@@ -1,3 +1,46 @@
+--- a/drivers/net/wireless/ath/ath9k/Kconfig
++++ b/drivers/net/wireless/ath/ath9k/Kconfig
+@@ -32,6 +32,13 @@ config ATH9K_DEBUGFS
+ 
+ 	  Also required for changing debug message flags at run time.
+ 
++config ATH9K_PKTLOG
++	bool "ath9k packet logging support"
++	depends on ATH9K_DEBUGFS
++	---help---
++	Say Y to dump frame information during tx/rx, rate information
++	and ani state.
++
+ config ATH9K_HTC
+        tristate "Atheros HTC based wireless cards support"
+        depends on USB && MAC80211
+@@ -53,3 +60,4 @@ config ATH9K_HTC_DEBUGFS
+ 	depends on ATH9K_HTC && DEBUG_FS
+ 	---help---
+ 	  Say Y, if you need access to ath9k_htc's statistics.
++
+--- a/drivers/net/wireless/ath/ath9k/Makefile
++++ b/drivers/net/wireless/ath/ath9k/Makefile
+@@ -10,6 +10,7 @@ ath9k-y +=	beacon.o \
+ ath9k-$(CONFIG_PCI) += pci.o
+ ath9k-$(CONFIG_ATHEROS_AR71XX) += ahb.o
+ ath9k-$(CONFIG_ATH9K_DEBUGFS) += debug.o
++ath9k-$(CONFIG_ATH9K_PKTLOG) += pktlog.o
+ 
+ obj-$(CONFIG_ATH9K) += ath9k.o
+ 
+--- a/drivers/net/wireless/ath/ath9k/ar9002_mac.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_mac.c
+@@ -215,7 +215,8 @@ static void ar9002_hw_fill_txdesc(struct
+ }
+ 
+ static int ar9002_hw_proc_txdesc(struct ath_hw *ah, void *ds,
+-				 struct ath_tx_status *ts)
++				 struct ath_tx_status *ts,
++				 void *txs_desc)
+ {
+ 	struct ar5416_desc *ads = AR5416DESC(ds);
+ 
 --- /dev/null
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_2p0_initvals.h
 @@ -0,0 +1,1784 @@
@@ -3573,6 +3616,32 @@
 +};
 +
 +#endif /* INITVALS_9003_2P2_H */
+--- a/drivers/net/wireless/ath/ath9k/ar9003_calib.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_calib.c
+@@ -739,6 +739,12 @@ static bool ar9003_hw_init_cal(struct at
+ 	 */
+ 	ar9003_hw_set_chain_masks(ah, 0x7, 0x7);
+ 
++	/* Do Tx IQ Calibration */
++	ar9003_hw_tx_iq_cal(ah);
++	REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_DIS);
++	udelay(5);
++	REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_EN);
++
+ 	/* Calibrate the AGC */
+ 	REG_WRITE(ah, AR_PHY_AGC_CONTROL,
+ 		  REG_READ(ah, AR_PHY_AGC_CONTROL) |
+@@ -753,10 +759,6 @@ static bool ar9003_hw_init_cal(struct at
+ 		return false;
+ 	}
+ 
+-	/* Do Tx IQ Calibration */
+-	if (ah->config.tx_iq_calibration)
+-		ar9003_hw_tx_iq_cal(ah);
+-
+ 	/* Revert chainmasks to their original values before NF cal */
+ 	ar9003_hw_set_chain_masks(ah, ah->rxchainmask, ah->txchainmask);
+ 
 --- a/drivers/net/wireless/ath/ath9k/ar9003_hw.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_hw.c
 @@ -16,7 +16,8 @@
@@ -5564,6 +5633,360 @@
 -};
 -
 -#endif /* INITVALS_9003_H */
+--- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
+@@ -90,6 +90,8 @@ static bool ar9003_hw_get_isr(struct ath
+ 				  MAP_ISR_S2_CST);
+ 			mask2 |= ((isr2 & AR_ISR_S2_TSFOOR) >>
+ 				  MAP_ISR_S2_TSFOOR);
++			mask2 |= ((isr2 & AR_ISR_S2_BB_WATCHDOG) >>
++				  MAP_ISR_S2_BB_WATCHDOG);
+ 
+ 			if (!(pCap->hw_caps & ATH9K_HW_CAP_RAC_SUPPORTED)) {
+ 				REG_WRITE(ah, AR_ISR_S2, isr2);
+@@ -167,6 +169,9 @@ static bool ar9003_hw_get_isr(struct ath
+ 
+ 			(void) REG_READ(ah, AR_ISR);
+ 		}
++
++		if (*masked & ATH9K_INT_BB_WATCHDOG)
++			ar9003_hw_bb_watchdog_read(ah);
+ 	}
+ 
+ 	if (sync_cause) {
+@@ -229,7 +234,8 @@ static void ar9003_hw_fill_txdesc(struct
+ }
+ 
+ static int ar9003_hw_proc_txdesc(struct ath_hw *ah, void *ds,
+-				 struct ath_tx_status *ts)
++				 struct ath_tx_status *ts,
++				 void *txs_desc)
+ {
+ 	struct ar9003_txs *ads;
+ 
+@@ -300,6 +306,7 @@ static int ar9003_hw_proc_txdesc(struct 
+ 
+ 	ts->tid = MS(ads->status8, AR_TxTid);
+ 
++	memcpy(txs_desc, ads, sizeof(*ads));
+ 	memset(ads, 0, sizeof(*ads));
+ 
+ 	return 0;
+--- a/drivers/net/wireless/ath/ath9k/ar9003_mac.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.h
+@@ -47,6 +47,7 @@
+ #define MAP_ISR_S2_DTIMSYNC     7
+ #define MAP_ISR_S2_DTIM         7
+ #define MAP_ISR_S2_TSFOOR       4
++#define MAP_ISR_S2_BB_WATCHDOG  6
+ 
+ #define AR9003TXC_CONST(_ds) ((const struct ar9003_txc *) _ds)
+ 
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -1132,3 +1132,122 @@ void ar9003_hw_attach_phy_ops(struct ath
+ 	priv_ops->do_getnf = ar9003_hw_do_getnf;
+ 	priv_ops->loadnf = ar9003_hw_loadnf;
+ }
++
++void ar9003_hw_bb_watchdog_config(struct ath_hw *ah)
++{
++	struct ath_common *common = ath9k_hw_common(ah);
++	u32 idle_tmo_ms = ah->bb_watchdog_timeout_ms;
++	u32 val, idle_count;
++
++	if (!idle_tmo_ms) {
++		/* disable IRQ, disable chip-reset for BB panic */
++		REG_WRITE(ah, AR_PHY_WATCHDOG_CTL_2,
++			  REG_READ(ah, AR_PHY_WATCHDOG_CTL_2) &
++			  ~(AR_PHY_WATCHDOG_RST_ENABLE |
++			    AR_PHY_WATCHDOG_IRQ_ENABLE));
++
++		/* disable watchdog in non-IDLE mode, disable in IDLE mode */
++		REG_WRITE(ah, AR_PHY_WATCHDOG_CTL_1,
++			  REG_READ(ah, AR_PHY_WATCHDOG_CTL_1) &
++			  ~(AR_PHY_WATCHDOG_NON_IDLE_ENABLE |
++			    AR_PHY_WATCHDOG_IDLE_ENABLE));
++
++		ath_print(common, ATH_DBG_RESET, "Disabled BB Watchdog\n");
++		return;
++	}
++
++	/* enable IRQ, disable chip-reset for BB watchdog */
++	val = REG_READ(ah, AR_PHY_WATCHDOG_CTL_2) & AR_PHY_WATCHDOG_CNTL2_MASK;
++	REG_WRITE(ah, AR_PHY_WATCHDOG_CTL_2,
++		  (val | AR_PHY_WATCHDOG_IRQ_ENABLE) &
++		  ~AR_PHY_WATCHDOG_RST_ENABLE);
++
++	/* bound limit to 10 secs */
++	if (idle_tmo_ms > 10000)
++		idle_tmo_ms = 10000;
++
++	/*
++	 * The time unit for watchdog event is 2^15 44/88MHz cycles.
++	 *
++	 * For HT20 we have a time unit of 2^15/44 MHz = .74 ms per tick
++	 * For HT40 we have a time unit of 2^15/88 MHz = .37 ms per tick
++	 *
++	 * Given we use fast clock now in 5 GHz, these time units should
++	 * be common for both 2 GHz and 5 GHz.
++	 */
++	idle_count = (100 * idle_tmo_ms) / 74;
++	if (ah->curchan && IS_CHAN_HT40(ah->curchan))
++		idle_count = (100 * idle_tmo_ms) / 37;
++
++	/*
++	 * enable watchdog in non-IDLE mode, disable in IDLE mode,
++	 * set idle time-out.
++	 */
++	REG_WRITE(ah, AR_PHY_WATCHDOG_CTL_1,
++		  AR_PHY_WATCHDOG_NON_IDLE_ENABLE |
++		  AR_PHY_WATCHDOG_IDLE_MASK |
++		  (AR_PHY_WATCHDOG_NON_IDLE_MASK & (idle_count << 2)));
++
++	ath_print(common, ATH_DBG_RESET,
++		  "Enabled BB Watchdog timeout (%u ms)\n",
++		  idle_tmo_ms);
++}
++
++void ar9003_hw_bb_watchdog_read(struct ath_hw *ah)
++{
++	/*
++	 * we want to avoid printing in ISR context so we save the
++	 * watchdog status to be printed later in bottom half context.
++	 */
++	ah->bb_watchdog_last_status = REG_READ(ah, AR_PHY_WATCHDOG_STATUS);
++
++	/*
++	 * the watchdog timer should reset on status read but to be sure
++	 * sure we write 0 to the watchdog status bit.
++	 */
++	REG_WRITE(ah, AR_PHY_WATCHDOG_STATUS,
++		  ah->bb_watchdog_last_status & ~AR_PHY_WATCHDOG_STATUS_CLR);
++}
++
++void ar9003_hw_bb_watchdog_dbg_info(struct ath_hw *ah)
++{
++	struct ath_common *common = ath9k_hw_common(ah);
++	u32 rxc_pcnt = 0, rxf_pcnt = 0, txf_pcnt = 0, status;
++
++	if (likely(!(common->debug_mask & ATH_DBG_RESET)))
++		return;
++
++	status = ah->bb_watchdog_last_status;
++	ath_print(common, ATH_DBG_RESET,
++		  "\n==== BB update: BB status=0x%08x ====\n", status);
++	ath_print(common, ATH_DBG_RESET,
++		  "** BB state: wd=%u det=%u rdar=%u rOFDM=%d "
++		  "rCCK=%u tOFDM=%u tCCK=%u agc=%u src=%u **\n",
++		  MS(status, AR_PHY_WATCHDOG_INFO),
++		  MS(status, AR_PHY_WATCHDOG_DET_HANG),
++		  MS(status, AR_PHY_WATCHDOG_RADAR_SM),
++		  MS(status, AR_PHY_WATCHDOG_RX_OFDM_SM),
++		  MS(status, AR_PHY_WATCHDOG_RX_CCK_SM),
++		  MS(status, AR_PHY_WATCHDOG_TX_OFDM_SM),
++		  MS(status, AR_PHY_WATCHDOG_TX_CCK_SM),
++		  MS(status, AR_PHY_WATCHDOG_AGC_SM),
++		  MS(status,AR_PHY_WATCHDOG_SRCH_SM));
++
++	ath_print(common, ATH_DBG_RESET,
++		  "** BB WD cntl: cntl1=0x%08x cntl2=0x%08x **\n",
++		  REG_READ(ah, AR_PHY_WATCHDOG_CTL_1),
++		  REG_READ(ah, AR_PHY_WATCHDOG_CTL_2));
++	ath_print(common, ATH_DBG_RESET,
++		  "** BB mode: BB_gen_controls=0x%08x **\n",
++		  REG_READ(ah, AR_PHY_GEN_CTRL));
++
++	if (ath9k_hw_GetMibCycleCountsPct(ah, &rxc_pcnt, &rxf_pcnt, &txf_pcnt))
++		ath_print(common, ATH_DBG_RESET,
++			  "** BB busy times: rx_clear=%d%%, "
++			  "rx_frame=%d%%, tx_frame=%d%% **\n",
++			  rxc_pcnt, rxf_pcnt, txf_pcnt);
++
++	ath_print(common, ATH_DBG_RESET,
++		  "==== BB update: done ====\n\n");
++}
++EXPORT_SYMBOL(ar9003_hw_bb_watchdog_dbg_info);
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
+@@ -483,10 +483,10 @@
+ #define AR_PHY_TX_IQCAL_STATUS_B0   (AR_SM_BASE + 0x48c)
+ #define AR_PHY_TX_IQCAL_CORR_COEFF_01_B0    (AR_SM_BASE + 0x450)
+ 
+-#define AR_PHY_PANIC_WD_STATUS      (AR_SM_BASE + 0x5c0)
+-#define AR_PHY_PANIC_WD_CTL_1       (AR_SM_BASE + 0x5c4)
+-#define AR_PHY_PANIC_WD_CTL_2       (AR_SM_BASE + 0x5c8)
+-#define AR_PHY_BT_CTL               (AR_SM_BASE + 0x5cc)
++#define AR_PHY_WATCHDOG_STATUS      (AR_SM_BASE + 0x5c0)
++#define AR_PHY_WATCHDOG_CTL_1       (AR_SM_BASE + 0x5c4)
++#define AR_PHY_WATCHDOG_CTL_2       (AR_SM_BASE + 0x5c8)
++#define AR_PHY_WATCHDOG_CTL         (AR_SM_BASE + 0x5cc)
+ #define AR_PHY_ONLY_WARMRESET       (AR_SM_BASE + 0x5d0)
+ #define AR_PHY_ONLY_CTL             (AR_SM_BASE + 0x5d4)
+ #define AR_PHY_ECO_CTRL             (AR_SM_BASE + 0x5dc)
+@@ -812,35 +812,35 @@
+ #define AR_PHY_CAL_MEAS_2_9300_10(_i) (AR_PHY_IQ_ADC_MEAS_2_B0_9300_10 + (AR_PHY_CHAIN_OFFSET * (_i)))
+ #define AR_PHY_CAL_MEAS_3_9300_10(_i) (AR_PHY_IQ_ADC_MEAS_3_B0_9300_10 + (AR_PHY_CHAIN_OFFSET * (_i)))
+ 
+-#define AR_PHY_BB_PANIC_NON_IDLE_ENABLE 0x00000001
+-#define AR_PHY_BB_PANIC_IDLE_ENABLE     0x00000002
+-#define AR_PHY_BB_PANIC_IDLE_MASK       0xFFFF0000
+-#define AR_PHY_BB_PANIC_NON_IDLE_MASK   0x0000FFFC
+-
+-#define AR_PHY_BB_PANIC_RST_ENABLE      0x00000002
+-#define AR_PHY_BB_PANIC_IRQ_ENABLE      0x00000004
+-#define AR_PHY_BB_PANIC_CNTL2_MASK      0xFFFFFFF9
+-
+-#define AR_PHY_BB_WD_STATUS             0x00000007
+-#define AR_PHY_BB_WD_STATUS_S           0
+-#define AR_PHY_BB_WD_DET_HANG           0x00000008
+-#define AR_PHY_BB_WD_DET_HANG_S         3
+-#define AR_PHY_BB_WD_RADAR_SM           0x000000F0
+-#define AR_PHY_BB_WD_RADAR_SM_S         4
+-#define AR_PHY_BB_WD_RX_OFDM_SM         0x00000F00
+-#define AR_PHY_BB_WD_RX_OFDM_SM_S       8
+-#define AR_PHY_BB_WD_RX_CCK_SM          0x0000F000
+-#define AR_PHY_BB_WD_RX_CCK_SM_S        12
+-#define AR_PHY_BB_WD_TX_OFDM_SM         0x000F0000
+-#define AR_PHY_BB_WD_TX_OFDM_SM_S       16
+-#define AR_PHY_BB_WD_TX_CCK_SM          0x00F00000
+-#define AR_PHY_BB_WD_TX_CCK_SM_S        20
+-#define AR_PHY_BB_WD_AGC_SM             0x0F000000
+-#define AR_PHY_BB_WD_AGC_SM_S           24
+-#define AR_PHY_BB_WD_SRCH_SM            0xF0000000
+-#define AR_PHY_BB_WD_SRCH_SM_S          28
++#define AR_PHY_WATCHDOG_NON_IDLE_ENABLE    0x00000001
++#define AR_PHY_WATCHDOG_IDLE_ENABLE        0x00000002
++#define AR_PHY_WATCHDOG_IDLE_MASK          0xFFFF0000
++#define AR_PHY_WATCHDOG_NON_IDLE_MASK      0x0000FFFC
++
++#define AR_PHY_WATCHDOG_RST_ENABLE         0x00000002
++#define AR_PHY_WATCHDOG_IRQ_ENABLE         0x00000004
++#define AR_PHY_WATCHDOG_CNTL2_MASK         0xFFFFFFF9
++
++#define AR_PHY_WATCHDOG_INFO               0x00000007
++#define AR_PHY_WATCHDOG_INFO_S             0
++#define AR_PHY_WATCHDOG_DET_HANG           0x00000008
++#define AR_PHY_WATCHDOG_DET_HANG_S         3
++#define AR_PHY_WATCHDOG_RADAR_SM           0x000000F0
++#define AR_PHY_WATCHDOG_RADAR_SM_S         4
++#define AR_PHY_WATCHDOG_RX_OFDM_SM         0x00000F00
++#define AR_PHY_WATCHDOG_RX_OFDM_SM_S       8
++#define AR_PHY_WATCHDOG_RX_CCK_SM          0x0000F000
++#define AR_PHY_WATCHDOG_RX_CCK_SM_S        12
++#define AR_PHY_WATCHDOG_TX_OFDM_SM         0x000F0000
++#define AR_PHY_WATCHDOG_TX_OFDM_SM_S       16
++#define AR_PHY_WATCHDOG_TX_CCK_SM          0x00F00000
++#define AR_PHY_WATCHDOG_TX_CCK_SM_S        20
++#define AR_PHY_WATCHDOG_AGC_SM             0x0F000000
++#define AR_PHY_WATCHDOG_AGC_SM_S           24
++#define AR_PHY_WATCHDOG_SRCH_SM            0xF0000000
++#define AR_PHY_WATCHDOG_SRCH_SM_S          28
+ 
+-#define AR_PHY_BB_WD_STATUS_CLR         0x00000008
++#define AR_PHY_WATCHDOG_STATUS_CLR         0x00000008
+ 
+ void ar9003_hw_set_chain_masks(struct ath_hw *ah, u8 rx, u8 tx);
+ 
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -23,6 +23,7 @@
+ 
+ #include "debug.h"
+ #include "common.h"
++#include "pktlog.h"
+ 
+ /*
+  * Header for the ath9k.ko driver core *only* -- hw code nor any other driver
+@@ -206,6 +207,69 @@ struct ath_txq {
+ 	u8 txq_tailidx;
+ };
+ 
++struct ath_atx_ac {
++	int sched;
++	int qnum;
++	struct list_head list;
++	struct list_head tid_q;
++};
++
++struct ath_buf_state {
++	int bfs_nframes;
++	u16 bfs_al;
++	u16 bfs_frmlen;
++	int bfs_seqno;
++	int bfs_tidno;
++	int bfs_retries;
++	u8 bf_type;
++	u32 bfs_keyix;
++	enum ath9k_key_type bfs_keytype;
++};
++
++struct ath_buf {
++	struct list_head list;
++	struct ath_buf *bf_lastbf;	/* last buf of this unit (a frame or
++					   an aggregate) */
++	struct ath_buf *bf_next;	/* next subframe in the aggregate */
++	struct sk_buff *bf_mpdu;	/* enclosing frame structure */
++	void *bf_desc;			/* virtual addr of desc */
++	dma_addr_t bf_daddr;		/* physical addr of desc */
++	dma_addr_t bf_buf_addr;		/* physical addr of data buffer */
++	bool bf_stale;
++	bool bf_isnullfunc;
++	bool bf_tx_aborted;
++	u16 bf_flags;
++	struct ath_buf_state bf_state;
++	dma_addr_t bf_dmacontext;
++	struct ath_wiphy *aphy;
++};
++
++struct ath_atx_tid {
++	struct list_head list;
++	struct list_head buf_q;
++	struct ath_node *an;
++	struct ath_atx_ac *ac;
++	struct ath_buf *tx_buf[ATH_TID_MAX_BUFS];
++	u16 seq_start;
++	u16 seq_next;
++	u16 baw_size;
++	int tidno;
++	int baw_head;   /* first un-acked tx buffer */
++	int baw_tail;   /* next unused tx buffer slot */
++	int sched;
++	int paused;
++	u8 state;
++};
++
++struct ath_node {
++	struct ath_common *common;
++	struct ath_atx_tid tid[WME_NUM_TID];
++	struct ath_atx_ac ac[WME_NUM_AC];
++	u16 maxampdu;
++	u8 mpdudensity;
++	int last_rssi;
++};
++
+ #define AGGR_CLEANUP         BIT(1)
+ #define AGGR_ADDBA_COMPLETE  BIT(2)
+ #define AGGR_ADDBA_PROGRESS  BIT(3)
+@@ -446,6 +510,7 @@ void ath_deinit_leds(struct ath_softc *s
+ #define SC_OP_TSF_RESET              BIT(11)
+ #define SC_OP_BT_PRIORITY_DETECTED   BIT(12)
+ #define SC_OP_BT_SCAN		     BIT(13)
++#define SC_OP_PKTLOGGING	     BIT(14)
+ 
+ /* Powersave flags */
+ #define PS_WAIT_FOR_BEACON        BIT(0)
+@@ -523,6 +588,10 @@ struct ath_softc {
+ #ifdef CONFIG_ATH9K_DEBUGFS
+ 	struct ath9k_debug debug;
+ #endif
++#ifdef CONFIG_ATH9K_PKTLOG
++	struct ath_pktlog_debugfs pktlog;
++#endif
++	bool is_pkt_logging;
+ 	struct ath_beacon_config cur_beacon_conf;
+ 	struct delayed_work tx_complete_work;
+ 	struct ath_btcoex btcoex;
 --- a/drivers/net/wireless/ath/ath9k/beacon.c
 +++ b/drivers/net/wireless/ath/ath9k/beacon.c
 @@ -76,22 +76,13 @@ static void ath_beacon_setup(struct ath_
@@ -5685,6 +6108,2563 @@
  }
  
  void ath_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif)
+--- a/drivers/net/wireless/ath/ath9k/common.c
++++ b/drivers/net/wireless/ath/ath9k/common.c
+@@ -27,270 +27,6 @@ MODULE_AUTHOR("Atheros Communications");
+ MODULE_DESCRIPTION("Shared library for Atheros wireless 802.11n LAN cards.");
+ MODULE_LICENSE("Dual BSD/GPL");
+ 
+-/* Common RX processing */
+-
+-/* Assumes you've already done the endian to CPU conversion */
+-static bool ath9k_rx_accept(struct ath_common *common,
+-			    struct sk_buff *skb,
+-			    struct ieee80211_rx_status *rxs,
+-			    struct ath_rx_status *rx_stats,
+-			    bool *decrypt_error)
+-{
+-	struct ath_hw *ah = common->ah;
+-	struct ieee80211_hdr *hdr;
+-	__le16 fc;
+-
+-	hdr = (struct ieee80211_hdr *) skb->data;
+-	fc = hdr->frame_control;
+-
+-	if (!rx_stats->rs_datalen)
+-		return false;
+-        /*
+-         * rs_status follows rs_datalen so if rs_datalen is too large
+-         * we can take a hint that hardware corrupted it, so ignore
+-         * those frames.
+-         */
+-	if (rx_stats->rs_datalen > common->rx_bufsize)
+-		return false;
+-
+-	/*
+-	 * rs_more indicates chained descriptors which can be used
+-	 * to link buffers together for a sort of scatter-gather
+-	 * operation.
+-	 * reject the frame, we don't support scatter-gather yet and
+-	 * the frame is probably corrupt anyway
+-	 */
+-	if (rx_stats->rs_more)
+-		return false;
+-
+-	/*
+-	 * The rx_stats->rs_status will not be set until the end of the
+-	 * chained descriptors so it can be ignored if rs_more is set. The
+-	 * rs_more will be false at the last element of the chained
+-	 * descriptors.
+-	 */
+-	if (rx_stats->rs_status != 0) {
+-		if (rx_stats->rs_status & ATH9K_RXERR_CRC)
+-			rxs->flag |= RX_FLAG_FAILED_FCS_CRC;
+-		if (rx_stats->rs_status & ATH9K_RXERR_PHY)
+-			return false;
+-
+-		if (rx_stats->rs_status & ATH9K_RXERR_DECRYPT) {
+-			*decrypt_error = true;
+-		} else if (rx_stats->rs_status & ATH9K_RXERR_MIC) {
+-			if (ieee80211_is_ctl(fc))
+-				/*
+-				 * Sometimes, we get invalid
+-				 * MIC failures on valid control frames.
+-				 * Remove these mic errors.
+-				 */
+-				rx_stats->rs_status &= ~ATH9K_RXERR_MIC;
+-			else
+-				rxs->flag |= RX_FLAG_MMIC_ERROR;
+-		}
+-		/*
+-		 * Reject error frames with the exception of
+-		 * decryption and MIC failures. For monitor mode,
+-		 * we also ignore the CRC error.
+-		 */
+-		if (ah->opmode == NL80211_IFTYPE_MONITOR) {
+-			if (rx_stats->rs_status &
+-			    ~(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_MIC |
+-			      ATH9K_RXERR_CRC))
+-				return false;
+-		} else {
+-			if (rx_stats->rs_status &
+-			    ~(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_MIC)) {
+-				return false;
+-			}
+-		}
+-	}
+-	return true;
+-}
+-
+-static int ath9k_process_rate(struct ath_common *common,
+-			      struct ieee80211_hw *hw,
+-			      struct ath_rx_status *rx_stats,
+-			      struct ieee80211_rx_status *rxs,
+-			      struct sk_buff *skb)
+-{
+-	struct ieee80211_supported_band *sband;
+-	enum ieee80211_band band;
+-	unsigned int i = 0;
+-
+-	band = hw->conf.channel->band;
+-	sband = hw->wiphy->bands[band];
+-
+-	if (rx_stats->rs_rate & 0x80) {
+-		/* HT rate */
+-		rxs->flag |= RX_FLAG_HT;
+-		if (rx_stats->rs_flags & ATH9K_RX_2040)
+-			rxs->flag |= RX_FLAG_40MHZ;
+-		if (rx_stats->rs_flags & ATH9K_RX_GI)
+-			rxs->flag |= RX_FLAG_SHORT_GI;
+-		rxs->rate_idx = rx_stats->rs_rate & 0x7f;
+-		return 0;
+-	}
+-
+-	for (i = 0; i < sband->n_bitrates; i++) {
+-		if (sband->bitrates[i].hw_value == rx_stats->rs_rate) {
+-			rxs->rate_idx = i;
+-			return 0;
+-		}
+-		if (sband->bitrates[i].hw_value_short == rx_stats->rs_rate) {
+-			rxs->flag |= RX_FLAG_SHORTPRE;
+-			rxs->rate_idx = i;
+-			return 0;
+-		}
+-	}
+-
+-	/*
+-	 * No valid hardware bitrate found -- we should not get here
+-	 * because hardware has already validated this frame as OK.
+-	 */
+-	ath_print(common, ATH_DBG_XMIT, "unsupported hw bitrate detected "
+-		  "0x%02x using 1 Mbit\n", rx_stats->rs_rate);
+-	if ((common->debug_mask & ATH_DBG_XMIT))
+-		print_hex_dump_bytes("", DUMP_PREFIX_NONE, skb->data, skb->len);
+-
+-	return -EINVAL;
+-}
+-
+-static void ath9k_process_rssi(struct ath_common *common,
+-			       struct ieee80211_hw *hw,
+-			       struct sk_buff *skb,
+-			       struct ath_rx_status *rx_stats)
+-{
+-	struct ath_hw *ah = common->ah;
+-	struct ieee80211_sta *sta;
+-	struct ieee80211_hdr *hdr;
+-	struct ath_node *an;
+-	int last_rssi = ATH_RSSI_DUMMY_MARKER;
+-	__le16 fc;
+-
+-	hdr = (struct ieee80211_hdr *)skb->data;
+-	fc = hdr->frame_control;
+-
+-	rcu_read_lock();
+-	/*
+-	 * XXX: use ieee80211_find_sta! This requires quite a bit of work
+-	 * under the current ath9k virtual wiphy implementation as we have
+-	 * no way of tying a vif to wiphy. Typically vifs are attached to
+-	 * at least one sdata of a wiphy on mac80211 but with ath9k virtual
+-	 * wiphy you'd have to iterate over every wiphy and each sdata.
+-	 */
+-	sta = ieee80211_find_sta_by_hw(hw, hdr->addr2);
+-	if (sta) {
+-		an = (struct ath_node *) sta->drv_priv;
+-		if (rx_stats->rs_rssi != ATH9K_RSSI_BAD &&
+-		   !rx_stats->rs_moreaggr)
+-			ATH_RSSI_LPF(an->last_rssi, rx_stats->rs_rssi);
+-		last_rssi = an->last_rssi;
+-	}
+-	rcu_read_unlock();
+-
+-	if (likely(last_rssi != ATH_RSSI_DUMMY_MARKER))
+-		rx_stats->rs_rssi = ATH_EP_RND(last_rssi,
+-					      ATH_RSSI_EP_MULTIPLIER);
+-	if (rx_stats->rs_rssi < 0)
+-		rx_stats->rs_rssi = 0;
+-
+-	/* Update Beacon RSSI, this is used by ANI. */
+-	if (ieee80211_is_beacon(fc))
+-		ah->stats.avgbrssi = rx_stats->rs_rssi;
+-}
+-
+-/*
+- * For Decrypt or Demic errors, we only mark packet status here and always push
+- * up the frame up to let mac80211 handle the actual error case, be it no
+- * decryption key or real decryption error. This let us keep statistics there.
+- */
+-int ath9k_cmn_rx_skb_preprocess(struct ath_common *common,
+-				struct ieee80211_hw *hw,
+-				struct sk_buff *skb,
+-				struct ath_rx_status *rx_stats,
+-				struct ieee80211_rx_status *rx_status,
+-				bool *decrypt_error)
+-{
+-	struct ath_hw *ah = common->ah;
+-
+-	memset(rx_status, 0, sizeof(struct ieee80211_rx_status));
+-
+-	/*
+-	 * everything but the rate is checked here, the rate check is done
+-	 * separately to avoid doing two lookups for a rate for each frame.
+-	 */
+-	if (!ath9k_rx_accept(common, skb, rx_status, rx_stats, decrypt_error))
+-		return -EINVAL;
+-
+-	ath9k_process_rssi(common, hw, skb, rx_stats);
+-
+-	if (ath9k_process_rate(common, hw, rx_stats, rx_status, skb))
+-		return -EINVAL;
+-
+-	rx_status->mactime = ath9k_hw_extend_tsf(ah, rx_stats->rs_tstamp);
+-	rx_status->band = hw->conf.channel->band;
+-	rx_status->freq = hw->conf.channel->center_freq;
+-	rx_status->signal = ATH_DEFAULT_NOISE_FLOOR + rx_stats->rs_rssi;
+-	rx_status->antenna = rx_stats->rs_antenna;
+-	rx_status->flag |= RX_FLAG_TSFT;
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(ath9k_cmn_rx_skb_preprocess);
+-
+-void ath9k_cmn_rx_skb_postprocess(struct ath_common *common,
+-				  struct sk_buff *skb,
+-				  struct ath_rx_status *rx_stats,
+-				  struct ieee80211_rx_status *rxs,
+-				  bool decrypt_error)
+-{
+-	struct ath_hw *ah = common->ah;
+-	struct ieee80211_hdr *hdr;
+-	int hdrlen, padpos, padsize;
+-	u8 keyix;
+-	__le16 fc;
+-
+-	/* see if any padding is done by the hw and remove it */
+-	hdr = (struct ieee80211_hdr *) skb->data;
+-	hdrlen = ieee80211_get_hdrlen_from_skb(skb);
+-	fc = hdr->frame_control;
+-	padpos = ath9k_cmn_padpos(hdr->frame_control);
+-
+-	/* The MAC header is padded to have 32-bit boundary if the
+-	 * packet payload is non-zero. The general calculation for
+-	 * padsize would take into account odd header lengths:
+-	 * padsize = (4 - padpos % 4) % 4; However, since only
+-	 * even-length headers are used, padding can only be 0 or 2
+-	 * bytes and we can optimize this a bit. In addition, we must
+-	 * not try to remove padding from short control frames that do
+-	 * not have payload. */
+-	padsize = padpos & 3;
+-	if (padsize && skb->len>=padpos+padsize+FCS_LEN) {
+-		memmove(skb->data + padsize, skb->data, padpos);
+-		skb_pull(skb, padsize);
+-	}
+-
+-	keyix = rx_stats->rs_keyix;
+-
+-	if (!(keyix == ATH9K_RXKEYIX_INVALID) && !decrypt_error &&
+-	    ieee80211_has_protected(fc)) {
+-		rxs->flag |= RX_FLAG_DECRYPTED;
+-	} else if (ieee80211_has_protected(fc)
+-		   && !decrypt_error && skb->len >= hdrlen + 4) {
+-		keyix = skb->data[hdrlen + 3] >> 6;
+-
+-		if (test_bit(keyix, common->keymap))
+-			rxs->flag |= RX_FLAG_DECRYPTED;
+-	}
+-	if (ah->sw_mgmt_crypto &&
+-	    (rxs->flag & RX_FLAG_DECRYPTED) &&
+-	    ieee80211_is_mgmt(fc))
+-		/* Use software decrypt for management frames. */
+-		rxs->flag &= ~RX_FLAG_DECRYPTED;
+-}
+-EXPORT_SYMBOL(ath9k_cmn_rx_skb_postprocess);
+-
+ int ath9k_cmn_padpos(__le16 frame_control)
+ {
+ 	int padpos = 24;
+--- a/drivers/net/wireless/ath/ath9k/common.h
++++ b/drivers/net/wireless/ath/ath9k/common.h
+@@ -52,82 +52,6 @@
+ #define ATH_EP_RND(x, mul) 						\
+ 	((((x)%(mul)) >= ((mul)/2)) ? ((x) + ((mul) - 1)) / (mul) : (x)/(mul))
+ 
+-struct ath_atx_ac {
+-	int sched;
+-	int qnum;
+-	struct list_head list;
+-	struct list_head tid_q;
+-};
+-
+-struct ath_buf_state {
+-	int bfs_nframes;
+-	u16 bfs_al;
+-	u16 bfs_frmlen;
+-	int bfs_seqno;
+-	int bfs_tidno;
+-	int bfs_retries;
+-	u8 bf_type;
+-	u32 bfs_keyix;
+-	enum ath9k_key_type bfs_keytype;
+-};
+-
+-struct ath_buf {
+-	struct list_head list;
+-	struct ath_buf *bf_lastbf;	/* last buf of this unit (a frame or
+-					   an aggregate) */
+-	struct ath_buf *bf_next;	/* next subframe in the aggregate */
+-	struct sk_buff *bf_mpdu;	/* enclosing frame structure */
+-	void *bf_desc;			/* virtual addr of desc */
+-	dma_addr_t bf_daddr;		/* physical addr of desc */
+-	dma_addr_t bf_buf_addr;		/* physical addr of data buffer */
+-	bool bf_stale;
+-	bool bf_isnullfunc;
+-	bool bf_tx_aborted;
+-	u16 bf_flags;
+-	struct ath_buf_state bf_state;
+-	dma_addr_t bf_dmacontext;
+-	struct ath_wiphy *aphy;
+-};
+-
+-struct ath_atx_tid {
+-	struct list_head list;
+-	struct list_head buf_q;
+-	struct ath_node *an;
+-	struct ath_atx_ac *ac;
+-	struct ath_buf *tx_buf[ATH_TID_MAX_BUFS];
+-	u16 seq_start;
+-	u16 seq_next;
+-	u16 baw_size;
+-	int tidno;
+-	int baw_head;   /* first un-acked tx buffer */
+-	int baw_tail;   /* next unused tx buffer slot */
+-	int sched;
+-	int paused;
+-	u8 state;
+-};
+-
+-struct ath_node {
+-	struct ath_common *common;
+-	struct ath_atx_tid tid[WME_NUM_TID];
+-	struct ath_atx_ac ac[WME_NUM_AC];
+-	u16 maxampdu;
+-	u8 mpdudensity;
+-	int last_rssi;
+-};
+-
+-int ath9k_cmn_rx_skb_preprocess(struct ath_common *common,
+-				struct ieee80211_hw *hw,
+-				struct sk_buff *skb,
+-				struct ath_rx_status *rx_stats,
+-				struct ieee80211_rx_status *rx_status,
+-				bool *decrypt_error);
+-
+-void ath9k_cmn_rx_skb_postprocess(struct ath_common *common,
+-				  struct sk_buff *skb,
+-				  struct ath_rx_status *rx_stats,
+-				  struct ieee80211_rx_status *rxs,
+-				  bool decrypt_error);
+-
+ int ath9k_cmn_padpos(__le16 frame_control);
+ int ath9k_cmn_get_hw_crypto_keytype(struct sk_buff *skb);
+ void ath9k_cmn_update_ichannel(struct ieee80211_hw *hw,
+--- a/drivers/net/wireless/ath/ath9k/debug.c
++++ b/drivers/net/wireless/ath/ath9k/debug.c
+@@ -15,6 +15,7 @@
+  */
+ 
+ #include <linux/slab.h>
++#include <linux/vmalloc.h>
+ #include <asm/unaligned.h>
+ 
+ #include "ath9k.h"
+@@ -32,6 +33,19 @@ static int ath9k_debugfs_open(struct ino
+ 	return 0;
+ }
+ 
++static ssize_t ath9k_debugfs_read_buf(struct file *file, char __user *user_buf,
++				      size_t count, loff_t *ppos)
++{
++	u8 *buf = file->private_data;
++	return simple_read_from_buffer(user_buf, count, ppos, buf, strlen(buf));
++}
++
++static int ath9k_debugfs_release_buf (struct inode *inode, struct file *file)
++{
++	vfree(file->private_data);
++	return 0;
++}
++
+ #ifdef CONFIG_ATH_DEBUG
+ 
+ static ssize_t read_file_debug(struct file *file, char __user *user_buf,
+@@ -269,6 +283,8 @@ void ath_debug_stat_interrupt(struct ath
+ 			sc->debug.stats.istats.rxlp++;
+ 		if (status & ATH9K_INT_RXHP)
+ 			sc->debug.stats.istats.rxhp++;
++		if (status & ATH9K_INT_BB_WATCHDOG)
++			sc->debug.stats.istats.bb_watchdog++;
+ 	} else {
+ 		if (status & ATH9K_INT_RX)
+ 			sc->debug.stats.istats.rxok++;
+@@ -319,6 +335,9 @@ static ssize_t read_file_interrupt(struc
+ 			"%8s: %10u\n", "RXLP", sc->debug.stats.istats.rxlp);
+ 		len += snprintf(buf + len, sizeof(buf) - len,
+ 			"%8s: %10u\n", "RXHP", sc->debug.stats.istats.rxhp);
++		len += snprintf(buf + len, sizeof(buf) - len,
++			"%8s: %10u\n", "WATCHDOG",
++			sc->debug.stats.istats.bb_watchdog);
+ 	} else {
+ 		len += snprintf(buf + len, sizeof(buf) - len,
+ 			"%8s: %10u\n", "RX", sc->debug.stats.istats.rxok);
+@@ -871,7 +890,38 @@ static ssize_t write_file_regval(struct 
+ static const struct file_operations fops_regval = {
+ 	.read = read_file_regval,
+ 	.write = write_file_regval,
+-	.open = ath9k_debugfs_open,
++};
++
++#define REGDUMP_LINE_SIZE	20
++#define REGDUMP_NUM_REGS	(0x16bd4 / 4 + 1)
++#define REGDUMP_DATA_LEN	(REGDUMP_NUM_REGS * REGDUMP_LINE_SIZE + 1)
++
++static int open_file_regdump(struct inode *inode, struct file *file)
++{
++	struct ath_softc *sc = inode->i_private;
++	unsigned int len = 0;
++	u8 *buf;
++	int i;
++
++	buf = vmalloc(REGDUMP_DATA_LEN);
++	if (!buf)
++		return -ENOMEM;
++
++	ath9k_ps_wakeup(sc);
++	for (i = 0; i < REGDUMP_NUM_REGS; i++)
++		len += scnprintf(buf + len, REGDUMP_DATA_LEN - len,
++			"0x%06x 0x%08x\n", i << 2, REG_READ(sc->sc_ah, i << 2));
++	ath9k_ps_restore(sc);
++
++	file->private_data = buf;
++
++	return 0;
++}
++
++static const struct file_operations fops_regdump = {
++	.open = open_file_regdump,
++	.read = ath9k_debugfs_read_buf,
++	.release = ath9k_debugfs_release_buf,
+ 	.owner = THIS_MODULE
+ };
+ 
+@@ -935,6 +985,16 @@ int ath9k_init_debug(struct ath_hw *ah)
+ 		goto err;
+ 
+ 	sc->debug.regidx = 0;
++
++	if (!debugfs_create_file("regdump", S_IRUSR, sc->debug.debugfs_phy,
++			sc, &fops_regdump))
++		goto err;
++
++#ifdef CONFIG_ATH9K_PKTLOG
++	if (ath9k_init_pktlog(sc) != 0)
++		goto err;
++#endif
++
+ 	return 0;
+ err:
+ 	ath9k_exit_debug(ah);
+@@ -946,6 +1006,10 @@ void ath9k_exit_debug(struct ath_hw *ah)
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ath_softc *sc = (struct ath_softc *) common->priv;
+ 
++#ifdef CONFIG_ATH9K_PKTLOG
++	ath9k_deinit_pktlog(sc);
++#endif
++	debugfs_remove(sc->debug.debugfs_regdump);
+ 	debugfs_remove_recursive(sc->debug.debugfs_phy);
+ }
+ 
+--- a/drivers/net/wireless/ath/ath9k/debug.h
++++ b/drivers/net/wireless/ath/ath9k/debug.h
+@@ -53,6 +53,7 @@ struct ath_buf;
+  * @cabend: RX End of CAB traffic
+  * @dtimsync: DTIM sync lossage
+  * @dtim: RX Beacon with DTIM
++ * @bb_watchdog: Baseband watchdog
+  */
+ struct ath_interrupt_stats {
+ 	u32 total;
+@@ -76,6 +77,7 @@ struct ath_interrupt_stats {
+ 	u32 cabend;
+ 	u32 dtimsync;
+ 	u32 dtim;
++	u32 bb_watchdog;
+ };
+ 
+ struct ath_rc_stats {
+@@ -154,6 +156,14 @@ struct ath_stats {
+ struct ath9k_debug {
+ 	struct dentry *debugfs_phy;
+ 	u32 regidx;
++	struct dentry *debugfs_debug;
++	struct dentry *debugfs_dma;
++	struct dentry *debugfs_interrupt;
++	struct dentry *debugfs_rcstat;
++	struct dentry *debugfs_wiphy;
++	struct dentry *debugfs_xmit;
++	struct dentry *debugfs_recv;
++	struct dentry *debugfs_regdump;
+ 	struct ath_stats stats;
+ };
+ 
+--- a/drivers/net/wireless/ath/ath9k/hw-ops.h
++++ b/drivers/net/wireless/ath/ath9k/hw-ops.h
+@@ -67,9 +67,10 @@ static inline void ath9k_hw_filltxdesc(s
+ }
+ 
+ static inline int ath9k_hw_txprocdesc(struct ath_hw *ah, void *ds,
+-				      struct ath_tx_status *ts)
++				      struct ath_tx_status *ts,
++				      void *txs_desc)
+ {
+-	return ath9k_hw_ops(ah)->proc_txdesc(ah, ds, ts);
++	return ath9k_hw_ops(ah)->proc_txdesc(ah, ds, ts, txs_desc);
+ }
+ 
+ static inline void ath9k_hw_set11n_txdesc(struct ath_hw *ah, void *ds,
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -395,12 +395,6 @@ static void ath9k_hw_init_config(struct 
+ 	ah->config.rx_intr_mitigation = true;
+ 
+ 	/*
+-	 * Tx IQ Calibration (ah->config.tx_iq_calibration) is only
+-	 * used by AR9003, but it is showing reliability issues.
+-	 * It will take a while to fix so this is currently disabled.
+-	 */
+-
+-	/*
+ 	 * We need this for PCI devices only (Cardbus, PCI, miniPCI)
+ 	 * _and_ if on non-uniprocessor systems (Multiprocessor/HT).
+ 	 * This means we use it for all AR5416 devices, and the few
+@@ -639,6 +633,7 @@ static int __ath9k_hw_init(struct ath_hw
+ 		ar9003_hw_set_nf_limits(ah);
+ 
+ 	ath9k_init_nfcal_hist_buffer(ah);
++	ah->bb_watchdog_timeout_ms = 25;
+ 
+ 	common->state = ATH_HW_INITIALIZED;
+ 
+@@ -1453,6 +1448,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 	if (AR_SREV_9300_20_OR_LATER(ah)) {
+ 		ath9k_hw_loadnf(ah, curchan);
+ 		ath9k_hw_start_nfcal(ah);
++		ar9003_hw_bb_watchdog_config(ah);
+ 	}
+ 
+ 	return 0;
+@@ -2177,7 +2173,7 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 		pCap->hw_caps |= ATH9K_HW_CAP_RFSILENT;
+ 	}
+ #endif
+-	if (AR_SREV_9271(ah))
++	if (AR_SREV_9271(ah) || AR_SREV_9300_20_OR_LATER(ah))
+ 		pCap->hw_caps |= ATH9K_HW_CAP_AUTOSLEEP;
+ 	else
+ 		pCap->hw_caps &= ~ATH9K_HW_CAP_AUTOSLEEP;
+@@ -2244,6 +2240,9 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 	if (AR_SREV_9300_20_OR_LATER(ah))
+ 		pCap->hw_caps |= ATH9K_HW_CAP_RAC_SUPPORTED;
+ 
++	if (AR_SREV_9287_10_OR_LATER(ah))
++		pCap->hw_caps |= ATH9K_HW_CAP_SGI_20;
++
+ 	return 0;
+ }
+ 
+@@ -2478,7 +2477,7 @@ void ath9k_hw_setrxfilter(struct ath_hw 
+ 		phybits |= AR_PHY_ERR_RADAR;
+ 	if (bits & ATH9K_RX_FILTER_PHYERR)
+ 		phybits |= AR_PHY_ERR_OFDM_TIMING | AR_PHY_ERR_CCK_TIMING;
+-	REG_WRITE(ah, AR_PHY_ERR, phybits);
++	REG_WRITE(ah, AR_PHY_ERR, 0xffffffff);
+ 
+ 	if (phybits)
+ 		REG_WRITE(ah, AR_RXCFG,
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -199,6 +199,7 @@ enum ath9k_hw_caps {
+ 	ATH9K_HW_CAP_RAC_SUPPORTED		= BIT(18),
+ 	ATH9K_HW_CAP_LDPC			= BIT(19),
+ 	ATH9K_HW_CAP_FASTCLOCK			= BIT(20),
++	ATH9K_HW_CAP_SGI_20			= BIT(21),
+ };
+ 
+ enum ath9k_capability_type {
+@@ -262,7 +263,6 @@ struct ath9k_ops_config {
+ #define AR_BASE_FREQ_5GHZ   	4900
+ #define AR_SPUR_FEEQ_BOUND_HT40 19
+ #define AR_SPUR_FEEQ_BOUND_HT20 10
+-	bool tx_iq_calibration; /* Only available for >= AR9003 */
+ 	int spurmode;
+ 	u16 spurchans[AR_EEPROM_MODAL_SPURS][2];
+ 	u8 max_txtrig_level;
+@@ -279,6 +279,7 @@ enum ath9k_int {
+ 	ATH9K_INT_TX = 0x00000040,
+ 	ATH9K_INT_TXDESC = 0x00000080,
+ 	ATH9K_INT_TIM_TIMER = 0x00000100,
++	ATH9K_INT_BB_WATCHDOG = 0x00000400,
+ 	ATH9K_INT_TXURN = 0x00000800,
+ 	ATH9K_INT_MIB = 0x00001000,
+ 	ATH9K_INT_RXPHY = 0x00004000,
+@@ -581,7 +582,7 @@ struct ath_hw_ops {
+ 			    const void *ds0, dma_addr_t buf_addr,
+ 			    unsigned int qcu);
+ 	int (*proc_txdesc)(struct ath_hw *ah, void *ds,
+-			   struct ath_tx_status *ts);
++			   struct ath_tx_status *ts, void* txs_desc);
+ 	void (*set11n_txdesc)(struct ath_hw *ah, void *ds,
+ 			      u32 pktLen, enum ath9k_pkt_type type,
+ 			      u32 txPower, u32 keyIx,
+@@ -789,6 +790,11 @@ struct ath_hw {
+ 	u32 ts_paddr_end;
+ 	u16 ts_tail;
+ 	u8 ts_size;
++
++	u32 bb_watchdog_last_status;
++	u32 bb_watchdog_timeout_ms; /* in ms, 0 to disable */
++
++	bool is_pkt_logging;
+ };
+ 
+ static inline struct ath_common *ath9k_hw_common(struct ath_hw *ah)
+@@ -910,10 +916,13 @@ void ar9002_hw_enable_async_fifo(struct 
+ void ar9002_hw_enable_wep_aggregation(struct ath_hw *ah);
+ 
+ /*
+- * Code specifric to AR9003, we stuff these here to avoid callbacks
++ * Code specific to AR9003, we stuff these here to avoid callbacks
+  * for older families
+  */
+ void ar9003_hw_set_nf_limits(struct ath_hw *ah);
++void ar9003_hw_bb_watchdog_config(struct ath_hw *ah);
++void ar9003_hw_bb_watchdog_read(struct ath_hw *ah);
++void ar9003_hw_bb_watchdog_dbg_info(struct ath_hw *ah);
+ 
+ /* Hardware family op attach helpers */
+ void ar5008_hw_attach_phy_ops(struct ath_hw *ah);
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -209,6 +209,9 @@ static void setup_ht_cap(struct ath_soft
+ 	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_LDPC)
+ 		ht_info->cap |= IEEE80211_HT_CAP_LDPC_CODING;
+ 
++	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_SGI_20)
++		ht_info->cap |= IEEE80211_HT_CAP_SGI_20;
++
+ 	ht_info->ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
+ 	ht_info->ampdu_density = IEEE80211_HT_MPDU_DENSITY_8;
+ 
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -521,6 +521,12 @@ irqreturn_t ath_isr(int irq, void *dev)
+ 	    !(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)))
+ 		goto chip_reset;
+ 
++	if ((ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) &&
++	    (status & ATH9K_INT_BB_WATCHDOG)) {
++		ar9003_hw_bb_watchdog_dbg_info(ah);
++		goto chip_reset;
++	}
++
+ 	if (status & ATH9K_INT_SWBA)
+ 		tasklet_schedule(&sc->bcon_tasklet);
+ 
+@@ -1196,7 +1202,9 @@ static int ath9k_start(struct ieee80211_
+ 		    ATH9K_INT_GLOBAL;
+ 
+ 	if (ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
+-		ah->imask |= ATH9K_INT_RXHP | ATH9K_INT_RXLP;
++		ah->imask |= ATH9K_INT_RXHP |
++			     ATH9K_INT_RXLP |
++			     ATH9K_INT_BB_WATCHDOG;
+ 	else
+ 		ah->imask |= ATH9K_INT_RX;
+ 
+@@ -1275,7 +1283,8 @@ static int ath9k_tx(struct ieee80211_hw 
+ 		 * completed and if needed, also for RX of buffered frames.
+ 		 */
+ 		ath9k_ps_wakeup(sc);
+-		ath9k_hw_setrxabort(sc->sc_ah, 0);
++		if (!(sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_AUTOSLEEP))
++			ath9k_hw_setrxabort(sc->sc_ah, 0);
+ 		if (ieee80211_is_pspoll(hdr->frame_control)) {
+ 			ath_print(common, ATH_DBG_PS,
+ 				  "Sending PS-Poll to pick a buffered frame\n");
+@@ -1539,8 +1548,8 @@ void ath9k_enable_ps(struct ath_softc *s
+ 			ah->imask |= ATH9K_INT_TIM_TIMER;
+ 			ath9k_hw_set_interrupts(ah, ah->imask);
+ 		}
++		ath9k_hw_setrxabort(ah, 1);
+ 	}
+-	ath9k_hw_setrxabort(ah, 1);
+ }
+ 
+ static int ath9k_config(struct ieee80211_hw *hw, u32 changed)
+--- a/drivers/net/wireless/ath/ath9k/pci.c
++++ b/drivers/net/wireless/ath/ath9k/pci.c
+@@ -29,6 +29,7 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
+ 	{ PCI_VDEVICE(ATHEROS, 0x002C) }, /* PCI-E 802.11n bonded out */
+ 	{ PCI_VDEVICE(ATHEROS, 0x002D) }, /* PCI   */
+ 	{ PCI_VDEVICE(ATHEROS, 0x002E) }, /* PCI-E */
++	{ PCI_VDEVICE(ATHEROS, 0x0030) }, /* PCI-E  AR9300 */
+ 	{ 0 }
+ };
+ 
+--- /dev/null
++++ b/drivers/net/wireless/ath/ath9k/pktlog.c
+@@ -0,0 +1,783 @@
++
++#include <linux/vmalloc.h>
++#include <linux/highmem.h>
++#include "ath9k.h"
++
++static int ath9k_debugfs_open(struct inode *inode, struct file *file)
++{
++	file->private_data = inode->i_private;
++	return 0;
++}
++
++static struct page *pktlog_virt_to_logical(void *addr)
++{
++	struct page *page;
++	unsigned long vpage = 0UL;
++
++	page = vmalloc_to_page(addr);
++	if (page) {
++		vpage = (unsigned long) page_address(page);
++		vpage |= ((unsigned long) addr & (PAGE_SIZE - 1));
++	}
++	return virt_to_page((void *) vpage);
++}
++
++static void ath_pktlog_release(struct ath_pktlog *pktlog)
++{
++	unsigned long page_cnt, vaddr;
++	struct page *page;
++
++	page_cnt =
++		((sizeof(*(pktlog->pktlog_buf)) +
++		pktlog->pktlog_buf_size) / PAGE_SIZE) + 1;
++
++	for (vaddr = (unsigned long) (pktlog->pktlog_buf); vaddr <
++			(unsigned long) (pktlog->pktlog_buf) +
++			(page_cnt * PAGE_SIZE);
++			vaddr += PAGE_SIZE) {
++		page = pktlog_virt_to_logical((void *) vaddr);
++		clear_bit(PG_reserved, &page->flags);
++	}
++
++	vfree(pktlog->pktlog_buf);
++	pktlog->pktlog_buf = NULL;
++}
++
++static int ath_alloc_pktlog_buf(struct ath_softc *sc)
++{
++	u32 page_cnt;
++	unsigned long vaddr;
++	struct page *page;
++	struct ath_pktlog *pktlog = &sc->pktlog.pktlog;
++
++	if (pktlog->pktlog_buf_size == 0)
++		return -EINVAL;
++
++	page_cnt = (sizeof(*(pktlog->pktlog_buf)) +
++		    pktlog->pktlog_buf_size) / PAGE_SIZE;
++
++	pktlog->pktlog_buf =  vmalloc((page_cnt + 2) * PAGE_SIZE);
++	if (pktlog->pktlog_buf == NULL) {
++		printk(KERN_ERR "Failed to allocate memory  for pktlog");
++		return -ENOMEM;
++	}
++
++	pktlog->pktlog_buf = (struct ath_pktlog_buf *)
++				     (((unsigned long)
++				      (pktlog->pktlog_buf)
++				     + PAGE_SIZE - 1) & PAGE_MASK);
++
++	for (vaddr = (unsigned long) (pktlog->pktlog_buf);
++		      vaddr < ((unsigned long) (pktlog->pktlog_buf)
++		      + (page_cnt * PAGE_SIZE)); vaddr += PAGE_SIZE) {
++		page = pktlog_virt_to_logical((void *)vaddr);
++		set_bit(PG_reserved, &page->flags);
++	}
++
++	return 0;
++}
++
++static void ath_init_pktlog_buf(struct ath_pktlog *pktlog)
++{
++	pktlog->pktlog_buf->bufhdr.magic_num = PKTLOG_MAGIC_NUM;
++	pktlog->pktlog_buf->bufhdr.version = CUR_PKTLOG_VER;
++	pktlog->pktlog_buf->rd_offset = -1;
++	pktlog->pktlog_buf->wr_offset = 0;
++	if (pktlog->pktlog_filter == 0)
++		pktlog->pktlog_filter = ATH_PKTLOG_FILTER_DEFAULT;
++}
++
++static char *ath_pktlog_getbuf(struct ath_pktlog *pl_info,
++			       u16 log_type, size_t log_size,
++		               u32 flags)
++{
++	struct ath_pktlog_buf *log_buf;
++	struct ath_pktlog_hdr *log_hdr;
++	int32_t cur_wr_offset, buf_size;
++	char *log_ptr;
++
++	log_buf = pl_info->pktlog_buf;
++	buf_size = pl_info->pktlog_buf_size;
++
++	spin_lock_bh(&pl_info->pktlog_lock);
++	cur_wr_offset = log_buf->wr_offset;
++	/* Move read offset to the next entry if there is a buffer overlap */
++	if (log_buf->rd_offset >= 0) {
++		if ((cur_wr_offset <= log_buf->rd_offset)
++				&& (cur_wr_offset +
++				sizeof(struct ath_pktlog_hdr)) >
++				log_buf->rd_offset)
++			PKTLOG_MOV_RD_IDX(log_buf->rd_offset, log_buf,
++					  buf_size);
++	} else {
++		log_buf->rd_offset = cur_wr_offset;
++	}
++
++	log_hdr =
++		(struct ath_pktlog_hdr *) (log_buf->log_data + cur_wr_offset);
++	log_hdr->log_type = log_type;
++	log_hdr->flags = flags;
++	log_hdr->timestamp = jiffies;
++	log_hdr->size = (u16) log_size;
++
++	cur_wr_offset += sizeof(*log_hdr);
++
++	if ((buf_size - cur_wr_offset) < log_size) {
++		while ((cur_wr_offset <= log_buf->rd_offset)
++				&& (log_buf->rd_offset < buf_size))
++			PKTLOG_MOV_RD_IDX(log_buf->rd_offset, log_buf,
++					  buf_size);
++		cur_wr_offset = 0;
++	}
++
++	while ((cur_wr_offset <= log_buf->rd_offset)
++			&& (cur_wr_offset + log_size) > log_buf->rd_offset)
++		PKTLOG_MOV_RD_IDX(log_buf->rd_offset, log_buf, buf_size);
++
++	log_ptr = &(log_buf->log_data[cur_wr_offset]);
++
++	cur_wr_offset += log_hdr->size;
++
++	log_buf->wr_offset =
++		((buf_size - cur_wr_offset) >=
++		 sizeof(struct ath_pktlog_hdr)) ? cur_wr_offset : 0;
++	spin_unlock_bh(&pl_info->pktlog_lock);
++
++	return log_ptr;
++}
++
++static void ath9k_hw_get_descinfo(struct ath_hw *ah, struct ath_desc_info *desc_info)
++{
++       desc_info->txctl_numwords = TXCTL_NUMWORDS(ah);
++       desc_info->txctl_offset = TXCTL_OFFSET(ah);
++       desc_info->txstatus_numwords = TXSTATUS_NUMWORDS(ah);
++       desc_info->txstatus_offset = TXSTATUS_OFFSET(ah);
++
++       desc_info->rxctl_numwords = RXCTL_NUMWORDS(ah);
++       desc_info->rxctl_offset = RXCTL_OFFSET(ah);
++       desc_info->rxstatus_numwords = RXSTATUS_NUMWORDS(ah);
++       desc_info->rxstatus_offset = RXSTATUS_OFFSET(ah);
++}
++
++static int  pktlog_pgfault(struct vm_area_struct *vma, struct vm_fault *vmf)
++{
++	unsigned long address = (unsigned long) vmf->virtual_address;
++
++	if (address == 0UL)
++		return VM_FAULT_NOPAGE;
++
++	if (vmf->pgoff > vma->vm_end)
++		return VM_FAULT_SIGBUS;
++
++	get_page(virt_to_page(address));
++	vmf->page = virt_to_page(address);
++	return VM_FAULT_MINOR;
++}
++
++static struct vm_operations_struct pktlog_vmops = {
++	.fault = pktlog_pgfault
++};
++
++static int ath_pktlog_mmap(struct file *file, struct vm_area_struct *vma)
++{
++	struct ath_softc *sc = file->private_data;
++
++	/* entire buffer should be mapped */
++	if (vma->vm_pgoff != 0)
++		return -EINVAL;
++
++	if (!sc->pktlog.pktlog.pktlog_buf) {
++		printk(KERN_ERR "Can't allocate pktlog buf");
++		return -ENOMEM;
++	}
++
++	vma->vm_flags |= VM_LOCKED;
++	vma->vm_ops = &pktlog_vmops;
++
++	return 0;
++}
++
++static ssize_t ath_pktlog_read(struct file *file, char __user *userbuf,
++			       size_t count, loff_t *ppos)
++{
++	size_t bufhdr_size;
++	size_t nbytes = 0, ret_val = 0;
++	int rem_len;
++	int start_offset, end_offset;
++	int fold_offset, ppos_data, cur_rd_offset;
++	struct ath_softc *sc = file->private_data;
++	struct ath_pktlog *pktlog_info = &sc->pktlog.pktlog;
++	struct ath_pktlog_buf *log_buf = pktlog_info->pktlog_buf;
++
++	if (log_buf == NULL)
++		return 0;
++
++	bufhdr_size = sizeof(log_buf->bufhdr);
++
++	/* copy valid log entries from circular buffer into user space */
++	rem_len = count;
++
++	nbytes = 0;
++
++	if (*ppos < bufhdr_size) {
++		nbytes = min((int) (bufhdr_size -  *ppos), rem_len);
++		if (copy_to_user(userbuf,
++		    ((char *) &log_buf->bufhdr) + *ppos, nbytes))
++			return -EFAULT;
++		rem_len -= nbytes;
++		ret_val += nbytes;
++	}
++
++	start_offset = log_buf->rd_offset;
++
++	if ((rem_len == 0) || (start_offset < 0))
++		goto read_done;
++
++	fold_offset = -1;
++	cur_rd_offset = start_offset;
++
++	/* Find the last offset and fold-offset if the buffer is folded */
++	do {
++		struct ath_pktlog_hdr *log_hdr;
++		int log_data_offset;
++
++		log_hdr =
++			(struct ath_pktlog_hdr *) (log_buf->log_data +
++							cur_rd_offset);
++
++		log_data_offset = cur_rd_offset + sizeof(struct ath_pktlog_hdr);
++
++		if ((fold_offset == -1)
++				&& ((pktlog_info->pktlog_buf_size -
++				    log_data_offset) <= log_hdr->size))
++			fold_offset = log_data_offset - 1;
++
++		PKTLOG_MOV_RD_IDX(cur_rd_offset, log_buf,
++				  pktlog_info->pktlog_buf_size);
++
++		if ((fold_offset == -1) && (cur_rd_offset == 0)
++				&& (cur_rd_offset != log_buf->wr_offset))
++			fold_offset = log_data_offset + log_hdr->size - 1;
++
++		end_offset = log_data_offset + log_hdr->size - 1;
++	} while (cur_rd_offset != log_buf->wr_offset);
++
++	ppos_data = *ppos + ret_val - bufhdr_size + start_offset;
++
++	if (fold_offset == -1) {
++		if (ppos_data > end_offset)
++			goto read_done;
++
++		nbytes = min(rem_len, end_offset - ppos_data + 1);
++		if (copy_to_user(userbuf + ret_val,
++				 log_buf->log_data + ppos_data, nbytes))
++			return -EFAULT;
++		ret_val += nbytes;
++		rem_len -= nbytes;
++	} else {
++		if (ppos_data <= fold_offset) {
++			nbytes = min(rem_len, fold_offset - ppos_data + 1);
++			if (copy_to_user(userbuf + ret_val,
++						log_buf->log_data + ppos_data,
++						nbytes))
++				return -EFAULT;
++			ret_val += nbytes;
++			rem_len -= nbytes;
++		}
++
++		if (rem_len == 0)
++			goto read_done;
++
++		ppos_data =
++			*ppos + ret_val - (bufhdr_size +
++					(fold_offset - start_offset + 1));
++
++		if (ppos_data <= end_offset) {
++			nbytes = min(rem_len, end_offset - ppos_data + 1);
++			if (copy_to_user(userbuf + ret_val, log_buf->log_data
++					 + ppos_data,
++					 nbytes))
++				return -EFAULT;
++			ret_val += nbytes;
++			rem_len -= nbytes;
++		}
++	}
++
++read_done:
++		*ppos += ret_val;
++
++		return ret_val;
++}
++
++static const struct file_operations fops_pktlog_dump = {
++	.read = ath_pktlog_read,
++	.mmap = ath_pktlog_mmap,
++	.open = ath9k_debugfs_open
++};
++
++static ssize_t write_pktlog_start(struct file *file, const char __user *ubuf,
++				   size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	struct ath_pktlog *pktlog = &sc->pktlog.pktlog;
++	char buf[32];
++	int buf_size;
++	int start_pktlog, err;
++
++	buf_size = min(count, sizeof(buf) - 1);
++	if (copy_from_user(buf, ubuf, buf_size))
++		return -EFAULT;
++
++	sscanf(buf, "%d", &start_pktlog);
++	if (start_pktlog) {
++		if (pktlog->pktlog_buf != NULL)
++			ath_pktlog_release(pktlog);
++
++		err = ath_alloc_pktlog_buf(sc);
++		if (err != 0)
++			return err;
++
++		ath_init_pktlog_buf(pktlog);
++		pktlog->pktlog_buf->rd_offset = -1;
++		pktlog->pktlog_buf->wr_offset = 0;
++		sc->is_pkt_logging = 1;
++	} else {
++		sc->is_pkt_logging = 0;
++	}
++
++	sc->sc_ah->is_pkt_logging = sc->is_pkt_logging;
++	return count;
++}
++
++static ssize_t read_pktlog_start(struct file *file, char __user *ubuf,
++				  size_t count, loff_t *ppos)
++{
++	char buf[32];
++	struct ath_softc *sc = file->private_data;
++	int len = 0;
++
++	len = scnprintf(buf, sizeof(buf) - len, "%d", sc->is_pkt_logging);
++	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops_pktlog_start = {
++	.read = read_pktlog_start,
++	.write = write_pktlog_start,
++	.open = ath9k_debugfs_open
++};
++
++static ssize_t pktlog_size_write(struct file *file, const char __user *ubuf,
++				 size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	char buf[32];
++	u32 pktlog_size;
++	int buf_size;
++
++	buf_size = min(count, sizeof(buf) - 1);
++	if (copy_from_user(buf, ubuf, buf_size))
++		return -EFAULT;
++
++	sscanf(buf, "%d", &pktlog_size);
++
++	if (pktlog_size == sc->pktlog.pktlog.pktlog_buf_size)
++		return count;
++
++	if (sc->is_pkt_logging) {
++		printk(KERN_DEBUG "Stop packet logging before"
++			" changing the pktlog size \n");
++		return -EINVAL;
++	}
++
++	sc->pktlog.pktlog.pktlog_buf_size = pktlog_size;
++
++	return count;
++}
++
++static ssize_t pktlog_size_read(struct file *file, char __user *ubuf,
++				size_t count, loff_t *ppos)
++{
++	char buf[32];
++	struct ath_softc *sc = file->private_data;
++	int len = 0;
++
++	len = scnprintf(buf, sizeof(buf) - len, "%ul",
++			    sc->pktlog.pktlog.pktlog_buf_size);
++	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops_pktlog_size = {
++	.read = pktlog_size_read,
++	.write = pktlog_size_write,
++	.open = ath9k_debugfs_open
++};
++
++static ssize_t pktlog_filter_write(struct file *file, const char __user *ubuf,
++				   size_t count, loff_t *ppos)
++{
++	char buf[32];
++	struct ath_softc *sc = file->private_data;
++	u32 filter;
++	int buf_count;
++
++	buf_count = min(count, sizeof(buf) - 1);
++	if (copy_from_user(buf, ubuf, buf_count))
++		return -EFAULT;
++
++	if (sscanf(buf, "%x", &filter))
++		sc->pktlog.pktlog.pktlog_filter = filter;
++	else
++		sc->pktlog.pktlog.pktlog_filter = 0;
++
++	return count;
++}
++
++static ssize_t  pktlog_filter_read(struct file *file, char __user *ubuf,
++				   size_t count, loff_t *ppos)
++{
++	char buf[32];
++	struct ath_softc *sc = file->private_data;
++	int len = 0;
++
++	len = scnprintf(buf, sizeof(buf) - len, "%ul",
++			    sc->pktlog.pktlog.pktlog_filter);
++
++	return simple_read_from_buffer(ubuf, count, ppos, buf, len);
++}
++
++static const struct file_operations fops_pktlog_filter = {
++	.read = pktlog_filter_read,
++	.write = pktlog_filter_write,
++	.open = ath9k_debugfs_open
++};
++
++void ath_pktlog_txctl(struct ath_softc *sc, struct ath_buf *bf)
++{
++	struct ath_pktlog_txctl *tx_log;
++	struct ath_pktlog *pl_info;
++	struct ieee80211_hdr *hdr;
++	struct ath_desc_info desc_info;
++	int i;
++	u32 *ds_words, flags = 0;
++
++	pl_info = &sc->pktlog.pktlog;
++
++	if ((pl_info->pktlog_filter & ATH_PKTLOG_TX) == 0 ||
++	    bf->bf_mpdu == NULL || !sc->is_pkt_logging)
++		return;
++
++	flags |= (((sc->sc_ah->hw_version.macRev <<
++			PHFLAGS_MACREV_SFT) & PHFLAGS_MACREV_MASK) |
++			((sc->sc_ah->hw_version.macVersion << PHFLAGS_MACVERSION_SFT)
++			& PHFLAGS_MACVERSION_MASK));
++
++	tx_log = (struct ath_pktlog_txctl *)ath_pktlog_getbuf(pl_info,
++			PKTLOG_TYPE_TXCTL, sizeof(*tx_log), flags);
++
++	memset(tx_log, 0, sizeof(*tx_log));
++
++	hdr = (struct ieee80211_hdr *) bf->bf_mpdu->data;
++	tx_log->framectrl = hdr->frame_control;
++	tx_log->seqctrl   = hdr->seq_ctrl;
++
++	if (ieee80211_has_tods(tx_log->framectrl)) {
++		tx_log->bssid_tail = (hdr->addr1[ETH_ALEN - 2] << 8) |
++				     (hdr->addr1[ETH_ALEN - 1]);
++		tx_log->sa_tail    = (hdr->addr2[ETH_ALEN - 2] << 8) |
++				     (hdr->addr2[ETH_ALEN - 1]);
++		tx_log->da_tail    = (hdr->addr3[ETH_ALEN - 2] << 8) |
++				     (hdr->addr3[ETH_ALEN - 1]);
++	} else if (ieee80211_has_fromds(tx_log->framectrl)) {
++		tx_log->bssid_tail = (hdr->addr2[ETH_ALEN - 2] << 8) |
++				     (hdr->addr2[ETH_ALEN - 1]);
++		tx_log->sa_tail    = (hdr->addr3[ETH_ALEN - 2] << 8) |
++				     (hdr->addr3[ETH_ALEN - 1]);
++		tx_log->da_tail    = (hdr->addr1[ETH_ALEN - 2] << 8) |
++				     (hdr->addr1[ETH_ALEN - 1]);
++	} else {
++		tx_log->bssid_tail = (hdr->addr3[ETH_ALEN - 2] << 8) |
++				     (hdr->addr3[ETH_ALEN - 1]);
++		tx_log->sa_tail	   = (hdr->addr2[ETH_ALEN - 2] << 8) |
++				     (hdr->addr2[ETH_ALEN - 1]);
++		tx_log->da_tail    = (hdr->addr1[ETH_ALEN - 2] << 8) |
++				     (hdr->addr1[ETH_ALEN - 1]);
++	}
++
++	ath9k_hw_get_descinfo(sc->sc_ah, &desc_info);
++
++	ds_words = (u32 *)(bf->bf_desc) + desc_info.txctl_offset;
++	for (i = 0; i < desc_info.txctl_numwords; i++)
++		tx_log->txdesc_ctl[i] = ds_words[i];
++}
++
++void ath_pktlog_txstatus(struct ath_softc *sc, void *ds)
++{
++	struct ath_pktlog_txstatus *tx_log;
++	struct ath_pktlog *pl_info;
++	struct ath_desc_info desc_info;
++	int i;
++	u32 *ds_words, flags = 0;
++
++	pl_info = &sc->pktlog.pktlog;
++
++	if ((pl_info->pktlog_filter & ATH_PKTLOG_TX) == 0 ||
++	    !sc->is_pkt_logging)
++		return;
++
++	flags |= (((sc->sc_ah->hw_version.macRev <<
++		  PHFLAGS_MACREV_SFT) & PHFLAGS_MACREV_MASK) |
++		  ((sc->sc_ah->hw_version.macVersion << PHFLAGS_MACVERSION_SFT)
++		  & PHFLAGS_MACVERSION_MASK));
++	tx_log = (struct ath_pktlog_txstatus *)ath_pktlog_getbuf(pl_info,
++			PKTLOG_TYPE_TXSTATUS, sizeof(*tx_log), flags);
++
++	memset(tx_log, 0, sizeof(*tx_log));
++
++	ath9k_hw_get_descinfo(sc->sc_ah, &desc_info);
++
++	ds_words = (u32 *)(ds) + desc_info.txstatus_offset;
++
++	for (i = 0; i < desc_info.txstatus_numwords; i++)
++		tx_log->txdesc_status[i] = ds_words[i];
++}
++
++void ath_pktlog_rx(struct ath_softc *sc, void *desc, struct sk_buff *skb)
++{
++	struct ath_pktlog_rx *rx_log;
++	struct ath_pktlog *pl_info;
++	struct ieee80211_hdr *hdr;
++	struct ath_desc_info desc_info;
++	int i;
++	u32 *ds_words, flags = 0;
++
++	pl_info = &sc->pktlog.pktlog;
++
++	if ((pl_info->pktlog_filter & ATH_PKTLOG_RX) == 0 ||
++	    !sc->is_pkt_logging)
++		return;
++
++	flags |= (((sc->sc_ah->hw_version.macRev <<
++		  PHFLAGS_MACREV_SFT) & PHFLAGS_MACREV_MASK) |
++		  ((sc->sc_ah->hw_version.macVersion <<
++		 PHFLAGS_MACVERSION_SFT) & PHFLAGS_MACVERSION_MASK));
++
++	rx_log = (struct ath_pktlog_rx *)ath_pktlog_getbuf(pl_info, PKTLOG_TYPE_RX,
++			sizeof(*rx_log), flags);
++
++	memset(rx_log, 0, sizeof(*rx_log));
++
++	if (skb->len > sizeof(struct ieee80211_hdr)) {
++		hdr = (struct ieee80211_hdr *) skb->data;
++		rx_log->framectrl = hdr->frame_control;
++		rx_log->seqctrl   = hdr->seq_ctrl;
++
++		if (ieee80211_has_tods(rx_log->framectrl)) {
++			rx_log->bssid_tail = (hdr->addr1[ETH_ALEN - 2] << 8) |
++					     (hdr->addr1[ETH_ALEN - 1]);
++			rx_log->sa_tail    = (hdr->addr2[ETH_ALEN - 2] << 8) |
++					     (hdr->addr2[ETH_ALEN - 1]);
++			rx_log->da_tail    = (hdr->addr3[ETH_ALEN - 2] << 8) |
++					     (hdr->addr3[ETH_ALEN - 1]);
++		} else if (ieee80211_has_fromds(rx_log->framectrl)) {
++			rx_log->bssid_tail = (hdr->addr2[ETH_ALEN - 2] << 8) |
++					     (hdr->addr2[ETH_ALEN - 1]);
++			rx_log->sa_tail    = (hdr->addr3[ETH_ALEN - 2] << 8) |
++					     (hdr->addr3[ETH_ALEN - 1]);
++			rx_log->da_tail    = (hdr->addr1[ETH_ALEN - 2] << 8) |
++					     (hdr->addr1[ETH_ALEN - 1]);
++		} else {
++			rx_log->bssid_tail = (hdr->addr3[ETH_ALEN - 2] << 8) |
++					     (hdr->addr3[ETH_ALEN - 1]);
++			rx_log->sa_tail    = (hdr->addr2[ETH_ALEN - 2] << 8) |
++					     (hdr->addr2[ETH_ALEN - 1]);
++			rx_log->da_tail    = (hdr->addr1[ETH_ALEN - 2] << 8) |
++					     (hdr->addr1[ETH_ALEN - 1]);
++		}
++	} else {
++		hdr = (struct ieee80211_hdr *) skb->data;
++
++		if (ieee80211_is_ctl(hdr->frame_control)) {
++			rx_log->framectrl = hdr->frame_control;
++			rx_log->da_tail = (hdr->addr1[ETH_ALEN - 2] << 8) |
++					     (hdr->addr1[ETH_ALEN - 1]);
++			if (skb->len < sizeof(struct ieee80211_rts)) {
++				rx_log->sa_tail = 0;
++			} else {
++				rx_log->sa_tail = (hdr->addr2[ETH_ALEN - 2]
++						  << 8) |
++						  (hdr->addr2[ETH_ALEN - 1]);
++			}
++		} else {
++			rx_log->framectrl = 0xFFFF;
++			rx_log->da_tail = 0;
++			rx_log->sa_tail = 0;
++		}
++
++		rx_log->seqctrl   = 0;
++		rx_log->bssid_tail = 0;
++	}
++
++	ath9k_hw_get_descinfo(sc->sc_ah, &desc_info);
++
++	ds_words = (u32 *)(desc) + desc_info.rxstatus_offset;
++
++	for (i = 0; i < desc_info.rxstatus_numwords; i++)
++		rx_log->rxdesc_status[i] = ds_words[i];
++}
++
++void ath9k_pktlog_rc(struct ath_softc *sc, struct ath_rate_priv *ath_rc_priv,
++		     int8_t ratecode, u8 rate, int8_t is_probing, u16 ac)
++{
++	struct ath_pktlog_rcfind *rcf_log;
++	struct ath_pktlog *pl_info;
++	u32 flags = 0;
++
++	pl_info = &sc->pktlog.pktlog;
++
++	if ((pl_info->pktlog_filter & ATH_PKTLOG_RCFIND) == 0 ||
++	    !sc->is_pkt_logging)
++		return;
++
++	flags |= (((sc->sc_ah->hw_version.macRev <<
++		 PHFLAGS_MACREV_SFT) & PHFLAGS_MACREV_MASK) |
++		 ((sc->sc_ah->hw_version.macVersion <<
++		 PHFLAGS_MACVERSION_SFT) & PHFLAGS_MACVERSION_MASK));
++	rcf_log = (struct ath_pktlog_rcfind *)ath_pktlog_getbuf(pl_info,
++		  PKTLOG_TYPE_RCFIND, sizeof(*rcf_log), flags);
++
++	rcf_log->rate = rate;
++	rcf_log->rateCode = ratecode;
++	rcf_log->rcProbeRate = is_probing ? ath_rc_priv->probe_rate : 0;
++	rcf_log->isProbing = is_probing;
++	rcf_log->ac = ac;
++	rcf_log->rcRateMax = ath_rc_priv->rate_max_phy;
++	rcf_log->rcRateTableSize = ath_rc_priv->rate_table_size;
++}
++
++void ath9k_pktlog_rcupdate(struct ath_softc *sc, struct ath_rate_priv *ath_rc_priv, u8 tx_rate,
++			   u8 rate_code, u8 xretries, u8 retries, int8_t rssi, u16 ac)
++{
++	struct ath_pktlog_rcupdate *rcu_log;
++	struct ath_pktlog *pl_info;
++	int i;
++	u32 flags = 0;
++
++	pl_info = &sc->pktlog.pktlog;
++
++	if ((pl_info->pktlog_filter & ATH_PKTLOG_RCUPDATE) == 0 ||
++	    !sc->is_pkt_logging)
++		return;
++
++	flags |= (((sc->sc_ah->hw_version.macRev <<
++		 PHFLAGS_MACREV_SFT) & PHFLAGS_MACREV_MASK) |
++		 ((sc->sc_ah->hw_version.macVersion <<
++		 PHFLAGS_MACVERSION_SFT) & PHFLAGS_MACVERSION_MASK));
++	rcu_log = (struct ath_pktlog_rcupdate *)ath_pktlog_getbuf(pl_info,
++						PKTLOG_TYPE_RCUPDATE,
++						sizeof(*rcu_log), flags);
++
++	memset(rcu_log, 0, sizeof(*rcu_log));
++
++	rcu_log->txRate = tx_rate;
++	rcu_log->rateCode = rate_code;
++	rcu_log->Xretries = xretries;
++	rcu_log->retries = retries;
++	rcu_log->rssiAck = rssi;
++	rcu_log->ac = ac;
++	rcu_log->rcProbeRate = ath_rc_priv->probe_rate;
++	rcu_log->rcRateMax = ath_rc_priv->rate_max_phy;
++
++	for (i = 0; i < RATE_TABLE_SIZE; i++) {
++		rcu_log->rcPer[i] = ath_rc_priv->per[i];
++	}
++}
++
++void ath9k_pktlog_txcomplete(struct ath_softc *sc, struct list_head *bf_head,
++			     struct ath_buf *bf, struct ath_buf *bf_last)
++{
++	struct log_tx ;
++	struct ath_buf *tbf;
++
++	list_for_each_entry(tbf, bf_head, list)
++		ath_pktlog_txctl(sc, tbf);
++
++	if (bf->bf_next == NULL && bf_last->bf_stale)
++		ath_pktlog_txctl(sc, bf_last);
++}
++
++void ath9k_pktlog_txctrl(struct ath_softc *sc, struct list_head *bf_head, struct ath_buf *lastbf)
++{
++	struct log_tx ;
++	struct ath_buf *tbf;
++
++	list_for_each_entry(tbf, bf_head, list)
++		ath_pktlog_txctl(sc, tbf);
++
++	/* log the last descriptor. */
++	ath_pktlog_txctl(sc, lastbf);
++}
++
++static void pktlog_init(struct ath_softc *sc)
++{
++	spin_lock_init(&sc->pktlog.pktlog.pktlog_lock);
++	sc->pktlog.pktlog.pktlog_buf_size = ATH_DEBUGFS_PKTLOG_SIZE_DEFAULT;
++	sc->pktlog.pktlog.pktlog_buf = NULL;
++	sc->pktlog.pktlog.pktlog_filter = 0;
++}
++
++int ath9k_init_pktlog(struct ath_softc *sc)
++{
++	sc->pktlog.debugfs_pktlog = debugfs_create_dir("pktlog",
++			sc->debug.debugfs_phy);
++	if (!sc->pktlog.debugfs_pktlog)
++		goto err;
++
++	sc->pktlog.pktlog_start = debugfs_create_file("pktlog_start",
++			S_IRUGO | S_IWUSR,
++			sc->pktlog.debugfs_pktlog,
++			sc, &fops_pktlog_start);
++	if (!sc->pktlog.pktlog_start)
++		goto err;
++
++	sc->pktlog.pktlog_size = debugfs_create_file("pktlog_size",
++			S_IRUGO | S_IWUSR,
++			sc->pktlog.debugfs_pktlog,
++			sc, &fops_pktlog_size);
++	if (!sc->pktlog.pktlog_size)
++		goto err;
++
++	sc->pktlog.pktlog_filter = debugfs_create_file("pktlog_filter",
++			S_IRUGO | S_IWUSR,
++			sc->pktlog.debugfs_pktlog,
++			sc, &fops_pktlog_filter);
++	if (!sc->pktlog.pktlog_filter)
++		goto err;
++
++	sc->pktlog.pktlog_dump = debugfs_create_file("pktlog_dump",
++			S_IRUGO,
++			sc->pktlog.debugfs_pktlog,
++			sc, &fops_pktlog_dump);
++	if (!sc->pktlog.pktlog_dump)
++		goto err;
++
++	pktlog_init(sc);
++
++	return 0;
++
++err:
++	return -ENOMEM;
++}
++
++void ath9k_deinit_pktlog(struct ath_softc *sc)
++{
++	struct ath_pktlog *pktlog = &sc->pktlog.pktlog;
++
++	if (pktlog->pktlog_buf != NULL)
++		ath_pktlog_release(pktlog);
++
++	debugfs_remove(sc->pktlog.pktlog_start);
++	debugfs_remove(sc->pktlog.pktlog_size);
++	debugfs_remove(sc->pktlog.pktlog_filter);
++	debugfs_remove(sc->pktlog.pktlog_dump);
++	debugfs_remove(sc->pktlog.debugfs_pktlog);
++}
+--- /dev/null
++++ b/drivers/net/wireless/ath/ath9k/pktlog.h
+@@ -0,0 +1,235 @@
++#ifndef PKTLOG_H
++#define PKTLOG_H
++
++#ifdef CONFIG_ATH9K_PKTLOG
++#define CUR_PKTLOG_VER          10010  /* Packet log version */
++#define PKTLOG_MAGIC_NUM        7735225
++#define ATH_PKTLOG_TX		0x000000001
++#define ATH_PKTLOG_RX		0x000000002
++#define ATH_PKTLOG_RCFIND	0x000000004
++#define ATH_PKTLOG_RCUPDATE	0x000000008
++
++#define ATH_DEBUGFS_PKTLOG_SIZE_DEFAULT (1024 * 1024)
++#define ATH_PKTLOG_FILTER_DEFAULT (ATH_PKTLOG_TX | ATH_PKTLOG_RX |	\
++		ATH_PKTLOG_RCFIND | ATH_PKTLOG_RCUPDATE)
++
++#define PHFLAGS_MACVERSION_MASK 0x00ff0000
++#define PHFLAGS_MACVERSION_SFT  16
++#define PHFLAGS_MACREV_MASK 0xff0  /* MAC revision */
++#define PHFLAGS_MACREV_SFT  4
++
++struct ath_pktlog_hdr {
++	u32 flags;
++	u16 log_type; /* Type of log information foll this header */
++	int16_t size; /* Size of variable length log information in bytes */
++	u32 timestamp;
++}  __packed;
++
++/* Types of packet log events */
++#define PKTLOG_TYPE_TXCTL    0
++#define PKTLOG_TYPE_TXSTATUS 1
++#define PKTLOG_TYPE_RX       2
++#define PKTLOG_TYPE_RCFIND   3
++#define PKTLOG_TYPE_RCUPDATE 4
++
++#define PKTLOG_MAX_TXCTL_WORDS 12
++#define PKTLOG_MAX_TXSTATUS_WORDS 10
++#define PKTLOG_MAX_PROTO_WORDS  16
++
++struct ath_pktlog_txctl {
++	__le16 framectrl;       /* frame control field from header */
++	__le16 seqctrl;         /* frame control field from header */
++	u16 bssid_tail;      /* last two octets of bssid */
++	u16 sa_tail;         /* last two octets of SA */
++	u16 da_tail;         /* last two octets of DA */
++	u16 resvd;
++	u32 txdesc_ctl[PKTLOG_MAX_TXCTL_WORDS];     /* Tx descriptor words */
++	unsigned long proto_hdr;   /* protocol header (variable length!) */
++	int32_t misc[0]; /* Can be used for HT specific or other misc info */
++}  __packed;
++
++struct ath_pktlog_txstatus {
++	/* Tx descriptor status words */
++	u32 txdesc_status[PKTLOG_MAX_TXSTATUS_WORDS];
++	int32_t misc[0]; /* Can be used for HT specific or other misc info */
++}  __packed;
++
++#define PKTLOG_MAX_RXSTATUS_WORDS 11
++
++struct ath_pktlog_rx {
++	u16 framectrl;       /* frame control field from header */
++	u16 seqctrl;         /* sequence control field */
++	u16 bssid_tail;      /* last two octets of bssid */
++	u16 sa_tail;         /* last two octets of SA */
++	u16 da_tail;         /* last two octets of DA */
++	u16 resvd;
++	u32 rxdesc_status[PKTLOG_MAX_RXSTATUS_WORDS];  /* Rx descriptor words */
++	unsigned long proto_hdr;   /* protocol header (variable length!) */
++	int32_t misc[0];    /* Can be used for HT specific or other misc info */
++}  __packed;
++
++struct ath_pktlog_rcfind {
++	u8 rate;
++	u8 rateCode;
++	s8 rcRssiLast;
++	s8 rcRssiLastPrev;
++	s8 rcRssiLastPrev2;
++	s8 rssiReduce;
++	u8 rcProbeRate;
++	s8 isProbing;
++	s8 primeInUse;
++	s8 currentPrimeState;
++	u8 rcRateTableSize;
++	u8 rcRateMax;
++	u8 ac;
++	int32_t misc[0]; /* Can be used for HT specific or other misc info */
++}  __packed;
++
++struct ath_pktlog_rcupdate {
++	u8 txRate;
++	u8 rateCode;
++	s8 rssiAck;
++	u8 Xretries;
++	u8 retries;
++	s8 rcRssiLast;
++	s8 rcRssiLastLkup;
++	s8 rcRssiLastPrev;
++	s8 rcRssiLastPrev2;
++	u8 rcProbeRate;
++	u8 rcRateMax;
++	s8 useTurboPrime;
++	s8 currentBoostState;
++	u8 rcHwMaxRetryRate;
++	u8 ac;
++	u8 resvd[2];
++	s8 rcRssiThres[RATE_TABLE_SIZE];
++	u8 rcPer[RATE_TABLE_SIZE];
++	u8 resv2[RATE_TABLE_SIZE + 5];
++	int32_t misc[0]; /* Can be used for HT specific or other misc info */
++};
++
++#define TXCTL_OFFSET(ah)      (AR_SREV_9300_20_OR_LATER(ah) ? 11 : 2)
++#define TXCTL_NUMWORDS(ah)    (AR_SREV_5416_20_OR_LATER(ah) ? 12 : 8)
++#define TXSTATUS_OFFSET(ah)   (AR_SREV_9300_20_OR_LATER(ah) ? 2 : 14)
++#define TXSTATUS_NUMWORDS(ah) (AR_SREV_9300_20_OR_LATER(ah) ? 7 : 10)
++
++#define RXCTL_OFFSET(ah)      (AR_SREV_9300_20_OR_LATER(ah) ? 0 : 3)
++#define RXCTL_NUMWORDS(ah)    (AR_SREV_9300_20_OR_LATER(ah) ? 0 : 1)
++#define RXSTATUS_OFFSET(ah)   (AR_SREV_9300_20_OR_LATER(ah) ? 1 : 4)
++#define RXSTATUS_NUMWORDS(ah) (AR_SREV_9300_20_OR_LATER(ah) ? 11 : 9)
++
++struct ath_desc_info {
++	u8 txctl_offset;
++	u8 txctl_numwords;
++	u8 txstatus_offset;
++	u8 txstatus_numwords;
++	u8 rxctl_offset;
++	u8 rxctl_numwords;
++	u8 rxstatus_offset;
++	u8 rxstatus_numwords;
++};
++
++#define PKTLOG_MOV_RD_IDX(_rd_offset, _log_buf, _log_size)  \
++	do { \
++		if ((_rd_offset + sizeof(struct ath_pktlog_hdr) + \
++		    ((struct ath_pktlog_hdr *)((_log_buf)->log_data + \
++			    (_rd_offset)))->size) <= _log_size) { \
++			_rd_offset = ((_rd_offset) + \
++					sizeof(struct ath_pktlog_hdr) + \
++					((struct ath_pktlog_hdr *) \
++					 ((_log_buf)->log_data + \
++					  (_rd_offset)))->size); \
++		} else { \
++			_rd_offset = ((struct ath_pktlog_hdr *) \
++					((_log_buf)->log_data +  \
++					 (_rd_offset)))->size;  \
++		} \
++		(_rd_offset) = (((_log_size) - (_rd_offset)) >= \
++				sizeof(struct ath_pktlog_hdr)) ? \
++		_rd_offset : 0; \
++	} while (0);
++
++struct ath_pktlog_bufhdr {
++	u32 magic_num;  /* Used by post processing scripts */
++	u32 version;    /* Set to CUR_PKTLOG_VER */
++};
++
++struct ath_pktlog_buf {
++	struct ath_pktlog_bufhdr bufhdr;
++	int32_t rd_offset;
++	int32_t wr_offset;
++	char log_data[0];
++};
++
++struct ath_pktlog {
++	struct ath_pktlog_buf *pktlog_buf;
++	u32 pktlog_filter;
++	u32 pktlog_buf_size;           /* Size of buffer in bytes */
++	spinlock_t pktlog_lock;
++};
++
++struct ath_pktlog_debugfs {
++	struct dentry *debugfs_pktlog;
++	struct dentry *pktlog_enable;
++	struct dentry *pktlog_start;
++	struct dentry *pktlog_filter;
++	struct dentry *pktlog_size;
++	struct dentry *pktlog_dump;
++	struct ath_pktlog pktlog;
++};
++
++void ath_pktlog_txctl(struct ath_softc *sc, struct ath_buf *bf);
++void ath_pktlog_txstatus(struct ath_softc *sc, void *ds);
++void ath_pktlog_rx(struct ath_softc *sc, void *ds, struct sk_buff *skb);
++void ath9k_pktlog_rc(struct ath_softc *sc, struct ath_rate_priv *ath_rc_priv,
++		int8_t ratecode, u8 rate, int8_t is_probing, u16 ac);
++void ath9k_pktlog_rcupdate(struct ath_softc *sc,
++			   struct ath_rate_priv *ath_rc_priv, u8 tx_rate,
++			   u8 rate_code, u8 xretries, u8 retries, int8_t rssi,
++			   u16 ac);
++void ath9k_pktlog_txcomplete(struct ath_softc *sc ,struct list_head *bf_head,
++			     struct ath_buf *bf, struct ath_buf *bf_last);
++void ath9k_pktlog_txctrl(struct ath_softc *sc, struct list_head *bf_head,
++			 struct ath_buf *lastbf);
++int ath9k_init_pktlog(struct ath_softc *sc);
++void ath9k_deinit_pktlog(struct ath_softc *sc);
++#else /* CONFIG_ATH9K_PKTLOG */
++static inline void ath_pktlog_txstatus(struct ath_softc *sc, void *ds)
++{
++}
++
++static inline void ath_pktlog_rx(struct ath_softc *sc, void *ds,
++				 struct sk_buff *skb)
++{
++}
++
++static inline void ath9k_pktlog_rc(struct ath_softc *sc,
++				   struct ath_rate_priv *ath_rc_priv,
++				   int8_t ratecode, u8 rate,
++				   int8_t is_probing, u16 ac)
++{
++}
++
++static inline void ath9k_pktlog_rcupdate(struct ath_softc *sc,
++					 struct ath_rate_priv *ath_rc_priv,
++					 u8 tx_rate, u8 rate_code,
++					 u8 xretries, u8 retries,
++					 int8_t rssi, u16 ac)
++{
++}
++
++static inline void ath9k_pktlog_txcomplete(struct ath_softc *sc,
++					   struct list_head *bf_head,
++					   struct ath_buf *bf,
++					   struct ath_buf *bf_last)
++{
++}
++
++static inline void ath9k_pktlog_txctrl(struct ath_softc *sc,
++				       struct list_head *bf_head,
++				       struct ath_buf *lastbf)
++{
++}
++#endif /* CONFIG_ATH9K_PKTLOG */
++
++#endif
+--- a/drivers/net/wireless/ath/ath9k/rc.c
++++ b/drivers/net/wireless/ath/ath9k/rc.c
+@@ -40,73 +40,75 @@ static const struct ath_rate_table ar541
+ 		{ VALID, VALID, WLAN_RC_PHY_OFDM, 54000, /* 54 Mb */
+ 			29300, 7, 108, 4, 7, 7, 7, 7 },
+ 		{ VALID_2040, VALID_2040, WLAN_RC_PHY_HT_20_SS, 6500, /* 6.5 Mb */
+-			6400, 0, 0, 0, 8, 24, 8, 24 },
++			6400, 0, 0, 0, 8, 25, 8, 25 },
+ 		{ VALID_20, VALID_20, WLAN_RC_PHY_HT_20_SS, 13000, /* 13 Mb */
+-			12700, 1, 1, 2, 9, 25, 9, 25 },
++			12700, 1, 1, 2, 9, 26, 9, 26 },
+ 		{ VALID_20, VALID_20, WLAN_RC_PHY_HT_20_SS, 19500, /* 19.5 Mb */
+-			18800, 2, 2, 2, 10, 26, 10, 26 },
++			18800, 2, 2, 2, 10, 27, 10, 27 },
+ 		{ VALID_20, VALID_20, WLAN_RC_PHY_HT_20_SS, 26000, /* 26 Mb */
+-			25000, 3, 3, 4, 11, 27, 11, 27 },
++			25000, 3, 3, 4, 11, 28, 11, 28 },
+ 		{ VALID_20, VALID_20, WLAN_RC_PHY_HT_20_SS, 39000, /* 39 Mb */
+-			36700, 4, 4, 4, 12, 28, 12, 28 },
++			36700, 4, 4, 4, 12, 29, 12, 29 },
+ 		{ INVALID, VALID_20, WLAN_RC_PHY_HT_20_SS, 52000, /* 52 Mb */
+-			48100, 5, 5, 4, 13, 29, 13, 29 },
++			48100, 5, 5, 4, 13, 30, 13, 30 },
+ 		{ INVALID, VALID_20, WLAN_RC_PHY_HT_20_SS, 58500, /* 58.5 Mb */
+-			53500, 6, 6, 4, 14, 30, 14, 30 },
++			53500, 6, 6, 4, 14, 31, 14, 31 },
+ 		{ INVALID, VALID_20, WLAN_RC_PHY_HT_20_SS, 65000, /* 65 Mb */
+-			59000, 7, 7, 4, 15, 31, 15, 32 },
++			59000, 7, 7, 4, 15, 32, 15, 33 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_20_DS, 13000, /* 13 Mb */
+-			12700, 8, 8, 3, 16, 33, 16, 33 },
++			12700, 8, 8, 3, 16, 34, 16, 34 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_20_DS, 26000, /* 26 Mb */
+-			24800, 9, 9, 2, 17, 34, 17, 34 },
++			24800, 9, 9, 2, 17, 35, 17, 35 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_20_DS, 39000, /* 39 Mb */
+-			36600, 10, 10, 2, 18, 35, 18, 35 },
++			36600, 10, 10, 2, 18, 36, 18, 36 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 52000, /* 52 Mb */
+-			48100, 11, 11, 4, 19, 36, 19, 36 },
++			48100, 11, 11, 4, 19, 37, 19, 37 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 78000, /* 78 Mb */
+-			69500, 12, 12, 4, 20, 37, 20, 37 },
++			69500, 12, 12, 4, 20, 38, 20, 38 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 104000, /* 104 Mb */
+-			89500, 13, 13, 4, 21, 38, 21, 38 },
++			89500, 13, 13, 4, 21, 39, 21, 39 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 117000, /* 117 Mb */
+-			98900, 14, 14, 4, 22, 39, 22, 39 },
++			98900, 14, 14, 4, 22, 40, 22, 40 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 130000, /* 130 Mb */
+-			108300, 15, 15, 4, 23, 40, 23, 41 },
++			108300, 15, 15, 4, 23, 41, 24, 42 },
++		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS_HGI, 144400, /* 144.4 Mb */
++			12000, 15, 15, 4, 23, 41, 24, 42 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 13500, /* 13.5 Mb */
+-			13200, 0, 0, 0, 8, 24, 24, 24 },
++			13200, 0, 0, 0, 8, 25, 25, 25 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 27500, /* 27.0 Mb */
+-			25900, 1, 1, 2, 9, 25, 25, 25 },
++			25900, 1, 1, 2, 9, 26, 26, 26 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 40500, /* 40.5 Mb */
+-			38600, 2, 2, 2, 10, 26, 26, 26 },
++			38600, 2, 2, 2, 10, 27, 27, 27 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 54000, /* 54 Mb */
+-			49800, 3, 3, 4, 11, 27, 27, 27 },
++			49800, 3, 3, 4, 11, 28, 28, 28 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 81500, /* 81 Mb */
+-			72200, 4, 4, 4, 12, 28, 28, 28 },
++			72200, 4, 4, 4, 12, 29, 29, 29 },
+ 		{ INVALID, VALID_40, WLAN_RC_PHY_HT_40_SS, 108000, /* 108 Mb */
+-			92900, 5, 5, 4, 13, 29, 29, 29 },
++			92900, 5, 5, 4, 13, 30, 30, 30 },
+ 		{ INVALID, VALID_40, WLAN_RC_PHY_HT_40_SS, 121500, /* 121.5 Mb */
+-			102700, 6, 6, 4, 14, 30, 30, 30 },
++			102700, 6, 6, 4, 14, 31, 31, 31 },
+ 		{ INVALID, VALID_40, WLAN_RC_PHY_HT_40_SS, 135000, /* 135 Mb */
+-			112000, 7, 7, 4, 15, 31, 32, 32 },
++			112000, 7, 7, 4, 15, 32, 33, 33 },
+ 		{ INVALID, VALID_40, WLAN_RC_PHY_HT_40_SS_HGI, 150000, /* 150 Mb */
+-			122000, 7, 7, 4, 15, 31, 32, 32 },
++			122000, 7, 7, 4, 15, 32, 33, 33 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_40_DS, 27000, /* 27 Mb */
+-			25800, 8, 8, 0, 16, 33, 33, 33 },
++			25800, 8, 8, 0, 16, 34, 34, 34 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_40_DS, 54000, /* 54 Mb */
+-			49800, 9, 9, 2, 17, 34, 34, 34 },
++			49800, 9, 9, 2, 17, 35, 35, 35 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_40_DS, 81000, /* 81 Mb */
+-			71900, 10, 10, 2, 18, 35, 35, 35 },
++			71900, 10, 10, 2, 18, 36, 36, 36 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 108000, /* 108 Mb */
+-			92500, 11, 11, 4, 19, 36, 36, 36 },
++			92500, 11, 11, 4, 19, 37, 37, 37 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 162000, /* 162 Mb */
+-			130300, 12, 12, 4, 20, 37, 37, 37 },
++			130300, 12, 12, 4, 20, 38, 38, 38 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 216000, /* 216 Mb */
+-			162800, 13, 13, 4, 21, 38, 38, 38 },
++			162800, 13, 13, 4, 21, 39, 39, 39 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 243000, /* 243 Mb */
+-			178200, 14, 14, 4, 22, 39, 39, 39 },
++			178200, 14, 14, 4, 22, 40, 40, 40 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 270000, /* 270 Mb */
+-			192100, 15, 15, 4, 23, 40, 41, 41 },
++			192100, 15, 15, 4, 23, 41, 42, 42 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS_HGI, 300000, /* 300 Mb */
+-			207000, 15, 15, 4, 23, 40, 41, 41 },
++			207000, 15, 15, 4, 23, 41, 42, 42 },
+ 	},
+ 	50,  /* probe interval */
+ 	WLAN_RC_HT_FLAG,  /* Phy rates allowed initially */
+@@ -144,73 +146,75 @@ static const struct ath_rate_table ar541
+ 		{ VALID, VALID, WLAN_RC_PHY_OFDM, 54000, /* 54 Mb */
+ 			30900, 11, 108, 8, 11, 11, 11, 11 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_20_SS, 6500, /* 6.5 Mb */
+-			6400, 0, 0, 4, 12, 28, 12, 28 },
++			6400, 0, 0, 4, 12, 29, 12, 29 },
+ 		{ VALID_20, VALID_20, WLAN_RC_PHY_HT_20_SS, 13000, /* 13 Mb */
+-			12700, 1, 1, 6, 13, 29, 13, 29 },
++			12700, 1, 1, 6, 13, 30, 13, 30 },
+ 		{ VALID_20, VALID_20, WLAN_RC_PHY_HT_20_SS, 19500, /* 19.5 Mb */
+-			18800, 2, 2, 6, 14, 30, 14, 30 },
++			18800, 2, 2, 6, 14, 31, 14, 31 },
+ 		{ VALID_20, VALID_20, WLAN_RC_PHY_HT_20_SS, 26000, /* 26 Mb */
+-			25000, 3, 3, 8, 15, 31, 15, 31 },
++			25000, 3, 3, 8, 15, 32, 15, 32 },
+ 		{ VALID_20, VALID_20, WLAN_RC_PHY_HT_20_SS, 39000, /* 39 Mb */
+-			36700, 4, 4, 8, 16, 32, 16, 32 },
++			36700, 4, 4, 8, 16, 33, 16, 33 },
+ 		{ INVALID, VALID_20, WLAN_RC_PHY_HT_20_SS, 52000, /* 52 Mb */
+-			48100, 5, 5, 8, 17, 33, 17, 33 },
++			48100, 5, 5, 8, 17, 34, 17, 34 },
+ 		{ INVALID,  VALID_20, WLAN_RC_PHY_HT_20_SS, 58500, /* 58.5 Mb */
+-			53500, 6, 6, 8, 18, 34, 18, 34 },
++			53500, 6, 6, 8, 18, 35, 18, 35 },
+ 		{ INVALID, VALID_20, WLAN_RC_PHY_HT_20_SS, 65000, /* 65 Mb */
+-			59000, 7, 7, 8, 19, 35, 19, 36 },
++			59000, 7, 7, 8, 19, 36, 19, 37 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_20_DS, 13000, /* 13 Mb */
+-			12700, 8, 8, 4, 20, 37, 20, 37 },
++			12700, 8, 8, 4, 20, 38, 20, 38 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_20_DS, 26000, /* 26 Mb */
+-			24800, 9, 9, 6, 21, 38, 21, 38 },
++			24800, 9, 9, 6, 21, 39, 21, 39 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_20_DS, 39000, /* 39 Mb */
+-			36600, 10, 10, 6, 22, 39, 22, 39 },
++			36600, 10, 10, 6, 22, 40, 22, 40 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 52000, /* 52 Mb */
+-			48100, 11, 11, 8, 23, 40, 23, 40 },
++			48100, 11, 11, 8, 23, 41, 23, 41 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 78000, /* 78 Mb */
+-			69500, 12, 12, 8, 24, 41, 24, 41 },
++			69500, 12, 12, 8, 24, 42, 24, 42 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 104000, /* 104 Mb */
+-			89500, 13, 13, 8, 25, 42, 25, 42 },
++			89500, 13, 13, 8, 25, 43, 25, 43 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 117000, /* 117 Mb */
+-			98900, 14, 14, 8, 26, 43, 26, 44 },
++			98900, 14, 14, 8, 26, 44, 26, 44 },
+ 		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS, 130000, /* 130 Mb */
+-			108300, 15, 15, 8, 27, 44, 27, 45 },
++			108300, 15, 15, 8, 27, 45, 28, 46 },
++		{ VALID_20, INVALID, WLAN_RC_PHY_HT_20_DS_HGI, 144400, /* 130 Mb */
++			120000, 15, 15, 8, 27, 45, 28, 46 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 13500, /* 13.5 Mb */
+-			13200, 0, 0, 8, 12, 28, 28, 28 },
++			13200, 0, 0, 8, 12, 29, 29, 29 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 27500, /* 27.0 Mb */
+-			25900, 1, 1, 8, 13, 29, 29, 29 },
++			25900, 1, 1, 8, 13, 30, 30, 30 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 40500, /* 40.5 Mb */
+-			38600, 2, 2, 8, 14, 30, 30, 30 },
++			38600, 2, 2, 8, 14, 31, 31, 31 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 54000, /* 54 Mb */
+-			49800, 3, 3, 8,  15, 31, 31, 31 },
++			49800, 3, 3, 8,  15, 32, 32, 32 },
+ 		{ VALID_40, VALID_40, WLAN_RC_PHY_HT_40_SS, 81500, /* 81 Mb */
+-			72200, 4, 4, 8, 16, 32, 32, 32 },
++			72200, 4, 4, 8, 16, 33, 33, 33 },
+ 		{ INVALID, VALID_40, WLAN_RC_PHY_HT_40_SS, 108000, /* 108 Mb */
+-			92900, 5, 5, 8, 17, 33, 33, 33 },
++			92900, 5, 5, 8, 17, 34, 34, 34 },
+ 		{ INVALID,  VALID_40, WLAN_RC_PHY_HT_40_SS, 121500, /* 121.5 Mb */
+-			102700, 6, 6, 8, 18, 34, 34, 34 },
++			102700, 6, 6, 8, 18, 35, 35, 35 },
+ 		{ INVALID, VALID_40, WLAN_RC_PHY_HT_40_SS, 135000, /* 135 Mb */
+-			112000, 7, 7, 8, 19, 35, 36, 36 },
++			112000, 7, 7, 8, 19, 36, 37, 37 },
+ 		{ INVALID, VALID_40, WLAN_RC_PHY_HT_40_SS_HGI, 150000, /* 150 Mb */
+-			122000, 7, 7, 8, 19, 35, 36, 36 },
++			122000, 7, 7, 8, 19, 36, 37, 37 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_40_DS, 27000, /* 27 Mb */
+-			25800, 8, 8, 8, 20, 37, 37, 37 },
++			25800, 8, 8, 8, 20, 38, 38, 38 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_40_DS, 54000, /* 54 Mb */
+-			49800, 9, 9, 8, 21, 38, 38, 38 },
++			49800, 9, 9, 8, 21, 39, 39, 39 },
+ 		{ INVALID, INVALID, WLAN_RC_PHY_HT_40_DS, 81000, /* 81 Mb */
+-			71900, 10, 10, 8, 22, 39, 39, 39 },
++			71900, 10, 10, 8, 22, 40, 40, 40 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 108000, /* 108 Mb */
+-			92500, 11, 11, 8, 23, 40, 40, 40 },
++			92500, 11, 11, 8, 23, 41, 41, 41 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 162000, /* 162 Mb */
+-			130300, 12, 12, 8, 24, 41, 41, 41 },
++			130300, 12, 12, 8, 24, 42, 42, 42 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 216000, /* 216 Mb */
+-			162800, 13, 13, 8, 25, 42, 42, 42 },
++			162800, 13, 13, 8, 25, 43, 43, 43 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 243000, /* 243 Mb */
+-			178200, 14, 14, 8, 26, 43, 43, 43 },
++			178200, 14, 14, 8, 26, 44, 44, 44 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS, 270000, /* 270 Mb */
+-			192100, 15, 15, 8, 27, 44, 45, 45 },
++			192100, 15, 15, 8, 27, 45, 46, 46 },
+ 		{ VALID_40, INVALID, WLAN_RC_PHY_HT_40_DS_HGI, 300000, /* 300 Mb */
+-			207000, 15, 15, 8, 27, 44, 45, 45 },
++			207000, 15, 15, 8, 27, 45, 46, 46 },
+ 	},
+ 	50,  /* probe interval */
+ 	WLAN_RC_HT_FLAG,  /* Phy rates allowed initially */
+@@ -510,7 +514,7 @@ static u8 ath_rc_setvalid_htrates(struct
+ static u8 ath_rc_get_highest_rix(struct ath_softc *sc,
+ 			         struct ath_rate_priv *ath_rc_priv,
+ 				 const struct ath_rate_table *rate_table,
+-				 int *is_probing)
++				 int *is_probing, u16 ac)
+ {
+ 	u32 best_thruput, this_thruput, now_msec;
+ 	u8 rate, next_rate, best_rate, maxindex, minindex;
+@@ -598,6 +602,8 @@ static u8 ath_rc_get_highest_rix(struct 
+ 
+ 	rate = ath_rc_priv->valid_rate_index[0];
+ 
++      ath9k_pktlog_rc(sc, ath_rc_priv,  rate_table->info[rate].ratecode,
++		      rate, *is_probing, ac);
+ 	return rate;
+ }
+ 
+@@ -689,7 +695,7 @@ static void ath_get_rate(void *priv, str
+ 	try_per_rate = 4;
+ 
+ 	rate_table = sc->cur_rate_table;
+-	rix = ath_rc_get_highest_rix(sc, ath_rc_priv, rate_table, &is_probe);
++	rix = ath_rc_get_highest_rix(sc, ath_rc_priv, rate_table, &is_probe, skb_get_queue_mapping(skb));
+ 
+ 	/*
+ 	 * If we're in HT mode and both us and our peer supports LDPC.
+@@ -929,7 +935,8 @@ static bool ath_rc_update_per(struct ath
+ static void ath_rc_update_ht(struct ath_softc *sc,
+ 			     struct ath_rate_priv *ath_rc_priv,
+ 			     struct ieee80211_tx_info *tx_info,
+-			     int tx_rate, int xretries, int retries)
++			     int tx_rate, int xretries, int retries,
++			     u16 ac)
+ {
+ 	u32 now_msec = jiffies_to_msecs(jiffies);
+ 	int rate;
+@@ -998,6 +1005,9 @@ static void ath_rc_update_ht(struct ath_
+ 	ath_debug_stat_retries(sc, tx_rate, xretries, retries,
+ 			       ath_rc_priv->per[tx_rate]);
+ 
++	ath9k_pktlog_rcupdate(sc, ath_rc_priv, tx_rate,
++			rate_table->info[tx_rate].ratecode,
++			xretries, retries, tx_info->status.ack_signal, ac);
+ }
+ 
+ static int ath_rc_get_rateindex(const struct ath_rate_table *rate_table,
+@@ -1025,7 +1035,8 @@ static int ath_rc_get_rateindex(const st
+ static void ath_rc_tx_status(struct ath_softc *sc,
+ 			     struct ath_rate_priv *ath_rc_priv,
+ 			     struct ieee80211_tx_info *tx_info,
+-			     int final_ts_idx, int xretries, int long_retry)
++			     int final_ts_idx, int xretries, int long_retry,
++			     u16 ac)
+ {
+ 	const struct ath_rate_table *rate_table;
+ 	struct ieee80211_tx_rate *rates = tx_info->status.rates;
+@@ -1054,7 +1065,7 @@ static void ath_rc_tx_status(struct ath_
+ 				rix = ath_rc_get_rateindex(rate_table, &rates[i]);
+ 				ath_rc_update_ht(sc, ath_rc_priv, tx_info,
+ 						rix, xretries ? 1 : 2,
+-						rates[i].count);
++						rates[i].count, ac);
+ 			}
+ 		}
+ 	} else {
+@@ -1076,7 +1087,7 @@ static void ath_rc_tx_status(struct ath_
+ 		return;
+ 
+ 	rix = ath_rc_get_rateindex(rate_table, &rates[i]);
+-	ath_rc_update_ht(sc, ath_rc_priv, tx_info, rix, xretries, long_retry);
++	ath_rc_update_ht(sc, ath_rc_priv, tx_info, rix, xretries, long_retry, ac);
+ }
+ 
+ static const
+@@ -1193,7 +1204,7 @@ static void ath_rc_init(struct ath_softc
+ }
+ 
+ static u8 ath_rc_build_ht_caps(struct ath_softc *sc, struct ieee80211_sta *sta,
+-			       bool is_cw40, bool is_sgi40)
++			       bool is_cw40, bool is_sgi)
+ {
+ 	u8 caps = 0;
+ 
+@@ -1206,8 +1217,9 @@ static u8 ath_rc_build_ht_caps(struct at
+ 		}
+ 		if (is_cw40)
+ 			caps |= WLAN_RC_40_FLAG;
+-		if (is_sgi40)
++		if (is_sgi)
+ 			caps |= WLAN_RC_SGI_FLAG;
++
+ 	}
+ 
+ 	return caps;
+@@ -1272,7 +1284,8 @@ static void ath_tx_status(void *priv, st
+ 		tx_status = 1;
+ 
+ 	ath_rc_tx_status(sc, ath_rc_priv, tx_info, final_ts_idx, tx_status,
+-			 (is_underrun) ? sc->hw->max_rate_tries : long_retry);
++			 (is_underrun) ? sc->hw->max_rate_tries : long_retry,
++			 skb_get_queue_mapping(skb));
+ 
+ 	/* Check if aggregation has to be enabled for this tid */
+ 	if (conf_is_ht(&sc->hw->conf) &&
+@@ -1300,7 +1313,7 @@ static void ath_rate_init(void *priv, st
+ 	struct ath_softc *sc = priv;
+ 	struct ath_rate_priv *ath_rc_priv = priv_sta;
+ 	const struct ath_rate_table *rate_table;
+-	bool is_cw40, is_sgi40;
++	bool is_cw40, is_sgi = false;
+ 	int i, j = 0;
+ 
+ 	for (i = 0; i < sband->n_bitrates; i++) {
+@@ -1323,7 +1336,11 @@ static void ath_rate_init(void *priv, st
+ 	}
+ 
+ 	is_cw40 = sta->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40;
+-	is_sgi40 = sta->ht_cap.cap & IEEE80211_HT_CAP_SGI_40;
++
++	if (is_cw40)
++		is_sgi = sta->ht_cap.cap & IEEE80211_HT_CAP_SGI_40;
++	else if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_SGI_20)
++		is_sgi = sta->ht_cap.cap & IEEE80211_HT_CAP_SGI_20;
+ 
+ 	/* Choose rate table first */
+ 
+@@ -1336,7 +1353,7 @@ static void ath_rate_init(void *priv, st
+ 		rate_table = hw_rate_table[sc->cur_rate_mode];
+ 	}
+ 
+-	ath_rc_priv->ht_cap = ath_rc_build_ht_caps(sc, sta, is_cw40, is_sgi40);
++	ath_rc_priv->ht_cap = ath_rc_build_ht_caps(sc, sta, is_cw40, is_sgi);
+ 	ath_rc_init(sc, priv_sta, sband, sta, rate_table);
+ }
+ 
+@@ -1347,10 +1364,10 @@ static void ath_rate_update(void *priv, 
+ 	struct ath_softc *sc = priv;
+ 	struct ath_rate_priv *ath_rc_priv = priv_sta;
+ 	const struct ath_rate_table *rate_table = NULL;
+-	bool oper_cw40 = false, oper_sgi40;
++	bool oper_cw40 = false, oper_sgi;
+ 	bool local_cw40 = (ath_rc_priv->ht_cap & WLAN_RC_40_FLAG) ?
+ 		true : false;
+-	bool local_sgi40 = (ath_rc_priv->ht_cap & WLAN_RC_SGI_FLAG) ?
++	bool local_sgi = (ath_rc_priv->ht_cap & WLAN_RC_SGI_FLAG) ?
+ 		true : false;
+ 
+ 	/* FIXME: Handle AP mode later when we support CWM */
+@@ -1363,15 +1380,21 @@ static void ath_rate_update(void *priv, 
+ 		    oper_chan_type == NL80211_CHAN_HT40PLUS)
+ 			oper_cw40 = true;
+ 
+-		oper_sgi40 = (sta->ht_cap.cap & IEEE80211_HT_CAP_SGI_40) ?
+-			true : false;
++		if (oper_cw40)
++			oper_sgi = (sta->ht_cap.cap & IEEE80211_HT_CAP_SGI_40) ?
++				   true : false;
++		else if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_SGI_20)
++			oper_sgi = (sta->ht_cap.cap & IEEE80211_HT_CAP_SGI_20) ?
++				   true : false;
++		else
++			oper_sgi = false;
+ 
+-		if ((local_cw40 != oper_cw40) || (local_sgi40 != oper_sgi40)) {
++		if ((local_cw40 != oper_cw40) || (local_sgi != oper_sgi)) {
+ 			rate_table = ath_choose_rate_table(sc, sband->band,
+ 						   sta->ht_cap.ht_supported,
+ 						   oper_cw40);
+ 			ath_rc_priv->ht_cap = ath_rc_build_ht_caps(sc, sta,
+-						   oper_cw40, oper_sgi40);
++						   oper_cw40, oper_sgi);
+ 			ath_rc_init(sc, priv_sta, sband, sta, rate_table);
+ 
+ 			ath_print(ath9k_hw_common(sc->sc_ah), ATH_DBG_CONFIG,
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -821,6 +821,259 @@ static struct ath_buf *ath_get_next_rx_b
+ 	return bf;
+ }
+ 
++/* Assumes you've already done the endian to CPU conversion */
++static bool ath9k_rx_accept(struct ath_common *common,
++			    struct ieee80211_hdr *hdr,
++			    struct ieee80211_rx_status *rxs,
++			    struct ath_rx_status *rx_stats,
++			    bool *decrypt_error)
++{
++	struct ath_hw *ah = common->ah;
++	__le16 fc;
++	u8 rx_status_len = ah->caps.rx_status_len;
++
++	fc = hdr->frame_control;
++
++	if (!rx_stats->rs_datalen)
++		return false;
++        /*
++         * rs_status follows rs_datalen so if rs_datalen is too large
++         * we can take a hint that hardware corrupted it, so ignore
++         * those frames.
++         */
++	if (rx_stats->rs_datalen > (common->rx_bufsize - rx_status_len))
++		return false;
++
++	/*
++	 * rs_more indicates chained descriptors which can be used
++	 * to link buffers together for a sort of scatter-gather
++	 * operation.
++	 * reject the frame, we don't support scatter-gather yet and
++	 * the frame is probably corrupt anyway
++	 */
++	if (rx_stats->rs_more)
++		return false;
++
++	/*
++	 * The rx_stats->rs_status will not be set until the end of the
++	 * chained descriptors so it can be ignored if rs_more is set. The
++	 * rs_more will be false at the last element of the chained
++	 * descriptors.
++	 */
++	if (rx_stats->rs_status != 0) {
++		if (rx_stats->rs_status & ATH9K_RXERR_CRC)
++			rxs->flag |= RX_FLAG_FAILED_FCS_CRC;
++		if (rx_stats->rs_status & ATH9K_RXERR_PHY)
++			return false;
++
++		if (rx_stats->rs_status & ATH9K_RXERR_DECRYPT) {
++			*decrypt_error = true;
++		} else if (rx_stats->rs_status & ATH9K_RXERR_MIC) {
++			if (ieee80211_is_ctl(fc))
++				/*
++				 * Sometimes, we get invalid
++				 * MIC failures on valid control frames.
++				 * Remove these mic errors.
++				 */
++				rx_stats->rs_status &= ~ATH9K_RXERR_MIC;
++			else
++				rxs->flag |= RX_FLAG_MMIC_ERROR;
++		}
++		/*
++		 * Reject error frames with the exception of
++		 * decryption and MIC failures. For monitor mode,
++		 * we also ignore the CRC error.
++		 */
++		if (ah->opmode == NL80211_IFTYPE_MONITOR) {
++			if (rx_stats->rs_status &
++			    ~(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_MIC |
++			      ATH9K_RXERR_CRC))
++				return false;
++		} else {
++			if (rx_stats->rs_status &
++			    ~(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_MIC)) {
++				return false;
++			}
++		}
++	}
++	return true;
++}
++
++static int ath9k_process_rate(struct ath_common *common,
++			      struct ieee80211_hw *hw,
++			      struct ath_rx_status *rx_stats,
++			      struct ieee80211_rx_status *rxs)
++{
++	struct ieee80211_supported_band *sband;
++	enum ieee80211_band band;
++	unsigned int i = 0;
++
++	band = hw->conf.channel->band;
++	sband = hw->wiphy->bands[band];
++
++	if (rx_stats->rs_rate & 0x80) {
++		/* HT rate */
++		rxs->flag |= RX_FLAG_HT;
++		if (rx_stats->rs_flags & ATH9K_RX_2040)
++			rxs->flag |= RX_FLAG_40MHZ;
++		if (rx_stats->rs_flags & ATH9K_RX_GI)
++			rxs->flag |= RX_FLAG_SHORT_GI;
++		rxs->rate_idx = rx_stats->rs_rate & 0x7f;
++		return 0;
++	}
++
++	for (i = 0; i < sband->n_bitrates; i++) {
++		if (sband->bitrates[i].hw_value == rx_stats->rs_rate) {
++			rxs->rate_idx = i;
++			return 0;
++		}
++		if (sband->bitrates[i].hw_value_short == rx_stats->rs_rate) {
++			rxs->flag |= RX_FLAG_SHORTPRE;
++			rxs->rate_idx = i;
++			return 0;
++		}
++	}
++
++	/*
++	 * No valid hardware bitrate found -- we should not get here
++	 * because hardware has already validated this frame as OK.
++	 */
++	ath_print(common, ATH_DBG_XMIT, "unsupported hw bitrate detected "
++		  "0x%02x using 1 Mbit\n", rx_stats->rs_rate);
++
++	return -EINVAL;
++}
++
++static void ath9k_process_rssi(struct ath_common *common,
++			       struct ieee80211_hw *hw,
++			       struct ieee80211_hdr *hdr,
++			       struct ath_rx_status *rx_stats)
++{
++	struct ath_hw *ah = common->ah;
++	struct ieee80211_sta *sta;
++	struct ath_node *an;
++	int last_rssi = ATH_RSSI_DUMMY_MARKER;
++	__le16 fc;
++
++	fc = hdr->frame_control;
++
++	rcu_read_lock();
++	/*
++	 * XXX: use ieee80211_find_sta! This requires quite a bit of work
++	 * under the current ath9k virtual wiphy implementation as we have
++	 * no way of tying a vif to wiphy. Typically vifs are attached to
++	 * at least one sdata of a wiphy on mac80211 but with ath9k virtual
++	 * wiphy you'd have to iterate over every wiphy and each sdata.
++	 */
++	sta = ieee80211_find_sta_by_hw(hw, hdr->addr2);
++	if (sta) {
++		an = (struct ath_node *) sta->drv_priv;
++		if (rx_stats->rs_rssi != ATH9K_RSSI_BAD &&
++		   !rx_stats->rs_moreaggr)
++			ATH_RSSI_LPF(an->last_rssi, rx_stats->rs_rssi);
++		last_rssi = an->last_rssi;
++	}
++	rcu_read_unlock();
++
++	if (likely(last_rssi != ATH_RSSI_DUMMY_MARKER))
++		rx_stats->rs_rssi = ATH_EP_RND(last_rssi,
++					      ATH_RSSI_EP_MULTIPLIER);
++	if (rx_stats->rs_rssi < 0)
++		rx_stats->rs_rssi = 0;
++
++	/* Update Beacon RSSI, this is used by ANI. */
++	if (ieee80211_is_beacon(fc))
++		ah->stats.avgbrssi = rx_stats->rs_rssi;
++}
++
++/*
++ * For Decrypt or Demic errors, we only mark packet status here and always push
++ * up the frame up to let mac80211 handle the actual error case, be it no
++ * decryption key or real decryption error. This let us keep statistics there.
++ */
++static int ath9k_rx_skb_preprocess(struct ath_common *common,
++				   struct ieee80211_hw *hw,
++				   struct ieee80211_hdr *hdr,
++				   struct ath_rx_status *rx_stats,
++				   struct ieee80211_rx_status *rx_status,
++				   bool *decrypt_error)
++{
++	struct ath_hw *ah = common->ah;
++
++	memset(rx_status, 0, sizeof(struct ieee80211_rx_status));
++
++	/*
++	 * everything but the rate is checked here, the rate check is done
++	 * separately to avoid doing two lookups for a rate for each frame.
++	 */
++	if (!ath9k_rx_accept(common, hdr, rx_status, rx_stats, decrypt_error))
++		return -EINVAL;
++
++	ath9k_process_rssi(common, hw, hdr, rx_stats);
++
++	if (ath9k_process_rate(common, hw, rx_stats, rx_status))
++		return -EINVAL;
++
++	rx_status->mactime = ath9k_hw_extend_tsf(ah, rx_stats->rs_tstamp);
++	rx_status->band = hw->conf.channel->band;
++	rx_status->freq = hw->conf.channel->center_freq;
++	rx_status->signal = ATH_DEFAULT_NOISE_FLOOR + rx_stats->rs_rssi;
++	rx_status->antenna = rx_stats->rs_antenna;
++	rx_status->flag |= RX_FLAG_TSFT;
++
++	return 0;
++}
++
++static void ath9k_rx_skb_postprocess(struct ath_common *common,
++				     struct sk_buff *skb,
++				     struct ath_rx_status *rx_stats,
++				     struct ieee80211_rx_status *rxs,
++				     bool decrypt_error)
++{
++	struct ath_hw *ah = common->ah;
++	struct ieee80211_hdr *hdr;
++	int hdrlen, padpos, padsize;
++	u8 keyix;
++	__le16 fc;
++
++	/* see if any padding is done by the hw and remove it */
++	hdr = (struct ieee80211_hdr *) skb->data;
++	hdrlen = ieee80211_get_hdrlen_from_skb(skb);
++	fc = hdr->frame_control;
++	padpos = ath9k_cmn_padpos(hdr->frame_control);
++
++	/* The MAC header is padded to have 32-bit boundary if the
++	 * packet payload is non-zero. The general calculation for
++	 * padsize would take into account odd header lengths:
++	 * padsize = (4 - padpos % 4) % 4; However, since only
++	 * even-length headers are used, padding can only be 0 or 2
++	 * bytes and we can optimize this a bit. In addition, we must
++	 * not try to remove padding from short control frames that do
++	 * not have payload. */
++	padsize = padpos & 3;
++	if (padsize && skb->len>=padpos+padsize+FCS_LEN) {
++		memmove(skb->data + padsize, skb->data, padpos);
++		skb_pull(skb, padsize);
++	}
++
++	keyix = rx_stats->rs_keyix;
++
++	if (!(keyix == ATH9K_RXKEYIX_INVALID) && !decrypt_error &&
++	    ieee80211_has_protected(fc)) {
++		rxs->flag |= RX_FLAG_DECRYPTED;
++	} else if (ieee80211_has_protected(fc)
++		   && !decrypt_error && skb->len >= hdrlen + 4) {
++		keyix = skb->data[hdrlen + 3] >> 6;
++
++		if (test_bit(keyix, common->keymap))
++			rxs->flag |= RX_FLAG_DECRYPTED;
++	}
++	if (ah->sw_mgmt_crypto &&
++	    (rxs->flag & RX_FLAG_DECRYPTED) &&
++	    ieee80211_is_mgmt(fc))
++		/* Use software decrypt for management frames. */
++		rxs->flag &= ~RX_FLAG_DECRYPTED;
++}
+ 
+ int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp)
+ {
+@@ -829,6 +1082,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 	struct ieee80211_rx_status *rxs;
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	u32 *rx_desc = NULL;
+ 	/*
+ 	 * The hw can techncically differ from common->hw when using ath9k
+ 	 * virtual wiphy so to account for that we iterate over the active
+@@ -842,6 +1096,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 	enum ath9k_rx_qtype qtype;
+ 	bool edma = !!(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA);
+ 	int dma_type;
++	u8 rx_status_len = ah->caps.rx_status_len;
+ 
+ 	if (edma)
+ 		dma_type = DMA_FROM_DEVICE;
+@@ -869,7 +1124,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 		if (!skb)
+ 			continue;
+ 
+-		hdr = (struct ieee80211_hdr *) skb->data;
++		hdr = (struct ieee80211_hdr *) (skb->data + rx_status_len);
+ 		rxs =  IEEE80211_SKB_RXCB(skb);
+ 
+ 		hw = ath_get_virt_hw(sc, hdr);
+@@ -883,8 +1138,8 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 		if (flush)
+ 			goto requeue;
+ 
+-		retval = ath9k_cmn_rx_skb_preprocess(common, hw, skb, &rs,
+-						     rxs, &decrypt_error);
++		retval = ath9k_rx_skb_preprocess(common, hw, hdr, &rs,
++						 rxs, &decrypt_error);
+ 		if (retval)
+ 			goto requeue;
+ 
+@@ -905,11 +1160,23 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 				 dma_type);
+ 
+ 		skb_put(skb, rs.rs_datalen + ah->caps.rx_status_len);
+-		if (ah->caps.rx_status_len)
++		if (ah->caps.rx_status_len) {
++			rx_desc = kzalloc(ah->caps.rx_status_len, GFP_ATOMIC);
++			if (rx_desc == NULL)
++				BUG_ON(1);
++			memcpy(rx_desc, skb->data, ah->caps.rx_status_len);
+ 			skb_pull(skb, ah->caps.rx_status_len);
++		}
+ 
+-		ath9k_cmn_rx_skb_postprocess(common, skb, &rs,
+-					     rxs, decrypt_error);
++		ath9k_rx_skb_postprocess(common, skb, &rs,
++					 rxs, decrypt_error);
++
++		if (rx_desc) {
++			ath_pktlog_rx(sc, (void *) rx_desc, skb);
++			kfree(rx_desc);
++		} else {
++			ath_pktlog_rx(sc, bf->bf_desc, skb);
++		}
+ 
+ 		/* We will now give hardware our shiny new allocated skb */
+ 		bf->bf_mpdu = requeue_skb;
+--- a/drivers/net/wireless/ath/ath9k/reg.h
++++ b/drivers/net/wireless/ath/ath9k/reg.h
+@@ -222,6 +222,7 @@
+ 
+ #define AR_ISR_S2              0x008c
+ #define AR_ISR_S2_QCU_TXURN    0x000003FF
++#define AR_ISR_S2_BB_WATCHDOG  0x00010000
+ #define AR_ISR_S2_CST          0x00400000
+ #define AR_ISR_S2_GTT          0x00800000
+ #define AR_ISR_S2_TIM          0x01000000
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -418,6 +418,8 @@ static void ath_tx_complete_aggr(struct 
+ 			list_move_tail(&bf->list, &bf_head);
+ 		}
+ 
++		ath9k_pktlog_txcomplete(sc, &bf_head, bf, bf_last);
++
+ 		if (!txpending) {
+ 			/*
+ 			 * complete the acked-ones/xretried ones; update
+@@ -2115,7 +2117,7 @@ static void ath_tx_processq(struct ath_s
+ 		ds = lastbf->bf_desc;
+ 
+ 		memset(&ts, 0, sizeof(ts));
+-		status = ath9k_hw_txprocdesc(ah, ds, &ts);
++		status = ath9k_hw_txprocdesc(ah, ds, &ts, NULL);
+ 		if (status == -EINPROGRESS) {
+ 			spin_unlock_bh(&txq->axq_lock);
+ 			break;
+@@ -2165,10 +2167,14 @@ static void ath_tx_processq(struct ath_s
+ 			ath_tx_rc_status(bf, &ts, 0, txok, true);
+ 		}
+ 
+-		if (bf_isampdu(bf))
++		if (bf_isampdu(bf)) {
+ 			ath_tx_complete_aggr(sc, txq, bf, &bf_head, &ts, txok);
+-		else
++		} else {
++			ath9k_pktlog_txctrl(sc, &bf_head, lastbf);
+ 			ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, txok, 0);
++		}
++
++		ath_pktlog_txstatus(sc, lastbf->bf_desc);
+ 
+ 		ath_wake_mac80211_queue(sc, txq);
+ 
+@@ -2240,9 +2246,11 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 	struct list_head bf_head;
+ 	int status;
+ 	int txok;
++	u32 txs_desc[9];
+ 
+ 	for (;;) {
+-		status = ath9k_hw_txprocdesc(ah, NULL, (void *)&txs);
++		status = ath9k_hw_txprocdesc(ah, NULL, (void *)&txs,
++					     (void *) txs_desc);
+ 		if (status == -EINPROGRESS)
+ 			break;
+ 		if (status == -EIO) {
+@@ -2277,6 +2285,17 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 
+ 		txok = !(txs.ts_status & ATH9K_TXERR_MASK);
+ 
++		/*
++		 * Make sure null func frame is acked before configuring
++		 * hw into ps mode.
++		 */
++		if (bf->bf_isnullfunc && txok) {
++			if ((sc->ps_flags & PS_ENABLED))
++				ath9k_enable_ps(sc);
++			else
++				sc->ps_flags |= PS_NULLFUNC_COMPLETED;
++		}
++
+ 		if (!bf_isampdu(bf)) {
+ 			bf->bf_retries = txs.ts_longretry;
+ 			if (txs.ts_status & ATH9K_TXERR_XRETRY)
+@@ -2284,14 +2303,18 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 			ath_tx_rc_status(bf, &txs, 0, txok, true);
+ 		}
+ 
+-		if (bf_isampdu(bf))
++		if (bf_isampdu(bf)) {
+ 			ath_tx_complete_aggr(sc, txq, bf, &bf_head, &txs, txok);
+-		else
++		} else {
++			ath9k_pktlog_txctrl(sc, &bf_head, lastbf);
+ 			ath_tx_complete_buf(sc, bf, txq, &bf_head,
+ 					    &txs, txok, 0);
++		}
+ 
+ 		ath_wake_mac80211_queue(sc, txq);
+ 
++		ath_pktlog_txstatus(sc, txs_desc);
++
+ 		spin_lock_bh(&txq->axq_lock);
+ 		if (!list_empty(&txq->txq_fifo_pending)) {
+ 			INIT_LIST_HEAD(&bf_head);
 --- a/net/mac80211/Kconfig
 +++ b/net/mac80211/Kconfig
 @@ -33,6 +33,13 @@ config MAC80211_RC_MINSTREL
@@ -5717,7 +8697,7 @@
  ccflags-y += -D__CHECK_ENDIAN__
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -701,6 +701,10 @@ static int __init ieee80211_init(void)
+@@ -710,6 +710,10 @@ static int __init ieee80211_init(void)
  	if (ret)
  		return ret;
  
@@ -5728,7 +8708,7 @@
  	ret = rc80211_pid_init();
  	if (ret)
  		goto err_pid;
-@@ -713,6 +717,8 @@ static int __init ieee80211_init(void)
+@@ -722,6 +726,8 @@ static int __init ieee80211_init(void)
   err_netdev:
  	rc80211_pid_exit();
   err_pid:
@@ -5737,7 +8717,7 @@
  	rc80211_minstrel_exit();
  
  	return ret;
-@@ -721,6 +727,7 @@ static int __init ieee80211_init(void)
+@@ -730,6 +736,7 @@ static int __init ieee80211_init(void)
  static void __exit ieee80211_exit(void)
  {
  	rc80211_pid_exit();
@@ -6847,34 +9827,3 @@
 +
 +	debugfs_remove(msp->dbg_stats);
 +}
---- a/net/wireless/scan.c
-+++ b/net/wireless/scan.c
-@@ -525,7 +525,7 @@ cfg80211_inform_bss(struct wiphy *wiphy,
- 
- 	privsz = wiphy->bss_priv_size;
- 
--	if (WARN_ON(wiphy->signal_type == NL80211_BSS_SIGNAL_UNSPEC &&
-+	if (WARN_ON(wiphy->signal_type == CFG80211_SIGNAL_TYPE_UNSPEC &&
- 			(signal < 0 || signal > 100)))
- 		return NULL;
- 
-@@ -581,7 +581,7 @@ cfg80211_inform_bss_frame(struct wiphy *
- 				      u.probe_resp.variable);
- 	size_t privsz = wiphy->bss_priv_size;
- 
--	if (WARN_ON(wiphy->signal_type == NL80211_BSS_SIGNAL_UNSPEC &&
-+	if (WARN_ON(wiphy->signal_type == CFG80211_SIGNAL_TYPE_UNSPEC &&
- 	            (signal < 0 || signal > 100)))
- 		return NULL;
- 
---- a/net/wireless/chan.c
-+++ b/net/wireless/chan.c
-@@ -50,7 +50,7 @@ int cfg80211_set_freq(struct cfg80211_re
- 	struct ieee80211_channel *chan;
- 	int result;
- 
--	if (wdev->iftype == NL80211_IFTYPE_MONITOR)
-+	if (wdev && wdev->iftype == NL80211_IFTYPE_MONITOR)
- 		wdev = NULL;
- 
- 	if (wdev) {
