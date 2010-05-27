@@ -1,0 +1,30 @@
+--- a/net80211/ieee80211_wireless.c
++++ b/net80211/ieee80211_wireless.c
+@@ -1370,15 +1370,9 @@ ieee80211_ioctl_siwtxpow(struct net_devi
+ 	int fixed, disabled;
+ 
+ 	fixed = (ic->ic_flags & IEEE80211_F_TXPOW_FIXED);
+-	disabled = (fixed && ic->ic_txpowlimit == 0);
+-	if (rrq->disabled) {
+-		if (!disabled) {
+-			ic->ic_flags |= IEEE80211_F_TXPOW_FIXED;
+-			ic->ic_txpowlimit = 0;
+-			goto done;
+-		}
+-		return 0;
+-	}
++
++	if (rrq->disabled)
++		return -EINVAL;
+ 
+ 	if (rrq->fixed) {
+ 		if ((ic->ic_caps & IEEE80211_C_TXPMGT) == 0)
+@@ -1571,7 +1565,7 @@ ieee80211_ioctl_giwtxpow(struct net_devi
+ 		rrq->fixed = 0;
+ 	}
+ 	rrq->value = txp / 2;
+-	rrq->disabled = (rrq->fixed && rrq->value == 0);
++	rrq->disabled = 0;
+ 	rrq->flags = IW_TXPOW_DBM;
+ 	return 0;
+ }
