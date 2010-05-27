@@ -12,7 +12,7 @@ BOARDNAME:=AMCC/IBM PPC44x
 FEATURES:=squashfs
 CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=440
 
-LINUX_VERSION:=2.6.32.13
+LINUX_VERSION:=2.6.32.14
 
 include $(INCLUDE_DIR)/target.mk
 
