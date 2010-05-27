@@ -23,7 +23,10 @@ boot() {
 		local proto
 		config_get proto "$ifc" proto
 
-		type "coldplug_interface_$proto" >/dev/null && \
+		local auto
+		config_get_bool auto "$ifc" auto 1
+
+		type "coldplug_interface_$proto" >/dev/null && [ "$auto" = 1 ] && \
 			coldplug_interface_$proto "$ifc"
 	done
 }
