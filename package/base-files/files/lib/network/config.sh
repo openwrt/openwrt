@@ -144,6 +144,8 @@ prepare_interface() {
 	config_get iftype "$config" type
 	case "$iftype" in
 		bridge)
+			local macaddr
+			config_get macaddr "$config" macaddr
 			[ -x /usr/sbin/brctl ] && {
 				ifconfig "br-$config" 2>/dev/null >/dev/null && {
 					local newdevs devices
@@ -168,7 +170,7 @@ prepare_interface() {
 					# result in another setup_interface() call, so we simply stop processing
 					# the current event at this point.
 				}
-				ifconfig "$iface" up 2>/dev/null >/dev/null
+				ifconfig "$iface" ${macaddr:+hw ether "${macaddr}"} up 2>/dev/null >/dev/null
 				return 1
 			}
 		;;
