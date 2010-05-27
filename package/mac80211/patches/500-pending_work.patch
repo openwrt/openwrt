@@ -8243,7 +8243,34 @@
  			ath_print(ath9k_hw_common(sc->sc_ah), ATH_DBG_CONFIG,
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -821,6 +821,259 @@ static struct ath_buf *ath_get_next_rx_b
+@@ -700,12 +700,16 @@ static bool ath_edma_get_buffers(struct 
+ 	bf = SKB_CB_ATHBUF(skb);
+ 	BUG_ON(!bf);
+ 
+-	dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
++	dma_sync_single_for_cpu(sc->dev, bf->bf_buf_addr,
+ 				common->rx_bufsize, DMA_FROM_DEVICE);
+ 
+ 	ret = ath9k_hw_process_rxdesc_edma(ah, NULL, skb->data);
+-	if (ret == -EINPROGRESS)
++	if (ret == -EINPROGRESS) {
++		/*let device gain the buffer again*/
++		dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
++				common->rx_bufsize, DMA_FROM_DEVICE);
+ 		return false;
++	}
+ 
+ 	__skb_unlink(skb, &rx_edma->rx_fifo);
+ 	if (ret == -EINVAL) {
+@@ -814,13 +818,266 @@ static struct ath_buf *ath_get_next_rx_b
+ 	 * 1. accessing the frame
+ 	 * 2. requeueing the same buffer to h/w
+ 	 */
+-	dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
++	dma_sync_single_for_cpu(sc->dev, bf->bf_buf_addr,
+ 			common->rx_bufsize,
+ 			DMA_FROM_DEVICE);
+ 
  	return bf;
  }
  
@@ -8503,7 +8530,7 @@
  
  int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp)
  {
-@@ -829,6 +1082,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+@@ -829,6 +1086,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
  	struct ieee80211_rx_status *rxs;
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
@@ -8511,7 +8538,7 @@
  	/*
  	 * The hw can techncically differ from common->hw when using ath9k
  	 * virtual wiphy so to account for that we iterate over the active
-@@ -842,6 +1096,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+@@ -842,6 +1100,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
  	enum ath9k_rx_qtype qtype;
  	bool edma = !!(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA);
  	int dma_type;
@@ -8519,7 +8546,7 @@
  
  	if (edma)
  		dma_type = DMA_FROM_DEVICE;
-@@ -869,7 +1124,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+@@ -869,7 +1128,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
  		if (!skb)
  			continue;
  
@@ -8528,7 +8555,7 @@
  		rxs =  IEEE80211_SKB_RXCB(skb);
  
  		hw = ath_get_virt_hw(sc, hdr);
-@@ -883,8 +1138,8 @@ int ath_rx_tasklet(struct ath_softc *sc,
+@@ -883,8 +1142,8 @@ int ath_rx_tasklet(struct ath_softc *sc,
  		if (flush)
  			goto requeue;
  
@@ -8539,7 +8566,7 @@
  		if (retval)
  			goto requeue;
  
-@@ -905,11 +1160,23 @@ int ath_rx_tasklet(struct ath_softc *sc,
+@@ -905,11 +1164,23 @@ int ath_rx_tasklet(struct ath_softc *sc,
  				 dma_type);
  
  		skb_put(skb, rs.rs_datalen + ah->caps.rx_status_len);
@@ -8551,12 +8578,12 @@
 +			memcpy(rx_desc, skb->data, ah->caps.rx_status_len);
  			skb_pull(skb, ah->caps.rx_status_len);
 +		}
++
++		ath9k_rx_skb_postprocess(common, skb, &rs,
++					 rxs, decrypt_error);
  
 -		ath9k_cmn_rx_skb_postprocess(common, skb, &rs,
 -					     rxs, decrypt_error);
-+		ath9k_rx_skb_postprocess(common, skb, &rs,
-+					 rxs, decrypt_error);
-+
 +		if (rx_desc) {
 +			ath_pktlog_rx(sc, (void *) rx_desc, skb);
 +			kfree(rx_desc);
@@ -8587,7 +8614,25 @@
  		if (!txpending) {
  			/*
  			 * complete the acked-ones/xretried ones; update
-@@ -2115,7 +2117,7 @@ static void ath_tx_processq(struct ath_s
+@@ -1728,6 +1730,8 @@ static int ath_tx_setup_buffer(struct ie
+ 	} else
+ 		bf->bf_isnullfunc = false;
+ 
++	bf->bf_tx_aborted = false;
++
+ 	return 0;
+ }
+ 
+@@ -1989,7 +1993,7 @@ static int ath_tx_num_badfrms(struct ath
+ 	int nbad = 0;
+ 	int isaggr = 0;
+ 
+-	if (bf->bf_tx_aborted)
++	if (bf->bf_lastbf->bf_tx_aborted)
+ 		return 0;
+ 
+ 	isaggr = bf_isaggr(bf);
+@@ -2115,7 +2119,7 @@ static void ath_tx_processq(struct ath_s
  		ds = lastbf->bf_desc;
  
  		memset(&ts, 0, sizeof(ts));
@@ -8596,7 +8641,7 @@
  		if (status == -EINPROGRESS) {
  			spin_unlock_bh(&txq->axq_lock);
  			break;
-@@ -2165,10 +2167,14 @@ static void ath_tx_processq(struct ath_s
+@@ -2165,10 +2169,14 @@ static void ath_tx_processq(struct ath_s
  			ath_tx_rc_status(bf, &ts, 0, txok, true);
  		}
  
@@ -8613,7 +8658,7 @@
  
  		ath_wake_mac80211_queue(sc, txq);
  
-@@ -2240,9 +2246,11 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2240,9 +2248,11 @@ void ath_tx_edma_tasklet(struct ath_soft
  	struct list_head bf_head;
  	int status;
  	int txok;
@@ -8626,7 +8671,7 @@
  		if (status == -EINPROGRESS)
  			break;
  		if (status == -EIO) {
-@@ -2277,6 +2285,17 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2277,6 +2287,17 @@ void ath_tx_edma_tasklet(struct ath_soft
  
  		txok = !(txs.ts_status & ATH9K_TXERR_MASK);
  
@@ -8644,7 +8689,7 @@
  		if (!bf_isampdu(bf)) {
  			bf->bf_retries = txs.ts_longretry;
  			if (txs.ts_status & ATH9K_TXERR_XRETRY)
-@@ -2284,14 +2303,18 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2284,14 +2305,18 @@ void ath_tx_edma_tasklet(struct ath_soft
  			ath_tx_rc_status(bf, &txs, 0, txok, true);
  		}
  
