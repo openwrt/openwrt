@@ -32,7 +32,6 @@ endif
 ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
 
 ifneq ($(CONFIG_X86_GRUB_IMAGES),)
- ifneq ($(HOST_OS),Darwin)
 
   BOOTOPTS:=$(call qstrip,$(CONFIG_X86_GRUB_BOOTOPTS))
 
@@ -83,16 +82,6 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 		$(KDIR)/
   endef
 
- else
-
-  define Image/Build/grub
-	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" PATH="$(TARGET_PATH)" NOGRUB=1 ./gen_image_x86.sh \
-		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-		$(CONFIG_TARGET_KERNEL_PARTSIZE) "" \
-		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1)
-  endef
-
- endif
 endif
 
 ROOTDELAY=10
