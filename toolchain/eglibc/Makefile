@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -32,6 +32,9 @@ ifneq ($(CONFIG_EGLIBC_VERSION_2_10),)
 endif
 ifneq ($(CONFIG_EGLIBC_VERSION_2_11),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_11
+endif
+ifneq ($(CONFIG_EGLIBC_VERSION_2_12),)
+  PKG_SOURCE_URL:=svn://svn.eglibc.org/branches/eglibc-2_12
 endif
 ifneq ($(CONFIG_EGLIBC_VERSION_TRUNK),)
   PKG_SOURCE_URL:=svn://svn.eglibc.org/trunk
