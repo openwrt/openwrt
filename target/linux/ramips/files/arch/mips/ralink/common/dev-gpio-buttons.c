@@ -10,6 +10,7 @@
 
 #include "linux/init.h"
 #include <linux/platform_device.h>
+#include <linux/slab.h>
 
 #include <asm/mach-ralink/dev-gpio-buttons.h>
 
