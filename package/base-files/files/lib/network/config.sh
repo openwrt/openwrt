@@ -170,6 +170,8 @@ prepare_interface() {
 					# result in another setup_interface() call, so we simply stop processing
 					# the current event at this point.
 				}
+
+				[ -n "$macaddr" ] && ifconfig "$iface" down 2>/dev/null >/dev/null
 				ifconfig "$iface" ${macaddr:+hw ether "${macaddr}"} up 2>/dev/null >/dev/null
 				return 1
 			}
