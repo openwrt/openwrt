@@ -1,0 +1,71 @@
+--- a/gcc/config/arm/arm.c
++++ b/gcc/config/arm/arm.c
+@@ -3769,6 +3769,7 @@ arm_legitimate_address_p (enum machine_m
+       rtx xop1 = XEXP (x, 1);
+ 
+       return ((arm_address_register_rtx_p (xop0, strict_p)
++	       && GET_CODE(xop1) == CONST_INT
+ 	       && arm_legitimate_index_p (mode, xop1, outer, strict_p))
+ 	      || (arm_address_register_rtx_p (xop1, strict_p)
+ 		  && arm_legitimate_index_p (mode, xop0, outer, strict_p)));
+--- a/gcc/config/arm/arm.md
++++ b/gcc/config/arm/arm.md
+@@ -4199,7 +4199,7 @@
+ 
+ (define_expand "extendqihi2"
+   [(set (match_dup 2)
+-	(ashift:SI (match_operand:QI 1 "general_operand" "")
++	(ashift:SI (match_operand:QI 1 "arm_reg_or_extendqisi_mem_op" "")
+ 		   (const_int 24)))
+    (set (match_operand:HI 0 "s_register_operand" "")
+ 	(ashiftrt:SI (match_dup 2)
+@@ -4224,7 +4224,7 @@
+ 
+ (define_insn "*arm_extendqihi_insn"
+   [(set (match_operand:HI 0 "s_register_operand" "=r")
+-	(sign_extend:HI (match_operand:QI 1 "memory_operand" "Uq")))]
++	(sign_extend:HI (match_operand:QI 1 "arm_extendqisi_mem_op" "Uq")))]
+   "TARGET_ARM && arm_arch4"
+   "ldr%(sb%)\\t%0, %1"
+   [(set_attr "type" "load_byte")
+@@ -4235,7 +4235,7 @@
+ 
+ (define_expand "extendqisi2"
+   [(set (match_dup 2)
+-	(ashift:SI (match_operand:QI 1 "general_operand" "")
++	(ashift:SI (match_operand:QI 1 "arm_reg_or_extendqisi_mem_op" "")
+ 		   (const_int 24)))
+    (set (match_operand:SI 0 "s_register_operand" "")
+ 	(ashiftrt:SI (match_dup 2)
+@@ -4267,7 +4267,7 @@
+ 
+ (define_insn "*arm_extendqisi"
+   [(set (match_operand:SI 0 "s_register_operand" "=r")
+-	(sign_extend:SI (match_operand:QI 1 "memory_operand" "Uq")))]
++	(sign_extend:SI (match_operand:QI 1 "arm_extendqisi_mem_op" "Uq")))]
+   "TARGET_ARM && arm_arch4 && !arm_arch6"
+   "ldr%(sb%)\\t%0, %1"
+   [(set_attr "type" "load_byte")
+@@ -4278,7 +4278,8 @@
+ 
+ (define_insn "*arm_extendqisi_v6"
+   [(set (match_operand:SI 0 "s_register_operand" "=r,r")
+-	(sign_extend:SI (match_operand:QI 1 "nonimmediate_operand" "r,Uq")))]
++	(sign_extend:SI
++	 (match_operand:QI 1 "arm_reg_or_extendqisi_mem_op" "r,Uq")))]
+   "TARGET_ARM && arm_arch6"
+   "@
+    sxtb%?\\t%0, %1
+--- a/gcc/config/arm/predicates.md
++++ b/gcc/config/arm/predicates.md
+@@ -234,6 +234,10 @@
+        (match_test "arm_legitimate_address_p (mode, XEXP (op, 0), SIGN_EXTEND,
+ 					      0)")))
+ 
++(define_special_predicate "arm_reg_or_extendqisi_mem_op"
++  (ior (match_operand 0 "arm_extendqisi_mem_op")
++       (match_operand 0 "s_register_operand")))
++
+ (define_predicate "power_of_two_operand"
+   (match_code "const_int")
+ {
