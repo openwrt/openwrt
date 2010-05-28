@@ -49,7 +49,7 @@ config EGLIBC_OPTION_EGLIBC_BACKTRACE
 config EGLIBC_OPTION_EGLIBC_BIG_MACROS
 	bool "Use extensive inline code"
 	default y
-	depends EGLIBC_VERSION_2_11
+	depends EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group specifies whether certain pieces of code
 	  should be inlined to achieve maximum speed.  If this option
@@ -170,6 +170,30 @@ config EGLIBC_OPTION_EGLIBC_CHARSETS
 							32-bit ISO 10646)
 
 
+config EGLIBC_OPTION_EGLIBC_CRYPT
+	bool "Encryption library"
+	default y
+	depends EGLIBC_VERSION_2_12
+	help
+	  This option group includes the `libcrypt' library which
+	  provides functions for one-way encryption.  Supported
+	  encryption algorithms include MD5, SHA-256, SHA-512 and DES.
+
+
+config EGLIBC_OPTION_EGLIBC_CRYPT_UFC
+	bool "Ultra fast `crypt' implementation"
+	default y
+	depends EGLIBC_VERSION_2_12
+	select EGLIBC_OPTION_EGLIBC_CRYPT
+	help
+	  This option group provides ultra fast DES-based implementation of
+	  the `crypt' function.  When this option group is disabled,
+	  (a) the library will not provide the setkey[_r] and encrypt[_r]
+	  functions and (b) the crypt[_r] function will return NULL and set the
+	  errno to ENOSYS if /salt/ passed does not correspond to either MD5,
+	  SHA-256 or SHA-512 algorithm.
+
+
 config EGLIBC_OPTION_EGLIBC_DB_ALIASES
 	bool "Functions for accessing the mail aliases database"
 	default y
@@ -209,7 +233,7 @@ config EGLIBC_OPTION_EGLIBC_ENVZ
 config EGLIBC_OPTION_EGLIBC_FCVT
 	bool "Functions for converting floating-point numbers to strings"
 	default y
-	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11
+	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes functions for converting
 	  floating-point numbers to strings.
@@ -226,7 +250,7 @@ config EGLIBC_OPTION_EGLIBC_FCVT
 config EGLIBC_OPTION_EGLIBC_FMTMSG
 	bool "Functions for formatting messages"
 	default y
-	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11
+	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes the following functions:
 
@@ -252,7 +276,7 @@ config EGLIBC_OPTION_EGLIBC_FSTAB
 config EGLIBC_OPTION_EGLIBC_FTRAVERSE
 	bool "Functions for traversing file hierarchies"
 	default y
-	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11
+	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes functions for traversing file
 	  UNIX file hierachies.
@@ -278,6 +302,15 @@ config EGLIBC_OPTION_EGLIBC_GETLOGIN
 	  With this option group disabled, the 'glob' function will not
 	  fall back on 'getlogin' to find the user's login name for tilde
 	  expansion when the 'HOME' environment variable is not set.
+
+
+config EGLIBC_OPTION_EGLIBC_IDN
+	bool "International domain names support"
+	default y
+	depends EGLIBC_VERSION_2_12
+	help
+	  This option group includes the `libcidn' library which
+	  provides support for international domain names.
 
 
 config EGLIBC_OPTION_EGLIBC_INET
@@ -407,6 +440,16 @@ config EGLIBC_OPTION_EGLIBC_INET
 	  syslog is valuable in non-networked contexts.
 
 
+config EGLIBC_OPTION_EGLIBC_INET_ANL
+	bool "Asynchronous name lookup"
+	default y
+	depends EGLIBC_VERSION_2_12
+	select OPTION_EGLIBC_INET
+	help
+	  This option group includes the `libanl' library which
+	  provides support for asynchronous name lookup.
+
+
 config EGLIBC_OPTION_EGLIBC_LIBM
 	bool "libm (math library)"
 	default y
@@ -427,6 +470,22 @@ config EGLIBC_OPTION_EGLIBC_LIBM
 	  resulting EGLIBC installation.
 
 
+config EGLIBC_OPTION_EGLIBC_LIBM_BIG
+	bool "Math library size"
+	default y
+	depends EGLIBC_VERSION_2_12
+	help
+	  This option group enables default configuration of the math library.
+	  Not selecting this option group removes most of the extended and
+	  double precision math functions and replaces them with wrappers
+	  to the single precision couterparts.
+	  Doing so greatly degrades quality of calculations carried
+	  out by the functions of the math library, but also significantly
+	  reduces the size of the libm.
+	  This option group is useful for systems that do not rely on precise
+	  floating point math.
+
+
 config EGLIBC_OPTION_EGLIBC_LOCALES
 	bool "Locale definitions"
 	default y
@@ -439,7 +498,7 @@ config EGLIBC_OPTION_EGLIBC_LOCALES
 config EGLIBC_OPTION_EGLIBC_LOCALE_CODE
 	bool "Locale functions"
 	default y
-	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11
+	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes locale support functions, programs,
 	  and libraries.  With EGLIBC_OPTION_EGLIBC_LOCALE_CODE disabled,
@@ -464,7 +523,7 @@ config EGLIBC_OPTION_EGLIBC_LOCALE_CODE
 config EGLIBC_OPTION_EGLIBC_MEMUSAGE
 	bool "Memory profiling library"
 	default y
-	depends EGLIBC_VERSION_2_11
+	depends EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes the `libmemusage' library and
 	  the `memusage' and `memusagestat' utilities.
@@ -598,6 +657,20 @@ config EGLIBC_OPTION_EGLIBC_RCMD
 		rresvport_af
 
 
+config EGLIBC_OPTION_EGLIBC_RTLD_DEBUG
+	bool "Runtime linker debug print outs"
+	default y
+	depends EGLIBC_VERSION_2_12
+	help
+	  This option group enables debug output of the runtime linker
+	  which is activated via LD_DEBUG and LD_TRACE_PRELINKING
+	  environment variables.  Disabling this option group yields
+	  a smaller runtime linker binary.
+	  BEWARE: Disabling this option group is likely to break
+	  the `ldd' utility which may also be used by the prelinker.
+	  In particular, the `--unused' ldd option will not work correctly.
+
+
 config EGLIBC_OPTION_EGLIBC_SPAWN
 	bool "Support for POSIX posix_spawn functions"
 	default y
@@ -729,7 +802,7 @@ config EGLIBC_OPTION_EGLIBC_WORDEXP
 config EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR
 	bool "ISO C library wide character functions, excluding I/O"
 	default y
-	depends EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11
+	depends EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes the functions defined by the ISO C
 	  standard for working with wide and multibyte characters in
@@ -784,7 +857,7 @@ config EGLIBC_OPTION_POSIX_REGEXP
 config EGLIBC_OPTION_POSIX_REGEXP_GLIBC
 	bool "Regular expressions from GLIBC"
 	default y
-	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11
+	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	select EGLIBC_OPTION_POSIX_REGEXP
 	help
 	  This option group specifies which regular expression
@@ -798,7 +871,7 @@ config EGLIBC_OPTION_POSIX_REGEXP_GLIBC
 config EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO
 	bool "Input and output functions for wide characters"
 	default y
-	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11
+	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes functions for reading and writing
 	  wide characters to and from <stdio.h> streams.
