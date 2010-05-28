@@ -2,6 +2,10 @@ find_gw() {
 	route -n | awk '$1 == "0.0.0.0" { print $2; exit }'
 }
 
+scan_pptp() {
+	config_set "$1" device "pptp-$1"
+}
+
 stop_interface_pptp() {
 	stop_interface_ppp "$1"
 }
