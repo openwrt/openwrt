@@ -1,0 +1,48 @@
+--- a/stage2/asm.S
++++ b/stage2/asm.S
+@@ -95,14 +95,16 @@ VARIABLE(stage2_id)
+ VARIABLE(force_lba)
+ 	.byte	0
+ VARIABLE(version_string)
+-	.string VERSION
++	.ascii VERSION
++	.byte	0
+ VARIABLE(config_file)
+ #ifndef STAGE1_5
+-	.string "/boot/grub/menu.lst"
++	.ascii "/boot/grub/menu.lst"
+ #else   /* STAGE1_5 */
+ 	.long	0xffffffff
+-	.string "/boot/grub/stage2"
++	.ascii "/boot/grub/stage2"
+ #endif  /* STAGE1_5 */
++	.byte	0
+ 
+ 	/*
+ 	 *  Leave some breathing room for the config file name.
+@@ -762,7 +764,9 @@ ENTRY(chain_stage1)
+ 	call	EXT_C(prot_to_real)
+ 	.code16
+ 
+-#ifdef ABSOLUTE_WITHOUT_ASTERISK
++#ifdef __APPLE__
++	DATA32	ADDR32	ljmp	offset
++#elif defined(ABSOLUTE_WITHOUT_ASTERISK)
+ 	DATA32	ADDR32	ljmp	(offset)
+ #else
+ 	DATA32	ADDR32	ljmp	*(offset)
+--- a/stage2/char_io.c
++++ b/stage2/char_io.c
+@@ -1345,5 +1345,12 @@ grub_strcpy (char *dest, const char *src
+ #ifndef GRUB_UTIL
+ # undef memcpy
+ /* GCC emits references to memcpy() for struct copies etc.  */
++#ifdef __APPLE__
++void *memcpy (void *dest, const void *src, int n)
++{
++	return grub_memmove(dest, src, n);
++}
++#else
+ void *memcpy (void *dest, const void *src, int n)  __attribute__ ((alias ("grub_memmove")));
+ #endif
++#endif

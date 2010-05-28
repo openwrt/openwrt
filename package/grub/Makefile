@@ -44,6 +44,11 @@ CONFIGURE_ARGS += $(MY_CONFIGURE_ARGS)
 
 CONFIGURE_VARS += $(MY_CONFIGURE_VARS)
 
+ifeq ($(HOST_OS),Darwin)
+  HOST_CFLAGS += $(call host-cc-option,-m32)
+  HOST_CFLAGS += $(call host-cc-option,-fnested-functions)
+endif
+
 HOST_CFLAGS += $(call host-cc-option,-fno-stack-protector)
 HOST_CFLAGS += $(call host-cc-option,-U_FORTIFY_SOURCE)
 
@@ -52,6 +57,22 @@ HOST_CONFIGURE_ARGS += $(MY_CONFIGURE_ARGS) \
 	--disable-graphics \
 
 HOST_CONFIGURE_VARS += $(MY_CONFIGURE_VARS)
+
+define Host/Configure
+	(cd $(HOST_BUILD_DIR); aclocal && autoconf && automake)
+	$(call Host/Configure/Default)
+endef
+
+ifeq ($(HOST_OS),Darwin)
+  define Host/Compile
+	$(MAKE) -C $(HOST_BUILD_DIR)/lib
+	$(MAKE) -C $(HOST_BUILD_DIR)/stage2 libgrub.a
+	$(MAKE) -C $(HOST_BUILD_DIR)/grub
+  endef
+  define Host/Install
+	$(MAKE) -C $(HOST_BUILD_DIR)/grub install
+  endef
+endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib
