@@ -1,5 +1,5 @@
---- linux-2.6.34.orig/arch/mips/ralink/common/dev-gpio-buttons.c        2010-05-21 09:59:26.000000000 +0400
-+++ linux-2.6.34/arch/mips/ralink/common/dev-gpio-buttons.c     2010-05-21 10:00:05.000000000 +0400
+--- a/arch/mips/ralink/common/dev-gpio-buttons.c
++++ b/arch/mips/ralink/common/dev-gpio-buttons.c
 @@ -10,6 +10,7 @@
  
  #include "linux/init.h"
@@ -8,8 +8,8 @@
  
  #include <asm/mach-ralink/dev-gpio-buttons.h>
  
---- linux-2.6.34.orig/arch/mips/ralink/common/dev-gpio-leds.c   2010-05-21 09:59:22.000000000 +0400
-+++ linux-2.6.34/arch/mips/ralink/common/dev-gpio-leds.c        2010-05-21 09:59:44.000000000 +0400
+--- a/arch/mips/ralink/common/dev-gpio-leds.c
++++ b/arch/mips/ralink/common/dev-gpio-leds.c
 @@ -10,6 +10,7 @@
  
  #include <linux/init.h>
@@ -17,3 +17,4 @@
 +#include <linux/slab.h>
  
  #include <asm/mach-ralink/dev-gpio-leds.h>
+ 
