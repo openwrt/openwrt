@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6in4
-PKG_VERSION:=1
+PKG_VERSION:=2
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -36,6 +36,8 @@ endef
 define Package/6in4/install
 	$(INSTALL_DIR) $(1)/lib/network
 	$(INSTALL_DATA) ./files/6in4.sh $(1)/lib/network/6in4.sh
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_DATA) ./files/6in4.hotplug $(1)/etc/hotplug.d/iface/90-6in4
 endef
 
 $(eval $(call BuildPackage,6in4))

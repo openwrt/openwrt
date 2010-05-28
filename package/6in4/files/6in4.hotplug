@@ -1,0 +1,44 @@
+#!/bin/sh
+
+if [ "$ACTION" = ifup ]; then
+	. /etc/functions.sh
+
+	include /lib/network
+	scan_interfaces
+
+	update_tunnel() {
+		local cfg="$1"
+
+		local proto
+		config_get proto "$cfg" proto
+		[ "$proto" = 6in4 ] || return 0
+
+		local wandev
+		config_get wandev "$cfg" wan_device
+		[ "$wandev" = "$DEVICE" ] || return 0
+
+		local oldip
+		local wanip=$(find_6in4_wanip "$wandev")
+		config_get oldip "$cfg" ipaddr
+
+		[ -n "$wanip" ] && [ "$oldip" != "$wanip" ] && {
+			local tunnelid
+			config_get tunnelid "$cfg" tunnelid
+
+			local username
+			config_get username "$cfg" username
+
+			local password
+			config_get password "$cfg" password
+
+			[ -n "$tunnelid" ] && [ -n "$username" ] && [ -n "$password" ] && {
+				password="$(echo -n "$password" | md5sum)"; password="${password%% *}"
+				uci_set_state network "$cfg" ipaddr "$wanip"
+
+				( wget -qO/dev/null "http://ipv4.tunnelbroker.net/ipv4_end.php?ipv4b=AUTO&user_id=$username&pass=$password&tunnel_id=$tunnelid" && ifup "$cfg" )&
+			}
+		}
+	}
+
+	config_foreach update_tunnel interface
+fi
