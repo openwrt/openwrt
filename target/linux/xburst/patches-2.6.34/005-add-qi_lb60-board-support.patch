@@ -1,4 +1,4 @@
-From 876a111075de6fcffbaa0814ee4118ac739df1a9 Mon Sep 17 00:00:00 2001
+From eb15b4f5046dbb1a530ec3e6134b1b68753e1f31 Mon Sep 17 00:00:00 2001
 From: Lars-Peter Clausen <lars@metafoo.de>
 Date: Sat, 24 Apr 2010 17:24:26 +0200
 Subject: [PATCH] Add qi_lb60 board support
@@ -70,12 +70,12 @@ index 0000000..cfbf073
 +
 +#endif /* __ASM_JZ4740_QI_LB60_H__ */
 diff --git a/arch/mips/jz4740/Kconfig b/arch/mips/jz4740/Kconfig
-index 5f6da09..3de3b99 100644
+index b959769..a255c1a 100644
 --- a/arch/mips/jz4740/Kconfig
 +++ b/arch/mips/jz4740/Kconfig
 @@ -3,6 +3,10 @@ choice
-     depends on MACH_JZ
-     default JZ4740_QI_LB60
+ 	depends on MACH_JZ
+ 	default JZ4740_QI_LB60
  
 +config JZ4740_QI_LB60
 +	bool "Qi Hardware Ben NanoNote"
@@ -85,7 +85,7 @@ index 5f6da09..3de3b99 100644
  
  config HAVE_PWM
 diff --git a/arch/mips/jz4740/Makefile b/arch/mips/jz4740/Makefile
-index e389ddd..deca88e 100644
+index 398ee91..dd27b49 100644
 --- a/arch/mips/jz4740/Makefile
 +++ b/arch/mips/jz4740/Makefile
 @@ -11,6 +11,8 @@ obj-$(CONFIG_DEBUG_FS) += clock-debugfs.o
@@ -96,7 +96,7 @@ index e389ddd..deca88e 100644
 +
  # PM support
  
- obj-$(CONFIG_PM)         += pm.o
+ obj-$(CONFIG_PM) += pm.o
 diff --git a/arch/mips/jz4740/board-qi_lb60.c b/arch/mips/jz4740/board-qi_lb60.c
 new file mode 100644
 index 0000000..b3cc308

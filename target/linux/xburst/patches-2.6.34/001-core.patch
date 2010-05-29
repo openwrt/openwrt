@@ -1,4 +1,4 @@
-From 7efb2cae3df49ba749860a0df04933dc522da224 Mon Sep 17 00:00:00 2001
+From e1828438bbdd0623cf7f9c6672f2fe65b1349aa6 Mon Sep 17 00:00:00 2001
 From: Lars-Peter Clausen <lars@metafoo.de>
 Date: Sat, 24 Apr 2010 17:35:05 +0200
 Subject: [PATCH] Add JZ4740 SoC core support
@@ -18,13 +18,13 @@ Subject: [PATCH] Add JZ4740 SoC core support
  arch/mips/include/asm/mach-jz4740/timer.h    |   22 +
  arch/mips/include/asm/mach-jz4740/war.h      |   25 +
  arch/mips/jz4740/Kconfig                     |   29 +
- arch/mips/jz4740/Makefile                    |   17 +
+ arch/mips/jz4740/Makefile                    |   18 +
  arch/mips/jz4740/clock-debugfs.c             |  109 +++
  arch/mips/jz4740/clock.c                     |  935 ++++++++++++++++++++++++++
  arch/mips/jz4740/clock.h                     |   75 ++
- arch/mips/jz4740/dma.c                       |  339 ++++++++++
+ arch/mips/jz4740/dma.c                       |  336 +++++++++
  arch/mips/jz4740/gpio.c                      |  598 ++++++++++++++++
- arch/mips/jz4740/irq.c                       |  174 +++++
+ arch/mips/jz4740/irq.c                       |  170 +++++
  arch/mips/jz4740/irq.h                       |   21 +
  arch/mips/jz4740/platform.c                  |  246 +++++++
  arch/mips/jz4740/pm.c                        |   59 ++
@@ -33,12 +33,12 @@ Subject: [PATCH] Add JZ4740 SoC core support
  arch/mips/jz4740/reset.c                     |   81 +++
  arch/mips/jz4740/reset.h                     |    7 +
  arch/mips/jz4740/setup.c                     |   64 ++
- arch/mips/jz4740/time.c                      |  145 ++++
- arch/mips/jz4740/timer.c                     |   45 ++
+ arch/mips/jz4740/time.c                      |  144 ++++
+ arch/mips/jz4740/timer.c                     |   48 ++
  arch/mips/jz4740/timer.h                     |  130 ++++
  arch/mips/kernel/cpu-probe.c                 |   20 +
  arch/mips/mm/tlbex.c                         |    5 +
- 34 files changed, 4073 insertions(+), 1 deletions(-)
+ 34 files changed, 4069 insertions(+), 1 deletions(-)
  create mode 100644 arch/mips/include/asm/mach-jz4740/base.h
  create mode 100644 arch/mips/include/asm/mach-jz4740/clock.h
  create mode 100644 arch/mips/include/asm/mach-jz4740/dma.h
@@ -232,7 +232,7 @@ index 0000000..9069727
 +#endif
 diff --git a/arch/mips/include/asm/mach-jz4740/dma.h b/arch/mips/include/asm/mach-jz4740/dma.h
 new file mode 100644
-index 0000000..d31d4e0
+index 0000000..bb7fc1e
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-jz4740/dma.h
 @@ -0,0 +1,90 @@
@@ -272,9 +272,9 @@ index 0000000..d31d4e0
 +};
 +
 +enum jz4740_dma_width {
-+	JZ4740_DMA_WIDTH_8BIT,
-+	JZ4740_DMA_WIDTH_16BIT,
-+	JZ4740_DMA_WIDTH_32BIT,
++	JZ4740_DMA_WIDTH_32BIT	= 0,
++	JZ4740_DMA_WIDTH_8BIT	= 1,
++	JZ4740_DMA_WIDTH_16BIT	= 2,
 +};
 +
 +enum jz4740_dma_transfer_size {
@@ -928,14 +928,14 @@ index 0000000..3a5bc17
 +#endif /* __ASM_MIPS_MACH_JZ4740_WAR_H */
 diff --git a/arch/mips/jz4740/Kconfig b/arch/mips/jz4740/Kconfig
 new file mode 100644
-index 0000000..5f6da09
+index 0000000..b959769
 --- /dev/null
 +++ b/arch/mips/jz4740/Kconfig
 @@ -0,0 +1,29 @@
 +choice
-+    prompt "Machine type"
-+    depends on MACH_JZ
-+    default JZ4740_QI_LB60
++	prompt "Machine type"
++	depends on MACH_JZ
++	default JZ4740_QI_LB60
 +
 +endchoice
 +
@@ -963,10 +963,10 @@ index 0000000..5f6da09
 +	bool
 diff --git a/arch/mips/jz4740/Makefile b/arch/mips/jz4740/Makefile
 new file mode 100644
-index 0000000..e389ddd
+index 0000000..398ee91
 --- /dev/null
 +++ b/arch/mips/jz4740/Makefile
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,18 @@
 +#
 +# Makefile for the Ingenic JZ4740.
 +#
@@ -982,8 +982,9 @@ index 0000000..e389ddd
 +
 +# PM support
 +
-+obj-$(CONFIG_PM)         += pm.o
++obj-$(CONFIG_PM) += pm.o
 +
++EXTRA_CFLAGS += -Werror -Wall
 diff --git a/arch/mips/jz4740/clock-debugfs.c b/arch/mips/jz4740/clock-debugfs.c
 new file mode 100644
 index 0000000..993b91b
@@ -1101,7 +1102,7 @@ index 0000000..993b91b
 +}
 diff --git a/arch/mips/jz4740/clock.c b/arch/mips/jz4740/clock.c
 new file mode 100644
-index 0000000..3954a20
+index 0000000..df0d6d3
 --- /dev/null
 +++ b/arch/mips/jz4740/clock.c
 @@ -0,0 +1,935 @@
@@ -1919,7 +1920,7 @@ index 0000000..3954a20
 +	struct clk *clk;
 +
 +	list_for_each_entry(clk, &jz_clocks, list) {
-+	    if (strcmp(clk->name, name) == 0)
++		if (strcmp(clk->name, name) == 0)
 +			return clk;
 +	}
 +	return ERR_PTR(-ENOENT);
@@ -2123,10 +2124,10 @@ index 0000000..96010a4
 +#endif
 diff --git a/arch/mips/jz4740/dma.c b/arch/mips/jz4740/dma.c
 new file mode 100644
-index 0000000..217ddc8
+index 0000000..b712afc
 --- /dev/null
 +++ b/arch/mips/jz4740/dma.c
-@@ -0,0 +1,339 @@
+@@ -0,0 +1,336 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  JZ4740 SoC DMA support
@@ -2275,7 +2276,6 @@ index 0000000..217ddc8
 +	const struct jz4740_dma_config *config)
 +{
 +	uint32_t cmd;
-+	uint32_t ctrl;
 +
 +	switch (config->transfer_size) {
 +	case JZ4740_DMA_TRANSFER_SIZE_2BYTE:
@@ -2302,11 +2302,8 @@ index 0000000..217ddc8
 +	cmd |= config->mode << JZ_DMA_CMD_MODE_OFFSET;
 +	cmd |= JZ_DMA_CMD_TRANSFER_IRQ_ENABLE;
 +
-+	ctrl = JZ_DMA_STATUS_CTRL_NO_DESC;
-+	ctrl |= JZ_DMA_STATUS_CTRL_HALT;
-+
 +	jz4740_dma_write(JZ_REG_DMA_CMD(dma->id), cmd);
-+	jz4740_dma_write(JZ_REG_DMA_STATUS_CTRL(dma->id), ctrl);
++	jz4740_dma_write(JZ_REG_DMA_STATUS_CTRL(dma->id), 0);
 +	jz4740_dma_write(JZ_REG_DMA_REQ_TYPE(dma->id), config->request_type);
 +}
 +EXPORT_SYMBOL_GPL(jz4740_dma_configure);
@@ -2348,12 +2345,13 @@ index 0000000..217ddc8
 +void jz4740_dma_enable(struct jz4740_dma_chan *dma)
 +{
 +	jz4740_dma_write_mask(JZ_REG_DMA_STATUS_CTRL(dma->id),
-+			JZ_DMA_STATUS_CTRL_ENABLE,
-+			JZ_DMA_STATUS_CTRL_ENABLE | JZ_DMA_STATUS_CTRL_HALT);
++			JZ_DMA_STATUS_CTRL_NO_DESC | JZ_DMA_STATUS_CTRL_ENABLE,
++			JZ_DMA_STATUS_CTRL_HALT | JZ_DMA_STATUS_CTRL_NO_DESC |
++			JZ_DMA_STATUS_CTRL_ENABLE);
 +
 +	jz4740_dma_write_mask(JZ_REG_DMA_CTRL,
 +			JZ_DMA_CTRL_ENABLE,
-+			JZ_DMA_CTRL_ENABLE | JZ_DMA_CTRL_HALT);
++			JZ_DMA_CTRL_HALT | JZ_DMA_CTRL_ENABLE);
 +}
 +EXPORT_SYMBOL_GPL(jz4740_dma_enable);
 +
@@ -2468,7 +2466,7 @@ index 0000000..217ddc8
 +arch_initcall(jz4740_dma_init);
 diff --git a/arch/mips/jz4740/gpio.c b/arch/mips/jz4740/gpio.c
 new file mode 100644
-index 0000000..14d8288
+index 0000000..84f4ef9
 --- /dev/null
 +++ b/arch/mips/jz4740/gpio.c
 @@ -0,0 +1,598 @@
@@ -2980,7 +2978,7 @@ index 0000000..14d8288
 +	ret = sysdev_register(&chip->sysdev);
 +
 +	if (ret)
-+	    return ret;
++		return ret;
 +
 +	spin_lock_init(&chip->lock);
 +
@@ -3011,7 +3009,7 @@ index 0000000..14d8288
 +		return ret;
 +
 +	for (i = 0; i < ARRAY_SIZE(jz4740_gpio_chips); ++i) {
-+	    jz4740_gpio_chip_init(&jz4740_gpio_chips[i], i);
++		jz4740_gpio_chip_init(&jz4740_gpio_chips[i], i);
 +	}
 +
 +	printk(KERN_INFO "JZ4740 GPIO initalized\n");
@@ -3072,10 +3070,10 @@ index 0000000..14d8288
 +#endif
 diff --git a/arch/mips/jz4740/irq.c b/arch/mips/jz4740/irq.c
 new file mode 100644
-index 0000000..a8c76af
+index 0000000..46a03ee
 --- /dev/null
 +++ b/arch/mips/jz4740/irq.c
-@@ -0,0 +1,174 @@
+@@ -0,0 +1,170 @@
 +/*
 + *  Copyright (C) 2009-2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  JZ4740 platform IRQ support
@@ -3131,11 +3129,6 @@ index 0000000..a8c76af
 +	writel(IRQ_BIT(irq), jz_intc_base + JZ_REG_INTC_SET_MASK);
 +}
 +
-+static void intc_irq_ack(unsigned int irq)
-+{
-+	writel(IRQ_BIT(irq), jz_intc_base + JZ_REG_INTC_PENDING);
-+}
-+
 +static int intc_irq_set_wake(unsigned int irq, unsigned int on)
 +{
 +	if (on)
@@ -3149,8 +3142,8 @@ index 0000000..a8c76af
 +static struct irq_chip intc_irq_type = {
 +	.name =		"INTC",
 +	.mask =		intc_irq_mask,
++	.mask_ack =	intc_irq_mask,
 +	.unmask =	intc_irq_unmask,
-+	.ack =		intc_irq_ack,
 +	.set_wake =	intc_irq_set_wake,
 +};
 +
@@ -3160,6 +3153,7 @@ index 0000000..a8c76af
 +	int intc_irq;
 +
 +	irq_reg = readl(jz_intc_base + JZ_REG_INTC_PENDING);
++
 +	intc_irq = ffs(irq_reg);
 +	if (intc_irq)
 +		generic_handle_irq(intc_irq - 1 + JZ4740_IRQ_BASE);
@@ -4014,10 +4008,10 @@ index 0000000..a6628f4
 +}
 diff --git a/arch/mips/jz4740/time.c b/arch/mips/jz4740/time.c
 new file mode 100644
-index 0000000..7721ba7
+index 0000000..da8183f
 --- /dev/null
 +++ b/arch/mips/jz4740/time.c
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,144 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  JZ4740 platform time support
@@ -4074,7 +4068,7 @@ index 0000000..7721ba7
 +
 +	cd->event_handler(cd);
 +
-+    return IRQ_HANDLED;
++	return IRQ_HANDLED;
 +}
 +
 +static void jz4740_clockevent_set_mode(enum clock_event_mode mode,
@@ -4120,7 +4114,7 @@ index 0000000..7721ba7
 +	.handler	= jz4740_clockevent_irq,
 +	.flags		= IRQF_PERCPU | IRQF_TIMER | IRQF_DISABLED,
 +	.name		= "jz4740-timerirq",
-+	.dev_id      = &jz4740_clockevent,
++	.dev_id		= &jz4740_clockevent,
 +};
 +
 +void __init plat_time_init(void)
@@ -4132,7 +4126,7 @@ index 0000000..7721ba7
 +	jz4740_timer_init();
 +
 +	clk_rate = jz4740_clock_bdata.ext_rate >> 4;
-+    jz4740_jiffies_per_tick = DIV_ROUND_CLOSEST(clk_rate, HZ);
++	jz4740_jiffies_per_tick = DIV_ROUND_CLOSEST(clk_rate, HZ);
 +
 +	clockevent_set_clock(&jz4740_clockevent, clk_rate);
 +	jz4740_clockevent.min_delta_ns = clockevent_delta2ns(100, &jz4740_clockevent);
@@ -4145,7 +4139,7 @@ index 0000000..7721ba7
 +	ret = clocksource_register(&jz4740_clocksource);
 +
 +	if (ret)
-+	    printk(KERN_ERR "Failed to register clocksource: %d\n", ret);
++		printk(KERN_ERR "Failed to register clocksource: %d\n", ret);
 +
 +	setup_irq(JZ4740_IRQ_TCU0, &timer_irqaction);
 +
@@ -4155,9 +4149,8 @@ index 0000000..7721ba7
 +	jz4740_timer_set_ctrl(TIMER_CLOCKSOURCE, ctrl);
 +
 +	jz4740_timer_set_period(TIMER_CLOCKEVENT, jz4740_jiffies_per_tick);
-+    jz4740_timer_irq_full_enable(TIMER_CLOCKEVENT);
++	jz4740_timer_irq_full_enable(TIMER_CLOCKEVENT);
 +
-+    jz4740_timer_irq_full_disable(TIMER_CLOCKSOURCE);
 +	jz4740_timer_set_period(TIMER_CLOCKSOURCE, 0xffff);
 +
 +	jz4740_timer_enable(TIMER_CLOCKEVENT);
@@ -4165,10 +4158,10 @@ index 0000000..7721ba7
 +}
 diff --git a/arch/mips/jz4740/timer.c b/arch/mips/jz4740/timer.c
 new file mode 100644
-index 0000000..208f14c
+index 0000000..6e09cae
 --- /dev/null
 +++ b/arch/mips/jz4740/timer.c
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,48 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  JZ4740 platform timer support
@@ -4211,8 +4204,11 @@ index 0000000..208f14c
 +	if (!jz4740_timer_base)
 +		panic("Failed to ioremap timer registers");
 +
-+	/* Disable all timers except those used as system timers */
-+	writel(0x100fc, jz4740_timer_base + JZ_REG_TIMER_STOP_SET);
++	/* Disable all timer clocks except for those used as system timers */
++	writel(0x000100fc, jz4740_timer_base + JZ_REG_TIMER_STOP_SET);
++
++	/* Timer irqs are unmasked by default, mask them */
++	writel(0x00ff00ff, jz4740_timer_base + JZ_REG_TIMER_MASK_SET);
 +}
 diff --git a/arch/mips/jz4740/timer.h b/arch/mips/jz4740/timer.h
 new file mode 100644
