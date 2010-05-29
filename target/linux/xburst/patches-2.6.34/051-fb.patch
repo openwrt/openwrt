@@ -1,4 +1,4 @@
-From 4b85f4f65855e49dec6271cf35efdcee26534210 Mon Sep 17 00:00:00 2001
+From bde0c6e017734b3164f5e3517d8e9373433b0cee Mon Sep 17 00:00:00 2001
 From: Lars-Peter Clausen <lars@metafoo.de>
 Date: Sat, 24 Apr 2010 12:13:58 +0200
 Subject: [PATCH] Add jz4740 framebuffer driver
@@ -6,9 +6,9 @@ Subject: [PATCH] Add jz4740 framebuffer driver
 ---
  drivers/video/Kconfig     |    9 +
  drivers/video/Makefile    |    1 +
- drivers/video/jz4740_fb.c |  810 +++++++++++++++++++++++++++++++++++++++++++++
+ drivers/video/jz4740_fb.c |  822 +++++++++++++++++++++++++++++++++++++++++++++
  include/linux/jz4740_fb.h |   58 ++++
- 4 files changed, 878 insertions(+), 0 deletions(-)
+ 4 files changed, 890 insertions(+), 0 deletions(-)
  create mode 100644 drivers/video/jz4740_fb.c
  create mode 100644 include/linux/jz4740_fb.h
 
@@ -46,13 +46,13 @@ index ddc2af2..f56a9ca 100644
  obj-$(CONFIG_FB_UVESA)            += uvesafb.o
 diff --git a/drivers/video/jz4740_fb.c b/drivers/video/jz4740_fb.c
 new file mode 100644
-index 0000000..53f3adb
+index 0000000..8bb0cb4
 --- /dev/null
 +++ b/drivers/video/jz4740_fb.c
-@@ -0,0 +1,810 @@
+@@ -0,0 +1,822 @@
 +/*
 + *  Copyright (C) 2009-2010, Lars-Peter Clausen <lars@metafoo.de>
-+ *		JZ4720/JZ4740 SoC LCD framebuffer driver
++ *		JZ4740 SoC LCD framebuffer driver
 + *
 + *  This program is free software; you can redistribute	 it and/or modify it
 + *  under  the terms of	 the GNU General  Public License as published by the
@@ -185,17 +185,17 @@ index 0000000..53f3adb
 +	unsigned is_enabled:1;
 +	struct mutex lock;
 +
-+	uint32_t pseudo_palette[256];
++	uint32_t pseudo_palette[16];
 +};
 +
 +static struct fb_fix_screeninfo jzfb_fix __devinitdata = {
-+	.id =		"JZ4740 FB",
-+	.type =		FB_TYPE_PACKED_PIXELS,
-+	.visual =	FB_VISUAL_TRUECOLOR,
-+	.xpanstep =	0,
-+	.ypanstep =	0,
-+	.ywrapstep =	0,
-+	.accel =	FB_ACCEL_NONE,
++	.id		= "JZ4740 FB",
++	.type		= FB_TYPE_PACKED_PIXELS,
++	.visual		= FB_VISUAL_TRUECOLOR,
++	.xpanstep	= 0,
++	.ypanstep	= 0,
++	.ywrapstep	= 0,
++	.accel		= FB_ACCEL_NONE,
 +};
 +
 +const static struct jz_gpio_bulk_request jz_lcd_ctrl_pins[] = {
@@ -258,7 +258,7 @@ index 0000000..53f3adb
 +		num = 16;
 +		break;
 +	case JZ_LCD_TYPE_GENERIC_18_BIT:
-+		num = 19;
++		num = 18;
 +		break;
 +	case JZ_LCD_TYPE_8BIT_SERIAL:
 +		num = 8;
@@ -273,10 +273,24 @@ index 0000000..53f3adb
 +static int jzfb_setcolreg(unsigned regno, unsigned red, unsigned green,
 +			unsigned blue, unsigned transp, struct fb_info *fb)
 +{
-+	if (regno >= fb->cmap.len)
++	uint32_t color;
++
++	if (regno >= 16)
 +		return -EINVAL;
 +
-+	((uint32_t *)fb->pseudo_palette)[regno] = red << 16 | green << 8 | blue;
++#define CNVT_TOHW(val,width) ((((val)<<(width))+0x7FFF-(val))>>16)
++	red = CNVT_TOHW(red, fb->var.red.length);
++	green = CNVT_TOHW(green, fb->var.green.length);
++	blue = CNVT_TOHW(blue, fb->var.blue.length);
++	transp = CNVT_TOHW(transp, fb->var.transp.length);
++#undef CNVT_TOHW
++
++	color = (red << fb->var.red.offset) |
++		(green << fb->var.green.offset) |
++		(blue << fb->var.blue.offset) |
++		(transp << fb->var.transp.offset);
++
++	((uint32_t*)(fb->pseudo_palette))[regno] = color;
 +
 +	return 0;
 +}
@@ -336,7 +350,7 @@ index 0000000..53f3adb
 +	case 16:
 +		var->red.offset = 11;
 +		var->red.length = 5;
-+		var->green.offset = 6;
++		var->green.offset = 5;
 +		var->green.length = 6;
 +		var->blue.offset = 0;
 +		var->blue.length = 5;
@@ -836,7 +850,6 @@ index 0000000..53f3adb
 +static struct platform_driver jzfb_driver = {
 +	.probe = jzfb_probe,
 +	.remove = __devexit_p(jzfb_remove),
-+
 +	.driver = {
 +		.name = "jz4740-fb",
 +		.pm = JZFB_PM_OPS,
@@ -859,7 +872,6 @@ index 0000000..53f3adb
 +MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
 +MODULE_DESCRIPTION("JZ4720/JZ4740 SoC LCD framebuffer driver");
 +MODULE_ALIAS("platform:jz4740-fb");
-+MODULE_ALIAS("platform:jz4720-fb");
 diff --git a/include/linux/jz4740_fb.h b/include/linux/jz4740_fb.h
 new file mode 100644
 index 0000000..ab4c963
