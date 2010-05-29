@@ -1,6 +1,6 @@
-From 3ff79323c50cc67df122c8f02670ff5483ea7ebc Mon Sep 17 00:00:00 2001
+From 075550fa667fca846d1217f649438df5cb4f9529 Mon Sep 17 00:00:00 2001
 From: Lars-Peter Clausen <lars@metafoo.de>
-Date: Sat, 24 Apr 2010 12:32:57 +0200
+Date: Fri, 28 May 2010 19:53:05 +0200
 Subject: [PATCH] Add jz4740 codec driver
 
 ---
@@ -52,7 +52,7 @@ index dd5ce6d..3f6ce05 100644
  obj-$(CONFIG_SND_SOC_MAX9877)	+= snd-soc-max9877.o
 diff --git a/sound/soc/codecs/jzcodec.c b/sound/soc/codecs/jzcodec.c
 new file mode 100644
-index 0000000..f960d46
+index 0000000..91720fa
 --- /dev/null
 +++ b/sound/soc/codecs/jzcodec.c
 @@ -0,0 +1,513 @@
@@ -325,15 +325,15 @@ index 0000000..f960d46
 +		.stream_name = "Playback",
 +		.channels_min = 2,
 +		.channels_max = 2,
-+		.rates = SNDRV_PCM_RATE_8000_44100,
-+		.formats = SNDRV_PCM_FMTBIT_S16_LE,
++		.rates = SNDRV_PCM_RATE_8000_48000,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S8,
 +	},
 +	.capture = {
 +		.stream_name = "Capture",
 +		.channels_min = 2,
 +		.channels_max = 2,
-+		.rates = SNDRV_PCM_RATE_8000_44100,
-+		.formats = SNDRV_PCM_FMTBIT_S16_LE,
++		.rates = SNDRV_PCM_RATE_8000_48000,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S8,
 +	},
 +	.ops = &jz_codec_dai_ops,
 +	.symmetric_rates = 1,
