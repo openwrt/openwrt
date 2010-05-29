@@ -1,4 +1,4 @@
-From 9241770134d9bea522051622c52a3195a3d218e0 Mon Sep 17 00:00:00 2001
+From 103784e50d565c9e9325a9256e0547a40c6b959c Mon Sep 17 00:00:00 2001
 From: Lars-Peter Clausen <lars@metafoo.de>
 Date: Sat, 24 Apr 2010 12:12:37 +0200
 Subject: [PATCH] Add jz4740 rtc driver
@@ -11,27 +11,25 @@ Subject: [PATCH] Add jz4740 rtc driver
  create mode 100644 drivers/rtc/rtc-jz4740.c
 
 diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
-index 6a13037..74699dd 100644
+index 6a13037..8210bc7 100644
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
-@@ -488,6 +488,17 @@ config RTC_DRV_EFI
+@@ -888,4 +888,15 @@ config RTC_DRV_MPC5121
  	  This driver can also be built as a module. If so, the module
- 	  will be called rtc-efi.
+ 	  will be called rtc-mpc5121.
  
 +config RTC_DRV_JZ4740
-+	tristate "Ingenic JZ4720/JZ4740 SoC"
++	tristate "Ingenic JZ4740 SoC"
 +	depends on RTC_CLASS
 +	depends on SOC_JZ4740
 +	help
 +	  If you say yes here you get support for the
-+	  Ingenic JZ4720/JZ4740 SoC RTC controller.
++	  Ingenic JZ4740 SoC RTC controller.
 +
 +	  This driver can also be buillt as a module. If so, the module
 +	  will be called rtc-jz4740.
 +
- config RTC_DRV_STK17TA8
- 	tristate "Simtek STK17TA8"
- 	depends on RTC_CLASS
+ endif # RTC_CLASS
 diff --git a/drivers/rtc/Makefile b/drivers/rtc/Makefile
 index 44ef194..7002033 100644
 --- a/drivers/rtc/Makefile
