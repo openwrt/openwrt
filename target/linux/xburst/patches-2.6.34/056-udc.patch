@@ -1,4 +1,4 @@
-From 9b62834f0e2aba2111ba22e734982f7c71293355 Mon Sep 17 00:00:00 2001
+From 644d56ba485f220b1b740b320760a12b5e4e0308 Mon Sep 17 00:00:00 2001
 From: Lars-Peter Clausen <lars@metafoo.de>
 Date: Sat, 24 Apr 2010 12:18:46 +0200
 Subject: [PATCH] Add jz4740 udc driver
@@ -7,9 +7,9 @@ Subject: [PATCH] Add jz4740 udc driver
  drivers/usb/gadget/Kconfig        |   14 +
  drivers/usb/gadget/Makefile       |    1 +
  drivers/usb/gadget/gadget_chips.h |    9 +
- drivers/usb/gadget/jz4740_udc.c   | 2439 +++++++++++++++++++++++++++++++++++++
- drivers/usb/gadget/jz4740_udc.h   |   99 ++
- 5 files changed, 2562 insertions(+), 0 deletions(-)
+ drivers/usb/gadget/jz4740_udc.c   | 2437 +++++++++++++++++++++++++++++++++++++
+ drivers/usb/gadget/jz4740_udc.h   |  100 ++
+ 5 files changed, 2561 insertions(+), 0 deletions(-)
  create mode 100644 drivers/usb/gadget/jz4740_udc.c
  create mode 100644 drivers/usb/gadget/jz4740_udc.h
 
@@ -84,10 +84,10 @@ index e511fec..b2ec5fb 100644
  
 diff --git a/drivers/usb/gadget/jz4740_udc.c b/drivers/usb/gadget/jz4740_udc.c
 new file mode 100644
-index 0000000..bea1a37
+index 0000000..e84c817
 --- /dev/null
 +++ b/drivers/usb/gadget/jz4740_udc.c
-@@ -0,0 +1,2439 @@
+@@ -0,0 +1,2437 @@
 +/*
 + * linux/drivers/usb/gadget/jz4740_udc.c
 + *
@@ -863,7 +863,6 @@ index 0000000..bea1a37
 +static void done(struct jz4740_ep *ep, struct jz4740_request *req, int status)
 +{
 +	unsigned int stopped = ep->stopped;
-+	unsigned long flags;
 +	uint32_t index;
 +
 +	DEBUG("%s, %p\n", __FUNCTION__, ep);
@@ -882,14 +881,14 @@ index 0000000..bea1a37
 +	/* don't modify queue heads during completion callback */
 +	ep->stopped = 1;
 +	/* Read current index (completion may modify it) */
-+	spin_lock_irqsave(&ep->dev->lock, flags);
 +	index = usb_readb(ep->dev, JZ_REG_UDC_INDEX);
++	spin_unlock_irqrestore(&ep->dev->lock, ep->dev->lock_flags);
 +
 +	req->req.complete(&ep->ep, &req->req);
 +
++	spin_lock_irqsave(&ep->dev->lock, ep->dev->lock_flags);
 +	/* Restore index */
 +	jz_udc_set_index(ep->dev, index);
-+	spin_unlock_irqrestore(&ep->dev->lock, flags);
 +	ep->stopped = stopped;
 +}
 +
@@ -1344,7 +1343,6 @@ index 0000000..bea1a37
 +	struct jz4740_request *req;
 +	struct jz4740_ep *ep;
 +	struct jz4740_udc *dev;
-+	unsigned long flags;
 +
 +	DEBUG("%s, %p\n", __FUNCTION__, _ep);
 +
@@ -1371,7 +1369,7 @@ index 0000000..bea1a37
 +	DEBUG("%s queue req %p, len %d buf %p\n", _ep->name, _req, _req->length,
 +	      _req->buf);
 +
-+	spin_lock_irqsave(&dev->lock, flags);
++	spin_lock_irqsave(&dev->lock, dev->lock_flags);
 +
 +	_req->status = -EINPROGRESS;
 +	_req->actual = 0;
@@ -1417,7 +1415,7 @@ index 0000000..bea1a37
 +	if (likely(req != 0))
 +		list_add_tail(&req->queue, &ep->queue);
 +
-+	spin_unlock_irqrestore(&dev->lock, flags);
++	spin_unlock_irqrestore(&dev->lock, dev->lock_flags);
 +
 +	return 0;
 +}
@@ -2529,10 +2527,10 @@ index 0000000..bea1a37
 +MODULE_LICENSE("GPL");
 diff --git a/drivers/usb/gadget/jz4740_udc.h b/drivers/usb/gadget/jz4740_udc.h
 new file mode 100644
-index 0000000..ac1540f
+index 0000000..7156768
 --- /dev/null
 +++ b/drivers/usb/gadget/jz4740_udc.h
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,100 @@
 +/*
 + * linux/drivers/usb/gadget/jz4740_udc.h
 + *
@@ -2608,6 +2606,7 @@ index 0000000..ac1540f
 +	struct usb_gadget_driver *driver;
 +	struct device *dev;
 +	spinlock_t lock;
++	unsigned long lock_flags;
 +
 +	enum ep0state ep0state;
 +	struct jz4740_ep ep[UDC_MAX_ENDPOINTS];
