@@ -87,8 +87,8 @@ config_get_ipaddr() {
 
 	local vers=
 	case "$addr" in
-		*.*) vers=4 ;;
-		*:*) vers=6 ;;
+		*.*) vers=4; mask="${mask:-32}" ;;
+		*:*) vers=6; mask="${mask:-128}" ;;
 	esac
 	
 	export ${NO_EXPORT:+-n} -- "${varn}=${addr}"
