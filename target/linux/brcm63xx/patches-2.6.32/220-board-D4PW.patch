@@ -1,6 +1,8 @@
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -467,6 +467,49 @@ static struct board_info __initdata boar
+Index: linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:44:35.000000000 -0400
++++ linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:45:09.000000000 -0400
+@@ -451,6 +451,49 @@
  
  	.has_ohci0 = 1,
  };
@@ -50,7 +52,7 @@
  #endif
  
  /*
-@@ -692,6 +735,7 @@ static const struct board_info __initdat
+@@ -676,6 +719,7 @@
  	&board_DV201AMR,
  	&board_96348gw_a,
  	&board_rta1025w_16,

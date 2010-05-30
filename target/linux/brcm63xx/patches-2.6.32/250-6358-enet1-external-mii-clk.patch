@@ -1,6 +1,8 @@
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1338,6 +1338,8 @@ void __init board_prom_init(void)
+Index: linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:48:23.000000000 -0400
++++ linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:48:31.000000000 -0400
+@@ -1322,6 +1322,8 @@
  		if (BCMCPU_IS_6348())
  			val |= GPIO_MODE_6348_G3_EXT_MII |
  				GPIO_MODE_6348_G0_EXT_MII;
@@ -9,8 +11,10 @@
  	}
  
  	bcm_gpio_writel(val, GPIO_MODE_REG);
---- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-+++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+Index: linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h	2010-05-27 21:48:23.000000000 -0400
++++ linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h	2010-05-27 21:48:31.000000000 -0400
 @@ -402,6 +402,8 @@
  #define GPIO_MODE_6358_EXTRA_SPI_SS	(1 << 7)
  #define GPIO_MODE_6358_SERIAL_LED	(1 << 10)
