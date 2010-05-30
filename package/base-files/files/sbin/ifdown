@@ -40,6 +40,9 @@ done
 config_get iftype "$cfg" type
 [ "bridge" = "$iftype" ] && brctl delbr "$ifname" >/dev/null 2>/dev/null
 
+# remove the interface's dns entries
+remove_dns "$cfg"
+
 # remove the interface's network state
 uci_revert_state network "$1"
 
