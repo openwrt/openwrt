@@ -11,7 +11,7 @@ define Profile/GW6X00
 	kmod-fs-ext2 kmod-nls-cp437 kmod-nls-iso8859-1 kmod-fs-vfat \
 	kmod-loop e2fsprogs kmod-spi-bitbang kmod-bcm63xx-spi \
 	kmod-ipt-nathelper-extra kmod-input-gpio-buttons \
-	wpa-supplicant iw
+	wpa-supplicant iw kmod-leds-gpio kmod-button-hotplug
 endef
 
 define Profile/GW6X00/Description
