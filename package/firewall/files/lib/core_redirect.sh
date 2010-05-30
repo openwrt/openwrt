@@ -42,8 +42,8 @@ fw_load_redirect() {
 	for redirect_proto in $redirect_proto; do
 		fw add $mode n zone_${redirect_src}_prerouting DNAT $ { $redirect_src_ip $redirect_dest_ip } { \
 			${redirect_proto:+-p $redirect_proto} \
-			${redirect_src_ip:+-s $redirect_src_ip} \
-			${redirect_src_dip:+-d $redirect_src_dip} \
+			${redirect_src_ip:+-s $redirect_src_ip/$redirect_src_ip_prefixlen} \
+			${redirect_src_dip:+-d $redirect_src_dip/$redirect_src_dip_prefixlen} \
 			${redirect_src_port:+--sport $redirect_src_port} \
 			${redirect_src_dport:+--dport $redirect_src_dport} \
 			${redirect_src_mac:+-m mac --mac-source $redirect_src_mac} \
@@ -53,7 +53,7 @@ fw_load_redirect() {
 		fw add $mode f zone_${redirect_src}_forward ACCEPT ^ { $redirect_src_ip $redirect_dest_ip } { \
 			-d $redirect_dest_ip \
 			${redirect_proto:+-p $redirect_proto} \
-			${redirect_src_ip:+-s $redirect_src_ip} \
+			${redirect_src_ip:+-s $redirect_src_ip/$redirect_src_ip_prefixlen} \
 			${redirect_src_port:+--sport $redirect_src_port} \
 			${fwd_dest_port:+--dport $fwd_dest_port} \
 			${redirect_src_mac:+-m mac --mac-source $redirect_src_mac} \

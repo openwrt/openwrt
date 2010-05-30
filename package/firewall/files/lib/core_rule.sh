@@ -56,10 +56,10 @@ fw_load_rule() {
 	for rule_proto in $rule_proto; do
 		fw add $mode f $chain $target $rule_pos { $rule_src_ip $rule_dest_ip } { \
 			${rule_proto:+-p $rule_proto} \
-			${rule_src_ip:+-s $rule_src_ip} \
+			${rule_src_ip:+-s $rule_src_ip/$rule_src_ip_prefixlen} \
 			${rule_src_port:+--sport $rule_src_port} \
 			${rule_src_mac:+-m mac --mac-source $rule_src_mac} \
-			${rule_dest_ip:+-d $rule_dest_ip} \
+			${rule_dest_ip:+-d $rule_dest_ip/$rule_dest_ip_prefixlen} \
 			${rule_dest_port:+--dport $rule_dest_port} \
 			${rule_icmp_type:+--icmp-type $rule_icmp_type} \
 		}
