@@ -1,6 +1,8 @@
---- a/arch/mips/bcm63xx/cpu.c
-+++ b/arch/mips/bcm63xx/cpu.c
-@@ -55,6 +55,7 @@ static const unsigned long bcm96338_regs
+Index: linux-2.6.32.13/arch/mips/bcm63xx/cpu.c
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/bcm63xx/cpu.c	2010-05-27 21:34:54.000000000 -0400
++++ linux-2.6.32.13/arch/mips/bcm63xx/cpu.c	2010-05-27 21:48:23.000000000 -0400
+@@ -55,6 +55,7 @@
  
  static const int bcm96338_irqs[] = {
  	[IRQ_TIMER]		= BCM_6338_TIMER_IRQ,
@@ -8,7 +10,7 @@
  	[IRQ_UART0]		= BCM_6338_UART0_IRQ,
  	[IRQ_DSL]		= BCM_6338_DSL_IRQ,
  	[IRQ_ENET0]		= BCM_6338_ENET0_IRQ,
-@@ -127,6 +128,7 @@ static const unsigned long bcm96348_regs
+@@ -127,6 +128,7 @@
  
  static const int bcm96348_irqs[] = {
  	[IRQ_TIMER]		= BCM_6348_TIMER_IRQ,
@@ -16,7 +18,7 @@
  	[IRQ_UART0]		= BCM_6348_UART0_IRQ,
  	[IRQ_DSL]		= BCM_6348_DSL_IRQ,
  	[IRQ_ENET0]		= BCM_6348_ENET0_IRQ,
-@@ -169,6 +171,7 @@ static const unsigned long bcm96358_regs
+@@ -169,6 +171,7 @@
  
  static const int bcm96358_irqs[] = {
  	[IRQ_TIMER]		= BCM_6358_TIMER_IRQ,
@@ -24,8 +26,10 @@
  	[IRQ_UART0]		= BCM_6358_UART0_IRQ,
  	[IRQ_DSL]		= BCM_6358_DSL_IRQ,
  	[IRQ_ENET0]		= BCM_6358_ENET0_IRQ,
---- /dev/null
-+++ b/arch/mips/bcm63xx/dev-spi.c
+Index: linux-2.6.32.13/arch/mips/bcm63xx/dev-spi.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.13/arch/mips/bcm63xx/dev-spi.c	2010-05-27 21:48:23.000000000 -0400
 @@ -0,0 +1,60 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -87,9 +91,11 @@
 +
 +	return platform_device_register(&bcm63xx_spi_device);
 +}
---- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
-+++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
-@@ -108,6 +108,7 @@ enum bcm63xx_regs_set {
+Index: linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h	2010-05-27 21:44:19.000000000 -0400
++++ linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h	2010-05-27 21:48:23.000000000 -0400
+@@ -108,6 +108,7 @@
  #define RSET_WDT_SIZE			12
  #define RSET_ENET_SIZE			2048
  #define RSET_ENETDMA_SIZE		2048
@@ -97,7 +103,7 @@
  #define RSET_UART_SIZE			24
  #define RSET_UDC_SIZE			256
  #define RSET_OHCI_SIZE			256
-@@ -209,7 +210,7 @@ enum bcm63xx_regs_set {
+@@ -209,7 +210,7 @@
  #define BCM_6358_WDT_BASE		(0xfffe005c)
  #define BCM_6358_UART0_BASE		(0xfffe0100)
  #define BCM_6358_GPIO_BASE		(0xfffe0080)
@@ -106,7 +112,7 @@
  #define BCM_6358_UDC0_BASE		(0xfffe0400)
  #define BCM_6358_OHCI0_BASE		(0xfffe1400)
  #define BCM_6358_OHCI_PRIV_BASE		(0xdeadbeef)
-@@ -428,6 +429,7 @@ static inline unsigned long bcm63xx_regs
+@@ -428,6 +429,7 @@
   */
  enum bcm63xx_irq {
  	IRQ_TIMER = 0,
@@ -114,7 +120,7 @@
  	IRQ_UART0,
  	IRQ_DSL,
  	IRQ_UDC0,
-@@ -493,6 +495,7 @@ enum bcm63xx_irq {
+@@ -493,6 +495,7 @@
   * 6348 irqs
   */
  #define BCM_6348_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
@@ -122,7 +128,7 @@
  #define BCM_6348_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
  #define BCM_6348_DSL_IRQ		(IRQ_INTERNAL_BASE + 4)
  #define BCM_6348_UDC0_IRQ		(IRQ_INTERNAL_BASE + 6)
-@@ -517,6 +520,7 @@ enum bcm63xx_irq {
+@@ -517,6 +520,7 @@
   * 6358 irqs
   */
  #define BCM_6358_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
@@ -130,8 +136,10 @@
  #define BCM_6358_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
  #define BCM_6358_OHCI0_IRQ		(IRQ_INTERNAL_BASE + 5)
  #define BCM_6358_ENET1_IRQ		(IRQ_INTERNAL_BASE + 6)
---- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-+++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+Index: linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h	2010-05-27 21:34:54.000000000 -0400
++++ linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h	2010-05-27 21:48:23.000000000 -0400
 @@ -769,5 +769,117 @@
  #define DMIPSPLLCFG_N2_SHIFT		29
  #define DMIPSPLLCFG_N2_MASK		(0x7 << DMIPSPLLCFG_N2_SHIFT)
@@ -250,8 +258,10 @@
 +
  #endif /* BCM63XX_REGS_H_ */
  
---- /dev/null
-+++ b/drivers/spi/bcm63xx_spi.c
+Index: linux-2.6.32.13/drivers/spi/bcm63xx_spi.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.13/drivers/spi/bcm63xx_spi.c	2010-05-27 21:48:23.000000000 -0400
 @@ -0,0 +1,628 @@
 +/*
 + * Broadcom BCM63xx SPI controller support
@@ -881,9 +891,11 @@
 +MODULE_DESCRIPTION("Broadcom BCM63xx SPI Controller driver");
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION(DRV_VER);
---- a/drivers/spi/Kconfig
-+++ b/drivers/spi/Kconfig
-@@ -60,6 +60,13 @@ config SPI_ATMEL
+Index: linux-2.6.32.13/drivers/spi/Kconfig
+===================================================================
+--- linux-2.6.32.13.orig/drivers/spi/Kconfig	2010-05-27 21:34:54.000000000 -0400
++++ linux-2.6.32.13/drivers/spi/Kconfig	2010-05-27 21:48:23.000000000 -0400
+@@ -60,6 +60,13 @@
  	  This selects a driver for the Atmel SPI Controller, present on
  	  many AT32 (AVR32) and AT91 (ARM) chips.
  
@@ -897,9 +909,11 @@
  config SPI_BFIN
  	tristate "SPI controller driver for ADI Blackfin5xx"
  	depends on BLACKFIN
---- a/drivers/spi/Makefile
-+++ b/drivers/spi/Makefile
-@@ -34,6 +34,7 @@ obj-$(CONFIG_SPI_TXX9)			+= spi_txx9.o
+Index: linux-2.6.32.13/drivers/spi/Makefile
+===================================================================
+--- linux-2.6.32.13.orig/drivers/spi/Makefile	2010-05-27 21:34:54.000000000 -0400
++++ linux-2.6.32.13/drivers/spi/Makefile	2010-05-27 21:48:23.000000000 -0400
+@@ -34,6 +34,7 @@
  obj-$(CONFIG_SPI_XILINX)		+= xilinx_spi.o
  obj-$(CONFIG_SPI_SH_SCI)		+= spi_sh_sci.o
  obj-$(CONFIG_SPI_STMP3XXX)		+= spi_stmp.o
@@ -907,8 +921,10 @@
  # 	... add above this line ...
  
  # SPI protocol drivers (device/link on bus)
---- /dev/null
-+++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h
+Index: linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h	2010-05-27 21:48:23.000000000 -0400
 @@ -0,0 +1,15 @@
 +#ifndef BCM63XX_DEV_SPI_H
 +#define BCM63XX_DEV_SPI_H
@@ -925,8 +941,10 @@
 +};
 +
 +#endif /* BCM63XX_DEV_SPI_H */
---- a/arch/mips/bcm63xx/Makefile
-+++ b/arch/mips/bcm63xx/Makefile
+Index: linux-2.6.32.13/arch/mips/bcm63xx/Makefile
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/bcm63xx/Makefile	2010-05-27 21:44:19.000000000 -0400
++++ linux-2.6.32.13/arch/mips/bcm63xx/Makefile	2010-05-27 21:48:23.000000000 -0400
 @@ -1,6 +1,6 @@
  obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
  		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-uart.o dev-wdt.o \
@@ -935,8 +953,10 @@
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
  
  obj-y		+= boards/
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+Index: linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:46:39.000000000 -0400
++++ linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:48:23.000000000 -0400
 @@ -30,6 +30,7 @@
  #include <bcm63xx_dev_usb_ohci.h>
  #include <bcm63xx_dev_usb_ehci.h>
@@ -945,7 +965,7 @@
  #include <board_bcm963xx.h>
  
  #define PFX	"board_bcm963xx: "
-@@ -1495,6 +1496,9 @@ int __init board_register_devices(void)
+@@ -1479,6 +1480,9 @@
  	if (board.has_udc0)
  		bcm63xx_udc_register();
  

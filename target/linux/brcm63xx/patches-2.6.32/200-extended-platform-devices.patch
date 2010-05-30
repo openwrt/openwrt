@@ -1,6 +1,8 @@
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1000,6 +1000,10 @@ int __init board_register_devices(void)
+Index: linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:44:19.000000000 -0400
++++ linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:44:35.000000000 -0400
+@@ -984,6 +984,10 @@
  		platform_device_register(&bcm63xx_gpio_buttons_device);
  	}
  
@@ -11,9 +13,11 @@
  	return 0;
  }
  
---- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-+++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -59,6 +59,10 @@ struct board_info {
+Index: linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-05-27 21:44:19.000000000 -0400
++++ linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-05-27 21:44:35.000000000 -0400
+@@ -59,6 +59,10 @@
  
  	/* Buttons */
  	struct gpio_button buttons[2];

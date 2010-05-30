@@ -1,5 +1,7 @@
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+Index: linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:45:09.000000000 -0400
++++ linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:46:39.000000000 -0400
 @@ -17,6 +17,7 @@
  #include <linux/ssb/ssb.h>
  #include <linux/gpio_buttons.h>
@@ -21,7 +23,7 @@
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -713,6 +720,471 @@ static struct board_info __initdata boar
+@@ -697,6 +704,471 @@
  
  	.has_ohci0 = 1,
  };
@@ -493,7 +495,7 @@
  #endif
  
  /*
-@@ -743,9 +1215,30 @@ static const struct board_info __initdat
+@@ -727,9 +1199,30 @@
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -524,7 +526,7 @@
  /*
   * early init callback, read nvram data from flash and checksum it
   */
-@@ -793,6 +1286,9 @@ void __init board_prom_init(void)
+@@ -777,6 +1270,9 @@
  		return;
  	}
  
@@ -534,13 +536,15 @@
  	/* find board by name */
  	for (i = 0; i < ARRAY_SIZE(bcm963xx_boards); i++) {
  		if (strncmp(nvram.name, bcm963xx_boards[i]->name,
---- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-+++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -55,7 +55,7 @@ struct board_info {
+Index: linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+===================================================================
+--- linux-2.6.32.13.orig/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-05-27 21:44:35.000000000 -0400
++++ linux-2.6.32.13/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h	2010-05-27 21:47:03.000000000 -0400
+@@ -55,7 +55,7 @@
  	struct bcm63xx_dsp_platform_data dsp;
  
  	/* GPIO LEDs */
--	struct gpio_led leds[8];
+-	struct gpio_led leds[5];
 +	struct gpio_led leds[9];
  
  	/* Buttons */
