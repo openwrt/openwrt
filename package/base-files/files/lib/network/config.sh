@@ -70,6 +70,16 @@ add_vlan() {
 add_dns() {
 	local cfg="$1"; shift
 
+	remove_dns "$cfg"
+
+	# We may be called by pppd's ip-up which has a nonstandard umask set.
+	# Create an empty file here and force its permission to 0644, otherwise
+	# dnsmasq will not be able to re-read the resolv.conf.auto .
+	[ ! -f /tmp/resolv.conf.auto ] && {
+		touch /tmp/resolv.conf.auto
+		chmod 0644 /tmp/resolv.conf.auto
+	}
+
 	local dns
 	local add
 	for dns in "$@"; do
@@ -79,20 +89,27 @@ add_dns() {
 		}
 	done
 
-	uci_set_state network "$cfg" dns "$add"
+	[ -n "$cfg" ] && {
+		uci_set_state network "$cfg" dns "$add"
+		uci_set_state network "$cfg" resolv_dns "$add"
+	}
 }
 
 # remove dns entries of the given iface
 remove_dns() {
 	local cfg="$1"
 
-	local dns
-	config_get dns "$cfg" dns
-	for dns in $dns; do
-		sed -i -e "/^nameserver $dns$/d" /tmp/resolv.conf.auto
-	done
+	[ -n "$cfg" ] && {
+		[ -f /tmp/resolv.conf.auto ] && {
+			local dns=$(uci_get_state network "$cfg" resolv_dns)
+			for dns in $dns; do
+				sed -i -e "/^nameserver $dns$/d" /tmp/resolv.conf.auto
+			done
+		}
 
-	uci_revert_state network "$cfg" dns
+		uci_revert_state network "$cfg" dns
+		uci_revert_state network "$cfg" resolv_dns
+	}
 }
 
 # sort the device list, drop duplicates
@@ -212,13 +229,7 @@ setup_interface_static() {
 	[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
 	[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" dev "$iface"
 	[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw" dev "$iface"
-	[ -z "$dns" ] || {
-		for ns in $dns; do
-			grep "$ns" /tmp/resolv.conf.auto 2>/dev/null >/dev/null || {
-				echo "nameserver $ns" >> /tmp/resolv.conf.auto
-			}
-		done
-	}
+	[ -z "$dns" ] || add_dns "$config" $dns
 
 	config_get type "$config" TYPE
 	[ "$type" = "alias" ] && return 0
@@ -363,11 +374,13 @@ setup_interface() {
 stop_interface_dhcp() {
 	local config="$1"
 
-	local iface
+	local ifname
 	config_get ifname "$config" ifname
 
 	local lock="/var/lock/dhcp-${ifname}"
 	[ -f "$lock" ] && lock -u "$lock"
+
+	remove_dns "$config"
 
 	local pidfile="/var/run/dhcp-${ifname}.pid"
 	local pid="$(cat "$pidfile" 2>/dev/null)"

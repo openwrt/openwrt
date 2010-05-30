@@ -139,21 +139,21 @@ setup_interface () {
 	}
 
 	# DNS
-	config_get old_dns "$ifc" dns
+	old_dns=$(uci_get_state network "$ifc" dns)
+	old_domain=$(uci_get_state network "$ifc" dnsdomain)
 	user_dns=$(uci_get "network.$ifc.dns")
 	[ -n "$user_dns" ] && dns="$user_dns"
 
-	[ -n "$dns" ] && [ ! -s "${RESOLV_CONF}" -o "$dns" != "$old_dns" ] && {
+	[ -n "$dns" ] && [ "$dns" != "$old_dns" -o -n "$user_dns" ] && {
 		echo "udhcpc: setting dns servers: $dns"
-		echo -n > "${RESOLV_CONF}.tmp"
-		for i in $dns ; do
-			echo "nameserver $i" >> "${RESOLV_CONF}.tmp"
-		done
-		${domain:+echo search $domain} >> "${RESOLV_CONF}.tmp"
-		mv "${RESOLV_CONF}.tmp" "$RESOLV_CONF"
+		add_dns "$ifc" $dns
 
-		change_state network "$ifc" dnsdomain "$domain"
-		change_state network "$ifc" dns "$dns"
+		[ -n "$domain" ] && [ "$domain" != "$old_domain" ] && {
+			echo "udhcpc: setting dns domain: $domain"
+			sed -i -e "${old_domain:+/^search $old_domain$/d; }/^search $domain$/d" "${RESOLV_CONF}"
+			echo "search $domain" >> "${RESOLV_CONF}"
+			change_state network "$ifc" dnsdomain "$domain"
+		}
 	}
 
 	[ -n "$ifc" ] || return
