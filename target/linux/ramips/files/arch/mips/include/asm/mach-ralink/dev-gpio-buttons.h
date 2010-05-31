@@ -23,7 +23,7 @@ void __init ramips_register_gpio_buttons(int id,
 static inline void ramips_register_gpio_buttons(int id,
 						unsigned poll_interval,
 						unsigned nbuttons,
-						struct gpio_button *buttons);
+						struct gpio_button *buttons)
 {
 }
 #endif
