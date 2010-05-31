@@ -51,8 +51,8 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 		shift
 		while [ "$1" != '}' ]; do
 			case "$1" in
-				*.*.*.*) ip4=1 ;;
 				*:*) ip6=1 ;;
+				*.*.*.*) ip4=1 ;;
 			esac
 			shift
 		done
