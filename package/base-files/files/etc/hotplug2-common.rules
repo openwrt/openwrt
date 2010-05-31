@@ -14,7 +14,6 @@ DEVICENAME ~~ (null|full|ptmx|tty|zero|gpio|hvc) {
 DEVICENAME ~~ (tun|tap[0-9]) {
 	nothrottle
 	makedev /dev/net/%DEVICENAME% 0644
-	next
 }
 
 DEVICENAME ~~ (ppp) {
