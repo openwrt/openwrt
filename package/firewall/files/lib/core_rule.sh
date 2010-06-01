@@ -11,7 +11,6 @@ fw_config_get_rule() {
 		string src_port "" \
 		string dest "" \
 		ipaddr dest_ip "" \
-		string dest_mac "" \
 		string dest_port "" \
 		string icmp_type "" \
 		string proto "tcpudp" \
