@@ -68,7 +68,35 @@ case "$ACTION" in
 	ifup)
 		include /lib/network
 		scan_interfaces
+
+		# Setup aliases
+		config_set "$INTERFACE" aliases ""
+		config_set "$INTERFACE" alias_count 0
+		config_foreach setup_interface_alias alias "$INTERFACE" "$DEVICE"
+
+		# Save alias references in state vars
+		local aliases
+		config_get aliases "$INTERFACE" aliases
+		[ -z "$aliases" ] || uci_set_state network "$INTERFACE" aliases "$aliases"
+
+		# Make ip6addr of parent iface the main address again
+		local ip6addr
+		config_get ip6addr "$INTERFACE" ip6addr
+		[ -z "$ip6addr" ] || {
+			ifconfig "$DEVICE" del "$ip6addr"
+			ifconfig "$DEVICE" add "$ip6addr"
+		}
+
+		# Setup routes
 		config_foreach "add_route" route
 		config_foreach "add_route6" route6
 	;;
+	ifdown)
+		# Bring down named aliases
+		local ifn
+		for ifn in $(ifconfig | sed -ne "s/^\($DEVICE:[^[:space:]]\+\).*/\1/p"); do
+			ifconfig "$ifn" down
+		done
+	;;
 esac
+
