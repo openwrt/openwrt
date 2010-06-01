@@ -118,6 +118,16 @@
  	dma_unmap_single(sc->dev, bf->bf_dmacontext, skb->len, DMA_TO_DEVICE);
  	ath_tx_complete(sc, skb, bf->aphy, tx_flags);
  	ath_debug_stat_tx(sc, txq, bf, ts);
+@@ -2060,8 +2048,7 @@ static void ath_wake_mac80211_queue(stru
+ 	int qnum;
+ 
+ 	spin_lock_bh(&txq->axq_lock);
+-	if (txq->stopped &&
+-	    sc->tx.txq[txq->axq_qnum].axq_depth <= (ATH_TXBUF - 20)) {
++	if (txq->stopped && txq->pending_frames < ATH_MAX_QDEPTH) {
+ 		qnum = ath_get_mac80211_qnum(txq->axq_qnum, sc);
+ 		if (qnum != -1) {
+ 			ath_mac80211_start_queue(sc, qnum);
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
 @@ -1026,6 +1026,7 @@ static int ath9k_tx(struct ieee80211_hw 
