@@ -93,8 +93,9 @@ case "$ACTION" in
 	;;
 	ifdown)
 		# Bring down named aliases
+		local device=$(uci_get_state network "$INTERFACE" device)
 		local ifn
-		for ifn in $(ifconfig | sed -ne "s/^\($DEVICE:[^[:space:]]\+\).*/\1/p"); do
+		for ifn in $(ifconfig | sed -ne "s/^\(\($DEVICE${device:+\|$device}\|br-$INTERFACE\):[^[:space:]]\+\).*/\1/p"); do
 			ifconfig "$ifn" down
 		done
 	;;

@@ -246,6 +246,25 @@ setup_interface_alias() {
 	config_get cfg "$config" interface
 	[ "$parent" == "$cfg" ] || return 0
 
+	# parent device and ifname
+	local p_device p_type
+	config_get p_device "$cfg" device
+	config_get p_type   "$cfg" type
+
+	# select alias ifname
+	local layer use_iface
+	config_get layer "$config" layer 2
+	case "$layer:$p_type" in
+		# layer 3: e.g. pppoe-wan or pptp-vpn
+		3:*)      use_iface="$iface" ;;
+
+		# layer 2 and parent is bridge: e.g. br-wan
+		2:bridge) use_iface="br-$cfg" ;;
+
+		# layer 1: e.g. eth0 or ath0
+		*)        use_iface="$p_device" ;;
+	esac
+
 	# alias counter
 	local ctr
 	config_get ctr "$parent" alias_count 0
@@ -258,14 +277,14 @@ setup_interface_alias() {
 	append list "$config"
 	config_set "$parent" aliases "$list"
 
-	iface="$iface:$ctr"
-	set_interface_ifname "$config" "$iface"
+	use_iface="$use_iface:$ctr"
+	set_interface_ifname "$config" "$use_iface"
 
 	local proto
 	config_get proto "$config" proto "static"
 	case "${proto}" in
 		static)
-			setup_interface_static "$iface" "$config"
+			setup_interface_static "$use_iface" "$config"
 		;;
 		*)
 			echo "Unsupported type '$proto' for alias config '$config'"
