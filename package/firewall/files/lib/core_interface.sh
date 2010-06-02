@@ -11,7 +11,11 @@ fw_configure_interface() {
 		[ "$status" == 1 ] || [ -n "$aliasnet" ] || return 0
 	}
 
-	[ -n "$ifname" ] || ifname=$(uci_get_state network "$iface" ifname "$iface")
+	[ -n "$ifname" ] || {
+		ifname=$(uci_get_state network "$iface" ifname "$iface")
+		ifname="${ifname%%:*}"
+	}
+
 	[ "$ifname" == "lo" ] && return 0
 
 	fw_callback pre interface
@@ -64,18 +68,21 @@ fw_configure_interface() {
 		fw $action $mode r PREROUTING ${chain}_notrack    ^ $inet { -i "$ifname" }
 	}
 
-	local old_zones old_ifname old_subnet
+	local old_zones old_ifname old_subnets
 	config_get old_zones core "${iface}_zone"
 	[ -n "$old_zones" ] && {
 		config_get old_ifname core "${iface}_ifname"
-		config_get old_subnet core "${iface}_subnet"
+		config_get old_subnets core "${iface}_subnets"
 
 		local z
 		for z in $old_zones; do
-			fw_log info "removing $iface ($old_ifname${old_subnet:+ alias $old_subnet}) from zone $z"
-			fw__do_rules del $z $old_ifname $old_subnet
+			local n
+			for n in ${old_subnets:-""}; do
+				fw_log info "removing $iface ($old_ifname${n:+ alias $n}) from zone $z"
+				fw__do_rules del $z $old_ifname $n
+			done
 
-			[ -n "$old_subnet" ] || ACTION=remove ZONE="$z" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
+			[ -n "$old_subnets" ] || ACTION=remove ZONE="$z" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
 		done
 
 		local old_aliases
@@ -88,7 +95,7 @@ fw_configure_interface() {
 
 		uci_revert_state firewall core "${iface}_zone"
 		uci_revert_state firewall core "${iface}_ifname"
-		uci_revert_state firewall core "${iface}_subnet"
+		uci_revert_state firewall core "${iface}_subnets"
 		uci_revert_state firewall core "${iface}_aliases"
 	}
 
@@ -118,19 +125,25 @@ fw_configure_interface() {
 			config_get netmask "$a" netmask
 			config_get ip6addr "$a" ip6addr
 
-			[ -n "$ipaddr" ] && fw_configure_interface "$a" add "$ifname" "$ipaddr${netmask:+/$netmask}"
-			[ -n "$ip6addr" ] && fw_configure_interface "$a" add "$ifname" "$ip6addr"
+			[ -n "$ipaddr" ] && fw_configure_interface "$a" add "" "$ipaddr${netmask:+/$netmask}"
+			[ -n "$ip6addr" ] && fw_configure_interface "$a" add "" "$ip6addr"
 		done
 
 		fw_sysctl_interface $ifname
 		fw_callback post interface
 
 		uci_set_state firewall core "${iface}_aliases" "$aliases"
+	} || {
+		local subnets=
+		config_get subnets core "${iface}_subnets"
+		append subnets "$aliasnet"
+
+		config_set core "${iface}_subnets" "$subnets"
+		uci_set_state firewall core "${iface}_subnets" "$subnets"
 	}
 
 	uci_set_state firewall core "${iface}_zone" "$new_zones"
 	uci_set_state firewall core "${iface}_ifname" "$ifname"
-	uci_set_state firewall core "${iface}_subnet" "$aliasnet"
 }
 
 fw_sysctl_interface() {
