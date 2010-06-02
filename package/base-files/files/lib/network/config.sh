@@ -348,12 +348,13 @@ setup_interface() {
 			if [ -d "/proc/$pid" ] && grep -qs udhcpc "/proc/${pid}/cmdline"; then
 				lock -u "$lockfile"
 			else
-				local ipaddr netmask hostname proto1 clientid
+				local ipaddr netmask hostname proto1 clientid broadcast
 				config_get ipaddr "$config" ipaddr
 				config_get netmask "$config" netmask
 				config_get hostname "$config" hostname
 				config_get proto1 "$config" proto
 				config_get clientid "$config" clientid
+				config_get_bool broadcast "$config" broadcast 0
 
 				[ -z "$ipaddr" ] || \
 					$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
@@ -361,7 +362,15 @@ setup_interface() {
 				# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
 				local dhcpopts
 				[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
-				$DEBUG eval udhcpc -t 0 -i "$iface" ${ipaddr:+-r $ipaddr} ${hostname:+-H $hostname} ${clientid:+-c $clientid} -b -p "$pidfile" ${dhcpopts:- -O rootpath -R &}
+				[ "$broadcast" = 1 ] && broadcast="-O broadcast" || broadcast=
+
+				$DEBUG eval udhcpc -t 0 -i "$iface" \
+					${ipaddr:+-r $ipaddr} \
+					${hostname:+-H $hostname} \
+					${clientid:+-c $clientid} \
+					-b -p "$pidfile" $broadcast \
+					${dhcpopts:- -O rootpath -R &}
+
 				lock -u "$lockfile"
 			fi
 		;;
