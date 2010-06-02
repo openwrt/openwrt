@@ -444,7 +444,7 @@ config EGLIBC_OPTION_EGLIBC_INET_ANL
 	bool "Asynchronous name lookup"
 	default y
 	depends EGLIBC_VERSION_2_12
-	select OPTION_EGLIBC_INET
+	select EGLIBC_OPTION_EGLIBC_INET
 	help
 	  This option group includes the `libanl' library which
 	  provides support for asynchronous name lookup.
