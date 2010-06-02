@@ -164,6 +164,15 @@ prepare_interface() {
 			local macaddr
 			config_get macaddr "$config" macaddr
 			[ -x /usr/sbin/brctl ] && {
+				# Remove IPv6 link local addr before adding the iface to the bridge
+				local llv6="$(ifconfig "$iface")"
+				case "$llv6" in
+					*fe80:*/64*)
+						llv6="${llv6#* fe80:}"
+						ifconfig "$iface" del "fe80:${llv6%% *}"
+					;;
+				esac
+
 				ifconfig "br-$config" 2>/dev/null >/dev/null && {
 					local newdevs devices
 					config_get devices "$config" device
