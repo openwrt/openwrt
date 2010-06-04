@@ -1,8 +1,8 @@
 --- /dev/null
 +++ b/arch/mips/include/asm/mips_machine.h
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,54 @@
 +/*
-+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
 + *
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -16,43 +16,50 @@
 +#include <linux/init.h>
 +#include <linux/list.h>
 +
++#include <asm/bootinfo.h>
++
 +struct mips_machine {
 +	unsigned long		mach_type;
++	const char		*mach_id;
++	const char		*mach_name;
 +	void			(*mach_setup)(void);
-+	char			*mach_name;
-+	struct list_head	list;
 +};
 +
-+void mips_machine_register(struct mips_machine *) __init;
-+void mips_machine_setup(unsigned long machtype) __init;
-+void mips_machine_set_name(char *name) __init;
-+
-+extern char *mips_machine_name;
-+
-+#define MIPS_MACHINE(_type, _name, _setup) 			\
-+static char machine_name_##_type[] __initdata = _name;		\
-+static struct mips_machine machine_##_type __initdata =		\
++#define MIPS_MACHINE(_type, _id, _name, _setup) 		\
++static const char machine_name_##_type[] __initconst		\
++			__aligned(1) = _name;			\
++static const char machine_id_##_type[] __initconst		\
++			__aligned(1) = _id;			\
++static struct mips_machine machine_##_type			\
++		__used __section(.mips.machines.init) =		\
 +{								\
 +	.mach_type	= _type,				\
++	.mach_id	= machine_id_##_type,			\
 +	.mach_name	= machine_name_##_type,			\
 +	.mach_setup	= _setup,				\
-+};								\
-+								\
-+static int __init register_machine_##_type(void)		\
-+{								\
-+	mips_machine_register(&machine_##_type);		\
-+	return 0;						\
-+}								\
-+								\
-+pure_initcall(register_machine_##_type)
++};
++
++extern long __mips_machines_start;
++extern long __mips_machines_end;
++
++#ifdef CONFIG_MIPS_MACHINE
++int  mips_machtype_setup(char *id) __init;
++void mips_machine_setup(void) __init;
++void mips_set_machine_name(const char *name) __init;
++char *mips_get_machine_name(void);
++#else
++static inline int mips_machtype_setup(char *id) { return 1; }
++static inline void mips_machine_setup(void) { }
++static inline void mips_set_machine_name(const char *name) { }
++static inline char *mips_get_machine_name(void) { return NULL; }
++#endif /* CONFIG_MIPS_MACHINE */
 +
 +#endif /* __ASM_MIPS_MACHINE_H */
-+
 --- /dev/null
 +++ b/arch/mips/kernel/mips_machine.c
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,83 @@
 +/*
-+ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
 + *
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -60,70 +67,79 @@
 + *
 + */
 +#include <linux/mm.h>
++#include <linux/string.h>
++#include <linux/slab.h>
 +
 +#include <asm/mips_machine.h>
-+#include <asm/bootinfo.h>
 +
-+static struct list_head mips_machines __initdata =
-+		LIST_HEAD_INIT(mips_machines);
++static struct mips_machine *mips_machine __initdata;
++static char *mips_machine_name = "Unknown";
 +
-+char *mips_machine_name = "Unknown";
++#define for_each_machine(mach) \
++	for ((mach) = (struct mips_machine *)&__mips_machines_start; \
++	     (mach) && \
++	     (unsigned long)(mach) < (unsigned long)&__mips_machines_end; \
++	     (mach)++)
 +
-+static struct mips_machine * __init mips_machine_find(unsigned long machtype)
++__init void mips_set_machine_name(const char *name)
 +{
-+	struct list_head *this;
-+
-+	list_for_each(this, &mips_machines) {
-+		struct mips_machine *mach;
-+
-+		mach = list_entry(this, struct mips_machine, list);
-+		if (mach->mach_type == machtype)
-+			return mach;
-+	}
-+
-+	return NULL;
-+}
-+
-+void __init mips_machine_register(struct mips_machine *mach)
-+{
-+	list_add_tail(&mach->list, &mips_machines);
-+}
-+
-+void __init mips_machine_set_name(char *name)
-+{
-+	unsigned int len;
 +	char *p;
 +
 +	if (name == NULL)
 +		return;
 +
-+	len = strlen(name);
-+	p = kmalloc(len + 1, GFP_KERNEL);
-+	if (p) {
-+		strncpy(p, name, len);
-+		p[len] = '\0';
-+		mips_machine_name = p;
-+	} else {
-+		printk(KERN_WARNING "MIPS: no memory for machine_name\n");
-+	}
++	p = kstrdup(name, GFP_KERNEL);
++	if (!p)
++		pr_err("MIPS: no memory for machine_name\n");
++
++	mips_machine_name = p;
 +}
 +
-+void __init mips_machine_setup(unsigned long machtype)
++char *mips_get_machine_name(void)
++{
++	return mips_machine_name;
++}
++
++__init int mips_machtype_setup(char *id)
 +{
 +	struct mips_machine *mach;
 +
-+	mach = mips_machine_find(machtype);
-+	if (!mach) {
-+		printk(KERN_ALERT "MIPS: no machine registered for "
-+			"machtype %lu\n", machtype);
-+		return;
++	for_each_machine(mach) {
++		if (mach->mach_id == NULL)
++			continue;
++
++		if (strcmp(mach->mach_id, id) == 0) {
++			mips_machine = mach;
++			break;
++		}
 +	}
 +
-+	mips_machine_set_name(mach->mach_name);
-+	printk(KERN_INFO "MIPS: machine is %s\n", mips_machine_name);
++	if (!mips_machine) {
++		pr_err("MIPS: no machine found for id '%s', supported machines:\n",
++		       id);
++		pr_err("%32s %s\n", "id", "name");
++		for_each_machine(mach)
++			pr_err("%32s %s\n", mach->mach_id, mach->mach_name);
++		return 1;
++	}
 +
-+	if (mach->mach_setup)
-+		mach->mach_setup();
++	mips_machtype = mips_machine->mach_type;
++
++	return 0;
++}
++
++__setup("machtype=", mips_machtype_setup);
++
++__init void mips_machine_setup(void)
++{
++	if (!mips_machine)
++		return;
++
++	mips_set_machine_name(mips_machine->mach_name);
++	pr_info("MIPS: machine is %s\n", mips_machine_name);
++
++	if (mips_machine->mach_setup)
++		mips_machine->mach_setup();
 +}
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
@@ -164,10 +180,26 @@
 -	if (n == 0)
 +	if (n == 0) {
  		seq_printf(m, "system type\t\t: %s\n", get_system_type());
-+#ifdef CONFIG_MIPS_MACHINE
-+		seq_printf(m, "machine\t\t\t: %s\n", mips_machine_name);
-+#endif
++		if (mips_get_machine_name())
++			seq_printf(m, "machine\t\t\t: %s\n",
++				   mips_get_machine_name());
 +	}
  
  	seq_printf(m, "processor\t\t: %ld\n", n);
  	sprintf(fmt, "cpu model\t\t: %%s V%%d.%%d%s\n",
+--- a/arch/mips/kernel/vmlinux.lds.S
++++ b/arch/mips/kernel/vmlinux.lds.S
+@@ -97,6 +97,13 @@ SECTIONS
+ 	INIT_TEXT_SECTION(PAGE_SIZE)
+ 	INIT_DATA_SECTION(16)
+ 
++	. = ALIGN(4);
++	.mips.machines.init : AT(ADDR(.mips.machines.init) - LOAD_OFFSET) {
++		__mips_machines_start = .;
++		*(.mips.machines.init)
++		__mips_machines_end = .;
++	}
++
+ 	/* .exit.text is discarded at runtime, not link time, to deal with
+ 	 * references from .rodata
+ 	 */
