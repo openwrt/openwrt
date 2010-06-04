@@ -17,6 +17,7 @@
 #include <linux/platform_device.h>
 #include <linux/gpio.h>
 #include <linux/irq.h>
+#include <linux/slab.h>
 
 #include <asm/bootinfo.h>
 
