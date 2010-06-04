@@ -9,7 +9,6 @@
  *
  */
 
-#include <linux/autoconf.h>
 #include <linux/init.h>
 #include <linux/types.h>
 #include <linux/module.h>
