@@ -1,4 +1,4 @@
-BOARDNAME:=Devices with NAND flash
+BOARDNAME:=Devices with NAND flash (mostly Mikrotik)
 
 define Target/Description
 	Build firmware images for Atheros AR71xx/AR913x based boards with 
