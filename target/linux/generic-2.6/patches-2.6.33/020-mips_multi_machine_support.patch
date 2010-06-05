@@ -57,7 +57,7 @@
 +#endif /* __ASM_MIPS_MACHINE_H */
 --- /dev/null
 +++ b/arch/mips/kernel/mips_machine.c
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,86 @@
 +/*
 + *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
 + *
@@ -109,29 +109,32 @@
 +			continue;
 +
 +		if (strcmp(mach->mach_id, id) == 0) {
-+			mips_machine = mach;
-+			break;
++			mips_machtype = mach->mach_type;
++			return 0;
 +		}
 +	}
 +
-+	if (!mips_machine) {
-+		pr_err("MIPS: no machine found for id '%s', supported machines:\n",
-+		       id);
-+		pr_err("%32s %s\n", "id", "name");
-+		for_each_machine(mach)
-+			pr_err("%32s %s\n", mach->mach_id, mach->mach_name);
-+		return 1;
-+	}
++	pr_err("MIPS: no machine found for id '%s', supported machines:\n", id);
++	pr_err("%-24s : %s\n", "id", "name");
++	for_each_machine(mach)
++		pr_err("%-24s : %s\n", mach->mach_id, mach->mach_name);
 +
-+	mips_machtype = mips_machine->mach_type;
-+
-+	return 0;
++	return 1;
 +}
 +
 +__setup("machtype=", mips_machtype_setup);
 +
 +__init void mips_machine_setup(void)
 +{
++	struct mips_machine *mach;
++
++	for_each_machine(mach) {
++		if (mips_machtype == mach->mach_type) {
++			mips_machine = mach;
++			break;
++		}
++	}
++
 +	if (!mips_machine)
 +		return;
 +
