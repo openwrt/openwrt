@@ -60,4 +60,4 @@ static void __init np28g_setup(void)
 	adm5120_pci_set_irq_map(ARRAY_SIZE(np28g_pci_irqs), np28g_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_ADM5120_NP28G, "Compex NetPassage 28G", np28g_setup);
+MIPS_MACHINE(MACH_ADM5120_NP28G, "NP28G", "Compex NetPassage 28G", np28g_setup);

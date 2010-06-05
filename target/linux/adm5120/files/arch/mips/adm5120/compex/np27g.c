@@ -25,4 +25,4 @@ static void __init np27g_setup(void)
 	/* TODO: add PCI IRQ map */
 }
 
-MIPS_MACHINE(MACH_ADM5120_NP27G, "Compex NetPassage 27G", np27g_setup);
+MIPS_MACHINE(MACH_ADM5120_NP27G, "NP27G", "Compex NetPassage 27G", np27g_setup);

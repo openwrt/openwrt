@@ -18,6 +18,5 @@ static void __init easy5120pata_setup(void)
 	adm5120_add_device_switch(6, NULL);
 }
 
-MIPS_MACHINE(MACH_ADM5120_EASY5120PATA,
-		"Infineon EASY 5120P-ATA Reference Board",
-		easy5120pata_setup);
+MIPS_MACHINE(MACH_ADM5120_EASY5120PATA, "EASY5120P-ATA",
+	     "Infineon EASY 5120P-ATA Reference Board", easy5120pata_setup);

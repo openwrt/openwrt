@@ -32,4 +32,5 @@ static void __init br6104k_setup(void)
 					br6104k_gpio_leds);
 }
 
-MIPS_MACHINE(MACH_ADM5120_BR6104K, "Edimax BR-6104K", br6104k_setup);
+MIPS_MACHINE(MACH_ADM5120_BR6104K, "BR-6104K", "Edimax BR-6104K",
+	     br6104k_setup);

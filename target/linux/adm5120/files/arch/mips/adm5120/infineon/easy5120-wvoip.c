@@ -20,6 +20,5 @@ static void __init easy5120wvoip_setup(void)
 	/* TODO: setup PCI IRQ map */
 }
 
-MIPS_MACHINE(MACH_ADM5120_EASY5120WVOIP,
-		"Infineon EASY 5120-WVoIP Reference Board",
-		easy5120wvoip_setup);
+MIPS_MACHINE(MACH_ADM5120_EASY5120WVOIP, "EASY5120WVoIP",
+	     "Infineon EASY 5120-WVoIP Reference Board", easy5120wvoip_setup);

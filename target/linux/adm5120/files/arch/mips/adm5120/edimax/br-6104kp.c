@@ -35,4 +35,5 @@ static void __init br6104kp_setup(void)
 	adm5120_add_device_usb();
 }
 
-MIPS_MACHINE(MACH_ADM5120_BR6104KP, "Edimax BR-6104KP", br6104kp_setup);
+MIPS_MACHINE(MACH_ADM5120_BR6104KP, "BR-6104KP", "Edimax BR-6104KP",
+	     br6104kp_setup);

@@ -17,4 +17,5 @@ static void __init p335_setup(void)
 	adm5120_add_device_usb();
 }
 
-MIPS_MACHINE(MACH_ADM5120_P335, "ZyXEL Prestige 335/335WT", p335_setup);
+MIPS_MACHINE(MACH_ADM5120_P335, "P-335", "ZyXEL Prestige 335/335WT",
+	     p335_setup);
