@@ -71,5 +71,5 @@ static void __init osbridge_5gxi_setup(void)
 				osbridge_5gxi_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_ADM5120_5GXI, "OSBRiDGE 5GXi/5XLi board",
+MIPS_MACHINE(MACH_ADM5120_5GXI, "5GXi", "OSBRiDGE 5GXi/5XLi board",
 	     osbridge_5gxi_setup);

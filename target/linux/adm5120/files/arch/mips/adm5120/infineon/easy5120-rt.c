@@ -44,6 +44,5 @@ static void __init easy5120_rt_setup(void)
 				easy5120_rt_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_ADM5120_EASY5120RT,
-		"Infineon EASY 5120-RT Reference Board",
-		easy5120_rt_setup);
+MIPS_MACHINE(MACH_ADM5120_EASY5120RT, "EASY5120-RT",
+	     "Infineon EASY 5120-RT Reference Board", easy5120_rt_setup);

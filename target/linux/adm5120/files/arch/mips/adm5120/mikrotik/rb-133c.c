@@ -33,4 +33,5 @@ static void __init rb133c_setup(void)
 					rb133c_gpio_leds);
 }
 
-MIPS_MACHINE(MACH_ADM5120_RB_133C, "Mikrotik RouterBOARD 133C", rb133c_setup);
+MIPS_MACHINE(MACH_ADM5120_RB_133C, "133C", "Mikrotik RouterBOARD 133C",
+	     rb133c_setup);

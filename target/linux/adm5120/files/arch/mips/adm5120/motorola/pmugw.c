@@ -96,6 +96,5 @@ void __init pmugw_setup(void)
 	adm5120_add_device_switch(5, pmugw_vlans);
 }
 
-MIPS_MACHINE(MACH_ADM5120_PMUGW,
-		"Motorola Powerline MU Gateway",
-		pmugw_setup);
+MIPS_MACHINE(MACH_ADM5120_PMUGW, "PMUGW", "Motorola Powerline MU Gateway",
+	     pmugw_setup);

@@ -79,7 +79,7 @@ static void __init wp54_setup(void)
 	adm5120_pci_set_irq_map(ARRAY_SIZE(wp54_pci_irqs), wp54_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_ADM5120_WP54, "Compex WP54 family", wp54_setup);
+MIPS_MACHINE(MACH_ADM5120_WP54, "WP54", "Compex WP54 family", wp54_setup);
 
 static void __init wp54_wrt_setup(void)
 {
@@ -91,4 +91,5 @@ static void __init wp54_wrt_setup(void)
 	wp54_setup();
 }
 
-MIPS_MACHINE(MACH_ADM5120_WP54G_WRT, "Compex WP54G-WRT", wp54_wrt_setup);
+MIPS_MACHINE(MACH_ADM5120_WP54G_WRT, "WP54G-WRT", "Compex WP54G-WRT",
+	     wp54_wrt_setup);

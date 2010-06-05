@@ -43,4 +43,5 @@ static void __init nfs101_setup(void)
 				nfs101_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_ADM5120_NFS101U, "Cellvision NFS-101U/101WU", nfs101_setup);
+MIPS_MACHINE(MACH_ADM5120_NFS101U, "NFS-101U", "Cellvision NFS-101U/101WU",
+	     nfs101_setup);

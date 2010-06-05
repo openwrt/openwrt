@@ -33,4 +33,5 @@ static void __init cas771_setup(void)
 	adm5120_pci_set_irq_map(ARRAY_SIZE(cas771_pci_irqs), cas771_pci_irqs);
 }
 
-MIPS_MACHINE(MACH_ADM5120_CAS771, "Cellvision CAS-771/771W", cas771_setup);
+MIPS_MACHINE(MACH_ADM5120_CAS771, "CAS-771", "Cellvision CAS-771/771W",
+	     cas771_setup);

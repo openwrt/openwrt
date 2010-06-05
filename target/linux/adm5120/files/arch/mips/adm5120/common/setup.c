@@ -107,7 +107,7 @@ static int __init adm5120_board_setup(void)
 {
 	adm5120_gpio_init();
 
-	mips_machine_setup(mips_machtype);
+	mips_machine_setup();
 
 	return 0;
 }
@@ -122,5 +122,5 @@ static void __init adm5120_generic_board_setup(void)
 	adm5120_add_device_switch(6, NULL);
 }
 
-MIPS_MACHINE(MACH_ADM5120_GENERIC, "Generic ADM5120 board",
-		adm5120_generic_board_setup);
+MIPS_MACHINE(MACH_ADM5120_GENERIC, "Generic", "Generic ADM5120 board",
+	     adm5120_generic_board_setup);
