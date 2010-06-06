@@ -596,6 +596,10 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WZRHPG300NH,$(1))
 endef
 
+define Image/Build/Profile/Minimal
+	$(call Image/Build/Profile/Default,$(1))
+endef
+
 define Image/Build/Profile/Madwifi
 	$(call Image/Build/Profile/UBNTRS,$(1))
 	$(call Image/Build/Profile/UBNTRSPRO,$(1))
