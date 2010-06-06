@@ -61,6 +61,12 @@ define Image/Build/CyberTAN
 		$(STAGING_DIR_HOST)/bin/addpattern -p $(3) -o $(BIN_DIR)/openwrt-$(2)-$(4)-code.bin
 endef
 
+define Image/Build/Titan
+	$(STAGING_DIR_HOST)/bin/mktitanimg -o $(BIN_DIR)/openwrt-$(2)-$(4)-code.bin -i $(KDIR)/loader.bin $(KDIR)/root.$(1) -a 0x10000 0x10000 -h 2  -p 0x4C575943 -s 0x0b010000
+	$(STAGING_DIR_HOST)/bin/mktitanimg -o $(BIN_DIR)/openwrt-$(2)-na-$(4)-code.bin -i $(KDIR)/loader.bin $(KDIR)/root.$(1) -a 0x10000 0x10000 -h 2  -p 0x4D575943 -s 0x0b010000
+endef
+
+
 #define Image/Build/sErCoMm
 #	cat sercomm/adam2.bin "$(BIN_DIR)/$(IMG_PREFIX)-$(1).bin" > "$(KDIR)/dgfw.tmp"
 #	dd if=sercomm/$(2) of="$(KDIR)/dgfw.tmp" bs=$$$$((0x3e0000 - 80)) seek=1 conv=notrunc
@@ -97,6 +103,7 @@ define Image/Build
 #	$(call Image/Build/sErCoMm,$(1),dg834,$(1))
 #	$(call Image/Build/sErCoMm,$(1),jdr454wb,$(1))
 	$(call Image/Build/EVA,$(1),EVA)
+	$(call Image/Build/Titan,$(1),Titan,Titan,$(1))
 endef
 
 $(eval $(call BuildImage))
