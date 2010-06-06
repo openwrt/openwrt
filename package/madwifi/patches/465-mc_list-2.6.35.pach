@@ -1,0 +1,40 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -4466,7 +4466,11 @@ ath_merge_mcast(struct ath_softc *sc, u_
+ {
+ 	struct ieee80211com *ic = &sc->sc_ic;
+ 	struct ieee80211vap *vap;
++	#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35) 
++	struct netdev_hw_addr *ha; 
++	#else
+ 	struct dev_mc_list *mc;
++	#endif
+ 	u_int32_t val;
+ 	u_int8_t pos;
+ 
+@@ -4474,6 +4478,17 @@ ath_merge_mcast(struct ath_softc *sc, u_
+ 	/* XXX locking */
+ 	TAILQ_FOREACH(vap, &ic->ic_vaps, iv_next) {
+ 		struct net_device *dev = vap->iv_dev;
++		#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
++		netdev_for_each_mc_addr(ha, dev) { 
++			/* calculate XOR of eight 6-bit values */
++			val = LE_READ_4(ha->addr + 0);
++			pos = (val >> 18) ^ (val >> 12) ^ (val >> 6) ^ val;
++			val = LE_READ_4(ha->addr + 3);
++			pos ^= (val >> 18) ^ (val >> 12) ^ (val >> 6) ^ val;
++			pos &= 0x3f;
++			mfilt[pos / 32] |= (1 << (pos % 32));
++		}
++		#else
+ 		for (mc = dev->mc_list; mc; mc = mc->next) {
+ 			/* calculate XOR of eight 6-bit values */
+ 			val = LE_READ_4(mc->dmi_addr + 0);
+@@ -4483,6 +4498,7 @@ ath_merge_mcast(struct ath_softc *sc, u_
+ 			pos &= 0x3f;
+ 			mfilt[pos / 32] |= (1 << (pos % 32));
+ 		}
++		#endif 
+ 	}
+ }
+ 
