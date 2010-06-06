@@ -45,6 +45,7 @@ define Host/Compile
 	$(call cc,wrt400n cyg_crc32)
 	$(call cc,wndr3700)
 	$(call cc,mkdniimg)
+	$(call cc,mktitanimg)
 endef
 
 define Host/Install
