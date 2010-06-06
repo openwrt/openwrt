@@ -208,7 +208,7 @@
  	} else if (strstr(prid, "DG834")) {
  		ar7_led_data.num_leds = ARRAY_SIZE(dg834g_leds);
  		ar7_led_data.leds = dg834g_leds;
-+	} else if (strstr(prid, "CYWM")) {
++	} else if (strstr(prid, "CYWM") || strstr(prid, "CYWL")) {
 +		ar7_led_data.num_leds = ARRAY_SIZE(titan_leds);
 +		ar7_led_data.leds = titan_leds;
  	}
