@@ -5,12 +5,12 @@
 # See /LICENSE for more information.
 #
 
-define Profile/DefaultNoWifi
-	NAME:=Default Profile (no WiFi)
+define Profile/Minimal
+	NAME:=Minimal Profile (no drivers)
 	PACKAGES:=
 endef
 
-define Profile/DefaultNoWifi/Description
-	Default package set compatible with most boards.
+define Profile/Minimal/Description
+	Minimal package set compatible with most boards.
 endef
-$(eval $(call Profile,DefaultNoWifi))
+$(eval $(call Profile,Minimal))
