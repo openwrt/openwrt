@@ -601,7 +601,7 @@
  			dev->checkpointBlockList[i] = -1;
  	}
  
-@@ -191,18 +185,17 @@ int yaffs_GetCheckpointSum(yaffs_Device 
+@@ -191,18 +185,17 @@ int yaffs_GetCheckpointSum(yaffs_Device
  
  static int yaffs_CheckpointFlushBuffer(yaffs_Device *dev)
  {
@@ -926,7 +926,7 @@
  {
  	unsigned char cDelta;	/* column parity delta */
  	unsigned lDelta;	/* line parity delta */
-@@ -294,8 +292,7 @@ int yaffs_ECCCorrectOther(unsigned char 
+@@ -294,8 +292,7 @@ int yaffs_ECCCorrectOther(unsigned char
  		return 0; /* no error */
  
  	if (lDelta == ~lDeltaPrime &&
@@ -936,7 +936,7 @@
  		/* Single bit (recoverable) error in data */
  
  		bit = 0;
-@@ -307,7 +304,7 @@ int yaffs_ECCCorrectOther(unsigned char 
+@@ -307,7 +304,7 @@ int yaffs_ECCCorrectOther(unsigned char
  		if (cDelta & 0x02)
  			bit |= 0x01;
  
@@ -945,7 +945,7 @@
  			return -1;
  
  		data[lDelta] ^= (1 << bit);
-@@ -316,7 +313,7 @@ int yaffs_ECCCorrectOther(unsigned char 
+@@ -316,7 +313,7 @@ int yaffs_ECCCorrectOther(unsigned char
  	}
  
  	if ((yaffs_CountBits32(lDelta) + yaffs_CountBits32(lDeltaPrime) +
@@ -954,7 +954,7 @@
  		/* Reccoverable error in ecc */
  
  		*read_ecc = *test_ecc;
-@@ -326,6 +323,4 @@ int yaffs_ECCCorrectOther(unsigned char 
+@@ -326,6 +323,4 @@ int yaffs_ECCCorrectOther(unsigned char
  	/* Unrecoverable error */
  
  	return -1;
@@ -1398,7 +1398,7 @@
  {
  	unsigned char *alias;
  	int ret;
-@@ -329,7 +395,7 @@ static int yaffs_readlink(struct dentry 
+@@ -329,7 +395,7 @@ static int yaffs_readlink(struct dentry
  	return ret;
  }
  
@@ -1560,7 +1560,7 @@
  static int yaffs_file_flush(struct file *file, fl_owner_t id)
  #else
  static int yaffs_file_flush(struct file *file)
-@@ -513,8 +579,8 @@ static int yaffs_file_flush(struct file 
+@@ -513,8 +579,8 @@ static int yaffs_file_flush(struct file
  	yaffs_Device *dev = obj->myDev;
  
  	T(YAFFS_TRACE_OS,
@@ -1571,7 +1571,7 @@
  
  	yaffs_GrossLock(dev);
  
-@@ -535,15 +601,15 @@ static int yaffs_readpage_nolock(struct 
+@@ -535,15 +601,15 @@ static int yaffs_readpage_nolock(struct
  
  	yaffs_Device *dev;
  
@@ -1591,7 +1591,7 @@
  	BUG_ON(!PageLocked(pg));
  #else
  	if (!PageLocked(pg))
-@@ -555,9 +621,9 @@ static int yaffs_readpage_nolock(struct 
+@@ -555,9 +621,9 @@ static int yaffs_readpage_nolock(struct
  
  	yaffs_GrossLock(dev);
  
@@ -1604,7 +1604,7 @@
  
  	yaffs_GrossUnlock(dev);
  
-@@ -575,7 +641,7 @@ static int yaffs_readpage_nolock(struct 
+@@ -575,7 +641,7 @@ static int yaffs_readpage_nolock(struct
  	flush_dcache_page(pg);
  	kunmap(pg);
  
@@ -3193,7 +3193,7 @@
  		if (n < step) {
  			n++;
  			continue;
-@@ -2119,7 +2356,7 @@ static int yaffs_proc_write(struct file 
+@@ -2119,7 +2356,7 @@ static int yaffs_proc_write(struct file
  	char *end;
  	char *mask_name;
  	const char *x;
@@ -3202,7 +3202,7 @@
  	int i;
  	int done = 0;
  	int add, len = 0;
-@@ -2129,9 +2366,8 @@ static int yaffs_proc_write(struct file 
+@@ -2129,9 +2366,8 @@ static int yaffs_proc_write(struct file
  
  	while (!done && (pos < count)) {
  		done = 1;
@@ -3213,7 +3213,7 @@
  
  		switch (buf[pos]) {
  		case '+':
-@@ -2148,20 +2384,21 @@ static int yaffs_proc_write(struct file 
+@@ -2148,20 +2384,21 @@ static int yaffs_proc_write(struct file
  		mask_name = NULL;
  
  		mask_bitfield = simple_strtoul(buf + pos, &end, 0);
@@ -3240,7 +3240,7 @@
  					mask_name = mask_flags[i].mask_name;
  					mask_bitfield = mask_flags[i].mask_bitfield;
  					done = 0;
-@@ -2172,7 +2409,7 @@ static int yaffs_proc_write(struct file 
+@@ -2172,7 +2409,7 @@ static int yaffs_proc_write(struct file
  
  		if (mask_name != NULL) {
  			done = 0;
@@ -3249,7 +3249,7 @@
  			case '-':
  				rg &= ~mask_bitfield;
  				break;
-@@ -2191,13 +2428,13 @@ static int yaffs_proc_write(struct file 
+@@ -2191,13 +2428,13 @@ static int yaffs_proc_write(struct file
  
  	yaffs_traceMask = rg | YAFFS_TRACE_ALWAYS;
  
@@ -5691,7 +5691,7 @@
  {
  	/* Get the real object in case we were fed a hard link as an equivalent object */
  	equivalentObject = yaffs_GetEquivalentObject(equivalentObject);
-@@ -2363,33 +2396,31 @@ yaffs_Object *yaffs_Link(yaffs_Object * 
+@@ -2363,33 +2396,31 @@ yaffs_Object *yaffs_Link(yaffs_Object *
  
  }
  
@@ -7622,7 +7622,7 @@
  	int nToCopy;
  	int n = nBytes;
  	int nDone = 0;
-@@ -4600,27 +4665,26 @@ int yaffs_ReadDataFromFile(yaffs_Object 
+@@ -4600,27 +4665,26 @@ int yaffs_ReadDataFromFile(yaffs_Object
  	dev = in->myDev;
  
  	while (n > 0) {
@@ -7657,7 +7657,7 @@
  			if (dev->nShortOpCaches > 0) {
  
  				/* If we can't find the data in the cache, then load it up. */
-@@ -4641,14 +4705,9 @@ int yaffs_ReadDataFromFile(yaffs_Object 
+@@ -4641,14 +4705,9 @@ int yaffs_ReadDataFromFile(yaffs_Object
  
  				cache->locked = 1;
  
@@ -7673,7 +7673,7 @@
  				cache->locked = 0;
  			} else {
  				/* Read into the local buffer then copy..*/
-@@ -4657,41 +4716,19 @@ int yaffs_ReadDataFromFile(yaffs_Object 
+@@ -4657,41 +4716,19 @@ int yaffs_ReadDataFromFile(yaffs_Object
  				    yaffs_GetTempBuffer(dev, __LINE__);
  				yaffs_ReadChunkDataFromObject(in, chunk,
  							      localBuffer);
@@ -7718,7 +7718,7 @@
  		}
  
  		n -= nToCopy;
-@@ -4704,28 +4741,37 @@ int yaffs_ReadDataFromFile(yaffs_Object 
+@@ -4704,28 +4741,37 @@ int yaffs_ReadDataFromFile(yaffs_Object
  	return nDone;
  }
  
@@ -7923,7 +7923,7 @@
  	int newFullChunks;
  
  	yaffs_Device *dev = in->myDev;
-@@ -4955,13 +4981,11 @@ int yaffs_ResizeFile(yaffs_Object * in, 
+@@ -4955,13 +4981,11 @@ int yaffs_ResizeFile(yaffs_Object * in,
  
  	yaffs_CheckGarbageCollection(dev);
  
@@ -7941,7 +7941,7 @@
  
  	if (newSize < oldFileSize) {
  
-@@ -4994,21 +5018,20 @@ int yaffs_ResizeFile(yaffs_Object * in, 
+@@ -4994,21 +5018,20 @@ int yaffs_ResizeFile(yaffs_Object * in,
  	}
  
  
@@ -7968,7 +7968,7 @@
  {
  	obj = yaffs_GetEquivalentObject(obj);
  
-@@ -5024,7 +5047,7 @@ loff_t yaffs_GetFileSize(yaffs_Object * 
+@@ -5024,7 +5047,7 @@ loff_t yaffs_GetFileSize(yaffs_Object *
  
  
  
@@ -9789,7 +9789,7 @@
  {
  	int init_failed = 0;
  	unsigned x;
-@@ -7040,6 +7126,8 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7040,6 +7126,8 @@ int yaffs_GutsInitialise(yaffs_Device *
  	dev->chunkOffset = 0;
  	dev->nFreeChunks = 0;
  
@@ -9798,7 +9798,7 @@
  	if (dev->startBlock == 0) {
  		dev->internalStartBlock = dev->startBlock + 1;
  		dev->internalEndBlock = dev->endBlock + 1;
-@@ -7049,18 +7137,18 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7049,18 +7137,18 @@ int yaffs_GutsInitialise(yaffs_Device *
  
  	/* Check geometry parameters. */
  
@@ -9823,7 +9823,7 @@
  		return YAFFS_FAIL;
  	}
  
-@@ -7070,6 +7158,12 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7070,6 +7158,12 @@ int yaffs_GutsInitialise(yaffs_Device *
  		return YAFFS_FAIL;
  	}
  
@@ -9836,7 +9836,7 @@
  	/* Got the right mix of functions? */
  	if (!yaffs_CheckDevFunctions(dev)) {
  		/* Function missing */
-@@ -7097,31 +7191,18 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7097,31 +7191,18 @@ int yaffs_GutsInitialise(yaffs_Device *
  
  	dev->isMounted = 1;
  
@@ -9875,7 +9875,7 @@
  
  	/*
  	 * Calculate chunkGroupBits.
-@@ -7133,16 +7214,15 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7133,16 +7214,15 @@ int yaffs_GutsInitialise(yaffs_Device *
  	bits = ShiftsGE(x);
  
  	/* Set up tnode width if wide tnodes are enabled. */
@@ -9896,7 +9896,7 @@
  		dev->tnodeWidth = 16;
  
  	dev->tnodeMask = (1<<dev->tnodeWidth)-1;
-@@ -7193,7 +7273,7 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7193,7 +7273,7 @@ int yaffs_GutsInitialise(yaffs_Device *
  	dev->hasPendingPrioritisedGCs = 1; /* Assume the worst for now, will get fixed on first GC */
  
  	/* Initialise temporary buffers and caches. */
@@ -9905,7 +9905,7 @@
  		init_failed = 1;
  
  	dev->srCache = NULL;
-@@ -7203,25 +7283,26 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7203,25 +7283,26 @@ int yaffs_GutsInitialise(yaffs_Device *
  	if (!init_failed &&
  	    dev->nShortOpCaches > 0) {
  		int i;
@@ -9940,7 +9940,7 @@
  			init_failed = 1;
  
  		dev->srLastUse = 0;
-@@ -7229,29 +7310,30 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7229,29 +7310,30 @@ int yaffs_GutsInitialise(yaffs_Device *
  
  	dev->cacheHits = 0;
  
@@ -9979,7 +9979,7 @@
  				T(YAFFS_TRACE_ALWAYS,
  				  (TSTR("yaffs: restored from checkpoint" TENDSTR)));
  			} else {
-@@ -7273,24 +7355,25 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7273,24 +7355,25 @@ int yaffs_GutsInitialise(yaffs_Device *
  				dev->nBackgroundDeletions = 0;
  				dev->oldestDirtySequence = 0;
  
@@ -10011,7 +10011,7 @@
  		/* Clean up the mess */
  		T(YAFFS_TRACE_TRACING,
  		  (TSTR("yaffs: yaffs_GutsInitialise() aborted.\n" TENDSTR)));
-@@ -7318,7 +7401,7 @@ int yaffs_GutsInitialise(yaffs_Device * 
+@@ -7318,7 +7401,7 @@ int yaffs_GutsInitialise(yaffs_Device *
  
  }
  
@@ -10710,7 +10710,7 @@
  {
  	if (etags) {
  		memset(etags, 0, sizeof(*etags));
-@@ -169,9 +169,9 @@ static int rettags(yaffs_ExtendedTags * 
+@@ -169,9 +169,9 @@ static int rettags(yaffs_ExtendedTags *
   * Returns YAFFS_OK or YAFFS_FAIL.
   */
  int nandmtd1_ReadChunkWithTagsFromNAND(yaffs_Device *dev,
@@ -11038,14 +11038,14 @@
 +			yaffs_UnpackTags2(tags, &pt);
 +		}
 +	}
- 
--	if(tags && retval == -EBADMSG && tags->eccResult == YAFFS_ECC_RESULT_NO_ERROR)
--		tags->eccResult = YAFFS_ECC_RESULT_UNFIXED;
++
 +	if (localData)
 +		yaffs_ReleaseTempBuffer(dev, data, __LINE__);
  
+-	if(tags && retval == -EBADMSG && tags->eccResult == YAFFS_ECC_RESULT_NO_ERROR)
 +	if (tags && retval == -EBADMSG && tags->eccResult == YAFFS_ECC_RESULT_NO_ERROR)
-+		tags->eccResult = YAFFS_ECC_RESULT_UNFIXED;
+ 		tags->eccResult = YAFFS_ECC_RESULT_UNFIXED;
+-
  	if (retval == 0)
  		return YAFFS_OK;
  	else
