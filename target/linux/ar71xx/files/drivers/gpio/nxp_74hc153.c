@@ -11,6 +11,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/gpio.h>
+#include <linux/slab.h>
 #include <linux/platform_device.h>
 #include <linux/nxp_74hc153.h>
 
