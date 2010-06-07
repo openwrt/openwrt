@@ -1,0 +1,37 @@
+--- a/fs/mini_fo/super.c
++++ b/fs/mini_fo/super.c
+@@ -84,6 +84,7 @@ mini_fo_write_inode(inode_t *inode, int
+ #endif /* defined(FIST_DEBUG) || defined(FIST_FILTER_SCA) */
+ 
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
+ STATIC void
+ mini_fo_put_inode(inode_t *inode)
+ {
+@@ -99,6 +100,7 @@ mini_fo_put_inode(inode_t *inode)
+ 	if (atomic_read(&inode->i_count) == 1)
+ 		inode->i_nlink = 0;
+ }
++#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26) */
+ 
+ 
+ #if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
+@@ -238,7 +240,7 @@ mini_fo_clear_inode(inode_t *inode)
+  * dies.
+  */
+ STATIC void
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26))
+ mini_fo_umount_begin(struct vfsmount *mnt, int flags)
+ {
+ 	struct vfsmount *hidden_mnt;
+@@ -290,7 +292,9 @@ struct super_operations mini_fo_sops =
+ #if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
+ 	write_inode:	mini_fo_write_inode,
+ #endif /* defined(FIST_DEBUG) || defined(FIST_FILTER_SCA) */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
+ 	put_inode:		mini_fo_put_inode,
++#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26) */
+ #if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
+ 	delete_inode:	mini_fo_delete_inode,
+ #endif /* defined(FIST_DEBUG) || defined(FIST_FILTER_SCA) */
