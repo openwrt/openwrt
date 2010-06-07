@@ -235,7 +235,7 @@ define KernelPackage/ipt-imq
   FILES:= \
 	$(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX) \
 	$(foreach mod,$(IPT_IMQ-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
-  AUTOLOAD:=$(call AutoLoad,45,$(notdir \
+  AUTOLOAD:=$(call AutoLoad,46,$(notdir \
 	imq \
 	$(IPT_IMQ-m) \
   ))
