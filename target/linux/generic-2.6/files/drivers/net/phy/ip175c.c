@@ -819,7 +819,7 @@ static int ip175c_reset(struct switch_dev *dev)
 	}
 
 	if (REG_SUPP(state->regs->MODE_REG)) {
-		err = setPhy(state, state->regs->MODE_REG, state->regs->RESET_VAL);
+		err = setPhy(state, state->regs->MODE_REG, state->regs->MODE_VAL);
 		if (err < 0)
 			return err;
 		err = getPhy(state, state->regs->MODE_REG);
