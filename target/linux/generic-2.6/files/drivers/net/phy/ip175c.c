@@ -1,5 +1,5 @@
 /*
- * swconfig-ip175c.c: Swconfig configuration for IC+ IP175C switch
+ * ip17xx.c: Swconfig configuration for IC+ IP17xx switch family
  *
  * Copyright (C) 2008 Patrick Horn <patrick.horn@gmail.com>
  * Copyright (C) 2008 Martin Mares <mj@ucw.cz>
@@ -31,7 +31,7 @@
 #define MAX_PORTS 9
 #undef DUMP_MII_IO
 
-typedef struct ip175c_reg {
+typedef struct ip17xx_reg {
 	u16 p;			// phy
 	u16 m;			// mii
 } reg;
@@ -41,7 +41,7 @@ typedef char bitnum;
 
 #define REG_SUPP(x) (((x).m != ((u16)-1)) && ((x).p != (u16)-1))
 
-struct ip175c_state;
+struct ip17xx_state;
 
 /*********** CONSTANTS ***********/
 struct register_mappings {
@@ -101,14 +101,14 @@ struct register_mappings {
 	bitnum SIMPLE_VLAN_REGISTERS;	// 175C has two vlans per register but 178C has only one.
 
 	// Pointers to functions which manipulate hardware state
-	int (*update_state)(struct ip175c_state *state);
-	int (*set_vlan_mode)(struct ip175c_state *state);
-	int (*reset)(struct ip175c_state *state);
+	int (*update_state)(struct ip17xx_state *state);
+	int (*set_vlan_mode)(struct ip17xx_state *state);
+	int (*reset)(struct ip17xx_state *state);
 };
 
-static int ip175c_update_state(struct ip175c_state *state);
-static int ip175c_set_vlan_mode(struct ip175c_state *state);
-static int ip175c_do_reset(struct ip175c_state *state);
+static int ip175c_update_state(struct ip17xx_state *state);
+static int ip175c_set_vlan_mode(struct ip17xx_state *state);
+static int ip175c_reset(struct ip17xx_state *state);
 
 static const struct register_mappings IP178C = {
 	.NAME = "IP178C",
@@ -154,7 +154,7 @@ static const struct register_mappings IP178C = {
 
 	.update_state = ip175c_update_state,
 	.set_vlan_mode = ip175c_set_vlan_mode,
-	.reset = ip175c_do_reset,
+	.reset = ip175c_reset,
 };
 
 static const struct register_mappings IP175C = {
@@ -201,7 +201,7 @@ static const struct register_mappings IP175C = {
 
 	.update_state = ip175c_update_state,
 	.set_vlan_mode = ip175c_set_vlan_mode,
-	.reset = ip175c_do_reset,
+	.reset = ip175c_reset,
 };
 
 static const struct register_mappings IP175A = {
@@ -249,13 +249,13 @@ static const struct register_mappings IP175A = {
 
 	.update_state = ip175c_update_state,
 	.set_vlan_mode = ip175c_set_vlan_mode,
-	.reset = ip175c_do_reset,
+	.reset = ip175c_reset,
 };
 
 
-static int ip175d_update_state(struct ip175c_state *state);
-static int ip175d_set_vlan_mode(struct ip175c_state *state);
-static int ip175d_reset(struct ip175c_state *state);
+static int ip175d_update_state(struct ip17xx_state *state);
+static int ip175d_set_vlan_mode(struct ip17xx_state *state);
+static int ip175d_reset(struct ip17xx_state *state);
 
 static const struct register_mappings IP175D = {
 	.NAME = "IP175D",
@@ -299,7 +299,7 @@ static const struct register_mappings IP175D = {
 	.reset = ip175d_reset,
 };
 
-struct ip175c_state {
+struct ip17xx_state {
 	struct switch_dev dev;
 	struct mii_bus *mii_bus;
 	bool registered;
@@ -324,32 +324,32 @@ struct ip175c_state {
 };
 
 
-static int ip_phy_read(struct ip175c_state *state, int port, int reg)
+static int ip_phy_read(struct ip17xx_state *state, int port, int reg)
 {
 	int val = mdiobus_read(state->mii_bus, port, reg);
 	if (val < 0)
-		pr_warning("IP175C: Unable to get MII register %d,%d: error %d\n", port, reg, -val);
+		pr_warning("IP17xx: Unable to get MII register %d,%d: error %d\n", port, reg, -val);
 #ifdef DUMP_MII_IO
 	else
-		pr_debug("IP175C: Read MII(%d,%d) -> %04x\n", port, reg, val);
+		pr_debug("IP17xx: Read MII(%d,%d) -> %04x\n", port, reg, val);
 #endif
 	return val;
 }
 
-static int ip_phy_write(struct ip175c_state *state, int port, int reg, u16 val)
+static int ip_phy_write(struct ip17xx_state *state, int port, int reg, u16 val)
 {
 	int err;
 
 #ifdef DUMP_MII_IO
-	pr_debug("IP175C: Write MII(%d,%d) <- %04x\n", port, reg, val);
+	pr_debug("IP17xx: Write MII(%d,%d) <- %04x\n", port, reg, val);
 #endif
 	err = mdiobus_write(state->mii_bus, port, reg, val);
 	if (err < 0)
-		pr_warning("IP175C: Unable to write MII register %d,%d: error %d\n", port, reg, -err);
+		pr_warning("IP17xx: Unable to write MII register %d,%d: error %d\n", port, reg, -err);
 	return err;
 }
 
-static int ip_phy_write_masked(struct ip175c_state *state, int port, int reg, unsigned int mask, unsigned int data)
+static int ip_phy_write_masked(struct ip17xx_state *state, int port, int reg, unsigned int mask, unsigned int data)
 {
 	int val = ip_phy_read(state, port, reg);
 	if (val < 0)
@@ -357,14 +357,14 @@ static int ip_phy_write_masked(struct ip175c_state *state, int port, int reg, un
 	return ip_phy_write(state, port, reg, (val & ~mask) | data);
 }
 
-static int getPhy(struct ip175c_state *state, reg mii)
+static int getPhy(struct ip17xx_state *state, reg mii)
 {
 	if (!REG_SUPP(mii))
 		return -EFAULT;
 	return ip_phy_read(state, mii.p, mii.m);
 }
 
-static int setPhy(struct ip175c_state *state, reg mii, u16 value)
+static int setPhy(struct ip17xx_state *state, reg mii, u16 value)
 {
 	int err;
 
@@ -413,7 +413,7 @@ static int setPhy(struct ip175c_state *state, reg mii, u16 value)
 	} while (0)
 
 
-static int get_model(struct ip175c_state *state)
+static int get_model(struct ip17xx_state *state)
 {
 	int id1, id2;
 	int oui_id, model_no, rev_no, chip_no;
@@ -423,7 +423,7 @@ static int get_model(struct ip175c_state *state)
 	oui_id = (id1 << 6) | ((id2 >> 10) & 0x3f);
 	model_no = (id2 >> 4) & 0x3f;
 	rev_no = id2 & 0xf;
-	pr_debug("IP175C: Identified oui=%06x model=%02x rev=%X\n", oui_id, model_no, rev_no);
+	pr_debug("IP17xx: Identified oui=%06x model=%02x rev=%X\n", oui_id, model_no, rev_no);
 
 	if (oui_id != 0x0090c3)  // No other oui_id should have reached us anyway
 		return -ENODEV;
@@ -441,7 +441,7 @@ static int get_model(struct ip175c_state *state)
 			state->regs = &IP178C;
 		} else {
 			chip_no = ip_phy_read(state, 20, 0);
-			pr_debug("IP175C: Chip ID register reads %04x\n", chip_no);
+			pr_debug("IP17xx: Chip ID register reads %04x\n", chip_no);
 			if (chip_no == 0x175d) {
 				state->regs = &IP175D;
 			} else {
@@ -449,7 +449,7 @@ static int get_model(struct ip175c_state *state)
 			}
 		}
 	} else {
-		pr_warning("IP175C: Found an unknown IC+ switch with model number %02x, revision %X.\n", model_no, rev_no);
+		pr_warning("IP17xx: Found an unknown IC+ switch with model number %02x, revision %X.\n", model_no, rev_no);
 		return -EPERM;
 	}
 	return 0;
@@ -458,7 +458,7 @@ static int get_model(struct ip175c_state *state)
 /*** Low-level functions for the older models ***/
 
 /** Only set vlan and router flags in the switch **/
-static int ip175c_set_flags(struct ip175c_state *state)
+static int ip175c_set_flags(struct ip17xx_state *state)
 {
 	int val;
 
@@ -496,7 +496,7 @@ static int ip175c_set_flags(struct ip175c_state *state)
 }
 
 /** Set all VLAN and port state.  Usually you should call "correct_vlan_state" first. **/
-static int ip175c_set_state(struct ip175c_state *state)
+static int ip175c_set_state(struct ip17xx_state *state)
 {
 	int j;
 	int i;
@@ -575,7 +575,7 @@ static int ip175c_set_state(struct ip175c_state *state)
  *  Uses only the VLAN port mask and the add tag mask to generate the other fields:
  *  which ports are part of the same VLAN, removing vlan tags, and VLAN tag ids.
  */
-static void ip175c_correct_vlan_state(struct ip175c_state *state)
+static void ip175c_correct_vlan_state(struct ip17xx_state *state)
 {
 	int i, j;
 	state->num_vlans = 0;
@@ -600,18 +600,18 @@ static void ip175c_correct_vlan_state(struct ip175c_state *state)
 	}
 }
 
-static int ip175c_update_state(struct ip175c_state *state)
+static int ip175c_update_state(struct ip17xx_state *state)
 {
 	ip175c_correct_vlan_state(state);
 	return ip175c_set_state(state);
 }
 
-static int ip175c_set_vlan_mode(struct ip175c_state *state)
+static int ip175c_set_vlan_mode(struct ip17xx_state *state)
 {
 	return ip175c_update_state(state);
 }
 
-static int ip175c_do_reset(struct ip175c_state *state)
+static int ip175c_reset(struct ip17xx_state *state)
 {
 	int err;
 
@@ -629,7 +629,7 @@ static int ip175c_do_reset(struct ip175c_state *state)
 
 /*** Low-level functions for IP175D ***/
 
-static int ip175d_update_state(struct ip175c_state *state)
+static int ip175d_update_state(struct ip17xx_state *state)
 {
 	unsigned int filter_mask = 0;
 	unsigned int ports[16], add[16], rem[16];
@@ -678,7 +678,7 @@ static int ip175d_update_state(struct ip175c_state *state)
 	return (err ? -EIO : 0);
 }
 
-static int ip175d_set_vlan_mode(struct ip175c_state *state)
+static int ip175d_set_vlan_mode(struct ip17xx_state *state)
 {
 	int i;
 	int err = 0;
@@ -713,7 +713,7 @@ static int ip175d_set_vlan_mode(struct ip175c_state *state)
 	return (err ? -EIO : 0);
 }
 
-static int ip175d_reset(struct ip175c_state *state)
+static int ip175d_reset(struct ip17xx_state *state)
 {
 	int err = 0;
 
@@ -731,15 +731,15 @@ static int ip175d_reset(struct ip175c_state *state)
 
 /*** High-level functions ***/
 
-static int ip175c_get_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_get_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 
 	val->value.i = state->vlan_enabled;
 	return 0;
 }
 
-static void ip175c_reset_vlan_config(struct ip175c_state *state)
+static void ip17xx_reset_vlan_config(struct ip17xx_state *state)
 {
 	int i;
 
@@ -753,9 +753,9 @@ static void ip175c_reset_vlan_config(struct ip175c_state *state)
 		state->ports[i].pvid = 0;
 }
 
-static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_set_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int enable;
 
 	enable = val->value.i;
@@ -766,14 +766,14 @@ static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_at
 	state->vlan_enabled = enable;
 
 	// Otherwise, if we are switching state, set fields to a known default.
-	ip175c_reset_vlan_config(state);
+	ip17xx_reset_vlan_config(state);
 
 	return state->regs->set_vlan_mode(state);
 }
 
-static int ip175c_get_ports(struct switch_dev *dev, struct switch_val *val)
+static int ip17xx_get_ports(struct switch_dev *dev, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int b;
 	int ind;
 	unsigned int ports;
@@ -799,9 +799,9 @@ static int ip175c_get_ports(struct switch_dev *dev, struct switch_val *val)
 	return 0;
 }
 
-static int ip175c_set_ports(struct switch_dev *dev, struct switch_val *val)
+static int ip17xx_set_ports(struct switch_dev *dev, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int i;
 
 	if (val->port_vlan >= dev->vlans || val->port_vlan < 0)
@@ -823,9 +823,9 @@ static int ip175c_set_ports(struct switch_dev *dev, struct switch_val *val)
 	return state->regs->update_state(state);
 }
 
-static int ip175c_apply(struct switch_dev *dev)
+static int ip17xx_apply(struct switch_dev *dev)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 
 	if (REG_SUPP(state->regs->MII_REGISTER_EN)) {
 		int val = getPhy(state, state->regs->MII_REGISTER_EN);
@@ -838,9 +838,9 @@ static int ip175c_apply(struct switch_dev *dev)
 	return 0;
 }
 
-static int ip175c_reset(struct switch_dev *dev)
+static int ip17xx_reset(struct switch_dev *dev)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int i, err;
 
 	if (REG_SUPP(state->regs->RESET_REG)) {
@@ -866,14 +866,14 @@ static int ip175c_reset(struct switch_dev *dev)
 
 	state->router_mode = 0;
 	state->vlan_enabled = 0;
-	ip175c_reset_vlan_config(state);
+	ip17xx_reset_vlan_config(state);
 
 	return state->regs->reset(state);
 }
 
-static int ip175c_get_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_get_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 
 	if (state->add_tag & (1<<val->port_vlan)) {
 		if (state->remove_tag & (1<<val->port_vlan))
@@ -889,9 +889,9 @@ static int ip175c_get_tagged(struct switch_dev *dev, const struct switch_attr *a
 	return 0;
 }
 
-static int ip175c_set_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_set_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 
 	state->add_tag &= ~(1<<val->port_vlan);
 	state->remove_tag &= ~(1<<val->port_vlan);
@@ -905,18 +905,18 @@ static int ip175c_set_tagged(struct switch_dev *dev, const struct switch_attr *a
 }
 
 /** Get the current phy address */
-static int ip175c_get_phy(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_get_phy(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 
 	val->value.i = state->proc_mii.p;
 	return 0;
 }
 
 /** Set a new phy address for low level access to registers */
-static int ip175c_set_phy(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_set_phy(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int new_reg = val->value.i;
 
 	if (new_reg < 0 || new_reg > 31)
@@ -927,18 +927,18 @@ static int ip175c_set_phy(struct switch_dev *dev, const struct switch_attr *attr
 }
 
 /** Get the current register number */
-static int ip175c_get_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_get_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 
 	val->value.i = state->proc_mii.m;
 	return 0;
 }
 
 /** Set a new register address for low level access to registers */
-static int ip175c_set_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_set_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int new_reg = val->value.i;
 
 	if (new_reg < 0 || new_reg > 31)
@@ -949,9 +949,9 @@ static int ip175c_set_reg(struct switch_dev *dev, const struct switch_attr *attr
 }
 
 /** Get the register content of state->proc_mii */
-static int ip175c_get_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_get_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int retval = -EINVAL;
 	if (REG_SUPP(state->proc_mii))
 		retval = getPhy(state, state->proc_mii);
@@ -965,9 +965,9 @@ static int ip175c_get_val(struct switch_dev *dev, const struct switch_attr *attr
 }
 
 /** Write a value to the register defined by phy/reg above */
-static int ip175c_set_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_set_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int myval, err = -EINVAL;
 
 	myval = val->value.i;
@@ -977,16 +977,16 @@ static int ip175c_set_val(struct switch_dev *dev, const struct switch_attr *attr
 	return err;
 }
 
-static int ip175c_read_name(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_read_name(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	val->value.s = state->regs->NAME; // Just a const pointer, won't be freed by swconfig.
 	return 0;
 }
 
-static int ip175c_get_tag(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_get_tag(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int vlan = val->port_vlan;
 
 	if (vlan < 0 || vlan >= MAX_VLANS)
@@ -996,9 +996,9 @@ static int ip175c_get_tag(struct switch_dev *dev, const struct switch_attr *attr
 	return 0;
 }
 
-static int ip175c_set_tag(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_set_tag(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int vlan = val->port_vlan;
 	int tag = val->value.i;
 
@@ -1012,9 +1012,9 @@ static int ip175c_set_tag(struct switch_dev *dev, const struct switch_attr *attr
 	return state->regs->update_state(state);
 }
 
-static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_set_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int nr = val->port_vlan;
 	int ctrl;
 	int autoneg;
@@ -1049,9 +1049,9 @@ static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_att
 	return ip_phy_write(state, nr, 0, ctrl);
 }
 
-static int ip175c_get_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_get_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int nr = val->port_vlan;
 	int speed, status;
 
@@ -1076,9 +1076,9 @@ static int ip175c_get_port_speed(struct switch_dev *dev, const struct switch_att
 	return 0;
 }
 
-static int ip175c_get_port_status(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int ip17xx_get_port_status(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 	int ctrl, speed, status;
 	int nr = val->port_vlan;
 	int len;
@@ -1120,17 +1120,17 @@ static int ip175c_get_port_status(struct switch_dev *dev, const struct switch_at
 	return 0;
 }
 
-static int ip175c_get_pvid(struct switch_dev *dev, int port, int *val)
+static int ip17xx_get_pvid(struct switch_dev *dev, int port, int *val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 
 	*val = state->ports[port].pvid;
 	return 0;
 }
 
-static int ip175c_set_pvid(struct switch_dev *dev, int port, int val)
+static int ip17xx_set_pvid(struct switch_dev *dev, int port, int val)
 {
-	struct ip175c_state *state = dev->priv;
+	struct ip17xx_state *state = dev->priv;
 
 	if (val < 0 || val >= MAX_VLANS)
 		return -EINVAL;
@@ -1141,110 +1141,110 @@ static int ip175c_set_pvid(struct switch_dev *dev, int port, int val)
 
 
 enum Ports {
-	IP175C_PORT_STATUS,
-	IP175C_PORT_LINK,
-	IP175C_PORT_TAGGED,
-	IP175C_PORT_PVID,
+	IP17XX_PORT_STATUS,
+	IP17XX_PORT_LINK,
+	IP17XX_PORT_TAGGED,
+	IP17XX_PORT_PVID,
 };
 
 enum Globals {
-	IP175C_ENABLE_VLAN,
-	IP175C_GET_NAME,
-	IP175C_REGISTER_PHY,
-	IP175C_REGISTER_MII,
-	IP175C_REGISTER_VALUE,
-	IP175C_REGISTER_ERRNO,
+	IP17XX_ENABLE_VLAN,
+	IP17XX_GET_NAME,
+	IP17XX_REGISTER_PHY,
+	IP17XX_REGISTER_MII,
+	IP17XX_REGISTER_VALUE,
+	IP17XX_REGISTER_ERRNO,
 };
 
 enum Vlans {
-	IP175C_VLAN_TAG,
+	IP17XX_VLAN_TAG,
 };
 
-static const struct switch_attr ip175c_global[] = {
-	[IP175C_ENABLE_VLAN] = {
-		.id = IP175C_ENABLE_VLAN,
+static const struct switch_attr ip17xx_global[] = {
+	[IP17XX_ENABLE_VLAN] = {
+		.id = IP17XX_ENABLE_VLAN,
 		.type = SWITCH_TYPE_INT,
 		.name  = "enable_vlan",
 		.description = "Flag to enable or disable VLANs and tagging",
-		.get  = ip175c_get_enable_vlan,
-		.set = ip175c_set_enable_vlan,
+		.get  = ip17xx_get_enable_vlan,
+		.set = ip17xx_set_enable_vlan,
 	},
-	[IP175C_GET_NAME] = {
-		.id = IP175C_GET_NAME,
+	[IP17XX_GET_NAME] = {
+		.id = IP17XX_GET_NAME,
 		.type = SWITCH_TYPE_STRING,
 		.description = "Returns the type of IC+ chip.",
 		.name  = "name",
-		.get  = ip175c_read_name,
+		.get  = ip17xx_read_name,
 		.set = NULL,
 	},
 	/* jal: added for low level debugging etc. */
-	[IP175C_REGISTER_PHY] = {
-		.id = IP175C_REGISTER_PHY,
+	[IP17XX_REGISTER_PHY] = {
+		.id = IP17XX_REGISTER_PHY,
 		.type = SWITCH_TYPE_INT,
 		.description = "Direct register access: set PHY (0-4, or 29,30,31)",
 		.name  = "phy",
-		.get  = ip175c_get_phy,
-		.set = ip175c_set_phy,
+		.get  = ip17xx_get_phy,
+		.set = ip17xx_set_phy,
 	},
-	[IP175C_REGISTER_MII] = {
-		.id = IP175C_REGISTER_MII,
+	[IP17XX_REGISTER_MII] = {
+		.id = IP17XX_REGISTER_MII,
 		.type = SWITCH_TYPE_INT,
 		.description = "Direct register access: set MII register number (0-31)",
 		.name  = "reg",
-		.get  = ip175c_get_reg,
-		.set = ip175c_set_reg,
+		.get  = ip17xx_get_reg,
+		.set = ip17xx_set_reg,
 	},
-	[IP175C_REGISTER_VALUE] = {
-		.id = IP175C_REGISTER_VALUE,
+	[IP17XX_REGISTER_VALUE] = {
+		.id = IP17XX_REGISTER_VALUE,
 		.type = SWITCH_TYPE_INT,
 		.description = "Direct register access: read/write to register (0-65535)",
 		.name  = "val",
-		.get  = ip175c_get_val,
-		.set = ip175c_set_val,
+		.get  = ip17xx_get_val,
+		.set = ip17xx_set_val,
 	},
 };
 
-static const struct switch_attr ip175c_vlan[] = {
-	[IP175C_VLAN_TAG] = {
-		.id = IP175C_VLAN_TAG,
+static const struct switch_attr ip17xx_vlan[] = {
+	[IP17XX_VLAN_TAG] = {
+		.id = IP17XX_VLAN_TAG,
 		.type = SWITCH_TYPE_INT,
 		.description = "VLAN tag (0-4095) [IP175D only]",
 		.name = "tag",
-		.get = ip175c_get_tag,
-		.set = ip175c_set_tag,
+		.get = ip17xx_get_tag,
+		.set = ip17xx_set_tag,
 	}
 };
 
-static const struct switch_attr ip175c_port[] = {
-	[IP175C_PORT_STATUS] = {
-		.id = IP175C_PORT_STATUS,
+static const struct switch_attr ip17xx_port[] = {
+	[IP17XX_PORT_STATUS] = {
+		.id = IP17XX_PORT_STATUS,
 		.type = SWITCH_TYPE_STRING,
 		.description = "Returns Detailed port status",
 		.name  = "status",
-		.get  = ip175c_get_port_status,
+		.get  = ip17xx_get_port_status,
 		.set = NULL,
 	},
-	[IP175C_PORT_LINK] = {
-		.id = IP175C_PORT_LINK,
+	[IP17XX_PORT_LINK] = {
+		.id = IP17XX_PORT_LINK,
 		.type = SWITCH_TYPE_INT,
 		.description = "Link speed. Can write 0 for auto-negotiate, or 10 or 100",
 		.name  = "link",
-		.get  = ip175c_get_port_speed,
-		.set = ip175c_set_port_speed,
+		.get  = ip17xx_get_port_speed,
+		.set = ip17xx_set_port_speed,
 	},
-	[IP175C_PORT_TAGGED] = {
-		.id = IP175C_PORT_LINK,
+	[IP17XX_PORT_TAGGED] = {
+		.id = IP17XX_PORT_LINK,
 		.type = SWITCH_TYPE_INT,
 		.description = "0 = untag, 1 = add tags, 2 = do not alter (This value is reset if vlans are altered)",
 		.name  = "tagged",
-		.get  = ip175c_get_tagged,
-		.set = ip175c_set_tagged,
+		.get  = ip17xx_get_tagged,
+		.set = ip17xx_set_tagged,
 	},
 };
 
-static int ip175c_probe(struct phy_device *pdev)
+static int ip17xx_probe(struct phy_device *pdev)
 {
-	struct ip175c_state *state;
+	struct ip17xx_state *state;
 	struct switch_dev *dev;
 	int err;
 
@@ -1257,19 +1257,19 @@ static int ip175c_probe(struct phy_device *pdev)
 		return -ENOMEM;
 
 	dev = &state->dev;
-	dev->attr_global.attr = ip175c_global;
-	dev->attr_global.n_attr = ARRAY_SIZE(ip175c_global);
-	dev->attr_port.attr = ip175c_port;
-	dev->attr_port.n_attr = ARRAY_SIZE(ip175c_port);
-	dev->attr_vlan.attr = ip175c_vlan;
-	dev->attr_vlan.n_attr = ARRAY_SIZE(ip175c_vlan);
+	dev->attr_global.attr = ip17xx_global;
+	dev->attr_global.n_attr = ARRAY_SIZE(ip17xx_global);
+	dev->attr_port.attr = ip17xx_port;
+	dev->attr_port.n_attr = ARRAY_SIZE(ip17xx_port);
+	dev->attr_vlan.attr = ip17xx_vlan;
+	dev->attr_vlan.n_attr = ARRAY_SIZE(ip17xx_vlan);
 
-	dev->get_port_pvid = ip175c_get_pvid;
-	dev->set_port_pvid = ip175c_set_pvid;
-	dev->get_vlan_ports = ip175c_get_ports;
-	dev->set_vlan_ports = ip175c_set_ports;
-	dev->apply_config = ip175c_apply;
-	dev->reset_switch = ip175c_reset;
+	dev->get_port_pvid = ip17xx_get_pvid;
+	dev->set_port_pvid = ip17xx_set_pvid;
+	dev->get_vlan_ports = ip17xx_get_ports;
+	dev->set_vlan_ports = ip17xx_set_ports;
+	dev->apply_config = ip17xx_apply;
+	dev->reset_switch = ip17xx_reset;
 
 	dev->priv = state;
 	pdev->priv = state;
@@ -1284,7 +1284,7 @@ static int ip175c_probe(struct phy_device *pdev)
 	dev->ports = state->regs->NUM_PORTS;
 	dev->name = state->regs->NAME;
 
-	pr_info("IP175C: Found %s at %s\n", dev->name, dev_name(&pdev->dev));
+	pr_info("IP17xx: Found %s at %s\n", dev->name, dev_name(&pdev->dev));
 	return 0;
 
 error:
@@ -1292,9 +1292,9 @@ error:
 	return err;
 }
 
-static int ip175c_config_init(struct phy_device *pdev)
+static int ip17xx_config_init(struct phy_device *pdev)
 {
-	struct ip175c_state *state = pdev->priv;
+	struct ip17xx_state *state = pdev->priv;
 	struct net_device *dev = pdev->attached_dev;
 	int err;
 
@@ -1303,7 +1303,7 @@ static int ip175c_config_init(struct phy_device *pdev)
 	if (err < 0)
 		return err;
 
-	ip175c_reset(&state->dev);
+	ip17xx_reset(&state->dev);
 
 	state->registered = true;
 
@@ -1316,35 +1316,35 @@ static int ip175c_config_init(struct phy_device *pdev)
 	return 0;
 }
 
-static void ip175c_remove(struct phy_device *pdev)
+static void ip17xx_remove(struct phy_device *pdev)
 {
-	struct ip175c_state *state = pdev->priv;
+	struct ip17xx_state *state = pdev->priv;
 
 	if (state->registered)
 		unregister_switch(&state->dev);
 	kfree(state);
 }
 
-static int ip175c_config_aneg(struct phy_device *pdev)
+static int ip17xx_config_aneg(struct phy_device *pdev)
 {
 	return 0;
 }
 
-static int ip175c_read_status(struct phy_device *pdev)
+static int ip17xx_read_status(struct phy_device *pdev)
 {
 	return 0;
 }
 
-static struct phy_driver ip175c_driver = {
-	.name		= "IC+ IP175C",
+static struct phy_driver ip17xx_driver = {
+	.name		= "IC+ IP17xx",
 	.phy_id		= 0x02430c00,
 	.phy_id_mask	= 0x0ffffc00,
 	.features	= PHY_BASIC_FEATURES,
-	.probe		= ip175c_probe,
-	.remove		= ip175c_remove,
-	.config_init	= ip175c_config_init,
-	.config_aneg	= ip175c_config_aneg,
-	.read_status	= ip175c_read_status,
+	.probe		= ip17xx_probe,
+	.remove		= ip17xx_remove,
+	.config_init	= ip17xx_config_init,
+	.config_aneg	= ip17xx_config_aneg,
+	.read_status	= ip17xx_read_status,
 	.driver		= { .owner = THIS_MODULE },
 };
 
@@ -1353,16 +1353,16 @@ static struct phy_driver ip175a_driver = {
 	.phy_id		= 0x02430c50,
 	.phy_id_mask	= 0x0ffffff0,
 	.features	= PHY_BASIC_FEATURES,
-	.probe		= ip175c_probe,
-	.remove		= ip175c_remove,
-	.config_init	= ip175c_config_init,
-	.config_aneg	= ip175c_config_aneg,
-	.read_status	= ip175c_read_status,
+	.probe		= ip17xx_probe,
+	.remove		= ip17xx_remove,
+	.config_init	= ip17xx_config_init,
+	.config_aneg	= ip17xx_config_aneg,
+	.read_status	= ip17xx_read_status,
 	.driver		= { .owner = THIS_MODULE },
 };
 
 
-int __init ip175c_init(void)
+int __init ip17xx_init(void)
 {
 	int ret;
 
@@ -1370,12 +1370,12 @@ int __init ip175c_init(void)
 	if (ret < 0)
 		return ret;
 
-	return phy_driver_register(&ip175c_driver);
+	return phy_driver_register(&ip17xx_driver);
 }
 
-void __exit ip175c_exit(void)
+void __exit ip17xx_exit(void)
 {
-	phy_driver_unregister(&ip175c_driver);
+	phy_driver_unregister(&ip17xx_driver);
 	phy_driver_unregister(&ip175a_driver);
 }
 
@@ -1383,5 +1383,5 @@ MODULE_AUTHOR("Patrick Horn <patrick.horn@gmail.com>");
 MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
 MODULE_LICENSE("GPL");
 
-module_init(ip175c_init);
-module_exit(ip175c_exit);
+module_init(ip17xx_init);
+module_exit(ip17xx_exit);
