@@ -43,7 +43,7 @@ typedef char bitnum;
 /*********** CONSTANTS ***********/
 struct register_mappings {
 	char *NAME;
-	u16 MODEL_NO;			// compare to bits 4-9 of MII register 0,3.
+	u16 MODEL_NO;			// Compare to bits 4-9 of MII register 0,3.
 	bitnum NUM_PORTS;
 	bitnum CPU_PORT;
 
@@ -201,11 +201,8 @@ static const struct register_mappings IP175A = {
 
 	.SIMPLE_VLAN_REGISTERS = 0,
 
-	// Register 19-21 documentation is missing/contradictory.
-	// For registers 19-21 ports need to be: even numbers to MSB, odd to LSB.
-	// This contradicts text for ROM registers, but follows logic of CoS bits.
-
-	.VLAN_LOOKUP_REG = {0,19},// +N/2
+	// Only programmable via EEPROM
+	.VLAN_LOOKUP_REG = NOTSUPPORTED,// +N/2
 	.VLAN_LOOKUP_REG_5 = NOTSUPPORTED,
 	.VLAN_LOOKUP_EVEN_BIT = {8,9,10,11,12,-1,-1,-1,-1},
 	.VLAN_LOOKUP_ODD_BIT = {0,1,2,3,4,-1,-1,-1,-1},
@@ -250,10 +247,11 @@ struct ip175c_state {
 	int num_vlans;
 	unsigned int vlan_ports[MAX_VLANS];
 	const struct register_mappings *regs;
-	reg proc_mii; /*!< phy/reg for the low level register access via /proc */
+	reg proc_mii; 	// phy/reg for the low level register access via swconfig
 
 	char buf[80];
 };
+
 
 static int ip_phy_read(struct ip175c_state *state, int port, int reg)
 {
@@ -267,7 +265,6 @@ static int ip_phy_read(struct ip175c_state *state, int port, int reg)
 	return val;
 }
 
-
 static int ip_phy_write(struct ip175c_state *state, int port, int reg, u16 val)
 {
 	int err;
@@ -280,7 +277,6 @@ static int ip_phy_write(struct ip175c_state *state, int port, int reg, u16 val)
 		pr_warning("IP175C: Unable to write MII register %d,%d: error %d\n", port, reg, -err);
 	return err;
 }
-
 
 static int ip_phy_write_masked(struct ip175c_state *state, int port, int reg, unsigned int mask, unsigned int data)
 {
@@ -309,6 +305,7 @@ static int setPhy(struct ip175c_state *state, reg mii, u16 value)
 	getPhy(state, mii);
 	return 0;
 }
+
 
 /**
  * These two macros are to simplify the mapping of logical bits to the bits in hardware.
@@ -343,6 +340,7 @@ static int setPhy(struct ip175c_state *state, reg mii, u16 value)
 		if (val < 0)					\
 			return val;				\
 	} while (0)
+
 
 static int get_model(struct ip175c_state *state)
 {
@@ -412,7 +410,6 @@ static int get_flags(struct ip175c_state *state)
 		state->num_vlans+=1; // does not include WAN.
 	}
 
-
 	val = getPhy(state, state->regs->VLAN_CONTROL_REG);
 	if (val < 0) {
 		return 0;
@@ -422,7 +419,8 @@ static int get_flags(struct ip175c_state *state)
 
 	return  0;
 }
-/** Get all state variables for VLAN mappings and port-based tagging. **/
+
+/** Get all state variables for VLAN mappings and port-based tagging **/
 static int get_state(struct ip175c_state *state)
 {
 	int i, j;
@@ -520,7 +518,6 @@ static int get_state(struct ip175c_state *state)
 
 	return 0;
 }
-
 
 /** Only update vlan and router flags in the switch **/
 static int update_flags(struct ip175c_state *state)
@@ -635,15 +632,11 @@ static int update_state(struct ip175c_state *state)
 	}
 
 	return update_flags(state);
-
-	// software reset: 30.0 = 0x175C
-	// wait 2ms
-	// reset ports 0,1,2,3,4
 }
 
-/*
-  Uses only the VLAN port mask and the add tag mask to generate the other fields:
-  which ports are part of the same VLAN, removing vlan tags, and VLAN tag ids.
+/**
+ *  Uses only the VLAN port mask and the add tag mask to generate the other fields:
+ *  which ports are part of the same VLAN, removing vlan tags, and VLAN tag ids.
  */
 static void correct_vlan_state(struct ip175c_state *state)
 {
@@ -651,16 +644,14 @@ static void correct_vlan_state(struct ip175c_state *state)
 	state->num_vlans = 0;
 	for (i=0; i<MAX_VLANS; i++) {
 		if (state->vlan_ports[i] != 0) {
-			state->num_vlans = i+1; //hack -- we need to store the "set" vlans somewhere...
+			state->num_vlans = i+1; // Hack -- we need to store the "set" vlans somewhere...
 		}
 	}
-
-
 
 	for (i=0; i<state->regs->NUM_PORTS; i++) {
 		unsigned int portmask = (1<<i);
 		if (!state->vlan_enabled) {
-			// share with everybody!
+			// Share with everybody!
 			state->ports[i].shareports = (1<<state->regs->NUM_PORTS)-1;
 			continue;
 		}
@@ -678,7 +669,7 @@ static int ip175c_get_enable_vlan(struct switch_dev *dev, const struct switch_at
 	struct ip175c_state *state = dev->priv;
 	int err;
 
-	err = get_state(state); // may be set in get_state.
+	err = get_state(state); // May be set in get_state.
 	if (err < 0)
 		return err;
 	val->value.i = state->vlan_enabled;
@@ -698,7 +689,7 @@ static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_at
 	enable = val->value.i;
 
 	if (state->vlan_enabled == enable) {
-		// do not change any state.
+		// Do not change any state.
 		return 0;
 	}
 	state->vlan_enabled = enable;
@@ -713,11 +704,11 @@ static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_at
 		state->vlan_ports[i] = 0x0;
 
 	if (state->vlan_enabled) {
-		// updates other fields only based off vlan_ports and add_tag fields.
+		// Updates other fields only based off vlan_ports and add_tag fields.
 		// Note that by default, no ports are in any vlans.
 		correct_vlan_state(state);
 	}
-	// ensure sane defaults?
+	// Ensure sane defaults?
 	return update_state(state);
 }
 
@@ -793,7 +784,7 @@ static int ip175c_apply(struct switch_dev *dev)
 	if (err < 0)
 		return err;
 
-	if (REG_SUPP(state->regs->MII_REGISTER_EN)){
+	if (REG_SUPP(state->regs->MII_REGISTER_EN)) {
 		int val = getPhy(state, state->regs->MII_REGISTER_EN);
 		if (val < 0) {
 			return val;
@@ -819,9 +810,11 @@ static int ip175c_reset(struct switch_dev *dev)
 			return err;
 		err = getPhy(state, state->regs->RESET_REG);
 
-		/* data sheet specifies reset period is 2 msec
-		   (don't see any mention of the 2ms delay in the IP178C spec, only
-		    in IP175C, but it can't hurt.) */
+		/*
+		 *  Data sheet specifies reset period to be 2 msec.
+		 *  (I don't see any mention of the 2ms delay in the IP178C spec, only
+		 *  in IP175C, but it can't hurt.)
+		 */
 		mdelay(2);
 	}
 
@@ -842,7 +835,6 @@ static int ip175c_reset(struct switch_dev *dev)
 	return 0;
 }
 
-/*! get the current register number */
 static int ip175c_get_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
@@ -866,7 +858,6 @@ static int ip175c_get_tagged(struct switch_dev *dev, const struct switch_attr *a
 	return 0;
 }
 
-/*! set a new register address for low level access to registers */
 static int ip175c_set_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
@@ -892,10 +883,7 @@ static int ip175c_set_tagged(struct switch_dev *dev, const struct switch_attr *a
 	return err;
 }
 
-
-/* low level /proc procedures */
-
-/*! get the current phy address */
+/** Get the current phy address */
 static int ip175c_get_phy(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
@@ -904,7 +892,7 @@ static int ip175c_get_phy(struct switch_dev *dev, const struct switch_attr *attr
 	return 0;
 }
 
-/*! set a new phy address for low level access to registers */
+/** Set a new phy address for low level access to registers */
 static int ip175c_set_phy(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
@@ -917,7 +905,7 @@ static int ip175c_set_phy(struct switch_dev *dev, const struct switch_attr *attr
 	return 0;
 }
 
-/*! get the current register number */
+/** Get the current register number */
 static int ip175c_get_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
@@ -926,7 +914,7 @@ static int ip175c_get_reg(struct switch_dev *dev, const struct switch_attr *attr
 	return 0;
 }
 
-/*! set a new register address for low level access to registers */
+/** Set a new register address for low level access to registers */
 static int ip175c_set_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
@@ -939,7 +927,7 @@ static int ip175c_set_reg(struct switch_dev *dev, const struct switch_attr *attr
 	return 0;
 }
 
-/*! get the register content of state->proc_mii */
+/** Get the register content of state->proc_mii */
 static int ip175c_get_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
@@ -955,7 +943,7 @@ static int ip175c_get_val(struct switch_dev *dev, const struct switch_attr *attr
 	}
 }
 
-/*! write a value to the register defined by phy/reg above */
+/** Write a value to the register defined by phy/reg above */
 static int ip175c_set_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
@@ -971,10 +959,9 @@ static int ip175c_set_val(struct switch_dev *dev, const struct switch_attr *attr
 static int ip175c_read_name(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
-	val->value.s = state->regs->NAME; // just a const pointer, won't be freed by swconfig.
+	val->value.s = state->regs->NAME; // Just a const pointer, won't be freed by swconfig.
 	return 0;
 }
-
 
 static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
@@ -994,7 +981,7 @@ static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_att
 		speed = 1;
 	}
 
-	/* can't set speed for cpu port */
+	/* Can't set speed for cpu port */
 	if (nr == state->regs->CPU_PORT)
 		return -EINVAL;
 
@@ -1039,7 +1026,6 @@ static int ip175c_get_port_speed(struct switch_dev *dev, const struct switch_att
 
 	return 0;
 }
-
 
 static int ip175c_get_port_status(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
@@ -1143,7 +1129,7 @@ static const struct switch_attr ip175c_global[] = {
 	[IP175C_REGISTER_PHY] = {
 		.id = IP175C_REGISTER_PHY,
 		.type = SWITCH_TYPE_INT,
-		.description = "Direct register access: set phy (0-4, or 29,30,31)",
+		.description = "Direct register access: set PHY (0-4, or 29,30,31)",
 		.name  = "phy",
 		.get  = ip175c_get_phy,
 		.set = ip175c_set_phy,
@@ -1151,7 +1137,7 @@ static const struct switch_attr ip175c_global[] = {
 	[IP175C_REGISTER_MII] = {
 		.id = IP175C_REGISTER_MII,
 		.type = SWITCH_TYPE_INT,
-		.description = "Direct register access: set mii number (0-31)",
+		.description = "Direct register access: set MII register number (0-31)",
 		.name  = "reg",
 		.get  = ip175c_get_reg,
 		.set = ip175c_set_reg,
@@ -1202,7 +1188,7 @@ static int ip175c_probe(struct phy_device *pdev)
 	struct switch_dev *dev;
 	int err;
 
-	/* we only attach to PHY 0, but use all available PHYs */
+	/* We only attach to PHY 0, but use all available PHYs */
 	if (pdev->addr != 0)
 		return -ENODEV;
 
@@ -1336,4 +1322,3 @@ MODULE_LICENSE("GPL");
 
 module_init(ip175c_init);
 module_exit(ip175c_exit);
-
