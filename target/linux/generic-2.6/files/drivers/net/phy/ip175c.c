@@ -263,6 +263,56 @@ static const struct register_mappings IP175A = {
 };
 
 
+static int ip175d_get_flags(struct ip175c_state *state);
+static int ip175d_get_state(struct ip175c_state *state);
+static int ip175d_update_state(struct ip175c_state *state);
+static int ip175d_set_vlan_mode(struct ip175c_state *state);
+static int ip175d_reset(struct ip175c_state *state);
+
+static const struct register_mappings IP175D = {
+	.NAME = "IP175D",
+	.MODEL_NO = 0x18,
+
+	// The IP175D has a completely different interface, so we leave most
+	// of the registers undefined and switch to different code paths.
+
+	.VLAN_DEFAULT_TAG_REG = {
+		NOTSUPPORTED,NOTSUPPORTED,NOTSUPPORTED,NOTSUPPORTED,
+		NOTSUPPORTED,NOTSUPPORTED,NOTSUPPORTED,NOTSUPPORTED,
+	},
+
+	.ADD_TAG_REG = NOTSUPPORTED,
+	.REMOVE_TAG_REG = NOTSUPPORTED,
+
+	.SIMPLE_VLAN_REGISTERS = 0,
+
+	.VLAN_LOOKUP_REG = NOTSUPPORTED,
+	.VLAN_LOOKUP_REG_5 = NOTSUPPORTED,
+	.TAG_VLAN_MASK_REG = NOTSUPPORTED,
+
+	.RESET_VAL = 0x175D,
+	.RESET_REG = {20,2},
+	.MODE_REG = NOTSUPPORTED,
+
+	.ROUTER_CONTROL_REG = NOTSUPPORTED,
+	.ROUTER_EN_BIT = -1,
+	.NUMLAN_GROUPS_BIT = -1,
+
+	.VLAN_CONTROL_REG = NOTSUPPORTED,
+	.TAG_VLAN_BIT = -1,
+
+	.NUM_PORTS = 6,
+	.CPU_PORT = 5,
+
+	.MII_REGISTER_EN = NOTSUPPORTED,
+
+	.get_flags = ip175d_get_flags,
+	.get_state = ip175d_get_state,
+	.update_state = ip175d_update_state,
+	.set_vlan_mode = ip175d_set_vlan_mode,
+	.reset = ip175d_reset,
+};
+
 struct ip175c_state {
 	struct switch_dev dev;
 	struct mii_bus *mii_bus;
@@ -407,7 +457,7 @@ static int get_model(struct ip175c_state *state)
 			chip_no = ip_phy_read(state, 20, 0);
 			pr_debug("IP175C: Chip ID register reads %04x\n", chip_no);
 			if (chip_no == 0x175d) {
-				state->regs = &IP175C;
+				state->regs = &IP175D;
 			} else {
 				state->regs = &IP175C;
 			}
@@ -418,6 +468,8 @@ static int get_model(struct ip175c_state *state)
 	}
 	return 0;
 }
+
+/*** Low-level functions for the older models ***/
 
 /** Get only the vlan and router flags on the router **/
 static int ip175c_get_flags(struct ip175c_state *state)
@@ -726,6 +778,122 @@ static int ip175c_do_reset(struct ip175c_state *state)
 
 	return 0;
 }
+
+/*** Low-level functions for IP175D ***/
+
+static int ip175d_get_flags(struct ip175c_state *state)
+{
+	// We keep the configuration of the switch cached, so get doesn't do anything
+	return 0;
+}
+
+static int ip175d_get_state(struct ip175c_state *state)
+{
+	// Again, the configuration is fully cached
+	return 0;
+}
+
+static int ip175d_update_state(struct ip175c_state *state)
+{
+	unsigned int filter_mask = 0;
+	unsigned int ports[16], add[16], rem[16];
+	int i, j;
+	int err = 0;
+
+	for (i = 0; i < 16; i++) {
+		ports[i] = 0;
+		add[i] = 0;
+		rem[i] = 0;
+		if (!state->vlan_enabled) {
+			err |= ip_phy_write(state, 22, 14+i, i+1);	// default tags
+			ports[i] = 0x3f;
+			continue;
+		}
+		if (!state->vlans[i].tag) {
+			// Reset the filter
+			err |= ip_phy_write(state, 22, 14+i, 0);	// tag
+			continue;
+		}
+		filter_mask |= 1 << i;
+		err |= ip_phy_write(state, 22, 14+i, state->vlans[i].tag);
+		ports[i] = state->vlans[i].ports;
+		for (j = 0; j < 6; j++) {
+			if (ports[i] & (1 << j)) {
+				if (state->add_tag & (1 << j))
+					add[i] |= 1 << j;
+				if (state->remove_tag & (1 << j))
+					rem[i] |= 1 << j;
+			}
+		}
+	}
+
+	// Port masks, tag adds and removals
+	for (i = 0; i < 8; i++) {
+		err |= ip_phy_write(state, 23, i, ports[2*i] | (ports[2*i+1] << 8));
+		err |= ip_phy_write(state, 23, 8+i, add[2*i] | (add[2*i+1] << 8));
+		err |= ip_phy_write(state, 23, 16+i, rem[2*i] | (rem[2*i+1] << 8));
+	}
+	err |= ip_phy_write(state, 22, 10, filter_mask);
+
+	// Default VLAN tag for each port
+	for (i = 0; i < 6; i++)
+		err |= ip_phy_write(state, 22, 4+i, state->vlans[state->ports[i].pvid].tag);
+
+	return (err ? -EIO : 0);
+}
+
+static int ip175d_set_vlan_mode(struct ip175c_state *state)
+{
+	int i;
+	int err = 0;
+
+	if (state->vlan_enabled) {
+		// VLAN classification rules: tag-based VLANs, use VID to classify,
+		// drop packets that cannot be classified.
+		err |= ip_phy_write_masked(state, 22, 0, 0x3fff, 0x003f);
+
+		// Ingress rules: CFI=1 dropped, null VID is untagged, VID=1 passed,
+		// VID=0xfff discarded, admin both tagged and untagged, ingress
+		// filters enabled.
+		err |= ip_phy_write_masked(state, 22, 1, 0x0fff, 0x0c3f);
+
+		// Egress rules: IGMP processing off, keep VLAN header off
+		err |= ip_phy_write_masked(state, 22, 2, 0x0fff, 0x0000);
+	} else {
+		// VLAN classification rules: everything off & clear table
+		err |= ip_phy_write_masked(state, 22, 0, 0xbfff, 0x8000);
+
+		// Ingress and egress rules: set to defaults
+		err |= ip_phy_write_masked(state, 22, 1, 0x0fff, 0x0c3f);
+		err |= ip_phy_write_masked(state, 22, 2, 0x0fff, 0x0000);
+	}
+
+	// Reset default VLAN for each port to 0
+	for (i = 0; i < 6; i++)
+		state->ports[i].pvid = 0;
+
+	err |= ip175d_update_state(state);
+
+	return (err ? -EIO : 0);
+}
+
+static int ip175d_reset(struct ip175c_state *state)
+{
+	int err = 0;
+
+	// Disable the special tagging mode
+	err |= ip_phy_write_masked(state, 21, 22, 0x0003, 0x0000);
+
+	// Set 802.1q protocol type
+	err |= ip_phy_write(state, 22, 3, 0x8100);
+
+	state->vlan_enabled = 0;
+	err |= ip175d_set_vlan_mode(state);
+
+	return (err ? -EIO : 0);
+}
+
+/*** High-level functions ***/
 
 static int ip175c_get_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
