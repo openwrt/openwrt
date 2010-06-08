@@ -25,6 +25,7 @@
 #include <linux/phy.h>
 #include <linux/delay.h>
 #include <linux/switch.h>
+#include <linux/device.h>
 
 #define MAX_VLANS 16
 #define MAX_PORTS 9
@@ -378,41 +379,41 @@ static int setPhy(struct ip175c_state *state, reg mii, u16 value)
 
 static int get_model(struct ip175c_state *state)
 {
-	reg oui_id_reg = {0, 2};
-	int oui_id;
-	reg model_no_reg = {0, 3};
-	int model_no, model_no_orig;
+	int id1, id2;
+	int oui_id, model_no, rev_no, chip_no;
 
-	// 175 and 178 have the same oui ID.
-	reg oui_id_reg_178c = {5, 2}; // returns error on IP175C.
-	int is_178c = 0;
+	id1 = ip_phy_read(state, 0, 2);
+	id2 = ip_phy_read(state, 0, 3);
+	oui_id = (id1 << 6) | ((id2 >> 10) & 0x3f);
+	model_no = (id2 >> 4) & 0x3f;
+	rev_no = id2 & 0xf;
+	pr_debug("IP175C: Identified oui=%06x model=%02x rev=%X\n", oui_id, model_no, rev_no);
 
-	oui_id = getPhy(state, oui_id_reg);
-	if (oui_id != 0x0243) {
-		// non
-		return -ENODEV; // Not a IC+ chip.
-	}
-	oui_id = getPhy(state, oui_id_reg_178c);
-	if (oui_id == 0x0243) {
-		is_178c = 1;
-	}
-
-	model_no_orig = getPhy(state, model_no_reg);
-	if (model_no_orig < 0) {
+	if (oui_id != 0x0090c3)  // No other oui_id should have reached us anyway
 		return -ENODEV;
-	}
-	model_no = model_no_orig >> 4; // shift out revision number.
-	model_no &= 0x3f; // only take the model number (low 6 bits).
+
 	if (model_no == IP175A.MODEL_NO) {
 		state->regs = &IP175A;
 	} else if (model_no == IP175C.MODEL_NO) {
-		if (is_178c) {
+		/*
+		 *  Several models share the same model_no:
+		 *  178C has more PHYs, so we try whether the device responds to a read from PHY5
+		 *  175D has a new chip ID register
+		 *  175C has neither
+		 */
+		if (ip_phy_read(state, 5, 2) == 0x0243) {
 			state->regs = &IP178C;
 		} else {
-			state->regs = &IP175C;
+			chip_no = ip_phy_read(state, 20, 0);
+			pr_debug("IP175C: Chip ID register reads %04x\n", chip_no);
+			if (chip_no == 0x175d) {
+				state->regs = &IP175C;
+			} else {
+				state->regs = &IP175C;
+			}
 		}
 	} else {
-		printk(KERN_WARNING "ip175c: Found an unknown IC+ switch with model number %02Xh.\n", model_no_orig);
+		pr_warning("IP175C: Found an unknown IC+ switch with model number %02x, revision %X.\n", model_no, rev_no);
 		return -EPERM;
 	}
 	return 0;
@@ -1321,6 +1322,7 @@ static int ip175c_probe(struct phy_device *pdev)
 	dev->ports = state->regs->NUM_PORTS;
 	dev->name = state->regs->NAME;
 
+	pr_info("IP175C: Found %s at %s\n", dev->name, dev_name(&pdev->dev));
 	return 0;
 
 error:
@@ -1371,8 +1373,8 @@ static int ip175c_read_status(struct phy_device *pdev)
 
 static struct phy_driver ip175c_driver = {
 	.name		= "IC+ IP175C",
-	.phy_id		= 0x02430d80,
-	.phy_id_mask	= 0x0ffffff0,
+	.phy_id		= 0x02430c00,
+	.phy_id_mask	= 0x0ffffc00,
 	.features	= PHY_BASIC_FEATURES,
 	.probe		= ip175c_probe,
 	.remove		= ip175c_remove,
