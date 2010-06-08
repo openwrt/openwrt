@@ -1298,21 +1298,12 @@ static int ip17xx_config_init(struct phy_device *pdev)
 	struct net_device *dev = pdev->attached_dev;
 	int err;
 
-	pdev->irq = PHY_IGNORE_INTERRUPT;
 	err = register_switch(&state->dev, dev);
 	if (err < 0)
 		return err;
 
-	ip17xx_reset(&state->dev);
-
 	state->registered = true;
-
-	pdev->state = PHY_RUNNING;
-	pdev->speed = SPEED_100;
-	pdev->duplex = DUPLEX_FULL;
-	pdev->pause = pdev->asym_pause = 0;
-	netif_carrier_on(pdev->attached_dev);
-
+	ip17xx_reset(&state->dev);
 	return 0;
 }
 
@@ -1330,8 +1321,24 @@ static int ip17xx_config_aneg(struct phy_device *pdev)
 	return 0;
 }
 
+static int ip17xx_aneg_done(struct phy_device *pdev)
+{
+	return BMSR_ANEGCOMPLETE;
+}
+
+static int ip17xx_update_link(struct phy_device *pdev)
+{
+	pdev->link = 1;
+	return 0;
+}
+
 static int ip17xx_read_status(struct phy_device *pdev)
 {
+	pdev->speed = SPEED_100;
+	pdev->duplex = DUPLEX_FULL;
+	pdev->pause = pdev->asym_pause = 0;
+	pdev->link = 1;
+
 	return 0;
 }
 
@@ -1344,6 +1351,8 @@ static struct phy_driver ip17xx_driver = {
 	.remove		= ip17xx_remove,
 	.config_init	= ip17xx_config_init,
 	.config_aneg	= ip17xx_config_aneg,
+	.aneg_done	= ip17xx_aneg_done,
+	.update_link	= ip17xx_update_link,
 	.read_status	= ip17xx_read_status,
 	.driver		= { .owner = THIS_MODULE },
 };
@@ -1357,6 +1366,8 @@ static struct phy_driver ip175a_driver = {
 	.remove		= ip17xx_remove,
 	.config_init	= ip17xx_config_init,
 	.config_aneg	= ip17xx_config_aneg,
+	.aneg_done	= ip17xx_aneg_done,
+	.update_link	= ip17xx_update_link,
 	.read_status	= ip17xx_read_status,
 	.driver		= { .owner = THIS_MODULE },
 };
