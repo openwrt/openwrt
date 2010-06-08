@@ -696,7 +696,6 @@ static void ip175c_correct_vlan_state(struct ip175c_state *state)
 				state->ports[i].shareports |= state->vlans[j].ports;
 		}
 	}
-	state->remove_tag = ((~state->add_tag) & ((1<<state->regs->NUM_PORTS)-1));
 }
 
 static int ip175c_update_state(struct ip175c_state *state)
@@ -742,7 +741,7 @@ static void ip175c_reset_vlan_config(struct ip175c_state *state)
 {
 	int i;
 
-	state->remove_tag = 0x0000;
+	state->remove_tag = (state->vlan_enabled ? ((1<<state->regs->NUM_PORTS)-1) : 0x0000);
 	state->add_tag = 0x0000;
 	for (i = 0; i < MAX_VLANS; i++)
 		state->vlans[i].ports = 0x0000;
@@ -821,12 +820,14 @@ static int ip175c_set_ports(struct switch_dev *dev, struct switch_val *val)
 
 	state->vlans[val->port_vlan].ports = 0;
 	for (i = 0; i < val->len; i++) {
-		int bitmask = (1<<val->value.ports[i].id);
+		unsigned int bitmask = (1<<val->value.ports[i].id);
 		state->vlans[val->port_vlan].ports |= bitmask;
 		if (val->value.ports[i].flags & (1<<SWITCH_PORT_FLAG_TAGGED)) {
 			state->add_tag |= bitmask;
+			state->remove_tag &= (~bitmask);
 		} else {
 			state->add_tag &= (~bitmask);
+			state->remove_tag |= bitmask;
 		}
 	}
 
