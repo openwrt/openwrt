@@ -40,6 +40,8 @@ typedef char bitnum;
 
 #define REG_SUPP(x) (((x).m != ((u16)-1)) && ((x).p != (u16)-1))
 
+struct ip175c_state;
+
 /*********** CONSTANTS ***********/
 struct register_mappings {
 	char *NAME;
@@ -96,7 +98,20 @@ struct register_mappings {
 
 	// set to 1 for 178C, 0 for 175C.
 	bitnum SIMPLE_VLAN_REGISTERS;	// 175C has two vlans per register but 178C has only one.
+
+	// Pointers to functions which manipulate hardware state
+	int (*get_flags)(struct ip175c_state *state);
+	int (*get_state)(struct ip175c_state *state);
+	int (*update_state)(struct ip175c_state *state);
+	int (*set_vlan_mode)(struct ip175c_state *state);
+	int (*reset)(struct ip175c_state *state);
 };
+
+static int ip175c_get_flags(struct ip175c_state *state);
+static int ip175c_get_state(struct ip175c_state *state);
+static int ip175c_update_state(struct ip175c_state *state);
+static int ip175c_set_vlan_mode(struct ip175c_state *state);
+static int ip175c_do_reset(struct ip175c_state *state);
 
 static const struct register_mappings IP178C = {
 	.NAME = "IP178C",
@@ -140,6 +155,11 @@ static const struct register_mappings IP178C = {
 
 	.MII_REGISTER_EN = NOTSUPPORTED,
 
+	.get_flags = ip175c_get_flags,
+	.get_state = ip175c_get_state,
+	.update_state = ip175c_update_state,
+	.set_vlan_mode = ip175c_set_vlan_mode,
+	.reset = ip175c_do_reset,
 };
 
 static const struct register_mappings IP175C = {
@@ -184,6 +204,11 @@ static const struct register_mappings IP175C = {
 
 	.MII_REGISTER_EN = NOTSUPPORTED,
 
+	.get_flags = ip175c_get_flags,
+	.get_state = ip175c_get_state,
+	.update_state = ip175c_update_state,
+	.set_vlan_mode = ip175c_set_vlan_mode,
+	.reset = ip175c_do_reset,
 };
 
 static const struct register_mappings IP175A = {
@@ -228,6 +253,12 @@ static const struct register_mappings IP175A = {
 
 	.MII_REGISTER_EN = {0, 18},
 	.MII_REGISTER_EN_BIT = 7,
+
+	.get_flags = ip175c_get_flags,
+	.get_state = ip175c_get_state,
+	.update_state = ip175c_update_state,
+	.set_vlan_mode = ip175c_set_vlan_mode,
+	.reset = ip175c_do_reset,
 };
 
 
@@ -385,7 +416,7 @@ static int get_model(struct ip175c_state *state)
 }
 
 /** Get only the vlan and router flags on the router **/
-static int get_flags(struct ip175c_state *state)
+static int ip175c_get_flags(struct ip175c_state *state)
 {
 	int val;
 
@@ -421,14 +452,16 @@ static int get_flags(struct ip175c_state *state)
 }
 
 /** Get all state variables for VLAN mappings and port-based tagging **/
-static int get_state(struct ip175c_state *state)
+static int ip175c_get_state(struct ip175c_state *state)
 {
 	int i, j;
 	int ret;
-	ret = get_flags(state);
+
+	ret = ip175c_get_flags(state);
 	if (ret < 0) {
 		return ret;
 	}
+
 	GET_PORT_BITS(state, state->remove_tag,
 				  state->regs->REMOVE_TAG_REG, state->regs->REMOVE_TAG_BIT);
 	GET_PORT_BITS(state, state->add_tag,
@@ -519,8 +552,8 @@ static int get_state(struct ip175c_state *state)
 	return 0;
 }
 
-/** Only update vlan and router flags in the switch **/
-static int update_flags(struct ip175c_state *state)
+/** Only set vlan and router flags in the switch **/
+static int ip175c_set_flags(struct ip175c_state *state)
 {
 	int val;
 
@@ -557,8 +590,8 @@ static int update_flags(struct ip175c_state *state)
 	return setPhy(state, state->regs->ROUTER_CONTROL_REG, val);
 }
 
-/** Update all VLAN and port state.  Usually you should call "correct_vlan_state" first. **/
-static int update_state(struct ip175c_state *state)
+/** Set all VLAN and port state.  Usually you should call "correct_vlan_state" first. **/
+static int ip175c_set_state(struct ip175c_state *state)
 {
 	int j;
 	int i;
@@ -631,14 +664,14 @@ static int update_state(struct ip175c_state *state)
 		}
 	}
 
-	return update_flags(state);
+	return ip175c_set_flags(state);
 }
 
 /**
  *  Uses only the VLAN port mask and the add tag mask to generate the other fields:
  *  which ports are part of the same VLAN, removing vlan tags, and VLAN tag ids.
  */
-static void correct_vlan_state(struct ip175c_state *state)
+static void ip175c_correct_vlan_state(struct ip175c_state *state)
 {
 	int i, j;
 	state->num_vlans = 0;
@@ -664,12 +697,39 @@ static void correct_vlan_state(struct ip175c_state *state)
 	state->remove_tag = ((~state->add_tag) & ((1<<state->regs->NUM_PORTS)-1));
 }
 
+static int ip175c_update_state(struct ip175c_state *state)
+{
+	ip175c_correct_vlan_state(state);
+	return ip175c_set_state(state);
+}
+
+static int ip175c_set_vlan_mode(struct ip175c_state *state)
+{
+	return ip175c_update_state(state);
+}
+
+static int ip175c_do_reset(struct ip175c_state *state)
+{
+	int err;
+
+	if (REG_SUPP(state->regs->MODE_REG)) {
+		err = setPhy(state, state->regs->MODE_REG, state->regs->MODE_VAL);
+		if (err < 0)
+			return err;
+		err = getPhy(state, state->regs->MODE_REG);
+		if (err < 0)
+			return err;
+	}
+
+	return 0;
+}
+
 static int ip175c_get_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
 	int err;
 
-	err = get_state(state); // May be set in get_state.
+	err = state->regs->get_state(state); // May be set in get_state.
 	if (err < 0)
 		return err;
 	val->value.i = state->vlan_enabled;
@@ -683,7 +743,7 @@ static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_at
 	int enable;
 	int i;
 
-	err = get_state(state);
+	err = state->regs->get_state(state);
 	if (err < 0)
 		return err;
 	enable = val->value.i;
@@ -697,19 +757,10 @@ static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_at
 	// Otherwise, if we are switching state, set fields to a known default.
 	state->remove_tag = 0x0000;
 	state->add_tag = 0x0000;
-	for (i = 0; i < MAX_PORTS; i++)
-		state->ports[i].shareports = 0xffff;
-
 	for (i = 0; i < MAX_VLANS; i++)
 		state->vlan_ports[i] = 0x0;
 
-	if (state->vlan_enabled) {
-		// Updates other fields only based off vlan_ports and add_tag fields.
-		// Note that by default, no ports are in any vlans.
-		correct_vlan_state(state);
-	}
-	// Ensure sane defaults?
-	return update_state(state);
+	return state->regs->set_vlan_mode(state);
 }
 
 static int ip175c_get_ports(struct switch_dev *dev, struct switch_val *val)
@@ -723,7 +774,7 @@ static int ip175c_get_ports(struct switch_dev *dev, struct switch_val *val)
 	if (val->port_vlan >= dev->vlans || val->port_vlan < 0)
 		return -EINVAL;
 
-	err = get_state(state);
+	err = state->regs->get_state(state);
 	if (err<0)
 		return err;
 
@@ -754,7 +805,7 @@ static int ip175c_set_ports(struct switch_dev *dev, struct switch_val *val)
 	if (val->port_vlan >= dev->vlans || val->port_vlan < 0)
 		return -EINVAL;
 
-	err = get_state(state);
+	err = state->regs->get_state(state);
 	if (err < 0)
 		return err;
 
@@ -769,10 +820,7 @@ static int ip175c_set_ports(struct switch_dev *dev, struct switch_val *val)
 		}
 	}
 
-	correct_vlan_state(state);
-	err = update_state(state);
-
-	return err;
+	return state->regs->update_state(state);
 }
 
 static int ip175c_apply(struct switch_dev *dev)
@@ -780,7 +828,7 @@ static int ip175c_apply(struct switch_dev *dev)
 	struct ip175c_state *state = dev->priv;
 	int err;
 
-	err = get_flags(state);
+	err = state->regs->get_flags(state);
 	if (err < 0)
 		return err;
 
@@ -800,7 +848,7 @@ static int ip175c_reset(struct switch_dev *dev)
 	struct ip175c_state *state = dev->priv;
 	int i, err;
 
-	err = get_flags(state);
+	err = state->regs->get_flags(state);
 	if (err < 0)
 		return err;
 
@@ -818,13 +866,6 @@ static int ip175c_reset(struct switch_dev *dev)
 		mdelay(2);
 	}
 
-	if (REG_SUPP(state->regs->MODE_REG)) {
-		err = setPhy(state, state->regs->MODE_REG, state->regs->MODE_VAL);
-		if (err < 0)
-			return err;
-		err = getPhy(state, state->regs->MODE_REG);
-	}
-
 	/* reset switch ports */
 	for (i = 0; i < state->regs->NUM_PORTS-1; i++) {
 		err = ip_phy_write(state, i, MII_BMCR, BMCR_RESET);
@@ -832,7 +873,7 @@ static int ip175c_reset(struct switch_dev *dev)
 			return err;
 	}
 
-	return 0;
+	return state->regs->reset(state);
 }
 
 static int ip175c_get_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
@@ -840,7 +881,7 @@ static int ip175c_get_tagged(struct switch_dev *dev, const struct switch_attr *a
 	struct ip175c_state *state = dev->priv;
 	int err;
 
-	err = get_state(state);
+	err = state->regs->get_state(state);
 	if (err < 0)
 		return err;
 
@@ -863,7 +904,7 @@ static int ip175c_set_tagged(struct switch_dev *dev, const struct switch_attr *a
 	struct ip175c_state *state = dev->priv;
 	int err;
 
-	err = get_state(state);
+	err = state->regs->get_state(state);
 	if (err < 0)
 		return err;
 
@@ -875,12 +916,7 @@ static int ip175c_set_tagged(struct switch_dev *dev, const struct switch_attr *a
 	if (val->value.i == 1)
 		state->add_tag |= (1<<val->port_vlan);
 
-	SET_PORT_BITS(state, state->add_tag,
-				  state->regs->ADD_TAG_REG, state->regs->ADD_TAG_BIT);
-	SET_PORT_BITS(state, state->remove_tag,
-				  state->regs->REMOVE_TAG_REG, state->regs->REMOVE_TAG_BIT);
-
-	return err;
+	return state->regs->update_state(state);
 }
 
 /** Get the current phy address */
@@ -1082,13 +1118,18 @@ static int ip175c_get_pvid(struct switch_dev *dev, int port, int *val)
 static int ip175c_set_pvid(struct switch_dev *dev, int port, int val)
 {
 	struct ip175c_state *state = dev->priv;
+	int err;
+
+	if (val < 0 || val >= MAX_VLANS)
+		return -EINVAL;
+
+	err = state->regs->get_state(state);
+	if (err < 0)
+		return err;
 
 	state->ports[port].pvid = val;
 
-	if (!REG_SUPP(state->regs->VLAN_DEFAULT_TAG_REG[port]))
-		return 0;
-
-	return setPhy(state, state->regs->VLAN_DEFAULT_TAG_REG[port], val);
+	return state->regs->update_state(state);
 }
 
 
