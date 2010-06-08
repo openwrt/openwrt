@@ -947,7 +947,7 @@ static int ip175c_get_val(struct switch_dev *dev, const struct switch_attr *attr
 static int ip175c_set_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
-	int myval, err = 0;
+	int myval, err = -EINVAL;
 
 	myval = val->value.i;
 	if (myval <= 0xffff && myval >= 0 && REG_SUPP(state->proc_mii)) {
