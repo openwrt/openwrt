@@ -738,12 +738,23 @@ static int ip175c_get_enable_vlan(struct switch_dev *dev, const struct switch_at
 	return 0;
 }
 
+static void ip175c_reset_vlan_config(struct ip175c_state *state)
+{
+	int i;
+
+	state->remove_tag = 0x0000;
+	state->add_tag = 0x0000;
+	for (i = 0; i < MAX_VLANS; i++)
+		state->vlans[i].ports = 0x0000;
+	for (i = 0; i < MAX_PORTS; i++)
+		state->ports[i].pvid = 0;
+}
+
 static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
 	int err;
 	int enable;
-	int i;
 
 	err = state->regs->get_state(state);
 	if (err < 0)
@@ -757,10 +768,7 @@ static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_at
 	state->vlan_enabled = enable;
 
 	// Otherwise, if we are switching state, set fields to a known default.
-	state->remove_tag = 0x0000;
-	state->add_tag = 0x0000;
-	for (i = 0; i < MAX_VLANS; i++)
-		state->vlans[i].ports = 0x0000;
+	ip175c_reset_vlan_config(state);
 
 	return state->regs->set_vlan_mode(state);
 }
@@ -874,6 +882,8 @@ static int ip175c_reset(struct switch_dev *dev)
 		if (err < 0)
 			return err;
 	}
+
+	ip175c_reset_vlan_config(state);
 
 	return state->regs->reset(state);
 }
