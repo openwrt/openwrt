@@ -199,19 +199,22 @@ static void __init rb411u_setup(void)
 MIPS_MACHINE(AR71XX_MACH_RB_411U, "411U", "MikroTik RouterBOARD 411U",
 	     rb411u_setup);
 
+#define RB433_LAN_PHYMASK	BIT(0)
+#define RB433_WAN_PHYMASK	BIT(4)
+#define RB433_MDIO_PHYMASK	(RB433_LAN_PHYMASK | RB433_WAN_PHYMASK)
+
 static void __init rb433_setup(void)
 {
 	rb4xx_generic_setup();
 	rb433_add_device_spi();
 
-	ar71xx_add_device_mdio(0xffffffe9);
+	ar71xx_add_device_mdio(~RB433_MDIO_PHYMASK);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.speed = SPEED_100;
-	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.phy_mask = RB433_LAN_PHYMASK;
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.phy_mask = 0x00000010;
+	ar71xx_eth1_data.phy_mask = RB433_WAN_PHYMASK;
 
 	ar71xx_add_device_eth(1);
 	ar71xx_add_device_eth(0);
