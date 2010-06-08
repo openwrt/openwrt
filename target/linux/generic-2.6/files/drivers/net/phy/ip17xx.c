@@ -2,7 +2,7 @@
  * ip17xx.c: Swconfig configuration for IC+ IP17xx switch family
  *
  * Copyright (C) 2008 Patrick Horn <patrick.horn@gmail.com>
- * Copyright (C) 2008 Martin Mares <mj@ucw.cz>
+ * Copyright (C) 2008, 2010 Martin Mares <mj@ucw.cz>
  * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
@@ -1381,6 +1381,7 @@ void __exit ip17xx_exit(void)
 
 MODULE_AUTHOR("Patrick Horn <patrick.horn@gmail.com>");
 MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
+MODULE_AUTHOR("Martin Mares <mj@ucw.cz>");
 MODULE_LICENSE("GPL");
 
 module_init(ip17xx_init);
