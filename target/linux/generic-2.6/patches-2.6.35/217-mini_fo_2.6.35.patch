@@ -1,0 +1,20 @@
+--- a/fs/mini_fo/file.c
++++ b/fs/mini_fo/file.c
+@@ -616,7 +616,7 @@ mini_fo_fsync(file_t *file, dentry_t *de
+ #else
+ 			down(&hidden_dentry->d_inode->i_sem);
+ #endif
+-			err1 = hidden_file->f_op->fsync(hidden_file, hidden_dentry, datasync);
++			err1 = hidden_file->f_op->fsync(hidden_file, hidden_dentry);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
+ 			mutex_unlock(&hidden_dentry->d_inode->i_mutex);
+ #else
+@@ -633,7 +633,7 @@ mini_fo_fsync(file_t *file, dentry_t *de
+ #else
+ 			down(&hidden_dentry->d_inode->i_sem);
+ #endif
+-			err2 = hidden_file->f_op->fsync(hidden_file, hidden_dentry, datasync);
++			err2 = hidden_file->f_op->fsync(hidden_file, hidden_dentry);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
+ 			mutex_unlock(&hidden_dentry->d_inode->i_mutex);
+ #else
