@@ -1344,6 +1344,11 @@ static int ip175c_config_init(struct phy_device *pdev)
 	ip175c_reset(&state->dev);
 
 	state->registered = true;
+
+	pdev->state = PHY_RUNNING;
+	pdev->speed = SPEED_100;
+	pdev->duplex = DUPLEX_FULL;
+	pdev->pause = pdev->asym_pause = 0;
 	netif_carrier_on(pdev->attached_dev);
 
 	return 0;
@@ -1365,9 +1370,6 @@ static int ip175c_config_aneg(struct phy_device *pdev)
 
 static int ip175c_read_status(struct phy_device *pdev)
 {
-	pdev->speed = SPEED_100;
-	pdev->duplex = DUPLEX_FULL;
-	pdev->pause = pdev->asym_pause = 0;
 	return 0;
 }
 
