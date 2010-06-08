@@ -278,6 +278,7 @@ struct ip175c_state {
 	int num_vlans;
 	struct vlan_state {
 		unsigned int ports;
+		unsigned int tag;	// VLAN tag (IP175D only)
 	} vlans[MAX_VLANS];
 	const struct register_mappings *regs;
 	reg proc_mii; 	// phy/reg for the low level register access via swconfig
@@ -743,8 +744,10 @@ static void ip175c_reset_vlan_config(struct ip175c_state *state)
 
 	state->remove_tag = (state->vlan_enabled ? ((1<<state->regs->NUM_PORTS)-1) : 0x0000);
 	state->add_tag = 0x0000;
-	for (i = 0; i < MAX_VLANS; i++)
+	for (i = 0; i < MAX_VLANS; i++) {
 		state->vlans[i].ports = 0x0000;
+		state->vlans[i].tag = (i ? i : 16);
+	}
 	for (i = 0; i < MAX_PORTS; i++)
 		state->ports[i].pvid = 0;
 }
@@ -1012,6 +1015,34 @@ static int ip175c_read_name(struct switch_dev *dev, const struct switch_attr *at
 	return 0;
 }
 
+static int ip175c_get_tag(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct ip175c_state *state = dev->priv;
+	int vlan = val->port_vlan;
+
+	if (vlan < 0 || vlan >= MAX_VLANS)
+		return -EINVAL;
+
+	val->value.i = state->vlans[vlan].tag;
+	return 0;
+}
+
+static int ip175c_set_tag(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct ip175c_state *state = dev->priv;
+	int vlan = val->port_vlan;
+	int tag = val->value.i;
+
+	if (vlan < 0 || vlan >= MAX_VLANS)
+		return -EINVAL;
+
+	if (tag < 0 || tag > 4095)
+		return -EINVAL;
+
+	state->vlans[vlan].tag = tag;
+	return state->regs->update_state(state);
+}
+
 static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
@@ -1162,6 +1193,10 @@ enum Globals {
 	IP175C_REGISTER_ERRNO,
 };
 
+enum Vlans {
+	IP175C_VLAN_TAG,
+};
+
 static const struct switch_attr ip175c_global[] = {
 	[IP175C_ENABLE_VLAN] = {
 		.id = IP175C_ENABLE_VLAN,
@@ -1207,6 +1242,14 @@ static const struct switch_attr ip175c_global[] = {
 };
 
 static const struct switch_attr ip175c_vlan[] = {
+	[IP175C_VLAN_TAG] = {
+		.id = IP175C_VLAN_TAG,
+		.type = SWITCH_TYPE_INT,
+		.description = "VLAN tag (0-4095) [IP175D only]",
+		.name = "tag",
+		.get = ip175c_get_tag,
+		.set = ip175c_set_tag,
+	}
 };
 
 static const struct switch_attr ip175c_port[] = {
