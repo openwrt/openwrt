@@ -28,6 +28,7 @@
 
 #define MAX_VLANS 16
 #define MAX_PORTS 9
+#undef DUMP_MII_IO
 
 typedef struct ip175c_reg {
 	u16 p;			// phy
@@ -254,59 +255,57 @@ struct ip175c_state {
 	char buf[80];
 };
 
-static int ip_phy_read(struct mii_bus *bus, int port, int reg)
+static int ip_phy_read(struct ip175c_state *state, int port, int reg)
 {
-	int val;
-
-	mutex_lock(&bus->mdio_lock);
-	val = bus->read(bus, port, reg);
-	mutex_unlock(&bus->mdio_lock);
-
+	int val = mdiobus_read(state->mii_bus, port, reg);
+	if (val < 0)
+		pr_warning("IP175C: Unable to get MII register %d,%d: error %d\n", port, reg, -val);
+#ifdef DUMP_MII_IO
+	else
+		pr_debug("IP175C: Read MII(%d,%d) -> %04x\n", port, reg, val);
+#endif
 	return val;
 }
 
 
-static int ip_phy_write(struct mii_bus *bus, int port, int reg, u16 val)
+static int ip_phy_write(struct ip175c_state *state, int port, int reg, u16 val)
 {
 	int err;
 
-	mutex_lock(&bus->mdio_lock);
-	err = bus->write(bus, port, reg, val);
-	mutex_unlock(&bus->mdio_lock);
-
+#ifdef DUMP_MII_IO
+	pr_debug("IP175C: Write MII(%d,%d) <- %04x\n", port, reg, val);
+#endif
+	err = mdiobus_write(state->mii_bus, port, reg, val);
+	if (err < 0)
+		pr_warning("IP175C: Unable to write MII register %d,%d: error %d\n", port, reg, -err);
 	return err;
 }
 
 
-static int getPhy (struct ip175c_state *state, reg mii)
+static int ip_phy_write_masked(struct ip175c_state *state, int port, int reg, unsigned int mask, unsigned int data)
 {
-	struct mii_bus *bus = state->mii_bus;
-	int val;
-
-	if (!REG_SUPP(mii))
-		return -EFAULT;
-
-	val = ip_phy_read(bus, mii.p, mii.m);
+	int val = ip_phy_read(state, port, reg);
 	if (val < 0)
-		pr_warning("IP175C: Unable to get MII register %d,%d: error %d\n", mii.p,mii.m,-val);
-
-	return val;
+		return 0;
+	return ip_phy_write(state, port, reg, (val & ~mask) | data);
 }
 
-static int setPhy (struct ip175c_state *state, reg mii, u16 value)
+static int getPhy(struct ip175c_state *state, reg mii)
 {
-	struct mii_bus *bus = state->mii_bus;
+	if (!REG_SUPP(mii))
+		return -EFAULT;
+	return ip_phy_read(state, mii.p, mii.m);
+}
+
+static int setPhy(struct ip175c_state *state, reg mii, u16 value)
+{
 	int err;
 
 	if (!REG_SUPP(mii))
 		return -EFAULT;
-
-	err = ip_phy_write(bus, mii.p, mii.m, value);
-	if (err < 0) {
-		pr_warning("IP175C: Unable to set MII register %d,%d to %d: error %d\n", mii.p,mii.m,value,-err);
+	err = ip_phy_write(state, mii.p, mii.m, value);
+	if (err < 0)
 		return err;
-	}
-	mdelay(2);
 	getPhy(state, mii);
 	return 0;
 }
@@ -833,14 +832,11 @@ static int ip175c_reset(struct switch_dev *dev)
 		err = getPhy(state, state->regs->MODE_REG);
 	}
 
-	if (REG_SUPP(state->regs->RESET_REG)) {
-		/* reset external phy ports, except on IP175A */
-		for (i = 0; i < state->regs->NUM_PORTS-1; i++) {
-			err = state->mii_bus->write(state->mii_bus, i,
-						 MII_BMCR, BMCR_RESET);
-			if (err < 0)
-				return err;
-		}
+	/* reset switch ports */
+	for (i = 0; i < state->regs->NUM_PORTS-1; i++) {
+		err = ip_phy_write(state, i, MII_BMCR, BMCR_RESET);
+		if (err < 0)
+			return err;
 	}
 
 	return 0;
@@ -983,7 +979,6 @@ static int ip175c_read_name(struct switch_dev *dev, const struct switch_attr *at
 static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
-	struct mii_bus *bus = state->mii_bus;
 	int nr = val->port_vlan;
 	int ctrl;
 	int autoneg;
@@ -1006,7 +1001,7 @@ static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_att
 	if (nr >= dev->ports || nr < 0)
 		return -EINVAL;
 
-	ctrl = ip_phy_read(bus, nr, 0);
+	ctrl = ip_phy_read(state, nr, 0);
 	if (ctrl < 0)
 		return -EIO;
 
@@ -1015,13 +1010,12 @@ static int ip175c_set_port_speed(struct switch_dev *dev, const struct switch_att
 	ctrl |= (autoneg<<12);
 	ctrl |= (speed<<13);
 
-	return ip_phy_write(bus, nr, 0, ctrl);
+	return ip_phy_write(state, nr, 0, ctrl);
 }
 
 static int ip175c_get_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
-	struct mii_bus *bus = state->mii_bus;
 	int nr = val->port_vlan;
 	int speed, status;
 
@@ -1033,8 +1027,8 @@ static int ip175c_get_port_speed(struct switch_dev *dev, const struct switch_att
 	if (nr >= dev->ports || nr < 0)
 		return -EINVAL;
 
-	status = ip_phy_read(bus, nr, 1);
-	speed = ip_phy_read(bus, nr, 18);
+	status = ip_phy_read(state, nr, 1);
+	speed = ip_phy_read(state, nr, 18);
 	if (status < 0 || speed < 0)
 		return -EIO;
 
@@ -1050,7 +1044,6 @@ static int ip175c_get_port_speed(struct switch_dev *dev, const struct switch_att
 static int ip175c_get_port_status(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct ip175c_state *state = dev->priv;
-	struct mii_bus *bus = state->mii_bus;
 	int ctrl, speed, status;
 	int nr = val->port_vlan;
 	int len;
@@ -1065,9 +1058,9 @@ static int ip175c_get_port_status(struct switch_dev *dev, const struct switch_at
 	if (nr >= dev->ports || nr < 0)
 		return -EINVAL;
 
-	ctrl = ip_phy_read(bus, nr, 0);
-	status = ip_phy_read(bus, nr, 1);
-	speed = ip_phy_read(bus, nr, 18);
+	ctrl = ip_phy_read(state, nr, 0);
+	status = ip_phy_read(state, nr, 1);
+	speed = ip_phy_read(state, nr, 18);
 	if (ctrl < 0 || status < 0 || speed < 0)
 		return -EIO;
 
