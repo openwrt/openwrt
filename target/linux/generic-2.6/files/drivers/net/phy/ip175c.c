@@ -276,7 +276,9 @@ struct ip175c_state {
 	unsigned int add_tag;
 	unsigned int remove_tag;
 	int num_vlans;
-	unsigned int vlan_ports[MAX_VLANS];
+	struct vlan_state {
+		unsigned int ports;
+	} vlans[MAX_VLANS];
 	const struct register_mappings *regs;
 	reg proc_mii; 	// phy/reg for the low level register access via swconfig
 
@@ -535,15 +537,15 @@ static int ip175c_get_state(struct ip175c_state *state)
 			} else {
 				addr.m += j/2;
 			}
-			GET_PORT_BITS(state, state->vlan_ports[j], addr, bit_lookup);
+			GET_PORT_BITS(state, state->vlans[j].ports, addr, bit_lookup);
 		}
 	} else {
 		for (j=0; j<MAX_VLANS; j++) {
-			state->vlan_ports[j] = 0;
+			state->vlans[j].ports = 0;
 			for (i=0; i<state->regs->NUM_PORTS; i++) {
 				if ((state->ports[i].pvid == j) ||
 						(state->ports[i].pvid == 0)) {
-					state->vlan_ports[j] |= (1<<i);
+					state->vlans[j].ports |= (1<<i);
 				}
 			}
 		}
@@ -649,7 +651,7 @@ static int ip175c_set_state(struct ip175c_state *state)
 			} else {
 				addr.m += j/2;
 			}
-			vlan_mask = state->vlan_ports[j];
+			vlan_mask = state->vlans[j].ports;
 			SET_PORT_BITS(state, vlan_mask, addr, bit_lookup);
 		}
 	}
@@ -676,7 +678,7 @@ static void ip175c_correct_vlan_state(struct ip175c_state *state)
 	int i, j;
 	state->num_vlans = 0;
 	for (i=0; i<MAX_VLANS; i++) {
-		if (state->vlan_ports[i] != 0) {
+		if (state->vlans[i].ports != 0) {
 			state->num_vlans = i+1; // Hack -- we need to store the "set" vlans somewhere...
 		}
 	}
@@ -690,8 +692,8 @@ static void ip175c_correct_vlan_state(struct ip175c_state *state)
 		}
 		state->ports[i].shareports = portmask;
 		for (j=0; j<MAX_VLANS; j++) {
-			if (state->vlan_ports[j] & portmask)
-				state->ports[i].shareports |= state->vlan_ports[j];
+			if (state->vlans[j].ports & portmask)
+				state->ports[i].shareports |= state->vlans[j].ports;
 		}
 	}
 	state->remove_tag = ((~state->add_tag) & ((1<<state->regs->NUM_PORTS)-1));
@@ -758,7 +760,7 @@ static int ip175c_set_enable_vlan(struct switch_dev *dev, const struct switch_at
 	state->remove_tag = 0x0000;
 	state->add_tag = 0x0000;
 	for (i = 0; i < MAX_VLANS; i++)
-		state->vlan_ports[i] = 0x0;
+		state->vlans[i].ports = 0x0000;
 
 	return state->regs->set_vlan_mode(state);
 }
@@ -778,7 +780,7 @@ static int ip175c_get_ports(struct switch_dev *dev, struct switch_val *val)
 	if (err<0)
 		return err;
 
-	ports = state->vlan_ports[val->port_vlan];
+	ports = state->vlans[val->port_vlan].ports;
 	b = 0;
 	ind = 0;
 	while (b < MAX_PORTS) {
@@ -809,10 +811,10 @@ static int ip175c_set_ports(struct switch_dev *dev, struct switch_val *val)
 	if (err < 0)
 		return err;
 
-	state->vlan_ports[val->port_vlan] = 0;
+	state->vlans[val->port_vlan].ports = 0;
 	for (i = 0; i < val->len; i++) {
 		int bitmask = (1<<val->value.ports[i].id);
-		state->vlan_ports[val->port_vlan] |= bitmask;
+		state->vlans[val->port_vlan].ports |= bitmask;
 		if (val->value.ports[i].flags & (1<<SWITCH_PORT_FLAG_TAGGED)) {
 			state->add_tag |= bitmask;
 		} else {
