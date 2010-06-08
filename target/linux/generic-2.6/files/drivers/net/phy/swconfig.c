@@ -92,7 +92,7 @@ swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, 
 		if (ports[i].id >= dev->ports)
 			return -EINVAL;
 
-		if (dev->set_port_pvid && !(ports[i].flags & SWITCH_PORT_FLAG_TAGGED))
+		if (dev->set_port_pvid && !(ports[i].flags & (1 << SWITCH_PORT_FLAG_TAGGED)))
 			dev->set_port_pvid(dev, ports[i].id, val->port_vlan);
 	}
 
