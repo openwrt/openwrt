@@ -1,0 +1,11 @@
+--- a/net/netfilter/xt_layer7.c
++++ b/net/netfilter/xt_layer7.c
+@@ -416,7 +416,7 @@ static int layer7_write_proc(struct file
+ 
+ static bool
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+-match(const struct sk_buff *skbin, const struct xt_match_param *par)
++match(const struct sk_buff *skbin, struct xt_action_param *par)
+ #else
+ match(const struct sk_buff *skbin,
+       const struct net_device *in,
