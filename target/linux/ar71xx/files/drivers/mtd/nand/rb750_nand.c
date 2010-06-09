@@ -14,6 +14,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
+#include <linux/slab.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/mach-rb750.h>
