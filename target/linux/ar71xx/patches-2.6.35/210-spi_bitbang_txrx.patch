@@ -1,0 +1,24 @@
+--- a/drivers/spi/ap83_spi.c
++++ b/drivers/spi/ap83_spi.c
+@@ -125,8 +125,8 @@ static void ap83_spi_chipselect(struct s
+ 		do_spidelay(spi, nsecs);				\
+ 	} while (0)
+ 
+-#define EXPAND_BITBANG_TXRX
+ #include <linux/spi/spi_bitbang.h>
++#include "spi_bitbang_txrx.h"
+ 
+ static u32 ap83_spi_txrx_mode0(struct spi_device *spi,
+ 			       unsigned nsecs, u32 word, u8 bits)
+--- a/drivers/spi/spi_gpio_old.c
++++ b/drivers/spi/spi_gpio_old.c
+@@ -74,8 +74,8 @@ static inline void do_spidelay(struct sp
+ 	do_spidelay(spi, nsecs);				\
+   } while (0)
+ 
+-#define EXPAND_BITBANG_TXRX
+ #include <linux/spi/spi_bitbang.h>
++#include "spi_bitbang_txrx.h"
+ 
+ static u32 spi_gpio_txrx_mode0(struct spi_device *spi,
+ 			       unsigned nsecs, u32 word, u8 bits)
