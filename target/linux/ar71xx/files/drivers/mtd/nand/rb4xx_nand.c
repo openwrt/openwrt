@@ -20,6 +20,7 @@
 #include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/gpio.h>
+#include <linux/slab.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
