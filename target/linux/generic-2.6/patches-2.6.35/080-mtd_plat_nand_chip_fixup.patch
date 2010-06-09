@@ -15,7 +15,7 @@
  
  	/* Scan to find existance of the device */
 -	if (nand_scan(&data->mtd, 1)) {
-+	if (nand_scan_ident(&data->mtd, 1)) {
++	if (nand_scan_ident(&data->mtd, 1, NULL)) {
 +		res = -ENXIO;
 +		goto out;
 +	}
