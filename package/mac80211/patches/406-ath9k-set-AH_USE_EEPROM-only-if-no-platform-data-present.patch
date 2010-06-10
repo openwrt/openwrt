@@ -10,7 +10,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -565,6 +565,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -556,6 +556,7 @@ static int ath9k_init_softc(u16 devid, s
  {
  	struct ath_hw *ah = NULL;
  	struct ath_common *common;
@@ -18,7 +18,7 @@
  	int ret = 0, i;
  	int csz = 0;
  
-@@ -576,6 +577,10 @@ static int ath9k_init_softc(u16 devid, s
+@@ -567,6 +568,10 @@ static int ath9k_init_softc(u16 devid, s
  	ah->hw_version.subsysid = subsysid;
  	sc->sc_ah = ah;
  
@@ -31,7 +31,7 @@
  	common->bus_ops = bus_ops;
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -429,10 +429,6 @@ static void ath9k_hw_init_defaults(struc
+@@ -423,10 +423,6 @@ static void ath9k_hw_init_defaults(struc
  	ah->hw_version.magic = AR5416_MAGIC;
  	ah->hw_version.subvendorid = 0;
  
