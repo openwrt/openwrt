@@ -29,7 +29,7 @@ $(eval $(call KernelPackage,ata-rb532-cf))
 define KernelPackage/input-rb532
   SUBMENU:=$(OTHER_MENU)
   TITLE:=RB532 button device support
-  DEPENDS:=@TARGET_rb532
+  DEPENDS:=@TARGET_rb532 +kmod-input-polldev
   KCONFIG:= \
 	CONFIG_INPUT_MISC=y \
 	CONFIG_INPUT_RB532_BUTTON
