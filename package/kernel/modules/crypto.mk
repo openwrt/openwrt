@@ -278,7 +278,7 @@ endef
 define KernelPackage/crypto-misc/2.6
   FILES+= \
 	$(LINUX_DIR)/crypto/camellia.$(LINUX_KMOD_SUFFIX) \
-	$(if $(findstring y,$(CONFIG_CRYPTO_CRC32C)),,$(LINUX_DIR)/crypto/crc32c.$(LINUX_KMOD_SUFFIX) \
+	$(if $(findstring y,$(CONFIG_CRYPTO_CRC32C)),,$(LINUX_DIR)/crypto/crc32c.$(LINUX_KMOD_SUFFIX)) \
 	$(LINUX_DIR)/crypto/fcrypt.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/tgr192.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/twofish_common.$(LINUX_KMOD_SUFFIX)
