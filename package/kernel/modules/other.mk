@@ -248,6 +248,20 @@ endef
 
 $(eval $(call KernelPackage,gpio-scx200))
 
+define KernelPackage/gpio-nxp-74hc164
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=NXP 74HC164 GPIO expander support
+  DEPENDS:=@TARGET_brcm63xx
+  KCONFIG:=CONFIG_GPIO_NXP_74HC164
+  FILES:=$(LINUX_DIR)/drivers/gpio/nxp_74hc164.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,99,nxp_74hc164)
+endef
+
+define KernelPackage/gpio-nxp-74hc164/description
+  Kernel module for NXP 74HC164 GPIO expander
+endef
+
+$(eval $(call KernelPackage,gpio-nxp-74hc164))
 
 define KernelPackage/hid
   SUBMENU:=$(OTHER_MENU)
