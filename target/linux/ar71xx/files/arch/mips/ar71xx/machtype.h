@@ -44,7 +44,6 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_UBNT_LSSR71, /* Ubiquiti LS-SR71 */
 	AR71XX_MACH_UBNT_LSX,	/* Ubiquiti LSX */
 	AR71XX_MACH_UBNT_RS,	/* Ubiquiti RouterStation */
-	AR71XX_MACH_UBNT_AR71XX, /* Ubiquiti AR71xx-based board */
 	AR71XX_MACH_UBNT_RSPRO,	/* Ubiquiti RouterStation Pro */
 	AR71XX_MACH_UBNT_BULLET_M, /* Ubiquiti Bullet M */
 	AR71XX_MACH_UBNT_ROCKET_M, /* Ubiquiti Rocket M */

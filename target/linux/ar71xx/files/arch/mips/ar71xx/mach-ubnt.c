@@ -161,9 +161,6 @@ static void __init ubnt_rs_setup(void)
 MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "UBNT-RS", "Ubiquiti RouterStation",
 	     ubnt_rs_setup);
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_AR71XX, "Ubiquiti AR71xx-based board",
-	     "Ubiquiti RouterStation", ubnt_rs_setup);
-
 #define UBNT_RSPRO_WAN_PHYMASK	(1 << 4)
 #define UBNT_RSPRO_LAN_PHYMASK	((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3))
 
