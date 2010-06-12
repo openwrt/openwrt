@@ -40,7 +40,7 @@
  /* Helper to extract some _offset, which is one of the SSB_SPROM_XXX defines. */
  #define SPEX16(_outvar, _offset, _mask, _shift)	\
  	out->_outvar = ((in[SPOFF(_offset)] & (_mask)) >> (_shift))
-@@ -254,7 +254,7 @@ static int sprom_do_read(struct ssb_bus 
+@@ -254,7 +254,7 @@ static int sprom_do_read(struct ssb_bus
  	int i;
  
  	for (i = 0; i < bus->sprom_size; i++)
