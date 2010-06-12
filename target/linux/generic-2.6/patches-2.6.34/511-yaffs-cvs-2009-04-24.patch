@@ -11038,14 +11038,14 @@
 +			yaffs_UnpackTags2(tags, &pt);
 +		}
 +	}
- 
--	if(tags && retval == -EBADMSG && tags->eccResult == YAFFS_ECC_RESULT_NO_ERROR)
--		tags->eccResult = YAFFS_ECC_RESULT_UNFIXED;
++
 +	if (localData)
 +		yaffs_ReleaseTempBuffer(dev, data, __LINE__);
  
+-	if(tags && retval == -EBADMSG && tags->eccResult == YAFFS_ECC_RESULT_NO_ERROR)
 +	if (tags && retval == -EBADMSG && tags->eccResult == YAFFS_ECC_RESULT_NO_ERROR)
-+		tags->eccResult = YAFFS_ECC_RESULT_UNFIXED;
+ 		tags->eccResult = YAFFS_ECC_RESULT_UNFIXED;
+-
  	if (retval == 0)
  		return YAFFS_OK;
  	else
