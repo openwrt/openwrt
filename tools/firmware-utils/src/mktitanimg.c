@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 #include "mktitanimg.h"
 
 
@@ -55,7 +56,7 @@ void mknspimg_print_hdr(struct nsp_img_hdr *hdr)
 	printf("Offset Sect info:  0x%x\n",		hdr->head.sect_info_offset);
 	printf("Offset Sections:   0x%x\n",		hdr->sect_info.sections_offset);
 
-	chksum=(struct nsp_img_hdr_chksum *)((unsigned int)hdr+hdr->head.chksum_offset);
+	chksum=(struct nsp_img_hdr_chksum *)(hdr+hdr->head.chksum_offset);
 	printf("Header Checksum:   0x%x\n",		chksum->hdr_chksum);
 
 	printf("+++ Section Information +++\n");
