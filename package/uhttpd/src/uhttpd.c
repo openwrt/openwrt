@@ -550,6 +550,7 @@ int main (int argc, char **argv)
 					&hints,	(opt == 's'), &conf
 				);
 
+				memset(bind, 0, sizeof(bind));
 				break;
 
 #ifdef HAVE_TLS
