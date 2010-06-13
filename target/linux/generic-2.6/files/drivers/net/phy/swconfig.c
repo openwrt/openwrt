@@ -886,6 +886,7 @@ unregister_switch(struct switch_dev *dev)
 	swconfig_lock();
 	list_del(&dev->dev_list);
 	swconfig_unlock();
+	spin_unlock(&dev->lock);
 }
 EXPORT_SYMBOL_GPL(unregister_switch);
 
