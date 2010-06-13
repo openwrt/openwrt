@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -588,6 +588,63 @@ static struct board_info __initdata boar
+@@ -588,6 +588,93 @@ static struct board_info __initdata boar
  
  	.has_ohci0 = 1,
  	.has_ehci0 = 1,
@@ -19,6 +19,26 @@
 +			.default_trigger = "default-on",
 +		},
 +		{
++			.name		= "service:red",
++			.gpio		= 7,
++			.active_low	= 1,
++		},
++		{
++			.name		= "service:green",
++			.gpio		= 6,
++			.active_low	= 1,
++		},
++		{
++			.name		= "adsl:red",
++			.gpio		= 9,
++			.active_low	= 1,
++		},
++		{
++			.name		= "adsl:green",
++			.gpio		= 10,
++			.active_low	= 1,
++		},
++		{
 +			.name		= "wifi:red",
 +			.gpio		= 23,
 +			.active_low	= 1,
@@ -26,6 +46,16 @@
 +		{
 +			.name		= "wifi:green",
 +			.gpio		= 22,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internet:red",
++			.gpio		= 25,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internet:green",
++			.gpio		= 25,
 +			.active_low	= 1,
 +		},
 +		{
@@ -64,3 +94,14 @@
  };
  
  static struct board_info __initdata board_DWVS0 = {
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -54,7 +54,7 @@ struct board_info {
+ 	struct bcm63xx_dsp_platform_data dsp;
+ 
+ 	/* GPIO LEDs */
+-	struct gpio_led leds[8];
++	struct gpio_led leds[14];
+ 
+ 	/* Buttons */
+ 	struct gpio_button buttons[2];

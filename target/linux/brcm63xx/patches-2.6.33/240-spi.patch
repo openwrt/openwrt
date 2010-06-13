@@ -937,7 +937,7 @@
  obj-y		+= boards/
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -29,6 +29,7 @@
+@@ -30,6 +30,7 @@
  #include <bcm63xx_dev_usb_ohci.h>
  #include <bcm63xx_dev_usb_ehci.h>
  #include <bcm63xx_dev_usb_udc.h>
@@ -945,7 +945,7 @@
  #include <board_bcm963xx.h>
  
  #define PFX	"board_bcm963xx: "
-@@ -998,6 +999,9 @@ int __init board_register_devices(void)
+@@ -1525,6 +1526,9 @@ int __init board_register_devices(void)
  	if (board.has_udc0)
  		bcm63xx_udc_register();
  
