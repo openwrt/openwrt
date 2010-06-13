@@ -688,7 +688,7 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 	memset(&val, 0, sizeof(val));
 	attr = swconfig_lookup_attr(dev, info, &val);
 	if (!attr || !attr->get)
-		goto error_dev;
+		goto error;
 
 	if (attr->type == SWITCH_TYPE_PORTS) {
 		val.value.ports = dev->portbuf;
@@ -737,9 +737,8 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 nla_put_failure:
 	if (msg)
 		nlmsg_free(msg);
-error_dev:
-	swconfig_put_dev(dev);
 error:
+	swconfig_put_dev(dev);
 	if (!err)
 		err = -ENOMEM;
 	return err;
