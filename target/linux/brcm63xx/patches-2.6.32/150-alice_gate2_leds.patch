@@ -1,8 +1,6 @@
-Index: linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c
-===================================================================
---- linux-2.6.32.13.orig/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:40:56.000000000 -0400
-+++ linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c	2010-05-27 21:43:41.000000000 -0400
-@@ -573,6 +573,63 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -573,6 +573,93 @@ static struct board_info __initdata boar
  
  	.has_ohci0 = 1,
  	.has_ehci0 = 1,
@@ -21,6 +19,26 @@ Index: linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +			.default_trigger = "default-on",
 +		},
 +		{
++			.name		= "service:red",
++			.gpio		= 7,
++			.active_low	= 1,
++		},
++		{
++			.name		= "service:green",
++			.gpio		= 6,
++			.active_low	= 1,
++		},
++		{
++			.name		= "adsl:red",
++			.gpio		= 9,
++			.active_low	= 1,
++		},
++		{
++			.name		= "adsl:green",
++			.gpio		= 10,
++			.active_low	= 1,
++		},
++		{
 +			.name		= "wifi:red",
 +			.gpio		= 23,
 +			.active_low	= 1,
@@ -28,6 +46,16 @@ Index: linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +		{
 +			.name		= "wifi:green",
 +			.gpio		= 22,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internet:red",
++			.gpio		= 25,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internet:green",
++			.gpio		= 25,
 +			.active_low	= 1,
 +		},
 +		{
@@ -66,3 +94,14 @@ Index: linux-2.6.32.13/arch/mips/bcm63xx/boards/board_bcm963xx.c
  };
  
  static struct board_info __initdata board_DWVS0 = {
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -54,7 +54,7 @@ struct board_info {
+ 	struct bcm63xx_dsp_platform_data dsp;
+ 
+ 	/* GPIO LEDs */
+-	struct gpio_led leds[5];
++	struct gpio_led leds[14];
+ 
+ 	/* Buttons */
+ 	struct gpio_button buttons[2];
