@@ -17,6 +17,7 @@
  *
  * Feedback, Bugs...  blogic@openwrt.org
  *
+ * dpg 20100106
  */
 
 #include <linux/module.h>
@@ -36,54 +37,57 @@
 #define DEVNAME		"gpio"
 
 static int dev_major;
-static unsigned int gpio_access_mask;
 static struct class *gpiodev_class;
 
-/* Counter is 1, if the device is not opened and zero (or less) if opened. */
-static atomic_t gpio_open_cnt = ATOMIC_INIT(1);
 
+/* third argument of user space ioctl ('arg' here) contains the <pin> */
 static int
-gpio_ioctl(struct inode * inode, struct file * file, unsigned int cmd, unsigned long arg)
+gpio_ioctl(struct inode * inode, struct file * file, unsigned int cmd,
+	   unsigned long arg)
 {
 	int retval = 0;
-
-	if (((1 << arg) & gpio_access_mask) != (1 << arg))
-	{
-		retval = -EINVAL;
-		goto out;
-	}
 
 	switch (cmd)
 	{
 	case GPIO_GET:
 		retval = gpio_get_value(arg);
 		break;
-
 	case GPIO_SET:
 		gpio_set_value(arg, 1);
 		break;
-
 	case GPIO_CLEAR:
 		gpio_set_value(arg, 0);
 		break;
-
 	case GPIO_DIR_IN:
-		gpio_direction_input(arg);
+		retval = gpio_direction_input(arg);
 		break;
-
 	case GPIO_DIR_OUT:
-		gpio_direction_output(arg, 0);
+		retval = gpio_direction_output(arg, 0);
 		break;
-
+	case GPIO_DIR_HIGH:
+		retval = gpio_direction_output(arg, 1);
+		break;
+	case GPIO_REQUEST:
+		/* should be first ioctl operation on <pin> */
+		retval = gpio_request(arg, DRVNAME);
+		break;
+	case GPIO_FREE:
+		/* should be last ioctl operation on <pin> */
+		/* may be needed first if previous user missed this ioctl */
+		gpio_free(arg);
+		break;
+	case GPIO_CAN_SLEEP:
+		retval = gpio_cansleep(arg);
+		break;
 	default:
 		retval = -EINVAL;
+		/* = -ENOTTY; // correct return but ... */
 		break;
 	}
-
-out:
 	return retval;
 }
 
+/* Allow co-incident opens */
 static int
 gpio_open(struct inode *inode, struct file *file)
 {
@@ -96,19 +100,6 @@ gpio_open(struct inode *inode, struct file *file)
 		result = -ENODEV;
 		goto out;
 	}
-
-	/* FIXME: We should really allow multiple applications to open the device
-	 *        at the same time, as long as the apps access different IO pins.
-	 *        The generic gpio-registration functions can be used for that.
-	 *        Two new IOCTLs have to be introduced for that. Need to check userspace
-	 *        compatibility first. --mb */
-	if (!atomic_dec_and_test(&gpio_open_cnt)) {
-		atomic_inc(&gpio_open_cnt);
-		printk(KERN_ERR DRVNAME ": Device with minor ID %d already in use\n", dev_minor);
-		result = -EBUSY;
-		goto out;
-	}
-
 out:
 	return result;
 }
@@ -116,9 +107,9 @@ out:
 static int
 gpio_close(struct inode * inode, struct file * file)
 {
-	smp_mb__before_atomic_inc();
-	atomic_inc(&gpio_open_cnt);
-
+	/* could track all <pin>s requested by this fd and gpio_free()
+         * them here
+	 */
 	return 0;
 }
 
@@ -140,22 +131,9 @@ gpio_probe(struct platform_device *dev)
 		result = -ENODEV;
 		goto out;
 	}
-
 	gpiodev_class = class_create(THIS_MODULE, DRVNAME);
 	device_create(gpiodev_class, NULL, MKDEV(dev_major, 0), dev, DEVNAME);
-
 	printk(KERN_INFO DRVNAME ": gpio device registered with major %d\n", dev_major);
-
-	if (dev->num_resources != 1)
-	{
-		printk(KERN_ERR DRVNAME ": device may only have 1 resource\n");
-		result = -ENODEV;
-		goto out;
-	}
-
-	gpio_access_mask = dev->resource[0].start;
-
-	printk(KERN_INFO DRVNAME ": gpio platform device registered with access mask %08X\n", gpio_access_mask);
 out:
 	return result;
 }
@@ -182,7 +160,7 @@ gpio_mod_init(void)
 {
 	int ret = platform_driver_register(&gpio_driver);
 	if (ret)
-		printk(KERN_INFO DRVNAME ": Error registering platfom driver!");
+		printk(KERN_INFO DRVNAME ": Error registering platfom driver!\n");
 
 	return ret;
 }
@@ -197,5 +175,5 @@ module_init (gpio_mod_init);
 module_exit (gpio_mod_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("John Crispin / OpenWrt");
+MODULE_AUTHOR("John Crispin / OpenWrt +");
 MODULE_DESCRIPTION("Character device for for generic gpio api");
