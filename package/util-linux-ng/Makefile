@@ -110,12 +110,23 @@ endef
 define Package/setterm
 $(call Package/util-linux/Default)
   TITLE:=Tool for setting terminal attributes
-  SUBMENU:=terminal
+  SUBMENU:=Terminal
   DEPENDS:= +libncurses
 endef
 
 define Package/setterm/description
   This package contains a utility for setting terminal attributes
+endef
+
+define Package/script
+$(call Package/util-linux/Default)
+  TITLE:=Make typescript of terminal session
+  SUBMENU=Terminal
+endef
+
+define Package/script/description
+ Script makes a typescript of everything printed on your terminal.
+ http://linux.die.net/man/1/script
 endef
 
 
@@ -126,6 +137,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)/hwclock hwclock
 	$(MAKE) -C $(PKG_BUILD_DIR)/sys-utils flock
 	$(MAKE) -C $(PKG_BUILD_DIR)/misc-utils setterm
+	$(MAKE) -C $(PKG_BUILD_DIR)/misc-utils script
 endef
 
 define Package/fdisk/install
@@ -174,6 +186,11 @@ define Package/setterm/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/setterm $(1)/usr/bin/
 endef
 
+define Package/script/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc-utils/script $(1)/usr/bin/
+endef
+
 
 $(eval $(call BuildPackage,fdisk))
 $(eval $(call BuildPackage,cfdisk))
@@ -184,3 +201,4 @@ $(eval $(call BuildPackage,swap-utils))
 $(eval $(call BuildPackage,hwclock))
 $(eval $(call BuildPackage,flock))
 $(eval $(call BuildPackage,setterm))
+$(eval $(call BuildPackage,script))
