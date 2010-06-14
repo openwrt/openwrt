@@ -46,7 +46,6 @@ define Host/Compile
 	$(call cc,wndr3700)
 	$(call cc,mkdniimg)
 	$(call cc,mktitanimg)
-	$(call cc,hcsmakeimage bcmalgo)
 endef
 
 define Host/Install
