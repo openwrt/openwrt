@@ -7,7 +7,7 @@
 
 define Profile/USBGeneric
   NAME:=Generic USB
-  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-usb2 wlc nas kmod-wlcompat
+  PACKAGES:=kmod-brcm-wl-old kmod-usb-core kmod-usb-ohci kmod-usb2 wlc-old nas-old kmod-wlcompat
 endef
 
 define Profile/USBGeneric/Description

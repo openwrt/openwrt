@@ -7,7 +7,7 @@
 
 define Profile/Broadcom
   NAME:=Generic, Broadcom WiFi (default)
-  PACKAGES:=kmod-brcm-wl wlc nas kmod-wlcompat
+  PACKAGES:=kmod-brcm-wl-old wlc-old nas-old kmod-wlcompat
 endef
 
 define Profile/Broadcom/Description

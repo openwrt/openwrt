@@ -7,7 +7,7 @@
 
 define Profile/WRT300Nv11
   NAME:=Linksys WRT300N v1.1
-  PACKAGES:=kmod-brcm-wl-mimo wlc nas kmod-wlcompat kmod-brcm-57xx
+  PACKAGES:=kmod-brcm-wl-mimo-old wlc-old nas-old kmod-wlcompat kmod-brcm-57xx
 endef
 
 define Profile/WRT300Nv11/Description

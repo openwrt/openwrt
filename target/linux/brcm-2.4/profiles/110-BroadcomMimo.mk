@@ -7,7 +7,7 @@
 
 define Profile/BroadcomMimo
   NAME:=Generic, Broadcom WiFi (MIMO)
-  PACKAGES:=kmod-brcm-wl-mimo wlc nas kmod-wlcompat
+  PACKAGES:=kmod-brcm-wl-mimo-old wlc-old nas-old kmod-wlcompat
 endef
 
 define Profile/BroadcomMimo/Description
