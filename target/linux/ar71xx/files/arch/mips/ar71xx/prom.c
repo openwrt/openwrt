@@ -1,7 +1,7 @@
 /*
  *  Atheros AR71xx SoC specific prom routines
  *
- *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -42,27 +42,31 @@ static void __init ar71xx_prom_append_cmdline(const char *name,
 	strlcat(arcs_cmdline, buf, sizeof(arcs_cmdline));
 }
 
-static void __init ar71xx_prom_find_env(char **envp, const char *name)
+static const char * __init ar71xx_prom_find_env(char **envp, const char *name)
 {
-	int len = strlen(name);
+	const char *ret = NULL;
+	int len;
 	char **p;
 
 	if (!is_valid_ram_addr(envp))
-		return;
+		return NULL;
 
+	len = strlen(name);
 	for (p = envp; is_valid_ram_addr(*p); p++) {
 		if (strncmp(name, *p, len) == 0 && (*p)[len] == '=') {
-			ar71xx_prom_append_cmdline(name, *p + len + 1);
+			ret = *p + len + 1;
 			break;
 		}
 
 		/* RedBoot env comes in pointer pairs - key, value */
 		if (strncmp(name, *p, len) == 0 && (*p)[len] == 0)
 			if (is_valid_ram_addr(*(++p))) {
-				ar71xx_prom_append_cmdline(name, *p);
+				ret = *p;
 				break;
 			}
 	}
+
+	return ret;
 }
 
 static int __init ar71xx_prom_init_myloader(void)
@@ -142,6 +146,7 @@ static __init void ar71xx_prom_init_cmdline(int argc, char **argv)
 
 void __init prom_init(void)
 {
+	const char *env;
 	char **envp;
 
 	printk(KERN_DEBUG "prom: fw_arg0=%08x, fw_arg1=%08x, "
@@ -156,8 +161,26 @@ void __init prom_init(void)
 	ar71xx_prom_init_cmdline(fw_arg0, (char **)fw_arg1);
 
 	envp = (char **)fw_arg2;
-	ar71xx_prom_find_env(envp, "board");
-	ar71xx_prom_find_env(envp, "ethaddr");
+	if (!strstr(arcs_cmdline, "ethaddr=")) {
+		env = ar71xx_prom_find_env(envp, "ethaddr");
+		if (env)
+			ar71xx_prom_append_cmdline("ethaddr", env);
+	}
+
+	if (!strstr(arcs_cmdline, "board=")) {
+		env = ar71xx_prom_find_env(envp, "board");
+		if (env) {
+			/* Workaround for buggy bootloaders */
+			if (strcmp(env, "RouterStation") == 0 ||
+			    strcmp(env, "Ubiquiti AR71xx-based board") == 0)
+				env = "UBNT-RS";
+
+			if (strcmp(env, "RouterStation PRO") == 0)
+				env = "UBNT-RSPRO";
+
+			ar71xx_prom_append_cmdline("board", env);
+		}
+	}
 }
 
 void __init prom_free_prom_memory(void)
