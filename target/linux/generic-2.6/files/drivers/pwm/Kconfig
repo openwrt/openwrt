@@ -1,0 +1,31 @@
+#
+# PWM infrastructure and devices
+#
+
+menuconfig GENERIC_PWM
+	tristate "PWM Support"
+	depends on SYSFS
+	help
+	  This enables PWM support through the generic PWM library.
+	  If unsure, say N.
+
+if GENERIC_PWM
+
+config ATMEL_PWM
+	tristate "Atmel AT32/AT91 PWM support"
+	depends on AVR32 || ARCH_AT91
+	help
+	  This option enables device driver support for the PWMC
+	  peripheral channels found on certain Atmel processors.
+	  Pulse Width Modulation is used many for purposes, including
+	  software controlled power-efficient backlights on LCD
+	  displays, motor control, and waveform generation.  If
+	  unsure, say N.
+
+config GPIO_PWM
+       tristate "PWM emulation using GPIO"
+       help
+         This option enables a single-channel PWM device using
+	 a kernel interval timer and a GPIO pin.  If unsure, say N.
+
+endif

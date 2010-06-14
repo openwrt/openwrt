@@ -1,0 +1,46 @@
+Patches from: Bill Gatliff <bgat@billgatliff.com>
+Based on:
+* Expunge old Atmel PWMC driver, replacing it with one that conforms to the PWM API
+* Incorporate PWM API code into KBuild
+Ignore the LEDS part atm
+---
+
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index 049ff24..b94666c 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -5,7 +5,6 @@
+ obj-$(CONFIG_IBM_ASM)		+= ibmasm/
+ obj-$(CONFIG_HDPU_FEATURES)	+= hdpuftrs/
+ obj-$(CONFIG_AD525X_DPOT)	+= ad525x_dpot.o
+-obj-$(CONFIG_ATMEL_PWM)		+= atmel_pwm.o
+ obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
+ obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib.o
+ obj-$(CONFIG_ICS932S401)	+= ics932s401.o
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index 368ae6d..54d7b16 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -54,6 +54,8 @@ source "drivers/pps/Kconfig"
+ 
+ source "drivers/gpio/Kconfig"
+ 
++source "drivers/pwm/Kconfig"
++
+ source "drivers/w1/Kconfig"
+ 
+ source "drivers/power/Kconfig"
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 6ee53c7..e6143f3 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -6,6 +6,8 @@
+ #
+ 
+ obj-y				+= gpio/
++obj-$(CONFIG_GENERIC_PWM)	+= pwm/
++
+ obj-$(CONFIG_PCI)		+= pci/
+ obj-$(CONFIG_PARISC)		+= parisc/
+ obj-$(CONFIG_RAPIDIO)		+= rapidio/
+diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
