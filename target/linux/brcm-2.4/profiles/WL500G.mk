@@ -7,7 +7,7 @@
 
 define Profile/WL500G
   NAME:=ASUS WL-500g
-  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-lp wlc nas kmod-wlcompat
+  PACKAGES:=kmod-brcm-wl-old kmod-usb-core kmod-usb-ohci kmod-lp wlc-old nas-old kmod-wlcompat
 endef
 
 define Profile/WL500G/Description

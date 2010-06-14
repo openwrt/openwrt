@@ -7,7 +7,7 @@
 
 define Profile/WRT54G3G
   NAME:=Linksys WRT54G3G
-  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-pcmcia-core kmod-pcmcia-serial kmod-nozomi comgt wlc nas kmod-wlcompat
+  PACKAGES:=kmod-brcm-wl-old kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-pcmcia-core kmod-pcmcia-serial kmod-nozomi comgt wlc-old nas-old kmod-wlcompat
 endef
 
 define Profile/WRT54G3G/Description

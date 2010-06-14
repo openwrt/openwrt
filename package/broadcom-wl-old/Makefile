@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/broadcom-wl/Default
   SECTION:=kernel
   CATEGORY:=Kernel modules
-  DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo
+  DEPENDS:=@PACKAGE_kmod-brcm-wl-old||PACKAGE_kmod-brcm-wl-mimo-old
   SUBMENU:=Proprietary BCM43xx WiFi driver
   SUBMENUDEP:=@TARGET_brcm_2_4
 endef
@@ -43,21 +43,21 @@ define KernelPackage/brcm-wl/Default/description
  BCM43xx chipset.
 endef
 
-define KernelPackage/brcm-wl
+define KernelPackage/brcm-wl-old
 $(call KernelPackage/brcm-wl/Default,)
   TITLE+= (normal version)
 endef
 
-define KernelPackage/brcm-wl/description
+define KernelPackage/brcm-wl-old/description
 $(call KernelPackage/brcm-wl/Default/description)
 endef
 
-define KernelPackage/brcm-wl-mimo
+define KernelPackage/brcm-wl-mimo-old
 $(call KernelPackage/brcm-wl/Default,_mimo)
   TITLE+= (MIMO version)
 endef
 
-define KernelPackage/brcm-wl-mimo/description
+define KernelPackage/brcm-wl-mimo-old/description
 $(call KernelPackage/brcm-wl/Default/description)
 endef
 
@@ -88,32 +88,32 @@ $(call KernelPackage/wlcompat/description)
  This is the debugging version.
 endef
 
-define Package/wlc
+define Package/wlc-old
 $(call Package/broadcom-wl/Default)
   TITLE:=wl driver setup utility
 endef
 
-define Package/wlc/description
+define Package/wlc-old/description
  This package contains an utility for initializing the proprietary Broadcom 
  wl driver.
 endef
 
-define Package/wl
+define Package/wl-old
 $(call Package/broadcom-wl/Default)
   TITLE:=Proprietary Broadcom wl driver config utility
 endef
 
-define Package/wl/description
+define Package/wl-old/description
  This package contains the proprietary utility (wl) for configuring the 
  proprietary Broadcom wl driver.
 endef
 
-define Package/nas
+define Package/nas-old
 $(call Package/broadcom-wl/Default)
   TITLE:=Proprietary Broadcom WPA/WPA2 authenticator
 endef
 
-define Package/nas/description
+define Package/nas-old/description
  This package contains the proprietary WPA/WPA2 authenticator (nas) for the 
  proprietary Broadcom wl driver.
 endef
@@ -175,28 +175,28 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/router/shared/libshared.a $(1)/usr/lib/
 endef
 
-define Package/wlc/install
+define Package/wlc-old/install
 	$(CP) ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wlc/wlc $(1)/sbin/
 endef
 
-define Package/wl/install
+define Package/wl-old/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wl $(1)/usr/sbin/
 endef
 
-define Package/nas/install
+define Package/nas-old/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/nas $(1)/usr/sbin/
 	ln -sf nas $(1)/usr/sbin/nas4not
 	ln -sf nas $(1)/usr/sbin/nas4wds
 endef
 
-$(eval $(call KernelPackage,brcm-wl))
-$(eval $(call KernelPackage,brcm-wl-mimo))
+$(eval $(call KernelPackage,brcm-wl-old))
+$(eval $(call KernelPackage,brcm-wl-mimo-old))
 $(eval $(call KernelPackage,wlcompat))
 $(eval $(call KernelPackage,wlcompat-debug))
-$(eval $(call BuildPackage,wlc))
-$(eval $(call BuildPackage,wl))
-$(eval $(call BuildPackage,nas))
+$(eval $(call BuildPackage,wlc-old))
+$(eval $(call BuildPackage,wl-old))
+$(eval $(call BuildPackage,nas-old))

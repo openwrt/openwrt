@@ -7,7 +7,7 @@
 
 define Profile/WLHDD
   NAME:=WL-HDD
-  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-ide-core kmod-ide-pdc202xx wlc nas kmod-wlcompat kmod-rtc-rv5c386a
+  PACKAGES:=kmod-brcm-wl-old kmod-usb-core kmod-usb-ohci kmod-ide-core kmod-ide-pdc202xx wlc-old nas-old kmod-wlcompat kmod-rtc-rv5c386a
 endef
 
 define Profile/WLHDD/Description
