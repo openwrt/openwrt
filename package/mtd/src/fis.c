@@ -77,7 +77,7 @@ fis_open(void)
 		goto error;
 
 	fis_erasesize = erasesize;
-	desc = mmap(NULL, erasesize, PROT_READ|PROT_WRITE, MAP_SHARED, fis_fd, 0);
+	desc = mmap(NULL, erasesize, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_LOCKED, fis_fd, 0);
 	if (desc == MAP_FAILED)
 		goto error;
 
