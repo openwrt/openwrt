@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/broadcom-wl/Default
   SECTION:=kernel
   CATEGORY:=Kernel modules
-  DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mimo
+  DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mini
   SUBMENU:=Proprietary BCM43xx WiFi driver
   SUBMENUDEP:=@TARGET_brcm47xx
 endef
