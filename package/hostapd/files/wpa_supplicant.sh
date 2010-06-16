@@ -70,6 +70,7 @@ wpa_supplicant_setup_vif() {
 			key_mgmt='WPA-EAP'
 			config_get ieee80211w "$vif" ieee80211w
 			config_get ca_cert "$vif" ca_cert
+			config_get eap_type "$vif" eap_type
 			ca_cert=${ca_cert:+"ca_cert=\"$ca_cert\""}
 			case "$eap_type" in
 				tls)
