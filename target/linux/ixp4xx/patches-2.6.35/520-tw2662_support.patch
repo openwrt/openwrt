@@ -118,7 +118,7 @@
 +subsys_initcall(tw2662_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/tw2662-setup.c
-@@ -0,0 +1,215 @@
+@@ -0,0 +1,212 @@
 +/*
 + * arch/arm/mach-ixp4xx/tw2662-setup.c
 + *
@@ -302,7 +302,6 @@
 +static void __init tw2662_init(void)
 +{
 +	ixp4xx_sys_init();
-+	int i;
 +
 +	tw2662_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
 +	tw2662_flash_resource.end =
@@ -310,13 +309,11 @@
 +
 +	platform_add_devices(tw2662_devices, ARRAY_SIZE(tw2662_devices));
 +
-+	for (i = 0; i < 6; i++)
-+		if (tw2662_plat_eth[0].hwaddr[i] != 0x00)
-+			break;
-+	if (i == 6) {
-+		/* hack MACs as most of these boards have a broken eeprom */
++	if (!(is_valid_ether_addr(tw2662_plat_eth[0].hwaddr)))
 +		random_ether_addr(tw2662_plat_eth[0].hwaddr);
-+		tw2662_plat_eth[1].hwaddr = (tw2662_plat_eth[0].hwaddr + 1);
++	if (!(is_valid_ether_addr(tw2662_plat_eth[1].hwaddr))) {
++		memcpy(tw2662_plat_eth[1].hwaddr, tw2662_plat_eth[0].hwaddr, ETH_ALEN);
++		tw2662_plat_eth[1].hwaddr[5] = (tw2662_plat_eth[0].hwaddr[5] + 1);
 +	}
 +
 +}
