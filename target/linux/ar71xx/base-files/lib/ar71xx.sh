@@ -25,6 +25,9 @@ ar71xx_board_name() {
 	*"DIR-825 rev. B1")
 		name="dir-825-b1"
 		;;
+	*EAP7660D)
+		name="eap7660d"
+		;;
 	*"Bullet M")
 		name="bullet-m"
 		;;

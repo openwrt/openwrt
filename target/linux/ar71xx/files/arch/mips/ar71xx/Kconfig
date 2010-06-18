@@ -223,6 +223,14 @@ config AR71XX_MACH_UBNT
 	select AR71XX_DEV_USB
 	default n
 
+config AR71XX_MACH_EAP7660D
+	bool "Senao EAP7660D support"
+	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_PB42_PCI if PCI
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
+	default n
+
 endmenu
 
 config AR71XX_DEV_M25P80
