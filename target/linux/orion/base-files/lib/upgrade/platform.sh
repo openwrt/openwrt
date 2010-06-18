@@ -9,8 +9,16 @@ platform_check_image() {
 
 	case "${hardware}" in
 	 # hardware with padded uImage + padded rootfs
-	 'Netgear WNR854T' | 'Linksys WRT350N v2')
+	 'Linksys WRT350N v2')
 		[ "${magic}" != '2705' ] && {
+			echo "Invalid image type ${magic}."
+			return 1
+		}
+		return 0
+		;;
+	 # Netgear WNR854T has extra header before uImage
+	 'Netgear WNR854T')
+		[ "${magic}" != '8519' ] && {
 			echo "Invalid image type ${magic}."
 			return 1
 		}
