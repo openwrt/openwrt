@@ -1,0 +1,54 @@
+--- a/arch/arm/mach-at91/Kconfig
++++ b/arch/arm/mach-at91/Kconfig
+@@ -354,6 +354,13 @@ config MACH_CPU9G20
+ 	  Select this if you are using a Eukrea Electromatique's
+ 	  CPU9G20 Board <http://www.eukrea.com/>
+ 
++config MACH_NETUS_FOXBOARD
++	bool "Acmesystems NetusG20 board"
++	depends on ARCH_AT91SAM9G20
++	help
++	  Select this if you are using a Acmesystems NetusG20
++	  board <http://netus.acmesystems.it/>
++
+ endif
+ 
+ # ----------------------------------------------------------
+@@ -444,6 +451,26 @@
+ 	  On AT91SAM926x boards both types of NAND flash can be present
+ 	  (8 and 16 bit data bus width).
+ 
++config NETUS_HEARTBEAT_LED
++	bool "Use heartbeat trigger for led"
++	depends on MACH_NETUS_FOXBOARD
++	help
++	  Select this option to enable default trigger heartbeart for
++	  FoxBoardG20 red led.
++
++config NETUS_SERIALS
++	bool "Enable serials"
++	depends on MACH_NETUS_FOXBOARD
++	help
++	  Select this option to enable serials interface /dev/ttyS1,
++	  /dev/ttyS2 and /dev/ttyS5 (for oLed interface)
++
++config NETUS_USE_DATAFLASH
++	bool "Enable the dataflash"
++	depends on MACH_NETUS_FOXBOARD
++	help
++	  Select this option to use the dataflash.
++
+ # ----------------------------------------------------------
+ 
+ comment "AT91 Feature Selections"
+--- a/arch/arm/mach-at91/Makefile
++++ b/arch/arm/mach-at91/Makefile
+@@ -62,6 +62,7 @@ obj-$(CONFIG_MACH_AT91SAM9RLEK)	+= board
+ obj-$(CONFIG_MACH_AT91SAM9G20EK) += board-sam9g20ek.o
+ obj-$(CONFIG_MACH_AT91SAM9G20EK_2MMC) += board-sam9g20ek-2slot-mmc.o
+ obj-$(CONFIG_MACH_CPU9G20)	+= board-cpu9krea.o
++obj-$(CONFIG_MACH_NETUS_FOXBOARD) += board-netus-foxboard.o
+ 
+ # AT91SAM9G45 board-specific support
+ obj-$(CONFIG_MACH_AT91SAM9G45EKES) += board-sam9m10g45ek.o
+

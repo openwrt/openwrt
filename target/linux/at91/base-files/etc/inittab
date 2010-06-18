@@ -1,6 +1,0 @@
-::sysinit:/etc/init.d/rcS S boot
-::shutdown:/etc/init.d/rcS K stop
-tts/0::askfirst:/bin/ash --login
-ttyS0::askfirst:/bin/ash --login
-
-ttyS2::respawn:/sbin/getty -L ttyS2 115200 vt100
