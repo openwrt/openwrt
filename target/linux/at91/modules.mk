@@ -19,3 +19,19 @@ define KernelPackage/mmc-at91/description
 endef
 
 $(eval $(call KernelPackage,mmc-at91))
+
+define KernelPackage/pwm-atmel
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PWM on atmel SoC
+  DEPENDS:=@TARGET_at91
+  KCONFIG:=CONFIG_GENERIC_PWM \
+		CONFIG_ATMEL_PWM
+  FILES:=$(LINUX_DIR)/drivers/pwm/atmel-pwm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,51,atmel-pwm)
+endef
+
+define KernelPackage/pwm-atmel/description
+ Kernel module to use the PWM channel on ATMEL SoC
+endef
+
+$(eval $(call KernelPackage,pwm-atmel))
