@@ -1,0 +1,78 @@
+diff -ruN uClibc-0.9.32/libpthread/nptl/allocatestack.c uClibc-0.9.32/libpthread/nptl.new/allocatestack.c
+--- uClibc-0.9.32/libpthread/nptl/allocatestack.c	2010-06-19 20:50:30.000000000 +0200
++++ uClibc-0.9.32/libpthread/nptl.new/allocatestack.c	2010-06-19 16:06:32.000000000 +0200
+@@ -844,7 +844,8 @@
+ 
+ 	      curp->specific_used = false;
+ 
+-	      for (size_t cnt = 1; cnt < PTHREAD_KEY_1STLEVEL_SIZE; ++cnt)
++	      size_t cnt;
++	      for (cnt = 1; cnt < PTHREAD_KEY_1STLEVEL_SIZE; ++cnt)
+ 		if (curp->specific[cnt] != NULL)
+ 		  {
+ 		    memset (curp->specific[cnt], '\0',
+diff -ruN uClibc-0.9.32/libpthread/nptl/pthread_key_create.c uClibc-0.9.32/libpthread/nptl.new/pthread_key_create.c
+--- uClibc-0.9.32/libpthread/nptl/pthread_key_create.c	2010-06-19 20:50:30.000000000 +0200
++++ uClibc-0.9.32/libpthread/nptl.new/pthread_key_create.c	2010-06-19 16:06:59.000000000 +0200
+@@ -29,7 +29,8 @@
+      void (*destr) (void *))
+ {
+   /* Find a slot in __pthread_kyes which is unused.  */
+-  for (size_t cnt = 0; cnt < PTHREAD_KEYS_MAX; ++cnt)
++  size_t cnt;
++  for (cnt = 0; cnt < PTHREAD_KEYS_MAX; ++cnt)
+     {
+       uintptr_t seq = __pthread_keys[cnt].seq;
+ 
+diff -ruN uClibc-0.9.32/libpthread/nptl/sysdeps/generic/dl-tls.c uClibc-0.9.32/libpthread/nptl.new/sysdeps/generic/dl-tls.c
+--- uClibc-0.9.32/libpthread/nptl/sysdeps/generic/dl-tls.c	2010-06-19 20:50:30.000000000 +0200
++++ uClibc-0.9.32/libpthread/nptl.new/sysdeps/generic/dl-tls.c	2010-06-19 16:06:04.000000000 +0200
+@@ -258,7 +258,8 @@
+   /* We simply start with zero.  */
+   size_t offset = 0;
+ 
+-  for (size_t cnt = 0; slotinfo[cnt].map != NULL; ++cnt)
++  size_t cnt;
++  for (cnt = 0; slotinfo[cnt].map != NULL; ++cnt)
+     {
+       assert (cnt < GL(dl_tls_dtv_slotinfo_list)->len);
+ 
+diff -ruN uClibc-0.9.32/libpthread/nptl/sysdeps/unix/sysv/linux/pthread_attr_getaffinity.c uClibc-0.9.32/libpthread/nptl.new/sysdeps/unix/sysv/linux/pthread_attr_getaffinity.c
+--- uClibc-0.9.32/libpthread/nptl/sysdeps/unix/sysv/linux/pthread_attr_getaffinity.c	2010-06-19 20:50:30.000000000 +0200
++++ uClibc-0.9.32/libpthread/nptl.new/sysdeps/unix/sysv/linux/pthread_attr_getaffinity.c	2010-06-19 16:05:38.000000000 +0200
+@@ -38,7 +38,8 @@
+     {
+       /* Check whether there are any bits set beyond the limits
+ 	 the user requested.  */
+-      for (size_t cnt = cpusetsize; cnt < iattr->cpusetsize; ++cnt)
++      size_t cnt;
++      for (cnt = cpusetsize; cnt < iattr->cpusetsize; ++cnt)
+ 	if (((char *) iattr->cpuset)[cnt] != 0)
+ 	  return EINVAL;
+ 
+diff -ruN uClibc-0.9.32/libpthread/nptl/sysdeps/unix/sysv/linux/pthread_attr_setaffinity.c uClibc-0.9.32/libpthread/nptl.new/sysdeps/unix/sysv/linux/pthread_attr_setaffinity.c
+--- uClibc-0.9.32/libpthread/nptl/sysdeps/unix/sysv/linux/pthread_attr_setaffinity.c	2010-06-19 20:50:30.000000000 +0200
++++ uClibc-0.9.32/libpthread/nptl.new/sysdeps/unix/sysv/linux/pthread_attr_setaffinity.c	2010-06-19 16:04:46.000000000 +0200
+@@ -57,7 +57,8 @@
+ 
+       /* Check whether the new bitmask has any bit set beyond the
+ 	 last one the kernel accepts.  */
+-      for (size_t cnt = __kernel_cpumask_size; cnt < cpusetsize; ++cnt)
++      size_t cnt;
++      for (cnt = __kernel_cpumask_size; cnt < cpusetsize; ++cnt)
+ 	if (((char *) cpuset)[cnt] != '\0')
+ 	  /* Found a nonzero byte.  This means the user request cannot be
+ 	     fulfilled.  */
+diff -ruN uClibc-0.9.32/libpthread/nptl/sysdeps/unix/sysv/linux/pthread_setaffinity.c uClibc-0.9.32/libpthread/nptl.new/sysdeps/unix/sysv/linux/pthread_setaffinity.c
+--- uClibc-0.9.32/libpthread/nptl/sysdeps/unix/sysv/linux/pthread_setaffinity.c	2010-06-19 20:50:30.000000000 +0200
++++ uClibc-0.9.32/libpthread/nptl.new/sysdeps/unix/sysv/linux/pthread_setaffinity.c	2010-06-19 16:05:15.000000000 +0200
+@@ -71,7 +71,8 @@
+ 
+   /* We now know the size of the kernel cpumask_t.  Make sure the user
+      does not request to set a bit beyond that.  */
+-  for (size_t cnt = __kernel_cpumask_size; cnt < cpusetsize; ++cnt)
++  size_t cnt;
++  for (cnt = __kernel_cpumask_size; cnt < cpusetsize; ++cnt)
+     if (((char *) cpuset)[cnt] != '\0')
+       /* Found a nonzero byte.  This means the user request cannot be
+ 	 fulfilled.  */
