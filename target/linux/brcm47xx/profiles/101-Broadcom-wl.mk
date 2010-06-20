@@ -6,8 +6,8 @@
 #
 
 define Profile/Broadcom-wl
-  NAME:=Broadcom BCM43xx WiFi - "wl" driver (proprietary)
-  PACKAGES:=kmod-brcm-wl wlc nas
+  NAME:=Broadcom BCM43xx WiFi (wl, proprietary)
+  PACKAGES:=-wpad-mini kmod-brcm-wl wlc nas
 endef
 
 define Profile/Broadcom-wl/Description
