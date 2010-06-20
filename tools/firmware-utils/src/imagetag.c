@@ -94,7 +94,7 @@ uint32_t compute_crc32(uint32_t crc, FILE *binfile, size_t compute_start, size_t
 	size_t read;
 
 	fseek(binfile, compute_start, SEEK_SET);
-	
+
 	/* read block of 1024 bytes */
 	while (binfile && !feof(binfile) && !ferror(binfile) && (compute_len >= sizeof(readbuf))) {
 		read = fread(readbuf, sizeof(uint8_t), sizeof(readbuf), binfile);
@@ -221,7 +221,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
 	printf("Data alignment to %dk with 'deadc0de' appended\n", flash_bs/1024);
 	fseek(binfile, rootfsoff + rootfslen - fwaddr, SEEK_SET);
 	fwrite(&deadcode, sizeof(uint32_t), 1, binfile);
-	
+
 	/* Flush the binfile buffer so that when we read from file, it contains
          * everything in the buffer
 	 */
@@ -243,7 +243,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin,
          * needs to be rootfs + deadcode
          */
 	rootfscrc = compute_crc32(rootfscrc, binfile, kerneloff - fwaddr, rootfslen + sizeof(deadcode));
-	
+
 	/* Close the files */
 	fclose(kernelfile);
 	fclose(rootfsfile);
@@ -306,7 +306,7 @@ int main(int argc, char **argv)
 	uint32_t flashstart, fwoffset, loadaddr, entry;
 	uint32_t fwaddr, flash_bs;
 	int tagidfound = 0;
-	
+
 	kernel = rootfs = bin = boardid = chipid = magic2 = ver = rsignature = layoutver = NULL;
 	entry = 0;
 
@@ -394,11 +394,11 @@ int main(int argc, char **argv)
 		fprintf(stderr, "You need to specify the kernel entry (-e)\n");
 		return 1;
 	}
-	
+
 	/* Fallback to defaults */
 
 	fwaddr = flashstart + fwoffset;
-	
+
 	if (!magic2) {
 		magic2 = malloc(sizeof(char) * 14);
 		if (!magic2) {
@@ -416,7 +416,7 @@ int main(int argc, char **argv)
 		}
 		strcpy(ver, IMAGETAG_VER);
 	}
-		
+
 
 	return tagfile(kernel, rootfs, bin, boardid, chipid, fwaddr, loadaddr, entry, ver, magic2, flash_bs, rsignature, layoutver);
 }
