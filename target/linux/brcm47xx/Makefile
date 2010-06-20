@@ -14,7 +14,7 @@ FEATURES:=squashfs usb pcmcia
 LINUX_VERSION:=2.6.32.14
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += wpad-mini kmod-switch kmod-diag nvram
+DEFAULT_PACKAGES += kmod-switch kmod-diag nvram
 
 define Target/Description
 	Build firmware images for Broadcom based routers
