@@ -6,8 +6,8 @@
 #
 
 define Profile/Broadcom-b43
-  NAME:=Broadcom BCM43xx WiFi - "b43" driver (default)
-  PACKAGES:=wpad-mini kmod-b43 kmod-b43legacy
+  NAME:=Broadcom BCM43xx WiFi (b43, default)
+  PACKAGES:=kmod-b43 kmod-b43legacy
 endef
 
 define Profile/Broadcom-b43/Description
