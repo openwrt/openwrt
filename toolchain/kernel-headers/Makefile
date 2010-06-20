@@ -50,7 +50,7 @@ ifneq ($(LINUX_HAS_HEADERS_INSTALL),)
 		INSTALL_HDR_PATH="$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/" \
 		headers_install
 	if [ -d $(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm ]; then \
-		mkdir -p $(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH)
+		mkdir -p $(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH); \
 		$(CP) \
 			$(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm/. \
 			$(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH)/; \
