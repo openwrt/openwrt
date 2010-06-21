@@ -23,7 +23,7 @@ define Package/broadcom-wl/Default
   CATEGORY:=Kernel modules
   DEPENDS:=@PACKAGE_kmod-brcm-wl||PACKAGE_kmod-brcm-wl-mini
   SUBMENU:=Proprietary BCM43xx WiFi driver
-  SUBMENUDEP:=@TARGET_brcm47xx
+  SUBMENUDEP:=@TARGET_brcm47xx||@TARGET_brcm_2_4
 endef
 
 define KernelPackage/brcm-wl/Default
