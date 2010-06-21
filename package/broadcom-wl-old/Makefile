@@ -21,16 +21,16 @@ WL_WEXT=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/broadcom-wl/Default
+define Package/broadcom-wl-old/Default
   SECTION:=kernel
   CATEGORY:=Kernel modules
   DEPENDS:=@PACKAGE_kmod-brcm-wl-old||PACKAGE_kmod-brcm-wl-mimo-old
   SUBMENU:=Proprietary BCM43xx WiFi driver
-  SUBMENUDEP:=@TARGET_brcm_2_4
+  SUBMENUDEP:=@TARGET_brcm_2_4||@TARGET_brcm47xx
 endef
 
-define KernelPackage/brcm-wl/Default
-  $(call Package/broadcom-wl/Default)
+define KernelPackage/brcm-wl-old/Default
+  $(call Package/broadcom-wl-old/Default)
   SECTION:=kernel
   DEPENDS:=@TARGET_brcm_2_4 +wireless-tools
   TITLE:=Kernel driver for BCM43xx chipsets
@@ -38,31 +38,31 @@ define KernelPackage/brcm-wl/Default
   AUTOLOAD:=$(call AutoLoad,30,wl$(1))
 endef
 
-define KernelPackage/brcm-wl/Default/description
+define KernelPackage/brcm-wl-old/Default/description
  This package contains the proprietary wireless driver for the Broadcom 
  BCM43xx chipset.
 endef
 
 define KernelPackage/brcm-wl-old
-$(call KernelPackage/brcm-wl/Default,)
+$(call KernelPackage/brcm-wl-old/Default,)
   TITLE+= (normal version)
 endef
 
 define KernelPackage/brcm-wl-old/description
-$(call KernelPackage/brcm-wl/Default/description)
+$(call KernelPackage/brcm-wl-old/Default/description)
 endef
 
 define KernelPackage/brcm-wl-mimo-old
-$(call KernelPackage/brcm-wl/Default,_mimo)
+$(call KernelPackage/brcm-wl-old/Default,_mimo)
   TITLE+= (MIMO version)
 endef
 
 define KernelPackage/brcm-wl-mimo-old/description
-$(call KernelPackage/brcm-wl/Default/description)
+$(call KernelPackage/brcm-wl-old/Default/description)
 endef
 
 define KernelPackage/wlcompat/Default
-  $(call KernelPackage/brcm-wl/Default,)
+  $(call KernelPackage/brcm-wl-old/Default,)
   TITLE:=Kernel driver for BCM43xx chipsets
   FILES:=$(PKG_BUILD_DIR)/wlcompat/wlcompat$(1).o
 endef
@@ -89,7 +89,7 @@ $(call KernelPackage/wlcompat/description)
 endef
 
 define Package/wlc-old
-$(call Package/broadcom-wl/Default)
+$(call Package/broadcom-wl-old/Default)
   TITLE:=wl driver setup utility
 endef
 
@@ -99,7 +99,7 @@ define Package/wlc-old/description
 endef
 
 define Package/wl-old
-$(call Package/broadcom-wl/Default)
+$(call Package/broadcom-wl-old/Default)
   TITLE:=Proprietary Broadcom wl driver config utility
 endef
 
@@ -109,7 +109,7 @@ define Package/wl-old/description
 endef
 
 define Package/nas-old
-$(call Package/broadcom-wl/Default)
+$(call Package/broadcom-wl-old/Default)
   TITLE:=Proprietary Broadcom WPA/WPA2 authenticator
 endef
 
