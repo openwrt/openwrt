@@ -407,3 +407,38 @@ define KernelPackage/macvlan/description
 endef
 
 $(eval $(call KernelPackage,macvlan))
+
+define KernelPackage/tulip
+  TITLE:=Tulip family network device support
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:= \
+    CONFIG_NET_TULIP=y \
+    CONFIG_DE2104X \
+    CONFIG_DE2104X_DSL=0 \
+    CONFIG_TULIP \
+    CONFIG_TULIP_MWI=y \
+    CONFIG_TULIP_MMIO=y \
+    CONFIG_TULIP_NAPI=y \
+    CONFIG_TULIP_NAPI_HW_MITIGATION=y \
+    CONFIG_DE4X5 \
+    CONFIG_WINBOND_840 \
+    CONFIG_DM9102 \
+    CONFIG_ULI526X 
+  FILES:= \
+    $(LINUX_DIR)/drivers/net/tulip/tulip.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/net/tulip/de2104x.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/net/tulip/de4x5.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/net/tulip/dmfe.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/net/tulip/uli526x.$(LINUX_KMOD_SUFFIX) \
+    $(LINUX_DIR)/drivers/net/tulip/winbond-840.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,tulip)
+endef
+
+define KernelPackage/tulip/description
+ Kernel modules for the Tulip family of network cards,
+ including DECchip Tulip, DIGITAL EtherWORKS, Winbond W89c840,
+ Davicom DM910x/DM980x and ULi M526x controller support.
+endef
+
+$(eval $(call KernelPackage,tulip))
