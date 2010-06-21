@@ -91,7 +91,7 @@ if !LINUX_2_4
 
 	config GCC_VERSION_4_4_3
 		default y if powerpc
-		default y if (TARGET_octeon || TARGET_sibyte)
+		default y if (TARGET_octeon || TARGET_sibyte || TARGET_omap35xx)
 
 endif
 endif

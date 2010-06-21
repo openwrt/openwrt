@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=omap35xx
 BOARDNAME:=TI OMAP35xx
 FEATURES:=broken
-SUBTARGETS=generic
+SUBTARGETS=beagleboard gumstix
 
 LINUX_VERSION:=2.6.32.14
 KERNELNAME:="uImage"
