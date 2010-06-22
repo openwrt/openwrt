@@ -214,6 +214,19 @@ Includes:
 - libipt_recent
 endef
 
+define Package/iptables-mod-tproxy
+$(call Package/iptables/Module, +kmod-ipt-tproxy)
+  TITLE:=Transparent proxy iptables extensions
+endef
+
+define Package/iptables-mod-tproxy/description
+Transparent proxy iptables extensions.
+Includes:
+- libxt_socket
+- libxt_TPROXY
+endef
+
+
 define Package/iptables-utils
 $(call Package/iptables/Module, )
   TITLE:=iptables save and restore utilities
@@ -380,6 +393,7 @@ $(eval $(call BuildPlugin,iptables-mod-nat,$(IPT_NAT-m)))
 $(eval $(call BuildPlugin,iptables-mod-nat-extra,$(IPT_NAT_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-iprange,$(IPT_IPRANGE-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
+$(eval $(call BuildPlugin,iptables-mod-tproxy,$(IPT_TPROXY-m)))
 $(eval $(call BuildPackage,ip6tables))
 $(eval $(call BuildPackage,ip6tables-utils))
 $(eval $(call BuildPackage,libiptc))
