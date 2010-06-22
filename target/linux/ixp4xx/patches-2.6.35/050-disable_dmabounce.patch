@@ -1,8 +1,8 @@
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -417,7 +417,6 @@ config ARCH_IXP4XX
+@@ -435,7 +435,6 @@ config ARCH_IXP4XX
+ 	select CPU_XSCALE
  	select GENERIC_GPIO
- 	select GENERIC_TIME
  	select GENERIC_CLOCKEVENTS
 -	select DMABOUNCE if PCI
  	help
@@ -10,26 +10,24 @@
  
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -199,6 +199,45 @@ config IXP4XX_INDIRECT_PCI
+@@ -199,6 +199,43 @@ config IXP4XX_INDIRECT_PCI
  	  need to use the indirect method instead. If you don't know
  	  what you need, leave this option unselected.
  
 +config IXP4XX_LEGACY_DMABOUNCE
-+	bool "legacy PCI DMA bounce support"
++	bool "Legacy PCI DMA bounce support"
 +	depends on PCI
 +	default n
 +	select DMABOUNCE
 +	help
 +	  The IXP4xx is limited to a 64MB window for PCI DMA, which
-+	  requires that PCI accesses above 64MB are bounced via buffers
-+	  below 64MB. Furthermore the IXP4xx has an erratum where PCI
-+	  read prefetches just below the 64MB limit can trigger lockups.
++	  requires that PCI accesses >= 64MB are bounced via buffers
++	  below 64MB.
 +
-+	  The kernel has traditionally handled these two issue by using
-+	  ARM specific DMA bounce support code for all accesses >= 64MB.
++	  The kernel has traditionally handled this issue by using ARM
++	  specific DMA bounce support code for all accesses >= 64MB.
 +	  That code causes problems of its own, so it is desirable to
-+	  disable it. As the kernel now has a workaround for the PCI read
-+	  prefetch erratum, it no longer requires the ARM bounce code.
++	  disable it.
 +
 +	  Enabling this option makes IXP4xx continue to use the problematic
 +	  ARM DMA bounce code. Disabling this option makes IXP4xx use the
@@ -58,7 +56,7 @@
  	help
 --- a/arch/arm/mach-ixp4xx/common-pci.c
 +++ b/arch/arm/mach-ixp4xx/common-pci.c
-@@ -321,27 +321,38 @@ static int abort_handler(unsigned long a
+@@ -321,27 +321,33 @@ static int abort_handler(unsigned long a
   */
  static int ixp4xx_pci_platform_notify(struct device *dev)
  {
@@ -88,12 +86,8 @@
 +#ifdef CONFIG_DMABOUNCE
  int dma_needs_bounce(struct device *dev, dma_addr_t dma_addr, size_t size)
  {
-+	/* Note that this returns true for the last page below 64M due to
-+	 * IXP4xx erratum 15 (SCR 1289), which states that PCI prefetches
-+	 * can cross the boundary between valid memory and a reserved region
-+	 * causing AHB bus errors and a lock-up.
-+	 */
- 	return (dev->bus == &pci_bus_type ) && ((dma_addr + size) >= SZ_64M);
+-	return (dev->bus == &pci_bus_type ) && ((dma_addr + size) >= SZ_64M);
++	return (dev->bus == &pci_bus_type ) && ((dma_addr + size) > SZ_64M);
  }
 +#endif
  
@@ -101,7 +95,7 @@
  /*
   * Only first 64MB of memory can be accessed via PCI.
   * We use GFP_DMA to allocate safe buffers to do map/unmap.
-@@ -364,6 +375,7 @@ void __init ixp4xx_adjust_zones(int node
+@@ -364,6 +370,7 @@ void __init ixp4xx_adjust_zones(int node
  	zhole_size[1] = zhole_size[0];
  	zhole_size[0] = 0;
  }
