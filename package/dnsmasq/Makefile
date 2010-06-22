@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.52
-PKG_RELEASE:=5
+PKG_VERSION:=2.55
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_MD5SUM:=1bb32fffdb4f977ead607802b5d701d0
+PKG_MD5SUM:=b093d7c6bc7f97ae6fd35d048529232a
 
 include $(INCLUDE_DIR)/package.mk
 
