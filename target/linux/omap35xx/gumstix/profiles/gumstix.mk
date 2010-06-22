@@ -12,7 +12,7 @@ define Profile/Gumstix
 		ext2 usb udev kmod-bluetooth ntpclient wpa-supplicant \
 		wireless-tools wpa-cli \
 		bluez-utils bluez-hcidump hegw usbutils python pyserial \
-		python-mini python-openssl python-sqlite3
+		python-mini python-openssl python-sqlite3 libstdcpp
 endef
 
 define Profile/Gumstix/Description
