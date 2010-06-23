@@ -440,7 +440,26 @@ define Download/usb8388
 endef
 $(eval $(call Download,usb8388))
 
-define KernelPackage/libertas
+SD8686FW_NAME:=sd8686
+SD8686FW_VERSION:=9.70.7.p0
+
+define Download/sd8686
+  URL:=http://dev.laptop.org/pub/firmware/libertas/
+  FILE:=$(SD8686FW_NAME)-$(SD8686FW_VERSION).bin
+  MD5SUM=b4f8be61e19780a14836f146c538c5dd
+endef
+$(eval $(call Download,sd8686))
+
+SD8686HELPER_NAME:=sd8686_helper
+
+define Download/sd8686_helper
+  URL:=http://dev.laptop.org/pub/firmware/libertas/
+  FILE:=$(SD8686HELPER_NAME).bin
+  MD5SUM=2a4d8f4df198ce949c350df5674f4ac6
+endef
+$(eval $(call Download,sd8686_helper))
+
+define KernelPackage/libertas-usb
   $(call KernelPackage/mac80211/Default)
   DEPENDS+= @USB_SUPPORT +kmod-mac80211 +kmod-usb-core +kmod-lib80211
   TITLE:=Marvell 88W8015 Wireless Driver
@@ -450,6 +469,15 @@ define KernelPackage/libertas
   AUTOLOAD:=$(call AutoLoad,27,libertas usb8xxx)
 endef
 
+define KernelPackage/libertas-sd
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS+= +kmod-mac80211 +kmod-lib80211
+  TITLE:=Marvell 88W8686 Wireless Driver
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.$(LINUX_KMOD_SUFFIX) \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas_sdio.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,libertas libertas_sdio)
+endef
 
 define KernelPackage/ar9170
   $(call KernelPackage/mac80211/Default)
@@ -848,11 +876,12 @@ MAKE_OPTS:= \
 	CONFIG_MAC80211_HWSIM=$(if $(CONFIG_PACKAGE_kmod-mac80211-hwsim),m) \
 	CONFIG_PCMCIA= \
 	CONFIG_LIBIPW=$(if $(CONFIG_PACKAGE_kmod-net-libipw),m) \
-	CONFIG_LIBERTAS=$(if $(CONFIG_PACKAGE_kmod-libertas),m) \
+	CONFIG_LIBERTAS=$(if $(CONFIG_PACKAGE_kmod-libertas-sd)$(CONFIG_PACKAGE_kmod-libertas-usb),m) \
 	CONFIG_LIBERTAS_CS= \
-	CONFIG_LIBERTAS_SDIO= \
+	CONFIG_LIBERTAS_SPI= \
+	CONFIG_LIBERTAS_SDIO=$(if $(CONFIG_PACKAGE_kmod-libertas-sd),m) \
 	CONFIG_LIBERTAS_THINFIRM= \
-	CONFIG_LIBERTAS_USB=$(if $(CONFIG_PACKAGE_kmod-libertas),m) \
+	CONFIG_LIBERTAS_USB=$(if $(CONFIG_PACKAGE_kmod-libertas-usb),m) \
 	CONFIG_IPW2100=$(if $(CONFIG_PACKAGE_kmod-net-ipw2100),m) \
 	CONFIG_IPW2200=$(if $(CONFIG_PACKAGE_kmod-net-ipw2200),m) \
 	CONFIG_NL80211=y \
@@ -924,9 +953,16 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/drivers/net/wireless/ath/*.h $(1)/usr/include/mac80211/ath/
 endef
 
-define KernelPackage/libertas/install
+define KernelPackage/libertas-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(DL_DIR)/$(USB8388FW_NAME)-$(USB8388FW_VERSION).bin $(1)/lib/firmware/$(USB8388FW_NAME).bin
+endef
+
+define KernelPackage/libertas-sd/install
+	echo "Libertas install: $(CONFIG_PACKAGE_kmod-libertas-sd)"
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(DL_DIR)/$(SD8686FW_NAME)-$(SD8686FW_VERSION).bin $(1)/lib/firmware/$(SD8686FW_NAME).bin
+	$(INSTALL_DATA) $(DL_DIR)/$(SD8686HELPER_NAME).bin $(1)/lib/firmware/$(SD8686HELPER_NAME).bin
 endef
 
 define KernelPackage/cfg80211/install
@@ -1033,7 +1069,8 @@ endif
 endef
 
 $(eval $(call KernelPackage,ath5k))
-$(eval $(call KernelPackage,libertas))
+$(eval $(call KernelPackage,libertas-usb))
+$(eval $(call KernelPackage,libertas-sd))
 $(eval $(call KernelPackage,cfg80211))
 $(eval $(call KernelPackage,mac80211))
 $(eval $(call KernelPackage,p54-common))
