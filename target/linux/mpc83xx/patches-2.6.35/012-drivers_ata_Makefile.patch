@@ -1,0 +1,10 @@
+--- a/drivers/ata/Makefile
++++ b/drivers/ata/Makefile
+@@ -88,6 +88,7 @@ obj-$(CONFIG_PATA_QDI)		+= pata_qdi.o
+ obj-$(CONFIG_PATA_RB532)	+= pata_rb532_cf.o
+ obj-$(CONFIG_PATA_RZ1000)	+= pata_rz1000.o
+ obj-$(CONFIG_PATA_WINBOND_VLB)	+= pata_winbond.o
++obj-$(CONFIG_PATA_RB_PPC)	+= pata_rbppc_cf.o
+ 
+ # Should be last but two libata driver
+ obj-$(CONFIG_PATA_ACPI)		+= pata_acpi.o

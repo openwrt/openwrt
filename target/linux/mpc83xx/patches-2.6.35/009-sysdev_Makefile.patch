@@ -1,0 +1,8 @@
+--- a/arch/powerpc/sysdev/Makefile
++++ b/arch/powerpc/sysdev/Makefile
+@@ -57,3 +57,5 @@ obj-$(CONFIG_PPC_MPC52xx)	+= mpc5xxx_clo
+ ifeq ($(CONFIG_SUSPEND),y)
+ obj-$(CONFIG_6xx)		+= 6xx-suspend.o
+ endif
++
++obj-$(CONFIG_RB_IOMAP)		+= rb_iomap.o

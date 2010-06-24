@@ -1,0 +1,60 @@
+--- a/drivers/ata/pata_rbppc_cf.c
++++ b/drivers/ata/pata_rbppc_cf.c
+@@ -521,7 +521,7 @@ static int rbppc_cf_init_info(struct of_
+ 	unsigned ccb_freq_hz;
+ 	unsigned lb_div;
+ 
+-	u32ptr = of_get_property(pdev->node, "lbc_extra_divider", NULL);
++	u32ptr = of_get_property(pdev->dev.of_node, "lbc_extra_divider", NULL);
+ 	if (u32ptr && *u32ptr) {
+ 		lbc_extra_divider = *u32ptr;
+ #if DEBUG_UPM
+@@ -567,7 +567,7 @@ static int rbppc_cf_init_info(struct of_
+ 	printk(KERN_INFO "rbppc_cf_init_info: Using Local-Bus clock %u kHz %u ps\n",
+ 	       lbc_clk_khz, info->clk_time_ps);
+ 
+-	u32ptr = of_get_property(pdev->node, "lb-timings", NULL);
++	u32ptr = of_get_property(pdev->dev.of_node, "lb-timings", NULL);
+ 	if (u32ptr) {
+ 		memcpy(info->lb_timings, u32ptr, LBT_SIZE * sizeof(*u32ptr));
+ #if DEBUG_UPM
+@@ -607,13 +607,13 @@ static int rbppc_cf_probe(struct of_devi
+ 		rbinfo = info;
+ 	}
+ 
+-	u32ptr = of_get_property(pdev->node, "interrupt-at-level", NULL);
++	u32ptr = of_get_property(pdev->dev.of_node, "interrupt-at-level", NULL);
+ 	if (u32ptr) {
+ 		irq_level = *u32ptr;
+ 		printk(KERN_INFO "rbppc_cf_probe: IRQ level %u\n", irq_level);
+ 	}
+ 
+-	if (of_address_to_resource(pdev->node, 0, &res)) {
++	if (of_address_to_resource(pdev->dev.of_node, 0, &res)) {
+ 	    printk(KERN_ERR "rbppc_cf_probe: No reg property found\n");
+ 	    goto err_info;
+ 	}
+@@ -640,7 +640,7 @@ static int rbppc_cf_probe(struct of_devi
+ 
+ 	err = ata_host_activate(
+ 		host,
+-		irq_of_parse_and_map(pdev->node, 0), ata_sff_interrupt,
++		irq_of_parse_and_map(pdev->dev.of_node, 0), ata_sff_interrupt,
+ 		irq_level ? IRQF_TRIGGER_HIGH : IRQF_TRIGGER_LOW,
+ 		&rbppc_cf_sht);
+ 	if (!err) return 0;
+@@ -671,13 +671,12 @@ static struct of_device_id rbppc_cf_ids[
+ };
+ 
+ static struct of_platform_driver rbppc_cf_driver = {
+-	.name = "cf",
+ 	.probe = rbppc_cf_probe,
+ 	.remove = rbppc_cf_remove,
+-	.match_table = rbppc_cf_ids,
+ 	.driver	= {
+ 		.name = "rbppc-cf",
+ 		.owner = THIS_MODULE,
++		.of_match_table = rbppc_cf_ids,
+ 	},
+ };
+ 

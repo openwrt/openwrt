@@ -1,0 +1,245 @@
+--- /dev/null
++++ b/arch/powerpc/boot/dts/rb600.dts
+@@ -0,0 +1,242 @@
++/*
++ * RouterBOARD 600 series Device Tree Source
++ *
++ * Copyright 2009 Michael Guntsche <mike@it-loops.com>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++
++/dts-v1/;
++
++/ {
++	model = "RB600";
++	compatible = "MPC83xx";
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	aliases {
++		ethernet0 = &enet0;
++		ethernet1 = &enet1;
++	};
++
++	chosen {
++		linux,stdout-path = "/soc8343@e0000000/serial@4500";
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		PowerPC,8343E@0 {
++			device_type = "cpu";
++			reg = <0x0>;
++			d-cache-line-size = <0x20>;
++			i-cache-line-size = <0x20>;
++			d-cache-size = <0x8000>;
++			i-cache-size = <0x8000>;
++			timebase-frequency = <0x0000000>; // filled by the bootwrapper from the firmware blob
++			clock-frequency = <0x00000000>; // filled by the bootwrapper from the firmware blob
++		};
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x0 0x0000000>; // filled by the bootwrapper from the firmware blob
++	};
++
++	cf@f9200000 {
++		lb-timings = <0x5dc 0x3e8 0x1194 0x5dc 0x2af8>;
++		interrupt-at-level = <0x0>;
++		interrupt-parent = <&ipic>;
++		interrupts = <0x16 0x8>;
++		lbc_extra_divider = <0x1>;
++		reg = <0xf9200000 0x200000>;
++		device_type = "rb,cf";
++	};
++
++	cf@f9000000 {
++		lb-timings = <0x5dc 0x3e8 0x1194 0x5dc 0x2af8>;
++		interrupt-at-level = <0x0>;
++		interrupt-parent = <&ipic>;
++		interrupts = <0x14 0x8>;
++		lbc_extra_divider = <0x1>;
++		reg = <0xf9000000 0x200000>;
++		device_type = "rb,cf";
++	};
++
++	flash {
++		reg = <0xff800000 0x20000>;
++	};
++
++	nnand {
++		reg = <0xf0000000 0x1000>;
++	};
++
++	nand {
++		ale = <&gpio 0x6>;
++		cle = <&gpio 0x5>;
++		nce = <&gpio 0x4>;
++		rdy = <&gpio 0x3>;
++		reg = <0xf8000000 0x1000>;
++		device_type = "rb,nand";
++	};
++
++	fancon {
++		interrupt-parent = <&ipic>;
++		interrupts = <0x17 0x8>;
++		sense = <&gpio 0x7>;
++		fan_on = <&gpio 0x9>;
++	};
++
++	pci0: pci@e0008500 {
++		device_type = "pci";
++		compatible = "fsl,mpc8349-pci";
++		reg = <0xe0008500 0x100 0xe0008300 0x8>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x2000000 0x0 0x80000000 0x80000000 0x0 0x20000000 0x1000000 0x0 0x0 0xd0000000 0x0 0x4000000>;
++		bus-range = <0x0 0x0>;
++		interrupt-map = <
++			0x5800 0x0 0x0 0x1 &ipic 0x15 0x8
++			0x6000 0x0 0x0 0x1 &ipic 0x30 0x8
++			0x6000 0x0 0x0 0x2 &ipic 0x11 0x8
++			0x6800 0x0 0x0 0x1 &ipic 0x11 0x8
++			0x6800 0x0 0x0 0x2 &ipic 0x12 0x8
++			0x7000 0x0 0x0 0x1 &ipic 0x12 0x8
++			0x7000 0x0 0x0 0x2 &ipic 0x13 0x8
++			0x7800 0x0 0x0 0x1 &ipic 0x13 0x8
++			0x7800 0x0 0x0 0x2 &ipic 0x30 0x8
++			0x8000 0x0 0x0 0x1 &ipic 0x30 0x8
++			0x8000 0x0 0x0 0x2 &ipic 0x12 0x8
++			0x8000 0x0 0x0 0x3 &ipic 0x11 0x8
++			0x8000 0x0 0x0 0x4 &ipic 0x13 0x8
++			0xa000 0x0 0x0 0x1 &ipic 0x30 0x8
++			0xa000 0x0 0x0 0x2 &ipic 0x11 0x8
++			0xa000 0x0 0x0 0x3 &ipic 0x12 0x8
++			0xa000 0x0 0x0 0x4 &ipic 0x13 0x8
++			0xa800 0x0 0x0 0x1 &ipic 0x11 0x8
++			0xa800 0x0 0x0 0x2 &ipic 0x12 0x8
++			0xa800 0x0 0x0 0x3 &ipic 0x13 0x8
++			0xa800 0x0 0x0 0x4 &ipic 0x30 0x8>;
++		interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
++		interrupt-parent = <&ipic>;
++	};
++
++	soc8343@e0000000 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		device_type = "soc";
++		compatible = "simple-bus";
++		ranges = <0x0 0xe0000000 0x100000>;
++		reg = <0xe0000000 0x200>;
++		bus-frequency = <0x1>;
++
++		led {
++			user_led = <0x400 0x8>;
++		};
++
++		beeper {
++			reg = <0x500 0x100>;
++		};
++
++		gpio: gpio@0 {
++			reg = <0xc08 0x4>;
++			device-id = <0x0>;
++			compatible = "gpio";
++			device_type = "gpio";
++		};
++
++		enet0: ethernet@25000 {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			cell-index = <0>;
++			phy-handle = <&phy0>;
++			tbi-handle = <&tbi0>;
++			interrupt-parent = <&ipic>;
++			interrupts = <0x23 0x8 0x24 0x8 0x25 0x8>;
++			local-mac-address = [00 00 00 00 00 00];
++			reg = <0x25000 0x1000>;
++			ranges = <0x0 0x25000 0x1000>;
++			compatible = "gianfar";
++			model = "TSEC";
++			device_type = "network";
++
++			mdio@520 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "fsl,gianfar-tbi";
++				reg = <0x520 0x20>;
++
++				tbi0: tbi-phy@11 {
++					reg = <0x11>;
++					device_type = "tbi-phy";
++				};
++			};
++		};
++
++		enet1: ethernet@24000 {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			cell-index = <1>;
++			phy-handle = <&phy1>;
++			tbi-handle = <&tbi1>;
++			interrupt-parent = <&ipic>;
++			interrupts = <0x20 0x8 0x21 0x8 0x22 0x8>;
++			local-mac-address = [00 00 00 00 00 00];
++			reg = <0x24000 0x1000>;
++			ranges = <0x0 0x24000 0x1000>;
++			compatible = "gianfar";
++			model = "TSEC";
++			device_type = "network";
++
++			mdio@520 {
++				#size-cells = <0x0>;
++				#address-cells = <0x1>;
++				reg = <0x520 0x20>;
++				compatible = "fsl,gianfar-mdio";
++
++				phy0: ethernet-phy@0 {
++					device_type = "ethernet-phy";
++					reg = <0x0>;
++				};
++
++				phy1: ethernet-phy@1 {
++					device_type = "ethernet-phy";
++					reg = <0x1>;
++				};
++
++				tbi1: tbi-phy@11 {
++					reg = <0x11>;
++					device_type = "tbi-phy";
++				};
++			};
++		};
++
++		ipic: pic@700 {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <2>;
++			reg = <0x700 0x100>;
++			device_type = "ipic";
++		};
++
++		serial@4500 {
++			interrupt-parent = <&ipic>;
++			interrupts = <0x9 0x8>;
++			clock-frequency = <0xfe4f840>;
++			reg = <0x4500 0x100>;
++			compatible = "ns16550";
++			device_type = "serial";
++		};
++
++		wdt@200 {
++			reg = <0x200 0x100>;
++			compatible = "mpc83xx_wdt";
++			device_type = "watchdog";
++		};
++	};
++};
