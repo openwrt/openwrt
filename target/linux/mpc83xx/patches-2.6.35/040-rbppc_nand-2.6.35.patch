@@ -1,0 +1,40 @@
+--- a/drivers/mtd/nand/rbppc_nand.c
++++ b/drivers/mtd/nand/rbppc_nand.c
+@@ -130,10 +130,10 @@ static int rbppc_nand_probe(struct of_de
+ 
+ 	info = kmalloc(sizeof(*info), GFP_KERNEL);
+ 
+-	rdy = of_get_property(pdev->node, "rdy", NULL);
+-	nce = of_get_property(pdev->node, "nce", NULL);
+-	cle = of_get_property(pdev->node, "cle", NULL);
+-	ale = of_get_property(pdev->node, "ale", NULL);
++	rdy = of_get_property(pdev->dev.of_node, "rdy", NULL);
++	nce = of_get_property(pdev->dev.of_node, "nce", NULL);
++	cle = of_get_property(pdev->dev.of_node, "cle", NULL);
++	ale = of_get_property(pdev->dev.of_node, "ale", NULL);
+ 
+ 	if (!rdy || !nce || !cle || !ale) {
+ 		printk(KERN_ERR "rbppc_nand_probe: GPIO properties are missing\n");
+@@ -180,7 +180,7 @@ static int rbppc_nand_probe(struct of_de
+ 	of_node_put(nnand);
+ 	info->localbus = ioremap_nocache(res.start, res.end - res.start + 1);
+ 
+-	if (of_address_to_resource(pdev->node, 0, &res)) {
++	if (of_address_to_resource(pdev->dev.of_node, 0, &res)) {
+ 	    printk("rbppc_nand_probe: No reg property found\n");
+ 	    goto err;
+ 	}
+@@ -222,12 +222,11 @@ static struct of_device_id rbppc_nand_id
+ };
+ 
+ static struct of_platform_driver rbppc_nand_driver = {
+-	.name   = "nand",
+ 	.probe	= rbppc_nand_probe,
+-	.match_table = rbppc_nand_ids,
+ 	.driver	= {
+ 		.name = "rbppc-nand",
+ 		.owner = THIS_MODULE,
++		.of_match_table = rbppc_nand_ids,
+ 	},
+ };
+ 

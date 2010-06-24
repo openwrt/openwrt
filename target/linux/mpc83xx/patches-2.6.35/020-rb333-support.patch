@@ -1,0 +1,207 @@
+--- a/arch/powerpc/platforms/83xx/rbppc.c
++++ b/arch/powerpc/platforms/83xx/rbppc.c
+@@ -1,4 +1,5 @@
+ /*
++ * Copyright (C) 2010 Alexandros C. Couloumbis <alex@ozo.com>
+  * Copyright (C) 2008-2009 Noah Fontes <nfontes@transtruct.org>
+  * Copyright (C) 2009 Michael Guntsche <mike@it-loops.com>
+  * Copyright (C) Mikrotik 2007
+@@ -167,6 +168,9 @@ static int __init rbppc_probe(void)
+ 	if (!model)
+ 		return 0;
+ 
++	if (strcmp(model, "RB333") == 0)
++		return 1;
++
+ 	if (strcmp(model, "RB600") == 0)
+ 		return 1;
+ 
+@@ -227,6 +231,9 @@ static void __init rbppc_beeper_init(str
+ #define SBIT(x) (0x80000000 >> (x))
+ #define DBIT(x, y) ((y) << (32 - (((x % 16) + 1) * 2)))
+ 
++#define GPIO_DIR_RB333(x) ((x) + (0x1408 >> 2))
++#define GPIO_DATA_RB333(x) ((x) + (0x1404 >> 2))
++
+ #define SICRL_RB600(x) ((x) + (0x114 >> 2))
+ #define GPIO_DIR_RB600(x) ((x) + (0xc00 >> 2))
+ #define GPIO_DATA_RB600(x) ((x) + (0xc08 >> 2))
+@@ -234,14 +241,38 @@ static void __init rbppc_beeper_init(str
+ static void rbppc_restart(char *cmd)
+ {
+ 	__be32 __iomem *reg;
+-
+-	reg = ioremap(get_immrbase(), 0x1000);
+-	local_irq_disable();
+-	out_be32(SICRL_RB600(reg), in_be32(SICRL_RB600(reg)) & ~0x00800000);
+-	out_be32(GPIO_DIR_RB600(reg), in_be32(GPIO_DIR_RB600(reg)) | SBIT(2));
+-	out_be32(GPIO_DATA_RB600(reg), in_be32(GPIO_DATA_RB600(reg)) & ~SBIT(2));
+-
+-	while (1);
++	unsigned rb_model;
++	struct device_node *root;
++	unsigned int size;    
++
++	root = of_find_node_by_path("/");
++	if (root) {
++		const char *prop = (char *) of_get_property(root, "model", &size);
++		rb_model = prop[sizeof("RB") - 1] - '0';
++		of_node_put(root);
++		switch (rb_model) {
++		case 3:
++			reg = ioremap(get_immrbase(), 0x2000);
++			local_irq_disable();
++			out_be32(GPIO_DIR_RB333(reg),
++			(in_be32(GPIO_DIR_RB333(reg)) & ~DBIT(4, 3)) | DBIT(4, 1));
++			out_be32(GPIO_DATA_RB333(reg), in_be32(GPIO_DATA_RB333(reg)) & ~SBIT(4));
++			break;
++		case 6:
++			reg = ioremap(get_immrbase(), 0x1000);
++			local_irq_disable();
++			out_be32(SICRL_RB600(reg), in_be32(SICRL_RB600(reg)) & ~0x00800000);
++			out_be32(GPIO_DIR_RB600(reg), in_be32(GPIO_DIR_RB600(reg)) | SBIT(2));
++			out_be32(GPIO_DATA_RB600(reg), in_be32(GPIO_DATA_RB600(reg)) & ~SBIT(2));
++			break;
++		default:
++			mpc83xx_restart(cmd);
++			break;
++		}
++	}
++	else mpc83xx_restart(cmd);
++    
++	for (;;) ;
+ }
+ 
+ static void rbppc_halt(void)
+@@ -301,10 +332,10 @@ static int __init rbppc_declare_of_platf
+ 
+ 	return 0;
+ }
+-device_initcall(rbppc_declare_of_platform_devices);
++machine_device_initcall(rb600, rbppc_declare_of_platform_devices);
+ 
+ define_machine(rb600) {
+-	.name 				= "MikroTik RouterBOARD 600 series",
++	.name 				= "MikroTik RouterBOARD 333/600 series",
+ 	.probe 				= rbppc_probe,
+ 	.setup_arch 			= rbppc_setup_arch,
+ 	.init_IRQ 			= rbppc_init_IRQ,
+@@ -314,3 +345,31 @@ define_machine(rb600) {
+ 	.time_init 			= mpc83xx_time_init,
+ 	.calibrate_decr			= generic_calibrate_decr,
+ };
++
++static void fixup_pcibridge(struct pci_dev *dev)
++{
++	if ((dev->class >> 8) == PCI_CLASS_BRIDGE_PCI) {
++		/* let the kernel itself set right memory windows */
++		pci_write_config_word(dev, PCI_MEMORY_BASE, 0);
++		pci_write_config_word(dev, PCI_MEMORY_LIMIT, 0);
++		pci_write_config_word(dev, PCI_PREF_MEMORY_BASE, 0);
++		pci_write_config_word(dev, PCI_PREF_MEMORY_LIMIT, 0);
++		pci_write_config_byte(dev, PCI_IO_BASE, 0);
++		pci_write_config_byte(dev, PCI_IO_LIMIT, 4 << 4);
++
++		pci_write_config_byte(
++			dev, PCI_COMMAND,
++			PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY | PCI_COMMAND_IO);
++		pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, 8);
++	}
++}
++
++
++static void fixup_rb604(struct pci_dev *dev)
++{
++	pci_write_config_byte(dev, 0xC0, 0x01);
++}
++
++DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, fixup_pcibridge)
++DECLARE_PCI_FIXUP_HEADER(0x3388, 0x0021, fixup_rb604)
++
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -410,11 +410,11 @@ config MTD_NAND_PLATFORM
+ 	  via platform_data.
+ 
+ config MTD_NAND_RB_PPC
+-	tristate "MikroTik RB600 NAND support"
++	tristate "MikroTik RB 333/600 NAND support"
+ 	depends on MTD_NAND && MTD_PARTITIONS && RB_PPC
+ 	help
+ 	  This option enables support for the NAND device on MikroTik
+-	  RouterBOARD 600 series boards.
++	  RouterBOARD 333/600 series boards.
+ 
+ config MTD_ALAUDA
+ 	tristate "MTD driver for Olympus MAUSB-10 and Fujifilm DPC-R1"
+--- a/drivers/mtd/nand/rbppc_nand.c
++++ b/drivers/mtd/nand/rbppc_nand.c
+@@ -126,7 +126,7 @@ static int rbppc_nand_probe(struct of_de
+ 	void *baddr;
+ 	const unsigned *rdy, *nce, *cle, *ale;
+ 
+-	printk(KERN_INFO "rbppc_nand_probe: MikroTik RouterBOARD 600 series NAND driver, version " DRV_VERSION "\n");
++	printk(KERN_INFO "rbppc_nand_probe: MikroTik RouterBOARD 333/600 series NAND driver, version " DRV_VERSION "\n");
+ 
+ 	info = kmalloc(sizeof(*info), GFP_KERNEL);
+ 
+@@ -244,7 +244,7 @@ static void __exit rbppc_nand_exit(void)
+ MODULE_AUTHOR("Mikrotikls SIA");
+ MODULE_AUTHOR("Noah Fontes");
+ MODULE_AUTHOR("Michael Guntsche");
+-MODULE_DESCRIPTION("MikroTik RouterBOARD 600 series NAND driver");
++MODULE_DESCRIPTION("MikroTik RouterBOARD 333/600 series NAND driver");
+ MODULE_LICENSE("GPL");
+ MODULE_VERSION(DRV_VERSION);
+ 
+--- a/arch/powerpc/platforms/83xx/Kconfig
++++ b/arch/powerpc/platforms/83xx/Kconfig
+@@ -31,13 +31,14 @@ config MPC832x_RDB
+ 	  This option enables support for the MPC8323 RDB board.
+ 
+ config RB_PPC
+-	bool "MikroTik RouterBOARD 600 series"
++	bool "MikroTik RouterBOARD 333/600 series"
+ 	select DEFAULT_UIMAGE
+ 	select QUICC_ENGINE
++	select PPC_MPC832x
+ 	select PPC_MPC834x
+ 	select RB_IOMAP
+ 	help
+-	  This option enables support for MikroTik RouterBOARD 600 series boards.
++	  This option enables support for MikroTik RouterBOARD 333/600 series boards.
+ 
+ config MPC834x_MDS
+ 	bool "Freescale MPC834x MDS"
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -73,7 +73,7 @@ src-plat := of.c cuboot-52xx.c cuboot-82
+ 		cuboot-pq2.c cuboot-sequoia.c treeboot-walnut.c \
+ 		cuboot-bamboo.c cuboot-mpc7448hpc2.c cuboot-taishan.c \
+ 		fixed-head.S ep88xc.c ep405.c cuboot-c2k.c \
+-		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c rb600.c \
++		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c rb600.c rb333.c \
+ 		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
+ 		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
+ 		cuboot-acadia.c cuboot-amigaone.c cuboot-kilauea.c \
+@@ -232,7 +232,8 @@ image-$(CONFIG_MPC834x_ITX)		+= cuImage.
+ image-$(CONFIG_MPC834x_MDS)		+= cuImage.mpc834x_mds
+ image-$(CONFIG_MPC836x_MDS)		+= cuImage.mpc836x_mds
+ image-$(CONFIG_ASP834x)			+= dtbImage.asp834x-redboot
+-image-$(CONFIG_RB_PPC)			+= dtbImage.rb600
++image-$(CONFIG_RB_PPC)			+= dtbImage.rb600 \
++					   dtbImage.rb333
+ 
+ # Board ports in arch/powerpc/platform/85xx/Kconfig
+ image-$(CONFIG_MPC8540_ADS)		+= cuImage.mpc8540ads
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -208,7 +208,7 @@ ps3)
+     isection=.kernel:initrd
+     link_address=''
+     ;;
+-ep88xc|ep405|ep8248e|rb600)
++ep88xc|ep405|ep8248e|rb600|rb333)
+     platformo="$object/fixed-head.o $object/$platform.o"
+     binary=y
+     ;;
