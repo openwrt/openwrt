@@ -1,0 +1,11 @@
+--- a/arch/arm/mm/fault-armv.c
++++ b/arch/arm/mm/fault-armv.c
+@@ -127,8 +127,6 @@ make_coherent(struct address_space *mapp
+ 	flush_dcache_mmap_unlock(mapping);
+ 	if (aliases)
+ 		adjust_pte(vma, addr);
+-	else
+-		flush_cache_page(vma, addr, pfn);
+ }
+ 
+ /*
