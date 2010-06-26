@@ -263,7 +263,7 @@ sub gen_target_config() {
 	print <<EOF;
 choice
 	prompt "Target System"
-	default TARGET_brcm_2_4
+	default TARGET_brcm47xx
 	reset if !DEVEL
 	
 EOF
