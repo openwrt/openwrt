@@ -10,7 +10,6 @@ WIRELESS_MENU:=Wireless Drivers
 define KernelPackage/lib80211
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=802.11 Networking stack
-  DEPENDS:=@!LINUX_2_4
   KCONFIG:= \
 	CONFIG_LIB80211 \
 	CONFIG_LIB80211_CRYPT_WEP \

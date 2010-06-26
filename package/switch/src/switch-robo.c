@@ -63,12 +63,7 @@
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
 #define SIOCSETCPHYWR           (SIOCDEVPRIVATE + 10)
 
-/* linux 2.4 does not have 'bool' */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0)
-#define bool int
-#endif
-
-/* Only available on brcm-2.4/brcm47xx */
+/* Only available on brcm47xx */
 #ifdef BROADCOM
 extern char *nvram_get(const char *name);
 #define getvar(str) (nvram_get(str)?:"")

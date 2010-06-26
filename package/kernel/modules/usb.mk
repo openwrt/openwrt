@@ -7,11 +7,7 @@
 
 USB_MENU:=USB Support
 
-ifneq ($(CONFIG_LINUX_2_4),)
-  USBNET_DIR:=usb/net
-endif
-
-USBNET_DIR?=net/usb
+USBNET_DIR:=net/usb
 USBHID_DIR?=hid/usbhid
 USBINPUT_DIR?=input/misc
 
@@ -20,15 +16,8 @@ define KernelPackage/usb-core
   TITLE:=Support for USB
   DEPENDS:=@USB_SUPPORT +LINUX_2_6_31:kmod-nls-base +LINUX_2_6_32:kmod-nls-base +LINUX_2_6_33:kmod-nls-base +LINUX_2_6_34:kmod-nls-base
   KCONFIG:=CONFIG_USB
-  AUTOLOAD:=$(call AutoLoad,20,usbcore,1)
-endef
-
-define KernelPackage/usb-core/2.4
-  FILES:=$(LINUX_DIR)/drivers/usb/usbcore.$(LINUX_KMOD_SUFFIX)
-endef
-
-define KernelPackage/usb-core/2.6
   FILES:=$(LINUX_DIR)/drivers/usb/core/usbcore.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,usbcore,1)
 endef
 
 define KernelPackage/usb-core/description
@@ -49,19 +38,9 @@ define KernelPackage/usb-uhci
   KCONFIG:= \
 	CONFIG_USB_UHCI_ALT \
 	CONFIG_USB_UHCI_HCD
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-uhci/2.4
-#  KCONFIG:=CONFIG_USB_UHCI_ALT
-  FILES:=$(LINUX_DIR)/drivers/usb/host/uhci.o
-  AUTOLOAD:=$(call AutoLoad,50,uhci,1)
-endef
-
-define KernelPackage/usb-uhci/2.6
-#  KCONFIG:=CONFIG_USB_UHCI_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/uhci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,50,uhci-hcd,1)
+  $(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-uhci/description
@@ -71,41 +50,15 @@ endef
 $(eval $(call KernelPackage,usb-uhci,1))
 
 
-define KernelPackage/usb-uhci-iv
-  TITLE:=Support for Intel/VIA UHCI controllers
-  DEPENDS:=@LINUX_2_4
-  KCONFIG:=CONFIG_USB_UHCI
-  FILES:=$(LINUX_DIR)/drivers/usb/host/usb-uhci.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50,usb-uhci,1)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-uhci-iv/description
- Kernel support for Intel/VIA USB UHCI controllers
-endef
-
-$(eval $(call KernelPackage,usb-uhci-iv,1))
-
-
 define KernelPackage/usb-ohci
   TITLE:=Support for OHCI controllers
   KCONFIG:= \
 	CONFIG_USB_OHCI \
 	CONFIG_USB_OHCI_HCD \
 	CONFIG_USB_OHCI_AR71XX=y
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-ohci/2.4
-#  KCONFIG:=CONFIG_USB_OHCI
-  FILES:=$(LINUX_DIR)/drivers/usb/host/usb-ohci.o
-  AUTOLOAD:=$(call AutoLoad,50,usb-ohci,1)
-endef
-
-define KernelPackage/usb-ohci/2.6
-#  KCONFIG:=CONFIG_USB_OHCI_HCD
   FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,50,ohci-hcd,1)
+  $(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-ohci/description
@@ -153,17 +106,9 @@ $(eval $(call KernelPackage,usb2))
 define KernelPackage/usb-acm
   TITLE:=Support for modems/isdn controllers
   KCONFIG:=CONFIG_USB_ACM
-$(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-acm/2.4
-  FILES:=$(LINUX_DIR)/drivers/usb/acm.o
-  AUTOLOAD:=$(call AutoLoad,60,acm)
-endef
-
-define KernelPackage/usb-acm/2.6
   FILES:=$(LINUX_DIR)/drivers/usb/class/cdc-acm.ko
   AUTOLOAD:=$(call AutoLoad,60,cdc-acm)
+$(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-acm/description
@@ -180,16 +125,6 @@ define KernelPackage/usb-audio
 	CONFIG_SND_USB_AUDIO
   $(call AddDepends/usb)
   $(call AddDepends/sound)
-endef
-
-define KernelPackage/usb-audio/2.4
-#  KCONFIG:=CONFIG_USB_AUDIO
-  FILES:=$(LINUX_DIR)/drivers/usb/audio.o
-  AUTOLOAD:=$(call AutoLoad,60,audio)
-endef
-
-define KernelPackage/usb-audio/2.6
-#  KCONFIG:=CONFIG_SND_USB_AUDIO
   FILES:= \
 	$(LINUX_DIR)/sound/usb/snd-usb-lib.ko \
 	$(LINUX_DIR)/sound/usb/snd-usb-audio.ko
@@ -206,17 +141,9 @@ $(eval $(call KernelPackage,usb-audio))
 define KernelPackage/usb-printer
   TITLE:=Support for printers
   KCONFIG:=CONFIG_USB_PRINTER
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-printer/2.4
-  FILES:=$(LINUX_DIR)/drivers/usb/printer.o
-  AUTOLOAD:=$(call AutoLoad,60,printer)
-endef
-
-define KernelPackage/usb-printer/2.6
   FILES:=$(LINUX_DIR)/drivers/usb/class/usblp.ko
   AUTOLOAD:=$(call AutoLoad,60,usblp)
+  $(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-printer/description
@@ -641,15 +568,8 @@ define KernelPackage/usb-net
   TITLE:=Kernel modules for USB-to-Ethernet convertors
   KCONFIG:=CONFIG_USB_USBNET
   AUTOLOAD:=$(call AutoLoad,60,usbnet)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-net/2.4
-  FILES:=$(LINUX_DIR)/drivers/usb/usbnet.$(LINUX_KMOD_SUFFIX)
-endef
-
-define KernelPackage/usb-net/2.6
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/usbnet.$(LINUX_KMOD_SUFFIX)
+  $(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-net/description

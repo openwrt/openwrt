@@ -27,20 +27,12 @@
 #include <linux/timer.h>
 #include <linux/version.h>
 #include <asm/uaccess.h>
-
-#ifndef LINUX_2_4
 #include <linux/workqueue.h>
 #include <linux/skbuff.h>
 #include <linux/netlink.h>
 #include <net/sock.h>
 extern struct sock *uevent_sock;
 extern u64 uevent_next_seqnum(void);
-#else
-#include <linux/tqueue.h>
-#define INIT_WORK INIT_TQUEUE
-#define schedule_work schedule_task
-#define work_struct tq_struct
-#endif
 
 #include "gpio.h"
 #include "diag.h"
@@ -179,12 +171,10 @@ static void __init NetCenter_init(void) {
 static void __init bcm57xx_init(void) {
 	int pin = 1 << 2;
 
-#ifndef LINUX_2_4
 	/* FIXME: switch comes up, but port mappings/vlans not right */
 	gpio_outen(pin, pin);
 	gpio_control(pin, 0);
 	gpio_out(pin, pin);
-#endif
 }
 
 static struct platform_t __initdata platforms[] = {
@@ -1145,7 +1135,6 @@ static void unregister_buttons(struct button_t *b)
 }
 
 
-#ifndef LINUX_2_4
 static void add_msg(struct event_t *event, char *msg, int argv)
 {
 	char *s;
@@ -1177,43 +1166,6 @@ static void hotplug_button(struct work_struct *work)
 	kfree(event);
 }
 
-#else /* !LINUX_2_4 */
-static inline char *kzalloc(unsigned int size, unsigned int gfp)
-{
-	char *p;
-
-	p = kmalloc(size, gfp);
-	if (p == NULL)
-		return NULL;
-
-	memset(p, 0, size);
-
-	return p;
-}
-
-static void add_msg(struct event_t *event, char *msg, int argv)
-{
-	if (argv)
-		event->argv[event->anr++] = event->scratch;
-	else
-		event->envp[event->enr++] = event->scratch;
-
-	event->scratch += sprintf(event->scratch, "%s", msg) + 1;
-}
-
-static void hotplug_button(struct event_t *event)
-{
-	char *scratch = kzalloc(256, GFP_KERNEL);
-	event->scratch = scratch;
-
-	add_msg(event, hotplug_path, 1);
-	add_msg(event, "button", 1);
-	fill_event(event);
-	call_usermodehelper (event->argv[0], event->argv, event->envp);
-	kfree(scratch);
-	kfree(event);
-}
-#endif /* !LINUX_2_4 */
 
 static int fill_event (struct event_t *event)
 {
@@ -1228,20 +1180,14 @@ static int fill_event (struct event_t *event)
 	add_msg(event, buf, 0);
 	snprintf(buf, 128, "SEEN=%ld", event->seen);
 	add_msg(event, buf, 0);
-#ifndef LINUX_2_4
 	snprintf(buf, 128, "SEQNUM=%llu", uevent_next_seqnum());
 	add_msg(event, buf, 0);
-#endif
 
 	return 0;
 }
 
 
-#ifndef LINUX_2_4
 static irqreturn_t button_handler(int irq, void *dev_id)
-#else
-static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs)
-#endif
 {
 	struct button_t *b;
 	u32 in, changed;
@@ -1264,11 +1210,7 @@ static irqreturn_t button_handler(int irq, void *dev_id, struct pt_regs *regs)
 			event->seen = (jiffies - b->seen)/HZ;
 			event->name = b->name;
 			event->action = b->pressed ? "pressed" : "released";
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
 			INIT_WORK(&event->wq, (void *)(void *)hotplug_button);
-#else
-			INIT_WORK(&event->wq, (void *)(void *)hotplug_button, (void *)event);
-#endif
 			schedule_work(&event->wq);
 		}
 
@@ -1362,12 +1304,7 @@ static void led_flash(unsigned long dummy) {
 
 static ssize_t diag_proc_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
-#ifdef LINUX_2_4
-	struct inode *inode = file->f_dentry->d_inode;
-	struct proc_dir_entry *dent = inode->u.generic_ip;
-#else
 	struct proc_dir_entry *dent = PDE(file->f_dentry->d_inode);
-#endif
 	char *page;
 	int len = 0;
 
@@ -1420,12 +1357,7 @@ static ssize_t diag_proc_read(struct file *file, char *buf, size_t count, loff_t
 
 static ssize_t diag_proc_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 {
-#ifdef LINUX_2_4
-	struct inode *inode = file->f_dentry->d_inode;
-	struct proc_dir_entry *dent = inode->u.generic_ip;
-#else
 	struct proc_dir_entry *dent = PDE(file->f_dentry->d_inode);
-#endif
 	char *page;
 	int ret = -EINVAL;
 

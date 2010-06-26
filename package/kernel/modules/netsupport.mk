@@ -106,8 +106,8 @@ $(eval $(call KernelPackage,capi))
 define KernelPackage/misdn
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=mISDN (ISDN) Support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
+	CONFIG_ISDN=y \
   	CONFIG_MISDN \
 	CONFIG_MISDN_DSP \
 	CONFIG_MISDN_L1OIP
@@ -116,16 +116,6 @@ define KernelPackage/misdn
 	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_dsp.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/mISDN/l1oip.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,30,mISDN_core mISDN_dsp l1oip)
-endef
-
-define KernelPackage/misdn/2.4
-  KCONFIG+= \
-	CONFIG_ISDN
-endef
-
-define KernelPackage/misdn/2.6
-   KCONFIG+= \
-	CONFIG_ISDN=y
 endef
 
 define KernelPackage/misdn/description
@@ -140,6 +130,7 @@ define KernelPackage/isdn4linux
   TITLE:=Old ISDN4Linux (deprecated)
   DEPENDS:=@LINUX_2_6
   KCONFIG:= \
+	CONFIG_ISDN=y \
     CONFIG_ISDN_I4L \
     CONFIG_ISDN_PPP=y \
     CONFIG_ISDN_PPP_VJ=y \
@@ -153,23 +144,10 @@ define KernelPackage/isdn4linux
     CONFIG_ISDN_X25=y \
     CONFIG_ISDN_DIVERSION
   FILES:= \
-    $(LINUX_DIR)/drivers/isdn/divert/dss1_divert.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,40,isdn isdn_bsdcomp dss1_divert)
-endef
-
-define KernelPackage/isdn4linux/2.4
-  KCONFIG+= \
-	CONFIG_ISDN
-  FILES+= \
-	$(LINUX_DIR)/drivers/isdn/isdn_bsdcomp.$(LINUX_KMOD_SUFFIX)
-endef
-
-define KernelPackage/isdn4linux/2.6
-  KCONFIG+= \
-	CONFIG_ISDN=y
-  FILES+= \
+    $(LINUX_DIR)/drivers/isdn/divert/dss1_divert.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/i4l/isdn.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/isdn/i4l/isdn_bsdcomp.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,40,isdn isdn_bsdcomp dss1_divert)
 endef
 
 define KernelPackage/isdn4linux/description
@@ -360,10 +338,9 @@ endef
 $(eval $(call KernelPackage,ipv6))
 
 
-# sit is not selectable on 2.4, but built when ipv6 is enabled
 define KernelPackage/sit
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  DEPENDS:=+kmod-ipv6 +LINUX_2_6:kmod-iptunnel4
+  DEPENDS:=+kmod-ipv6 +kmod-iptunnel4
   TITLE:=IPv6-in-IPv4 tunnelling
   KCONFIG:=CONFIG_IPV6 CONFIG_IPV6_SIT
   FILES:=$(LINUX_DIR)/net/ipv6/sit.$(LINUX_KMOD_SUFFIX)
@@ -534,16 +511,6 @@ define KernelPackage/mppe
   KCONFIG:= \
 	CONFIG_PPP_MPPE_MPPC \
 	CONFIG_PPP_MPPE
-endef
-
-define KernelPackage/mppe/2.4
-#  KCONFIG:=CONFIG_PPP_MPPE_MPPC
-  FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe_mppc.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,31,ppp_mppe_mppc)
-endef
-
-define KernelPackage/mppe/2.6
-#  KCONFIG:=CONFIG_PPP_MPPE
   FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,31,ppp_mppe)
 endef
