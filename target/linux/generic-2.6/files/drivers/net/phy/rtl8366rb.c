@@ -257,10 +257,9 @@ static int rtl8366rb_reset_chip(struct rtl8366rb *rtl)
 	return 0;
 }
 
-static int rtl8366rb_read_phy_reg(struct rtl8366rb *rtl,
+static int rtl8366rb_read_phy_reg(struct rtl8366_smi *smi,
 				 u32 phy_no, u32 page, u32 addr, u32 *data)
 {
-	struct rtl8366_smi *smi = &rtl->smi;
 	u32 reg;
 	int ret;
 
@@ -293,10 +292,9 @@ static int rtl8366rb_read_phy_reg(struct rtl8366rb *rtl,
 	return 0;
 }
 
-static int rtl8366rb_write_phy_reg(struct rtl8366rb *rtl,
+static int rtl8366rb_write_phy_reg(struct rtl8366_smi *smi,
 				  u32 phy_no, u32 page, u32 addr, u32 data)
 {
-	struct rtl8366_smi *smi = &rtl->smi;
 	u32 reg;
 	int ret;
 
@@ -1502,11 +1500,11 @@ static void rtl8366rb_switch_cleanup(struct rtl8366rb *rtl)
 
 static int rtl8366rb_mii_read(struct mii_bus *bus, int addr, int reg)
 {
-	struct rtl8366rb *rtl = smi_to_rtl8366rb(bus->priv);
+	struct rtl8366_smi *smi = bus->priv;
 	u32 val = 0;
 	int err;
 
-	err = rtl8366rb_read_phy_reg(rtl, addr, 0, reg, &val);
+	err = rtl8366rb_read_phy_reg(smi, addr, 0, reg, &val);
 	if (err)
 		return 0xffff;
 
@@ -1515,13 +1513,13 @@ static int rtl8366rb_mii_read(struct mii_bus *bus, int addr, int reg)
 
 static int rtl8366rb_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 {
-	struct rtl8366rb *rtl = smi_to_rtl8366rb(bus->priv);
+	struct rtl8366_smi *smi = bus->priv;
 	u32 t;
 	int err;
 
-	err = rtl8366rb_write_phy_reg(rtl, addr, 0, reg, val);
+	err = rtl8366rb_write_phy_reg(smi, addr, 0, reg, val);
 	/* flush write */
-	(void) rtl8366rb_read_phy_reg(rtl, addr, 0, reg, &t);
+	(void) rtl8366rb_read_phy_reg(smi, addr, 0, reg, &t);
 
 	return err;
 }
