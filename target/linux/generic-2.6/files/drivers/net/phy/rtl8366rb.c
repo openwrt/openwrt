@@ -472,20 +472,21 @@ static int rtl8366rb_set_vlan_4k(struct rtl8366rb *rtl,
 }
 
 static int rtl8366rb_get_vlan_mc(struct rtl8366rb *rtl, u32 index,
-				 struct rtl8366rb_vlan_mc *vlanmc)
+				 struct rtl8366_vlan_mc *vlanmc)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
+	struct rtl8366rb_vlan_mc vlanmc_priv;
 	int err;
 	u32 addr;
 	u32 data;
 	u16 *tableaddr;
 
-	memset(vlanmc, '\0', sizeof(struct rtl8366rb_vlan_mc));
+	memset(vlanmc, '\0', sizeof(struct rtl8366_vlan_mc));
 
 	if (index >= RTL8366_NUM_VLANS)
 		return -EINVAL;
 
-	tableaddr = (u16 *)vlanmc;
+	tableaddr = (u16 *)&vlanmc_priv;
 
 	addr = RTL8366S_VLAN_MEMCONF_BASE + (index * 3);
 	err = rtl8366_smi_read_reg(smi, addr, &data);
@@ -510,13 +511,20 @@ static int rtl8366rb_get_vlan_mc(struct rtl8366rb *rtl, u32 index,
 
 	*tableaddr = data;
 
+	vlanmc->vid = vlanmc_priv.vid;
+	vlanmc->priority = vlanmc_priv.priority;
+	vlanmc->untag = vlanmc_priv.untag;
+	vlanmc->member = vlanmc_priv.member;
+	vlanmc->fid = vlanmc_priv.fid;
+
 	return 0;
 }
 
 static int rtl8366rb_set_vlan_mc(struct rtl8366rb *rtl, u32 index,
-				 const struct rtl8366rb_vlan_mc *vlanmc)
+				 const struct rtl8366_vlan_mc *vlanmc)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
+	struct rtl8366rb_vlan_mc vlanmc_priv;
 	int err;
 	u32 addr;
 	u32 data;
@@ -530,9 +538,17 @@ static int rtl8366rb_set_vlan_mc(struct rtl8366rb *rtl, u32 index,
 	    vlanmc->fid > RTL8366S_FIDMAX)
 		return -EINVAL;
 
+	vlanmc_priv.vid = vlanmc->vid;
+	vlanmc_priv.priority = vlanmc->priority;
+	vlanmc_priv.untag = vlanmc->untag;
+	vlanmc_priv.member = vlanmc->member;
+	vlanmc_priv.stag_mbr = 0;
+	vlanmc_priv.stag_idx = 0;
+	vlanmc_priv.fid = vlanmc->fid;
+
 	addr = RTL8366S_VLAN_MEMCONF_BASE + (index * 3);
 
-	tableaddr = (u16 *)vlanmc;
+	tableaddr = (u16 *)&vlanmc_priv;
 	data = *tableaddr;
 
 	err = rtl8366_smi_write_reg(smi, addr, data);
@@ -584,7 +600,7 @@ static int rtl8366rb_get_port_vlan_index(struct rtl8366rb *rtl, int port,
 static int rtl8366rb_get_vlan_port_pvid(struct rtl8366rb *rtl, int port,
 				       int *val)
 {
-	struct rtl8366rb_vlan_mc vlanmc;
+	struct rtl8366_vlan_mc vlanmc;
 	int err;
 	int index;
 
@@ -628,7 +644,7 @@ static int rtl8366rb_set_port_vlan_index(struct rtl8366rb *rtl, int port,
 static int rtl8366rb_set_vlan_port_pvid(struct rtl8366rb *rtl, int port, int val)
 {
 	int i;
-	struct rtl8366rb_vlan_mc vlanmc;
+	struct rtl8366_vlan_mc vlanmc;
 	struct rtl8366rb_vlan_4k vlan4k;
 
 	if (port >= RTL8366_NUM_PORTS || val >= RTL8366_NUM_VIDS)
@@ -726,7 +742,7 @@ static int rtl8366rb_vlan_set_4ktable(struct rtl8366rb *rtl, int enable)
 static int rtl8366rb_reset_vlan(struct rtl8366rb *rtl)
 {
 	struct rtl8366rb_vlan_4k vlan4k;
-	struct rtl8366rb_vlan_mc vlanmc;
+	struct rtl8366_vlan_mc vlanmc;
 	int err;
 	int i;
 
@@ -831,7 +847,7 @@ static ssize_t rtl8366rb_read_debugfs_vlan(struct file *file,
 			"\tports\n");
 
 	for (i = 0; i < RTL8366_NUM_VLANS; ++i) {
-		struct rtl8366rb_vlan_mc vlanmc;
+		struct rtl8366_vlan_mc vlanmc;
 
 		rtl8366rb_get_vlan_mc(rtl, i, &vlanmc);
 
@@ -1150,7 +1166,7 @@ static int rtl8366rb_sw_get_vlan_info(struct switch_dev *dev,
 {
 	int i;
 	u32 len = 0;
-	struct rtl8366rb_vlan_mc vlanmc;
+	struct rtl8366_vlan_mc vlanmc;
 	struct rtl8366rb_vlan_4k vlan4k;
 	struct rtl8366rb *rtl = sw_to_rtl8366rb(dev);
 	char *buf = rtl->buf;
@@ -1288,7 +1304,7 @@ static int rtl8366rb_sw_get_port_mib(struct switch_dev *dev,
 static int rtl8366rb_sw_get_vlan_ports(struct switch_dev *dev,
 				      struct switch_val *val)
 {
-	struct rtl8366rb_vlan_mc vlanmc;
+	struct rtl8366_vlan_mc vlanmc;
 	struct rtl8366rb *rtl = sw_to_rtl8366rb(dev);
 	struct switch_port *port;
 	int i;
@@ -1316,7 +1332,7 @@ static int rtl8366rb_sw_get_vlan_ports(struct switch_dev *dev,
 static int rtl8366rb_sw_set_vlan_ports(struct switch_dev *dev,
 				      struct switch_val *val)
 {
-	struct rtl8366rb_vlan_mc vlanmc;
+	struct rtl8366_vlan_mc vlanmc;
 	struct rtl8366rb_vlan_4k vlan4k;
 	struct rtl8366rb *rtl = sw_to_rtl8366rb(dev);
 	struct switch_port *port;
