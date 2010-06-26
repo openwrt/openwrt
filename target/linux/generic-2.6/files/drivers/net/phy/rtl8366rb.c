@@ -16,7 +16,6 @@
 #include <linux/delay.h>
 #include <linux/skbuff.h>
 #include <linux/switch.h>
-#include <linux/phy.h>
 #include <linux/rtl8366rb.h>
 
 #include "rtl8366_smi.h"
@@ -148,8 +147,6 @@
 struct rtl8366rb {
 	struct device		*parent;
 	struct rtl8366_smi	smi;
-	struct mii_bus		*mii_bus;
-	int			mii_irq[PHY_MAX_ADDR];
 	struct switch_dev	dev;
 	char			buf[4096];
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
@@ -224,6 +221,11 @@ static struct mib_counter rtl8366rb_mib_counters[RTL8366S_MIB_COUNT] = {
 	{ 68, 2, "IfOutMulticastPkts                " },
 	{ 70, 2, "IfOutBroadcastPkts                " },
 };
+
+static inline struct rtl8366rb *smi_to_rtl8366rb(struct rtl8366_smi *smi)
+{
+	return container_of(smi, struct rtl8366rb, smi);
+}
 
 static inline struct rtl8366rb *sw_to_rtl8366rb(struct switch_dev *sw)
 {
@@ -1500,7 +1502,7 @@ static void rtl8366rb_switch_cleanup(struct rtl8366rb *rtl)
 
 static int rtl8366rb_mii_read(struct mii_bus *bus, int addr, int reg)
 {
-	struct rtl8366rb *rtl = bus->priv;
+	struct rtl8366rb *rtl = smi_to_rtl8366rb(bus->priv);
 	u32 val = 0;
 	int err;
 
@@ -1513,7 +1515,7 @@ static int rtl8366rb_mii_read(struct mii_bus *bus, int addr, int reg)
 
 static int rtl8366rb_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 {
-	struct rtl8366rb *rtl = bus->priv;
+	struct rtl8366rb *rtl = smi_to_rtl8366rb(bus->priv);
 	u32 t;
 	int err;
 
@@ -1522,47 +1524,6 @@ static int rtl8366rb_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 	(void) rtl8366rb_read_phy_reg(rtl, addr, 0, reg, &t);
 
 	return err;
-}
-
-static int rtl8366rb_mii_init(struct rtl8366rb *rtl)
-{
-	int ret;
-	int i;
-
-	rtl->mii_bus = mdiobus_alloc();
-	if (rtl->mii_bus == NULL) {
-		ret = -ENOMEM;
-		goto err;
-	}
-
-	rtl->mii_bus->priv = (void *) rtl;
-	rtl->mii_bus->name = "rtl8366-rtl";
-	rtl->mii_bus->read = rtl8366rb_mii_read;
-	rtl->mii_bus->write = rtl8366rb_mii_write;
-	snprintf(rtl->mii_bus->id, MII_BUS_ID_SIZE, "%s",
-		 dev_name(rtl->parent));
-	rtl->mii_bus->parent = rtl->parent;
-	rtl->mii_bus->phy_mask = ~(0x1f);
-	rtl->mii_bus->irq = rtl->mii_irq;
-	for (i = 0; i < PHY_MAX_ADDR; i++)
-		rtl->mii_irq[i] = PHY_POLL;
-
-	ret = mdiobus_register(rtl->mii_bus);
-	if (ret)
-		goto err_free;
-
-	return 0;
-
- err_free:
-	mdiobus_free(rtl->mii_bus);
- err:
-	return ret;
-}
-
-static void rtl8366rb_mii_cleanup(struct rtl8366rb *rtl)
-{
-	mdiobus_unregister(rtl->mii_bus);
-	mdiobus_free(rtl->mii_bus);
 }
 
 static int rtl8366rb_mii_bus_match(struct mii_bus *bus)
@@ -1618,6 +1579,8 @@ static int rtl8366rb_detect(struct rtl8366_smi *smi)
 
 static struct rtl8366_smi_ops rtl8366rb_smi_ops = {
 	.detect		= rtl8366rb_detect,
+	.mii_read	= rtl8366rb_mii_read,
+	.mii_write	= rtl8366rb_mii_write,
 };
 
 static int __init rtl8366rb_probe(struct platform_device *pdev)
@@ -1664,18 +1627,12 @@ static int __init rtl8366rb_probe(struct platform_device *pdev)
 	if (err)
 		goto err_clear_drvdata;
 
-	err = rtl8366rb_mii_init(rtl);
+	err = rtl8366rb_switch_init(rtl);
 	if (err)
 		goto err_clear_drvdata;
 
-	err = rtl8366rb_switch_init(rtl);
-	if (err)
-		goto err_mii_cleanup;
-
 	return 0;
 
- err_mii_cleanup:
-	rtl8366rb_mii_cleanup(rtl);
  err_clear_drvdata:
 	platform_set_drvdata(pdev, NULL);
 	rtl8366_smi_cleanup(smi);
@@ -1718,7 +1675,6 @@ static int __devexit rtl8366rb_remove(struct platform_device *pdev)
 	if (rtl) {
 		rtl8366rb_switch_cleanup(rtl);
 		rtl8366rb_debugfs_remove(rtl);
-		rtl8366rb_mii_cleanup(rtl);
 		platform_set_drvdata(pdev, NULL);
 		rtl8366_smi_cleanup(&rtl->smi);
 		kfree(rtl);

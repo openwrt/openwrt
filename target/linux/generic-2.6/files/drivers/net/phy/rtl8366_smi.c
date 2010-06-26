@@ -14,6 +14,7 @@
 #include <linux/delay.h>
 #include <linux/gpio.h>
 #include <linux/spinlock.h>
+#include <linux/skbuff.h>
 
 #include "rtl8366_smi.h"
 
@@ -265,6 +266,47 @@ int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 }
 EXPORT_SYMBOL_GPL(rtl8366_smi_write_reg);
 
+static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
+{
+	int ret;
+	int i;
+
+	smi->mii_bus = mdiobus_alloc();
+	if (smi->mii_bus == NULL) {
+		ret = -ENOMEM;
+		goto err;
+	}
+
+	smi->mii_bus->priv = (void *) smi;
+	smi->mii_bus->name = dev_name(smi->parent);
+	smi->mii_bus->read = smi->ops->mii_read;
+	smi->mii_bus->write = smi->ops->mii_write;
+	snprintf(smi->mii_bus->id, MII_BUS_ID_SIZE, "%s",
+		 dev_name(smi->parent));
+	smi->mii_bus->parent = smi->parent;
+	smi->mii_bus->phy_mask = ~(0x1f);
+	smi->mii_bus->irq = smi->mii_irq;
+	for (i = 0; i < PHY_MAX_ADDR; i++)
+		smi->mii_irq[i] = PHY_POLL;
+
+	ret = mdiobus_register(smi->mii_bus);
+	if (ret)
+		goto err_free;
+
+	return 0;
+
+ err_free:
+	mdiobus_free(smi->mii_bus);
+ err:
+	return ret;
+}
+
+static void rtl8366_smi_mii_cleanup(struct rtl8366_smi *smi)
+{
+	mdiobus_unregister(smi->mii_bus);
+	mdiobus_free(smi->mii_bus);
+}
+
 int rtl8366_smi_init(struct rtl8366_smi *smi)
 {
 	int err;
@@ -300,6 +342,10 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 		goto err_free_sck;
 	}
 
+	err = rtl8366_smi_mii_init(smi);
+	if (err)
+		goto err_free_sck;
+
 	return 0;
 
  err_free_sck:
@@ -313,6 +359,7 @@ EXPORT_SYMBOL_GPL(rtl8366_smi_init);
 
 void rtl8366_smi_cleanup(struct rtl8366_smi *smi)
 {
+	rtl8366_smi_mii_cleanup(smi);
 	gpio_free(smi->gpio_sck);
 	gpio_free(smi->gpio_sda);
 }
