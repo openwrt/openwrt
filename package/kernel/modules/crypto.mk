@@ -14,14 +14,12 @@ CRYPTO_MENU:=Cryptographic API modules
 #  - sha1 > sha1_generic (2.6.24)
 #  - sha256 > sha256_generic (2.6.24)
 #  - sha512 > sha512_generic (2.6.26)
-ifneq ($(CONFIG_LINUX_2_6),)
-  CRYPTO_GENERIC:=_generic
-  AES_SUFFIX:=$(CRYPTO_GENERIC)
-  DES_SUFFIX:=$(CRYPTO_GENERIC)
-  SHA1_SUFFIX:=$(CRYPTO_GENERIC)
-  SHA256_SUFFIX:=$(CRYPTO_GENERIC)
-  SHA512_SUFFIX:=$(CRYPTO_GENERIC)
-endif
+CRYPTO_GENERIC:=_generic
+AES_SUFFIX:=$(CRYPTO_GENERIC)
+DES_SUFFIX:=$(CRYPTO_GENERIC)
+SHA1_SUFFIX:=$(CRYPTO_GENERIC)
+SHA256_SUFFIX:=$(CRYPTO_GENERIC)
+SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 
 CRYPTO_MODULES = \
 	ALGAPI=crypto_algapi \
@@ -64,7 +62,6 @@ endef
 
 define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PADLOCK \
@@ -82,7 +79,6 @@ $(eval $(call KernelPackage,crypto-hw-padlock))
 
 define KernelPackage/crypto-hw-geode
   TITLE:=AMD Geode hardware crypto module
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_GEODE
@@ -96,7 +92,7 @@ $(eval $(call KernelPackage,crypto-hw-geode))
 
 define KernelPackage/crypto-hw-hifn-795x
   TITLE:=HIFN 795x crypto accelerator
-  DEPENDS:=@LINUX_2_6 @!TARGET_ubicom32
+  DEPENDS:=@!TARGET_ubicom32
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_HW_RANDOM=y \

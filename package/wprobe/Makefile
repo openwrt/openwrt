@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 # wprobe-lib.c:149: error: 'packed' attribute ignored for field of type 'struct <anonymous>'
 
 define Package/wprobe/Default
-  DEPENDS:=@LINUX_2_6 @(!(TARGET_ps3||TARGET_pxcab||cris)||BROKEN)
+  DEPENDS:=@(!(TARGET_ps3||TARGET_pxcab||cris)||BROKEN)
 endef
 
 define KernelPackage/wprobe

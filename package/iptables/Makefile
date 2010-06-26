@@ -143,7 +143,7 @@ Includes:
 endef
 
 define Package/iptables-mod-ipset
-$(call Package/iptables/Module, @LINUX_2_6)
+$(call Package/iptables/Module,)
   TITLE:=IPset iptables extensions
 endef
 

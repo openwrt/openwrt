@@ -10,7 +10,6 @@ SOUND_MENU:=Sound Support
 define KernelPackage/pcspkr
   SUBMENU:=$(SOUND_MENU)
   TITLE:=PC speaker support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_INPUT_PCSPKR
   FILES:=$(LINUX_DIR)/drivers/input/misc/pcspkr.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,pcspkr)

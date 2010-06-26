@@ -19,7 +19,7 @@ PKG_MD5SUM:=9060d549a18c1c0794fa47a71343d627
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ipset/Default
-  DEPENDS:= @LINUX_2_6 @(!(TARGET_ps3||TARGET_pxcab)||BROKEN)
+  DEPENDS:= @(!(TARGET_ps3||TARGET_pxcab)||BROKEN)
 endef
 
 define Package/ipset

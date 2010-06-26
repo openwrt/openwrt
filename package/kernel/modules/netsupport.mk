@@ -10,7 +10,6 @@ NETWORK_SUPPORT_MENU:=Network Support
 define KernelPackage/atm
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=ATM support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_ATM \
 	CONFIG_ATM_BR2684
@@ -30,7 +29,7 @@ $(eval $(call KernelPackage,atm))
 define KernelPackage/atmtcp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=ATM over TCP
-  DEPENDS:=@LINUX_2_6 kmod-atm
+  DEPENDS:=kmod-atm
   KCONFIG:=CONFIG_ATM_TCP CONFIG_ATM_DRIVERS=y
   FILES:=$(LINUX_DIR)/drivers/atm/atmtcp.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,atmtcp)
@@ -46,7 +45,6 @@ $(eval $(call KernelPackage,atmtcp))
 define KernelPackage/appletalk
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Appletalk protocol support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_ATALK \
 	CONFIG_DEV_APPLETALK \
@@ -84,7 +82,6 @@ $(eval $(call KernelPackage,bonding))
 define KernelPackage/capi
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=CAPI (ISDN) Support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_ISDN_CAPI \
 	CONFIG_ISDN_CAPI_CAPI20 \
@@ -128,7 +125,6 @@ $(eval $(call KernelPackage,misdn))
 define KernelPackage/isdn4linux
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Old ISDN4Linux (deprecated)
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_ISDN=y \
     CONFIG_ISDN_I4L \
@@ -160,7 +156,7 @@ $(eval $(call KernelPackage,isdn4linux))
 define KernelPackage/ipip
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP-in-IP encapsulation
-  DEPENDS:=+LINUX_2_6:kmod-iptunnel4
+  DEPENDS:=+kmod-iptunnel4
   KCONFIG:=CONFIG_NET_IPIP
   FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,32,ipip)
@@ -181,7 +177,7 @@ IPSEC-m:= \
 define KernelPackage/ipsec
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPsec related modules (IPv4 and IPv6)
-  DEPENDS:=@LINUX_2_6 +kmod-crypto-core +kmod-crypto-des +kmod-crypto-hmac +kmod-crypto-md5 +kmod-crypto-sha1
+  DEPENDS:=+kmod-crypto-core +kmod-crypto-des +kmod-crypto-hmac +kmod-crypto-md5 +kmod-crypto-sha1
   KCONFIG:= \
 	CONFIG_NET_KEY \
 	CONFIG_XFRM_USER \
@@ -285,7 +281,6 @@ $(eval $(call KernelPackage,ipsec6))
 define KernelPackage/iptunnel4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv4 tunneling
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_NET_IPIP \
 	CONFIG_INET_TUNNEL
@@ -303,7 +298,7 @@ $(eval $(call KernelPackage,iptunnel4))
 define KernelPackage/iptunnel6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv6 tunneling
-  DEPENDS:= @LINUX_2_6 +kmod-ipv6
+  DEPENDS:= +kmod-ipv6
   KCONFIG:= \
 	CONFIG_INET6_TUNNEL
   FILES:=$(LINUX_DIR)/net/ipv6/tunnel6.$(LINUX_KMOD_SUFFIX)
@@ -357,7 +352,7 @@ $(eval $(call KernelPackage,sit))
 define KernelPackage/ip6-tunnel
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP-in-IPv6 tunnelling
-  DEPENDS:= @LINUX_2_6 +kmod-ipv6 +kmod-iptunnel6
+  DEPENDS:= +kmod-ipv6 +kmod-iptunnel6
   KCONFIG:= CONFIG_IPV6_TUNNEL
   FILES:= $(foreach mod,ip6_tunnel, \
 	$(LINUX_DIR)/net/ipv6/$(mod).$(LINUX_KMOD_SUFFIX) \
@@ -404,7 +399,7 @@ $(eval $(call KernelPackage,tun))
 define KernelPackage/ppp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPP modules
-  DEPENDS:=+LINUX_2_6:kmod-crc-ccitt
+  DEPENDS:=+kmod-crc-ccitt
   KCONFIG:= \
 	CONFIG_PPP \
 	CONFIG_PPP_ASYNC \
@@ -475,7 +470,7 @@ $(eval $(call KernelPackage,pppoa))
 define KernelPackage/pppol2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoL2TP support
-  DEPENDS:=@LINUX_2_6 kmod-ppp +kmod-pppoe
+  DEPENDS:=kmod-ppp +kmod-pppoe
   KCONFIG:=CONFIG_PPPOL2TP
   FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,pppol2tp)
@@ -590,7 +585,6 @@ $(eval $(call KernelPackage,ax25))
 define KernelPackage/mp-alg
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=ECMP caching algorithms
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_IP_ROUTE_MULTIPATH_RR \
 	CONFIG_IP_ROUTE_MULTIPATH_RANDOM \
@@ -618,7 +612,6 @@ $(eval $(call KernelPackage,mp-alg))
 define KernelPackage/pktgen
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Network packet generator
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_NET_PKTGEN
   FILES:=$(LINUX_DIR)/net/core/pktgen.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,99,pktgen)

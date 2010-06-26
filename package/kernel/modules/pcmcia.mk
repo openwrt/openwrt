@@ -50,7 +50,7 @@ $(eval $(call KernelPackage,pcmcia-core))
 define KernelPackage/pcmcia-yenta
   SUBMENU:=$(PCMCIA_MENU)
   TITLE:=yenta socket driver
-  DEPENDS:=@LINUX_2_6 kmod-pcmcia-core
+  DEPENDS:=kmod-pcmcia-core
   KCONFIG:= \
 	CONFIG_PCCARD_NONSTATIC \
 	CONFIG_YENTA

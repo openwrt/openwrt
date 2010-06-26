@@ -10,7 +10,6 @@ HWMON_MENU:=Hardware Monitoring Support
 define KernelPackage/hwmon-core
   SUBMENU:=$(HWMON_MENU)
   TITLE:=Hardware monitoring support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_HWMON \
 	CONFIG_HWMON_DEBUG_CHIP=n
