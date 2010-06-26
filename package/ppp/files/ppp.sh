@@ -92,11 +92,11 @@ start_pppd() {
 	}
 
 	local demand
-	config_get_bool demand "$cfg" demand 0
+	config_get demand "$cfg" demand 0
 
 	local demandargs
-	[ "$demand" -eq 1 ] && {
-		demandargs="precompiled-active-filter /etc/ppp/filter demand idle"
+	[ "$demand" -gt 0 ] && {
+		demandargs="precompiled-active-filter /etc/ppp/filter demand idle $demand"
 		[ "$has_dns" -eq 0 ] && add_dns "$cfg" 1.1.1.1
 	} || {
 		demandargs="persist"
