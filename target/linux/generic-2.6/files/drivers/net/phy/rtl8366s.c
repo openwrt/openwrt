@@ -26,7 +26,7 @@
 #endif
 
 #define RTL8366S_DRIVER_DESC	"Realtek RTL8366S ethernet switch driver"
-#define RTL8366S_DRIVER_VER	"0.2.1"
+#define RTL8366S_DRIVER_VER	"0.2.2"
 
 #define RTL8366S_PHY_NO_MAX                 4
 #define RTL8366S_PHY_PAGE_MAX               7
@@ -1542,34 +1542,7 @@ static int rtl8366s_mii_bus_match(struct mii_bus *bus)
 
 static int rtl8366s_setup(struct rtl8366s *rtl)
 {
-	struct rtl8366_smi *smi = &rtl->smi;
-	u32 chip_id = 0;
-	u32 chip_ver = 0;
 	int ret;
-
-	ret = rtl8366_smi_read_reg(smi, RTL8366S_CHIP_ID_REG, &chip_id);
-	if (ret) {
-		dev_err(rtl->parent, "unable to read chip id\n");
-		return ret;
-	}
-
-	switch (chip_id) {
-	case RTL8366S_CHIP_ID_8366:
-		break;
-	default:
-		dev_err(rtl->parent, "unknown chip id (%04x)\n", chip_id);
-		return -ENODEV;
-	}
-
-	ret = rtl8366_smi_read_reg(smi, RTL8366S_CHIP_VERSION_CTRL_REG,
-				   &chip_ver);
-	if (ret) {
-		dev_err(rtl->parent, "unable to read chip version\n");
-		return ret;
-	}
-
-	dev_info(rtl->parent, "RTL%04x ver. %u chip found\n",
-		 chip_id, chip_ver & RTL8366S_CHIP_VERSION_MASK);
 
 	ret = rtl8366s_reset_chip(rtl);
 	if (ret)
@@ -1578,6 +1551,43 @@ static int rtl8366s_setup(struct rtl8366s *rtl)
 	rtl8366s_debugfs_init(rtl);
 	return 0;
 }
+
+static int rtl8366s_detect(struct rtl8366_smi *smi)
+{
+	u32 chip_id = 0;
+	u32 chip_ver = 0;
+	int ret;
+
+	ret = rtl8366_smi_read_reg(smi, RTL8366S_CHIP_ID_REG, &chip_id);
+	if (ret) {
+		dev_err(smi->parent, "unable to read chip id\n");
+		return ret;
+	}
+
+	switch (chip_id) {
+	case RTL8366S_CHIP_ID_8366:
+		break;
+	default:
+		dev_err(smi->parent, "unknown chip id (%04x)\n", chip_id);
+		return -ENODEV;
+	}
+
+	ret = rtl8366_smi_read_reg(smi, RTL8366S_CHIP_VERSION_CTRL_REG,
+				   &chip_ver);
+	if (ret) {
+		dev_err(smi->parent, "unable to read chip version\n");
+		return ret;
+	}
+
+	dev_info(smi->parent, "RTL%04x ver. %u chip found\n",
+		 chip_id, chip_ver & RTL8366S_CHIP_VERSION_MASK);
+
+	return 0;
+}
+
+static struct rtl8366_smi_ops rtl8366s_smi_ops = {
+	.detect		= rtl8366s_detect,
+};
 
 static int __init rtl8366s_probe(struct platform_device *pdev)
 {
@@ -1611,6 +1621,7 @@ static int __init rtl8366s_probe(struct platform_device *pdev)
 	smi->parent = &pdev->dev;
 	smi->gpio_sda = pdata->gpio_sda;
 	smi->gpio_sck = pdata->gpio_sck;
+	smi->ops = &rtl8366s_smi_ops;
 
 	err = rtl8366_smi_init(smi);
 	if (err)

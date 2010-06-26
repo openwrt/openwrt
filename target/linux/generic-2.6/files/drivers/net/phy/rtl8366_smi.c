@@ -272,6 +272,9 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	if (!smi->parent)
 		return -EINVAL;
 
+	if (!smi->ops)
+		return -EINVAL;
+
 	err = gpio_request(smi->gpio_sda, dev_name(smi->parent));
 	if (err) {
 		dev_err(smi->parent, "gpio_request failed for %u, err=%d\n",
@@ -291,8 +294,16 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	dev_info(smi->parent, "using GPIO pins %u (SDA) and %u (SCK)\n",
 		 smi->gpio_sda, smi->gpio_sck);
 
+	err = smi->ops->detect(smi);
+	if (err) {
+		dev_err(smi->parent, "chip detection failed, err=%d\n", err);
+		goto err_free_sck;
+	}
+
 	return 0;
 
+ err_free_sck:
+	gpio_free(smi->gpio_sck);
  err_free_sda:
 	gpio_free(smi->gpio_sda);
  err_out:
