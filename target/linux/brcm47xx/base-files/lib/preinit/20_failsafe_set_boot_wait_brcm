@@ -1,0 +1,14 @@
+#!/bin/sh
+
+. /etc/functions.sh
+
+set_boot_wait() {
+	[ -x "/usr/sbin/nvram" ] && {
+		[ "$(nvram get boot_wait)" != "on" ] && {
+			nvram set boot_wait=on
+			nvram commit
+		}
+	}
+}
+
+boot_hook_add failsafe set_boot_wait
