@@ -69,6 +69,8 @@
 #define RTL8366S_GLOBAL_MIB_COUNT           1
 #define RTL8366S_MIB_COUNTER_PORT_OFFSET    0x0040
 #define RTL8366S_MIB_COUNTER_BASE           0x1000
+#define RTL8366S_MIB_COUNTER_PORT_OFFSET2   0x0008
+#define RTL8366S_MIB_COUNTER_BASE2          0x1180
 #define RTL8366S_MIB_CTRL_REG               0x11F0
 #define RTL8366S_MIB_CTRL_USER_MASK         0x01FF
 #define RTL8366S_MIB_CTRL_BUSY_MASK         0x0001
@@ -181,45 +183,51 @@ u16 g_dbg_reg;
 #endif
 
 struct mib_counter {
+	unsigned	base;
 	unsigned	offset;
 	unsigned	length;
 	const char	*name;
 };
 
 static struct mib_counter rtl8366s_mib_counters[RTL8366S_MIB_COUNT] = {
-	{  0, 4, "IfInOctets"				},
-	{  4, 4, "EtherStatsOctets"			},
-	{  8, 2, "EtherStatsUnderSizePkts"		},
-	{ 10, 2, "EtherFragments"			},
-	{ 12, 2, "EtherStatsPkts64Octets"		},
-	{ 14, 2, "EtherStatsPkts65to127Octets"		},
-	{ 16, 2, "EtherStatsPkts128to255Octets"		},
-	{ 18, 2, "EtherStatsPkts256to511Octets"		},
-	{ 20, 2, "EtherStatsPkts512to1023Octets"	},
-	{ 22, 2, "EtherStatsPkts1024to1518Octets"	},
-	{ 24, 2, "EtherOversizeStats"			},
-	{ 26, 2, "EtherStatsJabbers"			},
-	{ 28, 2, "IfInUcastPkts"			},
-	{ 30, 2, "EtherStatsMulticastPkts"		},
-	{ 32, 2, "EtherStatsBroadcastPkts"		},
-	{ 34, 2, "EtherStatsDropEvents"			},
-	{ 36, 2, "Dot3StatsFCSErrors"			},
-	{ 38, 2, "Dot3StatsSymbolErrors"		},
-	{ 40, 2, "Dot3InPauseFrames"			},
-	{ 42, 2, "Dot3ControlInUnknownOpcodes"		},
-	{ 44, 4, "IfOutOctets"				},
-	{ 48, 2, "Dot3StatsSingleCollisionFrames"	},
-	{ 50, 2, "Dot3StatMultipleCollisionFrames"	},
-	{ 52, 2, "Dot3sDeferredTransmissions"		},
-	{ 54, 2, "Dot3StatsLateCollisions"		},
-	{ 56, 2, "EtherStatsCollisions"			},
-	{ 58, 2, "Dot3StatsExcessiveCollisions"		},
-	{ 60, 2, "Dot3OutPauseFrames"			},
-	{ 62, 2, "Dot1dBasePortDelayExceededDiscards"	},
-	{ 64, 2, "Dot1dTpPortInDiscards"		},
-	{ 66, 2, "IfOutUcastPkts"			},
-	{ 68, 2, "IfOutMulticastPkts"			},
-	{ 70, 2, "IfOutBroadcastPkts"			},
+	{ 0,  0, 4, "IfInOctets"				},
+	{ 0,  4, 4, "EtherStatsOctets"				},
+	{ 0,  8, 2, "EtherStatsUnderSizePkts"			},
+	{ 0, 10, 2, "EtherFragments"				},
+	{ 0, 12, 2, "EtherStatsPkts64Octets"			},
+	{ 0, 14, 2, "EtherStatsPkts65to127Octets"		},
+	{ 0, 16, 2, "EtherStatsPkts128to255Octets"		},
+	{ 0, 18, 2, "EtherStatsPkts256to511Octets"		},
+	{ 0, 20, 2, "EtherStatsPkts512to1023Octets"		},
+	{ 0, 22, 2, "EtherStatsPkts1024to1518Octets"		},
+	{ 0, 24, 2, "EtherOversizeStats"			},
+	{ 0, 26, 2, "EtherStatsJabbers"				},
+	{ 0, 28, 2, "IfInUcastPkts"				},
+	{ 0, 30, 2, "EtherStatsMulticastPkts"			},
+	{ 0, 32, 2, "EtherStatsBroadcastPkts"			},
+	{ 0, 34, 2, "EtherStatsDropEvents"			},
+	{ 0, 36, 2, "Dot3StatsFCSErrors"			},
+	{ 0, 38, 2, "Dot3StatsSymbolErrors"			},
+	{ 0, 40, 2, "Dot3InPauseFrames"				},
+	{ 0, 42, 2, "Dot3ControlInUnknownOpcodes"		},
+	{ 0, 44, 4, "IfOutOctets"				},
+	{ 0, 48, 2, "Dot3StatsSingleCollisionFrames"		},
+	{ 0, 50, 2, "Dot3StatMultipleCollisionFrames"		},
+	{ 0, 52, 2, "Dot3sDeferredTransmissions"		},
+	{ 0, 54, 2, "Dot3StatsLateCollisions"			},
+	{ 0, 56, 2, "EtherStatsCollisions"			},
+	{ 0, 58, 2, "Dot3StatsExcessiveCollisions"		},
+	{ 0, 60, 2, "Dot3OutPauseFrames"			},
+	{ 0, 62, 2, "Dot1dBasePortDelayExceededDiscards"	},
+
+	/*
+	 * The following counters are accessible at a different
+	 * base address.
+	 */
+	{ 1,  0, 2, "Dot1dTpPortInDiscards"			},
+	{ 1,  2, 2, "IfOutUcastPkts"				},
+	{ 1,  4, 2, "IfOutMulticastPkts"			},
+	{ 1,  6, 2, "IfOutBroadcastPkts"			},
 };
 
 static inline struct rtl8366s *smi_to_rtl8366s(struct rtl8366_smi *smi)
@@ -339,9 +347,22 @@ static int rtl8366_get_mib_counter(struct rtl8366_smi *smi, int counter,
 	if (port > RTL8366_NUM_PORTS || counter >= RTL8366S_MIB_COUNT)
 		return -EINVAL;
 
-	addr = RTL8366S_MIB_COUNTER_BASE +
-	       RTL8366S_MIB_COUNTER_PORT_OFFSET * (port) +
-	       rtl8366s_mib_counters[counter].offset;
+	switch (rtl8366s_mib_counters[counter].base) {
+	case 0:
+		addr = RTL8366S_MIB_COUNTER_BASE +
+		       RTL8366S_MIB_COUNTER_PORT_OFFSET * port;
+		break;
+
+	case 1:
+		addr = RTL8366S_MIB_COUNTER_BASE2 +
+			RTL8366S_MIB_COUNTER_PORT_OFFSET2 * port;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	addr += rtl8366s_mib_counters[counter].offset;
 
 	/*
 	 * Writing access counter address first
