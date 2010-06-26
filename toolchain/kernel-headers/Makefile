@@ -31,9 +31,7 @@ ifeq ($(strip $(BOARD)),uml)
   LINUX_KARCH:=$(subst x86_64,x86,$(subst i386,x86,$(ARCH)))
 endif
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.18)),1)
-  LINUX_HAS_HEADERS_INSTALL:=y
-endif
+LINUX_HAS_HEADERS_INSTALL:=y
 
 KMAKE := $(MAKE) -C $(HOST_BUILD_DIR) \
 	ARCH=$(LINUX_KARCH) \
@@ -43,8 +41,7 @@ KMAKE := $(MAKE) -C $(HOST_BUILD_DIR) \
 	KBUILD_HAVE_NLS=no \
 	CONFIG_SHELL=$(BASH)
 
-ifneq ($(LINUX_HAS_HEADERS_INSTALL),)
-  define Host/Prepare/all
+define Host/Prepare/all
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr
 	$(KMAKE) \
 		INSTALL_HDR_PATH="$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/" \
@@ -55,17 +52,7 @@ ifneq ($(LINUX_HAS_HEADERS_INSTALL),)
 			$(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm/. \
 			$(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH)/; \
 	fi
-  endef
-else
-  define Host/Prepare/all
-	$(KMAKE) include/linux/version.h include/asm
-	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include
-	cp -pLR $(HOST_BUILD_DIR)/include/asm $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
-	cp -pLR $(HOST_BUILD_DIR)/include/asm-generic $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
-	cp -pLR $(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH) $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
-	cp -pLR $(HOST_BUILD_DIR)/include/linux $(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include/
-  endef
-endif
+endef
 
 # XXX: the following is needed to build lzma-loader
 define Host/Prepare/lzma
