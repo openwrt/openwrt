@@ -31,9 +31,6 @@ include $(INCLUDE_DIR)/autotools.mk
 
 override MAKEFLAGS=
 CONFIG_SITE:=$(INCLUDE_DIR)/site/$(REAL_GNU_TARGET_NAME)
-ifneq ($(CONFIG_LINUX_2_4),)
-  CONFIG_SITE:=$(subst linux-,linux2.4-,$(CONFIG_SITE))
-endif
 CUR_MAKEFILE:=$(filter-out Makefile,$(firstword $(MAKEFILE_LIST)))
 SUBMAKE:=$(NO_TRACE_MAKE) $(if $(CUR_MAKEFILE),-f $(CUR_MAKEFILE))
 
