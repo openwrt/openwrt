@@ -2,7 +2,6 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_VERSION_3_4_6 if LINUX_2_4
 	default GCC_VERSION_4_2_4 if avr32
 	default GCC_VERSION_4_3_3 if powerpc64
 	default GCC_VERSION_4_3_3 if TARGET_coldfire
@@ -17,10 +16,6 @@ choice
 	help
 	  Select the version of gcc you wish to use.
 
-	config GCC_VERSION_3_4_6
-		bool "gcc 3.4.6"
-
-if !LINUX_2_4
 	config GCC_VERSION_4_1_2
 		bool "gcc 4.1.2"
 
@@ -65,8 +60,6 @@ if !LINUX_2_4
 	config GCC_VERSION_4_4_3_CS
 		bool "gcc 4.4.3 with CodeSourcery enhancements"
 		depends BROKEN
-
-endif
 
 endchoice
 

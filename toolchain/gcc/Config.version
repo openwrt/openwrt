@@ -25,8 +25,6 @@ config GCC_VERSION_3_4
 	bool
 	default y	if GCC_VERSION_3_4_6
 
-if !LINUX_2_4
-
 config GCC_VERSION_4
 	bool
 	default y	if GCC_VERSION_4_1
@@ -64,13 +62,7 @@ config GCC_VERSION_4_5
 	bool
 	default y       if GCC_VERSION_4_5_0
 
-endif
-
 if !TOOLCHAINOPTS
-	config GCC_VERSION_3_4_6
-		default y if LINUX_2_4
-
-if !LINUX_2_4
 	config GCC_VERSION_4_2_4
 		default y if avr32
 
@@ -93,5 +85,4 @@ if !LINUX_2_4
 		default y if powerpc
 		default y if (TARGET_octeon || TARGET_sibyte || TARGET_omap35xx)
 
-endif
 endif
