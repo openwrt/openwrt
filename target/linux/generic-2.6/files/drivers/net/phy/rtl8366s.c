@@ -1087,19 +1087,24 @@ static int rtl8366s_sw_get_port_link(struct switch_dev *dev,
 	if (val->port_vlan % 2)
 		data = data >> 8;
 
-	len = snprintf(rtl->buf, sizeof(rtl->buf),
-			"port:%d link:%s speed:%s %s-duplex %s%s%s",
-			val->port_vlan,
-			(data & RTL8366S_PORT_STATUS_LINK_MASK) ? "up" : "down",
-			rtl8366s_speed_str(data &
+	if (data & RTL8366S_PORT_STATUS_LINK_MASK) {
+		len = snprintf(rtl->buf, sizeof(rtl->buf),
+				"port:%d link:up speed:%s %s-duplex %s%s%s",
+				val->port_vlan,
+				rtl8366s_speed_str(data &
 					  RTL8366S_PORT_STATUS_SPEED_MASK),
-			(data & RTL8366S_PORT_STATUS_DUPLEX_MASK) ?
-				"full" : "half",
-			(data & RTL8366S_PORT_STATUS_TXPAUSE_MASK) ?
-				"tx-pause ": "",
-			(data & RTL8366S_PORT_STATUS_RXPAUSE_MASK) ?
-				"rx-pause " : "",
-			(data & RTL8366S_PORT_STATUS_AN_MASK) ? "nway ": "");
+				(data & RTL8366S_PORT_STATUS_DUPLEX_MASK) ?
+					"full" : "half",
+				(data & RTL8366S_PORT_STATUS_TXPAUSE_MASK) ?
+					"tx-pause ": "",
+				(data & RTL8366S_PORT_STATUS_RXPAUSE_MASK) ?
+					"rx-pause " : "",
+				(data & RTL8366S_PORT_STATUS_AN_MASK) ?
+					"nway ": "");
+	} else {
+		len = snprintf(rtl->buf, sizeof(rtl->buf), "port:%d link: down",
+				val->port_vlan);
+	}
 
 	val->value.s = rtl->buf;
 	val->len = len;
