@@ -7,11 +7,7 @@
 
 OTHER_MENU:=Other modules
 
-# XXX: added a workaround for watchdog path changes
-ifeq ($(KERNEL),2.4)
-  WATCHDOG_DIR=char
-endif
-WATCHDOG_DIR?=watchdog
+WATCHDOG_DIR:=watchdog
 
 
 define KernelPackage/bluetooth
@@ -39,37 +35,6 @@ define KernelPackage/bluetooth
   $(call AddDepends/crc16)
   $(call AddDepends/hid)
   $(call AddDepends/rfkill)
-endef
-
-define KernelPackage/bluetooth/2.4
-#  KCONFIG:= \
-#	CONFIG_BLUEZ \
-#	CONFIG_BLUEZ_L2CAP \
-#	CONFIG_BLUEZ_SCO \
-#	CONFIG_BLUEZ_RFCOMM \
-#	CONFIG_BLUEZ_BNEP \
-#	CONFIG_BLUEZ_HCIUART \
-#	CONFIG_BLUEZ_HCIUSB
-  FILES:= \
-	$(LINUX_DIR)/net/bluetooth/bluez.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/sco.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/rfcomm/rfcomm.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/bluetooth/bnep/bnep.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/bluetooth/hci_uart.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/bluetooth/hci_usb.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,90,bluez l2cap sco rfcomm bnep hci_uart hci_usb)
-endef
-
-define KernelPackage/bluetooth/2.6
-#  KCONFIG:= \
-#	CONFIG_BT \
-#	CONFIG_BT_L2CAP \
-#	CONFIG_BT_SCO \
-#	CONFIG_BT_RFCOMM \
-#	CONFIG_BT_BNEP \
-#	CONFIG_BT_HCIUSB \
-#	CONFIG_BT_HCIUART
   FILES:= \
 	$(LINUX_DIR)/net/bluetooth/bluetooth.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/net/bluetooth/l2cap.$(LINUX_KMOD_SUFFIX) \
@@ -286,20 +251,12 @@ define KernelPackage/input-core
   TITLE:=Input device core
   KCONFIG:=CONFIG_INPUT
   $(call SetDepends/input)
+  FILES:=$(LINUX_DIR)/drivers/input/input-core.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,19,input-core)
 endef
 
 define KernelPackage/input-core/description
  Kernel modules for support of input device
-endef
-
-define KernelPackage/input-core/2.4
-  FILES:=$(LINUX_DIR)/drivers/input/input.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,19,input)
-endef
-
-define KernelPackage/input-core/2.6
-  FILES:=$(LINUX_DIR)/drivers/input/input-core.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,19,input-core)
 endef
 
 $(eval $(call KernelPackage,input-core))
@@ -521,7 +478,7 @@ $(eval $(call KernelPackage,ledtrig-netdev))
 define KernelPackage/lp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port and line printer support
-  DEPENDS:=@LINUX_2_4
+  DEPENDS:=@BROKEN
   KCONFIG:= \
 	CONFIG_PARPORT \
 	CONFIG_PRINTER \
@@ -531,19 +488,6 @@ define KernelPackage/lp
 	$(LINUX_DIR)/drivers/char/lp.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/char/ppdev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,parport lp)
-endef
-
-define KernelPackage/lp/2.4
-  FILES:= \
-	$(LINUX_DIR)/drivers/parport/parport.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/parport/parport_*.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/char/lp.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/char/ppdev.$(LINUX_KMOD_SUFFIX)
-  AUTOLOAD:=$(call AutoLoad,50, \
-  	parport \
-  	parport_splink \
-  	lp \
-  )
 endef
 
 $(eval $(call KernelPackage,lp))

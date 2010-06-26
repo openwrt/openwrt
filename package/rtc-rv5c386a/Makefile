@@ -15,7 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/rtc-rv5c386a
   SUBMENU:=Other modules
-  DEPENDS:=@TARGET_brcm_2_4||TARGET_brcm47xx
+  DEPENDS:=@TARGET_brcm47xx
   TITLE:=Driver for RTC RV5C386A (used in WL-700gE and WL-HDD)
   AUTOLOAD:=$(call AutoLoad,70,rtc)
   FILES:=$(PKG_BUILD_DIR)/rtc.$(LINUX_KMOD_SUFFIX)
@@ -25,10 +25,6 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
-
-ifeq ($(BOARD),brcm-2.4)
-	BUILDFLAGS=-DBCMDRIVER -I$(LINUX_DIR)/arch/mips/bcm947xx/include -DLINUX_2_4
-endif
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \

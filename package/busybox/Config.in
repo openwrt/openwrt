@@ -1,21 +1,6 @@
 menu "Configuration"
 	depends on PACKAGE_busybox
 
-config BUSYBOX_CONFIG_FEATURE_DEVFS
-	bool
-	default y if LINUX_2_4
-	default n if LINUX_2_6
-
-config BUSYBOX_CONFIG_FEATURE_2_4_MODULES
-	bool
-	default y if LINUX_2_4
-	default n if LINUX_2_6
-
-config BUSYBOX_CONFIG_FEATURE_2_6_MODULES
-	bool
-	default n if LINUX_2_4
-	default y if LINUX_2_6
-
 config BUSYBOX_CONFIG_NOMMU
 	bool
 	depends NOMMU

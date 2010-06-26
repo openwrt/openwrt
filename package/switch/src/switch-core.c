@@ -68,12 +68,7 @@ static struct file_operations switch_proc_fops = {
 
 static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff_t *ppos)
 {
-#ifdef LINUX_2_4
-	struct inode *inode = file->f_dentry->d_inode;
-	struct proc_dir_entry *dent = inode->u.generic_ip;
-#else
 	struct proc_dir_entry *dent = PDE(file->f_dentry->d_inode);
-#endif
 	char *page;
 	int len = 0;
 	
@@ -105,12 +100,7 @@ static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff
 
 static ssize_t switch_proc_write(struct file *file, const char *buf, size_t count, void *data)
 {
-#ifdef LINUX_2_4
-	struct inode *inode = file->f_dentry->d_inode;
-	struct proc_dir_entry *dent = inode->u.generic_ip;
-#else
 	struct proc_dir_entry *dent = PDE(file->f_dentry->d_inode);
-#endif
 	char *page;
 	int ret = -EINVAL;
 

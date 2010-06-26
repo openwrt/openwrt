@@ -6,7 +6,7 @@
 #
 
 define AddDepends/nls
-  DEPENDS+= +!LINUX_2_4:kmod-nls-base
+  DEPENDS+= +kmod-nls-base
 endef
 
 define KernelPackage/nls-base
