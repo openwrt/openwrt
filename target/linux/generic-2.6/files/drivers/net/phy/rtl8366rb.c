@@ -35,6 +35,25 @@
 #define RTL8366_CHIP_CTRL_VLAN              (1 << 13)
 #define RTL8366_CHIP_CTRL_VLAN_4KTB         (1 << 14)
 
+/* Switch Global Configuration register */
+#define RTL8366_SGCR			0x0000
+#define RTL8366_SGCR_EN_BC_STORM_CTRL	BIT(0)
+#define RTL8366_SGCR_MAX_LENGTH(_x)	(_x << 4)
+#define RTL8366_SGCR_MAX_LENGTH_MASK	RTL8366_SGCR_MAX_LENGTH(0x3)
+#define RTL8366_SGCR_MAX_LENGTH_1522	RTL8366_SGCR_MAX_LENGTH(0x0)
+#define RTL8366_SGCR_MAX_LENGTH_1536	RTL8366_SGCR_MAX_LENGTH(0x1)
+#define RTL8366_SGCR_MAX_LENGTH_1552	RTL8366_SGCR_MAX_LENGTH(0x2)
+#define RTL8366_SGCR_MAX_LENGTH_9216	RTL8366_SGCR_MAX_LENGTH(0x3)
+
+/* Port Enable Control register */
+#define RTL8366_PECR			0x0001
+
+/* Switch Security Control registers */
+#define RTL8366_SSCR0			0x0002
+#define RTL8366_SSCR1			0x0003
+#define RTL8366_SSCR2			0x0004
+#define RTL8366_SSCR2_DROP_UNKNOWN_DA	BIT(0)
+
 #define RTL8366_RESET_CTRL_REG              0x0100
 #define RTL8366_CHIP_CTRL_RESET_HW          1
 #define RTL8366_CHIP_CTRL_RESET_SW          (1 << 1)
@@ -221,6 +240,20 @@ static struct mib_counter rtl8366rb_mib_counters[RTL8366S_MIB_COUNT] = {
 	{ 70, 2, "IfOutBroadcastPkts"			},
 };
 
+#define REG_WR(_smi, _reg, _val)					\
+	do {								\
+		err = rtl8366_smi_write_reg(_smi, _reg, _val);		\
+		if (err)						\
+			return err;					\
+	} while (0)
+
+#define REG_RMW(_smi, _reg, _mask, _val)				\
+	do {								\
+		err = rtl8366_smi_rmwr(_smi, _reg, _mask, _val);	\
+		if (err)						\
+			return err;					\
+	} while (0)
+
 static inline struct rtl8366rb *smi_to_rtl8366rb(struct rtl8366_smi *smi)
 {
 	return container_of(smi, struct rtl8366rb, smi);
@@ -257,6 +290,29 @@ static int rtl8366rb_reset_chip(struct rtl8366_smi *smi)
 		printk("Timeout waiting for the switch to reset\n");
 		return -EIO;
 	}
+
+	return 0;
+}
+
+static int rtl8366rb_hw_init(struct rtl8366_smi *smi)
+{
+	int err;
+
+	/* set maximum packet length to 1536 bytes */
+	REG_RMW(smi, RTL8366_SGCR, RTL8366_SGCR_MAX_LENGTH_MASK,
+		RTL8366_SGCR_MAX_LENGTH_1536);
+
+	/* enable all ports */
+	REG_WR(smi, RTL8366_PECR, 0);
+
+	/* disable learning for all ports */
+	REG_WR(smi, RTL8366_SSCR0, RTL8366_PORT_ALL);
+
+	/* disable auto ageing for all ports */
+	REG_WR(smi, RTL8366_SSCR1, RTL8366_PORT_ALL);
+
+	/* don't drop packets whose DA has not been learned */
+	REG_RMW(smi, RTL8366_SSCR2, RTL8366_SSCR2_DROP_UNKNOWN_DA, 0);
 
 	return 0;
 }
@@ -1339,6 +1395,10 @@ static int rtl8366rb_sw_reset_switch(struct switch_dev *dev)
 	if (err)
 		return err;
 
+	err = rtl8366rb_hw_init(smi);
+	if (err)
+		return err;
+
 	return rtl8366rb_reset_vlan(smi);
 }
 
@@ -1504,12 +1564,14 @@ static int rtl8366rb_setup(struct rtl8366rb *rtl)
 	struct rtl8366_smi *smi = &rtl->smi;
 	int ret;
 
+	rtl8366rb_debugfs_init(rtl);
+
 	ret = rtl8366rb_reset_chip(smi);
 	if (ret)
 		return ret;
 
-	rtl8366rb_debugfs_init(rtl);
-	return 0;
+	ret = rtl8366rb_hw_init(smi);
+	return ret;
 }
 
 static int rtl8366rb_detect(struct rtl8366_smi *smi)
