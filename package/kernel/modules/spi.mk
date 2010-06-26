@@ -10,7 +10,7 @@ SPI_MENU:=SPI Support
 define KernelPackage/mmc-spi
   SUBMENU:=$(SPI_MENU)
   TITLE:=MMC/SD over SPI Support
-  DEPENDS:=@LINUX_2_6 +kmod-mmc +kmod-crc-itu-t +kmod-crc7
+  DEPENDS:=+kmod-mmc +kmod-crc-itu-t +kmod-crc7
   KCONFIG:=CONFIG_MMC_SPI \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
@@ -28,7 +28,6 @@ $(eval $(call KernelPackage,mmc-spi))
 define KernelPackage/spi-bitbang
   SUBMENU:=$(SPI_MENU)
   TITLE:=Serial Peripheral Interface bitbanging library
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_SPI_BITBANG \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
@@ -76,7 +75,6 @@ $(eval $(call KernelPackage,spi-gpio))
 define KernelPackage/spi-dev
   SUBMENU:=$(SPI_MENU)
   TITLE:=User mode SPI device driver
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_SPI_SPIDEV \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y

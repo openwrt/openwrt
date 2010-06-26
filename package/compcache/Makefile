@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ramzswap
   SUBMENU:=Other modules
-  DEPENDS:=@LINUX_2_6 @BUSYBOX_CONFIG_SWAPONOFF
+  DEPENDS:=@BUSYBOX_CONFIG_SWAPONOFF
   TITLE:=Driver for compressed ram swap device
   VERSION:=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)+$(PKG_RELEASE)
   FILES:=$(PKG_BUILD_DIR)/ramzswap.$(LINUX_KMOD_SUFFIX) \

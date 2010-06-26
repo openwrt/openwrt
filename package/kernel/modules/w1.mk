@@ -12,7 +12,6 @@ W1_SLAVES_DIR:=$(LINUX_DIR)/drivers/w1/slaves
 define KernelPackage/w1
   SUBMENU:=$(W1_MENU)
   TITLE:=Dallas's 1-wire support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_W1
   FILES:=$(LINUX_DIR)/drivers/w1/wire.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,wire)

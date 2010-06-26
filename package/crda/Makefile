@@ -28,7 +28,7 @@ define Package/crda
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Central Regulatory Domain Agent (CRDA)
-  DEPENDS:=@LINUX_2_6 +hotplug2 +kmod-mac80211 +libnl-tiny
+  DEPENDS:=+hotplug2 +kmod-mac80211 +libnl-tiny
   URL:=http://wireless.kernel.org/en/developers/Regulatory/CRDA
 endef
 

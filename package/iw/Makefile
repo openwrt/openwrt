@@ -48,11 +48,9 @@ MAKE_FLAGS += \
 	LIBS="-lm -lnl-tiny" \
 	V=1
 
-ifneq ($(CONFIG_LINUX_2_6),)
-  define Package/iw/install
+define Package/iw/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/iw $(1)/usr/sbin/
-  endef
-endif
+endef
 
 $(eval $(call BuildPackage,iw))

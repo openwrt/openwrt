@@ -14,7 +14,7 @@ USBINPUT_DIR?=input/misc
 define KernelPackage/usb-core
   SUBMENU:=$(USB_MENU)
   TITLE:=Support for USB
-  DEPENDS:=@USB_SUPPORT +LINUX_2_6_31:kmod-nls-base +LINUX_2_6_32:kmod-nls-base +LINUX_2_6_33:kmod-nls-base +LINUX_2_6_34:kmod-nls-base
+  DEPENDS:=@USB_SUPPORT +kmod-nls-base
   KCONFIG:=CONFIG_USB
   FILES:=$(LINUX_DIR)/drivers/usb/core/usbcore.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,usbcore,1)
@@ -176,7 +176,6 @@ endef
 
 define KernelPackage/usb-serial-airprime
   TITLE:=Support for Airprime (EVDO)
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_AIRPRIME
   FILES:=$(LINUX_DIR)/drivers/usb/serial/airprime.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,airprime)
@@ -207,7 +206,6 @@ $(eval $(call KernelPackage,usb-serial-belkin))
 
 define KernelPackage/usb-serial-ch341
   TITLE:=Support for CH341 devices
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_CH341
   FILES:=$(LINUX_DIR)/drivers/usb/serial/ch341.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,ch341)
@@ -268,7 +266,6 @@ $(eval $(call KernelPackage,usb-serial-pl2303))
 
 define KernelPackage/usb-serial-cp210x
   TITLE:=Support for Silicon Labs cp210x devices
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_CP210X
   FILES:=$(LINUX_DIR)/drivers/usb/serial/cp210x.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,cp210x)
@@ -284,7 +281,6 @@ $(eval $(call KernelPackage,usb-serial-cp210x))
 
 define KernelPackage/usb-serial-ark3116
   TITLE:=Support for ArkMicroChips ARK3116 devices
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_ARK3116
   FILES:=$(LINUX_DIR)/drivers/usb/serial/ark3116.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,ark3116)
@@ -300,7 +296,6 @@ $(eval $(call KernelPackage,usb-serial-ark3116))
 
 define KernelPackage/usb-serial-oti6858
   TITLE:=Support for Ours Technology OTI6858 devices
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_OTI6858
   FILES:=$(LINUX_DIR)/drivers/usb/serial/oti6858.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,oti6858)
@@ -331,7 +326,6 @@ $(eval $(call KernelPackage,usb-serial-sierrawireless))
 
 define KernelPackage/usb-serial-motorola-phone
   TITLE:=Support for Motorola usb phone
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_MOTOROLA
   FILES:=$(LINUX_DIR)/drivers/usb/serial/moto_modem.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,moto_modem)
@@ -362,7 +356,6 @@ $(eval $(call KernelPackage,usb-serial-visor))
 
 define KernelPackage/usb-serial-cypress-m8
   TITLE:=Support for CypressM8 USB-Serial
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_CYPRESS_M8
   FILES:=$(LINUX_DIR)/drivers/usb/serial/cypress_m8.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,cypress_m8)
@@ -409,7 +402,6 @@ $(eval $(call KernelPackage,usb-serial-keyspan))
 
 define KernelPackage/usb-serial-option
   TITLE:=Support for Option HSDPA modems
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SERIAL_OPTION
   FILES:=$(LINUX_DIR)/drivers/usb/serial/option.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,65,option)
@@ -442,7 +434,7 @@ $(eval $(call KernelPackage,usb-storage))
 define KernelPackage/usb-storage-extras
   SUBMENU:=$(USB_MENU)
   TITLE:=Extra drivers for usb-storage
-  DEPENDS:=@LINUX_2_6 +kmod-usb-storage
+  DEPENDS:=+kmod-usb-storage
   KCONFIG:= \
 	CONFIG_USB_STORAGE_ALAUDA \
 	CONFIG_USB_STORAGE_CYPRESS_ATACB \
@@ -480,7 +472,6 @@ $(eval $(call KernelPackage,usb-storage-extras))
 
 define KernelPackage/usb-video
   TITLE:=Support for USB video devices
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_VIDEO_USBVIDEO
   FILES:=$(LINUX_DIR)/drivers/media/video/usbvideo/usbvideo.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,usbvideo)
@@ -496,7 +487,7 @@ $(eval $(call KernelPackage,usb-video))
 
 define KernelPackage/usb-atm
   TITLE:=Support for ATM on USB bus
-  DEPENDS:=@LINUX_2_6 +kmod-atm
+  DEPENDS:=+kmod-atm
   KCONFIG:=CONFIG_USB_ATM
   FILES:=$(LINUX_DIR)/drivers/usb/atm/usbatm.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,usbatm)
@@ -518,7 +509,6 @@ endef
 
 define KernelPackage/usb-atm-speedtouch
   TITLE:=SpeedTouch USB ADSL modems support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_SPEEDTOUCH
   FILES:=$(LINUX_DIR)/drivers/usb/atm/speedtch.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,70,speedtch)
@@ -534,7 +524,6 @@ $(eval $(call KernelPackage,usb-atm-speedtouch))
 
 define KernelPackage/usb-atm-ueagle
   TITLE:=Eagle 8051 based USB ADSL modems support
-  DEPENDS:=@LINUX_2_6
   FILES:=$(LINUX_DIR)/drivers/usb/atm/ueagle-atm.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_USB_UEAGLEATM
   AUTOLOAD:=$(call AutoLoad,70,ueagle-atm)
@@ -550,7 +539,6 @@ $(eval $(call KernelPackage,usb-atm-ueagle))
 
 define KernelPackage/usb-atm-cxacru
   TITLE:=cxacru
-  DEPENDS:=@LINUX_2_6
   FILES:=$(LINUX_DIR)/drivers/usb/atm/cxacru.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_USB_CXACRU
   AUTOLOAD:=$(call AutoLoad,70,cxacru)
@@ -587,7 +575,6 @@ endef
 
 define KernelPackage/usb-net-asix
   TITLE:=Kernel module for USB-to-Ethernet Asix convertors
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_NET_AX8817X
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/asix.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,asix)
@@ -603,7 +590,6 @@ $(eval $(call KernelPackage,usb-net-asix))
 
 define KernelPackage/usb-net-hso
   TITLE:=Kernel module for Option USB High Speed Mobile Devices
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_HSO
   FILES:= \
 	$(LINUX_DIR)/drivers/$(USBNET_DIR)/hso.$(LINUX_KMOD_SUFFIX)
@@ -621,7 +607,6 @@ $(eval $(call KernelPackage,usb-net-hso))
 
 define KernelPackage/usb-net-kaweth
   TITLE:=Kernel module for USB-to-Ethernet Kaweth convertors
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_KAWETH
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/kaweth.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,kaweth)
@@ -637,7 +622,6 @@ $(eval $(call KernelPackage,usb-net-kaweth))
 
 define KernelPackage/usb-net-pegasus
   TITLE:=Kernel module for USB-to-Ethernet Pegasus convertors
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_PEGASUS
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/pegasus.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,pegasus)
@@ -653,7 +637,6 @@ $(eval $(call KernelPackage,usb-net-pegasus))
 
 define KernelPackage/usb-net-mcs7830
   TITLE:=Kernel module for USB-to-Ethernet MCS7830 convertors
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_NET_MCS7830
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/mcs7830.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,mcs7830)
@@ -669,7 +652,6 @@ $(eval $(call KernelPackage,usb-net-mcs7830))
 
 define KernelPackage/usb-net-dm9601-ether
   TITLE:=Support for DM9601 ethernet connections
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_NET_DM9601
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/dm9601.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,dm9601)
@@ -684,7 +666,6 @@ $(eval $(call KernelPackage,usb-net-dm9601-ether))
 
 define KernelPackage/usb-net-cdc-ether
   TITLE:=Support for cdc ethernet connections
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_NET_CDCETHER
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_ether.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,61,cdc_ether)
@@ -700,7 +681,6 @@ $(eval $(call KernelPackage,usb-net-cdc-ether))
 
 define KernelPackage/usb-net-rndis
   TITLE:=Support for RNDIS connections
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_NET_RNDIS_HOST
   FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/rndis_host.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,62,rndis_host)
@@ -716,7 +696,6 @@ $(eval $(call KernelPackage,usb-net-rndis))
 
 define KernelPackage/usb-hid
   TITLE:=Support for USB Human Input Devices
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_HID_SUPPORT=y CONFIG_USB_HID
   FILES:=$(LINUX_DIR)/drivers/$(USBHID_DIR)/usbhid.ko
   AUTOLOAD:=$(call AutoLoad,70,usbhid)
@@ -735,7 +714,6 @@ $(eval $(call KernelPackage,usb-hid))
 
 define KernelPackage/usb-yealink
   TITLE:=USB Yealink VOIP phone
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_YEALINK CONFIG_INPUT_YEALINK CONFIG_INPUT=m CONFIG_INPUT_MISC=y
   FILES:=$(LINUX_DIR)/drivers/$(USBINPUT_DIR)/yealink.ko
   AUTOLOAD:=$(call AutoLoad,70,yealink)
@@ -752,7 +730,6 @@ $(eval $(call KernelPackage,usb-yealink))
 
 define KernelPackage/usb-cm109
   TITLE:=Support for CM109 device
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_CM109 CONFIG_INPUT_CM109 CONFIG_INPUT=m CONFIG_INPUT_MISC=y
   FILES:=$(LINUX_DIR)/drivers/$(USBINPUT_DIR)/cm109.ko
   AUTOLOAD:=$(call AutoLoad,70,cm109)
@@ -769,7 +746,7 @@ $(eval $(call KernelPackage,usb-cm109))
 
 define KernelPackage/usb-test
   TITLE:=USB Testing Driver
-  DEPENDS:=@LINUX_2_6 @DEVEL
+  DEPENDS:=@DEVEL
   KCONFIG:=CONFIG_USB_TEST
   FILES:=$(LINUX_DIR)/drivers/usb/misc/usbtest.ko
   $(call AddDepends/usb)
@@ -784,7 +761,6 @@ $(eval $(call KernelPackage,usb-test))
 
 define KernelPackage/usb-phidget
   TITLE:=USB Phidget Driver
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_USB_PHIDGET CONFIG_USB_PHIDGETKIT CONFIG_USB_PHIDGETMOTORCONTROL CONFIG_USB_PHIDGETSERVO
   FILES:=$(LINUX_DIR)/drivers/usb/misc/phidget*.ko
 $(call AddDepends/usb)

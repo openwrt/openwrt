@@ -86,7 +86,7 @@ define KernelPackage/ipt-filter
   KCONFIG:=$(KCONFIG_IPT_FILTER)
   FILES:=$(foreach mod,$(IPT_FILTER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_FILTER-m)))
-  $(call AddDepends/ipt,+LINUX_2_6:kmod-textsearch)
+  $(call AddDepends/ipt,+kmod-textsearch)
 endef
 
 define KernelPackage/ipt-filter/description
@@ -206,7 +206,7 @@ define KernelPackage/ipt-nathelper-extra
   KCONFIG:=$(KCONFIG_IPT_NATHELPER_EXTRA)
   FILES:=$(foreach mod,$(IPT_NATHELPER_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_NATHELPER_EXTRA-m)))
-  $(call AddDepends/ipt,+kmod-ipt-nat +LINUX_2_6:kmod-textsearch)
+  $(call AddDepends/ipt,+kmod-ipt-nat +kmod-textsearch)
 endef
 
 define KernelPackage/ipt-nathelper-extra/description
@@ -285,7 +285,6 @@ $(eval $(call KernelPackage,ipt-ulog))
 
 define KernelPackage/ipt-tproxy
   TITLE:=Transparent proxying support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
   	CONFIG_NETFILTER_TPROXY \
   	CONFIG_NETFILTER_XT_MATCH_SOCKET \
@@ -378,7 +377,6 @@ $(eval $(call KernelPackage,arptables))
 define KernelPackage/ebtables
   SUBMENU:=$(NF_MENU)
   TITLE:=Bridge firewalling modules
-  DEPENDS:=@LINUX_2_6
   FILES:=$(foreach mod,$(EBTABLES-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
   KCONFIG:=CONFIG_BRIDGE_NETFILTER=y \
 	$(KCONFIG_EBTABLES)
@@ -451,7 +449,7 @@ $(eval $(call KernelPackage,ebtables-watchers))
 define KernelPackage/nfnetlink
   SUBMENU:=$(NF_MENU)
   TITLE:=Netlink-based userspace interface
-  DEPENDS:=@LINUX_2_6 +kmod-ipt-core
+  DEPENDS:=+kmod-ipt-core
   FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_NETFILTER_NETLINK
   AUTOLOAD:=$(call AutoLoad,48,nfnetlink)
@@ -466,7 +464,7 @@ $(eval $(call KernelPackage,nfnetlink))
 
 define AddDepends/nfnetlink
   SUBMENU:=$(NF_MENU)
-  DEPENDS+=@LINUX_2_6 +kmod-nfnetlink $(1)
+  DEPENDS+=+kmod-nfnetlink $(1)
 endef
 
 

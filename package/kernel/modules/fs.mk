@@ -26,7 +26,7 @@ define KernelPackage/fs-btrfs
   SUBMENU:=$(FS_MENU)
   TITLE:=BTRFS filesystem support
   # for crc32c
-  DEPENDS:=@LINUX_2_6 +kmod-crypto-core +kmod-crypto-misc
+  DEPENDS:=+kmod-crypto-core +kmod-crypto-misc
   KCONFIG:=\
 	CONFIG_LIBCRC32C \
 	CONFIG_BTRFS_FS \
@@ -120,7 +120,7 @@ define KernelPackage/fs-ext4
 	CONFIG_EXT4_FS_SECURITY=y \
 	CONFIG_EXT4_FS \
 	CONFIG_JBD2
-  DEPENDS:= @LINUX_2_6 $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
+  DEPENDS:= $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
   FILES:= \
 	$(LINUX_DIR)/fs/ext4/ext4.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/fs/jbd2/jbd2.$(LINUX_KMOD_SUFFIX)
@@ -277,7 +277,7 @@ define KernelPackage/fs-nfs-common-v4
 	CONFIG_SUNRPC_GSS\
 	CONFIG_NFS_V4=y\
 	CONFIG_NFSD_V4=y
-  DEPENDS:= @LINUX_2_6 @BROKEN
+  DEPENDS:= @BROKEN
   FILES+=$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD=$(call AutoLoad,30,auth_rpcgss)
 endef

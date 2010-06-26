@@ -20,7 +20,7 @@ define Package/uboot-envtools
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=read/modify U-Boot bootloader environment
-  DEPENDS:= @LINUX_2_6 +zlib
+  DEPENDS:= +zlib
   URL:=http://www.denx.de/wiki/U-Boot
 endef
 

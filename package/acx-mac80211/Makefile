@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/acx-mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=ACX111 Mac80211 driver
-  DEPENDS:=@LINUX_2_6 @PCI_SUPPORT||TARGET_ar7 +kmod-mac80211
+  DEPENDS:=@PCI_SUPPORT||TARGET_ar7 +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,acx-mac80211)
 endef

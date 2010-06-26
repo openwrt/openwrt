@@ -10,7 +10,6 @@ NETWORK_DEVICES_MENU:=Network Devices
 define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_PHYLIB
   FILES:=$(LINUX_DIR)/drivers/net/phy/libphy.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,40,libphy)
@@ -321,7 +320,7 @@ define KernelPackage/tg3
   TITLE:=Broadcom Tigon3 Gigabit Ethernet
   FILES:=$(LINUX_DIR)/drivers/net/tg3.$(LINUX_KMOD_SUFFIX)
   KCONFIG:=CONFIG_TIGON3
-  DEPENDS:=@LINUX_2_6 +!TARGET_brcm47xx:kmod-libphy @!TARGET_ubicom32
+  DEPENDS:=+!TARGET_brcm47xx:kmod-libphy @!TARGET_ubicom32
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   AUTOLOAD:=$(call AutoLoad,50,tg3)
 endef
@@ -349,7 +348,7 @@ $(eval $(call KernelPackage,ssb-gige))
 define KernelPackage/hfcmulti
   TITLE:=HFC multiport cards (HFC-4S/8S/E1)
   KCONFIG:=CONFIG_MISDN_HFCMULTI
-  DEPENDS:=@LINUX_2_6 +kmod-misdn
+  DEPENDS:=+kmod-misdn
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/isdn/hardware/mISDN/hfcmulti.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,31,hfcmulti)
@@ -365,7 +364,7 @@ $(eval $(call KernelPackage,hfcmulti))
 define KernelPackage/gigaset
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Siemens Gigaset support (isdn)
-  DEPENDS:=@LINUX_2_6 @USB_SUPPORT +kmod-isdn4linux +kmod-crc-ccitt +kmod-usb-core
+  DEPENDS:=@USB_SUPPORT +kmod-isdn4linux +kmod-crc-ccitt +kmod-usb-core
   URL:=http://gigaset307x.sourceforge.net/
   KCONFIG:= \
     CONFIG_ISDN_DRV_GIGASET \
@@ -395,7 +394,6 @@ $(eval $(call KernelPackage,gigaset))
 define KernelPackage/macvlan
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=MAC-VLAN support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_MACVLAN
   FILES:=$(LINUX_DIR)/drivers/net/macvlan.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,macvlan)
@@ -411,7 +409,6 @@ $(eval $(call KernelPackage,macvlan))
 define KernelPackage/tulip
   TITLE:=Tulip family network device support
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
     CONFIG_NET_TULIP=y \
     CONFIG_DE2104X \

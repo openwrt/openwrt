@@ -57,7 +57,6 @@ $(eval $(call KernelPackage,bluetooth))
 define KernelPackage/crc-ccitt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC-CCITT support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_CRC_CCITT
   FILES:=$(LINUX_DIR)/lib/crc-ccitt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,crc-ccitt)
@@ -73,7 +72,6 @@ $(eval $(call KernelPackage,crc-ccitt))
 define KernelPackage/crc-itu-t
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC ITU-T V.41 support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_CRC_ITU_T
   FILES:=$(LINUX_DIR)/lib/crc-itu-t.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,crc-itu-t)
@@ -89,7 +87,6 @@ $(eval $(call KernelPackage,crc-itu-t))
 define KernelPackage/crc7
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC7 support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_CRC7
   FILES:=$(LINUX_DIR)/lib/crc7.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,crc7)
@@ -121,7 +118,6 @@ $(eval $(call KernelPackage,crc16))
 define KernelPackage/eeprom-93cx6
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM 93CX6 support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_EEPROM_93CX6
   FILES:=$(LINUX_DIR)/drivers/misc/eeprom/eeprom_93cx6.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,eeprom_93cx6)
@@ -333,7 +329,6 @@ $(eval $(call KernelPackage,input-joydev))
 define KernelPackage/input-polldev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Polled Input device support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_INPUT_POLLDEV
   FILES:=$(LINUX_DIR)/drivers/input/input-polldev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,20,input-polldev)
@@ -446,7 +441,6 @@ $(eval $(call KernelPackage,leds-wrap))
 define KernelPackage/ledtrig-morse
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED Morse Trigger
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_LEDS_TRIGGER_MORSE
   FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-morse.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-morse)
@@ -462,7 +456,6 @@ $(eval $(call KernelPackage,ledtrig-morse))
 define KernelPackage/ledtrig-netdev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED NETDEV Trigger
-  DEPENDS:=@LINUX_2_6
   KCONFIG:=CONFIG_LEDS_TRIGGER_NETDEV
   FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-netdev.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-netdev)
@@ -496,7 +489,6 @@ $(eval $(call KernelPackage,lp))
 define KernelPackage/mmc
   SUBMENU:=$(OTHER_MENU)
   TITLE:=MMC/SD Card Support
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
 	CONFIG_MMC \
 	CONFIG_MMC_BLOCK \
@@ -582,7 +574,7 @@ $(eval $(call KernelPackage,softdog))
 define KernelPackage/ssb
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Silicon Sonics Backplane glue code
-  DEPENDS:=@LINUX_2_6 @PCI_SUPPORT @!TARGET_brcm47xx @!TARGET_brcm63xx
+  DEPENDS:=@PCI_SUPPORT @!TARGET_brcm47xx @!TARGET_brcm63xx
   KCONFIG:=\
 	CONFIG_SSB \
 	CONFIG_SSB_B43_PCI_BRIDGE=y \
@@ -608,7 +600,6 @@ $(eval $(call KernelPackage,ssb))
 define KernelPackage/textsearch
 SUBMENU:=$(OTHER_MENU)
   TITLE:=Textsearch support is selected if needed
-  DEPENDS:=@LINUX_2_6
   KCONFIG:= \
     CONFIG_TEXTSEARCH=y \
     CONFIG_TEXTSEARCH_KMP \
@@ -627,7 +618,7 @@ $(eval $(call KernelPackage,textsearch))
 define KernelPackage/wdt-geode
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Geode/LX Watchdog timer
-  DEPENDS:=@TARGET_x86 @LINUX_2_6
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_GEODE_WDT
   FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/geodewdt.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,geodewdt)

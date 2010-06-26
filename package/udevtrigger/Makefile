@@ -22,7 +22,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/udevtrigger
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=@LINUX_2_6
   TITLE:=Small utility to request kernel devices events for coldplug
   URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
   MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
