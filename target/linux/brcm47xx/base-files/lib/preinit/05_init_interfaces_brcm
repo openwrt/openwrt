@@ -1,0 +1,37 @@
+#!/bin/sh
+
+set_preinit_iface() {
+	ifname=eth0
+
+	insmod diag
+
+	# hardware specific overrides
+	case "$(cat /proc/diag/model)" in
+		"Linksys WAP54G V1") ifname=eth1;;
+		"ASUS WL-HDD") ifname=eth1;;
+		"ASUS WL-300g") ifname=eth1;;
+		"ASUS (unknown, BCM4702)") ifname=eth1;;
+		"Sitecom WL-105b") ifname=eth1;;
+	esac
+	ifconfig $ifname 0.0.0.0 up
+}
+
+check_module () {
+  module="$1"; shift; params="$*"
+
+  insmod "$module" "$params"
+  sleep 1
+  grep "^$module" /proc/modules
+  return $?
+}
+
+init_iface() {
+	check_module tg3
+	insmod switch-core
+	check_module switch-robo || check_module switch-adm  || { 
+	  check_module bcm57xx activate_gpio=0x4 && cpu_port="8u*"
+	} || rmmod switch-core
+}
+
+boot_hook_add preinit_main set_preinit_iface
+boot_hook_add preinit_main init_iface
