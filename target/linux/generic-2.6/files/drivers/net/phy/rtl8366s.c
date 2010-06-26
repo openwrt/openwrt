@@ -1118,7 +1118,7 @@ static int rtl8366s_sw_get_vlan_info(struct switch_dev *dev,
 	struct rtl8366s *rtl = sw_to_rtl8366s(dev);
 	char *buf = rtl->buf;
 
-	if (val->port_vlan >= RTL8366_NUM_VLANS)
+	if (val->port_vlan == 0 || val->port_vlan >= RTL8366_NUM_VLANS)
 		return -EINVAL;
 
 	memset(buf, '\0', sizeof(rtl->buf));
@@ -1257,7 +1257,7 @@ static int rtl8366s_sw_get_vlan_ports(struct switch_dev *dev,
 	struct switch_port *port;
 	int i;
 
-	if (val->port_vlan >= RTL8366_NUM_VLANS)
+	if (val->port_vlan == 0 || val->port_vlan >= RTL8366_NUM_VLANS)
 		return -EINVAL;
 
 	rtl8366s_get_vlan_member_config(rtl, val->port_vlan, &vlanmc);
@@ -1286,7 +1286,7 @@ static int rtl8366s_sw_set_vlan_ports(struct switch_dev *dev,
 	struct switch_port *port;
 	int i;
 
-	if (val->port_vlan >= RTL8366_NUM_VLANS)
+	if (val->port_vlan == 0 || val->port_vlan >= RTL8366_NUM_VLANS)
 		return -EINVAL;
 
 	rtl8366s_get_vlan_member_config(rtl, val->port_vlan, &vlanmc);
