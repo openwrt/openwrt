@@ -11,11 +11,19 @@
 #ifndef _RTL8366_SMI_H
 #define _RTL8366_SMI_H
 
+struct rtl8366_smi_ops;
+
 struct rtl8366_smi {
 	struct device		*parent;
 	unsigned int		gpio_sda;
 	unsigned int		gpio_sck;
 	spinlock_t		lock;
+
+	struct rtl8366_smi_ops	*ops;
+};
+
+struct rtl8366_smi_ops {
+	int	(*detect)(struct rtl8366_smi *smi);
 };
 
 int rtl8366_smi_init(struct rtl8366_smi *smi);
