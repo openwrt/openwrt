@@ -187,39 +187,39 @@ struct mib_counter {
 };
 
 static struct mib_counter rtl8366s_mib_counters[RTL8366S_MIB_COUNT] = {
-	{  0, 4, "IfInOctets                        " },
-	{  4, 4, "EtherStatsOctets                  " },
-	{  8, 2, "EtherStatsUnderSizePkts           " },
-	{ 10, 2, "EtherFregament                    " },
-	{ 12, 2, "EtherStatsPkts64Octets            " },
-	{ 14, 2, "EtherStatsPkts65to127Octets       " },
-	{ 16, 2, "EtherStatsPkts128to255Octets      " },
-	{ 18, 2, "EtherStatsPkts256to511Octets      " },
-	{ 20, 2, "EtherStatsPkts512to1023Octets     " },
-	{ 22, 2, "EtherStatsPkts1024to1518Octets    " },
-	{ 24, 2, "EtherOversizeStats                " },
-	{ 26, 2, "EtherStatsJabbers                 " },
-	{ 28, 2, "IfInUcastPkts                     " },
-	{ 30, 2, "EtherStatsMulticastPkts           " },
-	{ 32, 2, "EtherStatsBroadcastPkts           " },
-	{ 34, 2, "EtherStatsDropEvents              " },
-	{ 36, 2, "Dot3StatsFCSErrors                " },
-	{ 38, 2, "Dot3StatsSymbolErrors             " },
-	{ 40, 2, "Dot3InPauseFrames                 " },
-	{ 42, 2, "Dot3ControlInUnknownOpcodes       " },
-	{ 44, 4, "IfOutOctets                       " },
-	{ 48, 2, "Dot3StatsSingleCollisionFrames    " },
-	{ 50, 2, "Dot3StatMultipleCollisionFrames   " },
-	{ 52, 2, "Dot3sDeferredTransmissions        " },
-	{ 54, 2, "Dot3StatsLateCollisions           " },
-	{ 56, 2, "EtherStatsCollisions              " },
-	{ 58, 2, "Dot3StatsExcessiveCollisions      " },
-	{ 60, 2, "Dot3OutPauseFrames                " },
-	{ 62, 2, "Dot1dBasePortDelayExceededDiscards" },
-	{ 64, 2, "Dot1dTpPortInDiscards             " },
-	{ 66, 2, "IfOutUcastPkts                    " },
-	{ 68, 2, "IfOutMulticastPkts                " },
-	{ 70, 2, "IfOutBroadcastPkts                " },
+	{  0, 4, "IfInOctets"				},
+	{  4, 4, "EtherStatsOctets"			},
+	{  8, 2, "EtherStatsUnderSizePkts"		},
+	{ 10, 2, "EtherFragments"			},
+	{ 12, 2, "EtherStatsPkts64Octets"		},
+	{ 14, 2, "EtherStatsPkts65to127Octets"		},
+	{ 16, 2, "EtherStatsPkts128to255Octets"		},
+	{ 18, 2, "EtherStatsPkts256to511Octets"		},
+	{ 20, 2, "EtherStatsPkts512to1023Octets"	},
+	{ 22, 2, "EtherStatsPkts1024to1518Octets"	},
+	{ 24, 2, "EtherOversizeStats"			},
+	{ 26, 2, "EtherStatsJabbers"			},
+	{ 28, 2, "IfInUcastPkts"			},
+	{ 30, 2, "EtherStatsMulticastPkts"		},
+	{ 32, 2, "EtherStatsBroadcastPkts"		},
+	{ 34, 2, "EtherStatsDropEvents"			},
+	{ 36, 2, "Dot3StatsFCSErrors"			},
+	{ 38, 2, "Dot3StatsSymbolErrors"		},
+	{ 40, 2, "Dot3InPauseFrames"			},
+	{ 42, 2, "Dot3ControlInUnknownOpcodes"		},
+	{ 44, 4, "IfOutOctets"				},
+	{ 48, 2, "Dot3StatsSingleCollisionFrames"	},
+	{ 50, 2, "Dot3StatMultipleCollisionFrames"	},
+	{ 52, 2, "Dot3sDeferredTransmissions"		},
+	{ 54, 2, "Dot3StatsLateCollisions"		},
+	{ 56, 2, "EtherStatsCollisions"			},
+	{ 58, 2, "Dot3StatsExcessiveCollisions"		},
+	{ 60, 2, "Dot3OutPauseFrames"			},
+	{ 62, 2, "Dot1dBasePortDelayExceededDiscards"	},
+	{ 64, 2, "Dot1dTpPortInDiscards"		},
+	{ 66, 2, "IfOutUcastPkts"			},
+	{ 68, 2, "IfOutMulticastPkts"			},
+	{ 70, 2, "IfOutBroadcastPkts"			},
 };
 
 static inline struct rtl8366s *smi_to_rtl8366s(struct rtl8366_smi *smi)
@@ -767,42 +767,29 @@ static ssize_t rtl8366s_read_debugfs_mibs(struct file *file,
 	int i, j, len = 0;
 	char *buf = rtl->buf;
 
-	len += snprintf(buf + len, sizeof(rtl->buf) - len, "MIB Counters:\n");
-	len += snprintf(buf + len, sizeof(rtl->buf) - len, "Counter"
-			"                            "
-			"Port 0 \t\t Port 1 \t\t Port 2 \t\t Port 3 \t\t "
-			"Port 4\n");
+	len += snprintf(buf + len, sizeof(rtl->buf) - len,
+			"%-36s %12s %12s %12s %12s %12s %12s\n",
+			"Counter",
+			"Port 0", "Port 1", "Port 2",
+			"Port 3", "Port 4", "Port 5");
 
-	for (i = 0; i < 33; ++i) {
-		len += snprintf(buf + len, sizeof(rtl->buf) - len, "%d:%s ",
-				i, rtl8366s_mib_counters[i].name);
+	for (i = 0; i < ARRAY_SIZE(rtl8366s_mib_counters); ++i) {
+		len += snprintf(buf + len, sizeof(rtl->buf) - len, "%-36s ",
+				rtl8366s_mib_counters[i].name);
 		for (j = 0; j < RTL8366_NUM_PORTS; ++j) {
 			unsigned long long counter = 0;
 
 			if (!rtl8366_get_mib_counter(smi, i, j, &counter))
 				len += snprintf(buf + len,
 						sizeof(rtl->buf) - len,
-						"[%llu]", counter);
+						"%12llu ", counter);
 			else
 				len += snprintf(buf + len,
 						sizeof(rtl->buf) - len,
-						"[error]");
-
-			if (j != RTL8366_NUM_PORTS - 1) {
-				if (counter < 100000)
-					len += snprintf(buf + len,
-							sizeof(rtl->buf) - len,
-							"\t");
-
-				len += snprintf(buf + len,
-						sizeof(rtl->buf) - len,
-						"\t");
-			}
+						"%12s ", "error");
 		}
 		len += snprintf(buf + len, sizeof(rtl->buf) - len, "\n");
 	}
-
-	len += snprintf(buf + len, sizeof(rtl->buf) - len, "\n");
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
@@ -1257,15 +1244,15 @@ static int rtl8366s_sw_get_port_mib(struct switch_dev *dev,
 			"Port %d MIB counters\n",
 			val->port_vlan);
 
-	for (i = 0; i < RTL8366S_MIB_COUNT; ++i) {
+	for (i = 0; i < ARRAY_SIZE(rtl8366s_mib_counters); ++i) {
 		len += snprintf(buf + len, sizeof(rtl->buf) - len,
-				"%d:%s\t", i, rtl8366s_mib_counters[i].name);
+				"%-36s: ", rtl8366s_mib_counters[i].name);
 		if (!rtl8366_get_mib_counter(smi, i, val->port_vlan, &counter))
 			len += snprintf(buf + len, sizeof(rtl->buf) - len,
-					"[%llu]\n", counter);
+					"%llu\n", counter);
 		else
 			len += snprintf(buf + len, sizeof(rtl->buf) - len,
-					"[error]\n");
+					"%s\n", "error");
 	}
 
 	val->value.s = buf;
