@@ -918,20 +918,18 @@ static ssize_t rtl8366s_read_debugfs_mibs(struct file *file,
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
 
-static ssize_t rtl8366s_read_debugfs_vlan(struct file *file,
-					  char __user *user_buf,
-					  size_t count, loff_t *ppos)
+static ssize_t rtl8366s_read_debugfs_vlan_mc(struct file *file,
+					     char __user *user_buf,
+					     size_t count, loff_t *ppos)
 {
 	struct rtl8366s *rtl = (struct rtl8366s *)file->private_data;
 	struct rtl8366_smi *smi = &rtl->smi;
-	int i, j, len = 0;
+	int i, len = 0;
 	char *buf = rtl->buf;
 
 	len += snprintf(buf + len, sizeof(rtl->buf) - len,
-			"VLAN Member Config:\n");
-	len += snprintf(buf + len, sizeof(rtl->buf) - len,
-			"\t id \t vid \t prio \t member \t untag  \t fid "
-			"\tports\n");
+			"%2s %6s %4s %6s %6s %3s\n",
+			"id", "vid","prio", "member", "untag", "fid");
 
 	for (i = 0; i < RTL8366_NUM_VLANS; ++i) {
 		struct rtl8366_vlan_mc vlanmc;
@@ -939,20 +937,9 @@ static ssize_t rtl8366s_read_debugfs_vlan(struct file *file,
 		rtl8366s_get_vlan_mc(smi, i, &vlanmc);
 
 		len += snprintf(buf + len, sizeof(rtl->buf) - len,
-				"\t[%d] \t %d \t %d \t 0x%04x \t 0x%04x \t %d "
-				"\t", i, vlanmc.vid, vlanmc.priority,
+				"%2d %6d %4d 0x%04x 0x%04x %3d\n",
+				i, vlanmc.vid, vlanmc.priority,
 				vlanmc.member, vlanmc.untag, vlanmc.fid);
-
-		for (j = 0; j < RTL8366_NUM_PORTS; ++j) {
-			int index = 0;
-			if (!rtl8366s_get_mc_index(smi, j, &index)) {
-				if (index == i)
-					len += snprintf(buf + len,
-							sizeof(rtl->buf) - len,
-							"%d", j);
-			}
-		}
-		len += snprintf(buf + len, sizeof(rtl->buf) - len, "\n");
 	}
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
@@ -1027,8 +1014,8 @@ static const struct file_operations fops_rtl8366s_regs = {
 	.owner = THIS_MODULE
 };
 
-static const struct file_operations fops_rtl8366s_vlan = {
-	.read = rtl8366s_read_debugfs_vlan,
+static const struct file_operations fops_rtl8366s_vlan_mc = {
+	.read = rtl8366s_read_debugfs_vlan_mc,
 	.open = rtl8366s_debugfs_open,
 	.owner = THIS_MODULE
 };
@@ -1068,11 +1055,11 @@ static void rtl8366s_debugfs_init(struct rtl8366s *rtl)
 		return;
 	}
 
-	node = debugfs_create_file("vlan", S_IRUSR, root, rtl,
-				   &fops_rtl8366s_vlan);
+	node = debugfs_create_file("vlan_mc", S_IRUSR, root, rtl,
+				   &fops_rtl8366s_vlan_mc);
 	if (!node) {
 		dev_err(rtl->parent, "Creating debugfs file '%s' failed\n",
-			"vlan");
+			"vlan_mc");
 		return;
 	}
 
