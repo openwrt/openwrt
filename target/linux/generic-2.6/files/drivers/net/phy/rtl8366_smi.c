@@ -266,6 +266,21 @@ int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 }
 EXPORT_SYMBOL_GPL(rtl8366_smi_write_reg);
 
+int rtl8366_smi_rmwr(struct rtl8366_smi *smi, u32 addr, u32 mask, u32 data)
+{
+	u32 t;
+	int err;
+
+	err = rtl8366_smi_read_reg(smi, addr, &t);
+	if (err)
+		return err;
+
+	err = rtl8366_smi_write_reg(smi, addr, (t & ~mask) | data);
+	return err;
+
+}
+EXPORT_SYMBOL_GPL(rtl8366_smi_rmwr);
+
 static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 {
 	int ret;
