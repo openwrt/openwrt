@@ -922,30 +922,32 @@ static void rtl8366s_debugfs_init(struct rtl8366s *rtl)
 
 	node = debugfs_create_x16("reg", S_IRUGO | S_IWUSR, root, &g_dbg_reg);
 	if (!node) {
-		dev_err(rtl->parent, "Creating debugfs file reg failed\n");
+		dev_err(rtl->parent, "Creating debugfs file '%s' failed\n",
+			"reg");
 		return;
 	}
 
 	node = debugfs_create_file("val", S_IRUGO | S_IWUSR, root, rtl,
 				   &fops_rtl8366s_regs);
 	if (!node) {
-		dev_err(rtl->parent, "Creating debugfs file val failed\n");
+		dev_err(rtl->parent, "Creating debugfs file '%s' failed\n",
+			"val");
 		return;
 	}
 
 	node = debugfs_create_file("vlan", S_IRUSR, root, rtl,
 				   &fops_rtl8366s_vlan);
 	if (!node) {
-		dev_err(rtl->parent,
-			"Creating debugfs file vlan failed\n");
+		dev_err(rtl->parent, "Creating debugfs file '%s' failed\n",
+			"vlan");
 		return;
 	}
 
 	node = debugfs_create_file("mibs", S_IRUSR, root, rtl,
 				   &fops_rtl8366s_mibs);
 	if (!node) {
-		dev_err(rtl->parent,
-			"Creating debugfs file mibs failed\n");
+		dev_err(rtl->parent, "Creating debugfs file '%s' failed\n",
+			"mibs");
 		return;
 	}
 }
