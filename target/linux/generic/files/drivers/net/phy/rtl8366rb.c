@@ -91,13 +91,10 @@
 #define RTL8366S_MIB_COUNTER_BASE           0x1000
 #define RTL8366S_MIB_CTRL_REG               0x13F0
 #define RTL8366S_MIB_CTRL_USER_MASK         0x0FFC
-#define RTL8366S_MIB_CTRL_BUSY_MASK         0x0001
-#define RTL8366S_MIB_CTRL_RESET_MASK        0x0001
-
-#define RTL8366S_MIB_CTRL_GLOBAL_RESET_MASK 0x0004
-#define RTL8366S_MIB_CTRL_PORT_RESET_BIT    0x0003
-#define RTL8366S_MIB_CTRL_PORT_RESET_MASK   0x01FC
-
+#define RTL8366S_MIB_CTRL_BUSY_MASK         BIT(0)
+#define RTL8366S_MIB_CTRL_RESET_MASK	    BIT(1)
+#define RTL8366S_MIB_CTRL_PORT_RESET(_p)    BIT(2 + (_p))
+#define RTL8366S_MIB_CTRL_GLOBAL_RESET	    BIT(11)
 
 #define RTL8366S_PORT_VLAN_CTRL_BASE        0x0063
 #define RTL8366S_PORT_VLAN_CTRL_REG(_p)  \
@@ -1107,7 +1104,8 @@ static int rtl8366rb_sw_reset_mibs(struct switch_dev *dev,
 	int err = 0;
 
 	if (val->value.i == 1)
-		err = rtl8366_smi_rmwr(smi, RTL8366S_MIB_CTRL_REG, 0, (1 << 2));
+		err = rtl8366_smi_rmwr(smi, RTL8366S_MIB_CTRL_REG, 0,
+				       RTL8366S_MIB_CTRL_GLOBAL_RESET);
 
 	return err;
 }
@@ -1327,8 +1325,8 @@ static int rtl8366rb_sw_reset_port_mibs(struct switch_dev *dev,
 	if (val->port_vlan >= RTL8366_NUM_PORTS)
 		return -EINVAL;
 
-	return rtl8366_smi_rmwr(smi, RTL8366S_MIB_CTRL_REG,
-				0, (1 << (val->port_vlan + 3)));
+	return rtl8366_smi_rmwr(smi, RTL8366S_MIB_CTRL_REG, 0,
+				RTL8366S_MIB_CTRL_PORT_RESET(val->port_vlan));
 }
 
 static int rtl8366rb_sw_get_port_mib(struct switch_dev *dev,
