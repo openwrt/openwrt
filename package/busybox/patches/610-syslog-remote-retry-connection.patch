@@ -1,0 +1,40 @@
+Index: busybox-1.16.1/sysklogd/syslogd.c
+===================================================================
+--- busybox-1.16.1.orig/sysklogd/syslogd.c	2010-03-28 13:44:04.000000000 -0400
++++ busybox-1.16.1/sysklogd/syslogd.c	2010-06-17 21:48:11.000000000 -0400
+@@ -555,6 +555,7 @@
+ static void do_syslogd(void)
+ {
+ 	int sock_fd;
++	int send_err = 0;
+ #if ENABLE_FEATURE_SYSLOGD_DUP
+ 	int last_sz = -1;
+ 	char *last_buf;
+@@ -632,10 +633,23 @@
+ 			 * over network, mimic that */
+ 			recvbuf[sz] = '\n';
+ 			/* send message to remote logger, ignore possible error */
+-			/* TODO: on some errors, close and set G.remoteFD to -1
+-			 * so that DNS resolution and connect is retried? */
+-			sendto(G.remoteFD, recvbuf, sz+1, MSG_DONTWAIT,
+-				    &G.remoteAddr->u.sa, G.remoteAddr->len);
++			if ( sendto(G.remoteFD, recvbuf, sz+1, MSG_DONTWAIT,
++				    &G.remoteAddr->u.sa, G.remoteAddr->len)  == -1 ) {
++				send_err = errno;
++		    }
++
++			/* On some errors, close and set G.remoteFD to -1
++			 * so that DNS resolution and connect is retried */
++		    switch (send_err) {
++			case ECONNRESET:
++			case EDESTADDRREQ:
++			case EISCONN:
++			case ENOTCONN:
++			case EPIPE:
++					close(G.remoteFD);
++					G.remoteFD = -1;
++					break;
++		    }
+  no_luck: ;
+ 		}
+ #endif
