@@ -30,6 +30,8 @@ struct rtl8366_smi {
 	unsigned int		num_vlan_mc;
 
 	struct rtl8366_smi_ops	*ops;
+
+	char			buf[4096];
 };
 
 struct rtl8366_vlan_mc {
