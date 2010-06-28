@@ -20,10 +20,6 @@
 
 #include "rtl8366_smi.h"
 
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
-#include <linux/debugfs.h>
-#endif
-
 #define RTL8366RB_DRIVER_DESC	"Realtek RTL8366RB ethernet switch driver"
 #define RTL8366RB_DRIVER_VER	"0.2.2"
 
@@ -671,72 +667,6 @@ static int rtl8366rb_vlan_set_4ktable(struct rtl8366_smi *smi, int enable)
 				(enable) ? RTL8366RB_CHIP_CTRL_VLAN_4KTB : 0);
 }
 
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
-static ssize_t rtl8366rb_read_debugfs_mibs(struct file *file,
-					  char __user *user_buf,
-					  size_t count, loff_t *ppos)
-{
-	struct rtl8366_smi *smi = file->private_data;
-	int i, j, len = 0;
-	char *buf = smi->buf;
-
-	len += snprintf(buf + len, sizeof(smi->buf) - len, "%-36s",
-			"Counter");
-
-	for (i = 0; i < smi->num_ports; i++) {
-		char port_buf[10];
-
-		snprintf(port_buf, sizeof(port_buf), "Port %d", i);
-		len += snprintf(buf + len, sizeof(smi->buf) - len, " %12s",
-				port_buf);
-	}
-	len += snprintf(buf + len, sizeof(smi->buf) - len, "\n");
-
-	for (i = 0; i < smi->num_mib_counters; i++) {
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "%-36s ",
-				smi->mib_counters[i].name);
-		for (j = 0; j < smi->num_ports; j++) {
-			unsigned long long counter = 0;
-
-			if (!smi->ops->get_mib_counter(smi, i, j, &counter))
-				len += snprintf(buf + len,
-						sizeof(smi->buf) - len,
-						"%12llu ", counter);
-			else
-				len += snprintf(buf + len,
-						sizeof(smi->buf) - len,
-						"%12s ", "error");
-		}
-		len += snprintf(buf + len, sizeof(smi->buf) - len, "\n");
-	}
-
-	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
-}
-
-static const struct file_operations fops_rtl8366rb_mibs = {
-	.read = rtl8366rb_read_debugfs_mibs,
-	.open = rtl8366_debugfs_open,
-	.owner = THIS_MODULE
-};
-
-static void rtl8366rb_debugfs_init(struct rtl8366_smi *smi)
-{
-	struct dentry *node;
-
-	if (!smi->debugfs_root)
-		return;
-
-	node = debugfs_create_file("mibs", S_IRUSR, smi->debugfs_root, smi,
-				   &fops_rtl8366rb_mibs);
-	if (!node)
-		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
-			"mibs");
-}
-
-#else
-static inline void rtl8366rb_debugfs_init(struct rtl8366_smi *smi) {}
-#endif /* CONFIG_RTL8366S_PHY_DEBUG_FS */
-
 static int rtl8366rb_sw_reset_mibs(struct switch_dev *dev,
 				  const struct switch_attr *attr,
 				  struct switch_val *val)
@@ -1240,8 +1170,6 @@ static int rtl8366rb_setup(struct rtl8366rb *rtl)
 {
 	struct rtl8366_smi *smi = &rtl->smi;
 	int ret;
-
-	rtl8366rb_debugfs_init(smi);
 
 	ret = rtl8366rb_reset_chip(smi);
 	if (ret)
