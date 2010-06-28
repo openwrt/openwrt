@@ -27,10 +27,6 @@
 #define RTL8366RB_PHY_PAGE_MAX	7
 #define RTL8366RB_PHY_ADDR_MAX	31
 
-#define RTL8366RB_CHIP_GLOBAL_CTRL_REG		0x0000
-#define RTL8366RB_CHIP_CTRL_VLAN		(1 << 13)
-#define RTL8366RB_CHIP_CTRL_VLAN_4KTB		(1 << 14)
-
 /* Switch Global Configuration register */
 #define RTL8366RB_SGCR				0x0000
 #define RTL8366RB_SGCR_EN_BC_STORM_CTRL		BIT(0)
@@ -40,6 +36,8 @@
 #define RTL8366RB_SGCR_MAX_LENGTH_1536		RTL8366RB_SGCR_MAX_LENGTH(0x1)
 #define RTL8366RB_SGCR_MAX_LENGTH_1552		RTL8366RB_SGCR_MAX_LENGTH(0x2)
 #define RTL8366RB_SGCR_MAX_LENGTH_9216		RTL8366RB_SGCR_MAX_LENGTH(0x3)
+#define RTL8366RB_SGCR_EN_VLAN			BIT(13)
+#define RTL8366RB_SGCR_EN_VLAN_4KTB		BIT(14)
 
 /* Port Enable Control register */
 #define RTL8366RB_PECR				0x0001
@@ -655,16 +653,15 @@ static int rtl8366rb_set_mc_index(struct rtl8366_smi *smi, int port, int index)
 
 static int rtl8366rb_vlan_set_vlan(struct rtl8366_smi *smi, int enable)
 {
-	return rtl8366_smi_rmwr(smi, RTL8366RB_CHIP_GLOBAL_CTRL_REG,
-				RTL8366RB_CHIP_CTRL_VLAN,
-				(enable) ? RTL8366RB_CHIP_CTRL_VLAN : 0);
+	return rtl8366_smi_rmwr(smi, RTL8366RB_SGCR, RTL8366RB_SGCR_EN_VLAN,
+				(enable) ? RTL8366RB_SGCR_EN_VLAN : 0);
 }
 
 static int rtl8366rb_vlan_set_4ktable(struct rtl8366_smi *smi, int enable)
 {
-	return rtl8366_smi_rmwr(smi, RTL8366RB_CHIP_GLOBAL_CTRL_REG,
-				RTL8366RB_CHIP_CTRL_VLAN_4KTB,
-				(enable) ? RTL8366RB_CHIP_CTRL_VLAN_4KTB : 0);
+	return rtl8366_smi_rmwr(smi, RTL8366RB_SGCR,
+				RTL8366RB_SGCR_EN_VLAN_4KTB,
+				(enable) ? RTL8366RB_SGCR_EN_VLAN_4KTB : 0);
 }
 
 static int rtl8366rb_sw_reset_mibs(struct switch_dev *dev,
@@ -689,16 +686,16 @@ static int rtl8366rb_sw_get_vlan_enable(struct switch_dev *dev,
 	u32 data;
 
 	if (attr->ofs == 1) {
-		rtl8366_smi_read_reg(smi, RTL8366RB_CHIP_GLOBAL_CTRL_REG, &data);
+		rtl8366_smi_read_reg(smi, RTL8366RB_SGCR, &data);
 
-		if (data & RTL8366RB_CHIP_CTRL_VLAN)
+		if (data & RTL8366RB_SGCR_EN_VLAN)
 			val->value.i = 1;
 		else
 			val->value.i = 0;
 	} else if (attr->ofs == 2) {
-		rtl8366_smi_read_reg(smi, RTL8366RB_CHIP_GLOBAL_CTRL_REG, &data);
+		rtl8366_smi_read_reg(smi, RTL8366RB_SGCR, &data);
 
-		if (data & RTL8366RB_CHIP_CTRL_VLAN_4KTB)
+		if (data & RTL8366RB_SGCR_EN_VLAN_4KTB)
 			val->value.i = 1;
 		else
 			val->value.i = 0;
