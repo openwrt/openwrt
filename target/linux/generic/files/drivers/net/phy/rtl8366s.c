@@ -193,14 +193,7 @@ struct rtl8366s_vlan_4k {
 	u16 	member:6;
 };
 
-struct mib_counter {
-	unsigned	base;
-	unsigned	offset;
-	unsigned	length;
-	const char	*name;
-};
-
-static struct mib_counter rtl8366s_mib_counters[RTL8366S_MIB_COUNT] = {
+static struct rtl8366_mib_counter rtl8366s_mib_counters[] = {
 	{ 0,  0, 4, "IfInOctets"				},
 	{ 0,  4, 4, "EtherStatsOctets"				},
 	{ 0,  8, 2, "EtherStatsUnderSizePkts"			},

@@ -20,6 +20,13 @@ struct dentry;
 struct inode;
 struct file;
 
+struct rtl8366_mib_counter {
+	unsigned	base;
+	unsigned	offset;
+	unsigned	length;
+	const char	*name;
+};
+
 struct rtl8366_smi {
 	struct device		*parent;
 	unsigned int		gpio_sda;
