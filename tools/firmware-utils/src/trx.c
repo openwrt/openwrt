@@ -114,7 +114,6 @@ int main(int argc, char **argv)
 
 	p->magic = STORE32_LE(TRX_MAGIC);
 	cur_len = sizeof(struct trx_header) - 4; /* assume v1 header */
-	p->flag_version = STORE32_LE((trx_version << 16));
 
 	in = NULL;
 	i = 0;
@@ -243,6 +242,7 @@ int main(int argc, char **argv)
 				usage();
 		}
 	}
+	p->flag_version = STORE32_LE((trx_version << 16));
 
 	if (!in) {
 		fprintf(stderr, "we require atleast one filename\n");
