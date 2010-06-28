@@ -170,9 +170,6 @@ struct rtl8366s {
 	struct device		*parent;
 	struct rtl8366_smi	smi;
 	struct switch_dev	dev;
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
-	struct dentry           *debugfs_root;
-#endif
 };
 
 struct rtl8366s_vlan_mc {
@@ -195,10 +192,6 @@ struct rtl8366s_vlan_4k {
 	u16 	untag:6;
 	u16 	member:6;
 };
-
-#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
-u16 g_dbg_reg;
-#endif
 
 struct mib_counter {
 	unsigned	base;
@@ -674,18 +667,11 @@ static int rtl8366s_vlan_set_4ktable(struct rtl8366_smi *smi, int enable)
 }
 
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
-static int rtl8366s_debugfs_open(struct inode *inode, struct file *file)
-{
-	file->private_data = inode->i_private;
-	return 0;
-}
-
 static ssize_t rtl8366s_read_debugfs_mibs(struct file *file,
 					  char __user *user_buf,
 					  size_t count, loff_t *ppos)
 {
-	struct rtl8366s *rtl = (struct rtl8366s *)file->private_data;
-	struct rtl8366_smi *smi = &rtl->smi;
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
 	int i, j, len = 0;
 	char *buf = smi->buf;
 
@@ -716,171 +702,27 @@ static ssize_t rtl8366s_read_debugfs_mibs(struct file *file,
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
 
-static ssize_t rtl8366s_read_debugfs_vlan_mc(struct file *file,
-					     char __user *user_buf,
-					     size_t count, loff_t *ppos)
-{
-	struct rtl8366s *rtl = (struct rtl8366s *)file->private_data;
-	struct rtl8366_smi *smi = &rtl->smi;
-	int i, len = 0;
-	char *buf = smi->buf;
-
-	len += snprintf(buf + len, sizeof(smi->buf) - len,
-			"%2s %6s %4s %6s %6s %3s\n",
-			"id", "vid","prio", "member", "untag", "fid");
-
-	for (i = 0; i < RTL8366S_NUM_VLANS; ++i) {
-		struct rtl8366_vlan_mc vlanmc;
-
-		rtl8366s_get_vlan_mc(smi, i, &vlanmc);
-
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"%2d %6d %4d 0x%04x 0x%04x %3d\n",
-				i, vlanmc.vid, vlanmc.priority,
-				vlanmc.member, vlanmc.untag, vlanmc.fid);
-	}
-
-	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
-}
-
-static ssize_t rtl8366s_read_debugfs_reg(struct file *file,
-					 char __user *user_buf,
-					 size_t count, loff_t *ppos)
-{
-	struct rtl8366s *rtl = (struct rtl8366s *)file->private_data;
-	struct rtl8366_smi *smi = &rtl->smi;
-	u32 t, reg = g_dbg_reg;
-	int err, len = 0;
-	char *buf = smi->buf;
-
-	memset(buf, '\0', sizeof(smi->buf));
-
-	err = rtl8366_smi_read_reg(smi, reg, &t);
-	if (err) {
-		len += snprintf(buf, sizeof(smi->buf),
-				"Read failed (reg: 0x%04x)\n", reg);
-		return simple_read_from_buffer(user_buf, count, ppos, buf, len);
-	}
-
-	len += snprintf(buf, sizeof(smi->buf), "reg = 0x%04x, val = 0x%04x\n",
-			reg, t);
-
-	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
-}
-
-static ssize_t rtl8366s_write_debugfs_reg(struct file *file,
-					  const char __user *user_buf,
-					  size_t count, loff_t *ppos)
-{
-	struct rtl8366s *rtl = (struct rtl8366s *)file->private_data;
-	struct rtl8366_smi *smi = &rtl->smi;
-	unsigned long data;
-	u32 reg = g_dbg_reg;
-	int err;
-	size_t len;
-	char *buf = smi->buf;
-
-	len = min(count, sizeof(smi->buf) - 1);
-	if (copy_from_user(buf, user_buf, len)) {
-		dev_err(rtl->parent, "copy from user failed\n");
-		return -EFAULT;
-	}
-
-	buf[len] = '\0';
-	if (len > 0 && buf[len - 1] == '\n')
-		buf[len - 1] = '\0';
-
-
-	if (strict_strtoul(buf, 16, &data)) {
-		dev_err(rtl->parent, "Invalid reg value %s\n", buf);
-	} else {
-		err = rtl8366_smi_write_reg(smi, reg, data);
-		if (err) {
-			dev_err(rtl->parent,
-				"writing reg 0x%04x val 0x%04lx failed\n",
-				reg, data);
-		}
-	}
-
-	return count;
-}
-
-static const struct file_operations fops_rtl8366s_regs = {
-	.read = rtl8366s_read_debugfs_reg,
-	.write = rtl8366s_write_debugfs_reg,
-	.open = rtl8366s_debugfs_open,
-	.owner = THIS_MODULE
-};
-
-static const struct file_operations fops_rtl8366s_vlan_mc = {
-	.read = rtl8366s_read_debugfs_vlan_mc,
-	.open = rtl8366s_debugfs_open,
-	.owner = THIS_MODULE
-};
-
 static const struct file_operations fops_rtl8366s_mibs = {
 	.read = rtl8366s_read_debugfs_mibs,
-	.open = rtl8366s_debugfs_open,
+	.open = rtl8366_debugfs_open,
 	.owner = THIS_MODULE
 };
 
-static void rtl8366s_debugfs_init(struct rtl8366s *rtl)
+static void rtl8366s_debugfs_init(struct rtl8366_smi *smi)
 {
 	struct dentry *node;
-	struct dentry *root;
 
-	if (!rtl->debugfs_root)
-		rtl->debugfs_root = debugfs_create_dir("rtl8366s", NULL);
-
-	if (!rtl->debugfs_root) {
-		dev_err(rtl->parent, "Unable to create debugfs dir\n");
+	if (!smi->debugfs_root)
 		return;
-	}
-	root = rtl->debugfs_root;
 
-	node = debugfs_create_x16("reg", S_IRUGO | S_IWUSR, root, &g_dbg_reg);
-	if (!node) {
-		dev_err(rtl->parent, "Creating debugfs file '%s' failed\n",
-			"reg");
-		return;
-	}
-
-	node = debugfs_create_file("val", S_IRUGO | S_IWUSR, root, rtl,
-				   &fops_rtl8366s_regs);
-	if (!node) {
-		dev_err(rtl->parent, "Creating debugfs file '%s' failed\n",
-			"val");
-		return;
-	}
-
-	node = debugfs_create_file("vlan_mc", S_IRUSR, root, rtl,
-				   &fops_rtl8366s_vlan_mc);
-	if (!node) {
-		dev_err(rtl->parent, "Creating debugfs file '%s' failed\n",
-			"vlan_mc");
-		return;
-	}
-
-	node = debugfs_create_file("mibs", S_IRUSR, root, rtl,
+	node = debugfs_create_file("mibs", S_IRUSR, smi->debugfs_root, smi,
 				   &fops_rtl8366s_mibs);
-	if (!node) {
-		dev_err(rtl->parent, "Creating debugfs file '%s' failed\n",
+	if (!node)
+		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
 			"mibs");
-		return;
-	}
 }
-
-static void rtl8366s_debugfs_remove(struct rtl8366s *rtl)
-{
-	if (rtl->debugfs_root) {
-		debugfs_remove_recursive(rtl->debugfs_root);
-		rtl->debugfs_root = NULL;
-	}
-}
-
 #else
-static inline void rtl8366s_debugfs_init(struct rtl8366s *rtl) {}
-static inline void rtl8366s_debugfs_remove(struct rtl8366s *rtl) {}
+static inline void rtl8366s_debugfs_init(struct rtl8366_smi *smi) {}
 #endif /* CONFIG_RTL8366S_PHY_DEBUG_FS */
 
 static int rtl8366s_sw_reset_mibs(struct switch_dev *dev,
@@ -1388,7 +1230,7 @@ static int rtl8366s_setup(struct rtl8366s *rtl)
 	struct rtl8366_smi *smi = &rtl->smi;
 	int ret;
 
-	rtl8366s_debugfs_init(rtl);
+	rtl8366s_debugfs_init(smi);
 
 	ret = rtl8366s_reset_chip(smi);
 	if (ret)
@@ -1538,7 +1380,6 @@ static int __devexit rtl8366s_remove(struct platform_device *pdev)
 
 	if (rtl) {
 		rtl8366s_switch_cleanup(rtl);
-		rtl8366s_debugfs_remove(rtl);
 		platform_set_drvdata(pdev, NULL);
 		rtl8366_smi_cleanup(&rtl->smi);
 		kfree(rtl);

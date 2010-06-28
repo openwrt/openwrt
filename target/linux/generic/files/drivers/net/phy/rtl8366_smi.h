@@ -16,6 +16,9 @@
 struct rtl8366_smi_ops;
 struct rtl8366_vlan_ops;
 struct mii_bus;
+struct dentry;
+struct inode;
+struct file;
 
 struct rtl8366_smi {
 	struct device		*parent;
@@ -32,6 +35,10 @@ struct rtl8366_smi {
 	struct rtl8366_smi_ops	*ops;
 
 	char			buf[4096];
+#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+	struct dentry           *debugfs_root;
+	u16			dbg_reg;
+#endif
 };
 
 struct rtl8366_vlan_mc {
@@ -78,5 +85,9 @@ int rtl8366_set_vlan(struct rtl8366_smi *smi, int vid, u32 member, u32 untag,
 int rtl8366_reset_vlan(struct rtl8366_smi *smi);
 int rtl8366_get_pvid(struct rtl8366_smi *smi, int port, int *val);
 int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port, unsigned vid);
+
+#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+int rtl8366_debugfs_open(struct inode *inode, struct file *file);
+#endif
 
 #endif /*  _RTL8366_SMI_H */
