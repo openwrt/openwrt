@@ -366,8 +366,8 @@ static int rtl8366rb_write_phy_reg(struct rtl8366_smi *smi,
 	return 0;
 }
 
-static int rtl8366_get_mib_counter(struct rtl8366_smi *smi, int counter,
-				   int port, unsigned long long *val)
+static int rtl8366rb_get_mib_counter(struct rtl8366_smi *smi, int counter,
+				     int port, unsigned long long *val)
 {
 	int i;
 	int err;
@@ -680,19 +680,25 @@ static ssize_t rtl8366rb_read_debugfs_mibs(struct file *file,
 	int i, j, len = 0;
 	char *buf = smi->buf;
 
-	len += snprintf(buf + len, sizeof(smi->buf) - len,
-			"%-36s %12s %12s %12s %12s %12s %12s\n",
-			"Counter",
-			"Port 0", "Port 1", "Port 2",
-			"Port 3", "Port 4", "Port 5");
+	len += snprintf(buf + len, sizeof(smi->buf) - len, "%-36s",
+			"Counter");
 
-	for (i = 0; i < ARRAY_SIZE(rtl8366rb_mib_counters); ++i) {
+	for (i = 0; i < smi->num_ports; i++) {
+		char port_buf[10];
+
+		snprintf(port_buf, sizeof(port_buf), "Port %d", i);
+		len += snprintf(buf + len, sizeof(smi->buf) - len, " %12s",
+				port_buf);
+	}
+	len += snprintf(buf + len, sizeof(smi->buf) - len, "\n");
+
+	for (i = 0; i < smi->num_mib_counters; i++) {
 		len += snprintf(buf + len, sizeof(smi->buf) - len, "%-36s ",
-				rtl8366rb_mib_counters[i].name);
-		for (j = 0; j < RTL8366RB_NUM_PORTS; ++j) {
+				smi->mib_counters[i].name);
+		for (j = 0; j < smi->num_ports; j++) {
 			unsigned long long counter = 0;
 
-			if (!rtl8366_get_mib_counter(smi, i, j, &counter))
+			if (!smi->ops->get_mib_counter(smi, i, j, &counter))
 				len += snprintf(buf + len,
 						sizeof(smi->buf) - len,
 						"%12llu ", counter);
@@ -981,7 +987,7 @@ static int rtl8366rb_sw_get_port_mib(struct switch_dev *dev,
 	for (i = 0; i < ARRAY_SIZE(rtl8366rb_mib_counters); ++i) {
 		len += snprintf(buf + len, sizeof(smi->buf) - len,
 				"%-36s: ", rtl8366rb_mib_counters[i].name);
-		if (!rtl8366_get_mib_counter(smi, i, val->port_vlan, &counter))
+		if (!rtl8366rb_get_mib_counter(smi, i, val->port_vlan, &counter))
 			len += snprintf(buf + len, sizeof(smi->buf) - len,
 					"%llu\n", counter);
 		else
@@ -1289,6 +1295,7 @@ static struct rtl8366_smi_ops rtl8366rb_smi_ops = {
 	.set_vlan_4k	= rtl8366rb_set_vlan_4k,
 	.get_mc_index	= rtl8366rb_get_mc_index,
 	.set_mc_index	= rtl8366rb_set_mc_index,
+	.get_mib_counter = rtl8366rb_get_mib_counter,
 };
 
 static int __init rtl8366rb_probe(struct platform_device *pdev)
@@ -1327,6 +1334,8 @@ static int __init rtl8366rb_probe(struct platform_device *pdev)
 	smi->cpu_port = RTL8366RB_PORT_NUM_CPU;
 	smi->num_ports = RTL8366RB_NUM_PORTS;
 	smi->num_vlan_mc = RTL8366RB_NUM_VLANS;
+	smi->mib_counters = rtl8366rb_mib_counters;
+	smi->num_mib_counters = ARRAY_SIZE(rtl8366rb_mib_counters);
 
 	err = rtl8366_smi_init(smi);
 	if (err)
