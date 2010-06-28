@@ -27,144 +27,144 @@
 #define RTL8366S_DRIVER_DESC	"Realtek RTL8366S ethernet switch driver"
 #define RTL8366S_DRIVER_VER	"0.2.2"
 
-#define RTL8366S_PHY_NO_MAX                 4
-#define RTL8366S_PHY_PAGE_MAX               7
-#define RTL8366S_PHY_ADDR_MAX               31
+#define RTL8366S_PHY_NO_MAX	4
+#define RTL8366S_PHY_PAGE_MAX	7
+#define RTL8366S_PHY_ADDR_MAX	31
 
-#define RTL8366_CHIP_GLOBAL_CTRL_REG        0x0000
-#define RTL8366_CHIP_CTRL_VLAN              (1 << 13)
+#define RTL8366S_CHIP_GLOBAL_CTRL_REG		0x0000
+#define RTL8366S_CHIP_CTRL_VLAN			(1 << 13)
 
 /* Switch Global Configuration register */
-#define RTL8366_SGCR			0x0000
-#define RTL8366_SGCR_EN_BC_STORM_CTRL	BIT(0)
-#define RTL8366_SGCR_MAX_LENGTH(_x)	(_x << 4)
-#define RTL8366_SGCR_MAX_LENGTH_MASK	RTL8366_SGCR_MAX_LENGTH(0x3)
-#define RTL8366_SGCR_MAX_LENGTH_1522	RTL8366_SGCR_MAX_LENGTH(0x0)
-#define RTL8366_SGCR_MAX_LENGTH_1536	RTL8366_SGCR_MAX_LENGTH(0x1)
-#define RTL8366_SGCR_MAX_LENGTH_1552	RTL8366_SGCR_MAX_LENGTH(0x2)
-#define RTL8366_SGCR_MAX_LENGTH_16000	RTL8366_SGCR_MAX_LENGTH(0x3)
+#define RTL8366S_SGCR				0x0000
+#define RTL8366S_SGCR_EN_BC_STORM_CTRL		BIT(0)
+#define RTL8366S_SGCR_MAX_LENGTH(_x)		(_x << 4)
+#define RTL8366S_SGCR_MAX_LENGTH_MASK		RTL8366S_SGCR_MAX_LENGTH(0x3)
+#define RTL8366S_SGCR_MAX_LENGTH_1522		RTL8366S_SGCR_MAX_LENGTH(0x0)
+#define RTL8366S_SGCR_MAX_LENGTH_1536		RTL8366S_SGCR_MAX_LENGTH(0x1)
+#define RTL8366S_SGCR_MAX_LENGTH_1552		RTL8366S_SGCR_MAX_LENGTH(0x2)
+#define RTL8366S_SGCR_MAX_LENGTH_16000		RTL8366S_SGCR_MAX_LENGTH(0x3)
 
 /* Port Enable Control register */
-#define RTL8366_PECR			0x0001
+#define RTL8366S_PECR				0x0001
 
 /* Switch Security Control registers */
-#define RTL8366_SSCR0			0x0002
-#define RTL8366_SSCR1			0x0003
-#define RTL8366_SSCR2			0x0004
-#define RTL8366_SSCR2_DROP_UNKNOWN_DA	BIT(0)
+#define RTL8366S_SSCR0				0x0002
+#define RTL8366S_SSCR1				0x0003
+#define RTL8366S_SSCR2				0x0004
+#define RTL8366S_SSCR2_DROP_UNKNOWN_DA		BIT(0)
 
-#define RTL8366_RESET_CTRL_REG              0x0100
-#define RTL8366_CHIP_CTRL_RESET_HW          1
-#define RTL8366_CHIP_CTRL_RESET_SW          (1 << 1)
+#define RTL8366S_RESET_CTRL_REG			0x0100
+#define RTL8366S_CHIP_CTRL_RESET_HW		1
+#define RTL8366S_CHIP_CTRL_RESET_SW		(1 << 1)
 
-#define RTL8366S_CHIP_VERSION_CTRL_REG      0x0104
-#define RTL8366S_CHIP_VERSION_MASK          0xf
-#define RTL8366S_CHIP_ID_REG                0x0105
-#define RTL8366S_CHIP_ID_8366               0x8366
+#define RTL8366S_CHIP_VERSION_CTRL_REG		0x0104
+#define RTL8366S_CHIP_VERSION_MASK		0xf
+#define RTL8366S_CHIP_ID_REG			0x0105
+#define RTL8366S_CHIP_ID_8366			0x8366
 
 /* PHY registers control */
-#define RTL8366S_PHY_ACCESS_CTRL_REG        0x8028
-#define RTL8366S_PHY_ACCESS_DATA_REG        0x8029
+#define RTL8366S_PHY_ACCESS_CTRL_REG		0x8028
+#define RTL8366S_PHY_ACCESS_DATA_REG		0x8029
 
-#define RTL8366S_PHY_CTRL_READ              1
-#define RTL8366S_PHY_CTRL_WRITE             0
+#define RTL8366S_PHY_CTRL_READ			1
+#define RTL8366S_PHY_CTRL_WRITE			0
 
-#define RTL8366S_PHY_REG_MASK               0x1f
-#define RTL8366S_PHY_PAGE_OFFSET            5
-#define RTL8366S_PHY_PAGE_MASK              (0x7 << 5)
-#define RTL8366S_PHY_NO_OFFSET              9
-#define RTL8366S_PHY_NO_MASK                (0x1f << 9)
+#define RTL8366S_PHY_REG_MASK			0x1f
+#define RTL8366S_PHY_PAGE_OFFSET		5
+#define RTL8366S_PHY_PAGE_MASK			(0x7 << 5)
+#define RTL8366S_PHY_NO_OFFSET			9
+#define RTL8366S_PHY_NO_MASK			(0x1f << 9)
 
 /* LED control registers */
-#define RTL8366_LED_BLINKRATE_REG           0x0420
-#define RTL8366_LED_BLINKRATE_BIT           0
-#define RTL8366_LED_BLINKRATE_MASK          0x0007
+#define RTL8366S_LED_BLINKRATE_REG		0x0420
+#define RTL8366S_LED_BLINKRATE_BIT		0
+#define RTL8366S_LED_BLINKRATE_MASK		0x0007
 
-#define RTL8366_LED_CTRL_REG                0x0421
-#define RTL8366_LED_0_1_CTRL_REG            0x0422
-#define RTL8366_LED_2_3_CTRL_REG            0x0423
+#define RTL8366S_LED_CTRL_REG			0x0421
+#define RTL8366S_LED_0_1_CTRL_REG		0x0422
+#define RTL8366S_LED_2_3_CTRL_REG		0x0423
 
-#define RTL8366S_MIB_COUNT                  33
-#define RTL8366S_GLOBAL_MIB_COUNT           1
-#define RTL8366S_MIB_COUNTER_PORT_OFFSET    0x0040
-#define RTL8366S_MIB_COUNTER_BASE           0x1000
-#define RTL8366S_MIB_COUNTER_PORT_OFFSET2   0x0008
-#define RTL8366S_MIB_COUNTER_BASE2          0x1180
-#define RTL8366S_MIB_CTRL_REG               0x11F0
-#define RTL8366S_MIB_CTRL_USER_MASK         0x01FF
-#define RTL8366S_MIB_CTRL_BUSY_MASK         0x0001
-#define RTL8366S_MIB_CTRL_RESET_MASK        0x0002
+#define RTL8366S_MIB_COUNT			33
+#define RTL8366S_GLOBAL_MIB_COUNT		1
+#define RTL8366S_MIB_COUNTER_PORT_OFFSET	0x0040
+#define RTL8366S_MIB_COUNTER_BASE		0x1000
+#define RTL8366S_MIB_COUNTER_PORT_OFFSET2	0x0008
+#define RTL8366S_MIB_COUNTER_BASE2		0x1180
+#define RTL8366S_MIB_CTRL_REG			0x11F0
+#define RTL8366S_MIB_CTRL_USER_MASK		0x01FF
+#define RTL8366S_MIB_CTRL_BUSY_MASK		0x0001
+#define RTL8366S_MIB_CTRL_RESET_MASK		0x0002
 
-#define RTL8366S_MIB_CTRL_GLOBAL_RESET_MASK 0x0004
-#define RTL8366S_MIB_CTRL_PORT_RESET_BIT    0x0003
-#define RTL8366S_MIB_CTRL_PORT_RESET_MASK   0x01FC
+#define RTL8366S_MIB_CTRL_GLOBAL_RESET_MASK	0x0004
+#define RTL8366S_MIB_CTRL_PORT_RESET_BIT	0x0003
+#define RTL8366S_MIB_CTRL_PORT_RESET_MASK	0x01FC
 
 
-#define RTL8366S_PORT_VLAN_CTRL_BASE        0x0058
+#define RTL8366S_PORT_VLAN_CTRL_BASE		0x0058
 #define RTL8366S_PORT_VLAN_CTRL_REG(_p)  \
 		(RTL8366S_PORT_VLAN_CTRL_BASE + (_p) / 4)
-#define RTL8366S_PORT_VLAN_CTRL_MASK	    0xf
-#define RTL8366S_PORT_VLAN_CTRL_SHIFT(_p)   (4 * ((_p) % 4))
+#define RTL8366S_PORT_VLAN_CTRL_MASK		0xf
+#define RTL8366S_PORT_VLAN_CTRL_SHIFT(_p)	(4 * ((_p) % 4))
 
 
-#define RTL8366S_VLAN_TABLE_READ_BASE       0x018B
-#define RTL8366S_VLAN_TABLE_WRITE_BASE      0x0185
+#define RTL8366S_VLAN_TABLE_READ_BASE		0x018B
+#define RTL8366S_VLAN_TABLE_WRITE_BASE		0x0185
 
-#define RTL8366S_VLAN_TB_CTRL_REG           0x010F
+#define RTL8366S_VLAN_TB_CTRL_REG		0x010F
 
-#define RTL8366S_TABLE_ACCESS_CTRL_REG      0x0180
-#define RTL8366S_TABLE_VLAN_READ_CTRL       0x0E01
-#define RTL8366S_TABLE_VLAN_WRITE_CTRL      0x0F01
+#define RTL8366S_TABLE_ACCESS_CTRL_REG		0x0180
+#define RTL8366S_TABLE_VLAN_READ_CTRL		0x0E01
+#define RTL8366S_TABLE_VLAN_WRITE_CTRL		0x0F01
 
-#define RTL8366S_VLAN_MEMCONF_BASE          0x0016
-
-
-#define RTL8366S_PORT_LINK_STATUS_BASE      0x0060
-#define RTL8366S_PORT_STATUS_SPEED_MASK     0x0003
-#define RTL8366S_PORT_STATUS_DUPLEX_MASK    0x0004
-#define RTL8366S_PORT_STATUS_LINK_MASK      0x0010
-#define RTL8366S_PORT_STATUS_TXPAUSE_MASK   0x0020
-#define RTL8366S_PORT_STATUS_RXPAUSE_MASK   0x0040
-#define RTL8366S_PORT_STATUS_AN_MASK        0x0080
+#define RTL8366S_VLAN_MEMCONF_BASE		0x0016
 
 
-#define RTL8366_PORT_NUM_CPU                5
-#define RTL8366_NUM_PORTS                   6
-#define RTL8366_NUM_VLANS                   16
-#define RTL8366_NUM_LEDGROUPS               4
-#define RTL8366_NUM_VIDS                    4096
-#define RTL8366S_PRIORITYMAX                7
-#define RTL8366S_FIDMAX	                    7
+#define RTL8366S_PORT_LINK_STATUS_BASE		0x0060
+#define RTL8366S_PORT_STATUS_SPEED_MASK		0x0003
+#define RTL8366S_PORT_STATUS_DUPLEX_MASK	0x0004
+#define RTL8366S_PORT_STATUS_LINK_MASK		0x0010
+#define RTL8366S_PORT_STATUS_TXPAUSE_MASK	0x0020
+#define RTL8366S_PORT_STATUS_RXPAUSE_MASK	0x0040
+#define RTL8366S_PORT_STATUS_AN_MASK		0x0080
 
 
-#define RTL8366_PORT_1                      (1 << 0) /* In userspace port 0 */
-#define RTL8366_PORT_2                      (1 << 1) /* In userspace port 1 */
-#define RTL8366_PORT_3                      (1 << 2) /* In userspace port 2 */
-#define RTL8366_PORT_4                      (1 << 3) /* In userspace port 3 */
+#define RTL8366S_PORT_NUM_CPU		5
+#define RTL8366S_NUM_PORTS		6
+#define RTL8366S_NUM_VLANS		16
+#define RTL8366S_NUM_LEDGROUPS		4
+#define RTL8366S_NUM_VIDS		4096
+#define RTL8366S_PRIORITYMAX		7
+#define RTL8366S_FIDMAX			7
 
-#define RTL8366_PORT_UNKNOWN                (1 << 4) /* No known connection */
-#define RTL8366_PORT_CPU                    (1 << 5) /* CPU port */
 
-#define RTL8366_PORT_ALL                    (RTL8366_PORT_1 |       \
-					     RTL8366_PORT_2 |       \
-					     RTL8366_PORT_3 |       \
-					     RTL8366_PORT_4 |       \
-					     RTL8366_PORT_UNKNOWN | \
-					     RTL8366_PORT_CPU)
+#define RTL8366S_PORT_1			(1 << 0) /* In userspace port 0 */
+#define RTL8366S_PORT_2			(1 << 1) /* In userspace port 1 */
+#define RTL8366S_PORT_3			(1 << 2) /* In userspace port 2 */
+#define RTL8366S_PORT_4			(1 << 3) /* In userspace port 3 */
 
-#define RTL8366_PORT_ALL_BUT_CPU            (RTL8366_PORT_1 |       \
-					     RTL8366_PORT_2 |       \
-					     RTL8366_PORT_3 |       \
-					     RTL8366_PORT_4 |       \
-					     RTL8366_PORT_UNKNOWN)
+#define RTL8366S_PORT_UNKNOWN		(1 << 4) /* No known connection */
+#define RTL8366S_PORT_CPU		(1 << 5) /* CPU port */
 
-#define RTL8366_PORT_ALL_EXTERNAL           (RTL8366_PORT_1 |       \
-					     RTL8366_PORT_2 |       \
-					     RTL8366_PORT_3 |       \
-					     RTL8366_PORT_4)
+#define RTL8366S_PORT_ALL		(RTL8366S_PORT_1 |	\
+					 RTL8366S_PORT_2 |	\
+					 RTL8366S_PORT_3 |	\
+					 RTL8366S_PORT_4 |	\
+					 RTL8366S_PORT_UNKNOWN | \
+					 RTL8366S_PORT_CPU)
 
-#define RTL8366_PORT_ALL_INTERNAL           (RTL8366_PORT_UNKNOWN | \
-					     RTL8366_PORT_CPU)
+#define RTL8366S_PORT_ALL_BUT_CPU	(RTL8366S_PORT_1 |	\
+					 RTL8366S_PORT_2 |	\
+					 RTL8366S_PORT_3 |	\
+					 RTL8366S_PORT_4 |	\
+					 RTL8366S_PORT_UNKNOWN)
+
+#define RTL8366S_PORT_ALL_EXTERNAL	(RTL8366S_PORT_1 |	\
+					 RTL8366S_PORT_2 |	\
+					 RTL8366S_PORT_3 |	\
+					 RTL8366S_PORT_4)
+
+#define RTL8366S_PORT_ALL_INTERNAL	(RTL8366S_PORT_UNKNOWN | \
+					 RTL8366S_PORT_CPU)
 
 struct rtl8366s {
 	struct device		*parent;
@@ -284,14 +284,14 @@ static int rtl8366s_reset_chip(struct rtl8366_smi *smi)
 	int timeout = 10;
 	u32 data;
 
-	rtl8366_smi_write_reg(smi, RTL8366_RESET_CTRL_REG,
-			      RTL8366_CHIP_CTRL_RESET_HW);
+	rtl8366_smi_write_reg(smi, RTL8366S_RESET_CTRL_REG,
+			      RTL8366S_CHIP_CTRL_RESET_HW);
 	do {
 		msleep(1);
-		if (rtl8366_smi_read_reg(smi, RTL8366_RESET_CTRL_REG, &data))
+		if (rtl8366_smi_read_reg(smi, RTL8366S_RESET_CTRL_REG, &data))
 			return -EIO;
 
-		if (!(data & RTL8366_CHIP_CTRL_RESET_HW))
+		if (!(data & RTL8366S_CHIP_CTRL_RESET_HW))
 			break;
 	} while (--timeout);
 
@@ -308,20 +308,20 @@ static int rtl8366s_hw_init(struct rtl8366_smi *smi)
 	int err;
 
 	/* set maximum packet length to 1536 bytes */
-	REG_RMW(smi, RTL8366_SGCR, RTL8366_SGCR_MAX_LENGTH_MASK,
-		RTL8366_SGCR_MAX_LENGTH_1536);
+	REG_RMW(smi, RTL8366S_SGCR, RTL8366S_SGCR_MAX_LENGTH_MASK,
+		RTL8366S_SGCR_MAX_LENGTH_1536);
 
 	/* enable all ports */
-	REG_WR(smi, RTL8366_PECR, 0);
+	REG_WR(smi, RTL8366S_PECR, 0);
 
 	/* disable learning for all ports */
-	REG_WR(smi, RTL8366_SSCR0, RTL8366_PORT_ALL);
+	REG_WR(smi, RTL8366S_SSCR0, RTL8366S_PORT_ALL);
 
 	/* disable auto ageing for all ports */
-	REG_WR(smi, RTL8366_SSCR1, RTL8366_PORT_ALL);
+	REG_WR(smi, RTL8366S_SSCR1, RTL8366S_PORT_ALL);
 
 	/* don't drop packets whose DA has not been learned */
-	REG_RMW(smi, RTL8366_SSCR2, RTL8366_SSCR2_DROP_UNKNOWN_DA, 0);
+	REG_RMW(smi, RTL8366S_SSCR2, RTL8366S_SSCR2_DROP_UNKNOWN_DA, 0);
 
 	return 0;
 }
@@ -400,7 +400,7 @@ static int rtl8366_get_mib_counter(struct rtl8366_smi *smi, int counter,
 	u32 addr, data;
 	u64 mibvalue;
 
-	if (port > RTL8366_NUM_PORTS || counter >= RTL8366S_MIB_COUNT)
+	if (port > RTL8366S_NUM_PORTS || counter >= RTL8366S_MIB_COUNT)
 		return -EINVAL;
 
 	switch (rtl8366s_mib_counters[counter].base) {
@@ -464,7 +464,7 @@ static int rtl8366s_get_vlan_4k(struct rtl8366_smi *smi, u32 vid,
 	memset(vlan4k, '\0', sizeof(struct rtl8366_vlan_4k));
 	vlan4k_priv.vid = vid;
 
-	if (vid >= RTL8366_NUM_VIDS)
+	if (vid >= RTL8366S_NUM_VIDS)
 		return -EINVAL;
 
 	tableaddr = (u16 *)&vlan4k_priv;
@@ -511,9 +511,9 @@ static int rtl8366s_set_vlan_4k(struct rtl8366_smi *smi,
 	u32 data;
 	u16 *tableaddr;
 
-	if (vlan4k->vid >= RTL8366_NUM_VIDS ||
-	    vlan4k->member > RTL8366_PORT_ALL ||
-	    vlan4k->untag > RTL8366_PORT_ALL ||
+	if (vlan4k->vid >= RTL8366S_NUM_VIDS ||
+	    vlan4k->member > RTL8366S_PORT_ALL ||
+	    vlan4k->untag > RTL8366S_PORT_ALL ||
 	    vlan4k->fid > RTL8366S_FIDMAX)
 		return -EINVAL;
 
@@ -557,7 +557,7 @@ static int rtl8366s_get_vlan_mc(struct rtl8366_smi *smi, u32 index,
 
 	memset(vlanmc, '\0', sizeof(struct rtl8366_vlan_mc));
 
-	if (index >= RTL8366_NUM_VLANS)
+	if (index >= RTL8366S_NUM_VLANS)
 		return -EINVAL;
 
 	tableaddr = (u16 *)&vlanmc_priv;
@@ -595,11 +595,11 @@ static int rtl8366s_set_vlan_mc(struct rtl8366_smi *smi, u32 index,
 	u32 data;
 	u16 *tableaddr;
 
-	if (index >= RTL8366_NUM_VLANS ||
-	    vlanmc->vid >= RTL8366_NUM_VIDS ||
+	if (index >= RTL8366S_NUM_VLANS ||
+	    vlanmc->vid >= RTL8366S_NUM_VIDS ||
 	    vlanmc->priority > RTL8366S_PRIORITYMAX ||
-	    vlanmc->member > RTL8366_PORT_ALL ||
-	    vlanmc->untag > RTL8366_PORT_ALL ||
+	    vlanmc->member > RTL8366S_PORT_ALL ||
+	    vlanmc->untag > RTL8366S_PORT_ALL ||
 	    vlanmc->fid > RTL8366S_FIDMAX)
 		return -EINVAL;
 
@@ -635,7 +635,7 @@ static int rtl8366s_get_mc_index(struct rtl8366_smi *smi, int port, int *val)
 	u32 data;
 	int err;
 
-	if (port >= RTL8366_NUM_PORTS)
+	if (port >= RTL8366S_NUM_PORTS)
 		return -EINVAL;
 
 	err = rtl8366_smi_read_reg(smi, RTL8366S_PORT_VLAN_CTRL_REG(port),
@@ -651,7 +651,7 @@ static int rtl8366s_get_mc_index(struct rtl8366_smi *smi, int port, int *val)
 
 static int rtl8366s_set_mc_index(struct rtl8366_smi *smi, int port, int index)
 {
-	if (port >= RTL8366_NUM_PORTS || index >= RTL8366_NUM_VLANS)
+	if (port >= RTL8366S_NUM_PORTS || index >= RTL8366S_NUM_VLANS)
 		return -EINVAL;
 
 	return rtl8366_smi_rmwr(smi, RTL8366S_PORT_VLAN_CTRL_REG(port),
@@ -681,7 +681,7 @@ static int rtl8366s_set_vlan(struct rtl8366_smi *smi, int vid, u32 member,
 		return err;
 
 	/* Try to find an existing MC entry for this VID */
-	for (i = 0; i < RTL8366_NUM_VLANS; i++) {
+	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
 		struct rtl8366_vlan_mc vlanmc;
 
 		err = rtl8366s_get_vlan_mc(smi, i, &vlanmc);
@@ -727,7 +727,7 @@ static int rtl8366s_mc_is_used(struct rtl8366_smi *smi, int mc_index,
 	int i;
 
 	*used = 0;
-	for (i = 0; i < RTL8366_NUM_PORTS; i++) {
+	for (i = 0; i < RTL8366S_NUM_PORTS; i++) {
 		int index = 0;
 
 		err = rtl8366s_get_mc_index(smi, i, &index);
@@ -752,7 +752,7 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 	int i;
 
 	/* Try to find an existing MC entry for this VID */
-	for (i = 0; i < RTL8366_NUM_VLANS; i++) {
+	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
 		err = rtl8366s_get_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
@@ -768,7 +768,7 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 	}
 
 	/* We have no MC entry for this VID, try to find an empty one */
-	for (i = 0; i < RTL8366_NUM_VLANS; i++) {
+	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
 		err = rtl8366s_get_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
@@ -793,7 +793,7 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 	}
 
 	/* MC table is full, try to find an unused entry and replace it */
-	for (i = 0; i < RTL8366_NUM_VLANS; i++) {
+	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
 		int used;
 
 		err = rtl8366s_mc_is_used(smi, i, &used);
@@ -827,9 +827,9 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 
 static int rtl8366s_vlan_set_vlan(struct rtl8366_smi *smi, int enable)
 {
-	return rtl8366_smi_rmwr(smi, RTL8366_CHIP_GLOBAL_CTRL_REG,
-				RTL8366_CHIP_CTRL_VLAN,
-				(enable) ? RTL8366_CHIP_CTRL_VLAN : 0);
+	return rtl8366_smi_rmwr(smi, RTL8366S_CHIP_GLOBAL_CTRL_REG,
+				RTL8366S_CHIP_CTRL_VLAN,
+				(enable) ? RTL8366S_CHIP_CTRL_VLAN : 0);
 }
 
 static int rtl8366s_vlan_set_4ktable(struct rtl8366_smi *smi, int enable)
@@ -850,19 +850,19 @@ static int rtl8366s_reset_vlan(struct rtl8366_smi *smi)
 	vlanmc.member = 0;
 	vlanmc.untag = 0;
 	vlanmc.fid = 0;
-	for (i = 0; i < RTL8366_NUM_VLANS; i++) {
+	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
 		err = rtl8366s_set_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
 	}
 
-	for (i = 0; i < RTL8366_NUM_PORTS; i++) {
-		if (i == RTL8366_PORT_CPU)
+	for (i = 0; i < RTL8366S_NUM_PORTS; i++) {
+		if (i == RTL8366S_PORT_CPU)
 			continue;
 
 		err = rtl8366s_set_vlan(smi, (i + 1),
-					 (1 << i) | RTL8366_PORT_CPU,
-					 (1 << i) | RTL8366_PORT_CPU,
+					 (1 << i) | RTL8366S_PORT_CPU,
+					 (1 << i) | RTL8366S_PORT_CPU,
 					 0);
 		if (err)
 			return err;
@@ -900,7 +900,7 @@ static ssize_t rtl8366s_read_debugfs_mibs(struct file *file,
 	for (i = 0; i < ARRAY_SIZE(rtl8366s_mib_counters); ++i) {
 		len += snprintf(buf + len, sizeof(rtl->buf) - len, "%-36s ",
 				rtl8366s_mib_counters[i].name);
-		for (j = 0; j < RTL8366_NUM_PORTS; ++j) {
+		for (j = 0; j < RTL8366S_NUM_PORTS; ++j) {
 			unsigned long long counter = 0;
 
 			if (!rtl8366_get_mib_counter(smi, i, j, &counter))
@@ -931,7 +931,7 @@ static ssize_t rtl8366s_read_debugfs_vlan_mc(struct file *file,
 			"%2s %6s %4s %6s %6s %3s\n",
 			"id", "vid","prio", "member", "untag", "fid");
 
-	for (i = 0; i < RTL8366_NUM_VLANS; ++i) {
+	for (i = 0; i < RTL8366S_NUM_VLANS; ++i) {
 		struct rtl8366_vlan_mc vlanmc;
 
 		rtl8366s_get_vlan_mc(smi, i, &vlanmc);
@@ -1106,9 +1106,9 @@ static int rtl8366s_sw_get_vlan_enable(struct switch_dev *dev,
 	u32 data;
 
 	if (attr->ofs == 1) {
-		rtl8366_smi_read_reg(smi, RTL8366_CHIP_GLOBAL_CTRL_REG, &data);
+		rtl8366_smi_read_reg(smi, RTL8366S_CHIP_GLOBAL_CTRL_REG, &data);
 
-		if (data & RTL8366_CHIP_CTRL_VLAN)
+		if (data & RTL8366S_CHIP_CTRL_VLAN)
 			val->value.i = 1;
 		else
 			val->value.i = 0;
@@ -1131,9 +1131,9 @@ static int rtl8366s_sw_get_blinkrate(struct switch_dev *dev,
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
 	u32 data;
 
-	rtl8366_smi_read_reg(smi, RTL8366_LED_BLINKRATE_REG, &data);
+	rtl8366_smi_read_reg(smi, RTL8366S_LED_BLINKRATE_REG, &data);
 
-	val->value.i = (data & (RTL8366_LED_BLINKRATE_MASK));
+	val->value.i = (data & (RTL8366S_LED_BLINKRATE_MASK));
 
 	return 0;
 }
@@ -1147,8 +1147,8 @@ static int rtl8366s_sw_set_blinkrate(struct switch_dev *dev,
 	if (val->value.i >= 6)
 		return -EINVAL;
 
-	return rtl8366_smi_rmwr(smi, RTL8366_LED_BLINKRATE_REG,
-				RTL8366_LED_BLINKRATE_MASK,
+	return rtl8366_smi_rmwr(smi, RTL8366S_LED_BLINKRATE_REG,
+				RTL8366S_LED_BLINKRATE_MASK,
 				val->value.i);
 }
 
@@ -1186,7 +1186,7 @@ static int rtl8366s_sw_get_port_link(struct switch_dev *dev,
 	struct rtl8366_smi *smi = &rtl->smi;
 	u32 len = 0, data = 0;
 
-	if (val->port_vlan >= RTL8366_NUM_PORTS)
+	if (val->port_vlan >= RTL8366S_NUM_PORTS)
 		return -EINVAL;
 
 	memset(rtl->buf, '\0', sizeof(rtl->buf));
@@ -1233,7 +1233,7 @@ static int rtl8366s_sw_get_vlan_info(struct switch_dev *dev,
 	char *buf = rtl->buf;
 	int err;
 
-	if (val->port_vlan == 0 || val->port_vlan >= RTL8366_NUM_VLANS)
+	if (val->port_vlan == 0 || val->port_vlan >= RTL8366S_NUM_VLANS)
 		return -EINVAL;
 
 	memset(buf, '\0', sizeof(rtl->buf));
@@ -1245,7 +1245,7 @@ static int rtl8366s_sw_get_vlan_info(struct switch_dev *dev,
 	len += snprintf(buf + len, sizeof(rtl->buf) - len,
 			"VLAN %d: Ports: '", vlan4k.vid);
 
-	for (i = 0; i < RTL8366_NUM_PORTS; i++) {
+	for (i = 0; i < RTL8366S_NUM_PORTS; i++) {
 		if (!(vlan4k.member & (1 << i)))
 			continue;
 
@@ -1272,21 +1272,21 @@ static int rtl8366s_sw_set_port_led(struct switch_dev *dev,
 	u32 mask;
 	u32 reg;
 
-	if (val->port_vlan >= RTL8366_NUM_PORTS ||
-	    (1 << val->port_vlan) == RTL8366_PORT_UNKNOWN)
+	if (val->port_vlan >= RTL8366S_NUM_PORTS ||
+	    (1 << val->port_vlan) == RTL8366S_PORT_UNKNOWN)
 		return -EINVAL;
 
-	if (val->port_vlan == RTL8366_PORT_NUM_CPU) {
-		reg = RTL8366_LED_BLINKRATE_REG;
+	if (val->port_vlan == RTL8366S_PORT_NUM_CPU) {
+		reg = RTL8366S_LED_BLINKRATE_REG;
 		mask = 0xF << 4;
 		data = val->value.i << 4;
 	} else {
-		reg = RTL8366_LED_CTRL_REG;
+		reg = RTL8366S_LED_CTRL_REG;
 		mask = 0xF << (val->port_vlan * 4),
 		data = val->value.i << (val->port_vlan * 4);
 	}
 
-	return rtl8366_smi_rmwr(smi, RTL8366_LED_BLINKRATE_REG, mask, data);
+	return rtl8366_smi_rmwr(smi, RTL8366S_LED_BLINKRATE_REG, mask, data);
 }
 
 static int rtl8366s_sw_get_port_led(struct switch_dev *dev,
@@ -1296,10 +1296,10 @@ static int rtl8366s_sw_get_port_led(struct switch_dev *dev,
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
 	u32 data = 0;
 
-	if (val->port_vlan >= RTL8366_NUM_LEDGROUPS)
+	if (val->port_vlan >= RTL8366S_NUM_LEDGROUPS)
 		return -EINVAL;
 
-	rtl8366_smi_read_reg(smi, RTL8366_LED_CTRL_REG, &data);
+	rtl8366_smi_read_reg(smi, RTL8366S_LED_CTRL_REG, &data);
 	val->value.i = (data >> (val->port_vlan * 4)) & 0x000F;
 
 	return 0;
@@ -1311,7 +1311,7 @@ static int rtl8366s_sw_reset_port_mibs(struct switch_dev *dev,
 {
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
 
-	if (val->port_vlan >= RTL8366_NUM_PORTS)
+	if (val->port_vlan >= RTL8366S_NUM_PORTS)
 		return -EINVAL;
 
 
@@ -1329,7 +1329,7 @@ static int rtl8366s_sw_get_port_mib(struct switch_dev *dev,
 	unsigned long long counter = 0;
 	char *buf = rtl->buf;
 
-	if (val->port_vlan >= RTL8366_NUM_PORTS)
+	if (val->port_vlan >= RTL8366S_NUM_PORTS)
 		return -EINVAL;
 
 	len += snprintf(buf + len, sizeof(rtl->buf) - len,
@@ -1360,14 +1360,14 @@ static int rtl8366s_sw_get_vlan_ports(struct switch_dev *dev,
 	struct rtl8366_vlan_4k vlan4k;
 	int i;
 
-	if (val->port_vlan == 0 || val->port_vlan >= RTL8366_NUM_VLANS)
+	if (val->port_vlan == 0 || val->port_vlan >= RTL8366S_NUM_VLANS)
 		return -EINVAL;
 
 	rtl8366s_get_vlan_4k(smi, val->port_vlan, &vlan4k);
 
 	port = &val->value.ports[0];
 	val->len = 0;
-	for (i = 0; i < RTL8366_NUM_PORTS; i++) {
+	for (i = 0; i < RTL8366S_NUM_PORTS; i++) {
 		if (!(vlan4k.member & BIT(i)))
 			continue;
 
@@ -1389,7 +1389,7 @@ static int rtl8366s_sw_set_vlan_ports(struct switch_dev *dev,
 	u32 untag = 0;
 	int i;
 
-	if (val->port_vlan == 0 || val->port_vlan >= RTL8366_NUM_VLANS)
+	if (val->port_vlan == 0 || val->port_vlan >= RTL8366S_NUM_VLANS)
 		return -EINVAL;
 
 	port = &val->value.ports[0];
@@ -1512,9 +1512,9 @@ static struct switch_attr rtl8366s_vlan[] = {
 /* template */
 static struct switch_dev rtl8366_switch_dev = {
 	.name = "RTL8366S",
-	.cpu_port = RTL8366_PORT_NUM_CPU,
-	.ports = RTL8366_NUM_PORTS,
-	.vlans = RTL8366_NUM_VLANS,
+	.cpu_port = RTL8366S_PORT_NUM_CPU,
+	.ports = RTL8366S_NUM_PORTS,
+	.vlans = RTL8366S_NUM_VLANS,
 	.attr_global = {
 		.attr = rtl8366s_globals,
 		.n_attr = ARRAY_SIZE(rtl8366s_globals),
