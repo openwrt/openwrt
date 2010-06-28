@@ -164,7 +164,6 @@ struct rtl8366rb {
 	struct device		*parent;
 	struct rtl8366_smi	smi;
 	struct switch_dev	dev;
-	char			buf[4096];
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 	struct dentry           *debugfs_root;
 #endif
@@ -699,30 +698,30 @@ static ssize_t rtl8366rb_read_debugfs_mibs(struct file *file,
 	struct rtl8366rb *rtl = (struct rtl8366rb *)file->private_data;
 	struct rtl8366_smi *smi = &rtl->smi;
 	int i, j, len = 0;
-	char *buf = rtl->buf;
+	char *buf = smi->buf;
 
-	len += snprintf(buf + len, sizeof(rtl->buf) - len,
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
 			"%-36s %12s %12s %12s %12s %12s %12s\n",
 			"Counter",
 			"Port 0", "Port 1", "Port 2",
 			"Port 3", "Port 4", "Port 5");
 
 	for (i = 0; i < ARRAY_SIZE(rtl8366rb_mib_counters); ++i) {
-		len += snprintf(buf + len, sizeof(rtl->buf) - len, "%-36s ",
+		len += snprintf(buf + len, sizeof(smi->buf) - len, "%-36s ",
 				rtl8366rb_mib_counters[i].name);
 		for (j = 0; j < RTL8366RB_NUM_PORTS; ++j) {
 			unsigned long long counter = 0;
 
 			if (!rtl8366_get_mib_counter(smi, i, j, &counter))
 				len += snprintf(buf + len,
-						sizeof(rtl->buf) - len,
+						sizeof(smi->buf) - len,
 						"%12llu ", counter);
 			else
 				len += snprintf(buf + len,
-						sizeof(rtl->buf) - len,
+						sizeof(smi->buf) - len,
 						"%12s ", "error");
 		}
-		len += snprintf(buf + len, sizeof(rtl->buf) - len, "\n");
+		len += snprintf(buf + len, sizeof(smi->buf) - len, "\n");
 	}
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
@@ -735,9 +734,9 @@ static ssize_t rtl8366rb_read_debugfs_vlan_mc(struct file *file,
 	struct rtl8366rb *rtl = (struct rtl8366rb *)file->private_data;
 	struct rtl8366_smi *smi = &rtl->smi;
 	int i, len = 0;
-	char *buf = rtl->buf;
+	char *buf = smi->buf;
 
-	len += snprintf(buf + len, sizeof(rtl->buf) - len,
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
 			"%2s %6s %4s %6s %6s %3s\n",
 			"id", "vid","prio", "member", "untag", "fid");
 
@@ -746,7 +745,7 @@ static ssize_t rtl8366rb_read_debugfs_vlan_mc(struct file *file,
 
 		rtl8366rb_get_vlan_mc(smi, i, &vlanmc);
 
-		len += snprintf(buf + len, sizeof(rtl->buf) - len,
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
 				"%2d %6d %4d 0x%04x 0x%04x %3d\n",
 				i, vlanmc.vid, vlanmc.priority,
 				vlanmc.member, vlanmc.untag, vlanmc.fid);
@@ -763,18 +762,18 @@ static ssize_t rtl8366rb_read_debugfs_reg(struct file *file,
 	struct rtl8366_smi *smi = &rtl->smi;
 	u32 t, reg = gl_dbg_reg;
 	int err, len = 0;
-	char *buf = rtl->buf;
+	char *buf = smi->buf;
 
-	memset(buf, '\0', sizeof(rtl->buf));
+	memset(buf, '\0', sizeof(smi->buf));
 
 	err = rtl8366_smi_read_reg(smi, reg, &t);
 	if (err) {
-		len += snprintf(buf, sizeof(rtl->buf),
+		len += snprintf(buf, sizeof(smi->buf),
 				"Read failed (reg: 0x%04x)\n", reg);
 		return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 	}
 
-	len += snprintf(buf, sizeof(rtl->buf), "reg = 0x%04x, val = 0x%04x\n",
+	len += snprintf(buf, sizeof(smi->buf), "reg = 0x%04x, val = 0x%04x\n",
 			reg, t);
 
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
@@ -790,9 +789,9 @@ static ssize_t rtl8366rb_write_debugfs_reg(struct file *file,
 	u32 reg = gl_dbg_reg;
 	int err;
 	size_t len;
-	char *buf = rtl->buf;
+	char *buf = smi->buf;
 
-	len = min(count, sizeof(rtl->buf) - 1);
+	len = min(count, sizeof(smi->buf) - 1);
 	if (copy_from_user(buf, user_buf, len)) {
 		dev_err(rtl->parent, "copy from user failed\n");
 		return -EFAULT;
@@ -993,14 +992,13 @@ static int rtl8366rb_sw_get_port_link(struct switch_dev *dev,
 				     const struct switch_attr *attr,
 				     struct switch_val *val)
 {
-	struct rtl8366rb *rtl = sw_to_rtl8366rb(dev);
-	struct rtl8366_smi *smi = &rtl->smi;
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
 	u32 len = 0, data = 0;
 
 	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
 		return -EINVAL;
 
-	memset(rtl->buf, '\0', sizeof(rtl->buf));
+	memset(smi->buf, '\0', sizeof(smi->buf));
 	rtl8366_smi_read_reg(smi, RTL8366RB_PORT_LINK_STATUS_BASE +
 			     (val->port_vlan / 2), &data);
 
@@ -1008,7 +1006,7 @@ static int rtl8366rb_sw_get_port_link(struct switch_dev *dev,
 		data = data >> 8;
 
 	if (data & RTL8366RB_PORT_STATUS_LINK_MASK) {
-		len = snprintf(rtl->buf, sizeof(rtl->buf),
+		len = snprintf(smi->buf, sizeof(smi->buf),
 				"port:%d link:up speed:%s %s-duplex %s%s%s",
 				val->port_vlan,
 				rtl8366rb_speed_str(data &
@@ -1022,11 +1020,11 @@ static int rtl8366rb_sw_get_port_link(struct switch_dev *dev,
 				(data & RTL8366RB_PORT_STATUS_AN_MASK) ?
 					"nway ": "");
 	} else {
-		len = snprintf(rtl->buf, sizeof(rtl->buf), "port:%d link: down",
+		len = snprintf(smi->buf, sizeof(smi->buf), "port:%d link: down",
 				val->port_vlan);
 	}
 
-	val->value.s = rtl->buf;
+	val->value.s = smi->buf;
 	val->len = len;
 
 	return 0;
@@ -1039,32 +1037,31 @@ static int rtl8366rb_sw_get_vlan_info(struct switch_dev *dev,
 	int i;
 	u32 len = 0;
 	struct rtl8366_vlan_4k vlan4k;
-	struct rtl8366rb *rtl = sw_to_rtl8366rb(dev);
-	struct rtl8366_smi *smi = &rtl->smi;
-	char *buf = rtl->buf;
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	char *buf = smi->buf;
 	int err;
 
 	if (val->port_vlan == 0 || val->port_vlan >= RTL8366RB_NUM_VLANS)
 		return -EINVAL;
 
-	memset(buf, '\0', sizeof(rtl->buf));
+	memset(buf, '\0', sizeof(smi->buf));
 
 	err = rtl8366rb_get_vlan_4k(smi, val->port_vlan, &vlan4k);
 	if (err)
 		return err;
 
-	len += snprintf(buf + len, sizeof(rtl->buf) - len,
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
 			"VLAN %d: Ports: '", vlan4k.vid);
 
 	for (i = 0; i < RTL8366RB_NUM_PORTS; i++) {
 		if (!(vlan4k.member & (1 << i)))
 			continue;
 
-		len += snprintf(buf + len, sizeof(rtl->buf) - len, "%d%s", i,
+		len += snprintf(buf + len, sizeof(smi->buf) - len, "%d%s", i,
 				(vlan4k.untag & (1 << i)) ? "" : "t");
 	}
 
-	len += snprintf(buf + len, sizeof(rtl->buf) - len,
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
 			"', members=%04x, untag=%04x, fid=%u",
 			vlan4k.member, vlan4k.untag, vlan4k.fid);
 
@@ -1132,27 +1129,26 @@ static int rtl8366rb_sw_get_port_mib(struct switch_dev *dev,
 				    const struct switch_attr *attr,
 				    struct switch_val *val)
 {
-	struct rtl8366rb *rtl = sw_to_rtl8366rb(dev);
-	struct rtl8366_smi *smi = &rtl->smi;
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
 	int i, len = 0;
 	unsigned long long counter = 0;
-	char *buf = rtl->buf;
+	char *buf = smi->buf;
 
 	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
 		return -EINVAL;
 
-	len += snprintf(buf + len, sizeof(rtl->buf) - len,
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
 			"Port %d MIB counters\n",
 			val->port_vlan);
 
 	for (i = 0; i < ARRAY_SIZE(rtl8366rb_mib_counters); ++i) {
-		len += snprintf(buf + len, sizeof(rtl->buf) - len,
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
 				"%-36s: ", rtl8366rb_mib_counters[i].name);
 		if (!rtl8366_get_mib_counter(smi, i, val->port_vlan, &counter))
-			len += snprintf(buf + len, sizeof(rtl->buf) - len,
+			len += snprintf(buf + len, sizeof(smi->buf) - len,
 					"%llu\n", counter);
 		else
-			len += snprintf(buf + len, sizeof(rtl->buf) - len,
+			len += snprintf(buf + len, sizeof(smi->buf) - len,
 					"%s\n", "error");
 	}
 
