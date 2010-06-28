@@ -669,14 +669,14 @@ static int rtl8366s_set_vlan(struct rtl8366_smi *smi, int vid, u32 member,
 	int i;
 
 	/* Update the 4K table */
-	err = rtl8366s_get_vlan_4k(smi, vid, &vlan4k);
+	err = smi->ops->get_vlan_4k(smi, vid, &vlan4k);
 	if (err)
 		return err;
 
 	vlan4k.member = member;
 	vlan4k.untag = untag;
 	vlan4k.fid = fid;
-	err = rtl8366s_set_vlan_4k(smi, &vlan4k);
+	err = smi->ops->set_vlan_4k(smi, &vlan4k);
 	if (err)
 		return err;
 
@@ -684,7 +684,7 @@ static int rtl8366s_set_vlan(struct rtl8366_smi *smi, int vid, u32 member,
 	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
 		struct rtl8366_vlan_mc vlanmc;
 
-		err = rtl8366s_get_vlan_mc(smi, i, &vlanmc);
+		err = smi->ops->get_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
 
@@ -694,7 +694,7 @@ static int rtl8366s_set_vlan(struct rtl8366_smi *smi, int vid, u32 member,
 			vlanmc.untag = untag;
 			vlanmc.fid = fid;
 
-			err = rtl8366s_set_vlan_mc(smi, i, &vlanmc);
+			err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
 			break;
 		}
 	}
@@ -708,11 +708,11 @@ static int rtl8366s_get_pvid(struct rtl8366_smi *smi, int port, int *val)
 	int err;
 	int index;
 
-	err = rtl8366s_get_mc_index(smi, port, &index);
+	err = smi->ops->get_mc_index(smi, port, &index);
 	if (err)
 		return err;
 
-	err = rtl8366s_get_vlan_mc(smi, index, &vlanmc);
+	err = smi->ops->get_vlan_mc(smi, index, &vlanmc);
 	if (err)
 		return err;
 
@@ -730,7 +730,7 @@ static int rtl8366s_mc_is_used(struct rtl8366_smi *smi, int mc_index,
 	for (i = 0; i < RTL8366S_NUM_PORTS; i++) {
 		int index = 0;
 
-		err = rtl8366s_get_mc_index(smi, i, &index);
+		err = smi->ops->get_mc_index(smi, i, &index);
 		if (err)
 			return err;
 
@@ -753,29 +753,29 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 
 	/* Try to find an existing MC entry for this VID */
 	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
-		err = rtl8366s_get_vlan_mc(smi, i, &vlanmc);
+		err = smi->ops->get_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
 
 		if (vid == vlanmc.vid) {
-			err = rtl8366s_set_vlan_mc(smi, i, &vlanmc);
+			err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
 			if (err)
 				return err;
 
-			err = rtl8366s_set_mc_index(smi, port, i);
+			err = smi->ops->set_mc_index(smi, port, i);
 			return err;
 		}
 	}
 
 	/* We have no MC entry for this VID, try to find an empty one */
 	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
-		err = rtl8366s_get_vlan_mc(smi, i, &vlanmc);
+		err = smi->ops->get_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
 
 		if (vlanmc.vid == 0 && vlanmc.member == 0) {
 			/* Update the entry from the 4K table */
-			err = rtl8366s_get_vlan_4k(smi, vid, &vlan4k);
+			err = smi->ops->get_vlan_4k(smi, vid, &vlan4k);
 			if (err)
 				return err;
 
@@ -783,11 +783,11 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 			vlanmc.member = vlan4k.member;
 			vlanmc.untag = vlan4k.untag;
 			vlanmc.fid = vlan4k.fid;
-			err = rtl8366s_set_vlan_mc(smi, i, &vlanmc);
+			err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
 			if (err)
 				return err;
 
-			err = rtl8366s_set_mc_index(smi, port, i);
+			err = smi->ops->set_mc_index(smi, port, i);
 			return err;
 		}
 	}
@@ -802,7 +802,7 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 
 		if (!used) {
 			/* Update the entry from the 4K table */
-			err = rtl8366s_get_vlan_4k(smi, vid, &vlan4k);
+			err = smi->ops->get_vlan_4k(smi, vid, &vlan4k);
 			if (err)
 				return err;
 
@@ -810,11 +810,11 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 			vlanmc.member = vlan4k.member;
 			vlanmc.untag = vlan4k.untag;
 			vlanmc.fid = vlan4k.fid;
-			err = rtl8366s_set_vlan_mc(smi, i, &vlanmc);
+			err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
 			if (err)
 				return err;
 
-			err = rtl8366s_set_mc_index(smi, port, i);
+			err = smi->ops->set_mc_index(smi, port, i);
 			return err;
 		}
 	}
@@ -851,7 +851,7 @@ static int rtl8366s_reset_vlan(struct rtl8366_smi *smi)
 	vlanmc.untag = 0;
 	vlanmc.fid = 0;
 	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
-		err = rtl8366s_set_vlan_mc(smi, i, &vlanmc);
+		err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
 	}
@@ -1640,6 +1640,13 @@ static struct rtl8366_smi_ops rtl8366s_smi_ops = {
 	.detect		= rtl8366s_detect,
 	.mii_read	= rtl8366s_mii_read,
 	.mii_write	= rtl8366s_mii_write,
+
+	.get_vlan_mc	= rtl8366s_get_vlan_mc,
+	.set_vlan_mc	= rtl8366s_set_vlan_mc,
+	.get_vlan_4k	= rtl8366s_get_vlan_4k,
+	.set_vlan_4k	= rtl8366s_set_vlan_4k,
+	.get_mc_index	= rtl8366s_get_mc_index,
+	.set_mc_index	= rtl8366s_set_mc_index,
 };
 
 static int __init rtl8366s_probe(struct platform_device *pdev)
