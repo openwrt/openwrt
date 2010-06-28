@@ -16,6 +16,10 @@
 #include <linux/spinlock.h>
 #include <linux/skbuff.h>
 
+#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+#include <linux/debugfs.h>
+#endif
+
 #include "rtl8366_smi.h"
 
 #define RTL8366_SMI_ACK_RETRY_COUNT         5
@@ -484,6 +488,163 @@ int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port, unsigned vid)
 }
 EXPORT_SYMBOL_GPL(rtl8366_set_pvid);
 
+#ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
+int rtl8366_debugfs_open(struct inode *inode, struct file *file)
+{
+	file->private_data = inode->i_private;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rtl8366_debugfs_open);
+
+static ssize_t rtl8366_read_debugfs_vlan_mc(struct file *file,
+					      char __user *user_buf,
+					      size_t count, loff_t *ppos)
+{
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	int i, len = 0;
+	char *buf = smi->buf;
+
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
+			"%2s %6s %4s %6s %6s %3s\n",
+			"id", "vid","prio", "member", "untag", "fid");
+
+	for (i = 0; i < smi->num_vlan_mc; ++i) {
+		struct rtl8366_vlan_mc vlanmc;
+
+		smi->ops->get_vlan_mc(smi, i, &vlanmc);
+
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"%2d %6d %4d 0x%04x 0x%04x %3d\n",
+				i, vlanmc.vid, vlanmc.priority,
+				vlanmc.member, vlanmc.untag, vlanmc.fid);
+	}
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+
+static ssize_t rtl8366_read_debugfs_reg(struct file *file,
+					 char __user *user_buf,
+					 size_t count, loff_t *ppos)
+{
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	u32 t, reg = smi->dbg_reg;
+	int err, len = 0;
+	char *buf = smi->buf;
+
+	memset(buf, '\0', sizeof(smi->buf));
+
+	err = rtl8366_smi_read_reg(smi, reg, &t);
+	if (err) {
+		len += snprintf(buf, sizeof(smi->buf),
+				"Read failed (reg: 0x%04x)\n", reg);
+		return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+	}
+
+	len += snprintf(buf, sizeof(smi->buf), "reg = 0x%04x, val = 0x%04x\n",
+			reg, t);
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+
+static ssize_t rtl8366_write_debugfs_reg(struct file *file,
+					  const char __user *user_buf,
+					  size_t count, loff_t *ppos)
+{
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	unsigned long data;
+	u32 reg = smi->dbg_reg;
+	int err;
+	size_t len;
+	char *buf = smi->buf;
+
+	len = min(count, sizeof(smi->buf) - 1);
+	if (copy_from_user(buf, user_buf, len)) {
+		dev_err(smi->parent, "copy from user failed\n");
+		return -EFAULT;
+	}
+
+	buf[len] = '\0';
+	if (len > 0 && buf[len - 1] == '\n')
+		buf[len - 1] = '\0';
+
+
+	if (strict_strtoul(buf, 16, &data)) {
+		dev_err(smi->parent, "Invalid reg value %s\n", buf);
+	} else {
+		err = rtl8366_smi_write_reg(smi, reg, data);
+		if (err) {
+			dev_err(smi->parent,
+				"writing reg 0x%04x val 0x%04lx failed\n",
+				reg, data);
+		}
+	}
+
+	return count;
+}
+
+static const struct file_operations fops_rtl8366_regs = {
+	.read	= rtl8366_read_debugfs_reg,
+	.write	= rtl8366_write_debugfs_reg,
+	.open	= rtl8366_debugfs_open,
+	.owner	= THIS_MODULE
+};
+
+static const struct file_operations fops_rtl8366_vlan_mc = {
+	.read	= rtl8366_read_debugfs_vlan_mc,
+	.open	= rtl8366_debugfs_open,
+	.owner	= THIS_MODULE
+};
+
+static void rtl8366_debugfs_init(struct rtl8366_smi *smi)
+{
+	struct dentry *node;
+	struct dentry *root;
+
+	if (!smi->debugfs_root)
+		smi->debugfs_root = debugfs_create_dir(dev_name(smi->parent),
+						       NULL);
+
+	if (!smi->debugfs_root) {
+		dev_err(smi->parent, "Unable to create debugfs dir\n");
+		return;
+	}
+	root = smi->debugfs_root;
+
+	node = debugfs_create_x16("reg", S_IRUGO | S_IWUSR, root,
+				  &smi->dbg_reg);
+	if (!node) {
+		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
+			"reg");
+		return;
+	}
+
+	node = debugfs_create_file("val", S_IRUGO | S_IWUSR, root, smi,
+				   &fops_rtl8366_regs);
+	if (!node) {
+		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
+			"val");
+		return;
+	}
+
+	node = debugfs_create_file("vlan_mc", S_IRUSR, root, smi,
+				   &fops_rtl8366_vlan_mc);
+	if (!node)
+		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
+			"vlan_mc");
+}
+
+static void rtl8366_debugfs_remove(struct rtl8366_smi *smi)
+{
+	if (smi->debugfs_root) {
+		debugfs_remove_recursive(smi->debugfs_root);
+		smi->debugfs_root = NULL;
+	}
+}
+#else
+static inline void rtl8366_debugfs_init(struct rtl8366_smi *smi) {}
+static inline void rtl8366_debugfs_remove(struct rtl8366_smi *smi) {}
+#endif /* CONFIG_RTL8366S_PHY_DEBUG_FS */
+
 static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 {
 	int ret;
@@ -564,6 +725,8 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	if (err)
 		goto err_free_sck;
 
+	rtl8366_debugfs_init(smi);
+
 	return 0;
 
  err_free_sck:
@@ -577,6 +740,7 @@ EXPORT_SYMBOL_GPL(rtl8366_smi_init);
 
 void rtl8366_smi_cleanup(struct rtl8366_smi *smi)
 {
+	rtl8366_debugfs_remove(smi);
 	rtl8366_smi_mii_cleanup(smi);
 	gpio_free(smi->gpio_sck);
 	gpio_free(smi->gpio_sda);
