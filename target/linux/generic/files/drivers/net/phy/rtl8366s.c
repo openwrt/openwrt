@@ -681,7 +681,7 @@ static int rtl8366s_set_vlan(struct rtl8366_smi *smi, int vid, u32 member,
 		return err;
 
 	/* Try to find an existing MC entry for this VID */
-	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
+	for (i = 0; i < smi->num_vlan_mc; i++) {
 		struct rtl8366_vlan_mc vlanmc;
 
 		err = smi->ops->get_vlan_mc(smi, i, &vlanmc);
@@ -727,7 +727,7 @@ static int rtl8366s_mc_is_used(struct rtl8366_smi *smi, int mc_index,
 	int i;
 
 	*used = 0;
-	for (i = 0; i < RTL8366S_NUM_PORTS; i++) {
+	for (i = 0; i < smi->num_ports; i++) {
 		int index = 0;
 
 		err = smi->ops->get_mc_index(smi, i, &index);
@@ -752,7 +752,7 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 	int i;
 
 	/* Try to find an existing MC entry for this VID */
-	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
+	for (i = 0; i < smi->num_vlan_mc; i++) {
 		err = smi->ops->get_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
@@ -768,7 +768,7 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 	}
 
 	/* We have no MC entry for this VID, try to find an empty one */
-	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
+	for (i = 0; i < smi->num_vlan_mc; i++) {
 		err = smi->ops->get_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
@@ -793,7 +793,7 @@ static int rtl8366s_set_pvid(struct rtl8366_smi *smi, unsigned port,
 	}
 
 	/* MC table is full, try to find an unused entry and replace it */
-	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
+	for (i = 0; i < smi->num_vlan_mc; i++) {
 		int used;
 
 		err = rtl8366s_mc_is_used(smi, i, &used);
@@ -850,19 +850,19 @@ static int rtl8366s_reset_vlan(struct rtl8366_smi *smi)
 	vlanmc.member = 0;
 	vlanmc.untag = 0;
 	vlanmc.fid = 0;
-	for (i = 0; i < RTL8366S_NUM_VLANS; i++) {
+	for (i = 0; i < smi->num_vlan_mc; i++) {
 		err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
 		if (err)
 			return err;
 	}
 
-	for (i = 0; i < RTL8366S_NUM_PORTS; i++) {
-		if (i == RTL8366S_PORT_CPU)
+	for (i = 0; i < smi->num_ports; i++) {
+		if (i == smi->cpu_port)
 			continue;
 
 		err = rtl8366s_set_vlan(smi, (i + 1),
-					 (1 << i) | RTL8366S_PORT_CPU,
-					 (1 << i) | RTL8366S_PORT_CPU,
+					 (1 << i) | (1 << smi->cpu_port),
+					 (1 << i) | (1 << smi->cpu_port),
 					 0);
 		if (err)
 			return err;
@@ -1682,6 +1682,9 @@ static int __init rtl8366s_probe(struct platform_device *pdev)
 	smi->gpio_sda = pdata->gpio_sda;
 	smi->gpio_sck = pdata->gpio_sck;
 	smi->ops = &rtl8366s_smi_ops;
+	smi->cpu_port = RTL8366S_PORT_NUM_CPU;
+	smi->num_ports = RTL8366S_NUM_PORTS;
+	smi->num_vlan_mc = RTL8366S_NUM_VLANS;
 
 	err = rtl8366_smi_init(smi);
 	if (err)
