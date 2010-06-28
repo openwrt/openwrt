@@ -38,6 +38,8 @@ struct rtl8366_smi {
 	unsigned int		cpu_port;
 	unsigned int		num_ports;
 	unsigned int		num_vlan_mc;
+	unsigned int		num_mib_counters;
+	struct rtl8366_mib_counter *mib_counters;
 
 	struct rtl8366_smi_ops	*ops;
 
@@ -79,6 +81,8 @@ struct rtl8366_smi_ops {
 			       const struct rtl8366_vlan_4k *vlan4k);
 	int	(*get_mc_index)(struct rtl8366_smi *smi, int port, int *val);
 	int	(*set_mc_index)(struct rtl8366_smi *smi, int port, int index);
+	int	(*get_mib_counter)(struct rtl8366_smi *smi, int counter,
+				   int port, unsigned long long *val);
 };
 
 int rtl8366_smi_init(struct rtl8366_smi *smi);

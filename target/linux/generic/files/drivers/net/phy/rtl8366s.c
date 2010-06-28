@@ -664,23 +664,29 @@ static ssize_t rtl8366s_read_debugfs_mibs(struct file *file,
 					  char __user *user_buf,
 					  size_t count, loff_t *ppos)
 {
-	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	struct rtl8366_smi *smi = file->private_data;
 	int i, j, len = 0;
 	char *buf = smi->buf;
 
-	len += snprintf(buf + len, sizeof(smi->buf) - len,
-			"%-36s %12s %12s %12s %12s %12s %12s\n",
-			"Counter",
-			"Port 0", "Port 1", "Port 2",
-			"Port 3", "Port 4", "Port 5");
+	len += snprintf(buf + len, sizeof(smi->buf) - len, "%-36s",
+			"Counter");
 
-	for (i = 0; i < ARRAY_SIZE(rtl8366s_mib_counters); ++i) {
+	for (i = 0; i < smi->num_ports; i++) {
+		char port_buf[10];
+
+		snprintf(port_buf, sizeof(port_buf), "Port %d", i);
+		len += snprintf(buf + len, sizeof(smi->buf) - len, " %12s",
+				port_buf);
+	}
+	len += snprintf(buf + len, sizeof(smi->buf) - len, "\n");
+
+	for (i = 0; i < smi->num_mib_counters; i++) {
 		len += snprintf(buf + len, sizeof(smi->buf) - len, "%-36s ",
-				rtl8366s_mib_counters[i].name);
-		for (j = 0; j < RTL8366S_NUM_PORTS; ++j) {
+				smi->mib_counters[i].name);
+		for (j = 0; j < smi->num_ports; j++) {
 			unsigned long long counter = 0;
 
-			if (!rtl8366_get_mib_counter(smi, i, j, &counter))
+			if (!smi->ops->get_mib_counter(smi, i, j, &counter))
 				len += snprintf(buf + len,
 						sizeof(smi->buf) - len,
 						"%12llu ", counter);
@@ -1277,6 +1283,7 @@ static struct rtl8366_smi_ops rtl8366s_smi_ops = {
 	.set_vlan_4k	= rtl8366s_set_vlan_4k,
 	.get_mc_index	= rtl8366s_get_mc_index,
 	.set_mc_index	= rtl8366s_set_mc_index,
+	.get_mib_counter = rtl8366_get_mib_counter,
 };
 
 static int __init rtl8366s_probe(struct platform_device *pdev)
@@ -1315,6 +1322,8 @@ static int __init rtl8366s_probe(struct platform_device *pdev)
 	smi->cpu_port = RTL8366S_PORT_NUM_CPU;
 	smi->num_ports = RTL8366S_NUM_PORTS;
 	smi->num_vlan_mc = RTL8366S_NUM_VLANS;
+	smi->mib_counters = rtl8366s_mib_counters;
+	smi->num_mib_counters = ARRAY_SIZE(rtl8366s_mib_counters);
 
 	err = rtl8366_smi_init(smi);
 	if (err)
