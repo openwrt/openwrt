@@ -1,0 +1,11 @@
+--- a/scripts/gen-compat-autoconf.sh
++++ b/scripts/gen-compat-autoconf.sh
+@@ -192,7 +192,7 @@ if [ -f $KLIB_BUILD/Makefile ]; then
+ 		define_config_multiple_deps CONFIG_MAC80211_QOS y $ALL_DEPS
+ 		rm -f $MULT_DEP_FILE
+ 		# Kernels >= 2.6.32 can disable WEXT :D
+-		if [ $SUBLEVEL -le 32 ]; then
++		if [ $SUBLEVEL -le 35 ]; then
+ 			define_config_dep CONFIG_CFG80211_WEXT 1 CONFIG_WIRELESS_EXT
+ 		fi
+ 	fi
