@@ -13,6 +13,7 @@ add_route() {
 	config_get netmask "$config" netmask
 	config_get gateway "$config" gateway
 	config_get metric "$config" metric
+	config_get mtu "$config" mtu
 
 	# make sure there is a gateway and a target
 	[ -n "$target" ] || {
@@ -33,7 +34,8 @@ add_route() {
 	dest="${dest:--host "$target"}"
 	
 	/sbin/route add $dest ${gateway:+gw "$gateway"} \
-		${dev:+dev "$dev"} ${metric:+ metric "$metric"}
+		${dev:+dev "$dev"} ${metric:+ metric "$metric"} \
+		${mtu:+mss "$mtu"}
 }
 
 add_route6() {
@@ -50,6 +52,7 @@ add_route6() {
 	config_get target "$config" target
 	config_get gateway "$config" gateway
 	config_get metric "$config" metric
+	config_get mtu "$config" mtu
 
 	# make sure there is a gateway and a target
 	[ -n "$target" ] || {
@@ -61,7 +64,8 @@ add_route6() {
 	}
 
 	/sbin/route -A inet6 add $target ${gateway:+gw "$gateway"} \
-		${dev:+dev "$dev"} ${metric:+ metric "$metric"}
+		${dev:+dev "$dev"} ${metric:+ metric "$metric"} \
+		${mtu:+mss "$mtu"}
 }
 
 case "$ACTION" in
