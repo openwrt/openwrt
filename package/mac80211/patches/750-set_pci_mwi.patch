@@ -1,8 +1,6 @@
-Index: compat-wireless-2010-06-10/drivers/net/wireless/rt2x00/rt2x00pci.c
-===================================================================
---- compat-wireless-2010-06-10.orig/drivers/net/wireless/rt2x00/rt2x00pci.c	2010-06-20 15:01:59.000000000 +0200
-+++ compat-wireless-2010-06-10/drivers/net/wireless/rt2x00/rt2x00pci.c	2010-06-20 15:02:32.000000000 +0200
-@@ -327,8 +327,10 @@
+--- a/drivers/net/wireless/rt2x00/rt2x00pci.c
++++ b/drivers/net/wireless/rt2x00/rt2x00pci.c
+@@ -327,8 +327,10 @@ int rt2x00pci_probe(struct pci_dev *pci_
  
  	pci_set_master(pci_dev);
  
@@ -13,4 +11,3 @@ Index: compat-wireless-2010-06-10/drivers/net/wireless/rt2x00/rt2x00pci.c
  
  	if (dma_set_mask(&pci_dev->dev, DMA_BIT_MASK(32))) {
  		ERROR_PROBE("PCI DMA not supported.\n");
-
