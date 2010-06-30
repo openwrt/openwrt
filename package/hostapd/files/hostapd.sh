@@ -38,7 +38,7 @@ hostapd_set_bss_options() {
 
 	# explicit override for crypto setting
 	case "$enc" in
-		*tkip+aes|*tkip+ccmp) crypto="CCMP TKIP";;
+		*tkip+aes|*tkip+ccmp|*aes+tkip|*ccmp+tkip) crypto="CCMP TKIP";;
 		*aes|*ccmp) crypto="CCMP";;
 		*tkip) crypto="TKIP";;
 	esac
