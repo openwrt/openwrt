@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -119,6 +119,9 @@ static void ath_unregister_led(struct at
+@@ -120,6 +120,9 @@ static void ath_unregister_led(struct at
  
  void ath_deinit_leds(struct ath_softc *sc)
  {
@@ -10,7 +10,7 @@
  	ath_unregister_led(&sc->assoc_led);
  	sc->sc_flags &= ~SC_OP_LED_ASSOCIATED;
  	ath_unregister_led(&sc->tx_led);
-@@ -132,6 +135,9 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -133,6 +136,9 @@ void ath_init_leds(struct ath_softc *sc)
  	char *trigger;
  	int ret;
  
