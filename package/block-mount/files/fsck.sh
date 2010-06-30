@@ -12,20 +12,18 @@ libmount_fsck() {
 	local found_fsck=0
 	
 
-	[ -n "$fsck_type" ] && [ "$fsck_type" != "swap" ] && {
-		grep -q "$device" /proc/swaps || grep -q "$device" /proc/mounts || {
-			[ -e "$device" ] && [ "$fsck_enabled" -eq 1 ] && {
-				for known_type in $libmount_known_fsck; do
-					if [ "$known_type" = "$fsck_fstype" ]; then
-						fsck_${known_type} "$device"
-						found_fsck=1
-						break
-					fi
-				done
-				if [ "$found_fsck" -ne 1 ]; then
-					logger -t 'fstab' "Unable to check/repair $device; no known fsck for filesystem type $fstype"
+	grep -q "$device" /proc/swaps || grep -q "$device" /proc/mounts || {
+		[ -e "$device" ] && [ "$fsck_enabled" -eq 1 ] && {
+			for known_type in $libmount_known_fsck; do
+				if [ "$known_type" = "$fsck_fstype" ]; then
+					fsck_${known_type} "$device"
+					found_fsck=1
+					break
 				fi
-			}
+			done
+			if [ "$found_fsck" -ne 1 ]; then
+				logger -t 'fstab' "Unable to check/repair $device; no known fsck for filesystem type $fstype"
+			fi
 		}
 	}
 }

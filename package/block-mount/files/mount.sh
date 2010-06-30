@@ -28,14 +28,13 @@ config_mount_by_section() {
 		local is_rootfs="$9"
 		shift
 		local found_device=""
-		local fsck_type=""
 		
 		found_device="$(libmount_find_device_by_id "$uuid" "$label" "$device" "$cfgdevice")"
 		if [ -n "$found_device" ]; then
 			if [ -z "$find_rootfs" ] || [ "$find_rootfs" -eq 0 ] || [ "$is_rootfs" -eq 1 ]; then
 				[ "$enabled_fsck" -eq 1 ] && {
 					grep -q "$found_device" /proc/swaps || grep -q "$found_device" /proc/mounts || {
-						libmount_fsck "$found_device" "$fsck_type" "$enabled_fsck"
+						libmount_fsck "$found_device" "$fstype" "$enabled_fsck"
 					}
 				}								
 	
@@ -72,7 +71,6 @@ config_swapon_by_section() {
 		local label
 		
 		local found_device=""
-		local fsck_type=""
 		
 		found_device="$(libmount_find_device_by_id "$uuid" "$label" "$device" "$cfgdevice")"
 

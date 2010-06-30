@@ -158,6 +158,7 @@ define Package/e2fsprogs/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/lib/functions/fsck
 	$(INSTALL_DATA) ./files/e2fsck.sh $(1)/lib/functions/fsck/
+	$(INSTALL_DATA) ./files/e2fsck.conf $(1)/etc/e2fsck.conf
 endef
 
 define Package/libuuid/install
