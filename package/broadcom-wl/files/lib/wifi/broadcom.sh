@@ -192,7 +192,7 @@ enable_broadcom() {
 		nasopts=
 		config_get enc "$vif" encryption
 		case "$enc" in
-			*WEP*|*wep*)
+			*wep*)
 				wsec_r=1
 				wsec=1
 				defkey=1
@@ -215,29 +215,48 @@ enable_broadcom() {
 					*) append vif_do_up "wepkey =1,$key" "$N";;
 				esac
 			;;
-			*psk*|*PSK*)
+			*psk*)
 				wsec_r=1
 				config_get key "$vif" key
+
+				# psk version + default cipher
 				case "$enc" in
-					wpa*+wpa2*|WPA*+WPA2*|*psk+*psk2|*PSK+*PSK2) auth=132; wsec=6;;
-					wpa2*|WPA2*|*PSK2|*psk2) auth=128; wsec=4;;
-					*aes|*AES) auth=4; wsec=4;;
+					*mixed*|*psk+psk2*) auth=132; wsec=6;;
+					*psk2*) auth=128; wsec=4;;
 					*) auth=4; wsec=2;;
 				esac
+
+				# cipher override
+				case "$enc" in
+					*tkip+aes*|*tkip+ccmp*|*aes+tkip*|*ccmp+tkip*) wsec=6;;
+					*aes*|*ccmp*) wsec=4;;
+					*tkip*) wsec=2;;
+				esac
+
 				eval "${vif}_key=\"\$key\""
 				nasopts="-k \"\$${vif}_key\""
 			;;
-			*wpa*|*WPA*)
+			*wpa*)
 				wsec_r=1
 				eap_r=1
 				config_get key "$vif" key
 				config_get server "$vif" server
 				config_get port "$vif" port
+
+				# wpa version + default cipher
 				case "$enc" in
-					wpa*+wpa2*|WPA*+WPA2*) auth=66; wsec=6;;
-					wpa2*|WPA2*) auth=64; wsec=4;;
+					*mixed*|*wpa+wpa2*) auth=66; wsec=6;;
+					*wpa2*) auth=64; wsec=4;;
 					*) auth=2; wsec=2;;
 				esac
+
+				# cipher override
+				case "$enc" in
+					*tkip+aes*|*tkip+ccmp*|*aes+tkip*|*ccmp+tkip*) wsec=6;;
+					*aes*|*ccmp*) wsec=4;;
+					*tkip*) wsec=2;;
+				esac
+
 				eval "${vif}_key=\"\$key\""
 				nasopts="-r \"\$${vif}_key\" -h $server -p ${port:-1812}"
 			;;
