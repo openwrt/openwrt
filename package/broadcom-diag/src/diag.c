@@ -266,7 +266,7 @@ static struct platform_t __initdata platforms[] = {
 		.name		= "Linksys WRT54G3GV2-VF",
 		.buttons	= {
 			{ .name = "reset",	.gpio = 1 << 6 },
-			{ .name = "3g",		.gpio = 1 << 4 },
+			{ .name = "3g",		.gpio = 1 << 5 },
 		},
 		.leds		= {
 			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
