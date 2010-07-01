@@ -35,7 +35,7 @@ define Image/Build/CyberTAN
 	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
 endef
 define Image/Build/CyberTAN2
-	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(2)-$(5)-sysupgrade.bin -o $(BIN_DIR)/openwrt-$(2)-$(5)-factory.bin $(if $(6),-s $(6))
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(2)-$(5).noheader.bin -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
 endef
 define Image/Build/CyberTANHead
 	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(3) -v v$(4) -i /dev/null -o $(KDIR)/openwrt-$(2)-header.bin $(if $(6),-s $(6))
@@ -61,7 +61,7 @@ endef
 
 define Image/Build/trxV2
 	$(call Image/Build/CyberTANHead,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
-	$(STAGING_DIR_HOST)/bin/trx -2 -o $(BIN_DIR)/openwrt-$(2)-$(5)-sysupgrade.bin \
+	$(STAGING_DIR_HOST)/bin/trx -2 -o $(BIN_DIR)/openwrt-$(2)-$(5).noheader.bin \
 		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(1),$(1),$(KDIR)/openwrt-$(2)-header.bin)
 	$(call Image/Build/CyberTAN2,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
