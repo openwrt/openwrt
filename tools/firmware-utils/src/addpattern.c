@@ -205,8 +205,10 @@ int main(int argc, char **argv)
 				break;
 			case '5':
 				/* V5 is appended to trxV2 image */
-				hdr->stable[0] = hdr->stable[1] = 0xFF;
-				hdr->try1[0]   = hdr->try1[1]   = 0xFF;
+				hdr->stable[0] = 0x73; // force image to be stable
+				hdr->stable[1] = 0x00;
+				hdr->try1[0]   = 0x74; // force try1 to be set
+				hdr->try1[1]   = 0x00;
 				hdr->try2[0]   = hdr->try2[1]   = 0xFF;
 				hdr->try3[0]   = hdr->try3[1]   = 0xFF;
 				break;
