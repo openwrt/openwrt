@@ -21,9 +21,8 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  include/linux/ssb/ssb.h |    2 +-
  2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff -puN drivers/ssb/main.c~ssb-add-dma_dev-to-ssb_device-structure drivers/ssb/main.c
---- a/drivers/ssb/main.c~ssb-add-dma_dev-to-ssb_device-structure
-+++ a/drivers/ssb/main.c
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
 @@ -486,6 +486,7 @@ static int ssb_devices_register(struct s
  #ifdef CONFIG_SSB_PCIHOST
  			sdev->irq = bus->host_pci->irq;
@@ -40,9 +39,8 @@ diff -puN drivers/ssb/main.c~ssb-add-dma_dev-to-ssb_device-structure drivers/ssb
  			break;
  		}
  
-diff -puN include/linux/ssb/ssb.h~ssb-add-dma_dev-to-ssb_device-structure include/linux/ssb/ssb.h
---- a/include/linux/ssb/ssb.h~ssb-add-dma_dev-to-ssb_device-structure
-+++ a/include/linux/ssb/ssb.h
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
 @@ -167,7 +167,7 @@ struct ssb_device {
  	 * is an optimization. */
  	const struct ssb_bus_ops *ops;
@@ -52,8 +50,3 @@ diff -puN include/linux/ssb/ssb.h~ssb-add-dma_dev-to-ssb_device-structure includ
  
  	struct ssb_bus *bus;
  	struct ssb_device_id id;
-_
---
-To unsubscribe from this list: send the line "unsubscribe linux-wireless" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
