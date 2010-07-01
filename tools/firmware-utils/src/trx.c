@@ -102,6 +102,7 @@ int main(int argc, char **argv)
 	unsigned long maxlen = TRX_MAX_LEN;
 	struct trx_header *p;
 	char trx_version = 1;
+	unsigned char binheader[32];
 
 	fprintf(stderr, "mjn3's trx replacement - v0.81.1\n");
 
@@ -213,7 +214,7 @@ int main(int argc, char **argv)
 					usage();
 				}
 				if (n < cur_len) {
-					fprintf(stderr, "WARNING: current length exceeds -b %d offset\n",n);
+					fprintf(stderr, "WARNING: current length exceeds -b %d offset\n",(int) n);
 				} else {
 					memset(buf + cur_len, 0, n - cur_len);
 					cur_len = n;
@@ -228,7 +229,7 @@ int main(int argc, char **argv)
 				}
 				if (n2 < 0) {
 					if (-n2 > cur_len) {
-						fprintf(stderr, "WARNING: current length smaller then -x %d offset\n",n2);
+						fprintf(stderr, "WARNING: current length smaller then -x %d offset\n",(int) n2);
 						cur_len = 0;
 					} else
 						cur_len += n2;
@@ -257,11 +258,26 @@ int main(int argc, char **argv)
 		cur_len += ROUND - n;
 	}
 
+	/* for TRXv2 set bin-header Flags to 0xFF for CRC calculation like CFE does */ 
+	if (trx_version == 2) {
+		if(cur_len - p->offsets[3] < sizeof(binheader)) {
+			fprintf(stderr, "TRXv2 binheader too small!\n");
+			return EXIT_FAILURE;
+		}
+		memcpy(binheader, buf + p->offsets[3], sizeof(binheader)); /* save header */
+		memset(buf + p->offsets[3] + 22, 0xFF, 8); /* set stable and try1-3 to 0xFF */
+	}
+
 	p->crc32 = crc32buf((char *) &p->flag_version,
 						cur_len - offsetof(struct trx_header, flag_version));
 	p->crc32 = STORE32_LE(p->crc32);
 
 	p->len = STORE32_LE(cur_len);
+
+	/* restore TRXv2 bin-header */
+	if (trx_version == 2) {
+		memcpy(buf + p->offsets[3], binheader, sizeof(binheader));
+	}
 
 	if (!fwrite(buf, cur_len, 1, out) || fflush(out)) {
 		fprintf(stderr, "fwrite failed\n");
