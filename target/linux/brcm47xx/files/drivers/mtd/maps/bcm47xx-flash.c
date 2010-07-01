@@ -222,6 +222,37 @@ static int erase_write (struct mtd_info *mtd, unsigned long pos,
 }
 
 
+static int __init
+find_dual_image_off (struct mtd_info *mtd, size_t size)
+{
+	struct trx_header trx;
+	int off, blocksize;
+	size_t len;
+
+	blocksize = mtd->erasesize;
+	if (blocksize < 0x10000)
+		blocksize = 0x10000;
+
+	for (off = (128*1024); off < size; off += blocksize) {
+		memset(&trx, 0xe5, sizeof(trx));
+		/*
+		* Read into buffer 
+		*/
+		if (mtd->read(mtd, off, sizeof(trx), &len, (char *) &trx) ||
+		    len != sizeof(trx))
+			continue;
+		/* found last TRX header */
+		if (le32_to_cpu(trx.magic) == TRX_MAGIC){ 
+			if (le32_to_cpu(trx.flag_version >> 16)==2){
+				printk("dual image TRX header found\n");
+				return size/2;
+			} else {
+				return 0;
+			}
+		}
+	}
+	return 0;
+}
 
 
 static int __init
@@ -232,7 +263,6 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 	int off, blocksize;
 	u32 i, crc = ~0;
 	size_t len;
-	struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
 
 	blocksize = mtd->erasesize;
 	if (blocksize < 0x10000)
@@ -318,6 +348,7 @@ struct mtd_partition * __init
 init_mtd_partitions(struct mtd_info *mtd, size_t size)
 {
 	int cfe_size;
+	int dual_image_offset = 0;
 
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
 		return NULL;
@@ -336,10 +367,13 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		bcm47xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	}
 
+	/* dual image offset*/
+	printk("Looking for dual image\n");
+	dual_image_offset=find_dual_image_off(mtd,size);
 	/* linux (kernel and rootfs) */
 	if (cfe_size != 384 * 1024) {
 		bcm47xx_parts[1].offset = bcm47xx_parts[0].size;
-		bcm47xx_parts[1].size   = bcm47xx_parts[3].offset - 
+		bcm47xx_parts[1].size   = bcm47xx_parts[3].offset - dual_image_offset -
 			bcm47xx_parts[1].offset;
 	} else {
 		/* do not count the elf loader, which is on one block */
@@ -353,7 +387,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 	/* find and size rootfs */
 	find_root(mtd,size,&bcm47xx_parts[2]);
-	bcm47xx_parts[2].size = size - bcm47xx_parts[2].offset - bcm47xx_parts[3].size;
+	bcm47xx_parts[2].size = size - dual_image_offset - bcm47xx_parts[2].offset - bcm47xx_parts[3].size;
 
 	return bcm47xx_parts;
 }
