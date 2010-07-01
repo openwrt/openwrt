@@ -1,0 +1,207 @@
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -1497,50 +1497,25 @@ static bool ar5008_hw_ani_control_new(st
+ static void ar5008_hw_do_getnf(struct ath_hw *ah,
+ 			      int16_t nfarray[NUM_NF_READINGS])
+ {
+-	struct ath_common *common = ath9k_hw_common(ah);
+ 	int16_t nf;
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_CCA), AR_PHY_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ctl] [chain 0] is %d\n", nf);
+-	nfarray[0] = nf;
++	nfarray[0] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_CH1_CCA), AR_PHY_CH1_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ctl] [chain 1] is %d\n", nf);
+-	nfarray[1] = nf;
++	nfarray[1] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_CH2_CCA), AR_PHY_CH2_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ctl] [chain 2] is %d\n", nf);
+-	nfarray[2] = nf;
++	nfarray[2] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_EXT_CCA), AR_PHY_EXT_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ext] [chain 0] is %d\n", nf);
+-	nfarray[3] = nf;
++	nfarray[3] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_CH1_EXT_CCA), AR_PHY_CH1_EXT_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ext] [chain 1] is %d\n", nf);
+-	nfarray[4] = nf;
++	nfarray[4] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_CH2_EXT_CCA), AR_PHY_CH2_EXT_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ext] [chain 2] is %d\n", nf);
+-	nfarray[5] = nf;
++	nfarray[5] = sign_extend(nf, 9);
+ }
+ 
+ static void ar5008_hw_loadnf(struct ath_hw *ah, struct ath9k_channel *chan)
+--- a/drivers/net/wireless/ath/ath9k/ar9002_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_phy.c
+@@ -471,47 +471,22 @@ static u32 ar9002_hw_compute_pll_control
+ static void ar9002_hw_do_getnf(struct ath_hw *ah,
+ 			      int16_t nfarray[NUM_NF_READINGS])
+ {
+-	struct ath_common *common = ath9k_hw_common(ah);
+ 	int16_t nf;
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_CCA), AR9280_PHY_MINCCA_PWR);
+-
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ctl] [chain 0] is %d\n", nf);
+-
+-	nfarray[0] = nf;
+-
+-	if (!AR_SREV_9285(ah) && !AR_SREV_9271(ah)) {
+-		nf = MS(REG_READ(ah, AR_PHY_CH1_CCA),
+-				AR9280_PHY_CH1_MINCCA_PWR);
+-
+-		if (nf & 0x100)
+-			nf = 0 - ((nf ^ 0x1ff) + 1);
+-		ath_print(common, ATH_DBG_CALIBRATE,
+-			  "NF calibrated [ctl] [chain 1] is %d\n", nf);
+-		nfarray[1] = nf;
+-	}
++	nfarray[0] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_EXT_CCA), AR9280_PHY_EXT_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ext] [chain 0] is %d\n", nf);
+-
+-	nfarray[3] = nf;
+-
+-	if (!AR_SREV_9285(ah) && !AR_SREV_9271(ah)) {
+-		nf = MS(REG_READ(ah, AR_PHY_CH1_EXT_CCA),
+-				AR9280_PHY_CH1_EXT_MINCCA_PWR);
+-
+-		if (nf & 0x100)
+-			nf = 0 - ((nf ^ 0x1ff) + 1);
+-		ath_print(common, ATH_DBG_CALIBRATE,
+-			  "NF calibrated [ext] [chain 1] is %d\n", nf);
+-		nfarray[4] = nf;
+-	}
++	nfarray[3] = sign_extend(nf, 9);
++
++	if (AR_SREV_9285(ah) || AR_SREV_9271(ah))
++		return;
++
++	nf = MS(REG_READ(ah, AR_PHY_CH1_CCA), AR9280_PHY_CH1_MINCCA_PWR);
++	nfarray[1] = sign_extend(nf, 9);
++
++	nf = MS(REG_READ(ah, AR_PHY_CH1_EXT_CCA), AR9280_PHY_CH1_EXT_MINCCA_PWR);
++	nfarray[4] = sign_extend(nf, 9);
+ }
+ 
+ static void ar9002_hw_set_nf_limits(struct ath_hw *ah)
+--- a/drivers/net/wireless/ath/ath9k/calib.c
++++ b/drivers/net/wireless/ath/ath9k/calib.c
+@@ -182,6 +182,10 @@ static void ath9k_hw_nf_sanitize(struct 
+ 		if (!nf[i])
+ 			continue;
+ 
++		ath_print(common, ATH_DBG_CALIBRATE,
++			  "NF calibrated [%s] [chain %d] is %d\n",
++			  (i > 3 ? "ext" : "ctl"), i % 3, nf[i]);
++
+ 		if (nf[i] > limit->max) {
+ 			ath_print(common, ATH_DBG_CALIBRATE,
+ 				  "NF[%d] (%d) > MAX (%d), correcting to MAX",
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -853,6 +853,12 @@ static inline struct ath_hw_ops *ath9k_h
+ 	return &ah->ops;
+ }
+ 
++static inline int sign_extend(int val, const int nbits)
++{
++	int order = BIT(nbits-1);
++	return (val ^ order) - order;
++}
++
+ /* Initialization, Detach, Reset */
+ const char *ath9k_hw_probe(u16 vendorid, u16 devid);
+ void ath9k_hw_deinit(struct ath_hw *ah);
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -1018,50 +1018,25 @@ static bool ar9003_hw_ani_control(struct
+ static void ar9003_hw_do_getnf(struct ath_hw *ah,
+ 			      int16_t nfarray[NUM_NF_READINGS])
+ {
+-	struct ath_common *common = ath9k_hw_common(ah);
+ 	int16_t nf;
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_CCA_0), AR_PHY_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ctl] [chain 0] is %d\n", nf);
+-	nfarray[0] = nf;
++	nfarray[0] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_CCA_1), AR_PHY_CH1_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ctl] [chain 1] is %d\n", nf);
+-	nfarray[1] = nf;
++	nfarray[1] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_CCA_2), AR_PHY_CH2_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ctl] [chain 2] is %d\n", nf);
+-	nfarray[2] = nf;
++	nfarray[2] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_EXT_CCA), AR_PHY_EXT_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ext] [chain 0] is %d\n", nf);
+-	nfarray[3] = nf;
++	nfarray[3] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_EXT_CCA_1), AR_PHY_CH1_EXT_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ext] [chain 1] is %d\n", nf);
+-	nfarray[4] = nf;
++	nfarray[4] = sign_extend(nf, 9);
+ 
+ 	nf = MS(REG_READ(ah, AR_PHY_EXT_CCA_2), AR_PHY_CH2_EXT_MINCCA_PWR);
+-	if (nf & 0x100)
+-		nf = 0 - ((nf ^ 0x1ff) + 1);
+-	ath_print(common, ATH_DBG_CALIBRATE,
+-		  "NF calibrated [ext] [chain 2] is %d\n", nf);
+-	nfarray[5] = nf;
++	nfarray[5] = sign_extend(nf, 9);
+ }
+ 
+ static void ar9003_hw_set_nf_limits(struct ath_hw *ah)
