@@ -1,0 +1,69 @@
+commit 1cd692621e6d4b1f707039ea0b4e5ad3143312fb
+Author: Florian Fainelli <ffainelli@freebox.fr>
+Date:   Thu Jul 1 10:02:53 2010 +0200
+
+    Revert "MIPS: Alchemy: MTX-1: Use linux gpio api."
+    
+    This reverts commit b312ab3b5a86c8be5753cdf32ea429ba80651298.
+
+diff --git a/arch/mips/alchemy/mtx-1/board_setup.c b/arch/mips/alchemy/mtx-1/board_setup.c
+index cc32c69..8ed1ae1 100644
+--- a/arch/mips/alchemy/mtx-1/board_setup.c
++++ b/arch/mips/alchemy/mtx-1/board_setup.c
+@@ -28,7 +28,6 @@
+  *  675 Mass Ave, Cambridge, MA 02139, USA.
+  */
+ 
+-#include <linux/gpio.h>
+ #include <linux/init.h>
+ 
+ #include <asm/mach-au1x00/au1000.h>
+@@ -56,11 +55,10 @@ void __init board_setup(void)
+ 	}
+ #endif
+ 
+-	alchemy_gpio2_enable();
+-
+ #if defined(CONFIG_USB_OHCI_HCD) || defined(CONFIG_USB_OHCI_HCD_MODULE)
+ 	/* Enable USB power switch */
+-	alchemy_gpio_direction_output(204, 0);
++	au_writel(au_readl(GPIO2_DIR) | 0x10, GPIO2_DIR);
++	au_writel(0x100000, GPIO2_OUTPUT);
+ #endif /* defined(CONFIG_USB_OHCI_HCD) || defined(CONFIG_USB_OHCI_HCD_MODULE) */
+ 
+ #ifdef CONFIG_PCI
+@@ -76,14 +74,14 @@ void __init board_setup(void)
+ 
+ 	/* Initialize GPIO */
+ 	au_writel(0xFFFFFFFF, SYS_TRIOUTCLR);
+-	alchemy_gpio_direction_output(0, 0);	/* Disable M66EN (PCI 66MHz) */
+-	alchemy_gpio_direction_output(3, 1);	/* Disable PCI CLKRUN# */
+-	alchemy_gpio_direction_output(1, 1);	/* Enable EXT_IO3 */
+-	alchemy_gpio_direction_output(5, 0);	/* Disable eth PHY TX_ER */
++	au_writel(0x00000001, SYS_OUTPUTCLR); /* set M66EN (PCI 66MHz) to OFF */
++	au_writel(0x00000008, SYS_OUTPUTSET); /* set PCI CLKRUN# to OFF */
++	au_writel(0x00000002, SYS_OUTPUTSET); /* set EXT_IO3 ON */
++	au_writel(0x00000020, SYS_OUTPUTCLR); /* set eth PHY TX_ER to OFF */
+ 
+ 	/* Enable LED and set it to green */
+-	alchemy_gpio_direction_output(211, 1);	/* green on */
+-	alchemy_gpio_direction_output(212, 0);	/* red off */
++	au_writel(au_readl(GPIO2_DIR) | 0x1800, GPIO2_DIR);
++	au_writel(0x18000800, GPIO2_OUTPUT);
+ 
+ 	board_pci_idsel = mtx1_pci_idsel;
+ 
+@@ -103,10 +101,10 @@ mtx1_pci_idsel(unsigned int devsel, int assert)
+ 
+ 	if (assert && devsel != 0)
+ 		/* Suppress signal to Cardbus */
+-		gpio_set_value(1, 0);	/* set EXT_IO3 OFF */
++		au_writel(0x00000002, SYS_OUTPUTCLR); /* set EXT_IO3 OFF */
+ 	else
+-		gpio_set_value(1, 1);	/* set EXT_IO3 ON */
+-
++		au_writel(0x00000002, SYS_OUTPUTSET); /* set EXT_IO3 ON */
+ 	au_sync_udelay(1);
+ 	return 1;
+ }
++
