@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2010 OpenWrt.org
+
+START=09
+
+boot() {
+	local sysfs=/sys/bus/pci/drivers/b43-pci-bridge
+	if [ -d "$sysfs" ]; then
+		local lnk
+		for lnk in $sysfs/*; do
+			[ -h "$lnk" ] || continue
+			case "${lnk##*/}" in
+				*:*:*.*)
+					logger "Unbinding WL PCI device ${lnk##*/} from B43 SSB bridge"
+					echo -n "${lnk##*/}" > "$sysfs/unbind"
+				;;
+			esac
+		done
+	fi
+}
+
+start() { :; }
+stop() { :; }

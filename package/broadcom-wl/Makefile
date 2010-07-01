@@ -126,7 +126,9 @@ define Build/Compile
 		$(PKG_BUILD_DIR)/nas_exe.o \
 		$(PKG_BUILD_DIR)/shared/libshared.a
 
-	$(TARGET_CC) -o $(PKG_BUILD_DIR)/wl $(PKG_BUILD_DIR)/wl_exe.o
+	$(TARGET_CC) -o $(PKG_BUILD_DIR)/wl \
+		$(PKG_BUILD_DIR)/wl_exe.o \
+		$(PKG_BUILD_DIR)/shared/libshared.a
 endef
 
 define Build/InstallDev
@@ -138,6 +140,11 @@ define Package/wlc/install
 	$(CP) ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wlc $(1)/sbin/
+endef
+
+define Package/wlc/postinst
+#!/bin/sh
+[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/wlunbind enable || true
 endef
 
 define Package/wl/install
