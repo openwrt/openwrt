@@ -70,6 +70,8 @@
 #define RTL8366RB_PHY_NO_OFFSET			9
 #define RTL8366RB_PHY_NO_MASK			(0x1f << 9)
 
+#define RTL8366RB_VLAN_INGRESS_CTRL2_REG	0x037f
+
 /* LED control registers */
 #define RTL8366RB_LED_BLINKRATE_REG		0x0430
 #define RTL8366RB_LED_BLINKRATE_BIT		0
@@ -287,6 +289,12 @@ static int rtl8366rb_hw_init(struct rtl8366_smi *smi)
 
 	/* disable auto ageing for all ports */
 	REG_WR(smi, RTL8366RB_SSCR1, RTL8366RB_PORT_ALL);
+
+	/*
+	 * discard VLAN tagged packets if the port is not a member of
+	 * the VLAN with which the packets is associated.
+	 */
+	REG_WR(smi, RTL8366RB_VLAN_INGRESS_CTRL2_REG, RTL8366RB_PORT_ALL);
 
 	/* don't drop packets whose DA has not been learned */
 	REG_RMW(smi, RTL8366RB_SSCR2, RTL8366RB_SSCR2_DROP_UNKNOWN_DA, 0);

@@ -112,6 +112,7 @@
 
 #define RTL8366S_VLAN_MEMCONF_BASE		0x0016
 
+#define RTL8366S_VLAN_MEMBERINGRESS_REG		0x0379
 
 #define RTL8366S_PORT_LINK_STATUS_BASE		0x0060
 #define RTL8366S_PORT_STATUS_SPEED_MASK		0x0003
@@ -298,6 +299,12 @@ static int rtl8366s_hw_init(struct rtl8366_smi *smi)
 
 	/* disable auto ageing for all ports */
 	REG_WR(smi, RTL8366S_SSCR1, RTL8366S_PORT_ALL);
+
+	/*
+	 * discard VLAN tagged packets if the port is not a member of
+	 * the VLAN with which the packets is associated.
+	 */
+	REG_WR(smi, RTL8366S_VLAN_MEMBERINGRESS_REG, RTL8366S_PORT_ALL);
 
 	/* don't drop packets whose DA has not been learned */
 	REG_RMW(smi, RTL8366S_SSCR2, RTL8366S_SSCR2_DROP_UNKNOWN_DA, 0);
