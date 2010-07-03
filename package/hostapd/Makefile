@@ -115,7 +115,7 @@ endef
 define Package/hostapd-utils
   $(call Package/hostapd/Default)
   TITLE+= (utils)
-  DEPENDS:=@PACKAGE_hostapd||PACKAGE_hostapd-mini
+  DEPENDS:=@PACKAGE_hostapd||PACKAGE_hostapd-mini||PACKAGE_wpad||PACKAGE_wpad-mini
 endef
 
 define Package/hostapd-utils/description
@@ -186,7 +186,7 @@ endef
 define Package/wpa-cli
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=wpa-supplicant
+  DEPENDS:=@PACKAGE_wpa-supplicant||PACKAGE_wpad-mini||PACKAGE_wpad
   TITLE:=WPA Supplicant command line interface
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
