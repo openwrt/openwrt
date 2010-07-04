@@ -1,0 +1,48 @@
+--- a/fs/mini_fo/meta.c
++++ b/fs/mini_fo/meta.c
+@@ -48,6 +48,9 @@ int meta_build_lists(dentry_t *dentry)
+ 					     dtohd2(dentry),
+ 					     strlen(META_FILENAME));
+ 		mutex_unlock(&dtohd2(dentry)->d_inode->i_mutex);
++		if (IS_ERR(meta_dentry))
++			goto out_ok;
++
+ 		if(!meta_dentry->d_inode) {
+ 			dput(meta_dentry);
+ 			goto out_ok;
+@@ -433,6 +436,8 @@ int meta_write_d_entry(dentry_t *dentry,
+ 	meta_dentry = lookup_one_len(META_FILENAME,
+ 				     dtohd2(dentry), strlen (META_FILENAME));
+ 	mutex_unlock(&dtohd2(dentry)->d_inode->i_mutex);
++	if (IS_ERR(meta_dentry))
++		return PTR_ERR(meta_dentry);
+ 
+ 	/* We need to create a META-file */
+         if(!meta_dentry->d_inode) {
+@@ -538,6 +543,8 @@ int meta_write_r_entry(dentry_t *dentry,
+ 				     dtohd2(dentry),
+ 				     strlen (META_FILENAME));
+ 	mutex_unlock(&dtohd2(dentry)->d_inode->i_mutex);
++	if (IS_ERR(meta_dentry))
++		return PTR_ERR(meta_dentry);
+ 
+         if(!meta_dentry->d_inode) {
+                 /* We need to create a META-file */
+@@ -656,6 +663,8 @@ int meta_sync_d_list(dentry_t *dentry, i
+ 				     dtohd2(dentry),
+ 				     strlen(META_FILENAME));
+ 	mutex_unlock(&dtohd2(dentry)->d_inode->i_mutex);
++	if (IS_ERR(meta_dentry))
++		return PTR_ERR(meta_dentry);
+ 
+         if(!meta_dentry->d_inode) {
+                 /* We need to create a META-file */
+@@ -803,6 +812,8 @@ int meta_sync_r_list(dentry_t *dentry, i
+ 				     dtohd2(dentry),
+ 				     strlen(META_FILENAME));
+ 	mutex_unlock(&dtohd2(dentry)->d_inode->i_mutex);
++	if (IS_ERR(meta_dentry))
++		return PTR_ERR(meta_dentry);
+ 
+         if(!meta_dentry->d_inode) {
+                 /* We need to create a META-file */
