@@ -579,6 +579,8 @@ static int ag71xx_open(struct net_device *dev)
 	if (ret)
 		goto err;
 
+	ag71xx_hw_init(ag);
+
 	napi_enable(&ag->napi);
 
 	netif_carrier_off(dev);
