@@ -1,0 +1,43 @@
+#!/bin/sh
+
+. /etc/functions.sh
+
+log() {
+	logger -t 3g-hotplug "$@"
+}
+
+find_3g_iface() {
+	local cfg="$1"
+	local tty="$2"
+
+	local proto
+	config_get proto "$cfg" proto
+
+	[ "$proto" = 3g ] && {
+		local auto
+		config_get_bool auto "$cfg" auto 1
+		[ "$auto" = 1 ] || return 0
+
+		local dev
+		config_get dev "$cfg" device
+
+		if [ "${dev##*/}" = "${tty##*/}" ]; then
+			log "Starting interface $cfg for device ${tty##*/}"
+			( sleep 1; /sbin/ifup "$cfg" ) &
+		fi
+	}
+}
+
+
+if [ "$ACTION" = add ]; then
+	case "$DEVICENAME" in
+		*-*:*.*) config_load network;;
+		*) exit 0;;
+	esac
+
+	local tty
+	for tty in /sys/$DEVPATH/ttyUSB*; do
+		[ -d "$tty" ] || break
+		config_foreach find_3g_iface interface "$tty"
+	done
+fi
