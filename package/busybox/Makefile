@@ -60,6 +60,10 @@ ifdef CONFIG_GCC_VERSION_LLVM
   TARGET_CFLAGS += -fnested-functions
 endif
 
+ifdef CONFIG_GCC_VERSION_4_5_0
+  TARGET_CFLAGS += -fno-tree-pta
+endif
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
