@@ -165,6 +165,14 @@ scan_mac80211() {
 	config_set "$device" vifs "${ap:+$ap }${adhoc:+$adhoc }${sta:+$sta }${monitor:+$monitor }${mesh:+$mesh}"
 }
 
+list_phy_interfaces() {
+	local phy="$1"
+	if [ -d "/sys/class/ieee80211/${phy}/device/net" ]; then
+		ls "/sys/class/ieee80211/${phy}/device/net" 2>/dev/null;
+	else
+		ls "/sys/class/ieee80211/${phy}/device" 2>/dev/null | grep net: | sed -e 's,net:,,g'
+	fi
+}
 
 disable_mac80211() (
 	local device="$1"
@@ -181,7 +189,7 @@ disable_mac80211() (
 	done
 
 	include /lib/network
-	for wdev in $(ls /sys/class/ieee80211/${phy}/device/net 2>/dev/null); do
+	for wdev in $(list_phy_interfaces "$phy"); do
 		[ -f "/var/run/$wdev.pid" ] && kill $(cat /var/run/$wdev.pid) >&/dev/null 2>&1
 		for pid in `pidof wpa_supplicant`; do
 			grep "$wdev" /proc/$pid/cmdline >/dev/null && \
