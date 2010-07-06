@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	unsigned int		tp_reserve;
  	unsigned int		tp_loss:1;
  	struct packet_type	prot_hook ____cacheline_aligned_in_smp;
-+	__u8			pkt_type:3;
++	unsigned int		pkt_type;
  };
  
  struct packet_skb_cb {
