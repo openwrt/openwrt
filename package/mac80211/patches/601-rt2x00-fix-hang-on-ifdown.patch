@@ -14,11 +14,9 @@ Signed-off-by: Helmut Schaa <helmut.schaa@googlemail.com>
  drivers/net/wireless/rt2x00/rt2800pci.c |    4 ++++
  1 files changed, 4 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/net/wireless/rt2x00/rt2800pci.c b/drivers/net/wireless/rt2x00/rt2800pci.c
-index 165da7b..bb35350 100644
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -737,6 +737,10 @@ static void rt2800pci_kill_tx_queue(struct rt2x00_dev *rt2x00dev,
+@@ -749,6 +749,10 @@ static void rt2800pci_kill_tx_queue(stru
  		rt2800_register_write(rt2x00dev, BCN_TIME_CFG, 0);
  		return;
  	}
@@ -29,6 +27,3 @@ index 165da7b..bb35350 100644
  
  	rt2800_register_read(rt2x00dev, WPDMA_RST_IDX, &reg);
  	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DTX_IDX0, (qid == QID_AC_BE));
--- 
-1.6.4.2
-
