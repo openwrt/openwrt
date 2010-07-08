@@ -99,7 +99,7 @@ sub update_index($)
 
 my %update_method = (
 	'src-svn' => {
-		'init'		=> "svn checkout --non-interactive --trust-server-cert '%s' '%s'",
+		'init'		=> "svn checkout '%s' '%s'",
 		'update'	=> "svn update",
 		'controldir'	=> ".svn"},
 	'src-cpy' => {
