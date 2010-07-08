@@ -62,7 +62,7 @@
  
  ifndef CONFIG_OS
  ifdef CONFIG_NATIVE_WINDOWS
-@@ -579,6 +580,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
+@@ -581,6 +582,10 @@ ifdef CONFIG_DYNAMIC_EAP_METHODS
  CFLAGS += -DCONFIG_DYNAMIC_EAP_METHODS
  LIBS += -ldl -rdynamic
  endif
@@ -73,7 +73,7 @@
  endif
  
  ifdef CONFIG_AP
-@@ -631,6 +636,12 @@ CFLAGS += -DEAP_SERVER_WSC
+@@ -635,6 +640,12 @@ CFLAGS += -DEAP_SERVER_WSC
  OBJS += ../src/ap/wps_hostapd.o
  OBJS += ../src/eap_server/eap_server_wsc.o
  endif
@@ -86,7 +86,7 @@
  endif
  
  ifdef NEED_RSN_AUTHENTICATOR
-@@ -1262,6 +1273,12 @@ BCHECK=../src/drivers/build.wpa_supplica
+@@ -1270,6 +1281,12 @@ BCHECK=../src/drivers/build.wpa_supplica
  wpa_priv: $(BCHECK) $(OBJS_priv)
  	$(LDO) $(LDFLAGS) -o wpa_priv $(OBJS_priv) $(LIBS)
  
@@ -99,7 +99,7 @@
  wpa_supplicant: .config $(BCHECK) $(OBJS) $(EXTRA_progs)
  	$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
  
-@@ -1321,6 +1338,12 @@ endif
+@@ -1329,6 +1346,12 @@ endif
  	$(Q)$(CC) -c -o $@ $(CFLAGS) $<
  	@$(E) "  CC " $<
  
@@ -114,7 +114,7 @@
  wpa_cli.exe: wpa_cli
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -2449,8 +2449,8 @@ union wpa_event_data {
+@@ -2465,8 +2465,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -169,7 +169,7 @@
  	for (;;) {
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -1577,8 +1577,8 @@ static void ft_rx_action(struct wpa_supp
+@@ -1582,8 +1582,8 @@ static void ft_rx_action(struct wpa_supp
  #endif /* CONFIG_IEEE80211R */
  
  
@@ -182,7 +182,7 @@
  	u16 reason_code = 0;
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2223,6 +2223,9 @@ struct wpa_supplicant * wpa_supplicant_g
+@@ -2228,6 +2228,9 @@ struct wpa_supplicant * wpa_supplicant_g
  	return NULL;
  }
  
@@ -192,7 +192,7 @@
  
  /**
   * wpa_supplicant_init - Initialize %wpa_supplicant
-@@ -2241,6 +2244,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -2246,6 +2249,7 @@ struct wpa_global * wpa_supplicant_init(
  	if (params == NULL)
  		return NULL;
  
