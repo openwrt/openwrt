@@ -1,6 +1,6 @@
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -543,10 +543,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -545,10 +545,16 @@ void wpa_supplicant_set_state(struct wpa
  		wpa_s->reassociated_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 1);
  		wpa_s->after_wps = 0;

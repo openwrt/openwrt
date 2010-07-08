@@ -38,7 +38,7 @@
  	 * @freq: Frequency (in MHz) of the channel
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4263,6 +4263,29 @@ static int i802_set_rate_sets(void *priv
+@@ -4339,6 +4339,29 @@ static int i802_set_rate_sets(void *priv
  	return -ENOBUFS;
  }
  
@@ -68,7 +68,7 @@
  #endif /* HOSTAPD */
  
  
-@@ -5372,6 +5395,7 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -5448,6 +5471,7 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_tx_queue_params = i802_set_tx_queue_params,
  	.set_sta_vlan = i802_set_sta_vlan,
  	.set_wds_sta = i802_set_wds_sta,

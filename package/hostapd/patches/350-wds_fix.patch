@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4576,9 +4576,11 @@ static int i802_set_wds_sta(void *priv, 
+@@ -4652,9 +4652,11 @@ static int i802_set_wds_sta(void *priv, 
  	wpa_printf(MSG_DEBUG, "nl80211: Set WDS STA addr=" MACSTR
  		   " aid=%d val=%d name=%s", MAC2STR(addr), aid, val, name);
  	if (val) {
@@ -16,7 +16,7 @@
  	} else {
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -1614,6 +1614,9 @@ static void handle_assoc_cb(struct hosta
+@@ -1627,6 +1627,9 @@ static void handle_assoc_cb(struct hosta
  			       "Could not add STA to kernel driver");
  	}
  

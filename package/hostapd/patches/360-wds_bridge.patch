@@ -21,7 +21,7 @@
  			/* clear to get error below if setting is invalid */
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4566,7 +4566,8 @@ static int i802_set_sta_vlan(void *priv,
+@@ -4642,7 +4642,8 @@ static int i802_set_sta_vlan(void *priv,
  }
  
  
@@ -31,7 +31,7 @@
  {
  	struct i802_bss *bss = priv;
  	struct wpa_driver_nl80211_data *drv = bss->drv;
-@@ -4580,6 +4581,10 @@ static int i802_set_wds_sta(void *priv, 
+@@ -4656,6 +4657,10 @@ static int i802_set_wds_sta(void *priv, 
  			if (nl80211_create_iface(drv, name, NL80211_IFTYPE_AP_VLAN,
  					 NULL, 1) < 0)
  				return -1;
