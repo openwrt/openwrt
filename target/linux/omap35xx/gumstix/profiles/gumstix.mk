@@ -16,7 +16,7 @@ define Profile/Gumstix
 		kmod-usb-serial kmod-usb-serial-cp210x kmod-usb-serial-ftdi \
 		kmod-usb-serial-pl2303 kmod-usb-uhci kmod-cfg80211 \
 		kmod-lib80211 kmod-libertas-sd kmod-mac80211 libnl-tiny \
-		crda iw kmod-usb-hid
+		crda iw kmod-usb-hid luci luci-app-ntpc
 endef
 
 define Profile/Gumstix/Description
