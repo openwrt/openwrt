@@ -1,7 +1,7 @@
 hostapd_set_bss_options() {
 	local var="$1"
 	local vif="$2"
-	local enc wpa_group_rekey
+	local enc wpa_group_rekey wps_possible
 
 	config_get enc "$vif" encryption
 	config_get wpa_group_rekey "$vif" wpa_group_rekey
@@ -60,6 +60,7 @@ hostapd_set_bss_options() {
 			else
 				append "$var" "wpa_passphrase=$psk" "$N"
 			fi
+			wps_possible=1
 		;;
 		*wpa*)
 			# required fields? formats?
@@ -115,6 +116,14 @@ hostapd_set_bss_options() {
 	config_get ssid "$vif" ssid
 	config_get bridge "$vif" bridge
 	config_get ieee80211d "$vif" ieee80211d
+
+	config_get_bool wps_pbc "$vif" wps_pushbutton 0
+	[ -n "$wps_possible" -a "$wps_pbc" -gt 0 ] && {
+		append "$var" "eap_server=1" "$N"
+		append "$var" "wps_state=2" "$N"
+		append "$var" "ap_setup_locked=1" "$N"
+		append "$var" "config_methods=push_button" "$N"
+	}
 
 	append "$var" "ssid=$ssid" "$N"
 	[ -n "$bridge" ] && append "$var" "bridge=$bridge" "$N"
