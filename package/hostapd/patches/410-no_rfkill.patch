@@ -1,0 +1,263 @@
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -75,7 +75,9 @@ struct wpa_driver_nl80211_data {
+ 	int ifindex;
+ 	int if_removed;
+ 	int if_disabled;
++#ifdef CONFIG_RFKILL
+ 	struct rfkill_data *rfkill;
++#endif
+ 	struct wpa_driver_capa capa;
+ 	int has_capability;
+ 
+@@ -1361,7 +1363,7 @@ err1:
+ 	return -1;
+ }
+ 
+-
++#ifdef CONFIG_RFKILL
+ static void wpa_driver_nl80211_rfkill_blocked(void *ctx)
+ {
+ 	wpa_printf(MSG_DEBUG, "nl80211: RFKILL blocked");
+@@ -1383,6 +1385,7 @@ static void wpa_driver_nl80211_rfkill_un
+ 	}
+ 	/* rtnetlink ifup handler will report interface as enabled */
+ }
++#endif /* CONFIG_RFKILL */
+ 
+ 
+ /**
+@@ -1396,7 +1399,9 @@ static void * wpa_driver_nl80211_init(vo
+ {
+ 	struct wpa_driver_nl80211_data *drv;
+ 	struct netlink_config *cfg;
++#ifdef CONFIG_RFKILL
+ 	struct rfkill_config *rcfg;
++#endif
+ 	struct i802_bss *bss;
+ 
+ 	drv = os_zalloc(sizeof(*drv));
+@@ -1434,6 +1439,7 @@ static void * wpa_driver_nl80211_init(vo
+ 		goto failed;
+ 	}
+ 
++#ifdef CONFIG_RFKILL
+ 	rcfg = os_zalloc(sizeof(*rcfg));
+ 	if (rcfg == NULL)
+ 		goto failed;
+@@ -1446,6 +1452,7 @@ static void * wpa_driver_nl80211_init(vo
+ 		wpa_printf(MSG_DEBUG, "nl80211: RFKILL status not available");
+ 		os_free(rcfg);
+ 	}
++#endif /* CONFIG_RFKILL */
+ 
+ 	if (wpa_driver_nl80211_finish_drv_init(drv))
+ 		goto failed;
+@@ -1453,7 +1460,9 @@ static void * wpa_driver_nl80211_init(vo
+ 	return bss;
+ 
+ failed:
++#ifdef CONFIG_RFKILL
+ 	rfkill_deinit(drv->rfkill);
++#endif
+ 	netlink_deinit(drv->netlink);
+ 	if (drv->ioctl_sock >= 0)
+ 		close(drv->ioctl_sock);
+@@ -1514,10 +1523,12 @@ static int nl80211_register_action_frame
+ }
+ 
+ 
++#ifdef CONFIG_RFKILL
+ static void wpa_driver_nl80211_send_rfkill(void *eloop_ctx, void *timeout_ctx)
+ {
+ 	wpa_supplicant_event(timeout_ctx, EVENT_INTERFACE_DISABLED, NULL);
+ }
++#endif /* CONFIG_RFKILL */
+ 
+ 
+ static int
+@@ -1536,13 +1547,16 @@ wpa_driver_nl80211_finish_drv_init(struc
+ 		}
+ 
+ 		if (linux_set_iface_flags(drv->ioctl_sock, bss->ifname, 1)) {
++#ifdef CONFIG_RFKILL
+ 			if (rfkill_is_blocked(drv->rfkill)) {
+ 				wpa_printf(MSG_DEBUG, "nl80211: Could not yet enable "
+ 					   "interface '%s' due to rfkill",
+ 					   bss->ifname);
+ 				drv->if_disabled = 1;
+ 				send_rfkill_event = 1;
+-			} else {
++			} else
++#endif
++			{
+ 				wpa_printf(MSG_ERROR, "nl80211: Could not set "
+ 					   "interface '%s' UP", bss->ifname);
+ 				return -1;
+@@ -1567,8 +1581,10 @@ wpa_driver_nl80211_finish_drv_init(struc
+ 	}
+ 
+ 	if (send_rfkill_event) {
++#ifdef CONFIG_RFKILL
+ 		eloop_register_timeout(0, 0, wpa_driver_nl80211_send_rfkill,
+ 				       drv, drv->ctx);
++#endif
+ 	}
+ 
+ 	return 0;
+@@ -1647,7 +1663,9 @@ static void wpa_driver_nl80211_deinit(vo
+ 
+ 	netlink_send_oper_ifla(drv->netlink, drv->ifindex, 0, IF_OPER_UP);
+ 	netlink_deinit(drv->netlink);
++#ifdef CONFIG_RFKILL
+ 	rfkill_deinit(drv->rfkill);
++#endif
+ 
+ 	eloop_cancel_timeout(wpa_driver_nl80211_scan_timeout, drv, drv->ctx);
+ 
+--- a/src/drivers/driver_wext.c
++++ b/src/drivers/driver_wext.c
+@@ -700,7 +700,7 @@ static void wpa_driver_wext_event_rtm_de
+ 	}
+ }
+ 
+-
++#ifdef CONFIG_RFKILL
+ static void wpa_driver_wext_rfkill_blocked(void *ctx)
+ {
+ 	wpa_printf(MSG_DEBUG, "WEXT: RFKILL blocked");
+@@ -722,7 +722,7 @@ static void wpa_driver_wext_rfkill_unblo
+ 	}
+ 	/* rtnetlink ifup handler will report interface as enabled */
+ }
+-
++#endif /* CONFIG_RFKILL */
+ 
+ /**
+  * wpa_driver_wext_init - Initialize WE driver interface
+@@ -735,7 +735,9 @@ void * wpa_driver_wext_init(void *ctx, c
+ {
+ 	struct wpa_driver_wext_data *drv;
+ 	struct netlink_config *cfg;
++#ifdef CONFIG_RFKILL
+ 	struct rfkill_config *rcfg;
++#endif
+ 	char path[128];
+ 	struct stat buf;
+ 
+@@ -769,6 +771,7 @@ void * wpa_driver_wext_init(void *ctx, c
+ 		goto err2;
+ 	}
+ 
++#ifdef CONFIG_RFKILL
+ 	rcfg = os_zalloc(sizeof(*rcfg));
+ 	if (rcfg == NULL)
+ 		goto err3;
+@@ -781,6 +784,7 @@ void * wpa_driver_wext_init(void *ctx, c
+ 		wpa_printf(MSG_DEBUG, "WEXT: RFKILL status not available");
+ 		os_free(rcfg);
+ 	}
++#endif /* CONFIG_RFKILL */
+ 
+ 	drv->mlme_sock = -1;
+ 
+@@ -792,7 +796,9 @@ void * wpa_driver_wext_init(void *ctx, c
+ 	return drv;
+ 
+ err3:
++#ifdef CONFIG_RFKILL
+ 	rfkill_deinit(drv->rfkill);
++#endif
+ 	netlink_deinit(drv->netlink);
+ err2:
+ 	close(drv->ioctl_sock);
+@@ -802,10 +808,12 @@ err1:
+ }
+ 
+ 
++#ifdef CONFIG_RFKILL
+ static void wpa_driver_wext_send_rfkill(void *eloop_ctx, void *timeout_ctx)
+ {
+ 	wpa_supplicant_event(timeout_ctx, EVENT_INTERFACE_DISABLED, NULL);
+ }
++#endif /* CONFIG_RFKILL */
+ 
+ 
+ static int wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv)
+@@ -813,13 +821,16 @@ static int wpa_driver_wext_finish_drv_in
+ 	int send_rfkill_event = 0;
+ 
+ 	if (linux_set_iface_flags(drv->ioctl_sock, drv->ifname, 1) < 0) {
++#ifdef CONFIG_RFKILL
+ 		if (rfkill_is_blocked(drv->rfkill)) {
+ 			wpa_printf(MSG_DEBUG, "WEXT: Could not yet enable "
+ 				   "interface '%s' due to rfkill",
+ 				   drv->ifname);
+ 			drv->if_disabled = 1;
+ 			send_rfkill_event = 1;
+-		} else {
++		} else
++#endif
++		{
+ 			wpa_printf(MSG_ERROR, "WEXT: Could not set "
+ 				   "interface '%s' UP", drv->ifname);
+ 			return -1;
+@@ -867,8 +878,10 @@ static int wpa_driver_wext_finish_drv_in
+ 			       1, IF_OPER_DORMANT);
+ 
+ 	if (send_rfkill_event) {
++#ifdef CONFIG_RFKILL
+ 		eloop_register_timeout(0, 0, wpa_driver_wext_send_rfkill,
+ 				       drv, drv->ctx);
++#endif
+ 	}
+ 
+ 	return 0;
+@@ -898,7 +911,9 @@ void wpa_driver_wext_deinit(void *priv)
+ 
+ 	netlink_send_oper_ifla(drv->netlink, drv->ifindex, 0, IF_OPER_UP);
+ 	netlink_deinit(drv->netlink);
++#ifdef CONFIG_RFKILL
+ 	rfkill_deinit(drv->rfkill);
++#endif
+ 
+ 	if (drv->mlme_sock >= 0)
+ 		eloop_unregister_read_sock(drv->mlme_sock);
+--- a/src/drivers/drivers.mak
++++ b/src/drivers/drivers.mak
+@@ -31,7 +31,6 @@ NEED_SME=y
+ NEED_AP_MLME=y
+ NEED_NETLINK=y
+ NEED_LINUX_IOCTL=y
+-NEED_RFKILL=y
+ DRV_LIBS += -lnl
+ 
+ ifdef CONFIG_LIBNL20
+@@ -78,7 +77,6 @@ DRV_WPA_CFLAGS += -DCONFIG_DRIVER_WEXT
+ CONFIG_WIRELESS_EXTENSION=y
+ NEED_NETLINK=y
+ NEED_LINUX_IOCTL=y
+-NEED_RFKILL=y
+ endif
+ 
+ ifdef CONFIG_DRIVER_HERMES
+@@ -166,6 +164,7 @@ endif
+ 
+ ifdef NEED_RFKILL
+ DRV_OBJS += ../src/drivers/rfkill.o
++DRV_WPA_CFLAGS += -DCONFIG_RFKILL
+ endif
+ 
+ 
+--- a/src/drivers/driver_wext.h
++++ b/src/drivers/driver_wext.h
+@@ -27,7 +27,9 @@ struct wpa_driver_wext_data {
+ 	int ifindex2;
+ 	int if_removed;
+ 	int if_disabled;
++#ifdef CONFIG_RFKILL
+ 	struct rfkill_data *rfkill;
++#endif
+ 	u8 *assoc_req_ies;
+ 	size_t assoc_req_ies_len;
+ 	u8 *assoc_resp_ies;
