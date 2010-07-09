@@ -14,7 +14,7 @@ if [ "$ACTION" = ifup ]; then
 		[ "$proto" = 6in4 ] || return 0
 
 		local wandev
-		config_get wandev "$cfg" wan_device
+		config_get wandev "$cfg" wan_device "$(find_6in4_wanif)"
 		[ "$wandev" = "$DEVICE" ] || return 0
 
 		local oldip
