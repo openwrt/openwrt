@@ -4706,8 +4706,7 @@ static int __init_or_module devdrv_hcd_probe(struct device *dev)
     return -EPERM;
   }
   
-  //XXX: dev->usb_id don't exist, using "" instread? - claudio
-  hcd = usb_create_hcd(&crisv10_hc_driver, dev, "");
+  hcd = usb_create_hcd(&crisv10_hc_driver, dev, dev_name(dev));
   if (!hcd)
     return -ENOMEM;
 
