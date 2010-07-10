@@ -1101,7 +1101,7 @@ static struct platform_t __init *platform_detect(void)
 		return &platforms[TEW411BRPP];
 	}
 
-	if (startswith(boardnum, "04FN52")) /* SimpleTech SimpleShare */
+	if (startswith(boardnum, "04FN")) /* SimpleTech SimpleShare */
 		return &platforms[STI_NAS];
 
 	if (!strcmp(getvar("boardnum"), "10") && !strcmp(getvar("boardrev"), "0x13")) /* D-Link DWL-3150 */
