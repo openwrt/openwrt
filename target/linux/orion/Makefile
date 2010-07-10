@@ -13,7 +13,7 @@ FEATURES:=squashfs
 SUBTARGETS=generic harddisk
 CFLAGS=-Os -pipe -march=armv5t -mtune=xscale -funit-at-a-time
 
-LINUX_VERSION:=2.6.34
+LINUX_VERSION:=2.6.34.1
 
 include $(INCLUDE_DIR)/target.mk
 
