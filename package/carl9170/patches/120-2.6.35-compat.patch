@@ -1,0 +1,53 @@
+--- a/drivers/net/wireless/ath/carl9170/main.c
++++ b/drivers/net/wireless/ath/carl9170/main.c
+@@ -591,21 +591,36 @@ out:
+ 	return err;
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35))
++static u64 ar9170_op_prepare_multicast(struct ieee80211_hw *hw,
++				       struct netdev_hw_addr_list *mclist)
++#else
+ static u64 ar9170_op_prepare_multicast(struct ieee80211_hw *hw, int mc_count,
+ 				       struct dev_addr_list *mclist)
++#endif
+ {
+ 	u64 mchash;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35))
++	struct netdev_hw_addr *ha;
++#else
+ 	int i;
++#endif
+ 
+ 	/* always get broadcast frames */
+ 	mchash = 1ULL << (0xff >> 2);
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35))
++	netdev_hw_addr_list_for_each(ha, mclist) {
++		mchash |= 1ULL << (ha->addr[5] >> 2);
++	}
++#else
+ 	for (i = 0; i < mc_count; i++) {
+ 		if (WARN_ON(!mclist))
+ 			break;
+ 		mchash |= 1ULL << (mclist->dmi_addr[5] >> 2);
+ 		mclist = mclist->next;
+ 	}
++#endif
+ 
+ 	return mchash;
+ }
+--- a/drivers/net/wireless/ath/carl9170/usb.c
++++ b/drivers/net/wireless/ath/carl9170/usb.c
+@@ -48,6 +48,11 @@
+ #include "fwcmd.h"
+ #include "usb.h"
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35))
++#define usb_buffer_alloc(dev, size, mem_flags, dma)	usb_alloc_coherent(dev, size, mem_flags, dma)
++#define usb_buffer_free(dev, size, addr, dma)	usb_free_coherent(dev, size, addr, dma)
++#endif
++
+ MODULE_AUTHOR("Johannes Berg <johannes@sipsolutions.net>");
+ MODULE_AUTHOR("Christian Lamparter <chunkeey@googlemail.com>");
+ MODULE_LICENSE("GPL");

@@ -60,6 +60,12 @@ PKG_EXTRA_CFLAGS:= \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(PKG_EXTRA_KCONFIG)))) \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(PKG_EXTRA_KCONFIG)))) \
 
+ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_LINUX_2_6_30)$(CONFIG_LINUX_2_6_31)$(CONFIG_LINUX_2_6_32),)
+  LINUX_AUTOCONF_FILE:= linux/autoconf.h
+else
+  LINUX_AUTOCONF_FILE:= generated/autoconf.h
+endif
+
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		ARCH="$(LINUX_KARCH)" \
@@ -69,7 +75,7 @@ define Build/Compile
 		EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS) -DCONFIG_ACX_MAC80211_VERSION=\"KERNEL_VERSION(2,6,34)\"" \
 		LINUXINCLUDE="-I$(STAGING_DIR)/usr/include/mac80211 -I$(LINUX_DIR)/include \
 			-Iarch/$(LINUX_KARCH)/include \
-			-include linux/autoconf.h" \
+			-include $(LINUX_AUTOCONF_FILE)" \
 		V="$(V)" \
 		modules
 endef
