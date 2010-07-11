@@ -29,7 +29,7 @@ $(eval $(call KernelPackage,usb-core))
 
 define AddDepends/usb
   SUBMENU:=$(USB_MENU)
-  DEPENDS+=kmod-usb-core $(1)
+  DEPENDS+=+!TARGET_etrax:kmod-usb-core $(1)
 endef
 
 
