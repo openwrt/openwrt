@@ -18,14 +18,3 @@
  
  obj-$(CONFIG_USB_C67X00_HCD)	+= c67x00/
  
---- a/arch/cris/arch-v10/drivers/Kconfig
-+++ b/arch/cris/arch-v10/drivers/Kconfig
-@@ -410,7 +410,7 @@ config ETRAX_RS485_DISABLE_RECEIVER
- 	  Axis 2400/2401 must disable receiver.
- 
- config ETRAX_USB_HOST
--	bool "USB host"
-+	tristate "ETRAX USB host"
- 	select USB
- 	help
- 	   This option enables the host functionality of the ETRAX 100LX

@@ -33,7 +33,7 @@
 /***************************************************************************/
 /***************************************************************************/
 
-#define VERSION			"1.00-openwrt_diff"
+#define VERSION			"1.00-openwrt_diff-v1"
 #define COPYRIGHT		"(c) 2005, 2006 Axis Communications AB"
 #define DESCRIPTION             "ETRAX 100LX USB Host Controller"
 
