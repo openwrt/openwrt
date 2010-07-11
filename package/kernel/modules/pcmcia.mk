@@ -54,10 +54,17 @@ define KernelPackage/pcmcia-yenta
   KCONFIG:= \
 	CONFIG_PCCARD_NONSTATIC \
 	CONFIG_YENTA
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1)
+  FILES:= \
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,41,pcmcia_rsrc yenta_socket)
+else
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,41,rsrc_nonstatic yenta_socket)
+endif
 endef
 
 $(eval $(call KernelPackage,pcmcia-yenta))
