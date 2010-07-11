@@ -1,0 +1,15 @@
+--- a/pci.c
++++ b/pci.c
+@@ -35,8 +35,12 @@
+ 
+ /* Linux 2.6.18+ uses <linux/utsrelease.h> */
+ #ifndef UTS_RELEASE
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
++#include <generated/utsrelease.h>
++#else
+ #include <linux/utsrelease.h>
+ #endif
++#endif
+ 
+ #include <linux/compiler.h> /* required for Lx 2.6.8 ?? */
+ #include <linux/kernel.h>
