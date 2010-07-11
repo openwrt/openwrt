@@ -125,10 +125,17 @@ define KernelPackage/usb-audio
 	CONFIG_SND_USB_AUDIO
   $(call AddDepends/usb)
   $(call AddDepends/sound)
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1)
+  FILES:= \
+	$(LINUX_DIR)/sound/usb/snd-usbmidi-lib.ko \
+	$(LINUX_DIR)/sound/usb/snd-usb-audio.ko
+  AUTOLOAD:=$(call AutoLoad,60,snd-usbmidi-lib snd-usb-audio)
+else
   FILES:= \
 	$(LINUX_DIR)/sound/usb/snd-usb-lib.ko \
 	$(LINUX_DIR)/sound/usb/snd-usb-audio.ko
   AUTOLOAD:=$(call AutoLoad,60,snd-usb-lib snd-usb-audio)
+endif
 endef
 
 define KernelPackage/usb-audio/description
