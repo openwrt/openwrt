@@ -38,3 +38,15 @@
  		}
  		wl->pub->nmulticast = i;
  		wlc_set(wl->wlc, WLC_SET_PROMISC, (dev->flags & IFF_PROMISC));
+--- a/driver/linux_osl.c
++++ b/driver/linux_osl.c
+@@ -65,7 +65,9 @@ struct osl_info {
+ #if defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE)
+ struct pcmcia_dev {
+ 	dev_link_t link;	/* PCMCIA device pointer */
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,34)
+ 	dev_node_t node;	/* PCMCIA node structure */
++#endif
+ 	void *base;		/* Mapped attribute memory window */
+ 	size_t size;		/* Size of window */
+ 	void *drv;		/* Driver data */
