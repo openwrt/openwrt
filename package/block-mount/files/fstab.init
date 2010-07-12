@@ -44,8 +44,8 @@ start() {
 	lock /var/lock/fstab.lck
 	echo '# WARNING: this is an auto generated file, please use uci to set defined filesystems' > /etc/fstab
 	lock -u /var/lock/fstab.lck
-	config_foreach do_mount mount
 	config_foreach do_swapon swap
+	config_foreach do_mount mount
 }
 
 stop() {
