@@ -50,7 +50,7 @@ define KernelPackage/fuse
   SUBMENU:=Filesystems
   TITLE+= (kernel module)
   KCONFIG:= CONFIG_FUSE_FS
-  FILES:=$(LINUX_DIR)/fs/fuse/fuse.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/fuse/fuse.ko
   VERSION:=$(LINUX_VERSION)-$(LINUX_RELEASE)
   AUTOLOAD:=$(call AutoLoad,80,fuse)
 endef

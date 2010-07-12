@@ -11,7 +11,7 @@ define KernelPackage/aoe
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=ATA over Ethernet support
   KCONFIG:=CONFIG_ATA_OVER_ETH
-  FILES:=$(LINUX_DIR)/drivers/block/aoe/aoe.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/block/aoe/aoe.ko
   AUTOLOAD:=$(call AutoLoad,30,aoe)
 endef
 
@@ -27,7 +27,7 @@ define KernelPackage/ata-core
   TITLE:=Serial and Parallel ATA support
   DEPENDS:=@PCI_SUPPORT +kmod-scsi-core @(!TARGET_ubicom32||!TARGET_etrax||!TARGET_x86)
   KCONFIG:=CONFIG_ATA
-  FILES:=$(LINUX_DIR)/drivers/ata/libata.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/libata.ko
   AUTOLOAD:=$(call AutoLoad,21,libata,1)
 endef
 
@@ -43,7 +43,7 @@ endef
 define KernelPackage/ata-ahci
   TITLE:=AHCI Serial ATA support
   KCONFIG:=CONFIG_SATA_AHCI
-  FILES:=$(LINUX_DIR)/drivers/ata/ahci.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/ahci.ko
   AUTOLOAD:=$(call AutoLoad,41,ahci,1)
   $(call AddDepends/ata)
 endef
@@ -58,7 +58,7 @@ $(eval $(call KernelPackage,ata-ahci))
 define KernelPackage/ata-artop
   TITLE:=ARTOP 6210/6260 PATA support
   KCONFIG:=CONFIG_PATA_ARTOP
-  FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_artop.ko
   AUTOLOAD:=$(call AutoLoad,41,pata_artop,1)
   $(call AddDepends/ata)
 endef
@@ -73,7 +73,7 @@ $(eval $(call KernelPackage,ata-artop))
 define KernelPackage/ata-nvidia-sata
   TITLE:=Nvidia Serial ATA support
   KCONFIG:=CONFIG_SATA_NV
-  FILES:=$(LINUX_DIR)/drivers/ata/sata_nv.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_nv.ko
   AUTOLOAD:=$(call AutoLoad,41,sata_nv,1)
   $(call AddDepends/ata)
 endef
@@ -88,7 +88,7 @@ define KernelPackage/ata-pdc202xx-old
   KCONFIG:= \
        CONFIG_ATA_SFF=y \
        CONFIG_PATA_PDC_OLD
-  FILES:=$(LINUX_DIR)/drivers/ata/pata_pdc202xx_old.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_pdc202xx_old.ko
   AUTOLOAD:=$(call AutoLoad,41,pata_pdc202xx_old,1)
 endef
 
@@ -103,7 +103,7 @@ $(eval $(call KernelPackage,ata-pdc202xx-old))
 define KernelPackage/ata-piix
   TITLE:=Intel PIIX PATA/SATA support
   KCONFIG:=CONFIG_ATA_PIIX
-  FILES:=$(LINUX_DIR)/drivers/ata/ata_piix.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/ata_piix.ko
   AUTOLOAD:=$(call AutoLoad,41,ata_piix,1)
   $(call AddDepends/ata)
 endef
@@ -119,7 +119,7 @@ $(eval $(call KernelPackage,ata-piix))
 define KernelPackage/ata-sil
   TITLE:=Silicon Image SATA support
   KCONFIG:=CONFIG_SATA_SIL
-  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil.ko
   AUTOLOAD:=$(call AutoLoad,41,sata_sil,1)
   $(call AddDepends/ata)
 endef
@@ -134,7 +134,7 @@ $(eval $(call KernelPackage,ata-sil))
 define KernelPackage/ata-sil24
   TITLE:=Silicon Image 3124/3132 SATA support
   KCONFIG:=CONFIG_SATA_SIL24
-  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil24.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_sil24.ko
   AUTOLOAD:=$(call AutoLoad,41,sata_sil24,1)
   $(call AddDepends/ata)
 endef
@@ -149,7 +149,7 @@ $(eval $(call KernelPackage,ata-sil24))
 define KernelPackage/ata-via-sata
   TITLE:=VIA SATA support
   KCONFIG:=CONFIG_SATA_VIA
-  FILES:=$(LINUX_DIR)/drivers/ata/sata_via.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_via.ko
   AUTOLOAD:=$(call AutoLoad,41,sata_via,1)
   $(call AddDepends/ata)
 endef
@@ -165,7 +165,7 @@ define KernelPackage/block2mtd
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Block device MTD emulation
   KCONFIG:=CONFIG_MTD_BLOCK2MTD
-  FILES:=$(LINUX_DIR)/drivers/mtd/devices/block2mtd.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/mtd/devices/block2mtd.ko
 endef
 
 $(eval $(call KernelPackage,block2mtd))
@@ -190,7 +190,7 @@ define KernelPackage/dm
        CONFIG_MD=y \
        CONFIG_BLK_DEV_DM \
        CONFIG_DM_MIRROR
-  FILES:=$(LINUX_DIR)/drivers/md/dm-*.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/md/dm-*.ko
   AUTOLOAD:=$(call AutoLoad,30,dm-mod dm-log dm-region-hash dm-mirror)
 endef
 
@@ -215,15 +215,15 @@ define KernelPackage/ide-core
 	CONFIG_BLK_DEV_IDEDMA_PCI=y \
 	CONFIG_BLK_DEV_IDEPCI=y
   FILES:= \
-	$(LINUX_DIR)/drivers/ide/ide-core.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/ide/ide-core.ko
   AUTOLOAD:= \
 	$(call AutoLoad,20,ide-core,1)
 endef
 
 define KernelPackage/ide-core/2.4
   FILES+= \
-	$(LINUX_DIR)/drivers/ide/ide-detect.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/ide/ide-disk.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/ide/ide-detect.ko \
+  	$(LINUX_DIR)/drivers/ide/ide-disk.ko
   AUTOLOAD+= \
 	$(call AutoLoad,35,ide-detect,1) \
 	$(call AutoLoad,40,ide-disk,1)
@@ -231,7 +231,7 @@ endef
 
 define KernelPackage/ide-core/2.6
   FILES+= \
-  	$(LINUX_DIR)/drivers/ide/ide-gd_mod.$(LINUX_KMOD_SUFFIX)
+  	$(LINUX_DIR)/drivers/ide/ide-gd_mod.ko
   AUTOLOAD+= \
 	$(call AutoLoad,40,ide-gd_mod,1)
 endef
@@ -263,14 +263,14 @@ endef
 
 define KernelPackage/ide-generic/2.4
   FILES+= \
-	$(LINUX_DIR)/drivers/ide/pci/generic.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/ide/pci/generic.ko
   AUTOLOAD+= \
 	$(call AutoLoad,30,generic,1)
 endef
 
 define KernelPackage/ide-generic/2.6
   FILES+= \
-	$(LINUX_DIR)/drivers/ide/ide-pci-generic.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/ide/ide-pci-generic.ko
   AUTOLOAD+= \
 	$(call AutoLoad,30,ide-pci-generic,1)
 endef
@@ -282,7 +282,7 @@ define KernelPackage/ide-generic-old
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for generic (legacy) IDE chipsets
   KCONFIG:=CONFIG_IDE_GENERIC
-  FILES:=$(LINUX_DIR)/drivers/ide/ide-generic.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ide/ide-generic.ko
   AUTOLOAD:=$(call AutoLoad,30,ide-generic,1)
   $(call AddDepends/ide)
 endef
@@ -294,13 +294,13 @@ define KernelPackage/ide-aec62xx
   TITLE:=Acard AEC62xx IDE driver
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_BLK_DEV_AEC62XX
-  FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ide/aec62xx.ko
   AUTOLOAD:=$(call AutoLoad,30,aec62xx,1)
   $(call AddDepends/ide)
 endef
 
 define KernelPackage/ide-aec62xx/2.4
-  FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.ko
 endef
 
 define KernelPackage/ide-aec62xx/description
@@ -314,13 +314,13 @@ define KernelPackage/ide-pdc202xx
   TITLE:=Promise PDC202xx IDE driver
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_BLK_DEV_PDC202XX_OLD
-  FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.ko
   AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old,1)
   $(call AddDepends/ide)
 endef
 
 define KernelPackage/ide-pdc202xx/2.4
-  FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.ko
 endef
 
 define KernelPackage/ide-pdc202xx/description
@@ -335,7 +335,7 @@ define KernelPackage/ide-it821x
   TITLE:=ITE IT821x IDE driver
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_BLK_DEV_IT821X
-  FILES=$(LINUX_DIR)/drivers/ide/it821x.$(LINUX_KMOD_SUFFIX)
+  FILES=$(LINUX_DIR)/drivers/ide/it821x.ko
   AUTOLOAD:=$(call AutoLoad,30,it821x,1)
   $(call AddDepends/ide)
 endef
@@ -357,8 +357,8 @@ define KernelPackage/libsas
 	CONFIG_SCSI_SAS_HOST_SMP=y \
 	CONFIG_SCSI_SAS_LIBSAS_DEBUG=y
   FILES:= \
-	$(LINUX_DIR)/drivers/scsi/scsi_transport_sas.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/scsi/libsas/libsas.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/scsi/scsi_transport_sas.ko \
+	$(LINUX_DIR)/drivers/scsi/libsas/libsas.ko
   AUTOLOAD:=$(call AutoLoad,29,scsi_transport_sas libsas,1)
 endef
 
@@ -375,7 +375,7 @@ define KernelPackage/loop
   KCONFIG:= \
 	CONFIG_BLK_DEV_LOOP \
 	CONFIG_BLK_DEV_CRYPTOLOOP=n
-  FILES:=$(LINUX_DIR)/drivers/block/loop.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/block/loop.ko
   AUTOLOAD:=$(call AutoLoad,30,loop)
 endef
 
@@ -392,9 +392,9 @@ define KernelPackage/mvsas
   DEPENDS:=@TARGET_x86 +kmod-libsas
   KCONFIG:=CONFIG_SCSI_MVSAS
   ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_LINUX_2_6_30),)
-	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.$(LINUX_KMOD_SUFFIX)
+	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.ko
   else
-	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas/mvsas.$(LINUX_KMOD_SUFFIX)
+	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas/mvsas.ko
   endif
   AUTOLOAD:=$(call AutoLoad,40,mvsas,1)
 endef
@@ -410,7 +410,7 @@ define KernelPackage/nbd
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Network block device support
   KCONFIG:=CONFIG_BLK_DEV_NBD
-  FILES:=$(LINUX_DIR)/drivers/block/nbd.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/block/nbd.ko
   AUTOLOAD:=$(call AutoLoad,30,nbd)
 endef
 
@@ -429,8 +429,8 @@ define KernelPackage/scsi-core
 	CONFIG_SCSI \
 	CONFIG_BLK_DEV_SD
   FILES:= \
-	$(if $(findstring y,$(CONFIG_SCSI)),,$(LINUX_DIR)/drivers/scsi/scsi_mod.$(LINUX_KMOD_SUFFIX)) \
-	$(LINUX_DIR)/drivers/scsi/sd_mod.$(LINUX_KMOD_SUFFIX)
+	$(if $(findstring y,$(CONFIG_SCSI)),,$(LINUX_DIR)/drivers/scsi/scsi_mod.ko) \
+	$(LINUX_DIR)/drivers/scsi/sd_mod.ko
   AUTOLOAD:=$(call AutoLoad,20,scsi_mod,1) $(call AutoLoad,40,sd_mod,1)
 endef
 
@@ -443,7 +443,7 @@ define KernelPackage/scsi-generic
   KCONFIG:= \
 	CONFIG_CHR_DEV_SG
   FILES:= \
-	$(LINUX_DIR)/drivers/scsi/sg.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/scsi/sg.ko
   AUTOLOAD:=$(call AutoLoad,65,sg)
 endef
 

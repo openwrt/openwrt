@@ -14,7 +14,7 @@ define KernelPackage/mmc-spi
   KCONFIG:=CONFIG_MMC_SPI \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/mmc/host/mmc_spi.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/mmc/host/mmc_spi.ko
   AUTOLOAD:=$(call AutoLoad,90,mmc_spi)
 endef
 
@@ -31,7 +31,7 @@ define KernelPackage/spi-bitbang
   KCONFIG:=CONFIG_SPI_BITBANG \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_bitbang.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/spi/spi_bitbang.ko
   AUTOLOAD:=$(call AutoLoad,91,spi_bitbang)
 endef
 
@@ -47,7 +47,7 @@ define KernelPackage/spi-gpio-old
   TITLE:=Old GPIO based bitbanging SPI controller (DEPRECATED)
   DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_GPIO_OLD
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio_old.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio_old.ko
   AUTOLOAD:=$(call AutoLoad,92,spi_gpio_old)
 endef
 
@@ -62,7 +62,7 @@ define KernelPackage/spi-gpio
   TITLE:=GPIO-based bitbanging SPI Master
   DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_GPIO
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.ko
   AUTOLOAD:=$(call AutoLoad,92,spi_gpio)
 endef
 
@@ -78,7 +78,7 @@ define KernelPackage/spi-dev
   KCONFIG:=CONFIG_SPI_SPIDEV \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spidev.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/spi/spidev.ko
   AUTOLOAD:=$(call AutoLoad,93,spidev)
 endef
 
@@ -94,7 +94,7 @@ define KernelPackage/spi-vsc7385
   TITLE:=Vitesse VSC7385 ethernet switch driver
   DEPENDS:=@TARGET_ar71xx
   KCONFIG:=CONFIG_SPI_VSC7385
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_vsc7385.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/spi/spi_vsc7385.ko
   AUTOLOAD:=$(call AutoLoad,93,spi_vsc7385)
 endef
 

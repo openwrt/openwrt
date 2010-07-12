@@ -28,7 +28,7 @@ define KernelPackage/acx
   DEPENDS:=@PCI_SUPPORT||TARGET_ar7 +wireless-tools
   URL:=http://acx100.sourceforge.net/
   SUBMENU:=Wireless Drivers
-  FILES:= $(PKG_BUILD_DIR)/acx.$(LINUX_KMOD_SUFFIX)
+  FILES:= $(PKG_BUILD_DIR)/acx.ko
   AUTOLOAD:=$(call AutoLoad,50,acx)
 endef
 

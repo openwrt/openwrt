@@ -42,9 +42,9 @@ define KernelPackage/ifxmips-dsl-api
   URL:=http://www.infineon.com/
   MAINTAINER:=Infineon Technologies AG / Lantiq / John Crispin <blogic@openwrt.org>
   DEPENDS:=@TARGET_ifxmips +kmod-atm @BROKEN
-  FILES:=$(PKG_BUILD_DIR)/src/mei/ifxmips_mei.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/src/mei/ifxmips_atm.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/src/mei/ifxmips_mei.ko \
+	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.ko \
+	$(PKG_BUILD_DIR)/src/mei/ifxmips_atm.ko
   AUTOLOAD:=$(call AutoLoad,50,ifxmips_mei drv_dsl_cpe_api ifxmips_atm)
   MENU:=1
 endef

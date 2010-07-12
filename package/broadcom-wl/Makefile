@@ -34,7 +34,7 @@ define KernelPackage/brcm-wl/Default
   SECTION:=kernel
   DEPENDS:=@TARGET_brcm47xx||TARGET_brcm63xx +wireless-tools
   TITLE:=Kernel driver for BCM43xx chipsets
-  FILES:=$(PKG_BUILD_DIR)/driver$(1)/wl.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/driver$(1)/wl.ko
   AUTOLOAD:=$(call AutoLoad,30,wl)
 endef
 

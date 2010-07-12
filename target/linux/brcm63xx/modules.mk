@@ -10,7 +10,7 @@ define KernelPackage/bcm63xx-spi
   TITLE:=Broadcom BCM63xx SPI driver
   DEPENDS:=@TARGET_brcm63xx +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_BCM63XX
-  FILES:=$(LINUX_DIR)/drivers/spi/bcm63xx_spi.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/spi/bcm63xx_spi.ko
   AUTOLOAD:=$(call AutoLoad,92,bcm63xx_spi)
 endef
 
@@ -26,7 +26,7 @@ define KernelPackage/pcmcia-bcm63xx
   TITLE:=Broadcom BCM63xx PCMCIA support
   DEPENDS:=@TARGET_brcm63xx kmod-pcmcia-core
   KCONFIG:=CONFIG_PCMCIA_BCM63XX
-  FILES:=$(LINUX_DIR)/drivers/pcmcia/bcm63xx_pcmcia.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/pcmcia/bcm63xx_pcmcia.ko
   AUTOLOAD:=$(call AutoLoad,41,bcm63xx_pcmcia)
 endef
 

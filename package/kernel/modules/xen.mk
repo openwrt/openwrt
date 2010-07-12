@@ -14,7 +14,7 @@ define KernelPackage/xen-fs
   KCONFIG:= \
   	CONFIG_XENFS \
   	CONFIG_XEN_COMPAT_XENFS=y
-  FILES:=$(LINUX_DIR)/drivers/xen/xenfs/xenfs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/xen/xenfs/xenfs.ko
   AUTOLOAD:=$(call AutoLoad,05,xenfs)
 endef
 
@@ -30,7 +30,7 @@ define KernelPackage/xen-evtchn
   TITLE:=Xen event channels
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:=CONFIG_XEN_DEV_EVTCHN
-  FILES:=$(LINUX_DIR)/drivers/xen/evtchn.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/xen/evtchn.ko
   AUTOLOAD:=$(call AutoLoad,06,evtchn)
 endef
 
@@ -55,12 +55,12 @@ define KernelPackage/xen-fbdev
   	CONFIG_FB_SYS_IMAGEBLIT \
   	CONFIG_FIRMWARE_EDID=n
   FILES:= \
-  	$(LINUX_DIR)/drivers/video/xen-fbfront.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/video/fb.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/video/syscopyarea.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/video/sysfillrect.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/video/fb_sys_fops.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/video/sysimgblt.$(LINUX_KMOD_SUFFIX)  	
+  	$(LINUX_DIR)/drivers/video/xen-fbfront.ko \
+  	$(LINUX_DIR)/drivers/video/fb.ko \
+  	$(LINUX_DIR)/drivers/video/syscopyarea.ko \
+  	$(LINUX_DIR)/drivers/video/sysfillrect.ko \
+  	$(LINUX_DIR)/drivers/video/fb_sys_fops.ko \
+  	$(LINUX_DIR)/drivers/video/sysimgblt.ko  	
   AUTOLOAD:=$(call AutoLoad,07, \
   	fb \
   	syscopyarea \
@@ -83,7 +83,7 @@ define KernelPackage/xen-kbddev
   TITLE:=Xen virtual keyboard and mouse
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:=CONFIG_XEN_KBDDEV_FRONTEND
-  FILES:=$(LINUX_DIR)/drivers/input/xen-kbdfront.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/input/xen-kbdfront.ko
   AUTOLOAD:=$(call AutoLoad,08,xen-kbdfront)
 endef
 
@@ -99,7 +99,7 @@ define KernelPackage/xen-netdev
   TITLE:=Xen network device frontend
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:=CONFIG_XEN_NETDEV_FRONTEND
-  FILES:=$(LINUX_DIR)/drivers/net/xen-netfront.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/xen-netfront.ko
   AUTOLOAD:=$(call AutoLoad,09,xen-netfront)
 endef
 

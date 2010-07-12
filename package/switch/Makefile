@@ -18,9 +18,9 @@ define KernelPackage/switch
   DEPENDS:=@TARGET_brcm47xx||TARGET_brcm63xx
   TITLE:=Switch drivers
   FILES:= \
-	$(PKG_BUILD_DIR)/switch-core.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/switch-adm.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/switch-robo.$(LINUX_KMOD_SUFFIX)
+	$(PKG_BUILD_DIR)/switch-core.ko \
+	$(PKG_BUILD_DIR)/switch-adm.ko \
+	$(PKG_BUILD_DIR)/switch-robo.ko
   AUTOLOAD:=$(call AutoLoad,20,switch-core switch-robo switch-adm)
 endef
 

@@ -36,7 +36,7 @@ $(call KernelPackage/hostap/Default)
   TITLE:=Host AP support for Prism2/2.5/3
   DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-lib80211 +wireless-tools
   KCONFIG:=CONFIG_HOSTAP CONFIG_HOSTAP_FIRMWARE=y CONFIG_HOSTAP_FIRMWARE_NVRAM=y
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap.ko
   AUTOLOAD:=$(call AutoLoad,60,hostap)
 endef
 
@@ -53,7 +53,7 @@ $(call KernelPackage/hostap/Default)
   TITLE:=Host AP driver for PCMCIA adaptors
   DEPENDS:=@PCMCIA_SUPPORT +kmod-hostap +kmod-pcmcia-core
   KCONFIG:=CONFIG_HOSTAP_CS
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_cs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_cs.ko
   AUTOLOAD:=$(call AutoLoad,60,hostap_cs)
 endef
 
@@ -68,7 +68,7 @@ $(call KernelPackage/hostap/Default)
   TITLE:=Host AP driver for PCI adaptors
   DEPENDS:=@PCI_SUPPORT +kmod-hostap
   KCONFIG:=CONFIG_HOSTAP_PCI
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_pci.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_pci.ko
   AUTOLOAD:=$(call AutoLoad,60,hostap_pci)
 endef
 
@@ -83,7 +83,7 @@ $(call KernelPackage/hostap/Default)
   TITLE:=Host AP driver for PLX9052 based PCI adaptors
   DEPENDS:=@PCI_SUPPORT +kmod-hostap
   KCONFIG:=CONFIG_HOSTAP_PLX
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_plx.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/hostap/hostap_plx.ko
   AUTOLOAD:=$(call AutoLoad,60,hostap_plx)
 endef
 

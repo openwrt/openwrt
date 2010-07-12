@@ -11,7 +11,7 @@ define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
   KCONFIG:=CONFIG_PHYLIB
-  FILES:=$(LINUX_DIR)/drivers/net/phy/libphy.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/phy/libphy.ko
   AUTOLOAD:=$(call AutoLoad,40,libphy)
 endef
 
@@ -26,7 +26,7 @@ define KernelPackage/swconfig
   TITLE:=switch configuration API
   DEPENDS:=+kmod-libphy
   KCONFIG:=CONFIG_SWCONFIG
-  FILES:=$(LINUX_DIR)/drivers/net/phy/swconfig.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/phy/swconfig.ko
   AUTOLOAD:=$(call AutoLoad,41,swconfig)
 endef
 
@@ -41,7 +41,7 @@ define KernelPackage/switch-ip175c
   TITLE:=IC+ IP175C/IP178C switch support
   DEPENDS:=+kmod-swconfig
   KCONFIG:=CONFIG_IP175C_PHY
-  FILES:=$(LINUX_DIR)/drivers/net/phy/ip175c.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/phy/ip175c.ko
   AUTOLOAD:=$(call AutoLoad,42,ip175c)
 endef
 
@@ -56,7 +56,7 @@ define KernelPackage/natsemi
   TITLE:=National Semiconductor DP8381x series
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_NATSEMI
-  FILES:=$(LINUX_DIR)/drivers/net/natsemi.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/natsemi.ko
   AUTOLOAD:=$(call AutoLoad,20,natsemi)
 endef
 
@@ -74,7 +74,7 @@ define KernelPackage/r6040
   DEPENDS:=@TARGET_rdc
   KCONFIG:=CONFIG_R6040 \
 		CONFIG_R6040_NAPI=y
-  FILES:=$(LINUX_DIR)/drivers/net/r6040.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/r6040.ko
   AUTOLOAD:=$(call AutoLoad,99,r6040)
 endef
 
@@ -90,7 +90,7 @@ define KernelPackage/sis900
   TITLE:=SiS 900 Ethernet support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SIS900
-  FILES:=$(LINUX_DIR)/drivers/net/sis900.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/sis900.ko
   AUTOLOAD:=$(call AutoLoad,50,sis900)
 endef
 
@@ -106,7 +106,7 @@ define KernelPackage/sky2
   TITLE:=SysKonnect Yukon2 support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SKY2
-  FILES:=$(LINUX_DIR)/drivers/net/sky2.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/sky2.ko
   AUTOLOAD:=$(call AutoLoad,50,sky2)
 endef
 
@@ -129,7 +129,7 @@ define KernelPackage/via-rhine
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_VIA_RHINE \
     CONFIG_VIA_RHINE_MMIO=y
-  FILES:=$(LINUX_DIR)/drivers/net/via-rhine.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/via-rhine.ko
   AUTOLOAD:=$(call AutoLoad,50,via-rhine)
 endef
 
@@ -145,7 +145,7 @@ define KernelPackage/via-velocity
   TITLE:=VIA Velocity Gigabit Ethernet Adapter kernel support
   DEPENDS:=@TARGET_ixp4xx||TARGET_mpc83xx||TARGET_x86
   KCONFIG:=CONFIG_VIA_VELOCITY
-  FILES:=$(LINUX_DIR)/drivers/net/via-velocity.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/via-velocity.ko
   AUTOLOAD:=$(call AutoLoad,50,via-velocity)
 endef
 
@@ -165,7 +165,7 @@ define KernelPackage/8139too
     CONFIG_8139TOO_TUNE_TWISTER=n \
     CONFIG_8139TOO_8129=n \
     CONFIG_8139_OLD_RX_RESET=n
-  FILES:=$(LINUX_DIR)/drivers/net/8139too.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/8139too.ko
   AUTOLOAD:=$(call AutoLoad,50,8139too)
 endef
 
@@ -183,7 +183,7 @@ define KernelPackage/r8169
   KCONFIG:=CONFIG_R8169 \
     CONFIG_R8169_NAPI=y \
     CONFIG_R8169_VLAN=n
-  FILES:=$(LINUX_DIR)/drivers/net/r8169.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/r8169.ko
   AUTOLOAD:=$(call AutoLoad,50,r8169)
 endef
 
@@ -200,8 +200,8 @@ define KernelPackage/ne2k-pci
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_NE2K_PCI
   FILES:= \
-	$(LINUX_DIR)/drivers/net/ne2k-pci.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/8390.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/net/ne2k-pci.ko \
+	$(LINUX_DIR)/drivers/net/8390.ko
   AUTOLOAD:=$(call AutoLoad,50,8390 ne2k-pci)
 endef
 
@@ -217,7 +217,7 @@ define KernelPackage/e100
   TITLE:=Intel(R) PRO/100+ cards kernel support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_E100
-  FILES:=$(LINUX_DIR)/drivers/net/e100.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/e100.ko
   AUTOLOAD:=$(call AutoLoad,50,e100)
 endef
 
@@ -235,7 +235,7 @@ define KernelPackage/e1000
   KCONFIG:=CONFIG_E1000 \
     CONFIG_E1000_DISABLE_PACKET_SPLIT=n \
     CONFIG_E1000_NAPI=y
-  FILES:=$(LINUX_DIR)/drivers/net/e1000/e1000.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/e1000/e1000.ko
   AUTOLOAD:=$(call AutoLoad,50,e1000)
 endef
 
@@ -251,7 +251,7 @@ define KernelPackage/e1000e
   TITLE:=Intel(R) PRO/1000 PCIe cards kernel support
   DEPENDS:=@PCIE_SUPPORT
   KCONFIG:=CONFIG_E1000E
-  FILES:=$(LINUX_DIR)/drivers/net/e1000e/e1000e.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/e1000e/e1000e.ko
   AUTOLOAD:=$(call AutoLoad,50,e1000e)
 endef
 
@@ -264,7 +264,7 @@ $(eval $(call KernelPackage,e1000e))
 
 define KernelPackage/b44
   TITLE:=Broadcom 44xx driver
-  FILES:=$(LINUX_DIR)/drivers/net/b44.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/b44.ko
   KCONFIG:=CONFIG_B44
   DEPENDS:=@TARGET_x86 +kmod-ssb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -283,7 +283,7 @@ define KernelPackage/3c59x
   TITLE:=3Com 3c590/3c900 series (592/595/597) Vortex/Boomerang
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_VORTEX
-  FILES:=$(LINUX_DIR)/drivers/net/3c59x.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/3c59x.ko
   AUTOLOAD:=$(call AutoLoad,50,3c59x)
 endef
 
@@ -305,7 +305,7 @@ define KernelPackage/pcnet32
   TITLE:=AMD PCnet32 PCI support
   DEPENDS:=@(TARGET_x86||TARGET_malta)
   KCONFIG:=CONFIG_PCNET32
-  FILES:=$(LINUX_DIR)/drivers/net/pcnet32.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/pcnet32.ko
   AUTOLOAD:=$(call AutoLoad,50,pcnet32)
 endef
 
@@ -318,7 +318,7 @@ $(eval $(call KernelPackage,pcnet32))
 
 define KernelPackage/tg3
   TITLE:=Broadcom Tigon3 Gigabit Ethernet
-  FILES:=$(LINUX_DIR)/drivers/net/tg3.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/tg3.ko
   KCONFIG:=CONFIG_TIGON3
   DEPENDS:=+!TARGET_brcm47xx:kmod-libphy @!TARGET_ubicom32
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -350,7 +350,7 @@ define KernelPackage/hfcmulti
   KCONFIG:=CONFIG_MISDN_HFCMULTI
   DEPENDS:=+kmod-misdn
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  FILES:=$(LINUX_DIR)/drivers/isdn/hardware/mISDN/hfcmulti.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/isdn/hardware/mISDN/hfcmulti.ko
   AUTOLOAD:=$(call AutoLoad,31,hfcmulti)
 endef
 
@@ -374,10 +374,10 @@ define KernelPackage/gigaset
     CONFIG_GIGASET_UNDOCREQ=y \
     CONFIG_GIGASET_I4L=y
   FILES:= \
-    $(LINUX_DIR)/drivers/isdn/gigaset/gigaset.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/isdn/gigaset/bas_gigaset.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/isdn/gigaset/ser_gigaset.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/isdn/gigaset/usb_gigaset.$(LINUX_KMOD_SUFFIX)
+    $(LINUX_DIR)/drivers/isdn/gigaset/gigaset.ko \
+    $(LINUX_DIR)/drivers/isdn/gigaset/bas_gigaset.ko \
+    $(LINUX_DIR)/drivers/isdn/gigaset/ser_gigaset.ko \
+    $(LINUX_DIR)/drivers/isdn/gigaset/usb_gigaset.ko
   AUTOLOAD:=$(call AutoLoad,50,gigaset bas_gigaset ser_gigaset usb_gigaset)
 endef
 
@@ -395,7 +395,7 @@ define KernelPackage/macvlan
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=MAC-VLAN support
   KCONFIG:=CONFIG_MACVLAN
-  FILES:=$(LINUX_DIR)/drivers/net/macvlan.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/macvlan.ko
   AUTOLOAD:=$(call AutoLoad,50,macvlan)
 endef
 
@@ -423,12 +423,12 @@ define KernelPackage/tulip
     CONFIG_DM9102 \
     CONFIG_ULI526X 
   FILES:= \
-    $(LINUX_DIR)/drivers/net/tulip/tulip.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/net/tulip/de2104x.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/net/tulip/de4x5.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/net/tulip/dmfe.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/net/tulip/uli526x.$(LINUX_KMOD_SUFFIX) \
-    $(LINUX_DIR)/drivers/net/tulip/winbond-840.$(LINUX_KMOD_SUFFIX)
+    $(LINUX_DIR)/drivers/net/tulip/tulip.ko \
+    $(LINUX_DIR)/drivers/net/tulip/de2104x.ko \
+    $(LINUX_DIR)/drivers/net/tulip/de4x5.ko \
+    $(LINUX_DIR)/drivers/net/tulip/dmfe.ko \
+    $(LINUX_DIR)/drivers/net/tulip/uli526x.ko \
+    $(LINUX_DIR)/drivers/net/tulip/winbond-840.ko
   AUTOLOAD:=$(call AutoLoad,50,tulip)
 endef
 

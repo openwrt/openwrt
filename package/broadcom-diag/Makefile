@@ -17,7 +17,7 @@ define KernelPackage/diag
   SUBMENU:=Other modules
   DEPENDS:=@TARGET_brcm47xx
   TITLE:=Driver for router LEDs and Buttons
-  FILES:=$(PKG_BUILD_DIR)/diag.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/diag.ko
 endef
 
 define Build/Prepare

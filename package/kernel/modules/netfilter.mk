@@ -14,7 +14,7 @@ define KernelPackage/ipt-core
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter core
   KCONFIG:=$(KCONFIG_IPT_CORE)
-  FILES:=$(foreach mod,$(IPT_CORE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_CORE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_CORE-m)))
 endef
 
@@ -42,7 +42,7 @@ endef
 define KernelPackage/ipt-conntrack
   TITLE:=Basic connection tracking modules
   KCONFIG:=$(KCONFIG_IPT_CONNTRACK)
-  FILES:=$(foreach mod,$(IPT_CONNTRACK-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_CONNTRACK-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,41,$(notdir $(IPT_CONNTRACK-m)))
   $(call AddDepends/ipt)
 endef
@@ -63,7 +63,7 @@ $(eval $(call KernelPackage,ipt-conntrack))
 define KernelPackage/ipt-conntrack-extra
   TITLE:=Extra connection tracking modules
   KCONFIG:=$(KCONFIG_IPT_CONNTRACK_EXTRA)
-  FILES:=$(foreach mod,$(IPT_CONNTRACK_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_CONNTRACK_EXTRA-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,42,$(notdir $(IPT_CONNTRACK_EXTRA-m)))
   $(call AddDepends/ipt,+kmod-ipt-conntrack)
 endef
@@ -84,7 +84,7 @@ $(eval $(call KernelPackage,ipt-conntrack-extra))
 define KernelPackage/ipt-filter
   TITLE:=Modules for packet content inspection
   KCONFIG:=$(KCONFIG_IPT_FILTER)
-  FILES:=$(foreach mod,$(IPT_FILTER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_FILTER-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_FILTER-m)))
   $(call AddDepends/ipt,+kmod-textsearch)
 endef
@@ -102,7 +102,7 @@ $(eval $(call KernelPackage,ipt-filter))
 define KernelPackage/ipt-ipopt
   TITLE:=Modules for matching/changing IP packet options
   KCONFIG:=$(KCONFIG_IPT_IPOPT)
-  FILES:=$(foreach mod,$(IPT_IPOPT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_IPOPT-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_IPOPT-m)))
   $(call AddDepends/ipt)
 endef
@@ -130,7 +130,7 @@ $(eval $(call KernelPackage,ipt-ipopt))
 define KernelPackage/ipt-ipsec
   TITLE:=Modules for matching IPSec packets
   KCONFIG:=$(KCONFIG_IPT_IPSEC)
-  FILES:=$(foreach mod,$(IPT_IPSEC-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_IPSEC-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_IPSEC-m)))
   $(call AddDepends/ipt)
 endef
@@ -149,7 +149,7 @@ $(eval $(call KernelPackage,ipt-ipsec))
 define KernelPackage/ipt-nat
   TITLE:=Basic NAT targets
   KCONFIG:=$(KCONFIG_IPT_NAT)
-  FILES:=$(foreach mod,$(IPT_NAT-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_NAT-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,42,$(notdir $(IPT_NAT-m)))
   $(call AddDepends/ipt,+kmod-ipt-conntrack)
 endef
@@ -166,7 +166,7 @@ $(eval $(call KernelPackage,ipt-nat))
 define KernelPackage/ipt-nat-extra
   TITLE:=Extra NAT targets
   KCONFIG:=$(KCONFIG_IPT_NAT_EXTRA)
-  FILES:=$(foreach mod,$(IPT_NAT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_NAT_EXTRA-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,43,$(notdir $(IPT_NAT_EXTRA-m)))
   $(call AddDepends/ipt,+kmod-ipt-nat)
 endef
@@ -185,7 +185,7 @@ $(eval $(call KernelPackage,ipt-nat-extra))
 define KernelPackage/ipt-nathelper
   TITLE:=Basic Conntrack and NAT helpers
   KCONFIG:=$(KCONFIG_IPT_NATHELPER)
-  FILES:=$(foreach mod,$(IPT_NATHELPER-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_NATHELPER-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_NATHELPER-m)))
   $(call AddDepends/ipt,+kmod-ipt-nat)
 endef
@@ -204,7 +204,7 @@ $(eval $(call KernelPackage,ipt-nathelper))
 define KernelPackage/ipt-nathelper-extra
   TITLE:=Extra Conntrack and NAT helpers
   KCONFIG:=$(KCONFIG_IPT_NATHELPER_EXTRA)
-  FILES:=$(foreach mod,$(IPT_NATHELPER_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_NATHELPER_EXTRA-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_NATHELPER_EXTRA-m)))
   $(call AddDepends/ipt,+kmod-ipt-nat +kmod-textsearch)
 endef
@@ -233,8 +233,8 @@ define KernelPackage/ipt-imq
 	CONFIG_IMQ_NUM_DEVS=2 \
 	CONFIG_NETFILTER_XT_TARGET_IMQ
   FILES:= \
-	$(LINUX_DIR)/drivers/net/imq.$(LINUX_KMOD_SUFFIX) \
-	$(foreach mod,$(IPT_IMQ-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+	$(LINUX_DIR)/drivers/net/imq.ko \
+	$(foreach mod,$(IPT_IMQ-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,46,$(notdir \
 	imq \
 	$(IPT_IMQ-m) \
@@ -252,7 +252,7 @@ $(eval $(call KernelPackage,ipt-imq))
 define KernelPackage/ipt-queue
   TITLE:=Module for user-space packet queueing
   KCONFIG:=$(KCONFIG_IPT_QUEUE)
-  FILES:=$(foreach mod,$(IPT_QUEUE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_QUEUE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_QUEUE-m)))
   $(call AddDepends/ipt)
 endef
@@ -269,7 +269,7 @@ $(eval $(call KernelPackage,ipt-queue))
 define KernelPackage/ipt-ulog
   TITLE:=Module for user-space packet logging
   KCONFIG:=$(KCONFIG_IPT_ULOG)
-  FILES:=$(foreach mod,$(IPT_ULOG-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_ULOG-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_ULOG-m)))
   $(call AddDepends/ipt)
 endef
@@ -290,8 +290,8 @@ define KernelPackage/ipt-tproxy
   	CONFIG_NETFILTER_XT_MATCH_SOCKET \
   	CONFIG_NETFILTER_XT_TARGET_TPROXY
   FILES:= \
-  	$(LINUX_DIR)/net/netfilter/nf_tproxy_core.$(LINUX_KMOD_SUFFIX) \
-  	$(foreach mod,$(IPT_TPROXY-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  	$(LINUX_DIR)/net/netfilter/nf_tproxy_core.ko \
+  	$(foreach mod,$(IPT_TPROXY-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir nf_tproxy_core $(IPT_TPROXY-m)))
   $(call AddDepends/ipt)
 endef
@@ -306,7 +306,7 @@ $(eval $(call KernelPackage,ipt-tproxy))
 define KernelPackage/ipt-iprange
   TITLE:=Module for matching ip ranges
   KCONFIG:=$(KCONFIG_IPT_IPRANGE)
-  FILES:=$(foreach mod,$(IPT_IPRANGE-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_IPRANGE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_IPRANGE-m)))
   $(call AddDepends/ipt)
 endef
@@ -323,7 +323,7 @@ $(eval $(call KernelPackage,ipt-iprange))
 define KernelPackage/ipt-extra
   TITLE:=Extra modules
   KCONFIG:=$(KCONFIG_IPT_EXTRA)
-  FILES:=$(foreach mod,$(IPT_EXTRA-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_EXTRA-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_EXTRA-m)))
   $(call AddDepends/ipt)
 endef
@@ -346,7 +346,7 @@ define KernelPackage/ip6tables
   TITLE:=IPv6 modules
   DEPENDS:=+kmod-ipv6
   KCONFIG:=$(KCONFIG_IPT_IPV6)
-  FILES:=$(foreach mod,$(IPT_IPV6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPT_IPV6-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,49,$(notdir $(IPT_IPV6-m)))
 endef
 
@@ -360,11 +360,11 @@ $(eval $(call KernelPackage,ip6tables))
 define KernelPackage/arptables
   SUBMENU:=$(NF_MENU)
   TITLE:=ARP firewalling modules
-  FILES:=$(LINUX_DIR)/net/ipv4/netfilter/arp*.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/ipv4/netfilter/arp*.ko
   KCONFIG:=CONFIG_IP_NF_ARPTABLES \
     CONFIG_IP_NF_ARPFILTER \
     CONFIG_IP_NF_ARP_MANGLE
-  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(patsubst %.$(LINUX_KMOD_SUFFIX),%,$(wildcard $(LINUX_DIR)/net/ipv4/netfilter/arp*.$(LINUX_KMOD_SUFFIX)))))
+  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(patsubst %.ko,%,$(wildcard $(LINUX_DIR)/net/ipv4/netfilter/arp*.ko))))
 endef
 
 define KernelPackage/arptables/description
@@ -377,7 +377,7 @@ $(eval $(call KernelPackage,arptables))
 define KernelPackage/ebtables
   SUBMENU:=$(NF_MENU)
   TITLE:=Bridge firewalling modules
-  FILES:=$(foreach mod,$(EBTABLES-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(EBTABLES-m),$(LINUX_DIR)/net/$(mod).ko)
   KCONFIG:=CONFIG_BRIDGE_NETFILTER=y \
 	$(KCONFIG_EBTABLES)
   AUTOLOAD:=$(call AutoLoad,49,$(notdir $(EBTABLES-m)))
@@ -400,7 +400,7 @@ endef
 
 define KernelPackage/ebtables-ipv4
   TITLE:=ebtables: IPv4 support
-  FILES:=$(foreach mod,$(EBTABLES_IP4-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(EBTABLES_IP4-m),$(LINUX_DIR)/net/$(mod).ko)
   KCONFIG:=$(KCONFIG_EBTABLES_IP4)
   AUTOLOAD:=$(call AutoLoad,49,$(notdir $(EBTABLES_IP4-m)))
   $(call AddDepends/ebtables)
@@ -416,7 +416,7 @@ $(eval $(call KernelPackage,ebtables-ipv4))
 
 define KernelPackage/ebtables-ipv6
   TITLE:=ebtables: IPv6 support
-  FILES:=$(foreach mod,$(EBTABLES_IP6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(EBTABLES_IP6-m),$(LINUX_DIR)/net/$(mod).ko)
   KCONFIG:=$(KCONFIG_EBTABLES_IP6)
   AUTOLOAD:=$(call AutoLoad,49,$(notdir $(EBTABLES_IP6-m)))
   $(call AddDepends/ebtables)
@@ -432,7 +432,7 @@ $(eval $(call KernelPackage,ebtables-ipv6))
 
 define KernelPackage/ebtables-watchers
   TITLE:=ebtables: watchers support
-  FILES:=$(foreach mod,$(EBTABLES_WATCHERS-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(EBTABLES_WATCHERS-m),$(LINUX_DIR)/net/$(mod).ko)
   KCONFIG:=$(KCONFIG_EBTABLES_WATCHERS)
   AUTOLOAD:=$(call AutoLoad,49,$(notdir $(EBTABLES_WATCHERS-m)))
   $(call AddDepends/ebtables)
@@ -450,7 +450,7 @@ define KernelPackage/nfnetlink
   SUBMENU:=$(NF_MENU)
   TITLE:=Netlink-based userspace interface
   DEPENDS:=+kmod-ipt-core
-  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink.ko
   KCONFIG:=CONFIG_NETFILTER_NETLINK
   AUTOLOAD:=$(call AutoLoad,48,nfnetlink)
 endef
@@ -470,7 +470,7 @@ endef
 
 define KernelPackage/nfnetlink-log
   TITLE:=Netfilter LOG over NFNETLINK interface
-  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_log.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_log.ko
   KCONFIG:=CONFIG_NETFILTER_NETLINK_LOG
   AUTOLOAD:=$(call AutoLoad,48,nfnetlink_log)
   $(call AddDepends/nfnetlink)
@@ -485,7 +485,7 @@ $(eval $(call KernelPackage,nfnetlink-log))
 
 define KernelPackage/nfnetlink-queue
   TITLE:=Netfilter QUEUE over NFNETLINK interface
-  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_queue.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/netfilter/nfnetlink_queue.ko
   KCONFIG:=CONFIG_NETFILTER_NETLINK_QUEUE
   AUTOLOAD:=$(call AutoLoad,48,nfnetlink_queue)
   $(call AddDepends/nfnetlink)
@@ -500,7 +500,7 @@ $(eval $(call KernelPackage,nfnetlink-queue))
 
 define KernelPackage/nf-conntrack-netlink
   TITLE:=Connection tracking netlink interface
-  FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.ko
   KCONFIG:=CONFIG_NF_CT_NETLINK
   AUTOLOAD:=$(call AutoLoad,49,nf_conntrack_netlink)
   $(call AddDepends/nfnetlink,+kmod-ipt-conntrack)

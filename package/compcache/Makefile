@@ -23,8 +23,8 @@ define KernelPackage/ramzswap
   DEPENDS:=@BUSYBOX_CONFIG_SWAPONOFF
   TITLE:=Driver for compressed ram swap device
   VERSION:=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)+$(PKG_RELEASE)
-  FILES:=$(PKG_BUILD_DIR)/ramzswap.$(LINUX_KMOD_SUFFIX) \
-	 $(PKG_BUILD_DIR)/sub-projects/compression/lzo-kmod/lzo1x.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/ramzswap.ko \
+	 $(PKG_BUILD_DIR)/sub-projects/compression/lzo-kmod/lzo1x.ko
   URL:=http://code.google.com/p/compcache/
 endef
 

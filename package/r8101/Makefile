@@ -26,7 +26,7 @@ define KernelPackage/r8101
   TITLE:=RealTek RTL-8101E PCIe Fast Ethernet Adapter kernel support
   DEPENDS:=@TARGET_x86
   URL:=http://www.realtek.com.tw/
-  FILES:= $(PKG_BUILD_DIR)/src/r8101.$(LINUX_KMOD_SUFFIX)
+  FILES:= $(PKG_BUILD_DIR)/src/r8101.ko
   AUTOLOAD:=$(call AutoLoad,50,r8101)
 endef
 

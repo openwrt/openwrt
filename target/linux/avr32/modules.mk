@@ -10,7 +10,7 @@ define KernelPackage/atmel-wdt
   TITLE:=AT32AP700x watchdog
   DEPENDS:=@TARGET_avr32
   KCONFIG:=CONFIG_AT32AP700X_WDT
-  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/at32ap700x_wdt.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/at32ap700x_wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,at32ap700x_wdt)
 endef
 
