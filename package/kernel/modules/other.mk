@@ -310,6 +310,22 @@ endef
 $(eval $(call KernelPackage,input-gpio-keys))
 
 
+define KernelPackage/input-gpio-encoder
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=GPIO rotay encoder
+  KCONFIG:=CONFIG_INPUT_GPIO_ROTARY_ENCODER
+  FILES:=$(LINUX_DIR)/drivers/input/misc/rotary_encoder.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,62,rotary_encoder)
+  $(call AddDepends/input,@GPIO_SUPPORT)
+endef
+
+define KernelPackage/gpio-encoder/description
+ Kernel module to use rotary encoders connected to GPIO pins
+endef
+
+$(eval $(call KernelPackage,input-gpio-encoder))
+
+
 define KernelPackage/input-joydev
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Joystick device support
