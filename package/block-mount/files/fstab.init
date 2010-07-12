@@ -50,6 +50,7 @@ start() {
 	}
 	config_foreach do_swapon swap
 	config_foreach do_mount mount
+	config_foreach do_swapon swap  # do swap a second time so that swap on filesystems is enabled
 }
 
 stop() {
