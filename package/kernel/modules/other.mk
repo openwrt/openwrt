@@ -661,3 +661,19 @@ define KernelPackage/wdt-scx200/description
 endef
 
 $(eval $(call KernelPackage,wdt-scx200))
+
+
+define KernelPackage/pwm-gpio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PWM over GPIO
+  KCONFIG:=CONFIG_GENERIC_PWM \
+		CONFIG_GPIO_PWM
+  FILES:=$(LINUX_DIR)/drivers/pwm/gpio-pwm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,51,gpio-pwm)
+endef
+
+define KernelPackage/pwm-gpio/description
+ Kernel module to models a single-channel PWM device using a timer and a GPIO pin
+endef
+
+$(eval $(call KernelPackage,pwm-gpio))
