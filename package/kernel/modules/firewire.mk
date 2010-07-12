@@ -18,7 +18,7 @@ define KernelPackage/ieee1394
   TITLE:=Support for FireWire
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_IEEE1394
-  FILES:=$(LINUX_DIR)/drivers/ieee1394/ieee1394.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ieee1394/ieee1394.ko
   AUTOLOAD:=$(call AutoLoad,20,ieee1394)
 endef
 
@@ -33,7 +33,7 @@ define KernelPackage/ohci1394
   $(call firewiredep,)
   TITLE:=Support for OHCI-1394 controllers
   KCONFIG:= CONFIG_IEEE1394_OHCI1394
-  FILES:=$(LINUX_DIR)/drivers/ieee1394/ohci1394.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ieee1394/ohci1394.ko
   AUTOLOAD:=$(call AutoLoad,50,ohci1394)
 endef
 
@@ -50,7 +50,7 @@ define KernelPackage/sbp2
   KCONFIG:= \
   	CONFIG_IEEE1394_SBP2 \
 	CONFIG_IEEE1394_SBP2_PHYS_DMA=n
-  FILES:=$(LINUX_DIR)/drivers/ieee1394/sbp2.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ieee1394/sbp2.ko
   AUTOLOAD:=$(call AutoLoad,50,sbp2)
 endef
 
@@ -65,7 +65,7 @@ define KernelPackage/raw1394
   $(call firewiredep,kmod-ohci1394)
   TITLE:=Support for Raw I/O for FireWire devices
   KCONFIG:=CONFIG_IEEE1394_RAWIO
-  FILES:=$(LINUX_DIR)/drivers/ieee1394/raw1394.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ieee1394/raw1394.ko
   AUTOLOAD:=$(call AutoLoad,50,raw1394)
 endef
 
@@ -80,7 +80,7 @@ define KernelPackage/video1394
   $(call firewiredep,kmod-ohci1394)
   TITLE:=Support for FireWire video
   KCONFIG:=CONFIG_IEEE1394_VIDEO1394
-  FILES:=$(LINUX_DIR)/drivers/ieee1394/video1394.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ieee1394/video1394.ko
   AUTOLOAD:=$(call AutoLoad,50,video1394)
 endef
 

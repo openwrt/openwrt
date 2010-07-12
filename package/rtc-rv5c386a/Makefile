@@ -18,7 +18,7 @@ define KernelPackage/rtc-rv5c386a
   DEPENDS:=@TARGET_brcm47xx
   TITLE:=Driver for RTC RV5C386A (used in WL-700gE and WL-HDD)
   AUTOLOAD:=$(call AutoLoad,70,rtc)
-  FILES:=$(PKG_BUILD_DIR)/rtc.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/rtc.ko
 endef
 
 define Build/Prepare

@@ -10,7 +10,7 @@ define KernelPackage/ata-ixp4xx-cf
   TITLE:=IXP4XX Compact Flash support
   DEPENDS:=@TARGET_ixp4xx
   KCONFIG:=CONFIG_PATA_IXP4XX_CF
-  FILES:=$(LINUX_DIR)/drivers/ata/pata_ixp4xx_cf.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_ixp4xx_cf.ko
   AUTOLOAD:=$(call AutoLoad,41,pata_ixp4xx_cf,1)
   $(call AddDepends/ata)
 endef
@@ -29,7 +29,7 @@ define KernelPackage/ixp4xx-beeper
   KCONFIG:= \
 	CONFIG_INPUT_MISC=y \
 	CONFIG_INPUT_IXP4XX_BEEPER
-  FILES:=$(LINUX_DIR)/drivers/input/misc/ixp4xx-beeper.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/input/misc/ixp4xx-beeper.ko
   AUTOLOAD:=$(call AutoLoad,50,ixp4xx-beeper)
   $(call AddDepends/input)
 endef

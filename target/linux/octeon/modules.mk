@@ -10,7 +10,7 @@ define KernelPackage/ata-octeon-cf
   TITLE:=Octeon Compact Flash support
   DEPENDS:=@TARGET_octeon
   KCONFIG:=CONFIG_PATA_OCTEON_CF
-  FILES:=$(LINUX_DIR)/drivers/ata/pata_octeon_cf.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_octeon_cf.ko
   AUTOLOAD:=$(call AutoLoad,41,pata_octeon_cf,1)
   $(call AddDepends/ata)
 endef
@@ -27,7 +27,7 @@ define KernelPackage/usb-octeon
   TITLE:=Support for the Octeon USB OTG controller
   DEPENDS:=@TARGET_octeon
   KCONFIG:=CONFIG_USB_DWC_OTG
-  FILES:=$(LINUX_DIR)/drivers/usb/host/dwc_otg/dwc_otg.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/host/dwc_otg/dwc_otg.ko
   AUTOLOAD:=$(call AutoLoad,50,dwc_otg)
   $(call AddDepends/usb)
 endef

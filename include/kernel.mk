@@ -16,12 +16,6 @@ ifeq ($(DUMP),1)
 else
   export GCC_HONOUR_COPTS=s
 
-  ifeq ($(KERNEL),2.6)
-    LINUX_KMOD_SUFFIX=ko
-  else
-    LINUX_KMOD_SUFFIX=o
-  endif
-
   ifneq (,$(findstring uml,$(BOARD)))
     KERNEL_CC?=$(HOSTCC)
     KERNEL_CROSS?=

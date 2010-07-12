@@ -13,8 +13,8 @@ define KernelPackage/ata-rb532-cf
   	CONFIG_PATA_PLATFORM \
   	CONFIG_PATA_RB532
   FILES:=\
-  	$(LINUX_DIR)/drivers/ata/pata_platform.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/drivers/ata/pata_rb532_cf.$(LINUX_KMOD_SUFFIX)
+  	$(LINUX_DIR)/drivers/ata/pata_platform.ko \
+  	$(LINUX_DIR)/drivers/ata/pata_rb532_cf.ko
   AUTOLOAD:=$(call AutoLoad,41,pata_platform pata_rb532_cf,1)
   $(call AddDepends/ata)
 endef
@@ -33,7 +33,7 @@ define KernelPackage/input-rb532
   KCONFIG:= \
 	CONFIG_INPUT_MISC=y \
 	CONFIG_INPUT_RB532_BUTTON
-  FILES:=$(LINUX_DIR)/drivers/input/misc/rb532_button.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/input/misc/rb532_button.ko
   AUTOLOAD:=$(call AutoLoad,62,rb532_button)
   $(call AddDepends/input)
 endef

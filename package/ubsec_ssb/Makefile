@@ -20,7 +20,7 @@ define KernelPackage/ocf-ubsec-ssb
   SUBMENU:=$(CRYPTO_MENU)
   DEPENDS:=@TARGET_brcm47xx +kmod-crypto-core +kmod-crypto-ocf
   TITLE:=BCM5365P IPSec Core driver
-  FILES:=$(PKG_BUILD_DIR)/src/ubsec_ssb.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/src/ubsec_ssb.ko
   AUTOLOAD:=$(call AutoLoad,09,ubsec_ssb)
 endef
 

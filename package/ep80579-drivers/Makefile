@@ -29,8 +29,8 @@ $(call KernelPackage/ep80579-drivers/Default)
   SUBMENU:=Network Devices
   TITLE:=Intel EP80579 ethernet driver
   FILES:= \
-	$(PKG_BUILD_DIR)/Embedded/build/gcu.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/Embedded/build/iegbe.$(LINUX_KMOD_SUFFIX)
+	$(PKG_BUILD_DIR)/Embedded/build/gcu.ko \
+	$(PKG_BUILD_DIR)/Embedded/build/iegbe.ko
   AUTOLOAD:=$(call AutoLoad,40,gcu iegbe)
 endef
 
@@ -39,8 +39,8 @@ $(call KernelPackage/ep80579-drivers/Default)
   SUBMENU:=Other modules
   TITLE:=Misc. Intel EP80579 drivers (DMA,, gpio)
   FILES:= \
-	$(PKG_BUILD_DIR)/Embedded/build/dma.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/Embedded/build/gpio.$(LINUX_KMOD_SUFFIX)
+	$(PKG_BUILD_DIR)/Embedded/build/dma.ko \
+	$(PKG_BUILD_DIR)/Embedded/build/gpio.ko
   AUTOLOAD:=$(call AutoLoad,40,gpio dma)
 endef
 
@@ -49,8 +49,8 @@ $(call KernelPackage/ep80579-drivers/Default)
   SUBMENU:=Other modules
   TITLE:=Intel EP80579 CAN driver
   FILES:= \
-	$(PKG_BUILD_DIR)/Embedded/build/timesync.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/Embedded/build/can.$(LINUX_KMOD_SUFFIX)
+	$(PKG_BUILD_DIR)/Embedded/build/timesync.ko \
+	$(PKG_BUILD_DIR)/Embedded/build/can.ko
   AUTOLOAD:=$(call AutoLoad,40,timesync can)
 endef
 

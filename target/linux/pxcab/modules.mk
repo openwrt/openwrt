@@ -10,7 +10,7 @@ define KernelPackage/axonram
   TITLE:=Axon DDR2 memory device driver
   DEPENDS:=@TARGET_pxcab
   KCONFIG:=CONFIG_AXON_RAM
-  FILES:=$(LINUX_DIR)/arch/powerpc/sysdev/axonram.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/arch/powerpc/sysdev/axonram.ko
   AUTOLOAD:=$(call AutoLoad,01,axonram)
 endef
 

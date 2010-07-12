@@ -10,7 +10,7 @@ define KernelPackage/ledtrig-adm5120-switch
   TITLE:=LED ADM5120 Switch Port Status Trigger
   DEPENDS:=@TARGET_adm5120
   KCONFIG:=CONFIG_LEDS_TRIGGER_ADM5120_SWITCH
-  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-adm5120-switch.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-adm5120-switch.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-adm5120-switch)
 endef
 
@@ -27,7 +27,7 @@ define KernelPackage/pata-rb153-cf
   TITLE:=RouterBOARD 153 CF Slot support
   DEPENDS:=@TARGET_adm5120_router_le
   KCONFIG:=CONFIG_PATA_RB153_CF
-  FILES:=$(LINUX_DIR)/drivers/ata/pata_rb153_cf.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_rb153_cf.ko
   AUTOLOAD:=$(call AutoLoad,30,pata_rb153_cf,1)
   $(call AddDepends/ata)
 endef
@@ -44,7 +44,7 @@ define KernelPackage/usb-adm5120
   TITLE:=Support for the ADM5120 HCD controller
   DEPENDS:=@TARGET_adm5120
   KCONFIG:=CONFIG_USB_ADM5120_HCD
-  FILES:=$(LINUX_DIR)/drivers/usb/host/adm5120-hcd.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/host/adm5120-hcd.ko
   AUTOLOAD:=$(call AutoLoad,50,adm5120-hcd,1)
   $(call AddDepends/usb)
 endef

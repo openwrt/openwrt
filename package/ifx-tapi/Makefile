@@ -26,7 +26,7 @@ define KernelPackage/ifx-tapi
   URL:=http://www.lantiq.com/
   MAINTAINER:=Lantiq
   DEPENDS:=+kmod-ifxos @BROKEN
-  FILES:=$(PKG_BUILD_DIR)/src/drv_tapi.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/src/drv_tapi.ko
   AUTOLOAD:=$(call AutoLoad,20,drv_tapi)
   MENU:=1
 endef

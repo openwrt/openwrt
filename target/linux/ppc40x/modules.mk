@@ -10,7 +10,7 @@ define KernelPackage/ata-magicbox-cf
   TITLE:=Magicbox v2/OpenRB Compact flash support
   DEPENDS:=@TARGET_ppc40x
   KCONFIG:=CONFIG_PATA_MAGICBOX_CF
-  FILES:=$(LINUX_DIR)/drivers/ata/pata_magicbox_cf.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/ata/pata_magicbox_cf.ko
   AUTOLOAD:=$(call AutoLoad,41,pata_magicbox_cf,1)
   $(call AddDepends/ata)
 endef

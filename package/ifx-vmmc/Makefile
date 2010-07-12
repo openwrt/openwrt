@@ -26,7 +26,7 @@ define KernelPackage/ifx-vmmc
   URL:=http://www.lantiq.com/
   MAINTAINER:=Lantiq
   DEPENDS:=+kmod-ifx-tapi @BROKEN
-  FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.ko
   AUTOLOAD:=$(call AutoLoad,25,drv_vmmc)
   MENU:=1
 endef

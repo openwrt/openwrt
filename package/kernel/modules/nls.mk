@@ -13,7 +13,7 @@ define KernelPackage/nls-base
   SUBMENU:=Native Language Support
   TITLE:=Native Language Support
   KCONFIG:=CONFIG_NLS
-  FILES:=$(LINUX_DIR)/fs/nls/nls_base.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_base.ko
   AUTOLOAD:=$(call AutoLoad,20,nls_base,1)
 endef
 
@@ -28,7 +28,7 @@ define KernelPackage/nls-cp437
   SUBMENU:=Native Language Support
   TITLE:=Codepage 437 (United States, Canada)
   KCONFIG:=CONFIG_NLS_CODEPAGE_437
-  FILES:=$(LINUX_DIR)/fs/nls/nls_cp437.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp437.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_cp437)
   $(call AddDepends/nls)
 endef
@@ -44,7 +44,7 @@ define KernelPackage/nls-cp775
   SUBMENU:=Native Language Support
   TITLE:=Codepage 775 (Baltic Rim)
   KCONFIG:=CONFIG_NLS_CODEPAGE_775
-  FILES:=$(LINUX_DIR)/fs/nls/nls_cp775.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp775.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_cp775)
   $(call AddDepends/nls)
 endef
@@ -60,7 +60,7 @@ define KernelPackage/nls-cp850
   SUBMENU:=Native Language Support
   TITLE:=Codepage 850 (Europe)
   KCONFIG:=CONFIG_NLS_CODEPAGE_850
-  FILES:=$(LINUX_DIR)/fs/nls/nls_cp850.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp850.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_cp850)
   $(call AddDepends/nls)
 endef
@@ -76,7 +76,7 @@ define KernelPackage/nls-cp852
   SUBMENU:=Native Language Support
   TITLE:=Codepage 852 (Europe)
   KCONFIG:=CONFIG_NLS_CODEPAGE_852
-  FILES:=$(LINUX_DIR)/fs/nls/nls_cp852.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp852.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_cp852)
   $(call AddDepends/nls)
 endef
@@ -92,7 +92,7 @@ define KernelPackage/nls-cp866
   SUBMENU:=Native Language Support
   TITLE:=Codepage 866 (Cyrillic)
   KCONFIG:=CONFIG_NLS_CODEPAGE_866
-  FILES:=$(LINUX_DIR)/fs/nls/nls_cp866.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp866.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_cp866)
   $(call AddDepends/nls)
 endef
@@ -108,7 +108,7 @@ define KernelPackage/nls-cp1250
   SUBMENU:=Native Language Support
   TITLE:=Codepage 1250 (Eastern Europe)
   KCONFIG:=CONFIG_NLS_CODEPAGE_1250
-  FILES:=$(LINUX_DIR)/fs/nls/nls_cp1250.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp1250.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_cp1250)
   $(call AddDepends/nls)
 endef
@@ -124,7 +124,7 @@ define KernelPackage/nls-cp1251
   SUBMENU:=Native Language Support
   TITLE:=Codepage 1251 (Russian)
   KCONFIG:=CONFIG_NLS_CODEPAGE_1251
-  FILES:=$(LINUX_DIR)/fs/nls/nls_cp1251.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp1251.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_cp1251)
   $(call AddDepends/nls)
 endef
@@ -140,7 +140,7 @@ define KernelPackage/nls-iso8859-1
   SUBMENU:=Native Language Support
   TITLE:=ISO 8859-1 (Latin 1; Western European Languages)
   KCONFIG:=CONFIG_NLS_ISO8859_1
-  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-1.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-1.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-1)
   $(call AddDepends/nls)
 endef
@@ -156,7 +156,7 @@ define KernelPackage/nls-iso8859-2
   SUBMENU:=Native Language Support
   TITLE:=ISO 8859-2 (Latin 2; Central European Languages)
   KCONFIG:=CONFIG_NLS_ISO8859_2
-  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-2.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-2.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-2)
   $(call AddDepends/nls)
 endef
@@ -172,7 +172,7 @@ define KernelPackage/nls-iso8859-13
   SUBMENU:=Native Language Support
   TITLE:=ISO 8859-13 (Latin 7; Baltic)
   KCONFIG:=CONFIG_NLS_ISO8859_13
-  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-13.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-13.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-13)
   $(call AddDepends/nls)
 endef
@@ -188,7 +188,7 @@ define KernelPackage/nls-iso8859-15
   SUBMENU:=Native Language Support
   TITLE:=ISO 8859-15 (Latin 9; Western, with Euro symbol)
   KCONFIG:=CONFIG_NLS_ISO8859_15
-  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-15.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_iso8859-15.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_iso8859-15)
   $(call AddDepends/nls)
 endef
@@ -204,7 +204,7 @@ define KernelPackage/nls-koi8r
   SUBMENU:=Native Language Support
   TITLE:=KOI8-R (Russian)
   KCONFIG:=CONFIG_NLS_KOI8_R
-  FILES:=$(LINUX_DIR)/fs/nls/nls_koi8-r.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_koi8-r.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_koi8-r)
   $(call AddDepends/nls)
 endef
@@ -220,7 +220,7 @@ define KernelPackage/nls-utf8
   SUBMENU:=Native Language Support
   TITLE:=UTF-8
   KCONFIG:=CONFIG_NLS_UTF8
-  FILES:=$(LINUX_DIR)/fs/nls/nls_utf8.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/fs/nls/nls_utf8.ko
   AUTOLOAD:=$(call AutoLoad,25,nls_utf8)
   $(call AddDepends/nls)
 endef

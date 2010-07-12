@@ -17,7 +17,7 @@ define KernelPackage/wrt55agv2-spidevs
   SUBMENU:=Other modules
   TITLE:=WRT55AG v2 SPI devices support
   DEPENDS:=@TARGET_atheros +kmod-spi-gpio-old +kmod-spi-ks8995
-  FILES:=$(PKG_BUILD_DIR)/wrt55agv2_spidevs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/wrt55agv2_spidevs.ko
 endef
 
 define KernelPackage/wrt55agv2-spidevs/description

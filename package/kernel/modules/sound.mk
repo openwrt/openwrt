@@ -11,7 +11,7 @@ define KernelPackage/pcspkr
   SUBMENU:=$(SOUND_MENU)
   TITLE:=PC speaker support
   KCONFIG:=CONFIG_INPUT_PCSPKR
-  FILES:=$(LINUX_DIR)/drivers/input/misc/pcspkr.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/input/misc/pcspkr.ko
   AUTOLOAD:=$(call AutoLoad,50,pcspkr)
 endef
 
@@ -45,7 +45,7 @@ define KernelPackage/sound-core
 endef
 
 define KernelPackage/sound-core/2.4
-  FILES:=$(LINUX_DIR)/drivers/sound/soundcore.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/sound/soundcore.ko
   AUTOLOAD:=$(call AutoLoad,30,soundcore)
 endef
 
@@ -63,16 +63,16 @@ SOUNDCORE_LOAD ?= \
 	snd-pcm-oss
 
 SOUNDCORE_FILES ?= \
-	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/snd.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/snd-page-alloc.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/snd-hwdep.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/seq/snd-seq-device.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/snd-rawmidi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/snd-timer.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/snd-pcm.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/oss/snd-mixer-oss.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/core/oss/snd-pcm-oss.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/sound/soundcore.ko \
+	$(LINUX_DIR)/sound/core/snd.ko \
+	$(LINUX_DIR)/sound/core/snd-page-alloc.ko \
+	$(LINUX_DIR)/sound/core/snd-hwdep.ko \
+	$(LINUX_DIR)/sound/core/seq/snd-seq-device.ko \
+	$(LINUX_DIR)/sound/core/snd-rawmidi.ko \
+	$(LINUX_DIR)/sound/core/snd-timer.ko \
+	$(LINUX_DIR)/sound/core/snd-pcm.ko \
+	$(LINUX_DIR)/sound/core/oss/snd-mixer-oss.ko \
+	$(LINUX_DIR)/sound/core/oss/snd-pcm-oss.ko
 
 define KernelPackage/sound-core/2.6
   FILES:=$(SOUNDCORE_FILES)
@@ -81,8 +81,8 @@ endef
 
 define KernelPackage/sound-core/uml
   FILES:= \
-	$(LINUX_DIR)/sound/soundcore.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/arch/um/drivers/hostaudio.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/sound/soundcore.ko \
+	$(LINUX_DIR)/arch/um/drivers/hostaudio.ko
   AUTOLOAD:=$(call AutoLoad,30,soundcore hostaudio)
 endef
 
@@ -102,7 +102,7 @@ endef
 define KernelPackage/sound-i8x0
   TITLE:=Intel/SiS/nVidia/AMD/ALi AC97 Controller
   KCONFIG:=CONFIG_SND_INTEL8X0
-  FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.ko
   AUTOLOAD:=$(call AutoLoad,35,snd-i8x0)
   $(call AddDepends/sound)
 endef
@@ -119,9 +119,9 @@ $(eval $(call KernelPackage,sound-i8x0))
 define KernelPackage/sound-cs5535audio
   TITLE:=CS5535 PCI Controller
   KCONFIG:=CONFIG_SND_CS5535AUDIO
-  FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/ac97_bus.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/sound/pci/ac97/snd-ac97-codec.$(LINUX_KMOD_SUFFIX) 
+  FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.ko \
+	$(LINUX_DIR)/sound/ac97_bus.ko \
+	$(LINUX_DIR)/sound/pci/ac97/snd-ac97-codec.ko 
   AUTOLOAD:=$(call AutoLoad,35, ac97_bus snd-ac97-codec snd-cs5535audio)
   $(call AddDepends/sound)
 endef

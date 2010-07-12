@@ -14,8 +14,8 @@ define KernelPackage/atm
 	CONFIG_ATM \
 	CONFIG_ATM_BR2684
   FILES:= \
-	$(LINUX_DIR)/net/atm/atm.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/atm/br2684.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/net/atm/atm.ko \
+	$(LINUX_DIR)/net/atm/br2684.ko
   AUTOLOAD:=$(call AutoLoad,30,atm br2684)
 endef
 
@@ -31,7 +31,7 @@ define KernelPackage/atmtcp
   TITLE:=ATM over TCP
   DEPENDS:=kmod-atm
   KCONFIG:=CONFIG_ATM_TCP CONFIG_ATM_DRIVERS=y
-  FILES:=$(LINUX_DIR)/drivers/atm/atmtcp.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/atm/atmtcp.ko
   AUTOLOAD:=$(call AutoLoad,40,atmtcp)
 endef
 
@@ -52,8 +52,8 @@ define KernelPackage/appletalk
 	CONFIG_IPDDP_ENCAP=y \
 	CONFIG_IPDDP_DECAP=y
   FILES:= \
-	$(LINUX_DIR)/net/appletalk/appletalk.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/appletalk/ipddp.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/net/appletalk/appletalk.ko \
+	$(LINUX_DIR)/drivers/net/appletalk/ipddp.ko
   AUTOLOAD:=$(call AutoLoad,40,appletalk ipddp)
 endef
 
@@ -68,7 +68,7 @@ define KernelPackage/bonding
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Ethernet bonding driver
   KCONFIG:=CONFIG_BONDING
-  FILES:=$(LINUX_DIR)/drivers/net/bonding/bonding.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/bonding/bonding.ko
   AUTOLOAD:=$(call AutoLoad,40,bonding)
 endef
 
@@ -88,9 +88,9 @@ define KernelPackage/capi
 	CONFIG_ISDN_CAPIFS \
 	CONFIG_ISDN_CAPI_CAPIFS
   FILES:= \
-	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/capi/capifs.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/capi/capi.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/isdn/capi/kernelcapi.ko \
+	$(LINUX_DIR)/drivers/isdn/capi/capifs.ko \
+	$(LINUX_DIR)/drivers/isdn/capi/capi.ko
   AUTOLOAD:=$(call AutoLoad,30,kernelcapi capifs capi)
 endef
 
@@ -109,9 +109,9 @@ define KernelPackage/misdn
 	CONFIG_MISDN_DSP \
 	CONFIG_MISDN_L1OIP
   FILES:= \
-  	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_dsp.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/mISDN/l1oip.$(LINUX_KMOD_SUFFIX)
+  	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_core.ko \
+	$(LINUX_DIR)/drivers/isdn/mISDN/mISDN_dsp.ko \
+	$(LINUX_DIR)/drivers/isdn/mISDN/l1oip.ko
   AUTOLOAD:=$(call AutoLoad,30,mISDN_core mISDN_dsp l1oip)
 endef
 
@@ -140,9 +140,9 @@ define KernelPackage/isdn4linux
     CONFIG_ISDN_X25=y \
     CONFIG_ISDN_DIVERSION
   FILES:= \
-    $(LINUX_DIR)/drivers/isdn/divert/dss1_divert.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/i4l/isdn.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/isdn/i4l/isdn_bsdcomp.$(LINUX_KMOD_SUFFIX)
+    $(LINUX_DIR)/drivers/isdn/divert/dss1_divert.ko \
+	$(LINUX_DIR)/drivers/isdn/i4l/isdn.ko \
+	$(LINUX_DIR)/drivers/isdn/i4l/isdn_bsdcomp.ko
   AUTOLOAD:=$(call AutoLoad,40,isdn isdn_bsdcomp dss1_divert)
 endef
 
@@ -158,7 +158,7 @@ define KernelPackage/ipip
   TITLE:=IP-in-IP encapsulation
   DEPENDS:=+kmod-iptunnel4
   KCONFIG:=CONFIG_NET_IPIP
-  FILES:=$(LINUX_DIR)/net/ipv4/ipip.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/ipv4/ipip.ko
   AUTOLOAD:=$(call AutoLoad,32,ipip)
 endef
 
@@ -182,7 +182,7 @@ define KernelPackage/ipsec
 	CONFIG_NET_KEY \
 	CONFIG_XFRM_USER \
 	CONFIG_XFRM_IPCOMP
-  FILES:=$(foreach mod,$(IPSEC-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPSEC-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,30,$(notdir $(IPSEC-m)))
 endef
 
@@ -218,7 +218,7 @@ define KernelPackage/ipsec4
 	CONFIG_INET_XFRM_MODE_TRANSPORT \
 	CONFIG_INET_XFRM_MODE_TUNNEL \
 	CONFIG_INET_XFRM_TUNNEL
-  FILES:=$(foreach mod,$(IPSEC4-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPSEC4-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,32,$(notdir $(IPSEC4-m)))
 endef
 
@@ -258,7 +258,7 @@ define KernelPackage/ipsec6
 	CONFIG_INET6_XFRM_MODE_TRANSPORT \
 	CONFIG_INET6_XFRM_MODE_TUNNEL \
 	CONFIG_INET6_XFRM_TUNNEL
-  FILES:=$(foreach mod,$(IPSEC6-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  FILES:=$(foreach mod,$(IPSEC6-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,32,$(notdir $(IPSEC6-m)))
 endef
 
@@ -284,7 +284,7 @@ define KernelPackage/iptunnel4
   KCONFIG:= \
 	CONFIG_NET_IPIP \
 	CONFIG_INET_TUNNEL
-  FILES:=$(LINUX_DIR)/net/ipv4/tunnel4.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/ipv4/tunnel4.ko
   AUTOLOAD:=$(call AutoLoad,31,tunnel4)
 endef
 
@@ -301,7 +301,7 @@ define KernelPackage/iptunnel6
   DEPENDS:= +kmod-ipv6
   KCONFIG:= \
 	CONFIG_INET6_TUNNEL
-  FILES:=$(LINUX_DIR)/net/ipv6/tunnel6.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/ipv6/tunnel6.ko
   AUTOLOAD:=$(call AutoLoad,31,tunnel6)
 endef
 
@@ -322,7 +322,7 @@ define KernelPackage/ipv6
 	CONFIG_IPV6_MROUTE=y \
 	CONFIG_IPV6_PIMSM_V2=n \
 	CONFIG_IPV6_SUBTREES=y
-  FILES:=$(LINUX_DIR)/net/ipv6/ipv6.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/ipv6/ipv6.ko
   AUTOLOAD:=$(call AutoLoad,20,ipv6)
 endef
 
@@ -338,7 +338,7 @@ define KernelPackage/sit
   DEPENDS:=+kmod-ipv6 +kmod-iptunnel4
   TITLE:=IPv6-in-IPv4 tunnelling
   KCONFIG:=CONFIG_IPV6 CONFIG_IPV6_SIT
-  FILES:=$(LINUX_DIR)/net/ipv6/sit.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/ipv6/sit.ko
   AUTOLOAD:=$(call AutoLoad,32,sit)
 endef
 
@@ -355,7 +355,7 @@ define KernelPackage/ip6-tunnel
   DEPENDS:= +kmod-ipv6 +kmod-iptunnel6
   KCONFIG:= CONFIG_IPV6_TUNNEL
   FILES:= $(foreach mod,ip6_tunnel, \
-	$(LINUX_DIR)/net/ipv6/$(mod).$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/net/ipv6/$(mod).ko \
   )
   AUTOLOAD:=$(call AutoLoad,32,ip6_tunnel)
 endef
@@ -371,7 +371,7 @@ define KernelPackage/gre
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=GRE support
   KCONFIG:=CONFIG_NET_IPGRE
-  FILES=$(LINUX_DIR)/net/ipv4/ip_gre.$(LINUX_KMOD_SUFFIX)
+  FILES=$(LINUX_DIR)/net/ipv4/ip_gre.ko
 endef
 
 define KernelPackage/gre/description
@@ -385,7 +385,7 @@ define KernelPackage/tun
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Universal TUN/TAP driver
   KCONFIG:=CONFIG_TUN
-  FILES:=$(LINUX_DIR)/drivers/net/tun.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/tun.ko
   AUTOLOAD:=$(call AutoLoad,30,tun)
 endef
 
@@ -405,9 +405,9 @@ define KernelPackage/ppp
 	CONFIG_PPP_ASYNC \
 	CONFIG_SLHC
   FILES:= \
-	$(LINUX_DIR)/drivers/net/ppp_async.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/ppp_generic.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/slhc.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/net/ppp_async.ko \
+	$(LINUX_DIR)/drivers/net/ppp_generic.ko \
+	$(LINUX_DIR)/drivers/net/slhc.ko
   AUTOLOAD:=$(call AutoLoad,30,slhc ppp_generic ppp_async)
 endef
 
@@ -423,7 +423,7 @@ define KernelPackage/ppp-synctty
   TITLE:=PPP sync tty support
   DEPENDS:=kmod-ppp
   KCONFIG:=CONFIG_PPP_SYNC_TTY
-  FILES:=$(LINUX_DIR)/drivers/net/ppp_synctty.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/ppp_synctty.ko
   AUTOLOAD:=$(call AutoLoad,40,ppp_synctty)
 endef
 
@@ -440,8 +440,8 @@ define KernelPackage/pppoe
   DEPENDS:=kmod-ppp
   KCONFIG:=CONFIG_PPPOE
   FILES:= \
-	$(LINUX_DIR)/drivers/net/pppoe.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/pppox.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/net/pppoe.ko \
+	$(LINUX_DIR)/drivers/net/pppox.ko
   AUTOLOAD:=$(call AutoLoad,40,pppox pppoe)
 endef
 
@@ -457,7 +457,7 @@ define KernelPackage/pppoa
   TITLE:=PPPoA support
   DEPENDS:=kmod-ppp +kmod-atm
   KCONFIG:=CONFIG_PPPOATM CONFIG_ATM_DRIVERS=y
-  FILES:=$(LINUX_DIR)/net/atm/pppoatm.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/atm/pppoatm.ko
   AUTOLOAD:=$(call AutoLoad,40,pppoatm)
 endef
 
@@ -472,7 +472,7 @@ define KernelPackage/pppol2tp
   TITLE:=PPPoL2TP support
   DEPENDS:=kmod-ppp +kmod-pppoe
   KCONFIG:=CONFIG_PPPOL2TP
-  FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.ko
   AUTOLOAD:=$(call AutoLoad,40,pppol2tp)
 endef
 
@@ -488,7 +488,7 @@ define KernelPackage/ipoa
   TITLE:=IPoA support
   DEPENDS:=kmod-atm
   KCONFIG:=CONFIG_ATM_CLIP
-  FILES:=$(LINUX_DIR)/net/atm/clip.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/atm/clip.ko
   AUTOLOAD:=$(call AutoLoad,40,clip)
 endef
 
@@ -506,7 +506,7 @@ define KernelPackage/mppe
   KCONFIG:= \
 	CONFIG_PPP_MPPE_MPPC \
 	CONFIG_PPP_MPPE
-  FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe.ko
   AUTOLOAD:=$(call AutoLoad,31,ppp_mppe)
 endef
 
@@ -552,7 +552,7 @@ define KernelPackage/sched
 	CONFIG_NET_EMATCH_U32 \
 	CONFIG_NET_EMATCH_META \
 	CONFIG_NET_EMATCH_TEXT
-  FILES:=$(LINUX_DIR)/net/sched/*.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/sched/*.ko
 endef
 
 define KernelPackage/sched/description
@@ -569,8 +569,8 @@ define KernelPackage/ax25
 	CONFIG_AX25 \
 	CONFIG_MKISS
   FILES:= \
-	$(LINUX_DIR)/net/ax25/ax25.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/net/hamradio/mkiss.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/net/ax25/ax25.ko \
+	$(LINUX_DIR)/drivers/net/hamradio/mkiss.ko
   AUTOLOAD:=$(call AutoLoad,80,ax25 mkiss)
   $(call AddDepends/crc16)
 endef
@@ -591,10 +591,10 @@ define KernelPackage/mp-alg
 	CONFIG_IP_ROUTE_MULTIPATH_WRANDOM \
 	CONFIG_IP_ROUTE_MULTIPATH_DRR
   FILES:= \
-	$(LINUX_DIR)/net/ipv4/multipath_rr.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/ipv4/multipath_random.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/ipv4/multipath_wrandom.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/ipv4/multipath_drr.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/net/ipv4/multipath_rr.ko \
+	$(LINUX_DIR)/net/ipv4/multipath_random.ko \
+	$(LINUX_DIR)/net/ipv4/multipath_wrandom.ko \
+	$(LINUX_DIR)/net/ipv4/multipath_drr.ko
   AUTOLOAD:=$(call AutoLoad,35,multipath_rr multipath_random multipath_wrandom multipath_drr)
 endef
 
@@ -613,7 +613,7 @@ define KernelPackage/pktgen
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Network packet generator
   KCONFIG:=CONFIG_NET_PKTGEN
-  FILES:=$(LINUX_DIR)/net/core/pktgen.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/core/pktgen.ko
   AUTOLOAD:=$(call AutoLoad,99,pktgen)
 endef
 

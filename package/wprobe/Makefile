@@ -33,7 +33,7 @@ $(call Package/wprobe/Default)
   TITLE:=Wireless driver probe infrastructure
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
   FILES:= \
-  	$(PKG_BUILD_DIR)/kernel/wprobe.$(LINUX_KMOD_SUFFIX)
+  	$(PKG_BUILD_DIR)/kernel/wprobe.ko
   AUTOLOAD:=$(call AutoLoad,01,wprobe)
 endef
 

@@ -16,10 +16,10 @@ define KernelPackage/lib80211
 	CONFIG_LIB80211_CRYPT_TKIP \
 	CONFIG_LIB80211_CRYPT_CCMP
   FILES:= \
-  	$(LINUX_DIR)/net/wireless/lib80211.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/net/wireless/lib80211_crypt_wep.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/net/wireless/lib80211_crypt_ccmp.$(LINUX_KMOD_SUFFIX) \
-  	$(LINUX_DIR)/net/wireless/lib80211_crypt_tkip.$(LINUX_KMOD_SUFFIX)
+  	$(LINUX_DIR)/net/wireless/lib80211.ko \
+  	$(LINUX_DIR)/net/wireless/lib80211_crypt_wep.ko \
+  	$(LINUX_DIR)/net/wireless/lib80211_crypt_ccmp.ko \
+  	$(LINUX_DIR)/net/wireless/lib80211_crypt_tkip.ko
   AUTOLOAD:=$(call AutoLoad,10, \
 	lib80211 \
 	lib80211_crypt_wep \
@@ -44,7 +44,7 @@ define KernelPackage/net-airo
   TITLE:=Cisco Aironet driver
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_AIRO
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/airo.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/airo.ko
   AUTOLOAD:=$(call AutoLoad,50,airo)
 endef
 
@@ -62,7 +62,7 @@ define KernelPackage/net-hermes
   KCONFIG:=CONFIG_HERMES \
 	CONFIG_HERMES_CACHE_FW_ON_INIT=n
   FILES:= \
-	$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco.ko
   AUTOLOAD:=$(call AutoLoad,50,orinoco)
 endef
 
@@ -78,7 +78,7 @@ define KernelPackage/net-hermes-pci
   TITLE:=Intersil Prism 2.5 PCI support
   DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PCI_HERMES
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco_pci.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco_pci.ko
   AUTOLOAD:=$(call AutoLoad,55,orinoco_pci)
 endef
 
@@ -94,7 +94,7 @@ define KernelPackage/net-hermes-plx
   TITLE:=PLX9052 based PCI adaptor
   DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PLX_HERMES
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco_plx.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco_plx.ko
   AUTOLOAD:=$(call AutoLoad,55,orinoco_plx)
 endef
 
@@ -110,7 +110,7 @@ define KernelPackage/net-hermes-pcmcia
   TITLE:=Hermes based PCMCIA adaptors
   DEPENDS:=@PCMCIA_SUPPORT +kmod-net-hermes
   KCONFIG:=CONFIG_PCMCIA_HERMES
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco_cs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/orinoco/orinoco_cs.ko
   AUTOLOAD:=$(call AutoLoad,55,orinoco_cs)
 endef
 
@@ -126,7 +126,7 @@ define KernelPackage/net-prism54
   TITLE:=Intersil Prism54 support
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_PRISM54
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/prism54/prism54.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/prism54/prism54.ko
   AUTOLOAD:=$(call AutoLoad,60,prism54)
 endef
 

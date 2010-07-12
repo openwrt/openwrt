@@ -33,7 +33,7 @@ CRYPTO_MODULES = \
 	DEFLATE=deflate
 
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
-crypto_file=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).$(LINUX_KMOD_SUFFIX))
+crypto_file=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).ko)
 crypto_name=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(word 2,$(subst =,$(space),$(1))))
 
 # XXX: added CONFIG_CRYPTO_HMAC to KCONFIG so that CONFIG_CRYPTO_HASH is
@@ -47,7 +47,7 @@ define KernelPackage/crypto-core
 endef
 
 define KernelPackage/crypto-core/2.4
-  FILES:=$(LINUX_DIR)/crypto/deflate.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/deflate.ko
   AUTOLOAD:=$(call AutoLoad,01, deflate)
 endef
 
@@ -68,8 +68,8 @@ define KernelPackage/crypto-hw-padlock
 	CONFIG_CRYPTO_DEV_PADLOCK_AES \
 	CONFIG_CRYPTO_DEV_PADLOCK_SHA
   FILES:= \
-	$(LINUX_DIR)/drivers/crypto/padlock-aes.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/crypto/padlock-sha.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/crypto/padlock-aes.ko \
+	$(LINUX_DIR)/drivers/crypto/padlock-sha.ko
   AUTOLOAD:=$(call AutoLoad,09,padlock-aes padlock-sha)
   $(call AddDepends/crypto)
 endef
@@ -82,7 +82,7 @@ define KernelPackage/crypto-hw-geode
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_GEODE
-  FILES:=$(LINUX_DIR)/drivers/crypto/geode-aes.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/crypto/geode-aes.ko
   AUTOLOAD:=$(call AutoLoad,09,geode-aes)
   $(call AddDepends/crypto)
 endef
@@ -98,7 +98,7 @@ define KernelPackage/crypto-hw-hifn-795x
 	CONFIG_HW_RANDOM=y \
 	CONFIG_CRYPTO_DEV_HIFN_795X \
 	CONFIG_CRYPTO_DEV_HIFN_795X_RNG=y
-  FILES:=$(LINUX_DIR)/drivers/crypto/hifn_795x.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/crypto/hifn_795x.ko
   AUTOLOAD:=$(call AutoLoad,09,hifn_795x)
   $(call AddDepends/crypto,+kmod-crypto-des)
 endef
@@ -112,7 +112,7 @@ define KernelPackage/crypto-hw-ixp4xx
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_IXP4XX
-  FILES:=$(LINUX_DIR)/drivers/crypto/ixp4xx_crypto.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/crypto/ixp4xx_crypto.ko
   AUTOLOAD:=$(call AutoLoad,90,ixp4xx_crypto)
   $(call AddDepends/crypto,+kmod-crypto-authenc +kmod-crypto-des)
 endef
@@ -130,7 +130,7 @@ define KernelPackage/crypto-hw-ppc4xx
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PPC4XX
-  FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.ko
   AUTOLOAD:=$(call AutoLoad,90,crypto4xx)
   $(call AddDepends/crypto)
 endef
@@ -145,13 +145,13 @@ $(eval $(call KernelPackage,crypto-hw-ppc4xx))
 define KernelPackage/crypto-aes
   TITLE:=AES cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_AES CONFIG_CRYPTO_AES_586
-  FILES:=$(LINUX_DIR)/crypto/aes$(AES_SUFFIX).$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/aes$(AES_SUFFIX).ko
   AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX))
   $(call AddDepends/crypto)
 endef
 
 define KernelPackage/crypto-aes/x86
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/aes-i586.$(LINUX_KMOD_SUFFIX)
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/aes-i586.ko
   AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX) aes-i586)
 endef
 
@@ -161,7 +161,7 @@ $(eval $(call KernelPackage,crypto-aes))
 define KernelPackage/crypto-arc4
   TITLE:=ARC4 (RC4) cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_ARC4
-  FILES:=$(LINUX_DIR)/crypto/arc4.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/arc4.ko
   AUTOLOAD:=$(call AutoLoad,09,arc4)
   $(call AddDepends/crypto)
 endef
@@ -172,7 +172,7 @@ $(eval $(call KernelPackage,crypto-arc4))
 define KernelPackage/crypto-authenc
   TITLE:=Combined mode wrapper for IPsec
   KCONFIG:=CONFIG_CRYPTO_AUTHENC
-  FILES:=$(LINUX_DIR)/crypto/authenc.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/authenc.ko
   AUTOLOAD:=$(call AutoLoad,09,authenc)
   $(call AddDepends/crypto)
 endef
@@ -182,7 +182,7 @@ $(eval $(call KernelPackage,crypto-authenc))
 define KernelPackage/crypto-des
   TITLE:=DES/3DES cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_DES
-  FILES:=$(LINUX_DIR)/crypto/des$(DES_SUFFIX).$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/des$(DES_SUFFIX).ko
   AUTOLOAD:=$(call AutoLoad,09,des$(DES_SUFFIX))
   $(call AddDepends/crypto)
 endef
@@ -193,7 +193,7 @@ $(eval $(call KernelPackage,crypto-des))
 define KernelPackage/crypto-hmac
   TITLE:=HMAC digest CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_HMAC
-  FILES:=$(LINUX_DIR)/crypto/hmac.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/hmac.ko
   AUTOLOAD:=$(call AutoLoad,09,hmac)
   $(call AddDepends/crypto)
 endef
@@ -204,7 +204,7 @@ $(eval $(call KernelPackage,crypto-hmac))
 define KernelPackage/crypto-md5
   TITLE:=MD5 digest CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_MD5
-  FILES:=$(LINUX_DIR)/crypto/md5.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/md5.ko
   AUTOLOAD:=$(call AutoLoad,09,md5)
   $(call AddDepends/crypto)
 endef
@@ -215,7 +215,7 @@ $(eval $(call KernelPackage,crypto-md5))
 define KernelPackage/crypto-michael-mic
   TITLE:=Michael MIC keyed digest CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_MICHAEL_MIC
-  FILES:=$(LINUX_DIR)/crypto/michael_mic.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/michael_mic.ko
   AUTOLOAD:=$(call AutoLoad,09,michael_mic)
   $(call AddDepends/crypto)
 endef
@@ -226,7 +226,7 @@ $(eval $(call KernelPackage,crypto-michael-mic))
 define KernelPackage/crypto-sha1
   TITLE:=SHA1 digest CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_SHA1
-  FILES:=$(LINUX_DIR)/crypto/sha1$(SHA1_SUFFIX).$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/sha1$(SHA1_SUFFIX).ko
   AUTOLOAD:=$(call AutoLoad,09,sha1$(SHA1_SUFFIX))
   $(call AddDepends/crypto)
 endef
@@ -256,32 +256,32 @@ define KernelPackage/crypto-misc
 	CONFIG_CRYPTO_TWOFISH_586 \
 	CONFIG_CRYPTO_WP512
   FILES:= \
-	$(LINUX_DIR)/crypto/anubis.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/blowfish.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/cast5.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/cast6.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/khazad.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/md4.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/serpent.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/sha256$(SHA256_SUFFIX).$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/sha512$(SHA512_SUFFIX).$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/tea.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/twofish.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/wp512.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/crypto/anubis.ko \
+	$(LINUX_DIR)/crypto/blowfish.ko \
+	$(LINUX_DIR)/crypto/cast5.ko \
+	$(LINUX_DIR)/crypto/cast6.ko \
+	$(LINUX_DIR)/crypto/khazad.ko \
+	$(LINUX_DIR)/crypto/md4.ko \
+	$(LINUX_DIR)/crypto/serpent.ko \
+	$(LINUX_DIR)/crypto/sha256$(SHA256_SUFFIX).ko \
+	$(LINUX_DIR)/crypto/sha512$(SHA512_SUFFIX).ko \
+	$(LINUX_DIR)/crypto/tea.ko \
+	$(LINUX_DIR)/crypto/twofish.ko \
+	$(LINUX_DIR)/crypto/wp512.ko
   $(call AddDepends/crypto)
 endef
 
 define KernelPackage/crypto-misc/2.6
   FILES+= \
-	$(LINUX_DIR)/crypto/camellia.$(LINUX_KMOD_SUFFIX) \
-	$(if $(findstring y,$(CONFIG_CRYPTO_CRC32C)),,$(LINUX_DIR)/crypto/crc32c.$(LINUX_KMOD_SUFFIX)) \
-	$(LINUX_DIR)/crypto/fcrypt.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/tgr192.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/twofish_common.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/crypto/camellia.ko \
+	$(if $(findstring y,$(CONFIG_CRYPTO_CRC32C)),,$(LINUX_DIR)/crypto/crc32c.ko) \
+	$(LINUX_DIR)/crypto/fcrypt.ko \
+	$(LINUX_DIR)/crypto/tgr192.ko \
+	$(LINUX_DIR)/crypto/twofish_common.ko
 endef
 
 define KernelPackage/crypto-misc/x86
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/twofish-i586.$(LINUX_KMOD_SUFFIX)
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/twofish-i586.ko
 endef
 
 $(eval $(call KernelPackage,crypto-misc))
@@ -297,9 +297,9 @@ define KernelPackage/crypto-ocf
 	CONFIG_OCF_FIPS=y \
 	CONFIG_OCF_RANDOMHARVEST=y
   FILES:= \
-	$(LINUX_DIR)/crypto/ocf/ocf.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/ocf/cryptodev.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/ocf/cryptosoft.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/crypto/ocf/ocf.ko \
+	$(LINUX_DIR)/crypto/ocf/cryptodev.ko \
+	$(LINUX_DIR)/crypto/ocf/cryptosoft.ko
   AUTOLOAD:=$(call AutoLoad,09, \
 	ocf \
 	cryptodev \
@@ -315,7 +315,7 @@ define KernelPackage/crypto-ocf-hifn7751
   TITLE:=OCF support for Hifn 6500/7751/7811/795x, Invertex AEON and NetSec 7751 devices
   DEPENDS:=+@OPENSSL_ENGINE @PCI_SUPPORT @!TARGET_uml kmod-crypto-ocf
   KCONFIG:=CONFIG_OCF_HIFN
-  FILES:=$(LINUX_DIR)/crypto/ocf/hifn/hifn7751.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/ocf/hifn/hifn7751.ko
   AUTOLOAD:=$(call AutoLoad,10,hifn7751)
   $(call AddDepends/crypto)
 endef
@@ -327,7 +327,7 @@ define KernelPackage/crypto-ocf-hifnhipp
   TITLE:=OCF support for Hifn 7855/8155 devices
   DEPENDS:=+@OPENSSL_ENGINE @PCI_SUPPORT @!TARGET_uml kmod-crypto-ocf
   KCONFIG:=CONFIG_OCF_HIFNHIPP
-  FILES:=$(LINUX_DIR)/crypto/ocf/hifn/hifnHIPP.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/ocf/hifn/hifnHIPP.ko
   AUTOLOAD:=$(call AutoLoad,10,hifnhipp)
   $(call AddDepends/crypto)
 endef
@@ -338,7 +338,7 @@ $(eval $(call KernelPackage,crypto-ocf-hifnhipp))
 define KernelPackage/crypto-null
   TITLE:=Null CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_NULL
-  FILES:=$(LINUX_DIR)/crypto/crypto_null.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/crypto_null.ko
   AUTOLOAD:=$(call AutoLoad,09,crypto_null)
   $(call AddDepends/crypto)
 endef
@@ -349,7 +349,7 @@ $(eval $(call KernelPackage,crypto-null))
 define KernelPackage/crypto-test
   TITLE:=Test CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_TEST
-  FILES:=$(LINUX_DIR)/crypto/tcrypt.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/crypto/tcrypt.ko
   $(call AddDepends/crypto)
 endef
 

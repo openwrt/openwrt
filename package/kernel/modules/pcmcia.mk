@@ -23,9 +23,9 @@ define KernelPackage/pcmcia-core/2.4
 #	CONFIG_PCMCIA \
 #	CONFIG_CARDBUS
   FILES:= \
-	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/ds.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.ko \
+	$(LINUX_DIR)/drivers/pcmcia/ds.ko \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.ko
   AUTOLOAD:=$(call AutoLoad,25,pcmcia_core ds yenta_socket)
 endef
 
@@ -35,8 +35,8 @@ define KernelPackage/pcmcia-core/2.6
 #	CONFIG_PCMCIA \
 #	PCMCIA_DEBUG=n
   FILES:= \
-	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/pcmcia.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.ko \
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia.ko
   AUTOLOAD:=$(call AutoLoad,25,pcmcia_core pcmcia)
 endef
 
@@ -56,13 +56,13 @@ define KernelPackage/pcmcia-yenta
 	CONFIG_YENTA
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1)
   FILES:= \
-	$(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.ko \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.ko
   AUTOLOAD:=$(call AutoLoad,41,pcmcia_rsrc yenta_socket)
 else
   FILES:= \
-	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.ko \
+	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.ko
   AUTOLOAD:=$(call AutoLoad,41,rsrc_nonstatic yenta_socket)
 endif
 endef
@@ -82,12 +82,12 @@ endef
 
 define KernelPackage/pcmcia-serial/2.4
 #  KCONFIG:=CONFIG_PCMCIA_SERIAL_CS
-  FILES:=$(LINUX_DIR)/drivers/char/pcmcia/serial_cs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/char/pcmcia/serial_cs.ko
 endef
 
 define KernelPackage/pcmcia-serial/2.6
 #  KCONFIG:=CONFIG_SERIAL_8250_CS
-  FILES:=$(LINUX_DIR)/drivers/serial/serial_cs.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/serial/serial_cs.ko
 endef
 
 define KernelPackage/pcmcia-serial/description

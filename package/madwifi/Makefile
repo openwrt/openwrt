@@ -112,19 +112,19 @@ ifdef CONFIG_MADWIFI_RCA_SAMPLERATE
 endif
 
 ifneq ($(CONFIG_MADWIFI_SINGLE_MODULE),)
-MADWIFI_FILES:= $(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX)
+MADWIFI_FILES:= $(PKG_BUILD_DIR)/ath_hal/ath_hal.ko
 else
 MADWIFI_FILES:= \
-	$(PKG_BUILD_DIR)/net80211/wlan.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_scan_ap.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_scan_sta.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/ath_hal/ath_hal.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_acl.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_ccmp.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_tkip.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_wep.$(LINUX_KMOD_SUFFIX) \
-	$(PKG_BUILD_DIR)/net80211/wlan_xauth.$(LINUX_KMOD_SUFFIX)
+	$(PKG_BUILD_DIR)/net80211/wlan.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_scan_ap.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_scan_sta.ko \
+	$(PKG_BUILD_DIR)/ath_hal/ath_hal.ko \
+	$(PKG_BUILD_DIR)/ath_rate/$(RATE_CONTROL)/ath_rate_$(RATE_CONTROL).ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_acl.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_ccmp.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_tkip.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_wep.ko \
+	$(PKG_BUILD_DIR)/net80211/wlan_xauth.ko
 endif
 
 ifneq ($(CONFIG_MADWIFI_SINGLE_MODULE),)
@@ -144,11 +144,11 @@ else
 endif
 
 ifeq ($(findstring AHB,$(BUS)),AHB)
-  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_ahb.$(LINUX_KMOD_SUFFIX)
+  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_ahb.ko
   MADWIFI_AUTOLOAD+= ath_ahb
 endif
 ifeq ($(findstring PCI,$(BUS)),PCI)
-  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_pci.$(LINUX_KMOD_SUFFIX)
+  MADWIFI_FILES+= $(PKG_BUILD_DIR)/ath/ath_pci.ko
   MADWIFI_AUTOLOAD+= ath_pci
 endif
 

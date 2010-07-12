@@ -17,7 +17,7 @@ define KernelPackage/avila-wdt
   SUBMENU:=Other modules
   TITLE:=GPIO hardware watchdog driver for modified Avila boards
   DEPENDS:=@GPIO_SUPPORT @TARGET_ixp4xx
-  FILES:=$(PKG_BUILD_DIR)/avila-wdt.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/avila-wdt.ko
   AUTOLOAD:=$(call AutoLoad,10,avila-wdt)
 endef
 
