@@ -10,7 +10,7 @@
 
 #include <linux/init.h>
 #include <linux/io.h>
-
+#include <linux/spinlock.h>
 #include <linux/gpio.h>
 
 #include <ralink_soc.h>
@@ -64,6 +64,7 @@ enum ramips_pio_reg {
 
 struct ramips_gpio_chip {
 	struct gpio_chip	chip;
+	spinlock_t		lock;
 	u8			regs[RAMIPS_GPIO_REG_MAX];
 };
 
@@ -90,11 +91,14 @@ static inline u32 ramips_gpio_rr(struct ramips_gpio_chip *rg, u8 reg)
 static int ramips_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
 {
 	struct ramips_gpio_chip *rg = to_ramips_gpio(chip);
+	unsigned long flags;
 	u32 t;
 
+	spin_lock_irqsave(&rg->lock, flags);
 	t = ramips_gpio_rr(rg, RAMIPS_GPIO_REG_DIR);
 	t &= ~(1 << offset);
 	ramips_gpio_wr(rg, RAMIPS_GPIO_REG_DIR, t);
+	spin_unlock_irqrestore(&rg->lock, flags);
 
 	return 0;
 }
@@ -103,15 +107,19 @@ static int ramips_gpio_direction_output(struct gpio_chip *chip,
 					unsigned offset, int value)
 {
 	struct ramips_gpio_chip *rg = to_ramips_gpio(chip);
+	unsigned long flags;
 	u32 reg;
 	u32 t;
 
 	reg = (value) ? RAMIPS_GPIO_REG_SET : RAMIPS_GPIO_REG_RESET;
+
+	spin_lock_irqsave(&rg->lock, flags);
 	ramips_gpio_wr(rg, reg, 1 << offset);
 
 	t = ramips_gpio_rr(rg, RAMIPS_GPIO_REG_DIR);
 	t |= 1 << offset;
 	ramips_gpio_wr(rg, RAMIPS_GPIO_REG_DIR, t);
+	spin_unlock_irqrestore(&rg->lock, flags);
 
 	return 0;
 }
@@ -208,6 +216,8 @@ static struct ramips_gpio_chip ramips_gpio_chip2 = {
 
 static __init void ramips_gpio_chip_add(struct ramips_gpio_chip *rg)
 {
+	spin_lock_init(&rg->lock);
+
 	/* set polarity to low for all lines */
 	ramips_gpio_wr(rg, RAMIPS_GPIO_REG_POL, 0);
 
