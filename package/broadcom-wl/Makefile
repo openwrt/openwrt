@@ -15,8 +15,8 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)_$(ARCH).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
 
-PKG_MD5SUM.mipsel:=800365b5e5088d5368f8b1e65df8ba8a
-PKG_MD5SUM.mips:=7a0425e9fb1e03c136564c99daf1ce16
+PKG_MD5SUM.mipsel:=3363e3a6b3d9d73c49dea870c7834eac
+PKG_MD5SUM.mips:=f8de63debc75333d6b4e28193eb051ff
 PKG_MD5SUM:=$(PKG_MD5SUM.$(ARCH))
 
 include $(INCLUDE_DIR)/package.mk
