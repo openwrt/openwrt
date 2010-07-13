@@ -9,14 +9,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=broadcom-wl
-PKG_VERSION:=5.10.56.27.1
+PKG_VERSION:=5.10.56.27.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)_$(ARCH).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
 
-PKG_MD5SUM.mipsel:=9f42cfa9c46ee1b0e04dc2d3ab9bc8cd
-PKG_MD5SUM.mips:=9dcc902af0fcac5f34b6656982e82c21
+PKG_MD5SUM.mipsel:=800365b5e5088d5368f8b1e65df8ba8a
+PKG_MD5SUM.mips:=7a0425e9fb1e03c136564c99daf1ce16
 PKG_MD5SUM:=$(PKG_MD5SUM.$(ARCH))
 
 include $(INCLUDE_DIR)/package.mk
