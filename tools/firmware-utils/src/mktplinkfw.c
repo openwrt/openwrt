@@ -93,10 +93,16 @@ static char *version = "ver. 1.0";
 static char *board_id;
 static struct board_info *board;
 static struct file_info kernel_info;
+static uint32_t kernel_la = 0;
+static uint32_t kernel_ep = 0;
 static struct file_info rootfs_info;
+static uint32_t rootfs_ofs = 0;
 static struct file_info boot_info;
 static int combined;
 static int strip_padding;
+
+static struct file_info inspect_info;
+static int extract = 0;
 
 char md5salt_normal[MD5SUM_LEN] = {
 	0xdc, 0xd7, 0x3a, 0xa5, 0xc3, 0x95, 0x98, 0xfb,
@@ -214,6 +220,19 @@ static struct board_info *find_board(char *id)
 	return ret;
 }
 
+static struct board_info *find_board_by_hwid(uint32_t hw_id)
+{
+	struct board_info *board;
+
+	for (board = boards; board->id != NULL; board++) {
+		if (hw_id == board->hw_id)
+			return board;
+	};
+
+	return NULL;
+}
+
+
 static void usage(int status)
 {
 	FILE *stream = (status != EXIT_SUCCESS) ? stderr : stdout;
@@ -225,12 +244,17 @@ static void usage(int status)
 "Options:\n"
 "  -B <board>      create image for the board specified with <board>\n"
 "  -c              use combined kernel image\n"
+"  -E <ep>         overwrite kernel entry point with <ep> (hexval prefixed with 0x)\n"
+"  -L <la>         overwrite kernel load address with <la> (hexval prefixed with 0x)\n"
 "  -k <file>       read kernel image from the file <file>\n"
 "  -r <file>       read rootfs image from the file <file>\n"
+"  -R <offset>     overwrite rootfs offset with <offset> (hexval prefixed with 0x)\n"
 "  -o <file>       write output to the file <file>\n"
 "  -s              strip padding from the end of the image\n"
 "  -N <vendor>     set image vendor to <vendor>\n"
 "  -V <version>    set image version to <version>\n"
+"  -i <file>       inspect given firmware file <file>\n"
+"  -x              extract kernel and rootfs while inspecting (requires -i)\n"
 "  -h              show this screen\n"
 	);
 
@@ -294,6 +318,17 @@ static int check_options(void)
 {
 	int ret;
 
+	if (inspect_info.file_name) {
+		ret = get_file_stat(&inspect_info);
+		if (ret)
+			return ret;
+
+		return 0;
+	} else if (extract) {
+		ERR("no firmware for inspection specified");
+		return -1;
+	}
+
 	if (board_id == NULL) {
 		ERR("no board specified");
 		return -1;
@@ -304,6 +339,12 @@ static int check_options(void)
 		ERR("unknown/unsupported board id \"%s\"", board_id);
 		return -1;
 	}
+	if (!kernel_la)
+		kernel_la = board->kernel_la;
+	if (!kernel_ep)
+		kernel_ep = board->kernel_ep;
+	if (!rootfs_ofs)
+		rootfs_ofs = board->rootfs_ofs;
 
 	if (kernel_info.file_name == NULL) {
 		ERR("no kernel image specified");
@@ -322,7 +363,7 @@ static int check_options(void)
 		}
 	} else {
 		if (kernel_info.file_size >
-		    board->rootfs_ofs - sizeof(struct fw_header)) {
+		    rootfs_ofs - sizeof(struct fw_header)) {
 			ERR("kernel image is too big");
 			return -1;
 		}
@@ -336,7 +377,7 @@ static int check_options(void)
 			return ret;
 
 		if (rootfs_info.file_size >
-                    (board->fw_max_len - board->rootfs_ofs)) {
+                    (board->fw_max_len - rootfs_ofs)) {
 			ERR("rootfs image is too big");
 			return -1;
 		}
@@ -367,13 +408,13 @@ static void fill_header(char *buf, int len)
 	else
 		memcpy(hdr->md5sum1, md5salt_boot, sizeof(hdr->md5sum1));
 
-	hdr->kernel_la = HOST_TO_BE32(board->kernel_la);
-	hdr->kernel_ep = HOST_TO_BE32(board->kernel_ep);
+	hdr->kernel_la = HOST_TO_BE32(kernel_la);
+	hdr->kernel_ep = HOST_TO_BE32(kernel_ep);
 	hdr->fw_length = HOST_TO_BE32(board->fw_max_len);
 	hdr->kernel_ofs = HOST_TO_BE32(sizeof(struct fw_header));
 	hdr->kernel_len = HOST_TO_BE32(kernel_info.file_size);
 	if (!combined) {
-		hdr->rootfs_ofs = HOST_TO_BE32(board->rootfs_ofs);
+		hdr->rootfs_ofs = HOST_TO_BE32(rootfs_ofs);
 		hdr->rootfs_len = HOST_TO_BE32(rootfs_info.file_size);
 	}
 
@@ -437,12 +478,12 @@ static int build_fw(void)
 	writelen = kernel_info.file_size;
 
 	if (!combined) {
-		p = buf + board->rootfs_ofs;
+		p = buf + rootfs_ofs;
 		ret = read_to_buf(&rootfs_info, p);
 		if (ret)
 			goto out_free_buf;
 
-		writelen = board->rootfs_ofs + rootfs_info.file_size;
+		writelen = rootfs_ofs + rootfs_info.file_size;
 	}
 
 	if (!strip_padding)
@@ -454,6 +495,216 @@ static int build_fw(void)
 		goto out_free_buf;
 
 	ret = EXIT_SUCCESS;
+
+ out_free_buf:
+	free(buf);
+ out:
+	return ret;
+}
+
+/* Helper functions to inspect_fw() representing different output formats */
+static inline void inspect_fw_pstr(char *label, char *str)
+{
+	printf("%-23s: %s\n", label, str);
+}
+
+static inline void inspect_fw_phex(char *label, uint32_t val)
+{
+	printf("%-23s: 0x%08x\n", label, val);
+}
+
+static inline void inspect_fw_phexpost(char *label,
+                                       uint32_t val, char *post)
+{
+	printf("%-23s: 0x%08x (%s)\n", label, val, post);
+}
+
+static inline void inspect_fw_phexdef(char *label,
+                                      uint32_t val, uint32_t defval)
+{
+	printf("%-23s: 0x%08x                  ", label, val);
+
+	if (val == defval)
+		printf("(== OpenWrt default)\n");
+	else
+		printf("(OpenWrt default: 0x%08x)\n", defval);
+}
+
+static inline void inspect_fw_phexexp(char *label,
+                                      uint32_t val, uint32_t expval)
+{
+	printf("%-23s: 0x%08x ", label, val);
+
+	if (val == expval)
+		printf("(ok)\n");
+	else
+		printf("(expected: 0x%08x)\n", expval);
+}
+
+static inline void inspect_fw_phexdec(char *label, uint32_t val)
+{
+	printf("%-23s: 0x%08x / %8u bytes\n", label, val, val);
+}
+
+static inline void inspect_fw_phexdecdef(char *label,
+                                         uint32_t val, uint32_t defval)
+{
+	printf("%-23s: 0x%08x / %8u bytes ", label, val, val);
+
+	if (val == defval)
+		printf("(== OpenWrt default)\n");
+	else
+		printf("(OpenWrt default: 0x%08x)\n", defval);
+}
+
+static inline void inspect_fw_pmd5sum(char *label, uint8_t *val, char *text)
+{
+	int i;
+
+	printf("%-23s:", label);
+	for (i=0; i<MD5SUM_LEN; i++)
+		printf(" %02x", val[i]);
+	printf(" %s\n", text);
+}
+
+static int inspect_fw(void)
+{
+	char *buf;
+	struct fw_header *hdr;
+	uint8_t md5sum[MD5SUM_LEN];
+	struct board_info *board;
+	int ret = EXIT_FAILURE;
+
+	buf = malloc(inspect_info.file_size);
+	if (!buf) {
+		ERR("no memory for buffer!\n");
+		goto out;
+	}
+
+	ret = read_to_buf(&inspect_info, buf);
+	if (ret)
+		goto out_free_buf;
+	hdr = (struct fw_header *)buf;
+
+	inspect_fw_pstr("File name", inspect_info.file_name);
+	inspect_fw_phexdec("File size", inspect_info.file_size);
+
+	if (BE32_TO_HOST(hdr->version) != HEADER_VERSION_V1) {
+		ERR("file does not seem to have V1 header!\n");
+		goto out_free_buf;
+	}
+
+	inspect_fw_phexdec("Version 1 Header size", sizeof(struct fw_header));
+
+	if (BE32_TO_HOST(hdr->unk1) != 0)
+		inspect_fw_phexdec("Unknown value 1", hdr->unk1);
+
+	memcpy(md5sum, hdr->md5sum1, sizeof(md5sum));
+	if (BE32_TO_HOST(hdr->boot_len) == 0)
+		memcpy(hdr->md5sum1, md5salt_normal, sizeof(md5sum));
+	else
+		memcpy(hdr->md5sum1, md5salt_boot, sizeof(md5sum));
+	get_md5(buf, inspect_info.file_size, hdr->md5sum1);
+
+	if (memcmp(md5sum, hdr->md5sum1, sizeof(md5sum))) {
+		inspect_fw_pmd5sum("Header MD5Sum1", md5sum, "(*ERROR*)");
+		inspect_fw_pmd5sum("          --> expected", hdr->md5sum1, "");
+	} else {
+		inspect_fw_pmd5sum("Header MD5Sum1", md5sum, "(ok)");
+	}
+	if (BE32_TO_HOST(hdr->unk2) != 0)
+		inspect_fw_phexdec("Unknown value 2", hdr->unk2);
+	inspect_fw_pmd5sum("Header MD5Sum2", hdr->md5sum2,
+	                   "(purpose yet unknown, unchecked here)");
+	if (BE32_TO_HOST(hdr->unk3) != 0)
+		inspect_fw_phexdec("Unknown value 3", hdr->unk3);
+
+	printf("\n");
+
+	inspect_fw_pstr("Vendor name", hdr->vendor_name);
+	inspect_fw_pstr("Firmware version", hdr->fw_version);
+	board = find_board_by_hwid(BE32_TO_HOST(hdr->hw_id));
+	if (board) {
+		inspect_fw_phexpost("Hardware ID",
+		                    BE32_TO_HOST(hdr->hw_id), board->id);
+		inspect_fw_phexexp("Hardware Revision",
+		                   BE32_TO_HOST(hdr->hw_rev), board->hw_rev);
+	} else {
+		inspect_fw_phexpost("Hardware ID",
+		                    BE32_TO_HOST(hdr->hw_id), "unknown");
+		inspect_fw_phex("Hardware Revision",
+		                BE32_TO_HOST(hdr->hw_rev));
+	}
+
+	printf("\n");
+
+	inspect_fw_phexdec("Kernel data offset",
+	                   BE32_TO_HOST(hdr->kernel_ofs));
+	inspect_fw_phexdec("Kernel data length",
+	                   BE32_TO_HOST(hdr->kernel_len));
+	if (board) {
+		inspect_fw_phexdef("Kernel load address",
+		                   BE32_TO_HOST(hdr->kernel_la),
+		                   board->kernel_la);
+		inspect_fw_phexdef("Kernel entry point",
+		                   BE32_TO_HOST(hdr->kernel_ep),
+		                   board->kernel_ep);
+		inspect_fw_phexdecdef("Rootfs data offset",
+		                      BE32_TO_HOST(hdr->rootfs_ofs),
+		                      board->rootfs_ofs);
+	} else {
+		inspect_fw_phex("Kernel load address",
+		                BE32_TO_HOST(hdr->kernel_la));
+		inspect_fw_phex("Kernel entry point",
+		                BE32_TO_HOST(hdr->kernel_ep));
+		inspect_fw_phexdec("Rootfs data offset",
+		                   BE32_TO_HOST(hdr->rootfs_ofs));
+	}
+	inspect_fw_phexdec("Rootfs data length",
+	                   BE32_TO_HOST(hdr->rootfs_len));
+	inspect_fw_phexdec("Boot loader data offset",
+	                   BE32_TO_HOST(hdr->boot_ofs));
+	inspect_fw_phexdec("Boot loader data length",
+	                   BE32_TO_HOST(hdr->boot_len));
+	inspect_fw_phexdec("Total firmware length",
+	                   BE32_TO_HOST(hdr->fw_length));
+
+	if (extract) {
+		FILE *fp;
+		char *filename;
+
+		printf("\n");
+
+		filename = malloc(strlen(inspect_info.file_name) + 8);
+		sprintf(filename, "%s-kernel", inspect_info.file_name);
+		printf("Extracting kernel to \"%s\"...\n", filename);
+		fp = fopen(filename, "w");
+		if (fp)	{
+			if (!fwrite(buf + BE32_TO_HOST(hdr->kernel_ofs),
+			            BE32_TO_HOST(hdr->kernel_len), 1, fp)) {
+				ERR("error in fwrite(): %s", strerror(errno));
+			}
+			fclose(fp);
+		} else {
+			ERR("error in fopen(): %s", strerror(errno));
+		}
+		free(filename);
+
+		filename = malloc(strlen(inspect_info.file_name) + 8);
+		sprintf(filename, "%s-rootfs", inspect_info.file_name);
+		printf("Extracting rootfs to \"%s\"...\n", filename);
+		fp = fopen(filename, "w");
+		if (fp)	{
+			if (!fwrite(buf + BE32_TO_HOST(hdr->rootfs_ofs),
+			            BE32_TO_HOST(hdr->rootfs_len), 1, fp)) {
+				ERR("error in fwrite(): %s", strerror(errno));
+			}
+			fclose(fp);
+		} else {
+			ERR("error in fopen(): %s", strerror(errno));
+		}
+		free(filename);
+	}
 
  out_free_buf:
 	free(buf);
@@ -473,13 +724,19 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:V:N:ck:r:o:hs");
+		c = getopt(argc, argv, "B:E:L:V:N:ci:k:r:R:o:xhs");
 		if (c == -1)
 			break;
 
 		switch (c) {
 		case 'B':
 			board_id = optarg;
+			break;
+		case 'E':
+			sscanf(optarg, "0x%x", &kernel_ep);
+			break;
+		case 'L':
+			sscanf(optarg, "0x%x", &kernel_la);
 			break;
 		case 'V':
 			version = optarg;
@@ -496,11 +753,20 @@ int main(int argc, char *argv[])
 		case 'r':
 			rootfs_info.file_name = optarg;
 			break;
+		case 'R':
+			sscanf(optarg, "0x%x", &rootfs_ofs);
+			break;
 		case 'o':
 			ofname = optarg;
 			break;
 		case 's':
 			strip_padding = 1;
+			break;
+		case 'i':
+			inspect_info.file_name = optarg;
+			break;
+		case 'x':
+			extract = 1;
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
@@ -515,7 +781,10 @@ int main(int argc, char *argv[])
 	if (ret)
 		goto out;
 
-	ret = build_fw();
+	if (!inspect_info.file_name)
+		ret = build_fw();
+	else
+		ret = inspect_fw();
 
  out:
 	return ret;
