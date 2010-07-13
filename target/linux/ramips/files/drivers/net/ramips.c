@@ -231,7 +231,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 		max_rx--;
 
 		rx_skb = priv->rx_skb[rx];
-		rx_skb->len = RX_DMA_PLEN0(priv->rx[rx].rxd2);
+		skb_put(rx_skb, RX_DMA_PLEN0(priv->rx[rx].rxd2));
 		rx_skb->dev = dev;
 		rx_skb->protocol = eth_type_trans(rx_skb, dev);
 		rx_skb->ip_summed = CHECKSUM_NONE;
