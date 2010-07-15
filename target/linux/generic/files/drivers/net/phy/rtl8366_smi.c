@@ -520,6 +520,34 @@ static ssize_t rtl8366_read_debugfs_vlan_mc(struct file *file,
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
 
+static ssize_t rtl8366_read_debugfs_pvid(struct file *file,
+					 char __user *user_buf,
+					 size_t count, loff_t *ppos)
+{
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	char *buf = smi->buf;
+	int len = 0;
+	int i;
+
+	len += snprintf(buf + len, sizeof(smi->buf) - len, "%4s %4s\n",
+			"port", "pvid");
+
+	for (i = 0; i < smi->num_ports; i++) {
+		int pvid;
+		int err;
+
+		err = rtl8366_get_pvid(smi, i, &pvid);
+		if (err)
+			len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"%4d error\n", i);
+		else
+			len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"%4d %4d\n", i, pvid);
+	}
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+
 static ssize_t rtl8366_read_debugfs_reg(struct file *file,
 					 char __user *user_buf,
 					 size_t count, loff_t *ppos)
@@ -634,6 +662,12 @@ static const struct file_operations fops_rtl8366_vlan_mc = {
 	.owner	= THIS_MODULE
 };
 
+static const struct file_operations fops_rtl8366_pvid = {
+	.read	= rtl8366_read_debugfs_pvid,
+	.open	= rtl8366_debugfs_open,
+	.owner	= THIS_MODULE
+};
+
 static const struct file_operations fops_rtl8366_mibs = {
 	.read = rtl8366_read_debugfs_mibs,
 	.open = rtl8366_debugfs_open,
@@ -676,6 +710,14 @@ static void rtl8366_debugfs_init(struct rtl8366_smi *smi)
 	if (!node) {
 		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
 			"vlan_mc");
+		return;
+	}
+
+	node = debugfs_create_file("pvid", S_IRUSR, root, smi,
+				   &fops_rtl8366_pvid);
+	if (!node) {
+		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
+			"pvid");
 		return;
 	}
 
