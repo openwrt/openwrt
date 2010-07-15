@@ -677,13 +677,9 @@ static int rtl8366rb_sw_reset_mibs(struct switch_dev *dev,
 				  struct switch_val *val)
 {
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	int err = 0;
 
-	if (val->value.i == 1)
-		err = rtl8366_smi_rmwr(smi, RTL8366RB_MIB_CTRL_REG, 0,
-				       RTL8366RB_MIB_CTRL_GLOBAL_RESET);
-
-	return err;
+	return rtl8366_smi_rmwr(smi, RTL8366RB_MIB_CTRL_REG, 0,
+			        RTL8366RB_MIB_CTRL_GLOBAL_RESET);
 }
 
 static int rtl8366rb_sw_get_vlan_enable(struct switch_dev *dev,
@@ -1032,12 +1028,10 @@ static struct switch_attr rtl8366rb_globals[] = {
 		.max = 1,
 		.ofs = 2
 	}, {
-		.type = SWITCH_TYPE_INT,
+		.type = SWITCH_TYPE_NOVAL,
 		.name = "reset_mibs",
 		.description = "Reset all MIB counters",
 		.set = rtl8366rb_sw_reset_mibs,
-		.get = NULL,
-		.max = 1
 	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "blinkrate",
@@ -1058,12 +1052,10 @@ static struct switch_attr rtl8366rb_port[] = {
 		.set = NULL,
 		.get = rtl8366rb_sw_get_port_link,
 	}, {
-		.type = SWITCH_TYPE_INT,
+		.type = SWITCH_TYPE_NOVAL,
 		.name = "reset_mib",
 		.description = "Reset single port MIB counters",
-		.max = 1,
 		.set = rtl8366rb_sw_reset_port_mibs,
-		.get = NULL,
 	}, {
 		.type = SWITCH_TYPE_STRING,
 		.name = "mib",
