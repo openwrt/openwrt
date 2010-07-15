@@ -1130,6 +1130,8 @@ static int rtl8366s_detect(struct rtl8366_smi *smi)
 
 static struct rtl8366_smi_ops rtl8366s_smi_ops = {
 	.detect		= rtl8366s_detect,
+	.setup		= rtl8366s_setup,
+
 	.mii_read	= rtl8366s_mii_read,
 	.mii_write	= rtl8366s_mii_write,
 
@@ -1180,10 +1182,6 @@ static int __init rtl8366s_probe(struct platform_device *pdev)
 		goto err_free_smi;
 
 	platform_set_drvdata(pdev, smi);
-
-	err = rtl8366s_setup(smi);
-	if (err)
-		goto err_clear_drvdata;
 
 	err = rtl8366s_switch_init(smi);
 	if (err)
