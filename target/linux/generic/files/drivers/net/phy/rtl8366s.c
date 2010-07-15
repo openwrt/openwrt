@@ -591,6 +591,14 @@ static int rtl8366s_vlan_set_4ktable(struct rtl8366_smi *smi, int enable)
 				1, (enable) ? 1 : 0);
 }
 
+static int rtl8366s_is_vlan_valid(struct rtl8366_smi *smi, unsigned vlan)
+{
+	if (vlan == 0 || vlan >= RTL8366S_NUM_VLANS)
+		return 0;
+
+	return 1;
+}
+
 static int rtl8366s_sw_reset_mibs(struct switch_dev *dev,
 				  const struct switch_attr *attr,
 				  struct switch_val *val)
@@ -733,7 +741,7 @@ static int rtl8366s_sw_get_vlan_info(struct switch_dev *dev,
 	char *buf = smi->buf;
 	int err;
 
-	if (val->port_vlan == 0 || val->port_vlan >= RTL8366S_NUM_VLANS)
+	if (!smi->ops->is_vlan_valid(smi, val->port_vlan))
 		return -EINVAL;
 
 	memset(buf, '\0', sizeof(smi->buf));
@@ -827,7 +835,7 @@ static int rtl8366s_sw_get_vlan_ports(struct switch_dev *dev,
 	struct rtl8366_vlan_4k vlan4k;
 	int i;
 
-	if (val->port_vlan == 0 || val->port_vlan >= RTL8366S_NUM_VLANS)
+	if (!smi->ops->is_vlan_valid(smi, val->port_vlan))
 		return -EINVAL;
 
 	rtl8366s_get_vlan_4k(smi, val->port_vlan, &vlan4k);
@@ -856,7 +864,7 @@ static int rtl8366s_sw_set_vlan_ports(struct switch_dev *dev,
 	u32 untag = 0;
 	int i;
 
-	if (val->port_vlan == 0 || val->port_vlan >= RTL8366S_NUM_VLANS)
+	if (!smi->ops->is_vlan_valid(smi, val->port_vlan))
 		return -EINVAL;
 
 	port = &val->value.ports[0];
@@ -1098,6 +1106,7 @@ static struct rtl8366_smi_ops rtl8366s_smi_ops = {
 	.get_mc_index	= rtl8366s_get_mc_index,
 	.set_mc_index	= rtl8366s_set_mc_index,
 	.get_mib_counter = rtl8366_get_mib_counter,
+	.is_vlan_valid	= rtl8366s_is_vlan_valid,
 };
 
 static int __init rtl8366s_probe(struct platform_device *pdev)
