@@ -1160,14 +1160,12 @@ static int __init rtl8366s_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
-	smi = kzalloc(sizeof(*smi), GFP_KERNEL);
+	smi = rtl8366_smi_alloc(&pdev->dev);
 	if (!smi) {
-		dev_err(&pdev->dev, "no memory for private data\n");
 		err = -ENOMEM;
 		goto err_out;
 	}
 
-	smi->parent = &pdev->dev;
 	smi->gpio_sda = pdata->gpio_sda;
 	smi->gpio_sck = pdata->gpio_sck;
 	smi->ops = &rtl8366s_smi_ops;

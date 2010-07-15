@@ -87,6 +87,7 @@ struct rtl8366_smi_ops {
 				   int port, unsigned long long *val);
 };
 
+struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent);
 int rtl8366_smi_init(struct rtl8366_smi *smi);
 void rtl8366_smi_cleanup(struct rtl8366_smi *smi);
 int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data);
