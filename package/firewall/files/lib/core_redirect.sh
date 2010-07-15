@@ -30,6 +30,9 @@ fw_load_redirect() {
 		fw_die "redirect ${redirect_name}: needs src and dest_ip"
 	}
 
+	list_contains FW_CONNTRACK_ZONES $redirect_src || \
+		append FW_CONNTRACK_ZONES $redirect_src
+
 	local mode=$(fw_get_family_mode ${redirect_family:-x} $redirect_src I)
 
 	local nat_dest_port=$redirect_dest_port
