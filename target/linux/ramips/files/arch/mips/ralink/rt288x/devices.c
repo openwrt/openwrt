@@ -13,11 +13,13 @@
 #include <linux/platform_device.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/physmap.h>
+#include <linux/etherdevice.h>
 
 #include <asm/addrspace.h>
 
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
+#include <asm/mach-ralink/ramips_eth_platform.h>
 
 #include "devices.h"
 
@@ -121,4 +123,43 @@ static struct platform_device rt288x_wifi_device = {
 void __init rt288x_register_wifi(void)
 {
 	platform_device_register(&rt288x_wifi_device);
+}
+
+static void rt288x_fe_reset(void)
+{
+	rt288x_sysc_wr(RT2880_RESET_FE, SYSC_REG_RESET_CTRL);
+}
+
+static struct resource rt288x_eth_resources[] = {
+	{
+		.start	= RT2880_FE_BASE,
+		.end	= RT2880_FE_BASE + PAGE_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	}, {
+		.start	= RT288X_CPU_IRQ_FE,
+		.end	= RT288X_CPU_IRQ_FE,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+struct ramips_eth_platform_data rt288x_eth_data;
+static struct platform_device rt288x_eth_device = {
+	.name		= "ramips_eth",
+	.resource	= rt288x_eth_resources,
+	.num_resources	= ARRAY_SIZE(rt288x_eth_resources),
+	.dev = {
+		.platform_data = &rt288x_eth_data,
+	}
+};
+
+void __init rt288x_register_ethernet(void)
+{
+	rt288x_eth_data.sys_freq = rt288x_sys_freq;
+	rt288x_eth_data.reset_fe = rt288x_fe_reset;
+	rt288x_eth_data.min_pkt_len = 64;
+
+	if (!is_valid_ether_addr(rt288x_eth_data.mac))
+		random_ether_addr(rt288x_eth_data.mac);
+
+	platform_device_register(&rt288x_eth_device);
 }
