@@ -15,7 +15,6 @@
 #include <linux/platform_device.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
-#include <linux/switch.h>
 #include <linux/rtl8366rb.h>
 
 #include "rtl8366_smi.h"
@@ -167,7 +166,6 @@
 struct rtl8366rb {
 	struct device		*parent;
 	struct rtl8366_smi	smi;
-	struct switch_dev	dev;
 };
 
 static struct rtl8366_mib_counter rtl8366rb_mib_counters[] = {
@@ -227,13 +225,8 @@ static inline struct rtl8366rb *smi_to_rtl8366rb(struct rtl8366_smi *smi)
 
 static inline struct rtl8366rb *sw_to_rtl8366rb(struct switch_dev *sw)
 {
-	return container_of(sw, struct rtl8366rb, dev);
-}
-
-static inline struct rtl8366_smi *sw_to_rtl8366_smi(struct switch_dev *sw)
-{
-	struct rtl8366rb *rtl = sw_to_rtl8366rb(sw);
-	return &rtl->smi;
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(sw);
+	return smi_to_rtl8366rb(smi);
 }
 
 static int rtl8366rb_reset_chip(struct rtl8366_smi *smi)
@@ -1028,7 +1021,7 @@ static struct switch_dev rtl8366_switch_dev = {
 
 static int rtl8366rb_switch_init(struct rtl8366rb *rtl)
 {
-	struct switch_dev *dev = &rtl->dev;
+	struct switch_dev *dev = &rtl->smi.sw_dev;
 	int err;
 
 	memcpy(dev, &rtl8366_switch_dev, sizeof(struct switch_dev));
@@ -1044,7 +1037,7 @@ static int rtl8366rb_switch_init(struct rtl8366rb *rtl)
 
 static void rtl8366rb_switch_cleanup(struct rtl8366rb *rtl)
 {
-	unregister_switch(&rtl->dev);
+	unregister_switch(&rtl->smi.sw_dev);
 }
 
 static int rtl8366rb_mii_read(struct mii_bus *bus, int addr, int reg)

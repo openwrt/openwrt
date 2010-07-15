@@ -12,6 +12,7 @@
 #define _RTL8366_SMI_H
 
 #include <linux/phy.h>
+#include <linux/switch.h>
 
 struct rtl8366_smi_ops;
 struct rtl8366_vlan_ops;
@@ -34,6 +35,7 @@ struct rtl8366_smi {
 	spinlock_t		lock;
 	struct mii_bus		*mii_bus;
 	int			mii_irq[PHY_MAX_ADDR];
+	struct switch_dev	sw_dev;
 
 	unsigned int		cpu_port;
 	unsigned int		num_ports;
@@ -100,5 +102,10 @@ int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port, unsigned vid);
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file);
 #endif
+
+static inline struct rtl8366_smi *sw_to_rtl8366_smi(struct switch_dev *sw)
+{
+	return container_of(sw, struct rtl8366_smi, sw_dev);
+}
 
 #endif /*  _RTL8366_SMI_H */
