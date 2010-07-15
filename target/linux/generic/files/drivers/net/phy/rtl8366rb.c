@@ -721,14 +721,14 @@ static int rtl8366rb_sw_get_vlan_info(struct switch_dev *dev,
 
 	memset(buf, '\0', sizeof(smi->buf));
 
-	err = rtl8366rb_get_vlan_4k(smi, val->port_vlan, &vlan4k);
+	err = smi->ops->get_vlan_4k(smi, val->port_vlan, &vlan4k);
 	if (err)
 		return err;
 
 	len += snprintf(buf + len, sizeof(smi->buf) - len,
 			"VLAN %d: Ports: '", vlan4k.vid);
 
-	for (i = 0; i < RTL8366RB_NUM_PORTS; i++) {
+	for (i = 0; i < smi->num_ports; i++) {
 		if (!(vlan4k.member & (1 << i)))
 			continue;
 
@@ -811,11 +811,11 @@ static int rtl8366rb_sw_get_vlan_ports(struct switch_dev *dev,
 	if (!smi->ops->is_vlan_valid(smi, val->port_vlan))
 		return -EINVAL;
 
-	rtl8366rb_get_vlan_4k(smi, val->port_vlan, &vlan4k);
+	smi->ops->get_vlan_4k(smi, val->port_vlan, &vlan4k);
 
 	port = &val->value.ports[0];
 	val->len = 0;
-	for (i = 0; i < RTL8366RB_NUM_PORTS; i++) {
+	for (i = 0; i < smi->num_ports; i++) {
 		if (!(vlan4k.member & BIT(i)))
 			continue;
 
