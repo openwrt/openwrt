@@ -307,8 +307,8 @@ static int rtl8366_mc_is_used(struct rtl8366_smi *smi, int mc_index, int *used)
 	return 0;
 }
 
-int rtl8366_set_vlan(struct rtl8366_smi *smi, int vid, u32 member, u32 untag,
-		     u32 fid)
+static int rtl8366_set_vlan(struct rtl8366_smi *smi, int vid, u32 member,
+			    u32 untag, u32 fid)
 {
 	struct rtl8366_vlan_4k vlan4k;
 	int err;
@@ -347,7 +347,6 @@ int rtl8366_set_vlan(struct rtl8366_smi *smi, int vid, u32 member, u32 untag,
 
 	return err;
 }
-EXPORT_SYMBOL_GPL(rtl8366_set_vlan);
 
 static int rtl8366_get_pvid(struct rtl8366_smi *smi, int port, int *val)
 {
