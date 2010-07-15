@@ -349,45 +349,7 @@ int rtl8366_set_vlan(struct rtl8366_smi *smi, int vid, u32 member, u32 untag,
 }
 EXPORT_SYMBOL_GPL(rtl8366_set_vlan);
 
-int rtl8366_reset_vlan(struct rtl8366_smi *smi)
-{
-	struct rtl8366_vlan_mc vlanmc;
-	int err;
-	int i;
-
-	/* clear VLAN member configurations */
-	vlanmc.vid = 0;
-	vlanmc.priority = 0;
-	vlanmc.member = 0;
-	vlanmc.untag = 0;
-	vlanmc.fid = 0;
-	for (i = 0; i < smi->num_vlan_mc; i++) {
-		err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
-		if (err)
-			return err;
-	}
-
-	for (i = 0; i < smi->num_ports; i++) {
-		if (i == smi->cpu_port)
-			continue;
-
-		err = rtl8366_set_vlan(smi, (i + 1),
-					(1 << i) | (1 << smi->cpu_port),
-					(1 << i) | (1 << smi->cpu_port),
-					0);
-		if (err)
-			return err;
-
-		err = rtl8366_set_pvid(smi, i, (i + 1));
-		if (err)
-			return err;
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL_GPL(rtl8366_reset_vlan);
-
-int rtl8366_get_pvid(struct rtl8366_smi *smi, int port, int *val)
+static int rtl8366_get_pvid(struct rtl8366_smi *smi, int port, int *val)
 {
 	struct rtl8366_vlan_mc vlanmc;
 	int err;
@@ -404,9 +366,9 @@ int rtl8366_get_pvid(struct rtl8366_smi *smi, int port, int *val)
 	*val = vlanmc.vid;
 	return 0;
 }
-EXPORT_SYMBOL_GPL(rtl8366_get_pvid);
 
-int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port, unsigned vid)
+static int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port,
+			    unsigned vid)
 {
 	struct rtl8366_vlan_mc vlanmc;
 	struct rtl8366_vlan_4k vlan4k;
@@ -486,7 +448,44 @@ int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port, unsigned vid)
 
 	return -ENOSPC;
 }
-EXPORT_SYMBOL_GPL(rtl8366_set_pvid);
+
+int rtl8366_reset_vlan(struct rtl8366_smi *smi)
+{
+	struct rtl8366_vlan_mc vlanmc;
+	int err;
+	int i;
+
+	/* clear VLAN member configurations */
+	vlanmc.vid = 0;
+	vlanmc.priority = 0;
+	vlanmc.member = 0;
+	vlanmc.untag = 0;
+	vlanmc.fid = 0;
+	for (i = 0; i < smi->num_vlan_mc; i++) {
+		err = smi->ops->set_vlan_mc(smi, i, &vlanmc);
+		if (err)
+			return err;
+	}
+
+	for (i = 0; i < smi->num_ports; i++) {
+		if (i == smi->cpu_port)
+			continue;
+
+		err = rtl8366_set_vlan(smi, (i + 1),
+					(1 << i) | (1 << smi->cpu_port),
+					(1 << i) | (1 << smi->cpu_port),
+					0);
+		if (err)
+			return err;
+
+		err = rtl8366_set_pvid(smi, i, (i + 1));
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rtl8366_reset_vlan);
 
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file)
