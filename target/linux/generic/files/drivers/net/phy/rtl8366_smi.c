@@ -754,6 +754,40 @@ int rtl8366_sw_set_port_pvid(struct switch_dev *dev, int port, int val)
 }
 EXPORT_SYMBOL_GPL(rtl8366_sw_set_port_pvid);
 
+int rtl8366_sw_get_port_mib(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	int i, len = 0;
+	unsigned long long counter = 0;
+	char *buf = smi->buf;
+
+	if (val->port_vlan >= smi->num_ports)
+		return -EINVAL;
+
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
+			"Port %d MIB counters\n",
+			val->port_vlan);
+
+	for (i = 0; i < smi->num_mib_counters; ++i) {
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"%-36s: ", smi->mib_counters[i].name);
+		if (!smi->ops->get_mib_counter(smi, i, val->port_vlan,
+					       &counter))
+			len += snprintf(buf + len, sizeof(smi->buf) - len,
+					"%llu\n", counter);
+		else
+			len += snprintf(buf + len, sizeof(smi->buf) - len,
+					"%s\n", "error");
+	}
+
+	val->value.s = buf;
+	val->len = len;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_get_port_mib);
+
 struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent)
 {
 	struct rtl8366_smi *smi;

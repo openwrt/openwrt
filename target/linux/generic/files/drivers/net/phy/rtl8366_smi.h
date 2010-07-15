@@ -110,5 +110,8 @@ static inline struct rtl8366_smi *sw_to_rtl8366_smi(struct switch_dev *sw)
 
 int rtl8366_sw_get_port_pvid(struct switch_dev *dev, int port, int *val);
 int rtl8366_sw_set_port_pvid(struct switch_dev *dev, int port, int val);
+int rtl8366_sw_get_port_mib(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val);
 
 #endif /*  _RTL8366_SMI_H */
