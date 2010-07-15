@@ -1,0 +1,8 @@
+#!/bin/sh
+
+enable_reset_button() {
+	insmod diag
+}
+
+boot_hook_add preinit_main enable_reset_button
+
