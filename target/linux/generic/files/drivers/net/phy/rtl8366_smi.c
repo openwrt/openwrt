@@ -741,12 +741,26 @@ static void rtl8366_smi_mii_cleanup(struct rtl8366_smi *smi)
 	mdiobus_free(smi->mii_bus);
 }
 
+struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent)
+{
+	struct rtl8366_smi *smi;
+
+	BUG_ON(!parent);
+
+	smi = kzalloc(sizeof(*smi), GFP_KERNEL);
+	if (!smi) {
+		dev_err(parent, "no memory for private data\n");
+		return NULL;
+	}
+
+	smi->parent = parent;
+	return smi;
+}
+EXPORT_SYMBOL_GPL(rtl8366_smi_alloc);
+
 int rtl8366_smi_init(struct rtl8366_smi *smi)
 {
 	int err;
-
-	if (!smi->parent)
-		return -EINVAL;
 
 	if (!smi->ops)
 		return -EINVAL;
