@@ -159,7 +159,7 @@ fw_load_zone() {
 	fw_callback pre zone
 
 	[ $zone_conntrack = 1 -o $zone_masq = 1 ] && \
-		append FW_CONNTRACK_ZONES "$zone_NAME"
+		append FW_CONNTRACK_ZONES "$zone_name"
 
 	local mode
 	case "$zone_family" in
