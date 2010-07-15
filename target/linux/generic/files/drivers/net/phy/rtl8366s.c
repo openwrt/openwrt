@@ -819,39 +819,6 @@ static int rtl8366s_sw_reset_port_mibs(struct switch_dev *dev,
 				0, (1 << (val->port_vlan + 3)));
 }
 
-static int rtl8366s_sw_get_port_mib(struct switch_dev *dev,
-				    const struct switch_attr *attr,
-				    struct switch_val *val)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	int i, len = 0;
-	unsigned long long counter = 0;
-	char *buf = smi->buf;
-
-	if (val->port_vlan >= smi->num_ports)
-		return -EINVAL;
-
-	len += snprintf(buf + len, sizeof(smi->buf) - len,
-			"Port %d MIB counters\n",
-			val->port_vlan);
-
-	for (i = 0; i < smi->num_mib_counters; ++i) {
-		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"%-36s: ", smi->mib_counters[i].name);
-		if (!smi->ops->get_mib_counter(smi, i, val->port_vlan,
-					       &counter))
-			len += snprintf(buf + len, sizeof(smi->buf) - len,
-					"%llu\n", counter);
-		else
-			len += snprintf(buf + len, sizeof(smi->buf) - len,
-					"%s\n", "error");
-	}
-
-	val->value.s = buf;
-	val->len = len;
-	return 0;
-}
-
 static int rtl8366s_sw_get_vlan_ports(struct switch_dev *dev,
 				      struct switch_val *val)
 {
@@ -971,7 +938,7 @@ static struct switch_attr rtl8366s_port[] = {
 		.description = "Get MIB counters for port",
 		.max = 33,
 		.set = NULL,
-		.get = rtl8366s_sw_get_port_mib,
+		.get = rtl8366_sw_get_port_mib,
 	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "led",
