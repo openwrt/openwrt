@@ -14,12 +14,14 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
 #include <linux/rtl8366s.h>
+#include <linux/ethtool.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
 #include <asm/mach-ralink/dev-gpio-leds.h>
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
+#include <asm/mach-ralink/ramips_eth_platform.h>
 
 #include "devices.h"
 
@@ -127,6 +129,12 @@ static void __init rt_n15_init(void)
 	platform_device_register(&rt_n15_rtl8366s_device);
 
 	rt288x_register_wifi();
+
+	rt288x_eth_data.speed = SPEED_1000;
+	rt288x_eth_data.duplex = DUPLEX_FULL;
+	rt288x_eth_data.tx_fc = 1;
+	rt288x_eth_data.rx_fc = 1;
+	rt288x_register_ethernet();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_RT_N15, "RT-N15", "Asus RT-N15", rt_n15_init);
