@@ -18,4 +18,7 @@ extern void rt288x_register_flash(unsigned int id,
 				  struct physmap_flash_data *pdata) __init;
 void rt288x_register_wifi(void) __init;
 
+extern struct ramips_eth_platform_data rt288x_eth_data;
+void rt288x_register_ethernet(void) __init;
+
 #endif  /* __ASM_MACH_RT288X_PLATFORM_H */
