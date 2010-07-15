@@ -741,6 +741,20 @@ static void rtl8366_smi_mii_cleanup(struct rtl8366_smi *smi)
 	mdiobus_free(smi->mii_bus);
 }
 
+int rtl8366_sw_get_port_pvid(struct switch_dev *dev, int port, int *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	return rtl8366_get_pvid(smi, port, val);
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_get_port_pvid);
+
+int rtl8366_sw_set_port_pvid(struct switch_dev *dev, int port, int val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	return rtl8366_set_pvid(smi, port, val);
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_set_port_pvid);
+
 struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent)
 {
 	struct rtl8366_smi *smi;

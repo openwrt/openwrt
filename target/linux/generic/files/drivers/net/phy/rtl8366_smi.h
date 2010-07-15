@@ -110,4 +110,7 @@ static inline struct rtl8366_smi *sw_to_rtl8366_smi(struct switch_dev *sw)
 	return container_of(sw, struct rtl8366_smi, sw_dev);
 }
 
+int rtl8366_sw_get_port_pvid(struct switch_dev *dev, int port, int *val);
+int rtl8366_sw_set_port_pvid(struct switch_dev *dev, int port, int val);
+
 #endif /*  _RTL8366_SMI_H */
