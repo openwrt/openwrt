@@ -39,7 +39,7 @@ fw_start() {
 	echo "Loading includes"
 	config_foreach fw_load_include include
 
-	[ -n "$FW_NOTRACK_DISABLED" ] && {
+	[ -z "$FW_NOTRACK_DISABLED" ] && {
 		echo "Optimizing conntrack"
 		config_foreach fw_load_notrack_zone zone
 	}

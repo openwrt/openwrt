@@ -32,11 +32,11 @@ fw_load_forwarding() {
 	fw add $mode f $chain $target ^
 
 	# propagate masq zone flag
-	[ -n "$forwarding_src" ] && list_contains CONNTRACK_ZONES $forwarding_src && {
-		append CONNTRACK_ZONES $forwarding_dest
+	[ -n "$forwarding_src" ] && list_contains FW_CONNTRACK_ZONES $forwarding_src && {
+		append FW_CONNTRACK_ZONES $forwarding_dest
 	}
-	[ -n "$forwarding_dest" ] && list_contains CONNTRACK_ZONES $forwarding_dest && {
-		append CONNTRACK_ZONES $forwarding_src
+	[ -n "$forwarding_dest" ] && list_contains FW_CONNTRACK_ZONES $forwarding_dest && {
+		append FW_CONNTRACK_ZONES $forwarding_src
 	}
 
 	fw_callback post forwarding

@@ -228,13 +228,12 @@ fw_load_zone() {
 }
 
 fw_load_notrack_zone() {
-	list_contains FW_CONNTRACK_ZONES "$1" && return
-
 	fw_config_get_zone "$1"
+	list_contains FW_CONNTRACK_ZONES "${zone_name}" && return
 
 	fw_callback pre notrack
 
-	fw add i f zone_${zone_name}_notrack NOTRACK $
+	fw add i r zone_${zone_name}_notrack NOTRACK $
 
 	fw_callback post notrack
 }
