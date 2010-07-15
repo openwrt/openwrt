@@ -98,8 +98,6 @@ int rtl8366_smi_rmwr(struct rtl8366_smi *smi, u32 addr, u32 mask, u32 data);
 int rtl8366_set_vlan(struct rtl8366_smi *smi, int vid, u32 member, u32 untag,
 		     u32 fid);
 int rtl8366_reset_vlan(struct rtl8366_smi *smi);
-int rtl8366_get_pvid(struct rtl8366_smi *smi, int port, int *val);
-int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port, unsigned vid);
 
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file);
