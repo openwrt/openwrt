@@ -122,6 +122,33 @@
 #define RAMIPS_RX_CALC_IDX1		(RAMIPS_PDMA_OFFSET + 0x68)
 #define RAMIPS_RX_DRX_IDX1		(RAMIPS_PDMA_OFFSET + 0x6C)
 
+/* MDIO_CFG register bits */
+#define RAMIPS_MDIO_CFG_AUTO_POLL_EN	BIT(29)
+#define RAMIPS_MDIO_CFG_GP1_BP_EN	BIT(16)
+#define RAMIPS_MDIO_CFG_GP1_FRC_EN	BIT(15)
+#define RAMIPS_MDIO_CFG_GP1_SPEED_10	(0 << 13)
+#define RAMIPS_MDIO_CFG_GP1_SPEED_100	(1 << 13)
+#define RAMIPS_MDIO_CFG_GP1_SPEED_1000	(2 << 13)
+#define RAMIPS_MDIO_CFG_GP1_DUPLEX	BIT(12)
+#define RAMIPS_MDIO_CFG_GP1_FC_TX	BIT(11)
+#define RAMIPS_MDIO_CFG_GP1_FC_RX	BIT(10)
+#define RAMIPS_MDIO_CFG_GP1_LNK_DWN	BIT(9)
+#define RAMIPS_MDIO_CFG_GP1_AN_FAIL	BIT(8)
+#define RAMIPS_MDIO_CFG_MDC_CLK_DIV_1	(0 << 6)
+#define RAMIPS_MDIO_CFG_MDC_CLK_DIV_2	(1 << 6)
+#define RAMIPS_MDIO_CFG_MDC_CLK_DIV_4	(2 << 6)
+#define RAMIPS_MDIO_CFG_MDC_CLK_DIV_8	(3 << 6)
+#define RAMIPS_MDIO_CFG_TURBO_MII_FREQ	BIT(5)
+#define RAMIPS_MDIO_CFG_TURBO_MII_MODE	BIT(4)
+#define RAMIPS_MDIO_CFG_RX_CLK_SKEW_0	(0 << 2)
+#define RAMIPS_MDIO_CFG_RX_CLK_SKEW_200	(1 << 2)
+#define RAMIPS_MDIO_CFG_RX_CLK_SKEW_400	(2 << 2)
+#define RAMIPS_MDIO_CFG_RX_CLK_SKEW_INV	(3 << 2)
+#define RAMIPS_MDIO_CFG_TX_CLK_SKEW_0	0
+#define RAMIPS_MDIO_CFG_TX_CLK_SKEW_200	1
+#define RAMIPS_MDIO_CFG_TX_CLK_SKEW_400	2
+#define RAMIPS_MDIO_CFG_TX_CLK_SKEW_INV	3
+
 /* uni-cast port */
 #define RAMIPS_GDM1_ICS_EN		BIT(22)
 #define RAMIPS_GDM1_TCS_EN		BIT(21)
@@ -201,6 +228,11 @@ struct raeth_priv
 
 	spinlock_t		page_lock;
 	struct ramips_eth_platform_data *plat;
+
+	int			speed;
+	int			duplex;
+	int			tx_fc;
+	int			rx_fc;
 };
 
 #endif /* RAMIPS_ETH_H */

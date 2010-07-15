@@ -22,6 +22,7 @@
 #include <linux/init.h>
 #include <linux/skbuff.h>
 #include <linux/etherdevice.h>
+#include <linux/ethtool.h>
 #include <linux/platform_device.h>
 
 #include <ramips_eth_platform.h>
@@ -76,6 +77,47 @@ ramips_hw_set_macaddr(unsigned char *mac)
 	ramips_fe_wr((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
 		     RAMIPS_GDMA1_MAC_ADRL);
 }
+
+#ifdef CONFIG_RALINK_RT288X
+static void
+ramips_setup_mdio_cfg(struct raeth_priv *re)
+{
+	unsigned int mdio_cfg;
+
+	mdio_cfg = RAMIPS_MDIO_CFG_TX_CLK_SKEW_200 |
+		   RAMIPS_MDIO_CFG_TX_CLK_SKEW_200 |
+		   RAMIPS_MDIO_CFG_GP1_FRC_EN;
+
+	if (re->duplex == DUPLEX_FULL)
+		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_DUPLEX;
+
+	if (re->tx_fc)
+		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_FC_TX;
+
+	if (re->rx_fc)
+		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_FC_RX;
+
+	switch (re->speed) {
+	case SPEED_10:
+		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_SPEED_10;
+		break;
+	case SPEED_100:
+		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_SPEED_100;
+		break;
+	case SPEED_1000:
+		mdio_cfg |= RAMIPS_MDIO_CFG_GP1_SPEED_1000;
+		break;
+	default:
+		BUG();
+	}
+
+	ramips_fe_wr(mdio_cfg, RAMIPS_MDIO_CFG);
+}
+#else
+static inline void ramips_setup_mdio_cfg(struct raeth_priv *re)
+{
+}
+#endif /* CONFIG_RALINK_RT288X */
 
 static void
 ramips_cleanup_dma(struct raeth_priv *re)
@@ -334,6 +376,8 @@ ramips_eth_open(struct net_device *dev)
 		     (unsigned long)dev);
 	tasklet_init(&priv->rx_tasklet, ramips_eth_rx_hw, (unsigned long)dev);
 
+	ramips_setup_mdio_cfg(priv);
+
 	ramips_fe_wr(RAMIPS_DELAY_INIT, RAMIPS_DLY_INT_CFG);
 	ramips_fe_wr(RAMIPS_TX_DLY_INT | RAMIPS_RX_DLY_INT, RAMIPS_FE_INT_ENABLE);
 	ramips_fe_wr(ramips_fe_rr(RAMIPS_GDMA1_FWD_CFG) &
@@ -442,6 +486,11 @@ ramips_eth_plat_probe(struct platform_device *plat)
 	ramips_dev->netdev_ops = &ramips_eth_netdev_ops;
 
 	priv = netdev_priv(ramips_dev);
+
+	priv->speed = data->speed;
+	priv->duplex = data->duplex;
+	priv->rx_fc = data->rx_fc;
+	priv->tx_fc = data->tx_fc;
 	priv->plat = data;
 
 	err = register_netdev(ramips_dev);
