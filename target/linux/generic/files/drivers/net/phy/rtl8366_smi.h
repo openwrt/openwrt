@@ -69,6 +69,7 @@ struct rtl8366_vlan_4k {
 
 struct rtl8366_smi_ops {
 	int	(*detect)(struct rtl8366_smi *smi);
+	int	(*setup)(struct rtl8366_smi *smi);
 
 	int	(*mii_read)(struct mii_bus *bus, int addr, int reg);
 	int	(*mii_write)(struct mii_bus *bus, int addr, int reg, u16 val);
