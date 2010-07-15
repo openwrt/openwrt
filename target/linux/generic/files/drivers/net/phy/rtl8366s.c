@@ -786,57 +786,6 @@ static int rtl8366s_sw_reset_port_mibs(struct switch_dev *dev,
 				0, (1 << (val->port_vlan + 3)));
 }
 
-static int rtl8366s_sw_get_vlan_ports(struct switch_dev *dev,
-				      struct switch_val *val)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	struct switch_port *port;
-	struct rtl8366_vlan_4k vlan4k;
-	int i;
-
-	if (!smi->ops->is_vlan_valid(smi, val->port_vlan))
-		return -EINVAL;
-
-	smi->ops->get_vlan_4k(smi, val->port_vlan, &vlan4k);
-
-	port = &val->value.ports[0];
-	val->len = 0;
-	for (i = 0; i < smi->num_ports; i++) {
-		if (!(vlan4k.member & BIT(i)))
-			continue;
-
-		port->id = i;
-		port->flags = (vlan4k.untag & BIT(i)) ?
-					0 : BIT(SWITCH_PORT_FLAG_TAGGED);
-		val->len++;
-		port++;
-	}
-	return 0;
-}
-
-static int rtl8366s_sw_set_vlan_ports(struct switch_dev *dev,
-				      struct switch_val *val)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	struct switch_port *port;
-	u32 member = 0;
-	u32 untag = 0;
-	int i;
-
-	if (!smi->ops->is_vlan_valid(smi, val->port_vlan))
-		return -EINVAL;
-
-	port = &val->value.ports[0];
-	for (i = 0; i < val->len; i++, port++) {
-		member |= BIT(port->id);
-
-		if (!(port->flags & BIT(SWITCH_PORT_FLAG_TAGGED)))
-			untag |= BIT(port->id);
-	}
-
-	return rtl8366_set_vlan(smi, val->port_vlan, member, untag, 0);
-}
-
 static int rtl8366s_sw_reset_switch(struct switch_dev *dev)
 {
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
@@ -946,8 +895,8 @@ static struct switch_dev rtl8366_switch_dev = {
 		.n_attr = ARRAY_SIZE(rtl8366s_vlan),
 	},
 
-	.get_vlan_ports = rtl8366s_sw_get_vlan_ports,
-	.set_vlan_ports = rtl8366s_sw_set_vlan_ports,
+	.get_vlan_ports = rtl8366_sw_get_vlan_ports,
+	.set_vlan_ports = rtl8366_sw_set_vlan_ports,
 	.get_port_pvid = rtl8366_sw_get_port_pvid,
 	.set_port_pvid = rtl8366_sw_set_port_pvid,
 	.reset_switch = rtl8366s_sw_reset_switch,
