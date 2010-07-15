@@ -875,18 +875,6 @@ static int rtl8366rb_sw_set_vlan_ports(struct switch_dev *dev,
 	return rtl8366_set_vlan(smi, val->port_vlan, member, untag, 0);
 }
 
-static int rtl8366rb_sw_get_port_pvid(struct switch_dev *dev, int port, int *val)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	return rtl8366_get_pvid(smi, port, val);
-}
-
-static int rtl8366rb_sw_set_port_pvid(struct switch_dev *dev, int port, int val)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	return rtl8366_set_pvid(smi, port, val);
-}
-
 static int rtl8366rb_sw_reset_switch(struct switch_dev *dev)
 {
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
@@ -998,8 +986,8 @@ static struct switch_dev rtl8366_switch_dev = {
 
 	.get_vlan_ports = rtl8366rb_sw_get_vlan_ports,
 	.set_vlan_ports = rtl8366rb_sw_set_vlan_ports,
-	.get_port_pvid = rtl8366rb_sw_get_port_pvid,
-	.set_port_pvid = rtl8366rb_sw_set_port_pvid,
+	.get_port_pvid = rtl8366_sw_get_port_pvid,
+	.set_port_pvid = rtl8366_sw_set_port_pvid,
 	.reset_switch = rtl8366rb_sw_reset_switch,
 };
 
