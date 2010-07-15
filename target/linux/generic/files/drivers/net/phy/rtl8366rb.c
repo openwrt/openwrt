@@ -163,11 +163,6 @@
 #define RTL8366RB_VLAN_MEMBER_MASK	0xff
 #define RTL8366RB_VLAN_FID_MASK		0x7
 
-struct rtl8366rb {
-	struct device		*parent;
-	struct rtl8366_smi	smi;
-};
-
 static struct rtl8366_mib_counter rtl8366rb_mib_counters[] = {
 	{ 0,  0, 4, "IfInOctets"				},
 	{ 0,  4, 4, "EtherStatsOctets"				},
@@ -217,17 +212,6 @@ static struct rtl8366_mib_counter rtl8366rb_mib_counters[] = {
 		if (err)						\
 			return err;					\
 	} while (0)
-
-static inline struct rtl8366rb *smi_to_rtl8366rb(struct rtl8366_smi *smi)
-{
-	return container_of(smi, struct rtl8366rb, smi);
-}
-
-static inline struct rtl8366rb *sw_to_rtl8366rb(struct switch_dev *sw)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(sw);
-	return smi_to_rtl8366rb(smi);
-}
 
 static int rtl8366rb_reset_chip(struct rtl8366_smi *smi)
 {
@@ -1019,25 +1003,25 @@ static struct switch_dev rtl8366_switch_dev = {
 	.reset_switch = rtl8366rb_sw_reset_switch,
 };
 
-static int rtl8366rb_switch_init(struct rtl8366rb *rtl)
+static int rtl8366rb_switch_init(struct rtl8366_smi *smi)
 {
-	struct switch_dev *dev = &rtl->smi.sw_dev;
+	struct switch_dev *dev = &smi->sw_dev;
 	int err;
 
 	memcpy(dev, &rtl8366_switch_dev, sizeof(struct switch_dev));
-	dev->priv = rtl;
-	dev->devname = dev_name(rtl->parent);
+	dev->priv = smi;
+	dev->devname = dev_name(smi->parent);
 
 	err = register_switch(dev, NULL);
 	if (err)
-		dev_err(rtl->parent, "switch registration failed\n");
+		dev_err(smi->parent, "switch registration failed\n");
 
 	return err;
 }
 
-static void rtl8366rb_switch_cleanup(struct rtl8366rb *rtl)
+static void rtl8366rb_switch_cleanup(struct rtl8366_smi *smi)
 {
-	unregister_switch(&rtl->smi.sw_dev);
+	unregister_switch(&smi->sw_dev);
 }
 
 static int rtl8366rb_mii_read(struct mii_bus *bus, int addr, int reg)
@@ -1072,9 +1056,8 @@ static int rtl8366rb_mii_bus_match(struct mii_bus *bus)
 		bus->write == rtl8366rb_mii_write);
 }
 
-static int rtl8366rb_setup(struct rtl8366rb *rtl)
+static int rtl8366rb_setup(struct rtl8366_smi *smi)
 {
-	struct rtl8366_smi *smi = &rtl->smi;
 	int ret;
 
 	ret = rtl8366rb_reset_chip(smi);
@@ -1136,7 +1119,6 @@ static int __init rtl8366rb_probe(struct platform_device *pdev)
 {
 	static int rtl8366_smi_version_printed;
 	struct rtl8366rb_platform_data *pdata;
-	struct rtl8366rb *rtl;
 	struct rtl8366_smi *smi;
 	int err;
 
@@ -1151,16 +1133,13 @@ static int __init rtl8366rb_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
-	rtl = kzalloc(sizeof(*rtl), GFP_KERNEL);
-	if (!rtl) {
+	smi = kzalloc(sizeof(*smi), GFP_KERNEL);
+	if (!smi) {
 		dev_err(&pdev->dev, "no memory for private data\n");
 		err = -ENOMEM;
 		goto err_out;
 	}
 
-	rtl->parent = &pdev->dev;
-
-	smi = &rtl->smi;
 	smi->parent = &pdev->dev;
 	smi->gpio_sda = pdata->gpio_sda;
 	smi->gpio_sck = pdata->gpio_sck;
@@ -1173,15 +1152,15 @@ static int __init rtl8366rb_probe(struct platform_device *pdev)
 
 	err = rtl8366_smi_init(smi);
 	if (err)
-		goto err_free_rtl;
+		goto err_free_smi;
 
-	platform_set_drvdata(pdev, rtl);
+	platform_set_drvdata(pdev, smi);
 
-	err = rtl8366rb_setup(rtl);
+	err = rtl8366rb_setup(smi);
 	if (err)
 		goto err_clear_drvdata;
 
-	err = rtl8366rb_switch_init(rtl);
+	err = rtl8366rb_switch_init(smi);
 	if (err)
 		goto err_clear_drvdata;
 
@@ -1190,8 +1169,8 @@ static int __init rtl8366rb_probe(struct platform_device *pdev)
  err_clear_drvdata:
 	platform_set_drvdata(pdev, NULL);
 	rtl8366_smi_cleanup(smi);
- err_free_rtl:
-	kfree(rtl);
+ err_free_smi:
+	kfree(smi);
  err_out:
 	return err;
 }
@@ -1224,13 +1203,13 @@ static struct phy_driver rtl8366rb_phy_driver = {
 
 static int __devexit rtl8366rb_remove(struct platform_device *pdev)
 {
-	struct rtl8366rb *rtl = platform_get_drvdata(pdev);
+	struct rtl8366_smi *smi = platform_get_drvdata(pdev);
 
-	if (rtl) {
-		rtl8366rb_switch_cleanup(rtl);
+	if (smi) {
+		rtl8366rb_switch_cleanup(smi);
 		platform_set_drvdata(pdev, NULL);
-		rtl8366_smi_cleanup(&rtl->smi);
-		kfree(rtl);
+		rtl8366_smi_cleanup(smi);
+		kfree(smi);
 	}
 
 	return 0;
