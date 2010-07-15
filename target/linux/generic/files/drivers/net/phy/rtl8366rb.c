@@ -801,17 +801,18 @@ static int rtl8366rb_sw_get_port_mib(struct switch_dev *dev,
 	unsigned long long counter = 0;
 	char *buf = smi->buf;
 
-	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
+	if (val->port_vlan >= smi->num_ports)
 		return -EINVAL;
 
 	len += snprintf(buf + len, sizeof(smi->buf) - len,
 			"Port %d MIB counters\n",
 			val->port_vlan);
 
-	for (i = 0; i < ARRAY_SIZE(rtl8366rb_mib_counters); ++i) {
+	for (i = 0; i < smi->num_mib_counters; ++i) {
 		len += snprintf(buf + len, sizeof(smi->buf) - len,
-				"%-36s: ", rtl8366rb_mib_counters[i].name);
-		if (!rtl8366rb_get_mib_counter(smi, i, val->port_vlan, &counter))
+				"%-36s: ", smi->mib_counters[i].name);
+		if (!smi->ops->get_mib_counter(smi, i, val->port_vlan,
+					       &counter))
 			len += snprintf(buf + len, sizeof(smi->buf) - len,
 					"%llu\n", counter);
 		else
