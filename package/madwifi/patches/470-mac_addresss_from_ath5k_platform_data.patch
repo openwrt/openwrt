@@ -1,0 +1,36 @@
+--- a/ath/if_ath.c	2010-07-13 22:58:23.000000000 +0200
++++ b/ath/if_ath.c	2010-07-13 23:03:20.000000000 +0200
+@@ -63,6 +63,8 @@
+ #include <linux/rtnetlink.h>
+ #include <linux/time.h>
+ #include <linux/pci.h>
++#include <linux/device.h>
++#include <linux/ath5k_platform.h>
+ #include <asm/uaccess.h>
+ 
+ #include "if_ethersubr.h"		/* for ETHER_IS_MULTICAST */
+@@ -587,6 +589,10 @@
+ 	unsigned int i;
+ 	int autocreatemode = -1;
+ 	u_int8_t csz;
++#ifdef ATH_PCI
++	struct ath5k_platform_data *pdata;
++	struct pci_dev *pdev;
++#endif
+ 
+ 	sc->devid = devid;
+ #ifdef AR_DEBUG
+@@ -648,6 +654,13 @@
+ 	}
+ 	sc->sc_ah = ah;
+ 
++#ifdef ATH_PCI
++	/* set MAC from ath_platform_data */
++	pdev = (struct pci_dev *)sc->sc_bdev;
++	pdata = pdev->dev.platform_data;
++	if (pdata && pdata->macaddr)
++		ath_hal_setmac(ah, pdata->macaddr);
++#endif
+ 	/* WAR for AR7100 PCI bug */
+ #ifdef CONFIG_ATHEROS_AR71XX
+ 	if ((ar_device(sc->devid) >= 5210) && (ar_device(sc->devid) < 5416)) {
