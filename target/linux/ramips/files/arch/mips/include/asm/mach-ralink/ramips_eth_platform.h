@@ -25,6 +25,11 @@ struct ramips_eth_platform_data
 	void (*reset_fe)(void);
 	int min_pkt_len;
 	unsigned long sys_freq;
+
+	int speed;
+	int duplex;
+	int tx_fc;
+	int rx_fc;
 };
 
 #endif /* _RAMIPS_ETH_PLATFORM_H */
