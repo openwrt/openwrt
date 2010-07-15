@@ -1,0 +1,57 @@
+--- a/drivers/net/wireless/ath/ath5k/eeprom.c	2010-06-23 03:08:32.000000000 +0200
++++ b/drivers/net/wireless/ath/ath5k/eeprom.c	2010-06-23 05:59:30.000000000 +0200
+@@ -22,6 +23,8 @@
+ \*************************************/
+ 
+ #include <linux/slab.h>
++#include <linux/ath5k_platform.h>
++#include <linux/pci.h>
+ 
+ #include "ath5k.h"
+ #include "reg.h"
+@@ -34,6 +37,18 @@
+ static int ath5k_hw_eeprom_read(struct ath5k_hw *ah, u32 offset, u16 *data)
+ {
+ 	u32 status, timeout;
++	struct ath5k_platform_data *pdata = NULL;
++
++	if (ah->ah_sc->pdev)
++		pdata = ah->ah_sc->pdev->dev.platform_data;
++
++	if (pdata && pdata->eeprom_data && pdata->eeprom_data[0] == AR5K_EEPROM_MAGIC_VALUE)
++	{
++		ATH5K_INFO(ah->ah_sc, "using eeprom-content from platform_data\n");
++		if (offset >= ATH5K_PLAT_EEP_MAX_WORDS) return -EIO;
++		*data = pdata->eeprom_data[offset];
++		return 0;
++	}
+ 
+ 	/*
+ 	 * Initialize EEPROM access
+@@ -1788,7 +1802,7 @@
+ }
+ 
+ /*
+- * Read the MAC address from eeprom
++ * Read the MAC address from eeprom or platform_data
+  */
+ int ath5k_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac)
+ {
+@@ -1796,6 +1810,16 @@
+ 	u32 total, offset;
+ 	u16 data;
+ 	int octet, ret;
++	struct ath5k_platform_data *pdata = NULL;
++
++	if (ah->ah_sc->pdev)
++		pdata = ah->ah_sc->pdev->dev.platform_data;
++
++	if (pdata && pdata->macaddr)
++	{
++		memcpy(mac, pdata->macaddr, ETH_ALEN);
++		return 0;
++	}
+ 
+ 	ret = ath5k_hw_eeprom_read(ah, 0x20, &data);
+ 	if (ret)
+
