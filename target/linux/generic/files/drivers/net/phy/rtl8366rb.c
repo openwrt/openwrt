@@ -107,7 +107,7 @@
 #define RTL8366RB_TABLE_VLAN_READ_CTRL		0x0E01
 #define RTL8366RB_TABLE_VLAN_WRITE_CTRL		0x0F01
 
-#define RTL8366RB_VLAN_MEMCONF_BASE		0x0020
+#define RTL8366RB_VLAN_MC_BASE(_x)		(0x0020 + (_x) * 3)
 
 
 #define RTL8366RB_PORT_LINK_STATUS_BASE		0x0014
@@ -156,31 +156,18 @@
 
 #define RTL8366RB_PORT_ALL_INTERNAL	 RTL8366RB_PORT_CPU
 
+#define RTL8366RB_VLAN_VID_MASK		0xfff
+#define RTL8366RB_VLAN_PRIORITY_SHIFT	12
+#define RTL8366RB_VLAN_PRIORITY_MASK	0x7
+#define RTL8366RB_VLAN_UNTAG_SHIFT	8
+#define RTL8366RB_VLAN_UNTAG_MASK	0xff
+#define RTL8366RB_VLAN_MEMBER_MASK	0xff
+#define RTL8366RB_VLAN_FID_MASK		0x7
+
 struct rtl8366rb {
 	struct device		*parent;
 	struct rtl8366_smi	smi;
 	struct switch_dev	dev;
-};
-
-struct rtl8366rb_vlan_mc {
-	u16	reserved2:1;
-	u16	priority:3;
-	u16	vid:12;
-	u16	untag:8;
-	u16	member:8;
-	u16	stag_mbr:8;
-	u16	stag_idx:3;
-	u16	reserved1:2;
-	u16	fid:3;
-};
-
-struct rtl8366rb_vlan_4k {
-	u16	reserved1:4;
-	u16	vid:12;
-	u16	untag:8;
-	u16	member:8;
-	u16	reserved2:13;
-	u16	fid:3;
 };
 
 static struct rtl8366_mib_counter rtl8366rb_mib_counters[] = {
@@ -419,22 +406,18 @@ static int rtl8366rb_get_mib_counter(struct rtl8366_smi *smi, int counter,
 static int rtl8366rb_get_vlan_4k(struct rtl8366_smi *smi, u32 vid,
 				 struct rtl8366_vlan_4k *vlan4k)
 {
-	struct rtl8366rb_vlan_4k vlan4k_priv;
+	u32 data[3];
 	int err;
-	u32 data;
-	u16 *tableaddr;
+	int i;
 
 	memset(vlan4k, '\0', sizeof(struct rtl8366_vlan_4k));
-	vlan4k_priv.vid = vid;
 
 	if (vid >= RTL8366RB_NUM_VIDS)
 		return -EINVAL;
 
-	tableaddr = (u16 *)&vlan4k_priv;
-
 	/* write VID */
-	data = *tableaddr;
-	err = rtl8366_smi_write_reg(smi, RTL8366RB_VLAN_TABLE_WRITE_BASE, data);
+	err = rtl8366_smi_write_reg(smi, RTL8366RB_VLAN_TABLE_WRITE_BASE,
+				    vid & RTL8366RB_VLAN_VID_MASK);
 	if (err)
 		return err;
 
@@ -444,31 +427,19 @@ static int rtl8366rb_get_vlan_4k(struct rtl8366_smi *smi, u32 vid,
 	if (err)
 		return err;
 
-	err = rtl8366_smi_read_reg(smi, RTL8366RB_VLAN_TABLE_READ_BASE, &data);
-	if (err)
-		return err;
-
-	*tableaddr = data;
-	tableaddr++;
-
-	err = rtl8366_smi_read_reg(smi, RTL8366RB_VLAN_TABLE_READ_BASE + 1,
-				   &data);
-	if (err)
-		return err;
-
-	*tableaddr = data;
-	tableaddr++;
-
-	err = rtl8366_smi_read_reg(smi, RTL8366RB_VLAN_TABLE_READ_BASE + 2,
-				   &data);
-	if (err)
-		return err;
-	*tableaddr = data;
+	for (i = 0; i < 3; i++) {
+		err = rtl8366_smi_read_reg(smi,
+					   RTL8366RB_VLAN_TABLE_READ_BASE + i,
+					   &data[i]);
+		if (err)
+			return err;
+	}
 
 	vlan4k->vid = vid;
-	vlan4k->untag = vlan4k_priv.untag;
-	vlan4k->member = vlan4k_priv.member;
-	vlan4k->fid = vlan4k_priv.fid;
+	vlan4k->untag = (data[1] >> RTL8366RB_VLAN_UNTAG_SHIFT) &
+			RTL8366RB_VLAN_UNTAG_MASK;
+	vlan4k->member = data[1] & RTL8366RB_VLAN_MEMBER_MASK;
+	vlan4k->fid = data[2] & RTL8366RB_VLAN_FID_MASK;
 
 	return 0;
 }
@@ -476,10 +447,9 @@ static int rtl8366rb_get_vlan_4k(struct rtl8366_smi *smi, u32 vid,
 static int rtl8366rb_set_vlan_4k(struct rtl8366_smi *smi,
 				 const struct rtl8366_vlan_4k *vlan4k)
 {
-	struct rtl8366rb_vlan_4k vlan4k_priv;
+	u32 data[3];
 	int err;
-	u32 data;
-	u16 *tableaddr;
+	int i;
 
 	if (vlan4k->vid >= RTL8366RB_NUM_VIDS ||
 	    vlan4k->member > RTL8366RB_PORT_ALL ||
@@ -487,36 +457,19 @@ static int rtl8366rb_set_vlan_4k(struct rtl8366_smi *smi,
 	    vlan4k->fid > RTL8366RB_FIDMAX)
 		return -EINVAL;
 
-	vlan4k_priv.vid = vlan4k->vid;
-	vlan4k_priv.untag = vlan4k->untag;
-	vlan4k_priv.member = vlan4k->member;
-	vlan4k_priv.fid = vlan4k->fid;
+	data[0] = vlan4k->vid & RTL8366RB_VLAN_VID_MASK;
+	data[1] = (vlan4k->member & RTL8366RB_VLAN_MEMBER_MASK) |
+		  ((vlan4k->untag & RTL8366RB_VLAN_UNTAG_MASK) <<
+			RTL8366RB_VLAN_UNTAG_SHIFT);
+	data[2] = vlan4k->fid & RTL8366RB_VLAN_FID_MASK;
 
-	tableaddr = (u16 *)&vlan4k_priv;
-
-	data = *tableaddr;
-
-	err = rtl8366_smi_write_reg(smi, RTL8366RB_VLAN_TABLE_WRITE_BASE, data);
-	if (err)
-		return err;
-
-	tableaddr++;
-
-	data = *tableaddr;
-
-	err = rtl8366_smi_write_reg(smi, RTL8366RB_VLAN_TABLE_WRITE_BASE + 1,
-				    data);
-	if (err)
-		return err;
-
-	tableaddr++;
-
-	data = *tableaddr;
-
-	err = rtl8366_smi_write_reg(smi, RTL8366RB_VLAN_TABLE_WRITE_BASE + 2,
-				    data);
-	if (err)
-		return err;
+	for (i = 0; i < 3; i++) {
+		err = rtl8366_smi_write_reg(smi,
+					    RTL8366RB_VLAN_TABLE_WRITE_BASE + i,
+					    data[i]);
+		if (err)
+			return err;
+	}
 
 	/* write table access control word */
 	err = rtl8366_smi_write_reg(smi, RTL8366RB_TABLE_ACCESS_CTRL_REG,
@@ -528,47 +481,30 @@ static int rtl8366rb_set_vlan_4k(struct rtl8366_smi *smi,
 static int rtl8366rb_get_vlan_mc(struct rtl8366_smi *smi, u32 index,
 				 struct rtl8366_vlan_mc *vlanmc)
 {
-	struct rtl8366rb_vlan_mc vlanmc_priv;
+	u32 data[3];
 	int err;
-	u32 addr;
-	u32 data;
-	u16 *tableaddr;
+	int i;
 
 	memset(vlanmc, '\0', sizeof(struct rtl8366_vlan_mc));
 
 	if (index >= RTL8366RB_NUM_VLANS)
 		return -EINVAL;
 
-	tableaddr = (u16 *)&vlanmc_priv;
+	for (i = 0; i < 3; i++) {
+		err = rtl8366_smi_read_reg(smi,
+					   RTL8366RB_VLAN_MC_BASE(index) + i,
+					   &data[i]);
+		if (err)
+			return err;
+	}
 
-	addr = RTL8366RB_VLAN_MEMCONF_BASE + (index * 3);
-	err = rtl8366_smi_read_reg(smi, addr, &data);
-	if (err)
-		return err;
-
-	*tableaddr = data;
-	tableaddr++;
-
-	addr = RTL8366RB_VLAN_MEMCONF_BASE + 1 + (index * 3);
-	err = rtl8366_smi_read_reg(smi, addr, &data);
-	if (err)
-		return err;
-
-	*tableaddr = data;
-	tableaddr++;
-
-	addr = RTL8366RB_VLAN_MEMCONF_BASE + 2 + (index * 3);
-	err = rtl8366_smi_read_reg(smi, addr, &data);
-	if (err)
-		return err;
-
-	*tableaddr = data;
-
-	vlanmc->vid = vlanmc_priv.vid;
-	vlanmc->priority = vlanmc_priv.priority;
-	vlanmc->untag = vlanmc_priv.untag;
-	vlanmc->member = vlanmc_priv.member;
-	vlanmc->fid = vlanmc_priv.fid;
+	vlanmc->vid = data[0] & RTL8366RB_VLAN_VID_MASK;
+	vlanmc->priority = (data[0] >> RTL8366RB_VLAN_PRIORITY_SHIFT) &
+			   RTL8366RB_VLAN_PRIORITY_MASK;
+	vlanmc->untag = (data[1] >> RTL8366RB_VLAN_UNTAG_SHIFT) &
+			RTL8366RB_VLAN_UNTAG_MASK;
+	vlanmc->member = data[1] & RTL8366RB_VLAN_MEMBER_MASK;
+	vlanmc->fid = data[2] & RTL8366RB_VLAN_FID_MASK;
 
 	return 0;
 }
@@ -576,11 +512,9 @@ static int rtl8366rb_get_vlan_mc(struct rtl8366_smi *smi, u32 index,
 static int rtl8366rb_set_vlan_mc(struct rtl8366_smi *smi, u32 index,
 				 const struct rtl8366_vlan_mc *vlanmc)
 {
-	struct rtl8366rb_vlan_mc vlanmc_priv;
+	u32 data[3];
 	int err;
-	u32 addr;
-	u32 data;
-	u16 *tableaddr;
+	int i;
 
 	if (index >= RTL8366RB_NUM_VLANS ||
 	    vlanmc->vid >= RTL8366RB_NUM_VIDS ||
@@ -590,40 +524,22 @@ static int rtl8366rb_set_vlan_mc(struct rtl8366_smi *smi, u32 index,
 	    vlanmc->fid > RTL8366RB_FIDMAX)
 		return -EINVAL;
 
-	vlanmc_priv.vid = vlanmc->vid;
-	vlanmc_priv.priority = vlanmc->priority;
-	vlanmc_priv.untag = vlanmc->untag;
-	vlanmc_priv.member = vlanmc->member;
-	vlanmc_priv.stag_mbr = 0;
-	vlanmc_priv.stag_idx = 0;
-	vlanmc_priv.fid = vlanmc->fid;
+	data[0] = (vlanmc->vid & RTL8366RB_VLAN_VID_MASK) |
+		  ((vlanmc->priority & RTL8366RB_VLAN_PRIORITY_MASK) <<
+			RTL8366RB_VLAN_PRIORITY_SHIFT);
+	data[1] = (vlanmc->member & RTL8366RB_VLAN_MEMBER_MASK) |
+		  ((vlanmc->untag & RTL8366RB_VLAN_UNTAG_MASK) <<
+			RTL8366RB_VLAN_UNTAG_SHIFT);
+	data[2] = vlanmc->fid & RTL8366RB_VLAN_FID_MASK;
 
-	addr = RTL8366RB_VLAN_MEMCONF_BASE + (index * 3);
+	for (i = 0; i < 3; i++) {
+		err = rtl8366_smi_write_reg(smi,
+					    RTL8366RB_VLAN_MC_BASE(index) + i,
+					    data[i]);
+		if (err)
+			return err;
+	}
 
-	tableaddr = (u16 *)&vlanmc_priv;
-	data = *tableaddr;
-
-	err = rtl8366_smi_write_reg(smi, addr, data);
-	if (err)
-		return err;
-
-	addr = RTL8366RB_VLAN_MEMCONF_BASE + 1 + (index * 3);
-
-	tableaddr++;
-	data = *tableaddr;
-
-	err = rtl8366_smi_write_reg(smi, addr, data);
-	if (err)
-		return err;
-
-	addr = RTL8366RB_VLAN_MEMCONF_BASE + 2 + (index * 3);
-
-	tableaddr++;
-	data = *tableaddr;
-
-	err = rtl8366_smi_write_reg(smi, addr, data);
-	if (err)
-		return err;
 	return 0;
 }
 
