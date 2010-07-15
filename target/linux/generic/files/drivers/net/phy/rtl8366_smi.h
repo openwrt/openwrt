@@ -86,6 +86,7 @@ struct rtl8366_smi_ops {
 	int	(*set_mc_index)(struct rtl8366_smi *smi, int port, int index);
 	int	(*get_mib_counter)(struct rtl8366_smi *smi, int counter,
 				   int port, unsigned long long *val);
+	int	(*is_vlan_valid)(struct rtl8366_smi *smi, unsigned vlan);
 };
 
 struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent);
