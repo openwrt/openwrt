@@ -99,6 +99,29 @@ dnsmasq() {
 
 	config_get hostsfile "$cfg" dhcphostsfile
 	[ -e "$hostsfile" ] && append args "--dhcp-hostsfile=$hostsfile"
+
+	local rebind
+	config_get_bool rebind "$cfg" rebind_protection 1
+	[ $rebind -gt 0 ] && {
+		logger -t dnsmasq \
+			"DNS rebinding protection is active," \
+			"will discard upstream RFC1918 responses!"
+		append args "--stop-dns-rebind"
+
+		local rebind_localhost
+		config_get_bool rebind_localhost "$cfg" rebind_localhost 0
+		[ $rebind_localhost -gt 0 ] && {
+			logger -t dnsmasq "Allowing 127.0.0.0/8 responses"
+			append args "--rebind-localhost-ok"
+		}
+
+		append_rebind_domain() {
+			logger -t dnsmasq "Allowing RFC1918 responses for domain $1"
+			append args "--rebind-domain-ok=$1"
+		}
+
+		config_list_foreach "$cfg" rebind_domain append_rebind_domain
+	}
 }
 
 dhcp_subscrid_add() {
