@@ -23,8 +23,8 @@ append_bool() {
 	local option="$2"
 	local value="$3"
 	local _loctmp
-	config_get_bool _loctmp "$section" "$option"
-	[ "$_loctmp" -gt 0 ] && append args "$value"
+	config_get_bool _loctmp "$section" "$option" 0
+	[ $_loctmp -gt 0 ] && append args "$value"
 }
 
 append_parm() {
@@ -274,7 +274,7 @@ dhcp_add() {
 
 	#check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
-	[ "$force" -gt 0 ] || {
+	[ $force -gt 0 ] || {
 		udhcpc -n -q -s /bin/true -t 1 -i $ifname >&- && return 0
 	}
 
