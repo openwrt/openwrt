@@ -206,7 +206,7 @@
 +}
 --- a/fs/jffs2/super.c
 +++ b/fs/jffs2/super.c
-@@ -254,14 +254,41 @@ static int __init init_jffs2_fs(void)
+@@ -252,14 +252,41 @@ static int __init init_jffs2_fs(void)
  	BUILD_BUG_ON(sizeof(struct jffs2_raw_inode) != 68);
  	BUILD_BUG_ON(sizeof(struct jffs2_raw_summary) != 32);
  
@@ -1081,7 +1081,7 @@
  ifdef CONFIG_FUNCTION_TRACER
  ORIG_CFLAGS := $(KBUILD_CFLAGS)
  KBUILD_CFLAGS = $(subst -pg,,$(ORIG_CFLAGS))
-@@ -66,6 +76,8 @@ obj-$(CONFIG_ZLIB_DEFLATE) += zlib_defla
+@@ -69,6 +79,8 @@ obj-$(CONFIG_ZLIB_DEFLATE) += zlib_defla
  obj-$(CONFIG_REED_SOLOMON) += reed_solomon/
  obj-$(CONFIG_LZO_COMPRESS) += lzo/
  obj-$(CONFIG_LZO_DECOMPRESS) += lzo/

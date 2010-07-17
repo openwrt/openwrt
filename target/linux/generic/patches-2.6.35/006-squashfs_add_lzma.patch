@@ -18,7 +18,7 @@ Signed-off-by: Phillip Lougher <phillip@lougher.demon.co.uk>
 
 --- a/fs/squashfs/Kconfig
 +++ b/fs/squashfs/Kconfig
-@@ -26,6 +26,11 @@ config SQUASHFS
+@@ -37,6 +37,11 @@ config SQUASHFS_XATTRS
  
  	  If unsure, say N.
  
@@ -210,7 +210,7 @@ Signed-off-by: Phillip Lougher <phillip@lougher.demon.co.uk>
 +
 --- a/fs/squashfs/squashfs.h
 +++ b/fs/squashfs/squashfs.h
-@@ -94,3 +94,6 @@ extern const struct address_space_operat
+@@ -104,3 +104,6 @@ extern const struct xattr_handler *squas
  
  /* zlib_wrapper.c */
  extern const struct squashfs_decompressor squashfs_zlib_comp_ops;

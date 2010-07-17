@@ -1,6 +1,6 @@
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
-@@ -1024,6 +1024,14 @@ config CS5535_GPIO
+@@ -1032,6 +1032,14 @@ config CS5535_GPIO
  
  	  If compiled as a module, it will be called cs5535_gpio.
  
@@ -17,7 +17,7 @@
  	depends on BLOCK
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
-@@ -95,6 +95,7 @@ obj-$(CONFIG_SCx200_GPIO)	+= scx200_gpio
+@@ -96,6 +96,7 @@ obj-$(CONFIG_SCx200_GPIO)	+= scx200_gpio
  obj-$(CONFIG_PC8736x_GPIO)	+= pc8736x_gpio.o
  obj-$(CONFIG_NSC_GPIO)		+= nsc_gpio.o
  obj-$(CONFIG_CS5535_GPIO)	+= cs5535_gpio.o

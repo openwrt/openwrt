@@ -71,7 +71,7 @@
  	idx = phy_find_valid(idx, phydev->supported);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -492,6 +492,7 @@ void phy_start_machine(struct phy_device
+@@ -497,6 +497,7 @@ void phy_start_machine(struct phy_device
  void phy_stop_machine(struct phy_device *phydev);
  int phy_ethtool_sset(struct phy_device *phydev, struct ethtool_cmd *cmd);
  int phy_ethtool_gset(struct phy_device *phydev, struct ethtool_cmd *cmd);

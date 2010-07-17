@@ -338,7 +338,7 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
 +MODULE_LICENSE("GPL v2");
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -133,6 +133,15 @@ config SPI_GPIO
+@@ -143,6 +143,15 @@ config SPI_GPIO
  	  GPIO operations, you should be able to leverage that for better
  	  speed with a custom version of this driver; see the source code.
  
@@ -356,9 +356,9 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
  	depends on ARCH_MXC
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -22,6 +22,7 @@ obj-$(CONFIG_SPI_DESIGNWARE)		+= dw_spi.
- obj-$(CONFIG_SPI_DW_PCI)		+= dw_spi_pci.o
+@@ -23,6 +23,7 @@ obj-$(CONFIG_SPI_DW_PCI)		+= dw_spi_pci.
  obj-$(CONFIG_SPI_DW_MMIO)		+= dw_spi_mmio.o
+ obj-$(CONFIG_SPI_EP93XX)		+= ep93xx_spi.o
  obj-$(CONFIG_SPI_GPIO)			+= spi_gpio.o
 +obj-$(CONFIG_SPI_GPIO_OLD)		+= spi_gpio_old.o
  obj-$(CONFIG_SPI_IMX)			+= spi_imx.o

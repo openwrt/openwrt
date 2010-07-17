@@ -534,9 +534,9 @@
  	mutex_init(&dev->write_mutex);
 +	rwlock_init(&dev->bdev_mutex);
  
- 	if (!mtdname)
- 		mtdname = devname;
-@@ -298,6 +392,7 @@ static struct block2mtd_dev *add_device(
+ 	/* Setup the MTD structure */
+ 	/* make the name contain the block device in */
+@@ -299,6 +393,7 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.read = block2mtd_read;
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
@@ -546,7 +546,7 @@
  	part->name = dev->mtd.name;
 --- a/drivers/mtd/mtdchar.c
 +++ b/drivers/mtd/mtdchar.c
-@@ -18,6 +18,7 @@
+@@ -19,6 +19,7 @@
  
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/compatmac.h>
@@ -554,7 +554,7 @@
  
  #include <asm/uaccess.h>
  
-@@ -814,6 +815,13 @@ static int mtd_ioctl(struct inode *inode
+@@ -826,6 +827,13 @@ static int mtd_ioctl(struct file *file, 
  		file->f_pos = 0;
  		break;
  	}
@@ -570,7 +570,7 @@
  		ret = -ENOTTY;
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -101,6 +101,7 @@ struct mtd_oob_ops {
+@@ -98,6 +98,7 @@ struct mtd_oob_ops {
  	uint8_t		*oobbuf;
  };
  
@@ -578,7 +578,7 @@
  struct mtd_info {
  	u_char type;
  	uint32_t flags;
-@@ -241,6 +242,9 @@ struct mtd_info {
+@@ -238,6 +239,9 @@ struct mtd_info {
  	struct device dev;
  	int usecount;
  
