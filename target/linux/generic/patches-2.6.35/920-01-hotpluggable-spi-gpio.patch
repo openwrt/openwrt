@@ -6,7 +6,7 @@ Fix spi-gpio for hotplug.
 
 --- a/drivers/spi/spi_gpio.c
 +++ b/drivers/spi/spi_gpio.c
-@@ -218,7 +218,7 @@ static void spi_gpio_cleanup(struct spi_
+@@ -217,7 +217,7 @@ static void spi_gpio_cleanup(struct spi_
  	spi_bitbang_cleanup(spi);
  }
  
@@ -15,7 +15,7 @@ Fix spi-gpio for hotplug.
  {
  	int value;
  
-@@ -232,7 +232,7 @@ static int __init spi_gpio_alloc(unsigne
+@@ -231,7 +231,7 @@ static int __init spi_gpio_alloc(unsigne
  	return value;
  }
  
@@ -24,7 +24,7 @@ Fix spi-gpio for hotplug.
  spi_gpio_request(struct spi_gpio_platform_data *pdata, const char *label)
  {
  	int value;
-@@ -261,7 +261,7 @@ done:
+@@ -260,7 +260,7 @@ done:
  	return value;
  }
  
@@ -33,7 +33,7 @@ Fix spi-gpio for hotplug.
  {
  	int				status;
  	struct spi_master		*master;
-@@ -317,7 +317,7 @@ gpio_free:
+@@ -316,7 +316,7 @@ gpio_free:
  	return status;
  }
  
@@ -42,7 +42,7 @@ Fix spi-gpio for hotplug.
  {
  	struct spi_gpio			*spi_gpio;
  	struct spi_gpio_platform_data	*pdata;
-@@ -344,12 +344,13 @@ MODULE_ALIAS("platform:" DRIVER_NAME);
+@@ -343,12 +343,13 @@ MODULE_ALIAS("platform:" DRIVER_NAME);
  static struct platform_driver spi_gpio_driver = {
  	.driver.name	= DRIVER_NAME,
  	.driver.owner	= THIS_MODULE,

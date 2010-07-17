@@ -3,7 +3,7 @@ they still want to support gcc 3.3 -- well, we don't.
 
 --- a/arch/powerpc/Makefile
 +++ b/arch/powerpc/Makefile
-@@ -123,7 +123,8 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
+@@ -130,7 +130,8 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
  KBUILD_CFLAGS		+= -mno-sched-epilog
  endif
  
@@ -28,4 +28,4 @@ they still want to support gcc 3.3 -- well, we don't.
 +$(obj)/cuboot-katmai.o: BOOTCFLAGS += -mcpu=440
  $(obj)/cuboot-acadia.o: BOOTCFLAGS += -mcpu=405
  $(obj)/treeboot-walnut.o: BOOTCFLAGS += -mcpu=405
- $(obj)/virtex405-head.o: BOOTAFLAGS += -mcpu=405
+ $(obj)/treeboot-iss4xx.o: BOOTCFLAGS += -mcpu=405

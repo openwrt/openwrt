@@ -611,7 +611,7 @@
 +module_exit(gpiommc_modexit);
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -370,6 +370,31 @@ config MMC_TMIO
+@@ -382,6 +382,31 @@ config MMC_TMIO
  	  This provides support for the SD/MMC cell found in TC6393XB,
  	  T7L66XB and also HTC ASIC3
  
@@ -645,14 +645,14 @@
  	depends on PCI
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -33,6 +33,7 @@ obj-$(CONFIG_MMC_SDRICOH_CS)	+= sdricoh_
+@@ -34,6 +34,7 @@ obj-$(CONFIG_MMC_SDRICOH_CS)	+= sdricoh_
  obj-$(CONFIG_MMC_TMIO)		+= tmio_mmc.o
  obj-$(CONFIG_MMC_CB710)	+= cb710-mmc.o
  obj-$(CONFIG_MMC_VIA_SDMMC)	+= via-sdmmc.o
 +obj-$(CONFIG_GPIOMMC)		+= gpiommc.o
  obj-$(CONFIG_SDH_BFIN)		+= bfin_sdh.o
+ obj-$(CONFIG_MMC_SH_MMCIF)	+= sh_mmcif.o
  
- obj-$(CONFIG_MMC_SDHCI_OF)	+= sdhci-of.o
 --- /dev/null
 +++ b/include/linux/mmc/gpiommc.h
 @@ -0,0 +1,71 @@
@@ -829,7 +829,7 @@
 +be done automatically.
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -2540,6 +2540,11 @@ T:	git git://git.kernel.org/pub/scm/linu
+@@ -2591,6 +2591,11 @@ T:	git git://git.kernel.org/pub/scm/linu
  S:	Maintained
  F:	drivers/media/video/gspca/
  

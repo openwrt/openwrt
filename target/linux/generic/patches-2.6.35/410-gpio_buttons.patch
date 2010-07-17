@@ -1,6 +1,6 @@
 --- a/drivers/input/misc/Kconfig
 +++ b/drivers/input/misc/Kconfig
-@@ -340,4 +340,20 @@ config INPUT_PCAP
+@@ -390,4 +390,20 @@ config INPUT_PCAP
  	  To compile this driver as a module, choose M here: the
  	  module will be called pcap_keys.
  
@@ -23,7 +23,7 @@
  endif
 --- a/drivers/input/misc/Makefile
 +++ b/drivers/input/misc/Makefile
-@@ -32,4 +32,5 @@ obj-$(CONFIG_INPUT_WINBOND_CIR)		+= winb
+@@ -37,4 +37,5 @@ obj-$(CONFIG_INPUT_WINBOND_CIR)		+= winb
  obj-$(CONFIG_INPUT_WISTRON_BTNS)	+= wistron_btns.o
  obj-$(CONFIG_INPUT_WM831X_ON)		+= wm831x-on.o
  obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o

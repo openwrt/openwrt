@@ -90,7 +90,7 @@
  
 --- a/include/linux/module.h
 +++ b/include/linux/module.h
-@@ -195,16 +195,24 @@ void *__symbol_get_gpl(const char *symbo
+@@ -202,16 +202,24 @@ struct module_use {
  #define __CRC_SYMBOL(sym, sec)
  #endif
  

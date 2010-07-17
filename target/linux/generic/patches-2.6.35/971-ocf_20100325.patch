@@ -24,7 +24,7 @@
   * All of these routines try to estimate how many bits of randomness a
   * particular randomness source.  They do this by keeping track of the
   * first and second order deltas of the event timings.
-@@ -715,6 +725,61 @@ void add_disk_randomness(struct gendisk
+@@ -715,6 +725,61 @@ void add_disk_randomness(struct gendisk 
  }
  #endif
  
@@ -88,7 +88,7 @@
   * Entropy extraction routines
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
-@@ -141,6 +141,7 @@ SYSCALL_DEFINE1(dup, unsigned int, filde
+@@ -142,6 +142,7 @@ SYSCALL_DEFINE1(dup, unsigned int, filde
  	}
  	return ret;
  }
@@ -98,7 +98,7 @@
  
 --- a/include/linux/miscdevice.h
 +++ b/include/linux/miscdevice.h
-@@ -12,6 +12,7 @@
+@@ -18,6 +18,7 @@
  #define APOLLO_MOUSE_MINOR	7
  #define PC110PAD_MINOR		9
  /*#define ADB_MOUSE_MINOR	10	FIXME OBSOLETE */
@@ -147,7 +147,7 @@
  struct rand_pool_info {
  	int	entropy_count;
  	int	buf_size;
-@@ -50,6 +75,10 @@ extern void add_input_randomness(unsigne
+@@ -54,6 +79,10 @@ extern void add_input_randomness(unsigne
  				 unsigned int value);
  extern void add_interrupt_randomness(int irq);
  
