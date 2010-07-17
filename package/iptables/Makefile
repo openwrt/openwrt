@@ -197,7 +197,7 @@ endef
 define Package/iptables-mod-hashlimit/description
 iptables extensions for hashlimit matching
 Includes:
-- libxt_hashlimit
+- libipt_hashlimit
 endef
 
 define Package/iptables-mod-iprange
