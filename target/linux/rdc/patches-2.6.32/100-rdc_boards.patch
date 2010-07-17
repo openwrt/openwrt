@@ -384,7 +384,7 @@
 +arch_initcall(ar525w_setup);
 --- /dev/null
 +++ b/arch/x86/mach-rdc321x/boards/bifferboard.c
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,69 @@
 +/*
 + *  Bifferboard RDC321x platform devices
 + *
@@ -421,38 +421,26 @@
 +	u32 kernel_len;
 +	u16 tmp;
 +
-+	if (master->size == 0x100000)
-+		kernel_len = master->size - 0x10000;
-+	else {
-+		res =  master->read(master, 0x4000 + 1036, 2, &len, (char *) &tmp);
-+		if (res)
-+			return res;
-+		kernel_len = tmp * master->erasesize;
-+	}
++	res =  master->read(master, 0x4000 + 1036, 2, &len, (char *) &tmp);
++	if (res)
++		return res;
++	kernel_len = tmp * master->erasesize;
 +
-+	rdc_flash_parts = kzalloc(sizeof(struct mtd_partition) * 4, GFP_KERNEL);
++	rdc_flash_parts = kzalloc(sizeof(struct mtd_partition) * 3, GFP_KERNEL);
 +
 +	*pparts = rdc_flash_parts;
 +
-+	rdc_flash_parts[0].name = "biffboot";
-+	rdc_flash_parts[0].offset = master->size - 0x10000;
-+	rdc_flash_parts[0].size = 0x10000;
-+	rdc_flash_parts[0].mask_flags = MTD_WRITEABLE;
-+	rdc_flash_parts[1].name = "firmware";
-+	rdc_flash_parts[1].offset = 0;
-+	rdc_flash_parts[1].size = rdc_flash_parts[0].offset;
-+	rdc_flash_parts[2].name = "kernel";
-+	rdc_flash_parts[2].offset = 0x00000000;
-+	rdc_flash_parts[2].size = kernel_len;
++	rdc_flash_parts[0].name = "kernel";
++	rdc_flash_parts[0].offset = 0;
++	rdc_flash_parts[0].size = kernel_len;
++	rdc_flash_parts[1].name = "rootfs";
++	rdc_flash_parts[1].offset = kernel_len;
++	rdc_flash_parts[1].size = master->size - kernel_len - 0x10000;
++	rdc_flash_parts[2].name = "biffboot";
++	rdc_flash_parts[2].offset = master->size - 0x10000;
++	rdc_flash_parts[2].size = 0x10000;
 +
-+	if (master->size == 0x100000)
-+		return 2;
-+
-+	rdc_flash_parts[3].name = "rootfs";
-+	rdc_flash_parts[3].offset = MTDPART_OFS_APPEND;
-+	rdc_flash_parts[3].size = rdc_flash_parts[1].size - rdc_flash_parts[2].size;
-+
-+	return 4;
++	return 3;
 +}
 +
 +struct mtd_part_parser __initdata bifferboard_parser = {
