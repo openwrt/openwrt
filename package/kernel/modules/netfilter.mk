@@ -514,11 +514,12 @@ endef
 $(eval $(call KernelPackage,nf-conntrack-netlink))
 
 define KernelPackage/ipt-hashlimit
-$(call KernelPackage/ipt/Depends,)
+  SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter hashlimit match
-  FILES:=$(LINUX_DIR)/net/netfilter/xt_hashlimit.ko
   KCONFIG:=$(KCONFIG_IPT_HASHLIMIT)
+  FILES:=$(LINUX_DIR)/net/netfilter/xt_hashlimit.ko
   AUTOLOAD:=$(call AutoLoad,50,xt_hashlimit)
+  $(call KernelPackage/ipt)
 endef
 
 define KernelPackage/ipt-hashlimit/description
