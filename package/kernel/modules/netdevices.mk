@@ -36,6 +36,21 @@ endef
 
 $(eval $(call KernelPackage,swconfig))
 
+define KernelPackage/mvswitch
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell 88E6060 switch support
+  DEPENDS:=+kmod-swconfig
+  KCONFIG:=CONFIG_MVSWITCH_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/mvswitch.ko
+  AUTOLOAD:=$(call AutoLoad,41,mvswitch)
+endef
+
+define KernelPackage/mvswitch/description
+  Marvell 88E6060 switch support
+endef
+
+$(eval $(call KernelPackage,mvswitch))
+
 define KernelPackage/switch-ip175c
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=IC+ IP175C/IP178C switch support
@@ -155,6 +170,20 @@ endef
 
 $(eval $(call KernelPackage,via-velocity))
 
+define KernelPackage/ixp4xx-eth
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=IXP4xxt Ethernet Adapter kernel support
+  DEPENDS:=@TARGET_ixp4xx
+  KCONFIG:=CONFIG_IXP4XX_ETH
+  FILES:=$(LINUX_DIR)/drivers/net/arm/ixp4xx_eth.ko
+  AUTOLOAD:=$(call AutoLoad,50,ixp4xx_eth)
+endef
+
+define KernelPackage/ixp4xx-eth/description
+ Kernel modules for Intel IXP4xx Ethernet chipsets.
+endef
+
+$(eval $(call KernelPackage,ixp4xx-eth))
 
 define KernelPackage/8139too
   SUBMENU:=$(NETWORK_DEVICES_MENU)
