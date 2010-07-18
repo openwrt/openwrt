@@ -201,7 +201,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 		goto out;
 	}
 
-	if (slot < 1 || slot > 3) {
+	if (slot < 1 || slot > 4) {
 		printk(KERN_ALERT "PCI: slot number %u is not supported\n",
 			slot);
 		goto out;

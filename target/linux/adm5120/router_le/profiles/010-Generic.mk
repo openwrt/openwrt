@@ -13,5 +13,16 @@ endef
 define Profile/Generic/Description
 	Generic package set compatible with most boards.
 endef
+
+define Profile/EB-214A
+	NAME:=Generic EB-214A
+	PACKAGES:=-wpad-mini -admswconfig -kmod-usb-adm5120 -kmod-ledtrig-adm5120-switch -dnsmasq kmod-usb-uhci kmod-usb2
+endef
+
+define Profile/EB-214A/Description
+	Package set optimized for generic EB-214A boards.
+endef
+
 $(eval $(call Profile,Generic))
+$(eval $(call Profile,EB-214A))
 
