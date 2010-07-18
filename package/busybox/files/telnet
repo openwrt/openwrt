@@ -1,17 +1,24 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 START=50
 
+has_root_pwd() {
+	local pwd=$([ -f "$1" ] && cat "$1")
+	      pwd="${pwd#*root:}"
+	      pwd="${pwd%%:*}"
+
+	test -n "${pwd#!}"
+}
+
 start() {
-	if 	[ \! -f /etc/passwd ] || \
-		( awk -F: '/^root:/ && ($2 != "") && ($2 !~ /\!/) {exit 1}' /etc/passwd 2>/dev/null && \
-		awk -F: '/^root:/ && ($2 != "") && ($2 !~ /\!/) {exit 1}' /etc/shadow 2>/dev/null ) || \
-		( [ \! -x /usr/sbin/dropbear ] && [ \! -x /usr/sbin/sshd ] )
-	then \
+	if ( ! has_root_pwd /etc/passwd && ! has_root_pwd /etc/shadow ) || \
+	   ( [ ! -x /usr/sbin/dropbear ] && [ ! -x /usr/sbin/sshd ] );
+	then
 		telnetd -l /bin/login.sh
 	fi
 }
 
 stop() {
-	killall telnetd
+	killall telnetd 2>/dev/null
 }
+
