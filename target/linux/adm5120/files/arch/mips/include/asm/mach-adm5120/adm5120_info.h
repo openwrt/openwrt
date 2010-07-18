@@ -84,6 +84,7 @@ enum {
 	MACH_ADM5120_WP54,		/* Compex WP54G/WP54AG/WPP54G/WPP54AG */
 	MACH_ADM5120_WP54G_WRT,		/* Compex WP54G-WRT */
 	MACH_ADM5120_WP54Gv1C,		/* Compex WP54G version 1C */
+	MACH_ADM5120_EB_214A,		/* Generic EB-214A */
 };
 
 /*

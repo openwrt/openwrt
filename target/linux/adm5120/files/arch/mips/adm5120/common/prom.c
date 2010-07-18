@@ -68,6 +68,8 @@ static struct board_desc common_boards[] __initdata = {
 	DEFBOARD("OSBRiDGE 5GXi",	MACH_ADM5120_5GXI),
 	/* Motorola boards */
 	DEFBOARD("Powerline MU Gateway",MACH_ADM5120_PMUGW),
+	/* Generic EB-214A */
+	DEFBOARD("ADM5120",	MACH_ADM5120_EB_214A),
 };
 
 static unsigned long __init find_machtype_byname(char *name)

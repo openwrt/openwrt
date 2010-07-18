@@ -37,6 +37,13 @@ config ADM5120_MACH_WP54
 	select ADM5120_OEM_COMPEX
 	default y
 
+config ADM5120_MACH_EB_214A
+	bool "EB-214A support"
+	depends on CPU_LITTLE_ENDIAN
+	select ADM5120_SOC_BGA
+	select ADM5120_OEM_GENERIC
+	default y
+
 config ADM5120_MACH_BR_6104K
 	bool "Edimax BR-6104K support"
 	depends on CPU_LITTLE_ENDIAN
@@ -163,6 +170,9 @@ config ADM5120_OEM_COMPEX
 	def_bool n
 
 config ADM5120_OEM_EDIMAX
+	def_bool n
+
+config ADM5120_OEM_GENERIC
 	def_bool n
 
 config ADM5120_OEM_INFINEON

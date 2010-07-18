@@ -41,6 +41,10 @@ adm5120_detect() {
 		status_led="power"
 		sys_mtd_part="trx"
 		;;
+	"EB-214A"*)
+		status_led="power"
+		sys_mtd_part="firmware"
+		;;
 	*)
 		;;
 	esac

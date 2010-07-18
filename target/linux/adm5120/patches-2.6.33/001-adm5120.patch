@@ -32,7 +32,7 @@
  source "arch/mips/jazz/Kconfig"
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -205,6 +205,22 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -I$(srctre
+@@ -205,6 +205,23 @@ cflags-$(CONFIG_MACH_JAZZ)	+= -I$(srctre
  load-$(CONFIG_MACH_JAZZ)	+= 0xffffffff80080000
  
  #
@@ -43,6 +43,7 @@
 +core-$(CONFIG_ADM5120_OEM_CELLVISION)	+= arch/mips/adm5120/cellvision/
 +core-$(CONFIG_ADM5120_OEM_COMPEX)	+= arch/mips/adm5120/compex/
 +core-$(CONFIG_ADM5120_OEM_EDIMAX)	+= arch/mips/adm5120/edimax/
++core-$(CONFIG_ADM5120_OEM_GENERIC)	+= arch/mips/adm5120/generic/
 +core-$(CONFIG_ADM5120_OEM_INFINEON)	+= arch/mips/adm5120/infineon/
 +core-$(CONFIG_ADM5120_OEM_MIKROTIK)	+= arch/mips/adm5120/mikrotik/
 +core-$(CONFIG_ADM5120_OEM_MOTOROLA)	+= arch/mips/adm5120/motorola/

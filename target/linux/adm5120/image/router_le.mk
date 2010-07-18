@@ -210,6 +210,14 @@ define Image/Build/Template/Infineon/Initramfs
 endef
 
 #
+# Generic EB-214A
+#
+define Image/Build/Template/Edimax/Initramfs
+	$(call Image/Build/LZMAKernel/Admboot,eb-214a,bin)
+endef
+
+
+#
 # Mikrotik RouterBOARD 1xx
 #
 define Image/Build/Template/Mikrotik/Initramfs
@@ -381,6 +389,7 @@ define Image/Build/Profile/Generic
 	$(call Image/Build/Profile/BR6104KP,$(1))
 	$(call Image/Build/Profile/BR6104WG,$(1))
 	$(call Image/Build/Profile/BR6114WG,$(1))
+	$(call Image/Build/Profile/EB214A,$(1))
 	# Infineon
 	$(call Image/Build/Profile/EASY83000,$(1))
 	$(call Image/Build/Profile/EASY5120RT,$(1))
