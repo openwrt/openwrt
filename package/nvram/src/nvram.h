@@ -46,7 +46,8 @@ struct nvram_tuple {
 struct nvram_handle {
 	int fd;
 	char *mmap;
-	unsigned long length;
+	unsigned int length;
+	unsigned int offset;
 	struct nvram_tuple *nvram_hash[257];
 	struct nvram_tuple *nvram_dead;
 };
@@ -113,7 +114,6 @@ char * nvram_find_staging(void);
 
 /* NVRAM constants */
 #define NVRAM_SPACE			0x8000
-#define NVRAM_START(x)		x - NVRAM_SPACE
 #define NVRAM_MAGIC			0x48534C46	/* 'FLSH' */
 #define NVRAM_VERSION		1
 

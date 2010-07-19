@@ -111,6 +111,7 @@ static int do_info(nvram_handle_t *nvram)
 	/* Show info */
 	printf("Magic:         0x%08X\n",   hdr->magic);
 	printf("Length:        0x%08X\n",   hdr->len);
+	printf("Offset:        0x%08X\n",   nvram->offset);
 
 	printf("CRC8:          0x%02X (calculated: 0x%02X)\n",
 		hdr->crc_ver_init & 0xFF, crc);
