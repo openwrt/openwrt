@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=arm
 BOARD:=at91
-BOARDNAME:=NetusG20
+BOARDNAME:=Atmel AT91
 FEATURES:=squashfs jffs2 targz
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -funit-at-a-time
 

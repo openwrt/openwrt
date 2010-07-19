@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=arm
 BOARD:=ep93xx
-BOARDNAME:=Cirrus Logic EP93xx SoC
+BOARDNAME:=Cirrus Logic EP93xx
 FEATURES:=squashfs jffs2 ext2 targz usb
 CFLAGS:=-Os -pipe -march=armv4t -funit-at-a-time
 
