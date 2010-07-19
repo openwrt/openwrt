@@ -142,7 +142,7 @@ static int _nvram_rehash(nvram_handle_t *h)
 /* Get nvram header. */
 nvram_header_t * nvram_header(nvram_handle_t *h)
 {
-	return (nvram_header_t *) &h->mmap[NVRAM_START(nvram_erase_size)];
+	return (nvram_header_t *) &h->mmap[h->offset];
 }
 
 /* Get the value of an NVRAM variable. */
@@ -337,10 +337,12 @@ int nvram_commit(nvram_handle_t *h)
 /* Open NVRAM and obtain a handle. */
 nvram_handle_t * nvram_open(const char *file, int rdonly)
 {
+	int i;
 	int fd;
 	char *mtd = NULL;
 	nvram_handle_t *h;
 	nvram_header_t *header;
+	int offset = -1;
 
 	/* If erase size or file are undefined then try to define them */
 	if( (nvram_erase_size == 0) || (file == NULL) )
@@ -361,15 +363,28 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 
 		if( mmap_area != MAP_FAILED )
 		{
-			memset(mmap_area, 0xFF, NVRAM_START(nvram_erase_size));
+			for( i = 0; i <= ((nvram_erase_size - NVRAM_SPACE) / sizeof(uint32_t)); i++ )
+			{
+				if( ((uint32_t *)mmap_area)[i] == NVRAM_MAGIC )
+				{
+					offset = i * sizeof(uint32_t);
+					break;
+				}
+			}
 
-			if((h = (nvram_handle_t *) malloc(sizeof(nvram_handle_t))) != NULL)
+			if( offset < 0 )
+			{
+				free(mtd);
+				return NULL;
+			}
+			else if( (h = malloc(sizeof(nvram_handle_t))) != NULL )
 			{
 				memset(h, 0, sizeof(nvram_handle_t));
 
 				h->fd     = fd;
 				h->mmap   = mmap_area;
 				h->length = nvram_erase_size;
+				h->offset = offset;
 
 				header = nvram_header(h);
 
