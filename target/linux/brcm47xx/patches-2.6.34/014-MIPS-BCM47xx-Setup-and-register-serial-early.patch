@@ -1,4 +1,4 @@
-From 4c6a515310f29c89f25a54a115cde905f97330f8 Mon Sep 17 00:00:00 2001
+From 09ebc2952d9d3df6b9c548d9943dc8bcffb87540 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 18 Jul 2010 14:59:24 +0200
 Subject: [PATCH 4/5] MIPS: BCM47xx: Setup and register serial early
@@ -33,7 +33,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -181,12 +183,44 @@ static int bcm47xx_get_invariants(struct
+@@ -184,12 +186,44 @@ static int bcm47xx_get_invariants(struct
  
  void __init plat_mem_setup(void)
  {

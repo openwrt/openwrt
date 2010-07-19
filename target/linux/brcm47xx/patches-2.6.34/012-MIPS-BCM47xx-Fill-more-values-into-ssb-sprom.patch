@@ -1,4 +1,4 @@
-From d6c049e08568aac29fff854ea0385e63c7150e09 Mon Sep 17 00:00:00 2001
+From 493d4a90850509e5f09b4799d4fc234b734a9d30 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 18 Jul 2010 13:34:32 +0200
 Subject: [PATCH 2/5] MIPS: BCM47xx: Fill more values into ssb sprom
@@ -10,18 +10,19 @@ drivers needs them.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- arch/mips/bcm47xx/setup.c |  122 +++++++++++++++++++++++++++++++++------------
- 1 files changed, 89 insertions(+), 33 deletions(-)
+ arch/mips/bcm47xx/setup.c |  125 +++++++++++++++++++++++++++++++++------------
+ 1 files changed, 92 insertions(+), 33 deletions(-)
 
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -74,6 +74,86 @@ static void str2eaddr(char *str, char *d
+@@ -74,6 +74,89 @@ static void str2eaddr(char *str, char *d
  	}
  }
  
 +static void bcm47xx_fill_sprom(struct ssb_sprom *sprom)
 +{
 +	char buf[100];
++	u64 boardflags;
 +
 +	memset(sprom, 0, sizeof(struct ssb_sprom));
 +
@@ -89,20 +90,22 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (nvram_getenv("pa1itssit", buf, sizeof(buf)) >= 0 ||
 +	    cfe_getenv("pa1itssit", buf, sizeof(buf)) >= 0)
 +		sprom->itssi_a = simple_strtoul(buf, NULL, 0);
-+	sprom->boardflags_lo = 0;
++
 +	if (nvram_getenv("boardflags", buf, sizeof(buf)) >= 0 ||
 +	    cfe_getenv("boardflags", buf, sizeof(buf)) >= 0)
-+		sprom->boardflags_lo = simple_strtoul(buf, NULL, 0);
-+	sprom->boardflags_hi = 0;
-+	if (nvram_getenv("boardflags", buf, sizeof(buf)) >= 0 ||
-+	    cfe_getenv("boardflags", buf, sizeof(buf)) >= 0)
-+		sprom->boardflags_hi = simple_strtoul(buf, NULL, 0);
++		boardflags = simple_strtoll(buf, NULL, 0);
++	if (boardflags) {
++		sprom->boardflags_lo = (boardflags & 0x000000000000FFFFLLU);
++		sprom->boardflags_hi = (boardflags & 0x00000000FFFF0000LLU) >> 16;
++		sprom->boardflags2_lo = (boardflags & 0x0000FFFF00000000LLU) >> 32;
++		sprom->boardflags2_hi = (boardflags & 0xFFFF000000000000LLU) >> 48;
++	}
 +}
 +
  static int bcm47xx_get_invariants(struct ssb_bus *bus,
  				   struct ssb_init_invariants *iv)
  {
-@@ -82,43 +162,19 @@ static int bcm47xx_get_invariants(struct
+@@ -82,43 +165,19 @@ static int bcm47xx_get_invariants(struct
  	/* Fill boardinfo structure */
  	memset(&(iv->boardinfo), 0 , sizeof(struct ssb_boardinfo));
  
