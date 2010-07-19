@@ -295,7 +295,7 @@
  	if (dc_lsize)
  		protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	if (!cpu_icache_snoops_remote_store && scache_size)
-@@ -1298,6 +1312,17 @@ static void __cpuinit coherency_setup(vo
+@@ -1311,6 +1325,17 @@ static void __cpuinit coherency_setup(vo
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
@@ -313,7 +313,7 @@
  	case CPU_R4000PC:
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -1354,6 +1379,15 @@ void __cpuinit r4k_cache_init(void)
+@@ -1367,6 +1392,15 @@ void __cpuinit r4k_cache_init(void)
  		break;
  	}
  
@@ -329,7 +329,7 @@
  	probe_pcache();
  	setup_scache();
  
-@@ -1412,5 +1446,13 @@ void __cpuinit r4k_cache_init(void)
+@@ -1425,5 +1459,13 @@ void __cpuinit r4k_cache_init(void)
  #if !defined(CONFIG_MIPS_CMP)
  	local_r4k___flush_cache_all(NULL);
  #endif
