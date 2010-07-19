@@ -679,11 +679,26 @@ endef
 $(eval $(call KernelPackage,wdt-scx200))
 
 
+define KernelPackage/pwm
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=PWM generic API
+  KCONFIG:=CONFIG_GENERIC_PWM
+  FILES:=$(LINUX_DIR)/drivers/pwm/pwm.ko
+  AUTOLOAD:=$(call AutoLoad,50,pwm)
+endef
+
+define KernelPackage/pwm/description
+ Kernel module that implement a generic PWM API
+endef
+
+$(eval $(call KernelPackage,pwm))
+
+
 define KernelPackage/pwm-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PWM over GPIO
-  KCONFIG:=CONFIG_GENERIC_PWM \
-		CONFIG_GPIO_PWM
+  DEPENDS:=+kmod-pwm
+  KCONFIG:=CONFIG_GPIO_PWM
   FILES:=$(LINUX_DIR)/drivers/pwm/gpio-pwm.ko
   AUTOLOAD:=$(call AutoLoad,51,gpio-pwm)
 endef
