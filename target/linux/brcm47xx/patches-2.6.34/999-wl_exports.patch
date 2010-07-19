@@ -1,16 +1,15 @@
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -29,7 +29,9 @@
- #define MB * 1048576
- extern struct ssb_bus ssb_bcm47xx;
+@@ -20,7 +20,8 @@
+ #include <asm/mach-bcm47xx/nvram.h>
+ #include <asm/mach-bcm47xx/bcm47xx.h>
  
 -static char nvram_buf[NVRAM_SPACE];
 +char nvram_buf[NVRAM_SPACE];
 +EXPORT_SYMBOL(nvram_buf);
-+
- static int cfe_env;
- extern char *cfe_env_get(char *nv_buf, const char *name);
- 		
+ 
+ /* Probe for NVRAM header */
+ static void __init early_nvram_init(void)
 --- a/arch/mips/mm/cache.c
 +++ b/arch/mips/mm/cache.c
 @@ -52,6 +52,7 @@ void (*_dma_cache_wback)(unsigned long s
