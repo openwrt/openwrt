@@ -7,8 +7,8 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=arm
-BOARD:=mx2
-BOARDNAME:=Freescale MX2
+BOARD:=imx21
+BOARDNAME:=Freescale i.MX21
 FEATURES:=jffs2
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -funit-at-a-time
 
