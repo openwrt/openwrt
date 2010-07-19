@@ -10,7 +10,7 @@ ARCH:=cris
 BOARD:=etrax
 BOARDNAME:=Axis ETRAX 100LX
 FEATURES:=squashfs jffs2 usb
-LINUX_VERSION:=2.6.32.14
+LINUX_VERSION:=2.6.32.16
 DEVICE_TYPE=
 
 include $(INCLUDE_DIR)/target.mk
