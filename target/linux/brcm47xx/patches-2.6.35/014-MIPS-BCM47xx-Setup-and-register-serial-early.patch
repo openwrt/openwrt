@@ -1,4 +1,4 @@
-From 09ebc2952d9d3df6b9c548d9943dc8bcffb87540 Mon Sep 17 00:00:00 2001
+From 3902bba103634d3256dac557020d7974f0d08aff Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 18 Jul 2010 14:59:24 +0200
 Subject: [PATCH 4/5] MIPS: BCM47xx: Setup and register serial early
@@ -9,8 +9,8 @@ Set it up and register it for early serial support.
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  arch/mips/Kconfig         |    1 -
- arch/mips/bcm47xx/setup.c |   36 +++++++++++++++++++++++++++++++++++-
- 2 files changed, 35 insertions(+), 2 deletions(-)
+ arch/mips/bcm47xx/setup.c |   37 ++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 36 insertions(+), 2 deletions(-)
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
@@ -33,7 +33,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -184,12 +186,44 @@ static int bcm47xx_get_invariants(struct
+@@ -189,12 +191,45 @@ static int bcm47xx_get_invariants(struct
  
  void __init plat_mem_setup(void)
  {
@@ -52,10 +52,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (!strncmp(buf, "console=ttyS1", 13)) {
 +		struct ssb_serial_port port;
 +
-+		printk("Swapping serial ports!\n");
++		printk(KERN_DEBUG "Swapping serial ports!\n");
 +		/* swap serial ports */
 +		memcpy(&port, &mcore->serial_ports[0], sizeof(port));
-+		memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1], sizeof(port));
++		memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1],
++		       sizeof(port));
 +		memcpy(&mcore->serial_ports[1], &port, sizeof(port));
 +	}
 +
@@ -75,7 +76,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +		early_serial_setup(&s);
 +	}
-+	printk("Serial init done.\n");
++	printk(KERN_DEBUG "Serial init done.\n");
  
  	_machine_restart = bcm47xx_machine_restart;
  	_machine_halt = bcm47xx_machine_halt;
