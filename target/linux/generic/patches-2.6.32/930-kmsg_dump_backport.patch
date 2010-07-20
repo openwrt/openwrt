@@ -1,0 +1,205 @@
+--- /dev/null
++++ b/include/linux/kmsg_dump.h
+@@ -0,0 +1,44 @@
++/*
++ * linux/include/kmsg_dump.h
++ *
++ * Copyright (C) 2009 Net Insight AB
++ *
++ * Author: Simon Kagstrom <simon.kagstrom@netinsight.net>
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file COPYING in the main directory of this archive
++ * for more details.
++ */
++#ifndef _LINUX_KMSG_DUMP_H
++#define _LINUX_KMSG_DUMP_H
++
++#include <linux/list.h>
++
++enum kmsg_dump_reason {
++	KMSG_DUMP_OOPS,
++	KMSG_DUMP_PANIC,
++};
++
++/**
++ * struct kmsg_dumper - kernel crash message dumper structure
++ * @dump:	The callback which gets called on crashes. The buffer is passed
++ * 		as two sections, where s1 (length l1) contains the older
++ * 		messages and s2 (length l2) contains the newer.
++ * @list:	Entry in the dumper list (private)
++ * @registered:	Flag that specifies if this is already registered
++ */
++struct kmsg_dumper {
++	void (*dump)(struct kmsg_dumper *dumper, enum kmsg_dump_reason reason,
++			const char *s1, unsigned long l1,
++			const char *s2, unsigned long l2);
++	struct list_head list;
++	int registered;
++};
++
++void kmsg_dump(enum kmsg_dump_reason reason);
++
++int kmsg_dump_register(struct kmsg_dumper *dumper);
++
++int kmsg_dump_unregister(struct kmsg_dumper *dumper);
++
++#endif /* _LINUX_KMSG_DUMP_H */
+--- a/kernel/panic.c
++++ b/kernel/panic.c
+@@ -10,6 +10,7 @@
+  */
+ #include <linux/debug_locks.h>
+ #include <linux/interrupt.h>
++#include <linux/kmsg_dump.h>
+ #include <linux/kallsyms.h>
+ #include <linux/notifier.h>
+ #include <linux/module.h>
+@@ -74,6 +75,7 @@ NORET_TYPE void panic(const char * fmt, 
+ 	dump_stack();
+ #endif
+ 
++	kmsg_dump(KMSG_DUMP_PANIC);
+ 	/*
+ 	 * If we have crashed and we have a crash kernel loaded let it handle
+ 	 * everything else.
+@@ -339,6 +341,7 @@ void oops_exit(void)
+ {
+ 	do_oops_enter_exit();
+ 	print_oops_end_marker();
++	kmsg_dump(KMSG_DUMP_OOPS);
+ }
+ 
+ #ifdef WANT_WARN_ON_SLOWPATH
+--- a/kernel/printk.c
++++ b/kernel/printk.c
+@@ -33,6 +33,7 @@
+ #include <linux/bootmem.h>
+ #include <linux/syscalls.h>
+ #include <linux/kexec.h>
++#include <linux/kmsg_dump.h>
+ 
+ #include <asm/uaccess.h>
+ 
+@@ -1405,3 +1406,121 @@ bool printk_timed_ratelimit(unsigned lon
+ }
+ EXPORT_SYMBOL(printk_timed_ratelimit);
+ #endif
++
++static DEFINE_SPINLOCK(dump_list_lock);
++static LIST_HEAD(dump_list);
++
++/**
++ * kmsg_dump_register - register a kernel log dumper.
++ * @dump: pointer to the kmsg_dumper structure
++ *
++ * Adds a kernel log dumper to the system. The dump callback in the
++ * structure will be called when the kernel oopses or panics and must be
++ * set. Returns zero on success and %-EINVAL or %-EBUSY otherwise.
++ */
++int kmsg_dump_register(struct kmsg_dumper *dumper)
++{
++	unsigned long flags;
++	int err = -EBUSY;
++
++	/* The dump callback needs to be set */
++	if (!dumper->dump)
++		return -EINVAL;
++
++	spin_lock_irqsave(&dump_list_lock, flags);
++	/* Don't allow registering multiple times */
++	if (!dumper->registered) {
++		dumper->registered = 1;
++		list_add_tail(&dumper->list, &dump_list);
++		err = 0;
++	}
++	spin_unlock_irqrestore(&dump_list_lock, flags);
++
++	return err;
++}
++EXPORT_SYMBOL_GPL(kmsg_dump_register);
++
++/**
++ * kmsg_dump_unregister - unregister a kmsg dumper.
++ * @dump: pointer to the kmsg_dumper structure
++ *
++ * Removes a dump device from the system. Returns zero on success and
++ * %-EINVAL otherwise.
++ */
++int kmsg_dump_unregister(struct kmsg_dumper *dumper)
++{
++	unsigned long flags;
++	int err = -EINVAL;
++
++	spin_lock_irqsave(&dump_list_lock, flags);
++	if (dumper->registered) {
++		dumper->registered = 0;
++		list_del(&dumper->list);
++		err = 0;
++	}
++	spin_unlock_irqrestore(&dump_list_lock, flags);
++
++	return err;
++}
++EXPORT_SYMBOL_GPL(kmsg_dump_unregister);
++
++static const char const *kmsg_reasons[] = {
++	[KMSG_DUMP_OOPS]	= "oops",
++	[KMSG_DUMP_PANIC]	= "panic",
++};
++
++static const char *kmsg_to_str(enum kmsg_dump_reason reason)
++{
++	if (reason >= ARRAY_SIZE(kmsg_reasons) || reason < 0)
++		return "unknown";
++
++	return kmsg_reasons[reason];
++}
++
++/**
++ * kmsg_dump - dump kernel log to kernel message dumpers.
++ * @reason: the reason (oops, panic etc) for dumping
++ *
++ * Iterate through each of the dump devices and call the oops/panic
++ * callbacks with the log buffer.
++ */
++void kmsg_dump(enum kmsg_dump_reason reason)
++{
++	unsigned long end;
++	unsigned chars;
++	struct kmsg_dumper *dumper;
++	const char *s1, *s2;
++	unsigned long l1, l2;
++	unsigned long flags;
++
++	/* Theoretically, the log could move on after we do this, but
++	   there's not a lot we can do about that. The new messages
++	   will overwrite the start of what we dump. */
++	spin_lock_irqsave(&logbuf_lock, flags);
++	end = log_end & LOG_BUF_MASK;
++	chars = logged_chars;
++	spin_unlock_irqrestore(&logbuf_lock, flags);
++
++	if (logged_chars > end) {
++		s1 = log_buf + log_buf_len - logged_chars + end;
++		l1 = logged_chars - end;
++
++		s2 = log_buf;
++		l2 = end;
++	} else {
++		s1 = "";
++		l1 = 0;
++
++		s2 = log_buf + end - logged_chars;
++		l2 = logged_chars;
++	}
++
++	if (!spin_trylock_irqsave(&dump_list_lock, flags)) {
++		printk(KERN_ERR "dump_kmsg: dump list lock is held during %s, skipping dump\n",
++				kmsg_to_str(reason));
++		return;
++	}
++	list_for_each_entry(dumper, &dump_list, list)
++		dumper->dump(dumper, reason, s1, l1, s2, l2);
++	spin_unlock_irqrestore(&dump_list_lock, flags);
++}
