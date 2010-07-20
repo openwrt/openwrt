@@ -28,19 +28,19 @@
 curdir:=toolchain
 
 # subdirectories to descend into
-$(curdir)/builddirs := $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_INSIGHT),insight) $(if $(CONFIG_EXTERNAL_TOOLCHAIN),,kernel-headers binutils gcc $(LIBC) $(if $(CONFIG_GLIBC_PORTS),glibc-ports))
+$(curdir)/builddirs := $(if $(CONFIG_GDB),gdb) $(if $(CONFIG_INSIGHT),insight) $(if $(CONFIG_EXTERNAL_TOOLCHAIN),,kernel-headers binutils gcc/minimal gcc/initial gcc/final $(LIBC) $(if $(CONFIG_GLIBC_PORTS),glibc-ports))
 $(curdir)/builddirs-compile:=$($(curdir)/builddirs-prepare)
 $(curdir)/builddirs-install:=$($(curdir)/builddirs-compile)
 
 # builddir dependencies
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   $(curdir)/$(LIBC)/prepare:=$(curdir)/kernel-headers/install
-  $(curdir)/gcc/prepare:=$(curdir)/binutils/install
-  $(curdir)/kernel-headers/install:=$(curdir)/gcc/prepare
-  $(curdir)/gcc/compile:=$(curdir)/$(LIBC)/prepare
-  $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/compile
-  $(curdir)/gcc/install:=$(curdir)/$(LIBC)/compile
-  $(curdir)/$(LIBC)/install:=$(curdir)/gcc/install
+  $(curdir)/gcc/minimal/compile:=$(curdir)/binutils/install
+  $(curdir)/kernel-headers/install:=$(curdir)/gcc/minimal/install
+  $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/prepare
+  $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/install
+  $(curdir)/gcc/final/compile:=$(curdir)/$(LIBC)/compile
+  $(curdir)/$(LIBC)/install:=$(curdir)/gcc/final/install
   ifneq ($(CONFIG_GLIBC_PORTS),)
     $(curdir)/glibc/prepare:=$(curdir)/glibc-ports/prepare
   endif
@@ -48,7 +48,7 @@ endif
 
 ifdef CONFIG_GCC_VERSION_LLVM
   $(curdir)/builddirs += llvm
-  $(curdir)/gcc/prepare += $(curdir)/llvm/install
+  $(curdir)/gcc/minimal/compile += $(curdir)/llvm/install
 endif
 
 ifneq ($(ARCH),)
