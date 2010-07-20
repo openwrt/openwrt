@@ -2,7 +2,7 @@
  * ADMTEK Adm6996 switch configuration module
  *
  * Copyright (C) 2005 Felix Fietkau <nbd@nbd.name>
- * 
+ *
  * Partially based on Broadcom Home Networking Division 10/100 Mbit/s
  * Ethernet Device Driver (from Montavista 2.4.20_mvl31 Kernel).
  * Copyright (C) 2004 Broadcom Corporation
@@ -22,7 +22,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA.
  */
 
@@ -182,10 +182,10 @@ static void adm_read(int cs, char *buf, unsigned int bits)
 
 /* Enable outputs with specified value to the chip */
 static void adm_enout(__u8 pins, __u8 val)
-{   
+{
 	/* Prepare GPIO output value */
 	gpio_out(pins, val);
-	
+
 	/* Enable GPIO outputs */
 	gpio_outen(pins, pins);
 	udelay(EECK_EDGE_TIME);
@@ -194,7 +194,7 @@ static void adm_enout(__u8 pins, __u8 val)
 
 /* Disable outputs to the chip */
 static void adm_disout(__u8 pins)
-{   
+{
 	/* Disable GPIO outputs */
 	gpio_outen(pins, 0);
 	udelay(EECK_EDGE_TIME);
@@ -285,17 +285,17 @@ static int vlan_ports[] = { 1 << 0, 1 << 2, 1 << 4, 1 << 6, 1 << 7, 1 << 8 };
 static int handle_vlan_port_read(void *driver, char *buf, int nr)
 {
 	int ports, i, c, len = 0;
-			
+
 	if ((nr < 0) || (nr > 15))
 		return 0;
 
 	/* Get VLAN port map */
 	ports = adm_rreg(0, 0x13 + nr);
-	
+
 	for (i = 0; i <= 5; i++) {
 		if (ports & vlan_ports[i]) {
 			c = adm_rreg(0, port_conf[i]);
-			
+
 			len += sprintf(buf + len, "%d", i);
 			if (c & (1 << 4)) {
 				buf[len++] = 't';
@@ -327,17 +327,17 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 			ports |= vlan_ports[i];
 
 			cfg = adm_rreg(0, port_conf[i]);
-			
+
 			/* Tagging */
 			if (c->untag & (1 << i))
 				cfg &= ~(1 << 4);
 			else
 				cfg |= (1 << 4);
-			
+
 			if ((c->untag | c->pvid) & (1 << i)) {
 				cfg = (cfg & ~(0xf << 10)) | (nr << 10);
 			}
-			
+
 			adm_wreg(port_conf[i], (__u16) cfg);
 		} else {
 			ports &= ~(vlan_ports[i]);
@@ -356,7 +356,7 @@ static int handle_port_enable_read(void *driver, char *buf, int nr)
 static int handle_port_enable_write(void *driver, char *buf, int nr)
 {
 	int reg = adm_rreg(0, port_conf[nr]);
-	
+
 	if (buf[0] == '0')
 		reg |= (1 << 5);
 	else if (buf[0] == '1')
@@ -391,7 +391,7 @@ static int handle_port_media_write(void *driver, char *buf, int nr)
 
 	if (media < 0)
 		return -1;
-	
+
 	reg &= ~((1 << 1) | (1 << 2) | (1 << 3));
 	if (media & SWITCH_MEDIA_AUTO)
 		reg |= 1 << 1;
@@ -401,7 +401,7 @@ static int handle_port_media_write(void *driver, char *buf, int nr)
 		reg |= 1 << 3;
 
 	adm_wreg(port_conf[nr], reg);
-	
+
 	return 0;
 }
 
@@ -413,7 +413,7 @@ static int handle_vlan_enable_read(void *driver, char *buf, int nr)
 static int handle_vlan_enable_write(void *driver, char *buf, int nr)
 {
 	int reg = adm_rreg(0, 0x11);
-	
+
 	if (buf[0] == '1')
 		reg |= (1 << 5);
 	else if (buf[0] == '0')
@@ -453,7 +453,7 @@ static int handle_reset(void *driver, char *buf, int nr)
 			udelay(1000);
 		/* Leave RC high and disable GPIO outputs */
 		adm_disout((__u8)(eecs | eesk | eedi));
-	
+
 	}
 
 	/* set up initial configuration for cpu port */
@@ -462,7 +462,7 @@ static int handle_reset(void *driver, char *buf, int nr)
 		  (1 << 4) | /* Tagging */
 		  0xf); /* full duplex, 100Mbps, auto neg, flow ctrl */
 	adm_wreg(port_conf[5], cfg);
-	
+
 	/* vlan mode select register (0x11): vlan on, mac clone */
 	adm_wreg(0x11, 0xff30);
 
@@ -472,7 +472,7 @@ static int handle_reset(void *driver, char *buf, int nr)
 static int handle_registers(void *driver, char *buf, int nr)
 {
 	int i, len = 0;
-	
+
 	for (i = 0; i <= 0x33; i++) {
 		len += sprintf(buf + len, "0x%02x: 0x%04x\n", i, adm_rreg(0, i));
 	}

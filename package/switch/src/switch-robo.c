@@ -125,7 +125,7 @@ static u16 mdio_read(__u16 phy_id, __u8 reg)
 			       "[%s:%d] SIOCGETCPHYRD failed!\n", __FILE__, __LINE__);
 			return 0xffff;
 		}
-	
+
 		return args[1];
 	} else {
 		struct mii_ioctl_data *mii = (struct mii_ioctl_data *) &robo.ifr.ifr_data;
@@ -155,7 +155,7 @@ static void mdio_write(__u16 phy_id, __u8 reg, __u16 val)
 
 			return;
 		}
-		
+
 		if (do_ioctl(SIOCSETCPHYWR, args) < 0) {
 			printk(KERN_ERR PFX
 			       "[%s:%d] SIOCGETCPHYWR failed!\n", __FILE__, __LINE__);
@@ -179,13 +179,13 @@ static void mdio_write(__u16 phy_id, __u8 reg, __u16 val)
 static int robo_reg(__u8 page, __u8 reg, __u8 op)
 {
 	int i = 3;
-	
+
 	/* set page number */
-	mdio_write(robo.phy_addr, REG_MII_PAGE, 
+	mdio_write(robo.phy_addr, REG_MII_PAGE,
 		(page << 8) | REG_MII_PAGE_ENABLE);
-	
+
 	/* set register address */
-	mdio_write(robo.phy_addr, REG_MII_ADDR, 
+	mdio_write(robo.phy_addr, REG_MII_ADDR,
 		(reg << 8) | op);
 
 	/* check if operation completed */
@@ -195,7 +195,7 @@ static int robo_reg(__u8 page, __u8 reg, __u8 op)
 	}
 
 	printk(KERN_ERR PFX "[%s:%d] timeout in robo_reg!\n", __FILE__, __LINE__);
-	
+
 	return 0;
 }
 
@@ -203,9 +203,9 @@ static int robo_reg(__u8 page, __u8 reg, __u8 op)
 static void robo_read(__u8 page, __u8 reg, __u16 *val, int count)
 {
 	int i;
-	
+
 	robo_reg(page, reg, REG_MII_ADDR_READ);
-	
+
 	for (i = 0; i < count; i++)
 		val[i] = mdio_read(robo.phy_addr, REG_MII_DATA0 + i);
 }
@@ -214,14 +214,14 @@ static void robo_read(__u8 page, __u8 reg, __u16 *val, int count)
 static __u16 robo_read16(__u8 page, __u8 reg)
 {
 	robo_reg(page, reg, REG_MII_ADDR_READ);
-	
+
 	return mdio_read(robo.phy_addr, REG_MII_DATA0);
 }
 
 static __u32 robo_read32(__u8 page, __u8 reg)
 {
 	robo_reg(page, reg, REG_MII_ADDR_READ);
-	
+
 	return mdio_read(robo.phy_addr, REG_MII_DATA0) +
 		(mdio_read(robo.phy_addr, REG_MII_DATA0 + 1) << 16);
 }
@@ -239,7 +239,7 @@ static void robo_write32(__u8 page, __u8 reg, __u32 val32)
 	/* write data */
 	mdio_write(robo.phy_addr, REG_MII_DATA0, val32 & 65535);
 	mdio_write(robo.phy_addr, REG_MII_DATA0 + 1, val32 >> 16);
-	
+
 	robo_reg(page, reg, REG_MII_ADDR_WRITE);
 }
 
@@ -249,7 +249,7 @@ static int robo_vlan5350(void)
 	/* set vlan access id to 15 and read it back */
 	__u16 val16 = 15;
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
-	
+
 	/* 5365 will refuse this as it does not have this reg */
 	return (robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350) == val16);
 }
@@ -376,7 +376,7 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 	int j;
 
 	val16 = (nr) /* vlan */ | (0 << 12) /* read */ | (1 << 13) /* enable */;
-	
+
 	if (robo.is_5350) {
 		u32 val32;
 		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS_5350, val16);
@@ -398,7 +398,7 @@ static int handle_vlan_port_read(void *driver, char *buf, int nr)
 			}
 			len += sprintf(buf + len, "\n");
 		}
-	} else { 
+	} else {
 		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
 		/* actual read */
 		val16 = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_READ);
@@ -431,7 +431,7 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 	switch_vlan_config *c = switch_parse_vlan(d, buf);
 	int j;
 	__u16 val16;
-	
+
 	if (c == NULL)
 		return -EINVAL;
 
@@ -490,7 +490,7 @@ static int handle_enable_vlan_read(void *driver, char *buf, int nr)
 static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 {
 	int disable = ((buf[0] != '1') ? 1 : 0);
-	
+
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, disable ? 0 :
 		(1 << 7) /* 802.1Q VLAN */ | (3 << 5) /* mac check and hash */);
 	robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_CTRL1, disable ? 0 :
@@ -514,7 +514,7 @@ static int handle_reset(void *driver, char *buf, int nr)
 	switch_vlan_config *c = switch_parse_vlan(d, buf);
 	int j;
 	__u16 val16;
-	
+
 	if (c == NULL)
 		return -EINVAL;
 
@@ -560,7 +560,7 @@ static int __init robo_init(void)
 			notfound = robo_probe(device);
 	}
 	device[3]--;
-	
+
 	if (notfound) {
 		kfree(device);
 		return -ENODEV;
