@@ -447,6 +447,13 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		pdata->set_pll =  id ? ar724x_set_pll_ge1
 				     : ar724x_set_pll_ge0;
 		pdata->is_ar724x = 1;
+
+		if (!pdata->fifo_cfg1)
+			pdata->fifo_cfg1 = 0x0010ffff;
+		if (!pdata->fifo_cfg2)
+			pdata->fifo_cfg2 = 0x015500aa;
+		if (!pdata->fifo_cfg3)
+			pdata->fifo_cfg3 = 0x01f00140;
 		break;
 
 	case AR71XX_SOC_AR9130:
