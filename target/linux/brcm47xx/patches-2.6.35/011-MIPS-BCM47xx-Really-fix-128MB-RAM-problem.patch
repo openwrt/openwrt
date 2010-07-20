@@ -1,4 +1,4 @@
-From cf731bb198bdaa4ce741536252ea99518887b721 Mon Sep 17 00:00:00 2001
+From bf93090747e3d23e5354bd8da52f85d96c0f6606 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 18 Jul 2010 12:49:41 +0200
 Subject: [PATCH 1/5] MIPS: BCM47xx: Really fix 128MB RAM problem
@@ -33,7 +33,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	 * want to reuse the memory used by CFE (around 4MB). That means cfe_*
  	 * functions stop to work at some point during the boot, we should only
  	 * call them at the beginning of the boot.
-+	 * 
++	 *
 +	 * BCM47XX uses 128MB for addressing the ram, if the system contains
 +	 * less that that amount of ram it remaps the ram more often into the
 +	 * available space.
@@ -45,7 +45,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	for (mem = (1 << 20); mem < (128 << 20); mem += (1 << 20)) {
 +		if (((unsigned long)(prom_init) + mem) > max) {
 +			mem = (128 << 20);
-+			printk("assume 128MB RAM\n");
++			printk(KERN_DEBUG "assume 128MB RAM\n");
 +			break;
 +		}
  		if (*(unsigned long *)((unsigned long)(prom_init) + mem) ==
