@@ -71,10 +71,10 @@ static ssize_t switch_proc_read(struct file *file, char *buf, size_t count, loff
 	struct proc_dir_entry *dent = PDE(file->f_dentry->d_inode);
 	char *page;
 	int len = 0;
-	
+
 	if ((page = kmalloc(SWITCH_MAX_BUFSZ, GFP_KERNEL)) == NULL)
 		return -ENOBUFS;
-	
+
 	if (dent->data != NULL) {
 		switch_proc_handler *handler = (switch_proc_handler *) dent->data;
 		if (handler->handler.read != NULL)
@@ -112,7 +112,7 @@ static ssize_t switch_proc_write(struct file *file, const char *buf, size_t coun
 		return -EINVAL;
 	}
 	page[count] = 0;
-	
+
 	if (dent->data != NULL) {
 		switch_proc_handler *handler = (switch_proc_handler *) dent->data;
 		if (handler->handler.write != NULL) {
@@ -154,11 +154,11 @@ static void add_handler(switch_driver *driver, const switch_config *handler, str
 	tmp->driver = driver;
 	memcpy(&tmp->handler, handler, sizeof(switch_config));
 	list_add(&tmp->list, &priv->data.list);
-	
+
 	mode = 0;
 	if (handler->read != NULL) mode |= S_IRUSR;
 	if (handler->write != NULL) mode |= S_IWUSR;
-	
+
 	if ((p = create_proc_entry(handler->name, mode, parent)) != NULL) {
 		p->data = (void *) tmp;
 		p->proc_fops = &switch_proc_fops;
@@ -168,11 +168,11 @@ static void add_handler(switch_driver *driver, const switch_config *handler, str
 static inline void add_handlers(switch_driver *driver, const switch_config *handlers, struct proc_dir_entry *parent, int nr)
 {
 	int i;
-	
+
 	for (i = 0; handlers[i].name != NULL; i++) {
 		add_handler(driver, &(handlers[i]), parent, nr);
 	}
-}		
+}
 
 static void remove_handlers(switch_priv *priv)
 {
@@ -195,7 +195,7 @@ static void do_unregister(switch_driver *driver)
 	switch_priv *priv = (switch_priv *) driver->data;
 
 	remove_handlers(priv);
-	
+
 	for(i = 0; priv->ports[i] != NULL; i++) {
 		sprintf(buf, "%d", i);
 		remove_proc_entry(buf, priv->port_dir);
@@ -211,7 +211,7 @@ static void do_unregister(switch_driver *driver)
 	remove_proc_entry("vlan", priv->driver_dir);
 
 	remove_proc_entry(driver->interface, switch_root);
-			
+
 	if (priv->nr == (drv_num - 1))
 		drv_num--;
 
@@ -250,14 +250,14 @@ static int do_register(switch_driver *driver)
 	}
 
 	INIT_LIST_HEAD(&priv->data.list);
-	
+
 	priv->nr = drv_num++;
 	priv->driver_dir = proc_mkdir(driver->interface, switch_root);
 	if (driver->driver_handlers != NULL) {
 		add_handlers(driver, driver->driver_handlers, priv->driver_dir, 0);
 		add_handlers(driver, global_driver_handlers, priv->driver_dir, 0);
 	}
-	
+
 	priv->port_dir = proc_mkdir("port", priv->driver_dir);
 	for (i = 0; i < driver->ports; i++) {
 		sprintf(buf, "%d", i);
@@ -266,7 +266,7 @@ static int do_register(switch_driver *driver)
 			add_handlers(driver, driver->port_handlers, priv->ports[i], i);
 	}
 	priv->ports[i] = NULL;
-	
+
 	priv->vlan_dir = proc_mkdir("vlan", priv->driver_dir);
 	for (i = 0; i < driver->vlans; i++) {
 		sprintf(buf, "%d", i);
@@ -275,7 +275,7 @@ static int do_register(switch_driver *driver)
 			add_handlers(driver, driver->vlan_handlers, priv->vlans[i], i);
 	}
 	priv->vlans[i] = NULL;
-	
+
 
 	return 0;
 }
@@ -294,7 +294,7 @@ static inline int isspace(char c) {
 
 #define toupper(c) (islower(c) ? ((c) ^ 0x20) : (c))
 #define islower(c) (((unsigned char)((c) - 'a')) < 26)
-														 
+
 int switch_parse_media(char *buf)
 {
 	char *str = buf;
@@ -340,7 +340,7 @@ switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 {
 	switch_vlan_config *c;
 	int j, u, p, s;
-	
+
 	c = kmalloc(sizeof(switch_vlan_config), GFP_KERNEL);
 	if (!c)
 		return NULL;
@@ -355,7 +355,7 @@ switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 		u = ((j == driver->cpuport) ? 0 : 1);
 		p = 0;
 		s = !(*buf >= '0' && *buf <= '9');
-	
+
 		if (s) {
 			while (s && !isspace(*buf) && (*buf != 0)) {
 				switch(*buf) {
@@ -379,7 +379,7 @@ switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 
 			j = 0;
 		}
-		
+
 		while (isspace(*buf)) buf++;
 	}
 	if (*buf != 0) return NULL;
@@ -387,7 +387,7 @@ switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 	c->port &= (1 << driver->ports) - 1;
 	c->untag &= (1 << driver->ports) - 1;
 	c->pvid &= (1 << driver->ports) - 1;
-	
+
 	return c;
 }
 
@@ -467,7 +467,7 @@ static int __init switch_init(void)
 	}
 
 	INIT_LIST_HEAD(&drivers.list);
-	
+
 	return 0;
 }
 
