@@ -1,0 +1,1071 @@
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -236,6 +236,39 @@ config SPI_XILINX
+ 	  See the "OPB Serial Peripheral Interface (SPI) (v1.00e)"
+ 	  Product Specification document (DS464) for hardware details.
+ 
++config SPI_CNS3XXX
++	tristate "CNS3XXX SPI controller"
++	depends on ARCH_CNS3XXX && SPI_MASTER && EXPERIMENTAL
++	select SPI_BITBANG
++	help
++	  This enables using the CNS3XXX SPI controller in master
++	  mode.
++
++config SPI_CNS3XXX_DEBUG
++	boolean "Debug support for CNS3XXX SPI drivers"
++	depends on SPI_CNS3XXX
++	help
++	  Say "yes" to enable debug messaging
++
++config SPI_CNS3XXX_2IOREAD
++	bool "CNS3XXX SPI 2 IO Read Mode"
++	depends on SPI_CNS3XXX
++	help
++	  This enables 2 IO Read Mode
++
++config SPI_CNS3XXX_USEDMA
++	bool "CNS3XXX SPI DMA Mode"
++	depends on SPI_CNS3XXX
++	select CNS3XXX_DMAC
++	help
++	  This enables DMA Mode
++
++config SPI_CNS3XXX_USEDMA_DEBUG
++	boolean "Debug support for CNS3XXX SPI DMA drivers"
++	depends on SPI_CNS3XXX_USEDMA
++	help
++	  Say "yes" to enable debug messaging
++
+ #
+ # Add new SPI master controllers in alphabetical order above this line
+ #
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -32,6 +32,7 @@ obj-$(CONFIG_SPI_S3C24XX)		+= spi_s3c24x
+ obj-$(CONFIG_SPI_TXX9)			+= spi_txx9.o
+ obj-$(CONFIG_SPI_XILINX)		+= xilinx_spi.o
+ obj-$(CONFIG_SPI_SH_SCI)		+= spi_sh_sci.o
++obj-$(CONFIG_SPI_CNS3XXX)		+= spi_cns3xxx.o
+ # 	... add above this line ...
+ 
+ # SPI protocol drivers (device/link on bus)
+--- a/drivers/spi/spi_bitbang.c
++++ b/drivers/spi/spi_bitbang.c
+@@ -334,6 +334,14 @@ static void bitbang_work(struct work_str
+ 				 */
+ 				if (!m->is_dma_mapped)
+ 					t->rx_dma = t->tx_dma = 0;
++
++#ifdef CONFIG_ARCH_CNS3XXX
++                if (t->transfer_list.next == &m->transfers) {
++                    t->last_in_message_list = 1;
++                } else {
++                    t->last_in_message_list = 0;
++                }
++#endif
+ 				status = bitbang->txrx_bufs(spi, t);
+ 			}
+ 			if (status > 0)
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -769,6 +769,89 @@ int spi_write_then_read(struct spi_devic
+ }
+ EXPORT_SYMBOL_GPL(spi_write_then_read);
+ 
++#ifdef CONFIG_ARCH_CNS3XXX
++/**
++ * spi_write_read_sync - SPI synchronous write & read
++ * @spi: device with which data will be exchanged
++ * @txbuf: data to be written (need not be dma-safe)
++ * @n_tx: size of txbuf, in bytes
++ * @rxbuf: buffer into which data will be read
++ * @n_rx: size of rxbuf, in bytes (need not be dma-safe)
++ * 
++ * This performs a half duplex MicroWire style transaction with the
++ * device, sending txbuf and then reading rxbuf.  The return value
++ * is zero for success, else a negative errno status code.
++ * This call may only be used from a context that may sleep.
++ * 
++ * Parameters to this routine are always copied using a small buffer;
++ * performance-sensitive or bulk transfer code should instead use
++ * spi_{async,sync}() calls with dma-safe buffers.
++ */
++int spi_write_read_sync(struct spi_device *spi,
++		const u8 *txbuf, unsigned n_tx,
++		u8 *rxbuf, unsigned n_rx)
++{
++	static DECLARE_MUTEX(lock);
++
++	int         status;
++	struct spi_message  message;
++	struct spi_transfer x;
++	u8          *local_buf;
++
++	/* Use preallocated DMA-safe buffer.  We can't avoid copying here,
++	 * (as a pure convenience thing), but we can keep heap costs
++	 * out of the hot path ...
++	 */
++#if 0
++    while (!str8131_spi_bus_idle()){
++        printk("spi bus is not idle \n"); // do nothing
++        }
++    while (!str8131_spi_tx_buffer_empty()){
++        printk("spi tx buffer is not empty \n"); // do nothing
++        }
++#endif
++	if ((n_tx + n_rx) > SPI_BUFSIZ)
++		return -EINVAL;
++	spi_message_init(&message);
++	memset(&x, 0, sizeof x);
++	x.len = n_tx;
++	spi_message_add_tail(&x, &message);
++
++	/* ... unless someone else is using the pre-allocated buffer */
++	if (down_trylock(&lock)) {
++		local_buf = kmalloc(SPI_BUFSIZ, GFP_KERNEL);
++		if (!local_buf)
++			return -ENOMEM;
++	} else
++		local_buf = buf;
++
++	memcpy(local_buf, txbuf, n_tx);
++	x.tx_buf = local_buf;
++	x.rx_buf = local_buf + n_tx;
++
++	/* do the i/o */
++	status = spi_sync(spi, &message);
++	if (status == 0) {
++		memcpy(rxbuf, x.rx_buf, n_rx);
++		status = message.status;
++	}
++
++	if (x.tx_buf == buf)
++		up(&lock);
++	else
++		kfree(local_buf);
++
++	return status;
++}
++
++EXPORT_SYMBOL_GPL(spi_write_read_sync);
++#endif /* CONFIG_ARCH_CNS3XXX */
++
++
++
++
++
++
+ /*-------------------------------------------------------------------------*/
+ 
+ static int __init spi_init(void)
+--- /dev/null
++++ b/drivers/spi/spi_cns3xxx.c
+@@ -0,0 +1,878 @@
++/*******************************************************************************
++ *
++ *  CNS3XXX SPI controller driver (master mode only)
++ *
++ *  Copyright (c) 2008 Cavium Networks 
++ * 
++ *  This file is free software; you can redistribute it and/or modify 
++ *  it under the terms of the GNU General Public License, Version 2, as 
++ *  published by the Free Software Foundation. 
++ *
++ *  This file is distributed in the hope that it will be useful, 
++ *  but AS-IS and WITHOUT ANY WARRANTY; without even the implied warranty of 
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, TITLE, or 
++ *  NONINFRINGEMENT.  See the GNU General Public License for more details. 
++ *
++ *  You should have received a copy of the GNU General Public License 
++ *  along with this file; if not, write to the Free Software 
++ *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA or 
++ *  visit http://www.gnu.org/licenses/. 
++ *
++ *  This file may also be available under a different license from Cavium. 
++ *  Contact Cavium Networks for more information
++ *
++ ******************************************************************************/
++
++#include <linux/init.h>
++#include <linux/spinlock.h>
++#include <linux/workqueue.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <linux/errno.h>
++#include <linux/err.h>
++#include <linux/clk.h>
++#include <linux/platform_device.h>
++
++#include <linux/spi/spi.h>
++#include <linux/spi/spi_bitbang.h>
++#include <linux/mtd/partitions.h>
++#include <linux/dma-mapping.h>
++
++#include <asm/io.h>
++#include <asm/memory.h>
++#include <asm/dma.h>
++#include <asm/delay.h>
++#include <mach/board.h>
++#include <mach/dmac.h>
++#include <linux/module.h>
++#include <mach/misc.h>
++#include <mach/gpio.h>
++#include <mach/pm.h>
++
++#define LE8221_SPI_CS		1
++#define SI3226_SPI_CS		1
++
++#define CNS3XXX_SPI_INTERRUPT
++#undef CNS3XXX_SPI_INTERRUPT	/* Interrupt is not supported for D2 and SEN */
++
++/*
++ * define access macros
++ */
++#define SPI_MEM_MAP_VALUE(reg_offset)		(*((u32 volatile *)(CNS3XXX_SSP_BASE_VIRT + reg_offset)))
++
++#define SPI_CONFIGURATION_REG			SPI_MEM_MAP_VALUE(0x40)
++#define SPI_SERVICE_STATUS_REG			SPI_MEM_MAP_VALUE(0x44)
++#define SPI_BIT_RATE_CONTROL_REG		SPI_MEM_MAP_VALUE(0x48)
++#define SPI_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x4C)
++#define SPI_TRANSMIT_BUFFER_REG			SPI_MEM_MAP_VALUE(0x50)
++#define SPI_RECEIVE_CONTROL_REG			SPI_MEM_MAP_VALUE(0x54)
++#define SPI_RECEIVE_BUFFER_REG			SPI_MEM_MAP_VALUE(0x58)
++#define SPI_FIFO_TRANSMIT_CONFIG_REG		SPI_MEM_MAP_VALUE(0x5C)
++#define SPI_FIFO_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x60)
++#define SPI_FIFO_RECEIVE_CONFIG_REG		SPI_MEM_MAP_VALUE(0x64)
++#define SPI_INTERRUPT_STATUS_REG		SPI_MEM_MAP_VALUE(0x68)
++#define SPI_INTERRUPT_ENABLE_REG		SPI_MEM_MAP_VALUE(0x6C)
++
++#define SPI_TRANSMIT_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x50)
++#define SPI_RECEIVE_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x58)
++
++/* Structure for SPI controller of CNS3XXX SOCs */
++struct cns3xxx_spi {
++	/* bitbang has to be first */
++	struct spi_bitbang bitbang;
++	struct completion done;
++	wait_queue_head_t wait;
++
++	int len;
++	int count;
++	int last_in_message_list;
++
++	/* data buffers */
++	const unsigned char *tx;
++	unsigned char *rx;
++
++	struct spi_master *master;
++	struct platform_device *pdev;
++	struct device *dev;
++};
++
++static inline u8 cns3xxx_spi_bus_idle(void)
++{
++	return ((SPI_SERVICE_STATUS_REG & 0x1) ? 0 : 1);
++}
++
++static inline u8 cns3xxx_spi_tx_buffer_empty(void)
++{
++	return ((SPI_INTERRUPT_STATUS_REG & (0x1 << 3)) ? 1 : 0);
++}
++
++static inline u8 cns3xxx_spi_rx_buffer_full(void)
++{
++	return ((SPI_INTERRUPT_STATUS_REG & (0x1 << 2)) ? 1 : 0);
++}
++
++u8 cns3xxx_spi_tx_rx(u8 tx_channel, u8 tx_eof, u32 tx_data,
++			    u32 * rx_data)
++{
++	u8 rx_channel;
++	u8 rx_eof;
++
++	while (!cns3xxx_spi_bus_idle()) ;	// do nothing
++
++	while (!cns3xxx_spi_tx_buffer_empty()) ;	// do nothing
++
++	SPI_TRANSMIT_CONTROL_REG &= ~(0x7);
++	SPI_TRANSMIT_CONTROL_REG |= (tx_channel & 0x3) | ((tx_eof & 0x1) << 2);
++
++	SPI_TRANSMIT_BUFFER_REG = tx_data;
++
++	while (!cns3xxx_spi_rx_buffer_full()) ;	// do nothing
++
++	rx_channel = SPI_RECEIVE_CONTROL_REG & 0x3;
++	rx_eof = (SPI_RECEIVE_CONTROL_REG & (0x1 << 2)) ? 1 : 0;
++
++	*rx_data = SPI_RECEIVE_BUFFER_REG;
++
++	if ((tx_channel != rx_channel) || (tx_eof != rx_eof)) {
++		return 0;
++	} else {
++		return 1;
++	}
++}
++
++u8 cns3xxx_spi_tx(u8 tx_channel, u8 tx_eof, u32 tx_data)
++{
++
++        while (!cns3xxx_spi_bus_idle()) ;       // do nothing
++
++        while (!cns3xxx_spi_tx_buffer_empty()) ;        // do nothing
++
++        SPI_TRANSMIT_CONTROL_REG &= ~(0x7);
++        SPI_TRANSMIT_CONTROL_REG |= (tx_channel & 0x3) | ((tx_eof & 0x1) << 2);
++
++        SPI_TRANSMIT_BUFFER_REG = tx_data;
++
++        return 1;
++}
++
++
++
++#ifdef CONFIG_SPI_CNS3XXX_DEBUG
++static void spi_slave_probe(void)
++{
++	int i;
++	u32 rx_data1, rx_data2, rx_data3;
++
++	cns3xxx_spi_tx_rx(0, 0, 0x9f, &rx_data1);
++	cns3xxx_spi_tx_rx(0, 0, 0xff, &rx_data1);
++	cns3xxx_spi_tx_rx(0, 0, 0xff, &rx_data2);
++	cns3xxx_spi_tx_rx(0, 1, 0xff, &rx_data3);
++	printk("[SPI_CNS3XXX_DEBUG] manufacturer: %x\n", rx_data1);
++	printk("[SPI_CNS3XXX_DEBUG] device:       %x\n",
++	       ((rx_data2 & 0xff) << 8) | (u16) (rx_data3 & 0xff));
++
++	cns3xxx_spi_tx_rx(0, 0, 0x03, &rx_data1);
++	cns3xxx_spi_tx_rx(0, 0, 0x00, &rx_data1);
++	cns3xxx_spi_tx_rx(0, 0, 0x00, &rx_data1);
++	cns3xxx_spi_tx_rx(0, 0, 0x00, &rx_data1);
++	for (i = 0; i < 15; i++) {
++		cns3xxx_spi_tx_rx(0, 0, 0xff, &rx_data1);
++		printk("[SPI_CNS3XXX_DEBUG] flash[%02d]:0x%02x\n", i,
++		       rx_data1 & 0xff);
++	}
++	cns3xxx_spi_tx_rx(0, 1, 0xff, &rx_data1);
++	printk("[SPI_CNS3XXX_DEBUG] flash[%02d]:0x%02x\n", i, rx_data1 & 0xff);
++}
++#else
++#define spi_slave_probe()	do{}while(0)
++#endif
++
++static inline struct cns3xxx_spi *to_hw(struct spi_device *sdev)
++{
++	return spi_master_get_devdata(sdev->master);
++}
++
++static int cns3xxx_spi_setup_transfer(struct spi_device *spi,
++				      struct spi_transfer *t)
++{
++	return 0;
++}
++
++static void cns3xxx_spi_chipselect(struct spi_device *spi, int value)
++{
++	unsigned int spi_config;
++
++	switch (value) {
++	case BITBANG_CS_INACTIVE:
++		break;
++
++	case BITBANG_CS_ACTIVE:
++		spi_config = SPI_CONFIGURATION_REG;
++
++		if (spi->mode & SPI_CPHA)
++			spi_config |= (0x1 << 13);
++		else
++			spi_config &= ~(0x1 << 13);
++
++		if (spi->mode & SPI_CPOL)
++			spi_config |= (0x1 << 14);
++		else
++			spi_config &= ~(0x1 << 14);
++
++		/* write new configration */
++		SPI_CONFIGURATION_REG = spi_config;
++
++		SPI_TRANSMIT_CONTROL_REG &= ~(0x7);
++		SPI_TRANSMIT_CONTROL_REG |= (spi->chip_select & 0x3);
++
++#if defined(CONFIG_LE8221_CONTROL)
++		if (spi->chip_select == LE8221_SPI_CS) {
++			SPI_CONFIGURATION_REG |= (0x1 << 9);
++		}
++#elif defined (CONFIG_SI3226_CONTROL_API)
++		if (spi->chip_select == SI3226_SPI_CS) {
++			SPI_CONFIGURATION_REG &= ~(0x1 << 9);
++		}
++#endif
++		break;
++	}
++}
++
++static int cns3xxx_spi_setup(struct spi_device *spi)
++{
++	if (!spi->bits_per_word)
++		spi->bits_per_word = 8;
++
++	return 0;
++}
++
++#ifdef CONFIG_SPI_CNS3XXX_USEDMA
++
++int cns3xxx_spi_dma_irq_handler(void *pdata)
++{
++
++	struct cns3xxx_spi *hw = pdata;
++	complete(&hw->done);
++
++	return 0;
++}
++
++static int cns3xxx_spi_dma_initialize(int *rxchan, int *txchan, int *rxevtno,
++				      int *txevtno, void *handlerargs)
++{
++	*rxchan = dmac_get_channel(cns3xxx_spi_dma_irq_handler, handlerargs);
++	if ((*rxchan) == -1)
++		goto fail1;
++	*txchan = dmac_get_channel(NULL, NULL);
++	if ((*txchan) == -1)
++		goto fail2;
++	*rxevtno = 9;
++	if (dmac_get_event(*rxchan, *rxevtno) == -1)
++		goto fail3;
++	*txevtno = 10;
++	if (dmac_get_event(*txchan, *txevtno) == -1)
++		goto fail4;
++	return 0;
++
++fail4:
++	dmac_release_event(*rxchan, *rxevtno);
++fail3:
++	dmac_release_channel(*txchan);
++fail2:
++	dmac_release_channel(*rxchan);
++fail1:
++	return -1;
++}
++
++static int cns3xxx_spi_start_dma(int rch, int tch, int rev, int tev,
++				 struct spi_transfer *t, struct cns3xxx_spi *hw)
++{
++	static void *dummy;
++	static dma_addr_t dummy_dma;
++	dma_addr_t rdma, tdma;
++	int rx_inc, tx_inc;
++	int lc0, totlps, lc1, rump;
++	u32 rx_data;
++
++	if (!dummy) {
++		dummy = dma_alloc_coherent(NULL, 16, &dummy_dma, GFP_KERNEL);
++#ifdef CONFIG_SPI_CNS3XXX_DEBUG_DMA
++		printk("Allocated Memory for dummy buffer va:%p,pa:%x\n", dummy,
++		       dummy_dma);
++#endif
++	}
++	if (!dummy) {
++		return -1;
++	}
++	*((uint32_t *) dummy) = 0xffffffff;
++
++	(t->tx_buf) ? (tdma = t->tx_dma, tx_inc = 1) :
++	    (tdma = dummy_dma, tx_inc = 0);
++	(t->rx_buf) ? (rdma = t->rx_dma, rx_inc = 1) :
++	    (rdma = dummy_dma, rx_inc = 0);
++
++#ifdef CONFIG_SPI_CNS3XXX_DEBUG_DMA
++	printk("Here with tdma %x, rdma %x\n", tdma, rdma);
++#endif
++
++        if(t->len < 3) {
++		if(t->len == 2){		
++                	cns3xxx_spi_tx_rx(0,0,(t->tx_buf) ? hw->tx[0] : 0xff ,&rx_data);
++		if(!(t->tx_buf))
++			hw->rx[0] = rx_data & 0xff;
++		}	
++                cns3xxx_spi_dma_irq_handler(hw);
++                return 0;
++        }
++
++
++	totlps = t->len - 1 -1;
++	if (totlps > 0x100) {
++		lc0 = 0x100;
++		lc1 = totlps / lc0;
++		rump = totlps % lc0;
++	} else {
++		lc0 = totlps;
++		lc1 = 0;
++		rump = 0;
++	}
++
++	if(t->tx_buf) {
++                cns3xxx_spi_tx(0,0,*((uint32_t *) t->tx_buf));
++                tdma+=1;
++        }
++        else {
++                cns3xxx_spi_tx(0,0,0xff);
++        }
++
++	//SPI_RECEIVE_BUFFER_REG;
++	{
++		DMAC_DMAMOV(tch, SAR, tdma);
++		DMAC_DMAMOV(tch, DAR, SPI_TRANSMIT_BUFFER_REG_ADDR);
++		DMAC_DMAMOV(tch, CCR,
++			    dmac_create_ctrlval(tx_inc, 1, 1, 0, 1, 1, 0));
++		//DMAC_WFE(tch, rev);
++          	if (lc1)
++                        DMAC_DMALP(tch, 1, lc1);
++                DMAC_DMALP(tch, 0, lc0);
++                DMAC_WFE(tch, rev);
++                DMAC_DMALDS(tch);
++                DMAC_DMASTS(tch);
++                DMAC_DMAWMB(tch);
++                DMAC_DMASEV(tch, tev);
++                DMAC_DMALPEND(tch, 0,
++                              DMAWFE_INSTR_SIZE + DMASEV_INSTR_SIZE +
++                              DMAWMB_INSTR_SIZE + DMAST_INSTR_SIZE +
++                              DMALD_INSTR_SIZE, 1);
++                if (lc1)
++                        DMAC_DMALPEND(tch, 1,
++                                      DMALP_INSTR_SIZE + DMALPEND_INSTR_SIZE +
++                                      DMAWFE_INSTR_SIZE + DMASEV_INSTR_SIZE +
++                                      DMAWMB_INSTR_SIZE + DMAST_INSTR_SIZE +
++                                      DMALD_INSTR_SIZE, 1);
++
++          	if (rump) {
++                        DMAC_DMALP(tch, 0, rump);
++                        DMAC_WFE(tch, rev);
++                        DMAC_DMALDS(tch);
++                        DMAC_DMASTS(tch);
++                        DMAC_DMAWMB(tch);
++                        DMAC_DMASEV(tch, tev);
++                        DMAC_DMALPEND(tch, 0,
++                                      DMAWFE_INSTR_SIZE + DMASEV_INSTR_SIZE +
++                                      DMAWMB_INSTR_SIZE + DMAST_INSTR_SIZE +
++                                      DMALD_INSTR_SIZE, 1);
++                }
++
++
++		DMAC_DMAEND(tch);
++		DMAC_DMAGO(tch);
++	}
++	{
++		DMAC_DMAMOV(rch, SAR, SPI_RECEIVE_BUFFER_REG_ADDR);
++		DMAC_DMAMOV(rch, DAR, rdma);
++		DMAC_DMAMOV(rch, CCR,
++			    dmac_create_ctrlval(0, 1, 1, rx_inc, 1, 1, 0));
++
++                if (lc1)
++                        DMAC_DMALP(rch, 1, lc1);
++                DMAC_DMALP(rch, 0, lc0);
++                DMAC_DMAWFP(rch, DMAC_SPI_PERIPH_ID, PERIPHERAL);
++                DMAC_DMALDP(rch, DMAC_SPI_PERIPH_ID, 0);
++                DMAC_DMASTS(rch);
++                DMAC_DMAWMB(rch);
++                DMAC_DMASEV(rch, rev);
++                DMAC_WFE(rch, tev);
++                DMAC_DMALPEND(rch, 0,
++                              DMAWFE_INSTR_SIZE + DMASEV_INSTR_SIZE +
++                              DMAWMB_INSTR_SIZE + DMAST_INSTR_SIZE +
++                              DMALDP_INSTR_SIZE + DMAWFP_INSTR_SIZE, 1);
++                if (lc1)
++                        DMAC_DMALPEND(rch, 1,
++                                      DMAWFE_INSTR_SIZE +
++                                      DMASEV_INSTR_SIZE + DMAWMB_INSTR_SIZE +
++                                      DMAST_INSTR_SIZE + DMALDP_INSTR_SIZE +
++                                      DMAWFP_INSTR_SIZE + DMALP_INSTR_SIZE +
++                                      DMALPEND_INSTR_SIZE, 1);
++
++
++                if (rump) {
++                        DMAC_DMALP(rch, 0, rump);
++                        DMAC_DMAWFP(rch, DMAC_SPI_PERIPH_ID, PERIPHERAL);
++                        DMAC_DMALDP(rch, DMAC_SPI_PERIPH_ID, 0);
++                        DMAC_DMASTS(rch);
++                        DMAC_DMAWMB(rch);
++                        DMAC_DMASEV(rch, rev);
++                        DMAC_WFE(rch, tev);
++                        DMAC_DMALPEND(rch, 0,
++                                      DMAWFE_INSTR_SIZE +
++                                      DMASEV_INSTR_SIZE + DMAWMB_INSTR_SIZE +
++                                      DMAST_INSTR_SIZE + DMALDP_INSTR_SIZE +
++                                      DMAWFP_INSTR_SIZE, 1);
++                }
++                // extra RX
++		DMAC_DMAWFP(rch, DMAC_SPI_PERIPH_ID, PERIPHERAL);
++                DMAC_DMALDP(rch, DMAC_SPI_PERIPH_ID, 0);
++                DMAC_DMASTS(rch);
++                DMAC_DMAWMB(rch);
++
++		DMAC_DMAFLUSHP(rch, DMAC_SPI_PERIPH_ID);
++                DMAC_DMASEV(rch, rch);  // This will generate an interrupt
++		DMAC_DMAEND(rch);
++		DMAC_DMAGO(rch);
++	}
++	return 0;
++}
++
++static void cns3xxx_spi_dma_uninitialize(int rch, int tch, int revt, int tevt)
++{
++	dmac_release_event(rch, revt);
++	dmac_release_event(tch, tevt);
++	dmac_release_channel(rch);
++	dmac_release_channel(tch);
++	return;
++}
++
++#endif /* CONFIG_SPI_CNS3XXX_USEDMA */
++
++static int cns3xxx_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
++{
++	struct cns3xxx_spi *hw = to_hw(spi);
++#ifdef CONFIG_SPI_CNS3XXX_USEDMA
++	int spi_rxchan, spi_txchan, spi_rxevt, spi_txevt;
++	int rx_data;
++#endif
++	dev_dbg(&spi->dev, "txrx: tx %p, rx %p, len %d\n", t->tx_buf, t->rx_buf,
++		t->len);
++
++	hw->tx = t->tx_buf;
++	hw->rx = t->rx_buf;
++	hw->len = t->len;
++	hw->count = 0;
++	hw->last_in_message_list = t->last_in_message_list;
++
++#ifdef CONFIG_SPI_CNS3XXX_USEDMA
++	init_completion(&hw->done);
++
++	if (cns3xxx_spi_dma_initialize
++	    (&spi_rxchan, &spi_txchan, &spi_rxevt, &spi_txevt, hw)) {
++		dev_dbg(&spi->dev, "%s:%d Could not initialize DMA. \n",
++			__FUNCTION__, __LINE__);
++		return 0;
++	}
++
++	if (t->tx_buf)
++		t->tx_dma =
++		    dma_map_single(NULL, t->tx_buf, t->len, DMA_TO_DEVICE);
++	if (t->rx_buf)
++		t->rx_dma =
++		    dma_map_single(NULL, t->rx_buf, t->len, DMA_FROM_DEVICE);
++
++	if (cns3xxx_spi_start_dma
++	    (spi_rxchan, spi_txchan, spi_rxevt, spi_txevt, t, hw)) {
++		dev_dbg(&spi->dev, "Could not start DMA. \n");
++		if (t->tx_buf)
++			dma_unmap_single(NULL, t->tx_dma, t->len,
++					 DMA_TO_DEVICE);
++		t->tx_dma = 0;
++		if (t->rx_buf)
++			dma_unmap_single(NULL, t->rx_dma, t->len,
++					 DMA_FROM_DEVICE);
++		t->rx_dma = 0;
++		cns3xxx_spi_dma_uninitialize(spi_rxchan, spi_txchan, spi_rxevt,
++					     spi_txevt);
++		return 0;
++	}
++
++	wait_for_completion(&hw->done);
++
++	dev_dbg(&spi->dev, "DMA reported completion of transfer of %d bytes\n",
++		t->len - 1);
++
++	if (t->tx_buf)
++		dma_unmap_single(NULL, t->tx_dma, t->len, DMA_TO_DEVICE);
++	t->tx_dma = 0;
++	if (t->rx_buf)
++		dma_unmap_single(NULL, t->rx_dma, t->len, DMA_FROM_DEVICE);
++	t->rx_dma = 0;
++	cns3xxx_spi_dma_uninitialize(spi_rxchan, spi_txchan, spi_rxevt,
++				     spi_txevt);
++
++	if (t->last_in_message_list)
++		cns3xxx_spi_tx_rx(spi->chip_select, 1,
++				  (hw->tx) ? hw->tx[hw->len - 1] : 0xff,
++				  &rx_data);
++	else
++		cns3xxx_spi_tx_rx(spi->chip_select, 0,
++				  (hw->tx) ? hw->tx[hw->len - 1] : 0xff,
++				  &rx_data);
++
++	if (hw->rx)
++		hw->rx[hw->len - 1] = rx_data & 0xff;
++
++	return hw->len;
++
++#else /* !CONFIG_SPI_CNS3XXX_USEDMA */
++
++#ifdef CNS3XXX_SPI_INTERRUPT
++
++	init_completion(&hw->done);
++
++	/* Effectively, we are enabling only the Receive Buffer Interrupt Enable */
++	/* TX Buf Underrun and RX Buf Overrun are not to happen */
++	SPI_INTERRUPT_ENABLE_REG = (0x1 << 2);
++//	    (0x0) | (0x1 << 2) | (0x0 << 3) | (0x1 << 6) | (0x1 << 7);
++
++	/* Write data and wait for completion */
++	SPI_TRANSMIT_CONTROL_REG &= ~(0x7);
++	SPI_TRANSMIT_CONTROL_REG |= (spi->chip_select & 0x3) |
++	    ((((hw->last_in_message_list) && (hw->len == 1)) ? 0x1 : 0x0) << 2);
++
++	SPI_TRANSMIT_BUFFER_REG = (hw->tx) ? hw->tx[hw->count] : 0xff;
++
++	wait_for_completion(&hw->done);
++
++	SPI_INTERRUPT_ENABLE_REG = 0;
++
++	return hw->count;
++
++#else /* !CNS3XXX_SPI_INTERRUPT */
++
++	init_completion(&hw->done);
++
++	if (hw->tx) {
++		int i;
++		u32 rx_data;
++		for (i = 0; i < (hw->len - 1); i++) {
++			dev_dbg(&spi->dev,
++				"[SPI_CNS3XXX_DEBUG] hw->tx[%02d]: 0x%02x\n", i,
++				hw->tx[i]);
++			cns3xxx_spi_tx_rx(spi->chip_select, 0, hw->tx[i],
++					  &rx_data);
++			if (hw->rx) {
++				hw->rx[i] = rx_data;
++				dev_dbg(&spi->dev,
++					"[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n",
++					i, hw->rx[i]);
++			}
++		}
++
++		if (t->last_in_message_list) {
++			cns3xxx_spi_tx_rx(spi->chip_select, 1, hw->tx[i],
++					  &rx_data);
++			if (hw->rx) {
++				hw->rx[i] = rx_data;
++				dev_dbg(&spi->dev,
++					"[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n",
++					i, hw->rx[i]);
++			}
++		} else {
++			cns3xxx_spi_tx_rx(spi->chip_select, 0, hw->tx[i],
++					  &rx_data);
++		}
++		goto done;
++	}
++
++	if (hw->rx) {
++		int i;
++		u32 rx_data;
++		for (i = 0; i < (hw->len - 1); i++) {
++			cns3xxx_spi_tx_rx(spi->chip_select, 0, 0xff, &rx_data);
++			hw->rx[i] = rx_data;
++			dev_dbg(&spi->dev,
++				"[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n", i,
++				hw->rx[i]);
++		}
++
++		if (t->last_in_message_list) {
++			cns3xxx_spi_tx_rx(spi->chip_select, 1, 0xff, &rx_data);
++		} else {
++			cns3xxx_spi_tx_rx(spi->chip_select, 0, 0xff, &rx_data);
++		}
++		hw->rx[i] = rx_data;
++		dev_dbg(&spi->dev, "[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n",
++			i, hw->rx[i]);
++	}
++done:
++	return hw->len;
++
++#endif /* CNS3XXX_SPI_INTERRUPT */
++
++#endif /* CONFIG_SPI_CNS3XXX_USEDMA */
++}
++
++#ifdef CNS3XXX_SPI_INTERRUPT
++/* Driver supports single master only. 
++ * We have disabled fifo, so we wait for the receive buff full interrupt. 
++ * Receive Buff overrun, transmit buff underrun are not to happen
++ */
++static irqreturn_t cns3xxx_spi_irq(int irq, void *dev)
++{
++	struct cns3xxx_spi *hw = dev;
++	uint32_t int_status;
++	uint8_t data;
++	unsigned int count = hw->count;
++
++	/* Read the interrupt status and clear interrupt */
++	int_status = SPI_INTERRUPT_STATUS_REG;
++
++	if (!(int_status & (0x1 << 2))) {
++		printk("DEBUG THIS ! Unexpected interrupt (status = 0x%x)", int_status);
++		/* Clearing spurious interrupts */
++		SPI_INTERRUPT_STATUS_REG = (0xF << 4);
++		goto irq_done;
++	}
++
++	/* Read to clear */
++	data = SPI_RECEIVE_BUFFER_REG & 0xff;
++
++	if (hw->rx)
++		hw->rx[hw->count] = data;
++
++	hw->count++;
++	hw->len--;
++
++	if (hw->len) {
++		SPI_TRANSMIT_CONTROL_REG |=
++		    ((((hw->last_in_message_list) && (hw->len == 1)) ? 0x1 : 0x0) << 2);
++		SPI_TRANSMIT_BUFFER_REG = (hw->tx) ? hw->tx[hw->count] : 0xff;
++	} else {
++		complete(&hw->done);
++	}
++
++irq_done:
++	return IRQ_HANDLED;
++}
++#endif
++
++static void __init cns3xxx_spi_initial(void)
++{
++
++	/* share pin config. */
++#if 1
++#if 0
++	/* GPIOB18 is set to PCM by default */
++    MISC_GPIOB_PIN_ENABLE_REG &= ~(MISC_GSW_P0_CRS_PIN);
++    gpio_direction_output(50, 1);
++#endif
++	PM_PLL_HM_PD_CTRL_REG &= ~(0x1 << 5);
++	HAL_MISC_ENABLE_SPI_PINS();
++	HAL_MISC_ENABLE_PCM_PINS(); /* this just for PCM test */
++	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(SPI_PCM_I2C));
++	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(SPI_PCM_I2C));
++#endif
++
++	SPI_CONFIGURATION_REG = (((0x0 & 0x3) << 0) |	/* 8bits shift length */
++				 (0x0 << 9) |	/* SPI mode */
++				 (0x0 << 10) |	/* disable FIFO */
++				 (0x1 << 11) |	/* SPI master mode */
++				 (0x0 << 12) |	/* disable SPI loopback mode */
++				 (0x1 << 13) |	/* clock phase */
++				 (0x1 << 14) |	/* clock polarity */
++				 (0x0 << 24) |	/* disable - SPI data swap */
++#ifdef CONFIG_SPI_CNS3XXX_2IOREAD
++				 (0x1 << 29) |	/* enable - 2IO Read mode */
++#else
++				 (0x0 << 29) |	/* disablea - 2IO Read mode */
++#endif
++				 (0x0 << 30) |	/* disable - SPI high speed read for system boot up */
++				 (0x0 << 31));	/* disable - SPI */
++
++	/* Set SPI bit rate PCLK/2 */
++	SPI_BIT_RATE_CONTROL_REG = 0x1;
++
++	/* Set SPI Tx channel 0 */
++	SPI_TRANSMIT_CONTROL_REG = 0x0;
++
++	/* Set Tx FIFO Threshold, Tx FIFO has 2 words */
++	SPI_FIFO_TRANSMIT_CONFIG_REG &= ~(0x03 << 4);
++	SPI_FIFO_TRANSMIT_CONFIG_REG |= ((0x0 & 0x03) << 4);
++
++	/* Set Rx FIFO Threshold, Rx FIFO has 2 words */
++	SPI_FIFO_RECEIVE_CONFIG_REG &= ~(0x03 << 4);
++	SPI_FIFO_RECEIVE_CONFIG_REG |= ((0x0 & 0x03) << 4);
++
++	/* Disable all interrupt */
++	SPI_INTERRUPT_ENABLE_REG = 0x0;
++
++	/* Clear spurious interrupt sources */
++	SPI_INTERRUPT_STATUS_REG = (0x0F << 4);
++
++	/* Enable SPI */
++	SPI_CONFIGURATION_REG |= (0x1 << 31);
++
++	return;
++}
++
++static int __init cns3xxx_spi_probe(struct platform_device *pdev)
++{
++	struct spi_master *master;
++	struct cns3xxx_spi *hw;
++	int err = 0;
++
++	printk("%s: setup CNS3XXX SPI Controller", __FUNCTION__);
++#ifdef CONFIG_SPI_CNS3XXX_USEDMA
++	printk(" w/ DMA \n");
++#else
++#ifdef CNS3XXX_SPI_INTERRUPT
++	printk(" in Interrupt mode, w/o DMA \n");
++#else
++	printk(" in polling mode, w/o DMA \n");
++#endif
++#endif
++
++	/* share pin config. */
++//	HAL_MISC_ENABLE_SPI_PINS();
++
++	/* Allocate master with space for cns3xxx_spi */
++	master = spi_alloc_master(&pdev->dev, sizeof(struct cns3xxx_spi));
++	if (master == NULL) {
++		dev_err(&pdev->dev, "No memory for spi_master\n");
++		err = -ENOMEM;
++		goto err_nomem;
++	}
++
++	hw = spi_master_get_devdata(master);
++	memset(hw, 0, sizeof(struct cns3xxx_spi));
++
++	hw->master = spi_master_get(master);
++	hw->dev = &pdev->dev;
++
++	platform_set_drvdata(pdev, hw);
++	init_completion(&hw->done);
++
++	/* setup the master state. */
++
++	master->num_chipselect = 4;
++	master->bus_num = 1;
++
++	/* setup the state for the bitbang driver */
++
++	hw->bitbang.master = hw->master;
++	hw->bitbang.setup_transfer = cns3xxx_spi_setup_transfer;
++	hw->bitbang.chipselect = cns3xxx_spi_chipselect;
++	hw->bitbang.txrx_bufs = cns3xxx_spi_txrx;
++	hw->bitbang.master->setup = cns3xxx_spi_setup;
++
++	dev_dbg(hw->dev, "bitbang at %p\n", &hw->bitbang);
++
++#ifdef CNS3XXX_SPI_INTERRUPT
++	err = request_irq(IRQ_CNS3XXX_SPI, cns3xxx_spi_irq, IRQF_SHARED, "cns3xxx_spi", hw);
++	if (err) {
++		dev_err(&pdev->dev, "Cannot claim IRQ\n");
++		goto err_no_irq;
++	}
++#endif
++
++	/* SPI controller initializations */
++	cns3xxx_spi_initial();
++
++	/* register SPI controller */
++
++	err = spi_bitbang_start(&hw->bitbang);
++	if (err) {
++		dev_err(&pdev->dev, "Failed to register SPI master\n");
++		goto err_register;
++	}
++
++	spi_slave_probe();
++
++	return 0;
++
++err_register:
++#ifdef CNS3XXX_SPI_INTERRUPT
++err_no_irq:
++#endif
++	spi_master_put(hw->master);;
++
++err_nomem:
++	return err;
++}
++
++static int __devexit cns3xxx_spi_remove(struct platform_device *dev)
++{
++	struct cns3xxx_spi *hw = platform_get_drvdata(dev);
++
++	platform_set_drvdata(dev, NULL);
++
++	spi_unregister_master(hw->master);
++
++	//cns3xxx_spi_clk_disable();
++
++	spi_master_put(hw->master);
++	return 0;
++}
++
++#ifdef CONFIG_PM
++
++static int cns3xxx_spi_suspend(struct platform_device *pdev, pm_message_t msg)
++{
++	struct cns3xxx_spi *hw = platform_get_drvdata(pdev);
++
++	//cns3xxx_spi_clk_disable();
++	return 0;
++}
++
++static int cns3xxx_spi_resume(struct platform_device *pdev)
++{
++	struct cns3xxx_spi *hw = platform_get_drvdata(pdev);
++
++	//cns3xxx_spi_clk_enable()
++	return 0;
++}
++
++#else
++#define cns3xxx_spi_suspend	NULL
++#define cns3xxx_spi_resume	NULL
++#endif
++
++static struct platform_driver cns3xxx_spi_driver = {
++	.probe		= cns3xxx_spi_probe,
++	.remove		= __devexit_p(cns3xxx_spi_remove),
++	.suspend	= cns3xxx_spi_suspend,
++	.resume		= cns3xxx_spi_resume,
++	.driver		= {
++		.name = "cns3xxx_spi",
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init cns3xxx_spi_init(void)
++{
++	return platform_driver_register(&cns3xxx_spi_driver);
++}
++
++static void __exit cns3xxx_spi_exit(void)
++{
++	platform_driver_unregister(&cns3xxx_spi_driver);
++}
++
++module_init(cns3xxx_spi_init);
++module_exit(cns3xxx_spi_exit);
++
++MODULE_AUTHOR("Cavium Networks");
++MODULE_DESCRIPTION("CNS3XXX SPI Controller Driver");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:cns3xxx_spi");
++
++EXPORT_SYMBOL_GPL(cns3xxx_spi_tx_rx);
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -424,6 +424,12 @@ struct spi_transfer {
+ 	u16		delay_usecs;
+ 	u32		speed_hz;
+ 
++#ifdef CONFIG_ARCH_CNS3XXX
++    unsigned    last_in_message_list;
++#ifdef CONFIG_SPI_CNS3XXX_2IOREAD
++    u8          dio_read;
++#endif
++#endif
+ 	struct list_head transfer_list;
+ };
+ 
+@@ -627,6 +633,13 @@ spi_read(struct spi_device *spi, u8 *buf
+ 	return spi_sync(spi, &m);
+ }
+ 
++#ifdef CONFIG_ARCH_CNS3XXX
++extern int spi_write_read_sync(struct spi_device *spi,
++		const u8 *txbuf, unsigned n_tx,
++		u8 *rxbuf, unsigned n_rx);
++
++#endif
++
+ /* this copies txbuf and rxbuf data; for small transfers only! */
+ extern int spi_write_then_read(struct spi_device *spi,
+ 		const u8 *txbuf, unsigned n_tx,
