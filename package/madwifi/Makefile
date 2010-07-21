@@ -85,6 +85,9 @@ endif
 ifeq ($(BOARD),orion)
   HAL_TARGET:=xscale-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
 endif
+ifeq ($(BOARD),cns3xxx)
+  HAL_TARGET:=arm11-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+endif
 ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
 endif

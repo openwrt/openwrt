@@ -1,0 +1,438 @@
+--- a/crypto/xor.c
++++ b/crypto/xor.c
+@@ -25,6 +25,26 @@
+ /* The xor routines to use.  */
+ static struct xor_block_template *active_template;
+ 
++#ifdef CONFIG_CNS3XXX_RAID
++extern void do_cns_rdma_xorgen(unsigned int src_no, unsigned int bytes,
++			       void **bh_ptr, void *dst_ptr);
++/**
++ * xor_blocks - one pass xor
++ * @src_count: source count
++ * @bytes: length in bytes
++ * @dest: dest
++ * @srcs: srcs
++ *
++ * Desc:
++ * 1. dest = xor(srcs[0...src_count-1]) within one calc
++ * 2. don't care if dest also be placed in srcs list or not.
++ */
++void xor_blocks(unsigned int src_count, unsigned int bytes, void *dest,
++		void **srcs)
++{
++	do_cns_rdma_xorgen(src_count, bytes, srcs, dest);
++}
++#else
+ void
+ xor_blocks(unsigned int src_count, unsigned int bytes, void *dest, void **srcs)
+ {
+@@ -51,6 +71,7 @@ xor_blocks(unsigned int src_count, unsig
+ 	p4 = (unsigned long *) srcs[3];
+ 	active_template->do_5(bytes, dest, p1, p2, p3, p4);
+ }
++#endif /* CONFIG_CNS3XXX_RAID */
+ EXPORT_SYMBOL(xor_blocks);
+ 
+ /* Set of all registered templates.  */
+@@ -95,7 +116,11 @@ do_xor_speed(struct xor_block_template *
+ 	       speed / 1000, speed % 1000);
+ }
+ 
++#ifdef CONFIG_CNS3XXX_RAID
++int
++#else
+ static int __init
++#endif				/* CONFIG_CNS3XXX_RAID */
+ calibrate_xor_blocks(void)
+ {
+ 	void *b1, *b2;
+@@ -139,7 +164,10 @@ calibrate_xor_blocks(void)
+ 			if (f->speed > fastest->speed)
+ 				fastest = f;
+ 	}
+-
++#ifdef CONFIG_CNS3XXX_RAID
++	/* preferred */
++	fastest = template_list;
++#endif /* CONFIG_CNS3XXX_RAID */
+ 	printk(KERN_INFO "xor: using function: %s (%d.%03d MB/sec)\n",
+ 	       fastest->name, fastest->speed / 1000, fastest->speed % 1000);
+ 
+@@ -151,10 +179,20 @@ calibrate_xor_blocks(void)
+ 	return 0;
+ }
+ 
+-static __exit void xor_exit(void) { }
++#ifndef        CONFIG_CNS3XXX_RAID
++static __exit void xor_exit(void)
++{
++}
++#endif /* ! CONFIG_CNS3XXX_RAID */
+ 
+ MODULE_LICENSE("GPL");
+ 
++#ifdef CONFIG_CNS3XXX_RAID
++/*
++ * Calibrate in R5 init.
++ */
++#else
+ /* when built-in xor.o must initialize before drivers/md/md.o */
+ core_initcall(calibrate_xor_blocks);
+ module_exit(xor_exit);
++#endif /* ! CONFIG_CNS3XXX_RAID */
+--- a/drivers/md/Makefile
++++ b/drivers/md/Makefile
+@@ -17,7 +17,7 @@ raid6_pq-y	+= raid6algos.o raid6recov.o 
+ 		   raid6int8.o raid6int16.o raid6int32.o \
+ 		   raid6altivec1.o raid6altivec2.o raid6altivec4.o \
+ 		   raid6altivec8.o \
+-		   raid6mmx.o raid6sse1.o raid6sse2.o
++		   raid6mmx.o raid6sse1.o raid6sse2.o raid6cns.o
+ hostprogs-y	+= mktables
+ 
+ # Note: link order is important.  All raid personalities
+--- a/drivers/md/raid5.c
++++ b/drivers/md/raid5.c
+@@ -1817,11 +1817,30 @@ static void compute_block_2(struct strip
+ 			compute_parity6(sh, UPDATE_PARITY);
+ 			return;
+ 		} else {
++#ifdef  CONFIG_CNS3XXX_RAID
++			void *ptrs[disks];
++
++			count = 0;
++			i = d0_idx;
++			do {
++				ptrs[count++] = page_address(sh->dev[i].page);
++				i = raid6_next_disk(i, disks);
++				if (i != dd_idx1 && i != dd_idx2 &&
++				    !test_bit(R5_UPTODATE, &sh->dev[i].flags))
++					printk
++					    ("compute_2 with missing block %d/%d\n",
++					     count, i);
++			} while (i != d0_idx);
++
++			raid6_dataq_recov(disks, STRIPE_SIZE, faila, ptrs);
++#else
++
+ 			/* We're missing D+Q; recompute D from P */
+ 			compute_block_1(sh, ((dd_idx1 == sh->qd_idx) ?
+ 					     dd_idx2 : dd_idx1),
+ 					0);
+ 			compute_parity6(sh, UPDATE_PARITY); /* Is this necessary? */
++#endif /* CONFIG_CNS3XXX_RAID */
+ 			return;
+ 		}
+ 	}
+@@ -5412,8 +5431,21 @@ static struct mdk_personality raid4_pers
+ 	.quiesce	= raid5_quiesce,
+ };
+ 
++#ifdef CONFIG_CNS3XXX_RAID
++extern int calibrate_xor_blocks(void);
++#endif /* CONFIG_CNS3XXX_RAID */
++
+ static int __init raid5_init(void)
+ {
++
++#ifdef  CONFIG_CNS3XXX_RAID
++	/* Just execute calibrate xor blocks */
++	int e;
++	e = calibrate_xor_blocks();
++	if (e)
++		return e;
++#endif /* CONFIG_CNS3XXX_RAID */
++
+ 	register_md_personality(&raid6_personality);
+ 	register_md_personality(&raid5_personality);
+ 	register_md_personality(&raid4_personality);
+--- a/drivers/md/raid6algos.c
++++ b/drivers/md/raid6algos.c
+@@ -49,6 +49,9 @@ extern const struct raid6_calls raid6_al
+ extern const struct raid6_calls raid6_altivec2;
+ extern const struct raid6_calls raid6_altivec4;
+ extern const struct raid6_calls raid6_altivec8;
++#ifdef CONFIG_CNS3XXX_RAID
++extern const struct raid6_calls raid6_cns_raid;
++#endif /* CONFIG_CNS3XXX_RAID */
+ 
+ const struct raid6_calls * const raid6_algos[] = {
+ 	&raid6_intx1,
+@@ -78,6 +81,11 @@ const struct raid6_calls * const raid6_a
+ 	&raid6_altivec4,
+ 	&raid6_altivec8,
+ #endif
++#ifdef CONFIG_CNS3XXX_RAID
++	/* CNS3000 HW RAID acceleration */
++	&raid6_cns_raid,
++#endif /* CONFIG_CNS3XXX_RAID */
++
+ 	NULL
+ };
+ 
+@@ -125,7 +133,9 @@ int __init raid6_select_algo(void)
+ 		if ( !(*algo)->valid || (*algo)->valid() ) {
+ 			perf = 0;
+ 
++#ifndef        CONFIG_CNS3XXX_RAID
+ 			preempt_disable();
++#endif
+ 			j0 = jiffies;
+ 			while ( (j1 = jiffies) == j0 )
+ 				cpu_relax();
+@@ -134,7 +144,9 @@ int __init raid6_select_algo(void)
+ 				(*algo)->gen_syndrome(disks, PAGE_SIZE, dptrs);
+ 				perf++;
+ 			}
++#ifndef        CONFIG_CNS3XXX_RAID
+ 			preempt_enable();
++#endif
+ 
+ 			if ( (*algo)->prefer > bestprefer ||
+ 			     ((*algo)->prefer == bestprefer &&
+--- /dev/null
++++ b/drivers/md/raid6cns.c
+@@ -0,0 +1,38 @@
++/* 
++ * raid6cns.c
++ *
++ * CNS3xxx xor & gen_syndrome functions
++ *
++ */
++
++#ifdef	CONFIG_CNS3XXX_RAID
++
++#include <linux/raid/pq.h>
++
++extern void do_cns_rdma_gfgen(unsigned int src_no, unsigned int bytes, void **bh_ptr, 
++				void *p_dst, void *q_dst);
++
++/**
++ * raid6_cnsraid_gen_syndrome - CNSRAID Syndrome Generate
++ *
++ * @disks: raid disks
++ * @bytes: length
++ * @ptrs:  already arranged stripe ptrs, 
++ *         disk0=[0], diskNNN=[disks-3], 
++ *         P/Q=[z0+1] & [z0+2], or, [disks-2], [disks-1]
++ */
++static void raid6_cnsraid_gen_syndrome(int disks, size_t bytes, void **ptrs)
++{
++	do_cns_rdma_gfgen(disks - 2, bytes, ptrs, ptrs[disks-2], ptrs[disks-1]);
++}
++
++const struct raid6_calls raid6_cns_raid = {
++	raid6_cnsraid_gen_syndrome,	/* callback */
++	NULL,						/* always valid */
++	"CNS-RAID",					/* name */
++	1							/* preferred: revise it to "0" to compare/compete with others algos */
++};
++
++EXPORT_SYMBOL(raid6_cns_raid);
++
++#endif /* CONFIG_CNS3XXX_RAID */
+--- a/drivers/md/raid6recov.c
++++ b/drivers/md/raid6recov.c
+@@ -20,6 +20,136 @@
+ 
+ #include <linux/raid/pq.h>
+ 
++#ifdef CONFIG_CNS3XXX_RAID
++#define        R6_RECOV_PD             1
++#define        R6_RECOV_DD             2
++#define        R6_RECOV_DQ             3
++extern void do_cns_rdma_gfgen_pd_dd_dq(unsigned int src_no, unsigned int bytes,
++				       void **bh_ptr, void *w1_dst,
++				       void *w2_dst, int pd_dd_qd,
++				       unsigned int w1_idx, unsigned int w2_idx,
++				       unsigned int *src_idx);
++
++/**
++ * @disks: nr_disks
++ * @bytes: len
++ * @faila: 1st failed DD
++ * @ptrs:  ptrs by order {d0, d1, ..., da, ..., dn, P, Q}
++ *
++ * Desc:
++ *     new_read_ptrs = {d0, d1, ... dn, Q}
++ *     dd1 = faila
++ *     p_dst = P
++ */
++void raid6_datap_recov(int disks, size_t bytes, int faila, void **ptrs)
++{
++	int cnt = 0;
++	int count = 0;
++	void *p_dst, *q;
++	void *dd1_dst;
++	void *new_read_ptrs[disks - 2];
++	unsigned int read_idx[disks - 2];
++
++	q = ptrs[disks - 1];
++	p_dst = ptrs[disks - 2];
++	dd1_dst = ptrs[faila];
++
++	while (cnt < disks) {
++		if (cnt != faila && cnt != disks - 2) {
++			new_read_ptrs[count] = ptrs[cnt];
++			read_idx[count] = cnt;
++			count++;
++		}
++		cnt++;
++	}
++
++	do_cns_rdma_gfgen_pd_dd_dq(disks - 2, bytes,
++				   new_read_ptrs, p_dst, dd1_dst,
++				   R6_RECOV_PD, disks - 1, faila + 1, read_idx);
++}
++
++/**
++ * @disks: nr_disks
++ * @bytes: len
++ * @faila: 1st failed DD
++ * @failb: 2nd failed DD
++ * @ptrs:  ptrs by order {d0, d1, ..., da, ..., db, ..., dn, P, Q}
++ *
++ * Desc:
++ *     new_read_ptrs = {d0, d1, ... dn, P, Q}
++ *     dd1_dst = faila
++ *     dd2_dst = failb
++ */
++void raid6_2data_recov(int disks, size_t bytes, int faila, int failb,
++		       void **ptrs)
++{
++
++	int cnt = 0;
++	int count = 0;
++	void *p, *q;
++	void *dd1_dst, *dd2_dst;
++	void *new_read_ptrs[disks - 2];
++	unsigned int read_idx[disks - 2];
++
++	q = ptrs[disks - 1];
++	p = ptrs[disks - 2];
++	dd1_dst = ptrs[faila];
++	dd2_dst = ptrs[failb];
++
++	while (cnt < disks) {
++		if (cnt != faila && cnt != failb) {
++			new_read_ptrs[count] = ptrs[cnt];
++			read_idx[count] = cnt;
++			count++;
++		}
++		cnt++;
++	}
++
++	do_cns_rdma_gfgen_pd_dd_dq(disks - 2, bytes,
++				   new_read_ptrs, dd1_dst, dd2_dst,
++				   R6_RECOV_DD, faila + 1, failb + 1, read_idx);
++}
++
++/**
++ * @disks: nr_disks
++ * @bytes: len
++ * @faila: 1st failed DD
++ * @ptrs:  ptrs by order {d0, d1, ..., da, ..., dn, P, Q}
++ *
++ * Desc:
++ *     new_read_ptrs = {d0, d1, ... dn, P}
++ *     dd1 = faila
++ *     q_dst = Q
++ */
++void raid6_dataq_recov(int disks, size_t bytes, int faila, void **ptrs)
++{
++	int cnt = 0;
++	int count = 0;
++	void *q_dst, *p;
++	void *dd1_dst;
++	void *new_read_ptrs[disks - 2];
++	unsigned int read_idx[disks - 2];
++
++	p = ptrs[disks - 2];
++	q_dst = ptrs[disks - 1];
++	dd1_dst = ptrs[faila];
++
++	while (cnt < disks) {
++		if (cnt != faila && cnt != disks - 1) {
++			new_read_ptrs[count] = ptrs[cnt];
++			read_idx[count] = cnt;
++			count++;
++		}
++		cnt++;
++	}
++
++	do_cns_rdma_gfgen_pd_dd_dq(disks - 2, bytes,
++				   new_read_ptrs, dd1_dst, q_dst,
++				   R6_RECOV_DQ, faila + 1, disks, read_idx);
++}
++
++#else /* CONFIG_CNS3XXX_RAID
++
+ /* Recover two failed data blocks. */
+ void raid6_2data_recov(int disks, size_t bytes, int faila, int failb,
+ 		       void **ptrs)
+@@ -96,6 +226,7 @@ void raid6_datap_recov(int disks, size_t
+ 	}
+ }
+ EXPORT_SYMBOL_GPL(raid6_datap_recov);
++#endif /* CONFIG_CNS3XXX_RAID */
+ 
+ #ifndef __KERNEL__
+ /* Testing only */
+--- a/include/linux/raid/pq.h
++++ b/include/linux/raid/pq.h
+@@ -100,6 +100,9 @@ void raid6_2data_recov(int disks, size_t
+ void raid6_datap_recov(int disks, size_t bytes, int faila, void **ptrs);
+ void raid6_dual_recov(int disks, size_t bytes, int faila, int failb,
+ 		      void **ptrs);
++#ifdef  CONFIG_CNS3XXX_RAID
++void raid6_dataq_recov(int disks, size_t bytes, int faila, void **ptrs);
++#endif /* CONFIG_CNS3XXX_RAID */
+ 
+ /* Some definitions to allow code to be compiled for testing in userspace */
+ #ifndef __KERNEL__
+--- a/include/linux/raid/xor.h
++++ b/include/linux/raid/xor.h
+@@ -1,7 +1,11 @@
+ #ifndef _XOR_H
+ #define _XOR_H
+ 
++#ifdef CONFIG_CNS3XXX_RAID
++#define        MAX_XOR_BLOCKS 32
++#else
+ #define MAX_XOR_BLOCKS 4
++#endif /* CONFIG_CNS3XXX_RAID */
+ 
+ extern void xor_blocks(unsigned int count, unsigned int bytes,
+ 	void *dest, void **srcs);
+--- a/mm/mempool.c
++++ b/mm/mempool.c
+@@ -250,6 +250,28 @@ repeat_alloc:
+ }
+ EXPORT_SYMBOL(mempool_alloc);
+ 
++#ifdef CONFIG_CNS3XXX_RAID
++/**
++ * acs_mempool_alloc - allocate an element from a specific memory pool
++ * @pool:      pointer to the memory pool which was allocated via
++ *             mempool_create().
++ *
++ * this function differs from mempool_alloc by directly allocating an element
++ * from @pool without calling @pool->alloc().
++ */
++void *acs_mempool_alloc(mempool_t * pool)
++{
++	unsigned long flags;
++	void *element = NULL;
++
++	spin_lock_irqsave(&pool->lock, flags);
++	if (likely(pool->curr_nr))
++		element = remove_element(pool);
++	spin_unlock_irqrestore(&pool->lock, flags);
++	return element;
++}
++#endif /* CONFIG_CNS3XXX_RAID */
++
+ /**
+  * mempool_free - return an element to the pool.
+  * @element:   pool element pointer.
