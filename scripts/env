@@ -192,7 +192,8 @@ env_new() {
 	if [ -f "$BASEDIR/.config" -o -d "$BASEDIR/files" ]; then
 		if ask_bool 1 "Do you want to keep your current config and files?"; then
 			[ -d "$BASEDIR/files" -a \! -L "$BASEDIR/files" ] && {
-				mv "$BASEDIR/files/"* "$ENVDIR/" 2>/dev/null
+				mkdir -p "$ENVDIR/files"
+				mv "$BASEDIR/files/*" "$ENVDIR/files/" 2>/dev/null
 				rmdir "$BASEDIR/files"
 			}
 			env_sync
