@@ -179,6 +179,17 @@ menu "Global build settings"
 		help
 		  This will give you more information in stack traces from kernel oopses
 
+	config KERNEL_DEBUG_KERNEL
+		bool
+		default n
+
+	config KERNEL_DEBUG_INFO
+		bool "Compile the kernel with debug information"
+		default n
+		select KERNEL_DEBUG_KERNEL
+		help
+		  This will compile your kernel and modules with debug information.
+
 	comment "Package build options"
 
 	config DEBUG
