@@ -155,6 +155,15 @@ menu "Global build settings"
 		help
 			This removes all ipkg/opkg status data files from the target directory before building the root fs
 
+	config COLLECT_KERNEL_DEBUG
+		bool
+		prompt "Colllect kernel debug information"
+		select KERNEL_DEBUG_INFO
+		default n
+		help
+			This collects debugging symbols from the kernel and all compiled modules.
+			Useful for release builds, so that kernel issues can be debugged offline later.
+
 	comment "Kernel build options"
 
 	config KERNEL_DEBUG_FS

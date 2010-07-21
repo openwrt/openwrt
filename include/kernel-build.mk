@@ -44,6 +44,19 @@ define Download/kernel
   MD5SUM:=$(LINUX_KERNEL_MD5SUM)
 endef
 
+ifdef CONFIG_COLLECT_KERNEL_DEBUG
+  define Kernel/CollectDebug
+	rm -rf $(KERNEL_BUILD_DIR)/debug
+	mkdir -p $(KERNEL_BUILD_DIR)/debug/modules
+	$(CP) $(LINUX_DIR)/vmlinux $(KERNEL_BUILD_DIR)/debug/
+	-$(CP) \
+		$(STAGING_DIR_ROOT)/lib/modules/$(LINUX_VERSION)/* \
+		$(KERNEL_BUILD_DIR)/debug/modules/
+	$(FIND) $(KERNEL_BUILD_DIR)/debug -type f | $(XARGS) $(KERNEL_CROSS)strip --only-keep-debug
+	$(TAR) c -C $(KERNEL_BUILD_DIR) debug | bzip2 -c -9 > $(BIN_DIR)/kernel-debug.tar.bz2
+  endef
+endif
+
 define BuildKernel
   $(if $(QUILT),$(Build/Quilt))
   $(if $(LINUX_SITE),$(call Download,kernel))
@@ -86,6 +99,7 @@ define BuildKernel
 
   $(LINUX_DIR)/.image: $(STAMP_CONFIGURED) $(if $(CONFIG_STRIP_KERNEL_EXPORTS),$(KERNEL_BUILD_DIR)/symtab.h) FORCE
 	$(Kernel/CompileImage)
+	$(Kernel/CollectDebug)
 	touch $$@
 	
   mostlyclean: FORCE
