@@ -503,7 +503,12 @@ __devinit ubsec_ssb_probe(struct ssb_device *sdev,
         goto err_out_powerdown;
     }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34))
+    err = dma_set_mask(sdev->dma_dev, DMA_BIT_MASK(32)) || 
+	  dma_set_coherent_mask(sdev->dma_dev, DMA_BIT_MASK(32));
+#else
     err = ssb_dma_set_mask(sdev, DMA_32BIT_MASK);
+#endif
     if (err) {
         dev_err(sdev->dev,
         "Required 32BIT DMA mask unsupported by the system.\n");
