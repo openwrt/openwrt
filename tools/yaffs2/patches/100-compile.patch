@@ -112,3 +112,14 @@
  	//printf("Processing directory %s into image file %s\n",argv[1],argv[2]);
  	error =  write_object_header(1, YAFFS_OBJECT_TYPE_DIRECTORY, &stats, 1,"", -1, NULL);
  	if(error)
+--- a/yaffs2/devextras.h
++++ b/yaffs2/devextras.h
+@@ -37,7 +37,7 @@ typedef unsigned char __u8;
+ typedef unsigned short __u16;
+ typedef unsigned __u32;
+ 
+-#if defined(__APPLE__)
++#if defined(__APPLE__) || defined(__FreeBSD__)
+ typedef long long loff_t;
+ #endif
+ 
