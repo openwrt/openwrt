@@ -1,10 +1,11 @@
 --- a/tools/kwbimage.c
 +++ b/tools/kwbimage.c
-@@ -206,6 +206,28 @@ INVL_DATA:
+@@ -206,6 +206,30 @@ INVL_DATA:
  	exit (EXIT_FAILURE);
  }
  
 +#ifndef __GLIBC__
++#ifndef __FreeBSD__
 +static ssize_t
 +getline(char **line, size_t *len, FILE *fd)
 +{
@@ -25,7 +26,21 @@
 +	return tmplen;
 +}
 +#endif
++#endif
 +
  /*
   * this function sets the kwbimage header by-
   * 	1. Abstracting input command line arguments data
+--- a/include/image.h
++++ b/include/image.h
+@@ -49,6 +49,10 @@
+ 
+ #endif /* USE_HOSTCC */
+ 
++#ifndef ulong
++#define ulong unsigned long
++#endif
++
+ #include <command.h>
+ 
+ #if defined(CONFIG_FIT)
