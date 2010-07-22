@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=1.1.4
+PKG_VERSION:=2010.06
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
@@ -34,16 +34,18 @@ define Build/Compile
 	$(CP) ./ubclient/* $(PKG_BUILD_DIR)/ubclient
 	export LAN_IP=$(LAN_IP); \
 	export LAN_SERVERIP=$(LAN_SERVERIP); \
-	$(MAKE) -C $(PKG_BUILD_DIR)/ubclient \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) -Dtarget_$(BOARD)=1"
+	#$(MAKE) -C $(PKG_BUILD_DIR)/ubclient \
+	#	$(TARGET_CONFIGURE_OPTS) \
+	#	CFLAGS="$(TARGET_CFLAGS) -Dtarget_$(BOARD)=1"
 endef
 
 define Build/InstallDev
 	dd if=$(PKG_BUILD_DIR)/u-boot.bin of=$(PKG_BUILD_DIR)/u-boot.block bs=232k count=1 conv=sync
 #	$(INSTALL_DIR) $(STAGING_DIR)/ubclient/sbin
 #	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ubclient/ubpar $(STAGING_DIR)/ubclient/sbin/
-	$(CP) $(PKG_BUILD_DIR)/ubclient/ubpar ../../base-files/sbin
+#	$(CP) $(PKG_BUILD_DIR)/ubclient/ubpar ../../base-files/sbin
+	mkdir -p $(BIN_DIR)/
+	cp $(PKG_BUILD_DIR)/u-boot.bin $(BIN_DIR)/u-boot.$(PKG_VERSION).bin
 endef
 
 $(eval $(call Build/DefaultTargets))

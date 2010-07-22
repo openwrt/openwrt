@@ -10,16 +10,14 @@ config AT91_UBOOT
 
 config UBOOT_TARGET
 	string "U-Boot target board"
-	depends TARGET_at91
 	depends AT91_UBOOT
-	default "vlink"
+	default "netusg20"
 	help
 	  For all supported boards there are ready-to-use default
 		configurations available; just type "<board_name>".
 
 config UBOOT_IPADDR
 	string "IP Address for U-Boot"
-	depends TARGET_at91
 	depends AT91_UBOOT
 	default "192.168.0.178"
 	help
@@ -27,7 +25,6 @@ config UBOOT_IPADDR
 
 config UBOOT_SERVERIP
 	string "IP Address of TFTP server"
-	depends TARGET_at91
 	depends AT91_UBOOT
 	default "192.168.0.232"
 	help
