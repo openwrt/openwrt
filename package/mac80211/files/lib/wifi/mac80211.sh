@@ -214,6 +214,8 @@ enable_mac80211() {
 	config_get txpower "$device" txpower
 	config_get country "$device" country
 	config_get distance "$device" distance
+	config_get frag "$device" frag
+	config_get rts "$device" rts
 	find_mac80211_phy "$device" || return 0
 	config_get phy "$device" phy
 	local i=0
@@ -227,6 +229,8 @@ enable_mac80211() {
 	}
 
 	[ -n "$distance" ] && iw phy "$phy" set distance "$distance"
+	[ -n "$frag" ] && iw phy "$phy" set frag "${frag%%.*}"
+	[ -n "$rts" ] && iw phy "$phy" set rts "${rts%%.*}"
 
 	export channel fixed
 	# convert channel to frequency
@@ -318,16 +322,6 @@ enable_mac80211() {
 		# wifi-device) if the latter doesn't exist
 		txpower="${txpower:-$vif_txpower}"
 		[ -z "$txpower" ] || iwconfig "$ifname" txpower "${txpower%%.*}"
-
-		config_get frag "$vif" frag
-		if [ -n "$frag" ]; then
-			iw phy "$phy" set frag "${frag%%.*}"
-		fi
-
-		config_get rts "$vif" rts
-		if [ -n "$rts" ]; then
-			iw phy "$phy" set rts "${rts%%.*}"
-		fi
 	done
 
 	local start_hostapd=
