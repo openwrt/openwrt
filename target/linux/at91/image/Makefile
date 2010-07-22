@@ -8,9 +8,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define Build/Clean
+	$(MAKE) -C u-boot clean
 endef
 
 define Build/Compile
+	if [ $(CONFIG_AT91_UBOOT) ]; then \
+		$(MAKE) -C u-boot compile; \
+	fi
 endef
 
 define Image/Prepare

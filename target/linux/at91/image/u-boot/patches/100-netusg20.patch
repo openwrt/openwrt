@@ -1,0 +1,574 @@
+Add support for the NetusG20 board by Acmesystems srl.
+This board is based on AT91SAM9G20 SoC.
+
+Signed-off-by: Claudio Mignanti <c.mignanti@gmail.com>
+---
+ MAKEALL                                           |    1 +
+ Makefile                                          |    3 +
+ arch/arm/cpu/arm926ejs/at91/at91sam9260_devices.c |    5 +
+ board/acmesystems/netusg20/Makefile               |   56 +++++++
+ board/acmesystems/netusg20/config.mk              |    1 +
+ board/acmesystems/netusg20/led.c                  |   40 +++++
+ board/acmesystems/netusg20/netusg20.c             |  152 +++++++++++++++++
+ board/acmesystems/netusg20/partition.c            |   39 +++++
+ include/configs/netusg20.h                        |  181 +++++++++++++++++++++
+ 9 files changed, 478 insertions(+), 0 deletions(-)
+ create mode 100644 board/acmesystems/netusg20/Makefile
+ create mode 100644 board/acmesystems/netusg20/config.mk
+ create mode 100644 board/acmesystems/netusg20/led.c
+ create mode 100644 board/acmesystems/netusg20/netusg20.c
+ create mode 100644 board/acmesystems/netusg20/partition.c
+ create mode 100644 include/configs/netusg20.h
+
+diff --git a/MAKEALL b/MAKEALL
+index d6d5f5b..60e36e1 100755
+--- a/MAKEALL
++++ b/MAKEALL
+@@ -684,6 +684,7 @@ LIST_at91="			\
+ 	meesc			\
+ 	mp2usb			\
+ 	m501sk			\
++	netusg20		\
+ 	otc570			\
+ 	pm9261			\
+ 	pm9263			\
+diff --git a/Makefile b/Makefile
+index 87d5214..b73659f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2867,6 +2867,9 @@ at91sam9g45ekes_config	:	unconfig
+ 	fi;
+ 	@$(MKCONFIG) -a at91sam9m10g45ek arm arm926ejs at91sam9m10g45ek atmel at91
+ 
++netusg20_config:	unconfig
++	@$(MKCONFIG) $(@:_config=) arm arm926ejs netusg20 acmesystems at91
++
+ otc570_config	:	unconfig
+ 	@$(MKCONFIG) $(@:_config=) arm arm926ejs otc570 esd at91
+ 
+diff --git a/arch/arm/cpu/arm926ejs/at91/at91sam9260_devices.c b/arch/arm/cpu/arm926ejs/at91/at91sam9260_devices.c
+index 77d49ab..87ec531 100644
+--- a/arch/arm/cpu/arm926ejs/at91/at91sam9260_devices.c
++++ b/arch/arm/cpu/arm926ejs/at91/at91sam9260_devices.c
+@@ -59,7 +59,12 @@ void at91_serial3_hw_init(void)
+ {
+ 	at91_pmc_t	*pmc	= (at91_pmc_t *) AT91_PMC_BASE;
+ 
++#ifdef CONFIG_NETUSG20
++	/* pull-up active on DRXD*/
++	at91_set_a_periph(AT91_PIO_PORTB, 14, 1);
++#else
+ 	at91_set_a_periph(AT91_PIO_PORTB, 14, 0);		/* DRXD */
++#endif
+ 	at91_set_a_periph(AT91_PIO_PORTB, 15, 1);		/* DTXD */
+ 	writel(1 << AT91_ID_SYS, &pmc->pcer);
+ }
+diff --git a/board/acmesystems/netusg20/Makefile b/board/acmesystems/netusg20/Makefile
+new file mode 100644
+index 0000000..31589fd
+--- /dev/null
++++ b/board/acmesystems/netusg20/Makefile
+@@ -0,0 +1,56 @@
++#
++# (C) Copyright 2003-2008
++# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++#
++# (C) Copyright 2008
++# Stelian Pop <stelian.pop@leadtechdesign.com>
++# Lead Tech Design <www.leadtechdesign.com>
++#
++# See file CREDITS for list of people who contributed to this
++# project.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#
++
++include $(TOPDIR)/config.mk
++
++LIB	= $(obj)lib$(BOARD).a
++
++COBJS-y	+= netusg20.o
++COBJS-y	+= led.o
++COBJS-y	+= partition.o
++
++SRCS	:= $(SOBJS:.o=.S) $(COBJS-y:.o=.c)
++OBJS	:= $(addprefix $(obj),$(COBJS-y))
++SOBJS	:= $(addprefix $(obj),$(SOBJS))
++
++$(LIB):	$(obj).depend $(OBJS) $(SOBJS)
++	$(AR) $(ARFLAGS) $@ $(OBJS) $(SOBJS)
++
++clean:
++	rm -f $(SOBJS) $(OBJS)
++
++distclean:	clean
++	rm -f $(LIB) core *.bak $(obj).depend
++
++#########################################################################
++
++# defines $(obj).depend target
++include $(SRCTREE)/rules.mk
++
++sinclude $(obj).depend
++
++#########################################################################
+diff --git a/board/acmesystems/netusg20/config.mk b/board/acmesystems/netusg20/config.mk
+new file mode 100644
+index 0000000..ff2cfd1
+--- /dev/null
++++ b/board/acmesystems/netusg20/config.mk
+@@ -0,0 +1 @@
++TEXT_BASE = 0x23f00000
+diff --git a/board/acmesystems/netusg20/led.c b/board/acmesystems/netusg20/led.c
+new file mode 100644
+index 0000000..1016b98
+--- /dev/null
++++ b/board/acmesystems/netusg20/led.c
+@@ -0,0 +1,40 @@
++/*
++ * (C) Copyright 2007-2008
++ * Stelian Pop <stelian.pop@leadtechdesign.com>
++ * Lead Tech Design <www.leadtechdesign.com>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <asm/arch/at91sam9260.h>
++#include <asm/arch/at91_pmc.h>
++#include <asm/arch/gpio.h>
++#include <asm/arch/io.h>
++
++
++void coloured_LED_init(void)
++{
++	/* Enable clock */
++	at91_sys_write(AT91_PMC_PCER, 1 << AT91SAM9260_ID_PIOA);
++
++	at91_set_gpio_output(CONFIG_RED_LED, 1);
++
++	at91_set_gpio_value(CONFIG_RED_LED, 1);
++}
+diff --git a/board/acmesystems/netusg20/netusg20.c b/board/acmesystems/netusg20/netusg20.c
+new file mode 100644
+index 0000000..94b4d4c
+--- /dev/null
++++ b/board/acmesystems/netusg20/netusg20.c
+@@ -0,0 +1,152 @@
++/*
++ * (C) Copyright 2007-2008
++ * Stelian Pop <stelian.pop@leadtechdesign.com>
++ * Lead Tech Design <www.leadtechdesign.com>
++ *
++ * (C) Copyright 2010
++ * Claudio Mignanti <c.mignanti@gmail.com>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <asm/arch/at91sam9260.h>
++#include <asm/arch/at91sam9260_matrix.h>
++#include <asm/arch/at91sam9_smc.h>
++#include <asm/arch/at91_common.h>
++#include <asm/arch/at91_pmc.h>
++#include <asm/arch/at91_rstc.h>
++#include <asm/arch/gpio.h>
++#include <asm/arch/io.h>
++#include <asm/arch/hardware.h>
++#if defined(CONFIG_RESET_PHY_R) && defined(CONFIG_MACB)
++#include <net.h>
++#endif
++#include <netdev.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++/* ------------------------------------------------------------------------- */
++/*
++ * Miscelaneous platform dependent initialisations
++ */
++
++#ifdef CONFIG_MACB
++static void at91sam9260ek_macb_hw_init(void)
++{
++	unsigned long rstc;
++
++	/* Enable clock */
++	at91_sys_write(AT91_PMC_PCER, 1 << AT91SAM9260_ID_EMAC);
++
++	/*
++	 * Disable pull-up on:
++	 *	RXDV (PA17) => PHY normal mode (not Test mode)
++	 *	ERX0 (PA14) => PHY ADDR0
++	 *	ERX1 (PA15) => PHY ADDR1
++	 *	ERX2 (PA25) => PHY ADDR2
++	 *	ERX3 (PA26) => PHY ADDR3
++	 *	ECRS (PA28) => PHY ADDR4  => PHYADDR = 0x0
++	 *
++	 * PHY has internal pull-down
++	 */
++	writel(pin_to_mask(AT91_PIN_PA14) |
++	       pin_to_mask(AT91_PIN_PA15) |
++	       pin_to_mask(AT91_PIN_PA17) |
++	       pin_to_mask(AT91_PIN_PA25) |
++	       pin_to_mask(AT91_PIN_PA26) |
++	       pin_to_mask(AT91_PIN_PA28),
++	       pin_to_controller(AT91_PIN_PA0) + PIO_PUDR);
++
++	rstc = at91_sys_read(AT91_RSTC_MR) & AT91_RSTC_ERSTL;
++
++	at91_sys_write(AT91_RSTC_CR, AT91_RSTC_KEY | AT91_RSTC_EXTRST);
++
++	/* Wait for end hardware reset */
++	while (!(at91_sys_read(AT91_RSTC_SR) & AT91_RSTC_NRSTL));
++
++	/* Restore NRST value */
++	at91_sys_write(AT91_RSTC_MR, AT91_RSTC_KEY |
++				     (rstc) |
++				     AT91_RSTC_URSTEN);
++
++	/* Re-enable pull-up */
++	writel(pin_to_mask(AT91_PIN_PA14) |
++	       pin_to_mask(AT91_PIN_PA15) |
++	       pin_to_mask(AT91_PIN_PA17) |
++	       pin_to_mask(AT91_PIN_PA25) |
++	       pin_to_mask(AT91_PIN_PA26) |
++	       pin_to_mask(AT91_PIN_PA28),
++	       pin_to_controller(AT91_PIN_PA0) + PIO_PUER);
++
++	at91_macb_hw_init();
++}
++#endif
++
++int board_init(void)
++{
++	/* Enable Ctrlc */
++	console_init_f();
++
++	gd->bd->bi_arch_number = MACH_TYPE_AT91SAM9G20EK;
++
++	/* adress of boot parameters */
++	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
++
++	at91_serial_hw_init();
++#ifdef CONFIG_HAS_DATAFLASH
++	at91_spi0_hw_init((1 << 0) | (1 << 1));
++#endif
++#ifdef CONFIG_MACB
++	at91sam9260ek_macb_hw_init();
++#endif
++
++	return 0;
++}
++
++int dram_init(void)
++{
++	gd->bd->bi_dram[0].start = PHYS_SDRAM;
++	gd->bd->bi_dram[0].size = PHYS_SDRAM_SIZE;
++	return 0;
++}
++
++#ifdef CONFIG_RESET_PHY_R
++void reset_phy(void)
++{
++#ifdef CONFIG_MACB
++	/*
++	 * Initialize ethernet HW addr prior to starting Linux,
++	 * needed for nfsroot
++	 */
++	eth_init(gd->bd);
++#endif
++}
++#endif
++
++int board_eth_init(bd_t *bis)
++{
++	int rc = 0;
++#ifdef CONFIG_MACB
++	rc = macb_eth_initialize(0, (void *)AT91SAM9260_BASE_EMAC, 0x00);
++#endif
++	return rc;
++}
++
++void show_boot_progress (int val){}
+diff --git a/board/acmesystems/netusg20/partition.c b/board/acmesystems/netusg20/partition.c
+new file mode 100644
+index 0000000..7d79e53
+--- /dev/null
++++ b/board/acmesystems/netusg20/partition.c
+@@ -0,0 +1,39 @@
++/*
++ * (C) Copyright 2008
++ * Ulf Samuelsson <ulf@atmel.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ */
++#include <common.h>
++#include <config.h>
++#include <asm/hardware.h>
++#include <dataflash.h>
++
++AT91S_DATAFLASH_INFO dataflash_info[CONFIG_SYS_MAX_DATAFLASH_BANKS];
++
++struct dataflash_addr cs[CONFIG_SYS_MAX_DATAFLASH_BANKS] = {
++	{CONFIG_SYS_DATAFLASH_LOGIC_ADDR_CS1, 1}
++};
++
++/*define the area offsets*/
++dataflash_protect_t area_list[NB_DATAFLASH_AREA] = {
++	{0x00000000, 0x000041FF, FLAG_PROTECT_SET,   0, "Bootstrap"},
++	{0x00004200, 0x000083FF, FLAG_PROTECT_CLEAR, 0, "Environment"},
++	{0x00008400, 0x00041FFF, FLAG_PROTECT_SET,   0, "U-Boot"},
++	{0x00042000, 0x00251FFF, FLAG_PROTECT_CLEAR, 0,	"Kernel"},
++	{0x00252000, 0xFFFFFFFF, FLAG_PROTECT_CLEAR, 0,	"FS"},
++};
+diff --git a/include/configs/netusg20.h b/include/configs/netusg20.h
+new file mode 100644
+index 0000000..99b4f12
+--- /dev/null
++++ b/include/configs/netusg20.h
+@@ -0,0 +1,181 @@
++/*
++ * (C) Copyright 2007-2008
++ * Stelian Pop <stelian.pop@leadtechdesign.com>
++ * Lead Tech Design <www.leadtechdesign.com>
++ *
++ * Configuation settings for the NetusG20 boards.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __CONFIG_H
++#define __CONFIG_H
++
++#define CONFIG_AT91_LEGACY
++
++/* ARM asynchronous clock */
++#define CONFIG_SYS_AT91_MAIN_CLOCK	18432000	/* 18.432 MHz crystal */
++#define CONFIG_SYS_HZ		1000
++
++#define CONFIG_DISPLAY_CPUINFO
++
++#define CONFIG_ARM926EJS	1	/* This is an ARM926EJS Core	*/
++#define CONFIG_AT91SAM9G20	1	/* It's an Atmel AT91SAM9G20 SoC*/
++#define CONFIG_NETUSG20	1
++
++#define CONFIG_ARCH_CPU_INIT
++#undef CONFIG_USE_IRQ			/* we don't need IRQ/FIQ stuff	*/
++
++#define CONFIG_CMDLINE_TAG	1	/* enable passing of ATAGs	*/
++#define CONFIG_SETUP_MEMORY_TAGS 1
++#define CONFIG_INITRD_TAG	1
++
++#define CONFIG_SKIP_LOWLEVEL_INIT
++#define CONFIG_SKIP_RELOCATE_UBOOT
++
++/*
++ * Hardware drivers
++ */
++#define CONFIG_AT91_GPIO	1
++#define CONFIG_ATMEL_USART	1
++#undef CONFIG_USART0
++#undef CONFIG_USART1
++#undef CONFIG_USART2
++#define CONFIG_USART3		1	/* USART 3 is DBGU */
++
++/* LED */
++#define CONFIG_AT91_LED
++#define	CONFIG_RED_LED		AT91_PIN_PA9	/* this is the power led */
++#define	CONFIG_GREEN_LED	AT91_PIN_PA6	/* this is the user led */
++
++#define CONFIG_BOOTDELAY	3
++
++/*
++ * BOOTP options
++ */
++#define CONFIG_BOOTP_BOOTFILESIZE	1
++#define CONFIG_BOOTP_BOOTPATH		1
++#define CONFIG_BOOTP_GATEWAY		1
++#define CONFIG_BOOTP_HOSTNAME		1
++
++/*
++ * Command line configuration.
++ */
++#include <config_cmd_default.h>
++#undef CONFIG_CMD_BDI
++#undef CONFIG_CMD_FPGA
++#undef CONFIG_CMD_IMI
++#undef CONFIG_CMD_IMLS
++#undef CONFIG_CMD_LOADS
++#undef CONFIG_CMD_SOURCE
++
++#define CONFIG_CMD_PING		1
++#define CONFIG_CMD_DHCP		1
++#define CONFIG_CMD_USB		1
++
++/* SDRAM */
++#define CONFIG_NR_DRAM_BANKS		1
++#define PHYS_SDRAM			0x20000000
++#define PHYS_SDRAM_SIZE			0x04000000	/* 64 megs */
++
++/* DataFlash */
++#define CONFIG_ATMEL_DATAFLASH_SPI
++#define CONFIG_HAS_DATAFLASH		1
++#define CONFIG_SYS_SPI_WRITE_TOUT		(5*CONFIG_SYS_HZ)
++#define CONFIG_SYS_MAX_DATAFLASH_BANKS		1
++#define CONFIG_SYS_DATAFLASH_LOGIC_ADDR_CS1	0xD0000000	/* CS1 */
++#define AT91_SPI_CLK			15000000
++
++#define DATAFLASH_TCSS			(0x22 << 16)
++#define DATAFLASH_TCHS			(0x1 << 24)
++
++/* no NAND flash on this board*/
++#define CONFIG_SYS_NO_FLASH
++
++/* Ethernet */
++#define CONFIG_MACB			1
++#define CONFIG_RMII			1
++#define CONFIG_NET_MULTI		1
++#define CONFIG_NET_RETRY_COUNT		20
++#define CONFIG_RESET_PHY_R		1
++
++/* MMC */
++#define CONFIG_MMC
++#define CONFIG_CMD_MMC
++#define CONFIG_ATMEL_MCI
++#define CONFIG_CMD_AUTOSCRIPT
++#define CONFIG_CMD_IMI
++#define CONFIG_CMD_SOURCE
++
++#define MMCI_BASE						0xFFFA8000
++
++/* USB */
++#define CONFIG_USB_ATMEL
++#define CONFIG_USB_OHCI_NEW		1
++#define CONFIG_DOS_PARTITION		1
++#define CONFIG_SYS_USB_OHCI_CPU_INIT		1
++#define CONFIG_SYS_USB_OHCI_REGS_BASE		0x00500000	/* AT91SAM9260_UHP_BASE */
++#define CONFIG_SYS_USB_OHCI_SLOT_NAME		"at91sam9260"
++#define CONFIG_SYS_USB_OHCI_MAX_ROOT_PORTS	2
++#define CONFIG_USB_STORAGE		1
++
++#define CONFIG_SYS_LOAD_ADDR			0x22000000	/* load address */
++
++#define CONFIG_SYS_MEMTEST_START		PHYS_SDRAM
++#define CONFIG_SYS_MEMTEST_END			0x23e00000
++
++/* Filesystem */
++#define CONFIG_CMD_FAT		1
++#define CONFIG_CMD_EXT2		1
++
++/* bootstrap + u-boot + env + linux in dataflash on CS1 */
++#define CONFIG_ENV_IS_IN_DATAFLASH	1
++#define CONFIG_SYS_MONITOR_BASE	(CONFIG_SYS_DATAFLASH_LOGIC_ADDR_CS1 + 0x8400)
++#define CONFIG_ENV_OFFSET		0x4200
++#define CONFIG_ENV_ADDR		(CONFIG_SYS_DATAFLASH_LOGIC_ADDR_CS1 + CONFIG_ENV_OFFSET)
++#define CONFIG_ENV_SIZE		0x4200
++#define CONFIG_BOOTCOMMAND	"mmc init; sleep 1; " \
++                            "ext2load mmc 0 0x20000000 uImage; " \
++                            "source 0x20000000"
++#define CONFIG_BOOTARGS		"mem=64M console=ttyS0,115200 " \
++                            "root=/dev/mmcblk0p1 rootwait"
++
++#define CONFIG_BAUDRATE		115200
++#define CONFIG_SYS_BAUDRATE_TABLE	{115200 , 19200, 38400, 57600, 9600 }
++
++#define CONFIG_SYS_PROMPT		"U-Boot> "
++#define CONFIG_SYS_CBSIZE		256
++#define CONFIG_SYS_MAXARGS		16
++#define CONFIG_SYS_PBSIZE		(CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
++#define CONFIG_SYS_LONGHELP		1
++#define CONFIG_CMDLINE_EDITING	1
++
++/*
++ * Size of malloc() pool
++ */
++#define CONFIG_SYS_MALLOC_LEN		ROUND(3 * CONFIG_ENV_SIZE + 128*1024, 0x1000)
++#define CONFIG_SYS_GBL_DATA_SIZE	128	/* 128 bytes for initial data */
++
++#define CONFIG_STACKSIZE	(32*1024)	/* regular stack */
++
++#ifdef CONFIG_USE_IRQ
++#error CONFIG_USE_IRQ not supported
++#endif
++
++#endif
+-- 
+1.7.0.4
+
+
