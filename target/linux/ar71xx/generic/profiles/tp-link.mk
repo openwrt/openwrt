@@ -5,6 +5,17 @@
 # See /LICENSE for more information.
 #
 
+define Profile/TLWA901NDV1
+	NAME:=TP-LINK TL-WA901ND v1
+	PACKAGES:=kmod-ath9k wpad-mini
+endef
+
+define Profile/TLWA901NDV1/Description
+	Package set optimized for the TP-LINK TL-WA901ND v1.
+endef
+
+$(eval $(call Profile,TLWA901NDV1))
+
 define Profile/TLWR741NDV1
 	NAME:=TP-LINK TL-WR741ND v1
 	PACKAGES:=kmod-ath9k wpad-mini
