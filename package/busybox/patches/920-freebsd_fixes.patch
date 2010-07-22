@@ -1,0 +1,11 @@
+--- a/include/platform.h
++++ b/include/platform.h
+@@ -253,7 +253,7 @@ typedef int socklen_t;
+ # define HAVE_FEATURES_H
+ # include <stdint.h>
+ # define HAVE_STDINT_H
+-#elif !defined __APPLE__
++#elif !defined(__APPLE__) && !defined(__FreeBSD__)
+ /* Largest integral types. */
+ # if BB_BIG_ENDIAN
+ /* Looks BROKEN! */
