@@ -52,12 +52,15 @@ help: FORCE
 
 # override variables from rules.mk
 PACKAGE_DIR:=$(TOPDIR)/packages
-IPKG:= \
+OPKG:= \
   IPKG_TMP="$(TOPDIR)/tmp/ipkgtmp" \
   IPKG_INSTROOT="$(TARGET_DIR)" \
   IPKG_CONF_DIR="$(TOPDIR)/tmp" \
   IPKG_OFFLINE_ROOT="$(TARGET_DIR)" \
-  $(SCRIPT_DIR)/ipkg -force-defaults
+  $(STAGING_DIR_HOST)/bin/opkg \
+  	-f $(TOPDIR)/tmp/opkg.conf \
+  	--force-depends \
+  	--force-overwrite
 
 define Profile
   $(eval $(call Profile/Default))
@@ -79,10 +82,18 @@ _call_info: FORCE
 	echo 'Available Profiles:'
 	echo; $(PROFILE_LIST)
 
-$(TOPDIR)/tmp/ipkg.conf: FORCE
+$(TOPDIR)/tmp/opkg.conf: FORCE
 	@mkdir -p $(TOPDIR)/tmp
+	@mkdir -p $(TARGET_DIR)/tmp
 	@echo 'dest root /' > $@
 	@echo 'src packages file:$(PACKAGE_DIR)' >> $@
+	@echo 'arch all 100' >> $@
+  ifneq ($(CONFIG_TARGET_adm5120),y)
+	@echo 'arch $(BOARD) 200' >> $@
+  else
+	@echo 'arch $(BOARD)_$(ARCH) 200' >> $@
+  endif
+	@echo 'option offline_root $(TARGET_DIR)' >> $@
 
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(USER_PACKAGES) $($(USER_PROFILE)_PACKAGES) kernel)
 # "-pkgname" in the package list means remove "pkgname" from the package list
@@ -102,18 +113,18 @@ endif
 	$(MAKE) package_postinst
 	$(MAKE) build_image
 	
-package_index: $(TOPDIR)/tmp/ipkg.conf FORCE
+package_index: $(TOPDIR)/tmp/opkg.conf FORCE
 	@echo
 	@echo Building package index...
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
 		gzip -9c Packages > Packages.gz \
 	) >/dev/null 2>/dev/null
-	$(IPKG) update
+	$(OPKG) update
 
 package_install: FORCE
 	@echo
 	@echo Installing packages...
-	$(IPKG) install $(BUILD_PACKAGES)
+	$(OPKG) install $(BUILD_PACKAGES)
 
 copy_files: FORCE
 	@echo
@@ -121,6 +132,9 @@ copy_files: FORCE
 	$(CP) $(USER_FILES)/* $(TARGET_DIR)/
 
 package_postinst: FORCE
+	@echo
+	@echo Cleaning up
+	@rm -f $(TARGET_DIR)/tmp/opkg.lock
 	@echo
 	@echo Activating init scripts
 	@( \
