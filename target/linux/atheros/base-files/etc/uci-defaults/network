@@ -1,5 +1,8 @@
 #!/bin/sh
-if [ -e "/sys/bus/mdio_bus/drivers/IC+ IP175C/0:00" -a -x /sbin/swconfig ]; then
+if [ -e "/sys/bus/mdio_bus/drivers/IC+ IP175C/0:00" -o \
+     -e "/sys/bus/mdio_bus/drivers/IC+ IP17xx/0:00" ] && \
+   [ -x /sbin/swconfig ];
+then
 	uci batch <<EOF
 set network.eth0=switch
 set network.eth0.name=eth0
