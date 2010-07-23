@@ -234,6 +234,17 @@ void uh_cgi_request(struct client *cl, struct http_request *req, struct path_inf
 				if( pi->info )
 					setenv("PATH_INFO", pi->info, 1);
 
+				/* REDIRECT_STATUS, php-cgi wants it */
+				switch( req->redirect_status )
+				{
+					case 404:
+						setenv("REDIRECT_STATUS", "404", 1);
+						break;
+
+					default:
+						setenv("REDIRECT_STATUS", "200", 1);
+						break;
+				}
 
 				/* http version */
 				if( req->version > 1.0 )

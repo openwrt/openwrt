@@ -464,6 +464,9 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url)
 	int i = 0;
 	struct stat s;
 
+	/* back out early if url is undefined */
+	if ( url == NULL )
+		return NULL;
 
 	memset(path_phys, 0, sizeof(path_phys));
 	memset(path_info, 0, sizeof(path_info));
@@ -550,18 +553,31 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url)
 			memcpy(buffer, path_phys, sizeof(buffer));
 			pathptr = &buffer[strlen(buffer)];
 
-			for( i = 0; i < array_size(uh_index_files); i++ )
+			if( cl->server->conf->index_file )
 			{
-				strncat(buffer, uh_index_files[i], sizeof(buffer));
+				strncat(buffer, cl->server->conf->index_file, sizeof(buffer));
 
 				if( !stat(buffer, &s) && (s.st_mode & S_IFREG) )
 				{
 					memcpy(path_phys, buffer, sizeof(path_phys));
 					memcpy(&p.stat, &s, sizeof(p.stat));
-					break;
 				}
+			}
+			else
+			{
+				for( i = 0; i < array_size(uh_index_files); i++ )
+				{
+					strncat(buffer, uh_index_files[i], sizeof(buffer));
 
-				*pathptr = 0;
+					if( !stat(buffer, &s) && (s.st_mode & S_IFREG) )
+					{
+						memcpy(path_phys, buffer, sizeof(path_phys));
+						memcpy(&p.stat, &s, sizeof(p.stat));
+						break;
+					}
+
+					*pathptr = 0;
+				}
 			}
 
 			p.root = docroot;
