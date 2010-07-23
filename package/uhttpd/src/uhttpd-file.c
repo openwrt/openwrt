@@ -29,7 +29,7 @@
 static const char * uh_file_mime_lookup(const char *path)
 {
 	struct mimetype *m = &uh_mime_types[0];
-	char *e;
+	const char *e;
 
 	while( m->extn )
 	{
@@ -275,7 +275,9 @@ static void uh_file_dirlist(struct client *cl, struct http_request *req, struct 
 			strncat(filename, files[i]->d_name,
 				sizeof(filename) - strlen(files[i]->d_name));
 
-			if( !stat(filename, &s) && (s.st_mode & S_IFDIR) )
+			if( !stat(filename, &s) &&
+			    (s.st_mode & S_IFDIR) && (s.st_mode & S_IXOTH)
+			)
 				uh_http_sendf(cl, req,
 					"<li><strong><a href='%s%s'>%s</a>/</strong><br />"
 					"<small>modified: %s<br />directory - %.02f kbyte"
@@ -293,7 +295,9 @@ static void uh_file_dirlist(struct client *cl, struct http_request *req, struct 
 			strncat(filename, files[i]->d_name,
 				sizeof(filename) - strlen(files[i]->d_name));
 
-			if( !stat(filename, &s) && !(s.st_mode & S_IFDIR) )
+			if( !stat(filename, &s) &&
+			    !(s.st_mode & S_IFDIR) && (s.st_mode & S_IROTH)
+			)
 				uh_http_sendf(cl, req,
 					"<li><strong><a href='%s%s'>%s</a></strong><br />"
 					"<small>modified: %s<br />%s - %.02f kbyte<br />"
@@ -369,7 +373,7 @@ void uh_file_request(struct client *cl, struct http_request *req, struct path_in
 	}
 
 	/* directory */
-	else if( pi->stat.st_mode & S_IFDIR )
+	else if( (pi->stat.st_mode & S_IFDIR) && !cl->server->conf->no_dirlists )
 	{
 		/* write status */
 		uh_file_response_200(cl, req, NULL);

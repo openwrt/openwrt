@@ -17,6 +17,17 @@ append_arg() {
 	[ -n "$val" -o -n "$def" ] && append UHTTPD_ARGS "$opt ${val:-$def}"
 }
 
+append_bool() {
+	local cfg="$1"
+	local var="$2"
+	local opt="$3"
+	local def="$4"
+	local val
+
+	config_get_bool val "$cfg" "$var" "$def"
+	[ "$val" = 1 ] && append UHTTPD_ARGS "$opt"
+}
+
 generate_keys() {
 	local cfg="$1"
 	local key="$2"
@@ -59,6 +70,11 @@ start_instance()
 	append_arg "$cfg" lua_handler "-L"
 	append_arg "$cfg" script_timeout "-t"
 	append_arg "$cfg" network_timeout "-T"
+	append_arg "$cfg" error_page "-E"
+	append_arg "$cfg" index_page "-I"
+
+	append_bool "$cfg" no_symlinks "-S" 0
+	append_bool "$cfg" no_dirlists "-D" 0
 
 	config_get http "$cfg" listen_http
 	for listen in $http; do

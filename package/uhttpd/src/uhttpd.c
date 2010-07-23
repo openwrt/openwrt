@@ -47,7 +47,7 @@ static void uh_sigchld(int sig)
 	while( waitpid(-1, NULL, WNOHANG) > 0 ) { }
 }
 
-static void uh_config_parse(const char *path)
+static void uh_config_parse(struct config *conf)
 {
 	FILE *c;
 	char line[512];
@@ -55,7 +55,10 @@ static void uh_config_parse(const char *path)
 	char *pass = NULL;
 	char *eol  = NULL;
 
-	if( (c = fopen(path ? path : "/etc/httpd.conf", "r")) != NULL )
+	const char *path = conf->file ? conf->file : "/etc/httpd.conf";
+
+
+	if( (c = fopen(path, "r")) != NULL )
 	{
 		memset(line, 0, sizeof(line));
 
@@ -74,9 +77,23 @@ static void uh_config_parse(const char *path)
 						"Notice: No password set for user %s, ignoring "
 						"authentication on %s\n", user, line
 					);
+				}
+			}
+			else if( !strncmp(line, "I:", 2) )
+			{
+				if( !(user = strchr(line, ':')) || (*user++ = 0) ||
+				    !(eol = strchr(user, '\n')) || (*eol++  = 0) )
+				    	continue;
 
-					break;
-				} 
+				conf->index_file = strdup(user);
+			}
+			else if( !strncmp(line, "E404:", 5) )
+			{
+				if( !(user = strchr(line, ':')) || (*user++ = 0) ||
+				    !(eol = strchr(user, '\n')) || (*eol++  = 0) )
+						continue;
+
+				conf->error_handler = strdup(user);
 			}
 		}
 
@@ -302,6 +319,7 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 		}
 
 		/* valid enough */
+		req.redirect_status = 200;
 		return &req;
 	}
 
@@ -505,8 +523,9 @@ int main (int argc, char **argv)
 	}
 #endif
 
-	while( (opt = getopt(argc, argv, "fSC:K:p:s:h:c:l:L:d:r:m:x:t:T:")) > 0 )
-	{
+	while( (opt = getopt(argc, argv,
+		"fSDC:K:E:I:p:s:h:c:l:L:d:r:m:x:t:T:")) > 0
+	) {
 		switch(opt)
 		{
 			/* [addr:]port */
@@ -597,9 +616,36 @@ int main (int argc, char **argv)
 				}
 				break;
 
+			/* error handler */
+			case 'E':
+				if( (strlen(optarg) == 0) || (optarg[0] != '/') )
+				{
+					fprintf(stderr, "Error: Invalid error handler: %s\n",
+						optarg);
+					exit(1);
+				}
+				conf.error_handler = optarg;
+				break;
+
+			/* index file */
+			case 'I':
+				if( (strlen(optarg) == 0) || (optarg[0] == '/') )
+				{
+					fprintf(stderr, "Error: Invalid index page: %s\n",
+						optarg);
+					exit(1);
+				}
+				conf.index_file = optarg;
+				break;
+
 			/* don't follow symlinks */
 			case 'S':
 				conf.no_symlinks = 1;
+				break;
+
+			/* don't list directories */
+			case 'D':
+				conf.no_dirlists = 1;
 				break;
 
 #ifdef HAVE_CGI
@@ -678,7 +724,10 @@ int main (int argc, char **argv)
 					"	-K file         ASN.1 server private key file\n"
 #endif
 					"	-h directory    Specify the document root, default is '.'\n"
+					"	-E string       Use given virtual URL as 404 error handler\n"
+					"	-I string       Use given filename as index page for directories\n"
 					"	-S              Do not follow symbolic links outside of the docroot\n"
+					"	-D              Do not allow directory listings, send 403 instead\n"
 #ifdef HAVE_LUA
 					"	-l string       URL prefix for Lua handler, default is '/lua'\n"
 					"	-L file         Lua handler script, omit to disable Lua\n"
@@ -727,7 +776,7 @@ int main (int argc, char **argv)
 		conf.realm = "Protected Area";
 
 	/* config file */
-	uh_config_parse(conf.file);
+	uh_config_parse(&conf);
 
 	/* default network timeout */
 	if( conf.network_timeout <= 0 )
@@ -913,8 +962,29 @@ int main (int argc, char **argv)
 						/* 404 */
 						else
 						{
-							uh_http_sendhf(cl, 404, "Not Found",
-								"No such file or directory");
+							/* Try to invoke an error handler */
+							pin = uh_path_lookup(cl, conf.error_handler);
+
+							if( pin && uh_auth_check(cl, req, pin) )
+							{
+								req->redirect_status = 404;
+
+#ifdef HAVE_CGI
+								if( uh_path_match(conf.cgi_prefix, pin->name) )
+								{
+									uh_cgi_request(cl, req, pin);
+								}
+								else
+#endif
+								{
+									uh_file_request(cl, req, pin);
+								}
+							}
+							else
+							{
+								uh_http_sendhf(cl, 404, "Not Found",
+									"No such file or directory");
+							}
 						}
 					}
 
