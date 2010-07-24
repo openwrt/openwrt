@@ -3,13 +3,10 @@
 # Copyright (C) 2010 Vertical Communications
 
 do_move_devtmpfs() {
-    foo="`grep devtmpfs /proc/mounts`"
-    x=${foo#* }
-    x=${x%% *}
+    local mnt="$(grep devtmpfs /proc/mounts)"
+          mnt="${mnt#* }"; mnt="${mnt%% *}"
 
-    if [ "$x" != "/dev" ] ; then
-	mount -o move "$x" /dev
-    fi
+    [ "$mnt" = "/dev" ] || mount -o move "$mnt" /dev
 }
 
 do_mount_devfs() {
