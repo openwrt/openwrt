@@ -1,0 +1,11 @@
+--- a/arch/arm/mm/alignment.c
++++ b/arch/arm/mm/alignment.c
+@@ -76,7 +76,7 @@ static unsigned long ai_half;
+ static unsigned long ai_word;
+ static unsigned long ai_dword;
+ static unsigned long ai_multi;
+-static int ai_usermode;
++static int ai_usermode = 3;
+ 
+ core_param(alignment, ai_usermode, int, 0600);
+ 
