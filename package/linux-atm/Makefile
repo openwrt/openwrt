@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -15,6 +15,8 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
 PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/l/linux-atm/
 PKG_MD5SUM:=9560b0e1f410a05b849dfdab465dd758
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -54,9 +56,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)/src/qgen \
 		LDFLAGS="" \
 		all
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
+	$(MAKE) -C $(PKG_BUILD_DIR) all
 endef
 
 define Build/InstallDev
