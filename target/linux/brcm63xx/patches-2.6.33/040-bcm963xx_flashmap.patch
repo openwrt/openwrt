@@ -140,7 +140,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +		return -ENOMEM;
 +
 +	/* Get the tag */
-+	ret = master->read(master,mater->erasesize,sizeof(struct bcm_tag), &retlen, (void *)buf);
++	ret = master->read(master, master->erasesize, sizeof(struct bcm_tag), &retlen, (void *)buf);
 +	if (retlen != sizeof(struct bcm_tag)){
 +		vfree(buf);
 +		return -EIO;
