@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 	int c, i, append = 0;
 	size_t n;
 	ssize_t n2;
-	uint32_t cur_len;
+	uint32_t cur_len, fsmark=0;
 	unsigned long maxlen = TRX_MAX_LEN;
 	struct trx_header *p;
 	char trx_version = 1;
@@ -131,6 +131,8 @@ int main(int argc, char **argv)
 					cur_len += 4;
 				}
 				break;
+			case 'F':
+				fsmark = cur_len;
 			case 'A':
 				append = 1;
 				/* fall through */
@@ -269,10 +271,10 @@ int main(int argc, char **argv)
 	}
 
 	p->crc32 = crc32buf((char *) &p->flag_version,
-						cur_len - offsetof(struct trx_header, flag_version));
+						(fsmark)?fsmark:cur_len - offsetof(struct trx_header, flag_version));
 	p->crc32 = STORE32_LE(p->crc32);
 
-	p->len = STORE32_LE(cur_len);
+	p->len = (fsmark)?fsmark:cur_len - offsetof(struct trx_header, flag_version);
 
 	/* restore TRXv2 bin-header */
 	if (trx_version == 2) {

@@ -56,7 +56,7 @@ define trxalign/jffs2-64k
 -a 0x10000 -f $(KDIR)/root.$(1)
 endef
 define trxalign/squashfs
--a 1024 -f $(KDIR)/root.$(1) $(if $(2),-f $(2)) -a 0x10000 -A $(KDIR)/fs_mark
+-a 1024 -f $(KDIR)/root.$(1) $(if $(2),-f $(2)) -a 0x10000 -F $(KDIR)/fs_mark
 endef
 
 define Image/Build/trxV2
