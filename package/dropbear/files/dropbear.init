@@ -53,9 +53,13 @@ dropbear_start()
 	local rootpassauth
 	config_get_bool rootpassauth "${section}" RootPasswordAuth 1
 	[ "${rootpassauth}" -eq 0 ] && norootpasswd=1
+	local rootloginallowed
+	local norootlogin
+	config_get_bool rootloginallowed "${section}" RootLogin 1
+	[ "${rootloginallowed}" -eq 0 ] && norootlogin=1
 	# concatenate parameters
 	local args
-	args="${nopasswd:+-s }${norootpasswd:+-g }${port:+-p ${port} }${bannerfile:+-b $bannerfile }${gatewayports:+-a }-P /var/run/${NAME}.${PIDCOUNT}.pid"
+	args="${nopasswd:+-s }${norootpasswd:+-g }${norootlogin:+-w }${port:+-p ${port} }${bannerfile:+-b $bannerfile }${gatewayports:+-a }-P /var/run/${NAME}.${PIDCOUNT}.pid"
 
 	# execute program and return its exit code
 	[ "${verbosed}" -ne 0 ] && echo "${initscript}: section ${section} starting ${PROG} ${args}"
