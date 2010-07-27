@@ -12,6 +12,7 @@ $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
 ifeq ($(SDK),1)
   $(curdir)/builddirs-install:=.
 else
+  $(curdir)/base-files/compile += $(curdir)/opkg/host/compile
   $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
   $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
   $(curdir)/builddirs-install:=. $(sort $(package-y))
@@ -19,9 +20,6 @@ endif
 ifneq ($(IGNORE_ERRORS),)
   $(curdir)/builddirs-ignore-compile:= $(if $(filter m y, $(IGNORE_ERRORS)),$(foreach m,$(IGNORE_ERRORS),$(package-$(m))),$(package-m))
 endif
-
-$(curdir)/opkghost: $(TMP_DIR)/.build
-	@-$(MAKE) package/opkg/host/install
 
 $(curdir)/install:=$(curdir)/install-cleanup
 
@@ -93,8 +91,7 @@ $(curdir)/flags-install:= -j1
 $(eval $(call stampfile,$(curdir),package,prereq,.config))
 $(eval $(call stampfile,$(curdir),package,cleanup))
 $(eval $(call stampfile,$(curdir),package,compile))
-$(eval $(call stampfile,$(curdir),package,opkghost))
-$(eval $(call stampfile,$(curdir),package,install,$(STAGING_DIR)/stamp/.package_opkghost))
+$(eval $(call stampfile,$(curdir),package,install))
 $(eval $(call stampfile,$(curdir),package,rootfs-prepare))
 
 $(eval $(call subdir,$(curdir)))
