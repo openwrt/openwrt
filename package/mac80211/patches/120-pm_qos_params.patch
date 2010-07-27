@@ -5,7 +5,7 @@
  #define DRV_COPYRIGHT	"Copyright(c) 2003-2006 Intel Corporation"
  
 +#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35))
- struct pm_qos_request_list *ipw2100_pm_qos_req;
+ static struct pm_qos_request_list *ipw2100_pm_qos_req;
 +#endif
  
  /* Debugging stuff */
