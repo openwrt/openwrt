@@ -119,7 +119,7 @@ int main(int argc, char **argv)
 	in = NULL;
 	i = 0;
 
-	while ((c = getopt(argc, argv, "-:2o:m:a:x:b:f:A:")) != -1) {
+	while ((c = getopt(argc, argv, "-:2o:m:a:x:b:f:A:F:")) != -1) {
 		switch (c) {
 			case '2':
 				/* take care that nothing was written to buf so far */
