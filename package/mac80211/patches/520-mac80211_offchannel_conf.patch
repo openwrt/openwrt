@@ -1,0 +1,35 @@
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -625,11 +625,14 @@ struct ieee80211_rx_status {
+  *	may turn the device off as much as possible. Typically, this flag will
+  *	be set when an interface is set UP but not associated or scanning, but
+  *	it can also be unset in that case when monitor interfaces are active.
++ * @IEEE80211_CONF_OFFCHANNEL: The device is currently not on its main
++ *	operating channel.
+  */
+ enum ieee80211_conf_flags {
+ 	IEEE80211_CONF_MONITOR		= (1<<0),
+ 	IEEE80211_CONF_PS		= (1<<1),
+ 	IEEE80211_CONF_IDLE		= (1<<2),
++	IEEE80211_CONF_OFFCHANNEL	= (1<<3),
+ };
+ 
+ 
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -111,12 +111,15 @@ int ieee80211_hw_config(struct ieee80211
+ 	if (scan_chan) {
+ 		chan = scan_chan;
+ 		channel_type = NL80211_CHAN_NO_HT;
++		local->hw.conf.flags |= IEEE80211_CONF_OFFCHANNEL;
+ 	} else if (local->tmp_channel) {
+ 		chan = scan_chan = local->tmp_channel;
+ 		channel_type = local->tmp_channel_type;
++		local->hw.conf.flags |= IEEE80211_CONF_OFFCHANNEL;
+ 	} else {
+ 		chan = local->oper_channel;
+ 		channel_type = local->_oper_channel_type;
++		local->hw.conf.flags &= ~IEEE80211_CONF_OFFCHANNEL;
+ 	}
+ 
+ 	if (chan != local->hw.conf.channel ||
