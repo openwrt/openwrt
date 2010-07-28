@@ -12,7 +12,6 @@ $(curdir)/builddirs:=$(sort $(package-) $(package-y) $(package-m))
 ifeq ($(SDK),1)
   $(curdir)/builddirs-install:=.
 else
-  $(curdir)/base-files/compile += $(curdir)/opkg/host/compile
   $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
   $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
   $(curdir)/builddirs-install:=. $(sort $(package-y))
@@ -89,9 +88,9 @@ $(curdir)/index: FORCE
 $(curdir)/flags-install:= -j1
 
 $(eval $(call stampfile,$(curdir),package,prereq,.config))
-$(eval $(call stampfile,$(curdir),package,cleanup))
-$(eval $(call stampfile,$(curdir),package,compile))
-$(eval $(call stampfile,$(curdir),package,install))
-$(eval $(call stampfile,$(curdir),package,rootfs-prepare))
+$(eval $(call stampfile,$(curdir),package,cleanup,$(TMP_DIR)/.build))
+$(eval $(call stampfile,$(curdir),package,compile,$(TMP_DIR)/.build))
+$(eval $(call stampfile,$(curdir),package,install,$(TMP_DIR)/.build))
+$(eval $(call stampfile,$(curdir),package,rootfs-prepare,$(TMP_DIR)/.build))
 
 $(eval $(call subdir,$(curdir)))
