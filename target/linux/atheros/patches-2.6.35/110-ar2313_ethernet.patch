@@ -25,7 +25,7 @@
  obj-$(CONFIG_DECLANCE) += declance.o
 --- /dev/null
 +++ b/drivers/net/ar231x.c
-@@ -0,0 +1,1263 @@
+@@ -0,0 +1,1266 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -182,11 +182,14 @@
 +#endif
 +
 +static const struct net_device_ops ar231x_ops = {
-+	.ndo_open = ar231x_open,
-+	.ndo_stop = ar231x_close,
-+	.ndo_start_xmit = ar231x_start_xmit,
++	.ndo_open 		= ar231x_open,
++	.ndo_stop 		= ar231x_close,
++	.ndo_start_xmit 	= ar231x_start_xmit,
 +	.ndo_set_multicast_list = ar231x_multicast_list,
-+	.ndo_do_ioctl = ar231x_ioctl,
++	.ndo_do_ioctl 		= ar231x_ioctl,
++	.ndo_change_mtu 	= eth_change_mtu,
++	.ndo_validate_addr	= eth_validate_addr,
++	.ndo_set_mac_address 	= eth_mac_addr,
 +};
 +
 +int __init ar231x_probe(struct platform_device *pdev)
@@ -333,7 +336,7 @@
 +		filter |= MAC_CONTROL_PR;
 +	else
 +		filter &= ~MAC_CONTROL_PR;
-+	if ((dev->flags & IFF_ALLMULTI) || (dev->mc_count > 0))
++	if ((dev->flags & IFF_ALLMULTI) || (netdev_mc_count(dev) > 0))
 +		filter |= MAC_CONTROL_PM;
 +	else
 +		filter &= ~MAC_CONTROL_PM;
