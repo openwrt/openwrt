@@ -25,7 +25,7 @@
  obj-$(CONFIG_DECLANCE) += declance.o
 --- /dev/null
 +++ b/drivers/net/ar231x.c
-@@ -0,0 +1,1266 @@
+@@ -0,0 +1,1278 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -170,6 +170,7 @@
 +static void rx_tasklet_func(unsigned long data);
 +static void rx_tasklet_cleanup(struct net_device *dev);
 +static void ar231x_multicast_list(struct net_device *dev);
++static void ar231x_tx_timeout(struct net_device *dev);
 +
 +static int ar231x_mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum);
 +static int ar231x_mdiobus_write(struct mii_bus *bus, int phy_addr, int regnum, u16 value);
@@ -190,6 +191,7 @@
 +	.ndo_change_mtu 	= eth_change_mtu,
 +	.ndo_validate_addr	= eth_validate_addr,
 +	.ndo_set_mac_address 	= eth_mac_addr,
++	.ndo_tx_timeout		= ar231x_tx_timeout,
 +};
 +
 +int __init ar231x_probe(struct platform_device *pdev)
@@ -1037,6 +1039,16 @@
 +	sp->eth_regs->mac_control |= MAC_CONTROL_RE;
 +
 +	return 0;
++}
++
++static void ar231x_tx_timeout(struct net_device *dev)
++{
++	struct ar231x_private *sp = netdev_priv(dev);
++	unsigned long flags;
++
++	spin_lock_irqsave(&sp->lock, flags);
++	ar231x_restart(dev);
++	spin_unlock_irqrestore(&sp->lock, flags);
 +}
 +
 +static void ar231x_halt(struct net_device *dev)
