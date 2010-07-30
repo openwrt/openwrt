@@ -276,7 +276,7 @@ int main(int argc, char **argv)
 						(fsmark)?fsmark:cur_len - offsetof(struct trx_header, flag_version));
 	p->crc32 = STORE32_LE(p->crc32);
 
-	p->len = (fsmark)?fsmark:cur_len - offsetof(struct trx_header, flag_version);
+	p->len = STORE32_LE((fsmark) ? fsmark : cur_len);
 	p->len = STORE32_LE(p->len);
 
 	/* restore TRXv2 bin-header */
