@@ -11,7 +11,7 @@ choice
 	default GCC_VERSION_4_3_4 if TARGET_gemini
 	default GCC_VERSION_4_4_1 if ubicom32
 	default GCC_VERSION_4_4_3 if powerpc
-	default GCC_VERSION_4_4_3 if (TARGET_octeon || TARGET_sibyte)
+	default GCC_VERSION_4_4_4 if (TARGET_octeon || TARGET_sibyte)
 	default GCC_VERSION_4_1_2
 	help
 	  Select the version of gcc you wish to use.
