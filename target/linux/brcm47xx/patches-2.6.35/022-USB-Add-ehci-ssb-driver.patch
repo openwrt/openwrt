@@ -1,4 +1,4 @@
-From cb269cf1f97c316a5184080814a751687c72b718 Mon Sep 17 00:00:00 2001
+From ad224c0d5fa0fc05f8aaef3c19fc9b4eb275a5d2 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 18 Jul 2010 21:29:40 +0200
 Subject: [PATCH 2/2] USB: Add ehci ssb driver
@@ -8,9 +8,9 @@ Support for the Sonics Silicon Backplane (SSB) attached Broadcom USB EHCI core.
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/usb/host/Kconfig    |   13 ++
- drivers/usb/host/ehci-hcd.c |   23 ++++-
- drivers/usb/host/ehci-ssb.c |  258 +++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 292 insertions(+), 2 deletions(-)
+ drivers/usb/host/ehci-hcd.c |   22 ++++-
+ drivers/usb/host/ehci-ssb.c |  255 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 288 insertions(+), 2 deletions(-)
  create mode 100644 drivers/usb/host/ehci-ssb.c
 
 --- a/drivers/usb/host/Kconfig
@@ -53,7 +53,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #error "missing bus glue for ehci-hcd"
  #endif
  
-@@ -1220,10 +1225,21 @@ static int __init ehci_hcd_init(void)
+@@ -1220,10 +1225,20 @@ static int __init ehci_hcd_init(void)
  	if (retval < 0)
  		goto clean4;
  #endif
@@ -63,7 +63,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (retval < 0)
 +		goto clean5;
 +#endif
-+
  	return retval;
  
 +#ifdef SSB_EHCI_DRIVER
@@ -76,7 +75,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  clean4:
  #endif
  #ifdef OF_PLATFORM_DRIVER
-@@ -1254,6 +1270,9 @@ module_init(ehci_hcd_init);
+@@ -1254,6 +1269,9 @@ module_init(ehci_hcd_init);
  
  static void __exit ehci_hcd_cleanup(void)
  {
@@ -88,7 +87,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #endif
 --- /dev/null
 +++ b/drivers/usb/host/ehci-ssb.c
-@@ -0,0 +1,258 @@
+@@ -0,0 +1,255 @@
 +/*
 + * Sonics Silicon Backplane
 + * Broadcom USB-core EHCI driver (SSB bus glue)
@@ -190,9 +189,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +static void ssb_ehci_detach(struct ssb_device *dev)
 +{
 +	struct usb_hcd *hcd = ssb_get_drvdata(dev);
++
 +	if (hcd->driver->shutdown)
 +		hcd->driver->shutdown(hcd);
-+
 +	usb_remove_hcd(hcd);
 +	iounmap(hcd->regs);
 +	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
@@ -214,12 +213,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	/*
 +	 * USB 2.0 special considerations:
 +	 *
-+	 * 1. Since the core supports both ehci and EHCI functions, it must
-+	 *    only be reset once.
-+	 *
-+	 * 2. In addition to the standard SSB reset sequence, the Host Control
-+	 *    Register must be programmed to bring the USB core and various
-+	 *    phy components out of reset.
++	 * In addition to the standard SSB reset sequence, the Host Control
++	 * Register must be programmed to bring the USB core and various phy
++	 * components out of reset.
 +	 */
 +	ssb_device_enable(dev, 0);
 +	ssb_write32(dev, 0x200, 0x7ff);
@@ -239,7 +235,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	udelay(1);
 +
 +	/* Work around for 5354 failures */
-+	if ((dev->id.revision == 2) && (dev->bus->chip_id == 0x5354)) {
++	if (dev->id.revision == 2 && dev->bus->chip_id == 0x5354) {
 +		/* Change syn01 reg */
 +		tmp = 0x00fe00fe;
 +		ssb_write32(dev, 0x894, tmp);

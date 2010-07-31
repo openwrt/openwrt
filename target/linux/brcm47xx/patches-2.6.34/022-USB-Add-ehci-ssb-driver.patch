@@ -1,4 +1,4 @@
-From cb269cf1f97c316a5184080814a751687c72b718 Mon Sep 17 00:00:00 2001
+From ad224c0d5fa0fc05f8aaef3c19fc9b4eb275a5d2 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 18 Jul 2010 21:29:40 +0200
 Subject: [PATCH 2/2] USB: Add ehci ssb driver
@@ -8,9 +8,9 @@ Support for the Sonics Silicon Backplane (SSB) attached Broadcom USB EHCI core.
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/usb/host/Kconfig    |   13 ++
- drivers/usb/host/ehci-hcd.c |   23 ++++-
- drivers/usb/host/ehci-ssb.c |  258 +++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 292 insertions(+), 2 deletions(-)
+ drivers/usb/host/ehci-hcd.c |   22 ++++-
+ drivers/usb/host/ehci-ssb.c |  255 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 288 insertions(+), 2 deletions(-)
  create mode 100644 drivers/usb/host/ehci-ssb.c
 
 --- a/drivers/usb/host/Kconfig
@@ -75,19 +75,19 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  clean3:
  #endif
  #ifdef PS3_SYSTEM_BUS_DRIVER
-@@ -1256,6 +1272,9 @@ static void __exit ehci_hcd_cleanup(void
- #ifdef PS3_SYSTEM_BUS_DRIVER
- 	ps3_ehci_driver_unregister(&PS3_SYSTEM_BUS_DRIVER);
- #endif
+@@ -1244,6 +1260,9 @@ module_init(ehci_hcd_init);
+ 
+ static void __exit ehci_hcd_cleanup(void)
+ {
 +#ifdef SSB_EHCI_DRIVER
 +	ssb_driver_unregister(&SSB_EHCI_DRIVER);
 +#endif
- #ifdef DEBUG
- 	debugfs_remove(ehci_debug_root);
+ #ifdef OF_PLATFORM_DRIVER
+ 	of_unregister_platform_driver(&OF_PLATFORM_DRIVER);
  #endif
 --- /dev/null
 +++ b/drivers/usb/host/ehci-ssb.c
-@@ -0,0 +1,258 @@
+@@ -0,0 +1,255 @@
 +/*
 + * Sonics Silicon Backplane
 + * Broadcom USB-core EHCI driver (SSB bus glue)
@@ -189,9 +189,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +static void ssb_ehci_detach(struct ssb_device *dev)
 +{
 +	struct usb_hcd *hcd = ssb_get_drvdata(dev);
++
 +	if (hcd->driver->shutdown)
 +		hcd->driver->shutdown(hcd);
-+
 +	usb_remove_hcd(hcd);
 +	iounmap(hcd->regs);
 +	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
@@ -213,12 +213,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	/*
 +	 * USB 2.0 special considerations:
 +	 *
-+	 * 1. Since the core supports both ehci and EHCI functions, it must
-+	 *    only be reset once.
-+	 *
-+	 * 2. In addition to the standard SSB reset sequence, the Host Control
-+	 *    Register must be programmed to bring the USB core and various
-+	 *    phy components out of reset.
++	 * In addition to the standard SSB reset sequence, the Host Control
++	 * Register must be programmed to bring the USB core and various phy
++	 * components out of reset.
 +	 */
 +	ssb_device_enable(dev, 0);
 +	ssb_write32(dev, 0x200, 0x7ff);
@@ -238,7 +235,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	udelay(1);
 +
 +	/* Work around for 5354 failures */
-+	if ((dev->id.revision == 2) && (dev->bus->chip_id == 0x5354)) {
++	if (dev->id.revision == 2 && dev->bus->chip_id == 0x5354) {
 +		/* Change syn01 reg */
 +		tmp = 0x00fe00fe;
 +		ssb_write32(dev, 0x894, tmp);

@@ -1,27 +1,18 @@
-From a41121d789e236fd637ab49beb5ce7b48763613a Mon Sep 17 00:00:00 2001
+From 9be402f069cc259ad5795b77567d66c4e7f6bef6 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 18 Jul 2010 14:59:24 +0200
-Subject: [PATCH 4/5] MIPS: BCM47xx: Setup and register serial early
+Subject: [PATCH 4/6] MIPS: BCM47xx: Setup and register serial early
 
 Swap the first and second serial if console=ttyS1 was set.
 Set it up and register it for early serial support.
 
+This patch has been in OpenWRT for a long time.
+
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- arch/mips/Kconfig         |    1 -
- arch/mips/bcm47xx/setup.c |   37 ++++++++++++++++++++++++++++++++++++-
- 2 files changed, 36 insertions(+), 2 deletions(-)
+ arch/mips/bcm47xx/setup.c |   39 ++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 38 insertions(+), 1 deletions(-)
 
---- a/arch/mips/Kconfig
-+++ b/arch/mips/Kconfig
-@@ -65,7 +65,6 @@ config BCM47XX
- 	select SSB_B43_PCI_BRIDGE if PCI
- 	select SSB_PCICORE_HOSTMODE if PCI
- 	select GENERIC_GPIO
--	select SYS_HAS_EARLY_PRINTK
- 	select CFE
- 	help
- 	 Support for BCM47XX based boards
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
 @@ -28,6 +28,8 @@
@@ -33,7 +24,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -190,12 +192,45 @@ static int bcm47xx_get_invariants(struct
+@@ -190,12 +192,47 @@ static int bcm47xx_get_invariants(struct
  
  void __init plat_mem_setup(void)
  {
@@ -48,16 +39,18 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		panic("Failed to initialize SSB bus (err %d)\n", err);
 +	mcore = &ssb_bcm47xx.mipscore;
 +
-+	nvram_getenv("kernel_args", buf, sizeof(buf));
-+	if (!strncmp(buf, "console=ttyS1", 13)) {
-+		struct ssb_serial_port port;
++	if (nvram_getenv("kernel_args", buf, sizeof(buf)) >= 0 ||
++	    cfe_getenv("kernel_args", buf, sizeof(buf)) >= 0) {
++		if (strstr(buf, "console=ttyS1")) {
++			struct ssb_serial_port port;
 +
-+		printk(KERN_DEBUG "Swapping serial ports!\n");
-+		/* swap serial ports */
-+		memcpy(&port, &mcore->serial_ports[0], sizeof(port));
-+		memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1],
-+		       sizeof(port));
-+		memcpy(&mcore->serial_ports[1], &port, sizeof(port));
++			printk(KERN_DEBUG "Swapping serial ports!\n");
++			/* swap serial ports */
++			memcpy(&port, &mcore->serial_ports[0], sizeof(port));
++			memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1],
++			       sizeof(port));
++			memcpy(&mcore->serial_ports[1], &port, sizeof(port));
++		}
 +	}
 +
 +	for (i = 0; i < mcore->nr_serial_ports; i++) {
