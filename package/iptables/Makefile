@@ -44,7 +44,7 @@ define Package/iptables
 $(call Package/iptables/Default)
   TITLE:=IPv4 firewall administration tool
   MENU:=1
-  DEPENDS+= +kmod-ipt-core +libiptc +libxtables
+  DEPENDS+= +kmod-ipt-core +libiptc +libxtables +libipq
 endef
 
 define Package/iptables/description
@@ -272,6 +272,12 @@ define Package/libxtables
  TITLE:=IPv4/IPv6 firewall - shared xtables library
 endef
 
+define Package/libipq
+  $(call Package/iptables/Default)
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=IPv4/IPv6 firewall - shared libipq library
+endef
 
 TARGET_CPPFLAGS := \
 	-I$(PKG_BUILD_DIR)/include \
@@ -372,6 +378,11 @@ define Package/libxtables/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.so* $(1)/usr/lib/
 endef
 
+define Package/libipq/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipq.so* $(1)/usr/lib/
+endef
+
 define BuildPlugin
   define Package/$(1)/install
 	$(INSTALL_DIR) $$(1)/usr/lib/iptables
@@ -411,3 +422,4 @@ $(eval $(call BuildPackage,ip6tables))
 $(eval $(call BuildPackage,ip6tables-utils))
 $(eval $(call BuildPackage,libiptc))
 $(eval $(call BuildPackage,libxtables))
+$(eval $(call BuildPackage,libipq))
