@@ -111,7 +111,7 @@
  
 +		if (tp->tg3_flags3 & TG3_FLG3_ROBOSWITCH) {
 +			current_link_up = 1;
-+			current_speed = SPEED_1000; //FIXME
++			current_speed = SPEED_1000; /* FIXME */
 +			current_duplex = DUPLEX_FULL;
 +			tp->link_config.active_speed = current_speed;
 +			tp->link_config.active_duplex = current_duplex;
