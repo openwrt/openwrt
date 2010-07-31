@@ -1,0 +1,79 @@
+#!/bin/sh
+# Setup NAT reflection rules
+
+. /etc/functions.sh
+
+if [ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "wan" ]; then
+	local wanip=$(uci -P/var/state get network.wan.ipaddr)
+
+	iptables -t nat -F nat_reflection_in 2>/dev/null || {
+		iptables -t nat -N nat_reflection_in
+		iptables -t nat -A prerouting_rule -j nat_reflection_in
+	}
+
+	iptables -t nat -F nat_reflection_out 2>/dev/null || {
+		iptables -t nat -N nat_reflection_out
+		iptables -t nat -A postrouting_rule -j nat_reflection_out
+	}
+
+	setup_fwd() {
+		local cfg="$1"
+
+		local src
+		config_get src "$cfg" src
+
+		[ "$src" = wan ] && {
+			local dest
+			config_get dest "$cfg" dest "lan"
+
+			local lanip=$(uci -P/var/state get network.$dest.ipaddr)
+			local lanmk=$(uci -P/var/state get network.$dest.netmask)
+
+			local proto
+			config_get proto "$cfg" proto
+
+			local epmin epmax extport
+			config_get extport "$cfg" src_dport
+			[ -n "$extport" ] || return
+
+			epmin="${extport%[-:]*}"; epmax="${extport#*[-:]}"
+			[ "$epmin" != "$epmax" ] || epmax=""
+
+			local ipmin ipmax intport
+			config_get intport "$cfg" dest_port "$extport"
+
+			ipmin="${intport%[-:]*}"; ipmax="${intport#*[-:]}"
+			[ "$ipmin" != "$ipmax" ] || ipmax=""
+
+			local exthost
+			config_get exthost "$cfg" src_dip "$wanip"
+
+			local inthost
+			config_get inthost "$cfg" dest_ip
+			[ -n "$inthost" ] || return
+
+			[ "$proto" = tcpudp ] && proto="tcp udp"
+
+			local p
+			for p in ${proto:-tcp udp}; do
+				case "$p" in
+					tcp|udp)
+						iptables -t nat -A nat_reflection_in \
+							-s $lanip/$lanmk -d $exthost \
+							-p $p --dport $epmin${epmax:+:$epmax} \
+							-j DNAT --to $inthost:$ipmin${ipmax:+-$ipmax}
+
+						iptables -t nat -A nat_reflection_out \
+							-s $lanip/$lanmk -d $inthost \
+							-p $p --dport $ipmin${ipmax:+:$ipmax} \
+							-j SNAT --to-source $lanip
+					;;
+				esac
+			done
+		}
+	}
+
+	config_load firewall
+	config_foreach setup_fwd redirect
+fi
+
