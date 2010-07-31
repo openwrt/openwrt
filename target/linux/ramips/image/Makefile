@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 define imgname
-$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
+$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1)
 endef
 
 VMLINUX:=$(IMG_PREFIX)-vmlinux
