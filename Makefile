@@ -24,6 +24,8 @@ ifneq ($(OPENWRT_BUILD),1)
 
   override OPENWRT_BUILD=1
   export OPENWRT_BUILD
+  GREP_OPTIONS=
+  export GREP_OPTIONS
   include $(TOPDIR)/include/debug.mk
   include $(TOPDIR)/include/depends.mk
   include $(TOPDIR)/include/toplevel.mk

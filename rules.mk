@@ -18,6 +18,9 @@ TMP_DIR:=$(TOPDIR)/tmp
 
 export SHELL=/usr/bin/env bash -c '. $(TOPDIR)/include/shell.sh; eval "$$2"' --
 
+GREP_OPTIONS=
+export GREP_OPTIONS
+
 qstrip=$(strip $(subst ",,$(1)))
 #"))
 
