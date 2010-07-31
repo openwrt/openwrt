@@ -1,25 +1,28 @@
 --- a/arch/mips/include/asm/r4kcache.h
 +++ b/arch/mips/include/asm/r4kcache.h
-@@ -20,10 +20,25 @@
+@@ -20,10 +20,28 @@
  #ifdef CONFIG_BCM47XX
  #include <asm/paccess.h>
  #include <linux/ssb/ssb.h>
 -#define BCM4710_DUMMY_RREG() ((void) *((u8 *) KSEG1ADDR(SSB_ENUM_BASE)))
 +#define BCM4710_DUMMY_RREG() bcm4710_dummy_rreg()
 +
-+static inline unsigned long bcm4710_dummy_rreg(void) {
-+      return (*(volatile unsigned long *)(KSEG1ADDR(SSB_ENUM_BASE)));
++static inline unsigned long bcm4710_dummy_rreg(void)
++{
++      return *(volatile unsigned long *)(KSEG1ADDR(SSB_ENUM_BASE));
 +}
 +
-+#define BCM4710_FILL_TLB(addr) bcm4710_fill_tlb((void*)(addr))
++#define BCM4710_FILL_TLB(addr) bcm4710_fill_tlb((void *)(addr))
 +
-+static inline unsigned long bcm4710_fill_tlb(void *addr) {
-+      return (*(unsigned long *)addr);
++static inline unsigned long bcm4710_fill_tlb(void *addr)
++{
++      return *(unsigned long *)addr;
 +}
 +
-+#define BCM4710_PROTECTED_FILL_TLB(addr) bcm4710_protected_fill_tlb((void*)(addr))
++#define BCM4710_PROTECTED_FILL_TLB(addr) bcm4710_protected_fill_tlb((void *)(addr))
 +
-+static inline void bcm4710_protected_fill_tlb(void *addr) {
++static inline void bcm4710_protected_fill_tlb(void *addr)
++{
 +      unsigned long x;
 +      get_dbe(x, (unsigned long *)addr);;
 +}

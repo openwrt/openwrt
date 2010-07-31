@@ -8,7 +8,7 @@
 +static ssize_t													\
 +attrib##_show(struct device *dev, struct device_attribute *attr, char *buf) \
 +{																\
-+	return sprintf (buf, format_string, dev_to_ssb_dev(dev)->field);		\
++	return sprintf(buf, format_string, dev_to_ssb_dev(dev)->field);		\
 +}
 +
 +ssb_config_attr(core_num, core_index, "%u\n")
@@ -19,7 +19,7 @@
 +static ssize_t
 +name_show(struct device *dev, struct device_attribute *attr, char *buf)
 +{
-+	return sprintf (buf, "%s\n", ssb_core_name(dev_to_ssb_dev(dev)->id.coreid));
++	return sprintf(buf, "%s\n", ssb_core_name(dev_to_ssb_dev(dev)->id.coreid));
 +}
 +
 +static struct device_attribute ssb_device_attrs[] = {
