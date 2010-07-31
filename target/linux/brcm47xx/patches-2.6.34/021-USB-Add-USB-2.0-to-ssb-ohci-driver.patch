@@ -1,32 +1,32 @@
-From cb33ffbdd8491c58b35958ec74c39b3a5c7fabe8 Mon Sep 17 00:00:00 2001
+From ca00adabb88dd1194891624836d7574aab2d7c05 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 18 Jul 2010 21:25:03 +0200
 Subject: [PATCH 1/2] USB: Add USB 2.0 to ssb ohci driver
 
 This adds USB 2.0 support to ssb ohci driver.
-This work was done based on Braodcom source code in the OpenWRT project.
+This patch was used in OpenWRT for a long time now.
 
+CC: Steve Brown <sbrown@cortland.com>
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- drivers/usb/host/ohci-ssb.c |   55 ++++++++++++++++++++++++++++++++++++++++--
- 1 files changed, 52 insertions(+), 3 deletions(-)
+ drivers/usb/host/ohci-ssb.c |   52 ++++++++++++++++++++++++++++++++++++++++--
+ 1 files changed, 49 insertions(+), 3 deletions(-)
 
 --- a/drivers/usb/host/ohci-ssb.c
 +++ b/drivers/usb/host/ohci-ssb.c
-@@ -92,9 +92,12 @@ static const struct hc_driver ssb_ohci_h
- static void ssb_ohci_detach(struct ssb_device *dev)
+@@ -93,8 +93,11 @@ static void ssb_ohci_detach(struct ssb_d
  {
  	struct usb_hcd *hcd = ssb_get_drvdata(dev);
+ 
 +	if (hcd->driver->shutdown)
 +		hcd->driver->shutdown(hcd);
- 
  	usb_remove_hcd(hcd);
  	iounmap(hcd->regs);
 +	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
  	usb_put_hcd(hcd);
  	ssb_device_disable(dev, 0);
  }
-@@ -106,10 +109,55 @@ static int ssb_ohci_attach(struct ssb_de
+@@ -106,10 +109,52 @@ static int ssb_ohci_attach(struct ssb_de
  	int err = -ENOMEM;
  	u32 tmp, flags = 0;
  
@@ -45,12 +45,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		/*
 +		 * USB 2.0 special considerations:
 +		 *
-+		 * 1. Since the core supports both ehci and EHCI functions, it must
-+		 *    only be reset once.
-+		 *
-+		 * 2. In addition to the standard SSB reset sequence, the Host Control
-+		 *    Register must be programmed to bring the USB core and various
-+		 *    phy components out of reset.
++		 * In addition to the standard SSB reset sequence, the Host
++		 * Control Register must be programmed to bring the USB core
++		 * and various phy components out of reset.
 +		 */
 +		ssb_device_enable(dev, 0);
 +		ssb_write32(dev, 0x200, 0x7ff);
@@ -70,7 +67,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		udelay(1);
 +
 +		/* Work around for 5354 failures */
-+		if ((dev->id.revision == 2) && (dev->bus->chip_id == 0x5354)) {
++		if (dev->id.revision == 2 && dev->bus->chip_id == 0x5354) {
 +			/* Change syn01 reg */
 +			tmp = 0x00fe00fe;
 +			ssb_write32(dev, 0x894, tmp);
@@ -85,7 +82,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	hcd = usb_create_hcd(&ssb_ohci_hc_driver, dev->dev,
  			dev_name(dev->dev));
-@@ -200,6 +248,7 @@ static int ssb_ohci_resume(struct ssb_de
+@@ -200,6 +245,7 @@ static int ssb_ohci_resume(struct ssb_de
  static const struct ssb_device_id ssb_ohci_table[] = {
  	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_USB11_HOSTDEV, SSB_ANY_REV),
  	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_USB11_HOST, SSB_ANY_REV),

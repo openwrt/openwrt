@@ -1,12 +1,15 @@
-From fbdfca0b2489ad94c6a3bc90b47adfd5c8179a89 Mon Sep 17 00:00:00 2001
+From e5c5828063a55a752e2392d820383dd7a5da3737 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 18 Jul 2010 13:34:32 +0200
-Subject: [PATCH 2/5] MIPS: BCM47xx: Fill values for b43 into ssb sprom
+Subject: [PATCH 2/6] MIPS: BCM47xx: Fill values for b43 into ssb sprom
 
 Most of the values are stored in the nvram and not in the CFE. At first
 the nvram should be read and if there is no value it should look into
 the CFE. Now more values are read out because the b43 and b43legacy
 drivers needs them.
+
+Some parts of this patch have been in OpenWRT for a long time and were
+made by Michael Buesch.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
