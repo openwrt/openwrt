@@ -1,5 +1,4 @@
 #!/bin/sh
-# Setup NAT reflection rules
 
 . /etc/functions.sh
 
@@ -16,6 +15,26 @@ if [ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "wan" ]; then
 		iptables -t nat -A postrouting_rule -j nat_reflection_out
 	}
 
+	find_networks() {
+		find_networks_cb() {
+			local cfg="$1"
+			local zone="$2"
+
+			local name
+			config_get name "$cfg" name
+
+			[ "$name" = "$zone" ] && {
+				local network
+				config_get network "$cfg" network
+
+				echo ${network:-$zone}
+				return 1
+			}
+		}
+
+		config_foreach find_networks_cb zone "$1"
+	}
+	
 	setup_fwd() {
 		local cfg="$1"
 
@@ -26,49 +45,52 @@ if [ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "wan" ]; then
 			local dest
 			config_get dest "$cfg" dest "lan"
 
-			local lanip=$(uci -P/var/state get network.$dest.ipaddr)
-			local lanmk=$(uci -P/var/state get network.$dest.netmask)
+			local net
+			for net in $(find_networks "$dest"); do
+				local lanip=$(uci -P/var/state get network.$net.ipaddr)
+				local lanmk=$(uci -P/var/state get network.$net.netmask)
 
-			local proto
-			config_get proto "$cfg" proto
+				local proto
+				config_get proto "$cfg" proto
 
-			local epmin epmax extport
-			config_get extport "$cfg" src_dport
-			[ -n "$extport" ] || return
+				local epmin epmax extport
+				config_get extport "$cfg" src_dport
+				[ -n "$extport" ] || return
 
-			epmin="${extport%[-:]*}"; epmax="${extport#*[-:]}"
-			[ "$epmin" != "$epmax" ] || epmax=""
+				epmin="${extport%[-:]*}"; epmax="${extport#*[-:]}"
+				[ "$epmin" != "$epmax" ] || epmax=""
 
-			local ipmin ipmax intport
-			config_get intport "$cfg" dest_port "$extport"
+				local ipmin ipmax intport
+				config_get intport "$cfg" dest_port "$extport"
 
-			ipmin="${intport%[-:]*}"; ipmax="${intport#*[-:]}"
-			[ "$ipmin" != "$ipmax" ] || ipmax=""
+				ipmin="${intport%[-:]*}"; ipmax="${intport#*[-:]}"
+				[ "$ipmin" != "$ipmax" ] || ipmax=""
 
-			local exthost
-			config_get exthost "$cfg" src_dip "$wanip"
+				local exthost
+				config_get exthost "$cfg" src_dip "$wanip"
 
-			local inthost
-			config_get inthost "$cfg" dest_ip
-			[ -n "$inthost" ] || return
+				local inthost
+				config_get inthost "$cfg" dest_ip
+				[ -n "$inthost" ] || return
 
-			[ "$proto" = tcpudp ] && proto="tcp udp"
+				[ "$proto" = tcpudp ] && proto="tcp udp"
 
-			local p
-			for p in ${proto:-tcp udp}; do
-				case "$p" in
-					tcp|udp)
-						iptables -t nat -A nat_reflection_in \
-							-s $lanip/$lanmk -d $exthost \
-							-p $p --dport $epmin${epmax:+:$epmax} \
-							-j DNAT --to $inthost:$ipmin${ipmax:+-$ipmax}
+				local p
+				for p in ${proto:-tcp udp}; do
+					case "$p" in
+						tcp|udp)
+							iptables -t nat -A nat_reflection_in \
+								-s $lanip/$lanmk -d $exthost \
+								-p $p --dport $epmin${epmax:+:$epmax} \
+								-j DNAT --to $inthost:$ipmin${ipmax:+-$ipmax}
 
-						iptables -t nat -A nat_reflection_out \
-							-s $lanip/$lanmk -d $inthost \
-							-p $p --dport $ipmin${ipmax:+:$ipmax} \
-							-j SNAT --to-source $lanip
-					;;
-				esac
+							iptables -t nat -A nat_reflection_out \
+								-s $lanip/$lanmk -d $inthost \
+								-p $p --dport $ipmin${ipmax:+:$ipmax} \
+								-j SNAT --to-source $lanip
+						;;
+					esac
+				done
 			done
 		}
 	}
