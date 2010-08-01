@@ -1,0 +1,12 @@
+--- a/Makefile
++++ b/Makefile
+@@ -2,8 +2,7 @@ KERNEL_BUILD_PATH ?= "/lib/modules/$(she
+ 
+ XVM = sub-projects/allocators/xvmalloc-kmod
+ LZO = sub-projects/compression/lzo-kmod
+-EXTRA_CFLAGS	:=	-DCONFIG_RAMZSWAP_STATS		\
+-			-Wall
++EXTRA_CFLAGS	:=	-Wall
+ 
+ obj-m		+=	ramzswap.o $(LZO)/lzo1x.o
+ ramzswap-objs	:=	ramzswap_drv.o $(XVM)/xvmalloc.o

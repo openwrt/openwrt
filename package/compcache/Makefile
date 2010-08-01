@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=compcache
 PKG_VERSION:=0.6.2
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_SOURCE_URL:=http://compcache.googlecode.com/files/
 PKG_MD5SUM:=27aec78dc50e34fb800c74e879057743
 
@@ -23,8 +23,17 @@ define KernelPackage/ramzswap
   DEPENDS:=@BUSYBOX_CONFIG_SWAPONOFF
   TITLE:=Driver for compressed ram swap device
   VERSION:=$(LINUX_VERSION)-$(BOARD)-$(LINUX_RELEASE)+$(PKG_RELEASE)
-  FILES:=$(PKG_BUILD_DIR)/ramzswap.ko \
-	 $(PKG_BUILD_DIR)/sub-projects/compression/lzo-kmod/lzo1x.ko
+  KCONFIG:=CONFIG_RAMZSWAP=m CONFIG_RAMZSWAP_STATS=n
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.33)),1)
+  FILES:= \
+  	$(LINUX_DIR)/drivers/staging/ramzswap/ramzswap.ko \
+	$(LINUX_DIR)/lib/lzo/lzo_compress.ko \
+	$(LINUX_DIR)/lib/lzo/lzo_decompress.ko 
+else
+  FILES:= \
+        $(PKG_BUILD_DIR)/ramzswap.ko \
+        $(PKG_BUILD_DIR)/sub-projects/compression/lzo-kmod/lzo1x.ko
+endif
   URL:=http://code.google.com/p/compcache/
 endef
 
@@ -39,20 +48,21 @@ endef
 
 include $(INCLUDE_DIR)/kernel-defaults.mk
 
-LZO = sub-projects/compression/lzo-kmod
 RZSC = sub-projects/rzscontrol
-
-BUILDFLAGS:=-DCONFIG_RAMZSWAP_STATS \
-	    -I$(PKG_BUILD_DIR)/$(LZO) \
-	    -Wall
 
 RZSCFLAGS:=-I$(PKG_BUILD_DIR)/$(RZSC)/../include \
 	   -I$(PKG_BUILD_DIR)/$(RZSC)/../..
 
-define Build/Compile
-	$(MAKE) $(KERNEL_MAKEOPTS) EXTRA_CFLAGS="$(BUILDFLAGS)" M="$(PKG_BUILD_DIR)" modules
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.33)),1)
+ define Build/Compile
+	$(TARGET_CC) $(TARGET_CFLAGS) $(RZSCFLAGS) $(PKG_BUILD_DIR)/$(RZSC)/rzscontrol.c -o $(PKG_BUILD_DIR)/rzscontrol 
+ endef
+else 
+ define Build/Compile
+	$(MAKE) $(KERNEL_MAKEOPTS) EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/sub-projects/compression/lzo-kmod -Wall" M="$(PKG_BUILD_DIR)" modules
 	$(TARGET_CC) $(TARGET_CFLAGS) $(RZSCFLAGS) $(PKG_BUILD_DIR)/$(RZSC)/rzscontrol.c -o $(PKG_BUILD_DIR)/rzscontrol
-endef
+ endef
+endif
 
 define Package/compcache/install
 	$(INSTALL_DIR) $(1)/etc/config
@@ -62,7 +72,11 @@ define Package/compcache/install
 	      -e 's,%BACKUP_DEV%,$(call qstrip,$(CONFIG_COMPCACHE_BACKUP_DEV)),g' \
 	      $(1)/etc/config/compcache
 	$(INSTALL_DIR) $(1)/etc/init.d
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.33)),1)
+	$(INSTALL_BIN) ./files/compcache.init.new $(1)/etc/init.d/compcache
+else
 	$(INSTALL_BIN) ./files/compcache.init $(1)/etc/init.d/compcache
+endif
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rzscontrol $(1)/sbin/rzscontrol
 endef
