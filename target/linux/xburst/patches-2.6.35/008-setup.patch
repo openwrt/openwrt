@@ -1,0 +1,49 @@
+From 05e8cc3590af4f29d48346e626b980741d480f77 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Sat, 19 Jun 2010 04:08:12 +0000
+Subject: [PATCH] MIPS: JZ4740: Add setup code
+
+Add plat_mem_setup and get_system_type for JZ4740 SoCs.
+
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Cc: linux-mips@linux-mips.org
+Cc: linux-kernel@vger.kernel.org
+Patchwork: https://patchwork.linux-mips.org/patch/1399/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/jz4740/setup.c |   29 +++++++++++++++++++++++++++++
+ 1 files changed, 29 insertions(+), 0 deletions(-)
+ create mode 100644 arch/mips/jz4740/setup.c
+
+--- /dev/null
++++ b/arch/mips/jz4740/setup.c
+@@ -0,0 +1,29 @@
++/*
++ *  Copyright (C) 2009-2010, Lars-Peter Clausen <lars@metafoo.de>
++ *  JZ4740 setup code
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under  the terms of the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the License, or (at your
++ *  option) any later version.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ */
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++
++#include "reset.h"
++
++void __init plat_mem_setup(void)
++{
++	jz4740_reset_init();
++}
++
++const char *get_system_type(void)
++{
++	return "JZ4740";
++}
