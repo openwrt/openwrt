@@ -17,7 +17,7 @@ define KernelPackage/sound-soc-jzcodec
   SUBMENU:=$(SOUND_MENU)
   DEPENDS:=kmod-sound-soc-core @TARGET_xburst
   TITLE:=JZ4740 SoC internal codec support
-  KCONFIG:=CONFIG_SND_SOC_JZCODEC
+  KCONFIG:=CONFIG_SND_SOC_JZCODEC CONFIG_SND_SOC_JZ4740_CODEC
   FILES:=$(LINUX_DIR)/sound/soc/codecs/snd-soc-jzcodec.ko
   AUTOLOAD:=$(call AutoLoad,60,snd-soc-jzcodec)
 endef

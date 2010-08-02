@@ -1,0 +1,82 @@
+From d9d3dc9a5a28b2bbb82fedca63aadae8ca540e94 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Sat, 19 Jun 2010 04:08:16 +0000
+Subject: [PATCH] MIPS: JZ4740: Add serial support
+
+The JZ4740 UART interface is almost 16550 compatible.
+The UART module needs to be enabled by setting a bit in the FCR register
+and it has support for receive timeout interrupts.  Instead of adding yet
+another machine specific quirk to the 8250 serial driver we provide a
+serial_out implementation which sets the required additional flags.
+
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Cc: linux-mips@linux-mips.org
+Cc: linux-kernel@vger.kernel.org
+Patchwork: https://patchwork.linux-mips.org/patch/1403/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/jz4740/serial.c |   33 +++++++++++++++++++++++++++++++++
+ arch/mips/jz4740/serial.h |   20 ++++++++++++++++++++
+ 2 files changed, 53 insertions(+), 0 deletions(-)
+ create mode 100644 arch/mips/jz4740/serial.c
+ create mode 100644 arch/mips/jz4740/serial.h
+
+--- /dev/null
++++ b/arch/mips/jz4740/serial.c
+@@ -0,0 +1,33 @@
++/*
++ *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
++ *  JZ4740 serial support
++ *
++ *  This program is free software; you can redistribute	 it and/or modify it
++ *  under  the terms of	 the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the	License, or (at your
++ *  option) any later version.
++ *
++ *  You should have received a copy of the  GNU General Public License along
++ *  with this program; if not, write  to the Free Software Foundation, Inc.,
++ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ */
++
++#include <linux/io.h>
++#include <linux/serial_core.h>
++#include <linux/serial_reg.h>
++
++void jz4740_serial_out(struct uart_port *p, int offset, int value)
++{
++	switch (offset) {
++	case UART_FCR:
++		value |= 0x10; /* Enable uart module */
++		break;
++	case UART_IER:
++		value |= (value & 0x4) << 2;
++		break;
++	default:
++		break;
++	}
++	writeb(value, p->membase + (offset << p->regshift));
++}
+--- /dev/null
++++ b/arch/mips/jz4740/serial.h
+@@ -0,0 +1,20 @@
++/*
++ *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
++ *  JZ4740 serial support
++ *
++ *  This program is free software; you can redistribute	 it and/or modify it
++ *  under  the terms of	 the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the	License, or (at your
++ *  option) any later version.
++ *
++ *  You should have received a copy of the  GNU General Public License along
++ *  with this program; if not, write  to the Free Software Foundation, Inc.,
++ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ */
++
++#ifndef __MIPS_JZ4740_SERIAL_H__
++
++void jz4740_serial_out(struct uart_port *p, int offset, int value);
++
++#endif
