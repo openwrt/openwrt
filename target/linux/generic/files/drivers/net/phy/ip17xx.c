@@ -373,6 +373,7 @@ static int setPhy(struct ip17xx_state *state, reg mii, u16 value)
 	err = ip_phy_write(state, mii.p, mii.m, value);
 	if (err < 0)
 		return err;
+	mdelay(2);
 	getPhy(state, mii);
 	return 0;
 }
