@@ -130,6 +130,16 @@
    flag_predictive_commoning = opt3;
    flag_inline_functions = opt3;
    flag_unswitch_loops = opt3;
+@@ -1607,6 +1607,9 @@
+       enable_warning_as_error (arg, value, lang_mask);
+       break;
+ 
++    case OPT_fhonour_copts:
++      break;
++
+     case OPT_Wextra:
+       set_Wextra (value);
+       break;
 --- a/gcc/doc/invoke.texi
 +++ b/gcc/doc/invoke.texi
 @@ -5699,7 +5715,7 @@
