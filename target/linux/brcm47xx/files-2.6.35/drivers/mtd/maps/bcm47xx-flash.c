@@ -52,6 +52,8 @@
 #include <linux/ssb/ssb.h>
 #endif
 #include <asm/io.h>
+#include <asm/mach-bcm47xx/nvram.h>
+#include <asm/fw/cfe/cfe_api.h>
 
 
 #define TRX_MAGIC	0x30524448	/* "HDR0" */
@@ -74,6 +76,11 @@ struct trx_header {
 #define WINDOW_ADDR 0x1fc00000
 #define WINDOW_SIZE 0x400000
 #define BUSWIDTH 2
+
+#define ROUTER_NETGEAR_WGR614L         1
+#define ROUTER_NETGEAR_WNR834B         2
+#define ROUTER_NETGEAR_WNDR3300        3
+#define ROUTER_NETGEAR_WNR3500L        4
 
 #ifdef CONFIG_SSB
 extern struct ssb_bus ssb_bcm47xx;
@@ -344,11 +351,87 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 	return part->size;
 }
 
+static int get_router(void)
+{
+	char buf[20];
+	u32 boardnum = 0;
+	u16 boardtype = 0;
+	u16 boardrev = 0;
+	u32 boardflags = 0;
+	u16 sdram_init = 0;
+	u16 cardbus = 0;
+
+	if (nvram_getenv("boardnum", buf, sizeof(buf)) >= 0 ||
+	    cfe_getenv("boardnum", buf, sizeof(buf)) >= 0)
+		boardnum = simple_strtoul(buf, NULL, 0);
+	if (nvram_getenv("boardtype", buf, sizeof(buf)) >= 0 ||
+	    cfe_getenv("boardtype", buf, sizeof(buf)) >= 0)
+		boardtype = simple_strtoul(buf, NULL, 0);
+	if (nvram_getenv("boardrev", buf, sizeof(buf)) >= 0 ||
+	    cfe_getenv("boardrev", buf, sizeof(buf)) >= 0)
+		boardrev = simple_strtoul(buf, NULL, 0);
+	if (nvram_getenv("boardflags", buf, sizeof(buf)) >= 0 ||
+	    cfe_getenv("boardflags", buf, sizeof(buf)) >= 0)
+		boardflags = simple_strtoul(buf, NULL, 0);
+	if (nvram_getenv("sdram_init", buf, sizeof(buf)) >= 0 ||
+	    cfe_getenv("sdram_init", buf, sizeof(buf)) >= 0)
+		sdram_init = simple_strtoul(buf, NULL, 0);
+	if (nvram_getenv("cardbus", buf, sizeof(buf)) >= 0 ||
+	    cfe_getenv("cardbus", buf, sizeof(buf)) >= 0)
+		cardbus = simple_strtoul(buf, NULL, 0);
+
+	if ((boardnum == 8 || boardnum == 01)
+	  && boardtype == 0x0472 && cardbus == 1) {
+		/* Netgear WNR834B, Netgear WNR834Bv2 */
+		return ROUTER_NETGEAR_WNR834B;
+	}
+
+	if (boardnum == 01 && boardtype == 0x0472 && boardrev == 0x23) {
+		/* Netgear WNDR-3300 */
+		return ROUTER_NETGEAR_WNDR3300;
+	}
+
+	if ((boardnum == 83258 || boardnum == 01)
+	  && boardtype == 0x048e
+	  && (boardrev == 0x11 || boardrev == 0x10)
+	  && boardflags == 0x750
+	  && sdram_init == 0x000A) {
+		/* Netgear WGR614v8/L/WW 16MB ram, cfe v1.3 or v1.5 */
+		return ROUTER_NETGEAR_WGR614L;
+	}
+
+	if ((boardnum == 1 || boardnum == 3500)
+	  && boardtype == 0x04CF
+	  && (boardrev == 0x1213 || boardrev == 02)) {
+		/* Netgear WNR3500v2/U/L */
+		return ROUTER_NETGEAR_WNR3500L;
+	}
+
+	return 0;
+}
+
 struct mtd_partition * __init
 init_mtd_partitions(struct mtd_info *mtd, size_t size)
 {
 	int cfe_size;
 	int dual_image_offset = 0;
+	/* e.g Netgear 0x003e0000-0x003f0000 : "board_data", we exclude this
+	 * part from our mapping to prevent overwriting len/checksum on e.g.
+	 * Netgear WGR614v8/L/WW
+	 */
+	int board_data_size = 0;
+
+	switch (get_router()) {
+	case ROUTER_NETGEAR_WGR614L:
+	case ROUTER_NETGEAR_WNR834B:
+	case ROUTER_NETGEAR_WNDR3300:
+	case ROUTER_NETGEAR_WNR3500L:
+		/* Netgear: checksum is @ 0x003AFFF8 for 4M flash or checksum
+		 * is @ 0x007AFFF8 for 8M flash
+		 */
+		board_data_size = 4 * mtd->erasesize;
+		break;
+	}
 
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
 		return NULL;
@@ -374,7 +457,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	if (cfe_size != 384 * 1024) {
 		bcm47xx_parts[1].offset = bcm47xx_parts[0].size;
 		bcm47xx_parts[1].size   = bcm47xx_parts[3].offset - dual_image_offset -
-			bcm47xx_parts[1].offset;
+			bcm47xx_parts[1].offset - board_data_size;
 	} else {
 		/* do not count the elf loader, which is on one block */
 		bcm47xx_parts[1].offset = bcm47xx_parts[0].size + 
@@ -382,12 +465,14 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		bcm47xx_parts[1].size   = size - 
 			bcm47xx_parts[0].size - 
 			(2*bcm47xx_parts[3].size) - 
-			mtd->erasesize;
+			mtd->erasesize - board_data_size;
 	}
 
 	/* find and size rootfs */
 	find_root(mtd,size,&bcm47xx_parts[2]);
-	bcm47xx_parts[2].size = size - dual_image_offset - bcm47xx_parts[2].offset - bcm47xx_parts[3].size;
+	bcm47xx_parts[2].size = size - dual_image_offset -
+				bcm47xx_parts[2].offset -
+				bcm47xx_parts[3].size - board_data_size;
 
 	return bcm47xx_parts;
 }
