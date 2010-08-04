@@ -42,11 +42,13 @@ append_server() {
 }
 
 append_interface() {
-	append args "-i $1"
+	local ifname=$(uci_get_state network "$1" ifname "$1")
+	append args "-i $ifname"
 }
 
 append_notinterface() {
-	append args "-I $1"
+	local ifname=$(uci_get_state network "$1" ifname "$1")
+	append args "-I $ifname"
 }
 
 append_addnhosts() {
