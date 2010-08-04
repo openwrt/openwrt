@@ -78,7 +78,7 @@
  
  	if (ppp_dev_fd >= 0) {
  		dbglog("in make_ppp_unit, already had /dev/ppp open?");
-@@ -645,6 +650,32 @@ static int make_ppp_unit()
+@@ -645,6 +650,30 @@ static int make_ppp_unit()
  	}
  	if (x < 0)
  		error("Couldn't create new ppp unit: %m");
@@ -103,8 +103,6 @@
 +			error("Couldn't rename %s to %s", ifr.ifr_name, ifr.ifr_newname);
 +			close(ppp_dev_fd);
 +			ppp_dev_fd = -1;
-+		} else {
-+			info("Renamed %s to %s", ifr.ifr_name, ifr.ifr_newname);
 +		}
 +	}
 +
