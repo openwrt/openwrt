@@ -876,12 +876,7 @@ static struct switch_attr rtl8366s_vlan[] = {
 	},
 };
 
-/* template */
-static struct switch_dev rtl8366_switch_dev = {
-	.name = "RTL8366S",
-	.cpu_port = RTL8366S_PORT_NUM_CPU,
-	.ports = RTL8366S_NUM_PORTS,
-	.vlans = RTL8366S_NUM_VLANS,
+static const struct switch_dev_ops rtl8366_ops = {
 	.attr_global = {
 		.attr = rtl8366s_globals,
 		.n_attr = ARRAY_SIZE(rtl8366s_globals),
@@ -907,8 +902,11 @@ static int rtl8366s_switch_init(struct rtl8366_smi *smi)
 	struct switch_dev *dev = &smi->sw_dev;
 	int err;
 
-	memcpy(dev, &rtl8366_switch_dev, sizeof(struct switch_dev));
-	dev->priv = smi;
+	dev->name = "RTL8366S";
+	dev->cpu_port = RTL8366S_PORT_NUM_CPU;
+	dev->ports = RTL8366S_NUM_PORTS;
+	dev->vlans = RTL8366S_NUM_VLANS;
+	dev->ops = &rtl8366_ops;
 	dev->devname = dev_name(smi->parent);
 
 	err = register_switch(dev, NULL);

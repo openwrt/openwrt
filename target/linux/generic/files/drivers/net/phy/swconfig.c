@@ -65,10 +65,10 @@ swconfig_get_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, 
 	if (val->port_vlan >= dev->vlans)
 		return -EINVAL;
 
-	if (!dev->get_vlan_ports)
+	if (!dev->ops->get_vlan_ports)
 		return -EOPNOTSUPP;
 
-	ret = dev->get_vlan_ports(dev, val);
+	ret = dev->ops->get_vlan_ports(dev, val);
 	return ret;
 }
 
@@ -76,6 +76,7 @@ static int
 swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct switch_port *ports = val->value.ports;
+	const struct switch_dev_ops *ops = dev->ops;
 	int i;
 
 	if (val->port_vlan >= dev->vlans)
@@ -85,18 +86,19 @@ swconfig_set_vlan_ports(struct switch_dev *dev, const struct switch_attr *attr, 
 	if (val->len > dev->ports)
 		return -EINVAL;
 
-	if (!dev->set_vlan_ports)
+	if (!ops->set_vlan_ports)
 		return -EOPNOTSUPP;
 
 	for (i = 0; i < val->len; i++) {
 		if (ports[i].id >= dev->ports)
 			return -EINVAL;
 
-		if (dev->set_port_pvid && !(ports[i].flags & (1 << SWITCH_PORT_FLAG_TAGGED)))
-			dev->set_port_pvid(dev, ports[i].id, val->port_vlan);
+		if (ops->set_port_pvid &&
+		    !(ports[i].flags & (1 << SWITCH_PORT_FLAG_TAGGED)))
+			ops->set_port_pvid(dev, ports[i].id, val->port_vlan);
 	}
 
-	return dev->set_vlan_ports(dev, val);
+	return ops->set_vlan_ports(dev, val);
 }
 
 static int
@@ -105,10 +107,10 @@ swconfig_set_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct
 	if (val->port_vlan >= dev->ports)
 		return -EINVAL;
 
-	if (!dev->set_port_pvid)
+	if (!dev->ops->set_port_pvid)
 		return -EOPNOTSUPP;
 
-	return dev->set_port_pvid(dev, val->port_vlan, val->value.i);
+	return dev->ops->set_port_pvid(dev, val->port_vlan, val->value.i);
 }
 
 static int
@@ -117,30 +119,30 @@ swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct
 	if (val->port_vlan >= dev->ports)
 		return -EINVAL;
 
-	if (!dev->get_port_pvid)
+	if (!dev->ops->get_port_pvid)
 		return -EOPNOTSUPP;
 
-	return dev->get_port_pvid(dev, val->port_vlan, &val->value.i);
+	return dev->ops->get_port_pvid(dev, val->port_vlan, &val->value.i);
 }
 
 static int
 swconfig_apply_config(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	/* don't complain if not supported by the switch driver */
-	if (!dev->apply_config)
+	if (!dev->ops->apply_config)
 		return 0;
 
-	return dev->apply_config(dev);
+	return dev->ops->apply_config(dev);
 }
 
 static int
 swconfig_reset_switch(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	/* don't complain if not supported by the switch driver */
-	if (!dev->reset_switch)
+	if (!dev->ops->reset_switch)
 		return 0;
 
-	return dev->reset_switch(dev);
+	return dev->ops->reset_switch(dev);
 }
 
 enum global_defaults {
@@ -194,14 +196,16 @@ static struct switch_attr default_vlan[] = {
 
 static void swconfig_defaults_init(struct switch_dev *dev)
 {
+	const struct switch_dev_ops *ops = dev->ops;
+
 	dev->def_global = 0;
 	dev->def_vlan = 0;
 	dev->def_port = 0;
 
-	if (dev->get_vlan_ports || dev->set_vlan_ports)
+	if (ops->get_vlan_ports || ops->set_vlan_ports)
 		set_bit(VLAN_PORTS, &dev->def_vlan);
 
-	if (dev->get_port_pvid || dev->set_port_pvid)
+	if (ops->get_port_pvid || ops->set_port_pvid)
 		set_bit(PORT_PVID, &dev->def_port);
 
 	/* always present, can be no-op */
@@ -335,7 +339,7 @@ swconfig_send_multipart(struct swconfig_callback *cb, void *arg)
 			if (cb->close(cb, arg) < 0)
 				goto error;
 		}
-		err = genlmsg_unicast(cb->msg, info->snd_pid);
+		err = genlmsg_reply(cb->msg, info);
 		cb->msg = NULL;
 		if (err < 0)
 			goto error;
@@ -371,19 +375,19 @@ swconfig_list_attrs(struct sk_buff *skb, struct genl_info *info)
 
 	switch(hdr->cmd) {
 	case SWITCH_CMD_LIST_GLOBAL:
-		alist = &dev->attr_global;
+		alist = &dev->ops->attr_global;
 		def_list = default_global;
 		def_active = &dev->def_global;
 		n_def = ARRAY_SIZE(default_global);
 		break;
 	case SWITCH_CMD_LIST_VLAN:
-		alist = &dev->attr_vlan;
+		alist = &dev->ops->attr_vlan;
 		def_list = default_vlan;
 		def_active = &dev->def_vlan;
 		n_def = ARRAY_SIZE(default_vlan);
 		break;
 	case SWITCH_CMD_LIST_PORT:
-		alist = &dev->attr_port;
+		alist = &dev->ops->attr_port;
 		def_list = default_port;
 		def_active = &dev->def_port;
 		n_def = ARRAY_SIZE(default_port);
@@ -419,7 +423,7 @@ swconfig_list_attrs(struct sk_buff *skb, struct genl_info *info)
 	if (!cb.msg)
 		return 0;
 
-	return genlmsg_unicast(cb.msg, info->snd_pid);
+	return genlmsg_reply(cb.msg, info);
 
 error:
 	if (cb.msg)
@@ -449,14 +453,14 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 	switch(hdr->cmd) {
 	case SWITCH_CMD_SET_GLOBAL:
 	case SWITCH_CMD_GET_GLOBAL:
-		alist = &dev->attr_global;
+		alist = &dev->ops->attr_global;
 		def_list = default_global;
 		def_active = &dev->def_global;
 		n_def = ARRAY_SIZE(default_global);
 		break;
 	case SWITCH_CMD_SET_VLAN:
 	case SWITCH_CMD_GET_VLAN:
-		alist = &dev->attr_vlan;
+		alist = &dev->ops->attr_vlan;
 		def_list = default_vlan;
 		def_active = &dev->def_vlan;
 		n_def = ARRAY_SIZE(default_vlan);
@@ -468,7 +472,7 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 		break;
 	case SWITCH_CMD_SET_PORT:
 	case SWITCH_CMD_GET_PORT:
-		alist = &dev->attr_port;
+		alist = &dev->ops->attr_port;
 		def_list = default_port;
 		def_active = &dev->def_port;
 		n_def = ARRAY_SIZE(default_port);
@@ -732,7 +736,7 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 		goto nla_put_failure;
 
 	swconfig_put_dev(dev);
-	return genlmsg_unicast(msg, info->snd_pid);
+	return genlmsg_reply(msg, info);
 
 nla_put_failure:
 	if (msg)

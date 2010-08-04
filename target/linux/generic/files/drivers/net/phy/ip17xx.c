@@ -323,6 +323,7 @@ struct ip17xx_state {
 	char buf[80];
 };
 
+#define get_state(_dev) container_of((_dev), struct ip17xx_state, dev)
 
 static int ip_phy_read(struct ip17xx_state *state, int port, int reg)
 {
@@ -734,7 +735,7 @@ static int ip175d_reset(struct ip17xx_state *state)
 
 static int ip17xx_get_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 
 	val->value.i = state->vlan_enabled;
 	return 0;
@@ -756,7 +757,7 @@ static void ip17xx_reset_vlan_config(struct ip17xx_state *state)
 
 static int ip17xx_set_enable_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int enable;
 
 	enable = val->value.i;
@@ -774,7 +775,7 @@ static int ip17xx_set_enable_vlan(struct switch_dev *dev, const struct switch_at
 
 static int ip17xx_get_ports(struct switch_dev *dev, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int b;
 	int ind;
 	unsigned int ports;
@@ -802,7 +803,7 @@ static int ip17xx_get_ports(struct switch_dev *dev, struct switch_val *val)
 
 static int ip17xx_set_ports(struct switch_dev *dev, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int i;
 
 	if (val->port_vlan >= dev->vlans || val->port_vlan < 0)
@@ -826,7 +827,7 @@ static int ip17xx_set_ports(struct switch_dev *dev, struct switch_val *val)
 
 static int ip17xx_apply(struct switch_dev *dev)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 
 	if (REG_SUPP(state->regs->MII_REGISTER_EN)) {
 		int val = getPhy(state, state->regs->MII_REGISTER_EN);
@@ -841,7 +842,7 @@ static int ip17xx_apply(struct switch_dev *dev)
 
 static int ip17xx_reset(struct switch_dev *dev)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int i, err;
 
 	if (REG_SUPP(state->regs->RESET_REG)) {
@@ -874,7 +875,7 @@ static int ip17xx_reset(struct switch_dev *dev)
 
 static int ip17xx_get_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 
 	if (state->add_tag & (1<<val->port_vlan)) {
 		if (state->remove_tag & (1<<val->port_vlan))
@@ -892,7 +893,7 @@ static int ip17xx_get_tagged(struct switch_dev *dev, const struct switch_attr *a
 
 static int ip17xx_set_tagged(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 
 	state->add_tag &= ~(1<<val->port_vlan);
 	state->remove_tag &= ~(1<<val->port_vlan);
@@ -908,7 +909,7 @@ static int ip17xx_set_tagged(struct switch_dev *dev, const struct switch_attr *a
 /** Get the current phy address */
 static int ip17xx_get_phy(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 
 	val->value.i = state->proc_mii.p;
 	return 0;
@@ -917,7 +918,7 @@ static int ip17xx_get_phy(struct switch_dev *dev, const struct switch_attr *attr
 /** Set a new phy address for low level access to registers */
 static int ip17xx_set_phy(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int new_reg = val->value.i;
 
 	if (new_reg < 0 || new_reg > 31)
@@ -930,7 +931,7 @@ static int ip17xx_set_phy(struct switch_dev *dev, const struct switch_attr *attr
 /** Get the current register number */
 static int ip17xx_get_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 
 	val->value.i = state->proc_mii.m;
 	return 0;
@@ -939,7 +940,7 @@ static int ip17xx_get_reg(struct switch_dev *dev, const struct switch_attr *attr
 /** Set a new register address for low level access to registers */
 static int ip17xx_set_reg(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int new_reg = val->value.i;
 
 	if (new_reg < 0 || new_reg > 31)
@@ -952,7 +953,7 @@ static int ip17xx_set_reg(struct switch_dev *dev, const struct switch_attr *attr
 /** Get the register content of state->proc_mii */
 static int ip17xx_get_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int retval = -EINVAL;
 	if (REG_SUPP(state->proc_mii))
 		retval = getPhy(state, state->proc_mii);
@@ -968,7 +969,7 @@ static int ip17xx_get_val(struct switch_dev *dev, const struct switch_attr *attr
 /** Write a value to the register defined by phy/reg above */
 static int ip17xx_set_val(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int myval, err = -EINVAL;
 
 	myval = val->value.i;
@@ -980,14 +981,14 @@ static int ip17xx_set_val(struct switch_dev *dev, const struct switch_attr *attr
 
 static int ip17xx_read_name(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	val->value.s = state->regs->NAME; // Just a const pointer, won't be freed by swconfig.
 	return 0;
 }
 
 static int ip17xx_get_tag(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int vlan = val->port_vlan;
 
 	if (vlan < 0 || vlan >= MAX_VLANS)
@@ -999,7 +1000,7 @@ static int ip17xx_get_tag(struct switch_dev *dev, const struct switch_attr *attr
 
 static int ip17xx_set_tag(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int vlan = val->port_vlan;
 	int tag = val->value.i;
 
@@ -1015,7 +1016,7 @@ static int ip17xx_set_tag(struct switch_dev *dev, const struct switch_attr *attr
 
 static int ip17xx_set_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int nr = val->port_vlan;
 	int ctrl;
 	int autoneg;
@@ -1052,7 +1053,7 @@ static int ip17xx_set_port_speed(struct switch_dev *dev, const struct switch_att
 
 static int ip17xx_get_port_speed(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int nr = val->port_vlan;
 	int speed, status;
 
@@ -1079,7 +1080,7 @@ static int ip17xx_get_port_speed(struct switch_dev *dev, const struct switch_att
 
 static int ip17xx_get_port_status(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 	int ctrl, speed, status;
 	int nr = val->port_vlan;
 	int len;
@@ -1123,7 +1124,7 @@ static int ip17xx_get_port_status(struct switch_dev *dev, const struct switch_at
 
 static int ip17xx_get_pvid(struct switch_dev *dev, int port, int *val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 
 	*val = state->ports[port].pvid;
 	return 0;
@@ -1131,7 +1132,7 @@ static int ip17xx_get_pvid(struct switch_dev *dev, int port, int *val)
 
 static int ip17xx_set_pvid(struct switch_dev *dev, int port, int val)
 {
-	struct ip17xx_state *state = dev->priv;
+	struct ip17xx_state *state = get_state(dev);
 
 	if (val < 0 || val >= MAX_VLANS)
 		return -EINVAL;
@@ -1243,6 +1244,28 @@ static const struct switch_attr ip17xx_port[] = {
 	},
 };
 
+static const struct switch_dev_ops ip17xx_ops = {
+	.attr_global = {
+		.attr = ip17xx_global,
+		.n_attr = ARRAY_SIZE(ip17xx_global),
+	},
+	.attr_port = {
+		.attr = ip17xx_port,
+		.n_attr = ARRAY_SIZE(ip17xx_port),
+	},
+	.attr_vlan = {
+		.attr = ip17xx_vlan,
+		.n_attr = ARRAY_SIZE(ip17xx_vlan),
+	},
+
+	.get_port_pvid = ip17xx_get_pvid,
+	.set_port_pvid = ip17xx_set_pvid,
+	.get_vlan_ports = ip17xx_get_ports,
+	.set_vlan_ports = ip17xx_set_ports,
+	.apply_config = ip17xx_apply,
+	.reset_switch = ip17xx_reset,
+};
+
 static int ip17xx_probe(struct phy_device *pdev)
 {
 	struct ip17xx_state *state;
@@ -1258,21 +1281,7 @@ static int ip17xx_probe(struct phy_device *pdev)
 		return -ENOMEM;
 
 	dev = &state->dev;
-	dev->attr_global.attr = ip17xx_global;
-	dev->attr_global.n_attr = ARRAY_SIZE(ip17xx_global);
-	dev->attr_port.attr = ip17xx_port;
-	dev->attr_port.n_attr = ARRAY_SIZE(ip17xx_port);
-	dev->attr_vlan.attr = ip17xx_vlan;
-	dev->attr_vlan.n_attr = ARRAY_SIZE(ip17xx_vlan);
 
-	dev->get_port_pvid = ip17xx_get_pvid;
-	dev->set_port_pvid = ip17xx_set_pvid;
-	dev->get_vlan_ports = ip17xx_get_ports;
-	dev->set_vlan_ports = ip17xx_set_ports;
-	dev->apply_config = ip17xx_apply;
-	dev->reset_switch = ip17xx_reset;
-
-	dev->priv = state;
 	pdev->priv = state;
 	state->mii_bus = pdev->bus;
 
@@ -1284,6 +1293,7 @@ static int ip17xx_probe(struct phy_device *pdev)
 	dev->cpu_port = state->regs->CPU_PORT;
 	dev->ports = state->regs->NUM_PORTS;
 	dev->name = state->regs->NAME;
+	dev->ops = &ip17xx_ops;
 
 	pr_info("IP17xx: Found %s at %s\n", dev->name, dev_name(&pdev->dev));
 	return 0;
