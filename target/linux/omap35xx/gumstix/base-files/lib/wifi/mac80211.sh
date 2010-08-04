@@ -417,7 +417,7 @@ detect_mac80211() {
 config wifi-device  radio$devidx
 	option type     mac80211
 	option channel  ${channel}
-	option macaddr	$(cat /sys/class/ieee80211/${dev}/macaddress)
+	option macaddr	$(cat /sys/class/net/wlan0/address)
 	option hwmode	11${mode_11n}${mode_band}
 $ht_capab
 	# REMOVE THIS LINE TO ENABLE WIFI:
@@ -426,7 +426,7 @@ $ht_capab
 config wifi-iface
 	option device   radio$devidx
 	option network  lan
-	option mode     ap
+	option mode     sta
 	option ssid     OpenWrt
 	option encryption none
 
