@@ -1,4 +1,4 @@
-From 34e75141dfd8edae48030b61741c294fd0f952b1 Mon Sep 17 00:00:00 2001
+From 11bc6d97096ab89da31f628c89b19ff37dfdd526 Mon Sep 17 00:00:00 2001
 From: Lars-Peter Clausen <lars@metafoo.de>
 Date: Thu, 15 Jul 2010 20:06:04 +0000
 Subject: [PATCH] MMC: Add support for the controller on JZ4740 SoCs.
@@ -16,11 +16,14 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/include/asm/mach-jz4740/jz4740_mmc.h |   15 +
  drivers/mmc/host/Kconfig                       |    9 +
  drivers/mmc/host/Makefile                      |    1 +
- drivers/mmc/host/jz4740_mmc.c                  | 1033 ++++++++++++++++++++++++
- 4 files changed, 1058 insertions(+), 0 deletions(-)
+ drivers/mmc/host/jz4740_mmc.c                  | 1029 ++++++++++++++++++++++++
+ 4 files changed, 1054 insertions(+), 0 deletions(-)
  create mode 100644 arch/mips/include/asm/mach-jz4740/jz4740_mmc.h
  create mode 100644 drivers/mmc/host/jz4740_mmc.c
 
+diff --git a/arch/mips/include/asm/mach-jz4740/jz4740_mmc.h b/arch/mips/include/asm/mach-jz4740/jz4740_mmc.h
+new file mode 100644
+index 0000000..8543f43
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-jz4740/jz4740_mmc.h
 @@ -0,0 +1,15 @@
@@ -39,9 +42,11 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 +};
 +
 +#endif
+diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
+index f06d06e..d25e22c 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -457,3 +457,12 @@ config MMC_SH_MMCIF
+@@ -432,3 +432,12 @@ config MMC_SH_MMCIF
  	  This selects the MMC Host Interface controler (MMCIF).
  
  	  This driver supports MMCIF in sh7724/sh7757/sh7372.
@@ -54,19 +59,24 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 +	  SoCs.
 +	  If you have a board based on such a SoC and with a SD/MMC slot,
 +	  say Y or M here.
+diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
+index e30c2ee..f4e53c9 100644
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -37,6 +37,7 @@ obj-$(CONFIG_MMC_VIA_SDMMC)	+= via-sdmmc
- obj-$(CONFIG_GPIOMMC)		+= gpiommc.o
+@@ -36,6 +36,7 @@ obj-$(CONFIG_MMC_CB710)	+= cb710-mmc.o
+ obj-$(CONFIG_MMC_VIA_SDMMC)	+= via-sdmmc.o
  obj-$(CONFIG_SDH_BFIN)		+= bfin_sdh.o
  obj-$(CONFIG_MMC_SH_MMCIF)	+= sh_mmcif.o
 +obj-$(CONFIG_MMC_JZ4740)	+= jz4740_mmc.o
  
  obj-$(CONFIG_MMC_SDHCI_OF)	+= sdhci-of.o
  sdhci-of-y				:= sdhci-of-core.o
+diff --git a/drivers/mmc/host/jz4740_mmc.c b/drivers/mmc/host/jz4740_mmc.c
+new file mode 100644
+index 0000000..ad4f987
 --- /dev/null
 +++ b/drivers/mmc/host/jz4740_mmc.c
-@@ -0,0 +1,1033 @@
+@@ -0,0 +1,1029 @@
 +/*
 + *  Copyright (C) 2009-2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  JZ4740 SD/MMC controller driver
@@ -830,24 +840,20 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 +static int __devinit jz4740_mmc_request_cd_irq(struct platform_device *pdev,
 +	struct jz4740_mmc_host *host)
 +{
-+	int ret;
 +	struct jz4740_mmc_platform_data *pdata = pdev->dev.platform_data;
 +
-+	if (gpio_is_valid(pdata->gpio_card_detect))
++	if (!gpio_is_valid(pdata->gpio_card_detect))
 +		return 0;
 +
 +	host->card_detect_irq = gpio_to_irq(pdata->gpio_card_detect);
-+
 +	if (host->card_detect_irq < 0) {
 +		dev_warn(&pdev->dev, "Failed to get card detect irq\n");
 +		return 0;
 +	}
++
 +	return request_irq(host->card_detect_irq, jz4740_mmc_card_detect_irq,
 +			IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
 +			"MMC card detect", host);
-+
-+
-+	return ret;
 +}
 +
 +static void jz4740_mmc_free_gpios(struct platform_device *pdev)
@@ -1100,3 +1106,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 +MODULE_DESCRIPTION("JZ4740 SD/MMC controller driver");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
+-- 
+1.5.6.5
+
