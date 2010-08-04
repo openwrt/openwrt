@@ -102,16 +102,50 @@ struct switch_attrlist;
 int register_switch(struct switch_dev *dev, struct net_device *netdev);
 void unregister_switch(struct switch_dev *dev);
 
+/**
+ * struct switch_attrlist - attribute list
+ *
+ * @n_attr: number of attributes
+ * @attr: pointer to the attributes array
+ */
 struct switch_attrlist {
-	/* filled in by the driver */
 	int n_attr;
 	const struct switch_attr *attr;
 };
 
+/**
+ * struct switch_dev_ops - switch driver operations
+ *
+ * @attr_global: global switch attribute list
+ * @attr_port: port attribute list
+ * @attr_vlan: vlan attribute list
+ *
+ * Callbacks:
+ *
+ * @get_vlan_ports: read the port list of a VLAN
+ * @set_vlan_ports: set the port list of a VLAN
+ *
+ * @get_port_pvid: get the primary VLAN ID of a port
+ * @set_port_pvid: set the primary VLAN ID of a port
+ *
+ * @apply_config: apply all changed settings to the switch
+ * @reset_switch: resetting the switch
+ */
+struct switch_dev_ops {
+	struct switch_attrlist attr_global, attr_port, attr_vlan;
+
+	int (*get_vlan_ports)(struct switch_dev *dev, struct switch_val *val);
+	int (*set_vlan_ports)(struct switch_dev *dev, struct switch_val *val);
+
+	int (*get_port_pvid)(struct switch_dev *dev, int port, int *val);
+	int (*set_port_pvid)(struct switch_dev *dev, int port, int val);
+
+	int (*apply_config)(struct switch_dev *dev);
+	int (*reset_switch)(struct switch_dev *dev);
+};
 
 struct switch_dev {
-	int id;
-	void *priv;
+	const struct switch_dev_ops *ops;
 	const char *name;
 
 	/* NB: either devname or netdev must be set */
@@ -121,19 +155,14 @@ struct switch_dev {
 	int ports;
 	int vlans;
 	int cpu_port;
-	struct switch_attrlist attr_global, attr_port, attr_vlan;
 
-	spinlock_t lock;
-	struct switch_port *portbuf;
+	/* the following fields are internal for swconfig */
+	int id;
 	struct list_head dev_list;
 	unsigned long def_global, def_port, def_vlan;
 
-	int (*get_vlan_ports)(struct switch_dev *dev, struct switch_val *val);
-	int (*set_vlan_ports)(struct switch_dev *dev, struct switch_val *val);
-	int (*get_port_pvid)(struct switch_dev *dev, int port, int *val);
-	int (*set_port_pvid)(struct switch_dev *dev, int port, int val);
-	int (*apply_config)(struct switch_dev *dev);
-	int (*reset_switch)(struct switch_dev *dev);
+	spinlock_t lock;
+	struct switch_port *portbuf;
 };
 
 struct switch_port {

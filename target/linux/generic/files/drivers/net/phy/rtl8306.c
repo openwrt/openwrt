@@ -250,11 +250,6 @@ static const struct rtl_reg rtl_regs[] = {
 };
 
 
-/* IFXMIPS compat stuff - remove after PHY layer migration */
-static struct switch_dev rtldev;
-/* END IFXMIPS compat stuff */
-
-
 static inline void
 rtl_set_page(struct rtl_priv *priv, unsigned int page)
 {
@@ -706,64 +701,6 @@ rtl_set_ports(struct switch_dev *dev, struct switch_val *val)
 	return 0;
 }
 
-static int
-rtl8306_config_init(struct phy_device *pdev)
-{
-	struct net_device *netdev = pdev->attached_dev;
-	struct rtl_priv *priv = pdev->priv;
-	struct switch_dev *dev = &priv->dev;
-	struct switch_val val;
-	unsigned int chipid, chipver, chiptype;
-	int err;
-
-	/* Only init the switch for the primary PHY */
-	if (pdev->addr != 0)
-		return 0;
-
-	val.value.i = 1;
-	memcpy(&priv->dev, &rtldev, sizeof(struct switch_dev));
-	priv->do_cpu = 0;
-	priv->page = -1;
-	priv->bus = pdev->bus;
-
-	dev->priv = priv;
-
-	chipid = rtl_get(dev, RTL_REG_CHIPID);
-	chipver = rtl_get(dev, RTL_REG_CHIPVER);
-	chiptype = rtl_get(dev, RTL_REG_CHIPTYPE);
-	switch(chiptype) {
-	case 0:
-	case 2:
-		strncpy(priv->hwname, RTL_NAME_S, sizeof(priv->hwname));
-		priv->type = RTL_TYPE_S;
-		break;
-	case 1:
-		strncpy(priv->hwname, RTL_NAME_SD, sizeof(priv->hwname));
-		priv->type = RTL_TYPE_SD;
-		break;
-	case 3:
-		strncpy(priv->hwname, RTL_NAME_SDM, sizeof(priv->hwname));
-		priv->type = RTL_TYPE_SDM;
-		break;
-	default:
-		strncpy(priv->hwname, RTL_NAME_UNKNOWN, sizeof(priv->hwname));
-		break;
-	}
-
-	dev->name = priv->hwname;
-	rtl_hw_init(dev);
-
-	printk(KERN_INFO "Registering %s switch with Chip ID: 0x%04x, version: 0x%04x\n", priv->hwname, chipid, chipver);
-
-	err = register_switch(dev, netdev);
-	if (err < 0) {
-		kfree(priv);
-		return err;
-	}
-
-	return 0;
-}
-
 static struct switch_attr rtl_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -897,11 +834,7 @@ static struct switch_attr rtl_vlan[] = {
 	},
 };
 
-/* template */
-static struct switch_dev rtldev = {
-	.cpu_port = RTL8306_PORT_CPU,
-	.ports = RTL8306_NUM_PORTS,
-	.vlans = RTL8306_NUM_VLANS,
+static const struct switch_dev_ops rtl8306_ops = {
 	.attr_global = {
 		.attr = rtl_globals,
 		.n_attr = ARRAY_SIZE(rtl_globals),
@@ -919,6 +852,65 @@ static struct switch_dev rtldev = {
 	.set_vlan_ports = rtl_set_ports,
 	.apply_config = rtl_hw_apply,
 };
+
+static int
+rtl8306_config_init(struct phy_device *pdev)
+{
+	struct net_device *netdev = pdev->attached_dev;
+	struct rtl_priv *priv = pdev->priv;
+	struct switch_dev *dev = &priv->dev;
+	struct switch_val val;
+	unsigned int chipid, chipver, chiptype;
+	int err;
+
+	/* Only init the switch for the primary PHY */
+	if (pdev->addr != 0)
+		return 0;
+
+	val.value.i = 1;
+	priv->dev.cpu_port = RTL8306_PORT_CPU;
+	priv->dev.ports = RTL8306_NUM_PORTS;
+	priv->dev.vlans = RTL8306_NUM_VLANS;
+	priv->dev.ops = &rtl8306_ops;
+	priv->do_cpu = 0;
+	priv->page = -1;
+	priv->bus = pdev->bus;
+
+	chipid = rtl_get(dev, RTL_REG_CHIPID);
+	chipver = rtl_get(dev, RTL_REG_CHIPVER);
+	chiptype = rtl_get(dev, RTL_REG_CHIPTYPE);
+	switch(chiptype) {
+	case 0:
+	case 2:
+		strncpy(priv->hwname, RTL_NAME_S, sizeof(priv->hwname));
+		priv->type = RTL_TYPE_S;
+		break;
+	case 1:
+		strncpy(priv->hwname, RTL_NAME_SD, sizeof(priv->hwname));
+		priv->type = RTL_TYPE_SD;
+		break;
+	case 3:
+		strncpy(priv->hwname, RTL_NAME_SDM, sizeof(priv->hwname));
+		priv->type = RTL_TYPE_SDM;
+		break;
+	default:
+		strncpy(priv->hwname, RTL_NAME_UNKNOWN, sizeof(priv->hwname));
+		break;
+	}
+
+	dev->name = priv->hwname;
+	rtl_hw_init(dev);
+
+	printk(KERN_INFO "Registering %s switch with Chip ID: 0x%04x, version: 0x%04x\n", priv->hwname, chipid, chipver);
+
+	err = register_switch(dev, netdev);
+	if (err < 0) {
+		kfree(priv);
+		return err;
+	}
+
+	return 0;
+}
 
 
 static int

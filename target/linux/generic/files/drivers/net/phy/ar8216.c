@@ -52,7 +52,6 @@ struct ar8216_priv {
 	u8 vlan_tagged;
 	u16 pvid[AR8216_NUM_PORTS];
 };
-static struct switch_dev athdev;
 
 #define to_ar8216(_dev) container_of(_dev, struct ar8216_priv, dev)
 
@@ -631,11 +630,34 @@ ar8216_reset_switch(struct switch_dev *dev)
 	return ar8216_hw_apply(dev);
 }
 
+
+static const struct switch_dev_ops ar8216_ops = {
+	.attr_global = {
+		.attr = ar8216_globals,
+		.n_attr = ARRAY_SIZE(ar8216_globals),
+	},
+	.attr_port = {
+		.attr = ar8216_port,
+		.n_attr = ARRAY_SIZE(ar8216_port),
+	},
+	.attr_vlan = {
+		.attr = ar8216_vlan,
+		.n_attr = ARRAY_SIZE(ar8216_vlan),
+	},
+	.get_port_pvid = ar8216_get_pvid,
+	.set_port_pvid = ar8216_set_pvid,
+	.get_vlan_ports = ar8216_get_ports,
+	.set_vlan_ports = ar8216_set_ports,
+	.apply_config = ar8216_hw_apply,
+	.reset_switch = ar8216_reset_switch,
+};
+
 static int
 ar8216_config_init(struct phy_device *pdev)
 {
 	struct ar8216_priv *priv;
 	struct net_device *dev = pdev->attached_dev;
+	struct switch_dev *swdev;
 	int ret;
 
 	priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
@@ -667,14 +689,22 @@ ar8216_config_init(struct phy_device *pdev)
 	mutex_init(&priv->reg_mutex);
 	priv->read = ar8216_mii_read;
 	priv->write = ar8216_mii_write;
-	memcpy(&priv->dev, &athdev, sizeof(struct switch_dev));
+
 	pdev->priv = priv;
 
+	swdev = &priv->dev;
+	swdev->cpu_port = AR8216_PORT_CPU;
+	swdev->ops = &ar8216_ops;
+
 	if (priv->chip == AR8316) {
-		priv->dev.name = "Atheros AR8316";
-		priv->dev.vlans = AR8X16_MAX_VLANS;
+		swdev->name = "Atheros AR8316";
+		swdev->vlans = AR8X16_MAX_VLANS;
 		/* port 5 connected to the other mac, therefore unusable */
-		priv->dev.ports = (AR8216_NUM_PORTS - 1);
+		swdev->ports = (AR8216_NUM_PORTS - 1);
+	} else {
+		swdev->name = "Atheros AR8216";
+		swdev->vlans = AR8216_NUM_VLANS;
+		swdev->ports = AR8216_NUM_PORTS;
 	}
 
 	if ((ret = register_switch(&priv->dev, pdev->attached_dev)) < 0) {
@@ -781,32 +811,6 @@ ar8216_remove(struct phy_device *pdev)
 		unregister_switch(&priv->dev);
 	kfree(priv);
 }
-
-/* template */
-static struct switch_dev athdev = {
-	.name = "Atheros AR8216",
-	.cpu_port = AR8216_PORT_CPU,
-	.ports = AR8216_NUM_PORTS,
-	.vlans = AR8216_NUM_VLANS,
-	.attr_global = {
-		.attr = ar8216_globals,
-		.n_attr = ARRAY_SIZE(ar8216_globals),
-	},
-	.attr_port = {
-		.attr = ar8216_port,
-		.n_attr = ARRAY_SIZE(ar8216_port),
-	},
-	.attr_vlan = {
-		.attr = ar8216_vlan,
-		.n_attr = ARRAY_SIZE(ar8216_vlan),
-	},
-	.get_port_pvid = ar8216_get_pvid,
-	.set_port_pvid = ar8216_set_pvid,
-	.get_vlan_ports = ar8216_get_ports,
-	.set_vlan_ports = ar8216_set_ports,
-	.apply_config = ar8216_hw_apply,
-	.reset_switch = ar8216_reset_switch,
-};
 
 static struct phy_driver ar8216_driver = {
 	.phy_id		= 0x004d0000,
