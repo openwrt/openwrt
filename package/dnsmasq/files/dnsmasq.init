@@ -74,6 +74,7 @@ dnsmasq() {
 	append_bool "$cfg" enable_tftp "--enable-tftp"
 	append_bool "$cfg" nonwildcard "-z"
 
+	append_parm "$cfg" cachesize "-c"
 	append_parm "$cfg" dnsforwardmax "-0"
 	append_parm "$cfg" port "-p"
 	append_parm "$cfg" ednspacket_max "-P"
