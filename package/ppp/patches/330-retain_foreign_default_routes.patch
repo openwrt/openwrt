@@ -4,7 +4,7 @@
  	SIN_ADDR(rt.rt_genmask) = 0L;
      }
  
-+	rt.rt_dev = ifname;
++    rt.rt_dev = ifname;
      rt.rt_flags = RTF_UP;
      if (ioctl(sock_fd, SIOCDELRT, &rt) < 0 && errno != ESRCH) {
  	if (still_ppp()) {
