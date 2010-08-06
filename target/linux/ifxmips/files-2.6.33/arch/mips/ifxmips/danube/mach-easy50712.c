@@ -61,8 +61,6 @@ easy50712_init(void)
 {
 	ifxmips_register_gpio();
 
-	ifxmips_register_gpio_dev();
-
 	ifxmips_register_mtd(&easy50712_flash_data);
 
 	ifxmips_register_leds(easy50712_leds, ARRAY_SIZE(easy50712_leds));

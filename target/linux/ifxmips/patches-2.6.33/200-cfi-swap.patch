@@ -25,7 +25,20 @@
  	case FL_WRITING:
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -1068,7 +1068,9 @@ static int __xipram do_write_oneword(str
+@@ -39,7 +39,11 @@
+ #include <linux/mtd/xip.h>
+ 
+ #define AMD_BOOTLOC_BUG
+-#define FORCE_WORD_WRITE 0
++#ifdef CONFIG_IFXMIPS
++#  define FORCE_WORD_WRITE 1
++#else
++#  define FORCE_WORD_WRITE 0
++#endif
+ 
+ #define MAX_WORD_RETRIES 3
+ 
+@@ -1096,7 +1096,9 @@ static int __xipram do_write_oneword(str
  	int retry_cnt = 0;
  
  	adr += chip->start;

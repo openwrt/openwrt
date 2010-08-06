@@ -351,7 +351,7 @@
     timer = TIMER1A;
 --- a/src/mps/drv_mps_vmmc_danube.c
 +++ b/src/mps/drv_mps_vmmc_danube.c
-@@ -32,9 +32,22 @@
+@@ -32,9 +32,20 @@
  #include "ifxos_select.h"
  #include "ifxos_interrupt.h"
  
@@ -363,12 +363,10 @@
 +#  include <asm/mach-ifxmips/ifxmips_irq.h>
 +#  include <asm/mach-ifxmips/ifxmips_gptu.h>
 +#  include <asm/mach-ifxmips/ifxmips_prom.h>
++#  include <linux/dma-mapping.h>
 +
 +#  define IFX_RCU_RST_REQ        IFXMIPS_RCU_RST
 +#  define IFX_RCU_RST_REQ_CPU1   IFXMIPS_RCU_RST_CPU1
-+
-+#  define ifx_get_cp1_base       prom_get_cp1_base
-+#  define ifx_get_cp1_size       prom_get_cp1_size
 +#else
 +#  include <asm/ifx/ifx_regs.h>
 +#  include <asm/ifx_vpe.h>
@@ -377,6 +375,30 @@
  
  #include "drv_mps_vmmc.h"
  #include "drv_mps_vmmc_dbg.h"
+@@ -72,6 +71,23 @@ volatile IFX_uint32_t *danube_cp1_base;
+ /* Local function definition     */
+ /* ============================= */
+ 
++#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,28))
++IFX_uint32_t ifx_get_cp1_size(IFX_void_t)
++{
++	return 2;
++}
++
++IFX_uint32_t *ifx_get_cp1_base(IFX_void_t)
++{
++	if (!danube_cp1_base) {
++		dma_addr_t dma;
++		danube_cp1_base = dma_alloc_coherent(NULL, ifx_get_cp1_size()<<20, &dma, GFP_ATOMIC);
++	}
++
++	return (IFX_uint32_t*)danube_cp1_base;
++}
++#endif
++
+ /******************************************************************************
+  * DANUBE Specific Routines
+  ******************************************************************************/
 @@ -119,6 +132,15 @@ IFX_int32_t ifx_mps_download_firmware (m
     }
  

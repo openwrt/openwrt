@@ -61,8 +61,6 @@ easy4010_init(void)
 {
 	ifxmips_register_gpio();
 
-	ifxmips_register_gpio_dev();
-
 	ifxmips_register_mtd(&easy4010_flash_data);
 
 	ifxmips_register_leds(easy4010_leds, ARRAY_SIZE(easy4010_leds));

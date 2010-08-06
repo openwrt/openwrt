@@ -19,8 +19,6 @@
 #define _IFXPROM_H__
 
 extern void early_printf(const char *fmt, ...);
-extern u32 *prom_get_cp1_base(void);
-extern u32 prom_get_cp1_size(void);
 extern int ifxmips_has_brn_block(void);
 
 #endif
