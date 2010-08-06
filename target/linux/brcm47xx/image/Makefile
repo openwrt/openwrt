@@ -98,6 +98,10 @@ define Image/Build/Initramfs
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-initramfs.trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma
 endef
 
+define Image/Build/Chk
+	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/openwrt-$(2)-$(5).chk -k $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -b $(3) -r $(4)
+endef
+
 define Image/Build
 	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx \
 		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
@@ -105,6 +109,8 @@ define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Motorola,$(1),wr850g,1,$(1))
 	$(call Image/Build/USR,$(1),usr5461,$(1))
+	$(call Image/Build/Chk,$(1),wnr834b_v2,U12H081T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wgr614_v8,U12H072T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 endef
 
 $(eval $(call BuildImage))
