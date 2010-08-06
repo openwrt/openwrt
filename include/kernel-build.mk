@@ -113,7 +113,7 @@ define BuildKernel
   compile: $(LINUX_DIR)/.modules
 	$(MAKE) -C image compile TARGET_BUILD=
 
-  oldconfig menuconfig: $(STAMP_PREPARED) $(STAMP_CHECKED) FORCE
+  oldconfig menuconfig nconfig: $(STAMP_PREPARED) $(STAMP_CHECKED) FORCE
 	[ -e "$(LINUX_CONFIG)" ] || touch "$(LINUX_CONFIG)"
 	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config
 	touch $(LINUX_CONFIG)
