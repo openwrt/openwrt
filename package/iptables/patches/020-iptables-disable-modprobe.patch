@@ -1,6 +1,6 @@
 --- a/xtables.c
 +++ b/xtables.c
-@@ -313,6 +313,7 @@ static char *get_modprobe(void)
+@@ -305,6 +305,7 @@ static char *get_modprobe(void)
  
  int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
  {
@@ -8,7 +8,7 @@
  	char *buf = NULL;
  	char *argv[4];
  	int status;
-@@ -356,6 +357,7 @@ int xtables_insmod(const char *modname, 
+@@ -348,6 +349,7 @@ int xtables_insmod(const char *modname, 
  	free(buf);
  	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
  		return 0;
