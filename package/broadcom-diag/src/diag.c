@@ -1047,7 +1047,7 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[WDNetCenter];
 		}
 
-		if (!strcmp(boardnum, "08") || !strcmp(boardnum, "01") &&	  
+		if ((!strcmp(boardnum, "08") || !strcmp(boardnum, "01")) &&
 				!strcmp(boardtype,"0x0472") && !strcmp(getvar("cardbus"), "1")) { /* Netgear WNR834B  V1 and V2*/
 			/* TODO: Check for version. Default platform is V2 for now. */
 			return &platforms[WNR834BV2];
