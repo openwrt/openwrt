@@ -628,7 +628,7 @@ define KernelPackage/l2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   DEPENDS:=@LINUX_2_6_35
   TITLE:=L2TPv3 Support
-  KCONFIG:=CONFIG_L2TP
+  KCONFIG:=CONFIG_L2TP CONFIG_L2TP_DEBUGFS=n
   FILES:=$(LINUX_DIR)/net/l2tp/l2tp_core.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,32,l2tp_core)
 endef
