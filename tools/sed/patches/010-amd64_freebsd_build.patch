@@ -1,0 +1,12 @@
+--- a/config/config.sub
++++ b/config/config.sub
+@@ -380,6 +380,9 @@ case $basic_machine in
+ 	amd64)
+ 		basic_machine=x86_64-pc
+ 		;;
++	amd64-*)
++		basic_machine=x86_64-`echo $basic_machine | sed 's/^[^-]*-//'`
++		;;
+ 	amdahl)
+ 		basic_machine=580-amdahl
+ 		os=-sysv
