@@ -60,9 +60,6 @@ easy50812_init(void)
 {
 	ifxmips_register_gpio();
 
-	//printk("ifxmips_register_gpio_dev\n");
-	//ifxmips_register_gpio_dev();
-
 	ifxmips_register_mtd(&easy50812_flash_data);
 
 	ifxmips_register_leds(easy50812_leds, ARRAY_SIZE(easy50812_leds));

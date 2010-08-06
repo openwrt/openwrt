@@ -9,10 +9,6 @@
 #include <ifxmips.h>
 #include <ifxmips_prom.h>
 
-/* for voice cpu (MIPS24K) */
-unsigned int *prom_cp1_base;
-unsigned int prom_cp1_size = 0;
-
 /* for Multithreading (APRP) on MIPS34K */
 unsigned long physical_memsize;
 
@@ -20,21 +16,6 @@ void
 prom_free_prom_memory(void)
 {
 }
-
-unsigned int*
-prom_get_cp1_base(void)
-{
-	return prom_cp1_base;
-}
-EXPORT_SYMBOL(prom_get_cp1_base);
-
-unsigned int
-prom_get_cp1_size(void)
-{
-	/* return size im MB */
-	return prom_cp1_size>>20;
-}
-EXPORT_SYMBOL(prom_get_cp1_size);
 
 extern unsigned char ifxmips_ethaddr[6];
 int cmdline_mac = 0;
@@ -114,18 +95,6 @@ static void __init prom_init_cmdline(void)
 		envp++;
 	}
 	memsize *= 1024 * 1024;
-
-	/* only on Twinpass/Danube a second CPU is used for Voice */
-	if ((cpu_data[0].cputype == CPU_24K) && (prom_cp1_size))
-	{
-#define CP1_SIZE	2 << 20
-		prom_cp1_size = CP1_SIZE;
-		memsize -= prom_cp1_size;
-		prom_cp1_base = (unsigned int *)KSEG1ADDR(memsize);
-
-		early_printf("Using %dMB Ram and reserving %dMB for cp1\n",
-			memsize>>20, prom_cp1_size>>20);
-	}
 
 	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
 }

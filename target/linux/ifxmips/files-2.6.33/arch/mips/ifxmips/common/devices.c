@@ -20,19 +20,6 @@
 #include <ifxmips.h>
 #include <ifxmips_irq.h>
 
-/* gpiodev */
-static struct platform_device ifxmips_gpio_dev =
-{
-	.name			= "GPIODEV",
-	.num_resources	= 1,
-};
-
-void __init
-ifxmips_register_gpio_dev(void)
-{
-	platform_device_register(&ifxmips_gpio_dev);
-}
-
 /* gpio leds */
 #ifdef CONFIG_LEDS_GPIO
 static struct gpio_led_platform_data ifxmips_gpio_led_data;
