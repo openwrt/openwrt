@@ -110,6 +110,7 @@ enum {
 
 	/* Netgear */
 	WGT634U,
+	WNR834BV2,
 
 	/* Trendware */
 	TEW411BRPP,
@@ -754,6 +755,17 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 3, .polarity = NORMAL },
 		},
 	},
+	[WNR834BV2] = {
+		.name		= "Netgear WNR834B V2",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 2, .polarity = NORMAL },
+			{ .name = "diag",	.gpio = 1 << 3, .polarity = NORMAL },
+			{ .name = "connected",	.gpio = 1 << 7, .polarity = NORMAL },
+		},
+	},
 	/* Trendware */
 	[TEW411BRPP] = {
 		.name           = "Trendware TEW411BRP+",
@@ -1033,6 +1045,12 @@ static struct platform_t __init *platform_detect(void)
 
 		if (!strncmp(boardnum, "TH",2) && !strcmp(boardtype,"0x042f")) {
 			return &platforms[WDNetCenter];
+		}
+
+		if (!strcmp(boardnum, "08") || !strcmp(boardnum, "01") &&	  
+				!strcmp(boardtype,"0x0472") && !strcmp(getvar("cardbus"), "1")) { /* Netgear WNR834B  V1 and V2*/
+			/* TODO: Check for version. Default platform is V2 for now. */
+			return &platforms[WNR834BV2];
 		}
 
 	} else { /* PMON based - old stuff */

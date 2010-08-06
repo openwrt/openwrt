@@ -46,6 +46,7 @@ define Host/Compile
 	$(call cc,wndr3700)
 	$(call cc,mkdniimg)
 	$(call cc,mktitanimg)
+	$(call cc,mkchkimg)
 endef
 
 define Host/Install
