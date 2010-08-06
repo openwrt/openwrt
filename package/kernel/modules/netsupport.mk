@@ -624,3 +624,53 @@ endef
 
 $(eval $(call KernelPackage,pktgen))
 
+define KernelPackage/l2tp
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  DEPENDS:=@LINUX_2_6_35
+  TITLE:=L2TPv3 Support
+  KCONFIG:=CONFIG_L2TP
+  FILES:=$(LINUX_DIR)/net/l2tp/l2tp_core.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,32,l2tp_core)
+endef
+
+define KernelPackage/l2tp/description
+ Kernel modules for L2TP V3 Support
+endef
+
+$(eval $(call KernelPackage,l2tp))
+
+define KernelPackage/l2tp-eth
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=L2TP ethernet pseudowire support for L2TPv3
+  DEPENDS:=+kmod-l2tp
+  KCONFIG:= CONFIG_L2TP_V3=y \
+  CONFIG_L2TP_ETH
+  FILES:= \
+	  $(LINUX_DIR)/net/l2tp/l2tp_netlink.$(LINUX_KMOD_SUFFIX) \
+	  $(LINUX_DIR)/net/l2tp/l2tp_eth.$(LINUX_KMOD_SUFFIX) 
+  AUTOLOAD:=$(call AutoLoad,32,l2tp_core l2tp_netlink l2tp_eth)
+endef
+
+define KernelPackage/l2tp-eth/description
+ Kernel modules for L2TP V3 pseudowire support
+endef
+
+$(eval $(call KernelPackage,l2tp-eth))
+
+define KernelPackage/l2tp-ip
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Support for L2TP-over-IP socket family
+  DEPENDS:=+kmod-l2tp
+  KCONFIG:= CONFIG_L2TP_V3=y \
+  CONFIG_L2TP_IP
+  FILES:=$(LINUX_DIR)/net/l2tp/l2tp_ip.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,32,l2tp_core l2tp_ip)
+endef
+
+define KernelPackage/l2tp-ip/description
+ Kernel modules for L2TP-over-IP socket family
+endef
+
+$(eval $(call KernelPackage,l2tp-ip))
+
+
