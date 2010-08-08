@@ -248,11 +248,11 @@ static int rtl8366rb_hw_init(struct rtl8366_smi *smi)
 	/* enable all ports */
 	REG_WR(smi, RTL8366RB_PECR, 0);
 
-	/* disable learning for all ports */
-	REG_WR(smi, RTL8366RB_SSCR0, RTL8366RB_PORT_ALL);
+	/* enable learning for all ports */
+	REG_WR(smi, RTL8366RB_SSCR0, 0);
 
-	/* disable auto ageing for all ports */
-	REG_WR(smi, RTL8366RB_SSCR1, RTL8366RB_PORT_ALL);
+	/* enable auto ageing for all ports */
+	REG_WR(smi, RTL8366RB_SSCR1, 0);
 
 	/*
 	 * discard VLAN tagged packets if the port is not a member of
@@ -649,6 +649,41 @@ static int rtl8366rb_sw_set_vlan_enable(struct switch_dev *dev,
 		return rtl8366rb_vlan_set_4ktable(smi, val->value.i);
 }
 
+static int rtl8366rb_sw_get_learning_enable(struct switch_dev *dev,
+				       const struct switch_attr *attr,
+				       struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 data;
+
+	rtl8366_smi_read_reg(smi, RTL8366RB_SSCR0, &data);
+	val->value.i = !data;
+
+	return 0;
+}
+
+
+static int rtl8366rb_sw_set_learning_enable(struct switch_dev *dev,
+				       const struct switch_attr *attr,
+				       struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 portmask = 0;
+	int err = 0;
+
+	if (!val->value.i)
+		portmask = RTL8366RB_PORT_ALL;
+
+	/* set learning for all ports */
+	REG_WR(smi, RTL8366RB_SSCR0, portmask);
+
+	/* set auto ageing for all ports */
+	REG_WR(smi, RTL8366RB_SSCR1, portmask);
+
+	return 0;
+}
+
+
 static const char *rtl8366rb_speed_str(unsigned speed)
 {
 	switch (speed) {
@@ -777,6 +812,13 @@ static int rtl8366rb_sw_reset_switch(struct switch_dev *dev)
 
 static struct switch_attr rtl8366rb_globals[] = {
 	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_learning",
+		.description = "Enable learning, enable aging",
+		.set = rtl8366rb_sw_set_learning_enable,
+		.get = rtl8366rb_sw_get_learning_enable,
+		.max = 1
+	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
 		.description = "Enable VLAN mode",
