@@ -92,6 +92,7 @@ endef
 # Prism54 drivers
 P54PCIFW:=2.13.12.0.arm
 P54USBFW:=2.13.24.0.lm87.arm
+P54SPIFW:=2.13.0.0.a.13.14.arm
 
 define Download/p54usb
   FILE:=$(P54USBFW)
@@ -107,6 +108,13 @@ define Download/p54pci
 endef
 $(eval $(call Download,p54pci))
 
+define Download/p54spi
+  FILE:=$(P54SPIFW)
+  URL:=http://daemonizer.de/prism54/prism54-fw/stlc4560
+  MD5SUM:=42661f8ecbadd88012807493f596081d
+endef
+$(eval $(call Download,p54spi))
+
 define KernelPackage/p54/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Prism54 Drivers
@@ -118,7 +126,7 @@ endef
 
 define KernelPackage/p54-common
   $(call KernelPackage/p54/Default)
-  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT +kmod-mac80211
+  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT||@TARGET_omap24xx +kmod-mac80211
   TITLE+= (COMMON)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54common.ko
   AUTOLOAD:=$(call AutoLoad,30,p54common)
@@ -138,6 +146,14 @@ define KernelPackage/p54-usb
   DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-p54-common
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54usb.ko
   AUTOLOAD:=$(call AutoLoad,31,p54usb)
+endef
+
+define KernelPackage/p54-spi
+  $(call KernelPackage/p54/Default)
+  TITLE+= (SPI)
+  DEPENDS+= @TARGET_omap24xx +kmod-p54-common
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54spi.ko
+  AUTOLOAD:=$(call AutoLoad,31,p54spi)
 endef
 
 # Ralink rt2x00 drivers
@@ -850,7 +866,7 @@ MAKE_OPTS:= \
 	CONFIG_P54_COMMON=$(if $(CONFIG_PACKAGE_kmod-p54-common),m) \
 	CONFIG_P54_PCI=$(if $(CONFIG_PACKAGE_kmod-p54-pci),m) \
 	CONFIG_P54_USB=$(if $(CONFIG_PACKAGE_kmod-p54-usb),m) \
-	CONFIG_P54_SPI= \
+	CONFIG_P54_SPI=$(if $(CONFIG_PACKAGE_kmod-p54-spi),m) \
 	CONFIG_RT2X00=$(if $(CONFIG_PACKAGE_kmod-rt2x00-lib),m) \
 	CONFIG_RT2X00_LIB=$(if $(CONFIG_PACKAGE_kmod-rt2x00-lib),m) \
 	CONFIG_RT2X00_LIB_PCI=$(if $(CONFIG_PACKAGE_kmod-rt2x00-pci),m) \
@@ -980,6 +996,11 @@ define KernelPackage/p54-usb/install
 	$(INSTALL_DATA) $(DL_DIR)/$(P54USBFW) $(1)/lib/firmware/isl3887usb
 endef
 
+define KernelPackage/p54-spi/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(DL_DIR)/$(P54SPIFW) $(1)/lib/firmware/3826.arm
+endef
+
 define KernelPackage/rt61-pci/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt2?61*.bin $(1)/lib/firmware/
@@ -1076,6 +1097,7 @@ $(eval $(call KernelPackage,mac80211))
 $(eval $(call KernelPackage,p54-common))
 $(eval $(call KernelPackage,p54-pci))
 $(eval $(call KernelPackage,p54-usb))
+$(eval $(call KernelPackage,p54-spi))
 $(eval $(call KernelPackage,rt2x00-lib))
 $(eval $(call KernelPackage,rt2x00-pci))
 $(eval $(call KernelPackage,rt2x00-usb))
