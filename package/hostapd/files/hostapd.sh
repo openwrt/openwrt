@@ -116,6 +116,7 @@ hostapd_set_bss_options() {
 	config_get ssid "$vif" ssid
 	config_get bridge "$vif" bridge
 	config_get ieee80211d "$vif" ieee80211d
+	config_get iapp_interface "$vif" iapp_interface
 
 	config_get_bool wps_pbc "$vif" wps_pushbutton 0
 	[ -n "$wps_possible" -a "$wps_pbc" -gt 0 ] && {
@@ -128,6 +129,7 @@ hostapd_set_bss_options() {
 	append "$var" "ssid=$ssid" "$N"
 	[ -n "$bridge" ] && append "$var" "bridge=$bridge" "$N"
 	[ -n "$ieee80211d" ] && append "$var" "ieee80211d=$ieee80211d" "$N"
+	[ -n "$iapp_interface" ] && append "$var" $(uci_get_state network "$iapp_interface" ifname "$iapp_interface") "$N"
 
 	[ "$wpa" -ge "2" ] && config_get ieee80211w "$vif" ieee80211w
 	case "$ieee80211w" in
