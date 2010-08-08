@@ -7,6 +7,6 @@
 
 define Profile/ar525w
   NAME:=Airlink AR525W
-  PACKAGES:=kmod-rt61-pci kmod-switch-ip175c swconfig
+  PACKAGES:=kmod-rt61-pci kmod-switch-ip17xx swconfig
 endef
 $(eval $(call Profile,ar525w))

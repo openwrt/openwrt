@@ -51,20 +51,20 @@ endef
 
 $(eval $(call KernelPackage,mvswitch))
 
-define KernelPackage/switch-ip175c
+define KernelPackage/switch-ip17xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=IC+ IP175C/IP178C switch support
+  TITLE:=IC+ IP17XX switch support
   DEPENDS:=+kmod-swconfig
-  KCONFIG:=CONFIG_IP175C_PHY
-  FILES:=$(LINUX_DIR)/drivers/net/phy/ip175c.ko
-  AUTOLOAD:=$(call AutoLoad,42,ip175c)
+  KCONFIG:=CONFIG_IP17XX_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/ip17xx.ko
+  AUTOLOAD:=$(call AutoLoad,42,ip17xx)
 endef
 
-define KernelPackage/switch-ip175c/description
+define KernelPackage/switch-ip17xx/description
   IC+ IP175C/IP178C switch support
 endef
 
-$(eval $(call KernelPackage,switch-ip175c))
+$(eval $(call KernelPackage,switch-ip17xx))
 
 define KernelPackage/natsemi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
