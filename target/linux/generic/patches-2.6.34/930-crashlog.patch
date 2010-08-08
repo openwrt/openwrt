@@ -15,12 +15,13 @@
 +#endif
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -715,6 +715,9 @@ config NET_NS
+@@ -715,6 +715,10 @@ config NET_NS
  	  Allow user space to create what appear to be multiple instances
  	  of the network stack.
  
 +config CRASHLOG
 +	bool "Crash logging"
++	depends on !NO_BOOTMEM
 +
  config BLK_DEV_INITRD
  	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
