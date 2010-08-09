@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
-PKG_VERSION:=2.0.1
-PKG_RELEASE:=3
+PKG_VERSION:=2.0.2
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/horms/kexec-tools
-PKG_MD5SUM:=67c1a396fdf67b984dad939a59a01571
+PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/kexec
+PKG_MD5SUM:=35d05fed1c97008ac34c5bfb929295eb
 
 PKG_FIXUP:=libtool
 
