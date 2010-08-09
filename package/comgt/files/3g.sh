@@ -92,10 +92,12 @@ setup_interface_3g() {
 		fi
 		# Don't assume Option to be default as it breaks with Huawei Cards/Sticks
 
-		PINCODE="$pincode" gcom -d "$device" -s /etc/gcom/setpin.gcom || {
-			echo "$config(3g): Failed to set the PIN code."
-			set_3g_led 0 0 0
-			return 1
+		test -z "$pincode" || {
+			PINCODE="$pincode" gcom -d "$device" -s /etc/gcom/setpin.gcom || {
+				echo "$config(3g): Failed to set the PIN code."
+				set_3g_led 0 0 0
+				return 1
+			}
 		}
 		test -z "$mode" || {
 			MODE="$mode" gcom -d "$device" -s /etc/gcom/setmode.gcom
