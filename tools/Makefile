@@ -18,6 +18,7 @@ tools-y += m4 autoconf automake bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs libuuid mtd-utils mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2
 tools-$(CONFIG_TARGET_orion) += wrt350nv2-builder upslug2
+tools-$(CONFIG_TARGET_x86) += qemu
 ifneq ($(CONFIG_LINUX_2_4)$(CONFIG_LINUX_2_6_25),)
 tools-y += squashfs lzma-old
 else
@@ -47,6 +48,7 @@ $(curdir)/mpc/compile := $(curdir)/gmp/install
 $(curdir)/mpfr/compile := $(curdir)/gmp/install
 $(curdir)/mtd-utils/compile := $(curdir)/libuuid/install
 $(curdir)/mkimage/compile := $(curdir)/sed/install
+$(curdir)/upslug2/compile := $(curdir)/automake/install
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
 $(curdir)/builddirs-default := $(tools-y)
