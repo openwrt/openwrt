@@ -5,7 +5,7 @@
  drivers/cbus/Makefile          |   14 
  drivers/cbus/cbus.c            |  309 ++++++++++++++++
  drivers/cbus/cbus.h            |   36 +
- drivers/cbus/retu-headset.c    |  355 ++++++++++++++++++
+ drivers/cbus/retu-headset.c    |  356 ++++++++++++++++++
  drivers/cbus/retu-pwrbutton.c  |  118 ++++++
  drivers/cbus/retu-rtc.c        |  477 +++++++++++++++++++++++++
  drivers/cbus/retu-user.c       |  425 ++++++++++++++++++++++
@@ -17,7 +17,7 @@
  drivers/cbus/tahvo.c           |  443 +++++++++++++++++++++++
  drivers/cbus/tahvo.h           |   61 +++
  drivers/cbus/user_retu_tahvo.h |   75 +++
- 18 files changed, 4524 insertions(+), 1 deletion(-)
+ 18 files changed, 4525 insertions(+), 1 deletion(-)
 
 --- /dev/null
 +++ linux-2.6.35/drivers/cbus/cbus.c
@@ -1032,7 +1032,7 @@
 +#endif /* __DRIVERS_CBUS_RETU_H */
 --- /dev/null
 +++ linux-2.6.35/drivers/cbus/retu-headset.c
-@@ -0,0 +1,355 @@
+@@ -0,0 +1,356 @@
 +/**
 + * Retu/Vilma headset detection
 + *
@@ -1060,6 +1060,7 @@
 +#include <linux/delay.h>
 +#include <linux/input.h>
 +#include <linux/platform_device.h>
++#include <linux/slab.h>
 +
 +#include "retu.h"
 +
