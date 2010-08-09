@@ -36,8 +36,6 @@ config X86_VDI_IMAGES
 	depends TARGET_x86_generic
 	depends TARGET_ROOTFS_EXT2FS
 	select PACKAGE_kmod-pcnet32
-	help
-	  Requires VBoxManage installed on the build system.
 
 config X86_VMDK_IMAGES
 	bool "Build VMware image files (VMDK)"
@@ -45,8 +43,6 @@ config X86_VMDK_IMAGES
 	depends TARGET_x86_generic
 	depends TARGET_ROOTFS_EXT2FS
 	select PACKAGE_kmod-e1000
-	help
-	  Requires qemu-img installed on the build system.
 
 
 config OLPC_BOOTSCRIPT_IMAGES
