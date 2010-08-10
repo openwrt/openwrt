@@ -1,6 +1,6 @@
 /*
 
-	WRT350Nv2-Builder 2.2 (previously called buildimg)
+	WRT350Nv2-Builder 2.3 (previously called buildimg)
 	Copyright (C) 2008-2009 Dirk Teurlings <info@upexia.nl>
 	Copyright (C) 2009-2010 Matthias Buecher (http://www.maddes.net/)
 
@@ -62,6 +62,8 @@
 	https://forum.openwrt.org/viewtopic.php?pid=92928#p92928
 
 	Changelog:
+	v2.3 - allow jffs by adding its magic number (0x8519)
+	       added parameter option -i to ignore unknown magic numbers
 	v2.2 - fixed checksum byte calculation for other versions than 0x2019
 	       fixed rare problem with padsize
 	       updated info to stock firmware 2.00.20
@@ -90,7 +92,7 @@
 
 
 // version info
-#define VERSION "2.2"
+#define VERSION "2.3"
 char program_info[] = "WRT350Nv2-Builder v%s by Dirk Teurlings <info@upexia.nl> and Matthias Buecher (http://www.maddes.net/)\n";
 
 // verbosity
@@ -708,6 +710,7 @@ int main(int argc, char *argv[]) {
 	int help;
 	int onlybin;
 	int havezip;
+	int ignoremagic;
 	char option;
 	char *par_filename = NULL;
 	char *img_filename = NULL;
@@ -723,7 +726,8 @@ int main(int argc, char *argv[]) {
 	int mandatory;
 	int noupdate;
 	int sizecheck;
-	unsigned char magic[2];
+	int magiccheck;
+	int magicerror;
 
 
 // display program header
@@ -735,7 +739,8 @@ int main(int argc, char *argv[]) {
 	help = 0;
 	onlybin = 0;
 	havezip = 0;
-	while ((option = getopt(argc, argv, ":hbzf:v")) != -1) {
+	ignoremagic = 0;
+	while ((option = getopt(argc, argv, "hbzif:v")) != -1) {
 		switch(option) {
 			case 'h':
 				help = 1;
@@ -745,6 +750,9 @@ int main(int argc, char *argv[]) {
 				break;
 			case 'z':
 				havezip = 1;
+				break;
+			case 'i':
+				ignoremagic = 1;
 				break;
 			case 'f':
 				sizecheck = sscanf(optarg, "%i", &i);
@@ -850,11 +858,12 @@ int main(int argc, char *argv[]) {
 			printf("This program creates Linksys style images for the WRT350Nv2 router.\n");
 		}
 		printf("  Usage:\n\
-  %s [-h] [-b] [-z] [-f <version>] [-v] <parameter or zip file> [<image file>]\n\n\
+  %s [-h] [-b] [-z] [-i] [-f <version>] [-v] <parameter or zip file> [<image file>]\n\n\
   Options:\n\
   -h            -  Show this help\n\
   -b            -  Create only bin file, no img or zip file is created\n\
   -z            -  Have zip file, the img file will be directly created from it\n\
+  -i            -  Ignore unknown magic numbers\n\
   -f <version>  -  Wanted firmware version to use with -z\n\
                    Default firmware version is 0x2020 = 2.00.20.\n\
                    Note: version from parameter file will supersede this\n\
@@ -929,16 +938,14 @@ int main(int argc, char *argv[]) {
 			mandatory = 0;
 			noupdate = 0;
 			sizecheck = 0;
-			magic[0] = 0;
-			magic[1] = 0;
+			magiccheck = 0;
 
 			switch (i) {
 				case 1:
 					mtd = &mtd_kernel;
 					mandatory = 1;
 					sizecheck = mtd_kernel.size - 16;
-					magic[0] = 0x27;
-					magic[1] = 0x05;
+					magiccheck = 1;
 					break;
 				case 2:
 					mtd = &mtd_rootfs;
@@ -946,8 +953,7 @@ int main(int argc, char *argv[]) {
 					mtd->size = ROOTFS_END_OFFSET - mtd_kernel.size;
 					mandatory = 1;
 					sizecheck = PRODUCT_ID_OFFSET - mtd_kernel.size;
-					magic[0] = 0x68;
-					magic[1] = 0x73;
+					magiccheck = 1;
 					break;
 				case 3:
 					mtd = &mtd_uboot;
@@ -973,7 +979,7 @@ int main(int argc, char *argv[]) {
 				printf("mtd %s not specified correctly or at all in parameter file\n", mtd->name);
 			}
 
-			// end checks if no file data present
+			// no further checks if no file data present
 			if (!mtd->filename) {
 				continue;
 			}
@@ -984,10 +990,36 @@ int main(int argc, char *argv[]) {
 			}
 
 			// general magic number check
-			if (magic[0]) {
-				if ((mtd->magic[0] != magic[0]) || (mtd->magic[1] != magic[1])) {
-					exitcode = 1;
-					printf("mtd %s input file %s has wrong magic number (0x%02X%02X)\n", mtd->name, mtd->filename, mtd->magic[0], mtd->magic[1]);
+			magicerror = 0;
+			if (magiccheck) {
+				switch (i) {
+					case 1:	// kernel
+						if (!( 
+						       ((mtd->magic[0] == 0x27) && (mtd->magic[1] == 0x05))	// uImage
+						)) {
+							magicerror = 1;
+						}
+						break;
+					case 2:	// rootfs
+						if (!( 
+						       ((mtd->magic[0] == 0x68) && (mtd->magic[1] == 0x73))	// squashfs
+						    || ((mtd->magic[0] == 0x85) && (mtd->magic[1] == 0x19))	// jffs
+						)) {
+							magicerror = 1;
+						}
+						break;
+					default:
+						magicerror = 1;
+						break;
+				}
+				if (magicerror) {
+					printf("mtd %s input file %s has unknown magic number (0x%02X%02X)", mtd->name, mtd->filename, mtd->magic[0], mtd->magic[1]);
+					if (ignoremagic) {
+						printf("...ignoring");
+					} else {
+						exitcode = 1;
+					}
+					printf("\n");
 				}
 			}
 
