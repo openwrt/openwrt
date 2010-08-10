@@ -162,7 +162,7 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
 +  } while (0)
 +
 +#define EXPAND_BITBANG_TXRX
-+#include <linux/spi/spi_bitbang.h>
++#include "spi_bitbang_txrx.h"
 +
 +static u32 spi_gpio_txrx_mode0(struct spi_device *spi,
 +			       unsigned nsecs, u32 word, u8 bits)
