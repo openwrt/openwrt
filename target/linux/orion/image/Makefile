@@ -79,13 +79,24 @@ define Image/Build/Linksys
 endef
 
 define Image/Build/Freecom
+	# Orion Freecom Images
+ # backup unwanted files
+	rm -rf ${TMP_DIR}/$2_backup
+	mkdir ${TMP_DIR}/$2_backup
+	-mv $(TARGET_DIR)/{var,jffs,rom} ${TMP_DIR}/$2_backup
+ # add extra files
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
 	# TODO: Add special CMDLINE shim for webupgrade image here
 	$(CP) $(KDIR)/dt2-uImage $(TARGET_DIR)/boot/uImage
-	rm -rf $(TARGET_DIR)/{var,jffs,rom}
 	$(INSTALL_DIR) $(TARGET_DIR)/var
+ # create image
 	$(TAR) cfj $(BIN_DIR)/openwrt-$(2)-$(1).img --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
 	$(STAGING_DIR_HOST)/bin/encode_crc $(BIN_DIR)/openwrt-$(2)-$(1).img $(BIN_DIR)/openwrt-$(2)-$(1)-webupgrade.img $(3)
+ # remove extra files
+	rm -rf $(TARGET_DIR)/{boot,var}
+ # recover unwanted files
+	-mv ${TMP_DIR}/$2_backup/* $(TARGET_DIR)/
+	rm -rf ${TMP_DIR}/$2_backup
 endef
 
 define Image/Build
