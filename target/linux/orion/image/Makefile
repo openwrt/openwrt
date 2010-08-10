@@ -12,21 +12,22 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-# WRT350N v2: mach id 1633 (0x661)
+	# Orion Kernel uImages
+ # WRT350N v2: mach id 1633 (0x661)
 	echo -en "\x06\x1c\xa0\xe3\x61\x10\x81\xe3" > $(KDIR)/wrt350nv2-zImage
 	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/wrt350nv2-zImage
 	$(STAGING_DIR_HOST)/bin/mkimage -A arm -O linux -T kernel \
 	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
 	-d $(KDIR)/wrt350nv2-zImage $(KDIR)/wrt350nv2-uImage
 	cp $(KDIR)/wrt350nv2-uImage $(BIN_DIR)/openwrt-wrt350nv2-uImage
-# WNR854T: mach id 1801 (0x709)
+ # WNR854T: mach id 1801 (0x709)
 	echo -en "\x07\x1c\xa0\xe3\x09\x10\x81\xe3" > $(KDIR)/wnr854t-zImage
 	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/wnr854t-zImage
 	$(STAGING_DIR_HOST)/bin/mkimage -A arm -O linux -T kernel \
 	-C none -a 0x00008000 -e 0x00008000 -n 'Linux-$(LINUX_VERSION)' \
 	-d $(KDIR)/wnr854t-zImage $(KDIR)/wnr854t-uImage
 	cp $(KDIR)/wnr854t-uImage $(BIN_DIR)/openwrt-wnr854t-uImage
-# DT2: mach id 1514 (0x5EA)
+ # DT2: mach id 1514 (0x5EA)
 	echo -en "\x05\x1c\xa0\xe3\xea\x10\x81\xe3" > $(KDIR)/dt2-zImage
 	cat $(LINUX_DIR)/arch/arm/boot/zImage >> $(KDIR)/dt2-zImage
 	$(STAGING_DIR_HOST)/bin/mkimage -A arm -O linux -T kernel \
@@ -36,6 +37,7 @@ define Image/BuildKernel
 endef
 
 define Image/Build/Netgear
+	# Orion Netgear Images
 	mkdir $(KDIR)/netgear_image
 	cp $(KDIR)/wnr854t-uImage $(KDIR)/netgear_image/uImage
 	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 -m none -p -l -q -e 128KiB -o $(KDIR)/wnr854t-uImage.jffs2 -d $(KDIR)/netgear_image
@@ -48,29 +50,29 @@ define Image/Build/Netgear
 endef
 
 define Image/Build/Linksys
-# WRT350N v2 images
-# sysupgrade image
+	# Orion Linksys Images
+ # sysupgrade image
 	( \
 		dd if="${KDIR}/$2-uImage" bs=$5 conv=sync; \
 		dd if="${KDIR}/root.$1" bs=64k conv=sync; \
 	) > "${BIN_DIR}/openwrt-$2-$1.img"
-# recovery image and webupgrade image for stock firmware
+ # recovery image and webupgrade image for stock firmware
 	rm -rf "${TMP_DIR}/$2_webupgrade"
 	mkdir "${TMP_DIR}/$2_webupgrade"
-# create parameter file
+ # create parameter file
 	echo ":kernel $5 ${BIN_DIR}/openwrt-$2-uImage" >"${TMP_DIR}/$2_webupgrade/$2.par"
 	echo ":rootfs 0 ${KDIR}/root.$1" >>"${TMP_DIR}/$2_webupgrade/$2.par"
 	[ ! -f "$(STAGING_DIR_HOST)/share/wrt350nv2-builder/u-boot.bin" ] || ( \
 		echo ":u-boot 0 $(STAGING_DIR_HOST)/share/wrt350nv2-builder/u-boot.bin" >>"${TMP_DIR}/$2_webupgrade/$2.par"; )
 	echo "#version 0x2020" >>"${TMP_DIR}/$2_webupgrade/$2.par"
-# create bin file for recovery and webupgrade image
+ # create bin file for recovery and webupgrade image
 	( cd "${TMP_DIR}/$2_webupgrade"; \
 		"${STAGING_DIR_HOST}/bin/$2-builder" \
 			-v -b "${TMP_DIR}/$2_webupgrade/$2.par"; \
 	)
-# copy bin file as recovery image
+ # copy bin file as recovery image
 	$(CP) "${TMP_DIR}/$2_webupgrade/wrt350n.bin" "$(BIN_DIR)/openwrt-$2-$1-recovery.bin"
-# create webupgrade image for stock firmware update mechanism
+ # create webupgrade image for stock firmware update mechanism
 	zip "${TMP_DIR}/$2_webupgrade/wrt350n.zip" "${TMP_DIR}/$2_webupgrade/wrt350n.bin"
 	"${STAGING_DIR_HOST}/bin/$2-builder" -v -z "${TMP_DIR}/$2_webupgrade/wrt350n.zip" "${BIN_DIR}/openwrt-$2-$1-webupgrade.img"
 	rm -rf "${TMP_DIR}/$2_webupgrade"
@@ -87,16 +89,16 @@ define Image/Build/Freecom
 endef
 
 define Image/Build
-	$(call Image/Build/$(1),$(1))
-	$(call Image/Build/Netgear,$(1),wnr854t,NG_WNR854T,$(1))
-	$(call Image/Build/Freecom,$(1),dt2,DT,$(1))
-# Leave WRT350Nv2 at last position due to webimage dependency for zip
-# 5th parameter is kernel mtd size, e.g. 0x00100000 = 1048576 or 0x001A0000 = 1703936
-	$(call Image/Build/Linksys,$(1),wrt350nv2,WNR350Nv2,$(1),1048576)
+$(call Image/Build/$(1),$(1))
+$(call Image/Build/Netgear,$(1),wnr854t,NG_WNR854T,$(1))
+$(call Image/Build/Freecom,$(1),dt2,DT,$(1))
+ # Leave WRT350Nv2 at last position due to webimage dependency for zip
+ # 5th parameter is kernel mtd size, e.g. 0x00100000 = 1048576 or 0x001A0000 = 1703936
+$(call Image/Build/Linksys,$(1),wrt350nv2,WNR350Nv2,$(1),1048576)
 endef
 
 define Image/Build/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	( \
 		dd if=$(KDIR)/uImage bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
