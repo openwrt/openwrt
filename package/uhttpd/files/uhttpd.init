@@ -75,6 +75,7 @@ start_instance()
 
 	append_bool "$cfg" no_symlinks "-S" 0
 	append_bool "$cfg" no_dirlists "-D" 0
+	append_bool "$cfg" rfc1918_filter "-R" 0
 
 	config_get http "$cfg" listen_http
 	for listen in $http; do

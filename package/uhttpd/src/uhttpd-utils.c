@@ -59,6 +59,21 @@ int sa_port(void *sa)
 	return ntohs(((struct sockaddr_in6 *)sa)->sin6_port);
 }
 
+int sa_rfc1918(void *sa)
+{
+	struct sockaddr_in *v4 = (struct sockaddr_in *)sa;
+	unsigned long a = htonl(v4->sin_addr.s_addr);
+
+	if( v4->sin_family == AF_INET )
+	{
+		return ((a >= 0x0A000000) && (a <= 0x0AFFFFFF)) ||
+		       ((a >= 0xAC100000) && (a <= 0xAC1FFFFF)) ||
+		       ((a >= 0xC0A80000) && (a <= 0xC0A8FFFF));
+	}
+
+	return 0;
+}
+
 /* Simple strstr() like function that takes len arguments for both haystack and needle. */
 char *strfind(char *haystack, int hslen, const char *needle, int ndlen)
 {

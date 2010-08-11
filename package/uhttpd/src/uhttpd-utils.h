@@ -49,6 +49,7 @@ struct path_info {
 const char * sa_straddr(void *sa);
 const char * sa_strport(void *sa);
 int sa_port(void *sa);
+int sa_rfc1918(void *sa);
 
 char *strfind(char *haystack, int hslen, const char *needle, int ndlen);
 

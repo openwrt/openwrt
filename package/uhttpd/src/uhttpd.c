@@ -524,7 +524,7 @@ int main (int argc, char **argv)
 #endif
 
 	while( (opt = getopt(argc, argv,
-		"fSDC:K:E:I:p:s:h:c:l:L:d:r:m:x:t:T:")) > 0
+		"fSDRC:K:E:I:p:s:h:c:l:L:d:r:m:x:t:T:")) > 0
 	) {
 		switch(opt)
 		{
@@ -648,6 +648,10 @@ int main (int argc, char **argv)
 				conf.no_dirlists = 1;
 				break;
 
+			case 'R':
+				conf.rfc1918_filter = 1;
+				break;
+
 #ifdef HAVE_CGI
 			/* cgi prefix */
 			case 'x':
@@ -728,6 +732,7 @@ int main (int argc, char **argv)
 					"	-I string       Use given filename as index page for directories\n"
 					"	-S              Do not follow symbolic links outside of the docroot\n"
 					"	-D              Do not allow directory listings, send 403 instead\n"
+					"	-R              Enable RFC1918 filter\n"
 #ifdef HAVE_LUA
 					"	-l string       URL prefix for Lua handler, default is '/lua'\n"
 					"	-L file         Lua handler script, omit to disable Lua\n"
@@ -932,6 +937,14 @@ int main (int argc, char **argv)
 					/* parse message header */
 					if( (req = uh_http_header_recv(cl)) != NULL )
 					{
+						/* RFC1918 filtering required? */
+						if( conf.rfc1918_filter && sa_rfc1918(&cl->peeraddr) &&
+						    !sa_rfc1918(&cl->servaddr) )
+						{
+							uh_http_sendhf(cl, 403, "Forbidden",
+								"Rejected request from RFC1918 IP to public server address");
+						}
+						else
 #ifdef HAVE_LUA
 						/* Lua request? */
 						if( L && uh_path_match(conf.lua_prefix, req->url) )
