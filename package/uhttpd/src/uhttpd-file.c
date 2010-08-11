@@ -97,36 +97,39 @@ static char * uh_file_header_lookup(struct http_request *req, const char *name)
 	return NULL;
 }
 
+#define ensure_ret(x) \
+	do { if( x < 0 ) return; } while(0)
+
 static void uh_file_response_ok_hdrs(struct client *cl, struct http_request *req, struct stat *s)
 {
-	uh_http_sendf(cl, NULL, "Connection: close\r\n");
+	ensure_ret(uh_http_sendf(cl, NULL, "Connection: close\r\n"));
 
 	if( s )
 	{
-		uh_http_sendf(cl, NULL, "ETag: %s\r\n", uh_file_mktag(s));
-		uh_http_sendf(cl, NULL, "Last-Modified: %s\r\n", uh_file_unix2date(s->st_mtime));
+		ensure_ret(uh_http_sendf(cl, NULL, "ETag: %s\r\n", uh_file_mktag(s)));
+		ensure_ret(uh_http_sendf(cl, NULL, "Last-Modified: %s\r\n", uh_file_unix2date(s->st_mtime)));
 	}
 
-	uh_http_sendf(cl, NULL, "Date: %s\r\n", uh_file_unix2date(time(NULL)));
+	ensure_ret(uh_http_sendf(cl, NULL, "Date: %s\r\n", uh_file_unix2date(time(NULL))));
 }
 
 static void uh_file_response_200(struct client *cl, struct http_request *req, struct stat *s)
 {
-	uh_http_sendf(cl, NULL, "HTTP/%.1f 200 OK\r\n", req->version);
+	ensure_ret(uh_http_sendf(cl, NULL, "HTTP/%.1f 200 OK\r\n", req->version));
 	uh_file_response_ok_hdrs(cl, req, s);
 }
 
 static void uh_file_response_304(struct client *cl, struct http_request *req, struct stat *s)
 {
-	uh_http_sendf(cl, NULL, "HTTP/%.1f 304 Not Modified\r\n", req->version);
+	ensure_ret(uh_http_sendf(cl, NULL, "HTTP/%.1f 304 Not Modified\r\n", req->version));
 	uh_file_response_ok_hdrs(cl, req, s);
 }
 
 static void uh_file_response_412(struct client *cl, struct http_request *req)
 {
-	uh_http_sendf(cl, NULL,
+	ensure_ret(uh_http_sendf(cl, NULL,
 		"HTTP/%.1f 412 Precondition Failed\r\n"
-		"Connection: close\r\n", req->version);
+		"Connection: close\r\n", req->version));
 }
 
 static int uh_file_if_match(struct client *cl, struct http_request *req, struct stat *s)
@@ -244,6 +247,9 @@ static int uh_file_if_unmodified_since(struct client *cl, struct http_request *r
 }
 
 
+#define ensure_out(x) \
+	do { if( x < 0 ) goto out; } while(0)
+
 static int uh_file_scandir_filter_dir(const struct dirent *e)
 {
 	return strcmp(e->d_name, ".") ? 1 : 0;
@@ -251,17 +257,18 @@ static int uh_file_scandir_filter_dir(const struct dirent *e)
 
 static void uh_file_dirlist(struct client *cl, struct http_request *req, struct path_info *pi)
 {
-	int i, count;
+	int i;
+	int count = 0;
 	char filename[PATH_MAX];
 	char *pathptr;
 	struct dirent **files = NULL;
 	struct stat s;
 
-	uh_http_sendf(cl, req,
+	ensure_out(uh_http_sendf(cl, req,
 		"<html><head><title>Index of %s</title></head>"
 		"<body><h1>Index of %s</h1><hr /><ol>",
 			pi->name, pi->name
-	);
+	));
 
 	if( (count = scandir(pi->phys, &files, uh_file_scandir_filter_dir, alphasort)) > 0 )
 	{
@@ -278,13 +285,13 @@ static void uh_file_dirlist(struct client *cl, struct http_request *req, struct 
 			if( !stat(filename, &s) &&
 			    (s.st_mode & S_IFDIR) && (s.st_mode & S_IXOTH)
 			)
-				uh_http_sendf(cl, req,
+				ensure_out(uh_http_sendf(cl, req,
 					"<li><strong><a href='%s%s'>%s</a>/</strong><br />"
 					"<small>modified: %s<br />directory - %.02f kbyte"
 					"<br /><br /></small></li>",
 						pi->name, files[i]->d_name, files[i]->d_name,
 						uh_file_unix2date(s.st_mtime), s.st_size / 1024.0
-				);
+				));
 
 			*pathptr = 0;
 		}
@@ -298,30 +305,37 @@ static void uh_file_dirlist(struct client *cl, struct http_request *req, struct 
 			if( !stat(filename, &s) &&
 			    !(s.st_mode & S_IFDIR) && (s.st_mode & S_IROTH)
 			)
-				uh_http_sendf(cl, req,
+				ensure_out(uh_http_sendf(cl, req,
 					"<li><strong><a href='%s%s'>%s</a></strong><br />"
 					"<small>modified: %s<br />%s - %.02f kbyte<br />"
 					"<br /></small></li>",
 						pi->name, files[i]->d_name, files[i]->d_name,
 						uh_file_unix2date(s.st_mtime),
 						uh_file_mime_lookup(filename), s.st_size / 1024.0
-				);
+				));
 
 			*pathptr = 0;
-			free(files[i]);
 		}
 	}
 
-	free(files);
+	ensure_out(uh_http_sendf(cl, req, "</ol><hr /></body></html>"));
+	ensure_out(uh_http_sendf(cl, req, ""));
 
-	uh_http_sendf(cl, req, "</ol><hr /></body></html>");
-	uh_http_sendf(cl, req, "");
+out:
+	if( files )
+	{
+		for( i = 0; i < count; i++ )
+			free(files[i]);
+
+		free(files);
+	}
 }
 
 
 void uh_file_request(struct client *cl, struct http_request *req, struct path_info *pi)
 {
-	int fd, rlen;
+	int rlen;
+	int fd = -1;
 	char buf[UH_LIMIT_MSGHEAD];
 
 	/* we have a file */
@@ -338,38 +352,33 @@ void uh_file_request(struct client *cl, struct http_request *req, struct path_in
 			/* write status */
 			uh_file_response_200(cl, req, &pi->stat);
 
-			uh_http_sendf(cl, NULL, "Content-Type: %s\r\n", uh_file_mime_lookup(pi->name));
-			uh_http_sendf(cl, NULL, "Content-Length: %i\r\n", pi->stat.st_size);
+			ensure_out(uh_http_sendf(cl, NULL, "Content-Type: %s\r\n", uh_file_mime_lookup(pi->name)));
+			ensure_out(uh_http_sendf(cl, NULL, "Content-Length: %i\r\n", pi->stat.st_size));
 
 			/* if request was HTTP 1.1 we'll respond chunked */
 			if( (req->version > 1.0) && (req->method != UH_HTTP_MSG_HEAD) )
-				uh_http_send(cl, NULL, "Transfer-Encoding: chunked\r\n", -1);
+				ensure_out(uh_http_send(cl, NULL, "Transfer-Encoding: chunked\r\n", -1));
 
 			/* close header */
-			uh_http_send(cl, NULL, "\r\n", -1);
+			ensure_out(uh_http_send(cl, NULL, "\r\n", -1));
 
 			/* send body */
 			if( req->method != UH_HTTP_MSG_HEAD )
 			{
 				/* pump file data */
 				while( (rlen = read(fd, buf, sizeof(buf))) > 0 )
-				{
-					if( uh_http_send(cl, req, buf, rlen) < 0 )
-						break;
-				}
+					ensure_out(uh_http_send(cl, req, buf, rlen));
 
 				/* send trailer in chunked mode */
-				uh_http_send(cl, req, "", 0);
+				ensure_out(uh_http_send(cl, req, "", 0));
 			}
 		}
 
 		/* one of the preconditions failed, terminate opened header and exit */
 		else
 		{
-			uh_http_send(cl, NULL, "\r\n", -1);
+			ensure_out(uh_http_send(cl, NULL, "\r\n", -1));
 		}
-
-		close(fd);
 	}
 
 	/* directory */
@@ -379,9 +388,9 @@ void uh_file_request(struct client *cl, struct http_request *req, struct path_in
 		uh_file_response_200(cl, req, NULL);
 
 		if( req->version > 1.0 )
-			uh_http_send(cl, NULL, "Transfer-Encoding: chunked\r\n", -1);
+			ensure_out(uh_http_send(cl, NULL, "Transfer-Encoding: chunked\r\n", -1));
 
-		uh_http_send(cl, NULL, "Content-Type: text/html\r\n\r\n", -1);
+		ensure_out(uh_http_send(cl, NULL, "Content-Type: text/html\r\n\r\n", -1));
 
 		/* content */
 		uh_file_dirlist(cl, req, pi);
@@ -390,8 +399,12 @@ void uh_file_request(struct client *cl, struct http_request *req, struct path_in
 	/* 403 */
 	else
 	{
-		uh_http_sendhf(cl, 403, "Forbidden",
-			"Access to this resource is forbidden");
+		ensure_out(uh_http_sendhf(cl, 403, "Forbidden",
+			"Access to this resource is forbidden"));
 	}
+
+out:
+	if( fd > -1 )
+		close(fd);
 }
 
