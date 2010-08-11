@@ -85,8 +85,8 @@ $(eval $(call KernelPackage,video-konica))
 
 
 define KernelPackage/video-ov511
-$(call AddDepends/video,@USB_SUPPORT +kmod-usb-core)
   TITLE:=OV511 USB webcam support
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core
   KCONFIG:=CONFIG_VIDEO_OV511
   FILES:=$(LINUX_DIR)/drivers/media/video/ov511.ko
   AUTOLOAD:=$(call AutoLoad,70,ov511)
@@ -102,8 +102,8 @@ $(eval $(call KernelPackage,video-ov511))
 
 
 define KernelPackage/video-ovcamchip
-$(call AddDepends/video,@USB_SUPPORT +kmod-i2c-core)
   TITLE:=OV6xxx/OV7xxx Camera Chip support
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core
   KCONFIG:=CONFIG_VIDEO_OVCAMCHIP
   FILES:=$(LINUX_DIR)/drivers/media/video/ovcamchip/ovcamchip.ko
   AUTOLOAD:=$(call AutoLoad,70,ovcamchip)
@@ -120,8 +120,8 @@ $(eval $(call KernelPackage,video-ovcamchip))
 
 
 define KernelPackage/video-sn9c102
-$(call AddDepends/video,@USB_SUPPORT +kmod-usb-core)
   TITLE:=SN9C102 Camera Chip support
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core
   KCONFIG:=CONFIG_USB_SN9C102
   FILES:=$(LINUX_DIR)/drivers/media/video/sn9c102/sn9c102.ko
   AUTOLOAD:=$(call AutoLoad,70,gspca_sn9c20x)
@@ -138,8 +138,8 @@ $(eval $(call KernelPackage,video-sn9c102))
 
 
 define KernelPackage/video-pwc
-$(call AddDepends/video,@USB_SUPPORT +kmod-usb-core)
   TITLE:=Philips USB webcam support
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core
   KCONFIG:= \
 	CONFIG_USB_PWC \
 	CONFIG_USB_PWC_DEBUG=n
@@ -156,8 +156,8 @@ endef
 $(eval $(call KernelPackage,video-pwc))
 
 define KernelPackage/video-uvc
-$(call AddDepends/video,@USB_SUPPORT +kmod-usb-core)
   TITLE:=USB Video Class (UVC) support
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core
   KCONFIG:= CONFIG_USB_VIDEO_CLASS
   FILES:=$(LINUX_DIR)/drivers/media/video/uvc/uvcvideo.ko
   AUTOLOAD:=$(call AutoLoad,90,uvcvideo)
