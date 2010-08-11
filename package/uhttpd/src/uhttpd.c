@@ -1001,13 +1001,6 @@ int main (int argc, char **argv)
 						}
 					}
 
-					/* 400 */
-					else
-					{
-						uh_http_sendhf(cl, 400, "Bad Request",
-							"Malformed request received");
-					}
-
 #ifdef HAVE_TLS
 					/* free client tls context */
 					if( conf.tls )
