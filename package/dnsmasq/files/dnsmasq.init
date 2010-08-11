@@ -55,6 +55,10 @@ append_addnhosts() {
 	append args "-H $1"
 }
 
+append_bogusnxdomain() {
+       append args "-B $1"
+}
+
 dnsmasq() {
 	local cfg="$1"
 	append_bool "$cfg" authoritative "-K"
@@ -86,6 +90,7 @@ dnsmasq() {
 	config_list_foreach "$cfg" "interface" append_interface
 	config_list_foreach "$cfg" "notinterface" append_notinterface
 	config_list_foreach "$cfg" "addnhosts" append_addnhosts
+	config_list_foreach "$cfg" "bogusnxdomain" append_bogusnxdomain
 	append_parm "$cfg" "leasefile" "-l"
 	append_parm "$cfg" "resolvfile" "-r"
 	append_parm "$cfg" "tftp_root" "--tftp-root"
