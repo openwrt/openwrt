@@ -11,7 +11,7 @@ VIDEO_MENU:=Video Support
 define KernelPackage/video-core
   SUBMENU:=$(VIDEO_MENU)
   TITLE=Video4Linux support
-  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT
+  DEPENDS:=@PCI_SUPPORT||USB_SUPPORT +!TARGET_etrax:kmod-i2c-core
   KCONFIG:= \
 	CONFIG_MEDIA_SUPPORT=m \
 	CONFIG_VIDEO_DEV \
@@ -162,6 +162,7 @@ define KernelPackage/video-uvc
   FILES:=$(LINUX_DIR)/drivers/media/video/uvc/uvcvideo.ko
   AUTOLOAD:=$(call AutoLoad,90,uvcvideo)
   $(call AddDepends/video)
+  $(call AddDepends/input)
 endef
 
 
