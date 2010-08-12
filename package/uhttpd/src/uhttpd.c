@@ -266,7 +266,8 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 		}
 
 		/* check version */
-		if( strcmp(version, "HTTP/0.9") && strcmp(version, "HTTP/1.0") && strcmp(version, "HTTP/1.1") )
+		if( (version == NULL) || (strcmp(version, "HTTP/0.9") &&
+		    strcmp(version, "HTTP/1.0") && strcmp(version, "HTTP/1.1")) )
 		{
 			/* unsupported version */
 			uh_http_response(cl, 400, "Bad Request");
