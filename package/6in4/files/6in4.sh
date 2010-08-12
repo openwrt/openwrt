@@ -2,13 +2,13 @@
 # Copyright (c) 2010 OpenWrt.org
 
 find_6in4_wanif() {
-	local if=$(ip -4 r l e 0/0); if="${if#default via * dev }"; if="${if%% *}"
+	local if=$(ip -4 r l e 0/0); if="${if#default* dev }"; if="${if%% *}"
 	[ -n "$if" ] && grep -qs "^ *$if:" /proc/net/dev && echo "$if"
 }
 
 find_6in4_wanip() {
 	local ip=$(ip -4 a s dev "$1"); ip="${ip#*inet }"
-	echo "${ip%%/[0-9]* brd *}"
+	echo "${ip%%[^0-9.]*}"
 }
 
 # Hook into scan_interfaces() to synthesize a .device option
