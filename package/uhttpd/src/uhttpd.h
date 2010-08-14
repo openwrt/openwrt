@@ -48,9 +48,7 @@
 #define UH_LIMIT_MSGHEAD	4096
 #define UH_LIMIT_HEADERS	64
 
-#define UH_LIMIT_LISTENERS	16
 #define UH_LIMIT_CLIENTS	64
-#define UH_LIMIT_AUTHREALMS	8
 
 #define UH_HTTP_MSG_GET		0
 #define UH_HTTP_MSG_HEAD	1
@@ -58,6 +56,7 @@
 
 struct listener;
 struct client;
+struct interpreter;
 struct http_request;
 
 struct config {
@@ -76,6 +75,7 @@ struct config {
 #ifdef HAVE_LUA
 	char *lua_prefix;
 	char *lua_handler;
+	lua_State *lua_state;
 	lua_State * (*lua_init) (const char *handler);
 	void (*lua_close) (lua_State *L);
 	void (*lua_request) (struct client *cl, struct http_request *req, lua_State *L);
@@ -105,6 +105,7 @@ struct listener {
 #ifdef HAVE_TLS
 	SSL_CTX *tls;
 #endif
+	struct listener *next;
 };
 
 struct client {
@@ -117,12 +118,14 @@ struct client {
 #ifdef HAVE_TLS
 	SSL *tls;
 #endif
+	struct client *next;
 };
 
 struct auth_realm {
 	char path[PATH_MAX];
 	char user[32];
 	char pass[128];
+	struct auth_realm *next;
 };
 
 struct http_request {
@@ -139,6 +142,14 @@ struct http_response {
 	char *statusmsg;
 	char *headers[UH_LIMIT_HEADERS];
 };
+
+#ifdef HAVE_CGI
+struct interpreter {
+	char path[PATH_MAX];
+	char extn[32];
+	struct interpreter *next;
+};
+#endif
 
 #endif
 

@@ -101,4 +101,9 @@ struct client * uh_client_add(int sock, struct listener *serv);
 struct client * uh_client_lookup(int sock);
 void uh_client_remove(int sock);
 
+#ifdef HAVE_CGI
+struct interpreter * uh_interpreter_add(const char *extn, const char *path);
+struct interpreter * uh_interpreter_lookup(const char *path);
+#endif
+
 #endif

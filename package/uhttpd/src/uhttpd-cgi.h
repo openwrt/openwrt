@@ -25,7 +25,8 @@
 #include <linux/limits.h>
 
 void uh_cgi_request(
-	struct client *cl, struct http_request *req, struct path_info *pi
+	struct client *cl, struct http_request *req,
+	struct path_info *pi, struct interpreter *ip
 );
 
 #endif
