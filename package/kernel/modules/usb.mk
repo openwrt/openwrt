@@ -703,7 +703,7 @@ $(eval $(call KernelPackage,usb-net-rndis))
 
 define KernelPackage/usb-hid
   TITLE:=Support for USB Human Input Devices
-  KCONFIG:=CONFIG_HID_SUPPORT=y CONFIG_USB_HID
+  KCONFIG:=CONFIG_HID_SUPPORT=y CONFIG_USB_HID CONFIG_USB_HIDDEV=y
   FILES:=$(LINUX_DIR)/drivers/$(USBHID_DIR)/usbhid.ko
   AUTOLOAD:=$(call AutoLoad,70,usbhid)
   $(call AddDepends/usb)
