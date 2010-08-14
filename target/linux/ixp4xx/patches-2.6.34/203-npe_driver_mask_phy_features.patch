@@ -1,6 +1,6 @@
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -1217,6 +1217,10 @@ static int __devinit eth_init_one(struct
+@@ -1221,6 +1221,10 @@ static int __devinit eth_init_one(struct
  	if ((err = IS_ERR(port->phydev)))
  		goto err_free_mem;
  

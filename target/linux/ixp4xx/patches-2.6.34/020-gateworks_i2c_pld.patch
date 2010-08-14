@@ -374,9 +374,9 @@
 +MODULE_AUTHOR("Chris Lang");
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -196,6 +196,14 @@ config GPIO_LANGWELL
- 	help
- 	  Say Y here to support Intel Moorestown platform GPIO.
+@@ -275,6 +275,14 @@ config GPIO_TIMBERDALE
+ 	---help---
+ 	Add support for the GPIO IP in the timberdale FPGA.
  
 +config GPIO_GW_I2C_PLD
 +	tristate "Gateworks I2C PLD GPIO Expander"

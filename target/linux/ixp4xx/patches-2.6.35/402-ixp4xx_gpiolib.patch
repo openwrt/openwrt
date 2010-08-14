@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-ixp4xx/common.c
 +++ b/arch/arm/mach-ixp4xx/common.c
-@@ -36,6 +36,7 @@
+@@ -35,6 +35,7 @@
  #include <asm/pgtable.h>
  #include <asm/page.h>
  #include <asm/irq.h>
@@ -8,7 +8,7 @@
  
  #include <asm/mach/map.h>
  #include <asm/mach/irq.h>
-@@ -375,12 +376,39 @@ static struct platform_device *ixp46x_de
+@@ -374,12 +375,39 @@ static struct platform_device *ixp46x_de
  unsigned long ixp4xx_exp_bus_size;
  EXPORT_SYMBOL(ixp4xx_exp_bus_size);
  
@@ -50,9 +50,9 @@
  
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -417,6 +417,7 @@ config ARCH_IXP4XX
+@@ -435,6 +435,7 @@ config ARCH_IXP4XX
+ 	select CPU_XSCALE
  	select GENERIC_GPIO
- 	select GENERIC_TIME
  	select GENERIC_CLOCKEVENTS
 +	select ARCH_REQUIRE_GPIOLIB
  	help
