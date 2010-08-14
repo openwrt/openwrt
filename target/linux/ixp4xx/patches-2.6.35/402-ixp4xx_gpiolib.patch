@@ -8,7 +8,7 @@
  
  #include <asm/mach/map.h>
  #include <asm/mach/irq.h>
-@@ -374,12 +375,39 @@ static struct platform_device *ixp46x_de
+@@ -374,12 +375,50 @@ static struct platform_device *ixp46x_de
  unsigned long ixp4xx_exp_bus_size;
  EXPORT_SYMBOL(ixp4xx_exp_bus_size);
  
@@ -17,7 +17,6 @@
 +	gpio_line_config(gpio, IXP4XX_GPIO_IN);
 +	return 0;
 +}
-+EXPORT_SYMBOL(ixp4xx_gpio_direction_input);
 +
 +static int ixp4xx_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int level)
 +{
@@ -25,14 +24,26 @@
 +	gpio_line_config(gpio, IXP4XX_GPIO_OUT);
 +	return 0;
 +}
-+EXPORT_SYMBOL(ixp4xx_gpio_direction_output);
++
++static int ixp4xx_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
++{
++	int value;
++
++	gpio_line_get(gpio, &value);
++	return value;
++}
++
++static void ixp4xx_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
++{
++	gpio_line_set(gpio, value);
++}
 +
 +static struct gpio_chip ixp4xx_gpio_chip = {
 +	.label			= "IXP4XX_GPIO_CHIP",
 +	.direction_input	= ixp4xx_gpio_direction_input,
 +	.direction_output	= ixp4xx_gpio_direction_output,
-+	.get			= gpio_get_value,
-+	.set			= gpio_set_value,
++	.get			= ixp4xx_gpio_get_value,
++	.set			= ixp4xx_gpio_set_value,
 +	.base			= 0,
 +	.ngpio			= 16,
 +};
