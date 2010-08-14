@@ -56,7 +56,7 @@ start_instance()
 
 	local cfg="$1"
 	local realm="$(uci_get system.@system[0].hostname)"
-	local listen http https
+	local listen http https interpreter path
 
 	append_arg "$cfg" home "-h"
 	append_arg "$cfg" realm "-r" "${realm:-OpenWrt}"
@@ -76,6 +76,11 @@ start_instance()
 	config_get http "$cfg" listen_http
 	for listen in $http; do
 		append UHTTPD_ARGS "-p $listen"
+	done
+
+	config_get interpreter "$cfg" interpreter
+	for path in $interpreter; do
+		append UHTTPD_ARGS "-i $path"
 	done
 
 	config_get https "$cfg" listen_https

@@ -605,8 +605,7 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url)
 }
 
 
-static char uh_realms[UH_LIMIT_AUTHREALMS * sizeof(struct auth_realm)] = { 0 };
-static int uh_realm_count = 0;
+static struct auth_realm *uh_realms = NULL;
 
 struct auth_realm * uh_auth_add(char *path, char *user, char *pass)
 {
@@ -614,11 +613,8 @@ struct auth_realm * uh_auth_add(char *path, char *user, char *pass)
 	struct passwd *pwd;
 	struct spwd *spwd;
 
-	if( uh_realm_count < UH_LIMIT_AUTHREALMS )
+	if((new = (struct auth_realm *)malloc(sizeof(struct auth_realm))) != NULL)
 	{
-		new = (struct auth_realm *)
-			&uh_realms[uh_realm_count * sizeof(struct auth_realm)];
-
 		memset(new, 0, sizeof(struct auth_realm));
 
 		memcpy(new->path, path,
@@ -655,9 +651,13 @@ struct auth_realm * uh_auth_add(char *path, char *user, char *pass)
 
 		if( new->pass[0] )
 		{
-			uh_realm_count++;
+			new->next = uh_realms;
+			uh_realms = new;
+
 			return new;
 		}
+
+		free(new);
 	}
 
 	return NULL;
@@ -677,11 +677,8 @@ int uh_auth_check(
 	protected = 0;
 
 	/* check whether at least one realm covers the requested url */
-	for( i = 0; i < uh_realm_count; i++ )
+	for( realm = uh_realms; realm; realm = realm->next )
 	{
-		realm = (struct auth_realm *)
-			&uh_realms[i * sizeof(struct auth_realm)];
-
 		rlen = strlen(realm->path);
 
 		if( (plen >= rlen) && !strncasecmp(pi->name, realm->path, rlen) )
@@ -721,11 +718,8 @@ int uh_auth_check(
 		if( user && pass )
 		{
 			/* find matching realm */
-			for( i = 0, realm = NULL; i < uh_realm_count; i++ )
+			for( realm = uh_realms; realm; realm = realm->next )
 			{
-				realm = (struct auth_realm *)
-					&uh_realms[i * sizeof(struct auth_realm)];
-
 				rlen = strlen(realm->path);
 
 				if( (plen >= rlen) &&
@@ -769,22 +763,17 @@ int uh_auth_check(
 }
 
 
-static char uh_listeners[UH_LIMIT_LISTENERS * sizeof(struct listener)] = { 0 };
-static char uh_clients[UH_LIMIT_CLIENTS * sizeof(struct client)] = { 0 };
-
-static int uh_listener_count = 0;
-static int uh_client_count = 0;
-
+static struct listener *uh_listeners = NULL;
+static struct client *uh_clients = NULL;
 
 struct listener * uh_listener_add(int sock, struct config *conf)
 {
 	struct listener *new = NULL;
 	socklen_t sl;
 
-	if( uh_listener_count < UH_LIMIT_LISTENERS )
+	if( (new = (struct listener *)malloc(sizeof(struct listener))) != NULL )
 	{
-		new = (struct listener *)
-			&uh_listeners[uh_listener_count * sizeof(struct listener)];
+		memset(new, 0, sizeof(struct listener));
 
 		new->socket = sock;
 		new->conf   = conf;
@@ -794,24 +783,22 @@ struct listener * uh_listener_add(int sock, struct config *conf)
 		memset(&(new->addr), 0, sl);
 		getsockname(sock, (struct sockaddr *) &(new->addr), &sl);
 
-		uh_listener_count++;
+		new->next = uh_listeners;
+		uh_listeners = new;
+
+		return new;
 	}
 
-	return new;
+	return NULL;
 }
 
 struct listener * uh_listener_lookup(int sock)
 {
 	struct listener *cur = NULL;
-	int i;
 
-	for( i = 0; i < uh_listener_count; i++ )
-	{
-		cur = (struct listener *) &uh_listeners[i * sizeof(struct listener)];
-
+	for( cur = uh_listeners; cur; cur = cur->next )
 		if( cur->socket == sock )
 			return cur;
-	}
 
 	return NULL;
 }
@@ -822,10 +809,9 @@ struct client * uh_client_add(int sock, struct listener *serv)
 	struct client *new = NULL;
 	socklen_t sl;
 
-	if( uh_client_count < UH_LIMIT_CLIENTS )
+	if( (new = (struct client *)malloc(sizeof(struct client))) != NULL )
 	{
-		new = (struct client *)
-			&uh_clients[uh_client_count * sizeof(struct client)];
+		memset(new, 0, sizeof(struct client));
 
 		new->socket = sock;
 		new->server = serv;
@@ -840,7 +826,8 @@ struct client * uh_client_add(int sock, struct listener *serv)
 		memset(&(new->servaddr), 0, sl);
 		getsockname(sock, (struct sockaddr *) &(new->servaddr), &sl);
 
-		uh_client_count++;
+		new->next = uh_clients;
+		uh_clients = new;
 	}
 
 	return new;
@@ -849,30 +836,72 @@ struct client * uh_client_add(int sock, struct listener *serv)
 struct client * uh_client_lookup(int sock)
 {
 	struct client *cur = NULL;
-	int i;
 
-	for( i = 0; i < uh_client_count; i++ )
-	{
-		cur = (struct client *) &uh_clients[i * sizeof(struct client)];
-
+	for( cur = uh_clients; cur; cur = cur->next )
 		if( cur->socket == sock )
 			return cur;
-	}
 
 	return NULL;
 }
 
 void uh_client_remove(int sock)
 {
-	struct client *del = uh_client_lookup(sock);
+	struct client *cur = NULL;
+	struct client *prv = NULL;
 
-	if( del )
+	for( cur = uh_clients; cur; prv = cur, cur = cur->next )
 	{
-		memmove(del, del + 1,
-			sizeof(uh_clients) - (int)((char *)del - uh_clients) - sizeof(struct client));
+		if( cur->socket == sock )
+		{
+			if( prv )
+				prv->next = cur->next;
+			else
+				uh_clients = cur->next;
 
-		uh_client_count--;
+			free(cur);
+			break;
+		}
 	}
 }
 
 
+#ifdef HAVE_CGI
+static struct interpreter *uh_interpreters = NULL;
+
+struct interpreter * uh_interpreter_add(const char *extn, const char *path)
+{
+	struct interpreter *new = NULL;
+
+	if( (new = (struct interpreter *)
+			malloc(sizeof(struct interpreter))) != NULL )
+	{
+		memset(new, 0, sizeof(struct interpreter));
+
+		memcpy(new->extn, extn, min(strlen(extn), sizeof(new->extn)-1));
+		memcpy(new->path, path, min(strlen(path), sizeof(new->path)-1));
+
+		new->next = uh_interpreters;
+		uh_interpreters = new;
+
+		return new;
+	}
+
+	return NULL;
+}
+
+struct interpreter * uh_interpreter_lookup(const char *path)
+{
+	struct interpreter *cur = NULL;
+	const char *e;
+
+	for( cur = uh_interpreters; cur; cur = cur->next )
+	{
+		e = &path[max(strlen(path) - strlen(cur->extn), 0)];
+
+		if( !strcmp(e, cur->extn) )
+			return cur;
+	}
+
+	return NULL;
+}
+#endif

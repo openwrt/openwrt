@@ -135,8 +135,10 @@ static int uh_cgi_error_500(struct client *cl, struct http_request *req, const c
 }
 
 
-void uh_cgi_request(struct client *cl, struct http_request *req, struct path_info *pi)
-{
+void uh_cgi_request(
+	struct client *cl, struct http_request *req,
+	struct path_info *pi, struct interpreter *ip
+) {
 	int i, hdroff, bufoff;
 	int hdrlen = 0;
 	int buflen = 0;
@@ -199,9 +201,9 @@ void uh_cgi_request(struct client *cl, struct http_request *req, struct path_inf
 			dup2(rfd[1], 1);
 			dup2(wfd[0], 0);
 
-			/* check for regular, world-executable file */
-			if( (pi->stat.st_mode & S_IFREG) &&
-			    (pi->stat.st_mode & S_IXOTH)
+			/* check for regular, world-executable file _or_ interpreter */
+			if( ((pi->stat.st_mode & S_IFREG) &&
+			     (pi->stat.st_mode & S_IXOTH)) || (ip != NULL)
 			) {
 				/* build environment */
 				clearenv();
@@ -320,14 +322,17 @@ void uh_cgi_request(struct client *cl, struct http_request *req, struct path_inf
 				if( chdir(pi->root) )
 					perror("chdir()");
 
-				execl(pi->phys, pi->phys, NULL);
+				if( ip != NULL )
+					execl(ip->path, ip->path, pi->phys, NULL);
+				else
+					execl(pi->phys, pi->phys, NULL);
 
 				/* in case it fails ... */
 				printf(
 					"Status: 500 Internal Server Error\r\n\r\n"
 					"Unable to launch the requested CGI program:\n"
 					"  %s: %s\n",
-						pi->phys, strerror(errno)
+						ip ? ip->path : pi->phys, strerror(errno)
 				);
 			}
 
