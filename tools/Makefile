@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -40,7 +40,7 @@ endif
 $(curdir)/pkg-config/compile := $(curdir)/sed/install
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
 $(curdir)/squashfs4/compile := $(curdir)/lzma/install
-$(curdir)/quilt/compile := $(curdir)/sed/install
+$(curdir)/quilt/compile := $(curdir)/sed/install $(curdir)/autoconf/install
 $(curdir)/dtc/compile := $(curdir)/bison/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install
 $(curdir)/automake/compile := $(curdir)/m4/install $(curdir)/autoconf/install
