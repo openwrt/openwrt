@@ -16,7 +16,7 @@
  	depends on LEDS_CLASS && X86 && SERIO_I8042 && DMI
 --- /dev/null
 +++ b/drivers/leds/leds-latch.c
-@@ -0,0 +1,149 @@
+@@ -0,0 +1,150 @@
 +/*
 + * LEDs driver for Memory Latched Devices
 + *
@@ -35,6 +35,7 @@
 +#include <linux/workqueue.h>
 +#include <asm/io.h>
 +#include <linux/spinlock.h>
++#include <linux/slab.h>
 +
 +static unsigned int mem_keep = 0xFF;
 +static spinlock_t mem_lock;
