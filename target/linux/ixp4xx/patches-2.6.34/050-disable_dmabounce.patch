@@ -1,6 +1,6 @@
---- a/arch/arm/Kconfig	2010-05-17 19:51:29.000000000 +0200
-+++ b/arch/arm/Kconfig	2010-05-18 17:44:39.000000000 +0200
-@@ -433,7 +433,6 @@ config ARCH_IXP4XX
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -434,7 +434,6 @@ config ARCH_IXP4XX
  	select GENERIC_GPIO
  	select GENERIC_TIME
  	select GENERIC_CLOCKEVENTS
@@ -8,8 +8,8 @@
  	help
  	  Support for Intel's IXP4XX (XScale) family of processors.
  
---- a/arch/arm/mach-ixp4xx/Kconfig	2010-02-25 14:45:00.000000000 +0100
-+++ b/arch/arm/mach-ixp4xx/Kconfig	2010-05-18 17:44:39.000000000 +0200
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
 @@ -199,6 +199,43 @@ config IXP4XX_INDIRECT_PCI
  	  need to use the indirect method instead. If you don't know
  	  what you need, leave this option unselected.
@@ -54,8 +54,8 @@
  config IXP4XX_QMGR
  	tristate "IXP4xx Queue Manager support"
  	help
---- a/arch/arm/mach-ixp4xx/common-pci.c	2010-05-17 19:51:29.000000000 +0200
-+++ b/arch/arm/mach-ixp4xx/common-pci.c	2010-05-18 17:44:39.000000000 +0200
+--- a/arch/arm/mach-ixp4xx/common-pci.c
++++ b/arch/arm/mach-ixp4xx/common-pci.c
 @@ -321,27 +321,33 @@ static int abort_handler(unsigned long a
   */
  static int ixp4xx_pci_platform_notify(struct device *dev)
@@ -103,8 +103,8 @@
  
  void __init ixp4xx_pci_preinit(void)
  {
---- a/arch/arm/mach-ixp4xx/include/mach/memory.h	2009-03-24 18:00:31.000000000 +0100
-+++ b/arch/arm/mach-ixp4xx/include/mach/memory.h	2010-05-18 17:44:39.000000000 +0200
+--- a/arch/arm/mach-ixp4xx/include/mach/memory.h
++++ b/arch/arm/mach-ixp4xx/include/mach/memory.h
 @@ -16,10 +16,12 @@
  
  #if !defined(__ASSEMBLY__) && defined(CONFIG_PCI)

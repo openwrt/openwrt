@@ -374,9 +374,9 @@
 +MODULE_AUTHOR("Chris Lang");
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -221,6 +221,14 @@ config GPIO_TIMBERDALE
- 	---help---
- 	Add support for the GPIO IP in the timberdale FPGA.
+@@ -298,6 +298,14 @@ config GPIO_RDC321X
+ 	  Support for the RDC R321x SoC GPIOs over southbridge
+ 	  PCI configuration space.
  
 +config GPIO_GW_I2C_PLD
 +	tristate "Gateworks I2C PLD GPIO Expander"
@@ -391,7 +391,7 @@
  config GPIO_MAX7301
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -31,3 +31,4 @@ obj-$(CONFIG_GPIO_WM8994)	+= wm8994-gpio
+@@ -35,3 +35,4 @@ obj-$(CONFIG_GPIO_WM8994)	+= wm8994-gpio
  obj-$(CONFIG_GPIO_SCH)		+= sch_gpio.o
  obj-$(CONFIG_GPIO_RDC321X)	+= rdc321x-gpio.o
  obj-$(CONFIG_GPIO_JANZ_TTL)	+= janz-ttl.o

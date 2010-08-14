@@ -1,6 +1,6 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -157,6 +157,13 @@ config LEDS_LP3944
+@@ -176,6 +176,13 @@ config LEDS_LP3944
  	  To compile this driver as a module, choose M here: the
  	  module will be called leds-lp3944.
  
@@ -13,7 +13,7 @@
 +
  config LEDS_CLEVO_MAIL
  	tristate "Mail LED on Clevo notebook"
- 	depends on LEDS_CLASS && X86 && SERIO_I8042 && DMI
+ 	depends on X86 && SERIO_I8042 && DMI
 --- /dev/null
 +++ b/drivers/leds/leds-latch.c
 @@ -0,0 +1,150 @@
@@ -167,10 +167,9 @@
 +
 +MODULE_AUTHOR("Chris Lang <clang@gateworks.com>");
 +MODULE_DESCRIPTION("Latch LED driver");
-+MODULE_LICENSE("GPL");
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_LEDS_COBALT_RAQ)		+= leds-c
+@@ -22,6 +22,7 @@ obj-$(CONFIG_LEDS_COBALT_RAQ)		+= leds-c
  obj-$(CONFIG_LEDS_SUNFIRE)		+= leds-sunfire.o
  obj-$(CONFIG_LEDS_PCA9532)		+= leds-pca9532.o
  obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
@@ -180,7 +179,7 @@
  obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.o
 --- a/include/linux/leds.h
 +++ b/include/linux/leds.h
-@@ -161,5 +161,19 @@ struct gpio_led_platform_data {
+@@ -165,5 +165,19 @@ struct gpio_led_platform_data {
  					unsigned long *delay_off);
  };
  

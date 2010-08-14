@@ -1,6 +1,6 @@
 --- a/arch/arm/kernel/setup.c
 +++ b/arch/arm/kernel/setup.c
-@@ -322,12 +322,13 @@ static void __init setup_processor(void)
+@@ -323,12 +323,13 @@ static void __init setup_processor(void)
  void cpu_init(void)
  {
  	unsigned int cpu = smp_processor_id();
@@ -15,7 +15,7 @@
  
  	/*
  	 * Define the placement constraint for the inline asm directive below.
-@@ -386,13 +387,14 @@ static struct machine_desc * __init setu
+@@ -387,13 +388,14 @@ static struct machine_desc * __init setu
  
  static int __init arm_add_memory(unsigned long start, unsigned long size)
  {

@@ -1,6 +1,6 @@
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -396,6 +396,50 @@ static void ixp4xx_adjust_link(struct ne
+@@ -397,6 +397,50 @@ static void ixp4xx_adjust_link(struct ne
  	       dev->name, port->speed, port->duplex ? "full" : "half");
  }
  
@@ -51,7 +51,7 @@
  
  static inline void debug_pkt(struct net_device *dev, const char *func,
  			     u8 *data, int len)
-@@ -1005,8 +1049,7 @@ static int eth_open(struct net_device *d
+@@ -1009,8 +1053,7 @@ static int eth_open(struct net_device *d
  		return err;
  	}
  
@@ -61,7 +61,7 @@
  
  	for (i = 0; i < ETH_ALEN; i++)
  		__raw_writel(dev->dev_addr[i], &port->regs->hw_addr[i]);
-@@ -1127,7 +1170,7 @@ static int eth_close(struct net_device *
+@@ -1131,7 +1174,7 @@ static int eth_close(struct net_device *
  		printk(KERN_CRIT "%s: unable to disable loopback\n",
  		       dev->name);
  
@@ -70,7 +70,7 @@
  
  	if (!ports_open)
  		qmgr_disable_irq(TXDONE_QUEUE);
-@@ -1153,7 +1196,6 @@ static int __devinit eth_init_one(struct
+@@ -1157,7 +1200,6 @@ static int __devinit eth_init_one(struct
  	struct net_device *dev;
  	struct eth_plat_info *plat = pdev->dev.platform_data;
  	u32 regs_phys;
@@ -78,7 +78,7 @@
  	int err;
  
  	if (!(dev = alloc_etherdev(sizeof(struct port))))
-@@ -1211,18 +1253,10 @@ static int __devinit eth_init_one(struct
+@@ -1215,18 +1257,10 @@ static int __devinit eth_init_one(struct
  	__raw_writel(DEFAULT_CORE_CNTRL, &port->regs->core_control);
  	udelay(50);
  
@@ -99,7 +99,7 @@
  	if ((err = register_netdev(dev)))
  		goto err_phy_dis;
  
-@@ -1232,7 +1266,7 @@ static int __devinit eth_init_one(struct
+@@ -1236,7 +1270,7 @@ static int __devinit eth_init_one(struct
  	return 0;
  
  err_phy_dis:
@@ -108,7 +108,7 @@
  err_free_mem:
  	npe_port_tab[NPE_ID(port->id)] = NULL;
  	platform_set_drvdata(pdev, NULL);
-@@ -1250,7 +1284,7 @@ static int __devexit eth_remove_one(stru
+@@ -1254,7 +1288,7 @@ static int __devexit eth_remove_one(stru
  	struct port *port = netdev_priv(dev);
  
  	unregister_netdev(dev);

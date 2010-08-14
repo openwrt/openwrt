@@ -1,6 +1,6 @@
 --- a/drivers/net/arm/ixp4xx_eth.c
 +++ b/drivers/net/arm/ixp4xx_eth.c
-@@ -168,7 +168,7 @@ struct port {
+@@ -169,7 +169,7 @@ struct port {
  	struct desc *desc_tab;	/* coherent */
  	u32 desc_tab_phys;
  	int id;			/* logical port ID */
@@ -9,7 +9,7 @@
  	u8 firmware[4];
  };
  
-@@ -365,37 +365,52 @@ static void ixp4xx_mdio_remove(void)
+@@ -366,37 +366,52 @@ static void ixp4xx_mdio_remove(void)
  	mdiobus_free(mdio_bus);
  }
  
@@ -77,7 +77,7 @@
  static int ixp4xx_phy_connect(struct net_device *dev)
  {
  	struct port *port = netdev_priv(dev);
-@@ -430,7 +445,6 @@ static void ixp4xx_phy_start(struct net_
+@@ -431,7 +446,6 @@ static void ixp4xx_phy_start(struct net_
  {
  	struct port *port = netdev_priv(dev);
  
@@ -85,7 +85,7 @@
  	phy_start(port->phydev);
  }
  
-@@ -1260,6 +1274,10 @@ static int __devinit eth_init_one(struct
+@@ -1263,6 +1277,10 @@ static int __devinit eth_init_one(struct
  	if ((err = register_netdev(dev)))
  		goto err_phy_dis;
  
