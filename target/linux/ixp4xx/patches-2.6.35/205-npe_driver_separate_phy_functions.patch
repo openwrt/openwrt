@@ -104,7 +104,7 @@
  
  err_phy_dis:
 -	phy_disconnect(port->phydev);
-+	ixp4xx_phy_disconnect(port->phydev);
++	ixp4xx_phy_disconnect(dev);
  err_free_mem:
  	npe_port_tab[NPE_ID(port->id)] = NULL;
  	platform_set_drvdata(pdev, NULL);
