@@ -51,6 +51,9 @@ get_status_led() {
 	dir-825-b1)
 		status_led="dir825b1:orange:power"
 		;;
+	eap7660d)
+		status_led="eap7660d:green:ds4"
+		;;
 	ls-sr71)
 		status_led="ubnt:green:d22"
 		;;
