@@ -96,7 +96,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	routerstation | routerstation-pro | ls-sr71 | pb42 | pb44)
+	routerstation | routerstation-pro | ls-sr71 | pb42 | pb44 | eap7660d )
 		[ "$magic" != "4349" ] && {
 			echo "Invalid image. Use *-sysupgrade.bin files on this board"
 			return 1
@@ -123,7 +123,7 @@ platform_do_upgrade() {
 	local board=$(ar71xx_board_name)
 
 	case "$board" in
-	routerstation | routerstation-pro | ls-sr71)
+	routerstation | routerstation-pro | ls-sr71 | eap7660d )
 		platform_do_upgrade_combined "$ARGV"
 		;;
 	*)
