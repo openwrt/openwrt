@@ -21,6 +21,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_DIR_300_REVB,	/* D-Link DIR-300 rev B */
 
 	/* RT3052 based machines */
+	RAMIPS_MACH_WCR150GN,		/* Sparklan WCR-150GN */
 	RAMIPS_MACH_V22RW_2X2,		/* Ralink AP-RT3052-V22RW-2X2 */
 	RAMIPS_MACH_WHR_G300N,		/* Buffalo WHR-G300N */
 	RAMIPS_MACH_FONERA20N,		/* La Fonera 2.0N */
