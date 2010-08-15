@@ -1,4 +1,4 @@
-From c5cb2459ff124c1a928e2056bc1fe2da7b6ab6ba Mon Sep 17 00:00:00 2001
+From ff7295cc37b1e4b31aed9f071374f43aa128329b Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Fri, 30 Jul 2010 17:45:20 +0200
 Subject: [PATCH 5/6] MIPS: BCM47xx: nvram_getenv fix return value.
@@ -9,8 +9,9 @@ Change nvram_getenv to do the same.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- arch/mips/bcm47xx/nvram.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ arch/mips/bcm47xx/nvram.c                  |    4 ++--
+ arch/mips/include/asm/mach-bcm47xx/nvram.h |    3 +++
+ 2 files changed, 5 insertions(+), 2 deletions(-)
 
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
@@ -19,7 +20,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	if (!name)
 -		return 1;
-+		return -8;
++		return NVRAM_ERR_INV_PARAM;
  
  	if (!nvram_buf[0])
  		early_nvram_init();
@@ -28,6 +29,19 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		}
  	}
 -	return 1;
-+	return -9;
++	return NVRAM_ERR_ENVNOTFOUND;
  }
  EXPORT_SYMBOL(nvram_getenv);
+--- a/arch/mips/include/asm/mach-bcm47xx/nvram.h
++++ b/arch/mips/include/asm/mach-bcm47xx/nvram.h
+@@ -31,6 +31,10 @@ struct nvram_header {
+ #define NVRAM_MAX_VALUE_LEN 255
+ #define NVRAM_MAX_PARAM_LEN 64
+ 
++// TODO: replace by old values. This chaueses that the system will not try to look into the cfe.
++#define NVRAM_ERR_INV_PARAM	1 // -8
++#define NVRAM_ERR_ENVNOTFOUND	1 // -9
++
+ extern int nvram_getenv(char *name, char *val, size_t val_len);
+ 
+ #endif
