@@ -1,22 +1,25 @@
---- a/include/usage.h
-+++ b/include/usage.h
-@@ -1727,6 +1727,7 @@
+--- a/include/usage.src.h
++++ b/include/usage.src.h
+@@ -1718,7 +1718,8 @@ INSERT
+ 	IF_FEATURE_HTTPD_SETUID(" [-u USER[:GRP]]") \
  	IF_FEATURE_HTTPD_BASIC_AUTH(" [-r REALM]") \
         " [-h HOME]\n" \
-        "or httpd -d/-e" IF_FEATURE_HTTPD_AUTH_MD5("/-m") " STRING"
+-       "or httpd -d/-e" IF_FEATURE_HTTPD_AUTH_MD5("/-m") " STRING"
++       "or httpd -d/-e" IF_FEATURE_HTTPD_AUTH_MD5("/-m") " STRING" \
 +       " [-R <path> [-H <host>]]"
  #define httpd_full_usage "\n\n" \
         "Listen for incoming HTTP requests\n" \
       "\nOptions:" \
-@@ -1744,6 +1745,8 @@
-      "\n	-m STRING	MD5 crypt STRING") \
-      "\n	-e STRING	HTML encode STRING" \
-      "\n	-d STRING	URL decode STRING" \
-+     "\n	-R PATH		Redirect target path" \
-+     "\n	-H HOST		Redirect target host" \
+@@ -2319,6 +2320,9 @@ INSERT
+ #define loadkmap_example_usage \
+        "$ loadkmap < /etc/i18n/lang-keymap\n"
  
- #define hwclock_trivial_usage \
- 	IF_FEATURE_HWCLOCK_LONG_OPTIONS( \
++#define lock_trivial_usage NOUSAGE_STR
++#define lock_full_usage ""
++
+ #define logger_trivial_usage \
+        "[OPTIONS] [MESSAGE]"
+ #define logger_full_usage "\n\n" \
 --- a/networking/httpd.c
 +++ b/networking/httpd.c
 @@ -250,6 +250,8 @@ struct globals {

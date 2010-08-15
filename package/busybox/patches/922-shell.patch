@@ -1,0 +1,104 @@
+--- a/shell/ash.c
++++ b/shell/ash.c
+@@ -4515,6 +4515,7 @@ clear_traps(void)
+ 			INT_ON;
+ 		}
+ 	}
++	may_have_traps = 0;
+ }
+ 
+ /* Lives far away from here, needed for forkchild */
+diff -urpN busybox-1.17.1/shell/ash_test/ash-signals/signal7.right busybox-1.17.1-shell/shell/ash_test/ash-signals/signal7.right
+--- busybox-1.17.1/shell/ash_test/ash-signals/signal7.right	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.17.1-shell/shell/ash_test/ash-signals/signal7.right	2010-07-25 13:09:32.000000000 +0200
+@@ -0,0 +1 @@
++Bug detected: 0
+diff -urpN busybox-1.17.1/shell/ash_test/ash-signals/signal7.tests busybox-1.17.1-shell/shell/ash_test/ash-signals/signal7.tests
+--- busybox-1.17.1/shell/ash_test/ash-signals/signal7.tests	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.17.1-shell/shell/ash_test/ash-signals/signal7.tests	2010-07-25 13:09:32.000000000 +0200
+@@ -0,0 +1,18 @@
++bug() {
++	trap : exit
++	# Bug was causing sh to be run in subshell,
++	# as if this line is replaced with (sh -c ...; exit $?) &
++	# here:
++	sh -c 'echo REAL_CHILD=$$' &
++	echo PARENTS_IDEA_OF_CHILD=$!
++	wait  # make sure bkgd shell completes
++}
++
++bug | {
++while read varval; do
++	eval $varval
++done
++test x"$REAL_CHILD" != x"" \
++&& test x"$REAL_CHILD" = x"$PARENTS_IDEA_OF_CHILD"
++echo "Bug detected: $?"
++}
+diff -urpN busybox-1.17.1/shell/hush.c busybox-1.17.1-shell/shell/hush.c
+--- busybox-1.17.1/shell/hush.c	2010-07-25 00:12:43.000000000 +0200
++++ busybox-1.17.1-shell/shell/hush.c	2010-07-25 13:09:32.000000000 +0200
+@@ -3901,8 +3901,6 @@ static void insert_bg_job(struct pipe *p
+ 
+ 	if (G_interactive_fd)
+ 		printf("[%d] %d %s\n", job->jobid, job->cmds[0].pid, job->cmdtext);
+-	/* Last command's pid goes to $! */
+-	G.last_bg_pid = job->cmds[job->num_cmds - 1].pid;
+ 	G.last_jobid = job->jobid;
+ }
+ 
+@@ -4825,6 +4823,8 @@ static int run_list(struct pipe *pi)
+ 				if (G.run_list_level == 1)
+ 					insert_bg_job(pi);
+ #endif
++				/* Last command's pid goes to $! */
++				G.last_bg_pid = pi->cmds[pi->num_cmds - 1].pid;
+ 				G.last_exitcode = rcode = EXIT_SUCCESS;
+ 				debug_printf_exec(": cmd&: exitcode EXIT_SUCCESS\n");
+ 			} else {
+diff -urpN busybox-1.17.1/shell/hush_test/hush-trap/signal7.right busybox-1.17.1-shell/shell/hush_test/hush-trap/signal7.right
+--- busybox-1.17.1/shell/hush_test/hush-trap/signal7.right	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.17.1-shell/shell/hush_test/hush-trap/signal7.right	2010-07-25 13:09:32.000000000 +0200
+@@ -0,0 +1 @@
++Bug detected: 0
+diff -urpN busybox-1.17.1/shell/hush_test/hush-trap/signal7.tests busybox-1.17.1-shell/shell/hush_test/hush-trap/signal7.tests
+--- busybox-1.17.1/shell/hush_test/hush-trap/signal7.tests	1970-01-01 01:00:00.000000000 +0100
++++ busybox-1.17.1-shell/shell/hush_test/hush-trap/signal7.tests	2010-07-25 13:09:32.000000000 +0200
+@@ -0,0 +1,18 @@
++bug() {
++	trap : exit
++	# Bug was causing sh to be run in subshell,
++	# as if this line is replaced with (sh -c ...; exit $?) &
++	# here:
++	sh -c 'echo REAL_CHILD=$$' &
++	echo PARENTS_IDEA_OF_CHILD=$!
++	wait  # make sure bkgd shell completes
++}
++
++bug | {
++while read varval; do
++	eval $varval
++done
++test x"$REAL_CHILD" != x"" \
++&& test x"$REAL_CHILD" = x"$PARENTS_IDEA_OF_CHILD"
++echo "Bug detected: $?"
++}
+diff -urpN busybox-1.17.1/shell/shell_common.c busybox-1.17.1-shell/shell/shell_common.c
+--- busybox-1.17.1/shell/shell_common.c	2010-07-06 04:25:54.000000000 +0200
++++ busybox-1.17.1-shell/shell/shell_common.c	2010-07-27 08:41:43.000000000 +0200
+@@ -428,9 +428,14 @@ shell_builtin_ulimit(char **argv)
+ 						val <<= l->factor_shift;
+ 					}
+ //bb_error_msg("opt %c val_str:'%s' val:%lld", opt_char, val_str, (long long)val);
++					/* from man bash: "If neither -H nor -S
++					 * is specified, both the soft and hard
++					 * limits are set. */
++					if (!opts)
++						opts = OPT_hard + OPT_soft;
+ 					if (opts & OPT_hard)
+ 						limit.rlim_max = val;
+-					if ((opts & OPT_soft) || opts == 0)
++					if (opts & OPT_soft)
+ 						limit.rlim_cur = val;
+ //bb_error_msg("setrlimit(%d, %lld, %lld)", l->cmd, (long long)limit.rlim_cur, (long long)limit.rlim_max);
+ 					if (setrlimit(l->cmd, &limit) < 0) {

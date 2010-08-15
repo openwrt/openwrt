@@ -1,5 +1,5 @@
---- a/include/applets.h
-+++ b/include/applets.h
+--- a/include/applets.src.h
++++ b/include/applets.src.h
 @@ -234,6 +234,7 @@ IF_LN(APPLET_NOEXEC(ln, ln, _BB_DIR_BIN,
  IF_LOAD_POLICY(APPLET(load_policy, _BB_DIR_USR_SBIN, _BB_SUID_DROP))
  IF_LOADFONT(APPLET(loadfont, _BB_DIR_USR_SBIN, _BB_SUID_DROP))
@@ -8,8 +8,8 @@
  IF_LOGGER(APPLET(logger, _BB_DIR_USR_BIN, _BB_SUID_DROP))
  IF_LOGIN(APPLET(login, _BB_DIR_BIN, _BB_SUID_REQUIRE))
  IF_LOGNAME(APPLET_NOFORK(logname, logname, _BB_DIR_USR_BIN, _BB_SUID_DROP, logname))
---- a/include/usage.h
-+++ b/include/usage.h
+--- a/include/usage.src.h
++++ b/include/usage.src.h
 @@ -2357,6 +2357,9 @@
  #define loadkmap_example_usage \
         "$ loadkmap < /etc/i18n/lang-keymap\n"
@@ -20,8 +20,8 @@
  #define logger_trivial_usage \
         "[OPTIONS] [MESSAGE]"
  #define logger_full_usage "\n\n" \
---- a/miscutils/Config.in
-+++ b/miscutils/Config.in
+--- a/miscutils/Config.src
++++ b/miscutils/Config.src
 @@ -463,6 +463,11 @@ config FEATURE_HDPARM_HDIO_GETSET_DMA
  	help
  	  Enables the 'hdparm -d' option to get/set using_dma flag.
@@ -34,8 +34,8 @@
  config MAKEDEVS
  	bool "makedevs"
  	default n
---- a/miscutils/Kbuild
-+++ b/miscutils/Kbuild
+--- a/miscutils/Kbuild.src
++++ b/miscutils/Kbuild.src
 @@ -27,6 +27,7 @@ lib-$(CONFIG_INOTIFYD)    += inotifyd.o
  lib-$(CONFIG_FEATURE_LAST_SMALL)+= last.o
  lib-$(CONFIG_FEATURE_LAST_FANCY)+= last_fancy.o

@@ -1,5 +1,5 @@
---- a/include/applets.h
-+++ b/include/applets.h
+--- a/include/applets.src.h
++++ b/include/applets.src.h
 @@ -282,6 +282,7 @@ IF_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_D
  IF_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_DROP))
@@ -8,8 +8,8 @@
  IF_NETSTAT(APPLET(netstat, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NICE(APPLET(nice, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_DROP))
---- a/include/usage.h
-+++ b/include/usage.h
+--- a/include/usage.src.h
++++ b/include/usage.src.h
 @@ -3166,6 +3166,9 @@
  
  #endif
@@ -20,23 +20,23 @@
  #define netstat_trivial_usage \
         "[-laentuwxr"IF_FEATURE_NETSTAT_WIDE("W")IF_FEATURE_NETSTAT_PRG("p")"]"
  #define netstat_full_usage "\n\n" \
---- a/networking/Config.in
-+++ b/networking/Config.in
-@@ -628,6 +628,12 @@ config NC
- 	  A simple Unix utility which reads and writes data across network
- 	  connections.
+--- a/networking/Config.src
++++ b/networking/Config.src
+@@ -623,6 +623,12 @@ config FEATURE_NAMEIF_EXTENDED
+ 	    new_interface_name  mac=00:80:C8:38:91:B5
+ 	    new_interface_name  00:80:C8:38:91:B5
  
 +config NETMSG
 +	bool "netmsg"
 +	default n
 +	help
-+	  simple program for sending udp broadcast messages
++	 simple program for sending udp broadcast messages
 +
- config NC_SERVER
- 	bool "Netcat server options (-l)"
- 	default n
---- a/networking/Kbuild
-+++ b/networking/Kbuild
+ config NETSTAT
+ 	bool "netstat"
+ 	default y
+--- a/networking/Kbuild.src
++++ b/networking/Kbuild.src
 @@ -25,6 +25,7 @@ lib-$(CONFIG_IP)           += ip.o
  lib-$(CONFIG_IPCALC)       += ipcalc.o
  lib-$(CONFIG_NAMEIF)       += nameif.o
