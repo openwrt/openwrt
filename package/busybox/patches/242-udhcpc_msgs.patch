@@ -1,16 +1,16 @@
---- a/networking/udhcp/clientpacket.c
-+++ b/networking/udhcp/clientpacket.c
-@@ -126,6 +126,7 @@ int FAST_FUNC send_decline(uint32_t xid,
- int FAST_FUNC send_discover(uint32_t xid, uint32_t requested)
+--- a/networking/udhcp/dhcpc.c
++++ b/networking/udhcp/dhcpc.c
+@@ -428,6 +428,7 @@ static int raw_bcast_from_client_config_
+ static int send_discover(uint32_t xid, uint32_t requested)
  {
  	struct dhcp_packet packet;
 +	static int msgs = 0;
  
  	init_packet(&packet, DHCPDISCOVER);
  	packet.xid = xid;
-@@ -138,6 +139,7 @@ int FAST_FUNC send_discover(uint32_t xid
- 
- 	add_param_req_option(&packet);
+@@ -438,6 +439,7 @@ static int send_discover(uint32_t xid, u
+ 	udhcp_add_simple_option(&packet, DHCP_MAX_SIZE, htons(576));
+ 	add_client_options(&packet);
  
 +	if (msgs++ < 3)
  	bb_info_msg("Sending discover...");

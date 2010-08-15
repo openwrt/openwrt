@@ -1,6 +1,6 @@
 --- a/editors/awk.c
 +++ b/editors/awk.c
-@@ -53,9 +53,14 @@ typedef struct chain_s {
+@@ -70,9 +70,14 @@ typedef struct chain_s {
  } chain;
  
  /* Function */
@@ -15,7 +15,7 @@
  } func;
  
  /* I/O stream */
-@@ -1424,7 +1429,8 @@ static void parse_program(char *p)
+@@ -1453,7 +1458,8 @@ static void parse_program(char *p)
  			next_token(TC_FUNCTION);
  			g_pos++;
  			f = newfunc(t_string);
@@ -25,38 +25,38 @@
  			f->nargs = 0;
  			while (next_token(TC_VARIABLE | TC_SEQTERM) & TC_VARIABLE) {
  				v = findvar(ahash, t_string);
-@@ -1433,7 +1439,7 @@ static void parse_program(char *p)
+@@ -1462,7 +1468,7 @@ static void parse_program(char *p)
  				if (next_token(TC_COMMA | TC_SEQTERM) & TC_SEQTERM)
  					break;
  			}
--			seq = &(f->body);
-+			seq = &(f->x.body);
+-			seq = &f->body;
++			seq = &f->x.body;
  			chain_group();
  			clear_array(ahash);
  
-@@ -2446,7 +2452,8 @@ static var *evaluate(node *op, var *res)
- 			break;
+@@ -2547,7 +2553,8 @@ static var *evaluate(node *op, var *res)
+ 			var *vbeg, *v;
+ 			const char *sv_progname;
  
- 		case XC( OC_FUNC ):
 -			if (!op->r.f->body.first)
 +			if ((op->r.f->type == AWKFUNC) &&
 +				!op->r.f->x.body.first)
  				syntax_error(EMSG_UNDEF_FUNC);
  
- 			X.v = R.v = nvalloc(op->r.f->nargs + 1);
-@@ -2463,7 +2470,10 @@ static var *evaluate(node *op, var *res)
- 			fnargs = X.v;
+ 			vbeg = v = nvalloc(op->r.f->nargs + 1);
+@@ -2564,7 +2571,10 @@ static var *evaluate(node *op, var *res)
+ 			fnargs = vbeg;
+ 			sv_progname = g_progname;
  
- 			L.s = g_progname;
 -			res = evaluate(op->r.f->body.first, res);
 +			if (op->r.f->type == AWKFUNC)
 +				res = evaluate(op->r.f->x.body.first, res);
 +			else if (op->r.f->type == CFUNC)
 +				res = op->r.f->x.cfunc(res, fnargs, op->r.f->nargs);
- 			g_progname = L.s;
  
+ 			g_progname = sv_progname;
  			nvfree(fnargs);
-@@ -2829,6 +2839,143 @@ static rstream *next_input_file(void)
+@@ -2942,6 +2952,143 @@ static rstream *next_input_file(void)
  #undef files_happen
  }
  
@@ -200,7 +200,7 @@
  int awk_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
  int awk_main(int argc, char **argv)
  {
-@@ -2894,6 +3041,9 @@ int awk_main(int argc, char **argv)
+@@ -3007,6 +3154,9 @@ int awk_main(int argc, char **argv)
  			*s1 = '=';
  		}
  	}
