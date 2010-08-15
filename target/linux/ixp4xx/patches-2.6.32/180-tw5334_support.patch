@@ -35,7 +35,7 @@
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/tw5334-setup.c
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,163 @@
 +/*
 + * arch/arm/mach-ixp4xx/tw5334-setup.c
 + *
@@ -169,14 +169,15 @@
 +	 */
 +	f = ioremap(IXP4XX_EXP_BUS_BASE(0), 0x1000000);
 +	if (f) {
-+		for (i = 0; i < 6; i++)
++		for (i = 0; i < 6; i++) {
 +#ifdef __ARMEB__
-+		tw5334_plat_eth[0].hwaddr[i] = readb(f + 0xFC0422 + i);
-+		tw5334_plat_eth[1].hwaddr[i] = readb(f + 0xFC043B + i);
++			tw5334_plat_eth[0].hwaddr[i] = readb(f + 0xFC0422 + i);
++			tw5334_plat_eth[1].hwaddr[i] = readb(f + 0xFC043B + i);
 +#else
-+		tw5334_plat_eth[0].hwaddr[i] = readb(f + 0xFC0422 + (i^3));
-+		tw5334_plat_eth[1].hwaddr[i] = readb(f + 0xFC043B + (i^3));
++			tw5334_plat_eth[0].hwaddr[i] = readb(f + 0xFC0422 + (i^3));
++			tw5334_plat_eth[1].hwaddr[i] = readb(f + 0xFC043B + (i^3));
 +#endif
++		}
 +		iounmap(f);
 +	}
 +
