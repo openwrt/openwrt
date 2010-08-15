@@ -168,6 +168,18 @@ config BUSYBOX_CONFIG_FEATURE_VI_WIN_RESIZE
 	help
 	  Make busybox vi behave nicely with terminals that get resized.
 
+config BUSYBOX_CONFIG_FEATURE_VI_ASK_TERMINAL
+	bool "Use 'tell me cursor position' ESC sequence to measure window"
+	default y
+	depends on BUSYBOX_CONFIG_VI
+	help
+	  If terminal size can't be retrieved and $LINES/$COLUMNS are not set,
+	  this option makes vi perform a last-ditch effort to find it:
+	  vi positions cursor to 999,999 and asks terminal to report real
+	  cursor position using "ESC [ 6 n" escape sequence, then reads stdin.
+
+	  This is not clean but helps a lot on serial lines and such.
+
 config BUSYBOX_CONFIG_FEATURE_VI_OPTIMIZE_CURSOR
 	bool "Optimize cursor movement"
 	default y

@@ -124,7 +124,7 @@
  	string "Default directory containing modules"
  	default "/lib/modules"
 -	depends on DEPMOD || MODPROBE || MODPROBE_SMALL || MODINFO
-+	depends on DEPMOD || MODPROBE || MODPROBE_SMALL || MODINFO || INSMOD
++	depends on DEPMOD || INSMOD || MODPROBE || MODPROBE_SMALL || MODINFO
  	help
  	  Directory that contains kernel modules.
  	  Defaults to "/lib/modules"

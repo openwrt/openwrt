@@ -5,6 +5,12 @@
 
 menu "Archival Utilities"
 
+config BUSYBOX_CONFIG_FEATURE_SEAMLESS_XZ
+	bool "Make tar, rpm, modprobe etc understand .xz data"
+	default n
+	help
+	  Make tar, rpm, modprobe etc understand .xz data.
+
 config BUSYBOX_CONFIG_FEATURE_SEAMLESS_LZMA
 	bool "Make tar, rpm, modprobe etc understand .lzma data"
 	default n
@@ -61,6 +67,13 @@ config BUSYBOX_CONFIG_FEATURE_AR_LONG_FILENAMES
 	  of the filename, this option removes that limitation.
 	  It supports the GNU ar long filename method which moves multiple long
 	  filenames into a the data section of a new ar entry.
+
+config BUSYBOX_CONFIG_FEATURE_AR_CREATE
+	bool "Support archive creation"
+	default n
+	depends on BUSYBOX_CONFIG_AR
+	help
+	  This enables archive creation (-c and -r) with busybox ar.
 
 config BUSYBOX_CONFIG_BUNZIP2
 	bool "bunzip2"
@@ -207,8 +220,6 @@ config BUSYBOX_CONFIG_TAR
 	  create compressed archives. It's probably the most widely used
 	  UNIX archive program.
 
-if BUSYBOX_CONFIG_TAR
-
 config BUSYBOX_CONFIG_FEATURE_TAR_CREATE
 	bool "Enable archive creation"
 	default y
@@ -220,7 +231,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_CREATE
 config BUSYBOX_CONFIG_FEATURE_TAR_AUTODETECT
 	bool "Autodetect compressed tarballs"
 	default n
-	depends on BUSYBOX_CONFIG_FEATURE_SEAMLESS_Z || BUSYBOX_CONFIG_FEATURE_SEAMLESS_GZ || BUSYBOX_CONFIG_FEATURE_SEAMLESS_BZ2 || BUSYBOX_CONFIG_FEATURE_SEAMLESS_LZMA
+	depends on BUSYBOX_CONFIG_TAR && (BUSYBOX_CONFIG_FEATURE_SEAMLESS_Z || BUSYBOX_CONFIG_FEATURE_SEAMLESS_GZ || BUSYBOX_CONFIG_FEATURE_SEAMLESS_BZ2 || BUSYBOX_CONFIG_FEATURE_SEAMLESS_LZMA || BUSYBOX_CONFIG_FEATURE_SEAMLESS_XZ)
 	help
 	  With this option tar can automatically detect compressed
 	  tarballs. Currently it works only on files (not pipes etc).
@@ -236,7 +247,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_FROM
 config BUSYBOX_CONFIG_FEATURE_TAR_OLDGNU_COMPATIBILITY
 	bool "Support for old tar header format"
 	default n
-	depends on BUSYBOX_CONFIG_TAR
+	depends on BUSYBOX_CONFIG_TAR || BUSYBOX_CONFIG_DPKG
 	help
 	  This option is required to unpack archives created in
 	  the old GNU format; help to kill this old format by
@@ -245,7 +256,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_OLDGNU_COMPATIBILITY
 config BUSYBOX_CONFIG_FEATURE_TAR_OLDSUN_COMPATIBILITY
 	bool "Enable untarring of tarballs with checksums produced by buggy Sun tar"
 	default n
-	depends on BUSYBOX_CONFIG_TAR
+	depends on BUSYBOX_CONFIG_TAR || BUSYBOX_CONFIG_DPKG
 	help
 	  This option is required to unpack archives created by some old
 	  version of Sun's tar (it was calculating checksum using signed
@@ -255,7 +266,7 @@ config BUSYBOX_CONFIG_FEATURE_TAR_OLDSUN_COMPATIBILITY
 config BUSYBOX_CONFIG_FEATURE_TAR_GNU_EXTENSIONS
 	bool "Support for GNU tar extensions (long filenames)"
 	default y
-	depends on BUSYBOX_CONFIG_TAR
+	depends on BUSYBOX_CONFIG_TAR || BUSYBOX_CONFIG_DPKG
 	help
 	  With this option busybox supports GNU long filenames and
 	  linknames.
@@ -266,6 +277,15 @@ config BUSYBOX_CONFIG_FEATURE_TAR_LONG_OPTIONS
 	depends on BUSYBOX_CONFIG_TAR && BUSYBOX_CONFIG_LONG_OPTS
 	help
 	  Enable use of long options, increases size by about 400 Bytes
+
+config BUSYBOX_CONFIG_FEATURE_TAR_TO_COMMAND
+	bool "Support for writing to an external program"
+	default n
+	depends on BUSYBOX_CONFIG_TAR && BUSYBOX_CONFIG_FEATURE_TAR_LONG_OPTIONS
+	help
+	  If you enable this option you'll be able to instruct tar to send
+	  the contents of each extracted file to the standard input of an
+	  external program.
 
 config BUSYBOX_CONFIG_FEATURE_TAR_UNAME_GNAME
 	bool "Enable use of user and group names"
@@ -284,7 +304,13 @@ config BUSYBOX_CONFIG_FEATURE_TAR_NOPRESERVE_TIME
 	  With this option busybox supports GNU tar -m
 	  (do not preserve time) option.
 
-endif #tar
+config BUSYBOX_CONFIG_FEATURE_TAR_SELINUX
+	bool "Support for extracting SELinux labels"
+	default n
+	depends on BUSYBOX_CONFIG_TAR && BUSYBOX_CONFIG_SELINUX
+	help
+	  With this option busybox supports restoring SELinux labels
+	  when extracting files from tar archives.
 
 config BUSYBOX_CONFIG_UNCOMPRESS
 	bool "uncompress"
@@ -315,6 +341,28 @@ config BUSYBOX_CONFIG_FEATURE_LZMA_FAST
 	help
 	  This option reduces decompression time by about 25% at the cost of
 	  a 1K bigger binary.
+
+config BUSYBOX_CONFIG_LZMA
+	bool "Provide lzma alias which supports only unpacking"
+	default n
+	depends on BUSYBOX_CONFIG_UNLZMA
+	help
+	  Enable this option if you want commands like "lzma -d" to work.
+	  IOW: you'll get lzma applet, but it will always require -d option.
+
+config BUSYBOX_CONFIG_UNXZ
+	bool "unxz"
+	default n
+	help
+	  unxz is a unlzma successor.
+
+config BUSYBOX_CONFIG_XZ
+	bool "Provide xz alias which supports only unpacking"
+	default n
+	depends on BUSYBOX_CONFIG_UNXZ
+	help
+	  Enable this option if you want commands like "xz -d" to work.
+	  IOW: you'll get xz applet, but it will always require -d option.
 
 config BUSYBOX_CONFIG_UNZIP
 	bool "unzip"

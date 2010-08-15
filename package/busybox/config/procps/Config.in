@@ -5,6 +5,13 @@
 
 menu "Process Utilities"
 
+config BUSYBOX_CONFIG_SMEMCAP
+	bool "smemcap"
+	default n
+	help
+	  smemcap is a tool for capturing process data for smem,
+	  a memory usage statistic tool.
+
 config BUSYBOX_CONFIG_FREE
 	bool "free"
 	default y

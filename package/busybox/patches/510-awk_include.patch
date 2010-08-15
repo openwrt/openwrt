@@ -1,6 +1,11 @@
 --- a/editors/awk.c
 +++ b/editors/awk.c
-@@ -70,9 +70,14 @@ typedef struct chain_s {
+@@ -1,3 +1,4 @@
++
+ /* vi: set sw=4 ts=4: */
+ /*
+  * awk implementation for busybox
+@@ -70,9 +71,14 @@ typedef struct chain_s {
  } chain;
  
  /* Function */
@@ -15,7 +20,7 @@
  } func;
  
  /* I/O stream */
-@@ -1453,7 +1458,8 @@ static void parse_program(char *p)
+@@ -1453,7 +1459,8 @@ static void parse_program(char *p)
  			next_token(TC_FUNCTION);
  			g_pos++;
  			f = newfunc(t_string);
@@ -25,7 +30,7 @@
  			f->nargs = 0;
  			while (next_token(TC_VARIABLE | TC_SEQTERM) & TC_VARIABLE) {
  				v = findvar(ahash, t_string);
-@@ -1462,7 +1468,7 @@ static void parse_program(char *p)
+@@ -1462,7 +1469,7 @@ static void parse_program(char *p)
  				if (next_token(TC_COMMA | TC_SEQTERM) & TC_SEQTERM)
  					break;
  			}
@@ -34,7 +39,7 @@
  			chain_group();
  			clear_array(ahash);
  
-@@ -2547,7 +2553,8 @@ static var *evaluate(node *op, var *res)
+@@ -2547,7 +2554,8 @@ static var *evaluate(node *op, var *res)
  			var *vbeg, *v;
  			const char *sv_progname;
  
@@ -44,7 +49,7 @@
  				syntax_error(EMSG_UNDEF_FUNC);
  
  			vbeg = v = nvalloc(op->r.f->nargs + 1);
-@@ -2564,7 +2571,10 @@ static var *evaluate(node *op, var *res)
+@@ -2564,7 +2572,10 @@ static var *evaluate(node *op, var *res)
  			fnargs = vbeg;
  			sv_progname = g_progname;
  
@@ -56,7 +61,7 @@
  
  			g_progname = sv_progname;
  			nvfree(fnargs);
-@@ -2942,6 +2952,143 @@ static rstream *next_input_file(void)
+@@ -2942,6 +2953,143 @@ static rstream *next_input_file(void)
  #undef files_happen
  }
  
@@ -200,7 +205,7 @@
  int awk_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
  int awk_main(int argc, char **argv)
  {
-@@ -3007,6 +3154,9 @@ int awk_main(int argc, char **argv)
+@@ -3007,6 +3155,9 @@ int awk_main(int argc, char **argv)
  			*s1 = '=';
  		}
  	}

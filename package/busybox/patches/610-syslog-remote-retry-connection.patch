@@ -1,34 +1,26 @@
 --- a/sysklogd/syslogd.c
 +++ b/sysklogd/syslogd.c
-@@ -98,6 +98,8 @@ struct globals {
- 	GLOBALS
- 
- #if ENABLE_FEATURE_REMOTE_LOG
-+	len_and_sockaddr *remoteAddr;
-+	int remoteFD;
- 	llist_t *remoteHosts;
- #endif
- #if ENABLE_FEATURE_IPC_SYSLOG
-@@ -554,6 +556,7 @@ static void do_syslogd(void) NORETURN;
- static void do_syslogd(void)
+@@ -555,6 +555,7 @@ static void do_syslogd(void)
  {
  	int sock_fd;
-+	int send_err = 0;
  #if ENABLE_FEATURE_REMOTE_LOG
++	int send_err = 0;
  	llist_t *item;
  #endif
-@@ -637,10 +640,23 @@ static void do_syslogd(void)
+ #if ENABLE_FEATURE_SYSLOGD_DUP
+@@ -636,11 +637,23 @@ static void do_syslogd(void)
+ 				if (rh->remoteFD == -1)
  					continue;
  			}
- 			/* Send message to remote logger, ignore possible error */
+-			/* Send message to remote logger, ignore possible error */
 -			/* TODO: on some errors, close and set G.remoteFD to -1
 -			 * so that DNS resolution and connect is retried? */
 -			sendto(rh->remoteFD, recvbuf, sz+1, MSG_DONTWAIT,
 -				&(rh->remoteAddr->u.sa), rh->remoteAddr->len);
++			/* Send message to remote logger */
 +			if (sendto(rh->remoteFD, recvbuf, sz+1, MSG_DONTWAIT,
-+				&G.remoteAddr->u.sa, G.remoteAddr->len)  == -1 ) {
++				&(rh->remoteAddr->u.sa), rh->remoteAddr->len) == -1)
 +				send_err = errno;
-+			}
 +
 +			/* On some errors, close and set G.remoteFD to -1
 +			 * so that DNS resolution and connect is retried */
@@ -38,8 +30,8 @@
 +				case EISCONN:
 +				case ENOTCONN:
 +				case EPIPE:
-+					close(G.remoteFD);
-+					G.remoteFD = -1;
++					close(rh->remoteFD);
++					rh->remoteFD = -1;
 +					break;
 +			}
  		}

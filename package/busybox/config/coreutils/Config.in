@@ -12,19 +12,96 @@ config BUSYBOX_CONFIG_BASENAME
 	  basename is used to strip the directory and suffix from filenames,
 	  leaving just the filename itself. Enable this option if you wish
 	  to enable the 'basename' utility.
-
-config BUSYBOX_CONFIG_CAL
-	bool "cal"
-	default n
-	help
-	  cal is used to display a monthly calender.
-
 config BUSYBOX_CONFIG_CAT
 	bool "cat"
 	default y
 	help
 	  cat is used to concatenate files and print them to the standard
 	  output. Enable this option if you wish to enable the 'cat' utility.
+config BUSYBOX_CONFIG_DATE
+	bool "date"
+	default y
+	help
+	  date is used to set the system date or display the
+	  current time in the given format.
+
+config BUSYBOX_CONFIG_FEATURE_DATE_ISOFMT
+	bool "Enable ISO date format output (-I)"
+	default y
+	depends on BUSYBOX_CONFIG_DATE
+	help
+	  Enable option (-I) to output an ISO-8601 compliant
+	  date/time string.
+
+config BUSYBOX_CONFIG_FEATURE_DATE_NANO
+	bool "Support %[num]N nanosecond format specifier"
+	default n
+	depends on BUSYBOX_CONFIG_DATE
+	help
+	  Support %[num]N format specifier. Adds ~250 bytes of code.
+
+config BUSYBOX_CONFIG_FEATURE_DATE_COMPAT
+	bool "Support weird 'date MMDDhhmm[[YY]YY][.ss]' format"
+	default n
+	depends on BUSYBOX_CONFIG_DATE
+	help
+	  System time can be set by 'date -s DATE' and simply 'date DATE',
+	  but formats of DATE string are different. 'date DATE' accepts
+	  a rather weird MMDDhhmm[[YY]YY][.ss] format with completely
+	  unnatural placement of year between minutes and seconds.
+	  date -s (and other commands like touch -d) use more sensible
+	  formats (for one, ISO format YYYY-MM-DD hh:mm:ss.ssssss).
+
+	  With this option off, 'date DATE' is 'date -s DATE' support
+	  the same format. With it on, 'date DATE' additionally supports
+	  MMDDhhmm[[YY]YY][.ss] format.
+
+config BUSYBOX_CONFIG_TEST
+	bool "test"
+	default y
+	help
+	  test is used to check file types and compare values,
+	  returning an appropriate exit code. The bash shell
+	  has test built in, ash can build it in optionally.
+
+config BUSYBOX_CONFIG_FEATURE_TEST_64
+	bool "Extend test to 64 bit"
+	default y
+	depends on BUSYBOX_CONFIG_TEST || BUSYBOX_CONFIG_ASH_BUILTIN_TEST || BUSYBOX_CONFIG_HUSH
+	help
+	  Enable 64-bit support in test.
+
+config BUSYBOX_CONFIG_TR
+	bool "tr"
+	default y
+	help
+	  tr is used to squeeze, and/or delete characters from standard
+	  input, writing to standard output.
+
+config BUSYBOX_CONFIG_FEATURE_TR_CLASSES
+	bool "Enable character classes (such as [:upper:])"
+	default n
+	depends on BUSYBOX_CONFIG_TR
+	help
+	  Enable character classes, enabling commands such as:
+	  tr [:upper:] [:lower:] to convert input into lowercase.
+
+config BUSYBOX_CONFIG_FEATURE_TR_EQUIV
+	bool "Enable equivalence classes"
+	default n
+	depends on BUSYBOX_CONFIG_TR
+	help
+	  Enable equivalence classes, which essentially add the enclosed
+	  character to the current set. For instance, tr [=a=] xyz would
+	  replace all instances of 'a' with 'xyz'. This option is mainly
+	  useful for cases when no other way of expressing a character
+	  is possible.
+
+config BUSYBOX_CONFIG_CAL
+	bool "cal"
+	default n
+	help
+	  cal is used to display a monthly calender.
 
 config BUSYBOX_CONFIG_CATV
 	bool "catv"
@@ -100,37 +177,6 @@ config BUSYBOX_CONFIG_CUT
 	  cut is used to print selected parts of lines from
 	  each file to stdout.
 
-config BUSYBOX_CONFIG_DATE
-	bool "date"
-	default y
-	help
-	  date is used to set the system date or display the
-	  current time in the given format.
-
-config BUSYBOX_CONFIG_FEATURE_DATE_ISOFMT
-	bool "Enable ISO date format output (-I)"
-	default y
-	depends on BUSYBOX_CONFIG_DATE
-	help
-	  Enable option (-I) to output an ISO-8601 compliant
-	  date/time string.
-
-config BUSYBOX_CONFIG_FEATURE_DATE_COMPAT
-	bool "Support weird 'date MMDDhhmm[[YY]YY][.ss]' format"
-	default n
-	depends on BUSYBOX_CONFIG_DATE
-	help
-	  System time can be set by 'date -s DATE' and simply 'date DATE',
-	  but formats of DATE string are different. 'date DATE' accepts
-	  a rather weird MMDDhhmm[[YY]YY][.ss] format with completely
-	  unnatural placement of year between minutes and seconds.
-	  date -s (and other commands like touch -d) use more sensible
-	  formats (for one, ISO format YYYY-MM-DD hh:mm:ss.ssssss).
-
-	  With this option off, 'date DATE' is 'date -s DATE' support
-	  the same format. With it on, 'date DATE' additionally supports
-	  MMDDhhmm[[YY]YY][.ss] format.
-
 config BUSYBOX_CONFIG_DD
 	bool "dd"
 	default y
@@ -182,6 +228,10 @@ config BUSYBOX_CONFIG_FEATURE_DF_FANCY
 	depends on BUSYBOX_CONFIG_DF
 	help
 	  This option enables -a, -i and -B.
+
+	    -a Show all filesystems
+	    -i Inodes
+	    -B <SIZE> Blocksize
 
 config BUSYBOX_CONFIG_DIRNAME
 	bool "dirname"
@@ -682,6 +732,10 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_TAIL
 	  The options (-q, -s, and -v) are provided by GNU tail, but
 	  are not specific in the SUSv3 standard.
 
+	    -q      Never output headers giving file names
+	    -s SEC  Wait SEC seconds between reads with -f
+	    -v      Always output headers giving file names
+
 config BUSYBOX_CONFIG_TEE
 	bool "tee"
 	default y
@@ -696,53 +750,12 @@ config BUSYBOX_CONFIG_FEATURE_TEE_USE_BLOCK_IO
 	help
 	  Enable this option for a faster tee, at expense of size.
 
-config BUSYBOX_CONFIG_TEST
-	bool "test"
-	default y
-	help
-	  test is used to check file types and compare values,
-	  returning an appropriate exit code. The bash shell
-	  has test built in, ash can build it in optionally.
-
-config BUSYBOX_CONFIG_FEATURE_TEST_64
-	bool "Extend test to 64 bit"
-	default y
-	depends on BUSYBOX_CONFIG_TEST || BUSYBOX_CONFIG_ASH_BUILTIN_TEST || BUSYBOX_CONFIG_HUSH
-	help
-	  Enable 64-bit support in test.
-
 config BUSYBOX_CONFIG_TOUCH
 	bool "touch"
 	default y
 	help
 	  touch is used to create or change the access and/or
 	  modification timestamp of specified files.
-
-config BUSYBOX_CONFIG_TR
-	bool "tr"
-	default y
-	help
-	  tr is used to squeeze, and/or delete characters from standard
-	  input, writing to standard output.
-
-config BUSYBOX_CONFIG_FEATURE_TR_CLASSES
-	bool "Enable character classes (such as [:upper:])"
-	default n
-	depends on BUSYBOX_CONFIG_TR
-	help
-	  Enable character classes, enabling commands such as:
-	  tr [:upper:] [:lower:] to convert input into lowercase.
-
-config BUSYBOX_CONFIG_FEATURE_TR_EQUIV
-	bool "Enable equivalence classes"
-	default n
-	depends on BUSYBOX_CONFIG_TR
-	help
-	  Enable equivalence classes, which essentially add the enclosed
-	  character to the current set. For instance, tr [=a=] xyz would
-	  replace all instances of 'a' with 'xyz'. This option is mainly
-	  useful for cases when no other way of expressing a character
-	  is possible.
 
 config BUSYBOX_CONFIG_TRUE
 	bool "true"
@@ -817,7 +830,7 @@ config BUSYBOX_CONFIG_FEATURE_WC_LARGE
 config BUSYBOX_CONFIG_WHO
 	bool "who"
 	default n
-	select BUSYBOX_CONFIG_FEATURE_UTMP
+	depends on BUSYBOX_CONFIG_FEATURE_UTMP
 	help
 	  who is used to show who is logged on.
 

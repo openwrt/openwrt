@@ -5,6 +5,27 @@
 
 menu "Miscellaneous Utilities"
 
+config BUSYBOX_CONFIG_CONSPY
+	bool "conspy"
+	default n
+	help
+	  A text-mode VNC like program for Linux virtual terminals.
+	  example:  conspy NUM      shared access to console num
+	  or        conspy -nd NUM  screenshot of console num
+	  or        conspy -cs NUM  poor man's GNU screen like
+
+config BUSYBOX_CONFIG_UBIATTACH
+	bool "ubiattach"
+	default n
+	help
+	  Attach MTD device to an UBI device.
+
+config BUSYBOX_CONFIG_UBIDETACH
+	bool "ubidetach"
+	default n
+	help
+	  Detach MTD device from an UBI device.
+
 config BUSYBOX_CONFIG_ADJTIMEX
 	bool "adjtimex"
 	default n
@@ -317,14 +338,14 @@ config BUSYBOX_CONFIG_INOTIFYD
 config BUSYBOX_CONFIG_LAST
 	bool "last"
 	default n
-	select BUSYBOX_CONFIG_FEATURE_WTMP
+	depends on BUSYBOX_CONFIG_FEATURE_WTMP
 	help
 	  'last' displays a list of the last users that logged into the system.
 
 choice
 	prompt "Choose last implementation"
 	depends on BUSYBOX_CONFIG_LAST
-	default BUSYBOX_CONFIG_FEATURE_LAST_SMALL
+	default BUSYBOX_CONFIG_FEATURE_LAST_FANCY
 
 config BUSYBOX_CONFIG_FEATURE_LAST_SMALL
 	bool "small"
@@ -550,6 +571,17 @@ config BUSYBOX_CONFIG_READAHEAD
 
 	  As readahead(2) blocks until each file has been read, it is best to
 	  run this applet as a background job.
+
+config BUSYBOX_CONFIG_RFKILL
+	bool "rfkill"
+	default n
+	help
+	  Enable/disable wireless devices.
+
+	  rfkill list : list all wireless devices
+	  rfkill list bluetooth : list all bluetooth devices
+	  rfkill list 1 : list device corresponding to the given index
+	  rfkill block|unblock wlan : block/unblock all wlan(wifi) devices
 
 config BUSYBOX_CONFIG_RUNLEVEL
 	bool "runlevel"

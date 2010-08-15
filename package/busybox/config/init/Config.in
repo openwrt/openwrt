@@ -5,6 +5,45 @@
 
 menu "Init Utilities"
 
+config BUSYBOX_CONFIG_BOOTCHARTD
+	bool "bootchartd"
+	default n
+	help
+	  bootchartd is commonly used to profile the boot process
+	  for the purpose of speeding it up. In this case, it is started
+	  by the kernel as the init process. This is configured by adding
+	  the init=/sbin/bootchartd option to the kernel command line.
+
+	  It can also be used to monitor the resource usage of a specific
+	  application or the running system in general. In this case,
+	  bootchartd is started interactively by running bootchartd start
+	  and stopped using bootchartd stop.
+
+config BUSYBOX_CONFIG_FEATURE_BOOTCHARTD_BLOATED_HEADER
+	bool "Compatible, bloated header"
+	default n
+	depends on BUSYBOX_CONFIG_BOOTCHARTD
+	help
+	  Create extended header file compatible with "big" bootchartd.
+	  "Big" bootchartd is a shell script and it dumps some
+	  "convenient" info int the header, such as:
+	    title = Boot chart for `hostname` (`date`)
+	    system.uname = `uname -srvm`
+	    system.release = `cat /etc/DISTRO-release`
+	    system.cpu = `grep '^model name' /proc/cpuinfo | head -1` ($cpucount)
+	    system.kernel.options = `cat /proc/cmdline`
+	  This data is not mandatory for bootchart graph generation,
+	  and is considered bloat. Nevertheless, this option
+	  makes bootchartd applet to dump a subset of it.
+
+config BUSYBOX_CONFIG_FEATURE_BOOTCHARTD_CONFIG_FILE
+	bool "Support bootchartd.conf"
+	default n
+	depends on BUSYBOX_CONFIG_BOOTCHARTD
+	help
+	  Enable reading and parsing of $PWD/bootchartd.conf
+	  and /etc/bootchartd.conf files.
+
 config BUSYBOX_CONFIG_INIT
 	bool "init"
 	default y
@@ -25,8 +64,8 @@ config BUSYBOX_CONFIG_FEATURE_KILL_REMOVED
 	depends on BUSYBOX_CONFIG_FEATURE_USE_INITTAB
 	help
 	  When respawn entries are removed from inittab and a SIGHUP is
-	  sent to init, this feature will kill the processes that have
-	  been removed.
+	  sent to init, this option will make init kill the processes
+	  that have been removed.
 
 config BUSYBOX_CONFIG_FEATURE_KILL_DELAY
 	int "How long to wait between TERM and KILL (0 - send TERM only)" if FEATURE_KILL_REMOVED
