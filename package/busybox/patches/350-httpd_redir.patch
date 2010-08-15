@@ -10,16 +10,16 @@
  #define httpd_full_usage "\n\n" \
         "Listen for incoming HTTP requests\n" \
       "\nOptions:" \
-@@ -2319,6 +2320,9 @@ INSERT
- #define loadkmap_example_usage \
-        "$ loadkmap < /etc/i18n/lang-keymap\n"
+@@ -2321,6 +2322,9 @@ INSERT
  
+ #define lock_trivial_usage NOUSAGE_STR
+ #define lock_full_usage ""
++
 +#define lock_trivial_usage NOUSAGE_STR
 +#define lock_full_usage ""
-+
+ 
  #define logger_trivial_usage \
         "[OPTIONS] [MESSAGE]"
- #define logger_full_usage "\n\n" \
 --- a/networking/httpd.c
 +++ b/networking/httpd.c
 @@ -250,6 +250,8 @@ struct globals {
@@ -53,7 +53,7 @@
  				(g_query ? "?" : ""),
  				(g_query ? g_query : ""));
  	}
-@@ -1941,8 +1948,12 @@ static void handle_incoming_and_exit(con
+@@ -1942,8 +1949,12 @@ static void handle_incoming_and_exit(con
  	} while (*++tptr);
  	*++urlp = '\0';       /* terminate after last character */
  
