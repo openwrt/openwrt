@@ -1,6 +1,6 @@
 --- a/networking/brctl.c
 +++ b/networking/brctl.c
-@@ -104,7 +104,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
+@@ -105,7 +105,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
  		"setageing\0" "setfd\0" "sethello\0" "setmaxage\0"
  		"setpathcost\0" "setportprio\0" "setbridgeprio\0"
  	)
@@ -9,7 +9,7 @@
  
  	enum { ARG_addbr = 0, ARG_delbr, ARG_addif, ARG_delif
  		IF_FEATURE_BRCTL_FANCY(,
-@@ -112,7 +112,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
+@@ -113,7 +113,7 @@ int brctl_main(int argc UNUSED_PARAM, ch
  		   ARG_setageing, ARG_setfd, ARG_sethello, ARG_setmaxage,
  		   ARG_setpathcost, ARG_setportprio, ARG_setbridgeprio
  		)
@@ -20,7 +20,7 @@
  	int fd;
 --- a/networking/Config.src
 +++ b/networking/Config.src
-@@ -79,7 +79,7 @@ config FEATURE_BRCTL_FANCY
+@@ -79,12 +79,12 @@ config FEATURE_BRCTL_FANCY
  	  This adds about 600 bytes.
  
  config FEATURE_BRCTL_SHOW
@@ -29,3 +29,9 @@
  	default y
  	depends on BRCTL && FEATURE_BRCTL_FANCY
  	help
+ 	  Add support for option which prints the current config:
+-	    showmacs, showstp, show
++	    show
+ 
+ config DNSD
+ 	bool "dnsd"

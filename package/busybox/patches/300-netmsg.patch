@@ -1,6 +1,6 @@
 --- a/include/applets.src.h
 +++ b/include/applets.src.h
-@@ -282,6 +282,7 @@ IF_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_D
+@@ -278,6 +278,7 @@ IF_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_D
  IF_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_DROP))
  IF_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_DROP))
@@ -10,9 +10,9 @@
  IF_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_DROP))
 --- a/include/usage.src.h
 +++ b/include/usage.src.h
-@@ -3166,6 +3166,9 @@
- 
- #endif
+@@ -2961,6 +2961,9 @@ INSERT
+        " or\n" \
+        "$ nameif -c /etc/my_mactab_file\n" \
  
 +#define netmsg_trivial_usage NOUSAGE_STR
 +#define netmsg_full_usage ""
@@ -37,7 +37,7 @@
  	default y
 --- a/networking/Kbuild.src
 +++ b/networking/Kbuild.src
-@@ -25,6 +25,7 @@ lib-$(CONFIG_IP)           += ip.o
+@@ -27,6 +27,7 @@ lib-$(CONFIG_IP)           += ip.o
  lib-$(CONFIG_IPCALC)       += ipcalc.o
  lib-$(CONFIG_NAMEIF)       += nameif.o
  lib-$(CONFIG_NC)           += nc.o

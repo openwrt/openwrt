@@ -42,9 +42,8 @@
  	opt = getopt32(argv, "irne:f:", &opt_e, &opt_f,
  			    &G.be_quiet); /* counter for -n */
  	//argc -= optind;
-diff -urpN busybox-1.17.1/testsuite/sed.tests busybox-1.17.1-sed/testsuite/sed.tests
---- busybox-1.17.1/testsuite/sed.tests	2010-07-06 04:25:54.000000000 +0200
-+++ busybox-1.17.1-sed/testsuite/sed.tests	2010-08-01 04:19:26.000000000 +0200
+--- a/testsuite/sed.tests
++++ b/testsuite/sed.tests
 @@ -270,11 +270,16 @@ testing "sed a cmd ended by double backs
  	| two \\
  '
