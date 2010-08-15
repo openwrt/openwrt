@@ -762,7 +762,7 @@ static int rtl8366rb_sw_set_port_led(struct switch_dev *dev,
 		data = val->value.i << (val->port_vlan * 4);
 	}
 
-	return rtl8366_smi_rmwr(smi, RTL8366RB_LED_BLINKRATE_REG, mask, data);
+	return rtl8366_smi_rmwr(smi, reg, mask, data);
 }
 
 static int rtl8366rb_sw_get_port_led(struct switch_dev *dev,
