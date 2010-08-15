@@ -5,34 +5,7 @@
 
 menu "Shells"
 
-choice
-	prompt "Choose your default shell"
-	default BUSYBOX_CONFIG_FEATURE_SH_IS_ASH
-	help
-	  Choose a shell. The ash shell is the most bash compatible
-	  and full featured one.
 
-config BUSYBOX_CONFIG_FEATURE_SH_IS_ASH
-	select BUSYBOX_CONFIG_ASH
-	bool "ash"
-	depends on !BUSYBOX_CONFIG_NOMMU
-
-config BUSYBOX_CONFIG_FEATURE_SH_IS_HUSH
-	select BUSYBOX_CONFIG_HUSH
-	bool "hush"
-
-####config FEATURE_SH_IS_LASH
-####	select LASH
-####	bool "lash"
-
-####config FEATURE_SH_IS_MSH
-####	select MSH
-####	bool "msh"
-
-config BUSYBOX_CONFIG_FEATURE_SH_IS_NONE
-	bool "none"
-
-endchoice
 
 config BUSYBOX_CONFIG_ASH
 	bool "ash"
@@ -243,6 +216,61 @@ config BUSYBOX_CONFIG_HUSH_RANDOM_SUPPORT
 	  Enable pseudorandom generator and dynamic variable "$RANDOM".
 	  Each read of "$RANDOM" will generate a new pseudorandom value.
 
+
+choice
+	prompt "Choose which shell is aliased to 'sh' name"
+	default BUSYBOX_CONFIG_FEATURE_SH_IS_ASH
+	help
+	  Choose which shell you want to be executed by 'sh' alias.
+	  The ash shell is the most bash compatible and full featured one.
+
+# note: cannot use "select ASH" here, it breaks "make allnoconfig"
+config BUSYBOX_CONFIG_FEATURE_SH_IS_ASH
+	depends on BUSYBOX_CONFIG_ASH
+	bool "ash"
+	depends on !BUSYBOX_CONFIG_NOMMU
+
+config BUSYBOX_CONFIG_FEATURE_SH_IS_HUSH
+	depends on BUSYBOX_CONFIG_HUSH
+	bool "hush"
+
+config BUSYBOX_CONFIG_FEATURE_SH_IS_NONE
+	bool "none"
+
+endchoice
+
+choice
+	prompt "Choose which shell is aliased to 'bash' name"
+	default BUSYBOX_CONFIG_FEATURE_BASH_IS_NONE
+	help
+	  Choose which shell you want to be executed by 'bash' alias.
+	  The ash shell is the most bash compatible and full featured one.
+
+	  Note that selecting this option does not switch on any bash
+	  compatibility code. It merely makes it possible to install
+	  /bin/bash (sym)link and run scripts which start with
+	  #!/bin/bash line.
+
+	  Many systems use it in scripts which use bash-specific features,
+	  even simple ones like $RANDOM. Without this option, busybox
+	  can't be used for running them because it won't recongnize
+	  "bash" as a supported applet name.
+
+config BUSYBOX_CONFIG_FEATURE_BASH_IS_ASH
+	depends on BUSYBOX_CONFIG_ASH
+	bool "ash"
+	depends on !BUSYBOX_CONFIG_NOMMU
+
+config BUSYBOX_CONFIG_FEATURE_BASH_IS_HUSH
+	depends on BUSYBOX_CONFIG_HUSH
+	bool "hush"
+
+config BUSYBOX_CONFIG_FEATURE_BASH_IS_NONE
+	bool "none"
+
+endchoice
+
+
 config BUSYBOX_CONFIG_LASH
 	bool "lash (deprecated: aliased to hush)"
 	default n
@@ -285,14 +313,14 @@ config BUSYBOX_CONFIG_SH_MATH_SUPPORT_64
 config BUSYBOX_CONFIG_FEATURE_SH_EXTRA_QUIET
 	bool "Hide message on interactive shell startup"
 	default n
-	depends on BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH
+	depends on BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH
 	help
 	  Remove the busybox introduction when starting a shell.
 
 config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE
 	bool "Standalone shell"
 	default n
-	depends on (BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH) && BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
+	depends on (BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH) && BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
 	help
 	  This option causes busybox shells to use busybox applets
 	  in preference to executables in the PATH whenever possible. For
@@ -325,7 +353,7 @@ config BUSYBOX_CONFIG_FEATURE_SH_STANDALONE
 config BUSYBOX_CONFIG_FEATURE_SH_NOFORK
 	bool "Run 'nofork' applets directly"
 	default n
-	depends on (BUSYBOX_CONFIG_MSH || BUSYBOX_CONFIG_LASH || BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH) && BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
+	depends on (BUSYBOX_CONFIG_HUSH || BUSYBOX_CONFIG_ASH) && BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
 	help
 	  This option causes busybox shells [currently only ash]
 	  to not execute typical fork/exec/wait sequence, but call <applet>_main
@@ -354,9 +382,20 @@ config BUSYBOX_CONFIG_CTTYHACK
 	  It analyzes stdin with various ioctls, trying to determine whether
 	  it is a /dev/ttyN or /dev/ttySN (virtual terminal or serial line).
 	  If it detects one, it closes stdin/out/err and reopens that device.
-	  Then it executes given program. Usage example for /etc/inittab
-	  (for busybox init):
+	  Then it executes given program. Opening the device will make
+	  that device a controlling tty. This may require cttyhack
+	  to be a session leader.
+
+	  Example for /etc/inittab (for busybox init):
 
 	  ::respawn:/bin/cttyhack /bin/sh
+
+	  Giving controlling tty to shell running with PID 1:
+
+	  $ exec cttyhack sh
+
+	  Starting an interactive shell from boot shell script:
+
+	  setsid cttyhack sh
 
 endmenu

@@ -12,6 +12,12 @@ config BUSYBOX_CONFIG_CHVT
 	  This program is used to change to another terminal.
 	  Example: chvt 4 (change to terminal /dev/tty4)
 
+config BUSYBOX_CONFIG_FGCONSOLE
+	bool "fgconsole"
+	default n
+	help
+	  This program prints active (foreground) console number.
+
 config BUSYBOX_CONFIG_CLEAR
 	bool "clear"
 	default y
@@ -134,5 +140,22 @@ config BUSYBOX_CONFIG_SHOWKEY
 	default n
 	help
 	  Shows keys pressed.
+
+comment "Common options for loadfont and setfont"
+	depends on BUSYBOX_CONFIG_LOADFONT || BUSYBOX_CONFIG_SETFONT
+
+config BUSYBOX_CONFIG_FEATURE_LOADFONT_PSF2
+	bool "Support for PSF2 console fonts"
+	default n
+	depends on BUSYBOX_CONFIG_LOADFONT || BUSYBOX_CONFIG_SETFONT
+	help
+	  Support PSF2 console fonts.
+
+config BUSYBOX_CONFIG_FEATURE_LOADFONT_RAW
+	bool "Support for old (raw) console fonts"
+	default n
+	depends on BUSYBOX_CONFIG_LOADFONT || BUSYBOX_CONFIG_SETFONT
+	help
+	  Support old (raw) console fonts.
 
 endmenu

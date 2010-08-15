@@ -5,6 +5,39 @@
 
 menu "Networking Utilities"
 
+config BUSYBOX_CONFIG_NC
+	bool "nc"
+	default y
+	help
+	  A simple Unix utility which reads and writes data across network
+	  connections.
+
+config BUSYBOX_CONFIG_NC_SERVER
+	bool "Netcat server options (-l)"
+	default n
+	depends on BUSYBOX_CONFIG_NC
+	help
+	  Allow netcat to act as a server.
+
+config BUSYBOX_CONFIG_NC_EXTRA
+	bool "Netcat extensions (-eiw and filename)"
+	default n
+	depends on BUSYBOX_CONFIG_NC
+	help
+	  Add -e (support for executing the rest of the command line after
+	  making or receiving a successful connection), -i (delay interval for
+	  lines sent), -w (timeout for initial connection).
+
+config BUSYBOX_CONFIG_NC_110_COMPAT
+	bool "Netcat 1.10 compatibility (+2.5k)"
+	default n
+	depends on BUSYBOX_CONFIG_NC
+	help
+	  This option makes nc closely follow original nc-1.10.
+	  The code is about 2.5k bigger. It enables
+	  -s ADDR, -n, -u, -v, -o FILE, -z options, but loses
+	  busybox-specific extensions: -f FILE and -ll.
+
 config BUSYBOX_CONFIG_FEATURE_IPV6
 	bool "Enable IPv6 support"
 	default y
@@ -122,8 +155,8 @@ config BUSYBOX_CONFIG_FEATURE_FTPD_ACCEPT_BROKEN_LIST
 	default n
 	depends on BUSYBOX_CONFIG_FTPD
 	help
-	  Some ftp-clients (among them KDE's Konqueror) issue illegal
-	  "LIST -la" requests. This option works around those problems.
+	  Some ftp clients (among them KDE's Konqueror) issue illegal
+	  "LIST -l" requests. This option works around such problems.
 	  It might prevent you from listing files starting with "-" and
 	  it increases the code size by ~40 bytes.
 	  Most other ftp servers seem to behave similar to this.
@@ -404,7 +437,7 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IPV6
 ### UNUSED
 ###config FEATURE_IFUPDOWN_IPX
 ###	bool "Support for IPX"
-###	default n
+###	default y
 ###	depends on IFUPDOWN
 ###	help
 ###	  If this option is selected you can use busybox to work with IPX
@@ -621,34 +654,11 @@ config BUSYBOX_CONFIG_FEATURE_NAMEIF_EXTENDED
 	    new_interface_name  mac=00:80:C8:38:91:B5
 	    new_interface_name  00:80:C8:38:91:B5
 
-config BUSYBOX_CONFIG_NC
-	bool "nc"
-	default y
-	help
-	  A simple Unix utility which reads and writes data across network
-	  connections.
-
 config BUSYBOX_CONFIG_NETMSG
 	bool "netmsg"
 	default y
 	help
 	  simple program for sending udp broadcast messages
-
-config BUSYBOX_CONFIG_NC_SERVER
-	bool "Netcat server options (-l)"
-	default n
-	depends on BUSYBOX_CONFIG_NC
-	help
-	  Allow netcat to act as a server.
-
-config BUSYBOX_CONFIG_NC_EXTRA
-	bool "Netcat extensions (-eiw and filename)"
-	default n
-	depends on BUSYBOX_CONFIG_NC
-	help
-	  Add -e (support for executing the rest of the command line after
-	  making or receiving a successful connection), -i (delay interval for
-	  lines sent), -w (timeout for initial connection).
 
 config BUSYBOX_CONFIG_NETSTAT
 	bool "netstat"
@@ -735,13 +745,20 @@ config BUSYBOX_CONFIG_SLATTACH
 
 #config TC
 #	bool "tc"
-#	default n
+#	default y
 #	help
 #	  show / manipulate traffic control settings
 #
 #config FEATURE_TC_INGRESS
 #	def_bool n
 #	depends on TC
+
+config BUSYBOX_CONFIG_TCPSVD
+	bool "tcpsvd"
+	default n
+	help
+	  tcpsvd listens on a TCP port and runs a program for each new
+	  connection.
 
 config BUSYBOX_CONFIG_TELNET
 	bool "telnet"
@@ -858,8 +875,11 @@ config BUSYBOX_CONFIG_TFTPD
 	  In other words: it should be run from inetd in nowait mode,
 	  or from udpsvd. Example: "udpsvd -E 0 69 tftpd DIR"
 
+comment "Common options for tftp/tftpd"
+	depends on BUSYBOX_CONFIG_TFTP || BUSYBOX_CONFIG_TFTPD
+
 config BUSYBOX_CONFIG_FEATURE_TFTP_GET
-	bool "Enable \"get\" command"
+	bool "Enable 'tftp get' and/or tftpd upload code"
 	default n
 	depends on BUSYBOX_CONFIG_TFTP || BUSYBOX_CONFIG_TFTPD
 	help
@@ -867,8 +887,11 @@ config BUSYBOX_CONFIG_FEATURE_TFTP_GET
 	  a client to retrieve a file from a TFTP server.
 	  Also enable upload support in tftpd, if tftpd is selected.
 
+	  Note: this option does _not_ make tftpd capable of download
+	  (the usual operation people need from it)!
+
 config BUSYBOX_CONFIG_FEATURE_TFTP_PUT
-	bool "Enable \"put\" command"
+	bool "Enable 'tftp put' and/or tftpd download code"
 	default n
 	depends on BUSYBOX_CONFIG_TFTP || BUSYBOX_CONFIG_TFTPD
 	help
@@ -935,6 +958,20 @@ config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_USE_ICMP
 	help
 	  Add option -I to use ICMP ECHO instead of UDP datagrams.
 
+config BUSYBOX_CONFIG_TUNCTL
+	bool "tunctl"
+	default n
+	help
+	  tunctl creates or deletes tun devices.
+
+config BUSYBOX_CONFIG_FEATURE_TUNCTL_UG
+	bool "Support owner:group assignment"
+	default n
+	depends on BUSYBOX_CONFIG_TUNCTL
+	help
+	  Allow to specify owner and group of newly created interface.
+	  340 bytes of pure bloat. Say no here.
+
 source package/busybox/config/networking/udhcp/Config.in
 
 config BUSYBOX_CONFIG_IFUPDOWN_UDHCPC_CMD_OPTIONS
@@ -945,6 +982,13 @@ config BUSYBOX_CONFIG_IFUPDOWN_UDHCPC_CMD_OPTIONS
 	  Command line options to pass to udhcpc from ifup.
 	  Intended to alter options not available in /etc/network/interfaces.
 	  (IE: --syslog --background etc...)
+
+config BUSYBOX_CONFIG_UDPSVD
+	bool "udpsvd"
+	default n
+	help
+	  udpsvd listens on an UDP port and runs a program for each new
+	  connection.
 
 config BUSYBOX_CONFIG_VCONFIG
 	bool "vconfig"
@@ -991,33 +1035,5 @@ config BUSYBOX_CONFIG_ZCIP
 
 	  See http://www.zeroconf.org for further details, and "zcip.script"
 	  in the busybox examples.
-
-config BUSYBOX_CONFIG_TCPSVD
-	bool "tcpsvd"
-	default n
-	help
-	  tcpsvd listens on a TCP port and runs a program for each new
-	  connection.
-
-config BUSYBOX_CONFIG_TUNCTL
-	bool "tunctl"
-	default n
-	help
-	  tunctl creates or deletes tun devices.
-
-config BUSYBOX_CONFIG_FEATURE_TUNCTL_UG
-	bool "Support owner:group assignment"
-	default n
-	depends on BUSYBOX_CONFIG_TUNCTL
-	help
-	  Allow to specify owner and group of newly created interface.
-	  340 bytes of pure bloat. Say no here.
-
-config BUSYBOX_CONFIG_UDPSVD
-	bool "udpsvd"
-	default n
-	help
-	  udpsvd listens on an UDP port and runs a program for each new
-	  connection.
 
 endmenu

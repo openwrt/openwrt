@@ -50,6 +50,16 @@ config BUSYBOX_CONFIG_FEATURE_SYSLOGD_DUP
 	  Option -D instructs syslogd to drop consecutive messages
 	  which are totally the same.
 
+config BUSYBOX_CONFIG_FEATURE_SYSLOGD_READ_BUFFER_SIZE
+	int "Read buffer size in bytes"
+	default 256
+	range 256 20000
+	depends on BUSYBOX_CONFIG_SYSLOGD
+	help
+	  This option sets the size of the syslog read buffer.
+	  Actual memory usage increases around five times the
+	  change done here.
+
 config BUSYBOX_CONFIG_FEATURE_IPC_SYSLOG
 	bool "Circular Buffer support"
 	default y
@@ -115,4 +125,3 @@ config BUSYBOX_CONFIG_LOGGER
 	    problems that occur within programs and scripts.
 
 endmenu
-

@@ -82,7 +82,7 @@ config BUSYBOX_CONFIG_SHOW_USAGE
 config BUSYBOX_CONFIG_FEATURE_VERBOSE_USAGE
 	bool "Show verbose applet usage messages"
 	default y
-	select BUSYBOX_CONFIG_SHOW_USAGE
+	depends on BUSYBOX_CONFIG_SHOW_USAGE
 	help
 	  All BusyBox applets will show more verbose help messages when
 	  busybox is invoked with --help. This will add a lot of text to the
@@ -118,7 +118,7 @@ config BUSYBOX_CONFIG_LOCALE_SUPPORT
 	  Enable this if your system has locale support and you would like
 	  busybox to support locale settings.
 
-config BUSYBOX_CONFIG_FEATURE_ASSUME_UNICODE
+config BUSYBOX_CONFIG_UNICODE_SUPPORT
 	bool "Support Unicode"
 	default n
 	help
@@ -130,15 +130,108 @@ config BUSYBOX_CONFIG_FEATURE_ASSUME_UNICODE
 	  Probably by the time when busybox will be fully Unicode-clean,
 	  other encodings will be mainly of historic interest.
 
+config BUSYBOX_CONFIG_UNICODE_USING_LOCALE
+	bool "Use libc routines for Unicode (else uses internal ones)"
+	default n
+	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT && BUSYBOX_CONFIG_LOCALE_SUPPORT
+	help
+	  With this option on, Unicode support is implemented using libc
+	  routines. Otherwise, internal implementation is used.
+
 config BUSYBOX_CONFIG_FEATURE_CHECK_UNICODE_IN_ENV
 	bool "Check $LANG environment variable"
 	default n
-	depends on BUSYBOX_CONFIG_FEATURE_ASSUME_UNICODE && !BUSYBOX_CONFIG_LOCALE_SUPPORT
+	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT && !BUSYBOX_CONFIG_UNICODE_USING_LOCALE
 	help
 	  With this option on, Unicode support is activated
 	  only if LANG variable has the value of the form "xxxx.utf8"
 
 	  Otherwise, Unicode support will be always enabled and active.
+
+config BUSYBOX_CONFIG_SUBST_WCHAR
+	int "Character code to substitute unprintable characters with"
+	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
+	default 63
+	help
+	  Typical values are 63 for '?' (works with any output device),
+	  30 for ASCII substitute control code,
+	  65533 (0xfffd) for Unicode replacement character.
+
+config BUSYBOX_CONFIG_LAST_SUPPORTED_WCHAR
+	int "Range of supported Unicode characters"
+	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
+	default 767
+	help
+	  Any character with Unicode value bigger than this is assumed
+	  to be non-printable on output device. Many applets replace
+	  such chars with substitution character.
+
+	  The idea is that many valid printable Unicode chars are
+	  nevertheless are not displayed correctly. Think about
+	  combining charachers, double-wide hieroglyphs, obscure
+	  characters in dozens of ancient scripts...
+	  Many terminals, terminal emulators, xterms etc will fail
+	  to handle them correctly. Choose the smallest value
+	  which suits your needs.
+
+	  Typical values are:
+	  126 - ASCII only
+	  767 (0x2ff) - there are no combining chars in [0..767] range
+			(the range includes Latin 1, Latin Ext. A and B),
+			code is ~700 bytes smaller for this case.
+	  4351 (0x10ff) - there are no double-wide chars in [0..4351] range,
+			code is ~300 bytes smaller for this case.
+	  12799 (0x31ff) - nearly all non-ideographic characters are
+			available in [0..12799] range, including
+			East Asian scripts like katakana, hiragana, hangul,
+			bopomofo...
+	  0 - off, any valid printable Unicode character will be printed.
+
+config BUSYBOX_CONFIG_UNICODE_COMBINING_WCHARS
+	bool "Allow zero-width Unicode characters on output"
+	default n
+	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
+	help
+	  With this option off, any Unicode char with width of 0
+	  is substituted on output.
+
+config BUSYBOX_CONFIG_UNICODE_WIDE_WCHARS
+	bool "Allow wide Unicode characters on output"
+	default n
+	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
+	help
+	  With this option off, any Unicode char with width > 1
+	  is substituted on output.
+
+config BUSYBOX_CONFIG_UNICODE_BIDI_SUPPORT
+	bool "Bidirectional character-aware line input"
+	default n
+	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT && !BUSYBOX_CONFIG_UNICODE_USING_LOCALE
+	help
+	  With this option on, right-to-left Unicode characters
+	  are treated differently on input (e.g. cursor movement).
+
+config BUSYBOX_CONFIG_UNICODE_NEUTRAL_TABLE
+	bool "In bidi input, support non-ASCII neutral chars too"
+	default n
+	depends on BUSYBOX_CONFIG_UNICODE_BIDI_SUPPORT
+	help
+	  In most cases it's enough to treat only ASCII non-letters
+	  (i.e. punctuation, numbers and space) as characters
+	  with neutral directionality.
+	  With this option on, more extensive (and bigger) table
+	  of neutral chars will be used.
+
+config BUSYBOX_CONFIG_UNICODE_PRESERVE_BROKEN
+	bool "Make it possible to enter sequences of chars which are not Unicode"
+	default n
+	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
+	help
+	  With this option on, invalid UTF-8 bytes are not substituted
+	  with the selected substitution character.
+	  For example, this means that entering 'l', 's', ' ', 0xff, [Enter]
+	  at shell prompt will list file named 0xff (single char name
+	  with char value 255), not file named '?'.
 
 config BUSYBOX_CONFIG_LONG_OPTS
 	bool "Support for --long-options"
@@ -168,6 +261,26 @@ config BUSYBOX_CONFIG_FEATURE_CLEAN_UP
 
 	  Don't enable this unless you have a really good reason to clean
 	  things up manually.
+
+config BUSYBOX_CONFIG_FEATURE_UTMP
+	bool "Support utmp file"
+	default n
+	help
+	  The file /var/run/utmp is used to track who is currently logged in.
+	  With this option on, certain applets (getty, login, telnetd etc)
+	  will create and delete entries there.
+	  "who" applet requires this option.
+
+config BUSYBOX_CONFIG_FEATURE_WTMP
+	bool "Support wtmp file"
+	default n
+	select BUSYBOX_CONFIG_FEATURE_UTMP
+	help
+	  The file /var/run/wtmp is used to track when users have logged into
+	  and logged out of the system.
+	  With this option on, certain applets (getty, login, telnetd etc)
+	  will append new entries there.
+	  "last" applet requires this option.
 
 config BUSYBOX_CONFIG_FEATURE_PIDFILE
 	bool "Support writing pidfiles"

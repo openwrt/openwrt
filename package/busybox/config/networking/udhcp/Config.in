@@ -92,7 +92,8 @@ config BUSYBOX_CONFIG_FEATURE_UDHCP_RFC3397
 	depends on BUSYBOX_CONFIG_UDHCPD || BUSYBOX_CONFIG_UDHCPC
 	help
 	  If selected, both client and server will support passing of domain
-	  search lists via option 119, specified in RFC3397.
+	  search lists via option 119, specified in RFC 3397,
+	  and SIP servers option 120, specified in RFC 3361.
 
 config BUSYBOX_CONFIG_UDHCPC_DEFAULT_SCRIPT
 	string "Absolute path to config script"

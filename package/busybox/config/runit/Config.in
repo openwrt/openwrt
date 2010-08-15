@@ -61,22 +61,26 @@ config BUSYBOX_CONFIG_CHPST
 
 config BUSYBOX_CONFIG_SETUIDGID
 	bool "setuidgid"
+	default n
 	help
 	  Sets soft resource limits as specified by options
 
 config BUSYBOX_CONFIG_ENVUIDGID
 	bool "envuidgid"
+	default n
 	help
 	  Sets $UID to account's uid and $GID to account's gid
 
 config BUSYBOX_CONFIG_ENVDIR
 	bool "envdir"
+	default n
 	help
 	  Sets various environment variables as specified by files
 	  in the given directory
 
 config BUSYBOX_CONFIG_SOFTLIMIT
 	bool "softlimit"
+	default n
 	help
 	  Sets soft resource limits as specified by options
 

@@ -8,18 +8,6 @@
  IF_NETSTAT(APPLET(netstat, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NICE(APPLET(nice, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_DROP))
---- a/include/usage.src.h
-+++ b/include/usage.src.h
-@@ -2961,6 +2961,9 @@ INSERT
-        " or\n" \
-        "$ nameif -c /etc/my_mactab_file\n" \
- 
-+#define netmsg_trivial_usage NOUSAGE_STR
-+#define netmsg_full_usage ""
-+
- #define netstat_trivial_usage \
-        "[-laentuwxr"IF_FEATURE_NETSTAT_WIDE("W")IF_FEATURE_NETSTAT_PRG("p")"]"
- #define netstat_full_usage "\n\n" \
 --- a/networking/Config.src
 +++ b/networking/Config.src
 @@ -623,6 +623,12 @@ config FEATURE_NAMEIF_EXTENDED
@@ -30,7 +18,7 @@
 +	bool "netmsg"
 +	default n
 +	help
-+	 simple program for sending udp broadcast messages
++	  simple program for sending udp broadcast messages
 +
  config NETSTAT
  	bool "netstat"
@@ -111,3 +99,20 @@
 +	close(s);
 +	exit(1);
 +}
+--- a/include/usage.src.h
++++ b/include/usage.src.h
+@@ -1,3 +1,4 @@
++
+ /* vi: set sw=8 ts=8: */
+ /*
+  * This file suffers from chronically incorrect tabification
+@@ -2961,6 +2962,9 @@ INSERT
+        " or\n" \
+        "$ nameif -c /etc/my_mactab_file\n" \
+ 
++#define netmsg_trivial_usage NOUSAGE_STR
++#define netmsg_full_usage ""
++
+ #define netstat_trivial_usage \
+        "[-laentuwxr"IF_FEATURE_NETSTAT_WIDE("W")IF_FEATURE_NETSTAT_PRG("p")"]"
+ #define netstat_full_usage "\n\n" \

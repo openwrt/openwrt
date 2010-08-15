@@ -5,6 +5,12 @@
 
 menu "Linux System Utilities"
 
+config BUSYBOX_CONFIG_REV
+	bool "rev"
+	default n
+	help
+	  Reverse lines of a file or files.
+
 config BUSYBOX_CONFIG_ACPID
 	bool "acpid"
 	default n
@@ -191,6 +197,12 @@ config BUSYBOX_CONFIG_FINDFS
 	  WARNING:
 	  With all submodules selected, it will add ~8k to busybox.
 
+config BUSYBOX_CONFIG_FLOCK
+	bool "flock"
+	default n
+	help
+	  Manage locks from shell scripts
+
 config BUSYBOX_CONFIG_FREERAMDISK
 	bool "freeramdisk"
 	default n
@@ -227,9 +239,6 @@ config BUSYBOX_CONFIG_MKFS_MINIX
 	  with little overhead. If you wish to be able to create minix
 	  filesystems this utility will do the job for you.
 
-comment "Minix filesystem support"
-	depends on BUSYBOX_CONFIG_FSCK_MINIX || BUSYBOX_CONFIG_MKFS_MINIX
-
 config BUSYBOX_CONFIG_FEATURE_MINIX2
 	bool "Support Minix fs v2 (fsck_minix/mkfs_minix)"
 	default n
@@ -244,6 +253,7 @@ config BUSYBOX_CONFIG_MKFS_REISER
 	default n
 	help
 	  Utility to create ReiserFS filesystems.
+	  Note: this applet needs a lot of testing and polishing.
 
 config BUSYBOX_CONFIG_MKFS_VFAT
 	bool "mkfs_vfat"
@@ -289,7 +299,7 @@ config BUSYBOX_CONFIG_FEATURE_HEXDUMP_REVERSE
 config BUSYBOX_CONFIG_HD
 	bool "hd"
 	default n
-	select BUSYBOX_CONFIG_HEXDUMP
+	depends on BUSYBOX_CONFIG_HEXDUMP
 	help
 	  hd is an alias to hexdump -C.
 
@@ -464,221 +474,6 @@ config BUSYBOX_CONFIG_FEATURE_USE_TERMIOS
 	  will be unable to determine the current screen size, and will be
 	  unable to move the cursor.
 
-config BUSYBOX_CONFIG_VOLUMEID
-	bool #No description makes it a hidden option
-	default n
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_EXT
-	bool "Ext filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_BTRFS
-	bool "btrfs filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_REISERFS
-	bool "Reiser filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_FAT
-	bool "fat filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_HFS
-	bool "hfs filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_JFS
-	bool "jfs filesystem"
-	default n
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_UFS
-###	bool "ufs filesystem"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_XFS
-	bool "xfs filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_NTFS
-	bool "ntfs filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_ISO9660
-	bool "iso9660 filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_UDF
-	bool "udf filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LUKS
-	bool "luks filesystem"
-	default n
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXSWAP
-	bool "linux swap filesystem"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_LVM
-###	bool "lvm"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_CRAMFS
-	bool "cramfs filesystem"
-	default n
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_HPFS
-###	bool "hpfs filesystem"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_ROMFS
-	bool "romfs filesystem"
-	default n
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_SYSV
-	bool "sysv filesystem"
-	default n
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_MINIX
-###	bool "minix filesystem"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### These only detect partition tables - not used (yet?)
-### config FEATURE_VOLUMEID_MAC
-###	bool "mac filesystem"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-###
-### config FEATURE_VOLUMEID_MSDOS
-###	bool "msdos filesystem"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_OCFS2
-	bool "ocfs2 filesystem"
-	default n
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
-### config FEATURE_VOLUMEID_HIGHPOINTRAID
-###	bool "highpoint raid"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_ISWRAID
-###	bool "intel raid"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_LSIRAID
-###	bool "lsi raid"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_VIARAID
-###	bool "via raid"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_SILICONRAID
-###	bool "silicon raid"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_NVIDIARAID
-###	bool "nvidia raid"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-### config FEATURE_VOLUMEID_PROMISERAID
-###	bool "promise raid"
-###	default n
-###	depends on VOLUMEID
-###	help
-###	  TODO
-
-config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXRAID
-	bool "linuxraid"
-	default y
-	depends on BUSYBOX_CONFIG_VOLUMEID
-	help
-	  TODO
-
 config BUSYBOX_CONFIG_MOUNT
 	bool "mount"
 	default y
@@ -719,7 +514,7 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_HELPERS
 	  The idea is to use such virtual filesystems in /etc/fstab.
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_LABEL
-	bool "Support specifiying devices by label or UUID"
+	bool "Support specifying devices by label or UUID"
 	default n
 	depends on BUSYBOX_CONFIG_MOUNT
 	select BUSYBOX_CONFIG_VOLUMEID
@@ -783,9 +578,9 @@ config BUSYBOX_CONFIG_RDATE
 	  systems.
 
 config BUSYBOX_CONFIG_RDEV
-       bool "rdev"
-       default n
-       help
+	bool "rdev"
+	default n
+	help
 	  Print the device node associated with the filesystem mounted at '/'.
 
 config BUSYBOX_CONFIG_READPROFILE
@@ -895,6 +690,18 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP
 	  specify an offset or cryptographic options to the loopback device.
 	  (If you don't want umount to free the loop device, use "umount -D".)
 
+config BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP_CREATE
+	bool "Create new loopback devices if needed"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_MOUNT_LOOP
+	help
+	  Linux kernels >= 2.6.24 support unlimited loopback devices. They are
+	  allocated for use when trying to use a loop device. The loop device
+	  must however exist.
+
+	  This feature lets mount to try to create next /dev/loopN device
+	  if it does not find a free one.
+
 config BUSYBOX_CONFIG_FEATURE_MTAB_SUPPORT
 	bool "Support for the old /etc/mtab file"
 	default n
@@ -912,11 +719,231 @@ config BUSYBOX_CONFIG_FEATURE_MTAB_SUPPORT
 	  If you must use this, keep in mind it's inherently brittle (for
 	  example a mount under chroot won't update it), can't handle modern
 	  features like separate per-process filesystem namespaces, requires
-	  that your /etc directory be writeable, tends to get easily confused
+	  that your /etc directory be writable, tends to get easily confused
 	  by --bind or --move mounts, won't update if you rename a directory
 	  that contains a mount point, and so on. (In brief: avoid.)
 
 	  About the only reason to use this is if you've removed /proc from
 	  your kernel.
+
+config BUSYBOX_CONFIG_VOLUMEID
+	bool #No description makes it a hidden option
+	default n
+
+menu "Filesystem/Volume identification"
+	depends on BUSYBOX_CONFIG_VOLUMEID
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_EXT
+	bool "Ext filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_BTRFS
+	bool "btrfs filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_REISERFS
+	bool "Reiser filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_FAT
+	bool "fat filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_HFS
+	bool "hfs filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_JFS
+	bool "jfs filesystem"
+	default n
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+### config FEATURE_VOLUMEID_UFS
+###	bool "ufs filesystem"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_XFS
+	bool "xfs filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_NTFS
+	bool "ntfs filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_ISO9660
+	bool "iso9660 filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_UDF
+	bool "udf filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LUKS
+	bool "luks filesystem"
+	default n
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXSWAP
+	bool "linux swap filesystem"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+### config FEATURE_VOLUMEID_LVM
+###	bool "lvm"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_CRAMFS
+	bool "cramfs filesystem"
+	default n
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+### config FEATURE_VOLUMEID_HPFS
+###	bool "hpfs filesystem"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_ROMFS
+	bool "romfs filesystem"
+	default n
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_SYSV
+	bool "sysv filesystem"
+	default n
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+### config FEATURE_VOLUMEID_MINIX
+###	bool "minix filesystem"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+### These only detect partition tables - not used (yet?)
+### config FEATURE_VOLUMEID_MAC
+###	bool "mac filesystem"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+###
+### config FEATURE_VOLUMEID_MSDOS
+###	bool "msdos filesystem"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_OCFS2
+	bool "ocfs2 filesystem"
+	default n
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+### config FEATURE_VOLUMEID_HIGHPOINTRAID
+###	bool "highpoint raid"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+### config FEATURE_VOLUMEID_ISWRAID
+###	bool "intel raid"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+### config FEATURE_VOLUMEID_LSIRAID
+###	bool "lsi raid"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+### config FEATURE_VOLUMEID_VIARAID
+###	bool "via raid"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+### config FEATURE_VOLUMEID_SILICONRAID
+###	bool "silicon raid"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+### config FEATURE_VOLUMEID_NVIDIARAID
+###	bool "nvidia raid"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+### config FEATURE_VOLUMEID_PROMISERAID
+###	bool "promise raid"
+###	default y
+###	depends on VOLUMEID
+###	help
+###	  TODO
+
+config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXRAID
+	bool "linuxraid"
+	default y
+	depends on BUSYBOX_CONFIG_VOLUMEID
+	help
+	  TODO
+
+endmenu
 
 endmenu
