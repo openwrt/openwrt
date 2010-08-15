@@ -96,12 +96,26 @@ define Image/Build/Profile/WHRG300N
 	$(call Image/Build/Template/GENERIC_4M,$(1),whr-g300n,WHR-G300N)
 endef
 
+
+mtdlayout_wcr150gn=mtdparts=physmap-flash.0:192k(Bootloader)ro,64k(Config),64k(Factory),832k(Kernel),2944k(rootfs),3776k@0x50000(firmware)
+mtd_wcr150gn_kernel_part_size=851968
+mtd_wcr150gn_rootfs_part_size=3014656
+define Image/Build/Template/WCR150GN
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_wcr150gn,$(mtd_wcr150gn_kernel_part_size),$(mtd_wcr150gn_rootfs_part_size))
+endef
+
+define Image/Build/Profile/WCR150GN
+	$(call Image/Build/Template/WCR150GN,$(1),wcr150gn,WCR150GN)
+endef
+
+
 ifeq ($(CONFIG_RALINK_RT305X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR300B1,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))
 	$(call Image/Build/Profile/V22RW2X2,$(1))
 	$(call Image/Build/Profile/WHRG300N,$(1))
+	$(call Image/Build/Profile/WCR150GN,$(1))
 endef
 endif
 
