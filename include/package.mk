@@ -21,6 +21,8 @@ STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured$(if $(DUMP),,_$(call confvar,$(PK
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_NAME)_installed
 
+STAGING_FILES_LIST:=$(PKG_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).list
+
 include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
 include $(INCLUDE_DIR)/package-defaults.mk
@@ -122,7 +124,7 @@ define Build/DefaultTargets
 		$(call $(hook),$(TMP_DIR)/stage-$(PKG_NAME),$(TMP_DIR)/stage-$(PKG_NAME)/host)$(sep)\
 	)
 	if [ -d $(TMP_DIR)/stage-$(PKG_NAME) ]; then \
-		(cd $(TMP_DIR)/stage-$(PKG_NAME); find ./ > $(STAGING_DIR)/packages/$(PKG_NAME).list); \
+		(cd $(TMP_DIR)/stage-$(PKG_NAME); find ./ > $(STAGING_DIR)/packages/$(STAGING_FILES_LIST)); \
 		$(CP) $(TMP_DIR)/stage-$(PKG_NAME)/* $(STAGING_DIR)/; \
 	fi
 	rm -rf $(TMP_DIR)/stage-$(PKG_NAME)
@@ -210,15 +212,15 @@ clean-staging: FORCE
 	rm -f $(STAMP_INSTALLED)
 	@-(\
 		cd "$(STAGING_DIR)"; \
-		if [ -f packages/$(PKG_NAME).list ]; then \
-			cat packages/$(PKG_NAME).list | xargs -r rm -f 2>/dev/null; \
+		if [ -f packages/$(STAGING_FILES_LIST) ]; then \
+			cat packages/$(STAGING_FILES_LIST) | xargs -r rm -f 2>/dev/null; \
 		fi; \
 	)
 
 clean: clean-staging FORCE
 	$(call Build/UninstallDev,$(STAGING_DIR),$(STAGING_DIR_HOST))
 	$(Build/Clean)
-	rm -f $(STAGING_DIR)/packages/$(PKG_NAME).list $(STAGING_DIR_HOST)/packages/$(PKG_NAME).list
+	rm -f $(STAGING_DIR)/packages/$(STAGING_FILES_LIST) $(STAGING_DIR_HOST)/packages/$(STAGING_FILES_LIST)
 	rm -rf $(PKG_BUILD_DIR)
 
 dist:
