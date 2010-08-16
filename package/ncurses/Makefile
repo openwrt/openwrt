@@ -9,8 +9,9 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ncurses
 PKG_VERSION:=5.7
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/ncurses
 PKG_MD5SUM:=cce05daf61a64501ef6cd8da1f727ec6
@@ -24,6 +25,16 @@ define Package/libncurses
   CATEGORY:=Libraries
   TITLE:=Terminal handling library
   URL:=http://www.gnu.org/software/ncurses/
+  VARIANT:=libncurses
+endef
+
+define Package/libncursesw
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=Terminal handling library (Unicode)
+  URL:=http://www.gnu.org/software/ncurses/
+  DEPENDS:=libncurses
+  VARIANT:=libncursesw
 endef
 
 TARGET_CFLAGS += $(FPIC)
@@ -44,11 +55,17 @@ CONFIGURE_ARGS += \
 	--with-terminfo-dirs=/usr/share/terminfo \
 	--with-default-terminfo-dir=/usr/share/terminfo
 
+ifeq ($(BUILD_VARIANT),libncursesw)
+	CONFIGURE_ARGS += \
+		--enable-widec \
+		--with-build-cppflags=-D_GNU_SOURCE
+endif
+
 MAKE_FLAGS += \
 	BUILD_CC="$(HOSTCC)" \
 	HOSTCC="$(HOSTCC)" \
 	HOSTCCFLAGS="" \
-	libs 
+	libs
 
 define Build/Install/Default
 	$(MAKE_VARS) \
@@ -74,6 +91,20 @@ define Package/libncurses/install
 	done
 endef
 
+define Package/libncursesw/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu,form}w.so* $(1)/usr/lib/
+endef
+
+ifeq ($(BUILD_VARIANT),libncursesw)
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include/ncursesw/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/*.h $(1)/usr/include/ncursesw/
+
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{ncurses,panel,menu,form}w.{a,so*} $(1)/usr/lib/
+endef
+else
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/*.h $(1)/usr/include/
@@ -81,5 +112,7 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{curses,ncurses,panel,menu,form}.{a,so*} $(1)/usr/lib/
 endef
+endif
 
 $(eval $(call BuildPackage,libncurses))
+$(eval $(call BuildPackage,libncursesw))
