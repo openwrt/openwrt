@@ -1,0 +1,19 @@
+--- a/include/platform.h
++++ b/include/platform.h
+@@ -154,14 +154,14 @@
+ # include <sex.h>
+ # define __BIG_ENDIAN__ (BYTE_ORDER == BIG_ENDIAN)
+ # define __BYTE_ORDER BYTE_ORDER
+-#elif defined __FreeBSD__
++#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined (__NetBSD__) || defined(__APPLE__)
+ # include <sys/resource.h>	/* rlimit */
+ # include <machine/endian.h>
+ # define bswap_64 __bswap64
+ # define bswap_32 __bswap32
+ # define bswap_16 __bswap16
+ # define __BIG_ENDIAN__ (_BYTE_ORDER == _BIG_ENDIAN)
+-#elif !defined __APPLE__
++#else
+ # include <byteswap.h>
+ # include <endian.h>
+ #endif
