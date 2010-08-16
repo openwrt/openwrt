@@ -51,7 +51,7 @@
 #define AG71XX_INT_INIT	(AG71XX_INT_ERR | AG71XX_INT_POLL)
 
 #define AG71XX_TX_FIFO_LEN	2048
-#define AG71XX_TX_MTU_LEN	1536
+#define AG71XX_TX_MTU_LEN	1540
 #define AG71XX_RX_PKT_RESERVE	64
 #define AG71XX_RX_PKT_SIZE	\
 	(AG71XX_RX_PKT_RESERVE + ETH_HLEN + ETH_FRAME_LEN + ETH_FCS_LEN)
@@ -158,6 +158,7 @@ struct ag71xx {
 
 	struct mii_bus		*mii_bus;
 	struct phy_device	*phy_dev;
+	void			*phy_priv;
 
 	unsigned int		link;
 	unsigned int		speed;
@@ -496,5 +497,10 @@ static inline void ag71xx_debugfs_update_int_stats(struct ag71xx *ag,
 static inline void ag71xx_debugfs_update_napi_stats(struct ag71xx *ag,
 						    int rx, int tx) {}
 #endif /* CONFIG_AG71XX_DEBUG_FS */
+
+void ag71xx_ar7240_start(struct ag71xx *ag);
+void ag71xx_ar7240_stop(struct ag71xx *ag);
+int ag71xx_ar7240_init(struct ag71xx *ag);
+void ag71xx_ar7240_cleanup(struct ag71xx *ag);
 
 #endif /* _AG71XX_H */
