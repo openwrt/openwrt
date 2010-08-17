@@ -353,6 +353,10 @@ endef
 define Package/ip6tables/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/usr/lib/iptables
+	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
+		$(CP) libip6t_*.so $(1)/usr/lib/iptables/ \
+	)
 endef
 
 define Package/ip6tables-utils/install
