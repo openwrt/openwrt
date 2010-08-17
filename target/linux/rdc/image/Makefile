@@ -29,8 +29,7 @@ define Image/Build/sitecom
 endef
 
 define Image/Build/bifferboard
-	$(TOPDIR)/target/linux/rdc/image/mkimg_bifferboard.py $(KDIR)/bzImage $(KDIR)/root.$(1) $(KDIR)/tmp.img
-	$(CP) $(KDIR)/tmp.img $(BIN_DIR)/$(IMG_PREFIX)-$(1)-$(2).img
+	$(TOPDIR)/target/linux/rdc/image/mkimg_bifferboard.py $(KDIR)/bzImage $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-$(2).img
 endef
 
 define Image/Build/Initramfs
