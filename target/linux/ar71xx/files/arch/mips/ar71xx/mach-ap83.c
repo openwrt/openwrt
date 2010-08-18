@@ -196,15 +196,15 @@ static void __init ap83_generic_setup(void)
 {
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	ar71xx_set_mac_base(eeprom);
-
 	ar71xx_add_device_mdio(0xfffffffe);
 
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, eeprom, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = 0x1;
 
 	ar71xx_add_device_eth(0);
 
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, eeprom, 1);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;

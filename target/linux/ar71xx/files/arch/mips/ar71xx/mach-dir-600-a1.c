@@ -118,8 +118,11 @@ static void __init dir_600_a1_setup(void)
 	u8 *mac = NULL;
 
 	if (nvram_parse_mac_addr(nvram, DIR_600_A1_NVRAM_SIZE,
-			         "lan_mac=", mac_buff) == 0)
+			         "lan_mac=", mac_buff) == 0) {
+		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
+		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
 		mac = mac_buff;
+	}
 
 	ar71xx_add_device_m25p80(&dir_600_a1_flash_data);
 
@@ -130,7 +133,7 @@ static void __init dir_600_a1_setup(void)
 					ARRAY_SIZE(dir_600_a1_gpio_buttons),
 					dir_600_a1_gpio_buttons);
 
-	ap91_eth_init(mac, NULL);
+	ap91_eth_init(NULL);
 	ap91_pci_init(ee, mac);
 }
 

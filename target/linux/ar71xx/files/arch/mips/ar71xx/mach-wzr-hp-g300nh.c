@@ -228,15 +228,16 @@ static struct platform_device wzrhpg300nh_rtl8366s_device = {
 static void __init wzrhpg300nh_setup(void)
 {
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
+	u8 *mac = eeprom + WZRHPG300NH_MAC_OFFSET;
 
-	ar71xx_set_mac_base(eeprom + WZRHPG300NH_MAC_OFFSET);
-
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
 	ar71xx_eth0_pll_data.pll_1000 = 0x1e000100;
 	ar71xx_eth0_data.mii_bus_dev = &wzrhpg300nh_rtl8366s_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
 	ar71xx_eth1_pll_data.pll_1000 = 0x1e000100;
 	ar71xx_eth1_data.mii_bus_dev = &wzrhpg300nh_rtl8366s_device.dev;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;

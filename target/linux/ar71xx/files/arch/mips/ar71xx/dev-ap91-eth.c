@@ -34,11 +34,8 @@ static void ap91_eth_set_port_name(unsigned port, const char *name)
 		ap91_dsa_chip.port_names[port] = (char *) name;
 }
 
-void __init ap91_eth_init(u8 *mac_addr, const char *port_names[])
+void __init ap91_eth_init(const char *port_names[])
 {
-	if (mac_addr)
-		ar71xx_set_mac_base(mac_addr);
-
 	if (port_names) {
 		int i;
 

@@ -22,7 +22,7 @@
 
 #include "devices.h"
 
-static u8 ar71xx_mac_base[ETH_ALEN] __initdata;
+unsigned char ar71xx_mac_base[ETH_ALEN] __initdata;
 
 static struct resource ar71xx_uart_resources[] = {
 	{
@@ -490,10 +490,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		break;
 	}
 
-	if (is_valid_ether_addr(ar71xx_mac_base)) {
-		memcpy(pdata->mac_addr, ar71xx_mac_base, ETH_ALEN);
-		pdata->mac_addr[5] += ar71xx_eth_instance;
-	} else {
+	if (!is_valid_ether_addr(pdata->mac_addr)) {
 		random_ether_addr(pdata->mac_addr);
 		printk(KERN_DEBUG
 			"ar71xx: using random MAC address for eth%d\n",
@@ -580,3 +577,24 @@ static int __init ar71xx_kmac_setup(char *str)
 	return 1;
 }
 __setup("kmac=", ar71xx_kmac_setup);
+
+void __init ar71xx_init_mac(unsigned char *dst, const unsigned char *src,
+			    unsigned offset)
+{
+	u32 t;
+
+	if (!is_valid_ether_addr(src)) {
+		memset(dst, '\0', ETH_ALEN);
+		return;
+	}
+
+	t = (((u32) src[3]) << 16) + (((u32) src[4]) << 8) + ((u32) src[5]);
+	t += offset;
+
+	dst[0] = src[0];
+	dst[1] = src[1];
+	dst[2] = src[2];
+	dst[3] = (t >> 16) & 0xff;
+	dst[4] = (t >> 8) & 0xff;
+	dst[5] = t & 0xff;
+}

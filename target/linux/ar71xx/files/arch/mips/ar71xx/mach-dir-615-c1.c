@@ -142,7 +142,8 @@ static void __init dir_615c1_setup(void)
 
 	if (nvram_parse_mac_addr(config, DIR_615C1_CONFIG_SIZE,
 			         "lan_mac=", mac) == 0) {
-		ar71xx_set_mac_base(mac);
+		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
+		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
 		wlan_mac = mac;
 	}
 

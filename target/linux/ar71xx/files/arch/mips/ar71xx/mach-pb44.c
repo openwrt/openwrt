@@ -173,11 +173,13 @@ static void __init pb44_init(void)
 {
 	ar71xx_add_device_mdio(~PB44_MDIO_PHYMASK);
 
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = PB44_WAN_PHYMASK;
 
 	ar71xx_add_device_eth(0);
 
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 1);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;

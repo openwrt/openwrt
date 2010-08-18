@@ -179,6 +179,7 @@ static void __init rb411_setup(void)
 
 	ar71xx_add_device_mdio(0xfffffffc);
 
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = 0x00000003;
 
@@ -210,9 +211,11 @@ static void __init rb433_setup(void)
 
 	ar71xx_add_device_mdio(~RB433_MDIO_PHYMASK);
 
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 1);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = RB433_LAN_PHYMASK;
 
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.phy_mask = RB433_WAN_PHYMASK;
 
@@ -245,9 +248,11 @@ static void __init rb450_generic_setup(int gige)
 
 	ar71xx_add_device_mdio(~RB450_MDIO_PHYMASK);
 
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 1);
 	ar71xx_eth0_data.phy_if_mode = (gige) ? PHY_INTERFACE_MODE_RGMII : PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = RB450_LAN_PHYMASK;
 
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth1_data.phy_if_mode = (gige) ? PHY_INTERFACE_MODE_RGMII : PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.phy_mask = RB450_WAN_PHYMASK;
 
@@ -278,10 +283,12 @@ static void __init rb493_setup(void)
 
 	ar71xx_add_device_mdio(0x3fffff00);
 
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 1);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.phy_mask = 0x00000001;
 
