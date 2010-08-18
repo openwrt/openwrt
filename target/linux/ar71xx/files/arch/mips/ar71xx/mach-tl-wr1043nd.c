@@ -126,8 +126,7 @@ static void __init tl_wr1043nd_setup(void)
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	ar71xx_set_mac_base(mac);
-
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
 	ar71xx_eth0_data.mii_bus_dev = &tl_wr1043nd_rtl8366rb_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;

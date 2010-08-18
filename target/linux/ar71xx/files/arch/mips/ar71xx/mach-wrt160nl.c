@@ -121,8 +121,10 @@ static void __init wrt160nl_setup(void)
 	u8 mac[6];
 
 	if (nvram_parse_mac_addr(nvram, WRT160NL_NVRAM_SIZE,
-			         "lan_hwaddr=", mac) == 0)
-		ar71xx_set_mac_base(mac);
+			         "lan_hwaddr=", mac) == 0) {
+		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
+		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
+	}
 
 	ar71xx_add_device_mdio(0x0);
 

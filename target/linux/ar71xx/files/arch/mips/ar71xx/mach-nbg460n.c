@@ -184,15 +184,15 @@ static void __init nbg460n_setup(void)
 	/* last sector contains wlan calib data */
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	ar71xx_set_mac_base(mac);
-
 	/* LAN Port */
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
 	ar71xx_eth0_data.mii_bus_dev = &nbg460n_rtl8366s_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	/* WAN Port */
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
 	ar71xx_eth1_data.mii_bus_dev = &nbg460n_rtl8366s_device.dev;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.phy_mask = 0x10;

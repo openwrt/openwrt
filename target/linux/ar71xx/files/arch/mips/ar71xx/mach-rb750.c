@@ -13,6 +13,7 @@
 #include <asm/mach-ar71xx/mach-rb750.h>
 
 #include "machtype.h"
+#include "devices.h"
 #include "dev-ap91-eth.h"
 
 static struct rb750_led_data rb750_leds[] = {
@@ -124,7 +125,10 @@ static void __init rb750_setup(void)
 				     AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
 				     AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
-	ap91_eth_init(NULL, rb750_port_names);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 1);
+	ap91_eth_init(rb750_port_names);
+
 	platform_device_register(&rb750_leds_device);
 	platform_device_register(&rb750_nand_device);
 }

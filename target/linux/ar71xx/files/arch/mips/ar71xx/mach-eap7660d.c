@@ -145,8 +145,11 @@ static struct gpio_button eap7660d_gpio_buttons[] __initdata = {
 static void __init eap7660d_setup(void)
 {
 	u8 *boardconfig = (u8 *) KSEG1ADDR(EAP7660D_BOARDCONFIG);
-	ar71xx_set_mac_base(boardconfig + EAP7660D_GBIC_MAC_OFFSET);
+
 	ar71xx_add_device_mdio(~EAP7660D_PHYMASK);
+
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr,
+			boardconfig + EAP7660D_GBIC_MAC_OFFSET, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = EAP7660D_PHYMASK;
 	ar71xx_add_device_eth(0);

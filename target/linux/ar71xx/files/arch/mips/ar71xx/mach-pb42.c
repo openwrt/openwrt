@@ -51,9 +51,11 @@ static void __init pb42_init(void)
 
 	ar71xx_add_device_mdio(~PB42_MDIO_PHYMASK);
 
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = PB42_WAN_PHYMASK;
 
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 1);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.speed = SPEED_100;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
