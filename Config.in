@@ -215,6 +215,38 @@ menu "Global build settings"
 		help
 		  Enable IPV6 support in packages (passes --enable-ipv6 to configure scripts).
 
+	config PKG_BUILD_PARALLEL
+		bool
+		prompt "Compile certain packages parallelized"
+		default n
+		help
+		  This adds a -jX option to certain packages that are known to
+		  behave well for parallel build.
+
+		  Note that this may overcommit CPU resources depending on the
+		  -j level of the main make process, the number of package
+		  submake jobs selected below and the number of actual CPUs present.
+		  Example: If the main make is passed a -j4 and the submake -j
+		  is also set to 4, we may end up with 16 parallel make processes
+		  in the worst case.
+
+		  You get maximum build performance, if you set the package build
+		  jobs to the number of CPUs (cores) available and also start the main
+		  make process with -jX, where X is the number of CPUs (cores).
+		  However, make sure you have enough RAM available for
+		  NR_CPUS to the power of two (NR_CPUS^2) make jobs.
+
+		  If you are unsure, select N.
+
+	config PKG_BUILD_JOBS
+		int
+		prompt "Number of package submake jobs (2-512)"
+		range 2 512
+		default 2
+		depends on PKG_BUILD_PARALLEL
+		help
+		  The number of jobs (-jX) to pass to packages submake.
+
 	comment "Stripping options"
 
 	choice
