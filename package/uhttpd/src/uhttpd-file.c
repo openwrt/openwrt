@@ -97,8 +97,6 @@ static char * uh_file_header_lookup(struct http_request *req, const char *name)
 	return NULL;
 }
 
-#define ensure_ret(x) \
-	do { if( x < 0 ) return -1; } while(0)
 
 static int uh_file_response_ok_hdrs(struct client *cl, struct http_request *req, struct stat *s)
 {
@@ -132,7 +130,7 @@ static int uh_file_response_412(struct client *cl, struct http_request *req)
 		"Connection: close\r\n", req->version);
 }
 
-static int uh_file_if_match(struct client *cl, struct http_request *req, struct stat *s)
+static int uh_file_if_match(struct client *cl, struct http_request *req, struct stat *s, int *ok)
 {
 	const char *tag = uh_file_mktag(s);
 	char *hdr = uh_file_header_lookup(req, "If-Match");
@@ -152,43 +150,44 @@ static int uh_file_if_match(struct client *cl, struct http_request *req, struct 
 			}
 			else if( !strcmp(p, "*") || !strcmp(p, tag) )
 			{
-				return 1;
+				*ok = 1;
+				return *ok;
 			}
 		}
 
-		uh_file_response_412(cl, req);
-		return 0;
+		*ok = 0;
+		ensure_ret(uh_file_response_412(cl, req));
+		return *ok;
 	}
 
-	return 1;
+	*ok = 1;
+	return *ok;
 }
 
-static int uh_file_if_modified_since(struct client *cl, struct http_request *req, struct stat *s)
+static int uh_file_if_modified_since(struct client *cl, struct http_request *req, struct stat *s, int *ok)
 {
 	char *hdr = uh_file_header_lookup(req, "If-Modified-Since");
+	*ok = 1;
 
 	if( hdr )
 	{
-		if( uh_file_date2unix(hdr) < s->st_mtime )
+		if( uh_file_date2unix(hdr) >= s->st_mtime )
 		{
-			return 1;
-		}
-		else
-		{
-			uh_file_response_304(cl, req, s);
-			return 0;
+			*ok = 0;
+			ensure_ret(uh_file_response_304(cl, req, s));
 		}
 	}
 
-	return 1;
+	return *ok;
 }
 
-static int uh_file_if_none_match(struct client *cl, struct http_request *req, struct stat *s)
+static int uh_file_if_none_match(struct client *cl, struct http_request *req, struct stat *s, int *ok)
 {
 	const char *tag = uh_file_mktag(s);
 	char *hdr = uh_file_header_lookup(req, "If-None-Match");
 	char *p;
 	int i;
+	*ok = 1;
 
 	if( hdr )
 	{
@@ -203,52 +202,53 @@ static int uh_file_if_none_match(struct client *cl, struct http_request *req, st
 			}
 			else if( !strcmp(p, "*") || !strcmp(p, tag) )
 			{
+				*ok = 0;
+
 				if( (req->method == UH_HTTP_MSG_GET) ||
 				    (req->method == UH_HTTP_MSG_HEAD) )
-					uh_file_response_304(cl, req, s);
+					ensure_ret(uh_file_response_304(cl, req, s));
 				else
-					uh_file_response_412(cl, req);
+					ensure_ret(uh_file_response_412(cl, req));
 
-				return 0;
+				break;
 			}
 		}
 	}
 
-	return 1;
+	return *ok;
 }
 
-static int uh_file_if_range(struct client *cl, struct http_request *req, struct stat *s)
+static int uh_file_if_range(struct client *cl, struct http_request *req, struct stat *s, int *ok)
 {
 	char *hdr = uh_file_header_lookup(req, "If-Range");
+	*ok = 1;
 
 	if( hdr )
 	{
-		uh_file_response_412(cl, req);
-		return 0;
+		*ok = 0;
+		ensure_ret(uh_file_response_412(cl, req));
 	}
 
-	return 1;
+	return *ok;
 }
 
-static int uh_file_if_unmodified_since(struct client *cl, struct http_request *req, struct stat *s)
+static int uh_file_if_unmodified_since(struct client *cl, struct http_request *req, struct stat *s, int *ok)
 {
 	char *hdr = uh_file_header_lookup(req, "If-Unmodified-Since");
+	*ok = 1;
 
 	if( hdr )
 	{
 		if( uh_file_date2unix(hdr) <= s->st_mtime )
 		{
-			uh_file_response_412(cl, req);
-			return 0;
+			*ok = 0;
+			ensure_ret(uh_file_response_412(cl, req));
 		}
 	}
 
-	return 1;
+	return *ok;
 }
 
-
-#define ensure_out(x) \
-	do { if( x < 0 ) goto out; } while(0)
 
 static int uh_file_scandir_filter_dir(const struct dirent *e)
 {
@@ -335,6 +335,7 @@ out:
 void uh_file_request(struct client *cl, struct http_request *req, struct path_info *pi)
 {
 	int rlen;
+	int ok = 1;
 	int fd = -1;
 	char buf[UH_LIMIT_MSGHEAD];
 
@@ -342,13 +343,14 @@ void uh_file_request(struct client *cl, struct http_request *req, struct path_in
 	if( (pi->stat.st_mode & S_IFREG) && ((fd = open(pi->phys, O_RDONLY)) > 0) )
 	{
 		/* test preconditions */
-		if(
-			uh_file_if_modified_since(cl, req, &pi->stat)  	&&
-			uh_file_if_match(cl, req, &pi->stat)           	&&
-			uh_file_if_range(cl, req, &pi->stat)           	&&
-			uh_file_if_unmodified_since(cl, req, &pi->stat)	&&
-			uh_file_if_none_match(cl, req, &pi->stat)
-		) {
+		if(ok) ensure_out(uh_file_if_modified_since(cl, req, &pi->stat, &ok));
+		if(ok) ensure_out(uh_file_if_match(cl, req, &pi->stat, &ok));
+		if(ok) ensure_out(uh_file_if_range(cl, req, &pi->stat, &ok));
+		if(ok) ensure_out(uh_file_if_unmodified_since(cl, req, &pi->stat, &ok));
+		if(ok) ensure_out(uh_file_if_none_match(cl, req, &pi->stat, &ok));
+
+		if( ok > 0 )
+		{
 			/* write status */
 			ensure_out(uh_file_response_200(cl, req, &pi->stat));
 

@@ -96,17 +96,18 @@ static void uh_config_parse(struct config *conf)
 				conf->error_handler = strdup(col1);
 			}
 #ifdef HAVE_CGI
-			else if( (line[0] == '.') && (strchr(line, ':') != NULL) )
+			else if( (line[0] == '*') && (strchr(line, ':') != NULL) )
 			{
-				if( !(col1 = strchr(line, ':')) || (*col1++ = 0) ||
-				    !(eol = strchr(col1, '\n')) || (*eol++  = 0) )
+				if( !(col1 = strchr(line, '*')) || (*col1++ = 0) ||
+				    !(col2 = strchr(col1, ':')) || (*col2++ = 0) ||
+				    !(eol = strchr(col2, '\n')) || (*eol++  = 0) )
 						continue;
 
-				if( !uh_interpreter_add(line, col1) )
+				if( !uh_interpreter_add(col1, col2) )
 				{
 					fprintf(stderr,
 						"Unable to add interpreter %s for extension %s: "
-						"Out of memory\n", col1, line
+						"Out of memory\n", col2, col1
 					);
 				}
 			}
@@ -125,6 +126,10 @@ static int uh_socket_bind(
 	int yes = 1;
 	int status;
 	int bound = 0;
+
+	int tcp_ka_idl = 1;
+	int tcp_ka_int = 1;
+	int tcp_ka_cnt = 3;
 
 	struct listener *l = NULL;
 	struct addrinfo *addrs = NULL, *p = NULL;
@@ -145,10 +150,20 @@ static int uh_socket_bind(
 		}
 
 		/* "address already in use" */
-		if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1 )
+		if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) )
 		{
 			perror("setsockopt()");
 			goto error;
+		}
+
+		/* TCP keep-alive */
+		if( setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes)) ||
+		    setsockopt(sock, SOL_TCP, TCP_KEEPIDLE,  &tcp_ka_idl, sizeof(tcp_ka_idl)) ||
+		    setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &tcp_ka_int, sizeof(tcp_ka_int)) ||
+		    setsockopt(sock, SOL_TCP, TCP_KEEPCNT,   &tcp_ka_cnt, sizeof(tcp_ka_cnt)) )
+		{
+		    fprintf(stderr, "Notice: Unable to enable TCP keep-alive: %s\n",
+		    	strerror(errno));
 		}
 
 		/* required to get parallel v4 + v6 working */
@@ -355,7 +370,6 @@ static struct http_request * uh_http_header_recv(struct client *cl)
 	ssize_t blen = sizeof(buffer)-1;
 	ssize_t rlen = 0;
 
-
 	memset(buffer, 0, sizeof(buffer));
 
 	while( blen > 0 )
@@ -371,41 +385,37 @@ static struct http_request * uh_http_header_recv(struct client *cl)
 		if( select(cl->socket + 1, &reader, NULL, NULL, &timeout) > 0 )
 		{
 			/* receive data */
-			rlen = uh_tcp_peek(cl, bufptr, blen);
+			ensure_out(rlen = uh_tcp_peek(cl, bufptr, blen));
 
-			if( rlen > 0 )
+			if( (idxptr = strfind(buffer, sizeof(buffer), "\r\n\r\n", 4)) )
 			{
-				if( (idxptr = strfind(buffer, sizeof(buffer), "\r\n\r\n", 4)) )
-				{
-					blen -= uh_tcp_recv(cl, bufptr, (int)(idxptr - bufptr) + 4);
+				ensure_out(rlen = uh_tcp_recv(cl, bufptr,
+					(int)(idxptr - bufptr) + 4));
 
-					/* header read complete ... */
-					return uh_http_header_parse(cl, buffer, sizeof(buffer) - blen - 1);
-				}
-				else
-				{
-					rlen = uh_tcp_recv(cl, bufptr, rlen);
-					blen -= rlen;
-					bufptr += rlen;
-				}
+				/* header read complete ... */
+				blen -= rlen;
+				return uh_http_header_parse(cl, buffer,
+					sizeof(buffer) - blen - 1);
 			}
 			else
 			{
-				/* invalid request (unexpected eof/timeout) */
-				uh_http_response(cl, 408, "Request Timeout");
-				return NULL;
+				ensure_out(rlen = uh_tcp_recv(cl, bufptr, rlen));
+
+				blen -= rlen;
+				bufptr += rlen;
 			}
 		}
 		else
 		{
 			/* invalid request (unexpected eof/timeout) */
-			uh_http_response(cl, 408, "Request Timeout");
 			return NULL;
 		}
 	}
 
 	/* request entity too large */
 	uh_http_response(cl, 413, "Request Entity Too Large");
+
+out:
 	return NULL;
 }
 

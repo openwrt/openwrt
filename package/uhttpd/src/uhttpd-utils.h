@@ -36,6 +36,13 @@
 #define fd_cloexec(fd) \
 	fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC)
 
+#define ensure_out(x) \
+	do { if((x) < 0) goto out; } while(0)
+
+#define ensure_ret(x) \
+	do { if((x) < 0) return -1; } while(0)
+
+
 struct path_info {
 	char *root;
 	char *phys;

@@ -28,6 +28,7 @@
 #include <sys/select.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <linux/limits.h>
 #include <netdb.h>
@@ -42,6 +43,11 @@
 
 #ifdef HAVE_TLS
 #include <openssl/ssl.h>
+#endif
+
+/* uClibc... */
+#ifndef SOL_TCP
+#define SOL_TCP	6
 #endif
 
 

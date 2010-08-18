@@ -70,12 +70,14 @@ void uh_tls_client_accept(struct client *c)
 
 int uh_tls_client_recv(struct client *c, void *buf, int len)
 {
-	return SSL_read(c->tls, buf, len);
+	int rv = SSL_read(c->tls, buf, len);
+	return (rv > 0) ? rv : -1;
 }
 
 int uh_tls_client_send(struct client *c, void *buf, int len)
 {
-	return SSL_write(c->tls, buf, len);
+	int rv = SSL_write(c->tls, buf, len);
+	return (rv > 0) ? rv : -1;
 }
 
 void uh_tls_client_close(struct client *c)

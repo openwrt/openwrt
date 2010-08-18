@@ -112,6 +112,7 @@ int select_intr(int n, fd_set *r, fd_set *w, fd_set *e, struct timeval *t)
 	/* unblock SIGCHLD */
 	sigemptyset(&ssn);
 	sigaddset(&ssn, SIGCHLD);
+	sigaddset(&ssn, SIGPIPE);
 	sigprocmask(SIG_UNBLOCK, &ssn, &sso);
 
 	rv = select(n, r, w, e, t);
@@ -193,8 +194,6 @@ int uh_tcp_recv(struct client *cl, char *buf, int len)
 	return sz;
 }
 
-#define ensure(x) \
-	do { if( x < 0 ) return -1; } while(0)
 
 int uh_http_sendhf(struct client *cl, int code, const char *summary, const char *fmt, ...)
 {
@@ -211,14 +210,14 @@ int uh_http_sendhf(struct client *cl, int code, const char *summary, const char 
 			code, summary
 	);
 
-	ensure(uh_tcp_send(cl, buffer, len));
+	ensure_ret(uh_tcp_send(cl, buffer, len));
 
 	va_start(ap, fmt);
 	len = vsnprintf(buffer, sizeof(buffer), fmt, ap);
 	va_end(ap);
 
-	ensure(uh_http_sendc(cl, buffer, len));
-	ensure(uh_http_sendc(cl, NULL, 0));
+	ensure_ret(uh_http_sendc(cl, buffer, len));
+	ensure_ret(uh_http_sendc(cl, NULL, 0));
 
 	return 0;
 }
@@ -235,13 +234,13 @@ int uh_http_sendc(struct client *cl, const char *data, int len)
 	if( len > 0 )
 	{
 	 	clen = snprintf(chunk, sizeof(chunk), "%X\r\n", len);
-		ensure(uh_tcp_send(cl, chunk, clen));
-		ensure(uh_tcp_send(cl, data, len));
-		ensure(uh_tcp_send(cl, "\r\n", 2));
+		ensure_ret(uh_tcp_send(cl, chunk, clen));
+		ensure_ret(uh_tcp_send(cl, data, len));
+		ensure_ret(uh_tcp_send(cl, "\r\n", 2));
 	}
 	else
 	{
-		ensure(uh_tcp_send(cl, "0\r\n\r\n", 5));
+		ensure_ret(uh_tcp_send(cl, "0\r\n\r\n", 5));
 	}
 
 	return 0;
@@ -259,9 +258,9 @@ int uh_http_sendf(
 	va_end(ap);
 
 	if( (req != NULL) && (req->version > 1.0) )
-		ensure(uh_http_sendc(cl, buffer, len));
+		ensure_ret(uh_http_sendc(cl, buffer, len));
 	else if( len > 0 )
-		ensure(uh_tcp_send(cl, buffer, len));
+		ensure_ret(uh_tcp_send(cl, buffer, len));
 
 	return 0;
 }
@@ -273,9 +272,9 @@ int uh_http_send(
 		len = strlen(buf);
 
 	if( (req != NULL) && (req->version > 1.0) )
-		ensure(uh_http_sendc(cl, buf, len));
+		ensure_ret(uh_http_sendc(cl, buf, len));
 	else if( len > 0 )
-		ensure(uh_tcp_send(cl, buf, len));
+		ensure_ret(uh_tcp_send(cl, buf, len));
 
 	return 0;
 }
@@ -639,7 +638,7 @@ struct auth_realm * uh_auth_add(char *path, char *user, char *pass)
 			) {
 				memcpy(new->pass, pwd->pw_passwd,
 					min(strlen(pwd->pw_passwd), sizeof(new->pass) - 1));
-			}			
+			}
 		}
 
 		/* ordinary pwd */
