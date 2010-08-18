@@ -86,7 +86,6 @@ config EXTRA_GCC_CONFIG_OPTIONS
 
 config SSP_SUPPORT
 	bool
-	depends !GCC_VERSION_3_4_6
 	prompt "Enable Stack-Smashing Protection support" if TOOLCHAINOPTS
 	default n
 	help
@@ -94,7 +93,7 @@ config SSP_SUPPORT
 
 config TLS_SUPPORT
 	bool
-	depends !GCC_VERSION_3_4_6 && UCLIBC_VERSION_NPTL
+	depends UCLIBC_VERSION_NPTL
 	prompt "Enable Thread-local storage (TLS) support" if TOOLCHAINOPTS
 	default n
 	help
