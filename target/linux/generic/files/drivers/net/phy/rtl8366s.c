@@ -608,32 +608,6 @@ static int rtl8366s_sw_reset_mibs(struct switch_dev *dev,
 	return rtl8366_smi_rmwr(smi, RTL8366S_MIB_CTRL_REG, 0, (1 << 2));
 }
 
-static int rtl8366s_sw_get_vlan_enable(struct switch_dev *dev,
-				       const struct switch_attr *attr,
-				       struct switch_val *val)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	u32 data;
-
-	if (attr->ofs == 1) {
-		rtl8366_smi_read_reg(smi, RTL8366S_SGCR, &data);
-
-		if (data & RTL8366S_SGCR_EN_VLAN)
-			val->value.i = 1;
-		else
-			val->value.i = 0;
-	} else if (attr->ofs == 2) {
-		rtl8366_smi_read_reg(smi, RTL8366S_VLAN_TB_CTRL_REG, &data);
-
-		if (data & 0x0001)
-			val->value.i = 1;
-		else
-			val->value.i = 0;
-	}
-
-	return 0;
-}
-
 static int rtl8366s_sw_get_blinkrate(struct switch_dev *dev,
 				     const struct switch_attr *attr,
 				     struct switch_val *val)
@@ -660,18 +634,6 @@ static int rtl8366s_sw_set_blinkrate(struct switch_dev *dev,
 	return rtl8366_smi_rmwr(smi, RTL8366S_LED_BLINKRATE_REG,
 				RTL8366S_LED_BLINKRATE_MASK,
 				val->value.i);
-}
-
-static int rtl8366s_sw_set_vlan_enable(struct switch_dev *dev,
-				       const struct switch_attr *attr,
-				       struct switch_val *val)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-
-	if (attr->ofs == 1)
-		return rtl8366s_enable_vlan(smi, val->value.i);
-	else
-		return rtl8366s_enable_vlan4k(smi, val->value.i);
 }
 
 static int rtl8366s_sw_get_learning_enable(struct switch_dev *dev,
@@ -849,16 +811,16 @@ static struct switch_attr rtl8366s_globals[] = {
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
 		.description = "Enable VLAN mode",
-		.set = rtl8366s_sw_set_vlan_enable,
-		.get = rtl8366s_sw_get_vlan_enable,
+		.set = rtl8366_sw_set_vlan_enable,
+		.get = rtl8366_sw_get_vlan_enable,
 		.max = 1,
 		.ofs = 1
 	}, {
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan4k",
 		.description = "Enable VLAN 4K mode",
-		.set = rtl8366s_sw_set_vlan_enable,
-		.get = rtl8366s_sw_get_vlan_enable,
+		.set = rtl8366_sw_set_vlan_enable,
+		.get = rtl8366_sw_get_vlan_enable,
 		.max = 1,
 		.ofs = 2
 	}, {

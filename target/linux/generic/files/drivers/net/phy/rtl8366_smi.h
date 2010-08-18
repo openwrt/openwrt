@@ -45,6 +45,9 @@ struct rtl8366_smi {
 
 	struct rtl8366_smi_ops	*ops;
 
+	int			vlan_enabled;
+	int			vlan4k_enabled;
+
 	char			buf[4096];
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 	struct dentry           *debugfs_root;
@@ -119,5 +122,11 @@ int rtl8366_sw_get_vlan_info(struct switch_dev *dev,
 			     struct switch_val *val);
 int rtl8366_sw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val);
 int rtl8366_sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val);
+int rtl8366_sw_get_vlan_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val);
+int rtl8366_sw_set_vlan_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val);
 
 #endif /*  _RTL8366_SMI_H */
