@@ -560,13 +560,13 @@ static int rtl8366rb_is_vlan_valid(struct rtl8366_smi *smi, unsigned vlan)
 	return 1;
 }
 
-static int rtl8366rb_vlan_set_vlan(struct rtl8366_smi *smi, int enable)
+static int rtl8366rb_enable_vlan(struct rtl8366_smi *smi, int enable)
 {
 	return rtl8366_smi_rmwr(smi, RTL8366RB_SGCR, RTL8366RB_SGCR_EN_VLAN,
 				(enable) ? RTL8366RB_SGCR_EN_VLAN : 0);
 }
 
-static int rtl8366rb_vlan_set_4ktable(struct rtl8366_smi *smi, int enable)
+static int rtl8366rb_enable_vlan4k(struct rtl8366_smi *smi, int enable)
 {
 	return rtl8366_smi_rmwr(smi, RTL8366RB_SGCR,
 				RTL8366RB_SGCR_EN_VLAN_4KTB,
@@ -644,9 +644,9 @@ static int rtl8366rb_sw_set_vlan_enable(struct switch_dev *dev,
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
 
 	if (attr->ofs == 1)
-		return rtl8366rb_vlan_set_vlan(smi, val->value.i);
+		return rtl8366rb_enable_vlan(smi, val->value.i);
 	else
-		return rtl8366rb_vlan_set_4ktable(smi, val->value.i);
+		return rtl8366rb_enable_vlan4k(smi, val->value.i);
 }
 
 static int rtl8366rb_sw_get_learning_enable(struct switch_dev *dev,
@@ -1028,6 +1028,8 @@ static struct rtl8366_smi_ops rtl8366rb_smi_ops = {
 	.set_mc_index	= rtl8366rb_set_mc_index,
 	.get_mib_counter = rtl8366rb_get_mib_counter,
 	.is_vlan_valid	= rtl8366rb_is_vlan_valid,
+	.enable_vlan	= rtl8366rb_enable_vlan,
+	.enable_vlan4k	= rtl8366rb_enable_vlan4k,
 };
 
 static int __init rtl8366rb_probe(struct platform_device *pdev)
