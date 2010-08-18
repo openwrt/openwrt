@@ -1,6 +1,5 @@
 config GCC_VERSION
 	string
-	default "3.4.6"     if GCC_VERSION_3_4_6
 	default "4.1.2"     if GCC_VERSION_4_1_2
 	default "4.2.4"     if GCC_VERSION_4_2_4
 	default "4.3.3"     if GCC_VERSION_4_3_3
@@ -17,14 +16,6 @@ config GCC_VERSION
 	default "4.4.3+cs"  if GCC_VERSION_4_4_3_CS
 	default "llvm"	    if GCC_VERSION_LLVM
 	default "4.1.2"
-
-config GCC_VERSION_3
-	bool
-	default y	if GCC_VERSION_3_4_6
-
-config GCC_VERSION_3_4
-	bool
-	default y	if GCC_VERSION_3_4_6
 
 config GCC_VERSION_4
 	bool
