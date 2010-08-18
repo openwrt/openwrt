@@ -554,7 +554,12 @@ static int rtl8366rb_set_mc_index(struct rtl8366_smi *smi, int port, int index)
 
 static int rtl8366rb_is_vlan_valid(struct rtl8366_smi *smi, unsigned vlan)
 {
-	if (vlan == 0 || vlan >= RTL8366RB_NUM_VLANS)
+	unsigned max = RTL8366RB_NUM_VLANS;
+
+	if (smi->vlan4k_enabled)
+		max = RTL8366RB_NUM_VIDS - 1;
+
+	if (vlan == 0 || vlan >= max)
 		return 0;
 
 	return 1;
@@ -882,7 +887,7 @@ static int rtl8366rb_switch_init(struct rtl8366_smi *smi)
 	dev->name = "RTL8366RB";
 	dev->cpu_port = RTL8366RB_PORT_NUM_CPU;
 	dev->ports = RTL8366RB_NUM_PORTS;
-	dev->vlans = RTL8366RB_NUM_VLANS;
+	dev->vlans = RTL8366RB_NUM_VIDS;
 	dev->ops = &rtl8366_ops;
 	dev->devname = dev_name(smi->parent);
 

@@ -593,7 +593,12 @@ static int rtl8366s_enable_vlan4k(struct rtl8366_smi *smi, int enable)
 
 static int rtl8366s_is_vlan_valid(struct rtl8366_smi *smi, unsigned vlan)
 {
-	if (vlan == 0 || vlan >= RTL8366S_NUM_VLANS)
+	unsigned max = RTL8366S_NUM_VLANS;
+
+	if (smi->vlan4k_enabled)
+		max = RTL8366S_NUM_VIDS - 1;
+
+	if (vlan == 0 || vlan >= max)
 		return 0;
 
 	return 1;
@@ -909,7 +914,7 @@ static int rtl8366s_switch_init(struct rtl8366_smi *smi)
 	dev->name = "RTL8366S";
 	dev->cpu_port = RTL8366S_PORT_NUM_CPU;
 	dev->ports = RTL8366S_NUM_PORTS;
-	dev->vlans = RTL8366S_NUM_VLANS;
+	dev->vlans = RTL8366S_NUM_VIDS;
 	dev->ops = &rtl8366_ops;
 	dev->devname = dev_name(smi->parent);
 
