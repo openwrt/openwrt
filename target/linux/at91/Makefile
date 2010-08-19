@@ -17,6 +17,7 @@ DEVICE_TYPE=
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES+= kmod-usb-ohci
 KERNELNAME:="uImage"
 
 define Target/Description
