@@ -62,10 +62,10 @@ EGLIBC_CONFIGURE:= \
 	CFLAGS="$(EGLIBC_CFLAGS)" \
 	libc_cv_slibdir="/lib" \
 	$(HOST_BUILD_DIR)/libc/configure \
-		--prefix=/usr \
+		--prefix= \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(REAL_GNU_TARGET_NAME) \
-		--with-headers=$(TOOLCHAIN_DIR)/usr/include \
+		--with-headers=$(TOOLCHAIN_DIR)/include \
 		--disable-profile \
 		--without-gd \
 		--without-cvs \
@@ -102,7 +102,7 @@ define Stage1/Compile
 endef
 
 define Stage1/Install
-	mkdir -p $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/{include,lib}
+	mkdir -p $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/{include,lib}
 	$(EGLIBC_MAKE) -C $(HOST_BUILD_DIR1) \
 		install_root="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev" \
 		install-bootstrap-headers=yes \
@@ -110,10 +110,10 @@ define Stage1/Install
 	$(EGLIBC_MAKE) -C $(HOST_BUILD_DIR1) \
 		csu/subdir_lib
 	( cd $(HOST_BUILD_DIR1); \
-		$(CP) csu/crt1.o csu/crti.o csu/crtn.o $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/lib/ \
+		$(CP) csu/crt1.o csu/crti.o csu/crtn.o $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/lib/ \
 	)
 	$(TARGET_CC) -nostdlib -nostartfiles -shared -x c /dev/null \
-		-o $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/lib/libc.so
+		-o $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/lib/libc.so
 endef
 
 define Stage2/Configure

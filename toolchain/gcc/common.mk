@@ -104,7 +104,7 @@ export libgcc_cv_fixed_point=no
 GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
 	$(HOST_SOURCE_DIR)/configure \
-		--prefix=$(TOOLCHAIN_DIR)/usr \
+		--prefix=$(TOOLCHAIN_DIR) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
@@ -187,7 +187,7 @@ define Host/Clean
 		$(STAGING_DIR_HOST)/stamp/.binutils_* \
 		$(GCC_BUILD_DIR) \
 		$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME) \
-		$(TOOLCHAIN_DIR)/usr/$(REAL_GNU_TARGET_NAME) \
-		$(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-gc* \
-		$(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-c*
+		$(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME) \
+		$(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-gc* \
+		$(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-c*
 endef

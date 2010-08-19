@@ -20,7 +20,7 @@ define Host/Configure
 		gdb_cv_func_sigsetjmp=yes \
 		CFLAGS="-O2" \
 		$(HOST_BUILD_DIR)/configure \
-		--prefix=$(TOOLCHAIN_DIR)/usr \
+		--prefix=$(TOOLCHAIN_DIR) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
@@ -38,17 +38,17 @@ define Host/Compile
 endef
 
 define Host/Install
-	mkdir -p $(TOOLCHAIN_DIR)/usr/bin
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/gdb/gdb $(TOOLCHAIN_DIR)/usr/bin/$(TARGET_CROSS)gdb
-	ln -fs $(TARGET_CROSS)gdb $(TOOLCHAIN_DIR)/usr/bin/$(GNU_TARGET_NAME)-gdb
-	strip $(TOOLCHAIN_DIR)/usr/bin/$(TARGET_CROSS)gdb
+	mkdir -p $(TOOLCHAIN_DIR)/bin
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/gdb/gdb $(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)gdb
+	ln -fs $(TARGET_CROSS)gdb $(TOOLCHAIN_DIR)/bin/$(GNU_TARGET_NAME)-gdb
+	strip $(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)gdb
 endef
 
 define Host/Clean
 	rm -rf \
 		$(HOST_BUILD_DIR) \
-		$(TOOLCHAIN_DIR)/usr/bin/$(TARGET_CROSS)gdb \
-		$(TOOLCHAIN_DIR)/usr/bin/$(GNU_TARGET_NAME)-gdb
+		$(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)gdb \
+		$(TOOLCHAIN_DIR)/bin/$(GNU_TARGET_NAME)-gdb
 endef
 
 $(eval $(call HostBuild))

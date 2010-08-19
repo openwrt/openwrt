@@ -24,7 +24,7 @@ define Host/Configure
 		gdb_cv_func_sigsetjmp=yes \
 		CFLAGS="-O2" \
 		$(HOST_BUILD_DIR)/configure \
-		--prefix=$(TOOLCHAIN_DIR)/usr \
+		--prefix=$(TOOLCHAIN_DIR) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
@@ -39,17 +39,17 @@ define Host/Compile
 endef
 
 define Host/Install
-	mkdir -p $(TOOLCHAIN_DIR)/usr/bin
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/gdb/insight $(TOOLCHAIN_DIR)/usr/bin/$(TARGET_CROSS)insight
-	ln -fs $(TARGET_CROSS)insight $(TOOLCHAIN_DIR)/usr/bin/$(GNU_TARGET_NAME)-insight
-	strip $(TOOLCHAIN_DIR)/usr/bin/$(TARGET_CROSS)insight
+	mkdir -p $(TOOLCHAIN_DIR)/bin
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/gdb/insight $(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)insight
+	ln -fs $(TARGET_CROSS)insight $(TOOLCHAIN_DIR)/bin/$(GNU_TARGET_NAME)-insight
+	strip $(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)insight
 endef
 
 define Host/Clean
 	rm -rf \
 		$(HOST_BUILD_DIR) \
-		$(TOOLCHAIN_DIR)/usr/bin/$(TARGET_CROSS)insight \
-		$(TOOLCHAIN_DIR)/usr/bin/$(GNU_TARGET_NAME)-insight
+		$(TOOLCHAIN_DIR)/bin/$(TARGET_CROSS)insight \
+		$(TOOLCHAIN_DIR)/bin/$(GNU_TARGET_NAME)-insight
 endef
 
 $(eval $(call HostBuild))

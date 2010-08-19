@@ -41,7 +41,7 @@ include $(INCLUDE_DIR)/toolchain-build.mk
 
 BINUTILS_CONFIGURE:= \
 	./configure \
-		--prefix=$(TOOLCHAIN_DIR)/usr \
+		--prefix=$(TOOLCHAIN_DIR) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
 		--target=$(REAL_GNU_TARGET_NAME) \
@@ -84,7 +84,7 @@ endef
 
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) install
-	$(CP) $(TOOLCHAIN_DIR)/usr/bin/$(REAL_GNU_TARGET_NAME)-readelf $(REAL_STAGING_DIR_HOST)/bin/readelf
+	$(CP) $(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-readelf $(REAL_STAGING_DIR_HOST)/bin/readelf
 endef
 
 define Host/Clean
