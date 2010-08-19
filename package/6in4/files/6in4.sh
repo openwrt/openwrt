@@ -28,7 +28,7 @@ setup_interface_6in4() {
 	local cfg="$2"
 	local link="6in4-$cfg"
 
-	local local4=$(uci_get network "$cfg" local4)
+	local local4=$(uci_get network "$cfg" ipaddr)
 
 	local remote4
 	config_get remote4 "$cfg" peeraddr
