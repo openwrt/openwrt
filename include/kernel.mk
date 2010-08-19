@@ -64,6 +64,7 @@ define KernelPackage/Defaults
 endef
 
 define ModuleAutoLoad
+	$(SH_FUNC) \
 	export modules=; \
 	add_module() { \
 		mkdir -p $(2)/etc/modules.d; \
