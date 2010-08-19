@@ -552,7 +552,7 @@ define KernelPackage/rfkill
     CONFIG_RFKILL \
     CONFIG_RFKILL_INPUT=y \
     CONFIG_RFKILL_LEDS=y
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.31)),1)
+ifeq ($(CONFIG_LINUX_2_6_30),)
   FILES:= \
     $(LINUX_DIR)/net/rfkill/rfkill.ko
   AUTOLOAD:=$(call AutoLoad,20,rfkill)

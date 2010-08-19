@@ -145,7 +145,8 @@ define KernelPackage/usb-audio
 	CONFIG_SND_USB_AUDIO
   $(call AddDepends/usb)
   $(call AddDepends/sound)
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1)
+# For Linux 2.6.35+
+ifneq ($(wildcard $(LINUX_DIR)/sound/usb/snd-usbmidi-lib.ko),)
   FILES:= \
 	$(LINUX_DIR)/sound/usb/snd-usbmidi-lib.ko \
 	$(LINUX_DIR)/sound/usb/snd-usb-audio.ko

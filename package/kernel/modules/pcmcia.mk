@@ -54,7 +54,8 @@ define KernelPackage/pcmcia-yenta
   KCONFIG:= \
 	CONFIG_PCCARD_NONSTATIC \
 	CONFIG_YENTA
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1)
+# For Linux 2.6.35+
+ifneq ($(wildcard $(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.ko),)
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.ko \
 	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.ko
