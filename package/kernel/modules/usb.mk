@@ -68,6 +68,26 @@ endef
 $(eval $(call KernelPackage,usb-ohci,1))
 
 
+define KernelPackage/usb-tahvo
+  TITLE:=Support for Tahvo (Nokia n810) USB
+  KCONFIG:= \
+	CONFIG_CBUS_TAHVO_USB \
+	CONFIG_CBUS_TAHVO_USB_HOST_BY_DEFAULT=y \
+	CONFIG_USB_OHCI_HCD_OMAP1=y \
+	CONFIG_USB_GADGET_DEBUG_FS=n
+  DEPENDS:=@TARGET_omap24xx +kmod-usb-ohci
+  FILES:=$(LINUX_DIR)/drivers/cbus/tahvo-usb.ko
+  AUTOLOAD:=$(call AutoLoad,51,tahvo-usb)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-tahvo/description
+  Kernel support for Nokia n810 USB OHCI controller.
+endef
+
+$(eval $(call KernelPackage,usb-tahvo))
+
+
 define KernelPackage/usb-isp116x-hcd
   TITLE:=Support for the ISP116x USB Host Controller
   DEPENDS:=@TARGET_ppc40x
