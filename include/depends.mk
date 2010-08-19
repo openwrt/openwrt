@@ -13,7 +13,7 @@
 
 DEP_FINDPARAMS := -x "*/.svn*" -x ".*" -x "*:*" -x "*\!*" -x "* *" -x "*\\\#*" -x "*/.*_check"
 
-find_md5=find $(1) -type f $(patsubst -x,-and -not -path,$(DEP_FINDPARAMS) $(2)) | md5s
+find_md5=$(SH_FUNC) find $(1) -type f $(patsubst -x,-and -not -path,$(DEP_FINDPARAMS) $(2)) | md5s
 
 define rdep
   .PRECIOUS: $(2)

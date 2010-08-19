@@ -16,8 +16,6 @@ include $(TOPDIR)/include/verbose.mk
 
 TMP_DIR:=$(TOPDIR)/tmp
 
-export SHELL=/usr/bin/env bash -c '. $(TOPDIR)/include/shell.sh; eval "$$2"' --
-
 GREP_OPTIONS=
 export GREP_OPTIONS
 
@@ -148,6 +146,7 @@ endif
 export PATH:=$(TARGET_PATH)
 export STAGING_DIR
 export GCC_HONOUR_COPTS:=0
+export SH_FUNC:=. $(INCLUDE_DIR)/shell.sh;
 
 PKG_CONFIG:=$(STAGING_DIR_HOST)/bin/pkg-config
 
