@@ -4,7 +4,7 @@ include ../common.mk
 
 GCC_CONFIGURE += \
 	--with-newlib \
-	--with-sysroot=$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev \
+	--with-sysroot=$(TOOLCHAIN_DIR) \
 	--enable-languages=c \
 	--disable-shared \
 	--disable-threads \
@@ -23,7 +23,7 @@ define Host/Install
 		$(if $(GCC_BUILD_TARGET_LIBGCC),install-target-libgcc)
 
 	# XXX: glibc insists on linking against libgcc_eh
-	( cd $(TOOLCHAIN_DIR)/usr/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(PKG_VERSION) ; \
+	( cd $(TOOLCHAIN_DIR)/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(PKG_VERSION) ; \
 		[ -e libgcc_eh.a ] || ln -sf libgcc.a libgcc_eh.a ; \
 		cp libgcc.a libgcc_initial.a; \
 	)

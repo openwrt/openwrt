@@ -114,7 +114,7 @@ ifndef DUMP
     TARGET_CFLAGS+= -fhonour-copts
     TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include
     TARGET_LDFLAGS+= -L$(TOOLCHAIN_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib
-    TARGET_PATH:=$(TOOLCHAIN_DIR)/usr/bin:$(TARGET_PATH)
+    TARGET_PATH:=$(TOOLCHAIN_DIR)/bin:$(TARGET_PATH)
   else
     ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
       TARGET_CROSS:=$(call qstrip,$(CONFIG_TOOLCHAIN_PREFIX))

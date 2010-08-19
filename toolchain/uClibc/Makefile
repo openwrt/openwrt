@@ -72,7 +72,7 @@ define Host/Prepare
 	$(call Host/Prepare/Default)
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(GEN_CONFIG) > $(HOST_BUILD_DIR)/.config
-	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(BUILD_DIR_TOOLCHAIN)/linux-dev/usr/include\",g' \
+	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(BUILD_DIR_TOOLCHAIN)/linux-dev/include\",g' \
 		-e 's,^.*UCLIBC_HAS_FPU.*,UCLIBC_HAS_FPU=$(if $(CONFIG_SOFT_FLOAT),n,y),g' \
 		-e 's,^.*UCLIBC_HAS_SOFT_FLOAT.*,UCLIBC_HAS_SOFT_FLOAT=$(if $(CONFIG_SOFT_FLOAT),y,n),g' \
 		-e 's,^.*UCLIBC_HAS_LFS.*,UCLIBC_HAS_LFS=$(if $(CONFIG_LARGEFILE),y,n),g' \
@@ -84,7 +84,7 @@ define Host/Prepare
 	$(MAKE) -C $(HOST_BUILD_DIR)/extra/config conf KBUILD_HAVE_NLS= HOSTCFLAGS="-DKBUILD_NO_NLS"
 	PATH='$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
 		PREFIX="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/" \
-		DEVEL_PREFIX=/usr/ \
+		DEVEL_PREFIX=/ \
 		RUNTIME_PREFIX="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/" \
 		HOSTCC="$(HOSTCC)" \
 		CC="$(TARGET_CC)" \
@@ -99,7 +99,7 @@ endef
 
 UCLIBC_MAKE = PATH='$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
 	$(TARGET_CONFIGURE_OPTS) \
-	DEVEL_PREFIX=/usr/ \
+	DEVEL_PREFIX=/ \
 	RUNTIME_PREFIX=/ \
 	HOSTCC="$(HOSTCC)" \
 	CPU_CFLAGS="$(TARGET_CFLAGS)" \
@@ -111,9 +111,8 @@ define Host/Compile
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(HOST_BUILD_DIR)/Rules.mak
 	$(UCLIBC_MAKE) PREFIX= all
 	$(UCLIBC_MAKE) PREFIX="$(TOOLCHAIN_DIR)/" install_runtime install_dev
-	ln -sf ../../lib/libc.so.0 $(TOOLCHAIN_DIR)/usr/lib/libc.so
-	$(CP) $(HOST_BUILD_DIR)/libc/libc_so.a $(TOOLCHAIN_DIR)/usr/lib/
-	$(CP) $(HOST_BUILD_DIR)/libpthread/*/libpthread_so.a $(TOOLCHAIN_DIR)/usr/lib/
+	$(CP) $(HOST_BUILD_DIR)/libc/libc_so.a $(TOOLCHAIN_DIR)/lib/
+	$(CP) $(HOST_BUILD_DIR)/libpthread/*/libpthread_so.a $(TOOLCHAIN_DIR)/lib/
 	( cd $(TOOLCHAIN_DIR) ; \
 		for d in lib usr/lib ; do \
 		  for f in libc.so libpthread.so libgcc_s.so ; do \
@@ -128,10 +127,9 @@ endef
 define Host/Install
 	$(UCLIBC_MAKE) PREFIX= utils
 	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/bin
-	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/usr/bin
 	$(INSTALL_BIN) \
 		$(HOST_BUILD_DIR)/utils/ldd \
-		$(TOOLCHAIN_DIR)/usr/bin/
+		$(TOOLCHAIN_DIR)/bin/
 	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/sbin
 	$(INSTALL_BIN) \
 		$(HOST_BUILD_DIR)/utils/ldconfig \

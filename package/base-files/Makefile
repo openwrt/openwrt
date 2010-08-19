@@ -402,7 +402,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/libstdcpp/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(TOOLCHAIN_DIR)/usr/lib/libstdc++.so.* $(1)/usr/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/libstdc++.so.* $(1)/usr/lib/
   endef
 
   use_libutil=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),libutil)
@@ -450,11 +450,11 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endef
 
   define Package/libc/install_lib
-	$(CP) $(filter-out %/libdl_pic.a %/libpthread_pic.a %/libresolv_pic.a,$(wildcard $(TOOLCHAIN_DIR)/usr/lib/lib*.a)) $(1)/lib/
-	$(if $(wildcard $(TOOLCHAIN_DIR)/usr/lib/libc_so.a),$(CP) $(TOOLCHAIN_DIR)/usr/lib/libc_so.a $(1)/lib/libc_pic.a)
-	$(if $(wildcard $(TOOLCHAIN_DIR)/usr/lib/gcc/*/*/libgcc.map), \
-		$(CP) $(TOOLCHAIN_DIR)/usr/lib/gcc/*/*/libgcc_pic.a $(1)/lib/libgcc_s_pic.a; \
-		$(CP) $(TOOLCHAIN_DIR)/usr/lib/gcc/*/*/libgcc.map $(1)/lib/libgcc_s_pic.map \
+	$(CP) $(filter-out %/libdl_pic.a %/libpthread_pic.a %/libresolv_pic.a,$(wildcard $(TOOLCHAIN_DIR)/lib/lib*.a)) $(1)/lib/
+	$(if $(wildcard $(TOOLCHAIN_DIR)/lib/libc_so.a),$(CP) $(TOOLCHAIN_DIR)/lib/libc_so.a $(1)/lib/libc_pic.a)
+	$(if $(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.map), \
+		$(CP) $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc_pic.a $(1)/lib/libgcc_s_pic.a; \
+		$(CP) $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.map $(1)/lib/libgcc_s_pic.map \
 	)
   endef
 
@@ -467,7 +467,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endef
 
   define Package/libpthread/install_lib
-	$(if $(wildcard $(TOOLCHAIN_DIR)/usr/lib/libpthread_so.a),$(CP) $(TOOLCHAIN_DIR)/usr/lib/libpthread_so.a $(1)/lib/libpthread_pic.a)
+	$(if $(wildcard $(TOOLCHAIN_DIR)/lib/libpthread_so.a),$(CP) $(TOOLCHAIN_DIR)/lib/libpthread_so.a $(1)/lib/libpthread_pic.a)
   endef
 
   define Package/librt/install
@@ -480,7 +480,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/ldd/install
 	$(INSTALL_DIR) $(1)/usr/bin/
-	$(CP) $(TOOLCHAIN_DIR)/usr/bin/ldd $(1)/usr/bin/
+	$(CP) $(TOOLCHAIN_DIR)/bin/ldd $(1)/usr/bin/
   endef
 
   define Package/ldconfig/install

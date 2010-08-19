@@ -57,10 +57,10 @@ GLIBC_CONFIGURE:= \
 	libc_cv_386_tls=yes \
 	libc_cv_slibdir="/lib" \
 	$(HOST_BUILD_DIR)/configure \
-		--prefix=/usr \
+		--prefix=/ \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(REAL_GNU_TARGET_NAME) \
-		--with-headers="$(TOOLCHAIN_DIR)/usr/include" \
+		--with-headers="$(TOOLCHAIN_DIR)/include" \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el), --enable-kernel="2.6.0") \
 		--disable-debug \
 		--disable-profile \
@@ -111,11 +111,11 @@ define Stage1/Install
 		cross-compiling=yes \
 		install_root="$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev" \
 		install-headers
-	[ -f $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/include/bits/stdio_lim.h ] || \
+	[ -f $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/include/bits/stdio_lim.h ] || \
 		$(CP) $(HOST_BUILD_DIR1)/bits/stdio_lim.h \
-			$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/include/bits/stdio_lim.h
-	[ -f $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/include/gnu/stubs.h ] || \
-		touch $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/usr/include/gnu/stubs.h
+			$(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/include/bits/stdio_lim.h
+	[ -f $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/include/gnu/stubs.h ] || \
+		touch $(BUILD_DIR_TOOLCHAIN)/$(LIBC)-dev/include/gnu/stubs.h
 endef
 
 define Stage2/Configure
