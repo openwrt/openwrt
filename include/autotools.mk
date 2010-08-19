@@ -38,7 +38,7 @@ autoconf_bool = $(patsubst %,$(if $($(1)),--enable,--disable)-%,$(2))
 define libtool_fixup_libdir
 	find $(1) -name '*.la' | $(XARGS) \
 		$(SED) "s,\(^libdir='\| \|-L\|^dependency_libs='\)/usr/lib,\1$(STAGING_DIR)/usr/lib,g" \
-		    -e "s,$(STAGING_DIR)/usr/lib/\(libstdc++\|libsupc++\).la,$(TOOLCHAIN_DIR)/usr/lib/\1.la,g"
+		    -e "s,$(STAGING_DIR)/usr/lib/\(libstdc++\|libsupc++\).la,$(TOOLCHAIN_DIR)/lib/\1.la,g"
 endef
 
 define remove_version_check
