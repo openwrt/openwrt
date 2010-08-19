@@ -36,6 +36,7 @@ TARGET_OPTIMIZATION:=$(call qstrip,$(CONFIG_TARGET_OPTIMIZATION))
 TARGET_SUFFIX=$(call qstrip,$(CONFIG_TARGET_SUFFIX))
 BUILD_SUFFIX:=$(call qstrip,$(CONFIG_BUILD_SUFFIX))
 SUBDIR:=$(patsubst $(TOPDIR)/%,%,${CURDIR})
+export SHELL:=/usr/bin/env bash
 
 OPTIMIZE_FOR_CPU=$(subst i386,i486,$(ARCH))
 

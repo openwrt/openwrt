@@ -7,7 +7,6 @@
 #
 
 RELEASE:=Kamikaze
-export SHELL:=/usr/bin/env bash
 PREP_MK= OPENWRT_BUILD= QUIET=0
 
 include $(TOPDIR)/include/verbose.mk
