@@ -77,12 +77,15 @@ ifeq ($(DUMP),)
 	touch $$@
 
     $$(IPKG_$(1)): $(STAGING_DIR)/etc/ipkg.conf $(STAMP_BUILT)
-	@rm -f $(PACKAGE_DIR)/$(1)_*
-	rm -rf $$(IDIR_$(1))
-	mkdir -p $$(IDIR_$(1))/CONTROL
-	echo "Package: $(1)" > $$(IDIR_$(1))/CONTROL/control
-	echo "Version: $(VERSION)" >> $$(IDIR_$(1))/CONTROL/control
+	@rm -rf $(PACKAGE_DIR)/$(1)_* $$(IDIR_$(1))
+	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL
+	$(call Package/$(1)/install,$$(IDIR_$(1)))
+	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' | $(XARGS) rm -rf
+	$(RSTRIP) $$(IDIR_$(1))
+	SIZE=`cd $$(IDIR_$(1)); du -bs --exclude=./CONTROL . 2>/dev/null | cut -f1`; \
 	( \
+		echo "Package: $(1)"; \
+		echo "Version: $(VERSION)"; \
 		DEPENDS='$(EXTRA_DEPENDS)'; \
 		for depend in $$(filter-out @%,$$(IDEPEND_$(1))); do \
 			DEPENDS=$$$${DEPENDS:+$$$$DEPENDS, }$$$${depend##+}; \
@@ -94,21 +97,15 @@ ifeq ($(DUMP),)
 		echo "Priority: $(PRIORITY)"; \
 		echo "Maintainer: $(MAINTAINER)"; \
 		echo "Architecture: $(PKGARCH)"; \
-		echo "Installed-Size: 1"; \
+		echo "Installed-Size: $$$$SIZE"; \
 		echo -n "Description: "; $(SH_FUNC) getvar $(call shvar,Package/$(1)/description) | sed -e 's,^[[:space:]]*, ,g'; \
- 	) >> $$(IDIR_$(1))/CONTROL/control
+ 	) > $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	(cd $$(IDIR_$(1))/CONTROL; \
 		$($(1)_COMMANDS) \
 	)
-	$(call Package/$(1)/install,$$(IDIR_$(1)))
-	mkdir -p $(PACKAGE_DIR)
-	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' | $(XARGS) rm -rf
-	$(RSTRIP) $$(IDIR_$(1))
-	SIZE=`cd $$(IDIR_$(1)); du -bs --exclude=./CONTROL . 2>/dev/null | cut -f1`; \
-	$(SED) "s|^\(Installed-Size:\).*|\1 $$$$SIZE|g" $$(IDIR_$(1))/CONTROL/control
 	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
-	@[ -f $$(IPKG_$(1)) ] || false 
+	@[ -f $$(IPKG_$(1)) ]
 
     $$(INFO_$(1)): $$(IPKG_$(1))
 	$(IPKG) install $$(IPKG_$(1))
