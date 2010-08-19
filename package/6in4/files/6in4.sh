@@ -28,8 +28,7 @@ setup_interface_6in4() {
 	local cfg="$2"
 	local link="6in4-$cfg"
 
-	local local4
-	config_get local4 "$cfg" ipaddr
+	local local4=$(uci_get network "$cfg" local4)
 
 	local remote4
 	config_get remote4 "$cfg" peeraddr
@@ -62,10 +61,9 @@ setup_interface_6in4() {
 		uci_set_state network "$cfg" ifname $link
 		uci_set_state network "$cfg" auto 0
 
-		ip tunnel add $link mode sit remote $remote4 local $local4 ttl 255
+		ip tunnel add $link mode sit remote $remote4 local $local4 ttl ${ttl:-64}
 		ip link set $link up
 		ip link set mtu ${mtu:-1280} dev $link
-		ip tunnel change $link ttl ${ttl:-64}
 		ip addr add $local6 dev $link
 
 		uci_set_state network "$cfg" ipaddr $local4
