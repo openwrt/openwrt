@@ -115,6 +115,7 @@ define KernelPackage/fs-ext4
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT4 filesystem support
   KCONFIG:= \
+	CONFIG_EXT4DEV_COMPAT=n \
 	CONFIG_EXT4_FS_XATTR=y \
 	CONFIG_EXT4_FS_POSIX_ACL=y \
 	CONFIG_EXT4_FS_SECURITY=y \
