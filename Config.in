@@ -247,6 +247,20 @@ menu "Global build settings"
 		help
 		  The number of jobs (-jX) to pass to packages submake.
 
+	config PKG_DEFAULT_PARALLEL
+		bool
+		prompt "Always parallelize the default package build rule (Dangerous)"
+		depends on PKG_BUILD_PARALLEL
+		default n
+		help
+		  Always set the default package build rules to parallel build.
+
+		  WARNING: This may break build or kill your cat, as it builds
+		  packages with multiple jobs that are probably not tested in
+		  a parallel build environment.
+
+		  Say N. Only say Y for testing.
+
 	comment "Stripping options"
 
 	choice
