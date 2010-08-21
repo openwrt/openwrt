@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qemu
 PKG_VERSION:=0.12.5
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=http://download.savannah.gnu.org/releases/qemu/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -27,9 +27,7 @@ define Host/Configure
 endef
 
 define Host/Compile
-	(cd $(HOST_BUILD_DIR); \
-		make qemu-img \
-	)
+	$(MAKE) -C $(HOST_BUILD_DIR) qemu-img
 endef
 
 define Host/Install
