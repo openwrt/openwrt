@@ -55,6 +55,26 @@ ifxmips_mask_and_ack_irq(unsigned int irq_nr)
 }
 EXPORT_SYMBOL(ifxmips_mask_and_ack_irq);
 
+static void
+ifxmips_ack_irq(unsigned int irq_nr)
+{
+	int i;
+	u32 *isr = IFXMIPS_ICU_IM0_ISR;
+
+	irq_nr -= INT_NUM_IRQ0;
+	for (i = 0; i <= 4; i++)
+	{
+		if (irq_nr < INT_NUM_IM_OFFSET)
+		{
+			ifxmips_w32((1 << irq_nr), isr);
+			return;
+		}
+		isr += IFXMIPS_ICU_OFFSET;
+		irq_nr -= INT_NUM_IM_OFFSET;
+	}
+}
+
+
 void
 ifxmips_enable_irq(unsigned int irq_nr)
 {
@@ -96,7 +116,7 @@ ifxmips_irq_type = {
 	.enable = ifxmips_enable_irq,
 	.disable = ifxmips_disable_irq,
 	.unmask = ifxmips_enable_irq,
-	.ack = ifxmips_end_irq,
+	.ack = ifxmips_ack_irq,
 	.mask = ifxmips_disable_irq,
 	.mask_ack = ifxmips_mask_and_ack_irq,
 	.end = ifxmips_end_irq,
