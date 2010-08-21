@@ -11,7 +11,7 @@ BOARD:=omap24xx
 BOARDNAME:=TI OMAP-24xx
 FEATURES:=squashfs jffs2
 
-LINUX_VERSION:=2.6.35
+LINUX_VERSION:=2.6.35.3
 
 define Target/Description
 	TI OMAP-24xx
