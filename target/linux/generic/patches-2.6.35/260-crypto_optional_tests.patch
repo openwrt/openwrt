@@ -1,8 +1,8 @@
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -96,6 +96,10 @@ config CRYPTO_MANAGER2
- 	select CRYPTO_BLKCIPHER2
- 	select CRYPTO_PCOMP
+@@ -104,6 +104,10 @@ config CRYPTO_MANAGER_TESTS
+ 	  Run cryptomanager's tests for the new crypto algorithms being
+ 	  registered.
  
 +config CRYPTO_MANAGER_NO_TESTS
 +	bool "Disable internal testsuite to save space"
@@ -13,7 +13,7 @@
  	depends on EXPERIMENTAL
 --- a/crypto/testmgr.c
 +++ b/crypto/testmgr.c
-@@ -47,6 +47,8 @@
+@@ -58,6 +58,8 @@ int alg_test(const char *driver, const c
  #define ENCRYPT 1
  #define DECRYPT 0
  
@@ -22,7 +22,7 @@
  struct tcrypt_result {
  	struct completion completion;
  	int err;
-@@ -2473,8 +2475,11 @@ static int alg_find_test(const char *alg
+@@ -2484,8 +2486,11 @@ static int alg_find_test(const char *alg
  	return -1;
  }
  
@@ -34,7 +34,7 @@
  	int i;
  	int j;
  	int rc;
-@@ -2529,5 +2534,8 @@ notest:
+@@ -2540,6 +2545,9 @@ notest:
  	return 0;
  non_fips_alg:
  	return -EINVAL;
@@ -42,7 +42,8 @@
 +	return 0;
 +#endif /* CONFIG_CRYPTO_MANAGER_NO_TESTS */
  }
- EXPORT_SYMBOL_GPL(alg_test);
+ 
+ #endif /* CONFIG_CRYPTO_MANAGER_TESTS */
 --- a/crypto/testmgr.h
 +++ b/crypto/testmgr.h
 @@ -20,6 +20,8 @@
