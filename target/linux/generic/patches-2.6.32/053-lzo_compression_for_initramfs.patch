@@ -1,6 +1,6 @@
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -120,6 +120,10 @@ config DECOMPRESS_LZMA
+@@ -126,6 +126,10 @@ config DECOMPRESS_LZMA
  config DECOMPRESS_LZMA_NEEDED
  	 boolean
  
@@ -13,7 +13,7 @@
  #
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -69,6 +69,7 @@ obj-$(CONFIG_LZO_DECOMPRESS) += lzo/
+@@ -81,6 +81,7 @@ obj-$(CONFIG_LZMA_DECOMPRESS) += lzma/
  lib-$(CONFIG_DECOMPRESS_GZIP) += decompress_inflate.o
  lib-$(CONFIG_DECOMPRESS_BZIP2) += decompress_bunzip2.o
  lib-$(CONFIG_DECOMPRESS_LZMA) += decompress_unlzma.o

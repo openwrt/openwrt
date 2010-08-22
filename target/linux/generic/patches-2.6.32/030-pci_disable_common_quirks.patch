@@ -33,7 +33,7 @@
  /* Enable 1k I/O space granularity on the Intel P64H2 */
  static void __devinit quirk_p64h2_1k_io(struct pci_dev *dev)
  {
-@@ -2522,6 +2525,7 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_I
+@@ -2526,6 +2529,7 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_I
  DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0x1518, quirk_i82576_sriov);
  
  #endif	/* CONFIG_PCI_IOV */

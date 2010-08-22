@@ -22,7 +22,7 @@
  struct tcrypt_result {
  	struct completion completion;
  	int err;
-@@ -2350,8 +2352,11 @@ static int alg_find_test(const char *alg
+@@ -2434,8 +2436,11 @@ static int alg_find_test(const char *alg
  	return -1;
  }
  
@@ -34,7 +34,7 @@
  	int i;
  	int j;
  	int rc;
-@@ -2406,5 +2411,8 @@ notest:
+@@ -2490,5 +2495,8 @@ notest:
  	return 0;
  non_fips_alg:
  	return -EINVAL;
