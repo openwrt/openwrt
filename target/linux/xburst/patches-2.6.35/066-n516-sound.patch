@@ -21,7 +21,7 @@ Subject: [PATCH] Add N516 sound SoC board driver
 +	tristate "SoC Audio support for Hanvon N516 eBook reader"
 +	depends on SND_JZ4740_SOC && JZ4740_N516
 +	select SND_JZ4740_SOC_I2S
-+    select SND_SOC_JZCODEC
++    select SND_SOC_JZ4740_CODEC
 +	help
 +	  Say Y if you want to enable support for SoC audio on the Hanvon N516.
 --- a/sound/soc/jz4740/Makefile
@@ -36,7 +36,7 @@ Subject: [PATCH] Add N516 sound SoC board driver
 +obj-$(CONFIG_SND_JZ4740_SOC_N516) += snd-soc-n516.o
 --- /dev/null
 +++ b/sound/soc/jz4740/n516.c
-@@ -0,0 +1,303 @@
+@@ -0,0 +1,288 @@
 +/*
 + * Copyright (C) 2009, Yauhen Kharuzhy <jekhor@gmail.com>
 + *  OpenInkpot project
@@ -63,7 +63,7 @@ Subject: [PATCH] Add N516 sound SoC board driver
 +#include <linux/gpio.h>
 +#include <linux/workqueue.h>
 +
-+#include "../codecs/jzcodec.h"
++#include "../codecs/jz4740.h"
 +#include "jz4740-pcm.h"
 +#include "jz4740-i2s.h"
 +
@@ -178,29 +178,15 @@ Subject: [PATCH] Add N516 sound SoC board driver
 +{
 +	int ret;
 +	struct snd_soc_dai *cpu_dai = codec->socdev->card->dai_link->cpu_dai;
-+	struct snd_soc_dai *codec_dai = codec->socdev->card->dai_link->codec_dai;
 +
 +	n516_codec = codec;
 +
 +	snd_soc_dapm_nc_pin(codec, "LIN");
 +	snd_soc_dapm_nc_pin(codec, "RIN");
 +
-+	ret = snd_soc_dai_set_fmt(codec_dai, N516_DAIFMT);
-+	if (ret < 0) {
-+		dev_err(codec->dev, "Failed to set codec dai format: %d\n", ret);
-+		return ret;
-+	}
-+
 +	ret = snd_soc_dai_set_fmt(cpu_dai, N516_DAIFMT);
 +	if (ret < 0) {
 +		dev_err(codec->dev, "Failed to set cpu dai format: %d\n", ret);
-+		return ret;
-+	}
-+
-+	ret = snd_soc_dai_set_sysclk(codec_dai, JZCODEC_SYSCLK, 111,
-+		SND_SOC_CLOCK_IN);
-+	if (ret < 0) {
-+		dev_err(codec->dev, "Failed to set codec dai sysclk: %d\n", ret);
 +		return ret;
 +	}
 +
@@ -210,7 +196,6 @@ Subject: [PATCH] Add N516 sound SoC board driver
 +		dev_err(codec->dev, "Failed to add controls: %d\n", ret);
 +		return ret;
 +	}
-+
 +
 +	ret = snd_soc_dapm_new_controls(codec, n516_widgets,
 +		ARRAY_SIZE(n516_widgets));
@@ -232,9 +217,9 @@ Subject: [PATCH] Add N516 sound SoC board driver
 +
 +static struct snd_soc_dai_link n516_dai = {
 +	.name = "jz-codec",
-+	.stream_name = "JZCODEC",
++	.stream_name = "jz4740",
 +	.cpu_dai = &jz4740_i2s_dai,
-+	.codec_dai = &jz_codec_dai,
++	.codec_dai = &jz4740_codec_dai,
 +	.init = n516_codec_init,
 +};
 +
@@ -247,7 +232,7 @@ Subject: [PATCH] Add N516 sound SoC board driver
 +
 +static struct snd_soc_device n516_snd_devdata = {
 +	.card = &n516_card,
-+	.codec_dev = &soc_codec_dev_jzcodec,
++	.codec_dev = &soc_codec_dev_jz4740_codec,
 +};
 +
 +static struct platform_device *n516_snd_device;
