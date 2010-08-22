@@ -8,7 +8,7 @@
  
  #include <net/checksum.h>
  #include <net/ip.h>
-@@ -471,8 +472,9 @@ static void _tw32_flush(struct tg3 *tp, 
+@@ -471,8 +472,9 @@ static void _tw32_flush(struct tg3 *tp,
  static inline void tw32_mailbox_flush(struct tg3 *tp, u32 off, u32 val)
  {
  	tp->write32_mbox(tp, off, val);
@@ -61,7 +61,7 @@
  {
  	u32 frame_val;
  	unsigned int loops;
-@@ -848,7 +855,7 @@ static int tg3_writephy(struct tg3 *tp, 
+@@ -848,7 +855,7 @@ static int tg3_writephy(struct tg3 *tp,
  		udelay(80);
  	}
  
@@ -70,7 +70,7 @@
  		      MI_COM_PHY_ADDR_MASK);
  	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
  		      MI_COM_REG_ADDR_MASK);
-@@ -881,6 +888,11 @@ static int tg3_writephy(struct tg3 *tp, 
+@@ -881,6 +888,11 @@ static int tg3_writephy(struct tg3 *tp,
  	return ret;
  }
  
@@ -147,7 +147,7 @@
  	tw32(GRC_MODE, tp->grc_mode);
  
  	if (tp->pci_chip_rev_id == CHIPREV_ID_5705_A0) {
-@@ -7135,9 +7173,12 @@ static int tg3_halt_cpu(struct tg3 *tp, 
+@@ -7135,9 +7173,12 @@ static int tg3_halt_cpu(struct tg3 *tp,
  		return -ENODEV;
  	}
  
@@ -175,7 +175,7 @@
  	fw_data = (void *)tp->fw->data;
  
  	/* Firmware blob starts with version numbers, followed by
-@@ -7256,6 +7302,11 @@ static int tg3_load_tso_firmware(struct 
+@@ -7256,6 +7302,11 @@ static int tg3_load_tso_firmware(struct
  	unsigned long cpu_base, cpu_scratch_base, cpu_scratch_size;
  	int err, i;
  
@@ -242,7 +242,7 @@
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -12020,6 +12087,9 @@ static int tg3_nvram_write_block(struct 
+@@ -12020,6 +12087,9 @@ static int tg3_nvram_write_block(struct
  {
  	int ret;
  

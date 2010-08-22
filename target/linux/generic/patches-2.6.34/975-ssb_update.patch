@@ -385,7 +385,7 @@
  	u32 pmucap;
  
  	if (!(cc->capabilities & SSB_CHIPCO_CAP_PMU))
-@@ -516,15 +516,12 @@ void ssb_pmu_init(struct ssb_chipcommon 
+@@ -516,15 +516,12 @@ void ssb_pmu_init(struct ssb_chipcommon
  	ssb_dprintk(KERN_DEBUG PFX "Found rev %u PMU (capabilities 0x%08X)\n",
  		    cc->pmu.rev, pmucap);
  
@@ -527,6 +527,35 @@
  /* Helper to extract some _offset, which is one of the SSB_SPROM_XXX defines. */
  #define SPEX16(_outvar, _offset, _mask, _shift)	\
  	out->_outvar = ((in[SPOFF(_offset)] & (_mask)) >> (_shift))
+@@ -623,6 +623,28 @@ static int ssb_pci_sprom_get(struct ssb_
+ 
+ 	if (!ssb_is_sprom_available(bus)) {
+ 		ssb_printk(KERN_ERR PFX "No SPROM available!\n");
++		return -ENODEV;
++	}
++	if (bus->chipco.dev) {	/* can be unavailible! */
++		/*
++		 * get SPROM offset: SSB_SPROM_BASE1 except for
++		 * chipcommon rev >= 31 or chip ID is 0x4312 and
++		 * chipcommon status & 3 == 2
++		 */
++		if (bus->chipco.dev->id.revision >= 31)
++			bus->sprom_offset = SSB_SPROM_BASE31;
++		else if (bus->chip_id == 0x4312 &&
++			 (bus->chipco.status & 0x03) == 2)
++			bus->sprom_offset = SSB_SPROM_BASE31;
++		else
++			bus->sprom_offset = SSB_SPROM_BASE1;
++	} else {
++		bus->sprom_offset = SSB_SPROM_BASE1;
++	}
++	ssb_dprintk(KERN_INFO PFX "SPROM offset is 0x%x\n", bus->sprom_offset);
++
++	if (!ssb_is_sprom_available(bus)) {
++		ssb_printk(KERN_ERR PFX "No SPROM available!\n");
+ 		return -ENODEV;
+ 	}
+ 	if (bus->chipco.dev) {	/* can be unavailible! */
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
 @@ -167,7 +167,7 @@ struct ssb_device {
@@ -538,7 +567,17 @@
  
  	struct ssb_bus *bus;
  	struct ssb_device_id id;
-@@ -470,14 +470,6 @@ extern u32 ssb_dma_translation(struct ss
+@@ -398,6 +398,9 @@ extern void ssb_bus_unregister(struct ss
+ /* Does the device have an SPROM? */
+ extern bool ssb_is_sprom_available(struct ssb_bus *bus);
+ 
++/* Does the device have an SPROM? */
++extern bool ssb_is_sprom_available(struct ssb_bus *bus);
++
+ /* Set a fallback SPROM.
+  * See kdoc at the function definition for complete documentation. */
+ extern int ssb_arch_set_fallback_sprom(const struct ssb_sprom *sprom);
+@@ -470,14 +473,6 @@ extern u32 ssb_dma_translation(struct ss
  #define SSB_DMA_TRANSLATION_MASK	0xC0000000
  #define SSB_DMA_TRANSLATION_SHIFT	30
  
@@ -553,7 +592,7 @@
  static inline void __cold __ssb_dma_not_implemented(struct ssb_device *dev)
  {
  #ifdef CONFIG_SSB_DEBUG
-@@ -486,155 +478,6 @@ static inline void __cold __ssb_dma_not_
+@@ -486,155 +481,6 @@ static inline void __cold __ssb_dma_not_
  #endif /* DEBUG */
  }
  
