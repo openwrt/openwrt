@@ -1,0 +1,22 @@
+--- a/Makefile
++++ b/Makefile
+@@ -3039,6 +3039,9 @@
+ sheevaplug_config: unconfig
+ 	@$(MKCONFIG) $(@:_config=) arm arm926ejs $(@:_config=) Marvell kirkwood
+ 
++dockstar_config: unconfig
++	@$(MKCONFIG) $(@:_config=) arm arm926ejs $(@:_config=) Marvell kirkwood
++
+ smdk2400_config	:	unconfig
+ 	@$(MKCONFIG) $(@:_config=) arm arm920t smdk2400 samsung s3c24x0
+ 
+--- a/include/asm-arm/mach-types.h
++++ b/include/asm-arm/mach-types.h
+@@ -2699,6 +2699,7 @@
+ #define MACH_TYPE_MX53_EVK             2716
+ #define MACH_TYPE_IGEP0030             2717
+ #define MACH_TYPE_AXELL_H40_H50_CTRL   2718
++#define MACH_TYPE_DOCKSTAR             2998
+ 
+ #ifdef CONFIG_ARCH_EBSA110
+ # ifdef machine_arch_type
