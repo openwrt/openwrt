@@ -11,7 +11,7 @@
  
 --- a/mm/swapfile.c
 +++ b/mm/swapfile.c
-@@ -574,6 +574,7 @@ static unsigned char swap_entry_free(str
+@@ -576,6 +576,7 @@ static unsigned char swap_entry_free(str
  
  	/* free if no reference */
  	if (!usage) {
@@ -19,7 +19,7 @@
  		if (offset < p->lowest_bit)
  			p->lowest_bit = offset;
  		if (offset > p->highest_bit)
-@@ -583,6 +584,8 @@ static unsigned char swap_entry_free(str
+@@ -585,6 +586,8 @@ static unsigned char swap_entry_free(str
  			swap_list.next = p->type;
  		nr_swap_pages++;
  		p->inuse_pages--;

@@ -12,7 +12,7 @@ BOARDNAME:=Atmel AT91
 FEATURES:=squashfs jffs2 targz
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -funit-at-a-time
 
-LINUX_VERSION:=2.6.34.1
+LINUX_VERSION:=2.6.34.5
 DEVICE_TYPE=
 
 include $(INCLUDE_DIR)/target.mk

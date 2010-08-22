@@ -14,8 +14,8 @@
  	}
  
  	/* Scan to find existance of the device */
--	if (nand_scan(&data->mtd, 1)) {
-+	if (nand_scan_ident(&data->mtd, 1)) {
+-	if (nand_scan(&data->mtd, pdata->chip.nr_chips)) {
++	if (nand_scan_ident(&data->mtd, pdata->chip.nr_chips)) {
 +		res = -ENXIO;
 +		goto out;
 +	}
