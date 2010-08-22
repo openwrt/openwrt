@@ -1,6 +1,6 @@
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -325,6 +325,8 @@ static struct cfi_fixup fixup_table[] =
+@@ -325,6 +325,8 @@ static struct cfi_fixup fixup_table[] = 
  static void cfi_fixup_major_minor(struct cfi_private *cfi,
  				  struct cfi_pri_amdstd *extp)
  {
@@ -9,7 +9,7 @@
  	if (cfi->mfr == CFI_MFR_SAMSUNG && cfi->id == 0x257e &&
  	    extp->MajorVersion == '0')
  		extp->MajorVersion = '1';
-@@ -355,6 +357,9 @@ struct mtd_info *cfi_cmdset_0002(struct
+@@ -355,6 +357,9 @@ struct mtd_info *cfi_cmdset_0002(struct 
  	mtd->name    = map->name;
  	mtd->writesize = 1;
  
@@ -19,7 +19,7 @@
  	if (cfi->cfi_mode==CFI_MODE_CFI){
  		unsigned char bootloc;
  		/*
-@@ -373,16 +378,24 @@ struct mtd_info *cfi_cmdset_0002(struct
+@@ -373,16 +378,24 @@ struct mtd_info *cfi_cmdset_0002(struct 
  
  		cfi_fixup_major_minor(cfi, extp);
  

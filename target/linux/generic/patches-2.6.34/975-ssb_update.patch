@@ -364,17 +364,7 @@
  	if (!(cc->capabilities & SSB_CHIPCO_CAP_PCTL))
  		return;
  
-@@ -233,6 +257,9 @@ void ssb_chipcommon_init(struct ssb_chip
- {
- 	if (!cc->dev)
- 		return; /* We don't have a ChipCommon */
-+	if (cc->dev->id.revision >= 11)
-+		cc->status = chipco_read32(cc, SSB_CHIPCO_CHIPSTAT);
-+	ssb_dprintk(KERN_INFO PFX "chipcommon status is 0x%x\n", cc->status);
- 	ssb_pmu_init(cc);
- 	chipco_powercontrol_init(cc);
- 	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
-@@ -370,6 +397,7 @@ u32 ssb_chipco_gpio_control(struct ssb_c
+@@ -373,6 +397,7 @@ u32 ssb_chipco_gpio_control(struct ssb_c
  {
  	return chipco_write32_masked(cc, SSB_CHIPCO_GPIOCTL, mask, value);
  }
@@ -395,7 +385,7 @@
  	u32 pmucap;
  
  	if (!(cc->capabilities & SSB_CHIPCO_CAP_PMU))
-@@ -516,15 +516,12 @@ void ssb_pmu_init(struct ssb_chipcommon
+@@ -516,15 +516,12 @@ void ssb_pmu_init(struct ssb_chipcommon 
  	ssb_dprintk(KERN_DEBUG PFX "Found rev %u PMU (capabilities 0x%08X)\n",
  		    cc->pmu.rev, pmucap);
  
@@ -419,7 +409,7 @@
  }
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -486,11 +486,12 @@ static int ssb_devices_register(struct s
+@@ -486,6 +486,7 @@ static int ssb_devices_register(struct s
  #ifdef CONFIG_SSB_PCIHOST
  			sdev->irq = bus->host_pci->irq;
  			dev->parent = &bus->host_pci->dev;
@@ -427,12 +417,6 @@
  #endif
  			break;
  		case SSB_BUSTYPE_PCMCIA:
- #ifdef CONFIG_SSB_PCMCIAHOST
--			sdev->irq = bus->host_pcmcia->irq.AssignedIRQ;
-+			sdev->irq = bus->host_pcmcia->irq;
- 			dev->parent = &bus->host_pcmcia->dev;
- #endif
- 			break;
 @@ -501,6 +502,7 @@ static int ssb_devices_register(struct s
  			break;
  		case SSB_BUSTYPE_SSB:
@@ -538,79 +522,11 @@
  }
  
  /* Get the word-offset for a SSB_SPROM_XXX define. */
--#define SPOFF(offset)	(((offset) - SSB_SPROM_BASE) / sizeof(u16))
+-#define SPOFF(offset)	(((offset) - SSB_SPROM_BASE1) / sizeof(u16))
 +#define SPOFF(offset)	((offset) / sizeof(u16))
  /* Helper to extract some _offset, which is one of the SSB_SPROM_XXX defines. */
  #define SPEX16(_outvar, _offset, _mask, _shift)	\
  	out->_outvar = ((in[SPOFF(_offset)] & (_mask)) >> (_shift))
-@@ -254,7 +254,7 @@ static int sprom_do_read(struct ssb_bus
- 	int i;
- 
- 	for (i = 0; i < bus->sprom_size; i++)
--		sprom[i] = ioread16(bus->mmio + SSB_SPROM_BASE + (i * 2));
-+		sprom[i] = ioread16(bus->mmio + bus->sprom_offset + (i * 2));
- 
- 	return 0;
- }
-@@ -285,7 +285,7 @@ static int sprom_do_write(struct ssb_bus
- 			ssb_printk("75%%");
- 		else if (i % 2)
- 			ssb_printk(".");
--		writew(sprom[i], bus->mmio + SSB_SPROM_BASE + (i * 2));
-+		writew(sprom[i], bus->mmio + bus->sprom_offset + (i * 2));
- 		mmiowb();
- 		msleep(20);
- 	}
-@@ -621,6 +621,28 @@ static int ssb_pci_sprom_get(struct ssb_
- 	int err = -ENOMEM;
- 	u16 *buf;
- 
-+	if (!ssb_is_sprom_available(bus)) {
-+		ssb_printk(KERN_ERR PFX "No SPROM available!\n");
-+		return -ENODEV;
-+	}
-+	if (bus->chipco.dev) {	/* can be unavailible! */
-+		/*
-+		 * get SPROM offset: SSB_SPROM_BASE1 except for
-+		 * chipcommon rev >= 31 or chip ID is 0x4312 and
-+		 * chipcommon status & 3 == 2
-+		 */
-+		if (bus->chipco.dev->id.revision >= 31)
-+			bus->sprom_offset = SSB_SPROM_BASE31;
-+		else if (bus->chip_id == 0x4312 &&
-+			 (bus->chipco.status & 0x03) == 2)
-+			bus->sprom_offset = SSB_SPROM_BASE31;
-+		else
-+			bus->sprom_offset = SSB_SPROM_BASE1;
-+	} else {
-+		bus->sprom_offset = SSB_SPROM_BASE1;
-+	}
-+	ssb_dprintk(KERN_INFO PFX "SPROM offset is 0x%x\n", bus->sprom_offset);
-+
- 	buf = kcalloc(SSB_SPROMSIZE_WORDS_R123, sizeof(u16), GFP_KERNEL);
- 	if (!buf)
- 		goto out;
---- a/drivers/ssb/sprom.c
-+++ b/drivers/ssb/sprom.c
-@@ -176,3 +176,18 @@ const struct ssb_sprom *ssb_get_fallback
- {
- 	return fallback_sprom;
- }
-+
-+/* http://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */
-+bool ssb_is_sprom_available(struct ssb_bus *bus)
-+{
-+	/* status register only exists on chipcomon rev >= 11 and we need check
-+	   for >= 31 only */
-+	/* this routine differs from specs as we do not access SPROM directly
-+	   on PCMCIA */
-+	if (bus->bustype == SSB_BUSTYPE_PCI &&
-+	    bus->chipco.dev &&	/* can be unavailible! */
-+	    bus->chipco.dev->id.revision >= 31)
-+		return bus->chipco.capabilities & SSB_CHIPCO_CAP_SPROM;
-+
-+	return true;
-+}
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
 @@ -167,7 +167,7 @@ struct ssb_device {
@@ -622,25 +538,7 @@
  
  	struct ssb_bus *bus;
  	struct ssb_device_id id;
-@@ -305,6 +305,7 @@ struct ssb_bus {
- 	/* ID information about the Chip. */
- 	u16 chip_id;
- 	u16 chip_rev;
-+	u16 sprom_offset;
- 	u16 sprom_size;		/* number of words in sprom */
- 	u8 chip_package;
- 
-@@ -394,6 +395,9 @@ extern int ssb_bus_sdiobus_register(stru
- 
- extern void ssb_bus_unregister(struct ssb_bus *bus);
- 
-+/* Does the device have an SPROM? */
-+extern bool ssb_is_sprom_available(struct ssb_bus *bus);
-+
- /* Set a fallback SPROM.
-  * See kdoc at the function definition for complete documentation. */
- extern int ssb_arch_set_fallback_sprom(const struct ssb_sprom *sprom);
-@@ -466,14 +470,6 @@ extern u32 ssb_dma_translation(struct ss
+@@ -470,14 +470,6 @@ extern u32 ssb_dma_translation(struct ss
  #define SSB_DMA_TRANSLATION_MASK	0xC0000000
  #define SSB_DMA_TRANSLATION_SHIFT	30
  
@@ -655,7 +553,7 @@
  static inline void __cold __ssb_dma_not_implemented(struct ssb_device *dev)
  {
  #ifdef CONFIG_SSB_DEBUG
-@@ -482,155 +478,6 @@ static inline void __cold __ssb_dma_not_
+@@ -486,155 +478,6 @@ static inline void __cold __ssb_dma_not_
  #endif /* DEBUG */
  }
  
@@ -811,61 +709,13 @@
  #ifdef CONFIG_SSB_PCIHOST
  /* PCI-host wrapper driver */
  extern int ssb_pcihost_register(struct pci_driver *driver);
---- a/include/linux/ssb/ssb_driver_chipcommon.h
-+++ b/include/linux/ssb/ssb_driver_chipcommon.h
-@@ -53,6 +53,7 @@
- #define  SSB_CHIPCO_CAP_64BIT		0x08000000	/* 64-bit Backplane */
- #define  SSB_CHIPCO_CAP_PMU		0x10000000	/* PMU available (rev >= 20) */
- #define  SSB_CHIPCO_CAP_ECI		0x20000000	/* ECI available (rev >= 20) */
-+#define  SSB_CHIPCO_CAP_SPROM		0x40000000	/* SPROM present */
- #define SSB_CHIPCO_CORECTL		0x0008
- #define  SSB_CHIPCO_CORECTL_UARTCLK0	0x00000001	/* Drive UART with internal clock */
- #define	 SSB_CHIPCO_CORECTL_SE		0x00000002	/* sync clk out enable (corerev >= 3) */
-@@ -385,6 +386,7 @@
- 
- 
- /** Chip specific Chip-Status register contents. */
-+#define SSB_CHIPCO_CHST_4322_SPROM_EXISTS	0x00000040 /* SPROM present */
- #define SSB_CHIPCO_CHST_4325_SPROM_OTP_SEL	0x00000003
- #define SSB_CHIPCO_CHST_4325_DEFCIS_SEL		0 /* OTP is powered up, use def. CIS, no SPROM */
- #define SSB_CHIPCO_CHST_4325_SPROM_SEL		1 /* OTP is powered up, SPROM is present */
-@@ -398,6 +400,18 @@
- #define SSB_CHIPCO_CHST_4325_RCAL_VALUE_SHIFT	4
- #define SSB_CHIPCO_CHST_4325_PMUTOP_2B 		0x00000200 /* 1 for 2b, 0 for to 2a */
- 
-+/** Macros to determine SPROM presence based on Chip-Status register. */
-+#define SSB_CHIPCO_CHST_4312_SPROM_PRESENT(status) \
-+	((status & SSB_CHIPCO_CHST_4325_SPROM_OTP_SEL) != \
-+		SSB_CHIPCO_CHST_4325_OTP_SEL)
-+#define SSB_CHIPCO_CHST_4322_SPROM_PRESENT(status) \
-+	(status & SSB_CHIPCO_CHST_4322_SPROM_EXISTS)
-+#define SSB_CHIPCO_CHST_4325_SPROM_PRESENT(status) \
-+	(((status & SSB_CHIPCO_CHST_4325_SPROM_OTP_SEL) != \
-+		SSB_CHIPCO_CHST_4325_DEFCIS_SEL) && \
-+	 ((status & SSB_CHIPCO_CHST_4325_SPROM_OTP_SEL) != \
-+		SSB_CHIPCO_CHST_4325_OTP_SEL))
-+
- 
- 
- /** Clockcontrol masks and values **/
-@@ -564,6 +578,7 @@ struct ssb_chipcommon_pmu {
- struct ssb_chipcommon {
- 	struct ssb_device *dev;
- 	u32 capabilities;
-+	u32 status;
- 	/* Fast Powerup Delay constant */
- 	u16 fast_pwrup_delay;
- 	struct ssb_chipcommon_pmu pmu;
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
-@@ -170,26 +170,27 @@
- #define SSB_SPROMSIZE_WORDS_R4		220
- #define SSB_SPROMSIZE_BYTES_R123	(SSB_SPROMSIZE_WORDS_R123 * sizeof(u16))
+@@ -172,25 +172,25 @@
  #define SSB_SPROMSIZE_BYTES_R4		(SSB_SPROMSIZE_WORDS_R4 * sizeof(u16))
--#define SSB_SPROM_BASE			0x1000
+ #define SSB_SPROM_BASE1			0x1000
+ #define SSB_SPROM_BASE31		0x0800
 -#define SSB_SPROM_REVISION		0x107E
-+#define SSB_SPROM_BASE1			0x1000
-+#define SSB_SPROM_BASE31		0x0800
 +#define SSB_SPROM_REVISION		0x007E
  #define  SSB_SPROM_REVISION_REV		0x00FF	/* SPROM Revision number */
  #define  SSB_SPROM_REVISION_CRC		0xFF00	/* SPROM CRC8 value */
@@ -896,7 +746,7 @@
  #define  SSB_SPROM1_BINF_BREV		0x00FF	/* Board Revision */
  #define  SSB_SPROM1_BINF_CCODE		0x0F00	/* Country Code */
  #define  SSB_SPROM1_BINF_CCODE_SHIFT	8
-@@ -197,63 +198,63 @@
+@@ -198,63 +198,63 @@
  #define  SSB_SPROM1_BINF_ANTBG_SHIFT	12
  #define  SSB_SPROM1_BINF_ANTA		0xC000	/* Available A-PHY antennas */
  #define  SSB_SPROM1_BINF_ANTA_SHIFT	14
@@ -988,7 +838,7 @@
  #define  SSB_SPROM3_CCKPO_1M		0x000F	/* 1M Rate PO */
  #define  SSB_SPROM3_CCKPO_2M		0x00F0	/* 2M Rate PO */
  #define  SSB_SPROM3_CCKPO_2M_SHIFT	4
-@@ -264,100 +265,100 @@
+@@ -265,100 +265,100 @@
  #define  SSB_SPROM3_OFDMGPO		0x107A	/* G-PHY OFDM Power Offset (4 bytes, BigEndian) */
  
  /* SPROM Revision 4 */
@@ -1146,7 +996,7 @@
  #define  SSB_SPROM8_RSSISMF2G		0x000F
  #define  SSB_SPROM8_RSSISMC2G		0x00F0
  #define  SSB_SPROM8_RSSISMC2G_SHIFT	4
-@@ -365,7 +366,7 @@
+@@ -366,7 +366,7 @@
  #define  SSB_SPROM8_RSSISAV2G_SHIFT	8
  #define  SSB_SPROM8_BXA2G		0x1800
  #define  SSB_SPROM8_BXA2G_SHIFT		11
@@ -1155,7 +1005,7 @@
  #define  SSB_SPROM8_RSSISMF5G		0x000F
  #define  SSB_SPROM8_RSSISMC5G		0x00F0
  #define  SSB_SPROM8_RSSISMC5G_SHIFT	4
-@@ -373,47 +374,47 @@
+@@ -374,47 +374,47 @@
  #define  SSB_SPROM8_RSSISAV5G_SHIFT	8
  #define  SSB_SPROM8_BXA5G		0x1800
  #define  SSB_SPROM8_BXA5G_SHIFT		11
