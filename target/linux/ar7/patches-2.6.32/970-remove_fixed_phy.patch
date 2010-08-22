@@ -47,7 +47,7 @@
  	res = platform_device_register(ar7_is_titan() ? &cpmac_low_titan :
 --- a/drivers/net/cpmac.c
 +++ b/drivers/net/cpmac.c
-@@ -1117,21 +1117,17 @@ static int __devinit cpmac_probe(struct 
+@@ -1117,21 +1117,17 @@ static int __devinit cpmac_probe(struct
  
  	pdata = pdev->dev.platform_data;
  
@@ -78,7 +78,7 @@
  		dev_err(&pdev->dev, "no PHY present, falling back to switch mode\n");
  		strncpy(mdio_bus_id, "0", MII_BUS_ID_SIZE); /* fixed phys bus */
  		phy_id = pdev->id;
-@@ -1268,7 +1264,7 @@ int __devinit cpmac_init(void)
+@@ -1269,7 +1265,7 @@ int __devinit cpmac_init(void)
  	}
  
  	cpmac_mii->phy_mask = ar7_is_titan()? ~(mask | 0x80000000 | 0x40000000):
