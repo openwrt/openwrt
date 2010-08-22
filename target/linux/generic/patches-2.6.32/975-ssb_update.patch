@@ -322,31 +322,6 @@
  	}
  
  	return err;
---- a/drivers/ssb/pci.c
-+++ b/drivers/ssb/pci.c
-@@ -17,6 +17,7 @@
- 
- #include <linux/ssb/ssb.h>
- #include <linux/ssb/ssb_regs.h>
-+#include <linux/slab.h>
- #include <linux/pci.h>
- #include <linux/delay.h>
- 
-@@ -642,6 +643,14 @@ static int ssb_pci_sprom_get(struct ssb_
- 	}
- 	ssb_dprintk(KERN_INFO PFX "SPROM offset is 0x%x\n", bus->sprom_offset);
- 
-+	if (!ssb_is_sprom_available(bus)) {
-+		ssb_printk(KERN_ERR PFX "No SPROM available!\n");
-+		return -ENODEV;
-+	}
-+
-+	bus->sprom_offset = (bus->chipco.dev->id.revision < 31) ?
-+		SSB_SPROM_BASE1 : SSB_SPROM_BASE31;
-+
- 	buf = kcalloc(SSB_SPROMSIZE_WORDS_R123, sizeof(u16), GFP_KERNEL);
- 	if (!buf)
- 		goto out;
 --- a/drivers/ssb/pcihost_wrapper.c
 +++ b/drivers/ssb/pcihost_wrapper.c
 @@ -12,6 +12,7 @@
@@ -664,26 +639,6 @@
  	if (err)
  		ssb_printk(KERN_ERR PFX "SPROM write: Could not thaw all devices\n");
  out_unlock:
-@@ -192,5 +189,19 @@ bool ssb_is_sprom_available(struct ssb_b
- 	    bus->chipco.dev->id.revision >= 31)
- 		return bus->chipco.capabilities & SSB_CHIPCO_CAP_SPROM;
- 
-+	return true;
-+}
-+
-+/* http://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */
-+bool ssb_is_sprom_available(struct ssb_bus *bus)
-+{
-+	/* status register only exists on chipcomon rev >= 11 and we need check
-+	   for >= 31 only */
-+	/* this routine differs from specs as we do not access SPROM directly
-+	   on PCMCIA */
-+	if (bus->bustype == SSB_BUSTYPE_PCI &&
-+	    bus->chipco.dev->id.revision >= 31)
-+		return bus->chipco.capabilities & SSB_CHIPCO_CAP_SPROM;
-+
- 	return true;
- }
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
 @@ -176,19 +176,27 @@ extern const struct ssb_sprom *ssb_get_f
@@ -762,16 +717,6 @@
  
  	/* See enum ssb_quirks */
  	unsigned int quirks;
-@@ -393,6 +397,9 @@ extern void ssb_bus_unregister(struct ss
- 
- /* Does the device have an SPROM? */
- extern bool ssb_is_sprom_available(struct ssb_bus *bus);
-+
-+/* Does the device have an SPROM? */
-+extern bool ssb_is_sprom_available(struct ssb_bus *bus);
- 
- /* Set a fallback SPROM.
-  * See kdoc at the function definition for complete documentation. */
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
 @@ -198,63 +198,63 @@

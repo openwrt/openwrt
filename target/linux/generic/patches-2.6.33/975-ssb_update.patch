@@ -115,26 +115,6 @@
  	}
  
  	return err;
---- a/drivers/ssb/sprom.c
-+++ b/drivers/ssb/sprom.c
-@@ -190,3 +190,17 @@ bool ssb_is_sprom_available(struct ssb_b
- 
- 	return true;
- }
-+
-+/* http://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */
-+bool ssb_is_sprom_available(struct ssb_bus *bus)
-+{
-+	/* status register only exists on chipcomon rev >= 11 and we need check
-+	   for >= 31 only */
-+	/* this routine differs from specs as we do not access SPROM directly
-+	   on PCMCIA */
-+	if (bus->bustype == SSB_BUSTYPE_PCI &&
-+	    bus->chipco.dev->id.revision >= 31)
-+		return bus->chipco.capabilities & SSB_CHIPCO_CAP_SPROM;
-+
-+	return true;
-+}
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
 @@ -196,7 +196,7 @@ extern int ssb_devices_thaw(struct ssb_f
@@ -154,26 +134,6 @@
 +#endif /* CONFIG_SSB_B43_PCI_BRIDGE */
  
  #endif /* LINUX_SSB_PRIVATE_H_ */
---- a/include/linux/ssb/ssb.h
-+++ b/include/linux/ssb/ssb.h
-@@ -305,6 +305,7 @@ struct ssb_bus {
- 	/* ID information about the Chip. */
- 	u16 chip_id;
- 	u16 chip_rev;
-+	u16 sprom_offset;
- 	u16 sprom_size;		/* number of words in sprom */
- 	u16 sprom_offset;
- 	u8 chip_package;
-@@ -395,6 +396,9 @@ extern int ssb_bus_sdiobus_register(stru
- 
- extern void ssb_bus_unregister(struct ssb_bus *bus);
- 
-+/* Does the device have an SPROM? */
-+extern bool ssb_is_sprom_available(struct ssb_bus *bus);
-+
- /* Set a fallback SPROM.
-  * See kdoc at the function definition for complete documentation. */
- extern int ssb_arch_set_fallback_sprom(const struct ssb_sprom *sprom);
 --- a/include/linux/ssb/ssb_driver_chipcommon.h
 +++ b/include/linux/ssb/ssb_driver_chipcommon.h
 @@ -54,6 +54,7 @@
