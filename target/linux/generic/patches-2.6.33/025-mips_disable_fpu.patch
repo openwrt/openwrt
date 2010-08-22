@@ -70,7 +70,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  /* Control registers */
  
  #define FPCREG_RID	0	/* $0  = revision id */
-@@ -1277,7 +1277,6 @@ int fpu_emulator_cop1Handler(struct pt_r
+@@ -1284,7 +1284,6 @@ int fpu_emulator_cop1Handler(struct pt_r
  
  	return sig;
  }
@@ -78,7 +78,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  #ifdef CONFIG_DEBUG_FS
  
  static int fpuemu_stat_get(void *data, u64 *val)
-@@ -1326,4 +1325,11 @@ static int __init debugfs_fpuemu(void)
+@@ -1333,4 +1332,11 @@ static int __init debugfs_fpuemu(void)
  	return 0;
  }
  __initcall(debugfs_fpuemu);

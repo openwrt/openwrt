@@ -76,7 +76,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -6171,6 +6171,7 @@ int can_nice(const struct task_struct *p
+@@ -6174,6 +6174,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= p->signal->rlim[RLIMIT_NICE].rlim_cur ||
  		capable(CAP_SYS_NICE));
  }
@@ -132,7 +132,7 @@
  #ifndef CONFIG_MMU
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -1104,6 +1104,7 @@ struct sighand_struct *lock_task_sighand
+@@ -1106,6 +1106,7 @@ struct sighand_struct *lock_task_sighand
  
  	return sighand;
  }
