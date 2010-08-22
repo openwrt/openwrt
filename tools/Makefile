@@ -48,6 +48,7 @@ $(curdir)/mpc/compile := $(curdir)/gmp/install
 $(curdir)/mpfr/compile := $(curdir)/gmp/install
 $(curdir)/mtd-utils/compile := $(curdir)/libuuid/install
 $(curdir)/mkimage/compile := $(curdir)/sed/install
+$(curdir)/qemu/compile := $(curdir)/libuuid/install
 $(curdir)/upslug2/compile := $(curdir)/automake/install
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
