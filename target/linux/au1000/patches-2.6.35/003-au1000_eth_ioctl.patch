@@ -1,7 +1,7 @@
 --- a/drivers/net/au1000_eth.c
 +++ b/drivers/net/au1000_eth.c
-@@ -994,10 +994,14 @@ static void au1000_multicast_list(struct
- 	writel(reg, &aup->mac->control);
+@@ -968,10 +968,14 @@ static void au1000_multicast_list(struct
+ 	}
  }
  
 +#define AU1000_KNOWN_PHY_IOCTLS        (SIOCGMIIPHY & 0xfff0)
