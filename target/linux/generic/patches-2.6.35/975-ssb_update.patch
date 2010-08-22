@@ -6,8 +6,8 @@
  include/linux/ssb/ssb.h             |  159 ------------------------------------
  5 files changed, 104 insertions(+), 318 deletions(-)
 
---- linux-2.6.35.3.orig/drivers/net/b44.c
-+++ linux-2.6.35.3/drivers/net/b44.c
+--- a/drivers/net/b44.c
++++ b/drivers/net/b44.c
 @@ -135,7 +135,6 @@ static void b44_init_rings(struct b44 *)
  
  static void b44_init_hw(struct b44 *, int);
@@ -323,8 +323,8 @@
  	dma_desc_sync_size = max_t(unsigned int, dma_desc_align_size, sizeof(struct dma_desc));
  
  	err = b44_pci_init();
---- linux-2.6.35.3.orig/drivers/ssb/driver_chipcommon.c
-+++ linux-2.6.35.3/drivers/ssb/driver_chipcommon.c
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
 @@ -209,6 +209,24 @@ static void chipco_powercontrol_init(str
  	}
  }
@@ -363,8 +363,8 @@
  	if (!(cc->capabilities & SSB_CHIPCO_CAP_PCTL))
  		return;
  
---- linux-2.6.35.3.orig/drivers/ssb/driver_chipcommon_pmu.c
-+++ linux-2.6.35.3/drivers/ssb/driver_chipcommon_pmu.c
+--- a/drivers/ssb/driver_chipcommon_pmu.c
++++ b/drivers/ssb/driver_chipcommon_pmu.c
 @@ -502,9 +502,9 @@ static void ssb_pmu_resources_init(struc
  		chipco_write32(cc, SSB_CHIPCO_PMU_MAXRES_MSK, max_msk);
  }
@@ -398,8 +398,8 @@
  	ssb_pmu_pll_init(cc);
  	ssb_pmu_resources_init(cc);
  }
---- linux-2.6.35.3.orig/drivers/ssb/main.c
-+++ linux-2.6.35.3/drivers/ssb/main.c
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
 @@ -486,6 +486,7 @@ static int ssb_devices_register(struct s
  #ifdef CONFIG_SSB_PCIHOST
  			sdev->irq = bus->host_pci->irq;
@@ -497,8 +497,8 @@
  int ssb_bus_may_powerdown(struct ssb_bus *bus)
  {
  	struct ssb_chipcommon *cc;
---- linux-2.6.35.3.orig/include/linux/ssb/ssb.h
-+++ linux-2.6.35.3/include/linux/ssb/ssb.h
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
 @@ -167,7 +167,7 @@ struct ssb_device {
  	 * is an optimization. */
  	const struct ssb_bus_ops *ops;

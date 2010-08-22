@@ -3,8 +3,8 @@
  include/linux/mtd/nand.h     |    1 +
  2 files changed, 13 insertions(+), 1 deletion(-)
 
---- linux-2.6.35.3.orig/include/linux/mtd/nand.h
-+++ linux-2.6.35.3/include/linux/mtd/nand.h
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
 @@ -512,6 +512,7 @@ struct platform_nand_chip {
  	int			chip_delay;
  	unsigned int		options;
@@ -13,8 +13,8 @@
  	void			(*set_parts)(uint64_t size,
  					struct platform_nand_chip *chip);
  	void			*priv;
---- linux-2.6.35.3.orig/drivers/mtd/nand/plat_nand.c
-+++ linux-2.6.35.3/drivers/mtd/nand/plat_nand.c
+--- a/drivers/mtd/nand/plat_nand.c
++++ b/drivers/mtd/nand/plat_nand.c
 @@ -91,7 +91,18 @@ static int __devinit plat_nand_probe(str
  	}
  
