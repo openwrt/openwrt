@@ -68,7 +68,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -6113,6 +6113,7 @@ int can_nice(const struct task_struct *p
+@@ -6165,6 +6165,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= p->signal->rlim[RLIMIT_NICE].rlim_cur ||
  		capable(CAP_SYS_NICE));
  }
@@ -86,7 +86,7 @@
  
  /**
   * zap_vma_ptes - remove ptes mapping the vma
-@@ -2486,6 +2487,7 @@ int vmtruncate_range(struct inode *inode
+@@ -2496,6 +2497,7 @@ int vmtruncate_range(struct inode *inode
  
  	return 0;
  }
