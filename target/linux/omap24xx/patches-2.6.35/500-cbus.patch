@@ -7,20 +7,20 @@
  drivers/cbus/cbus.h            |   36 +
  drivers/cbus/retu-headset.c    |  356 ++++++++++++++++++
  drivers/cbus/retu-pwrbutton.c  |  118 ++++++
- drivers/cbus/retu-rtc.c        |  477 +++++++++++++++++++++++++
+ drivers/cbus/retu-rtc.c        |  477 ++++++++++++++++++++++++
  drivers/cbus/retu-user.c       |  425 ++++++++++++++++++++++
  drivers/cbus/retu-wdt.c        |  388 ++++++++++++++++++++
  drivers/cbus/retu.c            |  468 ++++++++++++++++++++++++
  drivers/cbus/retu.h            |   77 ++++
- drivers/cbus/tahvo-usb.c       |  777 +++++++++++++++++++++++++++++++++++++++++
+ drivers/cbus/tahvo-usb.c       |  788 +++++++++++++++++++++++++++++++++++++++++
  drivers/cbus/tahvo-user.c      |  407 +++++++++++++++++++++
  drivers/cbus/tahvo.c           |  443 +++++++++++++++++++++++
  drivers/cbus/tahvo.h           |   61 +++
  drivers/cbus/user_retu_tahvo.h |   75 +++
- 18 files changed, 4525 insertions(+), 1 deletion(-)
+ 18 files changed, 4536 insertions(+), 1 deletion(-)
 
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/cbus.c
++++ linux-2.6.35.3/drivers/cbus/cbus.c
 @@ -0,0 +1,309 @@
 +/*
 + * drivers/cbus/cbus.c
@@ -332,7 +332,7 @@
 +MODULE_AUTHOR("Mikko Ylinen");
 +
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/cbus.h
++++ linux-2.6.35.3/drivers/cbus/cbus.h
 @@ -0,0 +1,36 @@
 +/*
 + * drivers/cbus/cbus.h
@@ -371,7 +371,7 @@
 +
 +#endif /* __DRIVERS_CBUS_CBUS_H */
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/Kconfig
++++ linux-2.6.35.3/drivers/cbus/Kconfig
 @@ -0,0 +1,89 @@
 +#
 +# CBUS device configuration
@@ -463,7 +463,7 @@
 +
 +endmenu
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/Makefile
++++ linux-2.6.35.3/drivers/cbus/Makefile
 @@ -0,0 +1,14 @@
 +#
 +# Makefile for CBUS.
@@ -480,7 +480,7 @@
 +obj-$(CONFIG_CBUS_RETU_USER)	+= retu-user.o
 +obj-$(CONFIG_CBUS_RETU_HEADSET)	+= retu-headset.o
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/retu.c
++++ linux-2.6.35.3/drivers/cbus/retu.c
 @@ -0,0 +1,468 @@
 +/**
 + * drivers/cbus/retu.c
@@ -951,7 +951,7 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä, David Weinehall, and Mikko Ylinen");
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/retu.h
++++ linux-2.6.35.3/drivers/cbus/retu.h
 @@ -0,0 +1,77 @@
 +/**
 + * drivers/cbus/retu.h
@@ -1031,7 +1031,7 @@
 +
 +#endif /* __DRIVERS_CBUS_RETU_H */
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/retu-headset.c
++++ linux-2.6.35.3/drivers/cbus/retu-headset.c
 @@ -0,0 +1,356 @@
 +/**
 + * Retu/Vilma headset detection
@@ -1390,7 +1390,7 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä");
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/retu-pwrbutton.c
++++ linux-2.6.35.3/drivers/cbus/retu-pwrbutton.c
 @@ -0,0 +1,118 @@
 +/**
 + * drivers/cbus/retu-pwrbutton.c
@@ -1511,7 +1511,7 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Ari Saastamoinen");
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/retu-rtc.c
++++ linux-2.6.35.3/drivers/cbus/retu-rtc.c
 @@ -0,0 +1,477 @@
 +/**
 + * drivers/cbus/retu-rtc.c
@@ -1991,7 +1991,7 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Paul Mundt and Igor Stoppa");
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/retu-user.c
++++ linux-2.6.35.3/drivers/cbus/retu-user.c
 @@ -0,0 +1,425 @@
 +/**
 + * drivers/cbus/retu-user.c
@@ -2419,7 +2419,7 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Mikko Ylinen");
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/retu-wdt.c
++++ linux-2.6.35.3/drivers/cbus/retu-wdt.c
 @@ -0,0 +1,388 @@
 +/**
 + * drivers/cbus/retu-wdt.c
@@ -2810,7 +2810,7 @@
 +MODULE_LICENSE("GPL");
 +
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/tahvo.c
++++ linux-2.6.35.3/drivers/cbus/tahvo.c
 @@ -0,0 +1,443 @@
 +/**
 + * drivers/cbus/tahvo.c
@@ -3256,7 +3256,7 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä, David Weinehall, and Mikko Ylinen");
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/tahvo.h
++++ linux-2.6.35.3/drivers/cbus/tahvo.h
 @@ -0,0 +1,61 @@
 +/*
 + * drivers/cbus/tahvo.h
@@ -3320,8 +3320,8 @@
 +
 +#endif /* __DRIVERS_CBUS_TAHVO_H */
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/tahvo-usb.c
-@@ -0,0 +1,777 @@
++++ linux-2.6.35.3/drivers/cbus/tahvo-usb.c
+@@ -0,0 +1,788 @@
 +/**
 + * drivers/cbus/tahvo-usb.c
 + *
@@ -3510,23 +3510,25 @@
 +	return 0;
 +}
 +
-+static int omap_otg_probe(struct device *dev)
++static int omap_otg_probe(struct platform_device *pdev)
 +{
-+	int ret;
++	int ret, err;
 +
-+	tahvo_otg_dev = to_platform_device(dev);
++	tahvo_otg_dev = pdev;
 +	ret = omap_otg_init();
 +	if (ret != 0) {
 +		printk(KERN_ERR "tahvo-usb: omap_otg_init failed\n");
 +		return ret;
 +	}
 +
-+	return request_irq(tahvo_otg_dev->resource[1].start,
-+			   omap_otg_irq, IRQF_DISABLED, DRIVER_NAME,
-+			   &tahvo_usb_device);
++	err = request_irq(tahvo_otg_dev->resource[1].start,
++			  omap_otg_irq, IRQF_DISABLED, DRIVER_NAME,
++			  &tahvo_usb_device);
++
++	return err;
 +}
 +
-+static int omap_otg_remove(struct device *dev)
++static int omap_otg_remove(struct platform_device *pdev)
 +{
 +	free_irq(tahvo_otg_dev->resource[1].start, &tahvo_usb_device);
 +	tahvo_otg_dev = NULL;
@@ -3534,11 +3536,12 @@
 +	return 0;
 +}
 +
-+struct device_driver omap_otg_driver = {
-+	.name		= "omap_otg",
-+	.bus		= &platform_bus_type,
++static struct platform_driver omap_otg_driver = {
 +	.probe		= omap_otg_probe,
 +	.remove		= omap_otg_remove,
++	.driver		= {
++		.name		= "omap_otg",
++	}
 +};
 +
 +/*
@@ -3551,7 +3554,8 @@
 +static ssize_t vbus_state_show(struct device *device,
 +			       struct device_attribute *attr, char *buf)
 +{
-+	struct tahvo_usb *tu = dev_get_drvdata(device);
++	struct platform_device *pdev = to_platform_device(device);
++	struct tahvo_usb *tu = platform_get_drvdata(pdev);
 +	return sprintf(buf, "%d\n", tu->vbus_state);
 +}
 +static DEVICE_ATTR(vbus_state, 0444, vbus_state_show, NULL);
@@ -3914,13 +3918,16 @@
 +static ssize_t otg_mode_show(struct device *device,
 +			     struct device_attribute *attr, char *buf)
 +{
-+	struct tahvo_usb *tu = dev_get_drvdata(device);
++	struct platform_device *pdev = to_platform_device(device);
++	struct tahvo_usb *tu = platform_get_drvdata(pdev);
++
 +	switch (tu->tahvo_mode) {
 +	case TAHVO_MODE_HOST:
 +		return sprintf(buf, "host\n");
 +	case TAHVO_MODE_PERIPHERAL:
 +		return sprintf(buf, "peripheral\n");
 +	}
++
 +	return sprintf(buf, "unknown\n");
 +}
 +
@@ -3928,7 +3935,8 @@
 +			      struct device_attribute *attr,
 +			      const char *buf, size_t count)
 +{
-+	struct tahvo_usb *tu = dev_get_drvdata(device);
++	struct platform_device *pdev = to_platform_device(device);
++	struct tahvo_usb *tu = platform_get_drvdata(pdev);
 +	int r;
 +
 +	r = strlen(buf);
@@ -3965,19 +3973,19 @@
 +static DEVICE_ATTR(otg_mode, 0644, otg_mode_show, otg_mode_store);
 +#endif
 +
-+static int tahvo_usb_probe(struct device *dev)
++static int tahvo_usb_probe(struct platform_device *pdev)
 +{
 +	struct tahvo_usb *tu;
 +	int ret;
 +
-+	dev_dbg(dev, "probe\n");
++	dev_dbg(&pdev->dev, "probe\n");
 +
 +	/* Create driver data */
 +	tu = kmalloc(sizeof(*tu), GFP_KERNEL);
 +	if (!tu)
 +		return -ENOMEM;
 +	memset(tu, 0, sizeof(*tu));
-+	tu->pt_dev = container_of(dev, struct platform_device, dev);
++	tu->pt_dev = pdev;
 +#ifdef CONFIG_USB_OTG
 +	/* Default mode */
 +#ifdef CONFIG_CBUS_TAHVO_USB_HOST_BY_DEFAULT
@@ -4004,9 +4012,9 @@
 +	}
 +
 +	/* Attributes */
-+	ret = device_create_file(dev, &dev_attr_vbus_state);
++	ret = device_create_file(&pdev->dev, &dev_attr_vbus_state);
 +#ifdef CONFIG_USB_OTG
-+	ret |= device_create_file(dev, &dev_attr_otg_mode);
++	ret |= device_create_file(&pdev->dev, &dev_attr_otg_mode);
 +#endif
 +	if (ret)
 +		printk(KERN_ERR "attribute creation failed: %d\n", ret);
@@ -4030,7 +4038,7 @@
 +		return ret;
 +	}
 +
-+	dev_set_drvdata(dev, tu);
++	platform_set_drvdata(pdev, tu);
 +
 +	/* Act upon current vbus state once at startup. A vbus state irq may or
 +	 * may not be generated in addition to this. */
@@ -4038,25 +4046,26 @@
 +	return 0;
 +}
 +
-+static int tahvo_usb_remove(struct device *dev)
++static int tahvo_usb_remove(struct platform_device *pdev)
 +{
-+	dev_dbg(dev, "remove\n");
++	dev_dbg(&pdev->dev, "remove\n");
 +
 +	tahvo_free_irq(TAHVO_INT_VBUSON);
 +	flush_scheduled_work();
 +	otg_set_transceiver(0);
-+	device_remove_file(dev, &dev_attr_vbus_state);
++	device_remove_file(&pdev->dev, &dev_attr_vbus_state);
 +#ifdef CONFIG_USB_OTG
-+	device_remove_file(dev, &dev_attr_otg_mode);
++	device_remove_file(&pdev->dev, &dev_attr_otg_mode);
 +#endif
 +	return 0;
 +}
 +
-+static struct device_driver tahvo_usb_driver = {
-+	.name		= "tahvo-usb",
-+	.bus		= &platform_bus_type,
++static struct platform_driver tahvo_usb_driver = {
 +	.probe		= tahvo_usb_probe,
 +	.remove		= tahvo_usb_remove,
++	.driver		= {
++		.name		= "tahvo-usb",
++	}
 +};
 +
 +static struct platform_device tahvo_usb_device = {
@@ -4069,30 +4078,32 @@
 +	int ret = 0;
 +
 +	printk(KERN_INFO "Tahvo USB transceiver driver initializing\n");
-+	ret = driver_register(&tahvo_usb_driver);
++
++	ret = platform_driver_register(&tahvo_usb_driver);
 +	if (ret)
 +		return ret;
-+	ret = platform_device_register(&tahvo_usb_device);
-+	if (ret < 0) {
-+		driver_unregister(&tahvo_usb_driver);
-+		return ret;
-+	}
-+	ret = driver_register(&omap_otg_driver);
++	ret = platform_driver_register(&omap_otg_driver);
 +	if (ret) {
-+		platform_device_unregister(&tahvo_usb_device);
-+		driver_unregister(&tahvo_usb_driver);
++		platform_driver_unregister(&tahvo_usb_driver);
 +		return ret;
 +	}
++
++	ret = platform_device_register(&tahvo_usb_device);
++	if (ret) {
++		platform_driver_unregister(&omap_otg_driver);
++		platform_driver_unregister(&tahvo_usb_driver);
++		return ret;
++	}
++
 +	return 0;
 +}
-+
 +subsys_initcall(tahvo_usb_init);
 +
 +static void __exit tahvo_usb_exit(void)
 +{
-+	driver_unregister(&omap_otg_driver);
 +	platform_device_unregister(&tahvo_usb_device);
-+	driver_unregister(&tahvo_usb_driver);
++	platform_driver_unregister(&omap_otg_driver);
++	platform_driver_unregister(&tahvo_usb_driver);
 +}
 +module_exit(tahvo_usb_exit);
 +
@@ -4100,7 +4111,7 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä, Tony Lindgren, and Timo Teräs");
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/tahvo-user.c
++++ linux-2.6.35.3/drivers/cbus/tahvo-user.c
 @@ -0,0 +1,407 @@
 +/**
 + * drivers/cbus/tahvo-user.c
@@ -4510,7 +4521,7 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Mikko Ylinen");
 --- /dev/null
-+++ linux-2.6.35/drivers/cbus/user_retu_tahvo.h
++++ linux-2.6.35.3/drivers/cbus/user_retu_tahvo.h
 @@ -0,0 +1,75 @@
 +/**
 + * drivers/cbus/user_retu_tahvo.h
@@ -4587,8 +4598,8 @@
 +};
 +
 +#endif
---- linux-2.6.35.orig/drivers/Makefile
-+++ linux-2.6.35/drivers/Makefile
+--- linux-2.6.35.3.orig/drivers/Makefile
++++ linux-2.6.35.3/drivers/Makefile
 @@ -74,7 +74,7 @@ obj-$(CONFIG_GAMEPORT)		+= input/gamepor
  obj-$(CONFIG_INPUT)		+= input/
  obj-$(CONFIG_I2O)		+= message/
@@ -4598,9 +4609,9 @@
  obj-$(CONFIG_PPS)		+= pps/
  obj-$(CONFIG_W1)		+= w1/
  obj-$(CONFIG_POWER_SUPPLY)	+= power/
---- linux-2.6.35.orig/arch/arm/Kconfig
-+++ linux-2.6.35/arch/arm/Kconfig
-@@ -1669,6 +1669,10 @@ source "net/Kconfig"
+--- linux-2.6.35.3.orig/arch/arm/Kconfig
++++ linux-2.6.35.3/arch/arm/Kconfig
+@@ -1681,6 +1681,10 @@ source "net/Kconfig"
  
  source "drivers/Kconfig"
  
