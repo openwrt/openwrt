@@ -1,7 +1,16 @@
-Index: linux-2.6.35/arch/arm/mach-omap1/board-nokia770.c
-===================================================================
---- linux-2.6.35.orig/arch/arm/mach-omap1/board-nokia770.c	2010-08-08 12:56:15.000000000 +0200
-+++ linux-2.6.35/arch/arm/mach-omap1/board-nokia770.c	2010-08-08 12:56:30.000000000 +0200
+---
+ arch/arm/mach-omap1/board-nokia770.c |   16 +
+ arch/arm/mach-omap2/Kconfig          |   10 +
+ arch/arm/mach-omap2/Makefile         |    2 
+ arch/arm/mach-omap2/board-n8x0-lcd.c |  127 +++++++++++++
+ arch/arm/mach-omap2/board-n8x0-usb.c |  175 +++++++++++++++++++
+ arch/arm/mach-omap2/board-n8x0.c     |  319 +++++++++++++++++++++++++----------
+ arch/arm/mach-omap2/control.c        |    2 
+ arch/arm/mach-omap2/serial.c         |    8 
+ 8 files changed, 569 insertions(+), 90 deletions(-)
+
+--- linux-2.6.35.3.orig/arch/arm/mach-omap1/board-nokia770.c
++++ linux-2.6.35.3/arch/arm/mach-omap1/board-nokia770.c
 @@ -37,6 +37,7 @@
  #include <plat/lcd_mipid.h>
  #include <plat/mmc.h>
@@ -34,10 +43,8 @@ Index: linux-2.6.35/arch/arm/mach-omap1/board-nokia770.c
  };
  
  static void mipid_shutdown(struct mipid_platform_data *pdata)
-Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
-===================================================================
---- linux-2.6.35.orig/arch/arm/mach-omap2/board-n8x0.c	2010-08-08 12:56:15.000000000 +0200
-+++ linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c	2010-08-08 12:56:30.000000000 +0200
+--- linux-2.6.35.3.orig/arch/arm/mach-omap2/board-n8x0.c
++++ linux-2.6.35.3/arch/arm/mach-omap2/board-n8x0.c
 @@ -18,8 +18,12 @@
  #include <linux/io.h>
  #include <linux/stddef.h>
@@ -51,12 +58,15 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
  
  #include <asm/mach/arch.h>
  #include <asm/mach-types.h>
-@@ -32,6 +36,117 @@
+@@ -32,114 +36,156 @@
  #include <plat/onenand.h>
  #include <plat/mmc.h>
  #include <plat/serial.h>
 +#include <plat/cbus.h>
-+
+ 
+-static int slot1_cover_open;
+-static int slot2_cover_open;
+-static struct device *mmc_device;
 +#define	RX51_TSC2005_RESET_GPIO	94
 +#define	RX51_TSC2005_IRQ_GPIO	106
 +#define OMAP_TAG_NOKIA_BT	0x4e01
@@ -112,14 +122,32 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
 +	[0x53] = KEY_DOWN,
 +	[0x55] = KEY_ENTER,
 +	[0x5f] = KEY_ESC,
-+
+ 
+-#define TUSB6010_ASYNC_CS	1
+-#define TUSB6010_SYNC_CS	4
+-#define TUSB6010_GPIO_INT	58
+-#define TUSB6010_GPIO_ENABLE	0
+-#define TUSB6010_DMACHAN	0x3f
 +	[0x61] = KEY_U,
 +	[0x64] = KEY_LEFT,
-+
+ 
+-#if defined(CONFIG_USB_TUSB6010) || \
+-	defined(CONFIG_USB_TUSB6010_MODULE)
+-/*
+- * Enable or disable power to TUSB6010. When enabling, turn on 3.3 V and
+- * 1.5 V voltage regulators of PM companion chip. Companion chip will then
+- * provide then PGOOD signal to TUSB6010 which will release it from reset.
+- */
+-static int tusb_set_power(int state)
+-{
+-	int i, retval = 0;
 +	[0x71] = KEY_I,
 +	[0x75] = KEY_KPENTER,
 +};
-+
+ 
+-	if (state) {
+-		gpio_set_value(TUSB6010_GPIO_ENABLE, 1);
+-		msleep(1);
 +static struct lm8323_platform_data lm8323_pdata = {
 +	.repeat		= 0, /* Repeat is handled in userspace for now. */
 +	.keymap		= rx44_keymap,
@@ -134,7 +162,13 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
 +	//.pwm1_name	= "n810::keyboard",
 +	//.pwm2_name	= "n810::cover",
 +};
-+
+ 
+-		/* Wait until TUSB6010 pulls INT pin down */
+-		i = 100;
+-		while (i && gpio_get_value(TUSB6010_GPIO_INT)) {
+-			msleep(1);
+-			i--;
+-		}
 +struct omap_bluetooth_config {
 +	u8    chip_type;
 +	u8    bt_wakeup_gpio;
@@ -144,7 +178,15 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
 +	u8    bd_addr[6];
 +	u8    bt_sysclk;
 +};
-+
+ 
+-		if (!i) {
+-			printk(KERN_ERR "tusb: powerup failed\n");
+-			retval = -ENODEV;
+-		}
+-	} else {
+-		gpio_set_value(TUSB6010_GPIO_ENABLE, 0);
+-		msleep(10);
+-	}
 +static struct platform_device n8x0_bt_device = {
 +	.name           = "hci_h4p",
 +	.id             = -1,
@@ -154,42 +196,97 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
 +void __init n8x0_bt_init(void)
 +{
 +	const struct omap_bluetooth_config *bt_config;
-+
+ 
+-	return retval;
 +	bt_config = (void *) omap_get_config(OMAP_TAG_NOKIA_BT,
 +					     struct omap_bluetooth_config);
 +	n8x0_bt_device.dev.platform_data = (void *) bt_config;
 +	if (platform_device_register(&n8x0_bt_device) < 0)
 +		BUG();
-+}
-+
+ }
+ 
+-static struct musb_hdrc_config musb_config = {
+-	.multipoint	= 1,
+-	.dyn_fifo	= 1,
+-	.num_eps	= 16,
+-	.ram_bits	= 12,
 +static struct omap2_mcspi_device_config mipid_mcspi_config = {
 +	.turbo_mode	= 0,
 +	.single_channel	= 1,
-+};
- 
- static int slot1_cover_open;
- static int slot2_cover_open;
-@@ -139,7 +254,34 @@ static struct omap2_mcspi_device_config
- 	.single_channel = 1,
  };
  
+-static struct musb_hdrc_platform_data tusb_data = {
+-#if defined(CONFIG_USB_MUSB_OTG)
+-	.mode		= MUSB_OTG,
+-#elif defined(CONFIG_USB_MUSB_PERIPHERAL)
+-	.mode		= MUSB_PERIPHERAL,
+-#else /* defined(CONFIG_USB_MUSB_HOST) */
+-	.mode		= MUSB_HOST,
+-#endif
+-	.set_power	= tusb_set_power,
+-	.min_power	= 25,	/* x2 = 50 mA drawn from VBUS as peripheral */
+-	.power		= 100,	/* Max 100 mA VBUS for host mode */
+-	.config		= &musb_config,
+-};
+-
+-static void __init n8x0_usb_init(void)
+-{
+-	int ret = 0;
+-	static char	announce[] __initdata = KERN_INFO "TUSB 6010\n";
+-
+-	/* PM companion chip power control pin */
+-	ret = gpio_request(TUSB6010_GPIO_ENABLE, "TUSB6010 enable");
+-	if (ret != 0) {
+-		printk(KERN_ERR "Could not get TUSB power GPIO%i\n",
+-		       TUSB6010_GPIO_ENABLE);
+-		return;
+-	}
+-	gpio_direction_output(TUSB6010_GPIO_ENABLE, 0);
+-
+-	tusb_set_power(0);
++static int slot1_cover_open;
++static int slot2_cover_open;
++static struct device *mmc_device;
+ 
+-	ret = tusb6010_setup_interface(&tusb_data, TUSB6010_REFCLK_19, 2,
+-					TUSB6010_ASYNC_CS, TUSB6010_SYNC_CS,
+-					TUSB6010_GPIO_INT, TUSB6010_DMACHAN);
+-	if (ret != 0)
+-		goto err;
+ 
+-	printk(announce);
++static struct omap2_mcspi_device_config p54spi_mcspi_config = {
++	.turbo_mode	= 0,
++	.single_channel = 1,
++};
+ 
+-	return;
 +#ifdef CONFIG_MACH_NOKIA_N8X0_LCD
 +extern struct mipid_platform_data n8x0_mipid_platform_data;
 +#endif
-+
+ 
+-err:
+-	gpio_free(TUSB6010_GPIO_ENABLE);
 +#ifdef CONFIG_TOUCHSCREEN_TSC2005
 +static struct tsc2005_platform_data tsc2005_config;
 +static void rx51_tsc2005_set_reset(bool enable)
 +{
 +	gpio_set_value(RX51_TSC2005_RESET_GPIO, enable);
-+}
-+
+ }
+-#else
+-
+-static void __init n8x0_usb_init(void) {}
+-
+-#endif /*CONFIG_USB_TUSB6010 */
+ 
+-
+-static struct omap2_mcspi_device_config p54spi_mcspi_config = {
 +static struct omap2_mcspi_device_config tsc2005_mcspi_config = {
-+	.turbo_mode	= 0,
-+	.single_channel = 1,
-+};
+ 	.turbo_mode	= 0,
+ 	.single_channel = 1,
+ };
 +#endif
-+
+ 
  static struct spi_board_info n800_spi_board_info[] __initdata = {
 +#ifdef CONFIG_MACH_NOKIA_N8X0_LCD
 +	{
@@ -204,7 +301,7 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
  	{
  		.modalias	= "p54spi",
  		.bus_num	= 2,
-@@ -147,6 +289,68 @@ static struct spi_board_info n800_spi_bo
+@@ -147,6 +193,68 @@ static struct spi_board_info n800_spi_bo
  		.max_speed_hz   = 48000000,
  		.controller_data = &p54spi_mcspi_config,
  	},
@@ -273,7 +370,7 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
  };
  
  #if defined(CONFIG_MTD_ONENAND_OMAP2) || \
-@@ -181,6 +385,20 @@ static struct mtd_partition onenand_part
+@@ -181,6 +289,20 @@ static struct mtd_partition onenand_part
  	},
  };
  
@@ -294,7 +391,7 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
  static struct omap_onenand_platform_data board_onenand_data = {
  	.cs		= 0,
  	.gpio_irq	= 26,
-@@ -649,14 +867,37 @@ static void __init n8x0_init_irq(void)
+@@ -649,14 +771,39 @@ static void __init n8x0_init_irq(void)
  	omap_gpio_init();
  }
  
@@ -305,6 +402,8 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
 +#define n8x0_mipid_init() 0
 +#define n8x0_blizzard_init() 0
 +#endif
++
++extern void n8x0_usb_init(void);
 +
  static void __init n8x0_init_machine(void)
  {
@@ -332,10 +431,8 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0.c
  	n8x0_onenand_init();
  	n8x0_mmc_init();
  	n8x0_usb_init();
-Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0-lcd.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.35/arch/arm/mach-omap2/board-n8x0-lcd.c	2010-08-08 12:56:31.000000000 +0200
+--- /dev/null
++++ linux-2.6.35.3/arch/arm/mach-omap2/board-n8x0-lcd.c
 @@ -0,0 +1,127 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0.c
@@ -464,10 +561,8 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0-lcd.c
 +
 +	printk(KERN_INFO "N8x0 Blizzard initialized");
 +}
-Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0-usb.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.35/arch/arm/mach-omap2/board-n8x0-usb.c	2010-08-08 12:56:31.000000000 +0200
+--- /dev/null
++++ linux-2.6.35.3/arch/arm/mach-omap2/board-n8x0-usb.c
 @@ -0,0 +1,175 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0-usb.c
@@ -644,10 +739,8 @@ Index: linux-2.6.35/arch/arm/mach-omap2/board-n8x0-usb.c
 +err:
 +	gpio_free(GPIO_TUSB_ENABLE);
 +}
-Index: linux-2.6.35/arch/arm/mach-omap2/control.c
-===================================================================
---- linux-2.6.35.orig/arch/arm/mach-omap2/control.c	2010-08-08 12:56:15.000000000 +0200
-+++ linux-2.6.35/arch/arm/mach-omap2/control.c	2010-08-08 12:56:32.000000000 +0200
+--- linux-2.6.35.3.orig/arch/arm/mach-omap2/control.c
++++ linux-2.6.35.3/arch/arm/mach-omap2/control.c
 @@ -162,6 +162,7 @@ u16 omap_ctrl_readw(u16 offset)
  	return __raw_readw(OMAP_CTRL_REGADDR(offset));
  }
@@ -664,10 +757,8 @@ Index: linux-2.6.35/arch/arm/mach-omap2/control.c
  void omap_ctrl_writel(u32 val, u16 offset)
  {
  	__raw_writel(val, OMAP_CTRL_REGADDR(offset));
-Index: linux-2.6.35/arch/arm/mach-omap2/Kconfig
-===================================================================
---- linux-2.6.35.orig/arch/arm/mach-omap2/Kconfig	2010-08-08 12:56:15.000000000 +0200
-+++ linux-2.6.35/arch/arm/mach-omap2/Kconfig	2010-08-08 12:56:33.000000000 +0200
+--- linux-2.6.35.3.orig/arch/arm/mach-omap2/Kconfig
++++ linux-2.6.35.3/arch/arm/mach-omap2/Kconfig
 @@ -116,6 +116,16 @@ config MACH_NOKIA_N8X0
  	select MACH_NOKIA_N810
  	select MACH_NOKIA_N810_WIMAX
@@ -685,10 +776,8 @@ Index: linux-2.6.35/arch/arm/mach-omap2/Kconfig
  config MACH_NOKIA_RX51
  	bool "Nokia RX-51 board"
  	depends on ARCH_OMAP3
-Index: linux-2.6.35/arch/arm/mach-omap2/Makefile
-===================================================================
---- linux-2.6.35.orig/arch/arm/mach-omap2/Makefile	2010-08-08 12:56:15.000000000 +0200
-+++ linux-2.6.35/arch/arm/mach-omap2/Makefile	2010-08-08 12:56:33.000000000 +0200
+--- linux-2.6.35.3.orig/arch/arm/mach-omap2/Makefile
++++ linux-2.6.35.3/arch/arm/mach-omap2/Makefile
 @@ -116,6 +116,8 @@ obj-$(CONFIG_MACH_OMAP_3430SDP)		+= boar
  					   hsmmc.o \
  					   board-sdp-flash.o
@@ -698,10 +787,8 @@ Index: linux-2.6.35/arch/arm/mach-omap2/Makefile
  obj-$(CONFIG_MACH_NOKIA_RX51)		+= board-rx51.o \
  					   board-rx51-sdram.o \
  					   board-rx51-peripherals.o \
-Index: linux-2.6.35/arch/arm/mach-omap2/serial.c
-===================================================================
---- linux-2.6.35.orig/arch/arm/mach-omap2/serial.c	2010-08-08 12:56:15.000000000 +0200
-+++ linux-2.6.35/arch/arm/mach-omap2/serial.c	2010-08-08 12:56:34.000000000 +0200
+--- linux-2.6.35.3.orig/arch/arm/mach-omap2/serial.c
++++ linux-2.6.35.3/arch/arm/mach-omap2/serial.c
 @@ -495,10 +495,10 @@ static void omap_uart_idle_init(struct o
  		uart->padconf = 0;
  	}
