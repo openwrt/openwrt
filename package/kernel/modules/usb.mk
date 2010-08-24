@@ -33,6 +33,40 @@ define AddDepends/usb
 endef
 
 
+define KernelPackage/usb-gadget
+  TITLE:=USB Gadget support
+  KCONFIG:=CONFIG_USB_GADGET
+  FILES:=
+  AUTOLOAD:=
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-gadget/description
+  Kernel support for USB Gadget mode.
+endef
+
+$(eval $(call KernelPackage,usb-gadget))
+
+
+define KernelPackage/usb-eth-gadget
+  TITLE:=USB Ethernet Gadget support
+  KCONFIG:= \
+	CONFIG_USB_ETH \
+	CONFIG_USB_ETH_RNDIS=y \
+	CONFIG_USB_ETH_EEM=y
+  DEPENDS:=+kmod-usb-gadget
+  FILES:=$(LINUX_DIR)/drivers/usb/gadget/g_ether.ko
+  AUTOLOAD:=$(call AutoLoad,52,usb-eth-gadget)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-eth-gadget/description
+  Kernel support for USB Ethernet Gadget.
+endef
+
+$(eval $(call KernelPackage,usb-eth-gadget))
+
+
 define KernelPackage/usb-uhci
   TITLE:=Support for UHCI controllers
   KCONFIG:= \
@@ -68,6 +102,27 @@ endef
 $(eval $(call KernelPackage,usb-ohci,1))
 
 
+define KernelPackage/musb-hdrc
+  TITLE:=Support for Mentor Graphics silicon dual role USB
+  KCONFIG:= \
+	CONFIG_USB_MUSB_HDRC \
+	CONFIG_USB_TUSB6010=y \
+	CONFIG_MUSB_PIO_ONLY=n \
+	CONFIG_USB_MUSB_OTG=y \
+	CONFIG_USB_MUSB_DEBUG=y
+  DEPENDS:=@TARGET_omap24xx
+  FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
+  AUTOLOAD:=$(call AutoLoad,54,musb-hdrc)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/musb-hdrc/description
+  Kernel support for Mentor Graphics silicon dual role USB device.
+endef
+
+$(eval $(call KernelPackage,musb-hdrc))
+
+
 define KernelPackage/usb-tahvo
   TITLE:=Support for Tahvo (Nokia n810) USB
   KCONFIG:= \
@@ -75,9 +130,9 @@ define KernelPackage/usb-tahvo
 	CONFIG_CBUS_TAHVO_USB_HOST_BY_DEFAULT=n \
 	CONFIG_USB_OHCI_HCD_OMAP1=y \
 	CONFIG_USB_GADGET_DEBUG_FS=n
-  DEPENDS:=@TARGET_omap24xx +kmod-usb-ohci
+  DEPENDS:=@TARGET_omap24xx +kmod-usb-ohci +kmod-musb-hdrc +kmod-usb-gadget
   FILES:=$(LINUX_DIR)/drivers/cbus/tahvo-usb.ko
-  AUTOLOAD:=$(call AutoLoad,51,tahvo-usb)
+  AUTOLOAD:=$(call AutoLoad,55,tahvo-usb)
   $(call AddDepends/usb)
 endef
 
