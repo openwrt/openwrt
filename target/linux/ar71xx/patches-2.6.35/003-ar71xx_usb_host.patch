@@ -14,9 +14,9 @@
  config USB_EHCI_FSL
  	bool "Support for Freescale on-chip EHCI USB controller"
  	depends on USB_EHCI_HCD && FSL_SOC
-@@ -207,6 +214,13 @@ config USB_OHCI_HCD
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called ohci-hcd.
+@@ -222,6 +229,13 @@ config USB_OHCI_HCD_OMAP3
+ 	  Enables support for the on-chip OHCI controller on
+ 	  OMAP3 and later chips.
  
 +config USB_OHCI_AR71XX
 +	bool "USB OHCI support for Atheros AR71xx"
@@ -40,11 +40,11 @@
 +#endif
 +
  #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \
-     !defined(PS3_SYSTEM_BUS_DRIVER) && !defined(OF_PLATFORM_DRIVER)
- #error "missing bus glue for ehci-hcd"
+     !defined(PS3_SYSTEM_BUS_DRIVER) && !defined(OF_PLATFORM_DRIVER) && \
+     !defined(XILINX_OF_PLATFORM_DRIVER)
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
-@@ -1090,6 +1090,11 @@ MODULE_LICENSE ("GPL");
+@@ -1095,6 +1095,11 @@ MODULE_LICENSE ("GPL");
  #define TMIO_OHCI_DRIVER	ohci_hcd_tmio_driver
  #endif
  
@@ -55,4 +55,4 @@
 +
  #if	!defined(PCI_DRIVER) &&		\
  	!defined(PLATFORM_DRIVER) &&	\
- 	!defined(OF_PLATFORM_DRIVER) &&	\
+ 	!defined(OMAP1_PLATFORM_DRIVER) &&	\
