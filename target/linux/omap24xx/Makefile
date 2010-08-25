@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=omap24xx
 BOARDNAME:=TI OMAP-24xx
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs jffs2 usb usbgadget
 
 LINUX_VERSION:=2.6.35.3
 

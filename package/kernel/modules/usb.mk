@@ -38,6 +38,7 @@ define KernelPackage/usb-gadget
   KCONFIG:=CONFIG_USB_GADGET
   FILES:=
   AUTOLOAD:=
+  DEPENDS:=@USB_GADGET_SUPPORT
   $(call AddDepends/usb)
 endef
 

@@ -158,6 +158,7 @@ sub target_config_features(@) {
 		/pci/ and $ret .= "\tselect PCI_SUPPORT\n";
 		/pcie/ and $ret .= "\tselect PCIE_SUPPORT\n";
 		/usb/ and $ret .= "\tselect USB_SUPPORT\n";
+		/usbgadget/ and $ret .= "\tselect USB_GADGET_SUPPORT\n";
 		/pcmcia/ and $ret .= "\tselect PCMCIA_SUPPORT\n";
 		/squashfs/ and $ret .= "\tselect USES_SQUASHFS\n";
 		/jffs2/ and $ret .= "\tselect USES_JFFS2\n";
