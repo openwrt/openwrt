@@ -728,8 +728,6 @@ int uh_auth_check(
 					req->realm = realm;
 					break;
 				}
-
-				realm = NULL;
 			}
 
 			/* found a realm matching the username */
