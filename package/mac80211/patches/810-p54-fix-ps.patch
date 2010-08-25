@@ -1,0 +1,33 @@
+From: Christian Lamparter <chunkeey@googlemail.com>
+
+Michael reported that p54* never really entered power
+save mode, even tough it was enabled.
+
+It turned out that upon a power save mode change the
+firmware will set a special flag onto the last outgoing
+frame tx status (which in this case is almost always the
+designated PSM nullfunc frame). This flag confused the
+driver; It erroneously reported transmission failures
+to the stack, which then generated the next nullfunc.
+and so on...
+
+Cc: <stable@kernel.org>
+Reported-by: Michael Buesch <mb@bu3sch.de>
+Tested-by: Michael Buesch <mb@bu3sch.de>
+Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
+---
+---
+ drivers/net/wireless/p54/txrx.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- compat-wireless-2010-07-29.orig/drivers/net/wireless/p54/txrx.c
++++ compat-wireless-2010-07-29/drivers/net/wireless/p54/txrx.c
+@@ -446,7 +446,7 @@ static void p54_rx_frame_sent(struct p54
+ 	}
+ 
+ 	if (!(info->flags & IEEE80211_TX_CTL_NO_ACK) &&
+-	     (!payload->status))
++	     !(payload->status & P54_TX_FAILED))
+ 		info->flags |= IEEE80211_TX_STAT_ACK;
+ 	if (payload->status & P54_TX_PSM_CANCELLED)
+ 		info->flags |= IEEE80211_TX_STAT_TX_FILTERED;
