@@ -1,6 +1,6 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -168,6 +168,13 @@ ifeq (,$(findstring march=octeon, $(cfla
+@@ -181,6 +181,13 @@ ifeq (,$(findstring march=octeon, $(cfla
  cflags-$(CONFIG_CPU_CAVIUM_OCTEON) += -Wa,-march=octeon
  endif
  
@@ -38,9 +38,9 @@
 +	  Support for Atheros AR71xx based boards.
 +
  config BCM47XX
- 	bool "BCM47XX based boards"
+ 	bool "Broadcom BCM47XX based boards"
  	select CEVT_R4K
-@@ -682,6 +699,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+@@ -684,6 +701,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  endchoice
  
  source "arch/mips/alchemy/Kconfig"

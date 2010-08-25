@@ -1,6 +1,6 @@
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -39,7 +39,7 @@
+@@ -40,7 +40,7 @@
  #include <linux/mtd/xip.h>
  
  #define AMD_BOOTLOC_BUG
@@ -9,7 +9,7 @@
  
  #define MAX_WORD_RETRIES 3
  
-@@ -55,7 +55,9 @@
+@@ -51,7 +51,9 @@
  
  static int cfi_amdstd_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
  static int cfi_amdstd_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
@@ -19,7 +19,7 @@
  static int cfi_amdstd_erase_chip(struct mtd_info *, struct erase_info *);
  static int cfi_amdstd_erase_varsize(struct mtd_info *, struct erase_info *);
  static void cfi_amdstd_sync (struct mtd_info *);
-@@ -190,6 +192,7 @@ static void fixup_amd_bootblock(struct m
+@@ -187,6 +189,7 @@ static void fixup_amd_bootblock(struct m
  }
  #endif
  
@@ -27,7 +27,7 @@
  static void fixup_use_write_buffers(struct mtd_info *mtd, void *param)
  {
  	struct map_info *map = mtd->priv;
-@@ -199,6 +202,7 @@ static void fixup_use_write_buffers(stru
+@@ -196,6 +199,7 @@ static void fixup_use_write_buffers(stru
  		mtd->write = cfi_amdstd_write_buffers;
  	}
  }
@@ -35,7 +35,7 @@
  
  /* Atmel chips don't use the same PRI format as AMD chips */
  static void fixup_convert_atmel_pri(struct mtd_info *mtd, void *param)
-@@ -1304,6 +1308,7 @@ static int cfi_amdstd_write_words(struct
+@@ -1391,6 +1395,7 @@ static int cfi_amdstd_write_words(struct
  /*
   * FIXME: interleaved mode not tested, and probably not supported!
   */
@@ -43,7 +43,7 @@
  static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
  				    unsigned long adr, const u_char *buf,
  				    int len)
-@@ -1415,7 +1420,6 @@ static int __xipram do_write_buffer(stru
+@@ -1502,7 +1507,6 @@ static int __xipram do_write_buffer(stru
  	return ret;
  }
  
@@ -51,7 +51,7 @@
  static int cfi_amdstd_write_buffers(struct mtd_info *mtd, loff_t to, size_t len,
  				    size_t *retlen, const u_char *buf)
  {
-@@ -1494,6 +1498,7 @@ static int cfi_amdstd_write_buffers(stru
+@@ -1581,6 +1585,7 @@ static int cfi_amdstd_write_buffers(stru
  
  	return 0;
  }
