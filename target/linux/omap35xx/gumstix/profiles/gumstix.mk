@@ -18,7 +18,8 @@ define Profile/Gumstix
 		kmod-lib80211 kmod-libertas-sd kmod-mac80211 libnl-tiny \
 		crda iw kmod-usb-hid luci luci-app-ntpc \
 		openssh-client openssh-client-utils openssh-keygen \
-		openssh-server
+		openssh-server kmod-usb-storage kmod-usb-storage-extras \
+		kmod-fs-vfat
 endef
 
 define Profile/Gumstix/Description
