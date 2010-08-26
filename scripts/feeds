@@ -307,6 +307,9 @@ sub install_package {
 		return 0;
 	};
 
+	# switch to the metadata for the selected feed
+	get_feed($feed->[1]);
+
 	my $pkg = $feed{$feed->[1]}->{$name} or return 1;
 	$pkg->{name} or do {
 		$installed{$name} and return 0;
@@ -337,8 +340,8 @@ sub install_package {
 		return 1;
 	};
 
-	# install all dependencies
-	foreach my $vpkg (@{$feed_src->{$src}}, $pkg) {
+	# install all dependencies referenced from the source package
+	foreach my $vpkg (@{$feed_src->{$src}}) {
 		foreach my $dep (@{$vpkg->{depends}}, @{$vpkg->{builddepends}}, @{$vpkg->{"builddepends/host"}}) {
 			next if $dep =~ /@/;
 			$dep =~ s/^\+//;
