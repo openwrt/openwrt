@@ -221,7 +221,7 @@ sub list_feed {
 	my $feed = shift;
 
 	get_feed($feed);
-	foreach my $name (sort { lc($a) cmp lc($b) } keys %package) {
+	foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_package) {
 		my $pkg = $feed_package->{$name};
 		next if $pkg->{vdepends};
 		if($pkg->{name}) {
@@ -397,7 +397,7 @@ sub install {
 			if (!defined($opts{p}) or $opts{p} eq $f->[1]) {
 				printf "Installing all packages from feed %s.\n", $f->[1];
 				get_feed($f->[1]);
-				foreach my $name (sort { lc($a) cmp lc($b) } keys %package) {
+				foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_package) {
 					my $p = $feed_package->{$name};
 					next if $p->{vdepends};
 					if( $p->{name} ) {
