@@ -1,0 +1,11 @@
+--- a/drivers/mtd/maps/physmap.c
++++ b/drivers/mtd/maps/physmap.c
+@@ -79,7 +79,7 @@ static const char *rom_probe_types[] = {
+ 					"map_rom",
+ 					NULL };
+ #ifdef CONFIG_MTD_PARTITIONS
+-static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", NULL };
++static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", "ar7part", NULL };
+ #endif
+ 
+ static int physmap_flash_probe(struct platform_device *dev)
