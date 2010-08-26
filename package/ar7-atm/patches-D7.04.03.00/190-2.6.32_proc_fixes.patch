@@ -1,8 +1,20 @@
 Index: sangam_atm-D7.04.03.00/tn7dsl.c
 ===================================================================
---- sangam_atm-D7.04.03.00.orig/tn7dsl.c	2010-02-01 22:30:45.000000000 +0100
-+++ sangam_atm-D7.04.03.00/tn7dsl.c	2010-02-01 22:32:41.000000000 +0100
-@@ -3431,8 +3431,11 @@
+--- sangam_atm-D7.04.03.00.orig/tn7dsl.c	2010-08-26 09:36:54.000000000 +0200
++++ sangam_atm-D7.04.03.00/tn7dsl.c	2010-08-26 10:18:47.000000000 +0200
+@@ -203,7 +203,11 @@
+ static struct led_funcs ledreg[2];
+ #endif
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
+ #define DEV_DSLMOD       CTL_UNNUMBERED
++#else
++#define DEV_DSLMOD	0
++#endif
+ #define MAX_STR_SIZE     256
+ #define DSL_MOD_SIZE     256
+ 
+@@ -3431,9 +3435,16 @@
     */
    if(write)
      {
@@ -12,10 +24,15 @@ Index: sangam_atm-D7.04.03.00/tn7dsl.c
 +#else
 +    ret = proc_dostring(ctl, write, buffer, lenp, 0);
 +#endif
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
      switch (ctl->ctl_name)
++#else
++    switch ((long)ctl->extra2)
++#endif
        {
        case DEV_DSLMOD:
-@@ -3517,7 +3520,11 @@
+       ptr = strpbrk(info, " \t");
+@@ -3517,14 +3528,22 @@
    else
      {
      len += sprintf(info+len, mod_req);
@@ -27,3 +44,14 @@ Index: sangam_atm-D7.04.03.00/tn7dsl.c
      }
    return ret;
  }
+ 
+ 
+ ctl_table dslmod_table[] = {
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)
+   {DEV_DSLMOD, "dslmod", info, DSL_MOD_SIZE, 0644, NULL, NULL, &dslmod_sysctl, &sysctl_string}
++#else
++  {"dslmod", info, DSL_MOD_SIZE, 0644, NULL, NULL, &dslmod_sysctl, NULL, (void *)DEV_DSLMOD}
++#endif
+   ,
+   {0}
+   };
