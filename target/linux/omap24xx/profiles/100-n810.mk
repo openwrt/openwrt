@@ -5,13 +5,21 @@
 # See /LICENSE for more information.
 #
 
-define Profile/n810
-  NAME:=Nokia n810
-  PACKAGES:=
+define Profile/n810-base
+  NAME:=Nokia n810 (base)
+  PACKAGES:= \
+	block-hotplug \
+	gpsd \
+	ip iw wireless-tools kmod-p54-spi wpa-supplicant \
+	dnsmasq dropbear \
+	kmod-fs-vfat kmod-fs-msdos \
+	kmod-input-evdev \
+	kmod-leds-gpio \
+	kmod-usb-tahvo kmod-usb-eth-gadget kmod-usb-net kmod-usb-net-cdc-ether
 endef
 
-define Profile/n810/Description
-	Package set compatible with Nokia n810 hardware
+define Profile/n810-base/Description
+	Minimal package set for Nokia n810 hardware.
 endef
-$(eval $(call Profile,n810))
+$(eval $(call Profile,n810-base))
 
