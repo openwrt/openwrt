@@ -1,0 +1,12 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -124,7 +124,8 @@ static void ath_tx_resume_tid(struct ath
+ {
+ 	struct ath_txq *txq = &sc->tx.txq[tid->ac->qnum];
+ 
+-	WARN_ON(!tid->paused);
++	if (!tid->paused)
++		return;
+ 
+ 	spin_lock_bh(&txq->axq_lock);
+ 	tid->paused = false;
