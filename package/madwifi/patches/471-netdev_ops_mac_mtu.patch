@@ -1,0 +1,20 @@
+--- a/net80211/ieee80211.c
++++ b/net80211/ieee80211.c
+@@ -47,6 +47,7 @@
+ #include <linux/skbuff.h>
+ #include <linux/netdevice.h>
+ #include <linux/rtnetlink.h>		/* XXX for rtnl_lock */
++#include <linux/etherdevice.h>
+ 
+ #include "if_media.h"
+ 
+@@ -463,6 +464,9 @@ static const struct net_device_ops ieee8
+ 	.ndo_set_multicast_list = ieee80211_set_multicast_list,
+ 	.ndo_change_mtu 	= ieee80211_change_mtu,
+ 	.ndo_do_ioctl		= ieee80211_ioctl,
++	.ndo_change_mtu		= eth_change_mtu,
++	.ndo_validate_addr	= eth_validate_addr,
++	.ndo_set_mac_address	= eth_mac_addr,
+ };
+ #endif
+ 
