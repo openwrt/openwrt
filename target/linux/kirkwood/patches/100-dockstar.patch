@@ -38,7 +38,7 @@ Signed-off-by: Eric Cooper <ecc@xxxxxxx>
  obj-$(CONFIG_MACH_TS219)		+= ts219-setup.o tsx1x-common.o
 --- /dev/null
 +++ b/arch/arm/mach-kirkwood/dockstar-setup.c
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,121 @@
 +/*
 + * arch/arm/mach-kirkwood/dockstar-setup.c
 + *
@@ -61,7 +61,6 @@ Signed-off-by: Eric Cooper <ecc@xxxxxxx>
 +#include <asm/mach/arch.h>
 +#include <mach/kirkwood.h>
 +#include <plat/mvsdio.h>
-+#include <plat/orion_nand.h>
 +#include "common.h"
 +#include "mpp.h"
 +
@@ -81,40 +80,13 @@ Signed-off-by: Eric Cooper <ecc@xxxxxxx>
 +	}, {
 +		.name = "rootfs",
 +		.offset = MTDPART_OFS_NXTBLK,
-+		.size = SZ_64M,
++		.size = SZ_32M,
 +	}, {
 +		.name = "data",
 +		.offset = MTDPART_OFS_NXTBLK,
 +		.size = MTDPART_SIZ_FULL
 +	},
 +};
-+
-+static struct resource dockstar_nand_resource = {
-+	.flags		= IORESOURCE_MEM,
-+	.start		= KIRKWOOD_NAND_MEM_PHYS_BASE,
-+	.end		= KIRKWOOD_NAND_MEM_PHYS_BASE +
-+			  KIRKWOOD_NAND_MEM_SIZE - 1,
-+};
-+
-+static struct orion_nand_data dockstar_nand_data = {
-+	.parts		= dockstar_nand_parts,
-+	.nr_parts	= ARRAY_SIZE(dockstar_nand_parts),
-+	.cle		= 0,
-+	.ale		= 1,
-+	.width		= 8,
-+	.chip_delay	= 25,
-+};
-+
-+static struct platform_device dockstar_nand_flash = {
-+	.name		= "orion_nand",
-+	.id		= -1,
-+	.dev		= {
-+		.platform_data	= &dockstar_nand_data,
-+	},
-+	.resource	= &dockstar_nand_resource,
-+	.num_resources	= 1,
-+};
-+
 +
 +static struct mv643xx_eth_platform_data dockstar_ge00_data = {
 +	.phy_addr	= MV643XX_ETH_PHY_ADDR(0),
@@ -172,9 +144,10 @@ Signed-off-by: Eric Cooper <ecc@xxxxxxx>
 +		printk(KERN_ERR "can't set up GPIO 29 (USB Power Enable)\n");
 +	kirkwood_ehci_init();
 +
++	kirkwood_nand_init(ARRAY_AND_SIZE(dockstar_nand_parts), 25);
++
 +	kirkwood_ge00_init(&dockstar_ge00_data);
 +
-+	platform_device_register(&dockstar_nand_flash);
 +	platform_device_register(&dockstar_leds);
 +}
 +
