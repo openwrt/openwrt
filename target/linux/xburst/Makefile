@@ -10,9 +10,9 @@ ARCH:=mipsel
 BOARD:=xburst
 BOARDNAME:=Ingenic XBurst
 FEATURES:=jffs2 targz ubifs audio
-SUBTARGETS:=qi_lb60 n516 n526
+SUBTARGETS:=qi_lb60 n516 n526 id800wt
 
-LINUX_VERSION:=2.6.35.3
+LINUX_VERSION:=2.6.35.4
 
 DEVICE_TYPE=other
 
