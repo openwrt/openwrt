@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-JFFS2OPTS_NAND += --little-endian --pagesize=0x800 --no-cleanmarkers --pad
+JFFS2OPTS += --little-endian --pagesize=0x800 --no-cleanmarkers --pad
 
 define Image/Prepare
 	cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
@@ -23,6 +23,11 @@ define Image/Build
 		$(call Image/Build/$(1),$(1)), \
 		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
 	)
+endef
+
+define Image/Build/jffs2-128k
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
+		bs=2048 conv=sync
 endef
 
 define Image/Build/squashfs
