@@ -135,7 +135,7 @@
 
 #define CONFIG_MTDPARTS		"orion_nand:1M(u-boot),"	\
 	"1M@1M(second_stage_u-boot)," \
-	"3M@2M(kernel),64M@5M(rootfs),187M@69M(data) rw\0"
+	"3M@2M(kernel),32M@5M(rootfs),219M@37M(data) rw\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS	"x_bootargs=console"	\
 	"=ttyS0,115200 mtdparts="CONFIG_MTDPARTS	\
