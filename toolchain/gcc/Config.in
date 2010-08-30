@@ -108,6 +108,7 @@ config INSTALL_LIBSTDCPP
 
 config INSTALL_LIBGCJ
 	bool
+	depends on !(GCC_VERSION_4_1||GCC_VERSION_4_2)
 	prompt "Build/install java compiler and GNU classpath ?" if TOOLCHAINOPTS
 	default n
 	help
