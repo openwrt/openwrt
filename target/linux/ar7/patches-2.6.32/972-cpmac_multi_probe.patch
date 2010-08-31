@@ -21,7 +21,21 @@
  static void cpmac_dump_regs(struct net_device *dev)
  {
  	int i;
-@@ -1122,12 +1129,39 @@ static int __devinit cpmac_probe(struct
+@@ -1111,9 +1118,13 @@ static int __devinit cpmac_probe(struct 
+ 	struct cpmac_priv *priv;
+ 	struct net_device *dev;
+ 	struct plat_cpmac_data *pdata;
++	void __iomem *mii_reg;
++	u32 tmp;
++	unsigned external_mii = 0;
+ 
+ 	pdata = pdev->dev.platform_data;
+ 
++detect_again:
+ 	for (phy_id = 0; phy_id < PHY_MAX_ADDR; phy_id++) {
+ 		if (!(pdata->phy_mask & (1 << phy_id)))
+ 			continue;
+@@ -1122,12 +1133,43 @@ static int __devinit cpmac_probe(struct 
  		strncpy(mdio_bus_id, cpmac_mii->id, MII_BUS_ID_SIZE);
  		break;
  	}
@@ -30,22 +44,26 @@
 -		dev_err(&pdev->dev, "no PHY present\n");
 -		return -ENODEV;
 +
-+	if (phy_id < PHY_MAX_ADDR)
++	if (phy_id < PHY_MAX_ADDR && !external_mii)
 +		goto dev_alloc;
 +
-+	dev_info(&pdev->dev, "trying external MII\n");
 +	/* Now disable EPHY and enable MII */
++	dev_info(&pdev->dev, "trying external MII\n");
 +	ar7_device_disable(AR7_RESET_BIT_EPHY);
-+	*(unsigned long*) ioremap(0x08611A08, 4) |= 0x00000001;
 +
-+	for (phy_id = 0; phy_id < PHY_MAX_ADDR; phy_id++) {
-+		if (!(pdata->phy_mask & (1 << phy_id)))
-+			continue;
-+		if (!cpmac_mii->phy_map[phy_id])
-+			continue;
-+		strncpy(mdio_bus_id, cpmac_mii->id, MII_BUS_ID_SIZE);
-+		break;
-+	}
++	mii_reg = ioremap(AR7_REGS_MII, 4);
++	if (!mii_reg) {
++		dev_err(&pdev->dev, "failed to iorenamp MII_SEL\n");
++		return -ENOMEM;
+ 	}
+ 
++	tmp = readl(mii_reg);
++	tmp |= 1;
++	writel(tmp, mii_reg);
++	external_mii++;
++
++	if (external_mii == 1)
++		goto detect_again;
 +
 +	if (phy_id < PHY_MAX_ADDR)
 +		goto dev_alloc;
@@ -56,8 +74,8 @@
 +	if (rc && rc != -ENODEV) {
 +		dev_err(&pdev->dev, "unable to register fixed PHY\n");
 +		return rc;
- 	}
- 
++	}
++
 +	strncpy(mdio_bus_id, "0", MII_BUS_ID_SIZE); /* fixed phys bus */
 +	phy_id = pdev->id;
 +
@@ -65,3 +83,13 @@
  	dev = alloc_etherdev_mq(sizeof(*priv), CPMAC_QUEUES);
  
  	if (!dev) {
+--- a/arch/mips/include/asm/mach-ar7/ar7.h
++++ b/arch/mips/include/asm/mach-ar7/ar7.h
+@@ -41,6 +41,7 @@
+ #define AR7_REGS_RESET	(AR7_REGS_BASE + 0x1600)
+ #define AR7_REGS_VLYNQ0	(AR7_REGS_BASE + 0x1800)
+ #define AR7_REGS_DCL	(AR7_REGS_BASE + 0x1a00)
++#define AR7_REGS_MII	(AR7_REGS_BASE + 0x1a08)
+ #define AR7_REGS_VLYNQ1	(AR7_REGS_BASE + 0x1c00)
+ #define AR7_REGS_MDIO	(AR7_REGS_BASE + 0x1e00)
+ #define AR7_REGS_IRQ	(AR7_REGS_BASE + 0x2400)
