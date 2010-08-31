@@ -16,8 +16,8 @@
  net/mac80211/util.c                    |    6 ++++++
  15 files changed, 69 insertions(+), 7 deletions(-)
 
---- compat-wireless-2010-07-29.orig/config.mk
-+++ compat-wireless-2010-07-29/config.mk
+--- a/config.mk
++++ b/config.mk
 @@ -115,7 +115,7 @@ CONFIG_COMPAT_MAC80211_RC_DEFAULT=minstr
  # CONFIG_MAC80211_RC_PID=y
  CONFIG_MAC80211_RC_MINSTREL=y
@@ -27,7 +27,7 @@
  
  # enable mesh networking too
  CONFIG_MAC80211_MESH=y
-@@ -194,7 +194,7 @@ CONFIG_B43_PCI_AUTOSELECT=y
+@@ -218,7 +218,7 @@ CONFIG_B43_PCI_AUTOSELECT=y
  ifneq ($(CONFIG_PCMCIA),)
  # CONFIG_B43_PCMCIA=y
  endif
@@ -36,7 +36,7 @@
  CONFIG_B43_PHY_LP=y
  # CONFIG_B43_NPHY is not set
  # CONFIG_B43_FORCE_PIO=y
-@@ -203,7 +203,7 @@ CONFIG_B43_PHY_LP=y
+@@ -227,7 +227,7 @@ CONFIG_B43_PHY_LP=y
  CONFIG_B43LEGACY=m
  CONFIG_B43LEGACY_HWRNG=y
  CONFIG_B43LEGACY_PCI_AUTOSELECT=y
@@ -45,32 +45,7 @@
  # CONFIG_B43LEGACY_DEBUG=y
  CONFIG_B43LEGACY_DMA=y
  CONFIG_B43LEGACY_PIO=y
-@@ -336,13 +336,13 @@ endif
- 
- CONFIG_P54_USB=m
- CONFIG_RTL8187=m
--CONFIG_RTL8187_LEDS=y
-+# CONFIG_RTL8187_LEDS=y
- 
- CONFIG_AT76C50X_USB=m
- 
- ifndef CONFIG_COMPAT_KERNEL_28
- CONFIG_AR9170_USB=m
--CONFIG_AR9170_LEDS=y
-+# CONFIG_AR9170_LEDS=y
- endif
- 
- CONFIG_ATH9K_HTC=m
-@@ -426,7 +426,7 @@ CONFIG_RT2800_LIB=m
- CONFIG_RT2X00_LIB_HT=y
- CONFIG_RT2X00_LIB_FIRMWARE=y
- CONFIG_RT2X00_LIB_CRYPTO=y
--CONFIG_RT2X00_LIB_LEDS=y
-+# CONFIG_RT2X00_LIB_LEDS=y
- # CONFIG_RT2X00_DEBUG=y
- # CONFIG_RT2X00_LIB_DEBUGFS
- endif
-@@ -437,7 +437,7 @@ endif
+@@ -499,7 +499,7 @@ endif
  
  # p54
  CONFIG_P54_COMMON=m
@@ -79,9 +54,9 @@
  
  # Atheros
  CONFIG_ATH_COMMON=m
---- compat-wireless-2010-07-29.orig/include/linux/compat-2.6.25.h
-+++ compat-wireless-2010-07-29/include/linux/compat-2.6.25.h
-@@ -146,10 +146,12 @@ static inline void __hwrng_unregister(st
+--- a/include/linux/compat-2.6.25.h
++++ b/include/linux/compat-2.6.25.h
+@@ -148,10 +148,12 @@ static inline void __hwrng_unregister(st
  	hwrng_unregister(rng);
  }
  
@@ -94,8 +69,8 @@
  
  /**
   * The following things are out of ./include/linux/kernel.h
---- compat-wireless-2010-07-29.orig/drivers/net/wireless/ath/ath9k/gpio.c
-+++ compat-wireless-2010-07-29/drivers/net/wireless/ath/ath9k/gpio.c
+--- a/drivers/net/wireless/ath/ath9k/gpio.c
++++ b/drivers/net/wireless/ath/ath9k/gpio.c
 @@ -20,6 +20,7 @@
  /*	 LED functions		*/
  /********************************/
@@ -112,8 +87,8 @@
  
  /*******************/
  /*	Rfkill	   */
---- compat-wireless-2010-07-29.orig/drivers/net/wireless/ath/ath9k/pci.c
-+++ compat-wireless-2010-07-29/drivers/net/wireless/ath/ath9k/pci.c
+--- a/drivers/net/wireless/ath/ath9k/pci.c
++++ b/drivers/net/wireless/ath/ath9k/pci.c
 @@ -273,7 +273,9 @@ static int ath_pci_suspend(struct pci_de
  	struct ath_wiphy *aphy = hw->priv;
  	struct ath_softc *sc = aphy->sc;
@@ -137,9 +112,9 @@
  
  	return 0;
  }
---- compat-wireless-2010-07-29.orig/drivers/net/wireless/ath/ath9k/ath9k.h
-+++ compat-wireless-2010-07-29/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -465,6 +465,7 @@ void ath9k_btcoex_timer_pause(struct ath
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -457,6 +457,7 @@ void ath9k_btcoex_timer_pause(struct ath
  /********************/
  /*   LED Control    */
  /********************/
@@ -147,7 +122,7 @@
  
  #define ATH_LED_PIN_DEF 		1
  #define ATH_LED_PIN_9287		8
-@@ -489,6 +490,7 @@ struct ath_led {
+@@ -481,6 +482,7 @@ struct ath_led {
  
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
@@ -155,7 +130,7 @@
  
  /********************/
  /* Main driver core */
-@@ -586,6 +588,7 @@ struct ath_softc {
+@@ -578,6 +580,7 @@ struct ath_softc {
  	enum wireless_mode cur_rate_mode;
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
@@ -163,7 +138,7 @@
  	struct ath_led radio_led;
  	struct ath_led assoc_led;
  	struct ath_led tx_led;
-@@ -595,6 +598,7 @@ struct ath_softc {
+@@ -587,6 +590,7 @@ struct ath_softc {
  	int led_off_duration;
  	int led_on_cnt;
  	int led_off_cnt;
@@ -171,21 +146,9 @@
  
  	int beacon_interval;
  
---- compat-wireless-2010-07-29.orig/drivers/net/wireless/ath/ath9k/init.c
-+++ compat-wireless-2010-07-29/drivers/net/wireless/ath/ath9k/init.c
-@@ -34,9 +34,11 @@ int modparam_nohwcrypt;
- module_param_named(nohwcrypt, modparam_nohwcrypt, int, 0444);
- MODULE_PARM_DESC(nohwcrypt, "Disable hardware encryption");
- 
-+#ifdef CONFIG_MAC80211_LEDS
- int led_blink = 1;
- module_param_named(blink, led_blink, int, 0444);
- MODULE_PARM_DESC(blink, "Enable LED blink on activity");
-+#endif
- 
- /* We use the hw_value as an index into our private channel structure */
- 
-@@ -757,7 +759,9 @@ int ath9k_init_device(u16 devid, struct
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -757,7 +757,9 @@ int ath9k_init_device(u16 devid, struct 
  	INIT_DELAYED_WORK(&sc->wiphy_work, ath9k_wiphy_work);
  	sc->wiphy_scheduler_int = msecs_to_jiffies(500);
  
@@ -195,7 +158,7 @@
  	ath_start_rfkill_poll(sc);
  
  	return 0;
-@@ -810,7 +814,9 @@ void ath9k_deinit_device(struct ath_soft
+@@ -810,7 +812,9 @@ void ath9k_deinit_device(struct ath_soft
  	ath9k_ps_wakeup(sc);
  
  	wiphy_rfkill_stop_polling(sc->hw->wiphy);
@@ -205,9 +168,9 @@
  
  	for (i = 0; i < sc->num_sec_wiphy; i++) {
  		struct ath_wiphy *aphy = sc->sec_wiphy[i];
---- compat-wireless-2010-07-29.orig/drivers/net/wireless/ath/ath9k/main.c
-+++ compat-wireless-2010-07-29/drivers/net/wireless/ath/ath9k/main.c
-@@ -868,9 +868,11 @@ void ath_radio_enable(struct ath_softc *
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -869,9 +869,11 @@ void ath_radio_enable(struct ath_softc *
  	ath9k_hw_set_interrupts(ah, ah->imask);
  
  	/* Enable LED */
@@ -219,7 +182,7 @@
  
  	ieee80211_wake_queues(hw);
  	ath9k_ps_restore(sc);
-@@ -889,10 +891,12 @@ void ath_radio_disable(struct ath_softc
+@@ -890,10 +892,12 @@ void ath_radio_disable(struct ath_softc 
  	 * Keep the LED on when the radio is disabled
  	 * during idle unassociated state.
  	 */
@@ -232,7 +195,7 @@
  
  	/* Disable interrupts */
  	ath9k_hw_set_interrupts(ah, 0);
-@@ -1303,8 +1307,10 @@ static void ath9k_stop(struct ieee80211_
+@@ -1304,8 +1308,10 @@ static void ath9k_stop(struct ieee80211_
  
  	aphy->state = ATH_WIPHY_INACTIVE;
  
@@ -243,8 +206,8 @@
  
  	cancel_delayed_work_sync(&sc->tx_complete_work);
  	cancel_work_sync(&sc->paprd_work);
---- compat-wireless-2010-07-29.orig/net/mac80211/iface.c
-+++ compat-wireless-2010-07-29/net/mac80211/iface.c
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
 @@ -21,7 +21,9 @@
  #include "sta_info.h"
  #include "debugfs_netdev.h"
@@ -255,8 +218,8 @@
  #include "driver-ops.h"
  #include "wme.h"
  
-@@ -189,7 +191,9 @@ static int ieee80211_open(struct net_dev
- 			goto err_del_bss;
+@@ -201,7 +203,9 @@ static int ieee80211_do_open(struct net_
+ 			napi_enable(&local->napi);
  		/* we're brought up, everything changes */
  		hw_reconf_flags = ~0;
 +#ifdef CONFIG_MAC80211_LEDS
@@ -265,8 +228,8 @@
  	}
  
  	/*
---- compat-wireless-2010-07-29.orig/net/mac80211/main.c
-+++ compat-wireless-2010-07-29/net/mac80211/main.c
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
 @@ -29,7 +29,9 @@
  #include "rate.h"
  #include "mesh.h"
@@ -277,7 +240,7 @@
  #include "cfg.h"
  #include "debugfs.h"
  
-@@ -674,7 +676,9 @@ int ieee80211_register_hw(struct ieee802
+@@ -778,7 +780,9 @@ int ieee80211_register_hw(struct ieee802
  
  	rtnl_unlock();
  
@@ -287,9 +250,9 @@
  
  	local->network_latency_notifier.notifier_call =
  		ieee80211_max_network_latency;
-@@ -699,7 +703,9 @@ int ieee80211_register_hw(struct ieee802
- 			       &local->network_latency_notifier);
+@@ -808,7 +812,9 @@ int ieee80211_register_hw(struct ieee802
  	rtnl_lock();
+ #endif
   fail_pm_qos:
 +#ifdef CONFIG_MAC80211_LEDS
  	ieee80211_led_exit(local);
@@ -297,7 +260,7 @@
  	ieee80211_remove_interfaces(local);
   fail_rate:
  	rtnl_unlock();
-@@ -755,7 +761,9 @@ void ieee80211_unregister_hw(struct ieee
+@@ -872,7 +878,9 @@ void ieee80211_unregister_hw(struct ieee
  	destroy_workqueue(local->workqueue);
  	wiphy_unregister(local->hw.wiphy);
  	ieee80211_wep_free(local);
@@ -307,8 +270,8 @@
  	kfree(local->int_scan_req);
  }
  EXPORT_SYMBOL(ieee80211_unregister_hw);
---- compat-wireless-2010-07-29.orig/net/mac80211/mlme.c
-+++ compat-wireless-2010-07-29/net/mac80211/mlme.c
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
 @@ -26,7 +26,9 @@
  #include "ieee80211_i.h"
  #include "driver-ops.h"
@@ -319,7 +282,7 @@
  
  #define IEEE80211_MAX_PROBE_TRIES 5
  
-@@ -872,7 +874,9 @@ static void ieee80211_set_associated(str
+@@ -879,7 +881,9 @@ static void ieee80211_set_associated(str
  	 */
  	sdata->u.mgd.wmm_last_param_set = -1;
  
@@ -329,7 +292,7 @@
  
  	if (local->hw.flags & IEEE80211_HW_NEED_DTIM_PERIOD)
  		bss_conf->dtim_period = bss->dtim_period;
-@@ -958,7 +962,9 @@ static void ieee80211_set_disassoc(struc
+@@ -965,7 +969,9 @@ static void ieee80211_set_disassoc(struc
  
  	changed |= ieee80211_reset_erp_info(sdata);
  
@@ -339,8 +302,8 @@
  	changed |= BSS_CHANGED_ASSOC;
  	sdata->vif.bss_conf.assoc = false;
  
---- compat-wireless-2010-07-29.orig/net/mac80211/pm.c
-+++ compat-wireless-2010-07-29/net/mac80211/pm.c
+--- a/net/mac80211/pm.c
++++ b/net/mac80211/pm.c
 @@ -4,7 +4,9 @@
  #include "ieee80211_i.h"
  #include "mesh.h"
@@ -351,8 +314,8 @@
  
  int __ieee80211_suspend(struct ieee80211_hw *hw)
  {
---- compat-wireless-2010-07-29.orig/net/mac80211/rx.c
-+++ compat-wireless-2010-07-29/net/mac80211/rx.c
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
 @@ -21,7 +21,9 @@
  
  #include "ieee80211_i.h"
@@ -363,7 +326,7 @@
  #include "mesh.h"
  #include "wep.h"
  #include "wpa.h"
-@@ -1342,8 +1344,10 @@ ieee80211_rx_h_defragment(struct ieee802
+@@ -1377,8 +1379,10 @@ ieee80211_rx_h_defragment(struct ieee802
  		rx->sta->rx_packets++;
  	if (is_multicast_ether_addr(hdr->addr1))
  		rx->local->dot11MulticastReceivedFrameCount++;
@@ -374,8 +337,8 @@
  	return RX_CONTINUE;
  }
  
---- compat-wireless-2010-07-29.orig/net/mac80211/status.c
-+++ compat-wireless-2010-07-29/net/mac80211/status.c
+--- a/net/mac80211/status.c
++++ b/net/mac80211/status.c
 @@ -13,7 +13,9 @@
  #include "ieee80211_i.h"
  #include "rate.h"
@@ -386,7 +349,7 @@
  
  
  void ieee80211_tx_status_irqsafe(struct ieee80211_hw *hw,
-@@ -247,7 +249,9 @@ void ieee80211_tx_status(struct ieee8021
+@@ -246,7 +248,9 @@ void ieee80211_tx_status(struct ieee8021
  
  	rcu_read_unlock();
  
@@ -396,8 +359,8 @@
  
  	/* SNMP counters
  	 * Fragments are passed to low-level drivers as separate skbs, so these
---- compat-wireless-2010-07-29.orig/net/mac80211/tx.c
-+++ compat-wireless-2010-07-29/net/mac80211/tx.c
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
 @@ -26,7 +26,9 @@
  
  #include "ieee80211_i.h"
@@ -408,7 +371,7 @@
  #include "mesh.h"
  #include "wep.h"
  #include "wpa.h"
-@@ -1312,7 +1314,9 @@ static int __ieee80211_tx(struct ieee802
+@@ -1334,7 +1336,9 @@ static int __ieee80211_tx(struct ieee802
  		}
  
  		*skbp = skb = next;
@@ -418,8 +381,8 @@
  		fragm = true;
  	}
  
---- compat-wireless-2010-07-29.orig/net/mac80211/util.c
-+++ compat-wireless-2010-07-29/net/mac80211/util.c
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
 @@ -29,7 +29,9 @@
  #include "rate.h"
  #include "mesh.h"
@@ -430,7 +393,7 @@
  #include "wep.h"
  
  /* privid for wiphys to determine whether they belong to us or not */
-@@ -1107,7 +1109,9 @@ u32 ieee80211_sta_get_rates(struct ieee8
+@@ -1110,7 +1112,9 @@ u32 ieee80211_sta_get_rates(struct ieee8
  
  void ieee80211_stop_device(struct ieee80211_local *local)
  {
@@ -440,7 +403,7 @@
  
  	cancel_work_sync(&local->reconfig_filter);
  
-@@ -1141,7 +1145,9 @@ int ieee80211_reconfig(struct ieee80211_
+@@ -1144,7 +1148,9 @@ int ieee80211_reconfig(struct ieee80211_
  			return res;
  		}
  

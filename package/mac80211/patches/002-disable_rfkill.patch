@@ -9,7 +9,7 @@
  
  ifeq ($(CONFIG_MAC80211),y)
  $(error "ERROR: you have MAC80211 compiled into the kernel, CONFIG_MAC80211=y, as such you cannot replace its mac80211 driver. You need this set to CONFIG_MAC80211=m. If you are using Fedora upgrade your kernel as later version should this set as modular. For further information on Fedora see https://bugzilla.redhat.com/show_bug.cgi?id=470143. If you are using your own kernel recompile it and make mac80211 modular")
-@@ -495,8 +495,8 @@ endif
+@@ -557,8 +557,8 @@ endif #CONFIG_COMPAT_KERNEL_27
  # We need the backported rfkill module on kernel < 2.6.31.
  # In more recent kernel versions use the in kernel rfkill module.
  ifdef CONFIG_COMPAT_KERNEL_31
@@ -19,5 +19,5 @@
 +# CONFIG_RFKILL_BACKPORT=m
 +# CONFIG_RFKILL_BACKPORT_LEDS=y
 +# CONFIG_RFKILL_BACKPORT_INPUT=y
- endif
+ endif #CONFIG_COMPAT_KERNEL_31
  
