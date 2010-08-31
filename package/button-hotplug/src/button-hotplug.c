@@ -21,10 +21,10 @@
 #include <linux/workqueue.h>
 #include <linux/skbuff.h>
 #include <linux/netlink.h>
-#include <net/sock.h>
+#include <linux/kobject.h>
 
 #define DRV_NAME	"button-hotplug"
-#define DRV_VERSION	"0.4.0"
+#define DRV_VERSION	"0.4.1"
 #define DRV_DESC	"Button Hotplug driver"
 
 #define BH_SKB_SIZE	2048
@@ -64,7 +64,6 @@ struct bh_map {
 	const char	*name;
 };
 
-extern struct sock *uevent_sock;
 extern u64 uevent_next_seqnum(void);
 
 #define BH_MAP(_code, _name)		\
@@ -160,9 +159,6 @@ static void button_hotplug_work(struct work_struct *work)
 	struct bh_event *event = container_of(work, struct bh_event, work);
 	int ret = 0;
 
-	if (!uevent_sock)
-		goto out_free_event;
-
 	event->skb = alloc_skb(BH_SKB_SIZE, GFP_KERNEL);
 	if (!event->skb)
 		goto out_free_event;
@@ -176,7 +172,7 @@ static void button_hotplug_work(struct work_struct *work)
 		goto out_free_skb;
 
 	NETLINK_CB(event->skb).dst_group = 1;
-	netlink_broadcast(uevent_sock, event->skb, 0, 1, GFP_KERNEL);
+	broadcast_uevent(event->skb, 0, 1, GFP_KERNEL);
 
  out_free_skb:
 	if (ret) {
