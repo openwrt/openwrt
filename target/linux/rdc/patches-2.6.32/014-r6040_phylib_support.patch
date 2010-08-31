@@ -223,7 +223,7 @@
  
  /* Read/set MAC address routines */
  static void r6040_mac_address(struct net_device *dev)
-@@ -874,10 +782,6 @@ static int r6040_open(struct net_device
+@@ -874,10 +782,6 @@ static int r6040_open(struct net_device 
  	napi_enable(&lp->napi);
  	netif_start_queue(dev);
  

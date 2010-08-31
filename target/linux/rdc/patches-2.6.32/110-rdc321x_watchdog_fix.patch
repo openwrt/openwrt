@@ -59,9 +59,9 @@
 +	.options = WDIOF_SETTIMEOUT | WDIOF_MAGICCLOSE,
 +	.identity = "RDC321x WDT",
 +};
++
  
 -static void rdc321x_wdt_trigger(unsigned long unused)
-+
 +/* generic helper functions */
 +static void rdc321x_wdt_timer(unsigned long unused)
  {
