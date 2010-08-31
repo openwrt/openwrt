@@ -1,0 +1,41 @@
+From: Helmut Schaa <helmut.schaa@googlemail.com>
+Date: Sat, 28 Aug 2010 09:25:44 +0000 (+0300)
+Subject: hostapd: enable STBC only for STBC capable STAs
+X-Git-Url: http://hostap.epitest.fi/gitweb/gitweb.cgi?p=hostap.git;a=commitdiff_plain;h=36af1c7d31bdc5ba4dacacbf32d3c7585665ae2b
+
+hostapd: enable STBC only for STBC capable STAs
+
+hostapd simply used its own STBC configuration in the STA's HT caps. This
+resulted in TX STBC being used for STAs not supporting RX STBC, which in
+turn resulted in the STA not receiving anything.
+
+Fix this by handling the STBC flags in the same way mac80211 does. Mask
+out RX STBC if we don't support TX STBC and vice versa.
+
+Tested only with the nl80211 driver and a STBC incapable STA.
+
+Signed-off-by: Helmut Schaa <helmut.schaa@googlemail.com>
+---
+
+diff --git a/src/ap/ieee802_11_ht.c b/src/ap/ieee802_11_ht.c
+index 1b39a6a..b193ee0 100644
+--- a/src/ap/ieee802_11_ht.c
++++ b/src/ap/ieee802_11_ht.c
+@@ -256,7 +256,15 @@ void hostapd_get_ht_capab(struct hostapd_data *hapd,
+ 	cap &= hapd->iconf->ht_capab;
+ 	cap |= (hapd->iconf->ht_capab & HT_CAP_INFO_SMPS_DISABLED);
+ 
+-	/* FIXME: Rx STBC needs to be handled specially */
+-	cap |= (hapd->iconf->ht_capab & HT_CAP_INFO_RX_STBC_MASK);
++	/*
++	 * STBC needs to be handled specially
++	 * if we don't support RX STBC, mask out TX STBC in the STA's HT caps
++	 * if we don't support TX STBC, mask out RX STBC in the STA's HT caps
++	 */
++	if (!(hapd->iconf->ht_capab & HT_CAP_INFO_RX_STBC_MASK))
++		cap &= ~HT_CAP_INFO_TX_STBC;
++	if (!(hapd->iconf->ht_capab & HT_CAP_INFO_TX_STBC))
++		cap &= ~HT_CAP_INFO_RX_STBC_MASK;
++
+ 	neg_ht_cap->ht_capabilities_info = host_to_le16(cap);
+ }
