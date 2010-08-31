@@ -1,6 +1,6 @@
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -2443,9 +2443,8 @@ void cfg80211_cqm_rssi_notify(struct net
+@@ -2574,9 +2574,8 @@ void cfg80211_cqm_rssi_notify(struct net
  	wiphy_printk(KERN_NOTICE, wiphy, format, ##args)
  #define wiphy_info(wiphy, format, args...)			\
  	wiphy_printk(KERN_INFO, wiphy, format, ##args)
@@ -14,7 +14,7 @@
  #define wiphy_dbg(wiphy, format, args...)			\
 --- a/net/wireless/core.c
 +++ b/net/wireless/core.c
-@@ -921,52 +921,3 @@ static void __exit cfg80211_exit(void)
+@@ -929,52 +929,3 @@ static void __exit cfg80211_exit(void)
  	destroy_workqueue(cfg80211_wq);
  }
  module_exit(cfg80211_exit);

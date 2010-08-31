@@ -1,8 +1,8 @@
 --- a/include/linux/compat-2.6.36.h
 +++ b/include/linux/compat-2.6.36.h
-@@ -8,6 +8,8 @@
- #define kparam_block_sysfs_write(a)
- #define kparam_unblock_sysfs_write(a)
+@@ -15,6 +15,8 @@ struct va_format {
+ 
+ #define device_rename(dev, new_name) device_rename(dev, (char *)new_name)
  
 +#define PCI_EEPROM_WIDTH_93C86   8
 +

@@ -1,6 +1,6 @@
---- a/drivers/net/wireless/ath/ath5k/eeprom.c	2010-06-23 03:08:32.000000000 +0200
-+++ b/drivers/net/wireless/ath/ath5k/eeprom.c	2010-06-23 05:59:30.000000000 +0200
-@@ -22,6 +23,8 @@
+--- a/drivers/net/wireless/ath/ath5k/eeprom.c
++++ b/drivers/net/wireless/ath/ath5k/eeprom.c
+@@ -22,6 +22,8 @@
  \*************************************/
  
  #include <linux/slab.h>
@@ -9,7 +9,7 @@
  
  #include "ath5k.h"
  #include "reg.h"
-@@ -34,6 +37,18 @@
+@@ -34,6 +36,18 @@
  static int ath5k_hw_eeprom_read(struct ath5k_hw *ah, u32 offset, u16 *data)
  {
  	u32 status, timeout;
@@ -28,7 +28,7 @@
  
  	/*
  	 * Initialize EEPROM access
-@@ -1788,7 +1802,7 @@
+@@ -1788,7 +1802,7 @@ ath5k_eeprom_init(struct ath5k_hw *ah)
  }
  
  /*
@@ -37,7 +37,7 @@
   */
  int ath5k_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac)
  {
-@@ -1796,6 +1810,16 @@
+@@ -1796,6 +1810,16 @@ int ath5k_eeprom_read_mac(struct ath5k_h
  	u32 total, offset;
  	u16 data;
  	int octet, ret;
@@ -54,4 +54,3 @@
  
  	ret = ath5k_hw_eeprom_read(ah, 0x20, &data);
  	if (ret)
-
