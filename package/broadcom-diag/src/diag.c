@@ -30,8 +30,8 @@
 #include <linux/workqueue.h>
 #include <linux/skbuff.h>
 #include <linux/netlink.h>
+#include <linux/kobject.h>
 #include <net/sock.h>
-extern struct sock *uevent_sock;
 extern u64 uevent_next_seqnum(void);
 
 #include "gpio.h"
@@ -1169,9 +1169,6 @@ static void hotplug_button(struct work_struct *work)
 	struct event_t *event = container_of(work, struct event_t, wq);
 	char *s;
 
-	if (!uevent_sock)
-		return;
-
 	event->skb = alloc_skb(2048, GFP_KERNEL);
 
 	s = skb_put(event->skb, strlen(event->action) + 2);
@@ -1179,7 +1176,7 @@ static void hotplug_button(struct work_struct *work)
 	fill_event(event);
 
 	NETLINK_CB(event->skb).dst_group = 1;
-	netlink_broadcast(uevent_sock, event->skb, 0, 1, GFP_KERNEL);
+	broadcast_uevent(event->skb, 0, 1, GFP_KERNEL);
 
 	kfree(event);
 }
