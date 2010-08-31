@@ -36,7 +36,7 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 	done
 
 	fw__rc() {
-		export FW_${fam}_ERROR=$1
+		export FW_${fam#G}_ERROR=$1
 		return $1
 	}
 
@@ -75,14 +75,14 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 			return
 		fi
 		local mod
-		eval "mod=\$FW_${fam}_${tab}"
+		eval "mod=\$FW_${fam#G}_${tab}"
 		if [ "$mod" ]; then
 			fw__rc $mod
 			return
 		fi
 		case "$fam" in
-			4) mod=iptable_${tab} ;;
-			6) mod=ip6table_${tab} ;;
+			*4) mod=iptable_${tab} ;;
+			*6) mod=ip6table_${tab} ;;
 			*) mod=. ;;
 		esac
 		grep -q "^${mod} " /proc/modules
@@ -100,8 +100,8 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 	local app=
 	local pol=
 	case "$fam" in
-		4) [ $FW_DISABLE_IPV4 == 0 ] && app=iptables  || return ;;
-		6) [ $FW_DISABLE_IPV6 == 0 ] && app=ip6tables || return ;;
+		*4) [ $FW_DISABLE_IPV4 == 0 ] && app=iptables  || return ;;
+		*6) [ $FW_DISABLE_IPV6 == 0 ] && app=ip6tables || return ;;
 		i) fw__dualip "$@"; return ;;
 		I) fw__autoip "$@"; return ;;
 		e) app=ebtables ;;
@@ -148,19 +148,23 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 		return 0
 	fi
 
+	case "$fam" in
+		G*) shift; while [ "$1" != "{" ]; do shift; done ;;
+	esac
+
 	if [ $# -gt 0 ]; then
 		shift
 		if [ $cmd == delete ]; then
 			pos=
 		fi
 	fi
+
 	while [ $# -gt 1 ]; do
 		case "$app:$1" in
 			ip6tables:--icmp-type) echo -n "--icmpv6-type" ;;
 			ip6tables:icmp|ip6tables:ICMP) echo -n "icmpv6" ;;
 			iptables:--icmpv6-type) echo -n "--icmp-type" ;;
 			iptables:icmpv6) echo -n "icmp" ;;
-			*:}|*:{) shift; continue ;;
 			*) echo -n "$1" ;;
 		esac
 		echo -ne "\0"
@@ -202,8 +206,8 @@ fw_get_family_mode() {
 	}
 
 	case "$hint:$ipv4:$ipv6" in
-		*4:1:*|*:1:0) echo 4 ;;
-		*6:*:1|*:0:1) echo 6 ;;
+		*4:1:*|*:1:0) echo G4 ;;
+		*6:*:1|*:0:1) echo G6 ;;
 		*) echo $mode ;;
 	esac
 }

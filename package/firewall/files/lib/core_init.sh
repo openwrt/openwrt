@@ -84,13 +84,16 @@ fw_load_defaults() {
 	[ $defaults_syn_flood == 1 ] && \
 		defaults_synflood_protect=1
 
+	[ "${defaults_synflood_rate%/*}" == "$defaults_synflood_rate" ] && \
+		defaults_synflood_rate="$defaults_synflood_rate/second"
+
 	[ $defaults_synflood_protect == 1 ] && {
 		echo "Loading synflood protection"
 		fw_callback pre synflood
 		fw add i f syn_flood
 		fw add i f syn_flood RETURN { \
 			-p tcp --syn \
-			-m limit --limit "${defaults_synflood_rate}/second" --limit-burst "${defaults_synflood_burst}" \
+			-m limit --limit "${defaults_synflood_rate}" --limit-burst "${defaults_synflood_burst}" \
 		}
 		fw add i f syn_flood DROP
 		fw add i f INPUT syn_flood { -p tcp --syn }
@@ -142,6 +145,8 @@ fw_config_get_zone() {
 		boolean conntrack 0 \
 		boolean mtu_fix 0 \
 		boolean custom_chains "$FW_ADD_CUSTOM_CHAINS" \
+		boolean log 0 \
+		string log_limit 10 \
 		string family "" \
 	} || return
 	[ -n "$zone_name" ] || zone_name=$zone_NAME
@@ -204,6 +209,7 @@ fw_load_zone() {
 	fw add $mode n ${chain}_prerouting
 
 	fw add $mode r ${chain}_notrack
+
 	[ $zone_masq == 1 ] && \
 		fw add $mode n POSTROUTING ${chain}_nat $
 
@@ -222,6 +228,17 @@ fw_load_zone() {
 
 		fw add $mode n prerouting_${zone_name}
 		fw add $mode n ${chain}_prerouting prerouting_${zone_name} ^
+	}
+
+	[ "$zone_log" == 1 ] && {
+		[ "${zone_log_limit%/*}" == "$zone_log_limit" ] && \
+			zone_log_limit="$zone_log_limit/minute"
+
+		local t
+		for t in REJECT DROP MSSFIX; do
+			fw add $mode f ${chain}_${t} LOG ^ \
+				{ -m limit --limit $zone_log_limit --log-prefix "$t($zone_name): "  }
+		done
 	}
 
 	fw_callback post zone

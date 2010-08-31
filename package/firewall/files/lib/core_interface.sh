@@ -32,16 +32,16 @@ fw_configure_interface() {
 
 		case "$mode/$subnet" in
 			# Zone supports v6 only or dual, need v6
-			6/*:*|i/*:*)
-				inet="{ -s $subnet -d ::/0 }"
-				onet="{ -s ::/0 -d $subnet }"
+			G6/*:*|i/*:*)
+				inet="-s $subnet -d ::/0"
+				onet="-s ::/0 -d $subnet"
 				mode=6
 			;;
 
 			# Zone supports v4 only or dual, need v4
-			4/*.*.*.*|i/*.*.*.*)
-				inet="{ -s $subnet -d 0.0.0.0/0 }"
-				onet="{ -s 0.0.0.0/0 -d $subnet }"
+			G4/*.*.*.*|i/*.*.*.*)
+				inet="-s $subnet -d 0.0.0.0/0"
+				onet="-s 0.0.0.0/0 -d $subnet"
 				mode=4
 			;;
 
@@ -52,20 +52,20 @@ fw_configure_interface() {
 			*/*.*) fw_log info "zone $zone does not support IPv4 address family, skipping"; return ;;
 		esac
 
-		fw $action $mode f ${chain}_ACCEPT ACCEPT ^ $onet { -o "$ifname" }
-		fw $action $mode f ${chain}_ACCEPT ACCEPT ^ $inet { -i "$ifname" }
-		fw $action $mode f ${chain}_DROP   DROP   ^ $onet { -o "$ifname" }
-		fw $action $mode f ${chain}_DROP   DROP   ^ $inet { -i "$ifname" }
-		fw $action $mode f ${chain}_REJECT reject ^ $onet { -o "$ifname" }
-		fw $action $mode f ${chain}_REJECT reject ^ $inet { -i "$ifname" }
+		fw $action $mode f ${chain}_ACCEPT ACCEPT $ { -o "$ifname" $onet }
+		fw $action $mode f ${chain}_ACCEPT ACCEPT $ { -i "$ifname" $inet }
+		fw $action $mode f ${chain}_DROP   DROP   $ { -o "$ifname" $onet }
+		fw $action $mode f ${chain}_DROP   DROP   $ { -i "$ifname" $inet }
+		fw $action $mode f ${chain}_REJECT reject $ { -o "$ifname" $onet }
+		fw $action $mode f ${chain}_REJECT reject $ { -i "$ifname" $inet }
 
-		fw $action $mode n ${chain}_nat MASQUERADE ^ $onet { -o "$ifname" }
-		fw $action $mode f ${chain}_MSSFIX TCPMSS  ^ $onet { -o "$ifname" -p tcp --tcp-flags SYN,RST SYN --clamp-mss-to-pmtu }
+		fw $action $mode n ${chain}_nat MASQUERADE $ { -o "$ifname" $onet }
+		fw $action $mode f ${chain}_MSSFIX TCPMSS  $ { -o "$ifname" -p tcp --tcp-flags SYN,RST SYN --clamp-mss-to-pmtu $onet }
 
-		fw $action $mode f input   ${chain}         $ $inet { -i "$ifname" }
-		fw $action $mode f forward ${chain}_forward $ $inet { -i "$ifname" }
-		fw $action $mode n PREROUTING ${chain}_prerouting ^ $inet { -i "$ifname" }
-		fw $action $mode r PREROUTING ${chain}_notrack    ^ $inet { -i "$ifname" }
+		fw $action $mode f input   ${chain}         $ { -i "$ifname" $inet }
+		fw $action $mode f forward ${chain}_forward $ { -i "$ifname" $inet }
+		fw $action $mode n PREROUTING ${chain}_prerouting $ { -i "$ifname" $inet }
+		fw $action $mode r PREROUTING ${chain}_notrack    $ { -i "$ifname" $inet }
 	}
 
 	local old_zones old_ifname old_subnets
@@ -101,19 +101,6 @@ fw_configure_interface() {
 
 	[ "$action" == del ] && return
 
-	local new_zones=
-	load_zone() {
-		fw_config_get_zone "$1"
-		list_contains zone_network "$iface" || return
-
-		fw_log info "adding $iface ($ifname${aliasnet:+ alias $aliasnet}) to zone $zone_name"
-		fw__do_rules add ${zone_name} "$ifname" $aliasnet
-		append new_zones $zone_name
-
-		[ -n "$aliasnet" ] || ACTION=add ZONE="$zone_name" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
-	}
-	config_foreach load_zone zone
-
 	[ -z "$aliasnet" ] && {
 		local aliases
 		config_get aliases "$iface" aliases
@@ -141,6 +128,19 @@ fw_configure_interface() {
 		config_set core "${iface}_subnets" "$subnets"
 		uci_set_state firewall core "${iface}_subnets" "$subnets"
 	}
+
+	local new_zones=
+	load_zone() {
+		fw_config_get_zone "$1"
+		list_contains zone_network "$iface" || return
+
+		fw_log info "adding $iface ($ifname${aliasnet:+ alias $aliasnet}) to zone $zone_name"
+		fw__do_rules add ${zone_name} "$ifname" $aliasnet
+		append new_zones $zone_name
+
+		[ -n "$aliasnet" ] || ACTION=add ZONE="$zone_name" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
+	}
+	config_foreach load_zone zone
 
 	uci_set_state firewall core "${iface}_zone" "$new_zones"
 	uci_set_state firewall core "${iface}_ifname" "$ifname"
