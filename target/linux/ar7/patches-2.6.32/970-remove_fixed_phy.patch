@@ -47,7 +47,7 @@
  	res = platform_device_register(ar7_is_titan() ? &cpmac_low_titan :
 --- a/drivers/net/cpmac.c
 +++ b/drivers/net/cpmac.c
-@@ -1117,21 +1117,17 @@ static int __devinit cpmac_probe(struct
+@@ -1117,21 +1117,17 @@ static int __devinit cpmac_probe(struct 
  
  	pdata = pdev->dev.platform_data;
  
