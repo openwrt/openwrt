@@ -13,7 +13,10 @@ include $(INCLUDE_DIR)/netfilter.mk
 define KernelPackage/ipt-core
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter core
-  KCONFIG:=$(KCONFIG_IPT_CORE)
+  KCONFIG:= \
+  	CONFIG_NETFILTER=y \
+	CONFIG_NETFILTER_ADVANCED=y \
+	$(KCONFIG_IPT_CORE)
   FILES:=$(foreach mod,$(IPT_CORE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,40,$(notdir $(IPT_CORE-m)))
 endef
