@@ -57,7 +57,7 @@ GLIBC_CONFIGURE:= \
 	libc_cv_386_tls=yes \
 	libc_cv_slibdir="/lib" \
 	$(HOST_BUILD_DIR)/configure \
-		--prefix=/ \
+		--prefix= \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(REAL_GNU_TARGET_NAME) \
 		--with-headers="$(TOOLCHAIN_DIR)/include" \
