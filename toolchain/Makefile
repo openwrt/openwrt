@@ -51,6 +51,7 @@ ifdef CONFIG_GCC_VERSION_LLVM
   $(curdir)/gcc/minimal/compile += $(curdir)/llvm/install
 endif
 
+ifndef DUMP_TARGET_DB
 ifneq ($(ARCH),)
   $(TOOLCHAIN_DIR)/info.mk: .config
 	@for dir in $(TOOLCHAIN_DIR); do ( \
@@ -62,6 +63,7 @@ ifneq ($(ARCH),)
 	@grep GCC_VERSION $@ >/dev/null 2>&1 || $(INSTALL_DATA) $(TOPDIR)/toolchain/info.mk $@
 	@touch $@
 endif
+endif
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
@@ -69,7 +71,9 @@ $(curdir)//prepare = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk
 $(curdir)//compile = $(1)/prepare
 $(curdir)//install = $(1)/compile
 
+ifndef DUMP_TARGET_DB
 $(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed:
+endif
 
 $(eval $(call stampfile,$(curdir),toolchain,install,$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed,,$(TOOLCHAIN_DIR)))
 $(eval $(call subdir,$(curdir)))

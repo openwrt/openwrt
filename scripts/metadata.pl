@@ -763,6 +763,7 @@ sub gen_package_mk() {
 		next unless $cmds;
 		print <<EOF
 
+ifndef DUMP_TARGET_DB
 \$(TARGET_DIR)/etc/uci-defaults/$preconfig: FORCE
 	( \\
 $cmds \\
@@ -771,6 +772,8 @@ $cmds \\
 ifneq (\$(IMAGEOPT)\$(CONFIG_IMAGEOPT),)
   package/preconfig: \$(TARGET_DIR)/etc/uci-defaults/$preconfig
 endif
+endif
+
 EOF
 	}
 }
