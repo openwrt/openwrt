@@ -54,6 +54,7 @@ $(curdir)/upslug2/compile := $(curdir)/automake/install
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
 $(curdir)/builddirs-default := $(tools-y)
 
+ifndef DUMP_TARGET_DB
 define PrepareStaging
 	@for dir in $(1); do ( \
 		set -x; \
@@ -84,6 +85,7 @@ $(STAGING_DIR_HOST)/bin/$(1): $(STAGING_DIR)/.prepared
 	}; ln -s "$$$$FILE" "$$@"
 
 endef
+endif
 
 $(eval $(call PrepareCommand,find,gfind find))
 $(eval $(call PrepareCommand,md5sum,md5sum $(SCRIPT_DIR)/md5sum))

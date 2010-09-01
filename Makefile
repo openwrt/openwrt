@@ -46,9 +46,8 @@ $(package/stamp-install): $(package/stamp-compile)
 $(package/stamp-rootfs-prepare): $(package/stamp-install)
 $(target/stamp-install): $(package/stamp-compile) $(package/stamp-install) $(package/stamp-rootfs-prepare)
 
-$(BUILD_DIR)/.prepared: Makefile
-	@mkdir -p $$(dirname $@)
-	@touch $@
+printdb:
+	@true
 
 prepare: $(target/stamp-compile)
 
@@ -60,6 +59,11 @@ dirclean: clean
 	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(STAGING_DIR_TOOLCHAIN) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST) $(BUILD_DIR_TOOLCHAIN)
 	rm -rf $(TMP_DIR)
 
+ifndef DUMP_TARGET_DB
+$(BUILD_DIR)/.prepared: Makefile
+	@mkdir -p $$(dirname $@)
+	@touch $@
+
 tmp/.prereq_packages: .config
 	unset ERROR; \
 	for package in $(sort $(prereq-y) $(prereq-m)); do \
@@ -70,6 +74,7 @@ tmp/.prereq_packages: .config
 		false; \
 	fi
 	touch $@
+endif
 
 # check prerequisites before starting to build
 prereq: $(target/stamp-prereq) tmp/.prereq_packages
