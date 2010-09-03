@@ -47,6 +47,7 @@ define Host/Compile
 	$(call cc,mkdniimg)
 	$(call cc,mktitanimg)
 	$(call cc,mkchkimg)
+	$(call cc,mkzcfw cyg_crc32)
 endef
 
 define Host/Install
