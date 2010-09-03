@@ -11,7 +11,7 @@
 #	3: tempfile for file listings
 #	4: find options
 
-DEP_FINDPARAMS := -x "*/.svn*" -x ".*" -x "*:*" -x "*\!*" -x "* *" -x "*\\\#*" -x "*/.*_check"
+DEP_FINDPARAMS := -x "*/.svn*" -x ".*" -x "*:*" -x "*\!*" -x "* *" -x "*\\\#*" -x "*/.*_check" -x "*/.*.swp"
 
 find_md5=$(SH_FUNC) find $(1) -type f $(patsubst -x,-and -not -path,$(DEP_FINDPARAMS) $(2)) | md5s
 
