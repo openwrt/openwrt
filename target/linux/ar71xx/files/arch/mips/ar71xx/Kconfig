@@ -177,7 +177,7 @@ config AR71XX_MACH_TL_WA901ND
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	default n
-	
+
 config AR71XX_MACH_TL_WR741ND
 	bool "TP-LINK TL-WR741ND support"
 	select AR71XX_DEV_M25P80
@@ -236,6 +236,14 @@ config AR71XX_MACH_UBNT
 config AR71XX_MACH_EAP7660D
 	bool "Senao EAP7660D support"
 	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
+	default n
+
+config AR71XX_MACH_ZCN_1523H
+	bool "Zcomax ZCN-1523H support"
+	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	default n

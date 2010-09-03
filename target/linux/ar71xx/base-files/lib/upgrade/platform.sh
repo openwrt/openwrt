@@ -96,6 +96,13 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	zcn-1523h-2 | zcn-1523h-5)
+		[ "$magic" != "6873" -a "$magic" != "1985" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
 	routerstation | routerstation-pro | ls-sr71 | pb42 | pb44 | eap7660d )
 		[ "$magic" != "4349" ] && {
 			echo "Invalid image. Use *-sysupgrade.bin files on this board"
