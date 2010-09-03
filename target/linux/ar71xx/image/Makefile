@@ -381,6 +381,20 @@ define Image/Build/WNDR3700/initramfs
 		$(call imgname,$(1),$(2))-uImage.bin
 endef
 
+define Image/Build/Zcomax
+	$(call PatchKernelLzma,$(2),$(3))
+	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage.bin)
+	-$(STAGING_DIR_HOST)/bin/mkzcfw \
+		-B $(2) \
+		-k $(KDIR)/vmlinux-$(2).uImage.bin \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		-o $(call imgname,$(1),$(2))-factory.img
+	( \
+		dd if=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=6208k count=1 conv=sync; \
+		dd if=$(KDIR)/vmlinux-$(2).uImage.bin bs=1472k count=1; \
+	) > $(call imgname,$(1),$(2))-sysupgrade.bin
+endef
+
 define Image/Build/Template/initramfs/initramfs
 	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7))
 endef
@@ -573,6 +587,14 @@ define Image/Build/Profile/WZRHPG300NH
 	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG300NH,wzr-hp-g300nh,board=WZR-HP-G300NH)
 endef
 
+define Image/Build/Profile/ZCN1523H28
+	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-2-8,board=ZCN-1523H-2)
+endef
+
+define Image/Build/Profile/ZCN1523H516
+	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-5-16,board=ZCN-1523H-5)
+endef
+
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AP81,$(1))
 	$(call Image/Build/Profile/AP83,$(1))
@@ -604,6 +626,8 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WRT400N,$(1))
 	$(call Image/Build/Profile/WRT160NL,$(1))
 	$(call Image/Build/Profile/WZRHPG300NH,$(1))
+	$(call Image/Build/Profile/ZCN1523H28,$(1))
+	$(call Image/Build/Profile/ZCN1523H516,$(1))
 endef
 
 define Image/Build/Profile/Minimal
