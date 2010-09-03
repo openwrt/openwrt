@@ -108,6 +108,9 @@ get_status_led() {
 	wzr-hp-g300nh)
 		status_led="wzr-hp-g300nh:green:router"
 		;;
+	zcn-1523h-2 | zcn-1523h-5)
+		status_led="zcn-1523h:amber:init"
+		;;
 	esac;
 }
 
