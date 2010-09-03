@@ -367,6 +367,16 @@ mtd_refresh(const char *mtd)
 	return 0;
 }
 
+static void
+indicate_writing(const char *mtd)
+{
+	if (quiet < 2)
+		fprintf(stderr, "\nWriting from %s to %s ... ", imagefile, mtd);
+
+	if (!quiet)
+		fprintf(stderr, " [ ]");
+}
+
 static int
 mtd_write(int imagefd, const char *mtd, char *fis_layout)
 {
@@ -374,6 +384,7 @@ mtd_write(int imagefd, const char *mtd, char *fis_layout)
 	char *str = NULL;
 	int fd, result;
 	ssize_t r, w, e;
+	ssize_t skip = 0;
 	uint32_t offset = 0;
 
 #ifdef FIS_SUPPORT
@@ -451,13 +462,9 @@ resume:
 		exit(1);
 	}
 
-	if (quiet < 2)
-		fprintf(stderr, "Writing from %s to %s ... ", imagefile, mtd);
+	indicate_writing(mtd);
 
 	w = e = 0;
-	if (!quiet)
-		fprintf(stderr, " [ ]");
-
 	for (;;) {
 		/* buffer may contain data already (from trx check or last mtd partition write attempt) */
 		while (buflen < erasesize) {
@@ -480,6 +487,15 @@ resume:
 		if (buflen == 0)
 			break;
 
+		if (skip > 0) {
+			skip -= buflen;
+			buflen = 0;
+			if (skip <= 0)
+				indicate_writing(mtd);
+
+			continue;
+		}
+
 		if (jffs2file) {
 			if (memcmp(buf, JFFS2_EOF, sizeof(JFFS2_EOF) - 1) == 0) {
 				if (!quiet)
@@ -487,8 +503,14 @@ resume:
 				if (quiet < 2)
 					fprintf(stderr, "\nAppending jffs2 data from %s to %s...", jffs2file, mtd);
 				/* got an EOF marker - this is the place to add some jffs2 data */
-				mtd_replace_jffs2(mtd, fd, e, jffs2file);
-				goto done;
+				skip = mtd_replace_jffs2(mtd, fd, e, jffs2file);
+
+				w += skip;
+				e += skip;
+				skip -= buflen;
+				buflen = 0;
+				offset = 0;
+				continue;
 			}
 			/* no EOF marker, make sure we figure out the last inode number
 			 * before appending some data */

@@ -247,7 +247,7 @@ int mtd_replace_jffs2(const char *mtd, int fd, int ofs, const char *filename)
 #ifdef target_brcm
 	trx_fixup(outfd, mtd);
 #endif
-	return 0;
+	return (mtdofs - ofs);
 }
 
 void mtd_parse_jffs2data(const char *buf, const char *dir)
