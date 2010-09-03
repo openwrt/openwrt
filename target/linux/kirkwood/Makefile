@@ -15,6 +15,8 @@ LINUX_VERSION:=2.6.35.4
 
 include $(INCLUDE_DIR)/target.mk
 
+CFLAGS:=-Os -pipe -march=armv5te -mtune=marvell-f -funit-at-a-time
+
 KERNELNAME:="uImage"
 
 DEFAULT_PACKAGES +=
