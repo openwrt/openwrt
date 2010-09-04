@@ -55,6 +55,22 @@ endef
 $(eval $(call KernelPackage,bluetooth))
 
 
+define KernelPackage/cpu-msr
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=x86 CPU MSR support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_X86_MSR
+  FILES:=$(LINUX_DIR)/arch/x86/kernel/msr.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,20,msr)
+endef
+
+define KernelPackage/cpu-msr/description
+ Kernel module for Model Specific Registers support in x86 CPUs
+endef
+
+$(eval $(call KernelPackage,cpu-msr))
+
+
 define KernelPackage/crc-ccitt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC-CCITT support
