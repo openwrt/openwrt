@@ -318,6 +318,17 @@ endef
 $(eval $(call KernelPackage,usb-serial-ftdi))
 
 
+define KernelPackage/usb-serial-ipw
+  TITLE:=Support for IPWireless 3G devices
+  KCONFIG:=CONFIG_USB_SERIAL_IPW
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/ipw.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,65,ipw)
+  $(call AddDepends/usb-serial)
+endef
+
+$(eval $(call KernelPackage,usb-serial-ipw))
+
+
 define KernelPackage/usb-serial-mct
   TITLE:=Support for Magic Control Tech. devices
   KCONFIG:=CONFIG_USB_SERIAL_MCT_U232
