@@ -23,7 +23,7 @@ define Package/firewall
 endef
 
 define Package/firewall/description
- uci based firewall for openwrt
+ UCI based firewall for OpenWrt
 endef
 
 define Build/Compile
