@@ -1,0 +1,46 @@
+--- a/arch/arm/mach-ixp4xx/cambria-setup.c
++++ b/arch/arm/mach-ixp4xx/cambria-setup.c
+@@ -214,6 +214,20 @@ static struct platform_device cambria_gp
+ 	.dev.platform_data = &cambria_gpio_leds_data,
+ };
+ 
++static struct resource cambria_gpio_resources[] = {
++	{
++		.name = "gpio",
++		.flags  = 0,
++	},
++};
++
++static struct platform_device cambria_gpio = {
++	.name     = "GPIODEV",
++	.id     = -1,
++	.num_resources    = ARRAY_SIZE(cambria_gpio_resources),
++	.resource   = cambria_gpio_resources,
++};
++
+ static struct latch_led cambria_latch_leds[] = {
+ 	{
+ 		.name	= "ledA",  /* green led */
+@@ -335,6 +349,11 @@ static void __init cambria_gw2350_setup(
+ 	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53FF0000, 0x0fff);
+ 	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
+ 
++	cambria_gpio_resources[0].start = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) |\
++																		(1 << 5) | (1 << 8) | (1 << 9) | (1 << 12);
++	cambria_gpio_resources[0].end = cambria_gpio_resources[0].start;
++
++	platform_device_register(&cambria_gpio);
+ 	platform_device_register(&cambria_optional_uart);
+ 	platform_device_register(&cambria_npec_device);
+ 	platform_device_register(&cambria_npea_device);
+@@ -358,6 +377,10 @@ static void __init cambria_gw2358_setup(
+ 	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53F80000, 0x0fff);
+ 	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
+ 
++	cambria_gpio_resources[0].start = (1 << 14);
++	cambria_gpio_resources[0].end = cambria_gpio_resources[0].start;
++
++	platform_device_register(&cambria_gpio);
+ 	platform_device_register(&cambria_optional_uart);
+ 
+ 	platform_device_register(&cambria_npec_device);
