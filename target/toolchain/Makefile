@@ -38,9 +38,9 @@ $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.bz2: clean
 	$(CP)  $(TOPDIR)/LICENSE ./files/README.TOOLCHAIN \
 		$(TOOLCHAIN_BUILD_DIR)/
 
-	$(CP) ./files/wrapper.sh $(TOOLCHAIN_PREFIX)/usr/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
-	chmod +x $(TOOLCHAIN_PREFIX)/usr/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
-	(cd $(TOOLCHAIN_PREFIX)/usr/bin; \
+	$(CP) ./files/wrapper.sh $(TOOLCHAIN_PREFIX)/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
+	chmod +x $(TOOLCHAIN_PREFIX)/bin/$(REAL_GNU_TARGET_NAME)-wrapper.sh
+	(cd $(TOOLCHAIN_PREFIX)/bin; \
 		for app in cc gcc g++ c++ cpp ld as ; do \
 			[ -f $(REAL_GNU_TARGET_NAME)-$${app} ] && mv $(REAL_GNU_TARGET_NAME)-$${app} $(REAL_GNU_TARGET_NAME)-$${app}.bin ; \
 			ln -sf $(REAL_GNU_TARGET_NAME)-wrapper.sh $(REAL_GNU_TARGET_NAME)-$${app} ; \
