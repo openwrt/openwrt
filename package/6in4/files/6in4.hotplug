@@ -32,7 +32,9 @@ if [ "$ACTION" = ifup ]; then
 			config_get password "$cfg" password
 
 			[ -n "$tunnelid" ] && [ -n "$username" ] && [ -n "$password" ] && {
-				password="$(echo -n "$password" | md5sum)"; password="${password%% *}"
+				[ "${#password}" != 32 ] || [ -n "$(echo "$password" | sed 's/[a-z0-9]//g')" ] && {
+					password="$(echo -n "$password" | md5sum)"; password="${password%% *}"
+				}
 				uci_set_state network "$cfg" ipaddr "$wanip"
 
 				( wget -qO/dev/null "http://ipv4.tunnelbroker.net/ipv4_end.php?ipv4b=AUTO&user_id=$username&pass=$password&tunnel_id=$tunnelid" && ifup "$cfg" )&
