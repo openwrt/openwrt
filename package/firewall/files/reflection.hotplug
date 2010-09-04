@@ -53,6 +53,10 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 				local proto
 				config_get proto "$cfg" proto
 
+				local reflection
+				config_get_bool reflection "$cfg" reflection 1
+				[ "$reflection" == 1 ] || return
+
 				local epmin epmax extport
 				config_get extport "$cfg" src_dport
 				[ -n "$extport" ] || return
