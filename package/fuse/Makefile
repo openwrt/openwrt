@@ -65,7 +65,7 @@ $(call Package/fuse/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= (library)
-  DEPENDS:=kmod-fuse
+  DEPENDS:=+kmod-fuse
   SUBMENU:=Filesystem
 endef
 
