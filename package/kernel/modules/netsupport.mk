@@ -674,3 +674,25 @@ endef
 $(eval $(call KernelPackage,l2tp-ip))
 
 
+define KernelPackage/sctp
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=SCTP protocol kernel support
+  KCONFIG:=\
+     CONFIG_IP_SCTP \
+     CONFIG_SCTP_DBG_MSG=n \
+     CONFIG_SCTP_DBG_OBJCNT=n \
+     CONFIG_SCTP_HMAC_NONE=n \
+     CONFIG_SCTP_HMAC_SHA1=n \
+     CONFIG_SCTP_HMAC_MD5=y
+  FILES:= $(LINUX_DIR)/net/sctp/sctp.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:= $(call AutoLoad,32,sctp)
+  DEPENDS:=+kmod-libcrc32c +kmod-crypto-md5 +kmod-crypto-hmac
+endef
+
+define KernelPackage/sctp/description
+ Kernel modules for SCTP protocol support
+endef
+
+$(eval $(call KernelPackage,sctp))
+
+

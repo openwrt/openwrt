@@ -132,6 +132,22 @@ endef
 $(eval $(call KernelPackage,crc16))
 
 
+define KernelPackage/libcrc32c
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=CRC32 library support
+  KCONFIG:=CONFIG_LIBCRC32C
+  DEPENDS:=+kmod-crypto-core +kmod-crypto-misc 
+  FILES:=$(LINUX_DIR)/lib/libcrc32c.ko
+  AUTOLOAD:=$(call AutoLoad,20,crc32c libcrc32c,1)
+endef
+
+define KernelPackage/libcrc32c/description
+ Kernel module for CRC32 support
+endef
+
+$(eval $(call KernelPackage,libcrc32c))
+
+
 define KernelPackage/eeprom-93cx6
   SUBMENU:=$(OTHER_MENU)
   TITLE:=EEPROM 93CX6 support
