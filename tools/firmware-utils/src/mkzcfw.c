@@ -297,7 +297,7 @@ static int build_fw(void)
 	/* fill firmware header */
 	hdr = (struct fw_header *) p;
 	hdr->magic = HOST_TO_LE32(MAGIC_FIRMWARE);
-	hdr->length = HOST_TO_LE32(buflen) - sizeof(struct fw_header);
+	hdr->length = HOST_TO_LE32(buflen - sizeof(struct fw_header));
 	p += sizeof(struct fw_header);
 
 	/* fill kernel block header */
