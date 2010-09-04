@@ -356,3 +356,20 @@ endef
 
 $(eval $(call KernelPackage,crypto-test))
 
+
+define KernelPackage/crypto-xts
+  TITLE:=XTS cipher CryptoAPI module
+  KCONFIG:= \
+	CONFIG_CRYPTO_GF128MUL \
+	CONFIG_CRYPTO_XTS
+  FILES:= \
+	$(LINUX_DIR)/crypto/xts.ko \
+	$(LINUX_DIR)/crypto/gf128mul.ko
+  AUTOLOAD:=$(call AutoLoad,09, \
+	gf128mul \
+	xts \
+  )
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-xts))
