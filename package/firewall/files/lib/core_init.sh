@@ -142,6 +142,8 @@ fw_config_get_zone() {
 		string output "$FW_DEFAULT_OUTPUT_POLICY" \
 		string forward "$FW_DEFAULT_FORWARD_POLICY" \
 		boolean masq 0 \
+		string masq_src "" \
+		string masq_dest "" \
 		boolean conntrack 0 \
 		boolean mtu_fix 0 \
 		boolean custom_chains "$FW_ADD_CUSTOM_CHAINS" \

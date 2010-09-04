@@ -2,7 +2,7 @@
 
 . /etc/functions.sh
 
-if [ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "wan" ]; then
+if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 	local wanip=$(uci -P/var/state get network.wan.ipaddr)
 
 	iptables -t nat -F nat_reflection_in 2>/dev/null || {
