@@ -1,0 +1,50 @@
+--- a/drivers/net/wireless/b43/b43.h
++++ b/drivers/net/wireless/b43/b43.h
+@@ -704,6 +704,7 @@ struct b43_wldev {
+ 	bool qos_enabled;		/* TRUE, if QoS is used. */
+ 	bool hwcrypto_enabled;		/* TRUE, if HW crypto acceleration is enabled. */
+ 	bool use_pio;			/* TRUE if next init should use PIO */
++	int gpiomask;			/* GPIO LED mask as a module parameter */
+ 
+ 	/* PHY/Radio device. */
+ 	struct b43_phy phy;
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -75,6 +75,11 @@ MODULE_FIRMWARE("b43/ucode15.fw");
+ MODULE_FIRMWARE("b43/ucode5.fw");
+ MODULE_FIRMWARE("b43/ucode9.fw");
+ 
++static int modparam_gpiomask = 0x000F;
++module_param_named(gpiomask, modparam_gpiomask, int, 0444);
++MODULE_PARM_DESC(gpiomask,
++         "GPIO mask for LED control (default 0x000F)");
++
+ static int modparam_bad_frames_preempt;
+ module_param_named(bad_frames_preempt, modparam_bad_frames_preempt, int, 0444);
+ MODULE_PARM_DESC(bad_frames_preempt,
+@@ -2534,10 +2539,10 @@ static int b43_gpio_init(struct b43_wlde
+ 		    & ~B43_MACCTL_GPOUTSMSK);
+ 
+ 	b43_write16(dev, B43_MMIO_GPIO_MASK, b43_read16(dev, B43_MMIO_GPIO_MASK)
+-		    | 0x000F);
++		    | modparam_gpiomask);
+ 
+ 	mask = 0x0000001F;
+-	set = 0x0000000F;
++	set = modparam_gpiomask;
+ 	if (dev->dev->bus->chip_id == 0x4301) {
+ 		mask |= 0x0060;
+ 		set |= 0x0060;
+@@ -5094,10 +5099,10 @@ static void b43_print_driverinfo(void)
+ 	feat_sdio = "S";
+ #endif
+ 	printk(KERN_INFO "Broadcom 43xx driver loaded "
+-	       "[ Features: %s%s%s%s%s, Firmware-ID: "
++	       "[ Features: %s%s%s%s%s, GPIO LED Mask: 0x%04x, Firmware-ID: "
+ 	       B43_SUPPORTED_FIRMWARE_ID " ]\n",
+ 	       feat_pci, feat_pcmcia, feat_nphy,
+-	       feat_leds, feat_sdio);
++	       feat_leds, feat_sdio, modparam_gpiomask);
+ }
+ 
+ static int __init b43_init(void)
