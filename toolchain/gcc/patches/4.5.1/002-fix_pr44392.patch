@@ -1,0 +1,70 @@
+>From d0557763b0713a4c006bd2405eede3924569cafd Mon Sep 17 00:00:00 2001
+From: Ramana Radhakrishnan <ramana.radhakrishnan@arm.com>
+Date: Mon, 5 Jul 2010 11:28:49 +0100
+Subject: [PATCH 2/2] Fix PR44392
+
+---
+ gcc/config/arm/arm.md |   43 +++++++++++++++++++------------------------
+ 1 files changed, 19 insertions(+), 24 deletions(-)
+
+diff --git a/gcc/config/arm/arm.md b/gcc/config/arm/arm.md
+index 2096ec6..f0348f3 100644
+--- a/gcc/config/arm/arm.md
++++ b/gcc/config/arm/arm.md
+@@ -11318,34 +11318,29 @@
+ (define_expand "bswapsi2"
+   [(set (match_operand:SI 0 "s_register_operand" "=r")
+   	(bswap:SI (match_operand:SI 1 "s_register_operand" "r")))]
+-"TARGET_EITHER"
++"TARGET_EITHER && (arm_arch6 || !optimize_size)"
+ "
+-  if (!arm_arch6)
+-    {
+-      if (!optimize_size)
+-	{
+-	  rtx op2 = gen_reg_rtx (SImode);
+-	  rtx op3 = gen_reg_rtx (SImode);
++    if (!arm_arch6)
++      {
++	rtx op2 = gen_reg_rtx (SImode);
++	rtx op3 = gen_reg_rtx (SImode);
+ 
+-	  if (TARGET_THUMB)
+-	    {
+-	      rtx op4 = gen_reg_rtx (SImode);
+-	      rtx op5 = gen_reg_rtx (SImode);
++	if (TARGET_THUMB)
++	  {
++	    rtx op4 = gen_reg_rtx (SImode);
++	    rtx op5 = gen_reg_rtx (SImode);
+ 
+-	      emit_insn (gen_thumb_legacy_rev (operands[0], operands[1],
+-					       op2, op3, op4, op5));
+-	    }
+-	  else
+-	    {
+-	      emit_insn (gen_arm_legacy_rev (operands[0], operands[1],
+-					     op2, op3));
+-	    }
++	    emit_insn (gen_thumb_legacy_rev (operands[0], operands[1],
++					     op2, op3, op4, op5));
++	  }
++	else
++	  {
++	    emit_insn (gen_arm_legacy_rev (operands[0], operands[1],
++					   op2, op3));
++	  }
+ 
+-	  DONE;
+-	}
+-      else
+-	FAIL;
+-    }
++	DONE;
++      }
+   "
+ )
+ 
+-- 
+1.6.2
+
