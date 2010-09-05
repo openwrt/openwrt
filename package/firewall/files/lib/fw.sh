@@ -149,7 +149,7 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 	fi
 
 	case "$fam" in
-		G*) shift; while [ "$1" != "{" ]; do shift; done ;;
+		G*) shift; while [ $# -gt 0 ] && [ "$1" != "{" ]; do shift; done ;;
 	esac
 
 	if [ $# -gt 0 ]; then

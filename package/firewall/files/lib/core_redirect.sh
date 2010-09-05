@@ -31,13 +31,15 @@ fw_load_redirect() {
 		fw_die "redirect ${redirect_name}: needs src and dest_ip or dest_port"
 	}
 
-	local chain destopt
+	local chain destopt destaddr
 	if [ "$redirect_target" == "DNAT" ]; then
 		chain="zone_${redirect_src}_prerouting"
 		destopt="--to-destination"
+		destaddr="$redirect_dest_ip"
 	elif [ "$redirect_target" == "SNAT" ]; then
 		chain="zone_${redirect_src}_nat"
 		destopt="--to-source"
+		destaddr="$redirect_src_dip"
 	else
 		fw_die "redirect ${redirect_name}: target must be either DNAT or SNAT"
 	fi
@@ -65,9 +67,9 @@ fw_load_redirect() {
 			$destopt ${redirect_dest_ip}${redirect_dest_port:+:$nat_dest_port} \
 		}
 
-		[ -n "$redirect_dest_ip" ] && \
+		[ -n "$destaddr" ] && \
 		fw add $mode f zone_${redirect_src}_forward ACCEPT ^ { $redirect_src_ip $redirect_dest_ip } { \
-			-d $redirect_dest_ip \
+			-d $destaddr \
 			${redirect_proto:+-p $redirect_proto} \
 			${redirect_src_ip:+-s $redirect_src_ip/$redirect_src_ip_prefixlen} \
 			${redirect_src_port:+--sport $redirect_src_port} \
