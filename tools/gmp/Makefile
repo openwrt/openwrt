@@ -17,11 +17,6 @@ include $(INCLUDE_DIR)/host-build.mk
 
 unexport CFLAGS
 
-ifeq ($(HOST_OS),Darwin)
-  GNU_HOST_NAME:=
-  HOST_CONFIGURE_ARGS:=$(filter-out --target= --build= --host=,$(HOST_CONFIGURE_ARGS))
-endif
-
 HOST_CONFIGURE_ARGS += \
 	--enable-static \
 	--disable-shared \
