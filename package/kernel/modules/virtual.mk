@@ -5,10 +5,10 @@
 # See /LICENSE for more information.
 #
 
-XEN_MENU:=Xen paravirtualized guest support
+VIRTUAL_MENU:=Virtualization Support
 
 define KernelPackage/xen-fs
-  SUBMENU:=$(XEN_MENU)
+  SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen filesystem
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:= \
@@ -26,7 +26,7 @@ $(eval $(call KernelPackage,xen-fs))
 
 
 define KernelPackage/xen-evtchn
-  SUBMENU:=$(XEN_MENU)
+  SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen event channels
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:=CONFIG_XEN_DEV_EVTCHN
@@ -42,7 +42,7 @@ $(eval $(call KernelPackage,xen-evtchn))
 
 # FIXME: the FB support should be moved to a separate kmod
 define KernelPackage/xen-fbdev
-  SUBMENU:=$(XEN_MENU)
+  SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen virtual frame buffer
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:= \
@@ -79,7 +79,7 @@ $(eval $(call KernelPackage,xen-fbdev))
 
 
 define KernelPackage/xen-kbddev
-  SUBMENU:=$(XEN_MENU)
+  SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen virtual keyboard and mouse
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:=CONFIG_XEN_KBDDEV_FRONTEND
@@ -95,7 +95,7 @@ $(eval $(call KernelPackage,xen-kbddev))
 
 
 define KernelPackage/xen-netdev
-  SUBMENU:=$(XEN_MENU)
+  SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen network device frontend
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:=CONFIG_XEN_NETDEV_FRONTEND
