@@ -41,7 +41,10 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 		local src
 		config_get src "$cfg" src
 
-		[ "$src" = wan ] && {
+		local target
+		config_get target "$cfg" target DNAT
+
+		[ "$src" = wan ] && [ "$target" = DNAT ] && {
 			local dest
 			config_get dest "$cfg" dest "lan"
 
