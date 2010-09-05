@@ -7,6 +7,54 @@
 
 VIRTUAL_MENU:=Virtualization Support
 
+
+define KernelPackage/virtio-balloon
+  SUBMENU:=$(VIRTUAL_MENU)
+  TITLE:=VirtIO balloon driver
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_VIRTIO_BALLOON
+  FILES:=$(LINUX_DIR)/drivers/virtio/virtio_balloon.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,06,virtio-balloon)
+endef
+
+define KernelPackage/virtio-balloon/description
+  Kernel module for VirtIO memory ballooning support
+endef
+
+$(eval $(call KernelPackage,virtio-balloon))
+
+
+define KernelPackage/virtio-net
+  SUBMENU:=$(VIRTUAL_MENU)
+  TITLE:=VirtIO network driver
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_VIRTIO_NET
+  FILES:=$(LINUX_DIR)/drivers/net/virtio_net.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,virtio_net)
+endef
+
+define KernelPackage/virtio-net/description
+ Kernel module for the VirtIO paravirtualized network device
+endef
+
+$(eval $(call KernelPackage,virtio-net))
+
+
+define KernelPackage/virtio-random
+  SUBMENU:=$(VIRTUAL_MENU)
+  TITLE:=VirtIO Random Number Generator support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_HW_RANDOM_VIRTIO
+  FILES:=$(LINUX_DIR)/drivers/char/hw_random/virtio-rng.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,09,virtio-rng)
+endef
+
+define KernelPackage/virtio-random/description
+  Kernel module for the VirtIO Random Number Generator
+endef
+
+$(eval $(call KernelPackage,virtio-random))
+
 define KernelPackage/xen-fs
   SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen filesystem
