@@ -32,11 +32,12 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		HOST_OS=`uname`; \
 		case "$$HOST_OS" in \
 			Linux) HOST_ARCH=`uname -m`;; \
+			Darwin) HOST_ARCH=`uname -m`;; \
 			*) HOST_ARCH=`uname -p`;; \
 		esac; \
 		GNU_HOST_NAME=`gcc -dumpmachine`; \
-		[ -n "$$GNU_HOST_NAME" ] || \
-			GNU_HOST_NAME=`$(SCRIPT_DIR)/config.guess`; \
+		[ -z "$$GNU_HOST_NAME" -o "$$HOST_OS" == "Darwin" ] && \
+			GNU_HOST_NAME=`$(TOPDIR)/scripts/config.guess`; \
 		echo "HOST_OS:=$$HOST_OS" > $@; \
 		echo "HOST_ARCH:=$$HOST_ARCH" >> $@; \
 		echo "GNU_HOST_NAME:=$$GNU_HOST_NAME" >> $@; \
