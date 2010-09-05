@@ -17,6 +17,7 @@ fw_config_get_redirect() {
 		string dest_port "" \
 		string proto "tcpudp" \
 		string family "" \
+		string target "DNAT" \
 	} || return
 	[ -n "$redirect_name" ] || redirect_name=$redirect__name
 }
@@ -29,6 +30,17 @@ fw_load_redirect() {
 	[ -n "$redirect_src" -a -n "$redirect_dest_ip$redirect_dest_port" ] || {
 		fw_die "redirect ${redirect_name}: needs src and dest_ip or dest_port"
 	}
+
+	local chain destopt
+	if [ "$redirect_target" == "DNAT" ]; then
+		chain="zone_${redirect_src}_prerouting"
+		destopt="--to-destination"
+	elif [ "$redirect_target" == "SNAT" ]; then
+		chain="zone_${redirect_src}_nat"
+		destopt="--to-source"
+	else
+		fw_die "redirect ${redirect_name}: target must be either DNAT or SNAT"
+	fi
 
 	list_contains FW_CONNTRACK_ZONES $redirect_src || \
 		append FW_CONNTRACK_ZONES $redirect_src
@@ -43,14 +55,14 @@ fw_load_redirect() {
 
 	[ "$redirect_proto" == "tcpudp" ] && redirect_proto="tcp udp"
 	for redirect_proto in $redirect_proto; do
-		fw add $mode n zone_${redirect_src}_prerouting DNAT $ { $redirect_src_ip $redirect_dest_ip } { \
+		fw add $mode n $chain $redirect_target $ { $redirect_src_ip $redirect_dest_ip } { \
 			${redirect_proto:+-p $redirect_proto} \
 			${redirect_src_ip:+-s $redirect_src_ip/$redirect_src_ip_prefixlen} \
 			${redirect_src_dip:+-d $redirect_src_dip/$redirect_src_dip_prefixlen} \
 			${redirect_src_port:+--sport $redirect_src_port} \
 			${redirect_src_dport:+--dport $redirect_src_dport} \
 			${redirect_src_mac:+-m mac --mac-source $redirect_src_mac} \
-			--to-destination ${redirect_dest_ip}${redirect_dest_port:+:$nat_dest_port} \
+			$destopt ${redirect_dest_ip}${redirect_dest_port:+:$nat_dest_port} \
 		}
 
 		[ -n "$redirect_dest_ip" ] && \
