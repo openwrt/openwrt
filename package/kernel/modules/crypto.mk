@@ -267,7 +267,8 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/sha256$(SHA256_SUFFIX).ko \
 	$(LINUX_DIR)/crypto/sha512$(SHA512_SUFFIX).ko \
 	$(LINUX_DIR)/crypto/tea.ko \
-	$(LINUX_DIR)/crypto/twofish.ko \
+	$(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,2.6.35)),,$(LINUX_DIR)/crypto/twofish.ko) \
+	$(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.36)),,$(LINUX_DIR)/crypto/twofish_generic.ko) \
 	$(LINUX_DIR)/crypto/wp512.ko
   $(call AddDepends/crypto)
 endef
