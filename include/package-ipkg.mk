@@ -14,7 +14,8 @@ OPKG:= \
   $(STAGING_DIR_HOST)/bin/opkg \
 	-f $(STAGING_DIR)/etc/opkg.conf \
 	--force-depends \
-	--force-overwrite
+	--force-overwrite \
+	--force-run-hooks
 
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
