@@ -12,7 +12,7 @@ define Profile/Gumstix
 		ext2 usb udev kmod-bluetooth ntpclient wpa-supplicant \
 		wireless-tools wpa-cli \
 		bluez-utils bluez-hcidump hegw usbutils python pyserial \
-		python-mini python-openssl libstdcpp \
+		python-mini python-openssl python-cjson libstdcpp \
 		kmod-usb-serial kmod-usb-serial-cp210x kmod-usb-serial-ftdi \
 		kmod-usb-serial-pl2303 kmod-usb-uhci kmod-cfg80211 \
 		kmod-lib80211 kmod-libertas-sd kmod-mac80211 libnl-tiny \
