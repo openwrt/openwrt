@@ -6,12 +6,15 @@
 #
 
 # where to build (and put) .ipk packages
-IPKG:= \
+OPKG:= \
   IPKG_TMP=$(TMP_DIR)/ipkg \
   IPKG_INSTROOT=$(TARGET_DIR) \
   IPKG_CONF_DIR=$(STAGING_DIR)/etc \
   IPKG_OFFLINE_ROOT=$(TARGET_DIR) \
-  $(SCRIPT_DIR)/ipkg -force-defaults -force-depends
+  $(STAGING_DIR_HOST)/bin/opkg \
+	-f $(STAGING_DIR)/etc/opkg.conf \
+	--force-depends \
+	--force-overwrite
 
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
@@ -76,7 +79,7 @@ ifeq ($(DUMP),)
 	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
 	touch $$@
 
-    $$(IPKG_$(1)): $(STAGING_DIR)/etc/ipkg.conf $(STAMP_BUILT)
+    $$(IPKG_$(1)): $(STAGING_DIR)/etc/opkg.conf $(STAMP_BUILT)
 	@rm -rf $(PACKAGE_DIR)/$(1)_* $$(IDIR_$(1))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
@@ -108,7 +111,8 @@ ifeq ($(DUMP),)
 	@[ -f $$(IPKG_$(1)) ]
 
     $$(INFO_$(1)): $$(IPKG_$(1))
-	$(IPKG) install $$(IPKG_$(1))
+	@[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
+	$(OPKG) install $$(IPKG_$(1))
 
     $(1)-clean:
 	rm -f $(PACKAGE_DIR)/$(1)_*
@@ -117,9 +121,11 @@ ifeq ($(DUMP),)
 
   endef
 
-  $(STAGING_DIR)/etc/ipkg.conf:
+  $(STAGING_DIR)/etc/opkg.conf:
 	mkdir -p $(STAGING_DIR)/etc
-	echo "dest root /" > $(STAGING_DIR)/etc/ipkg.conf
-	echo "option offline_root $(TARGET_DIR)" >> $(STAGING_DIR)/etc/ipkg.conf
+	( echo "dest root /"				> $@; \
+	  echo "arch all 100"				>> $@; \
+	  echo "arch $(PKGARCH) 200"			>> $@; \
+	  echo "option offline_root $(TARGET_DIR)"	>> $@ )
 
 endif
