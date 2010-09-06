@@ -36,7 +36,7 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 			*) HOST_ARCH=`uname -p`;; \
 		esac; \
 		GNU_HOST_NAME=`gcc -dumpmachine`; \
-		[ -z "$$GNU_HOST_NAME" -o "$$HOST_OS" == "Darwin" ] && \
+		[ -z "$$GNU_HOST_NAME" -o "$$HOST_OS" = "Darwin" ] && \
 			GNU_HOST_NAME=`$(TOPDIR)/scripts/config.guess`; \
 		echo "HOST_OS:=$$HOST_OS" > $@; \
 		echo "HOST_ARCH:=$$HOST_ARCH" >> $@; \
