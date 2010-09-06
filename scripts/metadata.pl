@@ -667,14 +667,15 @@ sub gen_package_mk() {
 					$dep = $1;
 					$suffix = $2;
 				}
-				my $pkg_dep = $package{$dep};
-				next unless $pkg_dep;
 
 				my $idx = "";
-				if (defined $pkg_dep->{src}) {
+				my $pkg_dep = $package{$dep};
+				if (defined($pkg_dep) && defined($pkg_dep->{src})) {
 					$idx = $pkg_dep->{subdir}.$pkg_dep->{src};
 				} elsif (defined($srcpackage{$dep})) {
 					$idx = $subdir{$dep}.$dep;
+				} else {
+					next;
 				}
 				my $depstr = "\$(curdir)/$idx$suffix/compile";
 				my $depline = get_conditional_dep($condition, $depstr);
