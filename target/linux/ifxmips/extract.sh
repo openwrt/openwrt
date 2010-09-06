@@ -11,9 +11,9 @@ echo "Please only do so if it is legal in your country"
 	exit 1
 }
 
-[ -f ${DIR}/ifxmips_fw_decode.tar.bz2 -a ! -f ${DIR}voip_coef.bin ] && {
+[ -f ${DIR}/ifxmips_fw_decodev2.tar.bz2 -a ! -f ${DIR}voip_coef.bin ] && {
 	[ ! -f ${DIR}decode_ifx_fw ] && {
-		tar xjf ${DIR}ifxmips_fw_decode.tar.bz2 ifxmips_fw_decode/decode.c -O > ${DIR}decode.c
+		tar xjf ${DIR}ifxmips_fw_decodev2.tar.bz2 ifxmips_fw_decode/decode.c -O > ${DIR}decode.c
 		gcc -o ${DIR}decode_ifx_fw ${DIR}decode.c
 	}
 	[ ! -f ${DIR}voip_coef.lzma ] && {
