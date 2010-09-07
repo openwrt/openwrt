@@ -7,8 +7,10 @@ RAMFS_COPY_DATA=""	# extra data files
 export INTERACTIVE=0
 export VERBOSE=1
 export SAVE_CONFIG=1
+export SAVE_OVERLAY=0
 export DELAY=
 export CONF_IMAGE=
+
 # parse options
 while [ -n "$1" ]; do 
 	case "$1" in
@@ -17,6 +19,7 @@ while [ -n "$1" ]; do
 		-v) export VERBOSE="$(($VERBOSE + 1))";;
 		-q) export VERBOSE="$(($VERBOSE - 1))";;
 		-n) export SAVE_CONFIG=0;;
+		-c) export SAVE_OVERLAY=1;;
 		-f) export CONF_IMAGE="$2"; shift;;
 		-*)
 			echo "Invalid option: $1"
@@ -41,7 +44,8 @@ Options:
 	-d <delay>   add a delay before rebooting
 	-f <config>  restore configuration from .tar.gz (file or url)
 	-i           interactive mode
-	-n	     do not save configuration over reflash
+	-c           attempt to preserve all changed files in /etc/
+	-n           do not save configuration over reflash
 	-q           less verbose
 	-v           more verbose
 
@@ -56,9 +60,22 @@ add_uci_conffiles() {
 	return 0
 }
 
+add_overlayfiles() {
+	local file="$1"
+	find /overlay/etc/ -type f | sed \
+		-e 's,^/overlay/,/,' \
+		-e '\,/META_[a-zA-Z0-9]*$,d' \
+		-e '\,/functions.sh$,d' \
+		-e '\,/[^/]*-opkg$,d' \
+	> "$file"
+	return 0
+}
+
 # hooks
 sysupgrade_image_check="platform_check_image"
-sysupgrade_init_conffiles="add_uci_conffiles"
+[ $SAVE_OVERLAY = 0 -o ! -d /overlay/etc ] && \
+	sysupgrade_init_conffiles="add_uci_conffiles" || \
+	sysupgrade_init_conffiles="add_overlayfiles"
 
 include /lib/upgrade
 
