@@ -19,6 +19,7 @@ PKG_MD5SUM:=5d720b6d8de97ae61a4c3e4ee10a6de1
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
+PKG_BUILD_PARALLEL:=1
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-mac80211 \
@@ -955,7 +956,7 @@ endef
 ifneq ($(CONFIG_PACKAGE_kmod-cfg80211),)
  define Build/Compile/kmod
 	rm -rf $(PKG_BUILD_DIR)/modules
-	$(MAKE) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) all
+	$(MAKE) $(PKG_JOBS) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) all
  endef
 endif
 

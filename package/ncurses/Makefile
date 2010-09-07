@@ -17,6 +17,7 @@ PKG_SOURCE_URL:=@GNU/ncurses
 PKG_MD5SUM:=cce05daf61a64501ef6cd8da1f727ec6
 
 PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
