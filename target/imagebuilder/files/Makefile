@@ -60,7 +60,8 @@ OPKG:= \
   $(STAGING_DIR_HOST)/bin/opkg \
 	-f $(TOPDIR)/tmp/opkg.conf \
 	--force-depends \
-	--force-overwrite
+	--force-overwrite \
+	--force-run-hooks
 
 define Profile
   $(eval $(call Profile/Default))
