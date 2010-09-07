@@ -1,14 +1,16 @@
 # system file for Dockstar
 config system
-        option hostname OpenWrt
-        option timezone UTC
+        option 'hostname' 'OpenWrt'
+        option 'timezone' 'UTC'
 
 config rdate
-        option interface        eth0
+        option 'interface' 'lan'
+
 config led
         option 'sysfs' 'dockstar:green:health'
         option 'trigger' 'none'
         option 'default' '1'
+
 config led
         option 'sysfs' 'dockstar:orange:misc'
         option 'trigger' 'netdev'
