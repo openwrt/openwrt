@@ -86,19 +86,12 @@ _call_info: FORCE
 $(TOPDIR)/tmp/opkg.conf: FORCE
 	@mkdir -p $(TOPDIR)/tmp
 	@mkdir -p $(TARGET_DIR)/tmp
-	@echo 'dest root /' > $@
-	@echo 'src packages file:$(PACKAGE_DIR)' >> $@
-	@echo 'arch all 100' >> $@
-ifneq ($(CONFIG_TARGET_adm5120),y)
-	@echo 'arch $(BOARD) 200' >> $@
-else
-	@echo 'arch $(BOARD)_$(ARCH) 200' >> $@
-endif
-	@echo 'option offline_root $(TARGET_DIR)' >> $@
+	@$(TOPDIR)/scripts/opkg-generate-config.sh $(TARGET_DIR)
 
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(USER_PACKAGES) $($(USER_PROFILE)_PACKAGES) kernel)
 # "-pkgname" in the package list means remove "pkgname" from the package list
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
+PACKAGES:=
 
 _call_image:
 	echo 'Building images for $(BOARD)$(if $($(USER_PROFILE)_NAME), - $($(USER_PROFILE)_NAME))'

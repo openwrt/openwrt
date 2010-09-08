@@ -22,15 +22,18 @@ all: compile
 
 $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	rm -rf $(PKG_BUILD_DIR)
-	mkdir -p $(IB_KDIR) $(PKG_BUILD_DIR)/staging_dir/host $(PKG_BUILD_DIR)/target
+	mkdir -p $(IB_KDIR) $(PKG_BUILD_DIR)/staging_dir/host \
+		$(PKG_BUILD_DIR)/target $(PKG_BUILD_DIR)/scripts
 	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
 	$(CP) \
 		$(INCLUDE_DIR) $(SCRIPT_DIR) \
 		$(TOPDIR)/rules.mk \
 		./files/Makefile \
+		./files/repositories.conf \
 		$(TMP_DIR)/.targetinfo \
 		$(TMP_DIR)/.packageinfo \
 		$(PKG_BUILD_DIR)/
+	$(CP) ./files/opkg-generate-config.sh $(PKG_BUILD_DIR)/scripts/
 	$(CP) $(PACKAGE_DIR) $(PKG_BUILD_DIR)/packages
 	$(CP) $(STAGING_DIR_HOST)/bin $(PKG_BUILD_DIR)/staging_dir/host/
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
