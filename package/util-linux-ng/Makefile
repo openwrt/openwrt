@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.13
 PKG_MD5SUM:=c841dc8743905c8f0db20c9db5094f57
 
-PKG_BUILD_DEPENDS=e2fsprogs
+PKG_BUILD_DEPENDS=e2fsprogs libncurses
 
 include $(INCLUDE_DIR)/package.mk
 
