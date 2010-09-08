@@ -12,7 +12,8 @@ TARGETDIR="${1}"
 PKGARCH=
 for pkg in $TOPDIR/packages/*.ipk; do
 	if [ -f "$pkg" ]; then
-		PKGARCH="${pkg##*_}"
+		PKGARCH="${pkg##*/}"
+		PKGARCH="${PKGARCH#*_*_}"
 		PKGARCH="${PKGARCH%.ipk}"
 		[ "$PKGARCH" = all ] || break
 	fi
