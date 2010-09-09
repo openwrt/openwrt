@@ -14,6 +14,7 @@ PKG_RELEASE:=2
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://devresources.linux-foundation.org/dev/iproute2/download/
 PKG_MD5SUM:=b0f281b3124bf04669e18f5fe16d4934
+PKG_BUILD_PARALLEL:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/iproute2-$(PKG_VERSION)
 
@@ -60,7 +61,10 @@ MAKE_FLAGS += \
 	FPIC="$(FPIC)"
 
 define Build/Compile
-	$(_SINGLE)$(MAKE) -C $(PKG_BUILD_DIR)/netem HOSTCC="$(HOSTCC)"  EXTRA_CCOPTS="$(TARGET_CFLAGS)" CFLAGS="-D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall -I ../include -DRESOLVE_HOSTNAMES"
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/netem \
+		HOSTCC="$(HOSTCC)"  EXTRA_CCOPTS="$(TARGET_CFLAGS)" \
+		CFLAGS="-D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall \
+		-I../include -DRESOLVE_HOSTNAMES"
 	$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) $(MAKE_FLAGS) all
 	$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/tc $(MAKE_FLAGS) tc
 	$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/ip $(MAKE_FLAGS) ip
