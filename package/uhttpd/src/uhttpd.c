@@ -401,6 +401,10 @@ static struct http_request * uh_http_header_recv(struct client *cl)
 			{
 				ensure_out(rlen = uh_tcp_recv(cl, bufptr, rlen));
 
+				/* unexpected eof - #7904 */
+				if( rlen == 0 )
+					return NULL;
+
 				blen -= rlen;
 				bufptr += rlen;
 			}
