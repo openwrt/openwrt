@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
 PKG_VERSION:=2.6.35
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://devresources.linux-foundation.org/dev/iproute2/download/
@@ -50,17 +50,20 @@ define Build/Configure
 	# For now disable compiling of the misc directory because it seems to fail
 	rm -rf $(PKG_BUILD_DIR)/misc
 	$(SED) "s, misc,," $(PKG_BUILD_DIR)/Makefile
+	echo "static const char SNAPSHOT[] = \"$(PKG_VERSION)-$(PKG_RELEASE)-openwrt\";" \
+		> $(PKG_BUILD_DIR)/include/SNAPSHOT.h
 endef
 
 MAKE_FLAGS += \
 	EXTRA_CCOPTS="$(TARGET_CFLAGS)" \
 	KERNEL_INCLUDE="$(LINUX_DIR)/include" \
-	FPIC="$(FPIC)" \
-	all tc/tc ip/ip
+	FPIC="$(FPIC)"
 
 define Build/Compile
 	$(_SINGLE)$(MAKE) -C $(PKG_BUILD_DIR)/netem HOSTCC="$(HOSTCC)"  EXTRA_CCOPTS="$(TARGET_CFLAGS)" CFLAGS="-D_GNU_SOURCE -O2 -Wstrict-prototypes -Wall -I ../include -DRESOLVE_HOSTNAMES"
-	$(_SINGLE)$(Build/Compile/Default)
+	$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) $(MAKE_FLAGS) all
+	$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/tc $(MAKE_FLAGS) tc
+	$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/ip $(MAKE_FLAGS) ip
 endef
 
 define Build/InstallDev
