@@ -7,8 +7,8 @@
  drivers/cbus/retu.h              |    2 
  6 files changed, 425 insertions(+), 3 deletions(-)
 
---- linux-2.6.35.3.orig/drivers/cbus/Kconfig
-+++ linux-2.6.35.3/drivers/cbus/Kconfig
+--- linux-2.6.35.4.orig/drivers/cbus/Kconfig
++++ linux-2.6.35.4/drivers/cbus/Kconfig
 @@ -94,4 +94,16 @@ config CBUS_RETU_HEADSET
  	  to Retu/Vilma. Detection state and events are exposed through
  	  sysfs.
@@ -26,15 +26,15 @@
 +	  If unsure, say N.
 +
  endmenu
---- linux-2.6.35.3.orig/drivers/cbus/Makefile
-+++ linux-2.6.35.3/drivers/cbus/Makefile
+--- linux-2.6.35.4.orig/drivers/cbus/Makefile
++++ linux-2.6.35.4/drivers/cbus/Makefile
 @@ -12,3 +12,4 @@ obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.
  obj-$(CONFIG_CBUS_TAHVO_USER)	+= tahvo-user.o
  obj-$(CONFIG_CBUS_RETU_USER)	+= retu-user.o
  obj-$(CONFIG_CBUS_RETU_HEADSET)	+= retu-headset.o
 +obj-$(CONFIG_N810BM)		+= n810bm.o
 --- /dev/null
-+++ linux-2.6.35.3/drivers/cbus/n810bm.c
++++ linux-2.6.35.4/drivers/cbus/n810bm.c
 @@ -0,0 +1,396 @@
 +/*
 + *   Nokia n810 battery management
@@ -432,8 +432,8 @@
 +MODULE_DESCRIPTION("Nokia n810 battery management");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Michael Buesch");
---- linux-2.6.35.3.orig/drivers/cbus/retu.c
-+++ linux-2.6.35.3/drivers/cbus/retu.c
+--- linux-2.6.35.4.orig/drivers/cbus/retu.c
++++ linux-2.6.35.4/drivers/cbus/retu.c
 @@ -85,10 +85,10 @@ int retu_read_reg(int reg)
   *
   * This function writes a value to the specified register
@@ -447,8 +447,8 @@
  }
  
  void retu_set_clear_reg_bits(int reg, u16 set, u16 clear)
---- linux-2.6.35.3.orig/drivers/cbus/retu.h
-+++ linux-2.6.35.3/drivers/cbus/retu.h
+--- linux-2.6.35.4.orig/drivers/cbus/retu.h
++++ linux-2.6.35.4/drivers/cbus/retu.h
 @@ -58,7 +58,7 @@
  #define	MAX_RETU_IRQ_HANDLERS	16
  
@@ -458,11 +458,11 @@
  void retu_set_clear_reg_bits(int reg, u16 set, u16 clear);
  int retu_read_adc(int channel);
  int retu_request_irq(int id, void *irq_handler, unsigned long arg, char *name);
---- linux-2.6.35.3.orig/arch/arm/mach-omap2/board-n8x0.c
-+++ linux-2.6.35.3/arch/arm/mach-omap2/board-n8x0.c
-@@ -875,6 +875,17 @@ extern void n8x0_blizzard_init(void);
- #define n8x0_blizzard_init() 0
- #endif
+--- linux-2.6.35.4.orig/arch/arm/mach-omap2/board-n8x0.c
++++ linux-2.6.35.4/arch/arm/mach-omap2/board-n8x0.c
+@@ -781,6 +781,17 @@ extern void n8x0_blizzard_init(void);
+ 
+ extern void n8x0_usb_init(void);
  
 +static struct platform_device n810_bm_device = {
 +	.name		= "n810bm",
@@ -478,7 +478,7 @@
  static void __init n8x0_init_machine(void)
  {
  	platform_device_register(&n8x0_cbus_device);
-@@ -901,6 +912,8 @@ static void __init n8x0_init_machine(voi
+@@ -807,6 +818,8 @@ static void __init n8x0_init_machine(voi
  	n8x0_onenand_init();
  	n8x0_mmc_init();
  	n8x0_usb_init();
