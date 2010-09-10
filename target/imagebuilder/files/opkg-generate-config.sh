@@ -32,7 +32,7 @@ rm -f $TOPDIR/tmp/opkg.conf
 
 [ -f $TOPDIR/repositories.conf ] && \
 	$TOPDIR/staging_dir/host/bin/sed \
-		-n -e "s/\$A/$PKGARCH/g" -e "/^[[:space:]*]src/p" \
+		-n -e "s/\$A/$PKGARCH/g" -e "/^[[:space:]]*src/p" \
 		$TOPDIR/repositories.conf > $TOPDIR/tmp/opkg.conf
 
 cat <<EOT >> $TOPDIR/tmp/opkg.conf
