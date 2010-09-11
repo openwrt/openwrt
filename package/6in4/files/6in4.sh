@@ -2,7 +2,7 @@
 # Copyright (c) 2010 OpenWrt.org
 
 find_6in4_wanif() {
-	local if=$(ip -4 r l e 0/0); if="${if#default* dev }"; if="${if%% *}"
+	local if=$(ip -4 r l e 0.0.0.0/0); if="${if#default* dev }"; if="${if%% *}"
 	[ -n "$if" ] && grep -qs "^ *$if:" /proc/net/dev && echo "$if"
 }
 
