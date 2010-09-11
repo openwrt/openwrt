@@ -1,0 +1,33 @@
+diff --git a/common.c b/common.c
+index 69cdf5b..28b3750 100644
+--- a/common.c
++++ b/common.c
+@@ -5765,8 +5765,9 @@ int acx_e_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
+ 	 * TODO WEP hw support can still be added later, if required.
+ 	 */
+ 
+-	switch (key->alg) {
+-	case ALG_WEP:
++	switch (key->cipher) {
++	case WLAN_CIPHER_SUITE_WEP40:
++	case WLAN_CIPHER_SUITE_WEP104:
+ 		if (key->keylen == 5) {
+ 			algorithm = ACX_SEC_ALGO_WEP;
+ 			log(L_INIT, "acx: %s: algorithm=%i: %s\n", __func__, algorithm, "ACX_SEC_ALGO_WEP");
+@@ -5778,14 +5779,14 @@ int acx_e_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
+ 		err = -EOPNOTSUPP;
+ 		break;
+ 
+-	case ALG_TKIP:
++	case WLAN_CIPHER_SUITE_TKIP:
+ 		algorithm = ACX_SEC_ALGO_TKIP;
+ 		log(L_INIT, "acx: %s: algorithm=%i: %s\n", __func__, algorithm, "ACX_SEC_ALGO_TKIP");
+ 		err = -EOPNOTSUPP;
+ 		break;
+ 
+ 		break;
+-	case ALG_CCMP:
++	case WLAN_CIPHER_SUITE_CCMP:
+ 		algorithm = ACX_SEC_ALGO_AES;
+ 		log(L_INIT, "acx: %s: algorithm=%i: %s\n", __func__, algorithm, "ACX_SEC_ALGO_AES");
+ 		err = -EOPNOTSUPP;
