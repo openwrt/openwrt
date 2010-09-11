@@ -27,7 +27,8 @@ fw_load_forwarding() {
 		target=zone_${forwarding_dest}_ACCEPT
 	}
 
-	local mode=$(fw_get_family_mode ${forwarding_family:-x} ${forwarding_dest:-${forwarding_src:--}} i)
+	local mode
+	fw_get_family_mode mode ${forwarding_family:-x} ${forwarding_dest:-${forwarding_src:--}} i
 
 	fw add $mode f $chain $target ^
 

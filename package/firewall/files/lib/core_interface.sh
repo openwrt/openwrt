@@ -27,11 +27,9 @@ fw_configure_interface() {
 		local chain=zone_${zone}
 		local ifname=$3
 		local subnet=$4
-		local masq_src=$5
-		local masq_dest=$6
 
-		local inet onet
-		local mode=$(fw_get_family_mode x $zone i)
+		local inet onet mode
+		fw_get_family_mode mode x $zone i
 
 		case "$mode/$subnet" in
 			# Zone supports v6 only or dual, need v6
@@ -62,38 +60,27 @@ fw_configure_interface() {
 		fw $action $mode f ${chain}_REJECT reject $ { -o "$ifname" $onet }
 		fw $action $mode f ${chain}_REJECT reject $ { -i "$ifname" $inet }
 
-		# NB: if MASQUERADING for IPv6 becomes available we'll need a family check here
-		local msrc mdst
-		for msrc in ${masq_src:-0.0.0.0/0}; do
-			[ "${msrc#!}" != "$msrc" ] && msrc="! -s ${msrc#!}" || msrc="-s $msrc"
-			for mdst in ${subnet:-${masq_dest:-0.0.0.0/0}}; do
-				[ "${mdst#!}" != "$mdst" ] && mdst="! -d ${mdst#!}" || mdst="-d $mdst"
-				fw $action $mode n ${chain}_nat MASQUERADE $ { -o "$ifname" $msrc $mdst }
-			done
-		done
-
 		fw $action $mode f ${chain}_MSSFIX TCPMSS  $ { -o "$ifname" -p tcp --tcp-flags SYN,RST SYN --clamp-mss-to-pmtu $onet }
 
 		fw $action $mode f input   ${chain}         $ { -i "$ifname" $inet }
 		fw $action $mode f forward ${chain}_forward $ { -i "$ifname" $inet }
 		fw $action $mode n PREROUTING ${chain}_prerouting $ { -i "$ifname" $inet }
 		fw $action $mode r PREROUTING ${chain}_notrack    $ { -i "$ifname" $inet }
+		fw $action $mode n POSTROUTING ${chain}_nat       $ { -o "$ifname" $onet }
 	}
 
-	local old_zones old_ifname old_subnets old_masq_src old_masq_dest
+	local old_zones old_ifname old_subnets
 	config_get old_zones core "${iface}_zone"
 	[ -n "$old_zones" ] && {
 		config_get old_ifname core "${iface}_ifname"
 		config_get old_subnets core "${iface}_subnets"
-		config_get old_masq_src core "${iface}_masq_src"
-		config_get old_masq_dest core "${iface}_masq_dest"
 
 		local z
 		for z in $old_zones; do
 			local n
 			for n in ${old_subnets:-""}; do
 				fw_log info "removing $iface ($old_ifname${n:+ alias $n}) from zone $z"
-				fw__do_rules del $z $old_ifname $n "$old_masq_src" "$old_masq_dest"
+				fw__do_rules del $z $old_ifname $n
 			done
 
 			[ -n "$old_subnets" ] || ACTION=remove ZONE="$z" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
@@ -111,8 +98,6 @@ fw_configure_interface() {
 		uci_revert_state firewall core "${iface}_ifname"
 		uci_revert_state firewall core "${iface}_subnets"
 		uci_revert_state firewall core "${iface}_aliases"
-		uci_revert_state firewall core "${iface}_masq_src"
-		uci_revert_state firewall core "${iface}_masq_dest"
 	}
 
 	[ "$action" == del ] && return
@@ -146,17 +131,13 @@ fw_configure_interface() {
 	}
 
 	local new_zones=
-	local new_masq_src=
-	local new_masq_dest=
 	load_zone() {
 		fw_config_get_zone "$1"
 		list_contains zone_network "$iface" || return
 
 		fw_log info "adding $iface ($ifname${aliasnet:+ alias $aliasnet}) to zone $zone_name"
-		fw__do_rules add ${zone_name} "$ifname" "$aliasnet" "$zone_masq_src" "$zone_masq_dest"
+		fw__do_rules add ${zone_name} "$ifname" "$aliasnet"
 		append new_zones $zone_name
-		append new_masq_src "$zone_masq_src"
-		append new_masq_dest "$zone_masq_dest"
 
 		[ -n "$aliasnet" ] || ACTION=add ZONE="$zone_name" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
 	}
@@ -164,8 +145,6 @@ fw_configure_interface() {
 
 	uci_set_state firewall core "${iface}_zone" "$new_zones"
 	uci_set_state firewall core "${iface}_ifname" "$ifname"
-	uci_set_state firewall core "${iface}_masq_src" "$new_masq_src"
-	uci_set_state firewall core "${iface}_masq_dest" "$new_masq_dest"
 }
 
 fw_sysctl_interface() {
