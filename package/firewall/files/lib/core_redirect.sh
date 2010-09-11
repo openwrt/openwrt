@@ -27,53 +27,77 @@ fw_load_redirect() {
 
 	fw_callback pre redirect
 
-	[ -n "$redirect_src" -a -n "$redirect_dest_ip$redirect_dest_port" ] || {
-		fw_die "redirect ${redirect_name}: needs src and dest_ip or dest_port"
-	}
-
-	local chain destopt destaddr
+	local fwdchain natchain natopt nataddr natports srcdaddr srcdports
 	if [ "$redirect_target" == "DNAT" ]; then
-		chain="zone_${redirect_src}_prerouting"
-		destopt="--to-destination"
-		destaddr="$redirect_dest_ip"
+		[ -n "$redirect_src" -a -n "$redirect_dest_ip$redirect_dest_port" ] || {
+			fw_die "DNAT redirect ${redirect_name}: needs src and dest_ip or dest_port"
+		}
+
+		fwdchain="zone_${redirect_src}_forward"
+
+		natopt="--to-destination"
+		natchain="zone_${redirect_src}_prerouting"
+		nataddr="$redirect_dest_ip"
+		fw_get_port_range natports "$redirect_dest_port" "-"
+
+		srcdaddr="${redirect_src_dip:+$redirect_src_dip/$redirect_src_dip_prefixlen}"
+		fw_get_port_range srcdports "$redirect_src_dport" ":"
+
+		list_contains FW_CONNTRACK_ZONES $redirect_src || \
+			append FW_CONNTRACK_ZONES $redirect_src
+
 	elif [ "$redirect_target" == "SNAT" ]; then
-		chain="zone_${redirect_src}_nat"
-		destopt="--to-source"
-		destaddr="$redirect_src_dip"
+		[ -n "$redirect_dest" -a -n "$redirect_src_dip" ] || {
+			fw_die "SNAT redirect ${redirect_name}: needs dest and src_dip"
+		}
+
+		fwdchain="${redirect_src:+zone_${redirect_src}_forward}"
+
+		natopt="--to-source"
+		natchain="zone_${redirect_dest}_nat"
+		nataddr="$redirect_src_dip"
+		fw_get_port_range natports "$redirect_src_dport" "-"
+
+		srcdaddr="${redirect_dest_ip:+$redirect_dest_ip/$redirect_dest_ip_prefixlen}"
+		fw_get_port_range srcdports "$redirect_dest_port" ":"
+
+		list_contains FW_CONNTRACK_ZONES $redirect_dest || \
+			append FW_CONNTRACK_ZONES $redirect_dest
+
 	else
 		fw_die "redirect ${redirect_name}: target must be either DNAT or SNAT"
 	fi
 
-	list_contains FW_CONNTRACK_ZONES $redirect_src || \
-		append FW_CONNTRACK_ZONES $redirect_src
+	local mode
+	fw_get_family_mode mode ${redirect_family:-x} ${redirect_src:-$redirect_dest} I
 
-	local mode=$(fw_get_family_mode ${redirect_family:-x} $redirect_src I)
+	local srcaddr="${redirect_src_ip:+$redirect_src_ip/$redirect_src_ip_prefixlen}"
+	local srcports
+	fw_get_port_range srcports "$redirect_src_port" ":"
 
-	local nat_dest_port=$redirect_dest_port
-	redirect_dest_port=$(fw_get_port_range $redirect_dest_port)
-	redirect_src_port=$(fw_get_port_range $redirect_src_port)
-	redirect_src_dport=$(fw_get_port_range $redirect_src_dport)
-	local fwd_dest_port=${redirect_dest_port:-$redirect_src_dport}
+	local destaddr="${redirect_dest_ip:+$redirect_dest_ip/$redirect_dest_ip_prefixlen}"
+	local destports
+	fw_get_port_range destports "${redirect_dest_port:-$redirect_src_dport}" ":"
 
 	[ "$redirect_proto" == "tcpudp" ] && redirect_proto="tcp udp"
 	for redirect_proto in $redirect_proto; do
-		fw add $mode n $chain $redirect_target $ { $redirect_src_ip $redirect_dest_ip } { \
+		fw add $mode n $natchain $redirect_target ^ { $redirect_src_ip $redirect_dest_ip } { \
 			${redirect_proto:+-p $redirect_proto} \
-			${redirect_src_ip:+-s $redirect_src_ip/$redirect_src_ip_prefixlen} \
-			${redirect_src_dip:+-d $redirect_src_dip/$redirect_src_dip_prefixlen} \
-			${redirect_src_port:+--sport $redirect_src_port} \
-			${redirect_src_dport:+--dport $redirect_src_dport} \
+			${srcaddr:+-s $srcaddr} \
+			${srcports:+--sport $srcports} \
+			${srcdaddr:+-d $srcdaddr} \
+			${srcdports:+--dport $srcdports} \
 			${redirect_src_mac:+-m mac --mac-source $redirect_src_mac} \
-			$destopt ${redirect_dest_ip}${redirect_dest_port:+:$nat_dest_port} \
+			$natopt $nataddr${natports:+:$natports} \
 		}
 
 		[ -n "$destaddr" ] && \
-		fw add $mode f zone_${redirect_src}_forward ACCEPT ^ { $redirect_src_ip $redirect_dest_ip } { \
-			-d $destaddr \
+		fw add $mode f ${fwdchain:-forward} ACCEPT ^ { $redirect_src_ip $redirect_dest_ip } { \
 			${redirect_proto:+-p $redirect_proto} \
-			${redirect_src_ip:+-s $redirect_src_ip/$redirect_src_ip_prefixlen} \
-			${redirect_src_port:+--sport $redirect_src_port} \
-			${fwd_dest_port:+--dport $fwd_dest_port} \
+			${srcaddr:+-s $srcaddr} \
+			${srcports:+--sport $srcports} \
+			${destaddr:+-d $destaddr} \
+			${destports:+--dport $destports} \
 			${redirect_src_mac:+-m mac --mac-source $redirect_src_mac} \
 		}
 	done

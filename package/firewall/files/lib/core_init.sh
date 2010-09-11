@@ -212,9 +212,6 @@ fw_load_zone() {
 
 	fw add $mode r ${chain}_notrack
 
-	[ $zone_masq == 1 ] && \
-		fw add $mode n POSTROUTING ${chain}_nat $
-
 	[ $zone_mtu_fix == 1 ] && \
 		fw add $mode f FORWARD ${chain}_MSSFIX ^
 
@@ -242,6 +239,18 @@ fw_load_zone() {
 				{ -m limit --limit $zone_log_limit --log-prefix "$t($zone_name): "  }
 		done
 	}
+
+	# NB: if MASQUERADING for IPv6 becomes available we'll need a family check here
+	if [ "$zone_masq" == 1 ]; then
+		local msrc mdst
+		for msrc in ${zone_masq_src:-0.0.0.0/0}; do
+			[ "${msrc#!}" != "$msrc" ] && msrc="! -s ${msrc#!}" || msrc="-s $msrc"
+			for mdst in ${zone_masq_dest:-0.0.0.0/0}; do
+				[ "${mdst#!}" != "$mdst" ] && mdst="! -d ${mdst#!}" || mdst="-d $mdst"
+				fw add $mode n ${chain}_nat MASQUERADE $ { $msrc $mdst }
+			done
+		done
+	fi
 
 	fw_callback post zone
 }

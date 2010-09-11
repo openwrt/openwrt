@@ -159,56 +159,62 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 		fi
 	fi
 
+	local cmdline="$app --table ${tab} --${cmd} ${chn} ${pol} ${pos} ${tgt:+--jump "$tgt"}"
 	while [ $# -gt 1 ]; do
 		case "$app:$1" in
-			ip6tables:--icmp-type) echo -n "--icmpv6-type" ;;
-			ip6tables:icmp|ip6tables:ICMP) echo -n "icmpv6" ;;
-			iptables:--icmpv6-type) echo -n "--icmp-type" ;;
-			iptables:icmpv6) echo -n "icmp" ;;
-			*) echo -n "$1" ;;
+			ip6tables:--icmp-type) cmdline="$cmdline --icmpv6-type" ;;
+			ip6tables:icmp|ip6tables:ICMP) cmdline="$cmdline icmpv6" ;;
+			iptables:--icmpv6-type) cmdline="$cmdline --icmp-type" ;;
+			iptables:icmpv6) cmdline="$cmdline icmp" ;;
+			*) cmdline="$cmdline $1" ;;
 		esac
-		echo -ne "\0"
 		shift
-	done | xargs -0 ${FW_TRACE:+-t} \
-		$app --table ${tab} --${cmd} ${chn} ${pol} ${pos} ${tgt:+--jump "$tgt"}
+	done
+
+	[ -n "$FW_TRACE" ] && echo $cmdline >&2
+
+	$cmdline
+
 	fw__rc $?
 }
 
 fw_get_port_range() {
-	local ports=$1
-	local delim=${2:-:}
-	if [ "$3" ]; then
-		fw_get_port_range "${ports}-${3}" $delim
+	local _var=$1
+	local _ports=$2
+	local _delim=${3:-:}
+	if [ "$4" ]; then
+		fw_get_port_range $_var "${_ports}-${4}" $_delim
 		return
 	fi
 
-	local first=${ports%-*}
-	local last=${ports#*-}
-	if [ "$first" != "$last" ]; then
-		echo "$first$delim$last"
+	local _first=${_ports%-*}
+	local _last=${_ports#*-}
+	if [ "$_first" != "$_last" ]; then
+		export -- "$_var=$_first$_delim$_last"
 	else
-		echo "$first"
+		export -- "$_var=$_first"
 	fi
 }
 
 fw_get_family_mode() {
-	local hint="$1"
-	local zone="$2"
-	local mode="$3"
+	local _var="$1"
+	local _hint="$2"
+	local _zone="$3"
+	local _mode="$4"
 
-	local ipv4 ipv6
+	local _ipv4 _ipv6
 	[ -n "$FW_ZONES4$FW_ZONES6" ] && {
-		list_contains FW_ZONES4 $zone && ipv4=1 || ipv4=0
-		list_contains FW_ZONES6 $zone && ipv6=1 || ipv6=0
+		list_contains FW_ZONES4 $_zone && _ipv4=1 || _ipv4=0
+		list_contains FW_ZONES6 $_zone && _ipv6=1 || _ipv6=0
 	} || {
-		ipv4=$(uci_get_state firewall core ${zone}_ipv4 0)
-		ipv6=$(uci_get_state firewall core ${zone}_ipv6 0)
+		_ipv4=$(uci_get_state firewall core ${_zone}_ipv4 0)
+		_ipv6=$(uci_get_state firewall core ${_zone}_ipv6 0)
 	}
 
-	case "$hint:$ipv4:$ipv6" in
-		*4:1:*|*:1:0) echo G4 ;;
-		*6:*:1|*:0:1) echo G6 ;;
-		*) echo $mode ;;
+	case "$_hint:$_ipv4:$_ipv6" in
+		*4:1:*|*:1:0) export -n -- "$_var=G4" ;;
+		*6:*:1|*:0:1) export -n -- "$_var=G6" ;;
+		*) export -n -- "$_var=$_mode" ;;
 	esac
 }
 
