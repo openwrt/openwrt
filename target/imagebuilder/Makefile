@@ -33,7 +33,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 		$(TMP_DIR)/.targetinfo \
 		$(TMP_DIR)/.packageinfo \
 		$(PKG_BUILD_DIR)/
-	$(CP) ./files/opkg-generate-config.sh $(PKG_BUILD_DIR)/scripts/
+	$(SED) 's/$$A/$(BOARD)/' $(PKG_BUILD_DIR)/repositories.conf
 	$(CP) $(PACKAGE_DIR) $(PKG_BUILD_DIR)/packages
 	$(CP) $(STAGING_DIR_HOST)/bin $(PKG_BUILD_DIR)/staging_dir/host/
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/

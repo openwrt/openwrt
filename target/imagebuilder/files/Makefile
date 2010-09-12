@@ -58,10 +58,15 @@ OPKG:= \
   IPKG_CONF_DIR="$(TOPDIR)/tmp" \
   IPKG_OFFLINE_ROOT="$(TARGET_DIR)" \
   $(STAGING_DIR_HOST)/bin/opkg \
-	-f $(TOPDIR)/tmp/opkg.conf \
+	-f $(TOPDIR)/repositories.conf \
 	--force-depends \
 	--force-overwrite \
-	--force-run-hooks
+	--force-postinstall \
+	--cache $(TOPDIR)/dl \
+	--offline-root $(TARGET_DIR) \
+	--add-dest root:/ \
+	--add-arch all:100 \
+	--add-arch $(ARCH_PACKAGES):200
 
 define Profile
   $(eval $(call Profile/Default))
@@ -83,11 +88,6 @@ _call_info: FORCE
 	echo 'Available Profiles:'
 	echo; $(PROFILE_LIST)
 
-$(TOPDIR)/tmp/opkg.conf: FORCE
-	@mkdir -p $(TOPDIR)/tmp
-	@mkdir -p $(TARGET_DIR)/tmp
-	@$(TOPDIR)/scripts/opkg-generate-config.sh $(TARGET_DIR)
-
 BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $(USER_PACKAGES) $($(USER_PROFILE)_PACKAGES) kernel)
 # "-pkgname" in the package list means remove "pkgname" from the package list
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
@@ -107,9 +107,10 @@ endif
 	$(MAKE) package_postinst
 	$(MAKE) build_image
 	
-package_index: $(TOPDIR)/tmp/opkg.conf FORCE
+package_index: FORCE
 	@echo
 	@echo Building package index...
+	@mkdir -p $(TOPDIR)/tmp $(TOPDIR)/dl $(TARGET_DIR)/tmp
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
 		gzip -9c Packages > Packages.gz \
 	) >/dev/null 2>/dev/null
@@ -145,7 +146,7 @@ build_image: FORCE
 	$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1
 	
 clean:
-	rm -rf tmp $(TARGET_DIR) $(BIN_DIR)
+	rm -rf $(TOPDIR)/tmp $(TOPDIR)/dl $(TARGET_DIR) $(BIN_DIR)
 
 
 info:
