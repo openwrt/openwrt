@@ -1,4 +1,5 @@
 ARCH:=mipsel
+ARCH_PACKAGES:=malta_mipsel
 SUBTARGET:=le
 BOARDNAME:=Little Endian
 FEATURES:=ramdisk

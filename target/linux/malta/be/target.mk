@@ -1,4 +1,5 @@
 ARCH:=mips
+ARCH_PACKAGES:=malta_mips
 SUBTARGET:=be
 BOARDNAME:=Big Endian
 FEATURES:=ramdisk
