@@ -7,11 +7,12 @@
 
 define Profile/GW6X00
   NAME:=Tecom GW6X00
-  PACKAGES:=kmod-b43 kmod-usb-core kmod-usb-ohci kmod-usb-storage \
+  PACKAGES:=kmod-brcm-wl kmod-usb-core kmod-usb-ohci kmod-usb-storage \
 	kmod-fs-ext2 kmod-nls-cp437 kmod-nls-iso8859-1 kmod-fs-vfat \
 	kmod-loop e2fsprogs kmod-spi-bitbang kmod-bcm63xx-spi \
 	kmod-ipt-nathelper-extra kmod-input-gpio-buttons \
-	wpa-supplicant iw kmod-leds-gpio kmod-button-hotplug
+	wpa-supplicant iw kmod-leds-gpio kmod-button-hotplug \
+	wl wlc
 endef
 
 define Profile/GW6X00/Description
