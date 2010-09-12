@@ -1,0 +1,238 @@
+--- a/libopkg/opkg.c
++++ b/libopkg/opkg.c
+@@ -120,6 +120,9 @@ opkg_new()
+ 	if (opkg_conf_init())
+ 		goto err0;
+ 
++	if (opkg_conf_load())
++		goto err0;
++
+ 	if (pkg_hash_load_feeds())
+ 		goto err1;
+ 
+--- a/libopkg/opkg_conf.c
++++ b/libopkg/opkg_conf.c
+@@ -91,15 +91,15 @@ opkg_option_t options[] = {
+ };
+ 
+ static int
+-resolve_pkg_dest_list(nv_pair_list_t *nv_pair_list)
++resolve_pkg_dest_list(void)
+ {
+      nv_pair_list_elt_t *iter;
+      nv_pair_t *nv_pair;
+      pkg_dest_t *dest;
+      char *root_dir;
+ 
+-     for (iter = nv_pair_list_first(nv_pair_list); iter;
+-		     iter = nv_pair_list_next(nv_pair_list, iter)) {
++     for (iter = nv_pair_list_first(&conf->tmp_dest_list); iter;
++		     iter = nv_pair_list_next(&conf->tmp_dest_list, iter)) {
+ 	  nv_pair = (nv_pair_t *)iter->data;
+ 
+ 	  if (conf->offline_root) {
+@@ -185,8 +185,7 @@ opkg_conf_set_option(const char *name, c
+ 
+ static int
+ opkg_conf_parse_file(const char *filename,
+-				pkg_src_list_t *pkg_src_list,
+-				nv_pair_list_t *tmp_dest_nv_pair_list)
++				pkg_src_list_t *pkg_src_list)
+ {
+      int line_num = 0;
+      int err = 0;
+@@ -269,7 +268,7 @@ opkg_conf_parse_file(const char *filenam
+ 				regmatch[11].rm_eo - regmatch[11].rm_so);
+ 	  }
+ 
+-	  /* We use the tmp_dest_nv_pair_list below instead of
++	  /* We use the tmp_dest_list below instead of
+ 	     conf->pkg_dest_list because we might encounter an
+ 	     offline_root option later and that would invalidate the
+ 	     directories we would have computed in
+@@ -292,7 +291,7 @@ opkg_conf_parse_file(const char *filenam
+ 				   "Skipping.\n", name, value);
+ 	       }
+ 	  } else if (strcmp(type, "dest") == 0) {
+-	       nv_pair_list_append(tmp_dest_nv_pair_list, name, value);
++	       nv_pair_list_append(&conf->tmp_dest_list, name, value);
+ 	  } else if (strcmp(type, "lists_dir") == 0) {
+ 	       conf->lists_dir = xstrdup(value);
+ 	  } else if (strcmp(type, "arch") == 0) {
+@@ -411,9 +410,19 @@ glob_errfunc(const char *epath, int eerr
+ int
+ opkg_conf_init(void)
+ {
++	pkg_src_list_init(&conf->pkg_src_list);
++	pkg_dest_list_init(&conf->pkg_dest_list);
++	pkg_dest_list_init(&conf->tmp_dest_list);
++	nv_pair_list_init(&conf->arch_list);
++
++	return 0;
++}
++
++int
++opkg_conf_load(void)
++{
+ 	int i, glob_ret;
+ 	char *tmp, *tmp_dir_base, **tmp_val;
+-	nv_pair_list_t tmp_dest_nv_pair_list;
+ 	glob_t globbuf;
+ 	char *etc_opkg_conf_pattern;
+ 
+@@ -423,11 +432,6 @@ opkg_conf_init(void)
+ 	conf->check_x509_path = 1;
+ #endif
+ 
+-	pkg_src_list_init(&conf->pkg_src_list);
+-	pkg_dest_list_init(&conf->pkg_dest_list);
+-	nv_pair_list_init(&conf->arch_list);
+-	nv_pair_list_init(&tmp_dest_nv_pair_list);
+-
+ 	if (!conf->offline_root)
+ 		conf->offline_root = xstrdup(getenv("OFFLINE_ROOT"));
+ 
+@@ -438,7 +442,7 @@ opkg_conf_init(void)
+ 			goto err0;
+ 		}
+ 		if (opkg_conf_parse_file(conf->conf_file,
+-				&conf->pkg_src_list, &tmp_dest_nv_pair_list))
++				&conf->pkg_src_list))
+ 			goto err1;
+ 	}
+ 
+@@ -467,7 +471,7 @@ opkg_conf_init(void)
+ 					!strcmp(conf->conf_file, globbuf.gl_pathv[i]))
+ 				continue;
+ 		if ( opkg_conf_parse_file(globbuf.gl_pathv[i], 
+-			&conf->pkg_src_list, &tmp_dest_nv_pair_list)<0) {
++			&conf->pkg_src_list)<0) {
+ 			globfree(&globbuf);
+ 			goto err1;
+ 		}
+@@ -528,16 +532,16 @@ opkg_conf_init(void)
+ 	}
+ 
+ 	/* Even if there is no conf file, we'll need at least one dest. */
+-	if (nv_pair_list_empty(&tmp_dest_nv_pair_list)) {
+-	nv_pair_list_append(&tmp_dest_nv_pair_list,
++	if (nv_pair_list_empty(&conf->tmp_dest_list)) {
++	nv_pair_list_append(&conf->tmp_dest_list,
+ 			OPKG_CONF_DEFAULT_DEST_NAME,
+ 			OPKG_CONF_DEFAULT_DEST_ROOT_DIR);
+ 	}
+ 
+-	if (resolve_pkg_dest_list(&tmp_dest_nv_pair_list))
++	if (resolve_pkg_dest_list())
+ 		goto err5;
+ 
+-	nv_pair_list_deinit(&tmp_dest_nv_pair_list);
++	nv_pair_list_deinit(&conf->tmp_dest_list);
+ 
+ 	return 0;
+ 
+@@ -577,7 +581,7 @@ err1:
+ 		}
+ 	}
+ err0:
+-	nv_pair_list_deinit(&tmp_dest_nv_pair_list);
++	nv_pair_list_deinit(&conf->tmp_dest_list);
+ 	if (conf->dest_str)
+ 		free(conf->dest_str);
+ 	if (conf->conf_file)
+--- a/libopkg/opkg_conf.h
++++ b/libopkg/opkg_conf.h
+@@ -46,6 +46,7 @@ struct opkg_conf
+ {
+      pkg_src_list_t pkg_src_list;
+      pkg_dest_list_t pkg_dest_list;
++     pkg_dest_list_t tmp_dest_list;
+      nv_pair_list_t arch_list;
+ 
+      int restrict_to_default_dest;
+@@ -133,6 +134,7 @@ struct opkg_option {
+ };
+ 
+ int opkg_conf_init(void);
++int opkg_conf_load(void);
+ void opkg_conf_deinit(void);
+ 
+ int opkg_conf_write_status_files(void);
+--- a/src/opkg-cl.c
++++ b/src/opkg-cl.c
+@@ -40,6 +40,8 @@ enum {
+ 	ARGS_OPT_FORCE_REMOVAL_OF_ESSENTIAL_PACKAGES,
+ 	ARGS_OPT_FORCE_SPACE,
+ 	ARGS_OPT_FORCE_POSTINSTALL,
++	ARGS_OPT_ADD_ARCH,
++	ARGS_OPT_ADD_DEST,
+ 	ARGS_OPT_NOACTION,
+ 	ARGS_OPT_DOWNLOAD_ONLY,
+ 	ARGS_OPT_NODEPS,
+@@ -82,6 +84,8 @@ static struct option long_options[] = {
+ 	{"nodeps", 0, 0, ARGS_OPT_NODEPS},
+ 	{"offline", 1, 0, 'o'},
+ 	{"offline-root", 1, 0, 'o'},
++	{"add-arch", 1, 0, ARGS_OPT_ADD_ARCH},
++	{"add-dest", 1, 0, ARGS_OPT_ADD_DEST},
+ 	{"test", 0, 0, ARGS_OPT_NOACTION},
+ 	{"tmp-dir", 1, 0, 't'},
+ 	{"tmp_dir", 1, 0, 't'},
+@@ -96,6 +100,7 @@ args_parse(int argc, char *argv[])
+ 	int c;
+ 	int option_index = 0;
+ 	int parse_err = 0;
++	char *tuple, *prio;
+ 
+ 	while (1) {
+ 		c = getopt_long_only(argc, argv, "Ad:f:no:p:t:vV:",
+@@ -162,6 +167,21 @@ args_parse(int argc, char *argv[])
+ 		case ARGS_OPT_NODEPS:
+ 			conf->nodeps = 1;
+ 			break;
++		case ARGS_OPT_ADD_ARCH:
++		case ARGS_OPT_ADD_DEST:
++			tuple = xstrdup(optarg);
++			if ((prio = strchr(tuple, ':')) != NULL) {
++				*prio++ = 0;
++				if ((strlen(tuple) > 0) && (strlen(prio) > 0)) {
++					nv_pair_list_append(
++						(c == ARGS_OPT_ADD_ARCH)
++							? &conf->arch_list : &conf->tmp_dest_list,
++						tuple, prio
++					);
++				}
++			}
++			free(tuple);
++			break;
+ 		case ARGS_OPT_NOACTION:
+ 			conf->noaction = 1;
+ 			break;
+@@ -240,6 +260,8 @@ usage()
+ 	printf("				directory name in a pinch).\n");
+ 	printf("\t-o <dir>		Use <dir> as the root directory for\n");
+ 	printf("\t--offline-root <dir>	offline installation of packages.\n");
++	printf("\t--add-arch <arch>:<prio>	Register architecture with given priority\n");
++	printf("\t--add-dest <name>:<path>	Register destination with given path\n");
+ 
+ 	printf("\nForce Options:\n");
+ 	printf("\t--force-depends		Install/remove despite failed dependencies\n");
+@@ -280,6 +302,9 @@ main(int argc, char *argv[])
+ 	int nocheckfordirorfile = 0;
+         int noreadfeedsfile = 0;
+ 
++	if (opkg_conf_init())
++		goto err0;
++
+ 	conf->verbosity = NOTICE;
+ 
+ 	opts = args_parse(argc, argv);
+@@ -317,7 +342,7 @@ main(int argc, char *argv[])
+ 
+ 	conf->pfm = cmd->pfm;
+ 
+-	if (opkg_conf_init())
++	if (opkg_conf_load())
+ 		goto err0;
+ 
+ 	if (!nocheckfordirorfile) {
