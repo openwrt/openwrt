@@ -31,6 +31,7 @@ strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
 _SINGLE=export MAKEFLAGS=$(space);
 CFLAGS:=
 ARCH:=$(subst i486,i386,$(subst i586,i386,$(subst i686,i386,$(call qstrip,$(CONFIG_ARCH)))))
+ARCH_PACKAGES:=$(call qstrip,$(CONFIG_TARGET_ARCH_PACKAGES))
 BOARD:=$(call qstrip,$(CONFIG_TARGET_BOARD))
 TARGET_OPTIMIZATION:=$(call qstrip,$(CONFIG_TARGET_OPTIMIZATION))
 TARGET_SUFFIX=$(call qstrip,$(CONFIG_TARGET_SUFFIX))
