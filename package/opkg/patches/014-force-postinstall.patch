@@ -4,7 +4,7 @@
  	  { "force_reinstall", OPKG_OPT_TYPE_BOOL, &_conf.force_reinstall },
  	  { "force_space", OPKG_OPT_TYPE_BOOL, &_conf.force_space },
            { "check_signature", OPKG_OPT_TYPE_BOOL, &_conf.check_signature }, 
-+	  { "force_run_hooks", OPKG_OPT_TYPE_BOOL, &_conf.force_run_hooks },
++	  { "force_postinstall", OPKG_OPT_TYPE_BOOL, &_conf.force_postinstall },
  	  { "ftp_proxy", OPKG_OPT_TYPE_STRING, &_conf.ftp_proxy },
  	  { "http_proxy", OPKG_OPT_TYPE_STRING, &_conf.http_proxy },
  	  { "no_proxy", OPKG_OPT_TYPE_STRING, &_conf.no_proxy },
@@ -14,7 +14,7 @@
       int force_space;
       int force_removal_of_dependent_packages;
       int force_removal_of_essential_packages;
-+     int force_run_hooks;
++     int force_postinstall;
       int check_signature;
       int nodeps; /* do not follow dependencies */
       char *offline_root;
@@ -25,7 +25,7 @@
       /* XXX: FEATURE: When conf->offline_root is set, we should run the
  	maintainer script within a chroot environment. */
 -     if (conf->offline_root) {
-+     if (conf->offline_root && !conf->force_run_hooks) {
++     if (conf->offline_root && !conf->force_postinstall) {
            opkg_msg(INFO, "Offline root mode: not running %s.%s.\n",
  			  pkg->name, script);
  	  return 0;
@@ -35,7 +35,7 @@
  	ARGS_OPT_FORCE_REMOVAL_OF_DEPENDENT_PACKAGES,
  	ARGS_OPT_FORCE_REMOVAL_OF_ESSENTIAL_PACKAGES,
  	ARGS_OPT_FORCE_SPACE,
-+	ARGS_OPT_FORCE_RUN_HOOKS,
++	ARGS_OPT_FORCE_POSTINSTALL,
  	ARGS_OPT_NOACTION,
  	ARGS_OPT_DOWNLOAD_ONLY,
  	ARGS_OPT_NODEPS,
@@ -43,8 +43,8 @@
  		ARGS_OPT_FORCE_REMOVAL_OF_ESSENTIAL_PACKAGES},
  	{"force_removal_of_essential_packages", 0, 0,
  		ARGS_OPT_FORCE_REMOVAL_OF_ESSENTIAL_PACKAGES},
-+	{"force-run-hooks", 0, 0, ARGS_OPT_FORCE_RUN_HOOKS},
-+	{"force_run_hooks", 0, 0, ARGS_OPT_FORCE_RUN_HOOKS},
++	{"force-postinstall", 0, 0, ARGS_OPT_FORCE_POSTINSTALL},
++	{"force_postinstall", 0, 0, ARGS_OPT_FORCE_POSTINSTALL},
  	{"noaction", 0, 0, ARGS_OPT_NOACTION},
  	{"download-only", 0, 0, ARGS_OPT_DOWNLOAD_ONLY},
  	{"nodeps", 0, 0, ARGS_OPT_NODEPS},
@@ -52,8 +52,8 @@
  		case ARGS_OPT_FORCE_SPACE:
  			conf->force_space = 1;
  			break;
-+		case ARGS_OPT_FORCE_RUN_HOOKS:
-+			conf->force_run_hooks = 1;
++		case ARGS_OPT_FORCE_POSTINSTALL:
++			conf->force_postinstall = 1;
 +			break;
  		case ARGS_OPT_NODEPS:
  			conf->nodeps = 1;
@@ -62,7 +62,7 @@
  	printf("\t--force-overwrite	Overwrite files from other package(s)\n");
  	printf("\t--force-downgrade	Allow opkg to downgrade packages\n");
  	printf("\t--force-space		Disable free space checks\n");
-+	printf("\t--force-run-hooks	Run postinstall scripts even in offline mode\n");
++	printf("\t--force-postinstall	Run postinstall scripts even in offline mode\n");
  	printf("\t--noaction		No action -- test only\n");
  	printf("\t--download-only	No action -- download only\n");
  	printf("\t--nodeps		Do not follow dependencies\n");

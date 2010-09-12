@@ -12,11 +12,13 @@ OPKG:= \
   IPKG_CONF_DIR=$(STAGING_DIR)/etc \
   IPKG_OFFLINE_ROOT=$(TARGET_DIR) \
   $(STAGING_DIR_HOST)/bin/opkg \
-	-f $(STAGING_DIR)/etc/opkg.conf \
 	--offline-root $(TARGET_DIR) \
 	--force-depends \
 	--force-overwrite \
-	--force-run-hooks
+	--force-postinstall \
+	--add-dest root:/ \
+	--add-arch all:100 \
+	--add-arch $(ARCH_PACKAGES):200
 
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
@@ -81,7 +83,7 @@ ifeq ($(DUMP),)
 	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
 	touch $$@
 
-    $$(IPKG_$(1)): $(STAGING_DIR)/etc/opkg.conf $(STAMP_BUILT)
+    $$(IPKG_$(1)): $(STAMP_BUILT)
 	@rm -rf $(PACKAGE_DIR)/$(1)_* $$(IDIR_$(1))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
@@ -122,11 +124,4 @@ ifeq ($(DUMP),)
     clean: $(1)-clean
 
   endef
-
-  $(STAGING_DIR)/etc/opkg.conf:
-	mkdir -p $(STAGING_DIR)/etc
-	( echo "dest root /"				> $@; \
-	  echo "arch all 100"				>> $@; \
-	  echo "arch $(PKGARCH) 200"			>> $@ )
-
 endif
