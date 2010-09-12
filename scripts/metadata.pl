@@ -49,6 +49,7 @@ sub parse_target_metadata() {
 		/^Target-Name:\s*(.+)\s*$/ and $target->{name} = $1;
 		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
 		/^Target-Arch:\s*(.+)\s*$/ and $target->{arch} = $1;
+		/^Target-Arch-Packages:\s*(.+)\s*$/ and $target->{arch_packages} = $1;
 		/^Target-Features:\s*(.+)\s*$/ and $target->{features} = [ split(/\s+/, $1) ];
 		/^Target-Depends:\s*(.+)\s*$/ and $target->{depends} = [ split(/\s+/, $1) ];
 		/^Target-Description:/ and $target->{desc} = get_multiline(*FILE);
@@ -333,6 +334,15 @@ config TARGET_BOARD
 EOF
 	foreach my $target (@target) {
 		$target->{subtarget} or	print "\t\tdefault \"".$target->{board}."\" if TARGET_".$target->{conf}."\n";
+	}
+	print <<EOF;
+config TARGET_ARCH_PACKAGES
+	string
+	
+EOF
+	foreach my $target (@target) {
+		next if @{$target->{subtargets}} > 0;
+		print "\t\tdefault \"".($target->{arch_packages} || $target->{board})."\" if TARGET_".$target->{conf}."\n";
 	}
 	print <<EOF;
 

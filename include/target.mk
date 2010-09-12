@@ -178,6 +178,7 @@ define BuildTargets/DumpCurrent
 	 echo 'Target-Name: $(BOARDNAME)$(if $(SUBTARGETS),$(if $(SUBTARGET),))'; \
 	 echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'; \
 	 echo 'Target-Arch: $(ARCH)'; \
+	 echo 'Target-Arch-Packages: $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD))'; \
 	 echo 'Target-Features: $(FEATURES)'; \
 	 echo 'Target-Depends: $(DEPENDS)'; \
 	 echo 'Target-Optimization: $(if $(CFLAGS),$(CFLAGS),$(DEFAULT_CFLAGS))'; \
