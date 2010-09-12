@@ -1,5 +1,17 @@
---- a/doc/ip-cref.tex
-+++ b/doc/ip-cref.tex
+---
+ Makefile                  |    4 
+ doc/Makefile              |    8 
+ doc/ip-cref.tex           |   16 +
+ include/linux/pkt_sched.h |  518 ++++++++++++++++++++++++++++++++++++++++++++++
+ ip/iptunnel.c             |    2 
+ misc/Makefile             |    3 
+ tc/Makefile               |    1 
+ tc/q_htb.c                |  308 +++++++++++++++++++++++++++
+ tc/q_wrr.c                |  322 ++++++++++++++++++++++++++++
+ 9 files changed, 1177 insertions(+), 5 deletions(-)
+
+--- iproute2-2.6.35.orig/doc/ip-cref.tex
++++ iproute2-2.6.35/doc/ip-cref.tex
 @@ -1307,6 +1307,19 @@ peers are allowed to send to us.
  --- \threeonly the clamp for congestion window. It is ignored if the \verb|lock|
      flag is not used.
@@ -20,18 +32,18 @@
  
  \item \verb|advmss NUMBER|
  
-@@ -2666,6 +2679,9 @@ http://www.cisco.com/univercd/cc/td/doc/
+@@ -2664,6 +2677,9 @@ http://www.cisco.com/univercd/cc/td/doc/
+ 
  \bibitem{RFC2414}  M.~Allman, S.~Floyd, C.~Partridge.
  ``Increasing TCP's Initial Window'', RFC-2414.
- 
++
 +\bibitem{RFC2414}  M.~Allman, S.~Floyd, C.~Partridge.
 +``Increasing TCP's Initial Window'', RFC-2414.
-+
+ 
  \end{thebibliography}
  
- 
---- a/doc/Makefile
-+++ b/doc/Makefile
+--- iproute2-2.6.35.orig/doc/Makefile
++++ iproute2-2.6.35/doc/Makefile
 @@ -14,6 +14,7 @@ PAGESIZE=a4
  PAGESPERPAGE=2
  
@@ -63,8 +75,8 @@
  clean:
 -	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html
 +	rm -f *.aux *.log *.toc $(PSFILES) $(DVIFILES) *.html $(TXTFILES)
---- a/include/linux/pkt_sched.h
-+++ b/include/linux/pkt_sched.h
+--- iproute2-2.6.35.orig/include/linux/pkt_sched.h
++++ iproute2-2.6.35/include/linux/pkt_sched.h
 @@ -1,3 +1,409 @@
 +#if 0
 +#ifndef __LINUX_PKT_SCHED_H
@@ -475,7 +487,7 @@
  #ifndef __LINUX_PKT_SCHED_H
  #define __LINUX_PKT_SCHED_H
  
-@@ -518,4 +924,116 @@ struct tc_drr_stats
+@@ -481,4 +887,116 @@ struct tc_drr_stats {
  	__u32	deficit;
  };
  
@@ -592,9 +604,9 @@
 +};
 +
  #endif
---- a/ip/iptunnel.c
-+++ b/ip/iptunnel.c
-@@ -129,7 +129,7 @@ static int parse_args(int argc, char **a
+--- iproute2-2.6.35.orig/ip/iptunnel.c
++++ iproute2-2.6.35/ip/iptunnel.c
+@@ -130,7 +130,7 @@ static int parse_args(int argc, char **a
  			NEXT_ARG();
  			p->o_flags |= GRE_KEY;
  			if (strchr(*argv, '.'))
@@ -603,8 +615,8 @@
  			else {
  				if (get_unsigned(&uval, *argv, 0)<0) {
  					fprintf(stderr, "invalid value of \"okey\"\n");
---- a/Makefile
-+++ b/Makefile
+--- iproute2-2.6.35.orig/Makefile
++++ iproute2-2.6.35/Makefile
 @@ -57,7 +57,7 @@ install: all
  		$(DESTDIR)$(DOCDIR)/examples
  	install -m 0644 $(shell find examples/diffserv -maxdepth 1 -type f) \
@@ -623,8 +635,8 @@
  	do $(MAKE) $(MFLAGS) -C $$i clean; done
  
  clobber: clean
---- a/misc/Makefile
-+++ b/misc/Makefile
+--- iproute2-2.6.35.orig/misc/Makefile
++++ iproute2-2.6.35/misc/Makefile
 @@ -1,7 +1,8 @@
  SSOBJ=ss.o ssfilter.o
  LNSTATOBJ=lnstat.o lnstat_util.o
@@ -635,8 +647,8 @@
  
  include ../Config
  
---- a/tc/Makefile
-+++ b/tc/Makefile
+--- iproute2-2.6.35.orig/tc/Makefile
++++ iproute2-2.6.35/tc/Makefile
 @@ -15,6 +15,7 @@ TCMODULES += q_cbq.o
  TCMODULES += q_rr.o
  TCMODULES += q_multiq.o
@@ -645,8 +657,8 @@
  TCMODULES += f_rsvp.o
  TCMODULES += f_u32.o
  TCMODULES += f_route.o
---- a/tc/q_htb.c
-+++ b/tc/q_htb.c
+--- iproute2-2.6.35.orig/tc/q_htb.c
++++ iproute2-2.6.35/tc/q_htb.c
 @@ -1,3 +1,311 @@
 +#if 0
 +/*
@@ -960,7 +972,7 @@
   * q_htb.c		HTB.
   *
 --- /dev/null
-+++ b/tc/q_wrr.c
++++ iproute2-2.6.35/tc/q_wrr.c
 @@ -0,0 +1,322 @@
 +#include <stdio.h>
 +#include <stdlib.h>

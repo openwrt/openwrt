@@ -1,0 +1,11 @@
+--- a/tc/Makefile
++++ b/tc/Makefile
+@@ -95,6 +95,8 @@ MODDESTDIR := $(DESTDIR)$(patsubst /usr%
+ 
+ all: libtc.a tc $(TCSO)
+ 
++$(TCOBJ): emp_ematch.yacc.c emp_ematch.lex.c
++
+ tc: $(TCOBJ) $(LIBNETLINK) $(LIBUTIL) $(TCLIB)
+ 
+ libtc.a: $(TCLIB)
