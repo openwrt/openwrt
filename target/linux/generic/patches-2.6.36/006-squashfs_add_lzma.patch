@@ -32,26 +32,27 @@ Signed-off-by: Phillip Lougher <phillip@lougher.demon.co.uk>
  	bool "Additional option for memory-constrained systems" 
 --- a/fs/squashfs/Makefile
 +++ b/fs/squashfs/Makefile
-@@ -5,5 +5,4 @@
+@@ -5,5 +5,5 @@
  obj-$(CONFIG_SQUASHFS) += squashfs.o
  squashfs-y += block.o cache.o dir.o export.o file.o fragment.o id.o inode.o
  squashfs-y += namei.o super.o symlink.o zlib_wrapper.o decompressor.o
--squashfs-$(CONFIG_SQUASHFS_XATTR) += xattr.o xattr_id.o
--squashfs-$(CONFIG_SQUASHFS_LZO) += lzo_wrapper.o
+-squashfs-$(CONFIG_SQUASHFS_XATTRS) += xattr.o xattr_id.o
 +squashfs-$(CONFIG_SQUASHFS_LZMA) += lzma_wrapper.o
+ 
 --- a/fs/squashfs/decompressor.c
 +++ b/fs/squashfs/decompressor.c
-@@ -53,8 +53,8 @@ static const struct squashfs_decompresso
+@@ -50,7 +50,11 @@ static const struct squashfs_decompresso
+ 
  static const struct squashfs_decompressor *decompressor[] = {
  	&squashfs_zlib_comp_ops,
- 	&squashfs_lzma_unsupported_comp_ops,
--#ifdef CONFIG_SQUASHFS_LZO
--	&squashfs_lzo_comp_ops,
 +#ifdef CONFIG_SQUASHFS_LZMA
 +	&squashfs_lzma_comp_ops,
- #else
++#else
+ 	&squashfs_lzma_unsupported_comp_ops,
++#endif
  	&squashfs_lzo_unsupported_comp_ops,
- #endif
+ 	&squashfs_unknown_comp_ops
+ };
 --- /dev/null
 +++ b/fs/squashfs/lzma_wrapper.c
 @@ -0,0 +1,152 @@
@@ -209,11 +210,10 @@ Signed-off-by: Phillip Lougher <phillip@lougher.demon.co.uk>
 +
 --- a/fs/squashfs/squashfs.h
 +++ b/fs/squashfs/squashfs.h
-@@ -105,5 +105,5 @@ extern const struct xattr_handler *squas
+@@ -104,3 +104,6 @@ extern const struct xattr_handler *squas
+ 
  /* zlib_wrapper.c */
  extern const struct squashfs_decompressor squashfs_zlib_comp_ops;
- 
--/* lzo_wrapper.c */
--extern const struct squashfs_decompressor squashfs_lzo_comp_ops;
-+/* lzma_wrapper.c */
++
++/* lzma wrapper.c */
 +extern const struct squashfs_decompressor squashfs_lzma_comp_ops;
