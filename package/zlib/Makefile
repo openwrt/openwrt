@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=zlib
-PKG_VERSION:=1.2.3
-PKG_RELEASE:=5
+PKG_VERSION:=1.2.5
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.zlib.net @SF/libpng
-PKG_MD5SUM:=dee233bf288ee795ac96a98cc2e369b6
+PKG_MD5SUM:=be1e89810e66150f5b0327984d8625a0
 
 PKG_BUILD_PARALLEL:=1
 
@@ -43,7 +43,7 @@ define Build/Compile
 		$(TARGET_CONFIGURE_OPTS) \
 		LDSHARED="$(TARGET_CROSS)ld -shared" \
 		CFLAGS="$(TARGET_CFLAGS) $(FPIC)" \
-		libz.a libz.so
+		libz.a
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
