@@ -9,7 +9,7 @@
 +endif
 +
 +ifneq ($(shell uname -o),Cygwin)
- SUBDIRS = ubi-utils mkfs.ubifs
+ SUBDIRS = lib ubi-utils mkfs.ubifs
  
  TARGETS = ftl_format flash_erase flash_eraseall nanddump doc_loadbios \
 @@ -17,6 +22,10 @@ TARGETS = ftl_format flash_erase flash_e

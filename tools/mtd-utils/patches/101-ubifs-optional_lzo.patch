@@ -2,48 +2,47 @@ diff --git a/mkfs.ubifs/Makefile b/mkfs.ubifs/Makefile
 index a678b0a..919ce89 100644
 --- a/mkfs.ubifs/Makefile
 +++ b/mkfs.ubifs/Makefile
-@@ -5,7 +5,7 @@ ALL_SOURCES=*.[ch] hashtable/*.[ch]
+@@ -6,7 +6,7 @@ ALL_SOURCES=*.[ch] hashtable/*.[ch]
  
  TARGETS = mkfs.ubifs
  
--LDLIBS_mkfs.ubifs = -lz -llzo2 -lm -luuid -L../ubi-utils/ -lubi
-+LDLIBS_mkfs.ubifs = -lz $(if,$(NO_LZO),,-llzo2) -lm -luuid -L../ubi-utils/ -lubi
- 
- include ../common.mk
+-LDLIBS_mkfs.ubifs = -lz -llzo2 -lm -luuid -L$(BUILDDIR)/../ubi-utils/ -lubi
++LDLIBS_mkfs.ubifs = -lz $(if,$(NO_LZO),,-llzo2) -lm -luuid -L$(BUILDDIR)/../ubi-utils/ -lubi
+ LDLIBS_mkfs.ubifs += -L$(BUILDDIR)/../lib -lmtd -lcrc32
+ LDLIBS_mkfs.ubifs += $(ZLIBLDFLAGS) $(LZOLDFLAGS)
  
 diff --git a/mkfs.ubifs/compr.c b/mkfs.ubifs/compr.c
 index e378c5d..0208f80 100644
 --- a/mkfs.ubifs/compr.c
 +++ b/mkfs.ubifs/compr.c
-@@ -25,7 +25,9 @@
+@@ -24,7 +24,9 @@
+ #include <stdio.h>
  #include <stdint.h>
  #include <string.h>
- #include <zlib.h>
 +#if CONFIG_UBIFS_LZO
  #include <lzo/lzo1x.h>
 +#endif
  #include <linux/types.h>
  
- #include "compr.h"
-@@ -83,6 +85,17 @@ static int zlib_deflate(void *in_buf, size_t in_len, void *out_buf,
+ #define crc32 __zlib_crc32
+@@ -85,6 +87,16 @@ static int zlib_deflate(void *in_buf, si
  	return 0;
  }
  
 +static int no_compress(void *in_buf, size_t in_len, void *out_buf,
-+		       size_t *out_len)
++			size_t *out_len)
 +{
 +	memcpy(out_buf, in_buf, in_len);
 +	*out_len = in_len;
 +	return 0;
 +}
 +
-+
 +#if CONFIG_UBIFS_LZO
 +
  static int lzo_compress(void *in_buf, size_t in_len, void *out_buf,
  			size_t *out_len)
  {
-@@ -101,14 +114,16 @@ static int lzo_compress(void *in_buf, size_t in_len, void *out_buf,
+@@ -103,14 +115,16 @@ static int lzo_compress(void *in_buf, si
  	return 0;
  }
  
@@ -57,7 +56,7 @@ index e378c5d..0208f80 100644
 -	memcpy(out_buf, in_buf, in_len);
 -	*out_len = in_len;
 -	return 0;
-+	return -1;
++	return 1;
  }
  
 +#endif
@@ -65,7 +64,7 @@ index e378c5d..0208f80 100644
  static char *zlib_buf;
  
  static int favor_lzo_compress(void *in_buf, size_t in_len, void *out_buf,
-@@ -195,9 +210,11 @@ int compress_data(void *in_buf, size_t in_len, void *out_buf, size_t *out_len,
+@@ -197,9 +211,11 @@ int compress_data(void *in_buf, size_t i
  
  int init_compression(void)
  {
@@ -77,7 +76,7 @@ index e378c5d..0208f80 100644
  
  	zlib_buf = malloc(UBIFS_BLOCK_SIZE * WORST_COMPR_FACTOR);
  	if (!zlib_buf) {
-@@ -211,7 +228,9 @@ int init_compression(void)
+@@ -213,7 +229,9 @@ int init_compression(void)
  void destroy_compression(void)
  {
  	free(zlib_buf);
