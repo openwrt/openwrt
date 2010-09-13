@@ -782,8 +782,7 @@ static struct platform_t __initdata platforms[] = {
 	[STI_NAS] = {
 		.name	   = "SimpleTech SimpleShare NAS",
 		.buttons	= {
-			{ .name = "reset",      .gpio = 1 << 7 }, // on back, hardwired, always resets device regardless OS state
-			{ .name = "power",      .gpio = 1 << 0 }, // on back
+			{ .name = "reset",      .gpio = 1 << 0 }, // Power button on back, named reset to enable failsafe.
 		},
 		.leds	   = {
 			{ .name = "diag",       .gpio = 1 << 1, .polarity = REVERSE }, // actual name ready
