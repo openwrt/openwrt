@@ -1,5 +1,5 @@
 --- a/Makefile	
-+++ b/Makefile	
++++ b/Makefile
 @@ -1,7 +1,7 @@
  
  # -*- sh -*-
@@ -9,17 +9,17 @@
  
  ifeq ($(WITHOUT_XATTR), 1)
    CPPFLAGS += -DWITHOUT_XATTR
-@@ -45,7 +45,9 @@
+@@ -51,7 +51,9 @@ $(SYMLINKS):
  	ln -sf ../fs/jffs2/$@ $@
  
  $(BUILDDIR)/mkfs.jffs2: $(addprefix $(BUILDDIR)/,\
--	crc32.o compr_rtime.o mkfs.jffs2.o compr_zlib.o $(if $(NO_LZO),,compr_lzo.o) \
-+	crc32.o compr_rtime.o mkfs.jffs2.o compr_zlib.o \
+-	compr_rtime.o mkfs.jffs2.o compr_zlib.o $(if $(NO_LZO),,compr_lzo.o) \
++	compr_rtime.o mkfs.jffs2.o compr_zlib.o \
 +	$(if $(NO_LZO),,compr_lzo.o) \
-+	compr_lzma.o lzma/LzFind.o lzma/LzmaEnc.o lzma/LzmaDec.o\
++	compr_lzma.o lzma/LzFind.o lzma/LzmaEnc.o lzma/LzmaDec.o \
  	compr.o rbtree.o)
- 
  LDFLAGS_mkfs.jffs2 := $(ZLIBLDFLAGS)
+ LDLIBS_mkfs.jffs2  := -lz
 --- a/compr.c	2009-06-05 16:59:08.000000000 +0200
 +++ b/compr.c	2010-03-20 23:16:14.556367000 +0100
 @@ -520,6 +520,9 @@
@@ -43,10 +43,11 @@
  }
 --- a/compr.h	2010-03-20 23:08:46.289595000 +0100
 +++ b/compr.h	2010-03-20 23:51:41.953345921 +0100
-@@ -18,12 +18,14 @@
+@@ -18,13 +18,14 @@
  
  #define CONFIG_JFFS2_ZLIB
  #define CONFIG_JFFS2_RTIME
+-#define CONFIG_JFFS2_LZO
 +#define CONFIG_JFFS2_LZMA
  
  #define JFFS2_RUBINMIPS_PRIORITY 10
@@ -60,7 +61,7 @@
  
  #define JFFS2_COMPR_MODE_NONE       0
  #define JFFS2_COMPR_MODE_PRIORITY   1
-@@ -114,5 +116,10 @@
+@@ -115,5 +116,10 @@ void jffs2_rtime_exit(void);
  int jffs2_lzo_init(void);
  void jffs2_lzo_exit(void);
  #endif
