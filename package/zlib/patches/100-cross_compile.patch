@@ -1,229 +1,29 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -25,20 +25,23 @@ CFLAGS=-O
- #           -Wstrict-prototypes -Wmissing-prototypes
- 
- LDFLAGS=libz.a
--LDSHARED=$(CC)
-+LDSHARED=$(CC) -shared -Wl,-soname,$(SHAREDLIBM)
- CPP=$(CC) -E
- 
--LIBS=libz.a
-+LIBS=
-+STATICLIB=libz.a
- SHAREDLIB=libz.so
- SHAREDLIBV=libz.so.1.2.3
+@@ -36,7 +36,7 @@ SHAREDLIBV=libz.so.1.2.5
  SHAREDLIBM=libz.so.1
+ LIBS=$(STATICLIB) $(SHAREDLIBV)
  
 -AR=ar rc
-+AR=ar 
++AR=ar
  RANLIB=ranlib
- TAR=tar
+ LDCONFIG=ldconfig
+ LDSHAREDLIBC=-lc
+@@ -44,6 +44,8 @@ TAR=tar
  SHELL=/bin/sh
  EXE=
  
-+DESTDIR =
++DESTDIR = 
 +
  prefix = /usr/local
  exec_prefix = ${prefix}
  libdir = ${exec_prefix}/lib
-@@ -67,8 +70,8 @@ test: all
- 	  echo '		*** zlib test FAILED ***'; \
- 	fi
+@@ -108,7 +110,7 @@ test64: all64
+ 	-@rm -f foo.gz
  
--libz.a: $(OBJS) $(OBJA)
--	$(AR) $@ $(OBJS) $(OBJA)
-+$(STATICLIB): $(OBJS) $(OBJA)
-+	$(AR) rc $@ $(OBJS) $(OBJA)
+ libz.a: $(OBJS)
+-	$(AR) $@ $(OBJS)
++	$(AR) rc $@ $(OBJS)
  	-@ ($(RANLIB) $@ || true) >/dev/null 2>&1
  
  match.o: match.S
-@@ -77,8 +80,10 @@ match.o: match.S
- 	mv _match.o match.o
- 	rm -f _match.s
- 
-+$(SHAREDLIB): $(SHAREDLIBV)
-+
- $(SHAREDLIBV): $(OBJS)
--	$(LDSHARED) -o $@ $(OBJS)
-+	$(LDSHARED) -lc -o $@ $(OBJS)
- 	rm -f $(SHAREDLIB) $(SHAREDLIBM)
- 	ln -s $@ $(SHAREDLIB)
- 	ln -s $@ $(SHAREDLIBM)
-@@ -90,23 +95,22 @@ minigzip$(EXE): minigzip.o $(LIBS)
- 	$(CC) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS)
- 
- install: $(LIBS)
--	-@if [ ! -d $(exec_prefix) ]; then mkdir -p $(exec_prefix); fi
--	-@if [ ! -d $(includedir)  ]; then mkdir -p $(includedir); fi
--	-@if [ ! -d $(libdir)      ]; then mkdir -p $(libdir); fi
--	-@if [ ! -d $(man3dir)     ]; then mkdir -p $(man3dir); fi
--	cp zlib.h zconf.h $(includedir)
--	chmod 644 $(includedir)/zlib.h $(includedir)/zconf.h
--	cp $(LIBS) $(libdir)
--	cd $(libdir); chmod 755 $(LIBS)
--	-@(cd $(libdir); $(RANLIB) libz.a || true) >/dev/null 2>&1
--	cd $(libdir); if test -f $(SHAREDLIBV); then \
-+	-@if [ ! -d $(DESTDIR)$(exec_prefix) ]; then mkdir -p $(DESTDIR)$(exec_prefix); fi
-+	-@if [ ! -d $(DESTDIR)$(includedir)  ]; then mkdir -p $(DESTDIR)$(includedir); fi
-+	-@if [ ! -d $(DESTDIR)$(libdir)      ]; then mkdir -p $(DESTDIR)$(libdir); fi
-+	-@if [ ! -d $(DESTDIR)$(man3dir)     ]; then mkdir -p $(DESTDIR)$(man3dir); fi
-+	cp zlib.h zconf.h $(DESTDIR)$(includedir)
-+	chmod 644 $(DESTDIR)$(includedir)/zlib.h $(DESTDIR)$(includedir)/zconf.h
-+	cp $(STATICLIB) $(SHAREDLIBV) $(DESTDIR)$(libdir)
-+	cd $(DESTDIR)$(libdir); chmod 755 $(LIBS)
-+	-@(cd $(DESTDIR)$(libdir); $(RANLIB) libz.a || true) >/dev/null 2>&1
-+	cd $(DESTDIR)$(libdir); if test -f $(SHAREDLIBV); then \
- 	  rm -f $(SHAREDLIB) $(SHAREDLIBM); \
- 	  ln -s $(SHAREDLIBV) $(SHAREDLIB); \
- 	  ln -s $(SHAREDLIBV) $(SHAREDLIBM); \
--	  (ldconfig || true)  >/dev/null 2>&1; \
- 	fi
--	cp zlib.3 $(man3dir)
--	chmod 644 $(man3dir)/zlib.3
-+	cp zlib.3 $(DESTDIR)$(man3dir)
-+	chmod 644 $(DESTDIR)$(man3dir)/zlib.3
- # The ranlib in install is needed on NeXTSTEP which checks file times
- # ldconfig is for Linux
- 
---- a/configure
-+++ b/configure
-@@ -23,7 +23,7 @@ LDFLAGS="-L. ${LIBS}"
- VER=`sed -n -e '/VERSION "/s/.*"\(.*\)".*/\1/p' < zlib.h`
- VER2=`sed -n -e '/VERSION "/s/.*"\([0-9]*\\.[0-9]*\)\\..*/\1/p' < zlib.h`
- VER1=`sed -n -e '/VERSION "/s/.*"\([0-9]*\)\\..*/\1/p' < zlib.h`
--AR=${AR-"ar rc"}
-+AR=${AR-"ar"}
- RANLIB=${RANLIB-"ranlib"}
- prefix=${prefix-/usr/local}
- exec_prefix=${exec_prefix-'${prefix}'}
-@@ -73,32 +73,9 @@ esac
- 
- if test "$gcc" -eq 1 && ($cc -c $cflags $test.c) 2>/dev/null; then
-   CC="$cc"
--  SFLAGS=${CFLAGS-"-fPIC -O3"}
-+  SFLAGS=${CFLAGS-"-D_REENTRANT -fPIC -O3"}
-   CFLAGS="$cflags"
--  case `(uname -s || echo unknown) 2>/dev/null` in
--  Linux | linux | GNU | GNU/*) LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1"};;
--  CYGWIN* | Cygwin* | cygwin* | OS/2* )
--             EXE='.exe';;
--  QNX*)  # This is for QNX6. I suppose that the QNX rule below is for QNX2,QNX4
--         # (alain.bonnefoy@icbt.com)
--                 LDSHARED=${LDSHARED-"$cc -shared -Wl,-hlibz.so.1"};;
--  HP-UX*)
--         LDSHARED=${LDSHARED-"$cc -shared $SFLAGS"}
--         case `(uname -m || echo unknown) 2>/dev/null` in
--         ia64)
--                 shared_ext='.so'
--                 SHAREDLIB='libz.so';;
--         *)
--                 shared_ext='.sl'
--                 SHAREDLIB='libz.sl';;
--         esac;;
--  Darwin*)   shared_ext='.dylib'
--             SHAREDLIB=libz$shared_ext
--             SHAREDLIBV=libz.$VER$shared_ext
--             SHAREDLIBM=libz.$VER1$shared_ext
--             LDSHARED=${LDSHARED-"$cc -dynamiclib -install_name $libdir/$SHAREDLIBM -compatibility_version $VER1 -current_version $VER"};;
--  *)             LDSHARED=${LDSHARED-"$cc -shared"};;
--  esac
-+  LDSHARED=${LDSHARED-"$cc -shared -Wl,-soname,libz.so.1"}
- else
-   # find system name and corresponding cc options
-   CC=${CC-cc}
-@@ -424,6 +401,29 @@ else
-   echo Checking for mmap support... No.
- fi
- 
-+cat > $test.c <<EOF
-+#include <stdio.h>
-+int main() { char buf[10]; snprintf(buf, sizeof(buf), "%s", "F"); return 0; }
-+EOF
-+if test "`($CC -c $CFLAGS $test.c) 2>&1`" = ""; then
-+  echo "Checking for snprintf...	 Yes."
-+  CFLAGS="$CFLAGS -DHAS_snprintf"
-+else
-+  echo "Checking for snprintf..	 No."
-+fi
-+
-+cat > $test.c <<EOF
-+#include <stdio.h>
-+#include <stdarg.h>
-+int main(void) { va_list a; vsnprintf(0, 0, "", a); return 0; }
-+EOF
-+if test "`($CC -c $CFLAGS $test.c) 2>&1`" = ""; then
-+  echo "Checking for vsnprintf...	 Yes."
-+  CFLAGS="$CFLAGS -DHAS_vsnprintf"
-+else
-+  echo "Checking for vsnprintf..	 No."
-+fi
-+
- CPP=${CPP-"$CC -E"}
- case $CFLAGS in
-   *ASMV*)
-@@ -440,20 +440,21 @@ rm -f $test.[co] $test $test$shared_ext
- # udpate Makefile
- sed < Makefile.in "
- /^CC *=/s#=.*#=$CC#
--/^CFLAGS *=/s#=.*#=$CFLAGS#
--/^CPP *=/s#=.*#=$CPP#
--/^LDSHARED *=/s#=.*#=$LDSHARED#
--/^LIBS *=/s#=.*#=$LIBS#
--/^SHAREDLIB *=/s#=.*#=$SHAREDLIB#
--/^SHAREDLIBV *=/s#=.*#=$SHAREDLIBV#
--/^SHAREDLIBM *=/s#=.*#=$SHAREDLIBM#
--/^AR *=/s#=.*#=$AR#
--/^RANLIB *=/s#=.*#=$RANLIB#
--/^EXE *=/s#=.*#=$EXE#
--/^prefix *=/s#=.*#=$prefix#
--/^exec_prefix *=/s#=.*#=$exec_prefix#
--/^libdir *=/s#=.*#=$libdir#
--/^includedir *=/s#=.*#=$includedir#
--/^mandir *=/s#=.*#=$mandir#
--/^LDFLAGS *=/s#=.*#=$LDFLAGS#
-+/^CC *=/s%=.*%= $CC%
-+/^CFLAGS *=/s%=.*%= $CFLAGS%
-+/^CPP *=/s%=.*%= $CPP%
-+/^LDSHARED *=/s%=.*%= $LDSHARED%
-+/^LIBS *=/s%=.*%= $LIBS%
-+/^SHAREDLIB *=/s%=.*%= $SHAREDLIB%
-+/^SHAREDLIBV *=/s%=.*%= $SHAREDLIBV%
-+/^SHAREDLIBM *=/s%=.*%= $SHAREDLIBM%
-+/^AR *=/s%=.*%= $AR%
-+/^RANLIB *=/s%=.*%= $RANLIB%
-+/^EXE *=/s%=.*%= $EXE%
-+/^prefix *=/s%=.*%= $prefix%
-+/^exec_prefix *=/s%=.*%= $exec_prefix%
-+/^libdir *=/s%=.*%= $libdir%
-+/^includedir *=/s%=.*%= $includedir%
-+/^mandir *=/s%=.*%= $mandir%
-+/^LDFLAGS *=/s%=.*%= $LDFLAGS%
- " > Makefile
---- a/contrib/minizip/Makefile
-+++ b/contrib/minizip/Makefile
-@@ -1,8 +1,8 @@
- CC=cc
--CFLAGS=-O -I../..
-+CFLAGS=-O2 -g -I../.. -Dunix
- 
--UNZ_OBJS = miniunz.o unzip.o ioapi.o ../../libz.a
--ZIP_OBJS = minizip.o zip.o   ioapi.o ../../libz.a
-+UNZ_OBJS = miniunz.o unzip.o ioapi.o
-+ZIP_OBJS = minizip.o zip.o   ioapi.o
- 
- .c.o:
- 	$(CC) -c $(CFLAGS) $*.c
-@@ -10,10 +10,10 @@ ZIP_OBJS = minizip.o zip.o   ioapi.o ../
- all: miniunz minizip
- 
- miniunz:  $(UNZ_OBJS)
--	$(CC) $(CFLAGS) -o $@ $(UNZ_OBJS)
-+	$(CC) $(CFLAGS) -o $@ $(UNZ_OBJS) -L ../.. -lz
- 
- minizip:  $(ZIP_OBJS)
--	$(CC) $(CFLAGS) -o $@ $(ZIP_OBJS)
-+	$(CC) $(CFLAGS) -o $@ $(ZIP_OBJS) -L ../.. -lz
- 
- test:	miniunz minizip
- 	./minizip test readme.txt
