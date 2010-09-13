@@ -1,11 +1,9 @@
 --- a/src/opkg-cl.c
 +++ b/src/opkg-cl.c
-@@ -172,7 +172,10 @@ args_parse(int argc, char *argv[])
- 			printf("Confusion: getopt_long returned %d\n", c);
+@@ -200,6 +200,9 @@ args_parse(int argc, char *argv[])
  		}
  	}
--    
-+
+ 
 +	if(!conf->conf_file && !conf->offline_root)
 +		conf->conf_file = xstrdup("/etc/opkg.conf");
 +
