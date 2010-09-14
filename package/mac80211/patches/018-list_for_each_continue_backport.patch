@@ -1,0 +1,15 @@
+--- a/include/linux/compat-2.6.33.h
++++ b/include/linux/compat-2.6.33.h
+@@ -98,6 +98,12 @@ int pccard_loop_tuple(struct pcmcia_sock
+ #define kfifo_out(a, b, c) __kfifo_get(*a, b, c)
+ #define kfifo_len(a) __kfifo_len(*a)
+ 
++#define list_for_each_entry_continue_rcu(pos, head, member) 		\
++	for (pos = list_entry_rcu(pos->member.next, typeof(*pos), member); \
++	     prefetch(pos->member.next), &pos->member != (head);	\
++	     pos = list_entry_rcu(pos->member.next, typeof(*pos), member))
++
++
+ #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)) */
+ 
+ #endif /* LINUX_26_33_COMPAT_H */
