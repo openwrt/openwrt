@@ -49,6 +49,7 @@ fw_start() {
 
 	fw_callback post core
 
+	uci_set_state firewall core zones "$FW_ZONES"
 	uci_set_state firewall core loaded 1
 }
 
@@ -56,6 +57,19 @@ fw_stop() {
 	fw_init
 
 	fw_callback pre stop
+
+	local old_zones z
+	config_get old_zones core zones
+	for z in $old_zones; do
+		local old_networks n i
+		config_get old_networks core "${z}_networks"
+		for n in $old_networks; do
+			config_get i core "${n}_ifname"
+			[ -n "$i" ] && env -i ACTION=remove ZONE="$z" \
+				INTERFACE="$n" DEVICE="$i" \
+				/sbin/hotplug-call firewall
+		done
+	done
 
 	fw_clear ACCEPT
 

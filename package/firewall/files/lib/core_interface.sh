@@ -1,5 +1,24 @@
 # Copyright (C) 2009-2010 OpenWrt.org
 
+fw__uci_state_add() {
+	local var="$1"
+	local item="$2"
+
+	local val="$(uci_get_state firewall core $var)"
+	uci_set_state firewall core $var "${val:+$val }$item"
+}
+
+fw__uci_state_del() {
+	local var="$1"
+	local item="$2"
+
+	local val=" $(uci_get_state firewall core $var) "
+	val="${val// $item / }"
+	val="${val# }"
+	val="${val% }"
+	uci_set_state firewall core $var "$val"
+}
+
 fw_configure_interface() {
 	local iface=$1
 	local action=$2
@@ -83,7 +102,10 @@ fw_configure_interface() {
 				fw__do_rules del $z $old_ifname $n
 			done
 
-			[ -n "$old_subnets" ] || ACTION=remove ZONE="$z" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
+			[ -n "$old_subnets" ] || {
+				fw__uci_state_del "${z}_networks" "$iface"
+				env -i ACTION=remove ZONE="$z" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
+			}
 		done
 
 		local old_aliases
@@ -139,7 +161,10 @@ fw_configure_interface() {
 		fw__do_rules add ${zone_name} "$ifname" "$aliasnet"
 		append new_zones $zone_name
 
-		[ -n "$aliasnet" ] || ACTION=add ZONE="$zone_name" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
+		[ -n "$aliasnet" ] || {
+			fw__uci_state_add "${zone_name}_networks" "${zone_network}"
+			env -i ACTION=add ZONE="$zone_name" INTERFACE="$iface" DEVICE="$ifname" /sbin/hotplug-call firewall
+		}
 	}
 	config_foreach load_zone zone
 
