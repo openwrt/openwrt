@@ -1,8 +1,8 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -220,7 +220,7 @@ ifneq ($(CONFIG_PCMCIA),)
- endif
- CONFIG_B43_LEDS=y
+@@ -218,7 +218,7 @@ ifdef CONFIG_PCMCIA
+ endif #CONFIG_PCMCIA
+ # CONFIG_B43_LEDS=y
  CONFIG_B43_PHY_LP=y
 -CONFIG_B43_NPHY=y
 +# CONFIG_B43_NPHY is not set

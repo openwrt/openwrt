@@ -10,12 +10,12 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2010-08-31
+PKG_VERSION:=2010-09-14
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 #	http://www.orbit-lab.org/kernel/compat-wireless-2.6/2010/11 \
 #	http://wireless.kernel.org/download/compat-wireless-2.6
-PKG_MD5SUM:=5d720b6d8de97ae61a4c3e4ee10a6de1
+PKG_MD5SUM:=88511287e013ff0f2843b3679f52f335
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -27,6 +27,8 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_ATH9K_USE_MINSTREL \
 	CONFIG_PACKAGE_ATH_DEBUG \
 	CONFIG_ATH_USER_REGD \
+
+CARL9170_FW_VERSION:=1.8.8.2
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -94,6 +96,7 @@ endef
 P54PCIFW:=2.13.12.0.arm
 P54USBFW:=2.13.24.0.lm87.arm
 P54SPIFW:=2.13.0.0.a.13.14.arm
+CARL9170_FW:=carl9170-1.fw
 
 define Download/p54usb
   FILE:=$(P54USBFW)
@@ -115,6 +118,13 @@ define Download/p54spi
   MD5SUM:=42661f8ecbadd88012807493f596081d
 endef
 $(eval $(call Download,p54spi))
+
+define Download/carl9170
+  FILE:=$(CARL9170_FW)
+  URL:=http://www.kernel.org/pub/linux/kernel/people/chr/carl9170/fw/$(CARL9170_FW_VERSION)
+  MD5SUM:=114c43846ed1d2f89cc92bd0e2ec0589
+endef
+$(eval $(call Download,carl9170))
 
 define KernelPackage/p54/Default
   $(call KernelPackage/mac80211/Default)
@@ -447,6 +457,20 @@ define KernelPackage/ath9k/config
 	endmenu
 endef
 
+define KernelPackage/carl9170
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Driver for Atheros AR9170 USB sticks
+  DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/carl9170/carl9170.ko
+  AUTOLOAD:=$(call AutoLoad,60,carl9170)
+endef
+
+define KernelPackage/carl9170/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(DL_DIR)/$(CARL9170_FW) $(1)/lib/firmware/
+endef
+
+
 USB8388FW_NAME:=usb8388
 USB8388FW_VERSION:=5.110.22.p23
 
@@ -494,19 +518,6 @@ define KernelPackage/libertas-sd
 	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas_sdio.ko
   AUTOLOAD:=$(call AutoLoad,27,libertas libertas_sdio)
-endef
-
-define KernelPackage/ar9170
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Atheros AR9170 802.11n USB support
-  URL:=http://wireless.kernel.org/en/users/Drivers/ar9170
-  DEPENDS+= @USB_SUPPORT @!LINUX_2_6_25 +kmod-ath +kmod-usb-core
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ar9170/ar9170usb.ko
-  AUTOLOAD:=$(call AutoLoad,27,ar9170usb)
-endef
-
-define KernelPackage/ar9170/description
- This is a driver for the Atheros "otus" 802.11n USB devices.
 endef
 
 define KernelPackage/mac80211-hwsim
@@ -821,7 +832,7 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PCI),-DCONFIG_B43_PCI_AUTOSELECT -DCONFIG_B43_PCICORE_AUTOSELECT) \
 	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS -DCONFIG_AR9170_LEDS) \
 	-DCONFIG_B43_HWRNG -DCONFIG_B43LEGACY_HWRNG \
-	$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),-DCONFIG_MAC80211_DEBUGFS -DCONFIG_ATH9K_DEBUGFS) \
+	$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),-DCONFIG_MAC80211_DEBUGFS -DCONFIG_ATH9K_DEBUGFS -DCONFIG_CARL9170_DEBUGFS) \
 	$(if $(CONFIG_PACKAGE_ATH_DEBUG),-DCONFIG_ATH_DEBUG -DCONFIG_ATH9K_PKTLOG) \
 	-D__CONFIG_MAC80211_RC_DEFAULT=minstrel \
 	-DCONFIG_MAC80211_RC_MINSTREL_HT \
@@ -866,6 +877,8 @@ MAKE_OPTS:= \
 	CONFIG_ATH9K_HW=$(if $(CONFIG_PACKAGE_kmod-ath9k),m) \
 	CONFIG_ATH9K_COMMON=$(if $(CONFIG_PACKAGE_kmod-ath9k),m) \
 	CONFIG_ATH9K_DEBUGFS=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
+	CONFIG_CARL9170=$(if $(CONFIG_PACKAGE_kmod-carl9170),m) \
+	CONFIG_CARL9170_DEBUGFS=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
 	CONFIG_ZD1211RW=$(if $(CONFIG_PACKAGE_kmod-zd1211rw),m) \
 	CONFIG_P54_COMMON=$(if $(CONFIG_PACKAGE_kmod-p54-common),m) \
 	CONFIG_P54_PCI=$(if $(CONFIG_PACKAGE_kmod-p54-pci),m) \
@@ -911,6 +924,7 @@ MAKE_OPTS:= \
 	CONFIG_LIB80211_CRYPT_CCMP= \
 	CONFIG_LIB80211_CRYPT_TKIP= \
 	CONFIG_IWLWIFI= \
+	CONFIG_COMPAT_IWLWIFI= \
 	CONFIG_IWLAGN= \
 	CONFIG_MWL8K=$(if $(CONFIG_PACKAGE_kmod-mwl8k),m) \
 	CONFIG_ATMEL= \
@@ -1121,7 +1135,7 @@ $(eval $(call KernelPackage,zd1211rw))
 $(eval $(call KernelPackage,mac80211-hwsim))
 $(eval $(call KernelPackage,ath9k))
 $(eval $(call KernelPackage,ath))
-$(eval $(call KernelPackage,ar9170))
+$(eval $(call KernelPackage,carl9170))
 $(eval $(call KernelPackage,b43))
 $(eval $(call KernelPackage,b43legacy))
 $(eval $(call KernelPackage,net-libipw))

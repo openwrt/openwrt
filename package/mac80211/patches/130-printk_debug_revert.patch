@@ -14,7 +14,7 @@
  #define wiphy_dbg(wiphy, format, args...)			\
 --- a/net/wireless/core.c
 +++ b/net/wireless/core.c
-@@ -929,52 +929,3 @@ static void __exit cfg80211_exit(void)
+@@ -936,52 +936,3 @@ static void __exit cfg80211_exit(void)
  	destroy_workqueue(cfg80211_wq);
  }
  module_exit(cfg80211_exit);
