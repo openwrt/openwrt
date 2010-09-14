@@ -1,0 +1,25 @@
+[PATCH] mac80211: hoist sta->lock from reorder release timer
+
+The patch "mac80211: AMPDU rx reorder timeout timer" clashes
+with "mac80211: use netif_receive_skb in ieee80211_rx callpath"
+
+The timer itself is part of the station's private struct and
+it gets killed whenever the station is removed. Therefore
+the extra sta->lock protection (that can interferes with the
+tx path) is not necessary.
+
+Reported-by: Ming Lei <tom.leiming@gmail.com>
+Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
+---
+--- a/net/mac80211/agg-rx.c
++++ b/net/mac80211/agg-rx.c
+@@ -129,9 +129,7 @@ static void sta_rx_agg_reorder_timer_exp
+ 			timer_to_tid[0]);
+ 
+ 	rcu_read_lock();
+-	spin_lock(&sta->lock);
+ 	ieee80211_release_reorder_timeout(sta, *ptid);
+-	spin_unlock(&sta->lock);
+ 	rcu_read_unlock();
+ }
+ 
