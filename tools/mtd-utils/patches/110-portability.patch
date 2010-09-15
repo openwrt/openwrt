@@ -42,12 +42,13 @@
          const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
 --- a/include/mtd/ubi-media.h
 +++ b/include/mtd/ubi-media.h
-@@ -30,7 +30,13 @@
+@@ -30,7 +30,15 @@
  #ifndef __UBI_MEDIA_H__
  #define __UBI_MEDIA_H__
  
--#include <asm/byteorder.h>
-+#if !defined(__u8) || !defined(__be16) || !defined(__be32) || !defined(__be64)
++#ifdef __linux__
+ #include <asm/byteorder.h>
++#else
 +#include <stdint.h>
 +typedef uint8_t __u8;
 +typedef uint16_t __be16;
