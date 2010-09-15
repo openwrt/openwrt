@@ -58,16 +58,14 @@ fw_stop() {
 
 	fw_callback pre stop
 
-	local old_zones z
-	config_get old_zones core zones
-	for z in $old_zones; do
-		local old_networks n i
-		config_get old_networks core "${z}_networks"
-		for n in $old_networks; do
+	local z n i
+	config_get z core zones
+	for z in $z; do
+		config_get n core "${z}_networks"
+		for n in $n; do
 			config_get i core "${n}_ifname"
 			[ -n "$i" ] && env -i ACTION=remove ZONE="$z" \
-				INTERFACE="$n" DEVICE="$i" \
-				/sbin/hotplug-call firewall
+				INTERFACE="$n" DEVICE="$i" /sbin/hotplug-call firewall
 		done
 	done
 
