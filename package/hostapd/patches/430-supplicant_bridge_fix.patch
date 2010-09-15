@@ -22,17 +22,19 @@
  	rta_len = RTA_ALIGN(sizeof(struct rtattr));
  	while (RTA_OK(attr, attrlen)) {
  		if (attr->rta_type == IFLA_IFNAME) {
-@@ -1347,6 +1355,9 @@ static int wpa_driver_nl80211_init_nl(st
+@@ -1347,6 +1355,11 @@ static int wpa_driver_nl80211_init_nl(st
  	eloop_register_read_sock(nl_socket_get_fd(drv->nl_handle_event),
  				 wpa_driver_nl80211_event_receive, drv, ctx);
  
++#ifdef HOSTAPD
 +	drv->num_if_indices = sizeof(drv->default_if_indices) / sizeof(int);
 +	drv->if_indices = drv->default_if_indices;
++#endif
 +
  	return 0;
  
  err4:
-@@ -4867,8 +4878,6 @@ static void *i802_init(struct hostapd_da
+@@ -4867,8 +4880,6 @@ static void *i802_init(struct hostapd_da
  		br_ifindex = 0;
  	}
  
