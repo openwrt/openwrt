@@ -199,6 +199,25 @@ menu "Global build settings"
 		help
 		  This will compile your kernel and modules with debug information.
 
+	config KERNEL_DEBUG_LL
+		bool
+		default n
+		depends on arm
+		help
+		  ARM low level debugging
+
+	config KERNEL_EARLY_PRINTK
+		bool "Compile the kernel with early printk"
+		default n
+		depends on arm
+		select KERNEL_DEBUG_KERNEL
+		select KERNEL_DEBUG_LL if arm
+		help
+		  Compile the kernel with early printk support.
+		  This is only useful for debugging purposes to send messages
+		  over the serial console in early boot.
+		  Enable this to debug early boot problems.
+
 	comment "Package build options"
 
 	config DEBUG
