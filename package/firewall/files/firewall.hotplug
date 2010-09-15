@@ -17,6 +17,6 @@ case "$ACTION" in
 		fw_configure_interface "$INTERFACE" add "$DEVICE" &
 	;;
 	ifdown)
-		fw_configure_interface "$INTERFACE" del "$DEVICE" &
+		fw_configure_interface "$INTERFACE" del "$DEVICE"
 	;;
 esac
