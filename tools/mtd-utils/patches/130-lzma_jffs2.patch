@@ -1,5 +1,5 @@
---- a/Makefile
-+++ b/Makefile
+--- a/Makefile	
++++ b/Makefile	
 @@ -1,7 +1,7 @@
  
  # -*- sh -*-
@@ -9,7 +9,7 @@
  
  ifeq ($(WITHOUT_XATTR), 1)
    CPPFLAGS += -DWITHOUT_XATTR
-@@ -45,7 +45,9 @@ $(SYMLINKS):
+@@ -45,7 +45,9 @@
  	ln -sf ../fs/jffs2/$@ $@
  
  $(BUILDDIR)/mkfs.jffs2: $(addprefix $(BUILDDIR)/,\
@@ -20,9 +20,9 @@
  	compr.o rbtree.o)
  
  LDFLAGS_mkfs.jffs2 := $(ZLIBLDFLAGS)
---- a/compr.c
-+++ b/compr.c
-@@ -520,6 +520,9 @@ int jffs2_compressors_init(void)
+--- a/compr.c	2009-06-05 16:59:08.000000000 +0200
++++ b/compr.c	2010-03-20 23:16:14.556367000 +0100
+@@ -520,6 +520,9 @@
  #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_init();
  #endif
@@ -32,7 +32,7 @@
  	return 0;
  }
  
-@@ -534,5 +537,8 @@ int jffs2_compressors_exit(void)
+@@ -534,5 +537,8 @@
  #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_exit();
  #endif
@@ -41,8 +41,8 @@
 +#endif
  	return 0;
  }
---- a/compr.h
-+++ b/compr.h
+--- a/compr.h	2010-03-20 23:08:46.289595000 +0100
++++ b/compr.h	2010-03-20 23:51:41.953345921 +0100
 @@ -18,12 +18,14 @@
  
  #define CONFIG_JFFS2_ZLIB
@@ -60,7 +60,7 @@
  
  #define JFFS2_COMPR_MODE_NONE       0
  #define JFFS2_COMPR_MODE_PRIORITY   1
-@@ -114,5 +116,10 @@ void jffs2_rtime_exit(void);
+@@ -114,5 +116,10 @@
  int jffs2_lzo_init(void);
  void jffs2_lzo_exit(void);
  #endif
@@ -71,8 +71,8 @@
 +
  
  #endif /* __JFFS2_COMPR_H__ */
---- /dev/null
-+++ b/compr_lzma.c
+--- a/compr_lzma.c	1970-01-01 01:00:00.000000000 +0100
++++ b/compr_lzma.c	2010-03-20 23:16:15.048654497 +0100
 @@ -0,0 +1,128 @@
 +/*
 + * JFFS2 -- Journalling Flash File System, Version 2.
@@ -202,8 +202,8 @@
 +	jffs2_unregister_compressor(&jffs2_lzma_comp);
 +	lzma_free_workspace();
 +}
---- a/include/linux/jffs2.h
-+++ b/include/linux/jffs2.h
+--- a/include/linux/jffs2.h	2009-06-05 16:59:08.000000000 +0200
++++ b/include/linux/jffs2.h	2010-03-20 23:16:15.305246000 +0100
 @@ -47,6 +47,7 @@
  #define JFFS2_COMPR_DYNRUBIN	0x05
  #define JFFS2_COMPR_ZLIB	0x06
@@ -212,8 +212,8 @@
  /* Compatibility flags. */
  #define JFFS2_COMPAT_MASK 0xc000      /* What do to if an unknown nodetype is found */
  #define JFFS2_NODE_ACCURATE 0x2000
---- /dev/null
-+++ b/include/linux/lzma.h
+--- a/include/linux/lzma.h	1970-01-01 01:00:00.000000000 +0100
++++ b/include/linux/lzma.h	2010-03-20 23:16:16.380508712 +0100
 @@ -0,0 +1,61 @@
 +#ifndef __LZMA_H__
 +#define __LZMA_H__
@@ -276,8 +276,8 @@
 +static ISzAlloc lzma_alloc = {p_lzma_malloc, p_lzma_free};
 +
 +#endif
---- /dev/null
-+++ b/include/linux/lzma/LzFind.h
+--- a/include/linux/lzma/LzFind.h	1970-01-01 01:00:00.000000000 +0100
++++ b/include/linux/lzma/LzFind.h	2010-03-20 23:19:44.189059515 +0100
 @@ -0,0 +1,116 @@
 +/* LzFind.h  -- Match finder for LZ algorithms
 +2008-04-04
@@ -395,8 +395,8 @@
 +void Hc3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num);
 +
 +#endif
---- /dev/null
-+++ b/include/linux/lzma/LzHash.h
+--- a/include/linux/lzma/LzHash.h	1970-01-01 01:00:00.000000000 +0100
++++ b/include/linux/lzma/LzHash.h	2010-03-20 23:19:44.588791287 +0100
 @@ -0,0 +1,56 @@
 +/* LzHash.h  -- HASH functions for LZ algorithms
 +2008-03-26
@@ -454,8 +454,8 @@
 +  hash4Value = (temp ^ ((UInt32)cur[2] << 8) ^ (p->crc[cur[3]] << 5)) & (kHash4Size - 1); }
 +
 +#endif
---- /dev/null
-+++ b/include/linux/lzma/LzmaDec.h
+--- a/include/linux/lzma/LzmaDec.h	1970-01-01 01:00:00.000000000 +0100
++++ b/include/linux/lzma/LzmaDec.h	2010-03-20 23:19:43.766328000 +0100
 @@ -0,0 +1,232 @@
 +/* LzmaDec.h -- LZMA Decoder
 +2008-04-29
@@ -689,8 +689,8 @@
 +    ELzmaStatus *status, ISzAlloc *alloc);
 +
 +#endif
---- /dev/null
-+++ b/include/linux/lzma/LzmaEnc.h
+--- a/include/linux/lzma/LzmaEnc.h	1970-01-01 01:00:00.000000000 +0100
++++ b/include/linux/lzma/LzmaEnc.h	2010-03-20 23:19:47.392642470 +0100
 @@ -0,0 +1,74 @@
 +/*  LzmaEnc.h -- LZMA Encoder
 +2008-04-27
@@ -766,8 +766,8 @@
 +    ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
 +
 +#endif
---- /dev/null
-+++ b/include/linux/lzma/Types.h
+--- a/include/linux/lzma/Types.h	1970-01-01 01:00:00.000000000 +0100
++++ b/include/linux/lzma/Types.h	2010-03-20 23:19:44.013465852 +0100
 @@ -0,0 +1,130 @@
 +/* Types.h -- Basic types
 +2008-04-11
@@ -899,8 +899,8 @@
 +#define IAlloc_Free(p, a) (p)->Free((p), a)
 +
 +#endif
---- /dev/null
-+++ b/lzma/LzFind.c
+--- a/lzma/LzFind.c	1970-01-01 01:00:00.000000000 +0100
++++ b/lzma/LzFind.c	2010-03-20 23:19:47.990406000 +0100
 @@ -0,0 +1,753 @@
 +/* LzFind.c  -- Match finder for LZ algorithms
 +2008-04-04
@@ -1655,8 +1655,8 @@
 +    vTable->Skip = (Mf_Skip_Func)Bt4_MatchFinder_Skip;
 +  }
 +}
---- /dev/null
-+++ b/lzma/LzmaDec.c
+--- a/lzma/LzmaDec.c	1970-01-01 01:00:00.000000000 +0100
++++ b/lzma/LzmaDec.c	2010-03-20 23:19:44.413562000 +0100
 @@ -0,0 +1,1014 @@
 +/* LzmaDec.c -- LZMA Decoder
 +2008-04-29
@@ -2672,8 +2672,8 @@
 +  LzmaDec_FreeProbs(&p, alloc);
 +  return res;
 +}
---- /dev/null
-+++ b/lzma/LzmaEnc.c
+--- a/lzma/LzmaEnc.c	1970-01-01 01:00:00.000000000 +0100
++++ b/lzma/LzmaEnc.c	2010-03-20 23:19:47.815156000 +0100
 @@ -0,0 +1,2335 @@
 +/* LzmaEnc.c -- LZMA Encoder
 +2008-04-28
@@ -5010,9 +5010,9 @@
 +  LzmaEnc_Destroy(p, alloc, allocBig);
 +  return res;
 +}
---- a/mkfs.jffs2.c
-+++ b/mkfs.jffs2.c
-@@ -1788,11 +1788,11 @@ int main(int argc, char **argv)
+--- a/mkfs.jffs2.c	2009-06-05 16:59:08.000000000 +0200
++++ b/mkfs.jffs2.c	2010-03-20 23:16:16.877026000 +0100
+@@ -1761,11 +1761,11 @@ int main(int argc, char **argv)
  						  }
  						  erase_block_size *= units;
  
