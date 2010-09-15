@@ -205,6 +205,22 @@ endef
 $(eval $(call KernelPackage,8139too))
 
 
+define KernelPackage/8139cp
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=RealTek RTL-8139C+ PCI Fast Ethernet Adapter kernel support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_8139CP
+  FILES:=$(LINUX_DIR)/drivers/net/8139cp.ko
+  AUTOLOAD:=$(call AutoLoad,50,8139cp)
+endef
+
+define KernelPackage/8139cp/description
+ Kernel module for RealTek RTL-8139C+ PCI Fast Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,8139cp))
+
+
 define KernelPackage/r8169
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RealTek RTL-8169 PCI Gigabit Ethernet Adapter kernel support
