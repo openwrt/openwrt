@@ -484,3 +484,20 @@ define KernelPackage/tulip/description
 endef
 
 $(eval $(call KernelPackage,tulip))
+
+
+define KernelPackage/solos-pci
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Solos ADSL2+ multiport modem
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_ATM_SOLOS
+  FILES:=$(LINUX_DIR)/drivers/atm/solos-pci.ko
+  AUTOLOAD:=$(call AutoLoad,50,solos-pci)
+endef
+
+define KernelPackage/solos-pci/description
+ Kernel module for Traverse Technologies' Solos PCI cards
+ and Geos ADSL2+ x86 motherboard.
+endef
+
+$(eval $(call KernelPackage,solos-pci))
