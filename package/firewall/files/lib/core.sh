@@ -107,10 +107,8 @@ fw_die() {
 
 fw_log() {
 	local level="$1"
-	[ -n "$2" ] || {
-		shift
-		level=notice
-	}
+	[ -n "$2" ] && shift || level=notice
+	[ "$level" != error ] || echo "Error: $@" >&2
 	logger -t firewall -p user.$level "$@"
 }
 
