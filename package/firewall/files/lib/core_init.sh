@@ -42,7 +42,7 @@ fw_load_defaults() {
 		boolean disable_ipv6 0 \
 	} || return
 	[ -n "$FW_DEFAULTS_APPLIED" ] && {
-		echo "Error: multiple defaults sections detected"
+		fw_log error "duplicate defaults section detected, skipping"
 		return 1
 	}
 	FW_DEFAULTS_APPLIED=1
@@ -159,7 +159,8 @@ fw_load_zone() {
 	fw_config_get_zone "$1"
 
 	list_contains FW_ZONES $zone_name && {
-		fw_die "zone ${zone_name}: duplicated zone"
+		fw_log error "zone ${zone_name}: duplicated zone, skipping"
+		return 0
 	}
 	append FW_ZONES $zone_name
 

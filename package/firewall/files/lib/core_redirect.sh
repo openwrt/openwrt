@@ -30,7 +30,8 @@ fw_load_redirect() {
 	local fwdchain natchain natopt nataddr natports srcdaddr srcdports
 	if [ "$redirect_target" == "DNAT" ]; then
 		[ -n "$redirect_src" -a -n "$redirect_dest_ip$redirect_dest_port" ] || {
-			fw_die "DNAT redirect ${redirect_name}: needs src and dest_ip or dest_port"
+			fw_log error "DNAT redirect ${redirect_name}: needs src and dest_ip or dest_port, skipping"
+			return 0
 		}
 
 		fwdchain="zone_${redirect_src}_forward"
@@ -48,7 +49,8 @@ fw_load_redirect() {
 
 	elif [ "$redirect_target" == "SNAT" ]; then
 		[ -n "$redirect_dest" -a -n "$redirect_src_dip" ] || {
-			fw_die "SNAT redirect ${redirect_name}: needs dest and src_dip"
+			fw_log error "SNAT redirect ${redirect_name}: needs dest and src_dip, skipping"
+			return 0
 		}
 
 		fwdchain="${redirect_src:+zone_${redirect_src}_forward}"
@@ -65,7 +67,8 @@ fw_load_redirect() {
 			append FW_CONNTRACK_ZONES $redirect_dest
 
 	else
-		fw_die "redirect ${redirect_name}: target must be either DNAT or SNAT"
+		fw_log error "redirect ${redirect_name}: target must be either DNAT or SNAT, skipping"
+		return 0
 	fi
 
 	local mode
