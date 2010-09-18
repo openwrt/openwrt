@@ -15,7 +15,7 @@ import getopt
 opt_dryrun = False
 
 
-def parseVer_1234(match):
+def parseVer_1234(match, filepath):
 	progname = match.group(1)
 	progversion = (int(match.group(2)) << 64) |\
 		      (int(match.group(3)) << 48) |\
@@ -23,7 +23,7 @@ def parseVer_1234(match):
 		      (int(match.group(5)) << 16)
 	return (progname, progversion)
 
-def parseVer_123(match):
+def parseVer_123(match, filepath):
 	progname = match.group(1)
 	try:
 		patchlevel = match.group(5)
@@ -39,7 +39,7 @@ def parseVer_123(match):
 		      patchlevel
 	return (progname, progversion)
 
-def parseVer_12(match):
+def parseVer_12(match, filepath):
 	progname = match.group(1)
 	try:
 		patchlevel = match.group(4)
@@ -54,16 +54,22 @@ def parseVer_12(match):
 		      patchlevel
 	return (progname, progversion)
 
-def parseVer_r(match):
+def parseVer_r(match, filepath):
 	progname = match.group(1)
 	progversion = (int(match.group(2)) << 64)
 	return (progname, progversion)
 
-def parseVer_ymd(match):
+def parseVer_ymd(match, filepath):
 	progname = match.group(1)
 	progversion = (int(match.group(2)) << 64) |\
 		      (int(match.group(3)) << 48) |\
 		      (int(match.group(4)) << 32)
+	return (progname, progversion)
+
+def parseVer_GIT(match, filepath):
+	progname = match.group(1)
+	st = os.stat(filepath)
+	progversion = int(st.st_mtime) << 64
 	return (progname, progversion)
 
 extensions = (
@@ -77,6 +83,7 @@ extensions = (
 )
 
 versionRegex = (
+	(re.compile(r"(.+)[-_]([0-9a-fA-F]{40,40})"), parseVer_GIT),		# xxx-GIT_SHASUM
 	(re.compile(r"(.+)[-_](\d+)\.(\d+)\.(\d+)\.(\d+)"), parseVer_1234),	# xxx-1.2.3.4
 	(re.compile(r"(.+)[-_](\d\d\d\d)-?(\d\d)-?(\d\d)"), parseVer_ymd),	# xxx-YYYY-MM-DD
 	(re.compile(r"(.+)[-_](\d+)\.(\d+)\.(\d+)(\w?)"), parseVer_123),	# xxx-1.2.3a
@@ -102,10 +109,12 @@ class Entry:
 		self.directory = directory
 		self.filename = filename
 		self.progname = ""
+		self.fileext = ""
 
 		for ext in extensions:
 			if filename.endswith(ext):
 				filename = filename[0:0-len(ext)]
+				self.fileext = ext
 				break
 		else:
 			print self.filename, "has an unknown file-extension"
@@ -113,7 +122,8 @@ class Entry:
 		for (regex, parseVersion) in versionRegex:
 			match = regex.match(filename)
 			if match:
-				(self.progname, self.version) = parseVersion(match)
+				(self.progname, self.version) = parseVersion(
+					match, directory + "/" + filename + self.fileext)
 				break
 		else:
 			print self.filename, "has an unknown version pattern"
