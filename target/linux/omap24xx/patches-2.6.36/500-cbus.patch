@@ -8,16 +8,16 @@
  drivers/cbus/retu-headset.c    |  356 ++++++++++++++++++
  drivers/cbus/retu-pwrbutton.c  |  118 ++++++
  drivers/cbus/retu-rtc.c        |  477 ++++++++++++++++++++++++
- drivers/cbus/retu-user.c       |  425 ++++++++++++++++++++++
- drivers/cbus/retu-wdt.c        |  388 ++++++++++++++++++++
+ drivers/cbus/retu-user.c       |  424 ++++++++++++++++++++++
+ drivers/cbus/retu-wdt.c        |  387 ++++++++++++++++++++
  drivers/cbus/retu.c            |  468 ++++++++++++++++++++++++
  drivers/cbus/retu.h            |   77 ++++
  drivers/cbus/tahvo-usb.c       |  788 +++++++++++++++++++++++++++++++++++++++++
- drivers/cbus/tahvo-user.c      |  407 +++++++++++++++++++++
+ drivers/cbus/tahvo-user.c      |  406 +++++++++++++++++++++
  drivers/cbus/tahvo.c           |  443 +++++++++++++++++++++++
  drivers/cbus/tahvo.h           |   61 +++
  drivers/cbus/user_retu_tahvo.h |   75 +++
- 18 files changed, 4536 insertions(+), 1 deletion(-)
+ 18 files changed, 4533 insertions(+), 1 deletion(-)
 
 --- /dev/null
 +++ linux-2.6.36-rc4/drivers/cbus/cbus.c
@@ -1992,7 +1992,7 @@
 +MODULE_AUTHOR("Paul Mundt and Igor Stoppa");
 --- /dev/null
 +++ linux-2.6.36-rc4/drivers/cbus/retu-user.c
-@@ -0,0 +1,425 @@
+@@ -0,0 +1,424 @@
 +/**
 + * drivers/cbus/retu-user.c
 + *
@@ -2265,8 +2265,7 @@
 +/*
 + * Device control (ioctl)
 + */
-+static int retu_ioctl(struct inode *inode, struct file *filp,
-+		      unsigned int cmd, unsigned long arg)
++static long retu_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 +{
 +	struct retu_tahvo_write_parms par;
 +	int ret;
@@ -2420,7 +2419,7 @@
 +MODULE_AUTHOR("Mikko Ylinen");
 --- /dev/null
 +++ linux-2.6.36-rc4/drivers/cbus/retu-wdt.c
-@@ -0,0 +1,388 @@
+@@ -0,0 +1,387 @@
 +/**
 + * drivers/cbus/retu-wdt.c
 + *
@@ -2609,8 +2608,7 @@
 +	return len;
 +}
 +
-+static int retu_wdt_ioctl(struct inode *inode, struct file *file,
-+					unsigned int cmd, unsigned long arg)
++static long retu_wdt_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 +{
 +	int new_margin;
 +
@@ -4112,7 +4110,7 @@
 +MODULE_AUTHOR("Juha Yrjölä, Tony Lindgren, and Timo Teräs");
 --- /dev/null
 +++ linux-2.6.36-rc4/drivers/cbus/tahvo-user.c
-@@ -0,0 +1,407 @@
+@@ -0,0 +1,406 @@
 +/**
 + * drivers/cbus/tahvo-user.c
 + *
@@ -4369,8 +4367,7 @@
 +/*
 + * Device control (ioctl)
 + */
-+static int tahvo_ioctl(struct inode *inode, struct file *filp,
-+		       unsigned int cmd, unsigned long arg)
++static long tahvo_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 +{
 +	struct retu_tahvo_write_parms par;
 +	int ret;

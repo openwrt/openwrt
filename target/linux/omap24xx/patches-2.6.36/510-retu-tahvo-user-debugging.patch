@@ -4,8 +4,8 @@
  drivers/cbus/tahvo-user.c |   75 +++++++++++++++++++++++++++++
  3 files changed, 198 insertions(+), 2 deletions(-)
 
---- linux-2.6.35.orig/drivers/cbus/Kconfig
-+++ linux-2.6.35/drivers/cbus/Kconfig
+--- linux-2.6.36-rc4.orig/drivers/cbus/Kconfig
++++ linux-2.6.36-rc4/drivers/cbus/Kconfig
 @@ -28,6 +28,10 @@ config CBUS_TAHVO_USER
  	  If you want support for Tahvo's user space read/write etc. functions,
  	  you should say Y here.
@@ -28,8 +28,8 @@
  config CBUS_RETU_POWERBUTTON
  	depends on CBUS_RETU
  	bool "Support for Retu power button"
---- linux-2.6.35.orig/drivers/cbus/retu-user.c
-+++ linux-2.6.35/drivers/cbus/retu-user.c
+--- linux-2.6.36-rc4.orig/drivers/cbus/retu-user.c
++++ linux-2.6.36-rc4/drivers/cbus/retu-user.c
 @@ -46,6 +46,12 @@
  
  #define PFX			"retu-user: "
@@ -168,8 +168,8 @@
  	/* Right justify value */
  	while (!(mask & 1)) {
  		value = value >> 1;
-@@ -274,7 +377,7 @@ static int retu_ioctl(struct inode *inod
- 		      unsigned int cmd, unsigned long arg)
+@@ -273,7 +376,7 @@ static int retu_close(struct inode *inod
+ static long retu_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
  {
  	struct retu_tahvo_write_parms par;
 -	int ret;
@@ -177,7 +177,7 @@
  
  	switch (cmd) {
  	case URT_IOCT_IRQ_SUBSCR:
-@@ -291,7 +394,15 @@ static int retu_ioctl(struct inode *inod
+@@ -290,7 +393,15 @@ static long retu_ioctl(struct file *filp
  			printk(KERN_ERR "copy_to_user failed: %d\n", ret);
  		break;
  	case RETU_IOCH_ADC_READ:
@@ -194,7 +194,7 @@
  	default:
  		return -ENOIOCTLCMD;
  	}
-@@ -333,6 +444,8 @@ static ssize_t retu_read(struct file *fi
+@@ -332,6 +443,8 @@ static ssize_t retu_read(struct file *fi
  		list_move(&irq->node, &retu_irqs_reserve);
  		spin_unlock_irqrestore(&retu_irqs_lock, flags);
  
@@ -203,8 +203,8 @@
  		ret = copy_to_user(buf + i * sizeof(irq_id), &irq_id,
  				   sizeof(irq_id));
  		if (ret)
---- linux-2.6.35.orig/drivers/cbus/tahvo-user.c
-+++ linux-2.6.35/drivers/cbus/tahvo-user.c
+--- linux-2.6.36-rc4.orig/drivers/cbus/tahvo-user.c
++++ linux-2.6.36-rc4/drivers/cbus/tahvo-user.c
 @@ -46,6 +46,12 @@
  
  #define PFX			"tahvo-user: "
@@ -313,7 +313,7 @@
  	/* Right justify value */
  	while (!(mask & 1)) {
  		value = value >> 1;
-@@ -315,6 +388,8 @@ static ssize_t tahvo_read(struct file *f
+@@ -314,6 +387,8 @@ static ssize_t tahvo_read(struct file *f
  		list_move(&irq->node, &tahvo_irqs_reserve);
  		spin_unlock_irqrestore(&tahvo_irqs_lock, flags);
  
