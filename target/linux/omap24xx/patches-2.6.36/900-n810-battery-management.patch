@@ -460,9 +460,9 @@
  int retu_request_irq(int id, void *irq_handler, unsigned long arg, char *name);
 --- linux-2.6.36-rc4.orig/arch/arm/mach-omap2/board-n8x0.c
 +++ linux-2.6.36-rc4/arch/arm/mach-omap2/board-n8x0.c
-@@ -795,6 +795,17 @@ extern void n8x0_blizzard_init(void);
- 
- extern void n8x0_usb_init(void);
+@@ -833,6 +833,17 @@ static void __init n8x0_gpio_switches_in
+ 				    ARRAY_SIZE(n8x0_gpio_switches));
+ }
  
 +static struct platform_device n810_bm_device = {
 +	.name		= "n810bm",
@@ -478,7 +478,7 @@
  static void __init n8x0_init_machine(void)
  {
  	omap2420_mux_init(board_mux, OMAP_PACKAGE_ZAC);
-@@ -823,6 +834,8 @@ static void __init n8x0_init_machine(voi
+@@ -860,6 +871,8 @@ static void __init n8x0_init_machine(voi
  	n8x0_onenand_init();
  	n8x0_mmc_init();
  	n8x0_usb_init();
