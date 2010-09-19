@@ -275,4 +275,21 @@ uci_apply_defaults() {
 	uci commit
 }
 
+service_kill() {
+	local name="${1}"
+	local pid="${2:-$(pidof "$name")}"
+	local grace="${3:-5}"
+
+	[ -f "$pid" ] && pid="$(head -n1 "$pid" 2>/dev/null)"
+
+	for pid in $pid; do
+		[ -d "/proc/$pid" ] || continue
+		local try=0
+		kill -TERM $pid 2>/dev/null && \
+			while grep -qs "$name" "/proc/$pid/cmdline" && [ $((try++)) -lt $grace ]; do sleep 1; done
+		kill -KILL $pid 2>/dev/null && \
+			while grep -qs "$name" "/proc/$pid/cmdline"; do sleep 1; done
+	done
+}
+
 [ -z "$IPKG_INSTROOT" -a -f /lib/config/uci.sh ] && . /lib/config/uci.sh
