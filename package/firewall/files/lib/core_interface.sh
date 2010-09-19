@@ -72,6 +72,8 @@ fw_configure_interface() {
 			*/*.*) fw_log info "zone $zone does not support IPv4 address family, skipping"; return ;;
 		esac
 
+		lock /var/run/firewall-interface.lock
+
 		fw $action $mode f ${chain}_ACCEPT ACCEPT $ { -o "$ifname" $onet }
 		fw $action $mode f ${chain}_ACCEPT ACCEPT $ { -i "$ifname" $inet }
 		fw $action $mode f ${chain}_DROP   DROP   $ { -o "$ifname" $onet }
@@ -86,6 +88,8 @@ fw_configure_interface() {
 		fw $action $mode n PREROUTING ${chain}_prerouting $ { -i "$ifname" $inet }
 		fw $action $mode r PREROUTING ${chain}_notrack    $ { -i "$ifname" $inet }
 		fw $action $mode n POSTROUTING ${chain}_nat       $ { -o "$ifname" $onet }
+
+		lock -u /var/run/firewall-interface.lock
 	}
 
 	local old_zones old_ifname old_subnets
