@@ -340,40 +340,32 @@ setup_interface() {
 			setup_interface_static "$iface" "$config"
 		;;
 		dhcp)
-			local lockfile="/var/lock/dhcp-$iface"
-			lock "$lockfile"
-
-			# prevent udhcpc from starting more than once
+			# kill running udhcpc instance
 			local pidfile="/var/run/dhcp-${iface}.pid"
-			local pid="$(cat "$pidfile" 2>/dev/null)"
-			if [ -d "/proc/$pid" ] && grep -qs udhcpc "/proc/${pid}/cmdline"; then
-				lock -u "$lockfile"
-			else
-				local ipaddr netmask hostname proto1 clientid broadcast
-				config_get ipaddr "$config" ipaddr
-				config_get netmask "$config" netmask
-				config_get hostname "$config" hostname
-				config_get proto1 "$config" proto
-				config_get clientid "$config" clientid
-				config_get_bool broadcast "$config" broadcast 0
+			service_kill udhcpc "$pidfile"
 
-				[ -z "$ipaddr" ] || \
-					$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
+			local ipaddr netmask hostname proto1 clientid broadcast
+			config_get ipaddr "$config" ipaddr
+			config_get netmask "$config" netmask
+			config_get hostname "$config" hostname
+			config_get proto1 "$config" proto
+			config_get clientid "$config" clientid
+			config_get_bool broadcast "$config" broadcast 0
 
-				# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
-				local dhcpopts
-				[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
-				[ "$broadcast" = 1 ] && broadcast="-O broadcast" || broadcast=
+			[ -z "$ipaddr" ] || \
+				$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
 
-				$DEBUG eval udhcpc -t 0 -i "$iface" \
-					${ipaddr:+-r $ipaddr} \
-					${hostname:+-H $hostname} \
-					${clientid:+-c $clientid} \
-					-b -p "$pidfile" $broadcast \
-					${dhcpopts:- -O rootpath -R &}
+			# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
+			local dhcpopts
+			[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
+			[ "$broadcast" = 1 ] && broadcast="-O broadcast" || broadcast=
 
-				lock -u "$lockfile"
-			fi
+			$DEBUG eval udhcpc -t 0 -i "$iface" \
+				${ipaddr:+-r $ipaddr} \
+				${hostname:+-H $hostname} \
+				${clientid:+-c $clientid} \
+				-b -p "$pidfile" $broadcast \
+				${dhcpopts:- -O rootpath -R &}
 		;;
 		none)
 			setup_interface_none "$iface" "$config"
@@ -401,12 +393,7 @@ stop_interface_dhcp() {
 	remove_dns "$config"
 
 	local pidfile="/var/run/dhcp-${ifname}.pid"
-	local pid="$(cat "$pidfile" 2>/dev/null)"
-	[ -d "/proc/$pid" ] && {
-		grep -qs udhcpc "/proc/$pid/cmdline" && kill -TERM $pid && \
-			while grep -qs udhcpc "/proc/$pid/cmdline"; do sleep 1; done
-		rm -f "$pidfile"
-	}
+	service_kill udhcpc "$pidfile"
 
 	uci -P /var/state revert "network.$config"
 }
