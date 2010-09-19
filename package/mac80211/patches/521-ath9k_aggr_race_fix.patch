@@ -1,0 +1,52 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -784,17 +784,23 @@ static void ath_tx_sched_aggr(struct ath
+ 		 status != ATH_AGGR_BAW_CLOSED);
+ }
+ 
+-void ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
+-		       u16 tid, u16 *ssn)
++int ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
++		      u16 tid, u16 *ssn)
+ {
+ 	struct ath_atx_tid *txtid;
+ 	struct ath_node *an;
+ 
+ 	an = (struct ath_node *)sta->drv_priv;
+ 	txtid = ATH_AN_2_TID(an, tid);
++
++	if (txtid->state & (AGGR_CLEANUP | AGGR_ADDBA_COMPLETE))
++		return -EAGAIN;
++
+ 	txtid->state |= AGGR_ADDBA_PROGRESS;
+ 	txtid->paused = true;
+ 	*ssn = txtid->seq_start;
++
++	return 0;
+ }
+ 
+ void ath_tx_aggr_stop(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid)
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -346,8 +346,8 @@ void ath_tx_tasklet(struct ath_softc *sc
+ void ath_tx_edma_tasklet(struct ath_softc *sc);
+ void ath_tx_cabq(struct ieee80211_hw *hw, struct sk_buff *skb);
+ bool ath_tx_aggr_check(struct ath_softc *sc, struct ath_node *an, u8 tidno);
+-void ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
+-		       u16 tid, u16 *ssn);
++int ath_tx_aggr_start(struct ath_softc *sc, struct ieee80211_sta *sta,
++		      u16 tid, u16 *ssn);
+ void ath_tx_aggr_stop(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid);
+ void ath_tx_aggr_resume(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid);
+ void ath9k_enable_ps(struct ath_softc *sc);
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1968,7 +1968,7 @@ static int ath9k_ampdu_action(struct iee
+ 		break;
+ 	case IEEE80211_AMPDU_TX_START:
+ 		ath9k_ps_wakeup(sc);
+-		ath_tx_aggr_start(sc, sta, tid, ssn);
++		ret = ath_tx_aggr_start(sc, sta, tid, ssn);
+ 		ieee80211_start_tx_ba_cb_irqsafe(vif, sta->addr, tid);
+ 		ath9k_ps_restore(sc);
+ 		break;
