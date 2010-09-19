@@ -31,19 +31,18 @@ define Build/Configure
 		$(TARGET_CONFIGURE_OPTS) \
 		LDSHARED="$(TARGET_CC) -shared -Wl,-soname,libz.so.1" \
 		CFLAGS="$(TARGET_CFLAGS) $(FPIC)" \
-		UNAME_S="Linux" \
 		./configure \
 			--prefix=/usr \
 			--shared \
+			--uname=Linux \
 	);
 endef
 
 define Build/Compile
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		LDSHARED="$(TARGET_CROSS)ld -shared" \
-		CFLAGS="$(TARGET_CFLAGS) $(FPIC)" \
-		libz.a
+		CFLAGS="$(TARGET_CFLAGS)" \
+		libz.a libz.so.$(PKG_VERSION)
 	mkdir -p $(PKG_INSTALL_DIR)
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
