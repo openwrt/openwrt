@@ -17,10 +17,9 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/block-extroot/Default
-  SECTION:=utils
-  CATEGORY:=Utilities
+  SECTION:=base
+  CATEGORY:=Base system
   TITLE:=root filesystem on secondary storage
-  SUBMENU:=disc
 endef
 
 define Package/block-extroot
