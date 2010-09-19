@@ -98,3 +98,16 @@ ramoverlay() {
 	mount -t tmpfs root /tmp/root
 	fopivot /tmp/root /rom 1
 }
+
+pi_include() {
+	if [ -f "/tmp/overlay/$1" ]; then
+		. "/tmp/overlay/$1"
+	elif [ -f "$1" ]; then
+		. "$1"
+	else
+		echo "WARNING: $1 not found"
+		return 1
+	fi
+	return 0
+}
+
