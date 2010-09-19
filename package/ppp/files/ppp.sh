@@ -5,15 +5,7 @@ stop_interface_ppp() {
 	config_get proto "$cfg" proto
 
 	local link="$proto-$cfg"
-	[ -f "/var/run/ppp-${link}.pid" ] && {
-		local pid="$(head -n1 /var/run/ppp-${link}.pid 2>/dev/null)"
-		local try=0
-		grep -qs pppd "/proc/$pid/cmdline" && kill -TERM $pid && \
-			while grep -qs pppd "/proc/$pid/cmdline" && [ $((try++)) -lt 5 ]; do sleep 1; done
-		grep -qs pppd "/proc/$pid/cmdline" && kill -KILL $pid && \
-			while grep -qs pppd "/proc/$pid/cmdline"; do sleep 1; done
-		rm -f "/var/run/ppp-${link}.pid"
-	}
+	service_kill pppd "/var/run/ppp-${link}.pid"
 
 	remove_dns "$cfg"
 
