@@ -21,9 +21,9 @@ setup_interface () {
 	local user_router
 
 	[ -n "$ifc" ] && {
-		config_get old_ip        "$ifc" ipaddr
-		config_get old_broadcast "$ifc" broadcast
-		config_get old_subnet    "$ifc" netmask
+		old_ip="$(uci_get_state network "$ifc" ipaddr)"
+		old_broadcast="$(uci_get_state network "$ifc" broadcast)"
+		old_subnet="$(uci_get_state network "$ifc" netmask)"
 	}
 
 	[ "$ip" != "$old_ip" ] \
