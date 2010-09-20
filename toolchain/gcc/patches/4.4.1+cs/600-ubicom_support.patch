@@ -1,24 +1,6 @@
---- a/config.sub
-+++ b/config.sub
-@@ -283,6 +283,7 @@ case $basic_machine in
- 	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
- 	| spu | strongarm \
- 	| tahoe | thumb | tic4x | tic80 | tron \
-+	| ubicom32 \
- 	| v850 | v850e \
- 	| ubicom32 \
- 	| we32k \
-@@ -367,6 +368,7 @@ case $basic_machine in
- 	| tahoe-* | thumb-* \
- 	| tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* \
- 	| tron-* \
-+	| ubicom32-* \
- 	| v850-* | v850e-* | vax-* \
- 	| ubicom32-* \
- 	| we32k-* \
 --- a/configure
 +++ b/configure
-@@ -2688,6 +2688,9 @@ case "${target}" in
+@@ -2688,6 +2688,9 @@
    ip2k-*-*)
      noconfigdirs="$noconfigdirs target-libiberty target-libstdc++-v3 ${libgcj}"
      ;;
@@ -9331,7 +9313,7 @@
 +#define FATAL_EXIT_CODE 33
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -2314,6 +2314,34 @@ spu-*-elf*)
+@@ -2320,6 +2320,34 @@
  	c_target_objs="${c_target_objs} spu-c.o"
  	cxx_target_objs="${cxx_target_objs} spu-c.o"
  	;;
@@ -9368,7 +9350,7 @@
  	tm_file="dbxelf.h elfos.h svr4.h v850/v850.h"
 --- a/libgcc/config.host
 +++ b/libgcc/config.host
-@@ -551,6 +551,15 @@ sparc64-*-netbsd*)
+@@ -562,6 +562,15 @@
  	;;
  spu-*-elf*)
  	;;

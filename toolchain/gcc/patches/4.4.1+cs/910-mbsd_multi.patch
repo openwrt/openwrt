@@ -13,7 +13,7 @@
 
 --- a/gcc/c-opts.c
 +++ b/gcc/c-opts.c
-@@ -105,6 +105,9 @@
+@@ -106,6 +106,9 @@
  /* Number of deferred options scanned for -include.  */
  static size_t include_cursor;
  
@@ -23,7 +23,7 @@
  static void set_Wimplicit (int);
  static void handle_OPT_d (const char *);
  static void set_std_cxx98 (int);
-@@ -690,6 +701,12 @@
+@@ -689,6 +692,12 @@
        flag_exceptions = value;
        break;
  
@@ -36,7 +36,7 @@
      case OPT_fimplement_inlines:
        flag_implement_inlines = value;
        break;
-@@ -1209,6 +1226,47 @@
+@@ -1198,6 +1207,47 @@
        return false;
      }
  
@@ -86,7 +86,7 @@
  
 --- a/gcc/c.opt
 +++ b/gcc/c.opt
-@@ -609,6 +613,9 @@
+@@ -609,6 +609,9 @@
  fhonor-std
  C++ ObjC++
  
@@ -98,7 +98,7 @@
  Assume normal C execution environment
 --- a/gcc/common.opt
 +++ b/gcc/common.opt
-@@ -573,6 +577,9 @@
+@@ -587,6 +587,9 @@
  Common Report Var(flag_guess_branch_prob) Optimization
  Enable guessing of branch probabilities
  
@@ -142,7 +142,7 @@
        break;
 --- a/gcc/doc/invoke.texi
 +++ b/gcc/doc/invoke.texi
-@@ -5699,7 +5715,7 @@
+@@ -5699,7 +5699,7 @@
  second branch or a point immediately following it, depending on whether
  the condition is known to be true or false.
  
@@ -151,7 +151,7 @@
  
  @item -fsplit-wide-types
  @opindex fsplit-wide-types
-@@ -5844,7 +5860,7 @@
+@@ -5844,7 +5844,7 @@
  @option{-fno-delete-null-pointer-checks} to disable this optimization
  for programs which depend on that behavior.
  
