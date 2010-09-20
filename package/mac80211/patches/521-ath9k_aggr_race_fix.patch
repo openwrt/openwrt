@@ -41,12 +41,15 @@
  void ath9k_enable_ps(struct ath_softc *sc);
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1968,7 +1968,7 @@ static int ath9k_ampdu_action(struct iee
+@@ -1968,8 +1968,9 @@ static int ath9k_ampdu_action(struct iee
  		break;
  	case IEEE80211_AMPDU_TX_START:
  		ath9k_ps_wakeup(sc);
 -		ath_tx_aggr_start(sc, sta, tid, ssn);
+-		ieee80211_start_tx_ba_cb_irqsafe(vif, sta->addr, tid);
 +		ret = ath_tx_aggr_start(sc, sta, tid, ssn);
- 		ieee80211_start_tx_ba_cb_irqsafe(vif, sta->addr, tid);
++		if (!ret)
++			ieee80211_start_tx_ba_cb_irqsafe(vif, sta->addr, tid);
  		ath9k_ps_restore(sc);
  		break;
+ 	case IEEE80211_AMPDU_TX_STOP:
