@@ -122,6 +122,12 @@ GCC_CONFIGURE:= \
 		$(if $(CONFIG_GCC_VERSION_LLVM),--enable-llvm=$(BUILD_DIR_BASE)/host/llvm) \
 		$(if $(CONFIG_GCC_VERSION_4_3_3_CS)$(CONFIG_GCC_VERSION_4_4_1_CS)$(CONFIG_GCC_VERSION_4_4_3_CS),--enable-poison-system-directories)
 
+ifneq ($(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5),)
+  ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
+    GCC_CONFIGURE += --with-mips-plt
+  endif
+endif
+
 ifneq ($(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5),)
   GCC_BUILD_TARGET_LIBGCC:=y
   GCC_CONFIGURE+= \
