@@ -22,27 +22,3 @@ merge_overlay_hooks() {
 }
 
 boot_hook_add preinit_mount_root merge_overlay_hooks
-#!/bin/sh
-# Copyright (C) 2010 OpenWrt.org
-
-merge_overlay_hooks() {
-	jffs2_not_mounted || [ ! -d /tmp/overlay/lib/preinit ] || {
-		echo "- merge overlay components -"
-
-		mkdir -p /tmp/preinit-hook-merge
-		ln -sf /lib/preinit/* /tmp/overlay/lib/preinit/* /tmp/preinit-hook-merge/
-
-		boot_hook_splice_start
-
-		local pipart
-		for pipart in /tmp/preinit-hook-merge/*; do
-			. $pipart
-		done
-
-		boot_hook_splice_finish
-
-		rm -rf /tmp/preinit-hook-merge
-	}
-}
-
-boot_hook_add preinit_mount_root merge_overlay_hooks
