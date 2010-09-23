@@ -6,7 +6,7 @@ merge_overlay_hooks() {
 		echo "- merge overlay components -"
 
 		mkdir -p /tmp/preinit-hook-merge
-		ln -sf /lib/preinit/* /tmp/overlay/lib/preinit/* /tmp/preinit-hook-merge/
+		ln -sf /lib/preinit/* /tmp/overlay/lib/preinit/[0-9][0-9]_* /tmp/preinit-hook-merge/
 
 		boot_hook_splice_start
 
