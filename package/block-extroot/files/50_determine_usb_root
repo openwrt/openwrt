@@ -5,9 +5,8 @@
 
 
 determine_external_root() {
-	. /etc/functions.sh
-	. /lib/functions/extmount.sh
-	. /lib/functions/mount.sh
+	pi_include /lib/functions/extmount.sh
+	pi_include /lib/functions/mount.sh
 
 	local OLD_UCI_CONFIG_DIR="$UCI_CONFIG_DIR"
 	set_jffs_mp
