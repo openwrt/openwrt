@@ -292,4 +292,25 @@ service_kill() {
 	done
 }
 
+
+pi_include() {
+	if [ -f "/tmp/overlay/$1" ]; then
+		. "/tmp/overlay/$1"
+	elif [ -f "$1" ]; then
+		. "$1"
+	elif [ -d "/tmp/overlay/$1" ]; then
+		for src_script in /tmp/overlay/$1/*.sh; do
+			. "$src_script"
+		done
+	elif [ -d "$1" ]; then
+		for src_script in $1/*.sh; do
+			. "$src_script"
+		done
+	else
+		echo "WARNING: $1 not found"
+		return 1
+	fi
+	return 0
+}
+
 [ -z "$IPKG_INSTROOT" -a -f /lib/config/uci.sh ] && . /lib/config/uci.sh

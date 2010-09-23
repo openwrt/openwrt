@@ -13,12 +13,14 @@ set_jffs_mp() {
 }
 
 er_load_modules() {
-	[ -d $ER_ROOT/etc/modules.d ] && {
-	    cd $ER_ROOT/etc/modules.d && {
-	    	local modules="$(grep -l '# May be required for rootfs' *)"
-	    	cat $modules | sed 's/^\([^#]\)/insmod \1/' | sh 2>&- || : 
-	    }
+	mkdir -p /tmp/extroot_modules/modules.d
+	mkdir -p /tmp/extroot_modules/modules
+	ln -sf /etc/modules.d/* /tmp/overlay/etc/modules.d/* /tmp/extroot_modules/modules.d
+	ln -sf /lib/modules/*/* /tmp/overlay/lib/modules/*/* /tmp/extroot_modules/modules
+    	local modules="$(grep -l '# May be required for rootfs' /tmp/extroot_modules/modules.d/*)"
+	cd /tmp/extroot_modules/modules && {
+		cat $modules | sed -e 's/^\([^#].*\)/insmod \.\/\1.ko/'| sh 2>&- || :
 	}
+	rm -rf /tmp/extroot_modules
 }
-
 

@@ -5,12 +5,6 @@
 export PATH=/bin:/sbin:/usr/bin:/usr/sbin
 . /etc/diag.sh
 
-preinit_essential_hook=
-preinit_main_hook=
-failsafe_hook=
-initramfs_hook=
-preinit_mount_root_hook=
-
 pi_ifname=
 pi_ip=192.168.1.1
 pi_broadcast=192.168.1.255
@@ -28,8 +22,14 @@ pi_init_suppress_stderr="y"
 pi_init_path="/bin:/sbin:/usr/bin:/usr/sbin"
 pi_init_cmd="/sbin/init"
 
+. /etc/functions.sh
 . /lib/functions/boot.sh
 
+boot_hook_init preinit_essential
+boot_hook_init preinit_main
+boot_hook_init failsafe
+boot_hook_init initramfs
+boot_hook_init preinit_mount_root
 
 for pi_source_file in /lib/preinit/*; do
     . $pi_source_file
