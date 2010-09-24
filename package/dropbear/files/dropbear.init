@@ -26,40 +26,32 @@ dropbear_start()
 	# increase pid file count to handle multiple instances correctly
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 
-	# prepare parameters
+	# prepare parameters (initialise with pid file)
+	local args="-P /var/run/${NAME}.${PIDCOUNT}.pid"
+	local val
 	# A) password authentication
-	local nopasswd
-	local passauth
-	config_get_bool passauth "${section}" PasswordAuth 1
-	[ "${passauth}" -eq 0 ] && nopasswd=1
+	config_get_bool val "${section}" PasswordAuth 1
+	[ "${val}" -eq 0 ] && append args "-s"
 	# B) listen interface and port
-	local port
 	local interface
 	local address
-	config_get port "${section}" Port
 	config_get interface "${section}" Interface
 	config_get address "${interface}" ipaddr
-	port="${address:+${address}:}${port}"
+	config_get val "${section}" Port
+	val="${address:+${address}:}${val}"
+	[ -n "${val}" ] && append args "-p ${val}"
 	# C) banner file
-	local bannerfile
-	config_get bannerfile "${section}" BannerFile
-	[ -f "$bannerfile" ] || bannerfile=''
+	config_get val "${section}" BannerFile
+	[ -f "${val}" ] && append args "-b ${val}"
 	# D) gatewayports
-	local gatewayports
-	config_get_bool gatewayports "${section}" GatewayPorts 0
-	[ "${gatewayports}" -eq 1 ] || gatewayports=''
+	config_get_bool val "${section}" GatewayPorts 0
+	[ "${val}" -eq 1 ] && append args "-a"
 	# E) root password authentication
-	local norootpasswd
-	local rootpassauth
-	config_get_bool rootpassauth "${section}" RootPasswordAuth 1
-	[ "${rootpassauth}" -eq 0 ] && norootpasswd=1
-	local rootloginallowed
-	local norootlogin
-	config_get_bool rootloginallowed "${section}" RootLogin 1
-	[ "${rootloginallowed}" -eq 0 ] && norootlogin=1
-	# concatenate parameters
-	local args
-	args="${nopasswd:+-s }${norootpasswd:+-g }${norootlogin:+-w }${port:+-p ${port} }${bannerfile:+-b $bannerfile }${gatewayports:+-a }-P /var/run/${NAME}.${PIDCOUNT}.pid"
+	config_get_bool val "${section}" RootPasswordAuth 1
+	[ "${val}" -eq 0 ] && append args "-g"
+	# F) root login
+	config_get_bool val "${section}" RootLogin 1
+	[ "${val}" -eq 0 ] && append args "-w"
 
 	# execute program and return its exit code
 	[ "${verbosed}" -ne 0 ] && echo "${initscript}: section ${section} starting ${PROG} ${args}"
