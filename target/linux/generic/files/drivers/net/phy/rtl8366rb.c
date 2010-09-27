@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2010 Antti Seppälä <a.seppala@gmail.com>
+ * Copyright (C) 2010 Roman Yeryomin <roman@advem.lv>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -162,6 +163,33 @@
 #define RTL8366RB_VLAN_UNTAG_MASK	0xff
 #define RTL8366RB_VLAN_MEMBER_MASK	0xff
 #define RTL8366RB_VLAN_FID_MASK		0x7
+
+
+/* Port ingress bandwidth control */
+#define RTL8366RB_IB_BASE		0x0200
+#define RTL8366RB_IB_REG(pnum)		(RTL8366RB_IB_BASE + pnum)
+#define RTL8366RB_IB_BDTH_MASK		0x3fff
+#define RTL8366RB_IB_PREIFG_OFFSET	14
+#define RTL8366RB_IB_PREIFG_MASK	(1 << RTL8366RB_IB_PREIFG_OFFSET)
+
+/* Port egress bandwidth control */
+#define RTL8366RB_EB_BASE		0x02d1
+#define RTL8366RB_EB_REG(pnum)		(RTL8366RB_EB_BASE + pnum)
+#define RTL8366RB_EB_BDTH_MASK		0x3fff
+#define RTL8366RB_EB_PREIFG_REG	0x02f8
+#define RTL8366RB_EB_PREIFG_OFFSET	9
+#define RTL8366RB_EB_PREIFG_MASK	(1 << RTL8366RB_EB_PREIFG_OFFSET)
+
+#define RTL8366RB_BDTH_SW_MAX		1048512
+#define RTL8366RB_BDTH_BASE		64
+#define RTL8366RB_BDTH_REG_DEFAULT	16383
+
+/* QOS */
+#define RTL8366RB_QOS_BIT		15
+#define RTL8366RB_QOS_MASK		(1 << RTL8366RB_QOS_BIT)
+/* Include/Exclude Preamble and IFG (20 bytes). 0:Exclude, 1:Include. */
+#define RTL8366RB_QOS_DEFAULT_PREIFG	1
+
 
 static struct rtl8366_mib_counter rtl8366rb_mib_counters[] = {
 	{ 0,  0, 4, "IfInOctets"				},
@@ -748,6 +776,159 @@ static int rtl8366rb_sw_get_port_led(struct switch_dev *dev,
 	return 0;
 }
 
+static int rtl8366rb_sw_set_port_disable(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 mask, data;
+
+	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
+		return -EINVAL;
+
+	mask = 1 << val->port_vlan ;
+	if (val->value.i)
+		data = mask;
+	else
+		data = 0;
+
+	return rtl8366_smi_rmwr(smi, RTL8366RB_PECR, mask, data);
+}
+
+static int rtl8366rb_sw_get_port_disable(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 data;
+
+	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
+		return -EINVAL;
+
+	rtl8366_smi_read_reg(smi, RTL8366RB_PECR, &data);
+	if (data & (1 << val->port_vlan))
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+
+	return 0;
+}
+
+static int rtl8366rb_sw_set_port_rate_in(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+
+	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
+		return -EINVAL;
+
+	if (val->value.i > 0 && val->value.i < RTL8366RB_BDTH_SW_MAX)
+		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_BASE;
+	else
+		val->value.i = RTL8366RB_BDTH_REG_DEFAULT;
+
+	return rtl8366_smi_rmwr(smi, RTL8366RB_IB_REG(val->port_vlan),
+		RTL8366RB_IB_BDTH_MASK | RTL8366RB_IB_PREIFG_MASK,
+		val->value.i |
+		(RTL8366RB_QOS_DEFAULT_PREIFG << RTL8366RB_IB_PREIFG_OFFSET));
+
+}
+
+static int rtl8366rb_sw_get_port_rate_in(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 data;
+
+	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
+		return -EINVAL;
+
+	rtl8366_smi_read_reg(smi, RTL8366RB_IB_REG(val->port_vlan), &data);
+	data &= RTL8366RB_IB_BDTH_MASK;
+	if (data < RTL8366RB_IB_BDTH_MASK)
+		data += 1;
+
+	val->value.i = (int)data * RTL8366RB_BDTH_BASE;
+
+	return 0;
+}
+
+static int rtl8366rb_sw_set_port_rate_out(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+
+	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
+		return -EINVAL;
+
+	rtl8366_smi_rmwr(smi, RTL8366RB_EB_PREIFG_REG,
+		RTL8366RB_EB_PREIFG_MASK,
+		(RTL8366RB_QOS_DEFAULT_PREIFG << RTL8366RB_EB_PREIFG_OFFSET));
+
+	if (val->value.i > 0 && val->value.i < RTL8366RB_BDTH_SW_MAX)
+		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_BASE;
+	else
+		val->value.i = RTL8366RB_BDTH_REG_DEFAULT;
+
+	return rtl8366_smi_rmwr(smi, RTL8366RB_EB_REG(val->port_vlan),
+			RTL8366RB_EB_BDTH_MASK, val->value.i );
+
+}
+
+static int rtl8366rb_sw_get_port_rate_out(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 data;
+
+	if (val->port_vlan >= RTL8366RB_NUM_PORTS)
+		return -EINVAL;
+
+	rtl8366_smi_read_reg(smi, RTL8366RB_EB_REG(val->port_vlan), &data);
+	data &= RTL8366RB_EB_BDTH_MASK;
+	if (data < RTL8366RB_EB_BDTH_MASK)
+		data += 1;
+
+	val->value.i = (int)data * RTL8366RB_BDTH_BASE;
+
+	return 0;
+}
+
+static int rtl8366rb_sw_set_qos_enable(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 data;
+
+	if (val->value.i)
+		data = RTL8366RB_QOS_MASK;
+	else
+		data = 0;
+
+	return rtl8366_smi_rmwr(smi, RTL8366RB_SGCR, RTL8366RB_QOS_MASK, data);
+}
+
+static int rtl8366rb_sw_get_qos_enable(struct switch_dev *dev,
+				    const struct switch_attr *attr,
+				    struct switch_val *val)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	u32 data;
+
+	rtl8366_smi_read_reg(smi, RTL8366RB_SGCR, &data);
+	if (data & RTL8366RB_QOS_MASK)
+		val->value.i = 1;
+	else
+		val->value.i = 0;
+
+	return 0;
+}
+
 static int rtl8366rb_sw_reset_port_mibs(struct switch_dev *dev,
 				       const struct switch_attr *attr,
 				       struct switch_val *val)
@@ -814,6 +995,13 @@ static struct switch_attr rtl8366rb_globals[] = {
 		.set = rtl8366rb_sw_set_blinkrate,
 		.get = rtl8366rb_sw_get_blinkrate,
 		.max = 5
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_qos",
+		.description = "Enable QOS",
+		.set = rtl8366rb_sw_set_qos_enable,
+		.get = rtl8366rb_sw_get_qos_enable,
+		.max = 1
 	},
 };
 
@@ -844,6 +1032,27 @@ static struct switch_attr rtl8366rb_port[] = {
 		.max = 15,
 		.set = rtl8366rb_sw_set_port_led,
 		.get = rtl8366rb_sw_get_port_led,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Get/Set port state (enabled or disabled)",
+		.max = 1,
+		.set = rtl8366rb_sw_set_port_disable,
+		.get = rtl8366rb_sw_get_port_disable,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "rate_in",
+		.description = "Get/Set port ingress (incoming) bandwidth limit in kbps",
+		.max = RTL8366RB_BDTH_SW_MAX,
+		.set = rtl8366rb_sw_set_port_rate_in,
+		.get = rtl8366rb_sw_get_port_rate_in,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "rate_out",
+		.description = "Get/Set port egress (outgoing) bandwidth limit in kbps",
+		.max = RTL8366RB_BDTH_SW_MAX,
+		.set = rtl8366rb_sw_set_port_rate_out,
+		.get = rtl8366rb_sw_get_port_rate_out,
 	},
 };
 
@@ -1132,5 +1341,6 @@ MODULE_DESCRIPTION(RTL8366RB_DRIVER_DESC);
 MODULE_VERSION(RTL8366RB_DRIVER_VER);
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 MODULE_AUTHOR("Antti Seppälä <a.seppala@gmail.com>");
+MODULE_AUTHOR("Roman Yeryomin <roman@advem.lv>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:" RTL8366RB_DRIVER_NAME);
