@@ -32,6 +32,12 @@ config RT305X_MACH_FONERA20N
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_PWH2004
+	bool "Prolink PWH2004 / Abocom WR5205 support (32M RAM, 8M flash)"
+	default y
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 endmenu
 
 endif

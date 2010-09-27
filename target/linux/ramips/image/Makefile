@@ -88,6 +88,10 @@ define Image/Build/Profile/FONERA20N
 	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N)
 endef
 
+define Image/Build/Template/PWH2004
+	$(call Image/Build/Template/GENERIC_8M,$(1),pwh2004,PWH2004)
+endef
+
 define Image/Build/Profile/V22RW2X2
 	$(call Image/Build/Template/GENERIC_4M,$(1),v22rw-2x2,V22RW-2X2)
 endef
@@ -114,6 +118,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR300B1,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))
 	$(call Image/Build/Profile/V22RW2X2,$(1))
+	$(call Image/Build/Profile/PWH2004,$(1))
 	$(call Image/Build/Profile/WHRG300N,$(1))
 	$(call Image/Build/Profile/WCR150GN,$(1))
 endef
