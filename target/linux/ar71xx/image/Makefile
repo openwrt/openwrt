@@ -531,6 +531,10 @@ define Image/Build/Profile/MZKW300NH
 	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w300nh,board=MZK-W300NH)
 endef
 
+define Image/Build/Profile/TLMR3420V1
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3420-v1,board=TL-MR3420,TL-MR3420v1)
+endef
+
 define Image/Build/Profile/TLWA901NDV1
 	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wa901nd-v1,board=TL-WA901ND,TL-WA901NDv1)
 endef
@@ -619,6 +623,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/PB92,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
+	$(call Image/Build/Profile/TLMR3420V1,$(1))
 	$(call Image/Build/Profile/TLWA901NDV1,$(1))
 	$(call Image/Build/Profile/TLWR741NDV1,$(1))
 	$(call Image/Build/Profile/TLWR841NV15,$(1))
