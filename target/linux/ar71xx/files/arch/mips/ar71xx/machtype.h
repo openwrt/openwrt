@@ -58,6 +58,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_EAP7660D,	/* Senao EAP7660D */
 	AR71XX_MACH_ZCN_1523H_2, /* Zcomax ZCN-1523H-2-xx */
 	AR71XX_MACH_ZCN_1523H_5, /* Zcomax ZCN-1523H-5-xx */
+	AR71XX_MACH_AP96,	/* Atheros AP96 */
 };
 
 #endif /* _AR71XX_MACHTYPE_H */

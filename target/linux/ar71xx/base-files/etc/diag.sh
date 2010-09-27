@@ -36,6 +36,9 @@ get_status_led() {
 	ap83)
 		status_led="ap83:green:power"
 		;;
+	ap96)
+		status_led="ap96:green:led2"
+		;;
 	aw-nr580)
 		status_led="aw-nr580:green:ready"
 		;;

@@ -571,6 +571,10 @@ define Image/Build/Profile/WNDR3700
 	$(call Image/Build/Template/$(fs_64k)/$(1),WNDR3700,wndr3700,board=WNDR3700)
 endef
 
+define Image/Build/Profile/AP96
+	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap96,board=AP96)
+endef
+
 define Image/Build/Profile/WRT400N
 	$(call Image/Build/Template/$(fs_64k)/$(1),WRT400N,wrt400n,board=WRT400N)
 endef
@@ -623,6 +627,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 	$(call Image/Build/Profile/WNDR3700,$(1))
+	$(call Image/Build/Profile/AP96,$(1))
 	$(call Image/Build/Profile/WRT400N,$(1))
 	$(call Image/Build/Profile/WRT160NL,$(1))
 	$(call Image/Build/Profile/WZRHPG300NH,$(1))
