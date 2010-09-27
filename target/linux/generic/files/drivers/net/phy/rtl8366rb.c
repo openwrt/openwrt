@@ -26,6 +26,7 @@
 #define RTL8366RB_PHY_NO_MAX	4
 #define RTL8366RB_PHY_PAGE_MAX	7
 #define RTL8366RB_PHY_ADDR_MAX	31
+#define RTL8366RB_PHY_WAN	4
 
 /* Switch Global Configuration register */
 #define RTL8366RB_SGCR				0x0000
@@ -1272,6 +1273,10 @@ static int rtl8366rb_phy_config_init(struct phy_device *phydev)
 
 static int rtl8366rb_phy_config_aneg(struct phy_device *phydev)
 {
+	/* phy 4 might be connected to a second mac, allow aneg config */
+	if (phydev->addr == RTL8366RB_PHY_WAN)
+		return genphy_config_aneg(phydev);
+
 	return 0;
 }
 
