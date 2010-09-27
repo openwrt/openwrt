@@ -551,6 +551,10 @@ define Image/Build/Profile/TLWR841NDV5
 	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr841nd-v5,board=TL-WR741ND,TL-WR841NDv5)
 endef
 
+define Image/Build/Profile/TLWR841NDV7
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr841nd-v7,board=TL-WR741ND,TL-WR841NDv7)
+endef
+
 define Image/Build/Profile/TLWR941NDV2
 	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v2,board=TL-WR941ND,TL-WR941NDv2)
 endef
@@ -620,6 +624,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLWR841NV15,$(1))
 	$(call Image/Build/Profile/TLWR841NDV3,$(1))
 	$(call Image/Build/Profile/TLWR841NDV5,$(1))
+	$(call Image/Build/Profile/TLWR841NDV7,$(1))
 	$(call Image/Build/Profile/TLWR941NDV2,$(1))
 	$(call Image/Build/Profile/TLWR941NDV3,$(1))
 	$(call Image/Build/Profile/TLWR941NDV4,$(1))
