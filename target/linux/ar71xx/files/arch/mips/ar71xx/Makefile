@@ -26,6 +26,7 @@ obj-$(CONFIG_AR71XX_DEV_PB9X_PCI)	+= dev-pb9x-pci.o
 obj-$(CONFIG_AR71XX_DEV_USB)		+= dev-usb.o
 
 obj-$(CONFIG_AR71XX_NVRAM)		+= nvram.o
+obj-$(CONFIG_AR71XX_PCI_ATH9K_FIXUP)	+= pci-ath9k-fixup.o
 
 obj-$(CONFIG_AR71XX_MACH_AP81)		+= mach-ap81.o
 obj-$(CONFIG_AR71XX_MACH_AP83)		+= mach-ap83.o
