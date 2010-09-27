@@ -177,6 +177,15 @@ config AR71XX_MACH_NBG460N
 	select AR71XX_DEV_LEDS_GPIO
 	default n
 
+config AR71XX_MACH_TL_MR3420
+	bool "TP-LINK TL-MR3420 support"
+	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_AP91_PCI if PCI
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
+	default n
+
 config AR71XX_MACH_TL_WA901ND
 	bool "TP-LINK TL-WA901ND support"
 	select AR71XX_DEV_M25P80

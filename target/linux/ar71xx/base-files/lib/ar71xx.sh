@@ -94,6 +94,9 @@ ar71xx_board_name() {
 	*"DIR-615 rev. C1")
 		name="dir-615-c1"
 		;;
+	*TL-MR3420)
+		name="tl-mr3420"
+		;;
 	*TL-WA901ND)
 		name="tl-wa901nd"
 		;;
