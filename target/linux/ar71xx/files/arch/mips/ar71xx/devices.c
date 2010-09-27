@@ -86,7 +86,13 @@ void __init ar71xx_add_device_mdio(u32 phy_mask)
 {
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7240:
+		ar71xx_mdio_data.is_ar7240 = 1;
+		break;
 	case AR71XX_SOC_AR7241:
+		ar71xx_mdio_data.is_ar7240 = 1;
+		ar71xx_mdio_resources[0].start = AR71XX_GE1_BASE;
+		ar71xx_mdio_resources[0].end = AR71XX_GE1_BASE + 0x200 - 1;
+		break;
 	case AR71XX_SOC_AR7242:
 		ar71xx_mdio_data.is_ar7240 = 1;
 		break;
