@@ -67,7 +67,20 @@ static void ap91_pci_fixup(struct pci_dev *dev)
 	}
 
 	/* Setup the PCI device to allow access to the internal registers */
-	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0xffff);
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7240:
+		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0xffff);
+		break;
+
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
+		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0x1000ffff);
+		break;
+
+	default:
+		BUG();
+	}
+
 	pci_read_config_word(dev, PCI_COMMAND, &cmd);
 	cmd |= PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
 	pci_write_config_word(dev, PCI_COMMAND, cmd);
