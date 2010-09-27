@@ -261,6 +261,7 @@ config AR71XX_DEV_M25P80
 	def_bool n
 
 config AR71XX_DEV_AP91_PCI
+	select AR71XX_PCI_ATH9K_FIXUP
 	def_bool n
 
 config AR71XX_DEV_AP91_ETH
@@ -268,6 +269,7 @@ config AR71XX_DEV_AP91_ETH
 	def_bool n
 
 config AR71XX_DEV_AP94_PCI
+	select AR71XX_PCI_ATH9K_FIXUP
 	def_bool n
 
 config AR71XX_DEV_AR913X_WMAC
@@ -292,6 +294,9 @@ config AR71XX_DEV_USB
 	def_bool n
 
 config AR71XX_NVRAM
+	def_bool n
+
+config AR71XX_PCI_ATH9K_FIXUP
 	def_bool n
 
 endif
