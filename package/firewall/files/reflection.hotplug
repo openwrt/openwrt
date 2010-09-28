@@ -82,6 +82,9 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 
 				[ "$proto" = tcpudp ] && proto="tcp udp"
 
+				[ "${inthost#!}" = "$inthost" ] || return 0
+				[ "${exthost#!}" = "$exthost" ] || return 0
+
 				local p
 				for p in ${proto:-tcp udp}; do
 					case "$p" in
