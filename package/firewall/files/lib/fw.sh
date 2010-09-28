@@ -218,3 +218,12 @@ fw_get_family_mode() {
 	esac
 }
 
+fw_get_negation() {
+	local _var="$1"
+	local _flag="$2"
+	local _ipaddr="$3"
+
+	[ "${_ipaddr#!}" != "$_ipaddr" ] && \
+		export -n -- "$_var=! $_flag ${_ipaddr#!}" || \
+		export -n -- "$_var=${_ipaddr:+$_flag $_ipaddr}"
+}
