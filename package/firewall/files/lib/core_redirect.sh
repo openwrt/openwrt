@@ -41,7 +41,7 @@ fw_load_redirect() {
 		nataddr="$redirect_dest_ip"
 		fw_get_port_range natports "$redirect_dest_port" "-"
 
-		srcdaddr="${redirect_src_dip:+$redirect_src_dip/$redirect_src_dip_prefixlen}"
+		fw_get_negation srcdaddr '-d' "${redirect_src_dip:+$redirect_src_dip/$redirect_src_dip_prefixlen}"
 		fw_get_port_range srcdports "$redirect_src_dport" ":"
 
 		list_contains FW_CONNTRACK_ZONES $redirect_src || \
@@ -60,7 +60,7 @@ fw_load_redirect() {
 		nataddr="$redirect_src_dip"
 		fw_get_port_range natports "$redirect_src_dport" "-"
 
-		srcdaddr="${redirect_dest_ip:+$redirect_dest_ip/$redirect_dest_ip_prefixlen}"
+		fw_get_negation srcdaddr '-d' "${redirect_dest_ip:+$redirect_dest_ip/$redirect_dest_ip_prefixlen}"
 		fw_get_port_range srcdports "$redirect_dest_port" ":"
 
 		list_contains FW_CONNTRACK_ZONES $redirect_dest || \
@@ -74,21 +74,24 @@ fw_load_redirect() {
 	local mode
 	fw_get_family_mode mode ${redirect_family:-x} ${redirect_src:-$redirect_dest} I
 
-	local srcaddr="${redirect_src_ip:+$redirect_src_ip/$redirect_src_ip_prefixlen}"
+	local srcaddr
+	fw_get_negation srcaddr '-s' "${redirect_src_ip:+$redirect_src_ip/$redirect_src_ip_prefixlen}"
+
 	local srcports
 	fw_get_port_range srcports "$redirect_src_port" ":"
 
-	local destaddr="${redirect_dest_ip:+$redirect_dest_ip/$redirect_dest_ip_prefixlen}"
+	local destaddr
+	fw_get_negation destaddr '-d' "${redirect_dest_ip:+$redirect_dest_ip/$redirect_dest_ip_prefixlen}"
+
 	local destports
 	fw_get_port_range destports "${redirect_dest_port:-$redirect_src_dport}" ":"
 
 	[ "$redirect_proto" == "tcpudp" ] && redirect_proto="tcp udp"
 	for redirect_proto in $redirect_proto; do
 		fw add $mode n $natchain $redirect_target ^ { $redirect_src_ip $redirect_dest_ip } { \
+			$srcaddr $srcdaddr \
 			${redirect_proto:+-p $redirect_proto} \
-			${srcaddr:+-s $srcaddr} \
 			${srcports:+--sport $srcports} \
-			${srcdaddr:+-d $srcdaddr} \
 			${srcdports:+--dport $srcdports} \
 			${redirect_src_mac:+-m mac --mac-source $redirect_src_mac} \
 			$natopt $nataddr${natports:+:$natports} \
@@ -96,10 +99,9 @@ fw_load_redirect() {
 
 		[ -n "$destaddr" ] && \
 		fw add $mode f ${fwdchain:-forward} ACCEPT ^ { $redirect_src_ip $redirect_dest_ip } { \
+			$srcaddr $destaddr \
 			${redirect_proto:+-p $redirect_proto} \
-			${srcaddr:+-s $srcaddr} \
 			${srcports:+--sport $srcports} \
-			${destaddr:+-d $destaddr} \
 			${destports:+--dport $destports} \
 			${redirect_src_mac:+-m mac --mac-source $redirect_src_mac} \
 		}

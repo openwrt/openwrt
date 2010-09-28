@@ -245,9 +245,9 @@ fw_load_zone() {
 	if [ "$zone_masq" == 1 ]; then
 		local msrc mdst
 		for msrc in ${zone_masq_src:-0.0.0.0/0}; do
-			[ "${msrc#!}" != "$msrc" ] && msrc="! -s ${msrc#!}" || msrc="-s $msrc"
+			fw_get_negation msrc '-s' "$msrc"
 			for mdst in ${zone_masq_dest:-0.0.0.0/0}; do
-				[ "${mdst#!}" != "$mdst" ] && mdst="! -d ${mdst#!}" || mdst="-d $mdst"
+				fw_get_negation mdst '-d' "$mdst"
 				fw add $mode n ${chain}_nat MASQUERADE $ { $msrc $mdst }
 			done
 		done

@@ -24,42 +24,45 @@ fw_config_get_rule() {
 fw_load_rule() {
 	fw_config_get_rule "$1"
 
+	[ "$rule_target" != "NOTRACK" ] || [ -n "$rule_src" ] || {
+		fw_log error "NOTRACK rule ${rule_name}: needs src, skipping"
+		return 0
+	}
+
 	fw_callback pre rule
 
 	fw_get_port_range rule_src_port $rule_src_port
 	fw_get_port_range rule_dest_port $rule_dest_port
 
+	local table=f
 	local chain=input
-	[ -n "$rule_src" ] && {
-		[ -z "$rule_dest" ] && {
-			chain=zone_${rule_src}
-		} || {
-			chain=zone_${rule_src}_forward
-		}
-	}
+	if [ "$rule_target" == "NOTRACK" ]; then
+		table=r
+		chain="zone_${rule_src}_notrack"
+	elif [ -n "$rule_src" ]; then
+		chain="zone_${rule_src}${rule_dest:+_forward}"
+	fi
 
-	local target=$rule_target
-	[ -z "$target" ] && {
-		target=REJECT
-	}
-	[ -n "$dest" ] && {
-		target=zone_${rule_dest}_${target}
-	}
+	local target="${rule_target:-REJECT}"
+	[ -n "$dest" ] && target="zone_${rule_dest}_${target}"
 
 	local mode
 	fw_get_family_mode mode ${rule_family:-x} $rule_src I
+
+	local src_spec dest_spec
+	fw_get_negation src_spec '-s' "${rule_src_ip:+$rule_src_ip/$rule_src_ip_prefixlen}"
+	fw_get_negation dest_spec '-d' "${rule_dest_ip:+$rule_dest_ip/$rule_dest_ip_prefixlen}"
 
 	local rule_pos
 	eval 'rule_pos=$((++FW__RULE_COUNT_'$mode'_'$chain'))'
 
 	[ "$rule_proto" == "tcpudp" ] && rule_proto="tcp udp"
 	for rule_proto in $rule_proto; do
-		fw add $mode f $chain $target $rule_pos { $rule_src_ip $rule_dest_ip } { \
+		fw add $mode $table $chain $target $rule_pos { $rule_src_ip $rule_dest_ip } { \
+			$src_spec $dest_spec \
 			${rule_proto:+-p $rule_proto} \
-			${rule_src_ip:+-s $rule_src_ip/$rule_src_ip_prefixlen} \
 			${rule_src_port:+--sport $rule_src_port} \
 			${rule_src_mac:+-m mac --mac-source $rule_src_mac} \
-			${rule_dest_ip:+-d $rule_dest_ip/$rule_dest_ip_prefixlen} \
 			${rule_dest_port:+--dport $rule_dest_port} \
 			${rule_icmp_type:+--icmp-type $rule_icmp_type} \
 		}
