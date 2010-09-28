@@ -134,22 +134,26 @@ static struct gpio_button ap96_gpio_buttons[] __initdata = {
 	}
 };
 
+#define AP96_WAN_PHYMASK 0x10
+#define AP96_LAN_PHYMASK 0x0f
+
 static void __init ap96_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 
-	ar71xx_add_device_mdio(0xfffffffe);
+	ar71xx_add_device_mdio(~(AP96_WAN_PHYMASK | AP96_LAN_PHYMASK));
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth0_data.phy_mask = 0x1;
+	ar71xx_eth0_data.phy_mask = AP96_LAN_PHYMASK;
+	ar71xx_eth0_data.speed = SPEED_1000;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(0);
 
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, art, 1);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-	ar71xx_eth1_data.speed = SPEED_1000;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_eth1_data.phy_mask = AP96_WAN_PHYMASK;
 
 	ar71xx_eth1_pll_data.pll_1000 = 0x1f000000;
 
