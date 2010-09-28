@@ -36,15 +36,14 @@ fw_load_rule() {
 
 	local table=f
 	local chain=input
-	if [ "$rule_target" == "NOTRACK" ]; then
+	local target="${rule_target:-REJECT}"
+	if [ "$target" == "NOTRACK" ]; then
 		table=r
 		chain="zone_${rule_src}_notrack"
-	elif [ -n "$rule_src" ]; then
-		chain="zone_${rule_src}${rule_dest:+_forward}"
+	else
+		[ -n "$rule_src" ] && chain="zone_${rule_src}${rule_dest:+_forward}"
+		[ -n "$rule_dest" ] && target="zone_${rule_dest}_${target}"
 	fi
-
-	local target="${rule_target:-REJECT}"
-	[ -n "$dest" ] && target="zone_${rule_dest}_${target}"
 
 	local mode
 	fw_get_family_mode mode ${rule_family:-x} $rule_src I
