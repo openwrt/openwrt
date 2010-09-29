@@ -119,3 +119,30 @@
  
  #define ISA_DMA_THRESHOLD (SZ_64M - 1)
  #define MAX_DMA_ADDRESS		(PAGE_OFFSET + SZ_64M)
+--- a/arch/arm/common/dmabounce.c
++++ b/arch/arm/common/dmabounce.c
+@@ -30,6 +30,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/dmapool.h>
+ #include <linux/list.h>
++#include <linux/pci.h>
+ #include <linux/scatterlist.h>
+ 
+ #include <asm/cacheflush.h>
+@@ -248,8 +249,15 @@ static inline dma_addr_t map_single(stru
+ 		needs_bounce = (dma_addr | (dma_addr + size - 1)) & ~mask;
+ 	}
+ 
+-	if (device_info && (needs_bounce || dma_needs_bounce(dev, dma_addr, size))) {
++#ifdef CONFIG_DMABOUNCE
++int dma_needs_bounce_2(struct device *dev, dma_addr_t dma_addr, size_t size)
++{
++	return (dev->bus == &pci_bus_type ) && ((dma_addr + size) > SZ_64M);
++}
++
++	if (device_info && (needs_bounce || dma_needs_bounce_2(dev, dma_addr, size))) {
+ 		struct safe_buffer *buf;
++#endif
+ 
+ 		buf = alloc_safe_buffer(device_info, ptr, size, dir);
+ 		if (buf == 0) {
