@@ -52,6 +52,11 @@ dropbear_start()
 	# F) root login
 	config_get_bool val "${section}" RootLogin 1
 	[ "${val}" -eq 0 ] && append args "-w"
+	# G) host keys
+	config_get val "${section}" rsakeyfile
+	[ -f "${val}" ] && append args "-r ${val}"
+	config_get val "${section}" dsskeyfile
+	[ -f "${val}" ] && append args "-d ${val}"
 
 	# execute program and return its exit code
 	[ "${verbosed}" -ne 0 ] && echo "${initscript}: section ${section} starting ${PROG} ${args}"
