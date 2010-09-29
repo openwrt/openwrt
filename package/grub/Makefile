@@ -37,6 +37,10 @@ MY_CONFIGURE_ARGS += \
 	--disable-hercules \
 	--without-curses \
 
+ifeq ($(HOST_OS),FreeBSD)
+  MY_CONFIGURE_ARGS += --build=$(GNU_HOST_NAME) --host=$(GNU_TARGET_NAME) --target=$(GNU_TARGET_NAME)
+endif
+
 MY_CONFIGURE_VARS += \
 	grub_cv_prog_objcopy_absolute=yes \
 
