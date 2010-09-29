@@ -19,8 +19,8 @@
  else
  include $(KLIB_BUILD)/.config
  endif
-@@ -280,21 +279,6 @@ endif #CONFIG_WEXT_PRIV
- endif #CONFIG_WEXT_SPY
+@@ -283,21 +282,6 @@ CONFIG_IPW2200_QOS=y
+ # % echo 1 > /sys/bus/pci/drivers/ipw2200/*/rtap_iface
  endif #CONFIG_WIRELESS_EXT
  
 -ifdef CONFIG_SSB
@@ -41,7 +41,7 @@
  CONFIG_P54_PCI=m
  
  # CONFIG_B44=m
-@@ -474,7 +458,6 @@ endif #CONFIG_SPI_MASTER end of SPI driv
+@@ -485,7 +469,6 @@ endif #CONFIG_SPI_MASTER end of SPI driv
  
  ifdef CONFIG_MMC
  
