@@ -1,0 +1,73 @@
+--- a/nl80211.h
++++ b/nl80211.h
+@@ -295,7 +295,9 @@
+  *	auth and assoc steps. For this, you need to specify the SSID in a
+  *	%NL80211_ATTR_SSID attribute, and can optionally specify the association
+  *	IEs in %NL80211_ATTR_IE, %NL80211_ATTR_AUTH_TYPE, %NL80211_ATTR_MAC,
+- *	%NL80211_ATTR_WIPHY_FREQ and %NL80211_ATTR_CONTROL_PORT.
++ *	%NL80211_ATTR_WIPHY_FREQ, %NL80211_ATTR_CONTROL_PORT,
++ *	%NL80211_ATTR_CONTROL_PORT_ETHERTYPE and
++ *	%NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT.
+  *	It is also sent as an event, with the BSSID and response IEs when the
+  *	connection is established or failed to be established. This can be
+  *	determined by the STATUS_CODE attribute.
+@@ -686,6 +688,15 @@ enum nl80211_commands {
+  *	request, the driver will assume that the port is unauthorized until
+  *	authorized by user space. Otherwise, port is marked authorized by
+  *	default in station mode.
++ * @NL80211_ATTR_CONTROL_PORT_ETHERTYPE: A 16-bit value indicating the
++ *	ethertype that will be used for key negotiation. It can be
++ *	specified with the associate and connect commands. If it is not
++ *	specified, the value defaults to 0x888E (PAE, 802.1X). This
++ *	attribute is also used as a flag in the wiphy information to
++ *	indicate that protocols other than PAE are supported.
++ * @NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT: When included along with
++ *	%NL80211_ATTR_CONTROL_PORT_ETHERTYPE, indicates that the custom
++ *	ethertype frames used for key negotiation must not be encrypted.
+  *
+  * @NL80211_ATTR_TESTDATA: Testmode data blob, passed through to the driver.
+  *	We recommend using nested, driver-specific attributes within this.
+@@ -951,6 +962,9 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_RX_FRAME_TYPES,
+ 	NL80211_ATTR_FRAME_TYPE,
+ 
++	NL80211_ATTR_CONTROL_PORT_ETHERTYPE,
++	NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT,
++
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+ 	__NL80211_ATTR_AFTER_LAST,
+@@ -1006,6 +1020,8 @@ enum nl80211_attrs {
+  * @NL80211_IFTYPE_WDS: wireless distribution interface
+  * @NL80211_IFTYPE_MONITOR: monitor interface receiving all frames
+  * @NL80211_IFTYPE_MESH_POINT: mesh point
++ * @NL80211_IFTYPE_P2P_CLIENT: P2P client
++ * @NL80211_IFTYPE_P2P_GO: P2P group owner
+  * @NL80211_IFTYPE_MAX: highest interface type number currently defined
+  * @NUM_NL80211_IFTYPES: number of defined interface types
+  *
+@@ -1022,6 +1038,8 @@ enum nl80211_iftype {
+ 	NL80211_IFTYPE_WDS,
+ 	NL80211_IFTYPE_MONITOR,
+ 	NL80211_IFTYPE_MESH_POINT,
++	NL80211_IFTYPE_P2P_CLIENT,
++	NL80211_IFTYPE_P2P_GO,
+ 
+ 	/* keep last */
+ 	NUM_NL80211_IFTYPES,
+@@ -1382,6 +1400,7 @@ enum nl80211_reg_rule_flags {
+  * @__NL80211_SURVEY_INFO_INVALID: attribute number 0 is reserved
+  * @NL80211_SURVEY_INFO_FREQUENCY: center frequency of channel
+  * @NL80211_SURVEY_INFO_NOISE: noise level of channel (u8, dBm)
++ * @NL80211_SURVEY_INFO_IN_USE: channel is currently being used
+  * @NL80211_SURVEY_INFO_MAX: highest survey info attribute number
+  *	currently defined
+  * @__NL80211_SURVEY_INFO_AFTER_LAST: internal use
+@@ -1390,6 +1409,7 @@ enum nl80211_survey_info {
+ 	__NL80211_SURVEY_INFO_INVALID,
+ 	NL80211_SURVEY_INFO_FREQUENCY,
+ 	NL80211_SURVEY_INFO_NOISE,
++	NL80211_SURVEY_INFO_IN_USE,
+ 
+ 	/* keep last */
+ 	__NL80211_SURVEY_INFO_AFTER_LAST,
