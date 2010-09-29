@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -897,6 +897,53 @@ static const struct file_operations fops
+@@ -930,6 +930,53 @@ static const struct file_operations fops
  	.owner = THIS_MODULE
  };
  
@@ -54,7 +54,7 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -960,6 +1007,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -993,6 +1040,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			sc->debug.debugfs_phy, &ah->config.cwm_ignore_extcca))
  		goto err;
  
