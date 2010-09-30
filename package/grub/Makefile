@@ -37,10 +37,6 @@ MY_CONFIGURE_ARGS += \
 	--disable-hercules \
 	--without-curses \
 
-ifeq ($(HOST_OS),FreeBSD)
-  MY_CONFIGURE_ARGS += --build=$(GNU_HOST_NAME) --host=$(GNU_TARGET_NAME) --target=$(GNU_TARGET_NAME)
-endif
-
 MY_CONFIGURE_VARS += \
 	grub_cv_prog_objcopy_absolute=yes \
 
@@ -51,6 +47,14 @@ CONFIGURE_VARS += $(MY_CONFIGURE_VARS)
 ifeq ($(HOST_OS),Darwin)
   HOST_CFLAGS += $(call host-cc-option,-m32)
   HOST_CFLAGS += $(call host-cc-option,-fnested-functions)
+endif
+
+ifeq ($(HOST_OS),FreeBSD)
+  ifeq ($(HOST_ARCH),amd64)
+    HOST_CFLAGS += $(call host-cc-option,-m32)
+    HOST_CFLAGS += $(call host-cc-option,-B/usr/lib32)
+    HOST_CFLAGS += $(call host-cc-option,-L/usr/lib32)
+  endif
 endif
 
 HOST_CFLAGS += $(call host-cc-option,-fno-stack-protector)
