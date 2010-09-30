@@ -18,6 +18,7 @@ define Package/px5g
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Standalone X.509 certificate generator
+  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
 
 define Package/px5g/description
