@@ -11,7 +11,7 @@ BOARD:=omap24xx
 BOARDNAME:=TI OMAP-24xx
 FEATURES:=targz squashfs jffs2 usb usbgadget display gpio audio
 
-LINUX_VERSION:=2.6.36-rc5
+LINUX_VERSION:=2.6.36-rc6
 
 define Target/Description
 	TI OMAP-24xx
