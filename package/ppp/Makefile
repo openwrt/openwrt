@@ -25,6 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ppp/Default
   SECTION:=net
   CATEGORY:=Network
+  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
   URL:=http://ppp.samba.org/
 endef
 

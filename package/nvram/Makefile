@@ -18,6 +18,7 @@ define Package/nvram
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=Userspace port of the Broadcom NVRAM manipulation tool
+  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
   DEPENDS:=@TARGET_brcm47xx||@TARGET_ar71xx
 endef
 

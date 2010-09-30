@@ -21,6 +21,7 @@ define Package/pptp
   SECTION:=net
   CATEGORY:=Network
   TITLE:=PPTP client
+  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
   URL:=http://pptpclient.sourceforge.net/
   DEPENDS:=+ppp +kmod-gre
 endef

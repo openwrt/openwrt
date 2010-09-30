@@ -18,6 +18,7 @@ define Package/6in4
   CATEGORY:=IPv6
   DEPENDS:=+ip +kmod-ipv6 +kmod-sit
   TITLE:=IPv6-in-IPv4 configuration support
+  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
   PKGARCH:=all
 endef
 

@@ -18,6 +18,7 @@ define Package/firewall
   CATEGORY:=Base system
   URL:=http://openwrt.org/
   TITLE:=OpenWrt firewall
+  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
   DEPENDS:=+iptables +iptables-mod-conntrack +iptables-mod-nat
   PKGARCH:=all
 endef

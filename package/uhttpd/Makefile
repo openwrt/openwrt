@@ -19,6 +19,7 @@ define Package/uhttpd/default
   SECTION:=net
   CATEGORY:=Network
   TITLE:=uHTTPd - tiny, single threaded HTTP server
+  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
 
 define Package/uhttpd
