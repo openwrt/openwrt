@@ -46,7 +46,8 @@ $(if $(KCONFIG),Kernel-Config: $(KCONFIG)
 )$(if $(BUILDONLY),Build-Only: $(BUILDONLY)
 )Description: $(if $(Package/$(1)/description),$(Package/$(1)/description),$(TITLE))
 $(if $(URL),$(URL)
-)@@
+)$(MAINTAINER)
+@@
 $(if $(Package/$(1)/config),Config:
 $(Package/$(1)/config)
 @@
