@@ -22,6 +22,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_DIR_600_A1,	/* D-Link DIR-600 rev. A1 */
 	AR71XX_MACH_DIR_615_C1,	/* D-Link DIR-615 rev. C1 */
 	AR71XX_MACH_DIR_825_B1,	/* D-Link DIR-825 rev. B1 */
+	AR71XX_MACH_JWAP003,	/* jjPlus JWAP003 */
 	AR71XX_MACH_RB_411,	/* MikroTik RouterBOARD 411/411A/411AH */
 	AR71XX_MACH_RB_411U,	/* MikroTik RouterBOARD 411U */
 	AR71XX_MACH_RB_433,	/* MikroTik RouterBOARD 433/433AH */
