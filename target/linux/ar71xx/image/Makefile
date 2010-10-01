@@ -470,6 +470,10 @@ define Image/Build/Profile/EAP7660D
 	$(call Image/Build/Template/$(fs_128k)/$(1),PB4X,eap7660d,board=EAP7660D)
 endef
 
+define Image/Build/Profile/JWAP003
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,jwap003,board=JWAP003)
+endef
+
 define Image/Build/Profile/FR54RTR
 	$(call Image/Build/Template/$(fs_64k)/$(1),Cameo7240,fr-54rtr,board=DIR-600-A1,"AP91-AR7240-RT-090223-01")
 endef
@@ -616,6 +620,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR825B1,$(1))
 	$(call Image/Build/Profile/EAP7660D,$(1))
 	$(call Image/Build/Profile/FR54RTR,$(1))
+	$(call Image/Build/Profile/JWAP003,$(1))
 	$(call Image/Build/Profile/MZKW04NU,$(1))
 	$(call Image/Build/Profile/MZKW300NH,$(1))
 	$(call Image/Build/Profile/PB42,$(1))

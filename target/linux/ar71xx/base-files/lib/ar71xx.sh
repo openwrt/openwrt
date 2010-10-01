@@ -37,6 +37,9 @@ ar71xx_board_name() {
 	*"Nanostation M")
 		name="nanostation-m"
 		;;
+	*JWAP003)
+		name="jwap003"
+		;;
 	*LS-SR71)
 		name="ls-sr71"
 		;;
