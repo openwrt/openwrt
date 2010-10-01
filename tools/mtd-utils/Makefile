@@ -7,14 +7,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mtd
-PKG_VERSION:=20090505
+PKG_VERSION:=20101001
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=git://git.infradead.org/mtd-utils.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=d021e049efaff50de33819b8cd2835d4b79bcfa8
+PKG_SOURCE_VERSION:=e2ddf154e1050faea5a24cf44345aec0d715a8c9
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_MD5SUM:=1f42c2cae08eb9e7b52d0c188f8d6338
+PKG_MD5SUM:=fd168f4e41614e2a819f4e49e83431bc
 PKG_CAT:=zcat
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
@@ -36,6 +36,10 @@ define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) \
 		$(MTD_MAKEOPTS) \
 		TARGETS=mkfs.jffs2
+	$(MAKE) -C $(HOST_BUILD_DIR)/lib \
+		$(MTD_MAKEOPTS) \
+		TARGETS="libmtd.a libcrc32.a" \
+		LIBS="libmtd libcrc32"
 	$(MAKE) -C $(HOST_BUILD_DIR)/ubi-utils \
 		$(MTD_MAKEOPTS) \
 		TARGETS=ubinize

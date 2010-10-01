@@ -30,16 +30,6 @@
  
  struct rb_node
  {
-@@ -131,7 +130,9 @@ static inline void rb_set_color(struct r
- 
- #define RB_ROOT	(struct rb_root) { NULL, }
- 
-+#ifndef offsetof
- #define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-+#endif
- 
- #define container_of(ptr, type, member) ({                      \
-         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
 --- a/include/mtd/ubi-media.h
 +++ b/include/mtd/ubi-media.h
 @@ -30,7 +30,15 @@

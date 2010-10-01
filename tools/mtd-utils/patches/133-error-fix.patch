@@ -1,0 +1,20 @@
+--- a/mkfs.jffs2.c
++++ b/mkfs.jffs2.c
+@@ -471,7 +471,7 @@ static int interpret_table_entry(struct 
+ 	if (entry) {
+ 		/* Check the type */
+ 		if ((mode & S_IFMT) != (entry->sb.st_mode & S_IFMT)) {
+-			error_msg ("skipping device_table entry '%s': type mismatch!", name);
++			sys_errmsg ("skipping device_table entry '%s': type mismatch!", name);
+ 			free(name);
+ 			free(hostpath);
+ 			return 1;
+@@ -487,7 +487,7 @@ static int interpret_table_entry(struct 
+ 		}
+ 	} else {
+ 		if (type == 'f' || type == 'l') {
+-			error_msg ("skipping device_table entry '%s': file does not exist!", name);
++			sys_errmsg ("skipping device_table entry '%s': file does not exist!", name);
+ 			free(name);
+ 			free(hostpath);
+ 			return 1;
