@@ -49,8 +49,8 @@ ifeq ($(HOST_OS),Darwin)
   HOST_CFLAGS += $(call host-cc-option,-fnested-functions)
 endif
 
-ifeq ($(HOST_ARCH),amd64)
-  ifeq ($(HOST_OS),FreeBSD)
+ifeq ($(HOST_OS),FreeBSD)
+  ifeq ($(HOST_ARCH),amd64)
     HOST_CFLAGS += $(call host-cc-option,-m32)
     HOST_CFLAGS += $(call host-cc-option,-B/usr/lib32)
     HOST_CFLAGS += $(call host-cc-option,-L/usr/lib32)
