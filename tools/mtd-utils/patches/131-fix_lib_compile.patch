@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -68,8 +68,6 @@ $(BUILDDIR)/jffs2reader: $(BUILDDIR)/jff
+ LDFLAGS_jffs2reader = $(ZLIBLDFLAGS) $(LZOLDFLAGS)
+ LDLIBS_jffs2reader  = -lz -llzo2
+ 
+-$(BUILDDIR)/lib/libmtd.a: subdirs_lib_all ;
+-
+ install:: ${TARGETS} ${SCRIPTS}
+ 	mkdir -p ${DESTDIR}/${SBINDIR}
+ 	install -m 0755 ${TARGETS} ${SCRIPTS} ${DESTDIR}/${SBINDIR}/

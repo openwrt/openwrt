@@ -1,0 +1,210 @@
+diff -Nrup a/compr_zlib.c b/compr_zlib.c
+--- a/compr_zlib.c
++++ b/compr_zlib.c
+@@ -35,9 +35,7 @@
+ #define PROGRAM_NAME "compr_zlib"
+ 
+ #include <stdint.h>
+-#define crc32 __zlib_crc32
+ #include <zlib.h>
+-#undef crc32
+ #include <stdio.h>
+ #include <linux/jffs2.h>
+ #include "common.h"
+diff -Nrup a/jffs2reader.c b/jffs2reader.c
+--- a/jffs2reader.c
++++ b/jffs2reader.c
+@@ -76,6 +76,7 @@ BUGS:
+ #include <sys/stat.h>
+ #include <sys/param.h>
+ #include <dirent.h>
++#include <zlib.h>
+ #include <linux/jffs2.h>
+ 
+ #define SCRATCH_SIZE (5*1024*1024)
+diff -Nrup a/mkfs.jffs2.c b/mkfs.jffs2.c
+--- a/mkfs.jffs2.c
++++ b/mkfs.jffs2.c
+@@ -71,6 +71,9 @@
+ #include <sys/acl.h>
+ #endif
+ #include <byteswap.h>
++#define crc32 __zlib_crc32
++#include <zlib.h>
++#undef crc32
+ #include <crc32.h>
+ #include "rbtree.h"
+ 
+@@ -725,7 +728,7 @@ static void write_dirent(struct filesyst
+ 	rd.magic = cpu_to_je16(JFFS2_MAGIC_BITMASK);
+ 	rd.nodetype = cpu_to_je16(JFFS2_NODETYPE_DIRENT);
+ 	rd.totlen = cpu_to_je32(sizeof(rd) + strlen(name));
+-	rd.hdr_crc = cpu_to_je32(mtd_crc32(0, &rd,
++	rd.hdr_crc = cpu_to_je32(crc32(0, &rd,
+ 				sizeof(struct jffs2_unknown_node) - 4));
+ 	rd.pino = cpu_to_je32((e->parent) ? e->parent->ino : 1);
+ 	rd.version = cpu_to_je32(version++);
+@@ -735,8 +738,8 @@ static void write_dirent(struct filesyst
+ 	rd.type = IFTODT(statbuf->st_mode);
+ 	//rd.unused[0] = 0;
+ 	//rd.unused[1] = 0;
+-	rd.node_crc = cpu_to_je32(mtd_crc32(0, &rd, sizeof(rd) - 8));
+-	rd.name_crc = cpu_to_je32(mtd_crc32(0, name, strlen(name)));
++	rd.node_crc = cpu_to_je32(crc32(0, &rd, sizeof(rd) - 8));
++	rd.name_crc = cpu_to_je32(crc32(0, name, strlen(name)));
+ 
+ 	pad_block_if_less_than(sizeof(rd) + rd.nsize);
+ 	full_write(out_fd, &rd, sizeof(rd));
+@@ -822,15 +825,15 @@ static unsigned int write_regular_file(s
+ 			}
+ 
+ 			ri.totlen = cpu_to_je32(sizeof(ri) + space);
+-			ri.hdr_crc = cpu_to_je32(mtd_crc32(0,
++			ri.hdr_crc = cpu_to_je32(crc32(0,
+ 						&ri, sizeof(struct jffs2_unknown_node) - 4));
+ 
+ 			ri.version = cpu_to_je32(++ver);
+ 			ri.offset = cpu_to_je32(offset);
+ 			ri.csize = cpu_to_je32(space);
+ 			ri.dsize = cpu_to_je32(dsize);
+-			ri.node_crc = cpu_to_je32(mtd_crc32(0, &ri, sizeof(ri) - 8));
+-			ri.data_crc = cpu_to_je32(mtd_crc32(0, wbuf, space));
++			ri.node_crc = cpu_to_je32(crc32(0, &ri, sizeof(ri) - 8));
++			ri.data_crc = cpu_to_je32(crc32(0, wbuf, space));
+ 
+ 			full_write(out_fd, &ri, sizeof(ri));
+ 			totcomp += sizeof(ri);
+@@ -855,11 +858,11 @@ static unsigned int write_regular_file(s
+ 
+ 		ri.version = cpu_to_je32(++ver);
+ 		ri.totlen = cpu_to_je32(sizeof(ri));
+-		ri.hdr_crc = cpu_to_je32(mtd_crc32(0,
++		ri.hdr_crc = cpu_to_je32(crc32(0,
+ 					&ri, sizeof(struct jffs2_unknown_node) - 4));
+ 		ri.csize = cpu_to_je32(0);
+ 		ri.dsize = cpu_to_je32(0);
+-		ri.node_crc = cpu_to_je32(mtd_crc32(0, &ri, sizeof(ri) - 8));
++		ri.node_crc = cpu_to_je32(crc32(0, &ri, sizeof(ri) - 8));
+ 
+ 		full_write(out_fd, &ri, sizeof(ri));
+ 		padword();
+@@ -894,7 +897,7 @@ static void write_symlink(struct filesys
+ 	ri.magic = cpu_to_je16(JFFS2_MAGIC_BITMASK);
+ 	ri.nodetype = cpu_to_je16(JFFS2_NODETYPE_INODE);
+ 	ri.totlen = cpu_to_je32(sizeof(ri) + len);
+-	ri.hdr_crc = cpu_to_je32(mtd_crc32(0,
++	ri.hdr_crc = cpu_to_je32(crc32(0,
+ 				&ri, sizeof(struct jffs2_unknown_node) - 4));
+ 
+ 	ri.ino = cpu_to_je32(e->ino);
+@@ -908,8 +911,8 @@ static void write_symlink(struct filesys
+ 	ri.version = cpu_to_je32(1);
+ 	ri.csize = cpu_to_je32(len);
+ 	ri.dsize = cpu_to_je32(len);
+-	ri.node_crc = cpu_to_je32(mtd_crc32(0, &ri, sizeof(ri) - 8));
+-	ri.data_crc = cpu_to_je32(mtd_crc32(0, e->link, len));
++	ri.node_crc = cpu_to_je32(crc32(0, &ri, sizeof(ri) - 8));
++	ri.data_crc = cpu_to_je32(crc32(0, e->link, len));
+ 
+ 	pad_block_if_less_than(sizeof(ri) + len);
+ 	full_write(out_fd, &ri, sizeof(ri));
+@@ -936,7 +939,7 @@ static void write_pipe(struct filesystem
+ 	ri.magic = cpu_to_je16(JFFS2_MAGIC_BITMASK);
+ 	ri.nodetype = cpu_to_je16(JFFS2_NODETYPE_INODE);
+ 	ri.totlen = cpu_to_je32(sizeof(ri));
+-	ri.hdr_crc = cpu_to_je32(mtd_crc32(0,
++	ri.hdr_crc = cpu_to_je32(crc32(0,
+ 				&ri, sizeof(struct jffs2_unknown_node) - 4));
+ 
+ 	ri.ino = cpu_to_je32(e->ino);
+@@ -950,7 +953,7 @@ static void write_pipe(struct filesystem
+ 	ri.version = cpu_to_je32(1);
+ 	ri.csize = cpu_to_je32(0);
+ 	ri.dsize = cpu_to_je32(0);
+-	ri.node_crc = cpu_to_je32(mtd_crc32(0, &ri, sizeof(ri) - 8));
++	ri.node_crc = cpu_to_je32(crc32(0, &ri, sizeof(ri) - 8));
+ 	ri.data_crc = cpu_to_je32(0);
+ 
+ 	pad_block_if_less_than(sizeof(ri));
+@@ -976,7 +979,7 @@ static void write_special_file(struct fi
+ 	ri.magic = cpu_to_je16(JFFS2_MAGIC_BITMASK);
+ 	ri.nodetype = cpu_to_je16(JFFS2_NODETYPE_INODE);
+ 	ri.totlen = cpu_to_je32(sizeof(ri) + sizeof(kdev));
+-	ri.hdr_crc = cpu_to_je32(mtd_crc32(0,
++	ri.hdr_crc = cpu_to_je32(crc32(0,
+ 				&ri, sizeof(struct jffs2_unknown_node) - 4));
+ 
+ 	ri.ino = cpu_to_je32(e->ino);
+@@ -990,8 +993,8 @@ static void write_special_file(struct fi
+ 	ri.version = cpu_to_je32(1);
+ 	ri.csize = cpu_to_je32(sizeof(kdev));
+ 	ri.dsize = cpu_to_je32(sizeof(kdev));
+-	ri.node_crc = cpu_to_je32(mtd_crc32(0, &ri, sizeof(ri) - 8));
+-	ri.data_crc = cpu_to_je32(mtd_crc32(0, &kdev, sizeof(kdev)));
++	ri.node_crc = cpu_to_je32(crc32(0, &ri, sizeof(ri) - 8));
++	ri.data_crc = cpu_to_je32(crc32(0, &kdev, sizeof(kdev)));
+ 
+ 	pad_block_if_less_than(sizeof(ri) + sizeof(kdev));
+ 	full_write(out_fd, &ri, sizeof(ri));
+@@ -1104,15 +1107,15 @@ static xattr_entry_t *create_xattr_entry
+ 	rx.magic = cpu_to_je16(JFFS2_MAGIC_BITMASK);
+ 	rx.nodetype = cpu_to_je16(JFFS2_NODETYPE_XATTR);
+ 	rx.totlen = cpu_to_je32(PAD(sizeof(rx) + xe->name_len + 1 + xe->value_len));
+-	rx.hdr_crc = cpu_to_je32(mtd_crc32(0, &rx, sizeof(struct jffs2_unknown_node) - 4));
++	rx.hdr_crc = cpu_to_je32(crc32(0, &rx, sizeof(struct jffs2_unknown_node) - 4));
+ 
+ 	rx.xid = cpu_to_je32(xe->xid);
+ 	rx.version = cpu_to_je32(1);	/* initial version */
+ 	rx.xprefix = xprefix;
+ 	rx.name_len = xe->name_len;
+ 	rx.value_len = cpu_to_je16(xe->value_len);
+-	rx.data_crc = cpu_to_je32(mtd_crc32(0, xe->xname, xe->name_len + 1 + xe->value_len));
+-	rx.node_crc = cpu_to_je32(mtd_crc32(0, &rx, sizeof(rx) - 4));
++	rx.data_crc = cpu_to_je32(crc32(0, xe->xname, xe->name_len + 1 + xe->value_len));
++	rx.node_crc = cpu_to_je32(crc32(0, &rx, sizeof(rx) - 4));
+ 
+ 	pad_block_if_less_than(sizeof(rx) + xe->name_len + 1 + xe->value_len);
+ 	full_write(out_fd, &rx, sizeof(rx));
+@@ -1138,7 +1141,7 @@ static xattr_entry_t *find_xattr_entry(i
+ 		formalize_posix_acl(xvalue, &value_len);
+ 
+ 	name_len = strlen(xname);
+-	index = (mtd_crc32(0, xname, name_len) ^ mtd_crc32(0, xvalue, value_len)) % XATTRENTRY_HASHSIZE;
++	index = (crc32(0, xname, name_len) ^ crc32(0, xvalue, value_len)) % XATTRENTRY_HASHSIZE;
+ 	for (xe = xentry_hash[index]; xe; xe = xe->next) {
+ 		if (xe->xprefix == xprefix
+ 				&& xe->value_len == value_len
+@@ -1218,11 +1221,11 @@ static void write_xattr_entry(struct fil
+ 		ref.magic = cpu_to_je16(JFFS2_MAGIC_BITMASK);
+ 		ref.nodetype = cpu_to_je16(JFFS2_NODETYPE_XREF);
+ 		ref.totlen = cpu_to_je32(sizeof(ref));
+-		ref.hdr_crc = cpu_to_je32(mtd_crc32(0, &ref, sizeof(struct jffs2_unknown_node) - 4));
++		ref.hdr_crc = cpu_to_je32(crc32(0, &ref, sizeof(struct jffs2_unknown_node) - 4));
+ 		ref.ino = cpu_to_je32(e->ino);
+ 		ref.xid = cpu_to_je32(xe->xid);
+ 		ref.xseqno = cpu_to_je32(highest_xseqno += 2);
+-		ref.node_crc = cpu_to_je32(mtd_crc32(0, &ref, sizeof(ref) - 4));
++		ref.node_crc = cpu_to_je32(crc32(0, &ref, sizeof(ref) - 4));
+ 
+ 		pad_block_if_less_than(sizeof(ref));
+ 		full_write(out_fd, &ref, sizeof(ref));
+@@ -1350,7 +1353,7 @@ static void create_target_filesystem(str
+ 	cleanmarker.magic    = cpu_to_je16(JFFS2_MAGIC_BITMASK);
+ 	cleanmarker.nodetype = cpu_to_je16(JFFS2_NODETYPE_CLEANMARKER);
+ 	cleanmarker.totlen   = cpu_to_je32(cleanmarker_size);
+-	cleanmarker.hdr_crc  = cpu_to_je32(mtd_crc32(0, &cleanmarker, sizeof(struct jffs2_unknown_node)-4));
++	cleanmarker.hdr_crc  = cpu_to_je32(crc32(0, &cleanmarker, sizeof(struct jffs2_unknown_node)-4));
+ 
+ 	if (ino == 0)
+ 		ino = 1;
+diff -Nrup a/mkfs.ubifs/compr.c b/mkfs.ubifs/compr.c
+--- a/mkfs.ubifs/compr.c
++++ b/mkfs.ubifs/compr.c
+@@ -31,7 +31,6 @@
+ 
+ #define crc32 __zlib_crc32
+ #include <zlib.h>
+-#undef crc32
+ 
+ #include "compr.h"
+ #include "ubifs-media.h"
