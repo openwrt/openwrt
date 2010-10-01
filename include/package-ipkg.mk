@@ -18,7 +18,7 @@ OPKG:= \
 	--force-postinstall \
 	--add-dest root:/ \
 	--add-arch all:100 \
-	--add-arch $(ARCH_PACKAGES):200
+	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
 
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
