@@ -1,5 +1,3 @@
-diff --git a/mkfs.ubifs/Makefile b/mkfs.ubifs/Makefile
-index a678b0a..919ce89 100644
 --- a/mkfs.ubifs/Makefile
 +++ b/mkfs.ubifs/Makefile
 @@ -6,7 +6,7 @@ ALL_SOURCES=*.[ch] hashtable/*.[ch]
@@ -11,8 +9,6 @@ index a678b0a..919ce89 100644
  LDLIBS_mkfs.ubifs += -L$(BUILDDIR)/../lib -lmtd -lcrc32
  LDLIBS_mkfs.ubifs += $(ZLIBLDFLAGS) $(LZOLDFLAGS)
  
-diff --git a/mkfs.ubifs/compr.c b/mkfs.ubifs/compr.c
-index e378c5d..0208f80 100644
 --- a/mkfs.ubifs/compr.c
 +++ b/mkfs.ubifs/compr.c
 @@ -24,7 +24,9 @@
@@ -25,7 +21,7 @@ index e378c5d..0208f80 100644
  #include <linux/types.h>
  
  #define crc32 __zlib_crc32
-@@ -85,6 +87,16 @@ static int zlib_deflate(void *in_buf, si
+@@ -86,6 +88,16 @@ static int zlib_deflate(void *in_buf, si
  	return 0;
  }
  
@@ -42,7 +38,7 @@ index e378c5d..0208f80 100644
  static int lzo_compress(void *in_buf, size_t in_len, void *out_buf,
  			size_t *out_len)
  {
-@@ -103,14 +115,16 @@ static int lzo_compress(void *in_buf, si
+@@ -104,14 +116,16 @@ static int lzo_compress(void *in_buf, si
  	return 0;
  }
  
@@ -64,7 +60,7 @@ index e378c5d..0208f80 100644
  static char *zlib_buf;
  
  static int favor_lzo_compress(void *in_buf, size_t in_len, void *out_buf,
-@@ -197,9 +211,11 @@ int compress_data(void *in_buf, size_t i
+@@ -198,9 +212,11 @@ int compress_data(void *in_buf, size_t i
  
  int init_compression(void)
  {
@@ -76,7 +72,7 @@ index e378c5d..0208f80 100644
  
  	zlib_buf = malloc(UBIFS_BLOCK_SIZE * WORST_COMPR_FACTOR);
  	if (!zlib_buf) {
-@@ -213,7 +229,9 @@ int init_compression(void)
+@@ -214,7 +230,9 @@ int init_compression(void)
  void destroy_compression(void)
  {
  	free(zlib_buf);
