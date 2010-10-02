@@ -23,6 +23,11 @@ define Package/Default
   else
     VERSION:=$(PKG_RELEASE)
   endif
+  ifneq ($(PKG_FLAGS),)
+    PKGFLAGS:=$(PKG_FLAGS)
+  else
+    PKGFLAGS:=
+  endif
   ifneq ($(ARCH_PACKAGES),)
     PKGARCH:=$(ARCH_PACKAGES)
   else
