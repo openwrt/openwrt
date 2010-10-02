@@ -402,6 +402,7 @@ sub install {
 					next if $p->{vdepends};
 					if( $p->{name} ) {
 						install_package($feed, $p->{name}) == 0 or $ret = 1;
+						get_feed($f->[1]);
 					}
 				}
 			}
