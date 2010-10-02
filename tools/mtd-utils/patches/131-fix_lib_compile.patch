@@ -1,11 +1,11 @@
---- a/Makefile
-+++ b/Makefile
-@@ -68,8 +68,6 @@ $(BUILDDIR)/jffs2reader: $(BUILDDIR)/jff
- LDFLAGS_jffs2reader = $(ZLIBLDFLAGS) $(LZOLDFLAGS)
- LDLIBS_jffs2reader  = -lz -llzo2
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -7,7 +7,7 @@ SUBDIRS =
+ # CFLAGS += -Werror
+ CPPFLAGS += -I../include
+ LIBS = libmtd libcrc32
+-TARGETS = libmtd.a libcrc32.a
++override TARGETS = libmtd.a libcrc32.a
  
--$(BUILDDIR)/lib/libmtd.a: subdirs_lib_all ;
--
- install:: ${TARGETS} ${SCRIPTS}
- 	mkdir -p ${DESTDIR}/${SBINDIR}
- 	install -m 0755 ${TARGETS} ${SCRIPTS} ${DESTDIR}/${SBINDIR}/
+ include ../common.mk
+ 
