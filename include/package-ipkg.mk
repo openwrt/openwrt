@@ -101,6 +101,7 @@ ifeq ($(DUMP),)
 		echo "Provides: $(PROVIDES)"; \
 		echo "Source: $(SOURCE)"; \
 		echo "Section: $(SECTION)"; \
+		echo "Status: install $(if $(filter hold,$(PKG_FLAGS)),hold,ok) not-installed"; \
 		echo "Priority: $(PRIORITY)"; \
 		echo "Maintainer: $(MAINTAINER)"; \
 		echo "Architecture: $(PKGARCH)"; \
