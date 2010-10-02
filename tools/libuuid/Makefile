@@ -7,44 +7,81 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.40.11
-PKG_MD5SUM:=004cea70d724fdc7f1a952dffe4c9db8
+PKG_NAME:=util-linux-ng
+PKG_VERSION:=2.18
+PKG_MD5SUM:=aff22adfff1bf39cd3f13371b95a3d3a
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/e2fsprogs
+PKG_SOURCE_URL:=ftp://ftp.kernel.org/pub/linux/utils/util-linux-ng/v2.18/
 
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Configure
-	$(call Host/Configure/Default,\
-		--enable-shared \
+	$(call Host/Configure/Default, \
+		--disable-shared \
 		--enable-static \
 		--disable-rpath \
-		--enable-elf-shlibs \
-		--disable-dynamic-e2fsck \
 		--disable-tls \
+		--disable-mount \
+		--disable-fsck \
+		--enable-libuuid \
 		--disable-uuidd \
+		--disable-libblkid \
+		--disable-libmount \
+		--disable-nls \
+		--disable-rpath \
+		--disable-arch \
+		--disable-agetty \
+		--disable-cramfs \
+		--disable-switch \
+		--disable-pivot \
+		--disable-fallocate \
+		--disable-unshare \
+		--disable-elvtune \
+		--disable-init \
+		--disable-kill \
+		--disable-last \
+		--disable-mesg \
+		--disable-partx \
+		--disable-raw \
+		--disable-rename \
+		--disable-reset \
+		--disable-login-utils \
+		--disable-schedutils \
+		--disable-wall \
+		--disable-write \
+		--disable-chsh-only-listed \
+		--disable-login-chown-vcs \
+		--disable-login-stat-mail \
+		--disable-pg-bell \
+		--disable-require-password \
+		--disable-fs-paths-default \
+		--disable-fs-paths-extra \
+		--disable-use-tty-group \
+		--disable-makeinstall-chown \
+		--disable-makeinstall-setuid \
 		--without-libiconv-prefix \
 		--without-libintl-prefix \
+		--without-ncurses \
+		--without-slang \
+		--without-utempter \
+		--without-pam \
+		--without-selinux \
+		--without-audit \
 	)
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)/lib/uuid libuuid.a
+	$(MAKE) -C $(HOST_BUILD_DIR)/shlibs/uuid/src
 endef
 
 define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/{lib,include/uuid}
-	$(CP) $(HOST_BUILD_DIR)/lib/uuid/uuid.h $(STAGING_DIR_HOST)/include/uuid/
-	$(CP) $(HOST_BUILD_DIR)/lib/uuid/libuuid.a $(STAGING_DIR_HOST)/lib/
+	$(MAKE) -C $(HOST_BUILD_DIR)/shlibs/uuid/src install
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/include/uuid/uuid.h
-	rm -f $(STAGING_DIR_HOST)/lib/uuid/libuuid.*
-	$(call Host/Clean/Default)
+	-$(MAKE) -C $(HOST_BUILD_DIR)/shlibs/uuid/src uninstall
 endef
 
 $(eval $(call HostBuild))
