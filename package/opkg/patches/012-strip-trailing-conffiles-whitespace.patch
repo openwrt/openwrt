@@ -1,6 +1,6 @@
 --- a/libopkg/opkg_install.c
 +++ b/libopkg/opkg_install.c
-@@ -271,6 +271,7 @@ unpack_pkg_control_files(pkg_t *pkg)
+@@ -274,6 +274,7 @@ unpack_pkg_control_files(pkg_t *pkg)
       while (1) {
  	  char *cf_name;
  	  char *cf_name_in_dest;
@@ -8,7 +8,7 @@
  
  	  cf_name = file_read_line_alloc(conffiles_file);
  	  if (cf_name == NULL) {
-@@ -279,6 +280,12 @@ unpack_pkg_control_files(pkg_t *pkg)
+@@ -282,6 +283,12 @@ unpack_pkg_control_files(pkg_t *pkg)
  	  if (cf_name[0] == '\0') {
  	       continue;
  	  }
