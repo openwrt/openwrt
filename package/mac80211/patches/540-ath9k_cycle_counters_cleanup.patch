@@ -1,0 +1,282 @@
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -765,6 +765,8 @@ struct ath_hw {
+ 	int coarse_low[5];
+ 	int firpwr[5];
+ 	enum ath9k_ani_cmd ani_function;
++	struct ath_cycle_counters cc, cc_delta;
++	int32_t listen_time;
+ 
+ 	/* Bluetooth coexistance */
+ 	struct ath_btcoex_hw btcoex_hw;
+--- a/drivers/net/wireless/ath/ath9k/ani.c
++++ b/drivers/net/wireless/ath/ath9k/ani.c
+@@ -549,47 +549,15 @@ static u8 ath9k_hw_chan_2_clockrate_mhz(
+ 
+ static int32_t ath9k_hw_ani_get_listen_time(struct ath_hw *ah)
+ {
+-	struct ar5416AniState *aniState;
+-	struct ath_common *common = ath9k_hw_common(ah);
+-	u32 txFrameCount, rxFrameCount, cycleCount;
+-	int32_t listenTime;
+-
+-	txFrameCount = REG_READ(ah, AR_TFCNT);
+-	rxFrameCount = REG_READ(ah, AR_RFCNT);
+-	cycleCount = REG_READ(ah, AR_CCCNT);
+-
+-	aniState = ah->curani;
+-	if (aniState->cycleCount == 0 || aniState->cycleCount > cycleCount) {
+-		listenTime = 0;
+-		ah->stats.ast_ani_lzero++;
+-		ath_print(common, ATH_DBG_ANI,
+-			  "1st call: aniState->cycleCount=%d\n",
+-			  aniState->cycleCount);
+-	} else {
+-		int32_t ccdelta = cycleCount - aniState->cycleCount;
+-		int32_t rfdelta = rxFrameCount - aniState->rxFrameCount;
+-		int32_t tfdelta = txFrameCount - aniState->txFrameCount;
+-		int32_t clock_rate;
+-
+-		/*
+-		 * convert HW counter values to ms using mode
+-		 * specifix clock rate
+-		 */
+-		clock_rate = ath9k_hw_chan_2_clockrate_mhz(ah) * 1000;;
++	int32_t listen_time;
++	int32_t clock_rate;
+ 
+-		listenTime = (ccdelta - rfdelta - tfdelta) / clock_rate;
++	ath9k_hw_update_cycle_counters(ah);
++	clock_rate = ath9k_hw_chan_2_clockrate_mhz(ah) * 1000;
++	listen_time = ah->listen_time / clock_rate;
++	ah->listen_time = 0;
+ 
+-		ath_print(common, ATH_DBG_ANI,
+-			  "cyclecount=%d, rfcount=%d, "
+-			  "tfcount=%d, listenTime=%d CLOCK_RATE=%d\n",
+-			  ccdelta, rfdelta, tfdelta, listenTime, clock_rate);
+-	}
+-
+-	aniState->cycleCount = cycleCount;
+-	aniState->txFrameCount = txFrameCount;
+-	aniState->rxFrameCount = rxFrameCount;
+-
+-	return listenTime;
++	return listen_time;
+ }
+ 
+ static void ath9k_ani_reset_old(struct ath_hw *ah, bool is_scanning)
+@@ -1041,45 +1009,52 @@ void ath9k_hw_disable_mib_counters(struc
+ }
+ EXPORT_SYMBOL(ath9k_hw_disable_mib_counters);
+ 
+-u32 ath9k_hw_GetMibCycleCountsPct(struct ath_hw *ah,
+-				  u32 *rxc_pcnt,
+-				  u32 *rxf_pcnt,
+-				  u32 *txf_pcnt)
++void ath9k_hw_update_cycle_counters(struct ath_hw *ah)
+ {
+-	struct ath_common *common = ath9k_hw_common(ah);
+-	static u32 cycles, rx_clear, rx_frame, tx_frame;
+-	u32 good = 1;
++	struct ath_cycle_counters cc;
++	bool clear;
+ 
+-	u32 rc = REG_READ(ah, AR_RCCNT);
+-	u32 rf = REG_READ(ah, AR_RFCNT);
+-	u32 tf = REG_READ(ah, AR_TFCNT);
+-	u32 cc = REG_READ(ah, AR_CCCNT);
++	memcpy(&cc, &ah->cc, sizeof(cc));
+ 
+-	if (cycles == 0 || cycles > cc) {
+-		ath_print(common, ATH_DBG_ANI,
+-			  "cycle counter wrap. ExtBusy = 0\n");
+-		good = 0;
+-	} else {
+-		u32 cc_d = cc - cycles;
+-		u32 rc_d = rc - rx_clear;
+-		u32 rf_d = rf - rx_frame;
+-		u32 tf_d = tf - tx_frame;
+-
+-		if (cc_d != 0) {
+-			*rxc_pcnt = rc_d * 100 / cc_d;
+-			*rxf_pcnt = rf_d * 100 / cc_d;
+-			*txf_pcnt = tf_d * 100 / cc_d;
+-		} else {
+-			good = 0;
+-		}
+-	}
++	/* freeze counters */
++	REG_WRITE(ah, AR_MIBC, AR_MIBC_FMC);
+ 
+-	cycles = cc;
+-	rx_frame = rf;
+-	rx_clear = rc;
+-	tx_frame = tf;
++	ah->cc.cycles = REG_READ(ah, AR_CCCNT);
++	if (ah->cc.cycles < cc.cycles) {
++		clear = true;
++		goto skip;
++	}
++
++	ah->cc.rx_clear = REG_READ(ah, AR_RCCNT);
++	ah->cc.rx_frame = REG_READ(ah, AR_RFCNT);
++	ah->cc.tx_frame = REG_READ(ah, AR_TFCNT);
++
++	/* prevent wraparound */
++	if (ah->cc.cycles & BIT(31))
++		clear = true;
++
++#define CC_DELTA(_field, _reg) ah->cc_delta._field += ah->cc._field - cc._field
++	CC_DELTA(cycles, AR_CCCNT);
++	CC_DELTA(rx_frame, AR_RFCNT);
++	CC_DELTA(rx_clear, AR_RCCNT);
++	CC_DELTA(tx_frame, AR_TFCNT);
++#undef CC_DELTA
++
++	ah->listen_time += (ah->cc.cycles - cc.cycles) -
++		 ((ah->cc.rx_frame - cc.rx_frame) +
++		  (ah->cc.tx_frame - cc.tx_frame));
++
++skip:
++	if (clear) {
++		REG_WRITE(ah, AR_CCCNT, 0);
++		REG_WRITE(ah, AR_RFCNT, 0);
++		REG_WRITE(ah, AR_RCCNT, 0);
++		REG_WRITE(ah, AR_TFCNT, 0);
++		memset(&ah->cc, 0, sizeof(ah->cc));
++	}
+ 
+-	return good;
++	/* unfreeze counters */
++	REG_WRITE(ah, AR_MIBC, 0);
+ }
+ 
+ /*
+--- a/drivers/net/wireless/ath/ath9k/ani.h
++++ b/drivers/net/wireless/ath/ath9k/ani.h
+@@ -93,6 +93,13 @@ struct ath9k_mib_stats {
+ 	u32 beacons;
+ };
+ 
++struct ath_cycle_counters {
++	u32 cycles;
++	u32 rx_frame;
++	u32 rx_clear;
++	u32 tx_frame;
++};
++
+ /* INI default values for ANI registers */
+ struct ath9k_ani_default {
+ 	u16 m1ThreshLow;
+@@ -130,9 +137,6 @@ struct ar5416AniState {
+ 	int32_t rssiThrLow;
+ 	int32_t rssiThrHigh;
+ 	u32 noiseFloor;
+-	u32 txFrameCount;
+-	u32 rxFrameCount;
+-	u32 cycleCount;
+ 	u32 ofdmPhyErrCount;
+ 	u32 cckPhyErrCount;
+ 	u32 ofdmPhyErrBase;
+@@ -166,8 +170,7 @@ struct ar5416Stats {
+ 
+ void ath9k_enable_mib_counters(struct ath_hw *ah);
+ void ath9k_hw_disable_mib_counters(struct ath_hw *ah);
+-u32 ath9k_hw_GetMibCycleCountsPct(struct ath_hw *ah, u32 *rxc_pcnt,
+-				  u32 *rxf_pcnt, u32 *txf_pcnt);
++void ath9k_hw_update_cycle_counters(struct ath_hw *ah);
+ void ath9k_hw_ani_setup(struct ath_hw *ah);
+ void ath9k_hw_ani_init(struct ath_hw *ah);
+ int ath9k_hw_get_ani_channel_idx(struct ath_hw *ah,
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -1227,8 +1227,7 @@ static bool ar5008_hw_ani_control_old(st
+ 		  aniState->firstepLevel,
+ 		  aniState->listenTime);
+ 	ath_print(common, ATH_DBG_ANI,
+-		"cycleCount=%d, ofdmPhyErrCount=%d, cckPhyErrCount=%d\n\n",
+-		aniState->cycleCount,
++		"ofdmPhyErrCount=%d, cckPhyErrCount=%d\n\n",
+ 		aniState->ofdmPhyErrCount,
+ 		aniState->cckPhyErrCount);
+ 
+@@ -1480,15 +1479,13 @@ static bool ar5008_hw_ani_control_new(st
+ 
+ 	ath_print(common, ATH_DBG_ANI,
+ 		  "ANI parameters: SI=%d, ofdmWS=%s FS=%d "
+-		  "MRCcck=%s listenTime=%d CC=%d listen=%d "
++		  "MRCcck=%s listenTime=%d "
+ 		  "ofdmErrs=%d cckErrs=%d\n",
+ 		  aniState->spurImmunityLevel,
+ 		  !aniState->ofdmWeakSigDetectOff ? "on" : "off",
+ 		  aniState->firstepLevel,
+ 		  !aniState->mrcCCKOff ? "on" : "off",
+ 		  aniState->listenTime,
+-		  aniState->cycleCount,
+-		  aniState->listenTime,
+ 		  aniState->ofdmPhyErrCount,
+ 		  aniState->cckPhyErrCount);
+ 	return true;
+@@ -1581,8 +1578,6 @@ static void ar5008_hw_ani_cache_ini_regs
+ 	aniState->firstepLevel = ATH9K_ANI_FIRSTEP_LVL_NEW;
+ 	aniState->ofdmWeakSigDetectOff = !ATH9K_ANI_USE_OFDM_WEAK_SIG;
+ 	aniState->mrcCCKOff = true; /* not available on pre AR9003 */
+-
+-	aniState->cycleCount = 0;
+ }
+ 
+ static void ar5008_hw_set_nf_limits(struct ath_hw *ah)
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -1005,15 +1005,13 @@ static bool ar9003_hw_ani_control(struct
+ 
+ 	ath_print(common, ATH_DBG_ANI,
+ 		  "ANI parameters: SI=%d, ofdmWS=%s FS=%d "
+-		  "MRCcck=%s listenTime=%d CC=%d listen=%d "
++		  "MRCcck=%s listenTime=%d "
+ 		  "ofdmErrs=%d cckErrs=%d\n",
+ 		  aniState->spurImmunityLevel,
+ 		  !aniState->ofdmWeakSigDetectOff ? "on" : "off",
+ 		  aniState->firstepLevel,
+ 		  !aniState->mrcCCKOff ? "on" : "off",
+ 		  aniState->listenTime,
+-		  aniState->cycleCount,
+-		  aniState->listenTime,
+ 		  aniState->ofdmPhyErrCount,
+ 		  aniState->cckPhyErrCount);
+ 	return true;
+@@ -1116,8 +1114,6 @@ static void ar9003_hw_ani_cache_ini_regs
+ 	aniState->firstepLevel = ATH9K_ANI_FIRSTEP_LVL_NEW;
+ 	aniState->ofdmWeakSigDetectOff = !ATH9K_ANI_USE_OFDM_WEAK_SIG;
+ 	aniState->mrcCCKOff = !ATH9K_ANI_ENABLE_MRC_CCK;
+-
+-	aniState->cycleCount = 0;
+ }
+ 
+ void ar9003_hw_attach_phy_ops(struct ath_hw *ah)
+@@ -1232,7 +1228,7 @@ void ar9003_hw_bb_watchdog_read(struct a
+ void ar9003_hw_bb_watchdog_dbg_info(struct ath_hw *ah)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
+-	u32 rxc_pcnt = 0, rxf_pcnt = 0, txf_pcnt = 0, status;
++	u32 status;
+ 
+ 	if (likely(!(common->debug_mask & ATH_DBG_RESET)))
+ 		return;
+@@ -1261,11 +1257,13 @@ void ar9003_hw_bb_watchdog_dbg_info(stru
+ 		  "** BB mode: BB_gen_controls=0x%08x **\n",
+ 		  REG_READ(ah, AR_PHY_GEN_CTRL));
+ 
+-	if (ath9k_hw_GetMibCycleCountsPct(ah, &rxc_pcnt, &rxf_pcnt, &txf_pcnt))
++	ath9k_hw_update_cycle_counters(ah);
++#define PCT(_field) (ah->cc_delta._field * 100 / ah->cc_delta.cycles)
++	if (ah->cc_delta.cycles)
+ 		ath_print(common, ATH_DBG_RESET,
+ 			  "** BB busy times: rx_clear=%d%%, "
+ 			  "rx_frame=%d%%, tx_frame=%d%% **\n",
+-			  rxc_pcnt, rxf_pcnt, txf_pcnt);
++			  PCT(rx_clear), PCT(rx_frame), PCT(tx_frame));
+ 
+ 	ath_print(common, ATH_DBG_RESET,
+ 		  "==== BB update: done ====\n\n");
