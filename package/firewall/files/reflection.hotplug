@@ -15,6 +15,11 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 		iptables -t nat -A postrouting_rule -j nat_reflection_out
 	}
 
+	iptables -t filter -F nat_reflection_fwd 2>/dev/null || {
+		iptables -t filter -N nat_reflection_fwd
+		iptables -t filter -A forwarding_rule -j nat_reflection_fwd
+	}
+
 	find_networks() {
 		find_networks_cb() {
 			local cfg="$1"
@@ -34,9 +39,13 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 
 		config_foreach find_networks_cb zone "$1"
 	}
-	
+
 	setup_fwd() {
 		local cfg="$1"
+
+		local reflection
+		config_get_bool reflection "$cfg" reflection 1
+		[ "$reflection" == 1 ] || return
 
 		local src
 		config_get src "$cfg" src
@@ -55,10 +64,6 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 
 				local proto
 				config_get proto "$cfg" proto
-
-				local reflection
-				config_get_bool reflection "$cfg" reflection 1
-				[ "$reflection" == 1 ] || return
 
 				local epmin epmax extport
 				config_get extport "$cfg" src_dport
@@ -98,6 +103,11 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 								-s $lanip/$lanmk -d $inthost \
 								-p $p --dport $ipmin${ipmax:+:$ipmax} \
 								-j SNAT --to-source $lanip
+
+							iptables -t filter -A nat_reflection_fwd \
+								-s $lanip/$lanmk -d $inthost \
+								-p $p --dport $ipmin${ipmax:+:$ipmax} \
+								-j ACCEPT
 						;;
 					esac
 				done
@@ -108,4 +118,3 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 	config_load firewall
 	config_foreach setup_fwd redirect
 fi
-
