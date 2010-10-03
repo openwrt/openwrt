@@ -41,7 +41,11 @@ crypto_name=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(word 2,$(subs
 define KernelPackage/crypto-core
   SUBMENU:=$(CRYPTO_MENU)
   TITLE:=Core CryptoAPI modules
-  KCONFIG:=CONFIG_CRYPTO=y CONFIG_CRYPTO_HMAC $(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
+  KCONFIG:= \
+	CONFIG_CRYPTO=y \
+	CONFIG_CRYPTO_HW=y \
+	CONFIG_CRYPTO_HMAC \
+	$(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
   FILES:=$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod)))
   AUTOLOAD:=$(call AutoLoad,01,$(foreach mod,$(CRYPTO_MODULES),$(call crypto_name,$(mod))))
 endef
@@ -64,7 +68,6 @@ define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
   DEPENDS:=+kmod-crypto-aes
   KCONFIG:= \
-	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PADLOCK \
 	CONFIG_CRYPTO_DEV_PADLOCK_AES \
 	CONFIG_CRYPTO_DEV_PADLOCK_SHA
@@ -81,7 +84,6 @@ $(eval $(call KernelPackage,crypto-hw-padlock))
 define KernelPackage/crypto-hw-geode
   TITLE:=AMD Geode hardware crypto module
   KCONFIG:= \
-	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_GEODE
   FILES:=$(LINUX_DIR)/drivers/crypto/geode-aes.ko
   AUTOLOAD:=$(call AutoLoad,09,geode-aes)
@@ -95,7 +97,6 @@ define KernelPackage/crypto-hw-hifn-795x
   TITLE:=HIFN 795x crypto accelerator
   DEPENDS:=@!TARGET_ubicom32
   KCONFIG:= \
-	CONFIG_CRYPTO_HW=y \
 	CONFIG_HW_RANDOM=y \
 	CONFIG_CRYPTO_DEV_HIFN_795X \
 	CONFIG_CRYPTO_DEV_HIFN_795X_RNG=y
@@ -111,7 +112,6 @@ define KernelPackage/crypto-hw-ixp4xx
   TITLE:=Intel IXP4xx hardware crypto module
   DEPENDS:=@TARGET_ixp4xx
   KCONFIG:= \
-	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_IXP4XX
   FILES:=$(LINUX_DIR)/drivers/crypto/ixp4xx_crypto.ko
   AUTOLOAD:=$(call AutoLoad,90,ixp4xx_crypto)
@@ -129,7 +129,6 @@ define KernelPackage/crypto-hw-ppc4xx
   TITLE:=AMCC PPC4xx hardware crypto module
   DEPENDS:=@TARGET_ppc40x||TARGET_ppc44x
   KCONFIG:= \
-	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PPC4XX
   FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.ko
   AUTOLOAD:=$(call AutoLoad,90,crypto4xx)
