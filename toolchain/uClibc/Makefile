@@ -109,7 +109,7 @@ UCLIBC_MAKE = PATH='$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
 
 define Host/Compile
 	$(SED) 's,^CROSS=.*,CROSS=$(TARGET_CROSS),g' $(HOST_BUILD_DIR)/Rules.mak
-	$(UCLIBC_MAKE) PREFIX= all
+	$(UCLIBC_MAKE) $(TOOLCHAIN_JOBS) PREFIX= all
 	$(UCLIBC_MAKE) PREFIX="$(TOOLCHAIN_DIR)/" install_runtime install_dev
 	$(CP) $(HOST_BUILD_DIR)/libc/libc_so.a $(TOOLCHAIN_DIR)/lib/
 	$(CP) $(HOST_BUILD_DIR)/libpthread/*/libpthread_so.a $(TOOLCHAIN_DIR)/lib/

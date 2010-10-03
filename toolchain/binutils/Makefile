@@ -79,7 +79,7 @@ define Host/Configure
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) all
+	$(MAKE) $(TOOLCHAIN_JOBS) -C $(HOST_BUILD_DIR) all
 endef
 
 define Host/Install
