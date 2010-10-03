@@ -8,10 +8,11 @@
 define Profile/n810-base
   NAME:=Nokia n810 (base)
   PACKAGES:= \
-	block-hotplug \
+	block-mount block-hotplug \
 	gpsd \
 	ip iw wireless-tools kmod-p54-spi wpa-supplicant \
 	dnsmasq dropbear \
+	pwrtray-backend \
 	kmod-fs-vfat kmod-fs-msdos \
 	kmod-input-evdev \
 	kmod-leds-gpio \
