@@ -268,7 +268,7 @@ menu "Global build settings"
 
 	config PKG_DEFAULT_PARALLEL
 		bool
-		prompt "Always parallelize the default package build rule (Dangerous)"
+		prompt "Parallelize the default package build rule (May break build)"
 		depends on PKG_BUILD_PARALLEL
 		default n
 		help
@@ -278,7 +278,21 @@ menu "Global build settings"
 		  packages with multiple jobs that are probably not tested in
 		  a parallel build environment.
 
-		  Say N. Only say Y for testing.
+		  Only say Y, if you don't mind fixing broken packages.
+		  Before reporting build bugs, set this to N and re-run the build.
+
+	config TOOLCHAIN_PARALLEL
+		bool
+		prompt "Parallelize the toolchain build (May break build)"
+		depends on PKG_BUILD_PARALLEL
+		default n
+		help
+		  Build the toolchain with parallel make jobs.
+		  This speeds up the toolchain build on SMP machines, but may
+		  break the build for certain toolchain versions.
+
+		  If you say Y, toolchain build might break.
+		  Before reporting build bugs, set this to N and re-run the build.
 
 	comment "Stripping options"
 
