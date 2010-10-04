@@ -380,7 +380,6 @@ start_cg() {
 	local iptrules
 	local pktrules
 	local sizerules
-	local download
 	enum_classes "$cg"
 	add_rules iptrules "$ctrules" "iptables -t mangle -A ${cg}_ct"
 	config_get classes "$cg" classes
@@ -397,12 +396,14 @@ start_cg() {
 		config_get classgroup "$iface" classgroup
 		config_get device "$iface" device
 		config_get imqdev "$iface" imqdev
-		config_get dl "$iface" download
+		config_get upload "$iface" upload
+		config_get download "$iface" download
 		config_get halfduplex "$iface" halfduplex
+		download="${download:-${halfduplex:+$upload}}"
 		add_insmod ipt_IMQ
 		append up "iptables -t mangle -A OUTPUT -o $device -j ${cg}" "$N"
 		append up "iptables -t mangle -A FORWARD -o $device -j ${cg}" "$N"
-		[ -z "$dl" ] || {
+		[ -z "$download" ] || {
 			append down "iptables -t mangle -A POSTROUTING -o $device -j ${cg}" "$N"
 			[ -z "$halfduplex" ] || {
 				append down "iptables -t mangle -A POSTROUTING -o $device -j IMQ --todev $imqdev" "$N"
