@@ -11,7 +11,7 @@ BOARD:=kirkwood
 BOARDNAME:=Marvell Kirkwood
 FEATURES:=targz usb jffs2
 
-LINUX_VERSION:=2.6.35.4
+LINUX_VERSION:=2.6.35.7
 
 include $(INCLUDE_DIR)/target.mk
 

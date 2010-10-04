@@ -21,9 +21,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  create mode 100644 arch/mips/include/asm/mach-jz4740/jz4740_mmc.h
  create mode 100644 drivers/mmc/host/jz4740_mmc.c
 
-diff --git a/arch/mips/include/asm/mach-jz4740/jz4740_mmc.h b/arch/mips/include/asm/mach-jz4740/jz4740_mmc.h
-new file mode 100644
-index 0000000..8543f43
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-jz4740/jz4740_mmc.h
 @@ -0,0 +1,15 @@
@@ -42,11 +39,9 @@ index 0000000..8543f43
 +};
 +
 +#endif
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index f06d06e..d25e22c 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -432,3 +432,12 @@ config MMC_SH_MMCIF
+@@ -457,3 +457,12 @@ config MMC_SH_MMCIF
  	  This selects the MMC Host Interface controler (MMCIF).
  
  	  This driver supports MMCIF in sh7724/sh7757/sh7372.
@@ -59,21 +54,16 @@ index f06d06e..d25e22c 100644
 +	  SoCs.
 +	  If you have a board based on such a SoC and with a SD/MMC slot,
 +	  say Y or M here.
-diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
-index e30c2ee..f4e53c9 100644
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -36,6 +36,7 @@ obj-$(CONFIG_MMC_CB710)	+= cb710-mmc.o
- obj-$(CONFIG_MMC_VIA_SDMMC)	+= via-sdmmc.o
+@@ -37,6 +37,7 @@ obj-$(CONFIG_MMC_VIA_SDMMC)	+= via-sdmmc
+ obj-$(CONFIG_GPIOMMC)		+= gpiommc.o
  obj-$(CONFIG_SDH_BFIN)		+= bfin_sdh.o
  obj-$(CONFIG_MMC_SH_MMCIF)	+= sh_mmcif.o
 +obj-$(CONFIG_MMC_JZ4740)	+= jz4740_mmc.o
  
  obj-$(CONFIG_MMC_SDHCI_OF)	+= sdhci-of.o
  sdhci-of-y				:= sdhci-of-core.o
-diff --git a/drivers/mmc/host/jz4740_mmc.c b/drivers/mmc/host/jz4740_mmc.c
-new file mode 100644
-index 0000000..ad4f987
 --- /dev/null
 +++ b/drivers/mmc/host/jz4740_mmc.c
 @@ -0,0 +1,1029 @@
@@ -1106,6 +1096,3 @@ index 0000000..ad4f987
 +MODULE_DESCRIPTION("JZ4740 SD/MMC controller driver");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
--- 
-1.5.6.5
-
