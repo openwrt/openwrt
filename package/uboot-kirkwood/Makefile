@@ -34,7 +34,11 @@ define uboot/dockstar
   TITLE:=U-boot for the Seagate Dockstar
 endef
 
-UBOOTS:=sheevaplug dockstar
+define uboot/iconnect
+  TITLE:=U-boot for the Iomega iConnect Wireless
+endef
+
+UBOOTS:=sheevaplug dockstar iconnect
 
 define Package/uboot/template
 define Package/uboot-kirkwood-$(1)
@@ -73,6 +77,7 @@ endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
+		u-boot.kwb \
 		CROSS_COMPILE=$(TARGET_CROSS)
 endef
 
@@ -80,6 +85,8 @@ define Package/uboot/install/default
 	$(INSTALL_DIR) $(BIN_DIR)
 	$(CP) $(PKG_BUILD_DIR)/u-boot.bin \
 		$(BIN_DIR)/openwrt-$(BOARD)-$(1)-u-boot.bin
+	$(CP) $(PKG_BUILD_DIR)/u-boot.kwb \
+		$(BIN_DIR)/openwrt-$(BOARD)-$(1)-u-boot.kwb
 endef
 
 define Package/uboot/install/template
