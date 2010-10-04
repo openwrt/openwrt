@@ -7492,7 +7492,7 @@
 +
 --- /dev/null
 +++ b/fs/mini_fo/super.c
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,285 @@
 +/*
 + * Copyright (c) 1997-2003 Erez Zadok
 + * Copyright (c) 2001-2003 Stony Brook University
@@ -7665,7 +7665,11 @@
 +	struct dentry *hidden_d;
 +
 +	hidden_d = dtohd(d);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
++	err = statfs_by_dentry(hidden_d, buf);
++#else
 +	err = vfs_statfs(hidden_d, buf);
++#endif
 +#else
 +	super_block_t *hidden_sb;
 +
