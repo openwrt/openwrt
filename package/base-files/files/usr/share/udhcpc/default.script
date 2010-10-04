@@ -41,8 +41,8 @@ setup_interface () {
 	# Default Route
 	[ -n "$ifc" ] && {
 		change_state network "$ifc" lease_gateway "$router"
-		config_get old_router "$ifc" gateway
-		user_router=$(uci_get "network.$ifc.gateway")
+		old_router="$(uci_get_state network "$ifc" gateway)"
+		user_router="$(uci_get network "$ifc" gateway)"
 		[ -n "$user_router" ] && router="$user_router"
 	}
 
