@@ -69,6 +69,9 @@ else
   ifeq ($(PKG_VERSION),4.4.4)
     PKG_MD5SUM:=7ff5ce9e5f0b088ab48720bbd7203530
   endif
+  ifeq ($(PKG_VERSION),4.4.5)
+    PKG_MD5SUM:=44b3192c4c584b9be5243d9e8e7e0ed1
+  endif
   ifeq ($(PKG_VERSION),4.5.0)
   PKG_MD5SUM:=ff27b7c4a5d5060c8a8543a44abca31f
   endif
