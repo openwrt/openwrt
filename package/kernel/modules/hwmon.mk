@@ -30,6 +30,20 @@ define AddDepends/hwmon
   DEPENDS:=kmod-hwmon-core $(1)
 endef
 
+define KernelPackage/hwmon-lm63
+  TITLE:=LM63/64 monitoring support
+  KCONFIG:=CONFIG_SENSORS_LM63
+  FILES:=$(LINUX_DIR)/drivers/hwmon/lm63.ko
+  AUTOLOAD:=$(call AutoLoad,60,lm63)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-lm63/description
+ Kernel module for lm63 and lm64 thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-lm63))
+
 
 define KernelPackage/hwmon-lm75
   TITLE:=LM75 monitoring support
