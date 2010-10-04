@@ -167,3 +167,19 @@ define KernelPackage/i2c-ibm-iic/description
 endef
 
 $(eval $(call KernelPackage,i2c-ibm-iic))
+
+I2C_MV64XXX_MODULES:=\
+  CONFIG_I2C_MV64XXX:drivers/i2c/busses/i2c-mv64xxx
+
+define KernelPackage/i2c-mv64xxx
+  $(call i2c_defaults,$(I2C_MV64XXX_MODULES),59)
+  TITLE:=Orion Platform I2C interface support
+  DEPENDS:=@TARGET_kirkwood||TARGET_orion +kmod-i2c-core
+endef
+
+define KernelPackage/i2c-mv64xxx/description
+ Kernel module for I2C interface on the Kirkwood and Orion
+ family processors.
+endef
+
+$(eval $(call KernelPackage,i2c-mv64xxx))
