@@ -83,10 +83,7 @@ endef
 
 define Package/ppp-mod-radius/conffiles
 /etc/ppp/radius.conf
-/etc/ppp/radius/dictionary
-/etc/ppp/radius/dictionary.asnet
-/etc/ppp/radius/dictionary.microsoft
-/etc/ppp/radius/servers
+/etc/ppp/radius/
 endef
 
 define Package/chat
