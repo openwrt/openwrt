@@ -68,6 +68,8 @@ endef
 
 define Package/uhttpd/conffiles
 /etc/config/uhttpd
+/etc/uhttpd.crt
+/etc/uhttpd.key
 endef
 
 define Package/uhttpd/install
