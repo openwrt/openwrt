@@ -31,6 +31,10 @@ $(call Package/iproute2/Default)
   TITLE:=Routing control utility
 endef
 
+define Package/ip/conffiles
+/etc/iproute2/rt_tables
+endef
+
 define Package/tc
 $(call Package/iproute2/Default)
   TITLE:=Traffic control utility
