@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qos-scripts
 PKG_VERSION:=1.2.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
@@ -27,6 +27,10 @@ define Package/qos-scripts/description
  A set of scripts that abstract QoS configuration into a simple 
  configuration file supporting stanzas that specify any number of QoS 
  entries.
+endef
+
+define Package/qos-scripts/conffiles
+/etc/config/qos
 endef
 
 define Build/Prepare
