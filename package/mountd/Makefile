@@ -25,6 +25,10 @@ define Package/mountd/description
   openwrt automount daemon
 endef
 
+define Package/mountd/conffiles
+/etc/config/mountd
+endef
+
 define Build/Compile
 	$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -I$(STAGING_DIR)/usr/include -I$(PKG_BUILD_DIR)" \
@@ -40,4 +44,3 @@ define Package/mountd/install
 endef
 
 $(eval $(call BuildPackage,mountd))
-
