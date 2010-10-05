@@ -54,6 +54,7 @@ define Package/base-files/conffiles
 /etc/shells
 /etc/sysctl.conf
 /etc/rc.local
+/etc/sysupgrade.conf
 /etc/config/
 /etc/dropbear/
 $(call $(TARGET)/conffiles)
