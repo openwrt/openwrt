@@ -33,6 +33,7 @@ endef
 
 define Package/firewall/conffiles
 /etc/config/firewall
+/etc/firewall.user
 endef
 
 define Package/firewall/install
