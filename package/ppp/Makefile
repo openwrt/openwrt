@@ -40,6 +40,16 @@ define Package/ppp/description
 This package contains the PPP (Point-to-Point Protocol) daemon.
 endef
 
+define Package/ppp/conffiles
+/etc/ppp/chap-secrets
+/etc/ppp/filter
+/etc/ppp/ip-down
+/etc/ppp/ip-up
+/etc/ppp/ipv6-down
+/etc/ppp/ipv6-up
+/etc/ppp/options
+endef
+
 define Package/ppp-mod-pppoa
 $(call Package/ppp/Default)
   DEPENDS:=ppp +linux-atm +kmod-pppoa
@@ -69,6 +79,14 @@ endef
 define Package/ppp-mod-radius/description
 This package contains a RADIUS (Remote Authentication Dial-In User Service)
 plugin for ppp.
+endef
+
+define Package/ppp-mod-radius/conffiles
+/etc/ppp/radius.conf
+/etc/ppp/radius/dictionary
+/etc/ppp/radius/dictionary.asnet
+/etc/ppp/radius/dictionary.microsoft
+/etc/ppp/radius/servers
 endef
 
 define Package/chat
@@ -143,7 +161,7 @@ define Package/ppp/install
 	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
 	ln -sf /tmp/resolv.conf.ppp $(1)/etc/ppp/resolv.conf
 endef
-	
+
 define Package/ppp-mod-pppoa/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/pppoatm.so \
