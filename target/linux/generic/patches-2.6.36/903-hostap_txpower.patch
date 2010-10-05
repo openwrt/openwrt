@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/hostap/hostap_ap.c
 +++ b/drivers/net/wireless/hostap/hostap_ap.c
-@@ -2336,13 +2336,13 @@ int prism2_ap_get_sta_qual(local_info_t 
+@@ -2335,13 +2335,13 @@ int prism2_ap_get_sta_qual(local_info_t
  		addr[count].sa_family = ARPHRD_ETHER;
  		memcpy(addr[count].sa_data, sta->addr, ETH_ALEN);
  		if (sta->last_rx_silence == 0)
@@ -20,7 +20,7 @@
  		qual[count].updated = sta->last_rx_updated;
  
  		sta->last_rx_updated = IW_QUAL_DBM;
-@@ -2408,13 +2408,13 @@ int prism2_ap_translate_scan(struct net_
+@@ -2407,13 +2407,13 @@ int prism2_ap_translate_scan(struct net_
  		memset(&iwe, 0, sizeof(iwe));
  		iwe.cmd = IWEVQUAL;
  		if (sta->last_rx_silence == 0)

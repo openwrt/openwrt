@@ -1,8 +1,8 @@
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -104,6 +104,10 @@ config CRYPTO_MANAGER_TESTS
- 	  Run cryptomanager's tests for the new crypto algorithms being
- 	  registered.
+@@ -109,6 +109,10 @@ config CRYPTO_MANAGER_DISABLE_TESTS
+ 	  Disable run-time self tests that normally take place at
+ 	  algorithm registration.
  
 +config CRYPTO_MANAGER_NO_TESTS
 +	bool "Disable internal testsuite to save space"
@@ -43,7 +43,7 @@
 +#endif /* CONFIG_CRYPTO_MANAGER_NO_TESTS */
  }
  
- #endif /* CONFIG_CRYPTO_MANAGER_TESTS */
+ #endif /* CONFIG_CRYPTO_MANAGER_DISABLE_TESTS */
 --- a/crypto/testmgr.h
 +++ b/crypto/testmgr.h
 @@ -20,6 +20,8 @@

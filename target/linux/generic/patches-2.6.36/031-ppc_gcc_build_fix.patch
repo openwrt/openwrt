@@ -26,7 +26,7 @@ nice.
 
 --- a/arch/powerpc/kernel/misc_32.S
 +++ b/arch/powerpc/kernel/misc_32.S
-@@ -822,3 +822,80 @@ relocate_new_kernel_end:
+@@ -825,3 +825,80 @@ relocate_new_kernel_end:
  relocate_new_kernel_size:
  	.long relocate_new_kernel_end - relocate_new_kernel
  #endif
@@ -109,7 +109,7 @@ nice.
 +#endif
 --- a/arch/powerpc/kernel/ppc_ksyms.c
 +++ b/arch/powerpc/kernel/ppc_ksyms.c
-@@ -190,3 +190,114 @@ EXPORT_SYMBOL(__mtdcr);
+@@ -186,3 +186,114 @@ EXPORT_SYMBOL(__mtdcr);
  EXPORT_SYMBOL(__mfdcr);
  #endif
  EXPORT_SYMBOL(empty_zero_page);

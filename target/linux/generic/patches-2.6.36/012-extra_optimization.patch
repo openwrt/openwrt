@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -532,7 +532,7 @@ all: vmlinux
+@@ -537,7 +537,7 @@ all: vmlinux
  ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
  KBUILD_CFLAGS	+= -Os
  else
@@ -9,7 +9,7 @@
  endif
  
  include $(srctree)/arch/$(SRCARCH)/Makefile
-@@ -570,6 +570,9 @@ endif
+@@ -579,6 +579,9 @@ endif
  NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
  CHECKFLAGS     += $(NOSTDINC_FLAGS)
  

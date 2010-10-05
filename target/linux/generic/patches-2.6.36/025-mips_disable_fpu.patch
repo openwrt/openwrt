@@ -8,7 +8,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 --
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -841,6 +841,17 @@ config I8259
+@@ -862,6 +862,17 @@ config I8259
  config MIPS_BONITO64
  	bool
  
@@ -28,7 +28,7 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  
 --- a/arch/mips/math-emu/Makefile
 +++ b/arch/mips/math-emu/Makefile
-@@ -2,12 +2,14 @@
+@@ -2,11 +2,13 @@
  # Makefile for the Linux/MIPS kernel FPU emulation.
  #
  
@@ -44,7 +44,6 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
 -	   dp_sqrt.o sp_sqrt.o kernel_linkage.o dsemul.o
 +	   dp_sqrt.o sp_sqrt.o
  
- EXTRA_CFLAGS += -Werror
 --- a/arch/mips/math-emu/cp1emu.c
 +++ b/arch/mips/math-emu/cp1emu.c
 @@ -58,7 +58,11 @@

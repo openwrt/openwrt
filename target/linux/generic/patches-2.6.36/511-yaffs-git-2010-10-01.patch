@@ -1,6 +1,5 @@
-diff -Nrup a/fs/yaffs2/devextras.h b/fs/yaffs2/devextras.h
---- a/fs/yaffs2/devextras.h	2010-10-03 17:48:22.704000363 +0300
-+++ b/fs/yaffs2/devextras.h	2010-10-03 18:03:47.537000367 +0300
+--- a/fs/yaffs2/devextras.h
++++ b/fs/yaffs2/devextras.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -123,9 +122,8 @@ diff -Nrup a/fs/yaffs2/devextras.h b/fs/yaffs2/devextras.h
  
  #if !(defined __KERNEL__)
  
-diff -Nrup a/fs/yaffs2/Kconfig b/fs/yaffs2/Kconfig
---- a/fs/yaffs2/Kconfig	2010-10-03 17:48:22.704000363 +0300
-+++ b/fs/yaffs2/Kconfig	2010-10-03 18:03:47.461000368 +0300
+--- a/fs/yaffs2/Kconfig
++++ b/fs/yaffs2/Kconfig
 @@ -90,23 +90,15 @@ config YAFFS_AUTO_YAFFS2
  
  	  If unsure, say Y.
@@ -203,9 +201,8 @@ diff -Nrup a/fs/yaffs2/Kconfig b/fs/yaffs2/Kconfig
 +	 If unsure, say Y.
 +
 +
-diff -Nrup a/fs/yaffs2/Makefile b/fs/yaffs2/Makefile
---- a/fs/yaffs2/Makefile	2010-10-03 17:48:22.705000363 +0300
-+++ b/fs/yaffs2/Makefile	2010-10-03 18:03:47.460000369 +0300
+--- a/fs/yaffs2/Makefile
++++ b/fs/yaffs2/Makefile
 @@ -4,7 +4,14 @@
  
  obj-$(CONFIG_YAFFS_FS) += yaffs.o
@@ -223,9 +220,8 @@ diff -Nrup a/fs/yaffs2/Makefile b/fs/yaffs2/Makefile
 +yaffs-y += yaffs_bitmap.o
 +yaffs-y += yaffs_verify.o
 +
-diff -Nrup a/fs/yaffs2/moduleconfig.h b/fs/yaffs2/moduleconfig.h
---- a/fs/yaffs2/moduleconfig.h	2010-10-03 17:48:22.705000363 +0300
-+++ b/fs/yaffs2/moduleconfig.h	2010-10-03 18:03:47.538000366 +0300
+--- a/fs/yaffs2/moduleconfig.h
++++ b/fs/yaffs2/moduleconfig.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -285,9 +281,8 @@ diff -Nrup a/fs/yaffs2/moduleconfig.h b/fs/yaffs2/moduleconfig.h
  
  /*
  Older-style on-NAND data format has a "pageStatus" byte to record
-diff -Nrup a/fs/yaffs2/yaffs_allocator.c b/fs/yaffs2/yaffs_allocator.c
---- a/fs/yaffs2/yaffs_allocator.c	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_allocator.c	2010-10-03 18:03:47.504000356 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_allocator.c
 @@ -0,0 +1,409 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -698,9 +693,8 @@ diff -Nrup a/fs/yaffs2/yaffs_allocator.c b/fs/yaffs2/yaffs_allocator.c
 +
 +
 +#endif
-diff -Nrup a/fs/yaffs2/yaffs_allocator.h b/fs/yaffs2/yaffs_allocator.h
---- a/fs/yaffs2/yaffs_allocator.h	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_allocator.h	2010-10-03 18:03:47.538000366 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_allocator.h
 @@ -0,0 +1,30 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -732,9 +726,8 @@ diff -Nrup a/fs/yaffs2/yaffs_allocator.h b/fs/yaffs2/yaffs_allocator.h
 +void yaffs_FreeRawObject(yaffs_Device *dev, yaffs_Object *obj);
 +
 +#endif
-diff -Nrup a/fs/yaffs2/yaffs_bitmap.c b/fs/yaffs2/yaffs_bitmap.c
---- a/fs/yaffs2/yaffs_bitmap.c	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_bitmap.c	2010-10-03 18:03:47.505000364 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_bitmap.c
 @@ -0,0 +1,105 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -841,9 +834,8 @@ diff -Nrup a/fs/yaffs2/yaffs_bitmap.c b/fs/yaffs2/yaffs_bitmap.c
 +	return n;
 +}
 +
-diff -Nrup a/fs/yaffs2/yaffs_bitmap.h b/fs/yaffs2/yaffs_bitmap.h
---- a/fs/yaffs2/yaffs_bitmap.h	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_bitmap.h	2010-10-03 18:03:47.539000363 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_bitmap.h
 @@ -0,0 +1,31 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -876,9 +868,8 @@ diff -Nrup a/fs/yaffs2/yaffs_bitmap.h b/fs/yaffs2/yaffs_bitmap.h
 +int yaffs_CountChunkBits(yaffs_Device *dev, int blk);
 +
 +#endif
-diff -Nrup a/fs/yaffs2/yaffs_checkptrw.c b/fs/yaffs2/yaffs_checkptrw.c
---- a/fs/yaffs2/yaffs_checkptrw.c	2010-10-03 17:48:22.706000363 +0300
-+++ b/fs/yaffs2/yaffs_checkptrw.c	2010-10-03 18:03:47.505000364 +0300
+--- a/fs/yaffs2/yaffs_checkptrw.c
++++ b/fs/yaffs2/yaffs_checkptrw.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -1210,9 +1201,8 @@ diff -Nrup a/fs/yaffs2/yaffs_checkptrw.c b/fs/yaffs2/yaffs_checkptrw.c
  }
  
  
-diff -Nrup a/fs/yaffs2/yaffs_checkptrw.h b/fs/yaffs2/yaffs_checkptrw.h
---- a/fs/yaffs2/yaffs_checkptrw.h	2010-10-03 17:48:22.706000363 +0300
-+++ b/fs/yaffs2/yaffs_checkptrw.h	2010-10-03 18:03:47.540000359 +0300
+--- a/fs/yaffs2/yaffs_checkptrw.h
++++ b/fs/yaffs2/yaffs_checkptrw.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -1247,9 +1237,8 @@ diff -Nrup a/fs/yaffs2/yaffs_checkptrw.h b/fs/yaffs2/yaffs_checkptrw.h
  
  #endif
 -
-diff -Nrup a/fs/yaffs2/yaffs_ecc.c b/fs/yaffs2/yaffs_ecc.c
---- a/fs/yaffs2/yaffs_ecc.c	2010-10-03 17:48:22.706000363 +0300
-+++ b/fs/yaffs2/yaffs_ecc.c	2010-10-03 18:03:47.509000373 +0300
+--- a/fs/yaffs2/yaffs_ecc.c
++++ b/fs/yaffs2/yaffs_ecc.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -1269,9 +1258,8 @@ diff -Nrup a/fs/yaffs2/yaffs_ecc.c b/fs/yaffs2/yaffs_ecc.c
  #include "yportenv.h"
  
  #include "yaffs_ecc.h"
-diff -Nrup a/fs/yaffs2/yaffs_ecc.h b/fs/yaffs2/yaffs_ecc.h
---- a/fs/yaffs2/yaffs_ecc.h	2010-10-03 17:48:22.707000363 +0300
-+++ b/fs/yaffs2/yaffs_ecc.h	2010-10-03 18:03:47.541000359 +0300
+--- a/fs/yaffs2/yaffs_ecc.h
++++ b/fs/yaffs2/yaffs_ecc.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -1281,9 +1269,8 @@ diff -Nrup a/fs/yaffs2/yaffs_ecc.h b/fs/yaffs2/yaffs_ecc.h
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_fs.c b/fs/yaffs2/yaffs_fs.c
---- a/fs/yaffs2/yaffs_fs.c	2010-10-03 17:48:22.708000363 +0300
-+++ b/fs/yaffs2/yaffs_fs.c	1970-01-01 02:00:00.000000000 +0200
+--- a/fs/yaffs2/yaffs_fs.c
++++ /dev/null
 @@ -1,2529 +0,0 @@
 -/*
 - * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -3814,9 +3801,8 @@ diff -Nrup a/fs/yaffs2/yaffs_fs.c b/fs/yaffs2/yaffs_fs.c
 -MODULE_DESCRIPTION("YAFFS2 - a NAND specific flash file system");
 -MODULE_AUTHOR("Charles Manning, Aleph One Ltd., 2002-2006");
 -MODULE_LICENSE("GPL");
-diff -Nrup a/fs/yaffs2/yaffs_getblockinfo.h b/fs/yaffs2/yaffs_getblockinfo.h
---- a/fs/yaffs2/yaffs_getblockinfo.h	2010-10-03 17:48:22.710000363 +0300
-+++ b/fs/yaffs2/yaffs_getblockinfo.h	2010-10-03 18:03:47.542000362 +0300
+--- a/fs/yaffs2/yaffs_getblockinfo.h
++++ b/fs/yaffs2/yaffs_getblockinfo.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -3834,9 +3820,8 @@ diff -Nrup a/fs/yaffs2/yaffs_getblockinfo.h b/fs/yaffs2/yaffs_getblockinfo.h
  
  /* Function to manipulate block info */
  static Y_INLINE yaffs_BlockInfo *yaffs_GetBlockInfo(yaffs_Device * dev, int blk)
-diff -Nrup a/fs/yaffs2/yaffs_guts.c b/fs/yaffs2/yaffs_guts.c
---- a/fs/yaffs2/yaffs_guts.c	2010-10-03 17:48:22.715000364 +0300
-+++ b/fs/yaffs2/yaffs_guts.c	2010-10-03 18:03:47.518000364 +0300
+--- a/fs/yaffs2/yaffs_guts.c
++++ b/fs/yaffs2/yaffs_guts.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -14389,9 +14374,8 @@ diff -Nrup a/fs/yaffs2/yaffs_guts.c b/fs/yaffs2/yaffs_guts.c
  #ifndef CONFIG_YAFFS_WINCE
  	yaffs_CheckStruct(yaffs_ObjectHeader, 512, "yaffs_ObjectHeader");
  #endif
-diff -Nrup a/fs/yaffs2/yaffs_guts.h b/fs/yaffs2/yaffs_guts.h
---- a/fs/yaffs2/yaffs_guts.h	2010-10-03 17:48:22.718000363 +0300
-+++ b/fs/yaffs2/yaffs_guts.h	2010-10-03 18:03:47.542000362 +0300
+--- a/fs/yaffs2/yaffs_guts.h
++++ b/fs/yaffs2/yaffs_guts.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -14983,9 +14967,8 @@ diff -Nrup a/fs/yaffs2/yaffs_guts.h b/fs/yaffs2/yaffs_guts.h
 +__u32 yaffs_GetChunkGroupBase(yaffs_Device *dev, yaffs_Tnode *tn, unsigned pos);
 +
  #endif
-diff -Nrup a/fs/yaffs2/yaffsinterface.h b/fs/yaffs2/yaffsinterface.h
---- a/fs/yaffs2/yaffsinterface.h	2010-10-03 17:29:32.916000361 +0300
-+++ b/fs/yaffs2/yaffsinterface.h	2010-10-03 18:03:47.543000365 +0300
+--- a/fs/yaffs2/yaffsinterface.h
++++ b/fs/yaffs2/yaffsinterface.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -14995,9 +14978,8 @@ diff -Nrup a/fs/yaffs2/yaffsinterface.h b/fs/yaffs2/yaffsinterface.h
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_linux_allocator.c b/fs/yaffs2/yaffs_linux_allocator.c
---- a/fs/yaffs2/yaffs_linux_allocator.c	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_linux_allocator.c	2010-10-03 18:03:47.519000366 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_linux_allocator.c
 @@ -0,0 +1,200 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -15199,9 +15181,8 @@ diff -Nrup a/fs/yaffs2/yaffs_linux_allocator.c b/fs/yaffs2/yaffs_linux_allocator
 +	yaffs_Allocator *allocator = dev->allocator;
 +	kmem_cache_free(allocator->object_cache,obj);
 +}
-diff -Nrup a/fs/yaffs2/yaffs_linux.h b/fs/yaffs2/yaffs_linux.h
---- a/fs/yaffs2/yaffs_linux.h	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_linux.h	2010-10-03 18:03:47.544000367 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_linux.h
 @@ -0,0 +1,43 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -15246,9 +15227,8 @@ diff -Nrup a/fs/yaffs2/yaffs_linux.h b/fs/yaffs2/yaffs_linux.h
 +
 +#endif
 +
-diff -Nrup a/fs/yaffs2/yaffs_list.h b/fs/yaffs2/yaffs_list.h
---- a/fs/yaffs2/yaffs_list.h	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_list.h	2010-10-03 18:03:47.544000367 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_list.h
 @@ -0,0 +1,127 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -15377,9 +15357,8 @@ diff -Nrup a/fs/yaffs2/yaffs_list.h b/fs/yaffs2/yaffs_list.h
 +
 +
 +#endif
-diff -Nrup a/fs/yaffs2/yaffs_mtdif1.c b/fs/yaffs2/yaffs_mtdif1.c
---- a/fs/yaffs2/yaffs_mtdif1.c	2010-10-03 17:48:22.719000363 +0300
-+++ b/fs/yaffs2/yaffs_mtdif1.c	2010-10-03 18:03:47.519000366 +0300
+--- a/fs/yaffs2/yaffs_mtdif1.c
++++ b/fs/yaffs2/yaffs_mtdif1.c
 @@ -2,7 +2,7 @@
   * YAFFS: Yet another FFS. A NAND-flash specific file system.
   * yaffs_mtdif1.c  NAND mtd interface functions for small-page NAND.
@@ -15522,9 +15501,8 @@ diff -Nrup a/fs/yaffs2/yaffs_mtdif1.c b/fs/yaffs2/yaffs_mtdif1.c
  		state = YAFFS_BLOCK_STATE_DEAD;
  	} else if (etags.eccResult != YAFFS_ECC_RESULT_NO_ERROR) {
  		/* bad tags, need to look more closely */
-diff -Nrup a/fs/yaffs2/yaffs_mtdif1-compat.c b/fs/yaffs2/yaffs_mtdif1-compat.c
---- a/fs/yaffs2/yaffs_mtdif1-compat.c	2010-10-03 17:29:32.916000361 +0300
-+++ b/fs/yaffs2/yaffs_mtdif1-compat.c	1970-01-01 02:00:00.000000000 +0200
+--- a/fs/yaffs2/yaffs_mtdif1-compat.c
++++ /dev/null
 @@ -1,434 +0,0 @@
 -From ian@brightstareng.com Fri May 18 15:06:49 2007
 -From ian@brightstareng.com Fri May 18 15:08:21 2007
@@ -15960,9 +15938,8 @@ diff -Nrup a/fs/yaffs2/yaffs_mtdif1-compat.c b/fs/yaffs2/yaffs_mtdif1-compat.c
 -
 -
 -
-diff -Nrup a/fs/yaffs2/yaffs_mtdif1.h b/fs/yaffs2/yaffs_mtdif1.h
---- a/fs/yaffs2/yaffs_mtdif1.h	2010-10-03 17:48:22.719000363 +0300
-+++ b/fs/yaffs2/yaffs_mtdif1.h	2010-10-03 18:03:47.545000367 +0300
+--- a/fs/yaffs2/yaffs_mtdif1.h
++++ b/fs/yaffs2/yaffs_mtdif1.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System. A NAND-flash specific file system.
@@ -15972,9 +15949,8 @@ diff -Nrup a/fs/yaffs2/yaffs_mtdif1.h b/fs/yaffs2/yaffs_mtdif1.h
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * This program is free software; you can redistribute it and/or modify
-diff -Nrup a/fs/yaffs2/yaffs_mtdif2.c b/fs/yaffs2/yaffs_mtdif2.c
---- a/fs/yaffs2/yaffs_mtdif2.c	2010-10-03 17:48:22.720000363 +0300
-+++ b/fs/yaffs2/yaffs_mtdif2.c	2010-10-03 18:03:47.520000367 +0300
+--- a/fs/yaffs2/yaffs_mtdif2.c
++++ b/fs/yaffs2/yaffs_mtdif2.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -16221,9 +16197,8 @@ diff -Nrup a/fs/yaffs2/yaffs_mtdif2.c b/fs/yaffs2/yaffs_mtdif2.c
  						   &t);
  
  		if (t.chunkUsed) {
-diff -Nrup a/fs/yaffs2/yaffs_mtdif2.h b/fs/yaffs2/yaffs_mtdif2.h
---- a/fs/yaffs2/yaffs_mtdif2.h	2010-10-03 17:48:22.720000363 +0300
-+++ b/fs/yaffs2/yaffs_mtdif2.h	2010-10-03 18:03:47.545000367 +0300
+--- a/fs/yaffs2/yaffs_mtdif2.h
++++ b/fs/yaffs2/yaffs_mtdif2.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -16233,9 +16208,8 @@ diff -Nrup a/fs/yaffs2/yaffs_mtdif2.h b/fs/yaffs2/yaffs_mtdif2.h
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_mtdif.c b/fs/yaffs2/yaffs_mtdif.c
---- a/fs/yaffs2/yaffs_mtdif.c	2010-10-03 17:48:22.720000363 +0300
-+++ b/fs/yaffs2/yaffs_mtdif.c	2010-10-03 18:03:47.521000367 +0300
+--- a/fs/yaffs2/yaffs_mtdif.c
++++ b/fs/yaffs2/yaffs_mtdif.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -16470,9 +16444,8 @@ diff -Nrup a/fs/yaffs2/yaffs_mtdif.c b/fs/yaffs2/yaffs_mtdif.c
  	retval = mtd->erase(mtd, &ei);
  
  	if (retval == 0)
-diff -Nrup a/fs/yaffs2/yaffs_mtdif.h b/fs/yaffs2/yaffs_mtdif.h
---- a/fs/yaffs2/yaffs_mtdif.h	2010-10-03 17:48:22.721000363 +0300
-+++ b/fs/yaffs2/yaffs_mtdif.h	2010-10-03 18:03:47.546000366 +0300
+--- a/fs/yaffs2/yaffs_mtdif.h
++++ b/fs/yaffs2/yaffs_mtdif.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -16494,9 +16467,8 @@ diff -Nrup a/fs/yaffs2/yaffs_mtdif.h b/fs/yaffs2/yaffs_mtdif.h
  int nandmtd_EraseBlockInNAND(yaffs_Device *dev, int blockNumber);
  int nandmtd_InitialiseNAND(yaffs_Device *dev);
  #endif
-diff -Nrup a/fs/yaffs2/yaffs_nameval.c b/fs/yaffs2/yaffs_nameval.c
---- a/fs/yaffs2/yaffs_nameval.c	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_nameval.c	2010-10-03 18:03:47.523000363 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_nameval.c
 @@ -0,0 +1,197 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -16695,9 +16667,8 @@ diff -Nrup a/fs/yaffs2/yaffs_nameval.c b/fs/yaffs2/yaffs_nameval.c
 +{
 +	return nval_used(xb, xb_size) > 0;
 +}
-diff -Nrup a/fs/yaffs2/yaffs_nameval.h b/fs/yaffs2/yaffs_nameval.h
---- a/fs/yaffs2/yaffs_nameval.h	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_nameval.h	2010-10-03 18:03:47.546000366 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_nameval.h
 @@ -0,0 +1,25 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -16724,9 +16695,8 @@ diff -Nrup a/fs/yaffs2/yaffs_nameval.h b/fs/yaffs2/yaffs_nameval.h
 +int nval_list(const char *xb, int xb_size, char *buf, int bsize);
 +int nval_hasvalues(const char *xb, int xb_size);
 +#endif
-diff -Nrup a/fs/yaffs2/yaffs_nand.c b/fs/yaffs2/yaffs_nand.c
---- a/fs/yaffs2/yaffs_nand.c	2010-10-03 17:48:22.721000363 +0300
-+++ b/fs/yaffs2/yaffs_nand.c	2010-10-03 18:03:47.524000359 +0300
+--- a/fs/yaffs2/yaffs_nand.c
++++ b/fs/yaffs2/yaffs_nand.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -16840,9 +16810,8 @@ diff -Nrup a/fs/yaffs2/yaffs_nand.c b/fs/yaffs2/yaffs_nand.c
  }
  
  
-diff -Nrup a/fs/yaffs2/yaffs_nandemul2k.h b/fs/yaffs2/yaffs_nandemul2k.h
---- a/fs/yaffs2/yaffs_nandemul2k.h	2010-10-03 17:48:22.721000364 +0300
-+++ b/fs/yaffs2/yaffs_nandemul2k.h	2010-10-03 18:03:47.546000366 +0300
+--- a/fs/yaffs2/yaffs_nandemul2k.h
++++ b/fs/yaffs2/yaffs_nandemul2k.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -16852,9 +16821,8 @@ diff -Nrup a/fs/yaffs2/yaffs_nandemul2k.h b/fs/yaffs2/yaffs_nandemul2k.h
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_nand.h b/fs/yaffs2/yaffs_nand.h
---- a/fs/yaffs2/yaffs_nand.h	2010-10-03 17:48:22.721000364 +0300
-+++ b/fs/yaffs2/yaffs_nand.h	2010-10-03 18:03:47.547000363 +0300
+--- a/fs/yaffs2/yaffs_nand.h
++++ b/fs/yaffs2/yaffs_nand.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -16864,9 +16832,8 @@ diff -Nrup a/fs/yaffs2/yaffs_nand.h b/fs/yaffs2/yaffs_nand.h
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_packedtags1.c b/fs/yaffs2/yaffs_packedtags1.c
---- a/fs/yaffs2/yaffs_packedtags1.c	2010-10-03 17:48:22.721000364 +0300
-+++ b/fs/yaffs2/yaffs_packedtags1.c	2010-10-03 18:03:47.524000359 +0300
+--- a/fs/yaffs2/yaffs_packedtags1.c
++++ b/fs/yaffs2/yaffs_packedtags1.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -16876,9 +16843,8 @@ diff -Nrup a/fs/yaffs2/yaffs_packedtags1.c b/fs/yaffs2/yaffs_packedtags1.c
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_packedtags1.h b/fs/yaffs2/yaffs_packedtags1.h
---- a/fs/yaffs2/yaffs_packedtags1.h	2010-10-03 17:48:22.721000364 +0300
-+++ b/fs/yaffs2/yaffs_packedtags1.h	2010-10-03 18:03:47.547000363 +0300
+--- a/fs/yaffs2/yaffs_packedtags1.h
++++ b/fs/yaffs2/yaffs_packedtags1.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -16888,9 +16854,8 @@ diff -Nrup a/fs/yaffs2/yaffs_packedtags1.h b/fs/yaffs2/yaffs_packedtags1.h
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_packedtags2.c b/fs/yaffs2/yaffs_packedtags2.c
---- a/fs/yaffs2/yaffs_packedtags2.c	2010-10-03 17:48:22.722000365 +0300
-+++ b/fs/yaffs2/yaffs_packedtags2.c	2010-10-03 18:03:47.524000359 +0300
+--- a/fs/yaffs2/yaffs_packedtags2.c
++++ b/fs/yaffs2/yaffs_packedtags2.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -16987,9 +16952,8 @@ diff -Nrup a/fs/yaffs2/yaffs_packedtags2.c b/fs/yaffs2/yaffs_packedtags2.c
 -
  }
  
-diff -Nrup a/fs/yaffs2/yaffs_packedtags2.h b/fs/yaffs2/yaffs_packedtags2.h
---- a/fs/yaffs2/yaffs_packedtags2.h	2010-10-03 17:48:22.722000365 +0300
-+++ b/fs/yaffs2/yaffs_packedtags2.h	2010-10-03 18:03:47.547000363 +0300
+--- a/fs/yaffs2/yaffs_packedtags2.h
++++ b/fs/yaffs2/yaffs_packedtags2.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -17010,9 +16974,8 @@ diff -Nrup a/fs/yaffs2/yaffs_packedtags2.h b/fs/yaffs2/yaffs_packedtags2.h
  
  /* Only the tags part (no ECC for use with inband tags */
  void yaffs_PackTags2TagsPart(yaffs_PackedTags2TagsPart *pt, const yaffs_ExtendedTags *t);
-diff -Nrup a/fs/yaffs2/yaffs_qsort.h b/fs/yaffs2/yaffs_qsort.h
---- a/fs/yaffs2/yaffs_qsort.h	2010-10-03 17:48:22.724000363 +0300
-+++ b/fs/yaffs2/yaffs_qsort.h	2010-10-03 18:03:47.548000359 +0300
+--- a/fs/yaffs2/yaffs_qsort.h
++++ b/fs/yaffs2/yaffs_qsort.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -17041,9 +17004,8 @@ diff -Nrup a/fs/yaffs2/yaffs_qsort.h b/fs/yaffs2/yaffs_qsort.h
  
  #endif
 +#endif
-diff -Nrup a/fs/yaffs2/yaffs_tagscompat.c b/fs/yaffs2/yaffs_tagscompat.c
---- a/fs/yaffs2/yaffs_tagscompat.c	2010-10-03 17:48:22.724000363 +0300
-+++ b/fs/yaffs2/yaffs_tagscompat.c	2010-10-03 18:03:47.525000359 +0300
+--- a/fs/yaffs2/yaffs_tagscompat.c
++++ b/fs/yaffs2/yaffs_tagscompat.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -17171,9 +17133,8 @@ diff -Nrup a/fs/yaffs2/yaffs_tagscompat.c b/fs/yaffs2/yaffs_tagscompat.c
  				&spare1, &dummy, 1);
  
  	if (yaffs_CountBits(spare0.blockStatus & spare1.blockStatus) < 7)
-diff -Nrup a/fs/yaffs2/yaffs_tagscompat.h b/fs/yaffs2/yaffs_tagscompat.h
---- a/fs/yaffs2/yaffs_tagscompat.h	2010-10-03 17:48:22.724000363 +0300
-+++ b/fs/yaffs2/yaffs_tagscompat.h	2010-10-03 18:03:47.548000359 +0300
+--- a/fs/yaffs2/yaffs_tagscompat.h
++++ b/fs/yaffs2/yaffs_tagscompat.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -17183,9 +17144,8 @@ diff -Nrup a/fs/yaffs2/yaffs_tagscompat.h b/fs/yaffs2/yaffs_tagscompat.h
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_tagsvalidity.c b/fs/yaffs2/yaffs_tagsvalidity.c
---- a/fs/yaffs2/yaffs_tagsvalidity.c	2010-10-03 17:48:22.725000363 +0300
-+++ b/fs/yaffs2/yaffs_tagsvalidity.c	2010-10-03 18:03:47.526000362 +0300
+--- a/fs/yaffs2/yaffs_tagsvalidity.c
++++ b/fs/yaffs2/yaffs_tagsvalidity.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -17195,9 +17155,8 @@ diff -Nrup a/fs/yaffs2/yaffs_tagsvalidity.c b/fs/yaffs2/yaffs_tagsvalidity.c
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_tagsvalidity.h b/fs/yaffs2/yaffs_tagsvalidity.h
---- a/fs/yaffs2/yaffs_tagsvalidity.h	2010-10-03 17:48:22.725000363 +0300
-+++ b/fs/yaffs2/yaffs_tagsvalidity.h	2010-10-03 18:03:47.549000359 +0300
+--- a/fs/yaffs2/yaffs_tagsvalidity.h
++++ b/fs/yaffs2/yaffs_tagsvalidity.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -17207,9 +17166,8 @@ diff -Nrup a/fs/yaffs2/yaffs_tagsvalidity.h b/fs/yaffs2/yaffs_tagsvalidity.h
   *   for Toby Churchill Ltd and Brightstar Engineering
   *
   * Created by Charles Manning <charles@aleph1.co.uk>
-diff -Nrup a/fs/yaffs2/yaffs_trace.h b/fs/yaffs2/yaffs_trace.h
---- a/fs/yaffs2/yaffs_trace.h	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_trace.h	2010-10-03 18:03:47.550000362 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_trace.h
 @@ -0,0 +1,60 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -17271,9 +17229,8 @@ diff -Nrup a/fs/yaffs2/yaffs_trace.h b/fs/yaffs2/yaffs_trace.h
 +#define T(mask, p) do { if ((mask) & (yaffs_traceMask | YAFFS_TRACE_ALWAYS)) TOUT(p); } while (0)
 +
 +#endif
-diff -Nrup a/fs/yaffs2/yaffs_verify.c b/fs/yaffs2/yaffs_verify.c
---- a/fs/yaffs2/yaffs_verify.c	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_verify.c	2010-10-03 18:03:47.527000365 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_verify.c
 @@ -0,0 +1,626 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -17901,9 +17858,8 @@ diff -Nrup a/fs/yaffs2/yaffs_verify.c b/fs/yaffs2/yaffs_verify.c
 +	return YAFFS_OK;
 +#endif
 +}
-diff -Nrup a/fs/yaffs2/yaffs_verify.h b/fs/yaffs2/yaffs_verify.h
---- a/fs/yaffs2/yaffs_verify.h	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_verify.h	2010-10-03 18:03:47.551000365 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_verify.h
 @@ -0,0 +1,39 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -17944,9 +17900,8 @@ diff -Nrup a/fs/yaffs2/yaffs_verify.h b/fs/yaffs2/yaffs_verify.h
 +
 +#endif
 +
-diff -Nrup a/fs/yaffs2/yaffs_vfs_glue.c b/fs/yaffs2/yaffs_vfs_glue.c
---- a/fs/yaffs2/yaffs_vfs_glue.c	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_vfs_glue.c	2010-10-03 18:03:47.557000359 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_vfs_glue.c
 @@ -0,0 +1,3577 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -21525,9 +21480,8 @@ diff -Nrup a/fs/yaffs2/yaffs_vfs_glue.c b/fs/yaffs2/yaffs_vfs_glue.c
 +MODULE_DESCRIPTION("YAFFS2 - a NAND specific flash file system");
 +MODULE_AUTHOR("Charles Manning, Aleph One Ltd., 2002-2010");
 +MODULE_LICENSE("GPL");
-diff -Nrup a/fs/yaffs2/yaffs_yaffs1.c b/fs/yaffs2/yaffs_yaffs1.c
---- a/fs/yaffs2/yaffs_yaffs1.c	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_yaffs1.c	2010-10-03 18:03:47.535000365 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_yaffs1.c
 @@ -0,0 +1,465 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -21994,9 +21948,8 @@ diff -Nrup a/fs/yaffs2/yaffs_yaffs1.c b/fs/yaffs2/yaffs_yaffs1.c
 +	return YAFFS_OK;
 +}
 +
-diff -Nrup a/fs/yaffs2/yaffs_yaffs1.h b/fs/yaffs2/yaffs_yaffs1.h
---- a/fs/yaffs2/yaffs_yaffs1.h	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_yaffs1.h	2010-10-03 18:03:47.551000365 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_yaffs1.h
 @@ -0,0 +1,22 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -22020,9 +21973,8 @@ diff -Nrup a/fs/yaffs2/yaffs_yaffs1.h b/fs/yaffs2/yaffs_yaffs1.h
 +int yaffs1_Scan(yaffs_Device *dev);
 +
 +#endif
-diff -Nrup a/fs/yaffs2/yaffs_yaffs2.c b/fs/yaffs2/yaffs_yaffs2.c
---- a/fs/yaffs2/yaffs_yaffs2.c	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_yaffs2.c	2010-10-03 18:03:47.536000367 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_yaffs2.c
 @@ -0,0 +1,1540 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -23564,9 +23516,8 @@ diff -Nrup a/fs/yaffs2/yaffs_yaffs2.c b/fs/yaffs2/yaffs_yaffs2.c
 +
 +	return YAFFS_OK;
 +}
-diff -Nrup a/fs/yaffs2/yaffs_yaffs2.h b/fs/yaffs2/yaffs_yaffs2.h
---- a/fs/yaffs2/yaffs_yaffs2.h	1970-01-01 02:00:00.000000000 +0200
-+++ b/fs/yaffs2/yaffs_yaffs2.h	2010-10-03 18:03:47.552000367 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_yaffs2.h
 @@ -0,0 +1,36 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -23604,9 +23555,8 @@ diff -Nrup a/fs/yaffs2/yaffs_yaffs2.h b/fs/yaffs2/yaffs_yaffs2.h
 +int yaffs2_ScanBackwards(yaffs_Device *dev);
 +
 +#endif
-diff -Nrup a/fs/yaffs2/yportenv.h b/fs/yaffs2/yportenv.h
---- a/fs/yaffs2/yportenv.h	2010-10-03 17:48:22.725000364 +0300
-+++ b/fs/yaffs2/yportenv.h	2010-10-03 18:03:47.555000363 +0300
+--- a/fs/yaffs2/yportenv.h
++++ b/fs/yaffs2/yportenv.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
