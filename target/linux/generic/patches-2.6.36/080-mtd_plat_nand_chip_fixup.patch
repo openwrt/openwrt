@@ -5,7 +5,7 @@
 
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -512,6 +512,7 @@ struct platform_nand_chip {
+@@ -510,6 +510,7 @@ struct platform_nand_chip {
  	int			chip_delay;
  	unsigned int		options;
  	const char		**part_probe_types;
@@ -15,7 +15,7 @@
  	void			*priv;
 --- a/drivers/mtd/nand/plat_nand.c
 +++ b/drivers/mtd/nand/plat_nand.c
-@@ -91,7 +91,18 @@ static int __devinit plat_nand_probe(str
+@@ -96,7 +96,18 @@ static int __devinit plat_nand_probe(str
  	}
  
  	/* Scan to find existance of the device */

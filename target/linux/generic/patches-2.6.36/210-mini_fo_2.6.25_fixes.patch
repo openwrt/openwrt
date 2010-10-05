@@ -61,7 +61,7 @@
  #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
  extern int mini_fo_create(inode_t *dir, dentry_t *dentry, int mode, struct nameidata *nd);
  
-@@ -501,6 +505,29 @@ static inline void double_unlock(struct 
+@@ -501,6 +505,29 @@ static inline void double_unlock(struct
  #endif  /* if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
  #endif /* __KERNEL__ */
  
@@ -127,7 +127,7 @@
  #endif /* defined(FIST_DEBUG) || defined(FIST_FILTER_SCA) */
 --- a/fs/mini_fo/aux.c
 +++ b/fs/mini_fo/aux.c
-@@ -164,11 +164,11 @@ dentry_t *bpath_walk(super_block_t *sb, 
+@@ -164,11 +164,11 @@ dentry_t *bpath_walk(super_block_t *sb,
  	err = vfs_path_lookup(mnt->mnt_root, mnt, bpath+1, 0, &nd);
  
  	/* validate */

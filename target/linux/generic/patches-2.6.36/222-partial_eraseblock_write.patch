@@ -1,6 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -21,6 +21,8 @@
+@@ -32,6 +32,8 @@
  #include <linux/root_dev.h>
  #include <linux/magic.h>
  
@@ -9,7 +9,7 @@
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
  
-@@ -226,13 +228,60 @@ static int part_erase(struct mtd_info *m
+@@ -237,13 +239,60 @@ static int part_erase(struct mtd_info *m
  		return -EROFS;
  	if (instr->addr >= mtd->size)
  		return -EINVAL;
@@ -70,7 +70,7 @@
  	return ret;
  }
  
-@@ -240,7 +289,25 @@ void mtd_erase_callback(struct erase_inf
+@@ -251,7 +300,25 @@ void mtd_erase_callback(struct erase_inf
  {
  	if (instr->mtd->erase == part_erase) {
  		struct mtd_part *part = PART(instr->mtd);
@@ -96,7 +96,7 @@
  		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
  			instr->fail_addr -= part->offset;
  		instr->addr -= part->offset;
-@@ -473,18 +540,24 @@ static struct mtd_part *add_one_partitio
+@@ -494,18 +561,24 @@ static struct mtd_part *add_one_partitio
  	if ((slave->mtd.flags & MTD_WRITEABLE) &&
  	    mtd_mod_by_eb(slave->offset, &slave->mtd)) {
  		/* Doesn't start on a boundary of major erase size */
@@ -133,7 +133,7 @@
  	if (master->block_isbad) {
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -45,6 +45,10 @@ struct erase_info {
+@@ -57,6 +57,10 @@ struct erase_info {
  	u_long priv;
  	u_char state;
  	struct erase_info *next;

@@ -570,7 +570,7 @@
  		ret = -ENOTTY;
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
-@@ -98,6 +98,7 @@ struct mtd_oob_ops {
+@@ -110,6 +110,7 @@ struct mtd_oob_ops {
  	uint8_t		*oobbuf;
  };
  
@@ -578,7 +578,7 @@
  struct mtd_info {
  	u_char type;
  	uint32_t flags;
-@@ -238,6 +239,9 @@ struct mtd_info {
+@@ -251,6 +252,9 @@ struct mtd_info {
  	struct device dev;
  	int usecount;
  
