@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2008 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -26,8 +26,12 @@ define Package/pptp
   DEPENDS:=+ppp +kmod-gre
 endef
 
-define Package/pptp/daemon
+define Package/pptp/description
  This package contains a PPTP (Point-to-Point Tunneling Protocol) client.
+endef
+
+define Package/pptp/conffiles
+/etc/ppp/options.pptp
 endef
 
 define Package/pptp/install
