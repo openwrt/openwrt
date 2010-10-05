@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=sed
-PKG_VERSION:=4.1.2
+PKG_VERSION:=4.2.1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
-PKG_MD5SUM:=928f0e06422f414091917401f1a834d0
-PKG_CAT:=zcat
+PKG_MD5SUM:=7d310fbd76e01a01115075c1fd3f455a
+PKG_CAT:=bzcat
 export SED:=
 
 include $(INCLUDE_DIR)/host-build.mk
