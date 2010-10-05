@@ -51,6 +51,10 @@ define KernelPackage/mmc-over-gpio/description
  Support for driving an MMC/SD card over GPIO pins via SPI.
 endef
 
+define KernelPackage/mmc-over-gpio/conffiles
+/etc/config/mmc_over_gpio
+endef
+
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
