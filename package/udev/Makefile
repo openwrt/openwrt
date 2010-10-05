@@ -33,6 +33,10 @@ define Package/udev/description
 	provides the ability to have persistent device names.
 endef
 
+define Package/udev/conffiles
+/etc/udev/udev.conf
+endef
+
 define Package/udev/config
 	source "$(SOURCE)/Config.in"
 endef
