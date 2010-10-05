@@ -17,7 +17,6 @@ menu "Target Images"
 	menuconfig TARGET_ROOTFS_INITRAMFS
 		bool "ramdisk"
 		default y if USES_INITRAMFS
-		depends LINUX_2_6
 		help
 		  Embed the rootfs into the kernel (initramfs)
 
@@ -169,7 +168,6 @@ menu "Global build settings"
 	config KERNEL_DEBUG_FS
 		bool "Compile the kernel with Debug FileSystem enabled"
 		default y
-		depends LINUX_2_6
 		help
 		  debugfs is a virtual file system that kernel developers use to put
 		  debugging files into. Enable this option to be able to read and
@@ -334,7 +332,6 @@ menu "Global build settings"
 		  Specifies arguments passed to the strip command when stripping binaries
 
 	config STRIP_KERNEL_EXPORTS
-		depends LINUX_2_6
 		bool "Strip unnecessary exports from the kernel image"
 		help
 		  Reduces kernel size by stripping unused kernel exports from the kernel image
