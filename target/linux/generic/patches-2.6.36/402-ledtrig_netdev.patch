@@ -21,9 +21,12 @@
 +obj-$(CONFIG_LEDS_TRIGGER_NETDEV)      += ledtrig-netdev.o
 --- a/drivers/leds/ledtrig-netdev.c
 +++ b/drivers/leds/ledtrig-netdev.c
-@@ -309,6 +309,7 @@ static void netdev_trig_timer(unsigned l
+@@ -307,8 +307,9 @@ done:
+ static void netdev_trig_timer(unsigned long arg)
+ {
  	struct led_netdev_data *trigger_data = (struct led_netdev_data *)arg;
- 	const struct net_device_stats *dev_stats;
+-	const struct net_device_stats *dev_stats;
++	struct rtnl_link_stats64 *dev_stats;
  	unsigned new_activity;
 +	struct rtnl_link_stats64 temp;
  

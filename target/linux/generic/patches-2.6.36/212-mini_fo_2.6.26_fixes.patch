@@ -16,7 +16,7 @@
  
  
  #if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
-@@ -238,7 +240,7 @@ mini_fo_clear_inode(inode_t *inode)
+@@ -242,7 +244,7 @@ mini_fo_clear_inode(inode_t *inode)
   * dies.
   */
  STATIC void
@@ -25,7 +25,7 @@
  mini_fo_umount_begin(struct vfsmount *mnt, int flags)
  {
  	struct vfsmount *hidden_mnt;
-@@ -290,7 +292,9 @@ struct super_operations mini_fo_sops =
+@@ -294,7 +296,9 @@ struct super_operations mini_fo_sops =
  #if defined(FIST_DEBUG) || defined(FIST_FILTER_SCA)
  	write_inode:	mini_fo_write_inode,
  #endif /* defined(FIST_DEBUG) || defined(FIST_FILTER_SCA) */
