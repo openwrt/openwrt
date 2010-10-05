@@ -406,6 +406,10 @@ ramips_eth_stop(struct net_device *dev)
 	ramips_fe_wr(ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) &
 		     ~(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN | RAMIPS_TX_DMA_EN),
 		     RAMIPS_PDMA_GLO_CFG);
+
+	/* disable all interrupts in the hw */
+	ramips_fe_wr(0, RAMIPS_FE_INT_ENABLE);
+
 	free_irq(dev->irq, dev);
 	netif_stop_queue(dev);
 	tasklet_kill(&priv->tx_housekeeping_tasklet);
