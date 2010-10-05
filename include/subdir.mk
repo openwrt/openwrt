@@ -5,7 +5,7 @@
 # See /LICENSE for more information.
 #
 
-SUBTARGETS:=clean download prepare compile install update refresh prereq dist distcheck
+SUBTARGETS:=clean download prepare compile install update refresh prereq dist distcheck configure
 
 subtarget-default = $(filter-out ., \
 	$(if $($(1)/builddirs-$(2)),$($(1)/builddirs-$(2)), \
