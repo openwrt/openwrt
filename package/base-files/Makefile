@@ -53,6 +53,7 @@ define Package/base-files/conffiles
 /etc/profile
 /etc/shells
 /etc/sysctl.conf
+/etc/rc.local
 $(call $(TARGET)/conffiles)
 endef
 
