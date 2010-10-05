@@ -558,7 +558,9 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 						if( conf->lua_state &&
 						    uh_path_match(conf->lua_prefix, req->url) )
 						{
-							conf->lua_request(cl, req, conf->lua_state);
+							/* auth ok? */
+							if( uh_auth_check(cl, req, pin) )
+								conf->lua_request(cl, req, conf->lua_state);
 						}
 						else
 #endif
