@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=58
+PKG_RELEASE:=59
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
 PKG_BUILD_DEPENDS:=opkg/host
@@ -54,6 +54,8 @@ define Package/base-files/conffiles
 /etc/shells
 /etc/sysctl.conf
 /etc/rc.local
+/etc/config/
+/etc/dropbear/
 $(call $(TARGET)/conffiles)
 endef
 
