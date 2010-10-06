@@ -21,7 +21,8 @@ tools-$(CONFIG_TARGET_orion) += wrt350nv2-builder upslug2
 tools-$(CONFIG_TARGET_x86) += qemu
 ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_TARGET_ar71xx),)
 tools-y += squashfs lzma-old
-else
+endif
+ifeq ($(CONFIG_LINUX_2_6_25),)
 tools-y += squashfs4 lzma
 endif
 tools-$(CONFIG_CCACHE) += ccache
