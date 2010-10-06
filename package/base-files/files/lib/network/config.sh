@@ -344,12 +344,13 @@ setup_interface() {
 			local pidfile="/var/run/dhcp-${iface}.pid"
 			service_kill udhcpc "$pidfile"
 
-			local ipaddr netmask hostname proto1 clientid broadcast
+			local ipaddr netmask hostname proto1 clientid vendorid broadcast
 			config_get ipaddr "$config" ipaddr
 			config_get netmask "$config" netmask
 			config_get hostname "$config" hostname
 			config_get proto1 "$config" proto
 			config_get clientid "$config" clientid
+			config_get vendorid "$config" vendorid
 			config_get_bool broadcast "$config" broadcast 0
 
 			[ -z "$ipaddr" ] || \
@@ -364,6 +365,7 @@ setup_interface() {
 				${ipaddr:+-r $ipaddr} \
 				${hostname:+-H $hostname} \
 				${clientid:+-c $clientid} \
+				${vendorid:+-V $vendorid} \
 				-b -p "$pidfile" $broadcast \
 				${dhcpopts:- -O rootpath -R &}
 		;;
