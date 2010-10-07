@@ -8,8 +8,6 @@
 
 START=20
 
-. /lib/functions/mount.sh
-
 do_mount() {
 	local cfg="$1"
 	config_mount_by_section "$cfg"
@@ -39,6 +37,8 @@ do_swapoff() {
 }
 
 start() {
+	. /lib/functions/mount.sh
+
 	config_load fstab
 	mkdir -p /var/lock
 	lock -w /var/lock/fstab.lck && {
@@ -54,9 +54,12 @@ start() {
 }
 
 stop() {
+	. /lib/functions/mount.sh
+
 	config_load fstab
 	config_foreach do_unmount mount
 	config_foreach do_swapoff swap
 	swapoff -a
 }
+
 
