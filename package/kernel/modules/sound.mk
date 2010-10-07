@@ -102,8 +102,10 @@ endef
 define KernelPackage/sound-i8x0
   TITLE:=Intel/SiS/nVidia/AMD/ALi AC97 Controller
   KCONFIG:=CONFIG_SND_INTEL8X0
-  FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.ko
-  AUTOLOAD:=$(call AutoLoad,35,snd-i8x0)
+  FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.ko \
+	$(LINUX_DIR)/sound/ac97_bus.ko \
+	$(LINUX_DIR)/sound/pci/ac97/snd-ac97-codec.ko 
+  AUTOLOAD:=$(call AutoLoad,35,ac97_bus snd-ac97-codec snd-intel8x0)
   $(call AddDepends/sound)
 endef
 
