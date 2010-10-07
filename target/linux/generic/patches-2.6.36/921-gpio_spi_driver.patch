@@ -6,8 +6,15 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
 
 
 
+---
+ drivers/spi/Kconfig              |    9 +
+ drivers/spi/Makefile             |    1 
+ drivers/spi/spi_gpio_old.c       |  251 +++++++++++++++++++++++++++++++++++++++
+ include/linux/spi/spi_gpio_old.h |   73 +++++++++++
+ 4 files changed, 334 insertions(+)
+
 --- /dev/null
-+++ b/include/linux/spi/spi_gpio_old.h
++++ linux-2.6.36-rc7/include/linux/spi/spi_gpio_old.h
 @@ -0,0 +1,73 @@
 +/*
 + * spi_gpio interface to platform code
@@ -83,7 +90,7 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
 +
 +#endif /* _LINUX_SPI_SPI_GPIO */
 --- /dev/null
-+++ b/drivers/spi/spi_gpio_old.c
++++ linux-2.6.36-rc7/drivers/spi/spi_gpio_old.c
 @@ -0,0 +1,251 @@
 +/*
 + * Bitbanging SPI bus driver using GPIO API
@@ -167,25 +174,25 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
 +static u32 spi_gpio_txrx_mode0(struct spi_device *spi,
 +			       unsigned nsecs, u32 word, u8 bits)
 +{
-+	return bitbang_txrx_be_cpha0(spi, nsecs, 0, word, bits);
++	return bitbang_txrx_be_cpha0(spi, nsecs, 0, 0, word, bits);
 +}
 +
 +static u32 spi_gpio_txrx_mode1(struct spi_device *spi,
 +			       unsigned nsecs, u32 word, u8 bits)
 +{
-+	return bitbang_txrx_be_cpha1(spi, nsecs, 0, word, bits);
++	return bitbang_txrx_be_cpha1(spi, nsecs, 0, 0, word, bits);
 +}
 +
 +static u32 spi_gpio_txrx_mode2(struct spi_device *spi,
 +			       unsigned nsecs, u32 word, u8 bits)
 +{
-+	return bitbang_txrx_be_cpha0(spi, nsecs, 1, word, bits);
++	return bitbang_txrx_be_cpha0(spi, nsecs, 1, 0, word, bits);
 +}
 +
 +static u32 spi_gpio_txrx_mode3(struct spi_device *spi,
 +			       unsigned nsecs, u32 word, u8 bits)
 +{
-+	return bitbang_txrx_be_cpha1(spi, nsecs, 1, word, bits);
++	return bitbang_txrx_be_cpha1(spi, nsecs, 1, 0, word, bits);
 +}
 +
 +static void spi_gpio_chipselect(struct spi_device *dev, int on)
@@ -336,8 +343,8 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
 +MODULE_AUTHOR("Michael Buesch");
 +MODULE_DESCRIPTION("Platform independent GPIO bitbanging SPI driver");
 +MODULE_LICENSE("GPL v2");
---- a/drivers/spi/Kconfig
-+++ b/drivers/spi/Kconfig
+--- linux-2.6.36-rc7.orig/drivers/spi/Kconfig
++++ linux-2.6.36-rc7/drivers/spi/Kconfig
 @@ -143,6 +143,15 @@ config SPI_GPIO
  	  GPIO operations, you should be able to leverage that for better
  	  speed with a custom version of this driver; see the source code.
@@ -354,8 +361,8 @@ Please use the new mainline SPI-GPIO driver, as of 2.6.29.
  config SPI_IMX
  	tristate "Freescale i.MX SPI controllers"
  	depends on ARCH_MXC
---- a/drivers/spi/Makefile
-+++ b/drivers/spi/Makefile
+--- linux-2.6.36-rc7.orig/drivers/spi/Makefile
++++ linux-2.6.36-rc7/drivers/spi/Makefile
 @@ -23,6 +23,7 @@ obj-$(CONFIG_SPI_DW_PCI)		+= dw_spi_pci.
  obj-$(CONFIG_SPI_DW_MMIO)		+= dw_spi_mmio.o
  obj-$(CONFIG_SPI_EP93XX)		+= ep93xx_spi.o
