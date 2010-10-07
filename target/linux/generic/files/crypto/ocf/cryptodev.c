@@ -1019,7 +1019,9 @@ static struct file_operations cryptodev_fops = {
 	.owner = THIS_MODULE,
 	.open = cryptodev_open,
 	.release = cryptodev_release,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 	.ioctl = cryptodev_ioctl,
+#endif
 #ifdef HAVE_UNLOCKED_IOCTL
 	.unlocked_ioctl = cryptodev_unlocked_ioctl,
 #endif
