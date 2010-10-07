@@ -81,7 +81,7 @@
  void ath_deinit_leds(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
 +++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
-@@ -871,6 +871,7 @@ static void ath9k_led_brightness_work(st
+@@ -860,6 +860,7 @@ static void ath9k_led_brightness_work(st
  	}
  }
  
@@ -89,7 +89,7 @@
  static void ath9k_led_brightness(struct led_classdev *led_cdev,
  				 enum led_brightness brightness)
  {
-@@ -882,6 +883,7 @@ static void ath9k_led_brightness(struct 
+@@ -871,6 +872,7 @@ static void ath9k_led_brightness(struct 
  		ieee80211_queue_delayed_work(priv->hw,
  					     &led->brightness_work, 0);
  }
@@ -97,7 +97,7 @@
  
  static void ath9k_led_stop_brightness(struct ath9k_htc_priv *priv)
  {
-@@ -894,6 +896,7 @@ static void ath9k_led_stop_brightness(st
+@@ -883,6 +885,7 @@ static void ath9k_led_stop_brightness(st
  static int ath9k_register_led(struct ath9k_htc_priv *priv, struct ath_led *led,
  			      char *trigger)
  {
@@ -105,7 +105,7 @@
  	int ret;
  
  	led->priv = priv;
-@@ -911,14 +914,19 @@ static int ath9k_register_led(struct ath
+@@ -900,14 +903,19 @@ static int ath9k_register_led(struct ath
  	INIT_DELAYED_WORK(&led->brightness_work, ath9k_led_brightness_work);
  
  	return ret;
