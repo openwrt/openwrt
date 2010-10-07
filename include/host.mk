@@ -59,6 +59,9 @@ $(TMP_DIR)/.host.mk: $(TOPDIR)/include/host.mk
 		else \
 			echo 'XARGS:=xargs' >> $@; \
 		fi; \
+		PATCH=`which gpatch 2>/dev/null`; \
+		[ -n "$$PATCH" -a -x "$$PATCH" ] || PATCH=`which patch 2>/dev/null`; \
+		echo "PATCH:=$$PATCH" >> $@; \
 	)
 
 endif
