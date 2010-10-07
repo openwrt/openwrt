@@ -1,14 +1,17 @@
 ---
  arch/arm/mach-omap2/board-n8x0.c |   13 +
  drivers/cbus/Kconfig             |   12 +
- drivers/cbus/Makefile            |    1 
- drivers/cbus/n810bm.c            |  396 +++++++++++++++++++++++++++++++++++++++
+ drivers/cbus/Makefile            |    3 
+ drivers/cbus/lipocharge.c        |   63 ++++++
+ drivers/cbus/lipocharge.h        |   50 ++++
+ drivers/cbus/n810bm_main.c       |  397 +++++++++++++++++++++++++++++++++++++++
  drivers/cbus/retu.c              |    4 
- drivers/cbus/retu.h              |    2 
- 6 files changed, 425 insertions(+), 3 deletions(-)
+ drivers/cbus/retu.h              |    3 
+ drivers/cbus/tahvo.h             |    6 
+ 9 files changed, 548 insertions(+), 3 deletions(-)
 
---- linux-2.6.36-rc5.orig/drivers/cbus/Kconfig
-+++ linux-2.6.36-rc5/drivers/cbus/Kconfig
+--- linux-2.6.36-rc7.orig/drivers/cbus/Kconfig
++++ linux-2.6.36-rc7/drivers/cbus/Kconfig
 @@ -94,4 +94,16 @@ config CBUS_RETU_HEADSET
  	  to Retu/Vilma. Detection state and events are exposed through
  	  sysfs.
@@ -26,16 +29,18 @@
 +	  If unsure, say N.
 +
  endmenu
---- linux-2.6.36-rc5.orig/drivers/cbus/Makefile
-+++ linux-2.6.36-rc5/drivers/cbus/Makefile
-@@ -12,3 +12,4 @@ obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.
+--- linux-2.6.36-rc7.orig/drivers/cbus/Makefile
++++ linux-2.6.36-rc7/drivers/cbus/Makefile
+@@ -12,3 +12,6 @@ obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.
  obj-$(CONFIG_CBUS_TAHVO_USER)	+= tahvo-user.o
  obj-$(CONFIG_CBUS_RETU_USER)	+= retu-user.o
  obj-$(CONFIG_CBUS_RETU_HEADSET)	+= retu-headset.o
++n810bm-y			+= n810bm_main.o
++n810bm-y			+= lipocharge.o
 +obj-$(CONFIG_N810BM)		+= n810bm.o
 --- /dev/null
-+++ linux-2.6.36-rc5/drivers/cbus/n810bm.c
-@@ -0,0 +1,396 @@
++++ linux-2.6.36-rc7/drivers/cbus/n810bm_main.c
+@@ -0,0 +1,397 @@
 +/*
 + *   Nokia n810 battery management
 + *
@@ -66,13 +71,11 @@
 +
 +#include "retu.h"
 +#include "tahvo.h"
++#include "lipocharge.h"
 +
 +
 +#define N810BM_CHECK_INTERVAL		(HZ * 5)
-+#define N810BM_MIN_VOLTAGE_THRES	3400 /* Absolute minimum voltage threshold */
-+/* FIXME: Not sure about the actual value of the low threshold, yet.
-+ * We must give userspace a chance to detect undervoltage and perform
-+ * a clean shutdown, before we flip the big switch. */
++#define N810BM_MIN_VOLTAGE_THRES	3300 /* Absolute minimum voltage threshold */
 +
 +
 +/* Battery related retu ADC channels */
@@ -126,8 +129,12 @@
 +
 +struct n810bm {
 +	struct platform_device *pdev;
++
 +	enum n810bm_capacity capacity;
 +	struct timer_list check_timer;
++
++	struct lipocharge *charger;
++
 +	spinlock_t lock;
 +};
 +
@@ -135,7 +142,7 @@
 +static NORET_TYPE void n810bm_emergency(struct n810bm *bm, const char *message) ATTRIB_NORET;
 +static void n810bm_emergency(struct n810bm *bm, const char *message)
 +{
-+	printk(KERN_EMERG "Nokia n810 battery management fatal fault: %s\n", message);
++	printk(KERN_EMERG "n810 battery management fatal fault: %s\n", message);
 +	/* Force a hard shutdown. */
 +	machine_power_off();
 +	panic("n810bm: Failed to halt machine in emergency state\n");
@@ -230,50 +237,33 @@
 +static enum n810bm_capacity n810bm_read_batt_capacity(struct n810bm *bm)
 +{
 +	int adc;
-+	const unsigned int hyst = 16;
++	const unsigned int hyst = 20;
 +
 +	adc = retu_adc_average(bm, RETU_ADC_BSI, 5);
-+	if (adc < 0)
++	if (adc < 0) {
++		dev_err(&bm->pdev->dev, "Failed to read BSI ADC");
 +		return N810BM_CAP_UNKNOWN;
++	}
 +
-+	if (adc >= 0x3AC - hyst && adc <= 0x3AC + hyst)
++	if (adc >= 0x3B5 - hyst && adc <= 0x3B5 + hyst)
 +		return N810BM_CAP_1500MAH;
++
++	dev_err(&bm->pdev->dev, "Capacity indicator 0x%X unknown", adc);
 +
 +	return N810BM_CAP_UNKNOWN;
 +}
 +
-+struct mv2p {
-+	unsigned int mv;
-+	unsigned int p;
-+};
-+
 +/* Convert a battery voltage (in mV) to percentage. */
 +static unsigned int n810bm_mvolt2percent(unsigned int mv)
 +{
-+	/* FIXME: Create a correct table. */
-+	static const struct mv2p table[] = {
-+		{ .mv = 4200, .p = 100, },
-+		{ .mv = 4150, .p = 90, },
-+		{ .mv = 4100, .p = 80, },
-+		{ .mv = 4050, .p = 70, },
-+		{ .mv = 4000, .p = 60, },
-+		{ .mv = 3950, .p = 50, },
-+		{ .mv = 3900, .p = 40, },
-+		{ .mv = 3850, .p = 30, },
-+		{ .mv = 3800, .p = 20, },
-+		{ .mv = 3750, .p = 10, },
-+		{ .mv = 3700, .p = 0, },
-+	};
-+	const struct mv2p *e;
-+	unsigned int i;
++	const unsigned int minv = 3700;
++	const unsigned int maxv = 4150;
++	unsigned int percent;
 +
-+	for (i = 0; i < ARRAY_SIZE(table); i++) {
-+		e = &table[i];
-+		if (mv >= e->mv)
-+			return e->p;
-+	}
++	mv = clamp(mv, minv, maxv);
++	percent = (mv - minv) * 100 / (maxv - minv);
 +
-+	return 0;
++	return percent;
 +}
 +
 +static void n810bm_check_timer(unsigned long data)
@@ -294,6 +284,15 @@
 +	spin_unlock_irqrestore(&bm->lock, flags);
 +
 +	return;
++}
++
++static void n810bm_adc_irq_handler(unsigned long data)
++{
++	struct n810bm *bm = (struct n810bm *)data;
++
++	retu_ack_irq(RETU_INT_ADCS);
++	//TODO
++printk("n810bm: ADC timer triggered\n");
 +}
 +
 +static ssize_t n810bm_attr_charge_show(struct device *dev,
@@ -378,6 +377,10 @@
 +	err = device_create_file(&pdev->dev, &dev_attr_batt_capacity);
 +	if (err)
 +		goto err_rem_charge;
++	err = retu_request_irq(RETU_INT_ADCS, n810bm_adc_irq_handler,
++			       (unsigned long)bm, "n810bm");
++	if (err)
++		goto err_rem_capa;
 +
 +	mod_timer(&bm->check_timer, round_jiffies(jiffies + N810BM_CHECK_INTERVAL));
 +
@@ -385,6 +388,8 @@
 +
 +	return 0;
 +
++err_rem_capa:
++	device_remove_file(&pdev->dev, &dev_attr_batt_capacity);
 +err_rem_charge:
 +	device_remove_file(&pdev->dev, &dev_attr_batt_charge);
 +err_exit:
@@ -399,6 +404,7 @@
 +{
 +	struct n810bm *bm = platform_get_drvdata(pdev);
 +
++	retu_free_irq(RETU_INT_ADCS);
 +	del_timer_sync(&bm->check_timer);
 +	device_remove_file(&pdev->dev, &dev_attr_batt_capacity);
 +	device_remove_file(&pdev->dev, &dev_attr_batt_charge);
@@ -432,8 +438,8 @@
 +MODULE_DESCRIPTION("Nokia n810 battery management");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Michael Buesch");
---- linux-2.6.36-rc5.orig/drivers/cbus/retu.c
-+++ linux-2.6.36-rc5/drivers/cbus/retu.c
+--- linux-2.6.36-rc7.orig/drivers/cbus/retu.c
++++ linux-2.6.36-rc7/drivers/cbus/retu.c
 @@ -85,10 +85,10 @@ int retu_read_reg(int reg)
   *
   * This function writes a value to the specified register
@@ -447,9 +453,17 @@
  }
  
  void retu_set_clear_reg_bits(int reg, u16 set, u16 clear)
---- linux-2.6.36-rc5.orig/drivers/cbus/retu.h
-+++ linux-2.6.36-rc5/drivers/cbus/retu.h
-@@ -58,7 +58,7 @@
+--- linux-2.6.36-rc7.orig/drivers/cbus/retu.h
++++ linux-2.6.36-rc7/drivers/cbus/retu.h
+@@ -39,6 +39,7 @@
+ #define RETU_REG_CC2		0x0e	/* Common control register 2 */
+ #define RETU_REG_CTRL_CLR	0x0f	/* Regulator clear register */
+ #define RETU_REG_CTRL_SET	0x10	/* Regulator set register */
++#define RETU_REG_UNK1		0x14	/* 0x1000 is set when charger is plugged in */
+ #define RETU_REG_STATUS		0x16	/* Status register */
+ #define RETU_REG_WATCHDOG	0x17	/* Watchdog register */
+ #define RETU_REG_AUDTXR		0x18	/* Audio Codec Tx register */
+@@ -58,7 +59,7 @@
  #define	MAX_RETU_IRQ_HANDLERS	16
  
  int retu_read_reg(int reg);
@@ -458,8 +472,8 @@
  void retu_set_clear_reg_bits(int reg, u16 set, u16 clear);
  int retu_read_adc(int channel);
  int retu_request_irq(int id, void *irq_handler, unsigned long arg, char *name);
---- linux-2.6.36-rc5.orig/arch/arm/mach-omap2/board-n8x0.c
-+++ linux-2.6.36-rc5/arch/arm/mach-omap2/board-n8x0.c
+--- linux-2.6.36-rc7.orig/arch/arm/mach-omap2/board-n8x0.c
++++ linux-2.6.36-rc7/arch/arm/mach-omap2/board-n8x0.c
 @@ -906,6 +906,17 @@ static void __init n8x0_gpio_switches_in
  				    ARRAY_SIZE(n8x0_gpio_switches));
  }
@@ -487,3 +501,139 @@
  }
  
  MACHINE_START(NOKIA_N800, "Nokia N800")
+--- /dev/null
++++ linux-2.6.36-rc7/drivers/cbus/lipocharge.c
+@@ -0,0 +1,63 @@
++/*
++ *   Generic LIPO battery charger
++ *
++ *   Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
++ *
++ *   This program is free software; you can redistribute it and/or
++ *   modify it under the terms of the GNU General Public License
++ *   as published by the Free Software Foundation; either version 2
++ *   of the License, or (at your option) any later version.
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *   GNU General Public License for more details.
++ */
++
++#include "lipocharge.h"
++
++#include <linux/slab.h>
++
++
++static void lipocharge_timer(unsigned long data)
++{
++	struct lipocharge *c = (struct lipocharge *)data;
++
++	spin_lock(&c->lock);
++	//TODO
++	spin_unlock(&c->lock);
++}
++
++struct lipocharge * lipocharge_alloc(gfp_t gfp)
++{
++	struct lipocharge *c;
++
++	c = kzalloc(sizeof(*c), gfp);
++	if (!c)
++		return NULL;
++	spin_lock_init(&c->lock);
++	setup_timer(&c->timer, lipocharge_timer, (unsigned long)c);
++
++	return c;
++}
++
++void lipocharge_free(struct lipocharge *c)
++{
++	kfree(c);
++}
++
++int lipocharge_start(struct lipocharge *c)
++{
++	if (!c->set_current || !c->get_voltage ||
++	    !c->finished || !c->emergency)
++		return -EINVAL;
++	if (!c->top_voltage || c->top_voltage > 4200)
++		return -EINVAL;
++	//TODO
++}
++
++void lipocharge_stop(struct lipocharge *c)
++{
++	del_timer_sync(&c->timer);
++	//TODO
++}
+--- /dev/null
++++ linux-2.6.36-rc7/drivers/cbus/lipocharge.h
+@@ -0,0 +1,50 @@
++#ifndef LIPOCHARGE_H_
++#define LIPOCHARGE_H_
++
++#include <linux/timer.h>
++#include <linux/spinlock.h>
++
++
++#define LIPORATE(a,b)	(((a) * 1000) + (b))
++#define LIPORATE_1C	LIPORATE(1,0)	/* 1C */
++#define LIPORATE_p8C	LIPORATE(0,8)	/* 0.8C */
++
++/** struct lipocharge - A generic LIPO charger
++ *
++ * @capacity: Battery capacity in mAh.
++ * @rate: Charge rate.
++ * @top_voltage: Fully charged voltage, in mV.
++ *
++ * @set_current: Set the charge current, in mA.
++ * @get_voltage: Get the battery voltage, in mV.
++ *
++ * @emergency: Something went wrong. Force shutdown.
++ *
++ * @priv: opaque pointer.
++ */
++struct lipocharge
++{
++	unsigned int capacity;
++	unsigned int rate;
++	unsigned int top_voltage;
++
++	int (*set_current)(struct lipocharge *c, unsigned int ma);
++	int (*get_voltage)(struct lipocharge *c, unsigned int *mv);
++
++	void (*finished)(struct lipocharge *c);
++	void (*emergency)(struct lipocharge *c);
++
++	void *priv;
++
++	/* internal */
++	spinlock_t lock;
++	struct timer_list timer;
++};
++
++struct lipocharge * lipocharge_alloc(gfp_t gfp);
++void lipocharge_free(struct lipocharge *c);
++
++int lipocharge_start(struct lipocharge *c);
++void lipocharge_stop(struct lipocharge *c);
++
++#endif /* LIPOCHARGE_H_ */
+--- linux-2.6.36-rc7.orig/drivers/cbus/tahvo.h
++++ linux-2.6.36-rc7/drivers/cbus/tahvo.h
+@@ -30,8 +30,14 @@
+ #define TAHVO_REG_IDR		0x01	/* Interrupt ID */
+ #define TAHVO_REG_IDSR		0x02	/* Interrupt status */
+ #define TAHVO_REG_IMR		0x03	/* Interrupt mask */
++#define TAHVO_REG_CHGCURR	0x04	/* Charge current control (8-bit) */
+ #define TAHVO_REG_LEDPWMR	0x05	/* LED PWM */
+ #define TAHVO_REG_USBR		0x06	/* USB control */
++#define TAHVO_REG_CHGCTL	0x08	/* Charge control register */
++#define  TAHVO_REG_CHGCTL_EN	0x0001	/* Global charge enable */
++#define TAHVO_REG_CHGCTL2	0x0c	/* Charge control register 2 */
++#define TAHVO_REG_BATCURR	0x0d	/* Battery (dis)charge current (signed 16-bit) */
++
+ #define TAHVO_REG_MAX		0x0d
+ 
+ /* Interrupt sources */
