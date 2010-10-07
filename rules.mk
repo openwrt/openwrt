@@ -160,7 +160,7 @@ HOST_LDFLAGS:=-L$(STAGING_DIR_HOST)/lib
 
 TARGET_CC:=$(TARGET_CROSS)gcc
 TARGET_CXX:=$(if $(CONFIG_INSTALL_LIBSTDCPP),$(TARGET_CROSS)g++,no)
-PATCH:=$(SCRIPT_DIR)/patch-kernel.sh
+KPATCH:=$(SCRIPT_DIR)/patch-kernel.sh
 SED:=$(STAGING_DIR_HOST)/bin/sed -i -e
 CP:=cp -fpR
 LN:=ln -sf
