@@ -2,18 +2,18 @@
  drivers/bluetooth/Kconfig           |   10 
  drivers/bluetooth/Makefile          |    1 
  drivers/bluetooth/hci_h4p/Makefile  |    7 
- drivers/bluetooth/hci_h4p/core.c    | 1023 ++++++++++++++++++++++++++++++++++++
+ drivers/bluetooth/hci_h4p/core.c    | 1043 ++++++++++++++++++++++++++++++++++++
  drivers/bluetooth/hci_h4p/fw-csr.c  |  149 +++++
  drivers/bluetooth/hci_h4p/fw-ti.c   |   90 +++
  drivers/bluetooth/hci_h4p/fw.c      |  155 +++++
  drivers/bluetooth/hci_h4p/hci_h4p.h |  183 ++++++
  drivers/bluetooth/hci_h4p/sysfs.c   |   84 ++
  drivers/bluetooth/hci_h4p/uart.c    |  169 +++++
- 10 files changed, 1871 insertions(+)
+ 10 files changed, 1891 insertions(+)
 
 --- /dev/null
-+++ linux-2.6.36-rc4/drivers/bluetooth/hci_h4p/core.c
-@@ -0,0 +1,1023 @@
++++ linux-2.6.36-rc7/drivers/bluetooth/hci_h4p/core.c
+@@ -0,0 +1,1043 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
 + *
@@ -55,7 +55,7 @@
 +#include <mach/hardware.h>
 +#include <mach/board.h>
 +#include <mach/irqs.h>
-+//#include <mach/pm.h>
++#include <plat/serial.h>
 +
 +#include <net/bluetooth/bluetooth.h>
 +#include <net/bluetooth/hci_core.h>
@@ -778,7 +778,7 @@
 +	}
 +	info->hdev = hdev;
 +
-+	hdev->type = HCI_UART;
++	hdev->dev_type = HCI_UART;
 +	hdev->driver_data = info;
 +
 +	hdev->open = hci_h4p_hci_open;
@@ -882,6 +882,26 @@
 +	gpio_direction_output(info->bt_wakeup_gpio, 0);
 +	gpio_direction_input(info->host_wakeup_gpio);
 +
++//FIXME
++#if defined(CONFIG_ARCH_OMAP1)
++# define OMAP_UART1_BASE	OMAP1_UART1_BASE
++# define OMAP_UART2_BASE	OMAP1_UART2_BASE
++# define OMAP_UART3_BASE	OMAP1_UART3_BASE
++#elif defined(CONFIG_ARCH_OMAP2)
++# define OMAP_UART1_BASE	OMAP2_UART1_BASE
++# define OMAP_UART2_BASE	OMAP2_UART2_BASE
++# define OMAP_UART3_BASE	OMAP2_UART3_BASE
++#elif defined(CONFIG_ARCH_OMAP3)
++# define OMAP_UART1_BASE	OMAP3_UART1_BASE
++# define OMAP_UART2_BASE	OMAP3_UART2_BASE
++# define OMAP_UART3_BASE	OMAP3_UART3_BASE
++#elif defined(CONFIG_ARCH_OMAP4)
++# define OMAP_UART1_BASE	OMAP4_UART1_BASE
++# define OMAP_UART2_BASE	OMAP4_UART2_BASE
++# define OMAP_UART3_BASE	OMAP4_UART3_BASE
++#else
++# error
++#endif
 +	switch (bt_config->bt_uart) {
 +	case 1:
 +		if (cpu_is_omap16xx()) {
@@ -1038,7 +1058,7 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Ville Tervo");
 --- /dev/null
-+++ linux-2.6.36-rc4/drivers/bluetooth/hci_h4p/fw.c
++++ linux-2.6.36-rc7/drivers/bluetooth/hci_h4p/fw.c
 @@ -0,0 +1,155 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1196,7 +1216,7 @@
 +	return;
 +}
 --- /dev/null
-+++ linux-2.6.36-rc4/drivers/bluetooth/hci_h4p/fw-csr.c
++++ linux-2.6.36-rc7/drivers/bluetooth/hci_h4p/fw-csr.c
 @@ -0,0 +1,149 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1348,7 +1368,7 @@
 +	return 0;
 +}
 --- /dev/null
-+++ linux-2.6.36-rc4/drivers/bluetooth/hci_h4p/fw-ti.c
++++ linux-2.6.36-rc7/drivers/bluetooth/hci_h4p/fw-ti.c
 @@ -0,0 +1,90 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1441,7 +1461,7 @@
 +	return 0;
 +}
 --- /dev/null
-+++ linux-2.6.36-rc4/drivers/bluetooth/hci_h4p/hci_h4p.h
++++ linux-2.6.36-rc7/drivers/bluetooth/hci_h4p/hci_h4p.h
 @@ -0,0 +1,183 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1627,7 +1647,7 @@
 +
 +#endif /* __DRIVERS_BLUETOOTH_HCI_H4P_H */
 --- /dev/null
-+++ linux-2.6.36-rc4/drivers/bluetooth/hci_h4p/Makefile
++++ linux-2.6.36-rc7/drivers/bluetooth/hci_h4p/Makefile
 @@ -0,0 +1,7 @@
 +#
 +# Makefile for the Linux Bluetooth HCI device drivers.
@@ -1637,7 +1657,7 @@
 +
 +hci_h4p-objs := core.o fw.o uart.o sysfs.o fw-ti.o fw-csr.o
 --- /dev/null
-+++ linux-2.6.36-rc4/drivers/bluetooth/hci_h4p/sysfs.c
++++ linux-2.6.36-rc7/drivers/bluetooth/hci_h4p/sysfs.c
 @@ -0,0 +1,84 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1724,7 +1744,7 @@
 +
 +#endif
 --- /dev/null
-+++ linux-2.6.36-rc4/drivers/bluetooth/hci_h4p/uart.c
++++ linux-2.6.36-rc7/drivers/bluetooth/hci_h4p/uart.c
 @@ -0,0 +1,169 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1895,8 +1915,8 @@
 +
 +	return 0;
 +}
---- linux-2.6.36-rc4.orig/drivers/bluetooth/Kconfig
-+++ linux-2.6.36-rc4/drivers/bluetooth/Kconfig
+--- linux-2.6.36-rc7.orig/drivers/bluetooth/Kconfig
++++ linux-2.6.36-rc7/drivers/bluetooth/Kconfig
 @@ -173,6 +173,16 @@ config BT_HCIBTUART
  	  Say Y here to compile support for HCI UART devices into the
  	  kernel or say M to compile it as module (btuart_cs).
@@ -1914,8 +1934,8 @@
  config BT_HCIVHCI
  	tristate "HCI VHCI (Virtual HCI device) driver"
  	help
---- linux-2.6.36-rc4.orig/drivers/bluetooth/Makefile
-+++ linux-2.6.36-rc4/drivers/bluetooth/Makefile
+--- linux-2.6.36-rc7.orig/drivers/bluetooth/Makefile
++++ linux-2.6.36-rc7/drivers/bluetooth/Makefile
 @@ -11,6 +11,7 @@ obj-$(CONFIG_BT_HCIDTL1)	+= dtl1_cs.o
  obj-$(CONFIG_BT_HCIBT3C)	+= bt3c_cs.o
  obj-$(CONFIG_BT_HCIBLUECARD)	+= bluecard_cs.o
