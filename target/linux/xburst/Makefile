@@ -16,8 +16,6 @@ LINUX_VERSION:=2.6.35.7
 
 DEVICE_TYPE=other
 
-CFLAGS:=-march=mips32
-
 include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
