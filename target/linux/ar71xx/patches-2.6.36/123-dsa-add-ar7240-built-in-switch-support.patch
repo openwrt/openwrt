@@ -1,0 +1,28 @@
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -29,6 +29,15 @@ config NET_DSA_TAG_QINQ
+ 
+ 
+ # switch drivers
++config NET_DSA_AR7240
++	bool "Atheros AR7240 built-in ethernet switch support"
++	depends on ATHEROS_AR71XX
++	default n
++	select NET_DSA_TAG_QINQ
++	---help---
++	  This enables support for the built-in ethernet switch of the
++	  Atheros AR7240 SoC.
++
+ config NET_DSA_MV88E6XXX
+ 	bool
+ 	default n
+--- a/net/dsa/Makefile
++++ b/net/dsa/Makefile
+@@ -5,6 +5,7 @@ obj-$(CONFIG_NET_DSA_TAG_QINQ) += tag_qi
+ obj-$(CONFIG_NET_DSA_TAG_TRAILER) += tag_trailer.o
+ 
+ # switch drivers
++obj-$(CONFIG_NET_DSA_AR7240) += ar7240.o
+ obj-$(CONFIG_NET_DSA_MV88E6XXX) += mv88e6xxx.o
+ obj-$(CONFIG_NET_DSA_MV88E6060) += mv88e6060.o
+ obj-$(CONFIG_NET_DSA_MV88E6063) += mv88e6063.o
