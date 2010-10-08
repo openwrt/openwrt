@@ -88,7 +88,10 @@ fw_load_redirect() {
 
 	[ "$redirect_proto" == "tcpudp" ] && redirect_proto="tcp udp"
 	for redirect_proto in $redirect_proto; do
-		fw add $mode n $natchain $redirect_target ^ { $redirect_src_ip $redirect_dest_ip } { \
+		local pos
+		eval 'pos=$((++FW__REDIR_COUNT_'${mode#G}'_'$natchain'))'
+
+		fw add $mode n $natchain $redirect_target $pos { $redirect_src_ip $redirect_dest_ip } { \
 			$srcaddr $srcdaddr \
 			${redirect_proto:+-p $redirect_proto} \
 			${srcports:+--sport $srcports} \
