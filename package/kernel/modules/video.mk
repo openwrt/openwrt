@@ -87,7 +87,7 @@ $(eval $(call KernelPackage,video-konica))
 define KernelPackage/video-ov511
   TITLE:=OV511 USB webcam support
   DEPENDS:=@USB_SUPPORT +kmod-usb-core
-  KCONFIG:=CONFIG_VIDEO_OV511
+  KCONFIG:=CONFIG_USB_OV511
   FILES:=$(LINUX_DIR)/drivers/media/video/ov511.ko
   AUTOLOAD:=$(call AutoLoad,70,ov511)
   $(call AddDepends/video)
