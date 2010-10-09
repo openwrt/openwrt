@@ -1,0 +1,189 @@
+--- a/scripts/admin-clean.sh
++++ b/scripts/admin-clean.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ if [ -d net ] ; then
+ 	make clean
+ fi
+--- a/scripts/admin-refresh.sh
++++ b/scripts/admin-refresh.sh
+@@ -1,3 +1,3 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ ./scripts/admin-clean.sh $@
+ ./scripts/admin-update.sh $@
+--- a/scripts/admin-update.sh
++++ b/scripts/admin-update.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # 
+ # Copyright 2007, 2008, 2010	Luis R. Rodriguez <mcgrof@winlab.rutgers.edu>
+ #
+--- a/scripts/athenable
++++ b/scripts/athenable
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ #
+ # Copyright 2007	Luis R. Rodriguez <mcgrof@winlab.rutgers.edu>
+ #
+--- a/scripts/athload
++++ b/scripts/athload
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # Copyright 2007	Luis R. Rodriguez <mcgrof@winlab.rutgers.edu>
+ #
+ # Loads ath5k or madwifi
+--- a/scripts/b43enable
++++ b/scripts/b43enable
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ #
+ # Copyright 2007	Luis R. Rodriguez <mcgrof@winlab.rutgers.edu>
+ #
+--- a/scripts/b43load
++++ b/scripts/b43load
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # Copyright 2007	Luis R. Rodriguez <mcgrof@winlab.rutgers.edu>
+ #
+ # Loads new broadcom drivers (b43 and b43legacy) or the old ones (bcm43xx)
+--- a/scripts/btload.sh
++++ b/scripts/btload.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ MODULES="bluetooth btusb l2cap sco hidp rfcomm bnep"
+ for i in $MODULES; do
+ 	echo Loading $i...
+--- a/scripts/btunload.sh
++++ b/scripts/btunload.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ MODULES="hidp rfcomm bnep l2cap sco btusb bluetooth"
+ echo Stoping bluetooth service..
+ /etc/init.d/bluetooth stop
+--- a/scripts/check_config.sh
++++ b/scripts/check_config.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # This script checks the compat-wireless configuration file and if changes were made
+ # regenerates the compat_autoconf header.
+ 
+--- a/scripts/check_depmod
++++ b/scripts/check_depmod
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # Copyright 2009	Luis R. Rodriguez <mcgrof@gmail.com>
+ # 
+ # Ensures your distribution likes to prefer updates/ over the kernel/
+--- a/scripts/compress_modules
++++ b/scripts/compress_modules
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # To be used by distributions using compressed modules
+ 
+ COMPRESSION_FOUND="n"
+--- a/scripts/driver-select
++++ b/scripts/driver-select
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # Copyright 2009        Luis R. Rodriguez <mcgrof@gmail.com>
+ #
+ # This script allows you to select your compat-wireless driver and
+--- a/scripts/gen-compat-autoconf.sh
++++ b/scripts/gen-compat-autoconf.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # 
+ # Copyright 2007	Luis R. Rodriguez <mcgrof@winlab.rutgers.edu>
+ #
+--- a/scripts/gen-stable-release.sh
++++ b/scripts/gen-stable-release.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # Copyright 2009  Luis R. Rodriguez <mcgrof@gmail.com>
+ #
+ # You can use this to make stable compat-wireless releases
+--- a/scripts/iwl-enable
++++ b/scripts/iwl-enable
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ #
+ # Copyright 2007	Luis R. Rodriguez <lrodriguez@atheros.com>
+ #
+--- a/scripts/iwl-load
++++ b/scripts/iwl-load
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # Copyright 2008	Luis R. Rodriguez <lrodriguez@atheros.com>
+ #
+ # Loads new Intel iwl (iwlagn) or the old ones (iwl4965)
+--- a/scripts/load.sh
++++ b/scripts/load.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ MODULES="ipw2100 ipw2200 libertas_cs usb8xxx"
+ MODULES="$MODULES p54pci p54usb"
+ MODULES="$MODULES adm8211 zd1211rw"
+--- a/scripts/modlib.sh
++++ b/scripts/modlib.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ #
+ # Copyright 2007	Luis R. Rodriguez <mcgrof@winlab.rutgers.edu>
+ #
+--- a/scripts/skip-colors
++++ b/scripts/skip-colors
+@@ -1,2 +1,2 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ perl -pe 's|(\e)\[(\d+)(;*)(\d*)(\w)||g'
+--- a/scripts/unload.sh
++++ b/scripts/unload.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ 
+ # The old stack drivers and the mac80211 rc80211_simple modules 
+ # which is no longer on recent kernels (its internal)
+--- a/scripts/update-initramfs
++++ b/scripts/update-initramfs
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ # Copyright 2009        Luis R. Rodriguez <mcgrof@gmail.com>
+ #
+ # Since we provide ssb, the Ethernet module b44 some people may
+--- a/scripts/wlload.sh
++++ b/scripts/wlload.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ MODULES="ipw2100 ipw2200 libertas_cs usb8xxx"
+ MODULES="$MODULES p54pci p54usb"
+ MODULES="$MODULES adm8211 zd1211rw"
+--- a/scripts/wlunload.sh
++++ b/scripts/wlunload.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!/usr/bin/env bash
+ 
+ # The old stack drivers and the mac80211 rc80211_simple modules
+ # which is no longer on recent kernels (its internal)
