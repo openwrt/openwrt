@@ -1,6 +1,6 @@
 --- a/include/linux/compat-2.6.37.h
 +++ b/include/linux/compat-2.6.37.h
-@@ -45,6 +45,68 @@ static inline void skb_checksum_none_ass
+@@ -45,6 +45,71 @@ static inline void skb_checksum_none_ass
  
  #define pcmcia_enable_device(link)	pcmcia_request_configuration(link, &link->conf)
  
@@ -60,7 +60,10 @@
 +
 +int genl_unregister_family(struct genl_family *family);
 +
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32))
 +#define genl_info_net(_info) genl_info_net((_info)->info)
++#endif
++
 +#define genlmsg_reply(_msg, _info) genlmsg_reply(_msg, (_info)->info)
 +#define genlmsg_put(_skb, _pid, _seq, _fam, _flags, _cmd) genlmsg_put(_skb, _pid, _seq, &(_fam)->family, _flags, _cmd)
 +#define genl_register_mc_group(_fam, _grp) genl_register_mc_group(&(_fam)->family, _grp)
@@ -188,3 +191,93 @@
 +EXPORT_SYMBOL(compat_genl_unregister_family);
 +
  #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37) */
+--- a/compat/compat-2.6.31.c
++++ /dev/null
+@@ -1,64 +0,0 @@
+-/*
+- * Copyright 2007	Luis R. Rodriguez <mcgrof@winlab.rutgers.edu>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * Compatibility file for Linux wireless for kernels 2.6.31.
+- */
+-
+-#include <linux/compat.h>
+-
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31))
+-
+-#include <linux/netdevice.h>
+-
+-/**
+- * genl_register_family_with_ops - register a generic netlink family
+- * @family: generic netlink family
+- * @ops: operations to be registered
+- * @n_ops: number of elements to register
+- *
+- * Registers the specified family and operations from the specified table.
+- * Only one family may be registered with the same family name or identifier.
+- *
+- * The family id may equal GENL_ID_GENERATE causing an unique id to
+- * be automatically generated and assigned.
+- *
+- * Either a doit or dumpit callback must be specified for every registered
+- * operation or the function will fail. Only one operation structure per
+- * command identifier may be registered.
+- *
+- * See include/net/genetlink.h for more documenation on the operations
+- * structure.
+- *
+- * This is equivalent to calling genl_register_family() followed by
+- * genl_register_ops() for every operation entry in the table taking
+- * care to unregister the family on error path.
+- *
+- * Return 0 on success or a negative error code.
+- */
+-int genl_register_family_with_ops(struct genl_family *family,
+-	struct genl_ops *ops, size_t n_ops)
+-{
+-	int err, i;
+-
+-	err = genl_register_family(family);
+-	if (err)
+-		return err;
+-
+-	for (i = 0; i < n_ops; ++i, ++ops) {
+-		err = genl_register_ops(family, ops);
+-		if (err)
+-			goto err_out;
+-	}
+-	return 0;
+-err_out:
+-	genl_unregister_family(family);
+-	return err;
+-}
+-EXPORT_SYMBOL(genl_register_family_with_ops);
+-
+-#endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,31)) */
+-
+--- a/include/linux/compat-2.6.31.h
++++ b/include/linux/compat-2.6.31.h
+@@ -114,10 +114,6 @@ static inline struct rtable *skb_rtable(
+ 	return (struct rtable *)skb_dst(skb);
+ }
+ 
+-extern int genl_register_family_with_ops(struct genl_family *family,
+-	struct genl_ops *ops, size_t n_ops);
+-
+-
+ /* Backport threaded IRQ support */
+ 
+ static inline
+--- a/compat/Makefile
++++ b/compat/Makefile
+@@ -23,7 +23,6 @@ compat-$(CONFIG_COMPAT_KERNEL_27) += com
+ compat-$(CONFIG_COMPAT_KERNEL_28) += compat-2.6.28.o
+ compat-$(CONFIG_COMPAT_KERNEL_29) += compat-2.6.29.o
+ compat-$(CONFIG_COMPAT_KERNEL_30) += compat-2.6.30.o
+-compat-$(CONFIG_COMPAT_KERNEL_31) += compat-2.6.31.o
+ compat-$(CONFIG_COMPAT_KERNEL_32) += compat-2.6.32.o
+ compat-$(CONFIG_COMPAT_KERNEL_33) += compat-2.6.33.o
+ compat-$(CONFIG_COMPAT_KERNEL_35) += compat-2.6.35.o
