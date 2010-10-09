@@ -15,6 +15,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/gdb
 PKG_MD5SUM:=c9da266b884fb8fa54df786dfaadbc7a
 
+PKG_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/gdb/Default
@@ -55,7 +57,7 @@ CONFIGURE_VARS+= \
 	ac_cv_search_tgetent="$(TARGET_LDFLAGS) -lncurses -lreadline"
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
 		CPPFLAGS="$(TARGET_CPPFLAGS)" \
 		all
