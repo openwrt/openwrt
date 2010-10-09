@@ -305,9 +305,9 @@ MAKE_FLAGS := \
 	KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 	KBUILD_OUTPUT="$(LINUX_DIR)" \
 
-define Build/Prepare
-$(call Build/Prepare/Default)
+define Build/Configure
 	(cd $(PKG_BUILD_DIR); ./autogen.sh)
+$(call Build/Configure/Default)
 endef
 
 define Build/InstallDev
