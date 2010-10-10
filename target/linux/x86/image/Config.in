@@ -8,7 +8,7 @@ config X86_GRUB_IMAGES
 config X86_GRUB_CONSOLE
 	bool "Use Console Terminal (in addition to Serial)"
 	depends X86_GRUB_IMAGES
-	default n if (TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501)
+	default n if (TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501 || TARGET_x86_geos)
 	default y
 
 config X86_GRUB_SERIAL
@@ -20,7 +20,7 @@ config X86_GRUB_SERIAL
 config X86_GRUB_BAUDRATE
 	int "Serial port baud rate"
 	depends X86_GRUB_IMAGES
-	default 19200 if TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501
+	default 19200 if TARGET_x86_generic_Soekris45xx || TARGET_x86_generic_Soekris48xx || TARGET_x86_net5501 || TARGET_x86_geos
 	default 38400
 
 config X86_GRUB_BOOTOPTS
