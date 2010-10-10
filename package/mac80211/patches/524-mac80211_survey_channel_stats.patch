@@ -81,7 +81,7 @@
  };
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -3176,6 +3176,21 @@ static int nl80211_send_survey(struct sk
+@@ -3153,6 +3153,21 @@ static int nl80211_send_survey(struct sk
  			    survey->noise);
  	if (survey->filled & SURVEY_INFO_IN_USE)
  		NLA_PUT_FLAG(msg, NL80211_SURVEY_INFO_IN_USE);
