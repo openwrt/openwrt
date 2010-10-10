@@ -374,7 +374,7 @@ endef
 
 $(eval $(call KernelPackage,crypto-xts))
 
-define KernelPackage/crypto-mv_cesa
+define KernelPackage/crypto-mv-cesa
    TITLE:=Marvell crypto engine
    KCONFIG:=CONFIG_CRYPTO_DEV_MV_CESA
    FILES:=$(LINUX_DIR)/drivers/crypto/mv_cesa.ko
@@ -383,4 +383,4 @@ define KernelPackage/crypto-mv_cesa
    DEPENDS:=kmod-crypto-core @TARGET_kirkwood||TARGET_orion
 endef
 
-$(eval $(call KernelPackage,crypto-mv_cesa))
+$(eval $(call KernelPackage,crypto-mv-cesa))
