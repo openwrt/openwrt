@@ -1,0 +1,25 @@
+BOARDNAME:=Traverse Geos
+FEATURES:=squashfs pci usb gpio
+DEFAULT_PACKAGES += kmod-ata-via-sata kmod-crypto-hw-geode \
+            kmod-gpio-cs5535 kmod-gpio-nsc \
+            kmod-wdt-geode kmod-hwmon-core kmod-hwmon-lm90 \
+            kmod-8139cp kmod-solos-pci \
+            kmod-i2c-core kmod-i2c-gpio \
+            kmod-i2c-algo-bit kmod-i2c-algo-pca kmod-i2c-algo-pcf \
+            kmod-usb-core kmod-usb2 kmod-usb-uhci \
+            kmod-cfg80211 kmod-mac80211 \
+            kmod-mppe kmod-pppoe kmod-pppoa kmod-pppol2tp \
+            kmod-ath kmod-ath5k kmod-ath9k
+
+CS5535_MASK:=0x0E000048
+
+CFLAGS += -Os -march=k6-2 -fno-align-functions -fno-align-loops -fno-align-jumps \
+      -fno-align-labels
+
+define Target/Description
+    Build firmware images for Traverse Geos board
+endef
+
+define KernelPackage/gpio-cs5535/install
+     sed -i -r -e 's/$$$$$$$$/ mask=$(CS5535_MASK)/' $(1)/etc/modules.d/??-gpio-cs5535
+endef
