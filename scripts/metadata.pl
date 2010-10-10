@@ -196,9 +196,7 @@ sub print_target($) {
 	my $target = shift;
 	my $features = target_config_features(@{$target->{features}});
 	my $help = $target->{desc};
-	my $kernel = $target->{kernel};
 	my $confstr;
-	$kernel =~ tr/./_/;
 
 	chomp $features;
 	$features .= "\n";
@@ -214,7 +212,6 @@ sub print_target($) {
 	$confstr = <<EOF;
 config TARGET_$target->{conf}
 	bool "$target->{name}"
-	select LINUX_$kernel
 	select LINUX_$v
 EOF
 	}
