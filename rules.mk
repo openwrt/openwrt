@@ -254,4 +254,16 @@ all:
 FORCE: ;
 .PHONY: FORCE
 
+val.%:
+	@$(if $(filter undefined,$(origin $*)),\
+		echo "$* undefined" >&2, \
+		echo '$(subst ','"'"',$($*))' \
+	)
+
+var.%:
+	@$(if $(filter undefined,$(origin $*)),\
+		echo "$* undefined" >&2, \
+		echo "$*='"'$(subst ','"'\"'\"'"',$($*))'"'" \
+	)
+
 endif #__rules_inc
