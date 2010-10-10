@@ -11,7 +11,7 @@
  	struct tasklet_struct bcon_tasklet;
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -176,6 +176,49 @@ static void ath_start_ani(struct ath_com
+@@ -176,6 +176,44 @@ static void ath_start_ani(struct ath_com
  			msecs_to_jiffies((u32)ah->config.ani_poll_interval));
  }
  
@@ -34,10 +34,7 @@
 +	int pos = ah->curchan - &ah->channels[0];
 +	struct survey_info *survey = &sc->survey[pos];
 +	struct ath_cycle_counters *cc = &common->cc_survey;
-+	unsigned long flags;
 +	unsigned int div = common->clockrate * 1000;
-+
-+	spin_lock_irqsave(&common->cc_lock, flags);
 +
 +	ath_hw_cycle_counters_update(common);
 +
@@ -54,14 +51,20 @@
 +	memset(cc, 0, sizeof(*cc));
 +
 +	ath_update_survey_nf(sc, pos);
-+
-+	spin_unlock_irqrestore(&common->cc_lock, flags);
 +}
 +
  /*
   * Set/change channels.  If the channel is really being changed, it's done
   * by reseting the chip.  To accomplish this we must first cleanup any pending
-@@ -1533,7 +1576,8 @@ static int ath9k_config(struct ieee80211
+@@ -454,6 +492,7 @@ void ath_ani_calibrate(unsigned long dat
+ 		if (aniflag) {
+ 			spin_lock_irqsave(&common->cc_lock, flags);
+ 			ath9k_hw_ani_monitor(ah, ah->curchan);
++			ath_update_survey_stats(sc);
+ 			spin_unlock_irqrestore(&common->cc_lock, flags);
+ 		}
+ 
+@@ -1533,7 +1572,8 @@ static int ath9k_config(struct ieee80211
  {
  	struct ath_wiphy *aphy = hw->priv;
  	struct ath_softc *sc = aphy->sc;
@@ -71,23 +74,26 @@
  	struct ieee80211_conf *conf = &hw->conf;
  	bool disable_radio;
  
-@@ -1599,6 +1643,10 @@ static int ath9k_config(struct ieee80211
+@@ -1599,6 +1639,11 @@ static int ath9k_config(struct ieee80211
  	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
  		struct ieee80211_channel *curchan = hw->conf.channel;
  		int pos = curchan->hw_value;
 +		int old_pos = -1;
++		unsigned long flags;
 +
 +		if (ah->curchan)
 +			old_pos = ah->curchan - &ah->channels[0];
  
  		aphy->chan_idx = pos;
  		aphy->chan_is_ht = conf_is_ht(conf);
-@@ -1626,12 +1674,43 @@ static int ath9k_config(struct ieee80211
+@@ -1626,12 +1671,45 @@ static int ath9k_config(struct ieee80211
  
  		ath_update_chainmask(sc, conf_is_ht(conf));
  
 +		/* update survey stats for the old channel before switching */
++		spin_lock_irqsave(&common->cc_lock, flags);
 +		ath_update_survey_stats(sc);
++		spin_unlock_irqrestore(&common->cc_lock, flags);
 +
 +		/*
 +		 * If the operating channel changes, change the survey in-use flags
@@ -126,25 +132,31 @@
  	}
  
  skip_chan_change:
-@@ -2001,9 +2080,12 @@ static int ath9k_get_survey(struct ieee8
+@@ -2001,9 +2079,15 @@ static int ath9k_get_survey(struct ieee8
  {
  	struct ath_wiphy *aphy = hw->priv;
  	struct ath_softc *sc = aphy->sc;
 -	struct ath_hw *ah = sc->sc_ah;
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
  	struct ieee80211_supported_band *sband;
 -	struct ath9k_channel *chan;
 +	struct ieee80211_channel *chan;
++	unsigned long flags;
 +	int pos;
 +
++	spin_lock_irqsave(&common->cc_lock, flags);
 +	if (idx == 0)
 +		ath_update_survey_stats(sc);
  
  	sband = hw->wiphy->bands[IEEE80211_BAND_2GHZ];
  	if (sband && idx >= sband->n_channels) {
-@@ -2017,17 +2099,10 @@ static int ath9k_get_survey(struct ieee8
- 	if (!sband || idx >= sband->n_channels)
- 	    return -ENOENT;
+@@ -2014,21 +2098,17 @@ static int ath9k_get_survey(struct ieee8
+ 	if (!sband)
+ 		sband = hw->wiphy->bands[IEEE80211_BAND_5GHZ];
  
+-	if (!sband || idx >= sband->n_channels)
+-	    return -ENOENT;
+-
 -	survey->channel = &sband->channels[idx];
 -	chan = &ah->channels[survey->channel->hw_value];
 -	survey->filled = 0;
@@ -155,11 +167,17 @@
 -	if (chan->noisefloor) {
 -		survey->filled |= SURVEY_INFO_NOISE_DBM;
 -		survey->noise = chan->noisefloor;
--	}
++	if (!sband || idx >= sband->n_channels) {
++		spin_unlock_irqrestore(&common->cc_lock, flags);
++		return -ENOENT;
+ 	}
+ 
 +	chan = &sband->channels[idx];
 +	pos = chan->hw_value;
 +	memcpy(survey, &sc->survey[pos], sizeof(*survey));
 +	survey->channel = chan;
- 
++	spin_unlock_irqrestore(&common->cc_lock, flags);
++
  	return 0;
  }
+ 
