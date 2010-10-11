@@ -21,7 +21,8 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
-	cp $(LINUX_DIR)/arch/arm/boot/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
+	mkimage -A arm -T kernel -C none -a 0x20008000 -e 0x20008000 -n linux-2.6 \
+		-d $(LINUX_DIR)/arch/arm/boot/Image $(BIN_DIR)/$(IMG_PREFIX)-uImage
 endef
 
 define Image/Build
