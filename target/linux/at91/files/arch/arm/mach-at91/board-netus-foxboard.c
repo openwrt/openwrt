@@ -55,7 +55,7 @@ static void __init ek_map_io(void)
 	/* DGBU on ttyS0. (Rx & Tx only) */
 	at91_register_uart(0, 0, 0);
 
-#if defined(CONFIG_NETUS_SERIALS)
+#if defined(CONFIG_NETUS_SERIALS) || defined(CONFIG_NETUS_FOXGM)
 	/* USART0 on ttyS1. (Rx, Tx, CTS, RTS, DTR, DSR, DCD, RI) */
 	at91_register_uart(AT91SAM9260_ID_US0, 1, ATMEL_UART_CTS | ATMEL_UART_RTS
 			   | ATMEL_UART_DTR | ATMEL_UART_DSR | ATMEL_UART_DCD
@@ -63,7 +63,9 @@ static void __init ek_map_io(void)
 
 	/* USART1 on ttyS2. (Rx, Tx, RTS, CTS) */
 	at91_register_uart(AT91SAM9260_ID_US1, 2, ATMEL_UART_CTS | ATMEL_UART_RTS);
+#endif
 
+#if defined(CONFIG_NETUS_SERIALS)
 	/* USART2 on ttyS3. (Rx, Tx) */
 	at91_register_uart(AT91SAM9260_ID_US2, 3, 0);
 #endif
@@ -131,6 +133,20 @@ static struct at91_mmc_data __initdata ek_mmc_data = {
  * LEDs
  */
 static struct gpio_led ek_leds[] = {
+#if defined(CONFIG_NETUS_FOXGM)
+	{
+		.name			= "led:red:L4",
+		.gpio			= AT91_PIN_PC9,
+		.active_low		= 0,
+		.default_trigger	= "heartbeat",
+	},
+	{
+		.name			= "led:red:L5",
+		.gpio			= AT91_PIN_PC13,
+		.active_low		= 0,
+		.default_trigger	= "none",
+	},
+#endif		//CONFIG_NETUS_FOXGM
 	{
 		.name			= "led:red:user",
 		.gpio			= AT91_PIN_PC7,
@@ -139,7 +155,7 @@ static struct gpio_led ek_leds[] = {
 		.default_trigger	= "heartbeat",
 #else
 		.default_trigger	= "none",
-#endif
+#endif		//CONFIG_NETUS_HEARTBEAT_LED
 	},
 };
 

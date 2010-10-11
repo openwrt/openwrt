@@ -38,6 +38,14 @@
 +	help
 +	  Select this option to use the dataflash.
 +
++config NETUS_FOXGM
++	bool "Enable support for FoxGM board"
++	depends on MACH_NETUS_FOXBOARD
++	select LEDS_TRIGGER_HEARTBEAT
++	help
++	  Select this option to auto-configure leds and
++	  serial ports according to FOXGM board.
++
  # ----------------------------------------------------------
  
  comment "AT91 Feature Selections"
