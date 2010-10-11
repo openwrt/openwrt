@@ -14,16 +14,17 @@
  endif
  
  # ----------------------------------------------------------
-@@ -444,6 +451,26 @@
+@@ -444,6 +451,40 @@
  	  On AT91SAM926x boards both types of NAND flash can be present
  	  (8 and 16 bit data bus width).
  
 +config NETUS_HEARTBEAT_LED
 +	bool "Use heartbeat trigger for led"
 +	depends on MACH_NETUS_FOXBOARD
++	select LEDS_TRIGGER_HEARTBEAT
 +	help
 +	  Select this option to enable default trigger heartbeart for
-+	  FoxBoardG20 red led.
++	  FoxBoardG20 user led.
 +
 +config NETUS_SERIALS
 +	bool "Enable serials"
@@ -34,6 +35,11 @@
 +
 +config NETUS_USE_DATAFLASH
 +	bool "Enable the dataflash"
++	select MTD_DATAFLASH
++	select MTD_PARTITIONS
++	select MTD_CMDLINE_PARTS
++	select MTD_CHAR
++	select MTD_BLOCK
 +	depends on MACH_NETUS_FOXBOARD
 +	help
 +	  Select this option to use the dataflash.
@@ -49,12 +55,12 @@
  # ----------------------------------------------------------
  
  comment "AT91 Feature Selections"
---- a/arch/arm/mach-at91/Makefile
-+++ b/arch/arm/mach-at91/Makefile
-@@ -62,6 +62,7 @@ obj-$(CONFIG_MACH_AT91SAM9RLEK)	+= board
- obj-$(CONFIG_MACH_AT91SAM9G20EK) += board-sam9g20ek.o
- obj-$(CONFIG_MACH_AT91SAM9G20EK_2MMC) += board-sam9g20ek-2slot-mmc.o
+--- linux-2.6.35.4.orig/arch/arm/mach-at91/Makefile	2010-09-18 13:29:33.000000000 +0200
++++ linux-2.6.35.4/arch/arm/mach-at91/Makefile	2010-09-18 13:31:31.000000000 +0200
+@@ -65,6 +65,7 @@
  obj-$(CONFIG_MACH_CPU9G20)	+= board-cpu9krea.o
+ obj-$(CONFIG_MACH_STAMP9G20)	+= board-stamp9g20.o
+ obj-$(CONFIG_MACH_PORTUXG20)	+= board-stamp9g20.o
 +obj-$(CONFIG_MACH_NETUS_FOXBOARD) += board-netus-foxboard.o
  
  # AT91SAM9G45 board-specific support
