@@ -26,6 +26,7 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1),$(1))
+	cp $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-root.$(1)
 endef
 
 $(eval $(call BuildImage))
