@@ -26,7 +26,7 @@ if( opendir SD, "$Bin/../staging_dir" )
 
 		while( defined( my $e = readdir SD ) )
 		{
-			if( -d "$Bin/../staging_dir/$e" && $e =~ /^target-([^_]+)_([^_]+)/ )
+			if( -d "$Bin/../staging_dir/$e" && $e =~ /^target-(.+?)_([^_]+libc[^_]+)/i )
 			{
 				push @arches, [ $1, $2 ];
 				printf(" %2d) %s (%s)\n", @arches + 0, $1, $2);
@@ -52,7 +52,7 @@ if( opendir SD, "$Bin/../staging_dir" )
 	closedir SD;
 
 	# Find gdb
-	my ($gdb) = glob("$Bin/../build_dir/toolchain-${arch}_*_${libc}/gdb-*/gdb/gdb");
+	my ($gdb) = glob("$Bin/../staging_dir/toolchain-${arch}_*_${libc}/bin/*-gdb");
 
 	if( defined($gdb) && -x $gdb )
 	{
@@ -64,7 +64,8 @@ if( opendir SD, "$Bin/../staging_dir" )
 		print $fh "set sysroot $sysroot\n" if $sysroot;
 		print $fh "target remote $ARGV[0]\n";
 
-		system($gdb, '-x', $fp, $ARGV[1]);
+		my $file = -f "$sysroot/$ARGV[1]" ? "$sysroot/$ARGV[1]" : $ARGV[1];
+		system($gdb, '-x', $fp, $file);
 
 		close($fh);
 		unlink($fp);
