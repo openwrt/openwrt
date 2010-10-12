@@ -329,8 +329,8 @@ static struct switch_attr ar8216_port[] = {
 static struct switch_attr ar8216_vlan[] = {
 	{
 		.type = SWITCH_TYPE_INT,
-		.name = "pvid",
-		.description = "VLAN ID",
+		.name = "vid",
+		.description = "VLAN ID (0-4094)",
 		.set = ar8216_set_vid,
 		.get = ar8216_get_vid,
 		.max = 4094,

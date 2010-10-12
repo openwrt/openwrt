@@ -149,8 +149,8 @@ static struct switch_attr psb6970_port[] = {
 static struct switch_attr psb6970_vlan[] = {
 	{
 	 .type = SWITCH_TYPE_INT,
-	 .name = "pvid",
-	 .description = "VLAN ID",
+	 .name = "vid",
+	 .description = "VLAN ID (0-4094)",
 	 .set = psb6970_set_vid,
 	 .get = psb6970_get_vid,
 	 .max = 4094,

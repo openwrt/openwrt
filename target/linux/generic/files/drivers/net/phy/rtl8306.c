@@ -829,7 +829,7 @@ static struct switch_attr rtl_vlan[] = {
 	{
 		RTL_VLAN_REGATTR(VID),
 		.name = "vid",
-		.description = "VLAN ID",
+		.description = "VLAN ID (1-4095)",
 		.max = 4095,
 	},
 };
