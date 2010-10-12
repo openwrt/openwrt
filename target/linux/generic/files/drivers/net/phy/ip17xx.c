@@ -1210,8 +1210,8 @@ static const struct switch_attr ip17xx_vlan[] = {
 	[IP17XX_VLAN_TAG] = {
 		.id = IP17XX_VLAN_TAG,
 		.type = SWITCH_TYPE_INT,
-		.description = "VLAN tag (0-4095) [IP175D only]",
-		.name = "tag",
+		.description = "VLAN ID (0-4095) [IP175D only]",
+		.name = "vid",
 		.get = ip17xx_get_tag,
 		.set = ip17xx_set_tag,
 	}
