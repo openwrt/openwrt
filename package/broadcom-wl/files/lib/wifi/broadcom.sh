@@ -363,7 +363,7 @@ detect_broadcom() {
 		cat <<EOF
 config wifi-device  wl${i}
 	option type     broadcom
-	option channel  5
+	option channel  11
 
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
