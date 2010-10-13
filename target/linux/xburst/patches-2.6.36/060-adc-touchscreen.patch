@@ -1,0 +1,90 @@
+From 9e8c7624668261bd0b6ee751642ca2c60a8aaba9 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Sun, 5 Sep 2010 20:36:59 +0200
+Subject: [PATCH] MFD: jz4740-adc: Add support for the touchscreen part of the adc unit
+
+---
+ drivers/mfd/jz4740-adc.c   |   39 ++++++++++++++++++++++++++++++++++++---
+ include/linux/jz4740-adc.h |    2 +-
+ 2 files changed, 37 insertions(+), 4 deletions(-)
+
+--- a/drivers/mfd/jz4740-adc.c
++++ b/drivers/mfd/jz4740-adc.c
+@@ -46,9 +46,9 @@
+ enum {
+ 	JZ_ADC_IRQ_ADCIN = 0,
+ 	JZ_ADC_IRQ_BATTERY,
+-	JZ_ADC_IRQ_TOUCH,
+-	JZ_ADC_IRQ_PENUP,
+-	JZ_ADC_IRQ_PENDOWN,
++	JZ_ADC_IRQ_TS_DATA_READY,
++	JZ_ADC_IRQ_TS_PENUP,
++	JZ_ADC_IRQ_TS_PENDOWN,
+ };
+ 
+ struct jz4740_adc {
+@@ -101,6 +101,7 @@ static void jz4740_adc_irq_ack(unsigned 
+ 	struct jz4740_adc *adc = get_irq_chip_data(irq);
+ 
+ 	irq -= adc->irq_base;
++
+ 	writeb(BIT(irq), adc->base + JZ_REG_ADC_STATUS);
+ }
+ 
+@@ -227,6 +228,27 @@ static struct resource jz4740_battery_re
+ 	},
+ };
+ 
++static struct resource jz4740_ts_resources[] = {
++	{
++		.start = JZ_ADC_IRQ_TS_DATA_READY,
++		.flags = IORESOURCE_IRQ,
++	},
++	{
++		.start = JZ_ADC_IRQ_TS_PENUP,
++		.flags = IORESOURCE_IRQ,
++	},
++	{
++		.start = JZ_ADC_IRQ_TS_PENDOWN,
++		.flags = IORESOURCE_IRQ,
++	},
++	{
++		.start	= JZ_REG_ADC_TOUCHSCREEN_BASE,
++		.end	= JZ_REG_ADC_TOUCHSCREEN_BASE + 0xb,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++
+ const struct mfd_cell jz4740_adc_cells[] = {
+ 	{
+ 		.id = 0,
+@@ -250,6 +272,17 @@ const struct mfd_cell jz4740_adc_cells[]
+ 		.enable = jz4740_adc_cell_enable,
+ 		.disable = jz4740_adc_cell_disable,
+ 	},
++	{
++		.id = 2,
++		.name = "jz4740-ts",
++		.num_resources = ARRAY_SIZE(jz4740_ts_resources),
++		.resources = jz4740_ts_resources,
++		.platform_data = (void *)&jz4740_adc_cells[2],
++		.data_size = sizeof(struct mfd_cell),
++
++		.enable = jz4740_adc_cell_enable,
++		.disable = jz4740_adc_cell_disable,
++	},
+ };
+ 
+ static int __devinit jz4740_adc_probe(struct platform_device *pdev)
+--- a/include/linux/jz4740-adc.h
++++ b/include/linux/jz4740-adc.h
+@@ -25,7 +25,7 @@ int jz4740_adc_set_config(struct device 
+ #define JZ_ADC_CONFIG_BAT_MB		BIT(4)
+ 
+ #define JZ_ADC_CONFIG_DNUM(dnum)	((dnum) << 16)
+-#define JZ_ADC_CONFIG_XYZ_OFFSET(dnum)	((xyz) << 13)
++#define JZ_ADC_CONFIG_XYZ_OFFSET(xyz)	((xyz) << 13)
+ #define JZ_ADC_CONFIG_SAMPLE_NUM(x)	((x) << 10)
+ #define JZ_ADC_CONFIG_CLKDIV(div)	((div) << 5)
+ 

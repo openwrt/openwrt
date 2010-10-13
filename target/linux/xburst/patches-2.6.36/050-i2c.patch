@@ -1,0 +1,472 @@
+From e5d89837a365a810b3cc5ce58d273a7c49029f36 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Sun, 5 Sep 2010 03:19:10 +0200
+Subject: [PATCH] i2c: Add i2c driver for JZ47XX SoCs
+
+This patch adds a driver for the i2c controller found in Ingenic JZ47XX based
+SoCs.
+
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+---
+ drivers/i2c/busses/Kconfig      |   10 +
+ drivers/i2c/busses/Makefile     |    1 +
+ drivers/i2c/busses/i2c-jz47xx.c |  424 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 435 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/i2c/busses/i2c-jz47xx.c
+
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -420,6 +420,16 @@ config I2C_IXP2000
+ 	  This driver is deprecated and will be dropped soon. Use i2c-gpio
+ 	  instead.
+ 
++config I2C_JZ47XX
++	tristate "JZ4740 I2C Interface"
++	depends on MACH_JZ4740
++	help
++	  Say Y here if you want support for the I2C controller found on Ingenic
++	  JZ47XX based SoCs.
++
++	  This driver can also be built as a module. If so, the module will be
++	  called i2c-jz47xx.
++
+ config I2C_MPC
+ 	tristate "MPC107/824x/85xx/512x/52xx/83xx/86xx"
+ 	depends on PPC32
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -40,6 +40,7 @@ obj-$(CONFIG_I2C_IBM_IIC)	+= i2c-ibm_iic
+ obj-$(CONFIG_I2C_IMX)		+= i2c-imx.o
+ obj-$(CONFIG_I2C_IOP3XX)	+= i2c-iop3xx.o
+ obj-$(CONFIG_I2C_IXP2000)	+= i2c-ixp2000.o
++obj-$(CONFIG_I2C_JZ47XX)	+= i2c-jz47xx.o
+ obj-$(CONFIG_I2C_MPC)		+= i2c-mpc.o
+ obj-$(CONFIG_I2C_MV64XXX)	+= i2c-mv64xxx.o
+ obj-$(CONFIG_I2C_NOMADIK)	+= i2c-nomadik.o
+--- /dev/null
++++ b/drivers/i2c/busses/i2c-jz47xx.c
+@@ -0,0 +1,424 @@
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/err.h>
++#include <linux/clk.h>
++#include <linux/platform_device.h>
++#include <linux/i2c.h>
++#include <linux/slab.h>
++#include <linux/interrupt.h>
++
++#include <linux/gpio.h>
++#include <linux/delay.h>
++
++#define JZ47XX_REG_I2C_DATA	0x00
++#define JZ47XX_REG_I2C_CTRL	0x04
++#define JZ47XX_REG_I2C_STATUS	0x08
++#define JZ47XX_REG_I2C_CLOCK	0x0C
++
++#define JZ47XX_I2C_STATUS_FIFO_FULL	BIT(4)
++#define JZ47XX_I2C_STATUS_BUSY		BIT(3)
++#define JZ47XX_I2C_STATUS_TEND		BIT(2)
++#define JZ47XX_I2C_STATUS_DATA_VALID	BIT(1)
++#define JZ47XX_I2C_STATUS_NACK		BIT(0)
++
++#define JZ47XX_I2C_CTRL_IRQ_ENABLE	BIT(4)
++#define JZ47XX_I2C_CTRL_START		BIT(3)
++#define JZ47XX_I2C_CTRL_STOP		BIT(2)
++#define JZ47XX_I2C_CTRL_NACK		BIT(1)
++#define JZ47XX_I2C_CTRL_ENABLE		BIT(0)
++
++struct jz47xx_i2c {
++	struct resource *mem;
++	void __iomem *base;
++	int irq;
++	struct clk *clk;
++
++	struct i2c_adapter adapter;
++
++	wait_queue_head_t wait_queue;
++};
++
++static inline struct jz47xx_i2c *adapter_to_jz47xx_i2c(struct i2c_adapter *adap)
++{
++	return container_of(adap, struct jz47xx_i2c, adapter);
++}
++
++static inline void jz47xx_i2c_set_ctrl(struct jz47xx_i2c *jz47xx_i2c,
++	uint8_t mask, uint8_t value)
++{
++	uint8_t ctrl;
++	ctrl = readb(jz47xx_i2c->base + JZ47XX_REG_I2C_CTRL);
++	ctrl &= ~mask;
++	ctrl |= value;
++	printk("ctrl: %x\n", ctrl);
++	writeb(ctrl, jz47xx_i2c->base + JZ47XX_REG_I2C_CTRL);
++}
++
++static irqreturn_t jz47xx_i2c_irq_handler(int irq, void *devid)
++{
++	struct jz47xx_i2c *jz47xx_i2c = devid;
++
++	printk("IRQ\n");
++
++	wake_up(&jz47xx_i2c->wait_queue);
++
++	jz47xx_i2c_set_ctrl(jz47xx_i2c, JZ47XX_I2C_CTRL_IRQ_ENABLE, 0);
++
++	return IRQ_HANDLED;
++}
++
++static inline void jz47xx_i2c_set_data_valid(struct jz47xx_i2c *jz47xx_i2c,
++	bool valid)
++{
++	uint8_t val;
++	val = readb(jz47xx_i2c->base + JZ47XX_REG_I2C_STATUS);
++	if (valid)
++		val |= JZ47XX_I2C_STATUS_DATA_VALID;
++	else
++		val &= ~JZ47XX_I2C_STATUS_DATA_VALID;
++	writeb(val, jz47xx_i2c->base + JZ47XX_REG_I2C_STATUS);
++}
++
++static int jz47xx_i2c_test_event(struct jz47xx_i2c *jz47xx_i2c, uint8_t mask, uint8_t value)
++{
++	uint8_t status;
++
++	mask |= JZ47XX_I2C_STATUS_NACK;
++	value |= JZ47XX_I2C_STATUS_NACK;
++
++	status = readb(jz47xx_i2c->base + JZ47XX_REG_I2C_STATUS);
++	printk("status: %x %x %x %x\n", status, mask, value, (status & mask) ^
++	value);
++	if (((status & mask) ^ value) == mask) {
++		jz47xx_i2c_set_ctrl(jz47xx_i2c, JZ47XX_I2C_CTRL_IRQ_ENABLE,
++			JZ47XX_I2C_CTRL_IRQ_ENABLE);
++		return 0;
++	}
++	return 1;
++}
++
++static int jz47xx_i2c_wait_event_or_nack(struct jz47xx_i2c *jz47xx_i2c, uint8_t
++mask, uint8_t value)
++{
++	int ret;
++
++	ret = wait_event_interruptible_timeout(jz47xx_i2c->wait_queue,
++		jz47xx_i2c_test_event(jz47xx_i2c, mask, value), 30 * HZ);
++
++/*	while (!jz47xx_i2c_test_event(jz47xx_i2c, mask, value));
++
++	ret = 1;*/
++
++	printk("wait event or nack: %d %x\n", ret, readb(jz47xx_i2c->base +
++	JZ47XX_REG_I2C_STATUS));
++
++	if (ret == 0)
++		ret = -ETIMEDOUT;
++	else if(ret > 0) {
++		if (readb(jz47xx_i2c->base + JZ47XX_REG_I2C_STATUS) & JZ47XX_I2C_STATUS_NACK)
++			ret = -EIO;
++		else
++			ret = 0;
++	}
++
++	return ret;
++}
++
++static int jz47xx_i2c_wait_event(struct jz47xx_i2c *jz47xx_i2c, uint8_t event)
++{
++	int ret;
++
++	ret = wait_event_interruptible_timeout(jz47xx_i2c->wait_queue,
++		jz47xx_i2c_test_event(jz47xx_i2c, event, event), 30 * HZ);
++
++	if (ret == 0)
++		ret = -ETIMEDOUT;
++	else if(ret > 0)
++		ret = 0;
++
++	return ret;
++}
++
++
++static int jz47xx_i2c_write_msg(struct jz47xx_i2c *jz47xx_i2c,
++	struct i2c_msg *msg)
++{
++	int ret;
++	int i;
++
++	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++	for (i = 0; i < msg->len; ++i) {
++		writeb(msg->buf[i], jz47xx_i2c->base + JZ47XX_REG_I2C_DATA);
++		jz47xx_i2c_set_data_valid(jz47xx_i2c, true);
++		ret = jz47xx_i2c_wait_event_or_nack(jz47xx_i2c,
++			JZ47XX_I2C_STATUS_DATA_VALID, 0);
++		if (ret)
++			break;
++	}
++	jz47xx_i2c_set_ctrl(jz47xx_i2c, JZ47XX_I2C_CTRL_STOP,
++		JZ47XX_I2C_CTRL_STOP);
++
++	if (!ret)
++		ret = jz47xx_i2c_wait_event_or_nack(jz47xx_i2c, JZ47XX_I2C_STATUS_TEND,
++			JZ47XX_I2C_STATUS_TEND);
++
++	return ret;
++}
++
++static int jz47xx_i2c_read_msg(struct jz47xx_i2c *jz47xx_i2c,
++	struct i2c_msg *msg)
++{
++	int i;
++	int ret;
++	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++
++	jz47xx_i2c_set_ctrl(jz47xx_i2c, JZ47XX_I2C_CTRL_NACK,
++		msg->len == 1 ? JZ47XX_I2C_CTRL_NACK : 0);
++
++	for (i = 0; i < msg->len; ++i) {
++		ret = jz47xx_i2c_wait_event(jz47xx_i2c, JZ47XX_I2C_STATUS_DATA_VALID);
++		if (ret) {
++			jz47xx_i2c_set_ctrl(jz47xx_i2c, JZ47XX_I2C_CTRL_NACK,
++				JZ47XX_I2C_CTRL_NACK);
++			break;
++		}
++
++		if (i == msg->len - 2) {
++			jz47xx_i2c_set_ctrl(jz47xx_i2c, JZ47XX_I2C_CTRL_NACK,
++				JZ47XX_I2C_CTRL_NACK);
++		}
++
++		msg->buf[i] = readb(jz47xx_i2c->base + JZ47XX_REG_I2C_DATA);
++		printk("read: %x\n", msg->buf[i]);
++		jz47xx_i2c_set_data_valid(jz47xx_i2c, false);
++	}
++
++	jz47xx_i2c_set_ctrl(jz47xx_i2c, JZ47XX_I2C_CTRL_STOP,
++		JZ47XX_I2C_CTRL_STOP);
++
++	return ret;
++}
++
++static int jz47xx_i2c_xfer_msg(struct jz47xx_i2c *jz47xx_i2c,
++	struct i2c_msg *msg)
++{
++	uint8_t addr;
++	int ret;
++
++	addr = msg->addr << 1;
++	if (msg->flags & I2C_M_RD)
++		addr |= 1;
++
++	jz47xx_i2c_set_ctrl(jz47xx_i2c, JZ47XX_I2C_CTRL_START,
++		JZ47XX_I2C_CTRL_START);
++	writeb(addr, jz47xx_i2c->base + JZ47XX_REG_I2C_DATA);
++	jz47xx_i2c_set_data_valid(jz47xx_i2c, true);
++
++	if (msg->flags & I2C_M_RD) {
++		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++		ret = jz47xx_i2c_wait_event_or_nack(jz47xx_i2c,
++		JZ47XX_I2C_STATUS_TEND, JZ47XX_I2C_STATUS_TEND);
++		if (!ret)
++			ret = jz47xx_i2c_read_msg(jz47xx_i2c, msg);
++	} else {
++		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
++		ret = jz47xx_i2c_wait_event_or_nack(jz47xx_i2c,
++		    JZ47XX_I2C_STATUS_DATA_VALID, 0);
++		if (!ret)
++			ret = jz47xx_i2c_write_msg(jz47xx_i2c, msg);
++	}
++
++	return ret;
++}
++
++static int jz47xx_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[], int
++num)
++{
++	struct jz47xx_i2c *jz47xx_i2c = adapter_to_jz47xx_i2c(adap);
++	int ret = 0;
++	int i;
++	int mask = JZ47XX_I2C_CTRL_ENABLE;
++
++	printk("xfer: %d %x\n", num, readb(jz47xx_i2c->base +
++	JZ47XX_REG_I2C_STATUS));
++
++	clk_enable(jz47xx_i2c->clk);
++	jz47xx_i2c_set_ctrl(jz47xx_i2c, mask, mask);
++
++	for (i = 0; i < num; ++i) {
++		ret = jz47xx_i2c_xfer_msg(jz47xx_i2c, &msgs[i]);
++		if (ret)
++			break;
++	}
++
++	jz47xx_i2c_set_ctrl(jz47xx_i2c, mask, 0);
++	clk_disable(jz47xx_i2c->clk);
++
++	printk("xfer ret: %d\n", ret);
++
++	return ret;
++}
++
++static u32 jz47xx_i2c_functionality(struct i2c_adapter *adap)
++{
++	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
++}
++
++static const struct i2c_algorithm jz47xx_i2c_algorithm = {
++	.master_xfer = jz47xx_i2c_xfer,
++	.functionality = jz47xx_i2c_functionality,
++};
++
++const static struct jz_gpio_bulk_request jz47xx_i2c_pins[] = {
++	JZ_GPIO_BULK_PIN(I2C_SDA),
++	JZ_GPIO_BULK_PIN(I2C_SCK),
++};
++
++static int __devinit jz47xx_i2c_probe(struct platform_device *pdev)
++{
++	struct jz47xx_i2c *jz47xx_i2c;
++	struct resource *mem;
++	void __iomem *base;
++	struct clk *clk;
++	int irq;
++	int ret;
++
++	irq = platform_get_irq(pdev, 0);
++	if (!irq) {
++		dev_err(&pdev->dev, "Failed to get IRQ: %d\n", irq);
++		return irq;
++	}
++
++	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!mem) {
++		dev_err(&pdev->dev, "Failed to get iomem region\n");
++		return -ENXIO;
++	}
++
++	mem = request_mem_region(mem->start, resource_size(mem), pdev->name);
++	if (!mem) {
++		dev_err(&pdev->dev, "Failed to request iomem region\n");
++		return -EBUSY;
++	}
++
++	base = ioremap(mem->start, resource_size(mem));
++	if (!base) {
++		dev_err(&pdev->dev, "Failed to ioremap iomem\n");
++		ret = -EBUSY;
++		goto err_release_mem_region;
++	}
++
++	clk = clk_get(&pdev->dev, "i2c");
++	if (IS_ERR(clk)) {
++		ret = PTR_ERR(clk);
++		goto err_iounmap;
++	}
++
++	jz47xx_i2c = kzalloc(sizeof(*jz47xx_i2c), GFP_KERNEL);
++	if (!jz47xx_i2c) {
++		ret = -ENOMEM;
++		goto err_clk_put;
++	}
++
++	jz47xx_i2c->adapter.owner = THIS_MODULE;
++	jz47xx_i2c->adapter.algo = &jz47xx_i2c_algorithm;
++	jz47xx_i2c->adapter.dev.parent = &pdev->dev;
++	jz47xx_i2c->adapter.nr = pdev->id < 0 ?: 0;
++	strcpy(jz47xx_i2c->adapter.name, pdev->name);
++
++	jz47xx_i2c->mem = mem;
++	jz47xx_i2c->base = base;
++	jz47xx_i2c->clk = clk;
++	jz47xx_i2c->irq = irq;
++
++	init_waitqueue_head(&jz47xx_i2c->wait_queue);
++
++	ret = request_irq(irq, jz47xx_i2c_irq_handler, 0, pdev->name, jz47xx_i2c);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to request irq: %d\n", ret);
++		goto err_free;
++	}
++
++    ret = jz_gpio_bulk_request(jz47xx_i2c_pins, ARRAY_SIZE(jz47xx_i2c_pins));
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to request i2c pins: %d\n", ret);
++		goto err_free_irq;
++	}
++
++	writew(0x10, jz47xx_i2c->base + JZ47XX_REG_I2C_CLOCK);
++
++	ret = i2c_add_numbered_adapter(&jz47xx_i2c->adapter);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to add i2c adapter: %d\n", ret);
++		goto err_free_gpios;
++	}
++
++	platform_set_drvdata(pdev, jz47xx_i2c);
++
++	printk("JZ4740 I2C\n");
++
++	return 0;
++
++err_free_gpios:
++	jz_gpio_bulk_free(jz47xx_i2c_pins, ARRAY_SIZE(jz47xx_i2c_pins));
++err_free_irq:
++	free_irq(irq, jz47xx_i2c);
++err_free:
++	kfree(jz47xx_i2c);
++err_clk_put:
++	clk_put(clk);
++err_iounmap:
++	iounmap(base);
++err_release_mem_region:
++	release_mem_region(mem->start, resource_size(mem));
++	return ret;
++}
++
++static int __devexit jz47xx_i2c_remove(struct platform_device *pdev)
++{
++	struct jz47xx_i2c *jz47xx_i2c = platform_get_drvdata(pdev);
++
++	platform_set_drvdata(pdev, NULL);
++	i2c_del_adapter(&jz47xx_i2c->adapter);
++
++	jz_gpio_bulk_free(jz47xx_i2c_pins, ARRAY_SIZE(jz47xx_i2c_pins));
++
++	free_irq(jz47xx_i2c->irq, jz47xx_i2c);
++	clk_put(jz47xx_i2c->clk);
++
++	iounmap(jz47xx_i2c->base);
++	release_mem_region(jz47xx_i2c->mem->start, resource_size(jz47xx_i2c->mem));
++
++	kfree(jz47xx_i2c);
++
++	return 0;
++}
++
++static struct platform_driver jz47xx_i2c_driver = {
++	.probe = jz47xx_i2c_probe,
++	.remove = jz47xx_i2c_remove,
++	.driver = {
++		.name = "jz47xx-i2c",
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init jz47xx_i2c_init(void)
++{
++	return platform_driver_register(&jz47xx_i2c_driver);
++}
++module_init(jz47xx_i2c_init);
++
++static void jz47xx_i2c_exit(void)
++{
++	platform_driver_unregister(&jz47xx_i2c_driver);
++}
++module_exit(jz47xx_i2c_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
++MODULE_DESCRIPTION("I2C adapter driver for JZ47XX SoCs");
++MODULE_ALIAS("platform:jz47xx-i2c");
++
