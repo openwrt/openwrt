@@ -30,7 +30,6 @@ config AR71XX_MACH_AP96
 
 config AR71XX_MACH_DIR_600_A1
 	bool "D-Link DIR-600 rev. A1 support"
-	select AR71XX_DEV_AP91_ETH
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -140,7 +139,6 @@ config AR71XX_MACH_RB4XX
 
 config AR71XX_MACH_RB750
 	bool "MikroTik RouterBOARD 750 support"
-	select AR71XX_DEV_AP91_ETH
 	default n
 
 config AR71XX_MACH_WNDR3700
@@ -279,10 +277,6 @@ config AR71XX_DEV_M25P80
 
 config AR71XX_DEV_AP91_PCI
 	select AR71XX_PCI_ATH9K_FIXUP
-	def_bool n
-
-config AR71XX_DEV_AP91_ETH
-	select AR71XX_DEV_DSA
 	def_bool n
 
 config AR71XX_DEV_AP94_PCI
