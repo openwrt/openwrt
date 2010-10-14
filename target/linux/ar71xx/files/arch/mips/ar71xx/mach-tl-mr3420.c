@@ -17,7 +17,6 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ap91-eth.h"
 #include "dev-ap91-pci.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
