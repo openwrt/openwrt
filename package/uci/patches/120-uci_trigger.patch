@@ -65,7 +65,7 @@
 +
 +struct trigger_set_op {
 +	struct uci_package *p;
-+	struct uci_history *h;
++	struct uci_delta *h;
 +};
 +
 +static int trigger_set(lua_State *L)
@@ -73,7 +73,7 @@
 +	struct trigger_set_op *so =
 +		(struct trigger_set_op *)lua_touserdata(L, 1);
 +	struct uci_package *p = so->p;
-+	struct uci_history *h = so->h;
++	struct uci_delta *h = so->h;
 +	struct uci_context *ctx = p->ctx;
 +
 +	/* ignore non-standard savedirs/configdirs
@@ -139,7 +139,7 @@
 +
 +#endif
 +
-+static void trigger_set_hook(const struct uci_hook_ops *ops, struct uci_package *p, struct uci_history *h)
++static void trigger_set_hook(const struct uci_hook_ops *ops, struct uci_package *p, struct uci_delta *h)
 +{
 +	struct trigger_set_op so;
 +
