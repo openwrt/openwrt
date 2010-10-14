@@ -18,6 +18,13 @@ $(eval $(call Require,non-root, \
 	Please do not compile as root. \
 ))
 
+define Require/umask-0022
+	[ "$$(shell umask)" -eq 22 ]
+endef
+$(eval $(call Require,umask-0022, \
+	Please compile with umask 0022. \
+))
+
 # Required for the toolchain
 define Require/working-make
 	$(MAKE) -v | awk '($$$$1 == "GNU") && ($$$$2 = "Make") && ($$$$3 >= "3.81") { print "ok" }' | grep ok > /dev/null
