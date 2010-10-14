@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
-PKG_VERSION:=1.17.2
+PKG_VERSION:=1.17.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
-PKG_MD5SUM:=7360b7138b899ee7fc885791c740c3c3
+PKG_MD5SUM:=a2ce1a951571da8c6e0eaf75b1acef60
 
 PKG_BUILD_PARALLEL:=1
 
