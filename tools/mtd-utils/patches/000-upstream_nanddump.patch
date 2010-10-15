@@ -1,0 +1,28 @@
+From: Baruch Siach <baruch@tkos.co.il>
+Date: Mon, 11 Oct 2010 09:19:38 +0000 (+0200)
+Subject: nanddump: fix initialization of bad blocks oob data buffer
+X-Git-Url: http://git.infradead.org
+
+nanddump: fix initialization of bad blocks oob data buffer
+
+When dumping oob data of a bad block, initialize oobbuf with 0xff, instead of
+readbuf.  This avoids bogus oob data on output.
+
+Signed-off-by: Baruch Siach <baruch@tkos.co.il>
+Acked-by: Mike Frysinger <vapier@gentoo.org>
+Signed-off-by: Artem Bityutskiy <Artem.Bityutskiy@nokia.com>
+---
+
+diff --git a/nanddump.c b/nanddump.c
+index 3589931..b7341a5 100644
+--- a/nanddump.c
++++ b/nanddump.c
+@@ -452,7 +452,7 @@ int main(int argc, char * const argv[])
+ 			continue;
+ 
+ 		if (badblock) {
+-			memset (readbuf, 0xff, meminfo.oobsize);
++			memset(oobbuf, 0xff, meminfo.oobsize);
+ 		} else {
+ 			/* Read OOB data and exit on failure */
+ 			oob.start = ofs;
