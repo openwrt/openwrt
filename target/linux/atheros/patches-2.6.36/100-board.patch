@@ -44,7 +44,7 @@
 +#
 +# Atheros AR5312/AR2312 WiSoC
 +#
-+platform-$(CONFIG_ATHEROS_AR231X)          += arch/mips/ar231x/
++platform-$(CONFIG_ATHEROS_AR231X)          += ar231x/
 +cflags-$(CONFIG_ATHEROS_AR231X)        += -I$(srctree)/arch/mips/include/asm/mach-ar231x
 +load-$(CONFIG_ATHEROS_AR231X)          += 0xffffffff80041000
 --- /dev/null
