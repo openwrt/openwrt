@@ -1,0 +1,11 @@
+--- a/arch/mips/ar231x/reset.c
++++ b/arch/mips/ar231x/reset.c
+@@ -24,7 +24,7 @@ struct event_t {
+ static struct timer_list rst_button_timer;
+ static unsigned long seen;
+ 
+-extern struct sock *uevent_sock = NULL;
++struct sock *uevent_sock = NULL;
+ EXPORT_SYMBOL_GPL(uevent_sock);
+ extern u64 uevent_next_seqnum(void);
+ 
