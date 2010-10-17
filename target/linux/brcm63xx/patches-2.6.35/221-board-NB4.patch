@@ -1,54 +1,73 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -17,6 +17,7 @@
+@@ -17,6 +17,9 @@
  #include <linux/ssb/ssb.h>
  #include <linux/gpio_buttons.h>
  #include <linux/input.h>
-+#include <linux/nxp_74hc164.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/spi_gpio.h>
++#include <linux/spi/74x164.h>
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -34,6 +35,12 @@
+@@ -34,6 +37,12 @@
  
  #define PFX	"board_bcm963xx: "
  
-+#define NEUFBOX4_PID_OFFSET		0xff80
-+#define NEUFBOX4_EXP_GPIO_BASE		64
-+#define NEUFBOX4_GPIO_74HC164_DATA	7
-+#define NEUFBOX4_GPIO_74HC164_CLK	6
-+#define NXP_74HC64_GPIO(X)		(NEUFBOX4_EXP_GPIO_BASE + (X))
++#define NB4_PID_OFFSET		0xff80
++#define NB4_74X164_GPIO_BASE	64
++#define NB4_SPI_GPIO_MOSI	7
++#define NB4_SPI_GPIO_CLK	6
++#define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
 +
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -758,6 +765,471 @@ static struct board_info __initdata boar
+@@ -758,6 +767,502 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
 +
-+static struct nxp_74hc164_platform_data neufbox4_74hc164_data = {
-+	.gpio_base      = NEUFBOX4_EXP_GPIO_BASE,
-+	.gpio_pin_data  = NEUFBOX4_GPIO_74HC164_DATA,
-+	.gpio_pin_clk   = NEUFBOX4_GPIO_74HC164_CLK,
-+
++struct spi_gpio_platform_data nb4_spi_gpio_data = {
++	.sck		= NB4_SPI_GPIO_CLK,
++	.mosi		= NB4_SPI_GPIO_MOSI,
++	.miso		= SPI_GPIO_NO_MISO,
++	.num_chipselect	= 1,
 +};
 +
-+static struct platform_device neufbox4_74hc164 = {
-+	.name           = NXP_74HC164_DRIVER_NAME,
-+	.id             = -1,
++
++static struct platform_device nb4_spi_gpio = {
++	.name = "spi_gpio",
++	.id   = 1,
 +	.dev = {
-+		.platform_data  = &neufbox4_74hc164_data,
-+	}
++		.platform_data = &nb4_spi_gpio_data,
++	},
 +};
 +
-+static struct platform_device * __initdata neufbox4_devices[] = {
-+	&neufbox4_74hc164,
++static struct platform_device * __initdata nb4_devices[] = {
++	&nb4_spi_gpio,
++};
++
++const struct gen_74x164_chip_platform_data nb4_74x164_platform_data = {
++	.base = NB4_74X164_GPIO_BASE
++};
++
++static struct spi_board_info nb4_spi_devices[] = {
++	{
++		.modalias = "74x164",
++		.max_speed_hz = 781000,
++		.bus_num = 1,
++		.controller_data = (void *) SPI_GPIO_NO_CHIPSELECT,
++		.mode = SPI_MODE_0,
++		.platform_data = &nb4_74x164_platform_data
++	}
 +};
 +
 +static struct board_info __initdata board_nb4_ser_r0 = {
 +	.name				= "NB4-SER-r0",
 +	.expected_cpu_id		= 0x6358,
 +
++	.has_uart0			= 1,
 +	.has_enet0			= 1,
 +	.has_enet1			= 1,
 +	.has_pci			= 1,
@@ -73,7 +92,7 @@
 +	.leds = {
 +		{
 +			.name		= "adsl",
-+			.gpio		= NXP_74HC64_GPIO(4),
++			.gpio		= NB4_74HC64_GPIO(4),
 +			.active_low	= 1,
 +		},
 +		{
@@ -83,12 +102,12 @@
 +		},
 +		{
 +			.name		= "tel",
-+			.gpio		= NXP_74HC64_GPIO(3),
++			.gpio		= NB4_74HC64_GPIO(3),
 +			.active_low	= 1,
 +		},
 +		{
 +			.name		= "tv",
-+			.gpio		= NXP_74HC64_GPIO(2),
++			.gpio		= NB4_74HC64_GPIO(2),
 +			.active_low	= 1,
 +		},
 +		{
@@ -98,7 +117,7 @@
 +		},
 +		{
 +			.name		= "alarm",
-+			.gpio		= NXP_74HC64_GPIO(0),
++			.gpio		= NB4_74HC64_GPIO(0),
 +			.active_low	= 1,
 +		},
 +		{
@@ -133,14 +152,17 @@
 +			.threshold	= 3,
 +		},
 +	},
-+	.devs = neufbox4_devices,
-+	.num_devs = ARRAY_SIZE(neufbox4_devices),
++	.devs = nb4_devices,
++	.num_devs = ARRAY_SIZE(nb4_devices),
++	.spis = nb4_spi_devices,
++	.num_spis = ARRAY_SIZE(nb4_spi_devices),
 +};
 +
 +static struct board_info __initdata board_nb4_ser_r1 = {
 +	.name				= "NB4-SER-r1",
 +	.expected_cpu_id		= 0x6358,
 +
++	.has_uart0			= 1,
 +	.has_enet0			= 1,
 +	.has_enet1			= 1,
 +	.has_pci			= 1,
@@ -165,7 +187,7 @@
 +	.leds = {
 +		{
 +			.name		= "adsl",
-+			.gpio		= NXP_74HC64_GPIO(4),
++			.gpio		= NB4_74HC64_GPIO(4),
 +			.active_low	= 1,
 +		},
 +		{
@@ -175,12 +197,12 @@
 +		},
 +		{
 +			.name		= "tel",
-+			.gpio		= NXP_74HC64_GPIO(3),
++			.gpio		= NB4_74HC64_GPIO(3),
 +			.active_low	= 1,
 +		},
 +		{
 +			.name		= "tv",
-+			.gpio		= NXP_74HC64_GPIO(2),
++			.gpio		= NB4_74HC64_GPIO(2),
 +			.active_low	= 1,
 +		},
 +		{
@@ -190,7 +212,7 @@
 +		},
 +		{
 +			.name		= "alarm",
-+			.gpio		= NXP_74HC64_GPIO(0),
++			.gpio		= NB4_74HC64_GPIO(0),
 +			.active_low	= 1,
 +		},
 +		{
@@ -225,14 +247,17 @@
 +			.threshold	= 3,
 +		},
 +	},
-+	.devs = neufbox4_devices,
-+	.num_devs = ARRAY_SIZE(neufbox4_devices),
++	.devs = nb4_devices,
++	.num_devs = ARRAY_SIZE(nb4_devices),
++	.spis = nb4_spi_devices,
++	.num_spis = ARRAY_SIZE(nb4_spi_devices),
 +};
 +
 +static struct board_info __initdata board_nb4_ser_r2 = {
 +	.name				= "NB4-SER-r2",
 +	.expected_cpu_id		= 0x6358,
 +
++	.has_uart0			= 1,
 +	.has_enet0			= 1,
 +	.has_enet1			= 1,
 +	.has_pci			= 1,
@@ -255,7 +280,7 @@
 +	.leds = {
 +		{
 +			.name		= "adsl",
-+			.gpio		= NXP_74HC64_GPIO(4),
++			.gpio		= NB4_74HC64_GPIO(4),
 +			.active_low	= 1,
 +		},
 +		{
@@ -265,12 +290,12 @@
 +		},
 +		{
 +			.name		= "tel",
-+			.gpio		= NXP_74HC64_GPIO(3),
++			.gpio		= NB4_74HC64_GPIO(3),
 +			.active_low	= 1,
 +		},
 +		{
 +			.name		= "tv",
-+			.gpio		= NXP_74HC64_GPIO(2),
++			.gpio		= NB4_74HC64_GPIO(2),
 +			.active_low	= 1,
 +		},
 +		{
@@ -280,7 +305,7 @@
 +		},
 +		{
 +			.name		= "alarm",
-+			.gpio		= NXP_74HC64_GPIO(0),
++			.gpio		= NB4_74HC64_GPIO(0),
 +			.active_low	= 1,
 +		},
 +		{
@@ -315,14 +340,17 @@
 +			.threshold	= 3,
 +		},
 +	},
-+	.devs = neufbox4_devices,
-+	.num_devs = ARRAY_SIZE(neufbox4_devices),
++	.devs = nb4_devices,
++	.num_devs = ARRAY_SIZE(nb4_devices),
++	.spis = nb4_spi_devices,
++	.num_spis = ARRAY_SIZE(nb4_spi_devices),
 +};
 +
 +static struct board_info __initdata board_nb4_fxc_r1 = {
 +	.name				= "NB4-FXC-r1",
 +	.expected_cpu_id		= 0x6358,
 +
++	.has_uart0			= 1,
 +	.has_enet0			= 1,
 +	.has_enet1			= 1,
 +	.has_pci			= 1,
@@ -347,7 +375,7 @@
 +	.leds = {
 +		{
 +			.name		= "adsl",
-+			.gpio		= NXP_74HC64_GPIO(4),
++			.gpio		= NB4_74HC64_GPIO(4),
 +			.active_low	= 1,
 +		},
 +		{
@@ -356,12 +384,12 @@
 +		},
 +		{
 +			.name		= "tel",
-+			.gpio		= NXP_74HC64_GPIO(3),
++			.gpio		= NB4_74HC64_GPIO(3),
 +			.active_low	= 1,
 +		},
 +		{
 +			.name		= "tv",
-+			.gpio		= NXP_74HC64_GPIO(2),
++			.gpio		= NB4_74HC64_GPIO(2),
 +			.active_low	= 1,
 +		},
 +		{
@@ -370,7 +398,7 @@
 +		},
 +		{
 +			.name		= "alarm",
-+			.gpio		= NXP_74HC64_GPIO(0),
++			.gpio		= NB4_74HC64_GPIO(0),
 +			.active_low	= 1,
 +		},
 +		{
@@ -402,14 +430,17 @@
 +			.threshold	= 3,
 +		},
 +	},
-+	.devs = neufbox4_devices,
-+	.num_devs = ARRAY_SIZE(neufbox4_devices),
++	.devs = nb4_devices,
++	.num_devs = ARRAY_SIZE(nb4_devices),
++	.spis = nb4_spi_devices,
++	.num_spis = ARRAY_SIZE(nb4_spi_devices),
 +};
 +
 +static struct board_info __initdata board_nb4_fxc_r2 = {
 +	.name				= "NB4-FXC-r2",
 +	.expected_cpu_id		= 0x6358,
 +
++	.has_uart0			= 1,
 +	.has_enet0			= 1,
 +	.has_enet1			= 1,
 +	.has_pci			= 1,
@@ -432,7 +463,7 @@
 +	.leds = {
 +		{
 +			.name		= "adsl",
-+			.gpio		= NXP_74HC64_GPIO(4),
++			.gpio		= NB4_74HC64_GPIO(4),
 +			.active_low	= 1,
 +		},
 +		{
@@ -441,12 +472,12 @@
 +		},
 +		{
 +			.name		= "tel",
-+			.gpio		= NXP_74HC64_GPIO(3),
++			.gpio		= NB4_74HC64_GPIO(3),
 +			.active_low	= 1,
 +		},
 +		{
 +			.name		= "tv",
-+			.gpio		= NXP_74HC64_GPIO(2),
++			.gpio		= NB4_74HC64_GPIO(2),
 +			.active_low	= 1,
 +		},
 +		{
@@ -455,7 +486,7 @@
 +		},
 +		{
 +			.name		= "alarm",
-+			.gpio		= NXP_74HC64_GPIO(0),
++			.gpio		= NB4_74HC64_GPIO(0),
 +			.active_low	= 1,
 +		},
 +		{
@@ -487,13 +518,15 @@
 +			.threshold	= 3,
 +		},
 +	},
-+	.devs = neufbox4_devices,
-+	.num_devs = ARRAY_SIZE(neufbox4_devices),
++	.devs = nb4_devices,
++	.num_devs = ARRAY_SIZE(nb4_devices),
++	.spis = nb4_spi_devices,
++	.num_spis = ARRAY_SIZE(nb4_spi_devices),
 +};
  #endif
  
  /*
-@@ -788,9 +1260,30 @@ static const struct board_info __initdat
+@@ -788,9 +1293,30 @@ static const struct board_info __initdat
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -505,7 +538,7 @@
  #endif
  };
  
-+static void __init neufbox4_nvram_fixup(void)
++static void __init nb4_nvram_fixup(void)
 +{
 +	u8 *boot_addr, *p;
 +	u32 val;
@@ -514,8 +547,8 @@
 +		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
 +		val &= MPI_CSBASE_BASE_MASK;
 +		boot_addr = (u8 *)KSEG1ADDR(val);
-+		/* Extract neufbox4 PID */
-+		p = boot_addr + NEUFBOX4_PID_OFFSET;
++		/* Extract nb4 PID */
++		p = boot_addr + NB4_PID_OFFSET;
 +		if (!memcmp(p, "NB4-", 4))
 +			memcpy(nvram.name, p, sizeof("NB4-XXX-rX"));
 +	}
@@ -524,12 +557,12 @@
  /*
   * Register a sane SPROMv2 to make the on-board
   * bcm4318 WLAN work
-@@ -908,6 +1401,9 @@ void __init board_prom_init(void)
+@@ -908,6 +1434,9 @@ void __init board_prom_init(void)
  		return;
  	}
  
-+	/* Fixup broken neufbox4 board name */
-+	neufbox4_nvram_fixup();
++	/* Fixup broken nb4 board name */
++	nb4_nvram_fixup();
 +
  	/* find board by name */
  	for (i = 0; i < ARRAY_SIZE(bcm963xx_boards); i++) {
