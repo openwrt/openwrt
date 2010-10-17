@@ -13,7 +13,7 @@ DEFAULT_PACKAGES += kmod-ata-via-sata kmod-crypto-hw-geode \
 
 CS5535_MASK:=0x0E000048
 
-CFLAGS += -Os -march=k6-2 -fno-align-functions -fno-align-loops -fno-align-jumps \
+CFLAGS += -Os -pipe -march=k6-2 -fno-align-functions -fno-align-loops -fno-align-jumps \
       -fno-align-labels
 
 define Target/Description

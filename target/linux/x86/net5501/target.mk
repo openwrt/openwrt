@@ -6,7 +6,8 @@ DEFAULT_PACKAGES += kmod-ata-via-sata kmod-crypto-hw-geode \
 			kmod-i2c-core kmod-i2c-gpio \
 			kmod-i2c-algo-bit kmod-i2c-algo-pca kmod-i2c-algo-pcf \
 			kmod-usb-core kmod-usb2 kmod-usb-hid kmod-usb-uhci
-CFLAGS += -Os -march=k6-2 -fno-align-functions -fno-align-loops -fno-align-jumps \
+
+CFLAGS += -Os -pipe -march=k6-2 -fno-align-functions -fno-align-loops -fno-align-jumps \
 	  -fno-align-labels
 
 define Target/Description
