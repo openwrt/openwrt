@@ -67,16 +67,20 @@ define ModuleAutoLoad
 	$(SH_FUNC) \
 	export modules=; \
 	add_module() { \
+		priority="$$$$$$$$1"; \
+		mods="$$$$$$$$2"; \
+		boot="$$$$$$$$3"; \
+		shift 3; \
 		mkdir -p $(2)/etc/modules.d; \
 		( \
-			[ "$$$$$$$$3" = "1" ] && { \
+			[ "$$$$$$$$boot" = "1" ] && { \
 				echo '# May be required for rootfs' ; \
 			} ; \
-			for mod in $$$$$$$$2; do \
-				getvar mod; \
+			for mod in $$$$$$$$mods; do \
+				echo "$$$$$$$$mod"; \
 			done \
-		) > $(2)/etc/modules.d/$$$$$$$$1-$(1); \
-		modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$1-$(1)"; \
+		) > $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
+		modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$priority-$(1)"; \
 	}; \
 	$(3) \
 	if [ -n "$$$$$$$$modules" ]; then \
@@ -156,7 +160,7 @@ $(call KernelPackage/$(1)/config)
 endef
 
 define AutoLoad
-  add_module $(1) "$(2)" $(3);
+  add_module "$(1)" "$(2)" "$(3)";
 endef
 
 ifdef DUMP
