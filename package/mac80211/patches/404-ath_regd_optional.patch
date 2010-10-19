@@ -1,68 +1,46 @@
 --- a/drivers/net/wireless/ath/regd.c
 +++ b/drivers/net/wireless/ath/regd.c
-@@ -18,6 +18,9 @@
- #include <net/cfg80211.h>
- #include <net/mac80211.h>
- #include "regd.h"
-+
-+#ifndef ATH_USER_REGD
-+
- #include "regd_common.h"
- 
- /*
-@@ -587,3 +590,5 @@ u32 ath_regd_get_band_ctl(struct ath_reg
- 	}
- }
- EXPORT_SYMBOL(ath_regd_get_band_ctl);
-+
-+#endif
---- a/drivers/net/wireless/ath/regd.h
-+++ b/drivers/net/wireless/ath/regd.h
-@@ -249,6 +249,41 @@ enum CountryCode {
- 	CTRY_BELGIUM2 = 5002
- };
+@@ -185,6 +185,10 @@ ath_reg_apply_beaconing_flags(struct wip
+ 	u32 bandwidth = 0;
+ 	int r;
  
 +#ifdef ATH_USER_REGD
-+
-+static inline bool
-+ath_is_world_regd(struct ath_regulatory *reg)
-+{
-+	return true;
-+}
-+
-+static inline int
-+ath_regd_init(struct ath_regulatory *reg, struct wiphy *wiphy,
-+	      int (*reg_notifier)(struct wiphy *wiphy,
-+	      struct regulatory_request *request))
-+{
-+	return 0;
-+}
-+
-+
-+static inline u32
-+ath_regd_get_band_ctl(struct ath_regulatory *reg,
-+		      enum ieee80211_band band)
-+{
-+	return SD_NO_CTL;
-+}
-+
-+static inline int
-+ath_reg_notifier_apply(struct wiphy *wiphy,
-+		       struct regulatory_request *request,
-+		       struct ath_regulatory *reg)
-+{
-+	return 0;
-+}
-+
-+
-+#else
-+
- bool ath_is_world_regd(struct ath_regulatory *reg);
- int ath_regd_init(struct ath_regulatory *reg, struct wiphy *wiphy,
- 		  int (*reg_notifier)(struct wiphy *wiphy,
-@@ -260,3 +295,5 @@ int ath_reg_notifier_apply(struct wiphy 
- 			   struct ath_regulatory *reg);
- 
- #endif
-+
++	return;
 +#endif
++
+ 	for (band = 0; band < IEEE80211_NUM_BANDS; band++) {
+ 
+ 		if (!wiphy->bands[band])
+@@ -244,6 +248,10 @@ ath_reg_apply_active_scan_flags(struct w
+ 	u32 bandwidth = 0;
+ 	int r;
+ 
++#ifdef ATH_USER_REGD
++	return;
++#endif
++
+ 	sband = wiphy->bands[IEEE80211_BAND_2GHZ];
+ 
+ 	/*
+@@ -291,6 +299,10 @@ static void ath_reg_apply_radar_flags(st
+ 	struct ieee80211_channel *ch;
+ 	unsigned int i;
+ 
++#ifdef ATH_USER_REGD
++	return;
++#endif
++
+ 	if (!wiphy->bands[IEEE80211_BAND_5GHZ])
+ 		return;
+ 
+@@ -449,6 +461,10 @@ ath_regd_init_wiphy(struct ath_regulator
+ {
+ 	const struct ieee80211_regdomain *regd;
+ 
++#ifdef ATH_USER_REGD
++	return 0;
++#endif
++
+ 	wiphy->reg_notifier = reg_notifier;
+ 	wiphy->flags |= WIPHY_FLAG_STRICT_REGULATORY;
+ 
