@@ -6,9 +6,9 @@
  obj-$(CONFIG_COMPAT_NETWORK_MODULES) += drivers/net/
 -obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/ssb/ drivers/misc/eeprom/
 +obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/misc/eeprom/
- endif
  
- obj-$(CONFIG_COMPAT_BLUETOOTH) += net/bluetooth/
+ ifeq ($(CONFIG_STAGING_EXCLUDE_BUILD),)
+ obj-$(CONFIG_COMPAT_STAGING) += drivers/staging/ath6kl/
 --- a/config.mk
 +++ b/config.mk
 @@ -9,7 +9,6 @@ ifeq ($(wildcard $(KLIB_BUILD)/.config),
