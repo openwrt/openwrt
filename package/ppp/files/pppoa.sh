@@ -1,9 +1,12 @@
+coldplug_interface_pppoa() {
+	setup_interface_pppoa x "$1"
+}
+
 stop_interface_pppoa() {
 	stop_interface_ppp "$1"
 }
 
 setup_interface_pppoa() {
-	local iface="$1"
 	local config="$2"
 
 	local device
@@ -29,9 +32,8 @@ setup_interface_pppoa() {
 
 	local mtu
 	config_get mtu "$config" mtu
-	mtu=${mtu:-1500}
 
 	start_pppd "$config" \
-		plugin pppoatm.so ${vpi:-8}.${vci:-35} ${encaps} \
-		mtu $mtu mru $mtu
+		plugin pppoatm.so ${device:+$device.}${vpi:-8}.${vci:-35} \
+		${encaps} ${mtu:+mtu $mtu mru $mtu}
 }
