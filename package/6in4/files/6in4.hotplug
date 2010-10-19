@@ -17,11 +17,9 @@ if [ "$ACTION" = ifup ]; then
 		config_get wandev "$cfg" wan_device "$(find_6in4_wanif)"
 		[ "$wandev" = "$DEVICE" ] || return 0
 
-		local oldip
 		local wanip=$(find_6in4_wanip "$wandev")
-		config_get oldip "$cfg" ipaddr
 
-		[ -n "$wanip" ] && [ "$oldip" != "$wanip" ] && {
+		[ -n "$wanip" ] && {
 			local tunnelid
 			config_get tunnelid "$cfg" tunnelid
 
@@ -37,7 +35,22 @@ if [ "$ACTION" = ifup ]; then
 				}
 				uci_set_state network "$cfg" ipaddr "$wanip"
 
-				( wget -qO/dev/null "http://ipv4.tunnelbroker.net/ipv4_end.php?ipv4b=AUTO&user_id=$username&pass=$password&tunnel_id=$tunnelid" && ifup "$cfg" )&
+				(
+					local url="http://ipv4.tunnelbroker.net/ipv4_end.php?ipv4b=AUTO&user_id=$username&pass=$password&tunnel_id=$tunnelid"
+					local try=0
+					local max=3
+
+					while [ $((++try)) -le $max ]; do
+						wget -qO/dev/null "$url" 2>/dev/null && {
+							logger -t 6in4-update "Updated tunnel #$tunnelid endpoint to $wanip"
+							ifup "$cfg"
+							break
+						} || {
+							logger -t 6in4-update "Try $try/$max failed, retrying"
+							sleep 1
+						}
+					done
+				)&
 			}
 		}
 	}
