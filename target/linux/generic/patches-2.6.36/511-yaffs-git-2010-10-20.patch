@@ -1,6 +1,5 @@
-diff -Nrup linux-2.6.36-rc8/fs/Kconfig linux-2.6.36-rc8.new/fs/Kconfig
---- linux-2.6.36-rc8/fs/Kconfig	2010-10-20 13:11:25.295000294 +0300
-+++ linux-2.6.36-rc8.new/fs/Kconfig	2010-10-20 13:28:15.952000294 +0300
+--- a/fs/Kconfig
++++ b/fs/Kconfig
 @@ -44,7 +44,6 @@ source "fs/gfs2/Kconfig"
  source "fs/ocfs2/Kconfig"
  source "fs/btrfs/Kconfig"
@@ -20,9 +19,8 @@ diff -Nrup linux-2.6.36-rc8/fs/Kconfig linux-2.6.36-rc8.new/fs/Kconfig
  source "fs/jffs2/Kconfig"
  # UBIFS File system configuration
  source "fs/ubifs/Kconfig"
-diff -Nrup linux-2.6.36-rc8/fs/Makefile linux-2.6.36-rc8.new/fs/Makefile
---- linux-2.6.36-rc8/fs/Makefile	2010-10-20 13:11:25.295000294 +0300
-+++ linux-2.6.36-rc8.new/fs/Makefile	2010-10-20 13:28:15.953000294 +0300
+--- a/fs/Makefile
++++ b/fs/Makefile
 @@ -127,5 +127,6 @@ obj-$(CONFIG_BTRFS_FS)		+= btrfs/
  obj-$(CONFIG_GFS2_FS)           += gfs2/
  obj-$(CONFIG_EXOFS_FS)          += exofs/
@@ -31,9 +29,8 @@ diff -Nrup linux-2.6.36-rc8/fs/Makefile linux-2.6.36-rc8.new/fs/Makefile
  
 +# Patched by YAFFS
 +obj-$(CONFIG_YAFFS_FS)		+= yaffs2/
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/devextras.h linux-2.6.36-rc8.new/fs/yaffs2/devextras.h
---- linux-2.6.36-rc8/fs/yaffs2/devextras.h	2010-10-20 13:17:58.937000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/devextras.h	2010-10-20 13:28:16.050000294 +0300
+--- a/fs/yaffs2/devextras.h
++++ b/fs/yaffs2/devextras.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -156,9 +153,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/devextras.h linux-2.6.36-rc8.new/fs/yaffs2
  
  #if !(defined __KERNEL__)
  
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/Kconfig linux-2.6.36-rc8.new/fs/yaffs2/Kconfig
---- linux-2.6.36-rc8/fs/yaffs2/Kconfig	2010-10-20 13:17:58.937000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/Kconfig	2010-10-20 13:28:15.993000294 +0300
+--- a/fs/yaffs2/Kconfig
++++ b/fs/yaffs2/Kconfig
 @@ -90,23 +90,15 @@ config YAFFS_AUTO_YAFFS2
  
  	  If unsure, say Y.
@@ -236,9 +232,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/Kconfig linux-2.6.36-rc8.new/fs/yaffs2/Kco
 +	 If unsure, say Y.
 +
 +
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/Makefile linux-2.6.36-rc8.new/fs/yaffs2/Makefile
---- linux-2.6.36-rc8/fs/yaffs2/Makefile	2010-10-20 13:17:58.937000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/Makefile	2010-10-20 13:28:15.989000294 +0300
+--- a/fs/yaffs2/Makefile
++++ b/fs/yaffs2/Makefile
 @@ -4,7 +4,14 @@
  
  obj-$(CONFIG_YAFFS_FS) += yaffs.o
@@ -256,9 +251,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/Makefile linux-2.6.36-rc8.new/fs/yaffs2/Ma
 +yaffs-y += yaffs_bitmap.o
 +yaffs-y += yaffs_verify.o
 +
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/moduleconfig.h linux-2.6.36-rc8.new/fs/yaffs2/moduleconfig.h
---- linux-2.6.36-rc8/fs/yaffs2/moduleconfig.h	2010-10-20 13:17:58.938000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/moduleconfig.h	2010-10-20 13:28:16.055000294 +0300
+--- a/fs/yaffs2/moduleconfig.h
++++ b/fs/yaffs2/moduleconfig.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -331,9 +325,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/moduleconfig.h linux-2.6.36-rc8.new/fs/yaf
  /* #define CONFIG_YAFFS_9BYTE_TAGS */
  
  #endif /* YAFFS_OUT_OF_TREE */
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_allocator.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_allocator.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_allocator.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_allocator.c	2010-10-20 13:28:15.998000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_allocator.c
 @@ -0,0 +1,409 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -744,9 +737,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_allocator.c linux-2.6.36-rc8.new/fs/
 +
 +
 +#endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_allocator.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_allocator.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_allocator.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_allocator.h	2010-10-20 13:28:16.058000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_allocator.h
 @@ -0,0 +1,30 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -778,9 +770,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_allocator.h linux-2.6.36-rc8.new/fs/
 +void yaffs_free_raw_obj(yaffs_dev_t *dev, yaffs_obj_t *obj);
 +
 +#endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_bitmap.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_bitmap.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_bitmap.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_bitmap.c	2010-10-20 13:28:15.998000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_bitmap.c
 @@ -0,0 +1,105 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -887,9 +878,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_bitmap.c linux-2.6.36-rc8.new/fs/yaf
 +	return n;
 +}
 +
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_bitmap.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_bitmap.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_bitmap.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_bitmap.h	2010-10-20 13:28:16.058000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_bitmap.h
 @@ -0,0 +1,31 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -922,9 +912,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_bitmap.h linux-2.6.36-rc8.new/fs/yaf
 +int yaffs_count_chunk_bits(yaffs_dev_t *dev, int blk);
 +
 +#endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_checkptrw.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_checkptrw.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_checkptrw.c	2010-10-20 13:17:58.941000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_checkptrw.c	2010-10-20 13:28:15.999000294 +0300
+--- a/fs/yaffs2/yaffs_checkptrw.c
++++ b/fs/yaffs2/yaffs_checkptrw.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -1492,9 +1481,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_checkptrw.c linux-2.6.36-rc8.new/fs/
  }
  
  
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_checkptrw.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_checkptrw.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_checkptrw.h	2010-10-20 13:17:58.941000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_checkptrw.h	2010-10-20 13:28:16.058000294 +0300
+--- a/fs/yaffs2/yaffs_checkptrw.h
++++ b/fs/yaffs2/yaffs_checkptrw.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -1529,9 +1517,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_checkptrw.h linux-2.6.36-rc8.new/fs/
  
  #endif
 -
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_ecc.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_ecc.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_ecc.c	2010-10-20 13:17:58.942000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_ecc.c	2010-10-20 13:28:16.025000294 +0300
+--- a/fs/yaffs2/yaffs_ecc.c
++++ b/fs/yaffs2/yaffs_ecc.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -1647,9 +1634,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_ecc.c linux-2.6.36-rc8.new/fs/yaffs2
  		/* Reccoverable error in ecc */
  
  		*read_ecc = *test_ecc;
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_ecc.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_ecc.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_ecc.h	2010-10-20 13:17:58.942000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_ecc.h	2010-10-20 13:28:16.058000294 +0300
+--- a/fs/yaffs2/yaffs_ecc.h
++++ b/fs/yaffs2/yaffs_ecc.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -1677,9 +1663,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_ecc.h linux-2.6.36-rc8.new/fs/yaffs2
  			yaffs_ECCOther *read_ecc,
  			const yaffs_ECCOther *test_ecc);
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_fs.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_fs.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_fs.c	2010-10-20 13:17:58.944000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_fs.c	1970-01-01 02:00:00.000000000 +0200
+--- a/fs/yaffs2/yaffs_fs.c
++++ /dev/null
 @@ -1,2529 +0,0 @@
 -/*
 - * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -4210,9 +4195,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_fs.c linux-2.6.36-rc8.new/fs/yaffs2/
 -MODULE_DESCRIPTION("YAFFS2 - a NAND specific flash file system");
 -MODULE_AUTHOR("Charles Manning, Aleph One Ltd., 2002-2006");
 -MODULE_LICENSE("GPL");
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_getblockinfo.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_getblockinfo.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_getblockinfo.h	2010-10-20 13:17:58.945000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_getblockinfo.h	2010-10-20 13:28:16.058000294 +0300
+--- a/fs/yaffs2/yaffs_getblockinfo.h
++++ b/fs/yaffs2/yaffs_getblockinfo.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -4245,9 +4229,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_getblockinfo.h linux-2.6.36-rc8.new/
  }
  
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_guts.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_guts.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_guts.c	2010-10-20 13:17:58.951000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_guts.c	2010-10-20 13:28:16.027000294 +0300
+--- a/fs/yaffs2/yaffs_guts.c
++++ b/fs/yaffs2/yaffs_guts.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -15537,9 +15520,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_guts.c linux-2.6.36-rc8.new/fs/yaffs
  #endif
  	return YAFFS_OK;
  }
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_guts.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_guts.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_guts.h	2010-10-20 13:17:58.954000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_guts.h	2010-10-20 13:28:16.061000294 +0300
+--- a/fs/yaffs2/yaffs_guts.h
++++ b/fs/yaffs2/yaffs_guts.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -16822,9 +16804,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_guts.h linux-2.6.36-rc8.new/fs/yaffs
 +__u32 yaffs_get_group_base(yaffs_dev_t *dev, yaffs_tnode_t *tn, unsigned pos);
  
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffsinterface.h linux-2.6.36-rc8.new/fs/yaffs2/yaffsinterface.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffsinterface.h	2010-10-20 13:17:58.955000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffsinterface.h	2010-10-20 13:28:16.061000294 +0300
+--- a/fs/yaffs2/yaffsinterface.h
++++ b/fs/yaffs2/yaffsinterface.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -16842,9 +16823,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffsinterface.h linux-2.6.36-rc8.new/fs/y
 +int yaffs_initialise(unsigned nBlocks);
  
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_linux_allocator.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_linux_allocator.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_linux_allocator.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_linux_allocator.c	2010-10-20 13:28:16.028000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_linux_allocator.c
 @@ -0,0 +1,200 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -17046,9 +17026,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_linux_allocator.c linux-2.6.36-rc8.n
 +	yaffs_Allocator *allocator = dev->allocator;
 +	kmem_cache_free(allocator->object_cache,obj);
 +}
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_linux.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_linux.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_linux.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_linux.h	2010-10-20 13:28:16.061000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_linux.h
 @@ -0,0 +1,43 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -17093,9 +17072,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_linux.h linux-2.6.36-rc8.new/fs/yaff
 +
 +#endif
 +
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_list.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_list.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_list.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_list.h	2010-10-20 13:28:16.062000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_list.h
 @@ -0,0 +1,127 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -17224,9 +17202,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_list.h linux-2.6.36-rc8.new/fs/yaffs
 +
 +
 +#endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif1.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif1.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif1.c	2010-10-20 13:17:58.956000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif1.c	2010-10-20 13:28:16.028000294 +0300
+--- a/fs/yaffs2/yaffs_mtdif1.c
++++ b/fs/yaffs2/yaffs_mtdif1.c
 @@ -2,7 +2,7 @@
   * YAFFS: Yet another FFS. A NAND-flash specific file system.
   * yaffs_mtdif1.c  NAND mtd interface functions for small-page NAND.
@@ -17569,9 +17546,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif1.c linux-2.6.36-rc8.new/fs/yaf
  	} else {
  		state = YAFFS_BLOCK_STATE_EMPTY;
  	}
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif1-compat.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif1-compat.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif1-compat.c	2010-10-20 13:17:58.956000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif1-compat.c	1970-01-01 02:00:00.000000000 +0200
+--- a/fs/yaffs2/yaffs_mtdif1-compat.c
++++ /dev/null
 @@ -1,434 +0,0 @@
 -From ian@brightstareng.com Fri May 18 15:06:49 2007
 -From ian@brightstareng.com Fri May 18 15:08:21 2007
@@ -18007,9 +17983,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif1-compat.c linux-2.6.36-rc8.new
 -
 -
 -
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif1.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif1.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif1.h	2010-10-20 13:17:58.957000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif1.h	2010-10-20 13:28:16.062000294 +0300
+--- a/fs/yaffs2/yaffs_mtdif1.h
++++ b/fs/yaffs2/yaffs_mtdif1.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System. A NAND-flash specific file system.
@@ -18042,9 +18017,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif1.h linux-2.6.36-rc8.new/fs/yaf
 +	yaffs_block_state_t *state, __u32 *seq_number);
  
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif2.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif2.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif2.c	2010-10-20 13:17:58.957000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif2.c	2010-10-20 13:28:16.028000294 +0300
+--- a/fs/yaffs2/yaffs_mtdif2.c
++++ b/fs/yaffs2/yaffs_mtdif2.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -18347,9 +18321,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif2.c linux-2.6.36-rc8.new/fs/yaf
  	   *state));
  
  	if (retval == 0)
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif2.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif2.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif2.h	2010-10-20 13:17:58.957000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif2.h	2010-10-20 13:28:16.062000294 +0300
+--- a/fs/yaffs2/yaffs_mtdif2.h
++++ b/fs/yaffs2/yaffs_mtdif2.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -18380,9 +18353,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif2.h linux-2.6.36-rc8.new/fs/yaf
 +			yaffs_block_state_t *state, __u32 *seq_number);
  
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif.c	2010-10-20 13:17:58.958000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif.c	2010-10-20 13:28:16.029000294 +0300
+--- a/fs/yaffs2/yaffs_mtdif.c
++++ b/fs/yaffs2/yaffs_mtdif.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -18627,9 +18599,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif.c linux-2.6.36-rc8.new/fs/yaff
  {
  	return YAFFS_OK;
  }
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif.h	2010-10-20 13:17:58.958000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_mtdif.h	2010-10-20 13:28:16.062000294 +0300
+--- a/fs/yaffs2/yaffs_mtdif.h
++++ b/fs/yaffs2/yaffs_mtdif.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -18653,9 +18624,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_mtdif.h linux-2.6.36-rc8.new/fs/yaff
 +int nandmtd_EraseBlockInNAND(yaffs_dev_t *dev, int blockNumber);
 +int nandmtd_InitialiseNAND(yaffs_dev_t *dev);
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nameval.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nameval.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_nameval.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nameval.c	2010-10-20 13:28:16.029000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_nameval.c
 @@ -0,0 +1,197 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -18854,9 +18824,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nameval.c linux-2.6.36-rc8.new/fs/ya
 +{
 +	return nval_used(xb, xb_size) > 0;
 +}
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nameval.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nameval.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_nameval.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nameval.h	2010-10-20 13:28:16.062000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_nameval.h
 @@ -0,0 +1,25 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -18883,9 +18852,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nameval.h linux-2.6.36-rc8.new/fs/ya
 +int nval_list(const char *xb, int xb_size, char *buf, int bsize);
 +int nval_hasvalues(const char *xb, int xb_size);
 +#endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nand.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nand.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_nand.c	2010-10-20 13:17:58.959000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nand.c	2010-10-20 13:28:16.029000294 +0300
+--- a/fs/yaffs2/yaffs_nand.c
++++ b/fs/yaffs2/yaffs_nand.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -19073,9 +19041,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nand.c linux-2.6.36-rc8.new/fs/yaffs
  }
  
  
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nandemul2k.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nandemul2k.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_nandemul2k.h	2010-10-20 13:17:58.959000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nandemul2k.h	2010-10-20 13:28:16.063000294 +0300
+--- a/fs/yaffs2/yaffs_nandemul2k.h
++++ b/fs/yaffs2/yaffs_nandemul2k.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -19116,9 +19083,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nandemul2k.h linux-2.6.36-rc8.new/fs
  int nandemul2k_GetBytesPerChunk(void);
  int nandemul2k_GetChunksPerBlock(void);
  int nandemul2k_GetNumberOfBlocks(void);
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nand.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nand.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_nand.h	2010-10-20 13:17:58.959000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_nand.h	2010-10-20 13:28:16.063000294 +0300
+--- a/fs/yaffs2/yaffs_nand.h
++++ b/fs/yaffs2/yaffs_nand.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -19168,9 +19134,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_nand.h linux-2.6.36-rc8.new/fs/yaffs
  
  #endif
  
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags1.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_packedtags1.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags1.c	2010-10-20 13:17:58.959000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_packedtags1.c	2010-10-20 13:28:16.029000294 +0300
+--- a/fs/yaffs2/yaffs_packedtags1.c
++++ b/fs/yaffs2/yaffs_packedtags1.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -19235,9 +19200,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags1.c linux-2.6.36-rc8.new/f
 +		memset(t, 0, sizeof(yaffs_ext_tags));
  	}
  }
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags1.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_packedtags1.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags1.h	2010-10-20 13:17:58.960000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_packedtags1.h	2010-10-20 13:28:16.063000294 +0300
+--- a/fs/yaffs2/yaffs_packedtags1.h
++++ b/fs/yaffs2/yaffs_packedtags1.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -19271,9 +19235,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags1.h linux-2.6.36-rc8.new/f
 +void yaffs_PackTags1(yaffs_PackedTags1 *pt, const yaffs_ext_tags *t);
 +void yaffs_unpack_tags1(yaffs_ext_tags *t, const yaffs_PackedTags1 *pt);
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags2.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_packedtags2.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags2.c	2010-10-20 13:17:58.960000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_packedtags2.c	2010-10-20 13:28:16.029000294 +0300
+--- a/fs/yaffs2/yaffs_packedtags2.c
++++ b/fs/yaffs2/yaffs_packedtags2.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -19546,9 +19509,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags2.c linux-2.6.36-rc8.new/f
 -
  }
  
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags2.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_packedtags2.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags2.h	2010-10-20 13:17:58.960000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_packedtags2.h	2010-10-20 13:28:16.063000294 +0300
+--- a/fs/yaffs2/yaffs_packedtags2.h
++++ b/fs/yaffs2/yaffs_packedtags2.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -19588,9 +19550,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_packedtags2.h linux-2.6.36-rc8.new/f
 +void yaffs_PackTags2TagsPart(yaffs_PackedTags2TagsPart *pt, const yaffs_ext_tags *t);
 +void yaffs_unpack_tags2tags_part(yaffs_ext_tags *t, yaffs_PackedTags2TagsPart *pt);
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_qsort.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_qsort.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_qsort.h	2010-10-20 13:17:58.961000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_qsort.h	2010-10-20 13:28:16.063000294 +0300
+--- a/fs/yaffs2/yaffs_qsort.h
++++ b/fs/yaffs2/yaffs_qsort.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -19619,9 +19580,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_qsort.h linux-2.6.36-rc8.new/fs/yaff
  
  #endif
 +#endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_tagscompat.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_tagscompat.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_tagscompat.c	2010-10-20 13:17:58.961000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_tagscompat.c	2010-10-20 13:28:16.030000294 +0300
+--- a/fs/yaffs2/yaffs_tagscompat.c
++++ b/fs/yaffs2/yaffs_tagscompat.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -20290,9 +20250,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_tagscompat.c linux-2.6.36-rc8.new/fs
  		*state = YAFFS_BLOCK_STATE_DEAD;
  	else if (memcmp(&spareFF, &spare0, sizeof(spareFF)) == 0)
  		*state = YAFFS_BLOCK_STATE_EMPTY;
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_tagscompat.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_tagscompat.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_tagscompat.h	2010-10-20 13:17:58.961000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_tagscompat.h	2010-10-20 13:28:16.064000294 +0300
+--- a/fs/yaffs2/yaffs_tagscompat.h
++++ b/fs/yaffs2/yaffs_tagscompat.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -20341,9 +20300,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_tagscompat.h linux-2.6.36-rc8.new/fs
 +int yaffs_count_bits(__u8 byte);
  
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_tagsvalidity.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_tagsvalidity.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_tagsvalidity.c	2010-10-20 13:17:58.962000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_tagsvalidity.c	2010-10-20 13:28:16.030000294 +0300
+--- a/fs/yaffs2/yaffs_tagsvalidity.c
++++ b/fs/yaffs2/yaffs_tagsvalidity.c
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -20377,9 +20335,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_tagsvalidity.c linux-2.6.36-rc8.new/
 +		tags->validty1 == 0x55555555);
  
  }
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_tagsvalidity.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_tagsvalidity.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_tagsvalidity.h	2010-10-20 13:17:58.962000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_tagsvalidity.h	2010-10-20 13:28:16.064000294 +0300
+--- a/fs/yaffs2/yaffs_tagsvalidity.h
++++ b/fs/yaffs2/yaffs_tagsvalidity.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -20398,9 +20355,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_tagsvalidity.h linux-2.6.36-rc8.new/
 +void yaffs_init_tags(yaffs_ext_tags *tags);
 +int yaffs_validate_tags(yaffs_ext_tags *tags);
  #endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_trace.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_trace.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_trace.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_trace.h	2010-10-20 13:28:16.064000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_trace.h
 @@ -0,0 +1,60 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -20462,9 +20418,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_trace.h linux-2.6.36-rc8.new/fs/yaff
 +#define T(mask, p) do { if ((mask) & (yaffs_trace_mask | YAFFS_TRACE_ALWAYS)) TOUT(p); } while (0)
 +
 +#endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_verify.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_verify.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_verify.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_verify.c	2010-10-20 13:28:16.031000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_verify.c
 @@ -0,0 +1,626 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -21092,9 +21047,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_verify.c linux-2.6.36-rc8.new/fs/yaf
 +	return YAFFS_OK;
 +#endif
 +}
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_verify.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_verify.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_verify.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_verify.h	2010-10-20 13:28:16.064000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_verify.h
 @@ -0,0 +1,39 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -21135,9 +21089,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_verify.h linux-2.6.36-rc8.new/fs/yaf
 +
 +#endif
 +
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_vfs_glue.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_vfs_glue.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_vfs_glue.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_vfs_glue.c	2010-10-20 13:28:16.069000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_vfs_glue.c
 @@ -0,0 +1,3576 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -24715,9 +24668,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_vfs_glue.c linux-2.6.36-rc8.new/fs/y
 +MODULE_DESCRIPTION("YAFFS2 - a NAND specific flash file system");
 +MODULE_AUTHOR("Charles Manning, Aleph One Ltd., 2002-2010");
 +MODULE_LICENSE("GPL");
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs1.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_yaffs1.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs1.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_yaffs1.c	2010-10-20 13:28:16.039000295 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_yaffs1.c
 @@ -0,0 +1,465 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -25184,9 +25136,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs1.c linux-2.6.36-rc8.new/fs/yaf
 +	return YAFFS_OK;
 +}
 +
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs1.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_yaffs1.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs1.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_yaffs1.h	2010-10-20 13:28:16.064000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_yaffs1.h
 @@ -0,0 +1,22 @@
 +/*
 + * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
@@ -25210,9 +25161,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs1.h linux-2.6.36-rc8.new/fs/yaf
 +int yaffs1_scan(yaffs_dev_t *dev);
 +
 +#endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs2.c linux-2.6.36-rc8.new/fs/yaffs2/yaffs_yaffs2.c
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs2.c	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_yaffs2.c	2010-10-20 13:28:16.050000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_yaffs2.c
 @@ -0,0 +1,1540 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -26754,9 +26704,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs2.c linux-2.6.36-rc8.new/fs/yaf
 +
 +	return YAFFS_OK;
 +}
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs2.h linux-2.6.36-rc8.new/fs/yaffs2/yaffs_yaffs2.h
---- linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs2.h	1970-01-01 02:00:00.000000000 +0200
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yaffs_yaffs2.h	2010-10-20 13:28:16.067000294 +0300
+--- /dev/null
++++ b/fs/yaffs2/yaffs_yaffs2.h
 @@ -0,0 +1,36 @@
 +/*
 + * YAFFS: Yet Another Flash File System. A NAND-flash specific file system.
@@ -26794,9 +26743,8 @@ diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yaffs_yaffs2.h linux-2.6.36-rc8.new/fs/yaf
 +int yaffs2_scan_backwards(yaffs_dev_t *dev);
 +
 +#endif
-diff -Nrup linux-2.6.36-rc8/fs/yaffs2/yportenv.h linux-2.6.36-rc8.new/fs/yaffs2/yportenv.h
---- linux-2.6.36-rc8/fs/yaffs2/yportenv.h	2010-10-20 13:17:58.988000294 +0300
-+++ linux-2.6.36-rc8.new/fs/yaffs2/yportenv.h	2010-10-20 13:28:16.067000294 +0300
+--- a/fs/yaffs2/yportenv.h
++++ b/fs/yaffs2/yportenv.h
 @@ -1,7 +1,7 @@
  /*
   * YAFFS: Yet another Flash File System . A NAND-flash specific file system.
