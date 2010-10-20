@@ -1,0 +1,12 @@
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -183,6 +183,9 @@ static void ath_update_survey_stats(stru
+ 	struct ath_cycle_counters *cc = &common->cc_survey;
+ 	unsigned int div = common->clockrate * 1000;
+ 
++	if (!ah->curchan)
++		return;
++
+ 	if (ah->power_mode == ATH9K_PM_AWAKE)
+ 		ath_hw_cycle_counters_update(common);
+ 
