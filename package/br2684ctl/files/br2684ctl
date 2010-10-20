@@ -1,35 +1,60 @@
 #!/bin/sh /etc/rc.common
 START=50
 
-stop() {
-	killall br2684ctl 2>/dev/null >/dev/null
-	sleep 1
-	rmmod br2684
-}
-
 start_daemon() {
 	local cfg="$1"
-	config_get atmdev "$cfg" atmdev
-	config_get unit "$cfg" unit
-	config_get vpi "$cfg" vpi
-	config_get vci "$cfg" vci
+
+	local atmdev
+	config_get atmdev "$cfg" atmdev 0
+
+	local unit
+	config_get unit "$cfg" unit 0
+
+	local vpi
+	config_get vpi "$cfg" vpi 8
+
+	local vci
+	config_get vci "$cfg" vci 35
+
+	local encaps
 	config_get encaps "$cfg" encaps
-	config_get payload "$cfg" payload
-	config_get qos "$cfg" qos
+
 	case "$encaps" in
 		1|vc) encaps=1;;
 		*) encaps=0;;
 	esac
-        case "$payload" in
-                0|routed) payload=0;;
-                *) payload=1;;
-        esac
-	[ "$qos" ] && qos="-q $qos"
-	br2684ctl -b -c "$unit" -e "$encaps" -p "$payload" $qos -a "${atmdev:+$atmdev.}${vpi:-8}.${vci:-35}"	
+
+	local payload
+	config_get payload "$cfg" payload
+
+	case "$payload" in
+		0|routed) payload=0;;
+		*) payload=1;;
+	esac
+
+	local qos
+	config_get qos "$cfg" qos
+
+	local circuit="$atmdev.$vpi.$vci"
+	local pid="/var/run/br2684ctl-$circuit.pid"
+
+	start-stop-daemon -S -b -x /usr/sbin/br2684ctl -m -p "$pid" -- \
+		-c "$unit" -e "$encaps" -p "$payload" \
+		-a "$circuit" ${qos:+-q "$qos"}
 }
 
 start() {
 	insmod br2684 >/dev/null 2>/dev/null
 	config_load network
 	config_foreach start_daemon atm-bridge
+}
+
+stop() {
+	local pid
+	for pid in /var/run/br2684ctl-*.pid; do
+		if [ -f "$pid" ]; then
+			service_kill br2684ctl "$pid"
+			rm -f "$pid"
+		fi
+	done
 }
