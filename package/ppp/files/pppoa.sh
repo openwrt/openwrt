@@ -9,8 +9,8 @@ stop_interface_pppoa() {
 setup_interface_pppoa() {
 	local config="$2"
 
-	local device
-	config_get device "$config" device
+	local atmdev
+	config_get atmdev "$config" atmdev
 
 	local vpi
 	config_get vpi "$config" vpi
@@ -34,6 +34,6 @@ setup_interface_pppoa() {
 	config_get mtu "$config" mtu
 
 	start_pppd "$config" \
-		plugin pppoatm.so ${device:+$device.}${vpi:-8}.${vci:-35} \
+		plugin pppoatm.so ${atmdev:+$atmdev.}${vpi:-8}.${vci:-35} \
 		${encaps} ${mtu:+mtu $mtu mru $mtu}
 }
