@@ -18,13 +18,14 @@
  
  	cur_prob = 0;
  	cur_prob_tp = 0;
-@@ -572,6 +573,10 @@ minstrel_get_sample_rate(struct minstrel
+@@ -572,6 +573,11 @@ minstrel_get_sample_rate(struct minstrel
  	return sample_idx;
  
  next:
 +	if (mi->sample_retry > 0) {
 +		mi->sample_retry--;
 +		mi->sample_tries++;
++		mi->sample_wait = 1;
 +	}
  	minstrel_next_sample_idx(mi);
  	return -1;
