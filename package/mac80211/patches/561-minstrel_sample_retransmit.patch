@@ -1,0 +1,13 @@
+--- a/net/mac80211/rc80211_minstrel_ht.c
++++ b/net/mac80211/rc80211_minstrel_ht.c
+@@ -506,7 +506,9 @@ minstrel_ht_set_rate(struct minstrel_pri
+ 	if (!mr->retry_updated)
+ 		minstrel_calc_retransmit(mp, mi, index);
+ 
+-	if (mr->probability < MINSTREL_FRAC(20, 100))
++	if (sample)
++		rate->count = 1;
++	else if (mr->probability < MINSTREL_FRAC(20, 100))
+ 		rate->count = 2;
+ 	else if (rtscts)
+ 		rate->count = mr->retry_count_rtscts;
