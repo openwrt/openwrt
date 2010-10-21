@@ -297,7 +297,7 @@ define KernelPackage/usb-serial-ch341
   $(call AddDepends/usb-serial)
 endef
 
-define KernelPackage/usb-serial-belkin/description
+define KernelPackage/usb-serial-ch341/description
  Kernel support for Winchiphead CH341 USB-to-Serial converters
 endef
 
