@@ -146,7 +146,7 @@ static struct watchdog_info ar71xx_wdt_info = {
 	.identity		= "AR71XX watchdog",
 };
 
-static int ar71xx_wdt_ioctl(struct inode *inode, struct file *file,
+static long ar71xx_wdt_ioctl(struct file *file,
 			    unsigned int cmd, unsigned long arg)
 {
 	int t;
@@ -197,7 +197,7 @@ static int ar71xx_wdt_ioctl(struct inode *inode, struct file *file,
 static const struct file_operations ar71xx_wdt_fops = {
 	.owner		= THIS_MODULE,
 	.write		= ar71xx_wdt_write,
-	.ioctl		= ar71xx_wdt_ioctl,
+	.unlocked_ioctl	= ar71xx_wdt_ioctl,
 	.open		= ar71xx_wdt_open,
 	.release	= ar71xx_wdt_release,
 };

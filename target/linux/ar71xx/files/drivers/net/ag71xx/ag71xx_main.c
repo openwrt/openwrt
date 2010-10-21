@@ -685,7 +685,6 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 
 static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
-	struct mii_ioctl_data *data = (struct mii_ioctl_data *) &ifr->ifr_data;
 	struct ag71xx *ag = netdev_priv(dev);
 	int ret;
 
@@ -717,7 +716,7 @@ static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 		if (ag->phy_dev == NULL)
 			break;
 
-		return phy_mii_ioctl(ag->phy_dev, data, cmd);
+		return phy_mii_ioctl(ag->phy_dev, ifr, cmd);
 
 	default:
 		break;
