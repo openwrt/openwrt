@@ -824,7 +824,7 @@ void ag71xx_ar7240_stop(struct ag71xx *ag)
 {
 }
 
-int __init ag71xx_ar7240_init(struct ag71xx *ag)
+int __devinit ag71xx_ar7240_init(struct ag71xx *ag)
 {
 	struct ar7240sw *as;
 
@@ -838,7 +838,7 @@ int __init ag71xx_ar7240_init(struct ag71xx *ag)
 	return 0;
 }
 
-void __exit ag71xx_ar7240_cleanup(struct ag71xx *ag)
+void __devexit ag71xx_ar7240_cleanup(struct ag71xx *ag)
 {
 	struct ar7240sw *as = ag->phy_priv;
 
