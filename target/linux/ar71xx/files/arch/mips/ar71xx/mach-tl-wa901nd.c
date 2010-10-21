@@ -16,7 +16,6 @@
 
 #include "machtype.h"
 #include "devices.h"
-#include "dev-dsa.h"
 #include "dev-m25p80.h"
 #include "dev-ap91-pci.h"
 #include "dev-gpio-buttons.h"
@@ -95,16 +94,6 @@ static struct gpio_button tl_wa901nd_gpio_buttons[] __initdata = {
 	}
 };
 
-static struct dsa_chip_data tl_wa901nd_v1_dsa_chip = {
-	.port_names[0]  = "cpu",
-	.port_names[1]  = "lan",
-};
-
-static struct dsa_platform_data tl_wa901nd_v1_dsa_data = {
-	.nr_chips	= 1,
-	.chip		= &tl_wa901nd_v1_dsa_chip,
-};
-
 static void __init tl_wa901nd_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
@@ -119,11 +108,10 @@ static void __init tl_wa901nd_setup(void)
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.speed       = SPEED_1000;
 	ar71xx_eth1_data.duplex      = DUPLEX_FULL;
+	ar71xx_eth1_data.has_ar7240_switch = 1;
 
 	ar71xx_add_device_mdio(0x0);
 	ar71xx_add_device_eth(1);
-
-	ar71xx_add_device_dsa(1, &tl_wa901nd_v1_dsa_data);
 
 	ar71xx_add_device_m25p80(&tl_wa901nd_flash_data);
 
