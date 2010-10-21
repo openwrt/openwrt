@@ -194,7 +194,7 @@ detect_prism2() {
 
 config wifi-device $dev
 	option type	prism2
-	option channel  6
+	option channel  11
 
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
