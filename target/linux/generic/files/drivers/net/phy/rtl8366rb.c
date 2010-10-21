@@ -1209,7 +1209,7 @@ static struct rtl8366_smi_ops rtl8366rb_smi_ops = {
 	.enable_vlan4k	= rtl8366rb_enable_vlan4k,
 };
 
-static int __init rtl8366rb_probe(struct platform_device *pdev)
+static int __devinit rtl8366rb_probe(struct platform_device *pdev)
 {
 	static int rtl8366_smi_version_printed;
 	struct rtl8366rb_platform_data *pdata;
