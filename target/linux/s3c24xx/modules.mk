@@ -1,4 +1,4 @@
-ifeq ($(CONFIG_TARGET_s3c24xx),y)
+ifeq ($(CONFIG_TARGET_s3c24xx_openmoko_gta02),y)
 	SOUNDCORE_FILES = \
 		$(LINUX_DIR)/sound/soundcore.ko \
 		$(LINUX_DIR)/sound/core/snd.ko \
