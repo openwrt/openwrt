@@ -47,6 +47,8 @@ else
   FPIC:=-fpic
 endif
 
+HOST_FPIC:=-fPIC
+
 ARCH_SUFFIX:=
 ifneq ($(findstring -mips32r2,$(TARGET_OPTIMIZATION)),)
   ARCH_SUFFIX:=_r2
