@@ -50,6 +50,7 @@ define Package/base-files/conffiles
 /etc/inittab
 /etc/group
 /etc/passwd
+/etc/shadow
 /etc/profile
 /etc/shells
 /etc/sysctl.conf
