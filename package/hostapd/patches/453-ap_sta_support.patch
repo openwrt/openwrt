@@ -1,0 +1,208 @@
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -98,6 +98,8 @@ struct wpa_interface {
+ 	 * receiving of EAPOL frames from an additional interface.
+ 	 */
+ 	const char *bridge_ifname;
++
++	const char *hostapd_ctrl;
+ };
+ 
+ /**
+@@ -316,6 +318,8 @@ struct wpa_supplicant {
+ #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
+ 	char bridge_ifname[16];
+ 
++	struct wpa_ctrl *hostapd;
++
+ 	char *confname;
+ 	struct wpa_config *conf;
+ 	int countermeasures;
+--- a/wpa_supplicant/Makefile
++++ b/wpa_supplicant/Makefile
+@@ -51,6 +51,11 @@ OBJS_p += ../src/utils/wpa_debug.o
+ OBJS_p += ../src/utils/wpabuf.o
+ OBJS_c = wpa_cli.o ../src/common/wpa_ctrl.o
+ 
++ifdef MULTICALL
++OBJS += ../src/common/wpa_ctrl.o
++CFLAGS += -DMULTICALL
++endif
++
+ -include .config
+ -include $(if $(MULTICALL),../hostapd/.config)
+ 
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -120,6 +120,58 @@ extern int wpa_debug_show_keys;
+ extern int wpa_debug_timestamp;
+ extern struct wpa_driver_ops *wpa_drivers[];
+ 
++#ifdef MULTICALL
++static int hostapd_stop(struct wpa_supplicant *wpa_s)
++{
++	const char *cmd = "DOWN";
++	char buf[256];
++	int len = sizeof(buf);
++
++	if (wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL) < 0) {
++		wpa_printf(MSG_ERROR, "\nFailed to stop hostapd AP interfaces\n");
++		return -1;
++	}
++	return 0;
++}
++
++static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
++{
++	char *cmd = NULL;
++	char buf[256];
++	int len = sizeof(buf);
++	int channel, hw_mode;
++	int ret;
++
++	if (!bss)
++		return;
++
++	if (bss->freq < 4000) {
++		hw_mode = HOSTAPD_MODE_IEEE80211G;
++		channel = (bss->freq - 2407) / 5;
++	} else {
++		hw_mode = HOSTAPD_MODE_IEEE80211A;
++		channel = (bss->freq - 5000) / 5;
++	}
++
++	if (asprintf(&cmd, "RELOAD channel=%d sec_chan=0 hw_mode=%d ht_capab_mask=%d ieee80211n=%d",
++		     channel, hw_mode, bss->ht_capab, !!bss->ht_capab) < 0) {
++		fprintf(stderr, "ASPRINTF FAILED\n");
++		exit(1);
++		return -1;
++	}
++
++	wpa_printf(MSG_ERROR, "\n\n-------- RUN COMMAND: %s\n\n", cmd);
++	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
++	free(cmd);
++
++	if (ret < 0) {
++		wpa_printf(MSG_ERROR, "\nFailed to reload hostapd AP interfaces\n");
++		return -1;
++	}
++	return 0;
++}
++#endif
++
+ /* Configure default/group WEP keys for static WEP */
+ int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
+ {
+@@ -548,6 +600,10 @@ void wpa_supplicant_set_state(struct wpa
+ #ifndef IEEE8021X_EAPOL
+ 		wpa_drv_set_supp_port(wpa_s, 1);
+ #endif
++#ifdef MULTICALL
++		if (wpa_s->hostapd)
++			hostapd_reload(wpa_s, wpa_s->current_bss);
++#endif
+ 	} else if (state == WPA_DISCONNECTED || state == WPA_ASSOCIATING ||
+ 		   state == WPA_ASSOCIATED) {
+ 		wpa_s->new_connection = 1;
+@@ -1957,6 +2013,21 @@ static int wpa_supplicant_init_iface(str
+ 		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
+ 			   sizeof(wpa_s->bridge_ifname));
+ 	}
++#ifdef MULTICALL
++	if (iface->hostapd_ctrl) {
++		char *cmd = "DOWN";
++		char buf[256];
++		int len = sizeof(buf);
++
++		wpa_s->hostapd = wpa_ctrl_open(iface->hostapd_ctrl);
++		if (!wpa_s->hostapd) {
++			wpa_printf(MSG_ERROR, "\nFailed to connect to hostapd\n");
++			return -1;
++		}
++		if (hostapd_stop(wpa_s) < 0)
++			return -1;
++	}
++#endif
+ 
+ 	/* RSNA Supplicant Key Management - INITIALIZE */
+ 	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
+--- a/wpa_supplicant/bss.c
++++ b/wpa_supplicant/bss.c
+@@ -17,6 +17,7 @@
+ #include "utils/common.h"
+ #include "utils/eloop.h"
+ #include "common/ieee802_11_defs.h"
++#include "common/ieee802_11_common.h"
+ #include "drivers/driver.h"
+ #include "wpa_supplicant_i.h"
+ #include "config.h"
+@@ -89,6 +90,8 @@ struct wpa_bss * wpa_bss_get(struct wpa_
+ 
+ static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src)
+ {
++	struct ieee80211_ht_capabilities *capab;
++	struct ieee802_11_elems elems;
+ 	os_time_t usec;
+ 
+ 	dst->flags = src->flags;
+@@ -101,6 +104,12 @@ static void wpa_bss_copy_res(struct wpa_
+ 	dst->level = src->level;
+ 	dst->tsf = src->tsf;
+ 
++	memset(&elems, 0, sizeof(elems));
++	ieee802_11_parse_elems((u8 *) (src + 1), src->ie_len, &elems, 0);
++	capab = (struct ieee80211_ht_capabilities *) elems.ht_capabilities;
++	if (capab)
++		dst->ht_capab = le_to_host16(capab->ht_capabilities_info);
++
+ 	os_get_time(&dst->last_update);
+ 	dst->last_update.sec -= src->age / 1000;
+ 	usec = (src->age % 1000) * 1000;
+--- a/wpa_supplicant/bss.h
++++ b/wpa_supplicant/bss.h
+@@ -56,6 +56,7 @@ struct wpa_bss {
+ 	unsigned int flags;
+ 	u8 bssid[ETH_ALEN];
+ 	u8 ssid[32];
++	u16 ht_capab;
+ 	size_t ssid_len;
+ 	int freq;
+ 	u16 beacon_int;
+--- a/wpa_supplicant/main.c
++++ b/wpa_supplicant/main.c
+@@ -31,7 +31,7 @@ static void usage(void)
+ 	       "usage:\n"
+ 	       "  wpa_supplicant [-BddhKLqqstuvW] [-P<pid file>] "
+ 	       "[-g<global ctrl>] \\\n"
+-	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] "
++	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] [-H<hostapd path>]"
+ 	       "[-p<driver_param>] \\\n"
+ 	       "        [-b<br_ifname>] [-f<debug file>] \\\n"
+ 	       "        [-o<override driver>] [-O<override ctrl>] \\\n"
+@@ -67,6 +67,7 @@ static void usage(void)
+ #endif /* CONFIG_DEBUG_SYSLOG */
+ 	printf("  -t = include timestamp in debug messages\n"
+ 	       "  -h = show this help text\n"
++		   "  -H = connect to a hostapd instance to manage state changes\n"
+ 	       "  -L = show license (GPL and BSD)\n"
+ 	       "  -o = override driver parameter for new interfaces\n"
+ 	       "  -O = override ctrl_interface parameter for new interfaces\n"
+@@ -143,7 +144,7 @@ int main(int argc, char *argv[])
+ 	wpa_supplicant_fd_workaround();
+ 
+ 	for (;;) {
+-		c = getopt(argc, argv, "b:Bc:C:D:df:g:hi:KLNo:O:p:P:qstuvW");
++		c = getopt(argc, argv, "b:Bc:C:D:df:g:hH:i:KLNo:O:p:P:qstuvW");
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+@@ -184,6 +185,9 @@ int main(int argc, char *argv[])
+ 			usage();
+ 			exitcode = 0;
+ 			goto out;
++		case 'H':
++			iface->hostapd_ctrl = optarg;
++			break;
+ 		case 'i':
+ 			iface->ifname = optarg;
+ 			break;

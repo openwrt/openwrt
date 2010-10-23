@@ -222,6 +222,7 @@ enable_mac80211() {
 	local macidx=0
 	local apidx=0
 	fixed=""
+	local hostapd_ctrl=""
 
 	[ -n "$country" ] && iw reg set "$country"
 	[ "$channel" = "auto" -o "$channel" = "0" ] || {
@@ -344,6 +345,7 @@ enable_mac80211() {
 			config_get mode "$vif" mode
 			config_get ifname "$vif" ifname
 			[ "$mode" = "ap" ] || continue
+			hostapd_ctrl="${hostapd_ctrl:-/var/run/hostapd-$phy/$ifname}"
 			mac80211_start_vif "$vif" "$ifname"
 		done
 	}
@@ -364,7 +366,7 @@ enable_mac80211() {
 				;;
 				sta)
 					if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
-						wpa_supplicant_setup_vif "$vif" nl80211 || {
+						wpa_supplicant_setup_vif "$vif" nl80211 "${hostapd_ctrl:+-H $hostapd_ctrl}" || {
 							echo "enable_mac80211($device): Failed to set up wpa_supplicant for interface $ifname" >&2
 							# make sure this wifi interface won't accidentally stay open without encryption
 							ifconfig "$ifname" down
