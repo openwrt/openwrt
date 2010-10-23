@@ -34,7 +34,7 @@
  
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -120,6 +120,58 @@ extern int wpa_debug_show_keys;
+@@ -120,6 +120,55 @@ extern int wpa_debug_show_keys;
  extern int wpa_debug_timestamp;
  extern struct wpa_driver_ops *wpa_drivers[];
  
@@ -73,12 +73,9 @@
 +
 +	if (asprintf(&cmd, "RELOAD channel=%d sec_chan=0 hw_mode=%d ht_capab_mask=%d ieee80211n=%d",
 +		     channel, hw_mode, bss->ht_capab, !!bss->ht_capab) < 0) {
-+		fprintf(stderr, "ASPRINTF FAILED\n");
-+		exit(1);
 +		return -1;
 +	}
 +
-+	wpa_printf(MSG_ERROR, "\n\n-------- RUN COMMAND: %s\n\n", cmd);
 +	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
 +	free(cmd);
 +
@@ -93,7 +90,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -548,6 +600,10 @@ void wpa_supplicant_set_state(struct wpa
+@@ -548,6 +597,10 @@ void wpa_supplicant_set_state(struct wpa
  #ifndef IEEE8021X_EAPOL
  		wpa_drv_set_supp_port(wpa_s, 1);
  #endif
@@ -104,7 +101,7 @@
  	} else if (state == WPA_DISCONNECTED || state == WPA_ASSOCIATING ||
  		   state == WPA_ASSOCIATED) {
  		wpa_s->new_connection = 1;
-@@ -1957,6 +2013,21 @@ static int wpa_supplicant_init_iface(str
+@@ -1957,6 +2010,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
