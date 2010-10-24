@@ -1,12 +1,12 @@
 config AT91_DFBOOT
 	bool "Build dataflashboot loader"
 	depends TARGET_at91
-	default y
+	default n
 
 config AT91_UBOOT
 	bool "Build U-Boot bootloader"
 	depends TARGET_at91
-	default y
+	default n
 
 config UBOOT_TARGET
 	string "U-Boot target board"
