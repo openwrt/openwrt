@@ -28,7 +28,7 @@ $(strip \
 )
 endef
 
-# code for creating tarballs from cvs/svn/git/bzr/hg checkouts - useful for mirror support
+# code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
 dl_pack/bz2=$(TAR) cfj $(1) $(2)
 dl_pack/gz=$(TAR) cfz $(1) $(2)
 dl_pack/unknown=echo "ERROR: Unknown pack format for file $(1)"; false
@@ -128,11 +128,28 @@ define DownloadMethod/hg
 	)
 endef
 
+define DownloadMethod/darcs
+	$(call wrap_mirror, \
+		echo "Checking out files from the darcs repository..."; \
+		mkdir -p $(TMP_DIR)/dl && \
+		cd $(TMP_DIR)/dl && \
+		rm -rf $(SUBDIR) && \
+		[ \! -d $(SUBDIR) ] && \
+		darcs get -t $(VERSION) $(URL) $(SUBDIR) && \
+		find $(SUBDIR) -name _darcs | xargs rm -rf && \
+		echo "Packing checkout..." && \
+		$(call dl_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
+		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
+		rm -rf $(SUBDIR); \
+	)
+endef
+
 Validate/cvs=VERSION SUBDIR
 Validate/svn=VERSION SUBDIR
 Validate/git=VERSION SUBDIR
 Validate/bzr=VERSION SUBDIR
 Validate/hg=VERSION SUBDIR
+Validate/darcs=VERSION SUBDIR
 
 define Download/Defaults
   URL:=
