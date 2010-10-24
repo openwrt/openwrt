@@ -123,7 +123,11 @@ my %update_method = (
 	'src-hg' => {
 		'init'		=> "hg clone '%s' '%s'",
 		'update'	=> "hg pull --update",
-		'controldir'	=> ".hg"}
+		'controldir'	=> ".hg"},
+	'src-darcs' => {
+		'init'    => "darcs get '%s' '%s'",
+		'update'  => "darcs pull -a",
+		'controldir' => "_darcs"},
 );
 
 # src-git: pull broken
@@ -278,6 +282,7 @@ my %install_method = (
 	'src-git' => \&install_generic,
 	'src-bzr' => \&install_generic,
 	'src-hg' => \&install_generic,
+	'src-darcs' => \&install_generic,
 );
 
 my %feed;
