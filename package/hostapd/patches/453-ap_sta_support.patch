@@ -90,7 +90,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -548,8 +597,14 @@ void wpa_supplicant_set_state(struct wpa
+@@ -548,8 +597,16 @@ void wpa_supplicant_set_state(struct wpa
  #ifndef IEEE8021X_EAPOL
  		wpa_drv_set_supp_port(wpa_s, 1);
  #endif
@@ -100,12 +100,14 @@
 +#endif
  	} else if (state == WPA_DISCONNECTED || state == WPA_ASSOCIATING ||
  		   state == WPA_ASSOCIATED) {
++#ifdef MULTICALL
 +		if (wpa_s->hostapd)
 +			hostapd_stop(wpa_s);
++#endif
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -1957,6 +2012,21 @@ static int wpa_supplicant_init_iface(str
+@@ -1957,6 +2014,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
