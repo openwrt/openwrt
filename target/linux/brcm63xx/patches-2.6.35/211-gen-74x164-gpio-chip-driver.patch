@@ -27,7 +27,7 @@
  obj-$(CONFIG_GPIO_PL061)	+= pl061.o
 --- /dev/null
 +++ b/drivers/gpio/nxp_74hc164.c
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,227 @@
 +/*
 + *  NXP 74HC164 - output expander  GPIO driver
 + *
@@ -45,6 +45,7 @@
 +#include <linux/init.h>
 +#include <linux/gpio.h>
 +#include <linux/bitops.h>
++#include <linux/slab.h>
 +#include <linux/platform_device.h>
 +#include <linux/nxp_74hc164.h>
 +
