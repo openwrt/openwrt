@@ -1,0 +1,17 @@
+--- a/drivers/net/gianfar.c
++++ b/drivers/net/gianfar.c
+@@ -1002,6 +1002,14 @@ static int gfar_probe(struct platform_de
+ 	udelay(2);
+ 
+ 	tempval = (MACCFG1_TX_FLOW | MACCFG1_RX_FLOW);
++	/*
++	* Do not enable flow control on chips earlier than rev 1.1,
++	* because of the eTSEC27 erratum
++	*/
++	tempval = 0;
++	if (mfspr(SPRN_SVR) & 0xffff >= 0x0011)
++		tempval = (MACCFG1_TX_FLOW | MACCFG1_RX_FLOW);
++
+ 	gfar_write(&regs->maccfg1, tempval);
+ 
+ 	/* Initialize MACCFG2. */
