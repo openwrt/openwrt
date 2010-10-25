@@ -362,7 +362,14 @@ enable_mac80211() {
 				adhoc)
 					config_get bssid "$vif" bssid
 					config_get ssid "$vif" ssid
-					iw dev "$ifname" ibss join "$ssid" $freq ${fixed:+fixed-freq} $bssid
+					config_get mcast_rate "$vif" mcast_rate
+					local mcval=""
+					[ -n "$mcast_rate" ] && {
+						mcval="$(($mcast_rate / 1000))"
+						mcsub="$(( ($mcast_rate / 100) % 10 ))"
+						[ "$mcsub" -gt 0 ] && mcval="$mcval.$mcsub"
+					}
+					iw dev "$ifname" ibss join "$ssid" $freq ${fixed:+fixed-freq} $bssid ${mcval:+mcast-rate $mcval}
 				;;
 				sta)
 					if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
