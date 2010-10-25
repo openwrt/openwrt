@@ -8,11 +8,21 @@
  
  #include "if_media.h"
  
-@@ -463,6 +464,9 @@ static const struct net_device_ops ieee8
+@@ -463,6 +464,8 @@ static const struct net_device_ops ieee8
  	.ndo_set_multicast_list = ieee80211_set_multicast_list,
  	.ndo_change_mtu 	= ieee80211_change_mtu,
  	.ndo_do_ioctl		= ieee80211_ioctl,
-+	.ndo_change_mtu		= eth_change_mtu,
++	.ndo_validate_addr	= eth_validate_addr,
++	.ndo_set_mac_address	= eth_mac_addr,
+ };
+ #endif
+ 
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -574,6 +574,8 @@ static const struct net_device_ops ath_n
+ 	.ndo_get_stats		= ath_getstats,
+ 	.ndo_set_mac_address	= ath_set_mac_address,
+ 	.ndo_change_mtu 	= ath_change_mtu,
 +	.ndo_validate_addr	= eth_validate_addr,
 +	.ndo_set_mac_address	= eth_mac_addr,
  };
