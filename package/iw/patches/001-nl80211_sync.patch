@@ -55,17 +55,19 @@
   *
   * @NL80211_ATTR_TESTDATA: Testmode data blob, passed through to the driver.
   *	We recommend using nested, driver-specific attributes within this.
-@@ -787,6 +801,9 @@ enum nl80211_commands {
+@@ -787,6 +801,11 @@ enum nl80211_commands {
   *      This is used in association with @NL80211_ATTR_WIPHY_TX_POWER_SETTING
   *      for non-automatic settings.
   *
 + * @NL80211_ATTR_SUPPORT_IBSS_RSN: The device supports IBSS RSN, which mostly
 + *	means support for per-station GTKs.
 + *
++ * @NL80211_ATTR_MCAST_RATE: Multicast tx rate (in 100 kbps) for IBSS
++ *
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
   */
-@@ -951,6 +968,11 @@ enum nl80211_attrs {
+@@ -951,6 +970,13 @@ enum nl80211_attrs {
  	NL80211_ATTR_RX_FRAME_TYPES,
  	NL80211_ATTR_FRAME_TYPE,
  
@@ -74,10 +76,12 @@
 +
 +	NL80211_ATTR_SUPPORT_IBSS_RSN,
 +
++	NL80211_ATTR_MCAST_RATE,
++
  	/* add attributes here, update the policy in nl80211.c */
  
  	__NL80211_ATTR_AFTER_LAST,
-@@ -1006,6 +1028,8 @@ enum nl80211_attrs {
+@@ -1006,6 +1032,8 @@ enum nl80211_attrs {
   * @NL80211_IFTYPE_WDS: wireless distribution interface
   * @NL80211_IFTYPE_MONITOR: monitor interface receiving all frames
   * @NL80211_IFTYPE_MESH_POINT: mesh point
@@ -86,7 +90,7 @@
   * @NL80211_IFTYPE_MAX: highest interface type number currently defined
   * @NUM_NL80211_IFTYPES: number of defined interface types
   *
-@@ -1022,6 +1046,8 @@ enum nl80211_iftype {
+@@ -1022,6 +1050,8 @@ enum nl80211_iftype {
  	NL80211_IFTYPE_WDS,
  	NL80211_IFTYPE_MONITOR,
  	NL80211_IFTYPE_MESH_POINT,
@@ -95,7 +99,7 @@
  
  	/* keep last */
  	NUM_NL80211_IFTYPES,
-@@ -1111,6 +1137,8 @@ enum nl80211_rate_info {
+@@ -1111,6 +1141,8 @@ enum nl80211_rate_info {
   * @NL80211_STA_INFO_RX_PACKETS: total received packet (u32, from this station)
   * @NL80211_STA_INFO_TX_PACKETS: total transmitted packets (u32, to this
   *	station)
@@ -104,7 +108,7 @@
   */
  enum nl80211_sta_info {
  	__NL80211_STA_INFO_INVALID,
-@@ -1124,6 +1152,8 @@ enum nl80211_sta_info {
+@@ -1124,6 +1156,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_TX_BITRATE,
  	NL80211_STA_INFO_RX_PACKETS,
  	NL80211_STA_INFO_TX_PACKETS,
@@ -113,7 +117,7 @@
  
  	/* keep last */
  	__NL80211_STA_INFO_AFTER_LAST,
-@@ -1382,6 +1412,17 @@ enum nl80211_reg_rule_flags {
+@@ -1382,6 +1416,17 @@ enum nl80211_reg_rule_flags {
   * @__NL80211_SURVEY_INFO_INVALID: attribute number 0 is reserved
   * @NL80211_SURVEY_INFO_FREQUENCY: center frequency of channel
   * @NL80211_SURVEY_INFO_NOISE: noise level of channel (u8, dBm)
@@ -131,7 +135,7 @@
   * @NL80211_SURVEY_INFO_MAX: highest survey info attribute number
   *	currently defined
   * @__NL80211_SURVEY_INFO_AFTER_LAST: internal use
-@@ -1390,6 +1431,12 @@ enum nl80211_survey_info {
+@@ -1390,6 +1435,12 @@ enum nl80211_survey_info {
  	__NL80211_SURVEY_INFO_INVALID,
  	NL80211_SURVEY_INFO_FREQUENCY,
  	NL80211_SURVEY_INFO_NOISE,
@@ -144,7 +148,7 @@
  
  	/* keep last */
  	__NL80211_SURVEY_INFO_AFTER_LAST,
-@@ -1636,11 +1683,14 @@ enum nl80211_auth_type {
+@@ -1636,11 +1687,14 @@ enum nl80211_auth_type {
   * @NL80211_KEYTYPE_GROUP: Group (broadcast/multicast) key
   * @NL80211_KEYTYPE_PAIRWISE: Pairwise (unicast/individual) key
   * @NL80211_KEYTYPE_PEERKEY: PeerKey (DLS)
@@ -159,7 +163,7 @@
  };
  
  /**
-@@ -1671,6 +1721,9 @@ enum nl80211_wpa_versions {
+@@ -1671,6 +1725,9 @@ enum nl80211_wpa_versions {
   *	CCMP keys, each six bytes in little endian
   * @NL80211_KEY_DEFAULT: flag indicating default key
   * @NL80211_KEY_DEFAULT_MGMT: flag indicating default management key
@@ -169,7 +173,7 @@
   * @__NL80211_KEY_AFTER_LAST: internal
   * @NL80211_KEY_MAX: highest key attribute
   */
-@@ -1682,6 +1735,7 @@ enum nl80211_key_attributes {
+@@ -1682,6 +1739,7 @@ enum nl80211_key_attributes {
  	NL80211_KEY_SEQ,
  	NL80211_KEY_DEFAULT,
  	NL80211_KEY_DEFAULT_MGMT,
