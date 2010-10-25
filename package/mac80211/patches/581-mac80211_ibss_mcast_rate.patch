@@ -1,0 +1,106 @@
+--- a/net/mac80211/ibss.c
++++ b/net/mac80211/ibss.c
+@@ -914,6 +914,7 @@ int ieee80211_ibss_join(struct ieee80211
+ 
+ 	sdata->u.ibss.privacy = params->privacy;
+ 	sdata->u.ibss.basic_rates = params->basic_rates;
++	sdata->vif.bss_conf.mcast_rate = params->mcast_rate;
+ 
+ 	sdata->vif.bss_conf.beacon_int = params->beacon_interval;
+ 
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -244,6 +244,7 @@ struct ieee80211_bss_conf {
+ 	u16 assoc_capability;
+ 	u64 timestamp;
+ 	u32 basic_rates;
++	u32 mcast_rate;
+ 	u16 ht_operation_mode;
+ 	s32 cqm_rssi_thold;
+ 	u32 cqm_rssi_hyst;
+@@ -2644,7 +2645,7 @@ enum rate_control_changed {
+  * @rate_idx_mask: user-requested rate mask (not MCS for now)
+  * @skb: the skb that will be transmitted, the control information in it needs
+  *	to be filled in
+- * @ap: whether this frame is sent out in AP mode
++ * @bss: whether this frame is sent out in AP or IBSS mode
+  */
+ struct ieee80211_tx_rate_control {
+ 	struct ieee80211_hw *hw;
+@@ -2655,7 +2656,7 @@ struct ieee80211_tx_rate_control {
+ 	bool rts, short_preamble;
+ 	u8 max_rate_idx;
+ 	u32 rate_idx_mask;
+-	bool ap;
++	bool bss;
+ };
+ 
+ struct rate_control_ops {
+--- a/net/mac80211/rate.c
++++ b/net/mac80211/rate.c
+@@ -210,10 +210,20 @@ static bool rc_no_data_or_no_ack(struct 
+ 	return ((info->flags & IEEE80211_TX_CTL_NO_ACK) || !ieee80211_is_data(fc));
+ }
+ 
+-static void rc_send_low_broadcast(s8 *idx, u32 basic_rates, u8 max_rate_idx)
++static void rc_send_low_broadcast(s8 *idx, u32 basic_rates, u32 mcast_rate,
++				  struct ieee80211_supported_band *sband)
+ {
+ 	u8 i;
+ 
++	if (mcast_rate) {
++		for (i = 0; i < sband->n_bitrates; i++) {
++			if (sband->bitrates[i].bitrate == mcast_rate) {
++				*idx = i;
++				return;
++			}
++		}
++	}
++
+ 	if (basic_rates == 0)
+ 		return; /* assume basic rates unknown and accept rate */
+ 	if (*idx < 0)
+@@ -221,7 +231,7 @@ static void rc_send_low_broadcast(s8 *id
+ 	if (basic_rates & (1 << *idx))
+ 		return; /* selected rate is a basic rate */
+ 
+-	for (i = *idx + 1; i <= max_rate_idx; i++) {
++	for (i = *idx + 1; i <= sband->n_bitrates; i++) {
+ 		if (basic_rates & (1 << i)) {
+ 			*idx = i;
+ 			return;
+@@ -242,10 +252,11 @@ bool rate_control_send_low(struct ieee80
+ 		info->control.rates[0].count =
+ 			(info->flags & IEEE80211_TX_CTL_NO_ACK) ?
+ 			1 : txrc->hw->max_rate_tries;
+-		if (!sta && txrc->ap)
++		if (!sta && txrc->bss)
+ 			rc_send_low_broadcast(&info->control.rates[0].idx,
+ 					      txrc->bss_conf->basic_rates,
+-					      txrc->sband->n_bitrates);
++					      txrc->bss_conf->mcast_rate,
++					      txrc->sband);
+ 		return true;
+ 	}
+ 	return false;
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -622,7 +622,8 @@ ieee80211_tx_h_rate_ctrl(struct ieee8021
+ 		txrc.max_rate_idx = -1;
+ 	else
+ 		txrc.max_rate_idx = fls(txrc.rate_idx_mask) - 1;
+-	txrc.ap = tx->sdata->vif.type == NL80211_IFTYPE_AP;
++	txrc.bss = (tx->sdata->vif.type == NL80211_IFTYPE_AP ||
++			   tx->sdata->vif.type == NL80211_IFTYPE_ADHOC);
+ 
+ 	/* set up RTS protection if desired */
+ 	if (len > tx->local->hw.wiphy->rts_threshold) {
+@@ -2312,7 +2313,7 @@ struct sk_buff *ieee80211_beacon_get_tim
+ 		txrc.max_rate_idx = -1;
+ 	else
+ 		txrc.max_rate_idx = fls(txrc.rate_idx_mask) - 1;
+-	txrc.ap = true;
++	txrc.bss = true;
+ 	rate_control_get_rate(sdata, NULL, &txrc);
+ 
+ 	info->control.vif = vif;
