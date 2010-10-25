@@ -1,0 +1,11 @@
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -209,7 +209,7 @@ ps3)
+     isection=.kernel:initrd
+     link_address=''
+     ;;
+-ep88xc|ep405|ep8248e)
++ep88xc|ep405|ep8248e|rb600)
+     platformo="$object/fixed-head.o $object/$platform.o"
+     binary=y
+     ;;

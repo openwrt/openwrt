@@ -1,0 +1,18 @@
+--- a/arch/powerpc/platforms/83xx/Kconfig
++++ b/arch/powerpc/platforms/83xx/Kconfig
+@@ -38,6 +38,15 @@ config MPC832x_RDB
+ 	help
+ 	  This option enables support for the MPC8323 RDB board.
+ 
++config RB_PPC
++	bool "MikroTik RouterBOARD 600 series"
++	select DEFAULT_UIMAGE
++	select QUICC_ENGINE
++	select PPC_MPC834x
++	select RB_IOMAP
++	help
++	  This option enables support for MikroTik RouterBOARD 600 series boards.
++
+ config MPC834x_MDS
+ 	bool "Freescale MPC834x MDS"
+ 	select DEFAULT_UIMAGE
