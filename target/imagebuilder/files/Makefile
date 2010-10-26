@@ -42,6 +42,7 @@ Building images:
 	make image PROFILE="<profilename>" # override the default target profile
 	make image PACKAGES="<pkg1> [<pkg2> [<pkg3> ...]]" # include extra packages
 	make image FILES="<path>" # include extra files from <path>
+	make image BIN_DIR="<path>" # alternative output directory for the images
 
 endef
 $(eval $(call shexport,Helptext))
@@ -157,7 +158,8 @@ image:
 	$(MAKE) _call_image \
 		$(if $(PROFILE),USER_PROFILE="$(PROFILE)") \
 		$(if $(FILES),USER_FILES="$(FILES)") \
-		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)"))
+		$(if $(PACKAGES),USER_PACKAGES="$(PACKAGES)") \
+		$(if $(BIN_DIR),BIN_DIR="$(BIN_DIR)"))
 
 .SILENT: help info image
 
