@@ -17,12 +17,13 @@ PKG_CPU:=$(shell uname -m | sed "s/ //g")
 IB_NAME:=OpenWrt-ImageBuilder-$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(IB_NAME)
 IB_KDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(KERNEL_BUILD_DIR))
+IB_LDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(LINUX_DIR))
 
 all: compile
 
 $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	rm -rf $(PKG_BUILD_DIR)
-	mkdir -p $(IB_KDIR) $(PKG_BUILD_DIR)/staging_dir/host \
+	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host \
 		$(PKG_BUILD_DIR)/target $(PKG_BUILD_DIR)/scripts
 	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
 	$(CP) \
@@ -41,6 +42,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 		$(PKG_BUILD_DIR)/target/linux/*/files{,-*} \
 		$(PKG_BUILD_DIR)/target/linux/*/patches{,-*}
 	-cp $(KERNEL_BUILD_DIR)/* $(IB_KDIR)/ # don't copy subdirectories here
+	-cp $(LINUX_DIR)/.config $(IB_LDIR)/
 	echo REVISION:="$(REVISION)" > $(PKG_BUILD_DIR)/include/version.mk
 	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn \
 	  | $(XARGS) rm -rf
