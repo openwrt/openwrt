@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=hotplug2
 PKG_REV:=201
 PKG_VERSION:=$(PKG_REV)
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=svn
 PKG_SOURCE_VERSION:=$(PKG_REV)
@@ -25,6 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/hotplug2
   SECTION:=base
   CATEGORY:=Base system
+  DEPENDS:=+udevtrigger
   VERSION:=1.0-beta-$(PKG_RELEASE)
   TITLE:=Version 1.0 Dynamic device management subsystem for embedded systems
   URL:=http://isteve.bofh.cz/~isteve/hotplug2/
