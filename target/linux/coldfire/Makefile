@@ -10,6 +10,7 @@ ARCH:=m68k
 BOARD:=coldfire
 BOARDNAME:=Freescale Coldfire v4e
 FEATURES:=squashfs broken
+MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=2.6.25.20
 

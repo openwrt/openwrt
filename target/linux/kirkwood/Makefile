@@ -10,6 +10,7 @@ ARCH:=arm
 BOARD:=kirkwood
 BOARDNAME:=Marvell Kirkwood
 FEATURES:=targz usb jffs2
+MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=2.6.35.7
 

@@ -10,6 +10,7 @@ ARCH:=powerpc
 BOARD:=mpc83xx
 BOARDNAME:=Freescale MPC83xx
 FEATURES:=squashfs targz broken
+MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=2.6.33.7
 
