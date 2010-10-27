@@ -77,7 +77,6 @@ hostapd_set_bss_options() {
 			append "$var" "eapol_key_index_workaround=1" "$N"
 			append "$var" "radius_acct_interim_interval=300" "$N"
 			append "$var" "ieee8021x=1" "$N"
-			append "$var" "auth_algs=1" "$N"
 			append "$var" "wpa_key_mgmt=WPA-EAP" "$N"
 			append "$var" "wpa_group_rekey=300" "$N"
 			append "$var" "wpa_gmk_rekey=640" "$N"
@@ -101,6 +100,14 @@ hostapd_set_bss_options() {
 					append "$var" "wep_default_key=0" "$N"
 				;;
 			esac
+			case "$enc" in
+				*shared*)
+					auth_algs=2
+				;;
+				*mixed*)
+					auth_algs=3
+				;;
+			esac
 			wpa=0
 			crypto=
 		;;
@@ -109,6 +116,7 @@ hostapd_set_bss_options() {
 			crypto=
 		;;
 	esac
+	append "$var" "auth_algs=${auth_algs:-1}" "$N"
 	append "$var" "wpa=$wpa" "$N"
 	[ -n "$crypto" ] && append "$var" "wpa_pairwise=$crypto" "$N"
 	[ -n "$wpa_group_rekey" ] && append "$var" "wpa_group_rekey=$wpa_group_rekey" "$N"
