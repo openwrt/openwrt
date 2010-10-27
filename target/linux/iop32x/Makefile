@@ -10,6 +10,7 @@ ARCH:=arm
 BOARD:=iop32x
 BOARDNAME:=Intel IOP32x
 FEATURES:=squashfs
+MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=2.6.32.24
 

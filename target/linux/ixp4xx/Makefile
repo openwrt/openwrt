@@ -10,6 +10,7 @@ ARCH:=armeb
 BOARD:=ixp4xx
 BOARDNAME:=Intel IXP4xx
 FEATURES:=squashfs
+MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 SUBTARGETS=generic harddisk
 
 LINUX_VERSION:=2.6.32.24
