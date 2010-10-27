@@ -26,9 +26,9 @@
 #define __ICONNECT_H
 
 #define ICONNECT_OE_LOW			(~(1 << 7))
-#define ICONNECT_OE_HIGH			(~(1 << 2 | 1 << 12))
+#define ICONNECT_OE_HIGH			(~(1 << 10))
 #define ICONNECT_OE_VAL_LOW		(0)
-#define ICONNECT_OE_VAL_HIGH		(1 << 12)
+#define ICONNECT_OE_VAL_HIGH		(1 << 10)
 
 /* PHY related */
 #define MV88E1116_LED_FCTRL_REG		10
