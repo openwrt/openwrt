@@ -23,9 +23,19 @@
  endmenu
  
  endif
+--- a/arch/arm/mach-kirkwood/mpp.h
++++ b/arch/arm/mach-kirkwood/mpp.h 
+@@ -103,6 +103,7 @@
+ #define MPP11_SATA0_ACTn	MPP( 11, 0x5, 0, 1, 0,   1,   1,   1    )
+ 
+ #define MPP12_GPO		MPP( 12, 0x0, 0, 1, 1,   1,   1,   1    )
++#define MPP12_GPIO		MPP( 12, 0x0, 1, 1, 1,   1,   1,   1    )
+ #define MPP12_SD_CLK		MPP( 12, 0x1, 0, 1, 1,   1,   1,   1    )
+ 
+ #define MPP13_GPIO		MPP( 13, 0x0, 1, 1, 1,   1,   1,   1    )
 --- /dev/null 
 +++ b/arch/arm/mach-kirkwood/iconnect-setup.c 
-@@ -0,0 +1,95 @@
+@@ -1,0 +1,190 @@
 +/*
 + * arch/arm/mach-kirkwood/iconnect-setup.c
 + *
@@ -43,6 +53,10 @@
 +#include <linux/mtd/partitions.h>
 +#include <linux/mv643xx_eth.h>
 +#include <linux/ethtool.h>
++#include <linux/gpio.h>
++#include <linux/gpio_keys.h>
++#include <linux/input.h>
++#include <linux/leds.h>
 +#include <asm/mach-types.h>
 +#include <asm/mach/arch.h>
 +#include <mach/kirkwood.h>
@@ -73,12 +87,100 @@
 +	.phy_addr	= MV643XX_ETH_PHY_ADDR(11),
 +};
 +
++static struct gpio_led iconnect_led_pins[] = {
++	{
++		.name			= "iconnect:blue:power",
++		.default_trigger	= "default-on",
++		.gpio			= 42,
++	},
++	{
++		.name			= "iconnect:red:power",
++		.gpio			= 43,
++	},
++	{
++		.name			= "iconnect:blue:usb1",
++		.gpio			= 44,
++	},
++	{
++		.name			= "iconnect:blue:usb2",
++		.gpio			= 45,
++	},
++	{
++		.name			= "iconnect:blue:usb3",
++		.gpio			= 46,
++	},
++	{
++		.name			= "iconnect:blue:usb4",
++		.gpio			= 47,
++	},
++	{
++		.name			= "iconnect:blue:otb",
++		.gpio			= 48,
++	},
++};
++
++static struct gpio_led_platform_data iconnect_led_data = {
++	.leds		= iconnect_led_pins,
++	.num_leds	= ARRAY_SIZE(iconnect_led_pins),
++};
++
++static struct platform_device iconnect_leds = {
++	.name	= "leds-gpio",
++	.id	= -1,
++	.dev	= {
++		.platform_data	= &iconnect_led_data,
++	}
++};
++
++#define ICONNECT_GPIO_KEY_RESET		12
++#define ICONNECT_GPIO_KEY_OTB		35
++
++#define ICONNECT_SW_RESET		0x00
++#define ICONNECT_SW_OTB			0x01
++
++static struct gpio_keys_button iconnect_buttons[] = {
++		{
++		.type		= EV_SW,
++		.code		= ICONNECT_SW_RESET,
++		.gpio		= ICONNECT_GPIO_KEY_RESET,
++		.desc		= "Reset Button",
++		.active_low	= 1,
++		.debounce_interval = 100,
++		}, 
++		{
++		.type		= EV_SW,
++		.code		= ICONNECT_SW_OTB,
++		.gpio		= ICONNECT_GPIO_KEY_OTB,
++		.desc		= "OTB Button",
++		.active_low	= 1,
++		.debounce_interval = 100,
++		},
++};
++
++static struct gpio_keys_platform_data iconnect_button_data = {
++	.buttons	= iconnect_buttons,
++	.nbuttons	= ARRAY_SIZE(iconnect_buttons),
++};
++
++static struct platform_device iconnect_button_device = {
++	.name	   = "gpio-keys",
++	.id	     = -1,
++	.num_resources	= 0,
++	.dev	    =	{
++					.platform_data  = &iconnect_button_data,
++					},
++};
++
 +static unsigned int iconnect_mpp_config[] __initdata = {
-+	MPP8_TW_SDA,
-+	MPP9_TW_SCK,
-+	MPP10_UART0_TXD,
-+	MPP11_UART0_RXD,
-+	MPP28_GPIO,
++	MPP12_GPIO, /*Input for reset button*/
++	MPP35_GPIO, /*Input for OTB button*/
++	MPP42_GPIO,
++	MPP43_GPIO,
++	MPP44_GPIO,
++	MPP45_GPIO,
++	MPP46_GPIO,
++	MPP47_GPIO,
++	MPP48_GPIO,
 +	0
 +};
 +
@@ -100,6 +202,9 @@
 +
 +	kirkwood_uart0_init();
 +	kirkwood_i2c_init();
++
++	platform_device_register(&iconnect_leds);
++	platform_device_register(&iconnect_button_device);
 +}
 +
 +static int __init iconnect_pci_init(void)
