@@ -20,7 +20,7 @@
  EXTRA_CFLAGS += -Werror
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_livebox.c
-@@ -0,0 +1,223 @@
+@@ -0,0 +1,228 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -43,6 +43,7 @@
 +#include <bcm63xx_cpu.h>
 +#include <bcm63xx_regs.h>
 +#include <bcm63xx_io.h>
++#include <bcm63xx_dev_uart.h>
 +#include <bcm63xx_dev_pci.h>
 +#include <bcm63xx_dev_enet.h>
 +#include <bcm63xx_dev_pcmcia.h>
@@ -63,6 +64,7 @@
 +	.name				= "Livebox",
 +	.expected_cpu_id		= 0x6348,
 +
++	.has_uart0			= 1,
 +	.has_enet0			= 1,
 +	.has_enet1			= 1,
 +	.has_pci			= 1,
@@ -214,6 +216,9 @@
 +int __init board_register_devices(void)
 +{
 +	u32 val;
++
++	if (board.has_uart0)
++		bcm63xx_uart_register(0);
 +
 +	if (board.has_pccard)
 +		bcm63xx_pcmcia_register();
