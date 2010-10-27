@@ -71,8 +71,8 @@
 +		channel = (bss->freq - 5000) / 5;
 +	}
 +
-+	if (asprintf(&cmd, "RELOAD channel=%d sec_chan=0 hw_mode=%d ht_capab_mask=%d ieee80211n=%d",
-+		     channel, hw_mode, bss->ht_capab, !!bss->ht_capab) < 0) {
++	if (asprintf(&cmd, "RELOAD channel=%d sec_chan=0 hw_mode=%d ieee80211n=%d",
++		     channel, hw_mode, !!bss->ht_capab) < 0) {
 +		return -1;
 +	}
 +
