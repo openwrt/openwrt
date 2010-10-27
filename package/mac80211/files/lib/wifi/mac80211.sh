@@ -425,6 +425,7 @@ detect_mac80211() {
 
 			list="	list ht_capab"
 			[ "$(($ht_cap & 1))" -eq 1 ] && append ht_capab "$list	LDPC" "$N"
+			[ "$(($ht_cap & 16))" -eq 16 ] && append ht_capab "$list	GF" "$N"
 			[ "$(($ht_cap & 32))" -eq 32 ] && append ht_capab "$list	SHORT-GI-20" "$N"
 			[ "$(($ht_cap & 64))" -eq 64 ] && append ht_capab "$list	SHORT-GI-40" "$N"
 			[ "$(($ht_cap & 128))" -eq 128 ] && append ht_capab "$list	TX-STBC" "$N"
