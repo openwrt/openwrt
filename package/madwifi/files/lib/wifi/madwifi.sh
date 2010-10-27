@@ -219,7 +219,7 @@ enable_atheros() {
 				case "$enc" in
 					*shared*) iwpriv "$ifname" authmode 2;;
 					*)        iwpriv "$ifname" authmode 1;;
-				;;
+				esac
 				for idx in 1 2 3 4; do
 					config_get key "$vif" "key${idx}"
 					iwconfig "$ifname" enc "[$idx]" "${key:-off}"
