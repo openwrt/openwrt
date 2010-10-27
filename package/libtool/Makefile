@@ -19,6 +19,9 @@ HOST_PATCH_DIR=/dev/null
 
 PKG_BUILD_DEPENDS:=libtool/host
 
+PKG_BUILD_PARALLEL:=0
+HOST_BUILD_PARALLEL:=0
+
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
