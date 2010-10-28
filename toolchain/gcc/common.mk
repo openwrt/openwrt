@@ -39,9 +39,6 @@ else
   PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
   PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-  ifeq ($(PKG_VERSION),3.4.6)
-    PKG_MD5SUM:=4a21ac777d4b5617283ce488b808da7b
-  endif
   ifeq ($(PKG_VERSION),4.1.2)
     PKG_MD5SUM:=a4a3eb15c96030906d8494959eeda23c
   endif
