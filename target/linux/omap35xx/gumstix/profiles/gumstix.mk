@@ -19,7 +19,7 @@ define Profile/Gumstix
 		crda iw kmod-usb-hid luci luci-app-ntpc \
 		openssh-client openssh-client-utils openssh-keygen \
 		openssh-server kmod-usb-storage kmod-usb-storage-extras \
-		kmod-fs-vfat
+		kmod-fs-vfat avahi-autoipd avahi-daemon avahi-dnsconfd
 endef
 
 define Profile/Gumstix/Description
