@@ -71,7 +71,7 @@ if !TOOLCHAINOPTS
 
 	config GCC_VERSION_4_3_3_CS
 		default y if (mips || mipsel) && !(TARGET_octeon || TARGET_sibyte)
-		default y if (arm || armeb) && !TARGET_gemini
+		default y if (arm || armeb) && !(TARGET_gemini || TARGET_omap35xx)
 
 	config GCC_VERSION_4_4_1
 		default y if ubicom32
