@@ -680,6 +680,22 @@ endef
 $(eval $(call KernelPackage,wdt-geode))
 
 
+define KernelPackage/wdt-omap
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=OMAP Watchdog timer
+  DEPENDS:=@(TARGET_omap24xx||TARGET_omap35xx)
+  KCONFIG:=CONFIG_OMAP_WATCHDOG
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/omap_wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,omap_wdt.ko)
+endef
+
+define KernelPackage/wdt-omap/description
+  Kernel module for TI omap watchdog timer.
+endef
+
+$(eval $(call KernelPackage,wdt-omap))
+
+
 define KernelPackage/wdt-sc520
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi SC520 Watchdog support
