@@ -13,9 +13,6 @@ BIN_VERSION:=$(PKG_VERSION)
 PKG_SOURCE_URL:=@GNU/binutils/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-ifeq ($(PKG_VERSION),2.18)
-  PKG_MD5SUM:=9d22ee4dafa3a194457caf4706f9cf01
-endif
 ifeq ($(PKG_VERSION),2.19.1)
   PKG_MD5SUM:=09a8c5821a2dfdbb20665bc0bd680791
 endif
@@ -25,9 +22,6 @@ ifeq ($(PKG_VERSION),2.19.1+cs)
   PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
   PKG_MD5SUM:=040740e8c864dd1a15886753f9c0bc0b
   HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/binutils-$(BIN_VERSION)
-endif
-ifeq ($(PKG_VERSION),2.20)
-  PKG_MD5SUM:=ee2d3e996e9a2d669808713360fa96f8
 endif
 ifeq ($(PKG_VERSION),2.20.1)
   PKG_MD5SUM:=9cdfb9d6ec0578c166d3beae5e15c4e5
