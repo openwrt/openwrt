@@ -8,7 +8,7 @@ choice
 	default GCC_VERSION_4_3_3_CS if (arm || armeb) && !(TARGET_gemini || TARGET_omap35xx)
 	default GCC_VERSION_4_3_3_CS if (mips || mipsel) && !(TARGET_octeon || TARGET_sibyte)
 	default GCC_VERSION_4_4_5 if (powerpc || ubicom32)
-	default GCC VERSION_4_4_5 if (TARGET_omap35xx || TARGET_octeon || TARGET_sibyte)
+	default GCC_VERSION_4_4_5 if (TARGET_omap35xx || TARGET_octeon || TARGET_sibyte)
 	default GCC_VERSION_4_1_2
 	help
 	  Select the version of gcc you wish to use.
