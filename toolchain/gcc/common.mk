@@ -36,6 +36,15 @@ ifdef CONFIG_GCC_VERSION_LLVM
   PKG_SOURCE_SUBDIR:=$(GCC_DIR)
   HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)
 else
+ifdef CONFIG_GCC_VERSION_4_5_1_LINARO
+    PKG_REV:=4.5-2010.10-0
+    PKG_VERSION:=4.5.2
+    PKG_SOURCE_URL:=http://launchpad.net/gcc-linaro/4.5/4.5-2010.10-0/+download/
+    PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.bz2
+    PKG_MD5SUM:=39bb0627bb937af78c983e7066ca7f75
+    GCC_DIR:=gcc-linaro-$(PKG_REV)
+    HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)
+else
   PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
   PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
@@ -75,6 +84,7 @@ else
   ifeq ($(PKG_VERSION),4.5.1)
   PKG_MD5SUM:=48231a8e33ed6e058a341c53b819de1a
   endif
+endif
 endif
 
 PATCH_DIR=../patches/$(GCC_VERSION)
