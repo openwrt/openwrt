@@ -249,6 +249,16 @@ define include_mk
 $(eval -include $(if $(DUMP),,$(STAGING_DIR)/mk/$(strip $(1))))
 endef
 
+# Execute commands under flock
+# $(1) => The shell expression.
+# $(2) => The lock name. If not given, the global lock will be used.
+# $(3) => The filedescriptor used for the lock. Defaults to 1023.
+define locked
+    ( $(STAGING_DIR_HOST)/bin/flock -x $(if $(3),$(3),1023) && \
+      $(1) \
+    ) $(if $(3),$(strip $(3)),1023)>$(TMP_DIR)/.$(if $(2),$(strip $(2)),global).flock
+endef
+
 # file extension
 ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 
