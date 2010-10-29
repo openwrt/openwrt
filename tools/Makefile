@@ -16,7 +16,7 @@ tools-$(CONFIG_GCC_VERSION_4_5) += mpc libelf
 endif
 tools-y += m4 autoconf automake bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs libuuid mtd-utils mkimage
-tools-y += firmware-utils patch-cmdline quilt yaffs2
+tools-y += firmware-utils patch-cmdline quilt yaffs2 flock
 tools-$(CONFIG_TARGET_orion) += wrt350nv2-builder upslug2
 tools-$(CONFIG_TARGET_x86) += qemu
 ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_TARGET_ar71xx),)
