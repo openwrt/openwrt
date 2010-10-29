@@ -80,7 +80,7 @@ ifeq ($(DUMP),)
 	mkdir -p $(STAGING_DIR_ROOT)/stamp $(STAGING_DIR_ROOT)/tmp-$(1)
 	$(call Package/$(1)/install,$(STAGING_DIR_ROOT)/tmp-$(1))
 	$(call Package/$(1)/install_lib,$(STAGING_DIR_ROOT)/tmp-$(1))
-	$(CP) $(STAGING_DIR_ROOT)/tmp-$(1)/. $(STAGING_DIR_ROOT)/
+	$(call locked,$(CP) $(STAGING_DIR_ROOT)/tmp-$(1)/. $(STAGING_DIR_ROOT)/,root-copy)
 	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
 	touch $$@
 
