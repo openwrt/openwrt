@@ -57,29 +57,14 @@ else
   ifeq ($(PKG_VERSION),4.3.3)
     PKG_MD5SUM:=cc3c5565fdb9ab87a05ddb106ba0bd1f
   endif
-  ifeq ($(PKG_VERSION),4.3.4)
-    PKG_MD5SUM:=60df63222dbffd53ca11492a2545044f
-  endif
   ifeq ($(PKG_VERSION),4.3.5)
     PKG_MD5SUM:=e588cfde3bf323f82918589b94f14a15
   endif
   ifeq ($(PKG_VERSION),4,4,1)
     PKG_MD5SUM:=927eaac3d44b22f31f9c83df82f26436
   endif
-  ifeq ($(PKG_VERSION),4.4.2)
-    PKG_MD5SUM:=70f5ac588a79e3c9901d5b34f58d896d
-  endif
-  ifeq ($(PKG_VERSION),4.4.3)
-    PKG_MD5SUM:=fe1ca818fc6d2caeffc9051fe67ff103
-  endif
-  ifeq ($(PKG_VERSION),4.4.4)
-    PKG_MD5SUM:=7ff5ce9e5f0b088ab48720bbd7203530
-  endif
   ifeq ($(PKG_VERSION),4.4.5)
     PKG_MD5SUM:=44b3192c4c584b9be5243d9e8e7e0ed1
-  endif
-  ifeq ($(PKG_VERSION),4.5.0)
-  PKG_MD5SUM:=ff27b7c4a5d5060c8a8543a44abca31f
   endif
   ifeq ($(PKG_VERSION),4.5.1)
   PKG_MD5SUM:=48231a8e33ed6e058a341c53b819de1a
@@ -130,7 +115,7 @@ GCC_CONFIGURE:= \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 --with-abi=64) \
 		$(if $(CONFIG_GCC_VERSION_LLVM),--enable-llvm=$(BUILD_DIR_BASE)/host/llvm) \
-		$(if $(CONFIG_GCC_VERSION_4_3_3_CS)$(CONFIG_GCC_VERSION_4_4_1_CS)$(CONFIG_GCC_VERSION_4_4_3_CS),--enable-poison-system-directories)
+		$(if $(CONFIG_GCC_VERSION_4_3_3_CS)$(CONFIG_GCC_VERSION_4_4_1_CS),--enable-poison-system-directories)
 
 ifneq ($(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5),)
   ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
