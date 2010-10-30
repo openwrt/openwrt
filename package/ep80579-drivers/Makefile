@@ -21,7 +21,7 @@ PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ep80579-drivers/Default
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@TARGET_x86_ep80579
 endef
 
 define KernelPackage/ep80579-eth
