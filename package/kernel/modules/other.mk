@@ -444,6 +444,21 @@ endef
 
 $(eval $(call KernelPackage,leds-net48xx))
 
+define KernelPackage/leds-net5501
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Soekris Net5501 LED support
+  DEPENDS:=@TARGET_x86 +kmod-gpio-cs5535 +kmod-leds-gpio
+  KCONFIG:=CONFIG_LEDS_NET5501
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-net5501.ko
+  AUTOLOAD:=$(call AutoLoad,50,leds-net5501)
+endef
+
+define KernelPackage/leds-net5501/description
+ Kernel module for Soekris Net5501 LEDs
+endef
+
+$(eval $(call KernelPackage,leds-net5501))
+
 
 define KernelPackage/leds-rb750
   SUBMENU:=$(OTHER_MENU)
