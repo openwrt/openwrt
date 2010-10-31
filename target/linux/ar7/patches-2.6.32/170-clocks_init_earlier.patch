@@ -1,0 +1,53 @@
+--- a/arch/mips/ar7/clock.c
++++ b/arch/mips/ar7/clock.c
+@@ -232,12 +232,12 @@ static void tnetd7300_set_clock(u32 shif
+ 	calculate(base_clock, frequency, &prediv, &postdiv, &mul);
+ 
+ 	writel(((prediv - 1) << PREDIV_SHIFT) | (postdiv - 1), &clock->ctrl);
+-	msleep(1);
++	mdelay(1);
+ 	writel(4, &clock->pll);
+ 	while (readl(&clock->pll) & PLL_STATUS)
+ 		;
+ 	writel(((mul - 1) << MUL_SHIFT) | (0xff << 3) | 0x0e, &clock->pll);
+-	msleep(75);
++	mdelay(75);
+ }
+ 
+ static void __init tnetd7300_init_clocks(void)
+@@ -407,7 +407,7 @@ static void __init tnetd7200_init_clocks
+ 	iounmap(bootcr);
+ }
+ 
+-int __init ar7_init_clocks(void)
++void __init ar7_init_clocks(void)
+ {
+ 	switch (ar7_chip_id()) {
+ 	case AR7_CHIP_7100:
+@@ -421,7 +421,4 @@ int __init ar7_init_clocks(void)
+ 	default:
+ 		break;
+ 	}
+-
+-	return 0;
+ }
+-arch_initcall(ar7_init_clocks);
+--- a/arch/mips/ar7/time.c
++++ b/arch/mips/ar7/time.c
+@@ -26,5 +26,7 @@
+ 
+ void __init plat_time_init(void)
+ {
++	ar7_init_clocks();
++
+ 	mips_hpt_frequency = ar7_cpu_freq() / 2;
+ }
+--- a/arch/mips/include/asm/mach-ar7/ar7.h
++++ b/arch/mips/include/asm/mach-ar7/ar7.h
+@@ -178,4 +178,6 @@ static inline void ar7_device_off(u32 bi
+ 	msleep(20);
+ }
+ 
++extern void __init ar7_init_clocks(void);
++
+ #endif /* __AR7_H__ */
