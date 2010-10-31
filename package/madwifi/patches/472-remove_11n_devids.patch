@@ -1,0 +1,20 @@
+--- a/ath/if_ath_pci.c
++++ b/ath/if_ath_pci.c
+@@ -111,8 +111,6 @@ static struct pci_device_id ath_pci_id_t
+ 	{ 0x168c, 0x001b, PCI_ANY_ID, PCI_ANY_ID },
+ 	{ 0x168c, 0x001c, PCI_ANY_ID, PCI_ANY_ID }, /* PCI Express 5424 */
+ 	{ 0x168c, 0x001d, PCI_ANY_ID, PCI_ANY_ID }, /* PCI Express ???  */
+-	{ 0x168c, 0x0023, PCI_ANY_ID, PCI_ANY_ID },
+-	{ 0x168c, 0x0024, PCI_ANY_ID, PCI_ANY_ID },
+ 	{ 0x168c, 0x9013, PCI_ANY_ID, PCI_ANY_ID }, /* sonicwall */
+ 	{ 0x168c, 0xff1a, PCI_ANY_ID, PCI_ANY_ID },
+ 	{ 0 }
+@@ -146,8 +144,6 @@ static const struct ath_hw_detect cards[
+ 	{ ubnt, "SR4C",    0x168c, 0x0013, 0x7777, 0x1004, 6 },
+ 	{ ubnt, "SR5",     0x168c, 0x0013, 0x168c, 0x2042, 7 },
+ 	{ ubnt, "SR9",     0x168c, 0x0013, 0x7777, 0x2009, 12 },
+-	{ ubnt, "SR71A",   0x168c, 0x0027, 0x168c, 0x2082, 10 },
+-	{ ubnt, "SR71",    0x168c, 0x0027, 0x0777, 0x4082, 10 },
+ };
+ 
+ static int
