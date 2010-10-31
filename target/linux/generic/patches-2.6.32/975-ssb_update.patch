@@ -343,7 +343,10 @@
 +static int ssb_pcmcia_get_mac(struct pcmcia_device *p_dev,
 +			tuple_t *tuple,
 +			void *priv)
-+{
+ {
+-	tuple_t tuple;
+-	int res;
+-	unsigned char buf[32];
 +	struct ssb_sprom *sprom = priv;
 +
 +	if (tuple->TupleData[0] != CISTPL_FUNCE_LAN_NODE_ID)
@@ -359,10 +362,7 @@
 +static int ssb_pcmcia_do_get_invariants(struct pcmcia_device *p_dev,
 +					tuple_t *tuple,
 +					void *priv)
- {
--	tuple_t tuple;
--	int res;
--	unsigned char buf[32];
++{
 +	struct ssb_init_invariants *iv = priv;
  	struct ssb_sprom *sprom = &iv->sprom;
  	struct ssb_boardinfo *bi = &iv->boardinfo;
