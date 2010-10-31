@@ -21,7 +21,7 @@
  static void cpmac_dump_regs(struct net_device *dev)
  {
  	int i;
-@@ -1111,9 +1118,13 @@ static int __devinit cpmac_probe(struct 
+@@ -1111,9 +1118,13 @@ static int __devinit cpmac_probe(struct
  	struct cpmac_priv *priv;
  	struct net_device *dev;
  	struct plat_cpmac_data *pdata;
@@ -35,7 +35,7 @@
  	for (phy_id = 0; phy_id < PHY_MAX_ADDR; phy_id++) {
  		if (!(pdata->phy_mask & (1 << phy_id)))
  			continue;
-@@ -1122,12 +1133,43 @@ static int __devinit cpmac_probe(struct 
+@@ -1122,12 +1133,43 @@ static int __devinit cpmac_probe(struct
  		strncpy(mdio_bus_id, cpmac_mii->id, MII_BUS_ID_SIZE);
  		break;
  	}
