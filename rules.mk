@@ -254,9 +254,10 @@ endef
 # $(2) => The lock name. If not given, the global lock will be used.
 # $(3) => The filedescriptor used for the lock. Defaults to 1023.
 define locked
-    ( $(STAGING_DIR_HOST)/bin/flock -x $(if $(3),$(3),1023) && \
-      $(1) \
-    ) $(if $(3),$(strip $(3)),1023)>$(TMP_DIR)/.$(if $(2),$(strip $(2)),global).flock
+	SHELL= \
+	$(STAGING_DIR_HOST)/bin/flock \
+		$(TMP_DIR)/.$(if $(2),$(strip $(2)),global).flock \
+		-c '$(subst ','\'',$(1))'
 endef
 
 # file extension
