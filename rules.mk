@@ -252,7 +252,6 @@ endef
 # Execute commands under flock
 # $(1) => The shell expression.
 # $(2) => The lock name. If not given, the global lock will be used.
-# $(3) => The filedescriptor used for the lock. Defaults to 1023.
 define locked
 	SHELL= \
 	$(STAGING_DIR_HOST)/bin/flock \
