@@ -329,9 +329,9 @@
  
  /* Interrupts */
  #define AR7_IRQ_UART0	15
-@@ -97,14 +117,22 @@ extern int ar7_cpu_clock, ar7_bus_clock,
+@@ -95,14 +115,22 @@ struct plat_dsl_data {
  
- extern void __init ar7_init_clocks(void);
+ extern int ar7_cpu_clock, ar7_bus_clock, ar7_dsp_clock;
  
 +static inline int ar7_is_titan(void)
 +{
