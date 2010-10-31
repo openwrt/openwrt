@@ -19,7 +19,7 @@ PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=c45bc531c1ed2ac80f68fb986b63bb87
 
 ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_IFXMIPS_DSL_' $(TOPDIR)/.config | md5s)
+  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell $(SH_FUNC) grep '^CONFIG_IFXMIPS_DSL_' $(TOPDIR)/.config | md5s)
 endif
 
 FW_BASE_NAME:=dsl_danube_firmware_adsl
