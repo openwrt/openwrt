@@ -23,25 +23,3 @@ DORMANT state does not prevent normal operations after that.
  	return 0;
  }
  
---- a/src/drivers/driver_wext.c
-+++ b/src/drivers/driver_wext.c
-@@ -2245,11 +2245,14 @@ int wpa_driver_wext_set_operstate(void *
- {
- 	struct wpa_driver_wext_data *drv = priv;
- 
--	wpa_printf(MSG_DEBUG, "%s: operstate %d->%d (%s)",
--		   __func__, drv->operstate, state, state ? "UP" : "DORMANT");
--	drv->operstate = state;
--	return netlink_send_oper_ifla(drv->netlink, drv->ifindex, -1,
--				      state ? IF_OPER_UP : IF_OPER_DORMANT);
-+	if (drv != NULL)
-+	{
-+		wpa_printf(MSG_DEBUG, "%s: operstate %d->%d (%s)",
-+			   __func__, drv->operstate, state, state ? "UP" : "DORMANT");
-+		drv->operstate = state;
-+		return netlink_send_oper_ifla(drv->netlink, drv->ifindex, -1,
-+					      state ? IF_OPER_UP : IF_OPER_DORMANT);
-+	}
- }
- 
- 

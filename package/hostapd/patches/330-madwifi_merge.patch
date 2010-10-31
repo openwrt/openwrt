@@ -336,7 +336,7 @@
 -	return 0;
 -}
 -
- static int
+-static int
 -set80211param(struct wpa_driver_madwifi_data *drv, int op, int arg,
 -	      int show_err)
 -{
@@ -355,7 +355,7 @@
 -	return 0;
 -}
 -
--static int
+ static int
 -wpa_driver_madwifi_set_wpa_ie(struct wpa_driver_madwifi_data *drv,
 +wpa_driver_madwifi_set_wpa_ie(struct madwifi_driver_data *drv,
  			      const u8 *wpa_ie, size_t wpa_ie_len)
@@ -627,7 +627,7 @@
  	return wpa_driver_wext_get_ssid(drv->wext, ssid);
  }
  
-@@ -1705,14 +1481,14 @@ static int wpa_driver_madwifi_get_ssid(v
+@@ -1705,14 +1481,16 @@ static int wpa_driver_madwifi_get_ssid(v
  static struct wpa_scan_results *
  wpa_driver_madwifi_get_scan_results(void *priv)
  {
@@ -641,10 +641,12 @@
  {
 -	struct wpa_driver_madwifi_data *drv = priv;
 +	struct madwifi_driver_data *drv = priv;
++	if (!drv->wext)
++		return 0;
  	return wpa_driver_wext_set_operstate(drv->wext, state);
  }
  
-@@ -1733,7 +1509,7 @@ static int wpa_driver_madwifi_set_probe_
+@@ -1733,7 +1511,7 @@ static int wpa_driver_madwifi_set_probe_
  
  	ret = set80211priv(priv, IEEE80211_IOCTL_SET_APPIEBUF, probe_req_ie,
  			   sizeof(struct ieee80211req_getset_appiebuf) +
@@ -653,7 +655,7 @@
  
  	os_free(probe_req_ie);
  
-@@ -1743,7 +1519,7 @@ static int wpa_driver_madwifi_set_probe_
+@@ -1743,7 +1521,7 @@ static int wpa_driver_madwifi_set_probe_
  
  static void * wpa_driver_madwifi_init(void *ctx, const char *ifname)
  {
@@ -662,7 +664,7 @@
  
  	drv = os_zalloc(sizeof(*drv));
  	if (drv == NULL)
-@@ -1754,17 +1530,17 @@ static void * wpa_driver_madwifi_init(vo
+@@ -1754,17 +1532,17 @@ static void * wpa_driver_madwifi_init(vo
  
  	drv->ctx = ctx;
  	os_strlcpy(drv->ifname, ifname, sizeof(drv->ifname));
@@ -684,7 +686,7 @@
  		wpa_printf(MSG_DEBUG, "%s: failed to enable WPA support",
  			   __FUNCTION__);
  		goto fail3;
-@@ -1773,7 +1549,7 @@ static void * wpa_driver_madwifi_init(vo
+@@ -1773,7 +1551,7 @@ static void * wpa_driver_madwifi_init(vo
  	return drv;
  
  fail3:
@@ -693,7 +695,7 @@
  fail2:
  	wpa_driver_wext_deinit(drv->wext);
  fail:
-@@ -1784,38 +1560,37 @@ fail:
+@@ -1784,38 +1562,37 @@ fail:
  
  static void wpa_driver_madwifi_deinit(void *priv)
  {
@@ -739,7 +741,7 @@
  #ifdef HOSTAPD
  	.hapd_init		= madwifi_init,
  	.hapd_deinit		= madwifi_deinit,
-@@ -1835,7 +1610,8 @@ const struct wpa_driver_ops wpa_driver_m
+@@ -1835,7 +1612,8 @@ const struct wpa_driver_ops wpa_driver_m
  	.sta_clear_stats        = madwifi_sta_clear_stats,
  	.commit			= madwifi_commit,
  	.set_ap_wps_ie		= madwifi_set_ap_wps_ie,
@@ -749,7 +751,7 @@
  	.get_bssid		= wpa_driver_madwifi_get_bssid,
  	.get_ssid		= wpa_driver_madwifi_get_ssid,
  	.init			= wpa_driver_madwifi_init,
-@@ -1847,5 +1623,5 @@ const struct wpa_driver_ops wpa_driver_m
+@@ -1847,5 +1625,5 @@ const struct wpa_driver_ops wpa_driver_m
  	.disassociate		= wpa_driver_madwifi_disassociate,
  	.associate		= wpa_driver_madwifi_associate,
  	.set_operstate		= wpa_driver_madwifi_set_operstate,
