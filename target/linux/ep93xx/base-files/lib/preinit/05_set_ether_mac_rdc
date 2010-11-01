@@ -1,0 +1,12 @@
+#!/bin/sh
+# Copyright (C) 2010 OpenWrt.org
+
+. /lib/functions/boot.sh
+
+set_ether_mac() {
+	mac=$(sed -n 's/^Serial.* 000000/02/p' /proc/cpuinfo)
+	ifconfig eth0 hw ether $mac
+}
+
+boot_hook_add preinit_main set_ether_mac
+
