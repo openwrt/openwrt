@@ -1,6 +1,6 @@
 --- a/drivers/mtd/redboot.c
 +++ b/drivers/mtd/redboot.c
-@@ -13,6 +13,8 @@
+@@ -31,6 +31,8 @@
  
  #define BOARD_CONFIG_PART		"boardconfig"
  
@@ -9,7 +9,7 @@
  struct fis_image_desc {
      unsigned char name[16];      // Null terminated name
      uint32_t	  flash_base;    // Address within FLASH of image
-@@ -30,7 +32,8 @@ struct fis_list {
+@@ -48,7 +50,8 @@ struct fis_list {
  	struct fis_list *next;
  };
  
@@ -19,7 +19,7 @@
  module_param(directory, int, 0);
  
  static inline int redboot_checksum(struct fis_image_desc *img)
-@@ -59,6 +62,8 @@ static int parse_redboot_partitions(stru
+@@ -77,6 +80,8 @@ static int parse_redboot_partitions(stru
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	static char nullstring[] = "unallocated";
  #endif

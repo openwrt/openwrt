@@ -30,7 +30,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  config ARCH_IXDP425
  	bool "IXDP425"
  	help
-@@ -169,7 +177,7 @@ config MACH_FSG
+@@ -177,7 +185,7 @@ config MACH_ARCOM_VULCAN
  #
  config CPU_IXP46X
  	bool
@@ -41,17 +41,17 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  config CPU_IXP43X
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -18,6 +18,7 @@ obj-pci-$(CONFIG_MACH_WG302V1)		+= wg302
- obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302v2-pci.o
+@@ -19,6 +19,7 @@ obj-pci-$(CONFIG_MACH_WG302V2)		+= wg302
  obj-pci-$(CONFIG_MACH_FSG)		+= fsg-pci.o
+ obj-pci-$(CONFIG_MACH_ARCOM_VULCAN)	+= vulcan-pci.o
  obj-pci-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-pci.o
 +obj-pci-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-pci.o
  
  obj-y	+= common.o
  
-@@ -35,6 +36,7 @@ obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-se
- obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
+@@ -37,6 +38,7 @@ obj-$(CONFIG_MACH_FSG)		+= fsg-setup.o
  obj-$(CONFIG_MACH_GORAMO_MLR)	+= goramo_mlr.o
+ obj-$(CONFIG_MACH_ARCOM_VULCAN)	+= vulcan-setup.o
  obj-$(CONFIG_MACH_PRONGHORN)	+= pronghorn-setup.o
 +obj-$(CONFIG_MACH_SIDEWINDER)	+= sidewinder-setup.o
  

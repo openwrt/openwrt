@@ -85,7 +85,7 @@
  	phy_start(port->phydev);
  }
  
-@@ -1263,6 +1277,10 @@ static int __devinit eth_init_one(struct
+@@ -1275,6 +1289,10 @@ static int __devinit eth_init_one(struct
  	if ((err = register_netdev(dev)))
  		goto err_phy_dis;
  

@@ -421,7 +421,7 @@
 +
 --- a/arch/arm/mach-ixp4xx/Makefile
 +++ b/arch/arm/mach-ixp4xx/Makefile
-@@ -23,6 +23,7 @@ obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp42
+@@ -24,6 +24,7 @@ obj-pci-$(CONFIG_MACH_COMPEX)		+= ixdp42
  obj-pci-$(CONFIG_MACH_WRT300NV2)		+= wrt300nv2-pci.o
  obj-pci-$(CONFIG_MACH_AP1000)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_TW5334)		+= tw5334-pci.o
@@ -429,7 +429,7 @@
  
  obj-y	+= common.o
  
-@@ -45,6 +46,7 @@ obj-$(CONFIG_MACH_COMPEX)	+= compex-setu
+@@ -47,6 +48,7 @@ obj-$(CONFIG_MACH_COMPEX)	+= compex-setu
  obj-$(CONFIG_MACH_WRT300NV2)	+= wrt300nv2-setup.o
  obj-$(CONFIG_MACH_AP1000)	+= ap1000-setup.o
  obj-$(CONFIG_MACH_TW5334)	+= tw5334-setup.o
@@ -439,7 +439,7 @@
  obj-$(CONFIG_IXP4XX_QMGR)	+= ixp4xx_qmgr.o
 --- a/arch/arm/mach-ixp4xx/Kconfig
 +++ b/arch/arm/mach-ixp4xx/Kconfig
-@@ -235,6 +235,13 @@ config MACH_GTWX5715
+@@ -243,6 +243,13 @@ config MACH_GTWX5715
  		"High Speed" UART is n/c (as far as I can tell)
  		20 Pin ARM/Xscale JTAG interface on J2
  

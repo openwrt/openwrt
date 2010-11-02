@@ -524,7 +524,7 @@
  config MACH_LOFT
      bool "Loft"
      depends on MACH_AVILA
-@@ -214,7 +222,7 @@ config CPU_IXP46X
+@@ -222,7 +230,7 @@ config CPU_IXP46X
  
  config CPU_IXP43X
  	bool
@@ -543,7 +543,7 @@
  obj-pci-$(CONFIG_MACH_IXDPG425)		+= ixdpg425-pci.o
  obj-pci-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-pci.o
  obj-pci-$(CONFIG_MACH_GTWX5715)		+= gtwx5715-pci.o
-@@ -29,6 +30,7 @@ obj-y	+= common.o
+@@ -30,6 +31,7 @@ obj-y	+= common.o
  
  obj-$(CONFIG_ARCH_IXDP4XX)	+= ixdp425-setup.o
  obj-$(CONFIG_MACH_AVILA)	+= avila-setup.o
