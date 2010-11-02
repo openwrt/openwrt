@@ -12,13 +12,17 @@ LOG_DIR="$DIR/logs"
 
 mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$BUILD_DIR" "$LOG_DIR"
 
+die()
+{
+	echo "$@"
+	exit 1
+}
+
 [ -d "$STAGING_DIR_HOST_TMPL" ] || {
 	rm -rf staging_dir/host
-	make tools/install V=99 || {
-		echo "make tools/install failed, please check"
-		exit 1
-	}
+	make tools/install V=99 || die "make tools/install failed, please check"
 	cp -al staging_dir/host "$STAGING_DIR_HOST_TMPL"
+	make toolchain/install V=99 || die "make toolchain/install failed, please check"
 }
 
 for pkg in `cat tmp/.packagedeps  | grep CONFIG_PACKAGE | grep -v curdir | sed -e 's,.*[/=]\s*,,' | sort -u`; do
