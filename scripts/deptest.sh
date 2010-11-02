@@ -1,22 +1,30 @@
 #!/bin/bash
 
-DIR="$PWD/tmp/deptest"
+SCRIPTDIR="$(dirname "$0")"
+[ "${SCRIPTDIR:0:1}" = "/" ] || SCRIPTDIR="$PWD/$SCRIPTDIR"
+BASEDIR="$SCRIPTDIR/.."
+
+DIR="$BASEDIR/tmp/deptest"
 STAMP_DIR_SUCCESS="$DIR/stamp-success"
 STAMP_DIR_FAILED="$DIR/stamp-failed"
-BUILD_DIR="$DIR/build"
-BUILD_DIR_HOST="$DIR/build_host"
-STAGING_DIR="$DIR/staging"
-STAGING_DIR_HOST="$DIR/staging_host"
-STAGING_DIR_HOST_TMPL="$DIR/staging_host_tmpl"
+BUILD_DIR="$DIR/build_dir/target"
+BUILD_DIR_HOST="$DIR/build_dir/host"
+STAGING_DIR="$DIR/staging_dir"
+STAGING_DIR_HOST="$DIR/staging_dir_host"
+STAGING_DIR_HOST_TMPL="$DIR/staging_dir_host_tmpl"
 LOG_DIR="$DIR/logs"
-
-mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$BUILD_DIR" "$LOG_DIR"
 
 die()
 {
 	echo "$@"
 	exit 1
 }
+
+[ -f "$BASEDIR/include/toplevel.mk" ] || \
+	die "Error: Could not find buildsystem base directory"
+cd "$BASEDIR" || die "Failed to enter base directory"
+
+mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$BUILD_DIR" "$BUILD_DIR_HOST" "$LOG_DIR"
 
 [ -d "$STAGING_DIR_HOST_TMPL" ] || {
 	rm -rf staging_dir/host
