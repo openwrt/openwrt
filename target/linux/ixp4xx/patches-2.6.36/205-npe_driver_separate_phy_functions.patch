@@ -51,7 +51,7 @@
  
  static inline void debug_pkt(struct net_device *dev, const char *func,
  			     u8 *data, int len)
-@@ -1008,8 +1052,7 @@ static int eth_open(struct net_device *d
+@@ -1020,8 +1064,7 @@ static int eth_open(struct net_device *d
  		return err;
  	}
  
@@ -61,7 +61,7 @@
  
  	for (i = 0; i < ETH_ALEN; i++)
  		__raw_writel(dev->dev_addr[i], &port->regs->hw_addr[i]);
-@@ -1130,7 +1173,7 @@ static int eth_close(struct net_device *
+@@ -1142,7 +1185,7 @@ static int eth_close(struct net_device *
  		printk(KERN_CRIT "%s: unable to disable loopback\n",
  		       dev->name);
  
@@ -70,7 +70,7 @@
  
  	if (!ports_open)
  		qmgr_disable_irq(TXDONE_QUEUE);
-@@ -1156,7 +1199,6 @@ static int __devinit eth_init_one(struct
+@@ -1168,7 +1211,6 @@ static int __devinit eth_init_one(struct
  	struct net_device *dev;
  	struct eth_plat_info *plat = pdev->dev.platform_data;
  	u32 regs_phys;
@@ -78,7 +78,7 @@
  	int err;
  
  	if (!(dev = alloc_etherdev(sizeof(struct port))))
-@@ -1214,18 +1256,10 @@ static int __devinit eth_init_one(struct
+@@ -1226,18 +1268,10 @@ static int __devinit eth_init_one(struct
  	__raw_writel(DEFAULT_CORE_CNTRL, &port->regs->core_control);
  	udelay(50);
  
@@ -99,7 +99,7 @@
  	if ((err = register_netdev(dev)))
  		goto err_phy_dis;
  
-@@ -1235,7 +1269,7 @@ static int __devinit eth_init_one(struct
+@@ -1247,7 +1281,7 @@ static int __devinit eth_init_one(struct
  	return 0;
  
  err_phy_dis:
@@ -108,7 +108,7 @@
  err_free_mem:
  	npe_port_tab[NPE_ID(port->id)] = NULL;
  	platform_set_drvdata(pdev, NULL);
-@@ -1253,7 +1287,7 @@ static int __devexit eth_remove_one(stru
+@@ -1265,7 +1299,7 @@ static int __devexit eth_remove_one(stru
  	struct port *port = netdev_priv(dev);
  
  	unregister_netdev(dev);
