@@ -1,3 +1,5 @@
+#!/bin/bash
+
 DIR="$PWD/tmp/deptest"
 STAMP_DIR="$DIR/stamp"
 BUILD_DIR="$DIR/build"
