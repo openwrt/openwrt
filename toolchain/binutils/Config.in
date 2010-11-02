@@ -2,7 +2,8 @@
 
 choice
 	prompt "Binutils Version" if TOOLCHAINOPTS
-	default BINUTILS_VERSION_2_19_1
+	default BINUTILS_VERSION_2_19_1 if (avr32 || ubicom32)
+	default BINUTILS_VERSION_2_20_1
 	help
 	  Select the version of binutils you wish to use.
 
@@ -35,4 +36,5 @@ config BINUTILS_VERSION
 	default "2.19.1"          if BINUTILS_VERSION_2_19_1
 	default "2.20.1"          if BINUTILS_VERSION_2_20_1
 	default "2.19.1+cs"       if BINUTILS_VERSION_CS
-	default "2.19.1"
+	default "2.19.1"          if (avr32 || ubicom32)
+	default "2.20.1"
