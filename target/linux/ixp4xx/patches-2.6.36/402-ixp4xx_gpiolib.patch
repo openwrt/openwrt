@@ -61,14 +61,15 @@
  
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -435,6 +435,7 @@ config ARCH_IXP4XX
+@@ -431,7 +431,7 @@ config ARCH_IXP4XX
+ 	bool "IXP4xx-based"
+ 	depends on MMU
  	select CPU_XSCALE
- 	select GENERIC_GPIO
- 	select GENERIC_CLOCKEVENTS
+-	select GENERIC_GPIO
 +	select ARCH_REQUIRE_GPIOLIB
+ 	select GENERIC_CLOCKEVENTS
+ 	select DMABOUNCE if PCI
  	help
- 	  Support for Intel's IXP4XX (XScale) family of processors.
- 
 --- a/arch/arm/mach-ixp4xx/include/mach/gpio.h
 +++ b/arch/arm/mach-ixp4xx/include/mach/gpio.h
 @@ -27,47 +27,31 @@
