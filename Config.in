@@ -125,6 +125,10 @@ menu "Global build settings"
 
 	comment "General build options"
 
+	config DISPLAY_SUPPORT
+		bool "Show packages that require graphics support (local or remote)"
+		default n
+
 	config BUILD_PATENTED
 		default y
 		bool "Compile with support for patented functionality"
