@@ -19,27 +19,27 @@ mkdir -p "$STAMP_DIR" "$BUILD_DIR" "$LOG_DIR"
 }
 
 for pkg in `cat tmp/.packagedeps  | grep CONFIG_PACKAGE | grep -v curdir | sed -e 's,.*[/=]\s*,,' | sort -u`; do
-		SELECTED=
-		for conf in `grep CONFIG_PACKAGE tmp/.packagedeps | grep -E "[ /]$pkg\$" | sed -e 's,package-$(\(CONFIG_PACKAGE_.*\)).*,\1,'`; do
-				grep "$conf=" .config > /dev/null && SELECTED=1
-		done
-        [ -f "$STAMP_DIR/$pkg-done" ] && continue
-		[ -n "$SELECTED" ] || {
-				echo "Package $pkg is not selected"
-				continue
-		}
-        echo "Testing package $pkg..."
-        rm -rf "$STAGING_DIR"
-        mkdir -p "$STAGING_DIR"
-		rm -rf "$STAGING_DIR_HOST"
-		cp -al "$STAGING_DIR_HOST_TMPL" "$STAGING_DIR_HOST"
-        make package/$pkg/compile \
-                BUILD_DIR="$BUILD_DIR" \
-                BUILD_DIR_HOST="$BUILD_DIR_HOST" \
-                STAGING_DIR="$STAGING_DIR" \
-				STAGING_DIR_HOST="$STAGING_DIR_HOST" \
-                V=99 >"$LOG_DIR/$(basename $pkg).log" 2>&1 \
-        && touch "$STAMP_DIR/$pkg-done" || {
-                echo "Building package $pkg failed!"
-        }
+	SELECTED=
+	for conf in `grep CONFIG_PACKAGE tmp/.packagedeps | grep -E "[ /]$pkg\$" | sed -e 's,package-$(\(CONFIG_PACKAGE_.*\)).*,\1,'`; do
+		grep "$conf=" .config > /dev/null && SELECTED=1
+	done
+	[ -f "$STAMP_DIR/$pkg-done" ] && continue
+	[ -n "$SELECTED" ] || {
+		echo "Package $pkg is not selected"
+		continue
+	}
+	echo "Testing package $pkg..."
+	rm -rf "$STAGING_DIR"
+	mkdir -p "$STAGING_DIR"
+	rm -rf "$STAGING_DIR_HOST"
+	cp -al "$STAGING_DIR_HOST_TMPL" "$STAGING_DIR_HOST"
+	make package/$pkg/compile \
+		BUILD_DIR="$BUILD_DIR" \
+		BUILD_DIR_HOST="$BUILD_DIR_HOST" \
+		STAGING_DIR="$STAGING_DIR" \
+		STAGING_DIR_HOST="$STAGING_DIR_HOST" \
+		V=99 >"$LOG_DIR/$(basename $pkg).log" 2>&1 \
+	&& touch "$STAMP_DIR/$pkg-done" || {
+		echo "Building package $pkg failed!"
+	}
 done
