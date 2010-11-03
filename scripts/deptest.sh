@@ -22,6 +22,8 @@ die()
 
 [ -f "$BASEDIR/include/toplevel.mk" ] || \
 	die "Error: Could not find buildsystem base directory"
+[ -f "$BASEDIR/.config" ] || \
+	die "The buildsystem is not configured. Please run make menuconfig."
 cd "$BASEDIR" || die "Failed to enter base directory"
 
 mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$BUILD_DIR" "$BUILD_DIR_HOST" "$LOG_DIR"
