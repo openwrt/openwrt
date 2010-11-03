@@ -39,7 +39,15 @@
  
 --- a/src/include/drv_dsl_cpe_os_linux.h
 +++ b/src/include/drv_dsl_cpe_os_linux.h
-@@ -24,7 +24,7 @@
+@@ -17,17 +17,17 @@
+ #endif
+ 
+ #include <asm/ioctl.h>
+-#include <linux/autoconf.h>
++#include <generated/autoconf.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
  #include <linux/ctype.h>
  #include <linux/version.h>
  #include <linux/spinlock.h>
@@ -47,4 +55,19 @@
 +#include <linux/sched.h>
  
  #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
-    #include <linux/utsrelease.h>
+-   #include <linux/utsrelease.h>
++   #include <generated/utsrelease.h>
+ #endif
+ 
+ #include <linux/types.h>
+--- a/src/mei/ifxmips_mei.c
++++ b/src/mei/ifxmips_mei.c
+@@ -29,7 +29,7 @@
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/version.h>
+-#include <linux/utsrelease.h>
++#include <generated/utsrelease.h>
+ #include <linux/types.h>
+ #include <linux/fs.h>
+ #include <linux/mm.h>

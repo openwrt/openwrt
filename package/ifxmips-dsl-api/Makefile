@@ -41,7 +41,7 @@ define KernelPackage/ifxmips-dsl-api
   TITLE:=DSL CPE API driver
   URL:=http://www.infineon.com/
   MAINTAINER:=Infineon Technologies AG / Lantiq / John Crispin <blogic@openwrt.org>
-  DEPENDS:=@TARGET_ifxmips +kmod-atm @BROKEN
+  DEPENDS:=@TARGET_ifxmips +kmod-atm
   FILES:=$(PKG_BUILD_DIR)/src/mei/ifxmips_mei.ko \
 	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.ko \
 	$(PKG_BUILD_DIR)/src/mei/ifxmips_atm.ko
