@@ -74,6 +74,7 @@ test_package() # $1=pkgname
 		BUILD_DIR_HOST="$BUILD_DIR_HOST" \
 		STAGING_DIR="$STAGING_DIR" \
 		STAGING_DIR_HOST="$STAGING_DIR_HOST" \
+		FORCE_HOST_INSTALL=1 \
 		V=99 >"$LOG_DIR/$(basename $pkg).log" 2>&1
 	if [ $? -eq 0 ]; then
 		touch "$STAMP_SUCCESS"

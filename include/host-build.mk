@@ -153,12 +153,12 @@ ifndef DUMP
 		$(call Host/Compile)
 		touch $$@
 
-    $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT)
+    $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
 		$(call Host/Install)
 		mkdir -p $$(shell dirname $$@)
 		touch $$@
   else
-    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+    $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED) $(if $(FORCE_HOST_INSTALL),FORCE)
 		$(call Host/Compile)
 		$(call Host/Install)
 		touch $$@
