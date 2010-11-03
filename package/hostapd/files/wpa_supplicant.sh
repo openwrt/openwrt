@@ -77,8 +77,10 @@ wpa_supplicant_setup_vif() {
 				tls)
 					pairwise='pairwise=CCMP'
 					group='group=CCMP'
+					config_get identity "$vif" identity
 					config_get priv_key "$vif" priv_key
 					config_get priv_key_pwd "$vif" priv_key_pwd
+					identity="identity=\"$identity\""
 					priv_key="private_key=\"$priv_key\""
 					priv_key_pwd="private_key_passwd=\"$priv_key_pwd\""
 				;;
