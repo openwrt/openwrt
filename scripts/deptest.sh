@@ -36,6 +36,8 @@ die()
 test_package() # $1=pkgname
 {
 	local pkg="$1"
+	[ -z "$(echo "$pkg" | grep -e '/')" -a "$pkg" != "." -a "$pkg" != ".." ] || \
+		die "Package name \"$pkg\" contains illegal characters"
 	local SELECTED=
 	for conf in `grep CONFIG_PACKAGE tmp/.packagedeps | grep -E "[ /]$pkg\$" | sed -e 's,package-$(\(CONFIG_PACKAGE_.*\)).*,\1,'`; do
 		grep "$conf=" .config > /dev/null && SELECTED=1 && break
