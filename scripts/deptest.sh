@@ -7,10 +7,6 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# Usage:
-#   No commandline arguments => check dependencies of all installed packages
-#   Package name(s) as arguments => only test the specified packages
-#
 
 SCRIPTDIR="$(dirname "$0")"
 [ "${SCRIPTDIR:0:1}" = "/" ] || SCRIPTDIR="$PWD/$SCRIPTDIR"
@@ -23,7 +19,7 @@ STAMP_DIR_BLACKLIST="$DIR/stamp-blacklist"
 BUILD_DIR="$DIR/build_dir/target"
 BUILD_DIR_HOST="$DIR/build_dir/host"
 STAGING_DIR="$DIR/staging_dir"
-STAGING_DIR_HOST="$DIR/staging_dir_host"
+STAGING_DIR_HOST="$STAGING_DIR/host"
 STAGING_DIR_HOST_TMPL="$DIR/staging_dir_host_tmpl"
 LOG_DIR="$DIR/logs"
 
@@ -33,10 +29,22 @@ die()
 	exit 1
 }
 
+usage()
+{
+	echo "deptest.sh [OPTIONS] [PACKAGES]"
+	echo
+	echo "OPTIONS:"
+	echo "  --lean       Run a lean test. Do not clean the build directory for each"
+	echo "               package test."
+	echo
+	echo "PACKAGES are packages to test. If not specified, all installed packages"
+	echo "will be tested."
+}
+
 test_package() # $1=pkgname
 {
 	local pkg="$1"
-	[ -z "$(echo "$pkg" | grep -e '/')" -a "$pkg" != "." -a "$pkg" != ".." ] || \
+	[ -n "$pkg" -a -z "$(echo "$pkg" | grep -e '/')" -a "$pkg" != "." -a "$pkg" != ".." ] || \
 		die "Package name \"$pkg\" contains illegal characters"
 	local SELECTED=
 	for conf in `grep CONFIG_PACKAGE tmp/.packagedeps | grep -E "[ /]$pkg\$" | sed -e 's,package-$(\(CONFIG_PACKAGE_.*\)).*,\1,'`; do
@@ -58,8 +66,9 @@ test_package() # $1=pkgname
 	echo "Testing package $pkg..."
 	rm -rf "$STAGING_DIR"
 	mkdir -p "$STAGING_DIR"
-	rm -rf "$STAGING_DIR_HOST"
 	cp -al "$STAGING_DIR_HOST_TMPL" "$STAGING_DIR_HOST"
+	[ $lean_test -eq 0 ] && rm -rf "$BUILD_DIR" "$BUILD_DIR_HOST"
+	mkdir -p "$BUILD_DIR" "$BUILD_DIR_HOST"
 	make package/$pkg/compile \
 		BUILD_DIR="$BUILD_DIR" \
 		BUILD_DIR_HOST="$BUILD_DIR_HOST" \
@@ -74,14 +83,32 @@ test_package() # $1=pkgname
 	fi
 }
 
+# parse commandline options
+packages=
+lean_test=0
+while [ $# -ne 0 ]; do
+	case "$1" in
+	--help|-h)
+		usage
+		exit 0
+		;;
+	--lean)
+		lean_test=1
+		;;
+	*)
+		packages="$packages $1"
+		;;
+	esac
+	shift
+done
+
 [ -f "$BASEDIR/include/toplevel.mk" ] || \
 	die "Error: Could not find buildsystem base directory"
 [ -f "$BASEDIR/.config" ] || \
 	die "The buildsystem is not configured. Please run make menuconfig."
 cd "$BASEDIR" || die "Failed to enter base directory"
 
-mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$STAMP_DIR_BLACKLIST" \
-	"$BUILD_DIR" "$BUILD_DIR_HOST" "$LOG_DIR"
+mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$STAMP_DIR_BLACKLIST" "$LOG_DIR"
 
 [ -d "$STAGING_DIR_HOST_TMPL" ] || {
 	rm -rf staging_dir/host
@@ -91,15 +118,14 @@ mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$STAMP_DIR_BLACKLIST" \
 	make target/linux/install V=99 || die "make target/linux/install failed, please check"
 }
 
-if [ $# -eq 0 ]; then
+if [ -z "$packages" ]; then
 	# iterate over all packages
 	for pkg in `cat tmp/.packagedeps  | grep CONFIG_PACKAGE | grep -v curdir | sed -e 's,.*[/=]\s*,,' | sort -u`; do
 		test_package "$pkg"
 	done
 else
-	# Only check the specified packages
-	while [ $# -ne 0 ]; do
-		test_package "$1"
-		shift
+	# only check the specified packages
+	for pkg in $packages; do
+		test_package "$pkg"
 	done
 fi
