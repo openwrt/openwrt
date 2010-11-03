@@ -12,15 +12,15 @@ BOARDNAME:=Infineon Mips
 FEATURES:=squashfs jffs2 atm
 SUBTARGETS:=danube ar9
 
-LINUX_VERSION:=2.6.33.7
+LINUX_VERSION:=2.6.35.8
 
 CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES+=uboot-lantiq kmod-pppoa ppp-mod-pppoa linux-atm atm-tools br2684ctl ifxmips-dsl-api ifxmips-dsl-control ifx-tapidemo
+DEFAULT_PACKAGES+=uboot-lantiq kmod-pppoa ppp-mod-pppoa linux-atm atm-tools br2684ctl ifxmips-dsl-api ifxmips-dsl-control tapi_sip lqtapi_firmware_danube
 
-#define Target/Description
-#	Build firmware images for Infineon Mips Controllers
-#endef
+define Target/Description
+	Build firmware images for Infineon Mips Controllers
+endef
 
 $(eval $(call BuildTarget))

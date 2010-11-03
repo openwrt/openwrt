@@ -6,12 +6,9 @@
 #
 
 define Profile/Ralink
-  NAME:=Ralink RT61 Wifi (ARV452)
-  PACKAGES:=kmod-rt61-pci
+  NAME:=Ralink RT61 Wifi
+  PACKAGES:=kmod-rt61-pci hostapd-mini
 endef
 
-define Profile/Ralink/Description
-	Package set compatible with hardware using Ralink WiFi cards
-endef
 $(eval $(call Profile,Ralink))
 
