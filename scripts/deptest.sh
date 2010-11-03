@@ -7,6 +7,7 @@ BASEDIR="$SCRIPTDIR/.."
 DIR="$BASEDIR/tmp/deptest"
 STAMP_DIR_SUCCESS="$DIR/stamp-success"
 STAMP_DIR_FAILED="$DIR/stamp-failed"
+STAMP_DIR_BLACKLIST="$DIR/stamp-blacklist"
 BUILD_DIR="$DIR/build_dir/target"
 BUILD_DIR_HOST="$DIR/build_dir/host"
 STAGING_DIR="$DIR/staging_dir"
@@ -26,7 +27,8 @@ die()
 	die "The buildsystem is not configured. Please run make menuconfig."
 cd "$BASEDIR" || die "Failed to enter base directory"
 
-mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$BUILD_DIR" "$BUILD_DIR_HOST" "$LOG_DIR"
+mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$STAMP_DIR_BLACKLIST" \
+	"$BUILD_DIR" "$BUILD_DIR_HOST" "$LOG_DIR"
 
 [ -d "$STAGING_DIR_HOST_TMPL" ] || {
 	rm -rf staging_dir/host
@@ -43,10 +45,15 @@ for pkg in `cat tmp/.packagedeps  | grep CONFIG_PACKAGE | grep -v curdir | sed -
 	done
 	STAMP_SUCCESS="$STAMP_DIR_SUCCESS/$pkg"
 	STAMP_FAILED="$STAMP_DIR_FAILED/$pkg"
+	STAMP_BLACKLIST="$STAMP_DIR_BLACKLIST/$pkg"
 	rm -f "$STAMP_FAILED"
 	[ -f "$STAMP_SUCCESS" ] && continue
 	[ -n "$SELECTED" ] || {
 		echo "Package $pkg is not selected"
+		continue
+	}
+	[ -f "$STAMP_BLACKLIST" ] && {
+		echo "Package $pkg is blacklisted"
 		continue
 	}
 	echo "Testing package $pkg..."
