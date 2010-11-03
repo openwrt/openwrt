@@ -18,9 +18,11 @@ STAMP_DIR_FAILED="$DIR/stamp-failed"
 STAMP_DIR_BLACKLIST="$DIR/stamp-blacklist"
 BUILD_DIR="$DIR/build_dir/target"
 BUILD_DIR_HOST="$DIR/build_dir/host"
-STAGING_DIR="$DIR/staging_dir"
-STAGING_DIR_HOST="$STAGING_DIR/host"
+KERNEL_BUILD_DIR="$DIR/build_dir/linux"
+STAGING_DIR="$DIR/staging_dir/target"
+STAGING_DIR_HOST="$DIR/staging_dir/host"
 STAGING_DIR_HOST_TMPL="$DIR/staging_dir_host_tmpl"
+BIN_DIR="$DIR/staging_dir/bin_dir"
 LOG_DIR="$DIR/logs"
 
 die()
@@ -37,9 +39,39 @@ usage()
 	echo "  --lean       Run a lean test. Do not clean the build directory for each"
 	echo "               package test."
 	echo "  --force      Force a test, even if a success/blacklist stamp is available"
+	echo "  -j X         Number of make jobs"
 	echo
 	echo "PACKAGES are packages to test. If not specified, all installed packages"
 	echo "will be tested."
+}
+
+deptest_make()
+{
+	local target="$1"
+	shift
+	local logfile="$1"
+	shift
+	make -j$nrjobs "$target" \
+		BUILD_DIR="$BUILD_DIR" \
+		BUILD_DIR_HOST="$BUILD_DIR_HOST" \
+		KERNEL_BUILD_DIR="$KERNEL_BUILD_DIR" \
+		BIN_DIR="$BIN_DIR" \
+		STAGING_DIR="$STAGING_DIR" \
+		STAGING_DIR_HOST="$STAGING_DIR_HOST" \
+		FORCE_HOST_INSTALL=1 \
+		V=99 "$@" >"$LOG_DIR/$logfile" 2>&1
+}
+
+clean_kernel_build_dir()
+{
+	# delete everything, except the kernel build dir "linux-X.X.X"
+	(
+		cd "$KERNEL_BUILD_DIR" || die "Failed to enter kernel build dir"
+		for entry in *; do
+			[ -z "$(echo "$entry" | egrep -e '^linux-*.*.*$')" ] || continue
+			rm -rf "$entry" || die "Failed to clean kernel build dir"
+		done
+	)
 }
 
 test_package() # $1=pkgname
@@ -66,18 +98,15 @@ test_package() # $1=pkgname
 		return
 	}
 	echo "Testing package $pkg..."
-	rm -rf "$STAGING_DIR"
+	rm -rf "$STAGING_DIR" "$STAGING_DIR_HOST"
 	mkdir -p "$STAGING_DIR"
 	cp -al "$STAGING_DIR_HOST_TMPL" "$STAGING_DIR_HOST"
-	[ $lean_test -eq 0 ] && rm -rf "$BUILD_DIR" "$BUILD_DIR_HOST"
+	[ $lean_test -eq 0 ] && {
+		rm -rf "$BUILD_DIR" "$BUILD_DIR_HOST"
+		clean_kernel_build_dir
+	}
 	mkdir -p "$BUILD_DIR" "$BUILD_DIR_HOST"
-	make package/$pkg/compile \
-		BUILD_DIR="$BUILD_DIR" \
-		BUILD_DIR_HOST="$BUILD_DIR_HOST" \
-		STAGING_DIR="$STAGING_DIR" \
-		STAGING_DIR_HOST="$STAGING_DIR_HOST" \
-		FORCE_HOST_INSTALL=1 \
-		V=99 >"$LOG_DIR/$(basename $pkg).log" 2>&1
+	deptest_make "package/$pkg/compile" "$(basename $pkg).log"
 	if [ $? -eq 0 ]; then
 		touch "$STAMP_SUCCESS"
 	else
@@ -90,6 +119,7 @@ test_package() # $1=pkgname
 packages=
 lean_test=0
 force=0
+nrjobs=1
 while [ $# -ne 0 ]; do
 	case "$1" in
 	--help|-h)
@@ -101,6 +131,14 @@ while [ $# -ne 0 ]; do
 		;;
 	--force)
 		force=1
+		;;
+	-j*)
+		if [ -n "${1:2}" ]; then
+			nrjobs="${1:2}"
+		else
+			shift
+			nrjobs="$1"
+		fi
 		;;
 	*)
 		packages="$packages $1"
@@ -115,14 +153,42 @@ done
 	die "The buildsystem is not configured. Please run make menuconfig."
 cd "$BASEDIR" || die "Failed to enter base directory"
 
-mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$STAMP_DIR_BLACKLIST" "$LOG_DIR"
+mkdir -p "$STAMP_DIR_SUCCESS" "$STAMP_DIR_FAILED" "$STAMP_DIR_BLACKLIST" \
+	"$BIN_DIR" "$LOG_DIR"
+
+bootstrap_deptest_make()
+{
+	local target="$1"
+	shift
+	local logfile="bootstrap-deptest-$(echo "$target" | tr / -).log"
+	echo "deptest-make $target"
+	deptest_make "$target" "$logfile" "$@" || \
+		die "make $target failed, please check $logfile"
+}
+
+bootstrap_native_make()
+{
+	local target="$1"
+	shift
+	local logfile="bootstrap-native-$(echo "$target" | tr / -).log"
+	echo "make $target"
+	make -j$nrjobs "$target" \
+		V=99 "$@" >"$LOG_DIR/$logfile" 2>&1 || \
+		die "make $target failed, please check $logfile"
+}
 
 [ -d "$STAGING_DIR_HOST_TMPL" ] || {
-	rm -rf staging_dir/host
-	make tools/install V=99 || die "make tools/install failed, please check"
-	cp -al staging_dir/host "$STAGING_DIR_HOST_TMPL"
-	make toolchain/install V=99 || die "make toolchain/install failed, please check"
-	make target/linux/install V=99 || die "make target/linux/install failed, please check"
+	echo "Bootstrapping build environment..."
+	rm -rf "$STAGING_DIR" "$STAGING_DIR_HOST" "$BUILD_DIR" "$BUILD_DIR_HOST" "$KERNEL_BUILD_DIR"
+	mkdir -p "$STAGING_DIR" "$STAGING_DIR_HOST" \
+		"$BUILD_DIR" "$BUILD_DIR_HOST" "$KERNEL_BUILD_DIR"
+	bootstrap_native_make tools/install
+	bootstrap_native_make toolchain/install
+	bootstrap_deptest_make tools/install
+	bootstrap_deptest_make target/linux/install
+	cp -al "$STAGING_DIR_HOST" "$STAGING_DIR_HOST_TMPL"
+	rm -rf "$STAGING_DIR" "$STAGING_DIR_HOST" "$BUILD_DIR" "$BUILD_DIR_HOST"
+	echo "Build environment OK."
 }
 
 if [ -z "$packages" ]; then
