@@ -36,6 +36,7 @@ usage()
 	echo "OPTIONS:"
 	echo "  --lean       Run a lean test. Do not clean the build directory for each"
 	echo "               package test."
+	echo "  --force      Force a test, even if a success stamp is available"
 	echo
 	echo "PACKAGES are packages to test. If not specified, all installed packages"
 	echo "will be tested."
@@ -54,7 +55,8 @@ test_package() # $1=pkgname
 	local STAMP_FAILED="$STAMP_DIR_FAILED/$pkg"
 	local STAMP_BLACKLIST="$STAMP_DIR_BLACKLIST/$pkg"
 	rm -f "$STAMP_FAILED"
-	[ -f "$STAMP_SUCCESS" ] && return
+	[ -f "$STAMP_SUCCESS" -a $force -eq 0 ] && return
+	rm -f "$STAMP_SUCCESS"
 	[ -n "$SELECTED" ] || {
 		echo "Package $pkg is not selected"
 		return
@@ -87,6 +89,7 @@ test_package() # $1=pkgname
 # parse commandline options
 packages=
 lean_test=0
+force=0
 while [ $# -ne 0 ]; do
 	case "$1" in
 	--help|-h)
@@ -95,6 +98,9 @@ while [ $# -ne 0 ]; do
 		;;
 	--lean)
 		lean_test=1
+		;;
+	--force)
+		force=1
 		;;
 	*)
 		packages="$packages $1"
