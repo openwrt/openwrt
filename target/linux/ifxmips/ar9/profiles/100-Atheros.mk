@@ -6,12 +6,9 @@
 #
 
 define Profile/Atheros
-  NAME:=Atheros WiFi (default)
-  PACKAGES:=kmod-madwifi
+  NAME:=Atheros WiFi
+  PACKAGES:=kmod-madwifi hostapd-mini
 endef
 
-define Profile/Atheros/Description
-	Package set compatible with hardware using Atheros WiFi cards
-endef
 $(eval $(call Profile,Atheros))
 
