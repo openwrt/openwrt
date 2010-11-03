@@ -25,7 +25,7 @@ define Package/ifxmips-dsl-control
   TITLE:=DSL CPE control application
   URL:=http://www.infineon.com/
   MAINTAINER:=Infineon Technologies AG / Lantiq / John Crispin <blogic@openwrt.org>
-  DEPENDS:=+kmod-ifxmips-dsl-api +libpthread @BROKEN
+  DEPENDS:=+kmod-ifxmips-dsl-api +libpthread
 endef
 
 define Package/ifxmips-dsl-control/description
