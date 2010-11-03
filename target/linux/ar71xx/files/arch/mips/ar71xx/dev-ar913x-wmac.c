@@ -22,7 +22,9 @@
 
 #include "dev-ar913x-wmac.h"
 
-static struct ath9k_platform_data ar913x_wmac_data;
+static struct ath9k_platform_data ar913x_wmac_data = {
+	.led_pin = -1,
+};
 static char ar913x_wmac_mac[6];
 
 static struct resource ar913x_wmac_resources[] = {
