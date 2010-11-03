@@ -36,7 +36,7 @@ usage()
 	echo "OPTIONS:"
 	echo "  --lean       Run a lean test. Do not clean the build directory for each"
 	echo "               package test."
-	echo "  --force      Force a test, even if a success stamp is available"
+	echo "  --force      Force a test, even if a success/blacklist stamp is available"
 	echo
 	echo "PACKAGES are packages to test. If not specified, all installed packages"
 	echo "will be tested."
@@ -61,7 +61,7 @@ test_package() # $1=pkgname
 		echo "Package $pkg is not selected"
 		return
 	}
-	[ -f "$STAMP_BLACKLIST" ] && {
+	[ -f "$STAMP_BLACKLIST" -a $force -eq 0 ] && {
 		echo "Package $pkg is blacklisted"
 		return
 	}
