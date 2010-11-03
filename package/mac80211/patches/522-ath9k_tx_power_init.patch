@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -650,6 +650,37 @@ err_hw:
+@@ -654,6 +654,37 @@ err_hw:
  	return ret;
  }
  
@@ -38,7 +38,7 @@
  void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
  {
  	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
-@@ -765,6 +796,8 @@ int ath9k_init_device(u16 devid, struct 
+@@ -748,6 +779,8 @@ int ath9k_init_device(u16 devid, struct 
  	if (error != 0)
  		goto error_rx;
  

@@ -18,7 +18,9 @@
 #include "dev-ap91-pci.h"
 #include "pci-ath9k-fixup.h"
 
-static struct ath9k_platform_data ap91_wmac_data;
+static struct ath9k_platform_data ap91_wmac_data = {
+	.led_pin = -1,
+};
 static char ap91_wmac_mac[6];
 
 static struct ar71xx_pci_irq ap91_pci_irqs[] __initdata = {

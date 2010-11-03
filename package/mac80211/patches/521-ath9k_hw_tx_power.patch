@@ -252,7 +252,7 @@
  
  	ath9k_hw_rfbus_done(ah);
  
-@@ -2177,7 +2177,7 @@ bool ath9k_hw_disable(struct ath_hw *ah)
+@@ -2193,7 +2193,7 @@ bool ath9k_hw_disable(struct ath_hw *ah)
  }
  EXPORT_SYMBOL(ath9k_hw_disable);
  
@@ -261,7 +261,7 @@
  {
  	struct ath_regulatory *regulatory = ath9k_hw_regulatory(ah);
  	struct ath9k_channel *chan = ah->curchan;
-@@ -2190,7 +2190,7 @@ void ath9k_hw_set_txpowerlimit(struct at
+@@ -2206,7 +2206,7 @@ void ath9k_hw_set_txpowerlimit(struct at
  				 channel->max_antenna_gain * 2,
  				 channel->max_power * 2,
  				 min((u32) MAX_RATE_POWER,
@@ -272,7 +272,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -860,7 +860,7 @@ u32 ath9k_hw_getrxfilter(struct ath_hw *
+@@ -862,7 +862,7 @@ u32 ath9k_hw_getrxfilter(struct ath_hw *
  void ath9k_hw_setrxfilter(struct ath_hw *ah, u32 bits);
  bool ath9k_hw_phy_disable(struct ath_hw *ah);
  bool ath9k_hw_disable(struct ath_hw *ah);
