@@ -1,0 +1,96 @@
+--- a/fs/mini_fo/aux.c
++++ b/fs/mini_fo/aux.c
+@@ -236,7 +236,7 @@ int mini_fo_cp_cont(dentry_t *tgt_dentry
+ 	mntget(src_mnt);
+ 
+ 	/* open file write only */
+-	tgt_file = dentry_open(tgt_dentry, tgt_mnt, 0x1);
++	tgt_file = dentry_open(tgt_dentry, tgt_mnt, 0x1, current_cred());
+ 	if(!tgt_file || IS_ERR(tgt_file)) {
+ 		printk(KERN_CRIT "mini_fo_cp_cont: ERROR opening target file.\n");
+ 		err = PTR_ERR(tgt_file);
+@@ -244,7 +244,7 @@ int mini_fo_cp_cont(dentry_t *tgt_dentry
+ 	}
+ 
+ 	/* open file read only */
+-	src_file = dentry_open(src_dentry, src_mnt, 0x0);
++	src_file = dentry_open(src_dentry, src_mnt, 0x0, current_cred());
+ 	if(!src_file || IS_ERR(src_file)) {
+ 		printk(KERN_CRIT "mini_fo_cp_cont: ERROR opening source file.\n");
+ 		err = PTR_ERR(src_file);
+--- a/fs/mini_fo/file.c
++++ b/fs/mini_fo/file.c
+@@ -437,7 +437,7 @@ mini_fo_open(inode_t *inode, file_t *fil
+ 			mntget(stopd(inode->i_sb)->hidden_mnt);
+ 			hidden_file = dentry_open(hidden_dentry,
+ 						  stopd(inode->i_sb)->hidden_mnt,
+-						  hidden_flags);
++						  hidden_flags, file->f_cred);
+ 			if (IS_ERR(hidden_file)) {
+ 				err = PTR_ERR(hidden_file);
+ 				dput(hidden_dentry);
+@@ -479,7 +479,7 @@ mini_fo_open(inode_t *inode, file_t *fil
+ 			mntget(stopd(inode->i_sb)->hidden_mnt);
+ 			hidden_file = dentry_open(hidden_dentry,
+ 						  stopd(inode->i_sb)->hidden_mnt,
+-						  hidden_flags);
++						  hidden_flags, file->f_cred);
+ 			if (IS_ERR(hidden_file)) {
+ 				err = PTR_ERR(hidden_file);
+ 				dput(hidden_dentry);
+@@ -512,7 +512,7 @@ mini_fo_open(inode_t *inode, file_t *fil
+ 	mntget(stopd(inode->i_sb)->hidden_mnt2);
+ 	hidden_sto_file = dentry_open(hidden_sto_dentry,
+ 				      stopd(inode->i_sb)->hidden_mnt2,
+-				      hidden_flags);
++				      hidden_flags, file->f_cred);
+ 
+ 	/* dentry_open dputs the dentry if it fails */
+ 	if (IS_ERR(hidden_sto_file)) {
+--- a/fs/mini_fo/meta.c
++++ b/fs/mini_fo/meta.c
+@@ -56,7 +56,7 @@ int meta_build_lists(dentry_t *dentry)
+ 
+ 
+ 		/* open META-file for reading */
+-		meta_file = dentry_open(meta_dentry, meta_mnt, 0x0);
++		meta_file = dentry_open(meta_dentry, meta_mnt, 0x0, current_cred());
+ 		if(!meta_file || IS_ERR(meta_file)) {
+ 			printk(KERN_CRIT "mini_fo: meta_build_lists: \
+                                           ERROR opening META file.\n");
+@@ -448,7 +448,7 @@ int meta_write_d_entry(dentry_t *dentry,
+ 	mntget(meta_mnt);
+ 
+         /* open META-file for writing */
+-        meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
++        meta_file = dentry_open(meta_dentry, meta_mnt, 0x1, current_cred());
+         if(!meta_file || IS_ERR(meta_file)) {
+                 printk(KERN_CRIT "mini_fo: meta_write_d_entry: \
+                                   ERROR opening meta file.\n");
+@@ -546,7 +546,7 @@ int meta_write_r_entry(dentry_t *dentry,
+ 	mntget(meta_mnt);
+ 
+         /* open META-file for writing */
+-        meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
++        meta_file = dentry_open(meta_dentry, meta_mnt, 0x1, current_cred());
+         if(!meta_file || IS_ERR(meta_file)) {
+                 printk(KERN_CRIT "mini_fo: meta_write_r_entry: \
+                                   ERROR opening meta file.\n");
+@@ -686,7 +686,7 @@ int meta_sync_d_list(dentry_t *dentry, i
+ 	mntget(meta_mnt);
+ 
+         /* open META-file for writing */
+-        meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
++        meta_file = dentry_open(meta_dentry, meta_mnt, 0x1, current_cred());
+         if(!meta_file || IS_ERR(meta_file)) {
+                 printk(KERN_CRIT "mini_fo: meta_sync_d_list: \
+                                   ERROR opening meta file.\n");
+@@ -828,7 +828,7 @@ int meta_sync_r_list(dentry_t *dentry, i
+ 	mntget(meta_mnt);
+ 
+         /* open META-file for writing */
+-        meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
++        meta_file = dentry_open(meta_dentry, meta_mnt, 0x1, current_cred());
+         if(!meta_file || IS_ERR(meta_file)) {
+                 printk(KERN_CRIT "mini_fo: meta_sync_r_list: \
+                                   ERROR opening meta file.\n");

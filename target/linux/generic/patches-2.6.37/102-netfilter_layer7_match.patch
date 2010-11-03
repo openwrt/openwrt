@@ -1,0 +1,25 @@
+--- a/net/netfilter/xt_layer7.c
++++ b/net/netfilter/xt_layer7.c
+@@ -415,7 +415,9 @@ static int layer7_write_proc(struct file
+ }
+ 
+ static bool
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
++match(const struct sk_buff *skbin, struct xt_action_param *par)
++#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+ match(const struct sk_buff *skbin, const struct xt_match_param *par)
+ #else
+ match(const struct sk_buff *skbin,
+@@ -598,7 +600,11 @@ match(const struct sk_buff *skbin,
+ 
+ // load nf_conntrack_ipv4
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
++#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
++static int check(const struct xt_mtchk_param *par)
++#  else
+ static bool check(const struct xt_mtchk_param *par)
++#  endif
+ {
+         if (nf_ct_l3proto_try_module_get(par->match->family) < 0) {
+                 printk(KERN_WARNING "can't load conntrack support for "
