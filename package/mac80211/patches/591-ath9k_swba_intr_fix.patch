@@ -1,0 +1,20 @@
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -506,7 +506,7 @@ static void ath_beacon_config_ap(struct 
+ 	ath9k_hw_disable_interrupts(ah);
+ 	ath9k_beacon_init(sc, nexttbtt, intval);
+ 	sc->beacon.bmisscnt = 0;
+-	ath9k_hw_enable_interrupts(ah);
++	ath9k_hw_set_interrupts(ah, ah->imask);
+ 
+ 	/* Clear the reset TSF flag, so that subsequent beacon updation
+ 	   will not reset the HW TSF. */
+@@ -689,7 +689,7 @@ static void ath_beacon_config_adhoc(stru
+ 	ath9k_hw_disable_interrupts(ah);
+ 	ath9k_beacon_init(sc, nexttbtt, intval);
+ 	sc->beacon.bmisscnt = 0;
+-	ath9k_hw_enable_interrupts(ah);
++	ath9k_hw_set_interrupts(ah, ah->imask);
+ }
+ 
+ void ath_beacon_config(struct ath_softc *sc, struct ieee80211_vif *vif)
