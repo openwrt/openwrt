@@ -247,7 +247,7 @@ mvswitch_config_init(struct phy_device *pdev)
 	pdev->supported = ADVERTISED_100baseT_Full;
 	pdev->advertising = ADVERTISED_100baseT_Full;
 	dev->phy_ptr = priv;
-	dev->irq = PHY_POLL;
+	pdev->irq = PHY_POLL;
 #ifdef HEADER_MODE
 	dev->flags |= IFF_PROMISC;
 #endif
