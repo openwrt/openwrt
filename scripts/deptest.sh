@@ -111,7 +111,7 @@ test_package() # $1=pkgname
 		touch "$STAMP_SUCCESS"
 	else
 		touch "$STAMP_FAILED"
-		echo "Building package $pkg failed!"
+		echo "Building package $pkg FAILED"
 	fi
 }
 
