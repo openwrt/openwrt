@@ -2,8 +2,7 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_VERSION_4_2_4 if avr32
-	default GCC_VERSION_4_3_5 if powerpc64
+	default GCC_VERSION_4_3_5 if (avr32 || powerpc64)
 	default GCC_VERSION_4_3_5 if (TARGET_coldfire || TARGET_etrax || TARGET_gemini)
 	default GCC_VERSION_4_3_3_CS if (arm || armeb) && !(TARGET_gemini || TARGET_omap35xx)
 	default GCC_VERSION_4_3_3_CS if (mips || mipsel) && !(TARGET_octeon || TARGET_sibyte)
