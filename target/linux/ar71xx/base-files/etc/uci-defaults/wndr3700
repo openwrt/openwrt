@@ -7,16 +7,28 @@
 
 board=$(ar71xx_board_name)
 
-wndr3700_set_wan_led() {
+wndr3700_set_wan_wifi_leds() {
 	uci batch <<EOF
-set system.wan_led=led
+set system.wan_led='led'
 set system.wan_led.sysfs='wndr3700:green:wan'
 set system.wan_led.name='WAN LED (green)'
 set system.wan_led.default='0'
+set system.wifi_led_2ghz='led'
+set system.wifi_led_2ghz.sysfs='ath9k-phy0::radio'
+set system.wifi_led_2ghz.name='2.4GHz WiFi LED (green)'
+set system.wifi_led_2ghz.trigger='netdev'
+set system.wifi_led_2ghz.dev='wlan0'
+set system.wifi_led_2ghz.mode='link tx rx'
+set system.wifi_led_5ghz='led'
+set system.wifi_led_5ghz.sysfs='ath9k-phy1::radio'
+set system.wifi_led_5ghz.name='5GHz WiFi LED (blue)'
+set system.wifi_led_5ghz.trigger='netdev'
+set system.wifi_led_5ghz.dev='wlan1'
+set system.wifi_led_5ghz.mode='link tx rx'
 commit system
 EOF
 }
 
 if [ "${board}" == "wndr3700" ]; then
-	wndr3700_set_wan_led
+	wndr3700_set_wan_wifi_leds
 fi
