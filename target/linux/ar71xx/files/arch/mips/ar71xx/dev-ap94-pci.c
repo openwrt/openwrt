@@ -61,7 +61,7 @@ void __init ap94_pci_enable_quirk_wndr3700(void)
 	ap94_wmac0_data.led_pin = 5;
 	ap94_wmac0_data.gpio_mask = (0xf << 6);
 	/* 2.4 GHz uses the first fixed antenna group (0, 1, 0, 1) */
-	ap94_wmac0_data.gpio_val = (5 << 6);
+	ap94_wmac0_data.gpio_val = (10 << 6);
 
 	ap94_wmac1_data.led_pin = 5;
 	ap94_wmac1_data.gpio_mask = (0xf << 6);
