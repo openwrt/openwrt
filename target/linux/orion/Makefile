@@ -9,8 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=orion
 BOARDNAME:=Marvell Orion
-FEATURES:=squashfs
-SUBTARGETS=generic harddisk
+SUBTARGETS:=generic harddisk
 CFLAGS=-Os -pipe -march=armv5t -mtune=xscale -funit-at-a-time
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
@@ -20,6 +19,6 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:="uImage"
 
-DEFAULT_PACKAGES += kmod-ath9k wpad-mini
+DEFAULT_PACKAGES += kmod-crypto-mv-cesa
 
 $(eval $(call BuildTarget))
