@@ -17,7 +17,7 @@ endif
 tools-y += m4 autoconf automake bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs libuuid mtd-utils mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2 flock
-tools-$(CONFIG_TARGET_orion) += wrt350nv2-builder upslug2
+tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_TARGET_x86) += qemu
 ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_TARGET_ar71xx),)
 tools-y += squashfs lzma-old
@@ -98,5 +98,5 @@ $(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(
 $(curdir)/ := .config prereq
 $(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_3 CONFIG_GCC_USE_GRAPHITE CONFIG_TARGET_orion))
+$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_3 CONFIG_GCC_USE_GRAPHITE CONFIG_TARGET_orion_generic))
 $(eval $(call subdir,$(curdir)))
