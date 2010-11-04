@@ -32,16 +32,16 @@ config switch_port
 	# the switch and the section does not correspond to a real
 	# switch port.
 	#
-	# 0=LED off; 1=Collision/FDX; 2=Link/activity; 3-1000MB/s
-	# 4=100 MB/s; 5=10 MB/s; 6=1000 MB/s+activity; 7=100 MB/s+activity
-	# 8=10 MB/s+activity; 9=10/100 Mb/s+activity; 10: Fiber;
+	# 0=LED off; 1=Collision/FDX; 2=Link/activity; 3=1000 Mb/s;
+	# 4=100 Mb/s; 5=10 Mb/s; 6=1000 Mb/s+activity; 7=100 Mb/s+activity;
+	# 8=10 Mb/s+activity; 9=10/100 Mb/s+activity; 10: Fiber;
 	# 11: Fault; 12: Link/activity(tx); 13: Link/activity(rx);
 	# 14: Link (master); 15: separate register
-	
+
 	option device		rtl8366s
 	option port		1
-	option led		9
-	
+	option led		6
+
 config switch_port
 	# Port 2 controls the ORANGE configuration of LEDs for
 	# the switch and the section does not correspond to a real
@@ -52,8 +52,7 @@ config switch_port
 	
 	option device		rtl8366s
 	option port		2
-	option led		6
-
+	option led		9
 
 config switch_port                                              
 	# Port 5 controls the configuration of the WAN LED and the
@@ -67,5 +66,4 @@ config switch_port
 
 	option device		rtl8366s
 	option port		5
-	option led		6
-
+	option led		2
