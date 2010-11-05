@@ -8,8 +8,6 @@
 BOARDNAME:=Internal Hard-Disk
 FEATURES:=targz
 
-DEFAULT_PACKAGES += kmod-ath9k wpad-mini
-
 define Target/Description
 	Build firmware images for Marvell Orion based boards that boot directly from internal disk storage.
 	(e.g.: Freecom DataTank 2, ...)

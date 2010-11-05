@@ -8,8 +8,6 @@
 BOARDNAME:=Generic
 FEATURES:=squashfs
 
-DEFAULT_PACKAGES += kmod-ath9k wpad-mini
-
 define Target/Description
 	Build firmware images for Marvell Orion based boards that boot from internal flash.
 	(e.g.: Linksys WRT350N v2, Netgear WNR854T, ...)

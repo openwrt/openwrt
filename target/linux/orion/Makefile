@@ -19,6 +19,6 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:="uImage"
 
-DEFAULT_PACKAGES += kmod-crypto-mv-cesa
+DEFAULT_PACKAGES += kmod-ath9k kmod-crypto-mv-cesa wpad-mini
 
 $(eval $(call BuildTarget))
