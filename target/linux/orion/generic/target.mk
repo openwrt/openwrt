@@ -6,7 +6,7 @@
 #
 
 BOARDNAME:=Generic
-FEATURES:=squashfs jffs2
+FEATURES:=squashfs
 
 DEFAULT_PACKAGES += kmod-ath9k wpad-mini
 
