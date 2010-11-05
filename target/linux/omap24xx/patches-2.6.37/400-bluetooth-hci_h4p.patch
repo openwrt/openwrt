@@ -1,0 +1,1966 @@
+---
+ drivers/bluetooth/Kconfig           |   10 
+ drivers/bluetooth/Makefile          |    1 
+ drivers/bluetooth/hci_h4p/Makefile  |    7 
+ drivers/bluetooth/hci_h4p/core.c    | 1043 ++++++++++++++++++++++++++++++++++++
+ drivers/bluetooth/hci_h4p/fw-csr.c  |  149 +++++
+ drivers/bluetooth/hci_h4p/fw-ti.c   |   90 +++
+ drivers/bluetooth/hci_h4p/fw.c      |  155 +++++
+ drivers/bluetooth/hci_h4p/hci_h4p.h |  183 ++++++
+ drivers/bluetooth/hci_h4p/sysfs.c   |   84 ++
+ drivers/bluetooth/hci_h4p/uart.c    |  169 +++++
+ 10 files changed, 1891 insertions(+)
+
+Index: linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/core.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/core.c	2010-11-05 17:04:44.762000001 +0100
+@@ -0,0 +1,1043 @@
++/*
++ * This file is part of hci_h4p bluetooth driver
++ *
++ * Copyright (C) 2005, 2006 Nokia Corporation.
++ *
++ * Contact: Ville Tervo <ville.tervo@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#include <linux/module.h>
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/errno.h>
++#include <linux/delay.h>
++#include <linux/spinlock.h>
++#include <linux/serial_reg.h>
++#include <linux/skbuff.h>
++#include <linux/timer.h>
++#include <linux/device.h>
++#include <linux/platform_device.h>
++#include <linux/clk.h>
++#include <linux/gpio.h>
++
++#include <mach/hardware.h>
++#include <mach/board.h>
++#include <mach/irqs.h>
++#include <plat/serial.h>
++
++#include <net/bluetooth/bluetooth.h>
++#include <net/bluetooth/hci_core.h>
++#include <net/bluetooth/hci.h>
++
++#include "hci_h4p.h"
++
++#define PM_TIMEOUT 200
++
++struct omap_bluetooth_config {
++	u8    chip_type;
++	u8    bt_wakeup_gpio;
++	u8    host_wakeup_gpio;
++	u8    reset_gpio;
++	u8    bt_uart;
++	u8    bd_addr[6];
++	u8    bt_sysclk;
++};
++
++/* This should be used in function that cannot release clocks */
++static void hci_h4p_set_clk(struct hci_h4p_info *info, int *clock, int enable)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&info->clocks_lock, flags);
++	if (enable && !*clock) {
++		NBT_DBG_POWER("Enabling %p\n", clock);
++		clk_enable(info->uart_fclk);
++#ifdef CONFIG_ARCH_OMAP2
++		if (cpu_is_omap24xx()) {
++			clk_enable(info->uart_iclk);
++			//omap2_block_sleep();
++		}
++#endif
++	}
++	if (!enable && *clock) {
++		NBT_DBG_POWER("Disabling %p\n", clock);
++		clk_disable(info->uart_fclk);
++#ifdef CONFIG_ARCH_OMAP2
++		if (cpu_is_omap24xx()) {
++			clk_disable(info->uart_iclk);
++			//omap2_allow_sleep();
++		}
++#endif
++	}
++
++	*clock = enable;
++	spin_unlock_irqrestore(&info->clocks_lock, flags);
++}
++
++/* Power management functions */
++static void hci_h4p_disable_tx(struct hci_h4p_info *info)
++{
++	NBT_DBG_POWER("\n");
++
++	if (!info->pm_enabled)
++		return;
++
++	mod_timer(&info->tx_pm_timer, jiffies + msecs_to_jiffies(PM_TIMEOUT));
++}
++
++static void hci_h4p_enable_tx(struct hci_h4p_info *info)
++{
++	NBT_DBG_POWER("\n");
++
++	if (!info->pm_enabled)
++		return;
++
++	del_timer_sync(&info->tx_pm_timer);
++	if (info->tx_pm_enabled) {
++		info->tx_pm_enabled = 0;
++		hci_h4p_set_clk(info, &info->tx_clocks_en, 1);
++		gpio_set_value(info->bt_wakeup_gpio, 1);
++	}
++}
++
++static void hci_h4p_tx_pm_timer(unsigned long data)
++{
++	struct hci_h4p_info *info;
++
++	NBT_DBG_POWER("\n");
++
++	info = (struct hci_h4p_info *)data;
++
++	if (hci_h4p_inb(info, UART_LSR) & UART_LSR_TEMT) {
++		gpio_set_value(info->bt_wakeup_gpio, 0);
++		hci_h4p_set_clk(info, &info->tx_clocks_en, 0);
++		info->tx_pm_enabled = 1;
++	}
++	else {
++		mod_timer(&info->tx_pm_timer, jiffies + msecs_to_jiffies(PM_TIMEOUT));
++	}
++}
++
++static void hci_h4p_disable_rx(struct hci_h4p_info *info)
++{
++	if (!info->pm_enabled)
++		return;
++
++	mod_timer(&info->rx_pm_timer, jiffies + msecs_to_jiffies(PM_TIMEOUT));
++}
++
++static void hci_h4p_enable_rx(struct hci_h4p_info *info)
++{
++	unsigned long flags;
++
++	if (!info->pm_enabled)
++		return;
++
++	del_timer_sync(&info->rx_pm_timer);
++	spin_lock_irqsave(&info->lock, flags);
++	if (info->rx_pm_enabled) {
++		hci_h4p_set_clk(info, &info->rx_clocks_en, 1);
++		hci_h4p_outb(info, UART_IER, hci_h4p_inb(info, UART_IER) | UART_IER_RDI);
++		__hci_h4p_set_auto_ctsrts(info, 1, UART_EFR_RTS);
++		info->rx_pm_enabled = 0;
++	}
++	spin_unlock_irqrestore(&info->lock, flags);
++}
++
++static void hci_h4p_rx_pm_timer(unsigned long data)
++{
++	unsigned long flags;
++	struct hci_h4p_info *info = (struct hci_h4p_info *)data;
++
++	spin_lock_irqsave(&info->lock, flags);
++	if (!(hci_h4p_inb(info, UART_LSR) & UART_LSR_DR)) {
++		__hci_h4p_set_auto_ctsrts(info, 0, UART_EFR_RTS);
++		hci_h4p_set_rts(info, 0);
++		hci_h4p_outb(info, UART_IER, hci_h4p_inb(info, UART_IER) & ~UART_IER_RDI);
++		hci_h4p_set_clk(info, &info->rx_clocks_en, 0);
++		info->rx_pm_enabled = 1;
++	}
++	else {
++		mod_timer(&info->rx_pm_timer, jiffies + msecs_to_jiffies(PM_TIMEOUT));
++	}
++	spin_unlock_irqrestore(&info->lock, flags);
++}
++
++/* Negotiation functions */
++int hci_h4p_send_alive_packet(struct hci_h4p_info *info)
++{
++	NBT_DBG("Sending alive packet\n");
++
++	if (!info->alive_cmd_skb)
++		return -EINVAL;
++
++	/* Keep reference to buffer so we can reuse it */
++	info->alive_cmd_skb = skb_get(info->alive_cmd_skb);
++
++	skb_queue_tail(&info->txq, info->alive_cmd_skb);
++	tasklet_schedule(&info->tx_task);
++
++	NBT_DBG("Alive packet sent\n");
++
++	return 0;
++}
++
++static void hci_h4p_alive_packet(struct hci_h4p_info *info, struct sk_buff *skb)
++{
++	NBT_DBG("Received alive packet\n");
++	if (skb->data[1] == 0xCC) {
++		complete(&info->init_completion);
++	}
++
++	kfree_skb(skb);
++}
++
++static int hci_h4p_send_negotiation(struct hci_h4p_info *info, struct sk_buff *skb)
++{
++	NBT_DBG("Sending negotiation..\n");
++
++	hci_h4p_change_speed(info, INIT_SPEED);
++
++	info->init_error = 0;
++	init_completion(&info->init_completion);
++	skb_queue_tail(&info->txq, skb);
++	tasklet_schedule(&info->tx_task);
++
++	if (!wait_for_completion_interruptible_timeout(&info->init_completion,
++				msecs_to_jiffies(1000)))
++		return -ETIMEDOUT;
++
++	NBT_DBG("Negotiation sent\n");
++	return info->init_error;
++}
++
++static void hci_h4p_negotiation_packet(struct hci_h4p_info *info,
++				       struct sk_buff *skb)
++{
++	int err = 0;
++
++	if (skb->data[1] == 0x20) {
++		/* Change to operational settings */
++		hci_h4p_set_rts(info, 0);
++
++		err = hci_h4p_wait_for_cts(info, 0, 100);
++		if (err < 0)
++			goto neg_ret;
++
++		hci_h4p_change_speed(info, MAX_BAUD_RATE);
++
++		err = hci_h4p_wait_for_cts(info, 1, 100);
++		if (err < 0)
++			goto neg_ret;
++
++		hci_h4p_set_auto_ctsrts(info, 1, UART_EFR_CTS | UART_EFR_RTS);
++
++		err = hci_h4p_send_alive_packet(info);
++		if (err < 0)
++			goto neg_ret;
++	} else {
++		dev_err(info->dev, "Could not negotiate hci_h4p settings\n");
++		err = -EINVAL;
++		goto neg_ret;
++	}
++
++	kfree_skb(skb);
++	return;
++
++neg_ret:
++	info->init_error = err;
++	complete(&info->init_completion);
++	kfree_skb(skb);
++}
++
++/* H4 packet handling functions */
++static int hci_h4p_get_hdr_len(struct hci_h4p_info *info, u8 pkt_type)
++{
++	long retval;
++
++	switch (pkt_type) {
++	case H4_EVT_PKT:
++		retval = HCI_EVENT_HDR_SIZE;
++		break;
++	case H4_ACL_PKT:
++		retval = HCI_ACL_HDR_SIZE;
++		break;
++	case H4_SCO_PKT:
++		retval = HCI_SCO_HDR_SIZE;
++		break;
++	case H4_NEG_PKT:
++		retval = 11;
++		break;
++	case H4_ALIVE_PKT:
++		retval = 3;
++		break;
++	default:
++		dev_err(info->dev, "Unknown H4 packet type 0x%.2x\n", pkt_type);
++		retval = -1;
++		break;
++	}
++
++	return retval;
++}
++
++static unsigned int hci_h4p_get_data_len(struct hci_h4p_info *info,
++					 struct sk_buff *skb)
++{
++	long retval = -1;
++	struct hci_event_hdr *evt_hdr;
++	struct hci_acl_hdr *acl_hdr;
++	struct hci_sco_hdr *sco_hdr;
++
++	switch (bt_cb(skb)->pkt_type) {
++	case H4_EVT_PKT:
++		evt_hdr = (struct hci_event_hdr *)skb->data;
++		retval = evt_hdr->plen;
++		break;
++	case H4_ACL_PKT:
++		acl_hdr = (struct hci_acl_hdr *)skb->data;
++		retval = le16_to_cpu(acl_hdr->dlen);
++		break;
++	case H4_SCO_PKT:
++		sco_hdr = (struct hci_sco_hdr *)skb->data;
++		retval = sco_hdr->dlen;
++		break;
++	case H4_NEG_PKT:
++		retval = 0;
++		break;
++	case H4_ALIVE_PKT:
++		retval = 0;
++		break;
++	}
++
++	return retval;
++}
++
++static inline void hci_h4p_recv_frame(struct hci_h4p_info *info,
++				      struct sk_buff *skb)
++{
++
++	if (unlikely(!test_bit(HCI_RUNNING, &info->hdev->flags))) {
++		NBT_DBG("fw_event\n");
++		hci_h4p_parse_fw_event(info, skb);
++	} else {
++		hci_recv_frame(skb);
++		NBT_DBG("Frame sent to upper layer\n");
++	}
++}
++
++static void hci_h4p_rx_tasklet(unsigned long data)
++{
++	u8 byte;
++	unsigned long flags;
++	struct hci_h4p_info *info = (struct hci_h4p_info *)data;
++
++	NBT_DBG("tasklet woke up\n");
++	NBT_DBG_TRANSFER("rx_tasklet woke up\ndata ");
++
++	while (hci_h4p_inb(info, UART_LSR) & UART_LSR_DR) {
++		byte = hci_h4p_inb(info, UART_RX);
++		if (info->garbage_bytes) {
++			info->garbage_bytes--;
++			continue;
++		}
++		if (info->rx_skb == NULL) {
++			info->rx_skb = bt_skb_alloc(HCI_MAX_FRAME_SIZE, GFP_ATOMIC | GFP_DMA);
++			if (!info->rx_skb) {
++				dev_err(info->dev, "Can't allocate memory for new packet\n");
++				goto finish_task;
++			}
++			info->rx_state = WAIT_FOR_PKT_TYPE;
++			info->rx_skb->dev = (void *)info->hdev;
++		}
++		info->hdev->stat.byte_rx++;
++		NBT_DBG_TRANSFER_NF("0x%.2x  ", byte);
++		switch (info->rx_state) {
++		case WAIT_FOR_PKT_TYPE:
++			bt_cb(info->rx_skb)->pkt_type = byte;
++			info->rx_count = hci_h4p_get_hdr_len(info, byte);
++			if (info->rx_count < 0) {
++				info->hdev->stat.err_rx++;
++				kfree_skb(info->rx_skb);
++				info->rx_skb = NULL;
++			} else {
++				info->rx_state = WAIT_FOR_HEADER;
++			}
++			break;
++		case WAIT_FOR_HEADER:
++			info->rx_count--;
++			*skb_put(info->rx_skb, 1) = byte;
++			if (info->rx_count == 0) {
++				info->rx_count = hci_h4p_get_data_len(info, info->rx_skb);
++				if (info->rx_count > skb_tailroom(info->rx_skb)) {
++					dev_err(info->dev, "Frame is %ld bytes too long.\n",
++					       info->rx_count - skb_tailroom(info->rx_skb));
++					kfree_skb(info->rx_skb);
++					info->rx_skb = NULL;
++					info->garbage_bytes = info->rx_count - skb_tailroom(info->rx_skb);
++					break;
++				}
++				info->rx_state = WAIT_FOR_DATA;
++
++				if (bt_cb(info->rx_skb)->pkt_type == H4_NEG_PKT) {
++					hci_h4p_negotiation_packet(info, info->rx_skb);
++					info->rx_skb = NULL;
++					info->rx_state = WAIT_FOR_PKT_TYPE;
++					goto finish_task;
++				}
++				if (bt_cb(info->rx_skb)->pkt_type == H4_ALIVE_PKT) {
++					hci_h4p_alive_packet(info, info->rx_skb);
++					info->rx_skb = NULL;
++					info->rx_state = WAIT_FOR_PKT_TYPE;
++					goto finish_task;
++				}
++			}
++			break;
++		case WAIT_FOR_DATA:
++			info->rx_count--;
++			*skb_put(info->rx_skb, 1) = byte;
++			if (info->rx_count == 0) {
++				/* H4+ devices should allways send word aligned packets */
++				if (!(info->rx_skb->len % 2)) {
++					info->garbage_bytes++;
++				}
++				hci_h4p_recv_frame(info, info->rx_skb);
++				info->rx_skb = NULL;
++			}
++			break;
++		default:
++			WARN_ON(1);
++			break;
++		}
++	}
++
++finish_task:
++	spin_lock_irqsave(&info->lock, flags);
++	hci_h4p_outb(info, UART_IER, hci_h4p_inb(info, UART_IER) | UART_IER_RDI);
++	spin_unlock_irqrestore(&info->lock, flags);
++
++	NBT_DBG_TRANSFER_NF("\n");
++	NBT_DBG("rx_ended\n");
++}
++
++static void hci_h4p_tx_tasklet(unsigned long data)
++{
++	unsigned int sent = 0;
++	unsigned long flags;
++	struct sk_buff *skb;
++	struct hci_h4p_info *info = (struct hci_h4p_info *)data;
++
++	NBT_DBG("tasklet woke up\n");
++	NBT_DBG_TRANSFER("tx_tasklet woke up\n data ");
++
++	skb = skb_dequeue(&info->txq);
++	if (!skb) {
++		/* No data in buffer */
++		NBT_DBG("skb ready\n");
++		hci_h4p_disable_tx(info);
++		return;
++	}
++
++	/* Copy data to tx fifo */
++	while (!(hci_h4p_inb(info, UART_OMAP_SSR) & UART_OMAP_SSR_TXFULL) &&
++	       (sent < skb->len)) {
++		NBT_DBG_TRANSFER_NF("0x%.2x ", skb->data[sent]);
++		hci_h4p_outb(info, UART_TX, skb->data[sent]);
++		sent++;
++	}
++
++	info->hdev->stat.byte_tx += sent;
++	NBT_DBG_TRANSFER_NF("\n");
++	if (skb->len == sent) {
++		kfree_skb(skb);
++	} else {
++		skb_pull(skb, sent);
++		skb_queue_head(&info->txq, skb);
++	}
++
++	spin_lock_irqsave(&info->lock, flags);
++	hci_h4p_outb(info, UART_IER, hci_h4p_inb(info, UART_IER) | UART_IER_THRI);
++	spin_unlock_irqrestore(&info->lock, flags);
++}
++
++static irqreturn_t hci_h4p_interrupt(int irq, void *data)
++{
++	struct hci_h4p_info *info = (struct hci_h4p_info *)data;
++	u8 iir, msr;
++	int ret;
++	unsigned long flags;
++
++	ret = IRQ_NONE;
++
++	iir = hci_h4p_inb(info, UART_IIR);
++	if (iir & UART_IIR_NO_INT) {
++		dev_err(info->dev, "Interrupt but no reason irq 0x%.2x\n", iir);
++		return IRQ_HANDLED;
++	}
++
++	NBT_DBG("In interrupt handler iir 0x%.2x\n", iir);
++
++	iir &= UART_IIR_ID;
++
++	if (iir == UART_IIR_MSI) {
++		msr = hci_h4p_inb(info, UART_MSR);
++		ret = IRQ_HANDLED;
++	}
++	if (iir == UART_IIR_RLSI) {
++		hci_h4p_inb(info, UART_RX);
++		hci_h4p_inb(info, UART_LSR);
++		ret = IRQ_HANDLED;
++	}
++
++	if (iir == UART_IIR_RDI) {
++		spin_lock_irqsave(&info->lock, flags);
++		hci_h4p_outb(info, UART_IER, hci_h4p_inb(info, UART_IER) & ~UART_IER_RDI);
++		spin_unlock_irqrestore(&info->lock, flags);
++		tasklet_schedule(&info->rx_task);
++		ret = IRQ_HANDLED;
++	}
++
++	if (iir == UART_IIR_THRI) {
++		spin_lock_irqsave(&info->lock, flags);
++		hci_h4p_outb(info, UART_IER, hci_h4p_inb(info, UART_IER) & ~UART_IER_THRI);
++		spin_unlock_irqrestore(&info->lock, flags);
++		tasklet_schedule(&info->tx_task);
++		ret = IRQ_HANDLED;
++	}
++
++	return ret;
++}
++
++static irqreturn_t hci_h4p_wakeup_interrupt(int irq, void *dev_inst)
++{
++	struct hci_h4p_info *info = dev_inst;
++	int should_wakeup;
++	struct hci_dev *hdev;
++
++	if (!info->hdev)
++		return IRQ_HANDLED;
++
++	hdev = info->hdev;
++
++	if (!test_bit(HCI_RUNNING, &hdev->flags))
++		return IRQ_HANDLED;
++
++	should_wakeup = gpio_get_value(info->host_wakeup_gpio);
++	NBT_DBG_POWER("gpio interrupt %d\n", should_wakeup);
++	if (should_wakeup) {
++		hci_h4p_enable_rx(info);
++	} else {
++		hci_h4p_disable_rx(info);
++	}
++
++	return IRQ_HANDLED;
++}
++
++static int hci_h4p_reset(struct hci_h4p_info *info)
++{
++	int err;
++
++	hci_h4p_init_uart(info);
++	hci_h4p_set_rts(info, 0);
++
++	gpio_set_value(info->reset_gpio, 0);
++	msleep(100);
++	gpio_set_value(info->bt_wakeup_gpio, 1);
++	gpio_set_value(info->reset_gpio, 1);
++	msleep(100);
++
++	err = hci_h4p_wait_for_cts(info, 1, 10);
++	if (err < 0) {
++		dev_err(info->dev, "No cts from bt chip\n");
++		return err;
++	}
++
++	hci_h4p_set_rts(info, 1);
++
++	return 0;
++}
++
++/* hci callback functions */
++static int hci_h4p_hci_flush(struct hci_dev *hdev)
++{
++	struct hci_h4p_info *info;
++	info = hdev->driver_data;
++
++	skb_queue_purge(&info->txq);
++
++	return 0;
++}
++
++static int hci_h4p_hci_open(struct hci_dev *hdev)
++{
++	struct hci_h4p_info *info;
++	int err;
++	struct sk_buff *neg_cmd_skb;
++	struct sk_buff_head fw_queue;
++
++	info = hdev->driver_data;
++
++	if (test_bit(HCI_RUNNING, &hdev->flags))
++		return 0;
++
++	skb_queue_head_init(&fw_queue);
++	err = hci_h4p_read_fw(info, &fw_queue);
++	if (err < 0) {
++		dev_err(info->dev, "Cannot read firmware\n");
++		return err;
++	}
++	neg_cmd_skb = skb_dequeue(&fw_queue);
++	if (!neg_cmd_skb) {
++		err = -EPROTO;
++		goto err_clean;
++	}
++	info->alive_cmd_skb = skb_dequeue(&fw_queue);
++	if (!info->alive_cmd_skb) {
++		err = -EPROTO;
++		goto err_clean;
++	}
++
++	hci_h4p_set_clk(info, &info->tx_clocks_en, 1);
++	hci_h4p_set_clk(info, &info->rx_clocks_en, 1);
++
++	tasklet_enable(&info->tx_task);
++	tasklet_enable(&info->rx_task);
++	info->rx_state = WAIT_FOR_PKT_TYPE;
++	info->rx_count = 0;
++	info->garbage_bytes = 0;
++	info->rx_skb = NULL;
++	info->pm_enabled = 0;
++	init_completion(&info->fw_completion);
++
++	err = hci_h4p_reset(info);
++	if (err < 0)
++		goto err_clean;
++
++	err = hci_h4p_send_negotiation(info, neg_cmd_skb);
++	neg_cmd_skb = NULL;
++	if (err < 0)
++		goto err_clean;
++
++	err = hci_h4p_send_fw(info, &fw_queue);
++	if (err < 0) {
++		dev_err(info->dev, "Sending firmware failed.\n");
++		goto err_clean;
++	}
++
++	kfree_skb(info->alive_cmd_skb);
++	info->alive_cmd_skb = NULL;
++	info->pm_enabled = 1;
++	info->tx_pm_enabled = 1;
++	info->rx_pm_enabled = 0;
++	set_bit(HCI_RUNNING, &hdev->flags);
++
++	NBT_DBG("hci up and running\n");
++	return 0;
++
++err_clean:
++	hci_h4p_hci_flush(hdev);
++	tasklet_disable(&info->tx_task);
++	tasklet_disable(&info->rx_task);
++	hci_h4p_reset_uart(info);
++	hci_h4p_set_clk(info, &info->tx_clocks_en, 0);
++	hci_h4p_set_clk(info, &info->rx_clocks_en, 0);
++	gpio_set_value(info->reset_gpio, 0);
++	gpio_set_value(info->bt_wakeup_gpio, 0);
++	skb_queue_purge(&fw_queue);
++	kfree_skb(neg_cmd_skb);
++	neg_cmd_skb = NULL;
++	kfree_skb(info->alive_cmd_skb);
++	info->alive_cmd_skb = NULL;
++	kfree_skb(info->rx_skb);
++
++	return err;
++}
++
++static int hci_h4p_hci_close(struct hci_dev *hdev)
++{
++	struct hci_h4p_info *info = hdev->driver_data;
++
++	if (!test_and_clear_bit(HCI_RUNNING, &hdev->flags))
++		return 0;
++
++	hci_h4p_hci_flush(hdev);
++	del_timer_sync(&info->tx_pm_timer);
++	del_timer_sync(&info->rx_pm_timer);
++	tasklet_disable(&info->tx_task);
++	tasklet_disable(&info->rx_task);
++	hci_h4p_set_clk(info, &info->tx_clocks_en, 1);
++	hci_h4p_set_clk(info, &info->rx_clocks_en, 1);
++	hci_h4p_reset_uart(info);
++	hci_h4p_set_clk(info, &info->tx_clocks_en, 0);
++	hci_h4p_set_clk(info, &info->rx_clocks_en, 0);
++	gpio_set_value(info->reset_gpio, 0);
++	gpio_set_value(info->bt_wakeup_gpio, 0);
++	kfree_skb(info->rx_skb);
++
++	return 0;
++}
++
++static void hci_h4p_hci_destruct(struct hci_dev *hdev)
++{
++}
++
++static int hci_h4p_hci_send_frame(struct sk_buff *skb)
++{
++	struct hci_h4p_info *info;
++	struct hci_dev *hdev = (struct hci_dev *)skb->dev;
++	int err = 0;
++
++	if (!hdev) {
++		printk(KERN_WARNING "hci_h4p: Frame for unknown device\n");
++		return -ENODEV;
++	}
++
++	NBT_DBG("dev %p, skb %p\n", hdev, skb);
++
++	info = hdev->driver_data;
++
++	if (!test_bit(HCI_RUNNING, &hdev->flags)) {
++		dev_warn(info->dev, "Frame for non-running device\n");
++		return -EIO;
++	}
++
++	switch (bt_cb(skb)->pkt_type) {
++	case HCI_COMMAND_PKT:
++		hdev->stat.cmd_tx++;
++		break;
++	case HCI_ACLDATA_PKT:
++		hdev->stat.acl_tx++;
++		break;
++	case HCI_SCODATA_PKT:
++		hdev->stat.sco_tx++;
++		break;
++	}
++
++	/* Push frame type to skb */
++	*skb_push(skb, 1) = (bt_cb(skb)->pkt_type);
++	/* We should allways send word aligned data to h4+ devices */
++	if (skb->len % 2) {
++		err = skb_pad(skb, 1);
++	}
++	if (err)
++		return err;
++
++	hci_h4p_enable_tx(info);
++	skb_queue_tail(&info->txq, skb);
++	tasklet_schedule(&info->tx_task);
++
++	return 0;
++}
++
++static int hci_h4p_hci_ioctl(struct hci_dev *hdev, unsigned int cmd, unsigned long arg)
++{
++	return -ENOIOCTLCMD;
++}
++
++static int hci_h4p_register_hdev(struct hci_h4p_info *info)
++{
++	struct hci_dev *hdev;
++
++	/* Initialize and register HCI device */
++
++	hdev = hci_alloc_dev();
++	if (!hdev) {
++		dev_err(info->dev, "Can't allocate memory for device\n");
++		return -ENOMEM;
++	}
++	info->hdev = hdev;
++
++	hdev->dev_type = HCI_UART;
++	hdev->driver_data = info;
++
++	hdev->open = hci_h4p_hci_open;
++	hdev->close = hci_h4p_hci_close;
++	hdev->flush = hci_h4p_hci_flush;
++	hdev->send = hci_h4p_hci_send_frame;
++	hdev->destruct = hci_h4p_hci_destruct;
++	hdev->ioctl = hci_h4p_hci_ioctl;
++
++	hdev->owner = THIS_MODULE;
++
++	if (hci_register_dev(hdev) < 0) {
++		dev_err(info->dev, "hci_h4p: Can't register HCI device %s.\n", hdev->name);
++		return -ENODEV;
++	}
++
++	return 0;
++}
++
++static int hci_h4p_probe(struct platform_device *pdev)
++{
++	struct omap_bluetooth_config *bt_config;
++	struct hci_h4p_info *info;
++	int irq, err;
++
++	dev_info(&pdev->dev, "Registering HCI H4P device\n");
++	info = kzalloc(sizeof(struct hci_h4p_info), GFP_KERNEL);
++	if (!info)
++		return -ENOMEM;
++
++	info->dev = &pdev->dev;
++	info->pm_enabled = 0;
++	info->tx_pm_enabled = 0;
++	info->rx_pm_enabled = 0;
++	info->garbage_bytes = 0;
++	info->tx_clocks_en = 0;
++	info->rx_clocks_en = 0;
++	tasklet_init(&info->tx_task, hci_h4p_tx_tasklet, (unsigned long)info);
++	tasklet_init(&info->rx_task, hci_h4p_rx_tasklet, (unsigned long)info);
++	/* hci_h4p_hci_open assumes that tasklet is disabled in startup */
++	tasklet_disable(&info->tx_task);
++	tasklet_disable(&info->rx_task);
++	spin_lock_init(&info->lock);
++	spin_lock_init(&info->clocks_lock);
++	skb_queue_head_init(&info->txq);
++	init_timer(&info->tx_pm_timer);
++	info->tx_pm_timer.function = hci_h4p_tx_pm_timer;
++	info->tx_pm_timer.data = (unsigned long)info;
++	init_timer(&info->rx_pm_timer);
++	info->rx_pm_timer.function = hci_h4p_rx_pm_timer;
++	info->rx_pm_timer.data = (unsigned long)info;
++
++	if (pdev->dev.platform_data == NULL) {
++		dev_err(&pdev->dev, "Could not get Bluetooth config data\n");
++		return -ENODATA;
++	}
++
++	bt_config = pdev->dev.platform_data;
++	info->chip_type = bt_config->chip_type;
++	info->bt_wakeup_gpio = bt_config->bt_wakeup_gpio;
++	info->host_wakeup_gpio = bt_config->host_wakeup_gpio;
++	info->reset_gpio = bt_config->reset_gpio;
++	info->bt_sysclk = bt_config->bt_sysclk;
++
++	NBT_DBG("RESET gpio: %d\n", info->reset_gpio);
++	NBT_DBG("BTWU gpio: %d\n", info->bt_wakeup_gpio);
++	NBT_DBG("HOSTWU gpio: %d\n", info->host_wakeup_gpio);
++	NBT_DBG("Uart: %d\n", bt_config->bt_uart);
++	NBT_DBG("sysclk: %d\n", info->bt_sysclk);
++
++	err = gpio_request(info->reset_gpio, "BT reset");
++	if (err < 0) {
++		dev_err(&pdev->dev, "Cannot get GPIO line %d\n",
++			info->reset_gpio);
++		kfree(info);
++		goto cleanup;
++	}
++
++	err = gpio_request(info->bt_wakeup_gpio, "BT wakeup");
++	if (err < 0)
++	{
++		dev_err(info->dev, "Cannot get GPIO line 0x%d",
++			info->bt_wakeup_gpio);
++		gpio_free(info->reset_gpio);
++		kfree(info);
++		goto cleanup;
++	}
++
++	err = gpio_request(info->host_wakeup_gpio, "BT host wakeup");
++	if (err < 0)
++	{
++		dev_err(info->dev, "Cannot get GPIO line %d",
++		       info->host_wakeup_gpio);
++		gpio_free(info->reset_gpio);
++		gpio_free(info->bt_wakeup_gpio);
++		kfree(info);
++		goto cleanup;
++	}
++
++	gpio_direction_output(info->reset_gpio, 0);
++	gpio_direction_output(info->bt_wakeup_gpio, 0);
++	gpio_direction_input(info->host_wakeup_gpio);
++
++//FIXME
++#if defined(CONFIG_ARCH_OMAP1)
++# define OMAP_UART1_BASE	OMAP1_UART1_BASE
++# define OMAP_UART2_BASE	OMAP1_UART2_BASE
++# define OMAP_UART3_BASE	OMAP1_UART3_BASE
++#elif defined(CONFIG_ARCH_OMAP2)
++# define OMAP_UART1_BASE	OMAP2_UART1_BASE
++# define OMAP_UART2_BASE	OMAP2_UART2_BASE
++# define OMAP_UART3_BASE	OMAP2_UART3_BASE
++#elif defined(CONFIG_ARCH_OMAP3)
++# define OMAP_UART1_BASE	OMAP3_UART1_BASE
++# define OMAP_UART2_BASE	OMAP3_UART2_BASE
++# define OMAP_UART3_BASE	OMAP3_UART3_BASE
++#elif defined(CONFIG_ARCH_OMAP4)
++# define OMAP_UART1_BASE	OMAP4_UART1_BASE
++# define OMAP_UART2_BASE	OMAP4_UART2_BASE
++# define OMAP_UART3_BASE	OMAP4_UART3_BASE
++#else
++# error
++#endif
++	switch (bt_config->bt_uart) {
++	case 1:
++		if (cpu_is_omap16xx()) {
++			irq = INT_UART1;
++			info->uart_fclk = clk_get(NULL, "uart1_ck");
++		} else if (cpu_is_omap24xx()) {
++			irq = INT_24XX_UART1_IRQ;
++			info->uart_iclk = clk_get(NULL, "uart1_ick");
++			info->uart_fclk = clk_get(NULL, "uart1_fck");
++		}
++		/* FIXME: Use platform_get_resource for the port */
++		info->uart_base = ioremap(OMAP_UART1_BASE, 0x16);
++		if (!info->uart_base)
++			goto cleanup;
++		break;
++	case 2:
++		if (cpu_is_omap16xx()) {
++			irq = INT_UART2;
++			info->uart_fclk = clk_get(NULL, "uart2_ck");
++		} else {
++			irq = INT_24XX_UART2_IRQ;
++			info->uart_iclk = clk_get(NULL, "uart2_ick");
++			info->uart_fclk = clk_get(NULL, "uart2_fck");
++		}
++		/* FIXME: Use platform_get_resource for the port */
++		info->uart_base = ioremap(OMAP_UART2_BASE, 0x16);
++		if (!info->uart_base)
++			goto cleanup;
++		break;
++	case 3:
++		if (cpu_is_omap16xx()) {
++			irq = INT_UART3;
++			info->uart_fclk = clk_get(NULL, "uart3_ck");
++		} else {
++			irq = INT_24XX_UART3_IRQ;
++			info->uart_iclk = clk_get(NULL, "uart3_ick");
++			info->uart_fclk = clk_get(NULL, "uart3_fck");
++		}
++		/* FIXME: Use platform_get_resource for the port */
++		info->uart_base = ioremap(OMAP_UART3_BASE, 0x16);
++		if (!info->uart_base)
++			goto cleanup;
++		break;
++	default:
++		dev_err(info->dev, "No uart defined\n");
++		goto cleanup;
++	}
++
++	info->irq = irq;
++	err = request_irq(irq, hci_h4p_interrupt, 0, "hci_h4p", (void *)info);
++	if (err < 0) {
++		dev_err(info->dev, "hci_h4p: unable to get IRQ %d\n", irq);
++		goto cleanup;
++	}
++
++	err = request_irq(gpio_to_irq(info->host_wakeup_gpio),
++			  hci_h4p_wakeup_interrupt,
++				IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
++			  "hci_h4p_wkup", (void *)info);
++	if (err < 0) {
++		dev_err(info->dev, "hci_h4p: unable to get wakeup IRQ %d\n",
++			  gpio_to_irq(info->host_wakeup_gpio));
++		free_irq(irq, (void *)info);
++		goto cleanup;
++	}
++
++	hci_h4p_set_clk(info, &info->tx_clocks_en, 1);
++	hci_h4p_set_auto_ctsrts(info, 0, UART_EFR_CTS | UART_EFR_RTS);
++	err = hci_h4p_init_uart(info);
++	if (err < 0)
++		goto cleanup_irq;
++	err = hci_h4p_reset(info);
++	if (err < 0)
++		goto cleanup_irq;
++	err = hci_h4p_wait_for_cts(info, 1, 10);
++	if (err < 0)
++		goto cleanup_irq;
++	hci_h4p_set_clk(info, &info->tx_clocks_en, 0);
++
++	platform_set_drvdata(pdev, info);
++	err = hci_h4p_sysfs_create_files(info->dev);
++	if (err < 0)
++		goto cleanup_irq;
++
++	if (hci_h4p_register_hdev(info) < 0) {
++		dev_err(info->dev, "failed to register hci_h4p hci device\n");
++		goto cleanup_irq;
++	}
++	gpio_set_value(info->reset_gpio, 0);
++
++	return 0;
++
++cleanup_irq:
++	free_irq(irq, (void *)info);
++	free_irq(gpio_to_irq(info->host_wakeup_gpio), (void *)info);
++cleanup:
++	gpio_set_value(info->reset_gpio, 0);
++	gpio_free(info->reset_gpio);
++	gpio_free(info->bt_wakeup_gpio);
++	gpio_free(info->host_wakeup_gpio);
++	kfree(info);
++
++	return err;
++
++}
++
++static int hci_h4p_remove(struct platform_device *dev)
++{
++	struct hci_h4p_info *info;
++
++	info = platform_get_drvdata(dev);
++
++	hci_h4p_hci_close(info->hdev);
++	free_irq(gpio_to_irq(info->host_wakeup_gpio), (void *) info);
++	hci_free_dev(info->hdev);
++	gpio_free(info->reset_gpio);
++	gpio_free(info->bt_wakeup_gpio);
++	gpio_free(info->host_wakeup_gpio);
++	free_irq(info->irq, (void *) info);
++	kfree(info);
++
++	return 0;
++}
++
++static struct platform_driver hci_h4p_driver = {
++	.probe		= hci_h4p_probe,
++	.remove		= hci_h4p_remove,
++	.driver		= {
++		.name	= "hci_h4p",
++	},
++};
++
++static int __init hci_h4p_init(void)
++{
++	int err = 0;
++
++	/* Register the driver with LDM */
++	err = platform_driver_register(&hci_h4p_driver);
++	if (err < 0)
++		printk(KERN_WARNING "failed to register hci_h4p driver\n");
++
++	return err;
++}
++
++static void __exit hci_h4p_exit(void)
++{
++	platform_driver_unregister(&hci_h4p_driver);
++}
++
++module_init(hci_h4p_init);
++module_exit(hci_h4p_exit);
++
++MODULE_DESCRIPTION("h4 driver with nokia extensions");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Ville Tervo");
+Index: linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/fw.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/fw.c	2010-11-05 17:04:44.762000001 +0100
+@@ -0,0 +1,155 @@
++/*
++ * This file is part of hci_h4p bluetooth driver
++ *
++ * Copyright (C) 2005, 2006 Nokia Corporation.
++ *
++ * Contact: Ville Tervo <ville.tervo@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#include <linux/skbuff.h>
++#include <linux/firmware.h>
++#include <linux/clk.h>
++
++#include <net/bluetooth/bluetooth.h>
++
++#include "hci_h4p.h"
++
++#define BT_CHIP_TI	2
++#define BT_CHIP_CSR	1
++
++static int fw_pos;
++
++/* Firmware handling */
++static int hci_h4p_open_firmware(struct hci_h4p_info *info,
++				 const struct firmware **fw_entry)
++{
++	int err;
++
++	fw_pos = 0;
++	NBT_DBG_FW("Opening %d firmware\n", info->chip_type);
++	switch (info->chip_type) {
++	case BT_CHIP_TI:
++		err = request_firmware(fw_entry, "brf6150fw.bin", info->dev);
++		break;
++	case BT_CHIP_CSR:
++		err = request_firmware(fw_entry, "bc4fw.bin", info->dev);
++		break;
++	default:
++		dev_err(info->dev, "Invalid chip type\n");
++		*fw_entry = NULL;
++		err = -EINVAL;
++	}
++
++	return err;
++}
++
++static void hci_h4p_close_firmware(const struct firmware *fw_entry)
++{
++	release_firmware(fw_entry);
++}
++
++/* Read fw. Return length of the command. If no more commands in
++ * fw 0 is returned. In error case return value is negative.
++ */
++static int hci_h4p_read_fw_cmd(struct hci_h4p_info *info, struct sk_buff **skb,
++			       const struct firmware *fw_entry, int how)
++{
++	unsigned int cmd_len;
++
++	if (fw_pos >= fw_entry->size) {
++		return 0;
++	}
++
++	cmd_len = fw_entry->data[fw_pos++];
++	if (!cmd_len)
++		return 0;
++
++	if (fw_pos + cmd_len > fw_entry->size) {
++		dev_err(info->dev, "Corrupted firmware image\n");
++		return -EMSGSIZE;
++	}
++
++	*skb = bt_skb_alloc(cmd_len, how);
++	if (!*skb) {
++		dev_err(info->dev, "Cannot reserve memory for buffer\n");
++		return -ENOMEM;
++	}
++	memcpy(skb_put(*skb, cmd_len), &fw_entry->data[fw_pos], cmd_len);
++
++	fw_pos += cmd_len;
++
++	return (*skb)->len;
++}
++
++int hci_h4p_read_fw(struct hci_h4p_info *info, struct sk_buff_head *fw_queue)
++{
++	const struct firmware *fw_entry = NULL;
++	struct sk_buff *skb = NULL;
++	int err;
++
++	err = hci_h4p_open_firmware(info, &fw_entry);
++	if (err < 0 || !fw_entry)
++		goto err_clean;
++
++	while ((err = hci_h4p_read_fw_cmd(info, &skb, fw_entry, GFP_KERNEL))) {
++		if (err < 0 || !skb)
++			goto err_clean;
++
++		skb_queue_tail(fw_queue, skb);
++	}
++
++err_clean:
++	hci_h4p_close_firmware(fw_entry);
++	return err;
++}
++
++int hci_h4p_send_fw(struct hci_h4p_info *info, struct sk_buff_head *fw_queue)
++{
++	int err;
++
++	switch(info->chip_type) {
++	case BT_CHIP_CSR:
++		err = hci_h4p_bc4_send_fw(info, fw_queue);
++		break;
++	case BT_CHIP_TI:
++		err = hci_h4p_brf6150_send_fw(info, fw_queue);
++		break;
++	default:
++		dev_err(info->dev, "Don't know how to send firmware\n");
++		err = -EINVAL;
++	}
++
++	return err;
++}
++
++void hci_h4p_parse_fw_event(struct hci_h4p_info *info, struct sk_buff *skb)
++{
++	switch (info->chip_type) {
++	case BT_CHIP_CSR:
++		hci_h4p_bc4_parse_fw_event(info, skb);
++		break;
++	case BT_CHIP_TI:
++		hci_h4p_brf6150_parse_fw_event(info, skb);
++		break;
++	default:
++		dev_err(info->dev, "Don't know how to parse fw event\n");
++		info->fw_error = -EINVAL;
++	}
++
++	return;
++}
+Index: linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/fw-csr.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/fw-csr.c	2010-11-05 17:04:44.762000001 +0100
+@@ -0,0 +1,149 @@
++/*
++ * This file is part of hci_h4p bluetooth driver
++ *
++ * Copyright (C) 2005, 2006 Nokia Corporation.
++ *
++ * Contact: Ville Tervo <ville.tervo@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#include <linux/skbuff.h>
++#include <linux/delay.h>
++#include <linux/serial_reg.h>
++
++#include "hci_h4p.h"
++
++void hci_h4p_bc4_parse_fw_event(struct hci_h4p_info *info, struct sk_buff *skb)
++{
++	/* Check if this is fw packet */
++	if (skb->data[0] != 0xff) {
++		hci_recv_frame(skb);
++		return;
++	}
++
++	if (skb->data[11] || skb->data[12]) {
++		dev_err(info->dev, "Firmware sending command failed\n");
++		info->fw_error = -EPROTO;
++	}
++
++	kfree_skb(skb);
++	complete(&info->fw_completion);
++}
++
++int hci_h4p_bc4_send_fw(struct hci_h4p_info *info,
++			struct sk_buff_head *fw_queue)
++{
++	struct sk_buff *skb;
++	unsigned int offset;
++	int retries, count, i;
++
++	info->fw_error = 0;
++
++	NBT_DBG_FW("Sending firmware\n");
++	skb = skb_dequeue(fw_queue);
++
++	if (!skb)
++		return -ENOMSG;
++
++	info->bdaddr[0] = 0x00;
++	info->bdaddr[1] = 0x1D;
++	info->bdaddr[2] = 0x6E;
++	info->bdaddr[3] = 0xD4;
++	info->bdaddr[4] = 0xF0;
++	info->bdaddr[5] = 0x37;
++
++	/* Check if this is bd_address packet */
++	if (skb->data[15] == 0x01 && skb->data[16] == 0x00) {
++		dev_info(info->dev, "bd_address packet found\n");
++		offset = 21;
++		skb->data[offset + 1] = 0x00;
++		skb->data[offset + 5] = 0x00;
++		skb->data[offset + 7] = info->bdaddr[0];
++		skb->data[offset + 6] = info->bdaddr[1];
++		skb->data[offset + 4] = info->bdaddr[2];
++		skb->data[offset + 0] = info->bdaddr[3];
++		skb->data[offset + 3] = info->bdaddr[4];
++		skb->data[offset + 2] = info->bdaddr[5];
++	}
++
++	for (i = 0; i < 6; i++) {
++		if (info->bdaddr[i] != 0x00)
++			break;
++	}
++
++	/* if (i > 5) {
++		dev_info(info->dev, "Valid bluetooth address not found.\n");
++		kfree_skb(skb);
++		return -ENODEV;
++	} */
++
++	for (count = 1; ; count++) {
++		NBT_DBG_FW("Sending firmware command %d\n", count);
++		init_completion(&info->fw_completion);
++		skb_queue_tail(&info->txq, skb);
++		tasklet_schedule(&info->tx_task);
++
++		skb = skb_dequeue(fw_queue);
++		if (!skb)
++			break;
++
++		if (!wait_for_completion_timeout(&info->fw_completion,
++						 msecs_to_jiffies(1000))) {
++			dev_err(info->dev, "No reply to fw command\n");
++			return -ETIMEDOUT;
++		}
++
++		if (info->fw_error) {
++			dev_err(info->dev, "FW error\n");
++			return -EPROTO;
++		}
++	};
++
++	/* Wait for chip warm reset */
++	retries = 100;
++	while ((!skb_queue_empty(&info->txq) ||
++	       !(hci_h4p_inb(info, UART_LSR) & UART_LSR_TEMT)) &&
++	       retries--) {
++		msleep(10);
++	}
++	if (!retries) {
++		dev_err(info->dev, "Transmitter not empty\n");
++		return -ETIMEDOUT;
++	}
++
++	hci_h4p_change_speed(info, BC4_MAX_BAUD_RATE);
++
++	if (hci_h4p_wait_for_cts(info, 1, 100)) {
++		dev_err(info->dev, "cts didn't go down after final speed change\n");
++		return -ETIMEDOUT;
++	}
++
++	retries = 100;
++	do {
++		init_completion(&info->init_completion);
++		hci_h4p_send_alive_packet(info);
++		retries--;
++	} while (!wait_for_completion_timeout(&info->init_completion, 100) &&
++		 retries > 0);
++
++	if (!retries) {
++		dev_err(info->dev, "No alive reply after speed change\n");
++		return -ETIMEDOUT;
++	}
++
++	return 0;
++}
+Index: linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/fw-ti.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/fw-ti.c	2010-11-05 17:04:44.762000001 +0100
+@@ -0,0 +1,90 @@
++/*
++ * This file is part of hci_h4p bluetooth driver
++ *
++ * Copyright (C) 2005, 2006 Nokia Corporation.
++ *
++ * Contact: Ville Tervo <ville.tervo@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#include <linux/skbuff.h>
++
++#include "hci_h4p.h"
++
++void hci_h4p_brf6150_parse_fw_event(struct hci_h4p_info *info,
++				    struct sk_buff *skb)
++{
++	struct hci_fw_event *ev;
++	int err = 0;
++
++	if (bt_cb(skb)->pkt_type != H4_EVT_PKT) {
++		dev_err(info->dev, "Got non event fw packet.\n");
++		err = -EPROTO;
++		goto ret;
++	}
++
++	ev = (struct hci_fw_event *)skb->data;
++	if (ev->hev.evt != HCI_EV_CMD_COMPLETE) {
++		dev_err(info->dev, "Got non cmd complete fw event\n");
++		err = -EPROTO;
++		goto ret;
++	}
++
++	if (ev->status != 0) {
++		dev_err(info->dev, "Got error status from fw command\n");
++		err = -EPROTO;
++		goto ret;
++	}
++
++ret:
++	info->fw_error = err;
++	complete(&info->fw_completion);
++}
++
++int hci_h4p_brf6150_send_fw(struct hci_h4p_info *info, struct sk_buff_head *fw_queue)
++{
++	struct sk_buff *skb;
++	int err = 0;
++
++	info->fw_error = 0;
++
++	while ((skb = skb_dequeue(fw_queue)) != NULL) {
++		/* We should allways send word aligned data to h4+ devices */
++		if (skb->len % 2) {
++			err = skb_pad(skb, 1);
++		}
++		if (err)
++			return err;
++
++		init_completion(&info->fw_completion);
++		skb_queue_tail(&info->txq, skb);
++		tasklet_schedule(&info->tx_task);
++
++		if (!wait_for_completion_timeout(&info->fw_completion, HZ)) {
++			dev_err(info->dev, "Timeout while sending brf6150 fw\n");
++			return -ETIMEDOUT;
++		}
++
++		if (info->fw_error) {
++			dev_err(info->dev, "There was fw_error while sending bfr6150 fw\n");
++			return -EPROTO;
++		}
++	}
++	NBT_DBG_FW("Firmware sent\n");
++
++	return 0;
++}
+Index: linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/hci_h4p.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/hci_h4p.h	2010-11-05 17:04:44.762000001 +0100
+@@ -0,0 +1,183 @@
++/*
++ * This file is part of hci_h4p bluetooth driver
++ *
++ * Copyright (C) 2005, 2006 Nokia Corporation.
++ *
++ * Contact: Ville Tervo <ville.tervo@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#include <mach/board.h>
++
++#include <net/bluetooth/bluetooth.h>
++#include <net/bluetooth/hci_core.h>
++#include <net/bluetooth/hci.h>
++
++#ifndef __DRIVERS_BLUETOOTH_HCI_H4P_H
++#define __DRIVERS_BLUETOOTH_HCI_H4P_H
++
++#define UART_SYSC_OMAP_RESET	0x03
++#define UART_SYSS_RESETDONE	0x01
++#define UART_OMAP_SCR_EMPTY_THR	0x08
++#define UART_OMAP_SCR_WAKEUP	0x10
++#define UART_OMAP_SSR_WAKEUP	0x02
++#define UART_OMAP_SSR_TXFULL	0x01
++
++#if 0
++#define NBT_DBG(fmt, arg...)  printk("%s: " fmt "" , __FUNCTION__ , ## arg)
++#else
++#define NBT_DBG(...)
++#endif
++
++#if 0
++#define NBT_DBG_FW(fmt, arg...)  printk("%s: " fmt "" , __FUNCTION__ , ## arg)
++#else
++#define NBT_DBG_FW(...)
++#endif
++
++#if 0
++#define NBT_DBG_POWER(fmt, arg...)  printk("%s: " fmt "" , __FUNCTION__ , ## arg)
++#else
++#define NBT_DBG_POWER(...)
++#endif
++
++#if 0
++#define NBT_DBG_TRANSFER(fmt, arg...)  printk("%s: " fmt "" , __FUNCTION__ , ## arg)
++#else
++#define NBT_DBG_TRANSFER(...)
++#endif
++
++#if 0
++#define NBT_DBG_TRANSFER_NF(fmt, arg...)  printk(fmt "" , ## arg)
++#else
++#define NBT_DBG_TRANSFER_NF(...)
++#endif
++
++#if 0
++#define NBT_DBG_DMA(fmt, arg...)  printk("%s: " fmt "" , __FUNCTION__ , ## arg)
++#else
++#define NBT_DBG_DMA(...)
++#endif
++
++struct hci_h4p_info {
++	struct hci_dev *hdev;
++	spinlock_t lock;
++
++	void __iomem *uart_base;
++	unsigned long uart_phys_base;
++	int irq;
++	struct device *dev;
++	u8 bdaddr[6];
++	u8 chip_type;
++	u8 bt_wakeup_gpio;
++	u8 host_wakeup_gpio;
++	u8 reset_gpio;
++	u8 bt_sysclk;
++
++
++	struct sk_buff_head fw_queue;
++	struct sk_buff *alive_cmd_skb;
++	struct completion init_completion;
++	struct completion fw_completion;
++	int fw_error;
++	int init_error;
++
++	struct sk_buff_head txq;
++	struct tasklet_struct tx_task;
++
++	struct sk_buff *rx_skb;
++	long rx_count;
++	unsigned long rx_state;
++	unsigned long garbage_bytes;
++	struct tasklet_struct rx_task;
++
++	int pm_enabled;
++	int tx_pm_enabled;
++	int rx_pm_enabled;
++	struct timer_list tx_pm_timer;
++	struct timer_list rx_pm_timer;
++
++	int tx_clocks_en;
++	int rx_clocks_en;
++	spinlock_t clocks_lock;
++	struct clk *uart_iclk;
++	struct clk *uart_fclk;
++};
++
++#define MAX_BAUD_RATE		921600
++#define BC4_MAX_BAUD_RATE	3692300
++#define UART_CLOCK		48000000
++#define BT_INIT_DIVIDER		320
++#define BT_BAUDRATE_DIVIDER	384000000
++#define BT_SYSCLK_DIV		1000
++#define INIT_SPEED		120000
++
++#define H4_TYPE_SIZE		1
++
++/* H4+ packet types */
++#define H4_CMD_PKT		0x01
++#define H4_ACL_PKT		0x02
++#define H4_SCO_PKT		0x03
++#define H4_EVT_PKT		0x04
++#define H4_NEG_PKT		0x06
++#define H4_ALIVE_PKT		0x07
++
++/* TX states */
++#define WAIT_FOR_PKT_TYPE	1
++#define WAIT_FOR_HEADER		2
++#define WAIT_FOR_DATA		3
++
++struct hci_fw_event {
++	struct hci_event_hdr hev;
++	struct hci_ev_cmd_complete cmd;
++	u8 status;
++} __attribute__ ((packed));
++
++struct hci_bc4_set_bdaddr {
++	u8 type;
++	struct hci_command_hdr cmd_hdr;
++} __attribute__ ((packed));
++
++int hci_h4p_send_alive_packet(struct hci_h4p_info *info);
++
++void hci_h4p_bc4_parse_fw_event(struct hci_h4p_info *info,
++				struct sk_buff *skb);
++int hci_h4p_bc4_send_fw(struct hci_h4p_info *info,
++			struct sk_buff_head *fw_queue);
++
++void hci_h4p_brf6150_parse_fw_event(struct hci_h4p_info *info,
++				    struct sk_buff *skb);
++int hci_h4p_brf6150_send_fw(struct hci_h4p_info *info,
++			    struct sk_buff_head *fw_queue);
++
++int hci_h4p_read_fw(struct hci_h4p_info *info, struct sk_buff_head *fw_queue);
++int hci_h4p_send_fw(struct hci_h4p_info *info, struct sk_buff_head *fw_queue);
++void hci_h4p_parse_fw_event(struct hci_h4p_info *info, struct sk_buff *skb);
++
++int hci_h4p_sysfs_create_files(struct device *dev);
++
++void hci_h4p_outb(struct hci_h4p_info *info, unsigned int offset, u8 val);
++u8 hci_h4p_inb(struct hci_h4p_info *info, unsigned int offset);
++void hci_h4p_set_rts(struct hci_h4p_info *info, int active);
++int hci_h4p_wait_for_cts(struct hci_h4p_info *info, int active, int timeout_ms);
++void __hci_h4p_set_auto_ctsrts(struct hci_h4p_info *info, int on, u8 which);
++void hci_h4p_set_auto_ctsrts(struct hci_h4p_info *info, int on, u8 which);
++void hci_h4p_change_speed(struct hci_h4p_info *info, unsigned long speed);
++int hci_h4p_reset_uart(struct hci_h4p_info *info);
++int hci_h4p_init_uart(struct hci_h4p_info *info);
++
++#endif /* __DRIVERS_BLUETOOTH_HCI_H4P_H */
+Index: linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/Makefile	2010-11-05 17:04:44.762000001 +0100
+@@ -0,0 +1,7 @@
++#
++# Makefile for the Linux Bluetooth HCI device drivers.
++#
++
++obj-$(CONFIG_BT_HCIH4P)		+= hci_h4p.o
++
++hci_h4p-objs := core.o fw.o uart.o sysfs.o fw-ti.o fw-csr.o
+Index: linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/sysfs.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/sysfs.c	2010-11-05 17:04:44.762000001 +0100
+@@ -0,0 +1,84 @@
++/*
++ * This file is part of hci_h4p bluetooth driver
++ *
++ * Copyright (C) 2005, 2006 Nokia Corporation.
++ *
++ * Contact: Ville Tervo <ville.tervo@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/device.h>
++#include <linux/platform_device.h>
++
++#include "hci_h4p.h"
++
++#ifdef CONFIG_SYSFS
++
++static ssize_t hci_h4p_store_bdaddr(struct device *dev, struct device_attribute *attr,
++				    const char *buf, size_t count)
++{
++	struct hci_h4p_info *info = (struct hci_h4p_info*)dev_get_drvdata(dev);
++	unsigned int bdaddr[6];
++	int ret, i;
++
++	dev_info(info->dev, "HCI_H4P_STORE_BDADDR called\n");
++
++	ret = sscanf(buf, "%2x:%2x:%2x:%2x:%2x:%2x\n",
++			&bdaddr[0], &bdaddr[1], &bdaddr[2],
++			&bdaddr[3], &bdaddr[4], &bdaddr[5]);
++
++	if (ret != 6) {
++		dev_info(info->dev, "bdaddr isn't found\n");
++		return -EINVAL;
++	}
++
++	//for (i = 0; i < 6; i++)
++		//info->bdaddr[i] = bdaddr[i] & 0xff;
++
++	info->bdaddr[0] = 0x00;
++	info->bdaddr[1] = 0x1D;
++	info->bdaddr[2] = 0x6E;
++	info->bdaddr[3] = 0xD4;
++	info->bdaddr[4] = 0xF0;
++	info->bdaddr[5] = 0x37;
++
++	return count;
++}
++
++static ssize_t hci_h4p_show_bdaddr(struct device *dev, struct device_attribute *attr,
++				   char *buf)
++{
++	struct hci_h4p_info *info = (struct hci_h4p_info*)dev_get_drvdata(dev);
++
++	return sprintf(buf, "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
++		       info->bdaddr[0],
++		       info->bdaddr[1],
++		       info->bdaddr[2],
++		       info->bdaddr[3],
++		       info->bdaddr[4],
++		       info->bdaddr[5]);
++}
++
++static DEVICE_ATTR(bdaddr, S_IRUGO | S_IWUSR, hci_h4p_show_bdaddr, hci_h4p_store_bdaddr);
++int hci_h4p_sysfs_create_files(struct device *dev)
++{
++	return device_create_file(dev, &dev_attr_bdaddr);
++}
++
++#endif
+Index: linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/uart.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-2.6.37-rc1/drivers/bluetooth/hci_h4p/uart.c	2010-11-05 17:04:44.762000001 +0100
+@@ -0,0 +1,169 @@
++/*
++ * This file is part of hci_h4p bluetooth driver
++ *
++ * Copyright (C) 2005, 2006 Nokia Corporation.
++ *
++ * Contact: Ville Tervo <ville.tervo@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#include <linux/serial_reg.h>
++#include <linux/delay.h>
++#include <linux/clk.h>
++
++#include <asm/io.h>
++
++#include "hci_h4p.h"
++
++inline void hci_h4p_outb(struct hci_h4p_info *info, unsigned int offset, u8 val)
++{
++	offset <<= 2;
++	__raw_writeb(val, info->uart_base + offset);
++	//outb(val, info->uart_base + (offset << 2));
++}
++
++inline u8 hci_h4p_inb(struct hci_h4p_info *info, unsigned int offset)
++{
++	offset <<= 2;
++	return (u8)__raw_readb(info->uart_base + offset);
++	//return (unsigned int)__raw_readb(up->membase + offset);
++	//return inb(info->uart_base + (offset << 2));
++}
++
++void hci_h4p_set_rts(struct hci_h4p_info *info, int active)
++{
++	u8 b;
++
++	b = hci_h4p_inb(info, UART_MCR);
++	if (active)
++		b |= UART_MCR_RTS;
++	else
++		b &= ~UART_MCR_RTS;
++	hci_h4p_outb(info, UART_MCR, b);
++}
++
++int hci_h4p_wait_for_cts(struct hci_h4p_info *info, int active,
++			 int timeout_ms)
++{
++	int okay;
++	unsigned long timeout;
++
++	okay = 0;
++	timeout = jiffies + msecs_to_jiffies(timeout_ms);
++	for (;;) {
++		int state;
++
++		state = hci_h4p_inb(info, UART_MSR) & UART_MSR_CTS;
++		if (active) {
++			if (state)
++				return 0;
++		} else {
++			if (!state)
++				return 0;
++		}
++		if (time_after(jiffies, timeout))
++			return -ETIMEDOUT;
++	}
++}
++
++void __hci_h4p_set_auto_ctsrts(struct hci_h4p_info *info, int on, u8 which)
++{
++	u8 lcr, b;
++
++	lcr = hci_h4p_inb(info, UART_LCR);
++	hci_h4p_outb(info, UART_LCR, 0xbf);
++	b = hci_h4p_inb(info, UART_EFR);
++	if (on)
++		b |= which;
++	else
++		b &= ~which;
++	hci_h4p_outb(info, UART_EFR, b);
++	hci_h4p_outb(info, UART_LCR, lcr);
++}
++
++void hci_h4p_set_auto_ctsrts(struct hci_h4p_info *info, int on, u8 which)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&info->lock, flags);
++	__hci_h4p_set_auto_ctsrts(info, on, which);
++	spin_unlock_irqrestore(&info->lock, flags);
++}
++
++void hci_h4p_change_speed(struct hci_h4p_info *info, unsigned long speed)
++{
++	unsigned int divisor;
++	u8 lcr, mdr1;
++
++	NBT_DBG("Setting speed %lu\n", speed);
++
++	if (speed >= 460800) {
++		divisor = UART_CLOCK / 13 / speed;
++		mdr1 = 3;
++	} else {
++		divisor = UART_CLOCK / 16 / speed;
++		mdr1 = 0;
++	}
++
++	hci_h4p_outb(info, UART_OMAP_MDR1, 7); /* Make sure UART mode is disabled */
++	lcr = hci_h4p_inb(info, UART_LCR);
++	hci_h4p_outb(info, UART_LCR, UART_LCR_DLAB);     /* Set DLAB */
++	hci_h4p_outb(info, UART_DLL, divisor & 0xff);    /* Set speed */
++	hci_h4p_outb(info, UART_DLM, divisor >> 8);
++	hci_h4p_outb(info, UART_LCR, lcr);
++	hci_h4p_outb(info, UART_OMAP_MDR1, mdr1); /* Make sure UART mode is enabled */
++}
++
++int hci_h4p_reset_uart(struct hci_h4p_info *info)
++{
++	int count = 0;
++
++	/* Reset the  UART */
++	hci_h4p_outb(info, UART_OMAP_SYSC, UART_SYSC_OMAP_RESET);
++	while (!(hci_h4p_inb(info, UART_OMAP_SYSS) & UART_SYSS_RESETDONE)) {
++		if (count++ > 20000) {
++			dev_err(info->dev, "hci_h4p: UART reset timeout\n");
++			return -ENODEV;
++		}
++		udelay(1);
++	}
++
++	return 0;
++}
++
++int hci_h4p_init_uart(struct hci_h4p_info *info)
++{
++	int err;
++
++	err = hci_h4p_reset_uart(info);
++	if (err < 0)
++		return err;
++
++	/* Enable and setup FIFO */
++	hci_h4p_outb(info, UART_LCR, UART_LCR_WLEN8);
++	hci_h4p_outb(info, UART_OMAP_MDR1, 0x00); /* Make sure UART mode is enabled */
++	hci_h4p_outb(info, UART_OMAP_SCR, 0x80);
++	hci_h4p_outb(info, UART_EFR, UART_EFR_ECB);
++	hci_h4p_outb(info, UART_MCR, UART_MCR_TCRTLR);
++	hci_h4p_outb(info, UART_TI752_TLR, 0x1f);
++	hci_h4p_outb(info, UART_TI752_TCR, 0xef);
++	hci_h4p_outb(info, UART_FCR, UART_FCR_ENABLE_FIFO | UART_FCR_CLEAR_RCVR |
++		     UART_FCR_CLEAR_XMIT | UART_FCR_R_TRIG_00);
++	hci_h4p_outb(info, UART_IER, UART_IER_RDI);
++
++	return 0;
++}
+Index: linux-2.6.37-rc1/drivers/bluetooth/Kconfig
+===================================================================
+--- linux-2.6.37-rc1.orig/drivers/bluetooth/Kconfig	2010-11-01 12:54:12.000000000 +0100
++++ linux-2.6.37-rc1/drivers/bluetooth/Kconfig	2010-11-05 17:04:44.762000001 +0100
+@@ -173,6 +173,16 @@
+ 	  Say Y here to compile support for HCI UART devices into the
+ 	  kernel or say M to compile it as module (btuart_cs).
+ 
++config BT_HCIH4P
++	tristate "HCI driver with H4 Nokia extensions"
++	depends on BT && ARCH_OMAP
++	help
++	  Bluetooth HCI driver with H4 extensions.  This driver provides
++	  support for H4+ Bluetooth chip with vendor-specific H4 extensions.
++
++	  Say Y here to compile support for h4 extended devices into the kernel
++	  or say M to compile it as module (hci_h4p).
++
+ config BT_HCIVHCI
+ 	tristate "HCI VHCI (Virtual HCI device) driver"
+ 	help
+Index: linux-2.6.37-rc1/drivers/bluetooth/Makefile
+===================================================================
+--- linux-2.6.37-rc1.orig/drivers/bluetooth/Makefile	2010-11-01 12:54:12.000000000 +0100
++++ linux-2.6.37-rc1/drivers/bluetooth/Makefile	2010-11-05 17:04:44.763000001 +0100
+@@ -11,6 +11,7 @@
+ obj-$(CONFIG_BT_HCIBT3C)	+= bt3c_cs.o
+ obj-$(CONFIG_BT_HCIBLUECARD)	+= bluecard_cs.o
+ obj-$(CONFIG_BT_HCIBTUART)	+= btuart_cs.o
++obj-$(CONFIG_BT_HCIH4P)		+= hci_h4p/
+ 
+ obj-$(CONFIG_BT_HCIBTUSB)	+= btusb.o
+ obj-$(CONFIG_BT_HCIBTSDIO)	+= btsdio.o
