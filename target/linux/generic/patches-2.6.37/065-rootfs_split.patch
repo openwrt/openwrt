@@ -37,7 +37,7 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -618,6 +620,164 @@ int mtd_del_partition(struct mtd_info *m
+@@ -618,6 +620,150 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -127,20 +127,6 @@
 +		kfree(dpart);
 +		return -ENOMEM;
 +	}
-+	if (!strcmp(parts[i].name, "rootfs")) {
-+#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
-+		if (ROOT_DEV == 0) {
-+			printk(KERN_NOTICE "mtd: partition \"rootfs\" "
-+				"set to be root filesystem\n");
-+			ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, slave->mtd.index);
-+		}
-+#endif
-+#ifdef CONFIG_MTD_ROOTFS_SPLIT
-+	ret = split_rootfs_data(master, &slave->mtd, &parts[i]);
-+	/* if (ret == 0)
-+	 * 	j++; */
-+#endif
-+	}
 +	rpart->split = &slave->mtd;
 +
 +	return 0;
@@ -202,7 +188,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -633,7 +793,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -633,7 +779,7 @@ int add_mtd_partitions(struct mtd_info *
  {
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
@@ -211,7 +197,29 @@
  
  	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
  
-@@ -655,6 +815,32 @@ int add_mtd_partitions(struct mtd_info *
+@@ -648,6 +794,21 @@ int add_mtd_partitions(struct mtd_info *
+ 
+ 		add_mtd_device(&slave->mtd);
+ 
++		if (!strcmp(parts[i].name, "rootfs")) {
++#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
++			if (ROOT_DEV == 0) {
++				printk(KERN_NOTICE "mtd: partition \"rootfs\" "
++					"set to be root filesystem\n");
++				ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, slave->mtd.index);
++			}
++#endif
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
++			ret = split_rootfs_data(master, &slave->mtd, &parts[i]);
++			/* if (ret == 0)
++			 * 	j++; */
++#endif
++		}
++
+ 		cur_offset = slave->offset + slave->mtd.size;
+ 	}
+ 
+@@ -655,6 +816,32 @@ int add_mtd_partitions(struct mtd_info *
  }
  EXPORT_SYMBOL(add_mtd_partitions);
  
