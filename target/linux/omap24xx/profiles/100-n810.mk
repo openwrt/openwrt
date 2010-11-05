@@ -16,7 +16,8 @@ define Profile/n810-base
 	kmod-fs-vfat kmod-fs-msdos \
 	kmod-input-evdev \
 	kmod-leds-gpio \
-	kmod-usb-tahvo kmod-usb-eth-gadget kmod-usb-net kmod-usb-net-cdc-ether
+	kmod-usb-tahvo kmod-usb-eth-gadget kmod-usb-net kmod-usb-net-cdc-ether \
+	maemo-kexec
 endef
 
 define Profile/n810-base/Description
