@@ -610,7 +610,10 @@ struct auth_realm * uh_auth_add(char *path, char *user, char *pass)
 {
 	struct auth_realm *new = NULL;
 	struct passwd *pwd;
+
+#ifdef HAVE_SHADOW
 	struct spwd *spwd;
+#endif
 
 	if((new = (struct auth_realm *)malloc(sizeof(struct auth_realm))) != NULL)
 	{
@@ -625,6 +628,7 @@ struct auth_realm * uh_auth_add(char *path, char *user, char *pass)
 		/* given password refers to a passwd entry */
 		if( (strlen(pass) > 3) && !strncmp(pass, "$p$", 3) )
 		{
+#ifdef HAVE_SHADOW
 			/* try to resolve shadow entry */
 			if( ((spwd = getspnam(&pass[3])) != NULL) && spwd->sp_pwdp )
 			{
@@ -632,8 +636,11 @@ struct auth_realm * uh_auth_add(char *path, char *user, char *pass)
 					min(strlen(spwd->sp_pwdp), sizeof(new->pass) - 1));
 			}
 
+			else
+#endif
+
 			/* try to resolve passwd entry */
-			else if( ((pwd = getpwnam(&pass[3])) != NULL) && pwd->pw_passwd &&
+			if( ((pwd = getpwnam(&pass[3])) != NULL) && pwd->pw_passwd &&
 				(pwd->pw_passwd[0] != '!') && (pwd->pw_passwd[0] != 0)
 			) {
 				memcpy(new->pass, pwd->pw_passwd,
