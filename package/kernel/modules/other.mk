@@ -508,6 +508,21 @@ endef
 $(eval $(call KernelPackage,leds-wrap))
 
 
+define KernelPackage/ledtrig-gpio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=LED GPIO Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_GPIO
+  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-gpio.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-gpio)
+endef
+
+define KernelPackage/ledtrig-gpio/description
+ Kernel module that allows LEDs to be controlled by gpio events.
+endef
+
+$(eval $(call KernelPackage,ledtrig-gpio))
+
+
 define KernelPackage/ledtrig-morse
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED Morse Trigger
