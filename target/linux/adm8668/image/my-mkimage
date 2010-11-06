@@ -1,0 +1,26 @@
+#!/bin/sh
+# my-mkimage
+# This will just pad the kernel partition to 64k boundary, then add rootfs.
+# but we have to be fancy because u-boot mkimage is going to add 64 byte header.
+#
+# Copyright (C) 2010 Scott Nicholas <neutronscott@scottn.us>
+
+PATH_LOADER=$1
+PATH_ROOTFS=$2
+OUTPUT=$3
+
+# todo - check arguments...? nah...
+if [ -x $OUTPUT ]; then
+  echo usage: $0 loader.bin root.squashfs output.bin
+  exit
+fi
+
+OLDSIZE=$(stat -c%s $PATH_LOADER)
+NEWSIZE=$(((OLDSIZE / 65536 + 1) * 65536 - 64))
+
+dd if=$PATH_LOADER of=vmlinuz.tmp bs=$NEWSIZE conv=sync
+cat $PATH_ROOTFS >>vmlinuz.tmp
+../../../../staging_dir/host/bin/mkimage -A mips -O linux -T kernel -C none -a 0x400000 -e 0x400000 -n "ADM8668 Linux Kernel(2.4.31)" -d vmlinuz.tmp $OUTPUT
+rm vmlinuz.tmp
+
+printf '\n\nOk done, now your squashfs starts on an erase boundary of %x :)\n\n' $((NEWSIZE+64))
