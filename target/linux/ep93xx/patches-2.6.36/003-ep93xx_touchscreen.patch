@@ -516,7 +516,7 @@
 +    write:      ep93xx_ts_write,
 +    poll:       ep93xx_ts_poll,
 +    open:       ep93xx_ts_open,
-+    ioctl:      ep93xx_ts_ioctl,
++    unlocked_ioctl:      ep93xx_ts_ioctl,
 +    release:    ep93xx_ts_release,
 +    fasync:     ep93xx_ts_fasync,
 +};
