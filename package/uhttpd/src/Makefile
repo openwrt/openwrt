@@ -13,6 +13,12 @@ LIB = -Wl,--export-dynamic -lcrypt -ldl
 TLSLIB =
 LUALIB =
 
+HAVE_SHADOW=$(shell echo 'int main(void){ return !getspnam("root"); }' | \
+	$(CC) -include shadow.h -xc -o/dev/null - 2>/dev/null && echo yes)
+
+ifeq ($(HAVE_SHADOW),yes)
+  CFLAGS += -DHAVE_SHADOW
+endif
 
 world: compile
 
