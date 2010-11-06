@@ -518,6 +518,10 @@ define Image/Build/Profile/UBNTNANOM
 	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-nano-m,board=UBNT-NM,XM,UBNTXM,ar7240)
 endef
 
+define Image/Build/Profile/UBNTUNIFI
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-unifi,board=UBNT-XM,XM,UBNTXM,ar7240)
+endef
+
 define Image/Build/Profile/UBNT
 	$(call Image/Build/Profile/UBNTRS,$(1))
 	$(call Image/Build/Profile/UBNTRSPRO,$(1))
@@ -525,6 +529,7 @@ define Image/Build/Profile/UBNT
 	$(call Image/Build/Profile/UBNTBULLETM,$(1))
 	$(call Image/Build/Profile/UBNTROCKETM,$(1))
 	$(call Image/Build/Profile/UBNTNANOM,$(1))
+	$(call Image/Build/Profile/UBNTUNIFI,$(1))
 endef
 
 define Image/Build/Profile/MZKW04NU

@@ -61,6 +61,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_ZCN_1523H_2, /* Zcomax ZCN-1523H-2-xx */
 	AR71XX_MACH_ZCN_1523H_5, /* Zcomax ZCN-1523H-5-xx */
 	AR71XX_MACH_AP96,	/* Atheros AP96 */
+	AR71XX_MACH_UBNT_UNIFI, /* Unifi */
 };
 
 #endif /* _AR71XX_MACHTYPE_H */
