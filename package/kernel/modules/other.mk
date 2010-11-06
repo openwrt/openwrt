@@ -553,6 +553,27 @@ endef
 $(eval $(call KernelPackage,ledtrig-netdev))
 
 
+define KernelPackage/ledtrig-netfilter
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=LED NetFilter Trigger
+  DEPENDS:=kmod-ipt-core
+  KCONFIG:=CONFIG_NETFILTER_XT_TARGET_LED
+  FILES:=$(LINUX_DIR)/net/netfilter/xt_LED.ko
+  AUTOLOAD:=$(call AutoLoad,50,xt_LED)
+endef
+
+define KernelPackage/ledtrig-netfilter/description
+ Kernel module to flash LED when a particular packets passing through your machine.
+ 
+ For example to create an LED trigger for incoming SSH traffic:
+    iptables -A INPUT -p tcp --dport 22 -j LED --led-trigger-id ssh --led-delay 1000
+ Then attach the new trigger to an LED on your system:
+    echo netfilter-ssh > /sys/class/leds/<ledname>/trigger
+endef
+
+$(eval $(call KernelPackage,ledtrig-netfilter))
+
+
 define KernelPackage/lp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port and line printer support
