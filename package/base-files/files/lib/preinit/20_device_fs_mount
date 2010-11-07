@@ -14,7 +14,7 @@ do_mount_devfs() {
 }
 
 do_mount_hotplug() {
-    mount -t tmpfs tmpfs /dev -o size=512K
+    mount -t tmpfs tmpfs /dev -o mode=0755,size=512K
 }
 
 do_mount_udev() {
