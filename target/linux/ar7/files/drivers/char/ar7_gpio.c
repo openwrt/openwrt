@@ -120,7 +120,7 @@ static const struct file_operations ar7_gpio_fops = {
 
 static struct platform_device *ar7_gpio_device;
 
-static int __init ar7_gpio_init(void)
+static int __init ar7_gpio_char_init(void)
 {
 	int rc;
 
@@ -148,11 +148,11 @@ out:
 	return rc;
 }
 
-static void __exit ar7_gpio_exit(void)
+static void __exit ar7_gpio_char_exit(void)
 {
 	unregister_chrdev(ar7_gpio_major, DRVNAME);
 	platform_device_unregister(ar7_gpio_device);
 }
 
-module_init(ar7_gpio_init);
-module_exit(ar7_gpio_exit);
+module_init(ar7_gpio_char_init);
+module_exit(ar7_gpio_char_exit);
