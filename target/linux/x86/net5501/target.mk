@@ -1,11 +1,12 @@
 BOARDNAME:=Soekris net5501
+FEATURES:=squashfs pci usb gpio
 DEFAULT_PACKAGES += kmod-ata-via-sata kmod-crypto-hw-geode \
 			kmod-gpio-cs5535 kmod-gpio-nsc kmod-gpio-pc8736x \
 			kmod-wdt-geode kmod-hwmon-core kmod-hwmon-pc87360 \
 			kmod-via-rhine kmod-leds-net5501 \
 			kmod-i2c-core kmod-i2c-gpio \
 			kmod-i2c-algo-bit kmod-i2c-algo-pca kmod-i2c-algo-pcf \
-			kmod-usb-core kmod-usb2 kmod-usb-hid kmod-usb-uhci
+			kmod-usb-core kmod-usb2 kmod-usb-uhci
 
 CFLAGS += -Os -pipe -march=k6-2 -fno-align-functions -fno-align-loops -fno-align-jumps \
 	  -fno-align-labels
