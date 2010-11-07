@@ -223,7 +223,7 @@
  
  /* Read/set MAC address routines */
  static void r6040_mac_address(struct net_device *dev)
-@@ -874,10 +782,6 @@ static int r6040_open(struct net_device 
+@@ -874,10 +782,6 @@ static int r6040_open(struct net_device
  	napi_enable(&lp->napi);
  	netif_start_queue(dev);
  
@@ -234,7 +234,7 @@
  	return 0;
  }
  
-@@ -1020,40 +924,22 @@ static void netdev_get_drvinfo(struct ne
+@@ -1018,40 +922,22 @@ static void netdev_get_drvinfo(struct ne
  static int netdev_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
  {
  	struct r6040_private *rp = netdev_priv(dev);
@@ -278,7 +278,7 @@
  };
  
  static const struct net_device_ops r6040_netdev_ops = {
-@@ -1072,6 +958,86 @@ static const struct net_device_ops r6040
+@@ -1070,6 +956,86 @@ static const struct net_device_ops r6040
  #endif
  };
  
@@ -365,7 +365,7 @@
  static int __devinit r6040_init_one(struct pci_dev *pdev,
  					 const struct pci_device_id *ent)
  {
-@@ -1082,6 +1048,7 @@ static int __devinit r6040_init_one(stru
+@@ -1080,6 +1046,7 @@ static int __devinit r6040_init_one(stru
  	static int card_idx = -1;
  	int bar = 0;
  	u16 *adrp;
@@ -373,7 +373,7 @@
  
  	printk("%s\n", version);
  
-@@ -1169,7 +1136,6 @@ static int __devinit r6040_init_one(stru
+@@ -1167,7 +1134,6 @@ static int __devinit r6040_init_one(stru
  	/* Init RDC private data */
  	lp->mcr0 = 0x1002;
  	lp->phy_addr = phy_table[card_idx];
@@ -381,7 +381,7 @@
  
  	/* The RDC-specific entries in the device structure. */
  	dev->netdev_ops = &r6040_netdev_ops;
-@@ -1177,28 +1143,61 @@ static int __devinit r6040_init_one(stru
+@@ -1175,28 +1141,61 @@ static int __devinit r6040_init_one(stru
  	dev->watchdog_timeo = TX_TIMEOUT;
  
  	netif_napi_add(dev, &lp->napi, r6040_poll, 64);
@@ -451,7 +451,7 @@
  err_out_unmap:
  	pci_iounmap(pdev, ioaddr);
  err_out_free_res:
-@@ -1212,8 +1211,12 @@ err_out:
+@@ -1210,8 +1209,12 @@ err_out:
  static void __devexit r6040_remove_one(struct pci_dev *pdev)
  {
  	struct net_device *dev = pci_get_drvdata(pdev);
