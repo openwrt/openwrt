@@ -8,7 +8,7 @@
  #include <asm/io.h>
  
  extern void build_clear_page(void);
-@@ -78,13 +79,16 @@ static inline void clear_user_page(void 
+@@ -78,13 +79,16 @@ static inline void clear_user_page(void
  		flush_data_cache_page((unsigned long)addr);
  }
  
