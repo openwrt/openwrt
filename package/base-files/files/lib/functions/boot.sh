@@ -142,7 +142,7 @@ fopivot() { # <rw_root> <ro_root> <dupe?>
 
 ramoverlay() {
 	mkdir -p /tmp/root
-	mount -t tmpfs root /tmp/root
+	mount -t tmpfs -o mode=0755 root /tmp/root
 	fopivot /tmp/root /rom 1
 }
 
