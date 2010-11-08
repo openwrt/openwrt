@@ -6,15 +6,6 @@
 #
 
 KERNELNAME=
-ifneq (,$(findstring x86,$(BOARD)))
-  KERNELNAME="bzImage"
-endif
-ifneq (,$(findstring rdc,$(BOARD)))
-  KERNELNAME="bzImage"
-endif
-ifneq (,$(findstring avr32,$(BOARD)))
-  KERNELNAME="uImage"
-endif
 
 KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
