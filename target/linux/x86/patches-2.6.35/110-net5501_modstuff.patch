@@ -1,0 +1,11 @@
+--- a/drivers/leds/leds-net5501.c.orig	2010-09-28 19:09:08.000000000 -0600
++++ b/drivers/leds/leds-net5501.c	2010-11-05 14:23:57.000000000 -0600
+@@ -92,3 +92,8 @@
+ }
+ 
+ arch_initcall(soekris_init);
++
++MODULE_AUTHOR("Alessandro Zummo <a.zummo@towertech.it>");
++MODULE_DESCRIPTION("Soekris Net5501 LED support");
++MODULE_LICENSE("GPL");
++
