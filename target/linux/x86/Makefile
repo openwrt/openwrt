@@ -16,8 +16,6 @@ LINUX_VERSION:=2.6.32.25
 
 include $(INCLUDE_DIR)/target.mk
 
-KERNELNAME:=bzImage
-
 $(eval $(call BuildTarget))
 
 $(eval $(call $(if $(CONFIG_TARGET_ROOTFS_ISO),RequireCommand,Ignore),mkisofs, \
