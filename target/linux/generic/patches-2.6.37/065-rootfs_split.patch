@@ -27,8 +27,8 @@
 +#include <linux/magic.h>
  #include <linux/err.h>
  
- /* Our partition linked list */
-@@ -48,7 +50,7 @@ struct mtd_part {
+ #define MTD_ERASE_PARTIAL	0x8000 /* partition only covers parts of an erase block */
+@@ -50,7 +52,7 @@ struct mtd_part {
   * the pointer to that structure with this macro.
   */
  #define PART(x)  ((struct mtd_part *)(x))
@@ -37,7 +37,7 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -618,6 +620,150 @@ int mtd_del_partition(struct mtd_info *m
+@@ -691,6 +693,153 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -92,8 +92,7 @@
 +{
 +	struct mtd_partition *dpart;
 +	struct mtd_part *slave = NULL;
-+	int split_offset = 0;
-+	int ret;
++	int ret, split_offset = 0;
 +
 +	ret = split_squashfs(master, part->offset, &split_offset);
 +	if (ret)
@@ -123,10 +122,14 @@
 +		ROOTFS_SPLIT_NAME, dpart->offset, dpart->size);
 +
 +	slave = allocate_partition(master, dpart, 0, split_offset);
-+	if (!slave) {
-+		kfree(dpart);
-+		return -ENOMEM;
-+	}
++	if (IS_ERR(slave))
++		return PTR_ERR(slave);
++	mutex_lock(&mtd_partitions_mutex);
++	list_add(&slave->list, &mtd_partitions);
++	mutex_unlock(&mtd_partitions_mutex);
++
++	add_mtd_device(&slave->mtd);
++
 +	rpart->split = &slave->mtd;
 +
 +	return 0;
@@ -188,7 +191,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -633,7 +779,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -706,7 +855,7 @@ int add_mtd_partitions(struct mtd_info *
  {
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
@@ -197,7 +200,7 @@
  
  	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
  
-@@ -648,6 +794,21 @@ int add_mtd_partitions(struct mtd_info *
+@@ -721,6 +870,21 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
@@ -219,7 +222,7 @@
  		cur_offset = slave->offset + slave->mtd.size;
  	}
  
-@@ -655,6 +816,32 @@ int add_mtd_partitions(struct mtd_info *
+@@ -728,6 +892,32 @@ int add_mtd_partitions(struct mtd_info *
  }
  EXPORT_SYMBOL(add_mtd_partitions);
  
