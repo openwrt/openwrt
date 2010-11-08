@@ -16,8 +16,6 @@ LINUX_VERSION:=2.6.32.25
 
 include $(INCLUDE_DIR)/target.mk
 
-KERNELNAME:=bzImage
-
 DEFAULT_PACKAGES += wpad-mini kmod-libphy kmod-r6040 kmod-input-core \
 		    kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug \
 		    kmod-rdc321x-wdt
