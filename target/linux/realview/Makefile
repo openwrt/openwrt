@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=arm
 BOARD:=realview
-BOARDNAME:=ARM Ltd Realview
+BOARDNAME:=ARM Ltd. Realview board (qemu)
 FEATURES:=squashfs jffs2 fpu
 CFLAGS:=-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -funit-at-a-time
 
@@ -17,7 +17,7 @@ LINUX_VERSION:=2.6.36
 include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
-	Build images for ARM Ltd Realview boards to be run with qemu
+	Build images for ARM Ltd. Realview boards to be run with qemu
 endef
 
 KERNELNAME:="zImage"
