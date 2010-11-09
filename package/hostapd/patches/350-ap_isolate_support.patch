@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1266,6 +1266,8 @@ struct hostapd_config * hostapd_config_r
+@@ -1281,6 +1281,8 @@ struct hostapd_config * hostapd_config_r
  			}
  		} else if (os_strcmp(buf, "wds_sta") == 0) {
  			bss->wds_sta = atoi(pos);
@@ -21,7 +21,7 @@
  			* algorithms, WPA_AUTH_ALG_{OPEN,SHARED,LEAP} */
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -1626,6 +1626,14 @@ struct wpa_driver_ops {
+@@ -1704,6 +1704,14 @@ struct wpa_driver_ops {
  	                   const char *bridge_ifname);
  
  	/**
@@ -38,7 +38,7 @@
  	 * @freq: Frequency (in MHz) of the channel
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4339,6 +4339,29 @@ static int i802_set_rate_sets(void *priv
+@@ -4661,6 +4661,29 @@ static int i802_set_rate_sets(void *priv
  	return -ENOBUFS;
  }
  
@@ -68,7 +68,7 @@
  #endif /* HOSTAPD */
  
  
-@@ -5448,6 +5471,7 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -5840,6 +5863,7 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_tx_queue_params = i802_set_tx_queue_params,
  	.set_sta_vlan = i802_set_sta_vlan,
  	.set_wds_sta = i802_set_wds_sta,
@@ -78,7 +78,7 @@
  	.send_action = wpa_driver_nl80211_send_action,
 --- a/src/ap/ap_drv_ops.c
 +++ b/src/ap/ap_drv_ops.c
-@@ -180,6 +180,14 @@ static int hostapd_set_radius_acl_expire
+@@ -281,6 +281,14 @@ static int hostapd_set_radius_acl_expire
  }
  
  
@@ -93,7 +93,7 @@
  static int hostapd_set_bss_params(struct hostapd_data *hapd,
  				  int use_protection)
  {
-@@ -229,6 +237,12 @@ static int hostapd_set_bss_params(struct
+@@ -330,6 +338,12 @@ static int hostapd_set_bss_params(struct
  			   "driver");
  		ret = -1;
  	}

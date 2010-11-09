@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -1135,7 +1135,6 @@ nla_put_failure:
+@@ -1380,7 +1380,6 @@ nla_put_failure:
  }
  
  
@@ -8,23 +8,23 @@
  struct wiphy_info_data {
  	int max_scan_ssids;
  	int ap_supported;
-@@ -1247,7 +1246,6 @@ static int wpa_driver_nl80211_capa(struc
+@@ -1493,7 +1492,6 @@ static int wpa_driver_nl80211_capa(struc
  
  	return 0;
  }
 -#endif /* HOSTAPD */
  
  
- static int wpa_driver_nl80211_init_nl(struct wpa_driver_nl80211_data *drv,
-@@ -1411,6 +1409,7 @@ static void * wpa_driver_nl80211_init(vo
+ static int wpa_driver_nl80211_init_nl(struct wpa_driver_nl80211_data *drv)
+@@ -1667,6 +1665,7 @@ static void * wpa_driver_nl80211_init(vo
  	drv->monitor_ifidx = -1;
  	drv->monitor_sock = -1;
  	drv->ioctl_sock = -1;
 +	drv->nlmode = NL80211_IFTYPE_STATION;
  
- 	if (wpa_driver_nl80211_init_nl(drv, ctx)) {
+ 	if (wpa_driver_nl80211_init_nl(drv)) {
  		os_free(drv);
-@@ -1530,32 +1529,32 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -1823,32 +1822,32 @@ wpa_driver_nl80211_finish_drv_init(struc
  	drv->ifindex = if_nametoindex(bss->ifname);
  	drv->first_bss.ifindex = drv->ifindex;
  
@@ -79,7 +79,7 @@
  
  	if (nl80211_register_action_frames(drv) < 0) {
  		wpa_printf(MSG_DEBUG, "nl80211: Failed to register Action "
-@@ -2219,13 +2218,9 @@ static int wpa_driver_nl80211_set_key(co
+@@ -2511,13 +2510,9 @@ static int wpa_driver_nl80211_set_key(co
  	 */
  	if (ret || !set_tx || alg == WPA_ALG_NONE)
  		return ret;
@@ -94,7 +94,7 @@
  
  	msg = nlmsg_alloc();
  	if (!msg)
-@@ -3066,7 +3061,8 @@ static void nl80211_remove_iface(struct 
+@@ -3368,7 +3363,8 @@ static void nl80211_remove_iface(struct 
  
  #ifdef HOSTAPD
  	/* stop listening for EAPOL on this interface */
@@ -104,7 +104,7 @@
  #endif /* HOSTAPD */
  
  	msg = nlmsg_alloc();
-@@ -3139,7 +3135,8 @@ static int nl80211_create_iface_once(str
+@@ -3441,7 +3437,8 @@ static int nl80211_create_iface_once(str
  
  #ifdef HOSTAPD
  	/* start listening for EAPOL on this interface */
@@ -114,7 +114,7 @@
  #endif /* HOSTAPD */
  
  	if (addr && iftype != NL80211_IFTYPE_MONITOR &&
-@@ -4842,6 +4839,7 @@ static void *i802_init(struct hostapd_da
+@@ -5177,6 +5174,7 @@ static void *i802_init(struct hostapd_da
  		return NULL;
  
  	drv = bss->drv;

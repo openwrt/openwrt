@@ -1,6 +1,6 @@
 --- a/wpa_supplicant/wpa_supplicant_i.h
 +++ b/wpa_supplicant/wpa_supplicant_i.h
-@@ -98,6 +98,8 @@ struct wpa_interface {
+@@ -99,6 +99,8 @@ struct wpa_interface {
  	 * receiving of EAPOL frames from an additional interface.
  	 */
  	const char *bridge_ifname;
@@ -9,7 +9,7 @@
  };
  
  /**
-@@ -316,6 +318,8 @@ struct wpa_supplicant {
+@@ -337,6 +339,8 @@ struct wpa_supplicant {
  #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
  	char bridge_ifname[16];
  
@@ -34,7 +34,7 @@
  
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -120,6 +120,55 @@ extern int wpa_debug_show_keys;
+@@ -122,6 +122,55 @@ extern int wpa_debug_show_keys;
  extern int wpa_debug_timestamp;
  extern struct wpa_driver_ops *wpa_drivers[];
  
@@ -90,10 +90,10 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -548,8 +597,16 @@ void wpa_supplicant_set_state(struct wpa
- #ifndef IEEE8021X_EAPOL
- 		wpa_drv_set_supp_port(wpa_s, 1);
- #endif
+@@ -557,8 +606,16 @@ void wpa_supplicant_set_state(struct wpa
+ #ifdef CONFIG_P2P
+ 		wpas_p2p_completed(wpa_s);
+ #endif /* CONFIG_P2P */
 +#ifdef MULTICALL
 +		if (wpa_s->hostapd)
 +			hostapd_reload(wpa_s, wpa_s->current_bss);
@@ -107,7 +107,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -1957,6 +2014,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2027,6 +2084,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
