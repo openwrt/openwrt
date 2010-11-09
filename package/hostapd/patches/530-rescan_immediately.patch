@@ -1,11 +1,11 @@
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -963,7 +963,7 @@ static void wpa_supplicant_event_scan_re
+@@ -893,7 +893,7 @@ static void wpa_supplicant_event_scan_re
  			wpa_printf(MSG_DEBUG, "Setup a new network");
  			wpa_supplicant_associate(wpa_s, NULL, ssid);
  		} else {
 -			int timeout_sec = 5;
 +			int timeout_sec = 0;
  			int timeout_usec = 0;
- 			wpa_supplicant_req_new_scan(wpa_s, timeout_sec,
- 						    timeout_usec);
+ #ifdef CONFIG_P2P
+ 			if (wpa_s->p2p_in_provisioning) {

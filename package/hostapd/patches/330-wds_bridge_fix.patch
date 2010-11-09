@@ -10,7 +10,7 @@
  
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1193,6 +1193,8 @@ struct hostapd_config * hostapd_config_r
+@@ -1208,6 +1208,8 @@ struct hostapd_config * hostapd_config_r
  				   sizeof(conf->bss[0].iface));
  		} else if (os_strcmp(buf, "bridge") == 0) {
  			os_strlcpy(bss->bridge, pos, sizeof(bss->bridge));
@@ -21,7 +21,7 @@
  			/* clear to get error below if setting is invalid */
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -4642,7 +4642,8 @@ static int i802_set_sta_vlan(void *priv,
+@@ -4977,7 +4977,8 @@ static int i802_set_sta_vlan(void *priv,
  }
  
  
@@ -31,7 +31,7 @@
  {
  	struct i802_bss *bss = priv;
  	struct wpa_driver_nl80211_data *drv = bss->drv;
-@@ -4656,6 +4657,10 @@ static int i802_set_wds_sta(void *priv, 
+@@ -4991,6 +4992,10 @@ static int i802_set_wds_sta(void *priv, 
  			if (nl80211_create_iface(drv, name, NL80211_IFTYPE_AP_VLAN,
  					 NULL, 1) < 0)
  				return -1;
@@ -44,7 +44,7 @@
  		return i802_set_sta_vlan(priv, addr, name, 0);
 --- a/src/ap/ap_drv_ops.c
 +++ b/src/ap/ap_drv_ops.c
-@@ -265,9 +265,15 @@ static int hostapd_vlan_if_remove(struct
+@@ -366,9 +366,15 @@ static int hostapd_vlan_if_remove(struct
  static int hostapd_set_wds_sta(struct hostapd_data *hapd, const u8 *addr,
  			       int aid, int val)
  {
@@ -63,7 +63,7 @@
  
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -1622,7 +1622,8 @@ struct wpa_driver_ops {
+@@ -1700,7 +1700,8 @@ struct wpa_driver_ops {
  	 * @val: 1 = bind to 4-address WDS; 0 = unbind
  	 * Returns: 0 on success, -1 on failure
  	 */
