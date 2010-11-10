@@ -474,6 +474,7 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url)
 	char *docroot = cl->server->conf->docroot;
 	char *pathptr = NULL;
 
+	int slash = 0;
 	int no_sym = cl->server->conf->no_symlinks;
 	int i = 0;
 	struct stat s;
@@ -516,7 +517,7 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url)
 	}
 
 	/* create canon path */
-	for( i = strlen(buffer); i >= 0; i-- )
+	for( i = strlen(buffer), slash = (buffer[max(0, i-1)] == '/'); i >= 0; i-- )
 	{
 		if( (buffer[i] == 0) || (buffer[i] == '/') )
 		{
@@ -567,7 +568,23 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url)
 			memcpy(buffer, path_phys, sizeof(buffer));
 			pathptr = &buffer[strlen(buffer)];
 
-			if( cl->server->conf->index_file )
+			/* if requested url resolves to a directory and a trailing slash
+			   is missing in the request url, redirect the client to the same
+			   url with trailing slash appended */
+			if( !slash )
+			{
+				uh_http_sendf(cl, NULL,
+					"HTTP/1.1 302 Found\r\n"
+					"Location: %s%s%s\r\n"
+					"Connection: close\r\n\r\n",
+						&path_phys[strlen(docroot)],
+						p.query ? "?" : "",
+						p.query ? p.query : ""
+				);
+
+				p.redirected = 1;
+			}
+			else if( cl->server->conf->index_file )
 			{
 				strncat(buffer, cl->server->conf->index_file, sizeof(buffer));
 

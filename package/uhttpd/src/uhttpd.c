@@ -566,7 +566,7 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 						if( (pin = uh_path_lookup(cl, req->url)) != NULL )
 						{
 							/* auth ok? */
-							if( uh_auth_check(cl, req, pin) )
+							if( !pin->redirected && uh_auth_check(cl, req, pin) )
 								uh_dispatch_request(cl, req, pin);
 						}
 
@@ -1089,4 +1089,3 @@ int main (int argc, char **argv)
 
 	return 0;
 }
-
