@@ -1,0 +1,11 @@
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -84,7 +84,7 @@ static void str2eaddr(char *str, char *d
+ static void bcm47xx_fill_sprom(struct ssb_sprom *sprom)
+ {
+ 	char buf[100];
+-	u32 boardflags;
++	u32 uninitialized_var(boardflags);
+ 
+ 	memset(sprom, 0, sizeof(struct ssb_sprom));
+ 

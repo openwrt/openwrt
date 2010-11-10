@@ -1,0 +1,15 @@
+--- a/drivers/net/b44.c
++++ b/drivers/net/b44.c
+@@ -188,10 +188,11 @@ static int b44_wait_bit(struct b44 *bp,
+ 		udelay(10);
+ 	}
+ 	if (i == timeout) {
++#if 0
+ 		if (net_ratelimit())
+ 			netdev_err(bp->dev, "BUG!  Timeout waiting for bit %08x of register %lx to %s\n",
+ 				   bit, reg, clear ? "clear" : "set");
+-
++#endif
+ 		return -ENODEV;
+ 	}
+ 	return 0;
