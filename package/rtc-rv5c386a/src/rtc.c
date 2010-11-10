@@ -52,6 +52,7 @@
 #include <linux/rtc.h>
 #include <linux/delay.h>
 #include <linux/version.h>
+#include <linux/smp_lock.h>
 
 #include <asm/uaccess.h>
 #include <asm/system.h>
@@ -461,8 +462,7 @@ static ssize_t rtc_read(UNUSED struct file *filp, char *buf, size_t count,
 	return len;
 }
 
-static int rtc_ioctl(UNUSED struct inode *inode, UNUSED struct file *filp,
-		     unsigned int cmd, unsigned long arg)
+static int rtc_do_ioctl(unsigned int cmd, unsigned long arg)
 {
 	struct rtc_time rtc_tm;
 
@@ -492,14 +492,23 @@ static int rtc_ioctl(UNUSED struct inode *inode, UNUSED struct file *filp,
 	return 0;
 }
 
-static struct file_operations rtc_fops = {
-	.owner   = THIS_MODULE,
-	.llseek  = no_llseek,
-	.read    = rtc_read,
-	.write   = rtc_write,
-	.ioctl   = rtc_ioctl,
-	.open    = rtc_open,
-	.release = rtc_release,
+static long rtc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	long ret;
+	lock_kernel();
+	ret = rtc_do_ioctl(cmd, arg);
+	unlock_kernel();
+	return ret;
+}
+
+static const struct file_operations rtc_fops = {
+	.owner		= THIS_MODULE,
+	.llseek		= no_llseek,
+	.read		= rtc_read,
+	.write		= rtc_write,
+	.unlocked_ioctl	= rtc_ioctl,
+	.open		= rtc_open,
+	.release	= rtc_release,
 };
 
 static struct miscdevice rtc_dev = {
