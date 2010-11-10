@@ -471,9 +471,13 @@ $(eval $(call KernelPackage,pppoa))
 define KernelPackage/pppol2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoL2TP support
-  DEPENDS:=kmod-ppp +kmod-pppoe
+  DEPENDS:=kmod-ppp +kmod-pppoe +LINUX_2_6_35||LINUX_2_6_36||LINUX_2_6_37:kmod-l2tp
   KCONFIG:=CONFIG_PPPOL2TP
-  FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.ko
+  ifneq ($(CONFIG_LINUX_2_6_35)$(CONFIG_LINUX_2_6_36)$(CONFIG_LINUX_2_6_37),)
+    FILES:=$(LINUX_DIR)/net/l2tp/l2tp_ppp.mod.o
+  else
+    FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.ko
+  endif
   AUTOLOAD:=$(call AutoLoad,40,pppol2tp)
 endef
 
@@ -626,7 +630,7 @@ $(eval $(call KernelPackage,pktgen))
 
 define KernelPackage/l2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  DEPENDS:=@LINUX_2_6_35
+  DEPENDS:=@LINUX_2_6_35||LINUX_2_6_36||LINUX_2_6_37
   TITLE:=L2TPv3 Support
   KCONFIG:=CONFIG_L2TP CONFIG_L2TP_DEBUGFS=n
   FILES:=$(LINUX_DIR)/net/l2tp/l2tp_core.$(LINUX_KMOD_SUFFIX)
