@@ -1,0 +1,11 @@
+--- a/drivers/gpio/gpiolib.c
++++ b/drivers/gpio/gpiolib.c
+@@ -1564,7 +1564,7 @@ void __gpio_set_value(unsigned gpio, int
+ 	struct gpio_chip	*chip;
+ 
+ 	chip = gpio_to_chip(gpio);
+-	WARN_ON(chip->can_sleep);
++//	WARN_ON(chip->can_sleep);
+ 	chip->set(chip, gpio - chip->base, value);
+ }
+ EXPORT_SYMBOL_GPL(__gpio_set_value);
