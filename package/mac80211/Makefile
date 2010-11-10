@@ -577,6 +577,55 @@ define KernelPackage/net-ipw2200/description
 endef
 
 
+define KernelPackage/net-hermes
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Hermes 802.11b chipset support
+  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-cfg80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco.ko
+  AUTOLOAD:=$(call AutoLoad,50,orinoco)
+endef
+
+define KernelPackage/net-hermes/description
+ Kernel support for Hermes 802.11b chipsets
+endef
+
+define KernelPackage/net-hermes-pci
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Intersil Prism 2.5 PCI support
+  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes +kmod-cfg80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_pci.ko
+  AUTOLOAD:=$(call AutoLoad,55,orinoco_pci)
+endef
+
+define KernelPackage/net-hermes-pci/description
+ Kernel modules for Intersil Prism 2.5 PCI support
+endef
+
+define KernelPackage/net-hermes-plx
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=PLX9052 based PCI adaptor
+  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes +kmod-cfg80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_plx.ko
+  AUTOLOAD:=$(call AutoLoad,55,orinoco_plx)
+endef
+
+define KernelPackage/net-hermes-plx/description
+ Kernel modules for Hermes in PLX9052 based PCI adaptors
+endef
+
+define KernelPackage/net-hermes-pcmcia
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Hermes based PCMCIA adaptors
+  DEPENDS:=@PCMCIA_SUPPORT +kmod-net-hermes +kmod-cfg80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_cs.ko
+  AUTOLOAD:=$(call AutoLoad,55,orinoco_cs)
+endef
+
+define KernelPackage/net-hermes-pcmcia/description
+ Kernel modules for Hermes based PCMCIA adaptors
+endef
+
+
 define KernelPackage/mwl8k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for Marvell TOPDOG 802.11 Wireless cards
@@ -924,7 +973,17 @@ MAKE_OPTS:= \
 	CONFIG_AT76C50X_USB= \
 	CONFIG_WL12XX= \
 	CONFIG_EEPROM_93CX6= \
-	CONFIG_HERMES= \
+	CONFIG_HERMES=$(if $(CONFIG_PACKAGE_kmod-net-hermes),m) \
+	CONFIG_HERMES_CACHE_FW_ON_INIT= \
+	CONFIG_PCI_HERMES=$(if $(CONFIG_PACKAGE_kmod-net-hermes-pci),m) \
+	CONFIG_PLX_HERMES=$(if $(CONFIG_PACKAGE_kmod-net-hermes-plx),m) \
+	CONFIG_PCMCIA_HERMES=$(if $(CONFIG_PACKAGE_kmod-net-hermes-pcmcia),m) \
+	CONFIG_HERMES_PRISM= \
+	CONFIG_APPLE_AIRPORT= \
+	CONFIG_TMD_HERMES= \
+	CONFIG_NORTEL_HERMES= \
+	CONFIG_PCMCIA_SPECTRUM= \
+	CONFIG_ORINOCO_USB= \
 	CONFIG_AR9170_USB=$(if $(CONFIG_PACKAGE_kmod-ar9170),m) \
 	CONFIG_AR9170_LEDS=$(CONFIG_LEDS_TRIGGERS) \
 	CONFIG_IWM= \
@@ -1129,3 +1188,7 @@ $(eval $(call KernelPackage,net-libipw))
 $(eval $(call KernelPackage,net-ipw2100))
 $(eval $(call KernelPackage,net-ipw2200))
 $(eval $(call KernelPackage,mwl8k))
+$(eval $(call KernelPackage,net-hermes))
+$(eval $(call KernelPackage,net-hermes-pci))
+$(eval $(call KernelPackage,net-hermes-plx))
+$(eval $(call KernelPackage,net-hermes-pcmcia))
