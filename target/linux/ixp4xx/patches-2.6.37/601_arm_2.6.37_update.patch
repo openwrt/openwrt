@@ -42,11 +42,6 @@
  	.map_io		= ixp4xx_map_io,
  	.init_irq	= ixp4xx_init_irq,
  	.timer		= &ixp4xx_timer,
---- /dev/null
-+++ b/arch/arm/mach-ixp4xx/modules.builtin
-@@ -0,0 +1,2 @@
-+kernel/arch/arm/mach-ixp4xx/ixp4xx_qmgr.ko
-+kernel/arch/arm/mach-ixp4xx/ixp4xx_npe.ko
 --- a/arch/arm/mach-ixp4xx/pronghorn-setup.c
 +++ b/arch/arm/mach-ixp4xx/pronghorn-setup.c
 @@ -224,8 +224,6 @@ static void __init pronghorn_init(void)
