@@ -10,6 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=busybox
 PKG_VERSION:=1.17.3
 PKG_RELEASE:=1
+PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.busybox.net/downloads \
