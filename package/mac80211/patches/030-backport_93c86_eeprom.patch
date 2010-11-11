@@ -1,8 +1,8 @@
 --- a/include/linux/compat-2.6.36.h
 +++ b/include/linux/compat-2.6.36.h
-@@ -56,6 +56,8 @@ static inline int pcmcia_write_config_by
- 	return pcmcia_access_configuration_register(p_dev, &reg);
- }
+@@ -90,6 +90,8 @@ struct pm_qos_request_list {
+ 
+ #endif
  
 +#define PCI_EEPROM_WIDTH_93C86   8
 +

@@ -1,14 +1,14 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -16,6 +16,7 @@
- 
+@@ -17,6 +17,7 @@
  #include <linux/slab.h>
+ #include <linux/pm_qos_params.h>
  
 +#include "linux/ath9k_platform.h"
  #include "ath9k.h"
  
  static char *dev_info = "ath9k";
-@@ -572,8 +573,14 @@ static int ath9k_init_softc(u16 devid, s
+@@ -535,8 +536,14 @@ static int ath9k_init_softc(u16 devid, s
  	sc->sc_ah = ah;
  
  	pdata = (struct ath9k_platform_data *) sc->dev->platform_data;
@@ -26,7 +26,7 @@
  	common->ops = &ath9k_common_ops;
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -742,7 +742,7 @@ struct ath_hw {
+@@ -750,7 +750,7 @@ struct ath_hw {
  	u32 originalGain[22];
  	int initPDADC;
  	int PDADCdelta;
