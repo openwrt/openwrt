@@ -164,6 +164,7 @@ ifneq ($(TARGET_avr32)$(TARGET_coldfire),)
   DEPENDS:=+libgcc
 endif
   URL:=$(LIBC_URL)
+  PKG_FLAGS:=hold essential
 endef
 
 
