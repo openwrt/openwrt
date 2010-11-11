@@ -6,16 +6,17 @@
  
 -	if (cfi->mfr == CFI_MFR_SAMSUNG && cfi->id == 0x257e &&
 -	    extp->MajorVersion == '0')
+-		extp->MajorVersion = '1';
 +	if (cfi->mfr == CFI_MFR_SAMSUNG &&
 +		extp->MajorVersion == '0') {
 +			printk("  Fixed Samsung's Amd/Fujitsu Extended Query version from %c.%c",
 +				extp->MajorVersion, extp->MinorVersion);
 +
- 		extp->MajorVersion = '1';
-+		extp->MinorVersion = '0';
++			extp->MajorVersion = '1';
++			extp->MinorVersion = '0';
 +
-+		printk(" to %c.%c.\n",
-+			extp->MajorVersion, extp->MinorVersion);
++			printk(" to %c.%c.\n",
++				extp->MajorVersion, extp->MinorVersion);
 +	}
 +
 +	if (cfi->mfr == CFI_MFR_SAMSUNG &&
