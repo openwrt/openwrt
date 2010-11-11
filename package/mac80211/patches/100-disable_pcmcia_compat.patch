@@ -1,6 +1,6 @@
 --- a/compat/compat-2.6.28.c
 +++ b/compat/compat-2.6.28.c
-@@ -89,7 +89,7 @@ EXPORT_SYMBOL_GPL(usb_poison_urb);
+@@ -86,7 +86,7 @@ EXPORT_SYMBOL_GPL(usb_poison_urb);
  #endif
  #endif /* CONFIG_USB */
  
@@ -11,8 +11,8 @@
  struct pcmcia_cfg_mem {
 --- a/compat/compat-2.6.33.c
 +++ b/compat/compat-2.6.33.c
-@@ -14,7 +14,7 @@
- 
+@@ -11,7 +11,7 @@
+ #include <linux/compat.h>
  #include <linux/autoconf.h>
  
 -#if defined(CONFIG_PCCARD) || defined(CONFIG_PCCARD_MODULE)
@@ -20,7 +20,7 @@
  
  /**
   * pccard_loop_tuple() - loop over tuples in the CIS
-@@ -76,7 +76,7 @@ next_entry:
+@@ -73,7 +73,7 @@ next_entry:
  EXPORT_SYMBOL(pccard_loop_tuple);
  /* Source: drivers/pcmcia/cistpl.c */
  
