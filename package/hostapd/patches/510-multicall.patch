@@ -114,7 +114,7 @@
  wpa_cli.exe: wpa_cli
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -2667,8 +2667,8 @@ union wpa_event_data {
+@@ -2684,8 +2684,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -182,7 +182,7 @@
  	u16 reason_code = 0;
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -2314,6 +2314,9 @@ struct wpa_supplicant * wpa_supplicant_g
+@@ -2320,6 +2320,9 @@ struct wpa_supplicant * wpa_supplicant_g
  	return NULL;
  }
  
@@ -192,7 +192,7 @@
  
  /**
   * wpa_supplicant_init - Initialize %wpa_supplicant
-@@ -2332,6 +2335,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -2338,6 +2341,7 @@ struct wpa_global * wpa_supplicant_init(
  	if (params == NULL)
  		return NULL;
  
