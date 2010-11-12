@@ -9,7 +9,7 @@
  */
 
 struct vsc7385_platform_data {
-	void		(* reset)(void);
+	void		(*reset)(void);
 	char		*ucode_name;
 	struct {
 		u32	tx_ipg:5;

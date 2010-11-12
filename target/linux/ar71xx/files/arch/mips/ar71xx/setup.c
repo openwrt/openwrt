@@ -63,7 +63,7 @@ static void __init ar71xx_detect_mem_size(void)
 	unsigned long size;
 
 	for (size = AR71XX_MEM_SIZE_MIN; size < AR71XX_MEM_SIZE_MAX;
-	     size <<= 1 ) {
+	     size <<= 1) {
 		if (!memcmp(ar71xx_detect_mem_size,
 			    ar71xx_detect_mem_size + size, 1024))
 			break;

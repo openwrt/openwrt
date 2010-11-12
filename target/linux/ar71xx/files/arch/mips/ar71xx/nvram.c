@@ -69,7 +69,7 @@ int nvram_parse_mac_addr(const char *nvram, unsigned nvram_len,
 
 	ret = 0;
 
- free:
+free:
 	vfree(buf);
 	return ret;
 }

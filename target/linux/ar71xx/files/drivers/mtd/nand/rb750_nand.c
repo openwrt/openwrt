@@ -313,11 +313,11 @@ static int __init rb750_nand_probe(struct platform_device *pdev)
 
 	return 0;
 
- err_release_nand:
+err_release_nand:
 	nand_release(&info->mtd);
- err_set_drvdata:
+err_set_drvdata:
 	platform_set_drvdata(pdev, NULL);
- err_free_info:
+err_free_info:
 	kfree(info);
 	return ret;
 }

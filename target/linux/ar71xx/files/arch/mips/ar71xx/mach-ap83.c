@@ -47,25 +47,25 @@ static struct mtd_partition ap83_flash_partitions[] = {
 		.offset		= 0,
 		.size		= 0x040000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "u-boot-env",
 		.offset		= 0x040000,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "kernel",
 		.offset		= 0x060000,
 		.size		= 0x140000,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x1a0000,
 		.size		= 0x650000,
-	} , {
+	}, {
 		.name		= "art",
 		.offset		= 0x7f0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "firmware",
 		.offset		= 0x060000,
 		.size		= 0x790000,
@@ -76,8 +76,8 @@ static struct mtd_partition ap83_flash_partitions[] = {
 static struct ar91xx_flash_platform_data ap83_flash_data = {
 	.width		= 2,
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = ap83_flash_partitions,
-        .nr_parts       = ARRAY_SIZE(ap83_flash_partitions),
+	.parts		= ap83_flash_partitions,
+	.nr_parts	= ARRAY_SIZE(ap83_flash_partitions),
 #endif
 };
 
@@ -123,7 +123,7 @@ static struct gpio_button ap83_gpio_buttons[] __initdata = {
 		.threshold	= 3,
 		.gpio		= AP83_GPIO_BTN_RESET,
 		.active_low	= 1,
-	} , {
+	}, {
 		.desc		= "jumpstart",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
@@ -231,7 +231,7 @@ static void __init ap83_generic_setup(void)
 
 static void __init ap83_040_setup(void)
 {
-	ap83_flash_data.is_shared=1;
+	ap83_flash_data.is_shared = 1;
 	ap83_generic_setup();
 	platform_device_register(&ap83_040_spi_device);
 }

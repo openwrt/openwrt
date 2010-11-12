@@ -55,41 +55,41 @@ static struct mtd_partition wndr3700_partitions[] = {
 		.offset		= 0,
 		.size		= 0x050000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "env",
 		.offset		= 0x050000,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x070000,
 		.size		= 0x720000,
-	} , {
+	}, {
 		.name		= "config",
 		.offset		= 0x790000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "config_bak",
 		.offset		= 0x7a0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "pot",
 		.offset		= 0x7b0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "traffic_meter",
 		.offset		= 0x7c0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "language",
 		.offset		= 0x7d0000,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "caldata",
 		.offset		= 0x7f0000,
 		.size		= 0x010000,
@@ -100,8 +100,8 @@ static struct mtd_partition wndr3700_partitions[] = {
 
 static struct flash_platform_data wndr3700_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = wndr3700_partitions,
-        .nr_parts       = ARRAY_SIZE(wndr3700_partitions),
+	.parts		= wndr3700_partitions,
+	.nr_parts	= ARRAY_SIZE(wndr3700_partitions),
 #endif
 };
 
@@ -144,7 +144,7 @@ static struct gpio_button wndr3700_gpio_buttons[] __initdata = {
 		.threshold	= 3,
 		.gpio		= WNDR3700_GPIO_BTN_WPS,
 		.active_low	= 1,
-	} , {
+	}, {
 		.desc		= "wifi",
 		.type		= EV_KEY,
 		.code		= BTN_2,
@@ -155,8 +155,8 @@ static struct gpio_button wndr3700_gpio_buttons[] __initdata = {
 };
 
 static struct rtl8366s_platform_data wndr3700_rtl8366s_data = {
-	.gpio_sda        = WNDR3700_GPIO_RTL8366_SDA,
-	.gpio_sck        = WNDR3700_GPIO_RTL8366_SCK,
+	.gpio_sda	= WNDR3700_GPIO_RTL8366_SDA,
+	.gpio_sck	= WNDR3700_GPIO_RTL8366_SCK,
 };
 
 static struct platform_device wndr3700_rtl8366s_device = {
@@ -193,12 +193,12 @@ static void __init wndr3700_setup(void)
 
 	ar71xx_add_device_m25p80(&wndr3700_flash_data);
 
-        ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wndr3700_leds_gpio),
-				    wndr3700_leds_gpio);
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wndr3700_leds_gpio),
+					wndr3700_leds_gpio);
 
 	ar71xx_add_device_gpio_buttons(-1, WNDR3700_BUTTONS_POLL_INTERVAL,
-				      ARRAY_SIZE(wndr3700_gpio_buttons),
-				      wndr3700_gpio_buttons);
+					ARRAY_SIZE(wndr3700_gpio_buttons),
+					wndr3700_gpio_buttons);
 
 	platform_device_register(&wndr3700_rtl8366s_device);
 	platform_device_register_simple("wndr3700-led-usb", -1, NULL, 0);

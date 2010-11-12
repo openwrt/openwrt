@@ -40,20 +40,20 @@ static struct mtd_partition tl_mr3420_partitions[] = {
 		.offset		= 0,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "kernel",
 		.offset		= 0x020000,
 		.size		= 0x140000,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x160000,
 		.size		= 0x290000,
-	} , {
+	}, {
 		.name		= "art",
 		.offset		= 0x3f0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "firmware",
 		.offset		= 0x020000,
 		.size		= 0x3d0000,
@@ -66,8 +66,8 @@ static struct mtd_partition tl_mr3420_partitions[] = {
 #endif /* CONFIG_MTD_PARTITIONS */
 
 static struct flash_platform_data tl_mr3420_flash_data = {
-        .parts          = tl_mr3420_partitions,
-        .nr_parts       = tl_mr3420_num_partitions,
+	.parts		= tl_mr3420_partitions,
+	.nr_parts	= tl_mr3420_num_partitions,
 };
 
 static struct gpio_led tl_mr3420_leds_gpio[] __initdata = {
@@ -110,7 +110,7 @@ static void __init tl_mr3420_setup(void)
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	/* enable power for the USB port */
-	gpio_request(TL_MR3420_GPIO_USB_POWER,"USB power");
+	gpio_request(TL_MR3420_GPIO_USB_POWER, "USB power");
 	gpio_direction_output(TL_MR3420_GPIO_USB_POWER, 1);
 
 	ar71xx_add_device_m25p80(&tl_mr3420_flash_data);

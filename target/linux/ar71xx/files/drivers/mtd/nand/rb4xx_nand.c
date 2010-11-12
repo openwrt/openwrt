@@ -244,21 +244,21 @@ static int __init rb4xx_nand_probe(struct platform_device *pdev)
 
 	return 0;
 
- err_release_nand:
+err_release_nand:
 	nand_release(&info->mtd);
- err_set_drvdata:
+err_set_drvdata:
 	platform_set_drvdata(pdev, NULL);
- err_free_info:
+err_free_info:
 	kfree(info);
- err_free_gpio_nce:
+err_free_gpio_nce:
 	gpio_free(RB4XX_NAND_GPIO_NCE);
- err_free_gpio_cle:
+err_free_gpio_cle:
 	gpio_free(RB4XX_NAND_GPIO_CLE);
- err_free_gpio_ale:
+err_free_gpio_ale:
 	gpio_free(RB4XX_NAND_GPIO_ALE);
- err_free_gpio_ready:
+err_free_gpio_ready:
 	gpio_free(RB4XX_NAND_GPIO_READY);
- err:
+err:
 	return ret;
 }
 

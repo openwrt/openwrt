@@ -47,24 +47,24 @@ static struct mtd_partition dir_615c1_partitions[] = {
 		.offset		= 0,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "config",
 		.offset		= 0x020000,
 		.size		= 0x010000,
-	} , {
+	}, {
 		.name		= "kernel",
 		.offset		= 0x030000,
 		.size		= 0x0d0000,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x100000,
 		.size		= 0x2f0000,
-	} , {
+	}, {
 		.name		= "art",
 		.offset		= 0x3f0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "firmware",
 		.offset		= 0x030000,
 		.size		= 0x3c0000,
@@ -74,8 +74,8 @@ static struct mtd_partition dir_615c1_partitions[] = {
 
 static struct flash_platform_data dir_615c1_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = dir_615c1_partitions,
-        .nr_parts       = ARRAY_SIZE(dir_615c1_partitions),
+	.parts		= dir_615c1_partitions,
+	.nr_parts	= ARRAY_SIZE(dir_615c1_partitions),
 #endif
 };
 
@@ -96,13 +96,13 @@ static struct gpio_led dir_615c1_leds_gpio[] __initdata = {
 		.name		= "dir-615c1:green:wancpu",
 		.gpio		= DIR_615C1_GPIO_LED_GREEN_WANCPU,
 		.active_low	= 1,
-        }, {
+	}, {
 		.name		= "dir-615c1:green:wlan",
 		.gpio		= DIR_615C1_GPIO_LED_GREEN_WLAN,
 		.active_low	= 1,
-        }, {
-		.name           = "dir-615c1:green:status",
-		.gpio           = DIR_615C1_GPIO_LED_GREEN_STATUS,
+	}, {
+		.name		= "dir-615c1:green:status",
+		.gpio		= DIR_615C1_GPIO_LED_GREEN_STATUS,
 		.active_low     = 1,
 	}, {
 		.name		= "dir-615c1:orange:wan",
@@ -141,7 +141,7 @@ static void __init dir_615c1_setup(void)
 	u8 *wlan_mac = NULL;
 
 	if (nvram_parse_mac_addr(config, DIR_615C1_CONFIG_SIZE,
-			         "lan_mac=", mac) == 0) {
+					"lan_mac=", mac) == 0) {
 		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
 		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
 		wlan_mac = mac;

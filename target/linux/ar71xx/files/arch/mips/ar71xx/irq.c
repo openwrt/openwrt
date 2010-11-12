@@ -271,7 +271,7 @@ asmlinkage void plat_irq_dispatch(void)
 
 void __init arch_init_irq(void)
 {
-	switch(ar71xx_soc) {
+	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:

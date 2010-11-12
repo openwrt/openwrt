@@ -90,7 +90,7 @@ static int __devinit rb750_led_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, drvdata);
 	return 0;
 
- err:
+err:
 	for (i = i - 1; i >= 0; i--)
 		led_classdev_unregister(&drvdata->led_devs[i].cdev);
 

@@ -103,7 +103,7 @@ int rb750_latch_change(u32 mask_clr, u32 mask_set)
 
 	ret = 1;
 
- unlock:
+unlock:
 	spin_unlock_irqrestore(&lock, flags);
 	return ret;
 }

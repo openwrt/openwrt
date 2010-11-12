@@ -72,8 +72,8 @@ static void __init jwap003_init(void)
 	ar71xx_add_device_usb();
 
 	ar71xx_add_device_gpio_buttons(-1, JWAP003_BUTTONS_POLL_INTERVAL,
-				       ARRAY_SIZE(jwap003_gpio_buttons),
-				       jwap003_gpio_buttons);
+					ARRAY_SIZE(jwap003_gpio_buttons),
+					jwap003_gpio_buttons);
 
 	pb42_pci_init();
 }

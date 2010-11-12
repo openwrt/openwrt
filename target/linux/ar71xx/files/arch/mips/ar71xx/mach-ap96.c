@@ -51,20 +51,20 @@ static struct mtd_partition ap96_partitions[] = {
 		.offset		= 0,
 		.size		= 0x030000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "env",
 		.offset		= 0x030000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x040000,
 		.size		= 0x600000,
-	} , {
+	}, {
 		.name		= "uImage",
 		.offset		= 0x640000,
 		.size		= 0x1b0000,
-	} , {
+	}, {
 		.name		= "caldata",
 		.offset		= 0x7f0000,
 		.size		= 0x010000,
@@ -75,8 +75,8 @@ static struct mtd_partition ap96_partitions[] = {
 
 static struct flash_platform_data ap96_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = ap96_partitions,
-        .nr_parts       = ARRAY_SIZE(ap96_partitions),
+	.parts		= ap96_partitions,
+	.nr_parts	= ARRAY_SIZE(ap96_partitions),
 #endif
 };
 
@@ -163,12 +163,12 @@ static void __init ap96_setup(void)
 
 	ar71xx_add_device_m25p80(&ap96_flash_data);
 
-        ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap96_leds_gpio),
-				    ap96_leds_gpio);
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap96_leds_gpio),
+					ap96_leds_gpio);
 
 	ar71xx_add_device_gpio_buttons(-1, AP96_BUTTONS_POLL_INTERVAL,
-				      ARRAY_SIZE(ap96_gpio_buttons),
-				      ap96_gpio_buttons);
+					ARRAY_SIZE(ap96_gpio_buttons),
+					ap96_gpio_buttons);
 
 	ap94_pci_init(art + AP96_CALDATA0_OFFSET,
 		      art + AP96_WMAC0_MAC_OFFSET,

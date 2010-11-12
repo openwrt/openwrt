@@ -42,25 +42,25 @@ static struct mtd_partition wrt160nl_partitions[] = {
 		.offset		= 0,
 		.size		= 0x040000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "kernel",
 		.offset		= 0x040000,
 		.size		= 0x0e0000,
-	} , {
+	}, {
 		.name		= "filesytem",
 		.offset		= 0x120000,
 		.size		= 0x6c0000,
-	} , {
+	}, {
 		.name		= "nvram",
 		.offset		= 0x7e0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "ART",
 		.offset		= 0x7f0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "firmware",
 		.offset		= 0x040000,
 		.size		= 0x7a0000,
@@ -70,8 +70,8 @@ static struct mtd_partition wrt160nl_partitions[] = {
 
 static struct flash_platform_data wrt160nl_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = wrt160nl_partitions,
-        .nr_parts       = ARRAY_SIZE(wrt160nl_partitions),
+	.parts		= wrt160nl_partitions,
+	.nr_parts	= ARRAY_SIZE(wrt160nl_partitions),
 #endif
 };
 
@@ -121,7 +121,7 @@ static void __init wrt160nl_setup(void)
 	u8 mac[6];
 
 	if (nvram_parse_mac_addr(nvram, WRT160NL_NVRAM_SIZE,
-			         "lan_hwaddr=", mac) == 0) {
+				 "lan_hwaddr=", mac) == 0) {
 		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
 		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
 	}
@@ -142,7 +142,7 @@ static void __init wrt160nl_setup(void)
 	ar71xx_add_device_usb();
 
 	if (nvram_parse_mac_addr(nvram, WRT160NL_NVRAM_SIZE,
-			         "wl0_hwaddr=", mac) == 0)
+				 "wl0_hwaddr=", mac) == 0)
 		ar913x_add_device_wmac(eeprom, mac);
 	else
 		ar913x_add_device_wmac(eeprom, NULL);

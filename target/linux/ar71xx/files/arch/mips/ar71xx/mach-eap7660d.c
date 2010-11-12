@@ -45,20 +45,20 @@ static u16 eap7660d_wmac0_eeprom[ATH5K_PLAT_EEP_MAX_WORDS];
 static u16 eap7660d_wmac1_eeprom[ATH5K_PLAT_EEP_MAX_WORDS];
 
 static struct ar71xx_pci_irq eap7660d_pci_irqs[] __initdata = {
-        {
-                .slot   = 0,
-                .pin    = 1,
-                .irq    = AR71XX_PCI_IRQ_DEV0,
-        }, {
-                .slot   = 1,
-                .pin    = 1,
-                .irq    = AR71XX_PCI_IRQ_DEV1,
-        }
+	{
+		.slot   = 0,
+		.pin    = 1,
+		.irq    = AR71XX_PCI_IRQ_DEV0,
+	}, {
+		.slot   = 1,
+		.pin    = 1,
+		.irq    = AR71XX_PCI_IRQ_DEV1,
+	}
 };
 
 static int eap7660d_pci_plat_dev_init(struct pci_dev *dev)
 {
-	switch(PCI_SLOT(dev->devfn)) {
+	switch (PCI_SLOT(dev->devfn)) {
 	case 17:
 		dev->dev.platform_data = &eap7660d_wmac0_data;
 		break;
@@ -72,7 +72,7 @@ static int eap7660d_pci_plat_dev_init(struct pci_dev *dev)
 }
 
 void __init eap7660d_pci_init(u8 *cal_data0, u8 *mac_addr0,
-			  u8 *cal_data1, u8 *mac_addr1)
+			      u8 *cal_data1, u8 *mac_addr1)
 {
 	if (cal_data0 && *cal_data0 == 0xa55a) {
 		memcpy(eap7660d_wmac0_eeprom, cal_data0,

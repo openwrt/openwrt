@@ -384,12 +384,12 @@ int __init ar724x_pcibios_init(void)
 
 	return 0;
 
- err_unmap_ctrl:
+err_unmap_ctrl:
 	iounmap(ar724x_pci_ctrl_base);
-  err_unmap_devcfg:
+err_unmap_devcfg:
 	iounmap(ar724x_pci_devcfg_base);
- err_unmap_localcfg:
+err_unmap_localcfg:
 	iounmap(ar724x_pci_localcfg_base);
- err:
+err:
 	return ret;
 }

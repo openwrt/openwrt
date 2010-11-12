@@ -89,7 +89,7 @@ struct ag71xx_desc {
 
 struct ag71xx_buf {
 	struct sk_buff		*skb;
-	struct ag71xx_desc 	*desc;
+	struct ag71xx_desc	*desc;
 	dma_addr_t		dma_addr;
 	u32			pad;
 };
@@ -162,7 +162,7 @@ struct ag71xx {
 
 	unsigned int		link;
 	unsigned int		speed;
-	int 			duplex;
+	int			duplex;
 
 	struct work_struct	restart_work;
 	struct timer_list	oom_timer;

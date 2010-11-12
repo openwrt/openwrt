@@ -414,7 +414,7 @@ static int ar7240sw_reset(struct ar7240sw *as)
 			   AR7240_MASK_CTRL_SOFT_RESET);
 
 	ret = ar7240sw_reg_wait(as, AR7240_REG_MASK_CTRL,
-			        AR7240_MASK_CTRL_SOFT_RESET, 0, 1000);
+				AR7240_MASK_CTRL_SOFT_RESET, 0, 1000);
 	return ret;
 }
 
@@ -518,7 +518,7 @@ static int ar7240_set_addr(struct ar7240sw *as, u8 *addr)
 
 static int
 ar7240_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
-                struct switch_val *val)
+		struct switch_val *val)
 {
 	struct ar7240sw *as = sw_to_ar7240(dev);
 	as->vlan_id[val->port_vlan] = val->value.i;
@@ -527,7 +527,7 @@ ar7240_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 
 static int
 ar7240_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
-                struct switch_val *val)
+		struct switch_val *val)
 {
 	struct ar7240sw *as = sw_to_ar7240(dev);
 	val->value.i = as->vlan_id[val->port_vlan];
@@ -613,7 +613,7 @@ ar7240_set_ports(struct switch_dev *dev, struct switch_val *val)
 
 static int
 ar7240_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
-                struct switch_val *val)
+		struct switch_val *val)
 {
 	struct ar7240sw *as = sw_to_ar7240(dev);
 	as->vlan = !!val->value.i;
@@ -622,7 +622,7 @@ ar7240_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 
 static int
 ar7240_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
-                struct switch_val *val)
+		struct switch_val *val)
 {
 	struct ar7240sw *as = sw_to_ar7240(dev);
 	val->value.i = as->vlan;
@@ -790,8 +790,8 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	swdev->ops = &ar7240_ops;
 
 	if (register_switch(&as->swdev, ag->dev) < 0) {
-	    kfree(as);
-	    return NULL;
+		kfree(as);
+		return NULL;
 	}
 
 	printk("%s: Found an AR7240 built-in switch\n", ag->dev->name);

@@ -28,19 +28,19 @@ static struct mtd_partition pb92_partitions[] = {
 		.offset		= 0,
 		.size		= 0x040000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "u-boot-env",
 		.offset		= 0x040000,
 		.size		= 0x010000,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x050000,
 		.size		= 0x2b0000,
-	} , {
+	}, {
 		.name		= "uImage",
 		.offset		= 0x300000,
 		.size		= 0x0e0000,
-	} , {
+	}, {
 		.name		= "ART",
 		.offset		= 0x3e0000,
 		.size		= 0x020000,
@@ -51,8 +51,8 @@ static struct mtd_partition pb92_partitions[] = {
 
 static struct flash_platform_data pb92_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = pb92_partitions,
-        .nr_parts       = ARRAY_SIZE(pb92_partitions),
+	.parts		= pb92_partitions,
+	.nr_parts	= ARRAY_SIZE(pb92_partitions),
 #endif
 };
 
@@ -70,7 +70,7 @@ static struct gpio_button pb92_gpio_buttons[] __initdata = {
 		.threshold	= 3,
 		.gpio		= PB92_GPIO_BTN_SW4,
 		.active_low	= 1,
-	} , {
+	}, {
 		.desc		= "sw5",
 		.type		= EV_KEY,
 		.code		= BTN_1,
@@ -101,8 +101,8 @@ static void __init pb92_init(void)
 	ar71xx_add_device_eth(1);
 
 	ar71xx_add_device_gpio_buttons(-1, PB92_BUTTONS_POLL_INTERVAL,
-				       ARRAY_SIZE(pb92_gpio_buttons),
-				       pb92_gpio_buttons);
+					ARRAY_SIZE(pb92_gpio_buttons),
+					pb92_gpio_buttons);
 
 	pb9x_pci_init();
 }
