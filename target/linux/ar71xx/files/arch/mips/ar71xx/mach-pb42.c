@@ -31,7 +31,7 @@ static struct gpio_button pb42_gpio_buttons[] __initdata = {
 		.threshold	= 3,
 		.gpio		= PB42_GPIO_BTN_SW4,
 		.active_low	= 1,
-	} , {
+	}, {
 		.desc		= "sw5",
 		.type		= EV_KEY,
 		.code		= BTN_1,
@@ -64,8 +64,8 @@ static void __init pb42_init(void)
 	ar71xx_add_device_eth(1);
 
 	ar71xx_add_device_gpio_buttons(-1, PB42_BUTTONS_POLL_INTERVAL,
-				       ARRAY_SIZE(pb42_gpio_buttons),
-				       pb42_gpio_buttons);
+					ARRAY_SIZE(pb42_gpio_buttons),
+					pb42_gpio_buttons);
 
 	pb42_pci_init();
 }

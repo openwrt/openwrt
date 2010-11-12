@@ -37,20 +37,20 @@ static struct mtd_partition tl_wr841n_v1_partitions[] = {
 		.offset		= 0,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "kernel",
 		.offset		= 0x020000,
 		.size		= 0x140000,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x160000,
 		.size		= 0x280000,
-	} , {
+	}, {
 		.name		= "config",
 		.offset		= 0x3e0000,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "firmware",
 		.offset		= 0x020000,
 		.size		= 0x3c0000,
@@ -60,8 +60,8 @@ static struct mtd_partition tl_wr841n_v1_partitions[] = {
 
 static struct flash_platform_data tl_wr841n_v1_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = tl_wr841n_v1_partitions,
-        .nr_parts       = ARRAY_SIZE(tl_wr841n_v1_partitions),
+	.parts		= tl_wr841n_v1_partitions,
+	.nr_parts	= ARRAY_SIZE(tl_wr841n_v1_partitions),
 #endif
 };
 

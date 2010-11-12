@@ -14,14 +14,14 @@
 #include "ag71xx.h"
 
 #define AG71XX_DEFAULT_MSG_ENABLE	\
-	( NETIF_MSG_DRV 		\
+	(NETIF_MSG_DRV			\
 	| NETIF_MSG_PROBE		\
 	| NETIF_MSG_LINK		\
 	| NETIF_MSG_TIMER		\
 	| NETIF_MSG_IFDOWN		\
 	| NETIF_MSG_IFUP		\
 	| NETIF_MSG_RX_ERR		\
-	| NETIF_MSG_TX_ERR )
+	| NETIF_MSG_TX_ERR)
 
 static int ag71xx_msg_level = -1;
 
@@ -126,7 +126,7 @@ static int ag71xx_ring_alloc(struct ag71xx_ring *ring, unsigned int size)
 
 	return 0;
 
- err:
+err:
 	return err;
 }
 
@@ -599,7 +599,7 @@ static int ag71xx_open(struct net_device *dev)
 
 	return 0;
 
- err:
+err:
 	ag71xx_rings_cleanup(ag);
 	return ret;
 }
@@ -676,7 +676,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 
 	return NETDEV_TX_OK;
 
- err_drop:
+err_drop:
 	dev->stats.tx_dropped++;
 
 	dev_kfree_skb(skb);
@@ -908,12 +908,12 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 		return rx_done;
 	}
 
- more:
+more:
 	DBG("%s: stay in polling mode, rx=%d, tx=%d, limit=%d\n",
 			dev->name, rx_done, tx_done, limit);
 	return rx_done;
 
- oom:
+oom:
 	if (netif_msg_rx_err(ag))
 		printk(KERN_DEBUG "%s: out of memory\n", dev->name);
 
@@ -1105,19 +1105,19 @@ static int __devinit ag71xx_probe(struct platform_device *pdev)
 
 	return 0;
 
- err_phy_disconnect:
+err_phy_disconnect:
 	ag71xx_phy_disconnect(ag);
- err_unregister_netdev:
+err_unregister_netdev:
 	unregister_netdev(dev);
- err_free_irq:
+err_free_irq:
 	free_irq(dev->irq, dev);
- err_unmap_mii_ctrl:
+err_unmap_mii_ctrl:
 	iounmap(ag->mii_ctrl);
- err_unmap_base:
+err_unmap_base:
 	iounmap(ag->mac_base);
- err_free_dev:
+err_free_dev:
 	kfree(dev);
- err_out:
+err_out:
 	platform_set_drvdata(pdev, NULL);
 	return err;
 }
@@ -1168,11 +1168,11 @@ static int __init ag71xx_module_init(void)
 
 	return 0;
 
- err_mdio_exit:
+err_mdio_exit:
 	ag71xx_mdio_driver_exit();
- err_debugfs_exit:
+err_debugfs_exit:
 	ag71xx_debugfs_root_exit();
- err_out:
+err_out:
 	return ret;
 }
 

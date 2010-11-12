@@ -37,8 +37,8 @@
 #define AP83_SPI_GPIO_MISO	3
 
 struct ap83_spi {
-	struct	spi_bitbang 	bitbang;
-	void __iomem 		*base;
+	struct	spi_bitbang	bitbang;
+	void __iomem		*base;
 	u32			addr;
 
 	struct platform_device	*pdev;
@@ -230,15 +230,15 @@ static int ap83_spi_probe(struct platform_device *pdev)
 
 	return 0;
 
- err_unmap:
+err_unmap:
 	iounmap(sp->base);
- err_spi_put:
+err_spi_put:
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(sp->bitbang.master);
 
- err_free_cs:
+err_free_cs:
 	gpio_free(AP83_SPI_GPIO_CS);
- err_free_miso:
+err_free_miso:
 	gpio_free(AP83_SPI_GPIO_MISO);
 	return ret;
 }

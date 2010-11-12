@@ -247,7 +247,7 @@ static int rb4xx_spi_msg(struct rb4xx_spi *rbspi, struct spi_message *m)
 	__raw_writel(SPI_CTRL_FASTEST, base + SPI_REG_CTRL);
 	do_spi_init(m->spi);
 
-	list_for_each_entry (t, &m->transfers, transfer_list) {
+	list_for_each_entry(t, &m->transfers, transfer_list) {
 		int len;
 
 		len = rb4xx_spi_txrx(base, t);
@@ -338,13 +338,13 @@ static int rb4xx_spi_setup(struct spi_device *spi)
 
 	if (spi->mode & ~(SPI_CS_HIGH)) {
 		dev_err(&spi->dev, "mode %x not supported\n",
-		        (unsigned) spi->mode);
+			(unsigned) spi->mode);
 		return -EINVAL;
 	}
 
 	if (spi->bits_per_word != 8 && spi->bits_per_word != 0) {
 		dev_err(&spi->dev, "bits_per_word %u not supported\n",
-		        (unsigned) spi->bits_per_word);
+			(unsigned) spi->bits_per_word);
 		return -EINVAL;
 	}
 
@@ -432,12 +432,12 @@ static int rb4xx_spi_probe(struct platform_device *pdev)
 
 	return 0;
 
- err_iounmap:
+err_iounmap:
 	iounmap(rbspi->base);
- err_put_master:
+err_put_master:
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(master);
- err_out:
+err_out:
 	return err;
 }
 
@@ -455,10 +455,10 @@ static int rb4xx_spi_remove(struct platform_device *pdev)
 static struct platform_driver rb4xx_spi_drv = {
 	.probe		= rb4xx_spi_probe,
 	.remove		= rb4xx_spi_remove,
-        .driver		= {
+	.driver		= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,
-        },
+	},
 };
 
 static int __init rb4xx_spi_init(void)

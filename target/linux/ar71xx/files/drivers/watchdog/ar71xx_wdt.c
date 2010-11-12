@@ -115,7 +115,7 @@ static int ar71xx_wdt_release(struct inode *inode, struct file *file)
 static ssize_t ar71xx_wdt_write(struct file *file, const char *data,
 				size_t len, loff_t *ppos)
 {
-        if (len) {
+	if (len) {
 		if (!nowayout) {
 			size_t i;
 
@@ -142,7 +142,7 @@ static ssize_t ar71xx_wdt_write(struct file *file, const char *data,
 static struct watchdog_info ar71xx_wdt_info = {
 	.options		= WDIOF_SETTIMEOUT | WDIOF_KEEPALIVEPING |
 				  WDIOF_MAGICCLOSE | WDIOF_CARDRESET,
-	.firmware_version 	= 0,
+	.firmware_version	= 0,
 	.identity		= "AR71XX watchdog",
 };
 
@@ -226,7 +226,7 @@ static int __devinit ar71xx_wdt_probe(struct platform_device *pdev)
 	printk(KERN_INFO DRV_DESC " version " DRV_VERSION "\n");
 
 	printk(KERN_DEBUG DRV_NAME ": timeout=%d secs (max=%d)\n",
-				 	wdt_timeout, max_timeout);
+					wdt_timeout, max_timeout);
 
 	return 0;
 

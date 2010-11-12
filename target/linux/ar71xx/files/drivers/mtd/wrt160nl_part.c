@@ -158,9 +158,9 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 	*pparts = trx_parts;
 	ret = TRX_PARTS;
 
- free_hdr:
+free_hdr:
 	vfree(header);
- out:
+out:
 	return ret;
 }
 

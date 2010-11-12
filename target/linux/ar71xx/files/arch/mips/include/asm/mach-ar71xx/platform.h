@@ -33,8 +33,8 @@ struct ag71xx_platform_data {
 	u8		has_ar8216:1;
 	u8		has_ar7240_switch:1;
 
-	void		(* ddr_flush)(void);
-	void		(* set_pll)(int speed);
+	void		(*ddr_flush)(void);
+	void		(*set_pll)(int speed);
 
 	u32		fifo_cfg1;
 	u32		fifo_cfg2;

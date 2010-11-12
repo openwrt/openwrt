@@ -44,8 +44,8 @@ void ag71xx_debugfs_update_int_stats(struct ag71xx *ag, u32 status)
 static ssize_t read_file_int_stats(struct file *file, char __user *user_buf,
 				   size_t count, loff_t *ppos)
 {
-#define PR_INT_STAT(_label, _field) 					\
-	len += snprintf(buf + len, sizeof(buf) - len, 			\
+#define PR_INT_STAT(_label, _field)					\
+	len += snprintf(buf + len, sizeof(buf) - len,			\
 		"%20s: %10lu\n", _label, ag->debug.int_stats._field);
 
 	struct ag71xx *ag = file->private_data;
@@ -173,7 +173,7 @@ int ag71xx_debugfs_init(struct ag71xx *ag)
 
 	return 0;
 
- err:
+err:
 	ag71xx_debugfs_exit(ag);
 	return -ENOMEM;
 }

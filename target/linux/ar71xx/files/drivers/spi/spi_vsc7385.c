@@ -56,8 +56,8 @@
 #define VSC73XX_MAC_CFG_WEXC_DIS	(1 << 31)
 #define VSC73XX_MAC_CFG_PORT_RST	(1 << 29)
 #define VSC73XX_MAC_CFG_TX_EN		(1 << 28)
-#define VSC73XX_MAC_CFG_SEED_LOAD      	(1 << 27)
-#define VSC73XX_MAC_CFG_FDX	        (1 << 18)
+#define VSC73XX_MAC_CFG_SEED_LOAD	(1 << 27)
+#define VSC73XX_MAC_CFG_FDX		(1 << 18)
 #define VSC73XX_MAC_CFG_GIGE		(1 << 17)
 #define VSC73XX_MAC_CFG_RX_EN		(1 << 16)
 #define VSC73XX_MAC_CFG_VLAN_DBLAWR	(1 << 15)
@@ -430,7 +430,7 @@ static int vsc7385_upload_ucode(struct vsc7385 *vsc)
 
 	rc = vsc7385_icpu_start(vsc);
 
- out:
+out:
 	release_firmware(firmware);
 	return rc;
 }
@@ -475,7 +475,7 @@ static int vsc7385_setup(struct vsc7385 *vsc)
 
 	return 0;
 
- err:
+err:
 	return err;
 }
 
@@ -520,7 +520,7 @@ static int vsc7385_detect(struct vsc7385 *vsc)
 
 	rev = (t >> VSC73XX_ICPU_CHIPID_REV_SHIFT) &
 	      VSC73XX_ICPU_CHIPID_REV_MASK;
-	dev_info(&spi->dev, "VSC%04X (rev. %d) switch found \n", id, rev);
+	dev_info(&spi->dev, "VSC%04X (rev. %d) switch found\n", id, rev);
 
 	return 0;
 }
@@ -536,13 +536,13 @@ static int __devinit vsc7385_probe(struct spi_device *spi)
 	pdata = spi->dev.platform_data;
 	if (!pdata) {
 		dev_err(&spi->dev, "no platform data specified\n");
-		return-ENODEV;
+		return -ENODEV;
 	}
 
 	vsc = kzalloc(sizeof(*vsc), GFP_KERNEL);
 	if (!vsc) {
 		dev_err(&spi->dev, "no memory for private data\n");
-		return-ENOMEM;
+		return -ENOMEM;
 	}
 
 	mutex_init(&vsc->lock);
@@ -554,13 +554,13 @@ static int __devinit vsc7385_probe(struct spi_device *spi)
 	spi->bits_per_word = 8;
 	err = spi_setup(spi);
 	if (err) {
-		dev_err(&spi->dev, "spi_setup failed, err=%d \n", err);
+		dev_err(&spi->dev, "spi_setup failed, err=%d\n", err);
 		goto err_drvdata;
 	}
 
 	err = vsc7385_detect(vsc);
 	if (err) {
-		dev_err(&spi->dev, "no chip found, err=%d \n", err);
+		dev_err(&spi->dev, "no chip found, err=%d\n", err);
 		goto err_drvdata;
 	}
 
@@ -574,7 +574,7 @@ static int __devinit vsc7385_probe(struct spi_device *spi)
 
 	return 0;
 
- err_drvdata:
+err_drvdata:
 	dev_set_drvdata(&spi->dev, NULL);
 	kfree(vsc);
 	return err;

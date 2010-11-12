@@ -72,8 +72,8 @@ static struct mtd_partition dir_600_a1_partitions[] = {
 
 static struct flash_platform_data dir_600_a1_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = dir_600_a1_partitions,
-        .nr_parts       = ARRAY_SIZE(dir_600_a1_partitions),
+	.parts		= dir_600_a1_partitions,
+	.nr_parts	= ARRAY_SIZE(dir_600_a1_partitions),
 #endif
 };
 
@@ -117,7 +117,7 @@ static void __init dir_600_a1_setup(void)
 	u8 *mac = NULL;
 
 	if (nvram_parse_mac_addr(nvram, DIR_600_A1_NVRAM_SIZE,
-			         "lan_mac=", mac_buff) == 0) {
+				"lan_mac=", mac_buff) == 0) {
 		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
 		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
 		mac = mac_buff;

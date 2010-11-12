@@ -138,9 +138,9 @@ static struct mtd_partition rb4xx_partitions[] = {
 #endif /* CONFIG_MTD_PARTITIONS */
 
 static struct flash_platform_data rb4xx_flash_data = {
-	.type	= "pm25lv512",
-        .parts	= rb4xx_partitions,
-        .nr_parts = rb4xx_num_partitions,
+	.type		= "pm25lv512",
+	.parts		= rb4xx_partitions,
+	.nr_parts	= rb4xx_num_partitions,
 };
 
 static struct rb4xx_cpld_platform_data rb4xx_cpld_data = {
@@ -196,7 +196,7 @@ static struct platform_device rb4xx_spi_device = {
 static void __init rb4xx_generic_setup(void)
 {
 	ar71xx_gpio_function_enable(AR71XX_GPIO_FUNC_SPI_CS1_EN |
-				    AR71XX_GPIO_FUNC_SPI_CS2_EN);
+					AR71XX_GPIO_FUNC_SPI_CS2_EN);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);

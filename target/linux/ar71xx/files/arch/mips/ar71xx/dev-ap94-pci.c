@@ -28,20 +28,20 @@ static char ap94_wmac0_mac[6];
 static char ap94_wmac1_mac[6];
 
 static struct ar71xx_pci_irq ap94_pci_irqs[] __initdata = {
-        {
-                .slot   = 0,
-                .pin    = 1,
-                .irq    = AR71XX_PCI_IRQ_DEV0,
-        }, {
-                .slot   = 1,
-                .pin    = 1,
-                .irq    = AR71XX_PCI_IRQ_DEV1,
-        }
+	{
+		.slot   = 0,
+		.pin    = 1,
+		.irq    = AR71XX_PCI_IRQ_DEV0,
+	}, {
+		.slot   = 1,
+		.pin    = 1,
+		.irq    = AR71XX_PCI_IRQ_DEV1,
+	}
 };
 
 static int ap94_pci_plat_dev_init(struct pci_dev *dev)
 {
-	switch(PCI_SLOT(dev->devfn)) {
+	switch (PCI_SLOT(dev->devfn)) {
 	case 17:
 		dev->dev.platform_data = &ap94_wmac0_data;
 		break;

@@ -93,8 +93,8 @@ static struct mtd_partition wzrhpg300nh_flash_partitions[] = {
 static struct ar91xx_flash_platform_data wzrhpg300nh_flash_data = {
 	.width		= 2,
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = wzrhpg300nh_flash_partitions,
-        .nr_parts       = ARRAY_SIZE(wzrhpg300nh_flash_partitions),
+	.parts		= wzrhpg300nh_flash_partitions,
+	.nr_parts	= ARRAY_SIZE(wzrhpg300nh_flash_partitions),
 #endif
 };
 
@@ -213,8 +213,8 @@ static struct platform_device wzrhpg300nh_74hc153_device = {
 };
 
 static struct rtl8366s_platform_data wzrhpg300nh_rtl8366s_data = {
-	.gpio_sda        = WZRHPG300NH_GPIO_RTL8366_SDA,
-	.gpio_sck        = WZRHPG300NH_GPIO_RTL8366_SCK,
+	.gpio_sda	= WZRHPG300NH_GPIO_RTL8366_SDA,
+	.gpio_sck	= WZRHPG300NH_GPIO_RTL8366_SCK,
 };
 
 static struct platform_device wzrhpg300nh_rtl8366s_device = {
@@ -254,11 +254,11 @@ static void __init wzrhpg300nh_setup(void)
 	platform_device_register(&wzrhpg300nh_rtl8366s_device);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wzrhpg300nh_leds_gpio),
-				    wzrhpg300nh_leds_gpio);
+					wzrhpg300nh_leds_gpio);
 
 	ar71xx_add_device_gpio_buttons(-1, WZRHPG300NH_BUTTONS_POLL_INTERVAL,
-				       ARRAY_SIZE(wzrhpg300nh_gpio_buttons),
-				       wzrhpg300nh_gpio_buttons);
+					ARRAY_SIZE(wzrhpg300nh_gpio_buttons),
+					wzrhpg300nh_gpio_buttons);
 
 }
 

@@ -3,7 +3,7 @@
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This file was derived from: inlude/asm-mips/mach-generic/mangle-port.h
- * 	Copyright (C) 2003, 2004 Ralf Baechle
+ *      Copyright (C) 2003, 2004 Ralf Baechle
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published

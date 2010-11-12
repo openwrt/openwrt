@@ -227,7 +227,7 @@ static int ar91xx_flash_probe(struct platform_device *pdev)
 	add_mtd_device(info->mtd);
 	return 0;
 
- err_out:
+err_out:
 	ar91xx_flash_remove(pdev);
 	return err;
 }
@@ -246,7 +246,7 @@ static int ar91xx_flash_suspend(struct platform_device *dev, pm_message_t state)
 
 	return 0;
 
- fail:
+fail:
 	if (info->mtd->suspend) {
 		BUG_ON(!info->mtd->resume);
 		info->mtd->resume(info->mtd);

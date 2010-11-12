@@ -393,7 +393,7 @@ static int __devinit rb4xx_cpld_probe(struct spi_device *spi)
 
 	return 0;
 
- err_drvdata:
+err_drvdata:
 	dev_set_drvdata(&spi->dev, NULL);
 	kfree(cpld);
 

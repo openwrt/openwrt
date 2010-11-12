@@ -43,35 +43,35 @@ static struct mtd_partition zcn_1523h_partitions[] = {
 		.offset		= 0,
 		.size		= 0x040000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "u-boot-env",
 		.offset		= 0x040000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x050000,
 		.size		= 0x610000,
-	} , {
+	}, {
 		.name		= "kernel",
 		.offset		= 0x660000,
 		.size		= 0x170000,
-	} , {
+	}, {
 		.name		= "configure",
 		.offset		= 0x7d0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "mfg",
 		.offset		= 0x7e0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "eeprom",
 		.offset		= 0x7f0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "firmware",
 		.offset		= 0x050000,
 		.size		= 0x780000,
@@ -81,8 +81,8 @@ static struct mtd_partition zcn_1523h_partitions[] = {
 
 static struct flash_platform_data zcn_1523h_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = zcn_1523h_partitions,
-        .nr_parts       = ARRAY_SIZE(zcn_1523h_partitions),
+	.parts		= zcn_1523h_partitions,
+	.nr_parts	= ARRAY_SIZE(zcn_1523h_partitions),
 #endif
 };
 
@@ -162,7 +162,7 @@ static void __init zcn_1523h_generic_setup(void)
 	ar71xx_add_device_m25p80(&zcn_1523h_flash_data);
 
 	ar71xx_add_device_leds_gpio(0, ARRAY_SIZE(zcn_1523h_leds_gpio),
-				    zcn_1523h_leds_gpio);
+					zcn_1523h_leds_gpio);
 
 	ar71xx_add_device_gpio_buttons(-1, ZCN_1523H_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(zcn_1523h_gpio_buttons),
@@ -192,7 +192,7 @@ static void __init zcn_1523h_2_setup(void)
 	zcn_1523h_generic_setup();
 
 	ar71xx_add_device_leds_gpio(1, ARRAY_SIZE(zcn_1523h_2_leds_gpio),
-				    zcn_1523h_2_leds_gpio);
+					zcn_1523h_2_leds_gpio);
 }
 
 MIPS_MACHINE(AR71XX_MACH_ZCN_1523H_2, "ZCN-1523H-2", "Zcomax ZCN-1523H-2",
@@ -203,7 +203,7 @@ static void __init zcn_1523h_5_setup(void)
 	zcn_1523h_generic_setup();
 
 	ar71xx_add_device_leds_gpio(1, ARRAY_SIZE(zcn_1523h_5_leds_gpio),
-				    zcn_1523h_5_leds_gpio);
+					zcn_1523h_5_leds_gpio);
 	ar71xx_add_device_eth(1);
 }
 

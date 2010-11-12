@@ -117,12 +117,12 @@ static int ehci_ar71xx_probe(const struct hc_driver *driver,
 
 	return 0;
 
- err_iounmap:
+err_iounmap:
 	iounmap(hcd->regs);
 
- err_release_region:
+err_release_region:
 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
- err_put_hcd:
+err_put_hcd:
 	usb_put_hcd(hcd);
 	return ret;
 }

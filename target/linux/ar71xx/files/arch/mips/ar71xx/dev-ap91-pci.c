@@ -33,7 +33,7 @@ static struct ar71xx_pci_irq ap91_pci_irqs[] __initdata = {
 
 static int ap91_pci_plat_dev_init(struct pci_dev *dev)
 {
-	switch(PCI_SLOT(dev->devfn)) {
+	switch (PCI_SLOT(dev->devfn)) {
 	case 0:
 		dev->dev.platform_data = &ap91_wmac_data;
 		break;

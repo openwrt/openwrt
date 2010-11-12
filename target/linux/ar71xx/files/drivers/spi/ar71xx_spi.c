@@ -31,11 +31,11 @@
 #undef PER_BIT_READ
 
 struct ar71xx_spi {
-	struct	spi_bitbang 	bitbang;
+	struct	spi_bitbang	bitbang;
 	u32			ioc_base;
 	u32			reg_ctrl;
 
-	void __iomem 		*base;
+	void __iomem		*base;
 
 	struct platform_device	*pdev;
 	u32			(*get_ioc_base)(u8 chip_select, int cs_high,
@@ -234,7 +234,7 @@ static int ar71xx_spi_probe(struct platform_device *pdev)
 		return 0;
 
 	iounmap(sp->base);
- err1:
+err1:
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(sp->bitbang.master);
 

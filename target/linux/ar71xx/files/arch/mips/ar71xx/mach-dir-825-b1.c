@@ -54,21 +54,21 @@ static struct mtd_partition dir825b1_partitions[] = {
 		.offset		= 0,
 		.size		= 0x040000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "config",
 		.offset		= 0x040000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "firmware",
 		.offset		= 0x050000,
 		.size		= 0x610000,
-	} , {
+	}, {
 		.name		= "caldata",
 		.offset		= 0x660000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "unknown",
 		.offset		= 0x670000,
 		.size		= 0x190000,
@@ -79,8 +79,8 @@ static struct mtd_partition dir825b1_partitions[] = {
 
 static struct flash_platform_data dir825b1_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = dir825b1_partitions,
-        .nr_parts       = ARRAY_SIZE(dir825b1_partitions),
+	.parts          = dir825b1_partitions,
+	.nr_parts       = ARRAY_SIZE(dir825b1_partitions),
 #endif
 };
 
@@ -120,7 +120,7 @@ static struct gpio_button dir825b1_gpio_buttons[] __initdata = {
 		.threshold	= 3,
 		.gpio		= DIR825B1_GPIO_BTN_RESET,
 		.active_low	= 1,
-	} , {
+	}, {
 		.desc		= "powersave",
 		.type		= EV_KEY,
 		.code		= BTN_1,

@@ -42,20 +42,20 @@ static struct mtd_partition tl_wr1043nd_partitions[] = {
 		.offset		= 0,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "kernel",
 		.offset		= 0x020000,
 		.size		= 0x140000,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x160000,
 		.size		= 0x690000,
-	} , {
+	}, {
 		.name		= "art",
 		.offset		= 0x7f0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "firmware",
 		.offset		= 0x020000,
 		.size		= 0x7d0000,

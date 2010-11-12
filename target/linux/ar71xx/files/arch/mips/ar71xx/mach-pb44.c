@@ -98,7 +98,7 @@ static struct gpio_button pb44_gpio_buttons[] __initdata = {
 		.threshold	= 3,
 		.gpio		= PB44_GPIO_SW_RESET,
 		.active_low	= 1,
-	} , {
+	}, {
 		.desc		= "jumpstart",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
@@ -192,7 +192,7 @@ static void __init pb44_init(void)
 	pb42_pci_init();
 
 	i2c_register_board_info(0, pb44_i2c_board_info,
- 				ARRAY_SIZE(pb44_i2c_board_info));
+				ARRAY_SIZE(pb44_i2c_board_info));
 
 	platform_device_register(&pb44_i2c_gpio_device);
 
@@ -200,10 +200,10 @@ static void __init pb44_init(void)
 	platform_device_register(&pb44_spi_device);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(pb44_leds_gpio),
-				    pb44_leds_gpio);
+					pb44_leds_gpio);
 
 	ar71xx_add_device_gpio_buttons(-1, 20, ARRAY_SIZE(pb44_gpio_buttons),
-				       pb44_gpio_buttons);
+					pb44_gpio_buttons);
 }
 
 MIPS_MACHINE(AR71XX_MACH_PB44, "PB44", "Atheros PB44", pb44_init);

@@ -70,11 +70,11 @@ static int usb_hcd_ar71xx_probe(const struct hc_driver *driver,
 
 	return 0;
 
- err_stop_hcd:
+err_stop_hcd:
 	iounmap(hcd->regs);
- err_release_region:
+err_release_region:
 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
- err_put_hcd:
+err_put_hcd:
 	usb_put_hcd(hcd);
 	return ret;
 }
@@ -102,7 +102,7 @@ static int __devinit ohci_ar71xx_start(struct usb_hcd *hcd)
 
 	return 0;
 
- err:
+err:
 	ohci_stop(hcd);
 	return ret;
 }

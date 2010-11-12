@@ -42,40 +42,40 @@ static struct mtd_partition wrt400n_partitions[] = {
 		.offset		= 0,
 		.size		= 0x030000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "env",
 		.offset		= 0x030000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "linux",
 		.offset		= 0x040000,
 		.size		= 0x140000,
-	} , {
+	}, {
 		.name		= "rootfs",
 		.offset		= 0x180000,
 		.size		= 0x630000,
-	} , {
+	}, {
 		.name		= "nvram",
 		.offset		= 0x7b0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "factory",
 		.offset		= 0x7c0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "language",
 		.offset		= 0x7d0000,
 		.size		= 0x020000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "caldata",
 		.offset		= 0x7f0000,
 		.size		= 0x010000,
 		.mask_flags	= MTD_WRITEABLE,
-	} , {
+	}, {
 		.name		= "firmware",
 		.offset		= 0x040000,
 		.size		= 0x770000,
@@ -85,8 +85,8 @@ static struct mtd_partition wrt400n_partitions[] = {
 
 static struct flash_platform_data wrt400n_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-        .parts          = wrt400n_partitions,
-        .nr_parts       = ARRAY_SIZE(wrt400n_partitions),
+	.parts		= wrt400n_partitions,
+	.nr_parts	= ARRAY_SIZE(wrt400n_partitions),
 #endif
 };
 
@@ -118,7 +118,7 @@ static struct gpio_button wrt400n_gpio_buttons[] __initdata = {
 		.threshold	= 3,
 		.gpio		= WRT400N_GPIO_BTN_RESET,
 		.active_low	= 1,
-	} , {
+	}, {
 		.desc		= "wlsec",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
