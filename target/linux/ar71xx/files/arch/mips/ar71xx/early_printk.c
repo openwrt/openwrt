@@ -23,8 +23,10 @@
 
 void prom_putchar(unsigned char ch)
 {
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
+	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0)
+		;
 	UART_WRITE(UART_TX, ch);
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
+	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0)
+		;
 }
 
