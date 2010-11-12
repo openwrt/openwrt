@@ -287,11 +287,13 @@ static void __init rb450_generic_setup(int gige)
 	ar71xx_add_device_mdio(~RB450_MDIO_PHYMASK);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 1);
-	ar71xx_eth0_data.phy_if_mode = (gige) ? PHY_INTERFACE_MODE_RGMII : PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_if_mode = (gige) ?
+		PHY_INTERFACE_MODE_RGMII : PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = RB450_LAN_PHYMASK;
 
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 0);
-	ar71xx_eth1_data.phy_if_mode = (gige) ? PHY_INTERFACE_MODE_RGMII : PHY_INTERFACE_MODE_RMII;
+	ar71xx_eth1_data.phy_if_mode = (gige) ?
+		PHY_INTERFACE_MODE_RGMII : PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.phy_mask = RB450_WAN_PHYMASK;
 
 	ar71xx_add_device_eth(1);

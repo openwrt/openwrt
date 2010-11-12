@@ -219,4 +219,5 @@ static void __init nbg460n_setup(void)
 					nbg460n_gpio_buttons);
 }
 
-MIPS_MACHINE(AR71XX_MACH_NBG460N, "NBG460N", "Zyxel NBG460N/550N/550NH", nbg460n_setup);
+MIPS_MACHINE(AR71XX_MACH_NBG460N, "NBG460N", "Zyxel NBG460N/550N/550NH",
+	     nbg460n_setup);

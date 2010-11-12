@@ -770,7 +770,8 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 
 	ver = (ctrl >> AR7240_MASK_CTRL_VERSION_S) & AR7240_MASK_CTRL_VERSION_M;
 	if (ver != 1) {
-		pr_err("%s: unsupported chip, ctrl=%08x\n", ag->dev->name, ctrl);
+		pr_err("%s: unsupported chip, ctrl=%08x\n",
+			ag->dev->name, ctrl);
 		return NULL;
 	}
 

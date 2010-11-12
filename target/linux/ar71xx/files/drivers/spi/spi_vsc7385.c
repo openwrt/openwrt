@@ -398,7 +398,8 @@ static int vsc7385_upload_ucode(struct vsc7385 *vsc)
 		rc = vsc7385_read(vsc, VSC73XX_BLOCK_SYSTEM, 0,
 				  VSC73XX_ICPU_SRAM, &curVal);
 		if (rc) {
-			dev_err(&spi->dev, "could not read microcode %d\n",rc);
+			dev_err(&spi->dev, "could not read microcode %d\n",
+				rc);
 			goto out;
 		}
 
