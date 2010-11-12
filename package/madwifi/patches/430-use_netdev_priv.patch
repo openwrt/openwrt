@@ -67,7 +67,7 @@
  	struct ath_hal *ah = sc->sc_ah;
  	struct net_device *dev;
  	struct ath_vap *avp;
-@@ -1344,7 +1344,7 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1344,7 +1344,7 @@ ath_vap_create(struct ieee80211com *ic,
  		return NULL;
  	}
  
@@ -175,7 +175,7 @@
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_hal *ah = sc->sc_ah;
  	struct ieee80211_channel *c;
-@@ -3164,7 +3164,7 @@ dot11_to_ratecode(struct ath_softc *sc, 
+@@ -3164,7 +3164,7 @@ dot11_to_ratecode(struct ath_softc *sc,
  static int
  ath_tx_startraw(struct net_device *dev, struct ath_buf *bf, struct sk_buff *skb)
  {
@@ -372,7 +372,7 @@
  #ifdef AR_DEBUG
          struct ieee80211_frame *wh = (struct ieee80211_frame *)skb->data;
  #endif
-@@ -6780,7 +6780,7 @@ ath_rx_poll(struct net_device *dev, int 
+@@ -6780,7 +6780,7 @@ ath_rx_poll(struct net_device *dev, int
  	struct net_device *dev = sc->sc_dev;
  	int rx_limit = budget;
  #else
@@ -543,7 +543,7 @@
  	ieee80211_keyix_t keyix;
  
  	keyix = ath_key_alloc(vap, &ni->ni_ucastkey);
-@@ -10177,7 +10177,7 @@ ath_newassoc(struct ieee80211_node *ni, 
+@@ -10177,7 +10177,7 @@ ath_newassoc(struct ieee80211_node *ni,
  {
  	struct ieee80211com *ic = ni->ni_ic;
  	struct ieee80211vap *vap = ni->ni_vap;
@@ -552,7 +552,7 @@
  
  	sc->sc_rc->ops->newassoc(sc, ATH_NODE(ni), isnew);
  	ath_wprobe_node_join(ni->ni_vap, ni);
-@@ -10208,7 +10208,7 @@ ath_newassoc(struct ieee80211_node *ni, 
+@@ -10208,7 +10208,7 @@ ath_newassoc(struct ieee80211_node *ni,
  static int
  ath_getchannels(struct net_device *dev)
  {
@@ -723,7 +723,7 @@
  	if (sc->sc_txcont_rate != new_rate) {
  		/*  NOTE: This value is sanity checked and dropped down to 
  		 *  closest rate in txcont_on. */
-@@ -12539,7 +12539,7 @@ ath_set_txcont_rate(struct ieee80211com 
+@@ -12539,7 +12539,7 @@ ath_set_txcont_rate(struct ieee80211com
  ath_get_txcont_rate(struct ieee80211com *ic)
  {
  	struct net_device *dev = ic->ic_dev;
@@ -786,7 +786,7 @@
  	ath_hal_dump_map(sc->sc_ah);
  	return 0;
  }
-@@ -12724,7 +12724,7 @@ ath_rcv_dev_event(struct notifier_block 
+@@ -12724,7 +12724,7 @@ ath_rcv_dev_event(struct notifier_block
  	void *ptr)
  {
  	struct net_device *dev = (struct net_device *)ptr;
@@ -938,7 +938,7 @@
  		}
  }
  
-@@ -822,7 +822,7 @@ ath_proc_read_nodes(struct ieee80211vap 
+@@ -822,7 +822,7 @@ ath_proc_read_nodes(struct ieee80211vap
  		unsigned int x = 0;
  		unsigned int this_tp, this_prob, this_eprob;
  #ifdef AR_DEBUG
@@ -1002,7 +1002,7 @@
  #define skb_tail_pointer(_skb) ((_skb)->tail)
 --- a/net80211/ieee80211.c
 +++ b/net80211/ieee80211.c
-@@ -458,7 +458,7 @@ ieee80211_vap_setup(struct ieee80211com 
+@@ -458,7 +458,7 @@ ieee80211_vap_setup(struct ieee80211com
  #define	IEEE80211_C_OPMODE \
  	(IEEE80211_C_IBSS | IEEE80211_C_HOSTAP | IEEE80211_C_AHDEMO | \
  	 IEEE80211_C_MONITOR)
@@ -1029,7 +1029,7 @@
  	struct ieee80211vap *vap;
  	struct ifmedia_entry *ime = ic->ic_media.ifm_cur;
  	enum ieee80211_phymode newphymode;
-@@ -1511,7 +1511,7 @@ checkrate(struct ieee80211com *ic, enum 
+@@ -1511,7 +1511,7 @@ checkrate(struct ieee80211com *ic, enum
  int
  ieee80211_media_change(struct net_device *dev)
  {
@@ -1552,7 +1552,7 @@
         struct ieee80211com *ic = vap->iv_ic;
         params[0] = ic->ic_dump_hal_map(ic);
         return 0;
-@@ -1545,7 +1545,7 @@ ieee80211_ioctl_radar(struct net_device 
+@@ -1545,7 +1545,7 @@ ieee80211_ioctl_radar(struct net_device
  	void *w, char *extra)
  {
  	int *params = (int*) extra;
@@ -1633,7 +1633,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ifreq ifr;
  	char s[6];		/* big enough for ``11adt'' */
-@@ -2222,10 +2222,10 @@ ieee80211_setathcap(struct ieee80211vap 
+@@ -2222,10 +2222,10 @@ ieee80211_setathcap(struct ieee80211vap
  static int
  ieee80211_set_turbo(struct net_device *dev, int flag)
  {
@@ -1862,7 +1862,7 @@
  	struct ieee80211com *ic = vap->iv_ic;
  	struct ieee80211_node *ni;
  	u_int8_t macaddr[IEEE80211_ADDR_LEN];
-@@ -4428,7 +4428,7 @@ get_scan_result(void *arg, const struct 
+@@ -4428,7 +4428,7 @@ get_scan_result(void *arg, const struct
  static int
  ieee80211_ioctl_getscanresults(struct net_device *dev, struct iwreq *iwr)
  {

@@ -15,7 +15,7 @@
  char *uts_release = UTS_RELEASE;
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -11580,227 +11580,231 @@ static int mincalibrate = 1;		/* once a 
+@@ -11580,227 +11580,231 @@ static int mincalibrate = 1;		/* once a
  static int maxint = 0x7fffffff;		/* 32-bit big */
  
  static const ctl_table ath_sysctl_template[] = {
@@ -309,7 +309,7 @@
  	  .procname	= "debug",
  	  .mode		= 0644,
  	  .data		= &ath_debug,
-@@ -11974,14 +11982,14 @@ static ctl_table ath_static_sysctls[] = 
+@@ -11974,14 +11982,14 @@ static ctl_table ath_static_sysctls[] =
  	  .proc_handler	= proc_dointvec
  	},
  #endif
@@ -326,7 +326,7 @@
  	  .procname	= "calibrate",
  	  .mode		= 0644,
  	  .data		= &ath_calinterval,
-@@ -11993,14 +12001,14 @@ static ctl_table ath_static_sysctls[] = 
+@@ -11993,14 +12001,14 @@ static ctl_table ath_static_sysctls[] =
  	{ 0 }
  };
  static ctl_table ath_ath_table[] = {

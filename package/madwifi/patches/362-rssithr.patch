@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	{ IEEE80211_PARAM_UAPSDINFO,
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3261,6 +3261,19 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3261,6 +3261,19 @@ ieee80211_recv_mgmt(struct ieee80211vap
  			memcpy(ni->ni_tstamp.data, scan.tstamp,
  				sizeof(ni->ni_tstamp));
  

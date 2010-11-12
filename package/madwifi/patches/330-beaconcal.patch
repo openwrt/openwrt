@@ -79,7 +79,7 @@
  
  		sc->sc_stats.ast_be_xmit++;		/* XXX per-VAP? */
  	}
-@@ -5403,6 +5431,7 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5403,6 +5431,7 @@ ath_beacon_config(struct ath_softc *sc,
  		ath_hal_beacontimers(ah, &bs);
  		sc->sc_imask |= HAL_INT_BMISS;
  		ath_hal_intrset(ah, sc->sc_imask);
@@ -87,7 +87,7 @@
  	} else {
  		ath_hal_intrset(ah, 0);
  		if (reset_tsf)
-@@ -5414,8 +5443,11 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5414,8 +5443,11 @@ ath_beacon_config(struct ath_softc *sc,
  			 */
  			intval |= HAL_BEACON_ENA;
  			sc->sc_imask |= HAL_INT_SWBA;

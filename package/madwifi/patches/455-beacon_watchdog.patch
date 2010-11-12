@@ -62,7 +62,7 @@
  /*
   * Configure the beacon and sleep timers.
   *
-@@ -5523,6 +5543,7 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5523,6 +5543,7 @@ ath_beacon_config(struct ath_softc *sc,
  	if (vap == NULL)
  		vap = TAILQ_FIRST(&ic->ic_vaps);   /* XXX */
  
@@ -70,7 +70,7 @@
  	ni = vap->iv_bss;
  
  	/* TSF calculation is timing critical - we don't want to be interrupted here */
-@@ -5699,6 +5720,9 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5699,6 +5720,9 @@ ath_beacon_config(struct ath_softc *sc,
  			sc->sc_imask |= HAL_INT_SWBA;
  			ath_set_beacon_cal(sc, 1);
  			ath_beaconq_config(sc);

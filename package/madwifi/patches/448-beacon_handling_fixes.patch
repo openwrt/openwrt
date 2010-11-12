@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -160,7 +160,7 @@ static int ath_check_beacon_done(struct 
+@@ -160,7 +160,7 @@ static int ath_check_beacon_done(struct
  static void ath_beacon_send(struct ath_softc *, int *, uint64_t hw_tsf);
  static void ath_beacon_return(struct ath_softc *, struct ath_buf *);
  static void ath_beacon_free(struct ath_softc *);
@@ -81,7 +81,7 @@
  	if (xchanmode != -1)
  		ath_xchanmode = xchanmode;
  	error = ath_getchannels(dev);
-@@ -1349,12 +1337,6 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1349,12 +1337,6 @@ ath_vap_create(struct ieee80211com *ic,
  		return NULL;
  	}
  
@@ -94,7 +94,7 @@
  	dev = alloc_etherdev(sizeof(struct ath_vap) + sc->sc_rc->arc_vap_space);
  	if (dev == NULL) {
  		/* XXX msg */
-@@ -1424,7 +1406,7 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1424,7 +1406,7 @@ ath_vap_create(struct ieee80211com *ic,
  		TAILQ_FOREACH(v, &ic->ic_vaps, iv_next)
  			id_mask |= (1 << ATH_GET_VAP_ID(v->iv_myaddr));
  
@@ -103,7 +103,7 @@
  			/* get the first available slot */
  			if ((id_mask & (1 << id)) == 0) {
  				ATH_SET_VAP_BSSID(vap->iv_myaddr, id);
-@@ -1451,11 +1433,11 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1451,11 +1433,11 @@ ath_vap_create(struct ieee80211com *ic,
  		/* Assign the VAP to a beacon xmit slot.  As
  		 * above, this cannot fail to find one. */
  		avp->av_bslot = 0;
@@ -117,7 +117,7 @@
  				    sc->sc_bslot[slot+1] == NULL) {
  					avp->av_bslot = slot + 1;
  					break;
-@@ -1463,8 +1445,11 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1463,8 +1445,11 @@ ath_vap_create(struct ieee80211com *ic,
  				avp->av_bslot = slot;
  				/* NB: keep looking for a double slot */
  			}
@@ -131,7 +131,7 @@
  		sc->sc_bslot[avp->av_bslot] = vap;
  		sc->sc_nbcnvaps++;
  
-@@ -1475,15 +1460,7 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1475,15 +1460,7 @@ ath_vap_create(struct ieee80211com *ic,
  			 * of staggered beacons.
  			 */
  			/* XXX check for beacon interval too small */
@@ -148,7 +148,7 @@
  		}
  		DPRINTF(sc, ATH_DEBUG_BEACON, "sc->sc_stagbeacons %sabled\n", 
  				(sc->sc_stagbeacons ? "en" : "dis"));
-@@ -1553,7 +1530,7 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1553,7 +1530,7 @@ ath_vap_create(struct ieee80211com *ic,
  		if (ath_startrecv(sc) != 0)	/* restart recv */
  			EPRINTF(sc, "Unable to start receive logic.\n");
  		if (sc->sc_beacons)
@@ -231,7 +231,7 @@
  {
  	struct ieee80211com *ic = &sc->sc_ic;
  	struct ath_hal *ah = sc->sc_ah;
-@@ -5553,7 +5530,7 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5553,7 +5530,7 @@ ath_beacon_config(struct ath_softc *sc,
  	/* We should reset hw TSF only once, so we increment
  	 * ni_tstamp.tsf to avoid resetting the hw TSF multiple
  	 * times */
@@ -240,7 +240,7 @@
  		reset_tsf = 1;
  		ni->ni_tstamp.tsf = cpu_to_le64(1);
  	}
-@@ -5567,7 +5544,7 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5567,7 +5544,7 @@ ath_beacon_config(struct ath_softc *sc,
  		/* NB: the beacon interval is kept internally in TUs */
  		intval = ic->ic_lintval & HAL_BEACON_PERIOD;
  		if (sc->sc_stagbeacons)
@@ -249,7 +249,7 @@
  		if ((sc->sc_nostabeacons) &&
  		    (vap->iv_opmode == IEEE80211_M_HOSTAP))
  			reset_tsf = 1;
-@@ -5583,31 +5560,24 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5583,31 +5560,24 @@ ath_beacon_config(struct ath_softc *sc,
  		 * time */
  		nexttbtt = intval;
  	} else if (intval) {	/* NB: can be 0 for monitor mode */
@@ -299,7 +299,7 @@
  		}
  	}
  
-@@ -5730,9 +5700,6 @@ ath_beacon_config(struct ath_softc *sc, 
+@@ -5730,9 +5700,6 @@ ath_beacon_config(struct ath_softc *sc,
  		ath_beacon_dturbo_config(vap, intval &
  				~(HAL_BEACON_RESET_TSF | HAL_BEACON_ENA));
  #endif
@@ -378,7 +378,7 @@
  	  .procname	= "regdomain",
  	  .mode		= 0644,
  	  .proc_handler	= ath_sysctl_halparam,
-@@ -11928,13 +11883,6 @@ static ctl_table ath_static_sysctls[] = 
+@@ -11928,13 +11883,6 @@ static ctl_table ath_static_sysctls[] =
  	},
  #endif
  	{ .ctl_name	= CTL_AUTO,

@@ -444,7 +444,7 @@
  static int beacon_cal = 1;
  
  static const struct ath_hw_detect generic_hw_info = {
-@@ -1525,6 +1526,7 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1525,6 +1526,7 @@ ath_vap_create(struct ieee80211com *ic,
  		ath_hal_intrset(ah, sc->sc_imask);
  	}
  
@@ -509,7 +509,7 @@
  				if (bf->bf_skb->priority == WME_AC_VO ||
  				    bf->bf_skb->priority == WME_AC_VI)
  					ni->ni_ic->ic_wme.wme_hipri_traffic++;
-@@ -10111,6 +10124,7 @@ ath_newassoc(struct ieee80211_node *ni, 
+@@ -10111,6 +10124,7 @@ ath_newassoc(struct ieee80211_node *ni,
  	struct ath_softc *sc = ic->ic_dev->priv;
  
  	sc->sc_rc->ops->newassoc(sc, ATH_NODE(ni), isnew);

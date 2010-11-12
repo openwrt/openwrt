@@ -303,7 +303,7 @@
  		/* don't use a bit-rate that has been failing */
  		if (sn->stats[size_bin][x].successive_failures > 3)
  			continue;
-@@ -234,10 +230,6 @@ pick_sample_ndx(struct sample_node *sn, 
+@@ -234,10 +230,6 @@ pick_sample_ndx(struct sample_node *sn,
  		if (sn->rates[ndx].rate > 22 && ndx > current_ndx + 2)
  			continue;
  

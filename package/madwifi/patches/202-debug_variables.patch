@@ -10,7 +10,7 @@
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,5,52))
  MODULE_PARM(ath_debug, "i");
  #else
-@@ -465,8 +465,8 @@ static void ath_printrxbuf(const struct 
+@@ -465,8 +465,8 @@ static void ath_printrxbuf(const struct
  static void ath_printtxbuf(const struct ath_buf *, int);
  #endif /* defined(AR_DEBUG) */
  
@@ -118,7 +118,7 @@
  	struct ieee80211com *ic = &sc->sc_ic;
  	int required = 0;
  
-@@ -366,6 +370,7 @@ static struct ath_rp *pulse_prev(struct 
+@@ -366,6 +370,7 @@ static struct ath_rp *pulse_prev(struct
  #define MR_FAIL_MIN_PERIOD	4
  #define MR_FAIL_MAX_PERIOD	5
  
@@ -174,7 +174,7 @@
  	DPRINTF(sc, ATH_DEBUG_DOTHPULSES, "%s: ath_rp_record: "
 --- a/ath_rate/minstrel/minstrel.c
 +++ b/ath_rate/minstrel/minstrel.c
-@@ -931,7 +931,9 @@ ath_proc_read_nodes(struct ieee80211vap 
+@@ -931,7 +931,9 @@ ath_proc_read_nodes(struct ieee80211vap
  			    (struct ieee80211_node_table *) &vap->iv_ic->ic_sta;
  		unsigned int x = 0;
  		unsigned int this_tp, this_prob, this_eprob;

@@ -29,7 +29,7 @@
  	if (se->se_fails && (jiffies - se->se_lastfail) > STA_FAILS_AGE*HZ) {
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3106,6 +3106,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3106,6 +3106,7 @@ ieee80211_recv_mgmt(struct ieee80211vap
  		 */
  		IEEE80211_VERIFY_LENGTH(efrm - frm, 12);
  		memset(&scan, 0, sizeof(scan));

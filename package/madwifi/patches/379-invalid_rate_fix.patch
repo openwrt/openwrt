@@ -173,7 +173,7 @@
  
  		_MOD_INC_USE(THIS_MODULE, return NULL);
  		osc = kmalloc(sizeof(struct minstrel_softc), GFP_ATOMIC);
-@@ -963,7 +949,7 @@ ath_proc_read_nodes(struct ieee80211vap 
+@@ -963,7 +949,7 @@ ath_proc_read_nodes(struct ieee80211vap
  					p += sprintf(p, "out of room for node " MAC_FMT "\n\n", MAC_ADDR(ni->ni_macaddr));
  					break;
  				}

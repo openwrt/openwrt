@@ -49,7 +49,7 @@
  			break;
  		case IEEE80211_M_WDS:
  			if (skb->len < sizeof(struct ieee80211_frame_addr4)) {
-@@ -3066,7 +3063,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3066,7 +3063,7 @@ ieee80211_recv_mgmt(struct ieee80211vap
  	u_int8_t *frm, *efrm;
  	u_int8_t *ssid, *rates, *xrates, *suppchan, *wpa, *rsn, *wme, *ath;
  	u_int8_t rate;
@@ -58,7 +58,7 @@
  	u_int8_t qosinfo;
  
  	if (ni_or_null == NULL)
-@@ -3096,11 +3093,15 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3096,11 +3093,15 @@ ieee80211_recv_mgmt(struct ieee80211vap
  		 *    o station mode when associated (to collect state
  		 *      updates such as 802.11g slot time), or
  		 *    o adhoc mode (to discover neighbors)
@@ -75,7 +75,7 @@
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -3184,6 +3185,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3184,6 +3185,7 @@ ieee80211_recv_mgmt(struct ieee80211vap
  					break;
  				}
  				scan.erp = frm[2];
@@ -83,7 +83,7 @@
  				break;
  			case IEEE80211_ELEMID_RSN:
  				scan.rsn = frm;
-@@ -3421,6 +3423,20 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3421,6 +3423,20 @@ ieee80211_recv_mgmt(struct ieee80211vap
  				ieee80211_bg_scan(vap);
  			return;
  		}

@@ -33,7 +33,7 @@
  	/* Allocate space for dynamically determined maximum VAP count */
  	sc->sc_bslot = 
  		kmalloc(ath_maxvaps * sizeof(struct ieee80211vap*), GFP_KERNEL);
-@@ -1508,6 +1520,29 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1508,6 +1520,29 @@ ath_vap_create(struct ieee80211com *ic,
  	return vap;
  }
  
@@ -226,7 +226,7 @@
  
  #include <asm/io.h>
  #include <asm/uaccess.h>
-@@ -181,12 +182,32 @@ exit_ath_wmac(u_int16_t wlanNum, struct 
+@@ -181,12 +182,32 @@ exit_ath_wmac(u_int16_t wlanNum, struct
  	return 0;
  }
  

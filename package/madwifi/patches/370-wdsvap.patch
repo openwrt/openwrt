@@ -44,7 +44,7 @@
  
  	if (ic->ic_dev->flags & IFF_RUNNING) {
  		/* needs to disable hardware too */
-@@ -1271,8 +1269,12 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1271,8 +1269,12 @@ ath_vap_create(struct ieee80211com *ic,
  		} else
  			ic_opmode = opmode;
  		break;
@@ -58,7 +58,7 @@
  		/* permit multiple APs and/or WDS links */
  		/* XXX sta+ap for repeater/bridge application */
  		if ((sc->sc_nvaps != 0) && (ic->ic_opmode == IEEE80211_M_STA))
-@@ -1304,7 +1306,7 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1304,7 +1306,7 @@ ath_vap_create(struct ieee80211com *ic,
  	}
  
  	avp = dev->priv;
@@ -124,7 +124,7 @@
  {
  #define	IEEE80211_C_OPMODE \
  	(IEEE80211_C_IBSS | IEEE80211_C_HOSTAP | IEEE80211_C_AHDEMO | \
-@@ -510,9 +525,18 @@ ieee80211_vap_setup(struct ieee80211com 
+@@ -510,9 +525,18 @@ ieee80211_vap_setup(struct ieee80211com
  
  	vap->iv_monitor_crc_errors = 0;
  	vap->iv_monitor_phy_errors = 0;
@@ -528,7 +528,7 @@
  
  	switch (cmd) {
  	case SIOCG80211STATS:
-@@ -5921,8 +5922,20 @@ ieee80211_ioctl(struct net_device *dev, 
+@@ -5921,8 +5922,20 @@ ieee80211_ioctl(struct net_device *dev,
  	case SIOC80211IFDESTROY:
  		if (!capable(CAP_NET_ADMIN))
  			return -EPERM;
@@ -784,7 +784,7 @@
  					skb1 = skb;
  					skb = NULL;
  				}
-@@ -3084,8 +3133,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3084,8 +3133,7 @@ ieee80211_recv_mgmt(struct ieee80211vap
  		    (vap->iv_opmode == IEEE80211_M_STA && ni->ni_associd) ||
  		    (vap->iv_opmode == IEEE80211_M_IBSS) ||
  			((subtype == IEEE80211_FC0_SUBTYPE_BEACON) &&
@@ -794,7 +794,7 @@
  			vap->iv_stats.is_rx_mgtdiscard++;
  			return;
  		}
-@@ -3471,13 +3519,56 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3471,13 +3519,56 @@ ieee80211_recv_mgmt(struct ieee80211vap
  		 */
  		if (ic->ic_flags & IEEE80211_F_SCAN) {
  			ieee80211_add_scan(vap, &scan, wh, subtype, rssi, rtsf);
@@ -856,7 +856,7 @@
  			} else {
  				/*
  				 * Copy data from beacon to neighbor table.
-@@ -3490,6 +3581,7 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3490,6 +3581,7 @@ ieee80211_recv_mgmt(struct ieee80211vap
  				IEEE80211_ADDR_COPY(ni->ni_bssid, wh->i_addr3);
  				memcpy(ni->ni_tstamp.data, scan.tstamp,
  					sizeof(ni->ni_tstamp));
@@ -1157,7 +1157,7 @@
  	/* calculate priority so drivers can find the TX queue */
  	if (ieee80211_classify(ni, skb)) {
  		IEEE80211_NOTE(vap, IEEE80211_MSG_OUTPUT, ni,
-@@ -334,20 +335,33 @@ void ieee80211_parent_queue_xmit(struct 
+@@ -334,20 +335,33 @@ void ieee80211_parent_queue_xmit(struct
   * constructing a frame as it sets i_fc[1]; other bits can
   * then be or'd in.
   */
@@ -1176,12 +1176,12 @@
 +	struct ieee80211_frame *wh;
 +	int len = sizeof(struct ieee80211_frame);
 +	int opmode = vap->iv_opmode;
- 
++
 +	if ((type & IEEE80211_FC0_TYPE_MASK) == IEEE80211_FC0_TYPE_DATA) {
 +		if ((opmode == IEEE80211_M_STA) &&
 +			(vap->iv_flags_ext & IEEE80211_FEXT_WDS))
 +			opmode = IEEE80211_M_WDS;
-+
+ 
 +		if (opmode == IEEE80211_M_WDS)
 +			len = sizeof(struct ieee80211_frame_addr4);
 +	}
@@ -1482,7 +1482,7 @@
  	}
  }
  EXPORT_SYMBOL(ieee80211_stop_running);
-@@ -1342,9 +1398,9 @@ ieee80211_new_state(struct ieee80211vap 
+@@ -1342,9 +1398,9 @@ ieee80211_new_state(struct ieee80211vap
  	struct ieee80211com *ic = vap->iv_ic;
  	int rc;
  

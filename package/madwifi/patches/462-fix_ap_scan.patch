@@ -1,6 +1,6 @@
 --- a/net80211/ieee80211_scan_ap.c
 +++ b/net80211/ieee80211_scan_ap.c
-@@ -595,6 +595,14 @@ ap_end(struct ieee80211_scan_state *ss, 
+@@ -595,6 +595,14 @@ ap_end(struct ieee80211_scan_state *ss,
  
  	ic = vap->iv_ic;
  
@@ -15,7 +15,7 @@
  	/* record stats for the channel that was scanned last */
  	ic->ic_set_channel(ic);
  	spin_lock_irqsave(&channel_lock, sflags);
-@@ -648,6 +656,8 @@ ap_end(struct ieee80211_scan_state *ss, 
+@@ -648,6 +656,8 @@ ap_end(struct ieee80211_scan_state *ss,
  		IEEE80211_SCHEDULE_TQUEUE(&as->as_actiontq);
  		res = 1;
  	}
