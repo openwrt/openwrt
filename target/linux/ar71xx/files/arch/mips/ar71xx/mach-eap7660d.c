@@ -87,12 +87,14 @@ void __init eap7660d_pci_init(u8 *cal_data0, u8 *mac_addr0,
 	}
 
 	if (mac_addr0) {
-		memcpy(eap7660d_wmac0_mac, mac_addr0, sizeof(eap7660d_wmac0_mac));
+		memcpy(eap7660d_wmac0_mac, mac_addr0,
+			sizeof(eap7660d_wmac0_mac));
 		eap7660d_wmac0_data.macaddr = eap7660d_wmac0_mac;
 	}
 
 	if (mac_addr1) {
-		memcpy(eap7660d_wmac1_mac, mac_addr1, sizeof(eap7660d_wmac1_mac));
+		memcpy(eap7660d_wmac1_mac, mac_addr1,
+			sizeof(eap7660d_wmac1_mac));
 		eap7660d_wmac1_data.macaddr = eap7660d_wmac1_mac;
 	}
 

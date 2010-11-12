@@ -119,7 +119,8 @@ static int ag71xx_ring_alloc(struct ag71xx_ring *ring, unsigned int size)
 	}
 
 	for (i = 0; i < size; i++) {
-		ring->buf[i].desc = (struct ag71xx_desc *)&ring->descs_cpu[i * ring->desc_size];
+		int idx = i * ring->desc_size;
+		ring->buf[i].desc = (struct ag71xx_desc *)&ring->descs_cpu[idx];
 		DBG("ag71xx: ring %p, desc %d at %p\n",
 			ring, i, ring->buf[i].desc);
 	}

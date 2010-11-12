@@ -111,10 +111,9 @@ static int ar724x_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	 * if we set the BAR with proper base address
 	 */
 	if ((where == 0x10) && (size == 4)) {
-		if (ar71xx_soc == AR71XX_SOC_AR7240)
-			ar724x_pci_write(ar724x_pci_devcfg_base, where, size, 0xffff);
-		else
-			ar724x_pci_write(ar724x_pci_devcfg_base, where, size, 0x1000ffff);
+		u32 val;
+		val = (ar71xx_soc == AR71XX_SOC_AR7240) ? 0xffff : 0x1000ffff;
+		ar724x_pci_write(ar724x_pci_devcfg_base, where, size, val);
 	}
 
 	return PCIBIOS_SUCCESSFUL;
@@ -256,7 +255,8 @@ static int __init ar724x_pci_setup(void)
 		return -ENODEV;
 	}
 
-	if (ar71xx_soc == AR71XX_SOC_AR7241 || ar71xx_soc == AR71XX_SOC_AR7242) {
+	if (ar71xx_soc == AR71XX_SOC_AR7241 ||
+	    ar71xx_soc == AR71XX_SOC_AR7242) {
 		t = __raw_readl(base + AR724X_PCI_REG_APP);
 		t |= BIT(16);
 		__raw_writel(t, base + AR724X_PCI_REG_APP);

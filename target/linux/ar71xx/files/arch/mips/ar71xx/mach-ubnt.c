@@ -170,7 +170,8 @@ static void __init ubnt_rspro_setup(void)
 {
 	ubnt_generic_setup();
 
-	ar71xx_add_device_mdio(~(UBNT_RSPRO_WAN_PHYMASK | UBNT_RSPRO_LAN_PHYMASK));
+	ar71xx_add_device_mdio(~(UBNT_RSPRO_WAN_PHYMASK |
+				 UBNT_RSPRO_LAN_PHYMASK));
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;

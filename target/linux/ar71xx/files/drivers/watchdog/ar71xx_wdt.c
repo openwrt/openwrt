@@ -215,9 +215,8 @@ static int __devinit ar71xx_wdt_probe(struct platform_device *pdev)
 	max_timeout = (0xfffffffful / ar71xx_ahb_freq);
 	wdt_timeout = (max_timeout < WDT_TIMEOUT) ? max_timeout : WDT_TIMEOUT;
 
-	boot_status =
-		(ar71xx_reset_rr(AR71XX_RESET_REG_WDOG_CTRL) & WDOG_CTRL_LAST_RESET) ?
-		WDIOF_CARDRESET : 0;
+	if (ar71xx_reset_rr(AR71XX_RESET_REG_WDOG_CTRL) & WDOG_CTRL_LAST_RESET)
+		boot_status = WDIOF_CARDRESET;
 
 	ret = misc_register(&ar71xx_wdt_miscdev);
 	if (ret)

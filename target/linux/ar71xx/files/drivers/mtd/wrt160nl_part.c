@@ -123,7 +123,8 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 		goto free_hdr;
 	}
 
-	kernel_len = le32_to_cpu(theader->offsets[1]) + sizeof(struct cybertan_header);
+	kernel_len = le32_to_cpu(theader->offsets[1]) +
+		sizeof(struct cybertan_header);
 
 	trx_parts[0].name = "u-boot";
 	trx_parts[0].offset = 0;
@@ -137,7 +138,8 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 
 	trx_parts[2].name = "rootfs";
 	trx_parts[2].offset = trx_parts[1].offset + trx_parts[1].size;
-	trx_parts[2].size = master->size - 6 * master->erasesize - trx_parts[1].size;
+	trx_parts[2].size = master->size - 6 * master->erasesize -
+		trx_parts[1].size;
 	trx_parts[2].mask_flags = 0;
 
 	trx_parts[3].name = "nvram";
