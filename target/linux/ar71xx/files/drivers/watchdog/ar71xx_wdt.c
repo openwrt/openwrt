@@ -54,19 +54,19 @@ static int wdt_timeout = WDT_TIMEOUT;
 static int boot_status;
 static int max_timeout;
 
-static void inline ar71xx_wdt_keepalive(void)
+static inline void ar71xx_wdt_keepalive(void)
 {
 	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG, ar71xx_ahb_freq * wdt_timeout);
 }
 
-static void inline ar71xx_wdt_enable(void)
+static inline void ar71xx_wdt_enable(void)
 {
 	printk(KERN_DEBUG DRV_NAME ": enabling watchdog timer\n");
 	ar71xx_wdt_keepalive();
 	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG_CTRL, WDOG_CTRL_ACTION_FCR);
 }
 
-static void inline ar71xx_wdt_disable(void)
+static inline void ar71xx_wdt_disable(void)
 {
 	printk(KERN_DEBUG DRV_NAME ": disabling watchdog timer\n");
 	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG_CTRL, WDOG_CTRL_ACTION_NONE);

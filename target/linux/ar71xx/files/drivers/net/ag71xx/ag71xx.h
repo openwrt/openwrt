@@ -432,7 +432,7 @@ static inline u32 ag71xx_mii_ctrl_rr(struct ag71xx *ag)
 	return __raw_readl(ag->mii_ctrl);
 }
 
-static void inline ag71xx_mii_ctrl_set_if(struct ag71xx *ag,
+static inline void ag71xx_mii_ctrl_set_if(struct ag71xx *ag,
 					  unsigned int mii_if)
 {
 	u32 t;
@@ -443,7 +443,7 @@ static void inline ag71xx_mii_ctrl_set_if(struct ag71xx *ag,
 	ag71xx_mii_ctrl_wr(ag, t);
 }
 
-static void inline ag71xx_mii_ctrl_set_speed(struct ag71xx *ag,
+static inline void ag71xx_mii_ctrl_set_speed(struct ag71xx *ag,
 					     unsigned int speed)
 {
 	u32 t;
