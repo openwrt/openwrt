@@ -196,10 +196,12 @@
  static inline void ath_hal_beaconinit(struct ath_hal *ah, u_int32_t nexttbtt,
  				      u_int32_t intval)
  {
-@@ -841,6 +852,17 @@ static inline HAL_BOOL ath_hal_setslotti
+@@ -839,6 +850,17 @@ static inline HAL_BOOL ath_hal_setslotti
+ 	ath_hal_set_function(NULL);
+ 	ATH_HAL_UNLOCK_IRQ(ah->ah_sc);
  	return ret;
- }
- 
++}
++
 +static inline HAL_BOOL ath_hal_seteifstime(struct ath_hal *ah, u_int a1)
 +{
 +	HAL_BOOL ret;
@@ -209,11 +211,9 @@
 +	ath_hal_set_function(NULL);
 +	ATH_HAL_UNLOCK_IRQ(ah->ah_sc);
 +	return ret;
-+}
-+
+ }
+ 
  static inline void ath_hal_setledstate(struct ath_hal *ah, HAL_LED_STATE a1)
- {
- 	ATH_HAL_LOCK_IRQ(ah->ah_sc);
 --- a/ath/if_athvar.h
 +++ b/ath/if_athvar.h
 @@ -613,6 +613,15 @@ struct ath_rp {
@@ -446,7 +446,7 @@
  {
 --- a/ath_rate/sample/sample.c
 +++ b/ath_rate/sample/sample.c
-@@ -137,92 +137,6 @@ rate_to_ndx(struct sample_node *sn, int 
+@@ -137,92 +137,6 @@ rate_to_ndx(struct sample_node *sn, int
  	return -1;
  }
  

@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -1354,7 +1354,7 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1354,7 +1354,7 @@ ath_vap_create(struct ieee80211com *ic,
  		TAILQ_FOREACH(v, &ic->ic_vaps, iv_next)
  			id_mask |= (1 << ATH_GET_VAP_ID(v->iv_myaddr));
  

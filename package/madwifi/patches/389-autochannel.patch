@@ -16,7 +16,7 @@
  	sc->sc_curchan.channel = ic->ic_curchan->ic_freq;
  	sc->sc_curchan.channelFlags = ath_chan2flags(ic->ic_curchan);
  	if (!ath_hal_reset(ah, sc->sc_opmode, &sc->sc_curchan, AH_FALSE, &status)) {
-@@ -2914,6 +2916,48 @@ ath_hw_check_atim(struct ath_softc *sc, 
+@@ -2914,6 +2916,48 @@ ath_hw_check_atim(struct ath_softc *sc,
  	return 0;
  }
  
@@ -118,7 +118,7 @@
  #define	IEEE80211_CHAN_MAX	255
 --- a/net80211/ieee80211_scan_ap.c
 +++ b/net80211/ieee80211_scan_ap.c
-@@ -417,6 +417,19 @@ pc_cmp_rssi(struct ap_state *as, struct 
+@@ -417,6 +417,19 @@ pc_cmp_rssi(struct ap_state *as, struct
  
  /* This function must be invoked with locks acquired */
  static int
@@ -196,7 +196,7 @@
  	}
  
  	if (best != NULL) {
-@@ -599,6 +583,9 @@ ap_end(struct ieee80211_scan_state *ss, 
+@@ -599,6 +583,9 @@ ap_end(struct ieee80211_scan_state *ss,
  		("wrong opmode %u", vap->iv_opmode));
  
  	ic = vap->iv_ic;

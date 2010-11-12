@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static __inline int
-@@ -3258,6 +3260,25 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3258,6 +3260,25 @@ ieee80211_recv_mgmt(struct ieee80211vap
  			/* record tsf of last beacon */
  			memcpy(ni->ni_tstamp.data, scan.tstamp,
  				sizeof(ni->ni_tstamp));

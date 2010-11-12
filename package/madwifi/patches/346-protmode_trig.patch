@@ -13,7 +13,7 @@
  	TAILQ_INIT(&ic->ic_vaps);
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3411,14 +3411,18 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3411,14 +3411,18 @@ ieee80211_recv_mgmt(struct ieee80211vap
  			IEEE80211_IS_CHAN_ANYG(ic->ic_curchan)) {
  
  			/* Assume no ERP IE == 11b AP */

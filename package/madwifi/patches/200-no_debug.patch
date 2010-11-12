@@ -43,7 +43,7 @@
  	ic->ic_set_dfs_testmode     = ath_set_dfs_testmode;
  	ic->ic_get_dfs_testmode     = ath_get_dfs_testmode;
  
-@@ -1297,12 +1301,14 @@ ath_vap_create(struct ieee80211com *ic, 
+@@ -1297,12 +1301,14 @@ ath_vap_create(struct ieee80211com *ic,
  		/* If no default VAP debug flags are passed, allow a few to
  		 * transfer down from the driver to new VAPs so we can have load
  		 * time debugging for VAPs too. */

@@ -36,13 +36,13 @@
  	struct ieee80211vap *vap = ni->ni_vap;
 -	struct ether_header *eh = (struct ether_header *) skb->data;
 -	int v_wme_ac = 0, d_wme_ac = 0;
--
+ 
 -	/* default priority */
 -	skb->priority = WME_AC_BE;
 -
 -	if (!(ni->ni_flags & IEEE80211_NODE_QOS))
 -		return 0;
- 
+-
 -	/* 
 -	 * If node has a vlan tag then all traffic
 -	 * to it must have a matching vlan id.

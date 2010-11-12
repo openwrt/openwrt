@@ -56,14 +56,14 @@
  	/*
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -4020,7 +4020,26 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -4020,7 +4020,26 @@ ieee80211_recv_mgmt(struct ieee80211vap
  			vap->iv_stats.is_rx_assoc_norate++;
  			return;
  		}
 +		if (vap->iv_max_nodes > 0) {
 +			unsigned int active_nodes = 0;
 +			struct ieee80211_node *tni;
-+
+ 
 +			IEEE80211_NODE_TABLE_LOCK_IRQ(&ic->ic_sta);
 +			TAILQ_FOREACH(tni, &ic->ic_sta.nt_node, ni_list) {
 +				if (tni->ni_vap != vap)
@@ -73,7 +73,7 @@
 +				active_nodes++;
 +			}
 +			IEEE80211_NODE_TABLE_UNLOCK_IRQ(&ic->ic_sta);
- 
++
 +			if (active_nodes >= vap->iv_max_nodes) {
 +				/* too many nodes connected */
 +				ieee80211_node_leave(ni);

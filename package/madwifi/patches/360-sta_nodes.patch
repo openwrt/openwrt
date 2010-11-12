@@ -219,7 +219,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return ret;
 --- a/net80211/ieee80211_wireless.c
 +++ b/net80211/ieee80211_wireless.c
-@@ -514,8 +514,9 @@ ieee80211_ioctl_siwap(struct net_device 
+@@ -514,8 +514,9 @@ ieee80211_ioctl_siwap(struct net_device
  			vap->iv_flags |= IEEE80211_F_DESBSSID;
  
  		IEEE80211_ADDR_COPY(vap->iv_des_bssid, &ap_addr->sa_data);

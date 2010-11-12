@@ -1,6 +1,6 @@
 --- a/ath/if_ath.c
 +++ b/ath/if_ath.c
-@@ -6457,6 +6457,7 @@ ath_rx_poll(struct net_device *dev, int 
+@@ -6457,6 +6457,7 @@ ath_rx_poll(struct net_device *dev, int
  	int type;
  	u_int phyerr;
  	u_int processed = 0, early_stop = 0;
@@ -205,7 +205,7 @@
  			IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
  				ni->ni_macaddr, "data", "%s", "demic error");
  			IEEE80211_NODE_STAT(ni, rx_demicfail);
-@@ -4293,6 +4293,47 @@ ath_eth_type_trans(struct sk_buff *skb, 
+@@ -4293,6 +4293,47 @@ ath_eth_type_trans(struct sk_buff *skb,
  }
  #endif
  

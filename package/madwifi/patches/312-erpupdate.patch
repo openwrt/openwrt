@@ -15,7 +15,7 @@
  	/* if it is a mode change beacon for dynamic turbo case */
 --- a/net80211/ieee80211_input.c
 +++ b/net80211/ieee80211_input.c
-@@ -3431,9 +3431,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3431,9 +3431,12 @@ ieee80211_recv_mgmt(struct ieee80211vap
  			/* Assume no ERP IE == 11b AP */
  			if ((!has_erp || (has_erp && (scan.erp & IEEE80211_ERP_NON_ERP_PRESENT))) &&
  				!(ic->ic_flags & IEEE80211_F_USEPROT)) {

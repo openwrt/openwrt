@@ -180,7 +180,7 @@
  
  static void ath_poll_disable(struct net_device *dev);
  static void ath_poll_enable(struct net_device *dev);
-@@ -3168,7 +3167,7 @@ ath_tx_startraw(struct net_device *dev, 
+@@ -3168,7 +3167,7 @@ ath_tx_startraw(struct net_device *dev,
  	try0 = ph->try0;
  	rt = sc->sc_currates;
  	txrate = dot11_to_ratecode(sc, rt, ph->rate0);

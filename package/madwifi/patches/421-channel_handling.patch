@@ -8,7 +8,7 @@
  static void ath_updateslot(struct net_device *);
  static int ath_beaconq_setup(struct ath_softc *);
  static int ath_beacon_alloc(struct ath_softc *, struct ieee80211_node *);
-@@ -240,7 +239,7 @@ static void ath_setup_stationkey(struct 
+@@ -240,7 +239,7 @@ static void ath_setup_stationkey(struct
  static void ath_setup_stationwepkey(struct ieee80211_node *);
  static void ath_setup_keycacheslot(struct ath_softc *, struct ieee80211_node *);
  static void ath_newassoc(struct ieee80211_node *, int);
@@ -263,7 +263,7 @@
  
  	ath_rate_setup(dev, mode);
  	ath_setcurmode(sc, mode);
-@@ -10124,8 +10142,7 @@ ath_newassoc(struct ieee80211_node *ni, 
+@@ -10124,8 +10142,7 @@ ath_newassoc(struct ieee80211_node *ni,
  }
  
  static int
@@ -273,7 +273,7 @@
  {
  	struct ath_softc *sc = dev->priv;
  	struct ieee80211com *ic = &sc->sc_ic;
-@@ -10139,17 +10156,31 @@ ath_getchannels(struct net_device *dev, 
+@@ -10139,17 +10156,31 @@ ath_getchannels(struct net_device *dev,
  		EPRINTF(sc, "Insufficient memory for channel table!\n");
  		return -ENOMEM;
  	}
@@ -674,7 +674,7 @@
  	  .procname     = "rp",
  	  .mode         = 0200,
  	  .proc_handler = ath_sysctl_halparam,
-@@ -11669,13 +11801,6 @@ static ctl_table ath_static_sysctls[] = 
+@@ -11669,13 +11801,6 @@ static ctl_table ath_static_sysctls[] =
  	},
  #endif
  	{ .ctl_name	= CTL_AUTO,
@@ -688,7 +688,7 @@
  	  .procname	= "maxvaps",
  	  .mode		= 0444,
  	  .data		= &ath_maxvaps,
-@@ -11683,13 +11808,6 @@ static ctl_table ath_static_sysctls[] = 
+@@ -11683,13 +11808,6 @@ static ctl_table ath_static_sysctls[] =
  	  .proc_handler	= proc_dointvec
  	},
  	{ .ctl_name	= CTL_AUTO,
@@ -1109,7 +1109,7 @@
  	nrs = &ni->ni_rates;
  	fixedrate = IEEE80211_FIXED_RATE_NONE;
  	for (i = 0; i < nrs->rs_nrates;) {
-@@ -1407,6 +1407,7 @@ ieee80211_new_state(struct ieee80211vap 
+@@ -1407,6 +1407,7 @@ ieee80211_new_state(struct ieee80211vap
  	IEEE80211_VAPS_UNLOCK_IRQ(ic);
  	return rc;
  }
@@ -1294,7 +1294,7 @@
  	return best;
  }
  
-@@ -609,6 +611,7 @@ ap_end(struct ieee80211_scan_state *ss, 
+@@ -609,6 +611,7 @@ ap_end(struct ieee80211_scan_state *ss,
  		res = 1; /* Do NOT restart scan */
  	} else {
  		struct ieee80211_scan_entry se;
@@ -1302,7 +1302,7 @@
  		/* XXX: notify all VAPs? */
  		/* if this is a dynamic turbo frequency , start with normal 
  		 * mode first */
-@@ -623,6 +626,11 @@ ap_end(struct ieee80211_scan_state *ss, 
+@@ -623,6 +626,11 @@ ap_end(struct ieee80211_scan_state *ss,
  				return 0;
  			}
  		}

@@ -73,6 +73,7 @@
 -		ieee80211_ref_node(SKB_CB(skb)->ni);
 -		/* Unshare the node, decrementing users in the old skb */
 -		skb = skb_unshare(skb, GFP_ATOMIC);
+-	}
 +	need_headroom -= skb_headroom(skb);
 +	if (isff)
 +		need_tailroom -= skb_tailroom(skb2);
@@ -83,42 +84,32 @@
 +		need_headroom = 0;
 +	if (need_tailroom < 0)
 +		need_tailroom = 0;
-+
-+	if (skb_cloned(skb) || (need_headroom > 0) ||
-+		(!isff && (need_tailroom > 0))) {
-+
-+		if (pskb_expand_head(skb, need_headroom, need_tailroom, GFP_ATOMIC)) {
-+			IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
-+				"%s: cannot expand storage (tail)\n", __func__);
-+			goto error;
-+		}
- 	}
  
- #ifdef ATH_SUPERG_FF
- 	if (isff) {
+-#ifdef ATH_SUPERG_FF
+-	if (isff) {
 -		if (skb == NULL) {
 -			IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
 -				"%s: cannot unshare for encapsulation\n",
 -				__func__);
 -			vap->iv_stats.is_tx_nobuf++;
 -			ieee80211_dev_kfree_skb(&skb2);
--
++	if (skb_cloned(skb) || (need_headroom > 0) ||
++		(!isff && (need_tailroom > 0))) {
+ 
 -			return NULL;
--		}
-+		inter_headroom -= skb_headroom(skb2);
-+		if (inter_headroom < 0)
-+			inter_headroom = 0;
-+		if ((skb_cloned(skb2) ||
-+			(inter_headroom > 0) || (need_tailroom > 0))) {
++		if (pskb_expand_head(skb, need_headroom, need_tailroom, GFP_ATOMIC)) {
++			IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
++				"%s: cannot expand storage (tail)\n", __func__);
++			goto error;
+ 		}
++	}
  
 -		/* first skb header */
 -		if (skb_headroom(skb) < need_headroom) {
 -			struct sk_buff *tmp = skb;
 -			skb = skb_realloc_headroom(skb, need_headroom);
 -			if (skb == NULL) {
-+			if (pskb_expand_head(skb2, inter_headroom,
-+				need_tailroom, GFP_ATOMIC)) {
- 				IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
+-				IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
 -					"%s: cannot expand storage (head1)\n",
 -					__func__);
 -				vap->iv_stats.is_tx_nobuf++;
@@ -130,7 +121,14 @@
 -			/* NB: cb[] area was copied, but not next ptr. must do that
 -			 *     prior to return on success. */
 -		}
--
++#ifdef ATH_SUPERG_FF
++	if (isff) {
++		inter_headroom -= skb_headroom(skb2);
++		if (inter_headroom < 0)
++			inter_headroom = 0;
++		if ((skb_cloned(skb2) ||
++			(inter_headroom > 0) || (need_tailroom > 0))) {
+ 
 -		/* second skb with header and tail adjustments possible */
 -		if (skb_tailroom(skb2) < need_tailroom) {
 -			int n = 0;
@@ -139,7 +137,9 @@
 -			if (pskb_expand_head(skb2, n,
 -			    need_tailroom - skb_tailroom(skb2), GFP_ATOMIC)) {
 -				ieee80211_dev_kfree_skb(&skb2);
--				IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
++			if (pskb_expand_head(skb2, inter_headroom,
++				need_tailroom, GFP_ATOMIC)) {
+ 				IEEE80211_DPRINTF(vap, IEEE80211_MSG_OUTPUT,
 -					"%s: cannot expand storage (tail2)\n",
 -					__func__);
 -				vap->iv_stats.is_tx_nobuf++;
@@ -163,10 +163,10 @@
 -			} else
 -				ieee80211_skb_copy_noderef(tmp, skb);
 -			ieee80211_dev_kfree_skb(&tmp);
- 		}
+-		}
 -		if (skb) {
 -			skb->next = skb2;
--		}
+ 		}
 -		return skb;
 +		skb->next = skb2;
  	}

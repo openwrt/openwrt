@@ -1,5 +1,5 @@
---- a/ath/if_ath.c	2010-07-13 22:58:23.000000000 +0200
-+++ b/ath/if_ath.c	2010-07-13 23:03:20.000000000 +0200
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
 @@ -63,6 +63,8 @@
  #include <linux/rtnetlink.h>
  #include <linux/time.h>
@@ -9,7 +9,7 @@
  #include <asm/uaccess.h>
  
  #include "if_ethersubr.h"		/* for ETHER_IS_MULTICAST */
-@@ -587,6 +589,10 @@
+@@ -587,6 +589,10 @@ ath_attach(u_int16_t devid, struct net_d
  	unsigned int i;
  	int autocreatemode = -1;
  	u_int8_t csz;
@@ -20,7 +20,7 @@
  
  	sc->devid = devid;
  #ifdef AR_DEBUG
-@@ -648,6 +654,13 @@
+@@ -648,6 +654,13 @@ ath_attach(u_int16_t devid, struct net_d
  	}
  	sc->sc_ah = ah;
  

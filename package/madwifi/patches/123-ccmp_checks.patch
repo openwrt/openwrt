@@ -59,7 +59,7 @@
  }
  
  /*
-@@ -475,6 +483,9 @@ ccmp_encrypt(struct ieee80211_key *key, 
+@@ -475,6 +483,9 @@ ccmp_encrypt(struct ieee80211_key *key,
  	uint8_t *mic, *pos;
  	u_int space;
  
@@ -69,7 +69,7 @@
  	ctx->cc_vap->iv_stats.is_crypto_ccmp++;
  
  	skb = skb0;
-@@ -589,6 +600,9 @@ ccmp_decrypt(struct ieee80211_key *key, 
+@@ -589,6 +600,9 @@ ccmp_decrypt(struct ieee80211_key *key,
  	uint8_t *pos, *mic;
  	u_int space;
  

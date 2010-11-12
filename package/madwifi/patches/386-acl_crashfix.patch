@@ -37,7 +37,7 @@ Signed-off-by: Sebastian Gottschall <brainslayer@dd-wrt.com>
  	return NULL;
  }
  
-@@ -176,11 +183,11 @@ acl_add(struct ieee80211vap *vap, const 
+@@ -176,11 +183,11 @@ acl_add(struct ieee80211vap *vap, const
  		return -ENOMEM;
  	}
  
@@ -51,7 +51,7 @@ Signed-off-by: Sebastian Gottschall <brainslayer@dd-wrt.com>
  			FREE(new, M_80211_ACL);
  			IEEE80211_DPRINTF(vap, IEEE80211_MSG_ACL,
  				"ACL: add " MAC_FMT " failed, already present\n",
-@@ -191,7 +198,7 @@ acl_add(struct ieee80211vap *vap, const 
+@@ -191,7 +198,7 @@ acl_add(struct ieee80211vap *vap, const
  	IEEE80211_ADDR_COPY(new->acl_macaddr, mac);
  	TAILQ_INSERT_TAIL(&as->as_list, new, acl_list);
  	LIST_INSERT_HEAD(&as->as_hash[hash], new, acl_hash);

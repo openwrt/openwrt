@@ -53,7 +53,7 @@ http://madwifi-project.org/changeset/4005
  	unregister_netdev(dev);
  	return 0;
  }
-@@ -12732,8 +12749,13 @@ ath_rcv_dev_event(struct notifier_block 
+@@ -12732,8 +12749,13 @@ ath_rcv_dev_event(struct notifier_block
  	struct net_device *dev = (struct net_device *)ptr;
  	struct ath_softc *sc = (struct ath_softc *)netdev_priv(dev);
  
@@ -88,7 +88,7 @@ http://madwifi-project.org/changeset/4005
  int
  ieee80211_vap_setup(struct ieee80211com *ic, struct net_device *dev,
  	const char *name, int opmode, int flags, struct ieee80211vap *master)
-@@ -471,16 +483,21 @@ ieee80211_vap_setup(struct ieee80211com 
+@@ -471,16 +483,21 @@ ieee80211_vap_setup(struct ieee80211com
  		} else
  			strncpy(dev->name, name, sizeof(dev->name));
  	}

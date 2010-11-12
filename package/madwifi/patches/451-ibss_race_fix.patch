@@ -43,7 +43,7 @@
  				}
  			}
  			iwspy_event(vap, ni, rssi);
-@@ -3553,8 +3546,8 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3553,8 +3546,8 @@ ieee80211_recv_mgmt(struct ieee80211vap
  				(((vap->iv_opmode == IEEE80211_M_HOSTAP) ||
  				 (vap->iv_opmode == IEEE80211_M_WDS)) &&
  				(scan.capinfo & IEEE80211_CAPINFO_ESS))) {
@@ -53,7 +53,7 @@
  			int found = 0;
  
  			IEEE80211_LOCK_IRQ(vap->iv_ic);
-@@ -3570,14 +3563,12 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3570,14 +3563,12 @@ ieee80211_recv_mgmt(struct ieee80211vap
  					}
  				}
  				if (found)
@@ -72,7 +72,7 @@
  				found = 1;
  			}
  			IEEE80211_UNLOCK_IRQ(vap->iv_ic);
-@@ -3585,20 +3576,21 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3585,20 +3576,21 @@ ieee80211_recv_mgmt(struct ieee80211vap
  			if (!found)
  				break;
  
@@ -100,7 +100,7 @@
  			} else {
  				/*
  				 * Copy data from beacon to neighbor table.
-@@ -3606,39 +3598,38 @@ ieee80211_recv_mgmt(struct ieee80211vap 
+@@ -3606,39 +3598,38 @@ ieee80211_recv_mgmt(struct ieee80211vap
  				 * ieee80211_add_neighbor(), so we just copy
  				 * everything over to be safe.
  				 */
