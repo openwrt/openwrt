@@ -795,7 +795,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 		return NULL;
 	}
 
-	printk("%s: Found an AR7240 built-in switch\n", ag->dev->name);
+	pr_info("%s: Found an AR7240 built-in switch\n", ag->dev->name);
 
 	/* initialize defaults */
 	for (i = 0; i < AR7240_MAX_VLANS; i++)

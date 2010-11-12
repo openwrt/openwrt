@@ -95,11 +95,9 @@ static void do_spi_byte(void __iomem *base, unsigned char byte)
 	do_spi_clk(base, byte >> 1);
 	do_spi_clk(base, byte);
 
-#ifdef RB4XX_SPI_DEBUG
-	printk("spi_byte sent 0x%02x got 0x%02x\n",
+	pr_debug("spi_byte sent 0x%02x got 0x%02x\n",
 	       (unsigned)byte,
 	       (unsigned char)__raw_readl(base + SPI_REG_RDS));
-#endif
 }
 
 static inline void do_spi_clk_fast(void __iomem *base, unsigned bit1,
@@ -121,11 +119,9 @@ static void do_spi_byte_fast(void __iomem *base, unsigned char byte)
 	do_spi_clk_fast(base, byte >> 3, byte >> 2);
 	do_spi_clk_fast(base, byte >> 1, byte >> 0);
 
-#ifdef RB4XX_SPI_DEBUG
-	printk("spi_byte_fast sent 0x%02x got 0x%02x\n",
+	pr_debug("spi_byte_fast sent 0x%02x got 0x%02x\n",
 	       (unsigned)byte,
 	       (unsigned char) __raw_readl(base + SPI_REG_RDS));
-#endif
 }
 
 static int rb4xx_spi_txrx(void __iomem *base, struct spi_transfer *t)
@@ -135,12 +131,10 @@ static int rb4xx_spi_txrx(void __iomem *base, struct spi_transfer *t)
 	unsigned char *rx_ptr = t->rx_buf;
 	unsigned i;
 
-#ifdef RB4XX_SPI_DEBUG
-	printk("spi_txrx len %u tx %u rx %u\n",
+	pr_debug("spi_txrx len %u tx %u rx %u\n",
 	       t->len,
 	       (t->tx_buf ? 1 : 0),
 	       (t->rx_buf ? 1 : 0));
-#endif
 
 	if (t->verify) {
 		rxv_ptr = tx_ptr;
