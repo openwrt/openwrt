@@ -156,7 +156,7 @@ static long ar71xx_wdt_ioctl(struct file *file,
 	case WDIOC_GETSUPPORT:
 		ret = copy_to_user((struct watchdog_info *)arg,
 				   &ar71xx_wdt_info,
-				   sizeof(&ar71xx_wdt_info)) ? -EFAULT : 0;
+				   sizeof(ar71xx_wdt_info)) ? -EFAULT : 0;
 		break;
 
 	case WDIOC_GETSTATUS:
