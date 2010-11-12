@@ -124,7 +124,7 @@ static int __init ar71xx_use__image_cmdline(void)
 	return 1;
 }
 #else
-static int inline ar71xx_use__image_cmdline(void) { return 0; }
+static inline int ar71xx_use__image_cmdline(void) { return 0; }
 #endif
 
 static __init void ar71xx_prom_init_cmdline(int argc, char **argv)
