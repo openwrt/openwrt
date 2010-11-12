@@ -1,0 +1,16 @@
+--- a/include/linux/pm_qos_params.h
++++ b/include/linux/pm_qos_params.h
+@@ -1,5 +1,8 @@
+ #include <linux/version.h>
+ 
++#ifndef __COMPAT_LINUX_PM_QOS_PARAMS_H
++#define __COMPAT_LINUX_PM_QOS_PARAMS_H
++
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25))
+ #include_next <linux/pm_qos_params.h>
+ #else
+@@ -30,3 +33,4 @@ int pm_qos_add_notifier(int qos, struct 
+ int pm_qos_remove_notifier(int qos, struct notifier_block *notifier);
+ #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)) */
+ 
++#endif
