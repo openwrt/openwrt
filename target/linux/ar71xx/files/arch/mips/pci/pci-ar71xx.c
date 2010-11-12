@@ -107,7 +107,7 @@ int ar71xx_pci_be_handler(int is_fixup)
 		__raw_writel(ahb_err, base + PCI_REG_AHB_ERR);
 	}
 
-	return ((ahb_err | pci_err) ? 1 : 0);
+	return (ahb_err | pci_err) ? 1 : 0;
 }
 
 static inline int ar71xx_pci_set_cfgaddr(struct pci_bus *bus,

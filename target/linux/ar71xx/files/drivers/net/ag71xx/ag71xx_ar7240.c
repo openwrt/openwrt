@@ -219,17 +219,17 @@ static inline void ar7240sw_init(struct ar7240sw *as, struct mii_bus *mii)
 
 static inline u16 mk_phy_addr(u32 reg)
 {
-	return (0x17 & ((reg >> 4) | 0x10));
+	return 0x17 & ((reg >> 4) | 0x10);
 }
 
 static inline u16 mk_phy_reg(u32 reg)
 {
-	return ((reg << 1) & 0x1e);
+	return (reg << 1) & 0x1e;
 }
 
 static inline u16 mk_high_addr(u32 reg)
 {
-	return ((reg >> 7) & 0x1ff);
+	return (reg >> 7) & 0x1ff;
 }
 
 static u32 __ar7240sw_reg_read(struct ar7240sw *as, u32 reg)
@@ -249,7 +249,7 @@ static u32 __ar7240sw_reg_read(struct ar7240sw *as, u32 reg)
 	lo = (u32) mdiobus_read(mii, phy_addr, phy_reg);
 	hi = (u32) mdiobus_read(mii, phy_addr, phy_reg + 1);
 
-	return ((hi << 16) | lo);
+	return (hi << 16) | lo;
 }
 
 static void __ar7240sw_reg_write(struct ar7240sw *as, u32 reg, u32 val)
@@ -352,7 +352,7 @@ static u16 ar7240sw_phy_read(struct ar7240sw *as, unsigned phy_addr,
 		return 0xffff;
 
 	t = ar7240sw_reg_read(as, AR7240_REG_MDIO_CTRL);
-	return (t & AR7240_MDIO_CTRL_DATA_M);
+	return t & AR7240_MDIO_CTRL_DATA_M;
 }
 
 static int ar7240sw_phy_write(struct ar7240sw *as, unsigned phy_addr,

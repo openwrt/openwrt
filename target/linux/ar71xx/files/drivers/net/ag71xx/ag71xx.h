@@ -190,12 +190,12 @@ static inline struct ag71xx_platform_data *ag71xx_get_pdata(struct ag71xx *ag)
 
 static inline int ag71xx_desc_empty(struct ag71xx_desc *desc)
 {
-	return ((desc->ctrl & DESC_EMPTY) != 0);
+	return (desc->ctrl & DESC_EMPTY) != 0;
 }
 
 static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 {
-	return (desc->ctrl & DESC_PKTLEN_M);
+	return desc->ctrl & DESC_PKTLEN_M;
 }
 
 /* Register offsets */
