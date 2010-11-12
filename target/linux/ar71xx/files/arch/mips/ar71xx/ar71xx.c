@@ -157,10 +157,12 @@ EXPORT_SYMBOL_GPL(ar71xx_device_stopped);
 void ar71xx_ddr_flush(u32 reg)
 {
 	ar71xx_ddr_wr(reg, 1);
-	while ((ar71xx_ddr_rr(reg) & 0x1));
+	while ((ar71xx_ddr_rr(reg) & 0x1))
+		;
 
 	ar71xx_ddr_wr(reg, 1);
-	while ((ar71xx_ddr_rr(reg) & 0x1));
+	while ((ar71xx_ddr_rr(reg) & 0x1))
+		;
 }
 EXPORT_SYMBOL_GPL(ar71xx_ddr_flush);
 
