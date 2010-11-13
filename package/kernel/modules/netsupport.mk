@@ -337,8 +337,9 @@ $(eval $(call KernelPackage,ipv6))
 define KernelPackage/sit
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   DEPENDS:=+kmod-ipv6 +kmod-iptunnel4
-  TITLE:=IPv6-in-IPv4 tunnelling
-  KCONFIG:=CONFIG_IPV6 CONFIG_IPV6_SIT
+  TITLE:=IPv6-in-IPv4 tunnel
+  KCONFIG:=CONFIG_IPV6_SIT \
+	CONFIG_IPV6_SIT_6RD=y
   FILES:=$(LINUX_DIR)/net/ipv6/sit.ko
   AUTOLOAD:=$(call AutoLoad,32,sit)
 endef
@@ -355,9 +356,7 @@ define KernelPackage/ip6-tunnel
   TITLE:=IP-in-IPv6 tunnelling
   DEPENDS:= +kmod-ipv6 +kmod-iptunnel6
   KCONFIG:= CONFIG_IPV6_TUNNEL
-  FILES:= $(foreach mod,ip6_tunnel, \
-	$(LINUX_DIR)/net/ipv6/$(mod).ko \
-  )
+  FILES:=$(LINUX_DIR)/net/ipv6/ip6_tunnel.ko
   AUTOLOAD:=$(call AutoLoad,32,ip6_tunnel)
 endef
 
