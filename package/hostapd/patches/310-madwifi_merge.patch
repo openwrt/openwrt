@@ -771,3 +771,16 @@
 -#endif /* HOSTAPD */
 +#endif
  };
+--- a/src/drivers/drivers.mak
++++ b/src/drivers/drivers.mak
+@@ -168,8 +168,8 @@ DRV_WPA_OBJS += ../src/drivers/driver_ro
+ endif
+ 
+ ifdef CONFIG_WIRELESS_EXTENSION
+-DRV_WPA_CFLAGS += -DCONFIG_WIRELESS_EXTENSION
+-DRV_WPA_OBJS += ../src/drivers/driver_wext.o
++DRV_CFLAGS += -DCONFIG_WIRELESS_EXTENSION
++DRV_OBJS += ../src/drivers/driver_wext.o
+ NEED_RFKILL=y
+ endif
+ 
