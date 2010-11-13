@@ -243,8 +243,8 @@
  ifdef CONFIG_DRIVER_HERMES
 @@ -170,7 +168,6 @@ endif
  ifdef CONFIG_WIRELESS_EXTENSION
- DRV_WPA_CFLAGS += -DCONFIG_WIRELESS_EXTENSION
- DRV_WPA_OBJS += ../src/drivers/driver_wext.o
+ DRV_CFLAGS += -DCONFIG_WIRELESS_EXTENSION
+ DRV_OBJS += ../src/drivers/driver_wext.o
 -NEED_RFKILL=y
  endif
  
