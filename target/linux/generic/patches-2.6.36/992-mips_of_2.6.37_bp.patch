@@ -1,0 +1,233 @@
+From: Dezhong Diao <dediao@cisco.com>
+Date: Wed, 13 Oct 2010 06:52:46 +0000 (-0600)
+Subject: of/mips: Add device tree support to MIPS
+X-Git-Tag: v2.6.37-rc1~129^2~3
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=f2ffa5ab74f4dfd598860f96ca37a71c4d0a28a8
+
+of/mips: Add device tree support to MIPS
+
+Add the ability to enable CONFIG_OF on the MIPS architecture.
+
+Signed-off-by: Dezhong Diao <dediao@cisco.com>
+[grant.likely@secretlab.ca: cleared out obsolete hooks,
+	removed ARCH_HAS_DEVTREE_MEM,
+	remove __init tags from header file,
+	removed debugfs support hunk]
+[ddaney@linux-mips.org: backed out over aggressive trimming of hooks]
+Acked-by: Ralf Baechle <ralf@linux-mips.org>
+Tested-by: David Daney <ddaney@caviumnetworks.com>
+Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
+---
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -2146,6 +2146,13 @@ config SECCOMP
+ 
+ 	  If unsure, say Y. Only embedded should say N here.
+ 
++config USE_OF
++	bool "Flattened Device Tree support"
++	select OF
++	select OF_FLATTREE
++	help
++	  Include support for flattened device tree machine descriptions.
++
+ endmenu
+ 
+ config LOCKDEP_SUPPORT
+--- a/arch/mips/include/asm/irq.h
++++ b/arch/mips/include/asm/irq.h
+@@ -16,6 +16,11 @@
+ 
+ #include <irq.h>
+ 
++static inline void irq_dispose_mapping(unsigned int virq)
++{
++	return;
++}
++
+ #ifdef CONFIG_I8259
+ static inline int irq_canonicalize(int irq)
+ {
+--- /dev/null
++++ b/arch/mips/include/asm/prom.h
+@@ -0,0 +1,35 @@
++/*
++ *  arch/mips/include/asm/prom.h
++ *
++ *  Copyright (C) 2010 Cisco Systems Inc. <dediao@cisco.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ */
++#ifndef __ASM_MIPS_PROM_H
++#define __ASM_MIPS_PROM_H
++
++#ifdef CONFIG_OF
++#include <linux/init.h>
++
++#include <asm/setup.h>
++#include <asm/irq.h>
++#include <asm/bootinfo.h>
++
++/* which is compatible with the flattened device tree (FDT) */
++#define cmd_line arcs_cmdline
++
++extern int early_init_dt_scan_memory_arch(unsigned long node,
++	const char *uname, int depth, void *data);
++
++extern int reserve_mem_mach(unsigned long addr, unsigned long size);
++extern void free_mem_mach(unsigned long addr, unsigned long size);
++
++extern void __init device_tree_init(void);
++#else /* CONFIG_OF */
++static inline void __init device_tree_init(void) { }
++#endif /* CONFIG_OF */
++
++#endif /* _ASM_MIPS_PROM_H */
+--- a/arch/mips/kernel/Makefile
++++ b/arch/mips/kernel/Makefile
+@@ -97,6 +97,8 @@ obj-$(CONFIG_EARLY_PRINTK)	+= early_prin
+ obj-$(CONFIG_SPINLOCK_TEST)	+= spinlock_test.o
+ obj-$(CONFIG_MIPS_MACHINE)	+= mips_machine.o
+ 
++obj-$(CONFIG_OF)		+= prom.o
++
+ CFLAGS_cpu-bugs64.o	= $(shell if $(CC) $(KBUILD_CFLAGS) -Wa,-mdaddi -c -o /dev/null -xc /dev/null >/dev/null 2>&1; then echo "-DHAVE_AS_SET_DADDI"; fi)
+ 
+ obj-$(CONFIG_HAVE_STD_PC_SERIAL_PORT)	+= 8250-platform.o
+--- /dev/null
++++ b/arch/mips/kernel/prom.c
+@@ -0,0 +1,112 @@
++/*
++ * MIPS support for CONFIG_OF device tree support
++ *
++ * Copyright (C) 2010 Cisco Systems Inc. <dediao@cisco.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/errno.h>
++#include <linux/types.h>
++#include <linux/bootmem.h>
++#include <linux/initrd.h>
++#include <linux/debugfs.h>
++#include <linux/of.h>
++#include <linux/of_fdt.h>
++#include <linux/of_irq.h>
++#include <linux/of_platform.h>
++
++#include <asm/page.h>
++#include <asm/prom.h>
++
++int __init early_init_dt_scan_memory_arch(unsigned long node,
++					  const char *uname, int depth,
++					  void *data)
++{
++	return early_init_dt_scan_memory(node, uname, depth, data);
++}
++
++void __init early_init_dt_add_memory_arch(u64 base, u64 size)
++{
++	return add_memory_region(base, size, BOOT_MEM_RAM);
++}
++
++int __init reserve_mem_mach(unsigned long addr, unsigned long size)
++{
++	return reserve_bootmem(addr, size, BOOTMEM_DEFAULT);
++}
++
++void __init free_mem_mach(unsigned long addr, unsigned long size)
++{
++	return free_bootmem(addr, size);
++}
++
++u64 __init early_init_dt_alloc_memory_arch(u64 size, u64 align)
++{
++	return virt_to_phys(
++		__alloc_bootmem(size, align, __pa(MAX_DMA_ADDRESS))
++		);
++}
++
++#ifdef CONFIG_BLK_DEV_INITRD
++void __init early_init_dt_setup_initrd_arch(unsigned long start,
++					    unsigned long end)
++{
++	initrd_start = (unsigned long)__va(start);
++	initrd_end = (unsigned long)__va(end);
++	initrd_below_start_ok = 1;
++}
++#endif
++
++/*
++ * irq_create_of_mapping - Hook to resolve OF irq specifier into a Linux irq#
++ *
++ * Currently the mapping mechanism is trivial; simple flat hwirq numbers are
++ * mapped 1:1 onto Linux irq numbers.  Cascaded irq controllers are not
++ * supported.
++ */
++unsigned int irq_create_of_mapping(struct device_node *controller,
++				   const u32 *intspec, unsigned int intsize)
++{
++	return intspec[0];
++}
++EXPORT_SYMBOL_GPL(irq_create_of_mapping);
++
++void __init early_init_devtree(void *params)
++{
++	/* Setup flat device-tree pointer */
++	initial_boot_params = params;
++
++	/* Retrieve various informations from the /chosen node of the
++	 * device-tree, including the platform type, initrd location and
++	 * size, and more ...
++	 */
++	of_scan_flat_dt(early_init_dt_scan_chosen, NULL);
++
++	/* Scan memory nodes */
++	of_scan_flat_dt(early_init_dt_scan_root, NULL);
++	of_scan_flat_dt(early_init_dt_scan_memory_arch, NULL);
++}
++
++void __init device_tree_init(void)
++{
++	unsigned long base, size;
++
++	if (!initial_boot_params)
++		return;
++
++	base = virt_to_phys((void *)initial_boot_params);
++	size = initial_boot_params->totalsize;
++
++	/* Before we do anything, lets reserve the dt blob */
++	reserve_mem_mach(base, size);
++
++	unflatten_device_tree();
++
++	/* free the space reserved for the dt blob */
++	free_mem_mach(base, size);
++}
+--- a/arch/mips/kernel/setup.c
++++ b/arch/mips/kernel/setup.c
+@@ -31,6 +31,7 @@
+ #include <asm/setup.h>
+ #include <asm/smp-ops.h>
+ #include <asm/system.h>
++#include <asm/prom.h>
+ 
+ struct cpuinfo_mips cpu_data[NR_CPUS] __read_mostly;
+ 
+@@ -487,6 +488,7 @@ static void __init arch_mem_init(char **
+ 	}
+ 
+ 	bootmem_init();
++	device_tree_init();
+ 	sparse_init();
+ 	paging_init();
+ }
