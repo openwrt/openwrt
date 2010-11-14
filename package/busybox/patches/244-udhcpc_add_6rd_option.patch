@@ -1,0 +1,131 @@
+--- a/networking/udhcp/common.c
++++ b/networking/udhcp/common.c
+@@ -54,6 +54,7 @@ const struct dhcp_optflag dhcp_optflags[
+ 	{ OPTION_SIP_SERVERS                      , 0x78 }, /* DHCP_SIP_SERVERS   */
+ #endif
+ 	{ OPTION_STATIC_ROUTES                    , 0x79 }, /* DHCP_STATIC_ROUTES */
++	{ OPTION_6RD                              , 0xd4 }, /* DHCP_6RD           */
+ 	{ OPTION_STRING                           , 0xfc }, /* DHCP_WPAD          */
+ 
+ 	/* Options below have no match in dhcp_option_strings[],
+@@ -114,6 +115,7 @@ const char dhcp_option_strings[] ALIGN1 
+ // doesn't work in udhcpd.conf since OPTION_STATIC_ROUTES
+ // is not handled yet by "string->option" conversion code:
+ 	"staticroutes" "\0"/* DHCP_STATIC_ROUTES  */
++	"ip6rd" "\0"       /* DHCP_6RD            */
+ 	"wpad" "\0"        /* DHCP_WPAD           */
+ 	;
+ 
+@@ -141,6 +143,7 @@ const uint8_t dhcp_option_lengths[] ALIG
+ 	[OPTION_S32] =     4,
+ 	/* Just like OPTION_STRING, we use minimum length here */
+ 	[OPTION_STATIC_ROUTES] = 5,
++	[OPTION_6RD]           = 22,
+ };
+ 
+ 
+--- a/networking/udhcp/dhcpc.c
++++ b/networking/udhcp/dhcpc.c
+@@ -45,6 +45,7 @@ static const uint8_t len_of_option_as_st
+ 	[OPTION_IP              ] = sizeof("255.255.255.255 "),
+ 	[OPTION_IP_PAIR         ] = sizeof("255.255.255.255 ") * 2,
+ 	[OPTION_STATIC_ROUTES   ] = sizeof("255.255.255.255/32 255.255.255.255 "),
++	[OPTION_6RD             ] = sizeof("32 128 FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF 255.255.255.255 "),
+ 	[OPTION_STRING          ] = 1,
+ #if ENABLE_FEATURE_UDHCP_RFC3397
+ 	[OPTION_DNS_STRING      ] = 1, /* unused */
+@@ -68,6 +69,23 @@ static int sprint_nip(char *dest, const 
+ 	return sprintf(dest, "%s%u.%u.%u.%u", pre, ip[0], ip[1], ip[2], ip[3]);
+ }
+ 
++static int sprint_nip6(char *dest, const char *pre, const uint8_t *ip)
++{
++	int len = 0;
++	int off;
++	uint16_t word;
++
++	len += sprintf(dest, "%s", pre);
++
++	for (off = 0; off < 16; off += 2)
++	{
++		move_from_unaligned16(word, &ip[off]);
++		len += sprintf(dest+len, "%s%04X", off ? ":" : "", htons(word));
++	}
++
++	return len;
++}
++
+ /* really simple implementation, just count the bits */
+ static int mton(uint32_t mask)
+ {
+@@ -177,6 +195,60 @@ static NOINLINE char *xmalloc_optname_op
+ 
+ 			return ret;
+ 		}
++		case OPTION_6RD: {
++			/* Option binary format:
++			 *  0                   1                   2                   3
++			 *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++			 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++			 *  |  OPTION_6RD   | option-length |  IPv4MaskLen  |  6rdPrefixLen |
++			 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++			 *  |                                                               |
++			 *  |                           6rdPrefix                           |
++			 *  |                          (16 octets)                          |
++			 *  |                                                               |
++			 *  |                                                               |
++			 *  |                                                               |
++			 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++			 *  |                     6rdBRIPv4Address(es)                      |
++			 *  .                                                               .
++			 *  .                                                               .
++			 *  .                                                               .
++			 *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++			 *
++			 * We convert it to a string "IPv4MaskLen 6rdPrefixLen 6rdPrefix 6rdBRIPv4Address"
++			 */
++
++			/* IPv4MaskLen */
++			dest += sprintf(dest, "%u ", *option++);
++			len--;
++
++			/* 6rdPrefixLen */
++			dest += sprintf(dest, "%u ", *option++);
++			len--;
++
++			/* 6rdPrefix */
++			dest += sprint_nip6(dest, "", option);
++			option += 16;
++			len -= 16;
++
++			/* 6rdBRIPv4Addresses */
++			while (len >= 4)
++			{
++				dest += sprint_nip(dest, " ", option);
++				option += 4;
++				len -= 4;
++
++				/* the code to determine the option size fails to work with
++				 * lengths that are not a multiple of the minimum length,
++				 * adding all advertised 6rdBRIPv4Addresses here would
++				 * overflow the destination buffer, therefore skip the rest
++				 * for now
++				 */
++				break;
++			}
++
++			return ret;
++		}
+ #if ENABLE_FEATURE_UDHCP_RFC3397
+ 		case OPTION_DNS_STRING:
+ 			/* unpack option into dest; use ret for prefix (i.e., "optname=") */
+--- a/networking/udhcp/common.h
++++ b/networking/udhcp/common.h
+@@ -88,6 +88,7 @@ enum {
+ 	OPTION_S32,
+ 	OPTION_BIN,
+ 	OPTION_STATIC_ROUTES,
++	OPTION_6RD,
+ #if ENABLE_FEATURE_UDHCP_RFC3397
+ 	OPTION_DNS_STRING,  /* RFC1035 compressed domain name list */
+ 	OPTION_SIP_SERVERS,
