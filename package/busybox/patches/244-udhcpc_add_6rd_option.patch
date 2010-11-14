@@ -58,7 +58,7 @@
  /* really simple implementation, just count the bits */
  static int mton(uint32_t mask)
  {
-@@ -177,6 +195,60 @@ static NOINLINE char *xmalloc_optname_op
+@@ -177,6 +195,70 @@ static NOINLINE char *xmalloc_optname_op
  
  			return ret;
  		}
@@ -85,33 +85,43 @@
 +			 * We convert it to a string "IPv4MaskLen 6rdPrefixLen 6rdPrefix 6rdBRIPv4Address"
 +			 */
 +
-+			/* IPv4MaskLen */
-+			dest += sprintf(dest, "%u ", *option++);
-+			len--;
-+
-+			/* 6rdPrefixLen */
-+			dest += sprintf(dest, "%u ", *option++);
-+			len--;
-+
-+			/* 6rdPrefix */
-+			dest += sprint_nip6(dest, "", option);
-+			option += 16;
-+			len -= 16;
-+
-+			/* 6rdBRIPv4Addresses */
-+			while (len >= 4)
++			/* Sanity check: ensure that our length is at least 22 bytes, that
++			 * IPv4MaskLen is <= 32, 6rdPrefixLen <= 128 and that the sum of
++			 * (32 - IPv4MaskLen) + 6rdPrefixLen is less than or equal to 128.
++			 * If any of these requirements is not fulfilled, return with empty
++			 * value.
++			 */
++			if ((len >= 22) && (*option <= 32) && (*(option+1) <= 128) &&
++			    (((32 - *option) + *(option+1)) <= 128))
 +			{
-+				dest += sprint_nip(dest, " ", option);
-+				option += 4;
-+				len -= 4;
++				/* IPv4MaskLen */
++				dest += sprintf(dest, "%u ", *option++);
++				len--;
 +
-+				/* the code to determine the option size fails to work with
-+				 * lengths that are not a multiple of the minimum length,
-+				 * adding all advertised 6rdBRIPv4Addresses here would
-+				 * overflow the destination buffer, therefore skip the rest
-+				 * for now
-+				 */
-+				break;
++				/* 6rdPrefixLen */
++				dest += sprintf(dest, "%u ", *option++);
++				len--;
++
++				/* 6rdPrefix */
++				dest += sprint_nip6(dest, "", option);
++				option += 16;
++				len -= 16;
++
++				/* 6rdBRIPv4Addresses */
++				while (len >= 4)
++				{
++					dest += sprint_nip(dest, " ", option);
++					option += 4;
++					len -= 4;
++
++					/* the code to determine the option size fails to work with
++					 * lengths that are not a multiple of the minimum length,
++					 * adding all advertised 6rdBRIPv4Addresses here would
++					 * overflow the destination buffer, therefore skip the rest
++					 * for now
++					 */
++					break;
++				}
 +			}
 +
 +			return ret;
