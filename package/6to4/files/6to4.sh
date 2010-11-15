@@ -116,8 +116,8 @@ setup_interface_6to4() {
 				local sid="6to4_$cfg"
 
 				uci -q batch <<-EOF
-					delete radvd.iface_$sid
-					delete radvd.prefix_$sid
+					revert radvd.iface_$sid
+					revert radvd.prefix_$sid
 					set radvd.iface_$sid=interface
 					set radvd.iface_$sid.ignore=0
 					set radvd.iface_$sid.interface=${adv_interface:-lan}
@@ -165,8 +165,8 @@ stop_interface_6to4() {
 			local sid="6to4_$cfg"
 
 			uci -q batch <<-EOF
-				delete radvd.iface_$sid
-				delete radvd.prefix_$sid
+				revert radvd.iface_$sid
+				revert radvd.prefix_$sid
 			EOF
 
 			/etc/init.d/radvd enabled && /etc/init.d/radvd restart
