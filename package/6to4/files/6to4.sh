@@ -37,9 +37,6 @@ setup_interface_6to4() {
 
 	local local4=$(uci_get network "$cfg" ipaddr)
 
-	local remote4
-	config_get remote4 "$cfg" peeraddr
-
 	local mtu
 	config_get mtu "$cfg" mtu
 
