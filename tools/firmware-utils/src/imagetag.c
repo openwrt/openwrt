@@ -32,9 +32,9 @@ union int2char {
   char output[4];
 };
 
-/* This appears to be necessary due to alignment issues */
+/* Convert uint32_t CRC to bigendian and copy it into a character array */
 #define int2tag(tag, value)  intchar.input = htonl(value);	\
-	  strncpy(tag, intchar.output, sizeof(union int2char))
+	  memcpy(tag, intchar.output, sizeof(union int2char))
 
 /* Kernel header */
 struct kernelhdr {
