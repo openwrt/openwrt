@@ -30,29 +30,31 @@ endef
 define Image/Build/CFE
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin \
-		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
-	        -r "$(5)" $(6)
-#		-b $(2) -c $(3) -e $(KERNEL_ENTRY) -l $(LOADADDR)
-
+		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin \
+		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
+		--info1 "$(4) $(REVISION)" --info2 $(1) \
+		$(6) $(7) $(8) $(9)
 endef
 
 define Image/Build/CFEAGPF
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
-		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
-		-v 8 -m IMAGE -k 0x20000 -n $(4)
+		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
+		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
+		--load-addr $(LOADADDR) --tag-version 8 \
+		--signature2 IMAGE --block-size 0x20000 \
+		--image-offset $(4) --info1 "$(5) $(REVISION)" --info2 $(1)
 endef
 
 define Image/Build/RG100A
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
-		-b $(2) -c $(3) -e $(LOADADDR) -l $(LOADADDR) \
-		-k 0x20000 -n $(4)
+		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
+		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
+		--load-addr $(LOADADDR) --block-size 0x20000 \
+		--image-offset $(4) --info1 "$(5) $(REVISION)" --info2 $(1)
 endef
-
 
 define Image/Build/RedBoot
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(1)-vmlinux.elf
@@ -106,29 +108,29 @@ define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	# Various routers
 	$(call Image/Build/CFE,$(1),96345GW2,6345,96345GW2-generic)
-	$(call Image/Build/CFE,$(1),96345GW2,6345,96348GW2-bc221,,-y 5)
+	$(call Image/Build/CFE,$(1),96345GW2,6345,96348GW2-bc221,,--layoutver 5)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,92345GW2-revision,OpenWRT-$(REVISION))
 	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-generic,,)
-	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-bc221,,-y 5)
+	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-bc221,,--layoutver 5)
 	$(call Image/Build/CFE,$(1),6338GW,6338,6338GW-generic,,)
 	$(call Image/Build/CFE,$(1),6338W,6338,6338W-generic,,)
 
 	# BT Voyager V210_BTR
-	$(call Image/Build/CFE,$(1),V210_BB,6348,BTV210_BTR,,-y 5)
+	$(call Image/Build/CFE,$(1),V210_BB,6348,BTV210_BTR,,--layoutver 5)
 	# BT Voyager V210_ROI, V210_WB
-	$(call Image/Build/CFE,$(1),V210,6348,BTV210_ROI_WB,,-y 5)
+	$(call Image/Build/CFE,$(1),V210,6348,BTV210_ROI_WB,,--layoutver 5)
 	# BT Voyager V2091_BTR
-	$(call Image/Build/CFE,$(1),V2091_BB,6348,BTV2091_BTR,,y 5)
+	$(call Image/Build/CFE,$(1),V2091_BB,6348,BTV2091_BTR,,--layoutver 5)
 	# BT Voyager V2091_ROI, V2091_WB
-	$(call Image/Build/CFE,$(1),V2091,6348,BTV2091_ROI_WB,,-y 5)
+	$(call Image/Build/CFE,$(1),V2091,6348,BTV2091_ROI_WB,,--layoutver 5)
 	# BT Voyager V220V, V220V_MGCP_BTR
-	$(call Image/Build/CFE,$(1),RTA1052V,6348,BTV220V_MGCP_BTR,,-y 5)
+	$(call Image/Build/CFE,$(1),RTA1052V,6348,BTV220V_MGCP_BTR,,--layoutver 5)
 	# BT Voyager V2110, V2110_AA, V2110_ROI
-	$(call Image/Build/CFE,$(1),V2110,6348,BTV2110,,-y 5)
+	$(call Image/Build/CFE,$(1),V2110,6348,BTV2110,,--layoutver 5)
 	# BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
-	$(call Image/Build/CFE,$(1),V2500V_BB,6348,BTV2500V,,-y 5)
+	$(call Image/Build/CFE,$(1),V2500V_BB,6348,BTV2500V,,--layoutver 5)
 	# RTA1025W_16 (numerous routers)
-	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,-y 5)
+	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,--layoutver 5)
 	# Tecom GW6000
 	$(call Image/Build/CFE,$(1),96348GW,6348,GW6000)
 	# Tecom GW6200
@@ -166,7 +168,7 @@ define Image/Build
 	# Pirelli A226G
 	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,A226G-cfe)
 	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,A226G)
-	
+
 	# RG100A,DB120 etc.
 	$(call Image/Build/RG100A,$(1),96358VW2,6358,0x20000,RG100A_DB120)
 
