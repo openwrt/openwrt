@@ -511,8 +511,8 @@ define KernelPackage/mppe
   KCONFIG:= \
 	CONFIG_PPP_MPPE_MPPC \
 	CONFIG_PPP_MPPE
-  FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe*.ko
-  AUTOLOAD:=$(call AutoLoad,31,ppp_mppe ppp_mppe_mppc)
+  FILES:=$(LINUX_DIR)/drivers/net/ppp_mppe.ko
+  AUTOLOAD:=$(call AutoLoad,31,ppp_mppe)
 endef
 
 define KernelPackage/mppe/description
