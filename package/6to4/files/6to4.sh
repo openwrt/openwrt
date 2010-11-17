@@ -43,6 +43,9 @@ setup_interface_6to4() {
 	local ttl
 	config_get ttl "$cfg" ttl
 
+	local metric
+	config_get metric "$cfg" metric
+
 	local defaultroute
 	config_get_bool defaultroute "$cfg" defaultroute 1
 
@@ -91,7 +94,7 @@ setup_interface_6to4() {
 
 		[ "$defaultroute" = 1 ] && {
 			logger -t "$link" " * Adding default route"
-			ip -6 route add 2000::/3 via ::192.88.99.1 dev $link metric 1
+			ip -6 route add 2000::/3 via ::192.88.99.1 metric ${metric:-1} dev $link
 			uci_set_state network "$cfg" defaultroute 1
 		}
 
