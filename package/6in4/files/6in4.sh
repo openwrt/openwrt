@@ -42,6 +42,9 @@ setup_interface_6in4() {
 	local ttl
 	config_get ttl "$cfg" ttl
 
+	local metric
+	config_get metric "$cfg" metric
+
 	local defaultroute
 	config_get_bool defaultroute "$cfg" defaultroute 1
 
@@ -70,7 +73,7 @@ setup_interface_6in4() {
 		uci_set_state network "$cfg" ip6addr $local6
 
 		[ "$defaultroute" = 1 ] && {
-			ip -6 route add ::/0 dev $link
+			ip -6 route add ::/0 ${metric:+metric $metric} dev $link
 			uci_set_state network "$cfg" defaultroute 1
 		}
 
