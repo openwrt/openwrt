@@ -75,7 +75,8 @@ define Build/Compile
 		EXTRA_CFLAGS="$(PKG_EXTRA_CFLAGS) -DCONFIG_ACX_MAC80211_VERSION=\"KERNEL_VERSION(2,6,34)\"" \
 		LINUXINCLUDE="-I$(STAGING_DIR)/usr/include/mac80211 -I$(LINUX_DIR)/include \
 			-Iarch/$(LINUX_KARCH)/include \
-			-include $(LINUX_AUTOCONF_FILE)" \
+			-include $(LINUX_AUTOCONF_FILE) \
+			-include linux/compat-2.6.h" \
 		V="$(V)" \
 		modules
 endef
