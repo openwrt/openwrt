@@ -1,0 +1,81 @@
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -717,11 +717,8 @@ int hostapd_setup_interface_complete(str
+ 	size_t j;
+ 	u8 *prev_addr;
+ 
+-	if (err) {
+-		wpa_printf(MSG_ERROR, "Interface initialization failed");
+-		eloop_terminate();
+-		return -1;
+-	}
++	if (err)
++		goto error;
+ 
+ 	wpa_printf(MSG_DEBUG, "Completing interface initialization");
+ 	if (hapd->iconf->channel) {
+@@ -737,7 +734,7 @@ int hostapd_setup_interface_complete(str
+ 				     hapd->iconf->secondary_channel)) {
+ 			wpa_printf(MSG_ERROR, "Could not set channel for "
+ 				   "kernel driver");
+-			return -1;
++			goto error;
+ 		}
+ 	}
+ 
+@@ -748,7 +745,7 @@ int hostapd_setup_interface_complete(str
+ 			hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
+ 				       HOSTAPD_LEVEL_WARNING,
+ 				       "Failed to prepare rates table.");
+-			return -1;
++			goto error;
+ 		}
+ 	}
+ 
+@@ -756,14 +753,14 @@ int hostapd_setup_interface_complete(str
+ 	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
+ 		wpa_printf(MSG_ERROR, "Could not set RTS threshold for "
+ 			   "kernel driver");
+-		return -1;
++		goto error;
+ 	}
+ 
+ 	if (hapd->iconf->fragm_threshold > -1 &&
+ 	    hostapd_set_frag(hapd, hapd->iconf->fragm_threshold)) {
+ 		wpa_printf(MSG_ERROR, "Could not set fragmentation threshold "
+ 			   "for kernel driver");
+-		return -1;
++		goto error;
+ 	}
+ 
+ 	prev_addr = hapd->own_addr;
+@@ -773,7 +770,7 @@ int hostapd_setup_interface_complete(str
+ 		if (j)
+ 			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
+ 		if (hostapd_setup_bss(hapd, j == 0))
+-			return -1;
++			goto error;
+ 		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
+ 			prev_addr = hapd->own_addr;
+ 	}
+@@ -785,7 +782,7 @@ int hostapd_setup_interface_complete(str
+ 	if (hostapd_driver_commit(hapd) < 0) {
+ 		wpa_printf(MSG_ERROR, "%s: Failed to commit driver "
+ 			   "configuration", __func__);
+-		return -1;
++		goto error;
+ 	}
+ 
+ 	wpa_printf(MSG_DEBUG, "%s: Setup of interface done.",
+@@ -795,6 +792,11 @@ int hostapd_setup_interface_complete(str
+ 		iface->init_complete(iface);
+ 
+ 	return 0;
++
++error:
++	wpa_printf(MSG_ERROR, "Interface initialization failed");
++	eloop_terminate();
++	return -1;
+ }
+ 
+ 
