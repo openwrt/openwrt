@@ -156,7 +156,7 @@ static void __init dir825b1_setup(void)
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_pll_data.pll_1000 = 0x11110000;
 
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 2);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 2);
 	ar71xx_eth1_data.mii_bus_dev = &dir825b1_rtl8366s_device.dev;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.phy_mask = 0x10;
