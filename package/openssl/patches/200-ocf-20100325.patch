@@ -173,7 +173,7 @@
  	{FUNC_TYPE_MD,"md2",dgst_main},
 --- a/apps/speed.c
 +++ b/apps/speed.c
-@@ -296,7 +296,7 @@ static const char *names[ALGOR_NUM]={
+@@ -302,7 +302,7 @@ static const char *names[ALGOR_NUM]={
    "evp","sha256","sha512",
    "aes-128 ige","aes-192 ige","aes-256 ige"};
  static double results[ALGOR_NUM][SIZE_NUM];
@@ -182,7 +182,7 @@
  #ifndef OPENSSL_NO_RSA
  static double rsa_results[RSA_NUM][2];
  #endif
-@@ -336,6 +336,82 @@ static SIGRETTYPE sig_done(int sig)
+@@ -342,6 +342,82 @@ static SIGRETTYPE sig_done(int sig)
  #define START	0
  #define STOP	1
  
@@ -265,7 +265,7 @@
  #if defined(OPENSSL_SYS_NETWARE)
  
     /* for NetWare the best we can do is use clock() which returns the
-@@ -366,6 +442,9 @@ static double Time_F(int s)
+@@ -372,6 +448,9 @@ static double Time_F(int s)
  	{
  	double ret;
  
@@ -275,7 +275,7 @@
  #ifdef USE_TOD
  	if(usertime)
  		{
-@@ -840,6 +919,14 @@ int MAIN(int argc, char **argv)
+@@ -839,6 +918,14 @@ int MAIN(int argc, char **argv)
  			j--;	/* Otherwise, -elapsed gets confused with
  				   an algorithm. */
  			}
@@ -290,7 +290,7 @@
  		else if	((argc > 0) && (strcmp(*argv,"-evp") == 0))
  			{
  			argc--;
-@@ -1268,6 +1355,9 @@ int MAIN(int argc, char **argv)
+@@ -1267,6 +1354,9 @@ int MAIN(int argc, char **argv)
  #ifndef NO_FORK
  			BIO_printf(bio_err,"-multi n        run n benchmarks in parallel.\n");
  #endif
@@ -300,7 +300,7 @@
  			goto end;
  			}
  		argc--;
-@@ -1275,11 +1365,6 @@ int MAIN(int argc, char **argv)
+@@ -1274,11 +1364,6 @@ int MAIN(int argc, char **argv)
  		j++;
  		}
  
@@ -1121,7 +1121,7 @@
  		if (kop->crk_param[i].crp_p)
  			free(kop->crk_param[i].crp_p);
  		kop->crk_param[i].crp_p = NULL;
-@@ -768,7 +1039,6 @@ static int
+@@ -776,7 +1044,6 @@ static int
  cryptodev_rsa_nocrt_mod_exp(BIGNUM *r0, const BIGNUM *I, RSA *rsa, BN_CTX *ctx)
  {
  	int r;
@@ -1129,7 +1129,7 @@
  	r = cryptodev_bn_mod_exp(r0, I, rsa->d, rsa->n, ctx, NULL);
  	return (r);
  }
-@@ -904,6 +1177,9 @@ cryptodev_dsa_do_sign(const unsigned cha
+@@ -920,6 +1187,9 @@ cryptodev_dsa_do_sign(const unsigned cha
  		const DSA_METHOD *meth = DSA_OpenSSL();
  		BN_free(r);
  		BN_free(s);
@@ -1139,7 +1139,7 @@
  		dsaret = (meth->dsa_do_sign)(dgst, dlen, dsa);
  	}
  err:
-@@ -944,6 +1220,9 @@ cryptodev_dsa_verify(const unsigned char
+@@ -961,6 +1231,9 @@ cryptodev_dsa_verify(const unsigned char
  	} else {
  		const DSA_METHOD *meth = DSA_OpenSSL();
  
@@ -1149,7 +1149,7 @@
  		dsaret = (meth->dsa_do_verify)(dgst, dlen, sig, dsa);
  	}
  err:
-@@ -977,8 +1256,8 @@ static int
+@@ -994,8 +1267,8 @@ static int
  cryptodev_dh_compute_key(unsigned char *key, const BIGNUM *pub_key, DH *dh)
  {
  	struct crypt_kop kop;
@@ -1160,7 +1160,7 @@
  
  	if ((fd = get_asym_dev_crypto()) < 0) {
  		const DH_METHOD *meth = DH_OpenSSL();
-@@ -986,7 +1265,7 @@ cryptodev_dh_compute_key(unsigned char *
+@@ -1003,7 +1276,7 @@ cryptodev_dh_compute_key(unsigned char *
  		return ((meth->compute_key)(key, pub_key, dh));
  	}
  
@@ -1169,7 +1169,7 @@
  
  	memset(&kop, 0, sizeof kop);
  	kop.crk_op = CRK_DH_COMPUTE_KEY;
-@@ -1001,14 +1280,18 @@ cryptodev_dh_compute_key(unsigned char *
+@@ -1018,14 +1291,18 @@ cryptodev_dh_compute_key(unsigned char *
  	kop.crk_iparams = 3;
  
  	kop.crk_param[3].crp_p = (char *)key;
