@@ -1,46 +1,3 @@
---- a/drivers/net/wireless/ath/ath9k/hw.c
-+++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -17,8 +17,10 @@
- #include <linux/io.h>
- #include <linux/slab.h>
- #include <linux/etherdevice.h>
-+#include <linux/ath9k_platform.h>
- #include <asm/unaligned.h>
- 
-+#include "ath9k.h"
- #include "hw.h"
- #include "hw-ops.h"
- #include "rc.h"
-@@ -434,18 +436,23 @@ static void ath9k_hw_init_defaults(struc
- static int ath9k_hw_init_macaddr(struct ath_hw *ah)
- {
- 	struct ath_common *common = ath9k_hw_common(ah);
-+	struct ath_softc *sc = (struct ath_softc *) common->priv;
-+	struct ath9k_platform_data *pdata = sc->dev->platform_data;
- 	u32 sum;
- 	int i;
- 	u16 eeval;
- 	u32 EEP_MAC[] = { EEP_MAC_LSW, EEP_MAC_MID, EEP_MAC_MSW };
- 
- 	sum = 0;
--	for (i = 0; i < 3; i++) {
--		eeval = ah->eep_ops->get_eeprom(ah, EEP_MAC[i]);
--		sum += eeval;
--		common->macaddr[2 * i] = eeval >> 8;
--		common->macaddr[2 * i + 1] = eeval & 0xff;
--	}
-+	if (pdata && pdata->macaddr)
-+		memcpy(common->macaddr, pdata->macaddr, ETH_ALEN);
-+	else
-+		for (i = 0; i < 3; i++) {
-+			eeval = ah->eep_ops->get_eeprom(ah, EEP_MAC[i]);
-+			sum += eeval;
-+			common->macaddr[2 * i] = eeval >> 8;
-+			common->macaddr[2 * i + 1] = eeval & 0xff;
-+		}
- 	if (!is_valid_ether_addr(common->macaddr)) {
- 		ath_print(common, ATH_DBG_EEPROM,
- 			"eeprom contains invalid mac address: %pM\n",
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
 @@ -23,6 +23,7 @@
@@ -51,3 +8,31 @@
  };
  
  #endif /* _LINUX_ATH9K_PLATFORM_H */
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -16,6 +16,7 @@
+ 
+ #include <linux/slab.h>
+ #include <linux/pm_qos_params.h>
++#include <linux/ath9k_platform.h>
+ 
+ #include "ath9k.h"
+ 
+@@ -520,6 +521,7 @@ static void ath9k_init_misc(struct ath_s
+ static int ath9k_init_softc(u16 devid, struct ath_softc *sc, u16 subsysid,
+ 			    const struct ath_bus_ops *bus_ops)
+ {
++	struct ath9k_platform_data *pdata = sc->dev->platform_data;
+ 	struct ath_hw *ah = NULL;
+ 	struct ath_common *common;
+ 	int ret = 0, i;
+@@ -565,6 +567,9 @@ static int ath9k_init_softc(u16 devid, s
+ 	if (ret)
+ 		goto err_hw;
+ 
++	if (pdata && pdata->macaddr)
++		memcpy(common->macaddr, pdata->macaddr, ETH_ALEN);
++
+ 	ret = ath9k_init_debug(ah);
+ 	if (ret) {
+ 		ath_print(common, ATH_DBG_FATAL,

@@ -1,22 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -17,6 +17,7 @@
- #include <linux/slab.h>
- #include <linux/pm_qos_params.h>
- 
-+#include "linux/ath9k_platform.h"
- #include "ath9k.h"
- 
- static char *dev_info = "ath9k";
-@@ -522,6 +523,7 @@ static int ath9k_init_softc(u16 devid, s
- {
- 	struct ath_hw *ah = NULL;
- 	struct ath_common *common;
-+	struct ath9k_platform_data *pdata;
- 	int ret = 0, i;
- 	int csz = 0;
- 
-@@ -533,8 +535,15 @@ static int ath9k_init_softc(u16 devid, s
+@@ -535,8 +535,15 @@ static int ath9k_init_softc(u16 devid, s
  	ah->hw_version.subsysid = subsysid;
  	sc->sc_ah = ah;
  
