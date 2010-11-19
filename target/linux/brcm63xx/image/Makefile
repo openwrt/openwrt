@@ -172,6 +172,9 @@ define Image/Build
 	# RG100A,DB120 etc.
 	$(call Image/Build/RG100A,$(1),96358VW2,6358,0x20000,RG100A_DB120)
 
+	# Telsey CPVA642-type (e.g. CPA-ZNTE60T)
+	$(call Image/Build/CFE,$(1),CPVA642,6358,CPA-ZNTE60T,,--signature "Telsey Tlc",--signature2 "99.99.999",--second-image-flag "0")
+
 endef
 
 $(eval $(call BuildImage))
