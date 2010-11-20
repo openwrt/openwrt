@@ -98,15 +98,6 @@
  /*
   * Time the connection can be idle before we probe
   * it to see if we can still talk to the AP.
-@@ -45,7 +51,7 @@
-  * a probe request because of beacon loss or for
-  * checking the connection still works.
-  */
--#define IEEE80211_PROBE_WAIT		(HZ / 2)
-+#define IEEE80211_PROBE_WAIT		(HZ / 5)
- 
- /*
-  * Weight given to the latest Beacon frame when calculating average signal
 @@ -121,7 +127,7 @@ void ieee80211_sta_reset_beacon_monitor(
  		return;
  
