@@ -271,7 +271,7 @@ dhcp_add() {
 		DNS_SERVERS="$DNS_SERVERS $dnsserver"
 	}
 
-	append_bool "$cfg" ignore "-2 '$ifname'" && return 0
+	append_bool "$cfg" ignore "-2 $ifname" && return 0
 
 	config_get proto "$net" proto
 	[ static = "$proto" ] || return 0
@@ -283,7 +283,12 @@ dhcp_add() {
 	#check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
 	[ $force -gt 0 ] || {
-		udhcpc -n -q -s /bin/true -t 1 -i $ifname >&- && return 0
+		udhcpc -n -q -s /bin/true -t 1 -i $ifname >&- && {
+			logger -t dnsmasq \
+				"found already running DHCP-server on interface '$ifname'" \
+				"refusing to start, use 'option force 1' to override"
+			return 0
+		}
 	}
 
 	config_get start "$cfg" start
