@@ -19,10 +19,8 @@ IMG_PREFIX:=openwrt-$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
 
 ifneq ($(CONFIG_BIG_ENDIAN),)
   JFFS2OPTS     :=  --pad --big-endian --squash -v
-  SQUASHFS_OPTS :=  -be
 else
   JFFS2OPTS     :=  --pad --little-endian --squash -v
-  SQUASHFS_OPTS :=  -le
 endif
 
 ifeq ($(CONFIG_JFFS2_RTIME),y)
@@ -43,9 +41,6 @@ endif
 ifneq ($(CONFIG_JFFS2_LZMA),y)
   JFFS2OPTS += -x lzma
 endif
-
-  MKSQUASHFS_CMD := $(STAGING_DIR_HOST)/bin/mksquashfs4
-  SQUASHFS_OPTS  := -comp lzma -processors 1
 
 JFFS2_BLOCKSIZE ?= 64k 128k
 
@@ -91,7 +86,7 @@ else
   ifneq ($(CONFIG_TARGET_ROOTFS_SQUASHFS),)
     define Image/mkfs/squashfs
 		@mkdir -p $(TARGET_DIR)/overlay
-		$(MKSQUASHFS_CMD) $(TARGET_DIR) $(KDIR)/root.squashfs -nopad -noappend -root-owned $(SQUASHFS_OPTS)
+		$(STAGING_DIR_HOST)/bin/mksquashfs4 $(TARGET_DIR) $(KDIR)/root.squashfs -nopad -noappend -root-owned -comp lzma -processors 1
 		$(call Image/Build,squashfs)
     endef
   endif
