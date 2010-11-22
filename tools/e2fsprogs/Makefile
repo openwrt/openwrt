@@ -29,6 +29,7 @@ CONFIGURE_ARGS += \
 
 define Host/Install
 	$(Host/Install/Default)
+	$(MAKE) -C $(HOST_BUILD_DIR)/lib/uuid install
 	$(INSTALL_DATA) $(HOST_BUILD_DIR)/lib/uuid/libuuid.a $(STAGING_DIR_HOST)/lib/
 endef
 
