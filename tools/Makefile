@@ -15,7 +15,7 @@ tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5
 tools-$(CONFIG_GCC_VERSION_4_5) += mpc libelf
 endif
 tools-y += m4 autoconf automake bison pkg-config sed mklibs
-tools-y += sstrip ipkg-utils genext2fs libuuid mtd-utils mkimage
+tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2 flock
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_TARGET_x86) += qemu
@@ -44,9 +44,9 @@ $(curdir)/autoconf/compile := $(curdir)/m4/install
 $(curdir)/automake/compile := $(curdir)/m4/install $(curdir)/autoconf/install
 $(curdir)/mpc/compile := $(curdir)/gmp/install
 $(curdir)/mpfr/compile := $(curdir)/gmp/install
-$(curdir)/mtd-utils/compile := $(curdir)/libuuid/install
+$(curdir)/mtd-utils/compile := $(curdir)/e2fsprogs/install
 $(curdir)/mkimage/compile := $(curdir)/sed/install
-$(curdir)/qemu/compile := $(curdir)/libuuid/install
+$(curdir)/qemu/compile := $(curdir)/e2fsprogs/install
 $(curdir)/upslug2/compile := $(curdir)/automake/install
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
