@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -62,12 +62,12 @@ menu "Target Images"
 
 	comment "Root filesystem images"
 
-	config TARGET_ROOTFS_EXT2FS
-		bool "ext2"
-		default y if USES_EXT2
+	config TARGET_ROOTFS_EXT4FS
+		bool "ext4"
+		default y if USES_EXT4
 		depends !TARGET_ROOTFS_INITRAMFS
 		help
-		  Ext2 file system with some free space for uml images
+		  Ext4 file system with some free space for uml images
 
 	config TARGET_ROOTFS_ISO
 		bool "iso"
@@ -103,14 +103,14 @@ menu "Target Images"
 
 	config TARGET_ROOTFS_PARTSIZE
 		int "Root filesystem partition size (in MB)"
-		depends X86_GRUB_IMAGES || TARGET_ROOTFS_EXT2FS || TARGET_rb532
+		depends X86_GRUB_IMAGES || TARGET_ROOTFS_EXT4FS || TARGET_rb532
 		default 48
 		help
 		    Allows you to change the root filesystem partition size
 
 	config TARGET_ROOTFS_MAXINODE
 		int "Maximum number of inodes in root filesystem"
-		depends TARGET_ROOTFS_EXT2FS
+		depends TARGET_ROOTFS_EXT4FS
 		default 6000
 		help
 		    Allows you to change the maximum number of inodes in the root filesystem

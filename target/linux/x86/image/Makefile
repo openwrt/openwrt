@@ -35,8 +35,8 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 
   BOOTOPTS:=$(call qstrip,$(CONFIG_X86_GRUB_BOOTOPTS))
 
-  define Image/cmdline/ext2
-    root=$(ROOTPART) rootfstype=ext2 rootwait
+  define Image/cmdline/ext4
+    root=$(ROOTPART) rootfstype=ext4 rootwait
   endef
   
   define Image/cmdline/jffs2-64k
@@ -88,8 +88,8 @@ ROOTDELAY=10
 
 ifneq ($(CONFIG_OLPC_BOOTSCRIPT_IMAGES),)
 
-  define Image/cmdline/ext2
-    root=$(ROOTPART) rootfstype=ext2 rootwait
+  define Image/cmdline/ext4
+    root=$(ROOTPART) rootfstype=ext4 rootwait
   endef
 
   define Image/cmdline/jffs2-64k
@@ -141,7 +141,7 @@ endef
 ifneq ($(CONFIG_X86_VDI_IMAGES),)
   define Image/Build/vdi
     # left here because the image builder doesnt need these
-    ifeq ($(1),ext2)
+    ifeq ($(1),ext4)
 		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi || true
 		qemu-img convert -f raw -O vdi \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
@@ -155,7 +155,7 @@ endif
 ifneq ($(CONFIG_X86_VMDK_IMAGES),)
   define Image/Build/vmdk
     # left here because the image builder doesnt need these
-    ifeq ($(1),ext2)
+    ifeq ($(1),ext4)
 		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk || true
 		qemu-img convert -f raw -O vmdk \
 			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
@@ -184,7 +184,7 @@ define Image/Build
   endif
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/$(IMG_PREFIX)-vmlinuz
-  ifeq ($(1),ext2)
+  ifeq ($(1),ext4)
 	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img
 	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
   endif
