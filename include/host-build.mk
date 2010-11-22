@@ -58,7 +58,8 @@ HOST_CONFIGURE_ARGS = \
 	--prefix=$(STAGING_DIR_HOST) \
 	--exec-prefix=$(STAGING_DIR_HOST) \
 	--sysconfdir=$(STAGING_DIR_HOST)/etc \
-	--localstatedir=$(STAGING_DIR_HOST)/var
+	--localstatedir=$(STAGING_DIR_HOST)/var \
+	--sbindir=$(STAGING_DIR_HOST)/bin
 
 HOST_CONFIGURE_CMD = ./configure
 
