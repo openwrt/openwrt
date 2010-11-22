@@ -19,12 +19,10 @@ tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2 flock
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_TARGET_x86) += qemu
-ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_TARGET_ar71xx),)
+ifneq ($(CONFIG_TARGET_ar71xx),)
 tools-y += squashfs lzma-old
 endif
-ifeq ($(CONFIG_LINUX_2_6_25),)
 tools-y += squashfs4 lzma
-endif
 tools-$(CONFIG_CCACHE) += ccache
 
 ifdef CONFIG_GCC_USE_GRAPHITE

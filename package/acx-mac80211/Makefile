@@ -60,7 +60,7 @@ PKG_EXTRA_CFLAGS:= \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(PKG_EXTRA_KCONFIG)))) \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(PKG_EXTRA_KCONFIG)))) \
 
-ifneq ($(CONFIG_LINUX_2_6_25)$(CONFIG_LINUX_2_6_30)$(CONFIG_LINUX_2_6_31)$(CONFIG_LINUX_2_6_32),)
+ifneq ($(CONFIG_LINUX_2_6_30)$(CONFIG_LINUX_2_6_31)$(CONFIG_LINUX_2_6_32),)
   LINUX_AUTOCONF_FILE:= linux/autoconf.h
 else
   LINUX_AUTOCONF_FILE:= generated/autoconf.h
