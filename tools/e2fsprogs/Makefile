@@ -17,45 +17,19 @@ PKG_SOURCE_URL:=@SF/e2fsprogs
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Host/Configure
-	( cd $(HOST_BUILD_DIR); \
-		./configure \
-			--target=$(GNU_HOST_NAME) \
-			--host=$(GNU_HOST_NAME) \
-			--build=$(GNU_HOST_NAME) \
-			--program-prefix="" \
-			--program-suffix="" \
-			--prefix=/usr \
-			--exec-prefix=/usr \
-			--bindir=/usr/bin \
-			--sbindir=/usr/sbin \
-			--libexecdir=/usr/lib \
-			--sysconfdir=/etc \
-			--datadir=/usr/share \
-			--localstatedir=/var \
-			--mandir=/usr/man \
-			--infodir=/usr/info \
-	)
-endef
-
 TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
-	--enable-shared \
+	--disable-shared \
 	--enable-static \
 	--disable-rpath \
 	--enable-elf-shlibs \
 	--enable-dynamic-e2fsck \
 	--disable-tls
 
-define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) \
-		CFLAGS="$(HOST_CFLAGS)" all
-endef
-
 define Host/Install
-	install -m0755 $(HOST_BUILD_DIR)/e2fsck/e2fsck $(STAGING_DIR_HOST)/bin/
-	install -m0755 $(HOST_BUILD_DIR)/misc/tune2fs $(STAGING_DIR_HOST)/bin/
+	$(Host/Install/Default)
+	$(INSTALL_DATA) $(HOST_BUILD_DIR)/lib/uuid/libuuid.a $(STAGING_DIR_HOST)/lib/
 endef
 
 define Host/Clean
