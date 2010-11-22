@@ -299,7 +299,7 @@
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
-+	case CPU_BMIPS3300:
++	case CPU_BCM3302:
 +		{
 +			u32 cm;
 +			cm = read_c0_diag();
@@ -319,7 +319,7 @@
  
 +	/* Check if special workarounds are required */
 +#ifdef CONFIG_BCM47XX
-+	if (current_cpu_data.cputype == CPU_4KC && (current_cpu_data.processor_id & 0xff) == 0) {
++	if (current_cpu_data.cputype == CPU_BCM4710 && (current_cpu_data.processor_id & 0xff) == 0) {
 +		printk("Enabling BCM4710A0 cache workarounds.\n");
 +		bcm4710 = 1;
 +	} else
@@ -345,7 +345,7 @@
  }
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -872,6 +872,9 @@ static void __cpuinit build_r4000_tlb_re
+@@ -873,6 +873,9 @@ static void __cpuinit build_r4000_tlb_re
  		/* No need for uasm_i_nop */
  	}
  
@@ -355,7 +355,7 @@
  #ifdef CONFIG_64BIT
  	build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
  #else
-@@ -1322,6 +1325,9 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -1323,6 +1326,9 @@ build_r4000_tlbchange_handler_head(u32 *
  				   struct uasm_reloc **r, unsigned int pte,
  				   unsigned int ptr)
  {
