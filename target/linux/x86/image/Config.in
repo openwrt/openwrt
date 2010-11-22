@@ -1,7 +1,7 @@
 config X86_GRUB_IMAGES
 	bool "Build GRUB images (Linux x86 or x86_64 host only)"
 	depends TARGET_x86 && !TARGET_x86_olpc
-	depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+	depends TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 	select PACKAGE_grub
 	default y
 
@@ -35,21 +35,21 @@ config X86_VDI_IMAGES
 	bool "Build VirtualBox image files (VDI)"
 	depends X86_GRUB_IMAGES
 	depends TARGET_x86_generic
-	depends TARGET_ROOTFS_EXT2FS
+	depends TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-pcnet32
 
 config X86_VMDK_IMAGES
 	bool "Build VMware image files (VMDK)"
 	depends X86_GRUB_IMAGES
 	depends TARGET_x86_generic
-	depends TARGET_ROOTFS_EXT2FS
+	depends TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-e1000
 
 
 config OLPC_BOOTSCRIPT_IMAGES
 	bool "Build images with bootscript"
 	depends TARGET_x86_olpc
-	depends TARGET_ROOTFS_EXT2FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+	depends TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
 
 
 config TARGET_IMAGES_PAD

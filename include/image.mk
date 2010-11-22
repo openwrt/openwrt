@@ -128,12 +128,17 @@ ifneq ($(CONFIG_TARGET_ROOTFS_TARGZ),)
   endef
 endif
 
-ifneq ($(CONFIG_TARGET_ROOTFS_EXT2FS),)
+ifneq ($(CONFIG_TARGET_ROOTFS_EXT4FS),)
   E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024)))
 
-  define Image/mkfs/ext2
-		$(STAGING_DIR_HOST)/bin/genext2fs -U -b $(E2SIZE) -N $(CONFIG_TARGET_ROOTFS_MAXINODE) -d $(TARGET_DIR)/ $(KDIR)/root.ext2
-		$(call Image/Build,ext2)
+  define Image/mkfs/ext4
+# generate an ext2 fs
+	$(STAGING_DIR_HOST)/bin/genext2fs -U -b $(E2SIZE) -N $(CONFIG_TARGET_ROOTFS_MAXINODE) -d $(TARGET_DIR)/ $(KDIR)/root.ext4
+# convert it to ext4
+	$(STAGING_DIR_HOST)/bin/tune2fs -O extents,uninit_bg,dir_index $(KDIR)/root.ext4
+# fix it up
+	$(STAGING_DIR_HOST)/bin/e2fsck -fy $(KDIR)/root.ext4
+	$(call Image/Build,ext4)
   endef
 endif
 
@@ -184,7 +189,7 @@ define BuildImage
 		$(call Image/BuildKernel)
 		$(call Image/mkfs/cpiogz)
 		$(call Image/mkfs/targz)
-		$(call Image/mkfs/ext2)
+		$(call Image/mkfs/ext4)
 		$(call Image/mkfs/iso)
 		$(call Image/mkfs/jffs2)
 		$(call Image/mkfs/squashfs)
@@ -195,7 +200,7 @@ define BuildImage
 		$(call Image/BuildKernel)
 		$(call Image/mkfs/cpiogz)
 		$(call Image/mkfs/targz)
-		$(call Image/mkfs/ext2)
+		$(call Image/mkfs/ext4)
 		$(call Image/mkfs/iso)
 		$(call Image/mkfs/jffs2)
 		$(call Image/mkfs/squashfs)
