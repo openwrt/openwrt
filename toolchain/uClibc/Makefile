@@ -68,6 +68,12 @@ GEN_CONFIG=$(SCRIPT_DIR)/kconfig.pl -n \
 define Host/Prepare
 	$(call Host/SetToolchainInfo)
 	$(call Host/Prepare/Default)
+	$(if $(strip $(QUILT)), \
+		cd $(HOST_BUILD_DIR); \
+		if $(QUILT_CMD) next >/dev/null 2>&1; then \
+			$(QUILT_CMD) push -a; \
+		fi
+	)
 	ln -snf $(PKG_NAME)-$(PKG_VERSION) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(GEN_CONFIG) > $(HOST_BUILD_DIR)/.config
 	$(SED) 's,^KERNEL_HEADERS=.*,KERNEL_HEADERS=\"$(BUILD_DIR_TOOLCHAIN)/linux-dev/include\",g' \
