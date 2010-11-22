@@ -1,0 +1,193 @@
+--- a/arch/mips/bcm63xx/cpu.c
++++ b/arch/mips/bcm63xx/cpu.c
+@@ -10,9 +10,7 @@
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/cpu.h>
+-#include <asm/cpu.h>
+ #include <asm/cpu-info.h>
+-#include <asm/mipsregs.h>
+ #include <bcm63xx_cpu.h>
+ #include <bcm63xx_regs.h>
+ #include <bcm63xx_io.h>
+@@ -298,24 +296,26 @@ void __init bcm63xx_cpu_init(void)
+ 	expected_cpu_id = 0;
+ 
+ 	switch (c->cputype) {
+-	case CPU_BMIPS3300:
+-		if ((read_c0_prid() & 0xff00) == PRID_IMP_BMIPS3300_ALT) {
+-			expected_cpu_id = BCM6348_CPU_ID;
+-			bcm63xx_regs_base = bcm96348_regs_base;
+-			bcm63xx_irqs = bcm96348_irqs;
+-		} else {
+-			__cpu_name[cpu] = "Broadcom BCM6338";
+-			expected_cpu_id = BCM6338_CPU_ID;
+-			bcm63xx_regs_base = bcm96338_regs_base;
+-			bcm63xx_irqs = bcm96338_irqs;
+-		}
++	/*
++	 * BCM6338 as the same PrId as BCM3302 see arch/mips/kernel/cpu-probe.c
++	 */
++	case CPU_BCM3302:
++		__cpu_name[cpu] = "Broadcom BCM6338";
++		expected_cpu_id = BCM6338_CPU_ID;
++		bcm63xx_regs_base = bcm96338_regs_base;
++		bcm63xx_irqs = bcm96338_irqs;
+ 		break;
+-	case CPU_BMIPS32:
++	case CPU_BCM6345:
+ 		expected_cpu_id = BCM6345_CPU_ID;
+ 		bcm63xx_regs_base = bcm96345_regs_base;
+ 		bcm63xx_irqs = bcm96345_irqs;
+ 		break;
+-	case CPU_BMIPS4350:
++	case CPU_BCM6348:
++		expected_cpu_id = BCM6348_CPU_ID;
++		bcm63xx_regs_base = bcm96348_regs_base;
++		bcm63xx_irqs = bcm96348_irqs;
++		break;
++	case CPU_BCM6358:
+ 		expected_cpu_id = BCM6358_CPU_ID;
+ 		bcm63xx_regs_base = bcm96358_regs_base;
+ 		bcm63xx_irqs = bcm96358_irqs;
+--- a/arch/mips/include/asm/cpu.h
++++ b/arch/mips/include/asm/cpu.h
+@@ -111,16 +111,14 @@
+  * These are the PRID's for when 23:16 == PRID_COMP_BROADCOM
+  */
+ 
+-#define PRID_IMP_BMIPS4KC	0x4000
+-#define PRID_IMP_BMIPS32	0x8000
+-#define PRID_IMP_BMIPS3300	0x9000
+-#define PRID_IMP_BMIPS3300_ALT	0x9100
+-#define PRID_IMP_BMIPS3300_BUG	0x0000
+-#define PRID_IMP_BMIPS43XX	0xa000
+-#define PRID_IMP_BMIPS5000	0x5a00
+-
+-#define PRID_REV_BMIPS4380_LO	0x0040
+-#define PRID_REV_BMIPS4380_HI	0x006f
++#define PRID_IMP_BCM4710	0x4000
++#define PRID_IMP_BCM3302	0x9000
++#define PRID_IMP_BCM6338	0x9000
++#define PRID_IMP_BCM6345	0x8000
++#define PRID_IMP_BCM6348	0x9100
++#define PRID_IMP_BCM4350	0xA000
++#define PRID_REV_BCM6358	0x0010
++#define PRID_REV_BCM6368	0x0030
+ 
+ /*
+  * These are the PRID's for when 23:16 == PRID_COMP_CAVIUM
+@@ -226,8 +224,9 @@ enum cpu_type_enum {
+ 	 * MIPS32 class processors
+ 	 */
+ 	CPU_4KC, CPU_4KEC, CPU_4KSC, CPU_24K, CPU_34K, CPU_1004K, CPU_74K,
+-	CPU_ALCHEMY, CPU_PR4450, CPU_BMIPS32, CPU_BMIPS3300, CPU_BMIPS4350,
+-	CPU_BMIPS4380, CPU_BMIPS5000, CPU_JZRISC,
++	CPU_ALCHEMY, CPU_PR4450, CPU_BCM3302, CPU_BCM4710,
++	CPU_BCM6338, CPU_BCM6345, CPU_BCM6348, CPU_BCM6358,
++	CPU_JZRISC,
+ 
+ 	/*
+ 	 * MIPS64 class processors
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
+@@ -183,10 +183,10 @@ void __init check_wait(void)
+ 	case CPU_5KC:
+ 	case CPU_25KF:
+ 	case CPU_PR4450:
+-	case CPU_BMIPS3300:
+-	case CPU_BMIPS4350:
+-	case CPU_BMIPS4380:
+-	case CPU_BMIPS5000:
++	case CPU_BCM3302:
++	case CPU_BCM6338:
++	case CPU_BCM6348:
++	case CPU_BCM6358:
+ 	case CPU_CAVIUM_OCTEON:
+ 	case CPU_CAVIUM_OCTEON_PLUS:
+ 	case CPU_CAVIUM_OCTEON2:
+@@ -905,37 +905,33 @@ static inline void cpu_probe_broadcom(st
+ {
+ 	decode_configs(c);
+ 	switch (c->processor_id & 0xff00) {
+-	case PRID_IMP_BMIPS32:
+-		c->cputype = CPU_BMIPS32;
+-		__cpu_name[cpu] = "Broadcom BMIPS32";
+-		break;
+-	case PRID_IMP_BMIPS3300:
+-	case PRID_IMP_BMIPS3300_ALT:
+-	case PRID_IMP_BMIPS3300_BUG:
+-		c->cputype = CPU_BMIPS3300;
+-		__cpu_name[cpu] = "Broadcom BMIPS3300";
+-		break;
+-	case PRID_IMP_BMIPS43XX: {
+-		int rev = c->processor_id & 0xff;
+-
+-		if (rev >= PRID_REV_BMIPS4380_LO &&
+-				rev <= PRID_REV_BMIPS4380_HI) {
+-			c->cputype = CPU_BMIPS4380;
+-			__cpu_name[cpu] = "Broadcom BMIPS4380";
+-		} else {
+-			c->cputype = CPU_BMIPS4350;
+-			__cpu_name[cpu] = "Broadcom BMIPS4350";
+-		}
+-		break;
+-	}
+-	case PRID_IMP_BMIPS5000:
+-		c->cputype = CPU_BMIPS5000;
+-		__cpu_name[cpu] = "Broadcom BMIPS5000";
+-		c->options |= MIPS_CPU_ULRI;
++	case PRID_IMP_BCM3302:
++	 /* same as PRID_IMP_BCM6338 */
++		c->cputype = CPU_BCM3302;
++		__cpu_name[cpu] = "Broadcom BCM3302";
++		break;
++	case PRID_IMP_BCM4710:
++		c->cputype = CPU_BCM4710;
++		__cpu_name[cpu] = "Broadcom BCM4710";
++		break;
++	case PRID_IMP_BCM6345:
++		c->cputype = CPU_BCM6345;
++		__cpu_name[cpu] = "Broadcom BCM6345";
++		break;
++	case PRID_IMP_BCM6348:
++		c->cputype = CPU_BCM6348;
++		__cpu_name[cpu] = "Broadcom BCM6348";
+ 		break;
+-	case PRID_IMP_BMIPS4KC:
+-		c->cputype = CPU_4KC;
+-		__cpu_name[cpu] = "MIPS 4Kc";
++	case PRID_IMP_BCM4350:
++		switch (c->processor_id & 0xf0) {
++		case PRID_REV_BCM6358:
++			c->cputype = CPU_BCM6358;
++			__cpu_name[cpu] = "Broadcom BCM6358";
++			break;
++		default:
++			c->cputype = CPU_UNKNOWN;
++			break;
++		}
+ 		break;
+ 	}
+ }
+--- a/arch/mips/mm/tlbex.c
++++ b/arch/mips/mm/tlbex.c
+@@ -338,12 +338,13 @@ static void __cpuinit build_tlb_write_en
+ 	case CPU_4KSC:
+ 	case CPU_20KC:
+ 	case CPU_25KF:
+-	case CPU_BMIPS32:
+-	case CPU_BMIPS3300:
+-	case CPU_BMIPS4350:
+-	case CPU_BMIPS4380:
+-	case CPU_BMIPS5000:
++	case CPU_BCM3302:
++	case CPU_BCM4710:
+ 	case CPU_LOONGSON2:
++	case CPU_BCM6338:
++	case CPU_BCM6345:
++	case CPU_BCM6348:
++	case CPU_BCM6358:
+ 	case CPU_R5500:
+ 		if (m4kc_tlbp_war())
+ 			uasm_i_nop(p);
