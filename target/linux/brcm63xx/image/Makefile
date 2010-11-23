@@ -27,13 +27,17 @@ define trxalign/squashfs
 -a 1024
 endef
 
+define Image/LimitName16
+	$(shell expr substr $(1) 1 16)
+endef
+
 define Image/Build/CFE
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
 		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin \
 		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
 		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
-		--info1 "$(4) $(REVISION)" --info2 $(1) \
+		--info1 "$(call Image/LimitName16,$(4))" --info2 $(1) \
 		$(6) $(7) $(8) $(9)
 endef
 
@@ -44,7 +48,7 @@ define Image/Build/CFEAGPF
 		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
 		--load-addr $(LOADADDR) --tag-version 8 \
 		--signature2 IMAGE --block-size 0x20000 \
-		--image-offset $(4) --info1 "$(5) $(REVISION)" --info2 $(1)
+		--image-offset $(4) --info1 "$(call Image/LimitName16,$(5))" --info2 $(1)
 endef
 
 define Image/Build/RG100A
@@ -53,7 +57,7 @@ define Image/Build/RG100A
 		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
 		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
 		--load-addr $(LOADADDR) --block-size 0x20000 \
-		--image-offset $(4) --info1 "$(5) $(REVISION)" --info2 $(1)
+		--image-offset $(4) --info1 "$(call Image/LimitName16,$(5))" --info2 $(1)
 endef
 
 define Image/Build/RedBoot
@@ -109,7 +113,7 @@ define Image/Build
 	# Various routers
 	$(call Image/Build/CFE,$(1),96345GW2,6345,96345GW2-generic)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,96348GW2-bc221,,--layoutver 5)
-	$(call Image/Build/CFE,$(1),96345GW2,6345,92345GW2-revision,OpenWRT-$(REVISION))
+	$(call Image/Build/CFE,$(1),96345GW2,6345,92345GW2-rev,OpenWRT-$(REVISION))
 	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-generic,,)
 	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-bc221,,--layoutver 5)
 	$(call Image/Build/CFE,$(1),6338GW,6338,6338GW-generic,,)
