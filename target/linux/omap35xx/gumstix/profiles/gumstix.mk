@@ -9,7 +9,7 @@ define Profile/Gumstix
   NAME:=gumstix
   PACKAGES:=-iptables -ppp -ppp-mod-pppoe -kmod-ipt-nathelper \
 		-firewall -mtd -hotplug2 -udevtrigger -dropbear \
-		ext2 usb udev kmod-bluetooth ntpclient wpa-supplicant \
+		ext4 usb udev kmod-bluetooth ntpclient wpa-supplicant \
 		wireless-tools wpa-cli \
 		bluez-utils bluez-hcidump hegw usbutils python pyserial \
 		python-mini python-openssl python-cjson libstdcpp \
