@@ -48,7 +48,7 @@
  {
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -505,6 +505,7 @@ struct files_struct *get_files_struct(st
+@@ -513,6 +513,7 @@ struct files_struct *get_files_struct(st
  
  	return files;
  }
@@ -56,7 +56,7 @@
  
  void put_files_struct(struct files_struct *files)
  {
-@@ -526,6 +527,7 @@ void put_files_struct(struct files_struc
+@@ -534,6 +535,7 @@ void put_files_struct(struct files_struc
  		rcu_read_unlock();
  	}
  }
@@ -76,7 +76,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -4573,6 +4573,7 @@ int can_nice(const struct task_struct *p
+@@ -4588,6 +4588,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
  		capable(CAP_SYS_NICE));
  }
