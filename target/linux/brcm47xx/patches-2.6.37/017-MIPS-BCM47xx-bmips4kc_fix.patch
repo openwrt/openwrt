@@ -1,47 +1,52 @@
+From 1ff5904f725e9816b5ff2b5ade1d6326558d8e01 Mon Sep 17 00:00:00 2001
+From: Kevin Cernekee <cernekee@gmail.com>
+To: Ralf Baechle <ralf@linux-mips.org>
+Cc: <linux-mips@linux-mips.org>, <linux-kernel@vger.kernel.org>
+Date: Mon, 22 Nov 2010 21:41:28 -0800
+Subject: [PATCH 7/7] MIPS: Fix regression on BCM4710 processor detection
+
+BCM4710 uses the BMIPS32 core (like BCM6345), not the MIPS 4Kc core as
+was previously believed.
+
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+---
+ arch/mips/include/asm/cpu.h  |    4 ++--
+ arch/mips/kernel/cpu-probe.c |    7 ++-----
+ 2 files changed, 4 insertions(+), 7 deletions(-)
+
 --- a/arch/mips/include/asm/cpu.h
 +++ b/arch/mips/include/asm/cpu.h
-@@ -111,7 +111,7 @@
+@@ -111,8 +111,8 @@
   * These are the PRID's for when 23:16 == PRID_COMP_BROADCOM
   */
  
 -#define PRID_IMP_BMIPS4KC	0x4000
-+#define PRID_IMP_BCM4710	0x4000
- #define PRID_IMP_BMIPS32	0x8000
+-#define PRID_IMP_BMIPS32	0x8000
++#define PRID_IMP_BMIPS32_REV4	0x4000
++#define PRID_IMP_BMIPS32_REV8	0x8000
  #define PRID_IMP_BMIPS3300	0x9000
  #define PRID_IMP_BMIPS3300_ALT	0x9100
-@@ -226,8 +226,8 @@ enum cpu_type_enum {
- 	 * MIPS32 class processors
- 	 */
- 	CPU_4KC, CPU_4KEC, CPU_4KSC, CPU_24K, CPU_34K, CPU_1004K, CPU_74K,
--	CPU_ALCHEMY, CPU_PR4450, CPU_BMIPS32, CPU_BMIPS3300, CPU_BMIPS4350,
--	CPU_BMIPS4380, CPU_BMIPS5000, CPU_JZRISC,
-+	CPU_ALCHEMY, CPU_PR4450, CPU_BCM4710, CPU_BMIPS32, CPU_BMIPS3300,
-+	CPU_BMIPS4350, CPU_BMIPS4380, CPU_BMIPS5000, CPU_JZRISC,
- 
- 	/*
- 	 * MIPS64 class processors
+ #define PRID_IMP_BMIPS3300_BUG	0x0000
 --- a/arch/mips/kernel/cpu-probe.c
 +++ b/arch/mips/kernel/cpu-probe.c
-@@ -933,9 +933,9 @@ static inline void cpu_probe_broadcom(st
+@@ -905,7 +905,8 @@ static inline void cpu_probe_broadcom(st
+ {
+ 	decode_configs(c);
+ 	switch (c->processor_id & 0xff00) {
+-	case PRID_IMP_BMIPS32:
++	case PRID_IMP_BMIPS32_REV4:
++	case PRID_IMP_BMIPS32_REV8:
+ 		c->cputype = CPU_BMIPS32;
+ 		__cpu_name[cpu] = "Broadcom BMIPS32";
+ 		break;
+@@ -933,10 +934,6 @@ static inline void cpu_probe_broadcom(st
  		__cpu_name[cpu] = "Broadcom BMIPS5000";
  		c->options |= MIPS_CPU_ULRI;
  		break;
 -	case PRID_IMP_BMIPS4KC:
 -		c->cputype = CPU_4KC;
 -		__cpu_name[cpu] = "MIPS 4Kc";
-+	case PRID_IMP_BCM4710:
-+		c->cputype = CPU_BCM4710;
-+		__cpu_name[cpu] = "Broadcom BCM4710";
- 		break;
+-		break;
  	}
  }
---- a/arch/mips/mm/tlbex.c
-+++ b/arch/mips/mm/tlbex.c
-@@ -338,6 +338,7 @@ static void __cpuinit build_tlb_write_en
- 	case CPU_4KSC:
- 	case CPU_20KC:
- 	case CPU_25KF:
-+	case CPU_BCM4710:
- 	case CPU_BMIPS32:
- 	case CPU_BMIPS3300:
- 	case CPU_BMIPS4350:
+ 
