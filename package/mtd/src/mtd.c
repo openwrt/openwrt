@@ -74,6 +74,7 @@ static char *imagefile = NULL;
 static char *jffs2file = NULL, *jffs2dir = JFFS2_DEFAULT_DIR;
 static int buflen = 0;
 int quiet;
+int no_erase;
 int mtdsize = 0;
 int erasesize = 0;
 
@@ -518,6 +519,8 @@ resume:
 		}
 
 		/* need to erase the next block before writing data to it */
+    if(no_erase)
+    {
 		while (w + buflen > e) {
 			if (!quiet)
 				fprintf(stderr, "\b\b\b[e]");
@@ -544,6 +547,7 @@ resume:
 			/* erase the chunk */
 			e += erasesize;
 		}
+    }
 
 		if (!quiet)
 			fprintf(stderr, "\b\b\b[w]");
@@ -595,6 +599,7 @@ static void usage(void)
 	"Following options are available:\n"
 	"        -q                      quiet mode (once: no [w] on writing,\n"
 	"                                           twice: no status messages)\n"
+	"        -n                      write without first erasing the blocks\n"
 	"        -r                      reboot after successful command\n"
 	"        -f                      force write without trx checks\n"
 	"        -e <device>             erase <device> before executing the command\n"
@@ -646,12 +651,13 @@ int main (int argc, char **argv)
 	force = 0;
 	buflen = 0;
 	quiet = 0;
+  no_erase = 0;
 
 	while ((ch = getopt(argc, argv,
 #ifdef FIS_SUPPORT
 			"F:"
 #endif
-			"frqe:d:j:o:")) != -1)
+			"frnqe:d:j:o:")) != -1)
 		switch (ch) {
 			case 'f':
 				force = 1;
@@ -659,6 +665,9 @@ int main (int argc, char **argv)
 			case 'r':
 				boot = 1;
 				break;
+      case 'n':
+        no_erase = 1;
+        break;
 			case 'j':
 				jffs2file = optarg;
 				break;
