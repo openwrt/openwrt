@@ -519,35 +519,35 @@ resume:
 		}
 
 		/* need to erase the next block before writing data to it */
-    if(no_erase)
-    {
-		while (w + buflen > e) {
-			if (!quiet)
-				fprintf(stderr, "\b\b\b[e]");
+		if(!no_erase)
+		{
+			while (w + buflen > e) {
+				if (!quiet)
+					fprintf(stderr, "\b\b\b[e]");
 
 
-			if (mtd_erase_block(fd, e) < 0) {
-				if (next) {
-					if (w < e) {
-						write(fd, buf + offset, e - w);
-						offset = e - w;
+				if (mtd_erase_block(fd, e) < 0) {
+					if (next) {
+						if (w < e) {
+							write(fd, buf + offset, e - w);
+							offset = e - w;
+						}
+						w = 0;
+						e = 0;
+						close(fd);
+						mtd = next;
+						fprintf(stderr, "\b\b\b   \n");
+						goto resume;
+					} else {
+						fprintf(stderr, "Failed to erase block\n");
+						exit(1);
 					}
-					w = 0;
-					e = 0;
-					close(fd);
-					mtd = next;
-					fprintf(stderr, "\b\b\b   \n");
-					goto resume;
-				} else {
-					fprintf(stderr, "Failed to erase block\n");
-					exit(1);
 				}
-			}
 
-			/* erase the chunk */
-			e += erasesize;
-		}
-    }
+				/* erase the chunk */
+				e += erasesize;
+			}
+	    }
 
 		if (!quiet)
 			fprintf(stderr, "\b\b\b[w]");
@@ -665,9 +665,9 @@ int main (int argc, char **argv)
 			case 'r':
 				boot = 1;
 				break;
-      case 'n':
-        no_erase = 1;
-        break;
+			case 'n':
+				no_erase = 1;
+				break;
 			case 'j':
 				jffs2file = optarg;
 				break;
