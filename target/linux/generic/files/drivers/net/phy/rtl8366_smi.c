@@ -972,6 +972,52 @@ int rtl8366_sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 }
 EXPORT_SYMBOL_GPL(rtl8366_sw_set_vlan_ports);
 
+int rtl8366_sw_get_vlan_fid(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	struct rtl8366_vlan_4k vlan4k;
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	int err;
+
+	if (!smi->ops->is_vlan_valid(smi, val->port_vlan))
+		return -EINVAL;
+
+	err = smi->ops->get_vlan_4k(smi, val->port_vlan, &vlan4k);
+	if (err)
+		return err;
+
+	val->value.i = vlan4k.fid;
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_get_vlan_fid);
+
+int rtl8366_sw_set_vlan_fid(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	struct rtl8366_vlan_4k vlan4k;
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	int err;
+
+	if (!smi->ops->is_vlan_valid(smi, val->port_vlan))
+		return -EINVAL;
+
+	if (val->value.i < 0 || val->value.i > attr->max)
+		return -EINVAL;
+
+	err = smi->ops->get_vlan_4k(smi, val->port_vlan, &vlan4k);
+	if (err)
+		return err;
+
+	return rtl8366_set_vlan(smi, val->port_vlan,
+				vlan4k.member,
+				vlan4k.untag,
+				val->value.i);
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_set_vlan_fid);
+
 int rtl8366_sw_get_vlan_enable(struct switch_dev *dev,
 			       const struct switch_attr *attr,
 			       struct switch_val *val)
