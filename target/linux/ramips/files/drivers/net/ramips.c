@@ -169,12 +169,13 @@ ramips_alloc_dma(struct raeth_priv *re)
 
 	memset(re->rx, 0, sizeof(struct ramips_rx_dma) * NUM_RX_DESC);
 	for (i = 0; i < NUM_RX_DESC; i++) {
-		struct sk_buff *new_skb = dev_alloc_skb(MAX_RX_LENGTH + 2);
+		struct sk_buff *new_skb = dev_alloc_skb(MAX_RX_LENGTH +
+							NET_IP_ALIGN);
 
 		if (!new_skb)
 			goto err_cleanup;
 
-		skb_reserve(new_skb, 2);
+		skb_reserve(new_skb, NET_IP_ALIGN);
 		re->rx[i].rxd1 = dma_map_single(NULL,
 						new_skb->data,
 						MAX_RX_LENGTH,
@@ -272,7 +273,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 			break;
 		max_rx--;
 
-		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + 2);
+		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN);
 		/* Reuse the buffer on allocation failures */
 		if (new_skb) {
 			rx_skb = priv->rx_skb[rx];
@@ -285,7 +286,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 			netif_rx(rx_skb);
 
 			priv->rx_skb[rx] = new_skb;
-			skb_reserve(new_skb, 2);
+			skb_reserve(new_skb, NET_IP_ALIGN);
 			priv->rx[rx].rxd1 = dma_map_single(NULL,
 							   new_skb->data,
 							   MAX_RX_LENGTH,
