@@ -12,7 +12,7 @@ BOARDNAME:=Cobalt Microservers
 FEATURES:=targz pci ext4
 CFLAGS:=-O2 -pipe -mtune=r5000 -funit-at-a-time
 
-LINUX_VERSION:=2.6.32.25
+LINUX_VERSION:=2.6.32.26
 
 include $(INCLUDE_DIR)/target.mk
 

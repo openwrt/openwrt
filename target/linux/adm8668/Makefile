@@ -11,7 +11,7 @@ BOARD:=adm8668
 BOARDNAME:=Infineon WildPass ADM8668
 FEATURES:=squashfs
 
-LINUX_VERSION:=2.6.36
+LINUX_VERSION:=2.6.36.1
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += wpad-mini kmod-rt61-pci

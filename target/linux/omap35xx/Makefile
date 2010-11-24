@@ -12,7 +12,7 @@ BOARDNAME:=TI OMAP35xx
 FEATURES:=broken
 SUBTARGETS=beagleboard gumstix
 
-LINUX_VERSION:=2.6.32.25
+LINUX_VERSION:=2.6.32.26
 KERNELNAME:="uImage"
 
 DEVICE_TYPE=developerboard
