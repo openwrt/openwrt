@@ -176,7 +176,7 @@ ramips_alloc_dma(struct raeth_priv *re)
 
 		skb_reserve(new_skb, 2);
 		re->rx[i].rxd1 = dma_map_single(NULL,
-						skb_put(new_skb, 2),
+						new_skb->data,
 						MAX_RX_LENGTH + 2,
 						DMA_FROM_DEVICE);
 		re->rx[i].rxd2 |= RX_DMA_LSO;
