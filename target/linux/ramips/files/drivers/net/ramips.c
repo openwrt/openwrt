@@ -272,23 +272,26 @@ ramips_eth_rx_hw(unsigned long ptr)
 			break;
 		max_rx--;
 
-		rx_skb = priv->rx_skb[rx];
-		skb_put(rx_skb, RX_DMA_PLEN0(priv->rx[rx].rxd2));
-		rx_skb->dev = dev;
-		rx_skb->protocol = eth_type_trans(rx_skb, dev);
-		rx_skb->ip_summed = CHECKSUM_NONE;
-		dev->stats.rx_packets++;
-		dev->stats.rx_bytes += rx_skb->len;
-		netif_rx(rx_skb);
-
 		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + 2);
-		priv->rx_skb[rx] = new_skb;
-		BUG_ON(!new_skb);
-		skb_reserve(new_skb, 2);
-		priv->rx[rx].rxd1 = dma_map_single(NULL,
-						   new_skb->data,
-						   MAX_RX_LENGTH + 2,
-						   DMA_FROM_DEVICE);
+		/* Reuse the buffer on allocation failures */
+		if (new_skb) {
+			rx_skb = priv->rx_skb[rx];
+			skb_put(rx_skb, RX_DMA_PLEN0(priv->rx[rx].rxd2));
+			rx_skb->dev = dev;
+			rx_skb->protocol = eth_type_trans(rx_skb, dev);
+			rx_skb->ip_summed = CHECKSUM_NONE;
+			dev->stats.rx_packets++;
+			dev->stats.rx_bytes += rx_skb->len;
+			netif_rx(rx_skb);
+
+			priv->rx_skb[rx] = new_skb;
+			skb_reserve(new_skb, 2);
+			priv->rx[rx].rxd1 = dma_map_single(NULL,
+							   new_skb->data,
+							   MAX_RX_LENGTH + 2,
+							   DMA_FROM_DEVICE);
+		}
+
 		priv->rx[rx].rxd2 &= ~RX_DMA_DONE;
 		wmb();
 		ramips_fe_wr(rx, RAMIPS_RX_CALC_IDX0);
