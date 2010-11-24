@@ -2,6 +2,12 @@ if RALINK_RT305X
 
 menu "Ralink RT350x machine selection"
 
+config RT305X_MACH_F5D8235_V2
+	bool "Belkin F5D8235 v2 support"
+	default y
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_WHR_G300N
 	bool "Buffalo WHR-G300N support"
 	default y
