@@ -113,6 +113,18 @@ define Image/Build/Profile/WCR150GN
 endef
 
 
+mtdlayout_f5d8235=mtdparts=physmap-flash.0:320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(factory),7744k@0x50000(firmware)
+mtd_f5d8235_kernel_part_size=1572864
+mtd_f5d8235_rootfs_part_size=6356992
+define Image/Build/Template/F5D8235V2
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_f5d8235,$(mtd_f5d8235_kernel_part_size),$(mtd_f5d8235_rootfs_part_size))
+endef
+
+define Image/Build/Profile/F5D8235V2
+	$(call Image/Build/Template/F5D8235V2,$(1),f5d8235v2,F5D8235_V2)
+endef
+
+
 ifeq ($(CONFIG_RALINK_RT305X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR300B1,$(1))
@@ -121,6 +133,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/PWH2004,$(1))
 	$(call Image/Build/Profile/WHRG300N,$(1))
 	$(call Image/Build/Profile/WCR150GN,$(1))
+	$(call Image/Build/Profile/F5D8235V2,$(1))
 endef
 endif
 
