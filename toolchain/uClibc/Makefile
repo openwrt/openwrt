@@ -101,12 +101,17 @@ endef
 define Host/Configure
 endef
 
+CPU_CFLAGS = \
+	-funsigned-char -fno-builtin -fno-asm \
+	--std=gnu99 -ffunction-sections -fdata-sections \
+	$(TARGET_CFLAGS)
+
 UCLIBC_MAKE = PATH='$(TARGET_PATH)' $(MAKE) -C $(HOST_BUILD_DIR) \
 	$(TARGET_CONFIGURE_OPTS) \
 	DEVEL_PREFIX=/ \
 	RUNTIME_PREFIX=/ \
 	HOSTCC="$(HOSTCC)" \
-	CPU_CFLAGS="$(TARGET_CFLAGS)" \
+	CPU_CFLAGS="$(CPU_CFLAGS)" \
 	ARCH="$(CONFIG_ARCH)" \
 	LIBGCC="$(subst libgcc.a,libgcc_initial.a,$(shell $(TARGET_CC) -print-libgcc-file-name))" \
 	DOSTRIP=""
