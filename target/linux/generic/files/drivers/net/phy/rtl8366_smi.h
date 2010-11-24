@@ -120,6 +120,12 @@ int rtl8366_sw_get_port_mib(struct switch_dev *dev,
 int rtl8366_sw_get_vlan_info(struct switch_dev *dev,
 			     const struct switch_attr *attr,
 			     struct switch_val *val);
+int rtl8366_sw_get_vlan_fid(struct switch_dev *dev,
+			     const struct switch_attr *attr,
+			     struct switch_val *val);
+int rtl8366_sw_set_vlan_fid(struct switch_dev *dev,
+			     const struct switch_attr *attr,
+			     struct switch_val *val);
 int rtl8366_sw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val);
 int rtl8366_sw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val);
 int rtl8366_sw_get_vlan_enable(struct switch_dev *dev,

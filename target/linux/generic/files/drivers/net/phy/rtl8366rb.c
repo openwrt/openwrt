@@ -1,5 +1,5 @@
 /*
- * Platform driver for the Realtek RTL8366S ethernet switch
+ * Platform driver for the Realtek RTL8366RB ethernet switch
  *
  * Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2010 Antti Seppälä <a.seppala@gmail.com>
@@ -21,7 +21,7 @@
 #include "rtl8366_smi.h"
 
 #define RTL8366RB_DRIVER_DESC	"Realtek RTL8366RB ethernet switch driver"
-#define RTL8366RB_DRIVER_VER	"0.2.2"
+#define RTL8366RB_DRIVER_VER	"0.2.3"
 
 #define RTL8366RB_PHY_NO_MAX	4
 #define RTL8366RB_PHY_PAGE_MAX	7
@@ -182,7 +182,7 @@
 #define RTL8366RB_EB_PREIFG_MASK	(1 << RTL8366RB_EB_PREIFG_OFFSET)
 
 #define RTL8366RB_BDTH_SW_MAX		1048512
-#define RTL8366RB_BDTH_BASE		64
+#define RTL8366RB_BDTH_UNIT		64
 #define RTL8366RB_BDTH_REG_DEFAULT	16383
 
 /* QOS */
@@ -825,7 +825,7 @@ static int rtl8366rb_sw_set_port_rate_in(struct switch_dev *dev,
 		return -EINVAL;
 
 	if (val->value.i > 0 && val->value.i < RTL8366RB_BDTH_SW_MAX)
-		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_BASE;
+		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_UNIT;
 	else
 		val->value.i = RTL8366RB_BDTH_REG_DEFAULT;
 
@@ -851,7 +851,7 @@ static int rtl8366rb_sw_get_port_rate_in(struct switch_dev *dev,
 	if (data < RTL8366RB_IB_BDTH_MASK)
 		data += 1;
 
-	val->value.i = (int)data * RTL8366RB_BDTH_BASE;
+	val->value.i = (int)data * RTL8366RB_BDTH_UNIT;
 
 	return 0;
 }
@@ -870,7 +870,7 @@ static int rtl8366rb_sw_set_port_rate_out(struct switch_dev *dev,
 		(RTL8366RB_QOS_DEFAULT_PREIFG << RTL8366RB_EB_PREIFG_OFFSET));
 
 	if (val->value.i > 0 && val->value.i < RTL8366RB_BDTH_SW_MAX)
-		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_BASE;
+		val->value.i = (val->value.i - 1) / RTL8366RB_BDTH_UNIT;
 	else
 		val->value.i = RTL8366RB_BDTH_REG_DEFAULT;
 
@@ -894,7 +894,7 @@ static int rtl8366rb_sw_get_port_rate_out(struct switch_dev *dev,
 	if (data < RTL8366RB_EB_BDTH_MASK)
 		data += 1;
 
-	val->value.i = (int)data * RTL8366RB_BDTH_BASE;
+	val->value.i = (int)data * RTL8366RB_BDTH_UNIT;
 
 	return 0;
 }
@@ -1065,6 +1065,13 @@ static struct switch_attr rtl8366rb_vlan[] = {
 		.max = 1,
 		.set = NULL,
 		.get = rtl8366_sw_get_vlan_info,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "fid",
+		.description = "Get/Set vlan FID",
+		.max = RTL8366RB_FIDMAX,
+		.set = rtl8366_sw_set_vlan_fid,
+		.get = rtl8366_sw_get_vlan_fid,
 	},
 };
 
