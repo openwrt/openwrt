@@ -26,7 +26,7 @@ Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
  	  Allow the ext4 file system driver code to be used for ext2 or
 --- a/fs/ext4/super.c
 +++ b/fs/ext4/super.c
-@@ -3989,7 +3989,7 @@ static int ext4_get_sb(struct file_syste
+@@ -3994,7 +3994,7 @@ static int ext4_get_sb(struct file_syste
  	return get_sb_bdev(fs_type, flags, dev_name, data, ext4_fill_super,mnt);
  }
  
@@ -35,7 +35,7 @@ Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
  static struct file_system_type ext2_fs_type = {
  	.owner		= THIS_MODULE,
  	.name		= "ext2",
-@@ -4015,7 +4015,7 @@ static inline void register_as_ext2(void
+@@ -4020,7 +4020,7 @@ static inline void register_as_ext2(void
  static inline void unregister_as_ext2(void) { }
  #endif
  

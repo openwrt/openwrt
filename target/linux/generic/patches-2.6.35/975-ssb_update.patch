@@ -298,7 +298,7 @@
  			tx_ring_dma + size > DMA_BIT_MASK(30)) {
  			kfree(tx_ring);
  			goto out_err;
-@@ -2176,12 +2169,14 @@ static int __devinit b44_init_one(struct
+@@ -2174,12 +2167,14 @@ static int __devinit b44_init_one(struct
  			"Failed to powerup the bus\n");
  		goto err_out_free_dev;
  	}

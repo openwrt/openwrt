@@ -15,7 +15,7 @@ Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
 
 --- a/fs/ext4/super.c
 +++ b/fs/ext4/super.c
-@@ -4010,6 +4010,7 @@ static inline void unregister_as_ext2(vo
+@@ -4015,6 +4015,7 @@ static inline void unregister_as_ext2(vo
  {
  	unregister_filesystem(&ext2_fs_type);
  }
@@ -23,7 +23,7 @@ Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
  #else
  static inline void register_as_ext2(void) { }
  static inline void unregister_as_ext2(void) { }
-@@ -4036,6 +4037,7 @@ static inline void unregister_as_ext3(vo
+@@ -4041,6 +4042,7 @@ static inline void unregister_as_ext3(vo
  {
  	unregister_filesystem(&ext3_fs_type);
  }

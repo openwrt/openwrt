@@ -68,7 +68,7 @@
   * macro override instead of weak attribute alias, to workaround
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -6224,6 +6224,7 @@ int can_nice(const struct task_struct *p
+@@ -6223,6 +6223,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= p->signal->rlim[RLIMIT_NICE].rlim_cur ||
  		capable(CAP_SYS_NICE));
  }
@@ -96,7 +96,7 @@
   * We enter with non-exclusive mmap_sem (to exclude vma changes,
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -1172,6 +1172,7 @@ void unmap_kernel_range(unsigned long ad
+@@ -1181,6 +1181,7 @@ void unmap_kernel_range(unsigned long ad
  	vunmap_page_range(addr, end);
  	flush_tlb_kernel_range(addr, end);
  }
@@ -104,7 +104,7 @@
  
  int map_vm_area(struct vm_struct *area, pgprot_t prot, struct page ***pages)
  {
-@@ -1287,6 +1288,7 @@ struct vm_struct *get_vm_area(unsigned l
+@@ -1296,6 +1297,7 @@ struct vm_struct *get_vm_area(unsigned l
  	return __get_vm_area_node(size, 1, flags, VMALLOC_START, VMALLOC_END,
  				-1, GFP_KERNEL, __builtin_return_address(0));
  }
