@@ -547,7 +547,7 @@ resume:
 				/* erase the chunk */
 				e += erasesize;
 			}
-	    }
+		}
 
 		if (!quiet)
 			fprintf(stderr, "\b\b\b[w]");
