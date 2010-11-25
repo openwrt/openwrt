@@ -1,6 +1,8 @@
---- a/drivers/mtd/maps/physmap.c
-+++ b/drivers/mtd/maps/physmap.c
-@@ -80,7 +80,7 @@ static const char *rom_probe_types[] = {
+Index: linux-2.6.32.25/drivers/mtd/maps/physmap.c
+===================================================================
+--- linux-2.6.32.25.orig/drivers/mtd/maps/physmap.c	2010-10-28 21:47:22.000000000 -0700
++++ linux-2.6.32.25/drivers/mtd/maps/physmap.c	2010-11-16 08:14:11.469582161 -0800
+@@ -80,7 +80,7 @@
  					"map_rom",
  					NULL };
  #ifdef CONFIG_MTD_PARTITIONS
@@ -9,3 +11,16 @@
  #endif
  
  static int physmap_flash_probe(struct platform_device *dev)
+Index: linux-2.6.32.25/arch/mips/ar7/platform.c
+===================================================================
+--- linux-2.6.32.25.orig/arch/mips/ar7/platform.c	2010-11-16 08:17:41.352090063 -0800
++++ linux-2.6.32.25/arch/mips/ar7/platform.c	2010-11-16 08:18:09.232119441 -0800
+@@ -98,7 +98,7 @@
+ 	.name = "mem",
+ 	.flags = IORESOURCE_MEM,
+ 	.start = 0x10000000,
+-	.end = 0x107fffff,
++	.end = 0x11ffffff,
+ };
+ 
+ static struct resource cpmac_low_res[] = {
