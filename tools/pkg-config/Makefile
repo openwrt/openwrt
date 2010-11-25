@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pkg-config
-PKG_VERSION:=0.22
+PKG_VERSION:=0.25
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://pkgconfig.freedesktop.org/releases/
-PKG_MD5SUM:=fd5c547e9d66ba49bc735ccb8c791f2a
+PKG_MD5SUM:=a3270bab3f4b69b7dc6dbdacbcae9745
 
 include $(INCLUDE_DIR)/host-build.mk
 
