@@ -51,10 +51,17 @@ CONFIGURE_ARGS += \
 	--without-debug \
 	--without-profile \
 	--without-progs \
+	--disable-big-core \
+	--disable-home-terminfo \
 	--with-normal \
 	--with-shared \
 	--with-terminfo-dirs=/usr/share/terminfo \
 	--with-default-terminfo-dir=/usr/share/terminfo
+
+ifeq ($(HOST_OS),FreeBSD)
+	CONFIGURE_ARGS +=
+		--with-terminfo=/usr/share/terminfo.db 
+endif
 
 ifeq ($(BUILD_VARIANT),libncursesw)
 	CONFIGURE_ARGS += \
@@ -78,6 +85,7 @@ endef
 define Package/libncurses/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{curses,ncurses,panel,menu,form}.so* $(1)/usr/lib/
+ifneq ($(HOST_OS),FreeBSD)
 	$(INSTALL_DIR) $(1)/usr/share/terminfo
 	(cd $(PKG_INSTALL_DIR)/usr/share/terminfo; \
 		for dir in ??; do \
@@ -90,6 +98,7 @@ define Package/libncurses/install
 		$(CP) $(PKG_INSTALL_DIR)/usr/share/terminfo/$$$$file \
 			$(1)/usr/share/terminfo/$$$$file; \
 	done
+endif
 endef
 
 define Package/libncursesw/install
