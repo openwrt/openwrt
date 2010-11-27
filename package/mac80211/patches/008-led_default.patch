@@ -36,49 +36,6 @@
  
  # Atheros
  CONFIG_ATH_COMMON=m
---- a/drivers/net/wireless/ath/ath9k/gpio.c
-+++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -54,6 +54,7 @@ static void ath_led_blink_work(struct wo
- 		sc->sc_flags |= SC_OP_LED_ON;
- }
- 
-+#ifdef CONFIG_LEDS_CLASS
- static void ath_led_brightness(struct led_classdev *led_cdev,
- 			       enum led_brightness brightness)
- {
-@@ -90,10 +91,12 @@ static void ath_led_brightness(struct le
- 		break;
- 	}
- }
-+#endif
- 
- static int ath_register_led(struct ath_softc *sc, struct ath_led *led,
- 			    char *trigger)
- {
-+#ifdef CONFIG_LEDS_CLASS
- 	int ret;
- 
- 	led->sc = sc;
-@@ -108,14 +111,19 @@ static int ath_register_led(struct ath_s
- 	else
- 		led->registered = 1;
- 	return ret;
-+#else
-+	return 0;
-+#endif
- }
- 
- static void ath_unregister_led(struct ath_led *led)
- {
-+#ifdef CONFIG_LEDS_CLASS
- 	if (led->registered) {
- 		led_classdev_unregister(&led->led_cdev);
- 		led->registered = 0;
- 	}
-+#endif
- }
- 
- void ath_deinit_leds(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
 +++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
 @@ -822,6 +822,7 @@ static void ath9k_led_brightness_work(st
