@@ -37,7 +37,17 @@ define Image/Build/CFE
 		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin \
 		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
 		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
-		--info1 "$(call Image/LimitName16,$(4))" --info2 $(1) \
+		--info1 "-$(call Image/LimitName16,$(4))" --info2 $(1) \
+		$(6) $(7) $(8) $(9)
+endef
+
+define Image/Build/CFEFIXUP
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin \
+		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
+		--info1 "+$(call Image/LimitName16,$(4))" --info2 $(1) \
 		$(6) $(7) $(8) $(9)
 endef
 
@@ -48,7 +58,7 @@ define Image/Build/CFEAGPF
 		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
 		--load-addr $(LOADADDR) --tag-version 8 \
 		--signature2 IMAGE --block-size 0x20000 \
-		--image-offset $(4) --info1 "$(call Image/LimitName16,$(5))" --info2 $(1)
+		--image-offset $(4) --info1 "-$(call Image/LimitName16,$(5))" --info2 $(1)
 endef
 
 define Image/Build/RG100A
@@ -57,7 +67,7 @@ define Image/Build/RG100A
 		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
 		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
 		--load-addr $(LOADADDR) --block-size 0x20000 \
-		--image-offset $(4) --info1 "$(call Image/LimitName16,$(5))" --info2 $(1)
+		--image-offset $(4) --info1 "-$(call Image/LimitName16,$(5))" --info2 $(1)
 endef
 
 define Image/Build/RedBoot
