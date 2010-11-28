@@ -28,7 +28,7 @@ define trxalign/squashfs
 endef
 
 define Image/LimitName16
-$(shell expr substr "$(1)" 1 $$(expr length "$(1)"))
+$(shell expr substr "$(1)" 1 16)
 endef
 
 define Image/Build/CFE
