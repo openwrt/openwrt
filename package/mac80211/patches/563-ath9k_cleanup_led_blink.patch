@@ -61,7 +61,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -20,115 +20,34 @@
+@@ -20,120 +20,25 @@
  /*	 LED functions		*/
  /********************************/
  
@@ -98,20 +98,8 @@
 -	else
 -		sc->sc_flags |= SC_OP_LED_ON;
 -}
+-
 +#ifdef CONFIG_MAC80211_LEDS
-+static const struct ieee80211_tpt_blink ath9k_blink[] = {
-+	{ .throughput = 0 * 1024, .blink_time = 334 },
-+	{ .throughput = 1 * 1024, .blink_time = 260 },
-+	{ .throughput = 5 * 1024, .blink_time = 220 },
-+	{ .throughput = 10 * 1024, .blink_time = 190 },
-+	{ .throughput = 20 * 1024, .blink_time = 170 },
-+	{ .throughput = 50 * 1024, .blink_time = 150 },
-+	{ .throughput = 70 * 1024, .blink_time = 130 },
-+	{ .throughput = 100 * 1024, .blink_time = 110 },
-+	{ .throughput = 200 * 1024, .blink_time = 80 },
-+	{ .throughput = 300 * 1024, .blink_time = 50 },
-+};
- 
  static void ath_led_brightness(struct led_classdev *led_cdev,
  			       enum led_brightness brightness)
  {
@@ -195,25 +183,24 @@
  }
  
  void ath_init_leds(struct ath_softc *sc)
-@@ -152,48 +71,28 @@ void ath_init_leds(struct ath_softc *sc)
+ {
+-	char *trigger;
+ 	int ret;
+ 
+ 	if (AR_SREV_9100(sc->sc_ah))
+@@ -152,48 +57,22 @@ void ath_init_leds(struct ath_softc *sc)
  	/* LED off, active low */
  	ath9k_hw_set_gpio(sc->sc_ah, sc->sc_ah->led_pin, 1);
  
 -	if (led_blink)
 -		INIT_DELAYED_WORK(&sc->ath_led_blink_work, ath_led_blink_work);
-+	/*
-+	 * create the tpt trigger even if led_blink is disabled, so that
-+	 * user space can still make use of it
-+	 */
-+	trigger = ieee80211_create_tpt_led_trigger(sc->hw, HZ, ath9k_blink,
-+						   ARRAY_SIZE(ath9k_blink));
 +	if (!led_blink)
-+		trigger = ieee80211_get_radio_led_name(sc->hw);
++		sc->led_cdev.default_trigger =
++			ieee80211_get_radio_led_name(sc->hw);
 +
 +	snprintf(sc->led_name, sizeof(sc->led_name),
 +		"ath9k-%s", wiphy_name(sc->hw->wiphy));
 +	sc->led_cdev.name = sc->led_name;
-+	sc->led_cdev.default_trigger = trigger;
 +	sc->led_cdev.brightness_set = ath_led_brightness;
 +
 +	ret = led_classdev_register(wiphy_dev(sc->hw->wiphy), &sc->led_cdev);
@@ -276,3 +263,37 @@
  	cancel_delayed_work_sync(&sc->tx_complete_work);
  	cancel_work_sync(&sc->paprd_work);
  	cancel_work_sync(&sc->hw_check_work);
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -136,6 +136,20 @@ static struct ieee80211_rate ath9k_legac
+ 	RATE(540, 0x0c, 0),
+ };
+ 
++static const struct ieee80211_tpt_blink ath9k_tpt_blink[] = {
++	{ .throughput = 0 * 1024, .blink_time = 334 },
++	{ .throughput = 1 * 1024, .blink_time = 260 },
++	{ .throughput = 5 * 1024, .blink_time = 220 },
++	{ .throughput = 10 * 1024, .blink_time = 190 },
++	{ .throughput = 20 * 1024, .blink_time = 170 },
++	{ .throughput = 50 * 1024, .blink_time = 150 },
++	{ .throughput = 70 * 1024, .blink_time = 130 },
++	{ .throughput = 100 * 1024, .blink_time = 110 },
++	{ .throughput = 200 * 1024, .blink_time = 80 },
++	{ .throughput = 300 * 1024, .blink_time = 50 },
++};
++
++
+ static void ath9k_deinit_softc(struct ath_softc *sc);
+ 
+ /*
+@@ -746,6 +760,10 @@ int ath9k_init_device(u16 devid, struct 
+ 
+ 	ath9k_init_txpower_limits(sc);
+ 
++	/* must be initialized before ieee80211_register_hw */
++	sc->led_cdev.default_trigger = ieee80211_create_tpt_led_trigger(sc->hw,
++		ath9k_tpt_blink, ARRAY_SIZE(ath9k_tpt_blink));
++
+ 	/* Register with mac80211 */
+ 	error = ieee80211_register_hw(hw);
+ 	if (error)
