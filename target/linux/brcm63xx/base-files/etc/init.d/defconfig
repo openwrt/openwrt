@@ -1,0 +1,18 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (C) 2009 OpenWrt.org
+#
+
+START=05
+
+start() {
+	local board=$(awk 'BEGIN{FS="[ \t:/]+"} /system type/ {print $4}' /proc/cpuinfo)
+
+	[ ! -d /etc/defconfig/$board ] && board="generic"
+
+	for f in $( ls /etc/defconfig/$board ); do
+		if [ ! -e /etc/config/$f ]; then
+			cp /etc/defconfig/$board/$f /etc/config/
+		fi
+	done
+}
