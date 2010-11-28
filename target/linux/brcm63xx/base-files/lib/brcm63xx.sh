@@ -25,6 +25,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
+	"bcm63xx/96358GW "*)
+		status_led="power:green"
+		brcm63xx_has_reset_button="true"
+		ifname=eth0
+		;;
 	*)
 		;;
 	esac
