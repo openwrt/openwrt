@@ -1,7 +1,7 @@
 Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
 ===================================================================
---- linux-2.6.32.26.orig/drivers/vlynq/vlynq.c	2010-11-24 13:01:20.459985351 -0800
-+++ linux-2.6.32.26/drivers/vlynq/vlynq.c	2010-11-24 13:01:43.537494084 -0800
+--- linux-2.6.32.26.orig/drivers/vlynq/vlynq.c	2010-11-22 10:48:20.000000000 -0800
++++ linux-2.6.32.26/drivers/vlynq/vlynq.c	2010-11-28 02:56:51.972405343 -0800
 @@ -103,6 +103,12 @@
  }
  #endif
@@ -15,7 +15,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  /* Check the VLYNQ link status with a given device */
  static int vlynq_linked(struct vlynq_device *dev)
  {
-@@ -117,20 +123,43 @@
+@@ -117,20 +123,40 @@
  	return 0;
  }
  
@@ -38,9 +38,6 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  {
 +	u32 rtm = readl(&dev->local->revision);
 +
-+	if (rtm < 0x00010200)
-+		return;
-+
 +	rtm = rtm < 0x00010205 || readl(&dev->local->status) & 0x800 == 0 ?
 +			0 : 0x600000;
 +
@@ -62,7 +59,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  }
  
  static void vlynq_irq_unmask(unsigned int irq)
-@@ -379,6 +408,62 @@
+@@ -379,6 +405,61 @@
  }
  EXPORT_SYMBOL(vlynq_unregister_driver);
  
@@ -85,9 +82,6 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
 +		return -EINVAL;
 +	}
 +
-+	printk(KERN_INFO "%s: local VLYNQ protocol rev. is 0x%08x\n",
-+			dev_name(&dev->dev), readl(&dev->local->revision));
-+
 +	reg = readl(&dev->local->control);
 +	if (readl(&dev->local->revision) < 0x00010205) {
 +		if (clk_dir & vlynq_clk_local)
@@ -102,6 +96,8 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
 +	if (!vlynq_linked(dev))
 +		return -ENODEV;
 +
++	printk(KERN_INFO "%s: local VLYNQ protocol rev. is 0x%08x\n",
++			dev_name(&dev->dev), readl(&dev->local->revision));
 +	printk(KERN_INFO "%s: remote VLYNQ protocol rev. is 0x%08x\n",
 +			dev_name(&dev->dev), readl(&dev->remote->revision));
 +
@@ -125,15 +121,16 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  /*
   * A VLYNQ remote device can clock the VLYNQ bus master
   * using a dedicated clock line. In that case, both the
-@@ -392,29 +477,15 @@
+@@ -392,29 +473,17 @@
  	int i;
  
  	vlynq_reset(dev);
 -	for (i = dev->dev_id ? vlynq_rdiv2 : vlynq_rdiv8; dev->dev_id ?
 -			i <= vlynq_rdiv8 : i >= vlynq_rdiv2;
 -		dev->dev_id ? i++ : i--) {
--
-+	for (i = 0; i <= 7; i++) {
++	for (i = dev->dev_id ? 0 : 7; dev->dev_id ? i <= 7 : i >= 0;
++			dev->dev_id ? i++ : i--) {
+ 
  		if (!vlynq_linked(dev))
  			break;
  
@@ -149,18 +146,19 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
 -				&dev->local->control);
 -
 -		if (vlynq_linked(dev)) {
-+		if (!__vlynq_set_clocks(dev, vlynq_clk_remote, i, i)) {
- 			printk(KERN_DEBUG
+-			printk(KERN_DEBUG
 -				"%s: using remote clock divisor %d\n",
 -				dev_name(&dev->dev), i - vlynq_rdiv1 + 1);
 -			dev->divisor = i;
++		if (!__vlynq_set_clocks(dev, vlynq_clk_remote, i, i)) {
++			printk(KERN_INFO
 +					"%s: using remote clock divisor %d\n",
 +					dev_name(&dev->dev), i + 1);
 +			dev->divisor = i + vlynq_rdiv1;
  			return 0;
  		} else {
  			vlynq_reset(dev);
-@@ -437,21 +508,12 @@
+@@ -437,21 +506,14 @@
  
  	vlynq_reset(dev);
  
@@ -175,12 +173,15 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
 -				&dev->local->control);
 -
 -		if (vlynq_linked(dev)) {
-+	for (i = 0; i <= 7; i++) {
-+		if (!__vlynq_set_clocks(dev, vlynq_clk_local, i, 0)) {
- 			printk(KERN_DEBUG
+-			printk(KERN_DEBUG
 -				"%s: using local clock divisor %d\n",
 -				dev_name(&dev->dev), i - vlynq_ldiv1 + 1);
 -			dev->divisor = i;
++	for (i = dev->dev_id ? 0 : 7; dev->dev_id ? i <= 7 : i >= 0;
++			dev->dev_id ? i++ : i--) {
++
++		if (!__vlynq_set_clocks(dev, vlynq_clk_local, i, 0)) {
++			printk(KERN_INFO
 +					"%s: using local clock divisor %d\n",
 +					dev_name(&dev->dev), i + 1);
 +			dev->divisor = i + vlynq_ldiv1;
@@ -200,10 +201,11 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
 -			&dev->local->control);
 -
 -	if (vlynq_linked(dev)) {
-+	if (!__vlynq_set_clocks(dev, vlynq_clk_external, 0, 0)) {
- 		printk(KERN_DEBUG "%s: using external clock\n",
+-		printk(KERN_DEBUG "%s: using external clock\n",
 -			dev_name(&dev->dev));
 -			dev->divisor = vlynq_div_external;
++	if (!__vlynq_set_clocks(dev, vlynq_clk_external, 0, 0)) {
++		printk(KERN_INFO "%s: using external clock\n",
 +				dev_name(&dev->dev));
 +				dev->divisor = vlynq_div_external;
  		return 0;
@@ -240,12 +242,13 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
 -			vlynq_ldiv1), &dev->local->control);
 -		writel(0, &dev->remote->control);
 -		if (vlynq_linked(dev)) {
-+		if (!__vlynq_set_clocks(dev, vlynq_clk_local, dev->divisor -
-+				vlynq_ldiv1, 0)) {
- 			printk(KERN_DEBUG
+-			printk(KERN_DEBUG
 -				"%s: using local clock divisor %d\n",
 -				dev_name(&dev->dev),
 -				dev->divisor - vlynq_ldiv1 + 1);
++		if (!__vlynq_set_clocks(dev, vlynq_clk_local, dev->divisor -
++				vlynq_ldiv1, 0)) {
++			printk(KERN_INFO
 +					"%s: using local clock divisor %d\n",
 +					dev_name(&dev->dev),
 +					dev->divisor - vlynq_ldiv1 + 1);
@@ -261,19 +264,20 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
 -			VLYNQ_CTRL_CLOCK_DIV(dev->divisor -
 -			vlynq_rdiv1), &dev->remote->control);
 -		if (vlynq_linked(dev)) {
-+		if (!__vlynq_set_clocks(dev, vlynq_clk_remote, 0,
-+				dev->divisor - vlynq_rdiv1)) {
- 			printk(KERN_DEBUG
+-			printk(KERN_DEBUG
 -				"%s: using remote clock divisor %d\n",
 -				dev_name(&dev->dev),
 -				dev->divisor - vlynq_rdiv1 + 1);
++		if (!__vlynq_set_clocks(dev, vlynq_clk_remote, 0,
++				dev->divisor - vlynq_rdiv1)) {
++			printk(KERN_INFO
 +					"%s: using remote clock divisor %d\n",
 +					dev_name(&dev->dev),
 +					dev->divisor - vlynq_rdiv1 + 1);
  			return 0;
  		}
  		break;
-@@ -732,13 +771,13 @@
+@@ -732,13 +771,12 @@
  	platform_set_drvdata(pdev, dev);
  
  	printk(KERN_INFO "%s: regs 0x%p, irq %d, mem 0x%p\n",
@@ -282,20 +286,18 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
 +			dev_name(&dev->dev), (void *)dev->regs_start,
 +			dev->irq, (void *)dev->mem_start);
  
--	dev->dev_id = 0;
+ 	dev->dev_id = 0;
  	dev->divisor = vlynq_div_auto;
 -	result = __vlynq_enable_device(dev);
 -	if (result == 0) {
-+	if (__vlynq_enable_device(dev))
-+		dev->dev_id = 0;
-+	else {
++	if (!__vlynq_enable_device(dev)) {
  		dev->dev_id = readl(&dev->remote->chip);
  		((struct plat_vlynq_ops *)(dev->dev.platform_data))->off(dev);
  	}
 Index: linux-2.6.32.26/include/linux/vlynq.h
 ===================================================================
---- linux-2.6.32.26.orig/include/linux/vlynq.h	2010-11-24 13:07:33.297487888 -0800
-+++ linux-2.6.32.26/include/linux/vlynq.h	2010-11-24 13:08:44.107488596 -0800
+--- linux-2.6.32.26.orig/include/linux/vlynq.h	2010-11-22 10:48:20.000000000 -0800
++++ linux-2.6.32.26/include/linux/vlynq.h	2010-11-27 12:08:39.312438011 -0800
 @@ -98,6 +98,7 @@
  
  extern struct bus_type vlynq_bus_type;
