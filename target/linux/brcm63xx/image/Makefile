@@ -189,6 +189,8 @@ define Image/Build
 	# Telsey CPVA642-type (e.g. CPA-ZNTE60T)
 	$(call Image/Build/CFE,$(1),CPVA642,6358,CPA-ZNTE60T,,--signature "Telsey Tlc",--signature2 "99.99.999",--second-image-flag "0")
 
+	# T-Com Speedport W 500V
+	$(call Image/Build/CFEFIXUP,$(1),96348GW,6348,SPW500V)
 endef
 
 $(eval $(call BuildImage))
