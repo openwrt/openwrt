@@ -1,8 +1,6 @@
-Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
-===================================================================
---- linux-2.6.32.26.orig/drivers/vlynq/vlynq.c	2010-11-22 10:48:20.000000000 -0800
-+++ linux-2.6.32.26/drivers/vlynq/vlynq.c	2010-11-28 02:56:51.972405343 -0800
-@@ -103,6 +103,12 @@
+--- a/drivers/vlynq/vlynq.c
++++ b/drivers/vlynq/vlynq.c
+@@ -103,6 +103,12 @@ static void vlynq_dump_mem(u32 *base, in
  }
  #endif
  
@@ -15,7 +13,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  /* Check the VLYNQ link status with a given device */
  static int vlynq_linked(struct vlynq_device *dev)
  {
-@@ -117,20 +123,40 @@
+@@ -117,20 +123,40 @@ static int vlynq_linked(struct vlynq_dev
  	return 0;
  }
  
@@ -59,7 +57,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  }
  
  static void vlynq_irq_unmask(unsigned int irq)
-@@ -379,6 +405,61 @@
+@@ -379,6 +405,61 @@ void vlynq_unregister_driver(struct vlyn
  }
  EXPORT_SYMBOL(vlynq_unregister_driver);
  
@@ -121,7 +119,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  /*
   * A VLYNQ remote device can clock the VLYNQ bus master
   * using a dedicated clock line. In that case, both the
-@@ -392,29 +473,17 @@
+@@ -392,29 +473,17 @@ static int __vlynq_try_remote(struct vly
  	int i;
  
  	vlynq_reset(dev);
@@ -158,7 +156,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  			return 0;
  		} else {
  			vlynq_reset(dev);
-@@ -437,21 +506,14 @@
+@@ -437,21 +506,14 @@ static int __vlynq_try_local(struct vlyn
  
  	vlynq_reset(dev);
  
@@ -188,7 +186,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  			return 0;
  		} else {
  			vlynq_reset(dev);
-@@ -473,18 +535,10 @@
+@@ -473,18 +535,10 @@ static int __vlynq_try_external(struct v
  	if (!vlynq_linked(dev))
  		return -ENODEV;
  
@@ -211,7 +209,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  		return 0;
  	}
  
-@@ -507,18 +561,9 @@
+@@ -507,18 +561,9 @@ static int __vlynq_enable_device(struct
  		 * generation negotiated by hardware.
  		 * Check which device is generating clocks and perform setup
  		 * accordingly */
@@ -233,7 +231,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  		break;
  	case vlynq_ldiv1:
  	case vlynq_ldiv2:
-@@ -528,15 +573,12 @@
+@@ -528,15 +573,12 @@ static int __vlynq_enable_device(struct
  	case vlynq_ldiv6:
  	case vlynq_ldiv7:
  	case vlynq_ldiv8:
@@ -255,7 +253,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  			return 0;
  		}
  		break;
-@@ -548,15 +590,12 @@
+@@ -548,15 +590,12 @@ static int __vlynq_enable_device(struct
  	case vlynq_rdiv6:
  	case vlynq_rdiv7:
  	case vlynq_rdiv8:
@@ -277,7 +275,7 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  			return 0;
  		}
  		break;
-@@ -732,13 +771,12 @@
+@@ -732,13 +771,12 @@ static int vlynq_probe(struct platform_d
  	platform_set_drvdata(pdev, dev);
  
  	printk(KERN_INFO "%s: regs 0x%p, irq %d, mem 0x%p\n",
@@ -294,11 +292,9 @@ Index: linux-2.6.32.26/drivers/vlynq/vlynq.c
  		dev->dev_id = readl(&dev->remote->chip);
  		((struct plat_vlynq_ops *)(dev->dev.platform_data))->off(dev);
  	}
-Index: linux-2.6.32.26/include/linux/vlynq.h
-===================================================================
---- linux-2.6.32.26.orig/include/linux/vlynq.h	2010-11-22 10:48:20.000000000 -0800
-+++ linux-2.6.32.26/include/linux/vlynq.h	2010-11-27 12:08:39.312438011 -0800
-@@ -98,6 +98,7 @@
+--- a/include/linux/vlynq.h
++++ b/include/linux/vlynq.h
+@@ -98,6 +98,7 @@ static inline struct vlynq_device *to_vl
  
  extern struct bus_type vlynq_bus_type;
  

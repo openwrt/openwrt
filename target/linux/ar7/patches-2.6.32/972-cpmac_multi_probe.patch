@@ -1,8 +1,6 @@
-Index: linux-2.6.32.26/arch/mips/ar7/platform.c
-===================================================================
---- linux-2.6.32.26.orig/arch/mips/ar7/platform.c	2010-11-28 03:22:24.522383766 -0800
-+++ linux-2.6.32.26/arch/mips/ar7/platform.c	2010-11-28 04:17:24.872413302 -0800
-@@ -46,7 +46,6 @@
+--- a/arch/mips/ar7/platform.c
++++ b/arch/mips/ar7/platform.c
+@@ -46,7 +46,6 @@ struct plat_vlynq_data {
  	int reset_bit;
  };
  
@@ -10,7 +8,7 @@ Index: linux-2.6.32.26/arch/mips/ar7/platform.c
  static int vlynq_on(struct vlynq_device *dev)
  {
  	int result;
-@@ -72,7 +71,8 @@
+@@ -72,7 +71,8 @@ static int vlynq_on(struct vlynq_device
  
  	msleep(50);
  
@@ -20,7 +18,7 @@ Index: linux-2.6.32.26/arch/mips/ar7/platform.c
  	msleep(50);
  
  	return 0;
-@@ -601,6 +601,18 @@
+@@ -601,6 +601,18 @@ static inline unsigned char char2hex(cha
  	}
  }
  
@@ -39,7 +37,7 @@ Index: linux-2.6.32.26/arch/mips/ar7/platform.c
  static void cpmac_get_mac(int instance, unsigned char *dev_addr)
  {
  	int i;
-@@ -662,6 +674,7 @@
+@@ -662,6 +674,7 @@ static int __init ar7_register_devices(v
  	u16 chip_id;
  	int res;
  	u32 *bootcr, val;
@@ -47,7 +45,7 @@ Index: linux-2.6.32.26/arch/mips/ar7/platform.c
  #ifdef CONFIG_SERIAL_8250
  	static struct uart_port uart_port[2];
  
-@@ -715,27 +728,6 @@
+@@ -715,27 +728,6 @@ static int __init ar7_register_devices(v
  			return res;
  	}
  
@@ -75,7 +73,7 @@ Index: linux-2.6.32.26/arch/mips/ar7/platform.c
  	res = fixed_phy_add(PHY_POLL, ar7_is_titan() ? cpmac_low_titan.id :
  			cpmac_low.id, &fixed_phy_status);
  	if (res && res != -ENODEV)
-@@ -748,6 +740,34 @@
+@@ -748,6 +740,34 @@ static int __init ar7_register_devices(v
  	if (res)
  		return res;
  
@@ -110,7 +108,7 @@ Index: linux-2.6.32.26/arch/mips/ar7/platform.c
  	detect_leds();
  	res = platform_device_register(&ar7_gpio_leds);
  	if (res)
-@@ -771,8 +791,10 @@
+@@ -771,8 +791,10 @@ static int __init ar7_register_devices(v
  	ar7_wdt_res.end = ar7_wdt_res.start + 0x20;
  
  	bootcr = (u32 *)ioremap_nocache(AR7_REGS_DCL, 4);
@@ -123,10 +121,8 @@ Index: linux-2.6.32.26/arch/mips/ar7/platform.c
  
  	/* Register watchdog only if enabled in hardware */
  	if (val & AR7_WDT_HW_ENA)
-Index: linux-2.6.32.26/arch/mips/include/asm/mach-ar7/ar7.h
-===================================================================
---- linux-2.6.32.26.orig/arch/mips/include/asm/mach-ar7/ar7.h	2010-11-28 03:22:24.522383766 -0800
-+++ linux-2.6.32.26/arch/mips/include/asm/mach-ar7/ar7.h	2010-11-28 03:22:25.012385426 -0800
+--- a/arch/mips/include/asm/mach-ar7/ar7.h
++++ b/arch/mips/include/asm/mach-ar7/ar7.h
 @@ -41,6 +41,7 @@
  #define AR7_REGS_RESET	(AR7_REGS_BASE + 0x1600)
  #define AR7_REGS_VLYNQ0	(AR7_REGS_BASE + 0x1800)
@@ -135,11 +131,9 @@ Index: linux-2.6.32.26/arch/mips/include/asm/mach-ar7/ar7.h
  #define AR7_REGS_VLYNQ1	(AR7_REGS_BASE + 0x1c00)
  #define AR7_REGS_MDIO	(AR7_REGS_BASE + 0x1e00)
  #define AR7_REGS_IRQ	(AR7_REGS_BASE + 0x2400)
-Index: linux-2.6.32.26/drivers/net/cpmac.c
-===================================================================
---- linux-2.6.32.26.orig/drivers/net/cpmac.c	2010-11-28 03:22:24.982383427 -0800
-+++ linux-2.6.32.26/drivers/net/cpmac.c	2010-11-28 05:23:59.482390691 -0800
-@@ -668,9 +668,8 @@
+--- a/drivers/net/cpmac.c
++++ b/drivers/net/cpmac.c
+@@ -668,9 +668,8 @@ static void cpmac_hw_start(struct net_de
  	for (i = 0; i < 8; i++)
  		cpmac_write(priv->regs, CPMAC_MAC_ADDR_LO(i), dev->dev_addr[5]);
  	cpmac_write(priv->regs, CPMAC_MAC_ADDR_MID, dev->dev_addr[4]);
@@ -151,7 +145,7 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
  	cpmac_write(priv->regs, CPMAC_MAX_LENGTH, CPMAC_SKB_SIZE);
  	cpmac_write(priv->regs, CPMAC_UNICAST_CLEAR, 0xff);
  	cpmac_write(priv->regs, CPMAC_RX_INT_CLEAR, 0xff);
-@@ -1104,8 +1103,6 @@
+@@ -1104,8 +1103,6 @@ static const struct net_device_ops cpmac
  	.ndo_set_mac_address	= eth_mac_addr,
  };
  
@@ -160,7 +154,7 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
  static int __devinit cpmac_probe(struct platform_device *pdev)
  {
  	int rc, phy_id;
-@@ -1117,24 +1114,26 @@
+@@ -1117,24 +1114,26 @@ static int __devinit cpmac_probe(struct
  
  	pdata = pdev->dev.platform_data;
  
@@ -199,7 +193,7 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
  	}
  
  	dev = alloc_etherdev_mq(sizeof(*priv), CPMAC_QUEUES);
-@@ -1168,7 +1167,7 @@
+@@ -1168,7 +1167,7 @@ static int __devinit cpmac_probe(struct
  	priv->dev = dev;
  	priv->ring_size = 64;
  	priv->msg_enable = netif_msg_init(debug_level, 0xff);
@@ -208,7 +202,7 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
  
  	snprintf(priv->phy_name, MII_BUS_ID_SIZE, PHY_ID_FMT, mdio_bus_id, phy_id);
  
-@@ -1244,14 +1243,14 @@
+@@ -1244,14 +1243,14 @@ int __devinit cpmac_init(void)
  	ar7_gpio_disable(26);
  	ar7_gpio_disable(27);
  
@@ -228,7 +222,7 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
  	}
  
  	cpmac_mii->reset(cpmac_mii);
-@@ -1262,14 +1261,7 @@
+@@ -1262,14 +1261,7 @@ int __devinit cpmac_init(void)
  		else
  			msleep(10);
  
