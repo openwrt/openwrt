@@ -632,7 +632,7 @@
 + *  GPIO Control
 + **********************************************************************/
 +
-+typedef struct 
++typedef struct
 +{
 +    int pinSelReg;
 +    int shift;
@@ -721,7 +721,7 @@
 +    GPIO_CFG  gpio_cfg;
 +    volatile PIN_SEL_REG_ARRAY_T *pin_sel_array = (PIN_SEL_REG_ARRAY_T*) AVALANCHE_PIN_SEL_BASE;
 +    volatile TITAN_GPIO_CONTROL_T   *gpio_cntl     = (TITAN_GPIO_CONTROL_T*) KSEG1ADDR(AR7_REGS_GPIO + TITAN_GPIO_INPUT_0);
-+	
++
 +    if (gpio_pin > 51 )
 +        return(-1);
 +
