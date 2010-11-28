@@ -1,16 +1,8 @@
 Index: linux-2.6.32.26/arch/mips/ar7/platform.c
 ===================================================================
---- linux-2.6.32.26.orig/arch/mips/ar7/platform.c	2010-11-24 13:16:31.367487844 -0800
-+++ linux-2.6.32.26/arch/mips/ar7/platform.c	2010-11-24 13:16:49.677512306 -0800
-@@ -33,7 +33,6 @@
- #include <linux/string.h>
- #include <linux/etherdevice.h>
- #include <linux/phy.h>
--#include <linux/phy_fixed.h>
- 
- #include <asm/addrspace.h>
- #include <asm/mach-ar7/ar7.h>
-@@ -46,7 +45,6 @@
+--- linux-2.6.32.26.orig/arch/mips/ar7/platform.c	2010-11-28 03:22:24.522383766 -0800
++++ linux-2.6.32.26/arch/mips/ar7/platform.c	2010-11-28 04:17:24.872413302 -0800
+@@ -46,7 +46,6 @@
  	int reset_bit;
  };
  
@@ -18,7 +10,7 @@ Index: linux-2.6.32.26/arch/mips/ar7/platform.c
  static int vlynq_on(struct vlynq_device *dev)
  {
  	int result;
-@@ -72,7 +70,8 @@
+@@ -72,7 +71,8 @@
  
  	msleep(50);
  
@@ -28,87 +20,8 @@ Index: linux-2.6.32.26/arch/mips/ar7/platform.c
  	msleep(50);
  
  	return 0;
-@@ -294,16 +293,10 @@
- 	.width = 2,
- };
- 
--static struct fixed_phy_status fixed_phy_status __initdata = {
--	.link = 1,
--	.speed = 100,
--	.duplex = 1,
--};
--
- static struct plat_cpmac_data cpmac_low_data = {
- 	.reset_bit = 17,
- 	.power_bit = 20,
--	.phy_mask = 0x80000000,
-+	.phy_mask = 0xffffffff,
- };
- 
- static struct plat_cpmac_data cpmac_high_data = {
-@@ -716,11 +709,6 @@
+@@ -601,6 +601,18 @@
  	}
- 
- 	if (ar7_has_high_cpmac()) {
--		res = fixed_phy_add(PHY_POLL, ar7_is_titan() ? cpmac_high_titan.id : cpmac_high.id,
--						&fixed_phy_status);
--		if (res && res != -ENODEV)
--			return res;
--
- 		cpmac_get_mac(1, ar7_is_titan() ? cpmac_high_data_titan.dev_addr :
- 						cpmac_high_data.dev_addr);
- 		res = platform_device_register(ar7_is_titan() ? &cpmac_high_titan :
-@@ -728,19 +716,8 @@
- 
- 		if (res)
- 			return res;
--	} else {
--		if (ar7_is_titan())
--			cpmac_low_data_titan.phy_mask = 0xffffffff;
--		else
--			cpmac_low_data.phy_mask = 0xffffffff;
--
- 	}
- 
--	res = fixed_phy_add(PHY_POLL, ar7_is_titan() ? cpmac_low_titan.id :
--			cpmac_low.id, &fixed_phy_status);
--	if (res && res != -ENODEV)
--		return res;
--
- 	cpmac_get_mac(0, ar7_is_titan() ? cpmac_low_data_titan.dev_addr :
- 			cpmac_low_data.dev_addr);
- 	res = platform_device_register(ar7_is_titan() ? &cpmac_low_titan :
-Index: linux-2.6.32.26/arch/mips/include/asm/mach-ar7/ar7.h
-===================================================================
---- linux-2.6.32.26.orig/arch/mips/include/asm/mach-ar7/ar7.h	2010-11-24 13:16:31.387502677 -0800
-+++ linux-2.6.32.26/arch/mips/include/asm/mach-ar7/ar7.h	2010-11-24 13:16:37.117485679 -0800
-@@ -41,6 +41,7 @@
- #define AR7_REGS_RESET	(AR7_REGS_BASE + 0x1600)
- #define AR7_REGS_VLYNQ0	(AR7_REGS_BASE + 0x1800)
- #define AR7_REGS_DCL	(AR7_REGS_BASE + 0x1a00)
-+#define AR7_REGS_MII	(AR7_REGS_BASE + 0x1a08)
- #define AR7_REGS_VLYNQ1	(AR7_REGS_BASE + 0x1c00)
- #define AR7_REGS_MDIO	(AR7_REGS_BASE + 0x1e00)
- #define AR7_REGS_IRQ	(AR7_REGS_BASE + 0x2400)
-Index: linux-2.6.32.26/drivers/net/cpmac.c
-===================================================================
---- linux-2.6.32.26.orig/drivers/net/cpmac.c	2010-11-24 13:16:31.397493402 -0800
-+++ linux-2.6.32.26/drivers/net/cpmac.c	2010-11-24 13:16:37.117485679 -0800
-@@ -218,6 +218,12 @@
- static int cpmac_stop(struct net_device *dev);
- static int cpmac_open(struct net_device *dev);
- 
-+static struct fixed_phy_status fixed_phy_status = {
-+	.link = 1,
-+	.speed = 100,
-+	.duplex = 1,
-+};
-+
- static void cpmac_dump_regs(struct net_device *dev)
- {
- 	int i;
-@@ -269,6 +275,18 @@
- 	printk("\n");
  }
  
 +static void auto_mdix_on(void)
@@ -123,10 +36,122 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
 +	ar7_gpio_disable(30);
 +}*/
 +
- static int cpmac_mdio_read(struct mii_bus *bus, int phy_id, int reg)
+ static void cpmac_get_mac(int instance, unsigned char *dev_addr)
  {
- 	u32 val;
-@@ -1104,8 +1122,6 @@
+ 	int i;
+@@ -662,6 +674,7 @@
+ 	u16 chip_id;
+ 	int res;
+ 	u32 *bootcr, val;
++	void __iomem *mii_reg;
+ #ifdef CONFIG_SERIAL_8250
+ 	static struct uart_port uart_port[2];
+ 
+@@ -715,27 +728,6 @@
+ 			return res;
+ 	}
+ 
+-	if (ar7_has_high_cpmac()) {
+-		res = fixed_phy_add(PHY_POLL, ar7_is_titan() ? cpmac_high_titan.id : cpmac_high.id,
+-						&fixed_phy_status);
+-		if (res && res != -ENODEV)
+-			return res;
+-
+-		cpmac_get_mac(1, ar7_is_titan() ? cpmac_high_data_titan.dev_addr :
+-						cpmac_high_data.dev_addr);
+-		res = platform_device_register(ar7_is_titan() ? &cpmac_high_titan :
+-						&cpmac_high);
+-
+-		if (res)
+-			return res;
+-	} else {
+-		if (ar7_is_titan())
+-			cpmac_low_data_titan.phy_mask = 0xffffffff;
+-		else
+-			cpmac_low_data.phy_mask = 0xffffffff;
+-
+-	}
+-
+ 	res = fixed_phy_add(PHY_POLL, ar7_is_titan() ? cpmac_low_titan.id :
+ 			cpmac_low.id, &fixed_phy_status);
+ 	if (res && res != -ENODEV)
+@@ -748,6 +740,34 @@
+ 	if (res)
+ 		return res;
+ 
++	if (ar7_has_high_cpmac()) {
++		res = fixed_phy_add(PHY_POLL, ar7_is_titan() ?
++				cpmac_high_titan.id : cpmac_high.id,
++				&fixed_phy_status);
++		if (res && res != -ENODEV)
++			return res;
++
++		cpmac_get_mac(1, ar7_is_titan() ?
++				cpmac_high_data_titan.dev_addr :
++				cpmac_high_data.dev_addr);
++		res = platform_device_register(ar7_is_titan() ?
++				&cpmac_high_titan : &cpmac_high);
++
++		if (res)
++			return res;
++	} else {
++		mii_reg = ioremap(AR7_REGS_MII, 4);
++		if (mii_reg) {
++			writel(readl(mii_reg) | 1, mii_reg);
++			iounmap(mii_reg);
++		}
++
++		ar7_gpio_disable(17);
++		mdelay(20);
++		ar7_gpio_enable(17);
++		auto_mdix_on();
++	}
++
+ 	detect_leds();
+ 	res = platform_device_register(&ar7_gpio_leds);
+ 	if (res)
+@@ -771,8 +791,10 @@
+ 	ar7_wdt_res.end = ar7_wdt_res.start + 0x20;
+ 
+ 	bootcr = (u32 *)ioremap_nocache(AR7_REGS_DCL, 4);
+-	val = *bootcr;
+-	iounmap(bootcr);
++	if (bootcr) {
++		val = *bootcr;
++		iounmap(bootcr);
++	}
+ 
+ 	/* Register watchdog only if enabled in hardware */
+ 	if (val & AR7_WDT_HW_ENA)
+Index: linux-2.6.32.26/arch/mips/include/asm/mach-ar7/ar7.h
+===================================================================
+--- linux-2.6.32.26.orig/arch/mips/include/asm/mach-ar7/ar7.h	2010-11-28 03:22:24.522383766 -0800
++++ linux-2.6.32.26/arch/mips/include/asm/mach-ar7/ar7.h	2010-11-28 03:22:25.012385426 -0800
+@@ -41,6 +41,7 @@
+ #define AR7_REGS_RESET	(AR7_REGS_BASE + 0x1600)
+ #define AR7_REGS_VLYNQ0	(AR7_REGS_BASE + 0x1800)
+ #define AR7_REGS_DCL	(AR7_REGS_BASE + 0x1a00)
++#define AR7_REGS_MII	(AR7_REGS_BASE + 0x1a08)
+ #define AR7_REGS_VLYNQ1	(AR7_REGS_BASE + 0x1c00)
+ #define AR7_REGS_MDIO	(AR7_REGS_BASE + 0x1e00)
+ #define AR7_REGS_IRQ	(AR7_REGS_BASE + 0x2400)
+Index: linux-2.6.32.26/drivers/net/cpmac.c
+===================================================================
+--- linux-2.6.32.26.orig/drivers/net/cpmac.c	2010-11-28 03:22:24.982383427 -0800
++++ linux-2.6.32.26/drivers/net/cpmac.c	2010-11-28 05:23:59.482390691 -0800
+@@ -668,9 +668,8 @@
+ 	for (i = 0; i < 8; i++)
+ 		cpmac_write(priv->regs, CPMAC_MAC_ADDR_LO(i), dev->dev_addr[5]);
+ 	cpmac_write(priv->regs, CPMAC_MAC_ADDR_MID, dev->dev_addr[4]);
+-	cpmac_write(priv->regs, CPMAC_MAC_ADDR_HI, dev->dev_addr[0] |
+-		    (dev->dev_addr[1] << 8) | (dev->dev_addr[2] << 16) |
+-		    (dev->dev_addr[3] << 24));
++	cpmac_write(priv->regs, CPMAC_MAC_ADDR_HI, be32_to_cpu(*(u32 *)
++			dev->dev_addr));
+ 	cpmac_write(priv->regs, CPMAC_MAX_LENGTH, CPMAC_SKB_SIZE);
+ 	cpmac_write(priv->regs, CPMAC_UNICAST_CLEAR, 0xff);
+ 	cpmac_write(priv->regs, CPMAC_RX_INT_CLEAR, 0xff);
+@@ -1104,8 +1103,6 @@
  	.ndo_set_mac_address	= eth_mac_addr,
  };
  
@@ -135,13 +160,7 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
  static int __devinit cpmac_probe(struct platform_device *pdev)
  {
  	int rc, phy_id;
-@@ -1114,13 +1130,15 @@
- 	struct cpmac_priv *priv;
- 	struct net_device *dev;
- 	struct plat_cpmac_data *pdata;
-+	void __iomem *mii_reg;
-+	u32 tmp;
-+	unsigned external_mii;
+@@ -1117,24 +1114,26 @@
  
  	pdata = pdev->dev.platform_data;
  
@@ -149,61 +168,47 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
 -		strncpy(mdio_bus_id, "0", MII_BUS_ID_SIZE); /* fixed phys bus */
 -		phy_id = pdev->id;
 -	} else {
+-		for (phy_id = 0; phy_id < PHY_MAX_ADDR; phy_id++) {
+-			if (!(pdata->phy_mask & (1 << phy_id)))
+-				continue;
+-			if (!cpmac_mii->phy_map[phy_id])
+-				continue;
+-			strncpy(mdio_bus_id, cpmac_mii->id, MII_BUS_ID_SIZE);
+-			break;
+-		}
 +	if (dumb_switch)
 +		phy_id = PHY_MAX_ADDR;
-+	else for (external_mii = 0; external_mii <= 1; external_mii++) {
- 		for (phy_id = 0; phy_id < PHY_MAX_ADDR; phy_id++) {
- 			if (!(pdata->phy_mask & (1 << phy_id)))
- 				continue;
-@@ -1129,13 +1147,45 @@
- 			strncpy(mdio_bus_id, cpmac_mii->id, MII_BUS_ID_SIZE);
- 			break;
- 		}
-+
-+		if (phy_id == PHY_MAX_ADDR || external_mii || ar7_is_titan())
-+			break;
-+
-+		/* Now disable EPHY and enable MII */
-+		dev_info(&pdev->dev, "trying external MII\n");
-+		ar7_device_disable(AR7_RESET_BIT_EPHY);
-+
-+		if (!ar7_has_high_cpmac()) {
-+			mii_reg = ioremap(AR7_REGS_MII, 4);
-+			if (!mii_reg) {
-+				dev_err(&pdev->dev, "failed to iorenamp MII_SEL\n");
-+				return -ENOMEM;
-+		 	}
-+
-+			tmp = readl(mii_reg);
-+			tmp |= 1;
-+			writel(tmp, mii_reg);
-+			iounmap(mii_reg);
-+		}
-+
-+		ar7_gpio_disable(17);
-+		mdelay(20);
-+		ar7_gpio_enable(17);
++	else for (phy_id = 0; phy_id < PHY_MAX_ADDR; phy_id++) {
++		if (!((pdata->phy_mask | cpmac_mii->phy_mask) &
++				(1 << phy_id)))
++			continue;
++		if (cpmac_mii->phy_map[phy_id])
++			continue;
++		strncpy(mdio_bus_id, cpmac_mii->id, MII_BUS_ID_SIZE);
++		break;
  	}
  
  	if (phy_id == PHY_MAX_ADDR) {
--		dev_err(&pdev->dev, "no PHY present, falling back to switch mode\n");
-+		/* This still does not work, so now we register a fixed phy */
-+		dev_info(&pdev->dev, "using fixed PHY\n");
-+		rc = fixed_phy_add(PHY_POLL, pdev->id, &fixed_phy_status);
-+		if (rc && rc != -ENODEV) {
-+			dev_err(&pdev->dev, "unable to register fixed PHY\n");
-+			return rc;
-+		}
-+
+ 		dev_err(&pdev->dev, "no PHY present, falling back to switch mode\n");
  		strncpy(mdio_bus_id, "0", MII_BUS_ID_SIZE); /* fixed phys bus */
  		phy_id = pdev->id;
--	}
-+	} else
-+		auto_mdix_on();
++	} else {
++		/* Now disable EPHY and enable MII */
++		dev_info(&pdev->dev, "trying external MII\n");
++		ar7_device_disable(AR7_RESET_BIT_EPHY);
+ 	}
  
  	dev = alloc_etherdev_mq(sizeof(*priv), CPMAC_QUEUES);
+@@ -1168,7 +1167,7 @@
+ 	priv->dev = dev;
+ 	priv->ring_size = 64;
+ 	priv->msg_enable = netif_msg_init(debug_level, 0xff);
+-	memcpy(dev->dev_addr, pdata->dev_addr, sizeof(dev->dev_addr));
++	memcpy(dev->dev_addr, pdata->dev_addr, sizeof(pdata->dev_addr));
  
-@@ -1244,14 +1294,14 @@
+ 	snprintf(priv->phy_name, MII_BUS_ID_SIZE, PHY_ID_FMT, mdio_bus_id, phy_id);
+ 
+@@ -1244,14 +1243,14 @@
  	ar7_gpio_disable(26);
  	ar7_gpio_disable(27);
  
@@ -223,7 +228,7 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
  	}
  
  	cpmac_mii->reset(cpmac_mii);
-@@ -1262,12 +1312,6 @@
+@@ -1262,14 +1261,7 @@
  		else
  			msleep(10);
  
@@ -233,6 +238,9 @@ Index: linux-2.6.32.26/drivers/net/cpmac.c
 -		mask = 0;
 -	}
 -
- 	cpmac_mii->phy_mask = ar7_is_titan()? ~(mask | 0x80000000 | 0x40000000):
- 		~(mask | 0x80000000);
+-	cpmac_mii->phy_mask = ar7_is_titan()? ~(mask | 0x80000000 | 0x40000000):
+-		~(mask | 0x80000000);
++	cpmac_mii->phy_mask = ~mask;
  	snprintf(cpmac_mii->id, MII_BUS_ID_SIZE, "1");
+ 
+ 	res = mdiobus_register(cpmac_mii);
