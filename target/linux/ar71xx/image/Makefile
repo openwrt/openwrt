@@ -488,6 +488,7 @@ endef
 
 define Image/Build/Profile/TEW652BRP
 	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-652brp,board=TEW-632BRP,"AP81-AR9130-RT-080609-05")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-652brp-recovery,board=TEW-632BRP,"AP81-AR9130-RT-070614-02")
 endef
 
 define Image/Build/Profile/A02RBW300N
