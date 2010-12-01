@@ -1,6 +1,6 @@
 --- a/drivers/net/ag71xx/ag71xx_main.c
 +++ b/drivers/net/ag71xx/ag71xx_main.c
-@@ -685,6 +685,7 @@ static netdev_tx_t ag71xx_hard_start_xmi
+@@ -686,6 +686,7 @@ err_drop:
  
  static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
  {
@@ -8,7 +8,7 @@
  	struct ag71xx *ag = netdev_priv(dev);
  	int ret;
  
-@@ -716,7 +717,7 @@ static int ag71xx_do_ioctl(struct net_de
+@@ -717,7 +718,7 @@ static int ag71xx_do_ioctl(struct net_de
  		if (ag->phy_dev == NULL)
  			break;
  
