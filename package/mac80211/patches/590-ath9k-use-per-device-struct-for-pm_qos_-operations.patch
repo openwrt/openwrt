@@ -1,0 +1,92 @@
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -21,6 +21,7 @@
+ #include <linux/device.h>
+ #include <linux/leds.h>
+ #include <linux/completion.h>
++#include <linux/pm_qos_params.h>
+ 
+ #include "debug.h"
+ #include "common.h"
+@@ -618,6 +619,8 @@ struct ath_softc {
+ 	struct ath_descdma txsdma;
+ 
+ 	struct ath_ant_comb ant_comb;
++
++	struct pm_qos_request_list pm_qos_req;
+ };
+ 
+ struct ath_wiphy {
+@@ -647,7 +650,6 @@ static inline void ath_read_cachesize(st
+ }
+ 
+ extern struct ieee80211_ops ath9k_ops;
+-extern struct pm_qos_request_list ath9k_pm_qos_req;
+ extern int modparam_nohwcrypt;
+ extern int led_blink;
+ 
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -15,7 +15,6 @@
+  */
+ 
+ #include <linux/slab.h>
+-#include <linux/pm_qos_params.h>
+ #include <linux/ath9k_platform.h>
+ 
+ #include "ath9k.h"
+@@ -195,8 +194,6 @@ static const struct ath_ops ath9k_common
+ 	.write = ath9k_iowrite32,
+ };
+ 
+-struct pm_qos_request_list ath9k_pm_qos_req;
+-
+ /**************************/
+ /*     Initialization     */
+ /**************************/
+@@ -786,7 +783,7 @@ int ath9k_init_device(u16 devid, struct 
+ 	ath_init_leds(sc);
+ 	ath_start_rfkill_poll(sc);
+ 
+-	pm_qos_add_request(&ath9k_pm_qos_req, PM_QOS_CPU_DMA_LATENCY,
++	pm_qos_add_request(&sc->pm_qos_req, PM_QOS_CPU_DMA_LATENCY,
+ 			   PM_QOS_DEFAULT_VALUE);
+ 
+ 	return 0;
+@@ -857,7 +854,7 @@ void ath9k_deinit_device(struct ath_soft
+ 	}
+ 
+ 	ieee80211_unregister_hw(hw);
+-	pm_qos_remove_request(&ath9k_pm_qos_req);
++	pm_qos_remove_request(&sc->pm_qos_req);
+ 	ath_rx_cleanup(sc);
+ 	ath_tx_cleanup(sc);
+ 	ath9k_deinit_softc(sc);
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -15,7 +15,6 @@
+  */
+ 
+ #include <linux/nl80211.h>
+-#include <linux/pm_qos_params.h>
+ #include "ath9k.h"
+ #include "btcoex.h"
+ 
+@@ -1184,7 +1183,7 @@ static int ath9k_start(struct ieee80211_
+ 			ath9k_btcoex_timer_resume(sc);
+ 	}
+ 
+-	pm_qos_update_request(&ath9k_pm_qos_req, 55);
++	pm_qos_update_request(&sc->pm_qos_req, 55);
+ 
+ mutex_unlock:
+ 	mutex_unlock(&sc->mutex);
+@@ -1336,7 +1335,7 @@ static void ath9k_stop(struct ieee80211_
+ 
+ 	sc->sc_flags |= SC_OP_INVALID;
+ 
+-	pm_qos_update_request(&ath9k_pm_qos_req, PM_QOS_DEFAULT_VALUE);
++	pm_qos_update_request(&sc->pm_qos_req, PM_QOS_DEFAULT_VALUE);
+ 
+ 	mutex_unlock(&sc->mutex);
+ 
