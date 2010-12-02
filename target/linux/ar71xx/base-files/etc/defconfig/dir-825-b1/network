@@ -5,7 +5,7 @@ config interface loopback
 	option netmask	255.0.0.0
 
 config interface lan
-	option ifname	eth0
+	option ifname	eth0.1
 	option type	bridge
 	option proto	static
 	option ipaddr	192.168.1.1
@@ -23,4 +23,4 @@ config switch
 config switch_vlan
 	option device	rtl8366s
 	option vlan 	1
-	option ports	"0 1 2 3 5"
+	option ports	"0 1 2 3 5t"
