@@ -201,6 +201,150 @@ endef
 $(eval $(call KernelPackage,dm))
 
 
+define KernelPackage/md-mod
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=MD RAID
+  KCONFIG:= \
+       CONFIG_MD=y \
+       CONFIG_BLK_DEV_MD=m \
+       CONFIG_MD_AUTODETECT=y \
+       CONFIG_MD_FAULTY=n
+  FILES:=$(LINUX_DIR)/drivers/md/md-mod.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,27,md-mod)
+endef
+
+define KernelPackage/md-mod/description
+ Kernel RAID md module (md-mod.ko).
+ You will need to select at least one RAID level module below.
+endef
+
+$(eval $(call KernelPackage,md-mod))
+
+
+define KernelPackage/md/Depends
+  SUBMENU:=$(BLOCK_MENU)
+  DEPENDS:=kmod-md-mod $(1)
+endef
+
+
+define KernelPackage/md-linear
+$(call KernelPackage/md/Depends,)
+  TITLE:=RAID Linear Module
+  KCONFIG:=CONFIG_MD_LINEAR=m
+  FILES:=$(LINUX_DIR)/drivers/md/linear.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,28,linear)
+endef
+
+define KernelPackage/md-linear/description
+ RAID "Linear" or "Append" driver module (linear.ko)
+endef
+
+$(eval $(call KernelPackage,md-linear))
+
+
+define KernelPackage/md-raid0
+$(call KernelPackage/md/Depends,)
+  TITLE:=RAID0 Module
+  KCONFIG:=CONFIG_MD_RAID0=m
+  FILES:=$(LINUX_DIR)/drivers/md/raid0.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,28,raid0)
+endef
+
+define KernelPackage/md-raid0/description
+ RAID Level 0 (Striping) driver module (raid0.ko)
+endef
+
+$(eval $(call KernelPackage,md-raid0))
+
+
+define KernelPackage/md-raid1
+$(call KernelPackage/md/Depends,)
+  TITLE:=RAID1 Module
+  KCONFIG:=CONFIG_MD_RAID1=m
+  FILES:=$(LINUX_DIR)/drivers/md/raid1.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,28,raid1)
+endef
+
+define KernelPackage/md-raid1/description
+ RAID Level 1 (Mirroring) driver (raid1.ko)
+endef
+
+$(eval $(call KernelPackage,md-raid1))
+
+
+define KernelPackage/md-raid10
+$(call KernelPackage/md/Depends,)
+  TITLE:=RAID10 Module
+  KCONFIG:=CONFIG_MD_RAID10=m
+  FILES:=$(LINUX_DIR)/drivers/md/raid10.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,28,raid10)
+endef
+
+define KernelPackage/md-raid10/description
+ RAID Level 10 (Mirroring+Striping) driver module (raid10.ko)
+endef
+
+$(eval $(call KernelPackage,md-raid10))
+
+
+define KernelPackage/md-raid456
+$(call KernelPackage/md/Depends,)
+  TITLE:=RAID Level 456 Driver
+  KCONFIG:= \
+       CONFIG_XOR_BLOCKS=m \
+       CONFIG_ASYNC_CORE=m \
+       CONFIG_ASYNC_MEMCPY=m \
+       CONFIG_ASYNC_XOR=m \
+       CONFIG_ASYNC_PQ=m \
+       CONFIG_ASYNC_RAID6_RECOV=m \
+       CONFIG_ASYNC_RAID6_TEST=n \
+       CONFIG_MD_RAID6_PQ=m \
+       CONFIG_MD_RAID456=m \
+       CONFIG_MULTICORE_RAID456=n
+  FILES:= \
+	$(LINUX_DIR)/crypto/xor.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/async_tx/async_tx.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/async_tx/async_memcpy.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/async_tx/async_xor.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/async_tx/async_pq.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/crypto/async_tx/async_raid6_recov.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/md/raid6_pq.$(LINUX_KMOD_SUFFIX) \
+	$(LINUX_DIR)/drivers/md/raid456.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,28, xor async_tx async_memcpy async_xor raid6_pq async_pq async_raid6_recov raid456)
+endef
+
+define KernelPackage/md-raid456/description
+ RAID Level 4,5,6 kernel module (raid456.ko)
+
+ Includes the following modules required by
+ raid456.ko:
+    xor.ko
+    async_tx.ko
+    async_xor.ko
+    async_memcpy.ko
+    async_pq.ko
+    async_raid5_recov.ko
+    raid6_pq.ko 
+endef
+
+$(eval $(call KernelPackage,md-raid456))
+
+
+define KernelPackage/md-multipath
+$(call KernelPackage/md/Depends,)
+  TITLE:=MD Multipath Module
+  KCONFIG:=CONFIG_MD_MULTIPATH=m
+  FILES:=$(LINUX_DIR)/drivers/md/multipath.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,29,multipath)
+endef
+
+define KernelPackage/md-multipath/description
+ Multipath driver module (multipath.ko)
+endef
+
+$(eval $(call KernelPackage,md-multipath))
+
+
 define KernelPackage/ide-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=IDE (ATA/ATAPI) device support
