@@ -4,8 +4,8 @@
  tc/q_esfq.c               |  200 ++++++++++++++++++++++++++++++++++++++++++++++
  3 files changed, 260 insertions(+)
 
---- iproute2-2.6.35.orig/include/linux/pkt_sched.h
-+++ iproute2-2.6.35/include/linux/pkt_sched.h
+--- a/include/linux/pkt_sched.h
++++ b/include/linux/pkt_sched.h
 @@ -174,8 +174,38 @@ struct tc_sfq_qopt
   *
   *	The only reason for this is efficiency, it is possible
@@ -83,8 +83,8 @@
  /* RED section */
  
  enum {
---- iproute2-2.6.35.orig/tc/Makefile
-+++ iproute2-2.6.35/tc/Makefile
+--- a/tc/Makefile
++++ b/tc/Makefile
 @@ -8,6 +8,7 @@ SHARED_LIBS ?= y
  TCMODULES :=
  TCMODULES += q_fifo.o
@@ -94,7 +94,7 @@
  TCMODULES += q_prio.o
  TCMODULES += q_tbf.o
 --- /dev/null
-+++ iproute2-2.6.35/tc/q_esfq.c
++++ b/tc/q_esfq.c
 @@ -0,0 +1,200 @@
 +/*
 + * q_esfq.c		ESFQ.
