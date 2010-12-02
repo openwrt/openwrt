@@ -138,6 +138,9 @@ enum {
 
 	/* Microsoft */
 	MN700,
+
+	/* Edimax */
+	PS1208MFG,
 };
 
 static void __init bcm4780_init(void) {
@@ -895,6 +898,17 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 6, .polarity = NORMAL },
 		},
 	},
+	/* Edimax */
+	[PS1208MFG] = {
+		.name   = "Edimax PS-1208MFG",
+		.buttons        = {
+			{ .name = "reset",	.gpio = 1 << 4 },
+		},
+		.leds     = {
+			{ .name = "status",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "wlan",	.gpio = 1 << 0, .polarity = NORMAL },
+		},
+	},
 };
 
 static struct platform_t __init *platform_detect(void)
@@ -1121,8 +1135,12 @@ static struct platform_t __init *platform_detect(void)
 	if (startswith(boardnum, "04FN")) /* SimpleTech SimpleShare */
 		return &platforms[STI_NAS];
 
-	if (!strcmp(getvar("boardnum"), "10") && !strcmp(getvar("boardrev"), "0x13")) /* D-Link DWL-3150 */
+	if (!strcmp(boardnum, "10") && !strcmp(getvar("boardrev"), "0x13")) /* D-Link DWL-3150 */
 		return &platforms[DWL3150];
+
+	if (!strcmp(boardnum, "01") && !strcmp(boardtype, "0x048e") && /* Edimax PS1208MFG */
+		!strcmp(getvar("status_gpio"), "1")) /* gpio based detection */
+		return &platforms[PS1208MFG];
 
 	/* not found */
 	return NULL;

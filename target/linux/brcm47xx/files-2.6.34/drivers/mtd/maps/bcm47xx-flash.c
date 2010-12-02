@@ -71,6 +71,15 @@ struct trx_header {
 	u32 offsets[TRX_MAX_OFFSET];	/* Offsets of partitions from start of header */
 };
 
+/* for Edimax Print servers which use an additional header
+ * then the firmware on flash looks like :
+ * EDIMAX HEADER | TRX HEADER
+ * As this header is 12 bytes long we have to handle it
+ * and skip it to find the TRX header
+ */
+#define EDIMAX_PS_HEADER_MAGIC	0x36315350 /*  "PS16"  */
+#define EDIMAX_PS_HEADER_LEN	0xc /* 12 bytes long for edimax header */
+
 #define ROUNDUP(x, y) ((((x)+((y)-1))/(y))*(y))
 #define NVRAM_SPACE 0x8000
 #define WINDOW_ADDR 0x1fc00000
@@ -145,6 +154,15 @@ find_cfe_size(struct mtd_info *mtd, size_t size)
 		    len != sizeof(buf))
 			continue;
 
+		if (le32_to_cpu(trx->magic) == EDIMAX_PS_HEADER_MAGIC) {
+			if (mtd->read(mtd, off + EDIMAX_PS_HEADER_LEN,
+			    sizeof(buf), &len, buf) || len != sizeof(buf)) {
+				continue;
+			} else {
+				printk(KERN_NOTICE"Found edimax header\n");
+			}
+		}
+
 		/* found a TRX header */
 		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
 			goto found;
@@ -217,7 +235,7 @@ static int erase_write (struct mtd_info *mtd, unsigned long pos,
 	remove_wait_queue(&wait_q, &wait);
 
 	/*
-	 * Next, writhe data to flash.
+	 * Next, write data to flash.
 	 */
 
 	ret = mtd->write (mtd, pos, len, &retlen, buf);
@@ -267,9 +285,10 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 {
 	struct trx_header trx, *trx2;
 	unsigned char buf[512], *block;
-	int off, blocksize;
+	int off, blocksize, trxoff = 0;
 	u32 i, crc = ~0;
 	size_t len;
+	bool edimax = false;
 
 	blocksize = mtd->erasesize;
 	if (blocksize < 0x10000)
@@ -285,6 +304,19 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		    len != sizeof(trx))
 			continue;
 
+		/* found an edimax header */
+		if (le32_to_cpu(trx.magic) == EDIMAX_PS_HEADER_MAGIC) {
+			/* read the correct trx header */
+			if (mtd->read(mtd, off + EDIMAX_PS_HEADER_LEN,
+			    sizeof(trx), &len, (char *) &trx) ||
+			    len != sizeof(trx)) {
+				continue;
+			} else {
+				printk(KERN_NOTICE"Found an edimax ps header\n");
+				edimax = true;
+			}
+		}
+
 		/* found a TRX header */
 		if (le32_to_cpu(trx.magic) == TRX_MAGIC) {
 			part->offset = le32_to_cpu(trx.offsets[2]) ? : 
@@ -293,6 +325,10 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 
 			part->size -= part->offset;
 			part->offset += off;
+			if (edimax) {
+				off += EDIMAX_PS_HEADER_LEN;
+				trxoff = EDIMAX_PS_HEADER_LEN;
+			}
 
 			goto found;
 		}
@@ -304,6 +340,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 	return -1;
 
  found:
+	printk(KERN_NOTICE"TRX offset : %lx\n", trxoff);
 	if (part->size == 0)
 		return 0;
 	
@@ -328,7 +365,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		/* read first eraseblock from the trx */
 		block = kmalloc(mtd->erasesize, GFP_KERNEL);
 		trx2 = (struct trx_header *) block;
-		if (mtd->read(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
+		if (mtd->read(mtd, off - trxoff, mtd->erasesize, &len, block) || len != mtd->erasesize) {
 			printk("Error accessing the first trx eraseblock\n");
 			return 0;
 		}
@@ -338,10 +375,10 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		printk("new trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n",   trx.offsets[0],   trx.offsets[1],   trx.offsets[2],   trx.len, trx.crc32);
 
 		/* Write updated trx header to the flash */
-		memcpy(block, &trx, sizeof(trx));
+		memcpy(block + trxoff, &trx, sizeof(trx));
 		if (mtd->unlock)
-			mtd->unlock(mtd, off, mtd->erasesize);
-		erase_write(mtd, off, mtd->erasesize, block);
+			mtd->unlock(mtd, off - trxoff, mtd->erasesize);
+		erase_write(mtd, off - trxoff, mtd->erasesize, block);
 		if (mtd->sync)
 			mtd->sync(mtd);
 		kfree(block);
