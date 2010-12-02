@@ -87,6 +87,9 @@ struct trx_header {
 	unsigned int offsets[3];	/* Offsets of partitions from start of header */
 };
 
+#define EDIMAX_PS_HEADER_MAGIC	0x36315350 /*  "PS16"  */
+#define EDIMAX_PS_HEADER_LEN	0xc /* 12 bytes long for edimax header */
+
 /* beyound the image end, size not known in advance */
 extern unsigned char workspace[];
 
@@ -135,8 +138,12 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 
 	/* look for trx header, 32-bit data access */
 	for (data = ((unsigned char *) KSEG1ADDR(BCM4710_FLASH));
-		((struct trx_header *)data)->magic != TRX_MAGIC; data += 65536);
+		((struct trx_header *)data)->magic != TRX_MAGIC &&
+		((struct trx_header *)data)->magic != EDIMAX_PS_HEADER_MAGIC;
+		 data += 65536);
 
+	if (((struct trx_header *)data)->magic == EDIMAX_PS_HEADER_MAGIC)
+		data += EDIMAX_PS_HEADER_LEN;
 	/* compressed kernel is in the partition 0 or 1 */
 	if (((struct trx_header *)data)->offsets[1] > 65536) 
 		data += ((struct trx_header *)data)->offsets[0];

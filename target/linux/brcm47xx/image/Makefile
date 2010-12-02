@@ -49,6 +49,10 @@ define Image/Build/USR
 	$(STAGING_DIR_HOST)/bin/trx2usr $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
 endef
 
+define Image/Build/Edi
+	$(STAGING_DIR_HOST)/bin/trx2edips $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
+endef
+
 define trxalign/jffs2-128k
 -a 0x20000 -f $(KDIR)/root.$(1)
 endef
@@ -87,6 +91,7 @@ define Image/Build/jffs2-64k
 	$(call Image/Build/CyberTAN,$(1),wrt350n_v1,EWCG,1.04.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),we800g,3,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Edi,$(1),ps1208mfg,$(patsubst jffs2-%,jffs2,$(1)))
 endef
 
 define Image/Build/squashfs

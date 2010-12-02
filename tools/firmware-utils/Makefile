@@ -47,6 +47,7 @@ define Host/Compile
 	$(call cc,mktitanimg)
 	$(call cc,mkchkimg)
 	$(call cc,mkzcfw cyg_crc32)
+	$(call cc,trx2edips)
 endef
 
 define Host/Install
