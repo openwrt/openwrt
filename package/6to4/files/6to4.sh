@@ -18,6 +18,72 @@ find_6to4_prefix() {
 	printf "2002:%02x%02x:%02x%02x\n" $1 $2 $3 $4
 }
 
+set_6to4_radvd_interface() {
+	local cfgid="$1"
+	local lanif="${2:-lan}"
+	local ifsection=""
+
+	find_ifsection() {
+		local net
+		local cfg="$1"
+		config_get net "$cfg" interface
+
+		[ "$net" = "$lanif" ] && {
+			ifsection="$cfg"
+			return 1
+		}
+	}
+
+	config_foreach find_ifsection interface
+
+	[ -z "$ifsection" ] && {
+		ifsection="iface_$sid"
+		uci_set_state radvd "$ifsection" "" interface
+		uci_set_state radvd "$ifsection" interface "$lanif"
+	}
+
+	uci_set_state radvd "$ifsection" ignore            0
+	uci_set_state radvd "$ifsection" IgnoreIfMissing   1
+	uci_set_state radvd "$ifsection" AdvSendAdvert     1
+	uci_set_state radvd "$ifsection" MaxRtrAdvInterval 30
+}
+
+set_6to4_radvd_prefix() {
+	local cfgid="$1"
+	local lanif="${2:-lan}"
+	local wanif="${3:-wan}"
+	local prefix="${4:-0:0:0:1::/64}"
+	local pfxsection=""
+
+	find_pfxsection() {
+		local net base
+		local cfg="$1"
+		config_get net  "$cfg" interface
+		config_get base "$cfg" Base6to4Interface
+
+		[ "$net" = "$lanif" ] && [ "$base" = "$wanif" ] && {
+			pfxsection="$cfg"
+			return 1
+		}
+	}
+
+	config_foreach find_pfxsection prefix
+
+	[ -z "$pfxsection" ] && {
+		pfxsection="prefix_${sid}_${lanif}"
+		uci_set_state radvd "$pfxsection" ""                   prefix
+		uci_set_state radvd "$pfxsection" ignore               0
+		uci_set_state radvd "$pfxsection" interface            "$lanif"
+		uci_set_state radvd "$pfxsection" prefix               "$prefix"
+		uci_set_state radvd "$pfxsection" AdvOnLink            1
+		uci_set_state radvd "$pfxsection" AdvAutonomous        1
+		uci_set_state radvd "$pfxsection" AdvValidLifetime     300
+		uci_set_state radvd "$pfxsection" AdvPreferredLifetime 120
+		uci_set_state radvd "$pfxsection" Base6to4Interface    "$wanif"
+	}
+}
+
+
 # Hook into scan_interfaces() to synthesize a .device option
 # This is needed for /sbin/ifup to properly dispatch control
 # to setup_interface_6to4() even if no .ifname is set in
@@ -98,48 +164,43 @@ setup_interface_6to4() {
 			uci_set_state network "$cfg" defaultroute 1
 		}
 
-		# find delegation target
-		local adv_interface
-		config_get adv_interface "$cfg" adv_interface
+		[ -f /etc/config/radvd ] && /etc/init.d/radvd enabled && {
+			local sid="6to4_$cfg"
 
-		local adv_ifname
-		config_get adv_ifname "${adv_interface:-lan}" ifname
+			uci_revert_state radvd
+			config_load radvd
 
-		local adv_subnet=$(uci_get network "$cfg" adv_subnet)
+			# find delegation target
+			local adv_interface
+			config_get adv_interface "$cfg" adv_interface
 
-		grep -qs "^ *$adv_ifname:" /proc/net/dev && {
-			local subnet6="$prefix6:${adv_subnet:-1}::1/64"
+			local adv_subnet=$(uci_get network "$cfg" adv_subnet)
+			      adv_subnet=$((0x${adv_subnet:-1}))
 
-			logger -t "$link" " * Advertising IPv6 subnet $subnet6 on ${adv_interface:-lan} ($adv_ifname)"
-			ip -6 addr add $subnet6 dev $adv_ifname
-			uci_set_state network "$cfg" adv_subnet "$subnet6"
-			uci_set_state network "$cfg" adv_ifname "$adv_ifname"
+			local adv_subnets=""
 
-			[ -f /etc/config/radvd ] && /etc/init.d/radvd enabled && {
-				local sid="6to4_$cfg"
+			for adv_interface in ${adv_interface:-lan}; do
+				local adv_ifname
+				config_get adv_ifname "${adv_interface:-lan}" ifname
 
-				uci -q batch <<-EOF
-					revert radvd.iface_$sid
-					revert radvd.prefix_$sid
-					set radvd.iface_$sid=interface
-					set radvd.iface_$sid.ignore=0
-					set radvd.iface_$sid.interface=${adv_interface:-lan}
-					set radvd.iface_$sid.IgnoreIfMissing=1
-					set radvd.iface_$sid.AdvSendAdvert=1
-					set radvd.iface_$sid.MaxRtrAdvInterval=30
-					set radvd.prefix_$sid=prefix
-					set radvd.prefix_$sid.ignore=0
-					set radvd.prefix_$sid.interface=${adv_interface:-lan}
-					set radvd.prefix_$sid.prefix=0:0:0:${adv_subnet:-1}::/64
-					set radvd.prefix_$sid.AdvOnLink=1
-					set radvd.prefix_$sid.AdvAutonomous=1
-					set radvd.prefix_$sid.AdvValidLifetime=300
-					set radvd.prefix_$sid.AdvPreferredLifetime=120
-					set radvd.prefix_$sid.Base6to4Interface=$wancfg
-				EOF
+				grep -qs "^ *$adv_ifname:" /proc/net/dev && {
+					local subnet6="$(printf "%s:%x::1/64" "$prefix6" $adv_subnet)"
 
-				/etc/init.d/radvd restart
-			}
+					logger -t "$link" " * Advertising IPv6 subnet $subnet6 on ${adv_interface:-lan} ($adv_ifname)"
+					ip -6 addr add $subnet6 dev $adv_ifname
+
+					set_6to4_radvd_interface "$sid" "$adv_interface"
+					set_6to4_radvd_prefix    "$sid" "$adv_interface" \
+						"$wancfg" "$(printf "0:0:0:%x::/64" $adv_subnet)"
+
+					adv_subnets="${adv_subnets:+$adv_subnets }$adv_ifname:$subnet6"
+					adv_subnet=$(($adv_subnet + 1))
+				}
+			done
+
+			uci_set_state network "$cfg" adv_subnets "$adv_subnets"
+
+			/etc/init.d/radvd restart
 		}
 
 		logger -t "$link" "... started"
@@ -157,24 +218,24 @@ stop_interface_6to4() {
 	local local6=$(uci_get_state network "$cfg" ip6addr)
 	local defaultroute=$(uci_get_state network "$cfg" defaultroute)
 
-	local adv_subnet=$(uci_get_state network "$cfg" adv_subnet)
-	local adv_ifname=$(uci_get_state network "$cfg" adv_ifname)
+	local adv_subnets=$(uci_get_state network "$cfg" adv_subnets)
 
 	grep -qs "^ *$link:" /proc/net/dev && {
 		logger -t "$link" "Shutting down ..."
 		env -i ACTION="ifdown" INTERFACE="$cfg" DEVICE="$link" PROTO=6to4 /sbin/hotplug-call "iface" &
 
-		[ -n "$adv_subnet" ] && [ -n "$adv_ifname" ] && {
-			local sid="6to4_$cfg"
-
-			uci -q batch <<-EOF
-				revert radvd.iface_$sid
-				revert radvd.prefix_$sid
-			EOF
-
+		[ -n "$adv_subnets" ] && {
+			uci_revert_state radvd
 			/etc/init.d/radvd enabled && /etc/init.d/radvd restart
 
-			ip -6 addr del $adv_subnet dev $adv_ifname
+			local adv_subnet
+			for adv_subnet in $adv_subnets; do
+				local ifname="${adv_subnet%%:*}"
+				local subnet="${adv_subnet#*:}"
+
+				logger -t "$link" " * Removing IPv6 subnet $subnet from interface $ifname"
+				ip -6 addr del $subnet dev $ifname
+			done
 		}
 
 		[ "$defaultroute" = "1" ] && {
