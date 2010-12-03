@@ -12,7 +12,7 @@ BOARDNAME:=Freescale MPC83xx
 FEATURES:=squashfs targz broken
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.33.7
+LINUX_VERSION:=2.6.36.1
 
 include $(INCLUDE_DIR)/target.mk
 
