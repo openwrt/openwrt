@@ -18,6 +18,7 @@ determine_external_root() {
 	if [ "$jffs" = "/tmp/overlay" ] && [ -r "/tmp/overlay/etc/config/fstab" ]; then
 		UCI_CONFIG_DIR="/tmp/overlay/etc/config"
 		ER_IS_SQUASHFS=true
+		ER_OVERLAY_PREFIX="/tmp/overlay"
 	fi
 
 	# For squashfs on firstboot root_device will be tmpfs for the ramoverlay,
