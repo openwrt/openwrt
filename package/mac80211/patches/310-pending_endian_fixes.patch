@@ -1,57 +1,3 @@
---- a/drivers/net/wireless/ath/ath9k/eeprom.c
-+++ b/drivers/net/wireless/ath/ath9k/eeprom.c
-@@ -240,16 +240,16 @@ u16 ath9k_hw_get_max_edge_power(u16 freq
- 	for (i = 0; (i < num_band_edges) &&
- 		     (pRdEdgesPower[i].bChannel != AR5416_BCHAN_UNUSED); i++) {
- 		if (freq == ath9k_hw_fbin2freq(pRdEdgesPower[i].bChannel, is2GHz)) {
--			twiceMaxEdgePower = pRdEdgesPower[i].tPower;
-+			twiceMaxEdgePower = CTL_EDGE_TPOWER(pRdEdgesPower[i].ctl);
- 			break;
- 		} else if ((i > 0) &&
- 			   (freq < ath9k_hw_fbin2freq(pRdEdgesPower[i].bChannel,
- 						      is2GHz))) {
- 			if (ath9k_hw_fbin2freq(pRdEdgesPower[i - 1].bChannel,
- 					       is2GHz) < freq &&
--			    pRdEdgesPower[i - 1].flag) {
-+			    CTL_EDGE_FLAGS(pRdEdgesPower[i - 1].ctl)) {
- 				twiceMaxEdgePower =
--					pRdEdgesPower[i - 1].tPower;
-+					CTL_EDGE_TPOWER(pRdEdgesPower[i - 1].ctl);
- 			}
- 			break;
- 		}
---- a/drivers/net/wireless/ath/ath9k/eeprom.h
-+++ b/drivers/net/wireless/ath/ath9k/eeprom.h
-@@ -233,6 +233,9 @@
- 
- #define AR9287_CHECKSUM_LOCATION (AR9287_EEP_START_LOC + 1)
- 
-+#define CTL_EDGE_TPOWER(_ctl) ((_ctl) & 0x3f)
-+#define CTL_EDGE_FLAGS(_ctl) (((_ctl) >> 6) & 0x03)
-+
- enum eeprom_param {
- 	EEP_NFTHRESH_5,
- 	EEP_NFTHRESH_2,
-@@ -535,18 +538,10 @@ struct cal_target_power_ht {
- 	u8 tPow2x[8];
- } __packed;
- 
--
--#ifdef __BIG_ENDIAN_BITFIELD
--struct cal_ctl_edges {
--	u8 bChannel;
--	u8 flag:2, tPower:6;
--} __packed;
--#else
- struct cal_ctl_edges {
- 	u8 bChannel;
--	u8 tPower:6, flag:2;
-+	u8 ctl;
- } __packed;
--#endif
- 
- struct cal_data_op_loop_ar9287 {
- 	u8 pwrPdg[2][5];
 --- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
 @@ -57,6 +57,8 @@
@@ -623,7 +569,7 @@
  			}
  		},
  	 }
-@@ -4363,9 +4365,9 @@ static u16 ar9003_hw_get_direct_edge_pow
+@@ -4365,9 +4367,9 @@ static u16 ar9003_hw_get_direct_edge_pow
  	struct cal_ctl_data_5g *ctl_5g = eep->ctlPowerData_5G;
  
  	if (is2GHz)
@@ -635,7 +581,7 @@
  }
  
  static u16 ar9003_hw_get_indirect_edge_power(struct ar9300_eeprom *eep,
-@@ -4383,12 +4385,12 @@ static u16 ar9003_hw_get_indirect_edge_p
+@@ -4385,12 +4387,12 @@ static u16 ar9003_hw_get_indirect_edge_p
  
  	if (is2GHz) {
  		if (ath9k_hw_fbin2freq(ctl_freqbin[edge - 1], 1) < freq &&
@@ -674,3 +620,106 @@
  } __packed;
  
  struct ar9300_BaseExtension_1 {
+--- a/drivers/net/wireless/ath/ath9k/eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom.c
+@@ -240,16 +240,16 @@ u16 ath9k_hw_get_max_edge_power(u16 freq
+ 	for (i = 0; (i < num_band_edges) &&
+ 		     (pRdEdgesPower[i].bChannel != AR5416_BCHAN_UNUSED); i++) {
+ 		if (freq == ath9k_hw_fbin2freq(pRdEdgesPower[i].bChannel, is2GHz)) {
+-			twiceMaxEdgePower = pRdEdgesPower[i].tPower;
++			twiceMaxEdgePower = CTL_EDGE_TPOWER(pRdEdgesPower[i].ctl);
+ 			break;
+ 		} else if ((i > 0) &&
+ 			   (freq < ath9k_hw_fbin2freq(pRdEdgesPower[i].bChannel,
+ 						      is2GHz))) {
+ 			if (ath9k_hw_fbin2freq(pRdEdgesPower[i - 1].bChannel,
+ 					       is2GHz) < freq &&
+-			    pRdEdgesPower[i - 1].flag) {
++			    CTL_EDGE_FLAGS(pRdEdgesPower[i - 1].ctl)) {
+ 				twiceMaxEdgePower =
+-					pRdEdgesPower[i - 1].tPower;
++					CTL_EDGE_TPOWER(pRdEdgesPower[i - 1].ctl);
+ 			}
+ 			break;
+ 		}
+--- a/drivers/net/wireless/ath/ath9k/eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/eeprom.h
+@@ -233,6 +233,18 @@
+ 
+ #define AR9287_CHECKSUM_LOCATION (AR9287_EEP_START_LOC + 1)
+ 
++#define CTL_EDGE_TPOWER(_ctl) ((_ctl) & 0x3f)
++#define CTL_EDGE_FLAGS(_ctl) (((_ctl) >> 6) & 0x03)
++
++#define LNA_CTL_BUF_MODE	BIT(0)
++#define LNA_CTL_ISEL_LO		BIT(1)
++#define LNA_CTL_ISEL_HI		BIT(2)
++#define LNA_CTL_BUF_IN		BIT(3)
++#define LNA_CTL_FEM_BAND	BIT(4)
++#define LNA_CTL_LOCAL_BIAS	BIT(5)
++#define LNA_CTL_FORCE_XPA	BIT(6)
++#define LNA_CTL_USE_ANT1	BIT(7)
++
+ enum eeprom_param {
+ 	EEP_NFTHRESH_5,
+ 	EEP_NFTHRESH_2,
+@@ -379,10 +391,7 @@ struct modal_eep_header {
+ 	u8 xatten2Margin[AR5416_MAX_CHAINS];
+ 	u8 ob_ch1;
+ 	u8 db_ch1;
+-	u8 useAnt1:1,
+-	    force_xpaon:1,
+-	    local_bias:1,
+-	    femBandSelectUsed:1, xlnabufin:1, xlnaisel:2, xlnabufmode:1;
++	u8 lna_ctl;
+ 	u8 miscBits;
+ 	u16 xpaBiasLvlFreq[3];
+ 	u8 futureModal[6];
+@@ -536,18 +545,10 @@ struct cal_target_power_ht {
+ 	u8 tPow2x[8];
+ } __packed;
+ 
+-
+-#ifdef __BIG_ENDIAN_BITFIELD
+ struct cal_ctl_edges {
+ 	u8 bChannel;
+-	u8 flag:2, tPower:6;
++	u8 ctl;
+ } __packed;
+-#else
+-struct cal_ctl_edges {
+-	u8 bChannel;
+-	u8 tPower:6, flag:2;
+-} __packed;
+-#endif
+ 
+ struct cal_data_op_loop_ar9287 {
+ 	u8 pwrPdg[2][5];
+--- a/drivers/net/wireless/ath/ath9k/eeprom_def.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_def.c
+@@ -451,9 +451,10 @@ static void ath9k_hw_def_set_board_value
+ 		ath9k_hw_analog_shift_rmw(ah, AR_AN_TOP2,
+ 					  AR_AN_TOP2_LOCALBIAS,
+ 					  AR_AN_TOP2_LOCALBIAS_S,
+-					  pModal->local_bias);
++					  !!(pModal->lna_ctl &
++					     LNA_CTL_LOCAL_BIAS));
+ 		REG_RMW_FIELD(ah, AR_PHY_XPA_CFG, AR_PHY_FORCE_XPA_CFG,
+-			      pModal->force_xpaon);
++			      !!(pModal->lna_ctl & LNA_CTL_FORCE_XPA));
+ 	}
+ 
+ 	REG_RMW_FIELD(ah, AR_PHY_SETTLING, AR_PHY_SETTLING_SWITCH,
+@@ -1435,9 +1436,9 @@ static u8 ath9k_hw_def_get_num_ant_confi
+ 
+ 	num_ant_config = 1;
+ 
+-	if (pBase->version >= 0x0E0D)
+-		if (pModal->useAnt1)
+-			num_ant_config += 1;
++	if (pBase->version >= 0x0E0D &&
++	    (pModal->lna_ctl & LNA_CTL_USE_ANT1))
++		num_ant_config += 1;
+ 
+ 	return num_ant_config;
+ }

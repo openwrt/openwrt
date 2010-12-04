@@ -9,7 +9,7 @@
  
  #include "ath5k.h"
  #include "reg.h"
-@@ -34,6 +36,18 @@
+@@ -71,6 +73,18 @@ static u16 ath5k_eeprom_bin2freq(struct 
  static int ath5k_hw_eeprom_read(struct ath5k_hw *ah, u32 offset, u16 *data)
  {
  	u32 status, timeout;
@@ -28,7 +28,7 @@
  
  	/*
  	 * Initialize EEPROM access
-@@ -1788,7 +1802,7 @@ ath5k_eeprom_init(struct ath5k_hw *ah)
+@@ -1760,7 +1774,7 @@ ath5k_eeprom_read_spur_chans(struct ath5
  }
  
  /*
@@ -37,7 +37,7 @@
   */
  int ath5k_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac)
  {
-@@ -1796,6 +1810,16 @@ int ath5k_eeprom_read_mac(struct ath5k_h
+@@ -1768,6 +1782,16 @@ int ath5k_eeprom_read_mac(struct ath5k_h
  	u32 total, offset;
  	u16 data;
  	int octet, ret;
