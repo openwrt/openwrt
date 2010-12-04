@@ -1,0 +1,2139 @@
+--- a/drivers/net/wireless/ath/ath9k/ar9002_hw.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_hw.c
+@@ -26,24 +26,6 @@ MODULE_PARM_DESC(nohwcrypt, "Force new A
+ 
+ /* General hardware code for the A5008/AR9001/AR9002 hadware families */
+ 
+-static bool ar9002_hw_macversion_supported(u32 macversion)
+-{
+-	switch (macversion) {
+-	case AR_SREV_VERSION_5416_PCI:
+-	case AR_SREV_VERSION_5416_PCIE:
+-	case AR_SREV_VERSION_9160:
+-	case AR_SREV_VERSION_9100:
+-	case AR_SREV_VERSION_9280:
+-	case AR_SREV_VERSION_9285:
+-	case AR_SREV_VERSION_9287:
+-	case AR_SREV_VERSION_9271:
+-		return true;
+-	default:
+-		break;
+-	}
+-	return false;
+-}
+-
+ static void ar9002_hw_init_mode_regs(struct ath_hw *ah)
+ {
+ 	if (AR_SREV_9271(ah)) {
+@@ -565,7 +547,6 @@ void ar9002_hw_attach_ops(struct ath_hw 
+ 
+ 	priv_ops->init_mode_regs = ar9002_hw_init_mode_regs;
+ 	priv_ops->init_mode_gain_regs = ar9002_hw_init_mode_gain_regs;
+-	priv_ops->macversion_supported = ar9002_hw_macversion_supported;
+ 
+ 	ops->config_pci_powersave = ar9002_hw_configpcipowersave;
+ 
+--- a/drivers/net/wireless/ath/ath9k/ar9002_mac.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_mac.c
+@@ -283,7 +283,6 @@ static void ar9002_hw_set11n_txdesc(stru
+ {
+ 	struct ar5416_desc *ads = AR5416DESC(ds);
+ 
+-	txPower += ah->txpower_indexoffset;
+ 	if (txPower > 63)
+ 		txPower = 63;
+ 
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -71,7 +71,7 @@ static const struct ar9300_eeprom ar9300
+ 		.regDmn = { LE16(0), LE16(0x1f) },
+ 		.txrxMask =  0x77, /* 4 bits tx and 4 bits rx */
+ 		.opCapFlags = {
+-			.opFlags = AR9300_OPFLAGS_11G | AR9300_OPFLAGS_11A,
++			.opFlags = AR5416_OPFLAGS_11G | AR5416_OPFLAGS_11A,
+ 			.eepMisc = 0,
+ 		},
+ 		.rfSilent = 0,
+@@ -648,7 +648,7 @@ static const struct ar9300_eeprom ar9300
+ 		.regDmn = { LE16(0), LE16(0x1f) },
+ 		.txrxMask =  0x77, /* 4 bits tx and 4 bits rx */
+ 		.opCapFlags = {
+-			.opFlags = AR9300_OPFLAGS_11G | AR9300_OPFLAGS_11A,
++			.opFlags = AR5416_OPFLAGS_11G | AR5416_OPFLAGS_11A,
+ 			.eepMisc = 0,
+ 		},
+ 		.rfSilent = 0,
+@@ -1226,7 +1226,7 @@ static const struct ar9300_eeprom ar9300
+ 		.regDmn = { LE16(0), LE16(0x1f) },
+ 		.txrxMask =  0x77, /* 4 bits tx and 4 bits rx */
+ 		.opCapFlags = {
+-			.opFlags = AR9300_OPFLAGS_11G | AR9300_OPFLAGS_11A,
++			.opFlags = AR5416_OPFLAGS_11G | AR5416_OPFLAGS_11A,
+ 			.eepMisc = 0,
+ 		},
+ 		.rfSilent = 0,
+@@ -1804,7 +1804,7 @@ static const struct ar9300_eeprom ar9300
+ 		.regDmn = { LE16(0), LE16(0x1f) },
+ 		.txrxMask =  0x77, /* 4 bits tx and 4 bits rx */
+ 		.opCapFlags = {
+-			.opFlags = AR9300_OPFLAGS_11G | AR9300_OPFLAGS_11A,
++			.opFlags = AR5416_OPFLAGS_11G | AR5416_OPFLAGS_11A,
+ 			.eepMisc = 0,
+ 		},
+ 		.rfSilent = 0,
+@@ -2381,7 +2381,7 @@ static const struct ar9300_eeprom ar9300
+ 		.regDmn = { LE16(0), LE16(0x1f) },
+ 		.txrxMask =  0x33, /* 4 bits tx and 4 bits rx */
+ 		.opCapFlags = {
+-			.opFlags = AR9300_OPFLAGS_11G | AR9300_OPFLAGS_11A,
++			.opFlags = AR5416_OPFLAGS_11G | AR5416_OPFLAGS_11A,
+ 			.eepMisc = 0,
+ 		},
+ 		.rfSilent = 0,
+@@ -2973,7 +2973,7 @@ static const struct ar9300_eeprom *ar900
+ 
+ static u16 ath9k_hw_fbin2freq(u8 fbin, bool is2GHz)
+ {
+-	if (fbin == AR9300_BCHAN_UNUSED)
++	if (fbin == AR5416_BCHAN_UNUSED)
+ 		return fbin;
+ 
+ 	return (u16) ((is2GHz) ? (2300 + fbin) : (4800 + 5 * fbin));
+@@ -3422,18 +3422,6 @@ static int ath9k_hw_ar9300_get_eeprom_re
+ 	return 0;
+ }
+ 
+-static u8 ath9k_hw_ar9300_get_num_ant_config(struct ath_hw *ah,
+-					     enum ath9k_hal_freq_band freq_band)
+-{
+-	return 1;
+-}
+-
+-static u32 ath9k_hw_ar9300_get_eeprom_antenna_cfg(struct ath_hw *ah,
+-						  struct ath9k_channel *chan)
+-{
+-	return -EINVAL;
+-}
+-
+ static s32 ar9003_hw_xpa_bias_level_get(struct ath_hw *ah, bool is2ghz)
+ {
+ 	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+@@ -4395,7 +4383,7 @@ static u16 ar9003_hw_get_indirect_edge_p
+ 			return CTL_EDGE_TPOWER(ctl_5g[idx].ctlEdges[edge - 1]);
+ 	}
+ 
+-	return AR9300_MAX_RATE_POWER;
++	return MAX_RATE_POWER;
+ }
+ 
+ /*
+@@ -4404,7 +4392,7 @@ static u16 ar9003_hw_get_indirect_edge_p
+ static u16 ar9003_hw_get_max_edge_power(struct ar9300_eeprom *eep,
+ 					u16 freq, int idx, bool is2GHz)
+ {
+-	u16 twiceMaxEdgePower = AR9300_MAX_RATE_POWER;
++	u16 twiceMaxEdgePower = MAX_RATE_POWER;
+ 	u8 *ctl_freqbin = is2GHz ?
+ 		&eep->ctl_freqbin_2G[idx][0] :
+ 		&eep->ctl_freqbin_5G[idx][0];
+@@ -4414,7 +4402,7 @@ static u16 ar9003_hw_get_max_edge_power(
+ 
+ 	/* Get the edge power */
+ 	for (edge = 0;
+-	     (edge < num_edges) && (ctl_freqbin[edge] != AR9300_BCHAN_UNUSED);
++	     (edge < num_edges) && (ctl_freqbin[edge] != AR5416_BCHAN_UNUSED);
+ 	     edge++) {
+ 		/*
+ 		 * If there's an exact channel match or an inband flag set
+@@ -4452,9 +4440,9 @@ static void ar9003_hw_set_power_per_rate
+ 	struct ath_regulatory *regulatory = ath9k_hw_regulatory(ah);
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ar9300_eeprom *pEepData = &ah->eeprom.ar9300_eep;
+-	u16 twiceMaxEdgePower = AR9300_MAX_RATE_POWER;
++	u16 twiceMaxEdgePower = MAX_RATE_POWER;
+ 	static const u16 tpScaleReductionTable[5] = {
+-		0, 3, 6, 9, AR9300_MAX_RATE_POWER
++		0, 3, 6, 9, MAX_RATE_POWER
+ 	};
+ 	int i;
+ 	int16_t  twiceLargestAntenna;
+@@ -4762,8 +4750,6 @@ const struct eeprom_ops eep_ar9300_ops =
+ 	.fill_eeprom = ath9k_hw_ar9300_fill_eeprom,
+ 	.get_eeprom_ver = ath9k_hw_ar9300_get_eeprom_ver,
+ 	.get_eeprom_rev = ath9k_hw_ar9300_get_eeprom_rev,
+-	.get_num_ant_config = ath9k_hw_ar9300_get_num_ant_config,
+-	.get_eeprom_antenna_cfg = ath9k_hw_ar9300_get_eeprom_antenna_cfg,
+ 	.set_board_values = ath9k_hw_ar9300_set_board_values,
+ 	.set_addac = ath9k_hw_ar9300_set_addac,
+ 	.set_txpower = ath9k_hw_ar9300_set_txpower,
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
+@@ -20,48 +20,17 @@
+ /* #define AR9300_NUM_CTLS              21 */
+ #define AR9300_NUM_CTLS_5G           9
+ #define AR9300_NUM_CTLS_2G           12
+-#define AR9300_CTL_MODE_M            0xF
+ #define AR9300_NUM_BAND_EDGES_5G     8
+ #define AR9300_NUM_BAND_EDGES_2G     4
+-#define AR9300_NUM_PD_GAINS          4
+-#define AR9300_PD_GAINS_IN_MASK      4
+-#define AR9300_PD_GAIN_ICEPTS        5
+-#define AR9300_EEPROM_MODAL_SPURS    5
+-#define AR9300_MAX_RATE_POWER        63
+-#define AR9300_NUM_PDADC_VALUES      128
+-#define AR9300_NUM_RATES             16
+-#define AR9300_BCHAN_UNUSED          0xFF
+-#define AR9300_MAX_PWR_RANGE_IN_HALF_DB 64
+-#define AR9300_OPFLAGS_11A           0x01
+-#define AR9300_OPFLAGS_11G           0x02
+-#define AR9300_OPFLAGS_5G_HT40       0x04
+-#define AR9300_OPFLAGS_2G_HT40       0x08
+-#define AR9300_OPFLAGS_5G_HT20       0x10
+-#define AR9300_OPFLAGS_2G_HT20       0x20
+ #define AR9300_EEPMISC_BIG_ENDIAN    0x01
+ #define AR9300_EEPMISC_WOW           0x02
+ #define AR9300_CUSTOMER_DATA_SIZE    20
+ 
+-#define FREQ2FBIN(x, y) ((y) ? ((x) - 2300) : (((x) - 4800) / 5))
+ #define FBIN2FREQ(x, y) ((y) ? (2300 + x) : (4800 + 5 * x))
+ #define AR9300_MAX_CHAINS            3
+ #define AR9300_ANT_16S               25
+ #define AR9300_FUTURE_MODAL_SZ       6
+ 
+-#define AR9300_NUM_ANT_CHAIN_FIELDS     7
+-#define AR9300_NUM_ANT_COMMON_FIELDS    4
+-#define AR9300_SIZE_ANT_CHAIN_FIELD     3
+-#define AR9300_SIZE_ANT_COMMON_FIELD    4
+-#define AR9300_ANT_CHAIN_MASK           0x7
+-#define AR9300_ANT_COMMON_MASK          0xf
+-#define AR9300_CHAIN_0_IDX              0
+-#define AR9300_CHAIN_1_IDX              1
+-#define AR9300_CHAIN_2_IDX              2
+-
+-#define AR928X_NUM_ANT_CHAIN_FIELDS     6
+-#define AR928X_SIZE_ANT_CHAIN_FIELD     2
+-#define AR928X_ANT_CHAIN_MASK           0x3
+-
+ /* Delta from which to start power to pdadc table */
+ /* This offset is used in both open loop and closed loop power control
+  * schemes. In open loop power control, it is not really needed, but for
+@@ -71,12 +40,8 @@
+  */
+ #define AR9300_PWR_TABLE_OFFSET  0
+ 
+-/* enable flags for voltage and temp compensation */
+-#define ENABLE_TEMP_COMPENSATION 0x01
+-#define ENABLE_VOLT_COMPENSATION 0x02
+ /* byte addressable */
+ #define AR9300_EEPROM_SIZE (16*1024)
+-#define FIXED_CCA_THRESHOLD 15
+ 
+ #define AR9300_BASE_ADDR 0x3ff
+ #define AR9300_BASE_ADDR_512 0x1ff
+@@ -225,7 +190,7 @@ struct ar9300_modal_eep_header {
+ 	int8_t tempSlope;
+ 	int8_t voltSlope;
+ 	/* spur channels in usual fbin coding format */
+-	u8 spurChans[AR9300_EEPROM_MODAL_SPURS];
++	u8 spurChans[AR_EEPROM_MODAL_SPURS];
+ 	/* 3  Check if the register is per chain */
+ 	int8_t noiseFloorThreshCh[AR9300_MAX_CHAINS];
+ 	u8 ob[AR9300_MAX_CHAINS];
+--- a/drivers/net/wireless/ath/ath9k/ar9003_hw.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_hw.c
+@@ -20,17 +20,6 @@
+ 
+ /* General hardware code for the AR9003 hadware family */
+ 
+-static bool ar9003_hw_macversion_supported(u32 macversion)
+-{
+-	switch (macversion) {
+-	case AR_SREV_VERSION_9300:
+-		return true;
+-	default:
+-		break;
+-	}
+-	return false;
+-}
+-
+ /*
+  * The AR9003 family uses a new INI format (pre, core, post
+  * arrays per subsystem). This provides support for the
+@@ -216,7 +205,6 @@ void ar9003_hw_attach_ops(struct ath_hw 
+ 
+ 	priv_ops->init_mode_regs = ar9003_hw_init_mode_regs;
+ 	priv_ops->init_mode_gain_regs = ar9003_hw_init_mode_gain_regs;
+-	priv_ops->macversion_supported = ar9003_hw_macversion_supported;
+ 
+ 	ops->config_pci_powersave = ar9003_hw_configpcipowersave;
+ 
+--- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
+@@ -322,7 +322,6 @@ static void ar9003_hw_set11n_txdesc(stru
+ 	if (txpower > ah->txpower_limit)
+ 		txpower = ah->txpower_limit;
+ 
+-	txpower += ah->txpower_indexoffset;
+ 	if (txpower > 63)
+ 		txpower = 63;
+ 
+--- a/drivers/net/wireless/ath/ath9k/eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom.c
+@@ -234,7 +234,7 @@ void ath9k_hw_get_target_powers(struct a
+ u16 ath9k_hw_get_max_edge_power(u16 freq, struct cal_ctl_edges *pRdEdgesPower,
+ 				bool is2GHz, int num_band_edges)
+ {
+-	u16 twiceMaxEdgePower = AR5416_MAX_RATE_POWER;
++	u16 twiceMaxEdgePower = MAX_RATE_POWER;
+ 	int i;
+ 
+ 	for (i = 0; (i < num_band_edges) &&
+@@ -279,6 +279,219 @@ void ath9k_hw_update_regulatory_maxpower
+ 	}
+ }
+ 
++void ath9k_hw_get_gain_boundaries_pdadcs(struct ath_hw *ah,
++				struct ath9k_channel *chan,
++				void *pRawDataSet,
++				u8 *bChans, u16 availPiers,
++				u16 tPdGainOverlap,
++				u16 *pPdGainBoundaries, u8 *pPDADCValues,
++				u16 numXpdGains)
++{
++	int i, j, k;
++	int16_t ss;
++	u16 idxL = 0, idxR = 0, numPiers;
++	static u8 vpdTableL[AR5416_NUM_PD_GAINS]
++		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
++	static u8 vpdTableR[AR5416_NUM_PD_GAINS]
++		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
++	static u8 vpdTableI[AR5416_NUM_PD_GAINS]
++		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
++
++	u8 *pVpdL, *pVpdR, *pPwrL, *pPwrR;
++	u8 minPwrT4[AR5416_NUM_PD_GAINS];
++	u8 maxPwrT4[AR5416_NUM_PD_GAINS];
++	int16_t vpdStep;
++	int16_t tmpVal;
++	u16 sizeCurrVpdTable, maxIndex, tgtIndex;
++	bool match;
++	int16_t minDelta = 0;
++	struct chan_centers centers;
++	int pdgain_boundary_default;
++	struct cal_data_per_freq *data_def = pRawDataSet;
++	struct cal_data_per_freq_4k *data_4k = pRawDataSet;
++	struct cal_data_per_freq_ar9287 *data_9287 = pRawDataSet;
++	bool eeprom_4k = AR_SREV_9285(ah) || AR_SREV_9271(ah);
++	int intercepts;
++
++	if (AR_SREV_9287(ah))
++		intercepts = AR9287_PD_GAIN_ICEPTS;
++	else
++		intercepts = AR5416_PD_GAIN_ICEPTS;
++
++	memset(&minPwrT4, 0, AR5416_NUM_PD_GAINS);
++	ath9k_hw_get_channel_centers(ah, chan, &centers);
++
++	for (numPiers = 0; numPiers < availPiers; numPiers++) {
++		if (bChans[numPiers] == AR5416_BCHAN_UNUSED)
++			break;
++	}
++
++	match = ath9k_hw_get_lower_upper_index((u8)FREQ2FBIN(centers.synth_center,
++							     IS_CHAN_2GHZ(chan)),
++					       bChans, numPiers, &idxL, &idxR);
++
++	if (match) {
++		if (AR_SREV_9287(ah)) {
++			/* FIXME: array overrun? */
++			for (i = 0; i < numXpdGains; i++) {
++				minPwrT4[i] = data_9287[idxL].pwrPdg[i][0];
++				maxPwrT4[i] = data_9287[idxL].pwrPdg[i][4];
++				ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
++						data_9287[idxL].pwrPdg[i],
++						data_9287[idxL].vpdPdg[i],
++						intercepts,
++						vpdTableI[i]);
++			}
++		} else if (eeprom_4k) {
++			for (i = 0; i < numXpdGains; i++) {
++				minPwrT4[i] = data_4k[idxL].pwrPdg[i][0];
++				maxPwrT4[i] = data_4k[idxL].pwrPdg[i][4];
++				ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
++						data_4k[idxL].pwrPdg[i],
++						data_4k[idxL].vpdPdg[i],
++						intercepts,
++						vpdTableI[i]);
++			}
++		} else {
++			for (i = 0; i < numXpdGains; i++) {
++				minPwrT4[i] = data_def[idxL].pwrPdg[i][0];
++				maxPwrT4[i] = data_def[idxL].pwrPdg[i][4];
++				ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
++						data_def[idxL].pwrPdg[i],
++						data_def[idxL].vpdPdg[i],
++						intercepts,
++						vpdTableI[i]);
++			}
++		}
++	} else {
++		for (i = 0; i < numXpdGains; i++) {
++			if (AR_SREV_9287(ah)) {
++				pVpdL = data_9287[idxL].vpdPdg[i];
++				pPwrL = data_9287[idxL].pwrPdg[i];
++				pVpdR = data_9287[idxR].vpdPdg[i];
++				pPwrR = data_9287[idxR].pwrPdg[i];
++			} else if (eeprom_4k) {
++				pVpdL = data_4k[idxL].vpdPdg[i];
++				pPwrL = data_4k[idxL].pwrPdg[i];
++				pVpdR = data_4k[idxR].vpdPdg[i];
++				pPwrR = data_4k[idxR].pwrPdg[i];
++			} else {
++				pVpdL = data_def[idxL].vpdPdg[i];
++				pPwrL = data_def[idxL].pwrPdg[i];
++				pVpdR = data_def[idxR].vpdPdg[i];
++				pPwrR = data_def[idxR].pwrPdg[i];
++			}
++
++			minPwrT4[i] = max(pPwrL[0], pPwrR[0]);
++
++			maxPwrT4[i] =
++				min(pPwrL[intercepts - 1],
++				    pPwrR[intercepts - 1]);
++
++
++			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
++						pPwrL, pVpdL,
++						intercepts,
++						vpdTableL[i]);
++			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
++						pPwrR, pVpdR,
++						intercepts,
++						vpdTableR[i]);
++
++			for (j = 0; j <= (maxPwrT4[i] - minPwrT4[i]) / 2; j++) {
++				vpdTableI[i][j] =
++					(u8)(ath9k_hw_interpolate((u16)
++					     FREQ2FBIN(centers.
++						       synth_center,
++						       IS_CHAN_2GHZ
++						       (chan)),
++					     bChans[idxL], bChans[idxR],
++					     vpdTableL[i][j], vpdTableR[i][j]));
++			}
++		}
++	}
++
++	k = 0;
++
++	for (i = 0; i < numXpdGains; i++) {
++		if (i == (numXpdGains - 1))
++			pPdGainBoundaries[i] =
++				(u16)(maxPwrT4[i] / 2);
++		else
++			pPdGainBoundaries[i] =
++				(u16)((maxPwrT4[i] + minPwrT4[i + 1]) / 4);
++
++		pPdGainBoundaries[i] =
++			min((u16)MAX_RATE_POWER, pPdGainBoundaries[i]);
++
++		if ((i == 0) && !AR_SREV_5416_20_OR_LATER(ah)) {
++			minDelta = pPdGainBoundaries[0] - 23;
++			pPdGainBoundaries[0] = 23;
++		} else {
++			minDelta = 0;
++		}
++
++		if (i == 0) {
++			if (AR_SREV_9280_20_OR_LATER(ah))
++				ss = (int16_t)(0 - (minPwrT4[i] / 2));
++			else
++				ss = 0;
++		} else {
++			ss = (int16_t)((pPdGainBoundaries[i - 1] -
++					(minPwrT4[i] / 2)) -
++				       tPdGainOverlap + 1 + minDelta);
++		}
++		vpdStep = (int16_t)(vpdTableI[i][1] - vpdTableI[i][0]);
++		vpdStep = (int16_t)((vpdStep < 1) ? 1 : vpdStep);
++
++		while ((ss < 0) && (k < (AR5416_NUM_PDADC_VALUES - 1))) {
++			tmpVal = (int16_t)(vpdTableI[i][0] + ss * vpdStep);
++			pPDADCValues[k++] = (u8)((tmpVal < 0) ? 0 : tmpVal);
++			ss++;
++		}
++
++		sizeCurrVpdTable = (u8) ((maxPwrT4[i] - minPwrT4[i]) / 2 + 1);
++		tgtIndex = (u8)(pPdGainBoundaries[i] + tPdGainOverlap -
++				(minPwrT4[i] / 2));
++		maxIndex = (tgtIndex < sizeCurrVpdTable) ?
++			tgtIndex : sizeCurrVpdTable;
++
++		while ((ss < maxIndex) && (k < (AR5416_NUM_PDADC_VALUES - 1))) {
++			pPDADCValues[k++] = vpdTableI[i][ss++];
++		}
++
++		vpdStep = (int16_t)(vpdTableI[i][sizeCurrVpdTable - 1] -
++				    vpdTableI[i][sizeCurrVpdTable - 2]);
++		vpdStep = (int16_t)((vpdStep < 1) ? 1 : vpdStep);
++
++		if (tgtIndex >= maxIndex) {
++			while ((ss <= tgtIndex) &&
++			       (k < (AR5416_NUM_PDADC_VALUES - 1))) {
++				tmpVal = (int16_t)((vpdTableI[i][sizeCurrVpdTable - 1] +
++						    (ss - maxIndex + 1) * vpdStep));
++				pPDADCValues[k++] = (u8)((tmpVal > 255) ?
++							 255 : tmpVal);
++				ss++;
++			}
++		}
++	}
++
++	if (eeprom_4k)
++		pdgain_boundary_default = 58;
++	else
++		pdgain_boundary_default = pPdGainBoundaries[i - 1];
++
++	while (i < AR5416_PD_GAINS_IN_MASK) {
++		pPdGainBoundaries[i] = pdgain_boundary_default;
++		i++;
++	}
++
++	while (k < AR5416_NUM_PDADC_VALUES) {
++		pPDADCValues[k] = pPDADCValues[k - 1];
++		k++;
++	}
++}
++
+ int ath9k_hw_eeprom_init(struct ath_hw *ah)
+ {
+ 	int status;
+--- a/drivers/net/wireless/ath/ath9k/eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/eeprom.h
+@@ -17,6 +17,8 @@
+ #ifndef EEPROM_H
+ #define EEPROM_H
+ 
++#define AR_EEPROM_MODAL_SPURS   5
++
+ #include "../ath.h"
+ #include <net/cfg80211.h>
+ #include "ar9003_eeprom.h"
+@@ -149,8 +151,6 @@
+ #define AR5416_NUM_PD_GAINS             4
+ #define AR5416_PD_GAINS_IN_MASK         4
+ #define AR5416_PD_GAIN_ICEPTS           5
+-#define AR5416_EEPROM_MODAL_SPURS       5
+-#define AR5416_MAX_RATE_POWER           63
+ #define AR5416_NUM_PDADC_VALUES         128
+ #define AR5416_BCHAN_UNUSED             0xFF
+ #define AR5416_MAX_PWR_RANGE_IN_HALF_DB 64
+@@ -175,8 +175,6 @@
+ #define AR5416_EEP4K_NUM_CTLS                 12
+ #define AR5416_EEP4K_NUM_BAND_EDGES           4
+ #define AR5416_EEP4K_NUM_PD_GAINS             2
+-#define AR5416_EEP4K_PD_GAINS_IN_MASK         4
+-#define AR5416_EEP4K_PD_GAIN_ICEPTS           5
+ #define AR5416_EEP4K_MAX_CHAINS               1
+ 
+ #define AR9280_TX_GAIN_TABLE_SIZE 22
+@@ -198,35 +196,12 @@
+ #define AR9287_NUM_2G_40_TARGET_POWERS  3
+ #define AR9287_NUM_CTLS              	12
+ #define AR9287_NUM_BAND_EDGES        	4
+-#define AR9287_NUM_PD_GAINS             4
+-#define AR9287_PD_GAINS_IN_MASK         4
+ #define AR9287_PD_GAIN_ICEPTS           1
+-#define AR9287_EEPROM_MODAL_SPURS       5
+-#define AR9287_MAX_RATE_POWER           63
+-#define AR9287_NUM_PDADC_VALUES         128
+-#define AR9287_NUM_RATES                16
+-#define AR9287_BCHAN_UNUSED             0xFF
+-#define AR9287_MAX_PWR_RANGE_IN_HALF_DB 64
+-#define AR9287_OPFLAGS_11A              0x01
+-#define AR9287_OPFLAGS_11G              0x02
+-#define AR9287_OPFLAGS_2G_HT40          0x08
+-#define AR9287_OPFLAGS_2G_HT20          0x20
+-#define AR9287_OPFLAGS_5G_HT40          0x04
+-#define AR9287_OPFLAGS_5G_HT20          0x10
+ #define AR9287_EEPMISC_BIG_ENDIAN       0x01
+ #define AR9287_EEPMISC_WOW              0x02
+ #define AR9287_MAX_CHAINS               2
+ #define AR9287_ANT_16S                  32
+-#define AR9287_custdatasize             20
+ 
+-#define AR9287_NUM_ANT_CHAIN_FIELDS     6
+-#define AR9287_NUM_ANT_COMMON_FIELDS    4
+-#define AR9287_SIZE_ANT_CHAIN_FIELD     2
+-#define AR9287_SIZE_ANT_COMMON_FIELD    4
+-#define AR9287_ANT_CHAIN_MASK           0x3
+-#define AR9287_ANT_COMMON_MASK          0xf
+-#define AR9287_CHAIN_0_IDX              0
+-#define AR9287_CHAIN_1_IDX              1
+ #define AR9287_DATA_SZ                  32
+ 
+ #define AR9287_PWR_TABLE_OFFSET_DB  -5
+@@ -396,7 +371,7 @@ struct modal_eep_header {
+ 	u16 xpaBiasLvlFreq[3];
+ 	u8 futureModal[6];
+ 
+-	struct spur_chan spurChans[AR5416_EEPROM_MODAL_SPURS];
++	struct spur_chan spurChans[AR_EEPROM_MODAL_SPURS];
+ } __packed;
+ 
+ struct calDataPerFreqOpLoop {
+@@ -464,7 +439,7 @@ struct modal_eep_4k_header {
+ 	u8 db2_4:4, reserved:4;
+ #endif
+ 	u8 futureModal[4];
+-	struct spur_chan spurChans[AR5416_EEPROM_MODAL_SPURS];
++	struct spur_chan spurChans[AR_EEPROM_MODAL_SPURS];
+ } __packed;
+ 
+ struct base_eep_ar9287_header {
+@@ -522,7 +497,7 @@ struct modal_eep_ar9287_header {
+ 	u8 ob_qam;
+ 	u8 ob_pal_off;
+ 	u8 futureModal[30];
+-	struct spur_chan spurChans[AR9287_EEPROM_MODAL_SPURS];
++	struct spur_chan spurChans[AR_EEPROM_MODAL_SPURS];
+ } __packed;
+ 
+ struct cal_data_per_freq {
+@@ -531,8 +506,8 @@ struct cal_data_per_freq {
+ } __packed;
+ 
+ struct cal_data_per_freq_4k {
+-	u8 pwrPdg[AR5416_EEP4K_NUM_PD_GAINS][AR5416_EEP4K_PD_GAIN_ICEPTS];
+-	u8 vpdPdg[AR5416_EEP4K_NUM_PD_GAINS][AR5416_EEP4K_PD_GAIN_ICEPTS];
++	u8 pwrPdg[AR5416_EEP4K_NUM_PD_GAINS][AR5416_PD_GAIN_ICEPTS];
++	u8 vpdPdg[AR5416_EEP4K_NUM_PD_GAINS][AR5416_PD_GAIN_ICEPTS];
+ } __packed;
+ 
+ struct cal_target_power_leg {
+@@ -558,8 +533,8 @@ struct cal_data_op_loop_ar9287 {
+ } __packed;
+ 
+ struct cal_data_per_freq_ar9287 {
+-	u8 pwrPdg[AR9287_NUM_PD_GAINS][AR9287_PD_GAIN_ICEPTS];
+-	u8 vpdPdg[AR9287_NUM_PD_GAINS][AR9287_PD_GAIN_ICEPTS];
++	u8 pwrPdg[AR5416_NUM_PD_GAINS][AR9287_PD_GAIN_ICEPTS];
++	u8 vpdPdg[AR5416_NUM_PD_GAINS][AR9287_PD_GAIN_ICEPTS];
+ } __packed;
+ 
+ union cal_data_per_freq_ar9287_u {
+@@ -674,10 +649,6 @@ struct eeprom_ops {
+ 	bool (*fill_eeprom)(struct ath_hw *hw);
+ 	int (*get_eeprom_ver)(struct ath_hw *hw);
+ 	int (*get_eeprom_rev)(struct ath_hw *hw);
+-	u8 (*get_num_ant_config)(struct ath_hw *hw,
+-				 enum ath9k_hal_freq_band band);
+-	u32 (*get_eeprom_antenna_cfg)(struct ath_hw *hw,
+-				      struct ath9k_channel *chan);
+ 	void (*set_board_values)(struct ath_hw *hw, struct ath9k_channel *chan);
+ 	void (*set_addac)(struct ath_hw *hw, struct ath9k_channel *chan);
+ 	void (*set_txpower)(struct ath_hw *hw, struct ath9k_channel *chan,
+@@ -716,6 +687,14 @@ u16 ath9k_hw_get_max_edge_power(u16 freq
+ void ath9k_hw_update_regulatory_maxpower(struct ath_hw *ah);
+ int ath9k_hw_eeprom_init(struct ath_hw *ah);
+ 
++void ath9k_hw_get_gain_boundaries_pdadcs(struct ath_hw *ah,
++				struct ath9k_channel *chan,
++				void *pRawDataSet,
++				u8 *bChans, u16 availPiers,
++				u16 tPdGainOverlap,
++				u16 *pPdGainBoundaries, u8 *pPDADCValues,
++				u16 numXpdGains);
++
+ #define ar5416_get_ntxchains(_txchainmask)			\
+ 	(((_txchainmask >> 2) & 1) +                            \
+ 	 ((_txchainmask >> 1) & 1) + (_txchainmask & 1))
+--- a/drivers/net/wireless/ath/ath9k/eeprom_4k.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_4k.c
+@@ -155,7 +155,7 @@ static int ath9k_hw_4k_check_eeprom(stru
+ 			eep->modalHeader.antCtrlChain[i] = integer;
+ 		}
+ 
+-		for (i = 0; i < AR5416_EEPROM_MODAL_SPURS; i++) {
++		for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++) {
+ 			word = swab16(eep->modalHeader.spurChans[i].spurChan);
+ 			eep->modalHeader.spurChans[i].spurChan = word;
+ 		}
+@@ -230,173 +230,6 @@ static u32 ath9k_hw_4k_get_eeprom(struct
+ 	}
+ }
+ 
+-static void ath9k_hw_get_4k_gain_boundaries_pdadcs(struct ath_hw *ah,
+-				struct ath9k_channel *chan,
+-				struct cal_data_per_freq_4k *pRawDataSet,
+-				u8 *bChans, u16 availPiers,
+-				u16 tPdGainOverlap,
+-				u16 *pPdGainBoundaries, u8 *pPDADCValues,
+-				u16 numXpdGains)
+-{
+-#define TMP_VAL_VPD_TABLE \
+-	((vpdTableI[i][sizeCurrVpdTable - 1] + (ss - maxIndex + 1) * vpdStep));
+-	int i, j, k;
+-	int16_t ss;
+-	u16 idxL = 0, idxR = 0, numPiers;
+-	static u8 vpdTableL[AR5416_EEP4K_NUM_PD_GAINS]
+-		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
+-	static u8 vpdTableR[AR5416_EEP4K_NUM_PD_GAINS]
+-		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
+-	static u8 vpdTableI[AR5416_EEP4K_NUM_PD_GAINS]
+-		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
+-
+-	u8 *pVpdL, *pVpdR, *pPwrL, *pPwrR;
+-	u8 minPwrT4[AR5416_EEP4K_NUM_PD_GAINS];
+-	u8 maxPwrT4[AR5416_EEP4K_NUM_PD_GAINS];
+-	int16_t vpdStep;
+-	int16_t tmpVal;
+-	u16 sizeCurrVpdTable, maxIndex, tgtIndex;
+-	bool match;
+-	int16_t minDelta = 0;
+-	struct chan_centers centers;
+-#define PD_GAIN_BOUNDARY_DEFAULT 58;
+-
+-	memset(&minPwrT4, 0, AR9287_NUM_PD_GAINS);
+-	ath9k_hw_get_channel_centers(ah, chan, &centers);
+-
+-	for (numPiers = 0; numPiers < availPiers; numPiers++) {
+-		if (bChans[numPiers] == AR5416_BCHAN_UNUSED)
+-			break;
+-	}
+-
+-	match = ath9k_hw_get_lower_upper_index(
+-					(u8)FREQ2FBIN(centers.synth_center,
+-					IS_CHAN_2GHZ(chan)), bChans, numPiers,
+-					&idxL, &idxR);
+-
+-	if (match) {
+-		for (i = 0; i < numXpdGains; i++) {
+-			minPwrT4[i] = pRawDataSet[idxL].pwrPdg[i][0];
+-			maxPwrT4[i] = pRawDataSet[idxL].pwrPdg[i][4];
+-			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
+-					pRawDataSet[idxL].pwrPdg[i],
+-					pRawDataSet[idxL].vpdPdg[i],
+-					AR5416_EEP4K_PD_GAIN_ICEPTS,
+-					vpdTableI[i]);
+-		}
+-	} else {
+-		for (i = 0; i < numXpdGains; i++) {
+-			pVpdL = pRawDataSet[idxL].vpdPdg[i];
+-			pPwrL = pRawDataSet[idxL].pwrPdg[i];
+-			pVpdR = pRawDataSet[idxR].vpdPdg[i];
+-			pPwrR = pRawDataSet[idxR].pwrPdg[i];
+-
+-			minPwrT4[i] = max(pPwrL[0], pPwrR[0]);
+-
+-			maxPwrT4[i] =
+-				min(pPwrL[AR5416_EEP4K_PD_GAIN_ICEPTS - 1],
+-				    pPwrR[AR5416_EEP4K_PD_GAIN_ICEPTS - 1]);
+-
+-
+-			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
+-						pPwrL, pVpdL,
+-						AR5416_EEP4K_PD_GAIN_ICEPTS,
+-						vpdTableL[i]);
+-			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
+-						pPwrR, pVpdR,
+-						AR5416_EEP4K_PD_GAIN_ICEPTS,
+-						vpdTableR[i]);
+-
+-			for (j = 0; j <= (maxPwrT4[i] - minPwrT4[i]) / 2; j++) {
+-				vpdTableI[i][j] =
+-					(u8)(ath9k_hw_interpolate((u16)
+-					     FREQ2FBIN(centers.
+-						       synth_center,
+-						       IS_CHAN_2GHZ
+-						       (chan)),
+-					     bChans[idxL], bChans[idxR],
+-					     vpdTableL[i][j], vpdTableR[i][j]));
+-			}
+-		}
+-	}
+-
+-	k = 0;
+-
+-	for (i = 0; i < numXpdGains; i++) {
+-		if (i == (numXpdGains - 1))
+-			pPdGainBoundaries[i] =
+-				(u16)(maxPwrT4[i] / 2);
+-		else
+-			pPdGainBoundaries[i] =
+-				(u16)((maxPwrT4[i] + minPwrT4[i + 1]) / 4);
+-
+-		pPdGainBoundaries[i] =
+-			min((u16)AR5416_MAX_RATE_POWER, pPdGainBoundaries[i]);
+-
+-		if ((i == 0) && !AR_SREV_5416_20_OR_LATER(ah)) {
+-			minDelta = pPdGainBoundaries[0] - 23;
+-			pPdGainBoundaries[0] = 23;
+-		} else {
+-			minDelta = 0;
+-		}
+-
+-		if (i == 0) {
+-			if (AR_SREV_9280_20_OR_LATER(ah))
+-				ss = (int16_t)(0 - (minPwrT4[i] / 2));
+-			else
+-				ss = 0;
+-		} else {
+-			ss = (int16_t)((pPdGainBoundaries[i - 1] -
+-					(minPwrT4[i] / 2)) -
+-				       tPdGainOverlap + 1 + minDelta);
+-		}
+-		vpdStep = (int16_t)(vpdTableI[i][1] - vpdTableI[i][0]);
+-		vpdStep = (int16_t)((vpdStep < 1) ? 1 : vpdStep);
+-
+-		while ((ss < 0) && (k < (AR5416_NUM_PDADC_VALUES - 1))) {
+-			tmpVal = (int16_t)(vpdTableI[i][0] + ss * vpdStep);
+-			pPDADCValues[k++] = (u8)((tmpVal < 0) ? 0 : tmpVal);
+-			ss++;
+-		}
+-
+-		sizeCurrVpdTable = (u8) ((maxPwrT4[i] - minPwrT4[i]) / 2 + 1);
+-		tgtIndex = (u8)(pPdGainBoundaries[i] + tPdGainOverlap -
+-				(minPwrT4[i] / 2));
+-		maxIndex = (tgtIndex < sizeCurrVpdTable) ?
+-			tgtIndex : sizeCurrVpdTable;
+-
+-		while ((ss < maxIndex) && (k < (AR5416_NUM_PDADC_VALUES - 1)))
+-			pPDADCValues[k++] = vpdTableI[i][ss++];
+-
+-		vpdStep = (int16_t)(vpdTableI[i][sizeCurrVpdTable - 1] -
+-				    vpdTableI[i][sizeCurrVpdTable - 2]);
+-		vpdStep = (int16_t)((vpdStep < 1) ? 1 : vpdStep);
+-
+-		if (tgtIndex >= maxIndex) {
+-			while ((ss <= tgtIndex) &&
+-			       (k < (AR5416_NUM_PDADC_VALUES - 1))) {
+-				tmpVal = (int16_t) TMP_VAL_VPD_TABLE;
+-				pPDADCValues[k++] = (u8)((tmpVal > 255) ?
+-							 255 : tmpVal);
+-				ss++;
+-			}
+-		}
+-	}
+-
+-	while (i < AR5416_EEP4K_PD_GAINS_IN_MASK) {
+-		pPdGainBoundaries[i] = PD_GAIN_BOUNDARY_DEFAULT;
+-		i++;
+-	}
+-
+-	while (k < AR5416_NUM_PDADC_VALUES) {
+-		pPDADCValues[k] = pPDADCValues[k - 1];
+-		k++;
+-	}
+-
+-	return;
+-#undef TMP_VAL_VPD_TABLE
+-}
+-
+ static void ath9k_hw_set_4k_power_cal_table(struct ath_hw *ah,
+ 				  struct ath9k_channel *chan,
+ 				  int16_t *pTxPowerIndexOffset)
+@@ -407,7 +240,7 @@ static void ath9k_hw_set_4k_power_cal_ta
+ 	u8 *pCalBChans = NULL;
+ 	u16 pdGainOverlap_t2;
+ 	static u8 pdadcValues[AR5416_NUM_PDADC_VALUES];
+-	u16 gainBoundaries[AR5416_EEP4K_PD_GAINS_IN_MASK];
++	u16 gainBoundaries[AR5416_PD_GAINS_IN_MASK];
+ 	u16 numPiers, i, j;
+ 	u16 numXpdGain, xpdMask;
+ 	u16 xpdGainValues[AR5416_EEP4K_NUM_PD_GAINS] = { 0, 0 };
+@@ -429,12 +262,12 @@ static void ath9k_hw_set_4k_power_cal_ta
+ 
+ 	numXpdGain = 0;
+ 
+-	for (i = 1; i <= AR5416_EEP4K_PD_GAINS_IN_MASK; i++) {
+-		if ((xpdMask >> (AR5416_EEP4K_PD_GAINS_IN_MASK - i)) & 1) {
++	for (i = 1; i <= AR5416_PD_GAINS_IN_MASK; i++) {
++		if ((xpdMask >> (AR5416_PD_GAINS_IN_MASK - i)) & 1) {
+ 			if (numXpdGain >= AR5416_EEP4K_NUM_PD_GAINS)
+ 				break;
+ 			xpdGainValues[numXpdGain] =
+-				(u16)(AR5416_EEP4K_PD_GAINS_IN_MASK - i);
++				(u16)(AR5416_PD_GAINS_IN_MASK - i);
+ 			numXpdGain++;
+ 		}
+ 	}
+@@ -458,7 +291,7 @@ static void ath9k_hw_set_4k_power_cal_ta
+ 		if (pEepData->baseEepHeader.txMask & (1 << i)) {
+ 			pRawDataset = pEepData->calPierData2G[i];
+ 
+-			ath9k_hw_get_4k_gain_boundaries_pdadcs(ah, chan,
++			ath9k_hw_get_gain_boundaries_pdadcs(ah, chan,
+ 					    pRawDataset, pCalBChans,
+ 					    numPiers, pdGainOverlap_t2,
+ 					    gainBoundaries,
+@@ -532,7 +365,7 @@ static void ath9k_hw_set_4k_power_per_ra
+ 	int i;
+ 	int16_t twiceLargestAntenna;
+ 	u16 twiceMinEdgePower;
+-	u16 twiceMaxEdgePower = AR5416_MAX_RATE_POWER;
++	u16 twiceMaxEdgePower = MAX_RATE_POWER;
+ 	u16 scaledPower = 0, minCtlPower, maxRegAllowedPower;
+ 	u16 numCtlModes;
+ 	const u16 *pCtlMode;
+@@ -541,7 +374,7 @@ static void ath9k_hw_set_4k_power_per_ra
+ 	struct cal_ctl_data_4k *rep;
+ 	struct ar5416_eeprom_4k *pEepData = &ah->eeprom.map4k;
+ 	static const u16 tpScaleReductionTable[5] =
+-		{ 0, 3, 6, 9, AR5416_MAX_RATE_POWER };
++		{ 0, 3, 6, 9, MAX_RATE_POWER };
+ 	struct cal_target_power_leg targetPowerOfdm, targetPowerCck = {
+ 		0, { 0, 0, 0, 0}
+ 	};
+@@ -617,7 +450,7 @@ static void ath9k_hw_set_4k_power_per_ra
+ 
+ 		if (ah->eep_ops->get_eeprom_ver(ah) == 14 &&
+ 		    ah->eep_ops->get_eeprom_rev(ah) <= 2)
+-			twiceMaxEdgePower = AR5416_MAX_RATE_POWER;
++			twiceMaxEdgePower = MAX_RATE_POWER;
+ 
+ 		for (i = 0; (i < AR5416_EEP4K_NUM_CTLS) &&
+ 			     pEepData->ctlIndex[i]; i++) {
+@@ -756,8 +589,8 @@ static void ath9k_hw_4k_set_txpower(stru
+ 	regulatory->max_power_level = 0;
+ 	for (i = 0; i < ARRAY_SIZE(ratesArray); i++) {
+ 		ratesArray[i] =	(int16_t)(txPowerIndexOffset + ratesArray[i]);
+-		if (ratesArray[i] > AR5416_MAX_RATE_POWER)
+-			ratesArray[i] = AR5416_MAX_RATE_POWER;
++		if (ratesArray[i] > MAX_RATE_POWER)
++			ratesArray[i] = MAX_RATE_POWER;
+ 
+ 		if (ratesArray[i] > regulatory->max_power_level)
+ 			regulatory->max_power_level = ratesArray[i];
+@@ -941,8 +774,7 @@ static void ath9k_hw_4k_set_board_values
+ 	pModal = &eep->modalHeader;
+ 	txRxAttenLocal = 23;
+ 
+-	REG_WRITE(ah, AR_PHY_SWITCH_COM,
+-		  ah->eep_ops->get_eeprom_antenna_cfg(ah, chan));
++	REG_WRITE(ah, AR_PHY_SWITCH_COM, pModal->antCtrlCommon);
+ 
+ 	/* Single chain for 4K EEPROM*/
+ 	ath9k_hw_4k_set_gain(ah, pModal, eep, txRxAttenLocal);
+@@ -1158,21 +990,6 @@ static void ath9k_hw_4k_set_board_values
+ 	}
+ }
+ 
+-static u32 ath9k_hw_4k_get_eeprom_antenna_cfg(struct ath_hw *ah,
+-					      struct ath9k_channel *chan)
+-{
+-	struct ar5416_eeprom_4k *eep = &ah->eeprom.map4k;
+-	struct modal_eep_4k_header *pModal = &eep->modalHeader;
+-
+-	return pModal->antCtrlCommon;
+-}
+-
+-static u8 ath9k_hw_4k_get_num_ant_config(struct ath_hw *ah,
+-					 enum ath9k_hal_freq_band freq_band)
+-{
+-	return 1;
+-}
+-
+ static u16 ath9k_hw_4k_get_spur_channel(struct ath_hw *ah, u16 i, bool is2GHz)
+ {
+ #define EEP_MAP4K_SPURCHAN \
+@@ -1209,8 +1026,6 @@ const struct eeprom_ops eep_4k_ops = {
+ 	.fill_eeprom		= ath9k_hw_4k_fill_eeprom,
+ 	.get_eeprom_ver		= ath9k_hw_4k_get_eeprom_ver,
+ 	.get_eeprom_rev		= ath9k_hw_4k_get_eeprom_rev,
+-	.get_num_ant_config	= ath9k_hw_4k_get_num_ant_config,
+-	.get_eeprom_antenna_cfg	= ath9k_hw_4k_get_eeprom_antenna_cfg,
+ 	.set_board_values	= ath9k_hw_4k_set_board_values,
+ 	.set_addac		= ath9k_hw_4k_set_addac,
+ 	.set_txpower		= ath9k_hw_4k_set_txpower,
+--- a/drivers/net/wireless/ath/ath9k/eeprom_9287.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_9287.c
+@@ -152,7 +152,7 @@ static int ath9k_hw_ar9287_check_eeprom(
+ 			eep->modalHeader.antCtrlChain[i] = integer;
+ 		}
+ 
+-		for (i = 0; i < AR9287_EEPROM_MODAL_SPURS; i++) {
++		for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++) {
+ 			word = swab16(eep->modalHeader.spurChans[i].spurChan);
+ 			eep->modalHeader.spurChans[i].spurChan = word;
+ 		}
+@@ -223,163 +223,6 @@ static u32 ath9k_hw_ar9287_get_eeprom(st
+ 	}
+ }
+ 
+-static void ath9k_hw_get_ar9287_gain_boundaries_pdadcs(struct ath_hw *ah,
+-			       struct ath9k_channel *chan,
+-			       struct cal_data_per_freq_ar9287 *pRawDataSet,
+-			       u8 *bChans, u16 availPiers,
+-			       u16 tPdGainOverlap,
+-			       u16 *pPdGainBoundaries,
+-			       u8 *pPDADCValues,
+-			       u16 numXpdGains)
+-{
+-#define TMP_VAL_VPD_TABLE						\
+-	((vpdTableI[i][sizeCurrVpdTable - 1] + (ss - maxIndex + 1) * vpdStep));
+-
+-	int i, j, k;
+-	int16_t ss;
+-	u16 idxL = 0, idxR = 0, numPiers;
+-	u8 *pVpdL, *pVpdR, *pPwrL, *pPwrR;
+-	u8 minPwrT4[AR9287_NUM_PD_GAINS];
+-	u8 maxPwrT4[AR9287_NUM_PD_GAINS];
+-	int16_t vpdStep;
+-	int16_t tmpVal;
+-	u16 sizeCurrVpdTable, maxIndex, tgtIndex;
+-	bool match;
+-	int16_t minDelta = 0;
+-	struct chan_centers centers;
+-	static u8 vpdTableL[AR5416_EEP4K_NUM_PD_GAINS]
+-		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
+-	static u8 vpdTableR[AR5416_EEP4K_NUM_PD_GAINS]
+-		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
+-	static u8 vpdTableI[AR5416_EEP4K_NUM_PD_GAINS]
+-		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
+-
+-	memset(&minPwrT4, 0, AR9287_NUM_PD_GAINS);
+-	ath9k_hw_get_channel_centers(ah, chan, &centers);
+-
+-	for (numPiers = 0; numPiers < availPiers; numPiers++) {
+-		if (bChans[numPiers] == AR9287_BCHAN_UNUSED)
+-			break;
+-	}
+-
+-	match = ath9k_hw_get_lower_upper_index(
+-		(u8)FREQ2FBIN(centers.synth_center, IS_CHAN_2GHZ(chan)),
+-		bChans, numPiers, &idxL, &idxR);
+-
+-	if (match) {
+-		for (i = 0; i < numXpdGains; i++) {
+-			minPwrT4[i] = pRawDataSet[idxL].pwrPdg[i][0];
+-			maxPwrT4[i] = pRawDataSet[idxL].pwrPdg[i][4];
+-			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
+-						pRawDataSet[idxL].pwrPdg[i],
+-						pRawDataSet[idxL].vpdPdg[i],
+-						AR9287_PD_GAIN_ICEPTS,
+-						vpdTableI[i]);
+-		}
+-	} else {
+-		for (i = 0; i < numXpdGains; i++) {
+-			pVpdL = pRawDataSet[idxL].vpdPdg[i];
+-			pPwrL = pRawDataSet[idxL].pwrPdg[i];
+-			pVpdR = pRawDataSet[idxR].vpdPdg[i];
+-			pPwrR = pRawDataSet[idxR].pwrPdg[i];
+-
+-			minPwrT4[i] = max(pPwrL[0], pPwrR[0]);
+-
+-			maxPwrT4[i] = min(pPwrL[AR9287_PD_GAIN_ICEPTS - 1],
+-					  pPwrR[AR9287_PD_GAIN_ICEPTS - 1]);
+-
+-			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
+-						pPwrL, pVpdL,
+-						AR9287_PD_GAIN_ICEPTS,
+-						vpdTableL[i]);
+-			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
+-						pPwrR, pVpdR,
+-						AR9287_PD_GAIN_ICEPTS,
+-						vpdTableR[i]);
+-
+-			for (j = 0; j <= (maxPwrT4[i] - minPwrT4[i]) / 2; j++) {
+-				vpdTableI[i][j] = (u8)(ath9k_hw_interpolate(
+-				       (u16)FREQ2FBIN(centers. synth_center,
+-						      IS_CHAN_2GHZ(chan)),
+-				       bChans[idxL], bChans[idxR],
+-				       vpdTableL[i][j], vpdTableR[i][j]));
+-			}
+-		}
+-	}
+-
+-	k = 0;
+-
+-	for (i = 0; i < numXpdGains; i++) {
+-		if (i == (numXpdGains - 1))
+-			pPdGainBoundaries[i] =
+-				(u16)(maxPwrT4[i] / 2);
+-		else
+-			pPdGainBoundaries[i] =
+-				(u16)((maxPwrT4[i] + minPwrT4[i+1]) / 4);
+-
+-		pPdGainBoundaries[i] = min((u16)AR5416_MAX_RATE_POWER,
+-					   pPdGainBoundaries[i]);
+-
+-
+-		minDelta = 0;
+-
+-		if (i == 0) {
+-			if (AR_SREV_9280_20_OR_LATER(ah))
+-				ss = (int16_t)(0 - (minPwrT4[i] / 2));
+-			else
+-				ss = 0;
+-		} else {
+-			ss = (int16_t)((pPdGainBoundaries[i-1] -
+-					(minPwrT4[i] / 2)) -
+-				       tPdGainOverlap + 1 + minDelta);
+-		}
+-
+-		vpdStep = (int16_t)(vpdTableI[i][1] - vpdTableI[i][0]);
+-		vpdStep = (int16_t)((vpdStep < 1) ? 1 : vpdStep);
+-
+-		while ((ss < 0) && (k < (AR9287_NUM_PDADC_VALUES - 1)))	{
+-			tmpVal = (int16_t)(vpdTableI[i][0] + ss * vpdStep);
+-			pPDADCValues[k++] = (u8)((tmpVal < 0) ? 0 : tmpVal);
+-			ss++;
+-		}
+-
+-		sizeCurrVpdTable = (u8)((maxPwrT4[i] - minPwrT4[i]) / 2 + 1);
+-		tgtIndex = (u8)(pPdGainBoundaries[i] +
+-				tPdGainOverlap - (minPwrT4[i] / 2));
+-		maxIndex = (tgtIndex < sizeCurrVpdTable) ?
+-			    tgtIndex : sizeCurrVpdTable;
+-
+-		while ((ss < maxIndex) && (k < (AR9287_NUM_PDADC_VALUES - 1)))
+-			pPDADCValues[k++] = vpdTableI[i][ss++];
+-
+-		vpdStep = (int16_t)(vpdTableI[i][sizeCurrVpdTable - 1] -
+-				    vpdTableI[i][sizeCurrVpdTable - 2]);
+-		vpdStep = (int16_t)((vpdStep < 1) ? 1 : vpdStep);
+-
+-		if (tgtIndex > maxIndex) {
+-			while ((ss <= tgtIndex) &&
+-				(k < (AR9287_NUM_PDADC_VALUES - 1))) {
+-				tmpVal = (int16_t) TMP_VAL_VPD_TABLE;
+-				pPDADCValues[k++] =
+-					(u8)((tmpVal > 255) ? 255 : tmpVal);
+-				ss++;
+-			}
+-		}
+-	}
+-
+-	while (i < AR9287_PD_GAINS_IN_MASK) {
+-		pPdGainBoundaries[i] = pPdGainBoundaries[i-1];
+-		i++;
+-	}
+-
+-	while (k < AR9287_NUM_PDADC_VALUES) {
+-		pPDADCValues[k] = pPDADCValues[k-1];
+-		k++;
+-	}
+-
+-#undef TMP_VAL_VPD_TABLE
+-}
+-
+ static void ar9287_eeprom_get_tx_gain_index(struct ath_hw *ah,
+ 			    struct ath9k_channel *chan,
+ 			    struct cal_data_op_loop_ar9287 *pRawDatasetOpLoop,
+@@ -392,7 +235,7 @@ static void ar9287_eeprom_get_tx_gain_in
+ 	ath9k_hw_get_channel_centers(ah, chan, &centers);
+ 
+ 	for (numPiers = 0; numPiers < availPiers; numPiers++) {
+-		if (pCalChans[numPiers] == AR9287_BCHAN_UNUSED)
++		if (pCalChans[numPiers] == AR5416_BCHAN_UNUSED)
+ 			break;
+ 	}
+ 
+@@ -458,11 +301,11 @@ static void ath9k_hw_set_ar9287_power_ca
+ 	struct cal_data_op_loop_ar9287 *pRawDatasetOpenLoop;
+ 	u8 *pCalBChans = NULL;
+ 	u16 pdGainOverlap_t2;
+-	u8 pdadcValues[AR9287_NUM_PDADC_VALUES];
+-	u16 gainBoundaries[AR9287_PD_GAINS_IN_MASK];
++	u8 pdadcValues[AR5416_NUM_PDADC_VALUES];
++	u16 gainBoundaries[AR5416_PD_GAINS_IN_MASK];
+ 	u16 numPiers = 0, i, j;
+ 	u16 numXpdGain, xpdMask;
+-	u16 xpdGainValues[AR9287_NUM_PD_GAINS] = {0, 0, 0, 0};
++	u16 xpdGainValues[AR5416_NUM_PD_GAINS] = {0, 0, 0, 0};
+ 	u32 reg32, regOffset, regChainOffset, regval;
+ 	int16_t modalIdx, diff = 0;
+ 	struct ar9287_eeprom *pEepData = &ah->eeprom.map9287;
+@@ -490,12 +333,12 @@ static void ath9k_hw_set_ar9287_power_ca
+ 	numXpdGain = 0;
+ 
+ 	/* Calculate the value of xpdgains from the xpdGain Mask */
+-	for (i = 1; i <= AR9287_PD_GAINS_IN_MASK; i++) {
+-		if ((xpdMask >> (AR9287_PD_GAINS_IN_MASK - i)) & 1) {
+-			if (numXpdGain >= AR9287_NUM_PD_GAINS)
++	for (i = 1; i <= AR5416_PD_GAINS_IN_MASK; i++) {
++		if ((xpdMask >> (AR5416_PD_GAINS_IN_MASK - i)) & 1) {
++			if (numXpdGain >= AR5416_NUM_PD_GAINS)
+ 				break;
+ 			xpdGainValues[numXpdGain] =
+-				(u16)(AR9287_PD_GAINS_IN_MASK-i);
++				(u16)(AR5416_PD_GAINS_IN_MASK-i);
+ 			numXpdGain++;
+ 		}
+ 	}
+@@ -528,7 +371,7 @@ static void ath9k_hw_set_ar9287_power_ca
+ 					(struct cal_data_per_freq_ar9287 *)
+ 					pEepData->calPierData2G[i];
+ 
+-				ath9k_hw_get_ar9287_gain_boundaries_pdadcs(ah, chan,
++				ath9k_hw_get_gain_boundaries_pdadcs(ah, chan,
+ 							   pRawDataset,
+ 							   pCalBChans, numPiers,
+ 							   pdGainOverlap_t2,
+@@ -564,13 +407,13 @@ static void ath9k_hw_set_ar9287_power_ca
+ 					     (int32_t)AR9287_PWR_TABLE_OFFSET_DB);
+ 				diff *= 2;
+ 
+-				for (j = 0; j < ((u16)AR9287_NUM_PDADC_VALUES-diff); j++)
++				for (j = 0; j < ((u16)AR5416_NUM_PDADC_VALUES-diff); j++)
+ 					pdadcValues[j] = pdadcValues[j+diff];
+ 
+-				for (j = (u16)(AR9287_NUM_PDADC_VALUES-diff);
+-				     j < AR9287_NUM_PDADC_VALUES; j++)
++				for (j = (u16)(AR5416_NUM_PDADC_VALUES-diff);
++				     j < AR5416_NUM_PDADC_VALUES; j++)
+ 					pdadcValues[j] =
+-					  pdadcValues[AR9287_NUM_PDADC_VALUES-diff];
++					  pdadcValues[AR5416_NUM_PDADC_VALUES-diff];
+ 			}
+ 
+ 			if (!ath9k_hw_ar9287_get_eeprom(ah, EEP_OL_PWRCTRL)) {
+@@ -613,9 +456,9 @@ static void ath9k_hw_set_ar9287_power_pe
+ #define REDUCE_SCALED_POWER_BY_THREE_CHAIN   10
+ 
+ 	struct ath_regulatory *regulatory = ath9k_hw_regulatory(ah);
+-	u16 twiceMaxEdgePower = AR5416_MAX_RATE_POWER;
++	u16 twiceMaxEdgePower = MAX_RATE_POWER;
+ 	static const u16 tpScaleReductionTable[5] =
+-		{ 0, 3, 6, 9, AR5416_MAX_RATE_POWER };
++		{ 0, 3, 6, 9, MAX_RATE_POWER };
+ 	int i;
+ 	int16_t twiceLargestAntenna;
+ 	struct cal_ctl_data_ar9287 *rep;
+@@ -880,8 +723,8 @@ static void ath9k_hw_ar9287_set_txpower(
+ 	regulatory->max_power_level = 0;
+ 	for (i = 0; i < ARRAY_SIZE(ratesArray); i++) {
+ 		ratesArray[i] = (int16_t)(txPowerIndexOffset + ratesArray[i]);
+-		if (ratesArray[i] > AR9287_MAX_RATE_POWER)
+-			ratesArray[i] = AR9287_MAX_RATE_POWER;
++		if (ratesArray[i] > MAX_RATE_POWER)
++			ratesArray[i] = MAX_RATE_POWER;
+ 
+ 		if (ratesArray[i] > regulatory->max_power_level)
+ 			regulatory->max_power_level = ratesArray[i];
+@@ -1026,8 +869,7 @@ static void ath9k_hw_ar9287_set_board_va
+ 		antWrites[j++] = (u16)(pModal->antCtrlChain[i] & 0x3);
+ 	}
+ 
+-	REG_WRITE(ah, AR_PHY_SWITCH_COM,
+-		  ah->eep_ops->get_eeprom_antenna_cfg(ah, chan));
++	REG_WRITE(ah, AR_PHY_SWITCH_COM, pModal->antCtrlCommon);
+ 
+ 	for (i = 0; i < AR9287_MAX_CHAINS; i++)	{
+ 		regChainOffset = i * 0x1000;
+@@ -1128,21 +970,6 @@ static void ath9k_hw_ar9287_set_board_va
+ 				  pModal->xpaBiasLvl);
+ }
+ 
+-static u8 ath9k_hw_ar9287_get_num_ant_config(struct ath_hw *ah,
+-					     enum ath9k_hal_freq_band freq_band)
+-{
+-	return 1;
+-}
+-
+-static u32 ath9k_hw_ar9287_get_eeprom_antenna_cfg(struct ath_hw *ah,
+-						  struct ath9k_channel *chan)
+-{
+-	struct ar9287_eeprom *eep = &ah->eeprom.map9287;
+-	struct modal_eep_ar9287_header *pModal = &eep->modalHeader;
+-
+-	return pModal->antCtrlCommon;
+-}
+-
+ static u16 ath9k_hw_ar9287_get_spur_channel(struct ath_hw *ah,
+ 					    u16 i, bool is2GHz)
+ {
+@@ -1180,8 +1007,6 @@ const struct eeprom_ops eep_ar9287_ops =
+ 	.fill_eeprom		= ath9k_hw_ar9287_fill_eeprom,
+ 	.get_eeprom_ver		= ath9k_hw_ar9287_get_eeprom_ver,
+ 	.get_eeprom_rev		= ath9k_hw_ar9287_get_eeprom_rev,
+-	.get_num_ant_config	= ath9k_hw_ar9287_get_num_ant_config,
+-	.get_eeprom_antenna_cfg	= ath9k_hw_ar9287_get_eeprom_antenna_cfg,
+ 	.set_board_values	= ath9k_hw_ar9287_set_board_values,
+ 	.set_addac		= ath9k_hw_ar9287_set_addac,
+ 	.set_txpower		= ath9k_hw_ar9287_set_txpower,
+--- a/drivers/net/wireless/ath/ath9k/eeprom_def.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_def.c
+@@ -207,7 +207,7 @@ static int ath9k_hw_def_check_eeprom(str
+ 				pModal->antCtrlChain[i] = integer;
+ 			}
+ 
+-			for (i = 0; i < AR5416_EEPROM_MODAL_SPURS; i++) {
++			for (i = 0; i < AR_EEPROM_MODAL_SPURS; i++) {
+ 				word = swab16(pModal->spurChans[i].spurChan);
+ 				pModal->spurChans[i].spurChan = word;
+ 			}
+@@ -376,8 +376,7 @@ static void ath9k_hw_def_set_board_value
+ 	pModal = &(eep->modalHeader[IS_CHAN_2GHZ(chan)]);
+ 	txRxAttenLocal = IS_CHAN_2GHZ(chan) ? 23 : 44;
+ 
+-	REG_WRITE(ah, AR_PHY_SWITCH_COM,
+-		  ah->eep_ops->get_eeprom_antenna_cfg(ah, chan));
++	REG_WRITE(ah, AR_PHY_SWITCH_COM, pModal->antCtrlCommon & 0xffff);
+ 
+ 	for (i = 0; i < AR5416_MAX_CHAINS; i++) {
+ 		if (AR_SREV_9280(ah)) {
+@@ -590,168 +589,6 @@ static void ath9k_hw_def_set_addac(struc
+ #undef XPA_LVL_FREQ
+ }
+ 
+-static void ath9k_hw_get_def_gain_boundaries_pdadcs(struct ath_hw *ah,
+-				struct ath9k_channel *chan,
+-				struct cal_data_per_freq *pRawDataSet,
+-				u8 *bChans, u16 availPiers,
+-				u16 tPdGainOverlap,
+-				u16 *pPdGainBoundaries, u8 *pPDADCValues,
+-				u16 numXpdGains)
+-{
+-	int i, j, k;
+-	int16_t ss;
+-	u16 idxL = 0, idxR = 0, numPiers;
+-	static u8 vpdTableL[AR5416_NUM_PD_GAINS]
+-		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
+-	static u8 vpdTableR[AR5416_NUM_PD_GAINS]
+-		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
+-	static u8 vpdTableI[AR5416_NUM_PD_GAINS]
+-		[AR5416_MAX_PWR_RANGE_IN_HALF_DB];
+-
+-	u8 *pVpdL, *pVpdR, *pPwrL, *pPwrR;
+-	u8 minPwrT4[AR5416_NUM_PD_GAINS];
+-	u8 maxPwrT4[AR5416_NUM_PD_GAINS];
+-	int16_t vpdStep;
+-	int16_t tmpVal;
+-	u16 sizeCurrVpdTable, maxIndex, tgtIndex;
+-	bool match;
+-	int16_t minDelta = 0;
+-	struct chan_centers centers;
+-
+-	memset(&minPwrT4, 0, AR9287_NUM_PD_GAINS);
+-	ath9k_hw_get_channel_centers(ah, chan, &centers);
+-
+-	for (numPiers = 0; numPiers < availPiers; numPiers++) {
+-		if (bChans[numPiers] == AR5416_BCHAN_UNUSED)
+-			break;
+-	}
+-
+-	match = ath9k_hw_get_lower_upper_index((u8)FREQ2FBIN(centers.synth_center,
+-							     IS_CHAN_2GHZ(chan)),
+-					       bChans, numPiers, &idxL, &idxR);
+-
+-	if (match) {
+-		for (i = 0; i < numXpdGains; i++) {
+-			minPwrT4[i] = pRawDataSet[idxL].pwrPdg[i][0];
+-			maxPwrT4[i] = pRawDataSet[idxL].pwrPdg[i][4];
+-			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
+-					pRawDataSet[idxL].pwrPdg[i],
+-					pRawDataSet[idxL].vpdPdg[i],
+-					AR5416_PD_GAIN_ICEPTS,
+-					vpdTableI[i]);
+-		}
+-	} else {
+-		for (i = 0; i < numXpdGains; i++) {
+-			pVpdL = pRawDataSet[idxL].vpdPdg[i];
+-			pPwrL = pRawDataSet[idxL].pwrPdg[i];
+-			pVpdR = pRawDataSet[idxR].vpdPdg[i];
+-			pPwrR = pRawDataSet[idxR].pwrPdg[i];
+-
+-			minPwrT4[i] = max(pPwrL[0], pPwrR[0]);
+-
+-			maxPwrT4[i] =
+-				min(pPwrL[AR5416_PD_GAIN_ICEPTS - 1],
+-				    pPwrR[AR5416_PD_GAIN_ICEPTS - 1]);
+-
+-
+-			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
+-						pPwrL, pVpdL,
+-						AR5416_PD_GAIN_ICEPTS,
+-						vpdTableL[i]);
+-			ath9k_hw_fill_vpd_table(minPwrT4[i], maxPwrT4[i],
+-						pPwrR, pVpdR,
+-						AR5416_PD_GAIN_ICEPTS,
+-						vpdTableR[i]);
+-
+-			for (j = 0; j <= (maxPwrT4[i] - minPwrT4[i]) / 2; j++) {
+-				vpdTableI[i][j] =
+-					(u8)(ath9k_hw_interpolate((u16)
+-					     FREQ2FBIN(centers.
+-						       synth_center,
+-						       IS_CHAN_2GHZ
+-						       (chan)),
+-					     bChans[idxL], bChans[idxR],
+-					     vpdTableL[i][j], vpdTableR[i][j]));
+-			}
+-		}
+-	}
+-
+-	k = 0;
+-
+-	for (i = 0; i < numXpdGains; i++) {
+-		if (i == (numXpdGains - 1))
+-			pPdGainBoundaries[i] =
+-				(u16)(maxPwrT4[i] / 2);
+-		else
+-			pPdGainBoundaries[i] =
+-				(u16)((maxPwrT4[i] + minPwrT4[i + 1]) / 4);
+-
+-		pPdGainBoundaries[i] =
+-			min((u16)AR5416_MAX_RATE_POWER, pPdGainBoundaries[i]);
+-
+-		if ((i == 0) && !AR_SREV_5416_20_OR_LATER(ah)) {
+-			minDelta = pPdGainBoundaries[0] - 23;
+-			pPdGainBoundaries[0] = 23;
+-		} else {
+-			minDelta = 0;
+-		}
+-
+-		if (i == 0) {
+-			if (AR_SREV_9280_20_OR_LATER(ah))
+-				ss = (int16_t)(0 - (minPwrT4[i] / 2));
+-			else
+-				ss = 0;
+-		} else {
+-			ss = (int16_t)((pPdGainBoundaries[i - 1] -
+-					(minPwrT4[i] / 2)) -
+-				       tPdGainOverlap + 1 + minDelta);
+-		}
+-		vpdStep = (int16_t)(vpdTableI[i][1] - vpdTableI[i][0]);
+-		vpdStep = (int16_t)((vpdStep < 1) ? 1 : vpdStep);
+-
+-		while ((ss < 0) && (k < (AR5416_NUM_PDADC_VALUES - 1))) {
+-			tmpVal = (int16_t)(vpdTableI[i][0] + ss * vpdStep);
+-			pPDADCValues[k++] = (u8)((tmpVal < 0) ? 0 : tmpVal);
+-			ss++;
+-		}
+-
+-		sizeCurrVpdTable = (u8) ((maxPwrT4[i] - minPwrT4[i]) / 2 + 1);
+-		tgtIndex = (u8)(pPdGainBoundaries[i] + tPdGainOverlap -
+-				(minPwrT4[i] / 2));
+-		maxIndex = (tgtIndex < sizeCurrVpdTable) ?
+-			tgtIndex : sizeCurrVpdTable;
+-
+-		while ((ss < maxIndex) && (k < (AR5416_NUM_PDADC_VALUES - 1))) {
+-			pPDADCValues[k++] = vpdTableI[i][ss++];
+-		}
+-
+-		vpdStep = (int16_t)(vpdTableI[i][sizeCurrVpdTable - 1] -
+-				    vpdTableI[i][sizeCurrVpdTable - 2]);
+-		vpdStep = (int16_t)((vpdStep < 1) ? 1 : vpdStep);
+-
+-		if (tgtIndex >= maxIndex) {
+-			while ((ss <= tgtIndex) &&
+-			       (k < (AR5416_NUM_PDADC_VALUES - 1))) {
+-				tmpVal = (int16_t)((vpdTableI[i][sizeCurrVpdTable - 1] +
+-						    (ss - maxIndex + 1) * vpdStep));
+-				pPDADCValues[k++] = (u8)((tmpVal > 255) ?
+-							 255 : tmpVal);
+-				ss++;
+-			}
+-		}
+-	}
+-
+-	while (i < AR5416_PD_GAINS_IN_MASK) {
+-		pPdGainBoundaries[i] = pPdGainBoundaries[i - 1];
+-		i++;
+-	}
+-
+-	while (k < AR5416_NUM_PDADC_VALUES) {
+-		pPDADCValues[k] = pPDADCValues[k - 1];
+-		k++;
+-	}
+-}
+-
+ static int16_t ath9k_change_gain_boundary_setting(struct ath_hw *ah,
+ 				u16 *gb,
+ 				u16 numXpdGain,
+@@ -784,7 +621,7 @@ static int16_t ath9k_change_gain_boundar
+ 		/* Because of a hardware limitation, ensure the gain boundary
+ 		 * is not larger than (63 - overlap)
+ 		 */
+-		gb_limit = (u16)(AR5416_MAX_RATE_POWER - pdGainOverlap_t2);
++		gb_limit = (u16)(MAX_RATE_POWER - pdGainOverlap_t2);
+ 
+ 		for (k = 0; k < numXpdGain; k++)
+ 			gb[k] = (u16)min(gb_limit, gb[k]);
+@@ -918,7 +755,7 @@ static void ath9k_hw_set_def_power_cal_t
+ 				ath9k_olc_get_pdadcs(ah, pcdacIdx,
+ 						     txPower/2, pdadcValues);
+ 			} else {
+-				ath9k_hw_get_def_gain_boundaries_pdadcs(ah,
++				ath9k_hw_get_gain_boundaries_pdadcs(ah,
+ 							chan, pRawDataset,
+ 							pCalBChans, numPiers,
+ 							pdGainOverlap_t2,
+@@ -1004,9 +841,9 @@ static void ath9k_hw_set_def_power_per_r
+ 
+ 	struct ath_regulatory *regulatory = ath9k_hw_regulatory(ah);
+ 	struct ar5416_eeprom_def *pEepData = &ah->eeprom.def;
+-	u16 twiceMaxEdgePower = AR5416_MAX_RATE_POWER;
++	u16 twiceMaxEdgePower = MAX_RATE_POWER;
+ 	static const u16 tpScaleReductionTable[5] =
+-		{ 0, 3, 6, 9, AR5416_MAX_RATE_POWER };
++		{ 0, 3, 6, 9, MAX_RATE_POWER };
+ 
+ 	int i;
+ 	int16_t twiceLargestAntenna;
+@@ -1147,7 +984,7 @@ static void ath9k_hw_set_def_power_per_r
+ 
+ 		if (ah->eep_ops->get_eeprom_ver(ah) == 14 &&
+ 		    ah->eep_ops->get_eeprom_rev(ah) <= 2)
+-			twiceMaxEdgePower = AR5416_MAX_RATE_POWER;
++			twiceMaxEdgePower = MAX_RATE_POWER;
+ 
+ 		for (i = 0; (i < AR5416_NUM_CTLS) && pEepData->ctlIndex[i]; i++) {
+ 			if ((((cfgCtl & ~CTL_MODE_M) |
+@@ -1292,8 +1129,8 @@ static void ath9k_hw_def_set_txpower(str
+ 	regulatory->max_power_level = 0;
+ 	for (i = 0; i < ARRAY_SIZE(ratesArray); i++) {
+ 		ratesArray[i] =	(int16_t)(txPowerIndexOffset + ratesArray[i]);
+-		if (ratesArray[i] > AR5416_MAX_RATE_POWER)
+-			ratesArray[i] = AR5416_MAX_RATE_POWER;
++		if (ratesArray[i] > MAX_RATE_POWER)
++			ratesArray[i] = MAX_RATE_POWER;
+ 		if (ratesArray[i] > regulatory->max_power_level)
+ 			regulatory->max_power_level = ratesArray[i];
+ 	}
+@@ -1425,34 +1262,6 @@ static void ath9k_hw_def_set_txpower(str
+ 		  | ATH9K_POW_SM(pModal->pwrDecreaseFor2Chain, 0));
+ }
+ 
+-static u8 ath9k_hw_def_get_num_ant_config(struct ath_hw *ah,
+-					  enum ath9k_hal_freq_band freq_band)
+-{
+-	struct ar5416_eeprom_def *eep = &ah->eeprom.def;
+-	struct modal_eep_header *pModal =
+-		&(eep->modalHeader[freq_band]);
+-	struct base_eep_header *pBase = &eep->baseEepHeader;
+-	u8 num_ant_config;
+-
+-	num_ant_config = 1;
+-
+-	if (pBase->version >= 0x0E0D &&
+-	    (pModal->lna_ctl & LNA_CTL_USE_ANT1))
+-		num_ant_config += 1;
+-
+-	return num_ant_config;
+-}
+-
+-static u32 ath9k_hw_def_get_eeprom_antenna_cfg(struct ath_hw *ah,
+-					       struct ath9k_channel *chan)
+-{
+-	struct ar5416_eeprom_def *eep = &ah->eeprom.def;
+-	struct modal_eep_header *pModal =
+-		&(eep->modalHeader[IS_CHAN_2GHZ(chan)]);
+-
+-	return pModal->antCtrlCommon;
+-}
+-
+ static u16 ath9k_hw_def_get_spur_channel(struct ath_hw *ah, u16 i, bool is2GHz)
+ {
+ #define EEP_DEF_SPURCHAN \
+@@ -1489,8 +1298,6 @@ const struct eeprom_ops eep_def_ops = {
+ 	.fill_eeprom		= ath9k_hw_def_fill_eeprom,
+ 	.get_eeprom_ver		= ath9k_hw_def_get_eeprom_ver,
+ 	.get_eeprom_rev		= ath9k_hw_def_get_eeprom_rev,
+-	.get_num_ant_config	= ath9k_hw_def_get_num_ant_config,
+-	.get_eeprom_antenna_cfg	= ath9k_hw_def_get_eeprom_antenna_cfg,
+ 	.set_board_values	= ath9k_hw_def_set_board_values,
+ 	.set_addac		= ath9k_hw_def_set_addac,
+ 	.set_txpower		= ath9k_hw_def_set_txpower,
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -54,13 +54,6 @@ static void ath9k_hw_init_mode_regs(stru
+ 	ath9k_hw_private_ops(ah)->init_mode_regs(ah);
+ }
+ 
+-static bool ath9k_hw_macversion_supported(struct ath_hw *ah)
+-{
+-	struct ath_hw_private_ops *priv_ops = ath9k_hw_private_ops(ah);
+-
+-	return priv_ops->macversion_supported(ah->hw_version.macVersion);
+-}
+-
+ static u32 ath9k_hw_compute_pll_control(struct ath_hw *ah,
+ 					struct ath9k_channel *chan)
+ {
+@@ -284,11 +277,9 @@ static void ath9k_hw_read_revisions(stru
+ 
+ static void ath9k_hw_disablepcie(struct ath_hw *ah)
+ {
+-	if (AR_SREV_9100(ah))
++	if (!AR_SREV_5416(ah))
+ 		return;
+ 
+-	ENABLE_REGWRITE_BUFFER(ah);
+-
+ 	REG_WRITE(ah, AR_PCIE_SERDES, 0x9248fc00);
+ 	REG_WRITE(ah, AR_PCIE_SERDES, 0x24924924);
+ 	REG_WRITE(ah, AR_PCIE_SERDES, 0x28000029);
+@@ -300,8 +291,6 @@ static void ath9k_hw_disablepcie(struct 
+ 	REG_WRITE(ah, AR_PCIE_SERDES, 0x000e1007);
+ 
+ 	REG_WRITE(ah, AR_PCIE_SERDES2, 0x00000000);
+-
+-	REGWRITE_BUFFER_FLUSH(ah);
+ }
+ 
+ /* This should work for all families including legacy */
+@@ -422,7 +411,6 @@ static void ath9k_hw_init_defaults(struc
+ 	ah->sta_id1_defaults =
+ 		AR_STA_ID1_CRPT_MIC_ENABLE |
+ 		AR_STA_ID1_MCAST_KSRCH;
+-	ah->beacon_interval = 100;
+ 	ah->enable_32kHz_clock = DONT_USE_32KHZ;
+ 	ah->slottime = (u32) -1;
+ 	ah->globaltxtimeout = (u32) -1;
+@@ -544,7 +532,18 @@ static int __ath9k_hw_init(struct ath_hw
+ 	else
+ 		ah->config.max_txtrig_level = MAX_TX_FIFO_THRESHOLD;
+ 
+-	if (!ath9k_hw_macversion_supported(ah)) {
++	switch (ah->hw_version.macVersion) {
++	case AR_SREV_VERSION_5416_PCI:
++	case AR_SREV_VERSION_5416_PCIE:
++	case AR_SREV_VERSION_9160:
++	case AR_SREV_VERSION_9100:
++	case AR_SREV_VERSION_9280:
++	case AR_SREV_VERSION_9285:
++	case AR_SREV_VERSION_9287:
++	case AR_SREV_VERSION_9271:
++	case AR_SREV_VERSION_9300:
++		break;
++	default:
+ 		ath_print(common, ATH_DBG_FATAL,
+ 			  "Mac Chip Rev 0x%02x.%x is not supported by "
+ 			  "this driver\n", ah->hw_version.macVersion,
+@@ -1643,8 +1642,6 @@ void ath9k_hw_beaconinit(struct ath_hw *
+ {
+ 	int flags = 0;
+ 
+-	ah->beacon_interval = beacon_period;
+-
+ 	ENABLE_REGWRITE_BUFFER(ah);
+ 
+ 	switch (ah->opmode) {
+@@ -1936,11 +1933,6 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 	    AR_SREV_5416(ah))
+ 		pCap->reg_cap |= AR_EEPROM_EEREGCAP_EN_FCC_MIDBAND;
+ 
+-	pCap->num_antcfg_5ghz =
+-		ah->eep_ops->get_num_ant_config(ah, ATH9K_HAL_FREQ_BAND_5GHZ);
+-	pCap->num_antcfg_2ghz =
+-		ah->eep_ops->get_num_ant_config(ah, ATH9K_HAL_FREQ_BAND_2GHZ);
+-
+ 	if (AR_SREV_9280_20_OR_LATER(ah) && common->btcoex_enabled) {
+ 		btcoex_hw->btactive_gpio = ATH_BTACTIVE_GPIO;
+ 		btcoex_hw->wlanactive_gpio = ATH_WLANACTIVE_GPIO;
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -202,8 +202,6 @@ struct ath9k_hw_capabilities {
+ 	u16 tx_triglevel_max;
+ 	u16 reg_cap;
+ 	u8 num_gpio_pins;
+-	u8 num_antcfg_2ghz;
+-	u8 num_antcfg_5ghz;
+ 	u8 rx_hp_qdepth;
+ 	u8 rx_lp_qdepth;
+ 	u8 rx_status_len;
+@@ -234,7 +232,6 @@ struct ath9k_ops_config {
+ #define SPUR_DISABLE        	0
+ #define SPUR_ENABLE_IOCTL   	1
+ #define SPUR_ENABLE_EEPROM  	2
+-#define AR_EEPROM_MODAL_SPURS   5
+ #define AR_SPUR_5413_1      	1640
+ #define AR_SPUR_5413_2      	1200
+ #define AR_NO_SPUR      	0x8000
+@@ -530,7 +527,6 @@ struct ath_hw_radar_conf {
+  *
+  * @init_mode_regs: Initializes mode registers
+  * @init_mode_gain_regs: Initialize TX/RX gain registers
+- * @macversion_supported: If this specific mac revision is supported
+  *
+  * @rf_set_freq: change frequency
+  * @spur_mitigate_freq: spur mitigation
+@@ -552,7 +548,6 @@ struct ath_hw_private_ops {
+ 
+ 	void (*init_mode_regs)(struct ath_hw *ah);
+ 	void (*init_mode_gain_regs)(struct ath_hw *ah);
+-	bool (*macversion_supported)(u32 macversion);
+ 	void (*setup_calibration)(struct ath_hw *ah,
+ 				  struct ath9k_cal_list *currCal);
+ 
+@@ -762,9 +757,7 @@ struct ath_hw {
+ 	u32 *bank6Temp;
+ 
+ 	u8 txpower_limit;
+-	int16_t txpower_indexoffset;
+ 	int coverage_class;
+-	u32 beacon_interval;
+ 	u32 slottime;
+ 	u32 globaltxtimeout;
+ 
+--- a/net/mac80211/led.c
++++ b/net/mac80211/led.c
+@@ -54,12 +54,22 @@ void ieee80211_led_radio(struct ieee8021
+ 		led_trigger_event(local->radio_led, LED_OFF);
+ }
+ 
++void ieee80211_led_names(struct ieee80211_local *local)
++{
++	snprintf(local->rx_led_name, sizeof(local->rx_led_name),
++		 "%srx", wiphy_name(local->hw.wiphy));
++	snprintf(local->tx_led_name, sizeof(local->tx_led_name),
++		 "%stx", wiphy_name(local->hw.wiphy));
++	snprintf(local->assoc_led_name, sizeof(local->assoc_led_name),
++		 "%sassoc", wiphy_name(local->hw.wiphy));
++	snprintf(local->radio_led_name, sizeof(local->radio_led_name),
++		 "%sradio", wiphy_name(local->hw.wiphy));
++}
++
+ void ieee80211_led_init(struct ieee80211_local *local)
+ {
+ 	local->rx_led = kzalloc(sizeof(struct led_trigger), GFP_KERNEL);
+ 	if (local->rx_led) {
+-		snprintf(local->rx_led_name, sizeof(local->rx_led_name),
+-			 "%srx", wiphy_name(local->hw.wiphy));
+ 		local->rx_led->name = local->rx_led_name;
+ 		if (led_trigger_register(local->rx_led)) {
+ 			kfree(local->rx_led);
+@@ -69,8 +79,6 @@ void ieee80211_led_init(struct ieee80211
+ 
+ 	local->tx_led = kzalloc(sizeof(struct led_trigger), GFP_KERNEL);
+ 	if (local->tx_led) {
+-		snprintf(local->tx_led_name, sizeof(local->tx_led_name),
+-			 "%stx", wiphy_name(local->hw.wiphy));
+ 		local->tx_led->name = local->tx_led_name;
+ 		if (led_trigger_register(local->tx_led)) {
+ 			kfree(local->tx_led);
+@@ -80,8 +88,6 @@ void ieee80211_led_init(struct ieee80211
+ 
+ 	local->assoc_led = kzalloc(sizeof(struct led_trigger), GFP_KERNEL);
+ 	if (local->assoc_led) {
+-		snprintf(local->assoc_led_name, sizeof(local->assoc_led_name),
+-			 "%sassoc", wiphy_name(local->hw.wiphy));
+ 		local->assoc_led->name = local->assoc_led_name;
+ 		if (led_trigger_register(local->assoc_led)) {
+ 			kfree(local->assoc_led);
+@@ -91,14 +97,19 @@ void ieee80211_led_init(struct ieee80211
+ 
+ 	local->radio_led = kzalloc(sizeof(struct led_trigger), GFP_KERNEL);
+ 	if (local->radio_led) {
+-		snprintf(local->radio_led_name, sizeof(local->radio_led_name),
+-			 "%sradio", wiphy_name(local->hw.wiphy));
+ 		local->radio_led->name = local->radio_led_name;
+ 		if (led_trigger_register(local->radio_led)) {
+ 			kfree(local->radio_led);
+ 			local->radio_led = NULL;
+ 		}
+ 	}
++
++	if (local->tpt_led_trigger) {
++		if (led_trigger_register(&local->tpt_led_trigger->trig)) {
++			kfree(local->tpt_led_trigger);
++			local->tpt_led_trigger = NULL;
++		}
++	}
+ }
+ 
+ void ieee80211_led_exit(struct ieee80211_local *local)
+@@ -119,15 +130,18 @@ void ieee80211_led_exit(struct ieee80211
+ 		led_trigger_unregister(local->rx_led);
+ 		kfree(local->rx_led);
+ 	}
++
++	if (local->tpt_led_trigger) {
++		led_trigger_unregister(&local->tpt_led_trigger->trig);
++		kfree(local->tpt_led_trigger);
++	}
+ }
+ 
+ char *__ieee80211_get_radio_led_name(struct ieee80211_hw *hw)
+ {
+ 	struct ieee80211_local *local = hw_to_local(hw);
+ 
+-	if (local->radio_led)
+-		return local->radio_led_name;
+-	return NULL;
++	return local->radio_led_name;
+ }
+ EXPORT_SYMBOL(__ieee80211_get_radio_led_name);
+ 
+@@ -135,9 +149,7 @@ char *__ieee80211_get_assoc_led_name(str
+ {
+ 	struct ieee80211_local *local = hw_to_local(hw);
+ 
+-	if (local->assoc_led)
+-		return local->assoc_led_name;
+-	return NULL;
++	return local->assoc_led_name;
+ }
+ EXPORT_SYMBOL(__ieee80211_get_assoc_led_name);
+ 
+@@ -145,9 +157,7 @@ char *__ieee80211_get_tx_led_name(struct
+ {
+ 	struct ieee80211_local *local = hw_to_local(hw);
+ 
+-	if (local->tx_led)
+-		return local->tx_led_name;
+-	return NULL;
++	return local->tx_led_name;
+ }
+ EXPORT_SYMBOL(__ieee80211_get_tx_led_name);
+ 
+@@ -155,8 +165,115 @@ char *__ieee80211_get_rx_led_name(struct
+ {
+ 	struct ieee80211_local *local = hw_to_local(hw);
+ 
+-	if (local->rx_led)
+-		return local->rx_led_name;
+-	return NULL;
++	return local->rx_led_name;
+ }
+ EXPORT_SYMBOL(__ieee80211_get_rx_led_name);
++
++static unsigned long tpt_trig_traffic(struct ieee80211_local *local,
++				      struct tpt_led_trigger *tpt_trig)
++{
++	unsigned long traffic, delta;
++
++	traffic = tpt_trig->tx_bytes + tpt_trig->rx_bytes;
++
++	delta = traffic - tpt_trig->prev_traffic;
++	tpt_trig->prev_traffic = traffic;
++	return DIV_ROUND_UP(delta, 1024 / 8);
++}
++
++static void tpt_trig_timer(unsigned long data)
++{
++	struct ieee80211_local *local = (void *)data;
++	struct tpt_led_trigger *tpt_trig = local->tpt_led_trigger;
++	struct led_classdev *led_cdev;
++	unsigned long on, off, tpt;
++	int i;
++
++	if (!tpt_trig->running)
++		return;
++
++	mod_timer(&tpt_trig->timer, round_jiffies(jiffies + HZ));
++
++	tpt = tpt_trig_traffic(local, tpt_trig);
++
++	/* default to just solid on */
++	on = 1;
++	off = 0;
++
++	for (i = tpt_trig->blink_table_len - 1; i >= 0; i--) {
++		if (tpt_trig->blink_table[i].throughput < 0 ||
++		    tpt > tpt_trig->blink_table[i].throughput) {
++			off = tpt_trig->blink_table[i].blink_time / 2;
++			on = tpt_trig->blink_table[i].blink_time - off;
++			break;
++		}
++	}
++
++	read_lock(&tpt_trig->trig.leddev_list_lock);
++	list_for_each_entry(led_cdev, &tpt_trig->trig.led_cdevs, trig_list)
++		led_blink_set(led_cdev, &on, &off);
++	read_unlock(&tpt_trig->trig.leddev_list_lock);
++}
++
++extern char *__ieee80211_create_tpt_led_trigger(
++				struct ieee80211_hw *hw,
++				const struct ieee80211_tpt_blink *blink_table,
++				unsigned int blink_table_len)
++{
++	struct ieee80211_local *local = hw_to_local(hw);
++	struct tpt_led_trigger *tpt_trig;
++
++	if (WARN_ON(local->tpt_led_trigger))
++		return NULL;
++
++	tpt_trig = kzalloc(sizeof(struct tpt_led_trigger), GFP_KERNEL);
++	if (!tpt_trig)
++		return NULL;
++
++	snprintf(tpt_trig->name, sizeof(tpt_trig->name),
++		 "%stpt", wiphy_name(local->hw.wiphy));
++
++	tpt_trig->trig.name = tpt_trig->name;
++
++	tpt_trig->blink_table = blink_table;
++	tpt_trig->blink_table_len = blink_table_len;
++
++	setup_timer(&tpt_trig->timer, tpt_trig_timer, (unsigned long)local);
++
++	local->tpt_led_trigger = tpt_trig;
++
++	return tpt_trig->name;
++}
++EXPORT_SYMBOL(__ieee80211_create_tpt_led_trigger);
++
++void ieee80211_start_tpt_led_trig(struct ieee80211_local *local)
++{
++	struct tpt_led_trigger *tpt_trig = local->tpt_led_trigger;
++
++	if (!tpt_trig)
++		return;
++
++	/* reset traffic */
++	tpt_trig_traffic(local, tpt_trig);
++	tpt_trig->running = true;
++
++	tpt_trig_timer((unsigned long)local);
++	mod_timer(&tpt_trig->timer, round_jiffies(jiffies + HZ));
++}
++
++void ieee80211_stop_tpt_led_trig(struct ieee80211_local *local)
++{
++	struct tpt_led_trigger *tpt_trig = local->tpt_led_trigger;
++	struct led_classdev *led_cdev;
++
++	if (!tpt_trig)
++		return;
++
++	tpt_trig->running = false;
++	del_timer_sync(&tpt_trig->timer);
++
++	read_lock(&tpt_trig->trig.leddev_list_lock);
++	list_for_each_entry(led_cdev, &tpt_trig->trig.led_cdevs, trig_list)
++		led_brightness_set(led_cdev, LED_OFF);
++	read_unlock(&tpt_trig->trig.leddev_list_lock);
++}
+--- a/net/mac80211/led.h
++++ b/net/mac80211/led.h
+@@ -12,14 +12,17 @@
+ #include "ieee80211_i.h"
+ 
+ #ifdef CONFIG_MAC80211_LEDS
+-extern void ieee80211_led_rx(struct ieee80211_local *local);
+-extern void ieee80211_led_tx(struct ieee80211_local *local, int q);
+-extern void ieee80211_led_assoc(struct ieee80211_local *local,
+-				bool associated);
+-extern void ieee80211_led_radio(struct ieee80211_local *local,
+-				bool enabled);
+-extern void ieee80211_led_init(struct ieee80211_local *local);
+-extern void ieee80211_led_exit(struct ieee80211_local *local);
++void ieee80211_led_rx(struct ieee80211_local *local);
++void ieee80211_led_tx(struct ieee80211_local *local, int q);
++void ieee80211_led_assoc(struct ieee80211_local *local,
++			 bool associated);
++void ieee80211_led_radio(struct ieee80211_local *local,
++			 bool enabled);
++void ieee80211_led_names(struct ieee80211_local *local);
++void ieee80211_led_init(struct ieee80211_local *local);
++void ieee80211_led_exit(struct ieee80211_local *local);
++void ieee80211_start_tpt_led_trig(struct ieee80211_local *local);
++void ieee80211_stop_tpt_led_trig(struct ieee80211_local *local);
+ #else
+ static inline void ieee80211_led_rx(struct ieee80211_local *local)
+ {
+@@ -35,10 +38,37 @@ static inline void ieee80211_led_radio(s
+ 				       bool enabled)
+ {
+ }
++static inline void ieee80211_led_names(struct ieee80211_local *local)
++{
++}
+ static inline void ieee80211_led_init(struct ieee80211_local *local)
+ {
+ }
+ static inline void ieee80211_led_exit(struct ieee80211_local *local)
+ {
+ }
++static inline void ieee80211_start_tpt_led_trig(struct ieee80211_local *local)
++{
++}
++static inline void ieee80211_stop_tpt_led_trig(struct ieee80211_local *local)
++{
++}
++#endif
++
++static inline void
++ieee80211_tpt_led_trig_tx(struct ieee80211_local *local, __le16 fc, int bytes)
++{
++#ifdef CONFIG_MAC80211_LEDS
++	if (local->tpt_led_trigger && ieee80211_is_data(fc))
++		local->tpt_led_trigger->tx_bytes += bytes;
++#endif
++}
++
++static inline void
++ieee80211_tpt_led_trig_rx(struct ieee80211_local *local, __le16 fc, int bytes)
++{
++#ifdef CONFIG_MAC80211_LEDS
++	if (local->tpt_led_trigger && ieee80211_is_data(fc))
++		local->tpt_led_trigger->rx_bytes += bytes;
+ #endif
++}
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -599,6 +599,8 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+ 	/* init dummy netdev for use w/ NAPI */
+ 	init_dummy_netdev(&local->napi_dev);
+ 
++	ieee80211_led_names(local);
++
+ 	return local_to_hw(local);
+ }
+ EXPORT_SYMBOL(ieee80211_alloc_hw);
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1856,11 +1856,26 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+  */
+ int ieee80211_register_hw(struct ieee80211_hw *hw);
+ 
++/**
++ * struct ieee80211_tpt_blink - throughput blink description
++ * @throughput: throughput in Kbit/sec
++ * @blink_time: blink time in milliseconds
++ *	(full cycle, ie. one off + one on period)
++ */
++struct ieee80211_tpt_blink {
++	int throughput;
++	int blink_time;
++};
++
+ #ifdef CONFIG_MAC80211_LEDS
+ extern char *__ieee80211_get_tx_led_name(struct ieee80211_hw *hw);
+ extern char *__ieee80211_get_rx_led_name(struct ieee80211_hw *hw);
+ extern char *__ieee80211_get_assoc_led_name(struct ieee80211_hw *hw);
+ extern char *__ieee80211_get_radio_led_name(struct ieee80211_hw *hw);
++extern char *__ieee80211_create_tpt_led_trigger(
++				struct ieee80211_hw *hw,
++				const struct ieee80211_tpt_blink *blink_table,
++				unsigned int blink_table_len);
+ #endif
+ /**
+  * ieee80211_get_tx_led_name - get name of TX LED
+@@ -1939,6 +1954,29 @@ static inline char *ieee80211_get_radio_
+ }
+ 
+ /**
++ * ieee80211_create_tpt_led_trigger - create throughput LED trigger
++ * @hw: the hardware to create the trigger for
++ * @blink_table: the blink table -- needs to be ordered by throughput
++ * @blink_table_len: size of the blink table
++ *
++ * This function returns %NULL (in case of error, or if no LED
++ * triggers are configured) or the name of the new trigger.
++ * This function must be called before ieee80211_register_hw().
++ */
++static inline char *
++ieee80211_create_tpt_led_trigger(struct ieee80211_hw *hw,
++				 const struct ieee80211_tpt_blink *blink_table,
++				 unsigned int blink_table_len)
++{
++#ifdef CONFIG_MAC80211_LEDS
++	return __ieee80211_create_tpt_led_trigger(hw, blink_table,
++						  blink_table_len);
++#else
++	return NULL;
++#endif
++}
++
++/**
+  * ieee80211_unregister_hw - Unregister a hardware device
+  *
+  * This function instructs mac80211 to free allocated resources
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -23,6 +23,7 @@
+ #include <linux/types.h>
+ #include <linux/spinlock.h>
+ #include <linux/etherdevice.h>
++#include <linux/leds.h>
+ #include <net/ieee80211_radiotap.h>
+ #include <net/cfg80211.h>
+ #include <net/mac80211.h>
+@@ -641,6 +642,17 @@ enum queue_stop_reason {
+ 	IEEE80211_QUEUE_STOP_REASON_SKB_ADD,
+ };
+ 
++struct tpt_led_trigger {
++	struct led_trigger trig;
++	char name[32];
++	const struct ieee80211_tpt_blink *blink_table;
++	unsigned int blink_table_len;
++	struct timer_list timer;
++	bool running;
++	unsigned long prev_traffic;
++	unsigned long tx_bytes, rx_bytes;
++};
++
+ /**
+  * mac80211 scan flags - currently active scan mode
+  *
+@@ -854,6 +866,7 @@ struct ieee80211_local {
+ #ifdef CONFIG_MAC80211_LEDS
+ 	int tx_led_counter, rx_led_counter;
+ 	struct led_trigger *tx_led, *rx_led, *assoc_led, *radio_led;
++	struct tpt_led_trigger *tpt_led_trigger;
+ 	char tx_led_name[32], rx_led_name[32],
+ 	     assoc_led_name[32], radio_led_name[32];
+ #endif
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -225,6 +225,7 @@ static int ieee80211_do_open(struct net_
+ 		/* we're brought up, everything changes */
+ 		hw_reconf_flags = ~0;
+ 		ieee80211_led_radio(local, true);
++		ieee80211_start_tpt_led_trig(local);
+ 	}
+ 
+ 	/*
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2887,6 +2887,9 @@ void ieee80211_rx(struct ieee80211_hw *h
+ 		return;
+ 	}
+ 
++	ieee80211_tpt_led_trig_rx(local,
++			((struct ieee80211_hdr *)skb->data)->frame_control,
++			skb->len);
+ 	__ieee80211_rx_handle_packet(hw, skb);
+ 
+ 	rcu_read_unlock();
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1292,6 +1292,7 @@ static int __ieee80211_tx(struct ieee802
+ 
+ 	while (skb) {
+ 		int q = skb_get_queue_mapping(skb);
++		__le16 fc;
+ 
+ 		spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+ 		ret = IEEE80211_TX_OK;
+@@ -1334,6 +1335,7 @@ static int __ieee80211_tx(struct ieee802
+ 		else
+ 			info->control.sta = NULL;
+ 
++		fc = ((struct ieee80211_hdr *)skb->data)->frame_control;
+ 		ret = drv_tx(local, skb);
+ 		if (WARN_ON(ret != NETDEV_TX_OK && skb->len != len)) {
+ 			dev_kfree_skb(skb);
+@@ -1344,6 +1346,7 @@ static int __ieee80211_tx(struct ieee802
+ 			return IEEE80211_TX_AGAIN;
+ 		}
+ 
++		ieee80211_tpt_led_trig_tx(local, fc, len);
+ 		*skbp = skb = next;
+ 		ieee80211_led_tx(local, 1);
+ 		fragm = true;
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -1141,6 +1141,7 @@ u32 ieee80211_sta_get_rates(struct ieee8
+ void ieee80211_stop_device(struct ieee80211_local *local)
+ {
+ 	ieee80211_led_radio(local, false);
++	ieee80211_stop_tpt_led_trig(local);
+ 
+ 	cancel_work_sync(&local->reconfig_filter);
+ 
+@@ -1175,6 +1176,7 @@ int ieee80211_reconfig(struct ieee80211_
+ 		}
+ 
+ 		ieee80211_led_radio(local, true);
++		ieee80211_start_tpt_led_trig(local);
+ 	}
+ 
+ 	/* add interfaces */

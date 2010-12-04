@@ -1,0 +1,100 @@
+--- a/drivers/net/wireless/iwlwifi/iwl-agn.c
++++ b/drivers/net/wireless/iwlwifi/iwl-agn.c
+@@ -27,6 +27,7 @@
+  *
+  *****************************************************************************/
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/kernel.h>
+--- a/drivers/net/wireless/iwlwifi/iwl3945-base.c
++++ b/drivers/net/wireless/iwlwifi/iwl3945-base.c
+@@ -27,6 +27,7 @@
+  *
+  *****************************************************************************/
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/kernel.h>
+--- a/drivers/net/wireless/libertas_tf/cmd.c
++++ b/drivers/net/wireless/libertas_tf/cmd.c
+@@ -7,6 +7,7 @@
+  *  the Free Software Foundation; either version 2 of the License, or (at
+  *  your option) any later version.
+  */
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/slab.h>
+--- a/drivers/net/wireless/libertas_tf/if_usb.c
++++ b/drivers/net/wireless/libertas_tf/if_usb.c
+@@ -9,6 +9,7 @@
+  */
+ #define DRV_NAME "lbtf_usb"
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include "libertas_tf.h"
+--- a/drivers/net/wireless/libertas_tf/main.c
++++ b/drivers/net/wireless/libertas_tf/main.c
+@@ -7,6 +7,7 @@
+  *  the Free Software Foundation; either version 2 of the License, or (at
+  *  your option) any later version.
+  */
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/slab.h>
+--- a/net/wireless/core.c
++++ b/net/wireless/core.c
+@@ -4,6 +4,7 @@
+  * Copyright 2006-2010		Johannes Berg <johannes@sipsolutions.net>
+  */
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/if.h>
+--- a/net/wireless/core.c.orig
++++ b/net/wireless/core.c.orig
+@@ -4,6 +4,7 @@
+  * Copyright 2006-2010		Johannes Berg <johannes@sipsolutions.net>
+  */
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/if.h>
+--- a/net/wireless/lib80211.c
++++ b/net/wireless/lib80211.c
+@@ -13,6 +13,7 @@
+  *
+  */
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/module.h>
+--- a/net/wireless/lib80211_crypt_tkip.c
++++ b/net/wireless/lib80211_crypt_tkip.c
+@@ -10,6 +10,7 @@
+  * more details.
+  */
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/err.h>
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -33,6 +33,7 @@
+  *
+  */
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/kernel.h>

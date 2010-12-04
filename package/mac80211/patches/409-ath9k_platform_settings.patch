@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -535,8 +535,15 @@ static int ath9k_init_softc(u16 devid, s
+@@ -536,8 +536,15 @@ static int ath9k_init_softc(u16 devid, s
  	ah->hw_version.subsysid = subsysid;
  	sc->sc_ah = ah;
  
@@ -19,7 +19,7 @@
  	common->ops = &ath9k_common_ops;
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -788,7 +788,7 @@ struct ath_hw {
+@@ -782,7 +782,7 @@ struct ath_hw {
  	u32 originalGain[22];
  	int initPDADC;
  	int PDADCdelta;
@@ -30,7 +30,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -147,10 +147,12 @@ void ath_init_leds(struct ath_softc *sc)
+@@ -139,10 +139,12 @@ void ath_init_leds(struct ath_softc *sc)
  	if (AR_SREV_9100(sc->sc_ah))
  		return;
  
