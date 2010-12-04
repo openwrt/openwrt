@@ -57,18 +57,13 @@ endef
 
 Hooks/InstallDev/Post += libtool_remove_files
 
-# XXX the libtool fixups got deactivated in the course of switching to libtool2 in trunk XXX
-# ifneq ($(filter libtool,$(PKG_FIXUP)),)
-#   PKG_BUILD_DEPENDS += libtool
-#   Hooks/Configure/Pre += update_libtool remove_version_check
-#   Hooks/Configure/Post += update_libtool
-#   Hooks/InstallDev/Post += libtool_fixup_libdir
-# endif
-# 
-# ifneq ($(filter libtool-ucxx,$(PKG_FIXUP)),)
-#   PKG_BUILD_DEPENDS += libtool
-#   Hooks/Configure/Pre += update_libtool_ucxx remove_version_check
-#   Hooks/Configure/Post += update_libtool_ucxx
-#   Hooks/InstallDev/Post += libtool_fixup_libdir
-# endif
+ifneq ($(filter libtool,$(PKG_FIXUP)),)
+  # WARNING: the use of PKG_FIXUP is DEPRECATED
+  PKG_BUILD_DEPENDS += libtool
+endif
+ 
+ifneq ($(filter libtool-ucxx,$(PKG_FIXUP)),)
+  # WARNING: the use of PKG_FIXUP is DEPRECATED
+  PKG_BUILD_DEPENDS += libtool
+endif
 
