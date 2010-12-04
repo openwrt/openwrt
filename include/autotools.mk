@@ -49,6 +49,14 @@ define remove_version_check
 	fi
 endef
 
+# delete *.la-files from staging_dir - we can not yet remove respective lines within all package
+# Makefiles, since backfire still uses libtool v1.5.x which (may) require those files
+define libtool_remove_files
+	find $(1) -name '*.la' | $(XARGS) rm -f
+endef
+
+Hooks/InstallDev/Post += libtool_remove_files
+
 # XXX the libtool fixups got deactivated in the course of switching to libtool2 in trunk XXX
 # ifneq ($(filter libtool,$(PKG_FIXUP)),)
 #   PKG_BUILD_DEPENDS += libtool
