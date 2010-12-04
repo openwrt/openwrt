@@ -136,6 +136,7 @@ static int ar71xx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	static u32 mask[8] = {0, 0xff, 0xffff, 0, 0xffffffff, 0, 0, 0};
 	unsigned long flags;
 	u32 data;
+	int retry = 0;
 	int ret;
 
 	ret = PCIBIOS_SUCCESSFUL;
@@ -143,6 +144,7 @@ static int ar71xx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	DBG("PCI: read config: %02x:%02x.%01x/%02x:%01d\n", bus->number,
 			PCI_SLOT(devfn), PCI_FUNC(devfn), where, size);
 
+retry:
 	spin_lock_irqsave(&ar71xx_pci_lock, flags);
 
 	if (bus->number == 0 && devfn == 0) {
@@ -175,6 +177,14 @@ static int ar71xx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 		(data >> (8 * (where & 3))) & mask[size & 7], data);
 
 	*value = (data >> (8 * (where & 3))) & mask[size & 7];
+
+	/*
+	 * PCI controller bug: sometimes reads to the PCI_COMMAND register
+	 * return 0xffff, even though the PCI trace shows the correct value.
+	 * Work around this by retrying reads to this register
+	 */
+	if (where == PCI_COMMAND && (*value & 0xffff) == 0xffff && retry++ < 2)
+		goto retry;
 
 	return ret;
 }
