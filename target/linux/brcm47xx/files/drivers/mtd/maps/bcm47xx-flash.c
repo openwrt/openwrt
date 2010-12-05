@@ -398,23 +398,17 @@ static int get_router(void)
 	u16 sdram_init = 0;
 	u16 cardbus = 0;
 
-	if (nvram_getenv("boardnum", buf, sizeof(buf)) >= 0 ||
-	    cfe_getenv("boardnum", buf, sizeof(buf)) >= 0)
+	if (nvram_getenv("boardnum", buf, sizeof(buf)) >= 0)
 		boardnum = simple_strtoul(buf, NULL, 0);
-	if (nvram_getenv("boardtype", buf, sizeof(buf)) >= 0 ||
-	    cfe_getenv("boardtype", buf, sizeof(buf)) >= 0)
+	if (nvram_getenv("boardtype", buf, sizeof(buf)) >= 0)
 		boardtype = simple_strtoul(buf, NULL, 0);
-	if (nvram_getenv("boardrev", buf, sizeof(buf)) >= 0 ||
-	    cfe_getenv("boardrev", buf, sizeof(buf)) >= 0)
+	if (nvram_getenv("boardrev", buf, sizeof(buf)) >= 0)
 		boardrev = simple_strtoul(buf, NULL, 0);
-	if (nvram_getenv("boardflags", buf, sizeof(buf)) >= 0 ||
-	    cfe_getenv("boardflags", buf, sizeof(buf)) >= 0)
+	if (nvram_getenv("boardflags", buf, sizeof(buf)) >= 0)
 		boardflags = simple_strtoul(buf, NULL, 0);
-	if (nvram_getenv("sdram_init", buf, sizeof(buf)) >= 0 ||
-	    cfe_getenv("sdram_init", buf, sizeof(buf)) >= 0)
+	if (nvram_getenv("sdram_init", buf, sizeof(buf)) >= 0)
 		sdram_init = simple_strtoul(buf, NULL, 0);
-	if (nvram_getenv("cardbus", buf, sizeof(buf)) >= 0 ||
-	    cfe_getenv("cardbus", buf, sizeof(buf)) >= 0)
+	if (nvram_getenv("cardbus", buf, sizeof(buf)) >= 0)
 		cardbus = simple_strtoul(buf, NULL, 0);
 
 	if ((boardnum == 8 || boardnum == 01)
