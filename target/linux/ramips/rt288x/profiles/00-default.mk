@@ -7,7 +7,7 @@
 
 define Profile/Default
 	NAME:=Default Profile
-	PACKAGES:=kmod-leds-gpio kmod-rt2880-pci wpad-mini
+	PACKAGES:=kmod-rt2800-pci
 endef
 
 define Profile/Default/Description
