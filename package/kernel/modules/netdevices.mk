@@ -501,3 +501,17 @@ define KernelPackage/solos-pci/description
 endef
 
 $(eval $(call KernelPackage,solos-pci))
+
+define KernelPackage/dummy
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Dummy network device
+  KCONFIG:=CONFIG_DUMMY
+  FILES:=$(LINUX_DIR)/drivers/net/dummy.ko
+  AUTOLOAD:=$(call AutoLoad,34,dummy)
+endef
+
+define KernelPackage/dummy/description
+  The dummy network device
+endef
+
+$(eval $(call KernelPackage,dummy))
