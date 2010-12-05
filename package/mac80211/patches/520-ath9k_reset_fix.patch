@@ -1,0 +1,74 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -1172,7 +1172,7 @@ void ath_draintxq(struct ath_softc *sc, 
+ 	}
+ }
+ 
+-void ath_drain_all_txq(struct ath_softc *sc, bool retry_tx)
++bool ath_drain_all_txq(struct ath_softc *sc, bool retry_tx)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+@@ -1180,7 +1180,7 @@ void ath_drain_all_txq(struct ath_softc 
+ 	int i, npend = 0;
+ 
+ 	if (sc->sc_flags & SC_OP_INVALID)
+-		return;
++		return true;
+ 
+ 	/* Stop beacon queue */
+ 	ath9k_hw_stoptxdma(sc->sc_ah, sc->beacon.beaconq);
+@@ -1194,23 +1194,15 @@ void ath_drain_all_txq(struct ath_softc 
+ 		}
+ 	}
+ 
+-	if (npend) {
+-		int r;
+-
+-		ath_print(common, ATH_DBG_FATAL,
+-			  "Failed to stop TX DMA. Resetting hardware!\n");
+-
+-		r = ath9k_hw_reset(ah, sc->sc_ah->curchan, ah->caldata, false);
+-		if (r)
+-			ath_print(common, ATH_DBG_FATAL,
+-				  "Unable to reset hardware; reset status %d\n",
+-				  r);
+-	}
++	if (npend)
++		ath_print(common, ATH_DBG_FATAL,  "Failed to stop TX DMA!\n");
+ 
+ 	for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
+ 		if (ATH_TXQ_SETUP(sc, i))
+ 			ath_draintxq(sc, &sc->tx.txq[i], retry_tx);
+ 	}
++
++	return !npend;
+ }
+ 
+ void ath_tx_cleanupq(struct ath_softc *sc, struct ath_txq *txq)
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -311,7 +311,7 @@ void ath_rx_cleanup(struct ath_softc *sc
+ int ath_rx_tasklet(struct ath_softc *sc, int flush, bool hp);
+ struct ath_txq *ath_txq_setup(struct ath_softc *sc, int qtype, int subtype);
+ void ath_tx_cleanupq(struct ath_softc *sc, struct ath_txq *txq);
+-void ath_drain_all_txq(struct ath_softc *sc, bool retry_tx);
++bool ath_drain_all_txq(struct ath_softc *sc, bool retry_tx);
+ void ath_draintxq(struct ath_softc *sc,
+ 		     struct ath_txq *txq, bool retry_tx);
+ void ath_tx_node_init(struct ath_softc *sc, struct ath_node *an);
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -246,9 +246,10 @@ int ath_set_channel(struct ath_softc *sc
+ 	 * the relevant bits of the h/w.
+ 	 */
+ 	ath9k_hw_disable_interrupts(ah);
+-	ath_drain_all_txq(sc, false);
++	stopped = ath_drain_all_txq(sc, false);
+ 
+-	stopped = ath_stoprecv(sc);
++	if (!ath_stoprecv(sc))
++		stopped = false;
+ 
+ 	/* XXX: do not flush receive queue here. We don't want
+ 	 * to flush data frames already in queue because of
