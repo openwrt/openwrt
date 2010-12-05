@@ -3,6 +3,14 @@
 
 . /etc/functions.sh
 
+usage() {
+	cat <<EOF
+Usage: $0 [down|detect]
+enables (default), disables or detects a wifi configuration.
+EOF
+	exit 1
+}
+
 find_net_config() {(
 	local vif="$1"
 	local cfg
@@ -183,5 +191,6 @@ scan_wifi
 case "$1" in
 	down) wifi_updown "disable" "$2";;
 	detect) wifi_detect "$2";;
+	--help|help) usage;;
 	*) wifi_updown "enable" "$2";;
 esac
