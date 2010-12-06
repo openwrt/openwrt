@@ -114,6 +114,7 @@ my %update_method = (
 		'update'	=> ""},
 	'src-git' => {
 		'init'		=> "git clone --depth 1 '%s' '%s'",
+		'init_branch'	=> "git clone --depth 1 --branch '%s' '%s' '%s'",
 		'update'	=> "git pull",
 		'controldir'	=> ".git"},
 	'src-bzr' => {
@@ -143,10 +144,15 @@ sub update_feed_via($$$$) {
 	my $localpath = "./feeds/$name";
 	my $safepath = $localpath;
 	$safepath =~ s/'/'\\''/;
+	my ($base, $branch) = split(/;/, $src, 2);
 
 	if( $relocate || !$m->{'update'} || !-d "$localpath/$m->{'controldir'}" ) {
 		system("rm -rf '$safepath'");
-		system(sprintf($m->{'init'}, $src, $safepath)) == 0 or return 1;
+		if ($m->{'init_branch'} and $branch) {
+			system(sprintf($m->{'init_branch'}, $branch, $base, $safepath)) == 0 or return 1;
+		} else {
+			system(sprintf($m->{'init'}, $src, $safepath)) == 0 or return 1;
+		}
 	} else {
 		system("cd '$safepath'; $m->{'update'}") == 0 or return 1;
 	}
