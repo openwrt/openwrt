@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=m4
-PKG_VERSION:=1.4.5
+PKG_VERSION:=1.4.15
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
-PKG_MD5SUM:=
+PKG_MD5SUM:=5649a2e593b6c639deae9e72ede777dd
 PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/host-build.mk
