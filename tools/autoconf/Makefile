@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=autoconf
-PKG_VERSION:=2.62
+PKG_VERSION:=2.68
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/autoconf
-PKG_MD5SUM:=e1fb8fe0b22e651240afdfa2be537a3c
+PKG_MD5SUM:=864d785215aa60d627c91fcb21b05b07
 
 include $(INCLUDE_DIR)/host-build.mk
 
