@@ -31,6 +31,8 @@ define Host/Install
 	$(INSTALL_BIN) ./files/aclocal $(STAGING_DIR_HOST)/bin
 	ln -f $(STAGING_DIR_HOST)/bin/aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.9
 	ln -f $(STAGING_DIR_HOST)/bin/aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.10
+	ln -f $(STAGING_DIR_HOST)/bin/aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.11
+	ln -f $(STAGING_DIR_HOST)/bin/aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.11.1
 endef
 
 define Host/Clean
