@@ -18,7 +18,7 @@
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -1508,6 +1512,29 @@ static int board_get_mac_address(u8 *mac
+@@ -1586,6 +1590,29 @@ static int board_get_mac_address(u8 *mac
  	return 0;
  }
  
@@ -48,7 +48,7 @@
  /*
   * early init callback, read nvram data from flash and checksum it
   */
-@@ -1559,6 +1586,11 @@ void __init board_prom_init(void)
+@@ -1637,6 +1664,11 @@ void __init board_prom_init(void)
  	/* Fixup broken nb4 board name */
  	nb4_nvram_fixup();
  
