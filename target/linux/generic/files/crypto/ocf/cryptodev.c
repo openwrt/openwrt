@@ -977,10 +977,16 @@ cryptodev_open(struct inode *inode, struct file *filp)
 	struct fcrypt *fcr;
 
 	dprintk("%s()\n", __FUNCTION__);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35)
+	/*
+	 * on 2.6.35 private_data points to a miscdevice structure, we override
+	 * it,  which is currently safe to do.
+	 */
 	if (filp->private_data) {
-		printk("cryptodev: Private data already exists !\n");
-		return(0);
+		printk("cryptodev: Private data already exists - %p!\n", filp->private_data);
+		return(-ENODEV);
 	}
+#endif
 
 	fcr = kmalloc(sizeof(*fcr), GFP_KERNEL);
 	if (!fcr) {
