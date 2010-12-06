@@ -23,7 +23,8 @@ STAGING_DIR="$DIR/staging_dir/target"
 STAGING_DIR_HOST="$DIR/staging_dir/host"
 STAGING_DIR_HOST_TMPL="$DIR/staging_dir_host_tmpl"
 BIN_DIR="$DIR/staging_dir/bin_dir"
-LOG_DIR="$DIR/logs"
+LOG_DIR_NAME="logs"
+LOG_DIR="$DIR/$LOG_DIR_NAME"
 
 die()
 {
@@ -87,13 +88,13 @@ test_package() # $1=pkgname
 	local STAMP_FAILED="$STAMP_DIR_FAILED/$pkg"
 	local STAMP_BLACKLIST="$STAMP_DIR_BLACKLIST/$pkg"
 	rm -f "$STAMP_FAILED"
-	[ -f "$STAMP_SUCCESS" -a $force -eq 0 ] && return
+	[ -e "$STAMP_SUCCESS" -a $force -eq 0 ] && return
 	rm -f "$STAMP_SUCCESS"
 	[ -n "$SELECTED" ] || {
 		echo "Package $pkg is not selected"
 		return
 	}
-	[ -f "$STAMP_BLACKLIST" -a $force -eq 0 ] && {
+	[ -e "$STAMP_BLACKLIST" -a $force -eq 0 ] && {
 		echo "Package $pkg is blacklisted"
 		return
 	}
@@ -106,11 +107,12 @@ test_package() # $1=pkgname
 		clean_kernel_build_dir
 	}
 	mkdir -p "$BUILD_DIR" "$BUILD_DIR_HOST"
-	deptest_make "package/$pkg/compile" "$(basename $pkg).log"
+	local logfile="$(basename $pkg).log"
+	deptest_make "package/$pkg/compile" "$logfile"
 	if [ $? -eq 0 ]; then
-		touch "$STAMP_SUCCESS"
+		( cd "$STAMP_DIR_SUCCESS"; ln -s "../$LOG_DIR_NAME/$logfile" "./$pkg" )
 	else
-		touch "$STAMP_FAILED"
+		( cd "$STAMP_DIR_FAILED"; ln -s "../$LOG_DIR_NAME/$logfile" "./$pkg" )
 		echo "Building package $pkg FAILED"
 	fi
 }
