@@ -15,8 +15,7 @@ brcm63xx_detect() {
 
 	case "$board_name" in
 	"bcm63xx/96348GW "*)
-		status_led="tel"
-		status_led2="line1"
+		status_led="power"
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
