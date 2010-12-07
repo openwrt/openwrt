@@ -1,32 +1,25 @@
 --- a/Makefile.am
 +++ b/Makefile.am
-@@ -1,10 +1,10 @@
--SUBDIRS = src ctaocrypt examples testsuite
+@@ -1,4 +1,4 @@
+-SUBDIRS = src ctaocrypt examples testsuite sslSniffer
 +SUBDIRS = src ctaocrypt
  EXTRA_DIST = cyassl.dsp cyassl.dsw certs/*.pem certs/*.der certs/*.txt \
      lib/dummy cyassl.sln cyassl.vcproj cyassl-iphone.xcodeproj/project.pbxproj \
-     doc/*.pdf
- 
- basic:
--	cd src; $(MAKE); cd ../testsuite; $(MAKE); cd ../
-+	cd src; $(MAKE); cd ../
- 
- openssl-links:
- 	cd lib; ln -s ../src/.libs/libcyassl.a libcrypto.a; \
+     doc/*.pdf swig/README swig/*.i swig/cyassl_adds.c swig/*.sh swig/runme.* \
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -190,7 +190,7 @@ target_os = @target_os@
+@@ -193,7 +193,7 @@ target_os = @target_os@
  target_vendor = @target_vendor@
  top_builddir = @top_builddir@
  top_srcdir = @top_srcdir@
--SUBDIRS = src ctaocrypt examples testsuite
+-SUBDIRS = src ctaocrypt examples testsuite sslSniffer
 +SUBDIRS = src ctaocrypt
  EXTRA_DIST = cyassl.dsp cyassl.dsw certs/*.pem certs/*.der certs/*.txt \
      lib/dummy cyassl.sln cyassl.vcproj cyassl-iphone.xcodeproj/project.pbxproj \
-     doc/*.pdf
-@@ -638,7 +638,7 @@ uninstall-am:
+     doc/*.pdf swig/README swig/*.i swig/cyassl_adds.c swig/*.sh swig/runme.* \
+@@ -643,7 +643,7 @@ uninstall-am:
  
- 
+ # !!!! first line of rule has to start with a hard (real) tab, not spaces
  basic:
 -	cd src; $(MAKE); cd ../testsuite; $(MAKE); cd ../
 +	cd src; $(MAKE); cd ../
@@ -42,7 +35,7 @@
  
 --- a/ctaocrypt/Makefile.in
 +++ b/ctaocrypt/Makefile.in
-@@ -174,7 +174,7 @@ target_os = @target_os@
+@@ -177,7 +177,7 @@ target_os = @target_os@
  target_vendor = @target_vendor@
  top_builddir = @top_builddir@
  top_srcdir = @top_srcdir@
