@@ -19,6 +19,16 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
+	"bcm63xx/GW6000 "*)
+		brcm63xx_has_reset_button="true"
+		ifname=eth1
+		;;
+	"bcm63xx/GW6200 "*)
+		status_led="line1"
+		status_led2="tel"
+		brcm63xx_has_reset_button="true"
+		ifname=eth1
+		;;
 	"bcm63xx/96348GW-11 "*)
 		status_led="power"
 		brcm63xx_has_reset_button="true"
