@@ -8,7 +8,7 @@
  #include <board_bcm963xx.h>
  
  #define PFX	"board_bcm963xx: "
-@@ -415,6 +416,8 @@ static struct board_info __initdata boar
+@@ -400,6 +401,8 @@ static struct board_info __initdata boar
  	.has_ohci0			= 1,
  	.has_pccard			= 1,
  	.has_ehci0			= 1,
@@ -17,7 +17,7 @@
  };
  
  static struct board_info __initdata board_rta1025w_16 = {
-@@ -1011,6 +1014,9 @@ int __init board_register_devices(void)
+@@ -1001,6 +1004,9 @@ int __init board_register_devices(void)
  	if (board.has_dsp)
  		bcm63xx_dsp_register(&board.dsp);
  
