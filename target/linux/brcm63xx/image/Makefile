@@ -146,9 +146,9 @@ define Image/Build
 	# RTA1025W_16 (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,--layoutver 5)
 	# Tecom GW6000
-	$(call Image/Build/CFE,$(1),96348GW,6348,GW6000)
+	$(call Image/Build/CFEFIXUP,$(1),96348GW,6348,GW6000)
 	# Tecom GW6200
-	$(call Image/Build/CFE,$(1),96348GW,6348,GW6200,$(shell printf '\x99'))
+	$(call Image/Build/CFEFIXUP,$(1),96348GW,6348,GW6200,$(shell printf '\x99'))
 	# Neufbox4
 	$(call Image/Build/CFE,$(1),96358VW,6358,NEUFBOX4,OpenWRT-$(REVISION))
 	# Comtrend 536, 5621
