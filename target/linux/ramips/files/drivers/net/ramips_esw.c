@@ -28,6 +28,9 @@
 
 #define RT305X_ESW_PHY_TIMEOUT		(5 * HZ)
 
+#define RT305X_ESW_VLANI_VID_M		0xfff
+#define RT305X_ESW_VLANI_VID_S		12
+
 struct rt305x_esw {
 	void __iomem *base;
 	struct rt305x_esw_platform_data *pdata;
@@ -109,6 +112,18 @@ out:
 }
 
 static void
+rt305x_esw_set_vlan_id(struct rt305x_esw *esw, unsigned vlan, unsigned vid)
+{
+	unsigned s;
+
+	s = RT305X_ESW_VLANI_VID_S * (vlan % 2);
+	rt305x_esw_rmw(esw,
+		       RT305X_ESW_REG_VLANI(vlan / 2),
+		       RT305X_ESW_VLANI_VID_M << s,
+		       (vid & RT305X_ESW_VLANI_VID_M) << s);
+}
+
+static void
 rt305x_esw_hw_init(struct rt305x_esw *esw)
 {
 	int i;
@@ -117,7 +132,6 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	rt305x_esw_wr(esw, 0xC8A07850, RT305X_ESW_REG_FCT0);
 	rt305x_esw_wr(esw, 0x00000000, RT305X_ESW_REG_SGC2);
 	rt305x_esw_wr(esw, 0x00405555, RT305X_ESW_REG_PFC1);
-	rt305x_esw_wr(esw, 0x00002001, RT305X_ESW_REG_VLANI(0));
 	rt305x_esw_wr(esw, 0x00007f7f, RT305X_ESW_REG_POC1);
 	rt305x_esw_wr(esw, 0x00007f3f, RT305X_ESW_REG_POC3);
 	rt305x_esw_wr(esw, 0x00d6500c, RT305X_ESW_REG_FCT2);
@@ -154,7 +168,8 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	rt305x_mii_write(esw, 0, 31, 0x8000);
 
 	/* set default vlan */
-	rt305x_esw_wr(esw, 0x2001, RT305X_ESW_REG_VLANI(0));
+	rt305x_esw_set_vlan_id(esw, 0, 1);
+	rt305x_esw_set_vlan_id(esw, 1, 2);
 	rt305x_esw_wr(esw, 0x504f, RT305X_ESW_REG_VMSC(0));
 }
 
