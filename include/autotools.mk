@@ -9,13 +9,6 @@ PKG_LIBTOOL_PATHS?=$(CONFIGURE_PATH)
 
 autoconf_bool = $(patsubst %,$(if $($(1)),--enable,--disable)-%,$(2))
 
-# prevent libtool from linking against host development libraries
-define libtool_fixup_libdir
-	find $(1) -name '*.la' | $(XARGS) \
-		$(SED) "s,\(^libdir='\| \|-L\|^dependency_libs='\)/usr/lib,\1$(STAGING_DIR)/usr/lib,g" \
-		    -e "s,$(STAGING_DIR)/usr/lib/\(libstdc++\|libsupc++\).la,$(TOOLCHAIN_DIR)/lib/\1.la,g";
-endef
-
 # delete *.la-files from staging_dir - we can not yet remove respective lines within all package
 # Makefiles, since backfire still uses libtool v1.5.x which (may) require those files
 define libtool_remove_files
@@ -37,13 +30,15 @@ Hooks/InstallDev/Post += libtool_remove_files
 
 ifneq ($(filter libtool,$(PKG_FIXUP)),)
   PKG_BUILD_DEPENDS += libtool
+ ifeq ($(filter no-autoreconf,$(PKG_FIXUP)),)
   Hooks/Configure/Pre += autoreconf
-  Hooks/InstallDev/Post += libtool_fixup_libdir
+ endif
 endif
  
 ifneq ($(filter libtool-ucxx,$(PKG_FIXUP)),)
   PKG_BUILD_DEPENDS += libtool
+ ifeq ($(filter no-autoreconf,$(PKG_FIXUP)),)
   Hooks/Configure/Pre += autoreconf
-  Hooks/InstallDev/Post += libtool_fixup_libdir
+ endif
 endif
 
