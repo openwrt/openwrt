@@ -9,6 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=mpc83xx
 BOARDNAME:=Freescale MPC83xx
+CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=603e
 FEATURES:=squashfs targz broken
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
