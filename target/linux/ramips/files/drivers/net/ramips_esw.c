@@ -28,6 +28,9 @@
 
 #define RT305X_ESW_PHY_TIMEOUT		(5 * HZ)
 
+#define RT305X_ESW_PVIDC_PVID_M		0xfff
+#define RT305X_ESW_PVIDC_PVID_S		12
+
 #define RT305X_ESW_VLANI_VID_M		0xfff
 #define RT305X_ESW_VLANI_VID_S		12
 
@@ -135,6 +138,18 @@ rt305x_esw_set_vlan_id(struct rt305x_esw *esw, unsigned vlan, unsigned vid)
 }
 
 static void
+rt305x_esw_set_pvid(struct rt305x_esw *esw, unsigned port, unsigned pvid)
+{
+	unsigned s;
+
+	s = RT305X_ESW_PVIDC_PVID_S * (port % 2);
+	rt305x_esw_rmw(esw,
+		       RT305X_ESW_REG_PVIDC(port / 2),
+		       RT305X_ESW_PVIDC_PVID_S << s,
+		       (pvid & RT305X_ESW_PVIDC_PVID_M) << s);
+}
+
+static void
 rt305x_esw_set_vmsc(struct rt305x_esw *esw, unsigned vlan, unsigned msc)
 {
 	unsigned s;
@@ -160,7 +175,8 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	rt305x_esw_wr(esw, 0x00d6500c, RT305X_ESW_REG_FCT2);
 	rt305x_esw_wr(esw, 0x0008a301, RT305X_ESW_REG_SGC);
 	rt305x_esw_wr(esw, 0x02404040, RT305X_ESW_REG_SOCPC);
-	rt305x_esw_wr(esw, 0x00001002, RT305X_ESW_REG_PVIDC(2));
+	rt305x_esw_set_pvid(esw, RT305X_ESW_PORT4, 2);
+	rt305x_esw_set_pvid(esw, RT305X_ESW_PORT5, 1);
 	rt305x_esw_wr(esw, 0x3f502b28, RT305X_ESW_REG_FPA2);
 	rt305x_esw_wr(esw, 0x00000000, RT305X_ESW_REG_FPA);
 
