@@ -1,5 +1,5 @@
 --- /dev/null
-+++ b/extensions/libxt_layer7.c
++++ b/libxt_layer7.c
 @@ -0,0 +1,368 @@
 +/* 
 +   Shared library add-on to iptables for layer 7 matching support. 
@@ -369,20 +369,3 @@
 +{
 +	xtables_register_match(&layer7);
 +}
---- /dev/null
-+++ b/extensions/libxt_layer7.man
-@@ -0,0 +1,14 @@
-+This module matches packets based on the application layer data of 
-+their connections.  It uses regular expression matching to compare 
-+the application layer data to regular expressions found it the layer7 
-+configuration files.  This is an experimental module which can be found at 
-+http://l7-filter.sf.net.  It takes two options.
-+.TP
-+.BI "--l7proto " "\fIprotocol\fP"
-+Match the specified protocol.  The protocol name must match a file 
-+name in /etc/l7-protocols/ or one of its first-level child directories.
-+.TP
-+.BI "--l7dir " "\fIdirectory\fP"
-+Use \fIdirectory\fP instead of /etc/l7-protocols/.  This option must be 
-+specified before --l7proto.
-+
