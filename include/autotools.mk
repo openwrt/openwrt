@@ -17,11 +17,13 @@ endef
 
 define autoreconf
 	(cd $(PKG_BUILD_DIR); \
+		$(patsubst %,rm -f %;,$(PKG_REMOVE_FILES)) \
 		if [ -x ./autogen.sh ]; then \
 			./autogen.sh || true; \
 		elif [ -f ./configure.ac ] || [ -f ./configure.in ]; then \
-			rm -f ./GNUmakefile; \
+			[ -f ./aclocal.m4 ] && [ ! -f ./acinclude.m4 ] && mv aclocal.m4 acinclude.m4; \
 			$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
+				-B $(STAGING_DIR)/host/share/aclocal \
 				$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS) || true; \
 		fi \
 	);
