@@ -1,8 +1,8 @@
 --- a/util/Makefile.in
 +++ b/util/Makefile.in
-@@ -585,7 +585,7 @@ uninstall-am: uninstall-binPROGRAMS unin
+@@ -584,7 +584,7 @@ uninstall-am: uninstall-binPROGRAMS unin
+ 
  install-exec-hook:
- 	-chown root $(DESTDIR)$(bindir)/fusermount
  	-chmod u+s $(DESTDIR)$(bindir)/fusermount
 -	@if test ! -e $(DESTDIR)/dev/fuse; then \
 +	-@if test ! -e $(DESTDIR)/dev/fuse; then \
