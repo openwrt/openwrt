@@ -75,16 +75,10 @@ out:
 	return ret;
 }
 
-static int
-rt305x_esw_init(void)
+static void
+rt305x_esw_hw_init(struct rt305x_esw *esw)
 {
-	struct rt305x_esw *esw;
 	int i;
-
-	esw = &rt305x_esw;
-	esw->base = ioremap_nocache(RT305X_SWITCH_BASE, PAGE_SIZE);
-	if(!esw->base)
-		return -ENOMEM;
 
 	/* vodoo from original driver */
 	ramips_esw_wr(esw, 0xC8A07850, 0x08);
@@ -124,6 +118,18 @@ rt305x_esw_init(void)
 	/* set default vlan */
 	ramips_esw_wr(esw, 0x2001, 0x50);
 	ramips_esw_wr(esw, 0x504f, 0x70);
+}
 
+static int
+rt305x_esw_init(void)
+{
+	struct rt305x_esw *esw;
+
+	esw = &rt305x_esw;
+	esw->base = ioremap_nocache(RT305X_SWITCH_BASE, PAGE_SIZE);
+	if(!esw->base)
+		return -ENOMEM;
+
+	rt305x_esw_hw_init(esw);
 	return 0;
 }
