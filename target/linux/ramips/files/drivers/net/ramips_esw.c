@@ -34,26 +34,26 @@ struct rt305x_esw {
 };
 
 static inline void
-ramips_esw_wr(struct rt305x_esw *esw, u32 val, unsigned reg)
+rt305x_esw_wr(struct rt305x_esw *esw, u32 val, unsigned reg)
 {
 	__raw_writel(val, esw->base + reg);
 }
 
 static inline u32
-ramips_esw_rr(struct rt305x_esw *esw, unsigned reg)
+rt305x_esw_rr(struct rt305x_esw *esw, unsigned reg)
 {
 	return __raw_readl(esw->base + reg);
 }
 
 static u32
-mii_mgr_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
-	      u32 write_data)
+rt305x_mii_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
+		 u32 write_data)
 {
 	unsigned long t_start = jiffies;
 	int ret = 0;
 
 	while (1) {
-		if (!(ramips_esw_rr(esw, RT305X_ESW_REG_PCR1) &
+		if (!(rt305x_esw_rr(esw, RT305X_ESW_REG_PCR1) &
 		      RT305X_ESW_PCR1_WT_DONE))
 			break;
 		if (time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT)) {
@@ -63,7 +63,7 @@ mii_mgr_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
 	}
 
 	write_data &= 0xffff;
-	ramips_esw_wr(esw,
+	rt305x_esw_wr(esw,
 		      (write_data << RT305X_ESW_PCR0_WT_NWAY_DATA_S) |
 		      (phy_register << RT305X_ESW_PCR0_CPU_PHY_REG_S) |
 		      (phy_addr) | RT305X_ESW_PCR0_WT_PHY_CMD,
@@ -71,7 +71,7 @@ mii_mgr_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
 
 	t_start = jiffies;
 	while (1) {
-		if (ramips_esw_rr(esw, RT305X_ESW_REG_PCR1) &
+		if (rt305x_esw_rr(esw, RT305X_ESW_REG_PCR1) &
 		    RT305X_ESW_PCR1_WT_DONE)
 			break;
 
@@ -92,48 +92,48 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	int i;
 
 	/* vodoo from original driver */
-	ramips_esw_wr(esw, 0xC8A07850, RT305X_ESW_REG_FCT0);
-	ramips_esw_wr(esw, 0x00000000, RT305X_ESW_REG_SGC2);
-	ramips_esw_wr(esw, 0x00405555, RT305X_ESW_REG_PFC1);
-	ramips_esw_wr(esw, 0x00002001, RT305X_ESW_REG_VLANI(0));
-	ramips_esw_wr(esw, 0x00007f7f, RT305X_ESW_REG_POC1);
-	ramips_esw_wr(esw, 0x00007f3f, RT305X_ESW_REG_POC3);
-	ramips_esw_wr(esw, 0x00d6500c, RT305X_ESW_REG_FCT2);
-	ramips_esw_wr(esw, 0x0008a301, RT305X_ESW_REG_SGC);
-	ramips_esw_wr(esw, 0x02404040, RT305X_ESW_REG_SOCPC);
-	ramips_esw_wr(esw, 0x00001002, RT305X_ESW_REG_PVIDC(2));
-	ramips_esw_wr(esw, 0x3f502b28, RT305X_ESW_REG_FPA2);
-	ramips_esw_wr(esw, 0x00000000, RT305X_ESW_REG_FPA);
+	rt305x_esw_wr(esw, 0xC8A07850, RT305X_ESW_REG_FCT0);
+	rt305x_esw_wr(esw, 0x00000000, RT305X_ESW_REG_SGC2);
+	rt305x_esw_wr(esw, 0x00405555, RT305X_ESW_REG_PFC1);
+	rt305x_esw_wr(esw, 0x00002001, RT305X_ESW_REG_VLANI(0));
+	rt305x_esw_wr(esw, 0x00007f7f, RT305X_ESW_REG_POC1);
+	rt305x_esw_wr(esw, 0x00007f3f, RT305X_ESW_REG_POC3);
+	rt305x_esw_wr(esw, 0x00d6500c, RT305X_ESW_REG_FCT2);
+	rt305x_esw_wr(esw, 0x0008a301, RT305X_ESW_REG_SGC);
+	rt305x_esw_wr(esw, 0x02404040, RT305X_ESW_REG_SOCPC);
+	rt305x_esw_wr(esw, 0x00001002, RT305X_ESW_REG_PVIDC(2));
+	rt305x_esw_wr(esw, 0x3f502b28, RT305X_ESW_REG_FPA2);
+	rt305x_esw_wr(esw, 0x00000000, RT305X_ESW_REG_FPA);
 
-	mii_mgr_write(esw, 0, 31, 0x8000);
+	rt305x_mii_write(esw, 0, 31, 0x8000);
 	for (i = 0; i < 5; i++) {
 		/* TX10 waveform coefficient */
-		mii_mgr_write(esw, i, 0, 0x3100);
+		rt305x_mii_write(esw, i, 0, 0x3100);
 		/* TX10 waveform coefficient */
-		mii_mgr_write(esw, i, 26, 0x1601);
+		rt305x_mii_write(esw, i, 26, 0x1601);
 		/* TX100/TX10 AD/DA current bias */
-		mii_mgr_write(esw, i, 29, 0x7058);
+		rt305x_mii_write(esw, i, 29, 0x7058);
 		/* TX100 slew rate control */
-		mii_mgr_write(esw, i, 30, 0x0018);
+		rt305x_mii_write(esw, i, 30, 0x0018);
 	}
 
 	/* PHY IOT */
 	/* select global register */
-	mii_mgr_write(esw, 0, 31, 0x0);
+	rt305x_mii_write(esw, 0, 31, 0x0);
 	/* tune TP_IDL tail and head waveform */
-	mii_mgr_write(esw, 0, 22, 0x052f);
+	rt305x_mii_write(esw, 0, 22, 0x052f);
 	/* set TX10 signal amplitude threshold to minimum */
-	mii_mgr_write(esw, 0, 17, 0x0fe0);
+	rt305x_mii_write(esw, 0, 17, 0x0fe0);
 	/* set squelch amplitude to higher threshold */
-	mii_mgr_write(esw, 0, 18, 0x40ba);
+	rt305x_mii_write(esw, 0, 18, 0x40ba);
 	/* longer TP_IDL tail length */
-	mii_mgr_write(esw, 0, 14, 0x65);
+	rt305x_mii_write(esw, 0, 14, 0x65);
 	/* select local register */
-	mii_mgr_write(esw, 0, 31, 0x8000);
+	rt305x_mii_write(esw, 0, 31, 0x8000);
 
 	/* set default vlan */
-	ramips_esw_wr(esw, 0x2001, RT305X_ESW_REG_VLANI(0));
-	ramips_esw_wr(esw, 0x504f, RT305X_ESW_REG_VMSC(0));
+	rt305x_esw_wr(esw, 0x2001, RT305X_ESW_REG_VLANI(0));
+	rt305x_esw_wr(esw, 0x504f, RT305X_ESW_REG_VMSC(0));
 }
 
 static int
