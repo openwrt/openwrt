@@ -3,8 +3,6 @@
 #include <rt305x_regs.h>
 #include <rt305x_esw_platform.h>
 
-#define GPIO_PRUPOSE           0x60
-#define GPIO_MDIO_BIT          (1<<7)
 #define RT305X_ESW_PHY_WRITE		(1 << 13)
 #define RT305X_ESW_PHY_TOUT			(5 * HZ)
 #define RT305X_ESW_PHY_CONTROL_0	0xC0
@@ -27,17 +25,6 @@ ramips_esw_rr(struct rt305x_esw *esw, unsigned reg)
 	return __raw_readl(esw->base + reg);
 }
 
-static void
-ramips_enable_mdio(int s)
-{
-	u32 gpio = rt305x_sysc_rr(GPIO_PRUPOSE);
-	if(s)
-		gpio &= ~GPIO_MDIO_BIT;
-	else
-		gpio |= GPIO_MDIO_BIT;
-	rt305x_sysc_wr(gpio, GPIO_PRUPOSE);
-}
-
 u32
 mii_mgr_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
 	      u32 write_data)
@@ -45,7 +32,6 @@ mii_mgr_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
 	unsigned long volatile t_start = jiffies;
 	int ret = 0;
 
-	ramips_enable_mdio(1);
 	while(1)
 	{
 		if(!(ramips_esw_rr(esw, RT305X_ESW_PHY_CONTROL_1) & (0x1 << 0)))
@@ -70,7 +56,6 @@ mii_mgr_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
 		}
 	}
 out:
-	ramips_enable_mdio(0);
 	if(ret)
 		printk(KERN_ERR "ramips_eth: MDIO timeout\n");
 	return ret;
@@ -110,11 +95,6 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	mii_mgr_write(esw, 0, 18, 0x40ba);   //set squelch amplitude to higher threshold
 	mii_mgr_write(esw, 0, 14, 0x65);     //longer TP_IDL tail length
 	mii_mgr_write(esw, 0, 31, 0x8000);   //select local register
-
-	/* Port 5 Disabled */
-	rt305x_sysc_wr(rt305x_sysc_rr(0x60) | (1 << 9), 0x60); //set RGMII to GPIO mode (GPIO41-GPIO50)
-	rt305x_sysc_wr(0xfff, 0x674); //GPIO41-GPIO50 output mode
-	rt305x_sysc_wr(0x0, 0x670); //GPIO41-GPIO50 output low
 
 	/* set default vlan */
 	ramips_esw_wr(esw, 0x2001, 0x50);
