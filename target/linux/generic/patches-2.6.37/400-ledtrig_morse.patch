@@ -1,8 +1,8 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -407,4 +407,8 @@ endif # LEDS_TRIGGERS
- 
- endif # LEDS_CLASS
+@@ -439,4 +439,8 @@ config LEDS_TRIGGER_DEFAULT_ON
+ comment "iptables trigger is under Netfilter config (LED target)"
+ 	depends on LEDS_TRIGGERS
  
 +config LEDS_TRIGGER_MORSE
 +	tristate "LED Morse Trigger"
