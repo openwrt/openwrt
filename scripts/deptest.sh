@@ -75,6 +75,11 @@ clean_kernel_build_dir()
 	)
 }
 
+stamp_exists() # $1=stamp
+{
+	[ -e "$1" -o -L "$1" ]
+}
+
 test_package() # $1=pkgname
 {
 	local pkg="$1"
@@ -88,13 +93,13 @@ test_package() # $1=pkgname
 	local STAMP_FAILED="$STAMP_DIR_FAILED/$pkg"
 	local STAMP_BLACKLIST="$STAMP_DIR_BLACKLIST/$pkg"
 	rm -f "$STAMP_FAILED"
-	[ -e "$STAMP_SUCCESS" -a $force -eq 0 ] && return
+	stamp_exists "$STAMP_SUCCESS" && [ $force -eq 0 ] && return
 	rm -f "$STAMP_SUCCESS"
 	[ -n "$SELECTED" ] || {
 		echo "Package $pkg is not selected"
 		return
 	}
-	[ -e "$STAMP_BLACKLIST" -a $force -eq 0 ] && {
+	stamp_exists "$STAMP_BLACKLIST" && [ $force -eq 0 ] && {
 		echo "Package $pkg is blacklisted"
 		return
 	}
