@@ -25,10 +25,10 @@ endef
 define autoreconf
 	(cd $(PKG_BUILD_DIR); \
 		if [ -x ./autogen.sh ]; then \
-			./autogen.sh; \
+			./autogen.sh || true; \
 		elif [ -f ./configure.ac ] || [ -f ./configure.in ]; then \
 			$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
-				$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS); \
+				$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS) || true; \
 		fi \
 	);
 endef
