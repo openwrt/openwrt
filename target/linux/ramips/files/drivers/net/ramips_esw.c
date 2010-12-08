@@ -31,6 +31,7 @@
 struct rt305x_esw {
 	void __iomem *base;
 	struct rt305x_esw_platform_data *pdata;
+	spinlock_t reg_rw_lock;
 };
 
 static inline void
@@ -43,6 +44,27 @@ static inline u32
 rt305x_esw_rr(struct rt305x_esw *esw, unsigned reg)
 {
 	return __raw_readl(esw->base + reg);
+}
+
+static inline void
+rt305x_esw_rmw_raw(struct rt305x_esw *esw, unsigned reg, unsigned long mask,
+		   unsigned long val)
+{
+	unsigned long t;
+
+	t = __raw_readl(esw->base + reg) & ~mask;
+	__raw_writel(t | val, esw->base + reg);
+}
+
+static void
+rt305x_esw_rmw(struct rt305x_esw *esw, unsigned reg, unsigned long mask,
+	       unsigned long val)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&esw->reg_rw_lock, flags);
+	rt305x_esw_rmw_raw(esw, reg, mask, val);
+	spin_unlock_irqrestore(&esw->reg_rw_lock, flags);
 }
 
 static u32
@@ -170,6 +192,7 @@ rt305x_esw_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, esw);
 
 	esw->pdata = pdata;
+	spin_lock_init(&esw->reg_rw_lock);
 	rt305x_esw_hw_init(esw);
 
 	return 0;
