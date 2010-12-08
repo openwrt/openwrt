@@ -1,7 +1,7 @@
 /*
  *  Ralink RT305x SoC platform device registration
  *
- *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -130,10 +130,29 @@ static struct platform_device rt305x_eth_device = {
 	}
 };
 
+static struct resource rt305x_esw_resources[] = {
+	{
+		.start	= RT305X_SWITCH_BASE,
+		.end	= RT305X_SWITCH_BASE + PAGE_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+struct rt305x_esw_platform_data rt305x_esw_data;
+static struct platform_device rt305x_esw_device = {
+	.name		= "rt305x-esw",
+	.resource	= rt305x_esw_resources,
+	.num_resources	= ARRAY_SIZE(rt305x_esw_resources),
+	.dev = {
+		.platform_data = &rt305x_esw_data,
+	}
+};
+
 void __init rt305x_register_ethernet(void)
 {
 	ramips_eth_data.sys_freq = rt305x_sys_freq;
 
+	platform_device_register(&rt305x_esw_device);
 	platform_device_register(&rt305x_eth_device);
 }
 
