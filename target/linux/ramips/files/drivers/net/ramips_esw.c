@@ -45,20 +45,18 @@ ramips_esw_rr(struct rt305x_esw *esw, unsigned reg)
 	return __raw_readl(esw->base + reg);
 }
 
-u32
+static u32
 mii_mgr_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
 	      u32 write_data)
 {
-	unsigned long volatile t_start = jiffies;
+	unsigned long t_start = jiffies;
 	int ret = 0;
 
-	while(1)
-	{
+	while (1) {
 		if (!(ramips_esw_rr(esw, RT305X_ESW_REG_PCR1) &
 		      RT305X_ESW_PCR1_WT_DONE))
 			break;
-		if(time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT))
-		{
+		if (time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT)) {
 			ret = 1;
 			goto out;
 		}
@@ -72,19 +70,18 @@ mii_mgr_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
 		      RT305X_ESW_REG_PCR0);
 
 	t_start = jiffies;
-	while(1)
-	{
+	while (1) {
 		if (ramips_esw_rr(esw, RT305X_ESW_REG_PCR1) &
 		    RT305X_ESW_PCR1_WT_DONE)
 			break;
-		if(time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT))
-		{
+
+		if (time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT)) {
 			ret = 1;
 			break;
 		}
 	}
 out:
-	if(ret)
+	if (ret)
 		printk(KERN_ERR "ramips_eth: MDIO timeout\n");
 	return ret;
 }
@@ -109,20 +106,30 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	ramips_esw_wr(esw, 0x00000000, RT305X_ESW_REG_FPA);
 
 	mii_mgr_write(esw, 0, 31, 0x8000);
-	for(i = 0; i < 5; i++)
-	{
-		mii_mgr_write(esw, i, 0, 0x3100);   //TX10 waveform coefficient
-		mii_mgr_write(esw, i, 26, 0x1601);   //TX10 waveform coefficient
-		mii_mgr_write(esw, i, 29, 0x7058);   //TX100/TX10 AD/DA current bias
-		mii_mgr_write(esw, i, 30, 0x0018);   //TX100 slew rate control
+	for (i = 0; i < 5; i++) {
+		/* TX10 waveform coefficient */
+		mii_mgr_write(esw, i, 0, 0x3100);
+		/* TX10 waveform coefficient */
+		mii_mgr_write(esw, i, 26, 0x1601);
+		/* TX100/TX10 AD/DA current bias */
+		mii_mgr_write(esw, i, 29, 0x7058);
+		/* TX100 slew rate control */
+		mii_mgr_write(esw, i, 30, 0x0018);
 	}
+
 	/* PHY IOT */
-	mii_mgr_write(esw, 0, 31, 0x0);      //select global register
-	mii_mgr_write(esw, 0, 22, 0x052f);   //tune TP_IDL tail and head waveform
-	mii_mgr_write(esw, 0, 17, 0x0fe0);   //set TX10 signal amplitude threshold to minimum
-	mii_mgr_write(esw, 0, 18, 0x40ba);   //set squelch amplitude to higher threshold
-	mii_mgr_write(esw, 0, 14, 0x65);     //longer TP_IDL tail length
-	mii_mgr_write(esw, 0, 31, 0x8000);   //select local register
+	/* select global register */
+	mii_mgr_write(esw, 0, 31, 0x0);
+	/* tune TP_IDL tail and head waveform */
+	mii_mgr_write(esw, 0, 22, 0x052f);
+	/* set TX10 signal amplitude threshold to minimum */
+	mii_mgr_write(esw, 0, 17, 0x0fe0);
+	/* set squelch amplitude to higher threshold */
+	mii_mgr_write(esw, 0, 18, 0x40ba);
+	/* longer TP_IDL tail length */
+	mii_mgr_write(esw, 0, 14, 0x65);
+	/* select local register */
+	mii_mgr_write(esw, 0, 31, 0x8000);
 
 	/* set default vlan */
 	ramips_esw_wr(esw, 0x2001, RT305X_ESW_REG_VLANI(0));
@@ -147,7 +154,7 @@ rt305x_esw_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	esw = kzalloc(sizeof (struct rt305x_esw), GFP_KERNEL);
+	esw = kzalloc(sizeof(struct rt305x_esw), GFP_KERNEL);
 	if (!esw) {
 		dev_err(&pdev->dev, "no memory for private data\n");
 		return -ENOMEM;
