@@ -33,6 +33,9 @@
 
 #ifdef CONFIG_RALINK_RT305X
 #include "ramips_esw.c"
+#else
+static inline int rt305x_esw_init(void) { return 0; }
+static inline void rt305x_esw_exit(void) { }
 #endif
 
 #define phys_to_bus(a)  (a & 0x1FFFFFFF)
@@ -507,9 +510,6 @@ ramips_eth_plat_probe(struct platform_device *plat)
 		goto err_free_dev;
 	}
 
-#ifdef CONFIG_RALINK_RT305X
-	rt305x_esw_init();
-#endif
 	printk(KERN_DEBUG "ramips_eth: loaded\n");
 	return 0;
 
@@ -541,10 +541,23 @@ static struct platform_driver ramips_eth_driver = {
 static int __init
 ramips_eth_init(void)
 {
-	int ret = platform_driver_register(&ramips_eth_driver);
+	int ret;
+
+	ret = rt305x_esw_init();
 	if (ret)
+		return ret;
+
+	ret = platform_driver_register(&ramips_eth_driver);
+	if (ret) {
 		printk(KERN_ERR
 		       "ramips_eth: Error registering platfom driver!\n");
+		goto esw_cleanup;
+	}
+
+	return 0;
+
+esw_cleanup:
+	rt305x_esw_exit();
 	return ret;
 }
 
@@ -552,6 +565,7 @@ static void __exit
 ramips_eth_cleanup(void)
 {
 	platform_driver_unregister(&ramips_eth_driver);
+	rt305x_esw_exit();
 }
 
 module_init(ramips_eth_init);

@@ -1,5 +1,7 @@
-#include <rt305x.h>
+#include <linux/ioport.h>
+
 #include <rt305x_regs.h>
+#include <rt305x_esw_platform.h>
 
 #define GPIO_PRUPOSE           0x60
 #define GPIO_MDIO_BIT          (1<<7)
@@ -10,9 +12,8 @@
 
 struct rt305x_esw {
 	void __iomem *base;
+	struct rt305x_esw_platform_data *pdata;
 };
-
-static struct rt305x_esw rt305x_esw;
 
 static inline void
 ramips_esw_wr(struct rt305x_esw *esw, u32 val, unsigned reg)
@@ -121,15 +122,80 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 }
 
 static int
-rt305x_esw_init(void)
+rt305x_esw_probe(struct platform_device *pdev)
+{
+	struct rt305x_esw_platform_data *pdata;
+	struct rt305x_esw *esw;
+	struct resource *res;
+	int err;
+
+	pdata = pdev->dev.platform_data;
+	if (!pdata)
+		return -EINVAL;
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!res) {
+		dev_err(&pdev->dev, "no memory resource found\n");
+		return -ENOMEM;
+	}
+
+	esw = kzalloc(sizeof (struct rt305x_esw), GFP_KERNEL);
+	if (!esw) {
+		dev_err(&pdev->dev, "no memory for private data\n");
+		return -ENOMEM;
+	}
+
+	esw->base = ioremap(res->start, resource_size(res));
+	if (!esw->base) {
+		dev_err(&pdev->dev, "ioremap failed\n");
+		err = -ENOMEM;
+		goto free_esw;
+	}
+
+	platform_set_drvdata(pdev, esw);
+
+	esw->pdata = pdata;
+	rt305x_esw_hw_init(esw);
+
+	return 0;
+
+free_esw:
+	kfree(esw);
+	return err;
+}
+
+static int
+rt305x_esw_remove(struct platform_device *pdev)
 {
 	struct rt305x_esw *esw;
 
-	esw = &rt305x_esw;
-	esw->base = ioremap_nocache(RT305X_SWITCH_BASE, PAGE_SIZE);
-	if(!esw->base)
-		return -ENOMEM;
+	esw = platform_get_drvdata(pdev);
+	if (esw) {
+		platform_set_drvdata(pdev, NULL);
+		iounmap(esw->base);
+		kfree(esw);
+	}
 
-	rt305x_esw_hw_init(esw);
 	return 0;
+}
+
+static struct platform_driver rt305x_esw_driver = {
+	.probe = rt305x_esw_probe,
+	.remove = rt305x_esw_remove,
+	.driver = {
+		.name = "rt305x-esw",
+		.owner = THIS_MODULE,
+	},
+};
+
+static int __init
+rt305x_esw_init(void)
+{
+	return platform_driver_register(&rt305x_esw_driver);
+}
+
+static void __exit
+rt305x_esw_exit(void)
+{
+	platform_driver_unregister(&rt305x_esw_driver);
 }
