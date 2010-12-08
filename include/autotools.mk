@@ -20,6 +20,7 @@ define autoreconf
 		if [ -x ./autogen.sh ]; then \
 			./autogen.sh || true; \
 		elif [ -f ./configure.ac ] || [ -f ./configure.in ]; then \
+			rm -f ./GNUmakefile; \
 			$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
 				$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS) || true; \
 		fi \
