@@ -23,7 +23,14 @@ define libtool_remove_files
 endef
 
 define autoreconf
-	(cd $(PKG_BUILD_DIR); $(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s $(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS));
+	(cd $(PKG_BUILD_DIR); \
+		if [ -x ./autogen.sh ]; then \
+			./autogen.sh; \
+		elif [ -f ./configure.ac ] || [ -f ./configure.in ]; then \
+			$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
+				$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS); \
+		fi \
+	);
 endef
 
 Hooks/InstallDev/Post += libtool_remove_files
