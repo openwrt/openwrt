@@ -3,10 +3,30 @@
 #include <rt305x_regs.h>
 #include <rt305x_esw_platform.h>
 
-#define RT305X_ESW_PHY_WRITE		(1 << 13)
-#define RT305X_ESW_PHY_TOUT			(5 * HZ)
-#define RT305X_ESW_PHY_CONTROL_0	0xC0
-#define RT305X_ESW_PHY_CONTROL_1	0xC4
+#define RT305X_ESW_REG_FCT0		0x08
+#define RT305X_ESW_REG_PFC1		0x14
+#define RT305X_ESW_REG_PVIDC(_n)	(0x48 + 4 * (_n))
+#define RT305X_ESW_REG_VLANI(_n)	(0x50 + 4 * (_n))
+#define RT305X_ESW_REG_VMSC(_n)		(0x70 + 4 * (_n))
+#define RT305X_ESW_REG_FPA		0x84
+#define RT305X_ESW_REG_SOCPC		0x8c
+#define RT305X_ESW_REG_POC1		0x90
+#define RT305X_ESW_REG_POC2		0x94
+#define RT305X_ESW_REG_POC3		0x98
+#define RT305X_ESW_REG_SGC		0x9c
+#define RT305X_ESW_REG_PCR0		0xc0
+#define RT305X_ESW_REG_PCR1		0xc4
+#define RT305X_ESW_REG_FPA2		0xc8
+#define RT305X_ESW_REG_FCT2		0xcc
+#define RT305X_ESW_REG_SGC2		0xe4
+
+#define RT305X_ESW_PCR0_WT_NWAY_DATA_S	16
+#define RT305X_ESW_PCR0_WT_PHY_CMD	BIT(13)
+#define RT305X_ESW_PCR0_CPU_PHY_REG_S	8
+
+#define RT305X_ESW_PCR1_WT_DONE		BIT(0)
+
+#define RT305X_ESW_PHY_TIMEOUT		(5 * HZ)
 
 struct rt305x_esw {
 	void __iomem *base;
@@ -34,22 +54,30 @@ mii_mgr_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
 
 	while(1)
 	{
-		if(!(ramips_esw_rr(esw, RT305X_ESW_PHY_CONTROL_1) & (0x1 << 0)))
+		if (!(ramips_esw_rr(esw, RT305X_ESW_REG_PCR1) &
+		      RT305X_ESW_PCR1_WT_DONE))
 			break;
-		if(time_after(jiffies, t_start + RT305X_ESW_PHY_TOUT))
+		if(time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT))
 		{
 			ret = 1;
 			goto out;
 		}
 	}
-	ramips_esw_wr(esw, ((write_data & 0xFFFF) << 16) | (phy_register << 8) |
-		(phy_addr) | RT305X_ESW_PHY_WRITE, RT305X_ESW_PHY_CONTROL_0);
+
+	write_data &= 0xffff;
+	ramips_esw_wr(esw,
+		      (write_data << RT305X_ESW_PCR0_WT_NWAY_DATA_S) |
+		      (phy_register << RT305X_ESW_PCR0_CPU_PHY_REG_S) |
+		      (phy_addr) | RT305X_ESW_PCR0_WT_PHY_CMD,
+		      RT305X_ESW_REG_PCR0);
+
 	t_start = jiffies;
 	while(1)
 	{
-		if(ramips_esw_rr(esw, RT305X_ESW_PHY_CONTROL_1) & (0x1 << 0))
+		if (ramips_esw_rr(esw, RT305X_ESW_REG_PCR1) &
+		    RT305X_ESW_PCR1_WT_DONE)
 			break;
-		if(time_after(jiffies, t_start + RT305X_ESW_PHY_TOUT))
+		if(time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT))
 		{
 			ret = 1;
 			break;
@@ -67,18 +95,18 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	int i;
 
 	/* vodoo from original driver */
-	ramips_esw_wr(esw, 0xC8A07850, 0x08);
-	ramips_esw_wr(esw, 0x00000000, 0xe4);
-	ramips_esw_wr(esw, 0x00405555, 0x14);
-	ramips_esw_wr(esw, 0x00002001, 0x50);
-	ramips_esw_wr(esw, 0x00007f7f, 0x90);
-	ramips_esw_wr(esw, 0x00007f3f, 0x98);
-	ramips_esw_wr(esw, 0x00d6500c, 0xcc);
-	ramips_esw_wr(esw, 0x0008a301, 0x9c);
-	ramips_esw_wr(esw, 0x02404040, 0x8c);
-	ramips_esw_wr(esw, 0x00001002, 0x48);
-	ramips_esw_wr(esw, 0x3f502b28, 0xc8);
-	ramips_esw_wr(esw, 0x00000000, 0x84);
+	ramips_esw_wr(esw, 0xC8A07850, RT305X_ESW_REG_FCT0);
+	ramips_esw_wr(esw, 0x00000000, RT305X_ESW_REG_SGC2);
+	ramips_esw_wr(esw, 0x00405555, RT305X_ESW_REG_PFC1);
+	ramips_esw_wr(esw, 0x00002001, RT305X_ESW_REG_VLANI(0));
+	ramips_esw_wr(esw, 0x00007f7f, RT305X_ESW_REG_POC1);
+	ramips_esw_wr(esw, 0x00007f3f, RT305X_ESW_REG_POC3);
+	ramips_esw_wr(esw, 0x00d6500c, RT305X_ESW_REG_FCT2);
+	ramips_esw_wr(esw, 0x0008a301, RT305X_ESW_REG_SGC);
+	ramips_esw_wr(esw, 0x02404040, RT305X_ESW_REG_SOCPC);
+	ramips_esw_wr(esw, 0x00001002, RT305X_ESW_REG_PVIDC(2));
+	ramips_esw_wr(esw, 0x3f502b28, RT305X_ESW_REG_FPA2);
+	ramips_esw_wr(esw, 0x00000000, RT305X_ESW_REG_FPA);
 
 	mii_mgr_write(esw, 0, 31, 0x8000);
 	for(i = 0; i < 5; i++)
@@ -97,8 +125,8 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	mii_mgr_write(esw, 0, 31, 0x8000);   //select local register
 
 	/* set default vlan */
-	ramips_esw_wr(esw, 0x2001, 0x50);
-	ramips_esw_wr(esw, 0x504f, 0x70);
+	ramips_esw_wr(esw, 0x2001, RT305X_ESW_REG_VLANI(0));
+	ramips_esw_wr(esw, 0x504f, RT305X_ESW_REG_VMSC(0));
 }
 
 static int
