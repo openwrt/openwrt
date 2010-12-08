@@ -31,6 +31,17 @@
 #define RT305X_ESW_VLANI_VID_M		0xfff
 #define RT305X_ESW_VLANI_VID_S		12
 
+#define RT305X_ESW_VMSC_MSC_M		0xff
+#define RT305X_ESW_VMSC_MSC_S		8
+
+#define RT305X_ESW_PORT0		0
+#define RT305X_ESW_PORT1		1
+#define RT305X_ESW_PORT2		2
+#define RT305X_ESW_PORT3		3
+#define RT305X_ESW_PORT4		4
+#define RT305X_ESW_PORT5		5
+#define RT305X_ESW_PORT6		6
+
 struct rt305x_esw {
 	void __iomem *base;
 	struct rt305x_esw_platform_data *pdata;
@@ -124,6 +135,18 @@ rt305x_esw_set_vlan_id(struct rt305x_esw *esw, unsigned vlan, unsigned vid)
 }
 
 static void
+rt305x_esw_set_vmsc(struct rt305x_esw *esw, unsigned vlan, unsigned msc)
+{
+	unsigned s;
+
+	s = RT305X_ESW_VMSC_MSC_S * (vlan % 4);
+	rt305x_esw_rmw(esw,
+		       RT305X_ESW_REG_VMSC(vlan / 4),
+		       RT305X_ESW_VMSC_MSC_M << s,
+		       (msc & RT305X_ESW_VMSC_MSC_M) << s);
+}
+
+static void
 rt305x_esw_hw_init(struct rt305x_esw *esw)
 {
 	int i;
@@ -170,7 +193,14 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	/* set default vlan */
 	rt305x_esw_set_vlan_id(esw, 0, 1);
 	rt305x_esw_set_vlan_id(esw, 1, 2);
-	rt305x_esw_wr(esw, 0x504f, RT305X_ESW_REG_VMSC(0));
+	rt305x_esw_set_vmsc(esw, 0,
+			    (BIT(RT305X_ESW_PORT0) | BIT(RT305X_ESW_PORT1) |
+			     BIT(RT305X_ESW_PORT2) | BIT(RT305X_ESW_PORT3) |
+			     BIT(RT305X_ESW_PORT6)));
+	rt305x_esw_set_vmsc(esw, 1,
+			    (BIT(RT305X_ESW_PORT4) | BIT(RT305X_ESW_PORT6)));
+	rt305x_esw_set_vmsc(esw, 2, 0);
+	rt305x_esw_set_vmsc(esw, 3, 0);
 }
 
 static int
