@@ -308,8 +308,17 @@ $(call KernelPackage/md/Depends,)
 	$(LINUX_DIR)/crypto/async_tx/async_xor.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/async_tx/async_pq.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/crypto/async_tx/async_raid6_recov.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/md/raid6_pq.$(LINUX_KMOD_SUFFIX) \
 	$(LINUX_DIR)/drivers/md/raid456.$(LINUX_KMOD_SUFFIX)
+  # Additional files with kernel-dependent locations or presence
+  # For Linux >= 2.6.36
+  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.36)), 1)
+    FILES+= \
+	$(LINUX_DIR)/lib/raid6/raid6_pq.$(LINUX_KMOD_SUFFIX)
+  # For Linux < 2.6.36
+  else
+    FILES+= \
+	$(LINUX_DIR)/drivers/md/raid6_pq.$(LINUX_KMOD_SUFFIX)
+  endif
   AUTOLOAD:=$(call AutoLoad,28, xor async_tx async_memcpy async_xor raid6_pq async_pq async_raid6_recov raid456)
 endef
 
