@@ -1,0 +1,67 @@
+From 1f674977c0f3ea1e67deea93fa8f4e795cc869ad Mon Sep 17 00:00:00 2001
+From: Timo Teräs <timo.teras@iki.fi>
+Date: Tue, 07 Dec 2010 09:27:29 +0000
+Subject: nptl: fix Unwind_Resume PLT calls
+
+My change a49b3a18e463cbe8c94c41501e386e7f4c61609e fixed two
+Unwind_Resume calls to go via PLT to avoid text relocations for PIC
+builds. However, it looks the reason for upstream not using PLT calls
+is that ebx gets clobbered. So we need to reload it.
+
+Signed-off-by: Timo Teräs <timo.teras@iki.fi>
+Signed-off-by: Austin Foxley <austinf@cetoncorp.com>
+---
+diff --git a/libpthread/nptl/sysdeps/unix/sysv/linux/i386/i486/pthread_cond_timedwait.S b/libpthread/nptl/sysdeps/unix/sysv/linux/i386/i486/pthread_cond_timedwait.S
+index ac7983c..3b61367 100644
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/i386/i486/pthread_cond_timedwait.S
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/i386/i486/pthread_cond_timedwait.S
+@@ -648,6 +648,10 @@ __condvar_tw_cleanup:
+ 
+ 	movl	%esi, (%esp)
+ .LcallUR:
++#ifdef __PIC__
++	call	__i686.get_pc_thunk.bx
++	addl	$_GLOBAL_OFFSET_TABLE_, %ebx
++#endif
+ 	call	_Unwind_Resume@PLT
+ 	hlt
+ .LENDCODE:
+diff --git a/libpthread/nptl/sysdeps/unix/sysv/linux/i386/i486/pthread_cond_wait.S b/libpthread/nptl/sysdeps/unix/sysv/linux/i386/i486/pthread_cond_wait.S
+index abc963f..a1294c5 100644
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/i386/i486/pthread_cond_wait.S
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/i386/i486/pthread_cond_wait.S
+@@ -535,6 +535,10 @@ __condvar_w_cleanup:
+ 
+ 	movl	%esi, (%esp)
+ .LcallUR:
++#ifdef __PIC__
++	call	__i686.get_pc_thunk.bx
++	addl	$_GLOBAL_OFFSET_TABLE_, %ebx
++#endif
+ 	call	_Unwind_Resume@PLT
+ 	hlt
+ .LENDCODE:
+@@ -569,14 +573,14 @@ __condvar_w_cleanup:
+ .Lcstend:
+ 
+ #ifdef __PIC__
+-	.section .gnu.linkonce.t.__i686.get_pc_thunk.cx,"ax",@progbits
+-	.globl	__i686.get_pc_thunk.cx
+-	.hidden	__i686.get_pc_thunk.cx
+-	.type	__i686.get_pc_thunk.cx,@function
+-__i686.get_pc_thunk.cx:
+-	movl (%esp), %ecx;
++	.section .gnu.linkonce.t.__i686.get_pc_thunk.bx,"ax",@progbits
++	.globl	__i686.get_pc_thunk.bx
++	.hidden	__i686.get_pc_thunk.bx
++	.type	__i686.get_pc_thunk.bx,@function
++__i686.get_pc_thunk.bx:
++	movl (%esp), %ebx;
+ 	ret
+-	.size	__i686.get_pc_thunk.cx,.-__i686.get_pc_thunk.cx
++	.size	__i686.get_pc_thunk.bx,.-__i686.get_pc_thunk.bx
+ #endif
+ 
+ #ifdef SHARED
+--
+cgit v0.8.2.1
