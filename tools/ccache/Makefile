@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=ccache
-PKG_VERSION:=2.4
+PKG_VERSION:=3.1.3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://samba.org/ftp/ccache/
-PKG_MD5SUM:=73c1ed1e767c1752dd0f548ec1e66ce7
+PKG_MD5SUM:=b952d75e9ca37209d608ea58d84135cd
 PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/host-build.mk
