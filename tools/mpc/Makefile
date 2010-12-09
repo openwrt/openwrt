@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mpc
-PKG_VERSION:=0.8.1
+PKG_VERSION:=0.8.2
 
 PKG_SOURCE_URL:=http://www.multiprecision.org/mpc/download/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=5b34aa804d514cc295414a963aedb6bf
+PKG_MD5SUM:=e98267ebd5648a39f881d66797122fb6
 
 include $(INCLUDE_DIR)/host-build.mk
 
