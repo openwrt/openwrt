@@ -1,24 +1,26 @@
-diff -urN mpfr-2.4.1/Makefile.am mpfr-2.4.1.new/Makefile.am
---- mpfr-2.4.1/Makefile.am	2009-02-20 10:43:17.000000000 +0100
-+++ mpfr-2.4.1.new/Makefile.am	2009-08-20 14:59:00.000000000 +0200
-@@ -1,7 +1,7 @@
+Index: mpfr-3.0.0/Makefile.am
+===================================================================
+--- mpfr-3.0.0.orig/Makefile.am
++++ mpfr-3.0.0/Makefile.am
+@@ -12,7 +12,7 @@
  AUTOMAKE_OPTIONS = gnu ansi2knr
  ACLOCAL_AMFLAGS = -I m4
  
 -SUBDIRS = tests
 +SUBDIRS =
  
- nobase_dist_doc_DATA = AUTHORS BUGS COPYING COPYING.LIB FAQ.html NEWS TODO \
-   examples/ReadMe examples/divworst.c examples/rndo-add.c examples/sample.c
-diff -urN mpfr-2.4.1/Makefile.in mpfr-2.4.1.new/Makefile.in
---- mpfr-2.4.1/Makefile.in	2009-02-25 17:18:06.000000000 +0100
-+++ mpfr-2.4.1.new/Makefile.in	2009-08-20 14:58:32.000000000 +0200
-@@ -344,7 +344,7 @@
+ nobase_dist_doc_DATA = AUTHORS BUGS COPYING COPYING.LESSER FAQ.html NEWS TODO \
+   examples/ReadMe examples/divworst.c examples/rndo-add.c examples/sample.c \
+Index: mpfr-3.0.0/Makefile.in
+===================================================================
+--- mpfr-3.0.0.orig/Makefile.in
++++ mpfr-3.0.0/Makefile.in
+@@ -357,7 +357,7 @@ top_builddir = @top_builddir@
  top_srcdir = @top_srcdir@
  AUTOMAKE_OPTIONS = gnu ansi2knr
  ACLOCAL_AMFLAGS = -I m4
 -SUBDIRS = tests
 +SUBDIRS =
- nobase_dist_doc_DATA = AUTHORS BUGS COPYING COPYING.LIB FAQ.html NEWS TODO \
-   examples/ReadMe examples/divworst.c examples/rndo-add.c examples/sample.c
- 
+ nobase_dist_doc_DATA = AUTHORS BUGS COPYING COPYING.LESSER FAQ.html NEWS TODO \
+   examples/ReadMe examples/divworst.c examples/rndo-add.c examples/sample.c \
+   examples/version.c

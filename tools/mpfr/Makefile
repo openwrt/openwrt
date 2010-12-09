@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mpfr
-PKG_VERSION:=2.4.2
+PKG_VERSION:=3.0.0
 
 PKG_SOURCE_URL:=http://www.mpfr.org/mpfr-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=89e59fe665e2b3ad44a6789f40b059a0
+PKG_MD5SUM:=f45bac3584922c8004a10060ab1a8f9f
 
 include $(INCLUDE_DIR)/host-build.mk
 
