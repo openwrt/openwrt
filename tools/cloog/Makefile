@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cloog-ppl
-PKG_VERSION:=0.15.9
+PKG_VERSION:=0.15.10
 
 PKG_SOURCE_URL:=ftp://gcc.gnu.org/pub/gcc/infrastructure
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=806e001d1b1a6b130069ff6274900af5
+PKG_MD5SUM:=04aa756179b6d850d9ffa50f61b91895
 
 include $(INCLUDE_DIR)/host-build.mk
 
