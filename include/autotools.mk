@@ -22,6 +22,7 @@ define autoreconf
 			./autogen.sh || true; \
 		elif [ -f ./configure.ac ] || [ -f ./configure.in ]; then \
 			[ -f ./aclocal.m4 ] && [ ! -f ./acinclude.m4 ] && mv aclocal.m4 acinclude.m4; \
+			[ -d ./autom4te.cache ] && rm -rf autom4te.cache; \
 			$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
 				-B $(STAGING_DIR)/host/share/aclocal \
 				$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS) || true; \
