@@ -373,6 +373,29 @@ define Image/Build/WNDR3700
 		-o $(call imgname,$(1),$(2))-factory.img
 endef
 
+define Image/Build/ZyXEL
+	$(call PatchKernelLzma,$(2),$(3))
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 917504 ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 2752512 ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
+			0x80060000 \
+			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
+		( \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
+			dd if=$(KDIR)/root.$(1); \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+		$(STAGING_DIR_HOST)/bin/mkzynfw \
+			-B $(4) \
+			-b $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin \
+			-r $(call imgname,$(1),$(2))-sysupgrade.bin:0x10000 \
+			-o $(call imgname,$(1),$(2))-factory.bin; \
+	fi; fi
+endef
+
 define Image/Build/WNDR3700/initramfs
 	$(call PatchKernelLzma,$(2),$(3) $(wndr3700_mtdlayout))
 	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
@@ -541,6 +564,10 @@ define Image/Build/Profile/MZKW300NH
 	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w300nh,board=MZK-W300NH)
 endef
 
+define Image/Build/Profile/NBG_460N_550N_550NH
+	$(call Image/Build/Template/$(fs_64k)/$(1),ZyXEL,nbg460n_550n_550nh,board=NBG460N,NBG-460N)
+endef
+
 define Image/Build/Profile/TLMR3420V1
 	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3420-v1,board=TL-MR3420,TL-MR3420v1)
 endef
@@ -629,6 +656,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/JWAP003,$(1))
 	$(call Image/Build/Profile/MZKW04NU,$(1))
 	$(call Image/Build/Profile/MZKW300NH,$(1))
+	$(call Image/Build/Profile/NBG_460N_550N_550NH,$(1))
 	$(call Image/Build/Profile/PB42,$(1))
 	$(call Image/Build/Profile/PB44,$(1))
 	$(call Image/Build/Profile/PB92,$(1))

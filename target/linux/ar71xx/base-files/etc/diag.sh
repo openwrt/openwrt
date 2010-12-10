@@ -66,6 +66,9 @@ get_status_led() {
 	mzk-w300nh)
 		status_led="mzk-w300nh:green:status"
 		;;
+	nbg460n_550n_550nh)
+		status_led="nbg460n:green:power"
+		;;
 	pb44)
 		status_led="pb44:amber:jump1"
 		;;
