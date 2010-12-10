@@ -34,6 +34,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
+	"bcm63xx/CT536_CT5621 "*)
+		status_led="power"
+		brcm63xx_has_reset_button="true"
+		ifname=eth0
+		;;
 	"bcm63xx/96358GW "* | "bcm63xx/SPW500V "*)
 		status_led="power:green"
 		brcm63xx_has_reset_button="true"

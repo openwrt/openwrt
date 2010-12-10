@@ -128,6 +128,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-bc221,,--layoutver 5)
 	$(call Image/Build/CFE,$(1),6338GW,6338,6338GW-generic,,)
 	$(call Image/Build/CFE,$(1),6338W,6338,6338W-generic,,)
+	$(call Image/Build/CFE,$(1),96348GW-11,6348,96348GW-11-gen)
+	$(call Image/Build/CFE,$(1),96348GW-10,6348,96348GW-10-gen)
 
 	# BT Voyager V210_BTR
 	$(call Image/Build/CFE,$(1),V210_BB,6348,BTV210_BTR,,--layoutver 5)
@@ -152,7 +154,7 @@ define Image/Build
 	# Neufbox4
 	$(call Image/Build/CFE,$(1),96358VW,6358,NEUFBOX4,OpenWRT-$(REVISION))
 	# Comtrend 536, 5621
-	$(call Image/Build/CFE,$(1),96348GW-11,6348,CT536_CT5621)
+	$(call Image/Build/CFEFIXUP,$(1),96348GW-11,6348,CT536_CT5621)
 	# Davolink DV201AMR
 	$(call Image/Build/CFEOLD,$(1),DV201AMR,6348)
 	# USR 9108
