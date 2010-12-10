@@ -286,13 +286,15 @@
  static void ath9k_deinit_softc(struct ath_softc *sc);
  
  /*
-@@ -750,6 +764,10 @@ int ath9k_init_device(u16 devid, struct 
+@@ -750,6 +764,12 @@ int ath9k_init_device(u16 devid, struct 
  
  	ath9k_init_txpower_limits(sc);
  
++#ifdef CONFIG_MAC80211_LEDS
 +	/* must be initialized before ieee80211_register_hw */
 +	sc->led_cdev.default_trigger = ieee80211_create_tpt_led_trigger(sc->hw,
 +		ath9k_tpt_blink, ARRAY_SIZE(ath9k_tpt_blink));
++#endif
 +
  	/* Register with mac80211 */
  	error = ieee80211_register_hw(hw);
