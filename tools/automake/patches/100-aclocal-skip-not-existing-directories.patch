@@ -1,0 +1,12 @@
+--- a/aclocal.in
++++ b/aclocal.in
+@@ -311,7 +311,8 @@ sub scan_m4_dirs ($@)
+     {
+       if (! opendir (DIR, $m4dir))
+ 	{
+-	  fatal "couldn't open directory `$m4dir': $!";
++	  msg ('override', "warning: skipping not existing directory `$m4dir'");
++	  next;
+ 	}
+ 
+       # We reverse the directory contents so that foo2.m4 gets
