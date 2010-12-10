@@ -57,6 +57,9 @@ get_status_led() {
 	eap7660d)
 		status_led="eap7660d:green:ds4"
 		;;
+	ja76pf)
+		status_led="ja76pf:green:led1"
+		;;
 	ls-sr71)
 		status_led="ubnt:green:d22"
 		;;

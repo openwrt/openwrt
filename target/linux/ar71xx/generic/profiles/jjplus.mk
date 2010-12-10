@@ -5,6 +5,17 @@
 # See /LICENSE for more information.
 #
 
+define Profile/JA76PF
+	NAME:=jjPlus JA76PF
+	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-hwmon-core kmod-i2c-core kmod-hwmon-lm75
+endef
+
+define Profile/JA76PF/Description
+	Package set optimized for the jjPlus JA76PF board.
+endef
+
+$(eval $(call Profile,JA76PF))
+
 define Profile/JWAP003
 	NAME:=jjPlus JWAP0003
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
