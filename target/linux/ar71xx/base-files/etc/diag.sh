@@ -81,8 +81,8 @@ get_status_led() {
 	tew-632brp)
 		status_led="tew-632brp:green:status"
 		;;
-	tl-mr3420)
-		status_led="tl-mr3420:green:system"
+	tl-mr3220 | tl-mr3420)
+		status_led="tl-mr3x20:green:system"
 		;;
 	tl-wa901nd)
 		status_led="tl-wa901nd:green:system"

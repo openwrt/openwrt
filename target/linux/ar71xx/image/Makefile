@@ -570,6 +570,10 @@ define Image/Build/Profile/NBG_460N_550N_550NH
 	$(call Image/Build/Template/$(fs_64k)/$(1),ZyXEL,nbg460n_550n_550nh,board=NBG460N,NBG-460N)
 endef
 
+define Image/Build/Profile/TLMR3220V1
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3220-v1,board=TL-MR3220,TL-MR3220v1)
+endef
+
 define Image/Build/Profile/TLMR3420V1
 	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3420-v1,board=TL-MR3420,TL-MR3420v1)
 endef
@@ -664,6 +668,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/PB92,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
+	$(call Image/Build/Profile/TLMR3220V1,$(1))
 	$(call Image/Build/Profile/TLMR3420V1,$(1))
 	$(call Image/Build/Profile/TLWA901NDV1,$(1))
 	$(call Image/Build/Profile/TLWR741NDV1,$(1))

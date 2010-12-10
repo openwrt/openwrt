@@ -5,6 +5,17 @@
 # See /LICENSE for more information.
 #
 
+define Profile/TLMR3220V1
+	NAME:=TP-LINK TL-MR3220 v1
+	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2
+endef
+
+define Profile/TLMR3220V1/Description
+	Package set optimized for the TP-LINK TL-MR3220 v1.
+endef
+
+$(eval $(call Profile,TLMR3220V1))
+
 define Profile/TLMR3420V1
 	NAME:=TP-LINK TL-MR3420 v1
 	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2

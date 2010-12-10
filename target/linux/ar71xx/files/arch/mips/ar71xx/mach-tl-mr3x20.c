@@ -1,5 +1,5 @@
 /*
- *  TP-LINK TL-MR3420 board support
+ *  TP-LINK TL-MR3220/3420 board support
  *
  *  Copyright (C) 2010 Gabor Juhos <juhosg@openwrt.org>
  *
@@ -22,19 +22,19 @@
 #include "dev-leds-gpio.h"
 #include "dev-usb.h"
 
-#define TL_MR3420_GPIO_LED_QSS		0
-#define TL_MR3420_GPIO_LED_SYSTEM	1
-#define TL_MR3420_GPIO_LED_3G		8
+#define TL_MR3X20_GPIO_LED_QSS		0
+#define TL_MR3X20_GPIO_LED_SYSTEM	1
+#define TL_MR3X20_GPIO_LED_3G		8
 
-#define TL_MR3420_GPIO_BTN_RESET	11
-#define TL_MR3420_GPIO_BTN_QSS		12
+#define TL_MR3X20_GPIO_BTN_RESET	11
+#define TL_MR3X20_GPIO_BTN_QSS		12
 
-#define TL_MR3420_GPIO_USB_POWER	6
+#define TL_MR3X20_GPIO_USB_POWER	6
 
-#define TL_MR3420_BUTTONS_POLL_INTERVAL	20
+#define TL_MR3X20_BUTTONS_POLL_INTERVAL	20
 
 #ifdef CONFIG_MTD_PARTITIONS
-static struct mtd_partition tl_mr3420_partitions[] = {
+static struct mtd_partition tl_mr3x20_partitions[] = {
 	{
 		.name		= "u-boot",
 		.offset		= 0,
@@ -59,68 +59,68 @@ static struct mtd_partition tl_mr3420_partitions[] = {
 		.size		= 0x3d0000,
 	}
 };
-#define tl_mr3420_num_partitions	ARRAY_SIZE(tl_mr3420_partitions)
+#define tl_mr3x20_num_partitions	ARRAY_SIZE(tl_mr3x20_partitions)
 #else
-#define tl_mr3420_partitions		NULL
-#define tl_mr3420_num_partitions	0
+#define tl_mr3x20_partitions		NULL
+#define tl_mr3x20_num_partitions	0
 #endif /* CONFIG_MTD_PARTITIONS */
 
-static struct flash_platform_data tl_mr3420_flash_data = {
-	.parts		= tl_mr3420_partitions,
-	.nr_parts	= tl_mr3420_num_partitions,
+static struct flash_platform_data tl_mr3x20_flash_data = {
+	.parts		= tl_mr3x20_partitions,
+	.nr_parts	= tl_mr3x20_num_partitions,
 };
 
-static struct gpio_led tl_mr3420_leds_gpio[] __initdata = {
+static struct gpio_led tl_mr3x20_leds_gpio[] __initdata = {
 	{
-		.name		= "tl-mr3420:green:system",
-		.gpio		= TL_MR3420_GPIO_LED_SYSTEM,
+		.name		= "tl-mr3x20:green:system",
+		.gpio		= TL_MR3X20_GPIO_LED_SYSTEM,
 		.active_low	= 1,
 	}, {
-		.name		= "tl-mr3420:green:qss",
-		.gpio		= TL_MR3420_GPIO_LED_QSS,
+		.name		= "tl-mr3x20:green:qss",
+		.gpio		= TL_MR3X20_GPIO_LED_QSS,
 		.active_low	= 1,
 	}, {
-		.name		= "tl-mr3420:green:3g",
-		.gpio		= TL_MR3420_GPIO_LED_3G,
+		.name		= "tl-mr3x20:green:3g",
+		.gpio		= TL_MR3X20_GPIO_LED_3G,
 		.active_low	= 1,
 	}
 };
 
-static struct gpio_button tl_mr3420_gpio_buttons[] __initdata = {
+static struct gpio_button tl_mr3x20_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
 		.threshold	= 3,
-		.gpio		= TL_MR3420_GPIO_BTN_RESET,
+		.gpio		= TL_MR3X20_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "qss",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
 		.threshold	= 3,
-		.gpio		= TL_MR3420_GPIO_BTN_QSS,
+		.gpio		= TL_MR3X20_GPIO_BTN_QSS,
 		.active_low	= 1,
 	}
 };
 
-static void __init tl_mr3420_setup(void)
+static void __init tl_mr3x20_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	/* enable power for the USB port */
-	gpio_request(TL_MR3420_GPIO_USB_POWER, "USB power");
-	gpio_direction_output(TL_MR3420_GPIO_USB_POWER, 1);
+	gpio_request(TL_MR3X20_GPIO_USB_POWER, "USB power");
+	gpio_direction_output(TL_MR3X20_GPIO_USB_POWER, 1);
 
-	ar71xx_add_device_m25p80(&tl_mr3420_flash_data);
+	ar71xx_add_device_m25p80(&tl_mr3x20_flash_data);
 
-	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_mr3420_leds_gpio),
-					tl_mr3420_leds_gpio);
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_mr3x20_leds_gpio),
+					tl_mr3x20_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, TL_MR3420_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(tl_mr3420_gpio_buttons),
-					tl_mr3420_gpio_buttons);
+	ar71xx_add_device_gpio_buttons(-1, TL_MR3X20_BUTTONS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_mr3x20_gpio_buttons),
+					tl_mr3x20_gpio_buttons);
 
 	ar71xx_eth1_data.has_ar7240_switch = 1;
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
@@ -145,4 +145,7 @@ static void __init tl_mr3420_setup(void)
 	ap91_pci_init(ee, mac);
 }
 MIPS_MACHINE(AR71XX_MACH_TL_MR3420, "TL-MR3420", "TP-LINK TL-MR3420",
-	     tl_mr3420_setup);
+	     tl_mr3x20_setup);
+
+MIPS_MACHINE(AR71XX_MACH_TL_MR3220, "TL-MR3220", "TP-LINK TL-MR3220",
+	     tl_mr3x20_setup);
