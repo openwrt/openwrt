@@ -1,0 +1,28 @@
+diff -ur u-boot-2010.03/cpu/mips/Makefile u-boot-nbg/cpu/mips/Makefile
+--- u-boot-2010.03/cpu/mips/Makefile	2010-03-31 23:54:39.000000000 +0200
++++ u-boot-nbg/cpu/mips/Makefile	2010-04-15 18:58:01.000000000 +0200
+@@ -33,6 +33,7 @@
+ COBJS-$(CONFIG_INCA_IP)	+= asc_serial.o incaip_clock.o
+ COBJS-$(CONFIG_PURPLE)	+= asc_serial.o
+ COBJS-$(CONFIG_SOC_AU1X00) += au1x00_eth.o au1x00_serial.o au1x00_usb_ohci.o
++COBJS-$(CONFIG_AR71XX)	+= ar71xx_serial.o
+ 
+ SRCS	:= $(START:.o=.S) $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
+ OBJS	:= $(addprefix $(obj),$(SOBJS-y) $(COBJS-y))
+diff -ur u-boot-2010.03/Makefile u-boot-nbg/Makefile
+--- u-boot-2010.03/Makefile	2010-03-31 23:54:39.000000000 +0200
++++ u-boot-nbg/Makefile	2010-04-11 23:31:29.000000000 +0200
+@@ -3455,6 +3455,13 @@
+ 	@$(MKCONFIG) -a qemu-mips mips mips qemu-mips
+ 
+ #########################################################################
++## MIPS32 AR71XX (24K)
++#########################################################################
++
++nbg460n_550n_550nh_config : 	unconfig
++	@$(MKCONFIG) -a nbg460n mips mips nbg460n zyxel
++
++#########################################################################
+ ## MIPS64 5Kc
+ #########################################################################
+ 
