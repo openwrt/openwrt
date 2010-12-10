@@ -373,7 +373,8 @@ define Image/Build/WNDR3700
 		-o $(call imgname,$(1),$(2))-factory.img
 endef
 
-define Image/Build/ZyXEL
+ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
+  define Image/Build/ZyXEL
 	$(call PatchKernelLzma,$(2),$(3))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 917504 ]; then \
 		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
@@ -394,7 +395,8 @@ define Image/Build/ZyXEL
 			-r $(call imgname,$(1),$(2))-sysupgrade.bin:0x10000 \
 			-o $(call imgname,$(1),$(2))-factory.bin; \
 	fi; fi
-endef
+  endef
+endif
 
 define Image/Build/WNDR3700/initramfs
 	$(call PatchKernelLzma,$(2),$(3) $(wndr3700_mtdlayout))
