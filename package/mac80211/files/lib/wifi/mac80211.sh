@@ -317,12 +317,11 @@ enable_mac80211() {
 			[ -n "$fixed" -a -n "$channel" ] && iw dev "$ifname" set channel "$channel"
 		fi
 
-		# txpower is not yet implemented in iw
 		config_get vif_txpower "$vif" txpower
 		# use vif_txpower (from wifi-iface) to override txpower (from
 		# wifi-device) if the latter doesn't exist
 		txpower="${txpower:-$vif_txpower}"
-		[ -z "$txpower" ] || iwconfig "$ifname" txpower "${txpower%%.*}"
+		[ -z "$txpower" ] || iw dev "$ifname" set txpower fixed "${txpower%%.*}00"
 	done
 
 	local start_hostapd=
