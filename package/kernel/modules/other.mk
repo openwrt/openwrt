@@ -136,7 +136,7 @@ define KernelPackage/libcrc32c
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CRC32 library support
   KCONFIG:=CONFIG_LIBCRC32C
-  DEPENDS:=+kmod-crypto-core +kmod-crypto-misc 
+  DEPENDS:=+kmod-crypto-core +kmod-crypto-misc
   FILES:=$(LINUX_DIR)/lib/libcrc32c.ko
   AUTOLOAD:=$(call AutoLoad,20,crc32c libcrc32c,1)
 endef
@@ -564,7 +564,7 @@ endef
 
 define KernelPackage/ledtrig-netfilter/description
  Kernel module to flash LED when a particular packets passing through your machine.
- 
+
  For example to create an LED trigger for incoming SSH traffic:
     iptables -A INPUT -p tcp --dport 22 -j LED --led-trigger-id ssh --led-delay 1000
  Then attach the new trigger to an LED on your system:
@@ -784,7 +784,6 @@ endef
 
 $(eval $(call KernelPackage,wdt-scx200))
 
-
 define KernelPackage/pwm
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PWM generic API
@@ -814,3 +813,34 @@ define KernelPackage/pwm-gpio/description
 endef
 
 $(eval $(call KernelPackage,pwm-gpio))
+
+define KernelPackage/rtc-core
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Real Time Clock class support
+  DEPENDS:=@LINUX_2_6
+  KCONFIG:=CONFIG_RTC_CLASS
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-core.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,29,rtc-core)
+endef
+
+define KernelPackage/rtc-core/description
+ Generic RTC class support.
+endef
+
+$(eval $(call KernelPackage,rtc-core))
+
+define KernelPackage/rtc-pcf8563
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Philips PCF8563/Epson RTC8564 RTC support
+  DEPENDS:=+kmod-rtc-core
+  KCONFIG:=CONFIG_RTC_DRV_PCF8563
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf8563.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,30,rtc-pcf8563)
+endef
+
+define KernelPackage/rtc-pcf8563/description
+ Kernel module for Philips PCF8563 RTC chip.
+ The Epson RTC8564 should work as well.
+endef
+
+$(eval $(call KernelPackage,rtc-pcf8563))
