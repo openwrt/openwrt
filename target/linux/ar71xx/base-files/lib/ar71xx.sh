@@ -31,6 +31,9 @@ ar71xx_board_name() {
 	*EAP7660D)
 		name="eap7660d"
 		;;
+	*JA76PF)
+		name="ja76pf"
+		;;
 	*"Bullet M")
 		name="bullet-m"
 		;;

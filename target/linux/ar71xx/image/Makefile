@@ -495,6 +495,10 @@ define Image/Build/Profile/EAP7660D
 	$(call Image/Build/Template/$(fs_128k)/$(1),PB4X,eap7660d,board=EAP7660D)
 endef
 
+define Image/Build/Profile/JA76PF
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,ja76pf,board=JA76PF)
+endef
+
 define Image/Build/Profile/JWAP003
 	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,jwap003,board=JWAP003)
 endef
@@ -659,6 +663,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR825B1,$(1))
 	$(call Image/Build/Profile/EAP7660D,$(1))
 	$(call Image/Build/Profile/FR54RTR,$(1))
+	$(call Image/Build/Profile/JA76PF,$(1))
 	$(call Image/Build/Profile/JWAP003,$(1))
 	$(call Image/Build/Profile/MZKW04NU,$(1))
 	$(call Image/Build/Profile/MZKW300NH,$(1))
