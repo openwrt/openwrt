@@ -100,6 +100,9 @@ ar71xx_board_name() {
 	*"DIR-615 rev. C1")
 		name="dir-615-c1"
 		;;
+	*TL-MR3220)
+		name="tl-mr3220"
+		;;
 	*TL-MR3420)
 		name="tl-mr3420"
 		;;
