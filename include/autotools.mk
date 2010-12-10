@@ -45,3 +45,8 @@ ifneq ($(filter libtool-ucxx,$(PKG_FIXUP)),)
  endif
 endif
 
+ifneq ($(filter autoreconf,$(PKG_FIXUP)),)
+  ifeq ($(filter autoreconf,$(Hooks/Configure/Pre)),)
+    Hooks/Configure/Pre += autoreconf
+  endif
+endif
