@@ -24,6 +24,7 @@ define Host/Install
 		install
 	mv $(STAGING_DIR_HOST)/bin/pkg-config $(STAGING_DIR_HOST)/bin/pkg-config.real
 	$(INSTALL_BIN) ./files/pkg-config $(STAGING_DIR_HOST)/bin/pkg-config
+	$(INSTALL_DATA) $(HOST_BUILD_DIR)/pkg.m4 $(STAGING_DIR)/host/share/aclocal/
 endef
 
 define Host/Clean
