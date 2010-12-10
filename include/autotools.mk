@@ -6,6 +6,7 @@
 #
 
 PKG_LIBTOOL_PATHS?=$(CONFIGURE_PATH)
+PKG_REMOVE_FILES?=aclocal.m4
 
 autoconf_bool = $(patsubst %,$(if $($(1)),--enable,--disable)-%,$(2))
 
