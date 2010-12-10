@@ -1,12 +1,15 @@
 --- a/aclocal.in
 +++ b/aclocal.in
-@@ -311,7 +311,8 @@ sub scan_m4_dirs ($@)
+@@ -309,6 +309,12 @@ sub scan_m4_dirs ($@)
+ 
+   foreach my $m4dir (@dirlist)
      {
++      if (! -d $m4dir)
++      {
++        msg ('override', "warning: skipping not existing directory `$m4dir'");
++        next;
++      }
++
        if (! opendir (DIR, $m4dir))
  	{
--	  fatal "couldn't open directory `$m4dir': $!";
-+	  msg ('override', "warning: skipping not existing directory `$m4dir'");
-+	  next;
- 	}
- 
-       # We reverse the directory contents so that foo2.m4 gets
+ 	  fatal "couldn't open directory `$m4dir': $!";
