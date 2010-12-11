@@ -9,7 +9,7 @@
  
  # enable mesh networking too
  CONFIG_MAC80211_MESH=y
-@@ -240,7 +240,7 @@ CONFIG_B43_PCI_AUTOSELECT=y
+@@ -242,7 +242,7 @@ CONFIG_B43_PCI_AUTOSELECT=y
  ifdef CONFIG_PCMCIA
  CONFIG_B43_PCMCIA=y
  endif #CONFIG_PCMCIA
@@ -18,7 +18,7 @@
  CONFIG_B43_PHY_LP=y
  CONFIG_B43_NPHY=y
  # CONFIG_B43_FORCE_PIO=y
-@@ -249,7 +249,7 @@ CONFIG_B43_NPHY=y
+@@ -251,7 +251,7 @@ CONFIG_B43_NPHY=y
  CONFIG_B43LEGACY=m
  CONFIG_B43LEGACY_HWRNG=y
  CONFIG_B43LEGACY_PCI_AUTOSELECT=y
@@ -27,7 +27,7 @@
  # CONFIG_B43LEGACY_DEBUG=y
  CONFIG_B43LEGACY_DMA=y
  CONFIG_B43LEGACY_PIO=y
-@@ -559,7 +559,7 @@ endif
+@@ -561,7 +561,7 @@ endif
  
  # p54
  CONFIG_P54_COMMON=m
@@ -38,7 +38,7 @@
  CONFIG_ATH_COMMON=m
 --- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
 +++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
-@@ -863,6 +863,7 @@ static void ath9k_led_brightness_work(st
+@@ -864,6 +864,7 @@ static void ath9k_led_brightness_work(st
  	}
  }
  
@@ -46,7 +46,7 @@
  static void ath9k_led_brightness(struct led_classdev *led_cdev,
  				 enum led_brightness brightness)
  {
-@@ -874,6 +875,7 @@ static void ath9k_led_brightness(struct 
+@@ -875,6 +876,7 @@ static void ath9k_led_brightness(struct 
  		ieee80211_queue_delayed_work(priv->hw,
  					     &led->brightness_work, 0);
  }
@@ -54,7 +54,7 @@
  
  static void ath9k_led_stop_brightness(struct ath9k_htc_priv *priv)
  {
-@@ -886,6 +888,7 @@ static void ath9k_led_stop_brightness(st
+@@ -887,6 +889,7 @@ static void ath9k_led_stop_brightness(st
  static int ath9k_register_led(struct ath9k_htc_priv *priv, struct ath_led *led,
  			      char *trigger)
  {
@@ -62,7 +62,7 @@
  	int ret;
  
  	led->priv = priv;
-@@ -903,14 +906,19 @@ static int ath9k_register_led(struct ath
+@@ -904,14 +907,19 @@ static int ath9k_register_led(struct ath
  	INIT_DELAYED_WORK(&led->brightness_work, ath9k_led_brightness_work);
  
  	return ret;

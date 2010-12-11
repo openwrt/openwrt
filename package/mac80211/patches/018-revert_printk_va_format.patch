@@ -1,27 +1,3 @@
---- a/drivers/net/wireless/ath/debug.c
-+++ b/drivers/net/wireless/ath/debug.c
-@@ -19,19 +19,14 @@
- 
- void ath_print(struct ath_common *common, int dbg_mask, const char *fmt, ...)
- {
--	struct va_format vaf;
- 	va_list args;
- 
- 	if (likely(!(common->debug_mask & dbg_mask)))
- 		return;
- 
- 	va_start(args, fmt);
--
--	vaf.fmt = fmt;
--	vaf.va = &args;
--
--	printk(KERN_DEBUG "ath: %pV", &vaf);
--
-+	printk(KERN_DEBUG "ath: ");
-+	vprintk(fmt, args);
- 	va_end(args);
- }
- EXPORT_SYMBOL(ath_print);
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
 @@ -322,83 +322,59 @@ static int b43_ratelimit(struct b43_wl *

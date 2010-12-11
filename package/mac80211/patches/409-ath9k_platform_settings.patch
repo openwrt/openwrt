@@ -1,15 +1,14 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -536,8 +536,15 @@ static int ath9k_init_softc(u16 devid, s
+@@ -537,8 +537,14 @@ static int ath9k_init_softc(u16 devid, s
  	ah->hw_version.subsysid = subsysid;
  	sc->sc_ah = ah;
  
--	if (!sc->dev->platform_data)
-+	if (!sc->dev->platform_data) {
+-	if (!pdata)
++	if (!pdata) {
  		ah->ah_flags |= AH_USE_EEPROM;
 +		sc->sc_ah->led_pin = -1;
 +	} else {
-+		pdata = (struct ath9k_platform_data *) sc->dev->platform_data;
 +		sc->sc_ah->gpio_mask = pdata->gpio_mask;
 +		sc->sc_ah->gpio_val = pdata->gpio_val;
 +		sc->sc_ah->led_pin = pdata->led_pin;
@@ -19,7 +18,7 @@
  	common->ops = &ath9k_common_ops;
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -782,7 +782,7 @@ struct ath_hw {
+@@ -794,7 +794,7 @@ struct ath_hw {
  	u32 originalGain[22];
  	int initPDADC;
  	int PDADCdelta;

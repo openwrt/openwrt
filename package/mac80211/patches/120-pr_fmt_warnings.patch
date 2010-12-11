@@ -58,16 +58,6 @@
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
  
  #include <linux/if.h>
---- a/net/wireless/core.c.orig
-+++ b/net/wireless/core.c.orig
-@@ -4,6 +4,7 @@
-  * Copyright 2006-2010		Johannes Berg <johannes@sipsolutions.net>
-  */
- 
-+#undef pr_fmt
- #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
- 
- #include <linux/if.h>
 --- a/net/wireless/lib80211.c
 +++ b/net/wireless/lib80211.c
 @@ -13,6 +13,7 @@
