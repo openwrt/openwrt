@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qemu
-PKG_VERSION:=0.12.5
-PKG_RELEASE:=2
+PKG_VERSION:=0.13.0
+PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=http://download.savannah.gnu.org/releases/qemu/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=1d02ee0a04dfae2894340273372c1de4
+PKG_MD5SUM:=397a0d665da8ba9d3b9583629f3d6421
 
 include $(INCLUDE_DIR)/host-build.mk
 
