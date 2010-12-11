@@ -149,8 +149,8 @@
 -
 -	ret = led_classdev_register(wiphy_dev(sc->hw->wiphy), &led->led_cdev);
 -	if (ret)
--		ath_print(ath9k_hw_common(sc->sc_ah), ATH_DBG_FATAL,
--			  "Failed to register led:%s", led->name);
+-		ath_err(ath9k_hw_common(sc->sc_ah),
+-			"Failed to register led:%s", led->name);
 -	else
 -		led->registered = 1;
 -	return ret;
@@ -253,7 +253,7 @@
  /*	Rfkill	   */
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1278,9 +1278,6 @@ static void ath9k_stop(struct ieee80211_
+@@ -1275,9 +1275,6 @@ static void ath9k_stop(struct ieee80211_
  
  	aphy->state = ATH_WIPHY_INACTIVE;
  
@@ -265,10 +265,11 @@
  	cancel_work_sync(&sc->hw_check_work);
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -139,6 +139,20 @@ static struct ieee80211_rate ath9k_legac
+@@ -139,6 +139,21 @@ static struct ieee80211_rate ath9k_legac
  	RATE(540, 0x0c, 0),
  };
  
++#ifdef CONFIG_MAC80211_LEDS
 +static const struct ieee80211_tpt_blink ath9k_tpt_blink[] = {
 +	{ .throughput = 0 * 1024, .blink_time = 334 },
 +	{ .throughput = 1 * 1024, .blink_time = 260 },
@@ -281,12 +282,12 @@
 +	{ .throughput = 200 * 1024, .blink_time = 80 },
 +	{ .throughput = 300 * 1024, .blink_time = 50 },
 +};
-+
++#endif
 +
  static void ath9k_deinit_softc(struct ath_softc *sc);
  
  /*
-@@ -750,6 +764,12 @@ int ath9k_init_device(u16 devid, struct 
+@@ -742,6 +757,12 @@ int ath9k_init_device(u16 devid, struct 
  
  	ath9k_init_txpower_limits(sc);
  

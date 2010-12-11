@@ -9,26 +9,7 @@
  
  #include "ath5k.h"
  #include "reg.h"
-@@ -71,6 +73,18 @@ static u16 ath5k_eeprom_bin2freq(struct 
- static int ath5k_hw_eeprom_read(struct ath5k_hw *ah, u32 offset, u16 *data)
- {
- 	u32 status, timeout;
-+	struct ath5k_platform_data *pdata = NULL;
-+
-+	if (ah->ah_sc->pdev)
-+		pdata = ah->ah_sc->pdev->dev.platform_data;
-+
-+	if (pdata && pdata->eeprom_data && pdata->eeprom_data[0] == AR5K_EEPROM_MAGIC_VALUE)
-+	{
-+		ATH5K_INFO(ah->ah_sc, "using eeprom-content from platform_data\n");
-+		if (offset >= ATH5K_PLAT_EEP_MAX_WORDS) return -EIO;
-+		*data = pdata->eeprom_data[offset];
-+		return 0;
-+	}
- 
- 	/*
- 	 * Initialize EEPROM access
-@@ -1760,7 +1774,7 @@ ath5k_eeprom_read_spur_chans(struct ath5
+@@ -1726,7 +1728,7 @@ ath5k_eeprom_read_spur_chans(struct ath5
  }
  
  /*
@@ -37,7 +18,7 @@
   */
  int ath5k_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac)
  {
-@@ -1768,6 +1782,16 @@ int ath5k_eeprom_read_mac(struct ath5k_h
+@@ -1734,6 +1736,16 @@ int ath5k_eeprom_read_mac(struct ath5k_h
  	u32 total, offset;
  	u16 data;
  	int octet, ret;
@@ -52,5 +33,35 @@
 +		return 0;
 +	}
  
- 	ret = ath5k_hw_eeprom_read(ah, 0x20, &data);
+ 	ret = ath5k_hw_nvram_read(ah, 0x20, &data);
  	if (ret)
+--- a/drivers/net/wireless/ath/ath5k/pci.c
++++ b/drivers/net/wireless/ath/ath5k/pci.c
+@@ -17,6 +17,7 @@
+ #include <linux/nl80211.h>
+ #include <linux/pci.h>
+ #include <linux/pci-aspm.h>
++#include <linux/ath5k_platform.h>
+ #include "../ath.h"
+ #include "ath5k.h"
+ #include "debug.h"
+@@ -73,6 +74,19 @@ bool ath5k_pci_eeprom_read(struct ath_co
+ {
+ 	struct ath5k_hw *ah = (struct ath5k_hw *) common->ah;
+ 	u32 status, timeout;
++	struct ath5k_platform_data *pdata = NULL;
++
++	if (ah->ah_sc->pdev)
++		pdata = ah->ah_sc->pdev->dev.platform_data;
++
++	if (pdata && pdata->eeprom_data && pdata->eeprom_data[0] == AR5K_EEPROM_MAGIC_VALUE)
++	{
++		if (offset >= ATH5K_PLAT_EEP_MAX_WORDS)
++			return -EIO;
++
++		*data = pdata->eeprom_data[offset];
++		return 0;
++	}
+ 
+ 	/*
+ 	 * Initialize EEPROM access
