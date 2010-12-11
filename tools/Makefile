@@ -65,9 +65,6 @@ endef
 # preparatory work
 $(STAGING_DIR)/.prepared: $(TMP_DIR)/.build $(STAGING_DIR_HOST)/.prepared
 	$(call PrepareStaging,$(STAGING_DIR))
-	mkdir -p $(STAGING_DIR)/host/share
-	rm -rf $(STAGING_DIR)/host/share/aclocal
-	ln -s $(STAGING_DIR_HOST)/share/aclocal $(STAGING_DIR)/host/share/
 	mkdir -p $(BUILD_DIR)/stamp
 	touch $@
 
