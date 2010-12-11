@@ -48,6 +48,8 @@ define Build/InstallDev
 	$(SED) 's,\(hardcode_into_libs\)=yes,\1=no,g' $(2)/bin/libtool
 	$(CP) $(2)/bin/libtool $(2)/bin/libtool-ucxx
 	$(SED) 's,-lstdc++,-luClibc++,g' $(2)/bin/libtool-ucxx
+	[ -h $(STAGING_DIR)/host/share/aclocal ] && \
+		rm -rf $(TMP_DIR)/stage-$(PKG_NAME)/host/share/aclocal || true
 endef
 
 define Package/libltdl/install
