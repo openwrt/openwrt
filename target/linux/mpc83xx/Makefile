@@ -13,7 +13,7 @@ CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=603e
 FEATURES:=squashfs targz broken
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.36.1
+LINUX_VERSION:=2.6.36.2
 
 include $(INCLUDE_DIR)/target.mk
 
