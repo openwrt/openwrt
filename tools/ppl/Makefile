@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ppl
-PKG_VERSION:=0.10.2
+PKG_VERSION:=0.11
 
-PKG_SOURCE_URL:=ftp://gcc.gnu.org/pub/gcc/infrastructure
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=e7dd265afdeaea81f7e87a72b182d875
+PKG_SOURCE_URL:=ftp://ftp.cs.unipr.it/pub/ppl/releases/$(PKG_VERSION)/
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_MD5SUM:=c414abd2ecaf1f1f48949c78d383ee1a
 
 include $(INCLUDE_DIR)/host-build.mk
 
