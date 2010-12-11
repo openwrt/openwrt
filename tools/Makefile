@@ -63,7 +63,7 @@ define PrepareStaging
 endef
 
 # preparatory work
-$(STAGING_DIR)/.prepared: $(TMP_DIR)/.build $(STAGING_DIR_HOST)/.prepared
+$(STAGING_DIR)/.prepared: $(TMP_DIR)/.build
 	$(call PrepareStaging,$(STAGING_DIR))
 	mkdir -p $(BUILD_DIR)/stamp
 	touch $@
