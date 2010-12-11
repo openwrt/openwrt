@@ -1,0 +1,18 @@
+# 
+# Copyright (C) 2006 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=xz
+PKG_VERSION:=5.0.0
+
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_SOURCE_URL:=http://tukaani.org/xz
+PKG_MD5SUM:=0652c09fdbb93ae2ce78c1368ffda612
+
+include $(INCLUDE_DIR)/host-build.mk
+
+$(eval $(call HostBuild))
