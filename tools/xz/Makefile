@@ -15,4 +15,8 @@ PKG_MD5SUM:=0652c09fdbb93ae2ce78c1368ffda612
 
 include $(INCLUDE_DIR)/host-build.mk
 
+define Host/Install
+	$(MAKE) -C $(HOST_BUILD_DIR) install xzlinks="unxz xzcat"
+endef
+
 $(eval $(call HostBuild))
