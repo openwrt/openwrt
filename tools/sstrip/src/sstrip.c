@@ -59,7 +59,6 @@
 #include	<unistd.h>
 #include	<fcntl.h>
 #include	<elf.h>
-#include	<byteswap.h>
 
 #ifndef TRUE
 #define	TRUE		1
