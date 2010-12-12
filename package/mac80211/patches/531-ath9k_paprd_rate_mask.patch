@@ -1,0 +1,28 @@
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
+@@ -31,6 +31,12 @@
+ #define AR9300_ANT_16S               25
+ #define AR9300_FUTURE_MODAL_SZ       6
+ 
++#define AR9300_PAPRD_RATE_MASK		0x01ffffff
++#define AR9300_PAPRD_SCALE_1		0x0e000000
++#define AR9300_PAPRD_SCALE_1_S		25
++#define AR9300_PAPRD_SCALE_2		0x70000000
++#define AR9300_PAPRD_SCALE_2_S		28
++
+ /* Delta from which to start power to pdadc table */
+ /* This offset is used in both open loop and closed loop power control
+  * schemes. In open loop power control, it is not really needed, but for
+--- a/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
+@@ -52,8 +52,8 @@ static void ar9003_paprd_setup_single_ta
+ 	else
+ 		hdr = &eep->modalHeader2G;
+ 
+-	am_mask = le32_to_cpu(hdr->papdRateMaskHt20);
+-	ht40_mask = le32_to_cpu(hdr->papdRateMaskHt40);
++	am_mask = le32_to_cpu(hdr->papdRateMaskHt20) & AR9300_PAPRD_RATE_MASK;
++	ht40_mask = le32_to_cpu(hdr->papdRateMaskHt40) & AR9300_PAPRD_RATE_MASK;
+ 
+ 	REG_RMW_FIELD(ah, AR_PHY_PAPRD_AM2AM, AR_PHY_PAPRD_AM2AM_MASK, am_mask);
+ 	REG_RMW_FIELD(ah, AR_PHY_PAPRD_AM2PM, AR_PHY_PAPRD_AM2PM_MASK, am_mask);
