@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -813,7 +813,7 @@ void ath9k_hw_init_global_settings(struc
+@@ -817,7 +817,7 @@ void ath9k_hw_init_global_settings(struc
  	if (conf->channel && conf->channel->band == IEEE80211_BAND_2GHZ)
  		acktimeout += 64 - sifstime - ah->slottime;
  
