@@ -1,0 +1,12 @@
+--- a/drivers/net/wireless/ath/regd.c
++++ b/drivers/net/wireless/ath/regd.c
+@@ -37,7 +37,8 @@
+ 				NL80211_RRF_PASSIVE_SCAN | NL80211_RRF_NO_OFDM)
+ 
+ /* We allow IBSS on these on a case by case basis by regulatory domain */
+-#define ATH9K_5GHZ_5150_5350	REG_RULE(5150-10, 5350+10, 40, 0, 30,\
++#define ATH9K_5GHZ_5150_5350	REG_RULE(5150-10, 5250, 40, 0, 30, 0), \
++				REG_RULE(5250, 5350+10, 40, 0, 30,\
+ 				NL80211_RRF_PASSIVE_SCAN | NL80211_RRF_NO_IBSS)
+ #define ATH9K_5GHZ_5470_5850	REG_RULE(5470-10, 5850+10, 40, 0, 30,\
+ 				NL80211_RRF_PASSIVE_SCAN | NL80211_RRF_NO_IBSS)
