@@ -21,9 +21,9 @@ tools-y += xorg-macros xz
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
 tools-$(CONFIG_TARGET_x86) += qemu
 ifneq ($(CONFIG_TARGET_ar71xx),)
-tools-y += squashfs lzma-old
+tools-y += lzma-old squashfs 
 endif
-tools-y += squashfs4 lzma
+tools-y += lzma squashfs4
 tools-$(CONFIG_CCACHE) += ccache
 
 ifdef CONFIG_GCC_USE_GRAPHITE
