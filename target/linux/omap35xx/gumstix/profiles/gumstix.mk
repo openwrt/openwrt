@@ -11,15 +11,17 @@ define Profile/Gumstix
 		-firewall -mtd -hotplug2 -udevtrigger -dropbear \
 		ext4 usb udev kmod-bluetooth ntpclient wpa-supplicant \
 		wireless-tools wpa-cli \
-		bluez-utils bluez-hcidump hegw usbutils python pyserial \
+		bluez-utils bluez-hcidump usbutils python pyserial \
 		python-mini python-openssl python-cjson libstdcpp \
 		kmod-usb-serial kmod-usb-serial-cp210x kmod-usb-serial-ftdi \
 		kmod-usb-serial-pl2303 kmod-usb-uhci kmod-cfg80211 \
 		kmod-lib80211 kmod-libertas-sd kmod-mac80211 libnl-tiny \
-		crda iw kmod-usb-hid luci luci-app-ntpc \
+		crda iw kmod-usb-hid \
 		openssh-client openssh-client-utils openssh-keygen \
 		openssh-server kmod-usb-storage kmod-usb-storage-extras \
-		kmod-fs-vfat avahi-autoipd avahi-daemon avahi-dnsconfd
+		kmod-fs-vfat avahi-autoipd avahi-daemon avahi-dnsconfd \
+		hegw hegw-test \
+		dbus-python python-expat python-ifconfig
 endef
 
 define Profile/Gumstix/Description
