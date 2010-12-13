@@ -28,6 +28,10 @@ merge=$(subst $(space),,$(1))
 confvar=$(call merge,$(foreach v,$(1),$(if $($(v)),y,n)))
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
 
+define sep
+
+endef
+
 _SINGLE=export MAKEFLAGS=$(space);
 CFLAGS:=
 ARCH:=$(subst i486,i386,$(subst i586,i386,$(subst i686,i386,$(call qstrip,$(CONFIG_ARCH)))))
