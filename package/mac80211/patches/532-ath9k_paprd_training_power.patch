@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
-@@ -30,9 +30,66 @@ void ar9003_paprd_enable(struct ath_hw *
+@@ -30,9 +30,69 @@ void ar9003_paprd_enable(struct ath_hw *
  }
  EXPORT_SYMBOL(ar9003_paprd_enable);
  
@@ -11,7 +11,7 @@
 +	struct ar9300_modal_eep_header *hdr = &eep->modalHeader2G;
 +	unsigned int power, scale, delta;
 +
-+	scale = MS(hdr->papdRateMaskHt20, AR9300_PAPRD_SCALE_1);
++	scale = MS(le32_to_cpu(hdr->papdRateMaskHt20), AR9300_PAPRD_SCALE_1);
 +	power = REG_READ_FIELD(ah, AR_PHY_POWERTX_RATE5,
 +			       AR_PHY_POWERTX_RATE5_POWERTXHT20_0);
 +
@@ -39,11 +39,14 @@
 +	unsigned int power, scale, delta;
 +
 +	if (chan->channel >= 5700)
-+		scale = MS(hdr->papdRateMaskHt20, AR9300_PAPRD_SCALE_1);
++		scale = MS(le32_to_cpu(hdr->papdRateMaskHt20),
++			   AR9300_PAPRD_SCALE_1);
 +	else if (chan->channel >= 5400)
-+		scale = MS(hdr->papdRateMaskHt40, AR9300_PAPRD_SCALE_2);
++		scale = MS(le32_to_cpu(hdr->papdRateMaskHt40),
++			   AR9300_PAPRD_SCALE_2);
 +	else
-+		scale = MS(hdr->papdRateMaskHt40, AR9300_PAPRD_SCALE_1);
++		scale = MS(le32_to_cpu(hdr->papdRateMaskHt40),
++			   AR9300_PAPRD_SCALE_1);
 +
 +	if (IS_CHAN_HT40(chan))
 +		power = REG_READ_FIELD(ah, AR_PHY_POWERTX_RATE8,
@@ -68,7 +71,7 @@
  	struct ar9300_modal_eep_header *hdr;
  	static const u32 ctrl0[3] = {
  		AR_PHY_PAPRD_CTRL0_B0,
-@@ -45,6 +102,7 @@ static void ar9003_paprd_setup_single_ta
+@@ -45,6 +105,7 @@ static void ar9003_paprd_setup_single_ta
  		AR_PHY_PAPRD_CTRL1_B2
  	};
  	u32 am_mask, ht40_mask;
@@ -76,7 +79,7 @@
  	int i;
  
  	if (ah->curchan && IS_CHAN_5GHZ(ah->curchan))
-@@ -55,11 +113,25 @@ static void ar9003_paprd_setup_single_ta
+@@ -55,11 +116,25 @@ static void ar9003_paprd_setup_single_ta
  	am_mask = le32_to_cpu(hdr->papdRateMaskHt20) & AR9300_PAPRD_RATE_MASK;
  	ht40_mask = le32_to_cpu(hdr->papdRateMaskHt40) & AR9300_PAPRD_RATE_MASK;
  
@@ -103,7 +106,7 @@
  	for (i = 0; i < ah->caps.max_txchains; i++) {
  		REG_RMW_FIELD(ah, ctrl0[i],
  			      AR_PHY_PAPRD_CTRL0_USE_SINGLE_TABLE_MASK, 1);
-@@ -141,6 +213,7 @@ static void ar9003_paprd_setup_single_ta
+@@ -141,6 +216,7 @@ static void ar9003_paprd_setup_single_ta
  		      AR_PHY_PAPRD_PRE_POST_SCALING, 185706);
  	REG_RMW_FIELD(ah, AR_PHY_PAPRD_PRE_POST_SCALE_7_B0,
  		      AR_PHY_PAPRD_PRE_POST_SCALING, 175487);
@@ -111,7 +114,7 @@
  }
  
  static void ar9003_paprd_get_gain_table(struct ath_hw *ah)
-@@ -595,15 +668,10 @@ void ar9003_paprd_populate_single_table(
+@@ -595,15 +671,10 @@ void ar9003_paprd_populate_single_table(
  {
  	u32 *paprd_table_val = caldata->pa_table[chain];
  	u32 small_signal_gain = caldata->small_signal_gain[chain];
@@ -128,7 +131,7 @@
  	if (chain == 0)
  		reg = AR_PHY_PAPRD_MEM_TAB_B0;
  	else if (chain == 1)
-@@ -643,14 +711,8 @@ EXPORT_SYMBOL(ar9003_paprd_populate_sing
+@@ -643,14 +714,8 @@ EXPORT_SYMBOL(ar9003_paprd_populate_sing
  
  int ar9003_paprd_setup_gain_table(struct ath_hw *ah, int chain)
  {
@@ -144,7 +147,7 @@
  
  	desired_gain = ar9003_get_desired_gain(ah, chain, train_power);
  
-@@ -716,7 +778,12 @@ EXPORT_SYMBOL(ar9003_paprd_create_curve)
+@@ -716,7 +781,12 @@ EXPORT_SYMBOL(ar9003_paprd_create_curve)
  
  int ar9003_paprd_init_table(struct ath_hw *ah)
  {
@@ -188,17 +191,22 @@
  #endif  /* AR9003_PHY_H */
 --- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
-@@ -4798,6 +4798,14 @@ static void ath9k_hw_ar9300_set_txpower(
+@@ -4798,6 +4798,19 @@ static void ath9k_hw_ar9300_set_txpower(
  	/* Write target power array to registers */
  	ar9003_hw_tx_power_regwrite(ah, targetPowerValT2);
  	ar9003_hw_calibration_apply(ah, chan->channel);
 +
-+	if (IS_CHAN_2GHZ(chan))
-+		i = ALL_TARGET_HT20_0_8_16;
-+	else if (IS_CHAN_HT40(chan))
-+		i = ALL_TARGET_HT40_7;
-+	else
-+		i = ALL_TARGET_HT20_7;
++	if (IS_CHAN_2GHZ(chan)) {
++		if (IS_CHAN_HT40(chan))
++			i = ALL_TARGET_HT40_0_8_16;
++		else
++			i = ALL_TARGET_HT20_0_8_16;
++	} else {
++		if (IS_CHAN_HT40(chan))
++			i = ALL_TARGET_HT40_7;
++		else
++			i = ALL_TARGET_HT20_7;
++	}
 +	ah->paprd_target_power = targetPowerValT2[i];
  }
  
