@@ -5,10 +5,6 @@
 # See /LICENSE for more information.
 #
 
-PKG_LIBTOOL_PATHS?=$(CONFIGURE_PATH)
-PKG_AUTOMAKE_PATHS?=$(CONFIGURE_PATH)
-PKG_REMOVE_FILES?=aclocal.m4
-
 autoconf_bool = $(patsubst %,$(if $($(1)),--enable,--disable)-%,$(2))
 
 # delete *.la-files from staging_dir - we can not yet remove respective lines within all package
@@ -17,10 +13,15 @@ define libtool_remove_files
 	find $(1) -name '*.la' | $(XARGS) rm -f;
 endef
 
+# 1: build dir
+# 2: remove files
+# 3: automake paths
+# 4: libtool paths
+# 5: extra m4 dirs
 define autoreconf
-	(cd $(PKG_BUILD_DIR); \
-		$(patsubst %,rm -f %;,$(PKG_REMOVE_FILES)) \
-		$(foreach p,$(PKG_AUTOMAKE_PATHS), \
+	(cd $(1); \
+		$(patsubst %,rm -f %;,$(2)) \
+		$(foreach p,$(3), \
 			if [ -x $(p)/autogen.sh ]; then \
 				$(p)/autogen.sh || true; \
 			elif [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
@@ -28,32 +29,75 @@ define autoreconf
 				[ -d $(p)/autom4te.cache ] && rm -rf autom4te.cache; \
 				$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
 					-B $(STAGING_DIR_HOST)/share/aclocal \
-					-B $(STAGING_DIR)/host/share/aclocal \
-					-B $(STAGING_DIR)/usr/share/aclocal \
-					$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS) || true; \
+					$(patsubst %,-B %,$(5)) \
+					$(patsubst %,-I %,$(4)) $(4) || true; \
 			fi; \
 		) \
 	);
 endef
 
+
+PKG_LIBTOOL_PATHS?=$(CONFIGURE_PATH)
+PKG_AUTOMAKE_PATHS?=$(CONFIGURE_PATH)
+PKG_REMOVE_FILES?=aclocal.m4
+
 Hooks/InstallDev/Post += libtool_remove_files
+
+define autoreconf_target
+  $(strip $(call autoreconf, \
+    $(PKG_BUILD_DIR), $(PKG_REMOVE_FILES), \
+    $(PKG_AUTOMAKE_PATHS), $(PKG_LIBTOOL_PATHS), \
+    $(STAGING_DIR)/host/share/aclocal $(STAGING_DIR)/usr/share/aclocal))
+endef
 
 ifneq ($(filter libtool,$(PKG_FIXUP)),)
   PKG_BUILD_DEPENDS += libtool
  ifeq ($(filter no-autoreconf,$(PKG_FIXUP)),)
-  Hooks/Configure/Pre += autoreconf
+  Hooks/Configure/Pre += autoreconf_target
  endif
 endif
- 
+
 ifneq ($(filter libtool-ucxx,$(PKG_FIXUP)),)
   PKG_BUILD_DEPENDS += libtool
  ifeq ($(filter no-autoreconf,$(PKG_FIXUP)),)
-  Hooks/Configure/Pre += autoreconf
+  Hooks/Configure/Pre += autoreconf_target
  endif
 endif
 
 ifneq ($(filter autoreconf,$(PKG_FIXUP)),)
   ifeq ($(filter autoreconf,$(Hooks/Configure/Pre)),)
-    Hooks/Configure/Pre += autoreconf
+    Hooks/Configure/Pre += autoreconf_target
+  endif
+endif
+
+
+HOST_FIXUP?=$(PKG_FIXUP)
+HOST_LIBTOOL_PATHS?=$(if $(PKG_LIBTOOL_PATHS),$(PKG_LIBTOOL_PATHS),.)
+HOST_AUTOMAKE_PATHS?=$(if $(PKG_AUTOMAKE_PATHS),$(PKG_AUTOMAKE_PATHS),.)
+HOST_REMOVE_FILES?=$(PKG_REMOVE_FILES)
+
+define autoreconf_host
+  $(strip $(call autoreconf, \
+    $(HOST_BUILD_DIR), $(HOST_REMOVE_FILES), \
+    $(HOST_AUTOMAKE_PATHS), $(HOST_LIBTOOL_PATHS)))
+endef
+
+ifneq ($(filter libtool,$(HOST_FIXUP)),)
+  HOST_BUILD_DEPENDS += libtool
+ ifeq ($(filter no-autoreconf,$(HOST_FIXUP)),)
+  Hooks/HostConfigure/Pre += autoreconf_host
+ endif
+endif
+
+ifneq ($(filter libtool-ucxx,$(HOST_FIXUP)),)
+  HOST_BUILD_DEPENDS += libtool
+ ifeq ($(filter no-autoreconf,$(HOST_FIXUP)),)
+  Hooks/HostConfigure/Pre += autoreconf_host
+ endif
+endif
+
+ifneq ($(filter autoreconf,$(HOST_FIXUP)),)
+  ifeq ($(filter autoreconf,$(Hooks/HostConfigure/Pre)),)
+    Hooks/HostConfigure/Pre += autoreconf_host
   endif
 endif

@@ -30,6 +30,7 @@ override MAKEFLAGS=
 
 include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
+include $(INCLUDE_DIR)/autotools.mk
 
 Host/Patch:=$(Host/Patch/Default)
 ifneq ($(strip $(HOST_UNPACK)),)
@@ -130,12 +131,16 @@ ifndef DUMP
   $(HOST_STAMP_PREPARED):
 	@-rm -rf $(HOST_BUILD_DIR)
 	@mkdir -p $(HOST_BUILD_DIR)
+	$(foreach hook,$(Hooks/HostPrepare/Pre),$(call $(hook))$(sep))
 	$(call Host/Prepare)
+	$(foreach hook,$(Hooks/HostPrepare/Post),$(call $(hook))$(sep))
 	touch $$@
 
   $(call Host/Exports,$(HOST_STAMP_CONFIGURED))
   $(HOST_STAMP_CONFIGURED): $(HOST_STAMP_PREPARED)
+	$(foreach hook,$(Hooks/HostConfigure/Pre),$(call $(hook))$(sep))
 	$(call Host/Configure)
+	$(foreach hook,$(Hooks/HostConfigure/Post),$(call $(hook))$(sep))
 	touch $$@
 
   $(call Host/Exports,$(HOST_STAMP_BUILT))
@@ -151,17 +156,23 @@ ifndef DUMP
     update: host-update
 
     $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
+		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
 		$(call Host/Compile)
+		$(foreach hook,$(Hooks/HostCompile/Post),$(call $(hook))$(sep))
 		touch $$@
 
     $(HOST_STAMP_INSTALLED): $(HOST_STAMP_BUILT) $(if $(FORCE_HOST_INSTALL),FORCE)
 		$(call Host/Install)
+		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		mkdir -p $$(shell dirname $$@)
 		touch $$@
   else
     $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED) $(if $(FORCE_HOST_INSTALL),FORCE)
+		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
 		$(call Host/Compile)
+		$(foreach hook,$(Hooks/HostCompile/Post),$(call $(hook))$(sep))
 		$(call Host/Install)
+		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		touch $$@
   endif
   host-prepare: $(HOST_STAMP_PREPARED)
@@ -182,4 +193,3 @@ ifndef DUMP
   clean:
 
 endif
-
