@@ -18,6 +18,7 @@ PKG_SOURCE_SUBDIR:=opkg-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://opkg.googlecode.com/svn/trunk/
 PKG_SOURCE:=$(PKG_SOURCE_SUBDIR).tar.gz
 PKG_FIXUP = libtool
+PKG_REMOVE_FILES = autogen.sh aclocal.m4
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
@@ -53,13 +54,6 @@ CONFIGURE_ARGS += \
 	--with-opkgetcdir=/etc \
 	--with-opkglockfile=/var/lock/opkg.lock
 
-define Build/Configure
-	(cd $(PKG_BUILD_DIR); \
-		autoreconf -v --install || exit 1 \
-	);
-	$(call Build/Configure/Default)
-endef
-
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
@@ -90,11 +84,6 @@ HOST_CONFIGURE_ARGS+= \
 	--disable-gpg \
 	--with-opkgetcdir=/etc \
 	--with-opkglockfile=/tmp/opkg.lock
-
-define Host/Configure
-	(cd $(HOST_BUILD_DIR); autoreconf -v --install || exit 1)
-	$(call Host/Configure/Default)
-endef
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) CC="$(HOSTCC)" all
