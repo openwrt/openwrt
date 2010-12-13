@@ -6,6 +6,7 @@
 #
 
 PKG_LIBTOOL_PATHS?=$(CONFIGURE_PATH)
+PKG_AUTOMAKE_PATHS?=$(CONFIGURE_PATH)
 PKG_REMOVE_FILES?=aclocal.m4
 
 autoconf_bool = $(patsubst %,$(if $($(1)),--enable,--disable)-%,$(2))
@@ -19,16 +20,18 @@ endef
 define autoreconf
 	(cd $(PKG_BUILD_DIR); \
 		$(patsubst %,rm -f %;,$(PKG_REMOVE_FILES)) \
-		if [ -x ./autogen.sh ]; then \
-			./autogen.sh || true; \
-		elif [ -f ./configure.ac ] || [ -f ./configure.in ]; then \
-			[ -f ./aclocal.m4 ] && [ ! -f ./acinclude.m4 ] && mv aclocal.m4 acinclude.m4; \
-			[ -d ./autom4te.cache ] && rm -rf autom4te.cache; \
-			$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
-				-B $(STAGING_DIR_HOST)/share/aclocal \
-				-B $(STAGING_DIR)/host/share/aclocal \
-				$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS) || true; \
-		fi \
+		$(foreach p,$(PKG_AUTOMAKE_PATHS), \
+			if [ -x $(p)/autogen.sh ]; then \
+				$(p)/autogen.sh || true; \
+			elif [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
+				[ -f $(p)/aclocal.m4 ] && [ ! -f $(p)/acinclude.m4 ] && mv aclocal.m4 acinclude.m4; \
+				[ -d $(p)/autom4te.cache ] && rm -rf autom4te.cache; \
+				$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
+					-B $(STAGING_DIR_HOST)/share/aclocal \
+					-B $(STAGING_DIR)/host/share/aclocal \
+					$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS) || true; \
+			fi; \
+		) \
 	);
 endef
 
