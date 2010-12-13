@@ -29,6 +29,7 @@ define autoreconf
 				$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
 					-B $(STAGING_DIR_HOST)/share/aclocal \
 					-B $(STAGING_DIR)/host/share/aclocal \
+					-B $(STAGING_DIR)/usr/share/aclocal \
 					$(patsubst %,-I %,$(PKG_LIBTOOL_PATHS)) $(PKG_LIBTOOL_PATHS) || true; \
 			fi; \
 		) \
