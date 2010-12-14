@@ -144,8 +144,21 @@ static void __init tl_mr3x20_setup(void)
 
 	ap91_pci_init(ee, mac);
 }
-MIPS_MACHINE(AR71XX_MACH_TL_MR3420, "TL-MR3420", "TP-LINK TL-MR3420",
-	     tl_mr3x20_setup);
+
+static void __init tl_mr3220_setup(void)
+{
+	tl_mr3x20_setup();
+	ap91_pci_setup_wmac_led_pin(1);
+}
 
 MIPS_MACHINE(AR71XX_MACH_TL_MR3220, "TL-MR3220", "TP-LINK TL-MR3220",
-	     tl_mr3x20_setup);
+	     tl_mr3220_setup);
+
+static void __init tl_mr3420_setup(void)
+{
+	tl_mr3x20_setup();
+	ap91_pci_setup_wmac_led_pin(0);
+}
+
+MIPS_MACHINE(AR71XX_MACH_TL_MR3420, "TL-MR3420", "TP-LINK TL-MR3420",
+	     tl_mr3420_setup);
