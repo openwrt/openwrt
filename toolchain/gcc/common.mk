@@ -154,6 +154,10 @@ ifneq ($(CONFIG_EXTRA_TARGET_ARCH),)
 		--enable-targets=$(call qstrip,$(CONFIG_EXTRA_TARGET_ARCH_NAME))-linux-$(TARGET_SUFFIX)
 endif
 
+ifdef CONFIG_sparc
+  GCC_CONFIGURE+= --enable-targets=all
+endif
+
 ifeq ($(LIBC),uClibc)
   GCC_CONFIGURE+= \
 		--disable-__cxa_atexit
