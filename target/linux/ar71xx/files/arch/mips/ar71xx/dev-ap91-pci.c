@@ -42,6 +42,17 @@ static int ap91_pci_plat_dev_init(struct pci_dev *dev)
 	return 0;
 }
 
+__init void ap91_pci_setup_wmac_led_pin(int pin)
+{
+	ap91_wmac_data.led_pin = pin;
+}
+
+__init void ap91_pci_setup_wmac_gpio(u32 mask, u32 val)
+{
+	ap91_wmac_data.gpio_mask = mask;
+	ap91_wmac_data.gpio_val = val;
+}
+
 void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 {
 	if (cal_data)
