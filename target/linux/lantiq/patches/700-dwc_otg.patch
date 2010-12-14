@@ -5693,7 +5693,7 @@
 +}
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_driver.c
-@@ -0,0 +1,1264 @@
+@@ -0,0 +1,1269 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg_ipmate/linux/drivers/dwc_otg_driver.c $
 + * $Revision: 1.1.1.1 $
@@ -5748,6 +5748,7 @@
 +#include <linux/module.h>
 +#include <linux/moduleparam.h>
 +#include <linux/init.h>
++#include <linux/gpio.h>
 +
 +#include <linux/device.h>
 +#include <linux/platform_device.h>
@@ -6339,6 +6340,10 @@
 +    int32_t	snpsid;
 +	struct resource *res;
 +	gusbcfg_data_t usbcfg = {.d32 = 0};
++
++	// GPIOs
++	gpio_request(_dev->dev.platform_data, "USB_POWER");
++	gpio_direction_output(_dev->dev.platform_data, 1);
 +
 +	dev_dbg(&_dev->dev, "dwc_otg_driver_probe (%p)\n", _dev);
 +
@@ -13240,7 +13245,7 @@
 +#endif /* DWC_DEVICE_ONLY */
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_ifx.c
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,150 @@
 +/******************************************************************************
 +**
 +** FILE NAME    : dwc_otg_ifx.c
@@ -13302,40 +13307,14 @@
 +#define readl lq_r32
 +void dwc_otg_power_on (void)
 +{
-+	// GPIOs
-+	gpio_request(28, "USB_POWER");
-+	gpio_direction_output(28, 1);
-+	/*
-+	writel(readl(IFXMIPS_GPIO_P0_DIR) | (0x4000), IFXMIPS_GPIO_P0_DIR);
-+	writel(readl(IFXMIPS_GPIO_P0_OD) | (0x4000), IFXMIPS_GPIO_P0_OD);
-+	writel(readl(IFXMIPS_GPIO_P0_ALTSEL0) & ~(0x4000), IFXMIPS_GPIO_P0_ALTSEL0);
-+	writel(readl(IFXMIPS_GPIO_P0_ALTSEL1) & ~(0x4000), IFXMIPS_GPIO_P0_ALTSEL1);
-+	writel(readl(IFXMIPS_GPIO_P0_OUT) | (0x4000), IFXMIPS_GPIO_P0_OUT);
-+*/
-+/*	writel(readl(IFXMIPS_GPIO_P1_DIR) | (0x1000), IFXMIPS_GPIO_P1_DIR);
-+	writel(readl(IFXMIPS_GPIO_P1_OD) | (0x1000), IFXMIPS_GPIO_P1_OD);
-+	writel(readl(IFXMIPS_GPIO_P1_ALTSEL0) & ~(0x1000), IFXMIPS_GPIO_P1_ALTSEL0);
-+	writel(readl(IFXMIPS_GPIO_P1_ALTSEL1) & ~(0x1000), IFXMIPS_GPIO_P1_ALTSEL1);
-+	writel(readl(IFXMIPS_GPIO_P1_OUT) | (0x1000), IFXMIPS_GPIO_P1_OUT);
-+*/
 +	// clear power
-+	//set_bit (0, DANUBE_PMU_PWDCR);
-+	//set_bit (6, DANUBE_PMU_PWDCR);
 +	writel(readl(DANUBE_PMU_PWDCR) | 0x41, DANUBE_PMU_PWDCR);
-+
 +	// set clock gating
-+	//set_bit (4, (volatile unsigned long *)DANUBE_CGU_IFCCR);
-+	//set_bit (5, (volatile unsigned long *)DANUBE_CGU_IFCCR);
 +	writel(readl(DANUBE_CGU_IFCCR) | 0x30, DANUBE_CGU_IFCCR);
-+
 +	// set power
-+	//clear_bit (0, (volatile unsigned long *)DANUBE_PMU_PWDCR);
 +	writel(readl(DANUBE_PMU_PWDCR) & ~0x1, DANUBE_PMU_PWDCR);
-+	//clear_bit (6, (volatile unsigned long *)DANUBE_PMU_PWDCR);
 +	writel(readl(DANUBE_PMU_PWDCR) & ~0x40, DANUBE_PMU_PWDCR);
-+	//clear_bit (15, (volatile unsigned long *)DANUBE_PMU_PWDCR);
 +	writel(readl(DANUBE_PMU_PWDCR) & ~0x8000, DANUBE_PMU_PWDCR);
-+	//writel(readl(DANUBE_PMU_PWDCR) & ~0x8041, DANUBE_PMU_PWDCR);
 +
 +#if 1//defined (DWC_HOST_ONLY)
 +	// make the hardware be a host controller (default)
@@ -15577,10 +15556,10 @@
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY4010) += mach-easy4010.o
  obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
-+onj-y += dev-dwc_otg.o
++obj-y += dev-dwc_otg.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/dev-dwc_otg.c
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,68 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -15613,17 +15592,20 @@
 +#include <xway_irq.h>
 +#include <lantiq_platform.h>
 +
++#define LQ_USB_IOMEM_BASE 0x1e101000
++#define LQ_USB_IOMEM_SIZE 0x00040000
++
 +static struct resource resources[] =
 +{
 +	[0] = {
 +		.name    = "dwc_otg_membase",
-+		.start   = IFX_USB_IOMEM_BASE,
-+		.end	   = IFX_USB_IOMEM_BASE + IFX_USB_IOMEM_SIZE - 1,
++		.start   = LQ_USB_IOMEM_BASE,
++		.end	   = LQ_USB_IOMEM_BASE + LQ_USB_IOMEM_SIZE - 1,
 +		.flags	 = IORESOURCE_MEM,
 +	},
 +	[1] = {
 +		.name    = "dwc_otg_irq",
-+		.start   = IFX_USB_IRQ,
++		.start   = LQ_USB_INT,
 +		.flags   = IORESOURCE_IRQ,
 +	},
 +};
@@ -15643,6 +15625,7 @@
 +xway_register_dwc(int pin)
 +{
 +	lq_enable_irq(resources[1].start);
++	platform_dev.dev.platform_data = pin;
 +	return platform_device_register(&platform_dev);
 +}
 --- /dev/null
@@ -15667,7 +15650,7 @@
 +#endif
 --- a/arch/mips/lantiq/xway/mach-arv45xx.c
 +++ b/arch/mips/lantiq/xway/mach-arv45xx.c
-@@ -24,6 +24,7 @@
+@@ -23,6 +23,7 @@
  #include <lantiq_platform.h>
  
  #include "devices.h"
@@ -15675,7 +15658,7 @@
  
  #define ARV452_LATCH_SWITCH		(1 << 10)
  
-@@ -133,6 +134,7 @@
+@@ -132,6 +133,7 @@
  	lq_register_pci(&lq_pci_data);
  	lq_register_wdt();
  	arv45xx_register_ethernet();
@@ -15683,7 +15666,7 @@
  }
  
  MIPS_MACHINE(LANTIQ_MACH_ARV4518,
-@@ -152,6 +154,7 @@
+@@ -151,6 +153,7 @@
  	lq_register_pci(&lq_pci_data);
  	lq_register_wdt();
  	arv45xx_register_ethernet();
