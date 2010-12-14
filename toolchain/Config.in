@@ -98,6 +98,7 @@ config EABI_SUPPORT
 menuconfig EXTRA_TARGET_ARCH
 	bool
 	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
+	depends !sparc
 	default y	if powerpc64
 	default n
 	help

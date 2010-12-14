@@ -164,6 +164,7 @@ ifeq ($(DUMP),1)
   DEFAULT_CFLAGS_mipsel=$(DEFAULT_CFLAGS_mips)
   DEFAULT_CFLAGS_mips64=-Os -pipe -mips64 -mtune=mips64 -mabi=64 -funit-at-a-time
   DEFAULT_CFLAGS_mips64el=$(DEFAULT_CFLAGS_mips64)
+  DEFAULT_CFLAGS_sparc=-Os -pipe -mcpu=ultrasparc -funit-at-a-time
   DEFAULT_CFLAGS_arm=-Os -pipe -march=armv5te -mtune=xscale -funit-at-a-time
   DEFAULT_CFLAGS_armeb=$(DEFAULT_CFLAGS_arm)
   DEFAULT_CFLAGS=$(if $(DEFAULT_CFLAGS_$(ARCH)),$(DEFAULT_CFLAGS_$(ARCH)),-Os -pipe -funit-at-a-time)
