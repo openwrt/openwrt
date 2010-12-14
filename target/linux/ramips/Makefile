@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2009 OpenWrt.org
+# Copyright (C) 2008-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,7 +13,7 @@ SUBTARGETS:=rt288x rt305x
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 FEATURES:=squashfs
 
-LINUX_VERSION:=2.6.34.7
+LINUX_VERSION:=2.6.36.2
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=kmod-leds-gpio wpad-mini
