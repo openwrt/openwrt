@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# Copyright (C) 2010 OpenWrt.org
+#
+
+. /lib/ar71xx.sh
+
+board=$(ar71xx_board_name)
+
+tl_wr941nd_set_wlan_led() {
+	uci batch <<EOF
+set system.wlan_led=led
+set system.wlan_led.name='WLAN'
+set system.wlan_led.sysfs='tl-wr941nd:green:wlan'
+set system.wlan_led.trigger='phy0tpt'
+commit system
+EOF
+}
+
+if [ "${board}" == "tl-wr941nd" ]; then
+	tl_wr941nd_set_wlan_led
+fi
