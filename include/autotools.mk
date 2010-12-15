@@ -13,6 +13,16 @@ define libtool_remove_files
 	find $(1) -name '*.la' | $(XARGS) rm -f;
 endef
 
+
+AM_TOOL_PATHS:= \
+	AUTOM4TE=$(STAGING_DIR_HOST)/bin/autom4te \
+	AUTOCONF=$(STAGING_DIR_HOST)/bin/autoconf \
+	AUTOMAKE=$(STAGING_DIR_HOST)/bin/automake \
+	ACLOCAL=$(STAGING_DIR_HOST)/bin/aclocal \
+	AUTOHEADER=$(STAGING_DIR_HOST)/bin/autoheader \
+	LIBTOOLIZE=$(STAGING_DIR_HOST)/bin/libtoolize \
+	M4=$(STAGING_DIR_HOST)/bin/m4
+
 # 1: build dir
 # 2: remove files
 # 3: automake paths
@@ -23,11 +33,11 @@ define autoreconf
 		$(patsubst %,rm -f %;,$(2)) \
 		$(foreach p,$(3), \
 			if [ -x $(p)/autogen.sh ]; then \
-				$(p)/autogen.sh || true; \
+				$(AM_TOOL_PATHS) $(p)/autogen.sh || true; \
 			elif [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
 				[ -f $(p)/aclocal.m4 ] && [ ! -f $(p)/acinclude.m4 ] && mv aclocal.m4 acinclude.m4; \
 				[ -d $(p)/autom4te.cache ] && rm -rf autom4te.cache; \
-				$(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
+				$(AM_TOOL_PATHS) $(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
 					-B $(STAGING_DIR_HOST)/share/aclocal \
 					$(patsubst %,-B %,$(5)) \
 					$(patsubst %,-I %,$(4)) $(4) || true; \
