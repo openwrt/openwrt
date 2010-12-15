@@ -35,6 +35,7 @@ define autoreconf
 			if [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
 				[ -f $(p)/aclocal.m4 ] && [ ! -f $(p)/acinclude.m4 ] && mv aclocal.m4 acinclude.m4; \
 				[ -d $(p)/autom4te.cache ] && rm -rf autom4te.cache; \
+				touch NEWS AUTHORS COPYING ChangeLog; \
 				$(AM_TOOL_PATHS) $(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
 					-B $(STAGING_DIR_HOST)/share/aclocal \
 					$(patsubst %,-B %,$(5)) \
