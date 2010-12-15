@@ -32,9 +32,7 @@ define autoreconf
 	(cd $(1); \
 		$(patsubst %,rm -f %;,$(2)) \
 		$(foreach p,$(3), \
-			if [ -x $(p)/autogen.sh ]; then \
-				$(AM_TOOL_PATHS) $(p)/autogen.sh || true; \
-			elif [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
+			if [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
 				[ -f $(p)/aclocal.m4 ] && [ ! -f $(p)/acinclude.m4 ] && mv aclocal.m4 acinclude.m4; \
 				[ -d $(p)/autom4te.cache ] && rm -rf autom4te.cache; \
 				$(AM_TOOL_PATHS) $(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
