@@ -13,7 +13,7 @@ PKG_SOURCE_URL:=http://www.mpfr.org/mpfr-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=f45bac3584922c8004a10060ab1a8f9f
 
-#HOST_FIXUP:=autoreconf
+HOST_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -21,5 +21,10 @@ HOST_CONFIGURE_ARGS += \
 	--enable-static \
 	--disable-shared \
 	--with-gmp=$(STAGING_DIR_HOST)
+
+define Host/Configure
+	echo "PATH=$(shell echo $$PATH)"
+	$(call Host/Configure/Default)
+endef
 
 $(eval $(call HostBuild))
