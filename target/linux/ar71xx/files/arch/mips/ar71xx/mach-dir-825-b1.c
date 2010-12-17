@@ -178,6 +178,9 @@ static void __init dir825b1_setup(void)
 
 	platform_device_register(&dir825b1_rtl8366s_device);
 
+	ap94_pci_setup_wmac_led_pin(0, 5);
+	ap94_pci_setup_wmac_led_pin(1, 5);
+
 	ap94_pci_init((u8 *) KSEG1ADDR(DIR825B1_CAL_LOCATION_0),
 		      (u8 *) KSEG1ADDR(DIR825B1_MAC_LOCATION_0),
 		      (u8 *) KSEG1ADDR(DIR825B1_CAL_LOCATION_1),
