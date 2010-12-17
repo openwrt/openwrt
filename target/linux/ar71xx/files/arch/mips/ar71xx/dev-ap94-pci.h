@@ -15,13 +15,16 @@
 void ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,
 		   u8 *cal_data1, u8 *mac_addr1) __init;
 
-void ap94_pci_enable_quirk_wndr3700(void) __init;
+void ap94_pci_setup_wmac_led_pin(unsigned wmac, int pin) __init;
+void ap94_pci_setup_wmac_gpio(unsigned wmac, u32 mask, u32 val) __init;
 
 #else
 static inline void ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,
 				 u8 *cal_data1, u8 *mac_addr1) {}
 
-static inline void ap94_pci_enable_quirk_wndr3700(void) {}
+static inline void ap94_pci_setup_wmac_led_pin(unsigned wmac, int pin) {};
+static inline void ap94_pci_setup_wmac_gpio(unsigned wmac,
+					    u32 mask, u32 val) {};
 #endif
 
 #endif /* _AR71XX_DEV_AP94_PCI_H */
