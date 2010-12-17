@@ -12,6 +12,7 @@ load_led() {
 	local default
 	local delayon
 	local delayoff
+	local interval
 
 	config_get sysfs $1 sysfs
 	config_get name $1 name "$sysfs"
@@ -21,12 +22,13 @@ load_led() {
 	config_get_bool default $1 default "nil"
 	config_get delayon $1 delayon
 	config_get delayoff $1 delayoff
+	config_get interval $1 interval "50"
 
 	[ -e /sys/class/leds/${sysfs}/brightness ] && {
 		echo "setting up led ${name}"
-		[ "$default" != nil ] && { 
-			[ $default -eq 1 ] && 
-				echo 1 >/sys/class/leds/${sysfs}/brightness 
+		[ "$default" != nil ] && {
+			[ $default -eq 1 ] &&
+				echo 1 >/sys/class/leds/${sysfs}/brightness
 			[ $default -eq 1 ] ||
 				echo 0 >/sys/class/leds/${sysfs}/brightness
 		}
@@ -34,10 +36,14 @@ load_led() {
 		[ "$trigger" == "netdev" -a -n "$dev" ] && {
 			echo $dev > /sys/class/leds/${sysfs}/device_name
 			echo $mode > /sys/class/leds/${sysfs}/mode
-		} 
+		}
 		[ "$trigger" == "timer" ] && {
 			[ -n "$delayon" ] && echo $delayon > /sys/class/leds/${sysfs}/delay_on
 			[ -n "$delayoff" ] && echo $delayoff > /sys/class/leds/${sysfs}/delay_off
+		}
+		[ "$trigger" == "usbdev" -a -n "$dev" ] && {
+			echo $dev > /sys/class/leds/${sysfs}/device_name
+			echo $interval > /sys/class/leds/${sysfs}/activity_interval
 		}
 	}
 }
