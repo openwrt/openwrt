@@ -203,7 +203,15 @@ static void __init wndr3700_setup(void)
 	platform_device_register(&wndr3700_rtl8366s_device);
 	platform_device_register_simple("wndr3700-led-usb", -1, NULL, 0);
 
-	ap94_pci_enable_quirk_wndr3700();
+	ap94_pci_setup_wmac_led_pin(0, 5);
+	ap94_pci_setup_wmac_led_pin(1, 5);
+
+	/* 2.4 GHz uses the first fixed antenna group (1, 0, 1, 0) */
+	ap94_pci_setup_wmac_gpio(0, (0xf << 6), (0xa << 6));
+
+	/* 5 GHz uses the second fixed antenna group (0, 1, 1, 0) */
+	ap94_pci_setup_wmac_gpio(1, (0xf << 6), (0x6 << 6));
+
 	ap94_pci_init(art + WNDR3700_CALDATA0_OFFSET,
 		      art + WNDR3700_WMAC0_MAC_OFFSET,
 		      art + WNDR3700_CALDATA1_OFFSET,
