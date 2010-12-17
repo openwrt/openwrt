@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Copyright (C) 2010 OpenWrt.org
+#
+
+. /lib/ar71xx.sh
+
+board=$(ar71xx_board_name)
+
+wzrhpg300nh_set_leds() {
+	uci batch <<EOF
+add system led
+set system.@led[-1]='led'
+set system.@led[-1].name='Wireless'
+set system.@led[-1].sysfs='wzr-hp-g300nh:green:wireless'
+set system.@led[-1].trigger='phy0tpt'
+add system led
+set system.@led[-1]='led'
+set system.@led[-1].name='Router'
+set system.@led[-1].sysfs='wzr-hp-g300nh:green:router'
+set system.@led[-1].trigger='netdev'
+set system.@led[-1].dev='eth1'
+set system.@led[-1].mode='link tx rx'
+commit system
+EOF
+}
+
+if [ "${board}" == "wzr-hp-g300nh" ]; then
+	wzrhpg300nh_set_leds
+fi
