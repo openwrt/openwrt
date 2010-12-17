@@ -14,7 +14,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5) += gmp mpfr
 tools-$(CONFIG_GCC_VERSION_4_5) += mpc libelf
 endif
-tools-y += m4 autoconf automake bison pkg-config sed mklibs
+tools-y += m4 autoconf automake flex bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2 flock
 tools-y += xorg-macros xz
@@ -34,6 +34,7 @@ ifdef CONFIG_GCC_USE_GRAPHITE
 endif
 
 # builddir dependencies
+$(curdir)/bison/compile := $(curdir)/flex/install
 $(curdir)/pkg-config/compile := $(curdir)/sed/install
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
 $(curdir)/squashfs4/compile := $(curdir)/lzma/install
