@@ -22,9 +22,9 @@ void ap94_pci_setup_wmac_gpio(unsigned wmac, u32 mask, u32 val) __init;
 static inline void ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,
 				 u8 *cal_data1, u8 *mac_addr1) {}
 
-static inline void ap94_pci_setup_wmac_led_pin(unsigned wmac, int pin) {};
+static inline void ap94_pci_setup_wmac_led_pin(unsigned wmac, int pin) {}
 static inline void ap94_pci_setup_wmac_gpio(unsigned wmac,
-					    u32 mask, u32 val) {};
+					    u32 mask, u32 val) {}
 #endif
 
 #endif /* _AR71XX_DEV_AP94_PCI_H */
