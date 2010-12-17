@@ -999,12 +999,13 @@ calc_block_offsets(int type, uint32_t *offset)
 			continue;
 
 		next_offs = ALIGN(*offset, block->align);
-		avail = board->flash_size - board->romio_offs - next_offs;
+		avail = board->flash_size - next_offs;
 		if (block->file_size > avail) {
 			ERR("file %s is too big, offset = %u, size=%u,"
-				" align = %u", block->file_name,
+				" avail = %u, align = %u", block->file_name,
 				(unsigned)next_offs,
 				(unsigned)block->file_size,
+				(unsigned)avail,
 				(unsigned)block->align);
 			res = -1;
 			break;
