@@ -133,6 +133,17 @@ static void __init ubnt_generic_setup(void)
 	pb42_pci_init();
 }
 
+/*
+ * There is Secondary MAC address duplicate problem with some UBNT HW batches.
+ * Do not increase Secondary MAC address by 1 but do workaround
+ * with 'Locally Administrated' bit.
+ */
+static void ubnt_init_secondary_mac(unsigned char *mac_base)
+{
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac_base, 0);
+	ar71xx_eth1_data.mac_addr[0] |= 0x02;
+}
+
 #define UBNT_RS_WAN_PHYMASK	(1 << 20)
 #define UBNT_RS_LAN_PHYMASK	((1 << 16) | (1 << 17) | (1 << 18) | (1 << 19))
 
@@ -146,7 +157,7 @@ static void __init ubnt_rs_setup(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = UBNT_RS_WAN_PHYMASK;
 
-	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 1);
+	ubnt_init_secondary_mac(ar71xx_mac_base);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.speed = SPEED_100;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
@@ -177,7 +188,7 @@ static void __init ubnt_rspro_setup(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = UBNT_RSPRO_WAN_PHYMASK;
 
-	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 1);
+	ubnt_init_secondary_mac(ar71xx_mac_base);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.phy_mask = UBNT_RSPRO_LAN_PHYMASK;
 	ar71xx_eth1_data.speed = SPEED_1000;
