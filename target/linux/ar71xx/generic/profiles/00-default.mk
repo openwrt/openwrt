@@ -10,7 +10,8 @@ define Profile/Default
 	PACKAGES:= \
 		kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2 swconfig \
 		vsc7385-ucode-ap83 vsc7385-ucode-pb44 vsc7395-ucode-ap83 \
-		vsc7395-ucode-pb44 wpad-mini uboot-ar71xx-nbg460n_550n_550nh
+		vsc7395-ucode-pb44 wpad-mini uboot-ar71xx-nbg460n_550n_550nh \
+		kmod-ledtrig-usbdev
 endef
 
 define Profile/Default/Description

@@ -21,6 +21,13 @@ set system.@led[-1].sysfs='wzr-hp-g300nh:green:router'
 set system.@led[-1].trigger='netdev'
 set system.@led[-1].dev='eth1'
 set system.@led[-1].mode='link tx rx'
+add system led
+set system.@led[-1]='led'
+set system.@led[-1].name='USB'
+set system.@led[-1].sysfs='wzr-hp-g300nh:blue:usb'
+set system.@led[-1].trigger='usbdev'
+set system.@led[-1].dev='1-1'
+set system.@led[-1].interval='50'
 commit system
 EOF
 }
