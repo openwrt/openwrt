@@ -1,0 +1,38 @@
+From: Roberto Bagnara <bagnara@cs.unipr.it>
+Date: Sat, 9 Jan 2010 15:32:08 +0000 (+0100)
+Subject: Added support for GMP 5.0.
+X-Git-Url: http://www.cs.unipr.it/git/gitweb.cgi?p=ppl%2Fppl.git;a=commitdiff_plain;h=9c19bc2b318a35016e0189f9552c98910be37f53
+
+Added support for GMP 5.0.
+---
+
+diff --git a/m4/ac_check_gmp.m4 b/m4/ac_check_gmp.m4
+index 60cecdc..15acb18 100644
+--- a/m4/ac_check_gmp.m4
++++ b/m4/ac_check_gmp.m4
+@@ -71,6 +71,10 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
+ #GMP version 4.1.3 or higher is required
+ #endif
+ 
++#ifndef BITS_PER_MP_LIMB
++#define BITS_PER_MP_LIMB GMP_LIMB_BITS
++#endif
++
+ int
+ main() {
+   std::string header_version;
+@@ -97,11 +101,11 @@ main() {
+     return 1;
+   }
+ 
+-  if (sizeof(mp_limb_t)*CHAR_BIT != GMP_LIMB_BITS
+-      || GMP_LIMB_BITS != mp_bits_per_limb) {
++  if (sizeof(mp_limb_t)*CHAR_BIT != BITS_PER_MP_LIMB
++      || BITS_PER_MP_LIMB != mp_bits_per_limb) {
+     std::cerr
+       << "GMP header (gmp.h) and library (ligmp.*) bits-per-limb mismatch:\n"
+-      << "header gives " << __GMP_BITS_PER_MP_LIMB << ";\n"
++      << "header gives " << BITS_PER_MP_LIMB << ";\n"
+       << "library gives " << mp_bits_per_limb << ".\n"
+       << "This probably means you are on a bi-arch system and\n"
+       << "you are compiling with the wrong header or linking with\n"
