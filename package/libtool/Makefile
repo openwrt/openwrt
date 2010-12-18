@@ -15,12 +15,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/libtool
 PKG_MD5SUM:=b32b04148ecdd7344abc6fe8bd1bb021
 
-PKG_BUILD_DEPENDS:=libtool/host
-
 PKG_BUILD_PARALLEL:=0
-HOST_BUILD_PARALLEL:=0
 
-include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 CONFIGURE_PREFIX=$(STAGING_DIR)/host
@@ -43,9 +39,6 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/include
 	mv $(2)/lib/* $(1)/usr/lib/
 	mv $(2)/include/* $(1)/usr/include/
-	$(SED) 's,\(hardcode_into_libs\)=yes,\1=no,g' $(2)/bin/libtool
-	$(CP) $(2)/bin/libtool $(2)/bin/libtool-ucxx
-	$(SED) 's,-lstdc++,-luClibc++,g' $(2)/bin/libtool-ucxx
 endef
 
 define Package/libltdl/install
@@ -53,5 +46,4 @@ define Package/libltdl/install
 	$(CP) $(PKG_BUILD_DIR)/libltdl/.libs/libltdl.so.* $(1)/usr/lib/
 endef
 
-$(eval $(call HostBuild))
 $(eval $(call BuildPackage,libltdl))
