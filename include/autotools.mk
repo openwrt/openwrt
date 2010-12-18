@@ -21,7 +21,8 @@ AM_TOOL_PATHS:= \
 	ACLOCAL=$(STAGING_DIR_HOST)/bin/aclocal \
 	AUTOHEADER=$(STAGING_DIR_HOST)/bin/autoheader \
 	LIBTOOLIZE=$(STAGING_DIR_HOST)/bin/libtoolize \
-	M4=$(STAGING_DIR_HOST)/bin/m4
+	M4=$(STAGING_DIR_HOST)/bin/m4 \
+	AUTOPOINT=true
 
 # 1: build dir
 # 2: remove files
