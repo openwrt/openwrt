@@ -13,6 +13,8 @@ PKG_SOURCE_URL:=ftp://gcc.gnu.org/pub/gcc/infrastructure
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_MD5SUM:=04aa756179b6d850d9ffa50f61b91895
 
+HOST_FIXUP:=autoreconf
+
 include $(INCLUDE_DIR)/host-build.mk
 
 unexport CFLAGS
