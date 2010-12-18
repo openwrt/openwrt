@@ -44,7 +44,7 @@ $(curdir)/dtc/compile := $(curdir)/bison/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install $(curdir)/libtool/install
 $(curdir)/automake/compile := $(curdir)/m4/install $(curdir)/autoconf/install $(curdir)/pkg-config/install
 $(curdir)/mpc/compile := $(curdir)/gmp/install
-$(curdir)/mpfr/compile := $(curdir)/gmp/install
+$(curdir)/mpfr/compile := $(curdir)/gmp/install $(curdir)/automake/install
 $(curdir)/ppl/compile := $(curdir)/gmp/install
 $(curdir)/cloog/compile := $(curdir)/ppl/install
 $(curdir)/mtd-utils/compile := $(curdir)/e2fsprogs/install
@@ -52,7 +52,6 @@ $(curdir)/mkimage/compile := $(curdir)/sed/install
 $(curdir)/qemu/compile := $(curdir)/e2fsprogs/install
 $(curdir)/upslug2/compile := $(curdir)/automake/install
 $(curdir)/xorg-macros/compile := $(curdir)/automake/install
-$(curdir)/mpfr/compile := $(curdir)/automake/install
 $(curdir)/ppl/compile := $(curdir)/automake/install
 $(curdir)/cloog/compile := $(curdir)/automake/install
 
