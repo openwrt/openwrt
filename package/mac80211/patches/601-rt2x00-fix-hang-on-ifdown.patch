@@ -16,14 +16,14 @@ Signed-off-by: Helmut Schaa <helmut.schaa@googlemail.com>
 
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -592,6 +592,10 @@ static void rt2800pci_kill_tx_queue(stru
- 		return;
- 	}
+@@ -481,6 +481,10 @@ static void rt2800pci_disable_radio(stru
+ 
+ 	rt2800_register_write(rt2x00dev, PBF_SYS_CTRL, 0x00001280);
  
 +	rt2800_register_read(rt2x00dev, WPDMA_GLO_CFG, &reg);
 +	rt2x00_set_field32(&reg, WPDMA_GLO_CFG_ENABLE_TX_DMA, 0);
 +	rt2800_register_write(rt2x00dev, WPDMA_GLO_CFG, reg);
 +
  	rt2800_register_read(rt2x00dev, WPDMA_RST_IDX, &reg);
- 	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DTX_IDX0, (queue->qid == QID_AC_BE));
- 	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DTX_IDX1, (queue->qid == QID_AC_BK));
+ 	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DTX_IDX0, 1);
+ 	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DTX_IDX1, 1);

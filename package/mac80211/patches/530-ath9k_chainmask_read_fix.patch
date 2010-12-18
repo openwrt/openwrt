@@ -1,0 +1,28 @@
+--- a/drivers/net/wireless/ath/ath9k/debug.c
++++ b/drivers/net/wireless/ath/ath9k/debug.c
+@@ -81,11 +81,10 @@ static ssize_t read_file_tx_chainmask(st
+ 			     size_t count, loff_t *ppos)
+ {
+ 	struct ath_softc *sc = file->private_data;
+-	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	char buf[32];
+ 	unsigned int len;
+ 
+-	len = sprintf(buf, "0x%08x\n", common->tx_chainmask);
++	len = sprintf(buf, "0x%08x\n", sc->sc_ah->caps.tx_chainmask);
+ 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+ }
+ 
+@@ -124,11 +123,10 @@ static ssize_t read_file_rx_chainmask(st
+ 			     size_t count, loff_t *ppos)
+ {
+ 	struct ath_softc *sc = file->private_data;
+-	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	char buf[32];
+ 	unsigned int len;
+ 
+-	len = sprintf(buf, "0x%08x\n", common->rx_chainmask);
++	len = sprintf(buf, "0x%08x\n", sc->sc_ah->caps.rx_chainmask);
+ 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+ }
+ 
