@@ -93,14 +93,12 @@ define autoreconf_host
 endef
 
 ifneq ($(filter libtool,$(HOST_FIXUP)),)
-  HOST_BUILD_DEPENDS += libtool
  ifeq ($(filter no-autoreconf,$(HOST_FIXUP)),)
   Hooks/HostConfigure/Pre += autoreconf_host
  endif
 endif
 
 ifneq ($(filter libtool-ucxx,$(HOST_FIXUP)),)
-  HOST_BUILD_DEPENDS += libtool
  ifeq ($(filter no-autoreconf,$(HOST_FIXUP)),)
   Hooks/HostConfigure/Pre += autoreconf_host
  endif
