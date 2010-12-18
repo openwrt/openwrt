@@ -77,8 +77,6 @@ define Build/InstallDev
 endef
 
 
-HOST_BUILD_DEPENDS:=libtool/host
-
 HOST_CONFIGURE_ARGS+= \
 	--disable-curl \
 	--disable-gpg \
