@@ -282,6 +282,7 @@ static void __init ubnt_nano_m_setup(void)
 {
 	ubnt_m_setup();
 
+	ar71xx_eth1_data.has_ar7240_switch = 1;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
