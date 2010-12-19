@@ -105,13 +105,13 @@ mac80211_hostapd_setup_bss() {
 
 	config_get macaddr "$vif" macaddr
 	config_get_bool hidden "$vif" hidden 0
-	config_get max_clients "$vif" max_clients
+	config_get maxassoc "$vif" maxassoc
 	cat >> /var/run/hostapd-$phy.conf <<EOF
 $hostapd_cfg
 wmm_enabled=1
 bssid=$macaddr
 ignore_broadcast_ssid=$hidden
-${max_clients:+max_num_sta=$max_clients}
+${maxassoc:+max_num_sta=$maxassoc}
 EOF
 }
 
