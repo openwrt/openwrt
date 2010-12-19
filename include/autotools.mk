@@ -61,14 +61,14 @@ define autoreconf_target
 endef
 
 ifneq ($(filter libtool,$(PKG_FIXUP)),)
-  PKG_BUILD_DEPENDS += libtool
+  PKG_BUILD_DEPENDS += libtool libintl
  ifeq ($(filter no-autoreconf,$(PKG_FIXUP)),)
   Hooks/Configure/Pre += autoreconf_target
  endif
 endif
 
 ifneq ($(filter libtool-ucxx,$(PKG_FIXUP)),)
-  PKG_BUILD_DEPENDS += libtool
+  PKG_BUILD_DEPENDS += libtool libintl
  ifeq ($(filter no-autoreconf,$(PKG_FIXUP)),)
   Hooks/Configure/Pre += autoreconf_target
  endif
