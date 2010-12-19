@@ -139,20 +139,32 @@ hostapd_set_bss_options() {
 	[ -n "$ieee80211d" ] && append "$var" "ieee80211d=$ieee80211d" "$N"
 	[ -n "$iapp_interface" ] && append "$var" $(uci_get_state network "$iapp_interface" ifname "$iapp_interface") "$N"
 
-	[ "$wpa" -ge "2" ] && config_get ieee80211w "$vif" ieee80211w
-	case "$ieee80211w" in
-		[012])
-			append "$var" "ieee80211w=$ieee80211w" "$N"
-			[ "$ieee80211w" -gt "0" ] && {
-				config_get ieee80211w_max_timeout "$vif" ieee80211w_max_timeout
-				config_get ieee80211w_retry_timeout "$vif" ieee80211w_retry_timeout
-				[ -n "$ieee80211w_max_timeout" ] && \
-					append "$var" "assoc_sa_query_max_timeout=$ieee80211w_max_timeout" "$N"
-				[ -n "$ieee80211w_retry_timeout" ] && \
-					append "$var" "assoc_sa_query_retry_timeout=$ieee80211w_retry_timeout" "$N"
-			}
-		;;
-	esac
+	if [ "$wpa" -ge "2" ]
+	then
+		# RSN -> allow preauthentication
+		config_get rsn_preauth "$vif" rsn_preauth
+		if [ -n "$bridge" -a "$rsn_preauth" = 1 ]
+		then
+			append "$var" "rsn_preauth=1" "$N"
+			append "$var" "rsn_preauth_interfaces=$bridge" "$N"
+		fi
+
+		# RSN -> allow management frame protection
+		config_get ieee80211w "$vif" ieee80211w
+		case "$ieee80211w" in
+			[012])
+				append "$var" "ieee80211w=$ieee80211w" "$N"
+				[ "$ieee80211w" -gt "0" ] && {
+					config_get ieee80211w_max_timeout "$vif" ieee80211w_max_timeout
+					config_get ieee80211w_retry_timeout "$vif" ieee80211w_retry_timeout
+					[ -n "$ieee80211w_max_timeout" ] && \
+						append "$var" "assoc_sa_query_max_timeout=$ieee80211w_max_timeout" "$N"
+					[ -n "$ieee80211w_retry_timeout" ] && \
+						append "$var" "assoc_sa_query_retry_timeout=$ieee80211w_retry_timeout" "$N"
+				}
+			;;
+		esac
+	fi
 }
 
 hostapd_setup_vif() {
