@@ -137,7 +137,7 @@ hostapd_set_bss_options() {
 	append "$var" "ssid=$ssid" "$N"
 	[ -n "$bridge" ] && append "$var" "bridge=$bridge" "$N"
 	[ -n "$ieee80211d" ] && append "$var" "ieee80211d=$ieee80211d" "$N"
-	[ -n "$iapp_interface" ] && append "$var" $(uci_get_state network "$iapp_interface" ifname "$iapp_interface") "$N"
+	[ -n "$iapp_interface" ] && append "$var" iapp_interface=$(uci_get_state network "$iapp_interface" ifname "$iapp_interface") "$N"
 
 	if [ "$wpa" -ge "2" ]
 	then
