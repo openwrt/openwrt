@@ -1,0 +1,36 @@
+--- a/lib/ext2fs/unix_io.c
++++ b/lib/ext2fs/unix_io.c
+@@ -428,6 +428,7 @@ static errcode_t unix_open(const char *n
+ 	struct unix_private_data *data = NULL;
+ 	errcode_t	retval;
+ 	int		open_flags;
++	int		f_nocache = 0;
+ 	struct stat	st;
+ #ifdef __linux__
+ 	struct 		utsname ut;
+@@ -464,7 +465,11 @@ static errcode_t unix_open(const char *n
+ 	if (flags & IO_FLAG_EXCLUSIVE)
+ 		open_flags |= O_EXCL;
+ 	if (flags & IO_FLAG_DIRECT_IO)
++#if !defined(O_DIRECT) && defined(F_NOCACHE)
++		f_nocache = F_NOCACHE;
++#else
+ 		open_flags |= O_DIRECT;
++#endif
+ 	data->flags = flags;
+ 
+ #ifdef HAVE_OPEN64
+@@ -477,6 +482,13 @@ static errcode_t unix_open(const char *n
+ 		goto cleanup;
+ 	}
+ 
++	if (f_nocache) {
++		if (fcntl(data->dev, f_nocache, 1) < 0) {
++			retval = errno;
++			goto cleanup;
++		}
++	}
++
+ #ifdef BLKSSZGET
+ 	if (flags & IO_FLAG_DIRECT_IO) {
+ 		if (ioctl(data->dev, BLKSSZGET, &data->align) != 0)
