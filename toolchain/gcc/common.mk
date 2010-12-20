@@ -95,6 +95,9 @@ SEP:=,
 TARGET_LANGUAGES:="c$(if $(CONFIG_INSTALL_LIBSTDCPP),$(SEP)c++)$(if $(CONFIG_INSTALL_LIBGCJ),$(SEP)java)"
 
 export libgcc_cv_fixed_point=no
+ifdef CONFIG_USE_UCLIBC
+  export glibcxx_cv_c99_math_tr1=no
+endif
 
 GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
