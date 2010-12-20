@@ -19,7 +19,7 @@ PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.de.netfilter.org/pub/netfilter/iptables/ \
 	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
 
-PKG_FIXUP:=libtool
+PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 
@@ -304,11 +304,6 @@ MAKE_FLAGS := \
 	LDFLAGS="-rdynamic -static-libgcc" \
 	KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 	KBUILD_OUTPUT="$(LINUX_DIR)" \
-
-define Build/Configure
-	(cd $(PKG_BUILD_DIR); ./autogen.sh)
-$(call Build/Configure/Default)
-endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
