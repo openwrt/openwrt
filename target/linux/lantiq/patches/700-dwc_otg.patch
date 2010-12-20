@@ -13245,7 +13245,7 @@
 +#endif /* DWC_DEVICE_ONLY */
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_ifx.c
-@@ -0,0 +1,150 @@
+@@ -0,0 +1,105 @@
 +/******************************************************************************
 +**
 +** FILE NAME    : dwc_otg_ifx.c
@@ -13341,60 +13341,15 @@
 +
 +static void release_platform_dev(struct device * dev)
 +{
-+	printk("IFX dwc_otg USB platform_dev release\n");
-+	dev->parent = NULL;
 +}
 +
-+static struct resource resources[] =
-+{
-+	[0] = {
-+		.name    = "dwc_otg_membase",
-+		.start   = IFX_USB_IOMEM_BASE,
-+		.end	   = IFX_USB_IOMEM_BASE + IFX_USB_IOMEM_SIZE - 1,
-+		.flags	 = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.name    = "dwc_otg_irq",
-+		.start   = IFX_USB_IRQ,
-+		.flags   = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static u64 dwc_dmamask = (u32)0x1fffffff;
-+
-+static struct platform_device platform_dev = {
-+	.dev = {
-+		.release       = release_platform_dev,
-+		.dma_mask      = &dwc_dmamask,
-+	},
-+	.resource		= resources,
-+	.num_resources		= ARRAY_SIZE(resources),
-+};
-+
-+extern const char dwc_driver_name[];
 +int ifx_usb_hc_init(unsigned long base_addr, int irq)
 +{
-+	if (platform_dev.dev.parent)
-+		return -EBUSY;
-+
-+	/* finish seting up the platform device */
-+	//resources[0].start = base_addr;
-+	//resources[0].end = base_addr + SZ_256K;
-+
-+	//resources[1].start = irq;
-+
-+	/* The driver core will probe for us.  We know sl811-hcd has been
-+	 * initialized already because of the link order dependency.
-+	 */
-+	platform_dev.name = dwc_driver_name;
-+	lq_enable_irq(resources[1].start);
-+
-+	return platform_device_register(&platform_dev);
++	return 0;
 +}
 +
 +void ifx_usb_hc_remove(void)
 +{
-+    platform_device_unregister(&platform_dev);
 +}
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_ifx.h
