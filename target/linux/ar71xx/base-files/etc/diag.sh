@@ -102,6 +102,9 @@ get_status_led() {
 	tl-wr941nd)
 		status_led="tl-wr941nd:green:system"
 		;;
+	unifi)
+		status_led="ubnt:green:dome"
+		;;
 	wndr3700)
 		status_led="wndr3700:green:power"
 		;;

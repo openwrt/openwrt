@@ -121,6 +121,9 @@ ar71xx_board_name() {
 	*TL-WR941ND)
 		name="tl-wr941nd"
 		;;
+	*UniFi)
+		name="unifi"
+		;;
 	*WP543)
 		name="wp543"
 		;;
