@@ -59,7 +59,7 @@ m4_define(__va_copy_check, [
 ])
 
 dnl #   Autoconf check for va_copy() implementation checking
-AC_DEFUN(AC_CHECK_VA_COPY,[
+AC_DEFUN([AC_CHECK_VA_COPY],[
   dnl #   provide Autoconf display check message
   AC_MSG_CHECKING(for va_copy() function)
   dnl #   check for various implementations in priorized sequence   
