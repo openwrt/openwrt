@@ -7,7 +7,7 @@
 dnl AM_PATH_ESD([MINIMUM-VERSION, [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]]])
 dnl Test for ESD, and define ESD_CFLAGS and ESD_LIBS
 dnl
-AC_DEFUN(AM_PATH_ESD,
+AC_DEFUN([AM_PATH_ESD],
 [dnl 
 dnl Get the cflags and libraries from the esd-config script
 dnl
@@ -172,7 +172,7 @@ int main ()
 dnl AM_ESD_SUPPORTS_MULTIPLE_RECORD([ACTION-IF-SUPPORTS [, ACTION-IF-NOT-SUPPORTS]])
 dnl Test, whether esd supports multiple recording clients (version >=0.2.21)
 dnl
-AC_DEFUN(AM_ESD_SUPPORTS_MULTIPLE_RECORD,
+AC_DEFUN([AM_ESD_SUPPORTS_MULTIPLE_RECORD],
 [dnl
   AC_MSG_NOTICE([whether installed esd version supports multiple recording clients])
   ac_save_ESD_CFLAGS="$ESD_CFLAGS"
