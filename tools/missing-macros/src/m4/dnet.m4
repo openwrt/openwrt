@@ -1,3 +1,5 @@
+# dnet.m4 serial 1 (libdnet-1.11)
+
 dnl
 dnl Check for 4.4 BSD sa_len member in sockaddr struct
 dnl

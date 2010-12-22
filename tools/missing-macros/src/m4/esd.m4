@@ -1,3 +1,4 @@
+# esd.m4 serial 1 (libmikmod-3.1.12)
 # Configure paths for ESD
 # Manish Singh    98-9-30
 # stolen back from Frank Belew
