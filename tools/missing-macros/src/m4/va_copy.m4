@@ -1,3 +1,5 @@
+# va_copy.m4 serial 1 (js-1.6.20070208)
+
 dnl ##
 dnl ##  Check for C99 va_copy() implementation
 dnl ##  (and provide fallback implementation if neccessary)
