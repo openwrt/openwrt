@@ -1,6 +1,6 @@
 --- a/drivers/mtd/chips/jedec_probe.c
 +++ b/drivers/mtd/chips/jedec_probe.c
-@@ -115,6 +115,10 @@
+@@ -116,6 +116,10 @@
  #define UPD29F064115	0x221C
  
  /* PMC */
@@ -11,7 +11,7 @@
  #define PM49FL002	0x006D
  #define PM49FL004	0x006E
  #define PM49FL008	0x006A
-@@ -1259,6 +1263,54 @@ static const struct amd_flash_info jedec
+@@ -1273,6 +1277,54 @@ static const struct amd_flash_info jedec
  			ERASEINFO(0x02000,2),
  			ERASEINFO(0x04000,1),
  		}

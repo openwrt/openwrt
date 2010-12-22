@@ -14,7 +14,7 @@
  	depends on MTD_PARTITIONS
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -8,6 +8,7 @@ mtd-y				:= mtdcore.o mtdsuper.o mtdbdi.
+@@ -8,6 +8,7 @@ mtd-y				:= mtdcore.o mtdsuper.o
  mtd-$(CONFIG_MTD_PARTITIONS)	+= mtdpart.o
  
  obj-$(CONFIG_MTD_CONCAT)	+= mtdconcat.o
