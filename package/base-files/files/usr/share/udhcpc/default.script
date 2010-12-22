@@ -11,6 +11,18 @@ change_state () {
 	uci_set_state "$1" "$2" "$3" "$4"
 }
 
+set_classless_routes() {
+	local max=128
+	local type
+	while [ -n "$1" -a -n "$2" -a $max -gt 0 ]; do
+		[ ${1##*/} -eq 32 ] && type=host || type=net
+		echo "udhcpc: adding route for $type $1 via $2"
+		route add -$type "$1" gw "$2" dev "$interface"
+		max=$(($max-1))
+		shift 2
+	done
+}
+
 setup_interface () {
 	local old_ip
 	local old_broadcast
@@ -66,79 +78,8 @@ setup_interface () {
 	}
 
 	# CIDR STATIC ROUTES (rfc3442)
-	[ -n "$cidrroute" ] && {
-		# This defines how many CIDR Routes can be assigned so that we do not enter
-		# an endless loop on malformed data
-		MAXCIDRROUTES=24;
-		while [ ${MAXCIDRROUTES} -gt "0" ]; do
-			# Format is
-			# $MASK $NW $GW
-			# $NW == AAA.BBB.CCC.DDD
-			# $GW == EEE.FFF.CCC.DDD
-			# $MASK AAA.[BBB].[CCC].[DDD] EEE.FFF.GGG.HHH
-			#   1    2    3     4     5    6   7   8   9
-			MASK=$(echo $cidrroute | awk '{ print $1 }')
-			if [ ${MASK} = "0" ] ; then
-				# $MASK EEE.FFF.GGG.HHH
-				#   1    2   3   5   6
-				NW="0"
-				GW=$(echo $cidrroute | awk '{ print $2"."$3"."$4"."$5 }' )
-			elif [ ${MASK} -le "8" ] ; then
-				# $MASK AAA EEE.FFF.GGG.HHH
-				#   1    2   3   5   6   7
-				NW=$(echo $cidrroute | awk '{ print $2 }' )
-				GW=$(echo $cidrroute | awk '{ print $3"."$4"."$5"."$6 }' )
-			elif [ ${MASK} -le "16" ] ; then
-				# $MASK AAA.BBB EEE.FFF.GGG.HHH
-				#   1    2   3   5   6   7   8
-				NW=$(echo $cidrroute | awk '{ print $2"."$3 }' )
-				GW=$(echo $cidrroute | awk '{ print $4"."$5"."$6"."$7 }' )
-			elif [ ${MASK} -le "24" ] ; then
-				# $MASK AAA.BBB.CCC EEE.FFF.GGG.HHH
-				#   1    2   3   4   5   6   7   8
-				NW=$(echo $cidrroute | awk '{ print $2"."$3"."$4 }' )
-				GW=$(echo $cidrroute | awk '{ print $5"."$6"."$7"."$8 }' )
-
-			else
-				# $MASK AAA.BBB.CCC.DDD EEE.FFF.GGG.HHH
-				#   1    2   3   4   5   6   7   8   9
-				NW=$(echo $cidrroute | awk '{ print $2"."$3"."$4"."$5 }' )
-				GW=$(echo $cidrroute | awk '{ print $6"."$7"."$8"."$9 }' )
-			fi
-			echo [$ROUTECOUNTER] Route Network: $NW/$MASK Gateway: $GW on $interface
-
-			# TODO: Check for malformed data here to eliminate counter workaround
-			# Malformed data is: ... or xxx... or xxx.yyy.. or xxx.yyy.zzz.
-
-			[ -n "$NW" ] && [ -n "$GW" ] && {
-				route add $NW gw $GW dev $interface
-			}
-
-			# Clear the strings incase they don't get set next time around
-			if [ ${NW} = "0" ]; then
-				NW=""
-			fi
-			TMP="$MASK $NW $GW "
-			NW=""
-			GW=""
-
-			# Remove the '.' so that we can delete them from the input with sed
-			TMP=$(echo $TMP | sed "s/\./ /g")
-
-			# Remove the previous entry from cidrroute
-			cidrroute=$(echo $cidrroute | sed "s/$TMP//g")
-
-			# Add to counter
-			let ROUTECOUNTER=$ROUTECOUNTER+1;
-			let MAXCIDRROUTES=$MAXCIDRROUTES-1;
-
-			# Leave the loop if cidrroutes is empty (we've parsed everything)
-			[ ! -n "$cidrroute" ] && break
-
-		done
-
-		echo "done."
-	}
+	[ -n "$staticroutes" ] && set_classless_routes $staticroutes
+	[ -n "$msstaticroutes" ] && set_classless_routes $msstaticroutes
 
 	# DNS
 	old_dns=$(uci_get_state network "$ifc" dns)
