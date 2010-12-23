@@ -35,3 +35,18 @@ define KernelPackage/pwm-atmel/description
 endef
 
 $(eval $(call KernelPackage,pwm-atmel))
+
+define KernelPackage/at91-adc
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=ADC on atmel SoC
+  DEPENDS:=@TARGET_at91
+  KCONFIG:=CONFIG_AT91_ADC
+  FILES:=$(LINUX_DIR)/drivers/misc/at91-adc.ko
+  AUTOLOAD:=$(call AutoLoad,40,at91-adc)
+endef
+
+define KernelPackage/at91-adc/description
+ Kernel module to use the ADC channels of SoC
+endef
+
+$(eval $(call KernelPackage,at91-adc))
