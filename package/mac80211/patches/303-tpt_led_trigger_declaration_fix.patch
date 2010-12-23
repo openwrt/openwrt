@@ -1,0 +1,35 @@
+From: Luciano Coelho <luciano.coelho@xxxxxxxxx>
+
+If CONFIG_MAC80211_LEDS is not set, ieee80211_i.h was failing to compile,
+because struct led_trigger is only declared when CONFIG_LEDS_TRIGGERS is
+set.
+
+This patch adds ifdefs around the tpt_led_trigger declaration in
+ieee80211_i.h to avoid the problem.
+
+Cc: Johannes Berg <johannes@xxxxxxxxxxxxxxxx>
+Signed-off-by: Luciano Coelho <luciano.coelho@xxxxxxxxx>
+---
+ net/mac80211/ieee80211_i.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/net/mac80211/ieee80211_i.h b/net/mac80211/ieee80211_i.h
+index 0817ec6..7541d42 100644
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -631,6 +631,7 @@ enum queue_stop_reason {
+ 	IEEE80211_QUEUE_STOP_REASON_SKB_ADD,
+ };
+ 
++#ifdef CONFIG_MAC80211_LEDS
+ struct tpt_led_trigger {
+ 	struct led_trigger trig;
+ 	char name[32];
+@@ -642,6 +643,7 @@ struct tpt_led_trigger {
+ 	unsigned int active, want;
+ 	bool running;
+ };
++#endif
+ 
+ /**
+  * mac80211 scan flags - currently active scan mode
