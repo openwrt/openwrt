@@ -92,7 +92,49 @@
  	if (!ath9k_hw_private_ops(ah)->restore_chainmask)
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1399,7 +1399,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -491,6 +491,17 @@ static int __ath9k_hw_init(struct ath_hw
+ 	if (ah->hw_version.devid == AR5416_AR9100_DEVID)
+ 		ah->hw_version.macVersion = AR_SREV_VERSION_9100;
+ 
++	ath9k_hw_read_revisions(ah);
++
++	/*
++	 * Read back AR_WA into a permanent copy and set bits 14 and 17.
++	 * We need to do this to avoid RMW of this register. We cannot
++	 * read the reg when chip is asleep.
++	 */
++	ah->WARegVal = REG_READ(ah, AR_WA);
++	ah->WARegVal |= (AR_WA_D3_L1_DISABLE |
++			 AR_WA_ASPM_TIMER_BASED_DISABLE);
++
+ 	if (!ath9k_hw_set_reset_reg(ah, ATH9K_RESET_POWER_ON)) {
+ 		ath_err(common, "Couldn't reset chip\n");
+ 		return -EIO;
+@@ -559,14 +570,6 @@ static int __ath9k_hw_init(struct ath_hw
+ 
+ 	ath9k_hw_init_mode_regs(ah);
+ 
+-	/*
+-	 * Read back AR_WA into a permanent copy and set bits 14 and 17.
+-	 * We need to do this to avoid RMW of this register. We cannot
+-	 * read the reg when chip is asleep.
+-	 */
+-	ah->WARegVal = REG_READ(ah, AR_WA);
+-	ah->WARegVal |= (AR_WA_D3_L1_DISABLE |
+-			 AR_WA_ASPM_TIMER_BASED_DISABLE);
+ 
+ 	if (ah->is_pciexpress)
+ 		ath9k_hw_configpcipowersave(ah, 0, 0);
+@@ -1078,8 +1081,6 @@ static bool ath9k_hw_set_reset_power_on(
+ 		return false;
+ 	}
+ 
+-	ath9k_hw_read_revisions(ah);
+-
+ 	return ath9k_hw_set_reset(ah, ATH9K_RESET_WARM);
+ }
+ 
+@@ -1399,7 +1400,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  	ath9k_hw_init_qos(ah);
  
  	if (ah->caps.hw_caps & ATH9K_HW_CAP_RFSILENT)
