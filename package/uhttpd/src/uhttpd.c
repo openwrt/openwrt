@@ -339,8 +339,8 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 				hdrdata = &buffer[i+2];
 			}
 
-			/* have no name and found [A-Z], start of name */
-			else if( !hdrname && isalpha(buffer[i]) && isupper(buffer[i]) )
+			/* have no name and found [A-Za-z], start of name */
+			else if( !hdrname && isalpha(buffer[i]) )
 			{
 				hdrname = &buffer[i];
 			}
