@@ -598,7 +598,7 @@ int main (int argc, char **argv)
 				break;
 			case 'o':
 			    if (!mtd_fixtrx) {
-				    fprintf(stderr, "-o: Only for brcm47xx\n");
+				    fprintf(stderr, "-o: Only for brcm47xx/brcm63xx\n");
 					usage();
 				}
 				errno = 0;
