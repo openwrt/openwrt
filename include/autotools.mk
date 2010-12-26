@@ -21,6 +21,7 @@ AM_TOOL_PATHS:= \
 	ACLOCAL=$(STAGING_DIR_HOST)/bin/aclocal \
 	AUTOHEADER=$(STAGING_DIR_HOST)/bin/autoheader \
 	LIBTOOLIZE=$(STAGING_DIR_HOST)/bin/libtoolize \
+	LIBTOOL=$(STAGING_DIR_HOST)/bin/libtool \
 	M4=$(STAGING_DIR_HOST)/bin/m4 \
 	AUTOPOINT=true
 
@@ -34,13 +35,12 @@ define autoreconf
 		$(patsubst %,rm -f %;,$(2)) \
 		$(foreach p,$(3), \
 			if [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
-				[ -f $(p)/aclocal.m4 ] && [ ! -f $(p)/acinclude.m4 ] && mv aclocal.m4 acinclude.m4; \
 				[ -d $(p)/autom4te.cache ] && rm -rf autom4te.cache; \
 				touch NEWS AUTHORS COPYING ChangeLog; \
 				$(AM_TOOL_PATHS) $(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
 					-B $(STAGING_DIR_HOST)/share/aclocal \
 					$(patsubst %,-B %,$(5)) \
-					$(patsubst %,-I %,$(4)) -I m4 $(4) || true; \
+					$(patsubst %,-I %,$(4)) $(4) || true; \
 			fi; \
 		) \
 	);
@@ -49,6 +49,7 @@ endef
 
 PKG_LIBTOOL_PATHS?=$(CONFIGURE_PATH)
 PKG_AUTOMAKE_PATHS?=$(CONFIGURE_PATH)
+PKG_MACRO_PATHS?=m4
 PKG_REMOVE_FILES?=aclocal.m4
 
 Hooks/InstallDev/Post += libtool_remove_files
@@ -57,7 +58,7 @@ define autoreconf_target
   $(strip $(call autoreconf, \
     $(PKG_BUILD_DIR), $(PKG_REMOVE_FILES), \
     $(PKG_AUTOMAKE_PATHS), $(PKG_LIBTOOL_PATHS), \
-    $(STAGING_DIR)/host/share/aclocal $(STAGING_DIR)/usr/share/aclocal))
+    $(STAGING_DIR)/host/share/aclocal $(STAGING_DIR)/usr/share/aclocal $(PKG_MACRO_PATHS)))
 endef
 
 ifneq ($(filter libtool,$(PKG_FIXUP)),)
@@ -84,12 +85,14 @@ endif
 HOST_FIXUP?=$(PKG_FIXUP)
 HOST_LIBTOOL_PATHS?=$(if $(PKG_LIBTOOL_PATHS),$(PKG_LIBTOOL_PATHS),.)
 HOST_AUTOMAKE_PATHS?=$(if $(PKG_AUTOMAKE_PATHS),$(PKG_AUTOMAKE_PATHS),.)
+HOST_MACRO_PATHS?=$(if $(PKG_MACRO_PATHS),$(PKG_MACRO_PATHS),m4)
 HOST_REMOVE_FILES?=$(PKG_REMOVE_FILES)
 
 define autoreconf_host
   $(strip $(call autoreconf, \
     $(HOST_BUILD_DIR), $(HOST_REMOVE_FILES), \
-    $(HOST_AUTOMAKE_PATHS), $(HOST_LIBTOOL_PATHS)))
+    $(HOST_AUTOMAKE_PATHS), $(HOST_LIBTOOL_PATHS), \
+    $(HOST_MACRO_PATHS)))
 endef
 
 ifneq ($(filter libtool,$(HOST_FIXUP)),)
