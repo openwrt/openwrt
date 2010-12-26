@@ -78,6 +78,77 @@ uint32_t compute_crc32(uint32_t crc, off_t start, size_t compute_len, int fd)
 }
 
 int
+trx_fixup(int fd, const char *name)
+{
+	struct mtd_info_user mtdInfo;
+	unsigned long len;
+	void *ptr, *scan;
+	int bfd;
+	struct bcm_tag *tag;
+	ssize_t res;
+	uint32_t cfelen, imagelen, imagestart, rootfslen;
+	uint32_t imagecrc, rootfscrc, headercrc;
+	uint32_t offset = 0;
+	cfelen = imagelen = imagestart = imagecrc = rootfscrc = headercrc = rootfslen = 0;
+
+
+	if (ioctl(fd, MEMGETINFO, &mtdInfo) < 0) {
+		fprintf(stderr, "Failed to get mtd info\n");
+		goto err;
+	}
+
+	len = mtdInfo.size;
+	if (mtdInfo.size <= 0) {
+		fprintf(stderr, "Invalid MTD device size\n");
+		goto err;
+	}
+
+	bfd = mtd_open(name, true);
+	ptr = mmap(NULL, len, PROT_READ|PROT_WRITE, MAP_SHARED, bfd, 0);
+	if (!ptr || (ptr == (void *) -1)) {
+		perror("mmap");
+		goto err1;
+	}
+
+	tag = (struct bcm_tag *) (ptr);
+
+	cfelen = strntoul(&tag->cfeLength[0], NULL, 10, IMAGE_LEN);
+	if (cfelen) {
+	  fprintf(stderr, "Non-zero CFE length.  This is currently unsupported.\n");
+	  exit(1);
+	}
+
+	headercrc = compute_crc32(CRC_START, offset, offsetof(struct bcm_tag, headerCRC), fd);
+	if (headercrc != *(uint32_t *)(&tag->headerCRC[0])) {
+		fprintf(stderr, "Tag verify failed.  This may not be a valid image.\n");
+		exit(1);
+	}
+
+	sprintf(&tag->rootLength[0], "%lu", 0);
+	strncpy(&tag->totalLength[0], &tag->kernelLength[0], IMAGE_LEN);
+
+	imagestart = sizeof(tag);
+	memcpy(&tag->imageCRC[0], &tag->kernelCRC[0], CRC_LEN);
+	memcpy(&tag->fskernelCRC[0], &tag->kernelCRC[0], CRC_LEN);
+	rootfscrc = CRC_START;
+	memcpy(&tag->rootfsCRC[0], &rootfscrc, sizeof(uint32_t));
+	headercrc = crc32(CRC_START, tag, offsetof(struct bcm_tag, headerCRC));
+	memcpy(&tag->headerCRC[0], &headercrc, sizeof(uint32_t));
+
+	msync(ptr, sizeof(struct bcm_tag), MS_SYNC|MS_INVALIDATE);
+	munmap(ptr, len);
+	close(bfd);
+	return 0;
+
+err1:
+	close(bfd);
+err:
+	fprintf(stderr, "Error fixing up imagetag header\n");
+	return -1;
+}
+
+
+int
 trx_check(int imagefd, const char *mtd, char *buf, int *len)
 {
     struct bcm_tag *tag = (const struct bcm_tag *) buf;
