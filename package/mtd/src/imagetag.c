@@ -124,7 +124,7 @@ trx_fixup(int fd, const char *name)
 		exit(1);
 	}
 
-	sprintf(&tag->rootLength[0], "%lu", 0);
+	sprintf(&tag->flashRootLength[0], "%lu", 0);
 	strncpy(&tag->totalLength[0], &tag->kernelLength[0], IMAGE_LEN);
 
 	imagestart = sizeof(tag);
@@ -258,7 +258,7 @@ mtd_fixtrx(const char *mtd, size_t offset)
 	  fprintf(stderr, "Checking current fixed status.\n");
 	}
 
-	rootfslen = strntoul(&tag->rootLength[0], NULL, 10, IMAGE_LEN);
+	rootfslen = strntoul(&tag->flashRootLength[0], NULL, 10, IMAGE_LEN);
 	if (rootfslen == 0) {
 	  if (quiet < 2) 
 		fprintf(stderr, "Header already fixed, exiting\n");
@@ -270,7 +270,7 @@ mtd_fixtrx(const char *mtd, size_t offset)
 	  fprintf(stderr, "Setting root length to 0.\n");
 	}
 
-	sprintf(&tag->rootLength[0], "%lu", 0);
+	sprintf(&tag->flashRootLength[0], "%lu", 0);
 	strncpy(&tag->totalLength[0], &tag->kernelLength[0], IMAGE_LEN);
 
 	if (quiet < 2) {

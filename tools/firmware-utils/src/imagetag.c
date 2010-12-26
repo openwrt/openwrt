@@ -338,11 +338,12 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 
 	if (args->root_first_flag) {
 	  sprintf(tag.flashImageStart, "%lu", rootfsoff);
-	  sprintf(tag.rootLength, "%lu", rootfslen);	  
+	  sprintf(tag.flashRootLength, "%lu", rootfslen);	  
 	} else {
 	  sprintf(tag.flashImageStart, "%lu", kerneloff);
-	  sprintf(tag.rootLength, "%lu", rootfslen + sizeof(deadcode));
+	  sprintf(tag.flashRootLength, "%lu", rootfslen + sizeof(deadcode));
 	}
+	int2tag(tag.rootLength, rootfslen + sizeof(deadcode));
 
 	if (args->rsa_signature_given) {
 	    strncpy(tag.rsa_signature, args->rsa_signature_arg, RSASIG_LEN);
