@@ -73,7 +73,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +obj-$(CONFIG_MTD_BCM963XX)	+= bcm963xx-flash.o
 --- /dev/null
 +++ b/drivers/mtd/maps/bcm963xx-flash.c
-@@ -0,0 +1,314 @@
+@@ -0,0 +1,288 @@
 +/*
 + * Copyright (C) 2006-2008  Florian Fainelli <florian@openwrt.org>
 + * 			    Mike Albon <malbon@openwrt.org>
@@ -158,6 +158,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +	sscanf(buf->kernelAddress, "%u", &kerneladdr);
 +	sscanf(buf->kernelLength, "%u", &kernellen);
 +	sscanf(buf->totalLength, "%u", &totallen);
++	sscanf(buf->rootLength, "%u", &rootfslen);
 +	tagversion = &(buf->tagVersion[0]);
 +	boardid = &(buf->boardid[0]);
 +
@@ -173,33 +174,6 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +	  printk(KERN_ALERT PFX "parse_cfe_partitions: error occured while reading "
 +			 "from \"%s\"\n", master->name);
 +	  return -EINVAL;
-+	}
-+
-+	//	if (SQUASHFS_MAGIC != le32_to_cpu(sb.s_magic) ) {
-+	printk(KERN_DEBUG PFX "Squash magic %08lx: Found: %08lx\n", (long unsigned int)SQUASHFS_MAGIC, (long unsigned int)le32_to_cpu(sb.s_magic));
-+	if ((uint32_t)SQUASHFS_MAGIC != (uint32_t)le32_to_cpu(sb.s_magic) ) {
-+	  /* Not a squashfs image */
-+		printk(KERN_DEBUG PFX "No squashfs image in \"%s\"\n", master->name);
-+		printk(KERN_DEBUG PFX "Jffs magic %04x: Found: %04x\n", (uint16_t)(JFFS2_MAGIC_BITMASK), *(uint16_t *)(&sb));
-+		if (*(uint16_t *)(&sb) == JFFS2_MAGIC_BITMASK) {
-+		  printk(KERN_DEBUG PFX "jffs image in \"%s\"\n", master->name);
-+		  /* Is JFFS2 so have rootfslen so that true length gets calculated */
-+		  rootfslen = master->size - master->erasesize - offset;
-+		} else {
-+		  /* We only recognize squashfs and jffs2.  If it's not either of these,
-+			 don't create a rootfs partition. */
-+		  printk(KERN_INFO PFX "No known root filesystem in \"%s\"\n", master->name);
-+		  rootfslen = 0;
-+		}
-+	} else {
-+	  /* Is a squash image so find where the squash ends */
-+	  if (le64_to_cpu((sb.bytes_used)) <= 0) {
-+		printk(KERN_ALERT PFX "split_squashfs: squashfs is empty in \"%s\"\n",
-+			   master->name);
-+		return 0;
-+	  }
-+
-+	  rootfslen = (u32) le64_to_cpu(sb.bytes_used);
 +	}
 +
 +	rootfslen = ( ( rootfslen % master->erasesize ) > 0 ? (((rootfslen / master->erasesize) + 1 ) * master->erasesize) : rootfslen);

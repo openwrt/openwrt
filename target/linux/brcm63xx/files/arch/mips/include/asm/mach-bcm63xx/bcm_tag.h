@@ -48,7 +48,7 @@ struct bcm_tag {
 	char cfeAddress[ADDRESS_LEN];          // 72-83: Address in memory of CFE
 	char cfeLength[IMAGE_LEN];             // 84-93: Size of CFE
 	char flashImageStart[ADDRESS_LEN];     // 94-105: Address in memory of image start (kernel for OpenWRT, rootfs for stock firmware)
-	char rootLength[IMAGE_LEN];            // 106-115: Size of rootfs
+	char flashRootLength[IMAGE_LEN];            // 106-115: Size of rootfs for flashing
 	char kernelAddress[ADDRESS_LEN];       // 116-127: Address in memory of kernel
 	char kernelLength[IMAGE_LEN];          // 128-137: Size of kernel
 	char dualImage[DUALFLAG_LEN];          // 138-139: Unused at present
@@ -61,7 +61,8 @@ struct bcm_tag {
 	char imageCRC[CRC_LEN];                // 216-219: CRC32 of image less imagetag (kernel for Alice Gate)
         char rootfsCRC[CRC_LEN];               // 220-223: CRC32 of rootfs partition
         char kernelCRC[CRC_LEN];               // 224-227: CRC32 of kernel partition
-        char reserved1[8];                     // 228-235: Unused at present
+     char rootLength[4];                        // 228-231: steal from reserved1 to keep the real root length so we can use in the flash map even after we have change the rootLength to 0 to satisfy devices that check CRC on every boot
+        char reserved1[4];                     // 232-235: Unused at present
         char headerCRC[CRC_LEN];               // 236-239: CRC32 of header excluding tagVersion
         char reserved2[16];                    // 240-255: Unused at present
 };
