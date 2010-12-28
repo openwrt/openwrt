@@ -318,7 +318,7 @@
  #endif /* BCM63XX_REGS_H_ */
 --- /dev/null
 +++ b/drivers/spi/bcm63xx_spi.c
-@@ -0,0 +1,479 @@
+@@ -0,0 +1,501 @@
 +/*
 + * Broadcom BCM63xx SPI controller support
 + *
@@ -357,11 +357,11 @@
 +
 +struct bcm63xx_spi {
 +	spinlock_t              lock;
-+	int                     stopping;
++	int			stopping;
 +        struct completion	done;
 +
-+        void __iomem		*regs;
-+        int			irq;
++	void __iomem		*regs;
++	int			irq;
 +
 +	/* Platform data */
 +        u32			speed_hz;
@@ -375,6 +375,30 @@
 +	struct clk		*clk;
 +	struct platform_device	*pdev;
 +};
++
++static inline u8 bcm_spi_readb(struct bcm63xx_hsspi *bs,
++				unsigned int offset)
++{
++        return bcm_readw(bs->regs + bcm63xx_spireg(offset));
++}
++
++static inline u16 bcm_spi_readw(struct bcm63xx_hsspi *bs,
++				unsigned int offset)
++{
++        return bcm_readw(bs->regs + bcm63xx_spireg(offset));
++}
++
++static inline void bcm_spi_writeb(struct bcm63xx_hsspi *bs,
++				  u8 value, unsigned int offset)
++{
++        bcm_writeb(value, bs->regs + bcm63xx_spireg(offset));
++}
++
++static inline void bcm_spi_writew(struct bcm63xx_hsspi *bs,
++				  u16 value, unsigned int offset)
++{
++        bcm_writew(value, bs->regs + bcm63xx_spireg(offset));
++}
 +
 +static int bcm63xx_spi_setup_transfer(struct spi_device *spi,
 +					struct spi_transfer *t)
@@ -428,7 +452,7 @@
 +		break;
 +	}
 +
-+	bcm_spi_writeb(clk_cfg, SPI_CLK_CFG);
++	bcm_spi_writeb(bs, clk_cfg, SPI_CLK_CFG);
 +	dev_dbg(&spi->dev, "Setting clock register to %d (hz %d, cmd %02x)\n",
 +		div, hz, clk_cfg);
 +
@@ -441,7 +465,7 @@
 +static int bcm63xx_spi_setup(struct spi_device *spi)
 +{
 +	struct bcm63xx_spi *bs;
-+	int retval;
++	int ret;
 +
 +	bs = spi_master_get_devdata(spi->master);
 +
@@ -457,11 +481,11 @@
 +		return -EINVAL;
 +	}
 +
-+	retval = bcm63xx_spi_setup_transfer(spi, NULL);
-+	if (retval < 0) {
++	ret = bcm63xx_spi_setup_transfer(spi, NULL);
++	if (ret < 0) {
 +		dev_err(&spi->dev, "setup: unsupported mode bits %x\n",
 +			spi->mode & ~MODEBITS);
-+		return retval;
++		return ret;
 +	}
 +
 +	dev_dbg(&spi->dev, "%s, mode %d, %u bits/w, %u nsec/bit\n",
@@ -473,20 +497,20 @@
 +/* Fill the TX FIFO with as many bytes as possible */
 +static void bcm63xx_spi_fill_tx_fifo(struct bcm63xx_spi *bs)
 +{
-+        u8 tail;
++	u8 tail;
 +
 +        /* Fill the Tx FIFO with as many bytes as possible */
-+	tail = bcm_spi_readb(SPI_MSG_TAIL);
++	tail = bcm_spi_readb(bs, SPI_MSG_TAIL);
 +
-+        while ((tail < bs->fifo_size) && (bs->remaining_bytes > 0)) {
-+                if (bs->tx_ptr)
-+                        bcm_spi_writeb(*bs->tx_ptr++, SPI_MSG_DATA);
++	while ((tail < bs->fifo_size) && (bs->remaining_bytes > 0)) {
++		if (bs->tx_ptr)
++			bcm_spi_writeb(bs, *bs->tx_ptr++, SPI_MSG_DATA);
 +		else
-+			bcm_spi_writeb(0, SPI_MSG_DATA);
++			bcm_spi_writeb(bs, 0, SPI_MSG_DATA);
 +
-+                bs->remaining_bytes--;
-+		tail = bcm_spi_readb(SPI_MSG_TAIL);
-+        }
++		bs->remaining_bytes--;
++		tail = bcm_spi_readb(bs, SPI_MSG_TAIL);
++	}
 +}
 +
 +static int bcm63xx_txrx_bufs(struct spi_device *spi, struct spi_transfer *t)
@@ -510,7 +534,7 @@
 +
 +	/* Enable the command done interrupt which
 +	 * we use to determine completion of a command */
-+	bcm_spi_writeb(SPI_INTR_CMD_DONE, SPI_INT_MASK);
++	bcm_spi_writeb(bs, SPI_INTR_CMD_DONE, SPI_INT_MASK);
 +
 +	/* Fill in the Message control register */
 +	msg_ctl = (t->len << SPI_BYTE_CNT_SHIFT);
@@ -522,37 +546,37 @@
 +	else if (t->tx_buf)
 +		msg_ctl |= (SPI_HD_W << SPI_MSG_TYPE_SHIFT);
 +
-+	bcm_spi_writew(msg_ctl, SPI_MSG_CTL);
++	bcm_spi_writew(bs, msg_ctl, SPI_MSG_CTL);
 +
 +	/* Issue the transfer */
 +	cmd = SPI_CMD_START_IMMEDIATE;
 +	cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
-+	bcm_spi_writew(cmd, SPI_CMD);
++	bcm_spi_writew(bs, cmd, SPI_CMD);
 +	wait_for_completion(&bs->done);
 +
 +	/* Disable the CMD_DONE interrupt */
-+	bcm_spi_writeb(0, SPI_INT_MASK);
++	bcm_spi_writeb(bs, 0, SPI_INT_MASK);
 +
 +	return t->len - bs->remaining_bytes;
 +}
 +
-+static int bcm63xx_transfer(struct spi_device *spi, struct spi_message *msg)
++static int bcm63xx_transfer(struct spi_device *spi, struct spi_message *m)
 +{
 +	struct bcm63xx_spi *bs = spi_master_get_devdata(spi->master);
-+	struct spi_transfer *xfer;
++	struct spi_transfer *t;
 +	int ret = 0;
 +
-+	if (unlikely(list_empty(&msg->transfers)))
++	if (unlikely(list_empty(&m->transfers)))
 +		return -EINVAL;
 +
 +	if (bs->stopping)
 +		return -ESHUTDOWN;
 +
-+	list_for_each_entry(xfer, &msg->transfers, transfer_list) {
-+		ret += bcm63xx_txrx_bufs(spi, xfer);
++	list_for_each_entry(t, &m->transfers, transfer_list) {
++		ret += bcm63xx_txrx_bufs(spi, t);
 +	}
 +
-+	msg->complete(msg->context);
++	m->complete(m->context);
 +
 +	return ret;
 +}
@@ -568,15 +592,15 @@
 +	u16 cmd;
 +
 +	/* Read interupts and clear them immediately */
-+	intr = bcm_spi_readb(SPI_INT_STATUS);
-+	bcm_spi_writeb(SPI_INTR_CLEAR_ALL, SPI_INT_STATUS);
-+	bcm_spi_writeb(0, SPI_INT_MASK);
++	intr = bcm_spi_readb(bs, SPI_INT_STATUS);
++	bcm_spi_writeb(bs, SPI_INTR_CLEAR_ALL, SPI_INT_STATUS);
++	bcm_spi_writeb(bs, 0, SPI_INT_MASK);
 +
 +	/* A tansfer completed */
 +	if (intr & SPI_INTR_CMD_DONE) {
 +		u8 rx_tail;
 +
-+		rx_tail = bcm_spi_readb(SPI_RX_TAIL);
++		rx_tail = bcm_spi_readb(bs, SPI_RX_TAIL);
 +
 +		/* Read out all the data */
 +		if (rx_tail) {
@@ -584,7 +608,7 @@
 +			u8 i = 0;
 +
 +			for(i = 0; i < rx_tail; i++) {
-+				data = bcm_spi_readb(SPI_RX_DATA);
++				data = bcm_spi_readb(bs, SPI_RX_DATA);
 +				if (bs->rx_ptr)
 +					*bs->rx_ptr++ = data;
 +			}
@@ -595,13 +619,13 @@
 +			bcm63xx_spi_fill_tx_fifo(bs);
 +
 +			/* Start the transfer */
-+			bcm_spi_writew(SPI_HD_W << SPI_MSG_TYPE_SHIFT,
++			bcm_spi_writew(bs, SPI_HD_W << SPI_MSG_TYPE_SHIFT,
 +				       SPI_MSG_CTL);
-+			cmd = bcm_spi_readw(SPI_CMD);
++			cmd = bcm_spi_readw(bs, SPI_CMD);
 +			cmd |= SPI_CMD_START_IMMEDIATE;
 +			cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
-+			bcm_spi_writeb(SPI_INTR_CMD_DONE, SPI_INT_MASK);
-+			bcm_spi_writew(cmd, SPI_CMD);
++			bcm_spi_writeb(bs, SPI_INTR_CMD_DONE, SPI_INT_MASK);
++			bcm_spi_writew(bs, cmd, SPI_CMD);
 +		} else {
 +			complete(&bs->done);
 +		}
@@ -636,14 +660,14 @@
 +		goto out;
 +	}
 +
-+	clk = clk_get(&pdev->dev, "spi");
++	clk = clk_get(dev, "spi");
 +	if (IS_ERR(clk)) {
 +		dev_err(dev, "no clock for device\n");
 +		ret = -ENODEV;
 +		goto out;
 +	}
 +
-+	master = spi_alloc_master(&pdev->dev, sizeof(struct bcm63xx_spi));
++	master = spi_alloc_master(dev, sizeof(*bs));
 +	if (!master) {
 +		dev_err(dev, "out of memory\n");
 +		ret = -ENOMEM;
@@ -654,16 +678,15 @@
 +	init_completion(&bs->done);
 +
 +	platform_set_drvdata(pdev, master);
-+        bs->pdev = pdev;
++	bs->pdev = pdev;
 +
-+	if (!request_mem_region(r->start,
-+			r->end - r->start, PFX)) {
++	if (!request_mem_region(r->start, r->end - r->start, PFX)) {
 +		dev_err(dev, "iomem request failed\n");
 +		ret = -ENXIO;
 +		goto out_put_master;
 +	}
 +
-+        bs->regs = ioremap_nocache(r->start, r->end - r->start);
++	bs->regs = ioremap_nocache(r->start, r->end - r->start);
 +	if (!bs->regs) {
 +		dev_err(dev, "unable to ioremap regs\n");
 +		ret = -ENOMEM;
@@ -673,8 +696,7 @@
 +	bs->clk = clk;
 +	bs->fifo_size = pdata->fifo_size;
 +
-+	ret = request_irq(irq, bcm63xx_spi_interrupt, 0,
-+			  pdev->name, master);
++	ret = request_irq(irq, bcm63xx_spi_interrupt, 0, pdev->name, master);
 +	if (ret) {
 +		dev_err(dev, "unable to request irq\n");
 +		goto out_unmap;
@@ -690,7 +712,7 @@
 +
 +	/* Initialize hardware */
 +	clk_enable(bs->clk);
-+	bcm_spi_writeb(SPI_INTR_CLEAR_ALL, SPI_INT_STATUS);
++	bcm_spi_writeb(bs, SPI_INTR_CLEAR_ALL, SPI_INT_STATUS);
 +
 +	/* register and we are done */
 +	ret = spi_register_master(master);
@@ -702,7 +724,7 @@
 +	dev_info(dev, "at 0x%08x (irq %d, FIFOs size %d) v%s\n",
 +		 r->start, irq, bs->fifo_size, DRV_VER);
 +
-+	return ret;
++	return 0;
 +
 +out_reset_hw:
 +	clk_disable(clk);
@@ -719,12 +741,12 @@
 +
 +static int __exit bcm63xx_spi_remove(struct platform_device *pdev)
 +{
-+	struct spi_master  *master = platform_get_drvdata(pdev);
-+	struct bcm63xx_spi *bs = spi_master_get_devdata(master);
-+	struct resource    *r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	struct spi_master	*master = platform_get_drvdata(pdev);
++	struct bcm63xx_spi	*bs = spi_master_get_devdata(master);
++	struct resource		*r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +
 +	/* reset spi block */
-+	bcm_spi_writeb(0, SPI_INT_MASK);
++	bcm_spi_writeb(bs, 0, SPI_INT_MASK);
 +	spin_lock(&bs->lock);
 +	bs->stopping = 1;
 +
@@ -825,7 +847,7 @@
  spi_s3c24xx_hw-y			:= spi_s3c24xx.o
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,126 @@
 +#ifndef BCM63XX_DEV_SPI_H
 +#define BCM63XX_DEV_SPI_H
 +
@@ -950,16 +972,6 @@
 +#endif
 +	return 0;
 +}
-+
-+/*
-+ * helpers for the SPI register sets
-+ */
-+#define bcm_spi_readb(o)    bcm_rset_readb(RSET_SPI, bcm63xx_spireg(o))
-+#define bcm_spi_readw(o)    bcm_rset_readw(RSET_SPI, bcm63xx_spireg(o))
-+#define bcm_spi_readl(o)    bcm_rset_readl(RSET_SPI, bcm63xx_spireg(o))
-+#define bcm_spi_writeb(v,o) bcm_rset_writeb(RSET_SPI, (v), bcm63xx_spireg(o))
-+#define bcm_spi_writew(v,o) bcm_rset_writew(RSET_SPI, (v), bcm63xx_spireg(o))
-+#define bcm_spi_writel(v,o) bcm_rset_writel(RSET_SPI, (v), bcm63xx_spireg(o))
 +
 +#endif /* BCM63XX_DEV_SPI_H */
 --- a/arch/mips/bcm63xx/Makefile
