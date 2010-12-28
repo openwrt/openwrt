@@ -73,7 +73,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +obj-$(CONFIG_MTD_BCM963XX)	+= bcm963xx-flash.o
 --- /dev/null
 +++ b/drivers/mtd/maps/bcm963xx-flash.c
-@@ -0,0 +1,288 @@
+@@ -0,0 +1,276 @@
 +/*
 + * Copyright (C) 2006-2008  Florian Fainelli <florian@openwrt.org>
 + * 			    Mike Albon <malbon@openwrt.org>
@@ -136,12 +136,11 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +	int ret;
 +	size_t retlen;
 +	unsigned int rootfsaddr, kerneladdr, spareaddr;
-+	unsigned int rootfslen, kernellen, sparelen, totallen;
++	unsigned int rootfslen, kernellen, sparelen;
 +	int namelen = 0;
 +	int i, offset;
 +	char *boardid;
-+    char *tagversion;
-+	struct squashfs_super_block sb;
++	char *tagversion;
 +
 +	/* Allocate memory for buffer */
 +	buf = vmalloc(sizeof(struct bcm_tag));
@@ -157,8 +156,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +
 +	sscanf(buf->kernelAddress, "%u", &kerneladdr);
 +	sscanf(buf->kernelLength, "%u", &kernellen);
-+	sscanf(buf->totalLength, "%u", &totallen);
-+	sscanf(buf->rootLength, "%u", &rootfslen);
++	rootfslen = *(uint32_t *)(&(buf->rootLength[0]));
 +	tagversion = &(buf->tagVersion[0]);
 +	boardid = &(buf->boardid[0]);
 +
@@ -167,20 +165,10 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +	kerneladdr = kerneladdr - EXTENDED_SIZE;
 +	rootfsaddr = kerneladdr + kernellen;
 +
-+	//	offset = master->erasesize + sizeof(struct bcm_tag) + kernellen;
-+	offset = rootfsaddr;
-+	ret = master->read(master, offset, sizeof(sb), &retlen, (void *) &sb);
-+	if (ret || (retlen != sizeof(sb))) {
-+	  printk(KERN_ALERT PFX "parse_cfe_partitions: error occured while reading "
-+			 "from \"%s\"\n", master->name);
-+	  return -EINVAL;
-+	}
-+
 +	rootfslen = ( ( rootfslen % master->erasesize ) > 0 ? (((rootfslen / master->erasesize) + 1 ) * master->erasesize) : rootfslen);
-+	totallen = rootfslen + kernellen + sizeof(struct bcm_tag);
 +
 +	spareaddr = rootfsaddr + rootfslen;
-+	sparelen = master->size - totallen - master->erasesize;
++	sparelen = master->size - spareaddr - master->erasesize;
 +
 +	/* Determine number of partitions */
 +	namelen = 8;
