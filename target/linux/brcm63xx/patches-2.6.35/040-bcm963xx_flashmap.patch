@@ -179,8 +179,8 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 +	rootfslen = ( ( rootfslen % master->erasesize ) > 0 ? (((rootfslen / master->erasesize) + 1 ) * master->erasesize) : rootfslen);
 +	totallen = rootfslen + kernellen + sizeof(struct bcm_tag);
 +
-+	spareaddr = roundup(totallen, master->erasesize) + master->erasesize;
-+	sparelen = master->size - spareaddr - master->erasesize;
++	spareaddr = rootfsaddr + rootfslen;
++	sparelen = master->size - totallen - master->erasesize;
 +
 +	/* Determine number of partitions */
 +	namelen = 8;
