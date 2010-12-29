@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=missing-macros
-PKG_VERSION:=6
+PKG_VERSION:=7
 
 include $(INCLUDE_DIR)/host-build.mk
 
