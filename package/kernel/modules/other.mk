@@ -335,7 +335,9 @@ define KernelPackage/input-gpio-keys
   SUBMENU:=$(OTHER_MENU)
   TITLE:=GPIO key support
   DEPENDS:= @GPIO_SUPPORT
-  KCONFIG:=CONFIG_KEYBOARD_GPIO
+  KCONFIG:= \
+	CONFIG_KEYBOARD_GPIO \
+	CONFIG_INPUT_KEYBOARD=y
   FILES:=$(LINUX_DIR)/drivers/input/keyboard/gpio_keys.ko
   AUTOLOAD:=$(call AutoLoad,60,gpio_keys)
   $(call AddDepends/input)
