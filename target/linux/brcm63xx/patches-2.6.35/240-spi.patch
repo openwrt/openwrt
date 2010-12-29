@@ -318,7 +318,7 @@
  #endif /* BCM63XX_REGS_H_ */
 --- /dev/null
 +++ b/drivers/spi/bcm63xx_spi.c
-@@ -0,0 +1,501 @@
+@@ -0,0 +1,494 @@
 +/*
 + * Broadcom BCM63xx SPI controller support
 + *
@@ -370,38 +370,43 @@
 +	/* Data buffers */
 +	const unsigned char	*tx_ptr;
 +	unsigned char		*rx_ptr;
++
++	/* data iomem */
++	u8 __iomem		*tx_io;
++	const u8 __iomem	*rx_io;
++
 +	int			remaining_bytes;
 +
 +	struct clk		*clk;
 +	struct platform_device	*pdev;
 +};
 +
-+static inline u8 bcm_spi_readb(struct bcm63xx_hsspi *bs,
++static inline u8 bcm_spi_readb(struct bcm63xx_spi *bs,
 +				unsigned int offset)
 +{
-+        return bcm_readw(bs->regs + bcm63xx_spireg(offset));
++	return bcm_readw(bs->regs + bcm63xx_spireg(offset));
 +}
 +
-+static inline u16 bcm_spi_readw(struct bcm63xx_hsspi *bs,
++static inline u16 bcm_spi_readw(struct bcm63xx_spi *bs,
 +				unsigned int offset)
 +{
-+        return bcm_readw(bs->regs + bcm63xx_spireg(offset));
++	return bcm_readw(bs->regs + bcm63xx_spireg(offset));
 +}
 +
-+static inline void bcm_spi_writeb(struct bcm63xx_hsspi *bs,
++static inline void bcm_spi_writeb(struct bcm63xx_spi *bs,
 +				  u8 value, unsigned int offset)
 +{
-+        bcm_writeb(value, bs->regs + bcm63xx_spireg(offset));
++	bcm_writeb(value, bs->regs + bcm63xx_spireg(offset));
 +}
 +
-+static inline void bcm_spi_writew(struct bcm63xx_hsspi *bs,
++static inline void bcm_spi_writew(struct bcm63xx_spi *bs,
 +				  u16 value, unsigned int offset)
 +{
-+        bcm_writew(value, bs->regs + bcm63xx_spireg(offset));
++	bcm_writew(value, bs->regs + bcm63xx_spireg(offset));
 +}
 +
 +static int bcm63xx_spi_setup_transfer(struct spi_device *spi,
-+					struct spi_transfer *t)
++				      struct spi_transfer *t)
 +{
 +	u8 bits_per_word;
 +	u8 clk_cfg;
@@ -442,13 +447,13 @@
 +	case 32:
 +		clk_cfg = SPI_CLK_1_563MHZ;
 +		break;
-+	case 128:
++	case 64:
 +		clk_cfg = SPI_CLK_0_781MHZ;
 +		break;
-+	case 64:
++	case 128:
 +	default:
 +		/* Set to slowest mode for compatibility */
-+		clk_cfg = SPI_CLK_0_781MHZ;
++		clk_cfg = SPI_CLK_0_391MHZ;
 +		break;
 +	}
 +
@@ -497,20 +502,13 @@
 +/* Fill the TX FIFO with as many bytes as possible */
 +static void bcm63xx_spi_fill_tx_fifo(struct bcm63xx_spi *bs)
 +{
-+	u8 tail;
++	u8 size;
 +
 +        /* Fill the Tx FIFO with as many bytes as possible */
-+	tail = bcm_spi_readb(bs, SPI_MSG_TAIL);
-+
-+	while ((tail < bs->fifo_size) && (bs->remaining_bytes > 0)) {
-+		if (bs->tx_ptr)
-+			bcm_spi_writeb(bs, *bs->tx_ptr++, SPI_MSG_DATA);
-+		else
-+			bcm_spi_writeb(bs, 0, SPI_MSG_DATA);
-+
-+		bs->remaining_bytes--;
-+		tail = bcm_spi_readb(bs, SPI_MSG_TAIL);
-+	}
++	size = bs->remaining_bytes < bs->fifo_size ? bs->remaining_bytes :
++		bs->fifo_size;
++	memcpy_toio(bs->tx_io, bs->tx_ptr, size);
++	bs->remaining_bytes -= size;
 +}
 +
 +static int bcm63xx_txrx_bufs(struct spi_device *spi, struct spi_transfer *t)
@@ -551,6 +549,7 @@
 +	/* Issue the transfer */
 +	cmd = SPI_CMD_START_IMMEDIATE;
 +	cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
++	cmd |= (spi->chip_select << SPI_CMD_DEVICE_ID_SHIFT);
 +	bcm_spi_writew(bs, cmd, SPI_CMD);
 +	wait_for_completion(&bs->done);
 +
@@ -603,16 +602,8 @@
 +		rx_tail = bcm_spi_readb(bs, SPI_RX_TAIL);
 +
 +		/* Read out all the data */
-+		if (rx_tail) {
-+			u8 data;
-+			u8 i = 0;
-+
-+			for(i = 0; i < rx_tail; i++) {
-+				data = bcm_spi_readb(bs, SPI_RX_DATA);
-+				if (bs->rx_ptr)
-+					*bs->rx_ptr++ = data;
-+			}
-+		}
++		if (rx_tail)
++			memcpy_fromio(bs->rx_ptr, bs->rx_io, rx_tail);
 +
 +		/* See if there is more data to send */
 +		if (bs->remaining_bytes > 0) {
@@ -708,6 +699,8 @@
 +	master->transfer = bcm63xx_transfer;
 +	bs->speed_hz = pdata->speed_hz;
 +	bs->stopping = 0;
++	bs->tx_io = (u8*)(bs->regs + bcm63xx_spireg(SPI_MSG_DATA));
++	bs->rx_io = (const u8*)(bs->regs + bcm63xx_spireg(SPI_RX_DATA));
 +	spin_lock_init(&bs->lock);
 +
 +	/* Initialize hardware */
@@ -796,7 +789,7 @@
 +		.owner	= THIS_MODULE,
 +	},
 +	.probe		= bcm63xx_spi_probe,
-+	.remove		= bcm63xx_spi_remove,
++	.remove		= __exit_p(bcm63xx_spi_remove),
 +	.suspend	= bcm63xx_spi_suspend,
 +	.resume		= bcm63xx_spi_resume,
 +};
