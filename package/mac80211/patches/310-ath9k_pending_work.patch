@@ -232,3 +232,39 @@
  		spin_unlock_bh(&txq->axq_lock);
  
  		txok = !(txs.ts_status & ATH9K_TXERR_MASK);
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_init.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_init.c
+@@ -714,8 +714,7 @@ static void ath9k_set_hw_capab(struct at
+ 		IEEE80211_HW_HAS_RATE_CONTROL |
+ 		IEEE80211_HW_RX_INCLUDES_FCS |
+ 		IEEE80211_HW_SUPPORTS_PS |
+-		IEEE80211_HW_PS_NULLFUNC_STACK |
+-		IEEE80211_HW_NEED_DTIM_PERIOD;
++		IEEE80211_HW_PS_NULLFUNC_STACK;
+ 
+ 	hw->wiphy->interface_modes =
+ 		BIT(NL80211_IFTYPE_STATION) |
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -646,8 +646,7 @@ void ath9k_set_hw_capab(struct ath_softc
+ 		IEEE80211_HW_SUPPORTS_PS |
+ 		IEEE80211_HW_PS_NULLFUNC_STACK |
+ 		IEEE80211_HW_SPECTRUM_MGMT |
+-		IEEE80211_HW_REPORTS_TX_ACK_STATUS |
+-		IEEE80211_HW_NEED_DTIM_PERIOD;
++		IEEE80211_HW_REPORTS_TX_ACK_STATUS;
+ 
+ 	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT)
+ 		 hw->flags |= IEEE80211_HW_AMPDU_AGGREGATION;
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -285,7 +285,8 @@ int ath_set_channel(struct ath_softc *sc
+ 	ath9k_hw_set_interrupts(ah, ah->imask);
+ 
+ 	if (!(sc->sc_flags & (SC_OP_OFFCHANNEL))) {
+-		ath_beacon_config(sc, NULL);
++		if (sc->sc_flags & SC_OP_BEACONS)
++			ath_beacon_config(sc, NULL);
+ 		ieee80211_queue_delayed_work(sc->hw, &sc->tx_complete_work, 0);
+ 		ath_start_ani(common);
+ 	}

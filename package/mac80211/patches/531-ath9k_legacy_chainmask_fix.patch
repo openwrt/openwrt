@@ -10,7 +10,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -538,32 +538,6 @@ set_timer:
+@@ -539,32 +539,6 @@ set_timer:
  	}
  }
  
@@ -43,7 +43,7 @@
  static void ath_node_attach(struct ath_softc *sc, struct ieee80211_sta *sta)
  {
  	struct ath_node *an;
-@@ -1676,8 +1650,6 @@ static int ath9k_config(struct ieee80211
+@@ -1677,8 +1651,6 @@ static int ath9k_config(struct ieee80211
  		/* XXX: remove me eventualy */
  		ath9k_update_ichannel(sc, hw, &sc->sc_ah->channels[pos]);
  
@@ -52,7 +52,7 @@
  		/* update survey stats for the old channel before switching */
  		spin_lock_irqsave(&common->cc_lock, flags);
  		ath_update_survey_stats(sc);
-@@ -1909,10 +1881,6 @@ static void ath9k_bss_info_changed(struc
+@@ -1910,10 +1882,6 @@ static void ath9k_bss_info_changed(struc
  		/* Set aggregation protection mode parameters */
  		sc->config.ath_aggr_prot = 0;
  
