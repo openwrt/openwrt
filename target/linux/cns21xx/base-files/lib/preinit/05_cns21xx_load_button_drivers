@@ -1,0 +1,11 @@
+#
+# Copyright (C) 2010 OpenWrt.org
+#
+
+preinit_load_button_drivers() {
+	insmod input-core
+	insmod gpio_keys
+	insmod button-hotplug
+}
+
+boot_hook_add preinit_main preinit_load_button_drivers
