@@ -1,0 +1,26 @@
+From: Theodore Ts'o <tytso@mit.edu>
+Date: Fri, 17 Dec 2010 03:11:43 +0000 (-0500)
+Subject: libext2fs: Fix compile bug on big-endian architectures
+X-Git-Url: http://git.kernel.org/?p=fs%2Fext2%2Fe2fsprogs.git;a=commitdiff_plain;h=9098c986b64bb65a2b7fcd2724a400ba1f451f6b
+
+libext2fs: Fix compile bug on big-endian architectures
+
+Addresses-Sourceforge-Bug: #3138115
+
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+---
+
+diff --git a/lib/ext2fs/swapfs.c b/lib/ext2fs/swapfs.c
+index 6f6cec2..12427e0 100644
+--- a/lib/ext2fs/swapfs.c
++++ b/lib/ext2fs/swapfs.c
+@@ -72,7 +72,7 @@ void ext2fs_swap_super(struct ext2_super_block * sb)
+ 	sb->s_flags = ext2fs_swab32(sb->s_flags);
+ 	sb->s_kbytes_written = ext2fs_swab64(sb->s_kbytes_written);
+ 	sb->s_snapshot_inum = ext2fs_swab32(sb->s_snapshot_inum);
+-	sb->s_snapshot_id = ext2fs_swab32(s_snapshot_id);
++	sb->s_snapshot_id = ext2fs_swab32(sb->s_snapshot_id);
+ 	sb->s_snapshot_r_blocks_count =
+ 		ext2fs_swab64(sb->s_snapshot_r_blocks_count);
+ 	sb->s_snapshot_list = ext2fs_swab32(sb->s_snapshot_list);
+
