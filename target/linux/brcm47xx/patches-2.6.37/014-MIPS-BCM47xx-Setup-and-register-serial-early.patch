@@ -24,19 +24,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -168,7 +170,7 @@ static int bcm47xx_get_invariants(struct
+@@ -166,6 +168,31 @@ static int bcm47xx_get_invariants(struct
+ 	return 0;
+ }
  
- void __init plat_mem_setup(void)
- {
--	int err;
-+	int i, err;
- 	char buf[100];
- 	struct ssb_mipscore *mcore;
- 
-@@ -191,6 +193,24 @@ void __init plat_mem_setup(void)
- 		}
- 	}
- 
++#ifdef CONFIG_SERIAL_8250
++static void __init bcm47xx_early_serial_setup(struct ssb_mipscore *mcore)
++{
++	int i;
++
 +	for (i = 0; i < mcore->nr_serial_ports; i++) {
 +		struct ssb_serial_port *port = &(mcore->serial_ports[i]);
 +		struct uart_port s;
@@ -54,6 +50,19 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		early_serial_setup(&s);
 +	}
 +	printk(KERN_DEBUG "Serial init done.\n");
++}
++#endif
++
+ void __init plat_mem_setup(void)
+ {
+ 	int err;
+@@ -191,6 +218,10 @@ void __init plat_mem_setup(void)
+ 		}
+ 	}
+ 
++#ifdef CONFIG_SERIAL_8250
++	bcm47xx_early_serial_setup(mcore);
++#endif
 +
  	_machine_restart = bcm47xx_machine_restart;
  	_machine_halt = bcm47xx_machine_halt;
