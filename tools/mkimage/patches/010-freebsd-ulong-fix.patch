@@ -1,0 +1,13 @@
+--- a/include/image.h
++++ b/include/image.h
+@@ -50,6 +50,10 @@
+ 
+ #endif /* USE_HOSTCC */
+ 
++#ifndef ulong
++#define ulong unsigned long
++#endif
++
+ #if defined(CONFIG_FIT)
+ #include <fdt.h>
+ #include <libfdt.h>
