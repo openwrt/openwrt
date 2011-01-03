@@ -106,7 +106,7 @@ wprobe_dump_data(struct wprobe_iface *dev)
 		list_for_each_entry(attr, &dev->link_attr, list) {
 			if (first) {
 				fprintf(stdout,
-					(simple_mode ? 
+					(simple_mode ?
 					 "[%02x:%02x:%02x:%02x:%02x:%02x]\n%s=%s\n" :
 					 "%02x:%02x:%02x:%02x:%02x:%02x: %s=%s\n"),
 					link->addr[0], link->addr[1], link->addr[2],
@@ -142,22 +142,24 @@ static const char *attr_typestr[] = {
 static int usage(const char *prog)
 {
 	fprintf(stderr,
-#ifndef NO_LOCAL_ACCESS 
+#ifndef NO_LOCAL_ACCESS
 		"Usage: %s <interface>|<host>:<device>|-P [options]\n"
 #else
 		"Usage: %s <host>:<device> [options]\n"
 #endif
 		"\n"
 		"Options:\n"
+		"  -a:            Print attributes\n"
 		"  -c:            Only apply configuration\n"
 		"  -d:            Delay between measurement dumps (in milliseconds, default: 1000)\n"
+		"                 A value of 0 (zero) prints once and exits; useful for scripts\n"
 		"  -f:            Dump contents of layer 2 filter counters during measurement\n"
 		"  -F <file>:     Apply layer 2 filters from <file>\n"
 		"  -h:            This help text\n"
 		"  -i <interval>: Set measurement interval\n"
 		"  -m:            Run measurement loop\n"
 		"  -p:            Set the TCP port for server/client (default: 17990)\n"
-#ifndef NO_LOCAL_ACCESS 
+#ifndef NO_LOCAL_ACCESS
 		"  -P:            Run in proxy mode (listen on network)\n"
 #endif
 		"\n"
@@ -205,13 +207,14 @@ static void show_filter(void *arg, const char *group, struct wprobe_filter_item 
 
 static void loop_measurement(struct wprobe_iface *dev, bool print_filters, unsigned long delay)
 {
-	while (1) {
-		usleep(delay * 1000);
+	do {
 		wprobe_update_links(dev);
 		wprobe_dump_data(dev);
 		if (print_filters)
 			wprobe_dump_filters(dev, simple_mode ? show_filter_simple : show_filter, NULL);
+		usleep(delay * 1000);
 	}
+	while (delay);
 }
 
 static void set_filter(struct wprobe_iface *dev, const char *filename)
@@ -342,6 +345,7 @@ int main(int argc, char **argv)
 		CMD_PROXY,
 	} cmd = CMD_NONE;
 	const char *filter = NULL;
+	bool print_attributes = false;
 	bool print_filters = false;
 	unsigned long delay = 1000;
 	int interval = -1;
@@ -350,7 +354,7 @@ int main(int argc, char **argv)
 	if (argc < 2)
 		return usage(prog);
 
-#ifndef NO_LOCAL_ACCESS 
+#ifndef NO_LOCAL_ACCESS
 	if (!strcmp(argv[1], "-P")) {
 		while ((ch = getopt(argc - 1, argv + 1, "p:")) != -1) {
 			switch(ch) {
@@ -373,8 +377,11 @@ int main(int argc, char **argv)
 	argv++;
 	argc--;
 
-	while ((ch = getopt(argc, argv, "cd:fF:hi:msp:")) != -1) {
+	while ((ch = getopt(argc, argv, "acd:fF:hi:msp:")) != -1) {
 		switch(ch) {
+		case 'a':
+			print_attributes = true;
+			break;
 		case 'c':
 			cmd = CMD_CONFIG;
 			break;
@@ -430,8 +437,10 @@ int main(int argc, char **argv)
 		wprobe_apply_config(dev);
 	}
 
-	if (cmd != CMD_CONFIG)
-		show_attributes(dev);
+	if (cmd != CMD_CONFIG) {
+		if (print_attributes)
+			show_attributes(dev);
+	}
 	if (cmd == CMD_MEASURE)
 		loop_measurement(dev, print_filters, delay);
 
