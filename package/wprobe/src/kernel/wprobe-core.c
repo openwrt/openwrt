@@ -31,7 +31,10 @@
 #define static
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
-#define list_for_each_rcu __list_for_each_rcu
+#define list_for_each_rcu(pos, head) \
+for (pos = rcu_dereference((head)->next); \
+prefetch(pos->next), pos != (head); \
+pos = rcu_dereference(pos->next))
 #endif
 
 #define WPROBE_MIN_INTERVAL		100 /* minimum measurement interval in msecs */
