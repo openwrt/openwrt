@@ -1,0 +1,32 @@
+From: Johannes Berg <johannes.berg@intel.com>
+
+commit ad0e2b5a00dbec303e4682b403bb6703d11dcdb2
+Author: Johannes Berg <johannes.berg@intel.com>
+Date:   Tue Jun 1 10:19:19 2010 +0200
+
+    mac80211: simplify key locking
+
+removed the synchronization against RCU and thus
+opened a race window where we can use a key for
+TX while it is already freed. Put a synchronisation
+into the right place to close that window.
+
+Reported-by: Jussi Kivilinna <jussi.kivilinna@mbnet.fi>
+Cc: stable@kernel.org [2.6.36+]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+--- a/net/mac80211/key.c
++++ b/net/mac80211/key.c
+@@ -382,6 +382,12 @@ static void __ieee80211_key_destroy(stru
+ 	if (!key)
+ 		return;
+ 
++	/*
++	 * Synchronize so the TX path can no longer be using
++	 * this key before we free/remove it.
++	 */
++	synchronize_rcu();
++
+ 	if (key->local)
+ 		ieee80211_key_disable_hw_accel(key);
+ 
