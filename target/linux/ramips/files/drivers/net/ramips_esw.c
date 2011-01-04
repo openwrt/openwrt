@@ -5,7 +5,7 @@
 
 #define RT305X_ESW_REG_FCT0		0x08
 #define RT305X_ESW_REG_PFC1		0x14
-#define RT305X_ESW_REG_PVIDC(_n)	(0x48 + 4 * (_n))
+#define RT305X_ESW_REG_PVIDC(_n)	(0x40 + 4 * (_n))
 #define RT305X_ESW_REG_VLANI(_n)	(0x50 + 4 * (_n))
 #define RT305X_ESW_REG_VMSC(_n)		(0x70 + 4 * (_n))
 #define RT305X_ESW_REG_FPA		0x84
@@ -172,7 +172,7 @@ rt305x_esw_set_pvid(struct rt305x_esw *esw, unsigned port, unsigned pvid)
 	s = RT305X_ESW_PVIDC_PVID_S * (port % 2);
 	rt305x_esw_rmw(esw,
 		       RT305X_ESW_REG_PVIDC(port / 2),
-		       RT305X_ESW_PVIDC_PVID_S << s,
+		       RT305X_ESW_PVIDC_PVID_M << s,
 		       (pvid & RT305X_ESW_PVIDC_PVID_M) << s);
 }
 
