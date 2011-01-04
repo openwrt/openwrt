@@ -117,9 +117,9 @@ endef
 $(eval $(call Download,p54spi))
 
 define Download/carl9170
-  FILE:=$(CARL9170_FW)
-  URL:=http://www.kernel.org/pub/linux/kernel/people/chr/carl9170/fw/$(CARL9170_FW_VERSION)
-  MD5SUM:=114c43846ed1d2f89cc92bd0e2ec0589
+  FILE:=$(CARL9170_FW)-$(CARL9170_FW_VERSION)
+  URL:=http://downloads.openwrt.org/sources/
+  MD5SUM:=9e33ac39dcd610aa1ad80bbf4f1abccf
 endef
 $(eval $(call Download,carl9170))
 
@@ -453,7 +453,7 @@ endef
 
 define KernelPackage/carl9170/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(CARL9170_FW) $(1)/lib/firmware/
+	$(INSTALL_DATA) $(DL_DIR)/$(CARL9170_FW)-$(CARL9170_FW_VERSION) $(1)/lib/firmware/$(CARL9170_FW)
 endef
 
 
