@@ -3456,7 +3456,7 @@
 +		err = hidden_dentry->d_inode->i_op->getxattr(hidden_dentry, encoded_name, encoded_value, size);
 +		/* unlock_kernel() will be done by caller. */
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
-+		mutex_lock(&hidden_dentry->d_inode->i_mutex);
++		mutex_unlock(&hidden_dentry->d_inode->i_mutex);
 +#else
 +		up(&hidden_dentry->d_inode->i_sem);
 +#endif
