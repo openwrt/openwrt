@@ -13,10 +13,12 @@
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/mutex.h>
+#include <linux/spinlock.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
 static DEFINE_MUTEX(ar71xx_flash_mutex);
+static DEFINE_SPINLOCK(ar71xx_device_lock);
 
 void __iomem *ar71xx_ddr_base;
 EXPORT_SYMBOL_GPL(ar71xx_ddr_base);
@@ -43,30 +45,30 @@ void ar71xx_device_stop(u32 mask)
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
-		local_irq_save(flags);
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE);
 		ar71xx_reset_wr(AR71XX_RESET_REG_RESET_MODULE, t | mask);
-		local_irq_restore(flags);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
 	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
 		mask_inv = mask & RESET_MODULE_USB_OHCI_DLL_7240;
-		local_irq_save(flags);
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
 		t |= mask;
 		t &= ~mask_inv;
 		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t);
-		local_irq_restore(flags);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
-		local_irq_save(flags);
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(AR91XX_RESET_REG_RESET_MODULE);
 		ar71xx_reset_wr(AR91XX_RESET_REG_RESET_MODULE, t | mask);
-		local_irq_restore(flags);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
 	default:
@@ -85,30 +87,30 @@ void ar71xx_device_start(u32 mask)
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
-		local_irq_save(flags);
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE);
 		ar71xx_reset_wr(AR71XX_RESET_REG_RESET_MODULE, t & ~mask);
-		local_irq_restore(flags);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
 	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
 		mask_inv = mask & RESET_MODULE_USB_OHCI_DLL_7240;
-		local_irq_save(flags);
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
 		t &= ~mask;
 		t |= mask_inv;
 		ar71xx_reset_wr(AR724X_RESET_REG_RESET_MODULE, t);
-		local_irq_restore(flags);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
-		local_irq_save(flags);
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(AR91XX_RESET_REG_RESET_MODULE);
 		ar71xx_reset_wr(AR91XX_RESET_REG_RESET_MODULE, t & ~mask);
-		local_irq_restore(flags);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
 	default:
@@ -126,24 +128,24 @@ int ar71xx_device_stopped(u32 mask)
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
-		local_irq_save(flags);
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(AR71XX_RESET_REG_RESET_MODULE);
-		local_irq_restore(flags);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
 	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
-		local_irq_save(flags);
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
-		local_irq_restore(flags);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
-		local_irq_save(flags);
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
 		t = ar71xx_reset_rr(AR91XX_RESET_REG_RESET_MODULE);
-		local_irq_restore(flags);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
 
 	default:
