@@ -963,6 +963,10 @@ static int rtl8366rb_sw_reset_switch(struct switch_dev *dev)
 	if (err)
 		return err;
 
+	err = rtl8366_enable_vlan(smi, 1);
+	if (err)
+		return err;
+
 	return rtl8366_enable_all_ports(smi, 1);
 }
 
