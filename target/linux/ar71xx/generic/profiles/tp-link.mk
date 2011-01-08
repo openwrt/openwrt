@@ -7,7 +7,7 @@
 
 define Profile/TLMR3220V1
 	NAME:=TP-LINK TL-MR3220 v1
-	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/TLMR3220V1/Description
@@ -18,7 +18,7 @@ $(eval $(call Profile,TLMR3220V1))
 
 define Profile/TLMR3420V1
 	NAME:=TP-LINK TL-MR3420 v1
-	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/TLMR3420V1/Description
@@ -139,7 +139,7 @@ $(eval $(call Profile,TLWR941NDV4))
 
 define Profile/TLWR1043NDV1
 	NAME:=TP-LINK TL-WR1043ND v1
-	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/TLWR1043NDV1/Description
