@@ -368,11 +368,26 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 		ptr = (char *)str;
 		while(ptr && *ptr)
 		{
+			while(*ptr && isspace(*ptr))
+				ptr++;
+
+			if (!*ptr)
+				break;
+
+			if (!isdigit(*ptr))
+				return -1;
+
+			if (val.len >= dev->ports)
+				return -1;
+
 			ports[val.len].flags = 0;
 			ports[val.len].id = strtoul(ptr, &ptr, 10);
 			while(*ptr && !isspace(*ptr)) {
 				if (*ptr == 't')
 					ports[val.len].flags |= SWLIB_PORT_FLAG_TAGGED;
+				else
+					return -1;
+
 				ptr++;
 			}
 			if (*ptr)
