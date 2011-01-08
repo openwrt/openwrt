@@ -458,8 +458,8 @@ static int rtl8366rb_set_vlan_4k(struct rtl8366_smi *smi,
 	int i;
 
 	if (vlan4k->vid >= RTL8366RB_NUM_VIDS ||
-	    vlan4k->member > RTL8366RB_PORT_ALL ||
-	    vlan4k->untag > RTL8366RB_PORT_ALL ||
+	    vlan4k->member > RTL8366RB_VLAN_MEMBER_MASK ||
+	    vlan4k->untag > RTL8366RB_VLAN_UNTAG_MASK ||
 	    vlan4k->fid > RTL8366RB_FIDMAX)
 		return -EINVAL;
 
@@ -525,8 +525,8 @@ static int rtl8366rb_set_vlan_mc(struct rtl8366_smi *smi, u32 index,
 	if (index >= RTL8366RB_NUM_VLANS ||
 	    vlanmc->vid >= RTL8366RB_NUM_VIDS ||
 	    vlanmc->priority > RTL8366RB_PRIORITYMAX ||
-	    vlanmc->member > RTL8366RB_PORT_ALL ||
-	    vlanmc->untag > RTL8366RB_PORT_ALL ||
+	    vlanmc->member > RTL8366RB_VLAN_MEMBER_MASK ||
+	    vlanmc->untag > RTL8366RB_VLAN_UNTAG_MASK ||
 	    vlanmc->fid > RTL8366RB_FIDMAX)
 		return -EINVAL;
 
