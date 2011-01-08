@@ -448,7 +448,7 @@ static int rtl8366_set_pvid(struct rtl8366_smi *smi, unsigned port,
 	return -ENOSPC;
 }
 
-static int rtl8366_enable_vlan(struct rtl8366_smi *smi, int enable)
+int rtl8366_enable_vlan(struct rtl8366_smi *smi, int enable)
 {
 	int err;
 
@@ -465,6 +465,7 @@ static int rtl8366_enable_vlan(struct rtl8366_smi *smi, int enable)
 
 	return err;
 }
+EXPORT_SYMBOL_GPL(rtl8366_enable_vlan);
 
 static int rtl8366_enable_vlan4k(struct rtl8366_smi *smi, int enable)
 {
