@@ -607,6 +607,12 @@ static int rtl8366rb_enable_vlan4k(struct rtl8366_smi *smi, int enable)
 				(enable) ? RTL8366RB_SGCR_EN_VLAN_4KTB : 0);
 }
 
+static int rtl8366rb_enable_port(struct rtl8366_smi *smi, int port, int enable)
+{
+	return rtl8366_smi_rmwr(smi, RTL8366RB_PECR, (1 << port),
+				(enable) ? 0 : (1 << port));
+}
+
 static int rtl8366rb_sw_reset_mibs(struct switch_dev *dev,
 				  const struct switch_attr *attr,
 				  struct switch_val *val)
@@ -1214,6 +1220,7 @@ static struct rtl8366_smi_ops rtl8366rb_smi_ops = {
 	.is_vlan_valid	= rtl8366rb_is_vlan_valid,
 	.enable_vlan	= rtl8366rb_enable_vlan,
 	.enable_vlan4k	= rtl8366rb_enable_vlan4k,
+	.enable_port	= rtl8366rb_enable_port,
 };
 
 static int __devinit rtl8366rb_probe(struct platform_device *pdev)

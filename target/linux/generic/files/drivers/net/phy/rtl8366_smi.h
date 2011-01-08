@@ -93,6 +93,7 @@ struct rtl8366_smi_ops {
 	int	(*is_vlan_valid)(struct rtl8366_smi *smi, unsigned vlan);
 	int	(*enable_vlan)(struct rtl8366_smi *smi, int enable);
 	int	(*enable_vlan4k)(struct rtl8366_smi *smi, int enable);
+	int	(*enable_port)(struct rtl8366_smi *smi, int port, int enable);
 };
 
 struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent);
