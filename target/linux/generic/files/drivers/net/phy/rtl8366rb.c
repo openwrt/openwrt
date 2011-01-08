@@ -274,9 +274,6 @@ static int rtl8366rb_hw_init(struct rtl8366_smi *smi)
 	REG_RMW(smi, RTL8366RB_SGCR, RTL8366RB_SGCR_MAX_LENGTH_MASK,
 		RTL8366RB_SGCR_MAX_LENGTH_1536);
 
-	/* enable all ports */
-	REG_WR(smi, RTL8366RB_PECR, 0);
-
 	/* enable learning for all ports */
 	REG_WR(smi, RTL8366RB_SSCR0, 0);
 
@@ -962,7 +959,11 @@ static int rtl8366rb_sw_reset_switch(struct switch_dev *dev)
 	if (err)
 		return err;
 
-	return rtl8366_reset_vlan(smi);
+	err = rtl8366_reset_vlan(smi);
+	if (err)
+		return err;
+
+	return rtl8366_enable_all_ports(smi, 1);
 }
 
 static struct switch_attr rtl8366rb_globals[] = {

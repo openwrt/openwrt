@@ -486,6 +486,21 @@ static int rtl8366_enable_vlan4k(struct rtl8366_smi *smi, int enable)
 	return 0;
 }
 
+int rtl8366_enable_all_ports(struct rtl8366_smi *smi, int enable)
+{
+	int port;
+	int err;
+
+	for (port = 0; port < smi->num_ports; port++) {
+		err = smi->ops->enable_port(smi, port, enable);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rtl8366_enable_all_ports);
+
 int rtl8366_reset_vlan(struct rtl8366_smi *smi)
 {
 	struct rtl8366_vlan_mc vlanmc;
@@ -1188,6 +1203,10 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 			err);
 		goto err_disable_hw;
 	}
+
+	err = rtl8366_enable_all_ports(smi, 1);
+	if (err)
+		goto err_disable_hw;
 
 	err = rtl8366_smi_mii_init(smi);
 	if (err)
