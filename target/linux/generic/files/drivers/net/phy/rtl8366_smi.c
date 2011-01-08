@@ -507,25 +507,38 @@ int rtl8366_reset_vlan(struct rtl8366_smi *smi)
 			return err;
 	}
 
-	for (i = 0; i < smi->num_ports; i++) {
-		if (i == smi->cpu_port)
-			continue;
+	return 0;
+}
+EXPORT_SYMBOL_GPL(rtl8366_reset_vlan);
 
-		err = rtl8366_set_vlan(smi, (i + 1),
-					(1 << i) | (1 << smi->cpu_port),
-					(1 << i) | (1 << smi->cpu_port),
-					0);
+static int rtl8366_init_vlan(struct rtl8366_smi *smi)
+{
+	int port;
+	int err;
+
+	err = rtl8366_reset_vlan(smi);
+	if (err)
+		return err;
+
+	for (port = 0; port < smi->num_ports; port++) {
+		u32 mask;
+
+		if (port == smi->cpu_port)
+			mask = (1 << smi->num_ports) - 1;
+		else
+			mask = (1 << port) | (1 << smi->cpu_port);
+
+		err = rtl8366_set_vlan(smi, (port + 1), mask, mask, 0);
 		if (err)
 			return err;
 
-		err = rtl8366_set_pvid(smi, i, (i + 1));
+		err = rtl8366_set_pvid(smi, port, (port + 1));
 		if (err)
 			return err;
 	}
 
-	return 0;
+	return rtl8366_enable_vlan(smi, 1);
 }
-EXPORT_SYMBOL_GPL(rtl8366_reset_vlan);
 
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file)
@@ -1167,6 +1180,13 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	if (err) {
 		dev_err(smi->parent, "chip setup failed, err=%d\n", err);
 		goto err_free_sck;
+	}
+
+	err = rtl8366_init_vlan(smi);
+	if (err) {
+		dev_err(smi->parent, "VLAN initialization failed, err=%d\n",
+			err);
+		goto err_disable_hw;
 	}
 
 	err = rtl8366_smi_mii_init(smi);
