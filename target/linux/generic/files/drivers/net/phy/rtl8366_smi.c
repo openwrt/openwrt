@@ -561,6 +561,43 @@ static ssize_t rtl8366_read_debugfs_vlan_mc(struct file *file,
 	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
 }
 
+#define RTL8366_VLAN4K_PAGE_SIZE	64
+#define RTL8366_VLAN4K_NUM_PAGES	(4096 / RTL8366_VLAN4K_PAGE_SIZE)
+
+static ssize_t rtl8366_read_debugfs_vlan_4k(struct file *file,
+					    char __user *user_buf,
+					    size_t count, loff_t *ppos)
+{
+	struct rtl8366_smi *smi = (struct rtl8366_smi *)file->private_data;
+	int i, len = 0;
+	int offset;
+	char *buf = smi->buf;
+
+	if (smi->dbg_vlan_4k_page >= RTL8366_VLAN4K_NUM_PAGES) {
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"invalid page: %u\n", smi->dbg_vlan_4k_page);
+		return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+	}
+
+	len += snprintf(buf + len, sizeof(smi->buf) - len,
+			"%4s %6s %6s %3s\n",
+			"vid", "member", "untag", "fid");
+
+	offset = RTL8366_VLAN4K_PAGE_SIZE * smi->dbg_vlan_4k_page;
+	for (i = 0; i < RTL8366_VLAN4K_PAGE_SIZE; i++) {
+		struct rtl8366_vlan_4k vlan4k;
+
+		smi->ops->get_vlan_4k(smi, offset + i, &vlan4k);
+
+		len += snprintf(buf + len, sizeof(smi->buf) - len,
+				"%4d 0x%04x 0x%04x %3d\n",
+				vlan4k.vid, vlan4k.member,
+				vlan4k.untag, vlan4k.fid);
+	}
+
+	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+}
+
 static ssize_t rtl8366_read_debugfs_pvid(struct file *file,
 					 char __user *user_buf,
 					 size_t count, loff_t *ppos)
@@ -703,6 +740,12 @@ static const struct file_operations fops_rtl8366_vlan_mc = {
 	.owner	= THIS_MODULE
 };
 
+static const struct file_operations fops_rtl8366_vlan_4k = {
+	.read	= rtl8366_read_debugfs_vlan_4k,
+	.open	= rtl8366_debugfs_open,
+	.owner	= THIS_MODULE
+};
+
 static const struct file_operations fops_rtl8366_pvid = {
 	.read	= rtl8366_read_debugfs_pvid,
 	.open	= rtl8366_debugfs_open,
@@ -751,6 +794,22 @@ static void rtl8366_debugfs_init(struct rtl8366_smi *smi)
 	if (!node) {
 		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
 			"vlan_mc");
+		return;
+	}
+
+	node = debugfs_create_u8("vlan_4k_page", S_IRUGO | S_IWUSR, root,
+				  &smi->dbg_vlan_4k_page);
+	if (!node) {
+		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
+			"vlan_4k_page");
+		return;
+	}
+
+	node = debugfs_create_file("vlan_4k", S_IRUSR, root, smi,
+				   &fops_rtl8366_vlan_4k);
+	if (!node) {
+		dev_err(smi->parent, "Creating debugfs file '%s' failed\n",
+			"vlan_4k");
 		return;
 	}
 

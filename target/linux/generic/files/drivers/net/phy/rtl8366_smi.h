@@ -52,6 +52,7 @@ struct rtl8366_smi {
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 	struct dentry           *debugfs_root;
 	u16			dbg_reg;
+	u8			dbg_vlan_4k_page;
 #endif
 };
 
