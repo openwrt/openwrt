@@ -112,10 +112,6 @@ define KernelPackage/fs-ext4
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT4 filesystem support
   KCONFIG:= \
-	CONFIG_EXT4DEV_COMPAT=n \
-	CONFIG_EXT4_FS_XATTR=y \
-	CONFIG_EXT4_FS_POSIX_ACL=y \
-	CONFIG_EXT4_FS_SECURITY=y \
 	CONFIG_EXT4_FS \
 	CONFIG_JBD2
   DEPENDS:= $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
