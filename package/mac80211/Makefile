@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2010-12-16
-PKG_RELEASE:=2
+PKG_VERSION:=2011-01-05
+PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=39196307aa67c1f19f498b570b994112
+PKG_MD5SUM:=2b87fdd08d95fa5def39f56f49c4906d
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -345,7 +345,7 @@ define KernelPackage/rtl8180
   $(call KernelPackage/rtl818x/Default)
   DEPENDS+= @PCI_SUPPORT
   TITLE+= (RTL8180 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180/rtl8180.ko
   AUTOLOAD:=$(call AutoLoad,27,rtl8180)
 endef
 
@@ -353,7 +353,7 @@ define KernelPackage/rtl8187
 $(call KernelPackage/rtl818x/Default)
   DEPENDS+= @USB_SUPPORT
   TITLE+= (RTL8187 USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8187.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8187/rtl8187.ko
   AUTOLOAD:=$(call AutoLoad,27,rtl8187)
 endef
 
@@ -941,6 +941,7 @@ MAKE_OPTS:= \
 	CONFIG_RT2800USB=$(if $(CONFIG_PACKAGE_kmod-rt2800-usb),m) \
 	CONFIG_RTL8180=$(if $(CONFIG_PACKAGE_kmod-rtl8180),m) \
 	CONFIG_RTL8187=$(if $(CONFIG_PACKAGE_kmod-rtl8187),m) \
+	CONFIG_RTL8192CE= \
 	CONFIG_MAC80211_HWSIM=$(if $(CONFIG_PACKAGE_kmod-mac80211-hwsim),m) \
 	CONFIG_PCMCIA= \
 	CONFIG_LIBIPW=$(if $(CONFIG_PACKAGE_kmod-net-libipw),m) \

@@ -1,7 +1,7 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -33,7 +33,7 @@ int modparam_nohwcrypt;
- module_param_named(nohwcrypt, modparam_nohwcrypt, int, 0444);
+@@ -33,7 +33,7 @@ int ath9k_modparam_nohwcrypt;
+ module_param_named(nohwcrypt, ath9k_modparam_nohwcrypt, int, 0444);
  MODULE_PARM_DESC(nohwcrypt, "Disable hardware encryption");
  
 -int led_blink;
