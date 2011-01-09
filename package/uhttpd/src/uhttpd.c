@@ -127,9 +127,7 @@ static int uh_socket_bind(
 	int status;
 	int bound = 0;
 
-	int tcp_ka_idl = 1;
-	int tcp_ka_int = 1;
-	int tcp_ka_cnt = 3;
+	int tcp_ka_idl, tcp_ka_int, tcp_ka_cnt;
 
 	struct listener *l = NULL;
 	struct addrinfo *addrs = NULL, *p = NULL;
@@ -157,13 +155,20 @@ static int uh_socket_bind(
 		}
 
 		/* TCP keep-alive */
-		if( setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes)) ||
-		    setsockopt(sock, SOL_TCP, TCP_KEEPIDLE,  &tcp_ka_idl, sizeof(tcp_ka_idl)) ||
-		    setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &tcp_ka_int, sizeof(tcp_ka_int)) ||
-		    setsockopt(sock, SOL_TCP, TCP_KEEPCNT,   &tcp_ka_cnt, sizeof(tcp_ka_cnt)) )
+		if( conf->tcp_keepalive > 0 )
 		{
-		    fprintf(stderr, "Notice: Unable to enable TCP keep-alive: %s\n",
-		    	strerror(errno));
+			tcp_ka_idl = 1;
+			tcp_ka_cnt = 3;
+			tcp_ka_int = conf->tcp_keepalive;
+
+			if( setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes)) ||
+			    setsockopt(sock, SOL_TCP, TCP_KEEPIDLE,  &tcp_ka_idl, sizeof(tcp_ka_idl)) ||
+			    setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &tcp_ka_int, sizeof(tcp_ka_int)) ||
+			    setsockopt(sock, SOL_TCP, TCP_KEEPCNT,   &tcp_ka_cnt, sizeof(tcp_ka_cnt)) )
+			{
+			    fprintf(stderr, "Notice: Unable to enable TCP keep-alive: %s\n",
+			    	strerror(errno));
+			}
 		}
 
 		/* required to get parallel v4 + v6 working */
@@ -619,7 +624,7 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 int main (int argc, char **argv)
 {
 	/* master file descriptor list */
-	fd_set used_fds, serv_fds, read_fds;
+	fd_set serv_fds;
 
 	/* working structs */
 	struct addrinfo hints;
@@ -650,10 +655,7 @@ int main (int argc, char **argv)
 	void *lib;
 #endif
 
-	/* clear the master and temp sets */
-	FD_ZERO(&used_fds);
 	FD_ZERO(&serv_fds);
-	FD_ZERO(&read_fds);
 
 	/* handle SIGPIPE, SIGINT, SIGTERM, SIGCHLD */
 	sa.sa_flags = 0;
@@ -722,7 +724,7 @@ int main (int argc, char **argv)
 #endif
 
 	while( (opt = getopt(argc, argv,
-		"fSDRC:K:E:I:p:s:h:c:l:L:d:r:m:x:i:t:T:")) > 0
+		"fSDRC:K:E:I:p:s:h:c:l:L:d:r:m:x:i:t:T:A:")) > 0
 	) {
 		switch(opt)
 		{
@@ -894,6 +896,11 @@ int main (int argc, char **argv)
 			/* network timeout */
 			case 'T':
 				conf.network_timeout = atoi(optarg);
+				break;
+
+			/* tcp keep-alive */
+			case 'A':
+				conf.tcp_keepalive = atoi(optarg);
 				break;
 
 			/* no fork */

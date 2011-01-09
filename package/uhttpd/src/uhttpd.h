@@ -75,6 +75,7 @@ struct config {
 	int no_dirlists;
 	int network_timeout;
 	int rfc1918_filter;
+	int tcp_keepalive;
 #ifdef HAVE_CGI
 	char *cgi_prefix;
 #endif
