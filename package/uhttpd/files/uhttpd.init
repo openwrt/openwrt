@@ -66,6 +66,7 @@ start_instance()
 	append_arg "$cfg" lua_handler "-L"
 	append_arg "$cfg" script_timeout "-t"
 	append_arg "$cfg" network_timeout "-T"
+	append_arg "$cfg" tcp_keepalive "-A"
 	append_arg "$cfg" error_page "-E"
 	append_arg "$cfg" index_page "-I"
 

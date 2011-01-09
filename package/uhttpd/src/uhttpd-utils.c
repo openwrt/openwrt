@@ -167,6 +167,9 @@ int uh_tcp_recv(struct client *cl, char *buf, int len)
 	int sz = 0;
 	int rsz = 0;
 
+	fd_set reader;
+	struct timeval timeout;
+
 	/* first serve data from peek buffer */
 	if( cl->peeklen > 0 )
 	{
@@ -180,15 +183,28 @@ int uh_tcp_recv(struct client *cl, char *buf, int len)
 	/* caller wants more */
 	if( len > 0 )
 	{
-#ifdef HAVE_TLS
-		if( cl->tls )
-			rsz = cl->server->conf->tls_recv(cl, (void *)&buf[sz], len);
-		else
-#endif
-			rsz = recv(cl->socket, (void *)&buf[sz], len, 0);
+		FD_ZERO(&reader);
+		FD_SET(cl->socket, &reader);
 
-		if( (sz == 0) || (rsz > 0) )
-			sz += rsz;
+		timeout.tv_sec  = cl->server->conf->network_timeout;
+		timeout.tv_usec = 0;
+
+		if( select(cl->socket + 1, &reader, NULL, NULL, &timeout) > 0 )
+		{
+#ifdef HAVE_TLS
+			if( cl->tls )
+				rsz = cl->server->conf->tls_recv(cl, (void *)&buf[sz], len);
+			else
+#endif
+				rsz = recv(cl->socket, (void *)&buf[sz], len, 0);
+
+			if( (sz == 0) || (rsz > 0) )
+				sz += rsz;
+		}
+		else if( sz == 0 )
+		{
+			sz = -1;
+		}
 	}
 
 	return sz;
@@ -233,7 +249,7 @@ int uh_http_sendc(struct client *cl, const char *data, int len)
 
 	if( len > 0 )
 	{
-	 	clen = snprintf(chunk, sizeof(chunk), "%X\r\n", len);
+		clen = snprintf(chunk, sizeof(chunk), "%X\r\n", len);
 		ensure_ret(uh_tcp_send(cl, chunk, clen));
 		ensure_ret(uh_tcp_send(cl, data, len));
 		ensure_ret(uh_tcp_send(cl, "\r\n", 2));
