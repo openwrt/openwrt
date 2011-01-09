@@ -22,7 +22,7 @@
  static int modparam_bad_frames_preempt;
  module_param_named(bad_frames_preempt, modparam_bad_frames_preempt, int, 0444);
  MODULE_PARM_DESC(bad_frames_preempt,
-@@ -2536,10 +2541,10 @@ static int b43_gpio_init(struct b43_wlde
+@@ -2542,10 +2547,10 @@ static int b43_gpio_init(struct b43_wlde
  		    & ~B43_MACCTL_GPOUTSMSK);
  
  	b43_write16(dev, B43_MMIO_GPIO_MASK, b43_read16(dev, B43_MMIO_GPIO_MASK)
@@ -35,7 +35,7 @@
  	if (dev->dev->bus->chip_id == 0x4301) {
  		mask |= 0x0060;
  		set |= 0x0060;
-@@ -5096,10 +5101,10 @@ static void b43_print_driverinfo(void)
+@@ -5102,10 +5107,10 @@ static void b43_print_driverinfo(void)
  	feat_sdio = "S";
  #endif
  	printk(KERN_INFO "Broadcom 43xx driver loaded "
