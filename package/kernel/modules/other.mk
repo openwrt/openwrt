@@ -169,7 +169,7 @@ define KernelPackage/gpio-cs5535
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_CS5535_GPIO \
 	   CONFIG_GPIO_CS5535
-ifeq ($(CONFIG_LINUX_2_6_32),y)
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.32)),1) 
   FILES:=$(LINUX_DIR)/drivers/char/cs5535_gpio.ko
   AUTOLOAD:=$(call AutoLoad,50,cs5535_gpio)
 else
