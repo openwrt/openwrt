@@ -1,7 +1,7 @@
 /*
  *  NAND flash driver for the MikroTik RouterBoard 4xx series
  *
- *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This file was based on the driver for Linux 2.6.22 published by
@@ -71,7 +71,7 @@ static struct mtd_partition rb4xx_nand_partitions[] = {
 
 static int rb4xx_nand_dev_ready(struct mtd_info *mtd)
 {
-	return gpio_get_value(RB4XX_NAND_GPIO_READY);
+	return gpio_get_value_cansleep(RB4XX_NAND_GPIO_READY);
 }
 
 static void rb4xx_nand_write_cmd(unsigned char cmd)
@@ -88,9 +88,12 @@ static void rb4xx_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
 				unsigned int ctrl)
 {
 	if (ctrl & NAND_CTRL_CHANGE) {
-		gpio_set_value(RB4XX_NAND_GPIO_CLE, (ctrl & NAND_CLE) ? 1 : 0);
-		gpio_set_value(RB4XX_NAND_GPIO_ALE, (ctrl & NAND_ALE) ? 1 : 0);
-		gpio_set_value(RB4XX_NAND_GPIO_NCE, (ctrl & NAND_NCE) ? 0 : 1);
+		gpio_set_value_cansleep(RB4XX_NAND_GPIO_CLE,
+					(ctrl & NAND_CLE) ? 1 : 0);
+		gpio_set_value_cansleep(RB4XX_NAND_GPIO_ALE,
+					(ctrl & NAND_ALE) ? 1 : 0);
+		gpio_set_value_cansleep(RB4XX_NAND_GPIO_NCE,
+					(ctrl & NAND_NCE) ? 0 : 1);
 	}
 
 	if (cmd != NAND_CMD_NONE)
