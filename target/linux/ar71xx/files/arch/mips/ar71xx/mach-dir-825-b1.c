@@ -29,12 +29,12 @@
 #define DIR825B1_GPIO_LED_BLUE_USB		0
 #define DIR825B1_GPIO_LED_ORANGE_POWER		1
 #define DIR825B1_GPIO_LED_BLUE_POWER		2
-#define DIR825B1_GPIO_LED_BLUE_POWERSAVE	4
+#define DIR825B1_GPIO_LED_BLUE_WPS		4
 #define DIR825B1_GPIO_LED_ORANGE_PLANET		6
 #define DIR825B1_GPIO_LED_BLUE_PLANET		11
 
 #define DIR825B1_GPIO_BTN_RESET			3
-#define DIR825B1_GPIO_BTN_POWERSAVE		8
+#define DIR825B1_GPIO_BTN_WPS			8
 
 #define DIR825B1_GPIO_RTL8366_SDA		5
 #define DIR825B1_GPIO_RTL8366_SCK		7
@@ -98,8 +98,8 @@ static struct gpio_led dir825b1_leds_gpio[] __initdata = {
 		.gpio		= DIR825B1_GPIO_LED_BLUE_POWER,
 		.active_low	= 1,
 	}, {
-		.name		= "dir825b1:blue:powersave",
-		.gpio		= DIR825B1_GPIO_LED_BLUE_POWERSAVE,
+		.name		= "dir825b1:blue:wps",
+		.gpio		= DIR825B1_GPIO_LED_BLUE_WPS,
 		.active_low	= 1,
 	}, {
 		.name		= "dir825b1:orange:planet",
@@ -121,11 +121,11 @@ static struct gpio_button dir825b1_gpio_buttons[] __initdata = {
 		.gpio		= DIR825B1_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
-		.desc		= "powersave",
+		.desc		= "wps",
 		.type		= EV_KEY,
-		.code		= BTN_1,
+		.code		= KEY_WPS_BUTTON,
 		.threshold	= 3,
-		.gpio		= DIR825B1_GPIO_BTN_POWERSAVE,
+		.gpio		= DIR825B1_GPIO_BTN_WPS,
 		.active_low	= 1,
 	}
 };
