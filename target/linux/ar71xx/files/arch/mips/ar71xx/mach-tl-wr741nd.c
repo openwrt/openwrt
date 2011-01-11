@@ -125,6 +125,8 @@ static void __init tl_wr741nd_setup(void)
 	ar71xx_add_device_eth(1);
 	ar71xx_add_device_eth(0);
 
+	ap91_pci_setup_wmac_led_pin(1);
+
 	ap91_pci_init(ee, mac);
 }
 MIPS_MACHINE(AR71XX_MACH_TL_WR741ND, "TL-WR741ND", "TP-LINK TL-WR741ND",
