@@ -38,6 +38,8 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   $(curdir)/gcc/minimal/compile:=$(curdir)/binutils/install
   $(curdir)/kernel-headers/install:=$(curdir)/gcc/minimal/install
   $(curdir)/gcc/initial/compile:=$(curdir)/$(LIBC)/prepare
+  $(curdir)/gcc/initial/prepare:=$(curdir)/gcc/minimal/prepare
+  $(curdir)/gcc/final/prepare:=$(curdir)/gcc/initial/prepare
   $(curdir)/$(LIBC)/compile:=$(curdir)/gcc/initial/install
   $(curdir)/gcc/final/compile:=$(curdir)/$(LIBC)/compile
   $(curdir)/$(LIBC)/install:=$(curdir)/gcc/final/install
