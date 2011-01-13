@@ -183,3 +183,18 @@ define KernelPackage/i2c-mv64xxx/description
 endef
 
 $(eval $(call KernelPackage,i2c-mv64xxx))
+
+define KernelPackage/at91-i2c
+  SUBMENU:=$(I2C_MENU)
+  TITLE:=I2C (TWI) master driver for Atmel AT91
+  DEPENDS:=@TARGET_at91 kmod-i2c-core
+  KCONFIG:=CONFIG_I2C_AT91
+  FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-at91.ko
+  AUTOLOAD:=$(call AutoLoad,55,i2c-at91)
+endef
+
+define KernelPackage/at91-i2c/description
+ Kernel module to use the I2C (TWI) master driver for Atmel AT91
+endef
+
+$(eval $(call KernelPackage,at91-i2c))
