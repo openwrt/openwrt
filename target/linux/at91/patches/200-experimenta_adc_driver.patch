@@ -7,7 +7,7 @@ Index: linux-2.6.35.9/drivers/misc/Kconfig
  	  interval timing.
  
 +config AT91_ADC
-+	bool "AT91 ADC converter"
++	tristate "AT91 ADC converter"
 +	depends on ARCH_AT91 && SYSFS
 +
  config IBM_ASM
