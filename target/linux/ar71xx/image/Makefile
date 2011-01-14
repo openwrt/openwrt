@@ -342,14 +342,14 @@ define Image/Build/CyberTAN
 	rm $(KDIR)/image.tmp
 endef
 
-wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
-define Image/Build/WNDR3700
-	$(call PatchKernelLzma,$(2),$(3) $(wndr3700_mtdlayout))
+define Image/Build/Netgear
+	$(call PatchKernelLzma,$(2),$(3) $($(4)))
 	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
 	mkdir -p $(KDIR)/wndr3700/image
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
 		$(KDIR)/vmlinux-$(2).uImage \
-		$(KDIR)/wndr3700/image/uImage
+		$(KDIR)/wndr3700/image/uImage \
+		$(5)
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
 		$(KDIR)/wndr3700 $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp \
 		-nopad -noappend -root-owned -be
@@ -361,20 +361,30 @@ define Image/Build/WNDR3700
 		$(KDIR)/vmlinux-$(2).uImage.squashfs.tmp2
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
 		$(KDIR)/vmlinux-$(2).uImage.squashfs.tmp2 \
-		$(KDIR)/vmlinux-$(2).uImage.squashfs
+		$(KDIR)/vmlinux-$(2).uImage.squashfs \
+		$(5)
 	-rm -f $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp*
 	( \
 		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k; \
 	) > $(call imgname,$(1),$(2))-sysupgrade.bin
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B WNDR3700 -v OpenWrt.$(REVISION) \
+		-B $(6) -v OpenWrt.$(REVISION) \
 		-i $(call imgname,$(1),$(2))-sysupgrade.bin \
 		-o $(call imgname,$(1),$(2))-factory.img
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B WNDR3700 -v OpenWrt.$(REVISION) -r "NA" \
+		-B $(6) -v OpenWrt.$(REVISION) -r "NA" \
 		-i $(call imgname,$(1),$(2))-sysupgrade.bin \
 		-o $(call imgname,$(1),$(2))-factory-NA.img
+endef
+
+define Image/Build/Netgear/initramfs
+	$(call PatchKernelLzma,$(2),$(3) $($(4)))
+	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
+	$(STAGING_DIR_HOST)/bin/wndr3700 \
+		$(KDIR)/vmlinux-$(2).uImage \
+		$(call imgname,$(1),$(2))-uImage.bin \
+		$(5)
 endef
 
 ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
@@ -401,14 +411,6 @@ ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
 	fi; fi
   endef
 endif
-
-define Image/Build/WNDR3700/initramfs
-	$(call PatchKernelLzma,$(2),$(3) $(wndr3700_mtdlayout))
-	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
-	$(STAGING_DIR_HOST)/bin/wndr3700 \
-		$(KDIR)/vmlinux-$(2).uImage \
-		$(call imgname,$(1),$(2))-uImage.bin
-endef
 
 define Image/Build/Zcomax
 	$(call PatchKernelLzma,$(2),$(3))
@@ -630,8 +632,9 @@ define Image/Build/Profile/TLWR1043NDV1
 	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr1043nd-v1,board=TL-WR1043ND,TL-WR1043NDv1)
 endef
 
+wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
 define Image/Build/Profile/WNDR3700
-	$(call Image/Build/Template/$(fs_64k)/$(1),WNDR3700,wndr3700,board=WNDR3700)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,board=WNDR3700,wndr3700_mtdlayout,3700,WNDR3700)
 endef
 
 define Image/Build/Profile/AP96
