@@ -8,15 +8,18 @@
  
              symbols.update(library_symbols_used[library])
  
-@@ -575,6 +576,7 @@ while 1:
+@@ -575,6 +576,10 @@ while 1:
                  symbols.add(ProvidedSymbol('__uClibc_init', None, None, True))
                  symbols.add(ProvidedSymbol('__uClibc_fini', None, None, True))
                  extra_flags.append("-Wl,-init,__uClibc_init")
 +                libgcc_link = "-lgcc_s_pic"
++
++            if soname in ("libm.so.0"):
++                libgcc_link = "-lgcc_s_pic"
  
              map_file = find_pic_map(library)
              if map_file:
-@@ -590,7 +592,7 @@ while 1:
+@@ -590,7 +595,7 @@ while 1:
              cmd.append(pic_file)
              cmd.extend(extra_post_obj)
              cmd.extend(extra_flags)
