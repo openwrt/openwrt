@@ -37,7 +37,10 @@
 
 #define BPB 8 /* bits/byte */
 
+#define WNDR3700_MAGIC_LEN	4
+
 static uint32_t crc32[1<<BPB];
+static char *magic = "3700";
 
 static void init_crc32()
 {
@@ -64,7 +67,7 @@ static uint32_t crc32buf(unsigned char *buf, size_t len)
 }
 
 struct header {
-    uint32_t magic;
+    unsigned char magic[WNDR3700_MAGIC_LEN];
     uint32_t crc;
     unsigned char stuff[56];
 };
@@ -74,7 +77,7 @@ static void usage(const char *) __attribute__ (( __noreturn__ ));
 static void usage(const char *mess)
 {
 	fprintf(stderr, "Error: %s\n", mess);
-	fprintf(stderr, "Usage: wndr3700 input_file output_file\n");
+	fprintf(stderr, "Usage: wndr3700 input_file output_file [magic]\n");
 	fprintf(stderr, "\n");
 	exit(1);
 }
@@ -90,8 +93,16 @@ int main(int argc, char **argv)
 
 	// verify parameters
 
-	if (argc != 3)
+	if (argc < 3)
 		usage("wrong number of arguments");
+
+	if (argc > 3)
+		magic = argv[3];
+
+	if (strlen(magic) != WNDR3700_MAGIC_LEN) {
+		fprintf(stderr, "Invalid magic: '%s'\n", magic);
+		exit(1);
+	}
 
 	// mmap input_file
 	if ((fd = open(argv[1], O_RDONLY))  < 0
@@ -110,7 +121,7 @@ int main(int argc, char **argv)
         // preload header
         memcpy(&header, input_file, sizeof(header));
 
-        header.magic = htonl(0x33373030); /* 3700 in ascii */
+	memcpy(header.magic, magic, WNDR3700_MAGIC_LEN);
 	header.crc = 0;
 
 	// create a firmware image in memory and copy the input_file to it
