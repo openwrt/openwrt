@@ -9,6 +9,9 @@ hostapd_set_bss_options() {
 
 	config_get device "$vif" device
 	config_get hwmode "$device" hwmode
+	config_get phy "$device" phy
+
+	append "$var" "ctrl_interface=/var/run/hostapd-$phy" "$N"
 
 	if [ "$ap_isolate" -gt 0 ]; then
 		append "$var" "ap_isolate=$ap_isolate" "$N"
@@ -184,7 +187,6 @@ hostapd_setup_vif() {
 	[ "$channel" = auto ] && channel=
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
 	cat > /var/run/hostapd-$ifname.conf <<EOF
-ctrl_interface=/var/run/hostapd-$ifname
 driver=$driver
 interface=$ifname
 ${hwmode:+hw_mode=${hwmode#11}}
