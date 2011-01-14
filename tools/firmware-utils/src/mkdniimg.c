@@ -27,7 +27,7 @@ static char *ifname;
 static char *progname;
 static char *ofname;
 static char *version = "1.00.00";
-static char *region ="NA";
+static char *region = "";
 
 static char *board_id;
 /*
