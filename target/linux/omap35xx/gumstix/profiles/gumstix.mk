@@ -20,7 +20,7 @@ define Profile/Gumstix
 		openssh-client openssh-client-utils openssh-keygen \
 		openssh-server kmod-usb-storage kmod-usb-storage-extras \
 		kmod-fs-vfat avahi-autoipd avahi-daemon avahi-dnsconfd \
-		hegw hegw-test \
+		hegw hegwtest \
 		dbus-python python-expat python-ifconfig
 endef
 
