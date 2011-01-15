@@ -1,0 +1,18 @@
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1561,9 +1561,13 @@ __ieee80211_data_to_8023(struct ieee8021
+ 	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN && !sdata->u.vlan.sta)
+ 		return -1;
+ 
++	if (!ieee80211_802_1x_port_control(rx) &&
++	    sdata->vif.type == NL80211_IFTYPE_STATION &&
++	    !!sdata->u.mgd.use_4addr != !!ieee80211_has_a4(hdr->frame_control))
++		return -1;
++
+ 	if (is_multicast_ether_addr(hdr->addr1) &&
+-	    ((sdata->vif.type == NL80211_IFTYPE_AP_VLAN && sdata->u.vlan.sta) ||
+-	     (sdata->vif.type == NL80211_IFTYPE_STATION && sdata->u.mgd.use_4addr)))
++	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN && sdata->u.vlan.sta)
+ 		return -1;
+ 
+ 	return ieee80211_data_to_8023(rx->skb, sdata->vif.addr, sdata->vif.type);
