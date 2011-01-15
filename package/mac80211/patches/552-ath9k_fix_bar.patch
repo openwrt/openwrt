@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -429,7 +429,7 @@ static void ath_tx_complete_aggr(struct 
+ 
+ 	ath_tx_count_frames(sc, bf, ts, txok, &nframes, &nbad);
+ 	while (bf) {
+-		txfail = txpending = 0;
++		txfail = txpending = sendbar = 0;
+ 		bf_next = bf->bf_next;
+ 
+ 		skb = bf->bf_mpdu;
