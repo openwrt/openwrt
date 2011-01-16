@@ -992,7 +992,8 @@ MAKE_OPTS:= \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=: \
 	KLIB=$(TARGET_MODULES_DIR) \
-	KERNEL_SUBLEVEL=$(lastword $(subst ., ,$(KERNEL_PATCHVER)))
+	KERNEL_SUBLEVEL=$(lastword $(subst ., ,$(KERNEL_PATCHVER))) \
+	KBUILD_LDFLAGS_MODULE_PREREQ=
 
 ifeq ($(CONFIG_PACKAGE_kmod-libertas-sd)$(CONFIG_PACKAGE_kmod-libertas-usb)$(CONFIG_PACKAGE_kmod-rt2x00-lib),)
   MAKE_OPTS += CONFIG_COMPAT_KFIFO=
