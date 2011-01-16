@@ -69,6 +69,9 @@ endif
 ifneq ($(findstring -march=armv5te,$(TARGET_OPTIMIZATION)),)
   ARCH_SUFFIX:=_v5te
 endif
+ifdef CONFIG_HAS_SPE_FPU
+  TARGET_SUFFIX:=$(TARGET_SUFFIX)spe
+endif
 
 DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)
 BIN_DIR:=$(TOPDIR)/bin/$(BOARD)
