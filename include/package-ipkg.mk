@@ -90,7 +90,6 @@ ifeq ($(DUMP),)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' | $(XARGS) rm -rf
 	$(RSTRIP) $$(IDIR_$(1))
-	SIZE=`cd $$(IDIR_$(1)); du -bs --exclude=./CONTROL . 2>/dev/null | cut -f1`; \
 	( \
 		echo "Package: $(1)"; \
 		echo "Version: $(VERSION)"; \
@@ -107,7 +106,7 @@ ifeq ($(DUMP),)
 		echo "Priority: $(PRIORITY)"; \
 		echo "Maintainer: $(MAINTAINER)"; \
 		echo "Architecture: $(PKGARCH)"; \
-		echo "Installed-Size: $$$$SIZE"; \
+		echo "Installed-Size: 0"; \
 		echo -n "Description: "; $(SH_FUNC) getvar $(call shvar,Package/$(1)/description) | sed -e 's,^[[:space:]]*, ,g'; \
  	) > $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
