@@ -1,0 +1,42 @@
+--- a/libm/powerpc/e500/Makefile.arch
++++ b/libm/powerpc/e500/Makefile.arch
+@@ -6,5 +6,7 @@
+ #
+ 
+ libm_ARCH_fpu_DIR := $(libm_SUBARCH_DIR)/fpu
++libm_ARCH_fpu_OUT := $(libm_SUBARCH_OUT)/fpu
++CFLAGS-libm/$(TARGET_ARCH)/$(TARGET_SUBARCH)/fpu/ = $(CFLAGS-libm)
+ -include $(libm_ARCH_fpu_DIR)/Makefile.arch
+ 
+--- a/libm/powerpc/e500/fpu/fe_nomask.c
++++ b/libm/powerpc/e500/fpu/fe_nomask.c
+@@ -26,7 +26,7 @@
+ const fenv_t *
+ __fe_nomask_env(void)
+ {
+-  __set_errno (ENOSYS);
++  errno = ENOSYS;
+   return FE_ENABLED_ENV;
+ }
+ 
+--- a/libm/powerpc/e500/fpu/feholdexcpt.c
++++ b/libm/powerpc/e500/fpu/feholdexcpt.c
+@@ -42,4 +42,3 @@ feholdexcept (fenv_t *envp)
+ 
+   return 0;
+ }
+-libm_hidden_def (feholdexcept)
+--- a/libm/powerpc/e500/fpu/fesetround.c
++++ b/libm/powerpc/e500/fpu/fesetround.c
+@@ -34,4 +34,3 @@ fesetround (int round)
+ 
+   return 0;
+ }
+-libm_hidden_def (fesetround)
+--- a/libm/powerpc/e500/fpu/fraiseexcpt.c
++++ b/libm/powerpc/e500/fpu/fraiseexcpt.c
+@@ -26,4 +26,3 @@
+ 
+ #include "../spe-raise.c"
+ 
+-libm_hidden_def (feraiseexcept)
