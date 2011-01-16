@@ -12,7 +12,6 @@ PKG_VERSION:=1.7
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://handhelds.org/packages/ipkg-utils/
 PKG_MD5SUM:=da3e3ef772973d7370a6ac95f0fef9b8
-PKG_CAT:=zcat
 
 include $(INCLUDE_DIR)/host-build.mk
 
