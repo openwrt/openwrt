@@ -56,7 +56,6 @@ $(curdir)/mm-macros/compile := $(curdir)/automake/install
 $(curdir)/xorg-macros/compile := $(curdir)/automake/install
 $(curdir)/missing-macros/compile := $(curdir)/automake/install
 $(curdir)/e2fsprogs/compile := $(curdir)/automake/install
-$(curdir)/qemu/compile := $(curdir)/automake/install
 $(curdir)/libelf/compile := $(curdir)/automake/install
 
 $(curdir)/builddirs := $(tools-y) $(tools-dep) $(tools-)
