@@ -2,10 +2,6 @@ scan_pppoa() {
 	config_set "$1" device "pppoa-$1"
 }
 
-coldplug_interface_pppoa() {
-	setup_interface_pppoa x "$1"
-}
-
 stop_interface_pppoa() {
 	stop_interface_ppp "$1"
 }
