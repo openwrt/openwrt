@@ -1,3 +1,7 @@
+scan_pppoa() {
+	config_set "$1" device "pppoa-$1"
+}
+
 coldplug_interface_pppoa() {
 	setup_interface_pppoa x "$1"
 }
