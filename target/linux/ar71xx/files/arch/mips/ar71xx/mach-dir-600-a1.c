@@ -118,8 +118,8 @@ static void __init dir_600_a1_setup(void)
 
 	if (nvram_parse_mac_addr(nvram, DIR_600_A1_NVRAM_SIZE,
 				"lan_mac=", mac_buff) == 0) {
-		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
-		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
+		ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac_buff, 0);
+		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac_buff, 1);
 		mac = mac_buff;
 	}
 
