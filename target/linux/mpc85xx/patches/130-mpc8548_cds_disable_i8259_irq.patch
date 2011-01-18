@@ -1,0 +1,13 @@
+--- a/arch/powerpc/boot/dts/mpc8548cds.dts
++++ b/arch/powerpc/boot/dts/mpc8548cds.dts
+@@ -492,8 +492,10 @@
+ 					#address-cells = <0>;
+ 					#interrupt-cells = <2>;
+ 					compatible = "chrp,iic";
++/*
+ 					interrupts = <0 1>;
+ 					interrupt-parent = <&mpic>;
++*/
+ 				};
+ 
+ 				rtc@70 {
