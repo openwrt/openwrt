@@ -15,7 +15,7 @@ define KernelPackage/usb-core
   SUBMENU:=$(USB_MENU)
   TITLE:=Support for USB
   DEPENDS:=@USB_SUPPORT +kmod-nls-base
-  KCONFIG:=CONFIG_USB
+  KCONFIG:=CONFIG_USB CONFIG_XPS_USB_HCD_XILINX=n CONFIG_USB_FHCI_HCD=n
   FILES:=$(LINUX_DIR)/drivers/usb/core/usbcore.ko
   AUTOLOAD:=$(call AutoLoad,20,usbcore,1)
 endef
@@ -167,7 +167,8 @@ $(eval $(call KernelPackage,usb-isp116x-hcd))
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   KCONFIG:=CONFIG_USB_EHCI_HCD \
-    CONFIG_USB_EHCI_AR71XX=y
+    CONFIG_USB_EHCI_AR71XX=y \
+    CONFIG_USB_EHCI_FSL=n
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,40,ehci-hcd,1)
   $(call AddDepends/usb)
