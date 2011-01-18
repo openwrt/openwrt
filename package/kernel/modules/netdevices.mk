@@ -489,7 +489,7 @@ $(eval $(call KernelPackage,tulip))
 define KernelPackage/solos-pci
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Solos ADSL2+ multiport modem
-  DEPENDS:=@TARGET_x86 +kmod-atm
+  DEPENDS:=@TARGET_x86 +kmod-atm +soloscli
   KCONFIG:=CONFIG_ATM_SOLOS
   FILES:=$(LINUX_DIR)/drivers/atm/solos-pci.ko
   AUTOLOAD:=$(call AutoLoad,50,solos-pci)
