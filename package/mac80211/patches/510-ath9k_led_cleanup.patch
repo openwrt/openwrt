@@ -38,7 +38,7 @@
  
  /* Antenna diversity/combining */
  #define ATH_ANT_RX_CURRENT_SHIFT 4
-@@ -611,15 +605,11 @@ struct ath_softc {
+@@ -625,15 +619,11 @@ struct ath_softc {
  	struct ath_beacon beacon;
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
@@ -253,7 +253,7 @@
  /*	Rfkill	   */
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1270,9 +1270,6 @@ static void ath9k_stop(struct ieee80211_
+@@ -1281,9 +1281,6 @@ static void ath9k_stop(struct ieee80211_
  
  	aphy->state = ATH_WIPHY_INACTIVE;
  

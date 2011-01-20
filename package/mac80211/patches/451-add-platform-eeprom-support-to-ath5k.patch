@@ -9,7 +9,7 @@
  
  #include "ath5k.h"
  #include "reg.h"
-@@ -1726,7 +1728,7 @@ ath5k_eeprom_read_spur_chans(struct ath5
+@@ -1722,7 +1724,7 @@ ath5k_eeprom_read_spur_chans(struct ath5
  }
  
  /*
@@ -18,10 +18,10 @@
   */
  int ath5k_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac)
  {
-@@ -1734,6 +1736,16 @@ int ath5k_eeprom_read_mac(struct ath5k_h
+@@ -1730,6 +1732,16 @@ int ath5k_eeprom_read_mac(struct ath5k_h
  	u32 total, offset;
  	u16 data;
- 	int octet, ret;
+ 	int octet;
 +	struct ath5k_platform_data *pdata = NULL;
 +
 +	if (ah->ah_sc->pdev)
@@ -33,8 +33,8 @@
 +		return 0;
 +	}
  
- 	ret = ath5k_hw_nvram_read(ah, 0x20, &data);
- 	if (ret)
+ 	AR5K_EEPROM_READ(0x20, data);
+ 
 --- a/drivers/net/wireless/ath/ath5k/pci.c
 +++ b/drivers/net/wireless/ath/ath5k/pci.c
 @@ -17,6 +17,7 @@
@@ -45,7 +45,7 @@
  #include "../ath.h"
  #include "ath5k.h"
  #include "debug.h"
-@@ -73,6 +74,19 @@ bool ath5k_pci_eeprom_read(struct ath_co
+@@ -74,6 +75,19 @@ ath5k_pci_eeprom_read(struct ath_common 
  {
  	struct ath5k_hw *ah = (struct ath5k_hw *) common->ah;
  	u32 status, timeout;
