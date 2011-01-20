@@ -1,16 +1,59 @@
 #!/bin/sh
-echo '#################'
-echo '# EGRESS STATUS #'
-echo '#################'
-echo
-for iface in $(tc qdisc show | grep hfsc | awk '{print $5}' | grep -v imq); do
-	tc -s class show dev "$iface"
-done
+# Copyright (C) 2011 OpenWrt.org
 
-echo '##################'
-echo '# INGRESS STATUS #'
-echo '##################'
-echo
-for iface in $(tc qdisc show | grep hfsc | awk '{print $5}' | grep imq); do
-	tc -s class show dev "$iface"
-done
+. /etc/functions.sh
+
+include /lib/network
+
+get_ifname() {
+	local interface="$1"
+	local cfgt
+
+	scan_interfaces
+	config_get cfgt "$interface" TYPE
+	[ "$cfgt" == "interface" ] && config_get "$interface" ifname
+}
+
+config_cb() {
+	config_get TYPE "$CONFIG_SECTION" TYPE
+	[ "interface" == "$TYPE" ] && {
+		config_get device "$CONFIG_SECTION" ifname
+		[ -z "$device" ] && device="$(get_ifname ${CONFIG_SECTION})"
+		config_set "$CONFIG_SECTION" device "$device"
+	}
+}
+
+config_load qos
+
+print_comments() {
+	echo ''
+	echo '# Interface: '"$1"
+	echo '# Direction: '"$2"
+	echo '# Stats:     '"$3"
+	echo ''
+}	
+
+interface_stats() {
+	local interface="$1"
+	local device
+
+	config_get device "$interface" device
+	config_get_bool enabled "$interface" enabled 1
+	[ -z "$device" -o 1 -ne "$enabled" ] && {
+		return 1
+	}
+	config_get_bool halfduplex "$interface" halfduplex
+
+	[ 1 -ne "$halfduplex" ] && {
+		unset halfduplex
+		print_comments "$interface" "Egress" "Start"
+		tc -s class show dev "$device"
+		print_comments "$interface" "Egress" "End"
+	}
+
+	print_comments "$interface" "Ingress${halfduplex:+/Egress}" "Start"
+	tc -s class show dev "$(iptables -v -L PREROUTING -t mangle | awk '/IMQ: todev .*$/ && $6 ~ /'$device'/ {print "imq"$12}')"
+	print_comments "$interface" "Ingress${halfduplex:+/Egress}" "End"
+}
+
+[ -z "$1" ] && config_foreach interface_stats interface || interface_stats "$1"
