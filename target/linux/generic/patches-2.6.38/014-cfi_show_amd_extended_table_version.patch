@@ -1,0 +1,15 @@
+--- a/drivers/mtd/chips/cfi_cmdset_0002.c
++++ b/drivers/mtd/chips/cfi_cmdset_0002.c
+@@ -462,9 +462,9 @@ struct mtd_info *cfi_cmdset_0002(struct
+ 
+ 			/*
+ 			 * Valid primary extension versions are: 1.0, 1.1, 1.2, 1.3, 1.4
+-			 * see: http://cs.ozerki.net/zap/pub/axim-x5/docs/cfi_r20.pdf, page 19 
+-			 *      http://www.spansion.com/Support/AppNotes/cfi_100_20011201.pdf
+-			 *      http://www.spansion.com/Support/Datasheets/s29ws-p_00_a12_e.pdf
++ 			 * see: Spec 1.3 http://cs.ozerki.net/zap/pub/axim-x5/docs/cfi_r20.pdf, page 19 
++ 			 *               http://www.spansion.com/Support/AppNotes/cfi_100_20011201.pdf
++			 *      Spec 1.4 http://www.spansion.com/Support/AppNotes/CFI_Spec_AN_03.pdf, page 9
+ 			 */
+ 			if (extp->MajorVersion != '1' ||
+ 			    (extp->MajorVersion == '1' && (extp->MinorVersion < '0' || extp->MinorVersion > '4'))) {

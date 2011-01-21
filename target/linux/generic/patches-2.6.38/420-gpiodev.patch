@@ -1,0 +1,27 @@
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
+@@ -1047,6 +1047,14 @@ config NSC_GPIO
+ 	  pc8736x_gpio drivers.  If those drivers are built as
+ 	  modules, this one will be too, named nsc_gpio
+ 
++config GPIO_DEVICE
++	tristate "GPIO device support"
++	depends on GENERIC_GPIO
++	help
++	  Say Y to enable Linux GPIO device support.  This allows control of
++	  GPIO pins using a character device
++
++
+ config RAW_DRIVER
+ 	tristate "RAW driver (/dev/raw/rawN)"
+ 	depends on BLOCK
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
+@@ -82,6 +82,7 @@ obj-$(CONFIG_NWFLASH)		+= nwflash.o
+ obj-$(CONFIG_SCx200_GPIO)	+= scx200_gpio.o
+ obj-$(CONFIG_PC8736x_GPIO)	+= pc8736x_gpio.o
+ obj-$(CONFIG_NSC_GPIO)		+= nsc_gpio.o
++obj-$(CONFIG_GPIO_DEVICE)	+= gpio_dev.o
+ obj-$(CONFIG_GPIO_TB0219)	+= tb0219.o
+ obj-$(CONFIG_TELCLOCK)		+= tlclk.o
+ 
