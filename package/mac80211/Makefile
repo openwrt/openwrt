@@ -435,7 +435,6 @@ define KernelPackage/ath9k
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_hw.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.ko
   AUTOLOAD:=$(call AutoLoad,27,ath9k_hw ath9k_common ath9k)
-  MENU:=1
 endef
 
 define KernelPackage/ath9k/description
