@@ -1,0 +1,18 @@
+--- a/fs/Kconfig
++++ b/fs/Kconfig
+@@ -35,6 +35,7 @@ source "fs/gfs2/Kconfig"
+ source "fs/ocfs2/Kconfig"
+ source "fs/btrfs/Kconfig"
+ source "fs/nilfs2/Kconfig"
++source "fs/yaffs2/Kconfig"
+ 
+ endif # BLOCK
+ 
+--- a/fs/Makefile
++++ b/fs/Makefile
+@@ -122,3 +122,5 @@ obj-$(CONFIG_BTRFS_FS)		+= btrfs/
+ obj-$(CONFIG_GFS2_FS)           += gfs2/
+ obj-$(CONFIG_EXOFS_FS)          += exofs/
+ obj-$(CONFIG_CEPH_FS)		+= ceph/
++obj-$(CONFIG_YAFFS_FS)		+= yaffs2/
++

@@ -1,0 +1,102 @@
+--- a/drivers/staging/cs5535_gpio/cs5535_gpio.c
++++ b/drivers/staging/cs5535_gpio/cs5535_gpio.c
+@@ -15,6 +15,7 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/cdev.h>
++#include <linux/device.h>
+ #include <linux/ioport.h>
+ #include <linux/pci.h>
+ 
+@@ -48,6 +49,7 @@ static struct pci_device_id divil_pci[]
+ MODULE_DEVICE_TABLE(pci, divil_pci);
+ 
+ static struct cdev cs5535_gpio_cdev;
++static struct class *cs5535_gpio_class;
+ 
+ /* reserve 32 entries even though some aren't usable */
+ #define CS5535_GPIO_COUNT	32
+@@ -66,9 +68,14 @@ static struct gpio_regmap rm[] =
+ 	{ 0x30, 0x00, '1', '0' },	/* GPIOx_READ_BACK / GPIOx_OUT_VAL */
+ 	{ 0x20, 0x20, 'I', 'i' },	/* GPIOx_IN_EN */
+ 	{ 0x04, 0x04, 'O', 'o' },	/* GPIOx_OUT_EN */
++	{ 0x10, 0x10, 'A', 'a' },	/* GPIOx_OUT_AUX1_SEL */
++	{ 0x14, 0x14, 'B', 'b' },	/* GPIOx_OUT_AUX2_SEL */
+ 	{ 0x08, 0x08, 't', 'T' },	/* GPIOx_OUT_OD_EN */
+ 	{ 0x18, 0x18, 'P', 'p' },	/* GPIOx_OUT_PU_EN */
+ 	{ 0x1c, 0x1c, 'D', 'd' },	/* GPIOx_OUT_PD_EN */
++	{ 0x24, 0x24, 'N', 'n' },	/* GPIOx_IN_INV_EN */
++	{ 0x0c, 0x0c, 'X', 'x' },	/* GPIOx_OUT_INV_EN */
++	{ 0x00, 0x00, 'H', 'L' },	/* GPIOx_OUT_VAL */
+ };
+ 
+ 
+@@ -177,7 +184,7 @@ static int __init cs5535_gpio_init(void)
+ {
+ 	dev_t	dev_id;
+ 	u32	low, hi;
+-	int	retval;
++	int	retval, i;
+ 
+ 	if (pci_dev_present(divil_pci) == 0) {
+ 		printk(KERN_WARNING NAME ": DIVIL not found\n");
+@@ -232,23 +239,54 @@ static int __init cs5535_gpio_init(void)
+ 		major = MAJOR(dev_id);
+ 	}
+ 
+-	if (retval) {
+-		release_region(gpio_base, CS5535_GPIO_SIZE);
+-		return -1;
+-	}
++	if (retval)
++		goto error;
+ 
+ 	printk(KERN_DEBUG NAME ": base=%#x mask=%#lx major=%d\n",
+ 	       gpio_base, mask, major);
+ 
+ 	cdev_init(&cs5535_gpio_cdev, &cs5535_gpio_fops);
+-	cdev_add(&cs5535_gpio_cdev, dev_id, CS5535_GPIO_COUNT);
++	retval = cdev_add(&cs5535_gpio_cdev, dev_id, CS5535_GPIO_COUNT);
++	if (retval) {
++		kobject_put(&cs5535_gpio_cdev.kobj);
++		goto error_region;
++	}
++
++	cs5535_gpio_class = class_create(THIS_MODULE, "cs5535_gpio");
++	if (IS_ERR(cs5535_gpio_class)) {
++		printk(KERN_ERR "Error creating cs5535_gpio class\n");
++		cdev_del(&cs5535_gpio_cdev);
++		retval = PTR_ERR(cs5535_gpio_class);
++		goto error_region;
++	}
++
++	for (i = 0; i < CS5535_GPIO_COUNT; i++) {
++		if (mask & (1<<i)) {
++			device_create(cs5535_gpio_class, NULL, MKDEV(major, i), NULL, "cs5535_gpio%d", i);
++		}
++	}
+ 
+ 	return 0;
++
++error_region:
++	unregister_chrdev_region(dev_id, CS5535_GPIO_COUNT);
++error:
++	release_region(gpio_base, CS5535_GPIO_SIZE);
++	return retval;
+ }
+ 
+ static void __exit cs5535_gpio_cleanup(void)
+ {
+ 	dev_t dev_id = MKDEV(major, 0);
++	int i;
++
++	for (i = 0; i < CS5535_GPIO_COUNT; i++) {
++		if (mask & (1<<i)) {
++			device_destroy(cs5535_gpio_class, MKDEV(major, i));
++		}
++	}
++
++	class_destroy(cs5535_gpio_class);
+ 
+ 	cdev_del(&cs5535_gpio_cdev);
+ 	unregister_chrdev_region(dev_id, CS5535_GPIO_COUNT);

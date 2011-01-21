@@ -1,0 +1,56 @@
+--- a/Makefile
++++ b/Makefile
+@@ -362,6 +362,7 @@ KBUILD_AFLAGS   := -D__ASSEMBLY__
+ KBUILD_AFLAGS_MODULE  := -DMODULE
+ KBUILD_CFLAGS_MODULE  := -DMODULE
+ KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
++KBUILD_LDFLAGS_MODULE_PREREQ	:= 
+ 
+ # Read KERNELRELEASE from include/config/kernel.release (if it exists)
+ KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
+@@ -371,7 +372,7 @@ export VERSION PATCHLEVEL SUBLEVEL KERNE
+ export ARCH SRCARCH CONFIG_SHELL HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC
+ export CPP AR NM STRIP OBJCOPY OBJDUMP
+ export MAKE AWK GENKSYMS INSTALLKERNEL PERL UTS_MACHINE
+-export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
++export HOSTCXX HOSTCXXFLAGS LDFLAGS_MODULE KBUILD_LDFLAGS_MODULE_PREREQ CHECK CHECKFLAGS
+ 
+ export KBUILD_CPPFLAGS NOSTDINC_FLAGS LINUXINCLUDE OBJCOPYFLAGS LDFLAGS
+ export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE CFLAGS_GCOV
+--- a/arch/powerpc/Makefile
++++ b/arch/powerpc/Makefile
+@@ -94,7 +94,7 @@ else
+ endif
+ endif
+ 
+-KBUILD_LDFLAGS_MODULE += arch/powerpc/lib/crtsavres.o
++KBUILD_LDFLAGS_MODULE_PREREQ += arch/powerpc/lib/crtsavres.o
+ 
+ ifeq ($(CONFIG_TUNE_CELL),y)
+ 	KBUILD_CFLAGS += $(call cc-option,-mtune=cell)
+--- a/scripts/Makefile.modpost
++++ b/scripts/Makefile.modpost
+@@ -110,7 +110,14 @@ quiet_cmd_cc_o_c = CC      $@
+       cmd_cc_o_c = $(CC) $(c_flags) $(KBUILD_CFLAGS_MODULE) $(CFLAGS_MODULE) \
+ 		   -c -o $@ $<
+ 
+-$(modules:.ko=.mod.o): %.mod.o: %.mod.c FORCE
++quiet_cmd_as_o_S	= AS $(quiet_modtag)  $@
++cmd_as_o_S		= $(CC) $(a_flags) $(AFLAGS_MODULE) -c -o $@ $<
++
++$(KBUILD_LDFLAGS_MODULE_PREREQ): %.o: %.S FORCE
++	$(Q)mkdir -p $(dir $@)
++	$(call if_changed_dep,as_o_S)
++
++$(modules:.ko=.mod.o): %.mod.o: %.mod.c $(KBUILD_LDFLAGS_MODULE_PREREQ) FORCE
+ 	$(call if_changed_dep,cc_o_c)
+ 
+ targets += $(modules:.ko=.mod.o)
+@@ -119,6 +126,7 @@ targets += $(modules:.ko=.mod.o)
+ quiet_cmd_ld_ko_o = LD [M]  $@
+       cmd_ld_ko_o = $(LD) -r $(LDFLAGS)                                 \
+                              $(KBUILD_LDFLAGS_MODULE) $(LDFLAGS_MODULE) \
++			     $(KBUILD_LDFLAGS_MODULE_PREREQ)		\
+                              -o $@ $(filter-out FORCE,$^)
+ 
+ $(modules): %.ko :%.o %.mod.o FORCE

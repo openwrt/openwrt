@@ -1,0 +1,66 @@
+--- a/fs/mini_fo/meta.c
++++ b/fs/mini_fo/meta.c
+@@ -442,6 +442,11 @@ int meta_write_d_entry(dentry_t *dentry,
+ 			   S_IRUSR | S_IWUSR);
+ #endif
+ 	}
++
++	/* $%& err, is this correct? */
++	meta_mnt = stopd(dentry->d_inode->i_sb)->hidden_mnt2;
++	mntget(meta_mnt);
++
+         /* open META-file for writing */
+         meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
+         if(!meta_file || IS_ERR(meta_file)) {
+@@ -535,6 +540,11 @@ int meta_write_r_entry(dentry_t *dentry,
+ 			   meta_dentry, S_IRUSR | S_IWUSR);
+ #endif
+ 	}
++
++	/* $%& err, is this correct? */
++	meta_mnt = stopd(dentry->d_inode->i_sb)->hidden_mnt2;
++	mntget(meta_mnt);
++
+         /* open META-file for writing */
+         meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
+         if(!meta_file || IS_ERR(meta_file)) {
+@@ -671,14 +681,16 @@ int meta_sync_d_list(dentry_t *dentry, i
+ 		}
+ 	}
+ 
++	/* $%& err, is this correct? */
++	meta_mnt = stopd(dentry->d_inode->i_sb)->hidden_mnt2;
++	mntget(meta_mnt);
++
+         /* open META-file for writing */
+         meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
+         if(!meta_file || IS_ERR(meta_file)) {
+                 printk(KERN_CRIT "mini_fo: meta_sync_d_list: \
+                                   ERROR opening meta file.\n");
+-		/* we don't mntget so we dont't mntput (for now)
+-		 * mntput(meta_mnt);
+-		 */
++		mntput(meta_mnt);
+ 		dput(meta_dentry);
+ 		err = -1;
+                 goto out;
+@@ -811,14 +823,16 @@ int meta_sync_r_list(dentry_t *dentry, i
+ 		}
+ 	}
+ 
++	/* $%& err, is this correct? */
++	meta_mnt = stopd(dentry->d_inode->i_sb)->hidden_mnt2;
++	mntget(meta_mnt);
++
+         /* open META-file for writing */
+         meta_file = dentry_open(meta_dentry, meta_mnt, 0x1);
+         if(!meta_file || IS_ERR(meta_file)) {
+                 printk(KERN_CRIT "mini_fo: meta_sync_r_list: \
+                                   ERROR opening meta file.\n");
+-		/* we don't mntget so we dont't mntput (for now)
+-		 * mntput(meta_mnt);
+-		 */
++		mntput(meta_mnt);
+ 		dput(meta_dentry);
+ 		err = -1;
+                 goto out;

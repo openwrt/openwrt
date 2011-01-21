@@ -1,0 +1,26 @@
+--- a/arch/cris/include/arch-v10/arch/Kbuild
++++ b/arch/cris/include/arch-v10/arch/Kbuild
+@@ -1,3 +1,5 @@
++header-y += elf.h
++header-y += ptrace.h
+ header-y += user.h
+ header-y += svinto.h
+ header-y += sv_addr_ag.h
+--- a/arch/cris/include/asm/Kbuild
++++ b/arch/cris/include/asm/Kbuild
+@@ -1,10 +1,13 @@
+ include include/asm-generic/Kbuild.asm
+ 
+-header-y += arch-v10/
+-header-y += arch-v32/
++header-y += ../arch-v10/arch/
++header-y += ../arch-v32/arch/
+ 
++header-y += elf.h
+ header-y += ethernet.h
+ header-y += etraxgpio.h
++header-y += page.h
+ header-y += rs485.h
+ header-y += rtc.h
+ header-y += sync_serial.h
++header-y += user.h

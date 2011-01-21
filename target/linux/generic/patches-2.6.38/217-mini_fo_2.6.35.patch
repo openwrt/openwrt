@@ -1,0 +1,45 @@
+--- a/fs/mini_fo/file.c
++++ b/fs/mini_fo/file.c
+@@ -599,7 +599,7 @@ mini_fo_release(inode_t *inode, file_t *
+ }
+ 
+ STATIC int
+-mini_fo_fsync(file_t *file, dentry_t *dentry, int datasync)
++mini_fo_fsync(file_t *file, int datasync)
+ {
+ 	int err1 = 0;
+ 	int err2 = 0;
+@@ -609,14 +609,14 @@ mini_fo_fsync(file_t *file, dentry_t *de
+ 	check_mini_fo_file(file);
+ 
+ 	if ((hidden_file = ftohf(file)) != NULL) {
+-		hidden_dentry = dtohd(dentry);
++		hidden_dentry = dtohd(file->f_path.dentry);
+ 		if (hidden_file->f_op && hidden_file->f_op->fsync) {
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
+ 			mutex_lock(&hidden_dentry->d_inode->i_mutex);
+ #else
+ 			down(&hidden_dentry->d_inode->i_sem);
+ #endif
+-			err1 = hidden_file->f_op->fsync(hidden_file, hidden_dentry, datasync);
++			err1 = hidden_file->f_op->fsync(hidden_file, datasync);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
+ 			mutex_unlock(&hidden_dentry->d_inode->i_mutex);
+ #else
+@@ -626,14 +626,14 @@ mini_fo_fsync(file_t *file, dentry_t *de
+ 	}
+ 
+ 	if ((hidden_file = ftohf2(file)) != NULL) {
+-		hidden_dentry = dtohd2(dentry);
++		hidden_dentry = dtohd2(file->f_path.dentry);
+ 		if (hidden_file->f_op && hidden_file->f_op->fsync) {
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
+ 			mutex_lock(&hidden_dentry->d_inode->i_mutex);
+ #else
+ 			down(&hidden_dentry->d_inode->i_sem);
+ #endif
+-			err2 = hidden_file->f_op->fsync(hidden_file, hidden_dentry, datasync);
++			err2 = hidden_file->f_op->fsync(hidden_file, datasync);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,16)
+ 			mutex_unlock(&hidden_dentry->d_inode->i_mutex);
+ #else
