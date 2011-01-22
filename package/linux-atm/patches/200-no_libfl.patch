@@ -7,28 +7,19 @@
 -qgen_LDADD = -lfl
 +qgen_LDADD = 
  
- CC = @CC_FOR_BUILD@
- CFLAGS = @CFLAGS_FOR_BUILD@
+ COMPILE = @CC_FOR_BUILD@ @CFLAGS_FOR_BUILD@
+ LINK = @CC_FOR_BUILD@ @CFLAGS_FOR_BUILD@ -o $@
 --- a/src/qgen/Makefile.in
 +++ b/src/qgen/Makefile.in
-@@ -58,7 +58,7 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
- am__depfiles_maybe = depfiles
- am__mv = mv -f
- COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
--	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-+	$(AM_CFLAGS) $(CFLAGS)
- LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
- 	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
- 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-@@ -208,7 +208,7 @@ top_srcdir = @top_srcdir@
+@@ -204,7 +204,7 @@ top_srcdir = @top_srcdir@
  qgen_SOURCES = common.c common.h file.c file.h first.c ql_y.y ql_l.l qgen.c \
  		qgen.h second.c third.c
  
 -qgen_LDADD = -lfl
-+qgen_LDADD = 
++qgen_LDADD =
+ COMPILE = @CC_FOR_BUILD@ @CFLAGS_FOR_BUILD@
+ LINK = @CC_FOR_BUILD@ @CFLAGS_FOR_BUILD@ -o $@
  
- #TESTS = $(check_PROGRAMS)
- EXTRA_DIST = ql_y.h ql_y.c ql_l.c
 --- a/src/sigd/Makefile.am
 +++ b/src/sigd/Makefile.am
 @@ -8,7 +8,7 @@ atmsigd_XTRAS = mess.o $(top_builddir)/s
@@ -42,7 +33,7 @@
  CLEANFILES = mess.c
 --- a/src/sigd/Makefile.in
 +++ b/src/sigd/Makefile.in
-@@ -244,7 +244,7 @@ atmsigd_XTRAS = mess.o $(top_builddir)/s
+@@ -245,7 +245,7 @@ atmsigd_XTRAS = mess.o $(top_builddir)/s
  			$(top_builddir)/src/lib/libatm.la \
  			$(top_builddir)/src/saal/libsaal.a
  
@@ -78,7 +69,7 @@
  
 --- a/src/switch/debug/Makefile.in
 +++ b/src/switch/debug/Makefile.in
-@@ -199,7 +199,8 @@ sw_debug_SOURCES = debug.c
+@@ -200,7 +200,8 @@ sw_debug_SOURCES = debug.c
  sw_debug_XTRAS = $(top_builddir)/src/switch/libsw.a \
  			$(top_builddir)/src/lib/libatm.la
  
@@ -101,7 +92,7 @@
  EXTRA_DIST = mkfiles README
 --- a/src/switch/tcp/Makefile.in
 +++ b/src/switch/tcp/Makefile.in
-@@ -199,7 +199,7 @@ sw_tcp_SOURCES = tcpsw.c
+@@ -200,7 +200,7 @@ sw_tcp_SOURCES = tcpsw.c
  sw_tcp_XTRAS = $(top_builddir)/src/switch/libsw.a \
  		$(top_builddir)/src/lib/libatm.la
  
@@ -136,7 +127,7 @@
  
 --- a/src/test/Makefile.in
 +++ b/src/test/Makefile.in
-@@ -282,7 +282,7 @@ br_SOURCES = br.c
+@@ -283,7 +283,7 @@ br_SOURCES = br.c
  bw_SOURCES = bw.c
  isp_SOURCES = isp.c isp.h ispl_y.y ispl_l.l
  isp_XTRAS = $(LDADD)
