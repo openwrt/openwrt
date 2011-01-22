@@ -1,0 +1,16 @@
+#!/bin/sh
+
+uci batch <<__EOF__
+
+delete network.lan
+
+set network.lan=interface
+set network.lan.type=bridge
+set network.lan.ifname="eth0 eth1"
+set network.lan.proto=static
+set network.lan.ipaddr="192.168.1.1"
+set network.lan.netmask="255.255.255.0"
+set network.lan.nat=1
+
+commit network
+__EOF__
