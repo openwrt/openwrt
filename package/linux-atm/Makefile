@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=linux-atm
-PKG_VERSION:=2.5.1
+PKG_VERSION:=2.5.2
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
-PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/l/linux-atm/
-PKG_MD5SUM:=9560b0e1f410a05b849dfdab465dd758
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=@SF/$(PKG_NAME)
+PKG_MD5SUM:=d49499368c3cf15f73a05d9bce8824a8
 
 PKG_INSTALL:=1
 
