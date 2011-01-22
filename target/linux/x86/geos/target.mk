@@ -1,6 +1,7 @@
 BOARDNAME:=Traverse Geos
-FEATURES:=squashfs pci usb gpio
-DEFAULT_PACKAGES += kmod-ata-via-sata kmod-crypto-hw-geode \
+FEATURES:=squashfs jffs2 ext4 pci usb gpio
+DEFAULT_PACKAGES += kmod-ata-via-sata \
+            kmod-crypto-hw-geode kmod-crypto-ocf \
             kmod-gpio-cs5535 kmod-gpio-nsc \
             kmod-wdt-geode kmod-hwmon-core kmod-hwmon-lm90 \
             kmod-8139cp kmod-solos-pci \
@@ -9,7 +10,9 @@ DEFAULT_PACKAGES += kmod-ata-via-sata kmod-crypto-hw-geode \
             kmod-usb-core kmod-usb2 kmod-usb-uhci \
             kmod-cfg80211 kmod-mac80211 \
             kmod-mppe kmod-pppoe kmod-pppoa kmod-pppol2tp \
-            kmod-ath kmod-ath5k kmod-ath9k
+            kmod-ath kmod-ath5k kmod-ath9k \
+            soloscli linux-atm br2684ctl bridge ppp ppp-mod-pppoa \
+            libopenssl ocf-crypto-headers zlib hwclock hostapd
 
 CS5535_MASK:=0x0E000048
 
