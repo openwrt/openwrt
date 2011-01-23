@@ -23,7 +23,7 @@
 +endif
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/gpio_ebu.c
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,116 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -54,18 +54,24 @@
 +}
 +
 +static void
-+lq_ebu_set(struct gpio_chip *chip, unsigned offset, int value)
++lq_ebu_apply(void)
 +{
 +	unsigned long flags;
-+	if(value)
-+		shadow |= (1 << offset);
-+	else
-+		shadow &= ~(1 << offset);
 +	spin_lock_irqsave(&ebu_lock, flags);
 +	lq_w32(LQ_EBU_BUSCON, LQ_EBU_BUSCON1);
 +	*((__u16*)virt) = shadow;
 +	lq_w32(LQ_EBU_BUSCON | LQ_EBU_WP, LQ_EBU_BUSCON1);
 +	spin_unlock_irqrestore(&ebu_lock, flags);
++}
++
++static void
++lq_ebu_set(struct gpio_chip *chip, unsigned offset, int value)
++{
++	if(value)
++		shadow |= (1 << offset);
++	else
++		shadow &= ~(1 << offset);
++	lq_ebu_apply();
 +}
 +
 +static struct gpio_chip
@@ -108,7 +114,10 @@
 +
 +	ret = gpiochip_add(&lq_ebu_chip);
 +	if (!ret)
++	{
++		lq_ebu_apply();
 +		return 0;
++	}
 +
 +err_release_mem_region:
 +	release_mem_region(res->start, resource_size(res));
@@ -130,7 +139,7 @@
 +	return platform_driver_register(&lq_ebu_driver);
 +}
 +
-+arch_initcall(init_lq_ebu);
++postcore_initcall(init_lq_ebu);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/gpio_leds.c
 @@ -0,0 +1,161 @@
@@ -294,10 +303,10 @@
 +	return ret;
 +}
 +
-+arch_initcall(init_lq_stp);
++postcore_initcall(init_lq_stp);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-easy4010.c
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,82 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -353,7 +362,10 @@
 +
 +static struct lq_pci_data lq_pci_data = {
 +	.clock      = PCI_CLOCK_INT,
-+	.req_mask   = 0xf,
++	.gpio   = PCI_GNT1 | PCI_REQ1,
++	.irq    = {
++		[14] = INT_NUM_IM0_IRL0 + 22,
++	},
 +};
 +
 +static struct lq_eth_data lq_eth_data = {
@@ -379,7 +391,7 @@
 +			easy4010_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-easy50712.c
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,82 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -435,7 +447,10 @@
 +
 +static struct lq_pci_data lq_pci_data = {
 +	.clock      = PCI_CLOCK_INT,
-+	.req_mask   = 0xf,
++	.gpio   = PCI_GNT1 | PCI_REQ1,
++	.irq    = {
++		[14] = INT_NUM_IM0_IRL0 + 22,
++	},
 +};
 +
 +static struct lq_eth_data lq_eth_data = {
@@ -461,7 +476,7 @@
 +			easy50712_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-easy50812.c
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,81 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -517,7 +532,10 @@
 +
 +static struct lq_pci_data lq_pci_data = {
 +	.clock      = PCI_CLOCK_INT,
-+	.req_mask   = 0xf,
++	.gpio   = PCI_GNT1 | PCI_REQ1,
++	.irq    = {
++		[14] = INT_NUM_IM0_IRL0 + 22,
++	},
 +};
 +
 +static struct lq_eth_data lq_eth_data = {
@@ -878,7 +896,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/devices.h
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,25 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -891,6 +909,7 @@
 +#define _LQ_DEVICES_H__
 +
 +#include <lantiq_platform.h>
++#include <xway_irq.h>
 +
 +extern void __init lq_register_gpio(void);
 +extern void __init lq_register_gpio_stp(void);
@@ -2867,7 +2886,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/gpio.c
-@@ -0,0 +1,203 @@
+@@ -0,0 +1,206 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -2944,7 +2963,10 @@
 +		printk("failed to register %s gpio\n", name);
 +		return -EBUSY;
 +	}
-+	gpio_direction_output(pin, dir);
++	if(dir)
++		gpio_direction_output(pin, 1);
++	else
++		gpio_direction_input(pin);
 +	if(pin >= PINS_PER_PORT)
 +	{
 +		pin -= PINS_PER_PORT;
@@ -3070,7 +3092,7 @@
 +	return ret;
 +}
 +
-+arch_initcall(lq_gpio_init);
++postcore_initcall(lq_gpio_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/reset.c
 @@ -0,0 +1,53 @@

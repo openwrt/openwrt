@@ -15580,7 +15580,7 @@
 +xway_register_dwc(int pin)
 +{
 +	lq_enable_irq(resources[1].start);
-+	platform_dev.dev.platform_data = pin;
++	platform_dev.dev.platform_data = (void*) pin;
 +	return platform_device_register(&platform_dev);
 +}
 --- /dev/null
@@ -15612,8 +15612,8 @@
 +#include "dev-dwc_otg.h"
  
  #define ARV452_LATCH_SWITCH		(1 << 10)
- 
-@@ -132,6 +133,7 @@
+ #define ARV752DPW22_LATCH_DEFAULT	(2)
+@@ -195,6 +196,7 @@
  	lq_register_pci(&lq_pci_data);
  	lq_register_wdt();
  	arv45xx_register_ethernet();
@@ -15621,7 +15621,7 @@
  }
  
  MIPS_MACHINE(LANTIQ_MACH_ARV4518,
-@@ -151,6 +153,7 @@
+@@ -214,6 +216,7 @@
  	lq_register_pci(&lq_pci_data);
  	lq_register_wdt();
  	arv45xx_register_ethernet();
