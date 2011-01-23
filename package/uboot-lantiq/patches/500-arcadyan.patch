@@ -1,0 +1,102 @@
+--- a/common/Makefile
++++ b/common/Makefile
+@@ -127,7 +127,9 @@
+ ifdef CONFIG_PCI
+ COBJS-$(CONFIG_CMD_PCI) += cmd_pci.o
+ endif
++ifdef CONFIG_CMD_PCMCIA
+ COBJS-y += cmd_pcmcia.o
++endif
+ COBJS-$(CONFIG_CMD_PORTIO) += cmd_portio.o
+ COBJS-$(CONFIG_CMD_REGINFO) += cmd_reginfo.o
+ COBJS-$(CONFIG_CMD_REISER) += cmd_reiser.o
+--- a/drivers/pcmcia/Makefile
++++ b/drivers/pcmcia/Makefile
+@@ -28,9 +28,11 @@
+ COBJS-$(CONFIG_I82365) += i82365.o
+ COBJS-$(CONFIG_8xx) += mpc8xx_pcmcia.o
+ COBJS-$(CONFIG_PXA_PCMCIA) += pxa_pcmcia.o
+-COBJS-y += rpx_pcmcia.o
++#COBJS-y += rpx_pcmcia.o
++COBJS-$(CONFIG_RPX_PCMCIA) += rpx_pcmcia.o
+ COBJS-$(CONFIG_IDE_TI_CARDBUS) += ti_pci1410a.o
+-COBJS-y += tqm8xx_pcmcia.o
++#COBJS-y += tqm8xx_pcmcia.o
++COBJS-$(CONFIG_TQM8XX_PCMCIA) += tqm8xx_pcmcia.o
+ COBJS-$(CONFIG_MARUBUN_PCCARD) += marubun_pcmcia.o
+ 
+ COBJS	:= $(COBJS-y)
+--- a/drivers/usb/phy/Makefile
++++ b/drivers/usb/phy/Makefile
+@@ -23,7 +23,7 @@
+ LIB	:= $(obj)libusb_phy.a
+ 
+ COBJS-$(CONFIG_TWL4030_USB) += twl4030.o
+-COBJS-y := twl4030.o
++#COBJS-y := twl4030.o
+ 
+ COBJS	:= $(COBJS-y)
+ SRCS	:= $(COBJS:.o=.c)
+--- a/Makefile
++++ b/Makefile
+@@ -3414,6 +3414,46 @@
+ ## MIPS32 ifxcpe
+ #########################################################################
+ 
++arv752DWP22%config	: unconfig
++	@mkdir -p $(obj)include
++	@mkdir -p $(obj)board/arcadyan/arv752DWP22
++	@[ -z "$(findstring brnboot,$@)" ] || \
++		{ echo "TEXT_BASE = 0x80002000" >$(obj)board/arcadyan/arv752DWP22/config.tmp ; \
++			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
++			echo "#define CONFIG_SYS_BRNBOOT" >>$(obj)include/config.h ; \
++			$(XECHO) "... with brnboot configuration" ; \
++		}
++	@[ -z "$(findstring ramboot,$@)" ] || \
++		{ echo "TEXT_BASE = 0xA0400000" >$(obj)board/arcadyan/arv752DWP22/config.tmp ; \
++			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
++			$(XECHO) "... with ramboot configuration" ; \
++		}
++	@if [ "$(findstring flash,$@)" ] ; then \
++		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
++		echo "#define CONFIG_USE_DDR_RAM_CFG_DDR_psc166" >>$(obj)include/config.h ; \
++	fi
++	@$(MKCONFIG) -a $(word 1,$(subst _, ,$@)) mips mips arv752DWP22 arcadyan danube
++
++arv4518%config	: unconfig
++	@mkdir -p $(obj)include
++	@mkdir -p $(obj)board/arcadyan/arv4518
++	@[ -z "$(findstring brnboot,$@)" ] || \
++		{ echo "TEXT_BASE = 0x80002000" >$(obj)board/arcadyan/arv4518/config.tmp ; \
++			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
++			echo "#define CONFIG_SYS_BRNBOOT" >>$(obj)include/config.h ; \
++			$(XECHO) "... with brnboot configuration" ; \
++		}
++	@[ -z "$(findstring ramboot,$@)" ] || \
++		{ echo "TEXT_BASE = 0xA0400000" >$(obj)board/arcadyan/arv4518/config.tmp ; \
++			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
++			$(XECHO) "... with ramboot configuration" ; \
++		}
++	@if [ "$(findstring flash,$@)" ] ; then \
++		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
++		echo "#define CONFIG_USE_DDR_RAM_CFG_DDR_psc166" >>$(obj)include/config.h ; \
++	fi
++	@$(MKCONFIG) -a $(word 1,$(subst _, ,$@)) mips mips arv4518 arcadyan danube
++
+ easy50712%config	: unconfig
+ 	@mkdir -p $(obj)include
+ 	@mkdir -p $(obj)board/infineon/easy50712
+--- a/net/tftp.c
++++ b/net/tftp.c
+@@ -11,9 +11,9 @@
+ #include "bootp.h"
+ 
+ #define WELL_KNOWN_PORT	69		/* Well known TFTP port #		*/
+-#define TIMEOUT		5000UL		/* Millisecs to timeout for lost pkt */
++#define TIMEOUT		10000UL		/* Millisecs to timeout for lost pkt */
+ #ifndef	CONFIG_NET_RETRY_COUNT
+-# define TIMEOUT_COUNT	10		/* # of timeouts before giving up  */
++# define TIMEOUT_COUNT	200		/* # of timeouts before giving up  */
+ #else
+ # define TIMEOUT_COUNT  (CONFIG_NET_RETRY_COUNT * 2)
+ #endif
