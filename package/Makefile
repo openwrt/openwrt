@@ -64,6 +64,14 @@ endif
 $(curdir)/rootfs-prepare: $(TMP_DIR)/.build
 	@-$(MAKE) package/preconfig
 	@if [ -d $(TOPDIR)/files ]; then \
+		( cd $(TOPDIR)/files; find -type f ) | \
+			( cd $(TARGET_DIR); while :; do \
+				read FILE; \
+				[ -z "$$FILE" ] && break; \
+				[ -L "$$FILE" ] || continue; \
+				echo "Removing symlink $(TARGET_DIR)/$$FILE"; \
+				rm -f "$$FILE"; \
+			done; ); \
 		$(CP) $(TOPDIR)/files/. $(TARGET_DIR); \
 	fi
 	@mkdir -p $(TARGET_DIR)/etc/rc.d
