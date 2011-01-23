@@ -140,7 +140,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/pci/pci-lantiq.c
-@@ -0,0 +1,305 @@
+@@ -0,0 +1,302 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -302,9 +302,6 @@
 +				gmap[i].alt1, gmap[i].dir, gmap[i].name);
 +		}
 +	}
-+			lq_w32(lq_r32((u32*)0xBF101000) | 0x60, (u32*)0xBF101000);
-+			lq_w32(lq_r32((u32*)0xBF101004) & ~2, (u32*)0xBF101004);
-+			lq_w32(lq_r32((u32*)0xBF10100C) | 2, (u32*)0xBF10100C);
 +	for(i = 0; i < 3; i++)
 +	{
 +		if(gpio & (1 << i))
