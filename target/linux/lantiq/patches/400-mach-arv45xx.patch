@@ -1,6 +1,6 @@
 --- a/arch/mips/include/asm/mach-lantiq/machine.h
 +++ b/arch/mips/include/asm/mach-lantiq/machine.h
-@@ -11,4 +11,8 @@
+@@ -11,4 +11,9 @@
  	LANTIQ_MACH_EASY4010,		/* Twinpass evalkit */
  	LANTIQ_MACH_EASY50712,		/* Danube evalkit */
  	LANTIQ_MACH_EASY50812,		/* AR9 eval board */
@@ -8,6 +8,7 @@
 +	LANTIQ_MACH_ARV452,			/* Airties WAV-281, Arcor EasyboxA800 */
 +	LANTIQ_MACH_ARV4525,		/* Speedport W502V */
 +	LANTIQ_MACH_ARV752DPW22,	/* Arcor easybox a803 */
++	LANTIQ_MACH_ARV7518PW,		/* ASTORIA */
  };
 --- a/arch/mips/lantiq/xway/Kconfig
 +++ b/arch/mips/lantiq/xway/Kconfig
@@ -31,7 +32,7 @@
 +obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-arv45xx.c
-@@ -0,0 +1,268 @@
+@@ -0,0 +1,299 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -199,6 +200,16 @@
 +	{ .name = "soc:green:eth4", .gpio = 46, .active_low = 1, .default_trigger = "default-on", },
 +};
 +
++static struct gpio_led
++arv7518pw_leds_gpio[] __initdata = {
++	{ .name = "soc:green:power", .gpio = 2, .active_low = 1, },
++	{ .name = "soc:green:adsl", .gpio = 4, .active_low = 1, },
++	{ .name = "soc:green:internet", .gpio = 5, .active_low = 1, },
++	{ .name = "soc:green:wlan", .gpio = 6, .active_low = 1, },
++	{ .name = "sco:red:internet", .gpio = 8, .active_low = 1, },
++	{ .name = "soc:green:usb", .gpio = 19, .active_low = 1, },
++};
++
 +static void
 +arv45xx_register_ethernet(void)
 +{
@@ -273,6 +284,27 @@
 +			"ARV4525",
 +			"ARV4525 - Speedport W502V",
 +			arv4525_init);
++
++
++static void __init
++arv7518pw_init(void)
++{
++	lq_register_gpio();
++	lq_register_gpio_ebu(ARV452_LATCH_SWITCH);
++	lq_register_asc(0);
++	lq_register_asc(1);
++	lq_register_gpio_leds(arv7518pw_leds_gpio, ARRAY_SIZE(arv7518pw_leds_gpio));
++	lq_register_nor(&arv75xx_flash_data);
++	lq_register_pci(&lq_pci_data);
++	lq_register_wdt();
++	arv75xx_register_ethernet();
++	//arv7518_register_ath9k(mac);
++}
++
++MIPS_MACHINE(LANTIQ_MACH_ARV7518PW,
++			"ARV7518PW",
++			"ARV7518PW - ASTORIA",
++			arv7518pw_init);
 +
 +static void __init
 +arv752dpw22_init(void)
