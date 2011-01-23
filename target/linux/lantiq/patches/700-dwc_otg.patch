@@ -15603,29 +15603,3 @@
 +extern void __init xway_register_dwc(int pin);
 +
 +#endif
---- a/arch/mips/lantiq/xway/mach-arv45xx.c
-+++ b/arch/mips/lantiq/xway/mach-arv45xx.c
-@@ -23,6 +23,7 @@
- #include <lantiq_platform.h>
- 
- #include "devices.h"
-+#include "dev-dwc_otg.h"
- 
- #define ARV452_LATCH_SWITCH		(1 << 10)
- #define ARV752DPW22_LATCH_DEFAULT	(2)
-@@ -195,6 +196,7 @@
- 	lq_register_pci(&lq_pci_data);
- 	lq_register_wdt();
- 	arv45xx_register_ethernet();
-+	xway_register_dwc(14);
- }
- 
- MIPS_MACHINE(LANTIQ_MACH_ARV4518,
-@@ -214,6 +216,7 @@
- 	lq_register_pci(&lq_pci_data);
- 	lq_register_wdt();
- 	arv45xx_register_ethernet();
-+	xway_register_dwc(28);
- }
- 
- MIPS_MACHINE(LANTIQ_MACH_ARV452,

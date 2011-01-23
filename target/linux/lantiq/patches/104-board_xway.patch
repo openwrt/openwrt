@@ -615,7 +615,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -0,0 +1,278 @@
+@@ -0,0 +1,305 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -638,6 +638,7 @@
 +#include <linux/time.h>
 +#include <linux/io.h>
 +#include <linux/gpio.h>
++#include <linux/gpio_buttons.h>
 +#include <linux/leds.h>
 +
 +#include <asm/bootinfo.h>
@@ -666,6 +667,26 @@
 +	lq_gpio_led_data.leds = leds;
 +	lq_gpio_led_data.num_leds = cnt;
 +	platform_device_register(&lq_gpio_leds);
++}
++
++/* gpio buttons */
++static struct gpio_buttons_platform_data lq_gpio_buttons_platform_data;
++
++static struct platform_device lq_gpio_buttons_platform_device =
++{
++	.name = "gpio-buttons",
++	.id = 0,
++	.dev = {
++		.platform_data = (void *) &lq_gpio_buttons_platform_data,
++	},
++};
++
++void __init
++lq_register_gpio_buttons(struct gpio_button *buttons, int cnt)
++{
++	lq_gpio_buttons_platform_data.buttons = buttons;
++	lq_gpio_buttons_platform_data.nbuttons = cnt;
++	platform_device_register(&lq_gpio_buttons_platform_device);
 +}
 +
 +/* serial to parallel conversion */
@@ -894,9 +915,15 @@
 +		break;
 +	}
 +}
++
++void __init
++lq_register_crypto(const char *name)
++{
++	platform_device_register_simple(name, 0, 0, 0);
++}
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/devices.h
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,26 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -920,6 +947,7 @@
 +extern void __init lq_register_wdt(void);
 +extern void __init lq_register_ethernet(struct lq_eth_data *eth);
 +extern void __init lq_register_asc(int port);
++extern void __init lq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
 +
 +#endif
 --- /dev/null

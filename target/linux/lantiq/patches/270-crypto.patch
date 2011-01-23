@@ -6166,30 +6166,18 @@
 +};
 +
 +#endif /* DEU_FALCON_H */
---- a/arch/mips/lantiq/xway/devices.c
-+++ b/arch/mips/lantiq/xway/devices.c
-@@ -277,3 +277,9 @@
- 		break;
- 	}
- }
-+
-+void __init
-+lq_register_crypto(const char *name)
-+{
-+	platform_device_register_simple(name, 0, 0, 0);
-+}
 --- a/arch/mips/lantiq/xway/devices.h
 +++ b/arch/mips/lantiq/xway/devices.h
-@@ -21,5 +21,6 @@
- extern void __init lq_register_wdt(void);
+@@ -22,5 +22,6 @@
  extern void __init lq_register_ethernet(struct lq_eth_data *eth);
  extern void __init lq_register_asc(int port);
+ extern void __init lq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
 +extern void __init lq_register_crypto(const char *name);
  
  #endif
 --- a/arch/mips/lantiq/xway/mach-easy50712.c
 +++ b/arch/mips/lantiq/xway/mach-easy50712.c
-@@ -72,6 +72,7 @@
+@@ -74,6 +74,7 @@
  	lq_register_wdt();
  	lq_register_pci(&lq_pci_data);
  	lq_register_ethernet(&lq_eth_data);
@@ -6199,7 +6187,7 @@
  MIPS_MACHINE(LANTIQ_MACH_EASY50712,
 --- a/arch/mips/lantiq/xway/mach-easy50812.c
 +++ b/arch/mips/lantiq/xway/mach-easy50812.c
-@@ -71,6 +71,7 @@
+@@ -73,6 +73,7 @@
  	lq_register_wdt();
  	lq_register_pci(&lq_pci_data);
  	lq_register_ethernet(&lq_eth_data);
