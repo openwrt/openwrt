@@ -60,6 +60,7 @@ define Image/BuildKernel
 	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,EASY50812,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV452,$(xway_cmdline))
+	$(call Image/BuildKernel/Template,ARV752DPW22,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
 
@@ -68,6 +69,7 @@ define Image/Build
 	$(call Image/Build/$(1),$(1),EASY50712)
 	$(call Image/Build/$(1),$(1),EASY50812)
 	$(call Image/Build/$(1),$(1),ARV452)
+	$(call Image/Build/$(1),$(1),ARV752DPW22)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1)  $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef

@@ -1,6 +1,6 @@
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -55,6 +55,7 @@ obj-$(CONFIG_ZAO_CAPCELLA)	+= fixup-capc
+@@ -55,6 +55,7 @@
  obj-$(CONFIG_WR_PPMC)		+= fixup-wrppmc.o
  obj-$(CONFIG_MIKROTIK_RB532)	+= pci-rc32434.o ops-rc32434.o fixup-rc32434.o
  obj-$(CONFIG_CPU_CAVIUM_OCTEON)	+= pci-octeon.o pcie-octeon.o
@@ -140,7 +140,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/pci/pci-lantiq.c
-@@ -0,0 +1,293 @@
+@@ -0,0 +1,305 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -181,19 +181,19 @@
 +#define PCI_CR_FCI_ADDR_MAP6		((u32 *)(PCI_CR_PR_BASE_ADDR + 0x00D8))
 +#define PCI_CR_FCI_ADDR_MAP7		((u32 *)(PCI_CR_PR_BASE_ADDR + 0x00DC))
 +#define PCI_CR_CLK_CTRL			((u32 *)(PCI_CR_PR_BASE_ADDR + 0x0000))
++#define PCI_CR_PCI_IRM			((u32 *)(PCI_CR_PR_BASE_ADDR + 0x0028))
 +#define PCI_CR_PCI_MOD			((u32 *)(PCI_CR_PR_BASE_ADDR + 0x0030))
 +#define PCI_CR_PC_ARB			((u32 *)(PCI_CR_PR_BASE_ADDR + 0x0080))
 +#define PCI_CR_FCI_ADDR_MAP11hg		((u32 *)(PCI_CR_PR_BASE_ADDR + 0x00E4))
 +#define PCI_CR_BAR11MASK		((u32 *)(PCI_CR_PR_BASE_ADDR + 0x0044))
 +#define PCI_CR_BAR12MASK		((u32 *)(PCI_CR_PR_BASE_ADDR + 0x0048))
 +#define PCI_CR_BAR13MASK		((u32 *)(PCI_CR_PR_BASE_ADDR + 0x004C))
-+#define PCI_CS_BASE_ADDR1		((u32 *)(PCI_CS_PR_BASE_ADDR + 0x0010))
 +#define PCI_CR_PCI_ADDR_MAP11		((u32 *)(PCI_CR_PR_BASE_ADDR + 0x0064))
 +#define PCI_CR_FCI_BURST_LENGTH		((u32 *)(PCI_CR_PR_BASE_ADDR + 0x00E8))
 +#define PCI_CR_PCI_EOI			((u32 *)(PCI_CR_PR_BASE_ADDR + 0x002C))
 +
-+
 +#define PCI_CS_STS_CMD			((u32 *)(PCI_CS_PR_BASE_ADDR + 0x0004))
++#define PCI_CS_BASE_ADDR1		((u32 *)(PCI_CS_PR_BASE_ADDR + 0x0010))
 +
 +#define PCI_MASTER0_REQ_MASK_2BITS	8
 +#define PCI_MASTER1_REQ_MASK_2BITS	10
@@ -210,9 +210,13 @@
 +
 +u32 lq_pci_mapped_cfg;
 +
++int (*lqpci_plat_dev_init)(struct pci_dev *dev) = NULL;
++
 +/* Since the PCI REQ pins can be reused for other functionality, make it possible
 +   to exclude those from interpretation by the PCI controller */
 +static int lq_pci_req_mask = 0xf;
++
++static int *lq_pci_irq_map;
 +
 +struct pci_ops lq_pci_ops =
 +{
@@ -248,26 +252,9 @@
 +int
 +pcibios_plat_dev_init(struct pci_dev *dev)
 +{
-+	u8 pin;
++	if (lqpci_plat_dev_init)
++		return lqpci_plat_dev_init(dev);
 +
-+	pci_read_config_byte(dev, PCI_INTERRUPT_PIN, &pin);
-+	switch(pin)
-+	{
-+		case 0:
-+			break;
-+		case 1:
-+			//falling edge level triggered:0x4, low level:0xc, rising edge:0x2
-+			lq_w32(lq_r32(LQ_EBU_PCC_CON) | 0xc, LQ_EBU_PCC_CON);
-+			lq_w32(lq_r32(LQ_EBU_PCC_IEN) | 0x10, LQ_EBU_PCC_IEN);
-+			break;
-+		case 2:
-+		case 3:
-+		case 4:
-+			printk ("WARNING: interrupt pin %d not supported yet!\n", pin);
-+		default:
-+			printk ("WARNING: invalid interrupt pin %d\n", pin);
-+			return 1;
-+	}
 +	return 0;
 +}
 +
@@ -283,13 +270,63 @@
 +	return bar11mask;
 +}
 +
++struct ltq_pci_gpio_map {
++	int pin;
++	int alt0;
++	int alt1;
++	int dir;
++	char *name;
++};
++
++static struct ltq_pci_gpio_map gmap[] = {
++	{ 0, 1, 0, 0, "pci-exin0" },
++	{ 1, 1, 0, 0, "pci-exin1" },
++	{ 2, 1, 0, 0, "pci-exin2" },
++	{ 30, 1, 0, 1, "pci-gnt1" },
++	{ 23, 1, 0, 1, "pci-gnt2" },
++	{ 19, 1, 0, 1, "pci-gnt3" },
++	{ 29, 1, 0, 0, "pci-req1" },
++	{ 31, 1, 0, 0, "pci-req2" },
++	{ 3, 1, 0, 0, "pci-req3" },
++};
++
 +static void
-+lq_pci_setup_clk(int external_clock)
++lq_pci_setup_gpio(int gpio)
 +{
++	int i;
++	for (i = 0; i < ARRAY_SIZE(gmap); i++)
++	{
++		if(gpio & (1 << i))
++		{
++			lq_gpio_request(gmap[i].pin, gmap[i].alt0,
++				gmap[i].alt1, gmap[i].dir, gmap[i].name);
++		}
++	}
++			lq_w32(lq_r32((u32*)0xBF101000) | 0x60, (u32*)0xBF101000);
++			lq_w32(lq_r32((u32*)0xBF101004) & ~2, (u32*)0xBF101004);
++			lq_w32(lq_r32((u32*)0xBF10100C) | 2, (u32*)0xBF10100C);
++	for(i = 0; i < 3; i++)
++	{
++		if(gpio & (1 << i))
++		{
++			lq_w32(lq_r32((u32*)0xBF101000) | (0x6 << (i * 4)), (u32*)0xBF101000);
++			lq_w32(lq_r32((u32*)0xBF101004) & ~(1 << i), (u32*)0xBF101004);
++			lq_w32(lq_r32((u32*)0xBF10100C) | (1 << i), (u32*)0xBF10100C);
++		}
++	}
++	lq_gpio_request(21, 0, 0, 1, "pci-reset");
++	lq_pci_req_mask = (gpio >> PCI_REQ_SHIFT) & 0x7;
++}
++
++static int __init
++lq_pci_startup(struct lq_pci_data *conf)
++{
++	u32 temp_buffer;
++
 +	/* set clock to 33Mhz */
 +	lq_w32(lq_r32(LQ_CGU_IFCCR) & ~0xf00000, LQ_CGU_IFCCR);
 +	lq_w32(lq_r32(LQ_CGU_IFCCR) | 0x800000,	LQ_CGU_IFCCR);
-+	if (external_clock)
++	if (conf->clock == PCI_CLOCK_EXT)
 +	{
 +		lq_w32(lq_r32(LQ_CGU_IFCCR) & ~(1 << 16), LQ_CGU_IFCCR);
 +		lq_w32((1 << 30), LQ_CGU_PCICR);
@@ -297,28 +334,9 @@
 +		lq_w32(lq_r32(LQ_CGU_IFCCR) | (1 << 16), LQ_CGU_IFCCR);
 +		lq_w32((1 << 31) | (1 << 30), LQ_CGU_PCICR);
 +	}
-+}
-+
-+static void
-+lq_pci_setup_gpio(void)
-+{
-+	/* PCI reset line is gpio driven */
-+	lq_gpio_request(21, 0, 0, 1, "pci-reset");
-+
-+	/* PCI_REQ line */
-+	lq_gpio_request(29, 1, 0, 0, "pci-req");
-+
-+	/* PCI_GNT line */
-+	lq_gpio_request(30, 1, 0, 1, "pci-gnt");
-+}
-+
-+static int __init
-+lq_pci_startup(void)
-+{
-+	u32 temp_buffer;
 +
 +	/* setup pci clock and gpis used by pci */
-+	lq_pci_setup_gpio();
++	lq_pci_setup_gpio(conf->gpio);
 +
 +	/* enable auto-switching between PCI and EBU */
 +	lq_w32(0xa, PCI_CR_CLK_CTRL);
@@ -331,7 +349,8 @@
 +
 +	/* enable external 2 PCI masters */
 +	temp_buffer = lq_r32(PCI_CR_PC_ARB);
-+	temp_buffer &= (~(lq_pci_req_mask << 16));
++	temp_buffer &= (~((lq_pci_req_mask & 0xf) << 16));
++
 +	/* enable internal arbiter */
 +	temp_buffer |= (1 << INTERNAL_ARB_ENABLE_BIT);
 +	/* enable internal PCI master reqest */
@@ -355,21 +374,27 @@
 +	lq_w32(0x19800000, PCI_CR_FCI_ADDR_MAP6);
 +	lq_w32(0x19c00000, PCI_CR_FCI_ADDR_MAP7);
 +	lq_w32(0x1ae00000, PCI_CR_FCI_ADDR_MAP11hg);
++
 +	lq_w32(lq_calc_bar11mask(), PCI_CR_BAR11MASK);
 +	lq_w32(0, PCI_CR_PCI_ADDR_MAP11);
 +	lq_w32(0, PCI_CS_BASE_ADDR1);
-+#ifdef CONFIG_SWAP_IO_SPACE
++
 +	/* both TX and RX endian swap are enabled */
 +	lq_w32(lq_r32(PCI_CR_PCI_EOI) | 3, PCI_CR_PCI_EOI);
 +	wmb ();
-+#endif
++
 +	/*TODO: disable BAR2 & BAR3 - why was this in the origianl infineon code */
 +	lq_w32(lq_r32(PCI_CR_BAR12MASK) | 0x80000000, PCI_CR_BAR12MASK);
 +	lq_w32(lq_r32(PCI_CR_BAR13MASK) | 0x80000000, PCI_CR_BAR13MASK);
-+	/*use 8 dw burst length */
++
++	/* use 8 dw burst length */
 +	lq_w32(0x303, PCI_CR_FCI_BURST_LENGTH);
 +	lq_w32(lq_r32(PCI_CR_PCI_MOD) | (1 << 24), PCI_CR_PCI_MOD);
 +	wmb();
++
++	/* setup irq line */
++	lq_w32(lq_r32(LQ_EBU_PCC_CON) | 0xc, LQ_EBU_PCC_CON);
++	lq_w32(lq_r32(LQ_EBU_PCC_IEN) | 0x10, LQ_EBU_PCC_IEN);
 +
 +	/* toggle reset pin */
 +	__gpio_set_value(21, 0);
@@ -381,18 +406,10 @@
 +
 +int __init
 +pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin){
-+	switch(slot)
-+	{
-+		case 13:
-+			/* IDSEL = AD29 --> USB Host Controller */
-+			return (INT_NUM_IM1_IRL0 + 17);
-+		case 14:
-+			/* IDSEL = AD30 --> mini PCI connector */
-+			return (INT_NUM_IM0_IRL0 + 22);
-+		default:
-+			printk("lq_pci: no IRQ found for slot %d, pin %d\n", slot, pin);
-+			return 0;
-+	}
++	if(lq_pci_irq_map[slot])
++		return lq_pci_irq_map[slot];
++	printk("lq_pci: trying to map irq for unknown slot %d\n", slot);
++	return 0;
 +}
 +
 +static int
@@ -400,17 +417,12 @@
 +{
 +	struct lq_pci_data *lq_pci_data = (struct lq_pci_data*) pdev->dev.platform_data;
 +	extern int pci_probe_only;
-+
 +	pci_probe_only = 0;
-+	lq_pci_req_mask = lq_pci_data->req_mask;
-+	lq_pci_setup_clk(lq_pci_data->clock);
-+
-+	lq_pci_startup();
-+	lq_pci_mapped_cfg =
-+		(u32)ioremap_nocache(LQ_PCI_CFG_BASE, LQ_PCI_CFG_BASE);
-+	lq_pci_controller.io_map_base =
-+		(unsigned long)ioremap(LQ_PCI_IO_BASE, LQ_PCI_IO_SIZE - 1);
-+
++	lq_pci_irq_map = lq_pci_data->irq;
++	lq_pci_startup(lq_pci_data);
++	lq_pci_mapped_cfg = 
++		(u32)ioremap_nocache(LQ_PCI_CFG_BASE, LQ_PCI_CFG_SIZE);
++	lq_pci_controller.io_map_base = mips_io_port_base + LQ_PCI_IO_BASE;
 +	register_pci_controller(&lq_pci_controller);
 +	return 0;
 +}

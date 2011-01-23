@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/setup.c
 +++ b/arch/mips/lantiq/setup.c
-@@ -13,7 +13,8 @@
+@@ -12,7 +12,8 @@
  #include <linux/ioport.h>
  
  #include <lantiq.h>
@@ -10,7 +10,15 @@
  
  void __init
  plat_mem_setup(void)
-@@ -46,3 +47,25 @@ plat_mem_setup(void)
+@@ -31,6 +32,7 @@
+ 	ioport_resource.end = IOPORT_RESOURCE_END;
+ 	iomem_resource.start = IOMEM_RESOURCE_START;
+ 	iomem_resource.end = IOMEM_RESOURCE_END;
++	set_io_port_base((unsigned long) KSEG1);
+ 
+ 	while (*envp)
+ 	{
+@@ -45,3 +47,25 @@
  	memsize *= 1024 * 1024;
  	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
  }

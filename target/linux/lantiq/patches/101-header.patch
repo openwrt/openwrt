@@ -97,7 +97,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq_platform.h
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,51 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -122,15 +122,30 @@
 +	int mii_mode;
 +};
 +
-+/* struct used to pass info to the pci core */
-+enum {
-+	PCI_CLOCK_INT = 0,
-+	PCI_CLOCK_EXT
-+};
++#define PCI_EXIN0	0x0001
++#define PCI_EXIN1	0x0002
++#define PCI_EXIN2	0x0004
++#define PCI_EXIN_SHIFT	0
++
++#define PCI_GNT1	0x0008
++#define PCI_GNT2	0x0010
++#define PCI_GNT3	0x0020
++#define PCI_GNT_SHIFT	3
++
++#define PCI_REQ1	0x0040
++#define PCI_REQ2	0x0080
++#define PCI_REQ3	0x0100
++#define PCI_REQ_SHIFT	6
++
++#define	PCI_CLOCK_INT	0
++#define	PCI_CLOCK_EXT	1
 +
 +struct lq_pci_data {
 +	int clock;
-+	int req_mask;
++	int gpio;
++	int irq[16];
 +};
++
++extern int (*ifxmips_pci_plat_dev_init)(struct pci_dev *dev);
 +
 +#endif
