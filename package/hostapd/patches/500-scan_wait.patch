@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -271,6 +271,7 @@ struct hostapd_iface {
+@@ -221,6 +221,7 @@ struct hostapd_iface {
  	int (*for_each_interface)(struct hapd_interfaces *interfaces,
  				  int (*cb)(struct hostapd_iface *iface,
  					    void *ctx), void *ctx);
@@ -10,7 +10,7 @@
  /* hostapd.c */
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -787,6 +787,9 @@ int hostapd_setup_interface_complete(str
+@@ -779,6 +779,9 @@ int hostapd_setup_interface_complete(str
  	wpa_printf(MSG_DEBUG, "%s: Setup of interface done.",
  		   iface->bss[0]->conf->iface);
  
@@ -127,7 +127,7 @@
  		} else if (os_strcmp(buf, "ht_capab") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -380,6 +380,7 @@ struct hostapd_config {
+@@ -382,6 +382,7 @@ struct hostapd_config {
  
  	int ht_op_mode_fixed;
  	u16 ht_capab;

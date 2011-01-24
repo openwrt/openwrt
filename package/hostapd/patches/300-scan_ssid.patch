@@ -1,6 +1,6 @@
 --- a/wpa_supplicant/scan.c
 +++ b/wpa_supplicant/scan.c
-@@ -250,6 +250,7 @@ static void wpa_supplicant_scan(void *el
+@@ -251,6 +251,7 @@ static void wpa_supplicant_scan(void *el
  	enum wps_request_type req_type = WPS_REQ_ENROLLEE_INFO;
  #endif /* CONFIG_WPS */
  	struct wpa_driver_scan_params params;
@@ -8,7 +8,7 @@
  	size_t max_ssids;
  	enum wpa_states prev_state;
  
-@@ -306,6 +307,16 @@ static void wpa_supplicant_scan(void *el
+@@ -307,6 +308,16 @@ static void wpa_supplicant_scan(void *el
  	    wpa_s->wpa_state == WPA_INACTIVE)
  		wpa_supplicant_set_state(wpa_s, WPA_SCANNING);
  
@@ -25,7 +25,7 @@
  	/* Find the starting point from which to continue scanning */
  	ssid = wpa_s->conf->ssid;
  	if (wpa_s->prev_scan_ssid != WILDCARD_SSID_SCAN) {
-@@ -369,6 +380,9 @@ static void wpa_supplicant_scan(void *el
+@@ -370,6 +381,9 @@ static void wpa_supplicant_scan(void *el
  		int_array_sort_unique(params.freqs);
  	}
  
