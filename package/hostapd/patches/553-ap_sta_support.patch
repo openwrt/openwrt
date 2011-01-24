@@ -20,9 +20,9 @@
  	int countermeasures;
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -51,6 +51,11 @@ OBJS_p += ../src/utils/wpa_debug.o
- OBJS_p += ../src/utils/wpabuf.o
+@@ -52,6 +52,11 @@ OBJS_p += ../src/utils/wpabuf.o
  OBJS_c = wpa_cli.o ../src/common/wpa_ctrl.o
+ OBJS_c += ../src/utils/wpa_debug.o
  
 +ifdef MULTICALL
 +OBJS += ../src/common/wpa_ctrl.o
@@ -90,7 +90,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -557,8 +606,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -559,8 +608,16 @@ void wpa_supplicant_set_state(struct wpa
  #ifdef CONFIG_P2P
  		wpas_p2p_completed(wpa_s);
  #endif /* CONFIG_P2P */
@@ -107,7 +107,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2033,6 +2090,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2045,6 +2102,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}

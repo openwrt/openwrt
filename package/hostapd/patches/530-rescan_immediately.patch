@@ -1,6 +1,6 @@
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -893,7 +893,7 @@ static void wpa_supplicant_event_scan_re
+@@ -936,7 +936,7 @@ static void _wpa_supplicant_event_scan_r
  			wpa_printf(MSG_DEBUG, "Setup a new network");
  			wpa_supplicant_associate(wpa_s, NULL, ssid);
  		} else {

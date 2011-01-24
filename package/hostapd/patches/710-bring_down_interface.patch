@@ -1,0 +1,21 @@
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -4864,9 +4864,6 @@ static int wpa_driver_nl80211_set_mode(v
+ 			/* Try to set the mode again while the interface is
+ 			 * down */
+ 			ret = nl80211_set_mode(drv, drv->ifindex, nlmode);
+-			if (linux_set_iface_flags(drv->ioctl_sock, bss->ifname,
+-						  1))
+-				ret = -1;
+ 			if (!ret)
+ 				break;
+ 		} else
+@@ -4879,6 +4876,8 @@ static int wpa_driver_nl80211_set_mode(v
+ 		wpa_printf(MSG_DEBUG, "nl80211: Mode change succeeded while "
+ 			   "interface is down");
+ 		drv->nlmode = nlmode;
++		if (linux_set_iface_flags(drv->ioctl_sock, bss->ifname, 1))
++			ret = -1;
+ 	}
+ 
+ done:

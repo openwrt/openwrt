@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -1897,23 +1897,41 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -2044,23 +2044,41 @@ wpa_driver_nl80211_finish_drv_init(struc
  }
  
  
@@ -44,18 +44,18 @@
  
  /**
   * wpa_driver_nl80211_deinit - Deinitialize nl80211 driver interface
-@@ -5882,4 +5900,5 @@ const struct wpa_driver_ops wpa_driver_n
- 	.signal_monitor = nl80211_signal_monitor,
- 	.send_frame = nl80211_send_frame,
+@@ -6456,4 +6474,5 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_intra_bss = nl80211_set_intra_bss,
+ 	.set_param = nl80211_set_param,
+ 	.get_radio_name = nl80211_get_radio_name,
 +	.stop_ap = wpa_driver_nl80211_stop_ap,
  };
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -1909,6 +1909,8 @@ struct wpa_driver_ops {
- 	 * set_intra_bss - Enables/Disables intra BSS bridging
- 	 */
- 	int (*set_intra_bss)(void *priv, int enabled);
+@@ -2187,6 +2187,8 @@ struct wpa_driver_ops {
+ 	int (*p2p_invite)(void *priv, const u8 *peer, int role,
+ 			  const u8 *bssid, const u8 *ssid, size_t ssid_len,
+ 			  const u8 *go_dev_addr, int persistent_group);
 +
 +	int (*stop_ap)(void *priv);
  };
