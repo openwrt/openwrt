@@ -1,0 +1,12 @@
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2241,6 +2241,9 @@ struct sk_buff *ieee80211_beacon_get_tim
+ 
+ 	sdata = vif_to_sdata(vif);
+ 
++	if (!ieee80211_sdata_running(sdata))
++		goto out;
++
+ 	if (tim_offset)
+ 		*tim_offset = 0;
+ 	if (tim_length)
