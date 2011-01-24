@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2010 OpenWrt.org
+# Copyright (C) 2008-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,7 +13,7 @@ SUBTARGETS:=generic harddisk
 CFLAGS=-Os -pipe -march=armv5t -mtune=xscale -funit-at-a-time
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.36.2
+LINUX_VERSION:=2.6.37
 
 include $(INCLUDE_DIR)/target.mk
 
