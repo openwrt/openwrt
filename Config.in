@@ -43,6 +43,10 @@ menu "Target Images"
 
 			config TARGET_INITRAMFS_COMPRESSION_LZO
 				bool "lzo"
+
+			config TARGET_INITRAMFS_COMPRESSION_XZ
+				bool "xz"
+				depends LINUX_2_6_38
 		endchoice
 
 	comment "Root filesystem archives"
