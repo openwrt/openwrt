@@ -16,8 +16,11 @@
  	select I2C_BOARDINFO
 --- a/arch/arm/mach-orion5x/Makefile
 +++ b/arch/arm/mach-orion5x/Makefile
-@@ -21,3 +21,4 @@ obj-$(CONFIG_MACH_WNR854T)	+= wnr854t-se
+@@ -18,6 +18,7 @@ obj-$(CONFIG_MACH_BIGDISK)	+= d2net-setu
+ obj-$(CONFIG_MACH_NET2BIG)	+= net2big-setup.o
+ obj-$(CONFIG_MACH_MSS2)		+= mss2-setup.o
+ obj-$(CONFIG_MACH_WNR854T)	+= wnr854t-setup.o
++obj-$(CONFIG_MACH_DT2)		+= dt2-setup.o
  obj-$(CONFIG_MACH_RD88F5181L_GE)	+= rd88f5181l-ge-setup.o
  obj-$(CONFIG_MACH_RD88F5181L_FXO)	+= rd88f5181l-fxo-setup.o
  obj-$(CONFIG_MACH_RD88F6183AP_GE)	+= rd88f6183ap-ge-setup.o
-+obj-$(CONFIG_MACH_DT2)		+= dt2-setup.o

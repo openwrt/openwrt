@@ -437,8 +437,6 @@ void __init openwrt_fixup(struct machine_desc *mdesc, struct tag *t,
 /* Warning: Freecom uses their own custom bootloader with mach-type (=1500) */
 MACHINE_START(DT2, "Freecom DataTank Gateway")
 	/* Maintainer: Zintis Petersons <Zintis.Petersons@abcsolutions.lv> */
-	.phys_io	= ORION5X_REGS_PHYS_BASE,
-	.io_pg_offst	= ((ORION5X_REGS_VIRT_BASE) >> 18) & 0xFFFC,
 	.boot_params	= 0x00000100,
 	.init_machine	= dt2_init,
 	.map_io		= orion5x_map_io,
