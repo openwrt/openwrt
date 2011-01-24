@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -441,26 +441,20 @@ void ath9k_btcoex_timer_pause(struct ath
+@@ -447,26 +447,20 @@ void ath9k_btcoex_timer_pause(struct ath
  
  #define ATH_LED_PIN_DEF 		1
  #define ATH_LED_PIN_9287		8
@@ -38,7 +38,7 @@
  
  /* Antenna diversity/combining */
  #define ATH_ANT_RX_CURRENT_SHIFT 4
-@@ -625,15 +619,11 @@ struct ath_softc {
+@@ -618,15 +612,11 @@ struct ath_softc {
  	struct ath_beacon beacon;
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
@@ -57,8 +57,8 @@
 +	struct led_classdev led_cdev;
 +#endif
  
- 	int beacon_interval;
- 
+ 	struct ath9k_hw_cal_data caldata;
+ 	int last_rssi;
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
 @@ -20,120 +20,25 @@
@@ -253,9 +253,9 @@
  /*	Rfkill	   */
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1281,9 +1281,6 @@ static void ath9k_stop(struct ieee80211_
+@@ -1259,9 +1259,6 @@ static void ath9k_stop(struct ieee80211_
  
- 	aphy->state = ATH_WIPHY_INACTIVE;
+ 	mutex_lock(&sc->mutex);
  
 -	if (led_blink)
 -		cancel_delayed_work_sync(&sc->ath_led_blink_work);
@@ -287,7 +287,7 @@
  static void ath9k_deinit_softc(struct ath_softc *sc);
  
  /*
-@@ -747,6 +762,13 @@ int ath9k_init_device(u16 devid, struct 
+@@ -748,6 +763,13 @@ int ath9k_init_device(u16 devid, struct 
  
  	ath9k_init_txpower_limits(sc);
  
