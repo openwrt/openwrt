@@ -633,8 +633,10 @@ define Image/Build/Profile/TLWR1043NDV1
 endef
 
 wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
+wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),14848k(rootfs),64k(art)ro,15872k@0x70000(firmware)
 define Image/Build/Profile/WNDR3700
 	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,board=WNDR3700,wndr3700_mtdlayout,3700,WNDR3700)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,board=WNDR3700v2,wndr3700v2_mtdlayout,3701,WNDR3700v2)
 endef
 
 define Image/Build/Profile/AP96
