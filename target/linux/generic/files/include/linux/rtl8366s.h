@@ -13,9 +13,16 @@
 
 #define RTL8366S_DRIVER_NAME	"rtl8366s"
 
+struct rtl8366s_initval {
+	unsigned	reg;
+	u16		val;
+};
+
 struct rtl8366s_platform_data {
 	unsigned	gpio_sda;
 	unsigned	gpio_sck;
+	unsigned	num_initvals;
+	struct rtl8366s_initval *initvals;
 };
 
 #endif /*  _RTL8366_SMI_H */
