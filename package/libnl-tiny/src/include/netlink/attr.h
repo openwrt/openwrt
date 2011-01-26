@@ -508,7 +508,7 @@ static inline int nla_nest_end(struct nl_msg *msg, struct nlattr *start)
 static inline int nla_parse_nested(struct nlattr *tb[], int maxtype, struct nlattr *nla,
 		     struct nla_policy *policy)
 {
-	return nla_parse(tb, maxtype, nla_data(nla), nla_len(nla), policy);
+	return nla_parse(tb, maxtype, (struct nlattr *)nla_data(nla), nla_len(nla), policy);
 }
 
 /**
@@ -563,8 +563,8 @@ static inline int nla_strcmp(const struct nlattr *nla, const char *str)
  */
 static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize)
 {
-	size_t srclen = nla_len(nla);
-	char *src = nla_data(nla);
+	size_t srclen = (size_t)nla_len(nla);
+	char *src = (char*)nla_data(nla);
 
 	if (srclen > 0 && src[srclen - 1] == '\0')
 		srclen--;
@@ -713,7 +713,7 @@ static inline size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dst
  * @arg rem	initialized to len, holds bytes currently remaining in stream
  */
 #define nla_for_each_nested(pos, nla, rem) \
-	for (pos = nla_data(nla), rem = nla_len(nla); \
+	for (pos = (struct nlattr *)nla_data(nla), rem = nla_len(nla); \
 	     nla_ok(pos, rem); \
 	     pos = nla_next(pos, &(rem)))
 

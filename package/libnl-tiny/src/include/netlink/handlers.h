@@ -172,7 +172,7 @@ static inline int nl_cb_set_all(struct nl_cb *cb, enum nl_cb_kind kind,
 	int i, err;
 
 	for (i = 0; i <= NL_CB_TYPE_MAX; i++) {
-		err = nl_cb_set(cb, i, kind, func, arg);
+		err = nl_cb_set(cb,(enum nl_cb_type)i, kind, func, arg);
 		if (err < 0)
 			return err;
 	}
