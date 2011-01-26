@@ -6,6 +6,9 @@ mac80211_hostapd_setup_base() {
 	local ifname="$2"
 
 	cfgfile="/var/run/hostapd-$phy.conf"
+	macfile="/var/run/hostapd-$phy.maclist"
+	[ -e "$macfile" ] && rm -f "$macfile"
+
 	config_get device "$vif" device
 	config_get country "$device" country
 	config_get hwmode "$device" hwmode
@@ -30,7 +33,25 @@ mac80211_hostapd_setup_base() {
 			[ -n "$ht_capab" ] && append base_cfg "ht_capab=$ht_capab" "$N"
 		}
 	}
-	cat > "$cfgfile" <<EOF
+
+	config_get macfilter "$vif" macfilter
+	case "$macfilter" in
+		allow)
+			append base_cfg "macaddr_acl=1" "$N"
+			append base_cfg "accept_mac_file=$macfile" "$N"
+			;;
+		deny)
+			append base_cfg "macaddr_acl=0" "$N"
+			append base_cfg "deny_mac_file=$macfile" "$N"
+			;;
+	esac
+	config_get maclist "$vif" maclist
+	[ -n "$maclist" ] && {
+		for mac in $maclist; do
+			echo "$mac" >> $macfile
+		done
+	}
+	cat >> "$cfgfile" <<EOF
 ctrl_interface=/var/run/hostapd-$phy
 driver=nl80211
 wmm_ac_bk_cwmin=4
