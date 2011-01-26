@@ -413,6 +413,7 @@ enable_mac80211() {
 									}
 							;;
 							*) append keyspec "d:0:$(prepare_key_wep "$key")" ;;
+						esac
 					}
 
 					local mcval=""
