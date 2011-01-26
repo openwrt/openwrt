@@ -251,7 +251,18 @@ static int rtl8366s_reset_chip(struct rtl8366_smi *smi)
 
 static int rtl8366s_hw_init(struct rtl8366_smi *smi)
 {
+	struct rtl8366s_platform_data *pdata;
 	int err;
+
+	pdata = smi->parent->platform_data;
+	if (pdata->num_initvals && pdata->initvals) {
+		unsigned i;
+
+		dev_info(smi->parent, "applying initvals\n");
+		for (i = 0; i < pdata->num_initvals; i++)
+			REG_WR(smi, pdata->initvals[i].reg,
+			       pdata->initvals[i].val);
+	}
 
 	/* set maximum packet length to 1536 bytes */
 	REG_RMW(smi, RTL8366S_SGCR, RTL8366S_SGCR_MAX_LENGTH_MASK,
