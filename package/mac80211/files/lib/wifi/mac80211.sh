@@ -411,6 +411,7 @@ enable_mac80211() {
 										[ $idx -eq $key ] && ikey="d:$ikey"
 										append keyspec "$ikey"
 									}
+								done
 							;;
 							*) append keyspec "d:0:$(prepare_key_wep "$key")" ;;
 						esac
