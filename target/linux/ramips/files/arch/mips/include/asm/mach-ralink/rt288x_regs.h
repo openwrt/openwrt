@@ -33,6 +33,7 @@
 #define RT2880_SDRAM_BASE	0x08000000
 
 #define RT2880_SYSC_SIZE	0x100
+#define RT2880_TIMER_SIZE	0x100
 #define RT2880_INTC_SIZE	0x100
 #define RT2880_MEMC_SIZE	0x100
 #define RT2880_UART0_SIZE	0x100
@@ -45,6 +46,7 @@
 #define SYSC_REG_CHIP_NAME1	0x004	/* Chip Name 1 */
 #define SYSC_REG_CHIP_ID	0x00c	/* Chip Identification */
 #define SYSC_REG_SYSTEM_CONFIG	0x010	/* System Configuration */
+#define SYSC_REG_CLKCFG		0x030
 #define SYSC_REG_RESET_CTRL	0x034	/* Reset Control*/
 #define SYSC_REG_RESET_STATUS	0x038	/* Reset Status*/
 #define SYSC_REG_GPIO_MODE	0x060	/* GPIO Purpose Select */
@@ -61,6 +63,8 @@
 #define SYSTEM_CONFIG_CPUCLK_266	0x1
 #define SYSTEM_CONFIG_CPUCLK_280	0x2
 #define SYSTEM_CONFIG_CPUCLK_300	0x3
+
+#define CLKCFG_SRAM_CS_N_WDT	BIT(9)
 
 #define RT2880_RESET_SYSTEM	BIT(0)
 #define RT2880_RESET_TIMER	BIT(1)
