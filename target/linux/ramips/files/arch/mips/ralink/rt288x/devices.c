@@ -1,7 +1,7 @@
 /*
  *  Ralink RT288x SoC platform device registration
  *
- *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -14,6 +14,8 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/physmap.h>
 #include <linux/etherdevice.h>
+#include <linux/err.h>
+#include <linux/clk.h>
 
 #include <asm/addrspace.h>
 
@@ -154,7 +156,13 @@ static struct platform_device rt288x_eth_device = {
 
 void __init rt288x_register_ethernet(void)
 {
-	rt288x_eth_data.sys_freq = rt288x_sys_freq;
+	struct clk *clk;
+
+	clk = clk_get(NULL, "sys");
+	if (IS_ERR(clk))
+		panic("unable to get SYS clock, err=%ld", PTR_ERR(clk));
+
+	rt288x_eth_data.sys_freq = clk_get_rate(clk);
 	rt288x_eth_data.reset_fe = rt288x_fe_reset;
 	rt288x_eth_data.min_pkt_len = 64;
 
