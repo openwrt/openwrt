@@ -130,9 +130,15 @@ static struct gpio_button dir825b1_gpio_buttons[] __initdata = {
 	}
 };
 
+static struct rtl8366s_initval dir825b1_rtl8366s_initvals[] = {
+	{ .reg = 0x06, .val = 0x0108 },
+};
+
 static struct rtl8366s_platform_data dir825b1_rtl8366s_data = {
-	.gpio_sda        = DIR825B1_GPIO_RTL8366_SDA,
-	.gpio_sck        = DIR825B1_GPIO_RTL8366_SCK,
+	.gpio_sda	= DIR825B1_GPIO_RTL8366_SDA,
+	.gpio_sck	= DIR825B1_GPIO_RTL8366_SCK,
+	.num_initvals	= ARRAY_SIZE(dir825b1_rtl8366s_initvals),
+	.initvals	= dir825b1_rtl8366s_initvals,
 };
 
 static struct platform_device dir825b1_rtl8366s_device = {
