@@ -62,6 +62,7 @@ static void __init wcr150gn_init(void)
 	rt305x_register_flash(0, &wcr150gn_flash_data);
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
+	rt305x_register_wdt();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_WCR150GN, "WCR150GN", "Sparklan WCR-150GN",

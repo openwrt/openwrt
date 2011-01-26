@@ -120,6 +120,7 @@ static void __init fonera20n_init(void)
 
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
+	rt305x_register_wdt();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_FONERA20N, "FONERA20N", "La Fonera 2.0N",

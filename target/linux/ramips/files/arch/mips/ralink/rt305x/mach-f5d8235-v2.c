@@ -135,6 +135,7 @@ static void __init f5d8235v2_init(void)
 	rt305x_register_ethernet();
 	platform_device_register(&f5d8235v2_switch);
 	rt305x_register_wifi();
+	rt305x_register_wdt();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_F5D8235_V2, "F5D8235_V2", "Belkin F5D8235 v2",

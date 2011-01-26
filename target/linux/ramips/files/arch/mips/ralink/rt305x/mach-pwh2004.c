@@ -97,6 +97,7 @@ static void __init pwh2004_init(void)
 				     pwh2004_gpio_buttons);
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
+	rt305x_register_wdt();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_PWH2004, "PWH2004", "Prolink PWH2004",
