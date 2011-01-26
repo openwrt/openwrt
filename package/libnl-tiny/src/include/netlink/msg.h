@@ -144,7 +144,7 @@ static inline int nlmsg_len(const struct nlmsghdr *nlh)
  */
 static inline struct nlattr *nlmsg_attrdata(const struct nlmsghdr *nlh, int hdrlen)
 {
-	unsigned char *data = nlmsg_data(nlh);
+	unsigned char *data = (unsigned char*)nlmsg_data(nlh);
 	return (struct nlattr *) (data + NLMSG_ALIGN(hdrlen));
 }
 
@@ -160,7 +160,7 @@ static inline int nlmsg_attrlen(const struct nlmsghdr *nlh, int hdrlen)
 
 static inline int nlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen)
 {
-	if (nlh->nlmsg_len < nlmsg_msg_size(hdrlen))
+	if (nlh->nlmsg_len < (uint)nlmsg_msg_size(hdrlen))
 		return 0;
 
 	return 1;
@@ -263,7 +263,7 @@ static inline int nlmsg_expand(struct nl_msg *n, size_t newlen)
 	if (tmp == NULL)
 		return -NLE_NOMEM;
 
-	n->nm_nlh = tmp;
+	n->nm_nlh = (struct nlmsghdr*)tmp;
 	n->nm_size = newlen;
 
 	return 0;
