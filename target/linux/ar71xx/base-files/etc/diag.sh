@@ -105,7 +105,7 @@ get_status_led() {
 	unifi)
 		status_led="ubnt:green:dome"
 		;;
-	wndr3700)
+	wndr3700 | wndr3700v2)
 		status_led="wndr3700:green:power"
 		;;
 	wnr2000)

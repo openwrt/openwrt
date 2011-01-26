@@ -23,6 +23,6 @@ commit system
 EOF
 }
 
-if [ "${board}" == "wndr3700" ]; then
+if [ "${board}" == "wndr3700" -o "${board}" == "wndr3700v2" ]; then
 	wndr3700_set_wan_led
 fi
