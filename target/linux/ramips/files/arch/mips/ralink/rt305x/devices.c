@@ -10,6 +10,8 @@
 
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
+#include <linux/err.h>
+#include <linux/clk.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/physmap.h>
 
@@ -150,7 +152,13 @@ static struct platform_device rt305x_esw_device = {
 
 void __init rt305x_register_ethernet(void)
 {
-	ramips_eth_data.sys_freq = rt305x_sys_freq;
+	struct clk *clk;
+
+	clk = clk_get(NULL, "sys");
+	if (IS_ERR(clk))
+		panic("unable to get SYS clock, err=%ld", PTR_ERR(clk));
+
+	ramips_eth_data.sys_freq = clk_get_rate(clk);
 
 	platform_device_register(&rt305x_esw_device);
 	platform_device_register(&rt305x_eth_device);

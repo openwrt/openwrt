@@ -1,7 +1,7 @@
 /*
  * Ralink RT305x SoC specific definitions
  *
- * Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  *
  * Parts of this file are based on Ralink's 2.6.21 BSP
  *
@@ -17,10 +17,6 @@
 #include <linux/io.h>
 
 void rt305x_detect_sys_type(void);
-void rt305x_detect_sys_freq(void);
-
-extern unsigned long rt305x_cpu_freq;
-extern unsigned long rt305x_sys_freq;
 
 #define RT305X_MEM_SIZE_MIN (2 * 1024 * 1024)
 #define RT305X_MEM_SIZE_MAX (64 * 1024 * 1024)
