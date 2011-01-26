@@ -1,7 +1,7 @@
 /*
  * Ralink RT305x SoC specific platform device definitions
  *
- * Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -17,10 +17,9 @@ struct physmap_flash_data;
 
 extern struct rt305x_esw_platform_data rt305x_esw_data;
 
-extern void rt305x_register_flash(unsigned int id,
-				  struct physmap_flash_data *pdata) __init;
-extern void rt305x_register_ethernet(void) __init;
-extern void rt305x_register_wifi(void) __init;
+void rt305x_register_flash(unsigned int id, struct physmap_flash_data *pdata);
+void rt305x_register_ethernet(void);
+void rt305x_register_wifi(void);
 
 #endif  /* __RT305X_DEVICES_H */
 

@@ -1,7 +1,7 @@
 /*
  *  Ralink SoC GPIO LED device support
  *
- *  Copyright (C) 2009-2010 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -14,8 +14,8 @@
 #include <linux/leds.h>
 
 #ifdef CONFIG_RALINK_DEV_GPIO_LEDS
-__init void ramips_register_gpio_leds(int id, unsigned num_leds,
-				      struct gpio_led *leds);
+void ramips_register_gpio_leds(int id, unsigned num_leds,
+			       struct gpio_led *leds);
 #else
 static inline void ramips_register_gpio_leds(int id, unsigned num_leds,
 					     struct gpio_led *leds)
