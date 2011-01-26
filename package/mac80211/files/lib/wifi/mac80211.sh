@@ -239,7 +239,8 @@ enable_mac80211() {
 	config_get txpower "$device" txpower
 	config_get country "$device" country
 	config_get distance "$device" distance
-	config_get antenna "$device" antenna
+	config_get txantenna "$device" txantenna
+	config_get rxantenna "$device" rxantenna
 	config_get frag "$device" frag
 	config_get rts "$device" rts
 	find_mac80211_phy "$device" || return 0
@@ -255,8 +256,10 @@ enable_mac80211() {
 		fixed=1
 	}
 
+	local antspec="${txantenna:+$txantenna }$rxantenna"
+	iw phy "$phy" set antenna ${antspec:-all}
+
 	[ -n "$distance" ] && iw phy "$phy" set distance "$distance"
-	[ -n "$antenna" ] && iw phy "$phy" set antenna $antenna
 	[ -n "$frag" ] && iw phy "$phy" set frag "${frag%%.*}"
 	[ -n "$rts" ] && iw phy "$phy" set rts "${rts%%.*}"
 
@@ -391,18 +394,40 @@ enable_mac80211() {
 					config_get bintval "$vif" bintval
 					config_get basicrates "$vif" basicrates
 					config_get encryption "$vif" encryption
-					config_get key "$vif" key
+					config_get key "$vif" key 1
 					config_get mcast_rate "$vif" mcast_rate
-					[ -n "$bintval" ] && BINTVAL="beacon-interval $bintval"
-					[ -n "$basicrates" ] && BRATES="basic-rates $basicrates"
-					[ "$encryption" == "wep" ] && [ -n "$key" ] && KEY="key d:0:$key"
+
+					local keyspec=""
+					[ "$encryption" == "wep" ] && {
+						case "$key" in
+							[1234])
+								local idx
+								for idx in 1 2 3 4; do
+									local ikey
+									config_get ikey "$vif" "key$idx"
+
+									[ -n "$ikey" ] && {
+										ikey="$(($idx - 1)):$(prepare_key_wep "$ikey")"
+										[ $idx -eq $key ] && ikey="d:$ikey"
+										append keyspec "$ikey"
+									}
+							;;
+							*) append keyspec "d:0:$(prepare_key_wep "$key")" ;;
+					}
+
 					local mcval=""
 					[ -n "$mcast_rate" ] && {
 						mcval="$(($mcast_rate / 1000))"
 						mcsub="$(( ($mcast_rate / 100) % 10 ))"
 						[ "$mcsub" -gt 0 ] && mcval="$mcval.$mcsub"
 					}
-					iw dev "$ifname" ibss join "$ssid" $freq ${fixed:+fixed-freq} $bssid ${mcval:+mcast-rate $mcval} $BINTVAL $BRATES $KEY
+
+					iw dev "$ifname" ibss join "$ssid" $freq \
+						${fixed:+fixed-freq} $bssid \
+						${mcval:+mcast-rate $mcval} \
+						${bintval:+beacon-interval $bintval} \
+						${basicrates:+basic-rates $basicrates} \
+						${keyspec:+keys $keyspec}
 				;;
 				sta)
 					if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
