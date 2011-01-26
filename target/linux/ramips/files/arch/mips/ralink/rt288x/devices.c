@@ -171,3 +171,30 @@ void __init rt288x_register_ethernet(void)
 
 	platform_device_register(&rt288x_eth_device);
 }
+
+static struct resource rt288x_wdt_resources[] = {
+	{
+		.start	= RT2880_TIMER_BASE,
+		.end	= RT2880_TIMER_BASE + RT2880_TIMER_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device rt288x_wdt_device = {
+	.name		= "ramips-wdt",
+	.id		= -1,
+	.resource	= rt288x_wdt_resources,
+	.num_resources	= ARRAY_SIZE(rt288x_wdt_resources),
+};
+
+void __init rt288x_register_wdt(void)
+{
+	u32 t;
+
+	/* enable WDT reset output on pin SRAM_CS_N */
+	t = rt288x_sysc_rr(SYSC_REG_CLKCFG);
+	t |= CLKCFG_SRAM_CS_N_WDT;
+	rt288x_sysc_wr(t, SYSC_REG_CLKCFG);
+
+	platform_device_register(&rt288x_wdt_device);
+}

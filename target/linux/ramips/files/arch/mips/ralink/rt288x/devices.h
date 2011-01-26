@@ -20,4 +20,6 @@ void rt288x_register_wifi(void);
 extern struct ramips_eth_platform_data rt288x_eth_data;
 void rt288x_register_ethernet(void);
 
+void rt288x_register_wdt(void);
+
 #endif  /* __ASM_MACH_RT288X_PLATFORM_H */
