@@ -130,6 +130,9 @@ ar71xx_board_name() {
 	*WNDR3700)
 		name="wndr3700"
 		;;
+	*WNDR3700v2)
+		name="wndr3700v2"
+		;;
 	*WNR2000)
 		name="wnr2000"
 		;;

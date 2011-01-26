@@ -64,6 +64,7 @@ platform_do_upgrade_combined() {
 platform_check_image() {
 	local board=$(ar71xx_board_name)
 	local magic="$(get_magic_word "$1")"
+	local magic_long="$(get_magic_long "$1")"
 
 	[ "$ARGC" -gt 1 ] && return 1
 
@@ -83,7 +84,14 @@ platform_check_image() {
 		return 0
 		;;
 	wndr3700)
-		[ "$magic" != "3337" ] && {
+		[ "$magic_long" != "33373030" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
+	wndr3700v2)
+		[ "$magic_long" != "33373031" ] && {
 			echo "Invalid image type."
 			return 1
 		}
