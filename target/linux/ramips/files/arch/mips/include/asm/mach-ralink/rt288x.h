@@ -1,7 +1,7 @@
 /*
  * Ralink RT288x SoC specific definitions
  *
- * Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  * Parts of this file are based on Ralink's 2.6.21 BSP
@@ -18,10 +18,6 @@
 #include <linux/io.h>
 
 void rt288x_detect_sys_type(void);
-void rt288x_detect_sys_freq(void);
-
-extern unsigned long rt288x_cpu_freq;
-extern unsigned long rt288x_sys_freq;
 
 #define RT288X_CPU_IRQ_BASE	0
 #define RT288X_INTC_IRQ_BASE	8

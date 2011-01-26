@@ -20,12 +20,6 @@
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
 
-unsigned long rt288x_cpu_freq;
-EXPORT_SYMBOL_GPL(rt288x_cpu_freq);
-
-unsigned long rt288x_sys_freq;
-EXPORT_SYMBOL_GPL(rt288x_sys_freq);
-
 void __iomem * rt288x_sysc_base;
 void __iomem * rt288x_memc_base;
 
@@ -47,31 +41,6 @@ void __init rt288x_detect_sys_type(void)
 		(char) ((n1 >> 16) & 0xff), (char) ((n1 >> 24) & 0xff),
 		(id >> CHIP_ID_ID_SHIFT) & CHIP_ID_ID_MASK,
 		(id & CHIP_ID_REV_MASK));
-}
-
-void __init rt288x_detect_sys_freq(void)
-{
-	u32	t;
-
-	t = rt288x_sysc_rr(SYSC_REG_SYSTEM_CONFIG);
-	t = ((t >> SYSTEM_CONFIG_CPUCLK_SHIFT) & SYSTEM_CONFIG_CPUCLK_MASK);
-
-	switch (t) {
-	case SYSTEM_CONFIG_CPUCLK_250:
-		rt288x_cpu_freq = 250000000;
-		break;
-	case SYSTEM_CONFIG_CPUCLK_266:
-		rt288x_cpu_freq = 266666667;
-		break;
-	case SYSTEM_CONFIG_CPUCLK_280:
-		rt288x_cpu_freq = 280000000;
-		break;
-	case SYSTEM_CONFIG_CPUCLK_300:
-		rt288x_cpu_freq = 300000000;
-		break;
-	}
-
-	rt288x_sys_freq = rt288x_cpu_freq / 2;
 }
 
 static void rt288x_gpio_reserve(int first, int last)
