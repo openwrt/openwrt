@@ -189,3 +189,31 @@ void __init rt305x_register_wifi(void)
 {
 	platform_device_register(&rt305x_wifi_device);
 }
+
+static struct resource rt305x_wdt_resources[] = {
+	{
+		.start	= RT305X_TIMER_BASE,
+		.end	= RT305X_TIMER_BASE + RT305X_TIMER_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device rt305x_wdt_device = {
+	.name		= "ramips-wdt",
+	.id		= -1,
+	.resource	= rt305x_wdt_resources,
+	.num_resources	= ARRAY_SIZE(rt305x_wdt_resources),
+};
+
+void __init rt305x_register_wdt(void)
+{
+	u32 t;
+
+	/* enable WDT reset output on pin SRAM_CS_N */
+	t = rt305x_sysc_rr(SYSC_REG_SYSTEM_CONFIG);
+	t |= SYSTEM_CONFIG_SRAM_CS0_MODE_WDT <<
+	     SYSTEM_CONFIG_SRAM_CS0_MODE_SHIFT;
+	rt305x_sysc_wr(t, SYSC_REG_SYSTEM_CONFIG);
+
+	platform_device_register(&rt305x_wdt_device);
+}

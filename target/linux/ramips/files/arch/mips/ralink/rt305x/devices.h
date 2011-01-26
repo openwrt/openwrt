@@ -20,6 +20,7 @@ extern struct rt305x_esw_platform_data rt305x_esw_data;
 void rt305x_register_flash(unsigned int id, struct physmap_flash_data *pdata);
 void rt305x_register_ethernet(void);
 void rt305x_register_wifi(void);
+void rt305x_register_wdt(void);
 
 #endif  /* __RT305X_DEVICES_H */
 
