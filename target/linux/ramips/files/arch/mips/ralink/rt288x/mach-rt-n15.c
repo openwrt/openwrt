@@ -135,6 +135,7 @@ static void __init rt_n15_init(void)
 	rt288x_eth_data.tx_fc = 1;
 	rt288x_eth_data.rx_fc = 1;
 	rt288x_register_ethernet();
+	rt288x_register_wdt();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_RT_N15, "RT-N15", "Asus RT-N15", rt_n15_init);
