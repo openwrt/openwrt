@@ -16,8 +16,8 @@
 #include <linux/init.h>
 #include <linux/io.h>
 
-void rt305x_detect_sys_type(void) __init;
-void rt305x_detect_sys_freq(void) __init;
+void rt305x_detect_sys_type(void);
+void rt305x_detect_sys_freq(void);
 
 extern unsigned long rt305x_cpu_freq;
 extern unsigned long rt305x_sys_freq;
@@ -126,6 +126,6 @@ static inline u32 rt305x_memc_rr(unsigned reg)
 #define RT305X_GPIO_GE0_RXDV	50
 #define RT305X_GPIO_GE0_RXCLK	51
 
-void rt305x_gpio_init(u32 mode) __init;
+void rt305x_gpio_init(u32 mode);
 
 #endif /* _RT305X_H_ */

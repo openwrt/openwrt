@@ -17,8 +17,8 @@
 #include <linux/init.h>
 #include <linux/io.h>
 
-void rt288x_detect_sys_type(void) __init;
-void rt288x_detect_sys_freq(void) __init;
+void rt288x_detect_sys_type(void);
+void rt288x_detect_sys_freq(void);
 
 extern unsigned long rt288x_cpu_freq;
 extern unsigned long rt288x_sys_freq;
@@ -68,6 +68,6 @@ static inline u32 rt288x_memc_rr(unsigned reg)
 	return __raw_readl(rt288x_memc_base + reg);
 }
 
-void rt288x_gpio_init(u32 mode) __init;
+void rt288x_gpio_init(u32 mode);
 
 #endif /* _RT228X_H_ */
