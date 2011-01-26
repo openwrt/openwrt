@@ -1,0 +1,20 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (C) 2010 Thinktube Inc.
+#
+
+START=05
+
+start() {
+	. /lib/soekris.sh
+
+	local board=$(net48xx_board_name)
+
+	[ ! -d /etc/defconfig/$board ] && board="net4826"
+
+	for f in $( ls /etc/defconfig/$board ); do
+		if [ ! -e /etc/config/$f ]; then
+			cp /etc/defconfig/$board/$f /etc/config/
+		fi
+	done
+}
