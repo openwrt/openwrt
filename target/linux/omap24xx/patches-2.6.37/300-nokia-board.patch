@@ -9,10 +9,10 @@
  arch/arm/mach-omap2/serial.c         |    8 
  8 files changed, 608 insertions(+), 87 deletions(-)
 
-Index: linux-2.6.37-rc1/arch/arm/mach-omap1/board-nokia770.c
+Index: linux-2.6.37/arch/arm/mach-omap1/board-nokia770.c
 ===================================================================
---- linux-2.6.37-rc1.orig/arch/arm/mach-omap1/board-nokia770.c	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/arch/arm/mach-omap1/board-nokia770.c	2010-11-06 17:20:54.534000001 +0100
+--- linux-2.6.37.orig/arch/arm/mach-omap1/board-nokia770.c	2011-01-27 14:17:04.376000007 +0100
++++ linux-2.6.37/arch/arm/mach-omap1/board-nokia770.c	2011-01-27 14:17:29.131000007 +0100
 @@ -36,6 +36,7 @@
  #include <plat/lcd_mipid.h>
  #include <plat/mmc.h>
@@ -45,10 +45,10 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap1/board-nokia770.c
  };
  
  static void mipid_shutdown(struct mipid_platform_data *pdata)
-Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c
+Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-2.6.37-rc1.orig/arch/arm/mach-omap2/board-n8x0.c	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c	2010-11-06 17:26:56.824022830 +0100
+--- linux-2.6.37.orig/arch/arm/mach-omap2/board-n8x0.c	2011-01-27 14:17:04.381000007 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c	2011-01-27 14:17:29.132000007 +0100
 @@ -18,9 +18,13 @@
  #include <linux/io.h>
  #include <linux/stddef.h>
@@ -483,10 +483,10 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c
  	n8x0_onenand_init();
  	n8x0_mmc_init();
  	n8x0_usb_init();
-Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0-lcd.c
+Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0-lcd.c	2010-11-06 17:26:25.503999974 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-01-27 14:17:29.132000007 +0100
 @@ -0,0 +1,127 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0.c
@@ -615,10 +615,10 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0-lcd.c
 +
 +	printk(KERN_INFO "N8x0 Blizzard initialized");
 +}
-Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0-usb.c
+Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0-usb.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0-usb.c	2010-11-06 17:20:54.534000001 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0-usb.c	2011-01-27 14:17:29.132000007 +0100
 @@ -0,0 +1,175 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0-usb.c
@@ -795,10 +795,10 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0-usb.c
 +err:
 +	gpio_free(GPIO_TUSB_ENABLE);
 +}
-Index: linux-2.6.37-rc1/arch/arm/mach-omap2/control.c
+Index: linux-2.6.37/arch/arm/mach-omap2/control.c
 ===================================================================
---- linux-2.6.37-rc1.orig/arch/arm/mach-omap2/control.c	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/arch/arm/mach-omap2/control.c	2010-11-06 17:20:54.534000001 +0100
+--- linux-2.6.37.orig/arch/arm/mach-omap2/control.c	2011-01-27 14:17:04.403000007 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/control.c	2011-01-27 14:17:29.132000007 +0100
 @@ -172,6 +172,7 @@
  	return __raw_readw(OMAP_CTRL_REGADDR(offset));
  }
@@ -815,10 +815,10 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/control.c
  void omap_ctrl_writel(u32 val, u16 offset)
  {
  	__raw_writel(val, OMAP_CTRL_REGADDR(offset));
-Index: linux-2.6.37-rc1/arch/arm/mach-omap2/Kconfig
+Index: linux-2.6.37/arch/arm/mach-omap2/Kconfig
 ===================================================================
---- linux-2.6.37-rc1.orig/arch/arm/mach-omap2/Kconfig	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/arch/arm/mach-omap2/Kconfig	2010-11-06 17:20:54.534000001 +0100
+--- linux-2.6.37.orig/arch/arm/mach-omap2/Kconfig	2011-01-27 14:17:04.391000007 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/Kconfig	2011-01-27 14:17:29.132000007 +0100
 @@ -210,6 +210,16 @@
  	select MACH_NOKIA_N810
  	select MACH_NOKIA_N810_WIMAX
@@ -836,10 +836,10 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/Kconfig
  config MACH_NOKIA_RX51
  	bool "Nokia RX-51 board"
  	depends on ARCH_OMAP3
-Index: linux-2.6.37-rc1/arch/arm/mach-omap2/Makefile
+Index: linux-2.6.37/arch/arm/mach-omap2/Makefile
 ===================================================================
---- linux-2.6.37-rc1.orig/arch/arm/mach-omap2/Makefile	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/arch/arm/mach-omap2/Makefile	2010-11-06 17:20:54.534000001 +0100
+--- linux-2.6.37.orig/arch/arm/mach-omap2/Makefile	2011-01-27 14:17:04.386000007 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/Makefile	2011-01-27 14:17:29.132000007 +0100
 @@ -139,6 +139,8 @@
  					   hsmmc.o \
  					   board-flash.o
@@ -849,11 +849,11 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/Makefile
  obj-$(CONFIG_MACH_NOKIA_RX51)		+= board-rx51.o \
  					   board-rx51-sdram.o \
  					   board-rx51-peripherals.o \
-Index: linux-2.6.37-rc1/arch/arm/mach-omap2/serial.c
+Index: linux-2.6.37/arch/arm/mach-omap2/serial.c
 ===================================================================
---- linux-2.6.37-rc1.orig/arch/arm/mach-omap2/serial.c	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/arch/arm/mach-omap2/serial.c	2010-11-06 17:20:54.535000001 +0100
-@@ -545,14 +545,17 @@
+--- linux-2.6.37.orig/arch/arm/mach-omap2/serial.c	2011-01-27 14:17:04.398000007 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/serial.c	2011-01-27 14:17:29.132000007 +0100
+@@ -546,14 +546,17 @@
  		uart->padconf = 0;
  	}
  
@@ -871,7 +871,7 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/serial.c
  	int ret;
  	struct omap_uart_state *uart;
  
-@@ -569,6 +572,7 @@
+@@ -570,6 +573,7 @@
  			free_irq(uart->irq, (void *)uart);
  		}
  	}

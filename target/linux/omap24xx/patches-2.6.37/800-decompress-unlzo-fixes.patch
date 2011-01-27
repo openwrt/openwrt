@@ -2,9 +2,11 @@
  lib/decompress_unlzo.c |    4 ++++
  1 file changed, 4 insertions(+)
 
---- linux-2.6.35.orig/lib/decompress_unlzo.c
-+++ linux-2.6.35/lib/decompress_unlzo.c
-@@ -50,6 +50,10 @@ static const unsigned char lzop_magic[]
+Index: linux-2.6.37/lib/decompress_unlzo.c
+===================================================================
+--- linux-2.6.37.orig/lib/decompress_unlzo.c	2011-01-27 14:17:20.745000007 +0100
++++ linux-2.6.37/lib/decompress_unlzo.c	2011-01-27 14:17:56.557000007 +0100
+@@ -51,6 +51,10 @@
  #define LZO_BLOCK_SIZE        (256*1024l)
  #define HEADER_HAS_FILTER      0x00000800L
  
