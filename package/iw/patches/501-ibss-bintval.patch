@@ -9,11 +9,9 @@ Signed-off-by: Bruno Randolf <br1@einfach.org>
  ibss.c |   19 ++++++++++++++++---
  1 files changed, 16 insertions(+), 3 deletions(-)
 
-diff --git a/ibss.c b/ibss.c
-index ed2c73a..9c9c133 100644
 --- a/ibss.c
 +++ b/ibss.c
-@@ -26,6 +26,7 @@ static int join_ibss(struct nl80211_state *state,
+@@ -26,6 +26,7 @@ static int join_ibss(struct nl80211_stat
  	int n_rates = 0;
  	char *value = NULL, *sptr = NULL;
  	float rate;
@@ -21,7 +19,7 @@ index ed2c73a..9c9c133 100644
  
  	if (argc < 2)
  		return 1;
-@@ -57,6 +58,17 @@ static int join_ibss(struct nl80211_state *state,
+@@ -57,6 +58,17 @@ static int join_ibss(struct nl80211_stat
  		}
  	}
  

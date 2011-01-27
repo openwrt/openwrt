@@ -8,11 +8,9 @@ From: Bruno Randolf <br1@einfach.org>
  station.c |    3 +++
  2 files changed, 4 insertions(+), 0 deletions(-)
 
-diff --git a/nl80211.h b/nl80211.h
-index 276fec0..9da840d 100644
 --- a/nl80211.h
 +++ b/nl80211.h
-@@ -1179,6 +1179,7 @@ enum nl80211_sta_info {
+@@ -1183,6 +1183,7 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_TX_PACKETS,
  	NL80211_STA_INFO_TX_RETRIES,
  	NL80211_STA_INFO_TX_FAILED,
@@ -20,11 +18,9 @@ index 276fec0..9da840d 100644
  
  	/* keep last */
  	__NL80211_STA_INFO_AFTER_LAST,
-diff --git a/station.c b/station.c
-index 7639553..20f4ad4 100644
 --- a/station.c
 +++ b/station.c
-@@ -107,6 +107,9 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
+@@ -107,6 +107,9 @@ static int print_sta_handler(struct nl_m
  	if (sinfo[NL80211_STA_INFO_SIGNAL])
  		printf("\n\tsignal:  \t%d dBm",
  			(int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]));

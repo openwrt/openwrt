@@ -15,11 +15,9 @@ v8:  Simplfied option parser as requested.
  phy.c  |   39 +++++++++++++++++++++++++++++++++++++++
  2 files changed, 46 insertions(+), 0 deletions(-)
 
-diff --git a/info.c b/info.c
-index ce85514..75cadf0 100644
 --- a/info.c
 +++ b/info.c
-@@ -168,6 +168,13 @@ static int print_phy_handler(struct nl_msg *msg, void *arg)
+@@ -168,6 +168,13 @@ static int print_phy_handler(struct nl_m
  		printf("\tCoverage class: %d (up to %dm)\n", coverage, 450 * coverage);
  	}
  
@@ -33,11 +31,9 @@ index ce85514..75cadf0 100644
  	if (tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES]) {
  		printf("\tSupported interface modes:\n");
  		nla_for_each_nested(nl_mode, tb_msg[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode)
-diff --git a/phy.c b/phy.c
-index 7c6c7c8..e3bd4e8 100644
 --- a/phy.c
 +++ b/phy.c
-@@ -307,3 +307,51 @@ COMMAND(set, txpower, "<auto|fixed|limit> [<tx power in mBm>]",
+@@ -307,3 +307,51 @@ COMMAND(set, txpower, "<auto|fixed|limit
  COMMAND(set, txpower, "<auto|fixed|limit> [<tx power in mBm>]",
  	NL80211_CMD_SET_WIPHY, 0, CIB_NETDEV, handle_txpower,
  	"Specify transmit power level and setting type.");
