@@ -12,12 +12,6 @@ choice
 	help
 	  Select the version of gcc you wish to use.
 
-	config GCC_VERSION_4_1_2
-		bool "gcc 4.1.2"
-
-	config GCC_VERSION_4_2_4
-		bool "gcc 4.2.4"
-
 	config GCC_VERSION_4_3_5
 		bool "gcc 4.3.5"
 
@@ -84,7 +78,7 @@ config INSTALL_LIBSTDCPP
 
 config INSTALL_LIBGCJ
 	bool
-	depends on !(GCC_VERSION_4_1||GCC_VERSION_4_2)
+	depends on !GCC_VERSION_4_2
 	prompt "Build/install java compiler and GNU classpath ?" if TOOLCHAINOPTS
 	default n
 	help
