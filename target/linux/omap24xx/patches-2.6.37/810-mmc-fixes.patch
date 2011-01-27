@@ -4,10 +4,10 @@
  include/linux/mmc/host.h |    2 ++
  3 files changed, 10 insertions(+), 4 deletions(-)
 
-Index: linux-2.6.37-rc1/drivers/mmc/host/omap.c
+Index: linux-2.6.37/drivers/mmc/host/omap.c
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/mmc/host/omap.c	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/drivers/mmc/host/omap.c	2010-11-05 17:07:25.130000416 +0100
+--- linux-2.6.37.orig/drivers/mmc/host/omap.c	2011-01-27 14:16:57.305000007 +0100
++++ linux-2.6.37/drivers/mmc/host/omap.c	2011-01-27 14:17:59.807000006 +0100
 @@ -387,7 +387,7 @@
  
  	mod_timer(&host->cmd_abort_timer, jiffies + HZ/2);
@@ -36,10 +36,10 @@ Index: linux-2.6.37-rc1/drivers/mmc/host/omap.c
  
  	return 0;
  
-Index: linux-2.6.37-rc1/drivers/mmc/core/core.c
+Index: linux-2.6.37/drivers/mmc/core/core.c
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/mmc/core/core.c	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/drivers/mmc/core/core.c	2010-11-05 17:07:25.131000390 +0100
+--- linux-2.6.37.orig/drivers/mmc/core/core.c	2011-01-27 14:16:57.297000007 +0100
++++ linux-2.6.37/drivers/mmc/core/core.c	2011-01-27 14:17:59.807000006 +0100
 @@ -74,12 +74,13 @@
  }
  
@@ -56,11 +56,11 @@ Index: linux-2.6.37-rc1/drivers/mmc/core/core.c
  
  /**
   *	mmc_request_done - finish processing an MMC request
-Index: linux-2.6.37-rc1/include/linux/mmc/host.h
+Index: linux-2.6.37/include/linux/mmc/host.h
 ===================================================================
---- linux-2.6.37-rc1.orig/include/linux/mmc/host.h	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/include/linux/mmc/host.h	2010-11-05 17:07:25.131000390 +0100
-@@ -306,5 +306,7 @@
+--- linux-2.6.37.orig/include/linux/mmc/host.h	2011-01-27 14:16:57.292000007 +0100
++++ linux-2.6.37/include/linux/mmc/host.h	2011-01-27 14:17:59.807000006 +0100
+@@ -307,5 +307,7 @@
  	return !(host->caps & MMC_CAP_NONREMOVABLE) && mmc_assume_removable;
  }
  

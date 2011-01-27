@@ -19,10 +19,10 @@
  drivers/cbus/user_retu_tahvo.h |   75 +++
  18 files changed, 4533 insertions(+), 1 deletion(-)
 
-Index: linux-2.6.37-rc1/drivers/cbus/cbus.c
+Index: linux-2.6.37/drivers/cbus/cbus.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/cbus.c	2010-11-05 17:04:49.000997852 +0100
++++ linux-2.6.37/drivers/cbus/cbus.c	2011-01-27 14:17:39.085000008 +0100
 @@ -0,0 +1,309 @@
 +/*
 + * drivers/cbus/cbus.c
@@ -333,10 +333,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/cbus.c
 +MODULE_AUTHOR("David Weinehall");
 +MODULE_AUTHOR("Mikko Ylinen");
 +
-Index: linux-2.6.37-rc1/drivers/cbus/cbus.h
+Index: linux-2.6.37/drivers/cbus/cbus.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/cbus.h	2010-11-05 17:04:49.000997852 +0100
++++ linux-2.6.37/drivers/cbus/cbus.h	2011-01-27 14:17:39.085000008 +0100
 @@ -0,0 +1,36 @@
 +/*
 + * drivers/cbus/cbus.h
@@ -374,10 +374,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/cbus.h
 +extern int cbus_write_reg(struct cbus_host *host, int dev, int reg, u16 val);
 +
 +#endif /* __DRIVERS_CBUS_CBUS_H */
-Index: linux-2.6.37-rc1/drivers/cbus/Kconfig
+Index: linux-2.6.37/drivers/cbus/Kconfig
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/Kconfig	2010-11-05 17:04:49.001997921 +0100
++++ linux-2.6.37/drivers/cbus/Kconfig	2011-01-27 14:17:39.085000008 +0100
 @@ -0,0 +1,89 @@
 +#
 +# CBUS device configuration
@@ -468,10 +468,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/Kconfig
 +	  sysfs.
 +
 +endmenu
-Index: linux-2.6.37-rc1/drivers/cbus/Makefile
+Index: linux-2.6.37/drivers/cbus/Makefile
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/Makefile	2010-11-05 17:04:49.001997921 +0100
++++ linux-2.6.37/drivers/cbus/Makefile	2011-01-27 14:17:39.085000008 +0100
 @@ -0,0 +1,14 @@
 +#
 +# Makefile for CBUS.
@@ -487,10 +487,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/Makefile
 +obj-$(CONFIG_CBUS_TAHVO_USER)	+= tahvo-user.o
 +obj-$(CONFIG_CBUS_RETU_USER)	+= retu-user.o
 +obj-$(CONFIG_CBUS_RETU_HEADSET)	+= retu-headset.o
-Index: linux-2.6.37-rc1/drivers/cbus/retu.c
+Index: linux-2.6.37/drivers/cbus/retu.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/retu.c	2010-11-05 17:04:49.001997921 +0100
++++ linux-2.6.37/drivers/cbus/retu.c	2011-01-27 14:17:39.085000008 +0100
 @@ -0,0 +1,468 @@
 +/**
 + * drivers/cbus/retu.c
@@ -960,10 +960,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu.c
 +MODULE_DESCRIPTION("Retu ASIC control");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä, David Weinehall, and Mikko Ylinen");
-Index: linux-2.6.37-rc1/drivers/cbus/retu.h
+Index: linux-2.6.37/drivers/cbus/retu.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/retu.h	2010-11-05 17:04:49.001997921 +0100
++++ linux-2.6.37/drivers/cbus/retu.h	2011-01-27 14:17:39.085000008 +0100
 @@ -0,0 +1,77 @@
 +/**
 + * drivers/cbus/retu.h
@@ -1042,10 +1042,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu.h
 +extern spinlock_t retu_lock;
 +
 +#endif /* __DRIVERS_CBUS_RETU_H */
-Index: linux-2.6.37-rc1/drivers/cbus/retu-headset.c
+Index: linux-2.6.37/drivers/cbus/retu-headset.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/retu-headset.c	2010-11-05 17:04:49.001997921 +0100
++++ linux-2.6.37/drivers/cbus/retu-headset.c	2011-01-27 14:17:39.085000008 +0100
 @@ -0,0 +1,356 @@
 +/**
 + * Retu/Vilma headset detection
@@ -1403,10 +1403,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-headset.c
 +MODULE_DESCRIPTION("Retu/Vilma headset detection");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä");
-Index: linux-2.6.37-rc1/drivers/cbus/retu-pwrbutton.c
+Index: linux-2.6.37/drivers/cbus/retu-pwrbutton.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/retu-pwrbutton.c	2010-11-05 17:04:49.001997921 +0100
++++ linux-2.6.37/drivers/cbus/retu-pwrbutton.c	2011-01-27 14:17:39.085000008 +0100
 @@ -0,0 +1,118 @@
 +/**
 + * drivers/cbus/retu-pwrbutton.c
@@ -1526,10 +1526,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-pwrbutton.c
 +MODULE_DESCRIPTION("Retu Power Button");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Ari Saastamoinen");
-Index: linux-2.6.37-rc1/drivers/cbus/retu-rtc.c
+Index: linux-2.6.37/drivers/cbus/retu-rtc.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/retu-rtc.c	2010-11-05 17:04:49.001997921 +0100
++++ linux-2.6.37/drivers/cbus/retu-rtc.c	2011-01-27 14:17:39.086000008 +0100
 @@ -0,0 +1,477 @@
 +/**
 + * drivers/cbus/retu-rtc.c
@@ -2008,10 +2008,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-rtc.c
 +MODULE_DESCRIPTION("Retu RTC");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Paul Mundt and Igor Stoppa");
-Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
+Index: linux-2.6.37/drivers/cbus/retu-user.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/retu-user.c	2010-11-05 17:04:49.002997987 +0100
++++ linux-2.6.37/drivers/cbus/retu-user.c	2011-01-27 14:17:39.086000008 +0100
 @@ -0,0 +1,424 @@
 +/**
 + * drivers/cbus/retu-user.c
@@ -2437,10 +2437,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
 +MODULE_DESCRIPTION("Retu ASIC user space functions");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Mikko Ylinen");
-Index: linux-2.6.37-rc1/drivers/cbus/retu-wdt.c
+Index: linux-2.6.37/drivers/cbus/retu-wdt.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/retu-wdt.c	2010-11-05 17:04:49.002997987 +0100
++++ linux-2.6.37/drivers/cbus/retu-wdt.c	2011-01-27 14:17:39.086000008 +0100
 @@ -0,0 +1,387 @@
 +/**
 + * drivers/cbus/retu-wdt.c
@@ -2829,10 +2829,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-wdt.c
 +MODULE_AUTHOR("Amit Kucheria");
 +MODULE_LICENSE("GPL");
 +
-Index: linux-2.6.37-rc1/drivers/cbus/tahvo.c
+Index: linux-2.6.37/drivers/cbus/tahvo.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/tahvo.c	2010-11-05 17:04:49.002997987 +0100
++++ linux-2.6.37/drivers/cbus/tahvo.c	2011-01-27 14:17:39.086000008 +0100
 @@ -0,0 +1,443 @@
 +/**
 + * drivers/cbus/tahvo.c
@@ -3277,10 +3277,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo.c
 +MODULE_DESCRIPTION("Tahvo ASIC control");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä, David Weinehall, and Mikko Ylinen");
-Index: linux-2.6.37-rc1/drivers/cbus/tahvo.h
+Index: linux-2.6.37/drivers/cbus/tahvo.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/tahvo.h	2010-11-05 17:04:49.002997987 +0100
++++ linux-2.6.37/drivers/cbus/tahvo.h	2011-01-27 14:17:39.086000008 +0100
 @@ -0,0 +1,61 @@
 +/*
 + * drivers/cbus/tahvo.h
@@ -3343,10 +3343,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo.h
 +extern spinlock_t tahvo_lock;
 +
 +#endif /* __DRIVERS_CBUS_TAHVO_H */
-Index: linux-2.6.37-rc1/drivers/cbus/tahvo-usb.c
+Index: linux-2.6.37/drivers/cbus/tahvo-usb.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/tahvo-usb.c	2010-11-05 17:04:49.002997987 +0100
++++ linux-2.6.37/drivers/cbus/tahvo-usb.c	2011-01-27 14:17:39.087000008 +0100
 @@ -0,0 +1,788 @@
 +/**
 + * drivers/cbus/tahvo-usb.c
@@ -4136,10 +4136,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo-usb.c
 +MODULE_DESCRIPTION("Tahvo USB OTG Transceiver Driver");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä, Tony Lindgren, and Timo Teräs");
-Index: linux-2.6.37-rc1/drivers/cbus/tahvo-user.c
+Index: linux-2.6.37/drivers/cbus/tahvo-user.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/tahvo-user.c	2010-11-05 17:04:49.003998052 +0100
++++ linux-2.6.37/drivers/cbus/tahvo-user.c	2011-01-27 14:17:39.087000008 +0100
 @@ -0,0 +1,406 @@
 +/**
 + * drivers/cbus/tahvo-user.c
@@ -4547,10 +4547,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo-user.c
 +MODULE_DESCRIPTION("Tahvo ASIC user space functions");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Mikko Ylinen");
-Index: linux-2.6.37-rc1/drivers/cbus/user_retu_tahvo.h
+Index: linux-2.6.37/drivers/cbus/user_retu_tahvo.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/user_retu_tahvo.h	2010-11-05 17:04:49.003998052 +0100
++++ linux-2.6.37/drivers/cbus/user_retu_tahvo.h	2011-01-27 14:17:39.087000008 +0100
 @@ -0,0 +1,75 @@
 +/**
 + * drivers/cbus/user_retu_tahvo.h
@@ -4627,11 +4627,11 @@ Index: linux-2.6.37-rc1/drivers/cbus/user_retu_tahvo.h
 +};
 +
 +#endif
-Index: linux-2.6.37-rc1/drivers/Makefile
+Index: linux-2.6.37/drivers/Makefile
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/Makefile	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/drivers/Makefile	2010-11-05 17:04:49.003998052 +0100
-@@ -73,7 +73,7 @@
+--- linux-2.6.37.orig/drivers/Makefile	2011-01-27 14:17:04.232000007 +0100
++++ linux-2.6.37/drivers/Makefile	2011-01-27 14:17:39.087000008 +0100
+@@ -74,7 +74,7 @@
  obj-$(CONFIG_INPUT)		+= input/
  obj-$(CONFIG_I2O)		+= message/
  obj-$(CONFIG_RTC_LIB)		+= rtc/
@@ -4640,10 +4640,10 @@ Index: linux-2.6.37-rc1/drivers/Makefile
  obj-$(CONFIG_PPS)		+= pps/
  obj-$(CONFIG_W1)		+= w1/
  obj-$(CONFIG_POWER_SUPPLY)	+= power/
-Index: linux-2.6.37-rc1/arch/arm/Kconfig
+Index: linux-2.6.37/arch/arm/Kconfig
 ===================================================================
---- linux-2.6.37-rc1.orig/arch/arm/Kconfig	2010-11-01 12:54:12.000000000 +0100
-+++ linux-2.6.37-rc1/arch/arm/Kconfig	2010-11-05 17:04:49.003998052 +0100
+--- linux-2.6.37.orig/arch/arm/Kconfig	2011-01-27 14:17:04.178000007 +0100
++++ linux-2.6.37/arch/arm/Kconfig	2011-01-27 14:17:39.087000008 +0100
 @@ -1850,6 +1850,10 @@
  
  source "drivers/Kconfig"

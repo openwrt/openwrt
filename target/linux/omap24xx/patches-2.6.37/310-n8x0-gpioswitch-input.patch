@@ -2,11 +2,11 @@
  arch/arm/mach-omap2/board-n8x0.c |   73 +++++++++++++++++++++++++++++++++++++++
  1 file changed, 73 insertions(+)
 
-Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c
+Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-2.6.37-rc1.orig/arch/arm/mach-omap2/board-n8x0.c	2010-11-05 17:03:59.354999895 +0100
-+++ linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c	2010-11-05 17:04:41.040001926 +0100
-@@ -794,6 +794,77 @@
+--- linux-2.6.37.orig/arch/arm/mach-omap2/board-n8x0.c	2011-01-27 14:17:29.132000007 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c	2011-01-27 14:17:32.763000006 +0100
+@@ -789,6 +789,77 @@
  
  extern void n8x0_usb_init(void);
  
@@ -84,7 +84,7 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c
  static struct omap_gpio_switch n8x0_gpio_switches[] __initdata = {
  	{
  		.name			= "headphone",
-@@ -815,11 +886,13 @@
+@@ -810,11 +881,13 @@
  		.gpio			= -1,
  		.debounce_rising	= 200,
  		.debounce_falling	= 200,
