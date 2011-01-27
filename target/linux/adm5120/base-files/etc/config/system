@@ -1,0 +1,37 @@
+config system
+	option hostname	OpenWrt
+	option timezone	UTC
+
+config rdate
+	option interface	wan
+
+config led
+	option sysfs		lan1
+	option trigger		port_state
+	option port_state	link_act
+
+config led
+	option sysfs		lan2
+	option trigger		port_state
+	option port_state	link_act
+
+config led
+	option sysfs		lan3
+	option trigger		port_state
+	option port_state	link_act
+
+config led
+	option sysfs		lan4
+	option trigger		port_state
+	option port_state	link_act
+
+config led
+	option sysfs		wan
+	option trigger		port_state
+	option port_state	link_act
+
+config led
+	option sysfs		wlan
+	option trigger		netdev
+	option dev		wlan0
+
