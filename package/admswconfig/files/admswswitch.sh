@@ -4,7 +4,9 @@
 setup_switch_vlan() {
 	config_get ports "$CONFIG_SECTION" "eth$1"
 	ports=`echo "$ports"| sed s/" "/""/g`
+	ifconfig eth$1 down
 	admswconfig eth$1 ${ports}c
+	ifconfig eth$1 up
 }
 
 setup_switch() {
