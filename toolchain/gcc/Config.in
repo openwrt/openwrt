@@ -8,8 +8,7 @@ choice
 	default GCC_VERSION_4_3_3_CS if (mips || mipsel) && !(TARGET_octeon || TARGET_sibyte)
 	default GCC_VERSION_4_4_5 if (powerpc || ubicom32)
 	default GCC_VERSION_4_4_5 if (TARGET_omap35xx || TARGET_octeon || TARGET_sibyte)
-	default GCC_VERSION_4_5_1_LINARO if sparc
-	default GCC_VERSION_4_1_2
+	default GCC_VERSION_4_5_1_LINARO
 	help
 	  Select the version of gcc you wish to use.
 
