@@ -1,9 +1,0 @@
---- a/gcc/config/cris/t-linux
-+++ b/gcc/config/cris/t-linux
-@@ -1,6 +1,2 @@
- TARGET_LIBGCC2_CFLAGS += -fPIC
- CRTSTUFF_T_CFLAGS_S = $(TARGET_LIBGCC2_CFLAGS)
--
--# We *know* we have a limits.h in the glibc library, with extra
--# definitions needed for e.g. libgfortran.
--LIMITS_H_TEST = :
