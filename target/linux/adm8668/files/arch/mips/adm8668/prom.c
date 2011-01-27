@@ -96,7 +96,7 @@ void __init prom_setup_cmdline(void)
 		prom_argv[i] = (char *)KSEG0ADDR(prom_argv[i]);
 
 		/* default bootargs has "console=/dev/ttyS0" yet console won't
-		 * show up at all if you do this ... */
+		 * show up at all if you include the '/dev/' nowadays ... */
 		if (match_tag(prom_argv[i], "console=/dev/")) {
 			char *ptr = prom_argv[i] + strlen("console=/dev/");
 
@@ -128,7 +128,6 @@ void __init prom_init(void)
 
 	memsize = bd->bi_memsize;
 	printk("Board info:\n");
-	printk("  Board ID: %#lx\n", bd->bi_arch_number);
 	printk("  RAM size: %d MB\n", (int)memsize/(1024*1024));
 	printk("  NOR start: %#lx\n", bd->bi_flashstart);
 	printk("  NOR size: %#lx\n", bd->bi_flashsize);
