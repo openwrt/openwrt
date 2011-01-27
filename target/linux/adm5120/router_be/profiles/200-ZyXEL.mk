@@ -7,7 +7,7 @@
 
 define Profile/P334WT
 	NAME:=ZyXEL Prestige 334WT
-	PACKAGES:=kmod-acx
+	PACKAGES:=kmod-acx-mac80211
 endef
 
 define Profile/P334WT/Description
@@ -16,7 +16,7 @@ endef
 
 define Profile/P335WT
 	NAME:=ZyXEL Prestige 335WT
-	PACKAGES:=kmod-acx kmod-usb-core kmod-usb-adm5120
+	PACKAGES:=kmod-acx-mac80211 kmod-usb-core kmod-usb-adm5120
 endef
 
 define Profile/P335WT/Description
