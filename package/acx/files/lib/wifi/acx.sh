@@ -173,7 +173,7 @@ enable_acx() {
 		first=0
 	done
 	
-	echo 1 >/sys/class/leds/wifi/brightness
+	echo 1 >/sys/class/leds/wifi/brightness || :
 }
 
 
