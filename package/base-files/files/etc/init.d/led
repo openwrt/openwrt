@@ -23,6 +23,7 @@ load_led() {
 	config_get delayon $1 delayon
 	config_get delayoff $1 delayoff
 	config_get interval $1 interval "50"
+	config_get port_state $1 port_state
 
 	[ -e /sys/class/leds/${sysfs}/brightness ] && {
 		echo "setting up led ${name}"
@@ -44,6 +45,9 @@ load_led() {
 		[ "$trigger" == "usbdev" -a -n "$dev" ] && {
 			echo $dev > /sys/class/leds/${sysfs}/device_name
 			echo $interval > /sys/class/leds/${sysfs}/activity_interval
+		}
+		[ "$trigger" == "port_state" -a -n "$port_state" ] && {
+			echo $port_state > /sys/class/leds/${sysfs}/port_state
 		}
 	}
 }
