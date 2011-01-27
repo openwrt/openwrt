@@ -16,11 +16,14 @@ define Image/Prepare
 	$(MAKE) -C lzma-loader \
 		KDIR="$(KDIR)" \
 		clean compile
+	rm -f $(KDIR)/fs_mark
+	touch $(KDIR)/fs_mark
+	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
 
 define Image/Build
 	./my-mkimage $(KDIR)/loader.bin $(KDIR)/root.squashfs	\
-		$(BIN_DIR)/$(IMG_PREFIX)-$(1).bin
+		$(KDIR)/fs_mark $(BIN_DIR)/$(IMG_PREFIX)-$(1).bin
 endef
 
 $(eval $(call BuildImage))
