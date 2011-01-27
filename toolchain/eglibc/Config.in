@@ -22,11 +22,11 @@ choice
 
 	config EGLIBC_VERSION_2_11
 		bool "eglibc 2.11"
-		depends GCC_VERSION_4_3 || GCC_VERSION_4_4 || GCC_VERSION_4_5
+		depends !GCC_VERSION_LLVM
 
 	config EGLIBC_VERSION_2_12
 		bool "eglibc 2.12"
-		depends GCC_VERSION_4_3 || GCC_VERSION_4_4 || GCC_VERSION_4_5
+		depends !GCC_VERSION_LLVM
 
 	config EGLIBC_VERSION_TRUNK
 		bool "eglibc trunk"

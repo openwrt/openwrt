@@ -10,8 +10,8 @@ curdir:=tools
 
 # subdirectories to descend into
 tools-y :=
-ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
-tools-$(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5) += gmp mpfr
+ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN)$(CONFIG_GCC_LLVM),)
+tools-y += gmp mpfr
 tools-$(CONFIG_GCC_VERSION_4_5) += mpc libelf
 endif
 tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
@@ -107,5 +107,5 @@ $(curdir)//compile = $(STAGING_DIR)/.prepared $(STAGING_DIR_HOST)/.prepared $($(
 $(curdir)/ := .config prereq
 $(curdir)//install = $(1)/compile
 
-$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_3 CONFIG_GCC_USE_GRAPHITE CONFIG_TARGET_orion_generic))
+$(eval $(call stampfile,$(curdir),tools,install,,CONFIG_CCACHE CONFIG_powerpc CONFIG_GCC_VERSION_4_5 CONFIG_GCC_USE_GRAPHITE CONFIG_TARGET_orion_generic))
 $(eval $(call subdir,$(curdir)))
