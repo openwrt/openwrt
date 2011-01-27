@@ -239,8 +239,8 @@ enable_mac80211() {
 	config_get txpower "$device" txpower
 	config_get country "$device" country
 	config_get distance "$device" distance
-	config_get txantenna "$device" txantenna
-	config_get rxantenna "$device" rxantenna
+	config_get txantenna "$device" txantenna all
+	config_get rxantenna "$device" rxantenna all
 	config_get frag "$device" frag
 	config_get rts "$device" rts
 	find_mac80211_phy "$device" || return 0
@@ -256,8 +256,7 @@ enable_mac80211() {
 		fixed=1
 	}
 
-	local antspec="${txantenna:+$txantenna }$rxantenna"
-	iw phy "$phy" set antenna ${antspec:-all}
+	iw phy "$phy" set antenna "$txantenna $rxantenna"
 
 	[ -n "$distance" ] && iw phy "$phy" set distance "$distance"
 	[ -n "$frag" ] && iw phy "$phy" set frag "${frag%%.*}"
