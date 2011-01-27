@@ -52,11 +52,11 @@ fw_load_rule() {
 	fw_get_negation src_spec '-s' "${rule_src_ip:+$rule_src_ip/$rule_src_ip_prefixlen}"
 	fw_get_negation dest_spec '-d' "${rule_dest_ip:+$rule_dest_ip/$rule_dest_ip_prefixlen}"
 
-	local rule_pos
-	eval 'rule_pos=$((++FW__RULE_COUNT_'${mode#G}'_'$chain'))'
-
 	[ "$rule_proto" == "tcpudp" ] && rule_proto="tcp udp"
 	for rule_proto in $rule_proto; do
+		local rule_pos
+		eval 'rule_pos=$((++FW__RULE_COUNT_'${mode#G}'_'$chain'))'
+
 		fw add $mode $table $chain $target $rule_pos { $rule_src_ip $rule_dest_ip } { \
 			$src_spec $dest_spec \
 			${rule_proto:+-p $rule_proto} \
