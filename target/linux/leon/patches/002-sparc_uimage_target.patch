@@ -73,7 +73,7 @@ Subject: [PATCH] SPARC: added U-Boot build target: uImage
 +targets += uImage
 +$(obj)/uImage: $(obj)/image.gz
 +	$(call if_changed,uimage)
-+	sparc-linux-ld -Tdata $(UIMAGE_FLASHADDR) -r -b binary arch/sparc/boot/uImage -o arch/sparc/boot/uImage.o
++	$(LD) -Tdata $(UIMAGE_FLASHADDR) -r -b binary arch/sparc/boot/uImage -o arch/sparc/boot/uImage.o
 +	@echo '  Image $@ is ready'
 +
 +endif
