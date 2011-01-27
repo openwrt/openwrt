@@ -48,12 +48,6 @@ else
   PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
   PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-  ifeq ($(PKG_VERSION),4.1.2)
-    PKG_MD5SUM:=a4a3eb15c96030906d8494959eeda23c
-  endif
-  ifeq ($(PKG_VERSION),4.2.4)
-    PKG_MD5SUM:=d79f553e7916ea21c556329eacfeaa16
-  endif
   ifeq ($(PKG_VERSION),4.3.3)
     PKG_MD5SUM:=cc3c5565fdb9ab87a05ddb106ba0bd1f
   endif
@@ -126,7 +120,7 @@ ifneq ($(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5),)
   endif
 endif
 
-ifneq ($(CONFIG_GCC_VERSION_4_3)$(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5),)
+ifeq ($(CONFIG_GCC_LLVM),)
   GCC_BUILD_TARGET_LIBGCC:=y
   GCC_CONFIGURE+= \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
