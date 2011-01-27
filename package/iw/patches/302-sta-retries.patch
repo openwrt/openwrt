@@ -7,11 +7,9 @@ Signed-off-by: Bruno Randolf <br1@einfach.org>
  station.c |    8 ++++++++
  1 files changed, 8 insertions(+), 0 deletions(-)
 
-diff --git a/station.c b/station.c
-index 8cf038d..7639553 100644
 --- a/station.c
 +++ b/station.c
-@@ -48,6 +48,8 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
+@@ -48,6 +48,8 @@ static int print_sta_handler(struct nl_m
  		[NL80211_STA_INFO_LLID] = { .type = NLA_U16 },
  		[NL80211_STA_INFO_PLID] = { .type = NLA_U16 },
  		[NL80211_STA_INFO_PLINK_STATE] = { .type = NLA_U8 },
@@ -20,7 +18,7 @@ index 8cf038d..7639553 100644
  	};
  
  	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
-@@ -96,6 +98,12 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
+@@ -96,6 +98,12 @@ static int print_sta_handler(struct nl_m
  	if (sinfo[NL80211_STA_INFO_TX_PACKETS])
  		printf("\n\ttx packets:\t%u",
  			nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]));
