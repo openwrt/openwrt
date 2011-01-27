@@ -1,0 +1,23 @@
+From 417bc6751fdd3c24df274f25e020ec3decd09280 Mon Sep 17 00:00:00 2001
+From: Daniel Hellstrom <daniel@gaisler.com>
+Date: Thu, 16 Sep 2010 11:00:46 +0200
+Subject: [PATCH] Fixed SPARC/LEON SMP CPU Stuck problem.
+
+Signed-off-by: Daniel Hellstrom <daniel@gaisler.com>
+---
+ arch/sparc/kernel/leon_smp.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/sparc/kernel/leon_smp.c
++++ b/arch/sparc/kernel/leon_smp.c
+@@ -56,8 +56,8 @@ void __init leon_configure_cache_smp(voi
+ static inline unsigned long do_swap(volatile unsigned long *ptr,
+ 				    unsigned long val)
+ {
+-	__asm__ __volatile__("swapa [%1] %2, %0\n\t" : "=&r"(val)
+-			     : "r"(ptr), "i"(ASI_LEON_DCACHE_MISS)
++	__asm__ __volatile__("swapa [%2] %3, %0\n\t" : "=&r"(val)
++			     : "0"(val), "r"(ptr), "i"(ASI_LEON_DCACHE_MISS)
+ 			     : "memory");
+ 	return val;
+ }

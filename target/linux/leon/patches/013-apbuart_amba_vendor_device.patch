@@ -1,0 +1,22 @@
+From 1c14b8995c1b8212180b5009dc04ac222a449ecb Mon Sep 17 00:00:00 2001
+From: Daniel Hellstrom <daniel@gaisler.com>
+Date: Thu, 21 Oct 2010 14:35:09 +0200
+Subject: [PATCH] APBUART: added raw AMBA vendor/device number to match against.
+
+Signed-off-by: Daniel Hellstrom <daniel@gaisler.com>
+---
+ drivers/serial/apbuart.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+--- a/drivers/serial/apbuart.c
++++ b/drivers/serial/apbuart.c
+@@ -580,6 +580,9 @@ static struct of_device_id __initdata ap
+ 	{
+ 	 .name = "GAISLER_APBUART",
+ 	 },
++	{
++	 .name = "01_00c",
++	 },
+ 	{},
+ };
+ 
