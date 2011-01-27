@@ -1,0 +1,34 @@
+From 6216bc809c5bdd586b14d096fbaf6dc25574b928 Mon Sep 17 00:00:00 2001
+From: Daniel Hellstrom <daniel@gaisler.com>
+Date: Wed, 1 Dec 2010 09:59:14 +0100
+Subject: [PATCH] GRETH: fix opening/closing
+
+When NAPI is disabled there is no point in having IRQs enabled, TX/RX
+should be off before clearing the TX/RX descriptor rings.
+
+Signed-off-by: Daniel Hellstrom <daniel@gaisler.com>
+---
+ drivers/net/greth.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+--- a/drivers/net/greth.c
++++ b/drivers/net/greth.c
+@@ -365,6 +365,8 @@ static int greth_open(struct net_device
+ 		dev_dbg(&dev->dev, " starting queue\n");
+ 	netif_start_queue(dev);
+ 
++	GRETH_REGSAVE(greth->regs->status, 0xFF);
++
+ 	napi_enable(&greth->napi);
+ 
+ 	greth_enable_irqs(greth);
+@@ -380,7 +382,9 @@ static int greth_close(struct net_device
+ 
+ 	napi_disable(&greth->napi);
+ 
++	greth_disable_irqs(greth);
+ 	greth_disable_tx(greth);
++	greth_disable_rx(greth);
+ 
+ 	netif_stop_queue(dev);
+ 

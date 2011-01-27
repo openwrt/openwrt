@@ -1,0 +1,61 @@
+From 544631281bed5cc37b8f2d3a99f44c9d4b97f9a8 Mon Sep 17 00:00:00 2001
+From: Daniel Hellstrom <daniel@gaisler.com>
+Date: Wed, 1 Dec 2010 10:07:12 +0100
+Subject: [PATCH] GRETH: GBit transmit descriptor handling optimization
+
+It is safe to enable all fragments before enabling the first descriptor,
+this way all descriptors don't have to be processed twice, added extra
+memory barrier.
+
+Signed-off-by: Daniel Hellstrom <daniel@gaisler.com>
+---
+ drivers/net/greth.c |   19 ++++++++++---------
+ 1 files changed, 10 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/greth.c
++++ b/drivers/net/greth.c
+@@ -512,7 +512,7 @@ greth_start_xmit_gbit(struct sk_buff *sk
+ 		greth->tx_skbuff[curr_tx] = NULL;
+ 		bdp = greth->tx_bd_base + curr_tx;
+ 
+-		status = GRETH_TXBD_CSALL;
++		status = GRETH_TXBD_CSALL | GRETH_BD_EN;
+ 		status |= frag->size & GRETH_BD_LEN;
+ 
+ 		/* Wrap around descriptor ring */
+@@ -549,26 +549,27 @@ greth_start_xmit_gbit(struct sk_buff *sk
+ 
+ 	wmb();
+ 
+-	/* Enable the descriptors that we configured ...  */
+-	for (i = 0; i < nr_frags + 1; i++) {
+-		bdp = greth->tx_bd_base + greth->tx_next;
+-		greth_write_bd(&bdp->stat, greth_read_bd(&bdp->stat) | GRETH_BD_EN);
+-		greth->tx_next = NEXT_TX(greth->tx_next);
+-		greth->tx_free--;
+-	}
++	/* Enable the descriptor chain by enabling the first descriptor */
++	bdp = greth->tx_bd_base + greth->tx_next;
++	greth_write_bd(&bdp->stat, greth_read_bd(&bdp->stat) | GRETH_BD_EN);
++	greth->tx_next = curr_tx;
++	greth->tx_free -= nr_frags + 1;
++
++	wmb();
+ 
+ 	greth_enable_tx(greth);
+ 
+ 	return NETDEV_TX_OK;
+ 
+ frag_map_error:
+-	/* Unmap SKB mappings that succeeded */
++	/* Unmap SKB mappings that succeeded and disable descriptor */
+ 	for (i = 0; greth->tx_next + i != curr_tx; i++) {
+ 		bdp = greth->tx_bd_base + greth->tx_next + i;
+ 		dma_unmap_single(greth->dev,
+ 				 greth_read_bd(&bdp->addr),
+ 				 greth_read_bd(&bdp->stat) & GRETH_BD_LEN,
+ 				 DMA_TO_DEVICE);
++		greth_write_bd(&bdp->stat, 0);
+ 	}
+ map_error:
+ 	if (net_ratelimit())

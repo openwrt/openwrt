@@ -1,0 +1,187 @@
+From 300f3ee36c3019ee36f81befd91cd1b32544cefe Mon Sep 17 00:00:00 2001
+From: Daniel Hellstrom <daniel@gaisler.com>
+Date: Wed, 22 Sep 2010 15:39:05 +0200
+Subject: [PATCH] SPARC/LEON: Removed the need for two timers, per-cpu ticker is shared with system clock timer.
+
+Signed-off-by: Daniel Hellstrom <daniel@gaisler.com>
+---
+ arch/sparc/include/asm/leon.h      |    2 +-
+ arch/sparc/include/asm/leon_amba.h |    3 +-
+ arch/sparc/kernel/entry.S          |    3 +-
+ arch/sparc/kernel/leon_kernel.c    |   37 ++++++++---------------------------
+ arch/sparc/kernel/leon_smp.c       |    8 ++++++-
+ 5 files changed, 21 insertions(+), 32 deletions(-)
+
+--- a/arch/sparc/include/asm/leon.h
++++ b/arch/sparc/include/asm/leon.h
+@@ -240,7 +240,7 @@ static inline int sparc_leon3_cpuid(void
+ 
+ #ifdef CONFIG_SMP
+ # define LEON3_IRQ_RESCHEDULE		13
+-# define LEON3_IRQ_TICKER		(leon_percpu_timer_dev[0].irq)
++# define LEON3_IRQ_TICKER		(leon3_gptimer_irq + leon3_gptimer_idx)
+ # define LEON3_IRQ_CROSS_CALL		15
+ #endif
+ 
+--- a/arch/sparc/include/asm/leon_amba.h
++++ b/arch/sparc/include/asm/leon_amba.h
+@@ -182,11 +182,12 @@ void _amba_init(struct device_node *dp,
+ 
+ extern struct leon3_irqctrl_regs_map *leon3_irqctrl_regs;
+ extern struct leon3_gptimer_regs_map *leon3_gptimer_regs;
+-extern struct amba_apb_device leon_percpu_timer_dev[16];
+ extern int leondebug_irq_disable;
+ extern int leon_debug_irqout;
+ extern unsigned long leon3_gptimer_irq;
++extern unsigned long leon3_gptimer_idx; /* Timer Index (starting at 0) with Timer Core */
+ extern unsigned int sparc_leon_eirq;
++extern unsigned long leon3_cpu_idx;
+ 
+ #endif /* __ASSEMBLY__ */
+ 
+--- a/arch/sparc/kernel/entry.S
++++ b/arch/sparc/kernel/entry.S
+@@ -411,8 +411,9 @@ smpleon_ticker:
+ 	WRITE_PAUSE
+ 	wr	%g2, PSR_ET, %psr
+ 	WRITE_PAUSE
++	mov	%l7, %o0		! irq level
+ 	call	leon_percpu_timer_interrupt
+-	 add	%sp, STACKFRAME_SZ, %o0
++	 add	%sp, STACKFRAME_SZ, %o1 ! pt_regs
+ 	wr	%l0, PSR_ET, %psr
+ 	WRITE_PAUSE
+ 	RESTORE_ALL
+--- a/arch/sparc/kernel/leon_kernel.c
++++ b/arch/sparc/kernel/leon_kernel.c
+@@ -25,7 +25,6 @@
+ 
+ struct leon3_irqctrl_regs_map *leon3_irqctrl_regs = NULL; /* interrupt controller base address, initialized by amba_init() */
+ struct leon3_gptimer_regs_map *leon3_gptimer_regs = NULL; /* timer controller base address, initialized by amba_init() */
+-struct amba_apb_device leon_percpu_timer_dev[16];
+ 
+ int leondebug_irq_disable;
+ int leon_debug_irqout;
+@@ -34,6 +33,7 @@ static int dummy_master_l10_counter;
+ unsigned long leon3_gptimer_irq = 0; /* interrupt controller irq number, initialized by amba_init() */
+ unsigned long leon3_gptimer_idx = 0; /* Timer Index (starting at 0) with Timer Core */
+ unsigned int sparc_leon_eirq;
++unsigned long leon3_cpu_idx = 0; /* Boot CPU Index */
+ #define LEON_IMASK ((&leon3_irqctrl_regs->mask[0]))
+ 
+ /* Return the IRQ of the pending IRQ on the extended IRQ controller */
+@@ -109,13 +109,14 @@ void __init leon_init_timers(irq_handler
+ 	struct device_node *rootnp, *np;
+ 	struct property *pp;
+ 	int len;
+-	int cpu, icsel;
++	int icsel;
+ 	int ampopts;
+ 
+ 	leondebug_irq_disable = 0;
+ 	leon_debug_irqout = 0;
+ 	master_l10_counter = (unsigned int *)&dummy_master_l10_counter;
+ 	dummy_master_l10_counter = 0;
++	leon3_cpu_idx = sparc_leon3_cpuid();
+ 
+ 	/* Find IRQMP IRQ Controller Registers base address otherwise bail out. */
+ 	rootnp = of_find_node_by_path("/ambapp0");
+@@ -152,21 +153,11 @@ void __init leon_init_timers(irq_handler
+ 				      (((1000000 / HZ) - 1)));
+ 		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx].ctrl, 0);
+ 
+-#ifdef CONFIG_SMP
+-		leon_percpu_timer_dev[0].start = (int)leon3_gptimer_regs;
+-		leon_percpu_timer_dev[0].irq = leon3_gptimer_irq+1+leon3_gptimer_idx;
+-
+ 		if (!(LEON3_BYPASS_LOAD_PA(&leon3_gptimer_regs->config) &
+ 		      (1<<LEON3_GPTIMER_SEPIRQ))) {
+-			prom_printf("irq timer not configured with separate irqs\n");
+-			BUG();
++			prom_printf("LEON-SMP: GPTIMER use shared irqs, using other timers will fail.\n");
+ 		}
+ 
+-		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx+1].val, 0);
+-		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx+1].rld, (((1000000 / HZ) - 1)));
+-		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx+1].ctrl, 0);
+-# endif
+-
+ 		/* The IRQ controller may (if implemented) consist of multiple
+ 		 * IRQ controllers, each mapped on a 4Kb boundary.
+ 		 * Each CPU may be routed to different IRQCTRLs, however
+@@ -175,9 +166,8 @@ void __init leon_init_timers(irq_handler
+ 		 * accessed anyway.
+ 		 * In AMP systems, Linux may not be run on CPU0.
+ 		 */
+-		cpu = sparc_leon3_cpuid();
+-		icsel = LEON3_BYPASS_LOAD_PA(&leon3_irqctrl_regs->icsel[cpu/8]);
+-		icsel = (icsel >> ((7 - (cpu&0x7)) * 4)) & 0xf;
++		icsel = LEON3_BYPASS_LOAD_PA(&leon3_irqctrl_regs->icsel[leon3_cpu_idx/8]);
++		icsel = (icsel >> ((7 - (leon3_cpu_idx & 0x7)) * 4)) & 0xf;
+ 		leon3_irqctrl_regs += icsel;
+ 
+ 		LEON3_BYPASS_STORE_PA(&(leon3_irqctrl_regs->mask[0]), 0);
+@@ -204,7 +194,8 @@ void __init leon_init_timers(irq_handler
+ # ifdef CONFIG_SMP
+ 	{
+ 		unsigned long flags;
+-		struct tt_entry *trap_table = &sparc_ttable[SP_TRAP_IRQ1 + (leon_percpu_timer_dev[0].irq - 1)];
++		struct tt_entry *trap_table = &sparc_ttable[SP_TRAP_IRQ1 + 
++						(leon3_gptimer_irq + leon3_gptimer_idx - 1)];
+ 
+ 		/* For SMP we use the level 14 ticker, however the bootup code
+ 		 * has copied the firmwares level 14 vector into boot cpu's
+@@ -222,21 +213,11 @@ void __init leon_init_timers(irq_handler
+ 	}
+ # endif
+ 
+-	if (leon3_gptimer_regs) {
+-		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx].ctrl,
++	LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx].ctrl,
+ 				      LEON3_GPTIMER_EN |
+ 				      LEON3_GPTIMER_RL |
+ 				      LEON3_GPTIMER_LD | LEON3_GPTIMER_IRQEN);
+ 
+-#ifdef CONFIG_SMP
+-		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx+1].ctrl,
+-				      LEON3_GPTIMER_EN |
+-				      LEON3_GPTIMER_RL |
+-				      LEON3_GPTIMER_LD |
+-				      LEON3_GPTIMER_IRQEN);
+-#endif
+-
+-	}
+ }
+ 
+ void leon_clear_clock_irq(void)
+--- a/arch/sparc/kernel/leon_smp.c
++++ b/arch/sparc/kernel/leon_smp.c
+@@ -52,6 +52,7 @@ extern volatile unsigned long cpu_callin
+ extern unsigned char boot_cpu_id;
+ extern cpumask_t smp_commenced_mask;
+ void __init leon_configure_cache_smp(void);
++extern void handler_irq(int irq, struct pt_regs * regs);
+ 
+ static inline unsigned long do_swap(volatile unsigned long *ptr,
+ 				    unsigned long val)
+@@ -385,7 +386,7 @@ void leon_cross_call_irq(void)
+ 	ccall_info.processors_out[i] = 1;
+ }
+ 
+-void leon_percpu_timer_interrupt(struct pt_regs *regs)
++void leon_percpu_timer_interrupt(int irq, struct pt_regs *regs)
+ {
+ 	struct pt_regs *old_regs;
+ 	int cpu = smp_processor_id();
+@@ -406,6 +407,11 @@ void leon_percpu_timer_interrupt(struct
+ 		prof_counter(cpu) = prof_multiplier(cpu);
+ 	}
+ 	set_irq_regs(old_regs);
++
++	if ( cpu == leon3_cpu_idx ) {
++		/* Ticker Clock is shared with the System Clock */
++		handler_irq(irq, regs);
++	}
+ }
+ 
+ static void __init smp_setup_percpu_timer(void)

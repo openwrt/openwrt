@@ -1,0 +1,21 @@
+From 3d7788e8f5ae3d44e48f9b7476528acf3d9c8b32 Mon Sep 17 00:00:00 2001
+From: Daniel Hellstrom <daniel@gaisler.com>
+Date: Wed, 20 Oct 2010 17:07:12 +0200
+Subject: [PATCH] GRETH: Fixed potential future problem where unhandled IRQ is cleared.
+
+Signed-off-by: Daniel Hellstrom <daniel@gaisler.com>
+---
+ drivers/net/greth.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/drivers/net/greth.c
++++ b/drivers/net/greth.c
+@@ -584,7 +584,7 @@ static irqreturn_t greth_interrupt(int i
+ 	if (status & (GRETH_INT_RX | GRETH_INT_TX)) {
+ 
+ 		/* Clear interrupt status */
+-		GRETH_REGORIN(greth->regs->status,
++		GRETH_REGSAVE(greth->regs->status,
+ 			      status & (GRETH_INT_RX | GRETH_INT_TX));
+ 
+ 		retval = IRQ_HANDLED;

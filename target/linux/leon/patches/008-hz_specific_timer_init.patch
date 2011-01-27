@@ -1,0 +1,30 @@
+From e4d697dad4d43109f045a4f25cb1d706122045c0 Mon Sep 17 00:00:00 2001
+From: Daniel Hellstrom <daniel@gaisler.com>
+Date: Wed, 22 Sep 2010 13:24:36 +0200
+Subject: [PATCH] SPARC/LEON: removed constant timer initialization as if HZ=100, now it reflects the value of HZ
+
+Signed-off-by: Daniel Hellstrom <daniel@gaisler.com>
+---
+ arch/sparc/kernel/leon_kernel.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/sparc/kernel/leon_kernel.c
++++ b/arch/sparc/kernel/leon_kernel.c
+@@ -149,7 +149,7 @@ void __init leon_init_timers(irq_handler
+ 	if (leon3_gptimer_regs && leon3_irqctrl_regs && leon3_gptimer_irq) {
+ 		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx].val, 0);
+ 		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx].rld,
+-				      (((1000000 / 100) - 1)));
++				      (((1000000 / HZ) - 1)));
+ 		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx].ctrl, 0);
+ 
+ #ifdef CONFIG_SMP
+@@ -163,7 +163,7 @@ void __init leon_init_timers(irq_handler
+ 		}
+ 
+ 		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx+1].val, 0);
+-		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx+1].rld, (((1000000/100) - 1)));
++		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx+1].rld, (((1000000 / HZ) - 1)));
+ 		LEON3_BYPASS_STORE_PA(&leon3_gptimer_regs->e[leon3_gptimer_idx+1].ctrl, 0);
+ # endif
+ 

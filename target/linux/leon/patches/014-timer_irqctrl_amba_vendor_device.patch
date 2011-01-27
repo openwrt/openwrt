@@ -1,0 +1,32 @@
+From 12782c44d0c687b5b0400a8224a9b1bf9eb9a428 Mon Sep 17 00:00:00 2001
+From: Daniel Hellstrom <daniel@gaisler.com>
+Date: Tue, 26 Oct 2010 09:59:05 +0200
+Subject: [PATCH] TIMER,IRQCTRL: added raw AMBA vendor/device number to match against.
+
+Signed-off-by: Daniel Hellstrom <daniel@gaisler.com>
+---
+ arch/sparc/kernel/leon_kernel.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+--- a/arch/sparc/kernel/leon_kernel.c
++++ b/arch/sparc/kernel/leon_kernel.c
+@@ -120,7 +120,8 @@ void __init leon_init_timers(irq_handler
+ 
+ 	/* Find IRQMP IRQ Controller Registers base address otherwise bail out. */
+ 	rootnp = of_find_node_by_path("/ambapp0");
+-	if (rootnp && (np=of_find_node_by_name(rootnp, "GAISLER_IRQMP"))) {
++	if (rootnp && ((np=of_find_node_by_name(rootnp, "GAISLER_IRQMP")) ||
++			(np=of_find_node_by_name(rootnp, "01_00d")))) {
+ 		pp = of_find_property(np, "reg", &len);
+ 		if (pp)
+ 			leon3_irqctrl_regs = *(struct leon3_irqctrl_regs_map **)pp->value;
+@@ -128,7 +129,8 @@ void __init leon_init_timers(irq_handler
+ 
+ 	/* Find GPTIMER Timer Registers base address otherwise bail out. */
+ 	np = rootnp;
+-	while (np && (np=of_find_node_by_name(np, "GAISLER_GPTIMER"))) {
++	while (np && ((np=of_find_node_by_name(np, "GAISLER_GPTIMER")) ||
++			(np=of_find_node_by_name(np, "01_011")))) {
+ 		ampopts = 0;
+ 		pp = of_find_property(np, "ampopts", &len);
+ 		if ( pp && ((ampopts = *(int *)pp->value) == 0) ) {
