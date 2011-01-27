@@ -256,7 +256,7 @@ enable_mac80211() {
 		fixed=1
 	}
 
-	iw phy "$phy" set antenna "$txantenna $rxantenna"
+	iw phy "$phy" set antenna $txantenna $rxantenna
 
 	[ -n "$distance" ] && iw phy "$phy" set distance "$distance"
 	[ -n "$frag" ] && iw phy "$phy" set frag "${frag%%.*}"
@@ -425,9 +425,9 @@ enable_mac80211() {
 
 					iw dev "$ifname" ibss join "$ssid" $freq \
 						${fixed:+fixed-freq} $bssid \
-						${mcval:+mcast-rate $mcval} \
 						${bintval:+beacon-interval $bintval} \
 						${basicrates:+basic-rates $basicrates} \
+						${mcval:+mcast-rate $mcval} \
 						${keyspec:+keys $keyspec}
 				;;
 				sta)
