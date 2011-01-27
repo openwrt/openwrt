@@ -37,7 +37,7 @@ diff --git a/phy.c b/phy.c
 index 7c6c7c8..e3bd4e8 100644
 --- a/phy.c
 +++ b/phy.c
-@@ -307,3 +307,42 @@ COMMAND(set, txpower, "<auto|fixed|limit> [<tx power in mBm>]",
+@@ -307,3 +307,51 @@ COMMAND(set, txpower, "<auto|fixed|limit> [<tx power in mBm>]",
  COMMAND(set, txpower, "<auto|fixed|limit> [<tx power in mBm>]",
  	NL80211_CMD_SET_WIPHY, 0, CIB_NETDEV, handle_txpower,
  	"Specify transmit power level and setting type.");
@@ -50,21 +50,30 @@ index 7c6c7c8..e3bd4e8 100644
 +	char *end;
 +	uint32_t tx_ant = 0, rx_ant = 0;
 +
-+	if (argc == 1 && strcmp(argv[0], "all") == 0) {
-+		tx_ant = 0xffffffff;
-+		rx_ant = 0xffffffff;
-+	} else if (argc == 1) {
-+		tx_ant = rx_ant = strtoul(argv[0], &end, 0);
-+		if (*end)
-+			return 1;
++	if (argc == 1) {
++		if (strcmp(argv[0], "all") == 0)
++			tx_ant = rx_ant = 0xffffffff;
++		else {
++			tx_ant = rx_ant = strtoul(argv[0], &end, 0);
++			if (*end)
++				return 1;
++		}
 +	}
 +	else if (argc == 2) {
-+		tx_ant = strtoul(argv[0], &end, 0);
-+		if (*end)
-+			return 1;
-+		rx_ant = strtoul(argv[1], &end, 0);
-+		if (*end)
-+			return 1;
++		if (strcmp(argv[0], "all") == 0)
++			tx_ant = 0xffffffff;
++		else {
++			tx_ant = strtoul(argv[0], &end, 0);
++			if (*end)
++				return 1;
++		}
++		if (strcmp(argv[1], "all") == 0)
++			rx_ant = 0xffffffff;
++		else {
++			rx_ant = strtoul(argv[1], &end, 0);
++			if (*end)
++				return 1;
++		}
 +	} else
 +		return 1;
 +
