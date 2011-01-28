@@ -231,12 +231,6 @@ else
   DISABLE_IPV6:=--disable-ipv6
 endif
 
-ifeq ($(CONFIG_LARGEFILE),y)
-  DISABLE_LARGEFILE:=
-else
-  DISABLE_LARGEFILE:=--disable-largefile
-endif
-
 ifeq ($(CONFIG_TAR_VERBOSITY),y)
   TAR_OPTIONS:=-xvf -
 else
