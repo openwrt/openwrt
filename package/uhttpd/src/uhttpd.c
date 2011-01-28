@@ -620,6 +620,56 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 #endif
 }
 
+#ifdef HAVE_TLS
+static inline uh_inittls(struct config *conf)
+{
+	/* library handle */
+	void *lib;
+
+	/* already loaded */
+	if( conf->tls != NULL )
+		return 0;
+
+	/* load TLS plugin */
+	if( ! (lib = dlopen("uhttpd_tls.so", RTLD_LAZY | RTLD_GLOBAL)) )
+	{
+		fprintf(stderr,
+			"Notice: Unable to load TLS plugin - disabling SSL support! "
+			"(Reason: %s)\n", dlerror()
+		);
+
+		return 1;
+	}
+	else
+	{
+		/* resolve functions */
+		if( !(conf->tls_init   = dlsym(lib, "uh_tls_ctx_init"))      ||
+		    !(conf->tls_cert   = dlsym(lib, "uh_tls_ctx_cert"))      ||
+		    !(conf->tls_key    = dlsym(lib, "uh_tls_ctx_key"))       ||
+		    !(conf->tls_free   = dlsym(lib, "uh_tls_ctx_free"))      ||
+		    !(conf->tls_accept = dlsym(lib, "uh_tls_client_accept")) ||
+		    !(conf->tls_close  = dlsym(lib, "uh_tls_client_close"))  ||
+		    !(conf->tls_recv   = dlsym(lib, "uh_tls_client_recv"))   ||
+		    !(conf->tls_send   = dlsym(lib, "uh_tls_client_send"))
+		) {
+			fprintf(stderr,
+				"Error: Failed to lookup required symbols "
+				"in TLS plugin: %s\n", dlerror()
+			);
+			exit(1);
+		}
+
+		/* init SSL context */
+		if( ! (conf->tls = conf->tls_init()) )
+		{
+			fprintf(stderr, "Error: Failed to initalize SSL context\n");
+			exit(1);
+		}
+	}
+
+	return 0;
+}
+#endif
 
 int main (int argc, char **argv)
 {
@@ -650,7 +700,7 @@ int main (int argc, char **argv)
 	char bind[128];
 	char *port = NULL;
 
-#if defined(HAVE_TLS) || defined(HAVE_LUA)
+#ifdef HAVE_LUA
 	/* library handle */
 	void *lib;
 #endif
@@ -686,42 +736,6 @@ int main (int argc, char **argv)
 	memset(&conf, 0, sizeof(conf));
 	memset(bind, 0, sizeof(bind));
 
-#ifdef HAVE_TLS
-	/* load TLS plugin */
-	if( ! (lib = dlopen("uhttpd_tls.so", RTLD_LAZY | RTLD_GLOBAL)) )
-	{
-		fprintf(stderr,
-			"Notice: Unable to load TLS plugin - disabling SSL support! "
-			"(Reason: %s)\n", dlerror()
-		);
-	}
-	else
-	{
-		/* resolve functions */
-		if( !(conf.tls_init   = dlsym(lib, "uh_tls_ctx_init"))      ||
-		    !(conf.tls_cert   = dlsym(lib, "uh_tls_ctx_cert"))      ||
-		    !(conf.tls_key    = dlsym(lib, "uh_tls_ctx_key"))       ||
-		    !(conf.tls_free   = dlsym(lib, "uh_tls_ctx_free"))      ||
-			!(conf.tls_accept = dlsym(lib, "uh_tls_client_accept")) ||
-			!(conf.tls_close  = dlsym(lib, "uh_tls_client_close"))  ||
-			!(conf.tls_recv   = dlsym(lib, "uh_tls_client_recv"))   ||
-			!(conf.tls_send   = dlsym(lib, "uh_tls_client_send"))
-		) {
-			fprintf(stderr,
-				"Error: Failed to lookup required symbols "
-				"in TLS plugin: %s\n", dlerror()
-			);
-			exit(1);
-		}
-
-		/* init SSL context */
-		if( ! (conf.tls = conf.tls_init()) )
-		{
-			fprintf(stderr, "Error: Failed to initalize SSL context\n");
-			exit(1);
-		}
-	}
-#endif
 
 	while( (opt = getopt(argc, argv,
 		"fSDRC:K:E:I:p:s:h:c:l:L:d:r:m:x:i:t:T:A:")) > 0
@@ -750,7 +764,7 @@ int main (int argc, char **argv)
 #ifdef HAVE_TLS
 				if( opt == 's' )
 				{
-					if( !conf.tls )
+					if( uh_inittls(&conf) )
 					{
 						fprintf(stderr,
 							"Notice: TLS support is disabled, "
@@ -775,7 +789,7 @@ int main (int argc, char **argv)
 #ifdef HAVE_TLS
 			/* certificate */
 			case 'C':
-				if( conf.tls )
+				if( !uh_inittls(&conf) )
 				{
 					if( conf.tls_cert(conf.tls, optarg) < 1 )
 					{
@@ -791,7 +805,7 @@ int main (int argc, char **argv)
 
 			/* key */
 			case 'K':
-				if( conf.tls )
+				if( !uh_inittls(&conf) )
 				{
 					if( conf.tls_key(conf.tls, optarg) < 1 )
 					{
@@ -912,8 +926,14 @@ int main (int argc, char **argv)
 			case 'd':
 				if( (port = malloc(strlen(optarg)+1)) != NULL )
 				{
+					/* "decode" plus to space to retain compat */
+					for (opt = 0; optarg[opt]; opt++)
+						if (optarg[opt] == '+')
+							optarg[opt] = ' ';
+
 					memset(port, 0, strlen(optarg)+1);
 					uh_urldecode(port, strlen(optarg), optarg, strlen(optarg));
+
 					printf("%s", port);
 					free(port);
 					exit(0);
