@@ -88,6 +88,16 @@
  void ath_debug_stat_rx(struct ath_softc *sc, struct ath_rx_status *rs);
  
  #else
+@@ -192,7 +192,8 @@ static inline void ath_debug_stat_interr
+ 
+ static inline void ath_debug_stat_tx(struct ath_softc *sc,
+ 				     struct ath_buf *bf,
+-				     struct ath_tx_status *ts)
++				     struct ath_tx_status *ts,
++				     struct ath_txq *txq)
+ {
+ }
+ 
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
 @@ -1913,7 +1913,7 @@ static void ath_tx_complete_buf(struct a
