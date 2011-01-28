@@ -19,7 +19,7 @@
 
 --- a/gcc/c-opts.c
 +++ b/gcc/c-opts.c
-@@ -105,6 +105,9 @@
+@@ -106,6 +106,9 @@ static size_t deferred_count;
  /* Number of deferred options scanned for -include.  */
  static size_t include_cursor;
  
@@ -29,8 +29,8 @@
  static void set_Wimplicit (int);
  static void handle_OPT_d (const char *);
  static void set_std_cxx98 (int);
-@@ -454,6 +457,9 @@
-       enable_warning_as_error ("implicit-function-declaration", value, CL_C | CL_ObjC); 
+@@ -472,6 +475,9 @@ c_common_handle_option (size_t scode, co
+       enable_warning_as_error ("implicit-function-declaration", value, CL_C | CL_ObjC);
        break;
  
 +    case OPT_Werror_maybe_reset:
@@ -39,7 +39,7 @@
      case OPT_Wformat:
        set_Wformat (value);
        break;
-@@ -690,6 +701,12 @@
+@@ -704,6 +710,12 @@ c_common_handle_option (size_t scode, co
        flag_exceptions = value;
        break;
  
@@ -52,7 +52,7 @@
      case OPT_fimplement_inlines:
        flag_implement_inlines = value;
        break;
-@@ -1209,6 +1226,47 @@
+@@ -1240,6 +1252,47 @@ c_common_init (void)
        return false;
      }
  
@@ -102,7 +102,7 @@
  
 --- a/gcc/c.opt
 +++ b/gcc/c.opt
-@@ -215,6 +215,10 @@
+@@ -219,6 +219,10 @@ Werror-implicit-function-declaration
  C ObjC RejectNegative Warning
  This switch is deprecated; use -Werror=implicit-function-declaration instead
  
@@ -113,7 +113,7 @@
  Wfloat-equal
  C ObjC C++ ObjC++ Var(warn_float_equal) Warning
  Warn if testing floating point numbers for equality
-@@ -609,6 +613,9 @@
+@@ -637,6 +641,9 @@ C++ ObjC++ Optimization
  fhonor-std
  C++ ObjC++
  
@@ -125,7 +125,7 @@
  Assume normal C execution environment
 --- a/gcc/common.opt
 +++ b/gcc/common.opt
-@@ -102,6 +102,10 @@
+@@ -105,6 +105,10 @@ Werror=
  Common Joined
  Treat specified warning as error
  
@@ -134,9 +134,9 @@
 +If environment variable GCC_NO_WERROR is set, act as -Wno-error
 +
  Wextra
- Common Warning
+ Common Var(extra_warnings) Warning
  Print extra (possibly unwanted) warnings
-@@ -573,6 +577,9 @@
+@@ -625,6 +629,9 @@ fguess-branch-probability
  Common Report Var(flag_guess_branch_prob) Optimization
  Enable guessing of branch probabilities
  
@@ -148,7 +148,7 @@
  ; On SVR4 targets, it also controls whether or not to emit a
 --- a/gcc/opts.c
 +++ b/gcc/opts.c
-@@ -896,8 +896,6 @@
+@@ -897,8 +897,6 @@ decode_options (unsigned int argc, const
    flag_schedule_insns_after_reload = opt2;
  #endif
    flag_regmove = opt2;
@@ -157,7 +157,7 @@
    flag_reorder_blocks = opt2;
    flag_reorder_functions = opt2;
    flag_tree_vrp = opt2;
-@@ -922,6 +919,8 @@
+@@ -919,6 +917,8 @@ decode_options (unsigned int argc, const
  
    /* -O3 optimizations.  */
    opt3 = (optimize >= 3);
@@ -166,7 +166,7 @@
    flag_predictive_commoning = opt3;
    flag_inline_functions = opt3;
    flag_unswitch_loops = opt3;
-@@ -1601,6 +1601,17 @@
+@@ -1647,6 +1647,17 @@ common_handle_option (size_t scode, cons
        enable_warning_as_error (arg, value, lang_mask);
        break;
  
@@ -182,11 +182,11 @@
 +      break;
 +
      case OPT_Wlarger_than_:
-       /* This form corresponds to -Wlarger-than-. 
-          Kept for backward compatibility.
+       /* This form corresponds to -Wlarger-than-.
+ 	 Kept for backward compatibility.
 --- a/gcc/doc/cppopts.texi
 +++ b/gcc/doc/cppopts.texi
-@@ -164,6 +164,11 @@
+@@ -164,6 +164,11 @@ in older programs.  This warning is on b
  Make all warnings into hard errors.  Source code which triggers warnings
  will be rejected.
  
@@ -200,7 +200,7 @@
  Issue warnings for code in system headers.  These are normally unhelpful
 --- a/gcc/doc/invoke.texi
 +++ b/gcc/doc/invoke.texi
-@@ -234,7 +234,7 @@
+@@ -235,7 +235,7 @@ Objective-C and Objective-C++ Dialects}.
  -Wconversion  -Wcoverage-mismatch  -Wno-deprecated  @gol
  -Wno-deprecated-declarations -Wdisabled-optimization  @gol
  -Wno-div-by-zero -Wdouble-promotion -Wempty-body  -Wenum-compare @gol
@@ -209,7 +209,7 @@
  -Wfatal-errors  -Wfloat-equal  -Wformat  -Wformat=2 @gol
  -Wno-format-contains-nul -Wno-format-extra-args -Wformat-nonliteral @gol
  -Wformat-security  -Wformat-y2k @gol
-@@ -4161,6 +4161,22 @@
+@@ -4358,6 +4358,22 @@ This option is only supported for C and
  @option{-Wall} and by @option{-pedantic}, which can be disabled with
  @option{-Wno-pointer-sign}.
  
@@ -232,7 +232,7 @@
  @item -Wstack-protector
  @opindex Wstack-protector
  @opindex Wno-stack-protector
-@@ -5699,7 +5715,7 @@
+@@ -6110,7 +6126,7 @@ so, the first branch is redirected to ei
  second branch or a point immediately following it, depending on whether
  the condition is known to be true or false.
  
@@ -243,7 +243,7 @@
  @opindex fsplit-wide-types
 --- a/gcc/java/jvspec.c
 +++ b/gcc/java/jvspec.c
-@@ -670,6 +670,7 @@
+@@ -667,6 +667,7 @@ lang_specific_pre_link (void)
       class name.  Append dummy `.c' that can be stripped by set_input so %b
       is correct.  */ 
    set_input (concat (main_class_name, "main.c", NULL));

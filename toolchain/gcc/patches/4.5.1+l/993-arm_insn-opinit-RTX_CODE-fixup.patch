@@ -1,6 +1,6 @@
---- gcc-4.4.0/gcc/config/arm/arm-protos.h	2009-02-20 16:20:38.000000000 +0100
-+++ gcc-4.4.0.new/gcc/config/arm/arm-protos.h	2009-04-22 16:00:58.000000000 +0200
-@@ -43,10 +43,10 @@
+--- a/gcc/config/arm/arm-protos.h
++++ b/gcc/config/arm/arm-protos.h
+@@ -43,10 +43,10 @@ extern unsigned int arm_dbx_register_num
  extern void arm_output_fn_unwind (FILE *, bool);
    
  
@@ -11,4 +11,4 @@
 +#ifdef RTX_CODE
  extern int arm_split_constant (RTX_CODE, enum machine_mode, rtx,
  			       HOST_WIDE_INT, rtx, rtx, int);
- extern RTX_CODE arm_canonicalize_comparison (RTX_CODE, enum machine_mode,
+ extern RTX_CODE arm_canonicalize_comparison (RTX_CODE, rtx *, rtx *);

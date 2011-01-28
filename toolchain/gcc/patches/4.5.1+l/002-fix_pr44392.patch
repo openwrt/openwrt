@@ -7,11 +7,9 @@ Subject: [PATCH 2/2] Fix PR44392
  gcc/config/arm/arm.md |   43 +++++++++++++++++++------------------------
  1 files changed, 19 insertions(+), 24 deletions(-)
 
-diff --git a/gcc/config/arm/arm.md b/gcc/config/arm/arm.md
-index 2096ec6..f0348f3 100644
 --- a/gcc/config/arm/arm.md
 +++ b/gcc/config/arm/arm.md
-@@ -11318,34 +11318,29 @@
+@@ -11523,34 +11523,29 @@
  (define_expand "bswapsi2"
    [(set (match_operand:SI 0 "s_register_operand" "=r")
    	(bswap:SI (match_operand:SI 1 "s_register_operand" "r")))]
@@ -65,6 +63,3 @@ index 2096ec6..f0348f3 100644
    "
  )
  
--- 
-1.6.2
-

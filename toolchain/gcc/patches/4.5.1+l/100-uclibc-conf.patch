@@ -1,6 +1,6 @@
 --- a/contrib/regression/objs-gcc.sh
 +++ b/contrib/regression/objs-gcc.sh
-@@ -106,6 +106,10 @@
+@@ -106,6 +106,10 @@ if [ $H_REAL_TARGET = $H_REAL_HOST -a $H
   then
    make all-gdb all-dejagnu all-ld || exit 1
    make install-gdb install-dejagnu install-ld || exit 1
@@ -13,7 +13,7 @@
    make install || exit 1
 --- a/libjava/classpath/ltconfig
 +++ b/libjava/classpath/ltconfig
-@@ -603,7 +603,7 @@
+@@ -603,7 +603,7 @@ host_os=`echo $host | sed 's/^\([^-]*\)-
  
  # Transform linux* to *-*-linux-gnu*, to support old configure scripts.
  case $host_os in
@@ -22,7 +22,7 @@
  linux*) host=`echo $host | sed 's/^\(.*-.*-linux\)\(.*\)$/\1-gnu\2/'`
  esac
  
-@@ -1251,7 +1251,7 @@
+@@ -1251,7 +1251,7 @@ linux-gnuoldld* | linux-gnuaout* | linux
    ;;
  
  # This must be Linux ELF.
