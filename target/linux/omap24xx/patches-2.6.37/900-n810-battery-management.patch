@@ -10,10 +10,10 @@
  drivers/cbus/tahvo.h             |    6 
  9 files changed, 548 insertions(+), 3 deletions(-)
 
-Index: linux-2.6.37-rc1/drivers/cbus/Kconfig
+Index: linux-2.6.37/drivers/cbus/Kconfig
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/cbus/Kconfig	2010-11-06 17:28:21.821000000 +0100
-+++ linux-2.6.37-rc1/drivers/cbus/Kconfig	2010-11-06 17:28:21.872000001 +0100
+--- linux-2.6.37.orig/drivers/cbus/Kconfig	2011-01-28 18:14:27.901372343 +0100
++++ linux-2.6.37/drivers/cbus/Kconfig	2011-01-28 18:14:27.952363634 +0100
 @@ -94,4 +94,16 @@
  	  to Retu/Vilma. Detection state and events are exposed through
  	  sysfs.
@@ -31,10 +31,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/Kconfig
 +	  If unsure, say N.
 +
  endmenu
-Index: linux-2.6.37-rc1/drivers/cbus/Makefile
+Index: linux-2.6.37/drivers/cbus/Makefile
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/cbus/Makefile	2010-11-06 17:28:21.812000054 +0100
-+++ linux-2.6.37-rc1/drivers/cbus/Makefile	2010-11-06 17:28:21.872000001 +0100
+--- linux-2.6.37.orig/drivers/cbus/Makefile	2011-01-28 18:14:27.891374053 +0100
++++ linux-2.6.37/drivers/cbus/Makefile	2011-01-28 18:14:27.952363634 +0100
 @@ -12,3 +12,6 @@
  obj-$(CONFIG_CBUS_TAHVO_USER)	+= tahvo-user.o
  obj-$(CONFIG_CBUS_RETU_USER)	+= retu-user.o
@@ -42,10 +42,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/Makefile
 +n810bm-y			+= n810bm_main.o
 +n810bm-y			+= lipocharge.o
 +obj-$(CONFIG_N810BM)		+= n810bm.o
-Index: linux-2.6.37-rc1/drivers/cbus/n810bm_main.c
+Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/n810bm_main.c	2010-11-06 17:28:21.872000001 +0100
++++ linux-2.6.37/drivers/cbus/n810bm_main.c	2011-01-28 18:14:27.952363634 +0100
 @@ -0,0 +1,397 @@
 +/*
 + *   Nokia n810 battery management
@@ -444,10 +444,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/n810bm_main.c
 +MODULE_DESCRIPTION("Nokia n810 battery management");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Michael Buesch");
-Index: linux-2.6.37-rc1/drivers/cbus/retu.c
+Index: linux-2.6.37/drivers/cbus/retu.c
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/cbus/retu.c	2010-11-06 17:28:21.812000054 +0100
-+++ linux-2.6.37-rc1/drivers/cbus/retu.c	2010-11-06 17:28:21.872000001 +0100
+--- linux-2.6.37.orig/drivers/cbus/retu.c	2011-01-28 18:14:27.892373882 +0100
++++ linux-2.6.37/drivers/cbus/retu.c	2011-01-28 18:14:27.952363634 +0100
 @@ -85,10 +85,10 @@
   *
   * This function writes a value to the specified register
@@ -461,10 +461,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu.c
  }
  
  void retu_set_clear_reg_bits(int reg, u16 set, u16 clear)
-Index: linux-2.6.37-rc1/drivers/cbus/retu.h
+Index: linux-2.6.37/drivers/cbus/retu.h
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/cbus/retu.h	2010-11-06 17:28:21.812000054 +0100
-+++ linux-2.6.37-rc1/drivers/cbus/retu.h	2010-11-06 17:28:21.872000001 +0100
+--- linux-2.6.37.orig/drivers/cbus/retu.h	2011-01-28 18:14:27.892373882 +0100
++++ linux-2.6.37/drivers/cbus/retu.h	2011-01-28 18:14:27.953363463 +0100
 @@ -39,6 +39,7 @@
  #define RETU_REG_CC2		0x0e	/* Common control register 2 */
  #define RETU_REG_CTRL_CLR	0x0f	/* Regulator clear register */
@@ -482,11 +482,11 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu.h
  void retu_set_clear_reg_bits(int reg, u16 set, u16 clear);
  int retu_read_adc(int channel);
  int retu_request_irq(int id, void *irq_handler, unsigned long arg, char *name);
-Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c
+Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-2.6.37-rc1.orig/arch/arm/mach-omap2/board-n8x0.c	2010-11-06 17:28:21.796000362 +0100
-+++ linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c	2010-11-06 17:28:21.873000001 +0100
-@@ -899,6 +899,17 @@
+--- linux-2.6.37.orig/arch/arm/mach-omap2/board-n8x0.c	2011-01-28 18:14:27.876376613 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c	2011-01-28 18:14:27.953363463 +0100
+@@ -907,6 +907,17 @@
  				    ARRAY_SIZE(n8x0_gpio_switches));
  }
  
@@ -504,7 +504,7 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c
  static void __init n8x0_init_machine(void)
  {
  	omap2420_mux_init(board_mux, OMAP_PACKAGE_ZAC);
-@@ -925,6 +936,8 @@
+@@ -933,6 +944,8 @@
  	n8x0_onenand_init();
  	n8x0_mmc_init();
  	n8x0_usb_init();
@@ -513,10 +513,10 @@ Index: linux-2.6.37-rc1/arch/arm/mach-omap2/board-n8x0.c
  }
  
  MACHINE_START(NOKIA_N800, "Nokia N800")
-Index: linux-2.6.37-rc1/drivers/cbus/lipocharge.c
+Index: linux-2.6.37/drivers/cbus/lipocharge.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/lipocharge.c	2010-11-06 17:28:21.873000001 +0100
++++ linux-2.6.37/drivers/cbus/lipocharge.c	2011-01-28 18:14:27.953363463 +0100
 @@ -0,0 +1,63 @@
 +/*
 + *   Generic LIPO battery charger
@@ -581,10 +581,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/lipocharge.c
 +	del_timer_sync(&c->timer);
 +	//TODO
 +}
-Index: linux-2.6.37-rc1/drivers/cbus/lipocharge.h
+Index: linux-2.6.37/drivers/cbus/lipocharge.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37-rc1/drivers/cbus/lipocharge.h	2010-11-06 17:28:21.873000001 +0100
++++ linux-2.6.37/drivers/cbus/lipocharge.h	2011-01-28 18:14:27.953363463 +0100
 @@ -0,0 +1,50 @@
 +#ifndef LIPOCHARGE_H_
 +#define LIPOCHARGE_H_
@@ -636,10 +636,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/lipocharge.h
 +void lipocharge_stop(struct lipocharge *c);
 +
 +#endif /* LIPOCHARGE_H_ */
-Index: linux-2.6.37-rc1/drivers/cbus/tahvo.h
+Index: linux-2.6.37/drivers/cbus/tahvo.h
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/cbus/tahvo.h	2010-11-06 17:28:21.813000041 +0100
-+++ linux-2.6.37-rc1/drivers/cbus/tahvo.h	2010-11-06 17:28:21.873000001 +0100
+--- linux-2.6.37.orig/drivers/cbus/tahvo.h	2011-01-28 18:14:27.893373711 +0100
++++ linux-2.6.37/drivers/cbus/tahvo.h	2011-01-28 18:14:27.953363463 +0100
 @@ -30,8 +30,14 @@
  #define TAHVO_REG_IDR		0x01	/* Interrupt ID */
  #define TAHVO_REG_IDSR		0x02	/* Interrupt status */
