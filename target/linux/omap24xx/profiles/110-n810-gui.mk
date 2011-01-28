@@ -11,7 +11,7 @@ define Profile/n810-gui
   PACKAGES+= \
 	xserver-xorg xinit xauth xkeyboard-config xkbdata xterm \
 	xf86-video-omapfb xf86-input-tslib xf86-input-evdev \
-	openbox lxpanel \
+	openbox tint2 \
 	pwrtray
 endef
 
