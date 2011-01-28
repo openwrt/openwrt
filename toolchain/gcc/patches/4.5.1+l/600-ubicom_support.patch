@@ -1,6 +1,6 @@
 --- a/configure
 +++ b/configure
-@@ -2688,6 +2688,9 @@ case "${target}" in
+@@ -3730,6 +3730,9 @@ case "${target}" in
    ip2k-*-*)
      noconfigdirs="$noconfigdirs target-libiberty target-libstdc++-v3 ${libgcj}"
      ;;
@@ -9313,7 +9313,7 @@
 +#define FATAL_EXIT_CODE 33
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -2314,6 +2314,34 @@ spu-*-elf*)
+@@ -2497,6 +2497,34 @@ spu-*-elf*)
  	c_target_objs="${c_target_objs} spu-c.o"
  	cxx_target_objs="${cxx_target_objs} spu-c.o"
  	;;
@@ -9347,10 +9347,10 @@
 +	;;
  v850e1-*-*)
  	target_cpu_default="TARGET_CPU_v850e1"
- 	tm_file="dbxelf.h elfos.h svr4.h v850/v850.h"
+ 	tm_file="dbxelf.h elfos.h svr4.h newlib-stdint.h v850/v850.h"
 --- a/libgcc/config.host
 +++ b/libgcc/config.host
-@@ -551,6 +551,15 @@ sparc64-*-netbsd*)
+@@ -560,6 +560,15 @@ sparc64-*-netbsd*)
  	;;
  spu-*-elf*)
  	;;
