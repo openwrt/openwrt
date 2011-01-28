@@ -256,7 +256,7 @@ enable_mac80211() {
 		fixed=1
 	}
 
-	iw phy "$phy" set antenna $txantenna $rxantenna
+	iw phy "$phy" set antenna $txantenna $rxantenna >/dev/null 2>&1
 
 	[ -n "$distance" ] && iw phy "$phy" set distance "$distance"
 	[ -n "$frag" ] && iw phy "$phy" set frag "${frag%%.*}"
