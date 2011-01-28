@@ -12,9 +12,9 @@
 
 Index: linux-2.6.37/drivers/cbus/Kconfig
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/Kconfig	2011-01-28 18:14:27.901372343 +0100
-+++ linux-2.6.37/drivers/cbus/Kconfig	2011-01-28 18:14:27.952363634 +0100
-@@ -94,4 +94,16 @@
+--- linux-2.6.37.orig/drivers/cbus/Kconfig	2011-01-28 22:33:39.703215389 +0100
++++ linux-2.6.37/drivers/cbus/Kconfig	2011-01-28 23:41:57.094298060 +0100
+@@ -94,4 +94,12 @@
  	  to Retu/Vilma. Detection state and events are exposed through
  	  sysfs.
  
@@ -24,17 +24,13 @@ Index: linux-2.6.37/drivers/cbus/Kconfig
 +	---help---
 +	  Nokia n810 device battery management.
 +
-+	  WARNING: This driver is based on reverse engineered information.
-+	  It is possibly dangerous to use this software.
-+	  Use this software at your own risk!
-+
 +	  If unsure, say N.
 +
  endmenu
 Index: linux-2.6.37/drivers/cbus/Makefile
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/Makefile	2011-01-28 18:14:27.891374053 +0100
-+++ linux-2.6.37/drivers/cbus/Makefile	2011-01-28 18:14:27.952363634 +0100
+--- linux-2.6.37.orig/drivers/cbus/Makefile	2011-01-28 22:33:39.694216931 +0100
++++ linux-2.6.37/drivers/cbus/Makefile	2011-01-28 22:33:39.754206648 +0100
 @@ -12,3 +12,6 @@
  obj-$(CONFIG_CBUS_TAHVO_USER)	+= tahvo-user.o
  obj-$(CONFIG_CBUS_RETU_USER)	+= retu-user.o
@@ -45,16 +41,16 @@ Index: linux-2.6.37/drivers/cbus/Makefile
 Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/n810bm_main.c	2011-01-28 18:14:27.952363634 +0100
-@@ -0,0 +1,397 @@
++++ linux-2.6.37/drivers/cbus/n810bm_main.c	2011-01-28 23:41:23.510064352 +0100
+@@ -0,0 +1,562 @@
 +/*
 + *   Nokia n810 battery management
 + *
-+ *   WARNING: This driver is based on reverse engineered information.
++ *   WARNING: This driver is based on unconfirmed documentation.
 + *            It is possibly dangerous to use this software.
 + *            Use this software at your own risk!
 + *
-+ *   Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
++ *   Copyright (c) 2010-2011 Michael Buesch <mb@bu3sch.de>
 + *
 + *   This program is free software; you can redistribute it and/or
 + *   modify it under the terms of the GNU General Public License
@@ -83,10 +79,6 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +#define N810BM_CHECK_INTERVAL		(HZ * 5)
 +#define N810BM_MIN_VOLTAGE_THRES	3300 /* Absolute minimum voltage threshold */
 +
-+
-+/* Battery related retu ADC channels */
-+#define RETU_ADC_BSI		0x01 /* Battery Size Indicator */
-+#define RETU_ADC_BATTVOLT	0x08 /* Battery voltage measurement */
 +
 +/* RETU_ADC_BSI
 + * The battery size indicator ADC measures the resistance between
@@ -222,6 +214,42 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	return value;
 +}
 +
++static int adc_sanity_check(struct n810bm *bm, unsigned int channel)
++{
++	int value;
++
++	value = retu_read_adc(channel);
++	if (value < 0) {
++		dev_err(&bm->pdev->dev, "Failed to read GND ADC channel %u",
++			channel);
++		return -EIO;
++	}
++	dev_info(&bm->pdev->dev,
++		 "GND ADC channel %u sanity check got value: %d",
++		 channel, value);
++	if (value > 5) {
++		n810bm_emergency(bm, "GND ADC sanity check failed");
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int n810bm_check_adc_sanity(struct n810bm *bm)
++{
++	int err;
++
++	/* Discard one conversion */
++	retu_write(bm, RETU_REG_ADCSCR, 0);
++	retu_read_adc(RETU_ADC_GND2);
++
++	err = adc_sanity_check(bm, RETU_ADC_GND2);
++	if (err)
++		return err;
++
++	return 0;
++}
++
 +/* Measure the battery voltage. Returns the value in mV (or negative value on error). */
 +static int n810bm_measure_batt_voltage(struct n810bm *bm)
 +{
@@ -237,6 +265,51 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	mv = 2800 + ((adc - 0x37) * (((4200 - 2800) * scale) / (0x236 - 0x37))) / scale;
 +
 +	return mv;
++}
++
++/* Measure the charger voltage. Returns the value in mV (or negative value on error). */
++static int n810bm_measure_charger_voltage(struct n810bm *bm)
++{
++	int adc;
++	unsigned int mv;
++
++	adc = retu_adc_average(bm, RETU_ADC_CHGVOLT, 5);
++	if (adc < 0)
++		return adc;
++	//TODO convert to mV
++	mv = adc;
++
++	return mv;
++}
++
++/* Measure backup battery voltage. Returns the value in mV (or negative value on error). */
++static int n810bm_measure_backup_batt_voltage(struct n810bm *bm)
++{
++	int adc;
++	unsigned int mv;
++
++	adc = retu_adc_average(bm, RETU_ADC_BKUPVOLT, 3);
++	if (adc < 0)
++		return adc;
++	//TODO convert to mV
++	mv = adc;
++
++	return mv;
++}
++
++/* Measure the battery temperature. Returns the value in K (or negative value on error). */
++static int n810bm_measure_batt_temp(struct n810bm *bm)
++{
++	int adc;
++	unsigned int k;
++
++	adc = retu_adc_average(bm, RETU_ADC_BATTEMP, 3);
++	if (adc < 0)
++		return adc;
++	//TODO convert to K
++	k = adc;
++
++	return k;
 +}
 +
 +/* Read the battery capacity via BSI pin. */
@@ -294,7 +367,7 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +
 +static void n810bm_adc_irq_handler(unsigned long data)
 +{
-+	struct n810bm *bm = (struct n810bm *)data;
++//	struct n810bm *bm = (struct n810bm *)data;
 +
 +	retu_ack_irq(RETU_INT_ADCS);
 +	//TODO
@@ -341,6 +414,69 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +}
 +static DEVICE_ATTR(batt_capacity, 0444, n810bm_attr_capacity_show, NULL);
 +
++static ssize_t n810bm_attr_battemp_show(struct device *dev,
++					struct device_attribute *attr,
++					char *buf)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct n810bm *bm = platform_get_drvdata(pdev);
++	ssize_t count = 0;
++	int k, err = -ENODEV;
++
++	spin_lock_irq(&bm->lock);
++	k = n810bm_measure_batt_temp(bm);
++	if (k >= 0) {
++		count = snprintf(buf, PAGE_SIZE, "%d\n", k);
++		err = 0;
++	}
++	spin_unlock_irq(&bm->lock);
++
++	return err ? err : count;
++}
++static DEVICE_ATTR(batt_temp, 0444, n810bm_attr_battemp_show, NULL);
++
++static ssize_t n810bm_attr_charger_voltage(struct device *dev,
++					   struct device_attribute *attr,
++					   char *buf)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct n810bm *bm = platform_get_drvdata(pdev);
++	ssize_t count = 0;
++	int mv, err = -ENODEV;
++
++	spin_lock_irq(&bm->lock);
++	mv = n810bm_measure_charger_voltage(bm);
++	if (mv >= 0) {
++		count = snprintf(buf, PAGE_SIZE, "%d\n", mv);
++		err = 0;
++	}
++	spin_unlock_irq(&bm->lock);
++
++	return err ? err : count;
++}
++static DEVICE_ATTR(charger_voltage, 0444, n810bm_attr_charger_voltage, NULL);
++
++static ssize_t n810bm_attr_backup_batt_voltage(struct device *dev,
++					       struct device_attribute *attr,
++					       char *buf)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct n810bm *bm = platform_get_drvdata(pdev);
++	ssize_t count = 0;
++	int mv, err = -ENODEV;
++
++	spin_lock_irq(&bm->lock);
++	mv = n810bm_measure_backup_batt_voltage(bm);
++	if (mv >= 0) {
++		count = snprintf(buf, PAGE_SIZE, "%d\n", mv);
++		err = 0;
++	}
++	spin_unlock_irq(&bm->lock);
++
++	return err ? err : count;
++}
++static DEVICE_ATTR(backup_batt_voltage, 0444, n810bm_attr_backup_batt_voltage, NULL);
++
 +static void n810bm_hw_exit(struct n810bm *bm)
 +{
 +	retu_write(bm, RETU_REG_ADCSCR, 0);
@@ -348,17 +484,24 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +
 +static int n810bm_hw_init(struct n810bm *bm)
 +{
-+	retu_write(bm, RETU_REG_ADCSCR, 0);
++	int err;
 +
++	err = n810bm_check_adc_sanity(bm);
++	if (err)
++		goto error;
 +	bm->capacity = n810bm_read_batt_capacity(bm);
 +	if (bm->capacity == N810BM_CAP_UNKNOWN) {
 +		dev_err(&bm->pdev->dev, "Unknown battery detected");
-+		return -ENODEV;
++		err = -ENODEV;
++		goto error;
 +	}
 +	dev_info(&bm->pdev->dev, "Detected %u mAh battery\n",
 +		 (unsigned int)bm->capacity);
 +
 +	return 0;
++
++error:
++	return err;
 +}
 +
 +static int __devinit n810bm_probe(struct platform_device *pdev)
@@ -383,10 +526,19 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	err = device_create_file(&pdev->dev, &dev_attr_batt_capacity);
 +	if (err)
 +		goto err_rem_charge;
++	err = device_create_file(&pdev->dev, &dev_attr_batt_temp);
++	if (err)
++		goto err_rem_capa;
++	err = device_create_file(&pdev->dev, &dev_attr_charger_voltage);
++	if (err)
++		goto err_rem_temp;
++	err = device_create_file(&pdev->dev, &dev_attr_backup_batt_voltage);
++	if (err)
++		goto err_rem_chg;
 +	err = retu_request_irq(RETU_INT_ADCS, n810bm_adc_irq_handler,
 +			       (unsigned long)bm, "n810bm");
 +	if (err)
-+		goto err_rem_capa;
++		goto err_rem_bkup;
 +
 +	mod_timer(&bm->check_timer, round_jiffies(jiffies + N810BM_CHECK_INTERVAL));
 +
@@ -394,6 +546,12 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +
 +	return 0;
 +
++err_rem_bkup:
++	device_remove_file(&pdev->dev, &dev_attr_backup_batt_voltage);
++err_rem_chg:
++	device_remove_file(&pdev->dev, &dev_attr_charger_voltage);
++err_rem_temp:
++	device_remove_file(&pdev->dev, &dev_attr_batt_temp);
 +err_rem_capa:
 +	device_remove_file(&pdev->dev, &dev_attr_batt_capacity);
 +err_rem_charge:
@@ -412,6 +570,9 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +
 +	retu_free_irq(RETU_INT_ADCS);
 +	del_timer_sync(&bm->check_timer);
++	device_remove_file(&pdev->dev, &dev_attr_backup_batt_voltage);
++	device_remove_file(&pdev->dev, &dev_attr_charger_voltage);
++	device_remove_file(&pdev->dev, &dev_attr_batt_temp);
 +	device_remove_file(&pdev->dev, &dev_attr_batt_capacity);
 +	device_remove_file(&pdev->dev, &dev_attr_batt_charge);
 +	n810bm_hw_exit(bm);
@@ -446,8 +607,8 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +MODULE_AUTHOR("Michael Buesch");
 Index: linux-2.6.37/drivers/cbus/retu.c
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/retu.c	2011-01-28 18:14:27.892373882 +0100
-+++ linux-2.6.37/drivers/cbus/retu.c	2011-01-28 18:14:27.952363634 +0100
+--- linux-2.6.37.orig/drivers/cbus/retu.c	2011-01-28 22:33:39.695216760 +0100
++++ linux-2.6.37/drivers/cbus/retu.c	2011-01-28 22:33:39.754206648 +0100
 @@ -85,10 +85,10 @@
   *
   * This function writes a value to the specified register
@@ -463,8 +624,8 @@ Index: linux-2.6.37/drivers/cbus/retu.c
  void retu_set_clear_reg_bits(int reg, u16 set, u16 clear)
 Index: linux-2.6.37/drivers/cbus/retu.h
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/retu.h	2011-01-28 18:14:27.892373882 +0100
-+++ linux-2.6.37/drivers/cbus/retu.h	2011-01-28 18:14:27.953363463 +0100
+--- linux-2.6.37.orig/drivers/cbus/retu.h	2011-01-28 22:33:39.695216760 +0100
++++ linux-2.6.37/drivers/cbus/retu.h	2011-01-28 22:40:55.380584650 +0100
 @@ -39,6 +39,7 @@
  #define RETU_REG_CC2		0x0e	/* Common control register 2 */
  #define RETU_REG_CTRL_CLR	0x0f	/* Regulator clear register */
@@ -473,9 +634,27 @@ Index: linux-2.6.37/drivers/cbus/retu.h
  #define RETU_REG_STATUS		0x16	/* Status register */
  #define RETU_REG_WATCHDOG	0x17	/* Watchdog register */
  #define RETU_REG_AUDTXR		0x18	/* Audio Codec Tx register */
-@@ -58,7 +59,7 @@
+@@ -57,8 +58,25 @@
+ 
  #define	MAX_RETU_IRQ_HANDLERS	16
  
++/* ADC channels */
++#define RETU_ADC_GND		0x00 /* Ground */
++#define RETU_ADC_BSI		0x01 /* Battery Size Indicator */
++#define RETU_ADC_BATTEMP	0x02 /* Battery temperature */
++#define RETU_ADC_CHGVOLT	0x03 /* Charger voltage */
++#define RETU_ADC_HEADSET	0x04 /* Headset detection */
++#define RETU_ADC_HOOKDET	0x05 /* Hook detection */
++#define RETU_ADC_RFGP		0x06 /* RF GP */
++#define RETU_ADC_WBTX		0x07 /* Wideband Tx detection */
++#define RETU_ADC_BATTVOLT	0x08 /* Battery voltage measurement */
++#define RETU_ADC_GND2		0x09 /* Ground */
++#define RETU_ADC_LIGHTSENS	0x0A /* Light sensor */
++#define RETU_ADC_LIGHTTEMP	0x0B /* Light sensor temperature */
++#define RETU_ADC_BKUPVOLT	0x0C /* Backup battery voltage */
++#define RETU_ADC_TEMP		0x0D /* RETU temperature */
++
++
  int retu_read_reg(int reg);
 -void retu_write_reg(int reg, u16 val);
 +int retu_write_reg(int reg, u16 val);
@@ -484,8 +663,8 @@ Index: linux-2.6.37/drivers/cbus/retu.h
  int retu_request_irq(int id, void *irq_handler, unsigned long arg, char *name);
 Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-2.6.37.orig/arch/arm/mach-omap2/board-n8x0.c	2011-01-28 18:14:27.876376613 +0100
-+++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c	2011-01-28 18:14:27.953363463 +0100
+--- linux-2.6.37.orig/arch/arm/mach-omap2/board-n8x0.c	2011-01-28 22:33:39.679219500 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c	2011-01-28 22:33:39.754206648 +0100
 @@ -907,6 +907,17 @@
  				    ARRAY_SIZE(n8x0_gpio_switches));
  }
@@ -516,7 +695,7 @@ Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c
 Index: linux-2.6.37/drivers/cbus/lipocharge.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/lipocharge.c	2011-01-28 18:14:27.953363463 +0100
++++ linux-2.6.37/drivers/cbus/lipocharge.c	2011-01-28 22:33:39.755206476 +0100
 @@ -0,0 +1,63 @@
 +/*
 + *   Generic LIPO battery charger
@@ -584,7 +763,7 @@ Index: linux-2.6.37/drivers/cbus/lipocharge.c
 Index: linux-2.6.37/drivers/cbus/lipocharge.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/lipocharge.h	2011-01-28 18:14:27.953363463 +0100
++++ linux-2.6.37/drivers/cbus/lipocharge.h	2011-01-28 22:33:39.755206476 +0100
 @@ -0,0 +1,50 @@
 +#ifndef LIPOCHARGE_H_
 +#define LIPOCHARGE_H_
@@ -638,8 +817,8 @@ Index: linux-2.6.37/drivers/cbus/lipocharge.h
 +#endif /* LIPOCHARGE_H_ */
 Index: linux-2.6.37/drivers/cbus/tahvo.h
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/tahvo.h	2011-01-28 18:14:27.893373711 +0100
-+++ linux-2.6.37/drivers/cbus/tahvo.h	2011-01-28 18:14:27.953363463 +0100
+--- linux-2.6.37.orig/drivers/cbus/tahvo.h	2011-01-28 22:33:39.696216589 +0100
++++ linux-2.6.37/drivers/cbus/tahvo.h	2011-01-28 22:33:39.755206476 +0100
 @@ -30,8 +30,14 @@
  #define TAHVO_REG_IDR		0x01	/* Interrupt ID */
  #define TAHVO_REG_IDSR		0x02	/* Interrupt status */
