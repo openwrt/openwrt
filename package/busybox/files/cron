@@ -2,6 +2,8 @@
 # Copyright (C) 2006 OpenWrt.org
 START=50
 
+PATH="/bin:/sbin:/usr/bin:/usr/sbin"
+
 start () {
 	loglevel=$(uci_get "system.@system[0].cronloglevel")
 	[ -z "$(ls /etc/crontabs/)" ] && exit 1
