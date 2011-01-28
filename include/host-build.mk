@@ -154,6 +154,7 @@ ifndef DUMP
     install: host-install
     clean: host-clean
     update: host-update
+    refresh: host-refresh
 
     $(HOST_STAMP_BUILT): $(HOST_STAMP_CONFIGURED)
 		$(foreach hook,$(Hooks/HostCompile/Pre),$(call $(hook))$(sep))
