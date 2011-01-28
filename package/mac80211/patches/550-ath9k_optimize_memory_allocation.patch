@@ -30,7 +30,7 @@
  	sc->sc_flags &= ~SC_OP_RXFLUSH;
  	spin_lock_init(&sc->rx.rxbuflock);
  
-+	common->rx_bufsize = IEEE80211_MAX_MPDU_LEN / 2 + common->cachelsz +
++	common->rx_bufsize = IEEE80211_MAX_MPDU_LEN / 2 +
 +			     sc->sc_ah->caps.rx_status_len;
 +
  	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) {
