@@ -1,8 +1,6 @@
-#!/bin/sh /etc/rc.common
+#!/bin/sh
 
-START=30
-
-start() {
+do_generate_p54spi_eeprom() {
 	[ -e /lib/firmware/3826.eeprom ] && return 0
 
 	[ -x /usr/bin/calvaria ] || { echo "p54spi EEPROM: calvaria not found"; return 1; }
@@ -24,3 +22,5 @@ start() {
 
 	rm -f /tmp/wlan-iq-align /tmp/txgen_file
 }
+
+boot_hook_add preinit_mount_root do_generate_p54spi_eeprom
