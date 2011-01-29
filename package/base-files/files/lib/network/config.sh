@@ -360,9 +360,14 @@ setup_interface() {
 			[ -z "$ipaddr" ] || \
 				$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
 
+			# additional request options
+			local opt dhcpopts
+			for opt in $reqopts; do
+				append dhcpopts -O "$opt"
+			done
+
 			# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
-			local dhcpopts
-			[ ."$proto1" != ."$proto" ] && dhcpopts="-n -q"
+			[ "$proto1" != "$proto" ] && append dhcpopts "-n -q" || append dhcpopts "-O rootpath -R &"
 			[ "$broadcast" = 1 ] && broadcast="-O broadcast" || broadcast=
 
 			$DEBUG eval udhcpc -t 0 -i "$iface" \
@@ -371,8 +376,7 @@ setup_interface() {
 				${clientid:+-c $clientid} \
 				${vendorid:+-V $vendorid} \
 				-b -p "$pidfile" $broadcast \
-				${reqopts:+-O $reqopts} \
-				${dhcpopts:- -O rootpath -R &}
+				${dhcpopts}
 		;;
 		none)
 			setup_interface_none "$iface" "$config"
