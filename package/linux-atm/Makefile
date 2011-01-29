@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=linux-atm
 PKG_VERSION:=2.5.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
@@ -41,6 +41,18 @@ endef
 
 define Package/atm-tools/description
   This package contains the Linux ATM tools.
+endef
+
+define Package/br2684ctl
+  SECTION:=net
+  CATEGORY:=Network
+  DEPENDS:=linux-atm
+  TITLE:=ATM Ethernet bridging configuration utility
+  URL:=http://linux-atm.sourceforge.net/
+endef
+
+define Package/br2684ctl/description
+  Support for AAL5 encapsulation (RFC-1483/RFC-2684) over ATM.
 endef
 
 define Build/Configure
@@ -109,5 +121,13 @@ define Package/atm-tools/install
 #	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/ttcp_atm $(1)/usr/bin/
 endef
 
+define Package/br2684ctl/install
+	$(INSTALL_DIR) $(1)/etc/init.d/
+	$(INSTALL_BIN) ./files/br2684ctl $(1)/etc/init.d/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(1)/usr/sbin/
+endef
+
 $(eval $(call BuildPackage,linux-atm))
 $(eval $(call BuildPackage,atm-tools))
+$(eval $(call BuildPackage,br2684ctl))
