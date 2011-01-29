@@ -17,7 +17,7 @@ define Profile/n810-base
 	kmod-input-evdev \
 	kmod-leds-gpio \
 	kmod-usb-tahvo kmod-usb-eth-gadget kmod-usb-net kmod-usb-net-cdc-ether \
-	maemo-kexec
+	maemo-kexec calvaria
 endef
 
 define Profile/n810-base/Description
