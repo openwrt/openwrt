@@ -1,0 +1,13 @@
+--- a/libpthread/nptl/init.c
++++ b/libpthread/nptl/init.c
+@@ -401,6 +401,10 @@ __pthread_initialize_minimal_internal (v
+        Use the minimal size acceptable.  */
+     limit.rlim_cur = PTHREAD_STACK_MIN;
+ 
++  /* Do not exceed architecture specific default */
++  if (limit.rlim_cur > ARCH_STACK_DEFAULT_SIZE)
++    limit.rlim_cur = ARCH_STACK_DEFAULT_SIZE;
++
+   /* Make sure it meets the minimum size that allocate_stack
+      (allocatestack.c) will demand, which depends on the page size.  */
+   const uintptr_t pagesz = sysconf (_SC_PAGESIZE);
