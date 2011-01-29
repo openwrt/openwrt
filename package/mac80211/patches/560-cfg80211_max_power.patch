@@ -1,0 +1,35 @@
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -839,6 +839,12 @@ static void handle_channel(struct wiphy 
+ 	if (freq_range->max_bandwidth_khz < MHZ_TO_KHZ(40))
+ 		bw_flags = IEEE80211_CHAN_NO_HT40;
+ 
++	if (chan->orig_mpwr)
++		chan->max_power = min(chan->orig_mpwr,
++			(int) MBM_TO_DBM(power_rule->max_eirp));
++	else
++		chan->max_power = (int) MBM_TO_DBM(power_rule->max_eirp);
++
+ 	if (last_request->initiator == NL80211_REGDOM_SET_BY_DRIVER &&
+ 	    request_wiphy && request_wiphy == wiphy &&
+ 	    request_wiphy->flags & WIPHY_FLAG_STRICT_REGULATORY) {
+@@ -851,19 +857,12 @@ static void handle_channel(struct wiphy 
+ 			map_regdom_flags(reg_rule->flags) | bw_flags;
+ 		chan->max_antenna_gain = chan->orig_mag =
+ 			(int) MBI_TO_DBI(power_rule->max_antenna_gain);
+-		chan->max_power = chan->orig_mpwr =
+-			(int) MBM_TO_DBM(power_rule->max_eirp);
+ 		return;
+ 	}
+ 
+ 	chan->flags = flags | bw_flags | map_regdom_flags(reg_rule->flags);
+ 	chan->max_antenna_gain = min(chan->orig_mag,
+ 		(int) MBI_TO_DBI(power_rule->max_antenna_gain));
+-	if (chan->orig_mpwr)
+-		chan->max_power = min(chan->orig_mpwr,
+-			(int) MBM_TO_DBM(power_rule->max_eirp));
+-	else
+-		chan->max_power = (int) MBM_TO_DBM(power_rule->max_eirp);
+ }
+ 
+ static void handle_band(struct wiphy *wiphy,
