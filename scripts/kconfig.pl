@@ -80,13 +80,15 @@ sub config_add($$$) {
 	return \%config;
 }
 
-sub config_diff($$) {
+sub config_diff($$$) {
 	my $cfg1 = shift;
 	my $cfg2 = shift;
+	my $new_only = shift;
 	my %config;
 	
 	foreach my $config (keys %$cfg2) {
 		if (!defined($cfg1->{$config}) or $cfg1->{$config} ne $cfg2->{$config}) {
+			next if $new_only and !defined($cfg1->{$config}) and $cfg2->{$config} eq '#undef';
 			$config{$config} = $cfg2->{$config};
 		}
 	}
@@ -146,7 +148,11 @@ sub parse_expr {
 	} elsif ($arg eq '>') {
 		my $arg1 = parse_expr($pos);
 		my $arg2 = parse_expr($pos);
-		return config_diff($arg1, $arg2);
+		return config_diff($arg1, $arg2, 0);
+	} elsif ($arg eq '>+') {
+		my $arg1 = parse_expr($pos);
+		my $arg2 = parse_expr($pos);
+		return config_diff($arg1, $arg2, 1);
 	} elsif ($arg eq '-') {
 		my $arg1 = parse_expr($pos);
 		my $arg2 = parse_expr($pos);
