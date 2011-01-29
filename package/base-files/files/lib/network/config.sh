@@ -363,7 +363,7 @@ setup_interface() {
 			# additional request options
 			local opt dhcpopts
 			for opt in $reqopts; do
-				append dhcpopts -O "$opt"
+				append dhcpopts "-O $opt"
 			done
 
 			# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
