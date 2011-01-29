@@ -78,6 +78,17 @@ udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_scsi_id) += scsi_id
 
 udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_usb_id) += usb_id
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/libudev.h $(1)/usr/include
+	$(INSTALL_DIR) $(1)/lib
+	$(CP) $(PKG_INSTALL_DIR)/lib/libudev.so* $(1)/lib
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libudev.so $(1)/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libudev.pc $(1)/usr/lib/pkgconfig
+endef
+
 define Package/udev/install
 	$(INSTALL_DIR) $(1)/etc/udev/rules.d
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/etc/udev/udev.conf $(1)/etc/udev
