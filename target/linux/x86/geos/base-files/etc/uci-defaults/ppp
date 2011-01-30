@@ -2,6 +2,8 @@
 
 uci batch <<__EOF__
 
+delete network.wan
+
 set network.wan=interface
 set network.wan.proto='pppoa'
 set network.wan.atmdev=0
