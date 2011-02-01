@@ -5,7 +5,7 @@
  	  want to use the OMAP module for SHA1/MD5 algorithms.
  
 +config CRYPTO_DEV_LANTIQ
-+	bool "Support for Lantiq crypto engine"
++	tristate "Support for Lantiq crypto engine"
 +	select CRYPTO_ALGAPI
 +	default y
 +	help

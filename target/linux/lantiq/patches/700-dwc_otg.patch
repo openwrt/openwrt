@@ -5693,7 +5693,7 @@
 +}
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_driver.c
-@@ -0,0 +1,1269 @@
+@@ -0,0 +1,1274 @@
 +/* ==========================================================================
 + * $File: //dwh/usb_iip/dev/software/otg_ipmate/linux/drivers/dwc_otg_driver.c $
 + * $Revision: 1.1.1.1 $
@@ -6342,8 +6342,13 @@
 +	gusbcfg_data_t usbcfg = {.d32 = 0};
 +
 +	// GPIOs
-+	gpio_request(_dev->dev.platform_data, "USB_POWER");
-+	gpio_direction_output(_dev->dev.platform_data, 1);
++	if(_dev->dev.platform_data >= 0)
++	{
++		gpio_request(_dev->dev.platform_data, "usb_power");
++		gpio_direction_output(_dev->dev.platform_data, 1);
++		gpio_set_value(_dev->dev.platform_data, 1);
++		gpio_export(_dev->dev.platform_data, 0);
++	}
 +
 +	dev_dbg(&_dev->dev, "dwc_otg_driver_probe (%p)\n", _dev);
 +

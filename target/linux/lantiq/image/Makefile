@@ -55,31 +55,59 @@ define Image/BuildKernel/Template
 endef
 
 ifeq ($(CONFIG_SOC_LANTIQ_XWAY),y)
-define Image/BuildKernel
+define Image/BuildKernel/Profile/EASY50712
+	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/EASY50712
+	$(call Image/Build/$(1),$(1),EASY50712)
+endef
+
+define Image/BuildKernel/Profile/EASY50812
+	$(call Image/BuildKernel/Template,EASY50812,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/EASY50812
+	$(call Image/Build/$(1),$(1),EASY50812)
+endef
+
+define Image/BuildKernel/Profile/ARV752DPW22
+	$(call Image/BuildKernel/Template,ARV752DPW22,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV752DPW22
+	$(call Image/Build/$(1),$(1),ARV752DPW22)
+endef
+
+define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,EASY4010,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,EASY50812,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4510PW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4518PW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4520PW,$(xway_cmdline))
+	$(call Image/BuildKernel/Template,ARV452CPW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4525PW,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,ARV752DPW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV7518PW,$(xway_cmdline))
+	$(call Image/BuildKernel/Template,ARV752DPW,$(xway_cmdline))
+	$(call Image/BuildKernel/Template,ARV752DPW22,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
 
-define Image/Build
+define Image/Build/Profile/Generic
 	$(call Image/Build/$(1),$(1),EASY4010)
 	$(call Image/Build/$(1),$(1),EASY50712)
 	$(call Image/Build/$(1),$(1),EASY50812)
 	$(call Image/Build/$(1),$(1),ARV4510PW)
 	$(call Image/Build/$(1),$(1),ARV4518PW)
 	$(call Image/Build/$(1),$(1),ARV4520PW)
+	$(call Image/Build/$(1),$(1),ARV452CPW)
 	$(call Image/Build/$(1),$(1),ARV4525PW)
-	$(call Image/Build/$(1),$(1),ARV752DPW)
 	$(call Image/Build/$(1),$(1),ARV7518PW)
+	$(call Image/Build/$(1),$(1),ARV752DPW)
+	$(call Image/Build/$(1),$(1),ARV752DPW22)
 	$(call Image/Build/$(1),$(1),NONE)
-	$(CP) $(KDIR)/root.$(1)  $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef
 endif
 
@@ -95,5 +123,13 @@ define Image/Build
 	$(CP) $(KDIR)/root.$(1)  $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef
 endif
+
+define Image/BuildKernel
+	$(call Image/BuildKernel/Profile/$(PROFILE))
+endef
+
+define Image/Build
+	$(call Image/Build/Profile/$(PROFILE),$(1))
+endef
 
 $(eval $(call BuildImage))
