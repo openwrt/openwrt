@@ -1,5 +1,5 @@
 $include /etc/hotplug2-common.rules
 
-SUBSYSTEM ~~ button {
+SUBSYSTEM == button {
 	exec kill -USR1 1
 }

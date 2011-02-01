@@ -1,10 +1,10 @@
 $include /etc/hotplug2-common.rules
 
-SUBSYSTEM ~~ (net|input|button|usb|platform|ieee1394|block|atm) {
+SUBSYSTEM ~~ (^net$|^input$|^button$|^usb$|^platform$|^ieee1394$|^block$|^atm$) {
 	exec /sbin/hotplug-call %SUBSYSTEM%
 }
 
-DEVICENAME ~~ (watchdog) {
+DEVICENAME == watchdog {
 	exec /sbin/watchdog -t 5 /dev/watchdog
-	next
+	next-event
 }
