@@ -18,21 +18,21 @@ PKG_MD5SUM:=a38a7bf3242aad607f50f57b988bc87c
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ifx-tapidemo
+define Package/ltq-tapidemo
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=TAPIdemo application for Lantiq boards
   URL:=http://www.lantiq.com/
-  MAINTAINER:=Lantiq
-  DEPENDS:=+kmod-ifx-tapi +kmod-ifx-vmmc @BROKEN
+  DEPENDS:=+kmod-ltq-tapi +kmod-ltq-vmmc
+  MAINTAINER:=John Crispin <blogic@openwrt.org>
   MENU:=1
 endef
 
-define Package/ifx-tapidemo/description
+define Package/ltq-tapidemo/description
 	Voice Access mini-PBX Demo Application
 endef
 
-define Package/ifx-tapidemo/config
+define Package/ltq-tapidemo/config
 	source "$(SOURCE)/Config.in"
 endef
 
@@ -59,10 +59,10 @@ ifeq ($(CONFIG_VOICE_CPE_TAPIDEMO_BOARD_EASY80910),y)
   CONFIGURE_ARGS += --enable-boardname=EASY508XX
 endif
 
-define Package/ifx-tapidemo/install
+define Package/ltq-tapidemo/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/tapidemo $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/bringup_tapidemo $(1)/etc/init.d/tapidemo
 endef
 
-$(eval $(call BuildPackage,ifx-tapidemo))
+$(eval $(call BuildPackage,ltq-tapidemo))

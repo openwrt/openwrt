@@ -1,6 +1,6 @@
 --- a/src/Makefile.am
 +++ b/src/Makefile.am
-@@ -227,7 +227,7 @@ drv_vmmc_CFLAGS += -fno-common
+@@ -228,7 +228,7 @@
  drv_vmmc_OBJS = "$(subst .c,.o, $(drv_vmmc_SOURCES) $(nodist_drv_vmmc_SOURCES))"
  
  drv_vmmc.ko: $(drv_vmmc_SOURCES) $(EXTRA_DIST)
@@ -9,7 +9,7 @@
  	@for f in $(drv_vmmc_SOURCES) $(nodist_drv_vmmc_SOURCES) ; do \
  		if test ! -e $(PWD)/$$f; then \
  			echo "  LN      $$f" ; \
-@@ -235,10 +235,10 @@ drv_vmmc.ko: $(drv_vmmc_SOURCES) $(EXTRA
+@@ -236,10 +236,10 @@
  			ln -s @abs_srcdir@/$$f $(PWD)/$$f; \
  		fi; \
  	done;
@@ -84,7 +84,7 @@
  #include "ifx_types.h"
 --- a/configure.in
 +++ b/configure.in
-@@ -112,7 +112,7 @@ dnl Set kernel build path
+@@ -112,7 +112,7 @@
  AC_ARG_ENABLE(kernelbuild,
          AS_HELP_STRING(--enable-kernelbuild=x,Set the target kernel build path),
          [
