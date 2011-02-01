@@ -22,16 +22,47 @@ PKG_TARGETS:=bin
 include $(INCLUDE_DIR)/package.mk
 
 ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell $(SH_FUNC) grep '^CONFIG_UBOOT_' $(TOPDIR)/.config | md5s)
+  STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/$(BUILD_VARIANT)/.configured
+  STAMP_BUILT:=$(PKG_BUILD_DIR)/$(BUILD_VARIANT)/.built
 endif
 
-define Package/uboot-lantiq
+define Package/uboot-lantiq-template
   SECTION:=boot
   CATEGORY:=Boot Loaders
   DEPENDS:=@TARGET_lantiq
-  TITLE:=U-Boot for Lantiq reference boards
   URL:=http://www.denx.de/wiki/U-Boot
+  VARIANT:=$(1)
+  TITLE:=$(1) ($(2))
+  MAINTAINER:=John Crispin <blogic@openwrt.org>
 endef
+
+#Lantiq
+Package/uboot-lantiq-easy50712_DDR166M=$(call Package/uboot-lantiq-template,easy50712_DDR166M,NOR)
+Package/uboot-lantiq-easy50712_DDR166M_ramboot=$(call Package/uboot-lantiq-template,easy50712_DDR166M_ramboot,RAM)
+Package/uboot-lantiq-easy50812_DDR166M=$(call Package/uboot-lantiq-template,easy50812_DDR166M,NOR)
+Package/uboot-lantiq-easy50812_DDR166M_ramboot=$(call Package/uboot-lantiq-template,easy50812_DDR166M_ramboot,RAM)
+
+DDR_CONFIG_easy50712_DDR166M_ramboot:=easy50712_DDR166M
+DDR_CONFIG_easy50812_DDR166M_ramboot:=easy50812
+
+#Arcadyan
+Package/uboot-lantiq-arv4518=$(call Package/uboot-lantiq-template,arv4518,NOR)
+Package/uboot-lantiq-arv4518_ramboot=$(call Package/uboot-lantiq-template,arv4518_ramboot,RAM)
+Package/uboot-lantiq-arv4518_brnboot=$(call Package/uboot-lantiq-template,arv4518_brnboot,BRN)
+Package/uboot-lantiq-arv452C=$(call Package/uboot-lantiq-template,arv452C,NOR)
+Package/uboot-lantiq-arv452C_ramboot=$(call Package/uboot-lantiq-template,arv452C_ramboot,RAM)
+Package/uboot-lantiq-arv452C_brnboot=$(call Package/uboot-lantiq-template,arv452C_brnboot,BRN)
+Package/uboot-lantiq-arv752DPW=$(call Package/uboot-lantiq-template,arv752DPW,NOR)
+Package/uboot-lantiq-arv752DPW_ramboot=$(call Package/uboot-lantiq-template,arv752DPW_ramboot,RAM)
+Package/uboot-lantiq-arv752DPW_brnboot=$(call Package/uboot-lantiq-template,arv752DPW_brnboot,BRN)
+Package/uboot-lantiq-arv752DPW22=$(call Package/uboot-lantiq-template,arv752DPW22,NOR)
+Package/uboot-lantiq-arv752DPW22_ramboot=$(call Package/uboot-lantiq-template,arv752DPW22_ramboot,RAM)
+Package/uboot-lantiq-arv752DPW22_brnboot=$(call Package/uboot-lantiq-template,arv752DPW22_brnboot,BRN)
+
+DDR_CONFIG_arv4518_ramboot:=arcadyan_psc166
+DDR_CONFIG_arv452C_ramboot:=arcadyan_psc166
+DDR_CONFIG_arv752DPW_ramboot:=arcadyan_psc166
+DDR_CONFIG_arv752DPW22_ramboot:=arcadyan_psc166
 
 define Build/Prepare
 	$(PKG_UNPACK)
@@ -40,30 +71,20 @@ define Build/Prepare
 	find $(PKG_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 endef
 
-UBOOT_TARGET:=$(call qstrip,$(CONFIG_UBOOT_TARGET))
-UBOOT_RAMBOOT_DDR_CONFIG:=$(call qstrip,$(CONFIG_UBOOT_RAMBOOT_DDR_CONFIG))
-
 UBOOT_MAKE_OPTS:= \
 	CROSS_COMPILE=$(TARGET_CROSS) \
 	ENDIANNESS= \
 	V=1
 
-define Package/uboot-lantiq/config
-	source "$(SOURCE)/Config.in"
-endef
-
 define Build/Configure/Target
 	$(MAKE) -s -C $(PKG_BUILD_DIR) \
 		$(UBOOT_MAKE_OPTS) \
-		O=$(PKG_BUILD_DIR)/$(1) \
+		O=$(PKG_BUILD_DIR)/$(BUILD_VARIANT) \
 		$(1)_config
 endef
 
 define Build/Configure
-	$(call Build/Configure/Target,$(UBOOT_TARGET))
-ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
-	$(call Build/Configure/Target,$(UBOOT_TARGET)_ramboot)
-endif
+	$(call Build/Configure/Target,$(BUILD_VARIANT))
 endef
 
 define Build/Compile/Target
@@ -74,26 +95,39 @@ define Build/Compile/Target
 endef
 
 define Build/Compile
-	$(call Build/Compile/Target,$(UBOOT_TARGET))
-ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
-	$(call Build/Compile/Target,$(UBOOT_TARGET)_ramboot)
-endif
+	$(call Build/Compile/Target,$(BUILD_VARIANT))
 endef
 
-define Package/uboot-lantiq/install
-	mkdir -p $(1)/$(UBOOT_TARGET)
+define Package/uboot-lantiq-$(BUILD_VARIANT)/install
+	mkdir -p $(1)
 	dd \
-		if=$(PKG_BUILD_DIR)/$(UBOOT_TARGET)/u-boot.bin \
-		of=$(1)/$(UBOOT_TARGET)/u-boot.bin \
+		if=$(PKG_BUILD_DIR)/$(BUILD_VARIANT)/u-boot.bin \
+		of=$(1)/u-boot.bin \
 		bs=64k conv=sync
-ifeq ($(CONFIG_UBOOT_RAMBOOT),y)
-	if [ -e $(UBOOT_RAMBOOT_DDR_CONFIG) ]; then \
+ifneq ($(findstring ramboot,$(BUILD_VARIANT)),)
+	if [ -e $(DDR_CONFIG_$(BUILD_VARIANT)).conf ]; then \
 		perl ./gct \
-			$(UBOOT_RAMBOOT_DDR_CONFIG) \
-			$(PKG_BUILD_DIR)/$(UBOOT_TARGET)_ramboot/u-boot.srec \
-			$(1)/$(UBOOT_TARGET)/u-boot.asc; \
+			$(DDR_CONFIG_$(BUILD_VARIANT)).conf \
+			$(PKG_BUILD_DIR)/$(BUILD_VARIANT)/u-boot.srec \
+			$(1)/u-boot.asc; \
 	fi
 endif
 endef
 
-$(eval $(call BuildPackage,uboot-lantiq))
+$(eval $(call BuildPackage,uboot-lantiq-easy50712_DDR166M))
+$(eval $(call BuildPackage,uboot-lantiq-easy50712_DDR166M_ramboot))
+$(eval $(call BuildPackage,uboot-lantiq-easy50812_DDR166M))
+$(eval $(call BuildPackage,uboot-lantiq-easy50812_DDR166M_ramboot))
+$(eval $(call BuildPackage,uboot-lantiq-arv4518))
+$(eval $(call BuildPackage,uboot-lantiq-arv4518_brnboot))
+$(eval $(call BuildPackage,uboot-lantiq-arv4518_ramboot))
+$(eval $(call BuildPackage,uboot-lantiq-arv452C))
+$(eval $(call BuildPackage,uboot-lantiq-arv452C_brnboot))
+$(eval $(call BuildPackage,uboot-lantiq-arv452C_ramboot))
+$(eval $(call BuildPackage,uboot-lantiq-arv752DPW))
+$(eval $(call BuildPackage,uboot-lantiq-arv752DPW_brnboot))
+$(eval $(call BuildPackage,uboot-lantiq-arv752DPW_ramboot))
+$(eval $(call BuildPackage,uboot-lantiq-arv752DPW22))
+$(eval $(call BuildPackage,uboot-lantiq-arv752DPW22_brnboot))
+$(eval $(call BuildPackage,uboot-lantiq-arv752DPW22_ramboot))
+

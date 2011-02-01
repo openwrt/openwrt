@@ -33,12 +33,10 @@
 #define CONFIG_MIPS32		1	/* MIPS32 CPU compatible		*/
 #define CONFIG_MIPS24KEC	1	/* MIPS 24KEc CPU core			*/
 #define CONFIG_DANUBE		1	/* in a Danube/Twinpass Chip		*/
-#define CONFIG_ARV752DWP22	1	/* on the arv752DWP22 Board		*/
 
 #define CONFIG_SYS_MIPS_MULTI_CPU	1	/* This is a multi cpu system */
 
 #define CONFIG_USE_DDR_RAM
-#define CONFIG_SYS_MAX_RAM	64*1024*1024
 
 #define CONFIG_FLASH_CFI_DRIVER	1
 
@@ -58,8 +56,6 @@
 #endif
 #endif
 
-#define	CONFIG_SYS_PROMPT	"ARV752DWP22 => "	/* Monitor Command Prompt */
-
 #undef CONFIG_SYS_HUSH_PARSER		/* Use the HUSH parser		*/
 
 /*
@@ -72,7 +68,6 @@
 #define CONFIG_EXTRA_ENV_SETTINGS                                       \
         "ram_addr=0x80500000\0"                                         \
         "kernel_addr=0xb0050000\0"                                      \
-        "mtdparts=mtdparts=ifx-nor:256k(uboot)ro,64k(uboot_env)ro,64k(kernel),-(rootfs)\0" \
         "flashargs=setenv bootargs rootfstype=squashfs,jffs2\0"         \
         "nfsargs=setenv bootargs root=/dev/nfs rw "                     \
                 "nfsroot=${serverip}:${rootpath} \0"                    \
@@ -91,10 +86,10 @@
                 "bootm ${ram_addr}\0"                                   \
         "load_kernel=tftp ${ram_addr} "                                 \
                 "${tftppath}openwrt-ifxmips-uImage\0"                   \
-        "update_uboot=tftp 0x80500000 ${tftppath}u-boot.bin;era 0xb0000000 +${filesize};" \
+        "update_uboot=tftp 0x80500000 ${tftppath}u-boot-" CONFIG_ARCADYAN ".bin;era 0xb0000000 +${filesize};" \
                 "cp.b 0x80500000 0xb0000000 ${filesize}\0" \
         "update_openwrt=tftp ${ram_addr} "                              \
-                "${tftppath}openwrt-ifxmips-squashfs.image;"            \
+                "${tftppath}openwrt-lantiq-" CONFIG_ARCADYAN "-squashfs.image;"            \
                 "era ${kernel_addr} +${filesize};"                      \
                 "cp.b ${ram_addr} ${kernel_addr} ${filesize}\0"
 
@@ -107,16 +102,9 @@
 #define CONFIG_SYS_MIPS_CACHE_OPER_MODE	CONF_CM_CACHABLE_NO_WA
 
 #define CONFIG_NET_MULTI
-#if 0
-#define CONFIG_M4530_ETH
-#define CONFIG_M4530_FPGA
-#endif
 
 #define CONFIG_IFX_ETOP
 //#define CLK_OUT2_25MHZ
-#define CONFIG_EXTRA_SWITCH
-
-//#define CONFIG_RMII			/*  use interface in RMII mode */
 
 #define CONFIG_MII
 #define CONFIG_CMD_MII
@@ -141,11 +129,9 @@
 
 #define CONFIG_CMD_HTTPD		/* enable upgrade via HTTPD */
 
-//#define CONFIG_ETHADDR		00:13:f7:df:1c:80
-//#define CONFIG_ETHADDR		11:22:33:44:55:66
-#define CONFIG_IPADDR		192.168.2.1
-#define CONFIG_SERVERIP		192.168.2.101
-#define CONFIG_GATEWAYIP	192.168.2.254
+#define CONFIG_IPADDR		192.168.1.1
+#define CONFIG_SERVERIP		192.168.1.101
+#define CONFIG_GATEWAYIP	192.168.1.254
 #define CONFIG_NETMASK		255.255.255.0
 #define CONFIG_ROOTPATH		"/export"
 

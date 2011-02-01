@@ -25,8 +25,7 @@ include $(TOPDIR)/config.mk
 
 LIB	= $(obj)lib$(BOARD).a
 
-#COBJS	:= $(BOARD).o
-COBJS-y	+= arv752.o athrs26_phy.o
+COBJS-y	+= board.o athrs26_phy.o
 
 SOBJS	= lowlevel_init.o pmuenable.o
 
