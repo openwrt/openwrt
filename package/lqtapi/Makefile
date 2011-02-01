@@ -29,7 +29,7 @@ $(eval $(call Download,firmware))
 define KernelPackage/lqtapi
   SUBMENU:=Voice over IP
   TITLE:=Tapi drivers for Lantiq SoC
-  DEPENDS:=@TARGET_ifxmips_danube
+  DEPENDS:=@TARGET_lantiq_xway @BROKEN
   FILES:=$(PKG_BUILD_DIR)/tapi/tapi.ko \
 	$(PKG_BUILD_DIR)/mps/mps.ko \
   	$(PKG_BUILD_DIR)/mps/vmmc.ko

@@ -15,7 +15,7 @@ define Package/libtapi
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=libtapi
-  DEPENDS:=@TARGET_ifxmips_danube
+  DEPENDS:=@TARGET_lantiq_xway
 endef
 
 define Build/Prepare
