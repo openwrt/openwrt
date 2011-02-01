@@ -68,7 +68,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR)/src/qgen \
 		LDFLAGS="" \
 		all
-	$(MAKE) -C $(PKG_BUILD_DIR) all
+	$(MAKE) -C $(PKG_BUILD_DIR) OBJCOPY=$(TARGET_CROSS)objcopy all
 endef
 
 define Build/InstallDev
