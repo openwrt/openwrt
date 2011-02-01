@@ -1,0 +1,42 @@
+--- a/aconfigure.ac
++++ b/aconfigure.ac
+@@ -48,7 +48,7 @@
+     CROSS_COMPILE=`echo ${CC} | sed 's/gcc//'`
+ fi
+ 
+-if test "$AR" = ""; then AR="${CROSS_COMPILE}ar rv"; fi
++AR="${CROSS_COMPILE}ar rv"
+ AC_SUBST(AR)
+ if test "$LD" = ""; then LD="$CC"; fi
+ AC_SUBST(LD)
+@@ -590,6 +590,15 @@
+ 		AC_MSG_RESULT([Checking if external sound is set... yes])
+ 	       fi]
+ 	      )
++
++AC_ARG_ENABLE(ltq_tapi,
++	      AC_HELP_STRING([--enable-ltq-tapi],
++			     [PJMEDIA will use ltq tapi backend]),
++	      [if test "$enable_ltq_tapi" = "yes"; then
++		[ac_pjmedia_snd=ltqtapi]
++		AC_MSG_RESULT([Checking if external sound is set... yes])
++	       fi]
++	      )
+ 
+ dnl # Include resampling small filter
+ AC_SUBST(ac_no_small_filter)
+--- a/pjmedia/build/os-auto.mak.in
++++ b/pjmedia/build/os-auto.mak.in
+@@ -118,4 +118,11 @@
+ export CFLAGS += -DPJMEDIA_AUDIO_DEV_HAS_PORTAUDIO=0 -DPJMEDIA_AUDIO_DEV_HAS_WMME=0
+ endif
+ 
+-
++#
++# Lantiq tapi backend
++#
++ifeq ($(AC_PJMEDIA_SND),ltqtapi)
++export CFLAGS += -DPJMEDIA_AUDIO_DEV_HAS_PORTAUDIO=0 -DPJMEDIA_AUDIO_DEV_HAS_WMME=0
++export PJMEDIA_AUDIODEV_OBJS += tapi_dev.o
++export CFLAGS += -DPJMEDIA_AUDIO_DEV_HAS_TAPI_DEVICE=1
++endif
