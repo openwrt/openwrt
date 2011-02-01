@@ -38,7 +38,9 @@
 #if defined(CONFIG_PCI)
 #include <pci.h>
 #endif
+#if defined(CONFIG_AR8216_SWITCH)
 #include "athrs26_phy.h"
+#endif
 
 extern ulong ifx_get_ddr_hz(void);
 extern ulong ifx_get_cpuclk(void);
@@ -162,12 +164,65 @@ phys_size_t initdram(int board_type)
 }
 #endif
 
+static void gpio_default(void)
+{
+#ifdef CONFIG_SWITCH_PORT0
+	*DANUBE_GPIO_P0_ALTSEL0 &= ~(1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P0_ALTSEL1 &= ~(1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P0_OD |= (1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P0_DIR |= (1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P0_OUT |= (1<<CONFIG_SWITCH_PIN);
+#elif defined(CONFIG_SWITCH_PORT1)
+	*DANUBE_GPIO_P1_ALTSEL0 &= ~(1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P1_ALTSEL1 &= ~(1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P1_OD |= (1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P1_DIR |= (1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P1_OUT |= (1<<CONFIG_SWITCH_PIN);
+#endif
+#ifdef CONFIG_EBU_GPIO
+	{
+		int i = 0;
+		printf ("bring up ebu gpio\n");
+		*DANUBE_EBU_BUSCON1 = 0x1e7ff;
+		*DANUBE_EBU_ADDSEL1 = 0x14000001;
+
+		*((volatile u16*)0xb4000000) = 0x0;
+		for(i = 0; i < 1000; i++)
+			udelay(1000);
+		*((volatile u16*)0xb4000000) = CONFIG_EBU_GPIO;
+		*DANUBE_EBU_BUSCON1 = 0x8001e7ff;
+	}
+#endif
+#ifdef CONFIG_BUTTON_PORT0
+	*DANUBE_GPIO_P0_ALTSEL0 &= ~(1<<CONFIG_BUTTON_PIN);
+	*DANUBE_GPIO_P0_ALTSEL1 &= ~(1<<CONFIG_BUTTON_PIN);
+	*DANUBE_GPIO_P0_DIR &= ~(1<<CONFIG_BUTTON_PIN);
+	if(!!(*DANUBE_GPIO_P0_IN & (1<<CONFIG_BUTTON_PIN)) == CONFIG_BUTTON_LEVEL)
+	{
+		printf("button is pressed\n");
+		setenv("bootdelay", "0");
+		setenv("bootcmd", "httpd");
+	}
+#elif defined(CONFIG_BUTTON_PORT1)
+	*DANUBE_GPIO_P1_ALTSEL0 &= ~(1<<CONFIG_BUTTON_PIN);
+	*DANUBE_GPIO_P1_ALTSEL1 &= ~(1<<CONFIG_BUTTON_PIN);
+	*DANUBE_GPIO_P1_DIR &= ~(1<<CONFIG_BUTTON_PIN);
+	if(!!(*DANUBE_GPIO_P1_IN & (1<<CONFIG_BUTTON_PIN)) == CONFIG_BUTTON_LEVEL)
+	{
+		printf("button is pressed\n");
+		setenv("bootdelay", "0");
+		setenv("bootcmd", "httpd");
+	}
+#endif
+
+}
+
 int checkboard (void)
 {
 	unsigned long chipid = *DANUBE_MPS_CHIPID;
 	int part_num;
 
-	puts ("Board: ARV75DW22 - Easybox 803\n");
+	puts ("Board: "CONFIG_ARCADYAN"\n");
 	puts ("SoC: ");
 
 	part_num = DANUBE_MPS_CHIPID_PARTNUM_GET(chipid);
@@ -186,6 +241,7 @@ int checkboard (void)
 
 	printf("DDR Speed %ld MHz, ", ifx_get_ddr_hz()/1000000);
 	printf("CPU Speed %ld MHz\n", ifx_get_cpuclk()/1000000);
+
 
 	return 0;
 }
@@ -222,17 +278,37 @@ int board_early_init_f(void)
 }
 #endif /* CONFIG_SKIP_LOWLEVEL_INIT */
 
-
-#ifdef CONFIG_EXTRA_SWITCH
-static int external_switch_init(void)
+#ifdef CONFIG_RTL8306_SWITCH
+#define ID_RTL8306	0x5988
+static int external_switch_rtl8306(void)
 {
-	// switch reset pin on arv752
-	*DANUBE_GPIO_P1_ALTSEL0 &= ~8;
-	*DANUBE_GPIO_P1_ALTSEL1 &= ~8;
-	*DANUBE_GPIO_P1_OD |= 8;
-	*DANUBE_GPIO_P1_DIR |= 8;
-	*DANUBE_GPIO_P1_OUT |= 8;
+	unsigned short chipid;
+	static char * const name = "lq_cpe_eth";
 
+	udelay(100000);
+
+	puts("\nsearching for rtl8306 switch ... ");
+	if (miiphy_read(name, 4, 30, &chipid) == 0) {
+		if (chipid == ID_RTL8306) {
+			puts("found");
+			/* set led mode */
+			miiphy_write(name, 0, 19, 0xffff);
+			/* magic */
+			miiphy_write(name, 4, 22, 0x877f);
+			puts("\n");
+			return 0;
+		}
+		puts("failed\n");
+	}
+	puts("\nno known switch found ... \n");
+
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_AR8216_SWITCH
+static int external_switch_ar8216(void)
+{
 	puts("initializing ar8216 switch... ");
 	if (athrs26_phy_setup(0)==0) {
 	   printf("initialized\n");
@@ -241,10 +317,12 @@ static int external_switch_init(void)
 	puts("failed ... \n");
 	return 0;
 }
-#endif /* CONFIG_EXTRA_SWITCH */
+#endif
 
 int board_eth_init(bd_t *bis)
 {
+	gpio_default();
+
 #if defined(CONFIG_IFX_ETOP)
 	uchar enetaddr[6];
 	if (!eth_getenv_enetaddr("ethaddr", enetaddr))
@@ -261,12 +339,15 @@ int board_eth_init(bd_t *bis)
 	*DANUBE_RCU_RST_REQ &=(unsigned long)~1;
 	udelay(1000);
 
-#ifdef CONFIG_EXTRA_SWITCH
-	if (external_switch_init()<0)
+#ifdef CONFIG_RTL8306_SWITCH
+	if (external_switch_rtl8306()<0)
 		return -1;
-#endif /* CONFIG_EXTRA_SWITCH */
-#endif /* CONFIG_IFX_ETOP */
-
+#endif
+#ifdef CONFIG_AR8216_SWITCH
+	if (external_switch_ar8216()<0)
+		return -1;
+#endif
+#endif
 	return 0;
 }
 

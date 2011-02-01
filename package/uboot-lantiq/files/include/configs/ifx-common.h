@@ -23,7 +23,7 @@
 #ifndef __IFX_COMMON_H
 #define __IFX_COMMON_H
 
-#define CONFIG_BOOTDELAY	5	/* autoboot after 5 seconds	*/
+#define CONFIG_BOOTDELAY	2	/* autoboot after 5 seconds	*/
 
 #define CONFIG_BAUDRATE		115200
 

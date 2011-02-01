@@ -39,49 +39,40 @@
  SRCS	:= $(COBJS:.o=.c)
 --- a/Makefile
 +++ b/Makefile
-@@ -3414,6 +3414,46 @@
+@@ -3414,6 +3414,37 @@
  ## MIPS32 ifxcpe
  #########################################################################
  
-+arv752DWP22%config	: unconfig
++define arcadyan
++$(1)	: unconfig
 +	@mkdir -p $(obj)include
-+	@mkdir -p $(obj)board/arcadyan/arv752DWP22
-+	@[ -z "$(findstring brnboot,$@)" ] || \
-+		{ echo "TEXT_BASE = 0x80002000" >$(obj)board/arcadyan/arv752DWP22/config.tmp ; \
++	@mkdir -p $(obj)board/arcadyan/
++	@[ -z "$$(findstring brnboot,$$@)" ] || \
++		{ echo "TEXT_BASE = 0x80002000" >$(obj)board/arcadyan/config.tmp ; \
 +			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
 +			echo "#define CONFIG_SYS_BRNBOOT" >>$(obj)include/config.h ; \
 +			$(XECHO) "... with brnboot configuration" ; \
 +		}
-+	@[ -z "$(findstring ramboot,$@)" ] || \
-+		{ echo "TEXT_BASE = 0xA0400000" >$(obj)board/arcadyan/arv752DWP22/config.tmp ; \
++	@[ -z "$$(findstring ramboot,$$@)" ] || \
++		{ echo "TEXT_BASE = 0xA0400000" >$(obj)board/arcadyan/config.tmp ; \
 +			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
 +			$(XECHO) "... with ramboot configuration" ; \
 +		}
-+	@if [ "$(findstring flash,$@)" ] ; then \
++	@if [ "$$(findstring flash,$$@)" ] ; then \
 +		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
 +		echo "#define CONFIG_USE_DDR_RAM_CFG_DDR_psc166" >>$(obj)include/config.h ; \
 +	fi
-+	@$(MKCONFIG) -a $(word 1,$(subst _, ,$@)) mips mips arv752DWP22 arcadyan danube
++	@$(MKCONFIG) -a $$(word 1,$$(subst _, ,$$@)) mips mips arcadyan "" danube
++endef
 +
-+arv4518%config	: unconfig
-+	@mkdir -p $(obj)include
-+	@mkdir -p $(obj)board/arcadyan/arv4518
-+	@[ -z "$(findstring brnboot,$@)" ] || \
-+		{ echo "TEXT_BASE = 0x80002000" >$(obj)board/arcadyan/arv4518/config.tmp ; \
-+			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
-+			echo "#define CONFIG_SYS_BRNBOOT" >>$(obj)include/config.h ; \
-+			$(XECHO) "... with brnboot configuration" ; \
-+		}
-+	@[ -z "$(findstring ramboot,$@)" ] || \
-+		{ echo "TEXT_BASE = 0xA0400000" >$(obj)board/arcadyan/arv4518/config.tmp ; \
-+			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
-+			$(XECHO) "... with ramboot configuration" ; \
-+		}
-+	@if [ "$(findstring flash,$@)" ] ; then \
-+		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
-+		echo "#define CONFIG_USE_DDR_RAM_CFG_DDR_psc166" >>$(obj)include/config.h ; \
-+	fi
-+	@$(MKCONFIG) -a $(word 1,$(subst _, ,$@)) mips mips arv4518 arcadyan danube
++$(eval $(call arcadyan, arv4520PW%config))
++$(eval $(call arcadyan, arv452CPW%config))
++$(eval $(call arcadyan, arv4525PW%config))
++$(eval $(call arcadyan, arv4510PW%config))
++$(eval $(call arcadyan, arv4518PW%config))
++$(eval $(call arcadyan, arv7518PW%config))
++$(eval $(call arcadyan, arv752DPW%config))
++$(eval $(call arcadyan, arv752DPW22%config))
 +
  easy50712%config	: unconfig
  	@mkdir -p $(obj)include
