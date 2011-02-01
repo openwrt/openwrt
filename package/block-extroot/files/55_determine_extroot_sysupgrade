@@ -13,13 +13,15 @@ check_set_md5sum() {
 		er_extroot_md5sum="$(cat $er_md5sum_file)"
 	fi
 
+	local er_overlay_file="/overlay/etc/extroot.md5sum"
+
 	local er_extroot_overlay_md5sum
-	if [ -f "/overlay/etc/extroot.md5sum" ]; then
-		er_extroot_overlay_md5sum="$(cat /overlay/.extroot.md5sum)"
+	if [ -f "$er_overlay_file" ]; then
+		er_extroot_overlay_md5sum="$(cat $er_overlay_file)"
 	fi
 
 	if [ -z "$er_extroot_overlay_md5sum" ]; then
-		cat $er_md5sum_file >/overlay/.extroot.md5sum
+		cat $er_md5sum_file >$er_overlay_file
 	elif [ "$er_extroot_overlay_md5sum" != "$er_extroot_md5sum" ]; then
 		pi_extroot_mount_success="false"
 		mkdir -p /tmp/overlay-disabled
