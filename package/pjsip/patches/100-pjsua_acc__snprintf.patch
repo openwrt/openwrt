@@ -1,0 +1,90 @@
+--- a/pjsip/src/pjsua-lib/pjsua_acc.c
++++ b/pjsip/src/pjsua-lib/pjsua_acc.c
+@@ -430,7 +430,7 @@
+ 		     "<sip:%s%.*s%s:%d%s>", 
+ 		     beginquote,
+ 		     (int)t->local_name.host.slen,
+-		     t->local_name.host.ptr,
++		     t->local_name.host.slen ? t->local_name.host.ptr : "",
+ 		     endquote,
+ 		     t->local_name.port,
+ 		     transport_param);
+@@ -1158,18 +1158,18 @@
+ 	len = pj_ansi_snprintf(tmp, PJSIP_MAX_URL_SIZE,
+ 			       "<sip:%.*s%s%s%.*s%s:%d;transport=%s%.*s>%.*s",
+ 			       (int)acc->user_part.slen,
+-			       acc->user_part.ptr,
++			       acc->user_part.slen ? acc->user_part.ptr : "",
+ 			       (acc->user_part.slen? "@" : ""),
+ 			       beginquote,
+ 			       (int)via_addr->slen,
+-			       via_addr->ptr,
++			       via_addr->slen ? via_addr->ptr : "",
+ 			       endquote,
+ 			       rport,
+ 			       tp->type_name,
+ 			       (int)acc->cfg.contact_uri_params.slen,
+-			       acc->cfg.contact_uri_params.ptr,
++			       acc->cfg.contact_uri_params.slen ? acc->cfg.contact_uri_params.ptr : "",
+ 			       (int)acc->cfg.contact_params.slen,
+-			       acc->cfg.contact_params.ptr);
++			       acc->cfg.contact_params.slen ? acc->cfg.contact_params.ptr : "");
+ 	if (len < 1) {
+ 	    PJ_LOG(1,(THIS_FILE, "URI too long"));
+ 	    pj_pool_release(pool);
+@@ -2233,22 +2233,22 @@
+     contact->slen = pj_ansi_snprintf(contact->ptr, PJSIP_MAX_URL_SIZE,
+ 				     "%.*s%s<%s:%.*s%s%s%.*s%s:%d%s%.*s>%.*s",
+ 				     (int)acc->display.slen,
+-				     acc->display.ptr,
++				     acc->display.slen ? acc->display.ptr : "",
+ 				     (acc->display.slen?" " : ""),
+ 				     (secure ? PJSUA_SECURE_SCHEME : "sip"),
+ 				     (int)acc->user_part.slen,
+-				     acc->user_part.ptr,
++				     acc->user_part.slen ? acc->user_part.ptr : "",
+ 				     (acc->user_part.slen?"@":""),
+ 				     beginquote,
+ 				     (int)local_addr.slen,
+-				     local_addr.ptr,
++				     local_addr.slen ? local_addr.ptr : "",
+ 				     endquote,
+ 				     local_port,
+ 				     transport_param,
+ 				     (int)acc->cfg.contact_uri_params.slen,
+-				     acc->cfg.contact_uri_params.ptr,
++				     acc->cfg.contact_uri_params.slen ? acc->cfg.contact_uri_params.ptr : "",
+ 				     (int)acc->cfg.contact_params.slen,
+-				     acc->cfg.contact_params.ptr);
++				     acc->cfg.contact_params.slen ? acc->cfg.contact_params.ptr : "");
+ 
+     return PJ_SUCCESS;
+ }
+@@ -2390,22 +2390,22 @@
+     contact->slen = pj_ansi_snprintf(contact->ptr, PJSIP_MAX_URL_SIZE,
+ 				     "%.*s%s<%s:%.*s%s%s%.*s%s:%d%s%.*s>%.*s",
+ 				     (int)acc->display.slen,
+-				     acc->display.ptr,
++				     acc->display.slen ? acc->display.ptr : "",
+ 				     (acc->display.slen?" " : ""),
+ 				     (secure ? PJSUA_SECURE_SCHEME : "sip"),
+ 				     (int)acc->user_part.slen,
+-				     acc->user_part.ptr,
++				     acc->user_part.slen ? acc->user_part.ptr : "",
+ 				     (acc->user_part.slen?"@":""),
+ 				     beginquote,
+ 				     (int)local_addr.slen,
+-				     local_addr.ptr,
++				     local_addr.slen ? local_addr.ptr : "",
+ 				     endquote,
+ 				     local_port,
+ 				     transport_param,
+ 				     (int)acc->cfg.contact_uri_params.slen,
+-				     acc->cfg.contact_uri_params.ptr,
++				     acc->cfg.contact_uri_params.slen ? acc->cfg.contact_uri_params.ptr : "",
+ 				     (int)acc->cfg.contact_params.slen,
+-				     acc->cfg.contact_params.ptr);
++				     acc->cfg.contact_params.slen ? acc->cfg.contact_params.ptr : "");
+ 
+     return PJ_SUCCESS;
+ }

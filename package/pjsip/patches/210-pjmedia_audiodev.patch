@@ -1,0 +1,23 @@
+--- a/pjmedia/src/pjmedia-audiodev/audiodev.c
++++ b/pjmedia/src/pjmedia-audiodev/audiodev.c
+@@ -98,6 +98,10 @@
+ pjmedia_aud_dev_factory* pjmedia_null_audio_factory(pj_pool_factory *pf);
+ #endif
+ 
++#if PJMEDIA_AUDIO_DEV_HAS_TAPI_DEVICE
++pjmedia_aud_dev_factory* pjmedia_tapi_factory(pj_pool_factory *pf);
++#endif
++
+ #define MAX_DRIVERS	16
+ #define MAX_DEVS	64
+ 
+@@ -404,6 +408,9 @@
+ #if PJMEDIA_AUDIO_DEV_HAS_NULL_AUDIO
+     aud_subsys.drv[aud_subsys.drv_cnt++].create = &pjmedia_null_audio_factory;
+ #endif
++#if PJMEDIA_AUDIO_DEV_HAS_TAPI_DEVICE
++    aud_subsys.drv[aud_subsys.drv_cnt++].create = &pjmedia_tapi_factory;
++#endif
+ 
+     /* Initialize each factory and build the device ID list */
+     for (i=0; i<aud_subsys.drv_cnt; ++i) {
