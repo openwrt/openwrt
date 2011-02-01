@@ -17,12 +17,12 @@ PKG_MD5SUM:=ba775356bdd5e1b73b3e11a152710ed6
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/ifxos
-  SUBMENU:=Other modules
+define KernelPackage/ltq-ifxos
+  SUBMENU:=Voice over IP
   TITLE:=Lantiq OS abstraction library
   URL:=http://www.lantiq.com/
   MAINTAINER:=Lantiq
-  DEPENDS:=@TARGET_ifxmips @BROKEN
+  DEPENDS:=@TARGET_lantiq
   FILES:=$(PKG_BUILD_DIR)/src/drv_ifxos.ko
   AUTOLOAD:=$(call AutoLoad,10,drv_ifxos)
 endef
@@ -46,4 +46,4 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/src/libifxos.a $(1)/usr/lib/libifxos.a
 endef
 
-$(eval $(call KernelPackage,ifxos))
+$(eval $(call KernelPackage,ltq-ifxos))

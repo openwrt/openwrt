@@ -1,8 +1,6 @@
-menu "Configuration"
-	depends on PACKAGE_kmod-ifx-tapi
-
 config VOICE_CPE_TAPI_FAX
 	bool "fax relay and modem support"
+	depends on PACKAGE_kmod-ltq-tapi
 	default n
 	help
 		Option to enable fax/modem support in TAPI.
@@ -12,24 +10,28 @@ config VOICE_CPE_TAPI_FAX
 
 config VOICE_CPE_TAPI_CID
 	bool "CID support"
+	depends on PACKAGE_kmod-ltq-tapi
 	default y
 	help
 		Option to enable Caller ID support.
 
 config VOICE_CPE_TAPI_LT_GR909
 	bool "Linetesting GR-909 support"
+	depends on PACKAGE_kmod-ltq-tapi
 	default y
 		help
 			Option to enable linetesting GR-909.
 
 config VOICE_CPE_TAPI_DECT
 	bool "DECT encoding for COSIC modem"
+	depends on PACKAGE_kmod-ltq-tapi
 	default n
 		help
 			Option to enable DECT encoding for COSIC modem.
 
 config VOICE_CPE_TAPI_KPI
 	bool "KPI (Kernel Packet Interface)"
+	depends on PACKAGE_kmod-ltq-tapi
 	default y
 	help
 		Option to enable the generic kernel level packet interface
@@ -40,6 +42,7 @@ config VOICE_CPE_TAPI_KPI
 
 config VOICE_CPE_TAPI_QOS
 	bool "QOS for accelerated RTP packet handling"
+	depends on PACKAGE_kmod-ltq-tapi
 	default y
 	help
 		Option to enable an accelerated RTP packet transfer inside
@@ -49,18 +52,21 @@ config VOICE_CPE_TAPI_QOS
 
 config VOICE_CPE_TAPI_STATISTICS
 	bool "TAPI statistics via /proc fs"
+	depends on PACKAGE_kmod-ltq-tapi
 	default y
 	help
 		Option to enable /proc fs statistics for packet counts etc.
 
 config VOICE_CPE_TAPI_METERING
 	bool "Metering (TTX) support"
+	depends on PACKAGE_kmod-ltq-tapi
 	default n
 	help
 		Option to enable metering (TTX) support.
 
 config VOICE_CPE_TAPI_HDLC
 	bool "PCM HDLC support, evaluation"
+	depends on PACKAGE_kmod-ltq-tapi
 	default n
 	help
 		Option to enable PCM HDLC framing inside the firmware, e.g. for
@@ -68,9 +74,15 @@ config VOICE_CPE_TAPI_HDLC
 
 config VOICE_CPE_TAPI_TRACES
 	bool "enable driver traces"
+	depends on PACKAGE_kmod-ltq-tapi
 	default y
 	help
 		enable driver traces with different trace levels to be
 		configured dynamically from the application or during insmod
 
-endmenu
+config VOICE_CPE_TAPI_LINUX_HOTPLUG
+	bool "enable driver Linux hotplug events"
+	depends on PACKAGE_kmod-ltq-tapi
+	default y
+	help
+		enable driver Linux hotplug events generation

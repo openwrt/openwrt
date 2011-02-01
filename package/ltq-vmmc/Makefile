@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2010 OpenWrt.org
+# Copyright (C) 2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,33 +9,30 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=drv_vmmc
-PKG_VERSION:=1.7.0
+PKG_VERSION:=1.9.0
 PKG_RELEASE:=2
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=3f1b44e79408a3320aa9f8b21a260fd0
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+PKG_MD5SUM:=d8eee8cba0edb28974cc1f8532e3bd18
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-
-PATCH_DIR ?= ./patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/ifx-vmmc
+define KernelPackage/ltq-vmmc
   SUBMENU:=Voice over IP
   TITLE:=TAPI LL driver for Voice Macro
   URL:=http://www.lantiq.com/
-  MAINTAINER:=Lantiq
-  DEPENDS:=+kmod-ifx-tapi @BROKEN
+  DEPENDS:=+kmod-ltq-tapi @TARGET_lantiq
   FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.ko
   AUTOLOAD:=$(call AutoLoad,25,drv_vmmc)
-  MENU:=1
+  MAINTAINER:=John Crispin <blogic@openwrt.org>
 endef
 
-define KernelPackage/ifx-vmmc/description
+define KernelPackage/ltq-vmmc/description
 	Voice Subsystem Low Level Driver for Danube, AR9, VR9 device families
 endef
 
-define KernelPackage/ifx-vmmc/config
+define KernelPackage/ltq-vmmc/config
 	source "$(SOURCE)/Config.in"
 endef
 
@@ -151,11 +148,11 @@ define Build/InstallDev
 	(cd $(1)/usr/include/drv_vmmc && ln -snf . include)
 endef
 
-define KernelPackage/ifx-vmmc/install
+define KernelPackage/ltq-vmmc/install
 	$(INSTALL_DIR) $(1)/etc/init.d $(1)/$(FW_DIR)
 	$(INSTALL_BIN) ./files/vmmc.init $(1)/etc/init.d/vmmc
 	$(CP) $(PKG_BUILD_DIR)/firmware/$(FW_SOURCE) $(1)/$(FW_DIR)/$(FW_TARGET)
 	$(CP) $(PKG_BUILD_DIR)/coef/$(COEF_TARGET) $(1)/$(FW_DIR)/$(COEF_TARGET)
 endef
 
-$(eval $(call KernelPackage,ifx-vmmc))
+$(eval $(call KernelPackage,ltq-vmmc))
