@@ -1,15 +1,14 @@
 #
-# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-# ralph / blogic
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=lqdsl
+PKG_NAME:=ltq-dsl
 PKG_BASE_NAME:=drv_dsl_cpe_api_danube
 PKG_VERSION:=3.24.4.4
 PKG_RELEASE:=2
@@ -17,10 +16,6 @@ PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/drv_dsl_cpe_api-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=c45bc531c1ed2ac80f68fb986b63bb87
-
-ifeq ($(DUMP),)
-  STAMP_CONFIGURED:=$(strip $(STAMP_CONFIGURED))_$(shell grep '^CONFIG_LANTIQ_DSL_' $(TOPDIR)/.config | md5s)
-endif
 
 FW_BASE_NAME:=dsl_danube_firmware_adsl
 FW_A_VER:=02.04.04.00.00.01
@@ -30,35 +25,47 @@ FW_B_FILE_VER:=241702
 FW_A_MD5:=f717db3067a0049a26e233ab11238710
 FW_B_MD5:=349de7cd20368f4ac9b7e8322114a512
 
-PATCH_DIR ?= ./patches$(if $(wildcard ./patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
-
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/lqdsl
+define KernelPackage/ltq-dsl
   SECTION:=sys
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=Lantiq dsl driver
   URL:=http://www.lantiq.com/
-  MAINTAINER:=Lantiq 
   DEPENDS:=@TARGET_lantiq_xway +kmod-atm
   FILES:=$(PKG_BUILD_DIR)/src/mei/lantiq_mei.ko \
 	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.ko \
 	$(PKG_BUILD_DIR)/src/mei/lantiq_atm.ko
   AUTOLOAD:=$(call AutoLoad,50,lantiq_mei drv_dsl_cpe_api lantiq_atm)
+  MAINTAINER:=John Crispin <blogic@openwrt.org>
 endef
 
-define KernelPackage/lqdsl/description
-	Infineon DSL CPE API for Amazon SE, Danube and Vinax.
-
-	This package contains the DSL CPE API driver for Amazon SE & Danube.
-	
-	Supported Devices:
-		- Amazon SE
-		- Danube 
+define Package/kmod-ltq-dsl-firmware/default
+  SECTION:=sys
+  CATEGORY:=Kernel modules
+  SUBMENU:=Network Devices
+  TITLE:=Firmware
+  URL:=http://www.lantiq.com/
+  DEPENDS:=@TARGET_lantiq_xway kmod-ltq-dsl
+  MAINTAINER:=John Crispin <blogic@openwrt.org>
 endef
 
-define KernelPackage/lqdsl/config
+define Package/kmod-ltq-dsl-firmware-a
+  $(call Package/kmod-ltq-dsl-firmware/default)
+  TITLE+=Annex-A Danube
+endef
+
+define Package/kmod-ltq-dsl-firmware-b
+  $(call Package/kmod-ltq-dsl-firmware/default)
+  TITLE+=Annex-B Danube
+endef
+
+define KernelPackage/ltq-dsl/description
+	Lantiq DSL CPE API for Amazon SE, Danube and Vinax.
+endef
+
+define KernelPackage/ltq-dsl/config
 	source "$(SOURCE)/Config.in"
 endef
 
@@ -118,10 +125,8 @@ define Build/Prepare
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/src/mei/ 
 	$(CP) ./src/* $(PKG_BUILD_DIR)/src/mei/
 	$(Build/Patch)
-ifeq ($(CONFIG_LANTIQ_DSL_FIRMWARE),)
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(FW_BASE_NAME)_a-$(FW_A_VER).tar.gz
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(FW_BASE_NAME)_b-$(FW_B_VER).tar.gz
-endif
 endef
 
 define Build/Configure
@@ -150,9 +155,16 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/src/include/drv_dsl_cpe_cmv_danube.h $(1)/usr/include
 endef
 
-define KernelPackage/lqdsl/install
+define Package/ltq-dsl-firmware-a/install
 	$(INSTALL_DIR) $(1)/lib/firmware/
-	$(CP) $(PKG_BUILD_DIR)/$(FW_BASE_NAME)_$(if $(CONFIG_LANTIQ_ANNEX_A),a_$(FW_A_FILE_VER),b_$(FW_B_FILE_VER)).bin $(1)/lib/firmware/ModemHWE.bin
+	$(CP) $(PKG_BUILD_DIR)/$(FW_BASE_NAME)_a_$(FW_A_FILE_VER).bin $(1)/lib/firmware/ModemHWE.bin
 endef
 
-$(eval $(call KernelPackage,lqdsl))
+define Package/ltq-dsl-firmware-b/install
+	$(INSTALL_DIR) $(1)/lib/firmware/
+	$(CP) $(PKG_BUILD_DIR)/$(FW_BASE_NAME)_b_$(FW_B_FILE_VER).bin $(1)/lib/firmware/ModemHWE.bin
+endef
+
+$(eval $(call KernelPackage,ltq-dsl))
+$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a))
+$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-b))
