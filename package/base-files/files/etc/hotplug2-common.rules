@@ -4,38 +4,37 @@
 # 	exec logger -s -t hotplug -p daemon.info "name=%DEVICENAME%, path=%DEVPATH%"
 # }
 
-DEVICENAME ~~ (null|full|ptmx|tty|zero|gpio|hvc) {
+DEVICENAME ~~ (^null$|^full$|^ptmx$|^tty|^zero$|^gpio|^hvc) {
 	makedev /dev/%DEVICENAME% 0666
 	next-event
 }
 
-DEVICENAME ~~ (tun|tap[0-9]) {
+DEVICENAME ~~ (^tun|^tap[0-9]$) {
 	makedev /dev/net/%DEVICENAME% 0644
 }
 
-DEVICENAME ~~ (ppp) {
+DEVICENAME ~~ ^ppp {
 	makedev /dev/%DEVICENAME% 0600
 	next-event
 }
 
-DEVICENAME ~~ (controlC[0-9]|pcmC0D0*|timer) {
+DEVICENAME ~~ (^controlC[0-9]$|^pcmC0D0|^timer$) {
 	makedev /dev/snd/%DEVICENAME% 0644
 	next-event
 }
 
-DEVICENAME ~~ (lp[0-9]) {
+DEVICENAME ~~ ^lp[0-9]$ {
 	makedev /dev/%DEVICENAME% 0644
 	next-event
 }
 
-DEVPATH is set, SUBSYSTEM ~~ (input) {
+DEVPATH is set, SUBSYSTEM == input {
 	makedev /dev/input/%DEVICENAME% 0644
 }
 
 DEVICENAME == device-mapper {
 	makedev /dev/mapper/control 0600
 }
-
 
 DEVPATH is set {
 	makedev /dev/%DEVICENAME% 0644
