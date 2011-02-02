@@ -1,0 +1,146 @@
+Add three new blind options to set use of Thumb mode:
+- COMPILE_IN_THUMB_MODE
+  - if set, CFLAGS will contain -mthumb
+  - if unset, the compiler's default is used
+- HAS_THUMB
+  - CPUS with Thumb instruction set can select this
+  - use of BX depends on this
+- FORCE_THUMB
+  - CPUs that are Thumb-only must select this
+  - this selects: HAS_THUMB, COMPILE_IN_THUMB_MODE and USE_BX
+
+Also, remove leading space in Rules.mak.
+
+Signed-off-by: "Yann E. MORIN" <yann.morin.1998@anciens.enib.fr>
+Cc: Khem Raj <raj.khem@gmail.com>
+Cc: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
+---
+ Rules.mak                |    7 ++++---
+ extra/Configs/Config.arm |   31 ++++++++++++++++++++++++++++---
+ 2 files changed, 32 insertions(+), 6 deletions(-)
+
+diff --git a/Rules.mak b/Rules.mak
+index eecdc64..2a16908 100644
+--- a/Rules.mak
++++ b/Rules.mak
+@@ -348,9 +348,10 @@ ifeq ($(TARGET_ARCH),arm)
+ 	CPU_CFLAGS-$(CONFIG_ARM_SA1100)+=-mtune=strongarm1100 -march=armv4
+ 	CPU_CFLAGS-$(CONFIG_ARM_XSCALE)+=$(call check_gcc,-mtune=xscale,-mtune=strongarm110)
+ 	CPU_CFLAGS-$(CONFIG_ARM_XSCALE)+=-march=armv5te -Wa,-mcpu=xscale
+- 	CPU_CFLAGS-$(CONFIG_ARM_IWMMXT)+=-march=iwmmxt -Wa,-mcpu=iwmmxt -mabi=iwmmxt
+- 	CPU_CFLAGS-$(CONFIG_ARM_CORTEX_M3)+=-mcpu=cortex-m3 -mthumb
+- 	CPU_CFLAGS-$(CONFIG_ARM_CORTEX_M1)+=-mcpu=cortex-m1 -mthumb
++	CPU_CFLAGS-$(CONFIG_ARM_IWMMXT)+=-march=iwmmxt -Wa,-mcpu=iwmmxt -mabi=iwmmxt
++	CPU_CFLAGS-$(CONFIG_ARM_CORTEX_M3)+=-mcpu=cortex-m3
++	CPU_CFLAGS-$(CONFIG_ARM_CORTEX_M1)+=-mcpu=cortex-m1
++	CPU_CFLAGS-$(COMPILE_IN_THUMB_MODE)+=-mthumb
+ endif
+ 
+ ifeq ($(TARGET_ARCH),mips)
+diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
+index 3b90e67..c9c40d4 100644
+--- a/extra/Configs/Config.arm
++++ b/extra/Configs/Config.arm
+@@ -64,70 +64,95 @@ config CONFIG_ARM710
+ config CONFIG_ARM7TDMI
+ 	bool "Arm 7TDMI"
+ 	select ARCH_HAS_NO_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM720T
+ 	bool "Arm 720T"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM920T
+ 	bool "Arm 920T"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM922T
+ 	bool "Arm 922T"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM926T
+ 	bool "Arm 926T"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM10T
+ 	bool "Arm 10T"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM1136JF_S
+ 	bool "Arm 1136JF-S"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM1176JZ_S
+ 	bool "Arm 1176JZ-S"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM1176JZF_S
+ 	bool "Arm 1176JZF-S"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM_CORTEX_M3
+ 	bool "Arm Cortex-M3"
+ 	select ARCH_HAS_NO_MMU
+-	select USE_BX
++	select FORCE_THUMB
+ 
+ config CONFIG_ARM_CORTEX_M1
+ 	bool "Arm Cortex-M1"
+ 	select ARCH_HAS_NO_MMU
+-	select USE_BX
++	select FORCE_THUMB
+ 
+ config CONFIG_ARM_SA110
+ 	bool "Intel StrongArm SA-110"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM_SA1100
+ 	bool "Intel StrongArm SA-1100"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM_XSCALE
+ 	bool "Intel Xscale"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ config CONFIG_ARM_IWMMXT
+ 	bool "Intel Xscale With WMMX PXA27x"
+ 	select ARCH_HAS_MMU
++	select HAS_THUMB
+ 
+ endchoice
+ 
++config HAS_THUMB
++	bool
++
++config FORCE_THUMB
++	bool
++	select HAS_THUMB
++	select COMPILE_IN_THUMB_MODE
++	select USE_BX
++
++config COMPILE_IN_THUMB_MODE
++	bool
++
+ config USE_BX
+ 	bool "Use BX in function return"
+ 	default y
+-	depends on !CONFIG_GENERIC_ARM && !CONFIG_ARM610 && !CONFIG_ARM710
++	depends on HAS_THUMB
+ 	help
+ 	  Use BX instruction for THUMB aware architectures.
+-- 
+1.7.1
+

@@ -1,0 +1,49 @@
+The CONFIG_ARM_OABI option is never used.
+
+Signed-off-by: "Yann E. MORIN" <yann.morin.1998@anciens.enib.fr>
+Cc: Khem Raj <raj.khem@gmail.com>
+Cc: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
+---
+ extra/Configs/Config.arm |   23 ++++++++---------------
+ 1 files changed, 8 insertions(+), 15 deletions(-)
+
+diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
+index 6c75a00..227b90c 100644
+--- a/extra/Configs/Config.arm
++++ b/extra/Configs/Config.arm
+@@ -12,23 +12,16 @@ config FORCE_OPTIONS_FOR_ARCH
+ 	default y
+ 	select ARCH_ANY_ENDIAN
+ 
+-choice
+-	prompt "Target ABI"
+-	default CONFIG_ARM_OABI
++config CONFIG_ARM_EABI
++	bool "Build for EABI"
+ 	help
+-	  If you choose "EABI" here, functions and constants required by the
+-	  ARM EABI will be built into the library.  You should choose "EABI"
++	  If you say 'y' here, functions and constants required by the
++	  ARM EABI will be built into the library.  You should say 'y'
+ 	  if your compiler uses the ARM EABI, in which case you will also
+-	  need a kernel supporting the EABI system call interface, or "OABI"
+-	  for a compiler using the old Linux ABI.
+-
+-config CONFIG_ARM_OABI
+-	bool "OABI"
+-
+-config CONFIG_ARM_EABI
+-	bool "EABI"
+-
+-endchoice
++	  need a kernel supporting the EABI system call interface.
++	  
++	  If you say 'n' here, then the library will be built for the
++	  old Linux ABI.
+ 
+ config COMPILE_IN_THUMB_MODE
+ 	bool "Build using Thumb mode"
+-- 
+1.7.1
+

@@ -1,0 +1,39 @@
+The check for __USE_BX__ will be available in bits/arm_asm.h,
+so the latter must be included wherever the former is used.
+
+Signed-off-by: "Yann E. MORIN" <yann.morin.1998@anciens.enib.fr>
+Cc: Khem Raj <raj.khem@gmail.com>
+Cc: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
+---
+ ldso/ldso/arm/dl-startup.h      |    1 +
+ libc/sysdeps/linux/arm/sysdep.h |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/ldso/ldso/arm/dl-startup.h b/ldso/ldso/arm/dl-startup.h
+index a95389d..2dfdaff 100644
+--- a/ldso/ldso/arm/dl-startup.h
++++ b/ldso/ldso/arm/dl-startup.h
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <features.h>
++#include <bits/arm_asm.h>
+ 
+ #if !defined(__thumb__)
+ __asm__(
+diff --git a/libc/sysdeps/linux/arm/sysdep.h b/libc/sysdeps/linux/arm/sysdep.h
+index 013f88c..e498695 100644
+--- a/libc/sysdeps/linux/arm/sysdep.h
++++ b/libc/sysdeps/linux/arm/sysdep.h
+@@ -21,6 +21,7 @@
+ #define _LINUX_ARM_SYSDEP_H 1
+ 
+ #include <common/sysdep.h>
++#include <bits/arm_asm.h>
+ 
+ #include <sys/syscall.h>
+ /* For Linux we can use the system call table in the header file
+-- 
+1.7.1
+

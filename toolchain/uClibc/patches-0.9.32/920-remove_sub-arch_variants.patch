@@ -1,0 +1,189 @@
+Rely on the compiler to be correctly set up to generate
+appropriate code for the target variant.
+
+This exposes the Thumb option, as it is no longer auto-selected.
+The "Use BX" no longer depends on supported CPU to be selected,
+so it now defaults to 'n' as it shall work by default on CPUs
+that do not have BX.
+
+Signed-off-by: "Yann E. MORIN" <yann.morin.1998@anciens.enib.fr>
+Cc: Khem Raj <raj.khem@gmail.com>
+Cc: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
+---
+ Rules.mak                |   19 -------
+ extra/Configs/Config.arm |  125 ++--------------------------------------------
+ 2 files changed, 5 insertions(+), 139 deletions(-)
+
+diff --git a/Rules.mak b/Rules.mak
+index 2a16908..09741a6 100644
+--- a/Rules.mak
++++ b/Rules.mak
+@@ -332,25 +332,6 @@ ifeq ($(TARGET_ARCH),arm)
+ 	OPTIMIZATION+=-fstrict-aliasing
+ 	CPU_CFLAGS-$(ARCH_LITTLE_ENDIAN)+=-mlittle-endian
+ 	CPU_CFLAGS-$(ARCH_BIG_ENDIAN)+=-mbig-endian
+-	CPU_CFLAGS-$(CONFIG_GENERIC_ARM)+=
+-	CPU_CFLAGS-$(CONFIG_ARM610)+=-mtune=arm610 -march=armv3
+-	CPU_CFLAGS-$(CONFIG_ARM710)+=-mtune=arm710 -march=armv3
+-	CPU_CFLAGS-$(CONFIG_ARM7TDMI)+=-mtune=arm7tdmi -march=armv4t
+-	CPU_CFLAGS-$(CONFIG_ARM720T)+=-mtune=arm7tdmi -march=armv4t
+-	CPU_CFLAGS-$(CONFIG_ARM920T)+=-mtune=arm9tdmi -march=armv4t
+-	CPU_CFLAGS-$(CONFIG_ARM922T)+=-mtune=arm9tdmi -march=armv4t
+-	CPU_CFLAGS-$(CONFIG_ARM926T)+=-mtune=arm9e -march=armv5te
+-	CPU_CFLAGS-$(CONFIG_ARM10T)+=-mtune=arm10tdmi -march=armv5t
+-	CPU_CFLAGS-$(CONFIG_ARM1136JF_S)+=-mtune=arm1136jf-s -march=armv6
+-	CPU_CFLAGS-$(CONFIG_ARM1176JZ_S)+=-mtune=arm1176jz-s -march=armv6
+-	CPU_CFLAGS-$(CONFIG_ARM1176JZF_S)+=-mtune=arm1176jzf-s -march=armv6
+-	CPU_CFLAGS-$(CONFIG_ARM_SA110)+=-mtune=strongarm110 -march=armv4
+-	CPU_CFLAGS-$(CONFIG_ARM_SA1100)+=-mtune=strongarm1100 -march=armv4
+-	CPU_CFLAGS-$(CONFIG_ARM_XSCALE)+=$(call check_gcc,-mtune=xscale,-mtune=strongarm110)
+-	CPU_CFLAGS-$(CONFIG_ARM_XSCALE)+=-march=armv5te -Wa,-mcpu=xscale
+-	CPU_CFLAGS-$(CONFIG_ARM_IWMMXT)+=-march=iwmmxt -Wa,-mcpu=iwmmxt -mabi=iwmmxt
+-	CPU_CFLAGS-$(CONFIG_ARM_CORTEX_M3)+=-mcpu=cortex-m3
+-	CPU_CFLAGS-$(CONFIG_ARM_CORTEX_M1)+=-mcpu=cortex-m1
+ 	CPU_CFLAGS-$(COMPILE_IN_THUMB_MODE)+=-mthumb
+ endif
+ 
+diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
+index c9c40d4..6c75a00 100644
+--- a/extra/Configs/Config.arm
++++ b/extra/Configs/Config.arm
+@@ -30,129 +30,14 @@ config CONFIG_ARM_EABI
+ 
+ endchoice
+ 
+-choice
+-	prompt "Target Processor Type"
+-	default CONFIG_GENERIC_ARM
+-	help
+-	  This is the processor type of your CPU. This information is used for
+-	  optimizing purposes.  To build a library that will run on all ARMCPU
+-	  types (albeit not optimally fast), you can specify "Generic Arm" here.
+-	  If you pick anything other than "Generic Arm", there is no guarantee 
+-	  that uClibc will even run on anything other than the selected
+-	  processor type.
+-
+-	  Here are the settings recommended for greatest speed:
+-	  - "Generic Arm" select this if your compiler is already setup to
+-	    optimize things properly, or if you want to run on pretty much
+-	    everything, or you just don't much care.
+-	  - For anything else, pick the ARM core type that best matches the
+-	    cpu you will be using on your device.
+-
+-	  If you don't know what to do, choose "Generic Arm".
+-
+-config CONFIG_GENERIC_ARM
+-	bool "Generic Arm"
+-
+-config CONFIG_ARM610
+-	bool "Arm 610"
+-	select ARCH_HAS_MMU
+-
+-config CONFIG_ARM710
+-	bool "Arm 710"
+-	select ARCH_HAS_MMU
+-
+-config CONFIG_ARM7TDMI
+-	bool "Arm 7TDMI"
+-	select ARCH_HAS_NO_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM720T
+-	bool "Arm 720T"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM920T
+-	bool "Arm 920T"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM922T
+-	bool "Arm 922T"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM926T
+-	bool "Arm 926T"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM10T
+-	bool "Arm 10T"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM1136JF_S
+-	bool "Arm 1136JF-S"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM1176JZ_S
+-	bool "Arm 1176JZ-S"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM1176JZF_S
+-	bool "Arm 1176JZF-S"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM_CORTEX_M3
+-	bool "Arm Cortex-M3"
+-	select ARCH_HAS_NO_MMU
+-	select FORCE_THUMB
+-
+-config CONFIG_ARM_CORTEX_M1
+-	bool "Arm Cortex-M1"
+-	select ARCH_HAS_NO_MMU
+-	select FORCE_THUMB
+-
+-config CONFIG_ARM_SA110
+-	bool "Intel StrongArm SA-110"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM_SA1100
+-	bool "Intel StrongArm SA-1100"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM_XSCALE
+-	bool "Intel Xscale"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-config CONFIG_ARM_IWMMXT
+-	bool "Intel Xscale With WMMX PXA27x"
+-	select ARCH_HAS_MMU
+-	select HAS_THUMB
+-
+-endchoice
+-
+-config HAS_THUMB
+-	bool
+-
+-config FORCE_THUMB
+-	bool
+-	select HAS_THUMB
+-	select COMPILE_IN_THUMB_MODE
+-	select USE_BX
+-
+ config COMPILE_IN_THUMB_MODE
+-	bool
++	bool "Build using Thumb mode"
++	select USE_BX
++	help
++	  Say 'y' here to force building uClibc in thumb mode.
++	  Say 'n' to use your compiler's default mode.
+ 
+ config USE_BX
+ 	bool "Use BX in function return"
+-	default y
+-	depends on HAS_THUMB
+ 	help
+ 	  Use BX instruction for THUMB aware architectures.
+-- 
+1.7.1
+

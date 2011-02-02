@@ -1,0 +1,90 @@
+Rely on the compiler to be properly setup for the default ABI.
+
+When installing-headers, there are two cases:
+- NPTL: no issue, a cross-compiler is already expected
+- LinuxThreads: no issue, EABI/OABI has no impact on installed headers.
+
+Signed-off-by: "Yann E. MORIN" <yann.morin.1998@anciens.enib.fr>
+Cc: Khem Raj <raj.khem@gmail.com>
+Cc: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
+---
+ extra/Configs/Config.arm               |   11 -----------
+ libc/sysdeps/linux/arm/Makefile.arch   |    9 +++++++--
+ libc/sysdeps/linux/arm/bits/huge_val.h |    4 ++--
+ 3 files changed, 9 insertions(+), 15 deletions(-)
+
+diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
+index 9aa9e56..85f2515 100644
+--- a/extra/Configs/Config.arm
++++ b/extra/Configs/Config.arm
+@@ -12,17 +12,6 @@ config FORCE_OPTIONS_FOR_ARCH
+ 	default y
+ 	select ARCH_ANY_ENDIAN
+ 
+-config CONFIG_ARM_EABI
+-	bool "Build for EABI"
+-	help
+-	  If you say 'y' here, functions and constants required by the
+-	  ARM EABI will be built into the library.  You should say 'y'
+-	  if your compiler uses the ARM EABI, in which case you will also
+-	  need a kernel supporting the EABI system call interface.
+-	  
+-	  If you say 'n' here, then the library will be built for the
+-	  old Linux ABI.
+-
+ config COMPILE_IN_THUMB_MODE
+ 	bool "Build using Thumb mode"
+ 	select USE_BX
+diff --git a/libc/sysdeps/linux/arm/Makefile.arch b/libc/sysdeps/linux/arm/Makefile.arch
+index b53c539..14279e0 100644
+--- a/libc/sysdeps/linux/arm/Makefile.arch
++++ b/libc/sysdeps/linux/arm/Makefile.arch
+@@ -24,7 +24,12 @@ ifeq ($(UCLIBC_HAS_ADVANCED_REALTIME),y)
+ CSRC += posix_fadvise.c posix_fadvise64.c
+ endif
+ 
+-ifeq ($(CONFIG_ARM_EABI),y)
++# Is our compiler set up for EABI ?
++IS_EABI:=$(shell $(CC) $(CFLAGS) -x c - -E -dM </dev/null 2>/dev/null \
++                 |sed -r -e '/^\#[[:space:]]*define[[:space:]]+__ARM_EABI__([[:space:]]+1)?$$/!d; s/.+/y/;' \
++          )
++
++ifeq ($(IS_EABI),y)
+ CSRC += aeabi_assert.c aeabi_atexit.c aeabi_errno_addr.c \
+ 	aeabi_localeconv.c aeabi_memclr.c aeabi_memcpy.c \
+ 	aeabi_memmove.c aeabi_memset.c find_exidx.c
+@@ -37,7 +42,7 @@ else
+ CSRC += syscall.c
+ endif
+ 
+-ifeq ($(CONFIG_ARM_EABI),y)
++ifeq ($(IS_EABI),y)
+ libc-static-y += $(ARCH_OUT)/aeabi_lcsts.o $(ARCH_OUT)/aeabi_math.o \
+ 	$(ARCH_OUT)/aeabi_sighandlers.o
+ libc-nonshared-y += $(ARCH_OUT)/aeabi_lcsts.os $(ARCH_OUT)/aeabi_math.os \
+diff --git a/libc/sysdeps/linux/arm/bits/huge_val.h b/libc/sysdeps/linux/arm/bits/huge_val.h
+index a215f3c..745e0bb 100644
+--- a/libc/sysdeps/linux/arm/bits/huge_val.h
++++ b/libc/sysdeps/linux/arm/bits/huge_val.h
+@@ -32,7 +32,7 @@
+ # define HUGE_VAL (__extension__ 0x1.0p2047)
+ #elif defined __GNUC__
+ 
+-#ifndef __CONFIG_ARM_EABI__
++#ifndef __ARM_EABI__
+ # define HUGE_VAL \
+   (__extension__							      \
+    ((union { unsigned __l __attribute__((__mode__(__DI__))); double __d; })   \
+@@ -50,7 +50,7 @@
+ 
+ typedef union { unsigned char __c[8]; double __d; } __huge_val_t;
+ 
+-#ifndef __CONFIG_ARM_EABI__
++#ifndef __ARM_EABI__
+ # if __BYTE_ORDER == __BIG_ENDIAN
+ #  define __HUGE_VAL_bytes	{ 0, 0, 0, 0, 0x7f, 0xf0, 0, 0 }
+ # endif
+-- 
+1.7.1
+
