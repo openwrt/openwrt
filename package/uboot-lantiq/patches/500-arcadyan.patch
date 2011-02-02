@@ -60,7 +60,7 @@
 +		}
 +	@if [ "$$(findstring flash,$$@)" ] ; then \
 +		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
-+		echo "#define CONFIG_USE_DDR_RAM_CFG_DDR_psc166" >>$(obj)include/config.h ; \
++		echo "#define CONFIG_USE_DDR_RAM_CFG_psc166" >>$(obj)include/config.h ; \
 +	fi
 +	@$(MKCONFIG) -a $$(word 1,$$(subst _, ,$$@)) mips mips arcadyan "" danube
 +endef
