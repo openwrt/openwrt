@@ -1,0 +1,36 @@
+From 859158bfab7e72af440622fb9731bcaef4e7d6dc Mon Sep 17 00:00:00 2001
+From: Sukumar Ghorai <s-ghorai@ti.com>
+Date: Fri, 19 Nov 2010 14:45:26 +0000
+Subject: [PATCH] omap: nand: remove hardware ECC as default
+
+Commit 2c01946c6b9ebaa5a89710bc42ca224a7f52f227 (omap3 nand: cleanup
+virtual address usages) wrongly enabled CONFIG_MTD_NAND_OMAP_HWECC
+which breaks boards like beagle and pandora that use software ECC
+for write.
+
+Boards like beagle and pandora uses sw ecc for write (e.g. binary flushed
+from u-boot) and read from kernel.
+
+Signed-off-by: Sukumar Ghorai <s-ghorai@ti.com>
+Acked-by: David Woodhouse <David.Woodhouse@intel.com>
+[tony@atomide.com: updated comments]
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ drivers/mtd/nand/omap2.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/mtd/nand/omap2.c b/drivers/mtd/nand/omap2.c
+index cd41c58..15682ec 100644
+--- a/drivers/mtd/nand/omap2.c
++++ b/drivers/mtd/nand/omap2.c
+@@ -7,7 +7,6 @@
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+  */
+-#define CONFIG_MTD_NAND_OMAP_HWECC
+ 
+ #include <linux/platform_device.h>
+ #include <linux/dma-mapping.h>
+-- 
+1.7.0.4
+
