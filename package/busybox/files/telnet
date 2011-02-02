@@ -10,8 +10,14 @@ has_root_pwd() {
 	test -n "${pwd#!}"
 }
 
+has_ssh_pubkey() {
+	( test -x /usr/sbin/dropbear && grep -qs "^ssh-" /etc/dropbear/authorized_keys ) || \
+	( test -x /usr/sbin/sshd && grep -qs "^ssh-" /root/.ssh/authorized_keys )
+}
+
 start() {
-	if ( ! has_root_pwd /etc/passwd && ! has_root_pwd /etc/shadow ) || \
+	if ( ! has_ssh_pubkey && \
+	     ! has_root_pwd /etc/passwd && ! has_root_pwd /etc/shadow ) || \
 	   ( [ ! -x /usr/sbin/dropbear ] && [ ! -x /usr/sbin/sshd ] );
 	then
 		telnetd -l /bin/login.sh
