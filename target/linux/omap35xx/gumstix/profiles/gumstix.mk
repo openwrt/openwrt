@@ -5,6 +5,8 @@
 # See /LICENSE for more information.
 #
 
+FEATURES:=ubifs
+
 define Profile/Gumstix
   NAME:=gumstix
   PACKAGES:=-iptables -ppp -ppp-mod-pppoe -kmod-ipt-nathelper \
@@ -18,7 +20,7 @@ define Profile/Gumstix
 		crda iw kmod-usb-hid \
 		kmod-usb-storage kmod-usb-storage-extras \
 		kmod-fs-vfat \
-		hegw hegwtest
+		hegw hegwtest mtd-utils
 endef
 
 define Profile/Gumstix/Description
