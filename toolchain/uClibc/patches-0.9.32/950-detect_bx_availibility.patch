@@ -1,0 +1,49 @@
+The "use BX" option is now a suggestion that BX be used if available.
+Use a macro to detect if BX is available at build time. If so, and
+the user requested it be used, then use it. Otherwise, error out.
+
+Macro courtesy Khem RAJ:
+  http://lists.uclibc.org/pipermail/uclibc/2009-April/042301.html
+
+Signed-off-by: "Yann E. MORIN" <yann.morin.1998@anciens.enib.fr>
+Cc: Khem Raj <raj.khem@gmail.com>
+Cc: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
+---
+ extra/Configs/Config.arm              |    4 +++-
+ libc/sysdeps/linux/arm/bits/arm_asm.h |    9 ++++++++-
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
+index 227b90c..9aa9e56 100644
+--- a/extra/Configs/Config.arm
++++ b/extra/Configs/Config.arm
+@@ -33,4 +33,6 @@ config COMPILE_IN_THUMB_MODE
+ config USE_BX
+ 	bool "Use BX in function return"
+ 	help
+-	  Use BX instruction for THUMB aware architectures.
++	  Say 'y' to use BX to return from functions on your thumb-aware
++	  processor. Say 'y' if you need to use interworking. Say 'n' if not.
++	  It is safe to say 'y' even if you're not doing interworking.
+diff --git a/libc/sysdeps/linux/arm/bits/arm_asm.h b/libc/sysdeps/linux/arm/bits/arm_asm.h
+index 1d87df6..921c9a3 100644
+--- a/libc/sysdeps/linux/arm/bits/arm_asm.h
++++ b/libc/sysdeps/linux/arm/bits/arm_asm.h
+@@ -24,5 +24,12 @@
+ #define THUMB1_ONLY 1
+ #endif
+ 
+-#endif /* _ARM_ASM_H */
++#if defined(__USE_BX__)
++# if (   defined (__ARM_ARCH_2__)  || defined (__ARM_ARCH_3__) \
++      || defined (__ARM_ARCH_3M__) || defined (__ARM_ARCH_4__) \
++     )
++#  error Use of BX was requested, but is not available on the target processor.
++# endif /* ARCH level */
++#endif /* __USE_BX__ */
+ 
++#endif /* _ARM_ASM_H */
+-- 
+1.7.1
+
