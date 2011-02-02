@@ -1,7 +1,5 @@
-
-
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -14,7 +12,7 @@ PKG_VERSION:=$(call qstrip,$(CONFIG_UCLIBC_VERSION))
 ifeq ($(PKG_VERSION),0.9.32)
   PKG_SOURCE_URL:=git://git.busybox.net/uClibc
   PKG_SOURCE_PROTO:=git
-  PKG_SOURCE_VERSION:=a7c33ecabcead542e54c0c3514a92f4155add5b6
+  PKG_SOURCE_VERSION:=269f901e62106e2d36acf4c2b79a9a5ec6d684ff
   PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
   PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
   LIBC_SO_VERSION:=$(PKG_VERSION)-rc2-git
