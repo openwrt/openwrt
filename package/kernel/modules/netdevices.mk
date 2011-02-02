@@ -515,3 +515,19 @@ define KernelPackage/dummy/description
 endef
 
 $(eval $(call KernelPackage,dummy))
+
+define KernelPackage/ifb
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intermediate Functional Block support
+  KCONFIG:= \
+	CONFIG_IFB \
+	CONFIG_NET_CLS=y
+  FILES:=$(LINUX_DIR)/drivers/net/ifb.ko
+  AUTOLOAD:=$(call AutoLoad,34,ifb)
+endef
+
+define KernelPackage/ifb/description
+  The Intermediate Functional Block
+endef
+
+$(eval $(call KernelPackage,ifb))
