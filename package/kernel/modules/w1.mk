@@ -48,6 +48,20 @@ endef
 
 $(eval $(call KernelPackage,w1-master-gpio))
 
+define KernelPackage/w1-master-ds2490
+  TITLE:=DS2490 1-wire usb bus master driver
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core
+  KCONFIG:=CONFIG_W1_MASTER_DS2490
+  FILES:=$(W1_MASTERS_DIR)/ds2490.ko
+  AUTOLOAD:=$(call AutoLoad,60,ds2490)
+  $(call AddDepends/w1)
+endef
+ 
+define KernelPackage/w1-master-ds2490/description
+  Kernel module for the DS2490 usb 1-wire bus master driver
+endef
+
+$(eval $(call KernelPackage,w1-master-ds2490))
 
 #
 # 1-wire slaves
