@@ -140,6 +140,13 @@ menu "Global build settings"
 		  In case software provides optional support for patented functionality,
 		  this optional support will get disabled for this package.
 
+	config BUILD_NLS
+		default n
+		bool "Compile with full language support"
+		help
+		  When this option is enabled, packages are built with the full versions of iconv and GNU gettext
+		  instead of the default OpenWrt stubs.
+
 	config SHADOW_PASSWORDS
 		bool
 		prompt "Enable shadow password support"
