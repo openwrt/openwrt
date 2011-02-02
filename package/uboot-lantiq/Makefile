@@ -46,16 +46,16 @@ DDR_CONFIG_easy50712_DDR166M_ramboot:=easy50712_DDR166M
 DDR_CONFIG_easy50812_DDR166M_ramboot:=easy50812
 
 #Arcadyan
-Package/uboot-lantiq-arv4518=$(call Package/uboot-lantiq-template,arv4518,NOR)
-Package/uboot-lantiq-arv4518_ramboot=$(call Package/uboot-lantiq-template,arv4518_ramboot,RAM)
-Package/uboot-lantiq-arv4518_brnboot=$(call Package/uboot-lantiq-template,arv4518_brnboot,BRN)
-Package/uboot-lantiq-arv452C=$(call Package/uboot-lantiq-template,arv452C,NOR)
-Package/uboot-lantiq-arv452C_ramboot=$(call Package/uboot-lantiq-template,arv452C_ramboot,RAM)
-Package/uboot-lantiq-arv452C_brnboot=$(call Package/uboot-lantiq-template,arv452C_brnboot,BRN)
-Package/uboot-lantiq-arv752DPW=$(call Package/uboot-lantiq-template,arv752DPW,NOR)
+Package/uboot-lantiq-arv4518=$(call Package/uboot-lantiq-template,arv4518PW_flash,NOR)
+Package/uboot-lantiq-arv4518_ramboot=$(call Package/uboot-lantiq-template,arv4518PW_ramboot,RAM)
+Package/uboot-lantiq-arv4518_brnboot=$(call Package/uboot-lantiq-template,arv4518PW_brnboot,BRN)
+Package/uboot-lantiq-arv452C=$(call Package/uboot-lantiq-template,arv452CPW_flash,NOR)
+Package/uboot-lantiq-arv452C_ramboot=$(call Package/uboot-lantiq-template,arv452CPW_ramboot,RAM)
+Package/uboot-lantiq-arv452C_brnboot=$(call Package/uboot-lantiq-template,arv452CPW_brnboot,BRN)
+Package/uboot-lantiq-arv752DPW=$(call Package/uboot-lantiq-template,arv752DPW_flash,NOR)
 Package/uboot-lantiq-arv752DPW_ramboot=$(call Package/uboot-lantiq-template,arv752DPW_ramboot,RAM)
 Package/uboot-lantiq-arv752DPW_brnboot=$(call Package/uboot-lantiq-template,arv752DPW_brnboot,BRN)
-Package/uboot-lantiq-arv752DPW22=$(call Package/uboot-lantiq-template,arv752DPW22,NOR)
+Package/uboot-lantiq-arv752DPW22=$(call Package/uboot-lantiq-template,arv752DPW22_flash,NOR)
 Package/uboot-lantiq-arv752DPW22_ramboot=$(call Package/uboot-lantiq-template,arv752DPW22_ramboot,RAM)
 Package/uboot-lantiq-arv752DPW22_brnboot=$(call Package/uboot-lantiq-template,arv752DPW22_brnboot,BRN)
 
