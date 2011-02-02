@@ -18,7 +18,7 @@ DEVICENAME ~~ ^ppp {
 	next-event
 }
 
-DEVICENAME ~~ (^controlC[0-9]$|^pcmC0D0|^timer$) {
+DEVICENAME ~~ (^controlC[0-9]$|^pcmC[0-9]D[0-9]|^timer$) {
 	makedev /dev/snd/%DEVICENAME% 0644
 	next-event
 }
