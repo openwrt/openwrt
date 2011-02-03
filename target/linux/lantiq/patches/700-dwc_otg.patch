@@ -1917,7 +1917,7 @@
 +        dwc_modify_reg32(&global_regs->gintmsk, intr_mask.d32, 0);
 +}
 +
-+#if 1
++#if 0
 +/* currently not used, keep it here as if needed later */
 +static int phy_read(dwc_otg_core_if_t * _core_if, int addr)
 +{
@@ -6344,12 +6344,12 @@
 +	// GPIOs
 +	if(_dev->dev.platform_data >= 0)
 +	{
-+		gpio_request(_dev->dev.platform_data, "usb_power");
-+		gpio_direction_output(_dev->dev.platform_data, 1);
-+		gpio_set_value(_dev->dev.platform_data, 1);
-+		gpio_export(_dev->dev.platform_data, 0);
++		int pin = (int)_dev->dev.platform_data;
++		gpio_request(pin, "usb_power");
++		gpio_direction_output(pin, 1);
++		gpio_set_value(pin, 1);
++		gpio_export(pin, 0);
 +	}
-+
 +	dev_dbg(&_dev->dev, "dwc_otg_driver_probe (%p)\n", _dev);
 +
 +    dwc_otg_device = kmalloc(sizeof(dwc_otg_device_t), GFP_KERNEL);
@@ -13250,7 +13250,7 @@
 +#endif /* DWC_DEVICE_ONLY */
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_ifx.c
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,101 @@
 +/******************************************************************************
 +**
 +** FILE NAME    : dwc_otg_ifx.c
@@ -13342,10 +13342,6 @@
 +
 +	// PHY configurations.
 +	writel (0x14014, (volatile unsigned long *)0xbe10103c);
-+}
-+
-+static void release_platform_dev(struct device * dev)
-+{
 +}
 +
 +int ifx_usb_hc_init(unsigned long base_addr, int irq)
