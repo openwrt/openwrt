@@ -15,7 +15,6 @@ DEVICENAME ~~ (^tun|^tap[0-9]$) {
 
 DEVICENAME ~~ ^ppp {
 	makedev /dev/%DEVICENAME% 0600
-	next-event
 }
 
 DEVICENAME ~~ (^controlC[0-9]$|^pcmC[0-9]D[0-9]|^timer$) {
