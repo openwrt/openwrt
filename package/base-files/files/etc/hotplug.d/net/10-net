@@ -11,7 +11,7 @@ addif() {
 
 	# PPP devices are configured by pppd, no need to run setup_interface here
 	case "$INTERFACE" in
-		ppp*|3g-*) return 0;;
+		3g-*|ppp-*|pppoa-*|pppoe-*|pptp-*) return 0;;
 		ath*) return 0;;
 		wlan*) return 0;;
 	esac
