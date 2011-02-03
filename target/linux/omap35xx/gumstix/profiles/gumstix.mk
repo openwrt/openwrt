@@ -18,8 +18,8 @@ define Profile/Gumstix
 		kmod-usb-serial-pl2303 kmod-usb-uhci kmod-cfg80211 \
 		kmod-lib80211 kmod-libertas-sd kmod-mac80211 libnl-tiny \
 		crda iw kmod-usb-hid \
-		kmod-usb-storage kmod-usb-storage-extras \
-		kmod-fs-vfat \
+		kmod-usb-storage kmod-usb-storage-extras kmod-fs-vfat \
+		uboot-omap35xx-omap3_overo \
 		hegw hegwtest mtd-utils
 endef
 
