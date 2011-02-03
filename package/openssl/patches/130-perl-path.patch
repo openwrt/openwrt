@@ -18,7 +18,7 @@
 +++ b/util/clean-depend.pl
 @@ -1,4 +1,4 @@
 -#!/usr/local/bin/perl -w
-+#!/usr/bin/perl -w
++#!/usr/bin/perl
  # Clean the dependency list in a makefile of standard includes...
  # Written by Ben Laurie <ben@algroup.co.uk> 19 Jan 1999
  
@@ -37,7 +37,7 @@
 +#!/usr/bin/perl
  
  my $config = "crypto/err/openssl.ec";
- my $debug = 0;
+ my $hprefix = "openssl/";
 --- a/util/mkstack.pl
 +++ b/util/mkstack.pl
 @@ -1,4 +1,4 @@
