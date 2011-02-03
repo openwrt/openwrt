@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1669,6 +1669,28 @@ config MIPS_VPE_LOADER
+@@ -1699,6 +1699,28 @@
  	  Includes a loader for loading an elf relocatable object
  	  onto another VPE and running it.
  
@@ -110,7 +110,7 @@
  /* TCStatus fields (per TC) */
  #define TCSTATUS_TASID		(_ULCAST_(0xff))
  #define TCSTATUS_IXMT_SHIFT	10
-@@ -350,6 +390,14 @@ do {									\
+@@ -350,6 +390,14 @@
  #define write_vpe_c0_vpecontrol(val)	mttc0(1, 1, val)
  #define read_vpe_c0_vpeconf0()		mftc0(1, 2)
  #define write_vpe_c0_vpeconf0(val)	mttc0(1, 2, val)
@@ -125,7 +125,7 @@
  #define read_vpe_c0_count()		mftc0(9, 0)
  #define write_vpe_c0_count(val)		mttc0(9, 0, val)
  #define read_vpe_c0_status()		mftc0(12, 0)
-@@ -381,6 +429,12 @@ do {									\
+@@ -381,6 +429,12 @@
  #define write_tc_c0_tchalt(val)		mttc0(2, 4, val)
  #define read_tc_c0_tccontext()		mftc0(2, 5)
  #define write_tc_c0_tccontext(val)	mttc0(2, 5, val)
@@ -140,7 +140,7 @@
  #define read_tc_gpr_sp()		mftgpr(29)
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
-@@ -84,7 +84,8 @@ obj-$(CONFIG_MIPS32_O32)	+= binfmt_elfo3
+@@ -84,7 +84,8 @@
  
  obj-$(CONFIG_KGDB)		+= kgdb.o
  obj-$(CONFIG_PROC_FS)		+= proc.o
@@ -253,7 +253,7 @@
  
  /*
   * Dump new MIPS MT state for the core. Does not leave TCs halted.
-@@ -78,18 +147,18 @@ void mips_mt_regdump(unsigned long mvpct
+@@ -78,18 +147,18 @@
  			if ((read_tc_c0_tcbind() & TCBIND_CURVPE) == i) {
  				printk("  VPE %d\n", i);
  				printk("   VPEControl : %08lx\n",
@@ -279,7 +279,7 @@
  				break; /* Next VPE */
  			}
  		}
-@@ -287,6 +356,9 @@ void mips_mt_set_cpuoptions(void)
+@@ -287,6 +356,9 @@
  		printk("Mapped %ld ITC cells starting at 0x%08x\n",
  			((itcblkgrn & 0x7fe00000) >> 20), itc_base);
  	}
@@ -299,7 +299,7 @@
  #include <asm/bootinfo.h>
  #include <asm/cpu.h>
  #include <asm/cpu-features.h>
-@@ -108,3 +109,19 @@ const struct seq_operations cpuinfo_op =
+@@ -108,3 +109,19 @@
  	.stop	= c_stop,
  	.show	= show_cpuinfo,
  };
@@ -321,7 +321,7 @@
 +}
 --- a/arch/mips/kernel/smtc.c
 +++ b/arch/mips/kernel/smtc.c
-@@ -1335,6 +1335,13 @@ void smtc_get_new_mmu_context(struct mm_
+@@ -1336,6 +1336,13 @@
  	asid = asid_cache(cpu);
  
  	do {
@@ -337,7 +337,7 @@
  				flush_icache_all();
 --- a/arch/mips/kernel/vpe.c
 +++ b/arch/mips/kernel/vpe.c
-@@ -77,6 +77,58 @@ static struct kspd_notifications kspd_ev
+@@ -76,6 +76,58 @@
  static int kspd_events_reqd;
  #endif
  
@@ -396,7 +396,7 @@
  /* grab the likely amount of memory we will need. */
  #ifdef CONFIG_MIPS_VPE_LOADER_TOM
  #define P_SIZE (2 * 1024 * 1024)
-@@ -269,6 +321,13 @@ static void *alloc_progmem(unsigned long
+@@ -268,6 +320,13 @@
  	void *addr;
  
  #ifdef CONFIG_MIPS_VPE_LOADER_TOM
@@ -410,7 +410,7 @@
  	/*
  	 * This means you must tell Linux to use less memory than you
  	 * physically have, for example by passing a mem= boot argument.
-@@ -747,6 +806,12 @@ static int vpe_run(struct vpe * v)
+@@ -746,6 +805,12 @@
  	}
  
  	/* Write the address we want it to start running from in the TCPC register. */
@@ -423,7 +423,7 @@
  	write_tc_c0_tcrestart((unsigned long)v->__start);
  	write_tc_c0_tccontext((unsigned long)0);
  
-@@ -760,6 +825,20 @@ static int vpe_run(struct vpe * v)
+@@ -759,6 +824,20 @@
  
  	write_tc_c0_tchalt(read_tc_c0_tchalt() & ~TCHALT_H);
  
@@ -444,7 +444,7 @@
  	/*
  	 * The sde-kit passes 'memsize' to __start in $a3, so set something
  	 * here...  Or set $a3 to zero and define DFLT_STACK_SIZE and
-@@ -834,6 +913,9 @@ static int find_vpe_symbols(struct vpe *
+@@ -833,6 +912,9 @@
  	if ( (v->__start == 0) || (v->shared_ptr == NULL))
  		return -1;
  
@@ -454,7 +454,7 @@
  	return 0;
  }
  
-@@ -995,6 +1077,15 @@ static int vpe_elfload(struct vpe * v)
+@@ -994,6 +1076,15 @@
  			   (unsigned long)v->load_addr + v->len);
  
  	if ((find_vpe_symbols(v, sechdrs, symindex, strtab, &mod)) < 0) {
@@ -470,7 +470,7 @@
  		if (v->__start == 0) {
  			printk(KERN_WARNING "VPE loader: program does not contain "
  			       "a __start symbol\n");
-@@ -1065,6 +1156,9 @@ static int vpe_open(struct inode *inode,
+@@ -1064,6 +1155,9 @@
  	struct vpe_notifications *not;
  	struct vpe *v;
  	int ret;
@@ -480,7 +480,7 @@
  
  	if (minor != iminor(inode)) {
  		/* assume only 1 device at the moment. */
-@@ -1091,14 +1185,23 @@ static int vpe_open(struct inode *inode,
+@@ -1090,14 +1184,23 @@
  		cleanup_tc(get_tc(tclimit));
  	}
  
@@ -504,7 +504,7 @@
  
  #ifdef CONFIG_MIPS_APSP_KSPD
  	/* get kspd to tell us when a syscall_exit happens */
-@@ -1351,6 +1454,133 @@ static void kspd_sp_exit( int sp_id)
+@@ -1350,6 +1453,133 @@
  	cleanup_tc(get_tc(sp_id));
  }
  #endif
@@ -638,7 +638,7 @@
  
  static ssize_t store_kill(struct device *dev, struct device_attribute *attr,
  			  const char *buf, size_t len)
-@@ -1432,6 +1662,18 @@ static int __init vpe_module_init(void)
+@@ -1431,6 +1661,18 @@
  		printk("VPE loader: not a MIPS MT capable processor\n");
  		return -ENODEV;
  	}
@@ -657,7 +657,7 @@
  
  	if (vpelimit == 0) {
  		printk(KERN_WARNING "No VPEs reserved for AP/SP, not "
-@@ -1476,10 +1718,12 @@ static int __init vpe_module_init(void)
+@@ -1475,10 +1717,12 @@
  	mtflags = dmt();
  	vpflags = dvpe();
  
@@ -671,7 +671,7 @@
  
  	val = read_c0_mvpconf0();
  	hw_tcs = (val & MVPCONF0_PTC) + 1;
-@@ -1491,6 +1735,7 @@ static int __init vpe_module_init(void)
+@@ -1490,6 +1734,7 @@
  		 * reschedule send IPIs or similar we might hang.
  		 */
  		clear_c0_mvpcontrol(MVPCONTROL_VPC);
@@ -679,7 +679,7 @@
  		evpe(vpflags);
  		emt(mtflags);
  		local_irq_restore(flags);
-@@ -1516,6 +1761,7 @@ static int __init vpe_module_init(void)
+@@ -1515,6 +1760,7 @@
  			}
  
  			v->ntcs = hw_tcs - tclimit;
@@ -687,7 +687,7 @@
  
  			/* add the tc to the list of this vpe's tc's. */
  			list_add(&t->tc, &v->tc);
-@@ -1584,6 +1830,7 @@ static int __init vpe_module_init(void)
+@@ -1583,6 +1829,7 @@
  out_reenable:
  	/* release config state */
  	clear_c0_mvpcontrol(MVPCONTROL_VPC);
