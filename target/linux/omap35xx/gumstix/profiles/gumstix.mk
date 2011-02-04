@@ -11,7 +11,7 @@ define Profile/Gumstix
   NAME:=gumstix
   PACKAGES:=-iptables -ppp -ppp-mod-pppoe -kmod-ipt-nathelper \
 		-firewall -mtd -hotplug2 -udevtrigger -dropbear \
-		ext4 usb udev kmod-bluetooth ntpclient wpa-supplicant \
+		ext4 ubifs usb udev kmod-bluetooth ntpclient wpa-supplicant \
 		wireless-tools wpa-cli \
 		bluez-utils bluez-hcidump usbutils \
 		kmod-usb-serial kmod-usb-serial-cp210x kmod-usb-serial-ftdi \
