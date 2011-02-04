@@ -23,13 +23,11 @@ define Image/BuildKernel
 	rm linux.bin
 endef
 
-ifndef CONFIG_TARGET_omap35xx_gumstix
 define Image/Build
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(KERNEL)-root.$(1)
-	PADDING="true" PATH="$(TARGET_PATH)" ./gen_image.sh $(BIN_DIR)/$(IMG_PREFIX)-$(1).image 4 $(KDIR)/root.bootscript 240 $(KDIR)/root.$(1)
+#	PADDING="true" PATH="$(TARGET_PATH)" ./gen_image.sh $(BIN_DIR)/$(IMG_PREFIX)-$(1).image 4 $(KDIR)/root.bootscript 240 $(KDIR)/root.$(1)
 	$(call Image/Build/$(1),$(1))
 endef
-endif
 
 ifdef CONFIG_TARGET_omap35xx_gumstix
 define Image/Prepare
