@@ -54,7 +54,7 @@ define Image/BuildKernel/Template
 	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
 endef
 
-ifeq ($(CONFIG_SOC_LANTIQ_XWAY),y)
+ifeq ($(CONFIG_TARGET_lantiq_xway),y)
 define Image/BuildKernel/Profile/EASY50712
 	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
 endef
@@ -69,6 +69,38 @@ endef
 
 define Image/Build/Profile/EASY50812
 	$(call Image/Build/$(1),$(1),EASY50812)
+endef
+
+define Image/BuildKernel/Profile/ARV4518PW
+	$(call Image/BuildKernel/Template,ARV4518PW,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV4518PW
+	$(call Image/Build/$(1),$(1),ARV4518PW)
+endef
+
+define Image/BuildKernel/Profile/ARV4520PW
+	$(call Image/BuildKernel/Template,ARV4520PW,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV4520PW
+	$(call Image/Build/$(1),$(1),ARV4520PW)
+endef
+
+define Image/BuildKernel/Profile/ARV4525PW
+	$(call Image/BuildKernel/Template,ARV4525PW,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV4525PW
+	$(call Image/Build/$(1),$(1),ARV4525PW)
+endef
+
+define Image/BuildKernel/Profile/ARV452CPW
+	$(call Image/BuildKernel/Template,ARV452CPW,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV452CPW
+	$(call Image/Build/$(1),$(1),ARV452CPW)
 endef
 
 define Image/BuildKernel/Profile/ARV752DPW22
@@ -111,7 +143,7 @@ define Image/Build/Profile/Generic
 endef
 endif
 
-ifeq ($(CONFIG_SOC_LANTIQ_FALCON),y)
+ifeq ($(CONFIG_TARGET_lantiq_falcon),y)
 define Image/BuildKernel
 	$(call Image/BuildKernel/Template,EASY98000,$(falcon_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
