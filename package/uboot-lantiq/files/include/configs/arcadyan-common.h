@@ -89,7 +89,7 @@
         "update_uboot=tftp 0x80500000 ${tftppath}u-boot-" CONFIG_ARCADYAN ".bin;era 0xb0000000 +${filesize};" \
                 "cp.b 0x80500000 0xb0000000 ${filesize}\0" \
         "update_openwrt=tftp ${ram_addr} "                              \
-                "${tftppath}openwrt-lantiq-" CONFIG_ARCADYAN "-squashfs.image;"            \
+                "${tftppath}openwrt-lantiq-xway-" CONFIG_ARCADYAN "-squashfs.image;"            \
                 "era ${kernel_addr} +${filesize};"                      \
                 "cp.b ${ram_addr} ${kernel_addr} ${filesize}\0"
 
