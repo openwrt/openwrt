@@ -45,7 +45,6 @@ define Package/base-files
 endef
 
 define Package/base-files/conffiles
-/etc/banner
 /etc/hosts
 /etc/inittab
 /etc/group
