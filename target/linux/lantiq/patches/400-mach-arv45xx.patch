@@ -37,7 +37,7 @@
 +obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-arv45xx.c
-@@ -0,0 +1,465 @@
+@@ -0,0 +1,514 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -56,6 +56,8 @@
 +#include <linux/mtd/physmap.h>
 +#include <linux/input.h>
 +#include <linux/etherdevice.h>
++#include <linux/ath5k_platform.h>
++#include <linux/pci.h>
 +
 +#include <machine.h>
 +
@@ -315,6 +317,47 @@
 +	lq_register_ethernet(&lq_eth_data);
 +}
 +
++static u16 arv45xx_ath5k_eeprom_data[ATH5K_PLAT_EEP_MAX_WORDS];
++static struct ath5k_platform_data arv45xx_ath5k_platform_data;
++
++static int arv45xx_pci_plat_dev_init(struct pci_dev *dev)
++{
++	dev->dev.platform_data = &arv45xx_ath5k_platform_data;
++	return 0;
++}
++
++void __init
++arv45xx_register_ath5k(void)
++{
++#define ARV45XX_BRN_ATH		0x3f0478
++	int i;
++	unsigned char eeprom_mac[6];
++	u16 eeprom_data[ATH5K_PLAT_EEP_MAX_WORDS];
++	u32 *p = (u32*)arv45xx_ath5k_eeprom_data;
++
++	memcpy_fromio(eeprom_mac,
++		(void *)KSEG1ADDR(LQ_FLASH_START + ARV45XX_BRN_MAC), 6);
++	eeprom_mac[5]++;
++	memcpy_fromio(arv45xx_ath5k_eeprom_data,
++		(void *)KSEG1ADDR(LQ_FLASH_START + ARV45XX_BRN_ATH), ATH5K_PLAT_EEP_MAX_WORDS);
++	// swap eeprom bytes
++	for (i = 0; i < ATH5K_PLAT_EEP_MAX_WORDS>>1; i++){
++		//arv4518_ath5k_eeprom_data[i] = ((eeprom_data[i]&0xff)<<8)|((eeprom_data[i]&0xff00)>>8);
++		p[i] = ((eeprom_data[(i<<1)+1]&0xff)<<24)|((eeprom_data[(i<<1)+1]&0xff00)<<8)|((eeprom_data[i<<1]&0xff)<<8)|((eeprom_data[i<<1]&0xff00)>>8);
++		if (i == 0xbf>>1){
++			// printk ("regdomain: 0x%x --> 0x%x\n", p[i], (p[i] & 0xffff0000)|0x67);
++			/* regdomain is invalid?? how did original fw convert 
++			* value to 0x82d4 ??
++			* for now, force to 0x67 */
++			p[i] &= 0xffff0000;
++			p[i] |= 0x67;
++		}
++	}
++	arv45xx_ath5k_platform_data.eeprom_data = arv45xx_ath5k_eeprom_data;
++	arv45xx_ath5k_platform_data.macaddr = eeprom_mac;
++	lqpci_plat_dev_init = arv45xx_pci_plat_dev_init;
++}
++
 +static void __init
 +arv4510pw_init(void)
 +{
@@ -354,8 +397,9 @@
 +	lq_pci_data.gpio = PCI_GNT2 | PCI_REQ2;
 +	lq_register_pci(&lq_pci_data);
 +	lq_register_wdt();
-+	arv45xx_register_ethernet();
 +	xway_register_dwc(ARV4518PW_USB);
++	arv45xx_register_ethernet();
++	arv45xx_register_ath5k();
 +
 +	gpio_request(ARV4518PW_SWITCH_RESET, "switch");
 +	gpio_direction_output(ARV4518PW_SWITCH_RESET, 1);
@@ -372,6 +416,7 @@
 +{
 +#define ARV4520PW_EBU			0x400
 +#define ARV4520PW_USB			28
++#define ARV4520PW_SWITCH_RESET		42
 +
 +	lq_register_gpio();
 +	lq_register_gpio_ebu(ARV4520PW_EBU);
@@ -383,6 +428,9 @@
 +	lq_register_wdt();
 +	arv45xx_register_ethernet();
 +	xway_register_dwc(ARV4520PW_USB);
++
++	gpio_request(ARV4520PW_SWITCH_RESET, "switch");
++	gpio_set_value(ARV4520PW_SWITCH_RESET, 1);
 +}
 +
 +MIPS_MACHINE(LANTIQ_MACH_ARV4520PW,
@@ -407,8 +455,9 @@
 +	lq_register_nor(&arv4518_flash_data);
 +	lq_register_pci(&lq_pci_data);
 +	lq_register_wdt();
-+	arv45xx_register_ethernet();
 +	xway_register_dwc(ARV452CPW_USB);
++	arv45xx_register_ethernet();
++	arv45xx_register_ath5k();
 +
 +	gpio_request(ARV452CPW_SWITCH_RESET, "switch");
 +	gpio_set_value(ARV452CPW_SWITCH_RESET, 1);
