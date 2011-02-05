@@ -1,13 +1,12 @@
 --- a/ath_hal/ah_os.c
 +++ b/ath_hal/ah_os.c
-@@ -343,6 +343,46 @@ EXPORT_SYMBOL(ath_hal_func);
+@@ -343,6 +343,45 @@
   * NB: see the comments in ah_osdep.h about byte-swapping register
   *     reads and writes to understand what's going on below.
   */
 +
-+#ifdef CONFIG_IFXMIPS
-+extern int ifxmips_has_brn_block(void);
-+static int ifxmips_emulate = 0;
++#ifdef CONFIG_LANTIQ
++extern int lantiq_emulate_madwifi_eep;
 +#define EEPROM_EMULATION 1
 +#endif
 +
@@ -47,13 +46,13 @@
  void __ahdecl
  ath_hal_reg_write(struct ath_hal *ah, u_int reg, u_int32_t val)
  {
-@@ -351,20 +391,33 @@ ath_hal_reg_write(struct ath_hal *ah, u_
+@@ -351,20 +390,33 @@
  		ath_hal_printf(ah, "%s: WRITE 0x%x <= 0x%x\n", 
  				(ath_hal_func ?: "unknown"), reg, val);
  #endif
 -	_OS_REG_WRITE(ah, reg, val);
 +#ifdef EEPROM_EMULATION
-+	if((reg >= 0x6000) && (reg <= 0x6010) && ifxmips_emulate)
++	if((reg >= 0x6000) && (reg <= 0x6010) && lantiq_emulate_madwifi_eep)
 +	{
 +		val = ath_hal_eeprom(ah, reg, val, 1);
 +	} else
@@ -70,7 +69,7 @@
 - 	u_int32_t val;
 +	u_int32_t val;
 +#ifdef EEPROM_EMULATION
-+	if((reg >= 0x6000) && (reg <= 0x6010) && ifxmips_emulate)
++	if((reg >= 0x6000) && (reg <= 0x6010) && lantiq_emulate_madwifi_eep)
 +	{
 +		val = ath_hal_eeprom(ah, reg, 0, 0);
 +	} else
@@ -85,14 +84,11 @@
  				(ath_hal_func ?: "unknown"), reg, val);
  #endif
  	return val;
-@@ -581,7 +634,9 @@ init_ath_hal(void)
+@@ -581,7 +633,6 @@
  {
  	const char *sep;
  	int i;
 -
-+#ifdef CONFIG_IFXMIPS
-+	ifxmips_emulate = ifxmips_has_brn_block();
-+#endif
  	printk(KERN_INFO "%s: %s (", dev_info, ath_hal_version);
  	sep = "";
  	for (i = 0; ath_hal_buildopts[i] != NULL; i++) {
