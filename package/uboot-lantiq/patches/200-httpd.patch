@@ -53,23 +53,20 @@
  
 --- a/net/Makefile
 +++ b/net/Makefile
-@@ -26,6 +26,10 @@ include $(TOPDIR)/config.mk
+@@ -26,6 +26,8 @@ include $(TOPDIR)/config.mk
  # CFLAGS += -DDEBUG
  
  LIB	= $(obj)libnet.a
 +UIPDIR  = uip-0.9
-+RSADIR  = uip-0.9
 +$(shell mkdir -p $(obj)$(UIPDIR)) 
-+$(shell mkdir -p $(obj)$(RSADIR)) 
  
  COBJS-$(CONFIG_CMD_NET)  += bootp.o
  COBJS-$(CONFIG_CMD_DNS)  += dns.o
-@@ -36,6 +40,9 @@ COBJS-$(CONFIG_CMD_NET)  += rarp.o
+@@ -36,6 +40,8 @@ COBJS-$(CONFIG_CMD_NET)  += rarp.o
  COBJS-$(CONFIG_CMD_SNTP) += sntp.o
  COBJS-$(CONFIG_CMD_NET)  += tftp.o
  
 +COBJS-$(CONFIG_CMD_HTTPD) += httpd.o $(UIPDIR)/fs.o $(UIPDIR)/httpd.o $(UIPDIR)/uip_arp.o $(UIPDIR)/uip_arch.o $(UIPDIR)/uip.o
-+COBJS-$(CONFIG_CMD_RSA) += $(RSADIR)/bigint.o $(RSADIR)/base64.o $(RSADIR)/rmd160.o $(RSADIR)/rsa.o
 +
  COBJS	:= $(COBJS-y)
  SRCS	:= $(COBJS:.o=.c)
@@ -328,3717 +325,6 @@
 +}
 +
 +#endif
---- /dev/null
-+++ b/net/rsa/Makefile
-@@ -0,0 +1,31 @@
-+#
-+# FONRSA & FONSIGN libraries unit testing
-+# 
-+# This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+#
-+# Execute in this directory
-+#
-+# Created: 20070422 Pablo Martin Medrano <pablo@fon.com>
-+#
-+# $Id: Makefile 389 2007-06-11 08:29:56Z pablo.martin $
-+#
-+# FIXME: Put this in the main Makefile.am
-+# 
-+all: fonsign dump_key
-+
-+fonsign:
-+	gcc -g sign_openssl.c -D__MAINTEST__ -o fonsign -lssl
-+
-+dump_key:
-+	gcc -o dump_key dump_key.c
-+	./dump_key > public_key.h
-+
-+foncheckrsa:
-+	gcc -g bigint.c  fonrsa.c  rmd160.c foncheckrsa.c base64.c log.c  -o foncheckrsa 
-+
-+#private_fon_rsa_key.pem:
-+#	openssl genrsa -out private_fon_rsa_key.pem 4096
-+#	openssl rsa -in private_fon_rsa_key.pem -pubout -out public_fon_rsa_key.pem
-+
-+clean:
-+	rm fonsign dump_key 
---- /dev/null
-+++ b/net/rsa/base64.c
-@@ -0,0 +1,137 @@
-+#include "base64.h"
-+
-+static const char cb64[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-+/* Note that '=' (padding) is 0 */
-+static const unsigned char fb64[256] = {
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255, 62,255,255,255, 63,
-+	52, 53, 54, 55, 56, 57, 58, 59, 60, 61,255,255,255,  0,255,255,
-+	255,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
-+	15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,255,255,255,255,255,
-+	255, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-+	41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+	255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-+};
-+
-+static int encodeblock( unsigned char *in, char *out, int len )
-+{
-+	char s[3];
-+	int i;
-+
-+	for (i = 0; i < len; i++)
-+		s[i] = in[i];
-+	for (i = len; i < 3; i++)
-+		s[i] = 0;
-+	out[0] = (unsigned char)(cb64[(s[0] & 0xfc) >> 2 ]);
-+	out[1] = (unsigned char)(cb64[((s[0] & 0x03) << 4) | ((s[1] & 0xf0) >> 4) ]);
-+	out[2] = (unsigned char)(cb64[((s[1] & 0x0f) << 2) | ((s[2] & 0xc0) >> 6) ]);
-+	out[3] = (unsigned char)(cb64[s[2] & 0x3f ]);
-+	switch (len) {
-+		case 1:
-+			out[3] = '=';
-+		case 2:
-+			out[2] = '=';
-+			break;
-+		default:
-+			break;
-+	}
-+
-+	return 4;
-+}
-+
-+static int decodeblock(char *ins, unsigned char *out, int len)
-+{
-+	int i;
-+	unsigned char in[4];
-+	int skip = 0;
-+
-+	if (len != 4)
-+		return -1;
-+	for (i = 0; i < len; i++) {
-+		if (ins[i] == '=') {
-+			in[i] = 0;
-+			skip++;  
-+		} else
-+			in[i] = fb64[(int)(ins[i])];
-+		if (in[i] == 255) {
-+			return -1;
-+		}
-+	}
-+	out[0] = (unsigned char ) (in[0] << 2 | in[1] >> 4);
-+	if (skip == 2) {
-+		return 1;
-+	}
-+	out[1] = (unsigned char )((in[1] & 0x0f) << 4 | in[2] >> 2);
-+	if (skip == 1) {
-+		return 2;
-+	}
-+	out[2] = (unsigned char ) (((in[2] << 6) & 0xc0) | in[3]);
-+
-+	return 3;
-+}
-+
-+int B64_encode(char *source, char *destination, int size_source, int size_destination)
-+{
-+	int chunks, reminder, size, d, i, size_expected;
-+	char *s;
-+	unsigned char *t;
-+
-+	chunks = size_source / 3;
-+	reminder = size_source % 3;
-+	size = 0;
-+	size_expected = (chunks * 4) + (reminder?(reminder + 1):0);
-+	if (size_destination < ((chunks * 4) + (reminder?4:0))) {
-+		return 1;
-+	}
-+	for (i = 0; i < chunks; i++) {
-+		s = source + (i * 3); 
-+		t = destination + (i * 4);
-+		d = encodeblock(s, t, 3);
-+		if (d == -1) {
-+			return 1;
-+		}
-+		size += d;
-+	}
-+	if (reminder) {
-+		d = encodeblock(source + (chunks * 3), destination + (chunks * 4), reminder);
-+		if (d == -1) {
-+			return 1;
-+		}
-+		size += d;
-+	}
-+	return size;
-+}
-+
-+int B64_decode(char *source, char *destination, int size_source, int size_destination)
-+{
-+	int chunks, reminder, size, d, i;
-+
-+	chunks = size_source / 4;
-+	reminder = size_source % 4;
-+	size = 0;
-+	if (reminder) {
-+		return 1;
-+	}
-+	if (size_destination < ((chunks * 3))) {
-+		printf("%d, %d\n",
-+			size_destination, ((chunks * 3) + reminder));
-+		return -1;
-+	}
-+	for (i = 0; i < chunks; i++) {
-+		d = decodeblock(source + (i * 4), destination + (i * 3), 4);
-+		if (d == -1) {
-+			return -1;
-+		}
-+		size += d;
-+	}
-+	return size;
-+}
-+
---- /dev/null
-+++ b/net/rsa/base64.h
-@@ -0,0 +1,11 @@
-+#ifndef _BASE64_H_
-+#define _BASE64_H_
-+#ifdef __cplusplus
-+extern "C" {
-+#endif
-+int B64_encode(char *source, char *destination, int size_source, int size_destination);
-+int B64_decode(char *source, char *destination, int size_source, int size_destination);
-+#ifdef __cplusplus
-+}
-+#endif
-+#endif
---- /dev/null
-+++ b/net/rsa/bigint.c
-@@ -0,0 +1,906 @@
-+/*
-+ *  Copyright(C) 2006
-+ *
-+ *  This library is free software; you can redistribute it and/or modify
-+ *  it under the terms of the GNU Lesser General Public License as published by
-+ *  the Free Software Foundation; either version 2.1 of the License, or
-+ *  (at your option) any later version.
-+ *
-+ *  This library is distributed in the hope that it will be useful,
-+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ *  GNU Lesser General Public License for more details.
-+ *
-+ *  You should have received a copy of the GNU Lesser General Public License
-+ *  along with this library; if not, write to the Free Software
-+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ */
-+
-+/**
-+ * @defgroup bigint_api Big Integer API
-+ * @brief The bigint implementation as used by the axTLS project.
-+ *
-+ * The bigint library is for RSA encryption/decryption as well as signing.
-+ * This code tries to minimise use of malloc/free by maintaining a small 
-+ * cache. A bigint context may maintain state by being made "permanent". 
-+ * It be be later released with a bi_depermanent() and bi_free() call.
-+ *
-+ * It supports the following reduction techniques:
-+ * - Classical
-+ * - Barrett
-+ * - Montgomery
-+ *
-+ * It also implements the following:
-+ * - Karatsuba multiplication
-+ * - Squaring
-+ * - Sliding window exponentiation
-+ * - Chinese Remainder Theorem (implemented in rsa.c).
-+ *
-+ * All the algorithms used are pretty standard, and designed for different
-+ * data bus sizes. Negative numbers are not dealt with at all, so a subtraction
-+ * may need to be tested for negativity.
-+ *
-+ * This library steals some ideas from Jef Poskanzer
-+ * <http://cs.marlboro.edu/term/cs-fall02/algorithms/crypto/RSA/bigint>
-+ * and GMP <http://www.swox.com/gmp>. It gets most of its implementation
-+ * detail from "The Handbook of Applied Cryptography"
-+ * <http://www.cacr.math.uwaterloo.ca/hac/about/chap14.pdf>
-+ * @{
-+ */
-+
-+#include "bigint.h"
-+#include <malloc.h>
-+#include "div64.h"
-+
-+static bigint *bi_int_multiply(BI_CTX *ctx, bigint *bi, comp i);
-+static bigint *bi_int_divide(BI_CTX *ctx, bigint *biR, comp denom);
-+static bigint *alloc(BI_CTX *ctx, int size);
-+static bigint *trim(bigint *bi);
-+static void more_comps(bigint *bi, int n);
-+
-+/**
-+ * @brief Start a new bigint context.
-+ * @return A bigint context.
-+ */
-+BI_CTX *bi_initialize(void)
-+{
-+    BI_CTX *ctx = (BI_CTX *)calloc(1, sizeof(BI_CTX));
-+
-+    ctx->active_list = NULL;
-+    ctx->active_count = 0;
-+    ctx->free_list = NULL;
-+    ctx->free_count = 0;
-+    ctx->mod_offset = 0;
-+
-+    /* the radix */
-+    ctx->bi_radix = alloc(ctx, 2); 
-+    ctx->bi_radix->comps[0] = 0;
-+    ctx->bi_radix->comps[1] = 1;
-+    bi_permanent(ctx->bi_radix);
-+
-+    return ctx;
-+}
-+
-+/**
-+ * @brief Close the bigint context and free any resources.
-+ *
-+ * Free up any used memory - a check is done if all objects were not 
-+ * properly freed.
-+ * @param ctx [in]   The bigint session context.
-+ */
-+void bi_terminate(BI_CTX *ctx)
-+{
-+    bigint *p, *pn;
-+
-+    bi_depermanent(ctx->bi_radix); 
-+    bi_free(ctx, ctx->bi_radix);
-+
-+    if (ctx->active_count != 0)
-+    {
-+    	printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		return;
-+	}
-+
-+    for (p = ctx->free_list; p != NULL; p = pn)
-+    {
-+        pn = p->next;
-+        free(p->comps);
-+        free(p);
-+    }
-+
-+    free(ctx);
-+}
-+
-+/**
-+ * @brief Increment the number of references to this object. 
-+ * It does not do a full copy.
-+ * @param bi [in]   The bigint to copy.
-+ * @return A referent to the same bigint.
-+ */
-+bigint *bi_copy(bigint *bi)
-+{
-+    check(bi);
-+    if (bi->refs != PERMANENT)
-+        bi->refs++;
-+    return bi;
-+}
-+
-+/**
-+ * @brief Simply make a bigint object "unfreeable" if bi_free() is called on it.
-+ *
-+ * For this object to be freed, bi_depermanent() must be called.
-+ * @param bi [in]   The bigint to be made permanent.
-+ */
-+void bi_permanent(bigint *bi)
-+{
-+    check(bi);
-+    if (bi->refs != 1)
-+    {
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		return;
-+	}
-+
-+    bi->refs = PERMANENT;
-+}
-+
-+/**
-+ * @brief Take a permanent object and make it elligible for freedom.
-+ * @param bi [in]   The bigint to be made back to temporary.
-+ */
-+void bi_depermanent(bigint *bi)
-+{
-+    check(bi);
-+    if (bi->refs != PERMANENT)
-+    {
-+        printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		return;
-+	}
-+
-+    bi->refs = 1;
-+}
-+
-+/**
-+ * @brief Free a bigint object so it can be used again. 
-+ *
-+ * The memory itself it not actually freed, just tagged as being available 
-+ * @param ctx [in]   The bigint session context.
-+ * @param bi [in]    The bigint to be freed.
-+ */
-+void bi_free(BI_CTX *ctx, bigint *bi)
-+{
-+    check(bi);
-+    if (bi->refs == PERMANENT)
-+    {
-+        return;
-+    }
-+
-+    if (--bi->refs > 0)
-+    {
-+        return;
-+    }
-+
-+    bi->next = ctx->free_list;
-+    ctx->free_list = bi;
-+    ctx->free_count++;
-+
-+    if (--ctx->active_count < 0)
-+    {
-+        printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+		return;
-+	}
-+}
-+
-+/**
-+ * @brief Convert an (unsigned) integer into a bigint.
-+ * @param ctx [in]   The bigint session context.
-+ * @param i [in]     The (unsigned) integer to be converted.
-+ * 
-+ */
-+bigint *int_to_bi(BI_CTX *ctx, comp i)
-+{
-+    bigint *biR = alloc(ctx, 1);
-+    biR->comps[0] = i;
-+    return biR;
-+}
-+
-+/**
-+ * @brief Do a full copy of the bigint object.
-+ * @param ctx [in]   The bigint session context.
-+ * @param bi  [in]   The bigint object to be copied.
-+ */
-+bigint *bi_clone(BI_CTX *ctx, const bigint *bi)
-+{
-+    bigint *biR = alloc(ctx, bi->size);
-+    check(bi);
-+    memcpy(biR->comps, bi->comps, bi->size*COMP_BYTE_SIZE);
-+    return biR;
-+}
-+
-+/**
-+ * @brief Perform an additon operation between two bigints.
-+ * @param ctx [in]  The bigint session context.
-+ * @param bia [in]  A bigint.
-+ * @param bib [in]  Another bigint.
-+ * @return The result of the addition.
-+ */
-+bigint *bi_add(BI_CTX *ctx, bigint *bia, bigint *bib)
-+{
-+    int n;
-+    comp carry = 0;
-+    comp *pa, *pb;
-+
-+    check(bia);
-+    check(bib);
-+
-+    if (bia->size > bib->size)
-+        n = bia->size;
-+    else
-+        n = bib->size;
-+    more_comps(bia, n+1);
-+    more_comps(bib, n);
-+    pa = bia->comps;
-+    pb = bib->comps;
-+
-+    do
-+    {
-+        comp  sl, rl, cy1;
-+        sl = *pa + *pb++;
-+        rl = sl + carry;
-+        cy1 = sl < *pa;
-+        carry = cy1 | (rl < sl);
-+        *pa++ = rl;
-+    } while (--n != 0);
-+
-+    *pa = carry;                  /* do overflow */
-+    bi_free(ctx, bib);
-+    return trim(bia);
-+}
-+
-+/**
-+ * @brief Perform a subtraction operation between two bigints.
-+ * @param ctx [in]  The bigint session context.
-+ * @param bia [in]  A bigint.
-+ * @param bib [in]  Another bigint.
-+ * @param is_negative [out] If defined, indicates that the result was negative.
-+ * is_negative may be NULL.
-+ * @return The result of the subtraction. The result is always positive.
-+ */
-+bigint *bi_subtract(BI_CTX *ctx, 
-+        bigint *bia, bigint *bib, int *is_negative)
-+{
-+    int n = bia->size;
-+    comp *pa, *pb, carry = 0;
-+
-+    check(bia);
-+    check(bib);
-+
-+    more_comps(bib, n);
-+    pa = bia->comps;
-+    pb = bib->comps;
-+
-+    do 
-+    {
-+        comp sl, rl, cy1;
-+        sl = *pa - *pb++;
-+        rl = sl - carry;
-+        cy1 = sl > *pa;
-+        carry = cy1 | (rl > sl);
-+        *pa++ = rl;
-+    } while (--n != 0);
-+
-+    if (is_negative)    /* indicate a negative result */
-+    {
-+        *is_negative = carry;
-+    }
-+
-+    bi_free(ctx, trim(bib));    /* put bib back to the way it was */
-+    return trim(bia);
-+}
-+
-+/**
-+ * Perform a multiply between a bigint an an (unsigned) integer
-+ */
-+static bigint *bi_int_multiply(BI_CTX *ctx, bigint *bia, comp b)
-+{
-+    int j = 0, n = bia->size;
-+    bigint *biR = alloc(ctx, n + 1);
-+    comp carry = 0;
-+    comp *r = biR->comps;
-+    comp *a = bia->comps;
-+
-+    check(bia);
-+
-+    /* clear things to start with */
-+    memset(r, 0, ((n+1)*COMP_BYTE_SIZE));
-+
-+    do
-+    {
-+        long_comp tmp = *r + (long_comp)a[j]*b + carry;
-+        *r++ = (comp)tmp;              /* downsize */
-+        carry = (comp)(tmp >> COMP_BIT_SIZE);
-+    } while (++j < n);
-+
-+    *r = carry;
-+    bi_free(ctx, bia);
-+    return trim(biR);
-+}
-+
-+/**
-+ * @brief Does both division and modulo calculations. 
-+ *
-+ * Used extensively when doing classical reduction.
-+ * @param ctx [in]  The bigint session context.
-+ * @param u [in]    A bigint which is the numerator.
-+ * @param v [in]    Either the denominator or the modulus depending on the mode.
-+ * @param is_mod [n] Determines if this is a normal division (0) or a reduction
-+ * (1).
-+ * @return  The result of the division/reduction.
-+ */
-+bigint *bi_divide(BI_CTX *ctx, bigint *u, bigint *v, int is_mod)
-+{
-+    int n = v->size, m = u->size-n;
-+    int j = 0, orig_u_size = u->size;
-+    uint8_t mod_offset = ctx->mod_offset;
-+    comp d;
-+    bigint *quotient, *tmp_u;
-+    comp q_dash;
-+
-+    check(u);
-+    check(v);
-+
-+    /* if doing reduction and we are < mod, then return mod */
-+    if (is_mod && bi_compare(v, u) > 0)
-+    {
-+        bi_free(ctx, v);
-+        return u;
-+    }
-+
-+	quotient = alloc(ctx, m+1);
-+    tmp_u = alloc(ctx, n+1);
-+    v = trim(v);        /* make sure we have no leading 0's */
-+	// d = (comp)((long_comp)COMP_RADIX/(V1+1));
-+	long_comp x = COMP_RADIX; do_div(x, V1+1); d = x;
-+
-+    /* clear things to start with */
-+    memset(quotient->comps, 0, ((quotient->size)*COMP_BYTE_SIZE));
-+
-+    /* normalise */
-+    if (d > 1)
-+    {
-+		u = bi_int_multiply(ctx, u, d);
-+
-+		if (is_mod)
-+        {
-+			v = ctx->bi_normalised_mod[mod_offset];
-+        }
-+        else
-+        {
-+			v = bi_int_multiply(ctx, v, d);
-+        }
-+	}
-+
-+	if (orig_u_size == u->size)  /* new digit position u0 */
-+    {
-+		more_comps(u, orig_u_size + 1);
-+    }
-+
-+	do
-+    {
-+        /* get a temporary short version of u */
-+		memcpy(tmp_u->comps, &u->comps[u->size-n-1-j], (n+1)*COMP_BYTE_SIZE);
-+
-+        /* calculate q' */
-+        if (U(0) == V1)
-+        {
-+			q_dash = COMP_RADIX-1;
-+        }
-+        else
-+        {
-+            //q_dash = (comp)(((long_comp)U(0)*COMP_RADIX + U(1))/V1);
-+			long_comp x = U(0)*COMP_RADIX + U(1); do_div(x, V1); q_dash = x;
-+
-+        }
-+
-+		if (v->size > 1 && V2)
-+        {
-+            /* we are implementing the following
-+            if (V2*q_dash > (((U(0)*COMP_RADIX + U(1) - 
-+                    q_dash*V1)*COMP_RADIX) + U(2))) ... */
-+			comp inner = (comp)((long_comp)COMP_RADIX*U(0) + U(1) - 
-+                                        (long_comp)q_dash*V1);
-+			if ((long_comp)V2*q_dash > (long_comp)inner*COMP_RADIX + U(2))
-+            {
-+				q_dash--;
-+            }
-+        }
-+
-+        /* multiply and subtract */
-+        if (q_dash)
-+        {
-+            int is_negative;
-+			tmp_u = bi_subtract(ctx, tmp_u, 
-+                    bi_int_multiply(ctx, bi_copy(v), q_dash), &is_negative);
-+			more_comps(tmp_u, n+1);
-+
-+			Q(j) = q_dash; 
-+
-+            /* add back */
-+            if (is_negative)
-+            {
-+				Q(j)--;
-+                tmp_u = bi_add(ctx, tmp_u, bi_copy(v));
-+                /* lop off the carry */
-+                tmp_u->size--;
-+                v->size--;
-+            }
-+		}
-+        else
-+        {
-+			Q(j) = 0; 
-+        }
-+
-+        /* copy back to u */
-+		memcpy(&u->comps[u->size-n-1-j], tmp_u->comps, (n+1)*COMP_BYTE_SIZE);
-+    } while (++j <= m);
-+
-+    bi_free(ctx, tmp_u);
-+    bi_free(ctx, v);
-+
-+    if (is_mod)     /* get the remainder */
-+    {
-+		bi_free(ctx, quotient);
-+		return bi_int_divide(ctx, trim(u), d);
-+    }
-+    else            /* get the quotient */
-+    {
-+		bi_free(ctx, u);
-+		return trim(quotient);
-+    }
-+}
-+
-+/**
-+ * Perform an integer divide on a bigint.
-+ */
-+static bigint *bi_int_divide(BI_CTX *ctx, bigint *biR, comp denom)
-+{
-+    int i = biR->size - 1;
-+    long_comp r = 0;
-+
-+    check(biR);
-+
-+	do
-+    {
-+		r = (r<<COMP_BIT_SIZE) + biR->comps[i];
-+		//biR->comps[i] = (comp)(r / denom);
-+		long_comp x = r; do_div(x, denom); biR->comps[i] = x;
-+/*		while(r > denom)
-+		{
-+			r -= denom;
-+		}*/
-+		r%=denom;
-+	} while (--i != 0);
-+
-+    return trim(biR);
-+}
-+
-+/**
-+ * @brief Allow a binary sequence to be imported as a bigint.
-+ * @param ctx [in]  The bigint session context.
-+ * @param data [in] The data to be converted.
-+ * @param size [in] The number of bytes of data.
-+ * @return A bigint representing this data.
-+ */
-+bigint *bi_import(BI_CTX *ctx, const uint8_t *data, int size)
-+{
-+    bigint *biR = alloc(ctx, (size+COMP_BYTE_SIZE-1)/COMP_BYTE_SIZE);
-+    int i, j = 0, offset = 0;
-+
-+    memset(biR->comps, 0, biR->size*COMP_BYTE_SIZE);
-+
-+    for (i = size-1; i >= 0; i--)
-+    {
-+        biR->comps[offset] += data[i] << (j*8);
-+
-+        if (++j == COMP_BYTE_SIZE)
-+        {
-+            j = 0;
-+            offset ++;
-+        }
-+    }
-+
-+    return trim(biR);
-+}
-+
-+/**
-+ * @brief Take a bigint and convert it into a byte sequence. 
-+ *
-+ * This is useful after a decrypt operation.
-+ * @param ctx [in]  The bigint session context.
-+ * @param x [in]  The bigint to be converted.
-+ * @param data [out] The converted data as a byte stream.
-+ * @param size [in] The maximum size of the byte stream. Unused bytes will be
-+ * zeroed.
-+ */
-+void bi_export(BI_CTX *ctx, bigint *x, uint8_t *data, int size)
-+{
-+    int i, j, k = size-1;
-+
-+    check(x);
-+    memset(data, 0, size);  /* ensure all leading 0's are cleared */
-+
-+    for (i = 0; i < x->size; i++)
-+    {
-+        for (j = 0; j < COMP_BYTE_SIZE; j++)
-+        {
-+            comp mask = 0xff << (j*8);
-+            int num = (x->comps[i] & mask) >> (j*8);
-+            data[k--] = num;
-+
-+            if (k < 0)
-+            {
-+                break;
-+            }
-+        }
-+    }
-+
-+    bi_free(ctx, x);
-+}
-+
-+/**
-+ * @brief Pre-calculate some of the expensive steps in reduction. 
-+ *
-+ * This function should only be called once (normally when a session starts).
-+ * When the session is over, bi_free_mod() should be called. bi_mod_power()
-+ * relies on this function being called.
-+ * @param ctx [in]  The bigint session context.
-+ * @param bim [in]  The bigint modulus that will be used.
-+ * @param mod_offset [in] There are three moduluii that can be stored - the
-+ * standard modulus, and it's two primes p and q. This offset refers to which
-+ * modulus we are referring to.
-+ * @see bi_free_mod(), bi_mod_power().
-+ */
-+void bi_set_mod(BI_CTX *ctx, bigint *bim, int mod_offset)
-+{
-+    int k = bim->size;
-+	comp d;
-+//    comp d = (comp)((long_comp)COMP_RADIX/(bim->comps[k-1]+1));
-+	long_comp x = COMP_RADIX; do_div(x, bim->comps[k-1]+1); d = x;
-+
-+    ctx->bi_mod[mod_offset] = bim;
-+    bi_permanent(ctx->bi_mod[mod_offset]);
-+    ctx->bi_normalised_mod[mod_offset] = bi_int_multiply(ctx, bim, d);
-+    bi_permanent(ctx->bi_normalised_mod[mod_offset]);
-+}
-+
-+/**
-+ * @brief Used when cleaning various bigints at the end of a session.
-+ * @param ctx [in]  The bigint session context.
-+ * @param mod_offset [in] The offset to use.
-+ * @see bi_set_mod().
-+ */
-+void bi_free_mod(BI_CTX *ctx, int mod_offset)
-+{
-+    bi_depermanent(ctx->bi_mod[mod_offset]);
-+    bi_free(ctx, ctx->bi_mod[mod_offset]);
-+    bi_depermanent(ctx->bi_normalised_mod[mod_offset]); 
-+    bi_free(ctx, ctx->bi_normalised_mod[mod_offset]);
-+}
-+
-+/** 
-+ * Perform a standard multiplication between two bigints.
-+ */
-+static bigint *regular_multiply(BI_CTX *ctx, bigint *bia, bigint *bib)
-+{
-+    int i, j, i_plus_j, n = bia->size, t = bib->size;
-+    bigint *biR = alloc(ctx, n + t);
-+    comp *sr = biR->comps;
-+    comp *sa = bia->comps;
-+    comp *sb = bib->comps;
-+
-+    check(bia);
-+    check(bib);
-+
-+    /* clear things to start with */
-+    memset(biR->comps, 0, ((n+t)*COMP_BYTE_SIZE));
-+    i = 0;
-+
-+    do 
-+    {
-+        comp carry = 0;
-+        comp b = *sb++;
-+        i_plus_j = i;
-+        j = 0;
-+
-+        do
-+        {
-+            long_comp tmp = sr[i_plus_j] + (long_comp)sa[j]*b + carry;
-+            sr[i_plus_j++] = (comp)tmp;              /* downsize */
-+            carry = (comp)(tmp >> COMP_BIT_SIZE);
-+        } while (++j < n);
-+
-+        sr[i_plus_j] = carry;
-+    } while (++i < t);
-+
-+    bi_free(ctx, bia);
-+    bi_free(ctx, bib);
-+    return trim(biR);
-+}
-+
-+/**
-+ * @brief Perform a multiplication operation between two bigints.
-+ * @param ctx [in]  The bigint session context.
-+ * @param bia [in]  A bigint.
-+ * @param bib [in]  Another bigint.
-+ * @return The result of the multiplication.
-+ */
-+bigint *bi_multiply(BI_CTX *ctx, bigint *bia, bigint *bib)
-+{
-+    check(bia);
-+    check(bib);
-+
-+    return regular_multiply(ctx, bia, bib);
-+}
-+
-+
-+/**
-+ * @brief Compare two bigints.
-+ * @param bia [in]  A bigint.
-+ * @param bib [in]  Another bigint.
-+ * @return -1 if smaller, 1 if larger and 0 if equal.
-+ */
-+int bi_compare(bigint *bia, bigint *bib)
-+{
-+    int r, i;
-+
-+    check(bia);
-+    check(bib);
-+
-+    if (bia->size > bib->size)
-+        r = 1;
-+    else if (bia->size < bib->size)
-+        r = -1;
-+    else
-+    {
-+        comp *a = bia->comps; 
-+        comp *b = bib->comps; 
-+
-+        /* Same number of components.  Compare starting from the high end
-+         * and working down. */
-+        r = 0;
-+        i = bia->size - 1;
-+
-+        do 
-+        {
-+            if (a[i] > b[i])
-+            { 
-+                r = 1;
-+                break; 
-+            }
-+            else if (a[i] < b[i])
-+            { 
-+                r = -1;
-+                break; 
-+            }
-+        } while (--i >= 0);
-+    }
-+
-+    return r;
-+}
-+
-+/**
-+ * Allocate and zero more components.  Does not consume bi. 
-+ */
-+static void more_comps(bigint *bi, int n)
-+{
-+    if (n > bi->max_comps)
-+    {
-+        if ((bi->max_comps * 2) > n) {
-+	    bi->max_comps = bi->max_comps * 2;
-+	} else {
-+	    bi->max_comps = n;
-+	}
-+        bi->comps = (comp*)realloc(bi->comps, bi->max_comps * COMP_BYTE_SIZE);
-+    }
-+
-+    if (n > bi->size)
-+    {
-+        memset(&bi->comps[bi->size], 0, (n-bi->size)*COMP_BYTE_SIZE);
-+    }
-+
-+    bi->size = n;
-+}
-+
-+/*
-+ * Make a new empty bigint. It may just use an old one if one is available.
-+ * Otherwise get one of the heap.
-+ */
-+static bigint *alloc(BI_CTX *ctx, int size)
-+{
-+    bigint *biR;
-+
-+    /* Can we recycle an old bigint? */
-+    if (ctx->free_list != NULL)
-+    {
-+        biR = ctx->free_list;
-+        ctx->free_list = biR->next;
-+        ctx->free_count--;
-+        if (biR->refs != 0)
-+        {
-+            printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+			printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+			printf("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-+			return 0;
-+		}
-+
-+        more_comps(biR, size);
-+    }
-+    else
-+    {
-+        /* No free bigints available - create a new one. */
-+        biR = (bigint *)malloc(sizeof(bigint));
-+        biR->comps = (comp*) malloc(size * COMP_BYTE_SIZE);
-+        biR->max_comps = size;  /* give some space to spare */
-+    }
-+
-+    biR->size = size;
-+    biR->refs = 1;
-+    biR->next = NULL;
-+    ctx->active_count++;
-+    return biR;
-+}
-+
-+/*
-+ * Work out the highest '1' bit in an exponent. Used when doing sliding-window
-+ * exponentiation.
-+ */
-+static int find_max_exp_index(bigint *biexp)
-+{
-+    int i = COMP_BIT_SIZE-1;
-+    comp shift = COMP_RADIX/2;
-+    comp test = biexp->comps[biexp->size-1];    /* assume no leading zeroes */
-+
-+    check(biexp);
-+
-+    do
-+    {
-+        if (test & shift)
-+        {
-+            return i+(biexp->size-1)*COMP_BIT_SIZE;
-+        }
-+
-+        shift >>= 1;
-+    } while (--i != 0);
-+
-+    return -1;      /* error - must have been a leading 0 */
-+}
-+
-+/*
-+ * Is a particular bit is an exponent 1 or 0? Used when doing sliding-window
-+ * exponentiation.
-+ */
-+static int exp_bit_is_one(bigint *biexp, int offset)
-+{
-+    comp test = biexp->comps[offset / COMP_BIT_SIZE];
-+    int num_shifts = offset % COMP_BIT_SIZE;
-+    comp shift = 1;
-+    int i;
-+
-+    check(biexp);
-+
-+    for (i = 0; i < num_shifts; i++)
-+    {
-+        shift <<= 1;
-+    }
-+
-+    return test & shift;
-+}
-+
-+/*
-+ * Delete any leading 0's (and allow for 0).
-+ */
-+static bigint *trim(bigint *bi)
-+{
-+    check(bi);
-+
-+    while (bi->comps[bi->size-1] == 0 && bi->size > 1)
-+    {
-+        bi->size--;
-+    }
-+
-+    return bi;
-+}
-+
-+/**
-+ * @brief Perform a modular exponentiation.
-+ *
-+ * This function requires bi_set_mod() to have been called previously. This is 
-+ * one of the optimisations used for performance.
-+ * @param ctx [in]  The bigint session context.
-+ * @param bi  [in]  The bigint on which to perform the mod power operation.
-+ * @param biexp [in] The bigint exponent.
-+ * @see bi_set_mod().
-+ */
-+bigint *bi_mod_power(BI_CTX *ctx, bigint *bi, bigint *biexp)
-+{
-+    int i = find_max_exp_index(biexp), j, window_size = 1;
-+    bigint *biR = int_to_bi(ctx, 1);
-+
-+	check(bi);
-+	check(biexp);
-+
-+    ctx->g = (bigint **)malloc(sizeof(bigint *));
-+    ctx->g[0] = bi_clone(ctx, bi);
-+    ctx->window = 1;
-+	bi_permanent(ctx->g[0]);
-+
-+	/* if sliding-window is off, then only one bit will be done at a time and
-+     * will reduce to standard left-to-right exponentiation */
-+    do
-+    {
-+		if (exp_bit_is_one(biexp, i))
-+        {
-+            int l = i-window_size+1;
-+            int part_exp = 0;
-+
-+			if (l < 0)  /* LSB of exponent will always be 1 */
-+            {
-+				l = 0;
-+            }
-+            else
-+            {
-+				while (exp_bit_is_one(biexp, l) == 0)
-+                {
-+					l++;    /* go back up */
-+                }
-+            }
-+
-+            /* build up the section of the exponent */
-+            for (j = i; j >= l; j--)
-+            {
-+				biR = bi_residue(ctx, bi_square(ctx, biR));
-+                if (exp_bit_is_one(biexp, j))
-+                    part_exp++;
-+
-+                if (j != l)
-+                    part_exp <<= 1;
-+            }
-+
-+            part_exp = (part_exp-1)/2;  /* adjust for array */
-+            biR = bi_residue(ctx, 
-+                    bi_multiply(ctx, biR, ctx->g[part_exp]));
-+			i = l-1;
-+        }
-+        else    /* square it */
-+        {
-+			biR = bi_residue(ctx, bi_square(ctx, biR));
-+			i--;
-+        }
-+	} while (i >= 0);
-+     
-+    /* cleanup */
-+	for (i = 0; i < ctx->window; i++)
-+    {
-+		bi_depermanent(ctx->g[i]);
-+        bi_free(ctx, ctx->g[i]);
-+    }
-+
-+    free(ctx->g);
-+	bi_free(ctx, bi);
-+	bi_free(ctx, biexp);
-+	return biR;
-+}
-+
-+/** @} */
---- /dev/null
-+++ b/net/rsa/bigint.h
-@@ -0,0 +1,73 @@
-+/*
-+ *  Copyright(C) 2006
-+ *
-+ *  This library is free software; you can redistribute it and/or modify
-+ *  it under the terms of the GNU Lesser General Public License as published by
-+ *  the Free Software Foundation; either version 2 of the License, or
-+ *  (at your option) any later version.
-+ *
-+ *  This library is distributed in the hope that it will be useful,
-+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ *  GNU Lesser General Public License for more details.
-+ *
-+ *  You should have received a copy of the GNU Lesser General Public License
-+ *  along with this library; if not, write to the Free Software
-+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ *
-+ * Trimmed down from axTLS
-+ * 
-+ * $Id: bigint.h 392 2007-06-25 16:24:51Z pablo.martin $
-+ *
-+ */
-+
-+#ifndef BIGINT_HEADER
-+#define BIGINT_HEADER
-+
-+#define CONFIG_BIGINT_CLASSICAL 1
-+
-+#define SOCKET_READ(A,B,C)      read(A,B,C)
-+#define SOCKET_WRITE(A,B,C)     write(A,B,C)
-+#define SOCKET_CLOSE(A)         close(A)
-+#define TTY_FLUSH()
-+
-+#include "bigint_impl.h"
-+
-+#ifndef CONFIG_BIGINT_CHECK_ON
-+#define check(A)                /**< disappears in normal production mode */
-+#endif
-+BI_CTX *bi_initialize(void);
-+void bi_terminate(BI_CTX *ctx);
-+void bi_permanent(bigint *bi);
-+void bi_depermanent(bigint *bi);
-+void bi_free(BI_CTX *ctx, bigint *bi);
-+bigint *bi_copy(bigint *bi);
-+bigint *bi_clone(BI_CTX *ctx, const bigint *bi);
-+void bi_export(BI_CTX *ctx, bigint *bi, uint8_t *data, int size);
-+bigint *bi_import(BI_CTX *ctx, const uint8_t *data, int len);
-+bigint *int_to_bi(BI_CTX *ctx, comp i);
-+
-+/* the functions that actually do something interesting */
-+bigint *bi_add(BI_CTX *ctx, bigint *bia, bigint *bib);
-+bigint *bi_subtract(BI_CTX *ctx, bigint *bia, 
-+        bigint *bib, int *is_negative);
-+bigint *bi_divide(BI_CTX *ctx, bigint *bia, bigint *bim, int is_mod);
-+bigint *bi_multiply(BI_CTX *ctx, bigint *bia, bigint *bib);
-+bigint *bi_mod_power(BI_CTX *ctx, bigint *bi, bigint *biexp);
-+bigint *bi_mod_power2(BI_CTX *ctx, bigint *bi, bigint *bim, bigint *biexp);
-+int bi_compare(bigint *bia, bigint *bib);
-+void bi_set_mod(BI_CTX *ctx, bigint *bim, int mod_offset);
-+void bi_free_mod(BI_CTX *ctx, int mod_offset);
-+
-+/**
-+ * @def bi_mod
-+ * Find the residue of B. bi_set_mod() must be called before hand.
-+ */
-+#define bi_mod(A, B)      bi_divide(A, B, ctx->bi_mod[ctx->mod_offset], 1)
-+
-+#define bi_residue(A, B)         bi_mod(A, B)
-+
-+#define bi_square(A, B)     bi_multiply(A, bi_copy(B), B)
-+
-+#endif
-+
---- /dev/null
-+++ b/net/rsa/bigint_impl.h
-@@ -0,0 +1,109 @@
-+/*
-+ *  Copyright(C) 2006
-+ *
-+ *  This library is free software; you can redistribute it and/or modify
-+ *  it under the terms of the GNU Lesser General Public License as published by
-+ *  the Free Software Foundation; either version 2.1 of the License, or
-+ *  (at your option) any later version.
-+ *
-+ *  This library is distributed in the hope that it will be useful,
-+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ *  GNU Lesser General Public License for more details.
-+ *
-+ *  You should have received a copy of the GNU Lesser General Public License
-+ *  along with this library; if not, write to the Free Software
-+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ */
-+
-+#ifndef BIGINT_IMPL_HEADER
-+#define BIGINT_IMPL_HEADER
-+
-+#include <linux/types.h>
-+#include <common.h>
-+
-+/* Maintain a number of precomputed variables when doing reduction */
-+#define BIGINT_M_OFFSET     0    /**< Normal modulo offset. */
-+#ifdef CONFIG_BIGINT_CRT
-+#define BIGINT_P_OFFSET     1    /**< p modulo offset. */
-+#define BIGINT_Q_OFFSET     2    /**< q module offset. */
-+#define BIGINT_NUM_MODS     3    /**< The number of modulus constants used. */
-+#else
-+#define BIGINT_NUM_MODS     1    
-+#endif
-+
-+/* Architecture specific functions for big ints */
-+// #ifdef WIN32
-+// #define COMP_RADIX          4294967296i64         
-+// #define COMP_BIG_MSB        0x8000000000000000i64 
-+// #else
-+#define COMP_RADIX          4294967296ULL         /**< Max component + 1 */
-+#define COMP_BIG_MSB        0x8000000000000000ULL /**< (Max dbl comp + 1)/ 2 */
-+//#endif
-+#define COMP_BIT_SIZE       32  /**< Number of bits in a component. */
-+#define COMP_BYTE_SIZE      4   /**< Number of bytes in a component. */
-+#define COMP_NUM_NIBBLES    8   /**< Used For diagnostics only. */
-+
-+typedef uint32_t comp;	        /**< A single precision component. */
-+typedef uint64_t long_comp;     /**< A double precision component. */
-+typedef int64_t slong_comp;     /**< A signed double precision component. */
-+
-+/**
-+ * @struct  _bigint
-+ * @brief A big integer basic object
-+ */
-+struct _bigint
-+{
-+    struct _bigint* next;       /**< The next bigint in the cache. */
-+    short size;                 /**< The number of components in this bigint. */
-+    short max_comps;            /**< The heapsize allocated for this bigint */
-+    int refs;                   /**< An internal reference count. */
-+    comp* comps;                /**< A ptr to the actual component data */
-+};
-+
-+typedef struct _bigint bigint;  /**< An alias for _bigint */
-+
-+/**
-+ * Maintains the state of the cache, and a number of variables used in 
-+ * reduction.
-+ */
-+typedef struct /**< A big integer "session" context. */
-+{
-+    bigint *active_list;                    /**< Bigints currently used. */
-+    bigint *free_list;                      /**< Bigints not used. */
-+    bigint *bi_radix;                       /**< The radix used. */
-+    bigint *bi_mod[BIGINT_NUM_MODS];        /**< modulus */
-+
-+#if defined(CONFIG_BIGINT_MONTGOMERY)
-+    bigint *bi_RR_mod_m[BIGINT_NUM_MODS];   /**< R^2 mod m */
-+    bigint *bi_R_mod_m[BIGINT_NUM_MODS];    /**< R mod m */
-+    comp N0_dash[BIGINT_NUM_MODS];
-+#elif defined(CONFIG_BIGINT_BARRETT)
-+    bigint *bi_mu[BIGINT_NUM_MODS];         /**< Storage for mu */
-+#endif
-+    bigint *bi_normalised_mod[BIGINT_NUM_MODS]; /**< Normalised mod storage. */
-+    bigint **g;                 /**< Used by sliding-window. */
-+    int window;                 /**< The size of the sliding window */
-+
-+    int active_count;           /**< Number of active bigints. */
-+    int free_count;             /**< Number of free bigints. */
-+
-+#ifdef CONFIG_BIGINT_MONTGOMERY
-+    uint8_t use_classical;      /**< Use classical reduction. */
-+#endif
-+    uint8_t mod_offset;         /**< The mod offset we are using */
-+} BI_CTX;
-+
-+#if 0
-+#define max(a,b) ((a)>(b)?(a):(b))  /**< Find the maximum of 2 numbers. */
-+#define min(a,b) ((a)<(b)?(a):(b))  /**< Find the minimum of 2 numbers. */
-+#endif
-+
-+#define PERMANENT           0x7FFF55AA  /**< A magic number for permanents. */
-+
-+#define V1      v->comps[v->size-1]                 /**< v1 for division */
-+#define V2      v->comps[v->size-2]                 /**< v2 for division */
-+#define U(j)    tmp_u->comps[tmp_u->size-j-1]       /**< uj for division */
-+#define Q(j)    quotient->comps[quotient->size-j-1] /**< qj for division */
-+
-+#endif
---- /dev/null
-+++ b/net/rsa/div64.h
-@@ -0,0 +1,113 @@
-+/*
-+ * Copyright (C) 2000, 2004  Maciej W. Rozycki
-+ * Copyright (C) 2003 Ralf Baechle
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#ifndef _ASM_DIV64_H
-+#define _ASM_DIV64_H
-+
-+#if (_MIPS_SZLONG == 32)
-+
-+#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
-+#define GCC_REG_ACCUM "$0"
-+#else
-+#define GCC_REG_ACCUM "accum"
-+#endif
-+
-+
-+//#include <asm/compiler.h>
-+
-+/*
-+ * No traps on overflows for any of these...
-+ */
-+
-+#define do_div64_32(res, high, low, base) ({ \
-+	unsigned long __quot, __mod; \
-+	unsigned long __cf, __tmp, __tmp2, __i; \
-+	\
-+	__asm__(".set	push\n\t" \
-+		".set	noat\n\t" \
-+		".set	noreorder\n\t" \
-+		"move	%2, $0\n\t" \
-+		"move	%3, $0\n\t" \
-+		"b	1f\n\t" \
-+		" li	%4, 0x21\n" \
-+		"0:\n\t" \
-+		"sll	$1, %0, 0x1\n\t" \
-+		"srl	%3, %0, 0x1f\n\t" \
-+		"or	%0, $1, %5\n\t" \
-+		"sll	%1, %1, 0x1\n\t" \
-+		"sll	%2, %2, 0x1\n" \
-+		"1:\n\t" \
-+		"bnez	%3, 2f\n\t" \
-+		" sltu	%5, %0, %z6\n\t" \
-+		"bnez	%5, 3f\n" \
-+		"2:\n\t" \
-+		" addiu	%4, %4, -1\n\t" \
-+		"subu	%0, %0, %z6\n\t" \
-+		"addiu	%2, %2, 1\n" \
-+		"3:\n\t" \
-+		"bnez	%4, 0b\n\t" \
-+		" srl	%5, %1, 0x1f\n\t" \
-+		".set	pop" \
-+		: "=&r" (__mod), "=&r" (__tmp), "=&r" (__quot), "=&r" (__cf), \
-+		  "=&r" (__i), "=&r" (__tmp2) \
-+		: "Jr" (base), "0" (high), "1" (low)); \
-+	\
-+	(res) = __quot; \
-+	__mod; })
-+
-+#define do_div(n, base) ({ \
-+	unsigned long long __quot; \
-+	unsigned long __mod; \
-+	unsigned long long __div; \
-+	unsigned long __upper, __low, __high, __base; \
-+	\
-+	__div = (n); \
-+	__base = (base); \
-+	\
-+	__high = __div >> 32; \
-+	__low = __div; \
-+	__upper = __high; \
-+	\
-+	if (__high) \
-+		__asm__("divu	$0, %z2, %z3" \
-+			: "=h" (__upper), "=l" (__high) \
-+			: "Jr" (__high), "Jr" (__base) \
-+			: GCC_REG_ACCUM); \
-+	\
-+	__mod = do_div64_32(__low, __upper, __low, __base); \
-+	\
-+	__quot = __high; \
-+	__quot = __quot << 32 | __low; \
-+	(n) = __quot; \
-+	__mod; })
-+#endif /* (_MIPS_SZLONG == 32) */
-+
-+#if (_MIPS_SZLONG == 64)
-+
-+/*
-+ * Hey, we're already 64-bit, no
-+ * need to play games..
-+ */
-+#define do_div(n, base) ({ \
-+	unsigned long __quot; \
-+	unsigned int __mod; \
-+	unsigned long __div; \
-+	unsigned int __base; \
-+	\
-+	__div = (n); \
-+	__base = (base); \
-+	\
-+	__mod = __div % __base; \
-+	__quot = __div / __base; \
-+	\
-+	(n) = __quot; \
-+	__mod; })
-+
-+#endif /* (_MIPS_SZLONG == 64) */
-+
-+#endif /* _ASM_DIV64_H */
---- /dev/null
-+++ b/net/rsa/dump_key.c
-@@ -0,0 +1,29 @@
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <unistd.h>
-+
-+int main(int argc, char **argv)
-+{
-+	FILE *fp = fopen("public_fon_rsa_key_6.pem", "r");
-+	struct stat s;
-+	unsigned char *b;
-+	int i;
-+	if(!fp)
-+		return 1;
-+	stat("public_fon_rsa_key_6.pem", &s);
-+	b = malloc(s.st_size);
-+	fread(b, s.st_size, 1, fp);
-+	fclose(fp);
-+	printf("unsigned char public_key[] = {\n\t");
-+	for(i = 0;i < s.st_size; i++)
-+	{
-+		printf("0x%02X,", b[i]);
-+		if(i%16 == 15)
-+			printf("\n\t");
-+	}
-+	printf("};\n");
-+//	printf("\n%d %d\n", i, s.st_size);
-+	return 0;
-+}
---- /dev/null
-+++ b/net/rsa/foncheckrsa.c
-@@ -0,0 +1,79 @@
-+/*
-+ * RSA + RIPEMD160 signature verification command
-+ *
-+ * Copyright (C) 2007 FON Wireless Ltd.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License
-+ * as published by the Free Software Foundation; either version 2
-+ * of the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-+ *
-+ * Created: 20060728 Pablo Martín Medrano <pablo@fon.com>
-+ *
-+ * $Id: foncheckrsa.c 332 2007-05-02 09:45:54Z pablo.martin $
-+ */
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#include <string.h>
-+#include <errno.h>
-+#include <unistd.h>
-+#include "fonrsa.h"
-+
-+int main(int argc, char **argv)
-+{
-+	int fd, i;
-+	FONRSA_ERROR fonrsa_error;
-+	void *handle;
-+
-+	if (argc != 4) {
-+		fprintf(stderr, " Usage: foncheckrsa [public_key.der] [signature] [file]\n");
-+		fprintf(stderr, "  Pablo Martín Medrano <pablo@fon.com>\n");
-+		fprintf(stderr, "  RIPEMD-160 software written by Antoon Bosselaers,\n");
-+		fprintf(stderr, "  available at http://www.esat.kuleuven.be/~cosicart/ps/AB-9601/.\n");
-+		fprintf(stderr, "  Uses the axTLS library bigint implementation (libfonrsa)\n");
-+		fprintf(stderr, "  http://www.leroc.com.au/axTLS/\n");
-+		return -1;
-+	}
-+	/* Check the existence of input files */
-+	for (i = 1; i < 4; i++) {
-+		if ((fd = open(argv[i], O_RDONLY)) == -1) {
-+			fprintf(stderr, "Error: opening \"%s\": %s\n", argv[i],
-+				strerror(errno));
-+			fprintf(stderr, "Bailing out...");
-+			exit(-2);
-+		}
-+		close(fd);
-+	}
-+	handle = FR_init(argv[1]);
-+	if (handle == NULL) {
-+		printf("Error loading keys in %s\n", argv[1]);
-+		return 1;
-+	}
-+	fonrsa_error = FR_verify_file(handle, argv[3], argv[2]);
-+	FR_end(handle);
-+	switch (fonrsa_error) {
-+		case FONRSA_OK:
-+			printf("Verified OK\n");
-+			return 0;
-+		case FONRSA_VERIFICATION_FAILURE:
-+			printf("Verification failure\n");
-+			return 1;
-+		default:
-+			printf("Verification error\n");
-+			return -1;
-+	}
-+	return -1;
-+}
-+
---- /dev/null
-+++ b/net/rsa/fonrsa.c
-@@ -0,0 +1,584 @@
-+/*
-+ * FONSM RSA handling library
-+ *
-+ * This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+ *
-+ * This library is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU Lesser General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This library is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU Lesser General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU Lesser General Public License
-+ * along with this library; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ *
-+ * Created: 20070306 Pablo Martin Medrano <pablo@fon.com>
-+ *
-+ * Based on axTLS
-+ *
-+ * $Id: fonrsa.c 405 2007-09-19 15:26:17Z jesus.pico $
-+ */
-+#include <sys/types.h>
-+#include <stdlib.h>
-+#include <stdio.h>
-+#include <string.h>
-+#include <sys/types.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#include <unistd.h>
-+#include <errno.h>
-+#include "rmd160.h"
-+#include "bigint.h"
-+#include "fonrsa.h"
-+#include "base64.h"
-+
-+typedef struct {
-+	uint8_t *buffer;
-+	size_t size;
-+} DER_key;
-+
-+typedef struct {
-+	bigint *m;              /* modulus */
-+	bigint *e;              /* public exponent */
-+	int num_octets;
-+	BI_CTX *bi_ctx;         /* big integer handle */
-+} RSA_parameters;
-+
-+typedef struct {
-+	DER_key *derkey;
-+	RSA_parameters *rsaparms;
-+} RSA;
-+
-+static uint8_t *CH_load_raw_file(char *filename, size_t *size);
-+static DER_key *CH_load_der_key(char *filename);
-+static void CH_free_der_key(DER_key *key);
-+static int asn1_get_public_key(const uint8_t *buf, int len, RSA_parameters **rsa_parameters);
-+void CH_pub_key_new(RSA_parameters **rsa_parameters, const uint8_t *modulus, int mod_len, const uint8_t *pub_exp, int pub_len);
-+int CH_decrypt(RSA_parameters *rsa, uint8_t *buffer_in, uint8_t *buffer_out);
-+byte *RMDbinary(char *fname);
-+int CH_get_rmd160_hash_from_signature(byte *hash, char *signature_file, char *public_key_file);
-+static unsigned char *load_file_in_buffer(char *path, int *size);
-+static int save_file_from_buffer(char *path, unsigned char *buffer, int size);
-+int ExtractPadding(uint8_t* OutputBuffer, uint8_t* InputBuffer, int LengthOfInputBuffer);
-+
-+#define RMDsize 160		/* A RIPEMD-160 hash has 160 bits */
-+
-+/*
-+ * returns RMD(message in file fname) fname is read as binary data.
-+ * non-reentrant
-+ */
-+byte *RMDbinary(char *fname)
-+{
-+	FILE *mf;		/* pointer to file <fname>      */
-+	byte data[1024];	/* contains current mess. block */
-+	dword nbytes;		/* length of this block         */
-+	dword MDbuf[RMDsize / 32];	/* contains (A, B, C, D(, E))   */
-+	static byte hashcode[RMDsize / 8];	/* for final hash-value         */
-+	dword X[16];		/* current 16-word chunk        */
-+	unsigned int i, j;	/* counters                     */
-+	dword length[2];	/* length in bytes of message   */
-+	dword offset;		/* # of unprocessed bytes at    */
-+	/*          call of MDfinish    */
-+
-+	/* initialize */
-+	if ((mf = fopen(fname, "rb")) == NULL) {
-+		fprintf(stderr, "\nRMDbinary: cannot open file \"%s\".\n",
-+			fname);
-+		exit(1);
-+	}
-+	MDinit(MDbuf);
-+	length[0] = 0;
-+	length[1] = 0;
-+	while ((nbytes = fread(data, 1, 1024, mf)) != 0) {
-+		/* process all complete blocks */
-+		for (i = 0; i < (nbytes >> 6); i++) {
-+			for (j = 0; j < 16; j++)
-+				X[j] = BYTES_TO_DWORD(data + 64 * i + 4 * j);
-+			compress(MDbuf, X);
-+		}
-+		/* update length[] */
-+		if (length[0] + nbytes < length[0])
-+			length[1]++;	/* overflow to msb of length */
-+		length[0] += nbytes;
-+	}
-+	/* finish: */
-+	offset = length[0] & 0x3C0;	/* extract bytes 6 to 10 inclusive */
-+	MDfinish(MDbuf, data + offset, length[0], length[1]);
-+
-+	for (i = 0; i < RMDsize / 8; i += 4) {
-+		hashcode[i] = MDbuf[i >> 2];
-+		hashcode[i + 1] = (MDbuf[i >> 2] >> 8);
-+		hashcode[i + 2] = (MDbuf[i >> 2] >> 16);
-+		hashcode[i + 3] = (MDbuf[i >> 2] >> 24);
-+	}
-+	fclose(mf);
-+
-+	return (byte *) hashcode;
-+}
-+byte *RMDbinary_buffer(char *buffer, int size_buffer)
-+{
-+	return NULL;
-+}
-+
-+/*
-+ * Extracts the RMD 160 hash from the signature file
-+ */
-+int CH_get_rmd160_hash_from_signature(byte *hash, char *signature_file, char *public_key_file)
-+{
-+	RSA_parameters *rsa_parameters;
-+	DER_key *derkey;
-+	uint8_t *signature;
-+	size_t signature_size;
-+	uint8_t *decrypted;
-+
-+	signature = CH_load_raw_file(signature_file, &signature_size);
-+	if ((signature == NULL)||(signature_size != 512)) {
-+		fprintf(stderr, "Error: Loading signature key '%s'\n", signature_file);
-+		exit(-1);
-+	}
-+	derkey = CH_load_der_key(public_key_file);
-+	if (derkey == NULL) {
-+		fprintf(stderr, "Error: opening DER key file '%s'\n", public_key_file);
-+		exit(-1);
-+	}
-+	if ((asn1_get_public_key(derkey->buffer, derkey->size, &rsa_parameters)) != 0) {
-+		fprintf(stderr, "Error: Extracting public key from DER file\n");
-+		exit(-1);
-+	}
-+	CH_free_der_key(derkey);
-+	if (rsa_parameters->num_octets != 512)
-+		fprintf(stderr, "Error: The RSA public key size is not 4096 bits %d\n", rsa_parameters->num_octets);
-+	decrypted = (uint8_t *)malloc(rsa_parameters->num_octets);
-+	if (CH_decrypt(rsa_parameters, signature, decrypted)) {
-+		fprintf(stderr, "Error: Decrypting signature\n");
-+		exit(-1);
-+	}
-+	memcpy(hash, decrypted + 492, 20);		
-+	free(decrypted);
-+	free(signature);
-+	return 0;
-+}
-+
-+/*
-+ * Decrypts the signature buffer using the rsa public key loaded
-+ */
-+int CH_decrypt(RSA_parameters *rsa, uint8_t *buffer_in, uint8_t *buffer_out)
-+{
-+	bigint *dat_bi;
-+	bigint *decrypted_bi;
-+	int byte_size;
-+
-+	byte_size = rsa->num_octets; 
-+	dat_bi = bi_import(rsa->bi_ctx, buffer_in, byte_size);
-+	rsa->bi_ctx->mod_offset = BIGINT_M_OFFSET;
-+	bi_copy(rsa->m);
-+	decrypted_bi = bi_mod_power(rsa->bi_ctx, dat_bi, rsa->e);
-+	bi_export(rsa->bi_ctx, decrypted_bi, buffer_out, byte_size);
-+	return 0;
-+}
-+/*
-+ * Loads a file in a uint8_t buffer
-+ */
-+static uint8_t *CH_load_raw_file(char *filename, size_t *size)
-+{
-+	struct stat st;
-+	int fd;
-+	ssize_t br;
-+	uint8_t *ret;
-+
-+	if ((stat(filename, &st)) == -1)
-+		return NULL;
-+	if ((ret = (uint8_t *)malloc(st.st_size)) == NULL)
-+		return NULL;
-+	fd = open(filename, O_RDONLY);
-+	if (fd == -1) {
-+		free(ret);
-+		return NULL;
-+	}
-+	br = read(fd, ret, st.st_size);
-+	close(fd);
-+	if (br != st.st_size) {
-+		free(ret);
-+		return NULL;
-+	}
-+	*size = st.st_size;
-+	return ret;
-+}
-+/*
-+ * Loads a .der file in a buffer
-+ */
-+static DER_key *CH_load_der_key(char *filename)
-+{
-+	DER_key *ret;
-+
-+	if ((ret = (DER_key *)malloc(sizeof(DER_key))) == NULL)
-+		return NULL;
-+	if ((ret->buffer = CH_load_raw_file(filename, &(ret->size))) == NULL) {
-+		free(ret);
-+		return NULL;
-+	}
-+	return ret;
-+}
-+/*
-+ * CH_load_pem_key
-+ */
-+static DER_key *CH_load_pem_key(char *filename)
-+{
-+	DER_key *ret;
-+	uint8_t *buffer;
-+	char *b64,*p,*t;
-+	char key[1024];
-+	size_t filesize;
-+	int size;
-+
-+	if ((ret = (DER_key *)malloc(sizeof(DER_key))) == NULL)
-+		return NULL;
-+	if ((buffer = CH_load_raw_file(filename, &filesize)) == NULL) {
-+		free(ret);
-+		return NULL;
-+	}
-+	p = (char *)buffer;
-+	while ((*p != '\n') && (*p != '\0'))
-+		p++;
-+	if (*p == '\0') {
-+		free(ret);
-+		return NULL;
-+	}
-+	p++;
-+	b64 = t = p;
-+	while((p - b64) <= filesize) {
-+		if ((*p == '-')) {
-+			break;
-+		} else if ((*p != '\n') && (*p != ' ') && (*p != '\t')) {
-+			*t = *p;
-+			t++;
-+		}
-+		p++;
-+	}
-+	*t = '\0';
-+	size = B64_decode(b64, key, strlen(b64), 1024);
-+	if (size < 0) {
-+		free(buffer);
-+		free(ret);
-+		return NULL;
-+	}
-+	free(buffer);
-+	ret->buffer = (char *)malloc(size);
-+	ret->size = size;
-+	memcpy((void *)ret->buffer, (void *)key, size);
-+	return ret;
-+}
-+
-+/*
-+ * CH_free_der_key
-+ */
-+static void CH_free_der_key(DER_key *key)
-+{
-+	free(key->buffer);
-+	free(key);
-+}
-+
-+/*
-+ * Get the public key specifics from an ASN.1 encoded file
-+ * A function lacking in the exported axTLS API
-+ *
-+ * This is a really weird hack that only works with RSA public key
-+ * files
-+ */
-+static int asn1_get_public_key(const uint8_t *buf, int len, RSA_parameters **rsa_parameters)
-+{
-+	uint8_t *modulus, *pub_exp;
-+	int mod_len, pub_len;
-+
-+	pub_len = 3;
-+	mod_len = len - 37;
-+	if (buf[0] != 0x30) {
-+		return -1;
-+	}
-+
-+	pub_exp = (uint8_t *)malloc(3);
-+	modulus = (uint8_t *)malloc(mod_len);
-+	memcpy(modulus, buf + 32 , mod_len);
-+	memcpy(pub_exp, buf + 34 + mod_len, 3); 
-+	if (mod_len <= 0 || pub_len <= 0 )
-+		return -1;
-+	CH_pub_key_new(rsa_parameters, modulus, mod_len, pub_exp, pub_len);
-+
-+	free(modulus);
-+	free(pub_exp);
-+	return 0;
-+}
-+
-+/*
-+ * Similar to RSA_pub_key_new, rewritten to make this program depend only on bi module
-+ */
-+void CH_pub_key_new(RSA_parameters **rsa, const uint8_t *modulus, int mod_len, const uint8_t *pub_exp, int pub_len)
-+{
-+	RSA_parameters *rsa_parameters;
-+
-+	BI_CTX *bi_ctx = bi_initialize();
-+	*rsa = (RSA_parameters *)calloc(1, sizeof(RSA_parameters));
-+	rsa_parameters = *rsa;
-+	rsa_parameters->bi_ctx = bi_ctx;
-+	rsa_parameters->num_octets = (mod_len & 0xFFF0);
-+	rsa_parameters->m = bi_import(bi_ctx, modulus, mod_len);
-+	bi_set_mod(bi_ctx, rsa_parameters->m, BIGINT_M_OFFSET);
-+	rsa_parameters->e = bi_import(bi_ctx, pub_exp, pub_len);
-+	bi_permanent(rsa_parameters->e);
-+}
-+
-+static unsigned char *load_file_in_buffer(char *path, int *size)
-+{
-+	unsigned char *buffer;
-+	struct stat st;
-+	int fd;
-+
-+	if (stat(path, &st))
-+		return NULL;
-+	buffer = (unsigned char *)malloc(st.st_size);
-+	if (buffer == NULL)
-+		return NULL;
-+ 	if ((fd = open(path, O_RDONLY)) == -1) {
-+		free(buffer);
-+		return NULL;
-+	}
-+	if (read(fd, (void *)buffer,st.st_size) != (ssize_t)st.st_size) {
-+		free(buffer);
-+		close(fd);
-+		return NULL;
-+	}
-+	*size = (int)st.st_size;
-+	close(fd);
-+	return buffer;
-+}
-+
-+static int save_file_from_buffer(char *path, unsigned char *buffer, int size)
-+{
-+	int fd;
-+
-+	if ((fd = open(path, O_WRONLY | O_CREAT, 0644)) == -1)
-+		return -1;
-+	if (write(fd, buffer, (size_t)size) != ((ssize_t)size)) {
-+		close(fd);
-+		return -1;
-+	}
-+	close(fd);
-+	return 0;
-+}
-+
-+/* FR_init */
-+void *FR_init(char *public_key_path)
-+{
-+	DER_key *derkey;
-+	RSA_parameters *rsa_parameters;
-+	char *ending;
-+
-+	ending = public_key_path + strlen(public_key_path) - 3;
-+	if (!strcmp(ending, "der"))
-+		derkey = CH_load_der_key(public_key_path);	
-+	else if (!strcmp(ending, "pem"))
-+		derkey = CH_load_pem_key(public_key_path);
-+	else {
-+		fprintf(stderr, "Error: unknown key format\n");
-+		exit(-1);
-+	}
-+	if (derkey == NULL) {
-+		fprintf(stderr, "Error: opening key file '%s'\n", public_key_path);
-+		exit(-1);
-+	}
-+	if ((asn1_get_public_key(derkey->buffer, derkey->size, &rsa_parameters)) != 0) {
-+		fprintf(stderr, "Error: Extracting public key from file\n");
-+		exit(-1);
-+	}
-+	CH_free_der_key(derkey);
-+	return (void *)rsa_parameters;
-+}
-+
-+/* FR_end */
-+FONRSA_ERROR FR_end(void *handle)
-+{
-+	RSA_parameters *rsa_parameters = (RSA_parameters *)handle;
-+
-+	free(rsa_parameters);
-+	return FONRSA_OK;
-+}
-+
-+/* FR_decrypt_buffer */
-+FONRSA_ERROR FR_decrypt_buffer(void *handler, unsigned char *cryptext, int cryptext_size,
-+	unsigned char *plaintext, int plaintext_buffer_size, int *plaintext_size)
-+{
-+	RSA_parameters *rsaparms = (RSA_parameters *)handler;
-+
-+	if (cryptext_size != rsaparms->num_octets) {
-+		return FONRSA_SIZE;
-+	}
-+	if (plaintext_buffer_size < cryptext_size) {
-+		return FONRSA_SIZE;
-+	}
-+	if (CH_decrypt(rsaparms, (uint8_t *)cryptext, (uint8_t *)plaintext)) {
-+		return FONRSA_DECRYPT;
-+	}
-+	*plaintext_size = cryptext_size;
-+	return FONRSA_OK;
-+}
-+
-+FONRSA_ERROR FR_decrypt_buffer_v2(void *handler, unsigned char *cryptext, int cryptext_size,
-+	unsigned char *plaintext, int plaintext_buffer_size, int *plaintext_size)
-+{
-+	unsigned char* AuxBuffer;
-+	int AuxSize;
-+
-+	AuxBuffer = (unsigned char*)malloc(cryptext_size);
-+
-+	RSA_parameters *rsaparms = (RSA_parameters *)handler;
-+
-+        if (cryptext_size != rsaparms->num_octets) {
-+                return FONRSA_SIZE;
-+        }
-+        if (plaintext_buffer_size < cryptext_size) {
-+                return FONRSA_SIZE;
-+        }
-+        if (CH_decrypt(rsaparms, (uint8_t *)cryptext, (uint8_t *)AuxBuffer)) {
-+                return FONRSA_DECRYPT;
-+        }
-+	if ((AuxSize = ExtractPadding((uint8_t*)plaintext, (uint8_t*)AuxBuffer, cryptext_size)) < 0)
-+	{
-+		printf("Incorrect Padding decrypting buffer");
-+		return FONRSA_DECRYPT;
-+	}
-+        *plaintext_size = AuxSize;
-+        return FONRSA_OK;
-+}
-+
-+/*
-+ *
-+ * Implementation of  PKCS 1.5 padding, borrowed from
-+ * Tom's code (public domain)
-+ */
-+
-+/* Standalone FR_verify_file */
-+FONRSA_ERROR FR_verify_file(void *handler, char *file_path, char *signature_file_path)
-+{
-+	int j;
-+	byte *hashcode;
-+	byte hash[20];
-+	uint8_t *decrypted;
-+	RSA_parameters *rsa_parameters = (RSA_parameters *)handler;
-+	char *signature_buffer;
-+	int signature_size;
-+
-+	/* Calculates the RIPEMD-160 hash of the file */
-+	hashcode = RMDbinary (file_path);
-+	/* Decrypts the signature file using the RSA public key */
-+	signature_buffer = load_file_in_buffer(signature_file_path, &signature_size);
-+	if (signature_buffer == NULL)
-+		return FONRSA_OPENKEY;
-+
-+	if (rsa_parameters->num_octets != signature_size)
-+		return FONRSA_SIZE;
-+	decrypted = (uint8_t *)malloc(rsa_parameters->num_octets);
-+	if (CH_decrypt(rsa_parameters, signature_buffer, decrypted)) {
-+		fprintf(stderr, "Error: Decrypting signature\n");
-+		exit(-1);
-+	}
-+	memcpy(hash, decrypted + 492, 20);
-+	free(decrypted);
-+	free(signature_buffer);
-+	for (j = 0; j < RMDsize/8; j++) {
-+		if (hash[j] != hashcode[j])
-+			return FONRSA_VERIFICATION_FAILURE;
-+	}
-+	return FONRSA_OK;
-+}
-+
-+/* FR_decrypt_file */
-+FONRSA_ERROR FR_decrypt_file(void *handle, char *crypted_file_path, char *plaintext_file_path)
-+{
-+	int size;
-+	FONRSA_ERROR ret;
-+	char *filebuffer;
-+	char crypted[1024];
-+	int crypted_size;
-+
-+	if ((filebuffer = load_file_in_buffer(crypted_file_path, &size)) == NULL) {
-+		return FONRSA_LOADFILE;
-+	}
-+
-+	ret = FR_decrypt_buffer(handle, filebuffer, size, crypted, 1024, &crypted_size);
-+	if (ret != FONRSA_OK) {
-+		free(filebuffer);
-+		return ret;
-+	}
-+	free(filebuffer);
-+
-+	if (save_file_from_buffer(plaintext_file_path, crypted, crypted_size)) {
-+		printf("Error writing %lu bytes into %s", crypted_size, plaintext_file_path);
-+		return FONRSA_SAVEFILE;
-+	}
-+	return FONRSA_OK;
-+}
-+
-+int ExtractPadding(uint8_t* OutputBuffer, uint8_t* InputBuffer, int LengthOfInputBuffer)
-+{
-+	int i;
-+
-+	//First typical checks...
-+	if (LengthOfInputBuffer < MINIMUM_PADING_BYTES_PKCS_1_5)
-+	{
-+		fprintf(stderr, "Error:ExtractPadding: Error, Length of input buffer is too short.\n");
-+		return -1;
-+	}
-+	else if((InputBuffer[0] != 0) || (InputBuffer[1] > 2)) //Necessary header of Padding...
-+	{
-+		fprintf(stderr, "Error:ExtractPadding: Error, Padding header is incorrect.\n");
-+		return -1;
-+	}
-+	for (i=2; i < LengthOfInputBuffer; i++) //Variable size of non-zero padding....
-+	{
-+		if (InputBuffer[i] == 0) break; //This is the end of Padding.
-+	}
-+	//We need to evaluate if there is an existing message...
-+	if (i < LengthOfInputBuffer - 2)
-+	{//Ok, Padding is extracted... copying the message and finishing...
-+		memcpy(OutputBuffer, &(InputBuffer[i + 1]), LengthOfInputBuffer - (i + 1));
-+		return LengthOfInputBuffer - (i + 1);
-+	}
-+	//If we have reached to this point, then an error has occurred...
-+	return -1;	
-+}
-+
-+#ifdef __MAINTEST__
-+int main(int argc, char **argv)
-+{
-+	void *handle = NULL;
-+	FONRSA_ERROR ret;
-+	char *filebuffer = NULL;
-+	char crypted[1024];
-+	int size, crypted_size;
-+
-+	if (argc != 4) {
-+		printf("Usage: %s <key_file> <crypted_file> <output_file>\n", argv[0]);
-+		return 1;
-+	}
-+
-+	handle = FR_init(argv[1]);
-+	if (handle == NULL) {
-+		printf("Error loading keys\n");
-+		return 1;
-+	}
-+	ret = FR_decrypt_file(handle, argv[2], argv[3]);
-+	if (ret != FONRSA_OK) {
-+		printf("FR_decrypt_file returns %d\n", ret);
-+	}
-+	FR_end(handle);
-+	return (int)ret;
-+}
-+
-+#endif
-+
-+
---- /dev/null
-+++ b/net/rsa/fonrsa.h
-@@ -0,0 +1,53 @@
-+/*
-+ * FONSM RSA handling library, used by fonsmcd and foncheckrsa
-+ *
-+ * This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+ *
-+ * This library is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU Lesser General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This library is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU Lesser General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU Lesser General Public License
-+ * along with this library; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ *
-+ * Created: 20070306 Pablo Martin Medrano <pablo@fon.com>
-+ *
-+ * $Id: fonrsa.h 404 2007-09-17 10:41:31Z jesus.pico $
-+ */
-+#ifndef _FONRSA_H
-+#define _FONRSA_H
-+
-+#define MINIMUM_PADING_BYTES_PKCS_1_5 3
-+
-+typedef enum {
-+	FONRSA_OK = 0,
-+	FONRSA_VERIFICATION_FAILURE = 1,
-+	FONRSA_OPENKEY = 2,
-+	FONRSA_SIZE = 3,
-+	FONRSA_LOADFILE = 4,
-+	FONRSA_CRYPT = 5,
-+	FONRSA_DECRYPT = 6,
-+	FONRSA_SAVEFILE = 7,
-+	FONRSA_NOSYS = 8,
-+	FONRSA_VERIFY = 9
-+} FONRSA_ERROR;
-+
-+void *FR_init(char *public_key_path);
-+FONRSA_ERROR FR_end(void *handle);
-+FONRSA_ERROR FR_decrypt_buffer(void *handler, unsigned char *cryptext, int cryptext_size,
-+	unsigned char *plaintext, int plaintext_buffer_size, int *plaintext_size);
-+FONRSA_ERROR FR_decrypt_buffer_v2(void *handler, unsigned char *cryptext, int cryptext_size,
-+	unsigned char *plaintext, int plaintext_buffer_size, int *plaintext_size);
-+FONRSA_ERROR FR_verify_file(void *handler, char *file_path, char *signature_file_path);
-+FONRSA_ERROR FR_decrypt_file(void *handler, char *crypted_file_path, char *plaintext_file_path);
-+
-+#endif
-+
-+
---- /dev/null
-+++ b/net/rsa/log.c
-@@ -0,0 +1,138 @@
-+/*
-+ * Fonsm log module. Used inside the fonsm backend module and on the client.
-+ *
-+ * This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+ *
-+ * Created: 20070202 Pablo Martin Medrano <pablo@fon.com>
-+ *
-+ * $Id: log.c 392 2007-06-25 16:24:51Z pablo.martin $
-+ */
-+#include <stdio.h>
-+#include <string.h>
-+#include <stdlib.h>
-+#include <stdarg.h>
-+#include <unistd.h>
-+#ifndef WIN32
-+#include <syslog.h>
-+#endif
-+#include "log.h"
-+
-+#define MAX_SESSION_PREFIX 256
-+
-+typedef struct {
-+	char domain[256];
-+	LG_LEVEL watermark;
-+	int mode;
-+	LG_log_function_pointer function;
-+} ST_fslog;
-+
-+static ST_fslog fslog;
-+static void LG_log_string(LG_LEVEL level, const char *message);
-+
-+/*! 
-+ \brief Starts the log subsystem, redirecting glog() to stderr/syslog depending
-+ on mode
-+ \retval FSLOG_ERROR : FSLOG_OK if everything goes well
-+ \param lg : handle that will be returned
-+ \param ident : program identifier, any string 
-+ \param low_watermark : if the log level is less than this value, it will not be logged
-+ \param mode : FSLOG_MODE_SYSLOG (log to syslog) or FSLOG_MODE_STDERR (log to stderr)
-+*/
-+FSLOG_ERROR LG_start(const char *domain, LG_LEVEL watermark, int mode,
-+	LG_log_function_pointer log_function, int facility)
-+{
-+#ifndef WIN32
-+	strncpy(fslog.domain, domain, MAX_LG_DOMAIN);
-+	fslog.domain[MAX_LG_DOMAIN - 1] = '\0';
-+	fslog.watermark = watermark;
-+	fslog.mode = mode;
-+	fslog.function = log_function?log_function:LG_log_string;
-+	if (fslog.mode & LG_SYSLOG)
-+		openlog(domain, LOG_NDELAY, facility);
-+	return FSLOG_OK;
-+#else
-+	return FSLOG_OK;
-+#endif
-+}
-+
-+/*! 
-+ \brief Set the low watermark
-+ \retval FSLOG_ERROR : FSLOG_OK
-+ \param lg : log handle
-+ \param low_watermark : new watermark 
-+*/
-+FSLOG_ERROR LG_set_loglevel(LG_LEVEL watermark)
-+{
-+	fslog.watermark = watermark;
-+	return FSLOG_OK;
-+}
-+
-+/*! 
-+ \brief  Ends the log subsystem, unregisteing glog handle
-+ \retval FSLOG_ERROR : FSLOG_OK if everything goes well
-+ \param handle : log handle to free
-+*/
-+FSLOG_ERROR LG_end(void)
-+{
-+#ifndef WIN32
-+	if (fslog.mode & LG_SYSLOG)
-+		closelog();
-+#endif
-+	return FSLOG_OK;
-+}
-+
-+
-+void LG_log(LG_LEVEL loglevel, const char *message, ...)
-+{
-+#ifndef WIN32
-+	va_list ap;
-+	char buffer[4096];
-+	int n;
-+
-+	va_start(ap, message);
-+	n = vsnprintf(buffer, MAX_LOG_STRING, message, ap);
-+	va_end(ap);
-+	if (n > -1 && n < MAX_LOG_STRING)
-+		fslog.function(loglevel, buffer);
-+	else
-+		fon_critical("%s: Message too big to be logged", __FUNCTION__);
-+#else
-+	return;
-+#endif
-+}
-+
-+/* Default log function (when mode is LG_SYSLOG or LG_STDERR) */
-+static void LG_log_string(LG_LEVEL level, const char *message) 
-+{
-+#ifndef WIN32
-+        static struct {
-+                int syslog_level;
-+                char *log_string;
-+        } fonlog_to_syslog[] = {
-+                [LG_DEBUG] = {LOG_ERR, "DEBUG"},
-+                [LG_MESSAGE] = {LOG_ERR, "MESSAGE"},
-+                [LG_WARNING] = {LOG_ERR, "WARNING"},
-+                [LG_CRITICAL] = {LOG_ERR, "CRITICAL"},
-+                [LG_ERROR] = {LOG_ERR, "ERROR"}
-+        };
-+
-+	if (level < fslog.watermark)
-+		return;
-+	if (fslog.mode & LG_SYSLOG) {
-+		if (level == LG_MESSAGE) {
-+			syslog(LOG_INFO, "%s", message);
-+		} else {
-+			syslog(fonlog_to_syslog[level].syslog_level, "%s: %s", fonlog_to_syslog[level].log_string, message);
-+		}
-+	}
-+	if (fslog.mode & LG_STDERR) {
-+		fprintf(stderr, "%s[%d]: %8.8s: %s\n", fslog.domain, 
-+				getpid(), fonlog_to_syslog[level].log_string, 
-+				message);
-+	}
-+#else
-+	/* FIXE: todo */
-+	return;
-+#endif
-+}
-+
---- /dev/null
-+++ b/net/rsa/log.h
-@@ -0,0 +1,77 @@
-+/*
-+ * Fonsm log module. Used inside the fonsm backend module and on the client.
-+ *
-+ * This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+ *
-+ * Created: 20070202 Pablo Martin Medrano <pablo@fon.com>
-+ *
-+ * $Id: log.h 379 2007-05-28 09:17:48Z pablo.martin $
-+ */
-+#ifndef _LOG_H
-+#define _LOG_H
-+
-+#ifdef __cplusplus
-+extern "C" {
-+#endif
-+
-+#include <stdarg.h>
-+
-+typedef enum {
-+        FSLOG_OK = 0,
-+        FSLOG_UNKNOWN = -1
-+} FSLOG_ERROR;
-+
-+
-+typedef void * LG_HANDLE;
-+
-+typedef enum {
-+        LG_DEBUG = 0,
-+        LG_MESSAGE = 1,
-+        LG_INFO = 2,
-+        LG_WARNING = 3,
-+        LG_CRITICAL = 4,
-+        LG_ERROR = 5
-+} LG_LEVEL;
-+
-+#define LG_SYSLOG 0x01
-+#define LG_STDERR 0x02
-+#define LG_CUSTOM 0x04
-+
-+#define MAX_LG_DOMAIN 256
-+#define MAX_LOG_STRING 4096
-+
-+#ifndef NDEBUG
-+#ifndef LOGPRINTF
-+#define fon_debug(...) LG_log (LG_DEBUG, __VA_ARGS__)
-+#else
-+#define fon_debug(...) { printf("DEBUG: "); printf(__VA_ARGS__); printf("\n"); }
-+#endif
-+#else
-+/* fon_debug evaluates to nothing when NDEBUG is defined */
-+#define fon_debug(...)
-+#endif
-+#ifndef LOGPRINTF
-+#define fon_message(...) LG_log (LG_MESSAGE, __VA_ARGS__)
-+#define fon_warning(...) LG_log (LG_WARNING, __VA_ARGS__) 
-+#define fon_critical(...) LG_log (LG_CRITICAL, __VA_ARGS__)
-+#define fon_error(...) LG_log (LG_ERROR, __VA_ARGS__)
-+#else
-+#define fon_message(...) { printf("MESSAGE: "); printf(__VA_ARGS__); printf("\n"); }
-+#define fon_warning(...)  { printf("WARNING: "); printf(__VA_ARGS__); printf("\n"); }
-+#define fon_critical(...) { printf("CRITICAL: "); printf(__VA_ARGS__); printf("\n"); }
-+#define fon_error(...) { printf("ERROR: "); printf(__VA_ARGS__); printf("\n"); }
-+#endif
-+
-+typedef void (*LG_log_function_pointer)(LG_LEVEL level, const char *message);
-+
-+FSLOG_ERROR LG_start(const char *domain, LG_LEVEL watermark, int mode, LG_log_function_pointer log_function, int facility);
-+FSLOG_ERROR LG_set_loglevel(LG_LEVEL watermark);
-+FSLOG_ERROR LG_end(void);
-+void LG_log(LG_LEVEL loglevel, const char *message, ...);
-+
-+#ifdef __cplusplus
-+}
-+#endif
-+
-+#endif
-+
---- /dev/null
-+++ b/net/rsa/public_key.h
-@@ -0,0 +1,52 @@
-+unsigned char public_key[] = {
-+	0x2D,0x2D,0x2D,0x2D,0x2D,0x42,0x45,0x47,0x49,0x4E,0x20,0x50,0x55,0x42,0x4C,0x49,
-+	0x43,0x20,0x4B,0x45,0x59,0x2D,0x2D,0x2D,0x2D,0x2D,0x0A,0x4D,0x49,0x49,0x43,0x49,
-+	0x6A,0x41,0x4E,0x42,0x67,0x6B,0x71,0x68,0x6B,0x69,0x47,0x39,0x77,0x30,0x42,0x41,
-+	0x51,0x45,0x46,0x41,0x41,0x4F,0x43,0x41,0x67,0x38,0x41,0x4D,0x49,0x49,0x43,0x43,
-+	0x67,0x4B,0x43,0x41,0x67,0x45,0x41,0x34,0x4C,0x42,0x76,0x59,0x43,0x4B,0x38,0x38,
-+	0x6D,0x75,0x57,0x61,0x73,0x31,0x4F,0x53,0x73,0x71,0x30,0x0A,0x38,0x39,0x38,0x79,
-+	0x76,0x54,0x4B,0x71,0x41,0x6E,0x4F,0x37,0x78,0x2F,0x44,0x53,0x57,0x72,0x46,0x53,
-+	0x30,0x42,0x72,0x47,0x53,0x51,0x31,0x52,0x69,0x44,0x39,0x55,0x62,0x78,0x77,0x6F,
-+	0x64,0x76,0x36,0x65,0x51,0x4B,0x55,0x30,0x67,0x36,0x52,0x6B,0x2F,0x39,0x54,0x70,
-+	0x4C,0x6E,0x4F,0x2F,0x76,0x51,0x4B,0x70,0x69,0x41,0x30,0x30,0x0A,0x2B,0x32,0x59,
-+	0x30,0x74,0x6B,0x4C,0x39,0x73,0x6A,0x37,0x64,0x33,0x57,0x4B,0x47,0x39,0x62,0x6A,
-+	0x64,0x51,0x58,0x2F,0x43,0x49,0x35,0x57,0x46,0x42,0x42,0x64,0x77,0x57,0x73,0x74,
-+	0x4D,0x43,0x38,0x77,0x74,0x4C,0x6A,0x6A,0x45,0x59,0x79,0x43,0x58,0x46,0x32,0x31,
-+	0x30,0x39,0x7A,0x31,0x47,0x54,0x4C,0x73,0x53,0x44,0x34,0x57,0x4F,0x0A,0x45,0x50,
-+	0x6D,0x45,0x37,0x34,0x63,0x6E,0x6F,0x35,0x78,0x53,0x43,0x71,0x71,0x33,0x74,0x54,
-+	0x49,0x6D,0x38,0x50,0x78,0x49,0x77,0x54,0x46,0x6D,0x46,0x6F,0x6D,0x6A,0x76,0x31,
-+	0x4F,0x56,0x50,0x32,0x73,0x42,0x49,0x70,0x35,0x4E,0x2B,0x59,0x6F,0x56,0x61,0x53,
-+	0x58,0x6A,0x47,0x66,0x4E,0x63,0x54,0x36,0x4E,0x6B,0x39,0x76,0x6B,0x56,0x0A,0x57,
-+	0x69,0x67,0x39,0x30,0x71,0x50,0x4E,0x4C,0x58,0x6E,0x39,0x39,0x50,0x78,0x48,0x61,
-+	0x49,0x31,0x36,0x52,0x7A,0x78,0x48,0x4C,0x39,0x54,0x42,0x2B,0x50,0x43,0x33,0x68,
-+	0x33,0x61,0x58,0x33,0x71,0x57,0x30,0x4B,0x4C,0x4A,0x41,0x66,0x6F,0x35,0x70,0x48,
-+	0x6C,0x39,0x79,0x75,0x55,0x70,0x37,0x66,0x46,0x65,0x6A,0x4A,0x2B,0x41,0x58,0x0A,
-+	0x51,0x4F,0x4A,0x62,0x53,0x45,0x67,0x56,0x74,0x76,0x72,0x68,0x44,0x39,0x73,0x55,
-+	0x6D,0x4B,0x30,0x74,0x36,0x63,0x51,0x44,0x65,0x32,0x32,0x4E,0x4E,0x6E,0x77,0x37,
-+	0x43,0x4F,0x4F,0x61,0x59,0x49,0x57,0x55,0x55,0x6A,0x79,0x6A,0x68,0x35,0x50,0x4B,
-+	0x64,0x64,0x45,0x4B,0x5A,0x38,0x68,0x62,0x62,0x47,0x65,0x61,0x5A,0x4A,0x6F,0x76,
-+	0x0A,0x63,0x6F,0x51,0x64,0x55,0x56,0x51,0x6D,0x71,0x44,0x53,0x2B,0x6B,0x63,0x2F,
-+	0x41,0x51,0x6C,0x65,0x55,0x36,0x68,0x51,0x6A,0x63,0x55,0x4C,0x57,0x44,0x6B,0x4E,
-+	0x2F,0x6F,0x4F,0x6C,0x33,0x43,0x53,0x65,0x70,0x67,0x54,0x37,0x6B,0x67,0x73,0x52,
-+	0x63,0x63,0x47,0x74,0x66,0x4B,0x65,0x37,0x77,0x4D,0x70,0x35,0x66,0x59,0x4A,0x2B,
-+	0x41,0x0A,0x43,0x46,0x44,0x41,0x6F,0x4C,0x6E,0x58,0x4E,0x6A,0x4E,0x56,0x6C,0x65,
-+	0x73,0x43,0x6B,0x78,0x74,0x6A,0x62,0x4C,0x62,0x49,0x72,0x66,0x32,0x6E,0x43,0x62,
-+	0x32,0x61,0x4D,0x65,0x64,0x31,0x5A,0x48,0x4E,0x4A,0x51,0x75,0x6F,0x4E,0x58,0x67,
-+	0x72,0x43,0x41,0x44,0x31,0x71,0x2B,0x58,0x6E,0x66,0x77,0x63,0x69,0x6D,0x57,0x50,
-+	0x64,0x51,0x0A,0x44,0x59,0x6A,0x6D,0x65,0x44,0x70,0x35,0x77,0x36,0x41,0x4A,0x33,
-+	0x2F,0x35,0x59,0x39,0x55,0x74,0x78,0x47,0x34,0x72,0x51,0x72,0x61,0x68,0x78,0x53,
-+	0x42,0x77,0x43,0x4B,0x57,0x39,0x4B,0x79,0x53,0x31,0x71,0x53,0x76,0x73,0x37,0x7A,
-+	0x59,0x2F,0x52,0x59,0x37,0x4A,0x66,0x36,0x63,0x56,0x6B,0x54,0x43,0x78,0x69,0x33,
-+	0x7A,0x32,0x53,0x0A,0x50,0x46,0x33,0x51,0x64,0x6B,0x30,0x50,0x44,0x2F,0x73,0x2B,
-+	0x6B,0x77,0x39,0x71,0x4F,0x4E,0x79,0x69,0x33,0x67,0x6E,0x61,0x42,0x46,0x6E,0x54,
-+	0x77,0x48,0x7A,0x59,0x69,0x77,0x34,0x2F,0x77,0x6A,0x46,0x33,0x64,0x47,0x68,0x47,
-+	0x4E,0x6B,0x78,0x36,0x70,0x63,0x4E,0x4F,0x52,0x55,0x46,0x4E,0x65,0x4F,0x7A,0x59,
-+	0x76,0x39,0x6F,0x6A,0x0A,0x51,0x59,0x70,0x73,0x55,0x31,0x33,0x6A,0x6D,0x30,0x33,
-+	0x42,0x6F,0x45,0x2B,0x42,0x31,0x64,0x38,0x50,0x47,0x75,0x57,0x2B,0x49,0x7A,0x2F,
-+	0x41,0x4F,0x44,0x7A,0x6B,0x6F,0x56,0x6B,0x39,0x2B,0x57,0x79,0x49,0x33,0x37,0x50,
-+	0x30,0x53,0x7A,0x47,0x4B,0x72,0x2B,0x53,0x33,0x72,0x72,0x74,0x61,0x50,0x6C,0x41,
-+	0x70,0x71,0x4B,0x48,0x55,0x0A,0x6E,0x64,0x35,0x6C,0x30,0x63,0x76,0x75,0x59,0x66,
-+	0x31,0x4C,0x37,0x45,0x52,0x75,0x49,0x58,0x64,0x47,0x4C,0x6A,0x30,0x43,0x41,0x77,
-+	0x45,0x41,0x41,0x51,0x3D,0x3D,0x0A,0x2D,0x2D,0x2D,0x2D,0x2D,0x45,0x4E,0x44,0x20,
-+	0x50,0x55,0x42,0x4C,0x49,0x43,0x20,0x4B,0x45,0x59,0x2D,0x2D,0x2D,0x2D,0x2D,0x0A,
-+	};
---- /dev/null
-+++ b/net/rsa/rmd160.c
-@@ -0,0 +1,292 @@
-+/********************************************************************\
-+ *
-+ *      FILE:     rmd160.c
-+ *
-+ *      CONTENTS: A sample C-implementation of the RIPEMD-160
-+ *                hash-function.
-+ *      TARGET:   any computer with an ANSI C compiler
-+ *
-+ *      AUTHOR:   Antoon Bosselaers, ESAT-COSIC
-+ *      DATE:     1 March 1996
-+ *      VERSION:  1.0
-+ *
-+ *      Copyright (c) Katholieke Universiteit Leuven
-+ *      1996, All Rights Reserved
-+ *
-+ *  Conditions for use of the RIPEMD-160 Software
-+ *
-+ *  The RIPEMD-160 software is freely available for use under the terms and
-+ *  conditions described hereunder, which shall be deemed to be accepted by
-+ *  any user of the software and applicable on any use of the software:
-+ * 
-+ *  1. K.U.Leuven Department of Electrical Engineering-ESAT/COSIC shall for
-+ *     all purposes be considered the owner of the RIPEMD-160 software and of
-+ *     all copyright, trade secret, patent or other intellectual property
-+ *     rights therein.
-+ *  2. The RIPEMD-160 software is provided on an "as is" basis without
-+ *     warranty of any sort, express or implied. K.U.Leuven makes no
-+ *     representation that the use of the software will not infringe any
-+ *     patent or proprietary right of third parties. User will indemnify
-+ *     K.U.Leuven and hold K.U.Leuven harmless from any claims or liabilities
-+ *     which may arise as a result of its use of the software. In no
-+ *     circumstances K.U.Leuven R&D will be held liable for any deficiency,
-+ *     fault or other mishappening with regard to the use or performance of
-+ *     the software.
-+ *  3. User agrees to give due credit to K.U.Leuven in scientific publications 
-+ *     or communications in relation with the use of the RIPEMD-160 software 
-+ *     as follows: RIPEMD-160 software written by Antoon Bosselaers, 
-+ *     available at http://www.esat.kuleuven.be/~cosicart/ps/AB-9601/.
-+ *
-+\********************************************************************/
-+
-+/*  header files */
-+#include <common.h>
-+#include "rmd160.h"      
-+
-+/********************************************************************/
-+
-+void MDinit(dword *MDbuf)
-+{
-+   MDbuf[0] = 0x67452301UL;
-+   MDbuf[1] = 0xefcdab89UL;
-+   MDbuf[2] = 0x98badcfeUL;
-+   MDbuf[3] = 0x10325476UL;
-+   MDbuf[4] = 0xc3d2e1f0UL;
-+
-+   return;
-+}
-+
-+/********************************************************************/
-+
-+void compress(dword *MDbuf, dword *X)
-+{
-+   dword aa = MDbuf[0],  bb = MDbuf[1],  cc = MDbuf[2],
-+         dd = MDbuf[3],  ee = MDbuf[4];
-+   dword aaa = MDbuf[0], bbb = MDbuf[1], ccc = MDbuf[2],
-+         ddd = MDbuf[3], eee = MDbuf[4];
-+
-+   /* round 1 */
-+   FF(aa, bb, cc, dd, ee, X[ 0], 11);
-+   FF(ee, aa, bb, cc, dd, X[ 1], 14);
-+   FF(dd, ee, aa, bb, cc, X[ 2], 15);
-+   FF(cc, dd, ee, aa, bb, X[ 3], 12);
-+   FF(bb, cc, dd, ee, aa, X[ 4],  5);
-+   FF(aa, bb, cc, dd, ee, X[ 5],  8);
-+   FF(ee, aa, bb, cc, dd, X[ 6],  7);
-+   FF(dd, ee, aa, bb, cc, X[ 7],  9);
-+   FF(cc, dd, ee, aa, bb, X[ 8], 11);
-+   FF(bb, cc, dd, ee, aa, X[ 9], 13);
-+   FF(aa, bb, cc, dd, ee, X[10], 14);
-+   FF(ee, aa, bb, cc, dd, X[11], 15);
-+   FF(dd, ee, aa, bb, cc, X[12],  6);
-+   FF(cc, dd, ee, aa, bb, X[13],  7);
-+   FF(bb, cc, dd, ee, aa, X[14],  9);
-+   FF(aa, bb, cc, dd, ee, X[15],  8);
-+                             
-+   /* round 2 */
-+   GG(ee, aa, bb, cc, dd, X[ 7],  7);
-+   GG(dd, ee, aa, bb, cc, X[ 4],  6);
-+   GG(cc, dd, ee, aa, bb, X[13],  8);
-+   GG(bb, cc, dd, ee, aa, X[ 1], 13);
-+   GG(aa, bb, cc, dd, ee, X[10], 11);
-+   GG(ee, aa, bb, cc, dd, X[ 6],  9);
-+   GG(dd, ee, aa, bb, cc, X[15],  7);
-+   GG(cc, dd, ee, aa, bb, X[ 3], 15);
-+   GG(bb, cc, dd, ee, aa, X[12],  7);
-+   GG(aa, bb, cc, dd, ee, X[ 0], 12);
-+   GG(ee, aa, bb, cc, dd, X[ 9], 15);
-+   GG(dd, ee, aa, bb, cc, X[ 5],  9);
-+   GG(cc, dd, ee, aa, bb, X[ 2], 11);
-+   GG(bb, cc, dd, ee, aa, X[14],  7);
-+   GG(aa, bb, cc, dd, ee, X[11], 13);
-+   GG(ee, aa, bb, cc, dd, X[ 8], 12);
-+
-+   /* round 3 */
-+   HH(dd, ee, aa, bb, cc, X[ 3], 11);
-+   HH(cc, dd, ee, aa, bb, X[10], 13);
-+   HH(bb, cc, dd, ee, aa, X[14],  6);
-+   HH(aa, bb, cc, dd, ee, X[ 4],  7);
-+   HH(ee, aa, bb, cc, dd, X[ 9], 14);
-+   HH(dd, ee, aa, bb, cc, X[15],  9);
-+   HH(cc, dd, ee, aa, bb, X[ 8], 13);
-+   HH(bb, cc, dd, ee, aa, X[ 1], 15);
-+   HH(aa, bb, cc, dd, ee, X[ 2], 14);
-+   HH(ee, aa, bb, cc, dd, X[ 7],  8);
-+   HH(dd, ee, aa, bb, cc, X[ 0], 13);
-+   HH(cc, dd, ee, aa, bb, X[ 6],  6);
-+   HH(bb, cc, dd, ee, aa, X[13],  5);
-+   HH(aa, bb, cc, dd, ee, X[11], 12);
-+   HH(ee, aa, bb, cc, dd, X[ 5],  7);
-+   HH(dd, ee, aa, bb, cc, X[12],  5);
-+
-+   /* round 4 */
-+   II(cc, dd, ee, aa, bb, X[ 1], 11);
-+   II(bb, cc, dd, ee, aa, X[ 9], 12);
-+   II(aa, bb, cc, dd, ee, X[11], 14);
-+   II(ee, aa, bb, cc, dd, X[10], 15);
-+   II(dd, ee, aa, bb, cc, X[ 0], 14);
-+   II(cc, dd, ee, aa, bb, X[ 8], 15);
-+   II(bb, cc, dd, ee, aa, X[12],  9);
-+   II(aa, bb, cc, dd, ee, X[ 4],  8);
-+   II(ee, aa, bb, cc, dd, X[13],  9);
-+   II(dd, ee, aa, bb, cc, X[ 3], 14);
-+   II(cc, dd, ee, aa, bb, X[ 7],  5);
-+   II(bb, cc, dd, ee, aa, X[15],  6);
-+   II(aa, bb, cc, dd, ee, X[14],  8);
-+   II(ee, aa, bb, cc, dd, X[ 5],  6);
-+   II(dd, ee, aa, bb, cc, X[ 6],  5);
-+   II(cc, dd, ee, aa, bb, X[ 2], 12);
-+
-+   /* round 5 */
-+   JJ(bb, cc, dd, ee, aa, X[ 4],  9);
-+   JJ(aa, bb, cc, dd, ee, X[ 0], 15);
-+   JJ(ee, aa, bb, cc, dd, X[ 5],  5);
-+   JJ(dd, ee, aa, bb, cc, X[ 9], 11);
-+   JJ(cc, dd, ee, aa, bb, X[ 7],  6);
-+   JJ(bb, cc, dd, ee, aa, X[12],  8);
-+   JJ(aa, bb, cc, dd, ee, X[ 2], 13);
-+   JJ(ee, aa, bb, cc, dd, X[10], 12);
-+   JJ(dd, ee, aa, bb, cc, X[14],  5);
-+   JJ(cc, dd, ee, aa, bb, X[ 1], 12);
-+   JJ(bb, cc, dd, ee, aa, X[ 3], 13);
-+   JJ(aa, bb, cc, dd, ee, X[ 8], 14);
-+   JJ(ee, aa, bb, cc, dd, X[11], 11);
-+   JJ(dd, ee, aa, bb, cc, X[ 6],  8);
-+   JJ(cc, dd, ee, aa, bb, X[15],  5);
-+   JJ(bb, cc, dd, ee, aa, X[13],  6);
-+
-+   /* parallel round 1 */
-+   JJJ(aaa, bbb, ccc, ddd, eee, X[ 5],  8);
-+   JJJ(eee, aaa, bbb, ccc, ddd, X[14],  9);
-+   JJJ(ddd, eee, aaa, bbb, ccc, X[ 7],  9);
-+   JJJ(ccc, ddd, eee, aaa, bbb, X[ 0], 11);
-+   JJJ(bbb, ccc, ddd, eee, aaa, X[ 9], 13);
-+   JJJ(aaa, bbb, ccc, ddd, eee, X[ 2], 15);
-+   JJJ(eee, aaa, bbb, ccc, ddd, X[11], 15);
-+   JJJ(ddd, eee, aaa, bbb, ccc, X[ 4],  5);
-+   JJJ(ccc, ddd, eee, aaa, bbb, X[13],  7);
-+   JJJ(bbb, ccc, ddd, eee, aaa, X[ 6],  7);
-+   JJJ(aaa, bbb, ccc, ddd, eee, X[15],  8);
-+   JJJ(eee, aaa, bbb, ccc, ddd, X[ 8], 11);
-+   JJJ(ddd, eee, aaa, bbb, ccc, X[ 1], 14);
-+   JJJ(ccc, ddd, eee, aaa, bbb, X[10], 14);
-+   JJJ(bbb, ccc, ddd, eee, aaa, X[ 3], 12);
-+   JJJ(aaa, bbb, ccc, ddd, eee, X[12],  6);
-+
-+   /* parallel round 2 */
-+   III(eee, aaa, bbb, ccc, ddd, X[ 6],  9); 
-+   III(ddd, eee, aaa, bbb, ccc, X[11], 13);
-+   III(ccc, ddd, eee, aaa, bbb, X[ 3], 15);
-+   III(bbb, ccc, ddd, eee, aaa, X[ 7],  7);
-+   III(aaa, bbb, ccc, ddd, eee, X[ 0], 12);
-+   III(eee, aaa, bbb, ccc, ddd, X[13],  8);
-+   III(ddd, eee, aaa, bbb, ccc, X[ 5],  9);
-+   III(ccc, ddd, eee, aaa, bbb, X[10], 11);
-+   III(bbb, ccc, ddd, eee, aaa, X[14],  7);
-+   III(aaa, bbb, ccc, ddd, eee, X[15],  7);
-+   III(eee, aaa, bbb, ccc, ddd, X[ 8], 12);
-+   III(ddd, eee, aaa, bbb, ccc, X[12],  7);
-+   III(ccc, ddd, eee, aaa, bbb, X[ 4],  6);
-+   III(bbb, ccc, ddd, eee, aaa, X[ 9], 15);
-+   III(aaa, bbb, ccc, ddd, eee, X[ 1], 13);
-+   III(eee, aaa, bbb, ccc, ddd, X[ 2], 11);
-+
-+   /* parallel round 3 */
-+   HHH(ddd, eee, aaa, bbb, ccc, X[15],  9);
-+   HHH(ccc, ddd, eee, aaa, bbb, X[ 5],  7);
-+   HHH(bbb, ccc, ddd, eee, aaa, X[ 1], 15);
-+   HHH(aaa, bbb, ccc, ddd, eee, X[ 3], 11);
-+   HHH(eee, aaa, bbb, ccc, ddd, X[ 7],  8);
-+   HHH(ddd, eee, aaa, bbb, ccc, X[14],  6);
-+   HHH(ccc, ddd, eee, aaa, bbb, X[ 6],  6);
-+   HHH(bbb, ccc, ddd, eee, aaa, X[ 9], 14);
-+   HHH(aaa, bbb, ccc, ddd, eee, X[11], 12);
-+   HHH(eee, aaa, bbb, ccc, ddd, X[ 8], 13);
-+   HHH(ddd, eee, aaa, bbb, ccc, X[12],  5);
-+   HHH(ccc, ddd, eee, aaa, bbb, X[ 2], 14);
-+   HHH(bbb, ccc, ddd, eee, aaa, X[10], 13);
-+   HHH(aaa, bbb, ccc, ddd, eee, X[ 0], 13);
-+   HHH(eee, aaa, bbb, ccc, ddd, X[ 4],  7);
-+   HHH(ddd, eee, aaa, bbb, ccc, X[13],  5);
-+
-+   /* parallel round 4 */   
-+   GGG(ccc, ddd, eee, aaa, bbb, X[ 8], 15);
-+   GGG(bbb, ccc, ddd, eee, aaa, X[ 6],  5);
-+   GGG(aaa, bbb, ccc, ddd, eee, X[ 4],  8);
-+   GGG(eee, aaa, bbb, ccc, ddd, X[ 1], 11);
-+   GGG(ddd, eee, aaa, bbb, ccc, X[ 3], 14);
-+   GGG(ccc, ddd, eee, aaa, bbb, X[11], 14);
-+   GGG(bbb, ccc, ddd, eee, aaa, X[15],  6);
-+   GGG(aaa, bbb, ccc, ddd, eee, X[ 0], 14);
-+   GGG(eee, aaa, bbb, ccc, ddd, X[ 5],  6);
-+   GGG(ddd, eee, aaa, bbb, ccc, X[12],  9);
-+   GGG(ccc, ddd, eee, aaa, bbb, X[ 2], 12);
-+   GGG(bbb, ccc, ddd, eee, aaa, X[13],  9);
-+   GGG(aaa, bbb, ccc, ddd, eee, X[ 9], 12);
-+   GGG(eee, aaa, bbb, ccc, ddd, X[ 7],  5);
-+   GGG(ddd, eee, aaa, bbb, ccc, X[10], 15);
-+   GGG(ccc, ddd, eee, aaa, bbb, X[14],  8);
-+
-+   /* parallel round 5 */
-+   FFF(bbb, ccc, ddd, eee, aaa, X[12] ,  8);
-+   FFF(aaa, bbb, ccc, ddd, eee, X[15] ,  5);
-+   FFF(eee, aaa, bbb, ccc, ddd, X[10] , 12);
-+   FFF(ddd, eee, aaa, bbb, ccc, X[ 4] ,  9);
-+   FFF(ccc, ddd, eee, aaa, bbb, X[ 1] , 12);
-+   FFF(bbb, ccc, ddd, eee, aaa, X[ 5] ,  5);
-+   FFF(aaa, bbb, ccc, ddd, eee, X[ 8] , 14);
-+   FFF(eee, aaa, bbb, ccc, ddd, X[ 7] ,  6);
-+   FFF(ddd, eee, aaa, bbb, ccc, X[ 6] ,  8);
-+   FFF(ccc, ddd, eee, aaa, bbb, X[ 2] , 13);
-+   FFF(bbb, ccc, ddd, eee, aaa, X[13] ,  6);
-+   FFF(aaa, bbb, ccc, ddd, eee, X[14] ,  5);
-+   FFF(eee, aaa, bbb, ccc, ddd, X[ 0] , 15);
-+   FFF(ddd, eee, aaa, bbb, ccc, X[ 3] , 13);
-+   FFF(ccc, ddd, eee, aaa, bbb, X[ 9] , 11);
-+   FFF(bbb, ccc, ddd, eee, aaa, X[11] , 11);
-+
-+   /* combine results */
-+   ddd += cc + MDbuf[1];               /* final result for MDbuf[0] */
-+   MDbuf[1] = MDbuf[2] + dd + eee;
-+   MDbuf[2] = MDbuf[3] + ee + aaa;
-+   MDbuf[3] = MDbuf[4] + aa + bbb;
-+   MDbuf[4] = MDbuf[0] + bb + ccc;
-+   MDbuf[0] = ddd;
-+
-+   return;
-+}
-+
-+/********************************************************************/
-+
-+void MDfinish(dword *MDbuf, byte *strptr, dword lswlen, dword mswlen)
-+{
-+   unsigned int i;                                 /* counter       */
-+   dword        X[16];                             /* message words */
-+
-+   memset(X, 0, 16*sizeof(dword));
-+
-+   /* put bytes from strptr into X */
-+   for (i=0; i<(lswlen&63); i++) {
-+      /* byte i goes into word X[i div 4] at pos.  8*(i mod 4)  */
-+      X[i>>2] ^= (dword) *strptr++ << (8 * (i&3));
-+   }
-+
-+   /* append the bit m_n == 1 */
-+   X[(lswlen>>2)&15] ^= (dword)1 << (8*(lswlen&3) + 7);
-+
-+   if ((lswlen & 63) > 55) {
-+      /* length goes to next block */
-+      compress(MDbuf, X);
-+      memset(X, 0, 16*sizeof(dword));
-+   }
-+
-+   /* append length in bits*/
-+   X[14] = lswlen << 3;
-+   X[15] = (lswlen >> 29) | (mswlen << 3);
-+   compress(MDbuf, X);
-+
-+   return;
-+}
-+
-+/************************ end of file rmd160.c **********************/
-+
---- /dev/null
-+++ b/net/rsa/rmd160.h
-@@ -0,0 +1,154 @@
-+/********************************************************************\
-+ *
-+ *      FILE:     rmd160.h
-+ *
-+ *      CONTENTS: Header file for a sample C-implementation of the
-+ *                RIPEMD-160 hash-function. 
-+ *      TARGET:   any computer with an ANSI C compiler
-+ *
-+ *      AUTHOR:   Antoon Bosselaers, ESAT-COSIC
-+ *      DATE:     1 March 1996
-+ *      VERSION:  1.0
-+ *
-+ *      Copyright (c) Katholieke Universiteit Leuven
-+ *      1996, All Rights Reserved
-+ *
-+ *  Conditions for use of the RIPEMD-160 Software
-+ *
-+ *  The RIPEMD-160 software is freely available for use under the terms and
-+ *  conditions described hereunder, which shall be deemed to be accepted by
-+ *  any user of the software and applicable on any use of the software:
-+ * 
-+ *  1. K.U.Leuven Department of Electrical Engineering-ESAT/COSIC shall for
-+ *     all purposes be considered the owner of the RIPEMD-160 software and of
-+ *     all copyright, trade secret, patent or other intellectual property
-+ *     rights therein.
-+ *  2. The RIPEMD-160 software is provided on an "as is" basis without
-+ *     warranty of any sort, express or implied. K.U.Leuven makes no
-+ *     representation that the use of the software will not infringe any
-+ *     patent or proprietary right of third parties. User will indemnify
-+ *     K.U.Leuven and hold K.U.Leuven harmless from any claims or liabilities
-+ *     which may arise as a result of its use of the software. In no
-+ *     circumstances K.U.Leuven R&D will be held liable for any deficiency,
-+ *     fault or other mishappening with regard to the use or performance of
-+ *     the software.
-+ *  3. User agrees to give due credit to K.U.Leuven in scientific publications 
-+ *     or communications in relation with the use of the RIPEMD-160 software 
-+ *     as follows: RIPEMD-160 software written by Antoon Bosselaers, 
-+ *     available at http://www.esat.kuleuven.be/~cosicart/ps/AB-9601/.
-+ *
-+\********************************************************************/
-+
-+#ifndef  RMD160H           /* make sure this file is read only once */
-+#define  RMD160H
-+
-+/********************************************************************/
-+
-+/* typedef 8 and 32 bit types, resp.  */
-+/* adapt these, if necessary, 
-+   for your operating system and compiler */
-+typedef    unsigned char        byte;
-+typedef    unsigned long        dword;
-+
-+
-+/********************************************************************/
-+
-+/* macro definitions */
-+
-+/* collect four bytes into one word: */
-+#define BYTES_TO_DWORD(strptr)                    \
-+            (((dword) *((strptr)+3) << 24) | \
-+             ((dword) *((strptr)+2) << 16) | \
-+             ((dword) *((strptr)+1) <<  8) | \
-+             ((dword) *(strptr)))
-+
-+/* ROL(x, n) cyclically rotates x over n bits to the left */
-+/* x must be of an unsigned 32 bits type and 0 <= n < 32. */
-+#define ROL(x, n)        (((x) << (n)) | ((x) >> (32-(n))))
-+
-+/* the five basic functions F(), G() and H() */
-+#define F(x, y, z)        ((x) ^ (y) ^ (z)) 
-+#define G(x, y, z)        (((x) & (y)) | (~(x) & (z))) 
-+#define H(x, y, z)        (((x) | ~(y)) ^ (z))
-+#define I(x, y, z)        (((x) & (z)) | ((y) & ~(z))) 
-+#define J(x, y, z)        ((x) ^ ((y) | ~(z)))
-+  
-+/* the ten basic operations FF() through III() */
-+#define FF(a, b, c, d, e, x, s)        {\
-+      (a) += F((b), (c), (d)) + (x);\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+#define GG(a, b, c, d, e, x, s)        {\
-+      (a) += G((b), (c), (d)) + (x) + 0x5a827999UL;\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+#define HH(a, b, c, d, e, x, s)        {\
-+      (a) += H((b), (c), (d)) + (x) + 0x6ed9eba1UL;\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+#define II(a, b, c, d, e, x, s)        {\
-+      (a) += I((b), (c), (d)) + (x) + 0x8f1bbcdcUL;\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+#define JJ(a, b, c, d, e, x, s)        {\
-+      (a) += J((b), (c), (d)) + (x) + 0xa953fd4eUL;\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+#define FFF(a, b, c, d, e, x, s)        {\
-+      (a) += F((b), (c), (d)) + (x);\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+#define GGG(a, b, c, d, e, x, s)        {\
-+      (a) += G((b), (c), (d)) + (x) + 0x7a6d76e9UL;\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+#define HHH(a, b, c, d, e, x, s)        {\
-+      (a) += H((b), (c), (d)) + (x) + 0x6d703ef3UL;\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+#define III(a, b, c, d, e, x, s)        {\
-+      (a) += I((b), (c), (d)) + (x) + 0x5c4dd124UL;\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+#define JJJ(a, b, c, d, e, x, s)        {\
-+      (a) += J((b), (c), (d)) + (x) + 0x50a28be6UL;\
-+      (a) = ROL((a), (s)) + (e);\
-+      (c) = ROL((c), 10);\
-+   }
-+
-+/********************************************************************/
-+
-+/* function prototypes */
-+
-+void MDinit(dword *MDbuf);
-+/*
-+ *  initializes MDbuffer to "magic constants"
-+ */
-+
-+void compress(dword *MDbuf, dword *X);
-+/*
-+ *  the compression function.
-+ *  transforms MDbuf using message bytes X[0] through X[15]
-+ */
-+
-+void MDfinish(dword *MDbuf, byte *strptr, dword lswlen, dword mswlen);
-+/*
-+ *  puts bytes from strptr into X and pad out; appends length 
-+ *  and finally, compresses the last block(s)
-+ *  note: length in bits == 8 * (lswlen + 2^32 mswlen).
-+ *  note: there are (lswlen mod 64) bytes left in strptr.
-+ */
-+
-+#endif  /* RMD160H */
-+
-+/*********************** end of file rmd160.h ***********************/
-+
---- /dev/null
-+++ b/net/rsa/rsa.c
-@@ -0,0 +1,303 @@
-+/*
-+ * FONSM RSA handling library
-+ *
-+ * This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+ *
-+ * This library is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU Lesser General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This library is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU Lesser General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU Lesser General Public License
-+ * along with this library; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ *
-+ * Created: 20070306 Pablo Martin Medrano <pablo@fon.com>
-+ *
-+ * Based on axTLS
-+ *
-+ * $Id: fonrsa.c 405 2007-09-19 15:26:17Z jesus.pico $
-+ */
-+#include <malloc.h>
-+#include <common.h>
-+#include "rsa.h"
-+#include "rmd160.h"
-+#include "bigint.h"
-+#include "base64.h"
-+
-+#include "public_key.h"
-+
-+#define RMDsize 160		/* A RIPEMD-160 hash has 160 bits */
-+
-+typedef struct {
-+	uint8_t *buffer;
-+	size_t size;
-+} DER_key;
-+
-+typedef struct {
-+	bigint *m;              /* modulus */
-+	bigint *e;              /* public exponent */
-+	int num_octets;
-+	BI_CTX *bi_ctx;         /* big integer handle */
-+} RSA_parameters;
-+
-+typedef struct {
-+	DER_key *derkey;
-+	RSA_parameters *rsaparms;
-+} RSA;
-+
-+static void CH_free_der_key(DER_key *key)
-+{
-+	free(key->buffer);
-+	free(key);
-+}
-+
-+int CH_decrypt(RSA_parameters *rsa, uint8_t *buffer_in, uint8_t *buffer_out)
-+{
-+	bigint *dat_bi;
-+	bigint *decrypted_bi;
-+	int byte_size;
-+
-+	byte_size = rsa->num_octets; 
-+	dat_bi = bi_import(rsa->bi_ctx, buffer_in, byte_size);
-+	rsa->bi_ctx->mod_offset = BIGINT_M_OFFSET;
-+	bi_copy(rsa->m);
-+	decrypted_bi = bi_mod_power(rsa->bi_ctx, dat_bi, rsa->e);
-+	bi_export(rsa->bi_ctx, decrypted_bi, buffer_out, byte_size);
-+	return 0;
-+}
-+
-+byte *RMDbinary(char *buffer, int len)
-+{
-+	byte data[1024];	/* contains current mess. block */
-+	dword nbytes;		/* length of this block         */
-+	dword MDbuf[RMDsize / 32];	/* contains (A, B, C, D(, E))   */
-+	static byte hashcode[RMDsize / 8];	/* for final hash-value         */
-+	dword X[16];		/* current 16-word chunk        */
-+	unsigned int i, j;	/* counters                     */
-+	dword length[2];	/* length in bytes of message   */
-+	dword offset;		/* # of unprocessed bytes at    */
-+	/*          call of MDfinish    */
-+	int total = len;
-+	char *tmp = buffer;
-+	MDinit(MDbuf);
-+	length[0] = 0;
-+	length[1] = 0;
-+	while ( len) {
-+		memcpy(data, tmp, 1024);
-+		if(len > 1024)
-+		{
-+			nbytes = 1024;
-+			len -= 1024;
-+			tmp += 1024;
-+		} else {
-+			nbytes = len;
-+			len = 0;
-+		}
-+		/* process all complete blocks */
-+		for (i = 0; i < (nbytes >> 6); i++) {
-+			for (j = 0; j < 16; j++)
-+				X[j] = BYTES_TO_DWORD(data + 64 * i + 4 * j);
-+			compress(MDbuf, X);
-+		}
-+		/* update length[] */
-+		if (length[0] + nbytes < length[0])
-+			length[1]++;	/* overflow to msb of length */
-+		length[0] += nbytes;
-+	}
-+	/* finish: */
-+	offset = length[0] & 0x3C0;	/* extract bytes 6 to 10 inclusive */
-+	MDfinish(MDbuf, data + offset, length[0], length[1]);
-+
-+	for (i = 0; i < RMDsize / 8; i += 4) {
-+		hashcode[i] = MDbuf[i >> 2];
-+		hashcode[i + 1] = (MDbuf[i >> 2] >> 8);
-+		hashcode[i + 2] = (MDbuf[i >> 2] >> 16);
-+		hashcode[i + 3] = (MDbuf[i >> 2] >> 24);
-+	}
-+
-+	return (byte *) hashcode;
-+}
-+
-+static DER_key *CH_load_pem_key(void)
-+{
-+	DER_key *ret;
-+	uint8_t *buffer;
-+	char *b64,*p,*t;
-+	char key[1024];
-+	size_t filesize;
-+	int size;
-+
-+	if ((ret = (DER_key *)malloc(sizeof(DER_key))) == NULL)
-+		return NULL;
-+	buffer = public_key;
-+	p = (char *)buffer;
-+	while ((*p != '\n') && (*p != '\0'))
-+		p++;
-+	if (*p == '\0') {
-+		free(ret);
-+		return NULL;
-+	}
-+	p++;
-+	b64 = t = p;
-+	while((p - b64) <= filesize) {
-+		if ((*p == '-')) {
-+			break;
-+		} else if ((*p != '\n') && (*p != ' ') && (*p != '\t')) {
-+			*t = *p;
-+			t++;
-+		}
-+		p++;
-+	}
-+	*t = '\0';
-+	size = B64_decode(b64, key, strlen(b64), 1024);
-+	if (size < 0) {
-+		free(buffer);
-+		free(ret);
-+		return NULL;
-+	}
-+	//free(buffer);
-+	ret->buffer = (char *)malloc(size);
-+	ret->size = size;
-+	memcpy((void *)ret->buffer, (void *)key, size);
-+	return ret;
-+}
-+
-+/*
-+ * Similar to RSA_pub_key_new, rewritten to make this program depend only on bi module
-+ */
-+void CH_pub_key_new(RSA_parameters **rsa, const uint8_t *modulus, int mod_len, const uint8_t *pub_exp, int pub_len)
-+{
-+	RSA_parameters *rsa_parameters;
-+
-+	BI_CTX *bi_ctx = bi_initialize();
-+	*rsa = (RSA_parameters *)calloc(1, sizeof(RSA_parameters));
-+	rsa_parameters = *rsa;
-+	rsa_parameters->bi_ctx = bi_ctx;
-+	rsa_parameters->num_octets = (mod_len & 0xFFF0);
-+	rsa_parameters->m = bi_import(bi_ctx, modulus, mod_len);
-+	bi_set_mod(bi_ctx, rsa_parameters->m, BIGINT_M_OFFSET);
-+	rsa_parameters->e = bi_import(bi_ctx, pub_exp, pub_len);
-+	bi_permanent(rsa_parameters->e);
-+}
-+
-+/*
-+ * Get the public key specifics from an ASN.1 encoded file
-+ * A function lacking in the exported axTLS API
-+ *
-+ * This is a really weird hack that only works with RSA public key
-+ * files
-+ */
-+static int asn1_get_public_key(const uint8_t *buf, int len, RSA_parameters **rsa_parameters)
-+{
-+	uint8_t *modulus, *pub_exp;
-+	int mod_len, pub_len;
-+
-+	pub_len = 3;
-+	mod_len = len - 37;
-+	if (buf[0] != 0x30) {
-+		return -1;
-+	}
-+
-+	pub_exp = (uint8_t *)malloc(3);
-+	modulus = (uint8_t *)malloc(mod_len);
-+	memcpy(modulus, buf + 32 , mod_len);
-+	memcpy(pub_exp, buf + 34 + mod_len, 3); 
-+	if (mod_len <= 0 || pub_len <= 0 )
-+		return -1;
-+	CH_pub_key_new(rsa_parameters, modulus, mod_len, pub_exp, pub_len);
-+
-+	free(modulus);
-+	free(pub_exp);
-+	return 0;
-+}
-+
-+
-+/* FR_init */
-+void *FR_init(void)
-+{
-+	DER_key *derkey;
-+	RSA_parameters *rsa_parameters;
-+
-+	derkey = CH_load_pem_key();
-+	if ((asn1_get_public_key(derkey->buffer, derkey->size, &rsa_parameters)) != 0) {
-+		fprintf(stderr, "Error: Extracting public key from file\n");
-+		return 0;
-+	}
-+	CH_free_der_key(derkey);
-+	return (void *)rsa_parameters;
-+}
-+
-+FONRSA_ERROR FR_end(void *handle)
-+{
-+	RSA_parameters *rsa_parameters = (RSA_parameters *)handle;
-+
-+	free(rsa_parameters);
-+	return FONRSA_OK;
-+}
-+
-+/*
-+ *
-+ * Implementation of  PKCS 1.5 padding, borrowed from
-+ * Tom's code (public domain)
-+ */
-+
-+/* Standalone FR_verify_file */
-+FONRSA_ERROR FR_verify_file(void *handler, char *file_data, int file_len,
-+	char *signature_buffer, int signature_size)
-+{
-+	int j;
-+	byte *hashcode;
-+	byte hash[20];
-+	uint8_t *decrypted;
-+	RSA_parameters *rsa_parameters = (RSA_parameters *)handler;
-+
-+	/* Calculates the RIPEMD-160 hash of the file */
-+	hashcode = RMDbinary (file_data, file_len);
-+
-+	if (rsa_parameters->num_octets != signature_size)
-+		return FONRSA_SIZE;
-+	decrypted = (uint8_t *)malloc(rsa_parameters->num_octets);
-+	if (CH_decrypt(rsa_parameters, signature_buffer, decrypted)) {
-+		printf("Error: Decrypting signature\n");
-+		return FONRSA_VERIFICATION_FAILURE;
-+	}
-+	memcpy(hash, decrypted + 492, 20);
-+	//free(decrypted);
-+	//free(signature_buffer);
-+	for (j = 0; j < RMDsize/8; j++) {
-+		if (hash[j] != hashcode[j])
-+			return FONRSA_VERIFICATION_FAILURE;
-+	}
-+	return FONRSA_OK;
-+}
-+
-+int rsa_check_signature(char *signature, int signature_len, char *buffer, int buffer_len)
-+{
-+	FONRSA_ERROR fonrsa_error;
-+	void *handle;
-+	handle = FR_init();
-+	if (handle == NULL) {
-+		printf("Error loading keys\n");
-+		return 1;
-+	}
-+	fonrsa_error = FR_verify_file(handle, buffer, buffer_len, signature, signature_len);
-+	FR_end(handle);
-+	switch (fonrsa_error) {
-+		case FONRSA_OK:
-+			printf("Verified OK\n");
-+			return 0;
-+		case FONRSA_VERIFICATION_FAILURE:
-+			printf("Verification failure\n");
-+			return 1;
-+		default:
-+			printf("Verification error\n");
-+			return -1;
-+	}
-+
-+}
---- /dev/null
-+++ b/net/rsa/rsa.h
-@@ -0,0 +1,46 @@
-+/*
-+ * FONSM RSA handling library, used by fonsmcd and foncheckrsa
-+ *
-+ * This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+ *
-+ * This library is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU Lesser General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This library is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU Lesser General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU Lesser General Public License
-+ * along with this library; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ *
-+ * Created: 20070306 Pablo Martin Medrano <pablo@fon.com>
-+ *
-+ * $Id: fonrsa.h 404 2007-09-17 10:41:31Z jesus.pico $
-+ */
-+#ifndef _FONRSA_H
-+#define _FONRSA_H
-+
-+#define MINIMUM_PADING_BYTES_PKCS_1_5 3
-+
-+typedef enum {
-+	FONRSA_OK = 0,
-+	FONRSA_VERIFICATION_FAILURE = 1,
-+	FONRSA_OPENKEY = 2,
-+	FONRSA_SIZE = 3,
-+	FONRSA_LOADFILE = 4,
-+	FONRSA_CRYPT = 5,
-+	FONRSA_DECRYPT = 6,
-+	FONRSA_SAVEFILE = 7,
-+	FONRSA_NOSYS = 8,
-+	FONRSA_VERIFY = 9
-+} FONRSA_ERROR;
-+
-+int rsa_check_signature(char *signature, int signature_len, char *buffer, int buffer_len);
-+
-+#endif
-+
-+
---- /dev/null
-+++ b/net/rsa/sign.h
-@@ -0,0 +1,27 @@
-+/*
-+ * Signature interface
-+ *
-+ * This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+ *
-+ * Created: 20070417 Pablo Martín Medrano <pablo@fon.com>
-+ *
-+ * $Id: sign.h 389 2007-06-11 08:29:56Z pablo.martin $
-+ */
-+#ifndef __SIGN_H__
-+#define __SIGN_H__
-+#ifdef __cplusplus
-+	extern "C" {
-+#endif
-+
-+void SG_init(void);
-+void *SG_start(char *private_key_path, char *public_key_path);
-+void SG_stop(void *handle);
-+int SG_crypt(void *data, unsigned char *text, int size_text, unsigned char *crypted_text,
-+	unsigned int crypted_text_buffer_size, int *crypted_size);
-+int SG_crypt_v2(void *data, unsigned char *text, int size_text, unsigned char *crypted_text,
-+	unsigned int crypted_text_buffer_size, int *crypted_size);
-+#ifdef __cplusplus
-+}
-+#endif
-+#endif /* #ifdef __SIGN_H__ */
-+
---- /dev/null
-+++ b/net/rsa/sign_openssl.c
-@@ -0,0 +1,437 @@
-+/*
-+ * Signature using OpenSSL 
-+ *
-+ * This file is part of FONUCS. Copyright (C) 2007 FON Wireless Ltd.
-+ *
-+ * Created: 20070417 Pablo Martín Medrano <pablo@fon.com>
-+ *
-+ * $Id: sign_openssl.c 346 2007-05-10 19:51:38Z pablo.martin $
-+ */
-+/*
-+ *
-+ * How the RSA public and private key was generated
-+ * To check .FON files
-+ * openssl genrsa -out private_fon_rsa_key.pem 4096
-+ * openssl rsa -in private_fon_rsa_key.pem -pubout -out public_fon_rsa_key.pem
-+ *
-+ * How the Status Manager public and private key was generated
-+ * openssl genrsa -out private_sm_rsa_key.pem 2048
-+ * openssl rsa -in private_sm_rsa_key.pem -pubout -out public_sm_rsa_key.pem
-+ *
-+ * How to sign using the RSA private key (This is what fonsign does)
-+ *  openssl dgst -rmd160 -sign private_fon_rsa_key.pem FILE > SIGNATURE
-+ * How to verify using the RSA public key (This is what fonverify + foncheckrsa does)
-+ *  openssl dgst -rmd160 -verify public_fon_rsa_key.pem -signature SIGNATURE FILE
-+ * Convert to DER file (to use it in La Fonera)
-+ *  openssl rsa -inform PEM -outform DER -pubin -in public_fon_rsa_key.pem -pubout -out public_fon_rsa_key.der
-+ */
-+#include <openssl/rsa.h>
-+#include <openssl/ssl.h>
-+#include <openssl/bn.h>
-+#include <openssl/pem.h>
-+#include <openssl/evp.h>
-+#include <sys/stat.h>
-+#include <fcntl.h>
-+#ifndef __MAINTEST__
-+#include "log.h"
-+#else
-+#define fon_warning printf
-+#define fon_debug printf
-+#define fon_critical printf
-+#endif
-+#include "sign.h"
-+
-+typedef struct {
-+	RSA *rsa;
-+	int rsa_size;
-+	EVP_PKEY *pkey;
-+	int pkey_size;
-+	RSA *public_rsa;
-+	int public_rsa_size;
-+	EVP_PKEY *public_pkey;
-+	int public_pkey_size;
-+} Sign;
-+
-+typedef enum {
-+	KEY_PUBLIC = 0,
-+	KEY_PRIVATE
-+} KEY_TYPE;
-+
-+static EVP_PKEY *SG_load_key(char *key_path, KEY_TYPE type);
-+static unsigned char *load_file_in_buffer(char *path, int *size);
-+static int save_file_from_buffer(char *path, char *buffer, int size);
-+
-+void SG_init(void)
-+{
-+	SSL_load_error_strings();
-+	SSL_library_init();
-+	OpenSSL_add_all_algorithms();
-+	OpenSSL_add_all_ciphers();
-+	OpenSSL_add_all_digests();
-+}
-+
-+static unsigned char *load_file_in_buffer(char *path, int *size)
-+{
-+	char *buffer;
-+	struct stat st;
-+	int fd;
-+
-+	if (stat(path, &st))
-+		return NULL;
-+	buffer = (char *)malloc(st.st_size);
-+	if (buffer == NULL)
-+		return NULL;
-+ 	if ((fd = open(path, O_RDONLY)) == -1) {
-+		free(buffer);
-+		return NULL;
-+	}
-+	if (read(fd,buffer,st.st_size) != (ssize_t)st.st_size) {
-+		free(buffer);
-+		close(fd);
-+		return NULL;
-+	}
-+	*size = (int)st.st_size;
-+	close(fd);
-+	return buffer;
-+}
-+
-+static int save_file_from_buffer(char *path, char *buffer, int size)
-+{
-+	int fd;
-+
-+	if ((fd = open(path, O_WRONLY | O_CREAT, 0644)) == -1)
-+		return -1;
-+	if (write(fd, buffer, (size_t)size) != ((ssize_t)size)) {
-+		close(fd);
-+		return -1;
-+	}
-+	close(fd);
-+	return 0;
-+}
-+
-+static EVP_PKEY *SG_load_key(char *key_path, KEY_TYPE type)
-+{
-+	BIO *key = NULL;
-+	EVP_PKEY *pkey;
-+
-+	if ((key = BIO_new(BIO_s_file())) == NULL) {
-+		//ERR_print_errors(err);
-+		fon_warning("%s: Error calling BIO_new()\n", __FUNCTION__);
-+		return NULL;
-+	}
-+	if (BIO_read_filename(key, key_path) <= 0) {
-+		fon_warning("%s: Error opening %s\n", __FUNCTION__, key_path);
-+		// ERR_print_errors(err);
-+		BIO_free(key);	
-+	}
-+	if (type == KEY_PUBLIC) {
-+		pkey = PEM_read_bio_PUBKEY(key, NULL, NULL, NULL);
-+	} else if (type == KEY_PRIVATE) {
-+		pkey = PEM_read_bio_PrivateKey(key, NULL, NULL, NULL); 
-+	} else {
-+		return NULL;
-+	}
-+
-+	if (pkey == NULL) {
-+		fon_warning("%s: Error reading %s\n", __FUNCTION__, key_path);
-+		BIO_free(key);
-+		return NULL;
-+	}
-+	BIO_free(key);
-+	return pkey;
-+}
-+
-+void *SG_start(char *private_key_path, char *public_key_path)
-+{
-+	Sign *sign;
-+
-+	if ((sign = (Sign *)malloc(sizeof(Sign))) == NULL)
-+		return NULL;
-+	memset(sign, 0, sizeof(Sign));
-+	if (private_key_path != NULL) {
-+		if ((sign->pkey = SG_load_key(private_key_path, KEY_PRIVATE)) == NULL) {
-+			fon_warning("%s: Error loading %s", __FUNCTION__, private_key_path);
-+			return NULL;
-+		}
-+	}
-+	if (public_key_path != NULL) {
-+		if ((sign->public_pkey = SG_load_key(public_key_path, KEY_PUBLIC)) == NULL) {
-+			fon_warning("%s: Error loading %s", __FUNCTION__, public_key_path);
-+			return NULL;
-+		}
-+	}
-+	if (sign->pkey != NULL) {
-+		sign->pkey_size = EVP_PKEY_size(sign->pkey);
-+		if ((sign->rsa = EVP_PKEY_get1_RSA(sign->pkey)) == NULL) {
-+			EVP_PKEY_free(sign->pkey);
-+			return NULL;
-+		}
-+	}
-+	if (sign->public_pkey != NULL) {
-+		sign->public_pkey_size = EVP_PKEY_size(sign->public_pkey);
-+		if ((sign->public_rsa = EVP_PKEY_get1_RSA(sign->public_pkey)) == NULL) {
-+			EVP_PKEY_free(sign->pkey);
-+			return NULL;
-+		}
-+	}
-+	if (((sign->rsa == NULL) && (private_key_path != NULL)) || 
-+	   ((sign->public_rsa == NULL) && (public_key_path != NULL))) {
-+		fon_warning("%s: Error calling EVP_PKEY_get1_RSA()", __FUNCTION__);
-+		return NULL;
-+	}
-+	if (sign->rsa != NULL) {
-+		sign->rsa_size = RSA_size(sign->rsa);
-+		if (RSA_check_key(sign->rsa) != 1) {
-+			fon_warning("%s: RSA key failure", __FUNCTION__);
-+			return NULL;
-+		}
-+	}
-+
-+	return (void *)sign;
-+}
-+
-+void SG_stop(void *handle)
-+{
-+	Sign *sign = (Sign *)handle;
-+
-+	EVP_PKEY_free(sign->pkey);
-+	EVP_PKEY_free(sign->public_pkey);
-+	if (sign->rsa != NULL)
-+		RSA_free(sign->rsa);
-+	if (sign->public_rsa != NULL)
-+		RSA_free(sign->public_rsa);
-+	free(sign);
-+}
-+
-+int SG_verify(void *data, unsigned char *text, unsigned int size_text,
-+	unsigned char *signature, unsigned int size_signature)
-+{
-+	EVP_MD_CTX mdctx;
-+	EVP_MD *md;
-+	EVP_PKEY *pkey;
-+	int ret;
-+	Sign *sign = (Sign *)data;
-+
-+	md = (EVP_MD *)EVP_ripemd160();
-+	if(!EVP_VerifyInit(&mdctx, md))
-+		return 4;
-+	if (!EVP_VerifyUpdate(&mdctx, (const void *)text, (unsigned int)size_text)) {
-+		return 5;
-+	}
-+	ret = EVP_VerifyFinal(&mdctx, (const char *)signature, size_signature, sign->public_pkey);
-+	EVP_PKEY_free(pkey);
-+	EVP_MD_CTX_cleanup(&mdctx);
-+	return ret;
-+}
-+
-+int SG_sign(void *data, void *text, unsigned int size_text, void *signature_buffer,
-+	unsigned int size_signature_buffer, unsigned int *size_signature)
-+{
-+	unsigned char *digest[EVP_MAX_MD_SIZE];
-+	EVP_MD_CTX mdctx;
-+	EVP_MD *md;
-+	int ret;
-+	Sign *sign = (Sign *)data;
-+
-+	if (size_signature_buffer < sign->pkey_size) 
-+		return 1;
-+
-+	md = (EVP_MD *)EVP_ripemd160();
-+	EVP_SignInit(&mdctx, md);
-+	if (!EVP_SignUpdate(&mdctx, (const void *)text, (unsigned int)size_text)) {
-+		return 2;
-+	}
-+	if (!EVP_SignFinal(&mdctx, (unsigned char *)signature_buffer, (unsigned int *)size_signature, sign->pkey)) {
-+		return 3;
-+	}
-+	EVP_MD_CTX_cleanup(&mdctx);
-+
-+	return 0;
-+}
-+
-+/*
-+ * It's not advised to crypt using RAW ... unless you have crypted the buffer using AES before.
-+ */
-+int SG_crypt(void *data, unsigned char *text, int size_text,
-+	unsigned char *crypted_text, unsigned int crypted_text_buffer_size,
-+	int *crypted_size)
-+{
-+	EVP_MD_CTX mdctx;
-+	EVP_MD *md;
-+	int retsize;
-+	Sign *sign = (Sign *)data;
-+
-+	if (crypted_text_buffer_size < sign->pkey_size) {
-+		fon_critical("%s: size_signature_buffer [%u] < %u", __FUNCTION__, size_text, sign->pkey_size);
-+		return 1;
-+	}
-+	if (size_text != sign->pkey_size) {
-+		fon_critical("%s: size_text [%u] != %u", __FUNCTION__, size_text, sign->pkey_size);
-+		return 2;
-+	}
-+	/* The buffer is pre-padded with random data ... */
-+	fon_debug("%s: About to call RSA_private_encrypt(%d, %x, %x, %x, %d)",
-+			__FUNCTION__, size_text, crypted_text, sign->rsa, RSA_NO_PADDING);
-+	retsize = RSA_private_encrypt(size_text, text, crypted_text, sign->rsa, RSA_NO_PADDING);
-+	if (retsize == -1) {
-+		fon_critical("%s: Error calling RSA_private_encrypt(%d, %x, %x, %x, %d)",
-+			__FUNCTION__, size_text, crypted_text, sign->rsa, RSA_NO_PADDING);    
-+		return 1;
-+	}
-+	*crypted_size = retsize;
-+	return 0;
-+}
-+
-+/* SG_decrypt */
-+int SG_decrypt(void *data, unsigned char *cryptext, int cryptext_size, unsigned char *plaintext,
-+	int plaintext_buffer_size, int *plaintext_size)
-+{
-+	EVP_MD_CTX mdctx;
-+	EVP_MD *md;
-+	int retsize;
-+	Sign *sign = (Sign *)data;
-+
-+	if (plaintext_buffer_size < sign->public_pkey_size) {
-+		fon_critical("%s: plaintext_buffer_size [%u] < %u", __FUNCTION__, plaintext_buffer_size, sign->public_pkey_size);
-+		return 1;
-+	}
-+	if (cryptext_size != sign->public_pkey_size) {
-+		fon_critical("%s: cryptext_size [%u] != %u", __FUNCTION__, cryptext_size, sign->public_pkey_size);
-+		return 2;
-+	}
-+	retsize = RSA_public_decrypt(cryptext_size, cryptext, plaintext, sign->public_rsa, RSA_NO_PADDING);
-+	if (retsize == -1)
-+		return 1;
-+	*plaintext_size = retsize;
-+	return 0;
-+}
-+
-+#ifdef __MAINTEST__
-+int main(int argc, char **argv)
-+{
-+	size_t argv0_size;
-+	char *token;
-+
-+	argv0_size = strlen(argv[0]);
-+	if (argv0_size < 7) {
-+		fprintf(stderr, "%s?", argv[0]);
-+		return 1;
-+	}
-+	token =  argv[0] + argv0_size - 7;
-+
-+	SG_init();
-+	if (!strcmp(token, "fonsign")) {
-+		return main_fonsign(argc, argv);
-+	} else if (!strcmp(token, "foncryp")) {
-+		return main_foncryp(argc, argv);
-+	}
-+	fprintf(stderr, "%s?", argv[0]);
-+	return 1;
-+}
-+
-+int main_foncryp(int argc, char **argv)
-+{
-+	void *handle = NULL;
-+	int encrypt = 0;
-+	char *filebuffer = NULL;
-+	char crypted[1024];
-+	int size, crypted_size, ret;
-+
-+	if (argc != 5) {
-+		printf("Usage: %s encrypt|decrypt <key_file> <file> <crypted_file>\n", argv[0]);
-+		return 1;
-+	}
-+	if (!strcmp(argv[1], "encrypt")) {
-+		printf("Encryption mode\n");
-+		encrypt = 1;
-+	} else
-+		printf("Decryption mode\n");
-+	if (encrypt)
-+		handle = SG_start(argv[2], NULL);
-+	else
-+		handle = SG_start(NULL, argv[2]);
-+	if (handle == NULL) {
-+		printf("Error loading keys\n");
-+		return 1;
-+	}
-+	
-+	filebuffer = load_file_in_buffer(argv[3], &size); 
-+	if (filebuffer == NULL) {
-+		printf("Error reading %s\n", argv[3]);
-+		SG_stop(handle);
-+		return 1;
-+	}
-+	if (encrypt)
-+		ret = SG_crypt(handle, filebuffer, size, crypted, 1024, &crypted_size);
-+	else
-+		ret = SG_decrypt(handle, filebuffer, size, crypted, 1024, &crypted_size);
-+
-+	if (ret) {
-+		printf("Error crypting %d bytes\n", size);
-+		SG_stop(handle);
-+		return 1;
-+	}
-+	printf("Crypted size %d\n", crypted_size);
-+	if (save_file_from_buffer(argv[4], crypted, crypted_size)) {
-+		printf("Error saving file\n");
-+		SG_stop(handle);
-+		return 1;
-+	}
-+
-+	SG_stop(handle);
-+	return 0;
-+}
-+
-+int main_fonsign(int argc, char **argv)
-+{
-+	void *handle = NULL;
-+	char signature_buffer[4096];
-+	char *signature;
-+	unsigned int signature_size;
-+	struct stat st;
-+	char *filebuffer = NULL;
-+	int size;
-+	int ret = -1;
-+
-+	if (argc != 5) {
-+		fprintf(stderr, "usage: %s <private_key_file> <public_key_file> <file_to_sign> <signature_file>\n", argv[0]);
-+		goto end;
-+	}
-+	handle = SG_start(argv[1], argv[2]);
-+	if (handle == NULL) {
-+		fprintf(stderr, "Error calling SG_start(%s)\n", argv[1]);
-+		goto end;	
-+	}
-+	filebuffer = load_file_in_buffer(argv[3], &size); 
-+	if (filebuffer == NULL) {
-+		fprintf(stderr, "Error reading %s\n", argv[3]);
-+		goto end;
-+	}
-+	if (SG_sign(handle, filebuffer, size, signature_buffer, 4096, &signature_size)) {
-+		fprintf(stderr, "Error calling SG_sign()\n");
-+		goto end;
-+	}
-+	ret = SG_verify(handle, filebuffer, size, signature_buffer, signature_size); 
-+	if (ret == 0)
-+		fprintf(stderr, "signature failure\n");
-+	else if (ret == 1) {
-+		fprintf(stderr, "signature ok\n");
-+		ret = 0;
-+	} else {
-+		fprintf(stderr, "signature error\n");
-+		goto end;
-+	}
-+	if (save_file_from_buffer(argv[4], signature_buffer, signature_size)) {
-+		fprintf(stderr, "Error writing to %s\n", argv[4]);
-+		goto end;
-+	}
-+	ret = 0;
-+end:
-+	if (filebuffer != NULL)
-+		free(filebuffer);
-+	if (handle != NULL)
-+		SG_stop(handle);
-+	return ret;
-+}
-+#endif
-+
 --- /dev/null
 +++ b/net/uip-0.9/Makefile
 @@ -0,0 +1,54 @@
@@ -9348,3 +5634,533 @@
 +
 +
 +#endif /* __UIPOPT_H__ */
+--- a/board/infineon/easy50712/danube.c
++++ b/board/infineon/easy50712/danube.c
+@@ -354,7 +354,7 @@ int do_http_upgrade(const unsigned char 
+ 	}
+ 	/* write the image to the flash */
+ 	puts("http ugrade ...\n");
+-	sprintf(buf, "era ${kernel_addr} +0x%x; cp.b ${ram_addr} ${kernel_addr} 0x%x", size, size);
++	sprintf(buf, "era ${kernel_addr} +0x%lx; cp.b ${ram_addr} ${kernel_addr} 0x%lx", size, size);
+ 	return run_command(buf, 0);
+ }
+ 
+--- a/common/main.c
++++ b/common/main.c
+@@ -273,6 +273,10 @@ static __inline__ int abortboot(int boot
+ 
+ void main_loop (void)
+ {
++#ifdef CONFIG_CMD_HTTPD
++	int ret;
++#endif
++
+ #ifndef CONFIG_SYS_HUSH_PARSER
+ 	static char lastcommand[CONFIG_SYS_CBSIZE] = { 0, };
+ 	int len;
+@@ -403,12 +407,22 @@ void main_loop (void)
+ # endif
+ 
+ # ifndef CONFIG_SYS_HUSH_PARSER
+-		run_command (s, 0);
++		ret = run_command (s, 0);
+ # else
+-		parse_string_outer(s, FLAG_PARSE_SEMICOLON |
++		ret = parse_string_outer(s, FLAG_PARSE_SEMICOLON |
+ 				    FLAG_EXIT_FROM_LOOP);
+ # endif
+ 
++# ifdef CONFIG_CMD_HTTPD
++		if (ret != 0) {
++			printf("Failed to execute bootcmd "
++					"(maybe invalid u-boot environment?), "
++					"starting httpd to update firmware...\n");
++			NetLoopHttpd();
++		}
++# endif
++
++
+ # ifdef CONFIG_AUTOBOOT_KEYED
+ 		disable_ctrlc(prev);	/* restore Control C checking */
+ # endif
+--- a/include/configs/easy50712.h
++++ b/include/configs/easy50712.h
+@@ -114,4 +114,7 @@
+ 
+ #define CONFIG_CMD_HTTPD		/* enable upgrade via HTTPD */
+ 
++#define CONFIG_IPADDR		192.168.0.119
++#define CONFIG_ETHADDR		00:01:02:03:04:05
++
+ #endif	/* __CONFIG_H */
+--- a/lib_mips/time.c
++++ b/lib_mips/time.c
+@@ -29,6 +29,8 @@ static unsigned long timestamp;
+ /* how many counter cycles in a jiffy */
+ #define CYCLES_PER_JIFFY	(CONFIG_SYS_MIPS_TIMER_FREQ + CONFIG_SYS_HZ / 2) / CONFIG_SYS_HZ
+ 
++unsigned long ifx_get_cpuclk(void);
++
+ /*
+  * timer without interrupts
+  */
+--- a/net/httpd.c
++++ b/net/httpd.c
+@@ -35,12 +35,14 @@ HttpdHandler (void)
+ 	}
+ }
+ 
++#if 0
+ static void
+ HttpdTimeout (void)
+ {
+ 	puts ("T ");
+ 	NetSetTimeout (TIMEOUT * 1000, HttpdTimeout);
+ }
++#endif
+ 
+ void
+ HttpdStart (void)
+--- a/net/net.c
++++ b/net/net.c
+@@ -1966,7 +1966,7 @@ NetSendHttpd(void)
+ void
+ NetReceiveHttpd(volatile uchar * inpkt, int len)
+ {
+-	memcpy(uip_buf, inpkt, len);
++	memcpy(uip_buf, (const void *)inpkt, len);
+ 	uip_len = len;
+ 	if(BUF->type == htons(UIP_ETHTYPE_IP)) {
+ 		uip_arp_ipin();
+@@ -1989,6 +1989,7 @@ NetLoopHttpd(void)
+ 	unsigned long long tout = 0;
+ 	bd_t *bd = gd->bd;
+ 	unsigned short int ip[2];
++	struct uip_eth_addr eaddr;
+ 
+ #ifdef CONFIG_NET_MULTI
+ 	NetRestarted = 0;
+@@ -2039,6 +2040,15 @@ restart:
+ 	eth_getenv_enetaddr("ethaddr", NetOurEther);
+ #endif
+ 
++	eaddr.addr[0] = NetOurEther[0];
++	eaddr.addr[1] = NetOurEther[1];
++	eaddr.addr[2] = NetOurEther[2];
++	eaddr.addr[3] = NetOurEther[3];
++	eaddr.addr[4] = NetOurEther[4];
++	eaddr.addr[5] = NetOurEther[5];
++
++	uip_setethaddr(eaddr);
++
+ 	NetCopyIP(&NetOurIP, &bd->bi_ip_addr);
+ 	NetOurGatewayIP = getenv_IPaddr ("gatewayip");
+ 	NetOurSubnetMask= getenv_IPaddr ("netmask");
+@@ -2072,6 +2082,14 @@ restart:
+ 				tout = t1;
+ 			}
+ 		}
++
++		if (ctrlc()) {
++			eth_halt();
++			puts ("\nAbort\n");
++			return (-1);
++		}
++
++
+ 		if(!httpd_upload_complete)
+ 			continue;
+ 		printf("Bytes transferred = %ld (%lx hex)\n",
+--- a/net/uip-0.9/fsdata.c
++++ b/net/uip-0.9/fsdata.c
+@@ -1,199 +1,108 @@
+-static const char data_flashing_html[] = {
+-	/* /flashing.html */
+-	0x2f, 0x66, 0x6c, 0x61, 0x73, 0x68, 0x69, 0x6e, 0x67, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
+-	0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x20, 0x32, 
+-	0x30, 0x30, 0x20, 0x4f, 0x4b, 0xd, 0xa, 0x53, 0x65, 0x72, 
+-	0x76, 0x65, 0x72, 0x3a, 0x20, 0x75, 0x49, 0x50, 0x2f, 0x30, 
+-	0x2e, 0x39, 0x20, 0x28, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 
+-	0x2f, 0x64, 0x75, 0x6e, 0x6b, 0x65, 0x6c, 0x73, 0x2e, 0x63, 
+-	0x6f, 0x6d, 0x2f, 0x61, 0x64, 0x61, 0x6d, 0x2f, 0x75, 0x69, 
+-	0x70, 0x2f, 0x29, 0xd, 0xa, 0x43, 0x6f, 0x6e, 0x74, 0x65, 
+-	0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x74, 
+-	0x65, 0x78, 0x74, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0xd, 0xa, 
+-	0xd, 0xa, 0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0x3c, 0x62, 
+-	0x6f, 0x64, 0x79, 0x20, 0x73, 0x74, 0x79, 0x6c, 0x65, 0x3d, 
+-	0x22, 0x6d, 0x61, 0x72, 0x67, 0x69, 0x6e, 0x3a, 0x20, 0x30, 
+-	0x70, 0x74, 0x20, 0x61, 0x75, 0x74, 0x6f, 0x3b, 0x20, 0x68, 
+-	0x65, 0x69, 0x67, 0x68, 0x74, 0x3a, 0x31, 0x30, 0x30, 0x25, 
+-	0x3b, 0x20, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x3a, 0x20, 0x23, 
+-	0x66, 0x66, 0x66, 0x3b, 0x20, 0x62, 0x61, 0x63, 0x6b, 0x67, 
+-	0x72, 0x6f, 0x75, 0x6e, 0x64, 0x2d, 0x63, 0x6f, 0x6c, 0x6f, 
+-	0x72, 0x3a, 0x20, 0x23, 0x66, 0x62, 0x62, 0x30, 0x33, 0x34, 
+-	0x3b, 0x22, 0x3e, 0x3c, 0x63, 0x65, 0x6e, 0x74, 0x65, 0x72, 
+-	0x3e, 0x3c, 0x68, 0x31, 0x3e, 0x55, 0x70, 0x67, 0x72, 0x61, 
+-	0x64, 0x69, 0x6e, 0x67, 0x20, 0x73, 0x79, 0x73, 0x74, 0x65, 
+-	0x6d, 0x20, 0x2e, 0x2e, 0x2e, 0x2e, 0x3c, 0x2f, 0x68, 0x31, 
+-	0x3e, 0x3c, 0x2f, 0x63, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x3e, 
+-	0x3c, 0x2f, 0x62, 0x6f, 0x64, 0x79, 0x3e, 0x3c, 0x2f, 0x68, 
+-	0x74, 0x6d, 0x6c, 0x3e, 0xa, };
+-
+-static const char data_fail_html[] = {
+-	/* /fail.html */
+-	0x2f, 0x66, 0x61, 0x69, 0x6c, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
+-	0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x20, 0x32, 
+-	0x30, 0x30, 0x20, 0x4f, 0x4b, 0xd, 0xa, 0x53, 0x65, 0x72, 
+-	0x76, 0x65, 0x72, 0x3a, 0x20, 0x75, 0x49, 0x50, 0x2f, 0x30, 
+-	0x2e, 0x39, 0x20, 0x28, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 
+-	0x2f, 0x64, 0x75, 0x6e, 0x6b, 0x65, 0x6c, 0x73, 0x2e, 0x63, 
+-	0x6f, 0x6d, 0x2f, 0x61, 0x64, 0x61, 0x6d, 0x2f, 0x75, 0x69, 
+-	0x70, 0x2f, 0x29, 0xd, 0xa, 0x43, 0x6f, 0x6e, 0x74, 0x65, 
+-	0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x74, 
+-	0x65, 0x78, 0x74, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0xd, 0xa, 
+-	0xd, 0xa, 0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 0x9, 
+-	0x3c, 0x68, 0x65, 0x61, 0x64, 0x3e, 0xa, 0x9, 0x9, 0x3c, 
+-	0x74, 0x69, 0x74, 0x6c, 0x65, 0x3e, 0xa, 0x9, 0x9, 0x9, 
+-	0x4c, 0x61, 0x46, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x20, 0x46, 
+-	0x61, 0x69, 0x6c, 0x73, 0x61, 0x66, 0x65, 0x20, 0x55, 0x49, 
+-	0xa, 0x9, 0x9, 0x3c, 0x2f, 0x74, 0x69, 0x74, 0x6c, 0x65, 
+-	0x3e, 0xa, 0x9, 0x3c, 0x62, 0x6f, 0x64, 0x79, 0x3e, 0xa, 
+-	0x9, 0x9, 0x3c, 0x68, 0x31, 0x3e, 0x46, 0x6c, 0x61, 0x73, 
+-	0x68, 0x69, 0x6e, 0x67, 0x20, 0x66, 0x61, 0x69, 0x6c, 0x65, 
+-	0x64, 0x3c, 0x2f, 0x68, 0x31, 0x3e, 0xa, 0x9, 0x9, 0x45, 
+-	0x52, 0x52, 0x4f, 0x52, 0x20, 0x2d, 0x20, 0x74, 0x68, 0x65, 
+-	0x20, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x20, 0x79, 0x6f, 0x75, 
+-	0x20, 0x75, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x65, 0x64, 0x20, 
+-	0x66, 0x61, 0x69, 0x6c, 0x65, 0x64, 0x20, 0x74, 0x6f, 0x20, 
+-	0x70, 0x61, 0x73, 0x73, 0x20, 0x76, 0x65, 0x72, 0x69, 0x66, 
+-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x20, 0x50, 
+-	0x6c, 0x65, 0x61, 0x73, 0x65, 0x20, 0x6d, 0x61, 0x6b, 0x65, 
+-	0x20, 0x73, 0x75, 0x72, 0x65, 0x20, 0x74, 0x6f, 0x20, 0x75, 
+-	0x73, 0x65, 0x20, 0x61, 0x6e, 0x20, 0x6f, 0x66, 0x66, 0x69, 
+-	0x63, 0x69, 0x61, 0x6c, 0x20, 0x75, 0x70, 0x64, 0x61, 0x74, 
+-	0x65, 0x20, 0x70, 0x72, 0x6f, 0x76, 0x69, 0x64, 0x65, 0x64, 
+-	0x20, 0x62, 0x79, 0x20, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 
+-	0x2f, 0x64, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x2e, 
+-	0x66, 0x6f, 0x6e, 0x6f, 0x73, 0x66, 0x65, 0x72, 0x61, 0x2e, 
+-	0x6f, 0x72, 0x67, 0x2f, 0xa, 0x9, 0x3c, 0x2f, 0x62, 0x6f, 
+-	0x64, 0x79, 0x3e, 0xa, 0x3c, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 
+-	0x3e, 0xa, };
+-
+-static const char data_404_html[] = {
+-	/* /404.html */
+-	0x2f, 0x34, 0x30, 0x34, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
+-	0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x20, 0x34, 
+-	0x30, 0x34, 0x20, 0x46, 0x69, 0x6c, 0x65, 0x20, 0x6e, 0x6f, 
+-	0x74, 0x20, 0x66, 0x6f, 0x75, 0x6e, 0x64, 0xd, 0xa, 0x53, 
+-	0x65, 0x72, 0x76, 0x65, 0x72, 0x3a, 0x20, 0x75, 0x49, 0x50, 
+-	0x2f, 0x30, 0x2e, 0x39, 0x20, 0x28, 0x68, 0x74, 0x74, 0x70, 
+-	0x3a, 0x2f, 0x2f, 0x64, 0x75, 0x6e, 0x6b, 0x65, 0x6c, 0x73, 
+-	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x61, 0x64, 0x61, 0x6d, 0x2f, 
+-	0x75, 0x69, 0x70, 0x2f, 0x29, 0xd, 0xa, 0x43, 0x6f, 0x6e, 
+-	0x74, 0x65, 0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 
+-	0x20, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 
+-	0xd, 0xa, 0xd, 0xa, 0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 
+-	0x3c, 0x62, 0x6f, 0x64, 0x79, 0x20, 0x62, 0x67, 0x63, 0x6f, 
+-	0x6c, 0x6f, 0x72, 0x3d, 0x22, 0x77, 0x68, 0x69, 0x74, 0x65, 
+-	0x22, 0x3e, 0x3c, 0x63, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x3e, 
+-	0x3c, 0x68, 0x31, 0x3e, 0x34, 0x30, 0x34, 0x20, 0x2d, 0x20, 
+-	0x66, 0x69, 0x6c, 0x65, 0x20, 0x6e, 0x6f, 0x74, 0x20, 0x66, 
+-	0x6f, 0x75, 0x6e, 0x64, 0x3c, 0x2f, 0x68, 0x31, 0x3e, 0x3c, 
+-	0x2f, 0x63, 0x65, 0x6e, 0x74, 0x65, 0x72, 0x3e, 0x3c, 0x2f, 
+-	0x62, 0x6f, 0x64, 0x79, 0x3e, 0x3c, 0x2f, 0x68, 0x74, 0x6d, 
+-	0x6c, 0x3e, };
+-
+-static const char data_index_html[] = {
+-	/* /index.html */
+-	0x2f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
+-	0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x20, 0x32, 
+-	0x30, 0x30, 0x20, 0x4f, 0x4b, 0xd, 0xa, 0x53, 0x65, 0x72, 
+-	0x76, 0x65, 0x72, 0x3a, 0x20, 0x75, 0x49, 0x50, 0x2f, 0x30, 
+-	0x2e, 0x39, 0x20, 0x28, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 
+-	0x2f, 0x64, 0x75, 0x6e, 0x6b, 0x65, 0x6c, 0x73, 0x2e, 0x63, 
+-	0x6f, 0x6d, 0x2f, 0x61, 0x64, 0x61, 0x6d, 0x2f, 0x75, 0x69, 
+-	0x70, 0x2f, 0x29, 0xd, 0xa, 0x43, 0x6f, 0x6e, 0x74, 0x65, 
+-	0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x74, 
+-	0x65, 0x78, 0x74, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0xd, 0xa, 
+-	0xd, 0xa, 0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 0x9, 
+-	0x3c, 0x68, 0x65, 0x61, 0x64, 0x3e, 0xa, 0x9, 0x9, 0x3c, 
+-	0x74, 0x69, 0x74, 0x6c, 0x65, 0x3e, 0xa, 0x9, 0x9, 0x9, 
+-	0x4c, 0x61, 0x46, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x20, 0x46, 
+-	0x61, 0x69, 0x6c, 0x73, 0x61, 0x66, 0x65, 0x20, 0x55, 0x49, 
+-	0xa, 0x9, 0x9, 0x3c, 0x2f, 0x74, 0x69, 0x74, 0x6c, 0x65, 
+-	0x3e, 0xa, 0x9, 0x3c, 0x2f, 0x68, 0x65, 0x61, 0x64, 0x3e, 
+-	0xa, 0x9, 0x3c, 0x62, 0x6f, 0x64, 0x79, 0x20, 0x73, 0x74, 
+-	0x79, 0x6c, 0x65, 0x3d, 0x22, 0x6d, 0x61, 0x72, 0x67, 0x69, 
+-	0x6e, 0x3a, 0x20, 0x30, 0x70, 0x74, 0x20, 0x61, 0x75, 0x74, 
+-	0x6f, 0x3b, 0x20, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x3a, 
+-	0x31, 0x30, 0x30, 0x25, 0x3b, 0x20, 0x63, 0x6f, 0x6c, 0x6f, 
+-	0x72, 0x3a, 0x20, 0x23, 0x30, 0x30, 0x30, 0x3b, 0x20, 0x62, 
+-	0x61, 0x63, 0x6b, 0x67, 0x72, 0x6f, 0x75, 0x6e, 0x64, 0x2d, 
+-	0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x3a, 0x20, 0x23, 0x66, 0x62, 
+-	0x62, 0x30, 0x33, 0x34, 0x3b, 0x22, 0x3e, 0xa, 0x9, 0x9, 
+-	0x3c, 0x68, 0x31, 0x3e, 0x4c, 0x61, 0x46, 0x6f, 0x6e, 0x65, 
+-	0x72, 0x61, 0x20, 0x46, 0x61, 0x69, 0x6c, 0x73, 0x61, 0x66, 
+-	0x65, 0x20, 0x55, 0x49, 0x3c, 0x2f, 0x68, 0x31, 0x3e, 0xa, 
+-	0x9, 0x9, 0x3c, 0x66, 0x6f, 0x72, 0x6d, 0x20, 0x6d, 0x65, 
+-	0x74, 0x68, 0x6f, 0x64, 0x3d, 0x22, 0x70, 0x6f, 0x73, 0x74, 
+-	0x22, 0x20, 0x65, 0x6e, 0x63, 0x74, 0x79, 0x70, 0x65, 0x3d, 
+-	0x22, 0x6d, 0x75, 0x6c, 0x74, 0x69, 0x70, 0x61, 0x72, 0x74, 
+-	0x2f, 0x66, 0x6f, 0x72, 0x6d, 0x2d, 0x64, 0x61, 0x74, 0x61, 
+-	0x22, 0x3e, 0xa, 0x9, 0x9, 0x9, 0x3c, 0x69, 0x6e, 0x70, 
+-	0x75, 0x74, 0x20, 0x74, 0x79, 0x70, 0x65, 0x3d, 0x66, 0x69, 
+-	0x6c, 0x65, 0x20, 0x6e, 0x61, 0x6d, 0x65, 0x3d, 0x66, 0x69, 
+-	0x72, 0x6d, 0x77, 0x61, 0x72, 0x65, 0x3e, 0xa, 0x9, 0x9, 
+-	0x9, 0x3c, 0x69, 0x6e, 0x70, 0x75, 0x74, 0x20, 0x74, 0x79, 
+-	0x70, 0x65, 0x3d, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x3e, 
+-	0xa, 0x9, 0x9, 0x3c, 0x2f, 0x66, 0x6f, 0x72, 0x6d, 0x3e, 
+-	0xa, 0x9, 0x3c, 0x2f, 0x62, 0x6f, 0x64, 0x79, 0x3e, 0xa, 
+-	0x3c, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, };
+-
+-static const char data_flash_html[] = {
+-	/* /flash.html */
+-	0x2f, 0x66, 0x6c, 0x61, 0x73, 0x68, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0,
+-	0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x30, 0x20, 0x32, 
+-	0x30, 0x30, 0x20, 0x4f, 0x4b, 0xd, 0xa, 0x53, 0x65, 0x72, 
+-	0x76, 0x65, 0x72, 0x3a, 0x20, 0x75, 0x49, 0x50, 0x2f, 0x30, 
+-	0x2e, 0x39, 0x20, 0x28, 0x68, 0x74, 0x74, 0x70, 0x3a, 0x2f, 
+-	0x2f, 0x64, 0x75, 0x6e, 0x6b, 0x65, 0x6c, 0x73, 0x2e, 0x63, 
+-	0x6f, 0x6d, 0x2f, 0x61, 0x64, 0x61, 0x6d, 0x2f, 0x75, 0x69, 
+-	0x70, 0x2f, 0x29, 0xd, 0xa, 0x43, 0x6f, 0x6e, 0x74, 0x65, 
+-	0x6e, 0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x3a, 0x20, 0x74, 
+-	0x65, 0x78, 0x74, 0x2f, 0x68, 0x74, 0x6d, 0x6c, 0xd, 0xa, 
+-	0xd, 0xa, 0x3c, 0x68, 0x74, 0x6d, 0x6c, 0x3e, 0xa, 0x9, 
+-	0x3c, 0x68, 0x65, 0x61, 0x64, 0x3e, 0xa, 0x9, 0x9, 0x3c, 
+-	0x74, 0x69, 0x74, 0x6c, 0x65, 0x3e, 0xa, 0x9, 0x9, 0x9, 
+-	0x4c, 0x61, 0x46, 0x6f, 0x6e, 0x65, 0x72, 0x61, 0x20, 0x46, 
+-	0x61, 0x69, 0x6c, 0x73, 0x61, 0x66, 0x65, 0x20, 0x55, 0x49, 
+-	0xa, 0x9, 0x9, 0x3c, 0x2f, 0x74, 0x69, 0x74, 0x6c, 0x65, 
+-	0x3e, 0xa, 0x9, 0x3c, 0x2f, 0x68, 0x65, 0x61, 0x64, 0x3e, 
+-	0xa, 0x9, 0x3c, 0x62, 0x6f, 0x64, 0x79, 0x20, 0x73, 0x74, 
+-	0x79, 0x6c, 0x65, 0x3d, 0x22, 0x6d, 0x61, 0x72, 0x67, 0x69, 
+-	0x6e, 0x3a, 0x20, 0x30, 0x70, 0x74, 0x20, 0x61, 0x75, 0x74, 
+-	0x6f, 0x3b, 0x20, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x3a, 
+-	0x31, 0x30, 0x30, 0x25, 0x3b, 0x20, 0x63, 0x6f, 0x6c, 0x6f, 
+-	0x72, 0x3a, 0x20, 0x23, 0x30, 0x30, 0x30, 0x3b, 0x20, 0x62, 
+-	0x61, 0x63, 0x6b, 0x67, 0x72, 0x6f, 0x75, 0x6e, 0x64, 0x2d, 
+-	0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x3a, 0x20, 0x23, 0x66, 0x62, 
+-	0x62, 0x30, 0x33, 0x34, 0x3b, 0x22, 0x3e, 0xa, 0x9, 0x9, 
+-	0x3c, 0x68, 0x31, 0x3e, 0x46, 0x6c, 0x61, 0x73, 0x68, 0x69, 
+-	0x6e, 0x67, 0x3c, 0x2f, 0x68, 0x31, 0x3e, 0xa, 0x9, 0x9, 
+-	0x54, 0x68, 0x65, 0x20, 0x73, 0x79, 0x73, 0x74, 0x65, 0x6d, 
+-	0x20, 0x69, 0x73, 0x20, 0x6e, 0x6f, 0x77, 0x20, 0x74, 0x72, 
+-	0x79, 0x69, 0x6e, 0x67, 0x20, 0x74, 0x6f, 0x20, 0x66, 0x6c, 
+-	0x61, 0x73, 0x68, 0x2e, 0x20, 0x49, 0x66, 0x20, 0x74, 0x68, 
+-	0x65, 0x72, 0x65, 0x20, 0x69, 0x73, 0x20, 0x61, 0x20, 0x70, 
+-	0x72, 0x6f, 0x62, 0x6c, 0x65, 0x6d, 0x2c, 0x20, 0x74, 0x68, 
+-	0x65, 0x20, 0x6c, 0x65, 0x64, 0x73, 0x20, 0x77, 0x69, 0x6c, 
+-	0x6c, 0x20, 0x73, 0x74, 0x61, 0x72, 0x74, 0x20, 0x74, 0x6f, 
+-	0x20, 0x62, 0x6c, 0x69, 0x6e, 0x6b, 0x2e, 0xa, 0xa, 0x9, 
+-	0x9, 0x41, 0x66, 0x74, 0x65, 0x72, 0x20, 0x61, 0x20, 0x73, 
+-	0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x66, 0x75, 0x6c, 0x6c, 
+-	0x20, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x20, 0x74, 0x68, 
+-	0x65, 0x20, 0x62, 0x6f, 0x78, 0x20, 0x77, 0x69, 0x6c, 0x6c, 
+-	0x20, 0x72, 0x65, 0x62, 0x6f, 0x6f, 0x74, 0xa, 0x9, 0x3c, 
+-	0x2f, 0x62, 0x6f, 0x64, 0x79, 0x3e, 0xa, 0x3c, 0x2f, 0x68, 
+-	0x74, 0x6d, 0x6c, 0x3e, 0xa, };
+-
+-const struct fsdata_file file_flashing_html[] = {{NULL, data_flashing_html, data_flashing_html + 15, sizeof(data_flashing_html) - 15}};
++static const char data_flashing_html[] =
++"HTTP/1.0 200 OK\n"
++"Server: uIP/0.9 (http://dunkels.com/adam/uip/)\n"
++"Content-type: text/html\n"
++"\n"
++"<html>\n"
++"\t<head>\n"
++"\t\t<title>\n"
++"\t\t\tFailsafe UI\n"
++"\t\t</title>\n"
++"\t</head>\n"
++"\t<body>\n"
++"\t\t<center><h1>Upgrading system...</h1></center>\n"
++"\t</body>\n"
++"</html>\n";
++
++static const char data_fail_html[] =
++"HTTP/1.0 200 OK\n"
++"Server: uIP/0.9 (http://dunkels.com/adam/uip/)\n"
++"Content-type: text/html\n"
++"\n"
++"<html>\n"
++"\t<head>\n"
++"\t\t<title>\n"
++"\t\t\tFailsafe UI\n"
++"\t\t</title>\n"
++"\t</head>\n"
++"\t<body>\n"
++"\t\t<h1>Flashing failed</h1>\n"
++"\t\tERROR - the image you uploaded failed to pass verification.<br>\n"
++"\t\tPlease make sure to use an official update provided by http://lantiq.com/\n"
++"\t</body>\n"
++"</html>\n";
++
++static const char data_404_html[] =
++"HTTP/1.0 404 File not found\n"
++"Server: uIP/0.9 (http://dunkels.com/adam/uip/)\n"
++"Content-type: text/html\n"
++"\n"
++"<html>\n"
++"\t<head>\n"
++"\t\t<title>\n"
++"\t\t\tFailsafe UI\n"
++"\t\t</title>\n"
++"\t</head>\n"
++"\t<body>\n"
++"\t\t<center><h1>404 - file not found</h1></center>\n"
++"\t</body>\n"
++"</html>\n";
++
++static const char data_index_html[] =
++"HTTP/1.0 200 OK\n"
++"Server: uIP/0.9 (http://dunkels.com/adam/uip/)\n"
++"Content-type: text/html\n"
++"\n"
++"<html>\n"
++"\t<head>\n"
++"\t\t<title>\n"
++"\t\t\tFailsafe UI\n"
++"\t\t</title>\n"
++"\t</head>\n"
++"\t<body>\n"
++"\t\t<h1>Failsafe UI</h1>\n"
++"\t\t<form method=\"post\" enctype=\"multipart/form-data\">\n"
++"\t\t\t<input type=file name=firmware>\n"
++"\t\t\t<input type=submit>\n"
++"\t\t</form>\n"
++"\t</body>\n"
++"</html>\n";
++
++static const char data_flash_html[] =
++"HTTP/1.0 200 OK\n"
++"Server: uIP/0.9 (http://dunkels.com/adam/uip/)\n"
++"Content-type: text/html\n"
++"\n"
++"<html>\n"
++"\t<head>\n"
++"\t\t<title>\n"
++"\t\t\tFailsafe UI\n"
++"\t\t</title>\n"
++"\t</head>\n"
++"\t<body>\n"
++"\t\t<h1>Flashing...</h1>\n"
++"\t\tThe system is now trying to flash. If there is a problem, the LEDs will "
++"start to blink.<br>\n"
++"\n"
++"\t\tAfter a successful update the box will reboot\n"
++"\t</body>\n"
++"</html>\n";
++
++const struct fsdata_file file_flashing_html[] =
++{{NULL, "/flashing.html", data_flashing_html, sizeof(data_flashing_html)}};
++
++const struct fsdata_file file_fail_html[] =
++{{file_flashing_html, "/fail.html", data_fail_html, sizeof(data_fail_html)}};
+ 
+-const struct fsdata_file file_fail_html[] = {{file_flashing_html, data_fail_html, data_fail_html + 11, sizeof(data_fail_html) - 11}};
++const struct fsdata_file file_404_html[] =
++{{file_fail_html, "/404.html", data_404_html, sizeof(data_404_html)}};
+ 
+-const struct fsdata_file file_404_html[] = {{file_fail_html, data_404_html, data_404_html + 10, sizeof(data_404_html) - 10}};
++const struct fsdata_file file_index_html[] =
++{{file_404_html, "/index.html", data_index_html, sizeof(data_index_html)}};
+ 
+-const struct fsdata_file file_index_html[] = {{file_404_html, data_index_html, data_index_html + 12, sizeof(data_index_html) - 12}};
+-
+-const struct fsdata_file file_flash_html[] = {{file_index_html, data_flash_html, data_flash_html + 12, sizeof(data_flash_html) - 12}};
++const struct fsdata_file file_flash_html[] =
++{{file_index_html, "/flash.html", data_flash_html, sizeof(data_flash_html)}};
+ 
+ #define FS_ROOT file_flash_html
+ 
+-#define FS_NUMFILES 5
+\ No newline at end of file
++#define FS_NUMFILES 5
+--- a/net/uip-0.9/httpd.c
++++ b/net/uip-0.9/httpd.c
+@@ -130,7 +130,7 @@ httpd_appcall(void)
+ 					if(!fs_open((const char *)&uip_appdata[4], &fsfile))
+ 					{
+ 						PRINTLN("couldn't open file");
+-						fs_open(file_index_html.name, &fsfile);
++						fs_open(file_404_html.name, &fsfile);
+ 					}
+ 				}
+ 				hs->script = 0;
+@@ -141,7 +141,7 @@ httpd_appcall(void)
+ 			if(hs->state == HTTP_FIRMWARE)
+ 			{
+ 				unsigned char *start = (unsigned char*)uip_appdata;
+-				char *clen = strstr(start, "Content-Length:");
++				char *clen = strstr((char *)start, "Content-Length:");
+ 				int len = 0;
+ 				unsigned char *next, *end;
+ 				unsigned char *boundary_start;
+@@ -150,14 +150,14 @@ httpd_appcall(void)
+ 				if(clen)
+ 				{
+ 					clen += sizeof("Content-Length:");
+-					next = strstr(clen, eol);
++					next = (unsigned char *)strstr(clen, eol);
+ 					if(next)
+ 					{
+ 						len = atoi(clen);
+ 						next++;
+ 						printf("expecting %d bytes\n", len);
+ 						upload_data = httpd_upload_data = (unsigned char *)do_http_tmp_address();
+-						printf("received data will be stored at 0x%08X\n", upload_data);
++						printf("received data will be stored at %p\n", upload_data);
+ 						if(!upload_data)
+ 						{
+ 							printf("failed to allocate memory\n");
+@@ -174,14 +174,14 @@ httpd_appcall(void)
+ 					uip_close();
+ 					return;
+ 				}
+-				boundary_start = strstr(next, "---");
++				boundary_start = (unsigned char *)strstr((char *)next, "---");
+ 				if(!boundary_start)
+ 				{
+ 					uip_close();
+ 					return;
+ 				}
+-				end = strstr(boundary_start, eol);
+-				if(!eol)
++				end = (unsigned char *)strstr((char *)boundary_start, eol);
++				if(!end)
+ 				{
+ 					uip_close();
+ 					return;
+@@ -189,13 +189,13 @@ httpd_appcall(void)
+ 				boundary_len = end - boundary_start;
+ 				memcpy(boundary, boundary_start, boundary_len);
+ 				boundary[boundary_len] = 0;
+-				next = strstr(boundary_start, "name=\"firmware\";");
++				next = (unsigned char *)strstr((char *)boundary_start, "name=\"firmware\";");
+ 				if(!next)
+ 				{
+ 					uip_close();
+ 					return;
+ 				}
+-				next = strstr(next, eol2);
++				next = (unsigned char *)strstr((char *)next, eol2);
+ 				if(!next)
+ 				{
+ 					printf("could not find start of data\n");
+@@ -259,7 +259,6 @@ httpd_appcall(void)
+ 				{
+ 					if(upload_running)
+ 					{
+-						int i;
+ 						httpd_upload_complete = 1;
+ 					//	for(i = 0; i < hs->upload_total; i++)
+ 					//		printf("%c", httpd_upload_data[i]);
+@@ -267,7 +266,7 @@ httpd_appcall(void)
+ 					uip_close();
+ 				}
+ 			}
+-			uip_send(hs->dataptr, hs->count);
++			uip_send((unsigned char *)hs->dataptr, hs->count);
+ 		}
+ 		break;
+ 
