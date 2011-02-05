@@ -1,5 +1,7 @@
 PKG_INSTALL:=1
 
+MAKE_FLAGS+=VERBOSE=1
+
 define Build/Configure/Default
 	(cd $(PKG_BUILD_DIR); \
 		CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS)" \
