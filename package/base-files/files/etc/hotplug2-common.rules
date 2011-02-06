@@ -40,6 +40,7 @@ DEVPATH is set {
 }
 
 FIRMWARE is set, ACTION == add {
+	exec /sbin/hotplug-call firmware
 	load-firmware /lib/firmware
 	next-event
 }
