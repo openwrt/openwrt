@@ -1,0 +1,14 @@
+#!/bin/sh
+
+do_extract_cal_bme_pmm() {
+	[ -e /lib/firmware/n810-cal-bme-pmm.fw ] && return 0
+
+	[ -x /usr/bin/calvaria ] || { echo "CAL-BME extract: calvaria not found"; return 1; }
+
+	/usr/bin/calvaria -p -n bme -i last /dev/mtdblock1 >/lib/firmware/n810-cal-bme-pmm.fw || {
+		echo "CAL-BME extract: Failed to extract blob"
+		return 1
+	}
+}
+
+boot_hook_add preinit_mount_root do_extract_cal_bme_pmm
