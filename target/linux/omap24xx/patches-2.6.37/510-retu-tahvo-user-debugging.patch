@@ -4,10 +4,10 @@
  drivers/cbus/tahvo-user.c |   75 +++++++++++++++++++++++++++++
  3 files changed, 198 insertions(+), 2 deletions(-)
 
-Index: linux-2.6.37-rc1/drivers/cbus/Kconfig
+Index: linux-2.6.37/drivers/cbus/Kconfig
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/cbus/Kconfig	2010-11-05 17:04:49.001997921 +0100
-+++ linux-2.6.37-rc1/drivers/cbus/Kconfig	2010-11-05 17:04:52.017998785 +0100
+--- linux-2.6.37.orig/drivers/cbus/Kconfig	2011-02-05 20:01:30.636705379 +0100
++++ linux-2.6.37/drivers/cbus/Kconfig	2011-02-05 20:56:11.593025426 +0100
 @@ -28,6 +28,10 @@
  	  If you want support for Tahvo's user space read/write etc. functions,
  	  you should say Y here.
@@ -30,10 +30,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/Kconfig
  config CBUS_RETU_POWERBUTTON
  	depends on CBUS_RETU
  	bool "Support for Retu power button"
-Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
+Index: linux-2.6.37/drivers/cbus/retu-user.c
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/cbus/retu-user.c	2010-11-05 17:04:49.002997987 +0100
-+++ linux-2.6.37-rc1/drivers/cbus/retu-user.c	2010-11-05 17:04:52.017998785 +0100
+--- linux-2.6.37.orig/drivers/cbus/retu-user.c	2011-02-05 20:01:30.637705440 +0100
++++ linux-2.6.37/drivers/cbus/retu-user.c	2011-02-05 20:56:42.584938988 +0100
 @@ -46,6 +46,12 @@
  
  #define PFX			"retu-user: "
@@ -47,7 +47,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
  /* Bitmap for marking the interrupt sources as having the handlers */
  static u32 retu_irq_bits;
  
-@@ -105,6 +111,94 @@
+@@ -105,6 +111,93 @@
  	3
  };
  
@@ -88,7 +88,6 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
 +		[RETU_REG_STATUS]	= "Status register",
 +		[RETU_REG_WATCHDOG]	= "Watchdog register",
 +		[RETU_REG_AUDTXR]	= "Audio Codec Tx register",
-+		[0x14]			= "Charger detect?",
 +	};
 +	const char *name;
 +
@@ -142,7 +141,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
  /*
   * The handler for all RETU interrupts.
   *
-@@ -157,6 +251,8 @@
+@@ -157,6 +250,8 @@
  	/* Mark that this interrupt has a handler */
  	retu_irq_bits |= 1 << id;
  
@@ -151,7 +150,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
  	return 0;
  }
  
-@@ -216,6 +312,10 @@
+@@ -216,6 +311,10 @@
  
  	/* Generate new value */
  	tmp = (tmp & ~MASK(field)) | (value & MASK(field));
@@ -162,7 +161,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
  	/* Write data to RETU */
  	retu_write_reg(reg, tmp);
  	spin_unlock_irqrestore(&retu_lock, flags);
-@@ -244,6 +344,9 @@
+@@ -244,6 +343,9 @@
  	/* Read the register */
  	value = retu_read_reg(reg) & mask;
  
@@ -172,7 +171,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
  	/* Right justify value */
  	while (!(mask & 1)) {
  		value = value >> 1;
-@@ -273,7 +376,7 @@
+@@ -273,7 +375,7 @@
  static long retu_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
  {
  	struct retu_tahvo_write_parms par;
@@ -181,7 +180,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
  
  	switch (cmd) {
  	case URT_IOCT_IRQ_SUBSCR:
-@@ -290,7 +393,15 @@
+@@ -290,7 +392,15 @@
  			printk(KERN_ERR "copy_to_user failed: %d\n", ret);
  		break;
  	case RETU_IOCH_ADC_READ:
@@ -198,7 +197,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
  	default:
  		return -ENOIOCTLCMD;
  	}
-@@ -332,6 +443,8 @@
+@@ -332,6 +442,8 @@
  		list_move(&irq->node, &retu_irqs_reserve);
  		spin_unlock_irqrestore(&retu_irqs_lock, flags);
  
@@ -207,10 +206,10 @@ Index: linux-2.6.37-rc1/drivers/cbus/retu-user.c
  		ret = copy_to_user(buf + i * sizeof(irq_id), &irq_id,
  				   sizeof(irq_id));
  		if (ret)
-Index: linux-2.6.37-rc1/drivers/cbus/tahvo-user.c
+Index: linux-2.6.37/drivers/cbus/tahvo-user.c
 ===================================================================
---- linux-2.6.37-rc1.orig/drivers/cbus/tahvo-user.c	2010-11-05 17:04:49.003998052 +0100
-+++ linux-2.6.37-rc1/drivers/cbus/tahvo-user.c	2010-11-05 17:04:52.018998824 +0100
+--- linux-2.6.37.orig/drivers/cbus/tahvo-user.c	2011-02-05 20:01:30.638705501 +0100
++++ linux-2.6.37/drivers/cbus/tahvo-user.c	2011-02-05 20:57:03.817249794 +0100
 @@ -46,6 +46,12 @@
  
  #define PFX			"tahvo-user: "
@@ -224,7 +223,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo-user.c
  /* Bitmap for marking the interrupt sources as having the handlers */
  static u32 tahvo_irq_bits;
  
-@@ -87,6 +93,64 @@
+@@ -87,6 +93,60 @@
  	1
  };
  
@@ -255,10 +254,6 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo-user.c
 +		[TAHVO_REG_IMR]		= "Interrupt mask",
 +		[TAHVO_REG_LEDPWMR]	= "LED PWM",
 +		[TAHVO_REG_USBR]	= "USB control",
-+		[0x04]			= "Charge current control?",
-+		[0x08]			= "Charge ctl 1?",
-+		[0x0C]			= "Charge ctl 2?",
-+		[0x0D]			= "Battery current ADC?",
 +	};
 +	const char *name;
 +
@@ -289,7 +284,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo-user.c
  /*
   * The handler for all TAHVO interrupts.
   *
-@@ -142,6 +206,8 @@
+@@ -142,6 +202,8 @@
  	/* Mark that this interrupt has a handler */
  	tahvo_irq_bits |= 1 << id;
  
@@ -298,7 +293,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo-user.c
  	return 0;
  }
  
-@@ -200,6 +266,10 @@
+@@ -200,6 +262,10 @@
  	}
  	/* Generate a new value */
  	tmp = (tmp & ~MASK(field)) | (value & MASK(field));
@@ -309,7 +304,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo-user.c
  	/* Write data to TAHVO */
  	tahvo_write_reg(reg, tmp);
  	spin_unlock_irqrestore(&tahvo_lock, flags);
-@@ -228,6 +298,9 @@
+@@ -228,6 +294,9 @@
  	/* Read the register */
  	value = tahvo_read_reg(reg) & mask;
  
@@ -319,7 +314,7 @@ Index: linux-2.6.37-rc1/drivers/cbus/tahvo-user.c
  	/* Right justify value */
  	while (!(mask & 1)) {
  		value = value >> 1;
-@@ -314,6 +387,8 @@
+@@ -314,6 +383,8 @@
  		list_move(&irq->node, &tahvo_irqs_reserve);
  		spin_unlock_irqrestore(&tahvo_irqs_lock, flags);
  
