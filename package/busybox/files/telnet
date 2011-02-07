@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 START=50
 
 has_root_pwd() {
@@ -11,14 +11,14 @@ has_root_pwd() {
 }
 
 has_ssh_pubkey() {
-	( test -x /usr/sbin/dropbear && grep -qs "^ssh-" /etc/dropbear/authorized_keys ) || \
-	( test -x /usr/sbin/sshd && grep -qs "^ssh-" /root/.ssh/authorized_keys )
+	( /etc/init.d/dropbear enabled 2> /dev/null && grep -qs "^ssh-" /etc/dropbear/authorized_keys ) || \
+	( /etc/init.d/sshd enabled 2> /dev/null && grep -qs "^ssh-" /root/.ssh/authorized_keys )
 }
 
 start() {
 	if ( ! has_ssh_pubkey && \
 	     ! has_root_pwd /etc/passwd && ! has_root_pwd /etc/shadow ) || \
-	   ( [ ! -x /usr/sbin/dropbear ] && [ ! -x /usr/sbin/sshd ] );
+	   ( ! /etc/init.d/dropbear enabled 2> /dev/null && ! /etc/init.d/sshd enabled 2> /dev/null );
 	then
 		telnetd -l /bin/login.sh
 	fi
