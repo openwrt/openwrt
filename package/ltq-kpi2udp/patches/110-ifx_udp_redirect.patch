@@ -1,0 +1,29 @@
+--- a/ifx_udp_redirect.c
++++ b/ifx_udp_redirect.c
+@@ -256,7 +256,7 @@
+    {
+       if (redtab.channels[i].in_use == IFX_TRUE)
+       {
+-         if (redtab.channels[i].sk->sk_lock.owner != 0)
++         if (redtab.channels[i].sk->sk_lock.owned != 0)
+ 				return IFX_TRUE;
+       }
+    }
+@@ -545,7 +545,7 @@
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
+       if (sk->num != htons(sport))
+ #else
+-      if (((struct inet_sock *)sk)->num != htons(sport))
++      if (((struct inet_sock *)sk)->inet_num != htons(sport))
+ #endif
+       {
+          return CALL_MK_SESSION_ERR;
+@@ -628,7 +628,7 @@
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
+       if((vsock != NULL)&&(vsk != NULL)&&(vsk->num > 0))
+ #else
+-      if((vsock != NULL)&&(vsk != NULL)&&(((struct inet_sock *)vsk)->num > 0))
++      if((vsock != NULL)&&(vsk != NULL)&&(((struct inet_sock *)vsk)->inet_num > 0))
+ #endif
+       {
+          /*printk("[KPI2UDP] releasing vsock...%p, ops %p\n", vsock, vsock->ops);*/
