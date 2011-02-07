@@ -16,57 +16,65 @@ PKG_SOURCE_URL:=http://www.pjsip.org/release/$(PKG_VERSION)/
 PKG_MD5SUM:=f9aa9e58b4d697245eb4bfa7d81a54a3
 PKG_INSTALL:=1
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/pjproject-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/pjproject-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/pjsip
+define Package/pjsip-template
   SECTION:=lib
   CATEGORY:=Libraries
-  TITLE:=Voip lib
   URL:=http://www.pjsip.org/
-  DEPENDS:=+libuuid
   MAINTAINER:=John Crispin <blogic@openwrt.org>
+  TITLE:=pjsip-$(1)
+  VARIANT:=$(1)
+  DEPENDS:=+libuuid $(2)
 endef
 
-define Package/pjsip/config
-	source "$(SOURCE)/Config.in"
-endef
+CONFIGURE_PREFIX=/usr/pjsip-$(BUILD_VARIANT)
 
+ifeq ($(BUILD_VARIANT),oss)
+CONFIGURE_ARGS += \
+	--enable-g711-codec \
+	--disable-l16-codec \
+	--disable-g722-codec \
+	--disable-g7221-codec \
+	--disable-gsm-codec \
+	--disable-ilbc-coder \
+	--disable-libsamplerate \
+	--disable-ipp \
+	--disable-ssl \
+	--enable-oss \
+	--enable-sound
+endif
+
+ifeq ($(BUILD_VARIANT),ltq-tapi)
 CONFIGURE_ARGS += \
 	--enable-g711-codec \
 	--disable-l16-codec \
 	--disable-g722-codec \
 	--disable-g7221-codec \
 	--disable-ilbc-coder \
+	--disable-gsm-codec \
 	--disable-libsamplerate \
 	--disable-ipp \
 	--disable-ssl \
-	$(call autoconf_bool,CONFIG_PJSIP_GSM,gsm-codec) \
-	$(call autoconf_bool,CONFIG_PJSIP_SPEEX,speex-aec) \
-	$(call autoconf_bool,CONFIG_PJSIP_OSS,oss) \
-	$(call autoconf_bool,CONFIG_PJSIP_SOUND,sound) \
-	$(call autoconf_bool,CONFIG_PJSIP_DEV_TAPI,ltq-tapi)
-
-ifeq ($(CONFIG_PJSIP_DEV_TAPI),y)
+	--enable-sound \
+	--enable-ltq-tapi
 EXTRA_CFLAGS:=-I$(STAGING_DIR)/usr/include/drv_tapi -I$(STAGING_DIR)/usr/include/drv_vmmc
 endif
+
+Package/pjsip-oss=$(call Package/pjsip-template,oss,)
+Package/pjsip-ltq-tapi=$(call Package/pjsip-template,ltq-tapi,@TARGET_lantiq)
+
+define Build/Prepare
+	$(PKG_UNPACK)
+	$(Build/Patch)
+	$(CP) ./src/* $(PKG_BUILD_DIR)
+endef
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); autoconf aconfigure.ac > aconfigure)
 	$(call Build/Configure/Default)
-endef
-
-define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/{include,lib}
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/* \
-		$(1)/usr/include/
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/* \
-		$(1)/usr/lib/
-endef
-
-define Package/pjsip/install
-	$(INSTALL_DIR) $(1)/usr/sbin
 endef
 
 define Build/Compile
@@ -75,4 +83,15 @@ define Build/Compile
 		$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH)
 endef
 
-$(eval $(call BuildPackage,pjsip))
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/
+	$(CP) $(PKG_INSTALL_DIR)/usr/pjsip-$(BUILD_VARIANT) \
+		$(1)/usr/
+endef
+
+define Package/pjsip-$(BUILD_VARIANT)/install
+	echo "foo"
+endef
+
+$(eval $(call BuildPackage,pjsip-oss))
+$(eval $(call BuildPackage,pjsip-ltq-tapi))
