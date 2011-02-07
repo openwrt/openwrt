@@ -4,6 +4,8 @@
 # 	exec logger -s -t hotplug -p daemon.info "name=%DEVICENAME%, path=%DEVPATH%"
 # }
 
+$include /etc/hotplug2-platform.rules
+
 DEVICENAME ~~ (^null$|^full$|^ptmx$|^tty|^zero$|^gpio|^hvc) {
 	makedev /dev/%DEVICENAME% 0666
 	next-event
