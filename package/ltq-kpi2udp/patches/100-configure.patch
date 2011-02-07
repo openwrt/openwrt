@@ -1,0 +1,11 @@
+--- a/configure.in
++++ b/configure.in
+@@ -113,7 +113,7 @@
+ AC_ARG_ENABLE(kernelbuild,
+         AS_HELP_STRING(--enable-kernelbuild=x,Set the target kernel build path),
+         [
+-                if test -r $enableval/include/linux/autoconf.h; then
++                if test -r $enableval/include/generated/autoconf.h; then
+                         AC_SUBST([KERNEL_BUILD_PATH],[$enableval])
+                 else
+                         AC_MSG_ERROR([The kernel build directory is not valid or not configured!])
