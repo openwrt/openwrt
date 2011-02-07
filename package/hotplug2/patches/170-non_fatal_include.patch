@@ -1,0 +1,11 @@
+--- a/parser/parser.c
++++ b/parser/parser.c
+@@ -578,7 +578,7 @@ int parser_file(const char *filename, st
+ 	ctx.lexer.fp = fopen(filename, "r");
+ 	if (ctx.lexer.fp == NULL) {
+ 		parser_clear(&ctx);
+-		return -1;
++		return 0;
+ 	}
+ 	ctx.lexer.filename = strdup(filename);
+ 
