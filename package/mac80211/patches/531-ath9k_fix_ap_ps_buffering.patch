@@ -96,16 +96,20 @@
  			if (!(sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)) {
  				if (bf->bf_next == NULL && bf_last->bf_stale) {
  					struct ath_buf *tbf;
-@@ -547,6 +553,8 @@ static void ath_tx_complete_aggr(struct 
+@@ -546,7 +552,12 @@ static void ath_tx_complete_aggr(struct 
+ 
  	/* prepend un-acked frames to the beginning of the pending frame queue */
  	if (!list_empty(&bf_pending)) {
++		if (an->sleeping)
++			ieee80211_sta_set_tim(sta);
++
  		spin_lock_bh(&txq->axq_lock);
 +		if (clear_filter)
 +			tid->ac->clear_ps_filter = true;
  		list_splice(&bf_pending, &tid->buf_q);
  		ath_tx_queue_tid(txq, tid);
  		spin_unlock_bh(&txq->axq_lock);
-@@ -816,6 +824,11 @@ static void ath_tx_sched_aggr(struct ath
+@@ -816,6 +827,11 @@ static void ath_tx_sched_aggr(struct ath
  		bf = list_first_entry(&bf_q, struct ath_buf, list);
  		bf->bf_lastbf = list_entry(bf_q.prev, struct ath_buf, list);
  
@@ -117,7 +121,7 @@
  		/* if only one frame, send as non-aggregate */
  		if (bf == bf->bf_lastbf) {
  			fi = get_frame_info(bf->bf_mpdu);
-@@ -896,6 +909,67 @@ void ath_tx_aggr_stop(struct ath_softc *
+@@ -896,6 +912,67 @@ void ath_tx_aggr_stop(struct ath_softc *
  	ath_tx_flush_tid(sc, txtid);
  }
  
@@ -185,7 +189,7 @@
  void ath_tx_aggr_resume(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid)
  {
  	struct ath_atx_tid *txtid;
-@@ -1492,7 +1566,6 @@ static int setup_tx_flags(struct sk_buff
+@@ -1492,7 +1569,6 @@ static int setup_tx_flags(struct sk_buff
  	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
  	int flags = 0;
  
@@ -193,7 +197,7 @@
  	flags |= ATH9K_TXDESC_INTREQ;
  
  	if (tx_info->flags & IEEE80211_TX_CTL_NO_ACK)
-@@ -1755,6 +1828,9 @@ static void ath_tx_start_dma(struct ath_
+@@ -1755,6 +1831,9 @@ static void ath_tx_start_dma(struct ath_
  		if (txctl->paprd)
  			bf->bf_state.bfs_paprd_timestamp = jiffies;
  
