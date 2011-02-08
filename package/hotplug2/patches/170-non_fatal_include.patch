@@ -1,11 +1,21 @@
---- a/parser/parser.c
-+++ b/parser/parser.c
-@@ -578,7 +578,7 @@ int parser_file(const char *filename, st
+Index: hotplug2-201/parser/parser.c
+===================================================================
+--- hotplug2-201.orig/parser/parser.c	2009-12-09 19:44:13.000000000 +0100
++++ hotplug2-201/parser/parser.c	2011-02-08 18:06:44.681213713 +0100
+@@ -1,5 +1,7 @@
+ #include "parser.h"
+ 
++#include <errno.h>
++
+ /*
+  * Grammar: 
+  * input => directive // TOKEN_ROOTKW
+@@ -578,7 +580,7 @@
  	ctx.lexer.fp = fopen(filename, "r");
  	if (ctx.lexer.fp == NULL) {
  		parser_clear(&ctx);
 -		return -1;
-+		return 0;
++		return (errno == ENOENT) ? 0 : -1;
  	}
  	ctx.lexer.filename = strdup(filename);
  
