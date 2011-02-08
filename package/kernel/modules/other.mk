@@ -861,3 +861,20 @@ define KernelPackage/rtc-pcf8563/description
 endef
 
 $(eval $(call KernelPackage,rtc-pcf8563))
+
+
+define KernelPackage/n810bm
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Nokia N810 battery management driver
+  DEPENDS:=@TARGET_omap24xx
+  KCONFIG:=CONFIG_N810BM
+  FILES:=$(LINUX_DIR)/drivers/cbus/n810bm.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,01,n810bm)
+endef
+
+define KernelPackage/n810bm/description
+  Nokia N810 battery management driver.
+  Controls battery power management and battery charging.
+endef
+
+$(eval $(call KernelPackage,n810bm))
