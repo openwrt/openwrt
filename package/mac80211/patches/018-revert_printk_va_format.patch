@@ -186,24 +186,3 @@
  	va_end(args);
  }
  #endif /* DEBUG */
---- a/drivers/net/wireless/ath/main.c
-+++ b/drivers/net/wireless/ath/main.c
-@@ -60,16 +60,13 @@ EXPORT_SYMBOL(ath_rxbuf_alloc);
- int ath_printk(const char *level, struct ath_common *common,
- 	       const char *fmt, ...)
- {
--	struct va_format vaf;
- 	va_list args;
- 	int rtn;
- 
- 	va_start(args, fmt);
- 
--	vaf.fmt = fmt;
--	vaf.va = &args;
--
--	rtn = printk("%sath: %pV", level, &vaf);
-+	printk("%sath: ", level);
-+	rtn = vprintk(fmt, args);
- 
- 	va_end(args);
- 
