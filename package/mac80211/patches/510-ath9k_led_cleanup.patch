@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -447,26 +447,20 @@ void ath9k_btcoex_timer_pause(struct ath
+@@ -449,26 +449,20 @@ void ath9k_btcoex_timer_pause(struct ath
  
  #define ATH_LED_PIN_DEF 		1
  #define ATH_LED_PIN_9287		8
@@ -38,7 +38,7 @@
  
  /* Antenna diversity/combining */
  #define ATH_ANT_RX_CURRENT_SHIFT 4
-@@ -618,15 +612,11 @@ struct ath_softc {
+@@ -620,15 +614,11 @@ struct ath_softc {
  	struct ath_beacon beacon;
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
@@ -253,7 +253,7 @@
  /*	Rfkill	   */
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1259,9 +1259,6 @@ static void ath9k_stop(struct ieee80211_
+@@ -1204,9 +1204,6 @@ static void ath9k_stop(struct ieee80211_
  
  	mutex_lock(&sc->mutex);
  
@@ -261,8 +261,8 @@
 -		cancel_delayed_work_sync(&sc->ath_led_blink_work);
 -
  	cancel_delayed_work_sync(&sc->tx_complete_work);
+ 	cancel_delayed_work_sync(&sc->hw_pll_work);
  	cancel_work_sync(&sc->paprd_work);
- 	cancel_work_sync(&sc->hw_check_work);
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
 @@ -145,6 +145,21 @@ static struct ieee80211_rate ath9k_legac
@@ -287,7 +287,7 @@
  static void ath9k_deinit_softc(struct ath_softc *sc);
  
  /*
-@@ -748,6 +763,13 @@ int ath9k_init_device(u16 devid, struct 
+@@ -746,6 +761,13 @@ int ath9k_init_device(u16 devid, struct 
  
  	ath9k_init_txpower_limits(sc);
  
