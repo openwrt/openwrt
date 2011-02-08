@@ -10,9 +10,16 @@ has_root_pwd() {
 	test -n "${pwd#!}"
 }
 
+get_root_home() {
+	local homedir=$([ -f "$1" ] && cat "$1")
+	homedir="${homedir#*:*:0:0:*:}"
+
+	echo "${homedir%%:*}"
+}
+
 has_ssh_pubkey() {
 	( /etc/init.d/dropbear enabled 2> /dev/null && grep -qs "^ssh-" /etc/dropbear/authorized_keys ) || \
-	( /etc/init.d/sshd enabled 2> /dev/null && grep -qs "^ssh-" /root/.ssh/authorized_keys )
+	( /etc/init.d/sshd enabled 2> /dev/null && grep -qs "^ssh-" "$(get_root_home /etc/passwd)"/.ssh/authorized_keys )
 }
 
 start() {
