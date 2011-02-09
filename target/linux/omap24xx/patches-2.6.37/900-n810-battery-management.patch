@@ -41,8 +41,8 @@ Index: linux-2.6.37/drivers/cbus/Makefile
 Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/n810bm_main.c	2011-02-09 13:47:23.831144291 +0100
-@@ -0,0 +1,1169 @@
++++ linux-2.6.37/drivers/cbus/n810bm_main.c	2011-02-09 19:05:18.435536304 +0100
+@@ -0,0 +1,1168 @@
 +/*
 + *   Nokia n810 battery management
 + *
@@ -86,7 +86,7 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +#define N810BM_PMM_BLOCK_SIZE		0x600
 +
 +#define N810BM_CHECK_INTERVAL		(HZ * 2)
-+#define N810BM_MIN_VOLTAGE_THRES	3300 /* Absolute minimum voltage threshold */
++#define N810BM_MIN_VOLTAGE_THRES	3200 /* Absolute minimum voltage threshold */
 +
 +
 +/* RETU_ADC_BSI
@@ -612,7 +612,6 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +					 struct n810bm, periodic_check_work);
 +	u16 status;
 +	bool battery_was_present, charger_was_present;
-+	bool force_charge = 0;
 +	int mv;
 +
 +	mutex_lock(&bm->mutex);
@@ -646,23 +645,23 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +			 bm->charger_present ? "plugged in" : "removed");
 +	}
 +
-+	if (bm->battery_present && !lipocharge_is_charging(&bm->charger)) {
++	if ((bm->battery_present && !bm->charger_present) ||
++	    !n810bm_known_battery_present(bm)){
 +		/* We're draining the battery */
 +		mv = n810bm_measure_batt_voltage(bm);
-+		if (mv < 0)
-+			n810bm_emergency(bm, "check timer: Failed to measure");
-+		if (!bm->charger_present) {
-+			if (mv < N810BM_MIN_VOLTAGE_THRES) {
-+				n810bm_emergency(bm, "check timer: "
-+					"Minimum voltage threshold reached");
-+			}
-+			force_charge = 1;
++		if (mv < 0) {
++			n810bm_emergency(bm,
++				"check: Failed to measure voltage");
++		}
++		if (mv < N810BM_MIN_VOLTAGE_THRES) {
++			n810bm_emergency(bm,
++				"check: Minimum voltage threshold reached");
 +		}
 +	}
 +
 +	if (bm->charger_present && n810bm_known_battery_present(bm)) {
 +		/* Known battery and charger are connected */
-+		if (bm->charger_enabled || force_charge) {
++		if (bm->charger_enabled) {
 +			/* Charger is enabled */
 +			if (!lipocharge_is_charging(&bm->charger)) {
 +				//TODO start charging, if battery is below some threshold
