@@ -12,8 +12,8 @@
 
 Index: linux-2.6.37/drivers/cbus/Kconfig
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/Kconfig	2011-02-06 00:24:48.502005279 +0100
-+++ linux-2.6.37/drivers/cbus/Kconfig	2011-02-06 00:24:48.550008091 +0100
+--- linux-2.6.37.orig/drivers/cbus/Kconfig	2011-02-06 14:05:49.838388760 +0100
++++ linux-2.6.37/drivers/cbus/Kconfig	2011-02-06 14:05:49.885395646 +0100
 @@ -94,4 +94,12 @@
  	  to Retu/Vilma. Detection state and events are exposed through
  	  sysfs.
@@ -29,8 +29,8 @@ Index: linux-2.6.37/drivers/cbus/Kconfig
  endmenu
 Index: linux-2.6.37/drivers/cbus/Makefile
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/Makefile	2011-02-06 00:24:48.493004751 +0100
-+++ linux-2.6.37/drivers/cbus/Makefile	2011-02-06 00:24:48.550008091 +0100
+--- linux-2.6.37.orig/drivers/cbus/Makefile	2011-02-06 14:05:49.829387442 +0100
++++ linux-2.6.37/drivers/cbus/Makefile	2011-02-06 14:05:49.885395646 +0100
 @@ -12,3 +12,6 @@
  obj-$(CONFIG_CBUS_TAHVO_USER)	+= tahvo-user.o
  obj-$(CONFIG_CBUS_RETU_USER)	+= retu-user.o
@@ -41,8 +41,8 @@ Index: linux-2.6.37/drivers/cbus/Makefile
 Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/n810bm_main.c	2011-02-06 13:36:49.581078785 +0100
-@@ -0,0 +1,959 @@
++++ linux-2.6.37/drivers/cbus/n810bm_main.c	2011-02-09 13:47:23.831144291 +0100
+@@ -0,0 +1,1169 @@
 +/*
 + *   Nokia n810 battery management
 + *
@@ -69,11 +69,14 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +#include <linux/device.h>
 +#include <linux/platform_device.h>
 +#include <linux/slab.h>
-+#include <linux/spinlock.h>
++#include <linux/mutex.h>
 +#include <linux/timer.h>
-+#include <linux/reboot.h>
 +#include <linux/firmware.h>
++#include <linux/bitops.h>
++#include <linux/workqueue.h>
++#include <linux/delay.h>
 +
++#include "cbus.h"
 +#include "retu.h"
 +#include "tahvo.h"
 +#include "lipocharge.h"
@@ -132,22 +135,37 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	N810BM_CAP_1500MAH	= 1500,	/* 1500 mAh battery */
 +};
 +
++enum n810bm_notify_flags {
++	N810BM_NOTIFY_battery_charging,
++	N810BM_NOTIFY_charger_pwm,
++};
++
 +struct n810bm {
 +	bool battery_present;			/* A battery is inserted */
 +	bool charger_present;			/* The charger is connected */
 +	enum n810bm_capacity capacity;		/* The capacity of the inserted battery (if any) */
 +
-+	bool charger_enabled;			/* Want to charge? */ //TODO
++	bool charger_enabled;			/* Want to charge? */
 +	struct lipocharge charger;		/* Charger subsystem */
++	unsigned int active_current_pwm;	/* Active value of TAHVO_REG_CHGCURR */
++	int current_measure_enabled;		/* Current measure enable refcount */
 +
 +	struct platform_device *pdev;
 +	const struct firmware *pmm_block;	/* CAL PMM block */
 +
-+	struct timer_list check_timer;
++	bool verbose_charge_log;		/* Verbose charge logging */
++
++	unsigned long notify_flags;
++	struct work_struct notify_work;
++	struct work_struct currmeas_irq_work;
++	struct delayed_work periodic_check_work;
 +
 +	bool initialized;			/* The hardware was initialized */
-+	spinlock_t lock;
++	struct mutex mutex;
 +};
++
++static void n810bm_notify_battery_charging(struct n810bm *bm);
++static void n810bm_notify_charger_pwm(struct n810bm *bm);
 +
 +
 +static inline struct n810bm * device_to_n810bm(struct device *dev)
@@ -158,13 +176,18 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	return bm;
 +}
 +
++static inline bool n810bm_known_battery_present(struct n810bm *bm)
++{
++	return bm->battery_present &&
++	       bm->capacity != N810BM_CAP_UNKNOWN &&
++	       bm->capacity != N810BM_CAP_NONE;
++}
++
 +static NORET_TYPE void n810bm_emergency(struct n810bm *bm, const char *message) ATTRIB_NORET;
 +static void n810bm_emergency(struct n810bm *bm, const char *message)
 +{
 +	printk(KERN_EMERG "n810 battery management fatal fault: %s\n", message);
-+	/* Force a hard shutdown. */
-+	machine_power_off();
-+	panic("n810bm: Failed to halt machine in emergency state\n");
++	cbus_emergency();
 +}
 +
 +static u16 tahvo_read(struct n810bm *bm, unsigned int reg)
@@ -290,7 +313,8 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	return value;
 +}
 +
-+/* Set the current measure timer that triggers on Tahvo IRQ 7 */
++/* Set the current measure timer that triggers on Tahvo IRQ 7
++ * An interval of zero disables the timer. */
 +static void n810bm_set_current_measure_timer(struct n810bm *bm,
 +					     u16 millisec_interval)
 +{
@@ -308,38 +332,39 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +		  TAHVO_REG_CHGCTL_CURTIMRST);
 +	tahvo_clear(bm, TAHVO_REG_CHGCTL,
 +		    TAHVO_REG_CHGCTL_CURTIMRST);
-+}
 +
-+static void n810bm_enable_current_measure(struct n810bm *bm, bool slow, bool irq)
-+{
-+	u16 millisec_interval;
-+
-+	if (slow)
-+		millisec_interval = 1000;
-+	else
-+		millisec_interval = 250;
-+
-+	/* Enable the current measurement circuitry */
-+	tahvo_set(bm, TAHVO_REG_CHGCTL,
-+		  TAHVO_REG_CHGCTL_CURMEAS);
-+
-+	/* Setup the measurement timer */
-+	n810bm_set_current_measure_timer(bm, millisec_interval);
-+	if (irq)
++	if (millisec_interval)
 +		tahvo_enable_irq(TAHVO_INT_BATCURR);
++	else
++		tahvo_disable_irq(TAHVO_INT_BATCURR);
 +
 +	//TODO also do a software timer for safety.
 +}
 +
++static void n810bm_enable_current_measure(struct n810bm *bm)
++{
++	WARN_ON(bm->current_measure_enabled < 0);
++	if (!bm->current_measure_enabled) {
++		/* Enable the current measurement circuitry */
++		tahvo_set(bm, TAHVO_REG_CHGCTL,
++			  TAHVO_REG_CHGCTL_CURMEAS);
++		dev_dbg(&bm->pdev->dev,
++			"Current measurement circuitry enabled");
++	}
++	bm->current_measure_enabled++;
++}
++
 +static void n810bm_disable_current_measure(struct n810bm *bm)
 +{
-+	/* Disable the measurement timer */
-+	n810bm_set_current_measure_timer(bm, 0);
-+	tahvo_disable_irq(TAHVO_INT_BATCURR);
-+
-+	/* Disable the current measurement circuitry */
-+	tahvo_clear(bm, TAHVO_REG_CHGCTL,
-+		    TAHVO_REG_CHGCTL_CURMEAS);
++	bm->current_measure_enabled--;
++	WARN_ON(bm->current_measure_enabled < 0);
++	if (!bm->current_measure_enabled) {
++		/* Disable the current measurement circuitry */
++		tahvo_clear(bm, TAHVO_REG_CHGCTL,
++			    TAHVO_REG_CHGCTL_CURMEAS);
++		dev_dbg(&bm->pdev->dev,
++			"Current measurement circuitry disabled");
++	}
 +}
 +
 +/* Measure the actual battery current. Returns a signed value in mA.
@@ -349,6 +374,8 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	u16 retval;
 +	int adc = 0, ma, i;
 +
++	if (WARN_ON(bm->current_measure_enabled <= 0))
++		return 0;
 +	for (i = 0; i < 3; i++) {
 +		retval = tahvo_read(bm, TAHVO_REG_BATCURR);
 +		adc += (s16)retval; /* Value is signed */
@@ -357,6 +384,33 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +
 +	//TODO convert to mA
 +	ma = adc;
++
++	return ma;
++}
++
++/* Requires bm->mutex locked */
++static int n810bm_measure_batt_current_async(struct n810bm *bm)
++{
++	int ma;
++	bool charging = lipocharge_is_charging(&bm->charger);
++
++	n810bm_enable_current_measure(bm);
++	if (!charging)
++		WARN_ON(bm->active_current_pwm != 0);
++	tahvo_maskset(bm, TAHVO_REG_CHGCTL,
++		      TAHVO_REG_CHGCTL_EN |
++		      TAHVO_REG_CHGCTL_PWMOVR |
++		      TAHVO_REG_CHGCTL_PWMOVRZERO,
++		      TAHVO_REG_CHGCTL_EN |
++		      TAHVO_REG_CHGCTL_PWMOVR |
++		      (charging ? 0 : TAHVO_REG_CHGCTL_PWMOVRZERO));
++	ma = n810bm_measure_batt_current(bm);
++	tahvo_maskset(bm, TAHVO_REG_CHGCTL,
++		      TAHVO_REG_CHGCTL_EN |
++		      TAHVO_REG_CHGCTL_PWMOVR |
++		      TAHVO_REG_CHGCTL_PWMOVRZERO,
++		      (charging ? TAHVO_REG_CHGCTL_EN : 0));
++	n810bm_disable_current_measure(bm);
 +
 +	return ma;
 +}
@@ -410,6 +464,9 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	if (adc <= 0x37)
 +		return 2800;
 +	mv = 2800 + ((adc - 0x37) * (((4200 - 2800) * scale) / (0x236 - 0x37))) / scale;
++
++	//TODO compensate for power consumption
++	//TODO honor calibration values
 +
 +	return mv;
 +}
@@ -492,17 +549,73 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	return percent;
 +}
 +
-+/* Periodic check */
-+static void n810bm_check_timer(unsigned long data)
++static void n810bm_start_charge(struct n810bm *bm)
 +{
-+	struct n810bm *bm = (struct n810bm *)data;
-+	unsigned long flags;
++	int err;
++
++	WARN_ON(!bm->battery_present);
++	WARN_ON(!bm->charger_present);
++
++	/* Set PWM to zero */
++	bm->active_current_pwm = 0;
++	tahvo_write(bm, TAHVO_REG_CHGCURR, bm->active_current_pwm);
++
++	/* Charge global enable */
++	tahvo_maskset(bm, TAHVO_REG_CHGCTL,
++		      TAHVO_REG_CHGCTL_EN |
++		      TAHVO_REG_CHGCTL_PWMOVR |
++		      TAHVO_REG_CHGCTL_PWMOVRZERO,
++		      TAHVO_REG_CHGCTL_EN);
++
++	WARN_ON((int)bm->capacity <= 0);
++	bm->charger.capacity = bm->capacity;
++	err = lipocharge_start(&bm->charger);
++	WARN_ON(err);
++
++	/* Initialize current measurement circuitry */
++	n810bm_enable_current_measure(bm);
++	n810bm_set_current_measure_timer(bm, 250);
++
++	dev_info(&bm->pdev->dev, "Charging battery");
++	n810bm_notify_charger_pwm(bm);
++	n810bm_notify_battery_charging(bm);
++}
++
++static void n810bm_stop_charge(struct n810bm *bm)
++{
++	if (lipocharge_is_charging(&bm->charger)) {
++		n810bm_set_current_measure_timer(bm, 0);
++		n810bm_disable_current_measure(bm);
++	}
++	lipocharge_stop(&bm->charger);
++
++	/* Set PWM to zero */
++	bm->active_current_pwm = 0;
++	tahvo_write(bm, TAHVO_REG_CHGCURR, bm->active_current_pwm);
++
++	/* Charge global disable */
++	tahvo_maskset(bm, TAHVO_REG_CHGCTL,
++		      TAHVO_REG_CHGCTL_EN |
++		      TAHVO_REG_CHGCTL_PWMOVR |
++		      TAHVO_REG_CHGCTL_PWMOVRZERO,
++		      0);
++
++	dev_info(&bm->pdev->dev, "Not charging battery");
++	n810bm_notify_charger_pwm(bm);
++	n810bm_notify_battery_charging(bm);
++}
++
++/* Periodic check */
++static void n810bm_periodic_check_work(struct work_struct *work)
++{
++	struct n810bm *bm = container_of(to_delayed_work(work),
++					 struct n810bm, periodic_check_work);
 +	u16 status;
 +	bool battery_was_present, charger_was_present;
 +	bool force_charge = 0;
 +	int mv;
 +
-+	spin_lock_irqsave(&bm->lock, flags);
++	mutex_lock(&bm->mutex);
 +
 +	status = retu_read(bm, RETU_REG_STATUS);
 +	battery_was_present = bm->battery_present;
@@ -523,7 +636,7 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +		} else {
 +			bm->capacity = N810BM_CAP_NONE;
 +			dev_info(&bm->pdev->dev, "The main battery was removed");
-+			//TODO what do if charging?
++			//TODO disable charging
 +		}
 +	}
 +
@@ -534,6 +647,7 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	}
 +
 +	if (bm->battery_present && !lipocharge_is_charging(&bm->charger)) {
++		/* We're draining the battery */
 +		mv = n810bm_measure_batt_voltage(bm);
 +		if (mv < 0)
 +			n810bm_emergency(bm, "check timer: Failed to measure");
@@ -546,18 +660,25 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +		}
 +	}
 +
-+	if (bm->charger_present && bm->battery_present) {
++	if (bm->charger_present && n810bm_known_battery_present(bm)) {
++		/* Known battery and charger are connected */
 +		if (bm->charger_enabled || force_charge) {
++			/* Charger is enabled */
 +			if (!lipocharge_is_charging(&bm->charger)) {
 +				//TODO start charging, if battery is below some threshold
++				n810bm_start_charge(bm);
 +			}
 +		}
 +	}
 +
-+	mod_timer(&bm->check_timer, round_jiffies(jiffies + N810BM_CHECK_INTERVAL));
-+	spin_unlock_irqrestore(&bm->lock, flags);
++	if (lipocharge_is_charging(&bm->charger) && !bm->charger_present) {
++		/* Charger was unplugged. */
++		n810bm_stop_charge(bm);
++	}
 +
-+	return;
++	mutex_unlock(&bm->mutex);
++	schedule_delayed_work(&bm->periodic_check_work,
++			      round_jiffies_relative(N810BM_CHECK_INTERVAL));
 +}
 +
 +static void n810bm_adc_irq_handler(unsigned long data)
@@ -566,7 +687,54 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +
 +	retu_ack_irq(RETU_INT_ADCS);
 +	//TODO
-+dev_dbg(&bm->pdev->dev, "ADC interrupt triggered\n");
++dev_info(&bm->pdev->dev, "ADC interrupt triggered\n");
++}
++
++static void n810bm_tahvo_current_measure_work(struct work_struct *work)
++{
++	struct n810bm *bm = container_of(work, struct n810bm, currmeas_irq_work);
++	int res, ma, mv, temp;
++
++	mutex_lock(&bm->mutex);
++	if (!lipocharge_is_charging(&bm->charger))
++		goto out_unlock;
++
++	tahvo_maskset(bm, TAHVO_REG_CHGCTL,
++		      TAHVO_REG_CHGCTL_PWMOVR |
++		      TAHVO_REG_CHGCTL_PWMOVRZERO,
++		      TAHVO_REG_CHGCTL_PWMOVR);
++	ma = n810bm_measure_batt_current(bm);
++	tahvo_maskset(bm, TAHVO_REG_CHGCTL,
++		      TAHVO_REG_CHGCTL_PWMOVR |
++		      TAHVO_REG_CHGCTL_PWMOVRZERO,
++		      TAHVO_REG_CHGCTL_PWMOVR |
++		      TAHVO_REG_CHGCTL_PWMOVRZERO);
++	msleep(10);
++	mv = n810bm_measure_batt_voltage(bm);
++	tahvo_maskset(bm, TAHVO_REG_CHGCTL,
++		      TAHVO_REG_CHGCTL_PWMOVR |
++		      TAHVO_REG_CHGCTL_PWMOVRZERO,
++		      0);
++	temp = n810bm_measure_batt_temp(bm);
++	if (WARN_ON(mv < 0))
++		goto out_unlock;
++	if (WARN_ON(temp < 0))
++		goto out_unlock;
++
++	if (bm->verbose_charge_log) {
++		dev_info(&bm->pdev->dev,
++			 "Battery charge state: %d mV, %d mA (%s)",
++			 mv, ma,
++			 (ma <= 0) ? "discharging" : "charging");
++	}
++	res = lipocharge_update_state(&bm->charger, mv, ma, temp);
++	if (res) {
++		if (res > 0)
++			dev_info(&bm->pdev->dev, "Battery fully charged");
++		n810bm_stop_charge(bm);
++	}
++out_unlock:
++	mutex_unlock(&bm->mutex);
 +}
 +
 +static void n810bm_tahvo_current_measure_irq_handler(unsigned long data)
@@ -574,261 +742,279 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	struct n810bm *bm = (struct n810bm *)data;
 +
 +	tahvo_ack_irq(TAHVO_INT_BATCURR);
-+	//TODO
-+dev_dbg(&bm->pdev->dev, "Tahvo measure IRQ triggered\n");
++	schedule_work(&bm->currmeas_irq_work);
 +}
 +
++#define DEFINE_ATTR_NOTIFY(attr_name)						\
++	void n810bm_notify_##attr_name(struct n810bm *bm)			\
++	{									\
++		set_bit(N810BM_NOTIFY_##attr_name, &bm->notify_flags);		\
++		wmb();								\
++		schedule_work(&bm->notify_work);				\
++	}
++
 +#define DEFINE_SHOW_INT_FUNC(name, member)					\
-+	static ssize_t n810bm_##name##_show(struct device *dev,			\
-+					    struct device_attribute *attr,	\
-+					    char *buf)				\
++	static ssize_t n810bm_attr_##name##_show(struct device *dev,		\
++						 struct device_attribute *attr,	\
++						 char *buf)			\
 +	{									\
 +		struct n810bm *bm = device_to_n810bm(dev);			\
 +		ssize_t count;							\
 +										\
-+		spin_lock_irq(&bm->lock);					\
++		mutex_lock(&bm->mutex);						\
 +		count = snprintf(buf, PAGE_SIZE, "%d\n", (int)(bm->member));	\
-+		spin_unlock_irq(&bm->lock);					\
++		mutex_unlock(&bm->mutex);					\
 +										\
 +		return count;							\
 +	}
 +
 +#define DEFINE_STORE_INT_FUNC(name, member)					\
-+	static ssize_t n810bm_##name##_store(struct device *dev,		\
-+					     struct device_attribute *attr,	\
-+					     const char *buf, size_t count)	\
++	static ssize_t n810bm_attr_##name##_store(struct device *dev,		\
++						  struct device_attribute *attr,\
++						  const char *buf, size_t count)\
 +	{									\
 +		struct n810bm *bm = device_to_n810bm(dev);			\
 +		long val;							\
 +		int err;							\
 +										\
-+		spin_lock_irq(&bm->lock);					\
++		mutex_lock(&bm->mutex);						\
 +		err = strict_strtol(buf, 0, &val);				\
 +		if (!err)							\
 +			bm->member = (typeof(bm->member))val;			\
-+		spin_unlock_irq(&bm->lock);					\
++		mutex_unlock(&bm->mutex);					\
 +										\
 +		return err ? err : count;					\
 +	}
 +
 +#define DEFINE_ATTR_SHOW_INT(name, member)					\
 +	DEFINE_SHOW_INT_FUNC(name, member)					\
-+	static DEVICE_ATTR(name, 0444, n810bm_##name##_show, NULL);
++	static DEVICE_ATTR(name, S_IRUGO,					\
++			   n810bm_attr_##name##_show, NULL);
 +
 +#define DEFINE_ATTR_SHOW_STORE_INT(name, member)				\
 +	DEFINE_SHOW_INT_FUNC(name, member)					\
 +	DEFINE_STORE_INT_FUNC(name, member)					\
-+	static DEVICE_ATTR(name, 0644, n810bm_##name##_show,			\
-+				       n810bm_##name##_store);
++	static DEVICE_ATTR(name, S_IRUGO | S_IWUSR,				\
++			   n810bm_attr_##name##_show,				\
++			   n810bm_attr_##name##_store);
 +
-+DEFINE_ATTR_SHOW_INT(batt_present, battery_present);
++DEFINE_ATTR_SHOW_INT(battery_present, battery_present);
 +DEFINE_ATTR_SHOW_INT(charger_present, charger_present);
++DEFINE_ATTR_SHOW_INT(charger_pwm, active_current_pwm);
++static DEFINE_ATTR_NOTIFY(charger_pwm);
 +DEFINE_ATTR_SHOW_STORE_INT(charger_enable, charger_enabled);
++DEFINE_ATTR_SHOW_STORE_INT(charger_verbose, verbose_charge_log);
 +
-+static ssize_t n810bm_attr_charge_show(struct device *dev,
-+				       struct device_attribute *attr,
-+				       char *buf)
-+{
-+	struct n810bm *bm = device_to_n810bm(dev);
-+	int err = -ENODEV;
-+	ssize_t count = 0;
-+	int millivolt;
-+
-+	spin_lock_irq(&bm->lock);
-+	if (bm->battery_present) {
-+		millivolt = n810bm_measure_batt_voltage(bm);
-+		if (millivolt >= 0) {
-+			count = snprintf(buf, PAGE_SIZE, "%u\n",
-+					 n810bm_mvolt2percent(millivolt));
-+			err = 0;
-+		}
-+	} else {
-+		count = snprintf(buf, PAGE_SIZE, "no battery\n");
-+		err = 0;
-+	}
-+	spin_unlock_irq(&bm->lock);
-+
-+	return err ? err : count;
-+}
-+static DEVICE_ATTR(batt_charge, 0444, n810bm_attr_charge_show, NULL);
-+
-+static ssize_t n810bm_attr_capacity_show(struct device *dev,
-+					 struct device_attribute *attr,
-+					 char *buf)
++static ssize_t n810bm_attr_battery_charging(struct device *dev,
++					    struct device_attribute *attr,
++					    char *buf)
 +{
 +	struct n810bm *bm = device_to_n810bm(dev);
 +	ssize_t count;
 +
-+	spin_lock_irq(&bm->lock);
-+	if (bm->battery_present) {
-+		count = snprintf(buf, PAGE_SIZE, "%d\n",
-+				 (int)bm->capacity);
-+	} else
-+		count = snprintf(buf, PAGE_SIZE, "no battery\n");
-+	spin_unlock_irq(&bm->lock);
++	mutex_lock(&bm->mutex);
++	count = snprintf(buf, PAGE_SIZE, "%d\n",
++			 (int)lipocharge_is_charging(&bm->charger));
++	mutex_unlock(&bm->mutex);
 +
 +	return count;
 +}
-+static DEVICE_ATTR(batt_capacity, 0444, n810bm_attr_capacity_show, NULL);
++static DEVICE_ATTR(battery_charging, S_IRUGO,
++		   n810bm_attr_battery_charging, NULL);
++static DEFINE_ATTR_NOTIFY(battery_charging);
 +
-+static ssize_t n810bm_attr_battemp_show(struct device *dev,
-+					struct device_attribute *attr,
-+					char *buf)
++static ssize_t n810bm_attr_battery_level_show(struct device *dev,
++					      struct device_attribute *attr,
++					      char *buf)
 +{
 +	struct n810bm *bm = device_to_n810bm(dev);
-+	ssize_t count = 0;
-+	int k, err = -ENODEV;
++	ssize_t count = -ENODEV;
++	int millivolt;
 +
-+	spin_lock_irq(&bm->lock);
-+	k = n810bm_measure_batt_temp(bm);
-+	if (k >= 0) {
-+		count = snprintf(buf, PAGE_SIZE, "%d\n", k);
-+		err = 0;
++	mutex_lock(&bm->mutex);
++	if (!bm->battery_present || lipocharge_is_charging(&bm->charger))
++		millivolt = 0;
++	else
++		millivolt = n810bm_measure_batt_voltage(bm);
++	if (millivolt >= 0) {
++		count = snprintf(buf, PAGE_SIZE, "%u\n",
++				 n810bm_mvolt2percent(millivolt));
 +	}
-+	spin_unlock_irq(&bm->lock);
++	mutex_unlock(&bm->mutex);
 +
-+	return err ? err : count;
++	return count;
 +}
-+static DEVICE_ATTR(batt_temp, 0444, n810bm_attr_battemp_show, NULL);
++static DEVICE_ATTR(battery_level, S_IRUGO,
++		   n810bm_attr_battery_level_show, NULL);
++
++static ssize_t n810bm_attr_battery_capacity_show(struct device *dev,
++						 struct device_attribute *attr,
++						 char *buf)
++{
++	struct n810bm *bm = device_to_n810bm(dev);
++	ssize_t count;
++	int capacity = 0;
++
++	mutex_lock(&bm->mutex);
++	if (n810bm_known_battery_present(bm))
++		capacity = (int)bm->capacity;
++	count = snprintf(buf, PAGE_SIZE, "%d\n", capacity);
++	mutex_unlock(&bm->mutex);
++
++	return count;
++}
++static DEVICE_ATTR(battery_capacity, S_IRUGO,
++		   n810bm_attr_battery_capacity_show, NULL);
++
++static ssize_t n810bm_attr_battery_temp_show(struct device *dev,
++					     struct device_attribute *attr,
++					     char *buf)
++{
++	struct n810bm *bm = device_to_n810bm(dev);
++	ssize_t count = -ENODEV;
++	int k;
++
++	mutex_lock(&bm->mutex);
++	k = n810bm_measure_batt_temp(bm);
++	if (k >= 0)
++		count = snprintf(buf, PAGE_SIZE, "%d\n", k);
++	mutex_unlock(&bm->mutex);
++
++	return count;
++}
++static DEVICE_ATTR(battery_temp, S_IRUGO,
++		   n810bm_attr_battery_temp_show, NULL);
 +
 +static ssize_t n810bm_attr_charger_voltage_show(struct device *dev,
 +						struct device_attribute *attr,
 +						char *buf)
 +{
 +	struct n810bm *bm = device_to_n810bm(dev);
-+	ssize_t count = 0;
-+	int mv, err = -ENODEV;
++	ssize_t count = -ENODEV;
++	int mv = 0;
 +
-+	spin_lock_irq(&bm->lock);
-+	if (bm->charger_present) {
++	mutex_lock(&bm->mutex);
++	if (bm->charger_present)
 +		mv = n810bm_measure_charger_voltage(bm);
-+		if (mv >= 0) {
-+			count = snprintf(buf, PAGE_SIZE, "%d\n", mv);
-+			err = 0;
-+		}
-+	} else {
-+		count = snprintf(buf, PAGE_SIZE, "no charger\n");
-+		err = 0;
-+	}
-+	spin_unlock_irq(&bm->lock);
-+
-+	return err ? err : count;
-+}
-+static DEVICE_ATTR(charger_voltage, 0444, n810bm_attr_charger_voltage_show, NULL);
-+
-+static ssize_t n810bm_attr_backup_batt_voltage_show(struct device *dev,
-+						    struct device_attribute *attr,
-+						    char *buf)
-+{
-+	struct n810bm *bm = device_to_n810bm(dev);
-+	ssize_t count = 0;
-+	int mv, err = -ENODEV;
-+
-+	spin_lock_irq(&bm->lock);
-+	mv = n810bm_measure_backup_batt_voltage(bm);
-+	if (mv >= 0) {
++	if (mv >= 0)
 +		count = snprintf(buf, PAGE_SIZE, "%d\n", mv);
-+		err = 0;
-+	}
-+	spin_unlock_irq(&bm->lock);
-+
-+	return err ? err : count;
-+}
-+static DEVICE_ATTR(backup_batt_voltage, 0444, n810bm_attr_backup_batt_voltage_show, NULL);
-+
-+static ssize_t n810bm_attr_batt_current_show(struct device *dev,
-+					     struct device_attribute *attr,
-+					     char *buf)
-+{
-+	struct n810bm *bm = device_to_n810bm(dev);
-+	ssize_t count = 0;
-+	int ma;
-+
-+	spin_lock_irq(&bm->lock);
-+	if (bm->battery_present) {
-+		ma = n810bm_measure_batt_current(bm);//FIXME
-+		count = snprintf(buf, PAGE_SIZE, "%d\n", ma);
-+	} else
-+		count = snprintf(buf, PAGE_SIZE, "no battery\n");
-+	spin_unlock_irq(&bm->lock);
++	mutex_unlock(&bm->mutex);
 +
 +	return count;
 +}
-+static DEVICE_ATTR(batt_current, 0444, n810bm_attr_batt_current_show, NULL);
++static DEVICE_ATTR(charger_voltage, S_IRUGO,
++		   n810bm_attr_charger_voltage_show, NULL);
 +
-+//TODO remove this
-+static ssize_t n810bm_attr_charger_status_show(struct device *dev,
-+					       struct device_attribute *attr,
-+					       char *buf)
++static ssize_t n810bm_attr_backup_battery_voltage_show(struct device *dev,
++						       struct device_attribute *attr,
++						       char *buf)
 +{
 +	struct n810bm *bm = device_to_n810bm(dev);
-+	ssize_t count = 0;
-+	unsigned int stat;
++	ssize_t count = -ENODEV;
++	int mv;
 +
-+	spin_lock_irq(&bm->lock);
-+	stat = retu_read(bm, RETU_REG_STATUS);
-+	count = snprintf(buf, PAGE_SIZE, "0x%X\n", stat);
-+	spin_unlock_irq(&bm->lock);
++	mutex_lock(&bm->mutex);
++	mv = n810bm_measure_backup_batt_voltage(bm);
++	if (mv >= 0)
++		count = snprintf(buf, PAGE_SIZE, "%d\n", mv);
++	mutex_unlock(&bm->mutex);
 +
 +	return count;
 +}
-+static DEVICE_ATTR(charger_status, 0444, n810bm_attr_charger_status_show, NULL);
++static DEVICE_ATTR(backup_battery_voltage, S_IRUGO,
++		   n810bm_attr_backup_battery_voltage_show, NULL);
 +
-+//TODO remove this
-+static ssize_t n810bm_attr_charge_current_show(struct device *dev,
-+					       struct device_attribute *attr,
-+					       char *buf)
-+{
-+	struct n810bm *bm = device_to_n810bm(dev);
-+	ssize_t count = 0;
-+	unsigned int val;
-+
-+	spin_lock_irq(&bm->lock);
-+	val = tahvo_read(bm, TAHVO_REG_CHGCURR);
-+	count = snprintf(buf, PAGE_SIZE, "0x%X\n", val);
-+	spin_unlock_irq(&bm->lock);
-+
-+	return count;
-+}
-+
-+static ssize_t n810bm_attr_charge_current_store(struct device *dev,
++static ssize_t n810bm_attr_battery_current_show(struct device *dev,
 +						struct device_attribute *attr,
-+						const char *buf, size_t count)
++						char *buf)
 +{
 +	struct n810bm *bm = device_to_n810bm(dev);
-+	unsigned long val;
-+	int err;
++	ssize_t count = -ENODEV;
++	int ma = 0;
 +
-+	spin_lock_irq(&bm->lock);
-+	err = strict_strtoul(buf, 0, &val);
-+	if (!err && val <= 0xFF)
-+		tahvo_write(bm, TAHVO_REG_CHGCURR, val);
-+	spin_unlock_irq(&bm->lock);
++	mutex_lock(&bm->mutex);
++	if (bm->battery_present)
++		ma = n810bm_measure_batt_current_async(bm);
++	count = snprintf(buf, PAGE_SIZE, "%d\n", ma);
++	mutex_unlock(&bm->mutex);
 +
-+	return err ? err : count;
++	return count;
 +}
-+static DEVICE_ATTR(charge_current, 0644,
-+		   n810bm_attr_charge_current_show,
-+		   n810bm_attr_charge_current_store);
++static DEVICE_ATTR(battery_current, S_IRUGO,
++		   n810bm_attr_battery_current_show, NULL);
 +
 +static const struct device_attribute *n810bm_attrs[] = {
-+	&dev_attr_batt_present,
-+	&dev_attr_batt_charge,
-+	&dev_attr_batt_current,
-+	&dev_attr_batt_capacity,
-+	&dev_attr_batt_temp,
-+	&dev_attr_backup_batt_voltage,
++	&dev_attr_battery_present,
++	&dev_attr_battery_level,
++	&dev_attr_battery_charging,
++	&dev_attr_battery_current,
++	&dev_attr_battery_capacity,
++	&dev_attr_battery_temp,
++	&dev_attr_backup_battery_voltage,
 +	&dev_attr_charger_present,
++	&dev_attr_charger_verbose,
 +	&dev_attr_charger_voltage,
-+	&dev_attr_charger_status,
 +	&dev_attr_charger_enable,
-+	&dev_attr_charge_current,
++	&dev_attr_charger_pwm,
 +};
++
++static void n810bm_notify_work(struct work_struct *work)
++{
++	struct n810bm *bm = container_of(work, struct n810bm, notify_work);
++	unsigned long notify_flags;
++
++	notify_flags = xchg(&bm->notify_flags, 0);
++	mb();
++
++#define do_notify(attr_name)						\
++	do {								\
++		if (notify_flags & (1 << N810BM_NOTIFY_##attr_name)) {	\
++			sysfs_notify(&bm->pdev->dev.kobj, NULL,		\
++				     dev_attr_##attr_name.attr.name);	\
++		}							\
++	} while (0)
++
++	do_notify(battery_charging);
++	do_notify(charger_pwm);
++}
++
++static int n810bm_charger_set_current_pwm(struct lipocharge *c,
++					  unsigned int duty_cycle)
++{
++	struct n810bm *bm = container_of(c, struct n810bm, charger);
++	int err = -EINVAL;
++
++	WARN_ON(!mutex_is_locked(&bm->mutex));
++	if (WARN_ON(duty_cycle > 0xFF))
++		goto out;
++	if (WARN_ON(!bm->charger_enabled))
++		goto out;
++	if (WARN_ON(!bm->battery_present || !bm->charger_present))
++		goto out;
++
++	if (duty_cycle != bm->active_current_pwm) {
++		bm->active_current_pwm = duty_cycle;
++		tahvo_write(bm, TAHVO_REG_CHGCURR, duty_cycle);
++		n810bm_notify_charger_pwm(bm);
++	}
++
++	err = 0;
++out:
++
++	return err;
++}
++
++static void n810bm_charger_emergency(struct lipocharge *c)
++{
++	struct n810bm *bm = container_of(c, struct n810bm, charger);
++
++	n810bm_emergency(bm, "Battery charger fault");
++}
 +
 +static void n810bm_hw_exit(struct n810bm *bm)
 +{
++	n810bm_stop_charge(bm);
 +	retu_write(bm, RETU_REG_ADCSCR, 0);
-+	//TODO
 +}
 +
 +static int n810bm_hw_init(struct n810bm *bm)
@@ -839,13 +1025,30 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	if (err)
 +		return err;
 +
++	n810bm_stop_charge(bm);
++
 +	return 0;
++}
++
++static void n810bm_cancel_and_flush_work(struct n810bm *bm)
++{
++	cancel_delayed_work_sync(&bm->periodic_check_work);
++	cancel_work_sync(&bm->notify_work);
++	cancel_work_sync(&bm->currmeas_irq_work);
++	flush_scheduled_work();
 +}
 +
 +static int n810bm_device_init(struct n810bm *bm)
 +{
 +	int attr_index;
 +	int err;
++
++	bm->charger.rate = LIPORATE_p6C;
++	bm->charger.top_voltage = 4100;
++	bm->charger.duty_cycle_max = 0xFF;
++	bm->charger.set_current_pwm = n810bm_charger_set_current_pwm;
++	bm->charger.emergency = n810bm_charger_emergency;
++	lipocharge_init(&bm->charger, &bm->pdev->dev);
 +
 +	err = n810bm_hw_init(bm);
 +	if (err)
@@ -865,9 +1068,10 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +				(unsigned long)bm, "n810bm");
 +	if (err)
 +		goto err_free_retu_irq;
++	tahvo_disable_irq(TAHVO_INT_BATCURR);
 +
-+	lipocharge_init(&bm->charger);
-+	mod_timer(&bm->check_timer, round_jiffies(jiffies + N810BM_CHECK_INTERVAL));
++	schedule_delayed_work(&bm->periodic_check_work,
++			      round_jiffies_relative(N810BM_CHECK_INTERVAL));
 +
 +	bm->initialized = 1;
 +	dev_info(&bm->pdev->dev, "Battery management initialized");
@@ -882,6 +1086,8 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +/*err_exit:*/
 +	n810bm_hw_exit(bm);
 +error:
++	n810bm_cancel_and_flush_work(bm);
++
 +	return err;
 +}
 +
@@ -895,9 +1101,11 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	lipocharge_exit(&bm->charger);
 +	tahvo_free_irq(TAHVO_INT_BATCURR);
 +	retu_free_irq(RETU_INT_ADCS);
-+	del_timer_sync(&bm->check_timer);
 +	for (i = 0; i < ARRAY_SIZE(n810bm_attrs); i++)
 +		device_remove_file(&bm->pdev->dev, n810bm_attrs[i]);
++
++	n810bm_cancel_and_flush_work(bm);
++
 +	n810bm_hw_exit(bm);
 +	release_firmware(bm->pmm_block);
 +
@@ -944,8 +1152,10 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +		return -ENOMEM;
 +	bm->pdev = pdev;
 +	platform_set_drvdata(pdev, bm);
-+	spin_lock_init(&bm->lock);
-+	setup_timer(&bm->check_timer, n810bm_check_timer, (unsigned long)bm);
++	mutex_init(&bm->mutex);
++	INIT_DELAYED_WORK(&bm->periodic_check_work, n810bm_periodic_check_work);
++	INIT_WORK(&bm->notify_work, n810bm_notify_work);
++	INIT_WORK(&bm->currmeas_irq_work, n810bm_tahvo_current_measure_work);
 +
 +	dev_info(&bm->pdev->dev, "Requesting CAL BME PMM block firmware file "
 +		 N810BM_PMM_BLOCK_FILENAME);
@@ -1004,8 +1214,8 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +MODULE_AUTHOR("Michael Buesch");
 Index: linux-2.6.37/drivers/cbus/retu.c
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/retu.c	2011-02-06 00:24:48.493004751 +0100
-+++ linux-2.6.37/drivers/cbus/retu.c	2011-02-06 00:24:48.551008149 +0100
+--- linux-2.6.37.orig/drivers/cbus/retu.c	2011-02-06 14:05:49.829387442 +0100
++++ linux-2.6.37/drivers/cbus/retu.c	2011-02-08 17:33:18.981369017 +0100
 @@ -85,10 +85,10 @@
   *
   * This function writes a value to the specified register
@@ -1019,10 +1229,18 @@ Index: linux-2.6.37/drivers/cbus/retu.c
  }
  
  void retu_set_clear_reg_bits(int reg, u16 set, u16 clear)
+@@ -459,6 +459,7 @@
+ EXPORT_SYMBOL(retu_ack_irq);
+ EXPORT_SYMBOL(retu_read_reg);
+ EXPORT_SYMBOL(retu_write_reg);
++EXPORT_SYMBOL(retu_read_adc);
+ 
+ subsys_initcall(retu_init);
+ module_exit(retu_exit);
 Index: linux-2.6.37/drivers/cbus/retu.h
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/retu.h	2011-02-06 00:24:48.493004751 +0100
-+++ linux-2.6.37/drivers/cbus/retu.h	2011-02-06 00:24:48.551008149 +0100
+--- linux-2.6.37.orig/drivers/cbus/retu.h	2011-02-06 14:05:49.829387442 +0100
++++ linux-2.6.37/drivers/cbus/retu.h	2011-02-06 14:05:49.886395793 +0100
 @@ -40,6 +40,8 @@
  #define RETU_REG_CTRL_CLR	0x0f	/* Regulator clear register */
  #define RETU_REG_CTRL_SET	0x10	/* Regulator set register */
@@ -1061,8 +1279,8 @@ Index: linux-2.6.37/drivers/cbus/retu.h
  int retu_request_irq(int id, void *irq_handler, unsigned long arg, char *name);
 Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-2.6.37.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-06 00:24:48.478003872 +0100
-+++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c	2011-02-06 00:24:48.551008149 +0100
+--- linux-2.6.37.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-06 14:05:49.815385390 +0100
++++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c	2011-02-06 14:05:49.886395793 +0100
 @@ -907,6 +907,17 @@
  				    ARRAY_SIZE(n8x0_gpio_switches));
  }
@@ -1093,12 +1311,12 @@ Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c
 Index: linux-2.6.37/drivers/cbus/lipocharge.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/lipocharge.c	2011-02-06 12:57:01.427475867 +0100
-@@ -0,0 +1,58 @@
++++ linux-2.6.37/drivers/cbus/lipocharge.c	2011-02-09 12:42:58.243147563 +0100
+@@ -0,0 +1,183 @@
 +/*
 + *   Generic LIPO battery charger
 + *
-+ *   Copyright (c) 2010 Michael Buesch <mb@bu3sch.de>
++ *   Copyright (c) 2010-2011 Michael Buesch <mb@bu3sch.de>
 + *
 + *   This program is free software; you can redistribute it and/or
 + *   modify it under the terms of the GNU General Public License
@@ -1111,112 +1329,242 @@ Index: linux-2.6.37/drivers/cbus/lipocharge.c
 + *   GNU General Public License for more details.
 + */
 +
++#define DEBUG
++
 +#include "lipocharge.h"
 +
 +#include <linux/slab.h>
 +
 +
-+static void lipocharge_timer(unsigned long data)
-+{
-+	struct lipocharge *c = (struct lipocharge *)data;
++/* Hysteresis constants */
++#define CURRENT_HYST		30 /* mA */
++#define VOLTAGE_HYST		10 /* mV */
 +
-+	spin_lock(&c->lock);
-+	//TODO
-+	spin_unlock(&c->lock);
++/* Threshold constants */
++#define FINISH_CURRENT_PERCENT	3
++
++
++/* Returns the requested first-stage charge current in mA */
++static inline unsigned int get_stage1_charge_current(struct lipocharge *c)
++{
++	/* current = (capacity * C) */
++	return c->capacity * c->rate / 1000;
 +}
 +
-+void lipocharge_init(struct lipocharge *c)
++void lipocharge_init(struct lipocharge *c, struct device *dev)
 +{
-+	spin_lock_init(&c->lock);
-+	setup_timer(&c->timer, lipocharge_timer, (unsigned long)c);
++	c->dev = dev;
++	c->state = LIPO_IDLE;
 +}
 +
 +void lipocharge_exit(struct lipocharge *c)
 +{
++	c->state = LIPO_IDLE;
 +}
 +
 +int lipocharge_start(struct lipocharge *c)
 +{
-+	if (!c->set_charge_current || !c->get_charge_current ||
-+	    !c->get_voltage ||
-+	    !c->finished || !c->emergency)
++	int err;
++
++	if (c->state != LIPO_IDLE)
++		return -EBUSY;
++	if (!c->set_current_pwm || !c->emergency)
 +		return -EINVAL;
 +	if (!c->top_voltage || c->top_voltage > 4200)
 +		return -EINVAL;
-+	//TODO
++
++	c->active_duty_cycle = 0;
++	err = c->set_current_pwm(c, c->active_duty_cycle);
++	if (err)
++		return err;
++	c->state = LIPO_FIRST_STAGE;
 +
 +	return 0;
 +}
 +
 +void lipocharge_stop(struct lipocharge *c)
 +{
-+	del_timer_sync(&c->timer);
-+	//TODO
++	if (c->state == LIPO_IDLE)
++		return;
++	c->state = LIPO_IDLE;
++}
++
++static int lipocharge_increase_current(struct lipocharge *c,
++				       unsigned int inc_permille)
++{
++	int old_pwm, new_pwm;
++
++	if (c->active_duty_cycle >= c->duty_cycle_max)
++		return 0;
++
++	old_pwm = c->active_duty_cycle;
++	new_pwm = old_pwm + (c->duty_cycle_max * inc_permille / 1000);
++	new_pwm = min(new_pwm, (int)c->duty_cycle_max);
++	c->active_duty_cycle = new_pwm;
++
++	dev_dbg(c->dev, "lipo: Increasing duty_cycle by "
++		"%u permille (0x%02X -> 0x%02X)",
++		inc_permille, old_pwm, new_pwm);
++
++	return c->set_current_pwm(c, c->active_duty_cycle);
++}
++
++static int lipocharge_decrease_current(struct lipocharge *c,
++				       unsigned int dec_permille)
++{
++	int old_pwm, new_pwm;
++
++	if (c->active_duty_cycle <= 0)
++		return 0;
++
++	old_pwm = c->active_duty_cycle;
++	new_pwm = old_pwm - (c->duty_cycle_max * dec_permille / 1000);
++	new_pwm = max(0, new_pwm);
++	c->active_duty_cycle = new_pwm;
++
++	dev_dbg(c->dev, "lipo: Decreasing duty_cycle by "
++		"%u permille (0x%02X -> 0x%02X)",
++		dec_permille, old_pwm, new_pwm);
++
++	return c->set_current_pwm(c, c->active_duty_cycle);
++}
++
++/** lipocharge_update_state - Update the charge state
++ * @c: The context.
++ * @voltage_mV: The measured battery voltage.
++ * @current_mA: The measured charge current.
++ *		negative -> drain.
++ *		positive -> charge.
++ * @temp_K: Battery temperature in K.
++ *
++ * Returns 0 on success, -1 on error.
++ * Returns 1, if the charging process is finished.
++ */
++int lipocharge_update_state(struct lipocharge *c,
++			    unsigned int voltage_mV,
++			    int current_mA,
++			    unsigned int temp_K)
++{
++	int requested_current, current_diff;
++	int err;
++	unsigned int permille;
++
++	//TODO temp
++
++restart:
++	switch (c->state) {
++	case LIPO_IDLE:
++		dev_err(c->dev, "%s: called while idle", __func__);
++		return -EINVAL;
++	case LIPO_FIRST_STAGE:	/* Constant current */
++//printk("GOT %u %d %u\n", voltage_mV, current_mA, temp_K);
++		if (voltage_mV >= c->top_voltage) {
++			/* Float voltage reached.
++			 * Switch charger mode to "constant current" */
++			c->state = LIPO_SECOND_STAGE;
++			dev_dbg(c->dev, "Switched to second charging stage.");
++			goto restart;
++		}
++		/* Float voltage not reached, yet.
++		 * Try to get the requested constant current. */
++		requested_current = get_stage1_charge_current(c);
++		if (current_mA < 0)
++			current_mA = 0;
++		current_diff = requested_current - current_mA;
++		if (abs(requested_current - current_mA) > CURRENT_HYST) {
++			if (current_diff > 0) {
++				/* Increase current */
++				permille = current_diff * 1000 / requested_current;
++				permille /= 2;
++				err = lipocharge_increase_current(c, permille);
++				if (err)
++					return err;
++			} else {
++				/* Decrease current */
++				permille = (-current_diff) * 1000 / requested_current;
++				permille /= 2;
++				err = lipocharge_decrease_current(c, permille);
++				if (err)
++					return err;
++			}
++		}
++		break;
++	case LIPO_SECOND_STAGE:	/* Constant voltage */
++		//TODO
++		break;
++	}
++
++	return 0;
 +}
 Index: linux-2.6.37/drivers/cbus/lipocharge.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/lipocharge.h	2011-02-06 12:36:29.800830614 +0100
-@@ -0,0 +1,55 @@
++++ linux-2.6.37/drivers/cbus/lipocharge.h	2011-02-07 20:07:29.669098631 +0100
+@@ -0,0 +1,60 @@
 +#ifndef LIPOCHARGE_H_
 +#define LIPOCHARGE_H_
 +
-+#include <linux/timer.h>
-+#include <linux/spinlock.h>
++#include <linux/types.h>
++#include <linux/device.h>
 +
 +
-+#define LIPORATE(a,b)	(((a) * 1000) + (b))
-+#define LIPORATE_1C	LIPORATE(1,0)	/* 1C */
-+#define LIPORATE_p8C	LIPORATE(0,8)	/* 0.8C */
++#define LIPORATE(a,b)	(((a) * 1000) + ((b) * 100))
 +#define LIPORATE_p6C	LIPORATE(0,6)	/* 0.6C */
++
++enum lipocharge_state {
++	LIPO_IDLE,		/* Not charging */
++	LIPO_FIRST_STAGE,	/* Charging: constant current */
++	LIPO_SECOND_STAGE,	/* Charging: constant voltage */
++};
 +
 +/** struct lipocharge - A generic LIPO charger
 + *
 + * @capacity: Battery capacity in mAh.
 + * @rate: Charge rate.
 + * @top_voltage: Fully charged voltage, in mV.
++ * @duty_cycle_max: Max value for duty_cycle.
 + *
-+ * @set_charge_current: Set the charge current, in mA.
-+ * @get_charge_current: Get the battery current, in signed mA.
-+ * @get_voltage: Get the battery voltage, in mV.
-+ *
-+ * @finished: Charging finished.
++ * @set_charge_current: Set the charge current PWM duty cycle.
 + * @emergency: Something went wrong. Force shutdown.
 + */
 +struct lipocharge {
 +	unsigned int capacity;
 +	unsigned int rate;
 +	unsigned int top_voltage;
++	unsigned int duty_cycle_max;
 +
-+	int (*set_charge_current)(struct lipocharge *c, unsigned int ma);
-+	int (*get_charge_current)(struct lipocharge *c, int *ma);
-+	int (*get_voltage)(struct lipocharge *c, unsigned int *mv);
-+
-+	void (*finished)(struct lipocharge *c);
++	int (*set_current_pwm)(struct lipocharge *c, unsigned int duty_cycle);
 +	void (*emergency)(struct lipocharge *c);
 +
 +	/* internal */
-+	spinlock_t lock;
-+	struct timer_list timer;
-+	bool charging;
++	struct device *dev;
++	enum lipocharge_state state;
++	unsigned int active_duty_cycle;
++
++	//TODO implement timer to cut power after maximum charge time.
 +};
 +
-+void lipocharge_init(struct lipocharge *c);
++void lipocharge_init(struct lipocharge *c, struct device *dev);
 +void lipocharge_exit(struct lipocharge *c);
 +
 +int lipocharge_start(struct lipocharge *c);
 +void lipocharge_stop(struct lipocharge *c);
 +
++int lipocharge_update_state(struct lipocharge *c,
++			    unsigned int voltage_mV,
++			    int current_mA,
++			    unsigned int temp_K);
++
 +static inline bool lipocharge_is_charging(struct lipocharge *c)
 +{
-+	return c->charging;
++	return (c->state != LIPO_IDLE);
 +}
 +
 +#endif /* LIPOCHARGE_H_ */
 Index: linux-2.6.37/drivers/cbus/tahvo.h
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/tahvo.h	2011-02-06 00:24:48.494004810 +0100
-+++ linux-2.6.37/drivers/cbus/tahvo.h	2011-02-06 00:24:48.551008149 +0100
+--- linux-2.6.37.orig/drivers/cbus/tahvo.h	2011-02-06 14:05:49.830387588 +0100
++++ linux-2.6.37/drivers/cbus/tahvo.h	2011-02-06 16:22:25.902331536 +0100
 @@ -30,17 +30,28 @@
  #define TAHVO_REG_IDR		0x01	/* Interrupt ID */
  #define TAHVO_REG_IDSR		0x02	/* Interrupt status */
@@ -1226,8 +1574,8 @@ Index: linux-2.6.37/drivers/cbus/tahvo.h
  #define TAHVO_REG_USBR		0x06	/* USB control */
 +#define TAHVO_REG_CHGCTL	0x08	/* Charge control register */
 +#define  TAHVO_REG_CHGCTL_EN		0x0001	/* Global charge enable */
-+#define  TAHVO_REG_CHGCTL_PWMOVR	0x0004	/* PWM override. Force charge PWM to 100% duty cycle. */
-+#define  TAHVO_REG_CHGCTL_UNK8		0x0008	/* XXX: Unknown. Written on init. */
++#define  TAHVO_REG_CHGCTL_PWMOVR	0x0004	/* PWM override. Force charge PWM to 0%/100% duty cycle. */
++#define  TAHVO_REG_CHGCTL_PWMOVRZERO	0x0008	/* If set, PWM override is 0% (If unset -> 100%) */
 +#define  TAHVO_REG_CHGCTL_CURMEAS	0x0040	/* Enable battery current measurement. */
 +#define  TAHVO_REG_CHGCTL_CURTIMRST	0x0080	/* Current measure timer reset. */
 +#define TAHVO_REG_BATCURRTIMER	0x0c	/* Battery current measure timer (8-bit) */
@@ -1249,8 +1597,8 @@ Index: linux-2.6.37/drivers/cbus/tahvo.h
  void tahvo_free_irq(int id);
 Index: linux-2.6.37/drivers/cbus/tahvo.c
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/tahvo.c	2011-02-06 00:24:48.494004810 +0100
-+++ linux-2.6.37/drivers/cbus/tahvo.c	2011-02-06 00:24:48.552008207 +0100
+--- linux-2.6.37.orig/drivers/cbus/tahvo.c	2011-02-06 14:05:49.830387588 +0100
++++ linux-2.6.37/drivers/cbus/tahvo.c	2011-02-06 14:05:49.886395793 +0100
 @@ -85,10 +85,10 @@
   *
   * This function writes a value to the specified register
@@ -1264,3 +1612,40 @@ Index: linux-2.6.37/drivers/cbus/tahvo.c
  }
  
  /**
+Index: linux-2.6.37/drivers/cbus/cbus.c
+===================================================================
+--- linux-2.6.37.orig/drivers/cbus/cbus.c	2011-02-08 17:34:34.988926130 +0100
++++ linux-2.6.37/drivers/cbus/cbus.c	2011-02-08 17:38:16.980407594 +0100
+@@ -31,6 +31,7 @@
+ #include <linux/gpio.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
++#include <linux/reboot.h>
+ 
+ #include <asm/io.h>
+ #include <asm/mach-types.h>
+@@ -301,6 +302,13 @@
+ }
+ module_exit(cbus_bus_exit);
+ 
++void cbus_emergency(void)
++{
++	machine_power_off();
++	panic("cbus: Failed to halt machine in emergency state\n");
++}
++EXPORT_SYMBOL(cbus_emergency);
++
+ MODULE_DESCRIPTION("CBUS serial protocol");
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Juha Yrjölä");
+Index: linux-2.6.37/drivers/cbus/cbus.h
+===================================================================
+--- linux-2.6.37.orig/drivers/cbus/cbus.h	2011-02-08 17:36:40.172074049 +0100
++++ linux-2.6.37/drivers/cbus/cbus.h	2011-02-08 17:41:32.680647478 +0100
+@@ -33,4 +33,6 @@
+ extern int cbus_read_reg(struct cbus_host *host, int dev, int reg);
+ extern int cbus_write_reg(struct cbus_host *host, int dev, int reg, u16 val);
+ 
++NORET_TYPE void cbus_emergency(void) ATTRIB_NORET;
++
+ #endif /* __DRIVERS_CBUS_CBUS_H */
