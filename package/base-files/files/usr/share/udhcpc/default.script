@@ -103,7 +103,7 @@ setup_interface () {
 
 	# UCI State
 	change_state network "$ifc" lease_server "$serverid"
-	change_state network "$ifc" lease_acquired "$(date '+%s')"
+	change_state network "$ifc" lease_acquired "$(sed -ne 's![^0-9].*$!!p' /proc/uptime)"
 	change_state network "$ifc" lease_lifetime "$lease"
 	[ -n "$ntpsrv" ] && 	change_state network "$ifc" lease_ntpsrv "$ntpsrv"
 	[ -n "$timesvr" ] && 	change_state network "$ifc" lease_timesrv "$timesvr"
