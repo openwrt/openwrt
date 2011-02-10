@@ -46,21 +46,17 @@ define Host/Prepare/all
 	$(KMAKE) \
 		INSTALL_HDR_PATH="$(BUILD_DIR_TOOLCHAIN)/linux-dev/" \
 		headers_install
-	if [ -d $(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm ]; then \
-		mkdir -p $(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH); \
-		$(CP) \
-			$(HOST_BUILD_DIR)/arch/$(LINUX_KARCH)/include/asm/. \
-			$(HOST_BUILD_DIR)/include/asm-$(LINUX_KARCH)/; \
-	fi
 endef
 
 # XXX: the following is needed to build lzma-loader
-define Host/Prepare/lzma
+ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
+  define Host/Prepare/lzma
 	$(CP) \
-		$(HOST_BUILD_DIR)/include/asm-mips/asm.h \
-		$(HOST_BUILD_DIR)/include/asm-mips/regdef.h \
+		$(HOST_BUILD_DIR)/arch/mips/include/asm/asm.h \
+		$(HOST_BUILD_DIR)/arch/mips/include/asm/regdef.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/
-endef
+  endef
+endif
 
 define Host/Prepare/post/cris
 	$(CP) \
