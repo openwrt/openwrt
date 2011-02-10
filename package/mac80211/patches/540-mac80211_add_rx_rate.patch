@@ -1,0 +1,232 @@
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -414,7 +414,7 @@ struct station_parameters {
+  * @STATION_INFO_PLID: @plid filled
+  * @STATION_INFO_PLINK_STATE: @plink_state filled
+  * @STATION_INFO_SIGNAL: @signal filled
+- * @STATION_INFO_TX_BITRATE: @tx_bitrate fields are filled
++ * @STATION_INFO_TX_BITRATE: @txrate fields are filled
+  *  (tx_bitrate, tx_bitrate_flags and tx_bitrate_mcs)
+  * @STATION_INFO_RX_PACKETS: @rx_packets filled
+  * @STATION_INFO_TX_PACKETS: @tx_packets filled
+@@ -422,6 +422,7 @@ struct station_parameters {
+  * @STATION_INFO_TX_FAILED: @tx_failed filled
+  * @STATION_INFO_RX_DROP_MISC: @rx_dropped_misc filled
+  * @STATION_INFO_SIGNAL_AVG: @signal_avg filled
++ * @STATION_INFO_RX_BITRATE: @rxrate fields are filled
+  */
+ enum station_info_flags {
+ 	STATION_INFO_INACTIVE_TIME	= 1<<0,
+@@ -438,6 +439,7 @@ enum station_info_flags {
+ 	STATION_INFO_TX_FAILED		= 1<<11,
+ 	STATION_INFO_RX_DROP_MISC	= 1<<12,
+ 	STATION_INFO_SIGNAL_AVG		= 1<<13,
++	STATION_INFO_RX_BITRATE		= 1<<14,
+ };
+ 
+ /**
+@@ -507,6 +509,7 @@ struct station_info {
+ 	s8 signal;
+ 	s8 signal_avg;
+ 	struct rate_info txrate;
++	struct rate_info rxrate;
+ 	u32 rx_packets;
+ 	u32 tx_packets;
+ 	u32 tx_retries;
+--- a/include/linux/nl80211.h
++++ b/include/linux/nl80211.h
+@@ -1243,6 +1243,8 @@ enum nl80211_rate_info {
+  * @NL80211_STA_INFO_LLID: the station's mesh LLID
+  * @NL80211_STA_INFO_PLID: the station's mesh PLID
+  * @NL80211_STA_INFO_PLINK_STATE: peer link state for the station
++ * @NL80211_STA_INFO_RX_BITRATE: last unicast rx rate, nested attribute
++ * 	containing info as possible, see &enum nl80211_sta_info_txrate.
+  * @__NL80211_STA_INFO_AFTER_LAST: internal
+  * @NL80211_STA_INFO_MAX: highest possible station info attribute
+  */
+@@ -1261,6 +1263,7 @@ enum nl80211_sta_info {
+ 	NL80211_STA_INFO_TX_RETRIES,
+ 	NL80211_STA_INFO_TX_FAILED,
+ 	NL80211_STA_INFO_SIGNAL_AVG,
++	NL80211_STA_INFO_RX_BITRATE,
+ 
+ 	/* keep last */
+ 	__NL80211_STA_INFO_AFTER_LAST,
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -1968,13 +1968,41 @@ static int parse_station_flags(struct ge
+ 	return 0;
+ }
+ 
++static bool nl80211_put_sta_rate(struct sk_buff *msg, struct rate_info *info,
++				 int attr)
++{
++	struct nlattr *rate;
++	u16 bitrate;
++
++	rate = nla_nest_start(msg, attr);
++	if (!rate)
++		goto nla_put_failure;
++
++	/* cfg80211_calculate_bitrate will return 0 for mcs >= 32 */
++	bitrate = cfg80211_calculate_bitrate(info);
++	if (bitrate > 0)
++		NLA_PUT_U16(msg, NL80211_RATE_INFO_BITRATE, bitrate);
++
++	if (info->flags & RATE_INFO_FLAGS_MCS)
++		NLA_PUT_U8(msg, NL80211_RATE_INFO_MCS, info->mcs);
++	if (info->flags & RATE_INFO_FLAGS_40_MHZ_WIDTH)
++		NLA_PUT_FLAG(msg, NL80211_RATE_INFO_40_MHZ_WIDTH);
++	if (info->flags & RATE_INFO_FLAGS_SHORT_GI)
++		NLA_PUT_FLAG(msg, NL80211_RATE_INFO_SHORT_GI);
++
++	nla_nest_end(msg, rate);
++	return true;
++
++nla_put_failure:
++	return false;
++}
++
+ static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
+ 				int flags, struct net_device *dev,
+ 				const u8 *mac_addr, struct station_info *sinfo)
+ {
+ 	void *hdr;
+-	struct nlattr *sinfoattr, *txrate;
+-	u16 bitrate;
++	struct nlattr *sinfoattr;
+ 
+ 	hdr = nl80211hdr_put(msg, pid, seq, flags, NL80211_CMD_NEW_STATION);
+ 	if (!hdr)
+@@ -2013,24 +2041,14 @@ static int nl80211_send_station(struct s
+ 		NLA_PUT_U8(msg, NL80211_STA_INFO_SIGNAL_AVG,
+ 			   sinfo->signal_avg);
+ 	if (sinfo->filled & STATION_INFO_TX_BITRATE) {
+-		txrate = nla_nest_start(msg, NL80211_STA_INFO_TX_BITRATE);
+-		if (!txrate)
++		if (!nl80211_put_sta_rate(msg, &sinfo->txrate,
++					  NL80211_STA_INFO_TX_BITRATE))
++			goto nla_put_failure;
++	}
++	if (sinfo->filled & STATION_INFO_RX_BITRATE) {
++		if (!nl80211_put_sta_rate(msg, &sinfo->rxrate,
++					  NL80211_STA_INFO_RX_BITRATE))
+ 			goto nla_put_failure;
+-
+-		/* cfg80211_calculate_bitrate will return 0 for mcs >= 32 */
+-		bitrate = cfg80211_calculate_bitrate(&sinfo->txrate);
+-		if (bitrate > 0)
+-			NLA_PUT_U16(msg, NL80211_RATE_INFO_BITRATE, bitrate);
+-
+-		if (sinfo->txrate.flags & RATE_INFO_FLAGS_MCS)
+-			NLA_PUT_U8(msg, NL80211_RATE_INFO_MCS,
+-				    sinfo->txrate.mcs);
+-		if (sinfo->txrate.flags & RATE_INFO_FLAGS_40_MHZ_WIDTH)
+-			NLA_PUT_FLAG(msg, NL80211_RATE_INFO_40_MHZ_WIDTH);
+-		if (sinfo->txrate.flags & RATE_INFO_FLAGS_SHORT_GI)
+-			NLA_PUT_FLAG(msg, NL80211_RATE_INFO_SHORT_GI);
+-
+-		nla_nest_end(msg, txrate);
+ 	}
+ 	if (sinfo->filled & STATION_INFO_RX_PACKETS)
+ 		NLA_PUT_U32(msg, NL80211_STA_INFO_RX_PACKETS,
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -209,6 +209,8 @@ enum plink_state {
+  * @rate_ctrl_priv: rate control private per-STA pointer
+  * @last_tx_rate: rate used for last transmit, to report to userspace as
+  *	"the" transmit rate
++ * @last_rx_rate_idx: rx status rate index of the last data packet
++ * @last_rx_rate_flag: rx status flag of the last data packet
+  * @lock: used for locking all fields that require locking, see comments
+  *	in the header file.
+  * @flaglock: spinlock for flags accesses
+@@ -311,6 +313,8 @@ struct sta_info {
+ 	unsigned long tx_bytes;
+ 	unsigned long tx_fragments;
+ 	struct ieee80211_tx_rate last_tx_rate;
++	int last_rx_rate_idx;
++	int last_rx_rate_flag;
+ 	u16 tid_seq[IEEE80211_QOS_CTL_TID_MASK + 1];
+ 
+ 	/*
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1166,14 +1166,23 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 	if (rx->sdata->vif.type == NL80211_IFTYPE_ADHOC) {
+ 		u8 *bssid = ieee80211_get_bssid(hdr, rx->skb->len,
+ 						NL80211_IFTYPE_ADHOC);
+-		if (compare_ether_addr(bssid, rx->sdata->u.ibss.bssid) == 0)
++		if (compare_ether_addr(bssid, rx->sdata->u.ibss.bssid) == 0) {
+ 			sta->last_rx = jiffies;
++			if (ieee80211_is_data(hdr->frame_control)) {
++				sta->last_rx_rate_idx = status->rate_idx;
++				sta->last_rx_rate_flag = status->flag;
++			}
++		}
+ 	} else if (!is_multicast_ether_addr(hdr->addr1)) {
+ 		/*
+ 		 * Mesh beacons will update last_rx when if they are found to
+ 		 * match the current local configuration when processed.
+ 		 */
+ 		sta->last_rx = jiffies;
++		if (ieee80211_is_data(hdr->frame_control)) {
++			sta->last_rx_rate_idx = status->rate_idx;
++			sta->last_rx_rate_flag = status->flag;
++		}
+ 	}
+ 
+ 	if (!(status->rx_flags & IEEE80211_RX_RA_MATCH))
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -316,6 +316,17 @@ static int ieee80211_config_default_mgmt
+ 	return 0;
+ }
+ 
++static void rate_idx_to_bitrate(struct rate_info *rate, struct sta_info *sta, int idx)
++{
++	if (!(rate->flags & RATE_INFO_FLAGS_MCS)) {
++		struct ieee80211_supported_band *sband;
++		sband = sta->local->hw.wiphy->bands[
++				sta->local->hw.conf.channel->band];
++		rate->legacy = sband->bitrates[idx].bitrate;
++	} else
++		rate->mcs = idx;
++}
++
+ static void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo)
+ {
+ 	struct ieee80211_sub_if_data *sdata = sta->sdata;
+@@ -330,6 +341,7 @@ static void sta_set_sinfo(struct sta_inf
+ 			STATION_INFO_TX_RETRIES |
+ 			STATION_INFO_TX_FAILED |
+ 			STATION_INFO_TX_BITRATE |
++			STATION_INFO_RX_BITRATE |
+ 			STATION_INFO_RX_DROP_MISC;
+ 
+ 	sinfo->inactive_time = jiffies_to_msecs(jiffies - sta->last_rx);
+@@ -355,15 +367,16 @@ static void sta_set_sinfo(struct sta_inf
+ 		sinfo->txrate.flags |= RATE_INFO_FLAGS_40_MHZ_WIDTH;
+ 	if (sta->last_tx_rate.flags & IEEE80211_TX_RC_SHORT_GI)
+ 		sinfo->txrate.flags |= RATE_INFO_FLAGS_SHORT_GI;
++	rate_idx_to_bitrate(&sinfo->txrate, sta, sta->last_tx_rate.idx);
+ 
+-	if (!(sta->last_tx_rate.flags & IEEE80211_TX_RC_MCS)) {
+-		struct ieee80211_supported_band *sband;
+-		sband = sta->local->hw.wiphy->bands[
+-				sta->local->hw.conf.channel->band];
+-		sinfo->txrate.legacy =
+-			sband->bitrates[sta->last_tx_rate.idx].bitrate;
+-	} else
+-		sinfo->txrate.mcs = sta->last_tx_rate.idx;
++	sinfo->rxrate.flags = 0;
++	if (sta->last_rx_rate_flag & RX_FLAG_HT)
++		sinfo->rxrate.flags |= RATE_INFO_FLAGS_MCS;
++	if (sta->last_rx_rate_flag & RX_FLAG_40MHZ)
++		sinfo->rxrate.flags |= RATE_INFO_FLAGS_40_MHZ_WIDTH;
++	if (sta->last_rx_rate_flag & RX_FLAG_SHORT_GI)
++		sinfo->rxrate.flags |= RATE_INFO_FLAGS_SHORT_GI;
++	rate_idx_to_bitrate(&sinfo->rxrate, sta, sta->last_rx_rate_idx);
+ 
+ 	if (ieee80211_vif_is_mesh(&sdata->vif)) {
+ #ifdef CONFIG_MAC80211_MESH
