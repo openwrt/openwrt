@@ -1,221 +1,81 @@
 --- a/nl80211.h
 +++ b/nl80211.h
-@@ -295,7 +295,9 @@
-  *	auth and assoc steps. For this, you need to specify the SSID in a
-  *	%NL80211_ATTR_SSID attribute, and can optionally specify the association
-  *	IEs in %NL80211_ATTR_IE, %NL80211_ATTR_AUTH_TYPE, %NL80211_ATTR_MAC,
-- *	%NL80211_ATTR_WIPHY_FREQ and %NL80211_ATTR_CONTROL_PORT.
-+ *	%NL80211_ATTR_WIPHY_FREQ, %NL80211_ATTR_CONTROL_PORT,
-+ *	%NL80211_ATTR_CONTROL_PORT_ETHERTYPE and
-+ *	%NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT.
-  *	It is also sent as an event, with the BSSID and response IEs when the
-  *	connection is established or failed to be established. This can be
-  *	determined by the STATUS_CODE attribute.
-@@ -313,8 +315,8 @@
-  *	channel for the specified amount of time. This can be used to do
-  *	off-channel operations like transmit a Public Action frame and wait for
-  *	a response while being associated to an AP on another channel.
-- *	%NL80211_ATTR_WIPHY or %NL80211_ATTR_IFINDEX is used to specify which
-- *	radio is used. %NL80211_ATTR_WIPHY_FREQ is used to specify the
-+ *	%NL80211_ATTR_IFINDEX is used to specify which interface (and thus
-+ *	radio) is used. %NL80211_ATTR_WIPHY_FREQ is used to specify the
-  *	frequency for the operation and %NL80211_ATTR_WIPHY_CHANNEL_TYPE may be
-  *	optionally used to specify additional channel parameters.
-  *	%NL80211_ATTR_DURATION is used to specify the duration in milliseconds
-@@ -385,6 +387,8 @@
-  *	of any other interfaces, and other interfaces will again take
-  *	precedence when they are used.
+@@ -148,6 +148,10 @@
+  * @NL80211_CMD_SET_MPATH:  Set mesh path attributes for mesh path to
+  * 	destination %NL80211_ATTR_MAC on the interface identified by
+  * 	%NL80211_ATTR_IFINDEX.
++ * @NL80211_CMD_NEW_MPATH: Create a new mesh path for the destination given by
++ *	%NL80211_ATTR_MAC via %NL80211_ATTR_MPATH_NEXT_HOP.
++ * @NL80211_CMD_DEL_MPATH: Delete a mesh path to the destination given by
++ *	%NL80211_ATTR_MAC.
+  * @NL80211_CMD_NEW_PATH: Add a mesh path with given attributes to the
+  *	the interface identified by %NL80211_ATTR_IFINDEX.
+  * @NL80211_CMD_DEL_PATH: Remove a mesh path identified by %NL80211_ATTR_MAC
+@@ -612,7 +616,7 @@ enum nl80211_commands {
+  *	consisting of a nested array.
   *
-+ * @NL80211_CMD_SET_WDS_PEER: Set the MAC address of the peer on a WDS interface.
-+ *
-  * @NL80211_CMD_MAX: highest used command number
-  * @__NL80211_CMD_AFTER_LAST: internal use
-  */
-@@ -487,6 +491,7 @@ enum nl80211_commands {
- 	NL80211_CMD_NOTIFY_CQM,
- 
- 	NL80211_CMD_SET_CHANNEL,
-+	NL80211_CMD_SET_WDS_PEER,
- 
- 	/* add new commands above here */
- 
-@@ -686,6 +691,15 @@ enum nl80211_commands {
-  *	request, the driver will assume that the port is unauthorized until
-  *	authorized by user space. Otherwise, port is marked authorized by
-  *	default in station mode.
-+ * @NL80211_ATTR_CONTROL_PORT_ETHERTYPE: A 16-bit value indicating the
-+ *	ethertype that will be used for key negotiation. It can be
-+ *	specified with the associate and connect commands. If it is not
-+ *	specified, the value defaults to 0x888E (PAE, 802.1X). This
-+ *	attribute is also used as a flag in the wiphy information to
-+ *	indicate that protocols other than PAE are supported.
-+ * @NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT: When included along with
-+ *	%NL80211_ATTR_CONTROL_PORT_ETHERTYPE, indicates that the custom
-+ *	ethertype frames used for key negotiation must not be encrypted.
+  * @NL80211_ATTR_MESH_ID: mesh id (1-32 bytes).
+- * @NL80211_ATTR_PLINK_ACTION: action to perform on the mesh peer link.
++ * @NL80211_ATTR_STA_PLINK_ACTION: action to perform on the mesh peer link.
+  * @NL80211_ATTR_MPATH_NEXT_HOP: MAC address of the next hop for a mesh path.
+  * @NL80211_ATTR_MPATH_INFO: information about a mesh_path, part of mesh path
+  * 	info given for %NL80211_CMD_GET_MPATH, nested attribute described at
+@@ -879,7 +883,9 @@ enum nl80211_commands {
+  *	See &enum nl80211_key_default_types.
   *
-  * @NL80211_ATTR_TESTDATA: Testmode data blob, passed through to the driver.
-  *	We recommend using nested, driver-specific attributes within this.
-@@ -787,6 +801,33 @@ enum nl80211_commands {
-  *      This is used in association with @NL80211_ATTR_WIPHY_TX_POWER_SETTING
-  *      for non-automatic settings.
+  * @NL80211_ATTR_MESH_SETUP: Optional mesh setup parameters.  These cannot be
+- * changed once the mesh is active.
++ *	changed once the mesh is active.
++ * @NL80211_ATTR_MESH_CONFIG: Mesh configuration parameters, a nested attribute
++ *	containing attributes from &enum nl80211_meshconf_params.
   *
-+ * @NL80211_ATTR_SUPPORT_IBSS_RSN: The device supports IBSS RSN, which mostly
-+ *	means support for per-station GTKs.
-+ *
-+ * @NL80211_ATTR_WIPHY_ANTENNA_TX: Bitmap of allowed antennas for transmitting.
-+ *	This can be used to mask out antennas which are not attached or should
-+ *	not be used for transmitting. If an antenna is not selected in this
-+ *	bitmap the hardware is not allowed to transmit on this antenna.
-+ *
-+ *	Each bit represents one antenna, starting with antenna 1 at the first
-+ *	bit. Depending on which antennas are selected in the bitmap, 802.11n
-+ *	drivers can derive which chainmasks to use (if all antennas belonging to
-+ *	a particular chain are disabled this chain should be disabled) and if
-+ *	a chain has diversity antennas wether diversity should be used or not.
-+ *	HT capabilities (STBC, TX Beamforming, Antenna selection) can be
-+ *	derived from the available chains after applying the antenna mask.
-+ *	Non-802.11n drivers can derive wether to use diversity or not.
-+ *	Drivers may reject configurations or RX/TX mask combinations they cannot
-+ *	support by returning -EINVAL.
-+ *
-+ * @NL80211_ATTR_WIPHY_ANTENNA_RX: Bitmap of allowed antennas for receiving.
-+ *	This can be used to mask out antennas which are not attached or should
-+ *	not be used for receiving. If an antenna is not selected in this bitmap
-+ *	the hardware should not be configured to receive on this antenna.
-+ *	For a more detailed descripton see @NL80211_ATTR_WIPHY_ANTENNA_TX.
-+ *
-+ * @NL80211_ATTR_MCAST_RATE: Multicast tx rate (in 100 kbps) for IBSS
-+ *
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-  */
-@@ -951,6 +992,16 @@ enum nl80211_attrs {
- 	NL80211_ATTR_RX_FRAME_TYPES,
- 	NL80211_ATTR_FRAME_TYPE,
- 
-+	NL80211_ATTR_CONTROL_PORT_ETHERTYPE,
-+	NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT,
-+
-+	NL80211_ATTR_SUPPORT_IBSS_RSN,
-+
-+	NL80211_ATTR_WIPHY_ANTENNA_TX,
-+	NL80211_ATTR_WIPHY_ANTENNA_RX,
-+
-+	NL80211_ATTR_MCAST_RATE,
-+
- 	/* add attributes here, update the policy in nl80211.c */
- 
- 	__NL80211_ATTR_AFTER_LAST,
-@@ -1006,6 +1057,8 @@ enum nl80211_attrs {
-  * @NL80211_IFTYPE_WDS: wireless distribution interface
-  * @NL80211_IFTYPE_MONITOR: monitor interface receiving all frames
-  * @NL80211_IFTYPE_MESH_POINT: mesh point
-+ * @NL80211_IFTYPE_P2P_CLIENT: P2P client
-+ * @NL80211_IFTYPE_P2P_GO: P2P group owner
-  * @NL80211_IFTYPE_MAX: highest interface type number currently defined
-  * @NUM_NL80211_IFTYPES: number of defined interface types
-  *
-@@ -1022,6 +1075,8 @@ enum nl80211_iftype {
- 	NL80211_IFTYPE_WDS,
- 	NL80211_IFTYPE_MONITOR,
- 	NL80211_IFTYPE_MESH_POINT,
-+	NL80211_IFTYPE_P2P_CLIENT,
-+	NL80211_IFTYPE_P2P_GO,
- 
- 	/* keep last */
- 	NUM_NL80211_IFTYPES,
-@@ -1111,6 +1166,8 @@ enum nl80211_rate_info {
-  * @NL80211_STA_INFO_RX_PACKETS: total received packet (u32, from this station)
-  * @NL80211_STA_INFO_TX_PACKETS: total transmitted packets (u32, to this
-  *	station)
-+ * @NL80211_STA_INFO_TX_RETRIES: total retries (u32, to this station)
-+ * @NL80211_STA_INFO_TX_FAILED: total failed packets (u32, to this station)
+@@ -1225,8 +1231,6 @@ enum nl80211_rate_info {
+  * @NL80211_STA_INFO_INACTIVE_TIME: time since last activity (u32, msecs)
+  * @NL80211_STA_INFO_RX_BYTES: total received bytes (u32, from this station)
+  * @NL80211_STA_INFO_TX_BYTES: total transmitted bytes (u32, to this station)
+- * @__NL80211_STA_INFO_AFTER_LAST: internal
+- * @NL80211_STA_INFO_MAX: highest possible station info attribute
+  * @NL80211_STA_INFO_SIGNAL: signal strength of last received PPDU (u8, dBm)
+  * @NL80211_STA_INFO_TX_BITRATE: current unicast tx rate, nested attribute
+  * 	containing info as possible, see &enum nl80211_sta_info_txrate.
+@@ -1236,6 +1240,13 @@ enum nl80211_rate_info {
+  * @NL80211_STA_INFO_TX_RETRIES: total retries (u32, to this station)
+  * @NL80211_STA_INFO_TX_FAILED: total failed packets (u32, to this station)
+  * @NL80211_STA_INFO_SIGNAL_AVG: signal strength average (u8, dBm)
++ * @NL80211_STA_INFO_LLID: the station's mesh LLID
++ * @NL80211_STA_INFO_PLID: the station's mesh PLID
++ * @NL80211_STA_INFO_PLINK_STATE: peer link state for the station
++ * @NL80211_STA_INFO_RX_BITRATE: last unicast rx rate, nested attribute
++ * 	containing info as possible, see &enum nl80211_sta_info_txrate.
++ * @__NL80211_STA_INFO_AFTER_LAST: internal
++ * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
  enum nl80211_sta_info {
  	__NL80211_STA_INFO_INVALID,
-@@ -1124,6 +1181,8 @@ enum nl80211_sta_info {
- 	NL80211_STA_INFO_TX_BITRATE,
- 	NL80211_STA_INFO_RX_PACKETS,
- 	NL80211_STA_INFO_TX_PACKETS,
-+	NL80211_STA_INFO_TX_RETRIES,
-+	NL80211_STA_INFO_TX_FAILED,
+@@ -1252,6 +1263,7 @@ enum nl80211_sta_info {
+ 	NL80211_STA_INFO_TX_RETRIES,
+ 	NL80211_STA_INFO_TX_FAILED,
+ 	NL80211_STA_INFO_SIGNAL_AVG,
++	NL80211_STA_INFO_RX_BITRATE,
  
  	/* keep last */
  	__NL80211_STA_INFO_AFTER_LAST,
-@@ -1277,7 +1336,11 @@ enum nl80211_bitrate_attr {
-  * 	wireless core it thinks its knows the regulatory domain we should be in.
-  * @NL80211_REGDOM_SET_BY_COUNTRY_IE: the wireless core has received an
-  * 	802.11 country information element with regulatory information it
-- * 	thinks we should consider.
-+ * 	thinks we should consider. cfg80211 only processes the country
-+ *	code from the IE, and relies on the regulatory domain information
-+ *	structure pased by userspace (CRDA) from our wireless-regdb.
-+ *	If a channel is enabled but the country code indicates it should
-+ *	be disabled we disable the channel and re-enable it upon disassociation.
+@@ -1626,7 +1638,7 @@ enum nl80211_mntr_flags {
+  * @NL80211_MESHCONF_HWMP_NET_DIAM_TRVS_TIME: The interval of time (in TUs)
+  * that it takes for an HWMP information element to propagate across the mesh
+  *
+- * @NL80211_MESHCONF_ROOTMODE: whether root mode is enabled or not
++ * @NL80211_MESHCONF_HWMP_ROOTMODE: whether root mode is enabled or not
+  *
+  * @NL80211_MESHCONF_ELEMENT_TTL: specifies the value of TTL field set at a
+  * source mesh point for path selection elements.
+@@ -1678,6 +1690,7 @@ enum nl80211_meshconf_params {
+  * element that vendors will use to identify the path selection methods and
+  * metrics in use.
+  *
++ * @NL80211_MESH_SETUP_ATTR_MAX: highest possible mesh setup attribute number
+  * @__NL80211_MESH_SETUP_ATTR_AFTER_LAST: Internal use
   */
- enum nl80211_reg_initiator {
- 	NL80211_REGDOM_SET_BY_CORE,
-@@ -1382,6 +1445,17 @@ enum nl80211_reg_rule_flags {
-  * @__NL80211_SURVEY_INFO_INVALID: attribute number 0 is reserved
-  * @NL80211_SURVEY_INFO_FREQUENCY: center frequency of channel
-  * @NL80211_SURVEY_INFO_NOISE: noise level of channel (u8, dBm)
-+ * @NL80211_SURVEY_INFO_IN_USE: channel is currently being used
-+ * @NL80211_SURVEY_INFO_CHANNEL_TIME: amount of time (in ms) that the radio
-+ *	spent on this channel
-+ * @NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY: amount of the time the primary
-+ *	channel was sensed busy (either due to activity or energy detect)
-+ * @NL80211_SURVEY_INFO_CHANNEL_TIME_EXT_BUSY: amount of time the extension
-+ *	channel was sensed busy
-+ * @NL80211_SURVEY_INFO_CHANNEL_TIME_RX: amount of time the radio spent
-+ *	receiving data
-+ * @NL80211_SURVEY_INFO_CHANNEL_TIME_TX: amount of time the radio spent
-+ *	transmitting data
-  * @NL80211_SURVEY_INFO_MAX: highest survey info attribute number
-  *	currently defined
-  * @__NL80211_SURVEY_INFO_AFTER_LAST: internal use
-@@ -1390,6 +1464,12 @@ enum nl80211_survey_info {
- 	__NL80211_SURVEY_INFO_INVALID,
- 	NL80211_SURVEY_INFO_FREQUENCY,
- 	NL80211_SURVEY_INFO_NOISE,
-+	NL80211_SURVEY_INFO_IN_USE,
-+	NL80211_SURVEY_INFO_CHANNEL_TIME,
-+	NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY,
-+	NL80211_SURVEY_INFO_CHANNEL_TIME_EXT_BUSY,
-+	NL80211_SURVEY_INFO_CHANNEL_TIME_RX,
-+	NL80211_SURVEY_INFO_CHANNEL_TIME_TX,
- 
- 	/* keep last */
- 	__NL80211_SURVEY_INFO_AFTER_LAST,
-@@ -1636,11 +1716,14 @@ enum nl80211_auth_type {
-  * @NL80211_KEYTYPE_GROUP: Group (broadcast/multicast) key
-  * @NL80211_KEYTYPE_PAIRWISE: Pairwise (unicast/individual) key
-  * @NL80211_KEYTYPE_PEERKEY: PeerKey (DLS)
-+ * @NUM_NL80211_KEYTYPES: number of defined key types
-  */
- enum nl80211_key_type {
- 	NL80211_KEYTYPE_GROUP,
- 	NL80211_KEYTYPE_PAIRWISE,
- 	NL80211_KEYTYPE_PEERKEY,
-+
-+	NUM_NL80211_KEYTYPES
- };
- 
- /**
-@@ -1671,6 +1754,9 @@ enum nl80211_wpa_versions {
-  *	CCMP keys, each six bytes in little endian
-  * @NL80211_KEY_DEFAULT: flag indicating default key
-  * @NL80211_KEY_DEFAULT_MGMT: flag indicating default management key
-+ * @NL80211_KEY_TYPE: the key type from enum nl80211_key_type, if not
-+ *	specified the default depends on whether a MAC address was
-+ *	given with the command using the key or not (u32)
-  * @__NL80211_KEY_AFTER_LAST: internal
-  * @NL80211_KEY_MAX: highest key attribute
-  */
-@@ -1682,6 +1768,7 @@ enum nl80211_key_attributes {
- 	NL80211_KEY_SEQ,
- 	NL80211_KEY_DEFAULT,
- 	NL80211_KEY_DEFAULT_MGMT,
-+	NL80211_KEY_TYPE,
- 
- 	/* keep last */
- 	__NL80211_KEY_AFTER_LAST,
+ enum nl80211_mesh_setup_params {
