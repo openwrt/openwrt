@@ -41,11 +41,10 @@ So let's take a look at OpenWrt and see how this all works.
 
 \subsubsection{Download OpenWrt}
 
-This article refers to the "Kamikaze" branch of OpenWrt, which can be downloaded via
-subversion using the following command:
+OpenWrt can be downloaded via subversion using the following command:
 
 \begin{Verbatim}
-$ svn checkout svn://svn.openwrt.org/openwrt/trunk kamikaze
+$ svn checkout svn://svn.openwrt.org/openwrt/trunk openwrt-trunk
 \end{Verbatim}
 
 Additionally, there is a trac interface on \href{https://dev.openwrt.org/}{https://dev.openwrt.org/}
@@ -88,7 +87,7 @@ $ ./scripts/feeds update
 
 Those packages can be used to extend the functionality of the build system and need to be
 symlinked into the main trunk. Once you do that, the packages will show up in the menu for
-configuration. From kamikaze you would do something like this:
+configuration. You would do something like this:
 
 \begin{Verbatim}
 $ ./scripts/feeds search nmap
