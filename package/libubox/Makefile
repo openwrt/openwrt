@@ -34,7 +34,12 @@ TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 
 define Package/libubox/install
 	$(INSTALL_DIR) $(1)/lib/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/*.so $(1)/lib/
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libubox.so $(1)/lib/
+endef
+
+define Package/libblobmsg-json/install
+	$(INSTALL_DIR) $(1)/lib/
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libblobmsg_json.so $(1)/lib/
 endef
 
 $(eval $(call BuildPackage,libubox))
