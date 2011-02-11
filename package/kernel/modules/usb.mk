@@ -162,7 +162,7 @@ define KernelPackage/usb-tahvo
 	CONFIG_CBUS_TAHVO_USB_HOST_BY_DEFAULT=n \
 	CONFIG_USB_OHCI_HCD_OMAP1=y \
 	CONFIG_USB_GADGET_DEBUG_FS=n
-  DEPENDS:=@TARGET_omap24xx +kmod-usb-ohci +kmod-tusb6010 +kmod-usb-gadget
+  DEPENDS:=@TARGET_omap24xx +kmod-tusb6010 +kmod-usb-gadget
   FILES:=$(LINUX_DIR)/drivers/cbus/tahvo-usb.ko
   AUTOLOAD:=$(call AutoLoad,54,tahvo-usb)
   $(call AddDepends/usb)
