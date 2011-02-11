@@ -107,14 +107,12 @@ define KernelPackage/musb-hdrc
   TITLE:=Support for Mentor Graphics silicon dual role USB
   KCONFIG:= \
 	CONFIG_USB_MUSB_HDRC \
-	CONFIG_NOP_USB_XCEIV \
-	CONFIG_USB_TUSB6010=y \
 	CONFIG_MUSB_PIO_ONLY=n \
 	CONFIG_USB_MUSB_OTG=y \
 	CONFIG_USB_MUSB_DEBUG=y
   DEPENDS:=@TARGET_omap24xx
-  FILES:=$(LINUX_DIR)/drivers/usb/otg/nop-usb-xceiv.ko $(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
-  AUTOLOAD:=$(call AutoLoad,54,nop-usb-xceiv musb_hdrc)
+  FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
+  AUTOLOAD:=$(call AutoLoad,54,musb_hdrc)
   $(call AddDepends/usb)
 endef
 
