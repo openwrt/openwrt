@@ -170,11 +170,6 @@ prepare_interface() {
 			local macaddr
 			config_get macaddr "$config" macaddr
 			[ -x /usr/sbin/brctl ] && {
-				# Disable IPv6 for bridge ports
-				do_sysctl net.ipv6.conf.$iface.disable_ipv6 1
-				[ "${iface##wlan}" != "$iface" ] && \
-					do_sysctl net.ipv6.conf.mon.$iface.disable_ipv6 1
-
 				ifconfig "br-$config" 2>/dev/null >/dev/null && {
 					local newdevs devices
 					config_get devices "$config" device
@@ -183,6 +178,7 @@ prepare_interface() {
 					done
 					uci_set_state network "$config" device "$newdevs"
 					$DEBUG ifconfig "$iface" 0.0.0.0
+					$DEBUG do_sysctl "net.ipv6.conf.$iface.disable_ipv6" 1
 					$DEBUG brctl addif "br-$config" "$iface"
 					# Bridge existed already. No further processing necesary
 				} || {
@@ -192,6 +188,7 @@ prepare_interface() {
 					$DEBUG brctl setfd "br-$config" 0
 					$DEBUG ifconfig "br-$config" up
 					$DEBUG ifconfig "$iface" 0.0.0.0
+					$DEBUG do_sysctl "net.ipv6.conf.$iface.disable_ipv6" 1
 					$DEBUG brctl addif "br-$config" "$iface"
 					$DEBUG brctl stp "br-$config" $stp
 					# Creating the bridge here will have triggered a hotplug event, which will
