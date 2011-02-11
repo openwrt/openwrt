@@ -18,7 +18,7 @@ define Package/libubox
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Basic utility library
-  DEPENDS:=+libjson
+  DEPENDS:=
 endef
 
 
