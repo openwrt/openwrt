@@ -25,7 +25,7 @@ define Host/Install
 	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/wrt350nv2-builder $(STAGING_DIR_HOST)/bin/
 # optionally the builder can add a u-boot binary to create a complete webupgrade image, but this is not mandatory
-# u-boot images from stock firmware are available at ftp://ftp.maddes.net/openwrt/kamikaze/orion/stock/binaries/
+# u-boot images from stock firmware are available at ftp://ftp.maddes.net/openwrt/trunk/orion/stock/binaries/
 	[ ! -f "files/u-boot.bin" ] || ( \
 		$(INSTALL_DIR) $(STAGING_DIR_HOST)/share/wrt350nv2-builder; \
 		$(CP) files/u-boot.bin $(STAGING_DIR_HOST)/share/wrt350nv2-builder/; )
