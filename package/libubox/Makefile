@@ -38,4 +38,5 @@ define Package/libubox/install
 endef
 
 $(eval $(call BuildPackage,libubox))
+$(eval $(call BuildPackage,libblobmsg-json))
 
