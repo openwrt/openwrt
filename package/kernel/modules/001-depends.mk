@@ -36,7 +36,7 @@ endef
 
 
 define SetDepends/rfkill
-  DEPENDS:= @(TARGET_ar71xx||TARGET_brcm47xx||TARGET_s3c24xx||TARGET_x86)
+  DEPENDS:= @(TARGET_ar71xx||TARGET_brcm47xx||TARGET_s3c24xx||TARGET_x86||TARGET_gemini)
 endef
 
 define AddDepends/rfkill
