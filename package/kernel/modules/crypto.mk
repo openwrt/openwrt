@@ -22,7 +22,7 @@ SHA256_SUFFIX:=$(CRYPTO_GENERIC)
 SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 
 CRYPTO_MODULES = \
-	$(if $(filter 1,$(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.28)),ALGAPI2,ALGAPI)=crypto_algapi \
+	ALGAPI2=crypto_algapi \
 	AEAD2=aead \
 	$(if $(filter 1,$(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.36)),PCOMP2,PCOMP)=pcompress \
 	BLKCIPHER2=crypto_blkcipher \
