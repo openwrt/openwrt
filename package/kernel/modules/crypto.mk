@@ -28,7 +28,6 @@ CRYPTO_MODULES = \
 	BLKCIPHER2=crypto_blkcipher \
 	HASH2=crypto_hash \
 	MANAGER2=cryptomgr \
-	CBC=cbc \
 	ECB=ecb
 
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
@@ -171,6 +170,16 @@ define KernelPackage/crypto-authenc
 endef
 
 $(eval $(call KernelPackage,crypto-authenc))
+
+define KernelPackage/crypto-cbc
+  TITLE:=Cipher Block Chaining CryptoAPI module
+  KCONFIG:=CONFIG_CRYPTO_CBC
+  FILES:=$(LINUX_DIR)/crypto/cbc.ko
+  AUTOLOAD:=$(call AutoLoad,09,cbc)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-cbc))
 
 define KernelPackage/crypto-des
   TITLE:=DES/3DES cipher CryptoAPI module
