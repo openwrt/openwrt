@@ -49,12 +49,6 @@ define KernelPackage/crypto-core
   FILES:=$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod)))
   AUTOLOAD:=$(call AutoLoad,01,$(foreach mod,$(CRYPTO_MODULES),$(call crypto_name,$(mod))))
 endef
-
-define KernelPackage/crypto-core/2.4
-  FILES:=$(LINUX_DIR)/crypto/deflate.ko
-  AUTOLOAD:=$(call AutoLoad,01, deflate)
-endef
-
 $(eval $(call KernelPackage,crypto-core))
 
 
