@@ -416,9 +416,7 @@ unbridge() {
 
 		for brdev in $(brctl show | awk '$2 ~ /^[0-9].*\./ { print $1 }'); do
 			brctl delif "$brdev" "$dev" 2>/dev/null >/dev/null
-			do_sysctl net.ipv6.conf.$dev.disable_ipv6 0
-			[ "${dev##wlan}" != "$dev" ] && \
-				do_sysctl net.ipv6.conf.mon.$dev.disable_ipv6 0
+			do_sysctl "net.ipv6.conf.$dev.disable_ipv6" 0
 		done
 	}
 }
