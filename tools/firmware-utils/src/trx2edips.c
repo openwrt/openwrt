@@ -23,8 +23,8 @@ struct trx_header {
 
 
 
-#define EDIMAX_PS16	0x36315350
-#define EDIMAX_HDR_LEN 0xc
+#define EDIMAX_PS16	0x36315350	/* "PS16" */
+#define EDIMAX_HDR_LEN 	0xc
 
 
 /**********************************************************************/
@@ -94,9 +94,9 @@ int main(int argc, char *argv[])
 	FILE *fpIn = NULL;
 	FILE *fpOut = NULL;
 	long  nImgSize;
-	uint32_t sign = EDIMAX_PS16;	/* signature for header */
-	uint32_t start_addr = 0x80500000; /* start address but doesn't seems to be used... */
-	uint32_t length; /* length of data, not used too ...*/
+	uint32_t sign = EDIMAX_PS16;		/* signature for header */
+	uint32_t start_addr = 0x80500000; 	/* start address but doesn't seems to be used... */
+	uint32_t length; 			/* length of data, not used too ...*/
 	size_t res;
 
 	char *buf;
@@ -113,16 +113,18 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Unable to open %s\n", argv[1]);
 		return EXIT_FAILURE;
 	}
+	/* compute the length of the file */
 	fseek(fpIn, 0, SEEK_END);
 	length = ftell(fpIn);
-
+	/* alloc enough memory to store the file */
 	buf = (char *)malloc(length);
 	if (!buf) {
 		fprintf(stderr, "malloc of buffers failed\n");
 		return EXIT_FAILURE;
 	}
-
+	
 	rewind(fpIn);
+	/* read the whole file*/
 	res = fread(buf, 1, length, fpIn);
 
 	p = (struct trx_header *)buf;
@@ -140,11 +142,12 @@ int main(int argc, char *argv[])
 	}
 	/* make the 3 partition beeing 12 bytes closer from the header */
 	memcpy(buf + p->offsets[2] - EDIMAX_HDR_LEN, buf + p->offsets[2], length - p->offsets[2]);
+	/* recompute the crc32 check */
 	p->crc32 = crc32buf((char *) &p->flag_version, length - offsetof(struct trx_header, flag_version));
-
-	fwrite(&sign,  sizeof(long), 1, fpOut);
-	fwrite(&length, sizeof(long), 1, fpOut);
-	fwrite(&start_addr, sizeof(long), 1, fpOut);
+	/* write the modified file */
+	fwrite(&sign,  sizeof(uint32_t), 1, fpOut);
+	fwrite(&length, sizeof(uint32_t), 1, fpOut);
+	fwrite(&start_addr, sizeof(uint32_t), 1, fpOut);
 	fwrite(buf, sizeof(char), length, fpOut);
 	fclose(fpOut);
 }
