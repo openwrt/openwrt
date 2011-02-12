@@ -29,8 +29,7 @@ CRYPTO_MODULES = \
 	HASH2=crypto_hash \
 	MANAGER2=cryptomgr \
 	CBC=cbc \
-	ECB=ecb \
-	DEFLATE=deflate
+	ECB=ecb
 
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
 crypto_file=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).ko)
@@ -182,6 +181,16 @@ define KernelPackage/crypto-des
 endef
 
 $(eval $(call KernelPackage,crypto-des))
+
+define KernelPackage/crypto-deflate
+  TITLE:=Deflate compression CryptoAPI module
+  KCONFIG:=CONFIG_CRYPTO_DEFLATE
+  FILES:=$(LINUX_DIR)/crypto/deflate.ko
+  AUTOLOAD:=$(call AutoLoad,09,deflate)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-deflate))
 
 
 define KernelPackage/crypto-hmac
