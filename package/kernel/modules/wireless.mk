@@ -42,7 +42,7 @@ $(eval $(call KernelPackage,lib80211))
 define KernelPackage/net-airo
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Cisco Aironet driver
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +@DRIVER_WEXT_SUPPORT
   KCONFIG:=CONFIG_AIRO
   FILES:=$(LINUX_DIR)/drivers/net/wireless/airo.ko
   AUTOLOAD:=$(call AutoLoad,50,airo)
@@ -59,7 +59,7 @@ define KernelPackage/net-zd1201
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Zydas ZD1201 support
   DEPENDS:=@USB_SUPPORT
-  KCONFIG:=CONFIG_USB_ZD1201
+  KCONFIG:=CONFIG_USB_ZD1201 +@DRIVER_WEXT_SUPPORT
   FILES:=$(LINUX_DIR)/drivers/net/wireless/zd1201.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,zd1201)
 endef
@@ -112,7 +112,7 @@ $(eval $(call KernelPackage,net-zd1201))
 define KernelPackage/net-prism54
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Intersil Prism54 support
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +@DRIVER_WEXT_SUPPORT
   KCONFIG:=CONFIG_PRISM54
   FILES:=$(LINUX_DIR)/drivers/net/wireless/prism54/prism54.ko
   AUTOLOAD:=$(call AutoLoad,60,prism54)
