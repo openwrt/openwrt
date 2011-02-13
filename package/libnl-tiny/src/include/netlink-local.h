@@ -95,6 +95,7 @@ extern int __str2flags(const char *, struct trans_tbl *, size_t);
 
 extern void dump_from_ops(struct nl_object *, struct nl_dump_params *);
 
+#ifdef disabled
 static inline struct nl_cache *dp_cache(struct nl_object *obj)
 {
 	if (obj->ce_cache == NULL)
@@ -102,6 +103,7 @@ static inline struct nl_cache *dp_cache(struct nl_object *obj)
 
 	return obj->ce_cache;
 }
+#endif
 
 static inline int nl_cb_call(struct nl_cb *cb, int type, struct nl_msg *msg)
 {
