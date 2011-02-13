@@ -128,6 +128,9 @@ define Host/Compile
 		  done \
 		done \
 	)
+	rm -f \
+		$(TOOLCHAIN_DIR)/lib/libresolv*.so* \
+		$(TOOLCHAIN_DIR)/lib/libnsl*.so*
 endef
 
 define Host/Install
