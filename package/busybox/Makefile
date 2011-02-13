@@ -17,6 +17,7 @@ PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
 PKG_MD5SUM:=a2ce1a951571da8c6e0eaf75b1acef60
 
+PKG_BUILD_DEPENDS:=librpc
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -36,6 +37,7 @@ define Package/busybox
   MAINTAINER:=Nicolas Thill <nico@openwrt.org>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
+  DEPENDS:=+BUSYBOX_CONFIG_FEATURE_HAVE_RPC&&USE_UCLIBC:librpc
   MENU:=1
 endef
 
@@ -63,6 +65,13 @@ ifdef CONFIG_GCC_VERSION_LLVM
   TARGET_CFLAGS += -fnested-functions
 endif
 
+LDLIBS:=m crypt
+ifdef CONFIG_BUSYBOX_CONFIG_FEATURE_HAVE_RPC
+  TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
+  export LDFLAGS=$(TARGET_LDFLAGS)
+  LDLIBS += rpc
+endif
+
 define Build/Compile
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
@@ -71,6 +80,7 @@ define Build/Compile
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
 		SKIP_STRIP=y \
+		LDLIBS="$(LDLIBS)" \
 		all
 	rm -rf $(PKG_INSTALL_DIR)
 	$(FIND) $(PKG_BUILD_DIR) -lname "*busybox" -exec rm \{\} \;
@@ -80,6 +90,7 @@ define Build/Compile
 		EXTRA_CFLAGS="$(TARGET_CFLAGS)" \
 		ARCH="$(ARCH)" \
 		CONFIG_PREFIX="$(PKG_INSTALL_DIR)" \
+		LDLIBS="$(LDLIBS)" \
 		install
 endef
 
