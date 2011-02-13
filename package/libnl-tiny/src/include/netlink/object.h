@@ -35,23 +35,26 @@ struct nl_object
 
 /* General */
 extern struct nl_object *	nl_object_alloc(struct nl_object_ops *);
-extern int			nl_object_alloc_name(const char *,
-						     struct nl_object **);
 extern void			nl_object_free(struct nl_object *);
 extern struct nl_object *	nl_object_clone(struct nl_object *obj);
-extern void			nl_object_get(struct nl_object *);
-extern void			nl_object_put(struct nl_object *);
+
+#ifdef disabled
+
+extern int			nl_object_alloc_name(const char *,
+						     struct nl_object **);
 extern void			nl_object_dump(struct nl_object *,
 					       struct nl_dump_params *);
-extern int			nl_object_identical(struct nl_object *,
-						    struct nl_object *);
+
 extern uint32_t			nl_object_diff(struct nl_object *,
 					       struct nl_object *);
 extern int			nl_object_match_filter(struct nl_object *,
 						       struct nl_object *);
+extern int			nl_object_identical(struct nl_object *,
+						    struct nl_object *);
 extern char *			nl_object_attrs2str(struct nl_object *,
 						    uint32_t attrs, char *buf,
 						    size_t);
+#endif
 /**
  * Check whether this object is used by multiple users
  * @arg obj		object to check
@@ -62,6 +65,22 @@ static inline int nl_object_shared(struct nl_object *obj)
 	return obj->ce_refcnt > 1;
 }
 
+
+static inline void nl_object_get(struct nl_object *obj)
+{
+	obj->ce_refcnt++;
+}
+
+static inline void nl_object_put(struct nl_object *obj)
+{
+	if (!obj)
+		return;
+
+	obj->ce_refcnt--;
+
+	if (obj->ce_refcnt <= 0)
+		nl_object_free(obj);
+}
 
 
 /**
@@ -99,6 +118,7 @@ static inline int nl_object_is_marked(struct nl_object *obj)
 
 /** @} */
 
+#ifdef disabled
 /**
  * Return list of attributes present in an object
  * @arg obj		an object
@@ -111,7 +131,7 @@ static inline char *nl_object_attr_list(struct nl_object *obj, char *buf, size_t
 {
 	return nl_object_attrs2str(obj, obj->ce_mask, buf, len);
 }
-
+#endif
 
 /**
  * @name Attributes
