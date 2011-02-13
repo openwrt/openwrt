@@ -37,6 +37,8 @@ endef
 define Package/soloscli/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/soloscli/soloscli $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/atm
+	$(INSTALL_DATA) ./files/etc/hotplug.d/atm/15-solos-init $(1)/etc/hotplug.d/atm/
 endef
 
 $(eval $(call BuildPackage,soloscli))
