@@ -25,3 +25,8 @@ config WPA_RFKILL_SUPPORT
 	bool "Add rfkill support"
 	depends PACKAGE_wpa-supplicant || PACKAGE_wpa-supplicant-mini || PACKAGE_wpad || PACKAGE_wpad-mini
 	default n
+
+
+config DRIVER_WEXT_SUPPORT
+	bool
+	default n
