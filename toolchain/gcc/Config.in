@@ -8,7 +8,7 @@ choice
 	default GCC_VERSION_4_3_3_CS if (mips || mipsel) && !(TARGET_octeon || TARGET_sibyte)
 	default GCC_VERSION_4_4_5 if (powerpc || ubicom32)
 	default GCC_VERSION_4_4_5 if (TARGET_omap35xx || TARGET_octeon || TARGET_sibyte)
-	default GCC_VERSION_4_5_1_LINARO
+	default GCC_VERSION_LINARO
 	help
 	  Select the version of gcc you wish to use.
 
@@ -21,8 +21,8 @@ choice
 	config GCC_VERSION_4_5_2
 		bool "gcc 4.5.2"
 
-	config GCC_VERSION_4_5_1_LINARO
-		bool "gcc 4.5.1 with Linaro enhancements"
+	config GCC_VERSION_LINARO
+		bool "gcc 4.5.2 with Linaro enhancements"
 
 	config GCC_VERSION_LLVM
 		bool "llvm-gcc 4.2"

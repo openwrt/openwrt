@@ -157,7 +157,7 @@
    flag_reorder_blocks = opt2;
    flag_reorder_functions = opt2;
    flag_tree_vrp = opt2;
-@@ -919,6 +917,8 @@ decode_options (unsigned int argc, const
+@@ -920,6 +918,8 @@ decode_options (unsigned int argc, const
  
    /* -O3 optimizations.  */
    opt3 = (optimize >= 3);
@@ -166,7 +166,7 @@
    flag_predictive_commoning = opt3;
    flag_inline_functions = opt3;
    flag_unswitch_loops = opt3;
-@@ -1647,6 +1647,17 @@ common_handle_option (size_t scode, cons
+@@ -1648,6 +1648,17 @@ common_handle_option (size_t scode, cons
        enable_warning_as_error (arg, value, lang_mask);
        break;
  
@@ -209,7 +209,7 @@
  -Wfatal-errors  -Wfloat-equal  -Wformat  -Wformat=2 @gol
  -Wno-format-contains-nul -Wno-format-extra-args -Wformat-nonliteral @gol
  -Wformat-security  -Wformat-y2k @gol
-@@ -4358,6 +4358,22 @@ This option is only supported for C and
+@@ -4359,6 +4359,22 @@ This option is only supported for C and
  @option{-Wall} and by @option{-pedantic}, which can be disabled with
  @option{-Wno-pointer-sign}.
  
@@ -232,7 +232,7 @@
  @item -Wstack-protector
  @opindex Wstack-protector
  @opindex Wno-stack-protector
-@@ -6110,7 +6126,7 @@ so, the first branch is redirected to ei
+@@ -6112,7 +6128,7 @@ so, the first branch is redirected to ei
  second branch or a point immediately following it, depending on whether
  the condition is known to be true or false.
  
