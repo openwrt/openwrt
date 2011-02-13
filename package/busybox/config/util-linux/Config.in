@@ -525,7 +525,7 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_LABEL
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
 	bool "Support mounting NFS file systems"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_MOUNT
 	select BUSYBOX_CONFIG_FEATURE_HAVE_RPC
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
