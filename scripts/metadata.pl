@@ -738,7 +738,7 @@ sub gen_package_mk() {
 				if ($idx) {
 					my $depline;
 					next if $pkg->{src} eq $pkg_dep->{src}.$suffix;
-					next if $dep{$pkg->{src}."->".$idx};
+					next if $dep{$condition.":".$pkg->{src}."->".$idx};
 					next if $dep{$pkg->{src}."->($dep)".$idx} and $pkg_dep->{vdepends};
 					my $depstr;
 
