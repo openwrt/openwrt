@@ -41,7 +41,7 @@ endef
 define Package/ppp-multilink
 $(call Package/ppp/Default)
   DEPENDS:=+kmod-ppp
-  TITLE:=PPP daemon
+  TITLE:=PPP daemon (with multilink support)
   VARIANT:=multilink
 endef
 
