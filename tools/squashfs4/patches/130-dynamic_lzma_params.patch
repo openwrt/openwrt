@@ -1,0 +1,91 @@
+--- a/squashfs-tools/lzma_wrapper.c
++++ b/squashfs-tools/lzma_wrapper.c
+@@ -20,6 +20,8 @@
+  */
+ 
+ #include <LzmaLib.h>
++#include <stdio.h>
++#include "compressor.h"
+ 
+ #define LZMA_HEADER_SIZE	(LZMA_PROPS_SIZE + 8)
+ 
+@@ -30,9 +32,18 @@
+ 	size_t props_size = LZMA_PROPS_SIZE,
+ 		outlen = block_size - LZMA_HEADER_SIZE;
+ 	int res;
++	int lc;
++	int lp;
++	int pb;
++
++	if (!comp_args || sscanf(comp_args, "%d:%d:%d", &lc, &lp, &pb) != 3) {
++		lc = 0;
++		lp = 2;
++		pb = 2;
++	}
+ 
+ 	res = LzmaCompress(d + LZMA_HEADER_SIZE, &outlen, s, size, d,
+-		&props_size, 5, block_size, 3, 0, 2, 32, 1);
++		&props_size, 5, block_size, lc, lp, pb, 32, 1);
+ 	
+ 	if(res == SZ_ERROR_OUTPUT_EOF) {
+ 		/*
+--- a/squashfs-tools/compressor.c
++++ b/squashfs-tools/compressor.c
+@@ -25,6 +25,7 @@
+ #include "compressor.h"
+ #include "squashfs_fs.h"
+ 
++char *comp_args = NULL;
+ extern int gzip_compress(void **, char *, char *, int, int, int *);
+ extern int gzip_uncompress(char *, char *, int, int, int *);
+ extern int lzma_compress(void **, char *, char *, int, int, int *);
+--- a/squashfs-tools/compressor.h
++++ b/squashfs-tools/compressor.h
+@@ -31,3 +31,4 @@
+ extern struct compressor *lookup_compressor(char *);
+ extern struct compressor *lookup_compressor_id(int);
+ extern void display_compressors(char *, char *);
++extern char *comp_args;
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -4355,6 +4355,12 @@
+ 				exit(1);
+ 			}
+ 			comp_name = argv[i];
++		} else if(strcmp(argv[i], "-comp_args") == 0) {
++			if(++i == argc) {
++				ERROR("%s: -comp_args missing compression arguments\n", argv[0]);
++				exit(1);
++			}
++			comp_args = argv[i];
+ 		} else if(strcmp(argv[i], "-pf") == 0) {
+ 			if(++i == argc) {
+ 				ERROR("%s: -pf missing filename\n", argv[0]);
+@@ -4574,6 +4580,7 @@
+ 				"[-e list of exclude\ndirs/files]\n", argv[0]);
+ 			ERROR("\nFilesystem build options:\n");
+ 			ERROR("-comp <comp>\t\tselect <comp> compression\n");
++			ERROR("-comp_args <comp>\t\tselect compression arguments\n");
+ 			ERROR("\t\t\tCompressors available:\n");
+ 			display_compressors("\t\t\t", COMP_DEFAULT);
+ 			ERROR("-b <block_size>\t\tset data block to "
+@@ -4736,7 +4743,8 @@
+ 		else if(strcmp(argv[i], "-root-becomes") == 0 ||
+ 				strcmp(argv[i], "-sort") == 0 ||
+ 				strcmp(argv[i], "-pf") == 0 ||
+-				strcmp(argv[i], "-comp") == 0)
++				strcmp(argv[i], "-comp") == 0 ||
++				strcmp(argv[i], "-comp_args") == 0)
+ 			i++;
+ 
+ 	if(i != argc) {
+@@ -4761,7 +4769,8 @@
+ 		else if(strcmp(argv[i], "-root-becomes") == 0 ||
+ 				strcmp(argv[i], "-ef") == 0 ||
+ 				strcmp(argv[i], "-pf") == 0 ||
+-				strcmp(argv[i], "-comp") == 0)
++				strcmp(argv[i], "-comp") == 0 ||
++				strcmp(argv[i], "-comp_args") == 0)
+ 			i++;
+ 
+ #ifdef SQUASHFS_TRACE
