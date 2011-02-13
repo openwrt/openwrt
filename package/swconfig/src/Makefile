@@ -1,7 +1,7 @@
 ifndef CFLAGS
 CFLAGS = -O2 -g -I ../src
 endif
-LIBS=-lnl
+LIBS=-lnl -lnl-genl
 
 all: swconfig
 
