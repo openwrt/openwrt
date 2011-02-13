@@ -1,6 +1,6 @@
 #!/bin/sh
 
-awk -f /usr/lib/common.awk -f - $* <<EOF
+awk -f - $* <<EOF
 function bitcount(c) {
 	c=and(rshift(c, 1),0x55555555)+and(c,0x55555555)
 	c=and(rshift(c, 2),0x33333333)+and(c,0x33333333)
