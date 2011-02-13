@@ -65,6 +65,8 @@ CONFIGURE_ARGS += \
 	--disable-pututxline \
 	--disable-zlib
 
+TARGET_CFLAGS += -DARGTYPE=3
+
 define Build/Configure
 	$(SED) 's,^/\* #define PKG_MULTI.*,#define PKG_MULTI,g' $(PKG_BUILD_DIR)/options.h
 	$(SED) 's,^#define DO_HOST_LOOKUP,/* & */,g' $(PKG_BUILD_DIR)/options.h
