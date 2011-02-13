@@ -6335,16 +6335,16 @@
 +static int __devinit
 +dwc_otg_driver_probe(struct platform_device *_dev)
 +{
-+    int retval = 0;
-+    dwc_otg_device_t *dwc_otg_device;
-+    int32_t	snpsid;
++	int retval = 0;
++	dwc_otg_device_t *dwc_otg_device;
++	int pin = (int)_dev->dev.platform_data;
++	int32_t	snpsid;
 +	struct resource *res;
 +	gusbcfg_data_t usbcfg = {.d32 = 0};
 +
 +	// GPIOs
-+	if(_dev->dev.platform_data >= 0)
++	if(pin >= 0)
 +	{
-+		int pin = (int)_dev->dev.platform_data;
 +		gpio_request(pin, "usb_power");
 +		gpio_direction_output(pin, 1);
 +		gpio_set_value(pin, 1);
