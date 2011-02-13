@@ -156,37 +156,6 @@ void nl_object_free(struct nl_object *obj)
  * @{
  */
 
-/**
- * Acquire a reference on a object
- * @arg obj		object to acquire reference from
- */
-void nl_object_get(struct nl_object *obj)
-{
-	obj->ce_refcnt++;
-	NL_DBG(4, "New reference to object %p, total %d\n",
-	       obj, obj->ce_refcnt);
-}
-
-/**
- * Release a reference from an object
- * @arg obj		object to release reference from
- */
-void nl_object_put(struct nl_object *obj)
-{
-	if (!obj)
-		return;
-
-	obj->ce_refcnt--;
-	NL_DBG(4, "Returned object reference %p, %d remaining\n",
-	       obj, obj->ce_refcnt);
-
-	if (obj->ce_refcnt < 0)
-		BUG();
-
-	if (obj->ce_refcnt <= 0)
-		nl_object_free(obj);
-}
-
 /** @} */
 
 /**
@@ -235,7 +204,6 @@ int nl_object_identical(struct nl_object *a, struct nl_object *b)
 
 	return !(ops->oo_compare(a, b, req_attrs, 0));
 }
-#endif
 
 /**
  * Compute bitmask representing difference in attribute values
@@ -303,6 +271,8 @@ char *nl_object_attrs2str(struct nl_object *obj, uint32_t attrs,
 		return buf;
 	}
 }
+
+#endif
 
 /** @} */
 

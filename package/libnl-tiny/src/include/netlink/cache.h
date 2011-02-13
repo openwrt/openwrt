@@ -76,6 +76,7 @@ extern void			nl_cache_dump_filter(struct nl_cache *,
 						     struct nl_object *);
 
 /* Iterators */
+#ifdef disabled
 extern void			nl_cache_foreach(struct nl_cache *,
 						 void (*cb)(struct nl_object *,
 							    void *),
@@ -86,6 +87,7 @@ extern void			nl_cache_foreach_filter(struct nl_cache *,
 								   nl_object *,
 								   void *),
 							void *arg);
+#endif
 
 /* --- cache management --- */
 

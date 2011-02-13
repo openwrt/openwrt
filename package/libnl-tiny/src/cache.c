@@ -730,7 +730,6 @@ void nl_cache_mark_all(struct nl_cache *cache)
  * @name Dumping
  * @{
  */
-#ifdef disabled
 /**
  * Dump all elements of a cache.
  * @arg cache		cache to dump
@@ -781,7 +780,6 @@ void nl_cache_dump_filter(struct nl_cache *cache,
 		dump_from_ops(obj, params);
 	}
 }
-#endif
 
 /** @} */
 
