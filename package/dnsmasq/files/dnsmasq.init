@@ -399,6 +399,6 @@ stop() {
 		rm -f /tmp/resolv.conf
 		ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
 	}
-	killall dnsmasq
+	service_kill dnsmasq /var/run/dnsmasq.pid
 	return 0
 }
