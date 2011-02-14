@@ -121,6 +121,10 @@ $(eval $(call RequireCommand,wget, \
 	Please install wget. \
 ))
 
+$(eval $(call RequireCommand,git, \
+	Please install git (git-core). \
+))
+
 define Require/gnutar
 	$(TAR) --version 2>&1 | grep GNU > /dev/null
 endef
