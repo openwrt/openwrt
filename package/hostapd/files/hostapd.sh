@@ -50,8 +50,8 @@ hostapd_set_bss_options() {
 	esac
 
 	# enforce CCMP for 11ng and 11na
-	case "$hwmode" in
-		*ng|*na) crypto="CCMP";;
+	case "$hwmode:$crypto" in
+		*ng:TKIP|*na:TKIP) crypto="CCMP TKIP";;
 	esac
 
 	# use crypto/auth settings for building the hostapd config
