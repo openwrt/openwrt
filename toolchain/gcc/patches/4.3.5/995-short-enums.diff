@@ -1,9 +1,7 @@
 see gcc PR34205
-Index: gcc-4.3.0/gcc/tree.h
-===================================================================
---- gcc-4.3.0/gcc/tree.h	(revision 130511)
-+++ gcc-4.3.0/gcc/tree.h	(working copy)
-@@ -39,6 +39,7 @@
+--- a/gcc/tree.h
++++ b/gcc/tree.h
+@@ -39,6 +39,7 @@ enum tree_code {
  
    LAST_AND_UNUSED_TREE_CODE	/* A convenient way to get a value for
  				   NUM_TREE_CODES.  */
@@ -11,11 +9,9 @@ Index: gcc-4.3.0/gcc/tree.h
  };
  
  #undef DEFTREECODE
-Index: gcc-4.3.0/gcc/rtl.h
-===================================================================
---- gcc-4.3.0/gcc/rtl.h	(revision 130511)
-+++ gcc-4.3.0/gcc/rtl.h	(working copy)
-@@ -48,9 +48,11 @@
+--- a/gcc/rtl.h
++++ b/gcc/rtl.h
+@@ -48,9 +48,11 @@ enum rtx_code  {
  #include "rtl.def"		/* rtl expressions are documented here */
  #undef DEF_RTL_EXPR
  
@@ -28,11 +24,9 @@ Index: gcc-4.3.0/gcc/rtl.h
  
  #define NUM_RTX_CODE ((int) LAST_AND_UNUSED_RTX_CODE)
  				/* The cast here, saves many elsewhere.  */
-Index: gcc-4.3.0/gcc/c-common.h
-===================================================================
---- gcc-4.3.0/gcc/c-common.h	(revision 130511)
-+++ gcc-4.3.0/gcc/c-common.h	(working copy)
-@@ -125,6 +125,7 @@
+--- a/gcc/c-common.h
++++ b/gcc/c-common.h
+@@ -125,6 +125,7 @@ enum rid
    RID_LAST_AT = RID_AT_IMPLEMENTATION,
    RID_FIRST_PQ = RID_IN,
    RID_LAST_PQ = RID_ONEWAY

@@ -1,6 +1,6 @@
 --- a/gcc/builtins.c
 +++ b/gcc/builtins.c
-@@ -10779,7 +10779,7 @@
+@@ -10779,7 +10779,7 @@ validate_arglist (const_tree callexpr, .
  
    do
      {
@@ -11,7 +11,7 @@
  	case 0:
 --- a/gcc/calls.c
 +++ b/gcc/calls.c
-@@ -3496,7 +3496,7 @@
+@@ -3496,7 +3496,7 @@ emit_library_call_value_1 (int retval, r
    for (; count < nargs; count++)
      {
        rtx val = va_arg (p, rtx);
@@ -20,7 +20,7 @@
  
        /* We cannot convert the arg value to the mode the library wants here;
  	 must do it earlier where we know the signedness of the arg.  */
---- a/gcc/config/avr32/avr32.c
+--- /dev/null
 +++ b/gcc/config/avr32/avr32.c
 @@ -0,0 +1,7858 @@
 +/*
@@ -7881,7 +7881,7 @@
 +      set_optab_libfunc (sdiv_optab, SFmode, "__avr32_f32_div");
 +    }
 +}
---- a/gcc/config/avr32/avr32-elf.h
+--- /dev/null
 +++ b/gcc/config/avr32/avr32-elf.h
 @@ -0,0 +1,86 @@
 +/*
@@ -7970,7 +7970,7 @@
 +        builtin_define ("__AVR32_NO_MUL__");                    \
 +    }								\
 +  while (0)
---- a/gcc/config/avr32/avr32.h
+--- /dev/null
 +++ b/gcc/config/avr32/avr32.h
 @@ -0,0 +1,3344 @@
 +/*
@@ -11317,7 +11317,7 @@
 +#endif
 +
 +#endif
---- a/gcc/config/avr32/avr32.md
+--- /dev/null
 +++ b/gcc/config/avr32/avr32.md
 @@ -0,0 +1,4926 @@
 +;;   AVR32 machine description file.
@@ -16246,11 +16246,11 @@
 +
 +;; Load the FP coprAocessor patterns
 +(include "fpcp.md")
---- a/gcc/config/avr32/avr32-modes.def
+--- /dev/null
 +++ b/gcc/config/avr32/avr32-modes.def
 @@ -0,0 +1 @@
 +VECTOR_MODES (INT, 4);        /*            V4QI V2HI */
---- a/gcc/config/avr32/avr32.opt
+--- /dev/null
 +++ b/gcc/config/avr32/avr32.opt
 @@ -0,0 +1,81 @@
 +; Options for the ATMEL AVR32 port of the compiler.
@@ -16334,7 +16334,7 @@
 +Target Report Undocumented Mask(COND_EXEC_BEFORE_RELOAD) 
 +Enable experimental conditional execution preparation before the reload stage. 
 +
---- a/gcc/config/avr32/avr32-protos.h
+--- /dev/null
 +++ b/gcc/config/avr32/avr32-protos.h
 @@ -0,0 +1,197 @@
 +/*
@@ -16534,7 +16534,7 @@
 +
 +
 +#endif /* AVR32_PROTOS_H */
---- a/gcc/config/avr32/crti.asm
+--- /dev/null
 +++ b/gcc/config/avr32/crti.asm
 @@ -0,0 +1,64 @@
 +/*
@@ -16601,7 +16601,7 @@
 +1:	.long	0b - _GLOBAL_OFFSET_TABLE_		
 +2:	
 +
---- a/gcc/config/avr32/crtn.asm
+--- /dev/null
 +++ b/gcc/config/avr32/crtn.asm
 @@ -0,0 +1,44 @@
 +/*   Copyright (C) 2001 Free Software Foundation, Inc.
@@ -16648,7 +16648,7 @@
 +	.section	".fini"
 +	ldm	sp++, r6, pc
 +		
---- a/gcc/config/avr32/fpcp.md
+--- /dev/null
 +++ b/gcc/config/avr32/fpcp.md
 @@ -0,0 +1,551 @@
 +;;   AVR32 machine description file for Floating-Point instructions.
@@ -17202,7 +17202,7 @@
 +  [(set_attr "type" "fstm")
 +   (set_attr "length" "4")
 +   (set_attr "cc" "none")])
---- a/gcc/config/avr32/lib1funcs.S
+--- /dev/null
 +++ b/gcc/config/avr32/lib1funcs.S
 @@ -0,0 +1,2874 @@
 +/* Macro for moving immediate value to register. */	
@@ -20079,7 +20079,7 @@
 +1:
 +	ret r9
 +#endif
---- a/gcc/config/avr32/lib2funcs.S
+--- /dev/null
 +++ b/gcc/config/avr32/lib2funcs.S
 @@ -0,0 +1,21 @@
 +	.align	4
@@ -20103,7 +20103,7 @@
 +
 +
 +		
---- a/gcc/config/avr32/linux-elf.h
+--- /dev/null
 +++ b/gcc/config/avr32/linux-elf.h
 @@ -0,0 +1,151 @@
 +/*
@@ -20257,7 +20257,7 @@
 +
 +#define LINK_GCC_C_SEQUENCE_SPEC \
 +  "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
---- a/gcc/config/avr32/predicates.md
+--- /dev/null
 +++ b/gcc/config/avr32/predicates.md
 @@ -0,0 +1,386 @@
 +;;   AVR32 predicates file.
@@ -20646,7 +20646,7 @@
 +(define_predicate "avr32_mov_immediate_operand"
 +  (and (match_operand 0 "immediate_operand")
 +       (match_test "avr32_const_ok_for_move(INTVAL(op))")))
---- a/gcc/config/avr32/simd.md
+--- /dev/null
 +++ b/gcc/config/avr32/simd.md
 @@ -0,0 +1,145 @@
 +;;   AVR32 machine description file for SIMD instructions.
@@ -20794,7 +20794,7 @@
 +  "psubadd.h\t%0, %1:b, %2:b"
 +  [(set_attr "length" "4")
 +   (set_attr "type" "alu")])
---- a/gcc/config/avr32/sync.md
+--- /dev/null
 +++ b/gcc/config/avr32/sync.md
 @@ -0,0 +1,244 @@
 +;;=================================================================
@@ -21041,7 +21041,7 @@
 +  "xchg\t%0, %p1, %2"
 +  [(set_attr "length" "4")]
 +  )
---- a/gcc/config/avr32/t-avr32
+--- /dev/null
 +++ b/gcc/config/avr32/t-avr32
 @@ -0,0 +1,94 @@
 +
@@ -21138,7 +21138,7 @@
 +
 +
 +
---- a/gcc/config/avr32/t-avr32-linux
+--- /dev/null
 +++ b/gcc/config/avr32/t-avr32-linux
 @@ -0,0 +1,94 @@
 +
@@ -21235,7 +21235,7 @@
 +
 +
 +
---- a/gcc/config/avr32/t-elf
+--- /dev/null
 +++ b/gcc/config/avr32/t-elf
 @@ -0,0 +1,16 @@
 +
@@ -21254,7 +21254,7 @@
 +
 +LIBGCC = stmp-multilib
 +INSTALL_LIBGCC = install-multilib
---- a/gcc/config/avr32/uclinux-elf.h
+--- /dev/null
 +++ b/gcc/config/avr32/uclinux-elf.h
 @@ -0,0 +1,20 @@
 +
@@ -21291,7 +21291,7 @@
     address of non-fixed mapped segments by a (relatively) small amount.
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -834,6 +834,24 @@
+@@ -834,6 +834,24 @@ avr-*-*)
  	tm_file="avr/avr.h dbxelf.h"
  	use_fixproto=yes
  	;;
@@ -21316,7 +21316,7 @@
  bfin*-elf*)
  	tm_file="${tm_file} dbxelf.h elfos.h bfin/elf.h"
  	tmake_file=bfin/t-bfin-elf
-@@ -2950,6 +2968,32 @@
+@@ -2950,6 +2968,32 @@ case "${target}" in
  		fi
  		;;
  
@@ -21351,7 +21351,7 @@
  		case "$with_cpu" in
 --- a/gcc/configure.ac
 +++ b/gcc/configure.ac
-@@ -2174,10 +2174,9 @@
+@@ -2174,10 +2174,9 @@ L2:],
    as_ver=`$gcc_cv_as --version 2>/dev/null | sed 1q`
    if echo "$as_ver" | grep GNU > /dev/null; then
  changequote(,)dnl
@@ -21365,7 +21365,7 @@
  changequote([,])dnl
      if test $as_major -eq 2 && test $as_minor -lt 11
      then :
-@@ -3077,7 +3076,7 @@
+@@ -3077,7 +3076,7 @@ esac
  case "$target" in
    i?86*-*-* | mips*-*-* | alpha*-*-* | powerpc*-*-* | sparc*-*-* | m68*-*-* \
    | x86_64*-*-* | hppa*-*-* | arm*-*-* | strongarm*-*-* | xscale*-*-* \
@@ -21376,7 +21376,7 @@
    ia64*-*-* | s390*-*-*)
 --- a/gcc/doc/extend.texi
 +++ b/gcc/doc/extend.texi
-@@ -2336,7 +2336,7 @@
+@@ -2336,7 +2336,7 @@ This attribute is ignored for R8C target
  
  @item interrupt
  @cindex interrupt handler functions
@@ -21385,7 +21385,7 @@
  and Xstormy16 ports to indicate that the specified function is an
  interrupt handler.  The compiler will generate function entry and exit
  sequences suitable for use in an interrupt handler when this attribute
-@@ -2356,6 +2356,15 @@
+@@ -2356,6 +2356,15 @@ void f () __attribute__ ((interrupt ("IR
  
  Permissible values for this parameter are: IRQ, FIQ, SWI, ABORT and UNDEF@.
  
@@ -21401,7 +21401,7 @@
  On ARMv7-M the interrupt type is ignored, and the attribute means the function
  may be called with a word aligned stack pointer.
  
-@@ -3925,6 +3934,23 @@
+@@ -3925,6 +3934,23 @@ placed in either the @code{.bss_below100
  
  @end table
  
@@ -21425,7 +21425,7 @@
  @subsection AVR Variable Attributes
  
  @table @code
-@@ -6708,6 +6734,7 @@
+@@ -6708,6 +6734,7 @@ instructions, but allow the compiler to
  * Alpha Built-in Functions::
  * ARM iWMMXt Built-in Functions::
  * ARM NEON Intrinsics::
@@ -21433,7 +21433,7 @@
  * Blackfin Built-in Functions::
  * FR-V Built-in Functions::
  * X86 Built-in Functions::
-@@ -6955,6 +6982,74 @@
+@@ -6955,6 +6982,74 @@ when the @option{-mfpu=neon} switch is u
  
  @include arm-neon-intrinsics.texi
  
@@ -21510,7 +21510,7 @@
  
 --- a/gcc/doc/invoke.texi
 +++ b/gcc/doc/invoke.texi
-@@ -195,7 +195,7 @@
+@@ -195,7 +195,7 @@ in the following sections.
  -fvisibility-ms-compat @gol
  -Wabi  -Wctor-dtor-privacy @gol
  -Wnon-virtual-dtor  -Wreorder @gol
@@ -21519,7 +21519,7 @@
  -Wno-non-template-friend  -Wold-style-cast @gol
  -Woverloaded-virtual  -Wno-pmf-conversions @gol
  -Wsign-promo}
-@@ -609,6 +609,12 @@
+@@ -609,6 +609,12 @@ Objective-C and Objective-C++ Dialects}.
  -mauto-incdec  -minmax  -mlong-calls  -mshort @gol
  -msoft-reg-count=@var{count}}
  
@@ -21532,7 +21532,7 @@
  @emph{MCore Options}
  @gccoptlist{-mhardlit  -mno-hardlit  -mdiv  -mno-div  -mrelax-immediates @gol
  -mno-relax-immediates  -mwide-bitfields  -mno-wide-bitfields @gol
-@@ -3163,13 +3169,11 @@
+@@ -3163,13 +3169,11 @@ requiring @option{-O}.
  If you want to warn about code which uses the uninitialized value of the
  variable in its own initializer, use the @option{-Winit-self} option.
  
@@ -21551,7 +21551,7 @@
  
  Note that there may be no warning about a variable that is used only
  to compute a value that itself is never used, because such
-@@ -7034,10 +7038,6 @@
+@@ -7034,10 +7038,6 @@ If number of candidates in the set is sm
  we always try to remove unnecessary ivs from the set during its
  optimization when a new iv is added to the set.
  
@@ -21562,7 +21562,7 @@
  @item omega-max-vars
  The maximum number of variables in an Omega constraint system.
  The default value is 128.
-@@ -8363,6 +8363,7 @@
+@@ -8363,6 +8363,7 @@ platform.
  * ARC Options::
  * ARM Options::
  * AVR Options::
@@ -21570,7 +21570,7 @@
  * Blackfin Options::
  * CRIS Options::
  * CRX Options::
-@@ -8834,6 +8835,120 @@
+@@ -8834,6 +8835,120 @@ comply to the C standards, but it will p
  size.
  @end table
  
@@ -21691,7 +21691,7 @@
  @node Blackfin Options
  @subsection Blackfin Options
  @cindex Blackfin Options
-@@ -8889,29 +9004,12 @@
+@@ -8889,29 +9004,12 @@ When enabled, the compiler will ensure t
  contain speculative loads after jump instructions. If this option is used,
  @code{__WORKAROUND_SPECULATIVE_LOADS} is defined.
  
@@ -21721,7 +21721,7 @@
  
  @item -mstack-check-l1
  @opindex mstack-check-l1
-@@ -8925,11 +9023,6 @@
+@@ -8925,11 +9023,6 @@ This allows for execute in place and sha
  without virtual memory management.  This option implies @option{-fPIC}.
  With a @samp{bfin-elf} target, this option implies @option{-msim}.
  
@@ -21733,7 +21733,7 @@
  @item -mleaf-id-shared-library
  @opindex mleaf-id-shared-library
  Generate code that supports shared libraries via the library ID method,
-@@ -8971,11 +9064,6 @@
+@@ -8971,11 +9064,6 @@ call on this register.  This switch is n
  will lie outside of the 24 bit addressing range of the offset based
  version of subroutine call instruction.
  
@@ -21747,7 +21747,7 @@
  Link with the fast floating-point library. This library relaxes some of
 --- a/gcc/doc/md.texi
 +++ b/gcc/doc/md.texi
-@@ -1681,6 +1681,58 @@
+@@ -1681,6 +1681,58 @@ A memory reference suitable for iWMMXt l
  A memory reference suitable for the ARMv4 ldrsb instruction.
  @end table
  
@@ -21808,7 +21808,7 @@
  @item l
 --- a/gcc/expmed.c
 +++ b/gcc/expmed.c
-@@ -463,9 +463,9 @@
+@@ -463,9 +463,9 @@ store_bit_field_1 (rtx str_rtx, unsigned
  	  ? ((GET_MODE_SIZE (fieldmode) >= UNITS_PER_WORD
  	     || GET_MODE_SIZE (GET_MODE (op0)) == GET_MODE_SIZE (fieldmode))
  	     && byte_offset % GET_MODE_SIZE (fieldmode) == 0)
@@ -21822,7 +21822,7 @@
  	op0 = adjust_address (op0, fieldmode, offset);
 --- a/gcc/expr.c
 +++ b/gcc/expr.c
-@@ -52,6 +52,7 @@
+@@ -52,6 +52,7 @@ along with GCC; see the file COPYING3.
  #include "tree-flow.h"
  #include "target.h"
  #include "timevar.h"
@@ -21830,7 +21830,7 @@
  #include "df.h"
  #include "diagnostic.h"
  
-@@ -3620,16 +3621,17 @@
+@@ -3620,16 +3621,17 @@ emit_single_push_insn (enum machine_mode
      }
    else
      {
@@ -21855,7 +21855,7 @@
      }
  
    dest = gen_rtx_MEM (mode, dest_addr);
-@@ -5739,7 +5741,8 @@
+@@ -5739,7 +5741,8 @@ store_field (rtx target, HOST_WIDE_INT b
       is a bit field, we cannot use addressing to access it.
       Use bit-field techniques or SUBREG to store in it.  */
  
@@ -21865,7 +21865,7 @@
        || (mode != BLKmode && ! direct_store[(int) mode]
  	  && GET_MODE_CLASS (mode) != MODE_COMPLEX_INT
  	  && GET_MODE_CLASS (mode) != MODE_COMPLEX_FLOAT)
-@@ -5896,7 +5899,19 @@
+@@ -5896,7 +5899,19 @@ get_inner_reference (tree exp, HOST_WIDE
      {
        tree field = TREE_OPERAND (exp, 1);
        size_tree = DECL_SIZE (field);
@@ -21886,7 +21886,7 @@
  	mode = DECL_MODE (field);
        else if (DECL_MODE (field) == BLKmode)
  	blkmode_bitfield = true;
-@@ -7889,7 +7904,8 @@
+@@ -7889,7 +7904,8 @@ expand_expr_real_1 (tree exp, rtx target
  	   by doing the extract into an object as wide as the field
  	   (which we know to be the width of a basic mode), then
  	   storing into memory, and changing the mode to BLKmode.  */
@@ -21898,7 +21898,7 @@
  		&& GET_MODE_CLASS (mode) != MODE_COMPLEX_INT
 --- a/gcc/function.c
 +++ b/gcc/function.c
-@@ -2715,7 +2715,11 @@
+@@ -2715,7 +2715,11 @@ assign_parm_setup_reg (struct assign_par
      SET_DECL_RTL (parm, parmreg);
  
    /* Copy the value into the register.  */
@@ -21913,7 +21913,7 @@
        int save_tree_used;
 --- a/gcc/genemit.c
 +++ b/gcc/genemit.c
-@@ -121,6 +121,24 @@
+@@ -121,6 +121,24 @@ max_operand_vec (rtx insn, int arg)
  }
  
  static void
@@ -21938,7 +21938,7 @@
  print_code (RTX_CODE code)
  {
    const char *p1;
-@@ -406,18 +424,16 @@
+@@ -406,18 +424,16 @@ gen_insn (rtx insn, int lineno)
      fatal ("match_dup operand number has no match_operand");
  
    /* Output the function name and argument declarations.  */
@@ -21963,7 +21963,7 @@
    /* Output code to construct and return the rtl for the instruction body.  */
  
    if (XVECLEN (insn, 1) == 1)
-@@ -461,16 +477,12 @@
+@@ -461,16 +477,12 @@ gen_expand (rtx expand)
    operands = max_operand_vec (expand, 1);
  
    /* Output the function name and argument declarations.  */
@@ -21984,7 +21984,7 @@
    printf ("{\n");
  
    /* If we don't have any C code to write, only one insn is being written,
-@@ -480,6 +492,8 @@
+@@ -480,6 +492,8 @@ gen_expand (rtx expand)
        && operands > max_dup_opno
        && XVECLEN (expand, 1) == 1)
      {
@@ -21993,7 +21993,7 @@
        printf ("  return ");
        gen_exp (XVECEXP (expand, 1, 0), DEFINE_EXPAND, NULL);
        printf (";\n}\n\n");
-@@ -493,6 +507,7 @@
+@@ -493,6 +507,7 @@ gen_expand (rtx expand)
    for (; i <= max_scratch_opno; i++)
      printf ("  rtx operand%d ATTRIBUTE_UNUSED;\n", i);
    printf ("  rtx _val = 0;\n");
@@ -22003,7 +22003,7 @@
    /* The fourth operand of DEFINE_EXPAND is some code to be executed
 --- a/gcc/genflags.c
 +++ b/gcc/genflags.c
-@@ -127,7 +127,6 @@
+@@ -127,7 +127,6 @@ static void
  gen_proto (rtx insn)
  {
    int num = num_operands (insn);
@@ -22011,7 +22011,7 @@
    const char *name = XSTR (insn, 0);
    int truth = maybe_eval_c_test (XSTR (insn, 2));
  
-@@ -158,12 +157,7 @@
+@@ -158,12 +157,7 @@ gen_proto (rtx insn)
    if (num == 0)
      fputs ("void", stdout);
    else
@@ -22025,7 +22025,7 @@
  
    puts (");");
  
-@@ -173,12 +167,7 @@
+@@ -173,12 +167,7 @@ gen_proto (rtx insn)
      {
        printf ("static inline rtx\ngen_%s", name);
        if (num > 0)
@@ -22041,7 +22041,7 @@
        puts ("{\n  return 0;\n}");
 --- a/gcc/genoutput.c
 +++ b/gcc/genoutput.c
-@@ -386,7 +386,7 @@
+@@ -386,7 +386,7 @@ output_insn_data (void)
  	}
  
        if (d->name && d->name[0] != '*')
@@ -22052,7 +22052,7 @@
  
 --- a/gcc/ifcvt.c
 +++ b/gcc/ifcvt.c
-@@ -81,7 +81,7 @@
+@@ -81,7 +81,7 @@ static int num_possible_if_blocks;
  static int num_updated_if_blocks;
  
  /* # of changes made.  */
@@ -22061,7 +22061,7 @@
  
  /* Whether conditional execution changes were made.  */
  static int cond_exec_changed_p;
-@@ -286,6 +286,9 @@
+@@ -286,6 +286,9 @@ cond_exec_process_insns (ce_if_block_t *
        if (must_be_last)
  	return FALSE;
  
@@ -22071,7 +22071,7 @@
        if (modified_in_p (test, insn))
  	{
  	  if (!mod_ok)
-@@ -566,15 +569,18 @@
+@@ -566,15 +569,18 @@ cond_exec_process_if_block (ce_if_block_
    IFCVT_MODIFY_FINAL (ce_info);
  #endif
  
@@ -22091,7 +22091,7 @@
  
   fail:
  #ifdef IFCVT_MODIFY_CANCEL
-@@ -1080,7 +1086,11 @@
+@@ -1080,7 +1086,11 @@ noce_try_addcc (struct noce_if_info *if_
  	  != UNKNOWN))
      {
        rtx cond = if_info->cond;
@@ -22104,7 +22104,7 @@
  
        /* First try to use addcc pattern.  */
        if (general_operand (XEXP (cond, 0), VOIDmode)
-@@ -3017,7 +3027,12 @@
+@@ -3017,7 +3027,12 @@ find_if_header (basic_block test_bb, int
        && noce_find_if_block (test_bb, then_edge, else_edge, pass))
      goto success;
  
@@ -22118,7 +22118,7 @@
        && cond_exec_find_if_block (&ce_info))
      goto success;
  
-@@ -3132,7 +3147,11 @@
+@@ -3132,7 +3147,11 @@ cond_exec_find_if_block (struct ce_if_bl
  
    /* We only ever should get here after reload,
       and only if we have conditional execution.  */
@@ -22130,7 +22130,7 @@
  
    /* Discover if any fall through predecessors of the current test basic block
       were && tests (which jump to the else block) or || tests (which jump to
-@@ -4226,6 +4245,14 @@
+@@ -4226,6 +4245,14 @@ gate_handle_if_after_reload (void)
  static unsigned int
  rest_of_handle_if_after_reload (void)
  {
@@ -22147,7 +22147,7 @@
  }
 --- a/gcc/longlong.h
 +++ b/gcc/longlong.h
-@@ -239,6 +239,41 @@
+@@ -239,6 +239,41 @@ UDItype __umulsidi3 (USItype, USItype);
  #define UDIV_TIME 100
  #endif /* __arm__ */
  
@@ -22191,7 +22191,7 @@
  #if __CRIS_arch_version >= 8
 --- a/gcc/optabs.h
 +++ b/gcc/optabs.h
-@@ -586,7 +586,7 @@
+@@ -586,7 +586,7 @@ extern enum insn_code reload_out_optab[N
  extern optab code_to_optab[NUM_RTX_CODE + 1];
  
  
@@ -22202,7 +22202,7 @@
     gives the gen_function to make a branch to test that condition.  */
 --- a/gcc/sched-deps.c
 +++ b/gcc/sched-deps.c
-@@ -1406,7 +1406,14 @@
+@@ -1406,7 +1406,14 @@ fixup_sched_groups (rtx insn)
  
    prev_nonnote = prev_nonnote_insn (insn);
    if (BLOCK_FOR_INSN (insn) == BLOCK_FOR_INSN (prev_nonnote)
@@ -22218,7 +22218,7 @@
      add_dependence (insn, prev_nonnote, REG_DEP_ANTI);
  }
  
-@@ -1905,8 +1912,29 @@
+@@ -1905,8 +1912,29 @@ sched_analyze_insn (struct deps *deps, r
  
    if (code == COND_EXEC)
      {
@@ -22272,7 +22272,7 @@
  /* { dg-options "-O2 -foptimize-sibling-calls" } */
 --- a/gcc/testsuite/gcc.dg/trampoline-1.c
 +++ b/gcc/testsuite/gcc.dg/trampoline-1.c
-@@ -46,6 +46,8 @@
+@@ -46,6 +46,8 @@ void foo (void)
  
  int main (void)
  {
@@ -22294,7 +22294,7 @@
  // different sentry variables for construction and destruction.
 --- a/libgcc/config.host
 +++ b/libgcc/config.host
-@@ -240,6 +240,8 @@
+@@ -240,6 +240,8 @@ arm-*-pe*)
  	;;
  arm*-*-kaos*)
  	;;
@@ -22314,7 +22314,7 @@
    
  /** @file ctype_base.h
   *  This is an internal header file, included by other library headers.
-@@ -45,7 +47,11 @@
+@@ -45,7 +47,11 @@ _GLIBCXX_BEGIN_NAMESPACE(std)
    struct ctype_base
    {
      // Non-standard typedefs.
@@ -22328,7 +22328,7 @@
      // on the mask type. Because of this, we don't use an enum.
 --- a/libstdc++-v3/include/Makefile.in
 +++ b/libstdc++-v3/include/Makefile.in
-@@ -36,6 +36,7 @@
+@@ -36,6 +36,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -22338,7 +22338,7 @@
  subdir = include
 --- a/libstdc++-v3/libmath/Makefile.in
 +++ b/libstdc++-v3/libmath/Makefile.in
-@@ -37,6 +37,7 @@
+@@ -37,6 +37,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -22348,7 +22348,7 @@
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 --- a/libstdc++-v3/libsupc++/Makefile.in
 +++ b/libstdc++-v3/libsupc++/Makefile.in
-@@ -38,6 +38,7 @@
+@@ -38,6 +38,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -22358,7 +22358,7 @@
  subdir = libsupc++
 --- a/libstdc++-v3/Makefile.in
 +++ b/libstdc++-v3/Makefile.in
-@@ -36,6 +36,7 @@
+@@ -36,6 +36,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -22368,7 +22368,7 @@
  	$(srcdir)/Makefile.am $(top_srcdir)/configure \
 --- a/libstdc++-v3/po/Makefile.in
 +++ b/libstdc++-v3/po/Makefile.in
-@@ -36,6 +36,7 @@
+@@ -36,6 +36,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
@@ -22378,7 +22378,7 @@
  subdir = po
 --- a/libstdc++-v3/src/Makefile.in
 +++ b/libstdc++-v3/src/Makefile.in
-@@ -37,6 +37,7 @@
+@@ -37,6 +37,7 @@ POST_UNINSTALL = :
  build_triplet = @build@
  host_triplet = @host@
  target_triplet = @target@
