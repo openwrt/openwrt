@@ -179,7 +179,7 @@
  
    if (! bfd_set_arch_mach (stdoutput, bfd_arch_mips, file_mips_arch))
      as_warn (_("Could not set architecture and machine"));
-@@ -11264,6 +11264,7 @@
+@@ -11258,6 +11264,7 @@ enum options
      OPTION_PDR,
      OPTION_NO_PDR,
      OPTION_MVXWORKS_PIC,
@@ -187,7 +187,7 @@
  #endif /* OBJ_ELF */
      OPTION_END_OF_ENUM    
    };
-@@ -11365,6 +11372,7 @@ struct option md_longopts[] =
+@@ -11359,6 +11366,7 @@ struct option md_longopts[] =
    {"mpdr", no_argument, NULL, OPTION_PDR},
    {"mno-pdr", no_argument, NULL, OPTION_NO_PDR},
    {"mvxworks-pic", no_argument, NULL, OPTION_MVXWORKS_PIC},

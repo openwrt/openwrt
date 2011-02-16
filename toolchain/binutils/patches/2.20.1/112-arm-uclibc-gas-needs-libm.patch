@@ -18,10 +18,8 @@ floatformat.c:(.text+0x43e): undefined reference to `ldexp'                     
 collect2: ld returned 1 exit status
 make[4]: *** [as-new] Error 1
 
-Index: binutils-2.17.50/gas/configure.tgt
-===================================================================
---- binutils-2.17.50.orig/gas/configure.tgt
-+++ binutils-2.17.50/gas/configure.tgt
+--- a/gas/configure.tgt
++++ b/gas/configure.tgt
 @@ -431,6 +431,12 @@ case ${generic_target} in
    *-*-netware)				fmt=elf em=netware ;;
  esac
@@ -35,4 +33,3 @@ Index: binutils-2.17.50/gas/configure.tgt
  case ${cpu_type} in
    alpha | arm | i386 | ia64 | microblaze | mips | ns32k | pdp11 | ppc | sparc | z80 | z8k)
      bfd_gas=yes
-
