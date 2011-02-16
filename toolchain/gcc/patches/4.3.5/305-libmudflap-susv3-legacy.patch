@@ -36,7 +36,7 @@
  }
  
  
-@@ -465,7 +465,7 @@ WRAPPER2(char *, rindex, const char *s, 
+@@ -465,7 +465,7 @@ WRAPPER2(char *, rindex, const char *s,
    size_t n = strlen (s);
    TRACE ("%s\n", __PRETTY_FUNCTION__);
    MF_VALIDATE_EXTENT(s, CLAMPADD(n, 1), __MF_CHECK_READ, "rindex region");

@@ -1,6 +1,6 @@
 --- a/gcc/config/avr32/lib1funcs.S
 +++ b/gcc/config/avr32/lib1funcs.S
-@@ -2866,7 +2866,7 @@ __truncdfsf_return_op1: 
+@@ -2866,7 +2866,7 @@ __truncdfsf_return_op1:
          /* NaN or inf */
          cbr     r12,31                  /* clear implicit bit */
          retne   -1                      /* Return NaN if mantissa not zero */

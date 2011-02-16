@@ -1,6 +1,6 @@
 --- a/gcc/config/avr32/lib1funcs.S
 +++ b/gcc/config/avr32/lib1funcs.S
-@@ -1733,7 +1733,7 @@ __avr32_f64_div_round_subnormal:	
+@@ -1733,7 +1733,7 @@ __avr32_f64_div_round_subnormal:
          brne    16f     /* Return NaN if op1 is NaN */
          /* Op1 is inf check op2 */
          lsr     r6, r9, 20 /* Extract exponent */
@@ -9,7 +9,7 @@
          cp      r6, 0x7ff
          brne    17f     /* Inf/number gives inf, return inf */
          rjmp    16f     /* The rest gives NaN*/
-@@ -1849,7 +1849,7 @@ __avr32_f64_div_res_subnormal:/* Divide 
+@@ -1849,7 +1849,7 @@ __avr32_f64_div_res_subnormal:/* Divide
  	 
  16:     /* Return NaN. */
          mov     r11, -1
