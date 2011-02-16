@@ -1,0 +1,13 @@
+--- a/configure.in
++++ b/configure.in
+@@ -87,8 +87,8 @@ AC_PACKAGE_GLOBALS(xfsprogs)
+ AC_PACKAGE_UTILITIES(xfsprogs)
+ AC_MULTILIB($enable_lib64)
+ 
+-AC_PACKAGE_NEED_AIO_H
+-AC_PACKAGE_NEED_LIO_LISTIO
++librt="-lrt"
++AC_SUBST(librt)
+ 
+ AC_PACKAGE_NEED_UUID_H
+ AC_PACKAGE_NEED_UUIDCOMPARE
