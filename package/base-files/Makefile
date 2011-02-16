@@ -196,7 +196,6 @@ endef
 define Package/libpthread
 $(call Package/libc/Default)
   TITLE:=POSIX thread library
-  DEPENDS:= +librt
 endef
 
 define Package/libpthread/config
@@ -223,6 +222,7 @@ endef
 define Package/librt
 $(call Package/libc/Default)
   TITLE:=POSIX.1b RealTime extension library
+  DEPENDS:=+libpthread
 endef
 
 define Package/librt/config
