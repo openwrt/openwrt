@@ -1,0 +1,28 @@
+--- a/fsr/xfs_fsr.c
++++ b/fsr/xfs_fsr.c
+@@ -35,7 +35,9 @@
+ #include <sys/wait.h>
+ #include <sys/vfs.h>
+ #include <sys/statvfs.h>
++#ifndef __UCLIBC__
+ #include <sys/xattr.h>
++#endif
+ 
+ 
+ #ifndef XFS_XFLAG_NODEFRAG
+@@ -990,6 +992,7 @@ fsr_setup_attr_fork(
+ 	int		tfd,
+ 	xfs_bstat_t	*bstatp)
+ {
++#ifndef __UCLIBC__
+ 	struct stat64	tstatbuf;
+ 	int		i;
+ 	int		last_forkoff = 0;
+@@ -1108,6 +1111,7 @@ fsr_setup_attr_fork(
+ out:
+ 	if (dflag)
+ 		fsrprintf(_("set temp attr\n"));
++#endif
+ 	return 0;
+ }
+ 
