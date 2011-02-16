@@ -21,7 +21,7 @@
  extern const bfd_arch_info_type bfd_bfin_arch;
  extern const bfd_arch_info_type bfd_cr16_arch;
  extern const bfd_arch_info_type bfd_cr16c_arch;
-@@ -526,6 +533,7 @@ static const bfd_arch_info_type * const 
+@@ -526,6 +533,7 @@ static const bfd_arch_info_type * const
      &bfd_arc_arch,
      &bfd_arm_arch,
      &bfd_avr_arch,
@@ -166,7 +166,7 @@
      bfd_elf32_bfin_vec)		tb="$tb elf32-bfin.lo elf32.lo $elf" ;;
      bfd_elf32_bfinfdpic_vec)	tb="$tb elf32-bfin.lo elf32.lo $elf" ;;
      bfd_elf32_big_generic_vec) 	tb="$tb elf32-gen.lo elf32.lo $elf" ;;
---- a/bfd/cpu-avr32.c
+--- /dev/null
 +++ b/bfd/cpu-avr32.c
 @@ -0,0 +1,52 @@
 +/* BFD library support routines for AVR32.
@@ -221,7 +221,7 @@
 +
 +const bfd_arch_info_type bfd_avr32_arch =
 +  N(bfd_mach_avr32_ap, "avr32", TRUE, &cpu_info[0]);
---- a/bfd/elf32-avr32.c
+--- /dev/null
 +++ b/bfd/elf32-avr32.c
 @@ -0,0 +1,3915 @@
 +/* AVR32-specific support for 32-bit ELF.
@@ -4139,7 +4139,7 @@
 +#define elf_backend_got_header_size	AVR32_GOT_HEADER_SIZE
 +
 +#include "elf32-target.h"
---- a/bfd/elf32-avr32.h
+--- /dev/null
 +++ b/bfd/elf32-avr32.h
 @@ -0,0 +1,23 @@
 +/* AVR32-specific support for 32-bit ELF.
@@ -4482,7 +4482,7 @@
  
    input_scrub_end ();
  
---- a/gas/config/tc-avr32.c
+--- /dev/null
 +++ b/gas/config/tc-avr32.c
 @@ -0,0 +1,4829 @@
 +/* Assembler implementation for AVR32.
@@ -9314,7 +9314,7 @@
 +
 +/* vim: syntax=c sw=2
 + */
---- a/gas/config/tc-avr32.h
+--- /dev/null
 +++ b/gas/config/tc-avr32.h
 @@ -0,0 +1,325 @@
 +/* Assembler definitions for AVR32.
@@ -9705,7 +9705,7 @@
  @ifset BFIN
  @include c-bfin.texi
  @end ifset
---- a/gas/doc/c-avr32.texi
+--- /dev/null
 +++ b/gas/doc/c-avr32.texi
 @@ -0,0 +1,244 @@
 +@c Copyright 2005, 2006, 2007, 2008, 2009
@@ -10095,7 +10095,7 @@
  DEP_cris_aout = $(srcdir)/config/obj-aout.h $(srcdir)/config/tc-cris.h \
    $(BFDDIR)/libaout.h $(INCDIR)/bfdlink.h
  
---- a/gas/testsuite/gas/avr32/aliases.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/aliases.d
 @@ -0,0 +1,19 @@
 +#as:
@@ -10117,7 +10117,7 @@
 +   c:	b8 80      [ \t]+st\.b r12\[0x0\],r0
 +   e:	b8 00      [ \t]+st\.h r12\[0x0\],r0
 +  10:	99 00      [ \t]+st\.w r12\[0x0\],r0
---- a/gas/testsuite/gas/avr32/aliases.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/aliases.s
 @@ -0,0 +1,14 @@
 +	.text
@@ -10134,7 +10134,7 @@
 +	st.b	r12, r0
 +	st.h	r12, r0
 +	st.w	r12, r0
---- a/gas/testsuite/gas/avr32/allinsn.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/allinsn.d
 @@ -0,0 +1,2987 @@
 +#as:
@@ -13124,7 +13124,7 @@
 + *[0-9a-f]*:	fc 15 00 01     movh r5,0x1
 + *[0-9a-f]*:	fc 1c 7f ff     movh r12,0x7fff
 +
---- a/gas/testsuite/gas/avr32/allinsn.exp
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/allinsn.exp
 @@ -0,0 +1,5 @@
 +# AVR32 assembler testsuite. -*- Tcl -*-
@@ -13132,7 +13132,7 @@
 +if [istarget avr32-*-*] {
 +    run_dump_test "allinsn"
 +}
---- a/gas/testsuite/gas/avr32/allinsn.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/allinsn.s
 @@ -0,0 +1,3330 @@
 + .data
@@ -16465,7 +16465,7 @@
 +	movh	r12, 32767
 +	
 +		
---- a/gas/testsuite/gas/avr32/avr32.exp
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/avr32.exp
 @@ -0,0 +1,23 @@
 +# AVR32 assembler testsuite. -*- Tcl -*-
@@ -16491,7 +16491,7 @@
 +    run_dump_test "symdiff"
 +    run_dump_test "symdiff_linkrelax"
 +}
---- a/gas/testsuite/gas/avr32/call_nopic.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/call_nopic.d
 @@ -0,0 +1,36 @@
 +#source: call.s
@@ -16530,7 +16530,7 @@
 +
 +00000000 <different_section>:
 +   0:	e2 c0 00 00 	sub r0,r1,0
---- a/gas/testsuite/gas/avr32/call_nopic_linkrelax.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/call_nopic_linkrelax.d
 @@ -0,0 +1,43 @@
 +#source: call.s
@@ -16576,7 +16576,7 @@
 +
 +00000000 <different_section>:
 +   0:	e2 c0 00 00 	sub r0,r1,0
---- a/gas/testsuite/gas/avr32/call_pic.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/call_pic.d
 @@ -0,0 +1,36 @@
 +#source: call.s
@@ -16615,7 +16615,7 @@
 +
 +00000000 <different_section>:
 +   0:	e2 c0 00 00 	sub r0,r1,0
---- a/gas/testsuite/gas/avr32/call_pic_linkrelax.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/call_pic_linkrelax.d
 @@ -0,0 +1,47 @@
 +#source: call.s
@@ -16665,7 +16665,7 @@
 +
 +00000000 <different_section>:
 +   0:	e2 c0 00 00 	sub r0,r1,0
---- a/gas/testsuite/gas/avr32/call.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/call.s
 @@ -0,0 +1,30 @@
 +
@@ -16698,7 +16698,7 @@
 +	.section .text.init,"ax",@progbits
 +different_section:
 +	sub	r0, r1, 0
---- a/gas/testsuite/gas/avr32/dwarf2.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/dwarf2.d
 @@ -0,0 +1,42 @@
 +#readelf: -wl
@@ -16743,7 +16743,7 @@
 +  Special opcode .*: advance Address by 10 to 0xe and Line by 1 to 112
 +  Advance PC by 530 to 220
 +  Extended opcode 1: End of Sequence
---- a/gas/testsuite/gas/avr32/dwarf2.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/dwarf2.s
 @@ -0,0 +1,67 @@
 +# Source file used to test DWARF2 information for AVR32.
@@ -16813,7 +16813,7 @@
 +	.uleb128 0, 0
 +
 +	.byte	0
---- a/gas/testsuite/gas/avr32/fpinsn.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/fpinsn.d
 @@ -0,0 +1,271 @@
 +#as:
@@ -17087,7 +17087,7 @@
 + *[0-9a-f]*:	e1 a8 00 f0 	cop cp0,cr0,cr15,cr0,0x10
 + *[0-9a-f]*:	e1 a8 08 70 	cop cp0,cr8,cr7,cr0,0x10
 + *[0-9a-f]*:	e1 a8 06 80 	cop cp0,cr6,cr8,cr0,0x10
---- a/gas/testsuite/gas/avr32/fpinsn.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/fpinsn.s
 @@ -0,0 +1,266 @@
 +
@@ -17356,7 +17356,7 @@
 +	fcastd.s fr0, fr15
 +	fcastd.s fr8, fr7
 +	fcastd.s fr6, fr8
---- a/gas/testsuite/gas/avr32/hwrd-lwrd.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/hwrd-lwrd.d
 @@ -0,0 +1,47 @@
 +#as:
@@ -17406,7 +17406,7 @@
 +			58: R_AVR32_LO16	\.text\+0x60
 +  5c:	e0 10 00 00 	andl r0,0x0
 +			5c: R_AVR32_LO16	extsym1
---- a/gas/testsuite/gas/avr32/hwrd-lwrd.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/hwrd-lwrd.s
 @@ -0,0 +1,39 @@
 +
@@ -17448,7 +17448,7 @@
 +        andl	r0, lo(extsym1)
 +
 +sym2:
---- a/gas/testsuite/gas/avr32/jmptable.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/jmptable.d
 @@ -0,0 +1,20 @@
 +#source: jmptable.s
@@ -17471,7 +17471,7 @@
 +  12:	d7 03       	nop
 +  14:	d7 03       	nop
 +  16:	d7 03       	nop
---- a/gas/testsuite/gas/avr32/jmptable_linkrelax.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/jmptable_linkrelax.d
 @@ -0,0 +1,25 @@
 +#source: jmptable.s
@@ -17499,7 +17499,7 @@
 +  12:	d7 03       	nop
 +  14:	d7 03       	nop
 +  16:	d7 03       	nop
---- a/gas/testsuite/gas/avr32/jmptable.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/jmptable.s
 @@ -0,0 +1,14 @@
 +
@@ -17516,7 +17516,7 @@
 +1:	nop
 +2:	nop
 +3:	nop
---- a/gas/testsuite/gas/avr32/lda_nopic.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/lda_nopic.d
 @@ -0,0 +1,32 @@
 +#source: lda.s
@@ -17551,7 +17551,7 @@
 +	...
 +0001001c <toofar_positive>:
 +   1001c:	fe ce 00 00 	sub lr,pc,0
---- a/gas/testsuite/gas/avr32/lda_nopic_linkrelax.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/lda_nopic_linkrelax.d
 @@ -0,0 +1,41 @@
 +#source: lda.s
@@ -17595,7 +17595,7 @@
 +	\.\.\.
 +00010020 <toofar_positive>:
 +   10020:	fe ce 00 00 	sub lr,pc,0
---- a/gas/testsuite/gas/avr32/lda_pic.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/lda_pic.d
 @@ -0,0 +1,32 @@
 +#source: lda.s
@@ -17630,7 +17630,7 @@
 +	...
 +00010014 <toofar_positive>:
 +   10014:	fe ce 00 00 	sub lr,pc,0
---- a/gas/testsuite/gas/avr32/lda_pic_linkrelax.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/lda_pic_linkrelax.d
 @@ -0,0 +1,40 @@
 +#source: lda.s
@@ -17673,7 +17673,7 @@
 +	...
 +0001002c <toofar_positive>:
 +   1002c:	fe ce 00 00 	sub lr,pc,0
---- a/gas/testsuite/gas/avr32/lda.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/lda.s
 @@ -0,0 +1,30 @@
 +
@@ -17706,7 +17706,7 @@
 +	.data
 +different_section:
 +	.long	0x12345678
---- a/gas/testsuite/gas/avr32/pcrel.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/pcrel.d
 @@ -0,0 +1,64 @@
 +#as:
@@ -17773,7 +17773,7 @@
 +   e:	d7 03       	nop
 +  10:	e0 a0 .. .. 	rcall [0-9a-f]+ <.*>
 +			10: R_AVR32_22H_PCREL	\.text\+0xc
---- a/gas/testsuite/gas/avr32/pcrel.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/pcrel.s
 @@ -0,0 +1,57 @@
 +
@@ -17833,7 +17833,7 @@
 +	rcall	test_rcall2
 +	nop
 +	rcall	test_rcall2
---- a/gas/testsuite/gas/avr32/pico.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/pico.d
 @@ -0,0 +1,149 @@
 +#as:
@@ -17985,7 +17985,7 @@
 + *[0-9a-f]*:	ed a0 33 01 	stcm\.w cp1,--r0,cr8
 + *[0-9a-f]*:	ed a7 33 80 	stcm\.w cp1,--r7,cr15
 + *[0-9a-f]*:	ed a8 33 7f 	stcm\.w cp1,--r8,cr8-cr14
---- a/gas/testsuite/gas/avr32/pico.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/pico.s
 @@ -0,0 +1,144 @@
 +
@@ -18132,7 +18132,7 @@
 +	picostm.w	--r0, coeff1_a
 +	picostm.w	--r7, config
 +	picostm.w	--r8, coeff1_a-vmu2_out
---- a/gas/testsuite/gas/avr32/pic_reloc.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/pic_reloc.d
 @@ -0,0 +1,27 @@
 +#as:
@@ -18162,7 +18162,7 @@
 +			18: R_AVR32_GOT16S	\.L4
 +  1c:	ec f0 00 00 	ld.w r0,r6\[0\]
 +			1c: R_AVR32_GOT16S	ldw_got
---- a/gas/testsuite/gas/avr32/pic_reloc.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/pic_reloc.s
 @@ -0,0 +1,18 @@
 +
@@ -18183,7 +18183,7 @@
 +	ld.w	r0,r6[.L4@got]
 +	ld.w	r0,r6[ldw_got@got]
 +.L4:
---- a/gas/testsuite/gas/avr32/symdiff.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/symdiff.d
 @@ -0,0 +1,24 @@
 +#source: symdiff.s
@@ -18210,7 +18210,7 @@
 +   a:	d7 03       	nop
 +   c:	d7 03       	nop
 +   e:	d7 03       	nop
---- a/gas/testsuite/gas/avr32/symdiff_linkrelax.d
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/symdiff_linkrelax.d
 @@ -0,0 +1,28 @@
 +#source: symdiff.s
@@ -18241,7 +18241,7 @@
 +   a:	d7 03       	nop
 +   c:	d7 03       	nop
 +   e:	d7 03       	nop
---- a/gas/testsuite/gas/avr32/symdiff.s
+--- /dev/null
 +++ b/gas/testsuite/gas/avr32/symdiff.s
 @@ -0,0 +1,19 @@
 +
@@ -18265,7 +18265,7 @@
 +.L2:	nop
 --- a/gas/write.c
 +++ b/gas/write.c
-@@ -1993,6 +1993,10 @@ relax_frag (segT segment, fragS *fragP, 
+@@ -1993,6 +1993,10 @@ relax_frag (segT segment, fragS *fragP,
  
  #endif /* defined (TC_GENERIC_RELAX_TABLE)  */
  
@@ -18328,7 +18328,7 @@
  extern void print_s390_disassembler_options (FILE *);
  extern int  get_arm_regname_num_options (void);
  extern int  set_arm_regname_option (int);
---- a/include/elf/avr32.h
+--- /dev/null
 +++ b/include/elf/avr32.h
 @@ -0,0 +1,98 @@
 +/* AVR32 ELF support for BFD.
@@ -18463,7 +18463,7 @@
  bfin-*-elf)		targ_emul=elf32bfin;
  			targ_extra_emuls="elf32bfinfd"
  			targ_extra_libpath=$targ_extra_emuls
---- a/ld/emulparams/avr32elf.sh
+--- /dev/null
 +++ b/ld/emulparams/avr32elf.sh
 @@ -0,0 +1,274 @@
 +# This script is called from ld/genscript.sh 
@@ -18740,7 +18740,7 @@
 +    ;;
 +
 +esac
---- a/ld/emulparams/avr32linux.sh
+--- /dev/null
 +++ b/ld/emulparams/avr32linux.sh
 @@ -0,0 +1,14 @@
 +ARCH=avr32
@@ -18757,7 +18757,7 @@
 +# essential for uClinux.  We don't use those .s* sections on AVR32
 +# anyway, so it shouldn't hurt for regular Linux either...
 +NO_SMALL_DATA=yes
---- a/ld/emultempl/avr32elf.em
+--- /dev/null
 +++ b/ld/emultempl/avr32elf.em
 @@ -0,0 +1,162 @@
 +# This shell script emits a C file. -*- C -*-
@@ -19229,7 +19229,7 @@
  	ecoff_i860.o \
  	ecoff_sparc.o \
  	eelf32_spu.o \
-@@ -1480,6 +1530,194 @@ eavr6.c: $(srcdir)/emulparams/avr6.sh $(
+@@ -1480,6 +1527,194 @@ eavr6.c: $(srcdir)/emulparams/avr6.sh $(
    $(ELF_DEPS) $(srcdir)/scripttempl/avr.sc \
    ${GEN_DEPENDS}
  	${GENSCRIPTS} avr6 "$(tdir_avr2)"
@@ -19424,7 +19424,7 @@
  ecoff_i860.c: $(srcdir)/emulparams/coff_i860.sh \
    $(srcdir)/emultempl/generic.em $(srcdir)/scripttempl/i860coff.sc ${GEN_DEPENDS}
  	${GENSCRIPTS} coff_i860 "$(tdir_coff_i860)"
---- a/ld/scripttempl/avr32.sc
+--- /dev/null
 +++ b/ld/scripttempl/avr32.sc
 @@ -0,0 +1,459 @@
 +#
@@ -19886,7 +19886,7 @@
 +  ${RELOCATING+${STACKNOTE}}
 +}
 +EOF
---- a/ld/testsuite/ld-avr32/avr32.exp
+--- /dev/null
 +++ b/ld/testsuite/ld-avr32/avr32.exp
 @@ -0,0 +1,25 @@
 +# Expect script for AVR32 ELF linker tests.
@@ -19914,7 +19914,7 @@
 +}
 +
 +run_dump_test "pcrel"
---- a/ld/testsuite/ld-avr32/pcrel.d
+--- /dev/null
 +++ b/ld/testsuite/ld-avr32/pcrel.d
 @@ -0,0 +1,74 @@
 +#name: AVR32 ELF PC-relative external relocs
@@ -19991,7 +19991,7 @@
 +Disassembly of section \.text\.pcrel21:
 +a0200000 <extsym21>:
 +a0200000:	d7 03       	nop
---- a/ld/testsuite/ld-avr32/pcrel.ld
+--- /dev/null
 +++ b/ld/testsuite/ld-avr32/pcrel.ld
 @@ -0,0 +1,23 @@
 +ENTRY(_start)
@@ -20017,7 +20017,7 @@
 +		*(.text.pcrel21)
 +	}
 +}
---- a/ld/testsuite/ld-avr32/symbols.s
+--- /dev/null
 +++ b/ld/testsuite/ld-avr32/symbols.s
 @@ -0,0 +1,20 @@
 +	.text
@@ -20040,7 +20040,7 @@
 +	.global extsym21
 +extsym21:
 +	nop
---- a/opcodes/avr32-asm.c
+--- /dev/null
 +++ b/opcodes/avr32-asm.c
 @@ -0,0 +1,264 @@
 +/* Assembler interface for AVR32.
@@ -20307,7 +20307,7 @@
 +    { cr_table,  AVR32_NR_CPREGS,  NULL, N_("coprocessor register expected") },
 +  };
 +#endif
---- a/opcodes/avr32-asm.h
+--- /dev/null
 +++ b/opcodes/avr32-asm.h
 @@ -0,0 +1,42 @@
 +/* Assembler interface for AVR32.
@@ -20352,7 +20352,7 @@
 +avr32_make_regmask8(unsigned long regmask16, unsigned long *regmask8);
 +
 +#endif /* __OPCODES_AVR32_ASM_H */
---- a/opcodes/avr32-dis.c
+--- /dev/null
 +++ b/opcodes/avr32-dis.c
 @@ -0,0 +1,891 @@
 +/* Print AVR32 instructions for GDB and objdump.
@@ -21246,7 +21246,7 @@
 +{
 +
 +}
---- a/opcodes/avr32-opc.c
+--- /dev/null
 +++ b/opcodes/avr32-opc.c
 @@ -0,0 +1,6946 @@
 +/* Opcode tables for AVR32.
@@ -28195,7 +28195,7 @@
 +#undef NORMAL_MNEMONIC
 +#undef ALIAS_MNEMONIC
 +#undef FP_MNEMONIC
---- a/opcodes/avr32-opc.h
+--- /dev/null
 +++ b/opcodes/avr32-opc.h
 @@ -0,0 +1,2377 @@
 +/* Opcode tables for AVR32.
