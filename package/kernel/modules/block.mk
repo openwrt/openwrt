@@ -44,7 +44,12 @@ define KernelPackage/ata-ahci
   TITLE:=AHCI Serial ATA support
   KCONFIG:=CONFIG_SATA_AHCI
   FILES:=$(LINUX_DIR)/drivers/ata/ahci.ko
-  AUTOLOAD:=$(call AutoLoad,41,ahci,1)
+  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1)
+    FILES += $(LINUX_DIR)/drivers/ata/libahci.ko
+    AUTOLOAD:=$(call AutoLoad,41,libahci ahci,1)
+  else
+    AUTOLOAD:=$(call AutoLoad,41,ahci,1)
+  endif
   $(call AddDepends/ata)
 endef
 
