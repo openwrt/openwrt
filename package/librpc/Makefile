@@ -9,7 +9,9 @@ PKG_SOURCE_URL:=git://nbd.name/uclibc-rpc.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=49f63f433ddd1fb7ad1e450094b82aacaa3b0a7d
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
-CMAKE_INSTALL:=1
+ifdef CONFIG_USE_UCLIBC
+  CMAKE_INSTALL:=1
+endif
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -21,9 +23,11 @@ define Package/librpc
   DEPENDS:=@USE_UCLIBC
 endef
 
-define Package/librpc/install
+ifdef CONFIG_USE_UCLIBC
+  define Package/librpc/install
 	$(INSTALL_DIR) $(1)/lib/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/librpc.so $(1)/lib/
-endef
+  endef
+endif
 
 $(eval $(call BuildPackage,librpc))
