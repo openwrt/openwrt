@@ -1,0 +1,40 @@
+Index: sangam_atm-D7.04.03.00/tn7atm.c
+===================================================================
+--- sangam_atm-D7.04.03.00.orig/tn7atm.c	2011-02-18 13:36:12.000000000 +0100
++++ sangam_atm-D7.04.03.00/tn7atm.c	2011-02-18 13:36:21.268956988 +0100
+@@ -1867,7 +1867,11 @@
+ 
+   dgprintf (4, "device %s being registered\n", priv->name);
+ 
++  #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,37)
+   mydev = atm_dev_register (priv->proc_name, &tn7atm_ops, -1, NULL);
++  #else
++  mydev = atm_dev_register (priv->proc_name, NULL, &tn7atm_ops, -1, NULL);
++  #endif
+ 
+   if (mydev == NULL)
+   {
+Index: sangam_atm-D7.04.03.00/tn7dsl.c
+===================================================================
+--- sangam_atm-D7.04.03.00.orig/tn7dsl.c	2011-02-18 13:36:12.000000000 +0100
++++ sangam_atm-D7.04.03.00/tn7dsl.c	2011-02-18 13:37:41.678957013 +0100
+@@ -466,14 +466,17 @@
+ {
+ 	const struct firmware *fw_entry;
+ 	size_t size;
++ 	int ret;
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+ 	dev_set_name(&avsar, "avsar");
+ #endif
+ 	printk("requesting firmware image \"ar0700xx.bin\"\n");
+-	if(device_register(&avsar) < 0) {
++	dev_set_name(&avsar, "avsar");
++	ret = device_register(&avsar);
++	if (ret < 0) {
+ 		printk(KERN_ERR
+-			"avsar: device_register fails\n");
++			"avsar: device_register fails, error%i\n", ret);
+ 		return -1;
+ 	}
+ 

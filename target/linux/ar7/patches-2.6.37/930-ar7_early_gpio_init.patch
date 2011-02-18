@@ -1,0 +1,9 @@
+--- a/arch/mips/include/asm/mach-ar7/ar7.h
++++ b/arch/mips/include/asm/mach-ar7/ar7.h
+@@ -205,4 +205,6 @@ void __init ar7_init_clocks(void);
+ 
+ extern void __init ar7_init_clocks(void);
+ 
++int __init ar7_gpio_init(void);
++
+ #endif /* __AR7_H__ */
