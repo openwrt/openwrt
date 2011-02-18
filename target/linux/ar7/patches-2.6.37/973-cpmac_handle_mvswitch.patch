@@ -1,0 +1,70 @@
+--- a/drivers/net/cpmac.c
++++ b/drivers/net/cpmac.c
+@@ -372,6 +372,7 @@ static struct sk_buff *cpmac_rx_one(stru
+ 				    struct cpmac_desc *desc)
+ {
+ 	struct sk_buff *skb, *result = NULL;
++	int offset;
+ 
+ 	if (unlikely(netif_msg_hw(priv)))
+ 		cpmac_dump_desc(priv->dev, desc);
+@@ -383,10 +384,15 @@ static struct sk_buff *cpmac_rx_one(stru
+ 		return NULL;
+ 	}
+ 
+-	skb = netdev_alloc_skb_ip_align(priv->dev, CPMAC_SKB_SIZE);
++	skb = netdev_alloc_skb(priv->dev, CPMAC_SKB_SIZE);
+ 	if (likely(skb)) {
++		offset = 2;
++		if (priv->phy) {
++			offset += priv->phy->pkt_align;
++		}
++		skb_reserve(skb, offset);
++
+ 		skb_put(desc->skb, desc->datalen);
+-		desc->skb->protocol = eth_type_trans(desc->skb, priv->dev);
+ 		skb_checksum_none_assert(desc->skb);
+ 		priv->dev->stats.rx_packets++;
+ 		priv->dev->stats.rx_bytes += desc->datalen;
+@@ -458,7 +464,12 @@ static int cpmac_poll(struct napi_struct
+ 
+ 		skb = cpmac_rx_one(priv, desc);
+ 		if (likely(skb)) {
+-			netif_receive_skb(skb);
++			if (priv->phy->netif_receive_skb) {
++				priv->phy->netif_receive_skb(skb);
++			} else {
++				skb->protocol = eth_type_trans(skb, priv->dev);
++				netif_receive_skb(skb);
++			}
+ 			received++;
+ 		}
+ 		desc = desc->next;
+@@ -951,7 +962,7 @@ static void cpmac_adjust_link(struct net
+ 
+ static int cpmac_open(struct net_device *dev)
+ {
+-	int i, size, res;
++	int i, size, res, offset;
+ 	struct cpmac_priv *priv = netdev_priv(dev);
+ 	struct resource *mem;
+ 	struct cpmac_desc *desc;
+@@ -990,11 +1001,17 @@ static int cpmac_open(struct net_device
+ 
+ 	priv->rx_head = &priv->desc_ring[CPMAC_QUEUES];
+ 	for (i = 0, desc = priv->rx_head; i < priv->ring_size; i++, desc++) {
+-		skb = netdev_alloc_skb_ip_align(dev, CPMAC_SKB_SIZE);
++		skb = netdev_alloc_skb(dev, CPMAC_SKB_SIZE);
+ 		if (unlikely(!skb)) {
+ 			res = -ENOMEM;
+ 			goto fail_desc;
+ 		}
++		offset = 2;
++		if (priv->phy) {
++			offset += priv->phy->pkt_align;
++		}
++		skb_reserve(skb, offset);
++
+ 		desc->skb = skb;
+ 		desc->data_mapping = dma_map_single(&dev->dev, skb->data,
+ 						    CPMAC_SKB_SIZE,
