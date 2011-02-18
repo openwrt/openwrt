@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=http://www.busybox.net/downloads \
 		http://distfiles.gentoo.org/distfiles/
 PKG_MD5SUM:=a2ce1a951571da8c6e0eaf75b1acef60
 
-PKG_BUILD_DEPENDS:=USE_UCLIBC:librpc
+PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_FEATURE_HAVE_RPC:librpc
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
