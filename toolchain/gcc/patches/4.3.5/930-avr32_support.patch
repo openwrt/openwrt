@@ -22,7 +22,7 @@
  	 must do it earlier where we know the signedness of the arg.  */
 --- /dev/null
 +++ b/gcc/config/avr32/avr32.c
-@@ -0,0 +1,7858 @@
+@@ -0,0 +1,7869 @@
 +/*
 +   Target hooks and helper functions for AVR32.
 +   Copyright 2003-2006 Atmel Corporation.
@@ -6526,12 +6526,23 @@
 +                        continue;
 +
 +		      set = single_set (scan);
-+		      if (set && rtx_equal_p (src_reg, SET_DEST (set)))
-+			{
-+			  link = scan;
-+			  break;
-+			}
-+
++                      // Fix for bug #11763 : the following if condition
++                      // has been modified and else part is included to 
++                      // set the link to NULL_RTX. 
++                      // if (set && rtx_equal_p (src_reg, SET_DEST (set)))
++                      if (set && (REGNO(src_reg) == REGNO(SET_DEST(set))))
++                       {
++                         if (rtx_equal_p (src_reg, SET_DEST (set)))
++			  {
++			    link = scan;
++			    break;
++                          }
++                         else
++                          {
++                            link = NULL_RTX;
++                            break;
++                          }
++                       }
 +                    }
 +
 +
@@ -17204,7 +17215,7 @@
 +   (set_attr "cc" "none")])
 --- /dev/null
 +++ b/gcc/config/avr32/lib1funcs.S
-@@ -0,0 +1,2874 @@
+@@ -0,0 +1,2902 @@
 +/* Macro for moving immediate value to register. */	
 +.macro mov_imm	reg, imm
 +.if	(((\imm & 0xfffff) == \imm) || ((\imm | 0xfff00000) == \imm))
@@ -18243,6 +18254,7 @@
 +        brne    __avr32_f64_add_return_nan
 +        mov     r10, 0  /* Generate Inf in r11, r10 */
 +	mov_imm r11, 0x7ff00000
++        or      r11, r12 /* Put sign bit back */
 +        ldm     sp++, r5, r6, r7, pc/* opL Inf, return Inf */
 +__avr32_f64_add_return_nan:     
 +        mov     r10, -1 /* Generate NaN in r11, r10 */
@@ -18595,25 +18607,30 @@
 +#endif  
 + 
 +        /* compare magnitude of op1 and op2 */
++        st.w    --sp, lr
++        st.w    --sp, r7
 +        lsl     r11,1                   /* Remove sign bit of op1 */
 +        srcs    r12                     /* Sign op1 to lsb of r12*/
-+	subfeq	r10, 0
-+	breq	3f			/* op1 zero */
 +        lsl     r9,1                    /* Remove sign bit of op2 */
++        srcs    r7
 +        rol     r12                     /* Sign op2 to lsb of lr, sign bit op1 bit 1 of r12*/
 +	
 + 
 +        /* Check for Nan */
-+	pushm	lr
-+	mov_imm	lr, 0xffe00000
++        mov_imm lr, 0xffe00000
 +        cp.w    r10,0
 +        cpc     r11,lr
 +        brhi    0f      /* We have NaN */
 +        cp.w    r8,0
 +        cpc     r9,lr
 +        brhi    0f      /* We have NaN */
-+	popm	lr
-+ 
++
++        cp.w    r11, 0
++        subfeq  r10, 0
++        breq    3f			/* op1 zero */
++        ld.w    r7, sp++
++        ld.w    lr, sp++
++
 +        cp.w    r12,3                   /* both operands negative ?*/    
 +        breq    1f
 + 
@@ -18659,18 +18676,22 @@
 +#endif
 +
 +0:      
++        ld.w    r7, sp++
 +        popm    pc, r12=0
 +#endif
 + 
 +3:
-+        lsl     r9,1                   /* Remove sign bit of op1 */
++        cp.w    r7, 1          /* Check sign bit from r9 */
 +#ifdef L_avr32_f64_cmp_ge
-+        srcs    r12		       /* If op2 is negative then op1 >= op2. */	
++        sreq    r12		       /* If op2 is negative then op1 >= op2. */	
 +#endif
 +#ifdef L_avr32_f64_cmp_lt
-+        srcc    r12		       /* If op2 is positve then op1 <= op2. */
++        srne    r12		       /* If op2 is positve then op1 <= op2. */
 +#endif
-+	subfeq	r8, 0		       
++        cp.w    r9, 0
++        subfeq  r8, 0
++        ld.w    r7, sp++
++        ld.w    lr, sp++
 +#ifdef L_avr32_f64_cmp_ge
 +	reteq	1		       /* Both operands are zero. Return true. */
 +#endif
@@ -18930,7 +18951,7 @@
 +        brne    16f     /* Return NaN if op1 is NaN */
 +        /* Op1 is inf check op2 */
 +        lsr     r6, r9, 20 /* Extract exponent */
-+        cbr     r6, 8       /* Clear sign bit */
++        cbr     r6, 11      /* Clear sign bit */
 +        cp      r6, 0x7ff
 +        brne    17f     /* Inf/number gives inf, return inf */
 +        rjmp    16f     /* The rest gives NaN*/
@@ -19046,10 +19067,14 @@
 +	 
 +16:     /* Return NaN. */
 +        mov     r11, -1
-+        mov     r10, -1
++        mov     r10, 0
 +        ldm     sp++, r0, r1, r2, r3, r4, r5, r6, r7,pc
 +        
-+17:     /* Return INF. */
++17:     
++        /* Check if op1 is zero. */
++        or      r4, r10, r11
++        breq    __avr32_f64_div_op1_zero
++        /* Return INF. */
 +        mov     r11, lr /*Get correct sign*/
 +        andh    r11, 0x8000, COH
 +        orh     r11, 0x7ff0
@@ -19463,10 +19488,13 @@
 + 
 +        /* Unpack */
 +        lsl     r12,1
-+        reteq   0                       /* Return zero if op1 is zero */
 +        lsl     r11,1
 +        breq    4f                      /* Check op2 for zero */
-+        
++
++        tst     r12, r12
++        moveq   r9, 0
++        breq    12f
++
 +        /* Unpack op1*/ 
 +        /* exp: r9 */
 +        /* sf:  r12 */
@@ -19485,9 +19513,14 @@
 +        breq    13f /*If number is subnormal*/
 +        cp      r10, 0xff
 +        brhs    3f  /* Check op2 for NaN or Inf */      
-+        
 +        lsl     r11,7
 +        sbr     r11, 31 /*Implicit bit*/
++
++        cp.w    r9, 0
++        subfeq  r12, 0
++        reteq   0                       /* op1 is zero and op2 is not zero */
++                                        /* or NaN so return zero */
++
 +14:     
 + 
 +        /* For UC3, store with predecrement is faster than stm */
@@ -19656,9 +19689,14 @@
 +        reteq   0       /* Return zero if number/inf*/
 +        ret     -1      /* Return NaN*/
 +4:
-+        /* Op2 is zero ? */
++        /* Op1 is zero ? */
 +        tst     r12,r12
 +        reteq   -1      /* 0.0/0.0 is NaN */
++        /* Op1 is Nan? */
++        lsr     r9, r12, 24
++        breq    11f /*If number is subnormal*/
++        cp      r9, 0xff
++        brhs    2b  /* Check op1 for NaN or Inf */
 +        /* Nonzero/0.0 is Inf. Sign bit will be shifted in before returning*/
 +	mov_imm	r12, 0xff000000
 +        rjmp    __divsf_return_op1
@@ -20007,6 +20045,7 @@
 +        lsl     r11,8                   /* check mantissa */
 +        movne   r11, -1                 /* Return NaN */
 +        moveq   r11, r10                /* Return inf */
++        mov     r10, 0
 +        rjmp    __extendsfdf_return_op1
 +#endif                  
 + 
@@ -20054,7 +20093,7 @@
 +        /* NaN or inf */
 +        cbr     r12,31                  /* clear implicit bit */
 +        retne   -1                      /* Return NaN if mantissa not zero */
-+	mov_imm	r12, 0xff000000
++	mov_imm	r12, 0x7f800000
 +        ret     r12                     /* Return inf */
 + 
 +3:      /* Result is subnormal. Adjust it.*/
@@ -21297,7 +21336,7 @@
  	;;
 +avr32*-*-linux*)
 +	tm_file="dbxelf.h elfos.h linux.h avr32/linux-elf.h avr32/avr32.h "
-+	tmake_file="t-linux avr32/t-avr32 avr32/t-elf"
++	tmake_file="t-linux avr32/t-avr32-linux"
 +	extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
 +	extra_modes=avr32/avr32-modes.def
 +	gnu_ld=yes
@@ -22294,10 +22333,15 @@
  // different sentry variables for construction and destruction.
 --- a/libgcc/config.host
 +++ b/libgcc/config.host
-@@ -240,6 +240,8 @@ arm-*-pe*)
+@@ -240,6 +240,13 @@ arm-*-pe*)
  	;;
  arm*-*-kaos*)
  	;;
++avr32-*-linux*)
++	# No need to build crtbeginT.o on uClibc systems. Should probably be
++	# moved to the OS specific section above.
++	extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
++	;;
 +avr32-*-*)
 +	;;
  avr-*-rtems*)
