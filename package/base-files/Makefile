@@ -416,6 +416,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   use_nsswitch=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),libnss_dns libnss_files)
 
   define Package/glibc/install
+	$(CP) ./glibc-files/* $(1)/
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
