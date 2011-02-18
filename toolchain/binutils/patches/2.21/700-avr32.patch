@@ -4165,9 +4165,17 @@
 +
 +void bfd_elf32_avr32_set_options(struct bfd_link_info *info,
 +				 int direct_data_refs);
---- a/bfd/elf-bfd.h
+--- b/bfd/elf-bfd.h
 +++ b/bfd/elf-bfd.h
-@@ -1553,6 +1553,10 @@ struct elf_obj_tdata
+@@ -406,6 +406,7 @@
+   ALPHA_ELF_DATA = 1,
+   ARM_ELF_DATA,
+   AVR_ELF_DATA,
++  AVR32_ELF_DATA,
+   BFIN_ELF_DATA,
+   CRIS_ELF_DATA,
+   FRV_ELF_DATA,
+@@ -1553,6 +1554,10 @@
       find_nearest_line.  */
    struct mips_elf_find_line *find_line_info;
  
@@ -30757,3 +30765,115 @@
  #ifdef ARCH_s390
    print_s390_disassembler_options (stream);
  #endif
+--- a/bfd/elf32-avr32.c
++++ b/bfd/elf32-avr32.c
+@@ -352,7 +352,8 @@ struct elf_avr32_link_hash_table
+   unsigned int relax_pass;
+ };
+ #define avr32_elf_hash_table(p)				\
+-  ((struct elf_avr32_link_hash_table *)((p)->hash))
++  (elf_hash_table_id ((struct elf_link_hash_table *) ((p)->hash)) \
++  == AVR32_ELF_DATA ? ((struct elf_avr32_link_hash_table *) ((p)->hash)) : NULL)
+ 
+ static struct bfd_hash_entry *
+ avr32_elf_link_hash_newfunc(struct bfd_hash_entry *entry,
+@@ -414,7 +415,8 @@ avr32_elf_link_hash_table_create(bfd *ab
+ 
+   if (! _bfd_elf_link_hash_table_init(&ret->root, abfd,
+ 				      avr32_elf_link_hash_newfunc,
+-                      sizeof (struct elf_avr32_link_hash_entry)))
++                      sizeof (struct elf_avr32_link_hash_entry),
++                      AVR32_ELF_DATA))
+     {
+       free(ret);
+       return NULL;
+@@ -497,6 +499,9 @@ avr32_elf_create_got_section (bfd *dynob
+   htab = avr32_elf_hash_table(info);
+   flags = bed->dynamic_sec_flags;
+ 
++  if (htab == NULL)
++    return FALSE;
++
+   if (htab->sgot)
+     return TRUE;
+ 
+@@ -534,6 +539,9 @@ avr32_elf_create_dynamic_sections (bfd *
+   htab = avr32_elf_hash_table(info);
+   flags = bed->dynamic_sec_flags;
+ 
++  if (htab == NULL)
++    return FALSE;
++
+   if (!avr32_elf_create_got_section (dynobj, info))
+     return FALSE;
+ 
+@@ -574,6 +582,9 @@ avr32_check_relocs (bfd *abfd, struct bf
+   symtab_hdr = &elf_tdata(abfd)->symtab_hdr;
+   sym_hashes = elf_sym_hashes(abfd);
+   htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
+   local_got_ents = elf_local_got_ents(abfd);
+   sgot = htab->sgot;
+ 
+@@ -756,6 +767,9 @@ avr32_elf_adjust_dynamic_symbol(struct b
+   havr = (struct elf_avr32_link_hash_entry *)h;
+   dynobj = elf_hash_table(info)->dynobj;
+ 
++  if (htab == NULL)
++    return FALSE;
++
+   /* Make sure we know what is going on here.  */
+   BFD_ASSERT (dynobj != NULL
+ 	      && (h->u.weakdef != NULL
+@@ -1066,6 +1080,9 @@ allocate_dynrelocs(struct elf_link_hash_
+   htab = avr32_elf_hash_table(info);
+   havr = (struct elf_avr32_link_hash_entry *)h;
+ 
++  if (htab == NULL)
++    return FALSE;
++
+   got = h->got.glist;
+ 
+   /* If got is NULL, the symbol is never referenced through the GOT */
+@@ -1117,6 +1134,9 @@ avr32_elf_size_dynamic_sections (bfd *ou
+   pr_debug("(4) size dynamic sections\n");
+ 
+   htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
+   dynobj = htab->root.dynobj;
+   BFD_ASSERT(dynobj != NULL);
+ 
+@@ -3260,6 +3280,9 @@ avr32_elf_relocate_section(bfd *output_b
+     return TRUE;
+ 
+   htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
+   symtab_hdr = &elf_tdata(input_bfd)->symtab_hdr;
+   sym_hashes = elf_sym_hashes(input_bfd);
+   local_got_ents = elf_local_got_ents(input_bfd);
+@@ -3582,6 +3605,9 @@ avr32_elf_finish_dynamic_symbol(bfd *out
+   pr_debug("(7) finish dynamic symbol: %s\n", h->root.root.string);
+ 
+   htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
+   got = h->got.glist;
+ 
+   if (got && got->refcount > 0)
+@@ -3648,6 +3674,9 @@ avr32_elf_finish_dynamic_sections(bfd *o
+   pr_debug("(8) finish dynamic sections\n");
+ 
+   htab = avr32_elf_hash_table(info);
++  if (htab == NULL)
++    return FALSE;
++
+   sgot = htab->sgot;
+   sdyn = bfd_get_section_by_name(htab->root.dynobj, ".dynamic");
+ 
