@@ -16,6 +16,7 @@ choice
 
 	config BINUTILS_VERSION_2_21
 		depends !ubicom32
+		depends !avr32 || (avr32 && BROKEN)
 		bool "binutils 2.21"
 
 	config BINUTILS_VERSION_CS
