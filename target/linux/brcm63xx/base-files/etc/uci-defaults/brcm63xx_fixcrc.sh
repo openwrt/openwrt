@@ -13,7 +13,7 @@ do_fixcrc() {
 brcm63xx_detect
 
 case "$board_name" in
-	"bcm63xx/CPVA642 "*)
+	"bcm63xx/CPVA642 "* | "bcm63xx/MAGIC "*)
 		do_fixcrc
 		;;
 esac
