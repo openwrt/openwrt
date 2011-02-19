@@ -14,7 +14,7 @@ FEATURES:=squashfs jffs2 targz
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -funit-at-a-time
 SUBTARGETS:=netus tqma9263
 
-LINUX_VERSION:=2.6.35.9
+LINUX_VERSION:=2.6.35.11
 DEVICE_TYPE=
 
 include $(INCLUDE_DIR)/target.mk
