@@ -6,7 +6,7 @@
 # See /LICENSE for more information.
 #
 
-RELEASE:="Attitude Adjustment"
+RELEASE:=Attitude Adjustment
 PREP_MK= OPENWRT_BUILD= QUIET=0
 
 include $(TOPDIR)/include/verbose.mk
