@@ -958,7 +958,7 @@
  			dev_queue_xmit_nit(skb, dev);
  
  		if (netif_needs_gso(dev, skb)) {
-@@ -1789,8 +1796,7 @@ u16 skb_tx_hash(const struct net_device
+@@ -1797,8 +1804,7 @@ u16 skb_tx_hash(const struct net_device
  }
  EXPORT_SYMBOL(skb_tx_hash);
  
@@ -968,7 +968,7 @@
  {
  	const struct net_device_ops *ops = dev->netdev_ops;
  	u16 queue_index = 0;
-@@ -1803,6 +1809,7 @@ static struct netdev_queue *dev_pick_tx(
+@@ -1811,6 +1817,7 @@ static struct netdev_queue *dev_pick_tx(
  	skb_set_queue_mapping(skb, queue_index);
  	return netdev_get_tx_queue(dev, queue_index);
  }

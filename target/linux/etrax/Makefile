@@ -11,7 +11,7 @@ BOARD:=etrax
 MAINTAINER:=Claudio Mignanti <c.mignanti@gmail.com>
 BOARDNAME:=Axis ETRAX 100LX
 FEATURES:=squashfs jffs2 usb
-LINUX_VERSION:=2.6.32.27
+LINUX_VERSION:=2.6.32.29
 DEVICE_TYPE=
 
 include $(INCLUDE_DIR)/target.mk
