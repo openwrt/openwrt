@@ -51,6 +51,15 @@ define Image/Build/CFEFIXUP
 		$(6) $(7) $(8) $(9)
 endef
 
+define Image/Build/CFEHW553
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
+		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
+		--load-addr $(LOADADDR) --tag-version 7 \
+		--block-size 0x20000 --image-offset $(4)
+endef
+
 define Image/Build/CFEAGPF
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
@@ -193,6 +202,9 @@ define Image/Build
 
 	# T-Com Speedport W 500V
 	$(call Image/Build/CFEFIXUP,$(1),96348GW,6348,SPW500V)
+
+	#HW553
+	$(call Image/Build/CFEHW553,$(1),HW553,6358,0x20000,HW553)
 endef
 
 $(eval $(call BuildImage))
