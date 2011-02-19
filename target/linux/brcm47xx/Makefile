@@ -11,7 +11,7 @@ BOARD:=brcm47xx
 BOARDNAME:=Broadcom BCM947xx/953xx
 FEATURES:=squashfs usb pcmcia
 
-LINUX_VERSION:=2.6.36.2
+LINUX_VERSION:=2.6.36.4
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += wpad-mini kmod-switch kmod-diag nvram

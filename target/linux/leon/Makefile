@@ -14,7 +14,7 @@ FEATURES+=fpu tgz
 CFLAGS:=-Os -pipe -mcpu=v8 -funit-at-a-time
 KERNELNAME:="uImage"
 
-LINUX_VERSION:=2.6.36.2
+LINUX_VERSION:=2.6.36.4
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 include $(INCLUDE_DIR)/target.mk
