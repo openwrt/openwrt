@@ -1,26 +1,17 @@
---- a/gdb/gdbserver/configure
-+++ b/gdb/gdbserver/configure
-@@ -1239,7 +1239,7 @@
-       ac_cache_corrupted=: ;;
-     ,);;
-     *)
--      if test "x$ac_old_val" != "x$ac_new_val"; then
-+      if test "`echo x$ac_old_val`" != "`echo x$ac_new_val`"; then
- 	{ echo "$as_me:$LINENO: error: \`$ac_var' has changed since the previous run:" >&5
- echo "$as_me: error: \`$ac_var' has changed since the previous run:" >&2;}
- 	{ echo "$as_me:$LINENO:   former value:  $ac_old_val" >&5
---- a/gdb/configure
-+++ b/gdb/configure
-@@ -272,7 +272,7 @@
- PACKAGE_BUGREPORT=
- 
- ac_unique_file="main.c"
--ac_subdirs_all="$ac_subdirs_all doc testsuite"
-+ac_subdirs_all="$ac_subdirs_all doc"
- # Factoring default headers for most tests.
- ac_includes_default="\
- #include <stdio.h>
-@@ -3077,7 +3077,7 @@
+Index: openwrt/dl/gdb-7.2/gdb/configure
+===================================================================
+--- gdb-7.2/gdb/configure
++++ gdb-7.2/gdb/configure
+@@ -988,7 +988,7 @@ CPP
+ YACC
+ YFLAGS
+ XMKMF'
+-ac_subdirs_all='doc testsuite
++ac_subdirs_all='doc
+ gdbtk
+ multi-ice
+ gdbserver'
+@@ -7880,7 +7880,7 @@ fi
  
  
  
@@ -28,4 +19,17 @@
 +subdirs="$subdirs doc"
  
  
- # Provide defaults for some variables set by the per-host and per-target
+ # Check whether to support alternative target configurations
+Index: openwrt/dl/gdb-7.2/gdb/gdbserver/configure
+===================================================================
+--- gdb-7.2/gdb/gdbserver/configure
++++ gdb-7.2/gdb/gdbserver/configure
+@@ -2151,7 +2151,7 @@ $as_echo "$as_me: error: \`$ac_var' was 
+       ac_cache_corrupted=: ;;
+     ,);;
+     *)
+-      if test "x$ac_old_val" != "x$ac_new_val"; then
++      if test "`echo x$ac_old_val`" != "`echo x$ac_new_val`"; then
+ 	# differences in whitespace do not lead to failure.
+ 	ac_old_val_w=`echo x $ac_old_val`
+ 	ac_new_val_w=`echo x $ac_new_val`

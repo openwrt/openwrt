@@ -7,10 +7,10 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=6.8
+PKG_VERSION:=7.2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=c9da266b884fb8fa54df786dfaadbc7a
+PKG_MD5SUM:=64260e6c56979ee750a01055f16091a5
 PKG_SOURCE_URL:=@GNU/gdb
 
 include $(INCLUDE_DIR)/toolchain-build.mk
