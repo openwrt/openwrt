@@ -12,7 +12,7 @@ BOARDNAME:=ARM Ltd. Realview board (qemu)
 FEATURES:=squashfs jffs2 fpu
 CFLAGS:=-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -funit-at-a-time
 
-LINUX_VERSION:=2.6.37
+LINUX_VERSION:=2.6.37.1
 
 include $(INCLUDE_DIR)/target.mk
 
