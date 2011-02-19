@@ -12,7 +12,7 @@ BOARDNAME:=Cavium Networks CNS21xx
 FEATURES:=squashfs broken
 CFLAGS:=-Os -pipe -march=armv4 -mtune=arm9tdmi -funit-at-a-time
 
-LINUX_VERSION:=2.6.36.2
+LINUX_VERSION:=2.6.36.4
 
 include $(INCLUDE_DIR)/target.mk
 
