@@ -301,7 +301,7 @@ static int robo_probe(char *devname)
 {
 	__u32 phyid;
 	unsigned int i;
-	int err;
+	int err = 1;
 
 	printk(KERN_INFO PFX "Probing device %s: ", devname);
 	strcpy(robo.ifr.ifr_name, devname);
@@ -331,7 +331,7 @@ static int robo_probe(char *devname)
 		    (mii->phy_id != ROBO_PHY_ADDR_BCM63XX) &&
 		    (mii->phy_id != ROBO_PHY_ADDR_TG3)) {
 			printk("Invalid phy address (%d)\n", mii->phy_id);
-			return 1;
+			goto done;
 		}
 		robo.use_et = 0;
 		/* The robo has a fixed PHY address that is different from the
@@ -344,7 +344,7 @@ static int robo_probe(char *devname)
 
 	if (phyid == 0xffffffff || phyid == 0x55210022) {
 		printk("No Robo switch in managed mode found, phy_id = 0x%08x\n", phyid);
-		return 1;
+		goto done;
 	}
 
 	/* Get the device ID */
@@ -361,11 +361,18 @@ static int robo_probe(char *devname)
 	robo_switch_reset();
 	err = robo_switch_enable();
 	if (err)
-		return err;
+		goto done;
+	err = 0;
 
 	printk("found a 5%s%x!%s\n", robo.devid & 0xff00 ? "" : "3", robo.devid,
 		robo.is_5350 ? " It's a 5350." : "");
-	return 0;
+
+done:
+	if (err) {
+		dev_put(robo.dev);
+		robo.dev = NULL;
+	}
+	return err;
 }
 
 
@@ -610,6 +617,8 @@ static int __init robo_init(void)
 static void __exit robo_exit(void)
 {
 	switch_unregister_driver(DRIVER_NAME);
+	if (robo.dev)
+		dev_put(robo.dev);
 	kfree(robo.device);
 }
 
