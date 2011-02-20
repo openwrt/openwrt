@@ -1,0 +1,20 @@
+--- a/drivers/ssb/sprom.c
++++ b/drivers/ssb/sprom.c
+@@ -176,6 +176,7 @@ const struct ssb_sprom *ssb_get_fallback
+ {
+ 	return fallback_sprom;
+ }
++EXPORT_SYMBOL(ssb_get_fallback_sprom);
+ 
+ /* http://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */
+ bool ssb_is_sprom_available(struct ssb_bus *bus)
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -401,6 +401,7 @@ extern bool ssb_is_sprom_available(struc
+ /* Set a fallback SPROM.
+  * See kdoc at the function definition for complete documentation. */
+ extern int ssb_arch_set_fallback_sprom(const struct ssb_sprom *sprom);
++extern const struct ssb_sprom *ssb_get_fallback_sprom(void);
+ 
+ /* Suspend a SSB bus.
+  * Call this from the parent bus suspend routine. */

@@ -1,0 +1,34 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -49,6 +49,13 @@ static unsigned int mac_addr_used;
+ static struct board_info board;
+ 
+ /*
++ * Required export for WL
++ */
++#define NVRAM_SPACE 0x8000
++char nvram_buf[NVRAM_SPACE];
++EXPORT_SYMBOL(nvram_buf);
++
++/*
+  * known 6338 boards
+  */
+ #ifdef CONFIG_BCM63XX_CPU_6338
+@@ -1444,6 +1451,7 @@ void __init board_prom_init(void)
+ 
+ 	/* extract nvram data */
+ 	memcpy(&nvram, boot_addr + BCM963XX_NVRAM_OFFSET, sizeof(nvram));
++	memcpy(&nvram_buf, boot_addr + BCM963XX_NVRAM_OFFSET, NVRAM_SPACE);
+ 
+ 	/* check checksum before using data */
+ 	if (nvram.version <= 4)
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -52,6 +52,7 @@ void (*_dma_cache_wback)(unsigned long s
+ void (*_dma_cache_inv)(unsigned long start, unsigned long size);
+ 
+ EXPORT_SYMBOL(_dma_cache_wback_inv);
++EXPORT_SYMBOL(_dma_cache_inv);
+ 
+ #endif /* CONFIG_DMA_NONCOHERENT */
+ 
