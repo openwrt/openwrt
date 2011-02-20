@@ -16,6 +16,8 @@ PKG_MD5SUM:=397a0d665da8ba9d3b9583629f3d6421
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOST_CFLAGS += -I$(STAGING_DIR_HOST)/include/e2fsprogs
+
 define Host/Configure
 	(cd $(HOST_BUILD_DIR); \
 		CFLAGS="$(HOST_CFLAGS)" \

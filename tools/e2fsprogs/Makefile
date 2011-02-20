@@ -30,6 +30,9 @@ CONFIGURE_ARGS += \
 define Host/Install
 	$(Host/Install/Default)
 	$(MAKE) -C $(HOST_BUILD_DIR)/lib/uuid install
+	mkdir -p $(STAGING_DIR_HOST)/include/e2fsprogs
+	$(CP) $(STAGING_DIR_HOST)/include/uuid $(STAGING_DIR_HOST)/include/e2fsprogs/
+	rm -rf $(STAGING_DIR_HOST)/include/uuid
 	$(INSTALL_DATA) $(HOST_BUILD_DIR)/lib/uuid/libuuid.a $(STAGING_DIR_HOST)/lib/
 endef
 
