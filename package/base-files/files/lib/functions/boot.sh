@@ -3,7 +3,7 @@
 # Copyright (C) 2010 Vertical Communications
 
 mount() {
-	/bin/busybox mount "$@"
+	/bin/busybox mount -o noatime "$@"
 }
 
 boot_hook_splice_start() {
