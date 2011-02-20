@@ -10,10 +10,10 @@
  drivers/cbus/tahvo.h             |    6 
  9 files changed, 548 insertions(+), 3 deletions(-)
 
-Index: linux-2.6.37/drivers/cbus/Kconfig
+Index: linux-2.6.37.1/drivers/cbus/Kconfig
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/Kconfig	2011-02-06 14:05:49.838388760 +0100
-+++ linux-2.6.37/drivers/cbus/Kconfig	2011-02-06 14:05:49.885395646 +0100
+--- linux-2.6.37.1.orig/drivers/cbus/Kconfig	2011-02-19 20:26:01.282338290 +0100
++++ linux-2.6.37.1/drivers/cbus/Kconfig	2011-02-19 20:26:01.526318768 +0100
 @@ -94,4 +94,12 @@
  	  to Retu/Vilma. Detection state and events are exposed through
  	  sysfs.
@@ -27,10 +27,10 @@ Index: linux-2.6.37/drivers/cbus/Kconfig
 +	  If unsure, say N.
 +
  endmenu
-Index: linux-2.6.37/drivers/cbus/Makefile
+Index: linux-2.6.37.1/drivers/cbus/Makefile
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/Makefile	2011-02-06 14:05:49.829387442 +0100
-+++ linux-2.6.37/drivers/cbus/Makefile	2011-02-06 14:05:49.885395646 +0100
+--- linux-2.6.37.1.orig/drivers/cbus/Makefile	2011-02-19 20:26:01.250340850 +0100
++++ linux-2.6.37.1/drivers/cbus/Makefile	2011-02-19 20:26:01.526318768 +0100
 @@ -12,3 +12,6 @@
  obj-$(CONFIG_CBUS_TAHVO_USER)	+= tahvo-user.o
  obj-$(CONFIG_CBUS_RETU_USER)	+= retu-user.o
@@ -38,11 +38,11 @@ Index: linux-2.6.37/drivers/cbus/Makefile
 +n810bm-y			+= n810bm_main.o
 +n810bm-y			+= lipocharge.o
 +obj-$(CONFIG_N810BM)		+= n810bm.o
-Index: linux-2.6.37/drivers/cbus/n810bm_main.c
+Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/n810bm_main.c	2011-02-09 19:05:18.435536304 +0100
-@@ -0,0 +1,1168 @@
++++ linux-2.6.37.1/drivers/cbus/n810bm_main.c	2011-02-20 15:11:55.764356685 +0100
+@@ -0,0 +1,1559 @@
 +/*
 + *   Nokia n810 battery management
 + *
@@ -84,6 +84,8 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +
 +#define N810BM_PMM_BLOCK_FILENAME	"n810-cal-bme-pmm.fw"
 +#define N810BM_PMM_BLOCK_SIZE		0x600
++#define N810BM_PMM_GROUP_SIZE		0x200
++#define N810BM_PMM_ELEM_SIZE		0x10
 +
 +#define N810BM_CHECK_INTERVAL		(HZ * 2)
 +#define N810BM_MIN_VOLTAGE_THRES	3200 /* Absolute minimum voltage threshold */
@@ -129,6 +131,38 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 + */
 +
 +
++enum n810bm_pmm_adc_id {
++	N810BM_PMM_ADC_0x01	= 0x01,
++	N810BM_PMM_ADC_0x02	= 0x02,
++	N810BM_PMM_ADC_0x03	= 0x03,
++	N810BM_PMM_ADC_0x04	= 0x04,
++	N810BM_PMM_ADC_BATTEMP	= 0x05,
++	N810BM_PMM_ADC_0x06	= 0x06,
++	N810BM_PMM_ADC_0x07	= 0x07,
++	N810BM_PMM_ADC_0x08	= 0x08,
++	N810BM_PMM_ADC_0x0E	= 0x0E,
++	N810BM_PMM_ADC_0x13	= 0x13,
++	N810BM_PMM_ADC_0x14	= 0x14,
++	N810BM_PMM_ADC_0x15	= 0x15,
++	N810BM_PMM_ADC_0x16	= 0x16,
++	N810BM_PMM_ADC_0x17	= 0x17,
++	N810BM_PMM_ADC_0xFE	= 0xFE,
++};
++
++struct n810bm_adc_calib {
++	enum n810bm_pmm_adc_id id;
++	u8 flags;
++	u8 adc_groupnr;
++	u32 field1;
++	u32 field2;
++	u16 field3;
++	u16 field4;
++};
++
++struct n810bm_calib {
++	struct n810bm_adc_calib adc[25];
++};
++
 +enum n810bm_capacity {
 +	N810BM_CAP_UNKNOWN	= -1,
 +	N810BM_CAP_NONE		= 0,
@@ -151,7 +185,7 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	int current_measure_enabled;		/* Current measure enable refcount */
 +
 +	struct platform_device *pdev;
-+	const struct firmware *pmm_block;	/* CAL PMM block */
++	struct n810bm_calib calib;		/* Calibration data */
 +
 +	bool verbose_charge_log;		/* Verbose charge logging */
 +
@@ -311,6 +345,358 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	value /= nr_passes;
 +
 +	return value;
++}
++
++static int pmm_record_get(struct n810bm *bm,
++			  const struct firmware *pmm_block,
++			  void *buffer, size_t length,
++			  unsigned int group, unsigned int element, unsigned int offset)
++{
++	const u8 *pmm_area = pmm_block->data;
++	u8 active_group_mask;
++
++	if (pmm_block->size != N810BM_PMM_BLOCK_SIZE)
++		return -EINVAL;
++	if (group >= N810BM_PMM_BLOCK_SIZE / N810BM_PMM_GROUP_SIZE)
++		return -EINVAL;
++	if (element >= N810BM_PMM_GROUP_SIZE / N810BM_PMM_ELEM_SIZE)
++		return -EINVAL;
++	if (offset >= N810BM_PMM_ELEM_SIZE || length > N810BM_PMM_ELEM_SIZE ||
++	    length + offset > N810BM_PMM_ELEM_SIZE)
++		return -EINVAL;
++
++	active_group_mask = pmm_area[16];
++	if (!(active_group_mask & (1 << group))) {
++		dev_dbg(&bm->pdev->dev, "pwm_record_get: Requested group %u, "
++			"but group is not active", group);
++		return -ENOENT;
++	}
++
++	memcpy(buffer,
++	       pmm_area + group * N810BM_PMM_GROUP_SIZE
++			+ element * N810BM_PMM_ELEM_SIZE
++			+ offset,
++	       length);
++
++	return 0;
++}
++
++/* PMM block group 1 element */
++struct group1_element {
++	u8 id;
++	u8 flags;
++	u8 adc_groupnr;
++	u8 _padding;
++	__le32 field1;
++	__le32 field2;
++} __packed;
++
++static void extract_group1_elem(struct n810bm *bm,
++				const struct firmware *pmm_block,
++				const u8 *pmm_adc_ids, size_t nr_pmm_adc_ids,
++				u32 field1_mask, u32 field2_mask)
++{
++	struct group1_element elem;
++	int err;
++	unsigned int i, element_nr;
++	struct n810bm_adc_calib *adc_calib;
++
++	for (i = 0; i < nr_pmm_adc_ids; i++) {
++		element_nr = pmm_adc_ids[i] + 3;
++
++		err = pmm_record_get(bm, pmm_block, &elem, sizeof(elem),
++				     1, element_nr, 0);
++		if (err)
++			continue;
++		WARN_ON(element_nr - 3 + 1 >= ARRAY_SIZE(bm->calib.adc));
++		adc_calib = &bm->calib.adc[element_nr - 3 + 1];
++
++		if (adc_calib->flags == elem.flags) {
++			WARN_ON(adc_calib->id != elem.id);
++			adc_calib->field1 = le32_to_cpu(elem.field1) & field1_mask;
++			adc_calib->field2 = le32_to_cpu(elem.field2) & field2_mask;
++		}
++	}
++}
++
++static int n810bm_parse_pmm_group1(struct n810bm *bm,
++				   const struct firmware *pmm_block)
++{
++	struct group1_element elem;
++	int err;
++
++	static const u8 pmm_adc_ids_0[] = {
++		N810BM_PMM_ADC_0x01,
++		N810BM_PMM_ADC_0x02,
++		N810BM_PMM_ADC_0x13,
++		N810BM_PMM_ADC_0x0E,
++	};
++	static const u8 pmm_adc_ids_1[] = {
++		N810BM_PMM_ADC_0x04,
++	};
++	static const u8 pmm_adc_ids_2[] = {
++		N810BM_PMM_ADC_BATTEMP,
++	};
++
++	/* Parse element 2 */
++	err = pmm_record_get(bm, pmm_block, &elem, sizeof(elem),
++			     1, 2, 0);
++	if (err) {
++		dev_err(&bm->pdev->dev,
++			"PMM: Failed to get group 1 / element 2");
++		return err;
++	}
++	if (elem.id == N810BM_PMM_ADC_0xFE && elem.flags == 0x05) {
++		bm->calib.adc[0].id = elem.id;
++		bm->calib.adc[0].flags = elem.flags;
++		bm->calib.adc[0].field1 = le32_to_cpu(elem.field1);
++		bm->calib.adc[0].field2 = le32_to_cpu(elem.field2);
++	}
++
++	extract_group1_elem(bm, pmm_block,
++			    pmm_adc_ids_0, ARRAY_SIZE(pmm_adc_ids_0),
++			    0xFFFFFFFF, 0xFFFFFFFF);
++	extract_group1_elem(bm, pmm_block,
++			    pmm_adc_ids_1, ARRAY_SIZE(pmm_adc_ids_1),
++			    0xFFFFFFFF, 0);
++	extract_group1_elem(bm, pmm_block,
++			    pmm_adc_ids_2, ARRAY_SIZE(pmm_adc_ids_2),
++			    0xFFFFFFFF, 0x0000FFFF);
++
++	return 0;
++}
++
++static int n810bm_parse_pmm_group2(struct n810bm *bm,
++				   const struct firmware *pmm_block)
++{
++	dev_err(&bm->pdev->dev, "TODO: CAL BME PMM group 2 parser not implemented, yet");
++	return -EOPNOTSUPP;
++}
++
++static void n810bm_adc_calib_set_defaults(struct n810bm *bm)
++{
++	struct n810bm_adc_calib *adc_calib;
++	const struct n810bm_adc_calib *def;
++	unsigned int i, index;
++
++	static const struct n810bm_adc_calib defaults[] = {
++		/* ADC group-nr 0 */
++		{
++			.id		= N810BM_PMM_ADC_0x06,
++			.flags		= 0x00,
++			.adc_groupnr	= 0,
++		}, {
++			.id		= N810BM_PMM_ADC_0x07,
++			.flags		= 0x00,
++			.adc_groupnr	= 0,
++		}, {
++			.id		= N810BM_PMM_ADC_0x15,
++			.flags		= 0x00,
++			.adc_groupnr	= 0,
++		}, {
++			.id		= N810BM_PMM_ADC_0x08,
++			.flags		= 0x00,
++			.adc_groupnr	= 0,
++		}, {
++			.id		= N810BM_PMM_ADC_0x16,
++			.flags		= 0x00,
++			.adc_groupnr	= 0,
++		}, {
++			.id		= N810BM_PMM_ADC_0x17,
++			.flags		= 0x00,
++			.adc_groupnr	= 0,
++		}, {
++			.id		= N810BM_PMM_ADC_0x03,
++			.flags		= 0x00,
++			.adc_groupnr	= 0,
++		},
++		/* ADC group-nr 1 */
++		{
++			.id		= N810BM_PMM_ADC_0xFE,
++			.flags		= 0x05,
++			.adc_groupnr	= 1,
++			.field1		= (u32)-2,
++			.field2		= 13189,
++		}, {
++			.id		= N810BM_PMM_ADC_0x01,
++			.flags		= 0x01,
++			.adc_groupnr	= 1,
++			.field1		= 2527,
++			.field2		= 21373,
++		}, {
++			.id		= N810BM_PMM_ADC_0x02,
++			.flags		= 0x01,
++			.adc_groupnr	= 1,
++			.field1		= 0,
++			.field2		= 129848,
++		}, {
++			.id		= N810BM_PMM_ADC_0x13,
++			.flags		= 0x01,
++			.adc_groupnr	= 1,
++			.field1		= 0,
++			.field2		= 20000,
++		}, {
++			.id		= N810BM_PMM_ADC_0x0E,
++			.flags		= 0x06,
++			.adc_groupnr	= 1,
++			.field1		= 0,
++			.field2		= 9660,
++		},
++		/* ADC group-nr 2 */
++		{
++			.id		= N810BM_PMM_ADC_0x04,
++			.flags		= 0x02,
++			.adc_groupnr	= 2,
++			.field1		= 1169,
++			.field2		= 0,
++		},
++		/* ADC group-nr 3 */
++		{
++			.id		= N810BM_PMM_ADC_BATTEMP,
++			.flags		= 0x03,
++			.adc_groupnr	= 3,
++			.field1		= 265423000,
++			.field2		= 298,
++		},
++		/* ADC group-nr 4 */
++		{
++			.id		= N810BM_PMM_ADC_0x14,
++			.flags		= 0x04,
++			.adc_groupnr	= 4,
++			.field1		= 19533778,
++			.field2		= 308019670,
++			.field3		= 4700,
++			.field4		= 2500,
++		},
++	};
++
++	/* Clear the array */
++	memset(&bm->calib.adc, 0, sizeof(bm->calib.adc));
++	for (i = 0; i < ARRAY_SIZE(bm->calib.adc); i++)
++		bm->calib.adc[i].flags = 0xFF;
++
++	/* Copy the defaults */
++	for (i = 0; i < ARRAY_SIZE(defaults); i++) {
++		def = &defaults[i];
++
++		index = 0;
++		if (def->id != N810BM_PMM_ADC_0xFE)
++			index = def->id + 1;
++		WARN_ON(index >= ARRAY_SIZE(bm->calib.adc));
++
++		adc_calib = &bm->calib.adc[index];
++		*adc_calib = *def;
++	}
++}
++
++static const struct n810bm_adc_calib * n810bm_get_adc_calib(struct n810bm *bm,
++						enum n810bm_pmm_adc_id id)
++{
++	unsigned int index = 0;
++
++	if (id != N810BM_PMM_ADC_0xFE)
++		index = (unsigned int)id + 1;
++	WARN_ON(index >= ARRAY_SIZE(bm->calib.adc));
++
++	return &bm->calib.adc[index];
++}
++
++static int n810bm_parse_pmm_block(struct n810bm *bm,
++				  const struct firmware *pmm_block)
++{
++	u8 byte;
++	int err;
++	unsigned int i, count;
++	struct n810bm_adc_calib *adc_calib;
++
++	/* Initialize to defaults */
++	n810bm_adc_calib_set_defaults(bm);
++
++	/* Parse the PMM data */
++	err = pmm_record_get(bm, pmm_block, &byte, sizeof(byte),
++			     1, 0, 0); /* group 1 / element 0 */
++	err |= (byte != 0x01);
++	err |= pmm_record_get(bm, pmm_block, &byte, sizeof(byte),
++			      1, 1, 0); /* group 1 / element 1 */
++	err |= (byte != 0x01);
++	if (err)
++		err = n810bm_parse_pmm_group2(bm, pmm_block);
++	else
++		err = n810bm_parse_pmm_group1(bm, pmm_block);
++	if (err)
++		return err;
++
++	/* Sanity checks */
++	for (i = 0, count = 0; i < ARRAY_SIZE(bm->calib.adc); i++) {
++		adc_calib = &bm->calib.adc[i];
++		if (adc_calib->flags == 0xFF)
++			continue;
++		switch (adc_calib->id) {
++		case N810BM_PMM_ADC_0x01:
++			if (adc_calib->field1 < 2400 ||
++			    adc_calib->field1 > 2700)
++				goto value_check_fail;
++			if (adc_calib->field2 < 20000 ||
++			    adc_calib->field2 > 23000)
++				goto value_check_fail;
++			count++;
++			break;
++		case N810BM_PMM_ADC_0x04:
++			if (adc_calib->field1 < 1100 ||
++			    adc_calib->field1 > 1300)
++				goto value_check_fail;
++			count++;
++			break;
++		case N810BM_PMM_ADC_0x0E:
++			if (adc_calib->field2 < 7000 ||
++			    adc_calib->field2 > 12000)
++				goto value_check_fail;
++			count++;
++			break;
++		case N810BM_PMM_ADC_0xFE:
++			if ((s32)adc_calib->field1 > 14 ||
++			    (s32)adc_calib->field1 < -14)
++				goto value_check_fail;
++			if (adc_calib->field2 < 13000 ||
++			    adc_calib->field2 > 13350)
++				goto value_check_fail;
++			count++;
++			break;
++		case N810BM_PMM_ADC_0x02:
++		case N810BM_PMM_ADC_BATTEMP:
++		case N810BM_PMM_ADC_0x13:
++			count++;
++			break;
++		case N810BM_PMM_ADC_0x03:
++		case N810BM_PMM_ADC_0x07:
++		case N810BM_PMM_ADC_0x08:
++		case N810BM_PMM_ADC_0x06:
++		case N810BM_PMM_ADC_0x14:
++		case N810BM_PMM_ADC_0x15:
++		case N810BM_PMM_ADC_0x16:
++		case N810BM_PMM_ADC_0x17:
++			break;
++		}
++		dev_dbg(&bm->pdev->dev,
++			"ADC 0x%02X calib: 0x%02X 0x%02X 0x%08X 0x%08X 0x%04X 0x%04X",
++			adc_calib->id, adc_calib->flags, adc_calib->adc_groupnr,
++			adc_calib->field1, adc_calib->field2,
++			adc_calib->field3, adc_calib->field4);
++	}
++	if (count != 7) {
++		dev_err(&bm->pdev->dev, "PMM sanity check: Did not find "
++			"all required values (count=%u)", count);
++		goto check_fail;
++	}
++
++	return 0;
++
++value_check_fail:
++	dev_err(&bm->pdev->dev, "PMM image sanity check failed "
++		"(id=%02X, field1=%08X, field2=%08X)",
++		adc_calib->id, adc_calib->field1, adc_calib->field2);
++check_fail:
++	return -EILSEQ;
 +}
 +
 +/* Set the current measure timer that triggers on Tahvo IRQ 7
@@ -1106,7 +1492,6 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	n810bm_cancel_and_flush_work(bm);
 +
 +	n810bm_hw_exit(bm);
-+	release_firmware(bm->pmm_block);
 +
 +	bm->initialized = 0;
 +}
@@ -1119,16 +1504,20 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	if (!fw) {
 +		dev_err(&bm->pdev->dev,
 +			"CAL PMM block image file not found");
-+		goto error;
++		goto err_release;
 +	}
 +	if (fw->size != N810BM_PMM_BLOCK_SIZE ||
 +	    memcmp(fw->data, "BME-PMM-BLOCK01", 15) != 0) {
 +		dev_err(&bm->pdev->dev,
 +			"CAL PMM block image file has an invalid format");
-+		goto error;
++		goto err_release;
 +	}
 +
-+	bm->pmm_block = fw;
++	err = n810bm_parse_pmm_block(bm, fw);
++	if (err)
++		goto err_release;
++	release_firmware(fw);
++
 +	err = n810bm_device_init(bm);
 +	if (err) {
 +		dev_err(&bm->pdev->dev,
@@ -1137,8 +1526,10 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +	}
 +
 +	return;
-+error:
++err_release:
 +	release_firmware(fw);
++error:
++	return;
 +}
 +
 +static int __devinit n810bm_probe(struct platform_device *pdev)
@@ -1211,10 +1602,10 @@ Index: linux-2.6.37/drivers/cbus/n810bm_main.c
 +MODULE_FIRMWARE(N810BM_PMM_BLOCK_FILENAME);
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Michael Buesch");
-Index: linux-2.6.37/drivers/cbus/retu.c
+Index: linux-2.6.37.1/drivers/cbus/retu.c
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/retu.c	2011-02-06 14:05:49.829387442 +0100
-+++ linux-2.6.37/drivers/cbus/retu.c	2011-02-08 17:33:18.981369017 +0100
+--- linux-2.6.37.1.orig/drivers/cbus/retu.c	2011-02-19 20:26:01.251340770 +0100
++++ linux-2.6.37.1/drivers/cbus/retu.c	2011-02-19 20:26:01.529318528 +0100
 @@ -85,10 +85,10 @@
   *
   * This function writes a value to the specified register
@@ -1236,10 +1627,10 @@ Index: linux-2.6.37/drivers/cbus/retu.c
  
  subsys_initcall(retu_init);
  module_exit(retu_exit);
-Index: linux-2.6.37/drivers/cbus/retu.h
+Index: linux-2.6.37.1/drivers/cbus/retu.h
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/retu.h	2011-02-06 14:05:49.829387442 +0100
-+++ linux-2.6.37/drivers/cbus/retu.h	2011-02-06 14:05:49.886395793 +0100
+--- linux-2.6.37.1.orig/drivers/cbus/retu.h	2011-02-19 20:26:01.252340690 +0100
++++ linux-2.6.37.1/drivers/cbus/retu.h	2011-02-19 20:26:01.530318448 +0100
 @@ -40,6 +40,8 @@
  #define RETU_REG_CTRL_CLR	0x0f	/* Regulator clear register */
  #define RETU_REG_CTRL_SET	0x10	/* Regulator set register */
@@ -1276,10 +1667,10 @@ Index: linux-2.6.37/drivers/cbus/retu.h
  void retu_set_clear_reg_bits(int reg, u16 set, u16 clear);
  int retu_read_adc(int channel);
  int retu_request_irq(int id, void *irq_handler, unsigned long arg, char *name);
-Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c
+Index: linux-2.6.37.1/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-2.6.37.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-06 14:05:49.815385390 +0100
-+++ linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c	2011-02-06 14:05:49.886395793 +0100
+--- linux-2.6.37.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-19 20:26:01.201344770 +0100
++++ linux-2.6.37.1/arch/arm/mach-omap2/board-n8x0.c	2011-02-19 20:26:01.531318368 +0100
 @@ -907,6 +907,17 @@
  				    ARRAY_SIZE(n8x0_gpio_switches));
  }
@@ -1307,10 +1698,10 @@ Index: linux-2.6.37/arch/arm/mach-omap2/board-n8x0.c
  }
  
  MACHINE_START(NOKIA_N800, "Nokia N800")
-Index: linux-2.6.37/drivers/cbus/lipocharge.c
+Index: linux-2.6.37.1/drivers/cbus/lipocharge.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/lipocharge.c	2011-02-09 12:42:58.243147563 +0100
++++ linux-2.6.37.1/drivers/cbus/lipocharge.c	2011-02-19 20:26:01.531318368 +0100
 @@ -0,0 +1,183 @@
 +/*
 + *   Generic LIPO battery charger
@@ -1495,10 +1886,10 @@ Index: linux-2.6.37/drivers/cbus/lipocharge.c
 +
 +	return 0;
 +}
-Index: linux-2.6.37/drivers/cbus/lipocharge.h
+Index: linux-2.6.37.1/drivers/cbus/lipocharge.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37/drivers/cbus/lipocharge.h	2011-02-07 20:07:29.669098631 +0100
++++ linux-2.6.37.1/drivers/cbus/lipocharge.h	2011-02-19 20:26:01.531318368 +0100
 @@ -0,0 +1,60 @@
 +#ifndef LIPOCHARGE_H_
 +#define LIPOCHARGE_H_
@@ -1560,10 +1951,10 @@ Index: linux-2.6.37/drivers/cbus/lipocharge.h
 +}
 +
 +#endif /* LIPOCHARGE_H_ */
-Index: linux-2.6.37/drivers/cbus/tahvo.h
+Index: linux-2.6.37.1/drivers/cbus/tahvo.h
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/tahvo.h	2011-02-06 14:05:49.830387588 +0100
-+++ linux-2.6.37/drivers/cbus/tahvo.h	2011-02-06 16:22:25.902331536 +0100
+--- linux-2.6.37.1.orig/drivers/cbus/tahvo.h	2011-02-19 20:26:01.256340370 +0100
++++ linux-2.6.37.1/drivers/cbus/tahvo.h	2011-02-19 20:26:01.532318288 +0100
 @@ -30,17 +30,28 @@
  #define TAHVO_REG_IDR		0x01	/* Interrupt ID */
  #define TAHVO_REG_IDSR		0x02	/* Interrupt status */
@@ -1594,10 +1985,10 @@ Index: linux-2.6.37/drivers/cbus/tahvo.h
  void tahvo_set_clear_reg_bits(int reg, u16 set, u16 clear);
  int tahvo_request_irq(int id, void *irq_handler, unsigned long arg, char *name);
  void tahvo_free_irq(int id);
-Index: linux-2.6.37/drivers/cbus/tahvo.c
+Index: linux-2.6.37.1/drivers/cbus/tahvo.c
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/tahvo.c	2011-02-06 14:05:49.830387588 +0100
-+++ linux-2.6.37/drivers/cbus/tahvo.c	2011-02-06 14:05:49.886395793 +0100
+--- linux-2.6.37.1.orig/drivers/cbus/tahvo.c	2011-02-19 20:26:01.256340370 +0100
++++ linux-2.6.37.1/drivers/cbus/tahvo.c	2011-02-19 20:26:01.532318288 +0100
 @@ -85,10 +85,10 @@
   *
   * This function writes a value to the specified register
@@ -1611,10 +2002,10 @@ Index: linux-2.6.37/drivers/cbus/tahvo.c
  }
  
  /**
-Index: linux-2.6.37/drivers/cbus/cbus.c
+Index: linux-2.6.37.1/drivers/cbus/cbus.c
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/cbus.c	2011-02-08 17:34:34.988926130 +0100
-+++ linux-2.6.37/drivers/cbus/cbus.c	2011-02-08 17:38:16.980407594 +0100
+--- linux-2.6.37.1.orig/drivers/cbus/cbus.c	2011-02-19 20:26:01.249340930 +0100
++++ linux-2.6.37.1/drivers/cbus/cbus.c	2011-02-19 20:26:01.533318208 +0100
 @@ -31,6 +31,7 @@
  #include <linux/gpio.h>
  #include <linux/platform_device.h>
@@ -1637,10 +2028,10 @@ Index: linux-2.6.37/drivers/cbus/cbus.c
  MODULE_DESCRIPTION("CBUS serial protocol");
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Juha Yrjölä");
-Index: linux-2.6.37/drivers/cbus/cbus.h
+Index: linux-2.6.37.1/drivers/cbus/cbus.h
 ===================================================================
---- linux-2.6.37.orig/drivers/cbus/cbus.h	2011-02-08 17:36:40.172074049 +0100
-+++ linux-2.6.37/drivers/cbus/cbus.h	2011-02-08 17:41:32.680647478 +0100
+--- linux-2.6.37.1.orig/drivers/cbus/cbus.h	2011-02-19 20:26:01.250340850 +0100
++++ linux-2.6.37.1/drivers/cbus/cbus.h	2011-02-19 20:26:01.533318208 +0100
 @@ -33,4 +33,6 @@
  extern int cbus_read_reg(struct cbus_host *host, int dev, int reg);
  extern int cbus_write_reg(struct cbus_host *host, int dev, int reg, u16 val);
