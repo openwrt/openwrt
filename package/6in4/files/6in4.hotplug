@@ -29,11 +29,12 @@ if [ "$ACTION" = ifup ]; then
 			local password
 			config_get password "$cfg" password
 
+			uci_set_state network "$cfg" ipaddr "$wanip"
+
 			[ -n "$tunnelid" ] && [ -n "$username" ] && [ -n "$password" ] && {
 				[ "${#password}" == 32 -a -z "${password//[a-f0-9]/}" ] || {
 					password="$(echo -n "$password" | md5sum)"; password="${password%% *}"
 				}
-				uci_set_state network "$cfg" ipaddr "$wanip"
 
 				(
 					local url="http://ipv4.tunnelbroker.net/ipv4_end.php?ipv4b=AUTO&user_id=$username&pass=$password&tunnel_id=$tunnelid"
@@ -51,6 +52,9 @@ if [ "$ACTION" = ifup ]; then
 						}
 					done
 				)&
+			} || {
+				logger -t 6in4-update "Re-establishing tunnel due to change on $INTERFACE ($DEVICE)"
+				ifup "$cfg" &
 			}
 		}
 	}
