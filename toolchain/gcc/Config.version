@@ -1,3 +1,27 @@
+config GCC_DEFAULT_VERSION
+	bool
+
+config GCC_DEFAULT_VERSION_4_3_3_CS
+	default y if (arm || armeb) && !(TARGET_gemini || TARGET_cns21xx || TARGET_omap35xx)
+	default y if (mips || mipsel) && !(TARGET_octeon || TARGET_sibyte)
+	select GCC_DEFAULT_VERSION
+	bool
+
+config GCC_DEFAULT_VERSION_4_3_5
+	select GCC_DEFAULT_VERSION
+	default y if (avr32 || powerpc64 || TARGET_coldfire || TARGET_etrax || TARGET_gemini || TARGET_cns21xx)
+	bool
+
+config GCC_DEFAULT_VERSION_4_4_5
+	select GCC_DEFAULT_VERSION
+	default y if (powerpc || ubicom32 || TARGET_omap35xx || TARGET_octeon || TARGET_sibyte)
+	bool
+
+config GCC_DEFAULT_VERSION_LINARO
+	default y if !(GCC_DEFAULT_VERSION)
+	bool
+
+
 config GCC_VERSION
 	string
 	default "4.3.3+cs"  if GCC_VERSION_4_3_3_CS
@@ -27,20 +51,20 @@ config GCC_VERSION_4_5
 if !TOOLCHAINOPTS
 
 	config GCC_VERSION_4_3_3_CS
-		default y if (mips || mipsel) && !(TARGET_octeon || TARGET_sibyte)
-		default y if (arm || armeb) && !(TARGET_gemini || TARGET_cns21xx || TARGET_omap35xx)
+		default y if GCC_DEFAULT_VERSION_4_3_3_CS
+		bool
 
 	config GCC_VERSION_4_3_5
-		default y if avr32
-		default y if powerpc64
-		default y if TARGET_etrax
-		default y if TARGET_coldfire
-		default y if TARGET_gemini
-		default y if TARGET_cns21xx
+		default y if GCC_DEFAULT_VERSION_4_3_5
+		bool
 
 	config GCC_VERSION_4_4_5
-		default y if (TARGET_octeon || TARGET_sibyte || TARGET_omap35xx)
-		default y if powerpc
-		default y if ubicom32
+		default y if GCC_DEFAULT_VERSION_4_4_5
+		bool
+
+	config GCC_VERSION_LINARO
+		default y if GCC_DEFAULT_VERSION_LINARO
+		bool
+
 
 endif
