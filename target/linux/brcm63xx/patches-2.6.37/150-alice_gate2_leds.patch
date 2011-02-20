@@ -1,0 +1,113 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -588,6 +588,99 @@ static struct board_info __initdata boar
+ 
+ 	.has_ohci0 = 1,
+ 	.has_ehci0 = 1,
++
++	.leds = {
++		/*Each led on alice gate is bi-color */
++		{
++			.name		= "power:red",
++			.gpio		= 5,
++			.active_low	= 1,
++		},
++		{
++			.name		= "power:green",
++			.gpio		= 4,
++			.active_low	= 1,
++			.default_trigger = "default-on",
++		},
++		{
++			.name		= "service:red",
++			.gpio		= 7,
++			.active_low	= 1,
++		},
++		{
++			.name		= "service:green",
++			.gpio		= 6,
++			.active_low	= 1,
++		},
++		{
++			.name		= "adsl:red",
++			.gpio		= 9,
++			.active_low	= 1,
++		},
++		{
++			.name		= "adsl:green",
++			.gpio		= 10,
++			.active_low	= 1,
++		},
++		{
++			.name		= "wifi:red",
++			.gpio		= 23,
++			.active_low	= 1,
++		},
++		{
++			.name		= "wifi:green",
++			.gpio		= 22,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internet:red",
++			.gpio		= 25,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internet:green",
++			.gpio		= 24,
++			.active_low	= 1,
++		},
++		{
++			.name		= "usr1:red",
++			.gpio		= 27,
++			.active_low	= 1,
++		},
++		{
++			.name		= "usr1:green",
++			.gpio		= 26,
++			.active_low	= 1,
++		},
++		{
++			.name		= "usr2:red",
++			.gpio		= 30,
++			.active_low	= 1,
++		},
++		{
++			.name		= "usr2:green",
++			.gpio		= 29,
++			.active_low	= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc           = "reset",
++			.gpio           = 37,
++			.active_low     = 1,
++			.type           = EV_KEY,
++			.code           = KEY_RESTART,
++			.threshold      = 3,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 34,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.threshold	= 3,
++		},
++	},
+ };
+ 
+ static struct board_info __initdata board_DWVS0 = {
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -56,7 +56,7 @@ struct board_info {
+ 	struct bcm63xx_dsp_platform_data dsp;
+ 
+ 	/* GPIO LEDs */
+-	struct gpio_led leds[5];
++	struct gpio_led leds[14];
+ 
+ 	/* Buttons */
+ 	struct gpio_button buttons[2];
