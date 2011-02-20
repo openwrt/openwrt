@@ -41,8 +41,8 @@ Index: linux-2.6.37.1/drivers/cbus/Makefile
 Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37.1/drivers/cbus/n810bm_main.c	2011-02-20 15:11:55.764356685 +0100
-@@ -0,0 +1,1559 @@
++++ linux-2.6.37.1/drivers/cbus/n810bm_main.c	2011-02-20 15:58:42.058267135 +0100
+@@ -0,0 +1,1582 @@
 +/*
 + *   Nokia n810 battery management
 + *
@@ -347,6 +347,23 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +	return value;
 +}
 +
++static struct n810bm_adc_calib * n810bm_get_adc_calib(struct n810bm *bm,
++						enum n810bm_pmm_adc_id id)
++{
++	unsigned int index = 0;
++	struct n810bm_adc_calib *cal;
++
++	if (id != N810BM_PMM_ADC_0xFE)
++		index = (unsigned int)id + 1;
++	if (index >= ARRAY_SIZE(bm->calib.adc))
++		return NULL;
++
++	cal = &bm->calib.adc[index];
++	WARN_ON(cal->id && cal->id != id);
++
++	return cal;
++}
++
 +static int pmm_record_get(struct n810bm *bm,
 +			  const struct firmware *pmm_block,
 +			  void *buffer, size_t length,
@@ -391,10 +408,10 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +	__le32 field2;
 +} __packed;
 +
-+static void extract_group1_elem(struct n810bm *bm,
-+				const struct firmware *pmm_block,
-+				const u8 *pmm_adc_ids, size_t nr_pmm_adc_ids,
-+				u32 field1_mask, u32 field2_mask)
++static int extract_group1_elem(struct n810bm *bm,
++			       const struct firmware *pmm_block,
++			       const enum n810bm_pmm_adc_id *pmm_adc_ids, size_t nr_pmm_adc_ids,
++			       u32 field1_mask, u32 field2_mask)
 +{
 +	struct group1_element elem;
 +	int err;
@@ -402,39 +419,51 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +	struct n810bm_adc_calib *adc_calib;
 +
 +	for (i = 0; i < nr_pmm_adc_ids; i++) {
-+		element_nr = pmm_adc_ids[i] + 3;
++		element_nr = (unsigned int)(pmm_adc_ids[i]) + 3;
 +
 +		err = pmm_record_get(bm, pmm_block, &elem, sizeof(elem),
 +				     1, element_nr, 0);
 +		if (err)
 +			continue;
-+		WARN_ON(element_nr - 3 + 1 >= ARRAY_SIZE(bm->calib.adc));
-+		adc_calib = &bm->calib.adc[element_nr - 3 + 1];
++		adc_calib = n810bm_get_adc_calib(bm, elem.id);
++		if (!adc_calib) {
++			dev_err(&bm->pdev->dev, "extract_group1_elem: "
++				"Could not get calib element for 0x%02X",
++				elem.id);
++			return -EINVAL;
++		}
 +
 +		if (adc_calib->flags == elem.flags) {
-+			WARN_ON(adc_calib->id != elem.id);
 +			adc_calib->field1 = le32_to_cpu(elem.field1) & field1_mask;
 +			adc_calib->field2 = le32_to_cpu(elem.field2) & field2_mask;
++		} else {
++			dev_dbg(&bm->pdev->dev, "extract_group1_elem: "
++				"Not extracting fields due to flags mismatch: "
++				"0x%02X vs 0x%02X",
++				adc_calib->flags, elem.flags);
 +		}
 +	}
++
++	return 0;
 +}
 +
 +static int n810bm_parse_pmm_group1(struct n810bm *bm,
 +				   const struct firmware *pmm_block)
 +{
++	struct n810bm_adc_calib *adc_calib;
 +	struct group1_element elem;
 +	int err;
 +
-+	static const u8 pmm_adc_ids_0[] = {
++	static const enum n810bm_pmm_adc_id pmm_adc_ids_1[] = {
 +		N810BM_PMM_ADC_0x01,
 +		N810BM_PMM_ADC_0x02,
 +		N810BM_PMM_ADC_0x13,
 +		N810BM_PMM_ADC_0x0E,
 +	};
-+	static const u8 pmm_adc_ids_1[] = {
++	static const enum n810bm_pmm_adc_id pmm_adc_ids_2[] = {
 +		N810BM_PMM_ADC_0x04,
 +	};
-+	static const u8 pmm_adc_ids_2[] = {
++	static const enum n810bm_pmm_adc_id pmm_adc_ids_3[] = {
 +		N810BM_PMM_ADC_BATTEMP,
 +	};
 +
@@ -447,21 +476,33 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +		return err;
 +	}
 +	if (elem.id == N810BM_PMM_ADC_0xFE && elem.flags == 0x05) {
-+		bm->calib.adc[0].id = elem.id;
-+		bm->calib.adc[0].flags = elem.flags;
-+		bm->calib.adc[0].field1 = le32_to_cpu(elem.field1);
-+		bm->calib.adc[0].field2 = le32_to_cpu(elem.field2);
++		adc_calib = n810bm_get_adc_calib(bm, elem.id);
++		if (!adc_calib) {
++			dev_err(&bm->pdev->dev,
++				"calib extract: Failed to get 0xFE calib");
++			return -EINVAL;
++		}
++		adc_calib->id = elem.id;
++		adc_calib->flags = elem.flags;
++		adc_calib->field1 = le32_to_cpu(elem.field1);
++		adc_calib->field2 = le32_to_cpu(elem.field2);
 +	}
 +
-+	extract_group1_elem(bm, pmm_block,
-+			    pmm_adc_ids_0, ARRAY_SIZE(pmm_adc_ids_0),
-+			    0xFFFFFFFF, 0xFFFFFFFF);
-+	extract_group1_elem(bm, pmm_block,
-+			    pmm_adc_ids_1, ARRAY_SIZE(pmm_adc_ids_1),
-+			    0xFFFFFFFF, 0);
-+	extract_group1_elem(bm, pmm_block,
-+			    pmm_adc_ids_2, ARRAY_SIZE(pmm_adc_ids_2),
-+			    0xFFFFFFFF, 0x0000FFFF);
++	err = extract_group1_elem(bm, pmm_block,
++				  pmm_adc_ids_1, ARRAY_SIZE(pmm_adc_ids_1),
++				  0xFFFFFFFF, 0xFFFFFFFF);
++	if (err)
++		return err;
++	err = extract_group1_elem(bm, pmm_block,
++				  pmm_adc_ids_2, ARRAY_SIZE(pmm_adc_ids_2),
++				  0xFFFFFFFF, 0);
++	if (err)
++		return err;
++	err = extract_group1_elem(bm, pmm_block,
++				  pmm_adc_ids_3, ARRAY_SIZE(pmm_adc_ids_3),
++				  0xFFFFFFFF, 0x0000FFFF);
++	if (err)
++		return err;
 +
 +	return 0;
 +}
@@ -476,8 +517,7 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +static void n810bm_adc_calib_set_defaults(struct n810bm *bm)
 +{
 +	struct n810bm_adc_calib *adc_calib;
-+	const struct n810bm_adc_calib *def;
-+	unsigned int i, index;
++	unsigned int i;
 +
 +	static const struct n810bm_adc_calib defaults[] = {
 +		/* ADC group-nr 0 */
@@ -577,28 +617,11 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +
 +	/* Copy the defaults */
 +	for (i = 0; i < ARRAY_SIZE(defaults); i++) {
-+		def = &defaults[i];
-+
-+		index = 0;
-+		if (def->id != N810BM_PMM_ADC_0xFE)
-+			index = def->id + 1;
-+		WARN_ON(index >= ARRAY_SIZE(bm->calib.adc));
-+
-+		adc_calib = &bm->calib.adc[index];
-+		*adc_calib = *def;
++		adc_calib = n810bm_get_adc_calib(bm, defaults[i].id);
++		if (WARN_ON(!adc_calib))
++			continue;
++		*adc_calib = defaults[i];
 +	}
-+}
-+
-+static const struct n810bm_adc_calib * n810bm_get_adc_calib(struct n810bm *bm,
-+						enum n810bm_pmm_adc_id id)
-+{
-+	unsigned int index = 0;
-+
-+	if (id != N810BM_PMM_ADC_0xFE)
-+		index = (unsigned int)id + 1;
-+	WARN_ON(index >= ARRAY_SIZE(bm->calib.adc));
-+
-+	return &bm->calib.adc[index];
 +}
 +
 +static int n810bm_parse_pmm_block(struct n810bm *bm,
