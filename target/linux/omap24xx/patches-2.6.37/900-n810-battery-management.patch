@@ -41,8 +41,8 @@ Index: linux-2.6.37.1/drivers/cbus/Makefile
 Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.37.1/drivers/cbus/n810bm_main.c	2011-02-20 15:58:42.058267135 +0100
-@@ -0,0 +1,1582 @@
++++ linux-2.6.37.1/drivers/cbus/n810bm_main.c	2011-02-20 17:50:58.807801112 +0100
+@@ -0,0 +1,1583 @@
 +/*
 + *   Nokia n810 battery management
 + *
@@ -131,22 +131,23 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 + */
 +
 +
++/* PMM block ADC IDs */
 +enum n810bm_pmm_adc_id {
-+	N810BM_PMM_ADC_0x01	= 0x01,
-+	N810BM_PMM_ADC_0x02	= 0x02,
-+	N810BM_PMM_ADC_0x03	= 0x03,
-+	N810BM_PMM_ADC_0x04	= 0x04,
-+	N810BM_PMM_ADC_BATTEMP	= 0x05,
-+	N810BM_PMM_ADC_0x06	= 0x06,
-+	N810BM_PMM_ADC_0x07	= 0x07,
-+	N810BM_PMM_ADC_0x08	= 0x08,
-+	N810BM_PMM_ADC_0x0E	= 0x0E,
-+	N810BM_PMM_ADC_0x13	= 0x13,
-+	N810BM_PMM_ADC_0x14	= 0x14,
-+	N810BM_PMM_ADC_0x15	= 0x15,
-+	N810BM_PMM_ADC_0x16	= 0x16,
-+	N810BM_PMM_ADC_0x17	= 0x17,
-+	N810BM_PMM_ADC_0xFE	= 0xFE,
++	N810BM_PMM_ADC_BATVOLT		= 0x01,	/* Battery voltage */
++	N810BM_PMM_ADC_CHGVOLT		= 0x02,	/* Charger voltage */
++	N810BM_PMM_ADC_GND2		= 0x03,	/* Ground 0V */
++	N810BM_PMM_ADC_BSI		= 0x04,	/* Battery size indicator */
++	N810BM_PMM_ADC_BATTEMP		= 0x05,	/* Battery temperature */
++	N810BM_PMM_ADC_HEADSET		= 0x06,	/* Headset detection */
++	N810BM_PMM_ADC_HOOKDET		= 0x07,	/* Hook detection */
++	N810BM_PMM_ADC_LIGHTSENS	= 0x08,	/* Light sensor */
++	N810BM_PMM_ADC_BATCURR		= 0x0E,	/* Battery current */
++	N810BM_PMM_ADC_BKUPVOLT		= 0x13,	/* Backup battery voltage */
++	N810BM_PMM_ADC_LIGHTTEMP	= 0x14,	/* Light sensor temperature */
++	N810BM_PMM_ADC_RFGP		= 0x15,	/* RF GP */
++	N810BM_PMM_ADC_WBTX		= 0x16,	/* Wideband TX detection */
++	N810BM_PMM_ADC_RETUTEMP		= 0x17,	/* RETU chip temperature */
++	N810BM_PMM_ADC_0xFE		= 0xFE,
 +};
 +
 +struct n810bm_adc_calib {
@@ -455,13 +456,13 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +	int err;
 +
 +	static const enum n810bm_pmm_adc_id pmm_adc_ids_1[] = {
-+		N810BM_PMM_ADC_0x01,
-+		N810BM_PMM_ADC_0x02,
-+		N810BM_PMM_ADC_0x13,
-+		N810BM_PMM_ADC_0x0E,
++		N810BM_PMM_ADC_BATVOLT,
++		N810BM_PMM_ADC_CHGVOLT,
++		N810BM_PMM_ADC_BKUPVOLT,
++		N810BM_PMM_ADC_BATCURR,
 +	};
 +	static const enum n810bm_pmm_adc_id pmm_adc_ids_2[] = {
-+		N810BM_PMM_ADC_0x04,
++		N810BM_PMM_ADC_BSI,
 +	};
 +	static const enum n810bm_pmm_adc_id pmm_adc_ids_3[] = {
 +		N810BM_PMM_ADC_BATTEMP,
@@ -522,31 +523,31 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +	static const struct n810bm_adc_calib defaults[] = {
 +		/* ADC group-nr 0 */
 +		{
-+			.id		= N810BM_PMM_ADC_0x06,
++			.id		= N810BM_PMM_ADC_HEADSET,
 +			.flags		= 0x00,
 +			.adc_groupnr	= 0,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x07,
++			.id		= N810BM_PMM_ADC_HOOKDET,
 +			.flags		= 0x00,
 +			.adc_groupnr	= 0,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x15,
++			.id		= N810BM_PMM_ADC_RFGP,
 +			.flags		= 0x00,
 +			.adc_groupnr	= 0,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x08,
++			.id		= N810BM_PMM_ADC_LIGHTSENS,
 +			.flags		= 0x00,
 +			.adc_groupnr	= 0,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x16,
++			.id		= N810BM_PMM_ADC_WBTX,
 +			.flags		= 0x00,
 +			.adc_groupnr	= 0,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x17,
++			.id		= N810BM_PMM_ADC_RETUTEMP,
 +			.flags		= 0x00,
 +			.adc_groupnr	= 0,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x03,
++			.id		= N810BM_PMM_ADC_GND2,
 +			.flags		= 0x00,
 +			.adc_groupnr	= 0,
 +		},
@@ -558,25 +559,25 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +			.field1		= (u32)-2,
 +			.field2		= 13189,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x01,
++			.id		= N810BM_PMM_ADC_BATVOLT,
 +			.flags		= 0x01,
 +			.adc_groupnr	= 1,
 +			.field1		= 2527,
 +			.field2		= 21373,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x02,
++			.id		= N810BM_PMM_ADC_CHGVOLT,
 +			.flags		= 0x01,
 +			.adc_groupnr	= 1,
 +			.field1		= 0,
 +			.field2		= 129848,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x13,
++			.id		= N810BM_PMM_ADC_BKUPVOLT,
 +			.flags		= 0x01,
 +			.adc_groupnr	= 1,
 +			.field1		= 0,
 +			.field2		= 20000,
 +		}, {
-+			.id		= N810BM_PMM_ADC_0x0E,
++			.id		= N810BM_PMM_ADC_BATCURR,
 +			.flags		= 0x06,
 +			.adc_groupnr	= 1,
 +			.field1		= 0,
@@ -584,7 +585,7 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +		},
 +		/* ADC group-nr 2 */
 +		{
-+			.id		= N810BM_PMM_ADC_0x04,
++			.id		= N810BM_PMM_ADC_BSI,
 +			.flags		= 0x02,
 +			.adc_groupnr	= 2,
 +			.field1		= 1169,
@@ -600,7 +601,7 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +		},
 +		/* ADC group-nr 4 */
 +		{
-+			.id		= N810BM_PMM_ADC_0x14,
++			.id		= N810BM_PMM_ADC_LIGHTTEMP,
 +			.flags		= 0x04,
 +			.adc_groupnr	= 4,
 +			.field1		= 19533778,
@@ -655,7 +656,7 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +		if (adc_calib->flags == 0xFF)
 +			continue;
 +		switch (adc_calib->id) {
-+		case N810BM_PMM_ADC_0x01:
++		case N810BM_PMM_ADC_BATVOLT:
 +			if (adc_calib->field1 < 2400 ||
 +			    adc_calib->field1 > 2700)
 +				goto value_check_fail;
@@ -664,13 +665,13 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +				goto value_check_fail;
 +			count++;
 +			break;
-+		case N810BM_PMM_ADC_0x04:
++		case N810BM_PMM_ADC_BSI:
 +			if (adc_calib->field1 < 1100 ||
 +			    adc_calib->field1 > 1300)
 +				goto value_check_fail;
 +			count++;
 +			break;
-+		case N810BM_PMM_ADC_0x0E:
++		case N810BM_PMM_ADC_BATCURR:
 +			if (adc_calib->field2 < 7000 ||
 +			    adc_calib->field2 > 12000)
 +				goto value_check_fail;
@@ -685,19 +686,19 @@ Index: linux-2.6.37.1/drivers/cbus/n810bm_main.c
 +				goto value_check_fail;
 +			count++;
 +			break;
-+		case N810BM_PMM_ADC_0x02:
++		case N810BM_PMM_ADC_CHGVOLT:
 +		case N810BM_PMM_ADC_BATTEMP:
-+		case N810BM_PMM_ADC_0x13:
++		case N810BM_PMM_ADC_BKUPVOLT:
 +			count++;
 +			break;
-+		case N810BM_PMM_ADC_0x03:
-+		case N810BM_PMM_ADC_0x07:
-+		case N810BM_PMM_ADC_0x08:
-+		case N810BM_PMM_ADC_0x06:
-+		case N810BM_PMM_ADC_0x14:
-+		case N810BM_PMM_ADC_0x15:
-+		case N810BM_PMM_ADC_0x16:
-+		case N810BM_PMM_ADC_0x17:
++		case N810BM_PMM_ADC_GND2:
++		case N810BM_PMM_ADC_HOOKDET:
++		case N810BM_PMM_ADC_LIGHTSENS:
++		case N810BM_PMM_ADC_HEADSET:
++		case N810BM_PMM_ADC_LIGHTTEMP:
++		case N810BM_PMM_ADC_RFGP:
++		case N810BM_PMM_ADC_WBTX:
++		case N810BM_PMM_ADC_RETUTEMP:
 +			break;
 +		}
 +		dev_dbg(&bm->pdev->dev,
