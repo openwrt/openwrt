@@ -770,6 +770,22 @@ endef
 $(eval $(call KernelPackage,wdt-omap))
 
 
+define KernelPackage/wdt-orion
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Marvell Orion Watchdog timer
+  DEPENDS:=@TARGET_orion
+  KCONFIG:=CONFIG_ORION_WATCHDOG
+  FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/orion_wdt.ko
+  AUTOLOAD:=$(call AutoLoad,50,orion_wdt)
+endef
+
+define KernelPackage/wdt-orion/description
+  Kernel module for Marvell orion watchdog timer.
+endef
+
+$(eval $(call KernelPackage,wdt-orion))
+
+
 define KernelPackage/wdt-sc520
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Natsemi SC520 Watchdog support
