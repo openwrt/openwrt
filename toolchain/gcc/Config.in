@@ -2,12 +2,9 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_VERSION_4_3_5 if (avr32 || powerpc64)
-	default GCC_VERSION_4_3_5 if (TARGET_coldfire || TARGET_etrax || TARGET_gemini || TARGET_cns21xx)
-	default GCC_VERSION_4_3_3_CS if (arm || armeb) && !(TARGET_gemini || TARGET_cns21xx || TARGET_omap35xx)
-	default GCC_VERSION_4_3_3_CS if (mips || mipsel) && !(TARGET_octeon || TARGET_sibyte)
-	default GCC_VERSION_4_4_5 if (powerpc || ubicom32)
-	default GCC_VERSION_4_4_5 if (TARGET_omap35xx || TARGET_octeon || TARGET_sibyte)
+	default GCC_VERSION_4_3_3_CS if GCC_DEFAULT_VERSION_4_3_3_CS
+	default GCC_VERSION_4_3_5 if GCC_DEFAULT_VERSION_4_3_5
+	default GCC_VERSION_4_4_5 if GCC_DEFAULT_VERSION_4_4_5
 	default GCC_VERSION_LINARO
 	help
 	  Select the version of gcc you wish to use.
