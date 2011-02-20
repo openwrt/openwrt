@@ -36,8 +36,8 @@ if [ "$ACTION" = add ]; then
 	esac
 
 	local tty
-	for tty in /sys/$DEVPATH/ttyUSB*; do
-		[ -d "$tty" ] || break
+	for tty in /sys/$DEVPATH/ttyUSB* /sys/$DEVPATH/tty/ttyACM*;; do
+		[ -d "$tty" ] || continue
 		config_foreach find_3g_iface interface "$tty"
 	done
 fi
