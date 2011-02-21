@@ -1,0 +1,29 @@
+--- a/tools/wlanconfig.c
++++ b/tools/wlanconfig.c
+@@ -654,7 +654,7 @@ static void
+ list_scan(const char *ifname)
+ {
+ 	static uint8_t buf[24 * 1024];
+-	char ssid[14];
++	char ssid[30];
+ 	uint8_t *cp;
+ 	int len;
+ 
+@@ -665,7 +665,7 @@ list_scan(const char *ifname)
+ 	if (len < sizeof(struct ieee80211req_scan_result))
+ 		return;
+ 
+-	printf("%-14.14s  %-17.17s  %4s %4s  %-5s %3s %4s\n",
++	printf("%-30.30s  %-17.17s  %4s %4s  %-5s %3s %4s\n",
+ 		"SSID",
+ 		"BSSID",
+ 		"CHAN",
+@@ -680,7 +680,7 @@ list_scan(const char *ifname)
+ 
+ 		sr = (struct ieee80211req_scan_result *) cp;
+ 		vp = (u_int8_t *)(sr+1);
+-		printf("%-14.*s  %s  %3d  %3dM %2d:%-2d  %3d %-4.4s",
++		printf("%-30.*s  %s  %3d  %3dM %2d:%-2d  %3d %-4.4s",
+ 			copy_essid(ssid, sizeof(ssid), vp, sr->isr_ssid_len),
+ 			ssid,
+ 			ieee80211_ntoa(sr->isr_bssid),
