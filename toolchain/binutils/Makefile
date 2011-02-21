@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2009 OpenWrt.org
+#
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -15,13 +15,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
 ifeq ($(PKG_VERSION),2.19.1)
   PKG_MD5SUM:=09a8c5821a2dfdbb20665bc0bd680791
-endif
-ifeq ($(PKG_VERSION),2.19.1+cs)
-  BIN_VERSION:=20090205
-  PKG_SOURCE:=$(PKG_NAME)-$(BIN_VERSION).tar.bz2
-  PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-  PKG_MD5SUM:=040740e8c864dd1a15886753f9c0bc0b
-  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/binutils-$(BIN_VERSION)
 endif
 ifeq ($(PKG_VERSION),2.20.1)
   PKG_MD5SUM:=9cdfb9d6ec0578c166d3beae5e15c4e5
