@@ -17,6 +17,7 @@ define Package/jshn/description
   Library for parsing and generating JSON from shell scripts
 endef
 
+PKG_BUILD_DEPENDS += libubox
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include --std=gnu99
 
 define Build/Compile
