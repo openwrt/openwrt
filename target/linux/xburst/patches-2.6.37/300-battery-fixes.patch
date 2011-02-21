@@ -1,33 +1,6 @@
 --- a/drivers/power/jz4740-battery.c
 +++ b/drivers/power/jz4740-battery.c
-@@ -47,6 +47,8 @@ struct jz_battery {
- 
- 	struct power_supply battery;
- 	struct delayed_work work;
-+
-+	struct mutex lock;
- };
- 
- static inline struct jz_battery *psy_to_jz_battery(struct power_supply *psy)
-@@ -68,6 +70,8 @@ static long jz_battery_read_voltage(stru
- 	unsigned long val;
- 	long voltage;
- 
-+	mutex_lock(&battery->lock);
-+
- 	INIT_COMPLETION(battery->read_completion);
- 
- 	enable_irq(battery->irq);
-@@ -91,6 +95,8 @@ static long jz_battery_read_voltage(stru
- 	battery->cell->disable(battery->pdev);
- 	disable_irq(battery->irq);
- 
-+	mutex_unlock(&battery->lock);
-+
- 	return voltage;
- }
- 
-@@ -240,6 +246,11 @@ static int __devinit jz_battery_probe(st
+@@ -246,6 +246,11 @@ static int __devinit jz_battery_probe(st
  	struct jz_battery *jz_battery;
  	struct power_supply *battery;
  
@@ -39,11 +12,3 @@
  	jz_battery = kzalloc(sizeof(*jz_battery), GFP_KERNEL);
  	if (!jz_battery) {
  		dev_err(&pdev->dev, "Failed to allocate driver structure\n");
-@@ -291,6 +302,7 @@ static int __devinit jz_battery_probe(st
- 	jz_battery->pdev = pdev;
- 
- 	init_completion(&jz_battery->read_completion);
-+	mutex_init(&jz_battery->lock);
- 
- 	INIT_DELAYED_WORK(&jz_battery->work, jz_battery_work);
- 
