@@ -35,7 +35,7 @@
  
  /* Atmel chips don't use the same PRI format as AMD chips */
  static void fixup_convert_atmel_pri(struct mtd_info *mtd, void *param)
-@@ -1391,6 +1395,7 @@ static int cfi_amdstd_write_words(struct
+@@ -1388,6 +1392,7 @@ static int cfi_amdstd_write_words(struct
  /*
   * FIXME: interleaved mode not tested, and probably not supported!
   */
@@ -43,7 +43,7 @@
  static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
  				    unsigned long adr, const u_char *buf,
  				    int len)
-@@ -1501,7 +1506,6 @@ static int __xipram do_write_buffer(stru
+@@ -1498,7 +1503,6 @@ static int __xipram do_write_buffer(stru
  	return ret;
  }
  
@@ -51,7 +51,7 @@
  static int cfi_amdstd_write_buffers(struct mtd_info *mtd, loff_t to, size_t len,
  				    size_t *retlen, const u_char *buf)
  {
-@@ -1580,6 +1584,7 @@ static int cfi_amdstd_write_buffers(stru
+@@ -1577,6 +1581,7 @@ static int cfi_amdstd_write_buffers(stru
  
  	return 0;
  }

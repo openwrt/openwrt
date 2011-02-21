@@ -12,8 +12,8 @@
  /* makes sure the async qh will become idle */
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -133,6 +133,7 @@ struct ehci_hcd {			/* one per controlle
- 	unsigned		broken_periodic:1;
+@@ -134,6 +134,7 @@ struct ehci_hcd {			/* one per controlle
+ 	unsigned		amd_l1_fix:1;
  	unsigned		fs_i_thresh:1;	/* Intel iso scheduling */
  	unsigned		use_dummy_qh:1;	/* AMD Frame List table quirk*/
 +	unsigned		has_synopsys_hc_bug:1; /* Synopsys HC */

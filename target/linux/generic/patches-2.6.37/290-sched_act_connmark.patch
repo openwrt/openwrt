@@ -140,7 +140,7 @@
 +module_exit(connmark_cleanup_module);
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
-@@ -559,6 +559,18 @@
+@@ -559,6 +559,18 @@ config NET_ACT_CSUM
  	  To compile this code as a module, choose M here: the
  	  module will be called act_csum.
  
@@ -161,7 +161,7 @@
  	depends on NET_CLS_U32 || NET_CLS_FW
 --- a/net/sched/Makefile
 +++ b/net/sched/Makefile
-@@ -16,6 +16,7 @@
+@@ -16,6 +16,7 @@ obj-$(CONFIG_NET_ACT_PEDIT)	+= act_pedit
  obj-$(CONFIG_NET_ACT_SIMP)	+= act_simple.o
  obj-$(CONFIG_NET_ACT_SKBEDIT)	+= act_skbedit.o
  obj-$(CONFIG_NET_ACT_CSUM)	+= act_csum.o

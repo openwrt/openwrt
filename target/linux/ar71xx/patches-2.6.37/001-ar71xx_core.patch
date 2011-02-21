@@ -16,7 +16,7 @@
  cflags-$(CONFIG_CPU_DADDI_WORKAROUNDS)	+= $(call cc-option,-mno-daddi,)
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -63,6 +63,23 @@ config AR7
+@@ -65,6 +65,23 @@ config AR7
  	  Support for the Texas Instruments AR7 System-on-a-Chip
  	  family: TNETD7100, 7200 and 7300.
  
@@ -40,7 +40,7 @@
  config BCM47XX
  	bool "Broadcom BCM47XX based boards"
  	select CEVT_R4K
-@@ -715,6 +732,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+@@ -717,6 +734,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  endchoice
  
  source "arch/mips/alchemy/Kconfig"

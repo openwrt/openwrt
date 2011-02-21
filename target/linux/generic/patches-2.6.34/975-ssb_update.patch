@@ -385,7 +385,7 @@
  	u32 pmucap;
  
  	if (!(cc->capabilities & SSB_CHIPCO_CAP_PMU))
-@@ -516,15 +516,12 @@ void ssb_pmu_init(struct ssb_chipcommon
+@@ -516,15 +516,12 @@ void ssb_pmu_init(struct ssb_chipcommon 
  	ssb_dprintk(KERN_DEBUG PFX "Found rev %u PMU (capabilities 0x%08X)\n",
  		    cc->pmu.rev, pmucap);
  

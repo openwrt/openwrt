@@ -228,30 +228,6 @@ endef
 $(eval $(call KernelPackage,ipt-nathelper-extra))
 
 
-define KernelPackage/ipt-imq
-  TITLE:=Intermediate Queueing support
-  KCONFIG:= \
-	CONFIG_IMQ \
-	CONFIG_IMQ_BEHAVIOR_BA=y \
-	CONFIG_IMQ_NUM_DEVS=2 \
-	CONFIG_NETFILTER_XT_TARGET_IMQ
-  FILES:= \
-	$(LINUX_DIR)/drivers/net/imq.ko \
-	$(foreach mod,$(IPT_IMQ-m),$(LINUX_DIR)/net/$(mod).ko)
-  AUTOLOAD:=$(call AutoLoad,46,$(notdir \
-	imq \
-	$(IPT_IMQ-m) \
-  ))
-  $(call AddDepends/ipt)
-endef
-
-define KernelPackage/ipt-imq/description
- Kernel support for Intermediate Queueing devices
-endef
-
-$(eval $(call KernelPackage,ipt-imq))
-
-
 define KernelPackage/ipt-queue
   TITLE:=Module for user-space packet queueing
   KCONFIG:=$(KCONFIG_IPT_QUEUE)
