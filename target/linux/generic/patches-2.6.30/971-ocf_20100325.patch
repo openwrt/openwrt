@@ -1,7 +1,5 @@
-Index: linux-2.6.30.10/drivers/char/random.c
-===================================================================
---- linux-2.6.30.10.orig/drivers/char/random.c	2009-12-04 07:00:07.000000000 +0100
-+++ linux-2.6.30.10/drivers/char/random.c	2010-05-15 15:44:19.000000000 +0200
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
 @@ -129,6 +129,9 @@
   *                                unsigned int value);
   * 	void add_interrupt_randomness(int irq);
@@ -26,7 +24,7 @@ Index: linux-2.6.30.10/drivers/char/random.c
   * All of these routines try to estimate how many bits of randomness a
   * particular randomness source.  They do this by keeping track of the
   * first and second order deltas of the event timings.
-@@ -712,6 +722,61 @@
+@@ -712,6 +722,61 @@ void add_disk_randomness(struct gendisk 
  }
  #endif
  
@@ -88,11 +86,9 @@ Index: linux-2.6.30.10/drivers/char/random.c
  #define EXTRACT_SIZE 10
  
  /*********************************************************************
-Index: linux-2.6.30.10/fs/fcntl.c
-===================================================================
---- linux-2.6.30.10.orig/fs/fcntl.c	2009-12-04 07:00:07.000000000 +0100
-+++ linux-2.6.30.10/fs/fcntl.c	2010-05-15 15:44:19.000000000 +0200
-@@ -142,6 +142,7 @@
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -142,6 +142,7 @@ SYSCALL_DEFINE1(dup, unsigned int, filde
  	}
  	return ret;
  }
@@ -100,10 +96,8 @@ Index: linux-2.6.30.10/fs/fcntl.c
  
  #define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | O_DIRECT | O_NOATIME)
  
-Index: linux-2.6.30.10/include/linux/miscdevice.h
-===================================================================
---- linux-2.6.30.10.orig/include/linux/miscdevice.h	2009-12-04 07:00:07.000000000 +0100
-+++ linux-2.6.30.10/include/linux/miscdevice.h	2010-05-15 15:44:19.000000000 +0200
+--- a/include/linux/miscdevice.h
++++ b/include/linux/miscdevice.h
 @@ -12,6 +12,7 @@
  #define APOLLO_MOUSE_MINOR	7
  #define PC110PAD_MINOR		9
@@ -112,10 +106,8 @@ Index: linux-2.6.30.10/include/linux/miscdevice.h
  #define WATCHDOG_MINOR		130	/* Watchdog timer     */
  #define TEMP_MINOR		131	/* Temperature Sensor */
  #define RTC_MINOR		135
-Index: linux-2.6.30.10/include/linux/random.h
-===================================================================
---- linux-2.6.30.10.orig/include/linux/random.h	2009-12-04 07:00:07.000000000 +0100
-+++ linux-2.6.30.10/include/linux/random.h	2010-05-15 15:44:19.000000000 +0200
+--- a/include/linux/random.h
++++ b/include/linux/random.h
 @@ -9,6 +9,7 @@
  
  #include <linux/types.h>
@@ -155,7 +147,7 @@ Index: linux-2.6.30.10/include/linux/random.h
  struct rand_pool_info {
  	int	entropy_count;
  	int	buf_size;
-@@ -50,6 +75,10 @@
+@@ -50,6 +75,10 @@ extern void add_input_randomness(unsigne
  				 unsigned int value);
  extern void add_interrupt_randomness(int irq);
  

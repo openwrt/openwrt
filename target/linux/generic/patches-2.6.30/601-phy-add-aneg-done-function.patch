@@ -1,6 +1,6 @@
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -393,9 +393,18 @@ struct phy_driver {
+@@ -379,9 +379,18 @@ struct phy_driver {
  	 */
  	int (*config_aneg)(struct phy_device *phydev);
  
@@ -21,7 +21,7 @@
  
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -695,6 +695,9 @@ int genphy_update_link(struct phy_device
+@@ -590,6 +590,9 @@ int genphy_update_link(struct phy_device
  {
  	int status;
  

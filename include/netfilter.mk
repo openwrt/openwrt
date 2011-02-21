@@ -107,12 +107,6 @@ $(eval $(call nf_add,IPT_FILTER,CONFIG_IP_NF_MATCH_STRING, $(P_V4)ipt_string))
 $(eval $(call nf_add,IPT_FILTER,CONFIG_NETFILTER_XT_MATCH_STRING, $(P_XT)xt_string))
 
 
-# imq
-
-$(eval $(call nf_add,IPT_IMQ,CONFIG_IP_NF_TARGET_IMQ, $(P_V4)ipt_IMQ))
-$(eval $(call nf_add,IPT_IMQ,CONFIG_NETFILTER_XT_TARGET_IMQ, $(P_XT)xt_IMQ))
-
-
 # ipopt
 
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_IP_NF_TARGET_DSCP, $(P_V4)ipt_DSCP))
@@ -200,7 +194,6 @@ $(eval $(call nf_add,IPT_IPV6,CONFIG_IP6_NF_MATCH_OWNER, $(P_V6)ip6t_owner))
 $(eval $(call nf_add,IPT_IPV6,CONFIG_IP6_NF_MATCH_OPTS, $(P_V6)ip6t_hbh))
 $(eval $(call nf_add,IPT_IPV6,CONFIG_IP6_NF_MATCH_RT, $(P_V6)ip6t_rt))
 
-$(eval $(call nf_add,IPT_IPV6,CONFIG_IP6_NF_TARGET_IMQ, $(P_V6)ip6t_IMQ))
 $(eval $(call nf_add,IPT_IPV6,CONFIG_IP6_NF_TARGET_LOG, $(P_V6)ip6t_LOG))
 $(eval $(call nf_add,IPT_IPV6,CONFIG_IP6_NF_TARGET_REJECT, $(P_V6)ip6t_REJECT))
 $(eval $(call nf_add,IPT_IPV6,CONFIG_IP6_NF_TARGET_ROUTE, $(P_V6)ip6t_ROUTE))
@@ -331,7 +324,6 @@ IPT_BUILTIN += $(IPT_CONNTRACK-y)
 IPT_BUILTIN += $(IPT_CONNTRACK_EXTRA-y)
 IPT_BUILTIN += $(IPT_EXTRA-y)
 IPT_BUILTIN += $(IPT_FILTER-y)
-IPT_BUILTIN += $(IPT_IMQ-y)
 IPT_BUILTIN += $(IPT_IPOPT-y)
 IPT_BUILTIN += $(IPT_IPRANGE-y)
 IPT_BUILTIN += $(IPT_IPSEC-y)

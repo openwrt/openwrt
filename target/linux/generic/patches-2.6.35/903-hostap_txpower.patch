@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/hostap/hostap_ap.c
 +++ b/drivers/net/wireless/hostap/hostap_ap.c
-@@ -2336,13 +2336,13 @@ int prism2_ap_get_sta_qual(local_info_t
+@@ -2336,13 +2336,13 @@ int prism2_ap_get_sta_qual(local_info_t 
  		addr[count].sa_family = ARPHRD_ETHER;
  		memcpy(addr[count].sa_data, sta->addr, ETH_ALEN);
  		if (sta->last_rx_silence == 0)

@@ -20,7 +20,7 @@
  #else
  static inline int kobject_uevent(struct kobject *kobj,
  				 enum kobject_action action)
-@@ -224,6 +230,16 @@ static inline int add_uevent_var(struct
+@@ -224,6 +230,16 @@ static inline int add_uevent_var(struct 
  static inline int kobject_action_type(const char *buf, size_t count,
  				      enum kobject_action *type)
  { return -EINVAL; }

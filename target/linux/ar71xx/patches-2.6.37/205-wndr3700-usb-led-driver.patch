@@ -1,8 +1,8 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -347,6 +347,13 @@ config LEDS_TRIGGERS
- 
- if LEDS_TRIGGERS
+@@ -377,6 +377,13 @@ config LEDS_TRIGGERS
+ 	  These triggers allow kernel events to drive the LEDs and can
+ 	  be configured via sysfs. If unsure, say Y.
  
 +config LEDS_WNDR3700_USB
 +	tristate "NETGEAR WNDR3700 USB LED driver"

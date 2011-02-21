@@ -8,7 +8,7 @@
  
  extern void check_wait(void);
  extern asmlinkage void r4k_wait(void);
-@@ -1552,6 +1553,8 @@ void __cpuinit per_cpu_trap_init(void)
+@@ -1578,6 +1579,8 @@ void __cpuinit per_cpu_trap_init(void)
  	if (cpu_has_mips_r2) {
  		cp0_compare_irq_shift = CAUSEB_TI - CAUSEB_IP;
  		cp0_compare_irq = (read_c0_intctl() >> INTCTLB_IPTI) & 7;

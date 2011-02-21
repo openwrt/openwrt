@@ -140,7 +140,7 @@
 +module_exit(connmark_cleanup_module);
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
-@@ -549,6 +549,18 @@
+@@ -549,6 +549,18 @@ config NET_ACT_SKBEDIT
  	  To compile this code as a module, choose M here: the
  	  module will be called act_skbedit.
  
@@ -161,7 +161,7 @@
  	depends on NET_CLS_U32 || NET_CLS_FW
 --- a/net/sched/Makefile
 +++ b/net/sched/Makefile
-@@ -15,6 +15,7 @@
+@@ -15,6 +15,7 @@ obj-$(CONFIG_NET_ACT_NAT)	+= act_nat.o
  obj-$(CONFIG_NET_ACT_PEDIT)	+= act_pedit.o
  obj-$(CONFIG_NET_ACT_SIMP)	+= act_simple.o
  obj-$(CONFIG_NET_ACT_SKBEDIT)	+= act_skbedit.o
