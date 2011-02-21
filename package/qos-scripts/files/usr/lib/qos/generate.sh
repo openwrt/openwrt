@@ -210,7 +210,7 @@ config_cb() {
 			config_get_bool enabled "$CONFIG_SECTION" enabled 1
 			[ 1 -eq "$enabled" ] || return 0
 			config_get classgroup "$CONFIG_SECTION" classgroup
-			config_set "$CONFIG_SECTION" imqdev "$C"
+			config_set "$CONFIG_SECTION" ifbdev "$C"
 			C=$(($C+1))
 			append INTERFACES "$CONFIG_SECTION"
 			config_set "$classgroup" enabled 1
@@ -274,7 +274,7 @@ tcrules() {
 
 start_interface() {
 	local iface="$1"
-	local num_imq="$2"
+	local num_ifb="$2"
 	config_get device "$iface" device
 	config_get_bool enabled "$iface" enabled 1
 	[ -z "$device" -o 1 -ne "$enabled" ] && {
@@ -298,10 +298,10 @@ start_interface() {
 				prefix="cls"
 			;;
 			down)
-				[ "$(ls -d /proc/sys/net/ipv4/conf/imq* 2>&- | wc -l)" -ne "$num_imq" ] && add_insmod imq numdevs="$num_imq"
-				config_get imqdev "$iface" imqdev
+				[ "$(ls -d /proc/sys/net/ipv4/conf/ifb* 2>&- | wc -l)" -ne "$num_ifb" ] && add_insmod ifb numifbs="$num_ifb"
+				config_get ifbdev "$iface" ifbdev
 				[ "$overhead" = 1 ] && download=$(($download * 98 / 100 - (80 * 1024 / $download)))
-				dev="imq$imqdev"
+				dev="ifb$ifbdev"
 				rate="$download"
 				dl_mode=1
 				prefix="d_cls"
@@ -326,6 +326,22 @@ tc qdisc del dev $dev root >&- 2>&-
 tc qdisc add dev $dev root handle 1: hfsc default ${class_default}0
 tc class add dev $dev parent 1: classid 1:1 hfsc sc rate ${rate}kbit ul rate ${rate}kbit"
 	done
+	[ -n "$download" ] && {
+		add_insmod cls_u32
+		add_insmod em_u32
+		add_insmod act_connmark
+		add_insmod act_mirred
+		add_insmod sch_ingress
+	}
+	if [ -n "$halfduplex" ]; then
+		export dev_up="tc qdisc del dev $device root >&- 2>&-
+tc qdisc add dev $device root handle 1: hfsc
+tc filter add dev $device parent 1: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$ifbdev"
+	elif [ -n "$download" ]; then
+		append dev_${dir} "tc qdisc del dev $device ingress >&- 2>&-
+tc qdisc add dev $device ingress
+tc filter add dev $device parent ffff: protocol ip prio 1 u32 match u32 0 0 flowid 1:1 action connmark action mirred egress redirect dev ifb$ifbdev" "$N"
+	fi
 	add_insmod cls_fw
 	add_insmod sch_hfsc
 	add_insmod sch_sfq
@@ -334,7 +350,7 @@ tc class add dev $dev parent 1: classid 1:1 hfsc sc rate ${rate}kbit ul rate ${r
 	cat <<EOF
 ${INSMOD:+$INSMOD$N}${dev_up:+$dev_up
 $clsq
-}${imqdev:+$dev_down
+}${ifbdev:+$dev_down
 $d_clsq
 $d_clsl
 $d_clsf
@@ -395,22 +411,13 @@ start_cg() {
 	for iface in $INTERFACES; do
 		config_get classgroup "$iface" classgroup
 		config_get device "$iface" device
-		config_get imqdev "$iface" imqdev
+		config_get ifbdev "$iface" ifbdev
 		config_get upload "$iface" upload
 		config_get download "$iface" download
 		config_get halfduplex "$iface" halfduplex
 		download="${download:-${halfduplex:+$upload}}"
-		add_insmod ipt_IMQ
 		append up "iptables -t mangle -A OUTPUT -o $device -j ${cg}" "$N"
 		append up "iptables -t mangle -A FORWARD -o $device -j ${cg}" "$N"
-		[ -z "$download" ] || {
-			append down "iptables -t mangle -A POSTROUTING -o $device -j ${cg}" "$N"
-			[ -z "$halfduplex" ] || {
-				append down "iptables -t mangle -A POSTROUTING -o $device -j IMQ --todev $imqdev" "$N"
-			}
-			append down "iptables -t mangle -A PREROUTING -i $device -j ${cg}" "$N"
-			append down "iptables -t mangle -A PREROUTING -i $device -j IMQ --todev $imqdev" "$N"
-		}
 	done
 	cat <<EOF
 $INSMOD
