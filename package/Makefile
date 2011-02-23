@@ -89,7 +89,7 @@ $(curdir)/rootfs-prepare: $(TMP_DIR)/.build
 	$(call mklibs)
 
 $(curdir)/index: FORCE
-	@(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
+	@(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages && \
 		gzip -9c Packages > Packages.gz \
 	)
 
