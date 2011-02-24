@@ -1,0 +1,11 @@
+--- a/drivers/mtd/devices/block2mtd.c
++++ b/drivers/mtd/devices/block2mtd.c
+@@ -330,7 +330,7 @@ static int block2mtd_refresh(struct mtd_
+ 	_close_bdev(dev);
+ 
+ 	/* open the whole disk, issue a partition rescan, then */
+-	bdev = blkdev_get_by_dev(devt, FMODE_WRITE | FMODE_READ);
++	bdev = blkdev_get_by_dev(devt, FMODE_WRITE | FMODE_READ, mtd);
+ 	if (!bdev || !bdev->bd_disk)
+ 		err = -EINVAL;
+ #ifndef CONFIG_MTD_BLOCK2MTD_MODULE
