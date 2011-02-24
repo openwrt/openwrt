@@ -20,8 +20,6 @@ Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
  extra/Configs/Config.arm |   31 ++++++++++++++++++++++++++++---
  2 files changed, 32 insertions(+), 6 deletions(-)
 
-diff --git a/Rules.mak b/Rules.mak
-index eecdc64..2a16908 100644
 --- a/Rules.mak
 +++ b/Rules.mak
 @@ -348,9 +348,10 @@ ifeq ($(TARGET_ARCH),arm)
@@ -38,8 +36,6 @@ index eecdc64..2a16908 100644
  endif
  
  ifeq ($(TARGET_ARCH),mips)
-diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
-index 3b90e67..c9c40d4 100644
 --- a/extra/Configs/Config.arm
 +++ b/extra/Configs/Config.arm
 @@ -64,70 +64,95 @@ config CONFIG_ARM710
@@ -141,6 +137,3 @@ index 3b90e67..c9c40d4 100644
 +	depends on HAS_THUMB
  	help
  	  Use BX instruction for THUMB aware architectures.
--- 
-1.7.1
-

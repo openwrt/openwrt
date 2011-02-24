@@ -8,8 +8,6 @@ Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
  extra/Configs/Config.arm |   23 ++++++++---------------
  1 files changed, 8 insertions(+), 15 deletions(-)
 
-diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
-index 6c75a00..227b90c 100644
 --- a/extra/Configs/Config.arm
 +++ b/extra/Configs/Config.arm
 @@ -12,23 +12,16 @@ config FORCE_OPTIONS_FOR_ARCH
@@ -18,7 +16,7 @@ index 6c75a00..227b90c 100644
  
 -choice
 -	prompt "Target ABI"
--	default CONFIG_ARM_OABI
+-	default CONFIG_ARM_EABI
 +config CONFIG_ARM_EABI
 +	bool "Build for EABI"
  	help
@@ -44,6 +42,3 @@ index 6c75a00..227b90c 100644
  
  config COMPILE_IN_THUMB_MODE
  	bool "Build using Thumb mode"
--- 
-1.7.1
-

@@ -1,6 +1,6 @@
 --- a/ldso/include/dl-elf.h
 +++ b/ldso/include/dl-elf.h
-@@ -42,6 +42,10 @@
+@@ -42,6 +42,10 @@ extern int _dl_linux_resolve(void);
  extern int _dl_fixup(struct dyn_elf *rpnt, int flag);
  extern void _dl_protect_relro (struct elf_resolve *l);
  
@@ -11,18 +11,18 @@
  /*
   * Bitsize related settings for things ElfW()
   * does not handle already
-@@ -163,7 +167,7 @@
- 			dynamic_info[tag] = (unsigned long) DL_RELOC_ADDR(load_off, dynamic_info[tag]); \
- 	} while (0)
- 	/* Don't adjust .dynamic unnecessarily.  */
--	if (load_off != 0) {
-+	if (DL_LOADADDR_ISSET(load_off)) {
+@@ -166,7 +170,7 @@ unsigned int __dl_parse_dynamic_info(Elf
+ 	   we'd have to walk all the loadsegs to find out if it was
+ 	   actually unnecessary, so skip this optimization.  */
+ #ifndef __FDPIC__
+-	if (load_off != 0)
++	if (DL_LOADADDR_ISSET(load_off))
+ #endif
+ 	{
  		ADJUST_DYN_INFO(DT_HASH, load_off);
- 		ADJUST_DYN_INFO(DT_PLTGOT, load_off);
- 		ADJUST_DYN_INFO(DT_STRTAB, load_off);
 --- a/ldso/ldso/ubicom32/dl-sysdep.h
 +++ b/ldso/ldso/ubicom32/dl-sysdep.h
-@@ -101,6 +101,7 @@
+@@ -101,6 +101,7 @@ do {									\
  } while (0)
  
  #define DL_LOADADDR_TYPE struct elf32_fdpic_loadaddr

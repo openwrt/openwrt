@@ -14,8 +14,6 @@ Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
  libc/sysdeps/linux/arm/bits/huge_val.h |    4 ++--
  3 files changed, 9 insertions(+), 15 deletions(-)
 
-diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
-index 9aa9e56..85f2515 100644
 --- a/extra/Configs/Config.arm
 +++ b/extra/Configs/Config.arm
 @@ -12,17 +12,6 @@ config FORCE_OPTIONS_FOR_ARCH
@@ -36,8 +34,6 @@ index 9aa9e56..85f2515 100644
  config COMPILE_IN_THUMB_MODE
  	bool "Build using Thumb mode"
  	select USE_BX
-diff --git a/libc/sysdeps/linux/arm/Makefile.arch b/libc/sysdeps/linux/arm/Makefile.arch
-index b53c539..14279e0 100644
 --- a/libc/sysdeps/linux/arm/Makefile.arch
 +++ b/libc/sysdeps/linux/arm/Makefile.arch
 @@ -24,7 +24,12 @@ ifeq ($(UCLIBC_HAS_ADVANCED_REALTIME),y)
@@ -63,8 +59,6 @@ index b53c539..14279e0 100644
  libc-static-y += $(ARCH_OUT)/aeabi_lcsts.o $(ARCH_OUT)/aeabi_math.o \
  	$(ARCH_OUT)/aeabi_sighandlers.o
  libc-nonshared-y += $(ARCH_OUT)/aeabi_lcsts.os $(ARCH_OUT)/aeabi_math.os \
-diff --git a/libc/sysdeps/linux/arm/bits/huge_val.h b/libc/sysdeps/linux/arm/bits/huge_val.h
-index a215f3c..745e0bb 100644
 --- a/libc/sysdeps/linux/arm/bits/huge_val.h
 +++ b/libc/sysdeps/linux/arm/bits/huge_val.h
 @@ -32,7 +32,7 @@
@@ -85,6 +79,3 @@ index a215f3c..745e0bb 100644
  # if __BYTE_ORDER == __BIG_ENDIAN
  #  define __HUGE_VAL_bytes	{ 0, 0, 0, 0, 0x7f, 0xf0, 0, 0 }
  # endif
--- 
-1.7.1
-

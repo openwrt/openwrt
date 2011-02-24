@@ -15,8 +15,6 @@ Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
  extra/Configs/Config.arm |  125 ++--------------------------------------------
  2 files changed, 5 insertions(+), 139 deletions(-)
 
-diff --git a/Rules.mak b/Rules.mak
-index 2a16908..09741a6 100644
 --- a/Rules.mak
 +++ b/Rules.mak
 @@ -332,25 +332,6 @@ ifeq ($(TARGET_ARCH),arm)
@@ -45,8 +43,6 @@ index 2a16908..09741a6 100644
  	CPU_CFLAGS-$(COMPILE_IN_THUMB_MODE)+=-mthumb
  endif
  
-diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
-index c9c40d4..6c75a00 100644
 --- a/extra/Configs/Config.arm
 +++ b/extra/Configs/Config.arm
 @@ -30,129 +30,14 @@ config CONFIG_ARM_EABI
@@ -184,6 +180,3 @@ index c9c40d4..6c75a00 100644
 -	depends on HAS_THUMB
  	help
  	  Use BX instruction for THUMB aware architectures.
--- 
-1.7.1
-
