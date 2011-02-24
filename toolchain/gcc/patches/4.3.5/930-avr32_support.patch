@@ -22,13 +22,10 @@
  	 must do it earlier where we know the signedness of the arg.  */
 --- /dev/null
 +++ b/gcc/config/avr32/avr32.c
-@@ -0,0 +1,7869 @@
+@@ -0,0 +1,8018 @@
 +/*
 +   Target hooks and helper functions for AVR32.
-+   Copyright 2003-2006 Atmel Corporation.
-+
-+   Written by Ronny Pedersen, Atmel Norway, <rpedersen@atmel.com>
-+   Initial porting by Anders �dland.
++   Copyright 2003,2004,2005,2006,2007,2008,2009,2010 Atmel Corporation.
 +
 +   This file is part of GCC.
 +
@@ -81,7 +78,9 @@
 +
 +#include <ctype.h>
 +
-+/* Forward definitions of types.  */
++
++
++/* Global variables.  */
 +typedef struct minipool_node Mnode;
 +typedef struct minipool_fixup Mfix;
 +
@@ -93,7 +92,10 @@
 +/* True if we are currently building a constant table.  */
 +int making_const_table;
 +
-+/* Some forward function declarations */
++tree fndecl_attribute_args = NULL_TREE;
++
++
++/* Function prototypes. */
 +static unsigned long avr32_isr_value (tree);
 +static unsigned long avr32_compute_func_type (void);
 +static tree avr32_handle_isr_attribute (tree *, tree, tree, int, bool *);
@@ -104,6 +106,9 @@
 +bool avr32_return_in_msb (tree type);
 +bool avr32_vector_mode_supported (enum machine_mode mode);
 +static void avr32_init_libfuncs (void);
++static void avr32_file_end (void);
++static void flashvault_decl_list_add (unsigned int vector_num, const char *name);
++
 +
 +
 +static void
@@ -117,51 +122,60 @@
 +/* List of all known AVR32 parts  */
 +static const struct part_type_s avr32_part_types[] = {
 +  /* name, part_type, architecture type, macro */
-+  {"none",         PART_TYPE_AVR32_NONE,         ARCH_TYPE_AVR32_AP,        "__AVR32__"},
-+  {"ap7000",       PART_TYPE_AVR32_AP7000,       ARCH_TYPE_AVR32_AP,        "__AVR32_AP7000__"},
-+  {"ap7001",       PART_TYPE_AVR32_AP7001,       ARCH_TYPE_AVR32_AP,        "__AVR32_AP7001__"},
-+  {"ap7002",       PART_TYPE_AVR32_AP7002,       ARCH_TYPE_AVR32_AP,        "__AVR32_AP7002__"},
-+  {"ap7200",       PART_TYPE_AVR32_AP7200,       ARCH_TYPE_AVR32_AP,        "__AVR32_AP7200__"},
-+  {"uc3a0128",     PART_TYPE_AVR32_UC3A0128,     ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A0128__"},
-+  {"uc3a0256",     PART_TYPE_AVR32_UC3A0256,     ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A0256__"},
-+  {"uc3a0512",     PART_TYPE_AVR32_UC3A0512,     ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A0512__"},
-+  {"uc3a0512es",   PART_TYPE_AVR32_UC3A0512ES,   ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3A0512ES__"},
-+  {"uc3a1128",     PART_TYPE_AVR32_UC3A1128,     ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A1128__"},
-+  {"uc3a1256",     PART_TYPE_AVR32_UC3A1256,     ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A1256__"},
-+  {"uc3a1512",     PART_TYPE_AVR32_UC3A1512,     ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A1512__"},
-+  {"uc3a1512es",   PART_TYPE_AVR32_UC3A1512ES,   ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3A1512ES__"},
-+  {"uc3a3revd",    PART_TYPE_AVR32_UC3A3REVD,    ARCH_TYPE_AVR32_UCR2NOMUL, "__AVR32_UC3A3256S__"},
-+  {"uc3a364",      PART_TYPE_AVR32_UC3A364,      ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A364__"},
-+  {"uc3a364s",     PART_TYPE_AVR32_UC3A364S,     ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A364S__"},
-+  {"uc3a3128",     PART_TYPE_AVR32_UC3A3128,     ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A3128__"},
-+  {"uc3a3128s",    PART_TYPE_AVR32_UC3A3128S,    ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A3128S__"},
-+  {"uc3a3256",     PART_TYPE_AVR32_UC3A3256,     ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A3256__"},
-+  {"uc3a3256s",    PART_TYPE_AVR32_UC3A3256S,    ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A3256S__"},
-+  {"uc3b064",      PART_TYPE_AVR32_UC3B064,      ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B064__"},
-+  {"uc3b0128",     PART_TYPE_AVR32_UC3B0128,     ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B0128__"},
-+  {"uc3b0256",     PART_TYPE_AVR32_UC3B0256,     ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B0256__"},
-+  {"uc3b0256es",   PART_TYPE_AVR32_UC3B0256ES,   ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B0256ES__"},
-+  {"uc3b0512revc", PART_TYPE_AVR32_UC3B0512REVC, ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3B0512REVC__"},
-+  {"uc3b164",      PART_TYPE_AVR32_UC3B164,      ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B164__"},
-+  {"uc3b1128",     PART_TYPE_AVR32_UC3B1128,     ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B1128__"},
-+  {"uc3b1256",     PART_TYPE_AVR32_UC3B1256,     ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B1256__"},
-+  {"uc3b1256es",   PART_TYPE_AVR32_UC3B1256ES,   ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B1256ES__"},
-+  {"uc3b1512revc", PART_TYPE_AVR32_UC3B1512REVC, ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3B1512REVC__"},
-+  {"uc3c0512c",    PART_TYPE_AVR32_UC3C0512C,    ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C0512C__"},
-+  {"uc3c0256c",    PART_TYPE_AVR32_UC3C0256C,    ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C0256C__"},
-+  {"uc3c0128c",    PART_TYPE_AVR32_UC3C0128C,    ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C0128C__"},
-+  {"uc3c064c",     PART_TYPE_AVR32_UC3C064C,     ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C064C__"},
-+  {"uc3c1512c",    PART_TYPE_AVR32_UC3C1512C,    ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C1512C__"},
-+  {"uc3c1256c",    PART_TYPE_AVR32_UC3C1256C,    ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C1256C__"},
-+  {"uc3c1128c",    PART_TYPE_AVR32_UC3C1128C,    ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C1128C__"},
-+  {"uc3c164c",     PART_TYPE_AVR32_UC3C164C,     ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C164C__"},
-+  {"uc3c2512c",    PART_TYPE_AVR32_UC3C2512C,    ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C2512C__"},
-+  {"uc3c2256c",    PART_TYPE_AVR32_UC3C2256C,    ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C2256C__"},
-+  {"uc3c2128c",    PART_TYPE_AVR32_UC3C2128C,    ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C2128C__"},
-+  {"uc3c264c",     PART_TYPE_AVR32_UC3C264C,     ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C264C__"},
-+  {"uc3l064",      PART_TYPE_AVR32_UC3L064,      ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3L064__"},
-+  {"uc3l032",      PART_TYPE_AVR32_UC3L032,      ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3L032__"},
-+  {"uc3l016",      PART_TYPE_AVR32_UC3L016,      ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3L016__"},
++  {"none",            PART_TYPE_AVR32_NONE,            ARCH_TYPE_AVR32_AP,        "__AVR32__"},
++  {"ap7000",          PART_TYPE_AVR32_AP7000,          ARCH_TYPE_AVR32_AP,        "__AVR32_AP7000__"},
++  {"ap7001",          PART_TYPE_AVR32_AP7001,          ARCH_TYPE_AVR32_AP,        "__AVR32_AP7001__"},
++  {"ap7002",          PART_TYPE_AVR32_AP7002,          ARCH_TYPE_AVR32_AP,        "__AVR32_AP7002__"},
++  {"ap7200",          PART_TYPE_AVR32_AP7200,          ARCH_TYPE_AVR32_AP,        "__AVR32_AP7200__"},
++  {"uc3a0128",        PART_TYPE_AVR32_UC3A0128,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A0128__"},
++  {"uc3a0256",        PART_TYPE_AVR32_UC3A0256,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A0256__"},
++  {"uc3a0512",        PART_TYPE_AVR32_UC3A0512,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A0512__"},
++  {"uc3a0512es",      PART_TYPE_AVR32_UC3A0512ES,      ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3A0512ES__"},
++  {"uc3a1128",        PART_TYPE_AVR32_UC3A1128,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A1128__"},
++  {"uc3a1256",        PART_TYPE_AVR32_UC3A1256,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A1256__"},
++  {"uc3a1512",        PART_TYPE_AVR32_UC3A1512,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A1512__"},
++  {"uc3a1512es",      PART_TYPE_AVR32_UC3A1512ES,      ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3A1512ES__"},
++  {"uc3a3revd",       PART_TYPE_AVR32_UC3A3REVD,       ARCH_TYPE_AVR32_UCR2NOMUL, "__AVR32_UC3A3256S__"},
++  {"uc3a364",         PART_TYPE_AVR32_UC3A364,         ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A364__"},
++  {"uc3a364s",        PART_TYPE_AVR32_UC3A364S,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A364S__"},
++  {"uc3a3128",        PART_TYPE_AVR32_UC3A3128,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A3128__"},
++  {"uc3a3128s",       PART_TYPE_AVR32_UC3A3128S,       ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A3128S__"},
++  {"uc3a3256",        PART_TYPE_AVR32_UC3A3256,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A3256__"},
++  {"uc3a3256s",       PART_TYPE_AVR32_UC3A3256S,       ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3A3256S__"},
++  {"uc3b064",         PART_TYPE_AVR32_UC3B064,         ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B064__"},
++  {"uc3b0128",        PART_TYPE_AVR32_UC3B0128,        ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B0128__"},
++  {"uc3b0256",        PART_TYPE_AVR32_UC3B0256,        ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B0256__"},
++  {"uc3b0256es",      PART_TYPE_AVR32_UC3B0256ES,      ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B0256ES__"},
++  {"uc3b0512",        PART_TYPE_AVR32_UC3B0512,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3B0512__"},
++  {"uc3b0512revc",    PART_TYPE_AVR32_UC3B0512REVC,    ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3B0512REVC__"},
++  {"uc3b164",         PART_TYPE_AVR32_UC3B164,         ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B164__"},
++  {"uc3b1128",        PART_TYPE_AVR32_UC3B1128,        ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B1128__"},
++  {"uc3b1256",        PART_TYPE_AVR32_UC3B1256,        ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B1256__"},
++  {"uc3b1256es",      PART_TYPE_AVR32_UC3B1256ES,      ARCH_TYPE_AVR32_UCR1,      "__AVR32_UC3B1256ES__"},
++  {"uc3b1512",        PART_TYPE_AVR32_UC3B1512,        ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3B1512__"},
++  {"uc3b1512revc",    PART_TYPE_AVR32_UC3B1512REVC,    ARCH_TYPE_AVR32_UCR2,      "__AVR32_UC3B1512REVC__"},
++  {"uc3c0512crevc",   PART_TYPE_AVR32_UC3C0512CREVC,   ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C0512CREVC__"},
++  {"uc3c1512crevc",   PART_TYPE_AVR32_UC3C1512CREVC,   ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C1512CREVC__"},
++  {"uc3c2512crevc",   PART_TYPE_AVR32_UC3C2512CREVC,   ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3C2512CREVC__"},
++  {"uc3l0256",        PART_TYPE_AVR32_UC3L0256,        ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3L0256__"},
++  {"uc3l0128",        PART_TYPE_AVR32_UC3L0128,        ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3L0128__"},
++  {"uc3l064",         PART_TYPE_AVR32_UC3L064,         ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3L064__"},
++  {"uc3l032",         PART_TYPE_AVR32_UC3L032,         ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3L032__"},
++  {"uc3l016",         PART_TYPE_AVR32_UC3L016,         ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3L016__"},
++  {"uc3l064revb",     PART_TYPE_AVR32_UC3L064,         ARCH_TYPE_AVR32_UCR3,      "__AVR32_UC3L064REVB__"},
++  {"uc3c064c",        PART_TYPE_AVR32_UC3C064C,        ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C064C__"},
++  {"uc3c0128c",       PART_TYPE_AVR32_UC3C0128C,       ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C0128C__"},
++  {"uc3c0256c",       PART_TYPE_AVR32_UC3C0256C,       ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C0256C__"},
++  {"uc3c0512c",       PART_TYPE_AVR32_UC3C0512C,       ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C0512C__"},
++  {"uc3c164c",        PART_TYPE_AVR32_UC3C164C,        ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C164C__"},
++  {"uc3c1128c",       PART_TYPE_AVR32_UC3C1128C,       ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C1128C__"},
++  {"uc3c1256c",       PART_TYPE_AVR32_UC3C1256C,       ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C1256C__"},
++  {"uc3c1512c",       PART_TYPE_AVR32_UC3C1512C,       ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C1512C__"},
++  {"uc3c264c",        PART_TYPE_AVR32_UC3C264C,        ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C264C__"},
++  {"uc3c2128c",       PART_TYPE_AVR32_UC3C2128C,       ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C2128C__"},
++  {"uc3c2256c",       PART_TYPE_AVR32_UC3C2256C,       ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C2256C__"},
++  {"uc3c2512c",       PART_TYPE_AVR32_UC3C2512C,       ARCH_TYPE_AVR32_UCR3FP,    "__AVR32_UC3C2512C__"},
++  {"mxt768e",         PART_TYPE_AVR32_MXT768E,         ARCH_TYPE_AVR32_UCR3,      "__AVR32_MXT768E__"},
 +  {NULL, 0, 0, NULL}
 +};
 +
@@ -190,6 +204,10 @@
 +   (FLAG_AVR32_HAS_DSP | FLAG_AVR32_HAS_RMW
 +    | FLAG_AVR32_HAS_V2_INSNS),
 +   "__AVR32_UC__=3"},
++  {"ucr3fp", ARCH_TYPE_AVR32_UCR3FP, UARCH_TYPE_AVR32A,
++   (FLAG_AVR32_HAS_DSP | FLAG_AVR32_HAS_RMW | FLAG_AVR32_HAS_FPU
++    | FLAG_AVR32_HAS_V2_INSNS),
++   "__AVR32_UC__=3"},
 +  {NULL, 0, 0, 0, NULL}
 +};
 +
@@ -201,14 +219,25 @@
 +const struct arch_type_s *avr32_arch;
 +
 +
++/* FIXME: needs to use GC.  */
++struct flashvault_decl_list
++{
++  struct flashvault_decl_list *next;
++  unsigned int vector_num;
++  const char *name;
++};
++
++static struct flashvault_decl_list *flashvault_decl_list_head = NULL;
++
++
 +/* Set default target_flags. */
 +#undef TARGET_DEFAULT_TARGET_FLAGS
 +#define TARGET_DEFAULT_TARGET_FLAGS \
 +  (MASK_HAS_ASM_ADDR_PSEUDOS | MASK_MD_REORG_OPTIMIZATION | MASK_COND_EXEC_BEFORE_RELOAD)
 +
 +void
-+avr32_optimization_options (int level,
-+                            int size){
++avr32_optimization_options (int level, int size)
++{
 +  if (AVR32_ALWAYS_PIC)
 +    flag_pic = 1;
 +
@@ -216,6 +245,7 @@
 +  if (level > 0 || size)
 +    flag_section_anchors = 1;
 +}
++
 +
 +/* Override command line options */
 +void
@@ -301,7 +331,6 @@
 +
 +  if (TARGET_NO_PIC)
 +    flag_pic = 0;
-+
 +  avr32_add_gc_roots ();
 +}
 +
@@ -352,6 +381,8 @@
 +#undef TARGET_ASM_FUNCTION_PROLOGUE
 +#define TARGET_ASM_FUNCTION_PROLOGUE avr32_target_asm_function_prologue
 +
++#undef TARGET_ASM_FILE_END
++#define TARGET_ASM_FILE_END avr32_file_end
 +
 +#undef TARGET_DEFAULT_SHORT_ENUMS
 +#define TARGET_DEFAULT_SHORT_ENUMS hook_bool_void_false
@@ -382,6 +413,9 @@
 +
 +#undef TARGET_RETURN_IN_MSB
 +#define TARGET_RETURN_IN_MSB avr32_return_in_msb
++
++#undef TARGET_ENCODE_SECTION_INFO
++#define TARGET_ENCODE_SECTION_INFO avr32_encode_section_info
 +
 +#undef TARGET_ARG_PARTIAL_BYTES
 +#define TARGET_ARG_PARTIAL_BYTES avr32_arg_partial_bytes
@@ -418,8 +452,24 @@
 +
 +#undef  TARGET_MAX_ANCHOR_OFFSET
 +#define TARGET_MAX_ANCHOR_OFFSET ((1 << 15) - 1)
++#undef TARGET_SECONDARY_RELOAD
++#define TARGET_SECONDARY_RELOAD avr32_secondary_reload
 +
++enum reg_class
++avr32_secondary_reload (bool in_p, rtx x, enum reg_class class,
++                        enum machine_mode mode, secondary_reload_info *sri)
++{
 +
++  if ( avr32_rmw_memory_operand (x, mode) )
++    {
++      if (!in_p)
++        sri->icode = CODE_FOR_reload_out_rmw_memory_operand;
++      else
++        sri->icode = CODE_FOR_reload_in_rmw_memory_operand;
++    }
++  return NO_REGS;
++
++}
 +/*
 + * Switches to the appropriate section for output of constant pool
 + * entry x in mode. You can assume that x is some kind of constant in
@@ -493,6 +543,7 @@
 +
 +  return default_assemble_integer (x, size, aligned_p);
 +}
++
 +
 +/*
 + * This target hook describes the relative costs of RTL expressions.
@@ -632,6 +683,7 @@
 +    }
 +}
 +
++
 +static bool
 +avr32_rtx_costs (rtx x, int code, int outer_code, int *total)
 +{
@@ -659,6 +711,9 @@
 +  {"interrupt", 0, 1, false, false, false, avr32_handle_isr_attribute},
 +  {"acall", 0, 1, false, true, true, avr32_handle_acall_attribute},
 +  {"naked", 0, 0, true, false, false, avr32_handle_fndecl_attribute},
++  {"rmw_addressable", 0, 0, true, false, false, NULL},
++  {"flashvault", 0, 1, true, false, false, avr32_handle_fndecl_attribute},
++  {"flashvault_impl", 0, 1, true, false, false, avr32_handle_fndecl_attribute},
 +  {NULL, 0, 0, false, false, false, NULL}
 +};
 +
@@ -669,6 +724,7 @@
 +  const unsigned long return_value;
 +}
 +isr_attribute_arg;
++
 +
 +static const isr_attribute_arg isr_attribute_args[] = {
 +  {"FULL", AVR32_FT_ISR_FULL},
@@ -684,9 +740,9 @@
 +  {NULL, AVR32_FT_ISR_NONE}
 +};
 +
++
 +/* Returns the (interrupt) function type of the current
 +   function, or AVR32_FT_UNKNOWN if the type cannot be determined.  */
-+
 +static unsigned long
 +avr32_isr_value (tree argument)
 +{
@@ -712,7 +768,6 @@
 +  /* An unrecognized interrupt type.  */
 +  return AVR32_FT_UNKNOWN;
 +}
-+
 +
 +
 +/*
@@ -750,6 +805,7 @@
 +
 +#undef TARGET_ASM_CAN_OUTPUT_MI_THUNK
 +#define TARGET_ASM_CAN_OUTPUT_MI_THUNK hook_bool_const_tree_hwi_hwi_const_tree_true
++
 +
 +static void
 +avr32_output_mi_thunk (FILE * file,
@@ -837,7 +893,7 @@
 +
 +tree int_ftype_int, int_ftype_void, short_ftype_short, void_ftype_int_int,
 +  void_ftype_ptr_int;
-+tree void_ftype_int, void_ftype_void, int_ftype_ptr_int;
++tree void_ftype_int, void_ftype_ulong, void_ftype_void, int_ftype_ptr_int;
 +tree short_ftype_short, int_ftype_int_short, int_ftype_short_short,
 +  short_ftype_short_short;
 +tree int_ftype_int_int, longlong_ftype_int_short, longlong_ftype_short_short;
@@ -871,21 +927,22 @@
 +};
 +
 +static const struct builtin_description bdesc_2arg[] = {
++
 +#define DSP_BUILTIN(code, builtin, ftype) \
 +  { 1, CODE_FOR_##code, "__builtin_" #code , \
-+    AVR32_BUILTIN_##builtin, 0, 0, ftype }
++  AVR32_BUILTIN_##builtin, 0, 0, ftype }
 +
-+  DSP_BUILTIN (mulsathh_h, MULSATHH_H, &short_ftype_short_short),
-+  DSP_BUILTIN (mulsathh_w, MULSATHH_W, &int_ftype_short_short),
++  DSP_BUILTIN (mulsathh_h,    MULSATHH_H,    &short_ftype_short_short),
++  DSP_BUILTIN (mulsathh_w,    MULSATHH_W,    &int_ftype_short_short),
 +  DSP_BUILTIN (mulsatrndhh_h, MULSATRNDHH_H, &short_ftype_short_short),
 +  DSP_BUILTIN (mulsatrndwh_w, MULSATRNDWH_W, &int_ftype_int_short),
-+  DSP_BUILTIN (mulsatwh_w, MULSATWH_W, &int_ftype_int_short),
-+  DSP_BUILTIN (satadd_h, SATADD_H, &short_ftype_short_short),
-+  DSP_BUILTIN (satsub_h, SATSUB_H, &short_ftype_short_short),
-+  DSP_BUILTIN (satadd_w, SATADD_W, &int_ftype_int_int),
-+  DSP_BUILTIN (satsub_w, SATSUB_W, &int_ftype_int_int),
-+  DSP_BUILTIN (mulwh_d, MULWH_D, &longlong_ftype_int_short),
-+  DSP_BUILTIN (mulnwh_d, MULNWH_D, &longlong_ftype_int_short)
++  DSP_BUILTIN (mulsatwh_w,    MULSATWH_W,    &int_ftype_int_short),
++  DSP_BUILTIN (satadd_h,      SATADD_H,      &short_ftype_short_short),
++  DSP_BUILTIN (satsub_h,      SATSUB_H,      &short_ftype_short_short),
++  DSP_BUILTIN (satadd_w,      SATADD_W,      &int_ftype_int_int),
++  DSP_BUILTIN (satsub_w,      SATSUB_W,      &int_ftype_int_int),
++  DSP_BUILTIN (mulwh_d,       MULWH_D,       &longlong_ftype_int_short),
++  DSP_BUILTIN (mulnwh_d,      MULNWH_D,      &longlong_ftype_int_short)
 +};
 +
 +
@@ -1014,6 +1071,10 @@
 +  /* void func (int) */
 +  void_ftype_int = build_function_type (void_type_node, int_endlink);
 +
++  /* void func (ulong) */
++  void_ftype_ulong = build_function_type_list (void_type_node,
++                           long_unsigned_type_node, NULL_TREE);
++
 +  /* void func (void) */
 +  void_ftype_void = build_function_type (void_type_node, void_endlink);
 +
@@ -1074,6 +1135,11 @@
 +	       AVR32_BUILTIN_MACWH_D);
 +  def_builtin ("__builtin_machh_d", longlong_ftype_longlong_short_short,
 +	       AVR32_BUILTIN_MACHH_D);
++  def_builtin ("__builtin_mems", void_ftype_ptr_int, AVR32_BUILTIN_MEMS);
++  def_builtin ("__builtin_memt", void_ftype_ptr_int, AVR32_BUILTIN_MEMT);
++  def_builtin ("__builtin_memc", void_ftype_ptr_int, AVR32_BUILTIN_MEMC);
++  def_builtin ("__builtin_sleep", void_ftype_int, AVR32_BUILTIN_SLEEP);
++  def_builtin ("__builtin_avr32_delay_cycles", void_ftype_int, AVR32_BUILTIN_DELAY_CYCLES);
 +
 +  /* Add all builtins that are more or less simple operations on two
 +     operands.  */
@@ -1090,8 +1156,7 @@
 +}
 +
 +
-+/* Subroutine of avr32_expand_builtin to take care of binop insns.  */
-+
++/* Subroutine of avr32_expand_builtin to take care of binop insns. */
 +static rtx
 +avr32_expand_binop_builtin (enum insn_code icode, tree exp, rtx target)
 +{
@@ -1134,12 +1199,12 @@
 +  return target;
 +}
 +
++
 +/* Expand an expression EXP that calls a built-in function,
 +   with result going to TARGET if that's convenient
 +   (and in mode MODE if that's convenient).
 +   SUBTARGET may be used as the target for computing one of EXP's operands.
 +   IGNORE is nonzero if the value is to be ignored.  */
-+
 +rtx
 +avr32_expand_builtin (tree exp,
 +		      rtx target,
@@ -1806,6 +1871,99 @@
 +	return target;
 +      }
 +
++     case AVR32_BUILTIN_MEMS:
++     case AVR32_BUILTIN_MEMC:
++     case AVR32_BUILTIN_MEMT:
++       {
++         if (!TARGET_RMW)
++           error ("Trying to use __builtin_mem(s/c/t) when target does not support RMW insns.");
++         
++         switch (fcode) {
++         case AVR32_BUILTIN_MEMS:
++           icode = CODE_FOR_iorsi3;
++           break;
++         case AVR32_BUILTIN_MEMC:
++           icode = CODE_FOR_andsi3;
++           break;
++         case AVR32_BUILTIN_MEMT:
++           icode = CODE_FOR_xorsi3;
++           break;
++         }
++			arg0 = CALL_EXPR_ARG (exp,0);
++			arg1 = CALL_EXPR_ARG (exp,1);
++         op0 = expand_expr (arg0, NULL_RTX, VOIDmode, 0);
++         if ( GET_CODE (op0) == SYMBOL_REF )
++           // This symbol must be RMW addressable
++           SYMBOL_REF_FLAGS (op0) |= (1 << SYMBOL_FLAG_RMW_ADDR_SHIFT);
++         op0 = gen_rtx_MEM(SImode, op0);
++         op1 = expand_expr (arg1, NULL_RTX, VOIDmode, 0);
++         mode0 = insn_data[icode].operand[1].mode;
++         
++         
++         if (!(*insn_data[icode].operand[1].predicate) (op0, mode0))
++           {
++             error ("Parameter 1 to __builtin_mem(s/c/t) must be a Ks15<<2 address or a rmw addressable symbol.");
++           }
++         
++         if ( !CONST_INT_P (op1)
++              || INTVAL (op1) > 31
++              || INTVAL (op1) < 0 )
++           error ("Parameter 2 to __builtin_mem(s/c/t) must be a constant between 0 and 31.");
++ 
++         if ( fcode == AVR32_BUILTIN_MEMC )
++           op1 = GEN_INT((~(1 << INTVAL(op1)))&0xffffffff);
++         else
++           op1 = GEN_INT((1 << INTVAL(op1))&0xffffffff);
++         pat = GEN_FCN (icode) (op0, op0, op1);
++         if (!pat)
++           return 0;
++         emit_insn (pat);
++         return op0;
++       }
++       
++     case AVR32_BUILTIN_SLEEP:
++       {
++ 	arg0 = CALL_EXPR_ARG (exp, 0);
++ 	op0  = expand_normal (arg0);
++ 	int intval = INTVAL(op0);
++ 
++ 	/* Check if the argument if integer and if the value of integer
++ 	   is greater than 0. */ 
++ 	 
++ 	if (!CONSTANT_P (op0))
++         error ("Parameter 1 to __builtin_sleep() is not a valid integer.");
++ 	if (intval < 0 )
++ 	     error ("Parameter 1 to __builtin_sleep() should be an integer greater than 0.");
++ 
++         int strncmpval = strncmp (avr32_part_name,"uc3l", 4);
++  
++ 	/* Check if op0 is less than 7 for uc3l* and less than 6 for other
++ 	   devices. By this check we are avoiding if operand is less than  
++ 	   256. For more devices, add more such checks. */
++ 	 
++ 	if ( strncmpval == 0 && intval >= 7)  
++        error ("Parameter 1 to __builtin_sleep() should be less than or equal to 7.");
++ 	else if ( strncmp != 0 && intval >= 6)
++ 	    error ("Parameter 1 to __builtin_sleep() should be less than or equal to 6.");
++ 
++ 	emit_insn (gen_sleep(op0));
++ 	return target;
++ 
++       }	
++     case AVR32_BUILTIN_DELAY_CYCLES: 
++       {
++       arg0 = CALL_EXPR_ARG (exp, 0);
++       op0 = expand_expr (arg0, NULL_RTX, VOIDmode, 0);
++ 
++       if (TARGET_ARCH_AP)
++         error (" __builtin_avr32_delay_cycles() not supported for \'%s\' architecture.", avr32_arch_name);
++       if (!CONSTANT_P (op0))
++        error ("Parameter 1 to __builtin_avr32_delay_cycles() should be an integer.");
++       emit_insn (gen_delay_cycles (op0));
++       return 0;
++ 
++       }       
++
 +    }
 +
 +  for (i = 0, d = bdesc_2arg; i < ARRAY_SIZE (bdesc_2arg); i++, d++)
@@ -1820,7 +1978,6 @@
 +
 +/* Handle an "interrupt" or "isr" attribute;
 +   arguments as in struct attribute_spec.handler.  */
-+
 +static tree
 +avr32_handle_isr_attribute (tree * node, tree name, tree args,
 +			    int flags, bool * no_add_attrs)
@@ -1878,17 +2035,32 @@
 +  return NULL_TREE;
 +}
 +
++
 +/* Handle an attribute requiring a FUNCTION_DECL;
 +   arguments as in struct attribute_spec.handler.  */
 +static tree
 +avr32_handle_fndecl_attribute (tree * node, tree name,
-+			       tree args ATTRIBUTE_UNUSED,
++			       tree args,
 +			       int flags ATTRIBUTE_UNUSED,
 +			       bool * no_add_attrs)
 +{
 +  if (TREE_CODE (*node) != FUNCTION_DECL)
 +    {
 +      warning (OPT_Wattributes,"%qs attribute only applies to functions",
++	       IDENTIFIER_POINTER (name));
++      *no_add_attrs = true;
++      return NULL_TREE;
++    }
++
++  fndecl_attribute_args = args;
++  if (args == NULL_TREE)
++	  return NULL_TREE;
++
++  tree value = TREE_VALUE (args);
++  if (TREE_CODE (value) != INTEGER_CST)
++    {
++      warning (OPT_Wattributes,
++	       "argument of %qs attribute is not an integer constant",
 +	       IDENTIFIER_POINTER (name));
 +      *no_add_attrs = true;
 +    }
@@ -1920,14 +2092,62 @@
 +}
 +
 +
++bool
++avr32_flashvault_call(tree decl)
++{
++  tree attributes;
++  tree fv_attribute;
++  tree vector_tree;
++  unsigned int vector;
++
++  if (decl && TREE_CODE (decl) == FUNCTION_DECL) 
++    {
++      attributes = DECL_ATTRIBUTES(decl);
++      fv_attribute = lookup_attribute ("flashvault", attributes);
++      if (fv_attribute != NULL_TREE)
++        {
++          /* Get attribute parameter, for the function vector number. */
++          /* 
++          There is probably an easier, standard way to retrieve the
++          attribute parameter which needs to be done here.
++          */
++          vector_tree = TREE_VALUE(fv_attribute);
++          if (vector_tree != NULL_TREE)
++            {
++              vector = (unsigned int)TREE_INT_CST_LOW(TREE_VALUE(vector_tree));
++              fprintf (asm_out_file,
++                       "\tmov\tr8, lo(%i)\t# Load vector number for sscall.\n",
++                       vector);
++            }
++
++          fprintf (asm_out_file,
++                   "\tsscall\t# Secure system call.\n");
++
++          return true;
++        }
++    }
++  
++  return false;
++}
++
++
++static bool has_attribute_p (tree decl, const char *name)
++{
++  if (decl && TREE_CODE (decl) == FUNCTION_DECL) 
++    {
++      return (lookup_attribute (name, DECL_ATTRIBUTES(decl)) != NULL_TREE);
++    }
++  return NULL_TREE;    
++}
++
++
 +/* Return 0 if the attributes for two types are incompatible, 1 if they
 +   are compatible, and 2 if they are nearly compatible (which causes a
 +   warning to be generated).  */
-+
 +static int
 +avr32_comp_type_attributes (tree type1, tree type2)
 +{
-+  int acall1, acall2, isr1, isr2, naked1, naked2;
++  bool acall1, acall2, isr1, isr2, naked1, naked2, fv1, fv2, fvimpl1, fvimpl2;
 +
 +  /* Check for mismatch of non-default calling convention.  */
 +  if (TREE_CODE (type1) != FUNCTION_TYPE)
@@ -1938,6 +2158,10 @@
 +  acall2 = lookup_attribute ("acall", TYPE_ATTRIBUTES (type2)) != NULL;
 +  naked1 = lookup_attribute ("naked", TYPE_ATTRIBUTES (type1)) != NULL;
 +  naked2 = lookup_attribute ("naked", TYPE_ATTRIBUTES (type2)) != NULL;
++  fv1 = lookup_attribute ("flashvault", TYPE_ATTRIBUTES (type1)) != NULL;
++  fv2 = lookup_attribute ("flashvault", TYPE_ATTRIBUTES (type2)) != NULL;
++  fvimpl1 = lookup_attribute ("flashvault_impl", TYPE_ATTRIBUTES (type1)) != NULL;
++  fvimpl2 = lookup_attribute ("flashvault_impl", TYPE_ATTRIBUTES (type2)) != NULL;
 +  isr1 = lookup_attribute ("isr", TYPE_ATTRIBUTES (type1)) != NULL;
 +  if (!isr1)
 +    isr1 = lookup_attribute ("interrupt", TYPE_ATTRIBUTES (type1)) != NULL;
@@ -1947,7 +2171,16 @@
 +    isr2 = lookup_attribute ("interrupt", TYPE_ATTRIBUTES (type2)) != NULL;
 +
 +  if ((acall1 && isr2)
-+      || (acall2 && isr1) || (naked1 && isr2) || (naked2 && isr1))
++      || (acall2 && isr1)
++      || (naked1 && isr2)
++      || (naked2 && isr1)
++      || (fv1 && isr2)
++      || (fv2 && isr1)
++      || (fvimpl1 && isr2)
++      || (fvimpl2 && isr1)
++      || (fv1 && fvimpl2)
++      || (fv2 && fvimpl1)
++      )
 +    return 0;
 +
 +  return 1;
@@ -1955,7 +2188,6 @@
 +
 +
 +/* Computes the type of the current function.  */
-+
 +static unsigned long
 +avr32_compute_func_type (void)
 +{
@@ -1998,11 +2230,19 @@
 +  if (a != NULL_TREE)
 +    type |= AVR32_FT_NAKED;
 +
++  a = lookup_attribute ("flashvault", attr);
++  if (a != NULL_TREE)
++    type |= AVR32_FT_FLASHVAULT;
++
++  a = lookup_attribute ("flashvault_impl", attr);
++  if (a != NULL_TREE)
++    type |= AVR32_FT_FLASHVAULT_IMPL;
++
 +  return type;
 +}
 +
-+/* Returns the type of the current function.  */
 +
++/* Returns the type of the current function.  */
 +static unsigned long
 +avr32_current_func_type (void)
 +{
@@ -2012,10 +2252,11 @@
 +  return cfun->machine->func_type;
 +}
 +
++
 +/*
-+   This target hook should return true if we should not pass type solely
-+   in registers. The file expr.h defines a definition that is usually appropriate,
-+   refer to expr.h for additional documentation.
++This target hook should return true if we should not pass type solely
++in registers. The file expr.h defines a definition that is usually appropriate,
++refer to expr.h for additional documentation.
 +*/
 +bool
 +avr32_must_pass_in_stack (enum machine_mode mode ATTRIBUTE_UNUSED, tree type)
@@ -2052,6 +2293,7 @@
 +  return true;
 +}
 +
++
 +/*
 +   This target hook should return true if an argument at the position indicated
 +   by cum should be passed by reference. This predicate is queried after target
@@ -2068,6 +2310,7 @@
 +{
 +  return (type && (TREE_CODE (TYPE_SIZE (type)) != INTEGER_CST));
 +}
++
 +
 +static int
 +avr32_arg_partial_bytes (CUMULATIVE_ARGS * pcum ATTRIBUTE_UNUSED,
@@ -2093,10 +2336,12 @@
 +  INTERNAL_REGNUM (8)
 +};
 +
++
 +rtx avr32_compare_op0 = NULL_RTX;
 +rtx avr32_compare_op1 = NULL_RTX;
 +rtx avr32_compare_operator = NULL_RTX;
 +rtx avr32_acc_cache = NULL_RTX;
++
 +
 +/*
 +  Returns nonzero if it is allowed to store a value of mode mode in hard
@@ -2105,43 +2350,35 @@
 +int
 +avr32_hard_regno_mode_ok (int regnr, enum machine_mode mode)
 +{
-+  /* We allow only float modes in the fp-registers */
-+  if (regnr >= FIRST_FP_REGNUM
-+      && regnr <= LAST_FP_REGNUM && GET_MODE_CLASS (mode) != MODE_FLOAT)
-+    {
-+      return 0;
-+    }
-+
 +  switch (mode)
 +    {
-+    case DImode:		/* long long */
-+    case DFmode:		/* double */
-+    case SCmode:		/* __complex__ float */
-+    case CSImode:		/* __complex__ int */
-+      if (regnr < 4)
-+	{			/* long long int not supported in r12, sp, lr
-+				   or pc. */
-+	  return 0;
-+	}
-+      else
-+	{
-+	  if (regnr % 2)	/* long long int has to be refered in even
-+				   registers. */
++      case DImode:		/* long long */
++      case DFmode:		/* double */
++      case SCmode:		/* __complex__ float */
++      case CSImode:		/* __complex__ int */
++        if (regnr < 4)
++	  {		/* long long int not supported in r12, sp, lr or pc. */
 +	    return 0;
-+	  else
-+	    return 1;
-+	}
-+    case CDImode:		/* __complex__ long long */
-+    case DCmode:		/* __complex__ double */
-+    case TImode:		/* 16 bytes */
-+      if (regnr < 7)
-+	return 0;
-+      else if (regnr % 2)
-+	return 0;
-+      else
-+	return 1;
-+    default:
-+      return 1;
++	  }
++        else
++	  {
++	    /* long long int has to be referred in even registers. */
++            if (regnr % 2)
++	      return 0;
++	    else
++	      return 1;
++	  }
++      case CDImode:		/* __complex__ long long */
++      case DCmode:		/* __complex__ double */
++      case TImode:		/* 16 bytes */
++        if (regnr < 7)
++	  return 0;
++        else if (regnr % 2)
++	  return 0;
++        else
++	  return 1;
++      default:
++        return 1;
 +    }
 +}
 +
@@ -2158,7 +2395,6 @@
 +
 +  return FALSE;
 +}
-+
 +
 +
 +int
@@ -2204,50 +2440,20 @@
 +      return avr32_mask_upper_bits_operand (GEN_INT (value), VOIDmode);
 +    case 'J':
 +      return avr32_hi16_immediate_operand (GEN_INT (value), VOIDmode);
++    case 'O':
++      return one_bit_set_operand (GEN_INT (value), VOIDmode);
++    case 'N':
++      return one_bit_cleared_operand (GEN_INT (value), VOIDmode);
++    case 'L':
++      /* The lower 16-bits are set. */
++      return ((value & 0xffff) == 0xffff) ;
 +    }
 +
 +  return 0;
 +}
 +
 +
-+/*Compute mask of which floating-point registers needs saving upon
-+  entry to this function*/
-+static unsigned long
-+avr32_compute_save_fp_reg_mask (void)
-+{
-+  unsigned long func_type = avr32_current_func_type ();
-+  unsigned int save_reg_mask = 0;
-+  unsigned int reg;
-+  unsigned int max_reg = 7;
-+  int save_all_call_used_regs = FALSE;
-+
-+  /* This only applies for hardware floating-point implementation. */
-+  if (!TARGET_HARD_FLOAT)
-+    return 0;
-+
-+  if (IS_INTERRUPT (func_type))
-+    {
-+
-+      /* Interrupt functions must not corrupt any registers, even call
-+         clobbered ones.  If this is a leaf function we can just examine the
-+         registers used by the RTL, but otherwise we have to assume that
-+         whatever function is called might clobber anything, and so we have
-+         to save all the call-clobbered registers as well.  */
-+      max_reg = 13;
-+      save_all_call_used_regs = !current_function_is_leaf;
-+    }
-+
-+  /* All used registers used must be saved */
-+  for (reg = 0; reg <= max_reg; reg++)
-+    if (df_regs_ever_live_p (INTERNAL_FP_REGNUM (reg))
-+	|| (save_all_call_used_regs
-+	    && call_used_regs[INTERNAL_FP_REGNUM (reg)]))
-+      save_reg_mask |= (1 << reg);
-+
-+  return save_reg_mask;
-+}
-+
-+/*Compute mask of registers which needs saving upon function entry */
++/* Compute mask of registers which needs saving upon function entry. */
 +static unsigned long
 +avr32_compute_save_reg_mask (int push)
 +{
@@ -2260,7 +2466,6 @@
 +  if (IS_INTERRUPT (func_type))
 +    {
 +      unsigned int max_reg = 12;
-+
 +
 +      /* Get the banking scheme for the interrupt */
 +      switch (func_type)
@@ -2291,7 +2496,7 @@
 +	  func_type = AVR32_FT_ISR_NONE;
 +	}
 +
-+      /* All registers which are used and is not shadowed must be saved */
++      /* All registers which are used and are not shadowed must be saved. */
 +      for (reg = 0; reg <= max_reg; reg++)
 +	if (df_regs_ever_live_p (INTERNAL_REGNUM (reg))
 +	    || (!current_function_is_leaf
@@ -2328,7 +2533,7 @@
 +
 +
 +      /* If we optimize for size and do not have anonymous arguments: use
-+         popm/pushm always */
++         pushm/popm always. */
 +      if (use_pushm)
 +	{
 +	  if ((save_reg_mask & (1 << 0))
@@ -2346,12 +2551,14 @@
 +	}
 +
 +
-+      /* Check LR */
-+      if ((df_regs_ever_live_p (LR_REGNUM)
-+	   || !current_function_is_leaf
-+	   || (optimize_size
-+	       && save_reg_mask
-+	       && !current_function_calls_eh_return) || frame_pointer_needed))
++        /* Check LR */
++        if ((df_regs_ever_live_p (LR_REGNUM)
++        || !current_function_is_leaf
++        || (optimize_size
++        && save_reg_mask
++        && !current_function_calls_eh_return)
++          || frame_pointer_needed)
++          && !IS_FLASHVAULT (func_type))
 +	{
 +	  if (push
 +	      /* Never pop LR into PC for functions which
@@ -2389,7 +2596,8 @@
 +  return save_reg_mask;
 +}
 +
-+/*Compute total size in bytes of all saved registers  */
++
++/* Compute total size in bytes of all saved registers. */
 +static int
 +avr32_get_reg_mask_size (int reg_mask)
 +{
@@ -2403,9 +2611,9 @@
 +  return size;
 +}
 +
-+/*Get a register from one of the registers which are saved onto the stack
-+  upon function entry */
 +
++/* Get a register from one of the registers which are saved onto the stack
++  upon function entry. */
 +static int
 +avr32_get_saved_reg (int save_reg_mask)
 +{
@@ -2419,15 +2627,15 @@
 +  return -1;
 +}
 +
-+/* Return 1 if it is possible to return using a single instruction.  */
++
++/* Return 1 if it is possible to return using a single instruction. */
 +int
 +avr32_use_return_insn (int iscond)
 +{
 +  unsigned int func_type = avr32_current_func_type ();
 +  unsigned long saved_int_regs;
-+  unsigned long saved_fp_regs;
 +
-+  /* Never use a return instruction before reload has run.  */
++  /* Never use a return instruction before reload has run. */
 +  if (!reload_completed)
 +    return 0;
 +
@@ -2440,12 +2648,6 @@
 +    return 0;
 +
 +  saved_int_regs = avr32_compute_save_reg_mask (TRUE);
-+  saved_fp_regs = avr32_compute_save_fp_reg_mask ();
-+
-+  /* Functions which have saved fp-regs on the stack can not be performed in
-+     one instruction */
-+  if (saved_fp_regs)
-+    return 0;
 +
 +  /* Conditional returns can not be performed in one instruction if we need
 +     to restore registers from the stack */
@@ -2471,44 +2673,76 @@
 +}
 +
 +
-+/*Generate some function prologue info in the assembly file*/
-+
++/* Generate some function prologue info in the assembly file. */
 +void
 +avr32_target_asm_function_prologue (FILE * f, HOST_WIDE_INT frame_size)
 +{
-+  if (IS_NAKED (avr32_current_func_type ()))
-+    fprintf (f,
-+	     "\t# Function is naked: Prologue and epilogue provided by programmer\n");
++  unsigned long func_type = avr32_current_func_type ();
 +
-+  if (IS_INTERRUPT (avr32_current_func_type ()))
++  if (IS_NAKED (func_type))
++    fprintf (f,
++      "\t# Function is naked: Prologue and epilogue provided by programmer\n");
++
++  if (IS_FLASHVAULT (func_type))
++  {
++    fprintf(f, 
++      "\t.ident \"flashvault\"\n\t# Function is defined with flashvault attribute.\n");
++  }
++
++  if (IS_FLASHVAULT_IMPL (func_type))
++  {
++    fprintf(f, 
++      "\t.ident \"flashvault\"\n\t# Function is defined with flashvault_impl attribute.\n");
++
++    /* Save information on flashvault function declaration. */
++    tree fv_attribute = lookup_attribute ("flashvault_impl", DECL_ATTRIBUTES(current_function_decl));
++    if (fv_attribute != NULL_TREE)
++      {
++        tree vector_tree = TREE_VALUE(fv_attribute);
++        if (vector_tree != NULL_TREE)
++          {
++            unsigned int vector_num;
++            const char * name;
++
++            vector_num = (unsigned int) TREE_INT_CST_LOW (TREE_VALUE (vector_tree));
++
++            name = XSTR  (XEXP (DECL_RTL (current_function_decl), 0), 0);
++
++            flashvault_decl_list_add (vector_num, name);
++          }
++      }
++  }
++
++  if (IS_INTERRUPT (func_type))
 +    {
-+      switch (avr32_current_func_type ())
-+	{
-+	case AVR32_FT_ISR_FULL:
-+	  fprintf (f,
-+		   "\t# Interrupt Function: Fully shadowed register file\n");
-+	  break;
-+	case AVR32_FT_ISR_HALF:
-+	  fprintf (f,
-+		   "\t# Interrupt Function: Half shadowed register file\n");
-+	  break;
-+	default:
-+	case AVR32_FT_ISR_NONE:
-+	  fprintf (f, "\t# Interrupt Function: No shadowed register file\n");
-+	  break;
-+	}
++      switch (func_type)
++        {
++          case AVR32_FT_ISR_FULL:
++            fprintf (f,
++                     "\t# Interrupt Function: Fully shadowed register file\n");
++            break;
++          case AVR32_FT_ISR_HALF:
++            fprintf (f,
++                     "\t# Interrupt Function: Half shadowed register file\n");
++            break;
++          default:
++          case AVR32_FT_ISR_NONE:
++            fprintf (f, "\t# Interrupt Function: No shadowed register file\n");
++            break;
++        }
 +    }
 +
 +
 +  fprintf (f, "\t# args = %i, frame = %li, pretend = %i\n",
-+	   current_function_args_size, frame_size,
-+	   current_function_pretend_args_size);
++           current_function_args_size, frame_size,
++           current_function_pretend_args_size);
 +
 +  fprintf (f, "\t# frame_needed = %i, leaf_function = %i\n",
-+	   frame_pointer_needed, current_function_is_leaf);
++           frame_pointer_needed, current_function_is_leaf);
 +
 +  fprintf (f, "\t# uses_anonymous_args = %i\n",
-+	   current_function_args_info.uses_anonymous_args);
++           current_function_args_info.uses_anonymous_args);
++
 +  if (current_function_calls_eh_return)
 +    fprintf (f, "\t# Calls __builtin_eh_return.\n");
 +
@@ -2553,51 +2787,6 @@
 +      if (reglist & (1 << i))
 +	{
 +	  reg = gen_rtx_REG (SImode, INTERNAL_REGNUM (i));
-+	  tmp = gen_rtx_SET (VOIDmode,
-+			     gen_rtx_MEM (SImode,
-+					  plus_constant (stack_pointer_rtx,
-+							 4 * index)), reg);
-+	  RTX_FRAME_RELATED_P (tmp) = 1;
-+	  XVECEXP (dwarf, 0, 1 + index++) = tmp;
-+	}
-+    }
-+
-+  tmp = gen_rtx_SET (SImode,
-+		     stack_pointer_rtx,
-+		     gen_rtx_PLUS (SImode,
-+				   stack_pointer_rtx,
-+				   GEN_INT (-4 * nr_regs)));
-+  RTX_FRAME_RELATED_P (tmp) = 1;
-+  XVECEXP (dwarf, 0, 0) = tmp;
-+  REG_NOTES (insn) = gen_rtx_EXPR_LIST (REG_FRAME_RELATED_EXPR, dwarf,
-+					REG_NOTES (insn));
-+  return insn;
-+}
-+
-+
-+static rtx
-+emit_multi_fp_reg_push (int reglist)
-+{
-+  rtx insn;
-+  rtx dwarf;
-+  rtx tmp;
-+  rtx reg;
-+  int i;
-+  int nr_regs;
-+  int index = 0;
-+
-+  insn = emit_insn (gen_stm_fp (stack_pointer_rtx,
-+				gen_rtx_CONST_INT (SImode, reglist),
-+				gen_rtx_CONST_INT (SImode, 1)));
-+
-+  nr_regs = avr32_get_reg_mask_size (reglist) / 4;
-+  dwarf = gen_rtx_SEQUENCE (VOIDmode, rtvec_alloc (nr_regs + 1));
-+
-+  for (i = 15; i >= 0; i--)
-+    {
-+      if (reglist & (1 << i))
-+	{
-+	  reg = gen_rtx_REG (SImode, INTERNAL_FP_REGNUM (i));
 +	  tmp = gen_rtx_SET (VOIDmode,
 +			     gen_rtx_MEM (SImode,
 +					  plus_constant (stack_pointer_rtx,
@@ -2681,7 +2870,6 @@
 +
 +/* Move a block of memory if it is word aligned or we support unaligned
 +   word memory accesses. The size must be maximum 64 bytes. */
-+
 +int
 +avr32_gen_movmemsi (rtx * operands)
 +{
@@ -2773,16 +2961,15 @@
 +}
 +
 +
-+
-+/*Expand the prologue instruction*/
++/* Expand the prologue instruction. */
 +void
 +avr32_expand_prologue (void)
 +{
 +  rtx insn, dwarf;
-+  unsigned long saved_reg_mask, saved_fp_reg_mask;
++  unsigned long saved_reg_mask;
 +  int reglist8 = 0;
 +
-+  /* Naked functions does not have a prologue */
++  /* Naked functions do not have a prologue. */
 +  if (IS_NAKED (avr32_current_func_type ()))
 +    return;
 +
@@ -2790,7 +2977,7 @@
 +
 +  if (saved_reg_mask)
 +    {
-+      /* Must push used registers */
++      /* Must push used registers. */
 +
 +      /* Should we use POPM or LDM? */
 +      int usePUSHM = TRUE;
@@ -2799,12 +2986,12 @@
 +	   (saved_reg_mask & (1 << 1)) ||
 +	   (saved_reg_mask & (1 << 2)) || (saved_reg_mask & (1 << 3))))
 +	{
-+	  /* One of R0-R3 should at least be pushed */
++	  /* One of R0-R3 should at least be pushed. */
 +	  if (((saved_reg_mask & (1 << 0)) &&
 +	       (saved_reg_mask & (1 << 1)) &&
 +	       (saved_reg_mask & (1 << 2)) && (saved_reg_mask & (1 << 3))))
 +	    {
-+	      /* All should be pushed */
++	      /* All should be pushed. */
 +	      reglist8 |= 0x01;
 +	    }
 +	  else
@@ -2834,11 +3021,11 @@
 +
 +      if (((saved_reg_mask & (1 << 8)) || (saved_reg_mask & (1 << 9))))
 +	{
-+	  /* One of R8-R9 should at least be pushed */
++	  /* One of R8-R9 should at least be pushed. */
 +	  if (((saved_reg_mask & (1 << 8)) && (saved_reg_mask & (1 << 9))))
 +	    {
 +	      if (usePUSHM)
-+		/* All should be pushed */
++		/* All should be pushed. */
 +		reglist8 |= 0x04;
 +	    }
 +	  else
@@ -2856,7 +3043,8 @@
 +      if (saved_reg_mask & (1 << 12))
 +	reglist8 |= 0x20;
 +
-+      if (saved_reg_mask & (1 << ASM_REGNUM (LR_REGNUM)))
++      if ((saved_reg_mask & (1 << ASM_REGNUM (LR_REGNUM)))
++           && !IS_FLASHVAULT (avr32_current_func_type ()))
 +	{
 +	  /* Push LR */
 +	  reglist8 |= 0x40;
@@ -2870,17 +3058,6 @@
 +	{
 +	  insn = emit_multi_reg_push (saved_reg_mask, FALSE);
 +	}
-+      RTX_FRAME_RELATED_P (insn) = 1;
-+
-+      /* Prevent this instruction from being scheduled after any other
-+         instructions.  */
-+      emit_insn (gen_blockage ());
-+    }
-+
-+  saved_fp_reg_mask = avr32_compute_save_fp_reg_mask ();
-+  if (saved_fp_reg_mask)
-+    {
-+      insn = emit_multi_fp_reg_push (saved_fp_reg_mask);
 +      RTX_FRAME_RELATED_P (insn) = 1;
 +
 +      /* Prevent this instruction from being scheduled after any other
@@ -2987,6 +3164,7 @@
 +  return;
 +}
 +
++
 +void
 +avr32_set_return_address (rtx source, rtx scratch)
 +{
@@ -3016,10 +3194,8 @@
 +}
 +
 +
-+
 +/* Return the length of INSN.  LENGTH is the initial length computed by
 +   attributes in the machine-description file.  */
-+
 +int
 +avr32_adjust_insn_length (rtx insn ATTRIBUTE_UNUSED,
 +			  int length ATTRIBUTE_UNUSED)
@@ -3027,13 +3203,14 @@
 +  return length;
 +}
 +
++
 +void
 +avr32_output_return_instruction (int single_ret_inst ATTRIBUTE_UNUSED,
 +				 int iscond ATTRIBUTE_UNUSED,
 +				 rtx cond ATTRIBUTE_UNUSED, rtx r12_imm)
 +{
 +
-+  unsigned long saved_reg_mask, saved_fp_reg_mask;
++  unsigned long saved_reg_mask;
 +  int insert_ret = TRUE;
 +  int reglist8 = 0;
 +  int stack_adjustment = get_frame_size ();
@@ -3043,8 +3220,6 @@
 +  /* Naked functions does not have an epilogue */
 +  if (IS_NAKED (func_type))
 +    return;
-+
-+  saved_fp_reg_mask = avr32_compute_save_fp_reg_mask ();
 +
 +  saved_reg_mask = avr32_compute_save_reg_mask (FALSE);
 +
@@ -3064,19 +3239,6 @@
 +	  fprintf (f, "\torh\tr8, hi(%i) # Reset Frame Pointer\n",
 +		   -stack_adjustment);
 +	  fprintf (f, "\tadd\tsp, r8  # Reset Frame Pointer\n");
-+	}
-+    }
-+
-+  if (saved_fp_reg_mask)
-+    {
-+      char reglist[64];		/* 64 bytes should be enough... */
-+      avr32_make_fp_reglist_w (saved_fp_reg_mask, (char *) reglist);
-+      fprintf (f, "\tldcm.w\tcp0, sp++, %s\n", reglist);
-+      if (saved_fp_reg_mask & ~0xff)
-+	{
-+	  saved_fp_reg_mask &= ~0xff;
-+	  avr32_make_fp_reglist_d (saved_fp_reg_mask, (char *) reglist);
-+	  fprintf (f, "\tldcm.d\tcp0, sp++, %s\n", reglist);
 +	}
 +    }
 +
@@ -3151,7 +3313,8 @@
 +	/* Pop LR */
 +	reglist8 |= 0x40;
 +
-+      if (saved_reg_mask & (1 << ASM_REGNUM (PC_REGNUM)))
++      if ((saved_reg_mask & (1 << ASM_REGNUM (PC_REGNUM))) 
++           && !IS_FLASHVAULT_IMPL (func_type))
 +	/* Pop LR into PC. */
 +	reglist8 |= 0x80;
 +
@@ -3197,6 +3360,19 @@
 +    {
 +      fprintf (f, "\trete\n");
 +    }
++  else if (IS_FLASHVAULT (func_type))
++    {
++      /* Normal return from Secure System call, increment SS_RAR before
++      returning. Use R8 as scratch. */
++      fprintf (f,
++               "\t# Normal return from sscall.\n"
++               "\t# Increment SS_RAR before returning.\n"
++               "\t# Use R8 as scratch.\n"
++               "\tmfsr\tr8,  440\n"
++               "\tsub\tr8,  -2\n"
++               "\tmtsr\t440, r8\n"
++               "\tretss\n");
++    }
 +  else if (insert_ret)
 +    {
 +      if (r12_imm)
@@ -3206,69 +3382,20 @@
 +    }
 +}
 +
-+/* Function for converting a fp-register mask to a
-+   reglistCPD8 register list string. */
-+void
-+avr32_make_fp_reglist_d (int reglist_mask, char *reglist_string)
-+{
-+  int i;
-+
-+  /* Make sure reglist_string is empty */
-+  reglist_string[0] = '\0';
-+
-+  for (i = 0; i < NUM_FP_REGS; i += 2)
-+    {
-+      if (reglist_mask & (1 << i))
-+	{
-+	  strlen (reglist_string) ?
-+	    sprintf (reglist_string, "%s, %s-%s", reglist_string,
-+		     reg_names[INTERNAL_FP_REGNUM (i)],
-+		     reg_names[INTERNAL_FP_REGNUM (i + 1)]) :
-+	    sprintf (reglist_string, "%s-%s",
-+		     reg_names[INTERNAL_FP_REGNUM (i)],
-+		     reg_names[INTERNAL_FP_REGNUM (i + 1)]);
-+	}
-+    }
-+}
-+
-+/* Function for converting a fp-register mask to a
-+   reglistCP8 register list string. */
-+void
-+avr32_make_fp_reglist_w (int reglist_mask, char *reglist_string)
-+{
-+  int i;
-+
-+  /* Make sure reglist_string is empty */
-+  reglist_string[0] = '\0';
-+
-+  for (i = 0; i < NUM_FP_REGS; ++i)
-+    {
-+      if (reglist_mask & (1 << i))
-+	{
-+	  strlen (reglist_string) ?
-+	    sprintf (reglist_string, "%s, %s", reglist_string,
-+		     reg_names[INTERNAL_FP_REGNUM (i)]) :
-+	    sprintf (reglist_string, "%s", reg_names[INTERNAL_FP_REGNUM (i)]);
-+	}
-+    }
-+}
-+
 +void
 +avr32_make_reglist16 (int reglist16_vect, char *reglist16_string)
 +{
 +  int i;
-+
-+  /* Make sure reglist16_string is empty */
++  bool first_reg = true;
++  /* Make sure reglist16_string is empty. */
 +  reglist16_string[0] = '\0';
 +
 +  for (i = 0; i < 16; ++i)
 +    {
 +      if (reglist16_vect & (1 << i))
 +	{
-+	  strlen (reglist16_string) ?
-+	    sprintf (reglist16_string, "%s, %s", reglist16_string,
-+		     reg_names[INTERNAL_REGNUM (i)]) :
-+	    sprintf (reglist16_string, "%s", reg_names[INTERNAL_REGNUM (i)]);
++          first_reg == true ?  first_reg = false : strcat(reglist16_string,", ");
++	  strcat (reglist16_string, reg_names[INTERNAL_REGNUM (i)]);
 +	}
 +    }
 +}
@@ -3300,40 +3427,34 @@
 +void
 +avr32_make_reglist8 (int reglist8_vect, char *reglist8_string)
 +{
-+  /* Make sure reglist8_string is empty */
++  /* Make sure reglist8_string is empty. */
 +  reglist8_string[0] = '\0';
 +
 +  if (reglist8_vect & 0x1)
-+    sprintf (reglist8_string, "r0-r3");
++    strcpy (reglist8_string, "r0-r3");
 +  if (reglist8_vect & 0x2)
-+    strlen (reglist8_string) ? sprintf (reglist8_string, "%s, r4-r7",
-+					reglist8_string) :
-+      sprintf (reglist8_string, "r4-r7");
++    strlen (reglist8_string) ? strcat (reglist8_string, ", r4-r7") :
++      strcpy (reglist8_string, "r4-r7");
 +  if (reglist8_vect & 0x4)
-+    strlen (reglist8_string) ? sprintf (reglist8_string, "%s, r8-r9",
-+					reglist8_string) :
-+      sprintf (reglist8_string, "r8-r9");
++    strlen (reglist8_string) ? strcat (reglist8_string, ", r8-r9") :
++      strcpy (reglist8_string, "r8-r9");
 +  if (reglist8_vect & 0x8)
-+    strlen (reglist8_string) ? sprintf (reglist8_string, "%s, r10",
-+					reglist8_string) :
-+      sprintf (reglist8_string, "r10");
++    strlen (reglist8_string) ? strcat (reglist8_string, ", r10") :
++      strcpy (reglist8_string, "r10");
 +  if (reglist8_vect & 0x10)
-+    strlen (reglist8_string) ? sprintf (reglist8_string, "%s, r11",
-+					reglist8_string) :
-+      sprintf (reglist8_string, "r11");
++    strlen (reglist8_string) ? strcat (reglist8_string, ", r11") :
++      strcpy (reglist8_string, "r11");
 +  if (reglist8_vect & 0x20)
-+    strlen (reglist8_string) ? sprintf (reglist8_string, "%s, r12",
-+					reglist8_string) :
-+      sprintf (reglist8_string, "r12");
++    strlen (reglist8_string) ? strcat (reglist8_string, ", r12") :
++      strcpy (reglist8_string, "r12");
 +  if (reglist8_vect & 0x40)
-+    strlen (reglist8_string) ? sprintf (reglist8_string, "%s, lr",
-+					reglist8_string) :
-+      sprintf (reglist8_string, "lr");
++    strlen (reglist8_string) ? strcat (reglist8_string, ", lr") :
++      strcpy (reglist8_string, "lr");
 +  if (reglist8_vect & 0x80)
-+    strlen (reglist8_string) ? sprintf (reglist8_string, "%s, pc",
-+					reglist8_string) :
-+      sprintf (reglist8_string, "pc");
++    strlen (reglist8_string) ? strcat (reglist8_string, ", pc") :
++      strcpy (reglist8_string, "pc");
 +}
++
 +
 +int
 +avr32_eh_return_data_regno (int n)
@@ -3343,6 +3464,7 @@
 +  else
 +    return INVALID_REGNUM;
 +}
++
 +
 +/* Compute the distance from register FROM to register TO.
 +   These can be the arg pointer, the frame pointer or
@@ -3382,28 +3504,19 @@
 +  The sign of the number returned reflects the direction of stack
 +  growth, so the values are positive for all eliminations except
 +  from the soft frame pointer to the hard frame pointer.  */
-+
-+
 +int
 +avr32_initial_elimination_offset (int from, int to)
 +{
 +  int i;
 +  int call_saved_regs = 0;
-+  unsigned long saved_reg_mask, saved_fp_reg_mask;
++  unsigned long saved_reg_mask;
 +  unsigned int local_vars = get_frame_size ();
 +
 +  saved_reg_mask = avr32_compute_save_reg_mask (TRUE);
-+  saved_fp_reg_mask = avr32_compute_save_fp_reg_mask ();
 +
 +  for (i = 0; i < 16; ++i)
 +    {
 +      if (saved_reg_mask & (1 << i))
-+	call_saved_regs += 4;
-+    }
-+
-+  for (i = 0; i < NUM_FP_REGS; ++i)
-+    {
-+      if (saved_fp_reg_mask & (1 << i))
 +	call_saved_regs += 4;
 +    }
 +
@@ -3435,7 +3548,7 @@
 +
 +/*
 +  Returns a rtx used when passing the next argument to a function.
-+  avr32_init_cumulative_args() and avr32_function_arg_advance() sets witch
++  avr32_init_cumulative_args() and avr32_function_arg_advance() sets which
 +  register to use.
 +*/
 +rtx
@@ -3443,6 +3556,9 @@
 +		    tree type, int named)
 +{
 +  int index = -1;
++  //unsigned long func_type = avr32_current_func_type ();
++  //int last_reg_index = (IS_FLASHVAULT(func_type) || IS_FLASHVAULT_IMPL(func_type) || cum->flashvault_func ? LAST_CUM_REG_INDEX - 1 : LAST_CUM_REG_INDEX);
++  int last_reg_index = (cum->flashvault_func ? LAST_CUM_REG_INDEX - 1 : LAST_CUM_REG_INDEX);
 +
 +  HOST_WIDE_INT arg_size, arg_rsize;
 +  if (type)
@@ -3474,7 +3590,8 @@
 +      /* use r11:r10 or r9:r8. */
 +      if (!(GET_USED_INDEX (cum, 1) || GET_USED_INDEX (cum, 2)))
 +	index = 1;
-+      else if (!(GET_USED_INDEX (cum, 3) || GET_USED_INDEX (cum, 4)))
++      else if ((last_reg_index == 4) && 
++               !(GET_USED_INDEX (cum, 3) || GET_USED_INDEX (cum, 4)))
 +	index = 3;
 +      else
 +	index = -1;
@@ -3482,39 +3599,40 @@
 +  else if (arg_rsize == 4)
 +    {				/* Use first available register */
 +      index = 0;
-+      while (index <= LAST_CUM_REG_INDEX && GET_USED_INDEX (cum, index))
++      while (index <= last_reg_index && GET_USED_INDEX (cum, index))
 +	index++;
-+      if (index > LAST_CUM_REG_INDEX)
++      if (index > last_reg_index)
 +	index = -1;
 +    }
 +
 +  SET_REG_INDEX (cum, index);
 +
 +  if (GET_REG_INDEX (cum) >= 0)
-+    return gen_rtx_REG (mode,
-+			avr32_function_arg_reglist[GET_REG_INDEX (cum)]);
++    return gen_rtx_REG (mode, avr32_function_arg_reglist[GET_REG_INDEX (cum)]);
 +
 +  return NULL_RTX;
 +}
 +
-+/*
-+  Set the register used for passing the first argument to a function.
-+*/
++
++/* Set the register used for passing the first argument to a function. */
 +void
 +avr32_init_cumulative_args (CUMULATIVE_ARGS * cum,
 +                            tree fntype ATTRIBUTE_UNUSED,
 +                            rtx libname ATTRIBUTE_UNUSED,
-+                            tree fndecl ATTRIBUTE_UNUSED)
-+  {
-+    /* Set all registers as unused. */
-+    SET_INDEXES_UNUSED (cum);
++                            tree fndecl)
++{
++  /* Set all registers as unused. */
++  SET_INDEXES_UNUSED (cum);
 +
-+    /* Reset uses_anonymous_args */
-+    cum->uses_anonymous_args = 0;
++  /* Reset uses_anonymous_args */
++  cum->uses_anonymous_args = 0;
 +
-+    /* Reset size of stack pushed arguments */
-+    cum->stack_pushed_args_size = 0;
-+  }
++  /* Reset size of stack pushed arguments */
++  cum->stack_pushed_args_size = 0;
++  
++  cum->flashvault_func = (fndecl && (has_attribute_p (fndecl,"flashvault") || has_attribute_p (fndecl,"flashvault_impl")));
++}
++
 +
 +/*
 +  Set register used for passing the next argument to a function. Only the
@@ -3555,7 +3673,7 @@
 +    }
 +  arg_rsize = PUSH_ROUNDING (arg_size);
 +
-+  /* It the argument had to be passed in stack, no register is used. */
++  /* If the argument had to be passed in stack, no register is used. */
 +  if ((*targetm.calls.must_pass_in_stack) (mode, type))
 +    {
 +      cum->stack_pushed_args_size += PUSH_ROUNDING (int_size_in_bytes (type));
@@ -3577,6 +3695,7 @@
 +      cum->stack_pushed_args_size += arg_rsize;
 +    }
 +}
++
 +
 +/*
 +  Defines witch direction to go to find the next register to use if the
@@ -3602,9 +3721,8 @@
 +  return downward;
 +}
 +
-+/*
-+  Return a rtx used for the return value from a function call.
-+*/
++
++/* Return a rtx used for the return value from a function call. */
 +rtx
 +avr32_function_value (tree type, tree func, bool outgoing ATTRIBUTE_UNUSED)
 +{
@@ -3624,9 +3742,8 @@
 +  return NULL_RTX;
 +}
 +
-+/*
-+  Return a rtx used for the return value from a library function call.
-+*/
++
++/* Return a rtx used for the return value from a library function call. */
 +rtx
 +avr32_libcall_value (enum machine_mode mode)
 +{
@@ -3638,6 +3755,7 @@
 +  else
 +    return NULL_RTX;
 +}
++
 +
 +/* Return TRUE if X references a SYMBOL_REF.  */
 +int
@@ -3668,6 +3786,7 @@
 +  return 0;
 +}
 +
++
 +/* Return TRUE if X references a LABEL_REF.  */
 +int
 +label_mentioned_p (rtx x)
@@ -3696,6 +3815,7 @@
 +  return 0;
 +}
 +
++
 +/* Return TRUE if X contains a MEM expression.  */
 +int
 +mem_mentioned_p (rtx x)
@@ -3723,6 +3843,7 @@
 +
 +  return 0;
 +}
++
 +
 +int
 +avr32_legitimate_pic_operand_p (rtx x)
@@ -3824,6 +3945,7 @@
 +  return orig;
 +}
 +
++
 +/* Generate code to load the PIC register.  */
 +void
 +avr32_load_pic_register (void)
@@ -3852,7 +3974,6 @@
 +     can cause life info to screw up.  */
 +  emit_insn (gen_rtx_USE (VOIDmode, pic_offset_table_rtx));
 +}
-+
 +
 +
 +/* This hook should return true if values of type type are returned at the most
@@ -3923,9 +4044,7 @@
 +}
 +
 +
-+/*
-+  Initialize the variable parts of a trampoline.
-+*/
++/* Initialize the variable parts of a trampoline. */
 +void
 +avr32_initialize_trampoline (rtx addr, rtx fnaddr, rtx static_chain)
 +{
@@ -3942,6 +4061,7 @@
 +			gen_rtx_CONST_INT (SImode,
 +					   AVR32_CACHE_INVALIDATE_ICACHE)));
 +}
++
 +
 +/* Return nonzero if X is valid as an addressing register.  */
 +int
@@ -3965,6 +4085,7 @@
 +  return (regno <= LAST_REGNUM || regno >= FIRST_PSEUDO_REGISTER);
 +}
 +
++
 +/* Return nonzero if INDEX is valid for an address index operand.  */
 +int
 +avr32_legitimate_index_p (enum machine_mode mode, rtx index, int strict_p)
@@ -3977,10 +4098,6 @@
 +  /* Standard coprocessor addressing modes.  */
 +  if (code == CONST_INT)
 +    {
-+      if (TARGET_HARD_FLOAT && GET_MODE_CLASS (mode) == MODE_FLOAT)
-+	/* Coprocessor mem insns has a smaller reach than ordinary mem insns */
-+	return CONST_OK_FOR_CONSTRAINT_P (INTVAL (index), 'K', "Ku14");
-+      else
 +	return CONST_OK_FOR_CONSTRAINT_P (INTVAL (index), 'K', "Ks16");
 +    }
 +
@@ -4010,6 +4127,7 @@
 +  return 0;
 +}
 +
++
 +/*
 +  Used in the GO_IF_LEGITIMATE_ADDRESS macro. Returns a nonzero value if
 +  the RTX x is a legitimate memory address.
@@ -4018,7 +4136,8 @@
 +  if it is.
 +*/
 +
-+/* Forward declaration*/
++
++/* Forward declaration */
 +int is_minipool_label (rtx label);
 +
 +int
@@ -4029,6 +4148,9 @@
 +    {
 +    case REG:
 +      return avr32_address_register_rtx_p (x, strict);
++    case CONST_INT:
++      return ((mode==SImode) && TARGET_RMW_ADDRESSABLE_DATA
++              && CONST_OK_FOR_CONSTRAINT_P(INTVAL(x), 'K', "Ks17"));
 +    case CONST:
 +      {
 +	rtx label = avr32_find_symbol (x);
@@ -4045,7 +4167,10 @@
 +               ||*/
 +             ((GET_CODE (label) == LABEL_REF)
 +              && GET_CODE (XEXP (label, 0)) == CODE_LABEL
-+              && is_minipool_label (XEXP (label, 0)))))
++    		  && is_minipool_label (XEXP (label, 0)))
++              /*|| ((GET_CODE (label) == SYMBOL_REF) 
++                  && mode == SImode
++                  && SYMBOL_REF_RMW_ADDR(label))*/))
 +	  {
 +	    return TRUE;
 +	  }
@@ -4065,12 +4190,9 @@
 +		 && (symbol_mentioned_p (get_pool_constant (x))
 +		     || label_mentioned_p (get_pool_constant (x)))))
 +	  return TRUE;
-+	/*
-+	   A symbol_ref is only legal if it is a function. If all of them are
-+	   legal, a pseudo reg that is a constant will be replaced by a
-+	   symbol_ref and make illegale code. SYMBOL_REF_FLAG is set by
-+	   ENCODE_SECTION_INFO. */
-+	else if (SYMBOL_REF_RCALL_FUNCTION_P (x))
++	else if (SYMBOL_REF_RCALL_FUNCTION_P (x)
++                 || (mode == SImode
++                     && SYMBOL_REF_RMW_ADDR (x)))
 +	  return TRUE;
 +	break;
 +      }
@@ -4105,6 +4227,7 @@
 +  else
 +    return avr32_const_ok_for_constraint_p (c, 'K', "Ks21");
 +}
++
 +
 +int
 +avr32_const_double_immediate (rtx value)
@@ -4164,9 +4287,8 @@
 +      else
 +	return 0;
 +    case LABEL_REF:
-+      return flag_pic || TARGET_HAS_ASM_ADDR_PSEUDOS;
 +    case SYMBOL_REF:
-+      return flag_pic || TARGET_HAS_ASM_ADDR_PSEUDOS;
++      return avr32_find_symbol (x) && (flag_pic || TARGET_HAS_ASM_ADDR_PSEUDOS);
 +    case CONST:
 +    case HIGH:
 +    case CONST_VECTOR:
@@ -4221,6 +4343,7 @@
 +  return machine;
 +}
 +
++
 +void
 +avr32_init_expanders (void)
 +{
@@ -4231,7 +4354,6 @@
 +
 +/* Return an RTX indicating where the return address to the
 +   calling function can be found.  */
-+
 +rtx
 +avr32_return_addr (int count, rtx frame ATTRIBUTE_UNUSED)
 +{
@@ -4245,19 +4367,28 @@
 +void
 +avr32_encode_section_info (tree decl, rtx rtl, int first)
 +{
++   default_encode_section_info(decl, rtl, first);
 +
-+  if (first && DECL_P (decl))
-+    {
-+      /* Set SYMBOL_REG_FLAG for local functions */
-+      if (!TREE_PUBLIC (decl) && TREE_CODE (decl) == FUNCTION_DECL)
-+	{
-+	  if ((*targetm.binds_local_p) (decl))
-+	    {
-+	      SYMBOL_REF_FLAG (XEXP (rtl, 0)) = 1;
-+	    }
-+	}
++   if ( TREE_CODE (decl) == VAR_DECL
++        && (GET_CODE (XEXP (rtl, 0)) == SYMBOL_REF)
++        && (lookup_attribute ("rmw_addressable", DECL_ATTRIBUTES (decl))
++            || TARGET_RMW_ADDRESSABLE_DATA) ){
++     if ( !TARGET_RMW || flag_pic )
++       return;
++     //  {
++     //    warning ("Using RMW addressable data with an arch that does not support RMW instructions.");
++     //    return;
++     //  } 
++     //
++     //if ( flag_pic )
++     //  {
++     //    warning ("Using RMW addressable data with together with -fpic switch. Can not use RMW instruction when compiling with -fpic.");
++     //    return;
++     //  } 
++     SYMBOL_REF_FLAGS (XEXP (rtl, 0)) |= (1 << SYMBOL_FLAG_RMW_ADDR_SHIFT);
 +  }
 +}
++
 +
 +void
 +avr32_asm_output_label (FILE * stream, const char *name)
@@ -4270,7 +4401,6 @@
 +}
 +
 +
-+
 +void
 +avr32_asm_weaken_label (FILE * stream, const char *name)
 +{
@@ -4278,6 +4408,7 @@
 +  assemble_name (stream, name);
 +  fprintf (stream, "\n");
 +}
++
 +
 +/*
 +  Checks if a labelref is equal to a reserved word in the assembler. If it is,
@@ -4312,7 +4443,6 @@
 +  else
 +    asm_fprintf (stream, "%U%s", stripped);
 +}
-+
 +
 +
 +/*
@@ -4393,6 +4523,7 @@
 +  return NULL_RTX;
 +}
 +
++
 +/* Updates cc_status.  */
 +void
 +avr32_notice_update_cc (rtx exp, rtx insn)
@@ -4411,7 +4542,6 @@
 +    {
 +    case CC_CALL_SET:
 +      CC_STATUS_INIT;
-+      FPCC_STATUS_INIT;
 +      /* Check if the function call returns a value in r12 */
 +      if (REG_P (recog_data.operand[0])
 +	  && REGNO (recog_data.operand[0]) == RETVAL_REGNUM)
@@ -4535,26 +4665,6 @@
 +          }
 +
 +      }
-+      break;
-+    case CC_FPCOMPARE:
-+      /* Check that floating-point compare will not be optimized away if so
-+         nothing should be done */
-+      if (!rtx_equal_p (cc_prev_status.mdep.fpvalue, SET_SRC (exp)))
-+	{
-+	  /* cc0 already contains the correct comparison -> delete cmp insn */
-+	  /* Reset the nonstandard flag */
-+	  cc_status.mdep.fpvalue = SET_SRC (exp);
-+	  cc_status.mdep.fpflags = CC_SET_CZ;
-+	}
-+      break;
-+    case CC_FROM_FPCC:
-+      /* Flags are updated with flags from Floating-point coprocessor, set
-+         CC_NOT_SIGNED flag since the flags are set so that unsigned
-+         condidion codes can be used directly. */
-+      CC_STATUS_INIT;
-+      cc_status.flags = CC_NOT_SIGNED;
-+      cc_status.mdep.value = cc_status.mdep.fpvalue;
-+      cc_status.mdep.flags = cc_status.mdep.fpflags;
 +      break;
 +    case CC_BLD:
 +      /* Bit load is kind of like an inverted testsi, because the Z flag is
@@ -4837,6 +4947,19 @@
 +              value = bitpos;
 +            }
 +            break;
++          case 'z':
++            {
++              /* Set to bit position of first bit cleared in immediate */
++              int i, bitpos = 32;
++              for (i = 0; i < 32; i++)
++                if (!(value & (1 << i)))
++                  {
++                    bitpos = i;
++                    break;
++                  }
++              value = bitpos;
++            }
++            break;
 +          case 'r':
 +            {
 +              /* Reglist 8 */
@@ -4844,26 +4967,21 @@
 +              op[0] = '\0';
 +
 +              if (value & 0x01)
-+                sprintf (op, "r0-r3");
++                strcpy (op, "r0-r3");
 +              if (value & 0x02)
-+                strlen (op) ? sprintf (op, "%s, r4-r7", op) : sprintf (op,
-+                                                                       "r4-r7");
++                strlen (op) ? strcat (op, ", r4-r7") : strcpy (op,"r4-r7");
 +              if (value & 0x04)
-+                strlen (op) ? sprintf (op, "%s, r8-r9", op) : sprintf (op,
-+                                                                       "r8-r9");
++                strlen (op) ? strcat (op, ", r8-r9") : strcpy (op,"r8-r9");
 +              if (value & 0x08)
-+                strlen (op) ? sprintf (op, "%s, r10", op) : sprintf (op,
-+                                                                     "r10");
++                strlen (op) ? strcat (op, ", r10") : strcpy (op,"r10");
 +              if (value & 0x10)
-+                strlen (op) ? sprintf (op, "%s, r11", op) : sprintf (op,
-+                                                                     "r11");
++                strlen (op) ? strcat (op, ", r11") : strcpy (op,"r11");
 +              if (value & 0x20)
-+                strlen (op) ? sprintf (op, "%s, r12", op) : sprintf (op,
-+                                                                     "r12");
++                strlen (op) ? strcat (op, ", r12") : strcpy (op,"r12");
 +              if (value & 0x40)
-+                strlen (op) ? sprintf (op, "%s, lr", op) : sprintf (op, "lr");
++                strlen (op) ? strcat (op, ", lr") : strcpy (op, "lr");
 +              if (value & 0x80)
-+                strlen (op) ? sprintf (op, "%s, pc", op) : sprintf (op, "pc");
++                strlen (op) ? strcat (op, ", pc") : strcpy (op, "pc");
 +
 +              fputs (op, stream);
 +              return;
@@ -4873,39 +4991,18 @@
 +              /* Reglist 16 */
 +              char reglist16_string[100];
 +              int i;
++	      bool first_reg = true;
 +              reglist16_string[0] = '\0';
 +
 +	      for (i = 0; i < 16; ++i)
 +		{
 +		  if (value & (1 << i))
 +		    {
-+		      strlen (reglist16_string) ? sprintf (reglist16_string,
-+							   "%s, %s",
-+							   reglist16_string,
-+							   reg_names
-+							   [INTERNAL_REGNUM
-+							    (i)]) :
-+			sprintf (reglist16_string, "%s",
-+				 reg_names[INTERNAL_REGNUM (i)]);
++			first_reg == true ?  first_reg = false : strcat(reglist16_string,", ");
++			strcat(reglist16_string,reg_names[INTERNAL_REGNUM(i)]);		      
 +		    }
 +		}
 +	      fputs (reglist16_string, stream);
-+	      return;
-+	    }
-+	  case 'C':
-+	    {
-+	      /* RegListCP8 */
-+	      char reglist_string[100];
-+	      avr32_make_fp_reglist_w (value, (char *) reglist_string);
-+	      fputs (reglist_string, stream);
-+	      return;
-+	    }
-+	  case 'D':
-+	    {
-+	      /* RegListCPD8 */
-+	      char reglist_string[100];
-+	      avr32_make_fp_reglist_d (value, (char *) reglist_string);
-+	      fputs (reglist_string, stream);
 +	      return;
 +	    }
 +	  case 'h':
@@ -5066,6 +5163,9 @@
 +	  fprintf (stream, " + %ld",
 +		   INTVAL (XEXP (XEXP (XEXP (x, 0), 0), 1)));
 +	  break;
++        case CONST_INT:
++	  avr32_print_operand (stream, XEXP (x, 0), 0);
++          break;
 +	default:
 +	  error = 1;
 +	}
@@ -5205,6 +5305,7 @@
 +    return NULL_RTX;
 +}
 +
++
 +/*
 +  Outputs to stdio stream stream the assembler syntax for an instruction
 +  operand that is a memory reference whose address is x. x is an RTL
@@ -5217,6 +5318,7 @@
 +{
 +  fprintf (stream, "(%d) /* address */", REGNO (x));
 +}
++
 +
 +/* Return true if _GLOBAL_OFFSET_TABLE_ symbol is mentioned.  */
 +bool
@@ -5243,7 +5345,6 @@
 +
 +
 +/* Find the symbol in an address expression.  */
-+
 +rtx
 +avr32_find_symbol (rtx addr)
 +{
@@ -5363,6 +5464,7 @@
 +  int fix_size;
 +};
 +
++
 +struct minipool_fixup
 +{
 +  Mfix *next;
@@ -5396,6 +5498,7 @@
 +/* The fix entry for the current minipool, once it has been placed.  */
 +Mfix *minipool_barrier;
 +
++
 +/* Determines if INSN is the start of a jump table.  Returns the end
 +   of the TABLE or NULL_RTX.  */
 +static rtx
@@ -5416,6 +5519,7 @@
 +  return NULL_RTX;
 +}
 +
++
 +static HOST_WIDE_INT
 +get_jump_table_size (rtx insn)
 +{
@@ -5434,6 +5538,7 @@
 +
 +  return 0;
 +}
++
 +
 +/* Move a minipool fix MP from its current location to before MAX_MP.
 +   If MAX_MP is NULL, then MP doesn't need moving, but the addressing
@@ -5492,6 +5597,7 @@
 +
 +  return max_mp;
 +}
++
 +
 +/* Add a constant to the minipool for a forward reference.  Returns the
 +   node added or NULL if the constant will not fit in this pool.  */
@@ -5595,6 +5701,7 @@
 +  return max_mp;
 +}
 +
++
 +static Mnode *
 +move_minipool_fix_backward_ref (Mnode * mp, Mnode * min_mp,
 +				HOST_WIDE_INT min_address)
@@ -5649,6 +5756,7 @@
 +
 +  return min_mp;
 +}
++
 +
 +/* Add a constant to the minipool for a backward reference.  Returns the
 +   node added or NULL if the constant will not fit in this pool.
@@ -5780,6 +5888,7 @@
 +  return min_mp;
 +}
 +
++
 +static void
 +assign_minipool_offsets (Mfix * barrier)
 +{
@@ -5796,6 +5905,7 @@
 +	offset += mp->fix_size;
 +    }
 +}
++
 +
 +/* Print a symbolic form of X to the debug file, F.  */
 +static void
@@ -5858,6 +5968,7 @@
 +    }
 +}
 +
++
 +int
 +is_minipool_label (rtx label)
 +{
@@ -5875,6 +5986,7 @@
 +    }
 +  return FALSE;
 +}
++
 +
 +static void
 +new_minipool_label (rtx label)
@@ -5900,6 +6012,7 @@
 +	cfun->machine->minipool_label_tail->next;
 +    }
 +}
++
 +
 +/* Output the literal table */
 +static void
@@ -5971,6 +6084,7 @@
 +  scan = emit_barrier_after (scan);
 +}
 +
++
 +/* Return the cost of forcibly inserting a barrier after INSN.  */
 +static int
 +avr32_barrier_cost (rtx insn)
@@ -6002,6 +6116,7 @@
 +      return base_cost + 10;
 +    }
 +}
++
 +
 +/* Find the best place in the insn stream in the range
 +   (FIX->address,MAX_ADDRESS) to forcibly insert a minipool barrier.
@@ -6087,6 +6202,7 @@
 +  return new_fix;
 +}
 +
++
 +/* Record that there is a natural barrier in the insn stream at
 +   ADDRESS.  */
 +static void
@@ -6105,6 +6221,7 @@
 +
 +  minipool_fix_tail = fix;
 +}
++
 +
 +/* Record INSN, which will need fixing up to load a value from the
 +   minipool.  ADDRESS is the offset of the insn since the start of the
@@ -6134,16 +6251,6 @@
 +  else if (GET_CODE (body) == SET
 +           && GET_MODE_SIZE (GET_MODE (SET_DEST (body))) == 4)
 +    {
-+        /* Word Load */
-+      if (TARGET_HARD_FLOAT
-+          && GET_MODE_CLASS (GET_MODE (SET_DEST (body))) == MODE_FLOAT)
-+        {
-+          /* Ldc0.w : Ku12 << 2 */
-+          fix->forwards = ((1 << 12) - 1) << 2;
-+          fix->backwards = 0;
-+        }
-+      else
-+        {
 +          if (optimize_size)
 +            {
 +              /* Lddpc : Ku7 << 2 */
@@ -6157,25 +6264,13 @@
 +              fix->backwards = (1 << 15);
 +            }
 +        }
-+    }
 +  else if (GET_CODE (body) == SET
 +           && GET_MODE_SIZE (GET_MODE (SET_DEST (body))) == 8)
 +    {
-+      /* Double word load */
-+      if (TARGET_HARD_FLOAT
-+          && GET_MODE_CLASS (GET_MODE (SET_DEST (body))) == MODE_FLOAT)
-+        {
-+          /* Ldc0.d : Ku12 << 2 */
-+          fix->forwards = ((1 << 12) - 1) << 2;
-+          fix->backwards = 0;
-+        }
-+      else
-+        {
 +          /* Ld.d : Ks16 */
 +          fix->forwards = ((1 << 15) - 4);
 +          fix->backwards = (1 << 15);
 +        }
-+    }
 +  else if (GET_CODE (body) == UNSPEC_VOLATILE
 +           && XINT (body, 1) == VUNSPEC_MVRC)
 +    {
@@ -6220,6 +6315,7 @@
 +
 +  minipool_fix_tail = fix;
 +}
++
 +
 +/* Scan INSN and note any of its operands that need fixing.
 +   If DO_PUSHES is false we do not actually push any of the fixups
@@ -6317,9 +6413,8 @@
 +  return false;
 +}
 +
-+/*
-+ Replace all occurances of reg FROM with reg TO in X */
 +
++/* Replace all occurances of reg FROM with reg TO in X. */
 +rtx
 +avr32_replace_reg (rtx x, rtx from, rtx to)
 +{
@@ -6853,11 +6948,11 @@
 +
 +}
 +
++
 +/* Exported to toplev.c.
 +
 +   Do a final pass over the function, just before delayed branch
 +   scheduling.  */
-+
 +static void
 +avr32_reorg (void)
 +{
@@ -7010,8 +7105,7 @@
 +}
 +
 +
-+/*
-+ Hook for doing some final scanning of instructions. Does nothing yet...*/
++/* Hook for doing some final scanning of instructions. Does nothing yet...*/
 +void
 +avr32_final_prescan_insn (rtx insn ATTRIBUTE_UNUSED,
 +			  rtx * opvec ATTRIBUTE_UNUSED,
@@ -7072,8 +7166,8 @@
 +  return FALSE;
 +}
 +
-+/* Function for obtaining the condition for the next instruction
-+   after cur_insn.
++
++/* Function for obtaining the condition for the next instruction after cur_insn.
 +*/
 +rtx
 +get_next_insn_cond (rtx cur_insn)
@@ -7181,6 +7275,7 @@
 +  return cond;
 +}
 +
++
 +int
 +avr32_load_multiple_operation (rtx op,
 +			       enum machine_mode mode ATTRIBUTE_UNUSED)
@@ -7232,6 +7327,7 @@
 +  return 1;
 +}
 +
++
 +int
 +avr32_store_multiple_operation (rtx op,
 +				enum machine_mode mode ATTRIBUTE_UNUSED)
@@ -7269,6 +7365,7 @@
 +  return 1;
 +}
 +
++
 +int
 +avr32_valid_macmac_bypass (rtx insn_out, rtx insn_in)
 +{
@@ -7281,6 +7378,7 @@
 +
 +  return FALSE;
 +}
++
 +
 +int
 +avr32_valid_mulmac_bypass (rtx insn_out, rtx insn_in)
@@ -7296,6 +7394,7 @@
 +  return FALSE;
 +}
 +
++
 +int
 +avr32_store_bypass (rtx insn_out, rtx insn_in)
 +{
@@ -7310,6 +7409,7 @@
 +  return FALSE;
 +}
 +
++
 +int
 +avr32_mul_waw_bypass (rtx insn_out, rtx insn_in)
 +{
@@ -7323,6 +7423,7 @@
 +
 +  return FALSE;
 +}
++
 +
 +int
 +avr32_valid_load_double_bypass (rtx insn_out, rtx insn_in)
@@ -7377,10 +7478,9 @@
 +}
 +
 +
-+
 +rtx
-+avr32_ifcvt_modify_test (ce_if_block_t *ce_info,
-+                         rtx test ){
++avr32_ifcvt_modify_test (ce_if_block_t *ce_info, rtx test )
++{
 +  rtx branch_insn;
 +  rtx cmp_test;
 +  rtx compare_op0;
@@ -7412,12 +7512,10 @@
 +}
 +
 +
-+
 +rtx
-+avr32_ifcvt_modify_insn (ce_if_block_t *ce_info,
-+                         rtx pattern,
-+                         rtx insn,
-+                         int *num_true_changes){
++avr32_ifcvt_modify_insn (ce_if_block_t *ce_info, rtx pattern, rtx insn,
++                         int *num_true_changes)
++{
 +  rtx test = COND_EXEC_TEST(pattern);
 +  rtx op = COND_EXEC_CODE(pattern);
 +  rtx cmp_insn;
@@ -7658,8 +7756,7 @@
 +
 +
 +void
-+avr32_ifcvt_modify_cancel ( ce_if_block_t *ce_info,
-+                            int *num_true_changes)
++avr32_ifcvt_modify_cancel ( ce_if_block_t *ce_info, int *num_true_changes)
 +{
 +  int n;
 +
@@ -7703,13 +7800,13 @@
 +    }
 +}
 +
++
 +/* Function returning TRUE if INSN with OPERANDS is a splittable
 +   conditional immediate clobber insn. We assume that the insn is
 +   already a conditional immediate clobber insns and do not check
 +   for that. */
 +int
-+avr32_cond_imm_clobber_splittable (rtx insn,
-+                                   rtx operands[])
++avr32_cond_imm_clobber_splittable (rtx insn, rtx operands[])
 +{
 +  if ( REGNO (operands[0]) == REGNO (operands[1]) )
 +    {
@@ -7729,6 +7826,7 @@
 +  return TRUE;
 +}
 +
++
 +/* Function for getting an integer value from a const_int or const_double
 +   expression regardless of the HOST_WIDE_INT size. Each target cpu word
 +   will be put into the val array where the LSW will be stored at the lowest
@@ -7737,9 +7835,7 @@
 +   of the word size.
 +*/
 +void
-+avr32_get_intval (enum machine_mode mode,
-+                  rtx const_expr,
-+                  HOST_WIDE_INT *val)
++avr32_get_intval (enum machine_mode mode, rtx const_expr, HOST_WIDE_INT *val)
 +{
 +  int words_in_mode = GET_MODE_SIZE (mode)/UNITS_PER_WORD;
 +  const int words_in_const_int = HOST_BITS_PER_WIDE_INT / BITS_PER_WORD;
@@ -7772,11 +7868,10 @@
 +  }
 +}
 +
++
 +void
-+avr32_split_const_expr (enum machine_mode mode,
-+                        enum machine_mode new_mode,
-+                        rtx expr,
-+                        rtx *split_expr)
++avr32_split_const_expr (enum machine_mode mode, enum machine_mode new_mode,
++                        rtx expr, rtx *split_expr)
 +{
 +  int i, word;
 +  int words_in_intval = GET_MODE_SIZE (mode)/UNITS_PER_WORD;
@@ -7806,7 +7901,6 @@
 +
 +
 +/* Set up library functions to comply to AVR32 ABI  */
-+
 +static void
 +avr32_init_libfuncs (void)
 +{
@@ -7892,14 +7986,67 @@
 +      set_optab_libfunc (sdiv_optab, SFmode, "__avr32_f32_div");
 +    }
 +}
++
++
++/* Record a flashvault declaration.  */
++static void
++flashvault_decl_list_add (unsigned int vector_num, const char *name)
++{
++  struct flashvault_decl_list *p;
++
++  p = (struct flashvault_decl_list *)
++       xmalloc (sizeof (struct flashvault_decl_list));
++  p->next = flashvault_decl_list_head;
++  p->name = name;
++  p->vector_num = vector_num;
++  flashvault_decl_list_head = p;
++}
++
++
++static void
++avr32_file_end (void)
++{
++  struct flashvault_decl_list *p;
++  unsigned int num_entries = 0;
++
++  /* Check if a list of flashvault declarations exists. */
++  if (flashvault_decl_list_head != NULL)
++    {
++      /* Calculate the number of entries in the table. */
++      for (p = flashvault_decl_list_head; p != NULL; p = p->next)
++        {
++           num_entries++;
++        }
++
++      /* Generate the beginning of the flashvault data table. */
++      fputs ("\t.global     __fv_table\n"
++             "\t.data\n"
++             "\t.align 2\n"
++             "\t.set .LFVTABLE, . + 0\n"
++             "\t.type __fv_table, @object\n", asm_out_file);
++      /* Each table entry is 8 bytes. */
++      fprintf (asm_out_file, "\t.size __fv_table, %u\n", (num_entries * 8));
++
++      fputs("__fv_table:\n", asm_out_file);
++
++      for (p = flashvault_decl_list_head; p != NULL; p = p->next)
++        {
++          /* Output table entry. */
++          fprintf (asm_out_file, 
++                   "\t.align 2\n"
++                   "\t.int %u\n", p->vector_num);
++          fprintf (asm_out_file, 
++                   "\t.align 2\n"
++                   "\t.int %s\n", p->name);
++        }
++    }
++}
 --- /dev/null
 +++ b/gcc/config/avr32/avr32-elf.h
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,91 @@
 +/*
 +   Elf specific definitions.
-+   Copyright 2003-2006 Atmel Corporation.
-+
-+   Written by Ronny Pedersen, Atmel Norway, <rpedersen@atmel.com>
++   Copyright 2003,2004,2005,2006,2007,2008,2009 Atmel Corporation.
 +
 +   This file is part of GCC.
 +
@@ -7919,7 +8066,7 @@
 +
 +
 +/*****************************************************************************
-+ * Controlling the Compilator Driver, 'gcc'
++ * Controlling the Compiler Driver, 'gcc'
 + *****************************************************************************/
 +
 +/* Run-time Target Specification.  */
@@ -7934,8 +8081,13 @@
 +If this macro is not defined, a default is provided that loads the
 +standard C startup file from the usual place.  See gcc.c.
 +*/
++#if 0
 +#undef  STARTFILE_SPEC
 +#define STARTFILE_SPEC "crt0%O%s crti%O%s crtbegin%O%s"
++#endif
++#undef  STARTFILE_SPEC 
++#define STARTFILE_SPEC "%{mflashvault: crtfv.o%s} %{!mflashvault: crt0.o%s} \
++			crti.o%s crtbegin.o%s"
 +
 +#undef LINK_SPEC
 +#define LINK_SPEC "%{muse-oscall:--defsym __do_not_use_oscall_coproc__=0} %{mrelax|O*:%{mno-relax|O0|O1: ;:--relax}} %{mpart=uc3a3revd:-mavr32elf_uc3a3256s;:%{mpart=*:-mavr32elf_%*}} %{mcpu=*:-mavr32elf_%*}"
@@ -7953,43 +8105,42 @@
 +
 +
 +/* Target CPU builtins.  */
-+#define TARGET_CPU_CPP_BUILTINS()				\
-+  do								\
-+    {								\
-+      builtin_define ("__avr32__");				\
-+      builtin_define ("__AVR32__");				\
-+      builtin_define ("__AVR32_ELF__");	       	        	\
-+      builtin_define (avr32_part->macro);			\
-+      builtin_define (avr32_arch->macro);			\
-+      if (avr32_arch->uarch_type == UARCH_TYPE_AVR32A)		\
-+	builtin_define ("__AVR32_AVR32A__");			\
-+      else							\
-+	builtin_define ("__AVR32_AVR32B__");			\
-+      if (TARGET_UNALIGNED_WORD)				\
-+	builtin_define ("__AVR32_HAS_UNALIGNED_WORD__");	\
-+      if (TARGET_SIMD)						\
-+	builtin_define ("__AVR32_HAS_SIMD__");			\
-+      if (TARGET_DSP)						\
-+	builtin_define ("__AVR32_HAS_DSP__");			\
-+      if (TARGET_RMW)						\
-+	builtin_define ("__AVR32_HAS_RMW__");			\
-+      if (TARGET_BRANCH_PRED)					\
-+	builtin_define ("__AVR32_HAS_BRANCH_PRED__");		\
++#define TARGET_CPU_CPP_BUILTINS()								\
++  do															\
++    {															\
++      builtin_define ("__avr32__");								\
++      builtin_define ("__AVR32__");								\
++      builtin_define ("__AVR32_ELF__");							\
++      builtin_define (avr32_part->macro);						\
++      builtin_define (avr32_arch->macro);						\
++      if (avr32_arch->uarch_type == UARCH_TYPE_AVR32A)			\
++        builtin_define ("__AVR32_AVR32A__");					\
++      else														\
++        builtin_define ("__AVR32_AVR32B__");					\
++      if (TARGET_UNALIGNED_WORD)								\
++        builtin_define ("__AVR32_HAS_UNALIGNED_WORD__");		\
++      if (TARGET_SIMD)											\
++        builtin_define ("__AVR32_HAS_SIMD__");					\
++      if (TARGET_DSP)											\
++        builtin_define ("__AVR32_HAS_DSP__");					\
++      if (TARGET_RMW)											\
++        builtin_define ("__AVR32_HAS_RMW__");					\
++      if (TARGET_BRANCH_PRED)									\
++        builtin_define ("__AVR32_HAS_BRANCH_PRED__");			\
 +      if (TARGET_FAST_FLOAT)                                    \
 +        builtin_define ("__AVR32_FAST_FLOAT__");                \
++      if (TARGET_FLASHVAULT)                                    \
++        builtin_define ("__AVR32_FLASHVAULT__");                \
 +      if (TARGET_NO_MUL_INSNS)                                  \
 +        builtin_define ("__AVR32_NO_MUL__");                    \
-+    }								\
++    }															\
 +  while (0)
 --- /dev/null
 +++ b/gcc/config/avr32/avr32.h
-@@ -0,0 +1,3344 @@
+@@ -0,0 +1,3274 @@
 +/*
 +   Definitions of target machine for AVR32.
-+   Copyright 2003-2006 Atmel Corporation.
-+
-+   Written by Ronny Pedersen, Atmel Norway, <rpedersen@atmel.com>
-+   Initial porting by Anders �dland.
++   Copyright 2003,2004,2005,2006,2007,2008,2009,2010 Atmel Corporation.
 +
 +   This file is part of GCC.
 +
@@ -8033,44 +8184,48 @@
 +/* cache instruction op5 codes */
 +#define AVR32_CACHE_INVALIDATE_ICACHE 1
 +
-+/* These bits describe the different types of function supported
-+   by the AVR32 backend.  They are exclusive.  ie a function cannot be both a
-+   normal function and an interworked function, for example.  Knowing the
-+   type of a function is important for determining its prologue and
-+   epilogue sequences.
-+   Note value 7 is currently unassigned.  Also note that the interrupt
-+   function types all have bit 2 set, so that they can be tested for easily.
-+   Note that 0 is deliberately chosen for AVR32_FT_UNKNOWN so that when the
-+   machine_function structure is initialized (to zero) func_type will
-+   default to unknown.  This will force the first use of avr32_current_func_type
-+   to call avr32_compute_func_type.  */
-+#define AVR32_FT_UNKNOWN	 0	/* Type has not yet been determined.
-+					   */
-+#define AVR32_FT_NORMAL		 1	/* Your normal, straightforward
-+					   function.  */
-+#define AVR32_FT_ACALL	         2	/* An acall function.  */
-+#define AVR32_FT_EXCEPTION_HANDLER 3	/* A C++ exception handler.  */
-+#define AVR32_FT_ISR_FULL	 4	/* A fully shadowed interrupt mode.  */
-+#define AVR32_FT_ISR_HALF	 5	/* A half shadowed interrupt mode.  */
-+#define AVR32_FT_ISR_NONE	 6	/* No shadow registers.  */
++/* 
++These bits describe the different types of function supported by the AVR32
++backend. They are exclusive, e.g. a function cannot be both a normal function
++and an interworked function.  Knowing the type of a function is important for
++determining its prologue and epilogue sequences. Note value 7 is currently 
++unassigned.  Also note that the interrupt function types all have bit 2 set, 
++so that they can be tested for easily. Note that 0 is deliberately chosen for
++AVR32_FT_UNKNOWN so that when the machine_function structure is initialized
++(to zero) func_type will default to unknown. This will force the first use of
++avr32_current_func_type to call avr32_compute_func_type. 
++*/
++#define AVR32_FT_UNKNOWN           0  /* Type has not yet been determined. */
++#define AVR32_FT_NORMAL            1  /* Normal function. */
++#define AVR32_FT_ACALL             2  /* An acall function. */
++#define AVR32_FT_EXCEPTION_HANDLER 3  /* A C++ exception handler. */
++#define AVR32_FT_ISR_FULL          4  /* A fully shadowed interrupt mode. */
++#define AVR32_FT_ISR_HALF          5  /* A half shadowed interrupt mode. */
++#define AVR32_FT_ISR_NONE          6  /* No shadow registers. */
 +
 +#define AVR32_FT_TYPE_MASK	((1 << 3) - 1)
 +
-+/* In addition functions can have several type modifiers,
-+   outlined by these bit masks:  */
-+#define AVR32_FT_INTERRUPT	(1 << 2)	/* Note overlap with FT_ISR
-+						   and above.  */
-+#define AVR32_FT_NAKED		(1 << 3)	/* No prologue or epilogue.  */
-+#define AVR32_FT_VOLATILE	(1 << 4)	/* Does not return.  */
-+#define AVR32_FT_NESTED		(1 << 5)	/* Embedded inside another
-+						   func. */
++/* In addition functions can have several type modifiers, outlined by these bit masks: */
++#define AVR32_FT_INTERRUPT       (1 << 2)  /* Note overlap with FT_ISR and above. */
++#define AVR32_FT_NAKED           (1 << 3)  /* No prologue or epilogue. */
++#define AVR32_FT_VOLATILE        (1 << 4)  /* Does not return. */
++#define AVR32_FT_NESTED          (1 << 5)  /* Embedded inside another func. */
++#define AVR32_FT_FLASHVAULT      (1 << 6)  /* Flashvault function call. */
++#define AVR32_FT_FLASHVAULT_IMPL (1 << 7)  /* Function definition in FlashVault. */
++
 +
 +/* Some macros to test these flags.  */
-+#define AVR32_FUNC_TYPE(t)	(t & AVR32_FT_TYPE_MASK)
-+#define IS_INTERRUPT(t)		(t & AVR32_FT_INTERRUPT)
-+#define IS_VOLATILE(t)     	(t & AVR32_FT_VOLATILE)
-+#define IS_NAKED(t)        	(t & AVR32_FT_NAKED)
-+#define IS_NESTED(t)       	(t & AVR32_FT_NESTED)
++#define AVR32_FUNC_TYPE(t)     (t & AVR32_FT_TYPE_MASK)
++#define IS_INTERRUPT(t)        (t & AVR32_FT_INTERRUPT)
++#define IS_NAKED(t)            (t & AVR32_FT_NAKED)
++#define IS_VOLATILE(t)         (t & AVR32_FT_VOLATILE)
++#define IS_NESTED(t)           (t & AVR32_FT_NESTED)
++#define IS_FLASHVAULT(t)       (t & AVR32_FT_FLASHVAULT)
++#define IS_FLASHVAULT_IMPL(t)  (t & AVR32_FT_FLASHVAULT_IMPL)
++
++#define SYMBOL_FLAG_RMW_ADDR_SHIFT    SYMBOL_FLAG_MACH_DEP_SHIFT
++#define SYMBOL_REF_RMW_ADDR(RTX)                                        \
++  ((SYMBOL_REF_FLAGS (RTX) & (1 << SYMBOL_FLAG_RMW_ADDR_SHIFT)) != 0)
 +
 +
 +typedef struct minipool_labels
@@ -8147,27 +8302,35 @@
 +  PART_TYPE_AVR32_UC3B0128,
 +  PART_TYPE_AVR32_UC3B0256,
 +  PART_TYPE_AVR32_UC3B0256ES,
++  PART_TYPE_AVR32_UC3B0512,
 +  PART_TYPE_AVR32_UC3B0512REVC,
 +  PART_TYPE_AVR32_UC3B164,
 +  PART_TYPE_AVR32_UC3B1128,
 +  PART_TYPE_AVR32_UC3B1256,
 +  PART_TYPE_AVR32_UC3B1256ES,
++  PART_TYPE_AVR32_UC3B1512,
 +  PART_TYPE_AVR32_UC3B1512REVC,
-+  PART_TYPE_AVR32_UC3C0512C,
-+  PART_TYPE_AVR32_UC3C0256C,
-+  PART_TYPE_AVR32_UC3C0128C,
-+  PART_TYPE_AVR32_UC3C064C,
-+  PART_TYPE_AVR32_UC3C1512C,
-+  PART_TYPE_AVR32_UC3C1256C,
-+  PART_TYPE_AVR32_UC3C1128C,
-+  PART_TYPE_AVR32_UC3C164C,
-+  PART_TYPE_AVR32_UC3C2512C,
-+  PART_TYPE_AVR32_UC3C2256C,
-+  PART_TYPE_AVR32_UC3C2128C,
-+  PART_TYPE_AVR32_UC3C264C,
++  PART_TYPE_AVR32_UC3C0512CREVC,
++  PART_TYPE_AVR32_UC3C1512CREVC,
++  PART_TYPE_AVR32_UC3C2512CREVC,
++  PART_TYPE_AVR32_UC3L0256,
++  PART_TYPE_AVR32_UC3L0128,
 +  PART_TYPE_AVR32_UC3L064,
 +  PART_TYPE_AVR32_UC3L032,
-+  PART_TYPE_AVR32_UC3L016
++  PART_TYPE_AVR32_UC3L016,
++  PART_TYPE_AVR32_UC3C064C,
++  PART_TYPE_AVR32_UC3C0128C,
++  PART_TYPE_AVR32_UC3C0256C,
++  PART_TYPE_AVR32_UC3C0512C,
++  PART_TYPE_AVR32_UC3C164C,
++  PART_TYPE_AVR32_UC3C1128C,
++  PART_TYPE_AVR32_UC3C1256C,
++  PART_TYPE_AVR32_UC3C1512C,
++  PART_TYPE_AVR32_UC3C264C,
++  PART_TYPE_AVR32_UC3C2128C,
++  PART_TYPE_AVR32_UC3C2256C,
++  PART_TYPE_AVR32_UC3C2512C,
++  PART_TYPE_AVR32_MXT768E
 +};
 +
 +/* Microarchitectures. */
@@ -8188,6 +8351,7 @@
 +  ARCH_TYPE_AVR32_UCR2,
 +  ARCH_TYPE_AVR32_UCR2NOMUL,
 +  ARCH_TYPE_AVR32_UCR3,
++  ARCH_TYPE_AVR32_UCR3FP,
 +  ARCH_TYPE_AVR32_NONE
 +};
 +
@@ -8210,6 +8374,9 @@
 +#define FLAG_AVR32_HAS_V2_INSNS (1 << 7)
 +/* Flag specifying that the cpu has buggy mul insns. */
 +#define FLAG_AVR32_HAS_NO_MUL_INSNS (1 << 8)
++/* Flag specifying that the device has FPU instructions according 
++   to AVR32002 specifications*/
++#define FLAG_AVR32_HAS_FPU (1 << 9)
 +
 +/* Structure for holding information about different avr32 CPUs/parts */
 +struct part_type_s
@@ -8251,6 +8418,7 @@
 +#define TARGET_ARCH_UC (TARGET_ARCH_UCR1 || TARGET_ARCH_UCR2)
 +#define TARGET_UARCH_AVR32A (avr32_arch->uarch_type == UARCH_TYPE_AVR32A)
 +#define TARGET_UARCH_AVR32B (avr32_arch->uarch_type == UARCH_TYPE_AVR32B)
++#define TARGET_ARCH_FPU (avr32_arch->feature_flags & FLAG_AVR32_HAS_FPU)
 +
 +#define CAN_DEBUG_WITHOUT_FP
 +
@@ -8705,12 +8873,10 @@
 +/* Convert from gcc internal register number to register number
 +   used in assembly code */
 +#define ASM_REGNUM(reg) (LAST_REGNUM - (reg))
-+#define ASM_FP_REGNUM(reg) (LAST_FP_REGNUM - (reg))
 +
 +/* Convert between register number used in assembly to gcc
 +   internal register number  */
 +#define INTERNAL_REGNUM(reg) (LAST_REGNUM - (reg))
-+#define INTERNAL_FP_REGNUM(reg) (LAST_FP_REGNUM - (reg))
 +
 +/** Basic Characteristics of Registers **/
 +
@@ -8720,13 +8886,10 @@
 +pseudo register's number really is assigned the number
 +FIRST_PSEUDO_REGISTER.
 +*/
-+#define FIRST_PSEUDO_REGISTER (LAST_FP_REGNUM + 1)
++#define FIRST_PSEUDO_REGISTER (LAST_REGNUM + 1)
 +
 +#define FIRST_REGNUM 0
 +#define LAST_REGNUM 15
-+#define NUM_FP_REGS 16
-+#define FIRST_FP_REGNUM 16
-+#define LAST_FP_REGNUM (16+NUM_FP_REGS-1)
 +
 +/*
 +An initializer that says which registers are used for fixed purposes
@@ -8773,22 +8936,6 @@
 +  0, /* r2 */			\
 +  0, /* r1 */			\
 +  0, /* r0 */			\
-+  0, /* f15 */			\
-+  0, /* f14 */			\
-+  0, /* f13 */			\
-+  0, /* f12 */			\
-+  0, /* f11 */			\
-+  0, /* f10 */			\
-+  0, /* f9 */			\
-+  0, /* f8 */			\
-+  0, /* f7 */			\
-+  0, /* f6 */			\
-+  0, /* f5 */			\
-+  0, /* f4 */			\
-+  0, /* f3 */			\
-+  0, /* f2*/			\
-+  0, /* f1 */			\
-+  0  /* f0 */			\
 +}
 +
 +/*
@@ -8819,22 +8966,6 @@
 +  0, /* r2 */			\
 +  0, /* r1 */			\
 +  0, /* r0 */			\
-+  1, /* f15 */			\
-+  1, /* f14 */			\
-+  1, /* f13 */			\
-+  1, /* f12 */			\
-+  1, /* f11 */			\
-+  1, /* f10 */			\
-+  1, /* f9 */			\
-+  1, /* f8 */			\
-+  0, /* f7 */			\
-+  0, /* f6 */			\
-+  0, /* f5 */			\
-+  0, /* f4 */			\
-+  0, /* f3 */			\
-+  0, /* f2*/			\
-+  0, /* f1*/			\
-+  0, /* f0 */			\
 +}
 +
 +/* Interrupt functions can only use registers that have already been
@@ -8878,14 +9009,6 @@
 +#define CONDITIONAL_REGISTER_USAGE                              \
 +  do								\
 +    {								\
-+      int regno;						\
-+								\
-+      if (TARGET_SOFT_FLOAT)			                \
-+	{							\
-+	  for (regno = FIRST_FP_REGNUM;				\
-+	       regno <= LAST_FP_REGNUM; ++regno)	        \
-+	    fixed_regs[regno] = call_used_regs[regno] = 1;	\
-+	}							\
 +      if (flag_pic)						\
 +	{							\
 +	  fixed_regs[PIC_OFFSET_TABLE_REGNUM] = 1;		\
@@ -8935,22 +9058,6 @@
 +  INTERNAL_REGNUM(2),		\
 +  INTERNAL_REGNUM(1),		\
 +  INTERNAL_REGNUM(0),		\
-+  INTERNAL_FP_REGNUM(15),	\
-+  INTERNAL_FP_REGNUM(14),	\
-+  INTERNAL_FP_REGNUM(13),	\
-+  INTERNAL_FP_REGNUM(12),	\
-+  INTERNAL_FP_REGNUM(11),	\
-+  INTERNAL_FP_REGNUM(10),	\
-+  INTERNAL_FP_REGNUM(9),	\
-+  INTERNAL_FP_REGNUM(8),	\
-+  INTERNAL_FP_REGNUM(7),	\
-+  INTERNAL_FP_REGNUM(6),	\
-+  INTERNAL_FP_REGNUM(5),	\
-+  INTERNAL_FP_REGNUM(4),	\
-+  INTERNAL_FP_REGNUM(3),	\
-+  INTERNAL_FP_REGNUM(2),	\
-+  INTERNAL_FP_REGNUM(1),	\
-+  INTERNAL_FP_REGNUM(0),	\
 +  SP_REGNUM,           		\
 +  PC_REGNUM			\
 +}
@@ -9071,7 +9178,6 @@
 +{
 +  NO_REGS,
 +  GENERAL_REGS,
-+  FP_REGS,
 +  ALL_REGS,
 +  LIM_REG_CLASSES
 +};
@@ -9090,7 +9196,6 @@
 +{				\
 +  "NO_REGS",			\
 +  "GENERAL_REGS",		\
-+  "FLOATING_POINT_REGS",	\
 +  "ALL_REGS"			\
 +}
 +
@@ -9111,7 +9216,6 @@
 +#define REG_CLASS_CONTENTS {		\
 +  {0x00000000}, /* NO_REGS */		\
 +  {0x0000FFFF}, /* GENERAL_REGS */	\
-+  {0xFFFF0000}, /* FP_REGS */		\
 +  {0x7FFFFFFF}, /* ALL_REGS */		\
 +}
 +
@@ -9122,7 +9226,7 @@
 +which is minimal, meaning that no smaller class also contains the
 +register.
 +*/
-+#define REGNO_REG_CLASS(REGNO) ((REGNO < 16) ? GENERAL_REGS : FP_REGS)
++#define REGNO_REG_CLASS(REGNO) (GENERAL_REGS)
 +
 +/*
 +A macro whose definition is the name of the class to which a valid
@@ -9155,8 +9259,7 @@
 +corresponding to class GENERAL_REGS, will not be passed
 +to this macro; you do not need to handle it.
 +*/
-+#define REG_CLASS_FROM_LETTER(CHAR) ((CHAR) == 'f' ? FP_REGS : NO_REGS)
-+
++#define REG_CLASS_FROM_LETTER(CHAR) NO_REGS
 +
 +/* These assume that REGNO is a hard or pseudo reg number.
 +   They give nonzero only if REGNO is a hard reg of the suitable class
@@ -9246,8 +9349,7 @@
 +#define CONSTRAINT_LEN(C, STR)				\
 +  ( ((C) == 'K' || (C) == 'I') ?  4 :			\
 +    ((C) == 'R') ?  5 :					\
-+    ((C) == 'N' || (C) == 'O' ||			\
-+     (C) == 'P' || (C) == 'L') ? -1 :	\
++    ((C) == 'P') ? -1 :                                 \
 +    DEFAULT_CONSTRAINT_LEN((C), (STR)) )
 +
 +#define CONST_OK_FOR_CONSTRAINT_P(VALUE, C, STR)	\
@@ -9301,11 +9403,15 @@
 +   (C) == 'T' ? avr32_const_pool_ref_operand(OP, GET_MODE(OP)) :	\
 +   (C) == 'U' ? SYMBOL_REF_RCALL_FUNCTION_P(OP) :			\
 +   (C) == 'Z' ? avr32_cop_memory_operand(OP, GET_MODE(OP)) :		\
++   (C) == 'Q' ? avr32_non_rmw_memory_operand(OP, GET_MODE(OP)) :		\
++   (C) == 'Y' ? avr32_rmw_memory_operand(OP, GET_MODE(OP)) :            \
 +   0)
 +
 +
 +#define EXTRA_MEMORY_CONSTRAINT(C, STR) ( ((C) == 'R') ||               \
++                                          ((C) == 'Q') ||               \
 +                                          ((C) == 'S') ||               \
++                                          ((C) == 'Y') ||               \
 +                                          ((C) == 'Z') )
 +
 +
@@ -9435,8 +9541,6 @@
 +*/
 +#define INCOMING_RETURN_ADDR_RTX gen_rtx_REG (Pmode, LR_REGNUM)
 +
-+
-+
 +/*
 +A C expression whose value is an integer giving the offset, in bytes,
 +from the value of the stack pointer register to the top of the stack
@@ -9561,8 +9665,6 @@
 +/* Use r7 */
 +#define FRAME_POINTER_REGNUM INTERNAL_REGNUM(7)
 +
-+
-+
 +/*
 +The register number of the arg pointer register, which is used to access
 +the function's argument list.  On some machines, this is the same as the
@@ -9592,7 +9694,6 @@
 +*/
 +/* Using r0 */
 +#define STATIC_CHAIN_REGNUM INTERNAL_REGNUM(0)
-+
 +
 +/** Eliminating Frame Pointer and Arg Pointer **/
 +
@@ -9697,7 +9798,6 @@
 +*/
 +#define PUSH_ARGS 1
 +
-+
 +/*
 +A C expression that is the number of bytes actually pushed onto the
 +stack when an instruction attempts to push NPUSHED bytes.
@@ -9725,9 +9825,6 @@
 +Setting both PUSH_ARGS and ACCUMULATE_OUTGOING_ARGS is not proper.
 +*/
 +#define ACCUMULATE_OUTGOING_ARGS 0
-+
-+
-+
 +
 +/*
 +A C expression that should indicate the number of bytes of its own
@@ -9845,9 +9942,6 @@
 +#define FUNCTION_ARG(CUM, MODE, TYPE, NAMED) \
 +  avr32_function_arg(&(CUM), MODE, TYPE, NAMED)
 +
-+
-+
-+
 +/*
 +A C type for declaring a variable that is used as the first argument of
 +FUNCTION_ARG and other related values.  For some target machines,
@@ -9867,7 +9961,7 @@
 +     will occupy */
 +  int index;
 +  /* A mask with bits representing the argument registers: if a bit is set
-+     then this register is used for an arguemnt */
++     then this register is used for an argument */
 +  int used_index;
 +  /* TRUE if this function has anonymous arguments */
 +  int uses_anonymous_args;
@@ -9875,6 +9969,8 @@
 +  int stack_pushed_args_size;
 +  /* Set to true if this function needs a Return Value Pointer */
 +  int use_rvp;
++  /* Set to true if function is a flashvault function. */
++  int flashvault_func;
 +
 +} CUMULATIVE_ARGS;
 +
@@ -9892,7 +9988,6 @@
 +    }						\
 +  while (0)
 +#define SET_INDEXES_UNUSED(CUM) ((CUM)->used_index = 0)
-+
 +
 +/*
 +   A C statement (sans semicolon) for initializing the variable cum for the
@@ -9914,7 +10009,6 @@
 +*/
 +#define INIT_CUMULATIVE_ARGS(CUM, FNTYPE, LIBNAME, FNDECL, N_NAMED_ARGS) \
 +  avr32_init_cumulative_args(&(CUM), FNTYPE, LIBNAME, FNDECL)
-+
 +
 +/*
 +A C statement (sans semicolon) to update the summarizer variable
@@ -9970,7 +10064,6 @@
 +#define PAD_VARARGS_DOWN \
 +  (FUNCTION_ARG_PADDING (TYPE_MODE (type), type) == downward)
 +
-+
 +/*
 +A C expression that is nonzero if REGNO is the number of a hard
 +register in which function arguments are sometimes passed.  This does
@@ -10000,7 +10093,6 @@
 +
 +/* AVR32 is using r12 as return register. */
 +#define RET_REGISTER (15 - 12)
-+
 +
 +/*
 +A C expression to create an RTX representing the place where a library
@@ -10360,8 +10452,6 @@
 +{
 +  int flags;
 +  rtx value;
-+  int fpflags;
-+  rtx fpvalue;
 +  int cond_exec_cmp_clobbered;
 +} avr32_status_reg;
 +
@@ -10379,9 +10469,6 @@
 +
 +#define CC_STATUS_MDEP_INIT  \
 +   (cc_status.mdep.flags = CC_NONE , cc_status.mdep.cond_exec_cmp_clobbered = 0, cc_status.mdep.value = 0)
-+
-+#define FPCC_STATUS_INIT \
-+   (cc_status.mdep.fpflags = CC_NONE , cc_status.mdep.fpvalue = 0)
 +
 +/*
 +A C compound statement to set the components of cc_status
@@ -10847,7 +10934,7 @@
 +itself; before and after that, output the additional assembler syntax
 +for making that name global, and a newline.
 +*/
-+#define GLOBAL_ASM_OP "\t.globl\t"
++#define GLOBAL_ASM_OP "\t.global\t"
 +
 +
 +
@@ -10934,14 +11021,6 @@
 +  "r5",  "r4",		\
 +  "r3",  "r2",		\
 +  "r1",  "r0",		\
-+  "f15","f14",		\
-+  "f13","f12",		\
-+  "f11","f10",		\
-+  "f9", "f8",		\
-+  "f7", "f6",		\
-+  "f5", "f4",		\
-+  "f3", "f2",		\
-+  "f1", "f0"		\
 +}
 +
 +/*
@@ -11273,7 +11352,12 @@
 +  AVR32_BUILTIN_SATS,
 +  AVR32_BUILTIN_SATU,
 +  AVR32_BUILTIN_SATRNDS,
-+  AVR32_BUILTIN_SATRNDU
++  AVR32_BUILTIN_SATRNDU,
++  AVR32_BUILTIN_MEMS,
++  AVR32_BUILTIN_MEMC,
++  AVR32_BUILTIN_MEMT,
++  AVR32_BUILTIN_SLEEP,
++  AVR32_BUILTIN_DELAY_CYCLES
 +};
 +
 +
@@ -11330,11 +11414,9 @@
 +#endif
 --- /dev/null
 +++ b/gcc/config/avr32/avr32.md
-@@ -0,0 +1,4926 @@
+@@ -0,0 +1,5025 @@
 +;;   AVR32 machine description file.
-+;;   Copyright 2003-2006 Atmel Corporation.
-+;;
-+;;   Written by Ronny Pedersen, Atmel Norway, <rpedersen@atmel.com>
++;;   Copyright 2003,2004,2005,2006,2007,2008,2009 Atmel Corporation.
 +;;
 +;;   This file is part of GCC.
 +;;
@@ -11363,7 +11445,7 @@
 +
 +
 +; NB! Keep this in sync with enum architecture_type in avr32.h
-+(define_attr "pipeline" "ap,ucr1,ucr2,ucr2nomul,ucr3"
++(define_attr "pipeline" "ap,ucr1,ucr2,ucr2nomul,ucr3,ucr3fp"
 +  (const (symbol_ref "avr32_arch->arch_type")))
 +
 +; Insn length in bytes
@@ -11389,7 +11471,7 @@
 +   (UNSPEC_PIC_BASE             11)
 +   (UNSPEC_STORE_MULTIPLE       12)
 +   (UNSPEC_STMFP                13)
-+   (UNSPEC_FPCC_TO_REG          14)
++   (UNSPEC_FRCPA                14)
 +   (UNSPEC_REG_TO_CC            15)
 +   (UNSPEC_FORCE_MINIPOOL       16)
 +   (UNSPEC_SATS                 17)
@@ -11429,6 +11511,12 @@
 +   (VUNSPEC_FRS                       27)
 +   (VUNSPEC_CSRF                      28)
 +   (VUNSPEC_SSRF                      29)
++   (VUNSPEC_SLEEP                     30)
++   (VUNSPEC_DELAY_CYCLES              31)
++   (VUNSPEC_DELAY_CYCLES_1            32)
++   (VUNSPEC_DELAY_CYCLES_2            33)
++   (VUNSPEC_NOP		       34)
++   (VUNSPEC_NOP3		       35)
 +   ])
 +
 +(define_constants
@@ -11786,17 +11874,15 @@
 +  }
 +)
 +
-+
 +(define_expand "mov<mode>"
-+  [(set (match_operand:MOVM 0 "register_operand" "")
-+	(match_operand:MOVM 1 "general_operand" ""))]
++  [(set (match_operand:MOVM 0 "avr32_non_rmw_nonimmediate_operand" "")
++	(match_operand:MOVM 1 "avr32_non_rmw_general_operand" ""))]
 +  ""
 +  {
 +
 +    /* One of the ops has to be in a register.  */
 +    if (GET_CODE (operands[0]) == MEM)
 +      operands[1] = force_reg (<MODE>mode, operands[1]);
-+
 +
 +    /* Check for out of range immediate constants as these may
 +       occur during reloading, since it seems like reload does
@@ -11808,7 +11894,19 @@
 +         && !avr32_const_ok_for_constraint_p(INTVAL(operands[1]), 'K', "Ks21") ){
 +        operands[1] = force_const_mem(SImode, operands[1]);
 +    }
++    /* Check for RMW memory operands. They are not allowed for mov operations
++       only the atomic memc/s/t operations */
++    if ( !reload_in_progress
++         && avr32_rmw_memory_operand (operands[0], <MODE>mode) ){
++       operands[0] = copy_rtx (operands[0]);                                                              
++       XEXP(operands[0], 0) = force_reg (<MODE>mode, XEXP(operands[0], 0));
++    }
 +
++    if ( !reload_in_progress
++         && avr32_rmw_memory_operand (operands[1], <MODE>mode) ){
++       operands[1] = copy_rtx (operands[1]);                                                              
++      XEXP(operands[1], 0) = force_reg (<MODE>mode, XEXP(operands[1], 0));
++    }
 +    if ( (flag_pic || TARGET_HAS_ASM_ADDR_PSEUDOS)
 +         && !avr32_legitimate_pic_operand_p(operands[1]) )
 +      operands[1] = legitimize_pic_address (operands[1], <MODE>mode,
@@ -11819,12 +11917,13 @@
 +  })
 +
 +
-+
 +(define_insn "mov<mode>_internal"
-+  [(set (match_operand:MOVM 0 "nonimmediate_operand"     "=r,   r,   r,r,r,m,r")
-+	(match_operand:MOVM 1 "general_operand"          "rKs08,Ks21,J,n,m,r,W"))]
-+  "register_operand (operands[0], <MODE>mode)
-+   || register_operand (operands[1], <MODE>mode)"
++  [(set (match_operand:MOVM 0 "avr32_non_rmw_nonimmediate_operand" "=r,   r,   r,r,r,Q,r")
++	(match_operand:MOVM 1 "avr32_non_rmw_general_operand"      "rKs08,Ks21,J,n,Q,r,W"))]
++  "(register_operand (operands[0], <MODE>mode)
++    || register_operand (operands[1], <MODE>mode))
++    && !avr32_rmw_memory_operand (operands[0], <MODE>mode) 
++    && !avr32_rmw_memory_operand (operands[1], <MODE>mode)"
 +  {
 +    switch (which_alternative) {
 +      case 0:
@@ -11873,6 +11972,27 @@
 +   (set_attr "cc" "none,none,set_z_if_not_v2,set_z,none,none,clobber")])
 +
 +
++(define_expand "reload_out_rmw_memory_operand"
++  [(set (match_operand:SI 2 "register_operand" "=r")
++        (match_operand:SI 0 "address_operand" ""))
++   (set (mem:SI (match_dup 2))
++        (match_operand:SI 1 "register_operand" ""))]
++  ""
++  {
++   operands[0] = XEXP(operands[0], 0);
++  }
++)
++
++(define_expand "reload_in_rmw_memory_operand"
++  [(set (match_operand:SI 2 "register_operand" "=r")
++        (match_operand:SI 1 "address_operand" ""))
++   (set (match_operand:SI 0 "register_operand" "")
++        (mem:SI (match_dup 2)))]
++  ""
++  {
++   operands[1] = XEXP(operands[1], 0);
++  }
++)
 +
 +
 +;; These instructions are for loading constants which cannot be loaded
@@ -12203,8 +12323,7 @@
 +(define_insn_and_split "*movdf_internal"
 +  [(set (match_operand:DF 0 "nonimmediate_operand"     "=r,r,r,r,m")
 +	(match_operand:DF 1 "general_operand"          " r,G,F,m,r"))]
-+  "TARGET_SOFT_FLOAT
-+   && (register_operand (operands[0], DFmode)
++  "(register_operand (operands[0], DFmode)
 +       || register_operand (operands[1], DFmode))"
 +  {
 +    switch (which_alternative ){
@@ -12223,8 +12342,7 @@
 +      abort();
 +    }
 +  }
-+  "TARGET_SOFT_FLOAT
-+   && reload_completed
++  "reload_completed
 +   && (REG_P (operands[0]) 
 +        && (REG_P (operands[1])
 +            || GET_CODE (operands[1]) == CONST_DOUBLE))"
@@ -12249,7 +12367,7 @@
 +;;=============================================================================
 +(define_insn "ld<mode>_predicable"
 +  [(set (match_operand:MOVCC 0 "register_operand" "=r")
-+	(match_operand:MOVCC 1 "memory_operand" "<MOVCC:pred_mem_constraint>"))]
++	(match_operand:MOVCC 1 "avr32_non_rmw_memory_operand" "<MOVCC:pred_mem_constraint>"))]
 +  "TARGET_V2_INSNS"
 +  "ld<MOVCC:load_postfix>%?\t%0, %1"
 +  [(set_attr "length" "4")
@@ -12260,7 +12378,7 @@
 +
 +
 +(define_insn "st<mode>_predicable"
-+  [(set (match_operand:MOVCC 0 "memory_operand" "=<MOVCC:pred_mem_constraint>")
++  [(set (match_operand:MOVCC 0 "avr32_non_rmw_memory_operand" "=<MOVCC:pred_mem_constraint>")
 +	(match_operand:MOVCC 1 "register_operand" "r"))]
 +  "TARGET_V2_INSNS"
 +  "st<MOVCC:store_postfix>%?\t%0, %1"
@@ -12560,13 +12678,13 @@
 +
 +(define_insn "adddi3"
 +  [(set (match_operand:DI 0 "register_operand" "=r,r")
-+	(plus:DI (match_operand:DI 1 "register_operand" "%r,0")
++	(plus:DI (match_operand:DI 1 "register_operand" "%0,r")
 +		 (match_operand:DI 2 "register_operand" "r,r")))]
 +  ""
 +  "@
-+   add     %0, %1, %2\;adc    %m0, %m1, %m2
-+   add     %0, %2\;adc    %m0, %m0, %m2"
-+  [(set_attr "length" "8,6")
++   add     %0, %2\;adc    %m0, %m0, %m2
++   add     %0, %1, %2\;adc    %m0, %m1, %m2"
++  [(set_attr "length" "6,8")
 +   (set_attr "type" "alu2")
 +   (set_attr "cc" "set_vncz")])
 +
@@ -12605,17 +12723,14 @@
 +   (set_attr "cc" "<INTM:alu_cc_attr>")])
 +
 +(define_insn "*sub<mode>3_mul"
-+  [(set (match_operand:INTM 0 "register_operand" "=r,r,r")
-+	(minus:INTM (match_operand:INTM 1 "register_operand" "r,0,r")
-+                    (mult:INTM (match_operand:INTM 2 "register_operand" "r,r,0")
-+                               (match_operand:SI 3 "immediate_operand" "Ku04,Ku04,Ku04" ))))]
++  [(set (match_operand:INTM 0 "register_operand" "=r")
++	(minus:INTM (match_operand:INTM 1 "register_operand" "r")
++                    (mult:INTM (match_operand:INTM 2 "register_operand" "r")
++                               (match_operand:SI 3 "immediate_operand" "Ku04" ))))]
 +  "(INTVAL(operands[3]) == 0) || (INTVAL(operands[3]) == 2) ||
 +   (INTVAL(operands[3]) == 4) || (INTVAL(operands[3]) == 8)"
-+  "@
-+   sub     %0, %1, %2 << %p3
-+   sub     %0, %0, %2 << %p3
-+   sub     %0, %1, %0 << %p3"
-+  [(set_attr "length" "4,4,4")
++  "sub     %0, %1, %2 << %p3"
++  [(set_attr "length" "4")
 +   (set_attr "cc" "<INTM:alu_cc_attr>")])
 +
 +(define_insn "*sub<mode>3_lsl"
@@ -12631,13 +12746,13 @@
 +
 +(define_insn "subdi3"
 +  [(set (match_operand:DI 0 "register_operand" "=r,r")
-+	(minus:DI (match_operand:DI 1 "register_operand" "%r,0")
++	(minus:DI (match_operand:DI 1 "register_operand" "%0,r")
 +		 (match_operand:DI 2 "register_operand" "r,r")))]
 +  ""
 +  "@
-+   sub     %0, %1, %2\;sbc    %m0, %m1, %m2
-+   sub     %0, %2\;sbc    %m0, %m0, %m2"
-+  [(set_attr "length" "8,6")
++   sub     %0, %2\;sbc    %m0, %m0, %m2
++   sub     %0, %1, %2\;sbc    %m0, %m1, %m2"
++  [(set_attr "length" "6,8")
 +   (set_attr "type" "alu2")
 +   (set_attr "cc" "set_vncz")])
 +
@@ -12805,7 +12920,7 @@
 +   (set_attr "length" "4")
 +   (set_attr "cc" "none")])
 +
-+(define_insn "mulaccsidi3"
++(define_insn "*mulaccsidi3"
 +  [(set (match_operand:DI 0 "register_operand" "+r")
 +	(plus:DI (mult:DI
 +		  (sign_extend:DI (match_operand:SI 1 "register_operand" "%r"))
@@ -12817,7 +12932,7 @@
 +   (set_attr "length" "4")
 +   (set_attr "cc" "none")])
 +
-+(define_insn "umulaccsidi3"
++(define_insn "*umulaccsidi3"
 +  [(set (match_operand:DI 0 "register_operand" "+r")
 +	(plus:DI (mult:DI
 +		  (zero_extend:DI (match_operand:SI 1 "register_operand" "%r"))
@@ -13189,56 +13304,24 @@
 +
 +
 +(define_insn "andsi3"
-+  [(set (match_operand:SI 0 "register_operand" "=r, r, r, r")
-+	(and:SI (match_operand:SI 1 "register_operand" "%0, r, 0, r")
-+                (match_operand:SI 2 "nonmemory_operand" "r, M, i, r")))]
++   [(set (match_operand:SI 0 "avr32_rmw_memory_or_register_operand"          "=Y,r,r,r,   r,   r,r,r,r,r")
++ 	(and:SI (match_operand:SI 1 "avr32_rmw_memory_or_register_operand"  "%0,r,0,0,   0,   0,0,0,0,r" )
++ 		(match_operand:SI 2 "nonmemory_operand"                     " N,M,N,Ku16,Ks17,J,L,r,i,r")))]
 +  ""
-+  {
-+   switch (which_alternative){
-+    case 0:
-+         return "and\t%0, %2";
-+    case 1:
-+        {
-+         int i, first_set = -1;
-+         /* Search for first bit set in mask */
-+         for ( i = 31; i >= 0; --i )
-+           if ( INTVAL(operands[2]) & (1 << i) ){
-+             first_set = i;
-+             break;
-+           }
-+         operands[2] = gen_rtx_CONST_INT(SImode, first_set + 1);
-+         return "bfextu\t%0, %1, 0, %2";
-+        }
-+    case 2:
-+         if ( one_bit_cleared_operand(operands[2], VOIDmode) ){
-+             int bitpos;
-+             for ( bitpos = 0; bitpos < 32; bitpos++ )
-+               if ( !(INTVAL(operands[2]) & (1 << bitpos)) )
-+                 break;
-+             operands[2] = gen_rtx_CONST_INT(SImode, bitpos);
-+             return "cbr\t%0, %2";
-+         } else if ( (INTVAL(operands[2]) >= 0) &&
-+                     (INTVAL(operands[2]) <= 65535) )
-+             return "andl\t%0, %2, COH";
-+         else if ( (INTVAL(operands[2]) < 0) &&
-+                   (INTVAL(operands[2]) >= -65536 ) )
-+             return "andl\t%0, lo(%2)";
-+         else if ( ((INTVAL(operands[2]) & 0xffff) == 0xffff) )
-+             return "andh\t%0, hi(%2)";
-+         else if ( ((INTVAL(operands[2]) & 0xffff) == 0x0) )
-+             return "andh\t%0, hi(%2), COH";
-+         else
-+             return "andh\t%0, hi(%2)\;andl\t%0, lo(%2)";
-+    case 3:
-+         return "and\t%0, %1, %2";
-+    default:
-+	 abort();
-+    }
-+  }
-+  
-+  [(set_attr "length" "2,4,8,4")
-+   (set_attr "cc" "set_z")])
++   "@
++    memc\t%0, %z2
++    bfextu\t%0, %1, 0, %z2
++    cbr\t%0, %z2
++    andl\t%0, %2, COH
++    andl\t%0, lo(%2)
++    andh\t%0, hi(%2), COH
++    andh\t%0, hi(%2)
++    and\t%0, %2
++    andh\t%0, hi(%2)\;andl\t%0, lo(%2)
++    and\t%0, %1, %2"
 +
++   [(set_attr "length" "4,4,2,4,4,4,4,2,8,4")
++    (set_attr "cc" "none,set_z,set_z,set_z,set_z,set_z,set_z,set_z,set_z,set_z")])
 +
 +  
 +
@@ -13259,37 +13342,21 @@
 +;;=============================================================================
 +
 +(define_insn "iorsi3"
-+  [(set (match_operand:SI 0 "register_operand"          "=r,r,r")
-+	(ior:SI (match_operand:SI 1 "register_operand"  "%0,0,r" )
-+		(match_operand:SI 2 "nonmemory_operand" "r ,i,r")))]
++  [(set (match_operand:SI 0 "avr32_rmw_memory_or_register_operand"          "=Y,r,r,   r,r,r,r")
++	(ior:SI (match_operand:SI 1 "avr32_rmw_memory_or_register_operand"  "%0,0,0,   0,0,0,r" )
++		(match_operand:SI 2 "nonmemory_operand"                     " O,O,Ku16,J,r,i,r")))]
 +  ""
-+  {
-+   switch (which_alternative){
-+    case 0:
-+         return "or\t%0, %2";
-+    case 1:
-+         if ( one_bit_set_operand(operands[2], VOIDmode) ){
-+             int bitpos;
-+             for (bitpos = 0; bitpos < 32; bitpos++)
-+               if (INTVAL(operands[2]) & (1 << bitpos))
-+                 break;
-+             operands[2] = gen_rtx_CONST_INT( SImode, bitpos);
-+             return "sbr\t%0, %2";
-+         } else if ( (INTVAL(operands[2]) >= 0) &&
-+              (INTVAL(operands[2]) <= 65535) )
-+             return "orl\t%0, %2";
-+         else if ( ((INTVAL(operands[2]) & 0xffff) == 0x0) )
-+             return "orh\t%0, hi(%2)";
-+         else
-+             return "orh\t%0, hi(%2)\;orl\t%0, lo(%2)";
-+    case 2:
-+         return "or\t%0, %1, %2";
-+    default:
-+	 abort();
-+    }
-+  }
-+  [(set_attr "length" "2,8,4")
-+   (set_attr "cc" "set_z")])
++  "@
++   mems\t%0, %p2
++   sbr\t%0, %p2
++   orl\t%0, %2
++   orh\t%0, hi(%2)
++   or\t%0, %2
++   orh\t%0, hi(%2)\;orl\t%0, lo(%2)
++   or\t%0, %1, %2"
++
++  [(set_attr "length" "4,2,4,4,2,8,4")
++   (set_attr "cc" "none,set_z,set_z,set_z,set_z,set_z,set_z")])
 +
 +
 +(define_insn "iordi3"
@@ -13309,32 +13376,20 @@
 +;;=============================================================================
 +
 +(define_insn "xorsi3"
-+  [(set (match_operand:SI 0 "register_operand" "=r,r,r")
-+	(xor:SI (match_operand:SI 1 "register_operand" "0,0,r")
-+		(match_operand:SI 2 "nonmemory_operand" "r,i,r")))]
++   [(set (match_operand:SI 0 "avr32_rmw_memory_or_register_operand"          "=Y,r,   r,r,r,r")
++ 	(xor:SI (match_operand:SI 1 "avr32_rmw_memory_or_register_operand"  "%0,0,   0,0,0,r" )
++ 		(match_operand:SI 2 "nonmemory_operand"                     " O,Ku16,J,r,i,r")))]
 +  ""
-+  {
-+   switch (which_alternative){
-+    case 0:
-+         return "eor     %0, %2";
-+    case 1:
-+         if ( (INTVAL(operands[2]) >= 0) &&
-+              (INTVAL(operands[2]) <= 65535) )
-+             return "eorl    %0, %2";
-+         else if ( ((INTVAL(operands[2]) & 0xffff) == 0x0) )
-+             return "eorh    %0, hi(%2)";
-+         else
-+             return "eorh    %0, hi(%2)\;eorl    %0, lo(%2)";
-+    case 2:
-+         return "eor     %0, %1, %2";
-+    default:
-+	 abort();
-+    }
-+  }
-+  
-+  [(set_attr "length" "2,8,4")
-+   (set_attr "cc" "set_z")])
++   "@
++    memt\t%0, %p2
++    eorl\t%0, %2
++    eorh\t%0, hi(%2)
++    eor\t%0, %2
++    eorh\t%0, hi(%2)\;eorl\t%0, lo(%2)
++    eor\t%0, %1, %2"
 +
++   [(set_attr "length" "4,4,4,2,8,4")
++    (set_attr "cc" "none,set_z,set_z,set_z,set_z,set_z")])
 +
 +(define_insn "xordi3"
 +  [(set (match_operand:DI 0 "register_operand" "=&r,&r")
@@ -13514,6 +13569,7 @@
 +;;-----------------------------------------------------------------------------
 +;; Signed division that produces both a quotient and a remainder.
 +;;=============================================================================
++
 +(define_expand "divmodsi4"
 +  [(parallel [
 +     (parallel [
@@ -13528,16 +13584,13 @@
 +  {
 +    if (can_create_pseudo_p ()) {
 +      operands[4] = gen_reg_rtx (DImode);
-+
 +      emit_insn(gen_divmodsi4_internal(operands[4],operands[1],operands[2]));
 +      emit_move_insn(operands[0], gen_rtx_SUBREG( SImode, operands[4], 4));
 +      emit_move_insn(operands[3], gen_rtx_SUBREG( SImode, operands[4], 0));
-+
 +      DONE;
 +    } else {
 +      FAIL;
 +    }
-+
 +  })
 +
 +
@@ -13694,12 +13747,12 @@
 +
 +(define_insn "one_cmplsi2"
 +  [(set (match_operand:SI 0 "register_operand" "=r,r")
-+	(not:SI (match_operand:SI 1 "register_operand" "r,0")))]
++	(not:SI (match_operand:SI 1 "register_operand" "0,r")))]
 +  ""
 +  "@
-+   rsub\t%0, %1, -1
-+   com\t%0"
-+  [(set_attr "length" "4,2")
++   com\t%0
++   rsub\t%0, %1, -1"
++  [(set_attr "length" "2,4")
 +   (set_attr "cc" "set_z")])
 +
 +
@@ -13763,6 +13816,26 @@
 +  [(set_attr "length" "4")
 +   (set_attr "cc" "compare")])
 +
++(define_expand "cmpsf"
++  [(set (cc0)
++	(compare:SF
++	 (match_operand:SF 0 "general_operand" "")
++	 (match_operand:SF 1 "general_operand"  "")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "{
++   rtx tmpreg;
++   if ( !REG_P(operands[0]) )
++     operands[0] = force_reg(SFmode, operands[0]);
++
++   if ( !REG_P(operands[1]) )
++     operands[1] = force_reg(SFmode, operands[1]);
++
++   avr32_compare_op0 = operands[0];
++   avr32_compare_op1 = operands[1];
++   emit_insn(gen_cmpsf_internal_uc3fp(operands[0], operands[1]));
++   DONE;
++  }"
++)
 +
 +;;;=============================================================================
 +;; Test if zero
@@ -14328,21 +14401,29 @@
 +              (clobber (reg:SI LR_REGNUM))])]
 +  ""
 +  {
-+   switch (which_alternative){
-+    case 0:
-+      return "icall\t%0";
-+    case 1:
-+      return "rcall\t%0";
-+    case 2:
-+      return "mcall\t%0";
-+    case 3:
-+      if ( TARGET_HAS_ASM_ADDR_PSEUDOS )
-+        return "call\t%0";
-+      else
-+        return "mcall\tr6[%0@got]";
-+    default:
-+      abort();
-+   }
++
++    /* Check for a flashvault call. */
++    if (avr32_flashvault_call (SYMBOL_REF_DECL (operands[0])))
++      {
++        /* Assembly is already emitted. */
++        return "";
++      }
++
++    switch (which_alternative) {
++      case 0:
++        return "icall\t%0";
++      case 1:
++        return "rcall\t%0";
++      case 2:
++        return "mcall\t%0";
++      case 3:
++        if (TARGET_HAS_ASM_ADDR_PSEUDOS)
++          return "call\t%0";
++        else
++          return "mcall\tr6[%0@got]";
++      default:
++        abort();
++    }
 +  }
 +  [(set_attr "type" "call")
 +   (set_attr "length" "2,4,4,10")
@@ -14355,50 +14436,54 @@
 +              (clobber (reg:SI LR_REGNUM))])]
 +  ""
 +  {
-+   rtx call_address;
-+   if ( GET_CODE(operands[0]) != MEM )
++    rtx call_address;
++    if ( GET_CODE(operands[0]) != MEM )
 +      FAIL;
 +
-+   call_address = XEXP(operands[0], 0);
++    call_address = XEXP(operands[0], 0);
 +
-+   /* If assembler supports call pseudo insn and the call
-+      address is a symbol then nothing special needs to be done. */
-+   if ( TARGET_HAS_ASM_ADDR_PSEUDOS
-+        && (GET_CODE(call_address) == SYMBOL_REF) ){
-+      /* We must however mark the function as using the GOT if
-+         flag_pic is set, since the call insn might turn into
-+         a mcall using the GOT ptr register. */
-+      if ( flag_pic ){
-+         current_function_uses_pic_offset_table = 1;
-+         emit_call_insn(gen_call_internal(call_address, operands[1]));
-+         DONE;
-+      }
-+   } else {
-+     if ( flag_pic &&
-+          GET_CODE(call_address) == SYMBOL_REF ){
-+       current_function_uses_pic_offset_table = 1;
-+       emit_call_insn(gen_call_internal(call_address, operands[1]));
-+       DONE;
-+     }
-+
-+     if ( !SYMBOL_REF_RCALL_FUNCTION_P(operands[0]) ){
-+       if ( optimize_size &&
-+             GET_CODE(call_address) == SYMBOL_REF ){
-+         call_address = force_const_mem(SImode, call_address);
-+       } else {
-+         call_address = force_reg(SImode, call_address);
++   /* If assembler supports call pseudo insn and the call address is a symbol then nothing special needs to be done. */
++    if (TARGET_HAS_ASM_ADDR_PSEUDOS && (GET_CODE(call_address) == SYMBOL_REF) )
++    {
++       /* We must however mark the function as using the GOT if flag_pic is set, since the call insn might turn into a mcall using the GOT ptr register. */
++       if (flag_pic)
++       {
++          current_function_uses_pic_offset_table = 1;
++          emit_call_insn(gen_call_internal(call_address, operands[1]));
++          DONE;
 +       }
-+     }
-+   }
-+   emit_call_insn(gen_call_internal(call_address, operands[1]));
-+   DONE;
++    } 
++    else 
++    {
++      if (flag_pic && GET_CODE(call_address) == SYMBOL_REF )
++      {
++        current_function_uses_pic_offset_table = 1;
++        emit_call_insn(gen_call_internal(call_address, operands[1]));
++        DONE;
++      }
++
++      if (!SYMBOL_REF_RCALL_FUNCTION_P(operands[0]) )
++      {
++        if (optimize_size && GET_CODE(call_address) == SYMBOL_REF )
++        {
++          call_address = force_const_mem(SImode, call_address);
++        } 
++        else 
++        {
++          call_address = force_reg(SImode, call_address);
++        }
++      }
++    }
++    emit_call_insn(gen_call_internal(call_address, operands[1]));
++    DONE;
++
 +  }
 +)
 +
 +;;=============================================================================
 +;; call_value
 +;;-----------------------------------------------------------------------------
-+;; Subrutine call instruction returning a value.
++;; Subroutine call instruction returning a value.
 +;;=============================================================================
 +(define_expand "call_value"
 +   [(parallel [(set (match_operand:SI 0 "" "")
@@ -14412,6 +14497,13 @@
 +      FAIL;
 +
 +    call_address = XEXP(operands[1], 0);
++
++   /* Check for a flashvault call. 
++   if (GET_CODE (call_address) == SYMBOL_REF 
++       && avr32_flashvault_call (SYMBOL_REF_DECL (call_address)))
++     DONE;  
++     
++    */ 
 +
 +    /* If assembler supports call pseudo insn and the call
 +       address is a symbol then nothing special needs to be done. */
@@ -14456,21 +14548,29 @@
 +  ;; Operand 2 not used on the AVR32.
 +  ""
 +  {
-+   switch (which_alternative){
-+    case 0:
-+      return "icall\t%1";
-+    case 1:
-+      return "rcall\t%1";
-+    case 2:
-+      return "mcall\t%1";
-+    case 3:
-+      if ( TARGET_HAS_ASM_ADDR_PSEUDOS )
-+        return "call\t%1";
-+      else
-+        return "mcall\tr6[%1@got]";
-+    default:
-+      abort();
-+   }
++    /* Check for a flashvault call. */
++    if (avr32_flashvault_call (SYMBOL_REF_DECL (operands[1])))
++      {
++        /* Assembly is already emitted. */
++        return "";
++      }
++
++
++    switch (which_alternative) {
++      case 0:
++        return "icall\t%1";
++      case 1:
++        return "rcall\t%1";
++      case 2:
++        return "mcall\t%1";
++      case 3:
++        if ( TARGET_HAS_ASM_ADDR_PSEUDOS )
++          return "call\t%1";
++        else
++          return "mcall\tr6[%1@got]";
++      default:
++        abort();
++    }
 +  }
 +  [(set_attr "type" "call")
 +   (set_attr "length" "2,4,4,10")
@@ -14602,19 +14702,6 @@
 +  [(set_attr "type" "call")])
 +  
 +;;=============================================================================
-+;; nop
-+;;-----------------------------------------------------------------------------
-+;; No-op instruction.
-+;;=============================================================================
-+(define_insn "nop"
-+  [(const_int 0)]
-+  ""
-+  "nop"
-+  [(set_attr "length" "2")
-+   (set_attr "type" "alu")
-+   (set_attr "cc" "none")])
-+
-+;;=============================================================================
 +;; nonlocal_goto_receiver
 +;;-----------------------------------------------------------------------------
 +;; For targets with a return stack we must make sure to flush the return stack
@@ -14676,7 +14763,7 @@
 +
 +(define_insn "indirect_jump_internal"
 +  [(set (pc)
-+	(match_operand:SI 0 "general_operand" "r,m,W"))]
++	(match_operand:SI 0 "avr32_non_rmw_general_operand" "r,m,W"))]
 +  ""
 +  {
 +    switch( which_alternative ){
@@ -15206,6 +15293,101 @@
 +   (set_attr "length" "4")]
 +  )
 +
++(define_insn "sleep"
++  [(unspec_volatile [(const_int 0)] VUNSPEC_SLEEP)
++  (match_operand:SI 0 "const_int_operand" "")]
++  ""
++  "sleep	%0"
++  [(set_attr "length" "1")
++   (set_attr "cc"  "none")
++  ])
++
++(define_expand "delay_cycles"
++  [(unspec_volatile [(match_operand:SI 0 "const_int_operand" "i")]
++                    VUNSPEC_DELAY_CYCLES)]
++  ""
++  "
++  unsigned int cycles = UINTVAL (operands[0]);
++  if (IN_RANGE(cycles,0x10000 ,0xFFFFFFFF))
++   {
++     unsigned int msb = (cycles & 0xFFFF0000);
++     unsigned int shift = 16;
++     msb = (msb >> shift);
++     unsigned int cycles_used = (msb*0x10000);
++     emit_insn (gen_delay_cycles_2 (gen_int_mode (msb, SImode)));
++     cycles -= cycles_used;
++   }
++  if (IN_RANGE(cycles, 4, 0xFFFF))
++   {
++     unsigned int loop_count = (cycles/ 4);
++     unsigned int cycles_used = (loop_count*4);
++     emit_insn (gen_delay_cycles_1 (gen_int_mode (loop_count, SImode)));
++     cycles -= cycles_used;
++   }
++  while (cycles >= 3)
++    {
++      emit_insn (gen_nop3 ());
++      cycles -= 3;
++    }
++  if (cycles == 1 || cycles == 2)
++    {
++      while (cycles--)
++        emit_insn (gen_nop ());
++    }
++  DONE;
++  ")
++
++(define_insn "delay_cycles_1"
++[(unspec_volatile [(const_int 0)] VUNSPEC_DELAY_CYCLES_1)
++  (match_operand:SI 0 "immediate_operand" "")
++  (clobber (match_scratch:SI 1 "=&r"))]
++  ""
++  "mov\t%1, %0
++    1:  sub\t%1, 1
++        brne\t1b
++        nop"
++)
++
++(define_insn "delay_cycles_2"
++[(unspec_volatile [(const_int 0)] VUNSPEC_DELAY_CYCLES_2)
++  (match_operand:SI 0 "immediate_operand" "")
++  (clobber (match_scratch:SI 1 "=&r"))
++  (clobber (match_scratch:SI 2 "=&r"))]
++  ""
++  "mov\t%1, %0
++    1:  mov\t%2, 16383 
++    2:  sub\t%2, 1	
++        brne\t2b
++        nop
++        sub\t%1, 1
++        brne\t1b
++        nop"
++)
++
++;; CPU instructions
++
++;;=============================================================================
++;; nop
++;;-----------------------------------------------------------------------------
++;; No-op instruction.
++;;=============================================================================
++(define_insn "nop"
++  [(unspec_volatile [(const_int 0)] VUNSPEC_NOP)]
++  ""
++  "nop"
++  [(set_attr "length" "1")
++   (set_attr "type" "alu")
++  (set_attr "cc" "none")])
++
++;; NOP3
++(define_insn "nop3"
++  [(unspec_volatile [(const_int 0)] VUNSPEC_NOP3)]
++  ""
++  "rjmp\t2"
++  [(set_attr "length" "3")
++   (set_attr "type" "alu")
++  (set_attr "cc" "none")])
++
 +;; Special patterns for dealing with the constant pool
 +
 +(define_insn "align_4"
@@ -15217,6 +15399,7 @@
 +  }
 +  [(set_attr "length" "2")]
 +)
++
 +
 +(define_insn "consttable_start"
 +  [(unspec_volatile [(const_int 0)] VUNSPEC_POOL_START)]
@@ -16255,15 +16438,15 @@
 +;; Load the SIMD description
 +(include "simd.md")
 +
-+;; Load the FP coprAocessor patterns
-+(include "fpcp.md")
++;; Include the FPU for uc3
++(include "uc3fpu.md")
 --- /dev/null
 +++ b/gcc/config/avr32/avr32-modes.def
 @@ -0,0 +1 @@
 +VECTOR_MODES (INT, 4);        /*            V4QI V2HI */
 --- /dev/null
 +++ b/gcc/config/avr32/avr32.opt
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,89 @@
 +; Options for the ATMEL AVR32 port of the compiler.
 +
 +; Copyright 2007 Atmel Corporation.
@@ -16290,12 +16473,12 @@
 +Use section .rodata for read-only data instead of .text.
 +
 +mhard-float
-+Target Report Undocumented Mask(HARD_FLOAT)
-+Use floating point coprocessor instructions.
++Target Report Mask(HARD_FLOAT)
++Use FPU instructions instead of floating point emulation.
 +
 +msoft-float
-+Target Report Undocumented InverseMask(HARD_FLOAT, SOFT_FLOAT)
-+Use software floating-point library for floating-point operations.
++Target Report InverseMask(HARD_FLOAT, SOFT_FLOAT)
++Use floating point emulation for floating point operations.
 +
 +mforce-double-align
 +Target Report RejectNegative Mask(FORCE_DOUBLE_ALIGN)
@@ -16345,15 +16528,20 @@
 +Target Report Undocumented Mask(COND_EXEC_BEFORE_RELOAD) 
 +Enable experimental conditional execution preparation before the reload stage. 
 +
++mrmw-addressable-data
++Target Report Mask(RMW_ADDRESSABLE_DATA)
++Signal that all data is in range for the Atomic Read-Modify-Write memory instructions, and that
++gcc can safely generate these whenever possible. 
++
++mflashvault
++Target Var(TARGET_FLASHVAULT)
++Generate code for flashvault
 --- /dev/null
 +++ b/gcc/config/avr32/avr32-protos.h
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,196 @@
 +/*
 +   Prototypes for exported functions defined in avr32.c
-+   Copyright 2003-2006 Atmel Corporation.
-+
-+   Written by Ronny Pedersen, Atmel Norway, <rpedersen@atmel.com>
-+   Initial porting by Anders �dland.
++   Copyright 2003,2004,2005,2006,2007,2008,2009 Atmel Corporation.
 +
 +   This file is part of GCC.
 +
@@ -16543,6 +16731,8 @@
 +int avr32_cond_imm_clobber_splittable (rtx insn, 
 +                                       rtx operands[]);
 +
++bool avr32_flashvault_call(tree decl);
++extern void avr32_emit_swdivsf (rtx, rtx, rtx);
 +
 +#endif /* AVR32_PROTOS_H */
 --- /dev/null
@@ -16660,562 +16850,8 @@
 +	ldm	sp++, r6, pc
 +		
 --- /dev/null
-+++ b/gcc/config/avr32/fpcp.md
-@@ -0,0 +1,551 @@
-+;;   AVR32 machine description file for Floating-Point instructions.
-+;;   Copyright 2003-2006 Atmel Corporation.
-+;;
-+;;   Written by Ronny Pedersen, Atmel Norway, <rpedersen@atmel.com>
-+;;
-+;;   This file is part of GCC.
-+;;
-+;;   This program is free software; you can redistribute it and/or modify
-+;;   it under the terms of the GNU General Public License as published by
-+;;   the Free Software Foundation; either version 2 of the License, or
-+;;   (at your option) any later version.
-+;;
-+;;   This program is distributed in the hope that it will be useful,
-+;;   but WITHOUT ANY WARRANTY; without even the implied warranty of
-+;;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+;;   GNU General Public License for more details.
-+;;
-+;;   You should have received a copy of the GNU General Public License
-+;;   along with this program; if not, write to the Free Software
-+;;   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-+
-+;; -*- Mode: Scheme -*-
-+
-+;;******************************************************************************
-+;; Automaton pipeline description for floating-point coprocessor insns
-+;;******************************************************************************
-+(define_cpu_unit "fid,fm1,fm2,fm3,fm4,fwb,fcmp,fcast" "avr32_ap")
-+
-+(define_insn_reservation "fmv_op" 1
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "fmv"))
-+  "is,da,d,fid,fwb")
-+
-+(define_insn_reservation "fmul_op" 5
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "fmul"))
-+  "is,da,d,fid,fm1,fm2,fm3,fm4,fwb")
-+
-+(define_insn_reservation "fcmps_op" 1
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "fcmps"))
-+  "is,da,d,fid,fcmp")
-+
-+(define_insn_reservation "fcmpd_op" 2
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "fcmpd"))
-+  "is,da,d,fid*2,fcmp")
-+
-+(define_insn_reservation "fcast_op" 3
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "fcast"))
-+  "is,da,d,fid,fcmp,fcast,fwb")
-+
-+(define_insn_reservation "fmvcpu_op" 2
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "fmvcpu"))
-+  "is,da,d")
-+
-+(define_insn_reservation "fldd_op" 1
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "fldd"))
-+  "is,da,d,fwb")
-+
-+(define_insn_reservation "flds_op" 1
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "flds"))
-+  "is,da,d,fwb")
-+
-+(define_insn_reservation "fsts_op" 0
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "fsts"))
-+  "is,da*2,d")
-+
-+(define_insn_reservation "fstd_op" 0
-+  (and (eq_attr "pipeline" "ap")
-+       (eq_attr "type" "fstd"))
-+  "is,da*2,d")
-+
-+
-+(define_insn "*movsf_fpcp"
-+  [(set (match_operand:SF 0 "nonimmediate_operand"     "=f,f,r,f,m,r,r,r,m")
-+	(match_operand:SF 1 "general_operand"          " f,r,f,m,f,r,G,m,r"))]
-+  "TARGET_HARD_FLOAT"
-+  "@
-+   fmov.s\t%0, %1
-+   fmov.s\t%0, %1
-+   fmov.s\t%0, %1
-+   fld.s\t%0, %1
-+   fst.s\t%0, %1
-+   mov\t%0, %1
-+   mov\t%0, %1
-+   ld.w\t%0, %1
-+   st.w\t%0, %1"
-+  [(set_attr "length" "4,4,4,4,4,2,4,4,4")
-+   (set_attr "type" "fmv,flds,fmvcpu,flds,fsts,alu,alu,load,store")])
-+
-+(define_insn_and_split "*movdf_fpcp"
-+  [(set (match_operand:DF 0 "nonimmediate_operand"     "=f,f,r,f,m,r,r,m")
-+	(match_operand:DF 1 "general_operand"          " f,r,f,m,f,r,m,r"))]
-+  "TARGET_HARD_FLOAT"
-+  "@
-+   fmov.d\t%0, %1
-+   fmov.d\t%0, %1
-+   fmov.d\t%0, %1
-+   fld.d\t%0, %1
-+   fst.d\t%0, %1
-+   mov\t%0, %1\;mov\t%m0, %m1
-+   ld.d\t%0, %1
-+   st.d\t%0, %1"
-+
-+  "TARGET_HARD_FLOAT
-+   && reload_completed
-+   && (REG_P(operands[0]) &&  (REGNO_REG_CLASS(REGNO(operands[0])) == GENERAL_REGS))
-+   && (REG_P(operands[1]) &&  (REGNO_REG_CLASS(REGNO(operands[1])) == GENERAL_REGS))"
-+  [(set (match_dup 0) (match_dup 1))
-+   (set (match_dup 2) (match_dup 3))]
-+  "
-+   {
-+    operands[2] = gen_highpart (SImode, operands[0]);
-+    operands[0] = gen_lowpart (SImode, operands[0]);
-+    operands[3] = gen_highpart(SImode, operands[1]);
-+    operands[1] = gen_lowpart(SImode, operands[1]);
-+   }
-+  "
-+
-+  [(set_attr "length" "4,4,4,4,4,4,4,4")
-+   (set_attr "type" "fmv,fldd,fmvcpu,fldd,fstd,alu2,load2,store2")])
-+
-+
-+(define_insn "mulsf3"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(mult:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")
-+		 (match_operand:SF 2 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fmul.s\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_insn "nmulsf3"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(neg:SF (mult:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")
-+                         (match_operand:SF 2 "avr32_fp_register_operand" "f"))))]
-+  "TARGET_HARD_FLOAT"
-+  "fnmul.s\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_peephole2
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "")
-+	(mult:SF (match_operand:SF 1 "avr32_fp_register_operand" "")
-+		 (match_operand:SF 2 "avr32_fp_register_operand" "")))
-+   (set (match_operand:SF          3 "avr32_fp_register_operand" "")
-+	(neg:SF (match_dup 0)))]
-+  "TARGET_HARD_FLOAT &&
-+   (peep2_reg_dead_p(2, operands[0]) || (REGNO(operands[3]) == REGNO(operands[0])))"
-+  [(set (match_dup 3)
-+	(neg:SF (mult:SF (match_dup 1)
-+			 (match_dup 2))))]
-+)
-+
-+
-+(define_insn "macsf3"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(plus:SF (mult:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")
-+                          (match_operand:SF 2 "avr32_fp_register_operand" "f"))
-+                 (match_operand:SF 3 "avr32_fp_register_operand" "0")))]
-+  "TARGET_HARD_FLOAT"
-+  "fmac.s\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_insn "nmacsf3"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(plus:SF  (neg:SF (mult:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")
-+                                   (match_operand:SF 2 "avr32_fp_register_operand" "f")))
-+                  (match_operand:SF 3 "avr32_fp_register_operand" "0")))]
-+  "TARGET_HARD_FLOAT"
-+  "fnmac.s\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_peephole2
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "")
-+	(mult:SF (match_operand:SF 1 "avr32_fp_register_operand" "")
-+		 (match_operand:SF 2 "avr32_fp_register_operand" "")))
-+   (set (match_operand:SF          3 "avr32_fp_register_operand" "")
-+	(minus:SF
-+	 (match_dup 3)
-+	 (match_dup 0)))]
-+  "TARGET_HARD_FLOAT && peep2_reg_dead_p(2, operands[0])"
-+  [(set (match_dup 3)
-+	(plus:SF  (neg:SF (mult:SF (match_dup 1)
-+                                   (match_dup 2)))
-+                  (match_dup 3)))]
-+)
-+
-+
-+(define_insn "msubacsf3"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(minus:SF (mult:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")
-+                           (match_operand:SF 2 "avr32_fp_register_operand" "f"))
-+                  (match_operand:SF 3 "avr32_fp_register_operand" "0")))]
-+  "TARGET_HARD_FLOAT"
-+  "fmsc.s\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_peephole2
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "")
-+	(mult:SF (match_operand:SF 1 "avr32_fp_register_operand" "")
-+		 (match_operand:SF 2 "avr32_fp_register_operand" "")))
-+   (set (match_operand:SF          3 "avr32_fp_register_operand" "")
-+	(minus:SF
-+	 (match_dup 0)
-+	 (match_dup 3)))]
-+  "TARGET_HARD_FLOAT && peep2_reg_dead_p(2, operands[0])"
-+  [(set (match_dup 3)
-+	(minus:SF  (mult:SF (match_dup 1)
-+			    (match_dup 2))
-+		   (match_dup 3)))]
-+)
-+
-+(define_insn "nmsubacsf3"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(minus:SF  (neg:SF (mult:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")
-+                                    (match_operand:SF 2 "avr32_fp_register_operand" "f")))
-+                   (match_operand:SF 3 "avr32_fp_register_operand" "0")))]
-+  "TARGET_HARD_FLOAT"
-+  "fnmsc.s\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+
-+
-+(define_insn "addsf3"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(plus:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")
-+		 (match_operand:SF 2 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fadd.s\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_insn "subsf3"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(minus:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")
-+                  (match_operand:SF 2 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fsub.s\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+
-+(define_insn "negsf2"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(neg:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fneg.s\t%0, %1"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmv")])
-+
-+(define_insn "abssf2"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(abs:SF (match_operand:SF 1 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fabs.s\t%0, %1"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmv")])
-+
-+(define_insn "truncdfsf2"
-+  [(set (match_operand:SF          0 "avr32_fp_register_operand" "=f")
-+	(float_truncate:SF
-+         (match_operand:DF 1 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fcastd.s\t%0, %1"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fcast")])
-+
-+(define_insn "extendsfdf2"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(float_extend:DF
-+         (match_operand:SF 1 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fcasts.d\t%0, %1"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fcast")])
-+
-+(define_insn "muldf3"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(mult:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")
-+		 (match_operand:DF 2 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fmul.d\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_insn "nmuldf3"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(neg:DF (mult:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")
-+                         (match_operand:DF 2 "avr32_fp_register_operand" "f"))))]
-+  "TARGET_HARD_FLOAT"
-+  "fnmul.d\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_peephole2
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "")
-+	(mult:DF (match_operand:DF 1 "avr32_fp_register_operand" "")
-+		 (match_operand:DF 2 "avr32_fp_register_operand" "")))
-+   (set (match_operand:DF          3 "avr32_fp_register_operand" "")
-+	(neg:DF (match_dup 0)))]
-+  "TARGET_HARD_FLOAT &&
-+   (peep2_reg_dead_p(2, operands[0]) || (REGNO(operands[3]) == REGNO(operands[0])))"
-+  [(set (match_dup 3)
-+	(neg:DF (mult:DF (match_dup 1)
-+			 (match_dup 2))))]
-+)
-+
-+(define_insn "macdf3"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(plus:DF (mult:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")
-+                          (match_operand:DF 2 "avr32_fp_register_operand" "f"))
-+                 (match_operand:DF 3 "avr32_fp_register_operand" "0")))]
-+  "TARGET_HARD_FLOAT"
-+  "fmac.d\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_insn "msubacdf3"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(minus:DF (mult:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")
-+                           (match_operand:DF 2 "avr32_fp_register_operand" "f"))
-+                  (match_operand:DF 3 "avr32_fp_register_operand" "0")))]
-+  "TARGET_HARD_FLOAT"
-+  "fmsc.d\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_peephole2
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "")
-+	(mult:DF (match_operand:DF 1 "avr32_fp_register_operand" "")
-+		 (match_operand:DF 2 "avr32_fp_register_operand" "")))
-+   (set (match_operand:DF          3 "avr32_fp_register_operand" "")
-+	(minus:DF
-+	 (match_dup 0)
-+	 (match_dup 3)))]
-+  "TARGET_HARD_FLOAT && peep2_reg_dead_p(2, operands[0])"
-+  [(set (match_dup 3)
-+	(minus:DF  (mult:DF (match_dup 1)
-+			    (match_dup 2))
-+		   (match_dup 3)))]
-+  )
-+
-+(define_insn "nmsubacdf3"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(minus:DF  (neg:DF (mult:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")
-+                                    (match_operand:DF 2 "avr32_fp_register_operand" "f")))
-+                   (match_operand:DF 3 "avr32_fp_register_operand" "0")))]
-+  "TARGET_HARD_FLOAT"
-+  "fnmsc.d\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_insn "nmacdf3"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(plus:DF  (neg:DF (mult:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")
-+                                   (match_operand:DF 2 "avr32_fp_register_operand" "f")))
-+                  (match_operand:DF 3 "avr32_fp_register_operand" "0")))]
-+  "TARGET_HARD_FLOAT"
-+  "fnmac.d\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_peephole2
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "")
-+	(mult:DF (match_operand:DF 1 "avr32_fp_register_operand" "")
-+		 (match_operand:DF 2 "avr32_fp_register_operand" "")))
-+   (set (match_operand:DF          3 "avr32_fp_register_operand" "")
-+	(minus:DF
-+	 (match_dup 3)
-+	 (match_dup 0)))]
-+  "TARGET_HARD_FLOAT && peep2_reg_dead_p(2, operands[0])"
-+  [(set (match_dup 3)
-+	(plus:DF  (neg:DF (mult:DF (match_dup 1)
-+                                   (match_dup 2)))
-+                  (match_dup 3)))]
-+)
-+
-+(define_insn "adddf3"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(plus:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")
-+		 (match_operand:DF 2 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fadd.d\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_insn "subdf3"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(minus:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")
-+                  (match_operand:DF 2 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fsub.d\t%0, %1, %2"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmul")])
-+
-+(define_insn "negdf2"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(neg:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fneg.d\t%0, %1"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmv")])
-+
-+(define_insn "absdf2"
-+  [(set (match_operand:DF          0 "avr32_fp_register_operand" "=f")
-+	(abs:DF (match_operand:DF 1 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  "fabs.d\t%0, %1"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmv")])
-+
-+
-+(define_expand "cmpdf"
-+  [(set (cc0)
-+	(compare:DF
-+	 (match_operand:DF 0 "general_operand" "")
-+	 (match_operand:DF 1 "general_operand"  "")))]
-+  "TARGET_HARD_FLOAT"
-+  "{
-+   rtx tmpreg;
-+   if ( !REG_P(operands[0]) )
-+     operands[0] = force_reg(DFmode, operands[0]);
-+
-+   if ( !REG_P(operands[1]) )
-+     operands[1] = force_reg(DFmode, operands[1]);
-+
-+   avr32_compare_op0 = operands[0];
-+   avr32_compare_op1 = operands[1];
-+
-+   emit_insn(gen_cmpdf_internal(operands[0], operands[1]));
-+
-+   tmpreg = gen_reg_rtx(SImode);
-+   emit_insn(gen_fpcc_to_reg(tmpreg));
-+   emit_insn(gen_reg_to_cc(tmpreg));
-+
-+   DONE;
-+  }"
-+)
-+
-+(define_insn "cmpdf_internal"
-+  [(set (reg:CC FPCC_REGNUM)
-+	(compare:CC
-+	 (match_operand:DF 0 "avr32_fp_register_operand" "f")
-+	 (match_operand:DF 1 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  {
-+   if (!rtx_equal_p(cc_prev_status.mdep.fpvalue, SET_SRC(PATTERN (insn))) )
-+      return "fcmp.d\t%0, %1";
-+   return "";
-+  }
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fcmpd")
-+   (set_attr "cc" "fpcompare")])
-+
-+(define_expand "cmpsf"
-+  [(set (cc0)
-+	(compare:SF
-+	 (match_operand:SF 0 "general_operand" "")
-+	 (match_operand:SF 1 "general_operand"  "")))]
-+  "TARGET_HARD_FLOAT"
-+  "{
-+   rtx tmpreg;
-+   if ( !REG_P(operands[0]) )
-+     operands[0] = force_reg(SFmode, operands[0]);
-+
-+   if ( !REG_P(operands[1]) )
-+     operands[1] = force_reg(SFmode, operands[1]);
-+
-+   avr32_compare_op0 = operands[0];
-+   avr32_compare_op1 = operands[1];
-+
-+   emit_insn(gen_cmpsf_internal(operands[0], operands[1]));
-+
-+   tmpreg = gen_reg_rtx(SImode);
-+   emit_insn(gen_fpcc_to_reg(tmpreg));
-+   emit_insn(gen_reg_to_cc(tmpreg));
-+
-+   DONE;
-+  }"
-+)
-+
-+(define_insn "cmpsf_internal"
-+  [(set (reg:CC FPCC_REGNUM)
-+	(compare:CC
-+	 (match_operand:SF 0 "avr32_fp_register_operand" "f")
-+	 (match_operand:SF 1 "avr32_fp_register_operand" "f")))]
-+  "TARGET_HARD_FLOAT"
-+  {
-+   if (!rtx_equal_p(cc_prev_status.mdep.fpvalue, SET_SRC(PATTERN (insn))) )
-+      return "fcmp.s\t%0, %1";
-+   return "";
-+  }
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fcmps")
-+   (set_attr "cc" "fpcompare")])
-+
-+(define_insn "fpcc_to_reg"
-+  [(set (match_operand:SI 0 "register_operand" "=r")
-+	(unspec:SI [(reg:CC FPCC_REGNUM)]
-+		   UNSPEC_FPCC_TO_REG))]
-+  "TARGET_HARD_FLOAT"
-+  "fmov.s\t%0, fsr"
-+  [(set_attr "length" "4")
-+   (set_attr "type" "fmvcpu")])
-+
-+(define_insn "reg_to_cc"
-+  [(set (cc0)
-+	(unspec:SI [(match_operand:SI 0 "register_operand" "r")]
-+		   UNSPEC_REG_TO_CC))]
-+  "TARGET_HARD_FLOAT"
-+  "musfr\t%0"
-+  [(set_attr "length" "2")
-+   (set_attr "type" "alu")
-+   (set_attr "cc" "from_fpcc")])
-+
-+(define_insn "stm_fp"
-+  [(unspec [(match_operand 0 "register_operand" "r")
-+            (match_operand 1 "const_int_operand" "")
-+            (match_operand 2 "const_int_operand" "")]
-+	   UNSPEC_STMFP)]
-+  "TARGET_HARD_FLOAT"
-+  {
-+    int cop_reglist = INTVAL(operands[1]);
-+
-+    if (INTVAL(operands[2]) != 0)
-+      return "stcm.w\tcp0, --%0, %C1";
-+    else
-+      return "stcm.w\tcp0, %0, %C1";
-+
-+    if ( cop_reglist & ~0xff ){
-+      operands[1] = GEN_INT(cop_reglist & ~0xff);
-+      if (INTVAL(operands[2]) != 0)
-+         return "stcm.d\tcp0, --%0, %D1";
-+      else
-+         return "stcm.d\tcp0, %0, %D1";
-+    }
-+  }
-+  [(set_attr "type" "fstm")
-+   (set_attr "length" "4")
-+   (set_attr "cc" "none")])
---- /dev/null
 +++ b/gcc/config/avr32/lib1funcs.S
-@@ -0,0 +1,2902 @@
+@@ -0,0 +1,2903 @@
 +/* Macro for moving immediate value to register. */	
 +.macro mov_imm	reg, imm
 +.if	(((\imm & 0xfffff) == \imm) || ((\imm | 0xfff00000) == \imm))
@@ -19840,6 +19476,7 @@
 +        cbr     r11, 31
 +        clz     r9, r11
 +        retcs   0       /* op2 is zero. Return 0 */
++        sub     r9, 8
 +        lsl     r11, r11, r9
 +        rsub    r9, r9, 1
 +                
@@ -20298,7 +19935,7 @@
 +  "%{static:--start-group} %G %L %{static:--end-group}%{!static:%G}"
 --- /dev/null
 +++ b/gcc/config/avr32/predicates.md
-@@ -0,0 +1,386 @@
+@@ -0,0 +1,422 @@
 +;;   AVR32 predicates file.
 +;;   Copyright 2003-2006 Atmel Corporation.
 +;;
@@ -20526,13 +20163,13 @@
 +  (ior (match_operand 0 "register_operand")
 +       (match_operand 0 "const_double_operand")))
 +
-+;; True is this is an operand containing a label_ref
++;; True if this is an operand containing a label_ref.
 +(define_predicate "avr32_label_ref_operand"
 +  (and (match_code "mem")
 +       (match_test "avr32_find_symbol(op)
 +                    && (GET_CODE(avr32_find_symbol(op)) == LABEL_REF)")))
 +
-+;; True is this is a valid symbol pointing to the constant pool
++;; True if this is a valid symbol pointing to the constant pool.
 +(define_predicate "avr32_const_pool_operand"
 +  (and (match_code "symbol_ref")
 +       (match_test "CONSTANT_POOL_ADDRESS_P(op)"))
@@ -20544,7 +20181,7 @@
 +  }
 +)
 +
-+;; True is this is a memory reference to the constant or mini pool
++;; True if this is a memory reference to the constant or mini pool.
 +(define_predicate "avr32_const_pool_ref_operand"
 +  (ior (match_operand 0 "avr32_label_ref_operand")
 +       (and (match_code "mem")
@@ -20565,7 +20202,7 @@
 +       (match_operand 0 "pre_dec_memory_operand")))
 +
 +
-+;; True is this is a k12 offseted memory operand
++;; True if this is a k12 offseted memory operand.
 +(define_predicate "avr32_k12_memory_operand"
 +  (and (match_code "mem")
 +       (ior (match_test "REG_P(XEXP(op, 0))")
@@ -20575,19 +20212,19 @@
 +                         && (CONST_OK_FOR_CONSTRAINT_P(INTVAL(XEXP(XEXP(op, 0), 0)),
 +                                'K', (mode == SImode) ? \"Ks14\" : ((mode == HImode) ? \"Ks13\" : \"Ks12\")))"))))
 +
-+;; True is this is a memory operand with an immediate displacement
++;; True if this is a memory operand with an immediate displacement.
 +(define_predicate "avr32_imm_disp_memory_operand"
 +  (and (match_code "mem")
 +       (match_test "GET_CODE(XEXP(op, 0)) == PLUS
 +                    && REG_P(XEXP(XEXP(op, 0), 0))
 +                    && (GET_CODE(XEXP(XEXP(op, 0), 1)) == CONST_INT)")))
 +
-+;; True is this is a bswap operand
++;; True if this is a bswap operand.
 +(define_predicate "avr32_bswap_operand"
 +  (ior (match_operand 0 "avr32_k12_memory_operand")
 +       (match_operand 0 "register_operand")))
 +
-+;; True is this is a valid coprocessor insn memory operand
++;; True if this is a valid coprocessor insn memory operand.
 +(define_predicate "avr32_cop_memory_operand"
 +  (and (match_operand 0 "memory_operand")
 +       (not (match_test "GET_CODE(XEXP(op, 0)) == PLUS
@@ -20595,34 +20232,29 @@
 +                         && (GET_CODE(XEXP(XEXP(op, 0), 1)) == CONST_INT)
 +                         && !(CONST_OK_FOR_CONSTRAINT_P(INTVAL(XEXP(XEXP(op, 0), 0)), 'K', \"Ku10\"))"))))
 +
-+;; True is this is a valid source/destination operand
++;; True if this is a valid source/destination operand.
 +;; for moving values to/from a coprocessor
 +(define_predicate "avr32_cop_move_operand"
 +  (ior (match_operand 0 "register_operand")
 +       (match_operand 0 "avr32_cop_memory_operand")))
 +
 +
-+;; True is this is a valid extract byte offset for use in
-+;; load extracted index insns
++;; True if this is a valid extract byte offset for use in
++;; load extracted index insns.
 +(define_predicate "avr32_extract_shift_operand"
 +  (and (match_operand 0 "const_int_operand")
 +       (match_test "(INTVAL(op) == 0) || (INTVAL(op) == 8)
 +                    || (INTVAL(op) == 16) || (INTVAL(op) == 24)")))
 +
-+;; True is this is a floating-point register
-+(define_predicate "avr32_fp_register_operand"
-+  (and (match_operand 0 "register_operand")
-+       (match_test "REGNO_REG_CLASS(REGNO(op)) == FP_REGS")))
-+
-+;; True is this is valid avr32 symbol operand
++;; True if this is a valid avr32 symbol operand.
 +(define_predicate "avr32_symbol_operand"
-+  (ior (match_code "label_ref, symbol_ref")
-+       (and (match_code "const")
-+            (match_test "avr32_find_symbol(op)"))))
++   (and (match_code "label_ref, symbol_ref, const")
++        (match_test "avr32_find_symbol(op)")))
 +
-+;; True is this is valid operand for the lda.w and call pseudo insns
++;; True if this is a valid operand for the lda.w and call pseudo insns.
 +(define_predicate "avr32_address_operand"
-+  (and (match_code "label_ref, symbol_ref")
++   (and (and (match_code "label_ref, symbol_ref")
++             (match_test "avr32_find_symbol(op)"))
 +       (ior (match_test "TARGET_HAS_ASM_ADDR_PSEUDOS")
 +            (match_test "flag_pic")) ))
 +
@@ -20685,6 +20317,47 @@
 +(define_predicate "avr32_mov_immediate_operand"
 +  (and (match_operand 0 "immediate_operand")
 +       (match_test "avr32_const_ok_for_move(INTVAL(op))")))
++
++
++(define_predicate "avr32_rmw_address_operand"
++  (ior (and (match_code "symbol_ref") 
++            (match_test "({rtx symbol = avr32_find_symbol(op); \
++                               symbol && (GET_CODE (symbol) == SYMBOL_REF) && SYMBOL_REF_RMW_ADDR(symbol);})"))
++       (and (match_operand 0 "immediate_operand")
++            (match_test "CONST_OK_FOR_CONSTRAINT_P(INTVAL(op), 'K', \"Ks17\")")))
++  {
++     return TARGET_RMW && !flag_pic;
++  }
++)
++ 
++(define_predicate "avr32_rmw_memory_operand"
++  (and (match_code "mem") 
++       (match_test "!volatile_refs_p(op) && (GET_MODE(op) == SImode) && 
++                    avr32_rmw_address_operand(XEXP(op, 0), GET_MODE(XEXP(op, 0)))")))
++
++(define_predicate "avr32_rmw_memory_or_register_operand"
++  (ior (match_operand 0 "avr32_rmw_memory_operand")
++       (match_operand 0 "register_operand")))
++
++(define_predicate "avr32_non_rmw_memory_operand"
++  (and (not (match_operand 0 "avr32_rmw_memory_operand"))
++       (match_operand 0 "memory_operand")))
++
++(define_predicate "avr32_non_rmw_general_operand"
++  (and (not (match_operand 0 "avr32_rmw_memory_operand"))
++       (match_operand 0 "general_operand")))
++
++(define_predicate "avr32_non_rmw_nonimmediate_operand"
++  (and (not (match_operand 0 "avr32_rmw_memory_operand"))
++       (match_operand 0 "nonimmediate_operand")))
++
++;; Return true if the operand is the 1.0f constant.
++
++(define_predicate "const_1f_operand"
++  (match_code "const_int,const_double")
++{
++  return (op == CONST1_RTX (SFmode));
++})
 --- /dev/null
 +++ b/gcc/config/avr32/simd.md
 @@ -0,0 +1,145 @@
@@ -21082,11 +20755,10 @@
 +  )
 --- /dev/null
 +++ b/gcc/config/avr32/t-avr32
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,102 @@
 +
 +MD_INCLUDES= 	$(srcdir)/config/avr32/avr32.md \
 +		$(srcdir)/config/avr32/sync.md \
-+		$(srcdir)/config/avr32/fpcp.md \
 +		$(srcdir)/config/avr32/simd.md \
 +        $(srcdir)/config/avr32/predicates.md
 +
@@ -21109,8 +20781,8 @@
 +
 +#LIB2FUNCS_EXTRA += $(srcdir)/config/avr32/lib2funcs.S
 +
-+MULTILIB_OPTIONS     = march=ap/march=ucr1/march=ucr2/march=ucr2nomul/march=ucr3
-+MULTILIB_DIRNAMES    = ap ucr1 ucr2 ucr2nomul ucr3
++MULTILIB_OPTIONS     = march=ap/march=ucr1/march=ucr2/march=ucr2nomul/march=ucr3/march=ucr3fp
++MULTILIB_DIRNAMES    = ap ucr1 ucr2 ucr2nomul ucr3 ucr3fp
 +MULTILIB_EXCEPTIONS  =
 +MULTILIB_MATCHES     += march?ap=mpart?ap7000
 +MULTILIB_MATCHES     += march?ap=mpart?ap7001
@@ -21136,27 +20808,36 @@
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b0128
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b0256es
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b0256
++MULTILIB_MATCHES     += march?ucr2=mpart?uc3b0512
 +MULTILIB_MATCHES     += march?ucr2=mpart?uc3b0512revc
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b164
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b1128
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b1256es
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b1256
++MULTILIB_MATCHES     += march?ucr2=mpart?uc3b1512
 +MULTILIB_MATCHES     += march?ucr2=mpart?uc3b1512revc
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c0512c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c0256c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c0128c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c064c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c1512c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c1256c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c1128c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c164c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c2512c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c2256c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c2128c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c264c
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3c0512crevc
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3c1512crevc
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3c2512crevc
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3l0256
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3l0128
 +MULTILIB_MATCHES     += march?ucr3=mpart?uc3l064
 +MULTILIB_MATCHES     += march?ucr3=mpart?uc3l032
 +MULTILIB_MATCHES     += march?ucr3=mpart?uc3l016
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3l064revb
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c064c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c0128c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c0256c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c0512c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c164c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c1128c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c1256c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c1512c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c264c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c2128c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c2256c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c2512c
++MULTILIB_MATCHES     += march?ucr3=mpart?mxt768e
 +
 +
 +EXTRA_MULTILIB_PARTS = crtbegin.o crtbeginS.o crtend.o crtendS.o crti.o crtn.o
@@ -21179,11 +20860,10 @@
 +
 --- /dev/null
 +++ b/gcc/config/avr32/t-avr32-linux
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,102 @@
 +
 +MD_INCLUDES= 	$(srcdir)/config/avr32/avr32.md \
 +		$(srcdir)/config/avr32/sync.md \
-+		$(srcdir)/config/avr32/fpcp.md \
 +		$(srcdir)/config/avr32/simd.md \
 +		$(srcdir)/config/avr32/predicates.md
 +
@@ -21206,8 +20886,8 @@
 +
 +#LIB2FUNCS_EXTRA += $(srcdir)/config/avr32/lib2funcs.S
 +
-+MULTILIB_OPTIONS     = march=ap/march=ucr1/march=ucr2/march=ucr2nomul/march=ucr3
-+MULTILIB_DIRNAMES    = ap ucr1 ucr2 ucr2nomul ucr3
++MULTILIB_OPTIONS     = march=ap/march=ucr1/march=ucr2/march=ucr2nomul/march=ucr3/march=ucr3fp
++MULTILIB_DIRNAMES    = ap ucr1 ucr2 ucr2nomul ucr3 ucr3fp
 +MULTILIB_EXCEPTIONS  =
 +MULTILIB_MATCHES     += march?ap=mpart?ap7000
 +MULTILIB_MATCHES     += march?ap=mpart?ap7001
@@ -21233,27 +20913,36 @@
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b0128
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b0256es
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b0256
++MULTILIB_MATCHES     += march?ucr2=mpart?uc3b0512
 +MULTILIB_MATCHES     += march?ucr2=mpart?uc3b0512revc
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b164
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b1128
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b1256es
 +MULTILIB_MATCHES     += march?ucr1=mpart?uc3b1256
++MULTILIB_MATCHES     += march?ucr2=mpart?uc3b1512
 +MULTILIB_MATCHES     += march?ucr2=mpart?uc3b1512revc
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c0512c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c0256c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c0128c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c064c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c1512c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c1256c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c1128c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c164c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c2512c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c2256c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c2128c
-+MULTILIB_MATCHES     += march?ucr3=mpart?uc3c264c
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3c0512crevc
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3c1512crevc
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3c2512crevc
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3l0256
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3l0128
 +MULTILIB_MATCHES     += march?ucr3=mpart?uc3l064
 +MULTILIB_MATCHES     += march?ucr3=mpart?uc3l032
 +MULTILIB_MATCHES     += march?ucr3=mpart?uc3l016
++MULTILIB_MATCHES     += march?ucr3=mpart?uc3l064revb
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c064c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c0128c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c0256c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c0512c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c164c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c1128c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c1256c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c1512c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c264c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c2128c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c2256c
++MULTILIB_MATCHES     += march?ucr3fp=mpart?uc3c2512c
++MULTILIB_MATCHES     += march?ucr3=mpart?mxt768e
 +
 +
 +EXTRA_MULTILIB_PARTS = crtbegin.o crtbeginS.o crtend.o crtendS.o
@@ -21293,6 +20982,207 @@
 +
 +LIBGCC = stmp-multilib
 +INSTALL_LIBGCC = install-multilib
+--- /dev/null
++++ b/gcc/config/avr32/uc3fpu.md
+@@ -0,0 +1,198 @@
++;;   AVR32 machine description file for Floating-Point instructions.
++;;   Copyright 2003-2006 Atmel Corporation.
++;;
++;;
++;;   This file is part of GCC.
++;;
++;;   This program is free software; you can redistribute it and/or modify
++;;   it under the terms of the GNU General Public License as published by
++;;   the Free Software Foundation; either version 2 of the License, or
++;;   (at your option) any later version.
++;;
++;;   This program is distributed in the hope that it will be useful,
++;;   but WITHOUT ANY WARRANTY; without even the implied warranty of
++;;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++;;   GNU General Public License for more details.
++;;
++;;   You should have received a copy of the GNU General Public License
++;;   along with this program; if not, write to the Free Software
++;;   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++
++(define_insn "*movsf_uc3fp"
++  [(set (match_operand:SF 0 "nonimmediate_operand"     "=r,r,r,m")
++	(match_operand:SF 1 "general_operand"          "r,G,m,r"))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "@
++   mov\t%0, %1
++   mov\t%0, %1
++   ld.w\t%0, %1
++   st.w\t%0, %1"
++  [(set_attr "length" "2,4,4,4")
++   (set_attr "type" "alu,alu,load,store")])
++
++(define_insn "mulsf3"
++  [(set (match_operand:SF          0 "register_operand" "=r")
++	(mult:SF (match_operand:SF 1 "register_operand" "r")
++		 (match_operand:SF 2 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fmul.s\t%0, %1, %2"
++  [(set_attr "length" "4")
++   (set_attr "type" "fmul")])
++
++(define_insn "nmulsf3"
++  [(set (match_operand:SF          0 "register_operand" "=r")
++	(neg:SF (mult:SF (match_operand:SF 1 "register_operand" "%r")
++                         (match_operand:SF 2 "register_operand" "r"))))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fnmul.s\t%0, %1, %2"
++  [(set_attr "length" "4")
++   (set_attr "type" "fmul")])
++
++(define_insn "macsf3"
++  [(set (match_operand:SF          0 "register_operand" "=r")
++	(plus:SF (mult:SF (match_operand:SF 1 "register_operand" "r")
++                          (match_operand:SF 2 "register_operand" "r"))
++                 (match_operand:SF 3 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fmac.s\t%0, %3, %1, %2"
++  [(set_attr "length" "4")
++   (set_attr "type" "fmul")])
++
++;(define_insn "nmacsf3"
++;  [(set (match_operand:SF          0 "register_operand" "=r")
++;	(plus:SF  (neg:SF (match_operand:SF 1 "register_operand" "r"))
++;                            (mult:SF(match_operand:SF 2 "register_operand" "r")
++;                                    (match_operand:SF 3 "register_operand" "r"))))]
++;  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++;  "fnmac.s\t%0, %1, %2, %3"
++;  [(set_attr "length" "4")
++;   (set_attr "type" "fmul")])
++
++(define_insn "nmacsf3"
++  [(set (match_operand:SF          0 "register_operand" "=r")
++	(minus:SF  (mult:SF (match_operand:SF 2 "register_operand" "r")
++                        (match_operand:SF 3 "register_operand" "r"))
++	                    (match_operand:SF 1 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fnmac.s\t%0, %1, %2, %3"
++  [(set_attr "length" "4")
++   (set_attr "type" "fmul")])
++
++(define_insn "msubacsf3"
++  [(set (match_operand:SF          0 "register_operand" "=r")
++	(minus:SF (match_operand:SF 3 "register_operand" "r")
++	          (mult:SF (match_operand:SF 1 "register_operand" "r")
++                       (match_operand:SF 2 "register_operand" "r"))))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fmsc.s\t%0, %3, %1, %2"
++  [(set_attr "length" "4")
++   (set_attr "type" "fmul")])
++
++(define_insn "nmsubacsf3"
++  [(set (match_operand:SF          0 "register_operand" "=r")
++	(minus:SF  (neg:SF (mult:SF (match_operand:SF 1 "register_operand" "r")
++                                    (match_operand:SF 2 "register_operand" "r")))
++                   (match_operand:SF 3 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fnmsc.s\t%0, %3, %1, %2"
++  [(set_attr "length" "4")
++   (set_attr "type" "fmul")])
++
++(define_insn "addsf3"
++  [(set (match_operand:SF 0 "register_operand" "=r")
++	(plus:SF (match_operand:SF 1 "register_operand" "%r")
++                   (match_operand:SF 2 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fadd.s\t%0, %1, %2"
++  [(set_attr "length" "4")
++   (set_attr "type" "fmul")])
++
++(define_insn "subsf3"
++  [(set (match_operand:SF          0 "register_operand" "=r")
++	(minus:SF (match_operand:SF 1 "register_operand" "r")
++                  (match_operand:SF 2 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fsub.s\t%0, %1, %2"
++  [(set_attr "length" "4")
++   (set_attr "type" "fmul")])
++
++(define_insn "fixuns_truncsfsi2"
++  [(set (match_operand:SI 0 "register_operand" "=r")
++	(unsigned_fix:SI (match_operand:SF 1 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fcastrs.uw\t%0, %1"
++  [(set_attr "length" "4")])
++
++(define_insn "fix_truncsfsi2"
++  [(set (match_operand:SI 0 "register_operand" "=r")
++	(fix:SI (match_operand:SF 1 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fcastrs.sw\t%0, %1"
++  [(set_attr "length" "4")])
++
++(define_insn "floatunssisf2"
++  [(set (match_operand:SF 0 "register_operand" "=r")
++        (unsigned_float:SF (match_operand:SI 1 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fcastuw.s\t%0, %1"
++  [(set_attr "length" "4")])
++
++(define_insn "floatsisf2"
++  [(set (match_operand:SF 0 "register_operand" "=r")
++        (float:SF (match_operand:SI 1 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "fcastsw.s\t%0, %1"
++  [(set_attr "length" "4")])
++
++(define_insn "cmpsf_internal_uc3fp"
++  [(set (cc0)
++        (compare:CC
++         (match_operand:SF 0 "register_operand" "r")
++         (match_operand:SF 1 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  {
++   if (!rtx_equal_p(cc_prev_status.mdep.value, SET_SRC(PATTERN (insn))) )
++      return "fcmp.s\t%0, %1";
++   return "";
++  }
++  [(set_attr "length" "4")
++   (set_attr "cc" "compare")])
++
++(define_expand "divsf3"
++  [(set (match_operand:SF 0 "register_operand" "=r")
++	(div:SF (match_operand:SF 1 "register_operand" "r")
++		 (match_operand:SF 2 "register_operand" "r")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT && flag_unsafe_math_optimizations"
++  "{
++    emit_insn(gen_frcpa_internal(operands[0],operands[2]));
++    emit_insn(gen_mulsf3(operands[0],operands[0],operands[1]));
++    DONE;
++  }"  
++)
++
++(define_insn "frcpa_internal"
++  [(set (match_operand:SF 0 "register_operand" "=r")
++	(unspec:SF [(match_operand:SF 1 "register_operand" "r")] UNSPEC_FRCPA))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "frcpa.s %0,%1"
++  [(set_attr "length" "4")])
++
++(define_expand "sqrtsf2"
++  [(set (match_operand:SF 0 "register_operand" "")
++	(sqrt:SF (match_operand:SF 1 "register_operand" "")))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT && flag_unsafe_math_optimizations"
++  "
++{
++  rtx scratch = gen_reg_rtx (SFmode);
++  emit_insn (gen_rsqrtsf2 (scratch, operands[1], CONST1_RTX (SFmode)));
++  emit_insn (gen_divsf3(operands[0], force_reg (SFmode, CONST1_RTX (SFmode)),
++			 scratch));
++  DONE;
++}")
++
++(define_insn "rsqrtsf2"
++  [(set (match_operand:SF 0 "register_operand" "=r")
++	(div:SF (match_operand:SF 2 "const_1f_operand" "F")
++		(sqrt:SF (match_operand:SF 1 "register_operand" "?r"))))]
++  "TARGET_ARCH_FPU && TARGET_HARD_FLOAT"
++  "frsqrta.s %1, %0")
 --- /dev/null
 +++ b/gcc/config/avr32/uclinux-elf.h
 @@ -0,0 +1,20 @@
@@ -21472,7 +21362,15 @@
  * Blackfin Built-in Functions::
  * FR-V Built-in Functions::
  * X86 Built-in Functions::
-@@ -6955,6 +6982,74 @@ when the @option{-mfpu=neon} switch is u
+@@ -6947,6 +6974,7 @@ long long __builtin_arm_wxor (long long,
+ long long __builtin_arm_wzero ()
+ @end smallexample
+ 
++
+ @node ARM NEON Intrinsics
+ @subsection ARM NEON Intrinsics
+ 
+@@ -6955,6 +6983,74 @@ when the @option{-mfpu=neon} switch is u
  
  @include arm-neon-intrinsics.texi
  
@@ -21609,7 +21507,7 @@
  * Blackfin Options::
  * CRIS Options::
  * CRX Options::
-@@ -8834,6 +8835,120 @@ comply to the C standards, but it will p
+@@ -8834,6 +8835,129 @@ comply to the C standards, but it will p
  size.
  @end table
  
@@ -21685,27 +21583,36 @@
 +@samp{uc3b0128},
 +@samp{uc3b0256},
 +@samp{uc3b0256es},
++@samp{uc3b0512},
 +@samp{uc3b0512revc},
 +@samp{uc3b164},
 +@samp{uc3b1128},
 +@samp{uc3b1256},
 +@samp{uc3b1256es},
++@samp{uc3b1512}
 +@samp{uc3b1512revc}
-+@samp{uc3c0512c},
-+@samp{uc3c0256c},
-+@samp{uc3c0128c},
-+@samp{uc3c064c},
-+@samp{uc3c1512c},
-+@samp{uc3c1256c},
-+@samp{uc3c1128c},
-+@samp{uc3c164c},
-+@samp{uc3c2512c},
-+@samp{uc3c2256c},
-+@samp{uc3c2128c},
-+@samp{uc3c264c},
++@samp{uc3c0512crevc},
++@samp{uc3c1512crevc},
++@samp{uc3c2512crevc},
++@samp{uc3l0256},
++@samp{uc3l0128},
 +@samp{uc3l064},
 +@samp{uc3l032},
-+@samp{uc3l016}.
++@samp{uc3l016},
++@samp{uc3l064revb},
++@samp{uc3c064c},
++@samp{uc3c0128c},
++@samp{uc3c0256c},
++@samp{uc3c0512c},
++@samp{uc3c164c},
++@samp{uc3c1128c},
++@samp{uc3c1256c},
++@samp{uc3c1512c},
++@samp{uc3c264c},
++@samp{uc3c2128c},
++@samp{uc3c2256c},
++@samp{uc3c2512c},
++@samp{mxt768e}.
 +
 +@item -mcpu=@var{cpu-type}
 +@opindex mcpu
@@ -21730,7 +21637,7 @@
  @node Blackfin Options
  @subsection Blackfin Options
  @cindex Blackfin Options
-@@ -8889,29 +9004,12 @@ When enabled, the compiler will ensure t
+@@ -8889,29 +9013,12 @@ When enabled, the compiler will ensure t
  contain speculative loads after jump instructions. If this option is used,
  @code{__WORKAROUND_SPECULATIVE_LOADS} is defined.
  
@@ -21760,7 +21667,7 @@
  
  @item -mstack-check-l1
  @opindex mstack-check-l1
-@@ -8925,11 +9023,6 @@ This allows for execute in place and sha
+@@ -8925,11 +9032,6 @@ This allows for execute in place and sha
  without virtual memory management.  This option implies @option{-fPIC}.
  With a @samp{bfin-elf} target, this option implies @option{-msim}.
  
@@ -21772,7 +21679,7 @@
  @item -mleaf-id-shared-library
  @opindex mleaf-id-shared-library
  Generate code that supports shared libraries via the library ID method,
-@@ -8971,11 +9064,6 @@ call on this register.  This switch is n
+@@ -8971,11 +9073,6 @@ call on this register.  This switch is n
  will lie outside of the 24 bit addressing range of the offset based
  version of subroutine call instruction.
  
@@ -21786,7 +21693,15 @@
  Link with the fast floating-point library. This library relaxes some of
 --- a/gcc/doc/md.texi
 +++ b/gcc/doc/md.texi
-@@ -1681,6 +1681,58 @@ A memory reference suitable for iWMMXt l
+@@ -3,6 +3,7 @@
+ @c This is part of the GCC manual.
+ @c For copying conditions, see the file gcc.texi.
+ 
++
+ @ifset INTERNALS
+ @node Machine Desc
+ @chapter Machine Descriptions
+@@ -1681,6 +1682,58 @@ A memory reference suitable for iWMMXt l
  A memory reference suitable for the ARMv4 ldrsb instruction.
  @end table
  
@@ -21904,7 +21819,7 @@
        || (mode != BLKmode && ! direct_store[(int) mode]
  	  && GET_MODE_CLASS (mode) != MODE_COMPLEX_INT
  	  && GET_MODE_CLASS (mode) != MODE_COMPLEX_FLOAT)
-@@ -5896,7 +5899,19 @@ get_inner_reference (tree exp, HOST_WIDE
+@@ -5896,7 +5899,18 @@ get_inner_reference (tree exp, HOST_WIDE
      {
        tree field = TREE_OPERAND (exp, 1);
        size_tree = DECL_SIZE (field);
@@ -21917,15 +21832,14 @@
 +             access operation. But for volatile bitfields we do
 +             not allow this when targetm.narrow_volatile_bitfield ()
 +             is false. We can use DECL_C_BIT_FIELD to check if this
-+             really is a c-bitfield. */
++             really is a c-bitfield. */ 
 +          && !(TREE_THIS_VOLATILE (exp)
 +               && !targetm.narrow_volatile_bitfield ()
 +               && DECL_C_BIT_FIELD (field)) )
-+
  	mode = DECL_MODE (field);
        else if (DECL_MODE (field) == BLKmode)
  	blkmode_bitfield = true;
-@@ -7889,7 +7904,8 @@ expand_expr_real_1 (tree exp, rtx target
+@@ -7889,7 +7903,8 @@ expand_expr_real_1 (tree exp, rtx target
  	   by doing the extract into an object as wide as the field
  	   (which we know to be the width of a basic mode), then
  	   storing into memory, and changing the mode to BLKmode.  */
@@ -22239,6 +22153,77 @@
  
  /* Indexed by the rtx-code for a conditional (e.g. EQ, LT,...)
     gives the gen_function to make a branch to test that condition.  */
+--- a/gcc/regrename.c
++++ b/gcc/regrename.c
+@@ -1580,6 +1580,9 @@ copyprop_hardreg_forward_1 (basic_block
+   bool changed = false;
+   rtx insn;
+ 
++  rtx prev_pred_test;
++  int prev_pred_insn_skipped = 0;
++
+   for (insn = BB_HEAD (bb); ; insn = NEXT_INSN (insn))
+     {
+       int n_ops, i, alt, predicated;
+@@ -1619,6 +1622,58 @@ copyprop_hardreg_forward_1 (basic_block
+ 	    recog_data.operand_type[i] = OP_INOUT;
+ 	}
+ 
++
++      /* Added for targets (AVR32) which supports test operands to be modified
++         in cond_exec instruction. For these targets we cannot make a change to
++         the test operands if one of the test operands is an output operand This beacuse
++         changing the test operands might cause the need for inserting a new test
++         insns in the middle of a sequence of cond_exec insns and if the test operands
++         are modified these tests will fail.
++      */
++      if ( IFCVT_ALLOW_MODIFY_TEST_IN_INSN
++           && predicated )
++        { 
++          int insn_skipped = 0;
++          rtx test = COND_EXEC_TEST (PATTERN (insn));
++
++          /* Check if the previous insn was a skipped predicated insn with the same
++             test as this predicated insns. If so we cannot do any modification to
++             this insn either since we cannot emit the test insn because the operands
++             are clobbered. */
++          if ( prev_pred_insn_skipped 
++               && (rtx_equal_p (test, prev_pred_test) 
++                   || rtx_equal_p (test, reversed_condition (prev_pred_test))) )
++            { 
++              insn_skipped = 1;
++            }
++          else
++            {
++              /* Check if the output operand is used in the test expression. */
++              for (i = 0; i < n_ops; ++i)
++                if ( recog_data.operand_type[i] == OP_INOUT 
++                     && reg_mentioned_p (recog_data.operand[i], test) )
++                  {
++                    insn_skipped = 1;
++                    break;
++                  }
++              
++            }
++          
++          prev_pred_test = test;
++          prev_pred_insn_skipped = insn_skipped;
++          if ( insn_skipped )
++            {
++              if (insn == BB_END (bb))
++                break;
++              else
++                continue;
++            }
++        } 
++      else 
++        {
++          prev_pred_insn_skipped = 0;
++        }
++      
+       /* For each earlyclobber operand, zap the value data.  */
+       for (i = 0; i < n_ops; i++)
+ 	if (recog_op_alt[i][alt].earlyclobber)
 --- a/gcc/sched-deps.c
 +++ b/gcc/sched-deps.c
 @@ -1406,7 +1406,14 @@ fixup_sched_groups (rtx insn)
