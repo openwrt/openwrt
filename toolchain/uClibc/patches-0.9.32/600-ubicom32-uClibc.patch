@@ -1,6 +1,6 @@
 --- a/Rules.mak
 +++ b/Rules.mak
-@@ -481,6 +481,17 @@
+@@ -481,6 +481,17 @@ ifeq ($(TARGET_ARCH),i960)
        SYMBOL_PREFIX=_
  endif
  
@@ -20,7 +20,7 @@
  endif
 --- a/extra/Configs/Config.in
 +++ b/extra/Configs/Config.in
-@@ -102,6 +102,9 @@
+@@ -102,6 +102,9 @@ config TARGET_sh64
  config TARGET_sparc
  	bool "sparc"
  
@@ -30,7 +30,7 @@
  config TARGET_v850
  	bool "v850 (BROKEN)"
  
-@@ -203,6 +206,10 @@
+@@ -203,6 +206,10 @@ if TARGET_sparc
  source "extra/Configs/Config.sparc"
  endif
  
@@ -43,7 +43,7 @@
  endif
 --- a/extra/Configs/Config.in.arch
 +++ b/extra/Configs/Config.in.arch
-@@ -149,7 +149,7 @@
+@@ -149,7 +149,7 @@ config UCLIBC_HAS_SOFT_FLOAT
  config DO_C99_MATH
  	bool "Enable full C99 math library support"
  	depends on UCLIBC_HAS_FLOATS
@@ -101,7 +101,7 @@
 +	string
 --- a/include/elf.h
 +++ b/include/elf.h
-@@ -337,6 +337,8 @@
+@@ -337,6 +337,8 @@ typedef struct
  
  #define EM_XSTORMY16		0xad45
  
@@ -110,7 +110,7 @@
  /* FRV magic number - no EABI available??.  */
  #define EM_CYGNUS_FRV	0x5441
  
-@@ -3063,6 +3065,55 @@
+@@ -3063,6 +3065,55 @@ typedef Elf32_Addr Elf32_Conflict;
  /* Keep this the last entry.  */
  #define R_XTENSA_NUM		50
  
@@ -168,7 +168,7 @@
  #endif
 --- a/include/features.h
 +++ b/include/features.h
-@@ -445,4 +445,10 @@
+@@ -445,4 +445,10 @@ uClibc was built without large file supp
  # include <libc-internal.h>
  #endif
  
@@ -181,7 +181,7 @@
  #endif	/* features.h  */
 --- a/ldso/ldso/dl-startup.c
 +++ b/ldso/ldso/dl-startup.c
-@@ -164,10 +164,13 @@
+@@ -164,10 +164,13 @@ DL_START(unsigned long args)
  		aux_dat += 2;
  	}
  
@@ -197,7 +197,7 @@
  
 --- a/ldso/ldso/ldso.c
 +++ b/ldso/ldso/ldso.c
-@@ -327,10 +327,12 @@
+@@ -327,10 +327,12 @@ void _dl_get_ready_to_run(struct elf_res
  		_dl_progname = argv[0];
  	}
  
@@ -2095,7 +2095,7 @@
 +	.size	_dl_ubicom32_resolve_pending, . - _dl_ubicom32_resolve_pending
 --- a/libc/misc/Makefile.in
 +++ b/libc/misc/Makefile.in
-@@ -12,7 +12,9 @@
+@@ -12,7 +12,9 @@ include $(top_srcdir)libc/misc/assert/Ma
  include $(top_srcdir)libc/misc/ctype/Makefile.in
  include $(top_srcdir)libc/misc/dirent/Makefile.in
  include $(top_srcdir)libc/misc/error/Makefile.in
@@ -4170,7 +4170,7 @@
 +	.set __GI_vfork,vfork
 --- a/libpthread/linuxthreads.old/pthread.c
 +++ b/libpthread/linuxthreads.old/pthread.c
-@@ -393,6 +393,10 @@
+@@ -393,6 +393,10 @@ void __pthread_initialize_minimal(void)
  #endif
  
      __libc_multiple_threads_ptr = __libc_pthread_init (ptr_pthread_functions);
@@ -4181,7 +4181,7 @@
  }
  
  
-@@ -461,8 +465,11 @@
+@@ -461,8 +465,11 @@ static void pthread_initialize(void)
     * __pthread_initial_thread_bos at address 0. These bounds are refined as we
     * malloc other stack frames such that they don't overlap. -StS
     */

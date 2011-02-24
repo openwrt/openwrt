@@ -12,8 +12,6 @@ Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
  extra/Configs/Config.arm |   14 +++++++-------
  1 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/extra/Configs/Config.arm b/extra/Configs/Config.arm
-index b060ace..3b90e67 100644
 --- a/extra/Configs/Config.arm
 +++ b/extra/Configs/Config.arm
 @@ -30,13 +30,6 @@ config CONFIG_ARM_EABI
@@ -41,6 +39,3 @@ index b060ace..3b90e67 100644
 +	depends on !CONFIG_GENERIC_ARM && !CONFIG_ARM610 && !CONFIG_ARM710
 +	help
 +	  Use BX instruction for THUMB aware architectures.
--- 
-1.7.1
-
