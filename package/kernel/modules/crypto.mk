@@ -24,7 +24,6 @@ SHA512_SUFFIX:=$(CRYPTO_GENERIC)
 CRYPTO_MODULES = \
 	ALGAPI2=crypto_algapi \
 	AEAD2=aead \
-	$(if $(filter 1,$(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.36)),PCOMP2,PCOMP)=pcompress \
 	BLKCIPHER2=crypto_blkcipher \
 	HASH2=crypto_hash \
 	MANAGER2=cryptomgr \
