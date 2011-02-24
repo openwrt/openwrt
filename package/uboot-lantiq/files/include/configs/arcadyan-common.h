@@ -28,8 +28,6 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-/* #define DEBUG */
-
 #define CONFIG_MIPS32		1	/* MIPS32 CPU compatible		*/
 #define CONFIG_MIPS24KEC	1	/* MIPS 24KEc CPU core			*/
 #define CONFIG_DANUBE		1	/* in a Danube/Twinpass Chip		*/
@@ -67,7 +65,7 @@
 #undef CONFIG_EXTRA_ENV_SETTINGS                                       
 #define CONFIG_EXTRA_ENV_SETTINGS                                       \
         "ram_addr=0x80500000\0"                                         \
-        "kernel_addr=0xb0050000\0"                                      \
+        "kernel_addr=0xb0020000\0"                                      \
         "flashargs=setenv bootargs rootfstype=squashfs,jffs2\0"         \
         "nfsargs=setenv bootargs root=/dev/nfs rw "                     \
                 "nfsroot=${serverip}:${rootpath} \0"                    \
@@ -89,7 +87,7 @@
         "update_uboot=tftp 0x80500000 ${tftppath}u-boot-" CONFIG_ARCADYAN ".bin;era 0xb0000000 +${filesize};" \
                 "cp.b 0x80500000 0xb0000000 ${filesize}\0" \
         "update_openwrt=tftp ${ram_addr} "                              \
-                "${tftppath}openwrt-lantiq-xway-" CONFIG_ARCADYAN "-squashfs.image;"            \
+                "${tftppath}" CONFIG_ARCADYAN "-squashfs.image;"            \
                 "era ${kernel_addr} +${filesize};"                      \
                 "cp.b ${ram_addr} ${kernel_addr} ${filesize}\0"
 
@@ -107,7 +105,7 @@
 //#define CLK_OUT2_25MHZ
 
 #define CONFIG_MII
-#define CONFIG_CMD_MII
+#undef CONFIG_CMD_MII
 
 #define CONFIG_IFX_ASC
 
@@ -134,5 +132,15 @@
 #define CONFIG_GATEWAYIP	192.168.1.254
 #define CONFIG_NETMASK		255.255.255.0
 #define CONFIG_ROOTPATH		"/export"
+
+#ifdef CONFIG_BOOTSTRAP
+#define CONFIG_BOOTSTRAP_BASE			CONFIG_BOOTSTRAP_TEXT_BASE
+#define CONFIG_BOOTSTRAP_BAUDRATE		CONFIG_BAUDRATE
+#define CONFIG_SKIP_LOWLEVEL_INIT
+#define CONFIG_BOOTSTRAP_LZMA
+//#define CONFIG_BOOTSTRAP_SERIAL
+#endif
+
+
 
 #endif	/* __CONFIG_H */

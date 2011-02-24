@@ -24,17 +24,33 @@
 include $(TOPDIR)/config.mk
 
 LIB	= $(obj)lib$(BOARD).a
+BOOTSTRAP_LIB = $(obj)lib$(BOARD)_bootstrap.a
+
+BOOTSTRAP_LIB-$(CONFIG_BOOTSTRAP) = $(BOOTSTRAP_LIB)
 
 COBJS-y	+= board.o athrs26_phy.o
 
 SOBJS	= lowlevel_init.o pmuenable.o
 
-SRCS	:= $(SOBJS:.o=.S) $(COBJS-y:.o=.c)
+BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP) = $(BOARD)_bootstrap.o
+BOOTSTRAP_SOBJS-$(CONFIG_BOOTSTRAP) = lowlevel_bootstrap_init.o
+
+BOOTSTRAP_SRCS	:= $(BOOTSTRAP_SOBJS-y:.o=.S) $(BOOTSTRAP_COBJS-y:.o=.c)
+
+SRCS	:= $(sort $(SOBJS:.o=.S) $(COBJS:.o=.c) $(BOOTSTRAP_SOBJS:.o=.S))
 OBJS	:= $(addprefix $(obj),$(COBJS-y))
 SOBJS	:= $(addprefix $(obj),$(SOBJS))
+BOOTSTRAP_OBJS	:= $(addprefix $(obj),$(BOOTSTRAP_COBJS-y))
+BOOTSTRAP_SOBJS	:= $(addprefix $(obj),$(BOOTSTRAP_SOBJS-y))
+
+
+all: $(obj).depend $(LIB) $(BOOTSTRAP_LIB)
 
 $(LIB):	$(obj).depend $(OBJS) $(SOBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS) $(SOBJS)
+
+$(BOOTSTRAP_LIB):	 $(BOOTSTRAP_OBJS) $(BOOTSTRAP_SOBJS)
+	$(AR) $(ARFLAGS) $@ $(BOOTSTRAP_OBJS) $(BOOTSTRAP_SOBJS)
 
 #########################################################################
 

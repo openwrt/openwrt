@@ -172,6 +172,48 @@ The side effect is the entire PCI block will see CFRAME low all the time meaning
 	.ent	ebu_init
 ebu_init:
 
+#if defined(CONFIG_EBU_ADDSEL0) || defined(CONFIG_EBU_ADDSEL1) || \
+	defined(CONFIG_EBU_ADDSEL2) || defined(CONFIG_EBU_ADDSEL3) || \
+	defined(CONFIG_EBU_BUSCON0) || defined(CONFIG_EBU_BUSCON1) || \
+	defined(CONFIG_EBU_BUSCON2) || defined(CONFIG_EBU_BUSCON3)
+
+	li	t1, EBU_MODUL_BASE
+#if defined(CONFIG_EBU_ADDSEL0)
+	li	t2, CONFIG_EBU_ADDSEL0
+	sw	t2, EBU_ADDSEL0(t1)
+#endif
+#if defined(CONFIG_EBU_ADDSEL1)
+	li	t2, CONFIG_EBU_ADDSEL1
+	sw	t2, EBU_ADDSEL1(t1)
+#endif
+#if defined(CONFIG_EBU_ADDSEL2)
+	li	t2, CONFIG_EBU_ADDSEL2
+	sw	t2, EBU_ADDSEL2(t1)
+#endif
+#if defined(CONFIG_EBU_ADDSEL3)
+	li	t2, CONFIG_EBU_ADDSEL3
+	sw	t2, EBU_ADDSEL3(t1)
+#endif
+
+#if defined(CONFIG_EBU_BUSCON0)
+	li	t2, CONFIG_EBU_BUSCON0
+	sw	t2, EBU_BUSCON0(t1)
+#endif
+#if defined(CONFIG_EBU_BUSCON1)
+	li	t2, CONFIG_EBU_BUSCON1
+	sw	t2, EBU_BUSCON1(t1)
+#endif
+#if defined(CONFIG_EBU_BUSCON2)
+	li	t2, CONFIG_EBU_BUSCON2
+	sw	t2, EBU_BUSCON2(t1)
+#endif
+#if defined(CONFIG_EBU_BUSCON3)
+	li	t2, CONFIG_EBU_BUSCON3
+	sw	t2, EBU_BUSCON3(t1)
+#endif
+
+#endif
+
 	j	ra
 	nop
 
@@ -239,6 +281,249 @@ freq_up2date:
 
 	.end	cgu_init
 
+#ifndef CONFIG_USE_DDR_RAM
+/*
+ * void sdram_init(long)
+ *
+ * a0 has the clock value
+ */
+	.globl	sdram_init
+	.ent	sdram_init
+sdram_init:
+
+	/* SDRAM Initialization
+	 */
+	li	t1, MC_MODUL_BASE
+
+	/* Clear Error log registers */
+	sw	zero, MC_ERRCAUSE(t1)
+	sw	zero, MC_ERRADDR(t1)
+
+	/* Enable SDRAM module in memory controller */
+	li	t3, MC_SDRAM_ENABLE
+	lw	t2, MC_CON(t1)
+	or	t3, t2, t3
+	sw	t3, MC_CON(t1)
+
+	li	t1, MC_SDR_MODUL_BASE
+
+	/* disable the controller */
+	li	t2, 0
+	sw	t2, MC_CTRLENA(t1)
+
+	li	t2, 0x822
+	sw	t2, MC_IOGP(t1)
+
+	li	t2, 0x2
+	sw	t2, MC_CFGDW(t1)
+
+	/* Set CAS Latency */
+	li	t2, 0x00000020
+	sw	t2, MC_MRSCODE(t1)
+
+	/* Set CS0 to SDRAM parameters */
+	li	t2, 0x000014d8
+	sw	t2, MC_CFGPB0(t1)
+
+	/* Set SDRAM latency parameters */
+	li  	t2, 0x00036325;   /* BC PC100 */
+	sw	t2, MC_LATENCY(t1)
+
+	/* Set SDRAM refresh rate */
+	li	t2, 0x00000C30
+	sw	t2, MC_TREFRESH(t1)
+
+	/* Clear Power-down registers */
+	sw	zero, MC_SELFRFSH(t1)
+
+	/* Finally enable the controller */
+	li	t2, 1
+	sw	t2, MC_CTRLENA(t1)
+
+	j	ra
+	nop
+
+	.end	sdram_init
+
+#endif /* !CONFIG_USE_DDR_RAM */
+
+#ifdef CONFIG_USE_DDR_RAM
+/*
+ * void ddrram_init(long)
+ *
+ * a0 has the clock value
+ */
+	.globl	ddrram_init
+	.ent	ddrram_init
+ddrram_init:
+
+	/* DDR-DRAM Initialization
+	 */
+	li	t1, MC_MODUL_BASE
+
+	/* Clear Error log registers */
+	sw	zero, MC_ERRCAUSE(t1)
+	sw	zero, MC_ERRADDR(t1)
+
+	/* Enable DDR module in memory controller */
+	li	t3, MC_DDRRAM_ENABLE
+	lw	t2, MC_CON(t1)
+	or	t3, t2, t3
+	sw	t3, MC_CON(t1)
+
+	li	t1, MC_DDR_MODUL_BASE
+
+	/* Write configuration to DDR controller registers */
+	li	t2, MC_DC0_VALUE
+	sw	t2, MC_DC00(t1)
+
+	li	t2, MC_DC1_VALUE
+	sw	t2, MC_DC01(t1)
+
+	li	t2, MC_DC2_VALUE
+	sw	t2, MC_DC02(t1)
+
+	li	t2, MC_DC3_VALUE
+	sw	t2, MC_DC03(t1)
+
+	li	t2, MC_DC4_VALUE
+	sw	t2, MC_DC04(t1)
+
+	li	t2, MC_DC5_VALUE
+	sw	t2, MC_DC05(t1)
+
+	li	t2, MC_DC6_VALUE
+	sw	t2, MC_DC06(t1)
+
+	li	t2, MC_DC7_VALUE
+	sw	t2, MC_DC07(t1)
+
+	li	t2, MC_DC8_VALUE
+	sw	t2, MC_DC08(t1)
+
+	li	t2, MC_DC9_VALUE
+	sw	t2, MC_DC09(t1)
+
+	li	t2, MC_DC10_VALUE
+	sw	t2, MC_DC10(t1)
+
+	li	t2, MC_DC11_VALUE
+	sw	t2, MC_DC11(t1)
+
+	li	t2, MC_DC12_VALUE
+	sw	t2, MC_DC12(t1)
+
+	li	t2, MC_DC13_VALUE
+	sw	t2, MC_DC13(t1)
+
+	li	t2, MC_DC14_VALUE
+	sw	t2, MC_DC14(t1)
+
+	li	t2, MC_DC15_VALUE
+	sw	t2, MC_DC15(t1)
+
+	li	t2, MC_DC16_VALUE
+	sw	t2, MC_DC16(t1)
+
+	li	t2, MC_DC17_VALUE
+	sw	t2, MC_DC17(t1)
+
+	li	t2, MC_DC18_VALUE
+	sw	t2, MC_DC18(t1)
+
+	li	t2, MC_DC19_VALUE
+	sw	t2, MC_DC19(t1)
+
+	li	t2, MC_DC20_VALUE
+	sw	t2, MC_DC20(t1)
+
+	li	t2, MC_DC21_VALUE
+	sw	t2, MC_DC21(t1)
+
+	li	t2, MC_DC22_VALUE
+	sw	t2, MC_DC22(t1)
+
+	li	t2, MC_DC23_VALUE
+	sw	t2, MC_DC23(t1)
+
+	li	t2, MC_DC24_VALUE
+	sw	t2, MC_DC24(t1)
+
+	li	t2, MC_DC25_VALUE
+	sw	t2, MC_DC25(t1)
+
+	li	t2, MC_DC26_VALUE
+	sw	t2, MC_DC26(t1)
+
+	li	t2, MC_DC27_VALUE
+	sw	t2, MC_DC27(t1)
+
+	li	t2, MC_DC28_VALUE
+	sw	t2, MC_DC28(t1)
+
+	li	t2, MC_DC29_VALUE
+	sw	t2, MC_DC29(t1)
+
+	li	t2, MC_DC30_VALUE
+	sw	t2, MC_DC30(t1)
+
+	li	t2, MC_DC31_VALUE
+	sw	t2, MC_DC31(t1)
+
+	li	t2, MC_DC32_VALUE
+	sw	t2, MC_DC32(t1)
+
+	li	t2, MC_DC33_VALUE
+	sw	t2, MC_DC33(t1)
+
+	li	t2, MC_DC34_VALUE
+	sw	t2, MC_DC34(t1)
+
+	li	t2, MC_DC35_VALUE
+	sw	t2, MC_DC35(t1)
+
+	li	t2, MC_DC36_VALUE
+	sw	t2, MC_DC36(t1)
+
+	li	t2, MC_DC37_VALUE
+	sw	t2, MC_DC37(t1)
+
+	li	t2, MC_DC38_VALUE
+	sw	t2, MC_DC38(t1)
+
+	li	t2, MC_DC39_VALUE
+	sw	t2, MC_DC39(t1)
+
+	li	t2, MC_DC40_VALUE
+	sw	t2, MC_DC40(t1)
+
+	li	t2, MC_DC41_VALUE
+	sw	t2, MC_DC41(t1)
+
+	li	t2, MC_DC42_VALUE
+	sw	t2, MC_DC42(t1)
+
+	li	t2, MC_DC43_VALUE
+	sw	t2, MC_DC43(t1)
+
+	li	t2, MC_DC44_VALUE
+	sw	t2, MC_DC44(t1)
+
+	li	t2, MC_DC45_VALUE
+	sw	t2, MC_DC45(t1)
+
+	li	t2, MC_DC46_VALUE
+	sw	t2, MC_DC46(t1)
+
+	li	t2, 0x00000100
+	sw	t2, MC_DC03(t1)
+
+	j	ra
+	nop
+
+	.end	ddrram_init
+#endif /* CONFIG_USE_DDR_RAM */
+
 	.globl	lowlevel_init
 	.ent	lowlevel_init
 lowlevel_init:
@@ -248,6 +533,18 @@ lowlevel_init:
 	/* We rely on the fact that non of the following ..._init() functions
 	 * modify t0
 	 */
+#if defined(DDR166)
+	/* 0xe8 means CPU0/CPU1 333M, DDR 167M, FPI 83M, PPE 240M */
+	li  a0,0xe8
+#elif defined(DDR133)
+	/* 0xe9 means CPU0/CPU1 333M, DDR 133M, FPI 83M, PPE 240M */
+	li  a0,0xe9
+#else /* defined(DDR111) */
+	/* 0xea means CPU0/CPU1 333M, DDR 111M, FPI 83M, PPE 240M */
+	li  a0,0xea
+#endif
+	bal	cgu_init
+	nop
 
 	bal	ebu_init
 	nop
@@ -272,6 +569,13 @@ lowlevel_init:
 #endif
 //06063001-joelin disable the PCI CFRAME mask-end
 
+#ifdef CONFIG_USE_DDR_RAM
+	bal	ddrram_init
+	nop
+#else
+	bal	sdram_init
+	nop
+#endif
 	move	ra, t0
 	j	ra
 	nop
