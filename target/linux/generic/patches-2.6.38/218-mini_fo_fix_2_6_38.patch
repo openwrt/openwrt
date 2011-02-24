@@ -14,7 +14,7 @@
  		   hidden_dentry->d_op &&
  		   hidden_dentry->d_op->d_hash) {
 -			err = hidden_dentry->d_op->d_hash(hidden_dentry, name);
-+			err = hidden_dentry->d_op->d_hash(hidden_dentry, hidden_sto_dentry->d_inode, name);
++			err = hidden_dentry->d_op->d_hash(hidden_dentry, hidden_dentry->d_inode, name);
  		}
  		goto out;
  	}
@@ -31,7 +31,7 @@
  		   hidden_dentry->d_op &&
  		   hidden_dentry->d_op->d_hash) {
 -			err = hidden_dentry->d_op->d_hash(hidden_dentry, name);
-+			err = hidden_dentry->d_op->d_hash(hidden_dentry, hidden_sto_dentry->d_inode, name);
++			err = hidden_dentry->d_op->d_hash(hidden_dentry, hidden_dentry->d_inode, name);
  			goto out;
  		}
  	}
