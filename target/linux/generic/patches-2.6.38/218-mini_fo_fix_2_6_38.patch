@@ -1,0 +1,37 @@
+--- a/fs/mini_fo/dentry.c
++++ b/fs/mini_fo/dentry.c
+@@ -96,7 +96,7 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t 
+ 		if(hidden_sto_dentry &&
+ 		   hidden_sto_dentry->d_op &&
+ 		   hidden_sto_dentry->d_op->d_hash) {
+-			err = hidden_sto_dentry->d_op->d_hash(hidden_sto_dentry, name);
++			err = hidden_sto_dentry->d_op->d_hash(hidden_sto_dentry, hidden_sto_dentry->d_inode, name);
+ 		}
+ 		goto out;
+ 	}
+@@ -106,7 +106,7 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t 
+ 		if(hidden_dentry &&
+ 		   hidden_dentry->d_op &&
+ 		   hidden_dentry->d_op->d_hash) {
+-			err = hidden_dentry->d_op->d_hash(hidden_dentry, name);
++			err = hidden_dentry->d_op->d_hash(hidden_dentry, hidden_sto_dentry->d_inode, name);
+ 		}
+ 		goto out;
+ 	}
+@@ -116,14 +116,14 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t 
+ 		if(hidden_sto_dentry &&
+ 		   hidden_sto_dentry->d_op &&
+ 		   hidden_sto_dentry->d_op->d_hash) {
+-			err = hidden_sto_dentry->d_op->d_hash(hidden_sto_dentry, name);
++			err = hidden_sto_dentry->d_op->d_hash(hidden_sto_dentry, hidden_sto_dentry->d_inode, name);
+ 			goto out;
+ 		}
+ 		hidden_dentry = dtohd(dentry);
+ 		if(hidden_dentry &&
+ 		   hidden_dentry->d_op &&
+ 		   hidden_dentry->d_op->d_hash) {
+-			err = hidden_dentry->d_op->d_hash(hidden_dentry, name);
++			err = hidden_dentry->d_op->d_hash(hidden_dentry, hidden_sto_dentry->d_inode, name);
+ 			goto out;
+ 		}
+ 	}
