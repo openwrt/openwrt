@@ -35,3 +35,13 @@
  			goto out;
  		}
  	}
+@@ -148,7 +148,8 @@ mini_fo_d_compare(dentry_t *dentry, qstr
+ 		hidden_dentry = dtohd(dentry);
+ 
+ 	if (hidden_dentry && hidden_dentry->d_op && hidden_dentry->d_op->d_compare) {
+-		err = hidden_dentry->d_op->d_compare(hidden_dentry, a, b);
++		err = hidden_dentry->d_op->d_compare(NULL, NULL, NULL, NULL,
++							hidden_dentry->d_name.len, a, b);
+ 	} else {
+ 		err = ((a->len != b->len) || memcmp(a->name, b->name, b->len));
+ 	}
