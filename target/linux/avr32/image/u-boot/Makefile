@@ -29,7 +29,7 @@ endef
 
 define Build/InstallDev
 	mkdir -p $(BIN_DIR)
-	dd if=$(PKG_BUILD_DIR)/u-boot.bin of=$(BIN_DIR)/u-boot-$(UBOOT_CONFIG).bin bs=64k conv=sync
+	dd if=$(PKG_BUILD_DIR)/u-boot.bin of=$(BIN_DIR)/u-boot-$(PKG_VERSION)-$(UBOOT_CONFIG).bin bs=64k conv=sync
 endef
 
 $(eval $(call Build/DefaultTargets))
