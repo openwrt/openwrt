@@ -42,6 +42,11 @@ define KernelPackage/crypto-core
 	CONFIG_CRYPTO=y \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_HMAC \
+	CONFIG_CRYPTO_AEAD \
+	CONFIG_CRYPTO_ALGAPI \
+	CONFIG_CRYPTO_BLKCIPHER \
+	CONFIG_CRYPTO_HASH \
+	CONFIG_CRYPTO_MANAGER \
 	$(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
   FILES:=$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod)))
   AUTOLOAD:=$(call AutoLoad,01,$(foreach mod,$(CRYPTO_MODULES),$(call crypto_name,$(mod))))
