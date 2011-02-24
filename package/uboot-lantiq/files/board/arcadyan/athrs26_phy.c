@@ -201,7 +201,7 @@ static int cmd = 1;
             
 /* Forward references */
 BOOL       athrs26_phy_is_link_alive(int phyUnit);
-static uint32_t athrs26_reg_read(uint16_t reg_addr);
+//static uint32_t athrs26_reg_read(uint16_t reg_addr);
 static void athrs26_reg_write(uint16_t reg_addr, 
                               uint32_t reg_val);
 
@@ -214,7 +214,7 @@ static void athrs26_reg_write(uint16_t reg_addr,
 *    FALSE --> link is down
 */
 
-void athrs26_reg_init()
+void athrs26_reg_init(void)
 {
 
     athrs26_reg_write(0x200, 0x200);
@@ -751,7 +751,7 @@ void athrs26_reg_dev(struct eth_device *mac)
 
 #endif
 
-static uint32_t
+/*static uint32_t
 athrs26_reg_read(uint16_t reg_addr)
 {
 #ifndef CFG_ATHRHDR_REG
@@ -759,15 +759,13 @@ athrs26_reg_read(uint16_t reg_addr)
     uint32_t phy_addr;
     uint8_t phy_reg; 
     
-    /* configure register high address */
     phy_addr = 0x18;
     phy_reg = 0x0;
-    phy_val = (reg_word_addr >> 8) & 0x1ff;         /* bit16-8 of reg address*/
+    phy_val = (reg_word_addr >> 8) & 0x1ff;        
     phy_reg_write (0, phy_addr, phy_reg, phy_val);
 
-    /* read register with low address */
-    phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
-    phy_reg = reg_word_addr & 0x1f;                 /* bit 4-0 of reg address*/
+    phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); 
+    phy_reg = reg_word_addr & 0x1f;            
     phy_reg_read(0, phy_addr, phy_reg, &phy_val);
     
     return phy_val;
@@ -779,7 +777,7 @@ athrs26_reg_read(uint16_t reg_addr)
     return (reg_data[0] | (reg_data[1] << 8) | (reg_data[2] << 16) | (reg_data[3] << 24));
 #endif
 }
-
+*/
 static void
 athrs26_reg_write(uint16_t reg_addr, uint32_t reg_val)
 {

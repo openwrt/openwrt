@@ -39,7 +39,7 @@
  SRCS	:= $(COBJS:.o=.c)
 --- a/Makefile
 +++ b/Makefile
-@@ -3414,6 +3414,37 @@
+@@ -3414,6 +3414,40 @@
  ## MIPS32 ifxcpe
  #########################################################################
  
@@ -59,12 +59,15 @@
 +			$(XECHO) "... with ramboot configuration" ; \
 +		}
 +	@if [ "$$(findstring flash,$$@)" ] ; then \
++               echo "#TEXT_BASE = 0xB0050000" >$(obj)board/arcadyan/config.tmp ; \
++		echo "#define CONFIG_BOOTSTRAP"  >>$(obj)include/config.h ; \
 +		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
 +		echo "#define CONFIG_USE_DDR_RAM_CFG_psc166" >>$(obj)include/config.h ; \
 +	fi
 +	@$(MKCONFIG) -a $$(word 1,$$(subst _, ,$$@)) mips mips arcadyan "" danube
 +endef
 +
++$(eval $(call arcadyan, arv3527P%config))
 +$(eval $(call arcadyan, arv4520PW%config))
 +$(eval $(call arcadyan, arv452CPW%config))
 +$(eval $(call arcadyan, arv4525PW%config))

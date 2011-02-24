@@ -10,7 +10,7 @@ $ make -s V=1
 
 --- a/config.mk
 +++ b/config.mk
-@@ -234,17 +234,42 @@ export	TEXT_BASE PLATFORM_CPPFLAGS PLATF
+@@ -234,17 +234,47 @@ export	TEXT_BASE PLATFORM_CPPFLAGS PLATF
  
  #########################################################################
  
@@ -38,18 +38,23 @@ $ make -s V=1
 +
  $(obj)%.s:	%.S
 +	$(call MESSAGE, [CPP],$(subst $(SRCTREE)/,,$(CURDIR)),$<)
++	#echo $(CPP) $(AFLAGS) $(AFLAGS_$(@F)) $(AFLAGS_$(BCURDIR)) -o $@ $<
  	$(CPP) $(AFLAGS) $(AFLAGS_$(@F)) $(AFLAGS_$(BCURDIR)) -o $@ $<
  $(obj)%.o:	%.S
 +	$(call MESSAGE, [AS], $(subst $(SRCTREE)/,,$(CURDIR)),$<)
++	#echo $(CC)  $(AFLAGS) $(AFLAGS_$(@F)) $(AFLAGS_$(BCURDIR)) -o $@ $< -c
  	$(CC)  $(AFLAGS) $(AFLAGS_$(@F)) $(AFLAGS_$(BCURDIR)) -o $@ $< -c
  $(obj)%.o:	%.c
 +	$(call MESSAGE, [CC], $(subst $(SRCTREE)/,,$(CURDIR)),$<)
++	#echo $(CC)  $(CFLAGS) $(CFLAGS_$(@F)) $(CFLAGS_$(BCURDIR)) -o $@ $< -c
  	$(CC)  $(CFLAGS) $(CFLAGS_$(@F)) $(CFLAGS_$(BCURDIR)) -o $@ $< -c
  $(obj)%.i:	%.c
 +	$(call MESSAGE, [CPP],$(subst $(SRCTREE)/,,$(CURDIR)),$<)
++	#echo $(CPP) $(CFLAGS) $(CFLAGS_$(@F)) $(CFLAGS_$(BCURDIR)) -o $@ $< -c
  	$(CPP) $(CFLAGS) $(CFLAGS_$(@F)) $(CFLAGS_$(BCURDIR)) -o $@ $< -c
  $(obj)%.s:	%.c
 +	$(call MESSAGE, [CC], $(subst $(SRCTREE)/,,$(CURDIR)),$<)
++	#echo $(CC)  $(CFLAGS) $(CFLAGS_$(@F)) $(CFLAGS_$(BCURDIR)) -o $@ $< -c -S
  	$(CC)  $(CFLAGS) $(CFLAGS_$(@F)) $(CFLAGS_$(BCURDIR)) -o $@ $< -c -S
  
  #########################################################################

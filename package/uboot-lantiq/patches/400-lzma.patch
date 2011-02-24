@@ -1,0 +1,1687 @@
+--- a/.gitignore
++++ b/.gitignore
+@@ -23,6 +23,11 @@
+ /u-boot.hex
+ /u-boot.map
+ /u-boot.bin
++/u-boot.bin.bz2
++/u-boot.bin.gz
++/u-boot.bin.lzma
++/u-boot.bin.lzo
++/u-boot.dis
+ /u-boot.srec
+ /u-boot.ldr
+ /u-boot.ldr.hex
+@@ -30,6 +35,20 @@
+ /u-boot.lds
+ /u-boot-onenand.bin
+ /u-boot-flexonenand.bin
++/u-boot-bootstrap
++/u-boot-bootstrap.hex
++/u-boot-bootstrap.map
++/u-boot-bootstrap.bin
++/u-boot-bootstrap.bin.bz2
++/u-boot-bootstrap.bin.gz
++/u-boot-bootstrap.bin.lzma
++/u-boot-bootstrap.bin.lzo
++/u-boot-bootstrap.dis
++/u-boot-bootstrap.srec
++/u-boot-bootstrap.ldr
++/u-boot-bootstrap.ldr.hex
++/u-boot-bootstrap.ldr.srec
++/u-boot-bootstrap.lds
+ 
+ #
+ # Generated files
+@@ -38,6 +57,7 @@
+ *.depend
+ /LOG
+ /errlog
++/.payload.s
+ /reloc_off
+ 
+ # stgit generated dirs
+@@ -63,3 +83,6 @@
+ /onenand_ipl/onenand-ipl*
+ /onenand_ipl/board/*/onenand*
+ /onenand_ipl/board/*/*.S
++examples/standalone/
++
++setvars
+--- a/Makefile
++++ b/Makefile
+@@ -183,6 +183,12 @@
+ 
+ OBJS := $(addprefix $(obj),$(OBJS))
+ 
++ifeq ($(CONFIG_BOOTSTRAP),y)
++BOOTSTRAP_OBJS  = cpu/$(ARCH)/start_bootstrap.o
++
++BOOTSTRAP_OBJS := $(addprefix $(obj),$(BOOTSTRAP_OBJS))
++endif
++
+ LIBS  = lib_generic/libgeneric.a
+ LIBS += lib_generic/lzma/liblzma.a
+ LIBS += lib_generic/lzo/liblzo.a
+@@ -254,6 +260,25 @@
+ LIBBOARD = board/$(BOARDDIR)/lib$(BOARD).a
+ LIBBOARD := $(addprefix $(obj),$(LIBBOARD))
+ 
++ifeq ($(CONFIG_BOOTSTRAP),y)
++BOOTSTRAP_LIBS =  lib_generic/libgeneric_bootstrap.a
++BOOTSTRAP_LIBS += cpu/$(ARCH)/lib$(ARCH)_bootstrap.a
++BOOTSTRAP_LIBS += lib_$(ARCH)/lib$(ARCH)_bootstrap.a
++BOOTSTRAP_LIBS += common/libcommon_bootstrap.a
++BOOTSTRAP_LIBS-$(CONFIG_BOOTSTRAP_SERIAL) += drivers/serial/libserial.a
++
++BOOTSTRAP_LIBS-$(CONFIG_BOOTSTRAP_LZMA) += lib_generic/lzma/liblzma.a
++BOOTSTRAP_LIBS-$(CONFIG_BOOTSTRAP_LZO) += lib/lzo/liblzo.a
++BOOTSTRAP_LIBS += $(BOOTSTRAP_LIBS-y)
++
++BOOTSTRAP_LIBS := $(addprefix $(obj),$(BOOTSTRAP_LIBS))
++.PHONY : $(BOOTSTRAP_LIBS)
++
++BOOTSTRAP_LIBBOARD = board/$(BOARDDIR)/lib$(BOARD)_bootstrap.a
++BOOTSTRAP_LIBBOARD := $(addprefix $(obj),$(BOOTSTRAP_LIBBOARD))
++endif
++
++
+ # Add GCC lib
+ ifdef USE_PRIVATE_LIBGCC
+ ifeq ("$(USE_PRIVATE_LIBGCC)", "yes")
+@@ -267,6 +292,9 @@
+ PLATFORM_LIBS += $(PLATFORM_LIBGCC)
+ export PLATFORM_LIBS
+ 
++BOOTSTRAP_PLATFORM_LIBS += $(PLATFORM_LIBGCC)
++export BOOTSTRAP_PLATFORM_LIBS
++
+ # Special flags for CPP when processing the linker script.
+ # Pass the version down so we can handle backwards compatibility
+ # on the fly.
+@@ -289,12 +317,19 @@
+ __OBJS := $(subst $(obj),,$(OBJS))
+ __LIBS := $(subst $(obj),,$(LIBS)) $(subst $(obj),,$(LIBBOARD))
+ 
++__BOOTSTRAP_OBJS := $(subst $(obj),,$(BOOTSTRAP_OBJS))
++__BOOTSTRAP_LIBS := $(subst $(obj),,$(BOOTSTRAP_LIBS)) $(subst $(obj),,$(BOOTSTRAP_LIBBOARD))
++
+ #########################################################################
+ #########################################################################
+ 
+ # Always append ALL so that arch config.mk's can add custom ones
+ ALL += $(obj)u-boot.srec $(obj)u-boot.bin $(obj)System.map $(U_BOOT_NAND) $(U_BOOT_ONENAND)
+ 
++ifeq ($(CONFIG_BOOTSTRAP),y)
++ALL += $(obj)u-boot-bootstrap.srec $(obj)u-boot-bootstrap.bin
++endif
++
+ all:		$(ALL)
+ 
+ $(obj)u-boot.hex:	$(obj)u-boot
+@@ -306,6 +341,19 @@
+ $(obj)u-boot.bin:	$(obj)u-boot
+ 		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
+ 
++$(obj)u-boot.bin.gz:	$(obj)u-boot.bin
++		gzip -c $< > $@
++
++$(obj)u-boot.bin.lzma:	$(obj)u-boot.bin
++		echo lzma -e -z -c $<  $@
++		lzma e  $< $@
++
++$(obj)u-boot.bin.lzo:	$(obj)u-boot.bin
++		lzop -9 -c $< > $@
++
++$(obj)u-boot.bin.bz2:	$(obj)u-boot.bin
++		bzip2 --best -z -c $< > $@
++
+ $(obj)u-boot.ldr:	$(obj)u-boot
+ 		$(CREATE_LDR_ENV)
+ 		$(LDR) -T $(CONFIG_BFIN_CPU) -c $@ $< $(LDR_FLAGS)
+@@ -335,12 +383,12 @@
+ 		$(obj)tools/ubsha1 $(obj)u-boot.bin
+ 
+ $(obj)u-boot.dis:	$(obj)u-boot
+-		$(OBJDUMP) -d $< > $@
++		$(OBJDUMP) -S -d $< > $@
+ 
+ GEN_UBOOT = \
+ 		UNDEF_SYM=`$(OBJDUMP) -x $(LIBBOARD) $(LIBS) | \
+ 		sed  -n -e 's/.*\($(SYM_PREFIX)__u_boot_cmd_.*\)/-u\1/p'|sort|uniq`;\
+-		cd $(LNDIR) && $(LD) $(LDFLAGS) $$UNDEF_SYM $(__OBJS) \
++		cd $(LNDIR) && $(LD) --gc-sections $(LDFLAGS) $$UNDEF_SYM $(__OBJS) \
+ 			--start-group $(__LIBS) --end-group $(PLATFORM_LIBS) \
+ 			-Map u-boot.map -o u-boot
+ $(obj)u-boot:	depend $(SUBDIRS) $(OBJS) $(LIBBOARD) $(LIBS) $(LDSCRIPT) $(obj)u-boot.lds
+@@ -362,6 +410,120 @@
+ $(LIBBOARD):	depend $(LIBS)
+ 		$(MAKE) -C $(dir $(subst $(obj),,$@))
+ 
++# Bootstrap targets
++
++ifeq ($(CONFIG_BOOTSTRAP),y)
++$(obj)u-boot-bootstrap.hex:	$(obj)u-boot-bootstrap
++		$(OBJCOPY) ${OBJCFLAGS} -O ihex $< $@
++
++$(obj)u-boot-bootstrap.srec:	$(obj)u-boot-bootstrap
++		$(OBJCOPY) -O srec $< $@
++
++$(obj)u-boot-bootstrap.bin:	$(obj)u-boot-bootstrap
++		$(OBJCOPY) ${OBJCFLAGS} -O binary $< $@
++		$(BOARD_SIZE_CHECK)
++
++$(obj)u-boot-bootstrap.bin.gz:	$(obj)u-boot-bootstrap.bin
++		gzip -c $< > $@
++
++$(obj)u-boot-bootstrap.bin.lzma:	$(obj)u-boot-bootstrap.bin
++		lzma -e -z -c $< > $@
++
++$(obj)u-boot.bin-bootstrap.lzo:	$(obj)u-boot-bootstrap.bin
++		lzop -9 -c $< > $@
++
++$(obj)u-boot.bin-bootstrap.bz2:	$(obj)u-boot-bootstrap.bin
++		bzip2 --best -z -c $< > $@
++
++$(obj)u-boot-bootstrap.ldr:	$(obj)u-boot-bootstrap
++		$(CREATE_LDR_ENV)
++		$(LDR) -T $(CONFIG_BFIN_CPU) -c $@ $< $(LDR_FLAGS)
++		$(BOARD_SIZE_CHECK)
++
++$(obj)u-boot-bootstrap.ldr.hex:	$(obj)u-boot-bootstrap.ldr
++		$(OBJCOPY) ${OBJCFLAGS} -O ihex $< $@ -I binary
++
++$(obj)u-boot-bootstrap.ldr.srec:	$(obj)u-boot-bootstrap.ldr
++		$(OBJCOPY) ${OBJCFLAGS} -O srec $< $@ -I binary
++
++$(obj)u-boot-bootstrap.img:	$(obj)u-boot-bootstrap.bin
++		$(obj)tools/mkimage -A $(ARCH) -T firmware -C none \
++		-a $(CONFIG_BOOTSTRAP_BASE) -e 0 \
++		-n $(shell sed -n -e 's/.*U_BOOT_VERSION//p' $(VERSION_FILE) | \
++			sed -e 's/"[	 ]*$$/ for $(BOARD) board"/') \
++		-d $< $@
++
++$(obj)u-boot-bootstrap.imx:       $(obj)u-boot-bootstrap.bin
++		$(obj)tools/mkimage -n $(IMX_CONFIG) -T imximage \
++		-e $(CONFIG_BOOTSTRAP_BASE) -d $< $@
++
++$(obj)u-boot-bootstrap.kwb:       $(obj)u-boot-bootstrap.bin
++		$(obj)tools/mkimage -n $(CONFIG_SYS_KWD_CONFIG) -T kwbimage \
++		-a $(CONFIG_SYS_TEXT_BASE) -e $(CONFIG_SYS_TEXT_BASE) -d $< $@
++
++$(obj)u-boot-bootstrap.sha1:	$(obj)u-boot-bootstrap.bin
++		$(obj)tools/ubsha1 $(obj)u-boot-bootstrap.bin
++
++$(obj)u-boot-bootstrap.dis:	$(obj)u-boot-bootstrap
++		echo $(OBJDUMP) -S -d $< > $@
++		$(OBJDUMP) -S -d $< > $@
++
++PAYLOAD_FILE_BASE=$(obj)u-boot.bin
++ifeq ($(CONFIG_BOOTSTRAP_GZIP),y)
++PAYLOAD_FILE_EXT:=.gz
++endif
++ifeq ($(CONFIG_BOOTSTRAP_LZMA),y)
++PAYLOAD_FILE_EXT:=.lzma
++endif
++ifeq ($(CONFIG_BOOTSTRAP_LZO),y)
++PAYLOAD_FILE_EXT:=.lzo
++endif
++ifeq ($(CONFIG_BOOTSTRAP_BZIP2),y)
++PAYLOAD_FILE_EXT:=.bz2
++endif
++
++PAYLOAD_FILE := $(PAYLOAD_FILE_BASE)$(PAYLOAD_FILE_EXT)
++
++$(obj).payload.s: $(PAYLOAD_FILE)
++		echo ".globl payload_start" > $@
++		echo ".globl payload_end" >> $@
++		echo ".globl payload_size" >> $@
++		echo ".globl payload_uncsize" >> $@
++		echo .section .payload,\"a\",@progbits >> $@
++		echo "payload_size:" >> $@
++		echo -n ".word " >> $@
++		wc -c $(PAYLOAD_FILE) | cut -f1 -d' ' >> $@
++		echo "payload_uncsize:" >> $@
++		echo -n ".word " >> $@
++		wc -c $(obj)u-boot.bin | cut -f1 -d' ' >> $@
++		echo "payload_start:" >> $@
++		echo .incbin \"$(PAYLOAD_FILE)\" >> $@
++		echo "payload_end:" >> $@
++
++
++GEN_UBOOT_BOOTSTRAP = \
++		UNDEF_SYM=`$(OBJDUMP) -x $(BOOTSTRAP_LIBBOARD) $(BOOTSTRAP_LIBS) | \
++		sed  -n -e 's/.*\($(SYM_PREFIX)__u_boot_cmd_.*\)/-u\1/p'|sort|uniq`;\
++		cd $(LNDIR) && $(LD) --gc-sections $(BOOTSTRAP_LDFLAGS) $$UNDEF_SYM  $(obj).payload.o $(__BOOTSTRAP_OBJS) \
++			--start-group $(__BOOTSTRAP_LIBS) --end-group $(BOOTSTRAP_PLATFORM_LIBS) \
++			-Map u-boot-bootstrap.map -o u-boot-bootstrap
++
++$(obj)u-boot-bootstrap:	depend $(SUBDIRS) $(BOOTSTRAP_OBJS) $(BOOTSTRAP_LIBS) $(BOOTSTRAP_LDSCRIPT) $(obj)u-boot-bootstrap.lds $(obj).payload.o #$(BOOTSTRAP_LIBBOARD) 
++		#echo "--------$(BOOTSTRAP_LIBBOARD)"
++		#echo "$(GEN_UBOOT_BOOTSTRAP)"
++		$(GEN_UBOOT_BOOTSTRAP)
++ifeq ($(CONFIG_KALLSYMS),y)
++		smap=`$(call SYSTEM_MAP,u-boot-bootstrap) | \
++			awk '$$2 ~ /[tTwW]/ {printf $$1 $$3 "\\\\000"}'` ; \
++		$(CC) $(CFLAGS) -DSYSTEM_MAP="\"$${smap}\"" \
++			-c common/system_map.c -o $(obj)common/system_map.o
++		$(GEN_UBOOT_BOOTSTRAP) $(obj)common/system_map.o
++endif
++
++$(BOOTSTRAP_LIBBOARD):	depend $(BOOTSTRAP_LIBS)
++		$(MAKE) -C $(dir $(subst $(obj),,$@)) $(notdir $@)
++endif
++
+ $(SUBDIRS):	depend
+ 		$(MAKE) -C $@ all
+ 
+@@ -371,6 +533,9 @@
+ $(obj)u-boot.lds: $(LDSCRIPT)
+ 		$(CPP) $(CPPFLAGS) $(LDPPFLAGS) -ansi -D__ASSEMBLY__ -P - <$^ >$@
+ 
++$(obj)u-boot-bootstrap.lds: $(BOOTSTRAP_LDSCRIPT)
++		$(CPP) $(CPPFLAGS) $(BOOTSTRAP_LDPPFLAGS) -ansi -D__ASSEMBLY__ -P - <$^ >$@
++
+ $(NAND_SPL):	$(TIMESTAMP_FILE) $(VERSION_FILE) $(obj)include/autoconf.mk
+ 		$(MAKE) -C nand_spl/board/$(BOARDDIR) all
+ 
+@@ -3829,6 +3994,7 @@
+ 	       $(obj)board/netstar/{eeprom,crcek,crcit,*.srec,*.bin}	  \
+ 	       $(obj)board/trab/trab_fkt   $(obj)board/voiceblue/eeprom   \
+ 	       $(obj)board/armltd/{integratorap,integratorcp}/u-boot.lds  \
++	       $(obj)u-boot-bootstrap.lds			\
+ 	       $(obj)lib_blackfin/u-boot.lds				  \
+ 	       $(obj)u-boot.lds						  \
+ 	       $(obj)cpu/blackfin/bootrom-asm-offsets.[chs]
+@@ -3853,6 +4019,12 @@
+ 	@rm -f $(obj)u-boot $(obj)u-boot.map $(obj)u-boot.hex $(ALL)
+ 	@rm -f $(obj)u-boot.kwb
+ 	@rm -f $(obj)u-boot.imx
++	@rm -f $(obj)u-boot.bin{.gz,.lzma,.lzo,.bz2}
++	@rm -f $(obj)u-boot-bootstrap $(obj)u-boot-bootstrap.map $(obj)u-boot-bootstrap.hex
++	@rm -f $(obj)u-boot-bootstrap.kwb
++	@rm -f $(obj)u-boot-bootstrap.imx
++	@rm -f $(obj)u-boot-bootstrap.bin{.gz,.lzma,.lzo,.bz2}
++	@rm -f $(obj).payload.s
+ 	@rm -f $(obj)tools/{env/crc32.c,inca-swap-bytes}
+ 	@rm -f $(obj)cpu/mpc824x/bedbug_603e.c
+ 	@rm -f $(obj)include/asm/proc $(obj)include/asm/arch $(obj)include/asm
+--- a/lib_mips/config.mk
++++ b/lib_mips/config.mk
+@@ -47,6 +47,6 @@
+ # On the other hand, we want PIC in the U-Boot code to relocate it from ROM
+ # to RAM. $28 is always used as gp.
+ #
+-PLATFORM_CPPFLAGS		+= -G 0 -mabicalls -fpic
++PLATFORM_CPPFLAGS		+= -G 0 -mabicalls -fpic -g
+ PLATFORM_CPPFLAGS		+= -msoft-float
+ PLATFORM_LDFLAGS		+= -G 0 -static -n -nostdlib
+--- /dev/null
++++ b/cpu/mips/reset.c
+@@ -0,0 +1,39 @@
++/*
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <command.h>
++#include <asm/mipsregs.h>
++#include <asm/reboot.h>
++
++void __attribute__((weak)) _machine_restart(void)
++{
++}
++
++int __attribute__((weak)) do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
++{
++	_machine_restart();
++
++	fprintf(stderr, "*** reset failed ***\n");
++	return 0;
++}
+--- /dev/null
++++ b/cpu/mips/reset_bootstrap.c
+@@ -0,0 +1,39 @@
++/*
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <command.h>
++#include <asm/mipsregs.h>
++#include <asm/reboot.h>
++
++void __attribute__((weak)) _machine_restart(void)
++{
++}
++
++int __attribute__((weak)) do_reset(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
++{
++	_machine_restart();
++
++	printf("*** reset failed ***\n");
++	return 0;
++}
+--- /dev/null
++++ b/cpu/mips/start_bootstrap.S
+@@ -0,0 +1,534 @@
++/*
++ *  Startup Code for MIPS32 CPU-core base on start.S source
++ *
++ *  Copyright (c) 2010	Industrie Dial Face S.p.A.
++ *  Luigi 'Comio' Mantellini <luigi.mantellini@idf-hit.com>
++ *
++ *  Copyright (c) 2003	Wolfgang Denk <wd@denx.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++//#include <generated/generic-asm-offsets.h>
++#include <config.h>
++#include <asm/regdef.h>
++//#include <asm/mipsregs.h>
++#define CP0_INDEX $0
++#define CP0_RANDOM $1
++#define CP0_ENTRYLO0 $2
++#define CP0_ENTRYLO1 $3
++#define CP0_CONF $3
++#define CP0_CONTEXT $4
++#define CP0_PAGEMASK $5
++#define CP0_WIRED $6
++#define CP0_INFO $7
++#define CP0_BADVADDR $8
++#define CP0_COUNT $9
++#define CP0_ENTRYHI $10
++#define CP0_COMPARE $11
++#define CP0_STATUS $12
++#define CP0_CAUSE $13
++#define CP0_EPC $14
++#define CP0_PRID $15
++#define CP0_EBASE $15,1
++#define CP0_CONFIG $16
++#define CP0_LLADDR $17
++#define CP0_WATCHLO $18
++#define CP0_WATCHHI $19
++#define CP0_XCONTEXT $20
++#define CP0_FRAMEMASK $21
++#define CP0_DIAGNOSTIC $22
++#define CP0_DEBUG $23
++#define CP0_DEPC $24
++#define CP0_PERFORMANCE $25
++#define CP0_ECC $26
++#define CP0_CACHEERR $27
++#define CP0_TAGLO $28
++#define CP0_TAGHI $29
++#define CP0_ERROREPC $30
++#define CP0_DESAVE $31
++#define ST0_CU0                 0x10000000
++#define CONF_CM_UNCACHED	2
++#define CONF_CM_CACHABLE_NONCOHERENT	3
++#define EBASEB_CPUNUM               0
++#define EBASEF_CPUNUM               (0x3ff << EBASEB_CPUNUM)
++#define MIPS_CONF7_RPS              4 //((unsigned long)(1) << 2)
++#define CONF_CM_CACHABLE_NONCOHERENT        3
++#ifndef CONFIG_SYS_MIPS_CACHE_OPER_MODE
++#define CONFIG_SYS_MIPS_CACHE_OPER_MODE CONF_CM_CACHABLE_NONCOHERENT
++#endif
++
++	/*
++	 * For the moment disable interrupts, mark the kernel mode and
++	 * set ST0_KX so that the CPU does not spit fire when using
++	 * 64-bit addresses.
++	 */
++	.macro	setup_c0_status set clr
++	.set	push
++	mfc0	t0, CP0_STATUS
++	or	t0, ST0_CU0 | \set | 0x1f | \clr
++	xor	t0, 0x1f | \clr
++	mtc0	t0, CP0_STATUS
++	.set	noreorder
++	sll	zero, 3				# ehb
++	.set	pop
++	.endm
++
++	.macro	setup_c0_status_reset
++#ifdef CONFIG_64BIT
++	setup_c0_status ST0_KX 0
++#else
++	setup_c0_status 0 0
++#endif
++	.endm
++
++#define RVECENT(f,n) \
++   b f; nop
++#define XVECENT(f,bev) \
++   b f     ;           \
++   li k0,bev
++
++	.set noreorder
++
++	.globl _start
++	.text
++_start:
++	RVECENT(reset,0)	/* U-boot entry point */
++	RVECENT(reset,1)	/* software reboot */
++#if defined(CONFIG_INCA_IP)
++	.word INFINEON_EBU_BOOTCFG /* EBU init code, fetched during booting */
++	.word 0x00000000           /* phase of the flash                    */
++#elif defined(CONFIG_PURPLE)
++	.word INFINEON_EBU_BOOTCFG /* EBU init code, fetched during booting */
++	.word INFINEON_EBU_BOOTCFG /* EBU init code, fetched during booting */
++#else
++	.word INFINEON_EBU_BOOTCFG /* EBU init code, fetched during booting */
++	.word 0x00000000           /* phase of the flash                    */
++#endif
++	RVECENT(romReserved,3)
++	RVECENT(romReserved,4)
++	RVECENT(romReserved,5)
++	RVECENT(romReserved,6)
++	RVECENT(romReserved,7)
++	RVECENT(romReserved,8)
++	RVECENT(romReserved,9)
++	RVECENT(romReserved,10)
++	RVECENT(romReserved,11)
++	RVECENT(romReserved,12)
++	RVECENT(romReserved,13)
++	RVECENT(romReserved,14)
++	RVECENT(romReserved,15)
++	RVECENT(romReserved,16)
++	RVECENT(romReserved,17)
++	RVECENT(romReserved,18)
++	RVECENT(romReserved,19)
++	RVECENT(romReserved,20)
++	RVECENT(romReserved,21)
++	RVECENT(romReserved,22)
++	RVECENT(romReserved,23)
++	RVECENT(romReserved,24)
++	RVECENT(romReserved,25)
++	RVECENT(romReserved,26)
++	RVECENT(romReserved,27)
++	RVECENT(romReserved,28)
++	RVECENT(romReserved,29)
++	RVECENT(romReserved,30)
++	RVECENT(romReserved,31)
++	RVECENT(romReserved,32)
++	RVECENT(romReserved,33)
++	RVECENT(romReserved,34)
++	RVECENT(romReserved,35)
++	RVECENT(romReserved,36)
++	RVECENT(romReserved,37)
++	RVECENT(romReserved,38)
++	RVECENT(romReserved,39)
++	RVECENT(romReserved,40)
++	RVECENT(romReserved,41)
++	RVECENT(romReserved,42)
++	RVECENT(romReserved,43)
++	RVECENT(romReserved,44)
++	RVECENT(romReserved,45)
++	RVECENT(romReserved,46)
++	RVECENT(romReserved,47)
++	RVECENT(romReserved,48)
++	RVECENT(romReserved,49)
++	RVECENT(romReserved,50)
++	RVECENT(romReserved,51)
++	RVECENT(romReserved,52)
++	RVECENT(romReserved,53)
++	RVECENT(romReserved,54)
++	RVECENT(romReserved,55)
++	RVECENT(romReserved,56)
++	RVECENT(romReserved,57)
++	RVECENT(romReserved,58)
++	RVECENT(romReserved,59)
++	RVECENT(romReserved,60)
++	RVECENT(romReserved,61)
++	RVECENT(romReserved,62)
++	RVECENT(romReserved,63)
++	XVECENT(romExcHandle,0x200)	/* bfc00200: R4000 tlbmiss vector */
++	RVECENT(romReserved,65)
++	RVECENT(romReserved,66)
++	RVECENT(romReserved,67)
++	RVECENT(romReserved,68)
++	RVECENT(romReserved,69)
++	RVECENT(romReserved,70)
++	RVECENT(romReserved,71)
++	RVECENT(romReserved,72)
++	RVECENT(romReserved,73)
++	RVECENT(romReserved,74)
++	RVECENT(romReserved,75)
++	RVECENT(romReserved,76)
++	RVECENT(romReserved,77)
++	RVECENT(romReserved,78)
++	RVECENT(romReserved,79)
++	XVECENT(romExcHandle,0x280)	/* bfc00280: R4000 xtlbmiss vector */
++	RVECENT(romReserved,81)
++	RVECENT(romReserved,82)
++	RVECENT(romReserved,83)
++	RVECENT(romReserved,84)
++	RVECENT(romReserved,85)
++	RVECENT(romReserved,86)
++	RVECENT(romReserved,87)
++	RVECENT(romReserved,88)
++	RVECENT(romReserved,89)
++	RVECENT(romReserved,90)
++	RVECENT(romReserved,91)
++	RVECENT(romReserved,92)
++	RVECENT(romReserved,93)
++	RVECENT(romReserved,94)
++	RVECENT(romReserved,95)
++	XVECENT(romExcHandle,0x300)	/* bfc00300: R4000 cache vector */
++	RVECENT(romReserved,97)
++	RVECENT(romReserved,98)
++	RVECENT(romReserved,99)
++	RVECENT(romReserved,100)
++	RVECENT(romReserved,101)
++	RVECENT(romReserved,102)
++	RVECENT(romReserved,103)
++	RVECENT(romReserved,104)
++	RVECENT(romReserved,105)
++	RVECENT(romReserved,106)
++	RVECENT(romReserved,107)
++	RVECENT(romReserved,108)
++	RVECENT(romReserved,109)
++	RVECENT(romReserved,110)
++	RVECENT(romReserved,111)
++	XVECENT(romExcHandle,0x380)	/* bfc00380: R4000 general vector */
++	RVECENT(romReserved,113)
++	RVECENT(romReserved,114)
++	RVECENT(romReserved,115)
++	RVECENT(romReserved,116)
++	RVECENT(romReserved,116)
++	RVECENT(romReserved,118)
++	RVECENT(romReserved,119)
++	RVECENT(romReserved,120)
++	RVECENT(romReserved,121)
++	RVECENT(romReserved,122)
++	RVECENT(romReserved,123)
++	RVECENT(romReserved,124)
++	RVECENT(romReserved,125)
++	RVECENT(romReserved,126)
++	RVECENT(romReserved,127)
++
++	/* We hope there are no more reserved vectors!
++	 * 128 * 8 == 1024 == 0x400
++	 * so this is address R_VEC+0x400 == 0xbfc00400
++	 */
++#if 1
++	XVECENT(romExcHandle,0x400);    /* bfc00400: Int, CauseIV=1 */
++	RVECENT(romReserved,129);
++	RVECENT(romReserved,130);
++	RVECENT(romReserved,131);
++	RVECENT(romReserved,132);
++	RVECENT(romReserved,133);
++	RVECENT(romReserved,134);
++	RVECENT(romReserved,135);
++	RVECENT(romReserved,136);
++	RVECENT(romReserved,137);
++	RVECENT(romReserved,138);
++	RVECENT(romReserved,139);
++	RVECENT(romReserved,140);
++	RVECENT(romReserved,141);
++	RVECENT(romReserved,142);
++	RVECENT(romReserved,143);
++	XVECENT(romExcHandle,0x480);    /* bfc00480: EJTAG debug exception */
++#elif defined(CONFIG_PURPLE)
++/* 0xbfc00400 */
++	.word	0xdc870000
++	.word	0xfca70000
++	.word	0x20840008
++	.word	0x20a50008
++	.word	0x20c6ffff
++	.word	0x14c0fffa
++	.word	0x00000000
++	.word	0x03e00008
++	.word	0x00000000
++	.word	0x00000000
++/* 0xbfc00428 */
++	.word	0xdc870000
++	.word	0xfca70000
++	.word	0x20840008
++	.word	0x20a50008
++	.word	0x20c6ffff
++	.word	0x14c0fffa
++	.word	0x00000000
++	.word	0x03e00008
++	.word	0x00000000
++	.word	0x00000000
++#endif /* CONFIG_PURPLE */
++	.align 4
++reset:
++#ifdef CONFIG_SYS_MIPS_MULTI_CPU
++       mfc0    k0, CP0_EBASE
++       and     k0, EBASEF_CPUNUM
++       bne     k0, zero, ifx_mips_handler_cpux
++       nop
++#endif
++	/* Clear watch registers.
++	 */
++	mtc0	zero, CP0_WATCHLO
++	mtc0	zero, CP0_WATCHHI
++
++	/* WP(Watch Pending), SW0/1 should be cleared. */
++	mtc0	zero, CP0_CAUSE
++
++	setup_c0_status_reset
++#if defined(CONFIG_MIPS24KEC) || defined(CONFIG_MIPS34KC)
++	/* CONFIG7 register */
++	/* Erratum "RPS May Cause Incorrect Instruction Execution"
++	* for 24KEC and 34KC */
++	mfc0    k0, CP0_CONFIG, 7
++	li      k1, MIPS_CONF7_RPS
++	or      k0, k1
++	mtc0    k0, CP0_CONFIG, 7
++#endif
++
++	/* Init Timer */
++	mtc0	zero, CP0_COUNT
++	mtc0	zero, CP0_COMPARE
++
++	/* CONFIG0 register */
++	li	t0, CONF_CM_UNCACHED
++	mtc0	t0, CP0_CONFIG
++
++	/* Initialize $gp.
++	 */
++	bal	1f
++	nop
++	.word	_gp
++1:
++	lw	gp, 0(ra)
++
++	/* Initialize any external memory.
++	 */
++	la	t9, lowlevel_init
++	jalr	t9
++	nop
++
++	/* Initialize caches...
++	 */
++	la	t9, mips_cache_reset
++	jalr	t9
++	nop
++
++	/* ... and enable them.
++	 */
++	li	t0, CONF_CM_CACHABLE_NONCOHERENT /*CONFIG_SYS_MIPS_CACHE_OPER_MODE*/
++	mtc0	t0, CP0_CONFIG
++
++	/* Set up temporary stack.
++	 */
++#ifdef CONFIG_SYS_INIT_RAM_LOCK_MIPS
++	li	a0, CONFIG_SYS_INIT_SP_OFFSET
++	la	t9, mips_cache_lock
++	jalr	t9
++	nop
++#endif
++
++	li	t0, CONFIG_SYS_SDRAM_BASE + CONFIG_SYS_INIT_SP_OFFSET
++	la	sp, 0(t0)
++
++	la	t9, bootstrap_board_init_f
++	jr	t9
++	nop
++
++/*
++ * void relocate_code (addr_sp, gd, addr_moni)
++ *
++ * This "function" does not return, instead it continues in RAM
++ * after relocating the monitor code.
++ *
++ * a0 = addr_sp
++ * a1 = gd
++ * a2 = destination address
++ */
++	.globl	relocate_code
++	.ent	relocate_code
++relocate_code:
++	move	sp, a0		/* Set new stack pointer	*/
++
++	li	t0, CONFIG_BOOTSTRAP_TEXT_BASE
++	la	t3, in_ram
++	lw	t2, -12(t3)	/* t2 <-- uboot_end_data	*/
++	move	t1, a2
++	move	s2, a2		/* s2 <-- destination address	*/
++
++	/*
++	 * Fix $gp:
++	 *
++	 * New $gp = (Old $gp - CONFIG_SYS_MONITOR_BASE) + Destination Address
++	 */
++	move	t6, gp
++	sub	gp, CONFIG_BOOTSTRAP_TEXT_BASE
++	add	gp, a2		/* gp now adjusted		*/
++	sub	s1, gp, t6	/* s1 <-- relocation offset	*/
++
++	/*
++	 * t0 = source address
++	 * t1 = target address
++	 * t2 = source end address
++	 */
++
++	/*
++	 * Save destination address and size for later usage in flush_cache()
++	 */
++	move	s0, a1		/* save gd in s0		*/
++	move	a0, t1		/* a0 <-- destination addr	*/
++	sub	a1, t2, t0	/* a1 <-- size			*/
++
++	/* On the purple board we copy the code earlier in a special way
++	 * in order to solve flash problems
++	 */
++#ifndef CONFIG_PURPLE
++1:
++	lw	t3, 0(t0)
++	sw	t3, 0(t1)
++	addu	t0, 4
++	ble	t0, t2, 1b
++	addu	t1, 4		/* delay slot			*/
++#endif
++
++	/* If caches were enabled, we would have to flush them here.
++	 */
++
++	/* a0 & a1 are already set up for flush_cache(start, size) */
++	la	t9, flush_cache
++	jalr	t9
++	nop
++
++	/* Jump to where we've relocated ourselves.
++	 */
++	addi	t0, s2, in_ram - _start
++	jr	t0
++	nop
++
++	.word	_gp
++	.word	_GLOBAL_OFFSET_TABLE_
++	.word	uboot_end_data
++	.word	uboot_end
++	.word	num_got_entries
++
++in_ram:
++	/*
++	 * Now we want to update GOT.
++	 *
++	 * GOT[0] is reserved. GOT[1] is also reserved for the dynamic object
++	 * generated by GNU ld. Skip these reserved entries from relocation.
++	 */
++	lw	t3, -4(t0)	/* t3 <-- num_got_entries	*/
++	lw	t4, -16(t0)	/* t4 <-- _GLOBAL_OFFSET_TABLE_	*/
++	lw	t5, -20(t0)	/* t5 <-- _gp	*/
++	sub	t4, t5		/* compute offset*/
++	add	t4, t4, gp	/* t4 now holds relocated _GLOBAL_OFFSET_TABLE_	*/
++	addi	t4, t4, 8	/* Skipping first two entries.	*/
++	li	t2, 2
++1:
++	lw	t1, 0(t4)
++	beqz	t1, 2f
++	add	t1, s1
++	sw	t1, 0(t4)
++2:
++	addi	t2, 1
++	blt	t2, t3, 1b
++	addi	t4, 4		/* delay slot			*/
++
++	/* Clear BSS.
++	 */
++	lw	t1, -12(t0)	/* t1 <-- uboot_end_data	*/
++	lw	t2, -8(t0)	/* t2 <-- uboot_end		*/
++	add	t1, s1		/* adjust pointers		*/
++	add	t2, s1
++
++	sub	t1, 4
++1:
++	addi	t1, 4
++	bltl	t1, t2, 1b
++	sw	zero, 0(t1)	/* delay slot			*/
++
++	move	a0, s0		/* a0 <-- gd			*/
++	la	t9, bootstrap_board_init_r
++	jr	t9
++	move	a1, s2		/* delay slot			*/
++
++	.end	relocate_code
++
++/*
++ * void copy_and_jump (void)
++ *
++ * This function copies/unzips the u-boot image and runs it.
++ * This "function" does not return
++ *
++*/
++	.globl	copy_and_jump
++	.ent	copy_and_jump
++copy_and_jump:
++
++	/* copy_uboot(CONFIG_SYS_MONITOR_BASE, payload_uncsize, payload_start, payload_size) */
++	li	a0, CONFIG_SYS_MONITOR_BASE
++	la	a1, payload_uncsize
++	lw	a1, 0(a1)
++	la	a2, payload_start
++	la	a3, payload_size
++	la	t9, copy_uboot
++	jalr t9
++	lw	a3, 0(a3)	/* delay slot */
++
++	li	t9, CONFIG_SYS_MONITOR_BASE
++	jr	t9
++	nop
++
++	.end copy_and_jump
++
++	/* Exception handlers.
++	 */
++romReserved:
++	b	romReserved
++
++romExcHandle:
++	b	romExcHandle
++#ifdef CONFIG_SYS_MIPS_MULTI_CPU
++/*
++ * Stop Slave CPUs
++ */
++ifx_mips_handler_cpux:
++       wait;
++       b ifx_mips_handler_cpux;
++       nop;
++#endif
+--- a/lib_mips/Makefile
++++ b/lib_mips/Makefile
+@@ -24,6 +24,9 @@
+ include $(TOPDIR)/config.mk
+ 
+ LIB	= $(obj)lib$(ARCH).a
++BOOTSTRAP_LIB	=	$(obj)lib$(ARCH)_bootstrap.a
++
++BOOTSTRAP_LIB-$(CONFIG_BOOTSTRAP)	= $(BOOTSTRAP_LIB)
+ 
+ SOBJS-y	+=
+ 
+@@ -35,12 +38,21 @@
+ endif
+ COBJS-y	+= time.o
+ 
+-SRCS	:= $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP)	+= board_bootstrap.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP)	+= time.o
++
++BOOTSTRAP_OBJS	:= $(addprefix $(obj),$(BOOTSTRAP_SOBJS-y) $(BOOTSTRAP_COBJS-y))
++
++SRCS	:= $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c) $(BOOTSTRAP_SOBJS-y:.o=.S) $(BOOTSTRAP_COBJS-y:.o=.c)
+ OBJS	:= $(addprefix $(obj),$(SOBJS-y) $(COBJS-y))
+ 
++all: $(obj).depend $(LIB) $(BOOTSTRAP_LIB)
+ $(LIB):	$(obj).depend $(OBJS)
+ 	$(AR) $(ARFLAGS) $@ $(OBJS)
+ 
++$(BOOTSTRAP_LIB):	$(obj).depend $(BOOTSTRAP_OBJS)
++	$(AR) $(ARFLAGS) $@ $(BOOTSTRAP_OBJS)
++
+ #########################################################################
+ 
+ # defines $(obj).depend target
+--- /dev/null
++++ b/lib_mips/board_bootstrap.c
+@@ -0,0 +1,270 @@
++/*
++ * (C) Copyright 2010 Industrie Dial Face S.p.A.
++ * Luigi 'Comio' Mantellini, luigi.mantellini@idf-hit.com
++ *
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <command.h>
++#include <malloc.h>
++#include <stdio_dev.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++extern int timer_init(void);
++
++extern int incaip_set_cpuclk(void);
++
++extern ulong uboot_end_data;
++extern ulong uboot_end;
++
++#ifdef CONFIG_BOOTSTRAP_SERIAL
++static char *failed = "*** failed ***\n";
++#endif
++/*
++ * mips_io_port_base is the begin of the address space to which x86 style
++ * I/O ports are mapped.
++ */
++unsigned long mips_io_port_base = -1;
++
++int __board_early_init_f(void)
++{
++	/*
++	 * Nothing to do in this dummy implementation
++	 */
++	return 0;
++}
++
++int board_early_init_f(void) __attribute__((weak, alias("__board_early_init_f")));
++int bootstrap_board_early_init_f(void) __attribute__((weak, alias("board_early_init_f")));
++
++static int bootstrap_init_func_ram (void)
++{
++	if ((gd->ram_size = bootstrap_initdram (0)) > 0) {
++		return (0);
++	}
++#ifdef CONFIG_BOOTSTRAP_SERIAL
++	puts (failed);
++#endif
++	return (1);
++}
++
++static int bootstrap_display_banner(void)
++{
++#ifdef CONFIG_BOOTSTRAP_SERIAL
++	puts ("bootstrap...");
++#endif
++	return (0);
++}
++
++static int bootstrap_init_baudrate (void)
++{
++#if defined(CONFIG_BOOTSTRAP_BAUDRATE)
++	gd->baudrate = CONFIG_BOOTSTRAP_BAUDRATE;
++#else
++	gd->baudrate = CONFIG_BAUDRATE;
++#endif
++	return 0;
++}
++
++/*
++ * Breath some life into the board...
++ *
++ * The first part of initialization is running from Flash memory;
++ * its main purpose is to initialize the RAM so that we
++ * can relocate the monitor code to RAM.
++ */
++
++/*
++ * All attempts to come up with a "common" initialization sequence
++ * that works for all boards and architectures failed: some of the
++ * requirements are just _too_ different. To get rid of the resulting
++ * mess of board dependend #ifdef'ed code we now make the whole
++ * initialization sequence configurable to the user.
++ *
++ * The requirements for any new initalization function is simple: it
++ * receives a pointer to the "global data" structure as it's only
++ * argument, and returns an integer return code, where 0 means
++ * "continue" and != 0 means "fatal error, hang the system".
++ */
++typedef int (init_fnc_t) (void);
++
++static init_fnc_t *init_sequence[] = {
++	bootstrap_board_early_init_f,
++	timer_init,
++	bootstrap_init_baudrate,/* initialze baudrate settings */
++#ifdef CONFIG_BOOTSTRAP_SERIAL
++	serial_init,			/* serial communications setup */
++#endif
++	bootstrap_display_banner,	/* say that we are here */
++	bootstrap_checkboard,
++	bootstrap_init_func_ram,
++	NULL,
++};
++
++
++void bootstrap_board_init_f(ulong bootflag)
++{
++	gd_t gd_data, *id;
++	bd_t *bd;
++	init_fnc_t **init_fnc_ptr;
++	ulong addr, addr_sp, len = (ulong)&uboot_end - CONFIG_BOOTSTRAP_TEXT_BASE;
++	ulong *s;
++
++	/* Pointer is writable since we allocated a register for it.
++	 */
++	gd = &gd_data;
++	/* compiler optimization barrier needed for GCC >= 3.4 */
++	__asm__ __volatile__("": : :"memory");
++
++	memset ((void *)gd, 0, sizeof (gd_t));
++
++	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
++		if ((*init_fnc_ptr)() != 0) {
++			bootstrap_hang ();
++		}
++	}
++
++	/*
++	 * Now that we have DRAM mapped and working, we can
++	 * relocate the code and continue running from DRAM.
++	 */
++	addr = CONFIG_SYS_SDRAM_BASE + gd->ram_size;
++
++	/* We can reserve some RAM "on top" here.
++	 */
++
++	/* round down to next 4 kB limit.
++	 */
++	addr &= ~(4096 - 1);
++	debug ("Top of RAM usable for U-Boot at: %08lx\n", addr);
++
++	/* Reserve memory for U-Boot code, data & bss
++	 * round down to next 16 kB limit
++	 */
++	addr -= len;
++	addr &= ~(16 * 1024 - 1);
++
++	debug ("Reserving %ldk for U-Boot at: %08lx\n", len >> 10, addr);
++
++	 /* Reserve memory for malloc() arena.
++	 */
++	addr_sp = addr - CONFIG_SYS_MALLOC_LEN;
++	debug ("Reserving %dk for malloc() at: %08lx\n",
++			CONFIG_SYS_MALLOC_LEN >> 10, addr_sp);
++
++	/*
++	 * (permanently) allocate a Board Info struct
++	 * and a permanent copy of the "global" data
++	 */
++	addr_sp -= sizeof(bd_t);
++	bd = (bd_t *)addr_sp;
++	gd->bd = bd;
++	debug ("Reserving %zu Bytes for Board Info at: %08lx\n",
++			sizeof(bd_t), addr_sp);
++
++	addr_sp -= sizeof(gd_t);
++	id = (gd_t *)addr_sp;
++	debug ("Reserving %zu Bytes for Global Data at: %08lx\n",
++			sizeof (gd_t), addr_sp);
++
++	/* Reserve memory for boot params.
++	 */
++	addr_sp -= CONFIG_SYS_BOOTPARAMS_LEN;
++	bd->bi_boot_params = addr_sp;
++	debug ("Reserving %dk for boot params() at: %08lx\n",
++			CONFIG_SYS_BOOTPARAMS_LEN >> 10, addr_sp);
++
++	/*
++	 * Finally, we set up a new (bigger) stack.
++	 *
++	 * Leave some safety gap for SP, force alignment on 16 byte boundary
++	 * Clear initial stack frame
++	 */
++	addr_sp -= 16;
++	addr_sp &= ~0xF;
++	s = (ulong *)addr_sp;
++	*s-- = 0;
++	*s-- = 0;
++	addr_sp = (ulong)s;
++	debug ("Stack Pointer at: %08lx\n", addr_sp);
++
++	/*
++	 * Save local variables to board info struct
++	 */
++	bd->bi_memstart	= CONFIG_SYS_SDRAM_BASE;	/* start of  DRAM memory */
++	bd->bi_memsize	= gd->ram_size;		/* size  of  DRAM memory in bytes */
++	bd->bi_baudrate	= gd->baudrate;		/* Console Baudrate */
++
++	memcpy (id, (void *)gd, sizeof (gd_t));
++
++	/* On the purple board we copy the code in a special way
++	 * in order to solve flash problems
++	 */
++	relocate_code (addr_sp, id, addr);
++
++	/* NOTREACHED - relocate_code() does not return */
++}
++/************************************************************************
++ *
++ * This is the next part if the initialization sequence: we are now
++ * running from RAM and have a "normal" C environment, i. e. global
++ * data can be written, BSS has been cleared, the stack size in not
++ * that critical any more, etc.
++ *
++ ************************************************************************
++ */
++
++void bootstrap_board_init_r (gd_t *id, ulong dest_addr)
++{
++	extern void malloc_bin_reloc (void);
++	extern void copy_and_jump(void);
++
++	bd_t *bd;
++
++	gd = id;
++	gd->flags |= GD_FLG_RELOC;	/* tell others: relocation done */
++
++	debug ("Now running in RAM - U-Boot at: %08lx\n", dest_addr);
++
++	gd->reloc_off = dest_addr - CONFIG_BOOTSTRAP_TEXT_BASE;
++
++	bd = gd->bd;
++
++	/* The Malloc area is immediately below the monitor copy in DRAM */
++	mem_malloc_init(CONFIG_BOOTSTRAP_BASE + gd->reloc_off -
++			CONFIG_SYS_MALLOC_LEN, CONFIG_SYS_MALLOC_LEN);
++	malloc_bin_reloc();
++
++	copy_and_jump();
++
++	/* NOTREACHED - no way out of command loop except booting */
++}
++
++void bootstrap_hang (void)
++{
++#ifdef CONFIG_BOOTSTRAP_SERIAL
++	puts ("### ERROR ### Please RESET the board ###\n");
++#endif
++	for (;;);
++}
+--- a/common/Makefile
++++ b/common/Makefile
+@@ -24,6 +24,9 @@
+ include $(TOPDIR)/config.mk
+ 
+ LIB	= $(obj)libcommon.a
++BOOTSTRAP_LIB	= $(obj)libcommon_bootstrap.a
++
++BOOTSTRAP_LIB-$(CONFIG_BOOTSTRAP)	= $(BOOTSTRAP_LIB)
+ 
+ AOBJS	=
+ 
+@@ -168,18 +171,27 @@
+ COBJS-$(CONFIG_UPDATE_TFTP) += update.o
+ COBJS-$(CONFIG_USB_KEYBOARD) += usb_kbd.o
+ 
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP) += dlmalloc.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_SERIAL) += console_bootstrap.o
++
++BOOTSTRAP_COBJS	:= $(sort $(BOOTSTRAP_COBJS-y))
++BOOTSTRAP_OBJS	:= $(addprefix $(obj),$(BOOTSTRAP_COBJS))
++
+ 
+ COBJS	:= $(sort $(COBJS-y))
+-SRCS	:= $(AOBJS:.o=.S) $(COBJS:.o=.c)
++SRCS	:= $(AOBJS:.o=.S) $(COBJS:.o=.c) $(BOOTSTRAP_COBJS:.o=.c)
+ OBJS	:= $(addprefix $(obj),$(AOBJS) $(COBJS))
+ 
+ CPPFLAGS += -I..
+ 
+-all:	$(LIB) $(AOBJS)
++all:	$(LIB) $(BOOTSTRAP_LIB-y) $(AOBJS)
+ 
+ $(LIB): $(obj).depend $(OBJS)
+ 	$(AR) $(ARFLAGS) $@ $(OBJS)
+ 
++$(BOOTSTRAP_LIB): $(obj).depend $(BOOTSTRAP_OBJS)
++	$(AR) $(ARFLAGS) $@ $(BOOTSTRAP_OBJS)
++
+ $(obj)env_embedded.o: $(src)env_embedded.c $(obj)../tools/envcrc
+ 	$(CC) $(AFLAGS) -Wa,--no-warn \
+ 		-DENV_CRC=$(shell $(obj)../tools/envcrc) \
+--- /dev/null
++++ b/common/console_bootstrap.c
+@@ -0,0 +1,81 @@
++/*
++ * (C) Copyright 2000
++ * Paolo Scaffardi, AIRVENT SAM s.p.a - RIMINI(ITALY), arsenio@tin.it
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <stdarg.h>
++#include <malloc.h>
++
++/** U-Boot INITIAL CONSOLE-COMPATIBLE FUNCTION *****************************/
++
++int getc(void)
++{
++	/* Send directly to the handler */
++	return serial_getc();
++}
++
++int tstc(void)
++{
++	/* Send directly to the handler */
++	return serial_tstc();
++}
++
++void putc(const char c)
++{
++	/* Send directly to the handler */
++	serial_putc(c);
++}
++
++void puts(const char *s)
++{
++	serial_puts(s);
++}
++
++void printf(const char *fmt, ...)
++{
++	va_list args;
++	char printbuffer[CONFIG_SYS_PBSIZE];
++
++	va_start(args, fmt);
++
++	/* For this to work, printbuffer must be larger than
++	 * anything we ever want to print.
++	 */
++	vsprintf(printbuffer, fmt, args);
++	va_end(args);
++
++	/* Print the string */
++	puts(printbuffer);
++}
++
++void vprintf(const char *fmt, va_list args)
++{
++	char printbuffer[CONFIG_SYS_PBSIZE];
++
++	/* For this to work, printbuffer must be larger than
++	 * anything we ever want to print.
++	 */
++	vsprintf(printbuffer, fmt, args);
++
++	/* Print the string */
++	puts(printbuffer);
++}
+--- a/config.mk
++++ b/config.mk
+@@ -136,7 +136,7 @@
+ ARFLAGS = crv
+ endif
+ RELFLAGS= $(PLATFORM_RELFLAGS)
+-DBGFLAGS= -g # -DDEBUG
++DBGFLAGS= -g
+ OPTFLAGS= -Os #-fomit-frame-pointer
+ ifndef LDSCRIPT
+ #LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot.lds.debug
+@@ -146,6 +146,11 @@
+ LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot.lds
+ endif
+ endif
++ifeq ($(CONFIG_BOOTSTRAP),y)
++ifndef BOOTSTRAP_LDSCRIPT
++BOOTSTRAP_LDSCRIPT := $(TOPDIR)/board/$(BOARDDIR)/u-boot-bootstrap.lds
++endif
++endif
+ OBJCFLAGS += --gap-fill=0xff
+ 
+ gccincdir := $(shell $(CC) -print-file-name=include)
+@@ -156,6 +161,10 @@
+ CPPFLAGS += -DTEXT_BASE=$(TEXT_BASE)
+ endif
+ 
++ifneq ($(CONFIG_BOOTSTRAP_TEXT_BASE),)
++CPPFLAGS += -DCONFIG_BOOTSTRAP_TEXT_BASE=$(CONFIG_BOOTSTRAP_TEXT_BASE)
++endif
++
+ ifneq ($(RESET_VECTOR_ADDRESS),)
+ CPPFLAGS += -DRESET_VECTOR_ADDRESS=$(RESET_VECTOR_ADDRESS)
+ endif
+@@ -176,6 +185,7 @@
+ endif
+ 
+ CFLAGS += $(call cc-option,-fno-stack-protector)
++CFLAGS += $(call cc-option,-ffunction-sections)
+ 
+ # avoid trigraph warnings while parsing pci.h (produced by NIOS gcc-2.9)
+ # this option have to be placed behind -Wall -- that's why it is here
+@@ -203,6 +213,13 @@
+ LDFLAGS += -Ttext $(TEXT_BASE)
+ endif
+ 
++ifeq ($(CONFIG_BOOTSTRAP),y)
++BOOTSTRAP_LDFLAGS += -Bstatic -T $(obj)u-boot-bootstrap.lds $(PLATFORM_LDFLAGS)
++ifneq ($(CONFIG_BOOTSTRAP_TEXT_BASE),)
++BOOTSTRAP_LDFLAGS += -Ttext $(CONFIG_BOOTSTRAP_TEXT_BASE)
++endif
++endif
++
+ # Location of a usable BFD library, where we define "usable" as
+ # "built for ${HOST}, supports ${TARGET}".  Sensible values are
+ # - When cross-compiling: the root of the cross-environment
+--- a/include/common.h
++++ b/include/common.h
+@@ -722,6 +722,27 @@
+ int cpu_release(int nr, int argc, char *argv[]);
+ #endif
+ 
++/* Bootstrap specific code */
++#ifdef CONFIG_BOOTSTRAP
++void bootstrap_hang(void) __attribute__ ((noreturn));
++void bootstrap_board_init_f(ulong) __attribute__ ((noreturn));
++void bootstrap_board_init_r(gd_t *, ulong) __attribute__ ((noreturn));
++int bootstrap_checkboard(void);
++
++int bootstrap_serial_init(void);
++void bootstrap_serial_exit(void);
++void bootstrap_serial_setbrg(void);
++void bootstrap_serial_putc(const char);
++void bootstrap_serial_putc_raw(const char);
++void bootstrap_serial_puts(const char *);
++int bootstrap_serial_getc(void);
++int bootstrap_serial_tstc(void);
++
++phys_size_t bootstrap_initdram (int);
++
++int copy_uboot(void *dst, size_t unc_size, void *src, size_t size);
++#endif
++
+ #endif /* __ASSEMBLY__ */
+ 
+ /* Put only stuff here that the assembler can digest */
+--- a/lib_generic/Makefile
++++ b/lib_generic/Makefile
+@@ -24,6 +24,9 @@
+ include $(TOPDIR)/config.mk
+ 
+ LIB	= $(obj)libgeneric.a
++BOOTSTRAP_LIB	= $(obj)libgeneric_bootstrap.a
++
++BOOTSTRAP_LIB-$(CONFIG_BOOTSTRAP)	= $(BOOTSTRAP_LIB)
+ 
+ COBJS-$(CONFIG_ADDR_MAP) += addr_map.o
+ COBJS-$(CONFIG_BZIP2) += bzlib.o
+@@ -50,14 +53,37 @@
+ COBJS-y += vsprintf.o
+ COBJS-$(CONFIG_ZLIB) += zlib.o
+ COBJS-$(CONFIG_RBTREE)	+= rbtree.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP) += string.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP) += vsprintf.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP) += div64.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP) += ctype.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP) += time.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP) += bootstrap.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_GZIP) += zlib.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_GZIP) += gunzip.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_GZIP) += crc32.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_BZIP2) += bzlib.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_BZIP2) += bzlib_crctable.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_BZIP2) += bzlib_decompress.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_BZIP2) += bzlib_randtable.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_BZIP2) += bzlib_huffman.o
++
++BOOTSTRAP_COBJS	:= $(BOOTSTRAP_COBJS-y)
++BOOTSTRAP_OBJS	:= $(addprefix $(obj),$(BOOTSTRAP_COBJS))
+ 
+ COBJS	:= $(COBJS-y)
+-SRCS	:= $(COBJS:.o=.c)
++SRCS	:= $(COBJS:.o=.c) $(BOOTSTRAP_COBJS:.o=.c)
+ OBJS	:= $(addprefix $(obj),$(COBJS))
+ 
++all: $(obj).depend $(LIB) $(BOOTSTRAP_LIB-y)
++
+ $(LIB):	$(obj).depend $(OBJS)
+ 	$(AR) $(ARFLAGS) $@ $(OBJS)
+ 
++$(BOOTSTRAP_LIB):	$(obj).depend $(BOOTSTRAP_OBJS)
++	$(AR) $(ARFLAGS) $@ $(BOOTSTRAP_OBJS)
++
++
+ #########################################################################
+ 
+ # defines $(obj).depend target
+--- /dev/null
++++ b/lib_generic/bootstrap.c
+@@ -0,0 +1,95 @@
++/*
++ * (C) Copyright 2010 Industrie Dial Face S.p.A.
++ * Luigi 'Comio' Mantellini, luigi.mantellini@idf-hit.com
++ *
++ * (C) Copyright 2003
++ * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <common.h>
++#include <command.h>
++#include <stdio_dev.h>
++
++#ifdef CONFIG_BOOTSTRAP_LZMA
++#include <lzma/LzmaTypes.h>
++#include <lzma/LzmaDec.h>
++#include <lzma/LzmaTools.h>
++#endif /* CONFIG_BOOTSTRAP_LZMA */
++
++#ifdef CONFIG_BOOTSTRAP_LZO
++#include <linux/lzo.h>
++#endif /* CONFIG_BOOTSTRAP_LZO */
++
++#ifdef CONFIG_BOOTSTRAP_BZIP2
++#include <bzlib.h>
++#endif
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#if defined(CONFIG_BOOTSTRAP_SERIAL)
++static const char *algo = 
++#if defined(CONFIG_BOOTSTRAP_GZIP)
++    "gzip";
++#elif defined(CONFIG_BOOTSTRAP_LZMA)
++    "lzma";
++#elif defined(CONFIG_BOOTSTRAP_LZO)
++    "lzo";
++#elif defined(CONFIG_BOOTSTRAP_BZIP2)
++    "bzip2";
++#else
++    "flat";
++#endif
++#endif
++
++int copy_uboot(void *dst, size_t unc_size, void *src, size_t size)
++{
++	int ret;
++	debug("copy from %p (%d) to %p (%d)\n", src, size, dst, unc_size);
++#if defined(CONFIG_BOOTSTRAP_SERIAL)
++	printf("Uncompressing payload (%s)...", algo);
++#endif
++#if defined(CONFIG_BOOTSTRAP_GZIP)
++	ret = gunzip(dst, unc_size, src, &size);
++#elif defined(CONFIG_BOOTSTRAP_LZMA)
++	SizeT outsize = unc_size;
++	ret = lzmaBuffToBuffDecompress(dst, &outsize, src, size);
++#elif defined(CONFIG_BOOTSTRAP_LZO)
++	uint unc_len = unc_size;
++	ret = lzop_decompress(src, size, dst, &unc_len);
++#elif defined(CONFIG_BOOTSTRAP_BZIP2)
++	uint unc_len = unc_size;
++	ret = BZ2_bzBuffToBuffDecompress ((char*)dst, &unc_len, (char *)src, size, CONFIG_SYS_MALLOC_LEN < (4096 * 1024), 0);
++#else
++	memcpy(dst, src, size);
++	ret = 0;
++#endif
++	if (ret) {
++#if defined(CONFIG_BOOTSTRAP_SERIAL)
++	    printf("failed with error %d.\n", ret);
++#endif
++	    bootstrap_hang();
++	} else {
++#if defined(CONFIG_BOOTSTRAP_SERIAL)
++	    puts("done.\n");
++#endif
++	}
++	return ret;
++}
+--- a/lib_generic/lzma/Makefile
++++ b/lib_generic/lzma/Makefile
+@@ -32,7 +32,9 @@
+ 
+ CFLAGS += -D_LZMA_PROB32
+ 
+-COBJS-$(CONFIG_LZMA) += LzmaDec.o LzmaTools.o
++COBJS-$(CONFIG_LZMA)$(CONFIG_BOOTSTRAP_LZMA) += LzmaDec.o LzmaTools.o
++
++COBJS-y	+= $(COBJS-yy)
+ 
+ COBJS	= $(COBJS-y)
+ SRCS 	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
+--- a/lib_generic/lzo/Makefile
++++ b/lib_generic/lzo/Makefile
+@@ -27,7 +27,9 @@
+ 
+ SOBJS	=
+ 
+-COBJS-$(CONFIG_LZO) += lzo1x_decompress.o
++COBJS-$(CONFIG_LZO)$(CONFIG_BOOTSTRAP_LZO) += lzo1x_decompress.o
++
++COBJS-y	+= $(OBJS-yy)
+ 
+ COBJS	= $(COBJS-y)
+ SRCS 	:= $(SOBJS:.o=.S) $(COBJS:.o=.c)
+--- a/cpu/mips/Makefile
++++ b/cpu/mips/Makefile
+@@ -24,25 +24,46 @@
+ include $(TOPDIR)/config.mk
+ 
+ LIB	= $(obj)lib$(CPU).a
++BOOTSTRAP_LIB = $(obj)lib$(CPU)_bootstrap.a
++
++BOOTSTRAP_LIB-$(CONFIG_BOOTSTRAP) = $(BOOTSTRAP_LIB)
+ 
+ START	= start.o
+ SOBJS-y	= cache.o
+-COBJS-y	= cpu.o interrupts.o
++COBJS-y	= cpu.o reset.o interrupts.o
+ 
+ SOBJS-$(CONFIG_INCA_IP)	+= incaip_wdt.o
+ COBJS-$(CONFIG_INCA_IP)	+= asc_serial.o incaip_clock.o
++#COBJS-$(CONFIG_IFX_ASC) += ifx_asc.o
+ COBJS-$(CONFIG_PURPLE)	+= asc_serial.o
+ COBJS-$(CONFIG_SOC_AU1X00) += au1x00_eth.o au1x00_serial.o au1x00_usb_ohci.o
+ 
+-SRCS	:= $(START:.o=.S) $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c)
++#BOOTSTRAP_START = start_bootstrap.o
++BOOTSTRAP_START-$(CONFIG_BOOTSTRAP) += start_bootstrap.o #$(BOOTSTRAP_START)
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP) += cpu.o interrupts.o reset_bootstrap.o
++BOOTSTRAP_SOBJS-$(CONFIG_BOOTSTRAP) += cache.o
++BOOTSTRAP_COBJS-$(CONFIG_DANUBE) += danube-clock.o
++BOOTSTRAP_COBJS-$(CONFIG_AR9) += ar9-clock.o
++BOOTSTRAP_COBJS-$(CONFIG_BOOTSTRAP_SERIAL) += ifx_asc.o
++
++BOOTSTRAP_OBJS	:= $(addprefix $(obj),$(BOOTSTRAP_SOBJS-y) $(BOOTSTRAP_COBJS-y))
++BOOTSTRAP_START := $(addprefix $(obj),$(BOOTSTRAP_START-y))
++
++SRCS	:= $(SOBJS-y:.o=.S) $(COBJS-y:.o=.c) $(BOOTSTRAP_START-y:.o=.S) $(BOOTSTRAP_SOBJS-y:.o=.S) $(BOOTSTRAP_COBJS-y:.o=.c)
+ OBJS	:= $(addprefix $(obj),$(SOBJS-y) $(COBJS-y))
+ START	:= $(addprefix $(obj),$(START))
+ 
+-all:	$(obj).depend $(START) $(LIB)
++all:	$(obj).depend $(START) $(LIB) $(BOOTSTRAP_START-y) $(BOOTSTRAP_LIB-y)
+ 
+-$(LIB):	$(OBJS)
++$(LIB):	 $(OBJS)
+ 	$(AR) $(ARFLAGS) $@ $(OBJS)
+ 
++#$(BOOTSTRAP_START):	$(obj).depend
++
++$(BOOTSTRAP_LIB):	$(BOOTSTRAP_OBJS)
++	$(AR) $(ARFLAGS) $@ $(BOOTSTRAP_OBJS)
++
++
+ #########################################################################
+ 
+ # defines $(obj).depend target

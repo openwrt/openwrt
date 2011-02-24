@@ -214,7 +214,13 @@ static void gpio_default(void)
 		setenv("bootcmd", "httpd");
 	}
 #endif
-
+#ifdef CONFIG_ARV4525
+	*DANUBE_GPIO_P0_ALTSEL0 &= ~((1<<4)|(1<<5)|(1<<6)|(1<<8)|(1<<9));
+	*DANUBE_GPIO_P0_ALTSEL1 &= ~((1<<4)|(1<<5)|(1<<6)|(1<<8)|(1<<9));
+	*DANUBE_GPIO_P0_OD |= ((1<<4)|(1<<5)|(1<<6)|(1<<8)|(1<<9));
+	*DANUBE_GPIO_P0_DIR |= ((1<<4)|(1<<5)|(1<<6)|(1<<8)|(1<<9));
+	*DANUBE_GPIO_P0_OUT &= ~((1<<4)|(1<<5)|(1<<6)|(1<<8)|(1<<9));
+#endif
 }
 
 int checkboard (void)
