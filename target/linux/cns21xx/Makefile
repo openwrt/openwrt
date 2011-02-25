@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010 OpenWrt.org
+# Copyright (C) 2010-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=cns21xx
 BOARDNAME:=Cavium Networks CNS21xx
 FEATURES:=squashfs broken
-CFLAGS:=-Os -pipe -march=armv4 -mtune=arm9tdmi -funit-at-a-time
+CFLAGS:=-Os -pipe -march=armv4 -mtune=fa526 -funit-at-a-time
 
 LINUX_VERSION:=2.6.36.4
 
