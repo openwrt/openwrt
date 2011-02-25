@@ -68,6 +68,9 @@ add_route6() {
 		${mtu:+mss "$mtu"}
 }
 
+# Skip fake devices (e.g. relayd)
+grep -qs "^ *$DEVICE:" /proc/net/dev || exit 0
+
 case "$ACTION" in
 	ifup)
 		include /lib/network
@@ -108,14 +111,14 @@ case "$ACTION" in
 			logger -t ifup "Allowing Router Advertisements on $INTERFACE ($DEVICE)"
 			accept_ra=2
 		}
-		do_sysctl "net.ipv6.conf.$INTERFACE.accept_ra" $accept_ra
+		do_sysctl "net.ipv6.conf.$DEVICE.accept_ra" $accept_ra
 
 		config_get_bool send_rs "$INTERFACE" send_rs $send_rs
 		[ $send_rs -eq 0 ] || {
 			logger -t ifup "Enabling Router Solicitations on $INTERFACE ($DEVICE)"
 			send_rs=2
 		}
-		do_sysctl "net.ipv6.conf.$INTERFACE.forwarding" $send_rs
+		do_sysctl "net.ipv6.conf.$DEVICE.forwarding" $send_rs
 
 
 		# Setup routes
