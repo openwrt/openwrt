@@ -54,20 +54,14 @@ endif
 HOST_FPIC:=-fPIC
 
 ARCH_SUFFIX:=
+GCC_ARCH:=
+
+ifneq ($(filter -march=armv%,$(TARGET_OPTIMIZATION)),)
+  ARCH_SUFFIX:=_$(patsubst -march=arm%,%,$(filter -march=armv%,$(TARGET_OPTIMIZATION)))
+  GCC_ARCH:=$(patsubst -march=%,%,$(filter -march=armv%,$(TARGET_OPTIMIZATION)))
+endif
 ifneq ($(findstring -mips32r2,$(TARGET_OPTIMIZATION)),)
   ARCH_SUFFIX:=_r2
-endif
-ifneq ($(findstring -march=armv4,$(TARGET_OPTIMIZATION)),)
-  ARCH_SUFFIX:=_v4
-endif
-ifneq ($(findstring -march=armv4t,$(TARGET_OPTIMIZATION)),)
-  ARCH_SUFFIX:=_v4t
-endif
-ifneq ($(findstring -march=armv5t,$(TARGET_OPTIMIZATION)),)
-  ARCH_SUFFIX:=_v5t
-endif
-ifneq ($(findstring -march=armv5te,$(TARGET_OPTIMIZATION)),)
-  ARCH_SUFFIX:=_v5te
 endif
 ifdef CONFIG_HAS_SPE_FPU
   TARGET_SUFFIX:=$(TARGET_SUFFIX)spe

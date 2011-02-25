@@ -90,8 +90,6 @@ config EABI_SUPPORT
 	bool
 	depends arm||armeb
 	prompt "Enable EABI support" if TOOLCHAINOPTS
-	default n if TARGET_gemini
-	default n if TARGET_cns21xx
 	default y
 	help
 	  Enable ARM EABI support
