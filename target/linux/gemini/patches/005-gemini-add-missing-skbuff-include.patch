@@ -25,8 +25,8 @@
  #include <linux/module.h>
 +#include <linux/skbuff.h>
  #include <linux/mdio-bitbang.h>
- #include <linux/slab.h>
  #include <linux/types.h>
+ #include <linux/delay.h>
 --- a/drivers/net/phy/mdio-gpio.c
 +++ b/drivers/net/phy/mdio-gpio.c
 @@ -25,6 +25,7 @@

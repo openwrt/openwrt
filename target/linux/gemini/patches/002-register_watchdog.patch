@@ -1,0 +1,30 @@
+--- a/arch/arm/mach-gemini/board-nas4220b.c
++++ b/arch/arm/mach-gemini/board-nas4220b.c
+@@ -95,6 +95,7 @@ static void __init ib4220b_init(void)
+ {
+ 	gemini_gpio_init();
+ 	platform_register_uart();
++	platform_register_watchdog();
+ 	platform_register_pflash(SZ_16M, NULL, 0);
+ 	platform_device_register(&ib4220b_led_device);
+ 	platform_device_register(&ib4220b_key_device);
+--- a/arch/arm/mach-gemini/board-wbd111.c
++++ b/arch/arm/mach-gemini/board-wbd111.c
+@@ -126,6 +126,7 @@ static void __init wbd111_init(void)
+ {
+ 	gemini_gpio_init();
+ 	platform_register_uart();
++	platform_register_watchdog();
+ 	platform_register_pflash(SZ_8M, wbd111_partitions,
+ 				 wbd111_num_partitions);
+ 	platform_device_register(&wbd111_leds_device);
+--- a/arch/arm/mach-gemini/board-wbd222.c
++++ b/arch/arm/mach-gemini/board-wbd222.c
+@@ -126,6 +126,7 @@ static void __init wbd222_init(void)
+ {
+ 	gemini_gpio_init();
+ 	platform_register_uart();
++	platform_register_watchdog();
+ 	platform_register_pflash(SZ_8M, wbd222_partitions,
+ 		wbd222_num_partitions);
+ 	platform_device_register(&wbd222_leds_device);
