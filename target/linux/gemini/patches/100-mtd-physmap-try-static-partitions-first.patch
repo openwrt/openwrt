@@ -1,6 +1,6 @@
 --- a/drivers/mtd/maps/physmap.c
 +++ b/drivers/mtd/maps/physmap.c
-@@ -170,6 +170,13 @@ static int physmap_flash_probe(struct pl
+@@ -173,6 +173,13 @@ static int physmap_flash_probe(struct pl
  		goto err_out;
  
  #ifdef CONFIG_MTD_PARTITIONS
@@ -14,7 +14,7 @@
  	err = parse_mtd_partitions(info->cmtd, part_probe_types,
  				&info->parts, 0);
  	if (err > 0) {
-@@ -177,13 +184,6 @@ static int physmap_flash_probe(struct pl
+@@ -180,13 +187,6 @@ static int physmap_flash_probe(struct pl
  		info->nr_parts = err;
  		return 0;
  	}

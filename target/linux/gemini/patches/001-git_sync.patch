@@ -8,7 +8,7 @@
  
  /*
   * Debugging stuff
-@@ -337,7 +338,7 @@ params:		ldr	r0, =params_phys
+@@ -355,7 +356,7 @@ params:		ldr	r0, =0x10000100		@ params_p
   * This routine must preserve:
   *  r4, r5, r6, r7, r8
   */
@@ -17,7 +17,7 @@
  cache_on:	mov	r3, #8			@ cache_on function
  		b	call_cache_fn
  
-@@ -519,7 +520,7 @@ __common_mmu_cache_on:
+@@ -544,7 +545,7 @@ __common_mmu_cache_on:
  		mcr	p15, 0, r3, c2, c0, 0	@ load page table pointer
  		mcr	p15, 0, r1, c3, c0, 0	@ load domain access control
  		b	1f
@@ -26,7 +26,7 @@
  1:		mcr	p15, 0, r0, c1, c0, 0	@ load control register
  		mrc	p15, 0, r0, c1, c0, 0	@ and read it back to
  		sub	pc, lr, r0, lsr #32	@ properly flush pipeline
-@@ -538,7 +539,7 @@ __common_mmu_cache_on:
+@@ -563,7 +564,7 @@ __common_mmu_cache_on:
   * r8     = atags pointer
   * r9-r12,r14 = corrupted
   */
@@ -35,16 +35,16 @@
  reloc_start:	add	r9, r5, r0
  		sub	r9, r9, #128		@ do not copy the stack
  		debug_reloc_start
-@@ -766,7 +767,7 @@ proc_types:
-  * On exit, r0, r1, r2, r3, r9, r12 corrupted
-  * This routine must preserve: r4, r6, r7
+@@ -793,7 +794,7 @@ proc_types:
+  * This routine must preserve:
+  *  r4, r6, r7
   */
 -		.align	5
 +		.align	L1_CACHE_SHIFT
  cache_off:	mov	r3, #12			@ cache_off function
  		b	call_cache_fn
  
-@@ -841,7 +842,7 @@ __armv3_mmu_cache_off:
+@@ -868,7 +869,7 @@ __armv3_mmu_cache_off:
   * This routine must preserve:
   *  r0, r4, r5, r6, r7
   */
@@ -53,40 +53,37 @@
  cache_clean_flush:
  		mov	r3, #16
  		b	call_cache_fn
---- a/arch/arm/include/asm/dma-mapping.h
-+++ b/arch/arm/include/asm/dma-mapping.h
-@@ -98,7 +98,7 @@ static inline int dma_set_mask(struct de
- 
- static inline int dma_get_cache_alignment(void)
- {
--	return 32;
-+	return L1_CACHE_BYTES;
- }
- 
- static inline int dma_is_consistent(struct device *dev, dma_addr_t handle)
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -923,7 +923,7 @@ config ISA_DMA_API
+@@ -307,6 +307,7 @@ config ARCH_GEMINI
+ 	select CPU_FA526
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select ARCH_USES_GETTIMEOFFSET
++	select PCI
+ 	help
+ 	  Support for the Cortina Systems Gemini family SoCs
+ 
+@@ -1164,7 +1165,7 @@ config ISA_DMA_API
  	bool
  
  config PCI
--	bool "PCI support" if ARCH_INTEGRATOR_AP || ARCH_VERSATILE_PB || ARCH_IXP4XX || ARCH_KS8695 || MACH_ARMCORE
-+	bool "PCI support" if ARCH_INTEGRATOR_AP || ARCH_VERSATILE_PB || ARCH_IXP4XX || ARCH_KS8695 || MACH_ARMCORE || ARCH_GEMINI
+-	bool "PCI support" if ARCH_INTEGRATOR_AP || ARCH_VERSATILE_PB || ARCH_IXP4XX || ARCH_KS8695 || MACH_ARMCORE || ARCH_CNS3XXX
++	bool "PCI support" if ARCH_INTEGRATOR_AP || ARCH_VERSATILE_PB || ARCH_IXP4XX || ARCH_KS8695 || MACH_ARMCORE || ARCH_CNS3XXX || ARCH_GEMINI
  	help
  	  Find out whether you have a PCI motherboard. PCI is the name of a
  	  bus system, i.e. the way the CPU talks to the other stuff inside
 --- a/arch/arm/kernel/entry-armv.S
 +++ b/arch/arm/kernel/entry-armv.S
-@@ -22,6 +22,7 @@
- #include <asm/thread_notify.h>
+@@ -23,6 +23,7 @@
  #include <asm/unwind.h>
  #include <asm/unistd.h>
+ #include <asm/tls.h>
 +#include <asm/cache.h>
  
  #include "entry-header.S"
  
-@@ -166,7 +167,7 @@ ENDPROC(__und_invalid)
- 	asm_trace_hardirqs_off
+@@ -167,7 +168,7 @@ ENDPROC(__und_invalid)
+ 	stmia	r5, {r0 - r4}
  	.endm
  
 -	.align	5
@@ -94,7 +91,7 @@
  __dabt_svc:
  	svc_entry
  
-@@ -214,7 +215,7 @@ __dabt_svc:
+@@ -215,7 +216,7 @@ __dabt_svc:
   UNWIND(.fnend		)
  ENDPROC(__dabt_svc)
  
@@ -103,7 +100,7 @@
  __irq_svc:
  	svc_entry
  
-@@ -255,7 +256,7 @@ svc_preempt:
+@@ -259,7 +260,7 @@ svc_preempt:
  	b	1b
  #endif
  
@@ -112,7 +109,7 @@
  __und_svc:
  #ifdef CONFIG_KPROBES
  	@ If a kprobe is about to simulate a "stmdb sp..." instruction,
-@@ -301,7 +302,7 @@ __und_svc:
+@@ -305,7 +306,7 @@ __und_svc:
   UNWIND(.fnend		)
  ENDPROC(__und_svc)
  
@@ -121,7 +118,7 @@
  __pabt_svc:
  	svc_entry
  
-@@ -337,7 +338,7 @@ __pabt_svc:
+@@ -341,7 +342,7 @@ __pabt_svc:
   UNWIND(.fnend		)
  ENDPROC(__pabt_svc)
  
@@ -130,7 +127,7 @@
  .LCcralign:
  	.word	cr_alignment
  #ifdef MULTI_DABORT
-@@ -412,7 +413,7 @@ ENDPROC(__pabt_svc)
+@@ -414,7 +415,7 @@ ENDPROC(__pabt_svc)
  #endif
  	.endm
  
@@ -139,7 +136,7 @@
  __dabt_usr:
  	usr_entry
  	kuser_cmpxchg_check
-@@ -444,7 +445,7 @@ __dabt_usr:
+@@ -446,7 +447,7 @@ __dabt_usr:
   UNWIND(.fnend		)
  ENDPROC(__dabt_usr)
  
@@ -148,7 +145,7 @@
  __irq_usr:
  	usr_entry
  	kuser_cmpxchg_check
-@@ -476,7 +477,7 @@ ENDPROC(__irq_usr)
+@@ -475,7 +476,7 @@ ENDPROC(__irq_usr)
  
  	.ltorg
  
@@ -157,7 +154,7 @@
  __und_usr:
  	usr_entry
  
-@@ -692,7 +693,7 @@ __und_usr_unknown:
+@@ -691,7 +692,7 @@ __und_usr_unknown:
  	b	do_undefinstr
  ENDPROC(__und_usr_unknown)
  
@@ -166,7 +163,7 @@
  __pabt_usr:
  	usr_entry
  
-@@ -803,7 +804,7 @@ ENDPROC(__switch_to)
+@@ -805,7 +806,7 @@ ENDPROC(__switch_to)
  #endif
  	.endm
  
@@ -175,7 +172,7 @@
  	.globl	__kuser_helper_start
  __kuser_helper_start:
  
-@@ -843,7 +844,7 @@ __kuser_memory_barrier:				@ 0xffff0fa0
+@@ -845,7 +846,7 @@ __kuser_memory_barrier:				@ 0xffff0fa0
  	smp_dmb
  	usr_ret	lr
  
@@ -184,7 +181,7 @@
  
  /*
   * Reference prototype:
-@@ -975,7 +976,7 @@ kuser_cmpxchg_fixup:
+@@ -972,7 +973,7 @@ kuser_cmpxchg_fixup:
  
  #endif
  
@@ -193,7 +190,7 @@
  
  /*
   * Reference prototype:
-@@ -1058,7 +1059,7 @@ __kuser_helper_end:
+@@ -1050,7 +1051,7 @@ __kuser_helper_end:
   * of which is copied into r0 for the mode specific abort handler.
   */
  	.macro	vector_stub, name, mode, correction=0
@@ -202,7 +199,7 @@
  
  vector_\name:
  	.if \correction
-@@ -1189,7 +1190,7 @@ __stubs_start:
+@@ -1181,7 +1182,7 @@ __stubs_start:
  	.long	__und_invalid			@  e
  	.long	__und_invalid			@  f
  
@@ -211,7 +208,7 @@
  
  /*=============================================================================
   * Undefined FIQs
-@@ -1219,7 +1220,7 @@ vector_addrexcptn:
+@@ -1211,7 +1212,7 @@ vector_addrexcptn:
   * We group all the following data together to optimise
   * for CPUs with separate I & D caches.
   */
@@ -238,7 +235,7 @@
  /*
   * This is the fast syscall return path.  We do as little as
   * possible here, and this includes saving r0 back into the SVC
-@@ -183,7 +184,7 @@ ftrace_stub:
+@@ -266,7 +267,7 @@ ENDPROC(ftrace_stub)
  #define A710(code...)
  #endif
  
@@ -247,7 +244,7 @@
  ENTRY(vector_swi)
  	sub	sp, sp, #S_FRAME_SIZE
  	stmia	sp, {r0 - r12}			@ Calling r0 - r12
-@@ -316,7 +317,7 @@ __sys_trace_return:
+@@ -410,7 +411,7 @@ __sys_trace_return:
  	bl	syscall_trace
  	b	ret_slow_syscall
  
@@ -264,9 +261,9 @@
  #include <asm/system.h>
 +#include <asm/cache.h>
  
- #if (PHYS_OFFSET & 0x001fffff)
- #error "PHYS_OFFSET must be at an even 2MiB boundary!"
-@@ -192,7 +193,7 @@ ENDPROC(__enable_mmu)
+ #ifdef CONFIG_DEBUG_LL
+ #include <mach/debug-macro.S>
+@@ -378,7 +379,7 @@ ENDPROC(__enable_mmu)
   *
   * other registers depend on the function called upon completion
   */
@@ -275,41 +272,6 @@
  __turn_mmu_on:
  	mov	r0, r0
  	mcr	p15, 0, r0, c1, c0, 0		@ write control reg
---- a/arch/arm/kernel/vmlinux.lds.S
-+++ b/arch/arm/kernel/vmlinux.lds.S
-@@ -7,6 +7,7 @@
- #include <asm/thread_info.h>
- #include <asm/memory.h>
- #include <asm/page.h>
-+#include <asm/cache.h>
- 	
- OUTPUT_ARCH(arm)
- ENTRY(stext)
-@@ -59,7 +60,7 @@ SECTIONS
- 			*(.security_initcall.init)
- 		__security_initcall_end = .;
- #ifdef CONFIG_BLK_DEV_INITRD
--		. = ALIGN(32);
-+		. = ALIGN(L1_CACHE_BYTES);
- 		__initramfs_start = .;
- 			usr/built-in.o(.init.ramfs)
- 		__initramfs_end = .;
-@@ -176,13 +177,13 @@ SECTIONS
- 		/*
- 		 * then the cacheline aligned data
- 		 */
--		. = ALIGN(32);
-+		. = ALIGN(L1_CACHE_BYTES);
- 		*(.data.cacheline_aligned)
- 
- 		/*
- 		 * The exception fixup table (might need resorting at runtime)
- 		 */
--		. = ALIGN(32);
-+		. = ALIGN(L1_CACHE_BYTES);
- 		__start___ex_table = .;
- #ifdef CONFIG_MMU
- 		*(__ex_table)
 --- a/arch/arm/lib/memchr.S
 +++ b/arch/arm/lib/memchr.S
 @@ -11,9 +11,10 @@
@@ -408,169 +370,6 @@
  ENTRY(strrchr)
  		mov	r3, #0
  1:		ldrb	r2, [r0], #1
---- /dev/null
-+++ b/arch/arm/mach-gemini/board-nas4220b.c
-@@ -0,0 +1,160 @@
-+/*
-+ *  Support for Raidsonic NAS-4220-B
-+ *
-+ *  Copyright (C) 2009 Janos Laube <janos.dev@gmail.com>
-+ *
-+ * based on rut1xx.c
-+ *  Copyright (C) 2008 Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/platform_device.h>
-+#include <linux/leds.h>
-+#include <linux/input.h>
-+#include <linux/gpio_keys.h>
-+#include <linux/mdio-gpio.h>
-+#include <linux/io.h>
-+
-+#include <asm/setup.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
-+#include <asm/mach/time.h>
-+
-+#include <mach/gmac.h>
-+#include <mach/hardware.h>
-+#include <mach/global_reg.h>
-+
-+#include "common.h"
-+
-+static struct sys_timer ib4220b_timer = {
-+	.init	= gemini_timer_init,
-+};
-+
-+static struct gpio_led ib4220b_leds[] = {
-+	{
-+		.name			= "nas4220b:orange:hdd",
-+		.default_trigger	= "ide-disk",
-+		.gpio			= 60,
-+	},
-+	{
-+		.name			= "nas4220b:green:os",
-+		.default_trigger	= "heartbeat",
-+		.gpio			= 62,
-+	},
-+};
-+
-+static struct gpio_led_platform_data ib4220b_leds_data = {
-+	.num_leds	= ARRAY_SIZE(ib4220b_leds),
-+	.leds		= ib4220b_leds,
-+};
-+
-+static struct platform_device ib4220b_led_device = {
-+	.name	= "leds-gpio",
-+	.id	= -1,
-+	.dev	= {
-+		.platform_data = &ib4220b_leds_data,
-+	},
-+};
-+
-+static struct gpio_keys_button ib4220b_keys[] = {
-+	{
-+		.code		= KEY_SETUP,
-+		.gpio		= 61,
-+		.active_low	= 1,
-+		.desc		= "Backup Button",
-+		.type		= EV_KEY,
-+	},
-+	{
-+		.code		= KEY_RESTART,
-+		.gpio		= 63,
-+		.active_low	= 1,
-+		.desc		= "Softreset Button",
-+		.type		= EV_KEY,
-+	},
-+};
-+
-+static struct gpio_keys_platform_data ib4220b_keys_data = {
-+	.buttons	= ib4220b_keys,
-+	.nbuttons	= ARRAY_SIZE(ib4220b_keys),
-+};
-+
-+static struct platform_device ib4220b_key_device = {
-+	.name	= "gpio-keys",
-+	.id	= -1,
-+	.dev	= {
-+		.platform_data = &ib4220b_keys_data,
-+	},
-+};
-+
-+static struct mdio_gpio_platform_data ib4220b_mdio = {
-+	.mdc		= 22,
-+	.mdio		= 21,
-+	.phy_mask	= ~(1 << 1),
-+};
-+
-+static struct platform_device ib4220b_phy_device = {
-+	.name	= "mdio-gpio",
-+	.id	= 0,
-+	.dev	= {
-+		.platform_data = &ib4220b_mdio,
-+	},
-+};
-+
-+static struct gemini_gmac_platform_data ib4220b_gmac_data = {
-+	.bus_id[0] = "0:01",
-+	.interface[0] = PHY_INTERFACE_MODE_RGMII,
-+};
-+
-+static void __init gmac_ib4220b_init(void)
-+{
-+	unsigned int val;
-+
-+	val = __raw_readl(IO_ADDRESS(GEMINI_GLOBAL_BASE) +
-+		GLOBAL_IO_DRIVING_CTRL);
-+	val |= (0x3 << GMAC0_PADS_SHIFT) | (0x3 << GMAC1_PADS_SHIFT);
-+	__raw_writel(val, IO_ADDRESS(GEMINI_GLOBAL_BASE) +
-+		GLOBAL_IO_DRIVING_CTRL);
-+
-+	val = (0x0 << GMAC0_RXDV_SKEW_SHIFT) | (0xf << GMAC0_RXC_SKEW_SHIFT) |
-+		(0x7 << GMAC0_TXEN_SKEW_SHIFT) | (0xa << GMAC0_TXC_SKEW_SHIFT) |
-+		(0x0 << GMAC1_RXDV_SKEW_SHIFT) | (0xf << GMAC1_RXC_SKEW_SHIFT) |
-+		(0x7 << GMAC1_TXEN_SKEW_SHIFT) | (0xa << GMAC1_TXC_SKEW_SHIFT);
-+	__raw_writel(val, IO_ADDRESS(GEMINI_GLOBAL_BASE) +
-+		GLOBAL_GMAC_CTRL_SKEW_CTRL);
-+
-+	val = __raw_readl(IO_ADDRESS(GEMINI_GLOBAL_BASE) +
-+		GLOBAL_ARBITRATION1_CTRL);
-+	val |= (0x20 << BURST_LENGTH_SHIFT);
-+	__raw_writel(val, IO_ADDRESS(GEMINI_GLOBAL_BASE) +
-+		GLOBAL_ARBITRATION1_CTRL);
-+}
-+
-+static void __init ib4220b_init(void)
-+{
-+	gemini_gpio_init();
-+	gmac_ib4220b_init();
-+	platform_register_uart();
-+	platform_register_usb(0);
-+	platform_register_usb(1);
-+	platform_register_pflash(SZ_16M, NULL, 0);
-+	platform_device_register(&ib4220b_led_device);
-+	platform_device_register(&ib4220b_key_device);
-+	platform_device_register(&ib4220b_phy_device);
-+	platform_register_ethernet(&ib4220b_gmac_data);
-+}
-+
-+MACHINE_START(NAS4220B, "Raidsonic NAS IB-4220-B")
-+	.phys_io	= 0x7fffc000,
-+	.io_pg_offst	= ((0xffffc000) >> 18) & 0xfffc,
-+	.boot_params	= 0x100,
-+	.map_io		= gemini_map_io,
-+	.init_irq	= gemini_init_irq,
-+	.timer		= &ib4220b_timer,
-+	.init_machine	= ib4220b_init,
-+MACHINE_END
 --- a/arch/arm/mach-gemini/board-rut1xx.c
 +++ b/arch/arm/mach-gemini/board-rut1xx.c
 @@ -14,13 +14,35 @@
@@ -852,36 +651,20 @@
 +#define NR_IRQS		(NORMAL_IRQ_NUM + PCI_IRQ_NUM + GPIO_IRQ_NUM)
  
  #endif /* __MACH_IRQS_H__ */
---- a/arch/arm/mach-gemini/Kconfig
-+++ b/arch/arm/mach-gemini/Kconfig
-@@ -2,6 +2,13 @@ if ARCH_GEMINI
- 
- menu "Cortina Systems Gemini Implementations"
- 
-+config MACH_NAS4220B
-+	bool "Raidsonic NAS-4220-B"
-+	select GEMINI_MEM_SWAP
-+	help
-+	  Say Y here if you intend to run this kernel on a
-+	  Raidsonic NAS-4220-B.
-+
- config MACH_RUT100
- 	bool "Teltonika RUT100"
- 	select GEMINI_MEM_SWAP
 --- a/arch/arm/mach-gemini/Makefile
 +++ b/arch/arm/mach-gemini/Makefile
-@@ -6,5 +6,8 @@
+@@ -6,6 +6,8 @@
  
  obj-y			:= irq.o mm.o time.o devices.o gpio.o
  
 +obj-$(CONFIG_PCI)	+= pci.o
 +
  # Board-specific support
-+obj-$(CONFIG_MACH_NAS4220B)	+= board-nas4220b.o
+ obj-$(CONFIG_MACH_NAS4220B)	+= board-nas4220b.o
  obj-$(CONFIG_MACH_RUT100)	+= board-rut1xx.o
 --- a/arch/arm/mach-gemini/mm.c
 +++ b/arch/arm/mach-gemini/mm.c
-@@ -59,6 +59,11 @@ static struct map_desc gemini_io_desc[] 
+@@ -59,6 +59,11 @@ static struct map_desc gemini_io_desc[]
  		.length		= SZ_512K,
  		.type 		= MT_DEVICE,
  	}, {
@@ -2373,14 +2156,14 @@
 +		filter.bits.unicast = 1;
 +		mc_filter[1] = mc_filter[0] = 0xffffffff;
 +	} else {
-+		struct dev_mc_list *mclist;
++		struct netdev_hw_addr *ha;
 +
 +		filter.bits.broadcast = 1;
 +		filter.bits.multicast = 1;
 +		filter.bits.unicast = 1;
 +		mc_filter[1] = mc_filter[0] = 0;
-+		for (i = 0, mclist = dev->mc_list; mclist && i < dev->mc_count; i++, mclist = mclist->next) {
-+			bit_nr = ether_crc(ETH_ALEN, mclist->dmi_addr) & 0x3f;
++		netdev_for_each_mc_addr(ha, dev) {
++			bit_nr = ether_crc(ETH_ALEN, ha->addr) & 0x3f;
 +			if (bit_nr <= 32)
 +				mc_filter[0] = mc_filter[0] | (1 << bit_nr);
 +			else
@@ -4099,7 +3882,7 @@
 +gemini_negmac-objs := gm_gmac.o
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -2126,6 +2126,13 @@ config ACENIC_OMIT_TIGON_I
+@@ -2068,6 +2068,13 @@ config ACENIC_OMIT_TIGON_I
  
  	  The safe and default value for this is N.
  
@@ -4115,10 +3898,10 @@
  	depends on PCI
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -247,6 +247,7 @@ pasemi_mac_driver-objs := pasemi_mac.o p
- obj-$(CONFIG_MLX4_CORE) += mlx4/
+@@ -257,6 +257,7 @@ obj-$(CONFIG_MLX4_CORE) += mlx4/
  obj-$(CONFIG_ENC28J60) += enc28j60.o
  obj-$(CONFIG_ETHOC) += ethoc.o
+ obj-$(CONFIG_GRETH) += greth.o
 +obj-$(CONFIG_GEMINI_NET_ENGINE_GMAC) += gemini_negmac/
  
  obj-$(CONFIG_XTENSA_XT2000_SONIC) += xtsonic.o
@@ -4587,7 +4370,7 @@
 +};
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -552,7 +552,12 @@ static inline unsigned int
+@@ -561,7 +561,12 @@ static inline unsigned int
  ehci_port_speed(struct ehci_hcd *ehci, unsigned int portsc)
  {
  	if (ehci_is_TDI(ehci)) {
@@ -4602,7 +4385,7 @@
  		case 1:
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -194,9 +194,11 @@ static int ehci_halt (struct ehci_hcd *e
+@@ -223,9 +223,11 @@ static int ehci_halt (struct ehci_hcd *e
  	if ((temp & STS_HALT) != 0)
  		return 0;
  
@@ -4614,7 +4397,7 @@
  	return handshake (ehci, &ehci->regs->status,
  			  STS_HALT, STS_HALT, 16 * 125);
  }
-@@ -263,8 +265,8 @@ static int ehci_reset (struct ehci_hcd *
+@@ -292,8 +294,8 @@ static int ehci_reset (struct ehci_hcd *
  	if (retval)
  		return retval;
  
@@ -4625,7 +4408,7 @@
  
  	if (ehci->debug)
  		dbgp_external_startup();
-@@ -397,12 +399,13 @@ static void ehci_silence_controller(stru
+@@ -427,12 +429,13 @@ static void ehci_silence_controller(stru
  {
  	ehci_halt(ehci);
  	ehci_turn_off_all_ports(ehci);
@@ -4640,7 +4423,7 @@
  }
  
  /* ehci_shutdown kick in for silicon on any bus (not just pci, etc).
-@@ -654,7 +657,9 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -712,7 +715,9 @@ static int ehci_run (struct usb_hcd *hcd
  	// Philips, Intel, and maybe others need CMD_RUN before the
  	// root hub will detect new devices (why?); NEC doesn't
  	ehci->command &= ~(CMD_LRESET|CMD_IAAD|CMD_PSE|CMD_ASE|CMD_RESET);
@@ -4650,7 +4433,7 @@
  	ehci_writel(ehci, ehci->command, &ehci->regs->command);
  	dbg_cmd (ehci, "init", ehci->command);
  
-@@ -674,9 +679,11 @@ static int ehci_run (struct usb_hcd *hcd
+@@ -732,9 +737,11 @@ static int ehci_run (struct usb_hcd *hcd
  	 */
  	down_write(&ehci_cf_port_reset_rwsem);
  	hcd->state = HC_STATE_RUNNING;
@@ -4662,7 +4445,7 @@
  	up_write(&ehci_cf_port_reset_rwsem);
  	ehci->last_periodic_enable = ktime_get_real();
  
-@@ -768,9 +775,10 @@ static irqreturn_t ehci_irq (struct usb_
+@@ -827,9 +834,10 @@ static irqreturn_t ehci_irq (struct usb_
  		pcd_status = status;
  
  		/* resume root hub? */
@@ -4671,10 +4454,10 @@
  			usb_hcd_resume_root_hub(hcd);
 -
 +#endif
- 		while (i--) {
- 			int pstatus = ehci_readl(ehci,
- 						 &ehci->regs->port_status [i]);
-@@ -803,7 +811,9 @@ static irqreturn_t ehci_irq (struct usb_
+ 		/* get per-port change detect bits */
+ 		if (ehci->has_ppcd)
+ 			ppcd = status >> 16;
+@@ -871,7 +879,9 @@ static irqreturn_t ehci_irq (struct usb_
  		ehci_halt(ehci);
  dead:
  		ehci_reset(ehci);
@@ -4684,7 +4467,7 @@
  		/* generic layer kills/unlinks all urbs, then
  		 * uses ehci_stop to clean up the rest
  		 */
-@@ -1102,6 +1112,11 @@ MODULE_LICENSE ("GPL");
+@@ -1169,6 +1179,11 @@ MODULE_LICENSE ("GPL");
  #define	PCI_DRIVER		ehci_pci_driver
  #endif
  
@@ -4698,7 +4481,7 @@
  #define	PLATFORM_DRIVER		ehci_fsl_driver
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -809,6 +809,12 @@ static int ehci_hub_control (
+@@ -929,6 +929,12 @@ static int ehci_hub_control (
  			/* see what we found out */
  			temp = check_reset_complete (ehci, wIndex, status_reg,
  					ehci_readl(ehci, status_reg));
@@ -4713,10 +4496,10 @@
  		if (!(temp & (PORT_RESUME|PORT_RESET)))
 --- a/drivers/usb/Kconfig
 +++ b/drivers/usb/Kconfig
-@@ -60,6 +60,7 @@ config USB_ARCH_HAS_EHCI
- 	default y if ARCH_IXP4XX
- 	default y if ARCH_W90X900
+@@ -66,6 +66,7 @@ config USB_ARCH_HAS_EHCI
  	default y if ARCH_AT91SAM9G45
+ 	default y if ARCH_MXC
+ 	default y if ARCH_OMAP3
 +	default y if ARCH_GEMINI
  	default PCI
  
@@ -4742,6 +4525,7 @@
 +#include <linux/miscdevice.h>
 +#include <linux/platform_device.h>
 +#include <linux/watchdog.h>
++#include <linux/slab.h>
 +
 +#define GEMINI_WDCOUNTER	0x0
 +#define GEMINI_WDLOAD		0x4
@@ -4924,7 +4708,6 @@
 +static const struct file_operations gemini_wdt_fops = {
 +	.owner		= THIS_MODULE,
 +	.llseek		= no_llseek,
-+	.ioctl		= gemini_wdt_ioctl,
 +	.open		= gemini_wdt_open,
 +	.release	= gemini_wdt_close,
 +	.write		= gemini_wdt_write,
@@ -5094,7 +4877,7 @@
 +MODULE_ALIAS("platform:gemini-wdt");
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -111,6 +111,16 @@ config 977_WATCHDOG
+@@ -118,6 +118,16 @@ config 977_WATCHDOG
  
  	  Not sure? It's safe to say N.
  
@@ -5113,7 +4896,7 @@
  	depends on ARCH_IXP2000
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -31,6 +31,7 @@ obj-$(CONFIG_OMAP_WATCHDOG) += omap_wdt.
+@@ -32,6 +32,7 @@ obj-$(CONFIG_OMAP_WATCHDOG) += omap_wdt.
  obj-$(CONFIG_TWL4030_WATCHDOG) += twl4030_wdt.o
  obj-$(CONFIG_21285_WATCHDOG) += wdt285.o
  obj-$(CONFIG_977_WATCHDOG) += wdt977.o
@@ -5123,13 +4906,13 @@
  obj-$(CONFIG_KS8695_WATCHDOG) += ks8695_wdt.o
 --- a/include/linux/usb/ehci_def.h
 +++ b/include/linux/usb/ehci_def.h
-@@ -91,9 +91,9 @@ struct ehci_regs {
+@@ -105,9 +105,9 @@ struct ehci_regs {
  	u32		frame_list;	/* points to periodic list */
  	/* ASYNCLISTADDR: offset 0x18 */
  	u32		async_next;	/* address of next async queue head */
 -
 +#ifndef CONFIG_ARCH_GEMINI
- 	u32		reserved [9];
+ 	u32		reserved[9];
 -
 +#endif
  	/* CONFIGFLAG: offset 0x40 */
@@ -5137,13 +4920,14 @@
  #define FLAG_CF		(1<<0)		/* true: we'll support "high speed" */
 --- a/arch/arm/mm/Kconfig
 +++ b/arch/arm/mm/Kconfig
-@@ -774,5 +774,6 @@ config CACHE_XSC3L2
+@@ -806,6 +806,7 @@ config CACHE_XSC3L2
  
  config ARM_L1_CACHE_SHIFT
  	int
 +	default 4 if CPU_FA526
- 	default 6 if ARCH_OMAP3
+ 	default 6 if ARM_L1_CACHE_SHIFT_6
  	default 5
+ 
 --- a/arch/arm/lib/copy_page.S
 +++ b/arch/arm/lib/copy_page.S
 @@ -17,7 +17,7 @@
