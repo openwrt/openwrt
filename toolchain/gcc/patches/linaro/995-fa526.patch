@@ -1,0 +1,257 @@
+--- a/gcc/config/arm/arm-cores.def
++++ b/gcc/config/arm/arm-cores.def
+@@ -74,6 +74,7 @@ ARM_CORE("strongarm",     strongarm,	4,
+ ARM_CORE("strongarm110",  strongarm110,	4,	             FL_MODE26 | FL_LDSCHED | FL_STRONG, fastmul)
+ ARM_CORE("strongarm1100", strongarm1100, 4,	             FL_MODE26 | FL_LDSCHED | FL_STRONG, fastmul)
+ ARM_CORE("strongarm1110", strongarm1110, 4,	             FL_MODE26 | FL_LDSCHED | FL_STRONG, fastmul)
++ARM_CORE("fa526",         fa526,        4,                               FL_LDSCHED, fastmul)
+ 
+ /* V4T Architecture Processors */
+ ARM_CORE("arm7tdmi",      arm7tdmi,	4T,	FL_CO_PROC          , fastmul)
+--- a/gcc/config/arm/arm.md
++++ b/gcc/config/arm/arm.md
+@@ -435,7 +435,7 @@
+ 
+ (define_attr "generic_sched" "yes,no"
+   (const (if_then_else
+-          (ior (eq_attr "tune" "arm926ejs,arm1020e,arm1026ejs,arm1136js,arm1136jfs,cortexa5,cortexa8,cortexa9,cortexm4")
++          (ior (eq_attr "tune" "fa526,arm926ejs,arm1020e,arm1026ejs,arm1136js,arm1136jfs,cortexa5,cortexa8,cortexa9,cortexm4")
+ 	       (eq_attr "tune_cortexr4" "yes"))
+           (const_string "no")
+           (const_string "yes"))))
+@@ -467,6 +467,7 @@
+ (include "arm1020e.md")
+ (include "arm1026ejs.md")
+ (include "arm1136jfs.md")
++(include "fa526.md")
+ (include "cortex-a5.md")
+ (include "cortex-a8.md")
+ (include "cortex-a9.md")
+--- a/gcc/config/arm/arm-tune.md
++++ b/gcc/config/arm/arm-tune.md
+@@ -1,5 +1,5 @@
+ ;; -*- buffer-read-only: t -*-
+ ;; Generated automatically by gentune.sh from arm-cores.def
+ (define_attr "tune"
+-	"arm2,arm250,arm3,arm6,arm60,arm600,arm610,arm620,arm7,arm7d,arm7di,arm70,arm700,arm700i,arm710,arm720,arm710c,arm7100,arm7500,arm7500fe,arm7m,arm7dm,arm7dmi,arm8,arm810,strongarm,strongarm110,strongarm1100,strongarm1110,arm7tdmi,arm7tdmis,arm710t,arm720t,arm740t,arm9,arm9tdmi,arm920,arm920t,arm922t,arm940t,ep9312,arm10tdmi,arm1020t,arm9e,arm946es,arm966es,arm968es,arm10e,arm1020e,arm1022e,xscale,iwmmxt,iwmmxt2,arm926ejs,arm1026ejs,arm1136js,arm1136jfs,arm1176jzs,arm1176jzfs,mpcorenovfp,mpcore,arm1156t2s,arm1156t2fs,cortexa5,cortexa8,cortexa9,cortexr4,cortexr4f,cortexm4,cortexm3,cortexm1,cortexm0"
++	"arm2,arm250,arm3,arm6,arm60,arm600,arm610,arm620,arm7,arm7d,arm7di,arm70,arm700,arm700i,arm710,arm720,arm710c,arm7100,arm7500,arm7500fe,arm7m,arm7dm,arm7dmi,arm8,arm810,strongarm,strongarm110,strongarm1100,strongarm1110,fa526,arm7tdmi,arm7tdmis,arm710t,arm720t,arm740t,arm9,arm9tdmi,arm920,arm920t,arm922t,arm940t,ep9312,arm10tdmi,arm1020t,arm9e,arm946es,arm966es,arm968es,arm10e,arm1020e,arm1022e,xscale,iwmmxt,iwmmxt2,arm926ejs,arm1026ejs,arm1136js,arm1136jfs,arm1176jzs,arm1176jzfs,mpcorenovfp,mpcore,arm1156t2s,arm1156t2fs,cortexa5,cortexa8,cortexa9,cortexr4,cortexr4f,cortexm4,cortexm3,cortexm1,cortexm0"
+ 	(const (symbol_ref "((enum attr_tune) arm_tune)")))
+--- a/gcc/config/arm/bpabi.h
++++ b/gcc/config/arm/bpabi.h
+@@ -52,7 +52,8 @@
+ /* The BPABI integer comparison routines return { -1, 0, 1 }.  */
+ #define TARGET_LIB_INT_CMP_BIASED !TARGET_BPABI
+ 
+-#define TARGET_FIX_V4BX_SPEC " %{mcpu=arm8|mcpu=arm810|mcpu=strongarm*|march=armv4:--fix-v4bx}"
++#define TARGET_FIX_V4BX_SPEC " %{mcpu=arm8|mcpu=arm810|mcpu=strongarm*\
++|march=armv4|mcpu=fa526:--fix-v4bx}"
+ 
+ #define BE8_LINK_SPEC " %{mbig-endian:%{march=armv7-a|mcpu=cortex-a5|mcpu=cortex-a8|mcpu=cortex-a9:%{!r:--be8}}}"
+ 
+--- /dev/null
++++ b/gcc/config/arm/fa526.md
+@@ -0,0 +1,161 @@
++;; Faraday FA526 Pipeline Description
++;; Copyright (C) 2010 Free Software Foundation, Inc.
++;; Written by I-Jui Sung, based on ARM926EJ-S Pipeline Description.
++
++;; This file is part of GCC.
++;;
++;; GCC is free software; you can redistribute it and/or modify it under
++;; the terms of the GNU General Public License as published by the Free
++;; Software Foundation; either version 3, or (at your option) any later
++;; version.
++;;
++;; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
++;; WARRANTY; without even the implied warranty of MERCHANTABILITY or
++;; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++;; for more details.
++;;
++;; You should have received a copy of the GNU General Public License
++;; along with GCC; see the file COPYING3.  If not see
++;; <http://www.gnu.org/licenses/>.  */
++
++;; These descriptions are based on the information contained in the
++;; FA526 Core Design Note, Copyright (c) 2010 Faraday Technology Corp.
++;;
++;; Modeled pipeline characteristics:
++;; LD -> any use: latency = 3 (2 cycle penalty).
++;; ALU -> any use: latency = 2 (1 cycle penalty).
++
++;; This automaton provides a pipeline description for the Faraday
++;; FA526 core.
++;;
++;; The model given here assumes that the condition for all conditional
++;; instructions is "true", i.e., that all of the instructions are
++;; actually executed.
++
++(define_automaton "fa526")
++
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++;; Pipelines
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; There is a single pipeline
++;;
++;;   The ALU pipeline has fetch, decode, execute, memory, and
++;;   write stages.  We only need to model the execute, memory and write
++;;   stages.
++
++;;      S      E      M      W
++
++(define_cpu_unit "fa526_core" "fa526")
++
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++;; ALU Instructions
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; ALU instructions require two cycles to execute, and use the ALU
++;; pipeline in each of the three stages.  The results are available
++;; after the execute stage stage has finished.
++;;
++;; If the destination register is the PC, the pipelines are stalled
++;; for several cycles.  That case is not modeled here.
++
++;; ALU operations
++(define_insn_reservation "526_alu_op" 1
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "alu"))
++ "fa526_core")
++
++(define_insn_reservation "526_alu_shift_op" 2
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "alu_shift,alu_shift_reg"))
++ "fa526_core")
++
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++;; Multiplication Instructions
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++(define_insn_reservation "526_mult1" 2
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "insn" "smlalxy,smulxy,smlaxy,smlalxy"))
++ "fa526_core")
++
++(define_insn_reservation "526_mult2" 5
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "insn" "mul,mla,muls,mlas,umull,umlal,smull,smlal,umulls,\
++                       umlals,smulls,smlals,smlawx"))
++ "fa526_core*4")
++
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++;; Load/Store Instructions
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; The models for load/store instructions do not accurately describe
++;; the difference between operations with a base register writeback
++;; (such as "ldm!").  These models assume that all memory references
++;; hit in dcache.
++
++(define_insn_reservation "526_load1_op" 3
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "load1,load_byte"))
++ "fa526_core")
++
++(define_insn_reservation "526_load2_op" 4
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "load2"))
++ "fa526_core*2")
++
++(define_insn_reservation "526_load3_op" 5
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "load3"))
++ "fa526_core*3")
++
++(define_insn_reservation "526_load4_op" 6
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "load4"))
++ "fa526_core*4")
++
++(define_insn_reservation "526_store1_op" 0
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "store1"))
++ "fa526_core")
++
++(define_insn_reservation "526_store2_op" 1
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "store2"))
++ "fa526_core*2")
++
++(define_insn_reservation "526_store3_op" 2
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "store3"))
++ "fa526_core*3")
++
++(define_insn_reservation "526_store4_op" 3
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "store4"))
++ "fa526_core*4")
++
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++;; Branch and Call Instructions
++;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
++
++;; Branch instructions are difficult to model accurately.  The FA526
++;; core can predict most branches.  If the branch is predicted
++;; correctly, and predicted early enough, the branch can be completely
++;; eliminated from the instruction stream.  Some branches can
++;; therefore appear to require zero cycle to execute.  We assume that
++;; all branches are predicted correctly, and that the latency is
++;; therefore the minimum value.
++
++(define_insn_reservation "526_branch_op" 0
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "branch"))
++ "fa526_core")
++
++;; The latency for a call is actually the latency when the result is available.
++;; i.e. R0 ready for int return value.  For most cases, the return value is set
++;; by a mov instruction, which has 1 cycle latency.
++(define_insn_reservation "526_call_op" 1
++ (and (eq_attr "tune" "fa526")
++      (eq_attr "type" "call"))
++ "fa526_core")
++
+--- a/gcc/config/arm/t-arm
++++ b/gcc/config/arm/t-arm
+@@ -24,6 +24,7 @@ MD_INCLUDES= 	$(srcdir)/config/arm/arm-t
+ 		$(srcdir)/config/arm/arm1020e.md \
+ 		$(srcdir)/config/arm/arm1026ejs.md \
+ 		$(srcdir)/config/arm/arm1136jfs.md \
++		$(srcdir)/config/arm/fa526.md \
+ 		$(srcdir)/config/arm/arm926ejs.md \
+ 		$(srcdir)/config/arm/cirrus.md \
+ 		$(srcdir)/config/arm/fpa.md \
+--- a/gcc/config/arm/t-arm-elf
++++ b/gcc/config/arm/t-arm-elf
+@@ -36,6 +36,10 @@ MULTILIB_DIRNAMES    = arm thumb
+ MULTILIB_EXCEPTIONS  = 
+ MULTILIB_MATCHES     =
+ 
++#MULTILIB_OPTIONS     += mcpu=fa526
++#MULTILIB_DIRNAMES    += fa526
++#MULTILIB_EXCEPTIONS  += *mthumb*/*mcpu=fa526
++
+ #MULTILIB_OPTIONS      += march=armv7
+ #MULTILIB_DIRNAMES     += thumb2
+ #MULTILIB_EXCEPTIONS   += march=armv7* marm/*march=armv7*
+@@ -52,6 +56,7 @@ MULTILIB_MATCHES     =
+ MULTILIB_OPTIONS       += mfloat-abi=hard
+ MULTILIB_DIRNAMES      += fpu
+ MULTILIB_EXCEPTIONS    += *mthumb/*mfloat-abi=hard*
++MULTILIB_EXCEPTIONS    += *mcpu=fa526/*mfloat-abi=hard*
+ 
+ # MULTILIB_OPTIONS    += mcpu=ep9312
+ # MULTILIB_DIRNAMES   += ep9312
+--- a/gcc/doc/invoke.texi
++++ b/gcc/doc/invoke.texi
+@@ -9900,7 +9900,8 @@ assembly code.  Permissible names are: @
+ @samp{cortex-r4}, @samp{cortex-r4f}, @samp{cortex-m4}, @samp{cortex-m3},
+ @samp{cortex-m1},
+ @samp{cortex-m0},
+-@samp{xscale}, @samp{iwmmxt}, @samp{iwmmxt2}, @samp{ep9312}.
++@samp{xscale}, @samp{iwmmxt}, @samp{iwmmxt2}, @samp{ep9312},
++@samp{fa526}.
+ 
+ @item -mtune=@var{name}
+ @opindex mtune
