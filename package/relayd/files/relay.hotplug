@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# Break recursion
+[ "$PROTO" = "relay" ] && exit 0
+
+include /lib/network
+scan_interfaces
+
+restart_relayd() {
+	local cfg="$1"
+	
+	local proto
+	config_get proto "$1" proto
+	[ "$proto" = "relay" ] || return 0
+
+	local net networks
+	config_get networks "$cfg" network
+	for net in $networks; do
+		[ "$net" = "$INTERFACE" ] && {
+			env -i /sbin/ifup "$cfg" &
+			return 0
+		}
+	done
+
+	local ifn ifnames
+	config_get ifnames "$cfg" ifname
+	for ifn in $ifnames; do
+		[ "$ifn" = "$DEVICE" ] && {
+			env -i /sbin/ifup "$cfg" &
+			return 0
+		}
+	done
+}
+
+config_foreach restart_relayd interface
+

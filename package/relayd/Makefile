@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010 OpenWrt.org
+# Copyright (C) 2010-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -32,6 +32,10 @@ TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 define Package/relayd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/relayd $(1)/usr/sbin/relayd
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
+	$(INSTALL_DATA) ./files/relay.hotplug $(1)/etc/hotplug.d/iface/30-relay
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_DATA) ./files/relay.sh $(1)/lib/network/relay.sh
 endef
 
 $(eval $(call BuildPackage,relayd))
