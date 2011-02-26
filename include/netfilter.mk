@@ -229,10 +229,6 @@ $(eval $(call nf_add,IPT_NATHELPER,CONFIG_IP_NF_IRC, $(P_V4)ip_conntrack_irc))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_IP_NF_NAT_IRC, $(P_V4)ip_nat_irc))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_CONNTRACK_IRC, $(P_XT)nf_conntrack_irc))
 $(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_IRC, $(P_V4)nf_nat_irc))
-$(eval $(call nf_add,IPT_NATHELPER,CONFIG_IP_NF_TFTP, $(P_V4)ip_conntrack_tftp))
-$(eval $(call nf_add,IPT_NATHELPER,CONFIG_IP_NF_NAT_TFTP, $(P_V4)ip_nat_tftp))
-$(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_CONNTRACK_TFTP, $(P_XT)nf_conntrack_tftp))
-$(eval $(call nf_add,IPT_NATHELPER,CONFIG_NF_NAT_TFTP, $(P_V4)nf_nat_tftp))
 
 
 # nathelper-extra
@@ -265,6 +261,10 @@ $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_SIP, $(P_XT)nf_conn
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_NAT_SIP, $(P_V4)nf_nat_sip))
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_IP_NF_NAT_SNMP_BASIC, $(P_V4)ip_nat_snmp_basic))
 $(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_NAT_SNMP_BASIC, $(P_V4)nf_nat_snmp_basic))
+$(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_IP_NF_TFTP, $(P_V4)ip_conntrack_tftp))
+$(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_IP_NF_NAT_TFTP, $(P_V4)ip_nat_tftp))
+$(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_TFTP, $(P_XT)nf_conntrack_tftp))
+$(eval $(call nf_add,IPT_NATHELPER_EXTRA,CONFIG_NF_NAT_TFTP, $(P_V4)nf_nat_tftp))
 
 
 # queue
