@@ -51,7 +51,7 @@
 +/*
 + * The Gateworks I2C PLD chip does not properly send the acknowledge bit
 + * thus we cannot use standard i2c_smbus functions. We have recreated
-+ * our own here, but we still use the mutex_lock to lock the i2c_bus
++ * our own here, but we still use the rt_mutex_lock to lock the i2c_bus
 + * as the device still exists on the I2C bus.
 +*/
 +
@@ -179,21 +179,21 @@
 +	int ret;
 +	struct gw_i2c_pld *gpio = container_of(chip, struct gw_i2c_pld, chip);
 +	struct i2c_adapter *adap = gpio->client->adapter;
-+	
++
 +	if (in_atomic() || irqs_disabled()) {
-+		ret = mutex_trylock(&adap->bus_lock);
++		ret = rt_mutex_trylock(&adap->bus_lock);
 +		if (!ret)
 +			/* I2C activity is ongoing. */
 +			return -EAGAIN;
 +	} else {
-+		mutex_lock_nested(&adap->bus_lock, adap->level);
++		rt_mutex_lock(&adap->bus_lock);
 +	}
 +
 +	gpio->out |= (1 << offset);
 +
 +	ret = i2c_pld_write_byte(gpio->client->addr, gpio->out);
 +
-+	mutex_unlock(&adap->bus_lock);
++	rt_mutex_unlock(&adap->bus_lock);
 +
 +	return ret;
 +}
@@ -204,19 +204,19 @@
 +	s32	value;
 +	struct gw_i2c_pld *gpio = container_of(chip, struct gw_i2c_pld, chip);
 +	struct i2c_adapter *adap = gpio->client->adapter;
-+	
++
 +	if (in_atomic() || irqs_disabled()) {
-+		ret = mutex_trylock(&adap->bus_lock);
++		ret = rt_mutex_trylock(&adap->bus_lock);
 +		if (!ret)
 +			/* I2C activity is ongoing. */
 +			return -EAGAIN;
 +	} else {
-+		mutex_lock_nested(&adap->bus_lock, adap->level);
++		rt_mutex_lock(&adap->bus_lock);
 +	}
 +
 +	value = i2c_pld_read_byte(gpio->client->addr);
 +
-+	mutex_unlock(&adap->bus_lock);
++	rt_mutex_unlock(&adap->bus_lock);
 +
 +	return (value < 0) ? 0 : (value & (1 << offset));
 +}
@@ -229,14 +229,14 @@
 +	struct i2c_adapter *adap = gpio->client->adapter;
 +
 +	unsigned bit = 1 << offset;
-+	
++
 +	if (in_atomic() || irqs_disabled()) {
-+		ret = mutex_trylock(&adap->bus_lock);
++		ret = rt_mutex_trylock(&adap->bus_lock);
 +		if (!ret)
 +			/* I2C activity is ongoing. */
 +			return -EAGAIN;
 +	} else {
-+		mutex_lock_nested(&adap->bus_lock, adap->level);
++		rt_mutex_lock(&adap->bus_lock);
 +	}
 +
 +
@@ -247,7 +247,7 @@
 +
 +	ret = i2c_pld_write_byte(gpio->client->addr, gpio->out);
 +
-+	mutex_unlock(&adap->bus_lock);
++	rt_mutex_unlock(&adap->bus_lock);
 +
 +	return ret;
 +}
