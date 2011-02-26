@@ -42,6 +42,10 @@ $(call Package/xfsprogs/default)
   TITLE:=Utility for increasing the size of XFS filesystems
 endef
 
+CONFIGURE_ARGS += \
+	--enable-gettext=no \
+	--enable-lib64=no
+
 TARGET_CFLAGS += \
 	-I$(STAGING_DIR)/usr/include \
 	-D_LARGEFILE64_SOURCE \
