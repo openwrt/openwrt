@@ -19,7 +19,7 @@
 +	bool "ADI Pronghorn series"
 +	select PCI
 +	help
-+	  Say 'Y' here if you want your kernel to support the ADI 
++	  Say 'Y' here if you want your kernel to support the ADI
 +	  Engineering Pronghorn series. For more
 +	  information on this platform, see http://www.adiengineering.com
 +
@@ -127,7 +127,7 @@
 +subsys_initcall(pronghorn_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/pronghorn-setup.c
-@@ -0,0 +1,245 @@
+@@ -0,0 +1,241 @@
 +/*
 + * arch/arm/mach-ixp4xx/pronghorn-setup.c
 + *
@@ -354,8 +354,6 @@
 +
 +MACHINE_START(PRONGHORN, "ADI Engineering Pronghorn")
 +	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
-+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
-+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 +	.map_io		= ixp4xx_map_io,
 +	.init_irq	= ixp4xx_init_irq,
 +	.timer		= &ixp4xx_timer,
@@ -365,8 +363,6 @@
 +
 +MACHINE_START(PRONGHORNMETRO, "ADI Engineering Pronghorn Metro")
 +	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
-+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
-+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 +	.map_io		= ixp4xx_map_io,
 +	.init_irq	= ixp4xx_init_irq,
 +	.timer		= &ixp4xx_timer,

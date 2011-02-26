@@ -112,7 +112,7 @@
 +subsys_initcall(wg302v1_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/wg302v1-setup.c
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,140 @@
 +/*
 + * arch/arm/mach-ixp4xx/wg302v1-setup.c
 + *
@@ -246,8 +246,6 @@
 +#ifdef CONFIG_MACH_WG302V1
 +MACHINE_START(WG302V1, "Netgear WG302 v1 / WAG302 v1")
 +	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
-+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
-+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 +	.map_io		= ixp4xx_map_io,
 +	.init_irq	= ixp4xx_init_irq,
 +	.timer		= &ixp4xx_timer,

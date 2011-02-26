@@ -103,7 +103,7 @@
 +subsys_initcall(wrt300nv2_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/wrt300nv2-setup.c
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,106 @@
 +/*
 + * arch/arm/mach-ixp4xx/wrt300nv2-setup.c
 + *
@@ -203,8 +203,6 @@
 +#ifdef CONFIG_MACH_WRT300NV2
 +MACHINE_START(WRT300NV2, "Linksys WRT300N v2")
 +	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
-+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
-+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 +	.map_io		= ixp4xx_map_io,
 +	.init_irq	= ixp4xx_init_irq,
 +	.timer		= &ixp4xx_timer,

@@ -1,8 +1,8 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -176,6 +176,13 @@ config LEDS_LP3944
- 	  To compile this driver as a module, choose M here: the
- 	  module will be called leds-lp3944.
+@@ -210,6 +210,13 @@ config LEDS_LP5523
+ 	  Driver provides direct control via LED class and interface for
+ 	  programming the engines.
  
 +config LEDS_LATCH
 +	tristate "LED Support for Memory Latched LEDs"
@@ -13,7 +13,7 @@
 +
  config LEDS_CLEVO_MAIL
  	tristate "Mail LED on Clevo notebook"
- 	depends on X86 && SERIO_I8042 && DMI
+ 	depends on LEDS_CLASS
 --- /dev/null
 +++ b/drivers/leds/leds-latch.c
 @@ -0,0 +1,150 @@
@@ -175,11 +175,11 @@
  obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
 +obj-$(CONFIG_LEDS_LATCH)		+= leds-latch.o
  obj-$(CONFIG_LEDS_LP3944)		+= leds-lp3944.o
- obj-$(CONFIG_LEDS_CLEVO_MAIL)		+= leds-clevo-mail.o
- obj-$(CONFIG_LEDS_HP6XX)		+= leds-hp6xx.o
+ obj-$(CONFIG_LEDS_LP5521)		+= leds-lp5521.o
+ obj-$(CONFIG_LEDS_LP5523)		+= leds-lp5523.o
 --- a/include/linux/leds.h
 +++ b/include/linux/leds.h
-@@ -165,5 +165,19 @@ struct gpio_led_platform_data {
+@@ -204,5 +204,19 @@ struct gpio_led_platform_data {
  					unsigned long *delay_off);
  };
  
