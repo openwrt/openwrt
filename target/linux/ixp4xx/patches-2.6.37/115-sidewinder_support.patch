@@ -130,7 +130,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +subsys_initcall(sidewinder_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/sidewinder-setup.c
-@@ -0,0 +1,149 @@
+@@ -0,0 +1,147 @@
 +/*
 + * arch/arm/mach-ixp4xx/sidewinder-setup.c
 + *
@@ -272,8 +272,6 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 +
 +MACHINE_START(SIDEWINDER, "ADI Engineering Sidewinder")
 +	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
-+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
-+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 +	.map_io		= ixp4xx_map_io,
 +	.init_irq	= ixp4xx_init_irq,
 +	.timer		= &ixp4xx_timer,

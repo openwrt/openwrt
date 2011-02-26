@@ -74,7 +74,7 @@
 +
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/mi424wr-setup.c
-@@ -0,0 +1,344 @@
+@@ -0,0 +1,342 @@
 +/*
 + * arch/arm/mach-ixp4xx/mi424wr-setup.c
 + *
@@ -410,8 +410,6 @@
 +
 +MACHINE_START(MI424WR, "Actiontec MI424WR")
 +	/* Maintainer: Jose Vasconcellos */
-+	.phys_io	= IXP4XX_UART2_BASE_PHYS,
-+	.io_pg_offst	= ((IXP4XX_UART2_BASE_VIRT) >> 18) & 0xfffc,
 +	.map_io		= ixp4xx_map_io,
 +	.init_irq	= ixp4xx_init_irq,
 +	.timer		= &ixp4xx_timer,

@@ -118,7 +118,7 @@
 +subsys_initcall(tw2662_pci_init);
 --- /dev/null
 +++ b/arch/arm/mach-ixp4xx/tw2662-setup.c
-@@ -0,0 +1,212 @@
+@@ -0,0 +1,210 @@
 +/*
 + * arch/arm/mach-ixp4xx/tw2662-setup.c
 + *
@@ -321,8 +321,6 @@
 +#ifdef CONFIG_MACH_TW2662
 +MACHINE_START(TW2662, "Titan Wireless TW-266-2")
 +	/* Maintainer: Alexandros C. Couloumbis <alex@ozo.com> */
-+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
-+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
 +	.fixup		= tw2662_fixup,
 +	.map_io		= ixp4xx_map_io,
 +	.init_irq	= ixp4xx_init_irq,
