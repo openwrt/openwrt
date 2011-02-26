@@ -190,7 +190,7 @@
  
  	cpmac_mii->reset(cpmac_mii);
  
-@@ -1269,10 +1256,20 @@ int __devinit cpmac_init(void)
+@@ -1269,10 +1256,22 @@ int __devinit cpmac_init(void)
  			msleep(10);
  	}
  
@@ -199,17 +199,19 @@
  	if (mask & (mask - 1)) {
 -		external_switch = 1;
 -		mask = 0;
-+		if (ar7_is_titan()) {
-+			ar7_device_disable(AR7_RESET_BIT_EPHY);
-+			ar7_device_disable(TITAN_RESET_BIT_EPHY1);
-+		} else
-+			ar7_device_disable(AR7_RESET_BIT_EPHY);
++		if (!ar7_has_high_cpmac()) {
++			if (ar7_is_titan()) {
++				ar7_device_disable(AR7_RESET_BIT_EPHY);
++				ar7_device_disable(TITAN_RESET_BIT_EPHY1);
++			} else
++				ar7_device_disable(AR7_RESET_BIT_EPHY);
 +
-+		//Titan remap might be different
-+		mii_reg = ioremap(AR7_REGS_MII, 4);
-+		if (mii_reg) {
-+			writel(readl(mii_reg) | 1, mii_reg);
-+			iounmap(mii_reg);
++			//Titan remap might be different
++			mii_reg = ioremap(AR7_REGS_MII, 4);
++			if (mii_reg) {
++				writel(readl(mii_reg) | 1, mii_reg);
++				iounmap(mii_reg);
++			}
 +		}
  	}
  
