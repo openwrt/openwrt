@@ -1,0 +1,28 @@
+Index: linux-2.6.38-rc6/drivers/cbus/tahvo.h
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/cbus/tahvo.h	2011-02-25 02:16:28.000000000 +0100
++++ linux-2.6.38-rc6/drivers/cbus/tahvo.h	2011-02-25 23:41:00.321263098 +0100
+@@ -30,12 +30,23 @@
+ #define TAHVO_REG_IDR		0x01	/* Interrupt ID */
+ #define TAHVO_REG_IDSR		0x02	/* Interrupt status */
+ #define TAHVO_REG_IMR		0x03	/* Interrupt mask */
++#define TAHVO_REG_CHGCURR	0x04	/* Charge current control PWM (8-bit) */
+ #define TAHVO_REG_LEDPWMR	0x05	/* LED PWM */
+ #define TAHVO_REG_USBR		0x06	/* USB control */
++#define TAHVO_REG_CHGCTL	0x08	/* Charge control register */
++#define  TAHVO_REG_CHGCTL_EN		0x0001	/* Global charge enable */
++#define  TAHVO_REG_CHGCTL_PWMOVR	0x0004	/* PWM override. Force charge PWM to 0%/100% duty cycle. */
++#define  TAHVO_REG_CHGCTL_PWMOVRZERO	0x0008	/* If set, PWM override is 0% (If unset -> 100%) */
++#define  TAHVO_REG_CHGCTL_CURMEAS	0x0040	/* Enable battery current measurement. */
++#define  TAHVO_REG_CHGCTL_CURTIMRST	0x0080	/* Current measure timer reset. */
++#define TAHVO_REG_BATCURRTIMER	0x0c	/* Battery current measure timer (8-bit) */
++#define TAHVO_REG_BATCURR	0x0d	/* Battery (dis)charge current (signed 16-bit) */
++
+ #define TAHVO_REG_MAX		0x0d
+ 
+ /* Interrupt sources */
+ #define TAHVO_INT_VBUSON	0
++#define TAHVO_INT_BATCURR	7 /* Battery current measure timer */
+ 
+ #define MAX_TAHVO_IRQ_HANDLERS	8
+ 
