@@ -1,0 +1,25 @@
+Index: linux-2.6.38-rc6/arch/arm/mach-omap2/serial.c
+===================================================================
+--- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/serial.c	2011-02-22 02:25:52.000000000 +0100
++++ linux-2.6.38-rc6/arch/arm/mach-omap2/serial.c	2011-02-26 22:17:38.356027926 +0100
+@@ -655,6 +655,8 @@
+ }
+ #endif
+ 
++static struct omap_uart_state statebuf[4];
++
+ void __init omap_serial_early_init(void)
+ {
+ 	int i = 0;
+@@ -670,9 +672,9 @@
+ 		if (!oh)
+ 			break;
+ 
+-		uart = kzalloc(sizeof(struct omap_uart_state), GFP_KERNEL);
+-		if (WARN_ON(!uart))
++		if (WARN_ON(i >= ARRAY_SIZE(statebuf)))
+ 			return;
++		uart = &statebuf[i];
+ 
+ 		uart->oh = oh;
+ 		uart->num = i++;

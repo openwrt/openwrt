@@ -1,0 +1,14 @@
+Index: linux-2.6.38-rc6/drivers/cbus/retu.c
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/cbus/retu.c	2011-02-26 23:23:34.014429906 +0100
++++ linux-2.6.38-rc6/drivers/cbus/retu.c	2011-02-26 23:25:18.905358127 +0100
+@@ -120,7 +120,9 @@
+ {
+ 	struct retu		*retu = dev_get_drvdata(child->parent);
+ 
++	mutex_lock(&retu->mutex);
+ 	__retu_write_reg(retu, reg, val);
++	mutex_unlock(&retu->mutex);
+ }
+ EXPORT_SYMBOL_GPL(retu_write_reg);
+ 
