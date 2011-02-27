@@ -1,11 +1,11 @@
 --- a/include/linux/compat-2.6.36.h
 +++ b/include/linux/compat-2.6.36.h
-@@ -101,6 +101,8 @@ int no_printk(const char *s, ...) { retu
+@@ -102,6 +102,8 @@ int no_printk(const char *s, ...) { retu
  #define alloc_workqueue(name, flags, max_active) __create_workqueue(name, flags, max_active, 0)
  #endif
  
 +#define PCI_EEPROM_WIDTH_93C86   8
 +
- #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)) */
+ #define EXTPROC	0200000
+ #define TIOCPKT_IOCTL		64
  
- #endif /* LINUX_26_36_COMPAT_H */
