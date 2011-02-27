@@ -1,0 +1,13 @@
+Index: linux-2.6.38-rc6/drivers/cbus/retu.c
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/cbus/retu.c	2011-02-27 18:01:26.306458689 +0100
++++ linux-2.6.38-rc6/drivers/cbus/retu.c	2011-02-27 18:05:56.472263901 +0100
+@@ -205,7 +205,7 @@
+ 		return IRQ_NONE;
+ 	}
+ 
+-	for (i = 0; idr != 0; i++, idr >>= 1) {
++	for (i = retu->irq_base; idr != 0; i++, idr >>= 1) {
+ 		if (!(idr & 1))
+ 			continue;
+ 
