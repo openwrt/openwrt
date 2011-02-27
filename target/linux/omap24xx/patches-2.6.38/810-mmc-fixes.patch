@@ -1,22 +1,7 @@
----
- drivers/mmc/core/core.c  |    5 +++--
- drivers/mmc/host/omap.c  |    7 +++++--
- include/linux/mmc/host.h |    2 ++
- 3 files changed, 10 insertions(+), 4 deletions(-)
-
 Index: linux-2.6.38-rc6/drivers/mmc/host/omap.c
 ===================================================================
 --- linux-2.6.38-rc6.orig/drivers/mmc/host/omap.c	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/drivers/mmc/host/omap.c	2011-02-24 00:40:46.129908862 +0100
-@@ -389,7 +389,7 @@
- 
- 	mod_timer(&host->cmd_abort_timer, jiffies + HZ/2);
- 
--	OMAP_MMC_WRITE(host, CTO, 200);
-+//	OMAP_MMC_WRITE(host, CTO, 200);
- 	OMAP_MMC_WRITE(host, ARGL, cmd->arg & 0xffff);
- 	OMAP_MMC_WRITE(host, ARGH, cmd->arg >> 16);
- 	OMAP_MMC_WRITE(host, IE,
++++ linux-2.6.38-rc6/drivers/mmc/host/omap.c	2011-02-27 00:58:54.735744872 +0100
 @@ -1456,6 +1456,7 @@
  	host->dma_ch = -1;
  
@@ -39,7 +24,7 @@ Index: linux-2.6.38-rc6/drivers/mmc/host/omap.c
 Index: linux-2.6.38-rc6/drivers/mmc/core/core.c
 ===================================================================
 --- linux-2.6.38-rc6.orig/drivers/mmc/core/core.c	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/drivers/mmc/core/core.c	2011-02-24 00:40:46.131908784 +0100
++++ linux-2.6.38-rc6/drivers/mmc/core/core.c	2011-02-27 00:57:32.633556994 +0100
 @@ -75,12 +75,13 @@
  }
  
@@ -59,7 +44,7 @@ Index: linux-2.6.38-rc6/drivers/mmc/core/core.c
 Index: linux-2.6.38-rc6/include/linux/mmc/host.h
 ===================================================================
 --- linux-2.6.38-rc6.orig/include/linux/mmc/host.h	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/include/linux/mmc/host.h	2011-02-24 00:40:46.131908784 +0100
++++ linux-2.6.38-rc6/include/linux/mmc/host.h	2011-02-27 00:57:32.633556994 +0100
 @@ -326,5 +326,7 @@
  	return host->pm_flags & MMC_PM_KEEP_POWER;
  }
