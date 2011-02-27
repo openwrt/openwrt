@@ -1,0 +1,13 @@
+Index: linux-2.6.38-rc6/drivers/mmc/host/omap.c
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/mmc/host/omap.c	2011-02-27 16:56:51.714348509 +0100
++++ linux-2.6.38-rc6/drivers/mmc/host/omap.c	2011-02-27 16:57:30.796529124 +0100
+@@ -832,7 +832,7 @@
+ 		return IRQ_HANDLED;
+ 	}
+ 
+-	if (end_command)
++	if (end_command && host->cmd)
+ 		mmc_omap_cmd_done(host, host->cmd);
+ 	if (host->data != NULL) {
+ 		if (transfer_error)
