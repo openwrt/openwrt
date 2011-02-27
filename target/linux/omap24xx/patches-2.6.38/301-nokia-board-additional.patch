@@ -1,7 +1,7 @@
 Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-25 01:36:43.691841133 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c	2011-02-25 01:38:19.129482731 +0100
+--- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-27 21:55:22.978833306 +0100
++++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c	2011-02-27 22:36:52.335957066 +0100
 @@ -23,6 +23,9 @@
  #include <linux/spi/spi.h>
  #include <linux/usb/musb.h>
@@ -20,7 +20,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  
  #include "mux.h"
  
-@@ -43,6 +47,221 @@
+@@ -43,6 +47,221 @@ static int slot1_cover_open;
  static int slot2_cover_open;
  static struct device *mmc_device;
  
@@ -242,7 +242,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  #define TUSB6010_ASYNC_CS	1
  #define TUSB6010_SYNC_CS	4
  #define TUSB6010_GPIO_INT	58
-@@ -146,12 +365,29 @@
+@@ -146,12 +365,29 @@ static struct omap2_mcspi_device_config
  
  static struct spi_board_info n800_spi_board_info[] __initdata = {
  	{
@@ -262,7 +262,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  	},
 +	{
 +		.modalias	 = "tsc2005",
-+		.bus_num	 = 3,
++		.bus_num	 = 1,
 +		.chip_select	 = 0,
 +		.irq		 = OMAP_GPIO_IRQ(RX51_TSC2005_IRQ_GPIO),
 +		.max_speed_hz    = 6000000,
@@ -272,7 +272,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  };
  
  #if defined(CONFIG_MTD_ONENAND_OMAP2) || \
-@@ -727,6 +963,11 @@
+@@ -727,6 +963,11 @@ static struct aic3x_pdata n810_aic33_dat
  };
  
  static struct i2c_board_info n810_i2c_board_info_2[] __initdata = {
@@ -284,7 +284,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  	{
  		I2C_BOARD_INFO("tlv320aic3x", 0x18),
  		.platform_data = &n810_aic33_data,
-@@ -796,9 +1037,12 @@
+@@ -796,9 +1037,12 @@ static inline void board_serial_init(voi
  static void __init n8x0_init_machine(void)
  {
  	omap2420_mux_init(board_mux, OMAP_PACKAGE_ZAC);
@@ -297,7 +297,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  	spi_register_board_info(n800_spi_board_info,
  				ARRAY_SIZE(n800_spi_board_info));
  	omap_register_i2c_bus(1, 400, n8x0_i2c_board_info_1,
-@@ -808,6 +1052,8 @@
+@@ -808,6 +1052,8 @@ static void __init n8x0_init_machine(voi
  		i2c_register_board_info(2, n810_i2c_board_info_2,
  					ARRAY_SIZE(n810_i2c_board_info_2));
  	board_serial_init();
@@ -309,7 +309,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
 Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-02-25 01:36:43.715837271 +0100
++++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-02-27 22:36:50.837929678 +0100
 @@ -0,0 +1,127 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0.c
@@ -440,9 +440,9 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c
 +}
 Index: linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile
 ===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/Makefile	2011-02-25 01:36:11.764976272 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile	2011-02-25 01:36:43.715837271 +0100
-@@ -177,6 +177,7 @@
+--- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/Makefile	2011-02-22 02:25:52.000000000 +0100
++++ linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile	2011-02-27 21:55:22.998833653 +0100
+@@ -177,6 +177,7 @@ obj-$(CONFIG_MACH_OMAP_3430SDP)		+= boar
  					   hsmmc.o \
  					   board-flash.o
  obj-$(CONFIG_MACH_NOKIA_N8X0)		+= board-n8x0.o
@@ -453,7 +453,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile
 Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h	2011-02-25 01:36:43.716837110 +0100
++++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h	2011-02-27 21:55:22.998833653 +0100
 @@ -0,0 +1,40 @@
 +/*
 + * cbus.h - CBUS platform_data definition
@@ -497,8 +497,8 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h
 +#endif /* __PLAT_CBUS_H */
 Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h
 ===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/plat-omap/include/plat/irqs.h	2011-02-25 01:36:11.794971452 +0100
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h	2011-02-25 01:36:43.716837110 +0100
+--- linux-2.6.38-rc6.orig/arch/arm/plat-omap/include/plat/irqs.h	2011-02-22 02:25:52.000000000 +0100
++++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h	2011-02-27 21:55:22.999833671 +0100
 @@ -411,7 +411,20 @@
  #define TWL_IRQ_END		TWL6030_IRQ_END
  #endif
