@@ -41,6 +41,8 @@ define autoreconf
 					-B $(STAGING_DIR_HOST)/share/aclocal \
 					$(patsubst %,-I %,$(5)) \
 					$(patsubst %,-I %,$(4)) $(4) || true; \
+				[ -e $(p)/config.rpath ] || \
+						ln -s $(SCRIPT_DIR)/config.rpath $(p)/config.rpath;
 			fi; \
 		) \
 	);
