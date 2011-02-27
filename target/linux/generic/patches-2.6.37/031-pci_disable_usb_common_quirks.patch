@@ -1,0 +1,12 @@
+--- a/drivers/usb/host/Makefile
++++ b/drivers/usb/host/Makefile
+@@ -16,7 +16,9 @@ xhci-hcd-y += xhci-ring.o xhci-hub.o xhc
+ 
+ obj-$(CONFIG_USB_WHCI_HCD)	+= whci/
+ 
++ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
+ obj-$(CONFIG_PCI)		+= pci-quirks.o
++endif
+ 
+ obj-$(CONFIG_USB_EHCI_HCD)	+= ehci-hcd.o
+ obj-$(CONFIG_USB_OXU210HP_HCD)	+= oxu210hp-hcd.o
