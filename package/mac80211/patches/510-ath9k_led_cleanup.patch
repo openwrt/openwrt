@@ -253,7 +253,7 @@
  /*	Rfkill	   */
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1204,9 +1204,6 @@ static void ath9k_stop(struct ieee80211_
+@@ -1216,9 +1216,6 @@ static void ath9k_stop(struct ieee80211_
  
  	mutex_lock(&sc->mutex);
  
@@ -265,7 +265,7 @@
  	cancel_work_sync(&sc->paprd_work);
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -145,6 +145,21 @@ static struct ieee80211_rate ath9k_legac
+@@ -141,6 +141,21 @@ static struct ieee80211_rate ath9k_legac
  	RATE(540, 0x0c, 0),
  };
  
@@ -287,7 +287,7 @@
  static void ath9k_deinit_softc(struct ath_softc *sc);
  
  /*
-@@ -746,6 +761,13 @@ int ath9k_init_device(u16 devid, struct 
+@@ -742,6 +757,13 @@ int ath9k_init_device(u16 devid, struct 
  
  	ath9k_init_txpower_limits(sc);
  

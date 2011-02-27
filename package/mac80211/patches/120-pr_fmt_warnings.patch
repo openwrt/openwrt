@@ -8,8 +8,8 @@
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
  
  #include <linux/kernel.h>
---- a/drivers/net/wireless/iwlwifi/iwl3945-base.c
-+++ b/drivers/net/wireless/iwlwifi/iwl3945-base.c
+--- a/drivers/net/wireless/iwlegacy/iwl3945-base.c
++++ b/drivers/net/wireless/iwlegacy/iwl3945-base.c
 @@ -27,6 +27,7 @@
   *
   *****************************************************************************/
@@ -83,6 +83,16 @@
 @@ -33,6 +33,7 @@
   *
   */
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/kernel.h>
+--- a/drivers/net/wireless/iwlegacy/iwl4965-base.c
++++ b/drivers/net/wireless/iwlegacy/iwl4965-base.c
+@@ -27,6 +27,7 @@
+  *
+  *****************************************************************************/
  
 +#undef pr_fmt
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt

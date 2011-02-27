@@ -1,6 +1,6 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -202,7 +202,7 @@ $(warning "WARNING: CONFIG_CFG80211_WEXT
+@@ -204,7 +204,7 @@ $(warning "WARNING: CONFIG_CFG80211_WEXT
  endif #CONFIG_WIRELESS_EXT
  
  ifneq ($(CONFIG_STAGING),)
@@ -9,7 +9,7 @@
  endif
  
  # mac80211 test driver
-@@ -336,13 +336,13 @@ endif #CONFIG_CRC_ITU_T
+@@ -342,13 +342,13 @@ endif #CONFIG_CRC_ITU_T
  CONFIG_MWL8K=m
  
  # Ethernet drivers go here
@@ -28,7 +28,7 @@
  endif #CONFIG_COMPAT_KERNEL_27
  
  ifdef CONFIG_WIRELESS_EXT
-@@ -396,21 +396,21 @@ CONFIG_ZD1211RW=m
+@@ -403,21 +403,21 @@ endif #CONFIG_COMPAT_KERNEL_29
  # Note: this depends on CONFIG_USB_NET_RNDIS_HOST and CONFIG_USB_NET_CDCETHER
  # it also requires new RNDIS_HOST and CDC_ETHER modules which we add
  ifdef CONFIG_COMPAT_KERNEL_29

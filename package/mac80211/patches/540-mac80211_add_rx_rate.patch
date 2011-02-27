@@ -152,7 +152,7 @@
  	/*
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1166,14 +1166,23 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1156,14 +1156,23 @@ ieee80211_rx_h_sta_process(struct ieee80
  	if (rx->sdata->vif.type == NL80211_IFTYPE_ADHOC) {
  		u8 *bssid = ieee80211_get_bssid(hdr, rx->skb->len,
  						NL80211_IFTYPE_ADHOC);
