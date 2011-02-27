@@ -223,6 +223,12 @@ menu "Global build settings"
 		  over the serial console in early boot.
 		  Enable this to debug early boot problems.
 
+	config KERNEL_AIO
+		bool "Compile the kernel with asynchronous IO support"
+		default n
+		help
+		  This will give you more information in stack traces from kernel oopses
+
 	comment "Package build options"
 
 	config DEBUG
