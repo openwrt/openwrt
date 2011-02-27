@@ -132,7 +132,7 @@
  		NLA_PUT_U32(msg, NL80211_STA_INFO_RX_PACKETS,
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -209,6 +209,8 @@ enum plink_state {
+@@ -212,6 +212,8 @@ enum plink_state {
   * @rate_ctrl_priv: rate control private per-STA pointer
   * @last_tx_rate: rate used for last transmit, to report to userspace as
   *	"the" transmit rate
@@ -141,7 +141,7 @@
   * @lock: used for locking all fields that require locking, see comments
   *	in the header file.
   * @flaglock: spinlock for flags accesses
-@@ -311,6 +313,8 @@ struct sta_info {
+@@ -314,6 +316,8 @@ struct sta_info {
  	unsigned long tx_bytes;
  	unsigned long tx_fragments;
  	struct ieee80211_tx_rate last_tx_rate;
