@@ -1,7 +1,7 @@
 Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-27 21:55:22.978833306 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c	2011-02-27 22:36:52.335957066 +0100
+--- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-28 16:48:12.972504055 +0100
++++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c	2011-02-28 21:03:41.761254167 +0100
 @@ -23,6 +23,9 @@
  #include <linux/spi/spi.h>
  #include <linux/usb/musb.h>
@@ -309,8 +309,8 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
 Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-02-27 22:36:50.837929678 +0100
-@@ -0,0 +1,127 @@
++++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-02-28 21:08:50.105894872 +0100
+@@ -0,0 +1,141 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0.c
 + *
@@ -354,11 +354,25 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c
 +void __init n8x0_mipid_init(void)
 +{
 +	const struct omap_lcd_config *conf;
++	int err;
 +
 +	conf = omap_get_config(OMAP_TAG_LCD, struct omap_lcd_config);
 +	if (conf != NULL) {
 +		n8x0_mipid_platform_data.nreset_gpio = conf->nreset_gpio;
 +		n8x0_mipid_platform_data.data_lines = conf->data_lines;
++		if (conf->nreset_gpio != -1) {
++			err = gpio_request(conf->nreset_gpio, "MIPID nreset");
++			if (err) {
++				printk(KERN_ERR "N8x0 MIPID failed to request nreset GPIO %d\n",
++				       conf->nreset_gpio);
++			} else {
++				err = gpio_direction_output(conf->nreset_gpio, 1);
++				if (err) {
++					printk(KERN_ERR "N8x0 MIPID failed to set nreset GPIO %d\n",
++					       conf->nreset_gpio);
++				}
++			}
++		}
 +		printk(KERN_INFO "N8x0 MIPID config loaded");
 +	}
 +	else
@@ -440,8 +454,8 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c
 +}
 Index: linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile
 ===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/Makefile	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile	2011-02-27 21:55:22.998833653 +0100
+--- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/Makefile	2011-02-28 16:45:53.321456871 +0100
++++ linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile	2011-02-28 16:48:12.997503690 +0100
 @@ -177,6 +177,7 @@ obj-$(CONFIG_MACH_OMAP_3430SDP)		+= boar
  					   hsmmc.o \
  					   board-flash.o
@@ -453,7 +467,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile
 Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h	2011-02-27 21:55:22.998833653 +0100
++++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h	2011-02-28 16:48:12.997503690 +0100
 @@ -0,0 +1,40 @@
 +/*
 + * cbus.h - CBUS platform_data definition
@@ -497,8 +511,8 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h
 +#endif /* __PLAT_CBUS_H */
 Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h
 ===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/plat-omap/include/plat/irqs.h	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h	2011-02-27 21:55:22.999833671 +0100
+--- linux-2.6.38-rc6.orig/arch/arm/plat-omap/include/plat/irqs.h	2011-02-28 16:45:53.350456485 +0100
++++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h	2011-02-28 16:48:12.998503676 +0100
 @@ -411,7 +411,20 @@
  #define TWL_IRQ_END		TWL6030_IRQ_END
  #endif
@@ -521,3 +535,15 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h
  
  #define OMAP_IRQ_BIT(irq)	(1 << ((irq) % 32))
  
+Index: linux-2.6.38-rc6/arch/arm/mach-omap2/omap_hwmod_2420_data.c
+===================================================================
+--- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-02-28 21:09:41.170169165 +0100
++++ linux-2.6.38-rc6/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-02-28 21:10:33.434425329 +0100
+@@ -673,6 +673,7 @@ static struct omap_hwmod_ocp_if *omap242
+ 
+ static struct omap_hwmod omap2420_gpio1_hwmod = {
+ 	.name		= "gpio1",
++	.flags		= HWMOD_INIT_NO_RESET, /* Workaround: Don't reset the n810 MIPID */
+ 	.mpu_irqs	= omap242x_gpio1_irqs,
+ 	.mpu_irqs_cnt	= ARRAY_SIZE(omap242x_gpio1_irqs),
+ 	.main_clk	= "gpios_fck",
