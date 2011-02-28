@@ -1,0 +1,18 @@
+Index: linux-2.6.38-rc6/drivers/cbus/retu.c
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/cbus/retu.c	2011-02-28 15:21:10.645505891 +0100
++++ linux-2.6.38-rc6/drivers/cbus/retu.c	2011-02-28 15:22:24.030477769 +0100
+@@ -198,10 +198,12 @@ static irqreturn_t retu_irq_handler(int
+ 	u16			idr;
+ 	u16			imr;
+ 
++	mutex_lock(&retu->mutex);
+ 	idr = __retu_read_reg(retu, RETU_REG_IDR);
+ 	imr = __retu_read_reg(retu, RETU_REG_IMR);
+-	idr &= ~imr;
++	mutex_unlock(&retu->mutex);
+ 
++	idr &= ~imr;
+ 	if (!idr) {
+ 		dev_vdbg(retu->dev, "No IRQ, spurious?\n");
+ 		return IRQ_NONE;
