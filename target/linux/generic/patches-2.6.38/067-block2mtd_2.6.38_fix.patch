@@ -1,6 +1,23 @@
---- a/drivers/mtd/devices/block2mtd.c
-+++ b/drivers/mtd/devices/block2mtd.c
-@@ -330,7 +330,7 @@ static int block2mtd_refresh(struct mtd_
+Index: linux-2.6.38-rc6/drivers/mtd/devices/block2mtd.c
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/mtd/devices/block2mtd.c	2011-02-28 16:41:59.839603348 +0100
++++ linux-2.6.38-rc6/drivers/mtd/devices/block2mtd.c	2011-02-28 16:47:59.637698484 +0100
+@@ -264,12 +264,13 @@ static int _open_bdev(struct block2mtd_d
+ 	bdev = blkdev_get_by_path(dev->devname, mode, dev);
+ #ifndef MODULE
+ 	if (IS_ERR(bdev)) {
++		dev_t devt;
+ 
+ 		/* We might not have rootfs mounted at this point. Try
+ 		   to resolve the device name by other means. */
+ 
+ 		wait_for_device_probe();
+-		dev_t devt = name_to_dev_t(dev->devname);
++		devt = name_to_dev_t(dev->devname);
+ 		if (devt)
+ 			bdev = blkdev_get_by_dev(devt, mode, dev);
+ 	}
+@@ -330,7 +331,7 @@ static int block2mtd_refresh(struct mtd_
  	_close_bdev(dev);
  
  	/* open the whole disk, issue a partition rescan, then */
@@ -9,3 +26,12 @@
  	if (!bdev || !bdev->bd_disk)
  		err = -EINVAL;
  #ifndef CONFIG_MTD_BLOCK2MTD_MODULE
+@@ -395,7 +396,7 @@ static struct block2mtd_dev *add_device(
+ 	dev->mtd.refresh_device = block2mtd_refresh;
+ 
+ 	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
+-	part->name = dev->mtd.name;
++	part->name = name;
+ 	part->offset = 0;
+ 	part->size = dev->mtd.size;
+ 	if (add_mtd_partitions(&dev->mtd, part, 1)) {
