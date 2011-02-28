@@ -22,16 +22,15 @@
  
              symbols.update(library_symbols_used[library])
  
-@@ -590,9 +588,11 @@ while 1:
+@@ -590,9 +588,10 @@ while 1:
              cmd.append(pic_file)
              cmd.extend(extra_post_obj)
              cmd.extend(extra_flags)
 -            cmd.append("-lgcc")
              cmd.extend(["-L%s" % a for a in [dest_path] + [sysroot + b for b in lib_path if sysroot == "" or b not in ("/" + libdir + "/", "/usr/" + libdir + "/")]])
 -            cmd.append(library_depends_gcc_libnames(so_file, soname))
-+            if soname != "libgcc_s.so.1" and soname != "libc.so.0":
-+                cmd.append(library_depends_gcc_libnames(so_file, soname))
 +            if soname != "libgcc_s.so.1":
++                cmd.append(library_depends_gcc_libnames(so_file, soname))
 +                cmd.append(libgcc_link)
              command(target + "gcc", *cmd)
  
