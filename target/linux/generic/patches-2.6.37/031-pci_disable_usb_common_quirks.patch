@@ -1,12 +1,18 @@
---- a/drivers/usb/host/Makefile
-+++ b/drivers/usb/host/Makefile
-@@ -16,7 +16,9 @@ xhci-hcd-y += xhci-ring.o xhci-hub.o xhc
+
+--- a/drivers/usb/host/pci-quirks.c
++++ b/drivers/usb/host/pci-quirks.c
+@@ -134,6 +134,8 @@ reset_needed:
+ }
+ EXPORT_SYMBOL_GPL(uhci_check_and_reset_hc);
  
- obj-$(CONFIG_USB_WHCI_HCD)	+= whci/
- 
-+ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
- obj-$(CONFIG_PCI)		+= pci-quirks.o
-+endif
- 
- obj-$(CONFIG_USB_EHCI_HCD)	+= ehci-hcd.o
- obj-$(CONFIG_USB_OXU210HP_HCD)	+= oxu210hp-hcd.o
++#ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
++
+ static inline int io_type_enabled(struct pci_dev *pdev, unsigned int mask)
+ {
+ 	u16 cmd;
+@@ -478,3 +480,5 @@ static void __devinit quirk_usb_early_ha
+ 		quirk_usb_handoff_xhci(pdev);
+ }
+ DECLARE_PCI_FIXUP_FINAL(PCI_ANY_ID, PCI_ANY_ID, quirk_usb_early_handoff);
++
++#endif
