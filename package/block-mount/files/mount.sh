@@ -31,14 +31,14 @@ config_mount_by_section() {
 		
 		found_device="$(libmount_find_device_by_id "$uuid" "$label" "$device" "$cfgdevice")"
 		if [ -n "$found_device" ]; then
-			if [ -z "$find_rootfs" ] || [ "$find_rootfs" -eq 0 ] || ( [ "$is_rootfs" -eq 1 ] || [ "$target" = "/" ] || [ "$target" = "/overlay" ] ); then
+			if [ "$find_rootfs" != "1" ] || ( [ "$is_rootfs" -eq 1 ] || [ "$target" = "/" ] || [ "$target" = "/overlay" ] ); then
 				[ "$enabled_fsck" -eq 1 ] && {
 					grep -q "$found_device" /proc/swaps || grep -q "$found_device" /proc/mounts || {
 						libmount_fsck "$found_device" "$fstype" "$enabled_fsck"
 					}
 				}								
 	
-				if [ "$find_rootfs" -eq 1 ]; then
+				if [ "$find_rootfs" = "1" ]; then
 				    if [ "$is_rootfs" -eq 1 ]; then
 					target=/overlay
 				    fi
@@ -55,7 +55,7 @@ config_mount_by_section() {
 				
 			fi
 		fi
-		[ "$find_rootfs" -eq 1 ] && {
+		[ "$find_rootfs" = "1" ] && {
 		    [ "$target" = "/overlay" ] && {
 			rootfs_found=1
 		    }
