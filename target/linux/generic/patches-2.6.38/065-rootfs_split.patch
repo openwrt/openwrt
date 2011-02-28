@@ -1,5 +1,7 @@
---- a/drivers/mtd/Kconfig
-+++ b/drivers/mtd/Kconfig
+Index: linux-2.6.38-rc6/drivers/mtd/Kconfig
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/mtd/Kconfig	2011-02-28 16:14:12.668466637 +0100
++++ linux-2.6.38-rc6/drivers/mtd/Kconfig	2011-02-28 16:26:55.463734599 +0100
 @@ -55,6 +55,16 @@ config MTD_PARTITIONS
  
  if MTD_PARTITIONS
@@ -17,8 +19,10 @@
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	---help---
---- a/drivers/mtd/mtdpart.c
-+++ b/drivers/mtd/mtdpart.c
+Index: linux-2.6.38-rc6/drivers/mtd/mtdpart.c
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/mtd/mtdpart.c	2011-02-28 16:14:12.686466221 +0100
++++ linux-2.6.38-rc6/drivers/mtd/mtdpart.c	2011-02-28 16:28:41.399156164 +0100
 @@ -29,6 +29,8 @@
  #include <linux/kmod.h>
  #include <linux/mtd/mtd.h>
@@ -191,16 +195,17 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -651,7 +800,7 @@ int add_mtd_partitions(struct mtd_info *
- {
+@@ -652,6 +801,9 @@ int add_mtd_partitions(struct mtd_info *
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
--	int i;
-+	int i, ret;
+ 	int i;
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
++	int ret;
++#endif
  
  	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
  
-@@ -666,6 +815,21 @@ int add_mtd_partitions(struct mtd_info *
+@@ -666,6 +818,21 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
@@ -222,7 +227,7 @@
  		cur_offset = slave->offset + slave->mtd.size;
  	}
  
-@@ -673,6 +837,32 @@ int add_mtd_partitions(struct mtd_info *
+@@ -673,6 +840,32 @@ int add_mtd_partitions(struct mtd_info *
  }
  EXPORT_SYMBOL(add_mtd_partitions);
  
@@ -255,8 +260,10 @@
  static DEFINE_SPINLOCK(part_parser_lock);
  static LIST_HEAD(part_parsers);
  
---- a/drivers/mtd/devices/block2mtd.c
-+++ b/drivers/mtd/devices/block2mtd.c
+Index: linux-2.6.38-rc6/drivers/mtd/devices/block2mtd.c
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/mtd/devices/block2mtd.c	2011-02-28 16:15:07.477184360 +0100
++++ linux-2.6.38-rc6/drivers/mtd/devices/block2mtd.c	2011-02-28 16:26:55.919727057 +0100
 @@ -30,6 +30,8 @@ struct block2mtd_dev {
  	struct block_device *blkdev;
  	struct mtd_info mtd;
@@ -545,8 +552,10 @@
  
  	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
  	part->name = dev->mtd.name;
---- a/drivers/mtd/mtdchar.c
-+++ b/drivers/mtd/mtdchar.c
+Index: linux-2.6.38-rc6/drivers/mtd/mtdchar.c
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/mtd/mtdchar.c	2011-02-28 16:14:12.652467007 +0100
++++ linux-2.6.38-rc6/drivers/mtd/mtdchar.c	2011-02-28 16:15:07.503183744 +0100
 @@ -841,6 +841,13 @@ static int mtd_ioctl(struct file *file,
  		file->f_pos = 0;
  		break;
@@ -561,8 +570,10 @@
  
  	case OTPGETREGIONCOUNT:
  	case OTPGETREGIONINFO:
---- a/include/linux/mtd/mtd.h
-+++ b/include/linux/mtd/mtd.h
+Index: linux-2.6.38-rc6/include/linux/mtd/mtd.h
+===================================================================
+--- linux-2.6.38-rc6.orig/include/linux/mtd/mtd.h	2011-02-28 16:14:12.613467908 +0100
++++ linux-2.6.38-rc6/include/linux/mtd/mtd.h	2011-02-28 16:26:51.223804561 +0100
 @@ -125,6 +125,7 @@ struct nand_ecclayout {
  	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES_LARGE];
  };
@@ -581,8 +592,10 @@
  	/* If the driver is something smart, like UBI, it may need to maintain
  	 * its own reference counting. The below functions are only for driver.
  	 * The driver may register its callbacks. These callbacks are not
---- a/include/linux/mtd/partitions.h
-+++ b/include/linux/mtd/partitions.h
+Index: linux-2.6.38-rc6/include/linux/mtd/partitions.h
+===================================================================
+--- linux-2.6.38-rc6.orig/include/linux/mtd/partitions.h	2011-02-28 16:14:12.635467400 +0100
++++ linux-2.6.38-rc6/include/linux/mtd/partitions.h	2011-02-28 16:26:55.382735938 +0100
 @@ -34,12 +34,14 @@
   * erasesize aligned (e.g. use MTDPART_OFS_NEXTBLK).
   */
@@ -606,8 +619,10 @@
  
  /*
   * Functions dealing with the various ways of partitioning the space
---- a/include/mtd/mtd-abi.h
-+++ b/include/mtd/mtd-abi.h
+Index: linux-2.6.38-rc6/include/mtd/mtd-abi.h
+===================================================================
+--- linux-2.6.38-rc6.orig/include/mtd/mtd-abi.h	2011-02-28 16:14:12.596468301 +0100
++++ linux-2.6.38-rc6/include/mtd/mtd-abi.h	2011-02-28 16:15:07.505183696 +0100
 @@ -127,6 +127,7 @@ struct otp_info {
  #define MEMWRITEOOB64		_IOWR('M', 21, struct mtd_oob_buf64)
  #define MEMREADOOB64		_IOWR('M', 22, struct mtd_oob_buf64)
