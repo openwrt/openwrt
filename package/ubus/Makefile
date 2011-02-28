@@ -18,7 +18,7 @@ define Package/ubus
   SECTION:=luci2
   CATEGORY:=LuCI2
   SUBMENU:=System
-  DEPENDS:=+libubus +ubusd
+  DEPENDS:=+libubus +libblobmsg-json +ubusd
   TITLE:=OpenWrt RPC client utility
 endef
 
