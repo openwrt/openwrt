@@ -62,7 +62,6 @@ GEN_CONFIG=$(SCRIPT_DIR)/kconfig.pl -n \
 	$(CONFIG_DIR)/$(ARCH)$(if $(wildcard $(CONFIG_DIR)/$(ARCH).$(BOARD)),.$(BOARD))
 
 define Host/Prepare
-	$(call Host/SetToolchainInfo)
 	$(call Host/Prepare/Default)
 	$(if $(strip $(QUILT)), \
 		cd $(HOST_BUILD_DIR); \
@@ -132,6 +131,7 @@ define Host/Compile
 endef
 
 define Host/Install
+	$(call Host/SetToolchainInfo)
 	$(UCLIBC_MAKE) PREFIX= utils
 	$(INSTALL_DIR) $(TOOLCHAIN_DIR)/bin
 	$(INSTALL_BIN) \
