@@ -1,14 +1,14 @@
-From b1096781081b328fdac0e14a726ea04c2e9545c7 Mon Sep 17 00:00:00 2001
+From a4d005c91d403d9f3d0272db6cc46202c06ec774 Mon Sep 17 00:00:00 2001
 From: Axel Gembe <ago@bastart.eu.org>
 Date: Mon, 12 May 2008 18:54:09 +0200
 Subject: [PATCH] bcm963xx: flashmap support
 
 Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 ---
- arch/mips/bcm63xx/boards/board_bcm963xx.c |   19 +---------------
- drivers/mtd/maps/bcm963xx-flash.c         |   34 ++++++++++++++++++++++++----
- drivers/mtd/redboot.c                     |   13 ++++++++--
- 3 files changed, 40 insertions(+), 26 deletions(-)
+ arch/mips/bcm63xx/boards/board_bcm963xx.c |   19 +----------------
+ drivers/mtd/maps/bcm963xx-flash.c         |   32 ++++++++++++++++++++++++----
+ drivers/mtd/redboot.c                     |   13 +++++++++--
+ 3 files changed, 38 insertions(+), 26 deletions(-)
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
@@ -73,29 +73,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  static struct mtd_partition *parsed_parts;
  
  static struct mtd_info *bcm963xx_mtd_info;
-@@ -56,7 +66,7 @@ static int parse_cfe_partitions(struct m
- 	unsigned int rootfsaddr, kerneladdr, spareaddr;
- 	unsigned int rootfslen, kernellen, sparelen, totallen;
- 	int namelen = 0;
--	int i;
-+	int i, offset;
- 	char *boardid;
- 	char *tagversion;
- 
-@@ -84,9 +94,11 @@ static int parse_cfe_partitions(struct m
- 
- 	kerneladdr = kerneladdr - BCM63XX_EXTENDED_SIZE;
- 	rootfsaddr = kerneladdr + kernellen;
-+
-+	rootfslen = ( ( rootfslen % master->erasesize ) > 0 ? (((rootfslen / master->erasesize) + 1 ) * master->erasesize) : rootfslen);
-+
- 	spareaddr = roundup(totallen, master->erasesize) + master->erasesize;
- 	sparelen = master->size - spareaddr - master->erasesize;
--	rootfslen = spareaddr - rootfsaddr;
- 
- 	/* Determine number of partitions */
- 	namelen = 8;
-@@ -214,9 +226,21 @@ static int bcm963xx_probe(struct platfor
+@@ -214,9 +224,21 @@ static int bcm963xx_probe(struct platfor
  			}
  		}
  	} else {
