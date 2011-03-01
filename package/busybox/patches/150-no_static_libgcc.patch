@@ -1,0 +1,11 @@
+--- a/Makefile.flags
++++ b/Makefile.flags
+@@ -50,7 +50,7 @@ CFLAGS += $(call cc-option,-fno-builtin-
+ # -fno-guess-branch-probability: prohibit pseudo-random guessing
+ # of branch probabilities (hopefully makes bloatcheck more stable):
+ CFLAGS += $(call cc-option,-fno-guess-branch-probability,)
+-CFLAGS += $(call cc-option,-funsigned-char -static-libgcc,)
++CFLAGS += $(call cc-option,-funsigned-char,)
+ CFLAGS += $(call cc-option,-falign-functions=1 -falign-jumps=1 -falign-labels=1 -falign-loops=1,)
+ 
+ # FIXME: These warnings are at least partially to be concerned about and should
