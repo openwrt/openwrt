@@ -12,4 +12,4 @@
 +	} else if (is_multicast_ether_addr(dest)) {
  		mdst = br_mdb_get(br, skb);
  		if (mdst || BR_INPUT_SKB_CB_MROUTERS_ONLY(skb)) {
- 			if ((mdst && !hlist_unhashed(&mdst->mglist)) ||
+ 			if ((mdst && mdst->mglist) ||

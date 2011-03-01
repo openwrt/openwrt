@@ -28,7 +28,7 @@
  #ifndef SYMBOL_PREFIX
  #define VMLINUX_SYMBOL(sym) sym
  #else
-@@ -276,35 +297,35 @@
+@@ -274,35 +295,35 @@
  	/* Kernel symbol table: Normal symbols */			\
  	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
  		VMLINUX_SYMBOL(__start___ksymtab) = .;			\
@@ -69,7 +69,7 @@
  		VMLINUX_SYMBOL(__stop___ksymtab_gpl_future) = .;	\
  	}								\
  									\
-@@ -345,7 +366,7 @@
+@@ -343,7 +364,7 @@
  									\
  	/* Kernel symbol table: strings */				\
          __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
@@ -78,7 +78,7 @@
  	}								\
  									\
  	/* __*init sections */						\
-@@ -670,6 +691,9 @@
+@@ -677,6 +698,9 @@
  	EXIT_TEXT							\
  	EXIT_DATA							\
  	EXIT_CALL							\
@@ -90,7 +90,7 @@
  	}
 --- a/include/linux/module.h
 +++ b/include/linux/module.h
-@@ -202,16 +202,24 @@ struct module_use {
+@@ -229,16 +229,24 @@ struct module_use {
  #define __CRC_SYMBOL(sym, sec)
  #endif
  

@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc6/drivers/mtd/devices/block2mtd.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/mtd/devices/block2mtd.c	2011-02-28 16:41:59.839603348 +0100
-+++ linux-2.6.38-rc6/drivers/mtd/devices/block2mtd.c	2011-02-28 16:47:59.637698484 +0100
+--- a/drivers/mtd/devices/block2mtd.c
++++ b/drivers/mtd/devices/block2mtd.c
 @@ -264,12 +264,13 @@ static int _open_bdev(struct block2mtd_d
  	bdev = blkdev_get_by_path(dev->devname, mode, dev);
  #ifndef MODULE
