@@ -36,7 +36,7 @@ include $(INCLUDE_DIR)/kernel-defaults.mk
 IPSET_MAKEOPTS:= -C $(PKG_BUILD_DIR) \
 	$(TARGET_CONFIGURE_OPTS) \
 	COPT_FLAGS="$(TARGET_CFLAGS)" \
-	LDFLAGS="-rdynamic -static-libgcc" \
+	LDFLAGS="-rdynamic" \
 	NO_EXTRA_WARN_FLAGS=yes \
 	KERNEL_DIR="$(LINUX_DIR)" \
 	PREFIX=/usr \
