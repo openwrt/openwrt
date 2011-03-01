@@ -503,7 +503,7 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_VERBOSE
 
 config BUSYBOX_CONFIG_FEATURE_MOUNT_HELPERS
 	bool "Support mount helpers"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_MOUNT
 	help
 	  Enable mounting of virtual file systems via external helpers.
