@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc6/fs/jffs2/Kconfig
-===================================================================
---- linux-2.6.38-rc6.orig/fs/jffs2/Kconfig	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/fs/jffs2/Kconfig	2011-02-28 15:34:05.308257697 +0100
+--- a/fs/jffs2/Kconfig
++++ b/fs/jffs2/Kconfig
 @@ -139,6 +139,15 @@ config JFFS2_LZO
  	  This feature was added in July, 2007. Say 'N' if you need
  	  compatibility with older bootloaders or kernels.
@@ -18,10 +16,8 @@ Index: linux-2.6.38-rc6/fs/jffs2/Kconfig
  config JFFS2_RTIME
  	bool "JFFS2 RTIME compression support" if JFFS2_COMPRESSION_OPTIONS
  	depends on JFFS2_FS
-Index: linux-2.6.38-rc6/fs/jffs2/Makefile
-===================================================================
---- linux-2.6.38-rc6.orig/fs/jffs2/Makefile	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/fs/jffs2/Makefile	2011-02-28 15:34:05.308257697 +0100
+--- a/fs/jffs2/Makefile
++++ b/fs/jffs2/Makefile
 @@ -18,4 +18,7 @@ jffs2-$(CONFIG_JFFS2_RUBIN)	+= compr_rub
  jffs2-$(CONFIG_JFFS2_RTIME)	+= compr_rtime.o
  jffs2-$(CONFIG_JFFS2_ZLIB)	+= compr_zlib.o
@@ -30,10 +26,8 @@ Index: linux-2.6.38-rc6/fs/jffs2/Makefile
  jffs2-$(CONFIG_JFFS2_SUMMARY)   += summary.o
 +
 +CFLAGS_compr_lzma.o += -Iinclude/linux -Ilib/lzma
-Index: linux-2.6.38-rc6/fs/jffs2/compr.c
-===================================================================
---- linux-2.6.38-rc6.orig/fs/jffs2/compr.c	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/fs/jffs2/compr.c	2011-02-28 15:34:05.309257668 +0100
+--- a/fs/jffs2/compr.c
++++ b/fs/jffs2/compr.c
 @@ -320,6 +320,9 @@ int __init jffs2_compressors_init(void)
  #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_init();
@@ -54,10 +48,8 @@ Index: linux-2.6.38-rc6/fs/jffs2/compr.c
  #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_exit();
  #endif
-Index: linux-2.6.38-rc6/fs/jffs2/compr.h
-===================================================================
---- linux-2.6.38-rc6.orig/fs/jffs2/compr.h	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/fs/jffs2/compr.h	2011-02-28 15:34:05.309257668 +0100
+--- a/fs/jffs2/compr.h
++++ b/fs/jffs2/compr.h
 @@ -29,9 +29,9 @@
  #define JFFS2_DYNRUBIN_PRIORITY  20
  #define JFFS2_LZARI_PRIORITY     30
@@ -81,10 +73,8 @@ Index: linux-2.6.38-rc6/fs/jffs2/compr.h
 +#endif
  
  #endif /* __JFFS2_COMPR_H__ */
-Index: linux-2.6.38-rc6/fs/jffs2/compr_lzma.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/fs/jffs2/compr_lzma.c	2011-02-28 16:15:02.388304647 +0100
+--- /dev/null
++++ b/fs/jffs2/compr_lzma.c
 @@ -0,0 +1,128 @@
 +/*
 + * JFFS2 -- Journalling Flash File System, Version 2.
@@ -214,10 +204,8 @@ Index: linux-2.6.38-rc6/fs/jffs2/compr_lzma.c
 +	jffs2_unregister_compressor(&jffs2_lzma_comp);
 +	lzma_free_workspace();
 +}
-Index: linux-2.6.38-rc6/fs/jffs2/super.c
-===================================================================
---- linux-2.6.38-rc6.orig/fs/jffs2/super.c	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/fs/jffs2/super.c	2011-02-28 15:34:05.310257639 +0100
+--- a/fs/jffs2/super.c
++++ b/fs/jffs2/super.c
 @@ -255,14 +255,41 @@ static int __init init_jffs2_fs(void)
  	BUILD_BUG_ON(sizeof(struct jffs2_raw_inode) != 68);
  	BUILD_BUG_ON(sizeof(struct jffs2_raw_summary) != 32);
@@ -263,10 +251,8 @@ Index: linux-2.6.38-rc6/fs/jffs2/super.c
  
  	jffs2_inode_cachep = kmem_cache_create("jffs2_i",
  					     sizeof(struct jffs2_inode_info),
-Index: linux-2.6.38-rc6/include/linux/jffs2.h
-===================================================================
---- linux-2.6.38-rc6.orig/include/linux/jffs2.h	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/include/linux/jffs2.h	2011-02-28 15:34:05.310257639 +0100
+--- a/include/linux/jffs2.h
++++ b/include/linux/jffs2.h
 @@ -46,6 +46,7 @@
  #define JFFS2_COMPR_DYNRUBIN	0x05
  #define JFFS2_COMPR_ZLIB	0x06
@@ -275,10 +261,8 @@ Index: linux-2.6.38-rc6/include/linux/jffs2.h
  /* Compatibility flags. */
  #define JFFS2_COMPAT_MASK 0xc000      /* What do to if an unknown nodetype is found */
  #define JFFS2_NODE_ACCURATE 0x2000
-Index: linux-2.6.38-rc6/include/linux/lzma.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/include/linux/lzma.h	2011-02-28 15:34:05.310257639 +0100
+--- /dev/null
++++ b/include/linux/lzma.h
 @@ -0,0 +1,62 @@
 +#ifndef __LZMA_H__
 +#define __LZMA_H__
@@ -342,10 +326,8 @@ Index: linux-2.6.38-rc6/include/linux/lzma.h
 +static ISzAlloc lzma_alloc = {p_lzma_malloc, p_lzma_free};
 +
 +#endif
-Index: linux-2.6.38-rc6/include/linux/lzma/LzFind.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/include/linux/lzma/LzFind.h	2011-02-28 16:14:14.392426757 +0100
+--- /dev/null
++++ b/include/linux/lzma/LzFind.h
 @@ -0,0 +1,115 @@
 +/* LzFind.h -- Match finder for LZ algorithms
 +2009-04-22 : Igor Pavlov : Public domain */
@@ -462,10 +444,8 @@ Index: linux-2.6.38-rc6/include/linux/lzma/LzFind.h
 +#endif
 +
 +#endif
-Index: linux-2.6.38-rc6/include/linux/lzma/LzHash.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/include/linux/lzma/LzHash.h	2011-02-28 15:34:05.311257610 +0100
+--- /dev/null
++++ b/include/linux/lzma/LzHash.h
 @@ -0,0 +1,54 @@
 +/* LzHash.h -- HASH functions for LZ algorithms
 +2009-02-07 : Igor Pavlov : Public domain */
@@ -521,10 +501,8 @@ Index: linux-2.6.38-rc6/include/linux/lzma/LzHash.h
 +  hash4Value = (temp ^ ((UInt32)cur[2] << 8) ^ (p->crc[cur[3]] << 5)) & (kHash4Size - 1); }
 +
 +#endif
-Index: linux-2.6.38-rc6/include/linux/lzma/LzmaDec.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/include/linux/lzma/LzmaDec.h	2011-02-28 16:14:14.408426387 +0100
+--- /dev/null
++++ b/include/linux/lzma/LzmaDec.h
 @@ -0,0 +1,231 @@
 +/* LzmaDec.h -- LZMA Decoder
 +2009-02-07 : Igor Pavlov : Public domain */
@@ -757,10 +735,8 @@ Index: linux-2.6.38-rc6/include/linux/lzma/LzmaDec.h
 +#endif
 +
 +#endif
-Index: linux-2.6.38-rc6/include/linux/lzma/LzmaEnc.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/include/linux/lzma/LzmaEnc.h	2011-02-28 16:14:14.430425878 +0100
+--- /dev/null
++++ b/include/linux/lzma/LzmaEnc.h
 @@ -0,0 +1,80 @@
 +/*  LzmaEnc.h -- LZMA Encoder
 +2009-02-07 : Igor Pavlov : Public domain */
@@ -842,10 +818,8 @@ Index: linux-2.6.38-rc6/include/linux/lzma/LzmaEnc.h
 +#endif
 +
 +#endif
-Index: linux-2.6.38-rc6/include/linux/lzma/Types.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/include/linux/lzma/Types.h	2011-02-28 15:34:05.313257550 +0100
+--- /dev/null
++++ b/include/linux/lzma/Types.h
 @@ -0,0 +1,226 @@
 +/* Types.h -- Basic types
 +2009-11-23 : Igor Pavlov : Public domain */
@@ -1073,10 +1047,8 @@ Index: linux-2.6.38-rc6/include/linux/lzma/Types.h
 +EXTERN_C_END
 +
 +#endif
-Index: linux-2.6.38-rc6/lib/Kconfig
-===================================================================
---- linux-2.6.38-rc6.orig/lib/Kconfig	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/lib/Kconfig	2011-02-28 16:14:00.063757281 +0100
+--- a/lib/Kconfig
++++ b/lib/Kconfig
 @@ -108,6 +108,12 @@ config LZO_DECOMPRESS
  
  source "lib/xz/Kconfig"
@@ -1090,10 +1062,8 @@ Index: linux-2.6.38-rc6/lib/Kconfig
  #
  # These all provide a common interface (hence the apparent duplication with
  # ZLIB_INFLATE; DECOMPRESS_GZIP is just a wrapper.)
-Index: linux-2.6.38-rc6/lib/Makefile
-===================================================================
---- linux-2.6.38-rc6.orig/lib/Makefile	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/lib/Makefile	2011-02-28 15:34:05.313257550 +0100
+--- a/lib/Makefile
++++ b/lib/Makefile
 @@ -2,6 +2,16 @@
  # Makefile for some libs needed in the kernel.
  #
@@ -1120,10 +1090,8 @@ Index: linux-2.6.38-rc6/lib/Makefile
  
  lib-$(CONFIG_DECOMPRESS_GZIP) += decompress_inflate.o
  lib-$(CONFIG_DECOMPRESS_BZIP2) += decompress_bunzip2.o
-Index: linux-2.6.38-rc6/lib/lzma/LzFind.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/lib/lzma/LzFind.c	2011-02-28 16:14:14.447425484 +0100
+--- /dev/null
++++ b/lib/lzma/LzFind.c
 @@ -0,0 +1,761 @@
 +/* LzFind.c -- Match finder for LZ algorithms
 +2009-04-22 : Igor Pavlov : Public domain */
@@ -1886,10 +1854,8 @@ Index: linux-2.6.38-rc6/lib/lzma/LzFind.c
 +    vTable->Skip = (Mf_Skip_Func)Bt4_MatchFinder_Skip;
 +  }
 +}
-Index: linux-2.6.38-rc6/lib/lzma/LzmaDec.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/lib/lzma/LzmaDec.c	2011-02-28 16:14:14.463425114 +0100
+--- /dev/null
++++ b/lib/lzma/LzmaDec.c
 @@ -0,0 +1,999 @@
 +/* LzmaDec.c -- LZMA Decoder
 +2009-09-20 : Igor Pavlov : Public domain */
@@ -2890,10 +2856,8 @@ Index: linux-2.6.38-rc6/lib/lzma/LzmaDec.c
 +  LzmaDec_FreeProbs(&p, alloc);
 +  return res;
 +}
-Index: linux-2.6.38-rc6/lib/lzma/LzmaEnc.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/lib/lzma/LzmaEnc.c	2011-02-28 16:14:14.485424605 +0100
+--- /dev/null
++++ b/lib/lzma/LzmaEnc.c
 @@ -0,0 +1,2271 @@
 +/* LzmaEnc.c -- LZMA Encoder
 +2009-11-24 : Igor Pavlov : Public domain */
@@ -5166,10 +5130,8 @@ Index: linux-2.6.38-rc6/lib/lzma/LzmaEnc.c
 +  LzmaEnc_Destroy(p, alloc, allocBig);
 +  return res;
 +}
-Index: linux-2.6.38-rc6/lib/lzma/Makefile
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/lib/lzma/Makefile	2011-02-28 15:34:05.321257314 +0100
+--- /dev/null
++++ b/lib/lzma/Makefile
 @@ -0,0 +1,7 @@
 +lzma_compress-objs := LzFind.o LzmaEnc.o
 +lzma_decompress-objs := LzmaDec.o

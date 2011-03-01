@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc6/drivers/mtd/Kconfig
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/mtd/Kconfig	2011-02-28 16:14:12.668466637 +0100
-+++ linux-2.6.38-rc6/drivers/mtd/Kconfig	2011-02-28 16:26:55.463734599 +0100
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
 @@ -55,6 +55,16 @@ config MTD_PARTITIONS
  
  if MTD_PARTITIONS
@@ -19,10 +17,8 @@ Index: linux-2.6.38-rc6/drivers/mtd/Kconfig
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	---help---
-Index: linux-2.6.38-rc6/drivers/mtd/mtdpart.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/mtd/mtdpart.c	2011-02-28 16:14:12.686466221 +0100
-+++ linux-2.6.38-rc6/drivers/mtd/mtdpart.c	2011-02-28 16:28:41.399156164 +0100
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
 @@ -29,6 +29,8 @@
  #include <linux/kmod.h>
  #include <linux/mtd/mtd.h>
@@ -260,10 +256,8 @@ Index: linux-2.6.38-rc6/drivers/mtd/mtdpart.c
  static DEFINE_SPINLOCK(part_parser_lock);
  static LIST_HEAD(part_parsers);
  
-Index: linux-2.6.38-rc6/drivers/mtd/devices/block2mtd.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/mtd/devices/block2mtd.c	2011-02-28 16:15:07.477184360 +0100
-+++ linux-2.6.38-rc6/drivers/mtd/devices/block2mtd.c	2011-02-28 16:26:55.919727057 +0100
+--- a/drivers/mtd/devices/block2mtd.c
++++ b/drivers/mtd/devices/block2mtd.c
 @@ -30,6 +30,8 @@ struct block2mtd_dev {
  	struct block_device *blkdev;
  	struct mtd_info mtd;
@@ -552,10 +546,8 @@ Index: linux-2.6.38-rc6/drivers/mtd/devices/block2mtd.c
  
  	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
  	part->name = dev->mtd.name;
-Index: linux-2.6.38-rc6/drivers/mtd/mtdchar.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/mtd/mtdchar.c	2011-02-28 16:14:12.652467007 +0100
-+++ linux-2.6.38-rc6/drivers/mtd/mtdchar.c	2011-02-28 16:15:07.503183744 +0100
+--- a/drivers/mtd/mtdchar.c
++++ b/drivers/mtd/mtdchar.c
 @@ -841,6 +841,13 @@ static int mtd_ioctl(struct file *file,
  		file->f_pos = 0;
  		break;
@@ -570,10 +562,8 @@ Index: linux-2.6.38-rc6/drivers/mtd/mtdchar.c
  
  	case OTPGETREGIONCOUNT:
  	case OTPGETREGIONINFO:
-Index: linux-2.6.38-rc6/include/linux/mtd/mtd.h
-===================================================================
---- linux-2.6.38-rc6.orig/include/linux/mtd/mtd.h	2011-02-28 16:14:12.613467908 +0100
-+++ linux-2.6.38-rc6/include/linux/mtd/mtd.h	2011-02-28 16:26:51.223804561 +0100
+--- a/include/linux/mtd/mtd.h
++++ b/include/linux/mtd/mtd.h
 @@ -125,6 +125,7 @@ struct nand_ecclayout {
  	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES_LARGE];
  };
@@ -592,10 +582,8 @@ Index: linux-2.6.38-rc6/include/linux/mtd/mtd.h
  	/* If the driver is something smart, like UBI, it may need to maintain
  	 * its own reference counting. The below functions are only for driver.
  	 * The driver may register its callbacks. These callbacks are not
-Index: linux-2.6.38-rc6/include/linux/mtd/partitions.h
-===================================================================
---- linux-2.6.38-rc6.orig/include/linux/mtd/partitions.h	2011-02-28 16:14:12.635467400 +0100
-+++ linux-2.6.38-rc6/include/linux/mtd/partitions.h	2011-02-28 16:26:55.382735938 +0100
+--- a/include/linux/mtd/partitions.h
++++ b/include/linux/mtd/partitions.h
 @@ -34,12 +34,14 @@
   * erasesize aligned (e.g. use MTDPART_OFS_NEXTBLK).
   */
@@ -619,10 +607,8 @@ Index: linux-2.6.38-rc6/include/linux/mtd/partitions.h
  
  /*
   * Functions dealing with the various ways of partitioning the space
-Index: linux-2.6.38-rc6/include/mtd/mtd-abi.h
-===================================================================
---- linux-2.6.38-rc6.orig/include/mtd/mtd-abi.h	2011-02-28 16:14:12.596468301 +0100
-+++ linux-2.6.38-rc6/include/mtd/mtd-abi.h	2011-02-28 16:15:07.505183696 +0100
+--- a/include/mtd/mtd-abi.h
++++ b/include/mtd/mtd-abi.h
 @@ -127,6 +127,7 @@ struct otp_info {
  #define MEMWRITEOOB64		_IOWR('M', 21, struct mtd_oob_buf64)
  #define MEMREADOOB64		_IOWR('M', 22, struct mtd_oob_buf64)

@@ -43,7 +43,7 @@
  #endif
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -91,7 +91,8 @@ int br_handle_frame_finish(struct sk_buf
+@@ -95,7 +95,8 @@ int br_handle_frame_finish(struct sk_buf
  			skb2 = skb;
  
  		br->dev->stats.multicast++;
@@ -55,7 +55,7 @@
  		skb = NULL;
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
-@@ -113,7 +113,7 @@ void br_deliver(const struct net_bridge_
+@@ -109,7 +109,7 @@ void br_deliver(const struct net_bridge_
  /* called with rcu_read_lock */
  void br_forward(const struct net_bridge_port *to, struct sk_buff *skb, struct sk_buff *skb0)
  {
@@ -64,7 +64,7 @@
  		if (skb0)
  			deliver_clone(to, skb, __br_forward);
  		else
-@@ -168,7 +168,8 @@ out:
+@@ -164,7 +164,8 @@ out:
  static void br_flood(struct net_bridge *br, struct sk_buff *skb,
  		     struct sk_buff *skb0,
  		     void (*__packet_hook)(const struct net_bridge_port *p,
@@ -74,7 +74,7 @@
  {
  	struct net_bridge_port *p;
  	struct net_bridge_port *prev;
-@@ -176,6 +177,9 @@ static void br_flood(struct net_bridge *
+@@ -172,6 +173,9 @@ static void br_flood(struct net_bridge *
  	prev = NULL;
  
  	list_for_each_entry_rcu(p, &br->port_list, list) {
@@ -84,7 +84,7 @@
  		prev = maybe_deliver(prev, p, skb, __packet_hook);
  		if (IS_ERR(prev))
  			goto out;
-@@ -199,14 +203,14 @@ out:
+@@ -195,14 +199,14 @@ out:
  /* called with rcu_read_lock */
  void br_flood_deliver(struct net_bridge *br, struct sk_buff *skb)
  {
