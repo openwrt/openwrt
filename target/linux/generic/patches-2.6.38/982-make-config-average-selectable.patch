@@ -1,0 +1,19 @@
+Index: linux-2.6.38-rc6/lib/Kconfig
+===================================================================
+--- linux-2.6.38-rc6.orig/lib/Kconfig	2011-03-01 19:24:16.246703947 +0100
++++ linux-2.6.38-rc6/lib/Kconfig	2011-03-01 19:26:58.696312483 +0100
+@@ -223,6 +223,13 @@ config LRU_CACHE
+ 	tristate
+ 
+ config AVERAGE
+-	bool
++	bool "Averaging functions"
++	help
++	  This option is provided for the case where no in-kernel-tree
++	  modules require averaging functions, but a module built outside
++	  the kernel tree does. Such modules that use library averaging
++	  functions require Y here.
++
++	  If unsure, say N.
+ 
+ endmenu
