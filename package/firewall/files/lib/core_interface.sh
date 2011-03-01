@@ -70,6 +70,9 @@ fw_configure_interface() {
 
 			# Need v4 while zone is v6
 			*/*.*) fw_log info "zone $zone does not support IPv4 address family, skipping"; return ;;
+
+			# Strip prefix
+			*) mode="${mode#G}" ;;
 		esac
 
 		lock /var/run/firewall-interface.lock
