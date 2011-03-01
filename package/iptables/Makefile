@@ -290,7 +290,7 @@ CONFIGURE_ARGS += \
 MAKE_FLAGS := \
 	$(TARGET_CONFIGURE_OPTS) \
 	COPT_FLAGS="$(TARGET_CFLAGS)" \
-	LDFLAGS="-rdynamic -static-libgcc" \
+	LDFLAGS="-rdynamic" \
 	KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 	KBUILD_OUTPUT="$(LINUX_DIR)" \
 
