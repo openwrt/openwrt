@@ -29,7 +29,7 @@
  #endif
  
 +#ifndef LIBGCC_SPEC
-+#define LIBGCC_SPEC "%{static|static-libgcc:-lgcc -lgcc_eh}%{!static:%{!static-libgcc:-lgcc_s}}"
++#define LIBGCC_SPEC "%{static|static-libgcc:-lgcc}%{!static:%{!static-libgcc:-lgcc_s}}"
 +#endif
 +
  /* Determine which dynamic linker to use depending on whether GLIBC or
