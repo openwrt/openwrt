@@ -33,12 +33,15 @@ define Package/dnsmasq/conffiles
 /etc/dnsmasq.conf
 endef
 
+TARGET_CFLAGS += -ffunction-sections -fdata-sections
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
 		BINDIR="/usr/sbin" MANDIR="/usr/man" \
 		AWK="awk" \
+		LDFLAGS="-Wl,--gc-sections" \
 		all
 endef
 
