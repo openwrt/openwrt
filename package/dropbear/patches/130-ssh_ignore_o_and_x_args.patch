@@ -1,6 +1,6 @@
 --- a/cli-runopts.c
 +++ b/cli-runopts.c
-@@ -271,6 +271,10 @@ void cli_getopts(int argc, char ** argv)
+@@ -287,6 +287,10 @@ void cli_getopts(int argc, char ** argv)
  					debug_trace = 1;
  					break;
  #endif
@@ -11,7 +11,7 @@
  				case 'F':
  				case 'e':
  				case 'c':
-@@ -282,7 +286,6 @@ void cli_getopts(int argc, char ** argv)
+@@ -298,7 +302,6 @@ void cli_getopts(int argc, char ** argv)
  #ifndef ENABLE_CLI_LOCALTCPFWD
  				case 'L':
  #endif
