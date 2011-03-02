@@ -65,7 +65,8 @@ CONFIGURE_ARGS += \
 	--disable-pututxline \
 	--disable-zlib
 
-TARGET_CFLAGS += -DARGTYPE=3
+TARGET_CFLAGS += -DARGTYPE=3 -ffunction-sections -fdata-sections
+TARGET_LDFLAGS += -Wl,--gc-sections
 
 define Build/Configure
 	$(SED) 's,^/\* #define PKG_MULTI.*,#define PKG_MULTI,g' $(PKG_BUILD_DIR)/options.h
