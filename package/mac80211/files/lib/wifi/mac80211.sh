@@ -13,6 +13,8 @@ mac80211_hostapd_setup_base() {
 	config_get country "$device" country
 	config_get hwmode "$device" hwmode
 	config_get channel "$device" channel
+	config_get beacon_int "$device" beacon_int
+	config_get basic_rate_list "$device" basic_rate
 	config_get_bool noscan "$device" noscan
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
 	[ "$channel" = auto ] && channel=
@@ -51,6 +53,16 @@ mac80211_hostapd_setup_base() {
 			echo "$mac" >> $macfile
 		done
 	}
+
+	local br brval brstr
+	[ -n "$basic_rate_list" ] && {
+		for br in $basic_rate_list; do
+			brval="$(($br / 100))"
+			[ -n "$brstr" ] && brstr="$brstr "
+			brstr="$brstr$brval"
+		done
+	}
+	
 	cat >> "$cfgfile" <<EOF
 ctrl_interface=/var/run/hostapd-$phy
 driver=nl80211
@@ -92,8 +104,10 @@ tx_queue_data0_cwmax=7
 tx_queue_data0_burst=1.5
 ${hwmode:+hw_mode=$hwmode}
 ${channel:+channel=$channel}
+${beacon_int:+beacon_int=$beacon_int}
 ${country:+country_code=$country}
 ${noscan:+noscan=$noscan}
+${brstr:+basic_rates=$brstr}
 $base_cfg
 
 EOF
@@ -127,6 +141,8 @@ mac80211_hostapd_setup_bss() {
 	local macaddr hidden maxassoc wmm
 	config_get macaddr "$vif" macaddr
 	config_get maxassoc "$vif" maxassoc
+	config_get dtim_period "$vif" dtim_period
+	config_get max_listen_int "$vif" max_listen_int
 	config_get_bool hidden "$vif" hidden 0
 	config_get_bool wmm "$vif" wmm 1
 	cat >> /var/run/hostapd-$phy.conf <<EOF
@@ -134,6 +150,8 @@ $hostapd_cfg
 wmm_enabled=$wmm
 bssid=$macaddr
 ignore_broadcast_ssid=$hidden
+${dtim_period:+dtim_period=$dtim_period}
+${max_listen_int:+max_listen_interval=$max_listen_int}
 ${maxassoc:+max_num_sta=$maxassoc}
 EOF
 }
@@ -390,8 +408,8 @@ enable_mac80211() {
 				adhoc)
 					config_get bssid "$vif" bssid
 					config_get ssid "$vif" ssid
-					config_get bintval "$vif" bintval
-					config_get basicrates "$vif" basicrates
+					config_get beacon_int "$device" beacon_int
+					config_get basic_rate_list "$device" basic_rate
 					config_get encryption "$vif" encryption
 					config_get key "$vif" key 1
 					config_get mcast_rate "$vif" mcast_rate
@@ -416,6 +434,17 @@ enable_mac80211() {
 						esac
 					}
 
+					local br brval brsub brstr
+					[ -n "$basic_rate_list" ] && {
+						for br in $basic_rate_list; do
+							brval="$(($br / 1000))"
+							brsub="$((($br / 100) % 10))"
+							[ "$brsub" -gt 0 ] && brval="$brval.$brsub"
+							[ -n "$brstr" ] && brstr="$brstr,"
+							brstr="$brstr$brval"
+						done
+					}
+
 					local mcval=""
 					[ -n "$mcast_rate" ] && {
 						mcval="$(($mcast_rate / 1000))"
@@ -425,8 +454,8 @@ enable_mac80211() {
 
 					iw dev "$ifname" ibss join "$ssid" $freq \
 						${fixed:+fixed-freq} $bssid \
-						${bintval:+beacon-interval $bintval} \
-						${basicrates:+basic-rates $basicrates} \
+						${beacon_int:+beacon-interval $beacon_int} \
+						${brstr:+basic-rates $brstr} \
 						${mcval:+mcast-rate $mcval} \
 						${keyspec:+keys $keyspec}
 				;;
