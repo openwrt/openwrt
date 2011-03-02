@@ -1,7 +1,7 @@
 Index: linux-2.6.38-rc6/drivers/cbus/Kconfig
 ===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/Kconfig	2011-02-28 15:20:39.590247119 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/Kconfig	2011-02-28 15:25:56.106012376 +0100
+--- linux-2.6.38-rc6.orig/drivers/cbus/Kconfig	2011-03-01 19:56:10.396378152 +0100
++++ linux-2.6.38-rc6/drivers/cbus/Kconfig	2011-03-01 19:56:10.669365669 +0100
 @@ -72,4 +72,12 @@ config CBUS_RETU_HEADSET
  	  to Retu/Vilma. Detection state and events are exposed through
  	  sysfs.
@@ -17,8 +17,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/Kconfig
  endmenu
 Index: linux-2.6.38-rc6/drivers/cbus/Makefile
 ===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/Makefile	2011-02-28 15:20:39.574247501 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/Makefile	2011-02-28 15:25:56.106012376 +0100
+--- linux-2.6.38-rc6.orig/drivers/cbus/Makefile	2011-03-01 19:56:10.396378152 +0100
++++ linux-2.6.38-rc6/drivers/cbus/Makefile	2011-03-01 19:56:10.669365669 +0100
 @@ -11,3 +11,6 @@ obj-$(CONFIG_CBUS_RETU_POWERBUTTON) += r
  obj-$(CONFIG_CBUS_RETU_RTC)	+= retu-rtc.o
  obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.o
@@ -29,8 +29,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/Makefile
 Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/n810bm_main.c	2011-02-28 15:25:56.109012160 +0100
-@@ -0,0 +1,1597 @@
++++ linux-2.6.38-rc6/drivers/cbus/n810bm_main.c	2011-03-01 21:15:45.484648402 +0100
+@@ -0,0 +1,1586 @@
 +/*
 + *   Nokia n810 battery management
 + *
@@ -159,7 +159,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 +};
 +
 +enum n810bm_notify_flags {
-+	N810BM_NOTIFY_battery_charging,
++	N810BM_NOTIFY_charger_present,
++	N810BM_NOTIFY_charger_state,
 +	N810BM_NOTIFY_charger_pwm,
 +};
 +
@@ -187,7 +188,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 +	struct mutex mutex;
 +};
 +
-+static void n810bm_notify_battery_charging(struct n810bm *bm);
++static void n810bm_notify_charger_present(struct n810bm *bm);
++static void n810bm_notify_charger_state(struct n810bm *bm);
 +static void n810bm_notify_charger_pwm(struct n810bm *bm);
 +
 +
@@ -919,8 +921,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 +	n810bm_set_current_measure_timer(bm, 250);
 +
 +	dev_info(&bm->pdev->dev, "Charging battery");
++	n810bm_notify_charger_state(bm);
 +	n810bm_notify_charger_pwm(bm);
-+	n810bm_notify_battery_charging(bm);
 +}
 +
 +static void n810bm_stop_charge(struct n810bm *bm)
@@ -943,8 +945,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 +		      0);
 +
 +	dev_info(&bm->pdev->dev, "Not charging battery");
++	n810bm_notify_charger_state(bm);
 +	n810bm_notify_charger_pwm(bm);
-+	n810bm_notify_battery_charging(bm);
 +}
 +
 +/* Periodic check */
@@ -985,6 +987,7 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 +		/* Charger state changed */
 +		dev_info(&bm->pdev->dev, "The charger was %s",
 +			 bm->charger_present ? "plugged in" : "removed");
++		n810bm_notify_charger_present(bm);
 +	}
 +
 +	if ((bm->battery_present && !bm->charger_present) ||
@@ -1143,28 +1146,13 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 +
 +DEFINE_ATTR_SHOW_INT(battery_present, battery_present);
 +DEFINE_ATTR_SHOW_INT(charger_present, charger_present);
++static DEFINE_ATTR_NOTIFY(charger_present);
++DEFINE_ATTR_SHOW_INT(charger_state, charger.state);
++static DEFINE_ATTR_NOTIFY(charger_state);
 +DEFINE_ATTR_SHOW_INT(charger_pwm, active_current_pwm);
 +static DEFINE_ATTR_NOTIFY(charger_pwm);
 +DEFINE_ATTR_SHOW_STORE_INT(charger_enable, charger_enabled);
 +DEFINE_ATTR_SHOW_STORE_INT(charger_verbose, verbose_charge_log);
-+
-+static ssize_t n810bm_attr_battery_charging(struct device *dev,
-+					    struct device_attribute *attr,
-+					    char *buf)
-+{
-+	struct n810bm *bm = device_to_n810bm(dev);
-+	ssize_t count;
-+
-+	mutex_lock(&bm->mutex);
-+	count = snprintf(buf, PAGE_SIZE, "%d\n",
-+			 (int)lipocharge_is_charging(&bm->charger));
-+	mutex_unlock(&bm->mutex);
-+
-+	return count;
-+}
-+static DEVICE_ATTR(battery_charging, S_IRUGO,
-+		   n810bm_attr_battery_charging, NULL);
-+static DEFINE_ATTR_NOTIFY(battery_charging);
 +
 +static ssize_t n810bm_attr_battery_level_show(struct device *dev,
 +					      struct device_attribute *attr,
@@ -1289,12 +1277,12 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 +static const struct device_attribute *n810bm_attrs[] = {
 +	&dev_attr_battery_present,
 +	&dev_attr_battery_level,
-+	&dev_attr_battery_charging,
 +	&dev_attr_battery_current,
 +	&dev_attr_battery_capacity,
 +	&dev_attr_battery_temp,
 +	&dev_attr_backup_battery_voltage,
 +	&dev_attr_charger_present,
++	&dev_attr_charger_state,
 +	&dev_attr_charger_verbose,
 +	&dev_attr_charger_voltage,
 +	&dev_attr_charger_enable,
@@ -1317,7 +1305,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 +		}							\
 +	} while (0)
 +
-+	do_notify(battery_charging);
++	do_notify(charger_present);
++	do_notify(charger_state);
 +	do_notify(charger_pwm);
 +}
 +
@@ -1631,7 +1620,7 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 Index: linux-2.6.38-rc6/drivers/cbus/lipocharge.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/lipocharge.c	2011-02-28 15:25:56.110012088 +0100
++++ linux-2.6.38-rc6/drivers/cbus/lipocharge.c	2011-03-01 19:56:10.672365533 +0100
 @@ -0,0 +1,183 @@
 +/*
 + *   Generic LIPO battery charger
@@ -1819,7 +1808,7 @@ Index: linux-2.6.38-rc6/drivers/cbus/lipocharge.c
 Index: linux-2.6.38-rc6/drivers/cbus/lipocharge.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/lipocharge.h	2011-02-28 15:25:56.110012088 +0100
++++ linux-2.6.38-rc6/drivers/cbus/lipocharge.h	2011-03-01 21:07:15.483394264 +0100
 @@ -0,0 +1,60 @@
 +#ifndef LIPOCHARGE_H_
 +#define LIPOCHARGE_H_
@@ -1832,7 +1821,7 @@ Index: linux-2.6.38-rc6/drivers/cbus/lipocharge.h
 +#define LIPORATE_p6C	LIPORATE(0,6)	/* 0.6C */
 +
 +enum lipocharge_state {
-+	LIPO_IDLE,		/* Not charging */
++	LIPO_IDLE = 0,		/* Not charging */
 +	LIPO_FIRST_STAGE,	/* Charging: constant current */
 +	LIPO_SECOND_STAGE,	/* Charging: constant voltage */
 +};
@@ -1883,8 +1872,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/lipocharge.h
 +#endif /* LIPOCHARGE_H_ */
 Index: linux-2.6.38-rc6/drivers/cbus/cbus.c
 ===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/cbus.c	2011-02-28 15:20:39.640245927 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/cbus.c	2011-02-28 15:25:56.110012088 +0100
+--- linux-2.6.38-rc6.orig/drivers/cbus/cbus.c	2011-03-01 19:56:10.396378152 +0100
++++ linux-2.6.38-rc6/drivers/cbus/cbus.c	2011-03-01 19:56:10.673365487 +0100
 @@ -35,6 +35,7 @@
  #include <linux/platform_device.h>
  
@@ -1909,8 +1898,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/cbus.c
  MODULE_AUTHOR("Juha Yrjölä");
 Index: linux-2.6.38-rc6/drivers/cbus/cbus.h
 ===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/cbus.h	2011-02-28 15:20:39.623246332 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/cbus.h	2011-02-28 15:25:56.111012017 +0100
+--- linux-2.6.38-rc6.orig/drivers/cbus/cbus.h	2011-03-01 19:56:10.396378152 +0100
++++ linux-2.6.38-rc6/drivers/cbus/cbus.h	2011-03-01 19:56:10.673365487 +0100
 @@ -26,4 +26,6 @@
  extern int cbus_read_reg(unsigned dev, unsigned reg);
  extern int cbus_write_reg(unsigned dev, unsigned reg, unsigned val);
@@ -1920,8 +1909,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/cbus.h
  #endif /* __DRIVERS_CBUS_CBUS_H */
 Index: linux-2.6.38-rc6/drivers/cbus/retu.c
 ===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/retu.c	2011-02-28 15:22:24.030477769 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/retu.c	2011-02-28 15:25:56.111012017 +0100
+--- linux-2.6.38-rc6.orig/drivers/cbus/retu.c	2011-03-01 19:56:10.469374814 +0100
++++ linux-2.6.38-rc6/drivers/cbus/retu.c	2011-03-01 19:56:10.674365441 +0100
 @@ -425,6 +425,11 @@ static int retu_allocate_children(struct
  	if (!child)
  		return -ENOMEM;
@@ -1936,8 +1925,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/retu.c
  
 Index: linux-2.6.38-rc6/drivers/cbus/tahvo.c
 ===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/tahvo.c	2011-02-28 15:20:39.547248145 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/tahvo.c	2011-02-28 15:25:56.112011946 +0100
+--- linux-2.6.38-rc6.orig/drivers/cbus/tahvo.c	2011-03-01 19:56:10.401377922 +0100
++++ linux-2.6.38-rc6/drivers/cbus/tahvo.c	2011-03-01 19:56:10.674365441 +0100
 @@ -54,6 +54,7 @@ static int tahvo_is_betty;
  
  static struct tasklet_struct tahvo_tasklet;
