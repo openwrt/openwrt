@@ -1,0 +1,39 @@
+Index: linux-2.6.38-rc6/drivers/cbus/retu-wdt.c
+===================================================================
+--- linux-2.6.38-rc6.orig/drivers/cbus/retu-wdt.c	2011-03-02 16:46:24.574676092 +0100
++++ linux-2.6.38-rc6/drivers/cbus/retu-wdt.c	2011-03-02 16:48:17.469807413 +0100
+@@ -56,7 +56,7 @@ static int counter_param = RETU_WDT_MAX_
+ 
+ struct retu_wdt_dev {
+ 	struct device		*dev;
+-	int			users;
++	unsigned long		users;
+ 	struct miscdevice	retu_wdt_miscdev;
+ 	struct delayed_work	ping_work;
+ };
+@@ -161,7 +161,7 @@ static DEVICE_ATTR(counter, S_IRUGO, ret
+ 
+ static int retu_wdt_open(struct inode *inode, struct file *file)
+ {
+-	if (test_and_set_bit(1, (unsigned long *)&(retu_wdt->users)))
++	if (test_and_set_bit(0, &retu_wdt->users))
+ 		return -EBUSY;
+ 
+ 	file->private_data = (void *)retu_wdt;
+@@ -177,7 +177,7 @@ static int retu_wdt_release(struct inode
+ #ifndef CONFIG_WATCHDOG_NOWAYOUT
+ 	retu_wdt_ping_enable(retu_wdt);
+ #endif
+-	wdev->users = 0;
++	clear_bit(0, &retu_wdt->users);
+ 
+ 	return 0;
+ }
+@@ -264,7 +264,6 @@ static int __init retu_wdt_probe(struct
+ 		return -ENOMEM;
+ 
+ 	wdev->dev = &pdev->dev;
+-	wdev->users = 0;
+ 
+ 	ret = device_create_file(&pdev->dev, &dev_attr_period);
+ 	if (ret) {
