@@ -140,6 +140,9 @@ $(call Build/Configure/Default,, \
 		$(PKG_BUILD_DIR)/pppd/plugins/pppoatm/linux/
 endef
 
+TARGET_CFLAGS += -ffunction-sections -fdata-sections
+MAKE_VARS += LDFLAGS="-Wl,--gc-sections"
+
 MAKE_FLAGS += COPTS="$(TARGET_CFLAGS)" \
 		PRECOMPILED_FILTER=1 \
 		STAGING_DIR="$(STAGING_DIR)"
