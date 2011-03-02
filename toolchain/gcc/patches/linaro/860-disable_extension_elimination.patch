@@ -1,0 +1,11 @@
+--- a/gcc/opts.c
++++ b/gcc/opts.c
+@@ -906,7 +906,7 @@ decode_options (unsigned int argc, const
+   flag_tree_if_to_switch_conversion = opt2;
+   flag_ipa_cp = opt2;
+   flag_ipa_sra = opt2;
+-  flag_ee = opt2;
++  flag_ee = 0;
+ 
+   /* Track fields in field-sensitive alias analysis.  */
+   set_param_value ("max-fields-for-field-sensitive",
