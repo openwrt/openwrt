@@ -1,0 +1,76 @@
+--- a/options.h
++++ b/options.h
+@@ -38,7 +38,7 @@
+  * Both of these flags can be defined at once, don't compile without at least
+  * one of them. */
+ #define NON_INETD_MODE
+-#define INETD_MODE
++/*#define INETD_MODE*/
+ 
+ /* Setting this disables the fast exptmod bignum code. It saves ~5kB, but is
+  * perhaps 20% slower for pubkey operations (it is probably worth experimenting
+@@ -49,7 +49,7 @@
+ several kB in binary size however will make the symmetrical ciphers and hashes
+ slower, perhaps by 50%. Recommended for small systems that aren't doing
+ much traffic. */
+-/*#define DROPBEAR_SMALL_CODE*/
++#define DROPBEAR_SMALL_CODE
+ 
+ /* Enable X11 Forwarding - server only */
+ #define ENABLE_X11FWD
+@@ -78,7 +78,7 @@ much traffic. */
+ 
+ /* Enable "Netcat mode" option. This will forward standard input/output
+  * to a remote TCP-forwarded connection */
+-#define ENABLE_CLI_NETCAT
++/*#define ENABLE_CLI_NETCAT*/
+ 
+ /* Encryption - at least one required.
+  * Protocol RFC requires 3DES and recommends AES128 for interoperability.
+@@ -89,8 +89,8 @@ much traffic. */
+ #define DROPBEAR_AES256
+ /* Compiling in Blowfish will add ~6kB to runtime heap memory usage */
+ /*#define DROPBEAR_BLOWFISH*/
+-#define DROPBEAR_TWOFISH256
+-#define DROPBEAR_TWOFISH128
++/*#define DROPBEAR_TWOFISH256
++#define DROPBEAR_TWOFISH128*/
+ 
+ /* Enable "Counter Mode" for ciphers. This is more secure than normal
+  * CBC mode against certain attacks. This adds around 1kB to binary 
+@@ -110,7 +110,7 @@ much traffic. */
+  * If you disable MD5, Dropbear will fall back to SHA1 fingerprints,
+  * which are not the standard form. */
+ #define DROPBEAR_SHA1_HMAC
+-#define DROPBEAR_SHA1_96_HMAC
++/*#define DROPBEAR_SHA1_96_HMAC*/
+ #define DROPBEAR_MD5_HMAC
+ 
+ /* Hostkey/public key algorithms - at least one required, these are used
+@@ -148,7 +148,7 @@ much traffic. */
+ 
+ /* Whether to print the message of the day (MOTD). This doesn't add much code
+  * size */
+-#define DO_MOTD
++/*#define DO_MOTD*/
+ 
+ /* The MOTD file path */
+ #ifndef MOTD_FILENAME
+@@ -177,7 +177,7 @@ much traffic. */
+ 
+ #define ENABLE_CLI_PASSWORD_AUTH
+ #define ENABLE_CLI_PUBKEY_AUTH
+-#define ENABLE_CLI_INTERACT_AUTH
++/*#define ENABLE_CLI_INTERACT_AUTH*/
+ 
+ /* This variable can be used to set a password for client
+  * authentication on the commandline. Beware of platforms
+@@ -185,7 +185,7 @@ much traffic. */
+  * note that it will be provided for all "hidden" client-interactive
+  * style prompts - if you want something more sophisticated, use 
+  * SSH_ASKPASS instead. Comment out this var to remove this functionality.*/
+-#define DROPBEAR_PASSWORD_ENV "DROPBEAR_PASSWORD"
++/*#define DROPBEAR_PASSWORD_ENV "DROPBEAR_PASSWORD"*/
+ 
+ /* Define this (as well as ENABLE_CLI_PASSWORD_AUTH) to allow the use of
+  * a helper program for the ssh client. The helper program should be
