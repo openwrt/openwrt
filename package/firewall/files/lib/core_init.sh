@@ -271,8 +271,10 @@ fw_load_notrack_zone() {
 fw_load_include() {
 	local name="$1"
 
-	local path; config_get path ${name} path
-	[ -e $path ] && . $path
+	local path
+	config_get path ${name} path
+
+	[ -e $path ] && ( . $path )
 }
 
 
