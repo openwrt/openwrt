@@ -1,0 +1,21 @@
+--- a/arch/arm/mach-gemini/board-wbd111.c
++++ b/arch/arm/mach-gemini/board-wbd111.c
+@@ -147,6 +147,7 @@ static void __init wbd111_init(void)
+ 	gemini_gpio_init();
+ 	platform_register_uart();
+ 	platform_register_watchdog();
++	platform_register_usb(0);
+ 	platform_register_pflash(SZ_8M, wbd111_partitions,
+ 				 wbd111_num_partitions);
+ 	platform_device_register(&wbd111_leds_device);
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -103,7 +103,7 @@ module_param (park, uint, S_IRUGO);
+ MODULE_PARM_DESC (park, "park setting; 1-3 back-to-back async packets");
+ 
+ /* for flakey hardware, ignore overcurrent indicators */
+-static int ignore_oc = 0;
++static int ignore_oc = 1;
+ module_param (ignore_oc, bool, S_IRUGO);
+ MODULE_PARM_DESC (ignore_oc, "ignore bogus hardware overcurrent indications");
+ 
