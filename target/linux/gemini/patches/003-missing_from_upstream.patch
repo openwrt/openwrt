@@ -30,7 +30,7 @@
  static struct gpio_keys_button wbd111_keys[] = {
  	{
  		.code		= KEY_SETUP,
-@@ -131,6 +151,8 @@
+@@ -131,6 +151,8 @@ static void __init wbd111_init(void)
  				 wbd111_num_partitions);
  	platform_device_register(&wbd111_leds_device);
  	platform_device_register(&wbd111_keys_device);
@@ -73,7 +73,7 @@
  static struct gpio_keys_button wbd222_keys[] = {
  	{
  		.code		= KEY_SETUP,
-@@ -131,6 +153,10 @@
+@@ -131,6 +153,10 @@ static void __init wbd222_init(void)
  		wbd222_num_partitions);
  	platform_device_register(&wbd222_leds_device);
  	platform_device_register(&wbd222_keys_device);
