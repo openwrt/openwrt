@@ -329,6 +329,7 @@ endef
 
 LIBGCC_A=$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc_pic.a)
 LIBGCC_MAP=$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.map)
+BUILD_LIBGCC:=$(if $(CONFIG_avr32)$(CONFIG_m68k),,$(PKG_BUILD_DIR)/libgcc_s.so.*)
 
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Build/Compile/uClibc
@@ -338,20 +339,20 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libc_so.a)" \
 		"$(patsubst $(TOOLCHAIN_DIR)/lib/%,$(PKG_BUILD_DIR)/%,$(wildcard $(TOOLCHAIN_DIR)/lib/libuClibc-*.so))" \
 		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
-		$(PKG_BUILD_DIR)/libgcc_s.so.*
+		$(BUILD_LIBGCC)
 	$(SCRIPT_DIR)/relink-lib.sh \
 		"$(TARGET_CROSS)" \
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libcrypt-*.so)" \
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libcrypt_pic.a)" \
 		"$(patsubst $(TOOLCHAIN_DIR)/lib/%,$(PKG_BUILD_DIR)/%,$(wildcard $(TOOLCHAIN_DIR)/lib/libcrypt-*.so))" \
-		$(PKG_BUILD_DIR)/libgcc_s.so.* \
+		$(BUILD_LIBGCC) \
 		-Wl,-soname=libcrypt.so.0
 	$(SCRIPT_DIR)/relink-lib.sh \
 		"$(TARGET_CROSS)" \
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libm-*.so)" \
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libm_pic.a)" \
 		"$(patsubst $(TOOLCHAIN_DIR)/lib/%,$(PKG_BUILD_DIR)/%,$(wildcard $(TOOLCHAIN_DIR)/lib/libm-*.so))" \
-		$(PKG_BUILD_DIR)/libgcc_s.so.* \
+		$(BUILD_LIBGCC) \
 		-Wl,-soname=libm.so.0
 	$(SCRIPT_DIR)/relink-lib.sh \
 		"$(TARGET_CROSS)" \
@@ -359,18 +360,19 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libpthread_so.a)" \
 		"$(patsubst $(TOOLCHAIN_DIR)/lib/%,$(PKG_BUILD_DIR)/%,$(wildcard $(TOOLCHAIN_DIR)/lib/libpthread-*.so))" \
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
-		$(PKG_BUILD_DIR)/libgcc_s.so.* \
+		$(BUILD_LIBGCC) \
 		-Wl,-soname=libpthread.so.0
   endef
-
-  define Build/Compile/libgcc
+  ifneq ($(BUILD_LIBGCC),)
+    define Build/Compile/libgcc
 	$(SCRIPT_DIR)/relink-lib.sh \
 		"$(TARGET_CROSS)" \
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so.*)" \
 		"$(LIBGCC_A)" \
 		"$(patsubst $(TOOLCHAIN_DIR)/lib/%,$(PKG_BUILD_DIR)/%,$(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so.*))" \
 		-Wl,--version-script=$(LIBGCC_MAP) -Wl,-soname=libgcc_s.so.1
-  endef
+    endef
+  endif
 endif
 
 define Build/Compile
