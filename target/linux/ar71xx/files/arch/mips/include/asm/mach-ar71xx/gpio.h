@@ -48,6 +48,11 @@ static inline void gpio_set_value(unsigned gpio, int value)
 		__gpio_set_value(gpio, value);
 }
 
+static inline int gpio_set_debounce(unsigned gpio, unsigned debounce)
+{
+	return -ENOSYS;
+}
+
 #define gpio_cansleep	__gpio_cansleep
 
 #endif /* __ASM_MACH_AR71XX_GPIO_H */
