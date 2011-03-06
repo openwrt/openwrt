@@ -8,7 +8,7 @@ start() {
 		echo "WARNING: Watchdog not available. System will reboot soon!"
 		return 1
 	}
-	/sbin/watchdog -T 60 -t 50 /dev/watchdog
+	/sbin/watchdog -T 63 -t 50 /dev/watchdog
 	[ -x /usr/bin/schedtool ] && /usr/bin/schedtool -R -p 60 -n -20 $(pidof watchdog)
 }
 
