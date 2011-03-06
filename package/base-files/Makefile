@@ -324,9 +324,6 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
 
-define Build/Compile/Default
-endef
-
 LIBGCC_A=$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc_pic.a)
 LIBGCC_MAP=$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.map)
 BUILD_LIBGCC:=$(if $(CONFIG_avr32)$(CONFIG_m68k),,$(PKG_BUILD_DIR)/libgcc_s.so.*)
@@ -375,11 +372,11 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endif
 endif
 
-define Build/Compile
-	$(call Build/Compile/Default)
+define Build/Compile/Default
 	$(call Build/Compile/libgcc)
 	$(call Build/Compile/$(LIBC))
 endef
+Build/Compile = $(Build/Compile/Default)
 
 define Package/base-files/install
 	$(CP) ./files/* $(1)/
