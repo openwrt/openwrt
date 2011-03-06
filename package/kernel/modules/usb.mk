@@ -112,7 +112,7 @@ define KernelPackage/musb-hdrc
 	CONFIG_USB_MUSB_DEBUG=y
   DEPENDS:=@TARGET_omap24xx
   FILES:=$(LINUX_DIR)/drivers/usb/musb/musb_hdrc.ko
-  AUTOLOAD:=$(call AutoLoad,55,musb_hdrc)
+  AUTOLOAD:=$(call AutoLoad,46,musb_hdrc)
   $(call AddDepends/usb)
 endef
 
@@ -129,7 +129,7 @@ define KernelPackage/nop-usb-xceiv
 	CONFIG_NOP_USB_XCEIV
   DEPENDS:=@TARGET_omap24xx
   FILES:=$(LINUX_DIR)/drivers/usb/otg/nop-usb-xceiv.ko
-  AUTOLOAD:=$(call AutoLoad,53,nop-usb-xceiv)
+  AUTOLOAD:=$(call AutoLoad,45,nop-usb-xceiv)
   $(call AddDepends/usb)
 endef
 
@@ -164,7 +164,7 @@ define KernelPackage/usb-tahvo
 	CONFIG_USB_GADGET_DEBUG_FS=n
   DEPENDS:=@TARGET_omap24xx +kmod-tusb6010 +kmod-usb-gadget
   FILES:=$(LINUX_DIR)/drivers/cbus/tahvo-usb.ko
-  AUTOLOAD:=$(call AutoLoad,54,tahvo-usb)
+  AUTOLOAD:=$(call AutoLoad,45,tahvo-usb)
   $(call AddDepends/usb)
 endef
 
