@@ -1,15 +1,51 @@
 Index: linux-2.6.38-rc7/drivers/cbus/tahvo-usb.c
 ===================================================================
 --- linux-2.6.38-rc7.orig/drivers/cbus/tahvo-usb.c	2011-03-06 23:00:14.411191087 +0100
-+++ linux-2.6.38-rc7/drivers/cbus/tahvo-usb.c	2011-03-06 23:00:16.571473834 +0100
-@@ -98,6 +98,7 @@ struct tahvo_usb {
++++ linux-2.6.38-rc7/drivers/cbus/tahvo-usb.c	2011-03-06 23:43:26.524751556 +0100
+@@ -98,8 +98,9 @@ struct tahvo_usb {
  #ifdef CONFIG_USB_OTG
  	int tahvo_mode;
  #endif
 +	struct clk *ick;
  };
- static struct platform_device tahvo_usb_device;
+-static struct platform_device tahvo_usb_device;
++static struct tahvo_usb *tahvo_usb_device;
  
+ /*
+  * ---------------------------------------------------------------------------
+@@ -114,8 +115,7 @@ static struct platform_device *tahvo_otg
+ 
+ static irqreturn_t omap_otg_irq(int irq, void *arg)
+ {
+-	struct platform_device *otg_dev = arg;
+-	struct tahvo_usb *tu = platform_get_drvdata(otg_dev);
++	struct tahvo_usb *tu = arg;
+ 	u16 otg_irq;
+ 
+ 	otg_irq = omap_readw(OTG_IRQ_SRC);
+@@ -201,12 +201,12 @@ static int __init omap_otg_probe(struct
+ 
+ 	return request_irq(tahvo_otg_dev->resource[1].start,
+ 			   omap_otg_irq, IRQF_DISABLED, DRIVER_NAME,
+-			   &tahvo_usb_device);
++			   tahvo_usb_device);
+ }
+ 
+ static int __exit omap_otg_remove(struct platform_device *pdev)
+ {
+-	free_irq(tahvo_otg_dev->resource[1].start, &tahvo_usb_device);
++	free_irq(tahvo_otg_dev->resource[1].start, tahvo_usb_device);
+ 	tahvo_otg_dev = NULL;
+ 
+ 	return 0;
+@@ -659,6 +659,7 @@ static int __init tahvo_usb_probe(struct
+ 	tu = kzalloc(sizeof(*tu), GFP_KERNEL);
+ 	if (!tu)
+ 		return -ENOMEM;
++	tahvo_usb_device = tu;
+ 
+ 	tu->pt_dev = container_of(dev, struct platform_device, dev);
+ #ifdef CONFIG_USB_OTG
 @@ -673,6 +674,14 @@ static int __init tahvo_usb_probe(struct
  	INIT_WORK(&tu->irq_work, tahvo_usb_irq_work);
  	mutex_init(&tu->serialize);
@@ -49,7 +85,7 @@ Index: linux-2.6.38-rc7/drivers/cbus/tahvo-usb.c
  	}
  
  	dev_set_drvdata(dev, tu);
-@@ -719,10 +725,22 @@ static int __init tahvo_usb_probe(struct
+@@ -719,10 +725,23 @@ static int __init tahvo_usb_probe(struct
  	 * may not be generated in addition to this. */
  	schedule_work(&tu->irq_work);
  	return 0;
@@ -61,6 +97,7 @@ Index: linux-2.6.38-rc7/drivers/cbus/tahvo-usb.c
 +	clk_put(tu->ick);
 +err_free_tu:
 +	kfree(tu);
++	tahvo_usb_device = NULL;
 +
 +	return ret;
  }
@@ -72,7 +109,7 @@ Index: linux-2.6.38-rc7/drivers/cbus/tahvo-usb.c
  	dev_dbg(&pdev->dev, "remove\n");
  
  	tahvo_free_irq(TAHVO_INT_VBUSON);
-@@ -732,6 +750,11 @@ static int __exit tahvo_usb_remove(struc
+@@ -732,6 +751,12 @@ static int __exit tahvo_usb_remove(struc
  #ifdef CONFIG_USB_OTG
  	device_remove_file(&pdev->dev, &dev_attr_otg_mode);
  #endif
@@ -80,6 +117,7 @@ Index: linux-2.6.38-rc7/drivers/cbus/tahvo-usb.c
 +	clk_put(tu->ick);
 +
 +	kfree(tu);
++	tahvo_usb_device = NULL;
 +
  	return 0;
  }
