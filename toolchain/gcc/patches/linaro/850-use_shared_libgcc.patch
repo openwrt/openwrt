@@ -24,7 +24,7 @@
  #define LINUX_TARGET_LINK_SPEC  "%{h*} %{version:-v} \
 --- a/gcc/config/linux.h
 +++ b/gcc/config/linux.h
-@@ -104,6 +104,10 @@ see the files COPYING3 and COPYING.RUNTI
+@@ -104,6 +104,10 @@
  #define USE_LD_AS_NEEDED 1
  #endif
  
@@ -35,3 +35,43 @@
  /* Determine which dynamic linker to use depending on whether GLIBC or
     uClibc is the default C library and whether -muclibc or -mglibc has
     been passed to change the default.  */
+--- a/gcc/config/rs6000/ppc-asm.h
++++ b/gcc/config/rs6000/ppc-asm.h
+@@ -325,8 +325,7 @@
+ FUNC_NAME(name):
+ 
+ #define HIDDEN_FUNC(name) \
+-  FUNC_START(name) \
+-  .hidden FUNC_NAME(name);
++  FUNC_START(name);
+ 
+ #define FUNC_END(name) \
+ GLUE(.L,name): \
+--- a/gcc/mkmap-symver.awk
++++ b/gcc/mkmap-symver.awk
+@@ -132,5 +132,5 @@
+   else if (inherit[lib])
+     printf("} %s;\n", inherit[lib]);
+   else
+-    printf ("\n  local:\n\t*;\n};\n");
++    printf ("\n\t*;\n};\n");
+ }
+--- a/libgcc/config/rs6000/t-ppccomm
++++ b/libgcc/config/rs6000/t-ppccomm
+@@ -1,4 +1,4 @@
+-LIB2ADD_ST += crtsavfpr.S crtresfpr.S \
++LIB2ADD += crtsavfpr.S crtresfpr.S \
+   crtsavgpr.S crtresgpr.S \
+   crtresxfpr.S crtresxgpr.S \
+   e500crtres32gpr.S \
+--- a/libgcc/Makefile.in
++++ b/libgcc/Makefile.in
+@@ -265,7 +265,7 @@
+ # For -fvisibility=hidden.  We need both a -fvisibility=hidden on
+ # the command line, and a #define to prevent libgcc2.h etc from
+ # overriding that with #pragmas.
+-vis_hide = @vis_hide@
++vis_hide =
+ 
+ ifneq (,$(vis_hide))
+ 
