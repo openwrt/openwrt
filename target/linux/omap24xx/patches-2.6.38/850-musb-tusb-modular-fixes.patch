@@ -1,0 +1,147 @@
+Index: linux-2.6.38-rc7/drivers/Makefile
+===================================================================
+--- linux-2.6.38-rc7.orig/drivers/Makefile	2011-03-06 18:50:23.464476877 +0100
++++ linux-2.6.38-rc7/drivers/Makefile	2011-03-06 18:51:09.485478381 +0100
+@@ -66,7 +66,7 @@ obj-$(CONFIG_TC)		+= tc/
+ obj-$(CONFIG_UWB)		+= uwb/
+ obj-$(CONFIG_USB_OTG_UTILS)	+= usb/otg/
+ obj-$(CONFIG_USB)		+= usb/
+-obj-$(CONFIG_USB_MUSB_HDRC)	+= usb/musb/
++obj-y				+= usb/musb/
+ obj-$(CONFIG_PCI)		+= usb/
+ obj-$(CONFIG_USB_GADGET)	+= usb/gadget/
+ obj-$(CONFIG_SERIO)		+= input/serio/
+Index: linux-2.6.38-rc7/drivers/usb/musb/Kconfig
+===================================================================
+--- linux-2.6.38-rc7.orig/drivers/usb/musb/Kconfig	2011-03-06 18:50:23.514483397 +0100
++++ linux-2.6.38-rc7/drivers/usb/musb/Kconfig	2011-03-06 18:51:09.486478512 +0100
+@@ -46,7 +46,7 @@ config USB_MUSB_DA8XX
+ 	depends on ARCH_DAVINCI_DA8XX
+ 
+ config USB_MUSB_TUSB6010
+-	bool "TUSB6010"
++	tristate "TUSB6010"
+ 	depends on ARCH_OMAP
+ 
+ config USB_MUSB_OMAP2PLUS
+Index: linux-2.6.38-rc7/drivers/usb/musb/tusb6010.c
+===================================================================
+--- linux-2.6.38-rc7.orig/drivers/usb/musb/tusb6010.c	2011-03-06 18:50:23.497481181 +0100
++++ linux-2.6.38-rc7/drivers/usb/musb/tusb6010.c	2011-03-06 18:51:09.487478643 +0100
+@@ -55,6 +55,7 @@ u8 tusb_get_revision(struct musb *musb)
+ 
+ 	return rev;
+ }
++EXPORT_SYMBOL(tusb_get_revision);
+ 
+ static int tusb_print_revision(struct musb *musb)
+ {
+@@ -218,6 +219,7 @@ void musb_write_fifo(struct musb_hw_ep *
+ 	if (len > 0)
+ 		tusb_fifo_write_unaligned(fifo, buf, len);
+ }
++EXPORT_SYMBOL(musb_write_fifo);
+ 
+ void musb_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *buf)
+ {
+@@ -264,6 +266,7 @@ void musb_read_fifo(struct musb_hw_ep *h
+ 	if (len > 0)
+ 		tusb_fifo_read_unaligned(fifo, buf, len);
+ }
++EXPORT_SYMBOL(musb_read_fifo);
+ 
+ static struct musb *the_musb;
+ 
+@@ -1259,18 +1262,16 @@ static struct platform_driver tusb_drive
+ 	},
+ };
+ 
+-MODULE_DESCRIPTION("TUSB6010 MUSB Glue Layer");
+-MODULE_AUTHOR("Felipe Balbi <balbi@ti.com>");
+-MODULE_LICENSE("GPL v2");
++//MODULE_DESCRIPTION("TUSB6010 MUSB Glue Layer");
++//MODULE_AUTHOR("Felipe Balbi <balbi@ti.com>");
++//MODULE_LICENSE("GPL v2");
+ 
+-static int __init tusb_init(void)
++int musb_hdrc_glue_init(void)
+ {
+ 	return platform_driver_probe(&tusb_driver, tusb_probe);
+ }
+-subsys_initcall(tusb_init);
+ 
+-static void __exit tusb_exit(void)
++void musb_hdrc_glue_exit(void)
+ {
+ 	platform_driver_unregister(&tusb_driver);
+ }
+-module_exit(tusb_exit);
+Index: linux-2.6.38-rc7/drivers/usb/musb/Makefile
+===================================================================
+--- linux-2.6.38-rc7.orig/drivers/usb/musb/Makefile	2011-03-06 18:50:23.481479093 +0100
++++ linux-2.6.38-rc7/drivers/usb/musb/Makefile	2011-03-06 18:51:09.487478643 +0100
+@@ -13,13 +13,13 @@ musb_hdrc-$(CONFIG_USB_MUSB_HDRC_HCD)		+
+ musb_hdrc-$(CONFIG_DEBUG_FS)			+= musb_debugfs.o
+ 
+ # Hardware Glue Layer
+-obj-$(CONFIG_USB_MUSB_OMAP2PLUS)		+= omap2430.o
+-obj-$(CONFIG_USB_MUSB_AM35X)			+= am35x.o
+-obj-$(CONFIG_USB_MUSB_TUSB6010)			+= tusb6010.o
+-obj-$(CONFIG_USB_MUSB_DAVINCI)			+= davinci.o
+-obj-$(CONFIG_USB_MUSB_DA8XX)			+= da8xx.o
+-obj-$(CONFIG_USB_MUSB_BLACKFIN)			+= blackfin.o
+-obj-$(CONFIG_USB_MUSB_UX500)			+= ux500.o
++musb_hdrc-$(CONFIG_USB_MUSB_OMAP2PLUS)		+= omap2430.o
++musb_hdrc-$(CONFIG_USB_MUSB_AM35X)		+= am35x.o
++musb_hdrc-$(CONFIG_USB_MUSB_TUSB6010)		+= tusb6010.o
++musb_hdrc-$(CONFIG_USB_MUSB_DAVINCI)		+= davinci.o
++musb_hdrc-$(CONFIG_USB_MUSB_DA8XX)		+= da8xx.o
++musb_hdrc-$(CONFIG_USB_MUSB_BLACKFIN)		+= blackfin.o
++musb_hdrc-$(CONFIG_USB_MUSB_UX500)		+= ux500.o
+ 
+ # the kconfig must guarantee that only one of the
+ # possible I/O schemes will be enabled at a time ...
+Index: linux-2.6.38-rc7/drivers/usb/musb/musb_core.c
+===================================================================
+--- linux-2.6.38-rc7.orig/drivers/usb/musb/musb_core.c	2011-03-06 18:50:23.538486528 +0100
++++ linux-2.6.38-rc7/drivers/usb/musb/musb_core.c	2011-03-06 18:51:09.489478904 +0100
+@@ -2427,8 +2427,13 @@ static struct platform_driver musb_drive
+ 
+ /*-------------------------------------------------------------------------*/
+ 
++extern int musb_hdrc_glue_init(void);
++extern void musb_hdrc_glue_exit(void);
++
+ static int __init musb_init(void)
+ {
++	int err;
++
+ #ifdef CONFIG_USB_MUSB_HDRC_HCD
+ 	if (usb_disabled())
+ 		return 0;
+@@ -2456,7 +2461,17 @@ static int __init musb_init(void)
+ #endif
+ 		", debug=%d\n",
+ 		musb_driver_name, musb_debug);
+-	return platform_driver_probe(&musb_driver, musb_probe);
++
++	err = musb_hdrc_glue_init();
++	if (err)
++		return err;
++	err = platform_driver_probe(&musb_driver, musb_probe);
++	if (err) {
++		musb_hdrc_glue_exit();
++		return err;
++	}
++
++	return 0;
+ }
+ 
+ /* make us init after usbcore and i2c (transceivers, regulators, etc)
+@@ -2467,5 +2482,6 @@ fs_initcall(musb_init);
+ static void __exit musb_cleanup(void)
+ {
+ 	platform_driver_unregister(&musb_driver);
++	musb_hdrc_glue_exit();
+ }
+ module_exit(musb_cleanup);
