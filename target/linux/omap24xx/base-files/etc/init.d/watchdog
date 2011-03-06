@@ -1,13 +1,15 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2008-2010 OpenWrt.org
 
-START=97
+START=25
+
 start() {
-	if ! [ -c /dev/watchdog -a -x /sbin/watchdog ]; then
+	[ -c /dev/watchdog -a -x /sbin/watchdog ] || {
 		echo "WARNING: Watchdog not available. System will reboot soon!"
-	else
-		/sbin/watchdog -T 63 -t 53 /dev/watchdog
-	fi
+		return 1
+	}
+	/sbin/watchdog -T 60 -t 50 /dev/watchdog
+	[ -x /usr/bin/schedtool ] && /usr/bin/schedtool -R -p 60 -n -20 $(pidof watchdog)
 }
 
 stop() {
