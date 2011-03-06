@@ -15,7 +15,7 @@ PKG_MD5SUM:=23568a603c913b80076abe3c23521573
 
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).tar.gz
 PKG_INSTALL:=1
-PKG_FIXUP = libtool
+PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/nls.mk
