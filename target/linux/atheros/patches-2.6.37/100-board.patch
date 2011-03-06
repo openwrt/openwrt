@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -100,6 +100,19 @@ config BCM63XX
+@@ -102,6 +102,19 @@ config BCM63XX
  	help
  	 Support for BCM63XX based boards
  
@@ -20,7 +20,7 @@
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select CEVT_R4K
-@@ -714,6 +727,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+@@ -716,6 +729,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
  
  endchoice
  
@@ -619,7 +619,7 @@
 +#endif /* __ASM_MACH_GENERIC_DMA_COHERENCE_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/gpio.h
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,84 @@
 +#ifndef _ATHEROS_GPIO_H_
 +#define _ATHEROS_GPIO_H_
 +
@@ -694,6 +694,11 @@
 +/* Returns gpio for IRQ attached.  Unchecked function */
 +static inline int irq_to_gpio(unsigned irq) {
 +	return (irq - (AR531X_GPIO_IRQ(0)));
++}
++
++static inline int gpio_set_debounce(unsigned gpio, unsigned debounce)
++{
++	return -ENOSYS;
 +}
 +
 +#include <asm-generic/gpio.h> /* cansleep wrappers */
