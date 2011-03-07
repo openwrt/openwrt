@@ -73,26 +73,23 @@ endif
 ifeq ($(ARCH),i686)
   HAL_TARGET:=i386-elf
 endif
-ifeq ($(BOARD),ixp4xx)
+ifeq ($(ARCH),armeb)
   HAL_TARGET:=xscale-be-elfgnueabi
 endif
-ifeq ($(BOARD),iop32x)
+ifneq ($(ARCH),arm)
   HAL_TARGET:=xscale-le-elfgnueabi
-endif
-ifeq ($(BOARD),kirkwood)
-  HAL_TARGET:=xscale-le-elfgnueabi
-endif
-ifeq ($(BOARD),orion)
-  HAL_TARGET:=xscale-le-elfgnueabi
-endif
-ifeq ($(BOARD),cns3xxx)
-  HAL_TARGET:=arm11-le-elfgnueabi
+  ifeq ($(BOARD),cns21xx)
+    HAL_TARGET:=armv4-le-elfgnueabi
+  endif
+  ifeq ($(BOARD),cns3xxx)
+    HAL_TARGET:=arm11-le-elfgnueabi
+  endif
+  ifeq ($(BOARD),gemini)
+    HAL_TARGET:=armv4-le-elfgnueabi
+  endif
 endif
 ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
-endif
-ifeq ($(BOARD),gemini)
-  HAL_TARGET:=armv4-le-elfgnueabi
 endif
 ifneq ($(CONFIG_TARGET_atheros),)
   HAL_TARGET:=wisoc
