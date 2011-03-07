@@ -1,0 +1,26 @@
+--- a/ldso/ldso/powerpc/elfinterp.c
++++ b/ldso/ldso/powerpc/elfinterp.c
+@@ -293,22 +293,17 @@
+ 		break;
+ #endif
+ 	case R_PPC_REL24:
+-#if 0
+ 		{
+ 			Elf32_Sword delta = finaladdr - (Elf32_Word)reloc_addr;
+ 			if (unlikely(delta<<6>>6 != delta)) {
+ 				_dl_dprintf(2, "%s: symbol '%s' R_PPC_REL24 is out of range.\n\t"
+ 						"Compile shared libraries with -fPIC!\n",
+ 						_dl_progname, symname);
+-				_dl_exit(1);
++				return -1;
+ 			}
+ 			*reloc_addr = (*reloc_addr & 0xfc000003) | (delta & 0x3fffffc);
+ 			break;
+ 		}
+-#else
+-		_dl_dprintf(2,"R_PPC_REL24: Compile shared libraries with -fPIC!\n");
+-		return -1;
+-#endif
+ 	case R_PPC_NONE:
+ 		goto out_nocode; /* No code code modified */
+ 	default:
