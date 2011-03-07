@@ -1,8 +1,8 @@
-Index: linux-2.6.38-rc6/arch/arm/mach-omap2/serial.c
+Index: linux-2.6.38-rc7/arch/arm/mach-omap2/serial.c
 ===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/serial.c	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/serial.c	2011-02-26 22:17:38.356027926 +0100
-@@ -655,6 +655,8 @@
+--- linux-2.6.38-rc7.orig/arch/arm/mach-omap2/serial.c	2011-03-07 17:24:16.786259530 +0100
++++ linux-2.6.38-rc7/arch/arm/mach-omap2/serial.c	2011-03-07 17:24:18.951998600 +0100
+@@ -660,6 +660,8 @@ static void serial_out_override(struct u
  }
  #endif
  
@@ -11,7 +11,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/serial.c
  void __init omap_serial_early_init(void)
  {
  	int i = 0;
-@@ -670,9 +672,9 @@
+@@ -675,9 +677,9 @@ void __init omap_serial_early_init(void)
  		if (!oh)
  			break;
  

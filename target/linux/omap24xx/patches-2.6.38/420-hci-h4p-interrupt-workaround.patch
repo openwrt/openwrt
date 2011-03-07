@@ -1,0 +1,58 @@
+Index: linux-2.6.38-rc7/arch/arm/mach-omap2/omap_hwmod_2420_data.c
+===================================================================
+--- linux-2.6.38-rc7.orig/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-03-07 16:07:00.174343135 +0100
++++ linux-2.6.38-rc7/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-03-07 16:09:15.601997493 +0100
+@@ -362,7 +362,7 @@ static struct omap_hwmod_class uart_clas
+ /* UART1 */
+ 
+ static struct omap_hwmod_irq_info uart1_mpu_irqs[] = {
+-	{ .irq = INT_24XX_UART1_IRQ, },
++	{ .irq = 0, },
+ };
+ 
+ static struct omap_hwmod_dma_info uart1_sdma_reqs[] = {
+Index: linux-2.6.38-rc7/arch/arm/mach-omap2/serial.c
+===================================================================
+--- linux-2.6.38-rc7.orig/arch/arm/mach-omap2/serial.c	2011-03-07 16:06:21.934958270 +0100
++++ linux-2.6.38-rc7/arch/arm/mach-omap2/serial.c	2011-03-07 16:08:59.649922915 +0100
+@@ -546,10 +546,12 @@ static void omap_uart_idle_init(struct o
+ 		uart->padconf = 0;
+ 	}
+ 
+-	uart->irqflags |= IRQF_SHARED;
+-	ret = request_threaded_irq(uart->irq, NULL, omap_uart_interrupt,
+-				   IRQF_SHARED, "serial idle", (void *)uart);
+-	WARN_ON(ret);
++	if (uart->irq) {
++		uart->irqflags |= IRQF_SHARED;
++		ret = request_threaded_irq(uart->irq, NULL, omap_uart_interrupt,
++					   IRQF_SHARED, "serial idle", (void *)uart);
++		WARN_ON(ret);
++	}
+ }
+ 
+ void omap_uart_enable_irqs(int enable)
+@@ -560,14 +562,17 @@ void omap_uart_enable_irqs(int enable)
+ 	list_for_each_entry(uart, &uart_list, node) {
+ 		if (enable) {
+ 			pm_runtime_put_sync(&uart->pdev->dev);
+-			ret = request_threaded_irq(uart->irq, NULL,
+-						   omap_uart_interrupt,
+-						   IRQF_SHARED,
+-						   "serial idle",
+-						   (void *)uart);
++			if (uart->irq) {
++				ret = request_threaded_irq(uart->irq, NULL,
++							   omap_uart_interrupt,
++							   IRQF_SHARED,
++							   "serial idle",
++							   (void *)uart);
++			}
+ 		} else {
+ 			pm_runtime_get_noresume(&uart->pdev->dev);
+-			free_irq(uart->irq, (void *)uart);
++			if (uart->irq)
++				free_irq(uart->irq, (void *)uart);
+ 		}
+ 	}
+ }
