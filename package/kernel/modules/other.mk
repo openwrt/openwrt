@@ -55,6 +55,22 @@ endef
 $(eval $(call KernelPackage,bluetooth))
 
 
+define KernelPackage/bluetooth-hci-h4p
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=HCI driver with H4 Nokia extensions
+  DEPENDS:=@TARGET_omap24xx +kmod-bluetooth
+  KCONFIG:=CONFIG_BT_HCIH4P
+  FILES:=$(LINUX_DIR)/drivers/bluetooth/hci_h4p/hci_h4p.ko
+  AUTOLOAD:=$(call AutoLoad,91,hci_h4p)
+endef
+
+define KernelPackage/bluetooth-hci-h4p/description
+  HCI driver with H4 Nokia extensions
+endef
+
+$(eval $(call KernelPackage,bluetooth-hci-h4p))
+
+
 define KernelPackage/cpu-msr
   SUBMENU:=$(OTHER_MENU)
   TITLE:=x86 CPU MSR support
