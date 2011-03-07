@@ -74,25 +74,25 @@ ifeq ($(ARCH),i686)
   HAL_TARGET:=i386-elf
 endif
 ifeq ($(BOARD),ixp4xx)
-  HAL_TARGET:=xscale-be-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+  HAL_TARGET:=xscale-be-elfgnueabi
 endif
 ifeq ($(BOARD),iop32x)
-  HAL_TARGET:=xscale-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+  HAL_TARGET:=xscale-le-elfgnueabi
 endif
 ifeq ($(BOARD),kirkwood)
-  HAL_TARGET:=xscale-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+  HAL_TARGET:=xscale-le-elfgnueabi
 endif
 ifeq ($(BOARD),orion)
-  HAL_TARGET:=xscale-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+  HAL_TARGET:=xscale-le-elfgnueabi
 endif
 ifeq ($(BOARD),cns3xxx)
-  HAL_TARGET:=arm11-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+  HAL_TARGET:=arm11-le-elfgnueabi
 endif
 ifeq ($(ARCH),powerpc)
   HAL_TARGET:=powerpc-be-elf
 endif
 ifeq ($(BOARD),gemini)
-  HAL_TARGET:=armv4-le-elf$(if $(CONFIG_EABI_SUPPORT),gnueabi)
+  HAL_TARGET:=armv4-le-elfgnueabi
 endif
 ifneq ($(CONFIG_TARGET_atheros),)
   HAL_TARGET:=wisoc
