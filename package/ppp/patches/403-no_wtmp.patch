@@ -1,0 +1,18 @@
+--- a/pppd/sys-linux.c
++++ b/pppd/sys-linux.c
+@@ -2237,6 +2237,7 @@ int ppp_available(void)
+ 
+ void logwtmp (const char *line, const char *name, const char *host)
+ {
++#if 0
+     struct utmp ut, *utp;
+     pid_t  mypid = getpid();
+ #if __GLIBC__ < 2
+@@ -2302,6 +2303,7 @@ void logwtmp (const char *line, const ch
+ 	close (wtmp);
+     }
+ #endif
++#endif
+ }
+ 
+ 

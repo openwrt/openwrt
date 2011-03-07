@@ -1,0 +1,92 @@
+--- a/pppd/sys-linux.c
++++ b/pppd/sys-linux.c
+@@ -203,7 +203,7 @@ static int driver_is_old       = 0;
+ static int restore_term        = 0;	/* 1 => we've munged the terminal */
+ static struct termios inittermios;	/* Initial TTY termios */
+ 
+-int new_style_driver = 0;
++static const int new_style_driver = 1;
+ 
+ static char loop_name[20];
+ static unsigned char inbuf[512]; /* buffer for chars read from loopback */
+@@ -220,8 +220,8 @@ static int	looped;			/* 1 if using loop 
+ static int	link_mtu;		/* mtu for the link (not bundle) */
+ 
+ static struct utsname utsname;	/* for the kernel version */
+-static int kernel_version;
+ #define KVERSION(j,n,p)	((j)*1000000 + (n)*1000 + (p))
++static const int kernel_version = KVERSION(2,6,37);
+ 
+ #define MAX_IFS		100
+ 
+@@ -1414,11 +1414,12 @@ int ccp_fatal_error (int unit)
+  *
+  * path_to_procfs - find the path to the proc file system mount point
+  */
+-static char proc_path[MAXPATHLEN];
+-static int proc_path_len;
++static char proc_path[MAXPATHLEN] = "/proc";
++static int proc_path_len = 5;
+ 
+ static char *path_to_procfs(const char *tail)
+ {
++#if 0
+     struct mntent *mntent;
+     FILE *fp;
+ 
+@@ -1440,6 +1441,7 @@ static char *path_to_procfs(const char *
+ 	    fclose (fp);
+ 	}
+     }
++#endif
+ 
+     strlcpy(proc_path + proc_path_len, tail,
+ 	    sizeof(proc_path) - proc_path_len);
+@@ -2098,11 +2100,13 @@ int ppp_available(void)
+ 	"ppp.o exists in /lib/modules/`uname -r`/net.\n"
+ 	"See README.linux file in the ppp distribution for more details.\n";
+ 
++#if 0
+     /* get the kernel version now, since we are called before sys_init */
+     uname(&utsname);
+     osmaj = osmin = ospatch = 0;
+     sscanf(utsname.release, "%d.%d.%d", &osmaj, &osmin, &ospatch);
+     kernel_version = KVERSION(osmaj, osmin, ospatch);
++#endif
+ 
+     fd = open("/dev/ppp", O_RDWR);
+ #if 0
+@@ -2121,7 +2125,9 @@ int ppp_available(void)
+     }
+ #endif /* 0 */
+     if (fd >= 0) {
++#if 0
+ 	new_style_driver = 1;
++#endif
+ 
+ 	/* XXX should get from driver */
+ 	driver_version = 2;
+@@ -2168,6 +2174,7 @@ int ppp_available(void)
+ 
+     if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
+ 	ok = 0;
++	return ok;
+ 
+ /*
+  *  This is the PPP device. Validate the version of the driver at this
+@@ -2659,6 +2666,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+     }
+ #endif /* TIOCGPTN */
+ 
++#if 0
+     if (sfd < 0) {
+ 	/* the old way - scan through the pty name space */
+ 	for (i = 0; i < 64; ++i) {
+@@ -2677,6 +2685,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+ 	    }
+ 	}
+     }
++#endif
+ 
+     if (sfd < 0)
+ 	return 0;
