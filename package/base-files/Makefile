@@ -326,9 +326,12 @@ endef
 
 LIBGCC_A=$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc_pic.a)
 LIBGCC_MAP=$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.map)
-BUILD_LIBGCC:=$(if $(CONFIG_avr32)$(CONFIG_m68k),,$(PKG_BUILD_DIR)/libgcc_s.so.*)
-
+LIBGCC_SO=$(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so.*)
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
+  BUILD_LIBGCC:=$(if $(CONFIG_avr32)$(CONFIG_m68k)$(CONFIG_powerpc),,$(PKG_BUILD_DIR)/libgcc_s.so.*)
+endif
+
+ifneq ($(BUILD_LIBGCC),)
   define Build/Compile/uClibc
 	$(SCRIPT_DIR)/relink-lib.sh \
 		"$(TARGET_CROSS)" \
@@ -360,14 +363,26 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 		-ldl $(BUILD_LIBGCC) \
 		-Wl,-soname=libpthread.so.0
   endef
-  ifneq ($(BUILD_LIBGCC),)
-    define Build/Compile/libgcc
+  define Build/Compile/libgcc
 	$(SCRIPT_DIR)/relink-lib.sh \
 		"$(TARGET_CROSS)" \
-		"$(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so.*)" \
+		"$(LIBGCC_SO)" \
 		"$(LIBGCC_A)" \
-		"$(patsubst $(TOOLCHAIN_DIR)/lib/%,$(PKG_BUILD_DIR)/%,$(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so.*))" \
+		"$(patsubst $(TOOLCHAIN_DIR)/lib/%,$(PKG_BUILD_DIR)/%,$(LIBGCC_SO))" \
 		-Wl,--version-script=$(LIBGCC_MAP) -Wl,-soname=libgcc_s.so.1
+  endef
+else
+  define Build/Compile/uClibc
+	$(CP) \
+		$(TOOLCHAIN_DIR)/lib/libuClibc-*.so \
+		$(TOOLCHAIN_DIR)/lib/libcrypt-*.so \
+		$(TOOLCHAIN_DIR)/lib/libm-*.so \
+		$(TOOLCHAIN_DIR)/lib/libpthread-*.so \
+		$(PKG_BUILD_DIR)/
+  endef
+  ifneq ($(LIBGCC_SO),)
+    define Build/Compile/libgcc
+	$(CP) $(LIBGCC_SO) $(PKG_BUILD_DIR)/
     endef
   endif
 endif
