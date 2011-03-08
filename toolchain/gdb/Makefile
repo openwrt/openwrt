@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006-2009 OpenWrt.org
+#
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=7.2
+PKG_VERSION:=linaro-7.2-2011.03-0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=64260e6c56979ee750a01055f16091a5
-PKG_SOURCE_URL:=@GNU/gdb
+PKG_MD5SUM:=747b655418058964451eff7c7a15013c
+PKG_SOURCE_URL:=http://launchpad.net/gdb-linaro/7.2/7.2-2011.03-0/+download/
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
