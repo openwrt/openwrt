@@ -357,7 +357,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libpthread_so.a)" \
 		"$(patsubst $(TOOLCHAIN_DIR)/lib/%,$(PKG_BUILD_DIR)/%,$(wildcard $(TOOLCHAIN_DIR)/lib/libpthread-*.so))" \
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
-		$(BUILD_LIBGCC) \
+		-ldl $(BUILD_LIBGCC) \
 		-Wl,-soname=libpthread.so.0
   endef
   ifneq ($(BUILD_LIBGCC),)
