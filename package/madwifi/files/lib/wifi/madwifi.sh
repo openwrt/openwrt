@@ -1,10 +1,36 @@
 #!/bin/sh
 append DRIVERS "atheros"
 
+find_atheros_phy() {
+	local device="$1"
+
+	local macaddr="$(config_get "$device" macaddr | tr 'A-Z' 'a-z')"
+	config_get phy "$device" phy
+	[ -z "$phy" -a -n "$macaddr" ] && {
+		cd /proc/sys/dev
+		for phy in $(ls -d wifi* 2>&-); do
+			[ "$macaddr" = "$(cat /sys/class/net/${phy}/address)" ] || continue
+			config_set "$device" phy "$phy"
+			break
+		done
+		config_get phy "$device" phy
+	}
+	[ -n "$phy" -a -d "/proc/sys/dev/$phy" ] || {
+		echo "phy for wifi device $1 not found"
+		return 1
+	}
+	[ -z "$macaddr" ] && {
+		config_set "$device" macaddr "$(cat /sys/class/net/${phy}/address)"
+	}
+	return 0
+}
+
 scan_atheros() {
 	local device="$1"
 	local wds
 	local adhoc ahdemo sta ap monitor
+
+	[ ${device%[0-9]} = "wifi" ] && config_set "$device" phy "$device"
 	
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
@@ -49,12 +75,15 @@ scan_atheros() {
 disable_atheros() (
 	local device="$1"
 
+	find_atheros_phy "$device" || return 0
+	config_get phy "$device" phy
+
 	set_wifi_down "$device"
 	
 	include /lib/network
 	cd /proc/sys/net
 	for dev in *; do
-		grep "$device" "$dev/%parent" >/dev/null 2>/dev/null && {
+		grep "$phy" "$dev/%parent" >/dev/null 2>/dev/null && {
 			[ -f "/var/run/wifi-${dev}.pid" ] &&
 				kill "$(cat "/var/run/wifi-${dev}.pid")"
 			ifconfig "$dev" down
@@ -68,15 +97,18 @@ disable_atheros() (
 enable_atheros() {
 	local device="$1"
 
+	find_atheros_phy "$device" || return 0
+	config_get phy "$device" phy
+
 	config_get regdomain "$device" regdomain
-	[ -n "$regdomain" ] && echo "$regdomain" > /proc/sys/dev/$device/regdomain
+	[ -n "$regdomain" ] && echo "$regdomain" > /proc/sys/dev/$phy/regdomain
 
 	config_get country "$device" country
 	[ -z "$country" ] && country="0"
-	echo "$country" > /proc/sys/dev/$device/countrycode
+	echo "$country" > /proc/sys/dev/$phy/countrycode
 
 	config_get_bool outdoor "$device" outdoor "0"
-	echo "$outdoor" > /proc/sys/dev/$device/outdoor
+	echo "$outdoor" > /proc/sys/dev/$phy/outdoor
 
 	config_get channel "$device" channel
 	config_get vifs "$device" vifs
@@ -90,7 +122,7 @@ enable_atheros() {
 	config_get_bool softled "$device" softled
 	config_get antenna "$device" antenna
 
-	devname="$(cat /proc/sys/dev/$device/dev_name)"
+	devname="$(cat /proc/sys/dev/$phy/dev_name)"
 	local antgpio=
 	local invert=
 	case "$devname" in
@@ -146,13 +178,13 @@ enable_atheros() {
 		esac
 	fi
 
-	[ -n "$antdiv" ] && sysctl -w dev."$device".diversity="$antdiv" >&-
-	[ -n "$antrx" ] && sysctl -w dev."$device".rxantenna="$antrx" >&-
-	[ -n "$anttx" ] && sysctl -w dev."$device".txantenna="$anttx" >&-
-	[ -n "$softled" ] && sysctl -w dev."$device".softled="$softled" >&-
+	[ -n "$antdiv" ] && sysctl -w dev."$phy".diversity="$antdiv" >&-
+	[ -n "$antrx" ] && sysctl -w dev."$phy".rxantenna="$antrx" >&-
+	[ -n "$anttx" ] && sysctl -w dev."$phy".txantenna="$anttx" >&-
+	[ -n "$softled" ] && sysctl -w dev."$phy".softled="$softled" >&-
 
 	config_get distance "$device" distance
-	[ -n "$distance" ] && sysctl -w dev."$device".distance="$distance" >&-
+	[ -n "$distance" ] && sysctl -w dev."$phy".distance="$distance" >&-
 
 	for vif in $vifs; do
 		local start_hostapd= vif_txpower= nosbeacon=
@@ -167,7 +199,7 @@ enable_atheros() {
 		esac
 		
 		[ "$nosbeacon" = 1 ] || nosbeacon=""
-		ifname=$(wlanconfig "$ifname" create wlandev "$device" wlanmode "$mode" ${nosbeacon:+nosbeacon})
+		ifname=$(wlanconfig "$ifname" create wlandev "$phy" wlanmode "$mode" ${nosbeacon:+nosbeacon})
 		[ $? -ne 0 ] && {
 			echo "enable_atheros($device): Failed to set up $mode vif $ifname" >&2
 			continue
@@ -374,12 +406,32 @@ enable_atheros() {
 	done
 }
 
+check_device() {
+	[ ${1%[0-9]} = "wifi" ] && config_set "$1" phy "$1"
+	config_get phy "$1" phy
+	[ -z "$phy" ] && {
+		find_atheros_phy "$1" >/dev/null || return 0
+		config_get phy "$1" phy
+	}
+	[ "$phy" = "$dev" ] && found=1
+}
+
 
 detect_atheros() {
+	devidx=0
+	config_load wireless
+	while :; do
+		config_get type "radio$devidx" type
+		[ -n "$type" ] || break
+		devidx=$(($devidx + 1))
+	done
 	cd /proc/sys/dev
 	[ -d ath ] || return
 	for dev in $(ls -d wifi* 2>&-); do
-		config_get type "$dev" type
+		found=0
+		config_foreach check_device wifi-device
+		[ "$found" -gt 0 ] && continue
+
 		devname="$(cat /proc/sys/dev/$dev/dev_name)"
 		case "$devname" in
 			"NanoStation Loco2")
@@ -401,21 +453,23 @@ detect_atheros() {
 "
 			;;
 		esac
-		[ "$type" = atheros ] && continue
+
 		cat <<EOF
-config wifi-device  $dev
+config wifi-device  radio$devidx
 	option type     atheros
 	option channel  auto
+	option macaddr	$(cat /sys/class/net/${dev}/address)
 $EXTRA_DEV
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
 
 config wifi-iface
-	option device	$dev
+	option device	radio$devidx
 	option network	lan
 	option mode	ap
 	option ssid	OpenWrt
 	option encryption none
 EOF
+	devidx=$(($devidx + 1))
 	done
 }
