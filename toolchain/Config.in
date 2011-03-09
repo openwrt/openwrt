@@ -86,6 +86,11 @@ menuconfig TOOLCHAINOPTS
 	bool "Toolchain Options"  if DEVEL
 	depends NEED_TOOLCHAIN
 
+config EABI_SUPPORT
+	bool
+	depends arm||armeb
+	default y
+
 menuconfig EXTRA_TARGET_ARCH
 	bool
 	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
@@ -197,5 +202,8 @@ config LIBC_VERSION
 
 config TARGET_SUFFIX
 	string
-	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC)
-	default "uclibcgnueabi"   if USE_UCLIBC
+	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC) && EABI_SUPPORT
+	default "gnu"             if (USE_EGLIBC || USE_GLIBC) && !EABI_SUPPORT
+	default "uclibcgnueabi"   if USE_UCLIBC && EABI_SUPPORT
+	default "uclibc"          if USE_UCLIBC && !EABI_SUPPORT
+
