@@ -374,6 +374,8 @@ define KernelPackage/gre
     $(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,2.6.37)),CONFIG_NET_IPGRE_DEMUX)
   FILES=$(LINUX_DIR)/net/ipv4/ip_gre.ko \
     $(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,2.6.37)),$(LINUX_DIR)/net/ipv4/gre.ko)
+  AUTOLOAD:=$(call AutoLoad,39, \
+    $(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,2.6.37)),gre) ip_gre)
 endef
 
 define KernelPackage/gre/description
@@ -468,6 +470,19 @@ define KernelPackage/pppoa/description
 endef
 
 $(eval $(call KernelPackage,pppoa))
+
+
+define KernelPackage/pptp
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=PPtP support
+  DEPENDS:=kmod-ppp +kmod-gre @LINUX_2_6_37||LINUX_2_6_38
+  KCONFIG:=CONFIG_PPTP
+  FILES:=$(LINUX_DIR)/drivers/net/pptp.ko
+  AUTOLOAD:=$(call AutoLoad,41,pptp)
+endef
+
+$(eval $(call KernelPackage,pptp))
+	
 
 define KernelPackage/pppol2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
