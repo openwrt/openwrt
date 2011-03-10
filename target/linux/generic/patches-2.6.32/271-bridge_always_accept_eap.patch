@@ -1,0 +1,11 @@
+--- a/net/bridge/br_input.c
++++ b/net/bridge/br_input.c
+@@ -50,7 +50,7 @@ int br_handle_frame_finish(struct sk_buf
+ 	br = p->br;
+ 	br_fdb_update(br, p, eth_hdr(skb)->h_source);
+ 
+-	if (p->state == BR_STATE_LEARNING)
++	if ((p->state == BR_STATE_LEARNING) && skb->protocol != htons(ETH_P_PAE))
+ 		goto drop;
+ 
+ 	/* The packet skb2 goes to the local host (NULL to skip). */
