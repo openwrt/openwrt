@@ -1,0 +1,32 @@
+From: Lasse Collin <lasse.collin@tukaani.org>
+Date: Fri, 4 Feb 2011 09:29:47 +0000 (+0200)
+Subject: xz: Check if the file already has custom suffix when compressing.
+X-Git-Url: http://repo.or.cz/w/xz.git/commitdiff_plain/8930c7ae3f82bdae15aa129f01de08be23d7e8d7
+
+xz: Check if the file already has custom suffix when compressing.
+
+Now "xz -S .test foo.test" refuses to compress the
+file because it already has the suffix .test. The man
+page had it documented this way already.
+---
+
+diff --git a/src/xz/suffix.c b/src/xz/suffix.c
+index ea86c1a..f795e2a 100644
+--- a/src/xz/suffix.c
++++ b/src/xz/suffix.c
+@@ -183,6 +183,15 @@ compressed_name(const char *src_name, const size_t src_len)
+ 		}
+ 	}
+ 
++	if (custom_suffix != NULL) {
++		if (test_suffix(custom_suffix, src_name, src_len) != 0) {
++			message_warning(_("%s: File already has `%s' "
++					"suffix, skipping"), src_name,
++					custom_suffix);
++			return NULL;
++		}
++	}
++
+ 	// TODO: Hmm, maybe it would be better to validate this in args.c,
+ 	// since the suffix handling when decoding is weird now.
+ 	if (opt_format == FORMAT_RAW && custom_suffix == NULL) {
