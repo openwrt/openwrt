@@ -370,12 +370,14 @@ $(eval $(call KernelPackage,ip6-tunnel))
 define KernelPackage/gre
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=GRE support
-  KCONFIG:=CONFIG_NET_IPGRE \
-    $(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.37)),CONFIG_NET_IPGRE_DEMUX)
-  FILES=$(LINUX_DIR)/net/ipv4/ip_gre.ko \
-    $(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.37)),$(LINUX_DIR)/net/ipv4/gre.ko)
-  AUTOLOAD:=$(call AutoLoad,39, \
-    $(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.37)),gre) ip_gre)
+  KCONFIG:=CONFIG_NET_IPGRE CONFIG_NET_IPGRE_DEMUX
+ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.37)),1)
+  FILES:=$(LINUX_DIR)/net/ipv4/ip_gre.ko $(LINUX_DIR)/net/ipv4/gre.ko
+  AUTOLOAD:=$(call AutoLoad,39,gre ip_gre)
+ else
+  FILES:=$(LINUX_DIR)/net/ipv4/ip_gre.ko
+  AUTOLOAD:=$(call AutoLoad,39,ip_gre)
+ endif
 endef
 
 define KernelPackage/gre/description
