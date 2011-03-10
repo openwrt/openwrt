@@ -89,7 +89,10 @@ menuconfig TOOLCHAINOPTS
 config EABI_SUPPORT
 	bool
 	depends arm||armeb
+	prompt "Enable EABI support" if TOOLCHAINOPTS
 	default y
+	help
+	  Enable ARM EABI support
 
 menuconfig EXTRA_TARGET_ARCH
 	bool
