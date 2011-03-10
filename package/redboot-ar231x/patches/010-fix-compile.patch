@@ -1,0 +1,181 @@
+--- a/ecos/packages/hal/mips/ap30/current/cdl/hal_mips_ap30.cdl
++++ b/ecos/packages/hal/mips/ap30/current/cdl/hal_mips_ap30.cdl
+@@ -98,7 +98,7 @@ cdl_package CYGPKG_HAL_MIPS_AP30 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/ap43/current/cdl/hal_mips_ap43.cdl
++++ b/ecos/packages/hal/mips/ap43/current/cdl/hal_mips_ap43.cdl
+@@ -98,7 +98,7 @@ cdl_package CYGPKG_HAL_MIPS_AP43 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/ap48/current/cdl/hal_mips_ap48.cdl
++++ b/ecos/packages/hal/mips/ap48/current/cdl/hal_mips_ap48.cdl
+@@ -98,7 +98,7 @@ cdl_package CYGPKG_HAL_MIPS_AP48 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/ap51/current/cdl/hal_mips_ap51.cdl
++++ b/ecos/packages/hal/mips/ap51/current/cdl/hal_mips_ap51.cdl
+@@ -93,7 +93,7 @@ cdl_package CYGPKG_HAL_MIPS_AP51 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/ap53/current/cdl/hal_mips_ap53.cdl
++++ b/ecos/packages/hal/mips/ap53/current/cdl/hal_mips_ap53.cdl
+@@ -93,7 +93,7 @@ cdl_package CYGPKG_HAL_MIPS_AP53 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/ap61/current/cdl/hal_mips_ap61.cdl
++++ b/ecos/packages/hal/mips/ap61/current/cdl/hal_mips_ap61.cdl
+@@ -93,7 +93,7 @@ cdl_package CYGPKG_HAL_MIPS_AP61 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/ap65/current/cdl/hal_mips_ap65.cdl
++++ b/ecos/packages/hal/mips/ap65/current/cdl/hal_mips_ap65.cdl
+@@ -93,7 +93,7 @@ cdl_package CYGPKG_HAL_MIPS_AP65 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/pb32/current/cdl/hal_mips_pb32.cdl
++++ b/ecos/packages/hal/mips/pb32/current/cdl/hal_mips_pb32.cdl
+@@ -91,7 +91,7 @@ cdl_package CYGPKG_HAL_MIPS_PB32 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/pb44/current/cdl/hal_mips_pb44.cdl
++++ b/ecos/packages/hal/mips/pb44/current/cdl/hal_mips_pb44.cdl
+@@ -99,7 +99,7 @@ cdl_package CYGPKG_HAL_MIPS_PB44 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/pb45/current/cdl/hal_mips_pb45.cdl
++++ b/ecos/packages/hal/mips/pb45/current/cdl/hal_mips_pb45.cdl
+@@ -99,7 +99,7 @@ cdl_package CYGPKG_HAL_MIPS_PB45 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/packages/hal/mips/tb225/current/cdl/hal_mips_tb225.cdl
++++ b/ecos/packages/hal/mips/tb225/current/cdl/hal_mips_tb225.cdl
+@@ -99,7 +99,7 @@ cdl_package CYGPKG_HAL_MIPS_TB225 {
+         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
+         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
+         @echo $@ ": \\" > $(notdir $@).deps
+-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
++        @tail -n +2 plf_defs.tmp >> $(notdir $@).deps
+         @echo >> $(notdir $@).deps
+         @rm plf_defs.tmp plf_mk_defs.tmp
+     }
+--- a/ecos/host/tools/configtool/standalone/common/cdl_exec.cxx
++++ b/ecos/host/tools/configtool/standalone/common/cdl_exec.cxx
+@@ -51,6 +51,7 @@
+ #endif
+ #include "build.hxx"
+ #include "cdl_exec.hxx"
++#include <linux/limits.h>
+ 
+ // ----------------------------------------------------------------------------
+ bool cdl_exec::quiet            = false;
+--- a/ecos/host/tools/configtool/standalone/common/ecosconfig.cxx
++++ b/ecos/host/tools/configtool/standalone/common/ecosconfig.cxx
+@@ -50,6 +50,7 @@
+ #endif
+ #include "cdl_exec.hxx"
+ #include "ecosconfig.hxx"
++#include <cstring>
+ 
+ #define TOOL_VERSION "2.net"
+ #define TOOL_COPYRIGHT "Copyright (c) 2002 Red Hat, Inc."
+--- a/ecos/host/libcdl/build.cxx
++++ b/ecos/host/libcdl/build.cxx
+@@ -57,6 +57,7 @@
+ // It implicitly supplies <string>, <vector> and <map> because
+ // the class definitions rely on these headers.
+ #include <cdlcore.hxx>
++#include <cstring>
+ 
+ //}}}
+ 
+--- a/ecos/host/libcdl/parse.cxx
++++ b/ecos/host/libcdl/parse.cxx
+@@ -58,6 +58,7 @@
+ // It implicitly supplies <string>, <vector> and <map> because
+ // the class definitions rely on these headers.
+ #include <cdlcore.hxx>
++#include <cstring> 
+ 
+ //}}}
+ 
+--- a/ecos/host/libcdl/cdlmisc.cxx
++++ b/ecos/host/libcdl/cdlmisc.cxx
+@@ -66,6 +66,7 @@
+ 
+ // For access to strtod()
+ #include <cstdlib>
++#include <cstring> 
+ 
+ // strtod() involves errno...
+ #include <cerrno>
+--- a/ecos/host/infra/assert.cxx
++++ b/ecos/host/infra/assert.cxx
+@@ -61,6 +61,7 @@
+ // STDLIB is needed for exit() and the status codes.
+ #include <cstdio>
+ #include <cstdlib>
++#include <cstring>
+ 
+ #if defined(__unix__) || defined(__CYGWIN32__)
+ extern "C" {
