@@ -328,7 +328,7 @@ LIBGCC_A=$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc_pic.a)
 LIBGCC_MAP=$(wildcard $(TOOLCHAIN_DIR)/lib/gcc/*/*/libgcc.map)
 LIBGCC_SO=$(wildcard $(TOOLCHAIN_DIR)/lib/libgcc_s.so.*)
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
-  ifneq ($(CONFIG_GCC_VERSION_LINARO),)
+  ifneq ($(if $(CONFIG_USE_UCLIBC),$(CONFIG_GCC_VERSION_LINARO)),)
     BUILD_LIBGCC:=$(if $(CONFIG_avr32)$(CONFIG_m68k)$(CONFIG_powerpc),,$(PKG_BUILD_DIR)/libgcc_s.so.*)
   endif
 endif
@@ -539,7 +539,10 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libpthread.so.* \
-		$(PKG_BUILD_DIR)/libpthread-$(LIBC_SO_VERSION).so \
+		$(if $(BUILD_LIBGCC),\
+			$(PKG_BUILD_DIR)/libpthread-$(LIBC_SO_VERSION).so, \
+			$(TOOLCHAIN_DIR)/lib/libpthread-$(LIBC_SO_VERSION).so \
+		) \
 		$(1)/lib/
   endef
 
