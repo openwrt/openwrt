@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -2149,54 +2149,37 @@ static void ath9k_set_coverage_class(str
+@@ -2149,56 +2149,40 @@ static void ath9k_set_coverage_class(str
  
  static void ath9k_flush(struct ieee80211_hw *hw, bool drop)
  {
@@ -10,9 +10,10 @@
 -	struct ath_hw *ah = sc->sc_ah;
 -	struct ath_common *common = ath9k_hw_common(ah);
 -	int i, j, npend = 0;
-+	int timeout = 60; /* ms */
++	int timeout = 200; /* ms */
 +	int i, j;
  
++	ath9k_ps_wakeup(sc);
  	mutex_lock(&sc->mutex);
  
  	cancel_delayed_work_sync(&sc->tx_complete_work);
@@ -55,22 +56,84 @@
 -			txq->txq_flush_inprogress = false;
 +			npend += ath9k_has_pending_frames(sc, &sc->tx.txq[i]);
  		}
--	}
- 
--	if (npend) {
--		ath_reset(sc, false);
--		txq->txq_flush_inprogress = false;
++
 +		if (!npend)
 +		    goto out;
 +
 +		usleep_range(1000, 2000);
  	}
  
-+	ath9k_ps_wakeup(sc);
-+	ath_drain_all_txq(sc, false);
-+	ath9k_ps_restore(sc);
-+
+-	if (npend) {
++	if (!ath_drain_all_txq(sc, false))
+ 		ath_reset(sc, false);
+-		txq->txq_flush_inprogress = false;
+-	}
+ 
 +out:
  	ieee80211_queue_delayed_work(hw, &sc->tx_complete_work, 0);
  	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ }
+ 
+ struct ieee80211_ops ath9k_ops = {
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -189,7 +189,6 @@ struct ath_txq {
+ 	u32 axq_ampdu_depth;
+ 	bool stopped;
+ 	bool axq_tx_inprogress;
+-	bool txq_flush_inprogress;
+ 	struct list_head axq_acq;
+ 	struct list_head txq_fifo[ATH_TXFIFO_DEPTH];
+ 	struct list_head txq_fifo_pending;
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -2091,8 +2091,7 @@ static void ath_tx_processq(struct ath_s
+ 		spin_lock_bh(&txq->axq_lock);
+ 		if (list_empty(&txq->axq_q)) {
+ 			txq->axq_link = NULL;
+-			if (sc->sc_flags & SC_OP_TXAGGR &&
+-			    !txq->txq_flush_inprogress)
++			if (sc->sc_flags & SC_OP_TXAGGR)
+ 				ath_txq_schedule(sc, txq);
+ 			spin_unlock_bh(&txq->axq_lock);
+ 			break;
+@@ -2173,7 +2172,7 @@ static void ath_tx_processq(struct ath_s
+ 
+ 		spin_lock_bh(&txq->axq_lock);
+ 
+-		if (sc->sc_flags & SC_OP_TXAGGR && !txq->txq_flush_inprogress)
++		if (sc->sc_flags & SC_OP_TXAGGR)
+ 			ath_txq_schedule(sc, txq);
+ 		spin_unlock_bh(&txq->axq_lock);
+ 	}
+@@ -2317,18 +2316,17 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 
+ 		spin_lock_bh(&txq->axq_lock);
+ 
+-		if (!txq->txq_flush_inprogress) {
+-			if (!list_empty(&txq->txq_fifo_pending)) {
+-				INIT_LIST_HEAD(&bf_head);
+-				bf = list_first_entry(&txq->txq_fifo_pending,
+-						      struct ath_buf, list);
+-				list_cut_position(&bf_head,
+-						  &txq->txq_fifo_pending,
+-						  &bf->bf_lastbf->list);
+-				ath_tx_txqaddbuf(sc, txq, &bf_head);
+-			} else if (sc->sc_flags & SC_OP_TXAGGR)
+-				ath_txq_schedule(sc, txq);
+-		}
++		if (!list_empty(&txq->txq_fifo_pending)) {
++			INIT_LIST_HEAD(&bf_head);
++			bf = list_first_entry(&txq->txq_fifo_pending,
++					      struct ath_buf, list);
++			list_cut_position(&bf_head,
++					  &txq->txq_fifo_pending,
++					  &bf->bf_lastbf->list);
++			ath_tx_txqaddbuf(sc, txq, &bf_head);
++		} else if (sc->sc_flags & SC_OP_TXAGGR)
++			ath_txq_schedule(sc, txq);
++
+ 		spin_unlock_bh(&txq->axq_lock);
+ 	}
  }
