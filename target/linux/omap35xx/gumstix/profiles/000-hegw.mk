@@ -8,7 +8,7 @@
 FEATURES:=ubifs
 
 define Profile/Gumstix
-  NAME:=gumstix
+  NAME:=hegw
   PACKAGES:=-iptables -ppp -ppp-mod-pppoe -kmod-ipt-nathelper \
 		-firewall -mtd -hotplug2 -udevtrigger -dropbear \
 		ext4 ubifs usb udev kmod-bluetooth ntpclient wpa-supplicant \
