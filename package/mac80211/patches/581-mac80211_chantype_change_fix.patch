@@ -1,0 +1,10 @@
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -76,6 +76,7 @@ bool ieee80211_set_channel_type(struct i
+ 
+ 		switch (tmp->vif.bss_conf.channel_type) {
+ 		case NL80211_CHAN_NO_HT:
++			break;
+ 		case NL80211_CHAN_HT20:
+ 			superchan = tmp->vif.bss_conf.channel_type;
+ 			break;
