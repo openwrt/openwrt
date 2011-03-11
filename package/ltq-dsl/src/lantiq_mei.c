@@ -200,7 +200,7 @@ static struct file_operations bsp_mei_operations = {
       open:IFX_MEI_Open,
       release:IFX_MEI_Release,
       write:IFX_MEI_Write,
-      ioctl:IFX_MEI_UserIoctls,
+      unlocked_ioctl:IFX_MEI_UserIoctls,
 };
 
 static DSL_DEV_Device_t dsl_devices[BSP_MAX_DEVICES];
