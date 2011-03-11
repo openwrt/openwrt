@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/mac.c
 +++ b/drivers/net/wireless/ath/ath9k/mac.c
-@@ -170,84 +170,30 @@ void ath9k_hw_abort_tx_dma(struct ath_hw
+@@ -171,84 +171,31 @@ void ath9k_hw_abort_tx_dma(struct ath_hw
  }
  EXPORT_SYMBOL(ath9k_hw_abort_tx_dma);
  
@@ -34,11 +34,11 @@
  	REG_WRITE(ah, AR_Q_TXD, 1 << q);
  
  	for (wait = wait_time; wait != 0; wait--) {
- 		if (ath9k_hw_numtxpending(ah, q) == 0)
- 			break;
+-		if (ath9k_hw_numtxpending(ah, q) == 0)
+-			break;
 -		udelay(ATH9K_TIME_QUANTUM);
 -	}
- 
+-
 -	if (ath9k_hw_numtxpending(ah, q)) {
 -		ath_dbg(common, ATH_DBG_QUEUE,
 -			"%s: Num of pending TX Frames %d on Q %d\n",
@@ -73,11 +73,13 @@
 -					"Failed to stop TX DMA in 100 msec after killing last frame\n");
 -				break;
 -			}
--			udelay(ATH9K_TIME_QUANTUM);
++		if (wait != wait_time)
+ 			udelay(ATH9K_TIME_QUANTUM);
 -		}
--
+ 
 -		REG_CLR_BIT(ah, AR_DIAG_SW, AR_DIAG_FORCE_CH_IDLE_HIGH);
-+		udelay(ATH9K_TIME_QUANTUM);
++		if (ath9k_hw_numtxpending(ah, q) == 0)
++			break;
  	}
  
  	REG_WRITE(ah, AR_Q_TXD, 0);
