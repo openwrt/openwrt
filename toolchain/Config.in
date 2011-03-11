@@ -195,15 +195,10 @@ config LIBC_VERSION
 	default GLIBC_VERSION   if USE_GLIBC
 	default UCLIBC_VERSION  if USE_UCLIBC
 
-config EABI_SUPPORT
-	bool
-	depends arm||armeb
-	default y
-
 config TARGET_SUFFIX
 	string
-	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC) && EABI_SUPPORT
-	default "gnu"             if (USE_EGLIBC || USE_GLIBC) && !EABI_SUPPORT
-	default "uclibcgnueabi"   if USE_UCLIBC && EABI_SUPPORT
-	default "uclibc"          if USE_UCLIBC && !EABI_SUPPORT
+	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC) && arm
+	default "gnu"             if (USE_EGLIBC || USE_GLIBC) && !arm
+	default "uclibcgnueabi"   if USE_UCLIBC && arm
+	default "uclibc"          if USE_UCLIBC && !arm
 
