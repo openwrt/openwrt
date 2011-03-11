@@ -1,8 +1,8 @@
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
-@@ -251,6 +251,12 @@
- 	help
- 	  Support for flash chips on NETtel/SecureEdge/SnapGear boards.
+@@ -260,6 +260,12 @@
+ 	  Support for parsing CFE image tag and creating MTD partitions on
+ 	  Broadcom BCM63xx boards.
  
 +config MTD_LANTIQ
 +	bool "Lantiq SoC NOR support"
@@ -16,13 +16,13 @@
 --- a/drivers/mtd/maps/Makefile
 +++ b/drivers/mtd/maps/Makefile
 @@ -59,3 +59,4 @@
- obj-$(CONFIG_MTD_RBTX4939)	+= rbtx4939-flash.o
  obj-$(CONFIG_MTD_VMU)		+= vmu-flash.o
  obj-$(CONFIG_MTD_GPIO_ADDR)	+= gpio-addr-flash.o
-+obj-$(CONFIG_MTD_LANTIQ)  += lantiq.o
+ obj-$(CONFIG_MTD_BCM963XX)	+= bcm963xx-flash.o
++obj-$(CONFIG_MTD_LANTIQ)	+= lantiq.o
 --- /dev/null
 +++ b/drivers/mtd/maps/lantiq.c
-@@ -0,0 +1,169 @@
+@@ -0,0 +1,173 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -47,6 +47,10 @@
 +
 +#include <lantiq.h>
 +#include <lantiq_platform.h>
++
++#ifdef CONFIG_SOC_LANTIQ_XWAY
++#include <xway.h>
++#endif
 +
 +static map_word
 +lq_read16(struct map_info *map, unsigned long adr)
@@ -194,7 +198,7 @@
 +MODULE_DESCRIPTION("Lantiq SoC NOR");
 --- a/drivers/mtd/chips/cfi_cmdset_0001.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0001.c
-@@ -41,7 +41,11 @@
+@@ -40,7 +40,11 @@
  /* #define CMDSET0001_DISABLE_WRITE_SUSPEND */
  
  // debugging, turns off buffer write mode if set to 1
@@ -207,7 +211,7 @@
  
  /* Intel chips */
  #define I82802AB	0x00ad
-@@ -1491,6 +1495,9 @@
+@@ -1493,6 +1497,9 @@
  	int ret=0;
  
  	adr += chip->start;
@@ -219,7 +223,7 @@
  	case FL_WRITING:
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -40,7 +40,11 @@
+@@ -39,7 +39,11 @@
  #include <linux/mtd/xip.h>
  
  #define AMD_BOOTLOC_BUG
@@ -232,7 +236,7 @@
  
  #define MAX_WORD_RETRIES 3
  
-@@ -1156,6 +1160,10 @@
+@@ -1167,6 +1171,10 @@
  
  	adr += chip->start;
  

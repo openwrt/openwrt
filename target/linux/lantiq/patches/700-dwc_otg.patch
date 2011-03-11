@@ -1,6 +1,6 @@
 --- a/drivers/usb/Kconfig
 +++ b/drivers/usb/Kconfig
-@@ -111,6 +111,8 @@
+@@ -113,6 +113,8 @@
  
  source "drivers/usb/host/Kconfig"
  
@@ -39,9 +39,9 @@
 +        bool "HOST ONLY MODE"
 +        depends on DWC_OTG
 +
-+config DWC_OTG_DEVICE_ONLY
-+        bool "DEVICE ONLY MODE"
-+        depends on DWC_OTG
++#config DWC_OTG_DEVICE_ONLY
++#        bool "DEVICE ONLY MODE"
++#        depends on DWC_OTG
 +endchoice
 +
 +choice

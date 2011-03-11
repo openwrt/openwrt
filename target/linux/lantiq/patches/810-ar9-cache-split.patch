@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1706,6 +1706,28 @@
+@@ -1844,6 +1844,28 @@
  	help
  	  IFX included extensions in APRP
  
@@ -113,7 +113,7 @@
  	write_vpe_c0_cause(0);
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -1348,6 +1348,106 @@
+@@ -1347,6 +1347,106 @@
  __setup("coherentio", setcoherentio);
  #endif
  
@@ -220,7 +220,7 @@
  void __cpuinit r4k_cache_init(void)
  {
  	extern void build_clear_page(void);
-@@ -1367,6 +1467,78 @@
+@@ -1366,6 +1466,78 @@
  		break;
  	}
  

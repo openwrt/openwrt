@@ -249,7 +249,7 @@
 +#endif /* CONFIG_IFX_UDP_REDIRECT* */
 --- a/net/ipv4/Makefile
 +++ b/net/ipv4/Makefile
-@@ -14,6 +14,9 @@ obj-y     := route.o inetpeer.o protocol
+@@ -14,6 +14,9 @@
  	     inet_fragment.o
  
  obj-$(CONFIG_SYSCTL) += sysctl_net_ipv4.o
@@ -261,7 +261,7 @@
  obj-$(CONFIG_PROC_FS) += proc.o
 --- a/net/ipv4/udp.c
 +++ b/net/ipv4/udp.c
-@@ -106,6 +106,10 @@
+@@ -107,6 +107,10 @@
  #include <net/xfrm.h>
  #include "udp_impl.h"
  
@@ -272,7 +272,7 @@
  struct udp_table udp_table __read_mostly;
  EXPORT_SYMBOL(udp_table);
  
-@@ -782,7 +786,7 @@ int udp_sendmsg(struct kiocb *iocb, stru
+@@ -784,7 +788,7 @@
  	u8  tos;
  	int err, is_udplite = IS_UDPLITE(sk);
  	int corkreq = up->corkflag || msg->msg_flags&MSG_MORE;
@@ -281,7 +281,7 @@
  
  	if (len > 0xFFFF)
  		return -EMSGSIZE;
-@@ -944,6 +948,12 @@ back_from_confirm:
+@@ -946,6 +950,12 @@
  
  do_append_data:
  	up->len += ulen;
@@ -294,7 +294,7 @@
  	getfrag  =  is_udplite ?  udplite_getfrag : ip_generic_getfrag;
  	err = ip_append_data(sk, getfrag, msg->msg_iov, ulen,
  			sizeof(struct udphdr), &ipc, &rt,
-@@ -1518,6 +1528,7 @@ int __udp4_lib_rcv(struct sk_buff *skb, 
+@@ -1573,6 +1583,7 @@
  	struct rtable *rt = skb_rtable(skb);
  	__be32 saddr, daddr;
  	struct net *net = dev_net(skb->dev);
@@ -302,7 +302,7 @@
  
  	/*
  	 *  Validate the packet.
-@@ -1550,7 +1561,16 @@ int __udp4_lib_rcv(struct sk_buff *skb, 
+@@ -1605,7 +1616,16 @@
  	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
  
  	if (sk != NULL) {
@@ -320,8 +320,8 @@
  		sock_put(sk);
  
  		/* a return value > 0 means to resubmit the input, but
-@@ -1845,7 +1865,7 @@ struct proto udp_prot = {
- #endif
+@@ -1902,7 +1922,7 @@
+ 	.clear_sk	   = sk_prot_clear_portaddr_nulls,
  };
  EXPORT_SYMBOL(udp_prot);
 -
@@ -331,7 +331,7 @@
  
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -72,6 +72,12 @@ config INET
+@@ -72,6 +72,12 @@
  
  	  Short answer: say Y.
  

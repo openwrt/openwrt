@@ -1,7 +1,7 @@
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
-@@ -33,4 +33,19 @@ endchoice
- source "arch/mips/lantiq/falcon/Kconfig"
+@@ -33,4 +33,19 @@
+ #source "arch/mips/lantiq/falcon/Kconfig"
  source "arch/mips/lantiq/xway/Kconfig"
  
 +if EARLY_PRINTK
@@ -44,7 +44,7 @@
 +#define LQ_ASC_BASE	KSEG1ADDR(LQ_ASC1_BASE)
 +#endif
 +
-+#elif CONFIG_SOC_LANTIQ_FALCON
++#elif defined(CONFIG_SOC_LANTIQ_FALCON)
 +#include <falcon/gpon_reg_base.h>
 +#ifdef CONFIG_LANTIQ_PROM_ASC0
 +#define LQ_ASC_BASE	GPON_ASC0_BASE

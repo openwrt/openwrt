@@ -1,0 +1,10 @@
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -206,6 +206,7 @@ static void m25p_addr2cmd(struct m25p *f
+ 	cmd[1] = addr >> (flash->addr_width * 8 -  8);
+ 	cmd[2] = addr >> (flash->addr_width * 8 - 16);
+ 	cmd[3] = addr >> (flash->addr_width * 8 - 24);
++	cmd[4] = 0;
+ }
+ 
+ static int m25p_cmdsz(struct m25p *flash)

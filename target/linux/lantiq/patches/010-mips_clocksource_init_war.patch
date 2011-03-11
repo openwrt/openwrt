@@ -1,6 +1,6 @@
 --- a/arch/mips/kernel/cevt-r4k.c
 +++ b/arch/mips/kernel/cevt-r4k.c
-@@ -22,6 +22,22 @@
+@@ -23,6 +23,22 @@
  
  #ifndef CONFIG_MIPS_MT_SMTC
  
@@ -23,11 +23,11 @@
  static int mips_next_event(unsigned long delta,
                             struct clock_event_device *evt)
  {
-@@ -31,6 +47,7 @@ static int mips_next_event(unsigned long
+@@ -32,6 +48,7 @@
  	cnt = read_c0_count();
  	cnt += delta;
  	write_c0_compare(cnt);
 +	compare_change_hazard();
- 	res = ((int)(read_c0_count() - cnt) > 0) ? -ETIME : 0;
+ 	res = ((int)(read_c0_count() - cnt) >= 0) ? -ETIME : 0;
  	return res;
  }
