@@ -73,9 +73,11 @@ ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE),y)
   FW_TARGET:=danube_firmware.bin
   FW_FILE=fw_voip_danube-12.1.0.1.0.tar.gz
   FW_MD5SUM:=51868b88dee9dbc65d3dbba355ded91c
+  FW_DOWNLOAD:=1
   COEF_TARGET:=danube_bbd_fxs.bin
   COEF_FILE:=coef_voip_danube-0.9.0.tar.gz
   COEF_MD5SUM:=c8ac6592b304b03829a8123560e15710
+  COEF_DOWNLOAD:=1
 endif
 
 ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_AR9),y)
@@ -93,14 +95,14 @@ define Download/firmware
   URL:=$(FW_URL)
   MD5SUM:=$(FW_MD5SUM)
 endef
-$(eval $(call Download,firmware))
+$(eval $(if $(FW_DOWNLOAD),$(call Download,firmware)))
 
 define Download/coef
   FILE:=$(COEF_FILE)
   URL:=$(FW_URL)
   MD5SUM:=$(COEF_MD5SUM)
 endef
-$(eval $(call Download,coef))
+$(eval $(if $(COEF_DOWNLOAD),$(call Download,coef)))
 
 define Build/Configure
 	rm -rf \
@@ -115,18 +117,20 @@ define Build/Configure
 	$(call Build/Configure/Default)
 endef
 
-define Build/InstallDev
+ifdef CONFIG_TARGET_lantiq_xway
+  define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	mkdir -p $(1)/usr/include/drv_vmmc
 	$(CP) -v --dereference $(PKG_BUILD_DIR)/include/* $(1)/usr/include/drv_vmmc
 	(cd $(1)/usr/include/drv_vmmc && ln -snf . include)
-endef
+  endef
 
-define KernelPackage/ltq-vmmc/install
+  define KernelPackage/ltq-vmmc/install
 	$(INSTALL_DIR) $(1)/etc/init.d $(1)/$(FW_DIR)
 	$(INSTALL_BIN) ./files/vmmc.init $(1)/etc/init.d/vmmc
 	$(CP) $(PKG_BUILD_DIR)/firmware/$(FW_SOURCE) $(1)/$(FW_DIR)/$(FW_TARGET)
 	$(CP) $(PKG_BUILD_DIR)/coef/$(COEF_TARGET) $(1)/$(FW_DIR)/$(COEF_TARGET)
-endef
+  endef
+endif
 
 $(eval $(call KernelPackage,ltq-vmmc))
