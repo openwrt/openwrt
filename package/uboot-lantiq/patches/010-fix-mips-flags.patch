@@ -1,6 +1,6 @@
 --- a/cpu/mips/config.mk
 +++ b/cpu/mips/config.mk
-@@ -23,16 +23,18 @@
+@@ -23,17 +23,19 @@
  v=$(shell $(AS) --version | grep 'GNU assembler' | egrep -o '2\.[0-9\.]+' | cut -d. -f2)
  MIPSFLAGS:=$(shell \
  if [ "$v" -lt "14" ]; then \
@@ -19,5 +19,7 @@
  endif
 +endif
  
- MIPSFLAGS += $(ENDIANNESS)
+-MIPSFLAGS += $(ENDIANNESS)
++MIPSFLAGS += $(ENDIANNESS) -fno-schedule-insns -fno-schedule-insns2
  
+ PLATFORM_CPPFLAGS += $(MIPSFLAGS)
