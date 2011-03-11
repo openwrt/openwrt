@@ -197,8 +197,7 @@ config LIBC_VERSION
 
 config TARGET_SUFFIX
 	string
-	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC) && arm
-	default "gnu"             if (USE_EGLIBC || USE_GLIBC) && !arm
-	default "uclibcgnueabi"   if USE_UCLIBC && arm
-	default "uclibc"          if USE_UCLIBC && !arm
-
+	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC) && (arm || armeb)
+	default "gnu"             if (USE_EGLIBC || USE_GLIBC) && !(arm || armeb)
+	default "uclibcgnueabi"   if USE_UCLIBC && (arm || armeb)
+	default "uclibc"          if USE_UCLIBC && !(arm || armeb)
