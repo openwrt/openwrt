@@ -1,6 +1,6 @@
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -343,6 +343,12 @@ config MACB
+@@ -358,6 +358,12 @@
  
  source "drivers/net/arm/Kconfig"
  
@@ -15,7 +15,7 @@
  	depends on ARM || MIPS || SUPERH
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -204,6 +204,7 @@ obj-$(CONFIG_SNI_82596) += sni_82596.o
+@@ -213,6 +213,7 @@
  obj-$(CONFIG_MVME16x_NET) += 82596.o
  obj-$(CONFIG_BVME6000_NET) += 82596.o
  obj-$(CONFIG_SC92031) += sc92031.o

@@ -33,7 +33,8 @@ define KernelPackage/usb-dwc-otg
   KCONFIG:=CONFIG_DWC_OTG \
   	CONFIG_DWC_OTG_DEBUG=n \
 	CONFIG_DWC_OTG_LANTIQ=y \
-	CONFIG_DWC_OTG_HOST_ONLY=y
+	CONFIG_DWC_OTG_HOST_ONLY=y \
+	CONFIG_DWC_OTG_DEVICE_ONLY=n
   FILES:=$(LINUX_DIR)/drivers/usb/dwc_otg/dwc_otg.ko
   AUTOLOAD:=$(call AutoLoad,50,dwc_otg)
 endef
@@ -44,4 +45,18 @@ endef
 
 $(eval $(call KernelPackage,usb-dwc-otg))
 
+I2C_FALCON_MODULES:= \
+  CONFIG_I2C_FALCON:drivers/i2c/busses/i2c-falcon
+
+define KernelPackage/i2c-falcon-lantiq
+  TITLE:=Falcon I2C controller
+  $(call i2c_defaults,$(I2C_FALCON_MODULES),52)
+  DEPENDS:=kmod-i2c-core @TARGET_lantiq
+endef
+
+define KernelPackage/i2c-falcon-lantiq/description
+  Kernel support for the Falcon I2C controller
+endef
+
+$(eval $(call KernelPackage,i2c-falcon-lantiq))
 

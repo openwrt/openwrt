@@ -1,6 +1,6 @@
 --- a/drivers/serial/Kconfig
 +++ b/drivers/serial/Kconfig
-@@ -1397,6 +1397,14 @@
+@@ -1454,6 +1454,14 @@
  	help
  	  Support for Console on the NWP serial ports.
  
@@ -17,10 +17,10 @@
  	depends on QUICC_ENGINE
 --- a/drivers/serial/Makefile
 +++ b/drivers/serial/Makefile
-@@ -84,3 +84,4 @@
- obj-$(CONFIG_SERIAL_GRLIB_GAISLER_APBUART) += apbuart.o
- obj-$(CONFIG_SERIAL_ALTERA_JTAGUART) += altera_jtaguart.o
- obj-$(CONFIG_SERIAL_ALTERA_UART) += altera_uart.o
+@@ -89,3 +89,4 @@
+ obj-$(CONFIG_SERIAL_MRST_MAX3110)	+= mrst_max3110.o
+ obj-$(CONFIG_SERIAL_MFD_HSU)	+= mfd.o
+ obj-$(CONFIG_SERIAL_OMAP) += omap-serial.o
 +obj-$(CONFIG_SERIAL_LANTIQ) += lantiq.o
 --- /dev/null
 +++ b/drivers/serial/lantiq.c

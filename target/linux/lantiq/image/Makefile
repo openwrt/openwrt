@@ -71,6 +71,14 @@ define Image/Build/Profile/EASY50812
 	$(call Image/Build/$(1),$(1),EASY50812)
 endef
 
+define Image/BuildKernel/Profile/ARV3527P
+	$(call Image/BuildKernel/Template,ARV3527P,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV3527P
+	$(call Image/Build/$(1),$(1),ARV3527P)
+endef
+
 define Image/BuildKernel/Profile/ARV4518PW
 	$(call Image/BuildKernel/Template,ARV4518PW,$(xway_cmdline))
 endef
@@ -115,6 +123,7 @@ define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,EASY4010,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,EASY50812,$(xway_cmdline))
+	$(call Image/BuildKernel/Template,ARV3527P,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4510PW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4518PW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4520PW,$(xway_cmdline))
@@ -130,6 +139,7 @@ define Image/Build/Profile/Generic
 	$(call Image/Build/$(1),$(1),EASY4010)
 	$(call Image/Build/$(1),$(1),EASY50712)
 	$(call Image/Build/$(1),$(1),EASY50812)
+	$(call Image/Build/$(1),$(1),ARV3527P)
 	$(call Image/Build/$(1),$(1),ARV4510PW)
 	$(call Image/Build/$(1),$(1),ARV4518PW)
 	$(call Image/Build/$(1),$(1),ARV4520PW)
@@ -144,15 +154,17 @@ endef
 endif
 
 ifeq ($(CONFIG_TARGET_lantiq_falcon),y)
-define Image/BuildKernel
+define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,EASY98000,$(falcon_cmdline))
+	$(call Image/BuildKernel/Template,EASY98020,$(falcon_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
 
-define Image/Build
+define Image/Build/Profile/Generic
 	$(call Image/Build/$(1),$(1),EASY98000)
+	$(call Image/Build/$(1),$(1),EASY98020)
 	$(call Image/Build/$(1),$(1),NONE)
-	$(CP) $(KDIR)/root.$(1)  $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef
 endif
 

@@ -11,7 +11,7 @@
  
 --- a/net/atm/proc.c
 +++ b/net/atm/proc.c
-@@ -153,7 +153,7 @@
+@@ -154,7 +154,7 @@
  static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
  {
  	static const char *const class_name[] = {
@@ -22,7 +22,7 @@
  		"???",	"5",	"???",	"???",	/*  4- 7 */
 --- a/net/atm/common.c
 +++ b/net/atm/common.c
-@@ -60,11 +60,17 @@
+@@ -62,11 +62,17 @@
  	write_unlock_irq(&vcc_sklist_lock);
  }
  

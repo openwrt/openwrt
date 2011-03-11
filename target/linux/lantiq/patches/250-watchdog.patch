@@ -1,8 +1,8 @@
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -840,6 +840,12 @@ config TXX9_WDT
- 	help
- 	  Hardware driver for the built-in watchdog timer on TXx9 MIPS SoCs.
+@@ -930,6 +930,12 @@
+ 	  To compile this driver as a loadable module, choose M here.
+ 	  The module will be called bcm63xx_wdt.
  
 +config LANTIQ_WDT
 +	bool "Lantiq SoC watchdog"
@@ -15,10 +15,10 @@
  # POWERPC Architecture
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -112,6 +112,7 @@ obj-$(CONFIG_PNX833X_WDT) += pnx833x_wdt
- obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
- obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
+@@ -119,6 +119,7 @@
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
+ obj-$(CONFIG_OCTEON_WDT) += octeon-wdt.o
+ octeon-wdt-y := octeon-wdt-main.o octeon-wdt-nmi.o
 +obj-$(CONFIG_LANTIQ_WDT) += lantiq_wdt.o
  
  # PARISC Architecture
@@ -167,7 +167,7 @@
 +static const struct file_operations lq_wdt_fops = {
 +	.owner		= THIS_MODULE,
 +	.write		= lq_wdt_write,
-+	.ioctl		= lq_wdt_ioctl,
++	.unlocked_ioctl	= lq_wdt_ioctl,
 +	.open		= lq_wdt_open,
 +	.release	= lq_wdt_release,
 +};

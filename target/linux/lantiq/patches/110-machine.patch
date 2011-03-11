@@ -1,18 +1,16 @@
 --- a/arch/mips/lantiq/setup.c
 +++ b/arch/mips/lantiq/setup.c
-@@ -12,7 +12,10 @@
+@@ -12,7 +12,8 @@
  #include <linux/ioport.h>
  
  #include <lantiq.h>
 -#include <lantiq_regs.h>
 +
 +#include <machine.h>
-+
-+static unsigned int *cp1_base;
  
  void __init
  plat_mem_setup(void)
-@@ -31,6 +34,7 @@
+@@ -31,6 +32,7 @@
  	ioport_resource.end = IOPORT_RESOURCE_END;
  	iomem_resource.start = IOMEM_RESOURCE_START;
  	iomem_resource.end = IOMEM_RESOURCE_END;
@@ -20,22 +18,10 @@
  
  	while (*envp)
  	{
-@@ -42,6 +46,37 @@
- 		}
- 		envp++;
- 	}
-+//	memsize -= 2;
+@@ -45,3 +47,25 @@
  	memsize *= 1024 * 1024;
-+//	cp1_base = (unsigned int*)(KSEG1 | memsize);
  	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
  }
-+
-+unsigned int*
-+lq_get_cp1_base(void)
-+{
-+	return cp1_base;
-+}
-+EXPORT_SYMBOL(lq_get_cp1_base);
 +
 +static int __init
 +lq_machine_setup(void)

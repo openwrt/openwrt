@@ -615,7 +615,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -0,0 +1,313 @@
+@@ -0,0 +1,336 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -871,13 +871,23 @@
 +	},
 +};
 +
++static unsigned int *cp1_base;
++unsigned int*
++lq_get_cp1_base(void)
++{
++	return cp1_base;
++}
++EXPORT_SYMBOL(lq_get_cp1_base);
++
 +void __init
 +lq_register_tapi(void)
 +{
 +#define CP1_SIZE	(1 << 20)
 +	dma_addr_t dma;
 +	mps_device.dev.platform_data =
++	cp1_base =
 +		(void*)CPHYSADDR(dma_alloc_coherent(NULL, CP1_SIZE, &dma, GFP_ATOMIC));
++	mps_device.dev.platform_data = cp1_base;
 +	platform_device_register(&mps_device);
 +	platform_device_register(&vmmc_device);
 +}
@@ -929,9 +939,22 @@
 +{
 +	platform_device_register_simple(name, 0, 0, 0);
 +}
++
++/* madwifi */
++int lantiq_emulate_madwifi_eep = 0;
++EXPORT_SYMBOL(lantiq_emulate_madwifi_eep);
++
++void __init
++lq_register_madwifi_eep(void)
++{
++	lantiq_emulate_madwifi_eep = 1;
++}
++
++
++
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/devices.h
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,28 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -952,6 +975,8 @@
 +extern void __init lq_register_gpio_leds(struct gpio_led *leds, int cnt);
 +extern void __init lq_register_pci(struct lq_pci_data *data);
 +extern void __init lq_register_nor(struct physmap_flash_data *data);
++extern void __init lq_register_tapi(void);
++extern void __init lq_register_madwifi_eep(void);
 +extern void __init lq_register_wdt(void);
 +extern void __init lq_register_ethernet(struct lq_eth_data *eth);
 +extern void __init lq_register_asc(int port);
@@ -1856,13 +1881,13 @@
 +	struct timer_dev_timer timer[MAX_NUM_OF_32BIT_TIMER_BLOCKS * 2];
 +};
 +
-+static int gptu_ioctl(struct inode *, struct file *, unsigned int, unsigned long);
++static long gptu_ioctl(struct file *, unsigned int, unsigned long);
 +static int gptu_open(struct inode *, struct file *);
 +static int gptu_release(struct inode *, struct file *);
 +
 +static struct file_operations gptu_fops = {
 +	.owner = THIS_MODULE,
-+	.ioctl = gptu_ioctl,
++	.unlocked_ioctl = gptu_ioctl,
 +	.open = gptu_open,
 +	.release = gptu_release
 +};
@@ -2376,7 +2401,7 @@
 +}
 +EXPORT_SYMBOL(lq_set_counter);
 +
-+static int gptu_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
++static long gptu_ioctl(struct file *file, unsigned int cmd,
 +	unsigned long arg)
 +{
 +	int ret;

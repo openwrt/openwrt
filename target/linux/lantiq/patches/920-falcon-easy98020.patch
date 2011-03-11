@@ -1,0 +1,120 @@
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/mach-easy98020.c
+@@ -0,0 +1,97 @@
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/leds.h>
++#include <linux/gpio.h>
++#include <linux/gpio_buttons.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++#include <linux/input.h>
++#include <linux/interrupt.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/flash.h>
++#include <machine.h>
++
++#include "devices.h"
++#include "dev-leds-gpio.h"
++
++#define EASY98020_GPIO_LED_0 9
++#define EASY98020_GPIO_LED_1 10
++#define EASY98020_GPIO_LED_2 11
++#define EASY98020_GPIO_LED_3 12
++
++extern unsigned char lq_ethaddr[6];
++
++#ifdef CONFIG_MTD_PARTITIONS
++static struct mtd_partition easy98020_spi_partitions[] =
++{
++	{
++		.name	= "uboot",
++		.offset	= 0x0,
++		.size	= 0x40000,
++	},
++	{
++		.name	= "uboot_env",
++		.offset	= 0x40000,
++		.size	= 0x40000,	/* 2 sectors for redundant env. */
++	},
++	{
++		.name	= "linux",
++		.offset	= 0x80000,
++		.size	= 0xF80000,	/* map only 16 MiB */
++	},
++};
++
++static struct flash_platform_data easy98020_spi_flash_platform_data = {
++	.name = "sflash",
++	.parts = easy98020_spi_partitions,
++	.nr_parts = ARRAY_SIZE(easy98020_spi_partitions)
++};
++#endif
++
++static struct spi_board_info easy98020_spi_flash_data __initdata = {
++	.modalias		= "m25p80",
++	.bus_num		= 0,
++	.chip_select		= 0,
++	.max_speed_hz		= 10 * 1000 * 1000,
++	.mode			= SPI_MODE_3,
++#ifdef CONFIG_MTD_PARTITIONS
++	.platform_data		= &easy98020_spi_flash_platform_data
++#endif
++};
++
++static struct gpio_led easy98020_leds_gpio[] __initdata = {
++	{
++		.name		= "easy98020:green:0",
++		.gpio		= EASY98020_GPIO_LED_0,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:green:1",
++		.gpio		= EASY98020_GPIO_LED_1,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:green:2",
++		.gpio		= EASY98020_GPIO_LED_2,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:green:3",
++		.gpio		= EASY98020_GPIO_LED_3,
++		.active_low	= 0,
++	}
++};
++
++static void __init easy98020_init(void)
++{
++	falcon_register_asc(0);
++	falcon_register_gpio();
++	falcon_register_wdt();
++	falcon_register_i2c();
++	falcon_register_spi_flash(&easy98020_spi_flash_data);
++	lq_add_device_leds_gpio(-1, ARRAY_SIZE(easy98020_leds_gpio),
++					easy98020_leds_gpio);
++	falcon_register_crypto();
++}
++
++MIPS_MACHINE(LANTIQ_MACH_EASY98020,
++			"EASY98020",
++			"EASY98020 Eval Board",
++			easy98020_init);
+--- a/arch/mips/lantiq/falcon/Kconfig
++++ b/arch/mips/lantiq/falcon/Kconfig
+@@ -6,6 +6,10 @@ config LANTIQ_MACH_EASY98000
+ 	bool "Easy98000"
+ 	default y
+ 
++config LANTIQ_MACH_EASY98020
++	bool "Easy98020"
++	default y
++
+ endmenu
+ 
+ endif
+--- a/arch/mips/lantiq/falcon/Makefile
++++ b/arch/mips/lantiq/falcon/Makefile
+@@ -2,3 +2,4 @@ obj-y := clk-falcon.o devices.o gpio.o p
+ obj-y += softdog_vpe.o
+ obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
+ obj-$(CONFIG_LANTIQ_MACH_EASY98000) += dev-leds-easy98000-cpld.o
++obj-$(CONFIG_LANTIQ_MACH_EASY98020) += mach-easy98020.o

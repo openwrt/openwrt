@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -139,6 +139,9 @@
+@@ -157,6 +157,9 @@
  
  	  otherwise choose R3000.
  
@@ -10,7 +10,7 @@
  config MACH_JAZZ
  	bool "Jazz family of machines"
  	select ARC
-@@ -695,6 +698,7 @@
+@@ -729,6 +732,7 @@
  source "arch/mips/vr41xx/Kconfig"
  source "arch/mips/cavium-octeon/Kconfig"
  source "arch/mips/loongson/Kconfig"
@@ -18,26 +18,6 @@
  
  endmenu
  
---- a/arch/mips/Makefile
-+++ b/arch/mips/Makefile
-@@ -339,6 +339,17 @@
- load-$(CONFIG_MIPS_COBALT)	+= 0xffffffff80080000
- 
- #
-+# Lantiq
-+#
-+load-$(CONFIG_LANTIQ) += 0xffffffff80002000
-+core-$(CONFIG_LANTIQ) += arch/mips/lantiq/
-+cflags-$(CONFIG_LANTIQ)   += -I$(srctree)/arch/mips/include/asm/mach-lantiq
-+core-$(CONFIG_SOC_LANTIQ_FALCON) += arch/mips/lantiq/falcon/
-+cflags-$(CONFIG_SOC_LANTIQ_FALCON)   += -I$(srctree)/arch/mips/include/asm/mach-lantiq/falcon
-+core-$(CONFIG_SOC_LANTIQ_XWAY) += arch/mips/lantiq/xway/
-+cflags-$(CONFIG_SOC_LANTIQ_XWAY)   += -I$(srctree)/arch/mips/include/asm/mach-lantiq/xway
-+
-+#
- # DECstation family
- #
- core-$(CONFIG_MACH_DECSTATION)	+= arch/mips/dec/
 --- /dev/null
 +++ b/arch/mips/lantiq/Kconfig
 @@ -0,0 +1,36 @@
@@ -79,9 +59,10 @@
 +endif
 --- /dev/null
 +++ b/arch/mips/lantiq/Makefile
-@@ -0,0 +1,2 @@
+@@ -0,0 +1,3 @@
 +obj-y := irq.o setup.o clk.o prom.o
 +obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
++obj-$(CONFIG_SOC_LANTIQ_XWAY) += xway/
 --- /dev/null
 +++ b/arch/mips/lantiq/irq.c
 @@ -0,0 +1,218 @@
@@ -645,3 +626,24 @@
 +void lq_soc_detect(struct lq_soc_info *i);
 +
 +#endif
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
+@@ -11,6 +11,7 @@
+ platforms += jazz
+ platforms += jz4740
+ platforms += lasat
++platforms += lantiq
+ platforms += loongson
+ platforms += mipssim
+ platforms += mti-malta
+--- /dev/null
++++ b/arch/mips/lantiq/Platform
+@@ -0,0 +1,8 @@
++#
++# Lantiq
++#
++
++platform-$(CONFIG_LANTIQ)      += lantiq/
++cflags-$(CONFIG_LANTIQ)       += -I$(srctree)/arch/mips/include/asm/mach-lantiq
++load-$(CONFIG_LANTIQ)          = 0xffffffff80002000
++cflags-$(CONFIG_SOC_LANTIQ_XWAY) += -I$(srctree)/arch/mips/include/asm/mach-lantiq/xway

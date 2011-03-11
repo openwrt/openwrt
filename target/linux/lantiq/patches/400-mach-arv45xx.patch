@@ -1,11 +1,12 @@
 --- a/arch/mips/include/asm/mach-lantiq/machine.h
 +++ b/arch/mips/include/asm/mach-lantiq/machine.h
-@@ -11,4 +11,14 @@
+@@ -11,4 +11,15 @@
  	LANTIQ_MACH_EASY4010,		/* Twinpass evalkit */
  	LANTIQ_MACH_EASY50712,		/* Danube evalkit */
  	LANTIQ_MACH_EASY50812,		/* AR9 eval board */
 +
 +	/* Arcadyan */
++	LANTIQ_MACH_ARV3527P,		/* Arcor easybox a401 */
 +	LANTIQ_MACH_ARV4510PW,		/* Wippies Homebox */
 +	LANTIQ_MACH_ARV4518PW,		/* Airties WAV-221, SMC-7908A-ISP */
 +	LANTIQ_MACH_ARV4520PW,		/* Airties WAV-281, Arcor EasyboxA800 */
@@ -37,7 +38,7 @@
 +obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-arv45xx.c
-@@ -0,0 +1,514 @@
+@@ -0,0 +1,504 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -73,41 +74,17 @@
 +	{
 +		.name	= "uboot",
 +		.offset	= 0x0,
-+		.size	= 0x20000,
++		.size	= 0x10000,
 +	},
 +	{
 +		.name	= "uboot_env",
++		.offset	= 0x10000,
++		.size	= 0x10000,
++	},
++	{
++		.name	= "linux",
 +		.offset	= 0x20000,
-+		.size	= 0x10000,
-+	},
-+	{
-+		.name	= "linux",
-+		.offset	= 0x30000,
-+		.size	= 0x3c0000,
-+	},
-+	{
-+		.name	= "board_config",
-+		.offset	= 0x3f0000,
-+		.size	= 0x10000,
-+	},
-+};
-+
-+static struct mtd_partition arv4518_partitions[] =
-+{
-+	{
-+		.name	= "uboot",
-+		.offset	= 0x0,
-+		.size	= 0x40000,
-+	},
-+	{
-+		.name	= "uboot_env",
-+		.offset	= 0x40000,
-+		.size	= 0x10000,
-+	},
-+	{
-+		.name	= "linux",
-+		.offset	= 0x50000,
-+		.size	= 0x3a0000,
++		.size	= 0x3d0000,
 +	},
 +	{
 +		.name	= "board_config",
@@ -121,17 +98,17 @@
 +	{
 +		.name	= "uboot",
 +		.offset	= 0x0,
-+		.size	= 0x40000,
++		.size	= 0x10000,
 +	},
 +	{
 +		.name	= "uboot_env",
-+		.offset	= 0x40000,
++		.offset	= 0x10000,
 +		.size	= 0x10000,
 +	},
 +	{
 +		.name	= "linux",
-+		.offset	= 0x50000,
-+		.size	= 0x7a0000,
++		.offset	= 0x20000,
++		.size	= 0x7d0000,
 +	},
 +	{
 +		.name	= "board_config",
@@ -146,13 +123,6 @@
 +#ifdef CONFIG_MTD_PARTITIONS
 +	.nr_parts	= ARRAY_SIZE(arv45xx_partitions),
 +	.parts		= arv45xx_partitions,
-+#endif
-+};
-+
-+static struct physmap_flash_data arv4518_flash_data = {
-+#ifdef CONFIG_MTD_PARTITIONS
-+	.nr_parts	= ARRAY_SIZE(arv4518_partitions),
-+	.parts		= arv4518_partitions,
 +#endif
 +};
 +
@@ -332,7 +302,7 @@
 +#define ARV45XX_BRN_ATH		0x3f0478
 +	int i;
 +	unsigned char eeprom_mac[6];
-+	u16 eeprom_data[ATH5K_PLAT_EEP_MAX_WORDS];
++	static u16 eeprom_data[ATH5K_PLAT_EEP_MAX_WORDS];
 +	u32 *p = (u32*)arv45xx_ath5k_eeprom_data;
 +
 +	memcpy_fromio(eeprom_mac,
@@ -359,6 +329,24 @@
 +}
 +
 +static void __init
++arv3527p_init(void)
++{
++	lq_register_gpio();
++	lq_register_gpio_stp();
++	//lq_register_gpio_leds(arv3527p_leds_gpio, ARRAY_SIZE(arv3527p_leds_gpio));
++	lq_register_asc(0);
++	lq_register_asc(1);
++	lq_register_nor(&arv45xx_flash_data);
++	lq_register_wdt();
++	arv45xx_register_ethernet();
++}
++
++MIPS_MACHINE(LANTIQ_MACH_ARV3527P,
++			"ARV3527P",
++			"ARV3527P - Arcor Easybox 401",
++			arv3527p_init);
++
++static void __init
 +arv4510pw_init(void)
 +{
 +	lq_register_gpio();
@@ -367,7 +355,6 @@
 +	lq_register_asc(0);
 +	lq_register_asc(1);
 +	lq_register_nor(&arv45xx_flash_data);
-+	lq_register_pci(&lq_pci_data);
 +	lq_pci_data.irq[15] = (INT_NUM_IM2_IRL0 + 31);
 +	lq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
 +	lq_register_pci(&lq_pci_data);
@@ -393,10 +380,11 @@
 +	lq_register_gpio_buttons(arv4518pw_gpio_buttons, ARRAY_SIZE(arv4518pw_gpio_buttons));
 +	lq_register_asc(0);
 +	lq_register_asc(1);
-+	lq_register_nor(&arv4518_flash_data);
++	lq_register_nor(&arv45xx_flash_data);
 +	lq_pci_data.gpio = PCI_GNT2 | PCI_REQ2;
 +	lq_register_pci(&lq_pci_data);
 +	lq_register_wdt();
++	lq_register_madwifi_eep();
 +	xway_register_dwc(ARV4518PW_USB);
 +	arv45xx_register_ethernet();
 +	arv45xx_register_ath5k();
@@ -426,6 +414,7 @@
 +	lq_register_nor(&arv45xx_flash_data);
 +	lq_register_pci(&lq_pci_data);
 +	lq_register_wdt();
++	lq_register_tapi();
 +	arv45xx_register_ethernet();
 +	xway_register_dwc(ARV4520PW_USB);
 +
@@ -452,9 +441,10 @@
 +	lq_register_gpio_leds(arv452cpw_leds_gpio, ARRAY_SIZE(arv452cpw_leds_gpio));
 +	lq_register_asc(0);
 +	lq_register_asc(1);
-+	lq_register_nor(&arv4518_flash_data);
++	lq_register_nor(&arv45xx_flash_data);
 +	lq_register_pci(&lq_pci_data);
 +	lq_register_wdt();
++	lq_register_madwifi_eep();
 +	xway_register_dwc(ARV452CPW_USB);
 +	arv45xx_register_ethernet();
 +	arv45xx_register_ath5k();
@@ -488,6 +478,7 @@
 +	lq_pci_data.clock = PCI_CLOCK_INT;
 +	lq_register_pci(&lq_pci_data);
 +	lq_register_wdt();
++	lq_register_madwifi_eep();
 +	lq_eth_data.mii_mode = MII_MODE;
 +	arv45xx_register_ethernet();
 +}

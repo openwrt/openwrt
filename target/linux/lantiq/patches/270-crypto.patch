@@ -1,8 +1,8 @@
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -243,4 +243,75 @@
- 	  OMAP processors have SHA1/MD5 hw accelerator. Select this if you
- 	  want to use the OMAP module for SHA1/MD5 algorithms.
+@@ -252,4 +252,75 @@
+ 	  OMAP processors have AES module accelerator. Select this if you
+ 	  want to use the OMAP module for AES algorithms.
  
 +config CRYPTO_DEV_LANTIQ
 +	tristate "Support for Lantiq crypto engine"
@@ -6168,7 +6168,7 @@
 +#endif /* DEU_FALCON_H */
 --- a/arch/mips/lantiq/xway/devices.h
 +++ b/arch/mips/lantiq/xway/devices.h
-@@ -22,5 +22,6 @@
+@@ -24,5 +24,6 @@
  extern void __init lq_register_ethernet(struct lq_eth_data *eth);
  extern void __init lq_register_asc(int port);
  extern void __init lq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
