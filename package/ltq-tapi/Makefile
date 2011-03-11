@@ -22,7 +22,7 @@ define KernelPackage/ltq-tapi
   SUBMENU:=Voice over IP
   TITLE:=Lantiq TAPI subsystem
   URL:=http://www.lantiq.com/
-  DEPENDS:=+kmod-ltq-ifxos @TARGET_lantiq
+  DEPENDS:=+kmod-ltq-ifxos @TARGET_lantiq_xway
   FILES:=$(PKG_BUILD_DIR)/src/drv_tapi.ko
   AUTOLOAD:=$(call AutoLoad,20,drv_tapi)
   MAINTAINER:=John Crispin <blogic@openwrt.org>

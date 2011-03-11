@@ -19,7 +19,16 @@
  
  #include "drv_dsl_cpe_api.h"
  #include "drv_dsl_cpe_api_ioctl.h"
-@@ -1058,6 +1059,7 @@ static void DSL_DRV_DebugInit(void)
+@@ -72,7 +73,7 @@
+    open:    DSL_DRV_Open,
+    release: DSL_DRV_Release,
+    write:   DSL_DRV_Write,
+-   ioctl:   DSL_DRV_Ioctls,
++   unlocked_ioctl:   DSL_DRV_Ioctls,
+    poll:    DSL_DRV_Poll
+ };
+ #else
+@@ -1058,6 +1059,7 @@
  /* Entry point of driver */
  int __init DSL_ModuleInit(void)
  {
@@ -27,7 +36,7 @@
     DSL_int_t i;
  
     printk(DSL_DRV_CRLF DSL_DRV_CRLF "Infineon CPE API Driver version: %s" DSL_DRV_CRLF,
-@@ -1104,7 +1106,8 @@ int __init DSL_ModuleInit(void)
+@@ -1104,7 +1106,8 @@
     }
  
     DSL_DRV_DevNodeInit();

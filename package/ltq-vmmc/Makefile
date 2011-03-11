@@ -22,7 +22,7 @@ define KernelPackage/ltq-vmmc
   SUBMENU:=Voice over IP
   TITLE:=TAPI LL driver for Voice Macro
   URL:=http://www.lantiq.com/
-  DEPENDS:=+kmod-ltq-tapi @TARGET_lantiq
+  DEPENDS:=+kmod-ltq-tapi @TARGET_lantiq_xway
   FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.ko
   AUTOLOAD:=$(call AutoLoad,25,drv_vmmc)
   MAINTAINER:=John Crispin <blogic@openwrt.org>
@@ -66,17 +66,6 @@ COEF_TARGET:=ifx_bbd_fxs.bin
 COEF_FILE:=coef_voip_ifx.tar.gz
 
 FW_DIR:=lib/firmware
-ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
-  CONFIGURE_ARGS += --with-device=DANUBE
-  FW_TARGET:=danube_firmware.bin
-  FW_SOURCE:=danube_firmware.bin
-  FW_URL:=http://www.arcor.de/hilfe/files/pdf/
-  FW_FILE=arcor_A800_452CPW_FW_1.02.206(20081201).bin
-  FW_MD5SUM:=19d9af4e369287a0f0abaed415cdac10
-  COEF_TARGET:=danube_bbd_fxs.bin
-  COEF_FILE:=arcor_A800_452CPW_FW_1.02.206(20081201).bin
-  COEF_MD5SUM:=19d9af4e369287a0f0abaed415cdac10
-endif
 
 ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE),y)
   CONFIGURE_ARGS += --with-device=DANUBE
@@ -97,15 +86,6 @@ endif
 ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_VR9),y)
   CONFIGURE_ARGS += --with-device=VR9
   # TODO: add fw/coef
-endif
-
-ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
-define Download/decode
-  FILE:=ifxmips_fw_decodev2.tar.bz2
-  URL:=http://downloads.openwrt.org/sources/
-  MD5SUM:=9f4ebfae5cb9d9e8fca46057a653ae27
-endef
-$(eval $(call Download,decode))
 endif
 
 define Download/firmware
@@ -129,14 +109,8 @@ define Build/Configure
 	mkdir -p \
 		$(PKG_BUILD_DIR)/coef \
 		$(PKG_BUILD_DIR)/firmware
-ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract),y)
-	$(PLATFORM_DIR)/extract.sh $(DL_DIR) '$(FW_FILE)' 
-	$(CP) $(DL_DIR)/voip.bin $(PKG_BUILD_DIR)/firmware/$(FW_TARGET)
-	$(CP) $(DL_DIR)/voip_coef.bin $(PKG_BUILD_DIR)/coef/$(COEF_TARGET)
-else
 	$(TAR) -C $(PKG_BUILD_DIR)/firmware -xvzf $(DL_DIR)/$(FW_FILE)
 	$(TAR) -C $(PKG_BUILD_DIR)/coef -xvzf $(DL_DIR)/$(COEF_FILE)
-endif
 	(cd $(PKG_BUILD_DIR); aclocal && autoconf && automake)
 	$(call Build/Configure/Default)
 endef

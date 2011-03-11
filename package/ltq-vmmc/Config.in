@@ -1,12 +1,9 @@
 choice
 	prompt "device selection"
 	depends on PACKAGE_kmod-ltq-vmmc
-	default VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract
+	default VOICE_CPE_VMMC_WITH_DEVICE_DANUBE
 	help
 		Select the target device.
-
-	config VOICE_CPE_VMMC_WITH_DEVICE_DANUBE_extract
-		bool "Danube, Twinpass, Vinax - extract binaries"
 
 	config VOICE_CPE_VMMC_WITH_DEVICE_DANUBE
 		bool "Danube, Twinpass, Vinax"

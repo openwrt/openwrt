@@ -1,0 +1,22 @@
+--- a/src/drv_vmmc_init.c
++++ b/src/drv_vmmc_init.c
+@@ -1594,7 +1594,7 @@
+ #ifdef VMMC_DRIVER_UNLOAD_HOOK
+    if (VDevices[0].nDevState & DS_GPIO_RESERVED)
+    {
+-      IFX_int32_t ret;
++      IFX_int32_t ret = 0;
+       VMMC_DRIVER_UNLOAD_HOOK(ret);
+       if (!VMMC_SUCCESS(ret))
+       {
+--- a/src/mps/drv_mps_vmmc_linux.c
++++ b/src/mps/drv_mps_vmmc_linux.c
+@@ -173,7 +173,7 @@
+ static struct file_operations ifx_mps_fops = {
+  owner:THIS_MODULE,
+  poll:ifx_mps_poll,
+- ioctl:ifx_mps_ioctl,
++ unlocked_ioctl:ifx_mps_ioctl,
+  open:ifx_mps_open,
+  release:ifx_mps_close
+ };
