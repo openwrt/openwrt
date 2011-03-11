@@ -20,6 +20,10 @@ DEFAULT_PACKAGES.bootloader:=
 # Add device specific packages
 DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
 
+# Add metapackages for menu groups that a) don't build or install anything, and b) prevent other packages from 
+# appearing in the package list if they are not selected
+DEFAULT_PACKAGES += coreutils
+
 ifneq ($(DUMP),)
   all: dumpinfo
 endif
