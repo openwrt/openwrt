@@ -28,6 +28,7 @@ endef
 
 define Package/ip
 $(call Package/iproute2/Default)
+  SUBMENU:=Routing and Redirection
   TITLE:=Routing control utility
 endef
 

@@ -23,6 +23,7 @@ include $(INCLUDE_DIR)/cmake.mk
 define Package/relayd
   SECTION:=net
   CATEGORY:=Network
+  SUBMENU:=Routing and Redirection
   TITLE:=Transparent routing / relay daemon
   DEPENDS:=+libubox
 endef
