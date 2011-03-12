@@ -34,6 +34,7 @@ endif
 define Package/iptables/Default
   SECTION:=net
   CATEGORY:=Network
+  SUBMENU:=Firewall
   URL:=http://netfilter.org/
 endef
 

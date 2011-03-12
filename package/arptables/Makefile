@@ -21,6 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/arptables
   SECTION:=net
   CATEGORY:=Network
+  SUBMENU:=Firewall
   TITLE:=ARP firewalling software
   DEPENDS:=+kmod-arptables
   URL:=http://ebtables.sourceforge.net

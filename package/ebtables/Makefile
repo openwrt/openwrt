@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ebtables
   SECTION:=net
   CATEGORY:=Network
+  SUBMENU:=Firewall
   DEPENDS:=+kmod-ebtables
   TITLE:=Ethernet bridge firewall administration utility
   URL:=http://ebtables.sourceforge.net/
