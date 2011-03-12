@@ -18,6 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/uhttpd/default
   SECTION:=net
   CATEGORY:=Network
+  SUBMENU:=Web Servers/Proxies
   TITLE:=uHTTPd - tiny, single threaded HTTP server
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
