@@ -37,10 +37,17 @@ determine_external_root() {
 		} 
 		config_load fstab
 		config_foreach config_mount_by_section mount 1
+		ER_OVERLAY_ROM="/no-extroot"
 		
 		[ "$rootfs_found" = "1" ] && grep -q ' /overlay ' /proc/mounts && { 
 			pi_extroot_mount_success=true
 			pi_mount_skip_next=false
+			ER_OVERLAY_ROM="/overlay"
+		}
+		[ "$rootfs_found" = "1" ] && grep -q ' /rom ' /proc/mounts && { 
+			pi_extroot_mount_success=true
+			pi_mount_skip_next=false
+			ER_OVERLAY_ROM="/rom"
 		}
 	}
 	UCI_CONFIG_DIR="$OLD_UCI_CONFIG_DIR"

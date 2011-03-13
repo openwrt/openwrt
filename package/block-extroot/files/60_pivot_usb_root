@@ -9,10 +9,17 @@
 external_root_pivot() {
 	check_skip || [ "$pi_extroot_mount_success" != "true" ] || {
 		echo "switching to external rootfs"
-		if [ "$ER_IS_SQUASHFS" = "true" ]; then
-			umount /tmp/overlay
+		if [ "$ER_OVERLAY_ROM" = "/overlay" ]; then
+			if [ "$ER_IS_SQUASHFS" = "true" ]; then
+				umount /tmp/overlay
+			fi
+			mount -o remount,ro / && fopivot /overlay /rom && pi_mount_skip_next=true
+		elif [ "$ER_OVERLAY_ROM" = "/rom" ]; then
+			if [ "$ER_IS_SQUASHFS" = "true" ]; then
+				umount /tmp/overlay
+			fi
+			mount -o remount,ro / && pivot_rom /rom /rom && pi_mount_skip_next=true
 		fi
-		mount -o remount,ro / && fopivot /overlay /rom && pi_mount_skip_next=true
 	}
 }
 

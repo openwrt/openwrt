@@ -24,3 +24,13 @@ er_load_modules() {
 	rm -rf /tmp/extroot_modules
 }
 
+pivot_rom() { # <new_root> <old_root>
+	mount -o move /proc $1/proc && \
+	pivot_root $1 $1$2 && {
+		mount -o move $2/dev /dev
+		mount -o move $2/tmp /tmp
+		mount -o move $2/sys /sys 2>&-
+		return 0
+	}
+}
+
