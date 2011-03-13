@@ -538,6 +538,21 @@ endef
 $(eval $(call KernelPackage,leds-wrap))
 
 
+define KernelPackage/ledtrig-heartbeat
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=LED Heartbeat Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_HEARTBEAT
+  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-heartbeat.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-heartbeat)
+endef
+
+define KernelPackage/ledtrig-gpio/description
+ Kernel module that allows LEDs to blink like heart beat
+endef
+
+$(eval $(call KernelPackage,ledtrig-heartbeat))
+
+
 define KernelPackage/ledtrig-gpio
   SUBMENU:=$(OTHER_MENU)
   TITLE:=LED GPIO Trigger
