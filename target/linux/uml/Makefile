@@ -23,7 +23,7 @@ BOARDNAME:=User Mode Linux
 FEATURES:=ext4 audio
 LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
 
-LINUX_VERSION:=2.6.37.1
+LINUX_VERSION:=2.6.37.3
 
 include $(INCLUDE_DIR)/target.mk
 
