@@ -1,0 +1,366 @@
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -189,7 +189,6 @@ struct ath_txq {
+ 	u32 axq_ampdu_depth;
+ 	bool stopped;
+ 	bool axq_tx_inprogress;
+-	bool txq_flush_inprogress;
+ 	struct list_head axq_acq;
+ 	struct list_head txq_fifo[ATH_TXFIFO_DEPTH];
+ 	struct list_head txq_fifo_pending;
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -373,6 +373,7 @@ void ath_beacon_tasklet(unsigned long da
+ 			ath_dbg(common, ATH_DBG_BSTUCK,
+ 				"missed %u consecutive beacons\n",
+ 				sc->beacon.bmisscnt);
++			ath9k_hw_stop_dma_queue(ah, sc->beacon.beaconq);
+ 			ath9k_hw_bstuck_nfcal(ah);
+ 		} else if (sc->beacon.bmisscnt >= BSTUCK_THRESH) {
+ 			ath_dbg(common, ATH_DBG_BSTUCK,
+@@ -450,16 +451,6 @@ void ath_beacon_tasklet(unsigned long da
+ 		sc->beacon.updateslot = OK;
+ 	}
+ 	if (bfaddr != 0) {
+-		/*
+-		 * Stop any current dma and put the new frame(s) on the queue.
+-		 * This should never fail since we check above that no frames
+-		 * are still pending on the queue.
+-		 */
+-		if (!ath9k_hw_stoptxdma(ah, sc->beacon.beaconq)) {
+-			ath_err(common, "beacon queue %u did not stop?\n",
+-				sc->beacon.beaconq);
+-		}
+-
+ 		/* NB: cabq traffic should already be queued and primed */
+ 		ath9k_hw_puttxbuf(ah, sc->beacon.beaconq, bfaddr);
+ 		ath9k_hw_txstart(ah, sc->beacon.beaconq);
+@@ -780,7 +771,7 @@ void ath9k_set_beaconing_status(struct a
+ 		ah->imask &= ~ATH9K_INT_SWBA;
+ 		ath9k_hw_set_interrupts(ah, ah->imask);
+ 		tasklet_kill(&sc->bcon_tasklet);
+-		ath9k_hw_stoptxdma(ah, sc->beacon.beaconq);
++		ath9k_hw_stop_dma_queue(ah, sc->beacon.beaconq);
+ 	}
+ 	ath9k_ps_restore(sc);
+ }
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -95,9 +95,9 @@
+ #define REG_READ_FIELD(_a, _r, _f) \
+ 	(((REG_READ(_a, _r) & _f) >> _f##_S))
+ #define REG_SET_BIT(_a, _r, _f) \
+-	REG_WRITE(_a, _r, REG_READ(_a, _r) | _f)
++	REG_WRITE(_a, _r, REG_READ(_a, _r) | (_f))
+ #define REG_CLR_BIT(_a, _r, _f) \
+-	REG_WRITE(_a, _r, REG_READ(_a, _r) & ~_f)
++	REG_WRITE(_a, _r, REG_READ(_a, _r) & ~(_f))
+ 
+ #define DO_DELAY(x) do {			\
+ 		if ((++(x) % 64) == 0)          \
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -143,84 +143,59 @@ bool ath9k_hw_updatetxtriglevel(struct a
+ }
+ EXPORT_SYMBOL(ath9k_hw_updatetxtriglevel);
+ 
+-bool ath9k_hw_stoptxdma(struct ath_hw *ah, u32 q)
++void ath9k_hw_abort_tx_dma(struct ath_hw *ah)
+ {
+-#define ATH9K_TX_STOP_DMA_TIMEOUT	4000    /* usec */
+-#define ATH9K_TIME_QUANTUM		100     /* usec */
+-	struct ath_common *common = ath9k_hw_common(ah);
+-	struct ath9k_hw_capabilities *pCap = &ah->caps;
+-	struct ath9k_tx_queue_info *qi;
+-	u32 tsfLow, j, wait;
+-	u32 wait_time = ATH9K_TX_STOP_DMA_TIMEOUT / ATH9K_TIME_QUANTUM;
++	int i, q;
+ 
+-	if (q >= pCap->total_queues) {
+-		ath_dbg(common, ATH_DBG_QUEUE,
+-			"Stopping TX DMA, invalid queue: %u\n", q);
+-		return false;
+-	}
++	REG_WRITE(ah, AR_Q_TXD, AR_Q_TXD_M);
+ 
+-	qi = &ah->txq[q];
+-	if (qi->tqi_type == ATH9K_TX_QUEUE_INACTIVE) {
+-		ath_dbg(common, ATH_DBG_QUEUE,
+-			"Stopping TX DMA, inactive queue: %u\n", q);
+-		return false;
+-	}
++	REG_SET_BIT(ah, AR_PCU_MISC, AR_PCU_FORCE_QUIET_COLL | AR_PCU_CLEAR_VMF);
++	REG_SET_BIT(ah, AR_DIAG_SW, AR_DIAG_FORCE_CH_IDLE_HIGH);
++	REG_SET_BIT(ah, AR_D_GBL_IFS_MISC, AR_D_GBL_IFS_MISC_IGNORE_BACKOFF);
+ 
+-	REG_WRITE(ah, AR_Q_TXD, 1 << q);
++	for (q = 0; q < AR_NUM_QCU; q++) {
++		for (i = 0; i < 1000; i++) {
++			if (i)
++				udelay(5);
+ 
+-	for (wait = wait_time; wait != 0; wait--) {
+-		if (ath9k_hw_numtxpending(ah, q) == 0)
+-			break;
+-		udelay(ATH9K_TIME_QUANTUM);
++			if (!ath9k_hw_numtxpending(ah, q))
++				break;
++		}
+ 	}
+ 
+-	if (ath9k_hw_numtxpending(ah, q)) {
+-		ath_dbg(common, ATH_DBG_QUEUE,
+-			"%s: Num of pending TX Frames %d on Q %d\n",
+-			__func__, ath9k_hw_numtxpending(ah, q), q);
+-
+-		for (j = 0; j < 2; j++) {
+-			tsfLow = REG_READ(ah, AR_TSF_L32);
+-			REG_WRITE(ah, AR_QUIET2,
+-				  SM(10, AR_QUIET2_QUIET_DUR));
+-			REG_WRITE(ah, AR_QUIET_PERIOD, 100);
+-			REG_WRITE(ah, AR_NEXT_QUIET_TIMER, tsfLow >> 10);
+-			REG_SET_BIT(ah, AR_TIMER_MODE,
+-				       AR_QUIET_TIMER_EN);
+-
+-			if ((REG_READ(ah, AR_TSF_L32) >> 10) == (tsfLow >> 10))
+-				break;
++	REG_CLR_BIT(ah, AR_PCU_MISC, AR_PCU_FORCE_QUIET_COLL | AR_PCU_CLEAR_VMF);
++	REG_CLR_BIT(ah, AR_DIAG_SW, AR_DIAG_FORCE_CH_IDLE_HIGH);
++	REG_CLR_BIT(ah, AR_D_GBL_IFS_MISC, AR_D_GBL_IFS_MISC_IGNORE_BACKOFF);
+ 
+-			ath_dbg(common, ATH_DBG_QUEUE,
+-				"TSF has moved while trying to set quiet time TSF: 0x%08x\n",
+-				tsfLow);
+-		}
++	REG_WRITE(ah, AR_Q_TXD, 0);
++}
++EXPORT_SYMBOL(ath9k_hw_abort_tx_dma);
+ 
+-		REG_SET_BIT(ah, AR_DIAG_SW, AR_DIAG_FORCE_CH_IDLE_HIGH);
++bool ath9k_hw_stop_dma_queue(struct ath_hw *ah, u32 q)
++{
++#define ATH9K_TX_STOP_DMA_TIMEOUT	1000    /* usec */
++#define ATH9K_TIME_QUANTUM		100     /* usec */
++	int wait_time = ATH9K_TX_STOP_DMA_TIMEOUT / ATH9K_TIME_QUANTUM;
++	int wait;
+ 
+-		udelay(200);
+-		REG_CLR_BIT(ah, AR_TIMER_MODE, AR_QUIET_TIMER_EN);
++	REG_WRITE(ah, AR_Q_TXD, 1 << q);
+ 
+-		wait = wait_time;
+-		while (ath9k_hw_numtxpending(ah, q)) {
+-			if ((--wait) == 0) {
+-				ath_err(common,
+-					"Failed to stop TX DMA in 100 msec after killing last frame\n");
+-				break;
+-			}
++	for (wait = wait_time; wait != 0; wait--) {
++		if (wait != wait_time)
+ 			udelay(ATH9K_TIME_QUANTUM);
+-		}
+ 
+-		REG_CLR_BIT(ah, AR_DIAG_SW, AR_DIAG_FORCE_CH_IDLE_HIGH);
++		if (ath9k_hw_numtxpending(ah, q) == 0)
++			break;
+ 	}
+ 
+ 	REG_WRITE(ah, AR_Q_TXD, 0);
++
+ 	return wait != 0;
+ 
+ #undef ATH9K_TX_STOP_DMA_TIMEOUT
+ #undef ATH9K_TIME_QUANTUM
+ }
+-EXPORT_SYMBOL(ath9k_hw_stoptxdma);
++EXPORT_SYMBOL(ath9k_hw_stop_dma_queue);
+ 
+ void ath9k_hw_gettxintrtxqs(struct ath_hw *ah, u32 *txqs)
+ {
+--- a/drivers/net/wireless/ath/ath9k/mac.h
++++ b/drivers/net/wireless/ath/ath9k/mac.h
+@@ -676,7 +676,8 @@ void ath9k_hw_txstart(struct ath_hw *ah,
+ void ath9k_hw_cleartxdesc(struct ath_hw *ah, void *ds);
+ u32 ath9k_hw_numtxpending(struct ath_hw *ah, u32 q);
+ bool ath9k_hw_updatetxtriglevel(struct ath_hw *ah, bool bIncTrigLevel);
+-bool ath9k_hw_stoptxdma(struct ath_hw *ah, u32 q);
++bool ath9k_hw_stop_dma_queue(struct ath_hw *ah, u32 q);
++void ath9k_hw_abort_tx_dma(struct ath_hw *ah);
+ void ath9k_hw_gettxintrtxqs(struct ath_hw *ah, u32 *txqs);
+ bool ath9k_hw_set_txq_props(struct ath_hw *ah, int q,
+ 			    const struct ath9k_tx_queue_info *qinfo);
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -2128,56 +2128,42 @@ static void ath9k_set_coverage_class(str
+ 
+ static void ath9k_flush(struct ieee80211_hw *hw, bool drop)
+ {
+-#define ATH_FLUSH_TIMEOUT	60 /* ms */
+ 	struct ath_softc *sc = hw->priv;
+-	struct ath_txq *txq = NULL;
+-	struct ath_hw *ah = sc->sc_ah;
+-	struct ath_common *common = ath9k_hw_common(ah);
+-	int i, j, npend = 0;
++	int timeout = 200; /* ms */
++	int i, j;
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	cancel_delayed_work_sync(&sc->tx_complete_work);
+ 
+-	for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
+-		if (!ATH_TXQ_SETUP(sc, i))
+-			continue;
+-		txq = &sc->tx.txq[i];
+-
+-		if (!drop) {
+-			for (j = 0; j < ATH_FLUSH_TIMEOUT; j++) {
+-				if (!ath9k_has_pending_frames(sc, txq))
+-					break;
+-				usleep_range(1000, 2000);
+-			}
+-		}
++	if (drop)
++		timeout = 1;
++
++	for (j = 0; j < timeout; j++) {
++		int npend = 0;
++
++		if (j)
++			usleep_range(1000, 2000);
+ 
+-		if (drop || ath9k_has_pending_frames(sc, txq)) {
+-			ath_dbg(common, ATH_DBG_QUEUE, "Drop frames from hw queue:%d\n",
+-				txq->axq_qnum);
+-			spin_lock_bh(&txq->axq_lock);
+-			txq->txq_flush_inprogress = true;
+-			spin_unlock_bh(&txq->axq_lock);
+-
+-			ath9k_ps_wakeup(sc);
+-			ath9k_hw_stoptxdma(ah, txq->axq_qnum);
+-			npend = ath9k_hw_numtxpending(ah, txq->axq_qnum);
+-			ath9k_ps_restore(sc);
+-			if (npend)
+-				break;
++		for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
++			if (!ATH_TXQ_SETUP(sc, i))
++				continue;
+ 
+-			ath_draintxq(sc, txq, false);
+-			txq->txq_flush_inprogress = false;
++			npend += ath9k_has_pending_frames(sc, &sc->tx.txq[i]);
+ 		}
++
++		if (!npend)
++		    goto out;
+ 	}
+ 
+-	if (npend) {
++	if (!ath_drain_all_txq(sc, false))
+ 		ath_reset(sc, false);
+-		txq->txq_flush_inprogress = false;
+-	}
+ 
++out:
+ 	ieee80211_queue_delayed_work(hw, &sc->tx_complete_work, 0);
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ }
+ 
+ struct ieee80211_ops ath9k_ops = {
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -166,7 +166,7 @@ static void ath_tx_flush_tid(struct ath_
+ 		fi = get_frame_info(bf->bf_mpdu);
+ 		if (fi->retries) {
+ 			ath_tx_update_baw(sc, tid, fi->seqno);
+-			ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0, 0);
++			ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0, 1);
+ 		} else {
+ 			ath_tx_send_normal(sc, txq, NULL, &bf_head);
+ 		}
+@@ -1194,16 +1194,14 @@ bool ath_drain_all_txq(struct ath_softc 
+ 	if (sc->sc_flags & SC_OP_INVALID)
+ 		return true;
+ 
+-	/* Stop beacon queue */
+-	ath9k_hw_stoptxdma(sc->sc_ah, sc->beacon.beaconq);
++	ath9k_hw_abort_tx_dma(ah);
+ 
+-	/* Stop data queues */
++	/* Check if any queue remains active */
+ 	for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
+-		if (ATH_TXQ_SETUP(sc, i)) {
+-			txq = &sc->tx.txq[i];
+-			ath9k_hw_stoptxdma(ah, txq->axq_qnum);
+-			npend += ath9k_hw_numtxpending(ah, txq->axq_qnum);
+-		}
++		if (!ATH_TXQ_SETUP(sc, i))
++			continue;
++
++		npend += ath9k_hw_numtxpending(ah, sc->tx.txq[i].axq_qnum);
+ 	}
+ 
+ 	if (npend)
+@@ -2014,8 +2012,7 @@ static void ath_tx_processq(struct ath_s
+ 		spin_lock_bh(&txq->axq_lock);
+ 		if (list_empty(&txq->axq_q)) {
+ 			txq->axq_link = NULL;
+-			if (sc->sc_flags & SC_OP_TXAGGR &&
+-			    !txq->txq_flush_inprogress)
++			if (sc->sc_flags & SC_OP_TXAGGR)
+ 				ath_txq_schedule(sc, txq);
+ 			spin_unlock_bh(&txq->axq_lock);
+ 			break;
+@@ -2096,7 +2093,7 @@ static void ath_tx_processq(struct ath_s
+ 
+ 		spin_lock_bh(&txq->axq_lock);
+ 
+-		if (sc->sc_flags & SC_OP_TXAGGR && !txq->txq_flush_inprogress)
++		if (sc->sc_flags & SC_OP_TXAGGR)
+ 			ath_txq_schedule(sc, txq);
+ 		spin_unlock_bh(&txq->axq_lock);
+ 	}
+@@ -2267,18 +2264,17 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 
+ 		spin_lock_bh(&txq->axq_lock);
+ 
+-		if (!txq->txq_flush_inprogress) {
+-			if (!list_empty(&txq->txq_fifo_pending)) {
+-				INIT_LIST_HEAD(&bf_head);
+-				bf = list_first_entry(&txq->txq_fifo_pending,
+-						      struct ath_buf, list);
+-				list_cut_position(&bf_head,
+-						  &txq->txq_fifo_pending,
+-						  &bf->bf_lastbf->list);
+-				ath_tx_txqaddbuf(sc, txq, &bf_head);
+-			} else if (sc->sc_flags & SC_OP_TXAGGR)
+-				ath_txq_schedule(sc, txq);
+-		}
++		if (!list_empty(&txq->txq_fifo_pending)) {
++			INIT_LIST_HEAD(&bf_head);
++			bf = list_first_entry(&txq->txq_fifo_pending,
++					      struct ath_buf, list);
++			list_cut_position(&bf_head,
++					  &txq->txq_fifo_pending,
++					  &bf->bf_lastbf->list);
++			ath_tx_txqaddbuf(sc, txq, &bf_head);
++		} else if (sc->sc_flags & SC_OP_TXAGGR)
++			ath_txq_schedule(sc, txq);
++
+ 		spin_unlock_bh(&txq->axq_lock);
+ 	}
+ }
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -77,6 +77,9 @@ bool ieee80211_set_channel_type(struct i
+ 		switch (tmp->vif.bss_conf.channel_type) {
+ 		case NL80211_CHAN_NO_HT:
+ 		case NL80211_CHAN_HT20:
++			if (superchan > tmp->vif.bss_conf.channel_type)
++				break;
++
+ 			superchan = tmp->vif.bss_conf.channel_type;
+ 			break;
+ 		case NL80211_CHAN_HT40PLUS:

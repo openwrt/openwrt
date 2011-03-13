@@ -1,8 +1,8 @@
 --- a/include/linux/compat-2.6.36.h
 +++ b/include/linux/compat-2.6.36.h
-@@ -102,6 +102,8 @@ int no_printk(const char *s, ...) { retu
- #define alloc_workqueue(name, flags, max_active) __create_workqueue(name, flags, max_active, 0)
- #endif
+@@ -104,6 +104,8 @@ int no_printk(const char *s, ...) { retu
+ 
+ #define PCI_EEPROM_WIDTH_93C86   8
  
 +#define PCI_EEPROM_WIDTH_93C86   8
 +
