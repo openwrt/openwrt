@@ -12,7 +12,7 @@ CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 SUBTARGETS:=le be
 INITRAMFS_EXTRA_FILES:=
 
-LINUX_VERSION:=2.6.37.1
+LINUX_VERSION:=2.6.37.3
 
 include $(INCLUDE_DIR)/target.mk
 

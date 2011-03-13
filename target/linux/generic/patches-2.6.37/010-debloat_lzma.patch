@@ -124,7 +124,7 @@
  /* LzmaDecode
 --- a/lib/lzma/LzmaDec.c
 +++ b/lib/lzma/LzmaDec.c
-@@ -682,7 +682,7 @@ static void LzmaDec_InitRc(CLzmaDec *p, 
+@@ -682,7 +682,7 @@ static void LzmaDec_InitRc(CLzmaDec *p,
    p->needFlush = 0;
  }
  
@@ -194,7 +194,7 @@
  {
    CLzmaProps propNew;
    RINOK(LzmaProps_Decode(&propNew, props, propsSize));
-@@ -944,7 +944,7 @@ SRes LzmaDec_AllocateProbs(CLzmaDec *p, 
+@@ -944,7 +944,7 @@ SRes LzmaDec_AllocateProbs(CLzmaDec *p,
    return SZ_OK;
  }
  
@@ -375,7 +375,7 @@
  void MatchFinder_Construct(CMatchFinder *p);
  
  /* Conditions:
-@@ -70,12 +65,6 @@ int MatchFinder_Create(CMatchFinder *p, 
+@@ -70,12 +65,6 @@ int MatchFinder_Create(CMatchFinder *p,
      UInt32 keepAddBufferBefore, UInt32 matchMaxLen, UInt32 keepAddBufferAfter,
      ISzAlloc *alloc);
  void MatchFinder_Free(CMatchFinder *p, ISzAlloc *alloc);

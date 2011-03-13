@@ -211,7 +211,7 @@
  	if (tg3_nvram_read(tp, 0, &magic) != 0)
  		return -EIO;
  
-@@ -11169,7 +11230,7 @@ static int tg3_ioctl(struct net_device *
+@@ -11171,7 +11232,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -220,7 +220,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		data->val_out = mii_regval;
-@@ -11185,7 +11246,7 @@ static int tg3_ioctl(struct net_device *
+@@ -11189,7 +11250,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -229,7 +229,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		return err;
-@@ -11830,6 +11891,12 @@ static void __devinit tg3_get_5717_nvram
+@@ -11834,6 +11895,12 @@ static void __devinit tg3_get_5717_nvram
  /* Chips other than 5700/5701 use the NVRAM for fetching info. */
  static void __devinit tg3_nvram_init(struct tg3 *tp)
  {
@@ -242,7 +242,7 @@
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -12093,6 +12160,9 @@ static int tg3_nvram_write_block(struct
+@@ -12097,6 +12164,9 @@ static int tg3_nvram_write_block(struct
  {
  	int ret;
  
@@ -252,7 +252,7 @@
  	if (tp->tg3_flags & TG3_FLAG_EEPROM_WRITE_PROT) {
  		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
  		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
-@@ -13518,6 +13588,11 @@ static int __devinit tg3_get_invariants(
+@@ -13522,6 +13592,11 @@ static int __devinit tg3_get_invariants(
  	      GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5701)))
  		tp->tg3_flags |= TG3_FLAG_SRAM_USE_CONFIG;
  
@@ -264,7 +264,7 @@
  	/* Get eeprom hw config before calling tg3_set_power_state().
  	 * In particular, the TG3_FLG2_IS_NIC flag must be
  	 * determined before calling tg3_set_power_state() so that
-@@ -13916,6 +13991,10 @@ static int __devinit tg3_get_device_addr
+@@ -13920,6 +13995,10 @@ static int __devinit tg3_get_device_addr
  	}
  
  	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
@@ -275,7 +275,7 @@
  #ifdef CONFIG_SPARC
  		if (!tg3_get_default_macaddr_sparc(tp))
  			return 0;
-@@ -14432,6 +14511,7 @@ static char * __devinit tg3_phy_string(s
+@@ -14436,6 +14515,7 @@ static char * __devinit tg3_phy_string(s
  	case TG3_PHY_ID_BCM5704:	return "5704";
  	case TG3_PHY_ID_BCM5705:	return "5705";
  	case TG3_PHY_ID_BCM5750:	return "5750";
@@ -283,7 +283,7 @@
  	case TG3_PHY_ID_BCM5752:	return "5752";
  	case TG3_PHY_ID_BCM5714:	return "5714";
  	case TG3_PHY_ID_BCM5780:	return "5780";
-@@ -14643,6 +14723,13 @@ static int __devinit tg3_init_one(struct
+@@ -14647,6 +14727,13 @@ static int __devinit tg3_init_one(struct
  		tp->msg_enable = tg3_debug;
  	else
  		tp->msg_enable = TG3_DEF_MSG_ENABLE;

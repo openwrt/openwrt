@@ -1,7 +1,5 @@
-Index: linux-2.6.37/drivers/atm/solos-pci.c
-===================================================================
---- linux-2.6.37.orig/drivers/atm/solos-pci.c	2011-03-05 21:46:26.136023697 +0100
-+++ linux-2.6.37/drivers/atm/solos-pci.c	2011-03-05 21:48:49.046598163 +0100
+--- a/drivers/atm/solos-pci.c
++++ b/drivers/atm/solos-pci.c
 @@ -710,8 +710,8 @@ void solos_bh(unsigned long card_arg)
  					       le16_to_cpu(header->vci));
  				if (!vcc) {

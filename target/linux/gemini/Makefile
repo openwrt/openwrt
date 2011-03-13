@@ -13,7 +13,7 @@ FEATURES:=squashfs
 CFLAGS:=-Os -pipe -march=armv4 -mtune=fa526 -funit-at-a-time
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.37.1
+LINUX_VERSION:=2.6.37.3
 
 include $(INCLUDE_DIR)/target.mk
 
