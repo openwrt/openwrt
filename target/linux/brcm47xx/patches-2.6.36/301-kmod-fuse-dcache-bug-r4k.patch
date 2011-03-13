@@ -18,7 +18,7 @@
  	unsigned long addr, unsigned long pfn)
  {
  	struct flush_cache_page_args args;
-@@ -1469,3 +1469,11 @@ void __cpuinit r4k_cache_init(void)
+@@ -1469,3 +1469,7 @@ void __cpuinit r4k_cache_init(void)
  	coherency_setup();
  #endif
  }
@@ -26,7 +26,3 @@
 +/* fuse package DCACHE BUG patch exports */
 +void (*fuse_flush_cache_all)(void) = r4k___flush_cache_all;
 +EXPORT_SYMBOL(fuse_flush_cache_all);
-+
-+void (*fuse_flush_cache_page)(struct vm_area_struct *vma, unsigned long page,
-+	unsigned long pfn) = r4k_flush_cache_page;
-+EXPORT_SYMBOL(fuse_flush_cache_page);
