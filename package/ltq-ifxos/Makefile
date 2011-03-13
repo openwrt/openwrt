@@ -39,11 +39,13 @@ define Build/Configure
 	$(call Build/Configure/Default)
 endef
 
-define Build/InstallDev
+ifdef CONFIG_TARGET_lantiq
+  define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/{lib,include/ifxos}
 	$(CP) $(PKG_BUILD_DIR)/src/include/* $(1)/usr/include/ifxos
 	mkdir -p $(1)/usr/lib
 	$(CP) $(PKG_BUILD_DIR)/src/libifxos.a $(1)/usr/lib/libifxos.a
-endef
+  endef
+endif
 
 $(eval $(call KernelPackage,ltq-ifxos))
