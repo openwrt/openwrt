@@ -299,7 +299,7 @@
  			tx_ring_dma + size > DMA_BIT_MASK(30)) {
  			kfree(tx_ring);
  			goto out_err;
-@@ -2178,12 +2169,14 @@ static int __devinit b44_init_one(struct
+@@ -2176,12 +2167,14 @@ static int __devinit b44_init_one(struct
  			"Failed to powerup the bus\n");
  		goto err_out_free_dev;
  	}
@@ -385,7 +385,7 @@
  	u32 pmucap;
  
  	if (!(cc->capabilities & SSB_CHIPCO_CAP_PMU))
-@@ -516,15 +516,12 @@ void ssb_pmu_init(struct ssb_chipcommon 
+@@ -516,15 +516,12 @@ void ssb_pmu_init(struct ssb_chipcommon
  	ssb_dprintk(KERN_DEBUG PFX "Found rev %u PMU (capabilities 0x%08X)\n",
  		    cc->pmu.rev, pmucap);
  
