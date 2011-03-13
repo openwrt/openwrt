@@ -44,6 +44,12 @@ config RT305X_MACH_PWH2004
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_HW550_3G
+	bool "Aztech HW550-3G support"
+	default y
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 endmenu
 
 endif

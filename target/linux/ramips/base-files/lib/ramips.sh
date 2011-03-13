@@ -22,6 +22,9 @@ ramips_board_name() {
 	*"WHR-G300N")
 		name="whr-g300n"
 		;;
+	*"Aztech HW550-3G")
+		name="hw550-3g"
+		;;
 	*)
 		name="generic"
 		;;
