@@ -36,6 +36,7 @@
 #define HWID_TL_MR3220_V1	0x32200001
 #define HWID_TL_MR3420_V1	0x34200001
 #define HWID_TL_WA901ND_V1	0x09010001
+#define HWID_TL_WA901ND_V2	0x09010002
 #define HWID_TL_WR741ND_V1	0x07410001
 #define HWID_TL_WR740N_V1	0x07400001
 #define HWID_TL_WR841N_V1_5	0x08410002
@@ -143,6 +144,14 @@ static struct board_info boards[] = {
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0x140000,
+	}, {
+		.id             = "TL-WA901NDv2",
+		.hw_id          = HWID_TL_WA901ND_V2,
+		.hw_rev         = 1,
+		.fw_max_len     = 0x3c0000,
+		.kernel_la      = 0x80060000,
+		.kernel_ep      = 0x80060000,
+		.rootfs_ofs     = 0x140000,
 	}, {
 		.id		= "TL-WR741NDv1",
 		.hw_id		= HWID_TL_WR741ND_V1,
