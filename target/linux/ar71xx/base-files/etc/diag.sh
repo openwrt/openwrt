@@ -90,6 +90,9 @@ get_status_led() {
 	tl-wa901nd)
 		status_led="tl-wa901nd:green:system"
 		;;
+	tl-wa901nd-v2)
+		status_led="tl-wa901nd-v2:green:system"
+		;;
 	tl-wr1043nd)
 		status_led="tl-wr1043nd:green:system"
 		;;

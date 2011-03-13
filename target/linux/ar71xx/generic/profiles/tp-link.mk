@@ -38,6 +38,17 @@ endef
 
 $(eval $(call Profile,TLWA901NDV1))
 
+define Profile/TLWA901NDV2
+	NAME:=TP-LINK TL-WA901ND v2
+	PACKAGES:=kmod-ath9k wpad-mini
+endef
+
+define Profile/TLWA901NDV2/Description
+	Package set optimized for the TP-LINK TL-WA901ND v2.
+endef
+
+$(eval $(call Profile,TLWA901NDV2))
+
 define Profile/TLWR741NDV1
 	NAME:=TP-LINK TL-WR741ND v1
 	PACKAGES:=kmod-ath9k wpad-mini
