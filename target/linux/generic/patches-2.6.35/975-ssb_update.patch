@@ -1,11 +1,3 @@
----
- drivers/net/b44.c                   |  146 +++++++++++++++------------------
- drivers/ssb/driver_chipcommon.c     |   24 +++++
- drivers/ssb/driver_chipcommon_pmu.c |   17 +--
- drivers/ssb/main.c                  |   76 -----------------
- include/linux/ssb/ssb.h             |  159 ------------------------------------
- 5 files changed, 104 insertions(+), 318 deletions(-)
-
 --- a/drivers/net/b44.c
 +++ b/drivers/net/b44.c
 @@ -135,7 +135,6 @@ static void b44_init_rings(struct b44 *)
@@ -400,7 +392,51 @@
  }
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -486,6 +486,7 @@ static int ssb_devices_register(struct s
+@@ -385,6 +385,35 @@ static int ssb_device_uevent(struct devi
+ 			     ssb_dev->id.revision);
+ }
+ 
++#define ssb_config_attr(attrib, field, format_string) \
++static ssize_t \
++attrib##_show(struct device *dev, struct device_attribute *attr, char *buf) \
++{ \
++	return sprintf(buf, format_string, dev_to_ssb_dev(dev)->field); \
++}
++
++ssb_config_attr(core_num, core_index, "%u\n")
++ssb_config_attr(coreid, id.coreid, "0x%04x\n")
++ssb_config_attr(vendor, id.vendor, "0x%04x\n")
++ssb_config_attr(revision, id.revision, "%u\n")
++ssb_config_attr(irq, irq, "%u\n")
++static ssize_t
++name_show(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	return sprintf(buf, "%s\n",
++		       ssb_core_name(dev_to_ssb_dev(dev)->id.coreid));
++}
++
++static struct device_attribute ssb_device_attrs[] = {
++	__ATTR_RO(name),
++	__ATTR_RO(core_num),
++	__ATTR_RO(coreid),
++	__ATTR_RO(vendor),
++	__ATTR_RO(revision),
++	__ATTR_RO(irq),
++	__ATTR_NULL,
++};
++
+ static struct bus_type ssb_bustype = {
+ 	.name		= "ssb",
+ 	.match		= ssb_bus_match,
+@@ -394,6 +423,7 @@ static struct bus_type ssb_bustype = {
+ 	.suspend	= ssb_device_suspend,
+ 	.resume		= ssb_device_resume,
+ 	.uevent		= ssb_device_uevent,
++	.dev_attrs	= ssb_device_attrs,
+ };
+ 
+ static void ssb_buses_lock(void)
+@@ -486,6 +516,7 @@ static int ssb_devices_register(struct s
  #ifdef CONFIG_SSB_PCIHOST
  			sdev->irq = bus->host_pci->irq;
  			dev->parent = &bus->host_pci->dev;
@@ -408,7 +444,7 @@
  #endif
  			break;
  		case SSB_BUSTYPE_PCMCIA:
-@@ -501,6 +502,7 @@ static int ssb_devices_register(struct s
+@@ -501,6 +532,7 @@ static int ssb_devices_register(struct s
  			break;
  		case SSB_BUSTYPE_SSB:
  			dev->dma_mask = &dev->coherent_dma_mask;
@@ -416,7 +452,78 @@
  			break;
  		}
  
-@@ -1226,80 +1228,6 @@ u32 ssb_dma_translation(struct ssb_devic
+@@ -1162,10 +1194,10 @@ void ssb_device_enable(struct ssb_device
+ }
+ EXPORT_SYMBOL(ssb_device_enable);
+ 
+-/* Wait for a bit in a register to get set or unset.
++/* Wait for bitmask in a register to get set or cleared.
+  * timeout is in units of ten-microseconds */
+-static int ssb_wait_bit(struct ssb_device *dev, u16 reg, u32 bitmask,
+-			int timeout, int set)
++static int ssb_wait_bits(struct ssb_device *dev, u16 reg, u32 bitmask,
++			 int timeout, int set)
+ {
+ 	int i;
+ 	u32 val;
+@@ -1173,7 +1205,7 @@ static int ssb_wait_bit(struct ssb_devic
+ 	for (i = 0; i < timeout; i++) {
+ 		val = ssb_read32(dev, reg);
+ 		if (set) {
+-			if (val & bitmask)
++			if ((val & bitmask) == bitmask)
+ 				return 0;
+ 		} else {
+ 			if (!(val & bitmask))
+@@ -1190,20 +1222,38 @@ static int ssb_wait_bit(struct ssb_devic
+ 
+ void ssb_device_disable(struct ssb_device *dev, u32 core_specific_flags)
+ {
+-	u32 reject;
++	u32 reject, val;
+ 
+ 	if (ssb_read32(dev, SSB_TMSLOW) & SSB_TMSLOW_RESET)
+ 		return;
+ 
+ 	reject = ssb_tmslow_reject_bitmask(dev);
+-	ssb_write32(dev, SSB_TMSLOW, reject | SSB_TMSLOW_CLOCK);
+-	ssb_wait_bit(dev, SSB_TMSLOW, reject, 1000, 1);
+-	ssb_wait_bit(dev, SSB_TMSHIGH, SSB_TMSHIGH_BUSY, 1000, 0);
+-	ssb_write32(dev, SSB_TMSLOW,
+-		    SSB_TMSLOW_FGC | SSB_TMSLOW_CLOCK |
+-		    reject | SSB_TMSLOW_RESET |
+-		    core_specific_flags);
+-	ssb_flush_tmslow(dev);
++
++	if (ssb_read32(dev, SSB_TMSLOW) & SSB_TMSLOW_CLOCK) {
++		ssb_write32(dev, SSB_TMSLOW, reject | SSB_TMSLOW_CLOCK);
++		ssb_wait_bits(dev, SSB_TMSLOW, reject, 1000, 1);
++		ssb_wait_bits(dev, SSB_TMSHIGH, SSB_TMSHIGH_BUSY, 1000, 0);
++
++		if (ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_INITIATOR) {
++			val = ssb_read32(dev, SSB_IMSTATE);
++			val |= SSB_IMSTATE_REJECT;
++			ssb_write32(dev, SSB_IMSTATE, val);
++			ssb_wait_bits(dev, SSB_IMSTATE, SSB_IMSTATE_BUSY, 1000,
++				      0);
++		}
++
++		ssb_write32(dev, SSB_TMSLOW,
++			SSB_TMSLOW_FGC | SSB_TMSLOW_CLOCK |
++			reject | SSB_TMSLOW_RESET |
++			core_specific_flags);
++		ssb_flush_tmslow(dev);
++
++		if (ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_INITIATOR) {
++			val = ssb_read32(dev, SSB_IMSTATE);
++			val &= ~SSB_IMSTATE_REJECT;
++			ssb_write32(dev, SSB_IMSTATE, val);
++		}
++	}
+ 
+ 	ssb_write32(dev, SSB_TMSLOW,
+ 		    reject | SSB_TMSLOW_RESET |
+@@ -1226,80 +1276,6 @@ u32 ssb_dma_translation(struct ssb_devic
  }
  EXPORT_SYMBOL(ssb_dma_translation);
  
@@ -497,9 +604,262 @@
  int ssb_bus_may_powerdown(struct ssb_bus *bus)
  {
  	struct ssb_chipcommon *cc;
+--- a/drivers/ssb/pci.c
++++ b/drivers/ssb/pci.c
+@@ -406,6 +406,46 @@ static void sprom_extract_r123(struct ss
+ 	out->antenna_gain.ghz5.a3 = gain;
+ }
+ 
++/* Revs 4 5 and 8 have partially shared layout */
++static void sprom_extract_r458(struct ssb_sprom *out, const u16 *in)
++{
++	SPEX(txpid2g[0], SSB_SPROM4_TXPID2G01,
++	     SSB_SPROM4_TXPID2G0, SSB_SPROM4_TXPID2G0_SHIFT);
++	SPEX(txpid2g[1], SSB_SPROM4_TXPID2G01,
++	     SSB_SPROM4_TXPID2G1, SSB_SPROM4_TXPID2G1_SHIFT);
++	SPEX(txpid2g[2], SSB_SPROM4_TXPID2G23,
++	     SSB_SPROM4_TXPID2G2, SSB_SPROM4_TXPID2G2_SHIFT);
++	SPEX(txpid2g[3], SSB_SPROM4_TXPID2G23,
++	     SSB_SPROM4_TXPID2G3, SSB_SPROM4_TXPID2G3_SHIFT);
++
++	SPEX(txpid5gl[0], SSB_SPROM4_TXPID5GL01,
++	     SSB_SPROM4_TXPID5GL0, SSB_SPROM4_TXPID5GL0_SHIFT);
++	SPEX(txpid5gl[1], SSB_SPROM4_TXPID5GL01,
++	     SSB_SPROM4_TXPID5GL1, SSB_SPROM4_TXPID5GL1_SHIFT);
++	SPEX(txpid5gl[2], SSB_SPROM4_TXPID5GL23,
++	     SSB_SPROM4_TXPID5GL2, SSB_SPROM4_TXPID5GL2_SHIFT);
++	SPEX(txpid5gl[3], SSB_SPROM4_TXPID5GL23,
++	     SSB_SPROM4_TXPID5GL3, SSB_SPROM4_TXPID5GL3_SHIFT);
++
++	SPEX(txpid5g[0], SSB_SPROM4_TXPID5G01,
++	     SSB_SPROM4_TXPID5G0, SSB_SPROM4_TXPID5G0_SHIFT);
++	SPEX(txpid5g[1], SSB_SPROM4_TXPID5G01,
++	     SSB_SPROM4_TXPID5G1, SSB_SPROM4_TXPID5G1_SHIFT);
++	SPEX(txpid5g[2], SSB_SPROM4_TXPID5G23,
++	     SSB_SPROM4_TXPID5G2, SSB_SPROM4_TXPID5G2_SHIFT);
++	SPEX(txpid5g[3], SSB_SPROM4_TXPID5G23,
++	     SSB_SPROM4_TXPID5G3, SSB_SPROM4_TXPID5G3_SHIFT);
++
++	SPEX(txpid5gh[0], SSB_SPROM4_TXPID5GH01,
++	     SSB_SPROM4_TXPID5GH0, SSB_SPROM4_TXPID5GH0_SHIFT);
++	SPEX(txpid5gh[1], SSB_SPROM4_TXPID5GH01,
++	     SSB_SPROM4_TXPID5GH1, SSB_SPROM4_TXPID5GH1_SHIFT);
++	SPEX(txpid5gh[2], SSB_SPROM4_TXPID5GH23,
++	     SSB_SPROM4_TXPID5GH2, SSB_SPROM4_TXPID5GH2_SHIFT);
++	SPEX(txpid5gh[3], SSB_SPROM4_TXPID5GH23,
++	     SSB_SPROM4_TXPID5GH3, SSB_SPROM4_TXPID5GH3_SHIFT);
++}
++
+ static void sprom_extract_r45(struct ssb_sprom *out, const u16 *in)
+ {
+ 	int i;
+@@ -428,10 +468,14 @@ static void sprom_extract_r45(struct ssb
+ 		SPEX(country_code, SSB_SPROM4_CCODE, 0xFFFF, 0);
+ 		SPEX(boardflags_lo, SSB_SPROM4_BFLLO, 0xFFFF, 0);
+ 		SPEX(boardflags_hi, SSB_SPROM4_BFLHI, 0xFFFF, 0);
++		SPEX(boardflags2_lo, SSB_SPROM4_BFL2LO, 0xFFFF, 0);
++		SPEX(boardflags2_hi, SSB_SPROM4_BFL2HI, 0xFFFF, 0);
+ 	} else {
+ 		SPEX(country_code, SSB_SPROM5_CCODE, 0xFFFF, 0);
+ 		SPEX(boardflags_lo, SSB_SPROM5_BFLLO, 0xFFFF, 0);
+ 		SPEX(boardflags_hi, SSB_SPROM5_BFLHI, 0xFFFF, 0);
++		SPEX(boardflags2_lo, SSB_SPROM5_BFL2LO, 0xFFFF, 0);
++		SPEX(boardflags2_hi, SSB_SPROM5_BFL2HI, 0xFFFF, 0);
+ 	}
+ 	SPEX(ant_available_a, SSB_SPROM4_ANTAVAIL, SSB_SPROM4_ANTAVAIL_A,
+ 	     SSB_SPROM4_ANTAVAIL_A_SHIFT);
+@@ -471,6 +515,8 @@ static void sprom_extract_r45(struct ssb
+ 	memcpy(&out->antenna_gain.ghz5, &out->antenna_gain.ghz24,
+ 	       sizeof(out->antenna_gain.ghz5));
+ 
++	sprom_extract_r458(out, in);
++
+ 	/* TODO - get remaining rev 4 stuff needed */
+ }
+ 
+@@ -561,6 +607,8 @@ static void sprom_extract_r8(struct ssb_
+ 	memcpy(&out->antenna_gain.ghz5, &out->antenna_gain.ghz24,
+ 	       sizeof(out->antenna_gain.ghz5));
+ 
++	sprom_extract_r458(out, in);
++
+ 	/* TODO - get remaining rev 8 stuff needed */
+ }
+ 
+@@ -573,37 +621,34 @@ static int sprom_extract(struct ssb_bus
+ 	ssb_dprintk(KERN_DEBUG PFX "SPROM revision %d detected.\n", out->revision);
+ 	memset(out->et0mac, 0xFF, 6);		/* preset et0 and et1 mac */
+ 	memset(out->et1mac, 0xFF, 6);
++
+ 	if ((bus->chip_id & 0xFF00) == 0x4400) {
+ 		/* Workaround: The BCM44XX chip has a stupid revision
+ 		 * number stored in the SPROM.
+ 		 * Always extract r1. */
+ 		out->revision = 1;
++		ssb_dprintk(KERN_DEBUG PFX "SPROM treated as revision %d\n", out->revision);
++	}
++
++	switch (out->revision) {
++	case 1:
++	case 2:
++	case 3:
+ 		sprom_extract_r123(out, in);
+-	} else if (bus->chip_id == 0x4321) {
+-		/* the BCM4328 has a chipid == 0x4321 and a rev 4 SPROM */
+-		out->revision = 4;
++		break;
++	case 4:
++	case 5:
+ 		sprom_extract_r45(out, in);
+-	} else {
+-		switch (out->revision) {
+-		case 1:
+-		case 2:
+-		case 3:
+-			sprom_extract_r123(out, in);
+-			break;
+-		case 4:
+-		case 5:
+-			sprom_extract_r45(out, in);
+-			break;
+-		case 8:
+-			sprom_extract_r8(out, in);
+-			break;
+-		default:
+-			ssb_printk(KERN_WARNING PFX "Unsupported SPROM"
+-				   "  revision %d detected. Will extract"
+-				   " v1\n", out->revision);
+-			out->revision = 1;
+-			sprom_extract_r123(out, in);
+-		}
++		break;
++	case 8:
++		sprom_extract_r8(out, in);
++		break;
++	default:
++		ssb_printk(KERN_WARNING PFX "Unsupported SPROM"
++			   " revision %d detected. Will extract"
++			   " v1\n", out->revision);
++		out->revision = 1;
++		sprom_extract_r123(out, in);
+ 	}
+ 
+ 	if (out->boardflags_lo == 0xFFFF)
+@@ -618,7 +663,7 @@ static int ssb_pci_sprom_get(struct ssb_
+ 			     struct ssb_sprom *sprom)
+ {
+ 	const struct ssb_sprom *fallback;
+-	int err = -ENOMEM;
++	int err;
+ 	u16 *buf;
+ 
+ 	if (!ssb_is_sprom_available(bus)) {
+@@ -645,7 +690,7 @@ static int ssb_pci_sprom_get(struct ssb_
+ 
+ 	buf = kcalloc(SSB_SPROMSIZE_WORDS_R123, sizeof(u16), GFP_KERNEL);
+ 	if (!buf)
+-		goto out;
++		return -ENOMEM;
+ 	bus->sprom_size = SSB_SPROMSIZE_WORDS_R123;
+ 	sprom_do_read(bus, buf);
+ 	err = sprom_check_crc(buf, bus->sprom_size);
+@@ -655,7 +700,7 @@ static int ssb_pci_sprom_get(struct ssb_
+ 		buf = kcalloc(SSB_SPROMSIZE_WORDS_R4, sizeof(u16),
+ 			      GFP_KERNEL);
+ 		if (!buf)
+-			goto out;
++			return -ENOMEM;
+ 		bus->sprom_size = SSB_SPROMSIZE_WORDS_R4;
+ 		sprom_do_read(bus, buf);
+ 		err = sprom_check_crc(buf, bus->sprom_size);
+@@ -677,7 +722,6 @@ static int ssb_pci_sprom_get(struct ssb_
+ 
+ out_free:
+ 	kfree(buf);
+-out:
+ 	return err;
+ }
+ 
+--- a/drivers/ssb/pcihost_wrapper.c
++++ b/drivers/ssb/pcihost_wrapper.c
+@@ -59,6 +59,7 @@ static int ssb_pcihost_probe(struct pci_
+ 	struct ssb_bus *ssb;
+ 	int err = -ENOMEM;
+ 	const char *name;
++	u32 val;
+ 
+ 	ssb = kzalloc(sizeof(*ssb), GFP_KERNEL);
+ 	if (!ssb)
+@@ -74,6 +75,12 @@ static int ssb_pcihost_probe(struct pci_
+ 		goto err_pci_disable;
+ 	pci_set_master(dev);
+ 
++	/* Disable the RETRY_TIMEOUT register (0x41) to keep
++	 * PCI Tx retries from interfering with C3 CPU state */
++	pci_read_config_dword(dev, 0x40, &val);
++	if ((val & 0x0000ff00) != 0)
++		pci_write_config_dword(dev, 0x40, val & 0xffff00ff);
++
+ 	err = ssb_bus_pcibus_register(ssb, dev);
+ 	if (err)
+ 		goto err_pci_release_regions;
+--- a/drivers/ssb/pcmcia.c
++++ b/drivers/ssb/pcmcia.c
+@@ -745,7 +745,7 @@ int ssb_pcmcia_get_invariants(struct ssb
+ 
+ 	/* Fetch the vendor specific tuples. */
+ 	res = pcmcia_loop_tuple(bus->host_pcmcia, SSB_PCMCIA_CIS,
+-				ssb_pcmcia_do_get_invariants, sprom);
++				ssb_pcmcia_do_get_invariants, iv);
+ 	if ((res == 0) || (res == -ENOSPC))
+ 		return 0;
+ 
+--- a/drivers/ssb/scan.c
++++ b/drivers/ssb/scan.c
+@@ -407,10 +407,10 @@ int ssb_bus_scan(struct ssb_bus *bus,
+ 				/* Ignore PCI cores on PCI-E cards.
+ 				 * Ignore PCI-E cores on PCI cards. */
+ 				if (dev->id.coreid == SSB_DEV_PCI) {
+-					if (bus->host_pci->is_pcie)
++					if (pci_is_pcie(bus->host_pci))
+ 						continue;
+ 				} else {
+-					if (!bus->host_pci->is_pcie)
++					if (!pci_is_pcie(bus->host_pci))
+ 						continue;
+ 				}
+ 			}
+@@ -422,6 +422,16 @@ int ssb_bus_scan(struct ssb_bus *bus,
+ 			bus->pcicore.dev = dev;
+ #endif /* CONFIG_SSB_DRIVER_PCICORE */
+ 			break;
++		case SSB_DEV_ETHERNET:
++			if (bus->bustype == SSB_BUSTYPE_PCI) {
++				if (bus->host_pci->vendor == PCI_VENDOR_ID_BROADCOM &&
++				    (bus->host_pci->device & 0xFF00) == 0x4300) {
++					/* This is a dangling ethernet core on a
++					 * wireless device. Ignore it. */
++					continue;
++				}
++			}
++			break;
+ 		default:
+ 			break;
+ 		}
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -167,7 +167,7 @@ struct ssb_device {
+@@ -55,6 +55,10 @@ struct ssb_sprom {
+ 	u8 tri5gl;		/* 5.2GHz TX isolation */
+ 	u8 tri5g;		/* 5.3GHz TX isolation */
+ 	u8 tri5gh;		/* 5.8GHz TX isolation */
++	u8 txpid2g[4];		/* 2GHz TX power index */
++	u8 txpid5gl[4];		/* 4.9 - 5.1GHz TX power index */
++	u8 txpid5g[4];		/* 5.1 - 5.5GHz TX power index */
++	u8 txpid5gh[4];		/* 5.5 - ...GHz TX power index */
+ 	u8 rxpo2g;		/* 2GHz RX power offset */
+ 	u8 rxpo5g;		/* 5GHz RX power offset */
+ 	u8 rssisav2g;		/* 2GHz RSSI params */
+@@ -167,7 +171,7 @@ struct ssb_device {
  	 * is an optimization. */
  	const struct ssb_bus_ops *ops;
  
@@ -508,7 +868,7 @@
  
  	struct ssb_bus *bus;
  	struct ssb_device_id id;
-@@ -470,14 +470,6 @@ extern u32 ssb_dma_translation(struct ss
+@@ -470,14 +474,6 @@ extern u32 ssb_dma_translation(struct ss
  #define SSB_DMA_TRANSLATION_MASK	0xC0000000
  #define SSB_DMA_TRANSLATION_SHIFT	30
  
@@ -523,7 +883,7 @@
  static inline void __cold __ssb_dma_not_implemented(struct ssb_device *dev)
  {
  #ifdef CONFIG_SSB_DEBUG
-@@ -486,155 +478,6 @@ static inline void __cold __ssb_dma_not_
+@@ -486,155 +482,6 @@ static inline void __cold __ssb_dma_not_
  #endif /* DEBUG */
  }
  
@@ -679,3 +1039,109 @@
  #ifdef CONFIG_SSB_PCIHOST
  /* PCI-host wrapper driver */
  extern int ssb_pcihost_register(struct pci_driver *driver);
+--- a/include/linux/ssb/ssb_driver_gige.h
++++ b/include/linux/ssb/ssb_driver_gige.h
+@@ -96,16 +96,21 @@ static inline bool ssb_gige_must_flush_p
+ 	return 0;
+ }
+ 
+-extern char * nvram_get(const char *name);
++#ifdef CONFIG_BCM47XX
++#include <asm/mach-bcm47xx/nvram.h>
+ /* Get the device MAC address */
+ static inline void ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
+ {
+-#ifdef CONFIG_BCM47XX
+-	char *res = nvram_get("et0macaddr");
+-	if (res)
+-		memcpy(macaddr, res, 6);
+-#endif
++	char buf[20];
++	if (nvram_getenv("et0macaddr", buf, sizeof(buf)) < 0)
++		return;
++	nvram_parse_macaddr(buf, macaddr);
+ }
++#else
++static inline void ssb_gige_get_macaddr(struct pci_dev *pdev, u8 *macaddr)
++{
++}
++#endif
+ 
+ extern int ssb_gige_pcibios_plat_dev_init(struct ssb_device *sdev,
+ 					  struct pci_dev *pdev);
+--- a/include/linux/ssb/ssb_regs.h
++++ b/include/linux/ssb/ssb_regs.h
+@@ -85,6 +85,8 @@
+ #define  SSB_IMSTATE_AP_RSV	0x00000030 /* Reserved */
+ #define  SSB_IMSTATE_IBE	0x00020000 /* In Band Error */
+ #define  SSB_IMSTATE_TO		0x00040000 /* Timeout */
++#define  SSB_IMSTATE_BUSY	0x01800000 /* Busy (Backplane rev >= 2.3 only) */
++#define  SSB_IMSTATE_REJECT	0x02000000 /* Reject (Backplane rev >= 2.3 only) */
+ #define SSB_INTVEC		0x0F94     /* SB Interrupt Mask */
+ #define  SSB_INTVEC_PCI		0x00000001 /* Enable interrupts for PCI */
+ #define  SSB_INTVEC_ENET0	0x00000002 /* Enable interrupts for enet 0 */
+@@ -267,6 +269,8 @@
+ /* SPROM Revision 4 */
+ #define SSB_SPROM4_BFLLO		0x0044	/* Boardflags (low 16 bits) */
+ #define SSB_SPROM4_BFLHI		0x0046  /* Board Flags Hi */
++#define SSB_SPROM4_BFL2LO		0x0048	/* Board flags 2 (low 16 bits) */
++#define SSB_SPROM4_BFL2HI		0x004A	/* Board flags 2 Hi */
+ #define SSB_SPROM4_IL0MAC		0x004C	/* 6 byte MAC address for a/b/g/n */
+ #define SSB_SPROM4_CCODE		0x0052	/* Country Code (2 bytes) */
+ #define SSB_SPROM4_GPIOA		0x0056	/* Gen. Purpose IO # 0 and 1 */
+@@ -298,6 +302,46 @@
+ #define  SSB_SPROM4_AGAIN2_SHIFT	0
+ #define  SSB_SPROM4_AGAIN3		0xFF00	/* Antenna 3 */
+ #define  SSB_SPROM4_AGAIN3_SHIFT	8
++#define SSB_SPROM4_TXPID2G01		0x0062 	/* TX Power Index 2GHz */
++#define  SSB_SPROM4_TXPID2G0		0x00FF
++#define  SSB_SPROM4_TXPID2G0_SHIFT	0
++#define  SSB_SPROM4_TXPID2G1		0xFF00
++#define  SSB_SPROM4_TXPID2G1_SHIFT	8
++#define SSB_SPROM4_TXPID2G23		0x0064 	/* TX Power Index 2GHz */
++#define  SSB_SPROM4_TXPID2G2		0x00FF
++#define  SSB_SPROM4_TXPID2G2_SHIFT	0
++#define  SSB_SPROM4_TXPID2G3		0xFF00
++#define  SSB_SPROM4_TXPID2G3_SHIFT	8
++#define SSB_SPROM4_TXPID5G01		0x0066 	/* TX Power Index 5GHz middle subband */
++#define  SSB_SPROM4_TXPID5G0		0x00FF
++#define  SSB_SPROM4_TXPID5G0_SHIFT	0
++#define  SSB_SPROM4_TXPID5G1		0xFF00
++#define  SSB_SPROM4_TXPID5G1_SHIFT	8
++#define SSB_SPROM4_TXPID5G23		0x0068 	/* TX Power Index 5GHz middle subband */
++#define  SSB_SPROM4_TXPID5G2		0x00FF
++#define  SSB_SPROM4_TXPID5G2_SHIFT	0
++#define  SSB_SPROM4_TXPID5G3		0xFF00
++#define  SSB_SPROM4_TXPID5G3_SHIFT	8
++#define SSB_SPROM4_TXPID5GL01		0x006A 	/* TX Power Index 5GHz low subband */
++#define  SSB_SPROM4_TXPID5GL0		0x00FF
++#define  SSB_SPROM4_TXPID5GL0_SHIFT	0
++#define  SSB_SPROM4_TXPID5GL1		0xFF00
++#define  SSB_SPROM4_TXPID5GL1_SHIFT	8
++#define SSB_SPROM4_TXPID5GL23		0x006C 	/* TX Power Index 5GHz low subband */
++#define  SSB_SPROM4_TXPID5GL2		0x00FF
++#define  SSB_SPROM4_TXPID5GL2_SHIFT	0
++#define  SSB_SPROM4_TXPID5GL3		0xFF00
++#define  SSB_SPROM4_TXPID5GL3_SHIFT	8
++#define SSB_SPROM4_TXPID5GH01		0x006E 	/* TX Power Index 5GHz high subband */
++#define  SSB_SPROM4_TXPID5GH0		0x00FF
++#define  SSB_SPROM4_TXPID5GH0_SHIFT	0
++#define  SSB_SPROM4_TXPID5GH1		0xFF00
++#define  SSB_SPROM4_TXPID5GH1_SHIFT	8
++#define SSB_SPROM4_TXPID5GH23		0x0070 	/* TX Power Index 5GHz high subband */
++#define  SSB_SPROM4_TXPID5GH2		0x00FF
++#define  SSB_SPROM4_TXPID5GH2_SHIFT	0
++#define  SSB_SPROM4_TXPID5GH3		0xFF00
++#define  SSB_SPROM4_TXPID5GH3_SHIFT	8
+ #define SSB_SPROM4_MAXP_BG		0x0080  /* Max Power BG in path 1 */
+ #define  SSB_SPROM4_MAXP_BG_MASK	0x00FF  /* Mask for Max Power BG */
+ #define  SSB_SPROM4_ITSSI_BG		0xFF00	/* Mask for path 1 itssi_bg */
+@@ -317,6 +361,8 @@
+ #define SSB_SPROM5_CCODE		0x0044	/* Country Code (2 bytes) */
+ #define SSB_SPROM5_BFLLO		0x004A	/* Boardflags (low 16 bits) */
+ #define SSB_SPROM5_BFLHI		0x004C  /* Board Flags Hi */
++#define SSB_SPROM5_BFL2LO		0x004E	/* Board flags 2 (low 16 bits) */
++#define SSB_SPROM5_BFL2HI		0x0050	/* Board flags 2 Hi */
+ #define SSB_SPROM5_IL0MAC		0x0052	/* 6 byte MAC address for a/b/g/n */
+ #define SSB_SPROM5_GPIOA		0x0076	/* Gen. Purpose IO # 0 and 1 */
+ #define  SSB_SPROM5_GPIOA_P0		0x00FF	/* Pin 0 */
