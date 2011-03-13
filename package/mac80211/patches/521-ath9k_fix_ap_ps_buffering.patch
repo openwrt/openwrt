@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -203,6 +203,7 @@ struct ath_atx_ac {
+@@ -202,6 +202,7 @@ struct ath_atx_ac {
  	int sched;
  	struct list_head list;
  	struct list_head tid_q;
@@ -8,7 +8,7 @@
  };
  
  struct ath_frame_info {
-@@ -260,6 +261,8 @@ struct ath_node {
+@@ -259,6 +260,8 @@ struct ath_node {
  	struct ath_atx_ac ac[WME_NUM_AC];
  	u16 maxampdu;
  	u8 mpdudensity;
@@ -17,7 +17,7 @@
  };
  
  #define AGGR_CLEANUP         BIT(1)
-@@ -341,6 +344,9 @@ int ath_tx_aggr_start(struct ath_softc *
+@@ -340,6 +343,9 @@ int ath_tx_aggr_start(struct ath_softc *
  void ath_tx_aggr_stop(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid);
  void ath_tx_aggr_resume(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid);
  
@@ -57,7 +57,7 @@
  static int ath9k_conf_tx(struct ieee80211_hw *hw, u16 queue,
  			 const struct ieee80211_tx_queue_params *params)
  {
-@@ -2191,6 +2212,7 @@ struct ieee80211_ops ath9k_ops = {
+@@ -2177,6 +2198,7 @@ struct ieee80211_ops ath9k_ops = {
  	.configure_filter   = ath9k_configure_filter,
  	.sta_add	    = ath9k_sta_add,
  	.sta_remove	    = ath9k_sta_remove,
@@ -189,7 +189,7 @@
  void ath_tx_aggr_resume(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid)
  {
  	struct ath_atx_tid *txtid;
-@@ -1493,7 +1570,6 @@ static int setup_tx_flags(struct sk_buff
+@@ -1491,7 +1568,6 @@ static int setup_tx_flags(struct sk_buff
  	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
  	int flags = 0;
  
@@ -197,7 +197,7 @@
  	flags |= ATH9K_TXDESC_INTREQ;
  
  	if (tx_info->flags & IEEE80211_TX_CTL_NO_ACK)
-@@ -1756,6 +1832,9 @@ static void ath_tx_start_dma(struct ath_
+@@ -1754,6 +1830,9 @@ static void ath_tx_start_dma(struct ath_
  		if (txctl->paprd)
  			bf->bf_state.bfs_paprd_timestamp = jiffies;
  

@@ -18,7 +18,7 @@
  
  #include "ath9k.h"
  
-@@ -522,6 +523,7 @@ static void ath9k_init_misc(struct ath_s
+@@ -537,6 +538,7 @@ static void ath9k_init_misc(struct ath_s
  static int ath9k_init_softc(u16 devid, struct ath_softc *sc, u16 subsysid,
  			    const struct ath_bus_ops *bus_ops)
  {
@@ -26,7 +26,7 @@
  	struct ath_hw *ah = NULL;
  	struct ath_common *common;
  	int ret = 0, i;
-@@ -536,7 +538,7 @@ static int ath9k_init_softc(u16 devid, s
+@@ -551,7 +553,7 @@ static int ath9k_init_softc(u16 devid, s
  	ah->hw_version.subsysid = subsysid;
  	sc->sc_ah = ah;
  
@@ -35,7 +35,7 @@
  		ah->ah_flags |= AH_USE_EEPROM;
  
  	common = ath9k_hw_common(ah);
-@@ -572,6 +574,9 @@ static int ath9k_init_softc(u16 devid, s
+@@ -587,6 +589,9 @@ static int ath9k_init_softc(u16 devid, s
  	if (ret)
  		goto err_hw;
  

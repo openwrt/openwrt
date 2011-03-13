@@ -1,7 +1,7 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1091,6 +1091,12 @@ int ath9k_init_debug(struct ath_hw *ah)
- 			sc->debug.debugfs_phy, &ah->config.cwm_ignore_extcca))
+@@ -1145,6 +1145,12 @@ int ath9k_init_debug(struct ath_hw *ah)
+ 			sc, &fops_regdump))
  		goto err;
  
 +	debugfs_create_u32("gpio_mask", S_IRUSR | S_IWUSR,
