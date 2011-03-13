@@ -13,7 +13,7 @@ FEATURES:=squashfs
 CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=440
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.32.29
+LINUX_VERSION:=2.6.32.32
 
 include $(INCLUDE_DIR)/target.mk
 
