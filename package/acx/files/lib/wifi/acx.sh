@@ -181,7 +181,7 @@ detect_acx() {
 	cd /sys/class/net
 	for dev in $(ls -d wlan* 2>&-); do
 		config_get type "$dev" type
-		[ "$type" = acx ] && return
+		[ "$type" = acx ] && continue
 		cat <<EOF
 config wifi-device  $dev
 	option type     acx
