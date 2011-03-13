@@ -22,7 +22,7 @@
  	depends on ARCH_AT91 && EXPERIMENTAL && BROKEN
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-falcon.c
-@@ -0,0 +1,802 @@
+@@ -0,0 +1,803 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -51,6 +51,7 @@
 +#include <linux/io.h>
 +#include <linux/clk.h>
 +#include <linux/err.h>
++#include <linux/slab.h>
 +
 +/* CURRENT ISSUES:
 + * - no high speed support
