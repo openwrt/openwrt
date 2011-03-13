@@ -100,6 +100,10 @@ define Image/Build/Profile/WHRG300N
 	$(call Image/Build/Template/GENERIC_4M,$(1),whr-g300n,WHR-G300N)
 endef
 
+define Image/Build/Profile/HW5503G
+	$(call Image/Build/Template/GENERIC_8M,$(1),hw550-3g,HW550-3G)
+endef
+
 
 mtdlayout_wcr150gn=mtdparts=physmap-flash.0:192k(Bootloader)ro,64k(Config),64k(Factory),832k(Kernel),2944k(rootfs),3776k@0x50000(firmware)
 mtd_wcr150gn_kernel_part_size=851968
@@ -134,6 +138,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WHRG300N,$(1))
 	$(call Image/Build/Profile/WCR150GN,$(1))
 	$(call Image/Build/Profile/F5D8235V2,$(1))
+	$(call Image/Build/Profile/HW5503G,$(1))
 endef
 endif
 
