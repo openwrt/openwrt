@@ -1,0 +1,136 @@
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -1192,10 +1192,10 @@ void ssb_device_enable(struct ssb_device
+ }
+ EXPORT_SYMBOL(ssb_device_enable);
+ 
+-/* Wait for a bit in a register to get set or unset.
++/* Wait for bitmask in a register to get set or cleared.
+  * timeout is in units of ten-microseconds */
+-static int ssb_wait_bit(struct ssb_device *dev, u16 reg, u32 bitmask,
+-			int timeout, int set)
++static int ssb_wait_bits(struct ssb_device *dev, u16 reg, u32 bitmask,
++			 int timeout, int set)
+ {
+ 	int i;
+ 	u32 val;
+@@ -1203,7 +1203,7 @@ static int ssb_wait_bit(struct ssb_devic
+ 	for (i = 0; i < timeout; i++) {
+ 		val = ssb_read32(dev, reg);
+ 		if (set) {
+-			if (val & bitmask)
++			if ((val & bitmask) == bitmask)
+ 				return 0;
+ 		} else {
+ 			if (!(val & bitmask))
+@@ -1220,20 +1220,38 @@ static int ssb_wait_bit(struct ssb_devic
+ 
+ void ssb_device_disable(struct ssb_device *dev, u32 core_specific_flags)
+ {
+-	u32 reject;
++	u32 reject, val;
+ 
+ 	if (ssb_read32(dev, SSB_TMSLOW) & SSB_TMSLOW_RESET)
+ 		return;
+ 
+ 	reject = ssb_tmslow_reject_bitmask(dev);
+-	ssb_write32(dev, SSB_TMSLOW, reject | SSB_TMSLOW_CLOCK);
+-	ssb_wait_bit(dev, SSB_TMSLOW, reject, 1000, 1);
+-	ssb_wait_bit(dev, SSB_TMSHIGH, SSB_TMSHIGH_BUSY, 1000, 0);
+-	ssb_write32(dev, SSB_TMSLOW,
+-		    SSB_TMSLOW_FGC | SSB_TMSLOW_CLOCK |
+-		    reject | SSB_TMSLOW_RESET |
+-		    core_specific_flags);
+-	ssb_flush_tmslow(dev);
++
++	if (ssb_read32(dev, SSB_TMSLOW) & SSB_TMSLOW_CLOCK) {
++		ssb_write32(dev, SSB_TMSLOW, reject | SSB_TMSLOW_CLOCK);
++		ssb_wait_bits(dev, SSB_TMSLOW, reject, 1000, 1);
++		ssb_wait_bits(dev, SSB_TMSHIGH, SSB_TMSHIGH_BUSY, 1000, 0);
++
++		if (ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_INITIATOR) {
++			val = ssb_read32(dev, SSB_IMSTATE);
++			val |= SSB_IMSTATE_REJECT;
++			ssb_write32(dev, SSB_IMSTATE, val);
++			ssb_wait_bits(dev, SSB_IMSTATE, SSB_IMSTATE_BUSY, 1000,
++				      0);
++		}
++
++		ssb_write32(dev, SSB_TMSLOW,
++			SSB_TMSLOW_FGC | SSB_TMSLOW_CLOCK |
++			reject | SSB_TMSLOW_RESET |
++			core_specific_flags);
++		ssb_flush_tmslow(dev);
++
++		if (ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_INITIATOR) {
++			val = ssb_read32(dev, SSB_IMSTATE);
++			val &= ~SSB_IMSTATE_REJECT;
++			ssb_write32(dev, SSB_IMSTATE, val);
++		}
++	}
+ 
+ 	ssb_write32(dev, SSB_TMSLOW,
+ 		    reject | SSB_TMSLOW_RESET |
+--- a/drivers/ssb/pci.c
++++ b/drivers/ssb/pci.c
+@@ -468,10 +468,14 @@ static void sprom_extract_r45(struct ssb
+ 		SPEX(country_code, SSB_SPROM4_CCODE, 0xFFFF, 0);
+ 		SPEX(boardflags_lo, SSB_SPROM4_BFLLO, 0xFFFF, 0);
+ 		SPEX(boardflags_hi, SSB_SPROM4_BFLHI, 0xFFFF, 0);
++		SPEX(boardflags2_lo, SSB_SPROM4_BFL2LO, 0xFFFF, 0);
++		SPEX(boardflags2_hi, SSB_SPROM4_BFL2HI, 0xFFFF, 0);
+ 	} else {
+ 		SPEX(country_code, SSB_SPROM5_CCODE, 0xFFFF, 0);
+ 		SPEX(boardflags_lo, SSB_SPROM5_BFLLO, 0xFFFF, 0);
+ 		SPEX(boardflags_hi, SSB_SPROM5_BFLHI, 0xFFFF, 0);
++		SPEX(boardflags2_lo, SSB_SPROM5_BFL2LO, 0xFFFF, 0);
++		SPEX(boardflags2_hi, SSB_SPROM5_BFL2HI, 0xFFFF, 0);
+ 	}
+ 	SPEX(ant_available_a, SSB_SPROM4_ANTAVAIL, SSB_SPROM4_ANTAVAIL_A,
+ 	     SSB_SPROM4_ANTAVAIL_A_SHIFT);
+@@ -641,7 +645,7 @@ static int sprom_extract(struct ssb_bus
+ 		break;
+ 	default:
+ 		ssb_printk(KERN_WARNING PFX "Unsupported SPROM"
+-			   "  revision %d detected. Will extract"
++			   " revision %d detected. Will extract"
+ 			   " v1\n", out->revision);
+ 		out->revision = 1;
+ 		sprom_extract_r123(out, in);
+--- a/include/linux/ssb/ssb_regs.h
++++ b/include/linux/ssb/ssb_regs.h
+@@ -85,6 +85,8 @@
+ #define  SSB_IMSTATE_AP_RSV	0x00000030 /* Reserved */
+ #define  SSB_IMSTATE_IBE	0x00020000 /* In Band Error */
+ #define  SSB_IMSTATE_TO		0x00040000 /* Timeout */
++#define  SSB_IMSTATE_BUSY	0x01800000 /* Busy (Backplane rev >= 2.3 only) */
++#define  SSB_IMSTATE_REJECT	0x02000000 /* Reject (Backplane rev >= 2.3 only) */
+ #define SSB_INTVEC		0x0F94     /* SB Interrupt Mask */
+ #define  SSB_INTVEC_PCI		0x00000001 /* Enable interrupts for PCI */
+ #define  SSB_INTVEC_ENET0	0x00000002 /* Enable interrupts for enet 0 */
+@@ -97,7 +99,6 @@
+ #define  SSB_TMSLOW_RESET	0x00000001 /* Reset */
+ #define  SSB_TMSLOW_REJECT_22	0x00000002 /* Reject (Backplane rev 2.2) */
+ #define  SSB_TMSLOW_REJECT_23	0x00000004 /* Reject (Backplane rev 2.3) */
+-#define  SSB_TMSLOW_PHYCLK	0x00000010 /* MAC PHY Clock Control Enable */
+ #define  SSB_TMSLOW_CLOCK	0x00010000 /* Clock Enable */
+ #define  SSB_TMSLOW_FGC		0x00020000 /* Force Gated Clocks On */
+ #define  SSB_TMSLOW_PE		0x40000000 /* Power Management Enable */
+@@ -268,6 +269,8 @@
+ /* SPROM Revision 4 */
+ #define SSB_SPROM4_BFLLO		0x0044	/* Boardflags (low 16 bits) */
+ #define SSB_SPROM4_BFLHI		0x0046  /* Board Flags Hi */
++#define SSB_SPROM4_BFL2LO		0x0048	/* Board flags 2 (low 16 bits) */
++#define SSB_SPROM4_BFL2HI		0x004A	/* Board flags 2 Hi */
+ #define SSB_SPROM4_IL0MAC		0x004C	/* 6 byte MAC address for a/b/g/n */
+ #define SSB_SPROM4_CCODE		0x0052	/* Country Code (2 bytes) */
+ #define SSB_SPROM4_GPIOA		0x0056	/* Gen. Purpose IO # 0 and 1 */
+@@ -358,6 +361,8 @@
+ #define SSB_SPROM5_CCODE		0x0044	/* Country Code (2 bytes) */
+ #define SSB_SPROM5_BFLLO		0x004A	/* Boardflags (low 16 bits) */
+ #define SSB_SPROM5_BFLHI		0x004C  /* Board Flags Hi */
++#define SSB_SPROM5_BFL2LO		0x004E	/* Board flags 2 (low 16 bits) */
++#define SSB_SPROM5_BFL2HI		0x0050	/* Board flags 2 Hi */
+ #define SSB_SPROM5_IL0MAC		0x0052	/* 6 byte MAC address for a/b/g/n */
+ #define SSB_SPROM5_GPIOA		0x0076	/* Gen. Purpose IO # 0 and 1 */
+ #define  SSB_SPROM5_GPIOA_P0		0x00FF	/* Pin 0 */

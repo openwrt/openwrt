@@ -25,7 +25,7 @@
  		ssb_printk(KERN_ERR PFX
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -151,9 +151,16 @@ struct ssb_bus_ops {
+@@ -155,9 +155,16 @@ struct ssb_bus_ops {
  #define SSB_DEV_MINI_MACPHY	0x823
  #define SSB_DEV_ARM_1176	0x824
  #define SSB_DEV_ARM_7TDMI	0x825
@@ -60,7 +60,7 @@
  
  /* Enumeration space constants */
  #define SSB_CORE_SIZE		0x1000	/* Size of a core MMIO area */
-@@ -453,5 +455,41 @@ enum {
+@@ -499,5 +501,41 @@ enum {
  #define SSB_ADM_BASE2			0xFFFF0000	/* Type2 base address for the core */
  #define SSB_ADM_BASE2_SHIFT		16
  
