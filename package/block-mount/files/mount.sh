@@ -41,10 +41,14 @@ config_mount_by_section() {
 				if [ "$find_rootfs" = "1" ]; then
 				    if [ "$is_rootfs" -eq 1 ]; then
 					target=/overlay
+				    elif [ "$target" = "/" ]; then
+					target=/rom
 				    fi
 				else
 				    if [ "$is_rootfs" -eq 1 ] || [ "$target" = "/overlay" ]; then
 					target=/tmp/overlay-disabled
+				    elif [ "$target" = "/" ] || [ "$target" = "/rom" ]; then
+					target="/tmp/rom-disabled"
 				    fi
 				fi
 				
@@ -57,6 +61,9 @@ config_mount_by_section() {
 		fi
 		[ "$find_rootfs" = "1" ] && {
 		    [ "$target" = "/overlay" ] && {
+			rootfs_found=1
+		    }
+		    [ "$target" = "/rom" ] && {
 			rootfs_found=1
 		    }
 		}
