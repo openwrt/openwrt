@@ -362,7 +362,7 @@ ifneq ($(BUILD_LIBGCC),)
 		"$(wildcard $(TOOLCHAIN_DIR)/lib/libpthread_so.a)" \
 		"$(patsubst $(TOOLCHAIN_DIR)/lib/%,$(PKG_BUILD_DIR)/%,$(wildcard $(TOOLCHAIN_DIR)/lib/libpthread-*.so))" \
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
-		-ldl $(BUILD_LIBGCC) \
+		-ldl -lc $(BUILD_LIBGCC) \
 		-Wl,-soname=libpthread.so.0
   endef
   define Build/Compile/libgcc
