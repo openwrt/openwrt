@@ -488,7 +488,7 @@ define KernelPackage/ath9k-htc
   AUTOLOAD:=$(call AutoLoad,28,ath9k_htc)
 endef
 
-define KernelPackage/ath9k/description
+define KernelPackage/ath9k-htc/description
 This module adds support for wireless adapters based on
 Atheros USB AR9271 and AR7010 family of chipsets.
 endef
