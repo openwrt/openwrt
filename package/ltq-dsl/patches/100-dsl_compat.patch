@@ -19,16 +19,70 @@
  
  #include "drv_dsl_cpe_api.h"
  #include "drv_dsl_cpe_api_ioctl.h"
-@@ -72,7 +73,7 @@
+@@ -34,9 +35,13 @@
+ static DSL_ssize_t DSL_DRV_Write(DSL_DRV_file_t *pFile, const DSL_char_t * pBuf,
+                                  DSL_DRV_size_t nSize, DSL_DRV_offset_t * pLoff);
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
+ static DSL_int_t DSL_DRV_Ioctls(DSL_DRV_inode_t * pINode, DSL_DRV_file_t * pFile,
+                          DSL_uint_t nCommand, unsigned long nArg);
+-
++#else
++static DSL_int_t DSL_DRV_Ioctls(DSL_DRV_file_t * pFile,
++                         DSL_uint_t nCommand, unsigned long nArg);
++#endif
+ static int DSL_DRV_Open(DSL_DRV_inode_t * ino, DSL_DRV_file_t * fil);
+ 
+ static int DSL_DRV_Release(DSL_DRV_inode_t * ino, DSL_DRV_file_t * fil);
+@@ -72,7 +77,11 @@
     open:    DSL_DRV_Open,
     release: DSL_DRV_Release,
     write:   DSL_DRV_Write,
--   ioctl:   DSL_DRV_Ioctls,
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
+    ioctl:   DSL_DRV_Ioctls,
++#else
 +   unlocked_ioctl:   DSL_DRV_Ioctls,
++#endif
     poll:    DSL_DRV_Poll
  };
  #else
-@@ -1058,6 +1059,7 @@
+@@ -168,10 +177,17 @@
+    \return  Success or failure.
+    \ingroup Internal
+ */
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
+ static DSL_int_t DSL_DRV_Ioctls(DSL_DRV_inode_t * pINode,
+    DSL_DRV_file_t * pFile,
+    DSL_uint_t nCommand,
+    unsigned long nArg)
++#else
++static DSL_int_t DSL_DRV_Ioctls(
++   DSL_DRV_file_t * pFile,
++   DSL_uint_t nCommand,
++   unsigned long nArg)
++#endif
+ {
+    DSL_int_t nErr=0;
+    DSL_boolean_t bIsInKernel;
+@@ -216,16 +232,7 @@
+          }
+       }
+    }
+-
+-   if (pINode == DSL_NULL)
+-   {
+-      bIsInKernel = DSL_TRUE;
+-   }
+-   else
+-   {
+-      bIsInKernel = DSL_FALSE;
+-   }
+-
++   bIsInKernel = DSL_FALSE;
+    if ( (_IOC_TYPE(nCommand) == DSL_IOC_MAGIC_CPE_API) ||
+         (_IOC_TYPE(nCommand) == DSL_IOC_MAGIC_CPE_API_G997) ||
+         (_IOC_TYPE(nCommand) == DSL_IOC_MAGIC_CPE_API_PM) ||
+@@ -1058,6 +1065,7 @@
  /* Entry point of driver */
  int __init DSL_ModuleInit(void)
  {
@@ -36,7 +90,7 @@
     DSL_int_t i;
  
     printk(DSL_DRV_CRLF DSL_DRV_CRLF "Infineon CPE API Driver version: %s" DSL_DRV_CRLF,
-@@ -1104,7 +1106,8 @@
+@@ -1104,7 +1112,8 @@
     }
  
     DSL_DRV_DevNodeInit();

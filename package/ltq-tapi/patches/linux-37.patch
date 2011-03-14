@@ -1,23 +1,57 @@
 --- a/src/drv_tapi_linux.c
 +++ b/src/drv_tapi_linux.c
-@@ -213,7 +213,7 @@
+@@ -128,8 +128,13 @@
+                               size_t count, loff_t * ppos);
+ static ssize_t ifx_tapi_read(struct file * filp, char *buf,
+                               size_t length, loff_t * ppos);
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
+ static int ifx_tapi_ioctl(struct inode *inode, struct file *filp,
+                               unsigned int nCmd, unsigned long nArgument);
++#else
++static int ifx_tapi_ioctl(struct file *filp,
++                              unsigned int nCmd, unsigned long nArgument);
++#endif
+ static unsigned int ifx_tapi_poll (struct file *filp, poll_table *table);
+ 
+ #ifdef CONFIG_PROC_FS
+@@ -213,7 +218,11 @@
     IFX_char_t   *pRegDrvName = IFX_NULL;
     IFX_int32_t ret = 0;
  
--   if (tapi_fops.ioctl == IFX_NULL)
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
+    if (tapi_fops.ioctl == IFX_NULL)
++#else
 +   if (tapi_fops.unlocked_ioctl == IFX_NULL)
++#endif
     {
  #ifdef MODULE
        tapi_fops.owner =    THIS_MODULE;
-@@ -221,7 +221,7 @@
+@@ -221,7 +230,11 @@
        tapi_fops.read =     ifx_tapi_read;
        tapi_fops.write =    ifx_tapi_write;
        tapi_fops.poll =     ifx_tapi_poll;
--      tapi_fops.ioctl =    ifx_tapi_ioctl;
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
+       tapi_fops.ioctl =    ifx_tapi_ioctl;
++#else
 +      tapi_fops.unlocked_ioctl =    ifx_tapi_ioctl;
++#endif
        tapi_fops.open =     ifx_tapi_open;
        tapi_fops.release =  ifx_tapi_release;
     }
+@@ -876,8 +889,13 @@
+    - 0 and positive values - success
+    - negative value - ioctl failed
+ */
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
+ static int ifx_tapi_ioctl(struct inode *inode, struct file *filp,
+                           unsigned int nCmd, unsigned long nArg)
++#else
++static int ifx_tapi_ioctl(struct file *filp,
++                          unsigned int nCmd, unsigned long nArg)
++#endif
+ {
+    TAPI_FD_PRIV_DATA_t *pTapiPriv;
+    IFX_TAPI_ioctlCtx_t  ctx;
 --- a/src/lib/lib_fifo/lib_fifo.c
 +++ b/src/lib/lib_fifo/lib_fifo.c
 @@ -41,7 +41,7 @@

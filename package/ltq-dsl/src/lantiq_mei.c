@@ -149,7 +149,11 @@ static int IFX_MEI_GetPage (DSL_DEV_Device_t *, u32, u32, u32, u32 *, u32 *);
 static int IFX_MEI_BarUpdate (DSL_DEV_Device_t *, int);
 
 static ssize_t IFX_MEI_Write (DSL_DRV_file_t *, const char *, size_t, loff_t *);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
 static int IFX_MEI_UserIoctls (DSL_DRV_inode_t *, DSL_DRV_file_t *, unsigned int, unsigned long);
+#else
+static int IFX_MEI_UserIoctls (DSL_DRV_file_t *, unsigned int, unsigned long);
+#endif
 static int IFX_MEI_Open (DSL_DRV_inode_t *, DSL_DRV_file_t *);
 static int IFX_MEI_Release (DSL_DRV_inode_t *, DSL_DRV_file_t *);
 
@@ -200,7 +204,11 @@ static struct file_operations bsp_mei_operations = {
       open:IFX_MEI_Open,
       release:IFX_MEI_Release,
       write:IFX_MEI_Write,
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
+      ioctl:IFX_MEI_UserIoctls,
+#else
       unlocked_ioctl:IFX_MEI_UserIoctls,
+#endif
 };
 
 static DSL_DEV_Device_t dsl_devices[BSP_MAX_DEVICES];
@@ -2662,16 +2670,28 @@ DSL_BSP_KernelIoctls (DSL_DEV_Device_t * pDev, unsigned int command,
 	return error;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
 static int
 IFX_MEI_UserIoctls (DSL_DRV_inode_t * ino, DSL_DRV_file_t * fil,
 			  unsigned int command, unsigned long lon)
+#else
+static int
+IFX_MEI_UserIoctls (DSL_DRV_file_t * fil,
+			  unsigned int command, unsigned long lon)
+#endif
 {
 	int error = 0;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
 	int maj = MAJOR (ino->i_rdev);
 	int num = MINOR (ino->i_rdev);
+#endif
 	DSL_DEV_Device_t *pDev;
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36))
 	pDev = IFX_BSP_HandleGet (maj, num);
+#else
+	pDev = IFX_BSP_HandleGet (0, 0);
+#endif
 	if (pDev == NULL)
 		return -EIO;
 
