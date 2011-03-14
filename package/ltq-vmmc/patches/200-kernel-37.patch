@@ -1,5 +1,14 @@
 --- a/src/drv_vmmc_init.c
 +++ b/src/drv_vmmc_init.c
+@@ -784,7 +784,7 @@
+       dwld.fwDwld.length = IoInit.pram_size;
+ 
+      /* download firmware */
+-      ret = ifx_mps_ioctl((IFX_void_t *) command, IFX_NULL, FIO_MPS_DOWNLOAD,
++      ret = ifx_mps_ioctl((IFX_void_t *) command, FIO_MPS_DOWNLOAD,
+                           (IFX_uint32_t) &dwld.fwDwld);
+    }
+ 
 @@ -1594,7 +1594,7 @@
  #ifdef VMMC_DRIVER_UNLOAD_HOOK
     if (VDevices[0].nDevState & DS_GPIO_RESERVED)
@@ -11,6 +20,15 @@
        {
 --- a/src/mps/drv_mps_vmmc_linux.c
 +++ b/src/mps/drv_mps_vmmc_linux.c
+@@ -112,7 +112,7 @@
+ #ifndef __KERNEL__
+ IFX_int32_t ifx_mps_open (struct inode *inode, struct file *file_p);
+ IFX_int32_t ifx_mps_close (struct inode *inode, struct file *file_p);
+-IFX_int32_t ifx_mps_ioctl (struct inode *inode, struct file *file_p,
++long ifx_mps_ioctl (struct file *file_p,
+                            IFX_uint32_t nCmd, IFX_ulong_t arg);
+ IFX_int32_t ifx_mps_read_mailbox (mps_devices type, mps_message * rw);
+ IFX_int32_t ifx_mps_write_mailbox (mps_devices type, mps_message * rw);
 @@ -173,7 +173,7 @@
  static struct file_operations ifx_mps_fops = {
   owner:THIS_MODULE,
@@ -20,3 +38,69 @@
   open:ifx_mps_open,
   release:ifx_mps_close
  };
+@@ -616,7 +616,7 @@
+  * \return  -ENOIOCTLCMD Invalid command
+  * \ingroup API
+  */
+-IFX_int32_t ifx_mps_ioctl (struct inode * inode, struct file * file_p,
++long ifx_mps_ioctl (struct file *file_p,
+                            IFX_uint32_t nCmd, IFX_ulong_t arg)
+ {
+    IFX_int32_t retvalue = -EINVAL;
+@@ -631,17 +631,18 @@
+       'mps_devices' enum type, which in fact is [0..8]; So, if inode value is
+       [0..NUM_VOICE_CHANNEL+1], then we make sure that we are calling from
+       kernel space. */
+-   if (((IFX_int32_t) inode >= 0) &&
+-       ((IFX_int32_t) inode < NUM_VOICE_CHANNEL + 1))
++   if (((IFX_int32_t) file_p >= 0) &&
++       ((IFX_int32_t) file_p < NUM_VOICE_CHANNEL + 1))
+    {
+       from_kernel = 1;
+ 
+       /* Get corresponding mailbox device structure */
+       if ((pMBDev =
+-           ifx_mps_get_device ((mps_devices) ((IFX_int32_t) inode))) == 0)
++           ifx_mps_get_device ((mps_devices) ((IFX_int32_t) file_p))) == 0)
+       {
+          return (-EINVAL);
+       }
++      file_p = NULL;
+    }
+    else
+    {
+--- a/src/drv_vmmc_ioctl.c
++++ b/src/drv_vmmc_ioctl.c
+@@ -427,18 +427,18 @@
+          /* MPS driver will do the USR2KERN so just pass on the pointer. */
+          dwnld_struct.data = (IFX_void_t *)IoInit.pPRAMfw;
+ 
+-         ret = ifx_mps_ioctl((IFX_void_t *)command, IFX_NULL,
++         ret = ifx_mps_ioctl((IFX_void_t *)command,
+                              FIO_MPS_DOWNLOAD, (IFX_uint32_t) &dwnld_struct);
+          break;
+       }
+       case FIO_DEV_RESET:
+       {
+-         ret = ifx_mps_ioctl((IFX_void_t *)command, IFX_NULL, FIO_MPS_RESET, 0);
++         ret = ifx_mps_ioctl((IFX_void_t *)command, FIO_MPS_RESET, 0);
+          break;
+       }
+       case FIO_DEV_RESTART:
+       {
+-         ret = ifx_mps_ioctl((IFX_void_t *)command, IFX_NULL, FIO_MPS_RESTART, 0);
++         ret = ifx_mps_ioctl((IFX_void_t *)command, FIO_MPS_RESTART, 0);
+          break;
+       }
+       case FIO_LASTERR:
+--- a/src/mps/drv_mps_vmmc.h
++++ b/src/mps/drv_mps_vmmc.h
+@@ -279,7 +279,7 @@
+ #include <linux/fs.h>
+ IFX_int32_t ifx_mps_open (struct inode *inode, struct file *file_p);
+ IFX_int32_t ifx_mps_close (struct inode *inode, struct file *filp);
+-IFX_int32_t ifx_mps_ioctl (struct inode *inode, struct file *file_p,
++long ifx_mps_ioctl (struct file *filp,
+                            IFX_uint32_t nCmd, unsigned long arg);
+ IFX_int32_t ifx_mps_register_data_callback (mps_devices type, IFX_uint32_t dir,
+                                             IFX_void_t (*callback) (mps_devices
