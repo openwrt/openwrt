@@ -22,7 +22,7 @@
 +obj-$(CONFIG_MTD_LANTIQ)	+= lantiq.o
 --- /dev/null
 +++ b/drivers/mtd/maps/lantiq.c
-@@ -0,0 +1,173 @@
+@@ -0,0 +1,183 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -44,6 +44,7 @@
 +#include <linux/magic.h>
 +#include <linux/platform_device.h>
 +#include <linux/mtd/physmap.h>
++#include <linux/mtd/cfi.h>
 +
 +#include <lantiq.h>
 +#include <lantiq_platform.h>
@@ -51,6 +52,7 @@
 +#ifdef CONFIG_SOC_LANTIQ_XWAY
 +#include <xway.h>
 +#endif
++static int ltq_mtd_probing;
 +
 +static map_word
 +lq_read16(struct map_info *map, unsigned long adr)
@@ -58,7 +60,8 @@
 +	unsigned long flags;
 +	map_word temp;
 +	spin_lock_irqsave(&ebu_lock, flags);
-+	adr ^= 2;
++	if (ltq_mtd_probing)
++		adr ^= 2;
 +	temp.x[0] = *((__u16 *)(map->virt + adr));
 +	spin_unlock_irqrestore(&ebu_lock, flags);
 +	return temp;
@@ -69,7 +72,8 @@
 +{
 +	unsigned long flags;
 +	spin_lock_irqsave(&ebu_lock, flags);
-+	adr ^= 2;
++	if (ltq_mtd_probing)
++		adr ^= 2;
 +	*((__u16 *)(map->virt + adr)) = d.x[0];
 +	spin_unlock_irqrestore(&ebu_lock, flags);
 +}
@@ -125,6 +129,7 @@
 +	struct mtd_partition *parts = NULL;
 +	struct resource *res = 0;
 +	int nr_parts = 0;
++	struct cfi_private *cfi;
 +
 +#ifdef CONFIG_SOC_LANTIQ_XWAY
 +	lq_w32(lq_r32(LQ_EBU_BUSCON0) & ~EBU_WRDIS, LQ_EBU_BUSCON0);
@@ -153,7 +158,9 @@
 +		return -EIO;
 +	}
 +
++	ltq_mtd_probing = 1;
 +	lq_mtd = (struct mtd_info *) do_map_probe("cfi_probe", &lq_map);
++	ltq_mtd_probing = 0;
 +	if (!lq_mtd) {
 +		iounmap(lq_map.virt);
 +		dev_err(&pdev->dev, "probing failed\n");
@@ -161,6 +168,9 @@
 +	}
 +
 +	lq_mtd->owner = THIS_MODULE;
++	cfi = lq_map.fldrv_priv;
++	cfi->addr_unlock1 ^= 1;
++	cfi->addr_unlock2 ^= 1;
 +
 +	nr_parts = parse_mtd_partitions(lq_mtd, part_probe_types, &parts, 0);
 +	if (nr_parts > 0) {
@@ -196,54 +206,3 @@
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Lantiq SoC NOR");
---- a/drivers/mtd/chips/cfi_cmdset_0001.c
-+++ b/drivers/mtd/chips/cfi_cmdset_0001.c
-@@ -40,7 +40,11 @@
- /* #define CMDSET0001_DISABLE_WRITE_SUSPEND */
- 
- // debugging, turns off buffer write mode if set to 1
--#define FORCE_WORD_WRITE 0
-+#ifdef CONFIG_LANTIQ
-+#  define FORCE_WORD_WRITE 1
-+#else
-+#  define FORCE_WORD_WRITE 0
-+#endif
- 
- /* Intel chips */
- #define I82802AB	0x00ad
-@@ -1493,6 +1497,9 @@
- 	int ret=0;
- 
- 	adr += chip->start;
-+#ifdef CONFIG_LANTIQ
-+	adr ^= 2;
-+#endif
- 
- 	switch (mode) {
- 	case FL_WRITING:
---- a/drivers/mtd/chips/cfi_cmdset_0002.c
-+++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -39,7 +39,11 @@
- #include <linux/mtd/xip.h>
- 
- #define AMD_BOOTLOC_BUG
--#define FORCE_WORD_WRITE 0
-+#ifdef CONFIG_LANTIQ
-+#  define FORCE_WORD_WRITE 1
-+#else
-+#  define FORCE_WORD_WRITE 0
-+#endif
- 
- #define MAX_WORD_RETRIES 3
- 
-@@ -1167,6 +1171,10 @@
- 
- 	adr += chip->start;
- 
-+#ifdef CONFIG_LANTIQ
-+	adr ^= 2;
-+#endif
-+
- 	mutex_lock(&chip->mutex);
- 	ret = get_chip(map, chip, adr, FL_WRITING);
- 	if (ret) {

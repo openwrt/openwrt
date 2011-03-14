@@ -38,7 +38,7 @@
 +obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-arv45xx.c
-@@ -0,0 +1,504 @@
+@@ -0,0 +1,536 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -69,22 +69,46 @@
 +#include "dev-dwc_otg.h"
 +
 +#ifdef CONFIG_MTD_PARTITIONS
++static struct mtd_partition arv4510_partitions[] =
++{
++	{
++		.name	= "uboot",
++		.offset	= 0x0,
++		.size	= 0x20000,
++	},
++	{
++		.name	= "uboot_env",
++		.offset	= 0x20000,
++		.size	= 0x120000,
++	},
++	{
++		.name	= "linux",
++		.offset	= 0x40000,
++		.size	= 0xfa0000,
++	},
++	{
++		.name	= "board_config",
++		.offset	= 0xfe0000,
++		.size	= 0x20000,
++	},
++};
++
 +static struct mtd_partition arv45xx_partitions[] =
 +{
 +	{
 +		.name	= "uboot",
 +		.offset	= 0x0,
-+		.size	= 0x10000,
++		.size	= 0x20000,
 +	},
 +	{
 +		.name	= "uboot_env",
-+		.offset	= 0x10000,
++		.offset	= 0x20000,
 +		.size	= 0x10000,
 +	},
 +	{
 +		.name	= "linux",
-+		.offset	= 0x20000,
-+		.size	= 0x3d0000,
++		.offset	= 0x30000,
++		.size	= 0x3c0000,
 +	},
 +	{
 +		.name	= "board_config",
@@ -118,6 +142,13 @@
 +};
 +
 +#endif
++
++static struct physmap_flash_data arv4510_flash_data = {
++#ifdef CONFIG_MTD_PARTITIONS
++	.nr_parts	= ARRAY_SIZE(arv4510_partitions),
++	.parts		= arv4510_partitions,
++#endif
++};
 +
 +static struct physmap_flash_data arv45xx_flash_data = {
 +#ifdef CONFIG_MTD_PARTITIONS
@@ -354,9 +385,10 @@
 +	lq_register_gpio_leds(arv4510pw_leds_gpio, ARRAY_SIZE(arv4510pw_leds_gpio));
 +	lq_register_asc(0);
 +	lq_register_asc(1);
-+	lq_register_nor(&arv45xx_flash_data);
-+	lq_pci_data.irq[15] = (INT_NUM_IM2_IRL0 + 31);
-+	lq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
++	lq_register_nor(&arv4510_flash_data);
++	lq_pci_data.irq[12] = (INT_NUM_IM2_IRL0 + 31);
++	lq_pci_data.irq[15] = (INT_NUM_IM0_IRL0 + 26);
++	lq_pci_data.gpio |= PCI_EXIN2 | PCI_REQ2;
 +	lq_register_pci(&lq_pci_data);
 +	lq_register_wdt();
 +	bewan_register_ethernet();
