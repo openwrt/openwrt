@@ -140,7 +140,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/pci/pci-lantiq.c
-@@ -0,0 +1,302 @@
+@@ -0,0 +1,303 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -394,15 +394,16 @@
 +	lq_w32(lq_r32(LQ_EBU_PCC_IEN) | 0x10, LQ_EBU_PCC_IEN);
 +
 +	/* toggle reset pin */
-+	__gpio_set_value(21, 0);
++	gpio_set_value(21, 0);
 +	wmb();
 +	mdelay(1);
-+	__gpio_set_value(21, 1);
++	gpio_set_value(21, 1);
 +	return 0;
 +}
 +
 +int __init
 +pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin){
++	printk("%s:%s[%d]%d %d\n", __FILE__, __func__, __LINE__, slot, pin);
 +	if(lq_pci_irq_map[slot])
 +		return lq_pci_irq_map[slot];
 +	printk("lq_pci: trying to map irq for unknown slot %d\n", slot);

@@ -79,6 +79,14 @@ define Image/Build/Profile/ARV3527P
 	$(call Image/Build/$(1),$(1),ARV3527P)
 endef
 
+define Image/BuildKernel/Profile/ARV4510PW
+	$(call Image/BuildKernel/Template,ARV4510PW,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV4510PW
+	$(call Image/Build/$(1),$(1),ARV4510PW)
+endef
+
 define Image/BuildKernel/Profile/ARV4518PW
 	$(call Image/BuildKernel/Template,ARV4518PW,$(xway_cmdline))
 endef
