@@ -220,7 +220,7 @@ enable_prism2() {
 
 }
 
-check_device() {
+check_prism2_device() {
 	[ ${1%[0-9]} = "wlan" ] && config_set "$1" phy "$1"
 	config_get phy "$1" phy
 	[ -z "$phy" ] && {
@@ -242,7 +242,7 @@ detect_prism2() {
 	[ -d wlan* ] || return
 	for dev in $(ls -d wlan* 2>&-); do
 		found=0
-		config_foreach check_device wifi-device
+		config_foreach check_prism2_device wifi-device
 		[ "$found" -gt 0 ] && continue
 		cat <<EOF
 
