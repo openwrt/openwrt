@@ -477,7 +477,7 @@ enable_mac80211() {
 }
 
 
-check_device() {
+check_mac80211_device() {
 	config_get phy "$1" phy
 	[ -z "$phy" ] && {
 		find_mac80211_phy "$1" >/dev/null || return 0
@@ -496,7 +496,7 @@ detect_mac80211() {
 	done
 	for dev in $(ls /sys/class/ieee80211); do
 		found=0
-		config_foreach check_device wifi-device
+		config_foreach check_mac80211_device wifi-device
 		[ "$found" -gt 0 ] && continue
 
 		mode_11n=""
