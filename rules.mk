@@ -178,8 +178,6 @@ INSTALL_DATA:=install -m0644
 INSTALL_CONF:=install -m0600
 
 ifneq ($(CONFIG_CCACHE),)
-  # FIXME: move this variable to a better location
-  export CCACHE_DIR=$(STAGING_DIR)/ccache
   TARGET_CC:= ccache $(TARGET_CC)
   TARGET_CXX:= ccache $(TARGET_CXX)
 endif
