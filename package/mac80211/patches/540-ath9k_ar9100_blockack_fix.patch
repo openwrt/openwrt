@@ -1,0 +1,21 @@
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -411,6 +411,8 @@ static void ath9k_hw_init_defaults(struc
+ 	ah->sta_id1_defaults =
+ 		AR_STA_ID1_CRPT_MIC_ENABLE |
+ 		AR_STA_ID1_MCAST_KSRCH;
++	if (AR_SREV_9100(ah))
++		ah->sta_id1_defaults |= AR_STA_ID1_AR9100_BA_FIX;
+ 	ah->enable_32kHz_clock = DONT_USE_32KHZ;
+ 	ah->slottime = 20;
+ 	ah->globaltxtimeout = (u32) -1;
+--- a/drivers/net/wireless/ath/ath9k/reg.h
++++ b/drivers/net/wireless/ath/ath9k/reg.h
+@@ -1396,6 +1396,7 @@ enum {
+ #define AR_STA_ID1_PCF             0x00100000
+ #define AR_STA_ID1_USE_DEFANT      0x00200000
+ #define AR_STA_ID1_DEFANT_UPDATE   0x00400000
++#define AR_STA_ID1_AR9100_BA_FIX   0x00400000
+ #define AR_STA_ID1_RTS_USE_DEF     0x00800000
+ #define AR_STA_ID1_ACKCTS_6MB      0x01000000
+ #define AR_STA_ID1_BASE_RATE_11B   0x02000000
