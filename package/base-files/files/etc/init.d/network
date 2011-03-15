@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 
 START=40
 STOP=90
@@ -9,11 +9,11 @@ boot() {
 
 	include /lib/network
 	setup_switch
+	/sbin/wifi detect >> /etc/config/wireless
 	grep -qs config /etc/config/wireless && {
 		/sbin/wifi up
 	} || {
 		rm -f /etc/config/wireless
-		/sbin/wifi detect > /etc/config/wireless
 	}
 
 	scan_interfaces
