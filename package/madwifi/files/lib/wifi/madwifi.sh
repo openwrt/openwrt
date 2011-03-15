@@ -406,7 +406,7 @@ enable_atheros() {
 	done
 }
 
-check_device() {
+check_atheros_device() {
 	[ ${1%[0-9]} = "wifi" ] && config_set "$1" phy "$1"
 	config_get phy "$1" phy
 	[ -z "$phy" ] && {
@@ -429,7 +429,7 @@ detect_atheros() {
 	[ -d ath ] || return
 	for dev in $(ls -d wifi* 2>&-); do
 		found=0
-		config_foreach check_device wifi-device
+		config_foreach check_atheros_device wifi-device
 		[ "$found" -gt 0 ] && continue
 
 		devname="$(cat /proc/sys/dev/$dev/dev_name)"
