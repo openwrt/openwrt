@@ -1,6 +1,6 @@
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -60,7 +60,7 @@ int br_handle_frame_finish(struct sk_buf
+@@ -64,7 +64,7 @@ int br_handle_frame_finish(struct sk_buf
  	    br_multicast_rcv(br, p, skb))
  		goto drop;
  

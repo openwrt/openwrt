@@ -548,7 +548,7 @@
  	part->name = dev->mtd.name;
 --- a/drivers/mtd/mtdchar.c
 +++ b/drivers/mtd/mtdchar.c
-@@ -841,6 +841,13 @@ static int mtd_ioctl(struct file *file,
+@@ -841,6 +841,13 @@ static int mtd_ioctl(struct file *file, 
  		file->f_pos = 0;
  		break;
  	}

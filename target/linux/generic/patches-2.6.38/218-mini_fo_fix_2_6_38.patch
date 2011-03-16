@@ -9,7 +9,7 @@
  {
  	int err = 0;
  	dentry_t *hidden_dentry;
-@@ -96,7 +96,7 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t
+@@ -96,7 +96,7 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t 
  		if(hidden_sto_dentry &&
  		   hidden_sto_dentry->d_op &&
  		   hidden_sto_dentry->d_op->d_hash) {
@@ -18,7 +18,7 @@
  		}
  		goto out;
  	}
-@@ -106,7 +106,7 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t
+@@ -106,7 +106,7 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t 
  		if(hidden_dentry &&
  		   hidden_dentry->d_op &&
  		   hidden_dentry->d_op->d_hash) {
@@ -27,7 +27,7 @@
  		}
  		goto out;
  	}
-@@ -116,14 +116,14 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t
+@@ -116,14 +116,14 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t 
  		if(hidden_sto_dentry &&
  		   hidden_sto_dentry->d_op &&
  		   hidden_sto_dentry->d_op->d_hash) {
@@ -44,7 +44,7 @@
  			goto out;
  		}
  	}
-@@ -136,21 +136,25 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t
+@@ -136,21 +136,25 @@ mini_fo_d_hash(dentry_t *dentry, qstr_t 
  
  
  STATIC int
