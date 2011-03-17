@@ -1,0 +1,76 @@
+--- a/fs/overlayfs/overlayfs.c
++++ b/fs/overlayfs/overlayfs.c
+@@ -1686,37 +1686,56 @@ static int ovl_check_empty_dir(struct de
+ 	return err;
+ }
+ 
+-static int ovl_unlink_whiteout(void *buf, const char *name, int namelen,
+-				 loff_t offset, u64 ino, unsigned int d_type)
++static int ovl_fill_links(void *buf, const char *name, int namelen,
++                          loff_t offset, u64 ino, unsigned int d_type)
+ {
+ 	struct ovl_readdir_data *rdd = buf;
++	struct ovl_cache_entry *p;
+ 
+-	rdd->count++;
+-	/* check d_type to filter out "." and ".." */
+-	if (d_type == DT_LNK) {
+-		struct dentry *dentry;
++	if (d_type != DT_LNK)
++		return 0;
+ 
+-		dentry = lookup_one_len(name, rdd->dir, namelen);
+-		if (IS_ERR(dentry)) {
+-			rdd->err = PTR_ERR(dentry);
+-		} else {
+-			rdd->err = vfs_unlink(rdd->dir->d_inode, dentry);
+-			dput(dentry);
+-		}
+-	}
++	p = ovl_cache_entry_new(name, namelen, ino, d_type);
++	if (!p)
++		return -ENOMEM;
+ 
+-	return rdd->err;
++	list_add(&p->l_node, rdd->list);
++	return 0;
+ }
+ 
+ static int ovl_remove_whiteouts(struct dentry *dentry)
+ {
+ 	struct path upperpath;
+-	struct ovl_readdir_data rdd = {	.list = NULL };
++	LIST_HEAD(list);
++	struct ovl_readdir_data rdd = {	.list = &list };
++	struct ovl_cache_entry *p, *t;
++	int ret;
+ 
+ 	ovl_path_upper(dentry, &upperpath);
+ 	rdd.dir = upperpath.dentry;
+ 
+-	return ovl_dir_read(&upperpath, &rdd, ovl_unlink_whiteout);
++	ret = ovl_dir_read(&upperpath, &rdd, ovl_fill_links);
++
++	mutex_lock(&rdd.dir->d_inode->i_mutex);
++	list_for_each_entry_safe(p, t, &list, l_node) {
++		struct dentry *dentry;
++
++		if (!ret) {
++			dentry = lookup_one_len(p->name, rdd.dir, p->len);
++			if (IS_ERR(dentry)) {
++				ret = PTR_ERR(dentry);
++			} else {
++				ret = vfs_unlink(rdd.dir->d_inode, dentry);
++				dput(dentry);
++			}
++		}
++
++		list_del(&p->l_node);
++		kfree(p);
++	}
++	mutex_unlock(&rdd.dir->d_inode->i_mutex);
++
++	return ret;
+ }
+ 
+ static int ovl_rmdir(struct inode *dir, struct dentry *dentry)
