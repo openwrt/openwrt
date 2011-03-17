@@ -7,6 +7,18 @@ with_fo_cleanup() {
     # try to get rid of /tmp/root
     # this will almost always fail
     umount /tmp/root 2>&-
+	grep -q overlay /proc/filesystems && {
+		cd /
+		(
+			cd /overlay
+			find -type l
+		) | while read FILE; do
+			[ -z "$FILE" ] && break
+			if ls -la "$FILE" 2>&- | grep -q '(overlay-whiteout)'; then
+				rm -f "$FILE"
+			fi
+		done
+	}
     exit 0
 }
 
