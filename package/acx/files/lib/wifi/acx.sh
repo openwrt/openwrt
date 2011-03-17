@@ -196,6 +196,7 @@ config wifi-iface
 	option mode	ap
 	option ssid	OpenWrt
 	option encryption none
+
 EOF
 	done
 }
