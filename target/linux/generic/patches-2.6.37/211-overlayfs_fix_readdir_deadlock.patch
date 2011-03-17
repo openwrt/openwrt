@@ -1,0 +1,124 @@
+--- a/fs/overlayfs/overlayfs.c
++++ b/fs/overlayfs/overlayfs.c
+@@ -248,8 +248,7 @@ static struct ovl_cache_entry *ovl_cache
+ }
+ 
+ static struct ovl_cache_entry *ovl_cache_entry_new(const char *name, int len,
+-						   u64 ino, unsigned int d_type,
+-						   bool is_whiteout)
++						   u64 ino, unsigned int d_type)
+ {
+ 	struct ovl_cache_entry *p;
+ 
+@@ -262,7 +261,7 @@ static struct ovl_cache_entry *ovl_cache
+ 		p->len = len;
+ 		p->type = d_type;
+ 		p->ino = ino;
+-		p->is_whiteout = is_whiteout;
++		p->is_whiteout = false;
+ 	}
+ 
+ 	return p;
+@@ -270,7 +269,7 @@ static struct ovl_cache_entry *ovl_cache
+ 
+ static int ovl_cache_entry_add_rb(struct ovl_readdir_data *rdd,
+ 				  const char *name, int len, u64 ino,
+-				  unsigned int d_type, bool is_whiteout)
++				  unsigned int d_type)
+ {
+ 	struct rb_node **newp = &rdd->root->rb_node;
+ 	struct rb_node *parent = NULL;
+@@ -291,11 +290,18 @@ static int ovl_cache_entry_add_rb(struct
+ 			return 0;
+ 	}
+ 
+-	p = ovl_cache_entry_new(name, len, ino, d_type, is_whiteout);
++	p = ovl_cache_entry_new(name, len, ino, d_type);
+ 	if (p == NULL)
+ 		return -ENOMEM;
+ 
+-	list_add_tail(&p->l_node, rdd->list);
++	/*
++	 * Add links before other types to be able to quicky mark
++	 * any whiteout entries
++	 */
++	if (d_type == DT_LNK)
++		list_add(&p->l_node, rdd->list);
++	else
++		list_add_tail(&p->l_node, rdd->list);
+ 	rb_link_node(&p->node, parent, newp);
+ 	rb_insert_color(&p->node, rdd->root);
+ 
+@@ -313,7 +319,7 @@ static int ovl_fill_lower(void *buf, con
+ 	if (p) {
+ 		list_move_tail(&p->l_node, rdd->middle);
+ 	} else {
+-		p = ovl_cache_entry_new(name, namelen, ino, d_type, false);
++		p = ovl_cache_entry_new(name, namelen, ino, d_type);
+ 		if (p == NULL)
+ 			rdd->err = -ENOMEM;
+ 		else
+@@ -338,26 +344,9 @@ static int ovl_fill_upper(void *buf, con
+ 			  loff_t offset, u64 ino, unsigned int d_type)
+ {
+ 	struct ovl_readdir_data *rdd = buf;
+-	bool is_whiteout = false;
+ 
+ 	rdd->count++;
+-	if (d_type == DT_LNK) {
+-		struct dentry *dentry;
+-
+-		dentry = lookup_one_len(name, rdd->dir, namelen);
+-		if (IS_ERR(dentry)) {
+-			rdd->err = PTR_ERR(dentry);
+-			goto out;
+-		}
+-		is_whiteout = ovl_is_whiteout(dentry);
+-		dput(dentry);
+-	}
+-
+-	rdd->err = ovl_cache_entry_add_rb(rdd, name, namelen, ino, d_type,
+-					  is_whiteout);
+-
+-out:
+-	return rdd->err;
++	return ovl_cache_entry_add_rb(rdd, name, namelen, ino, d_type);
+ }
+ 
+ static int ovl_dir_read(struct path *realpath, struct ovl_readdir_data *rdd,
+@@ -423,6 +412,26 @@ static void ovl_dir_reset(struct file *f
+ 	}
+ }
+ 
++static void ovl_dir_mark_whiteouts(struct ovl_readdir_data *rdd)
++{
++	struct ovl_cache_entry *p;
++	struct dentry *dentry;
++
++	mutex_lock(&rdd->dir->d_inode->i_mutex);
++	list_for_each_entry(p, rdd->list, l_node) {
++		if (p->type != DT_LNK)
++			break;
++
++		dentry = lookup_one_len(p->name, rdd->dir, p->len);
++		if (IS_ERR(dentry))
++			continue;
++
++		p->is_whiteout = ovl_is_whiteout(dentry);
++		dput(dentry);
++	}
++	mutex_unlock(&rdd->dir->d_inode->i_mutex);
++}
++
+ static int ovl_dir_read_merged(struct path *upperpath, struct path *lowerpath,
+ 			       struct ovl_readdir_data *rdd)
+ {
+@@ -436,6 +445,8 @@ static int ovl_dir_read_merged(struct pa
+ 		err = ovl_dir_read(upperpath, rdd, ovl_fill_upper);
+ 		if (err)
+ 			goto out;
++
++		ovl_dir_mark_whiteouts(rdd);
+ 	}
+ 	/*
+ 	 * Insert lowerpath entries before upperpath ones, this allows
