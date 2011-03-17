@@ -246,7 +246,6 @@ detect_prism2() {
 		config_foreach check_prism2_device wifi-device
 		[ "$found" -gt 0 ] && continue
 		cat <<EOF
-
 config wifi-device radio$devidx
 	option type	prism2
 	option channel  11
