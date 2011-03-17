@@ -274,7 +274,7 @@ endef
 
 define KernelPackage/rt2800-lib
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +USB_SUPPORT:kmod-rt2x00-usb +TARGET_ramips:kmod-rt2x00-soc
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +USB_SUPPORT:kmod-rt2x00-usb +TARGET_ramips:kmod-rt2x00-soc +@DRIVER_11N_SUPPORT
   TITLE+= (rt2800 LIB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800lib.ko
   AUTOLOAD:=$(call AutoLoad,27,rt2800lib)
@@ -431,7 +431,7 @@ define KernelPackage/ath9k-common
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n wireless devices (common code for ath9k and ath9k_htc)
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
-  DEPENDS+= @PCI_SUPPORT +kmod-ath
+  DEPENDS+= @PCI_SUPPORT +kmod-ath +@DRIVER_11N_SUPPORT
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_common.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_hw.ko
@@ -496,7 +496,7 @@ endef
 define KernelPackage/carl9170
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for Atheros AR9170 USB sticks
-  DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core
+  DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core +@DRIVER_11N_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/carl9170/carl9170.ko
   AUTOLOAD:=$(call AutoLoad,60,carl9170)
 endef
