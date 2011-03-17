@@ -3,11 +3,11 @@
 # Copyright (C) 2006-2010 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 
-check_for_mini_fo() {
-    if ! grep -q mini_fo /proc/filesystems; then
+check_for_overlay() {
+    if ! grep -qE '(mini_fo|overlay)' /proc/filesystems; then
 	boot_run_hook no_fo
 	exit 1
     fi
 }
 
-boot_hook_add switch2jffs check_for_mini_fo
+boot_hook_add switch2jffs check_for_overlay

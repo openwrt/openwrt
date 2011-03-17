@@ -125,7 +125,9 @@ pivot() { # <new_root> <old_root>
 fopivot() { # <rw_root> <ro_root> <dupe?>
 	root=$1
 	{
-		if grep -q mini_fo /proc/filesystems; then
+		if grep -q overlay /proc/filesystems; then
+			mount -t overlayfs -olowerdir=/,upperdir=$1 "overlayfs:$1" /mnt && root=/mnt
+		elif grep -q mini_fo /proc/filesystems; then
 			mount -t mini_fo -o base=/,sto=$1 "mini_fo:$1" /mnt 2>&- && root=/mnt
 		else
 			mount --bind / /mnt
