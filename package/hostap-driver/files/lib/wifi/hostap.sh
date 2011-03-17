@@ -124,6 +124,7 @@ enable_prism2() {
 			;;
 			ap) iwconfig "$phy" mode master;;
 			wds) iwpriv "$phy" wds_add "$ssid";;
+			adhoc) iwconfig "$phy" mode ad-hoc;;
 			*) iwconfig "$phy" mode "$mode";;
 		esac
 
