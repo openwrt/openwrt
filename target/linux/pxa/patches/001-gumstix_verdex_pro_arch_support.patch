@@ -17,8 +17,8 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 
 --- a/arch/arm/mach-pxa/Kconfig
 +++ b/arch/arm/mach-pxa/Kconfig
-@@ -32,23 +32,34 @@ endmenu
- endif
+@@ -116,23 +116,34 @@ config MACH_CAPC7117
+ 	select PXA3xx
  
  config ARCH_GUMSTIX
 -	bool "Gumstix XScale 255 boards"
@@ -63,19 +63,19 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  	bool "Intel Mote 2 Platform"
 --- a/arch/arm/mach-pxa/Makefile
 +++ b/arch/arm/mach-pxa/Makefile
-@@ -25,7 +25,8 @@ obj-$(CONFIG_CPU_PXA320)	+= pxa320.o
- obj-$(CONFIG_CPU_PXA930)	+= pxa930.o
- 
- # Specific board support
+@@ -49,7 +49,8 @@ endif
+ obj-$(CONFIG_MACH_EM_X270)	+= em-x270.o
+ obj-$(CONFIG_MACH_CM_X300)      += cm-x300.o
+ obj-$(CONFIG_MACH_CAPC7117)     += capc7117.o mxm8x10.o
 -obj-$(CONFIG_ARCH_GUMSTIX)	+= gumstix.o
 +obj-$(CONFIG_MACH_GUMSTIX_F)	+= gumstix.o
 +obj-$(CONFIG_MACH_GUMSTIX_VERDEX)	+= gumstix-verdex.o
  obj-$(CONFIG_GUMSTIX_AM200EPD)	+= am200epd.o
  obj-$(CONFIG_GUMSTIX_AM300EPD)	+= am300epd.o
- obj-$(CONFIG_ARCH_LUBBOCK)	+= lubbock.o
+ obj-$(CONFIG_MACH_INTELMOTE2)	+= stargate2.o
 --- /dev/null
 +++ b/arch/arm/mach-pxa/gumstix-verdex.c
-@@ -0,0 +1,749 @@
+@@ -0,0 +1,747 @@
 +/*
 + *  linux/arch/arm/mach-pxa/gumstix-verdex.c
 + *
@@ -816,9 +816,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 +}
 +
 +MACHINE_START(GUMSTIX, "Gumstix verdex")
-+    .phys_io        = 0x40000000,
 +    .boot_params    = 0xa0000100, /* match u-boot bi_boot_params */
-+    .io_pg_offst    = (io_p2v(0x40000000) >> 18) & 0xfffc,
 +    .map_io         = pxa_map_io,
 +    .init_irq       = pxa27x_init_irq,
 +    .timer          = &pxa_timer,

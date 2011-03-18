@@ -15,7 +15,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
 
 --- a/drivers/net/smsc911x.c
 +++ b/drivers/net/smsc911x.c
-@@ -1181,7 +1181,7 @@ static int smsc911x_open(struct net_devi
+@@ -1189,7 +1189,7 @@ static int smsc911x_open(struct net_devi
  		SMSC_WARNING(IFUP,
  			"Timed out waiting for EEPROM busy bit to clear");
  
@@ -24,7 +24,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  
  	/* The soft reset above cleared the device's MAC address,
  	 * restore it from local copy (set in probe) */
-@@ -1193,8 +1193,8 @@ static int smsc911x_open(struct net_devi
+@@ -1201,8 +1201,8 @@ static int smsc911x_open(struct net_devi
  	smsc911x_reg_write(pdata, INT_EN, 0);
  	smsc911x_reg_write(pdata, INT_STS, 0xFFFFFFFF);
  
@@ -35,7 +35,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  
  	if (pdata->config.irq_polarity) {
  		SMSC_TRACE(IFUP, "irq polarity: active high");
-@@ -1220,7 +1220,7 @@ static int smsc911x_open(struct net_devi
+@@ -1228,7 +1228,7 @@ static int smsc911x_open(struct net_devi
  	temp |= INT_EN_SW_INT_EN_;
  	smsc911x_reg_write(pdata, INT_EN, temp);
  
@@ -44,7 +44,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  	while (timeout--) {
  		if (pdata->software_irq_signal)
  			break;
-@@ -1948,6 +1948,38 @@ static int __devexit smsc911x_drv_remove
+@@ -1946,6 +1946,38 @@ static int __devexit smsc911x_drv_remove
  	return 0;
  }
  
@@ -83,7 +83,7 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  static int __devinit smsc911x_drv_probe(struct platform_device *pdev)
  {
  	struct net_device *dev;
-@@ -2081,11 +2113,11 @@ static int __devinit smsc911x_drv_probe(
+@@ -2082,11 +2114,11 @@ static int __devinit smsc911x_drv_probe(
  			SMSC_TRACE(PROBE,
  				"Mac Address is read from LAN911x EEPROM");
  		} else {

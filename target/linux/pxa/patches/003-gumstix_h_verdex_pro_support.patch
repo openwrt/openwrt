@@ -23,9 +23,9 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  
  /* BTRESET - Reset line to Bluetooth module, active low signal. */
  #define GPIO_GUMSTIX_BTRESET          7
-@@ -28,9 +31,18 @@ has detected a cable insertion; driven l
- 
- #else
+@@ -20,9 +23,18 @@ this moves to GPIO17 and GPIO37. */
+ /* GPIOx - Connects to USB D+ and used as a pull-up after GPIOn
+ has detected a cable insertion; driven low otherwise. */
  
 +#ifndef CONFIG_MACH_GUMSTIX_VERDEX
 +
@@ -34,15 +34,15 @@ Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
  
 +#else
 +
-+#define GPIO_GUMSTIX_USB_GPIOn		100
-+#define GPIO_GUMSTIX_USB_GPIOx		27
++#define GPIO_GUMSTIX_USB_GPIOn         100
++#define GPIO_GUMSTIX_USB_GPIOx         27
 +
 +#endif
 +
- #endif
- 
  /* usb state change */
-@@ -52,48 +64,136 @@ has detected a cable insertion; driven l
+ #define GUMSTIX_USB_INTR_IRQ		IRQ_GPIO(GPIO_GUMSTIX_USB_GPIOn)
+ 
+@@ -42,48 +54,136 @@ has detected a cable insertion; driven l
   * ETH_RST provides a hardware reset line to the ethernet chip
   * ETH is the IRQ line in from the ethernet chip to the PXA
   */
