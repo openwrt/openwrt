@@ -207,27 +207,153 @@
    { NULL, NULL, 0, 0, NULL, NULL },
 --- a/iwmulticall.c
 +++ b/iwmulticall.c
-@@ -76,12 +76,10 @@ extern int
- #undef iw_usage
- #undef main
- 
--#ifndef WE_ESSENTIAL
- /* Get iwspy in there, it's not that big. */
+@@ -81,7 +81,7 @@ extern int
  #define main(args...) main_iwspy(args)
  #include "iwspy.c"
  #undef main
 -#endif	/* WE_ESSENTIAL */
++#endif
  
  /* Get iwpriv in there. Mandatory for HostAP and some other drivers. */
  #define main(args...) main_iwpriv(args)
-@@ -128,10 +126,8 @@ main(int	argc,
-     return(main_iwconfig(argc, argv));
-   if(!strcmp(call_name, "iwlist"))
-     return(main_iwlist(argc, argv));
--#ifndef WE_ESSENTIAL
+@@ -90,12 +90,14 @@ extern int
+ #undef iw_usage
+ #undef main
+ 
++#ifndef WE_ESSENTIAL
+ /* Do we really need iwgetid ? Well, it's not like it's a big one */
+ #define main(args...) main_iwgetid(args)
+ #define iw_usage(args...) iwgetid_usage(args)
+ #include "iwgetid.c"
+ #undef iw_usage
+ #undef main
++#endif
+ 
+ /* iwevent is useless for most people, don't grab it ? */
+ 
+@@ -131,11 +133,13 @@ main(int	argc,
+ #ifndef WE_ESSENTIAL
    if(!strcmp(call_name, "iwspy"))
      return(main_iwspy(argc, argv));
 -#endif	/* WE_ESSENTIAL */
++#endif
    if(!strcmp(call_name, "iwpriv"))
      return(main_iwpriv(argc, argv));
++#ifndef WE_ESSENTIAL
    if(!strcmp(call_name, "iwgetid"))
+     return(main_iwgetid(argc, argv));
++#endif
+ 
+   /* Uh oh... Not supposed to come here. */
+   printf("iwmulticall : you are not supposed to call me this way...\n");
+--- a/iwlib.c
++++ b/iwlib.c
+@@ -113,6 +113,7 @@ const struct iw_modul_descr	iw_modul_lis
+   { IW_MODUL_11A, "11a", "IEEE 802.11a (5 GHz, up to 54 Mb/s)" },
+   { IW_MODUL_11B, "11b", "IEEE 802.11b (2.4 GHz, up to 11 Mb/s)" },
+ 
++#ifndef WE_ESSENTIAL
+   /* Proprietary aggregates */
+   { IW_MODUL_TURBO | IW_MODUL_11A, "turboa",
+     "Atheros turbo mode at 5 GHz (up to 108 Mb/s)" },
+@@ -120,6 +121,7 @@ const struct iw_modul_descr	iw_modul_lis
+     "Atheros turbo mode at 2.4 GHz (up to 108 Mb/s)" },
+   { IW_MODUL_PBCC | IW_MODUL_11B, "11+",
+     "TI 802.11+ (2.4 GHz, up to 22 Mb/s)" },
++#endif
+ 
+   /* Individual modulations */
+   { IW_MODUL_OFDM_G, "OFDMg",
+@@ -129,6 +131,7 @@ const struct iw_modul_descr	iw_modul_lis
+   { IW_MODUL_DS, "DS", "802.11 Direct Sequence (2.4 GHz, up to 2 Mb/s)" },
+   { IW_MODUL_FH, "FH", "802.11 Frequency Hopping (2,4 GHz, up to 2 Mb/s)" },
+ 
++#ifndef WE_ESSENTIAL
+   /* Proprietary modulations */
+   { IW_MODUL_TURBO, "turbo",
+     "Atheros turbo mode, channel bonding (up to 108 Mb/s)" },
+@@ -136,6 +139,7 @@ const struct iw_modul_descr	iw_modul_lis
+     "TI 802.11+ higher rates (2.4 GHz, up to 22 Mb/s)" },
+   { IW_MODUL_CUSTOM, "custom",
+     "Driver specific modulation (check driver documentation)" },
++#endif
+ };
+ 
+ /* Disable runtime version warning in iw_get_range_info() */
+@@ -440,6 +444,7 @@ iw_print_version_info(const char *	tooln
+       return -1;
+     }
+ 
++#ifndef WE_ESSENTIAL
+   /* Information about the tools themselves */
+   if(toolname != NULL)
+     printf("%-8.16s  Wireless-Tools version %d\n", toolname, WT_VERSION);
+@@ -452,6 +457,7 @@ iw_print_version_info(const char *	tooln
+   if(we_kernel_version > 15)
+     printf("Kernel    Currently compiled with Wireless Extension v%d.\n\n",
+ 	   we_kernel_version);
++#endif
+ 
+   /* Version for each device */
+   iw_enum_devices(skfd, &print_iface_version_info, NULL, 0);
+@@ -501,6 +507,7 @@ iw_get_range_info(int		skfd,
+       /* Copy stuff at the right place, ignore extra */
+       memcpy((char *) range, buffer, sizeof(iwrange));
+     }
++#ifndef WE_ESSENTIAL
+   else
+     {
+       /* Zero unknown fields */
+@@ -574,6 +581,7 @@ iw_get_range_info(int		skfd,
+        * If the driver source has not been updated to the latest, it doesn't
+        * matter because the new fields are set to zero */
+     }
++#endif
+ 
+   /* Don't complain twice.
+    * In theory, the test apply to each individual driver, but usually
+@@ -1542,6 +1550,7 @@ iw_print_key(char *			buffer,
+     }
+ }
+ 
++#ifndef WE_ESSENTIAL
+ /*------------------------------------------------------------------*/
+ /*
+  * Convert a passphrase into a key
+@@ -1556,6 +1565,7 @@ iw_pass_key(const char *	input,
+   fprintf(stderr, "Error: Passphrase not implemented\n");
+   return(-1);
+ }
++#endif
+ 
+ /*------------------------------------------------------------------*/
+ /*
+@@ -1578,12 +1588,14 @@ iw_in_key(const char *		input,
+ 	keylen = IW_ENCODING_TOKEN_MAX;
+       memcpy(key, input + 2, keylen);
+     }
++#ifndef WE_ESSENTIAL
+   else
+     if(!strncmp(input, "p:", 2))
+       {
+ 	/* Second case : as a passphrase (PrismII cards) */
+ 	return(iw_pass_key(input + 2, key));		/* skip "p:" */
+       }
++#endif
+     else
+       {
+ 	const char *	p;
+--- a/Makefile
++++ b/Makefile
+@@ -195,9 +195,9 @@ install-iwmulticall:: iwmulticall
+ 	install -m 755 $< $(INSTALL_DIR)/iwconfig
+ 	( cd $(INSTALL_DIR) ; \
+ 	  ln -f -s iwconfig iwlist ; \
+-	  ln -f -s iwconfig iwspy ; \
++	  $(if $(BUILD_WE_ESSENTIAL),,ln -f -s iwconfig iwspy ;) \
+ 	  ln -f -s iwconfig iwpriv ; \
+-	  ln -f -s iwconfig iwgetid )
++	  $(if $(BUILD_WE_ESSENTIAL),,ln -f -s iwconfig iwgetid ) )
+ 
+ clean::
+ 	$(RM_CMD) 
