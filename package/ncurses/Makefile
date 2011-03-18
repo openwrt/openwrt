@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ncurses
 PKG_VERSION:=5.7
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -25,6 +25,15 @@ define Package/libncurses
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Terminal handling library
+  URL:=http://www.gnu.org/software/ncurses/
+  DEPENDS:= +terminfo
+  VARIANT:=libncurses
+endef
+
+define Package/terminfo
+  SECTION:=libs
+  CATEGORY:=Libraries
+  TITLE:=Terminal Info Database (ncurses)
   URL:=http://www.gnu.org/software/ncurses/
   VARIANT:=libncurses
 endef
@@ -82,9 +91,8 @@ define Build/Install/Default
 		$(1) install.libs install.data;
 endef
 
-define Package/libncurses/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{curses,ncurses,panel,menu,form}.so* $(1)/usr/lib/
+define Package/terminfo/install
+	echo ""
 ifneq ($(HOST_OS),FreeBSD)
 	$(INSTALL_DIR) $(1)/usr/share/terminfo
 	(cd $(PKG_INSTALL_DIR)/usr/share/terminfo; \
@@ -99,6 +107,11 @@ ifneq ($(HOST_OS),FreeBSD)
 			$(1)/usr/share/terminfo/$$$$file; \
 	done
 endif
+endef
+
+define Package/libncurses/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib{curses,ncurses,panel,menu,form}.so* $(1)/usr/lib/
 endef
 
 define Package/libncursesw/install
@@ -124,5 +137,6 @@ define Build/InstallDev
 endef
 endif
 
+$(eval $(call BuildPackage,terminfo))
 $(eval $(call BuildPackage,libncurses))
 $(eval $(call BuildPackage,libncursesw))
