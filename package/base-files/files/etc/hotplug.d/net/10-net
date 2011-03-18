@@ -12,19 +12,22 @@ addif() {
 	# PPP devices are configured by pppd, no need to run setup_interface here
 	case "$INTERFACE" in
 		3g-*|ppp-*|pppoa-*|pppoe-*|pptp-*) return 0;;
-		ath*) return 0;;
-		wlan*) return 0;;
 	esac
 
 	scan_interfaces
 	local cfg="$(find_config "$INTERFACE")"
 
-	# check the autoload setting
-	config_get auto "$cfg" auto
-	case "$auto" in
-		1|on|enabled) setup_interface "$INTERFACE";;
+	case "$INTERFACE" in
+		# Skip wireless parent interfaces
+		ath[0-9]|wlan[0-9]) ;;
+		*)
+			# check the autoload setting
+			config_get auto "$cfg" auto
+			case "$auto" in
+				1|on|enabled) setup_interface "$INTERFACE";;
+			esac
+		;;
 	esac
-
 
 	# find all vlan configurations for this interface and set them up as well
 	for ifc in $interfaces; do
