@@ -1,18 +1,18 @@
 --- a/arch/arm/mach-kirkwood/Makefile
 +++ b/arch/arm/mach-kirkwood/Makefile
 @@ -8,6 +8,7 @@ obj-$(CONFIG_MACH_SHEEVAPLUG)		+= sheeva
- obj-$(CONFIG_MACH_DOCKSTAR)		+= dockstar-setup.o
  obj-$(CONFIG_MACH_ESATA_SHEEVAPLUG)	+= sheevaplug-setup.o
  obj-$(CONFIG_MACH_GURUPLUG)		+= guruplug-setup.o
+ obj-$(CONFIG_MACH_DOCKSTAR)		+= dockstar-setup.o
 +obj-$(CONFIG_MACH_ICONNECT)		+= iconnect-setup.o
  obj-$(CONFIG_MACH_TS219)		+= ts219-setup.o tsx1x-common.o
  obj-$(CONFIG_MACH_TS41X)		+= ts41x-setup.o tsx1x-common.o
  obj-$(CONFIG_MACH_OPENRD)		+= openrd-setup.o
 --- a/arch/arm/mach-kirkwood/Kconfig
 +++ b/arch/arm/mach-kirkwood/Kconfig
-@@ -105,6 +105,12 @@ config MACH_DOCKSTAR
+@@ -130,6 +130,12 @@ config MACH_T5325
  	  Say 'Y' here if you want your kernel to support the
- 	  Seagate FreeAgent DockStar.
+ 	  HP t5325 Thin Client.
  
 +config MACH_ICONNECT
 +	bool "Iomega iConnect Wireless"
@@ -25,17 +25,17 @@
  endif
 --- a/arch/arm/mach-kirkwood/mpp.h
 +++ b/arch/arm/mach-kirkwood/mpp.h
-@@ -103,6 +103,7 @@
- #define MPP11_SATA0_ACTn	MPP( 11, 0x5, 0, 1, 0,   1,   1,   1    )
+@@ -108,6 +108,7 @@
+ #define MPP11_SATA0_ACTn	MPP( 11, 0x5, 0, 1, 0,   1,   1,   1,   1 )
  
- #define MPP12_GPO		MPP( 12, 0x0, 0, 1, 1,   1,   1,   1    )
-+#define MPP12_GPIO		MPP( 12, 0x0, 1, 1, 1,   1,   1,   1    )
- #define MPP12_SD_CLK		MPP( 12, 0x1, 0, 1, 1,   1,   1,   1    )
- 
- #define MPP13_GPIO		MPP( 13, 0x0, 1, 1, 1,   1,   1,   1    )
+ #define MPP12_GPO		MPP( 12, 0x0, 0, 1, 1,   1,   1,   1,   1 )
++#define MPP12_GPIO		MPP( 12, 0x0, 1, 1, 1,   1,   1,   1,   1 )
+ #define MPP12_SD_CLK		MPP( 12, 0x1, 0, 1, 1,   1,   1,   1,   1 )
+ #define MPP12_AU_SPDIF0		MPP( 12, 0xa, 0, 1, 0,   0,   0,   0,   1 )
+ #define MPP12_SPI_MOSI		MPP( 12, 0xb, 0, 1, 0,   0,   0,   0,   1 )
 --- /dev/null
 +++ b/arch/arm/mach-kirkwood/iconnect-setup.c
-@@ -0,0 +1,190 @@
+@@ -0,0 +1,188 @@
 +/*
 + * arch/arm/mach-kirkwood/iconnect-setup.c
 + *
@@ -210,7 +210,7 @@
 +static int __init iconnect_pci_init(void)
 +{
 +	if (machine_is_iconnect())
-+		kirkwood_pcie_init();
++		kirkwood_pcie_init(KW_PCIE0);
 +
 +	return 0;
 +}
@@ -218,8 +218,6 @@
 +
 +
 +MACHINE_START(ICONNECT, "Iomega iConnect Wireless")
-+	.phys_io	= KIRKWOOD_REGS_PHYS_BASE,
-+	.io_pg_offst	= ((KIRKWOOD_REGS_VIRT_BASE) >> 18) & 0xfffc,
 +	.boot_params	= 0x00000100,
 +	.init_machine	= iconnect_init,
 +	.map_io		= kirkwood_map_io,
