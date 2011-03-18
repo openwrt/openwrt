@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2010 OpenWrt.org
+# Copyright (C) 2008-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,7 +13,7 @@ FEATURES:=squashfs jffs2 targz
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 SUBTARGETS:=generic nand
 
-LINUX_VERSION:=2.6.37.3
+LINUX_VERSION:=2.6.37.4
 
 include $(INCLUDE_DIR)/target.mk
 

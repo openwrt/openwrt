@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010 OpenWrt.org
+# Copyright (C) 2010-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
 SUBTARGETS:=le be
 INITRAMFS_EXTRA_FILES:=
 
-LINUX_VERSION:=2.6.37.3
+LINUX_VERSION:=2.6.37.4
 
 include $(INCLUDE_DIR)/target.mk
 

@@ -12,7 +12,7 @@ BOARDNAME:=Freescale i.MX21
 FEATURES:=jffs2 broken
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -funit-at-a-time
 
-LINUX_VERSION:=2.6.37.3
+LINUX_VERSION:=2.6.37.4
 
 DEVICE_TYPE=phone
 

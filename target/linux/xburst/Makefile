@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2009-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ BOARDNAME:=Ingenic XBurst
 FEATURES:=jffs2 targz ubifs audio
 SUBTARGETS:=qi_lb60 n516 n526 id800wt
 
-LINUX_VERSION:=2.6.37.3
+LINUX_VERSION:=2.6.37.4
 
 DEVICE_TYPE=other
 
