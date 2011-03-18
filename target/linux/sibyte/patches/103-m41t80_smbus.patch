@@ -24,9 +24,9 @@
 -#define DRV_VERSION "0.05"
 +#define DRV_VERSION "0.06"
  
+ static DEFINE_MUTEX(m41t80_rtc_mutex);
  static const struct i2c_device_id m41t80_id[] = {
- 	{ "m41t62", M41T80_FEATURE_SQ | M41T80_FEATURE_SQ_ALT },
-@@ -88,31 +91,88 @@ struct m41t80_data {
+@@ -89,31 +92,88 @@ struct m41t80_data {
  	struct rtc_device *rtc;
  };
  
@@ -136,7 +136,7 @@
  	tm->tm_min = bcd2bin(buf[M41T80_REG_MIN] & 0x7f);
  	tm->tm_hour = bcd2bin(buf[M41T80_REG_HOUR] & 0x3f);
  	tm->tm_mday = bcd2bin(buf[M41T80_REG_DAY] & 0x3f);
-@@ -127,39 +187,16 @@ static int m41t80_get_datetime(struct i2
+@@ -128,39 +188,16 @@ static int m41t80_get_datetime(struct i2
  /* Sets the given date and time to the real time clock. */
  static int m41t80_set_datetime(struct i2c_client *client, struct rtc_time *tm)
  {
@@ -180,7 +180,7 @@
  	/* Merge time-data and register flags into buf[0..7] */
  	buf[M41T80_REG_SSEC] = 0;
  	buf[M41T80_REG_SEC] =
-@@ -177,7 +214,8 @@ static int m41t80_set_datetime(struct i2
+@@ -178,7 +215,8 @@ static int m41t80_set_datetime(struct i2
  	/* assume 20YY not 19YY */
  	buf[M41T80_REG_YEAR] = bin2bcd(tm->tm_year % 100);
  
@@ -190,7 +190,7 @@
  		dev_err(&client->dev, "write error\n");
  		return -EIO;
  	}
-@@ -251,34 +289,11 @@ err:
+@@ -252,34 +290,11 @@ err:
  static int m41t80_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *t)
  {
  	struct i2c_client *client = to_i2c_client(dev);
@@ -228,7 +228,7 @@
  		dev_err(&client->dev, "read error\n");
  		return -EIO;
  	}
-@@ -288,7 +303,6 @@ static int m41t80_rtc_set_alarm(struct d
+@@ -289,7 +304,6 @@ static int m41t80_rtc_set_alarm(struct d
  	reg[M41T80_REG_ALARM_MIN] = 0;
  	reg[M41T80_REG_ALARM_SEC] = 0;
  
@@ -236,7 +236,7 @@
  	reg[M41T80_REG_ALARM_SEC] |= t->time.tm_sec >= 0 ?
  		bin2bcd(t->time.tm_sec) : 0x80;
  	reg[M41T80_REG_ALARM_MIN] |= t->time.tm_min >= 0 ?
-@@ -302,7 +316,8 @@ static int m41t80_rtc_set_alarm(struct d
+@@ -303,7 +317,8 @@ static int m41t80_rtc_set_alarm(struct d
  	else
  		reg[M41T80_REG_ALARM_DAY] |= 0x40;
  
@@ -246,7 +246,7 @@
  		dev_err(&client->dev, "write error\n");
  		return -EIO;
  	}
-@@ -322,24 +337,10 @@ static int m41t80_rtc_read_alarm(struct 
+@@ -323,24 +338,10 @@ static int m41t80_rtc_read_alarm(struct
  {
  	struct i2c_client *client = to_i2c_client(dev);
  	u8 buf[M41T80_ALARM_REG_SIZE + 1]; /* all alarm regs and flags */
@@ -273,7 +273,7 @@
  		dev_err(&client->dev, "read error\n");
  		return -EIO;
  	}
-@@ -512,26 +513,16 @@ static int boot_flag;
+@@ -513,26 +514,16 @@ static int boot_flag;
   */
  static void wdt_ping(void)
  {
@@ -306,7 +306,7 @@
  
  	/*
  	 * M41T65 has three bits for watchdog resolution.  Don't set bit 7, as
-@@ -540,7 +531,7 @@ static void wdt_ping(void)
+@@ -541,7 +532,7 @@ static void wdt_ping(void)
  	if (clientdata->features & M41T80_FEATURE_WD)
  		i2c_data[1] &= ~M41T80_WATCHDOG_RB2;
  
@@ -315,7 +315,7 @@
  }
  
  /**
-@@ -550,36 +541,8 @@ static void wdt_ping(void)
+@@ -551,36 +542,8 @@ static void wdt_ping(void)
   */
  static void wdt_disable(void)
  {
@@ -354,7 +354,7 @@
  }
  
  /**
-@@ -772,8 +735,8 @@ static int m41t80_probe(struct i2c_clien
+@@ -782,8 +745,8 @@ static int m41t80_probe(struct i2c_clien
  	struct rtc_time tm;
  	struct m41t80_data *clientdata = NULL;
  
