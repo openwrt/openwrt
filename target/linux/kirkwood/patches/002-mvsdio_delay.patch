@@ -1,6 +1,6 @@
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -264,6 +264,15 @@ static int mmc_switch_hs(struct mmc_card
+@@ -332,6 +332,15 @@ int mmc_sd_switch_hs(struct mmc_card *ca
  		return -ENOMEM;
  	}
  
@@ -18,7 +18,7 @@
  		goto out;
 --- a/drivers/mmc/core/core.c
 +++ b/drivers/mmc/core/core.c
-@@ -302,9 +302,9 @@ void mmc_set_data_timeout(struct mmc_dat
+@@ -303,9 +303,9 @@ void mmc_set_data_timeout(struct mmc_dat
  			 * The limit is really 250 ms, but that is
  			 * insufficient for some crappy cards.
  			 */
