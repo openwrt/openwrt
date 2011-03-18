@@ -1,8 +1,8 @@
---- a/arch/arm/mach-mx2/Kconfig
-+++ b/arch/arm/mach-mx2/Kconfig
-@@ -27,6 +27,12 @@ config MACH_MX21ADS
- 	  Include support for MX21ADS platform. This includes specific
- 	  configurations for the board and its peripherals.
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -83,6 +83,12 @@ if MACH_MX27
+ 
+ comment "MX27 platforms:"
  
 +config MACH_VP6500
 +	bool "Phillips VP6500 VoIP phone"
@@ -12,10 +12,10 @@
 +
  config MACH_MX27ADS
  	bool "MX27ADS platform"
- 	depends on MACH_MX27
---- a/arch/arm/mach-mx2/Makefile
-+++ b/arch/arm/mach-mx2/Makefile
-@@ -21,3 +21,4 @@ obj-$(CONFIG_MACH_CPUIMX27) += mach-cpui
+ 	select IMX_HAVE_PLATFORM_IMX_I2C
+--- a/arch/arm/mach-imx/Makefile
++++ b/arch/arm/mach-imx/Makefile
+@@ -32,3 +32,4 @@ obj-$(CONFIG_MACH_CPUIMX27) += mach-cpui
  obj-$(CONFIG_MACH_EUKREA_MBIMX27_BASEBOARD) += eukrea_mbimx27-baseboard.o
  obj-$(CONFIG_MACH_PCA100) += mach-pca100.o
  obj-$(CONFIG_MACH_MXT_TD60) += mach-mxt_td60.o
