@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2009 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ BOARDNAME:=RMI/AMD AU1x00
 FEATURES:=jffs2 usb pci
 SUBTARGETS=au1500 au1550
 
-LINUX_VERSION:=2.6.37.3
+LINUX_VERSION:=2.6.37.4
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += wpad-mini yamonenv
