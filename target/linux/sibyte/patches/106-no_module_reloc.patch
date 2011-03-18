@@ -1,11 +1,13 @@
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -85,7 +85,7 @@ all-$(CONFIG_BOOT_ELF64)	:= $(vmlinux-64
+@@ -93,8 +93,8 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
--MODFLAGS			+= -mno-long-calls
-+MODFLAGS			+= -mlong-calls
+-KBUILD_AFLAGS_MODULE		+= -mno-long-calls
+-KBUILD_CFLAGS_MODULE		+= -mno-long-calls
++KBUILD_AFLAGS_MODULE		+= -mlong-calls
++KBUILD_CFLAGS_MODULE		+= -mlong-calls
  
  cflags-y += -ffreestanding
  

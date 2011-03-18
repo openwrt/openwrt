@@ -8,10 +8,10 @@
  #include <asm/sibyte/board.h>
  #include <asm/sibyte/sb1250_genbus.h>
  #include <asm/sibyte/sb1250_regs.h>
-@@ -83,3 +84,71 @@ static int __init swarm_pata_init(void)
- device_initcall(swarm_pata_init);
- 
- #endif /* defined(CONFIG_SIBYTE_SWARM) || defined(CONFIG_SIBYTE_LITTLESUR) */
+@@ -137,3 +138,71 @@ static int __init sb1250_device_init(voi
+ 	return ret;
+ }
+ device_initcall(sb1250_device_init);
 +
 +#ifdef CONFIG_SIBYTE_RHONE
 +
