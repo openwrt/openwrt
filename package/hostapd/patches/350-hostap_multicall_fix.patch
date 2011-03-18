@@ -106,7 +106,7 @@
  static int hostap_get_seqnum(const char *ifname, void *priv, const u8 *addr,
  			     int idx, u8 *seq)
  {
-@@ -1125,21 +1071,14 @@ static struct hostapd_hw_modes * hostap_
+@@ -1125,21 +1071,9 @@ static struct hostapd_hw_modes * hostap_
  	return mode;
  }
  
@@ -119,23 +119,27 @@
 -	int sock;
 -	int current_mode; /* infra/adhoc */
 -};
+-
+-
+-static int wpa_driver_hostap_set_auth_alg(void *priv, int auth_alg);
+-
 +#endif /* HOSTAPD */
- 
-+#if !defined(NO_SUPPLICANT)
- 
- static int wpa_driver_hostap_set_auth_alg(void *priv, int auth_alg);
- 
  
 -static int hostapd_ioctl(struct wpa_driver_hostap_data *drv,
 +static int wpa_hostapd_ioctl(struct hostap_driver_data *drv,
  			 struct prism2_hostapd_param *param,
  			 int len, int show_err)
  {
-@@ -1161,7 +1100,7 @@ static int hostapd_ioctl(struct wpa_driv
+@@ -1161,7 +1095,12 @@ static int hostapd_ioctl(struct wpa_driv
  }
  
  
 -static int wpa_driver_hostap_set_wpa_ie(struct wpa_driver_hostap_data *drv,
++#if !defined(NO_SUPPLICANT)
++
++static int wpa_driver_hostap_set_auth_alg(void *priv, int auth_alg);
++
++
 +static int wpa_driver_hostap_set_wpa_ie(struct hostap_driver_data *drv,
  					const u8 *wpa_ie, size_t wpa_ie_len)
  {
@@ -167,41 +171,120 @@
  	int ret = 0;
  
  	wpa_printf(MSG_DEBUG, "%s: enabled=%d", __FUNCTION__, enabled);
-@@ -1260,7 +1199,7 @@ static int wpa_driver_hostap_set_key(con
- 				     const u8 *seq, size_t seq_len,
- 				     const u8 *key, size_t key_len)
- {
+@@ -1223,125 +1162,15 @@ static int wpa_driver_hostap_set_wpa(voi
+ }
+ 
+ 
+-static void show_set_key_error(struct prism2_hostapd_param *param)
+-{
+-	switch (param->u.crypt.err) {
+-	case HOSTAP_CRYPT_ERR_UNKNOWN_ALG:
+-		wpa_printf(MSG_INFO, "Unknown algorithm '%s'.",
+-			   param->u.crypt.alg);
+-		wpa_printf(MSG_INFO, "You may need to load kernel module to "
+-			   "register that algorithm.");
+-		wpa_printf(MSG_INFO, "E.g., 'modprobe hostap_crypt_wep' for "
+-			   "WEP.");
+-		break;
+-	case HOSTAP_CRYPT_ERR_UNKNOWN_ADDR:
+-		wpa_printf(MSG_INFO, "Unknown address " MACSTR ".",
+-			   MAC2STR(param->sta_addr));
+-		break;
+-	case HOSTAP_CRYPT_ERR_CRYPT_INIT_FAILED:
+-		wpa_printf(MSG_INFO, "Crypt algorithm initialization failed.");
+-		break;
+-	case HOSTAP_CRYPT_ERR_KEY_SET_FAILED:
+-		wpa_printf(MSG_INFO, "Key setting failed.");
+-		break;
+-	case HOSTAP_CRYPT_ERR_TX_KEY_SET_FAILED:
+-		wpa_printf(MSG_INFO, "TX key index setting failed.");
+-		break;
+-	case HOSTAP_CRYPT_ERR_CARD_CONF_FAILED:
+-		wpa_printf(MSG_INFO, "Card configuration failed.");
+-		break;
+-	}
+-}
+-
+-
+-static int wpa_driver_hostap_set_key(const char *ifname, void *priv,
+-				     enum wpa_alg alg, const u8 *addr,
+-				     int key_idx, int set_tx,
+-				     const u8 *seq, size_t seq_len,
+-				     const u8 *key, size_t key_len)
+-{
 -	struct wpa_driver_hostap_data *drv = priv;
-+	struct hostap_driver_data *drv = priv;
- 	struct prism2_hostapd_param *param;
- 	u8 *buf;
- 	size_t blen;
-@@ -1305,14 +1244,10 @@ static int wpa_driver_hostap_set_key(con
- 	 * use keyidx 1..3 (i.e., default key with keyidx 0 is not supported).
- 	 * This should be fine for more or less all cases, but for completeness
- 	 * sake, the driver could be enhanced to support the missing key. */
+-	struct prism2_hostapd_param *param;
+-	u8 *buf;
+-	size_t blen;
+-	int ret = 0;
+-	char *alg_name;
+-
+-	switch (alg) {
+-	case WPA_ALG_NONE:
+-		alg_name = "none";
+-		break;
+-	case WPA_ALG_WEP:
+-		alg_name = "WEP";
+-		break;
+-	case WPA_ALG_TKIP:
+-		alg_name = "TKIP";
+-		break;
+-	case WPA_ALG_CCMP:
+-		alg_name = "CCMP";
+-		break;
+-	default:
+-		return -1;
+-	}
+-
+-	wpa_printf(MSG_DEBUG, "%s: alg=%s key_idx=%d set_tx=%d seq_len=%lu "
+-		   "key_len=%lu", __FUNCTION__, alg_name, key_idx, set_tx,
+-		   (unsigned long) seq_len, (unsigned long) key_len);
+-
+-	if (seq_len > 8)
+-		return -2;
+-
+-	blen = sizeof(*param) + key_len;
+-	buf = os_zalloc(blen);
+-	if (buf == NULL)
+-		return -1;
+-
+-	param = (struct prism2_hostapd_param *) buf;
+-	param->cmd = PRISM2_SET_ENCRYPTION;
+-	/* TODO: In theory, STA in client mode can use five keys; four default
+-	 * keys for receiving (with keyidx 0..3) and one individual key for
+-	 * both transmitting and receiving (keyidx 0) _unicast_ packets. Now,
+-	 * keyidx 0 is reserved for this unicast use and default keys can only
+-	 * use keyidx 1..3 (i.e., default key with keyidx 0 is not supported).
+-	 * This should be fine for more or less all cases, but for completeness
+-	 * sake, the driver could be enhanced to support the missing key. */
 -#if 0
- 	if (addr == NULL)
- 		os_memset(param->sta_addr, 0xff, ETH_ALEN);
- 	else
- 		os_memcpy(param->sta_addr, addr, ETH_ALEN);
+-	if (addr == NULL)
+-		os_memset(param->sta_addr, 0xff, ETH_ALEN);
+-	else
+-		os_memcpy(param->sta_addr, addr, ETH_ALEN);
 -#else
 -	os_memset(param->sta_addr, 0xff, ETH_ALEN);
 -#endif
- 	os_strlcpy((char *) param->u.crypt.alg, alg_name,
- 		   HOSTAP_CRYPT_ALG_NAME_LEN);
- 	param->u.crypt.flags = set_tx ? HOSTAP_CRYPT_FLAG_SET_TX_KEY : 0;
-@@ -1322,7 +1257,7 @@ static int wpa_driver_hostap_set_key(con
- 	param->u.crypt.key_len = key_len;
- 	os_memcpy((u8 *) (param + 1), key, key_len);
- 
+-	os_strlcpy((char *) param->u.crypt.alg, alg_name,
+-		   HOSTAP_CRYPT_ALG_NAME_LEN);
+-	param->u.crypt.flags = set_tx ? HOSTAP_CRYPT_FLAG_SET_TX_KEY : 0;
+-	param->u.crypt.idx = key_idx;
+-	if (seq)
+-		os_memcpy(param->u.crypt.seq, seq, seq_len);
+-	param->u.crypt.key_len = key_len;
+-	os_memcpy((u8 *) (param + 1), key, key_len);
+-
 -	if (hostapd_ioctl(drv, param, blen, 1)) {
-+	if (wpa_hostapd_ioctl(drv, param, blen, 1)) {
- 		wpa_printf(MSG_WARNING, "Failed to set encryption.");
- 		show_set_key_error(param);
- 		ret = -1;
-@@ -1335,13 +1270,13 @@ static int wpa_driver_hostap_set_key(con
- 
+-		wpa_printf(MSG_WARNING, "Failed to set encryption.");
+-		show_set_key_error(param);
+-		ret = -1;
+-	}
+-	os_free(buf);
+-
+-	return ret;
+-}
+-
+-
  static int wpa_driver_hostap_set_countermeasures(void *priv, int enabled)
  {
 -	struct wpa_driver_hostap_data *drv = priv;
@@ -216,7 +299,7 @@
  				   int type)
  {
  	struct iwreq iwr;
-@@ -1362,7 +1297,7 @@ static int wpa_driver_hostap_reset(struc
+@@ -1362,7 +1191,7 @@ static int wpa_driver_hostap_reset(struc
  }
  
  
@@ -225,7 +308,7 @@
  				  const u8 *addr, int cmd, int reason_code)
  {
  	struct prism2_hostapd_param param;
-@@ -1377,7 +1312,7 @@ static int wpa_driver_hostap_mlme(struct
+@@ -1377,7 +1206,7 @@ static int wpa_driver_hostap_mlme(struct
  	os_memcpy(param.sta_addr, addr, ETH_ALEN);
  	param.u.mlme.cmd = cmd;
  	param.u.mlme.reason_code = reason_code;
@@ -234,7 +317,7 @@
  	if (ret == 0) {
  		os_sleep(0, 100000);
  		ret = wpa_driver_hostap_reset(drv, 2);
-@@ -1389,7 +1324,7 @@ static int wpa_driver_hostap_mlme(struct
+@@ -1389,7 +1218,7 @@ static int wpa_driver_hostap_mlme(struct
  static int wpa_driver_hostap_deauthenticate(void *priv, const u8 *addr,
  					    int reason_code)
  {
@@ -243,7 +326,7 @@
  	wpa_printf(MSG_DEBUG, "%s", __FUNCTION__);
  	return wpa_driver_hostap_mlme(drv, addr, MLME_STA_DEAUTH,
  				      reason_code);
-@@ -1399,7 +1334,7 @@ static int wpa_driver_hostap_deauthentic
+@@ -1399,7 +1228,7 @@ static int wpa_driver_hostap_deauthentic
  static int wpa_driver_hostap_disassociate(void *priv, const u8 *addr,
  					  int reason_code)
  {
@@ -252,7 +335,7 @@
  	wpa_printf(MSG_DEBUG, "%s", __FUNCTION__);
  	return wpa_driver_hostap_mlme(drv, addr, MLME_STA_DISASSOC,
  				      reason_code);
-@@ -1410,7 +1345,7 @@ static int
+@@ -1410,7 +1239,7 @@ static int
  wpa_driver_hostap_associate(void *priv,
  			    struct wpa_driver_associate_params *params)
  {
@@ -261,7 +344,7 @@
  	int ret = 0;
  	int allow_unencrypted_eapol;
  
-@@ -1474,7 +1409,7 @@ wpa_driver_hostap_associate(void *priv,
+@@ -1474,7 +1303,7 @@ wpa_driver_hostap_associate(void *priv,
  static int wpa_driver_hostap_scan(void *priv,
  				  struct wpa_driver_scan_params *params)
  {
@@ -270,7 +353,7 @@
  	struct prism2_hostapd_param param;
  	int ret;
  	const u8 *ssid = params->ssids[0].ssid;
-@@ -1495,7 +1430,7 @@ static int wpa_driver_hostap_scan(void *
+@@ -1495,7 +1324,7 @@ static int wpa_driver_hostap_scan(void *
  	param.cmd = PRISM2_HOSTAPD_SCAN_REQ;
  	param.u.scan_req.ssid_len = ssid_len;
  	os_memcpy(param.u.scan_req.ssid, ssid, ssid_len);
@@ -279,7 +362,7 @@
  
  	/* Not all drivers generate "scan completed" wireless event, so try to
  	 * read results after a timeout. */
-@@ -1510,7 +1445,7 @@ static int wpa_driver_hostap_scan(void *
+@@ -1510,7 +1339,7 @@ static int wpa_driver_hostap_scan(void *
  
  static int wpa_driver_hostap_set_auth_alg(void *priv, int auth_alg)
  {
@@ -288,7 +371,7 @@
  	int algs = 0;
  
  	if (auth_alg & WPA_AUTH_ALG_OPEN)
-@@ -1528,35 +1463,35 @@ static int wpa_driver_hostap_set_auth_al
+@@ -1528,35 +1357,35 @@ static int wpa_driver_hostap_set_auth_al
  
  static int wpa_driver_hostap_get_bssid(void *priv, u8 *bssid)
  {
@@ -329,7 +412,7 @@
  
  	drv = os_zalloc(sizeof(*drv));
  	if (drv == NULL)
-@@ -1596,14 +1531,14 @@ static void * wpa_driver_hostap_init(voi
+@@ -1596,14 +1425,120 @@ static void * wpa_driver_hostap_init(voi
  
  static void wpa_driver_hostap_deinit(void *priv)
  {
@@ -343,6 +426,112 @@
  
 -#endif /* HOSTAPD */
 +#endif
++
++
++static void show_set_key_error(struct prism2_hostapd_param *param)
++{
++	switch (param->u.crypt.err) {
++	case HOSTAP_CRYPT_ERR_UNKNOWN_ALG:
++		wpa_printf(MSG_INFO, "Unknown algorithm '%s'.",
++			   param->u.crypt.alg);
++		wpa_printf(MSG_INFO, "You may need to load kernel module to "
++			   "register that algorithm.");
++		wpa_printf(MSG_INFO, "E.g., 'modprobe hostap_crypt_wep' for "
++			   "WEP.");
++		break;
++	case HOSTAP_CRYPT_ERR_UNKNOWN_ADDR:
++		wpa_printf(MSG_INFO, "Unknown address " MACSTR ".",
++			   MAC2STR(param->sta_addr));
++		break;
++	case HOSTAP_CRYPT_ERR_CRYPT_INIT_FAILED:
++		wpa_printf(MSG_INFO, "Crypt algorithm initialization failed.");
++		break;
++	case HOSTAP_CRYPT_ERR_KEY_SET_FAILED:
++		wpa_printf(MSG_INFO, "Key setting failed.");
++		break;
++	case HOSTAP_CRYPT_ERR_TX_KEY_SET_FAILED:
++		wpa_printf(MSG_INFO, "TX key index setting failed.");
++		break;
++	case HOSTAP_CRYPT_ERR_CARD_CONF_FAILED:
++		wpa_printf(MSG_INFO, "Card configuration failed.");
++		break;
++	}
++}
++
++
++static int wpa_driver_hostap_set_key(const char *ifname, void *priv,
++				     enum wpa_alg alg, const u8 *addr,
++				     int key_idx, int set_tx,
++				     const u8 *seq, size_t seq_len,
++				     const u8 *key, size_t key_len)
++{
++	struct hostap_driver_data *drv = priv;
++	struct prism2_hostapd_param *param;
++	u8 *buf;
++	size_t blen;
++	int ret = 0;
++	char *alg_name;
++
++	switch (alg) {
++	case WPA_ALG_NONE:
++		alg_name = "none";
++		break;
++	case WPA_ALG_WEP:
++		alg_name = "WEP";
++		break;
++	case WPA_ALG_TKIP:
++		alg_name = "TKIP";
++		break;
++	case WPA_ALG_CCMP:
++		alg_name = "CCMP";
++		break;
++	default:
++		return -1;
++	}
++
++	wpa_printf(MSG_DEBUG, "%s: alg=%s key_idx=%d set_tx=%d seq_len=%lu "
++		   "key_len=%lu", __FUNCTION__, alg_name, key_idx, set_tx,
++		   (unsigned long) seq_len, (unsigned long) key_len);
++
++	if (seq_len > 8)
++		return -2;
++
++	blen = sizeof(*param) + key_len;
++	buf = os_zalloc(blen);
++	if (buf == NULL)
++		return -1;
++
++	param = (struct prism2_hostapd_param *) buf;
++	param->cmd = PRISM2_SET_ENCRYPTION;
++	/* TODO: In theory, STA in client mode can use five keys; four default
++	 * keys for receiving (with keyidx 0..3) and one individual key for
++	 * both transmitting and receiving (keyidx 0) _unicast_ packets. Now,
++	 * keyidx 0 is reserved for this unicast use and default keys can only
++	 * use keyidx 1..3 (i.e., default key with keyidx 0 is not supported).
++	 * This should be fine for more or less all cases, but for completeness
++	 * sake, the driver could be enhanced to support the missing key. */
++	if (addr == NULL)
++		os_memset(param->sta_addr, 0xff, ETH_ALEN);
++	else
++		os_memcpy(param->sta_addr, addr, ETH_ALEN);
++	os_strlcpy((char *) param->u.crypt.alg, alg_name,
++		   HOSTAP_CRYPT_ALG_NAME_LEN);
++	param->u.crypt.flags = set_tx ? HOSTAP_CRYPT_FLAG_SET_TX_KEY : 0;
++	param->u.crypt.idx = key_idx;
++	if (seq)
++		os_memcpy(param->u.crypt.seq, seq, seq_len);
++	param->u.crypt.key_len = key_len;
++	os_memcpy((u8 *) (param + 1), key, key_len);
++
++	if (wpa_hostapd_ioctl(drv, param, blen, 1)) {
++		wpa_printf(MSG_WARNING, "Failed to set encryption.");
++		show_set_key_error(param);
++		ret = -1;
++	}
++	os_free(buf);
++
++	return ret;
++}
  
  
  const struct wpa_driver_ops wpa_driver_hostap_ops = {
