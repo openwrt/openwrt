@@ -39,8 +39,11 @@
 __FBSDID("$FreeBSD: src/sys/opencrypto/cryptodev.c,v 1.34 2007/05/09 19:37:02 gnn Exp $");
  */
 
-#ifndef AUTOCONF_INCLUDED
-#include <linux/config.h>
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
+#include <generated/autoconf.h>
+#else
+#include <linux/autoconf.h>
 #endif
 #include <linux/types.h>
 #include <linux/time.h>
