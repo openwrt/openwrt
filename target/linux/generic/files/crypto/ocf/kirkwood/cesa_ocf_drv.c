@@ -26,8 +26,11 @@ DISCLAIMED.  The GPL License provides additional details about this warranty
 disclaimer.
 *******************************************************************************/
 
-#ifndef AUTOCONF_INCLUDED
-#include <linux/config.h>
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
+#include <generated/autoconf.h>
+#else
+#include <linux/autoconf.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>

@@ -31,8 +31,11 @@
 __FBSDID("$FreeBSD: src/sys/dev/safe/safe.c,v 1.18 2007/03/21 03:42:50 sam Exp $");
  */
 
-#ifndef AUTOCONF_INCLUDED
-#include <linux/config.h>
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
+#include <generated/autoconf.h>
+#else
+#include <linux/autoconf.h>
 #endif
 #include <linux/module.h>
 #include <linux/kernel.h>

@@ -46,8 +46,11 @@ __FBSDID("$FreeBSD: src/sys/dev/hifn/hifn7751.c,v 1.40 2007/03/21 03:42:49 sam E
 /*
  * Driver for various Hifn encryption processors.
  */
-#ifndef AUTOCONF_INCLUDED
-#include <linux/config.h>
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
+#include <generated/autoconf.h>
+#else
+#include <linux/autoconf.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
