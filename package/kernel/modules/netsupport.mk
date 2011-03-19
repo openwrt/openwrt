@@ -489,9 +489,9 @@ $(eval $(call KernelPackage,pptp))
 define KernelPackage/pppol2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoL2TP support
-  DEPENDS:=kmod-ppp +kmod-pppoe +LINUX_2_6_35||LINUX_2_6_36||LINUX_2_6_37:kmod-l2tp
+  DEPENDS:=kmod-ppp +kmod-pppoe +LINUX_2_6_35||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38:kmod-l2tp
   KCONFIG:=CONFIG_PPPOL2TP
-  ifneq ($(CONFIG_LINUX_2_6_35)$(CONFIG_LINUX_2_6_36)$(CONFIG_LINUX_2_6_37),)
+  ifneq ($(CONFIG_LINUX_2_6_35)$(CONFIG_LINUX_2_6_36)$(CONFIG_LINUX_2_6_37)$(CONFIG_LINUX_2_6_38),)
     FILES:=$(LINUX_DIR)/net/l2tp/l2tp_ppp.ko
     AUTOLOAD:=$(call AutoLoad,40,l2tp_ppp)
   else
@@ -651,7 +651,7 @@ $(eval $(call KernelPackage,pktgen))
 
 define KernelPackage/l2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  DEPENDS:=@LINUX_2_6_35||LINUX_2_6_36||LINUX_2_6_37
+  DEPENDS:=@LINUX_2_6_35||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38
   TITLE:=Layer Two Tunneling Protocol (L2TP)
   KCONFIG:=CONFIG_L2TP \
 	CONFIG_L2TP_V3=y \
