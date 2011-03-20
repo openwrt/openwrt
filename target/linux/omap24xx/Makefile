@@ -12,7 +12,7 @@ BOARDNAME:=TI OMAP-24xx
 MAINTAINER:=Michael Buesch <mb@bu3sch.de>
 FEATURES:=targz squashfs jffs2 usb usbgadget display gpio audio
 
-LINUX_VERSION:=2.6.38-rc8
+LINUX_VERSION:=2.6.38
 
 define Target/Description
 	TI OMAP-24xx
