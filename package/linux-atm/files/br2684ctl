@@ -35,12 +35,15 @@ start_daemon() {
 	local qos
 	config_get qos "$cfg" qos
 
+	local sendsize
+	config_get sendsize "$cfg" sendsize
+
 	local circuit="$atmdev.$vpi.$vci"
 	local pid="/var/run/br2684ctl-$circuit.pid"
 
 	start-stop-daemon -S -b -x /usr/sbin/br2684ctl -m -p "$pid" -- \
 		-c "$unit" -e "$encaps" -p "$payload" \
-		-a "$circuit" ${qos:+-q "$qos"}
+		-a "$circuit" ${qos:+-q "$qos"} ${sendsize:+-s "$sendsize"}
 }
 
 start() {
