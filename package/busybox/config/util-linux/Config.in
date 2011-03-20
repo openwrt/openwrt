@@ -35,7 +35,7 @@ config BUSYBOX_CONFIG_FEATURE_ACPID_COMPAT
 
 config BUSYBOX_CONFIG_BLKID
 	bool "blkid"
-	default y
+	default n
 	select BUSYBOX_CONFIG_VOLUMEID
 	help
 	  Lists labels and UUIDs of all filesystems.
@@ -435,7 +435,7 @@ config BUSYBOX_CONFIG_FEATURE_MDEV_LOAD_FIRMWARE
 
 config BUSYBOX_CONFIG_MKSWAP
 	bool "mkswap"
-	default y
+	default n
 	help
 	  The mkswap utility is used to configure a file or disk partition as
 	  Linux swap space. This allows Linux to use the entire file or
@@ -448,7 +448,7 @@ config BUSYBOX_CONFIG_MKSWAP
 
 config BUSYBOX_CONFIG_FEATURE_MKSWAP_UUID
 	bool "UUID support"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_MKSWAP
 	help
 	  Generate swap spaces with universally unique identifiers.
@@ -619,7 +619,7 @@ config BUSYBOX_CONFIG_SETARCH
 
 config BUSYBOX_CONFIG_SWAPONOFF
 	bool "swaponoff"
-	default y
+	default n
 	help
 	  This option enables both the 'swapon' and the 'swapoff' utilities.
 	  Once you have created some swap space using 'mkswap', you also need
@@ -735,35 +735,35 @@ menu "Filesystem/Volume identification"
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_EXT
 	bool "Ext filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_BTRFS
 	bool "btrfs filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_REISERFS
 	bool "Reiser filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_FAT
 	bool "fat filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_HFS
 	bool "hfs filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
@@ -784,28 +784,28 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_JFS
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_XFS
 	bool "xfs filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_NTFS
 	bool "ntfs filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_ISO9660
 	bool "iso9660 filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_UDF
 	bool "udf filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
@@ -819,7 +819,7 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LUKS
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXSWAP
 	bool "linux swap filesystem"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
@@ -861,7 +861,7 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_SYSV
 
 ### config FEATURE_VOLUMEID_MINIX
 ###	bool "minix filesystem"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
@@ -869,14 +869,14 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_SYSV
 ### These only detect partition tables - not used (yet?)
 ### config FEATURE_VOLUMEID_MAC
 ###	bool "mac filesystem"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
 ###
 ### config FEATURE_VOLUMEID_MSDOS
 ###	bool "msdos filesystem"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
@@ -890,56 +890,56 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_OCFS2
 
 ### config FEATURE_VOLUMEID_HIGHPOINTRAID
 ###	bool "highpoint raid"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
 
 ### config FEATURE_VOLUMEID_ISWRAID
 ###	bool "intel raid"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
 
 ### config FEATURE_VOLUMEID_LSIRAID
 ###	bool "lsi raid"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
 
 ### config FEATURE_VOLUMEID_VIARAID
 ###	bool "via raid"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
 
 ### config FEATURE_VOLUMEID_SILICONRAID
 ###	bool "silicon raid"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
 
 ### config FEATURE_VOLUMEID_NVIDIARAID
 ###	bool "nvidia raid"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
 
 ### config FEATURE_VOLUMEID_PROMISERAID
 ###	bool "promise raid"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
 
 config BUSYBOX_CONFIG_FEATURE_VOLUMEID_LINUXRAID
 	bool "linuxraid"
-	default y
+	default n
 	depends on BUSYBOX_CONFIG_VOLUMEID
 	help
 	  TODO
