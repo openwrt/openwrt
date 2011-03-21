@@ -13,7 +13,7 @@ platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$board_name" in
-	"ZyXEL"*)
+	"ZyXEL"*|"Compex WP54 family")
 		# .trx files
 		[ "$magic" != "4844" ] && {
 			echo "Invalid image type."
