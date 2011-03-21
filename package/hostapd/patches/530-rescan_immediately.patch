@@ -1,7 +1,7 @@
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -936,7 +936,7 @@ static void _wpa_supplicant_event_scan_r
- 			wpa_printf(MSG_DEBUG, "Setup a new network");
+@@ -953,7 +953,7 @@ static int _wpa_supplicant_event_scan_re
+ 			wpa_dbg(wpa_s, MSG_DEBUG, "Setup a new network");
  			wpa_supplicant_associate(wpa_s, NULL, ssid);
  		} else {
 -			int timeout_sec = 5;

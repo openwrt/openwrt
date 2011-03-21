@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -221,6 +221,7 @@ struct hostapd_iface {
+@@ -228,6 +228,7 @@ struct hostapd_iface {
  	int (*for_each_interface)(struct hapd_interfaces *interfaces,
  				  int (*cb)(struct hostapd_iface *iface,
  					    void *ctx), void *ctx);
@@ -10,7 +10,7 @@
  /* hostapd.c */
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -779,6 +779,9 @@ int hostapd_setup_interface_complete(str
+@@ -790,6 +790,9 @@ int hostapd_setup_interface_complete(str
  	wpa_printf(MSG_DEBUG, "%s: Setup of interface done.",
  		   iface->bss[0]->conf->iface);
  
@@ -86,17 +86,17 @@
  	eloop_run();
  
  	return 0;
-@@ -479,8 +485,7 @@ int main(int argc, char *argv[])
+@@ -491,8 +497,7 @@ int main(int argc, char *argv[])
  	struct hapd_interfaces interfaces;
  	int ret = 1;
  	size_t i;
 -	int c, debug = 0, daemonize = 0;
 -	char *pid_file = NULL;
 +	int c, debug = 0;
+ 	const char *log_file = NULL;
  
  	if (os_program_init())
- 		return -1;
-@@ -545,7 +550,7 @@ int main(int argc, char *argv[])
+@@ -566,7 +571,7 @@ int main(int argc, char *argv[])
  			goto out;
  	}
  
@@ -105,7 +105,7 @@
  		goto out;
  
  	ret = 0;
-@@ -556,7 +561,7 @@ int main(int argc, char *argv[])
+@@ -577,7 +582,7 @@ int main(int argc, char *argv[])
  		hostapd_interface_deinit_free(interfaces.iface[i]);
  	os_free(interfaces.iface);
  
@@ -113,10 +113,10 @@
 +	hostapd_global_deinit();
  	os_free(pid_file);
  
- 	os_program_deinit();
+ 	if (log_file)
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1890,6 +1890,8 @@ struct hostapd_config * hostapd_config_r
+@@ -1891,6 +1891,8 @@ struct hostapd_config * hostapd_config_r
  			}
  #endif /* CONFIG_IEEE80211W */
  #ifdef CONFIG_IEEE80211N
@@ -127,17 +127,17 @@
  		} else if (os_strcmp(buf, "ht_capab") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -382,6 +382,7 @@ struct hostapd_config {
+@@ -389,6 +389,7 @@ struct hostapd_config {
  
  	int ht_op_mode_fixed;
  	u16 ht_capab;
 +	int noscan;
  	int ieee80211n;
  	int secondary_channel;
- };
+ 	int require_ht;
 --- a/src/ap/hw_features.c
 +++ b/src/ap/hw_features.c
-@@ -460,7 +460,7 @@ static int ieee80211n_check_40mhz(struct
+@@ -463,7 +463,7 @@ static int ieee80211n_check_40mhz(struct
  {
  	struct wpa_driver_scan_params params;
  

@@ -90,7 +90,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -559,8 +608,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -597,8 +646,16 @@ void wpa_supplicant_set_state(struct wpa
  #ifdef CONFIG_P2P
  		wpas_p2p_completed(wpa_s);
  #endif /* CONFIG_P2P */
@@ -107,7 +107,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2045,6 +2102,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2148,6 +2205,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
@@ -139,7 +139,7 @@
  #include "drivers/driver.h"
  #include "wpa_supplicant_i.h"
  #include "config.h"
-@@ -89,6 +90,8 @@ struct wpa_bss * wpa_bss_get(struct wpa_
+@@ -70,6 +71,8 @@ struct wpa_bss * wpa_bss_get(struct wpa_
  
  static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src)
  {
@@ -148,7 +148,7 @@
  	os_time_t usec;
  
  	dst->flags = src->flags;
-@@ -101,6 +104,12 @@ static void wpa_bss_copy_res(struct wpa_
+@@ -82,6 +85,12 @@ static void wpa_bss_copy_res(struct wpa_
  	dst->level = src->level;
  	dst->tsf = src->tsf;
  

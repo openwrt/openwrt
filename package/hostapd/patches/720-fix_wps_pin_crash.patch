@@ -1,0 +1,12 @@
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -514,6 +514,9 @@ static int hostapd_ctrl_iface_wps_ap_pin
+ 	char *pos;
+ 	const char *pin_txt;
+ 
++	if (!hapd->wps)
++		return -1;
++
+ 	pos = os_strchr(txt, ' ');
+ 	if (pos)
+ 		*pos++ = '\0';
