@@ -45,7 +45,7 @@ define DownloadMethod/default
 endef
 
 define wrap_mirror
-	$(if $(MIRROR),@$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "x" || ( $(1) ),$(1))
+	$(if $(MIRROR),@$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_MD5SUM)" || ( $(1) ),$(1))
 endef
 
 define DownloadMethod/cvs
@@ -158,6 +158,7 @@ define Download/Defaults
   MD5SUM:=
   SUBDIR:=
   MIRROR:=1
+  MIRROR_MD5SUM:=x
   VERSION:=
 endef
 
