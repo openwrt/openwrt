@@ -8,7 +8,7 @@
  struct wiphy_info_data {
  	int max_scan_ssids;
  	int ap_supported;
-@@ -1592,7 +1591,6 @@ static int wpa_driver_nl80211_capa(struc
+@@ -1613,7 +1612,6 @@ static int wpa_driver_nl80211_capa(struc
  
  	return 0;
  }
@@ -16,7 +16,7 @@
  
  
  static int wpa_driver_nl80211_init_nl(struct wpa_driver_nl80211_data *drv)
-@@ -1804,6 +1802,7 @@ static void * wpa_driver_nl80211_init(vo
+@@ -1825,6 +1823,7 @@ static void * wpa_driver_nl80211_init(vo
  	drv->monitor_ifidx = -1;
  	drv->monitor_sock = -1;
  	drv->ioctl_sock = -1;
@@ -24,7 +24,7 @@
  
  	if (wpa_driver_nl80211_init_nl(drv)) {
  		os_free(drv);
-@@ -1967,32 +1966,32 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -1988,32 +1987,32 @@ wpa_driver_nl80211_finish_drv_init(struc
  	drv->ifindex = if_nametoindex(bss->ifname);
  	drv->first_bss.ifindex = drv->ifindex;
  
@@ -80,7 +80,7 @@
  
  	if (linux_get_ifhwaddr(drv->ioctl_sock, bss->ifname, drv->addr))
  		return -1;
-@@ -3719,7 +3718,8 @@ static void nl80211_remove_iface(struct 
+@@ -3738,7 +3737,8 @@ static void nl80211_remove_iface(struct 
  
  #ifdef HOSTAPD
  	/* stop listening for EAPOL on this interface */
@@ -90,7 +90,7 @@
  #endif /* HOSTAPD */
  
  	msg = nlmsg_alloc();
-@@ -3792,7 +3792,8 @@ static int nl80211_create_iface_once(str
+@@ -3811,7 +3811,8 @@ static int nl80211_create_iface_once(str
  
  #ifdef HOSTAPD
  	/* start listening for EAPOL on this interface */

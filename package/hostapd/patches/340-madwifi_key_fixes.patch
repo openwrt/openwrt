@@ -1,19 +1,54 @@
 --- a/src/drivers/driver_madwifi.c
 +++ b/src/drivers/driver_madwifi.c
-@@ -463,15 +463,30 @@ madwifi_set_key(const char *ifname, void
- 		memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
+@@ -439,7 +439,11 @@ madwifi_set_key(const char *ifname, void
+ 		   __func__, alg, ether_sprintf(addr), key_idx);
+ 
+ 	if (alg == WPA_ALG_WEP)
++	{
+ 		cipher = IEEE80211_CIPHER_WEP;
++		if ((!addr || !memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) && drv->wext)
++			return wpa_driver_wext_set_key(ifname, drv->wext, alg, addr, key_idx, set_tx, seq, seq_len, key, key_len);
++	}
+ 	else if (alg == WPA_ALG_TKIP)
+ 		cipher = IEEE80211_CIPHER_TKIP;
+ 	else if (alg == WPA_ALG_CCMP)
+@@ -458,20 +462,45 @@ madwifi_set_key(const char *ifname, void
+ 
+ 	memset(&wk, 0, sizeof(wk));
+ 	wk.ik_type = cipher;
+-	wk.ik_flags = IEEE80211_KEY_RECV | IEEE80211_KEY_XMIT;
+-	if (addr == NULL || is_broadcast_ether_addr(addr)) {
+-		memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
++	wk.ik_flags = IEEE80211_KEY_RECV;
++	if (set_tx)
++		wk.ik_flags |= IEEE80211_KEY_XMIT;
++	if (addr == NULL) {
++		os_memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
  		wk.ik_keyix = key_idx;
- 		wk.ik_flags |= IEEE80211_KEY_DEFAULT;
-+		wk.ik_flags |= IEEE80211_KEY_GROUP;
- 	} else if (!memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
-+		wk.ik_keyix = key_idx;
- 		wk.ik_flags |= IEEE80211_KEY_GROUP;
+-		wk.ik_flags |= IEEE80211_KEY_DEFAULT;
+-	} else if (!memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) {
+-		wk.ik_flags |= IEEE80211_KEY_GROUP;
 -		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
-+		memset(wk.ik_macaddr, 0, IEEE80211_ADDR_LEN);
  	} else {
- 		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
- 		wk.ik_keyix = IEEE80211_KEYIX_NONE;
+-		memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
+-		wk.ik_keyix = IEEE80211_KEYIX_NONE;
++		os_memcpy(wk.ik_macaddr, addr, IEEE80211_ADDR_LEN);
++		/*
++		 * Deduce whether group/global or unicast key by checking
++		 * the address (yech).  Note also that we can only mark global
++		 * keys default; doing this for a unicast key is an error.
++		 */
++		if (os_memcmp(addr, "\xff\xff\xff\xff\xff\xff",
++			      IEEE80211_ADDR_LEN) == 0) {
++			wk.ik_flags |= IEEE80211_KEY_GROUP;
++			wk.ik_keyix = key_idx;
++		} else {
++			wk.ik_keyix = key_idx == 0 ? IEEE80211_KEYIX_NONE :
++				key_idx;
++		}
  	}
++	if (wk.ik_keyix != IEEE80211_KEYIX_NONE && set_tx)
++		wk.ik_flags |= IEEE80211_KEY_DEFAULT;
  	wk.ik_keylen = key_len;
  	memcpy(wk.ik_keydata, key, key_len);
 +#ifdef WORDS_BIGENDIAN

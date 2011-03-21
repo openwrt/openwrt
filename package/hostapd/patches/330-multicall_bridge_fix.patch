@@ -22,9 +22,9 @@
  	rta_len = RTA_ALIGN(sizeof(struct rtattr));
  	while (RTA_OK(attr, attrlen)) {
  		if (attr->rta_type == IFLA_IFNAME) {
-@@ -1589,6 +1597,11 @@ static int wpa_driver_nl80211_capa(struc
- 	drv->capa.flags |= WPA_DRIVER_FLAGS_P2P_CAPABLE;
- 	drv->capa.max_remain_on_chan = 5000;
+@@ -1610,6 +1618,11 @@ static int wpa_driver_nl80211_capa(struc
+ 		drv->capa.flags |= WPA_DRIVER_FLAGS_P2P_CAPABLE;
+ 	drv->capa.max_remain_on_chan = info.max_remain_on_chan;
  
 +#ifdef HOSTAPD
 +	drv->num_if_indices = sizeof(drv->default_if_indices) / sizeof(int);
@@ -34,7 +34,7 @@
  	return 0;
  }
  
-@@ -5561,8 +5574,6 @@ static void *i802_init(struct hostapd_da
+@@ -5602,8 +5615,6 @@ static void *i802_init(struct hostapd_da
  		br_ifindex = 0;
  	}
  
