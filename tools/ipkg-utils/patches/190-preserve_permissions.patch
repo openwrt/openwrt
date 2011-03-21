@@ -1,0 +1,12 @@
+--- a/ipkg-build
++++ b/ipkg-build
+@@ -249,7 +249,8 @@ tmp_dir=$dest_dir/IPKG_BUILD.$$
+ mkdir $tmp_dir
+ 
+ echo $CONTROL > $tmp_dir/tarX
+-( cd $pkg_dir && $TAR $ogargs -X $tmp_dir/tarX -czf $tmp_dir/data.tar.gz . )
++# Preserve permissions (-p) when creating data.tar.gz as non-root user
++( cd $pkg_dir && $TAR $ogargs -X $tmp_dir/tarX -czpf $tmp_dir/data.tar.gz . )
+ 
+ installed_size=`du -b $tmp_dir/data.tar.gz | cut -f1`
+ sed -i -e "s/^Installed-Size: .*/Installed-Size: $installed_size/" \
