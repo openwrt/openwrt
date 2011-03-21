@@ -111,7 +111,8 @@ endif
 
 ifneq ($(CONFIG_TARGET_ROOTFS_TARGZ),)
   define Image/mkfs/targz
-		$(TAR) -zcf $(BIN_DIR)/$(IMG_PREFIX)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+		# Preserve permissions (-p) when building as non-root user
+		$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
   endef
 endif
 
@@ -137,9 +138,10 @@ endif
 
 
 define Image/mkfs/prepare/default
-	- $(FIND) $(TARGET_DIR) -type f -not -perm +0100 -not -name 'ssh_host*' -print0 | $(XARGS) -0 chmod 0644
-	- $(FIND) $(TARGET_DIR) -type f -perm +0100 -print0 | $(XARGS) -0 chmod 0755
-	- $(FIND) $(TARGET_DIR) -type d -print0 | $(XARGS) -0 chmod 0755
+	# Use symbolic permissions to avoid clobbering SUID/SGID/sticky bits
+	- $(FIND) $(TARGET_DIR) -type f -not -perm +0100 -not -name 'ssh_host*' -print0 | $(XARGS) -0 chmod u+rw,g+r,o+r
+	- $(FIND) $(TARGET_DIR) -type f -perm +0100 -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
+	- $(FIND) $(TARGET_DIR) -type d -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
 	$(INSTALL_DIR) $(TARGET_DIR)/tmp
 	chmod 0777 $(TARGET_DIR)/tmp
 endef
