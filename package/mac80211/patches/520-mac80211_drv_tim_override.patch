@@ -21,7 +21,7 @@
   * Call this function for all transmitted frames after they have been
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -608,7 +608,8 @@ static bool sta_info_cleanup_expire_buff
+@@ -609,7 +609,8 @@ static bool sta_info_cleanup_expire_buff
  #endif
  		dev_kfree_skb(skb);
  
@@ -31,7 +31,7 @@
  			sta_info_clear_tim_bit(sta);
  	}
  
-@@ -899,6 +900,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
+@@ -900,6 +901,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
  	struct ieee80211_local *local = sdata->local;
  	int sent, buffered;
  
@@ -39,7 +39,7 @@
  	if (!(local->hw.flags & IEEE80211_HW_AP_LINK_PS))
  		drv_sta_notify(local, sdata, STA_NOTIFY_AWAKE, &sta->sta);
  
-@@ -991,3 +993,12 @@ void ieee80211_sta_block_awake(struct ie
+@@ -992,3 +994,12 @@ void ieee80211_sta_block_awake(struct ie
  		ieee80211_queue_work(hw, &sta->drv_unblock_wk);
  }
  EXPORT_SYMBOL(ieee80211_sta_block_awake);
