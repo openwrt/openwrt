@@ -1,3 +1,23 @@
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -362,7 +362,7 @@ struct ath_vif {
+  * number of BSSIDs) if a given beacon does not go out even after waiting this
+  * number of beacon intervals, the game's up.
+  */
+-#define BSTUCK_THRESH           	(9 * ATH_BCBUF)
++#define BSTUCK_THRESH           	9
+ #define	ATH_BCBUF               	4
+ #define ATH_DEFAULT_BINTVAL     	100 /* TU */
+ #define ATH_DEFAULT_BMISS_LIMIT 	10
+@@ -386,7 +386,7 @@ struct ath_beacon {
+ 	u32 beaconq;
+ 	u32 bmisscnt;
+ 	u32 ast_be_xmit;
+-	u64 bc_tstamp;
++	u32 bc_tstamp;
+ 	struct ieee80211_vif *bslot[ATH_BCBUF];
+ 	int slottime;
+ 	int slotupdate;
 --- a/drivers/net/wireless/ath/ath9k/beacon.c
 +++ b/drivers/net/wireless/ath/ath9k/beacon.c
 @@ -57,8 +57,8 @@ int ath_beaconq_config(struct ath_softc 
@@ -53,7 +73,37 @@
  
  		ath_dbg(common, ATH_DBG_BEACON,
  			"stagger beacons, bslot %d intval %u tsfadjust %llu\n",
-@@ -401,8 +395,9 @@ void ath_beacon_tasklet(unsigned long da
+@@ -369,12 +363,13 @@ void ath_beacon_tasklet(unsigned long da
+ 	if (ath9k_hw_numtxpending(ah, sc->beacon.beaconq) != 0) {
+ 		sc->beacon.bmisscnt++;
+ 
+-		if (sc->beacon.bmisscnt < BSTUCK_THRESH) {
++		if (sc->beacon.bmisscnt < BSTUCK_THRESH * sc->nbcnvifs) {
+ 			ath_dbg(common, ATH_DBG_BSTUCK,
+ 				"missed %u consecutive beacons\n",
+ 				sc->beacon.bmisscnt);
+ 			ath9k_hw_stop_dma_queue(ah, sc->beacon.beaconq);
+-			ath9k_hw_bstuck_nfcal(ah);
++			if (sc->beacon.bmisscnt > 4)
++				ath9k_hw_bstuck_nfcal(ah);
+ 		} else if (sc->beacon.bmisscnt >= BSTUCK_THRESH) {
+ 			ath_dbg(common, ATH_DBG_BSTUCK,
+ 				"beacon is officially stuck\n");
+@@ -385,13 +380,6 @@ void ath_beacon_tasklet(unsigned long da
+ 		return;
+ 	}
+ 
+-	if (sc->beacon.bmisscnt != 0) {
+-		ath_dbg(common, ATH_DBG_BSTUCK,
+-			"resume beacon xmit after %u misses\n",
+-			sc->beacon.bmisscnt);
+-		sc->beacon.bmisscnt = 0;
+-	}
+-
+ 	/*
+ 	 * Generate beacon frames. we are sending frames
+ 	 * staggered so calculate the slot for this frame based
+@@ -401,8 +389,9 @@ void ath_beacon_tasklet(unsigned long da
  	intval = cur_conf->beacon_interval ? : ATH_DEFAULT_BINTVAL;
  
  	tsf = ath9k_hw_gettsf64(ah);
@@ -65,7 +115,7 @@
  	/*
  	 * Reverse the slot order to get slot 0 on the TBTT offset that does
  	 * not require TSF adjustment and other slots adding
-@@ -415,7 +410,7 @@ void ath_beacon_tasklet(unsigned long da
+@@ -415,7 +404,7 @@ void ath_beacon_tasklet(unsigned long da
  
  	ath_dbg(common, ATH_DBG_BEACON,
  		"slot %d [tsf %llu tsftu %u intval %u] vif %p\n",
@@ -74,7 +124,21 @@
  
  	bfaddr = 0;
  	if (vif) {
-@@ -463,13 +458,17 @@ static void ath9k_beacon_init(struct ath
+@@ -424,6 +413,13 @@ void ath_beacon_tasklet(unsigned long da
+ 			bfaddr = bf->bf_daddr;
+ 			bc = 1;
+ 		}
++
++		if (sc->beacon.bmisscnt != 0) {
++			ath_dbg(common, ATH_DBG_BSTUCK,
++				"resume beacon xmit after %u misses\n",
++				sc->beacon.bmisscnt);
++			sc->beacon.bmisscnt = 0;
++		}
+ 	}
+ 
+ 	/*
+@@ -463,13 +459,17 @@ static void ath9k_beacon_init(struct ath
  			      u32 next_beacon,
  			      u32 beacon_period)
  {
@@ -94,7 +158,7 @@
  }
  
  /*
-@@ -484,18 +483,14 @@ static void ath_beacon_config_ap(struct 
+@@ -484,18 +484,14 @@ static void ath_beacon_config_ap(struct 
  	u32 nexttbtt, intval;
  
  	/* NB: the beacon interval is kept internally in TU's */
@@ -114,7 +178,7 @@
  	ah->imask |= ATH9K_INT_SWBA;
  	ath_beaconq_config(sc);
  
-@@ -505,11 +500,6 @@ static void ath_beacon_config_ap(struct 
+@@ -505,11 +501,6 @@ static void ath_beacon_config_ap(struct 
  	ath9k_beacon_init(sc, nexttbtt, intval);
  	sc->beacon.bmisscnt = 0;
  	ath9k_hw_set_interrupts(ah, ah->imask);
@@ -126,7 +190,7 @@
  }
  
  /*
-@@ -643,25 +633,20 @@ static void ath_beacon_config_adhoc(stru
+@@ -643,25 +634,20 @@ static void ath_beacon_config_adhoc(stru
  {
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
@@ -134,13 +198,13 @@
 -	u32 tsftu, intval, nexttbtt;
 -
 -	intval = conf->beacon_interval & ATH9K_BEACON_PERIOD;
--
 +	u32 tsf, delta, intval, nexttbtt;
  
--	/* Pull nexttbtt forward to reflect the current TSF */
 +	tsf = ath9k_hw_gettsf32(ah) + TU_TO_USEC(FUDGE);
 +	intval = TU_TO_USEC(conf->beacon_interval & ATH9K_BEACON_PERIOD);
  
+-	/* Pull nexttbtt forward to reflect the current TSF */
+-
 -	nexttbtt = TSF_TO_TU(sc->beacon.bc_tstamp >> 32, sc->beacon.bc_tstamp);
 -	if (nexttbtt == 0)
 -                nexttbtt = intval;
@@ -164,7 +228,7 @@
  
  	ath_dbg(common, ATH_DBG_BEACON,
  		"IBSS nexttbtt %u intval %u (%u)\n",
-@@ -672,7 +657,6 @@ static void ath_beacon_config_adhoc(stru
+@@ -672,7 +658,6 @@ static void ath_beacon_config_adhoc(stru
  	 * if we need to manually prepare beacon frames.  Otherwise we use a
  	 * self-linked tx descriptor and let the hardware deal with things.
  	 */
@@ -172,103 +236,6 @@
  	ah->imask |= ATH9K_INT_SWBA;
  
  	ath_beaconq_config(sc);
---- a/drivers/net/wireless/ath/ath9k/hw.c
-+++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1706,21 +1706,15 @@ void ath9k_hw_beaconinit(struct ath_hw *
- 	case NL80211_IFTYPE_MESH_POINT:
- 		REG_SET_BIT(ah, AR_TXCFG,
- 			    AR_TXCFG_ADHOC_BEACON_ATIM_TX_POLICY);
--		REG_WRITE(ah, AR_NEXT_NDP_TIMER,
--			  TU_TO_USEC(next_beacon +
--				     (ah->atim_window ? ah->
--				      atim_window : 1)));
-+		REG_WRITE(ah, AR_NEXT_NDP_TIMER, next_beacon +
-+			  TU_TO_USEC(ah->atim_window ? ah->atim_window : 1));
- 		flags |= AR_NDP_TIMER_EN;
- 	case NL80211_IFTYPE_AP:
--		REG_WRITE(ah, AR_NEXT_TBTT_TIMER, TU_TO_USEC(next_beacon));
--		REG_WRITE(ah, AR_NEXT_DMA_BEACON_ALERT,
--			  TU_TO_USEC(next_beacon -
--				     ah->config.
--				     dma_beacon_response_time));
--		REG_WRITE(ah, AR_NEXT_SWBA,
--			  TU_TO_USEC(next_beacon -
--				     ah->config.
--				     sw_beacon_response_time));
-+		REG_WRITE(ah, AR_NEXT_TBTT_TIMER, next_beacon);
-+		REG_WRITE(ah, AR_NEXT_DMA_BEACON_ALERT, next_beacon -
-+			  TU_TO_USEC(ah->config.dma_beacon_response_time));
-+		REG_WRITE(ah, AR_NEXT_SWBA, next_beacon -
-+			  TU_TO_USEC(ah->config.sw_beacon_response_time));
- 		flags |=
- 			AR_TBTT_TIMER_EN | AR_DBA_TIMER_EN | AR_SWBA_TIMER_EN;
- 		break;
-@@ -1732,18 +1726,13 @@ void ath9k_hw_beaconinit(struct ath_hw *
- 		break;
- 	}
- 
--	REG_WRITE(ah, AR_BEACON_PERIOD, TU_TO_USEC(beacon_period));
--	REG_WRITE(ah, AR_DMA_BEACON_PERIOD, TU_TO_USEC(beacon_period));
--	REG_WRITE(ah, AR_SWBA_PERIOD, TU_TO_USEC(beacon_period));
--	REG_WRITE(ah, AR_NDP_PERIOD, TU_TO_USEC(beacon_period));
-+	REG_WRITE(ah, AR_BEACON_PERIOD, beacon_period);
-+	REG_WRITE(ah, AR_DMA_BEACON_PERIOD, beacon_period);
-+	REG_WRITE(ah, AR_SWBA_PERIOD, beacon_period);
-+	REG_WRITE(ah, AR_NDP_PERIOD, beacon_period);
- 
- 	REGWRITE_BUFFER_FLUSH(ah);
- 
--	beacon_period &= ~ATH9K_BEACON_ENA;
--	if (beacon_period & ATH9K_BEACON_RESET_TSF) {
--		ath9k_hw_reset_tsf(ah);
--	}
--
- 	REG_SET_BIT(ah, AR_TIMER_MODE, flags);
- }
- EXPORT_SYMBOL(ath9k_hw_beaconinit);
-@@ -2404,10 +2393,11 @@ static u32 rightmost_index(struct ath_ge
- 	return timer_table->gen_timer_index[b];
- }
- 
--static u32 ath9k_hw_gettsf32(struct ath_hw *ah)
-+u32 ath9k_hw_gettsf32(struct ath_hw *ah)
- {
- 	return REG_READ(ah, AR_TSF_L32);
- }
-+EXPORT_SYMBOL(ath9k_hw_gettsf32);
- 
- struct ath_gen_timer *ath_gen_timer_alloc(struct ath_hw *ah,
- 					  void (*trigger)(void *),
---- a/drivers/net/wireless/ath/ath9k/ath9k.h
-+++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -392,7 +392,7 @@ struct ath_beacon {
- 	u32 beaconq;
- 	u32 bmisscnt;
- 	u32 ast_be_xmit;
--	u64 bc_tstamp;
-+	u32 bc_tstamp;
- 	struct ieee80211_vif *bslot[ATH_BCBUF];
- 	int slottime;
- 	int slotupdate;
---- a/drivers/net/wireless/ath/ath9k/hw.h
-+++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -412,8 +412,6 @@ struct ath9k_beacon_state {
- 	u32 bs_nextdtim;
- 	u32 bs_intval;
- #define ATH9K_BEACON_PERIOD       0x0000ffff
--#define ATH9K_BEACON_ENA          0x00800000
--#define ATH9K_BEACON_RESET_TSF    0x01000000
- #define ATH9K_TSFOOR_THRESHOLD    0x00004240 /* 16k us */
- 	u32 bs_dtimperiod;
- 	u16 bs_cfpperiod;
-@@ -927,6 +925,7 @@ void ath9k_hw_setopmode(struct ath_hw *a
- void ath9k_hw_setmcastfilter(struct ath_hw *ah, u32 filter0, u32 filter1);
- void ath9k_hw_setbssidmask(struct ath_hw *ah);
- void ath9k_hw_write_associd(struct ath_hw *ah);
-+u32 ath9k_hw_gettsf32(struct ath_hw *ah);
- u64 ath9k_hw_gettsf64(struct ath_hw *ah);
- void ath9k_hw_settsf64(struct ath_hw *ah, u64 tsf64);
- void ath9k_hw_reset_tsf(struct ath_hw *ah);
 --- a/drivers/net/wireless/ath/ath9k/htc_drv_beacon.c
 +++ b/drivers/net/wireless/ath/ath9k/htc_drv_beacon.c
 @@ -155,7 +155,7 @@ static void ath9k_htc_beacon_config_ap(s
@@ -315,3 +282,89 @@
  	priv->bmiss_cnt = 0;
  	htc_imask = cpu_to_be32(imask);
  	WMI_CMD_BUF(WMI_ENABLE_INTR_CMDID, &htc_imask);
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -1697,21 +1697,15 @@ void ath9k_hw_beaconinit(struct ath_hw *
+ 	case NL80211_IFTYPE_MESH_POINT:
+ 		REG_SET_BIT(ah, AR_TXCFG,
+ 			    AR_TXCFG_ADHOC_BEACON_ATIM_TX_POLICY);
+-		REG_WRITE(ah, AR_NEXT_NDP_TIMER,
+-			  TU_TO_USEC(next_beacon +
+-				     (ah->atim_window ? ah->
+-				      atim_window : 1)));
++		REG_WRITE(ah, AR_NEXT_NDP_TIMER, next_beacon +
++			  TU_TO_USEC(ah->atim_window ? ah->atim_window : 1));
+ 		flags |= AR_NDP_TIMER_EN;
+ 	case NL80211_IFTYPE_AP:
+-		REG_WRITE(ah, AR_NEXT_TBTT_TIMER, TU_TO_USEC(next_beacon));
+-		REG_WRITE(ah, AR_NEXT_DMA_BEACON_ALERT,
+-			  TU_TO_USEC(next_beacon -
+-				     ah->config.
+-				     dma_beacon_response_time));
+-		REG_WRITE(ah, AR_NEXT_SWBA,
+-			  TU_TO_USEC(next_beacon -
+-				     ah->config.
+-				     sw_beacon_response_time));
++		REG_WRITE(ah, AR_NEXT_TBTT_TIMER, next_beacon);
++		REG_WRITE(ah, AR_NEXT_DMA_BEACON_ALERT, next_beacon -
++			  TU_TO_USEC(ah->config.dma_beacon_response_time));
++		REG_WRITE(ah, AR_NEXT_SWBA, next_beacon -
++			  TU_TO_USEC(ah->config.sw_beacon_response_time));
+ 		flags |=
+ 			AR_TBTT_TIMER_EN | AR_DBA_TIMER_EN | AR_SWBA_TIMER_EN;
+ 		break;
+@@ -1723,18 +1717,13 @@ void ath9k_hw_beaconinit(struct ath_hw *
+ 		break;
+ 	}
+ 
+-	REG_WRITE(ah, AR_BEACON_PERIOD, TU_TO_USEC(beacon_period));
+-	REG_WRITE(ah, AR_DMA_BEACON_PERIOD, TU_TO_USEC(beacon_period));
+-	REG_WRITE(ah, AR_SWBA_PERIOD, TU_TO_USEC(beacon_period));
+-	REG_WRITE(ah, AR_NDP_PERIOD, TU_TO_USEC(beacon_period));
++	REG_WRITE(ah, AR_BEACON_PERIOD, beacon_period);
++	REG_WRITE(ah, AR_DMA_BEACON_PERIOD, beacon_period);
++	REG_WRITE(ah, AR_SWBA_PERIOD, beacon_period);
++	REG_WRITE(ah, AR_NDP_PERIOD, beacon_period);
+ 
+ 	REGWRITE_BUFFER_FLUSH(ah);
+ 
+-	beacon_period &= ~ATH9K_BEACON_ENA;
+-	if (beacon_period & ATH9K_BEACON_RESET_TSF) {
+-		ath9k_hw_reset_tsf(ah);
+-	}
+-
+ 	REG_SET_BIT(ah, AR_TIMER_MODE, flags);
+ }
+ EXPORT_SYMBOL(ath9k_hw_beaconinit);
+@@ -2395,10 +2384,11 @@ static u32 rightmost_index(struct ath_ge
+ 	return timer_table->gen_timer_index[b];
+ }
+ 
+-static u32 ath9k_hw_gettsf32(struct ath_hw *ah)
++u32 ath9k_hw_gettsf32(struct ath_hw *ah)
+ {
+ 	return REG_READ(ah, AR_TSF_L32);
+ }
++EXPORT_SYMBOL(ath9k_hw_gettsf32);
+ 
+ struct ath_gen_timer *ath_gen_timer_alloc(struct ath_hw *ah,
+ 					  void (*trigger)(void *),
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -416,8 +416,6 @@ struct ath9k_beacon_state {
+ 	u32 bs_nextdtim;
+ 	u32 bs_intval;
+ #define ATH9K_BEACON_PERIOD       0x0000ffff
+-#define ATH9K_BEACON_ENA          0x00800000
+-#define ATH9K_BEACON_RESET_TSF    0x01000000
+ #define ATH9K_TSFOOR_THRESHOLD    0x00004240 /* 16k us */
+ 	u32 bs_dtimperiod;
+ 	u16 bs_cfpperiod;
+@@ -930,6 +928,7 @@ void ath9k_hw_setopmode(struct ath_hw *a
+ void ath9k_hw_setmcastfilter(struct ath_hw *ah, u32 filter0, u32 filter1);
+ void ath9k_hw_setbssidmask(struct ath_hw *ah);
+ void ath9k_hw_write_associd(struct ath_hw *ah);
++u32 ath9k_hw_gettsf32(struct ath_hw *ah);
+ u64 ath9k_hw_gettsf64(struct ath_hw *ah);
+ void ath9k_hw_settsf64(struct ath_hw *ah, u64 tsf64);
+ void ath9k_hw_reset_tsf(struct ath_hw *ah);
