@@ -1,0 +1,15 @@
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -264,9 +264,9 @@
+ /*
+  * Configuration information
+  */
+-#define INPUT_POOL_WORDS 128
+-#define OUTPUT_POOL_WORDS 32
+-#define SEC_XFER_SIZE 512
++#define INPUT_POOL_WORDS 256
++#define OUTPUT_POOL_WORDS 64
++#define SEC_XFER_SIZE 1024
+ #define EXTRACT_SIZE 10
+ 
+ /*
