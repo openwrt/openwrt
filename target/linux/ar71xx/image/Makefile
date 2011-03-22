@@ -394,6 +394,8 @@ ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
 		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 2752512 ]; then \
 		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else if [ ! -f $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin ]; then \
+		echo "Warning: $(IMG_PREFIX)-$(2)-u-boot.bin not found"; \
 	else \
 		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
 			0x80060000 \
@@ -408,7 +410,7 @@ ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
 			-b $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin \
 			-r $(call imgname,$(1),$(2))-sysupgrade.bin:0x10000 \
 			-o $(call imgname,$(1),$(2))-factory.bin; \
-	fi; fi
+	fi; fi; fi
   endef
 endif
 
