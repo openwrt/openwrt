@@ -1,0 +1,21 @@
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -1912,8 +1912,6 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 		pCap->rts_aggr_limit = (8 * 1024);
+ 	}
+ 
+-	pCap->hw_caps |= ATH9K_HW_CAP_ENHANCEDPM;
+-
+ #if defined(CONFIG_RFKILL) || defined(CONFIG_RFKILL_MODULE)
+ 	ah->rfsilent = ah->eep_ops->get_eeprom(ah, EEP_RF_SILENT);
+ 	if (ah->rfsilent & EEP_RFSILENT_ENABLED) {
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -174,7 +174,6 @@ enum ath9k_hw_caps {
+ 	ATH9K_HW_CAP_HT                         = BIT(0),
+ 	ATH9K_HW_CAP_RFSILENT                   = BIT(1),
+ 	ATH9K_HW_CAP_CST                        = BIT(2),
+-	ATH9K_HW_CAP_ENHANCEDPM                 = BIT(3),
+ 	ATH9K_HW_CAP_AUTOSLEEP                  = BIT(4),
+ 	ATH9K_HW_CAP_4KB_SPLITTRANS             = BIT(5),
+ 	ATH9K_HW_CAP_EDMA			= BIT(6),
