@@ -1,0 +1,24 @@
+diff -urN linux-2.6.36.1/drivers/usb/serial/ftdi_sio.c linux-2.6.36.1.old/drivers/usb/serial/ftdi_sio.c
+--- linux-2.6.36.1/drivers/usb/serial/ftdi_sio.c	2011-03-23 11:23:23.000000000 +0100
++++ linux-2.6.36.1.old/drivers/usb/serial/ftdi_sio.c	2010-11-22 20:03:49.000000000 +0100
+@@ -794,9 +794,6 @@
+ 	{ USB_DEVICE(FTDI_VID, FTDI_SCIENCESCOPE_LOGBOOKML_PID) },
+ 	{ USB_DEVICE(FTDI_VID, FTDI_SCIENCESCOPE_LS_LOGBOOK_PID) },
+ 	{ USB_DEVICE(FTDI_VID, FTDI_SCIENCESCOPE_HS_LOGBOOK_PID) },
+-	/* CTI Devices */
+-	{ USB_DEVICE(FTDI_VID, FTDI_CTI_Mini_PID) },
+-	{ USB_DEVICE(FTDI_VID, FTDI_CTI_Nano_PID) },
+ 	{ },					/* Optional parameter entry */
+ 	{ }					/* Terminating entry */
+ };
+diff -urN linux-2.6.36.1/drivers/usb/serial/ftdi_sio_ids.h linux-2.6.36.1.old/drivers/usb/serial/ftdi_sio_ids.h
+--- linux-2.6.36.1/drivers/usb/serial/ftdi_sio_ids.h	2011-03-23 11:20:57.000000000 +0100
++++ linux-2.6.36.1.old/drivers/usb/serial/ftdi_sio_ids.h	2010-11-22 20:03:49.000000000 +0100
+@@ -1100,7 +1100,3 @@
+ #define FTDI_SCIENCESCOPE_LOGBOOKML_PID		0xFF18
+ #define FTDI_SCIENCESCOPE_LS_LOGBOOK_PID	0xFF1C
+ #define FTDI_SCIENCESCOPE_HS_LOGBOOK_PID	0xFF1D
+-
+-/* www.cti-lean.com RS485 converter */
+-#define FTDI_CTI_Mini_PID	0xF608 /* USB-485 Mini */
+-#define FTDI_CTI_Nano_PID	0xF60B /* USB-Nano-485 */
