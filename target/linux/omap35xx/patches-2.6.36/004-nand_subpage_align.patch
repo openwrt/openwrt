@@ -1,0 +1,22 @@
+diff -urN linux-2.6.38.old/drivers/mtd/nand/omap2.c linux-2.6.38/drivers/mtd/nand/omap2.c
+--- linux-2.6.38.old/drivers/mtd/nand/omap2.c	2011-03-15 02:20:32.000000000 +0100
++++ linux-2.6.38/drivers/mtd/nand/omap2.c	2011-03-21 15:05:21.000000000 +0100
+@@ -245,6 +245,18 @@
+ 	int ret = 0;
+ 	u32 *p = (u32 *)buf;
+ 
++	/* u32 align the buffer and read */
++	/* NB: This assumes the buf ptr can be aligned *down* which is a valid.
++	* Assumption when dealing with ecc buffers etc.
++	*/
++	u32 addr = (u32)p;
++
++	int diff = addr & 3;
++	addr -= diff;
++	len += diff;
++	len = (len + 3) & ~3;
++	p = (u32 *)addr;
++
+ 	/* take care of subpage reads */
+ 	if (len % 4) {
+ 		if (info->nand.options & NAND_BUSWIDTH_16)
