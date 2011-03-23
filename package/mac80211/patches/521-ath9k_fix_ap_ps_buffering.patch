@@ -57,7 +57,7 @@
  static int ath9k_conf_tx(struct ieee80211_hw *hw, u16 queue,
  			 const struct ieee80211_tx_queue_params *params)
  {
-@@ -2177,6 +2198,7 @@ struct ieee80211_ops ath9k_ops = {
+@@ -2179,6 +2200,7 @@ struct ieee80211_ops ath9k_ops = {
  	.configure_filter   = ath9k_configure_filter,
  	.sta_add	    = ath9k_sta_add,
  	.sta_remove	    = ath9k_sta_remove,
@@ -223,7 +223,7 @@
  /* PHY ops */
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -646,6 +646,7 @@ struct ath_hw_ops {
+@@ -644,6 +644,7 @@ struct ath_hw_ops {
  				     u32 burstDuration);
  	void (*set11n_virtualmorefrag)(struct ath_hw *ah, void *ds,
  				       u32 vmf);
