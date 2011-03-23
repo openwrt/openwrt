@@ -368,3 +368,14 @@
  u64 ath9k_hw_gettsf64(struct ath_hw *ah);
  void ath9k_hw_settsf64(struct ath_hw *ah, u64 tsf64);
  void ath9k_hw_reset_tsf(struct ath_hw *ah);
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -2160,6 +2160,8 @@ static void ath9k_flush(struct ieee80211
+ 	if (!ath_drain_all_txq(sc, false))
+ 		ath_reset(sc, false);
+ 
++	ieee80211_wake_queues(hw);
++
+ out:
+ 	ieee80211_queue_delayed_work(hw, &sc->tx_complete_work, 0);
+ 	mutex_unlock(&sc->mutex);
