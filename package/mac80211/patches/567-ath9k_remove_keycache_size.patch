@@ -1,0 +1,59 @@
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -407,13 +407,7 @@ void ath9k_init_crypto(struct ath_softc 
+ 	int i = 0;
+ 
+ 	/* Get the hardware key cache size. */
+-	common->keymax = sc->sc_ah->caps.keycache_size;
+-	if (common->keymax > ATH_KEYMAX) {
+-		ath_dbg(common, ATH_DBG_ANY,
+-			"Warning, using only %u entries in %u key cache\n",
+-			ATH_KEYMAX, common->keymax);
+-		common->keymax = ATH_KEYMAX;
+-	}
++	common->keymax = AR_KEYTABLE_SIZE;
+ 
+ 	/*
+ 	 * Reset the key cache since some parts do not
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_init.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_init.c
+@@ -564,13 +564,7 @@ static void ath9k_init_crypto(struct ath
+ 	int i = 0;
+ 
+ 	/* Get the hardware key cache size. */
+-	common->keymax = priv->ah->caps.keycache_size;
+-	if (common->keymax > ATH_KEYMAX) {
+-		ath_dbg(common, ATH_DBG_ANY,
+-			"Warning, using only %u entries in %u key cache\n",
+-			ATH_KEYMAX, common->keymax);
+-		common->keymax = ATH_KEYMAX;
+-	}
++	common->keymax = AR_KEYTABLE_SIZE;
+ 
+ 	if (priv->ah->misc_mode & AR_PCU_MIC_NEW_LOC_ENA)
+ 		common->crypt_caps |= ATH_CRYPT_CAP_MIC_COMBINED;
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -1889,12 +1889,6 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 	else
+ 		pCap->hw_caps &= ~ATH9K_HW_CAP_HT;
+ 
+-	if (capField & AR_EEPROM_EEPCAP_KC_ENTRIES)
+-		pCap->keycache_size =
+-			1 << MS(capField, AR_EEPROM_EEPCAP_KC_ENTRIES);
+-	else
+-		pCap->keycache_size = AR_KEYTABLE_SIZE;
+-
+ 	if (AR_SREV_9285(ah) || AR_SREV_9271(ah))
+ 		pCap->tx_triglevel_max = MAX_TX_FIFO_THRESHOLD >> 1;
+ 	else
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -191,7 +191,6 @@ enum ath9k_hw_caps {
+ 
+ struct ath9k_hw_capabilities {
+ 	u32 hw_caps; /* ATH9K_HW_CAP_* from ath9k_hw_caps */
+-	u16 keycache_size;
+ 	u16 low_5ghz_chan, high_5ghz_chan;
+ 	u16 low_2ghz_chan, high_2ghz_chan;
+ 	u16 rts_aggr_limit;
