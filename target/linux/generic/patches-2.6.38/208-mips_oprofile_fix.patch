@@ -1,15 +1,3 @@
---- a/arch/mips/Makefile
-+++ b/arch/mips/Makefile
-@@ -48,6 +48,9 @@ ifneq ($(SUBARCH),$(ARCH))
-   endif
- endif
- 
-+ifndef CONFIG_PROFILING
-+  cflags-y := -ffunction-sections
-+endif
- ifdef CONFIG_FUNCTION_GRAPH_TRACER
-   ifndef KBUILD_MCOUNT_RA_ADDRESS
-     ifeq ($(call cc-option-yn,-mmcount-ra-address), y)
 --- a/arch/mips/oprofile/op_model_mipsxx.c
 +++ b/arch/mips/oprofile/op_model_mipsxx.c
 @@ -298,6 +298,11 @@ static void reset_counters(void *arg)
