@@ -31,7 +31,7 @@
  			sta_info_clear_tim_bit(sta);
  	}
  
-@@ -900,6 +901,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
+@@ -902,6 +903,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
  	struct ieee80211_local *local = sdata->local;
  	int sent, buffered;
  
@@ -39,7 +39,7 @@
  	if (!(local->hw.flags & IEEE80211_HW_AP_LINK_PS))
  		drv_sta_notify(local, sdata, STA_NOTIFY_AWAKE, &sta->sta);
  
-@@ -992,3 +994,12 @@ void ieee80211_sta_block_awake(struct ie
+@@ -994,3 +996,12 @@ void ieee80211_sta_block_awake(struct ie
  		ieee80211_queue_work(hw, &sta->drv_unblock_wk);
  }
  EXPORT_SYMBOL(ieee80211_sta_block_awake);

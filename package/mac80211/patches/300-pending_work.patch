@@ -1,3 +1,42 @@
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1048,6 +1048,8 @@ static int ath9k_start(struct ieee80211_
+ 		"Starting driver with initial channel: %d MHz\n",
+ 		curchan->center_freq);
+ 
++	ath9k_ps_wakeup(sc);
++
+ 	mutex_lock(&sc->mutex);
+ 
+ 	/* setup initial channel */
+@@ -1143,6 +1145,8 @@ static int ath9k_start(struct ieee80211_
+ mutex_unlock:
+ 	mutex_unlock(&sc->mutex);
+ 
++	ath9k_ps_restore(sc);
++
+ 	return r;
+ }
+ 
+--- a/net/mac80211/ibss.c
++++ b/net/mac80211/ibss.c
+@@ -661,7 +661,6 @@ static void ieee80211_sta_find_ibss(stru
+ static void ieee80211_rx_mgmt_probe_req(struct ieee80211_sub_if_data *sdata,
+ 					struct sk_buff *req)
+ {
+-	struct ieee80211_rx_status *rx_status = IEEE80211_SKB_RXCB(req);
+ 	struct ieee80211_mgmt *mgmt = (void *)req->data;
+ 	struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
+ 	struct ieee80211_local *local = sdata->local;
+@@ -685,7 +684,7 @@ static void ieee80211_rx_mgmt_probe_req(
+ 	       mgmt->bssid, tx_last_beacon);
+ #endif /* CONFIG_MAC80211_IBSS_DEBUG */
+ 
+-	if (!tx_last_beacon && !(rx_status->rx_flags & IEEE80211_RX_RA_MATCH))
++	if (!tx_last_beacon && is_multicast_ether_addr(mgmt->da))
+ 		return;
+ 
+ 	if (memcmp(mgmt->bssid, ifibss->bssid, ETH_ALEN) != 0 &&
 --- a/net/mac80211/rc80211_minstrel_ht.c
 +++ b/net/mac80211/rc80211_minstrel_ht.c
 @@ -659,18 +659,14 @@ minstrel_ht_update_caps(void *priv, stru
