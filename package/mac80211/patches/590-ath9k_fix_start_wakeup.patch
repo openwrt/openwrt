@@ -1,0 +1,20 @@
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1048,6 +1048,8 @@ static int ath9k_start(struct ieee80211_
+ 		"Starting driver with initial channel: %d MHz\n",
+ 		curchan->center_freq);
+ 
++	ath9k_ps_wakeup(sc);
++
+ 	mutex_lock(&sc->mutex);
+ 
+ 	/* setup initial channel */
+@@ -1143,6 +1145,8 @@ static int ath9k_start(struct ieee80211_
+ mutex_unlock:
+ 	mutex_unlock(&sc->mutex);
+ 
++	ath9k_ps_restore(sc);
++
+ 	return r;
+ }
+ 
