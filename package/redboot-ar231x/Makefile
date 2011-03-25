@@ -26,7 +26,7 @@ export GCC_HONOUR_COPTS=s
 define Package/redboot-ar231x
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_atheros
+  DEPENDS:=@TARGET_atheros @BROKEN
   TITLE:=Tiny redboot for AR231x/AR531x
 endef
 
