@@ -130,11 +130,23 @@ hostapd_set_bss_options() {
 	config_get iapp_interface "$vif" iapp_interface
 
 	config_get_bool wps_pbc "$vif" wps_pushbutton 0
-	[ -n "$wps_possible" -a "$wps_pbc" -gt 0 ] && {
+	config_get_bool wps_label "$vif" wps_label 0
+
+	config_get config_methods "$vif" wps_config
+	[ "$wps_pbc" -gt 0 ] && append config_methods push_button
+
+	[ -n "$wps_possible" -a -n "$config_methods" ] && {
+		config_get device_type "$vif" wps_device_type "6-0050F204-1"
+		config_get device_name "$vif" wps_device_name "OpenWrt AP"
+		config_get manufacturer "$vif" wps_manufacturer "openwrt.org"
+
 		append "$var" "eap_server=1" "$N"
 		append "$var" "wps_state=2" "$N"
 		append "$var" "ap_setup_locked=1" "$N"
-		append "$var" "config_methods=push_button" "$N"
+		append "$var" "device_type=$device_type" "$N"
+		append "$var" "device_name=$device_name" "$N"
+		append "$var" "manufacturer=$manufacturer" "$N"
+		append "$var" "config_methods=$config_methods" "$N"
 	}
 
 	append "$var" "ssid=$ssid" "$N"
