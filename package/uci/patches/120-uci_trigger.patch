@@ -1,51 +1,4 @@
 --- /dev/null
-+++ b/trigger/Makefile
-@@ -0,0 +1,44 @@
-+include ../Makefile.inc
-+LUA_VERSION=5.1
-+PREFIX_SEARCH=/usr /usr/local /opt/local
-+LUA_PLUGINDIR=$(firstword \
-+	$(foreach ldir,$(subst ;, ,$(shell lua -e 'print(package.cpath)')), \
-+		$(if $(findstring lib/lua/,$(ldir)),$(patsubst %/?.so,%,$(ldir))) \
-+	) \
-+)
-+
-+# find lua prefix
-+LUA_PREFIX=$(firstword \
-+	$(foreach prefix,$(PREFIX_SEARCH),\
-+		$(if $(wildcard $(prefix)/include/lua.h),$(prefix)) \
-+	) \
-+)
-+
-+libdir=$(prefix)/libs
-+luadir=$(if $(LUA_PLUGINDIR),$(LUA_PLUGINDIR),$(libdir)/lua/$(LUA_VERSION))
-+luainc=$(shell pkg-config --silence-errors --cflags lua$(LUA_VERSION))
-+
-+CPPFLAGS=-I.. $(if $(luainc),$(luainc), -I$(LUA_PREFIX)/include)
-+LIBS=-L.. -luci $(shell pkg-config --silence-errors --libs lua$(LUA_VERSION))
-+
-+PLUGIN_LD=$(CC)
-+ifeq ($(OS),Darwin)
-+  PLUGIN_LDFLAGS=-bundle
-+else
-+  PLUGIN_LDFLAGS=-shared -Wl,-soname,$(SHLIB_FILE)
-+endif
-+
-+all: uci_trigger.so
-+
-+uci_trigger.so: uci_trigger.o
-+	$(PLUGIN_LD) $(PLUGIN_LDFLAGS) -o $@ $^ $(LIBS)
-+
-+%.o: %.c
-+	$(CC) $(CPPFLAGS) $(CFLAGS) $(FPIC) -c -o $@ $<
-+
-+install:
-+	mkdir -p $(DESTDIR)$(luadir)
-+	$(INSTALL) -m0644 uci_trigger.so $(DESTDIR)$(luadir)/
-+
-+clean:
-+	rm -f *.so *.o uci_trigger.so
---- /dev/null
 +++ b/trigger/uci_trigger.c
 @@ -0,0 +1,132 @@
 +#include <sys/types.h>
@@ -180,3 +133,36 @@
 +	.attach = trigger_attach,
 +	.detach = trigger_detach,
 +};
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -35,6 +35,7 @@ ADD_EXECUTABLE(ucimap-example ucimap-exa
+ TARGET_LINK_LIBRARIES(ucimap-example uci-static ucimap dl)
+ 
+ ADD_SUBDIRECTORY(lua)
++ADD_SUBDIRECTORY(trigger)
+ 
+ INSTALL(FILES uci.h uci_config.h ucimap.h
+ 	DESTINATION include/libubox
+--- /dev/null
++++ b/trigger/CMakeLists.txt
+@@ -0,0 +1,19 @@
++cmake_minimum_required(VERSION 2.6)
++
++PROJECT(uci C)
++
++SET(CMAKE_INSTALL_PREFIX /)
++
++ADD_DEFINITIONS(-Os -Wall -Werror --std=gnu99 -g3 -I..)
++
++IF(APPLE)
++	SET(CMAKE_SHARED_MODULE_CREATE_C_FLAGS "${CMAKE_SHARED_MODULE_CREATE_C_FLAGS} -undefined dynamic_lookup")
++ENDIF(APPLE)
++
++ADD_LIBRARY(uci_trigger MODULE uci_trigger.c)
++SET_TARGET_PROPERTIES(uci_trigger PROPERTIES
++	OUTPUT_NAME uci_trigger
++	PREFIX ""
++)
++TARGET_LINK_LIBRARIES(uci_trigger uci)
++
+
