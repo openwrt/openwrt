@@ -10,7 +10,7 @@ ARCH:=powerpc
 BOARD:=ppc40x
 BOARDNAME:=AMCC/IBM PPC40x
 FEATURES:=squashfs
-CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=405
+CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=405
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=2.6.32.33

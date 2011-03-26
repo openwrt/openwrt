@@ -11,7 +11,7 @@ BOARD:=leon
 BOARDNAME:=LEON
 FEATURES+=fpu tgz
 
-CFLAGS:=-Os -pipe -mcpu=v8 -funit-at-a-time
+CFLAGS:=-Os -pipe -mcpu=v8 -fno-caller-saves
 KERNELNAME:="uImage"
 
 LINUX_VERSION:=2.6.36.4

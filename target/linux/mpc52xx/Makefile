@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=powerpc
 BOARD:=mpc52xx
 BOARDNAME:=Freescale MPC52xx
-CFLAGS:=-Os -pipe -funit-at-a-time -mcpu=603e
+CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=603e
 FEATURES:=targz ext4
 
 LINUX_VERSION:=2.6.30.10

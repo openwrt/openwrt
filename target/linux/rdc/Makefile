@@ -10,7 +10,7 @@ ARCH:=i386
 BOARD:=rdc
 BOARDNAME:=RDC 321x
 FEATURES:=squashfs jffs2 pci usb pcmcia
-CFLAGS:=-Os -pipe -march=i486 -mtune=i486 -funit-at-a-time
+CFLAGS:=-Os -pipe -march=i486 -mtune=i486 -fno-caller-saves
 
 LINUX_VERSION:=2.6.32.33
 

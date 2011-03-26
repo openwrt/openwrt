@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=ar71xx
 BOARDNAME:=Atheros AR71xx/AR7240/AR913x
 FEATURES:=squashfs jffs2 targz
-CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
+CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 SUBTARGETS:=generic nand
 
 LINUX_VERSION:=2.6.37.4

@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs jffs2 pci usb
-CFLAGS:=-Os -pipe -march=octeon -funit-at-a-time
+CFLAGS:=-Os -pipe -march=octeon -fno-caller-saves
 
 LINUX_VERSION:=2.6.37.4
 
