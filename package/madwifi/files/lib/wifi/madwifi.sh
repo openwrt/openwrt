@@ -79,7 +79,7 @@ disable_atheros() (
 	config_get phy "$device" phy
 
 	set_wifi_down "$device"
-	
+
 	include /lib/network
 	cd /proc/sys/net
 	for dev in *; do
@@ -104,8 +104,12 @@ enable_atheros() {
 	[ -n "$regdomain" ] && echo "$regdomain" > /proc/sys/dev/$phy/regdomain
 
 	config_get country "$device" country
-	[ -z "$country" ] && country="0"
-	echo "$country" > /proc/sys/dev/$phy/countrycode
+	case "$country" in
+		[A-Za-z]*) country=`grep -i "$country" /lib/wifi/madwifi_countrycodes.txt |cut -d " " -f 2`;;
+		[0-9]*) ;;
+		*) country="" ;;
+	esac
+	[ -n "$country" ] && echo "$country" > /proc/sys/dev/$phy/countrycode
 
 	config_get_bool outdoor "$device" outdoor "0"
 	echo "$outdoor" > /proc/sys/dev/$phy/outdoor
@@ -165,7 +169,7 @@ enable_atheros() {
 				esac
 			;;
 		esac
-			
+
 		[ -x "$(which gpioctl 2>/dev/null)" ] || antenna=
 		gpioctl "dirout" "$antgpio" >/dev/null 2>&1
 		case "$gpioval" in
@@ -192,12 +196,12 @@ enable_atheros() {
 		config_get enc "$vif" encryption
 		config_get eap_type "$vif" eap_type
 		config_get mode "$vif" mode
-		
+
 		case "$mode" in
 			sta) config_get_bool nosbeacon "$device" nosbeacon;;
 			adhoc) config_get_bool nosbeacon "$vif" sw_merge 1;;
 		esac
-		
+
 		[ "$nosbeacon" = 1 ] || nosbeacon=""
 		ifname=$(wlanconfig "$ifname" create wlandev "$phy" wlanmode "$mode" ${nosbeacon:+nosbeacon})
 		[ $? -ne 0 ] && {
