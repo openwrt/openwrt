@@ -10,7 +10,7 @@ ARCH:=mipsel
 BOARD:=ramips
 BOARDNAME:=Ralink RT288x/RT305x
 SUBTARGETS:=rt288x rt305x
-CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
+CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 FEATURES:=squashfs
 
 LINUX_VERSION:=2.6.36.4

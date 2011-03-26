@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=cns21xx
 BOARDNAME:=Cavium Networks CNS21xx
 FEATURES:=squashfs broken
-CFLAGS:=-Os -pipe -march=armv4 -mtune=fa526 -funit-at-a-time
+CFLAGS:=-Os -pipe -march=armv4 -mtune=fa526 -fno-caller-saves
 
 LINUX_VERSION:=2.6.36.4
 

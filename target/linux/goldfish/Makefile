@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=goldfish
 BOARDNAME:=Goldfish (Android Emulator)
 FEATURES:=
-CFLAGS:=-O2 -pipe -march=armv5te -mtune=xscale -funit-at-a-time
+CFLAGS:=-O2 -pipe -march=armv5te -mtune=xscale -fno-caller-saves
 
 LINUX_VERSION:=2.6.30.10
 

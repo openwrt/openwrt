@@ -10,7 +10,7 @@ ARCH:=arm
 BOARD:=imx21
 BOARDNAME:=Freescale i.MX21
 FEATURES:=jffs2 broken
-CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -funit-at-a-time
+CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -fno-caller-saves
 
 LINUX_VERSION:=2.6.37.4
 

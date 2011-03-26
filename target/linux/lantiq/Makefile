@@ -14,7 +14,7 @@ SUBTARGETS:=falcon xway
 
 LINUX_VERSION:=2.6.37.4
 
-CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -funit-at-a-time
+CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 
 include $(INCLUDE_DIR)/target.mk
 
