@@ -1,11 +1,14 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -541,7 +541,7 @@ all: vmlinux
+@@ -539,9 +539,9 @@ endif # $(dot-config)
+ all: vmlinux
+ 
  ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
- KBUILD_CFLAGS	+= -Os
+-KBUILD_CFLAGS	+= -Os
++KBUILD_CFLAGS	+= -Os -fno-caller-saves
  else
 -KBUILD_CFLAGS	+= -O2
-+KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch
++KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
  endif
  
  include $(srctree)/arch/$(SRCARCH)/Makefile
