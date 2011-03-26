@@ -41,13 +41,6 @@ define Package/uci
   TITLE:=Utility for the Unified Configuration Interface (UCI)
 endef
 
-define Package/ucitrigger
-  SECTION:=base
-  CATEGORY:=Base system
-  DEPENDS:=+libuci-lua +lua
-  TITLE:=Automatic triggers for applying system config changes
-endef
-
 define Package/libuci-lua
   SECTION=libs
   CATEGORY=Libraries
@@ -72,14 +65,6 @@ define Package/libuci-lua/install
 	$(CP) $(PKG_BUILD_DIR)/lua/uci.so $(1)/usr/lib/lua/
 endef
 
-define Package/ucitrigger/install
-	$(INSTALL_DIR) $(1)/usr/lib/lua/uci $(1)/lib/config/trigger $(1)/usr/sbin
-	$(INSTALL_DATA) ./trigger/lib/trigger.lua $(1)/usr/lib/lua/uci/
-	$(INSTALL_DATA) ./trigger/modules/*.lua $(1)/lib/config/trigger/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/trigger/uci_trigger.so $(1)/usr/lib/
-	$(INSTALL_BIN) ./trigger/apply_config $(1)/usr/sbin/
-endef
-
 define Package/uci/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DIR) $(1)/sbin
@@ -98,4 +83,3 @@ endef
 $(eval $(call BuildPackage,uci))
 $(eval $(call BuildPackage,libuci))
 $(eval $(call BuildPackage,libuci-lua))
-$(eval $(call BuildPackage,ucitrigger))
