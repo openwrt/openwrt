@@ -211,7 +211,7 @@ else
   RSTRIP:= \
     NM="$(TARGET_CROSS)nm" \
     STRIP="$(STRIP)" \
-    STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded -R .comment -R .pdr -R .mdebug.abi32 -R .note.gnu.build-id -R .gnu.attributes -R .reginfo" \
+    STRIP_KMOD="$(TARGET_CROSS)strip --strip-unneeded -R .comment -R .pdr -R .mdebug.abi32 -R .note.gnu.build-id -R .gnu.attributes -R .reginfo -x" \
     $(SCRIPT_DIR)/rstrip.sh
 endif
 
