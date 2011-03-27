@@ -1,7 +1,7 @@
 /*
  * Ralink SoC specific GPIO support
  *
- * Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
@@ -64,11 +64,13 @@ enum ramips_pio_reg {
 
 struct ramips_gpio_chip {
 	struct gpio_chip	chip;
-	spinlock_t		lock;
 	u8			regs[RAMIPS_GPIO_REG_MAX];
-};
+	unsigned long		map_base;
+	unsigned long		map_size;
 
-static void __iomem *ramips_gpio_base;
+	spinlock_t		lock;
+	void __iomem		*regs_base;
+};
 
 static inline struct ramips_gpio_chip *to_ramips_gpio(struct gpio_chip *chip)
 {
@@ -80,12 +82,12 @@ static inline struct ramips_gpio_chip *to_ramips_gpio(struct gpio_chip *chip)
 
 static inline void ramips_gpio_wr(struct ramips_gpio_chip *rg, u8 reg, u32 val)
 {
-	__raw_writel(val, ramips_gpio_base + rg->regs[reg]);
+	__raw_writel(val, rg->regs_base + rg->regs[reg]);
 }
 
 static inline u32 ramips_gpio_rr(struct ramips_gpio_chip *rg, u8 reg)
 {
-	return __raw_readl(ramips_gpio_base + rg->regs[reg]);
+	return __raw_readl(rg->regs_base + rg->regs[reg]);
 }
 
 static int ramips_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
@@ -164,6 +166,8 @@ static struct ramips_gpio_chip ramips_gpio_chip0 = {
 		[RAMIPS_GPIO_REG_RESET]	= GPIO0_REG_RESET,
 		[RAMIPS_GPIO_REG_TOGGLE] = GPIO0_REG_TOGGLE,
 	},
+	.map_base	= RALINK_SOC_GPIO_BASE,
+	.map_size	= PAGE_SIZE,
 };
 
 static struct ramips_gpio_chip ramips_gpio_chip1 = {
@@ -188,6 +192,8 @@ static struct ramips_gpio_chip ramips_gpio_chip1 = {
 		[RAMIPS_GPIO_REG_RESET]	= GPIO1_REG_RESET,
 		[RAMIPS_GPIO_REG_TOGGLE] = GPIO1_REG_TOGGLE,
 	},
+	.map_base	= RALINK_SOC_GPIO_BASE,
+	.map_size	= PAGE_SIZE,
 };
 
 static struct ramips_gpio_chip ramips_gpio_chip2 = {
@@ -212,11 +218,15 @@ static struct ramips_gpio_chip ramips_gpio_chip2 = {
 		[RAMIPS_GPIO_REG_RESET]	= GPIO2_REG_RESET,
 		[RAMIPS_GPIO_REG_TOGGLE] = GPIO2_REG_TOGGLE,
 	},
+	.map_base	= RALINK_SOC_GPIO_BASE,
+	.map_size	= PAGE_SIZE,
 };
 
 static __init void ramips_gpio_chip_add(struct ramips_gpio_chip *rg)
 {
 	spin_lock_init(&rg->lock);
+
+	rg->regs_base = ioremap(rg->map_base, rg->map_size);
 
 	/* set polarity to low for all lines */
 	ramips_gpio_wr(rg, RAMIPS_GPIO_REG_POL, 0);
@@ -226,8 +236,6 @@ static __init void ramips_gpio_chip_add(struct ramips_gpio_chip *rg)
 
 __init int ramips_gpio_init(void)
 {
-	ramips_gpio_base = ioremap_nocache(RALINK_SOC_GPIO_BASE, PAGE_SIZE);
-
 	ramips_gpio_chip_add(&ramips_gpio_chip0);
 	ramips_gpio_chip_add(&ramips_gpio_chip1);
 	ramips_gpio_chip_add(&ramips_gpio_chip2);
