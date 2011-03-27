@@ -14,9 +14,9 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/gpio.h>
 
 #include <asm/mach-ralink/common.h>
+#include <asm/mach-ralink/ramips_gpio.h>
 #include <asm/mach-ralink/rt305x.h>
 #include <asm/mach-ralink/rt305x_regs.h>
 

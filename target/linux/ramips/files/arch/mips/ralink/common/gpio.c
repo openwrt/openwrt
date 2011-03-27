@@ -10,67 +10,9 @@
 
 #include <linux/init.h>
 #include <linux/io.h>
-#include <linux/spinlock.h>
-#include <linux/gpio.h>
 
+#include <asm/mach-ralink/ramips_gpio.h>
 #include <ralink_soc.h>
-
-#define GPIO0_REG_INT		0x00
-#define GPIO0_REG_EDGE		0x04
-#define GPIO0_REG_RENA		0x08
-#define GPIO0_REG_FENA		0x0c
-#define GPIO0_REG_DATA		0x20
-#define GPIO0_REG_DIR		0x24
-#define GPIO0_REG_POL		0x28
-#define GPIO0_REG_SET		0x2c
-#define GPIO0_REG_RESET		0x30
-#define GPIO0_REG_TOGGLE	0x34
-
-#define GPIO1_REG_INT		0x38
-#define GPIO1_REG_EDGE		0x3c
-#define GPIO1_REG_RENA		0x40
-#define GPIO1_REG_FENA		0x44
-#define GPIO1_REG_DATA		0x48
-#define GPIO1_REG_DIR		0x4c
-#define GPIO1_REG_POL		0x50
-#define GPIO1_REG_SET		0x54
-#define GPIO1_REG_RESET		0x58
-#define GPIO1_REG_TOGGLE	0x5c
-
-#define GPIO2_REG_INT		0x60
-#define GPIO2_REG_EDGE		0x64
-#define GPIO2_REG_RENA		0x68
-#define GPIO2_REG_FENA		0x6c
-#define GPIO2_REG_DATA		0x70
-#define GPIO2_REG_DIR		0x74
-#define GPIO2_REG_POL		0x78
-#define GPIO2_REG_SET		0x7c
-#define GPIO2_REG_RESET		0x80
-#define GPIO2_REG_TOGGLE	0x84
-
-enum ramips_pio_reg {
-	RAMIPS_GPIO_REG_INT,		/* Interrupt status */
-	RAMIPS_GPIO_REG_EDGE,
-	RAMIPS_GPIO_REG_RENA,
-	RAMIPS_GPIO_REG_FENA,
-	RAMIPS_GPIO_REG_DATA,
-	RAMIPS_GPIO_REG_DIR,		/* Direction, 0:in, 1: out */
-	RAMIPS_GPIO_REG_POL,		/* Polarity, 0: normal, 1: invert */
-	RAMIPS_GPIO_REG_SET,
-	RAMIPS_GPIO_REG_RESET,
-	RAMIPS_GPIO_REG_TOGGLE,
-	RAMIPS_GPIO_REG_MAX
-};
-
-struct ramips_gpio_chip {
-	struct gpio_chip	chip;
-	u8			regs[RAMIPS_GPIO_REG_MAX];
-	unsigned long		map_base;
-	unsigned long		map_size;
-
-	spinlock_t		lock;
-	void __iomem		*regs_base;
-};
 
 static inline struct ramips_gpio_chip *to_ramips_gpio(struct gpio_chip *chip)
 {
