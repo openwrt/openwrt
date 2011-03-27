@@ -7,6 +7,12 @@
 check_set_md5sum() {
 	local er_md5sum_file
 	er_md5sum_file="${ER_OVERLAY_PREFIX}/.extroot.md5sum"
+	local er_disabled
+	if [ "${ER_OVERLAY_ROM}" = "/rom" ]; then
+		er_disabled=/tmp/whole_root-disabled
+	else
+		er_disabled=/tmp${ER_OVERLAY_ROM}-disabled
+	fi
 
 	local er_extroot_md5sum
 	if [ -f $md5sum_file ]; then
@@ -24,8 +30,8 @@ check_set_md5sum() {
 		cat $er_md5sum_file >$er_overlay_file
 	elif [ "$er_extroot_overlay_md5sum" != "$er_extroot_md5sum" ]; then
 		pi_extroot_mount_success="false"
-		mkdir -p /tmp${ER_OVERLAY_ROM}-disabled
-		mount --move ${ER_OVERLAY_ROM} /tmp${ER_OVERLAY_ROM}-disabled
+		mkdir -p $er_disabled
+		mount --move ${ER_OVERLAY_ROM} $er_disabled
 	fi
 }
 
