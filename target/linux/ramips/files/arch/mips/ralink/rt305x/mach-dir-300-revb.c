@@ -51,7 +51,7 @@ static struct mtd_partition dir_300b_partitions[] = {
 	}, {
 		.name	= "kernel",
 		.offset	= 0x050000,
-		.size	= 0x090000,
+		.size	= 0x0f0000,
 	}, {
 		.name	= "rootfs",
 		.offset	= 0x140000,
