@@ -86,72 +86,6 @@ static int ramips_gpio_get(struct gpio_chip *chip, unsigned offset)
 	return !!(t & (1 << offset));
 }
 
-static struct ramips_gpio_chip ramips_gpio_chip0 = {
-	.chip = {
-		.label			= "ramips-gpio0",
-		.base			= 0,
-		.ngpio			= RALINK_SOC_GPIO0_COUNT,
-	},
-	.regs = {
-		[RAMIPS_GPIO_REG_INT]	= GPIO0_REG_INT,
-		[RAMIPS_GPIO_REG_EDGE]	= GPIO0_REG_EDGE,
-		[RAMIPS_GPIO_REG_RENA]	= GPIO0_REG_RENA,
-		[RAMIPS_GPIO_REG_FENA]	= GPIO0_REG_FENA,
-		[RAMIPS_GPIO_REG_DATA]	= GPIO0_REG_DATA,
-		[RAMIPS_GPIO_REG_DIR]	= GPIO0_REG_DIR,
-		[RAMIPS_GPIO_REG_POL]	= GPIO0_REG_POL,
-		[RAMIPS_GPIO_REG_SET]	= GPIO0_REG_SET,
-		[RAMIPS_GPIO_REG_RESET]	= GPIO0_REG_RESET,
-		[RAMIPS_GPIO_REG_TOGGLE] = GPIO0_REG_TOGGLE,
-	},
-	.map_base	= RALINK_SOC_GPIO_BASE,
-	.map_size	= PAGE_SIZE,
-};
-
-static struct ramips_gpio_chip ramips_gpio_chip1 = {
-	.chip = {
-		.label			= "ramips-gpio1",
-		.base			= 32,
-		.ngpio			= RALINK_SOC_GPIO1_COUNT,
-	},
-	.regs = {
-		[RAMIPS_GPIO_REG_INT]	= GPIO1_REG_INT,
-		[RAMIPS_GPIO_REG_EDGE]	= GPIO1_REG_EDGE,
-		[RAMIPS_GPIO_REG_RENA]	= GPIO1_REG_RENA,
-		[RAMIPS_GPIO_REG_FENA]	= GPIO1_REG_FENA,
-		[RAMIPS_GPIO_REG_DATA]	= GPIO1_REG_DATA,
-		[RAMIPS_GPIO_REG_DIR]	= GPIO1_REG_DIR,
-		[RAMIPS_GPIO_REG_POL]	= GPIO1_REG_POL,
-		[RAMIPS_GPIO_REG_SET]	= GPIO1_REG_SET,
-		[RAMIPS_GPIO_REG_RESET]	= GPIO1_REG_RESET,
-		[RAMIPS_GPIO_REG_TOGGLE] = GPIO1_REG_TOGGLE,
-	},
-	.map_base	= RALINK_SOC_GPIO_BASE,
-	.map_size	= PAGE_SIZE,
-};
-
-static struct ramips_gpio_chip ramips_gpio_chip2 = {
-	.chip = {
-		.label			= "ramips-gpio2",
-		.base			= 64,
-		.ngpio			= RALINK_SOC_GPIO2_COUNT,
-	},
-	.regs = {
-		[RAMIPS_GPIO_REG_INT]	= GPIO2_REG_INT,
-		[RAMIPS_GPIO_REG_EDGE]	= GPIO2_REG_EDGE,
-		[RAMIPS_GPIO_REG_RENA]	= GPIO2_REG_RENA,
-		[RAMIPS_GPIO_REG_FENA]	= GPIO2_REG_FENA,
-		[RAMIPS_GPIO_REG_DATA]	= GPIO2_REG_DATA,
-		[RAMIPS_GPIO_REG_DIR]	= GPIO2_REG_DIR,
-		[RAMIPS_GPIO_REG_POL]	= GPIO2_REG_POL,
-		[RAMIPS_GPIO_REG_SET]	= GPIO2_REG_SET,
-		[RAMIPS_GPIO_REG_RESET]	= GPIO2_REG_RESET,
-		[RAMIPS_GPIO_REG_TOGGLE] = GPIO2_REG_TOGGLE,
-	},
-	.map_base	= RALINK_SOC_GPIO_BASE,
-	.map_size	= PAGE_SIZE,
-};
-
 static __init void ramips_gpio_chip_add(struct ramips_gpio_chip *rg)
 {
 	spin_lock_init(&rg->lock);
@@ -169,11 +103,12 @@ static __init void ramips_gpio_chip_add(struct ramips_gpio_chip *rg)
 	gpiochip_add(&rg->chip);
 }
 
-__init int ramips_gpio_init(void)
+__init int ramips_gpio_init(struct ramips_gpio_data *data)
 {
-	ramips_gpio_chip_add(&ramips_gpio_chip0);
-	ramips_gpio_chip_add(&ramips_gpio_chip1);
-	ramips_gpio_chip_add(&ramips_gpio_chip2);
+	int i;
+
+	for (i = 0; i < data->num_chips; i++)
+		ramips_gpio_chip_add(&data->chips[i]);
 
 	return 0;
 }

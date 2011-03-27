@@ -43,6 +43,77 @@ void __init rt305x_detect_sys_type(void)
 		(id & CHIP_ID_REV_MASK));
 }
 
+static struct ramips_gpio_chip rt305x_gpio_chips[] = {
+	{
+		.chip = {
+			.label	= "RT305X-GPIO0",
+			.base	= 0,
+			.ngpio	= 24,
+		},
+		.regs = {
+			[RAMIPS_GPIO_REG_INT]	= 0x00,
+			[RAMIPS_GPIO_REG_EDGE]	= 0x04,
+			[RAMIPS_GPIO_REG_RENA]	= 0x08,
+			[RAMIPS_GPIO_REG_FENA]	= 0x0c,
+			[RAMIPS_GPIO_REG_DATA]	= 0x20,
+			[RAMIPS_GPIO_REG_DIR]	= 0x24,
+			[RAMIPS_GPIO_REG_POL]	= 0x28,
+			[RAMIPS_GPIO_REG_SET]	= 0x2c,
+			[RAMIPS_GPIO_REG_RESET]	= 0x30,
+			[RAMIPS_GPIO_REG_TOGGLE] = 0x34,
+		},
+		.map_base = RT305X_PIO_BASE,
+		.map_size = RT305X_PIO_SIZE,
+	},
+	{
+		.chip = {
+			.label	= "RT305X-GPIO1",
+			.base	= 24,
+			.ngpio	= 16,
+		},
+		.regs = {
+			[RAMIPS_GPIO_REG_INT]	= 0x38,
+			[RAMIPS_GPIO_REG_EDGE]	= 0x3c,
+			[RAMIPS_GPIO_REG_RENA]	= 0x40,
+			[RAMIPS_GPIO_REG_FENA]	= 0x44,
+			[RAMIPS_GPIO_REG_DATA]	= 0x48,
+			[RAMIPS_GPIO_REG_DIR]	= 0x4c,
+			[RAMIPS_GPIO_REG_POL]	= 0x50,
+			[RAMIPS_GPIO_REG_SET]	= 0x54,
+			[RAMIPS_GPIO_REG_RESET]	= 0x58,
+			[RAMIPS_GPIO_REG_TOGGLE] = 0x5c,
+		},
+		.map_base = RT305X_PIO_BASE,
+		.map_size = RT305X_PIO_SIZE,
+	},
+	{
+		.chip = {
+			.label	= "RT305X-GPIO2",
+			.base	= 40,
+			.ngpio	= 12,
+		},
+		.regs = {
+			[RAMIPS_GPIO_REG_INT]	= 0x60,
+			[RAMIPS_GPIO_REG_EDGE]	= 0x64,
+			[RAMIPS_GPIO_REG_RENA]	= 0x68,
+			[RAMIPS_GPIO_REG_FENA]	= 0x6c,
+			[RAMIPS_GPIO_REG_DATA]	= 0x70,
+			[RAMIPS_GPIO_REG_DIR]	= 0x74,
+			[RAMIPS_GPIO_REG_POL]	= 0x78,
+			[RAMIPS_GPIO_REG_SET]	= 0x7c,
+			[RAMIPS_GPIO_REG_RESET]	= 0x80,
+			[RAMIPS_GPIO_REG_TOGGLE] = 0x84,
+		},
+		.map_base = RT305X_PIO_BASE,
+		.map_size = RT305X_PIO_SIZE,
+	},
+};
+
+static struct ramips_gpio_data rt305x_gpio_data = {
+	.chips = rt305x_gpio_chips,
+	.num_chips = ARRAY_SIZE(rt305x_gpio_chips),
+};
+
 static void rt305x_gpio_reserve(int first, int last)
 {
 	for (; first <= last; first++)
@@ -55,7 +126,7 @@ void __init rt305x_gpio_init(u32 mode)
 
 	rt305x_sysc_wr(mode, SYSC_REG_GPIO_MODE);
 
-	ramips_gpio_init();
+	ramips_gpio_init(&rt305x_gpio_data);
 	if ((mode & RT305X_GPIO_MODE_I2C) == 0)
 		rt305x_gpio_reserve(RT305X_GPIO_I2C_SD, RT305X_GPIO_I2C_SCLK);
 
