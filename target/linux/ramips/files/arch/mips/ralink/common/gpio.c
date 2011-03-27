@@ -147,10 +147,6 @@ static int ramips_gpio_get(struct gpio_chip *chip, unsigned offset)
 static struct ramips_gpio_chip ramips_gpio_chip0 = {
 	.chip = {
 		.label			= "ramips-gpio0",
-		.direction_input	= ramips_gpio_direction_input,
-		.direction_output	= ramips_gpio_direction_output,
-		.get			= ramips_gpio_get,
-		.set			= ramips_gpio_set,
 		.base			= 0,
 		.ngpio			= RALINK_SOC_GPIO0_COUNT,
 	},
@@ -173,10 +169,6 @@ static struct ramips_gpio_chip ramips_gpio_chip0 = {
 static struct ramips_gpio_chip ramips_gpio_chip1 = {
 	.chip = {
 		.label			= "ramips-gpio1",
-		.direction_input	= ramips_gpio_direction_input,
-		.direction_output	= ramips_gpio_direction_output,
-		.get			= ramips_gpio_get,
-		.set			= ramips_gpio_set,
 		.base			= 32,
 		.ngpio			= RALINK_SOC_GPIO1_COUNT,
 	},
@@ -199,10 +191,6 @@ static struct ramips_gpio_chip ramips_gpio_chip1 = {
 static struct ramips_gpio_chip ramips_gpio_chip2 = {
 	.chip = {
 		.label			= "ramips-gpio2",
-		.direction_input	= ramips_gpio_direction_input,
-		.direction_output	= ramips_gpio_direction_output,
-		.get			= ramips_gpio_get,
-		.set			= ramips_gpio_set,
 		.base			= 64,
 		.ngpio			= RALINK_SOC_GPIO2_COUNT,
 	},
@@ -227,6 +215,11 @@ static __init void ramips_gpio_chip_add(struct ramips_gpio_chip *rg)
 	spin_lock_init(&rg->lock);
 
 	rg->regs_base = ioremap(rg->map_base, rg->map_size);
+
+	rg->chip.direction_input = ramips_gpio_direction_input;
+	rg->chip.direction_output = ramips_gpio_direction_output;
+	rg->chip.get = ramips_gpio_get;
+	rg->chip.set = ramips_gpio_set;
 
 	/* set polarity to low for all lines */
 	ramips_gpio_wr(rg, RAMIPS_GPIO_REG_POL, 0);
