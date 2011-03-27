@@ -1,7 +1,7 @@
 /*
  * Ralink RT288x SoC specific setup
  *
- * Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  * Parts of this file are based on Ralink's 2.6.21 BSP
@@ -14,9 +14,9 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/gpio.h>
 
 #include <asm/mach-ralink/common.h>
+#include <asm/mach-ralink/ramips_gpio.h>
 #include <asm/mach-ralink/rt288x.h>
 #include <asm/mach-ralink/rt288x_regs.h>
 

@@ -16,7 +16,6 @@ void ramips_intc_irq_init(unsigned intc_base, unsigned irq, unsigned irq_base);
 u32 ramips_intc_get_status(void);
 
 void ramips_soc_setup(void);
-void ramips_gpio_init(void);
 void ramips_early_serial_setup(int line, unsigned base, unsigned freq,
 			       unsigned irq);
 
