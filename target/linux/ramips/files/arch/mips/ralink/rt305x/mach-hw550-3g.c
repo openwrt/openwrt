@@ -23,12 +23,12 @@
 #include "devices.h"
 
 #define HW550_3G_GPIO_LED_USB		8
-#define HW550_3G_GPIO_LED_3G_STAT	11
-#define HW550_3G_GPIO_LED_3G_TOGGLE	12
+#define HW550_3G_GPIO_LED_3G		11
+#define HW550_3G_GPIO_LED_STATUS	12
 #define HW550_3G_GPIO_LED_WPS		14
 
 #define HW550_3G_GPIO_BUTTON_RESET	10
-#define HW550_3G_GPIO_BUTTON_3G		7
+#define HW550_3G_GPIO_BUTTON_CONNECT	7
 #define HW550_3G_GPIO_BUTTON_WPS	0
 
 #define HW550_3G_BUTTONS_POLL_INTERVAL	20
@@ -83,12 +83,12 @@ static struct gpio_led hw550_3g_leds_gpio[] __initdata = {
 		.gpio		= HW550_3G_GPIO_LED_USB,
 		.active_low	= 1,
 	}, {
-		.name		= "hw550-3g:green:3g-stat",
-		.gpio		= HW550_3G_GPIO_LED_3G_STAT,
+		.name		= "hw550-3g:green:3g",
+		.gpio		= HW550_3G_GPIO_LED_3G,
 		.active_low	= 1,
 	}, {
-		.name		= "hw550-3g:green:3g-toggle",
-		.gpio		= HW550_3G_GPIO_LED_3G_TOGGLE,
+		.name		= "hw550-3g:green:status",
+		.gpio		= HW550_3G_GPIO_LED_STATUS,
 		.active_low	= 1,
 	}, {
 		.name		= "hw550-3g:green:wps",
@@ -106,11 +106,11 @@ static struct gpio_button hw550_3g_gpio_buttons[] __initdata = {
 		.gpio		= HW550_3G_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
-		.desc		= "3g",
+		.desc		= "connect",
 		.type		= EV_KEY,
-		.code		= BTN_1,
+		.code		= KEY_CONNECT,
 		.threshold	= 3,
-		.gpio		= HW550_3G_GPIO_BUTTON_3G,
+		.gpio		= HW550_3G_GPIO_BUTTON_CONNECT,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
