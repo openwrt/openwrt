@@ -49,7 +49,7 @@ void __init ramips_early_serial_setup(int line, unsigned base, unsigned freq,
 	int err;
 
 	memset(&p, 0, sizeof(p));
-	p.flags		= UPF_SKIP_TEST;
+	p.flags		= UPF_SKIP_TEST | UPF_FIXED_TYPE;
 	p.iotype	= UPIO_AU;
 	p.uartclk	= freq;
 	p.regshift	= 2;
