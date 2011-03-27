@@ -48,7 +48,7 @@ config_mount_by_section() {
 				    if [ "$is_rootfs" -eq 1 ] || [ "$target" = "/overlay" ]; then
 					target=/tmp/overlay-disabled
 				    elif [ "$target" = "/" ] || [ "$target" = "/rom" ]; then
-					target="/tmp/rom-disabled"
+					target="/tmp/whole_root-disabled"
 				    fi
 				fi
 				
