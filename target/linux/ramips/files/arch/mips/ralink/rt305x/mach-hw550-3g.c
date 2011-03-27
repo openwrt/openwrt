@@ -122,9 +122,13 @@ static struct gpio_button hw550_3g_gpio_buttons[] __initdata = {
 	}
 };
 
+#define HW550_3G_GPIO_MODE \
+	((RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT) | \
+	 RT305X_GPIO_MODE_MDIO)
+
 static void __init hw550_3g_init(void)
 {
-	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
+	rt305x_gpio_init(HW550_3G_GPIO_MODE);
 
 	rt305x_register_flash(0, &hw550_3g_flash_data);
 	rt305x_register_ethernet();
