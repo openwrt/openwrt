@@ -14,7 +14,7 @@ platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$board" in
-	dir-300-b1 | fonera20n | v22rw-2x2 | whr-g300n)
+	dir-300-b1 | fonera20n | v22rw-2x2 | whr-g300n | hw550-3g)
 		[ "$magic" != "2705" ] && {
 			echo "Invalid image type."
 			return 1
