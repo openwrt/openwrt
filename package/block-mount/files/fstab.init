@@ -8,6 +8,31 @@
 
 START=20
 
+EXTRA_COMMANDS="overlay_enable whole_root_enable"
+EXTRA_HELP="        overlay_enable    Reenable overlay rootfs. (After you fix it).
+        whole_root_enable Reenable whole-disk rootfs.  (After you fix it)."
+
+rootfs_enable() {
+	local extroot_type="$1"
+		
+	if [ ! -d /tmp/${extroot_type}-disabled ]; then
+		echo "No disabled ${extroot_type} present (/tmp/${extroot_type}-disabled).  Can't renable."
+		exit 1
+	fi
+	
+	rm -f /tmp/${extroot_type}-disabled/.extroot.md5sum
+	rm -f /tmp/${extroot_type}-disabled/etc/extroot.md5sum
+	echo "Please reboot router to complete re-enabling external rootfs."
+}
+
+overlay_enable() {
+	rootfs_enable overlay
+}
+
+whole_root_enable() {
+	rootfs_enable whole_root
+}
+
 do_mount() {
 	local cfg="$1"
 	config_mount_by_section "$cfg"
