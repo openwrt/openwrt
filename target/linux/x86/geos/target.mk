@@ -16,8 +16,10 @@ DEFAULT_PACKAGES += kmod-ata-via-sata \
             kmod-cfg80211 kmod-mac80211 \
             kmod-mppe kmod-pppoe kmod-pppoa kmod-pppol2tp \
             kmod-ath kmod-ath5k kmod-ath9k \
+            kmod-cpu-msr \
             soloscli linux-atm br2684ctl bridge ppp ppp-mod-pppoa \
-            libopenssl ocf-crypto-headers zlib hwclock hostapd
+            libopenssl ocf-crypto-headers zlib hwclock hostapd \
+            flashrom
 
 CS5535_MASK:=0x0E000048
 
