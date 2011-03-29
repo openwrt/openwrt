@@ -117,7 +117,7 @@ define Build/Configure
 	$(call Build/Configure/Default)
 endef
 
-ifdef CONFIG_TARGET_lantiq_xway
+ifdef CONFIG_TARGET_lantiq
   define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	mkdir -p $(1)/usr/include/drv_vmmc
@@ -129,7 +129,7 @@ ifdef CONFIG_TARGET_lantiq_xway
 	$(INSTALL_DIR) $(1)/etc/init.d $(1)/$(FW_DIR)
 	$(INSTALL_BIN) ./files/vmmc.init $(1)/etc/init.d/vmmc
 	$(CP) $(PKG_BUILD_DIR)/firmware/$(FW_SOURCE) $(1)/$(FW_DIR)/$(FW_TARGET)
-	$(CP) $(PKG_BUILD_DIR)/coef/$(COEF_TARGET) $(1)/$(FW_DIR)/$(COEF_TARGET)
+	$(CP) $(PKG_BUILD_DIR)/coef/$(COEF_SRC) $(1)/$(FW_DIR)/$(COEF_TARGET)
   endef
 endif
 
