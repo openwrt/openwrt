@@ -1,6 +1,6 @@
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -358,6 +358,12 @@
+@@ -235,6 +235,12 @@
  
  source "drivers/net/arm/Kconfig"
  
@@ -15,7 +15,7 @@
  	depends on ARM || MIPS || SUPERH
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -213,6 +213,7 @@
+@@ -212,6 +212,7 @@
  obj-$(CONFIG_MVME16x_NET) += 82596.o
  obj-$(CONFIG_BVME6000_NET) += 82596.o
  obj-$(CONFIG_SC92031) += sc92031.o
@@ -25,7 +25,7 @@
  obj-$(CONFIG_LP486E) += lp486e.o
 --- /dev/null
 +++ b/drivers/net/lantiq_etop.c
-@@ -0,0 +1,552 @@
+@@ -0,0 +1,557 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -201,8 +201,13 @@
 +
 +	skb_put(skb, len);
 +	skb->dev = dev;
-+	skb->protocol = eth_type_trans(skb, dev);
-+	netif_rx(skb);
++
++	if (priv->phydev && priv->phydev->netif_rx) {
++		priv->phydev->netif_rx(skb);
++	} else {
++		skb->protocol = eth_type_trans(skb, dev);
++		netif_rx(skb);
++	}
 +
 +	priv->stats.rx_packets++;
 +	priv->stats.rx_bytes += len;
