@@ -87,3 +87,15 @@ endef
 
 $(eval $(call Profile,ARV752DPW22))
 
+define Profile/ARV7518PW
+  NAME:=ARV7518PW - ASTORIA
+  PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
+	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
+	kmod-ath9k wpad-mini ltq-dsl-firmware-a swconfig
+endef
+
+define Profile/ARV7518PW/Description
+	Package set optimized for the ARV7518PW
+endef
+
+$(eval $(call Profile,ARV7518PW))
