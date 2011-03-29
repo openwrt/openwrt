@@ -1,6 +1,6 @@
 --- a/src/drv_tapi_linux.c
 +++ b/src/drv_tapi_linux.c
-@@ -544,7 +544,7 @@ static ssize_t ifx_tapi_write (struct fi
+@@ -552,7 +552,7 @@ static ssize_t ifx_tapi_write (struct fi
     IFX_uint8_t         *pData;
     IFX_size_t           buf_size;
  #endif /* TAPI_PACKET */
@@ -69,9 +69,9 @@
  /* ============================= */
 --- a/src/lib/lib_bufferpool/lib_bufferpool.c
 +++ b/src/lib/lib_bufferpool/lib_bufferpool.c
-@@ -80,24 +80,6 @@
- #include <linux/slab.h>
- #endif /* LINUX */
+@@ -85,24 +85,6 @@
+ #include <stdlib.h>
+ #endif /*VXWORKS*/
  
 -
 -/* ============================= */

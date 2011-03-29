@@ -1,6 +1,6 @@
 --- a/src/drv_tapi_linux.c
 +++ b/src/drv_tapi_linux.c
-@@ -128,8 +128,13 @@
+@@ -146,8 +146,13 @@ static ssize_t ifx_tapi_write(struct fil
                                size_t count, loff_t * ppos);
  static ssize_t ifx_tapi_read(struct file * filp, char *buf,
                                size_t length, loff_t * ppos);
@@ -8,13 +8,13 @@
  static int ifx_tapi_ioctl(struct inode *inode, struct file *filp,
                                unsigned int nCmd, unsigned long nArgument);
 +#else
-+static int ifx_tapi_ioctl(struct file *filp,
++static long ifx_tapi_ioctl(struct file *filp,
 +                              unsigned int nCmd, unsigned long nArgument);
 +#endif
  static unsigned int ifx_tapi_poll (struct file *filp, poll_table *table);
  
  #ifdef CONFIG_PROC_FS
-@@ -213,7 +218,11 @@
+@@ -231,7 +236,11 @@ IFX_return_t TAPI_OS_RegisterLLDrv (IFX_
     IFX_char_t   *pRegDrvName = IFX_NULL;
     IFX_int32_t ret = 0;
  
@@ -26,7 +26,7 @@
     {
  #ifdef MODULE
        tapi_fops.owner =    THIS_MODULE;
-@@ -221,7 +230,11 @@
+@@ -239,7 +248,11 @@ IFX_return_t TAPI_OS_RegisterLLDrv (IFX_
        tapi_fops.read =     ifx_tapi_read;
        tapi_fops.write =    ifx_tapi_write;
        tapi_fops.poll =     ifx_tapi_poll;
@@ -38,7 +38,7 @@
        tapi_fops.open =     ifx_tapi_open;
        tapi_fops.release =  ifx_tapi_release;
     }
-@@ -876,8 +889,13 @@
+@@ -894,8 +907,13 @@ static IFX_uint32_t ifx_tapi_poll (struc
     - 0 and positive values - success
     - negative value - ioctl failed
  */
@@ -46,7 +46,7 @@
  static int ifx_tapi_ioctl(struct inode *inode, struct file *filp,
                            unsigned int nCmd, unsigned long nArg)
 +#else
-+static int ifx_tapi_ioctl(struct file *filp,
++static long ifx_tapi_ioctl(struct file *filp,
 +                          unsigned int nCmd, unsigned long nArg)
 +#endif
  {

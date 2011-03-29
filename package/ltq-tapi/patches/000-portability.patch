@@ -1,6 +1,6 @@
 --- a/src/Makefile.am
 +++ b/src/Makefile.am
-@@ -149,7 +149,7 @@ if KERNEL_2_6
+@@ -154,7 +154,7 @@ if KERNEL_2_6
  drv_tapi_OBJS = "$(subst .c,.o, $(drv_tapi_SOURCES))"
  
  drv_tapi.ko: $(drv_tapi_SOURCES) $(EXTRA_DIST)
@@ -9,7 +9,7 @@
  	@for f in $(drv_tapi_SOURCES) ; do \
  		if test ! -e $(PWD)/$$f; then \
  			echo "  LN      $$f" ; \
-@@ -157,10 +157,10 @@ drv_tapi.ko: $(drv_tapi_SOURCES) $(EXTRA
+@@ -162,10 +162,10 @@ drv_tapi.ko: $(drv_tapi_SOURCES) $(EXTRA
  			ln -s @abs_srcdir@/$$f $(PWD)/$$f; \
  		fi; \
  	done;
@@ -47,17 +47,6 @@
  #include "ifx_types.h"                 /* ifx type definitions */
 --- a/src/drv_tapi_linux.c
 +++ b/src/drv_tapi_linux.c
-@@ -55,7 +55,7 @@
-    #include <linux/sched.h>
-    #undef   CONFIG_DEVFS_FS
-    #ifndef UTS_RELEASE
--      #include "linux/utsrelease.h"
-+      #include <utsrelease.h>
-    #endif /* UTC_RELEASE */
- #else
-    #include <linux/tqueue.h>
---- a/src/drv_tapi_linux.c
-+++ b/src/drv_tapi_linux.c
 @@ -47,6 +47,7 @@
  #include <linux/errno.h>
  #include <asm/uaccess.h>               /* copy_from_user(), ... */
@@ -66,21 +55,20 @@
  #include <asm/io.h>
  
  #ifdef LINUX_2_6
-@@ -55,12 +56,11 @@
+@@ -55,7 +56,11 @@
     #include <linux/sched.h>
     #undef   CONFIG_DEVFS_FS
     #ifndef UTS_RELEASE
--      #include <utsrelease.h>
-+      #include <generated/utsrelease.h>
+-      #include "linux/utsrelease.h"
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
++#   include <linux/utsrelease.h>
++#else
++#   include <generated/utsrelease.h>
++#endif
     #endif /* UTC_RELEASE */
  #else
     #include <linux/tqueue.h>
-    #include <linux/sched.h>
--   #include <linux/smp_lock.h>         /* lock_kernel() */
- #endif /* LINUX_2_6 */
- 
- #include "drv_tapi.h"
-@@ -3600,7 +3600,11 @@ IFX_void_t TAPI_OS_ThreadKill(IFXOS_Thre
+@@ -3718,7 +3723,11 @@ IFX_void_t TAPI_OS_ThreadKill(IFXOS_Thre
              flag and released after the down() call. */
           lock_kernel();
           mb();

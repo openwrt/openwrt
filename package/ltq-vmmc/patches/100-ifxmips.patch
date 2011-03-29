@@ -13,7 +13,7 @@
  /* ============================= */
 --- a/src/drv_vmmc_bbd.c
 +++ b/src/drv_vmmc_bbd.c
-@@ -1072,7 +1072,11 @@
+@@ -1072,7 +1072,11 @@ static IFX_int32_t vmmc_BBD_DownloadChCr
     IFX_uint8_t  padBytes = 0;
  #endif
     IFX_uint16_t cram_offset, cram_crc,
@@ -88,7 +88,7 @@
  } while(0);
  
  /**
-@@ -72,11 +34,6 @@
+@@ -72,11 +34,6 @@ do { \
  */
  #define VMMC_DRIVER_UNLOAD_HOOK(ret) \
  do { \
@@ -141,7 +141,7 @@
  
  #undef USE_PLAIN_VOICE_FIRMWARE
  #undef PRINT_ON_ERR_INTERRUPT
-@@ -35,8 +36,35 @@
+@@ -35,8 +36,22 @@
  #include "ifxos_interrupt.h"
  #include "ifxos_time.h"
  
@@ -157,19 +157,6 @@
 +#  define ifx_gptu_countvalue_get   lq_get_count_value
 +#  define ifx_gptu_timer_free       lq_free_timer
 +
-+#  define IFX_MPS_SRAM              IFXMIPS_MPS_SRAM
-+#  define IFX_MPS_AD0ENR            IFXMIPS_MPS_AD0ENR
-+#  define IFX_MPS_AD1ENR            IFXMIPS_MPS_AD1ENR
-+#  define IFX_MPS_VC0ENR            IFXMIPS_MPS_VC0ENR
-+#  define IFX_MPS_SAD0SR            IFXMIPS_MPS_SAD0SR
-+#  define IFX_MPS_RAD0SR            IFXMIPS_MPS_RAD0SR
-+#  define IFX_MPS_RAD1SR            IFXMIPS_MPS_RAD1SR
-+#  define IFX_MPS_CAD0SR            IFXMIPS_MPS_CAD0SR
-+#  define IFX_MPS_CAD1SR            IFXMIPS_MPS_CAD1SR
-+#  define IFX_MPS_RVC0SR            IFXMIPS_MPS_RVC0SR
-+#  define IFX_MPS_CVC0SR            IFXMIPS_MPS_CVC0SR
-+
-+#  define INT_NUM_IM4_IRL14         (INT_NUM_IM4_IRL0 + 14)
 +
 +#  define bsp_mask_and_ack_irq      lq_mask_and_ack_irq
 +#else
@@ -179,80 +166,123 @@
  
  #include "drv_mps_vmmc.h"
  #include "drv_mps_vmmc_dbg.h"
-@@ -201,7 +229,8 @@
+@@ -98,6 +113,9 @@ extern IFX_void_t bsp_mask_and_ack_irq (
+ extern IFX_void_t mask_and_ack_danube_irq (IFX_uint32_t irq_nr);
+ 
+ #endif /* */
++
++extern void sys_hw_setup (void);
++
+ extern IFXOS_event_t fw_ready_evt;
+ /* callback function to free all data buffers currently used by voice FW */
+ IFX_void_t (*ifx_mps_bufman_freeall)(IFX_void_t) = IFX_NULL;
+@@ -201,7 +219,8 @@ IFX_boolean_t ifx_mps_ext_bufman ()
   */
  IFX_void_t *ifx_mps_fastbuf_malloc (IFX_size_t size, IFX_int32_t priority)
  {
 -   IFX_uint32_t ptr, flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
 +   IFX_uint32_t ptr;
     IFX_int32_t index = fastbuf_index;
  
     if (fastbuf_initialized == 0)
-@@ -255,7 +284,7 @@
+@@ -255,7 +274,7 @@ IFX_void_t *ifx_mps_fastbuf_malloc (IFX_
   */
  IFX_void_t ifx_mps_fastbuf_free (const IFX_void_t * ptr)
  {
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
     IFX_int32_t index = fastbuf_index;
  
     IFXOS_LOCKINT (flags);
-@@ -451,7 +480,7 @@
+@@ -451,7 +470,7 @@ static mps_buffer_state_e ifx_mps_bufman
   */
  static IFX_int32_t ifx_mps_bufman_inc_level (IFX_uint32_t value)
  {
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
  
     if (mps_buffer.buf_level + value > MPS_BUFFER_MAX_LEVEL)
     {
-@@ -478,7 +507,7 @@
+@@ -478,7 +497,7 @@ static IFX_int32_t ifx_mps_bufman_inc_le
   */
  static IFX_int32_t ifx_mps_bufman_dec_level (IFX_uint32_t value)
  {
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
  
     if (mps_buffer.buf_level < value)
     {
-@@ -946,7 +975,7 @@
+@@ -630,7 +649,7 @@ IFX_int32_t ifx_mps_bufman_buf_provide (
+       mem_seg_ptr[i] =
+          (IFX_uint32_t *) CPHYSADDR ((IFX_uint32_t) mps_buffer.
+                                      malloc (segment_size, FASTBUF_FW_OWNED));
+-      if (mem_seg_ptr[i] == CPHYSADDR (IFX_NULL))
++      if (mem_seg_ptr[i] == (IFX_uint32_t *)CPHYSADDR (IFX_NULL))
+       {
+          TRACE (MPS, DBG_LEVEL_HIGH,
+                 ("%s(): cannot allocate buffer\n", __FUNCTION__));
+@@ -946,7 +965,7 @@ IFX_int32_t ifx_mps_common_open (mps_com
                                   mps_mbx_dev * pMBDev, IFX_int32_t bcommand,
                                   IFX_boolean_t from_kernel)
  {
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
  
     IFXOS_LOCKINT (flags);
  
-@@ -1062,7 +1091,7 @@
+@@ -1062,7 +1081,7 @@ IFX_int32_t ifx_mps_common_close (mps_mb
  IFX_void_t ifx_mps_release_structures (mps_comm_dev * pDev)
  {
     IFX_int32_t count;
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
  
     IFXOS_LOCKINT (flags);
     IFXOS_BlockFree (pFW_img_data);
-@@ -1558,7 +1587,7 @@
+@@ -1111,7 +1130,7 @@ IFX_uint32_t ifx_mps_init_structures (mp
+ 
+    /* Initialize MPS main structure */
+    memset ((IFX_void_t *) pDev, 0, sizeof (mps_comm_dev));
+-   pDev->base_global = (mps_mbx_reg *) IFX_MPS_SRAM;
++   pDev->base_global = (mps_mbx_reg *) IFXMIPS_MPS_SRAM;
+    pDev->flags = 0x00000000;
+    MBX_Memory = pDev->base_global;
+ 
+@@ -1119,9 +1138,11 @@ IFX_uint32_t ifx_mps_init_structures (mp
+       for MBX communication. These are: mailbox base address, mailbox size, *
+       mailbox read index and mailbox write index. for command and voice
+       mailbox, * upstream and downstream direction. */
+-   memset ((IFX_void_t *) MBX_Memory,   /* avoid to overwrite CPU boot
+-                                           registers */
+-           0, sizeof (mps_mbx_reg) - 2 * sizeof (mps_boot_cfg_reg));
++   memset (
++	/* avoid to overwrite CPU boot registers */
++	   (IFX_void_t *) MBX_Memory,
++           0,
++           sizeof (mps_mbx_reg) - 2 * sizeof (mps_boot_cfg_reg));
+    MBX_Memory->MBX_UPSTR_CMD_BASE =
+       (IFX_uint32_t *) CPHYSADDR ((IFX_uint32_t) MBX_UPSTRM_CMD_FIFO_BASE);
+    MBX_Memory->MBX_UPSTR_CMD_SIZE = MBX_CMD_FIFO_SIZE;
+@@ -1558,7 +1579,7 @@ IFX_int32_t ifx_mps_mbx_read_message (mp
                                        IFX_uint32_t * bytes)
  {
     IFX_int32_t i, ret;
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
  
     IFXOS_LOCKINT (flags);
  
-@@ -1768,7 +1797,7 @@
+@@ -1768,7 +1789,7 @@ IFX_int32_t ifx_mps_mbx_write_message (m
  {
     mps_fifo *mbx;
     IFX_uint32_t i;
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
     IFX_int32_t retval = -EAGAIN;
     IFX_int32_t retries = 0;
     IFX_uint32_t word = 0;
-@@ -2163,6 +2192,7 @@
+@@ -2163,6 +2184,7 @@ IFX_int32_t ifx_mps_mbx_write_cmd (mps_m
        TRACE (MPS, DBG_LEVEL_HIGH,
               ("%s(): Invalid device ID %d !\n", __FUNCTION__, pMBDev->devID));
     }
@@ -260,16 +290,16 @@
     return retval;
  }
  
-@@ -2186,7 +2216,7 @@
+@@ -2186,7 +2208,7 @@ IFX_void_t ifx_mps_mbx_data_upstream (IF
     mps_mbx_dev *mbx_dev;
     MbxMsg_s msg;
     IFX_uint32_t bytes_read = 0;
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
     IFX_int32_t ret;
  
     /* set pointer to data upstream mailbox, no matter if 0,1,2 or 3 because
-@@ -2277,7 +2307,7 @@
+@@ -2277,7 +2299,7 @@ IFX_void_t ifx_mps_mbx_data_upstream (IF
           {
              ifx_mps_bufman_dec_level (1);
              if ((ifx_mps_bufman_get_level () <= mps_buffer.buf_threshold) &&
@@ -278,7 +308,7 @@
              {
                 IFXOS_LockRelease (pMPSDev->provide_buffer);
              }
-@@ -2320,7 +2350,7 @@
+@@ -2320,7 +2342,7 @@ IFX_void_t ifx_mps_mbx_data_upstream (IF
  #endif /* CONFIG_PROC_FS */
              ifx_mps_bufman_dec_level (1);
              if ((ifx_mps_bufman_get_level () <= mps_buffer.buf_threshold) &&
@@ -287,43 +317,59 @@
              {
                 IFXOS_LockRelease (pMPSDev->provide_buffer);
              }
-@@ -2350,7 +2380,7 @@
+@@ -2350,7 +2372,7 @@ IFX_void_t ifx_mps_mbx_data_upstream (IF
  IFX_void_t ifx_mps_mbx_cmd_upstream (IFX_ulong_t dummy)
  {
     mps_fifo *mbx;
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
  
     /* set pointer to upstream command mailbox */
     mbx = &(pMPSDev->cmd_upstrm_fifo);
-@@ -2398,7 +2428,7 @@
+@@ -2398,7 +2420,7 @@ IFX_void_t ifx_mps_mbx_event_upstream (I
     mps_event_msg msg;
     IFX_int32_t length = 0;
     IFX_int32_t read_length = 0;
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
  
     /* set pointer to upstream event mailbox */
     mbx = &(pMPSDev->event_upstrm_fifo);
-@@ -2641,7 +2671,7 @@
+@@ -2613,6 +2635,7 @@ IFX_void_t ifx_mps_enable_mailbox_int ()
+ #endif
+ 
+    *IFX_MPS_AD0ENR = Ad0Reg.val;
++
+ }
+ 
+ /**
+@@ -2641,7 +2664,7 @@ IFX_void_t ifx_mps_disable_mailbox_int (
  */
  IFX_void_t ifx_mps_dd_mbx_int_enable (IFX_void_t)
  {
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
     MPS_Ad0Reg_u Ad0Reg;
  
     IFXOS_LOCKINT (flags);
-@@ -2667,7 +2697,7 @@
+@@ -2667,7 +2690,7 @@ IFX_void_t ifx_mps_dd_mbx_int_enable (IF
  */
  IFX_void_t ifx_mps_dd_mbx_int_disable (IFX_void_t)
  {
 -   IFX_uint32_t flags;
-+   unsigned long flags;
++   IFXOS_INTSTAT flags;
     MPS_Ad0Reg_u Ad0Reg;
  
     IFXOS_LOCKINT (flags);
-@@ -2794,6 +2824,7 @@
+@@ -2732,7 +2755,6 @@ irqreturn_t ifx_mps_ad0_irq (IFX_int32_t
+ #else /* */
+    mask_and_ack_danube_irq (irq);
+ #endif /* */
+-
+    /* FW is up and ready to process commands */
+    if (MPS_Ad0StatusReg.fld.dl_end)
+    {
+@@ -2794,6 +2816,7 @@ irqreturn_t ifx_mps_ad0_irq (IFX_int32_t
        }
     }
  
@@ -331,7 +377,21 @@
     if (MPS_Ad0StatusReg.fld.du_mbx)
     {
  #ifdef CONFIG_PROC_FS
-@@ -3087,7 +3118,8 @@
+@@ -2938,12 +2961,12 @@ irqreturn_t ifx_mps_vc_irq (IFX_int32_t 
+    IFX_MPS_CVC0SR[chan] = MPS_VCStatusReg.val;
+    /* handle only enabled interrupts */
+    MPS_VCStatusReg.val &= IFX_MPS_VC0ENR[chan];
+-
+ #ifdef LINUX_2_6
+    bsp_mask_and_ack_irq (irq);
+ #else /* */
+    mask_and_ack_danube_irq (irq);
+ #endif /* */
++
+    pMPSDev->event.MPS_VCStatReg[chan].val = MPS_VCStatusReg.val;
+ #ifdef PRINT_ON_ERR_INTERRUPT
+    if (MPS_VCStatusReg.fld.rcv_ov)
+@@ -3087,7 +3110,8 @@ IFX_int32_t ifx_mps_get_fw_version (IFX_
   */
  IFX_return_t ifx_mps_init_gpt ()
  {
@@ -341,6 +401,14 @@
     IFX_ulong_t count;
  #if defined(SYSTEM_AR9) || defined(SYSTEM_VR9)
     timer = TIMER1A;
+@@ -3160,6 +3184,7 @@ IFX_void_t ifx_mps_shutdown_gpt (IFX_voi
+ #else /* Danube */
+    timer = TIMER1B;
+ #endif /* SYSTEM_AR9 || SYSTEM_VR9 */
++
+    ifx_gptu_timer_free (timer);
+ }
+ 
 --- a/src/mps/drv_mps_vmmc_danube.c
 +++ b/src/mps/drv_mps_vmmc_danube.c
 @@ -32,9 +32,21 @@
@@ -368,7 +436,7 @@
  
  #include "drv_mps_vmmc.h"
  #include "drv_mps_vmmc_dbg.h"
-@@ -71,6 +83,20 @@
+@@ -71,6 +83,20 @@ IFX_void_t ifx_mps_release (IFX_void_t);
  /* Local function definition     */
  /* ============================= */
  
@@ -389,7 +457,7 @@
  /******************************************************************************
   * DANUBE Specific Routines
   ******************************************************************************/
-@@ -130,6 +156,15 @@
+@@ -130,6 +156,15 @@ IFX_int32_t ifx_mps_download_firmware (m
     }
  
     /* check if FW image fits in available memory space */
@@ -405,7 +473,7 @@
     if (mem > ifx_get_cp1_size())
     {
        TRACE (MPS, DBG_LEVEL_HIGH,
-@@ -137,6 +172,7 @@
+@@ -137,6 +172,7 @@ IFX_int32_t ifx_mps_download_firmware (m
                   __FILE__, __func__, __LINE__, mem, ifx_get_cp1_size()));
        return IFX_ERROR;
     }
@@ -413,7 +481,7 @@
  
     /* reset the driver */
     ifx_mps_reset ();
-@@ -357,7 +393,7 @@
+@@ -357,7 +393,7 @@ IFX_void_t ifx_mps_release (IFX_void_t)
   */
  IFX_void_t ifx_mps_wdog_expiry()
  {
@@ -424,7 +492,7 @@
     /* recalculate and compare the firmware checksum */
 --- a/src/mps/drv_mps_vmmc_device.h
 +++ b/src/mps/drv_mps_vmmc_device.h
-@@ -16,8 +16,15 @@
+@@ -16,8 +16,58 @@
                   declarations.
  *******************************************************************************/
  
@@ -435,16 +503,180 @@
 +#  include <irq.h>
 +#  include <xway/xway.h>
 +#  include <gpio.h>
++#define IFXMIPS_MPS_SRAM		((u32 *)(KSEG1 + 0x1F200000))
++#define IFXMIPS_MPS_BASE_ADDR		(KSEG1 + 0x1F107000)
++#define IFXMIPS_MPS_CHIPID		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0344))
++#define IFXMIPS_MPS_VC0ENR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0000))
++#define IFXMIPS_MPS_RVC0SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0010))
++#define IFXMIPS_MPS_CVC0SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0030))
++#define IFXMIPS_MPS_CVC1SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0034))
++#define IFXMIPS_MPS_CVC2SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0038))
++#define IFXMIPS_MPS_CVC3SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x003C))
++#define IFXMIPS_MPS_RAD0SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0040))
++#define IFXMIPS_MPS_RAD1SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0044))
++#define IFXMIPS_MPS_SAD0SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0048))
++#define IFXMIPS_MPS_SAD1SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x004C))
++#define IFXMIPS_MPS_CAD0SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0050))
++#define IFXMIPS_MPS_CAD1SR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0054))
++#define IFXMIPS_MPS_AD0ENR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0058))
++#define IFXMIPS_MPS_AD1ENR		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x005C))
++
++#define IFXMIPS_MPS_CHIPID_VERSION_GET(value)	(((value) >> 28) & ((1 << 4) - 1))
++#define IFXMIPS_MPS_CHIPID_VERSION_SET(value)	((((1 << 4) - 1) & (value)) << 28)
++#define IFXMIPS_MPS_CHIPID_PARTNUM_GET(value)	(((value) >> 12) & ((1 << 16) - 1))
++#define IFXMIPS_MPS_CHIPID_PARTNUM_SET(value)	((((1 << 16) - 1) & (value)) << 12)
++#define IFXMIPS_MPS_CHIPID_MANID_GET(value)	(((value) >> 1) & ((1 << 10) - 1))
++#define IFXMIPS_MPS_CHIPID_MANID_SET(value)	((((1 << 10) - 1) & (value)) << 1)
 +#else
 +#  include <asm/ifx/ifx_regs.h>
 +#  include <asm/ifx_vpe.h>
 +#endif
++/* MPS register */
++#  define IFX_MPS_AD0ENR      IFXMIPS_MPS_AD0ENR
++#  define IFX_MPS_AD1ENR      IFXMIPS_MPS_AD1ENR
++#  define IFX_MPS_RAD0SR      IFXMIPS_MPS_RAD0SR
++#  define IFX_MPS_RAD1SR      IFXMIPS_MPS_RAD1SR
++#  define IFX_MPS_VC0ENR      IFXMIPS_MPS_VC0ENR
++#  define IFX_MPS_RVC0SR      IFXMIPS_MPS_RVC0SR
++#  define IFX_MPS_CVC0SR      IFXMIPS_MPS_CVC0SR
++#  define IFX_MPS_CAD0SR      IFXMIPS_MPS_CAD0SR
++#  define IFX_MPS_CAD1SR      IFXMIPS_MPS_CAD1SR
++#  define IFX_MPS_CVC1SR      IFXMIPS_MPS_CVC1SR
++#  define IFX_MPS_CVC2SR      IFXMIPS_MPS_CVC2SR
++#  define IFX_MPS_CVC3SR      IFXMIPS_MPS_CVC3SR
++#  define IFX_MPS_SAD0SR      IFXMIPS_MPS_SAD0SR
++/* interrupt vectors */
++#  define INT_NUM_IM4_IRL14   (INT_NUM_IM4_IRL0 + 14)
++#  define INT_NUM_IM4_IRL18   (INT_NUM_IM4_IRL0 + 18)
++#  define INT_NUM_IM4_IRL19   (INT_NUM_IM4_IRL0 + 19)
++#  define IFX_ICU_IM4_IER     IFXMIPS_ICU_IM4_IER
  
  /* ============================= */
  /* MPS Common defines            */
+@@ -26,32 +76,28 @@
+ #define MPS_BASEADDRESS 0xBF107000
+ #define MPS_RAD0SR      MPS_BASEADDRESS + 0x0004
+ 
+-#define MPS_RAD0SR_DU   (1<<0)
+-#define MPS_RAD0SR_CU   (1<<1)
+-
+ #define MBX_BASEADDRESS 0xBF200000
+ #define VCPU_BASEADDRESS 0xBF208000     /* 0xBF108000 */
+ /*---------------------------------------------------------------------------*/
++#if !defined(CONFIG_LANTIQ)
++/* enabling interrupts is done with request_irq by the BSP
++   The related code should not be needed anymore */
+ #if defined(SYSTEM_AR9) || defined(SYSTEM_VR9)
+ /* TODO: doublecheck - IM4 or different! */
+ #define MPS_INTERRUPTS_ENABLE(X)  *((volatile IFX_uint32_t*) IFX_ICU_IM4_IER) |= X;
+ #define MPS_INTERRUPTS_DISABLE(X) *((volatile IFX_uint32_t*) IFX_ICU_IM4_IER) &= ~X;
+-#define MPS_INTERRUPTS_CLEAR(X)   *((volatile IFX_uint32_t*) IFX_ICU_IM4_ISR) = X;
+-#define MPS_INTERRUPTS_SET(X)     *((volatile IFX_uint32_t*) IFX_ICU_IM4_IRSR) = X;/* |= ? */
+ #else /* Danube */
+ /* TODO: possibly needs to be changed to IM4 !!!!!! */
+ #ifdef LINUX_2_6
+ #define MPS_INTERRUPTS_ENABLE(X)  *((volatile IFX_uint32_t*) IFX_ICU_IM4_IER) |= X;
+ #define MPS_INTERRUPTS_DISABLE(X) *((volatile IFX_uint32_t*) IFX_ICU_IM4_IER) &= ~X;
+-#define MPS_INTERRUPTS_CLEAR(X)   *((volatile IFX_uint32_t*) IFX_ICU_IM4_ISR) = X;
+-#define MPS_INTERRUPTS_SET(X)     *((volatile IFX_uint32_t*) IFX_ICU_IM4_IRSR) = X;/* |= ? */
+ #else /* */
+ #define MPS_INTERRUPTS_ENABLE(X)  *((volatile IFX_uint32_t*) DANUBE_ICU_IM5_IER) |= X;
+ #define MPS_INTERRUPTS_DISABLE(X) *((volatile IFX_uint32_t*) DANUBE_ICU_IM5_IER) &= ~X;
+-#define MPS_INTERRUPTS_CLEAR(X)   *((volatile IFX_uint32_t*) DANUBE_ICU_IM5_ISR) = X;
+-#define MPS_INTERRUPTS_SET(X)     *((volatile IFX_uint32_t*) DANUBE_ICU_IM5_IRSR) = X;/* |= ? */
+ #endif /* LINUX_2_6 */
+ #endif /* SYSTEM_AR9 || SYSTEM_VR9 */
++#endif /* !defined(CONFIG_LANTIQ) */
++
+ /*---------------------------------------------------------------------------*/
+ 
+ /*---------------------------------------------------------------------------*/
+@@ -142,53 +188,9 @@
+ #if defined(SYSTEM_AR9) || defined(SYSTEM_VR9)
+ /* ***** Amazon-S specific defines ***** */
+ #define IFX_MPS_Base      AMAZON_S_MPS
+-
+-//#define IFX_MPS_CHIPID              AMAZON_S_MPS_CHIPID
+-//#define IFX_MPS_CHIPID_VERSION_GET  AMAZON_S_MPS_CHIPID_VERSION_GET
+-
+-//#define IFX_MPS_AD0ENR    AMAZON_S_MPS_AD0ENR
+-//#define IFX_MPS_AD1ENR    AMAZON_S_MPS_AD1ENR
+-//#define IFX_MPS_VC0ENR    AMAZON_S_MPS_VC0ENR
+-//#define IFX_MPS_SAD0SR    AMAZON_S_MPS_SAD0SR
+-//#define IFX_MPS_RAD0SR    AMAZON_S_MPS_RAD0SR
+-//#define IFX_MPS_CAD0SR    AMAZON_S_MPS_CAD0SR
+-//#define IFX_MPS_RAD1SR    AMAZON_S_MPS_RAD1SR
+-//#define IFX_MPS_CAD1SR    AMAZON_S_MPS_CAD1SR
+-//#define IFX_MPS_RVC0SR    AMAZON_S_MPS_RVC0SR
+-//#define IFX_MPS_CVC0SR    AMAZON_S_MPS_CVC0SR
+-//#define IFX_MPS_CVC1SR    AMAZON_S_MPS_CVC1SR
+-//#define IFX_MPS_CVC2SR    AMAZON_S_MPS_CVC2SR
+-//#define IFX_MPS_CVC3SR    AMAZON_S_MPS_CVC3SR
+-
+-//#define IFX_MPS_SRAM      AMAZON_S_MPS_SRAM
+ #else /* */
+ /* ***** DANUBE specific defines ***** */
+ #define IFX_MPS_Base      DANUBE_MPS
+-
+-//#define IFX_MPS_CHIPID    DANUBE_MPS_CHIPID
+-//#define IFX_MPS_CHIPID_VERSION_GET  DANUBE_MPS_CHIPID_VERSION_GET
+-//#define IFX_MPS_CHIPID_VERSION_SET  DANUBE_MPS_CHIPID_VERSION_SET
+-//#define IFX_MPS_CHIPID_PARTNUM_GET  DANUBE_MPS_CHIPID_PARTNUM_GET
+-//#define IFX_MPS_CHIPID_PARTNUM_SET  DANUBE_MPS_CHIPID_PARTNUM_SET
+-//#define IFX_MPS_CHIPID_MANID_GET    DANUBE_MPS_CHIPID_MANID_GET
+-//#define IFX_MPS_CHIPID_MANID_SET    DANUBE_MPS_CHIPID_MANID_SET
+-//#define IFX_MPS_SUBVER              DANUBE_MPS_SUBVER
+-
+-//#define IFX_MPS_AD0ENR    DANUBE_MPS_AD0ENR
+-//#define IFX_MPS_AD1ENR    DANUBE_MPS_AD1ENR
+-//#define IFX_MPS_VC0ENR    DANUBE_MPS_VC0ENR
+-//#define IFX_MPS_SAD0SR    DANUBE_MPS_SAD0SR
+-//#define IFX_MPS_RAD0SR    DANUBE_MPS_RAD0SR
+-//#define IFX_MPS_CAD0SR    DANUBE_MPS_CAD0SR
+-//#define IFX_MPS_RAD1SR    DANUBE_MPS_RAD1SR
+-//#define IFX_MPS_CAD1SR    DANUBE_MPS_CAD1SR
+-//#define IFX_MPS_RVC0SR    DANUBE_MPS_RVC0SR
+-//#define IFX_MPS_CVC0SR    DANUBE_MPS_CVC0SR
+-//#define IFX_MPS_CVC1SR    DANUBE_MPS_CVC1SR
+-//#define IFX_MPS_CVC2SR    DANUBE_MPS_CVC2SR
+-//#define IFX_MPS_CVC3SR    DANUBE_MPS_CVC3SR
+-
+-//#define IFX_MPS_SRAM      DANUBE_MPS_SRAM
+ #endif /* SYSTEM_AR9 || SYSTEM_VR9 */
+ typedef enum
+ {
 --- a/src/mps/drv_mps_vmmc_linux.c
 +++ b/src/mps/drv_mps_vmmc_linux.c
-@@ -40,10 +40,28 @@
+@@ -19,11 +19,16 @@
+ #include "drv_config.h"
+ 
+ #include "drv_mps_version.h"
++#include <linux/version.h>
+ 
+ #ifdef CONFIG_DEBUG_MINI_BOOT
+ #define IKOS_MINI_BOOT
+ #endif /* */
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
++#include <linux/autoconf.h>
++#else
+ #include <generated/autoconf.h>
++#endif
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/poll.h>
+@@ -34,16 +39,27 @@
+ #include <linux/delay.h>
+ #include <linux/interrupt.h>
+ #ifdef LINUX_2_6
++#ifndef UTS_RELEASE
++#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
++#include <linux/utsrelease.h>
++#else
+ #include <generated/utsrelease.h>
++#endif
++#endif /* UTC_RELEASE */
+ #else /* */
+ #include <linux/uts.h>
  #include <linux/moduleparam.h>
  #endif /* */
  
@@ -456,19 +688,6 @@
 +#include "drv_vmmc_init.h"
 +#  include <lantiq.h>
 +#  include <irq.h>
-+
-+#  define IFX_MPS_AD0ENR      IFXMIPS_MPS_AD0ENR
-+#  define IFX_MPS_AD1ENR      IFXMIPS_MPS_AD1ENR
-+#  define IFX_MPS_RAD0SR      IFXMIPS_MPS_RAD0SR
-+#  define IFX_MPS_RAD1SR      IFXMIPS_MPS_RAD1SR
-+#  define IFX_MPS_VC0ENR      IFXMIPS_MPS_VC0ENR
-+#  define IFX_MPS_RVC0SR      IFXMIPS_MPS_RVC0SR
-+
-+#  define INT_NUM_IM4_IRL14   (INT_NUM_IM4_IRL0 + 14)
-+#  define INT_NUM_IM4_IRL18   (INT_NUM_IM4_IRL0 + 18)
-+#  define INT_NUM_IM4_IRL19   (INT_NUM_IM4_IRL0 + 19)
-+#define LQ_ICU_BASE_ADDR      (KSEG1 | 0x1F880200)
-+#  define IFX_ICU_IM4_IER     (LQ_ICU_BASE_ADDR + 0x00A8)
 +#else
 +#  include <asm/ifx/irq.h>
 +#  include <asm/ifx/ifx_regs.h>
@@ -477,7 +696,7 @@
  
  /* lib_ifxos headers */
  #include "ifx_types.h"
-@@ -915,7 +933,7 @@
+@@ -915,7 +931,7 @@ IFX_int32_t ifx_mps_ioctl (struct inode 
  #endif /* MPS_FIFO_BLOCKING_WRITE */
        case FIO_MPS_GET_STATUS:
           {
@@ -486,7 +705,7 @@
  
              /* get the status of the channel */
              if (!from_kernel)
-@@ -949,7 +967,7 @@
+@@ -949,7 +965,7 @@ IFX_int32_t ifx_mps_ioctl (struct inode 
  #if CONFIG_MPS_HISTORY_SIZE > 0
        case FIO_MPS_GET_CMD_HISTORY:
           {
@@ -495,7 +714,7 @@
  
              if (from_kernel)
              {
-@@ -1641,6 +1659,7 @@
+@@ -1641,6 +1657,7 @@ IFX_int32_t ifx_mps_get_status_proc (IFX
           sprintf (buf + len, "   minLv: \t  %8d\n",
                    ifx_mps_dev.voice_mb[i].upstrm_fifo->min_space);
     }
@@ -503,50 +722,33 @@
     return len;
  }
  
---- a/src/drv_vmmc_init.h
-+++ b/src/drv_vmmc_init.h
-@@ -53,4 +53,41 @@
- extern IFX_int32_t   VMMC_DeviceDriverStart(IFX_void_t);
- extern IFX_void_t    VMMC_DeviceDriverStop(IFX_void_t);
+@@ -2247,9 +2264,11 @@ IFX_int32_t __init ifx_mps_init_module (
+          return result;
+    }
  
-+
-+#define IFXMIPS_MPS_BASE_ADDR           (KSEG1 + 0x1F107000)
-+#define IFXMIPS_MPS_SRAM                ((u32 *)(KSEG1 + 0x1F200000))
-+
-+#define IFXMIPS_MPS_CHIPID              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0344))
-+#define IFXMIPS_MPS_VC0ENR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0000))
-+#define IFXMIPS_MPS_VC1ENR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0004))
-+#define IFXMIPS_MPS_VC2ENR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0008))
-+#define IFXMIPS_MPS_VC3ENR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x000C))
-+#define IFXMIPS_MPS_RVC0SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0010))
-+#define IFXMIPS_MPS_RVC1SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0014))
-+#define IFXMIPS_MPS_RVC2SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0018))
-+#define IFXMIPS_MPS_RVC3SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x001C))
-+#define IFXMIPS_MPS_SVC0SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0020))
-+#define IFXMIPS_MPS_SVC1SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0024))
-+#define IFXMIPS_MPS_SVC2SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0028))
-+#define IFXMIPS_MPS_SVC3SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x002C))
-+#define IFXMIPS_MPS_CVC0SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0030))
-+#define IFXMIPS_MPS_CVC1SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0034))
-+#define IFXMIPS_MPS_CVC2SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0038))
-+#define IFXMIPS_MPS_CVC3SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x003C))
-+#define IFXMIPS_MPS_RAD0SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0040))
-+#define IFXMIPS_MPS_RAD1SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0044))
-+#define IFXMIPS_MPS_SAD0SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0048))
-+#define IFXMIPS_MPS_SAD1SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x004C))
-+#define IFXMIPS_MPS_CAD0SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0050))
-+#define IFXMIPS_MPS_CAD1SR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0054))
-+#define IFXMIPS_MPS_AD0ENR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0058))
-+#define IFXMIPS_MPS_AD1ENR              ((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x005C))
-+
-+#define IFXMIPS_MPS_CHIPID_VERSION_GET(value)   (((value) >> 28) & ((1 << 4) - 1))
-+#define IFXMIPS_MPS_CHIPID_VERSION_SET(value)   ((((1 << 4) - 1) & (value)) << 28)
-+#define IFXMIPS_MPS_CHIPID_PARTNUM_GET(value)   (((value) >> 12) & ((1 << 16) - 1))
-+#define IFXMIPS_MPS_CHIPID_PARTNUM_SET(value)   ((((1 << 16) - 1) & (value)) << 12)
-+#define IFXMIPS_MPS_CHIPID_MANID_GET(value)     (((value) >> 1) & ((1 << 10) - 1))
-+#define IFXMIPS_MPS_CHIPID_MANID_SET(value)     ((((1 << 10) - 1) & (value)) << 1)
-+
- #endif /* _DRV_VMMC_INIT_H */
++#if !defined(CONFIG_LANTIQ)
++   /** \todo This is handled already with request_irq, remove */
+    /* Enable all MPS Interrupts at ICU0 */
+    MPS_INTERRUPTS_ENABLE (0x0000FF80);
+-
++#endif
+    /* enable mailbox interrupts */
+    ifx_mps_enable_mailbox_int ();
+    /* init FW ready event */
+@@ -2377,9 +2396,11 @@ ifx_mps_cleanup_module (IFX_void_t)
+    /* disable mailbox interrupts */
+    ifx_mps_disable_mailbox_int ();
+ 
++#if !defined(CONFIG_LANTIQ)
+    /* disable Interrupts at ICU0 */
+-   MPS_INTERRUPTS_DISABLE (DANUBE_MPS_AD0_IR4); /* Disable DFE/AFE 0 Interrupts
+-                                                 */
++   /* Disable DFE/AFE 0 Interrupts*/
++   MPS_INTERRUPTS_DISABLE (DANUBE_MPS_AD0_IR4);
++#endif
+ 
+    /* disable all MPS interrupts */
+    ifx_mps_disable_all_int ();
 --- a/src/drv_vmmc_ioctl.c
 +++ b/src/drv_vmmc_ioctl.c
 @@ -18,6 +18,7 @@
