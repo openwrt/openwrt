@@ -1,0 +1,66 @@
+From: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
+Date: Thu, 3 Mar 2011 20:42:26 +0000 (+0100)
+Subject: MIPS: lantiq: Add device register helper for SPI controller and devices
+X-Git-Url: http://nbd.name/gitweb.cgi?p=lantiq.git;a=commitdiff_plain;h=b35b07062b718ece9b9cb7b23b12d83a087eafb0;hp=653c95b8b9066c9c6ac08bd64d0ceee439e9fd90
+
+MIPS: lantiq: Add device register helper for SPI controller and devices
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
+---
+
+--- a/arch/mips/lantiq/xway/devices.c
++++ b/arch/mips/lantiq/xway/devices.c
+@@ -22,6 +22,7 @@
+ #include <linux/gpio.h>
+ #include <linux/gpio_buttons.h>
+ #include <linux/leds.h>
++#include <linux/spi/spi.h>
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/irq.h>
+@@ -332,5 +333,27 @@
+ 	lantiq_emulate_madwifi_eep = 1;
+ }
+ 
++static struct resource lq_spi_resources[] = {
++	{
++		.start  = LQ_SSC_BASE_ADDR,
++		.end    = LQ_SSC_BASE_ADDR + LQ_SSC_SIZE - 1,
++		.flags  = IORESOURCE_MEM,
++	},
++	IRQ_RES(spi_tx, LQ_SSC_TIR),
++	IRQ_RES(spi_rx, LQ_SSC_RIR),
++	IRQ_RES(spi_err, LQ_SSC_EIR),
++};
+ 
++static struct platform_device lq_spi = {
++	.name		= "ltq-spi",
++	.resource	= lq_spi_resources,
++	.num_resources	= ARRAY_SIZE(lq_spi_resources),
++};
+ 
++void __init lq_register_spi(struct lq_spi_platform_data *pdata,
++		struct spi_board_info const *info, unsigned n)
++{
++	spi_register_board_info(info, n);
++	lq_spi.dev.platform_data = pdata;
++	platform_device_register(&lq_spi);
++}
+--- a/arch/mips/lantiq/xway/devices.h
++++ b/arch/mips/lantiq/xway/devices.h
+@@ -11,6 +11,7 @@
+ 
+ #include <lantiq_platform.h>
+ #include <xway_irq.h>
++#include <linux/spi/spi.h>
+ 
+ extern void __init lq_register_gpio(void);
+ extern void __init lq_register_gpio_stp(void);
+@@ -25,5 +26,7 @@
+ extern void __init lq_register_asc(int port);
+ extern void __init lq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
+ extern void __init lq_register_crypto(const char *name);
++extern void lq_register_spi(struct lq_spi_platform_data *pdata,
++		struct spi_board_info const *info, unsigned n);
+ 
+ #endif
