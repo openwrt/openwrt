@@ -119,6 +119,14 @@ define Image/Build/Profile/ARV452CPW
 	$(call Image/Build/$(1),$(1),ARV452CPW)
 endef
 
+define Image/BuildKernel/Profile/ARV7518PW
+	$(call Image/BuildKernel/Template,ARV7518PW,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV7518PW
+	$(call Image/Build/$(1),$(1),ARV7518PW)
+endef
+
 define Image/BuildKernel/Profile/ARV752DPW22
 	$(call Image/BuildKernel/Template,ARV752DPW22,$(xway_cmdline))
 endef

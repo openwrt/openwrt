@@ -38,7 +38,7 @@
 +obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-arv45xx.c
-@@ -0,0 +1,536 @@
+@@ -0,0 +1,537 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -524,7 +524,7 @@
 +arv7518pw_init(void)
 +{
 +#define ARV7518PW_EBU			0x2
-+#define ARV7518PW_USB			-1
++#define ARV7518PW_USB			14
 +
 +	lq_register_gpio();
 +	lq_register_gpio_ebu(ARV7518PW_EBU);
@@ -535,6 +535,7 @@
 +	lq_register_nor(&arv75xx_flash_data);
 +	lq_register_pci(&lq_pci_data);
 +	lq_register_wdt();
++	lq_register_tapi();
 +	xway_register_dwc(ARV7518PW_USB);
 +	arv75xx_register_ethernet();
 +	//arv7518_register_ath9k(mac);
