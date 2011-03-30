@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=omap35xx
 BOARDNAME:=TI OMAP35xx
-FEATURES:=broken
+FEATURES:=ubifs targz broken
 SUBTARGETS=beagleboard gumstix
 
 LINUX_VERSION:=2.6.32.33
