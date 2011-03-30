@@ -20,7 +20,7 @@ define Profile/Vpp
 		crda iw kmod-usb-hid \
 		kmod-usb-storage kmod-usb-storage-extras kmod-fs-vfat \
 		uboot-omap35xx-omap3_overo \
-		vpp vpptest mtd-utils ejre
+		vpp vpptest mtd-utils ejre uboot-envtools
 endef
 
 define Profile/Vpp/Description

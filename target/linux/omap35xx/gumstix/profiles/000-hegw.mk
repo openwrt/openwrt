@@ -20,7 +20,7 @@ define Profile/Gumstix
 		crda iw kmod-usb-hid \
 		kmod-usb-storage kmod-usb-storage-extras kmod-fs-vfat \
 		uboot-omap35xx-omap3_overo \
-		hegw hegwtest mtd-utils
+		hegw hegwtest mtd-utils uboot-envtools
 endef
 
 define Profile/Gumstix/Description
