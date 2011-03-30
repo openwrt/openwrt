@@ -1,22 +1,13 @@
 Index: linux-2.6.38.2/mm/shmem.c
 ===================================================================
 --- linux-2.6.38.2.orig/mm/shmem.c	2011-03-27 20:37:20.000000000 +0200
-+++ linux-2.6.38.2/mm/shmem.c	2011-03-30 18:23:12.296417197 +0200
-@@ -30,6 +30,7 @@
- #include <linux/module.h>
- #include <linux/percpu_counter.h>
- #include <linux/swap.h>
-+#include <linux/ima.h>
- 
- static struct vfsmount *shm_mnt;
- 
-@@ -2710,6 +2711,17 @@ out:
++++ linux-2.6.38.2/mm/shmem.c	2011-03-30 18:44:41.068346925 +0200
+@@ -2710,6 +2710,16 @@ out:
  
  /* common code */
  
 +void shmem_set_file(struct vm_area_struct *vma, struct file *file)
 +{
-+	ima_counts_get(file);
 +	if (vma->vm_file)
 +		fput(vma->vm_file);
 +	vma->vm_file = file;
@@ -28,7 +19,7 @@ Index: linux-2.6.38.2/mm/shmem.c
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2787,10 +2799,7 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -2787,10 +2797,7 @@ int shmem_zero_setup(struct vm_area_stru
  	if (IS_ERR(file))
  		return PTR_ERR(file);
  
