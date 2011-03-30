@@ -199,3 +199,18 @@ define KernelPackage/at91-i2c/description
 endef
 
 $(eval $(call KernelPackage,at91-i2c))
+
+I2C_OCTEON_MODULES:=\
+  CONFIG_I2C_OCTEON:drivers/i2c/busses/i2c-octeon
+
+define KernelPackage/octeon-i2c
+  $(call i2c_defaults,$(I2C_OCTEON_MODULES),59)
+  TITLE:=I2C master driver for Cavium Octeon
+  DEPENDS:=@TARGET_octeon +kmod-i2c-core
+endef
+
+define KernelPackage/octeon-i2c/description
+  Kernel module to use the I2C master driver on Cavium Octeon
+endef
+
+$(eval $(call KernelPackage,octeon-i2c))
