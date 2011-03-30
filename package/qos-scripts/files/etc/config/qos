@@ -9,12 +9,6 @@ config interface wan
 
 # RULES:
 config classify
-	option target       "Bulk"
-	option layer7       "edonkey"
-config classify
-	option target       "Bulk"
-	option layer7       "bittorrent"
-config classify
 	option target       "Priority"
 	option ports        "22,53"
 config classify
