@@ -4,7 +4,10 @@ fw__uci_state_add() {
 	local var="$1"
 	local item="$2"
 
-	local val="$(uci_get_state firewall core $var)"
+	local val=" $(uci_get_state firewall core $var) "
+	val="${val// $item / }"
+	val="${val# }"
+	val="${val% }"
 	uci_set_state firewall core $var "${val:+$val }$item"
 }
 
