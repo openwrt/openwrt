@@ -19,8 +19,17 @@ PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
 PKG_BUILD_PARALLEL:=1
 
+PKG_DRIVERS = \
+	ath5k libertas-usb libertas-sd p54-common p54-pci p54-usb p54-spi \
+	rt2x00-lib rt2x00-pci rt2x00-usb rt2x00-soc rt2800-lib rt2400-pci \
+	rt2500-pci rt2500-usb rt61-pci rt73-usb rt2800-pci rt2800-usb \
+	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
+	ath9k-common ath9k ath9k-htc ath net-libipw net-ipw2100 net-ipw2200 \
+	mwl8k net-hermes net-hermes-pci net-hermes-plx net-hermes-pcmcia
+
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-mac80211 \
+	$(patsubst %,CONFIG_PACKAGE_kmod-%,$(PKG_DRIVERS)) \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
 	CONFIG_PACKAGE_ATH_DEBUG \
 	CONFIG_ATH_USER_REGD \
