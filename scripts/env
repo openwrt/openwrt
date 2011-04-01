@@ -138,7 +138,7 @@ env_clear() {
 	env_sync_data
 	if ask_bool 1 "Do you want to keep your current config and files"; then
 		mkdir -p "$BASEDIR/files"
-		cp -a "$ENVDIR/files/*" "$BASEDIR/files" 2>/dev/null >/dev/null
+		cp -a "$ENVDIR/files/"* "$BASEDIR/files" 2>/dev/null >/dev/null
 		cp "$ENVDIR/.config" "$BASEDIR/"
 	else
 		rm -rf "$BASEDIR/files" "$BASEDIR/.config"
@@ -193,7 +193,7 @@ env_new() {
 		if ask_bool 1 "Do you want to keep your current config and files?"; then
 			[ -d "$BASEDIR/files" -a \! -L "$BASEDIR/files" ] && {
 				mkdir -p "$ENVDIR/files"
-				mv "$BASEDIR/files/*" "$ENVDIR/files/" 2>/dev/null
+				mv "$BASEDIR/files/"* "$ENVDIR/files/" 2>/dev/null
 				rmdir "$BASEDIR/files"
 			}
 			env_sync
