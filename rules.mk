@@ -140,6 +140,7 @@ ifndef DUMP
       ifneq ($(TOOLCHAIN_LIB_DIRS),)
         TARGET_LDFLAGS+= $(patsubst %,-L%,$(TOOLCHAIN_LIB_DIRS))
       endif
+      TOOLCHAIN_DIR:=$(TOOLCHAIN_ROOT_DIR)
     endif
   endif
 endif
