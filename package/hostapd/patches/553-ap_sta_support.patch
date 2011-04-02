@@ -34,7 +34,7 @@
  
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -122,6 +122,55 @@ extern int wpa_debug_show_keys;
+@@ -123,6 +123,55 @@ extern int wpa_debug_show_keys;
  extern int wpa_debug_timestamp;
  extern struct wpa_driver_ops *wpa_drivers[];
  
@@ -90,7 +90,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -597,8 +646,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -598,8 +647,16 @@ void wpa_supplicant_set_state(struct wpa
  #ifdef CONFIG_P2P
  		wpas_p2p_completed(wpa_s);
  #endif /* CONFIG_P2P */
@@ -107,7 +107,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2148,6 +2205,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2154,6 +2211,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
