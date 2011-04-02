@@ -574,15 +574,11 @@ static void ag71xx_hw_stop(struct ag71xx *ag)
 static int ag71xx_open(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
-	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	int ret;
 
 	ret = ag71xx_rings_init(ag);
 	if (ret)
 		goto err;
-
-	if (pdata->is_ar724x)
-		ag71xx_hw_init(ag);
 
 	napi_enable(&ag->napi);
 
@@ -747,8 +743,13 @@ static void ag71xx_tx_timeout(struct net_device *dev)
 static void ag71xx_restart_work_func(struct work_struct *work)
 {
 	struct ag71xx *ag = container_of(work, struct ag71xx, restart_work);
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 
 	ag71xx_stop(ag->dev);
+
+	if (pdata->is_ar724x)
+		ag71xx_hw_init(ag);
+
 	ag71xx_open(ag->dev);
 }
 
