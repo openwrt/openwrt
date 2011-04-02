@@ -195,7 +195,6 @@
 
 struct ar7240sw {
 	struct mii_bus	*mii_bus;
-	struct mutex	reg_mutex;
 	struct switch_dev swdev;
 	bool vlan;
 	u16 vlan_id[AR7240_MAX_VLANS];
@@ -210,11 +209,11 @@ struct ar7240sw_hw_stat {
 	int reg;
 };
 
+static DEFINE_MUTEX(reg_mutex);
 
 static inline void ar7240sw_init(struct ar7240sw *as, struct mii_bus *mii)
 {
 	as->mii_bus = mii;
-	mutex_init(&as->reg_mutex);
 }
 
 static inline u16 mk_phy_addr(u32 reg)
@@ -232,95 +231,93 @@ static inline u16 mk_high_addr(u32 reg)
 	return (reg >> 7) & 0x1ff;
 }
 
-static u32 __ar7240sw_reg_read(struct ar7240sw *as, u32 reg)
+static u32 __ar7240sw_reg_read(struct mii_bus *mii, u32 reg)
 {
-	struct mii_bus *mii = as->mii_bus;
 	u16 phy_addr;
 	u16 phy_reg;
 	u32 hi, lo;
 
 	reg = (reg & 0xfffffffc) >> 2;
 
-	mdiobus_write(mii, 0x1f, 0x10, mk_high_addr(reg));
+	ag71xx_mdio_mii_write(mii->priv, 0x1f, 0x10, mk_high_addr(reg));
 
 	phy_addr = mk_phy_addr(reg);
 	phy_reg = mk_phy_reg(reg);
 
-	lo = (u32) mdiobus_read(mii, phy_addr, phy_reg);
-	hi = (u32) mdiobus_read(mii, phy_addr, phy_reg + 1);
+	lo = (u32) ag71xx_mdio_mii_read(mii->priv, phy_addr, phy_reg);
+	hi = (u32) ag71xx_mdio_mii_read(mii->priv, phy_addr, phy_reg + 1);
 
 	return (hi << 16) | lo;
 }
 
-static void __ar7240sw_reg_write(struct ar7240sw *as, u32 reg, u32 val)
+static void __ar7240sw_reg_write(struct mii_bus *mii, u32 reg, u32 val)
 {
-	struct mii_bus *mii = as->mii_bus;
 	u16 phy_addr;
 	u16 phy_reg;
 
 	reg = (reg & 0xfffffffc) >> 2;
 
-	mdiobus_write(mii, 0x1f, 0x10, mk_high_addr(reg));
+	ag71xx_mdio_mii_write(mii->priv, 0x1f, 0x10, mk_high_addr(reg));
 
 	phy_addr = mk_phy_addr(reg);
 	phy_reg = mk_phy_reg(reg);
 
-	mdiobus_write(mii, phy_addr, phy_reg + 1, (val >> 16));
-	mdiobus_write(mii, phy_addr, phy_reg, (val & 0xffff));
+	ag71xx_mdio_mii_write(mii->priv, phy_addr, phy_reg + 1, (val >> 16));
+	ag71xx_mdio_mii_write(mii->priv, phy_addr, phy_reg, (val & 0xffff));
 }
 
-static u32 ar7240sw_reg_read(struct ar7240sw *as, u32 reg_addr)
+static u32 ar7240sw_reg_read(struct mii_bus *mii, u32 reg_addr)
 {
 	u32 ret;
 
-	mutex_lock(&as->reg_mutex);
-	ret = __ar7240sw_reg_read(as, reg_addr);
-	mutex_unlock(&as->reg_mutex);
+	mutex_lock(&reg_mutex);
+	ret = __ar7240sw_reg_read(mii, reg_addr);
+	mutex_unlock(&reg_mutex);
 
 	return ret;
 }
 
-static void ar7240sw_reg_write(struct ar7240sw *as, u32 reg_addr, u32 reg_val)
+static void ar7240sw_reg_write(struct mii_bus *mii, u32 reg_addr, u32 reg_val)
 {
-	mutex_lock(&as->reg_mutex);
-	__ar7240sw_reg_write(as, reg_addr, reg_val);
-	mutex_unlock(&as->reg_mutex);
+	mutex_lock(&reg_mutex);
+	__ar7240sw_reg_write(mii, reg_addr, reg_val);
+	mutex_unlock(&reg_mutex);
 }
 
-static u32 ar7240sw_reg_rmw(struct ar7240sw *as, u32 reg, u32 mask, u32 val)
+static u32 ar7240sw_reg_rmw(struct mii_bus *mii, u32 reg, u32 mask, u32 val)
 {
 	u32 t;
 
-	mutex_lock(&as->reg_mutex);
-	t = __ar7240sw_reg_read(as, reg);
+	mutex_lock(&reg_mutex);
+	t = __ar7240sw_reg_read(mii, reg);
 	t &= ~mask;
 	t |= val;
-	__ar7240sw_reg_write(as, reg, t);
-	mutex_unlock(&as->reg_mutex);
+	__ar7240sw_reg_write(mii, reg, t);
+	mutex_unlock(&reg_mutex);
 
 	return t;
 }
 
-static void ar7240sw_reg_set(struct ar7240sw *as, u32 reg, u32 val)
+static void ar7240sw_reg_set(struct mii_bus *mii, u32 reg, u32 val)
 {
 	u32 t;
 
-	mutex_lock(&as->reg_mutex);
-	t = __ar7240sw_reg_read(as, reg);
+	mutex_lock(&reg_mutex);
+	t = __ar7240sw_reg_read(mii, reg);
 	t |= val;
-	__ar7240sw_reg_write(as, reg, t);
-	mutex_unlock(&as->reg_mutex);
+	__ar7240sw_reg_write(mii, reg, t);
+	mutex_unlock(&reg_mutex);
 }
 
-static int ar7240sw_reg_wait(struct ar7240sw *as, u32 reg, u32 mask, u32 val,
-			     unsigned timeout)
+static int __ar7240sw_reg_wait(struct mii_bus *mii, u32 reg, u32 mask, u32 val,
+			       unsigned timeout)
 {
 	int i;
 
 	for (i = 0; i < timeout; i++) {
 		u32 t;
 
-		t = ar7240sw_reg_read(as, reg);
+		t = __ar7240sw_reg_read(mii, reg);
 		if ((t & mask) == val)
 			return 0;
 
@@ -330,33 +327,45 @@ static int ar7240sw_reg_wait(struct ar7240sw *as, u32 reg, u32 mask, u32 val,
 	return -ETIMEDOUT;
 }
 
-static u16 ar7240sw_phy_read(struct ar7240sw *as, unsigned phy_addr,
-			     unsigned reg_addr)
+static int ar7240sw_reg_wait(struct mii_bus *mii, u32 reg, u32 mask, u32 val,
+			     unsigned timeout)
 {
-	u32 t;
+	int ret;
+
+	mutex_lock(&reg_mutex);
+	ret = __ar7240sw_reg_wait(mii, reg, mask, val, timeout);
+	mutex_unlock(&reg_mutex);
+	return ret;
+}
+
+u16 ar7240sw_phy_read(struct mii_bus *mii, unsigned phy_addr,
+		      unsigned reg_addr)
+{
+	u32 t, val = 0xffff;
 	int err;
 
 	if (phy_addr >= AR7240_NUM_PHYS)
 		return 0xffff;
 
+	mutex_lock(&reg_mutex);
 	t = (reg_addr << AR7240_MDIO_CTRL_REG_ADDR_S) |
 	    (phy_addr << AR7240_MDIO_CTRL_PHY_ADDR_S) |
 	    AR7240_MDIO_CTRL_MASTER_EN |
 	    AR7240_MDIO_CTRL_BUSY |
 	    AR7240_MDIO_CTRL_CMD_READ;
 
-	ar7240sw_reg_write(as, AR7240_REG_MDIO_CTRL, t);
-	err = ar7240sw_reg_wait(as, AR7240_REG_MDIO_CTRL,
-				AR7240_MDIO_CTRL_BUSY, 0, 5);
-	if (err)
-		return 0xffff;
+	__ar7240sw_reg_write(mii, AR7240_REG_MDIO_CTRL, t);
+	err = __ar7240sw_reg_wait(mii, AR7240_REG_MDIO_CTRL,
+				  AR7240_MDIO_CTRL_BUSY, 0, 5);
+	if (!err)
+		val = __ar7240sw_reg_read(mii, AR7240_REG_MDIO_CTRL);
+	mutex_unlock(&reg_mutex);
 
-	t = ar7240sw_reg_read(as, AR7240_REG_MDIO_CTRL);
-	return t & AR7240_MDIO_CTRL_DATA_M;
+	return val & AR7240_MDIO_CTRL_DATA_M;
 }
 
-static int ar7240sw_phy_write(struct ar7240sw *as, unsigned phy_addr,
-			      unsigned reg_addr, u16 reg_val)
+int ar7240sw_phy_write(struct mii_bus *mii, unsigned phy_addr,
+		       unsigned reg_addr, u16 reg_val)
 {
 	u32 t;
 	int ret;
@@ -364,6 +373,7 @@ static int ar7240sw_phy_write(struct ar7240sw *as, unsigned phy_addr,
 	if (phy_addr >= AR7240_NUM_PHYS)
 		return -EINVAL;
 
+	mutex_lock(&reg_mutex);
 	t = (phy_addr << AR7240_MDIO_CTRL_PHY_ADDR_S) |
 	    (reg_addr << AR7240_MDIO_CTRL_REG_ADDR_S) |
 	    AR7240_MDIO_CTRL_MASTER_EN |
@@ -371,34 +381,38 @@ static int ar7240sw_phy_write(struct ar7240sw *as, unsigned phy_addr,
 	    AR7240_MDIO_CTRL_CMD_WRITE |
 	    reg_val;
 
-	ar7240sw_reg_write(as, AR7240_REG_MDIO_CTRL, t);
-	ret = ar7240sw_reg_wait(as, AR7240_REG_MDIO_CTRL,
-				AR7240_MDIO_CTRL_BUSY, 0, 5);
+	__ar7240sw_reg_write(mii, AR7240_REG_MDIO_CTRL, t);
+	ret = __ar7240sw_reg_wait(mii, AR7240_REG_MDIO_CTRL,
+				  AR7240_MDIO_CTRL_BUSY, 0, 5);
+	mutex_unlock(&reg_mutex);
+
 	return ret;
 }
 
 static int ar7240sw_capture_stats(struct ar7240sw *as)
 {
+	struct mii_bus *mii = as->mii_bus;
 	int ret;
 
 	/* Capture the hardware statistics for all ports */
-	ar7240sw_reg_write(as, AR7240_REG_MIB_FUNCTION0,
+	ar7240sw_reg_write(mii, AR7240_REG_MIB_FUNCTION0,
 			   (AR7240_MIB_FUNC_CAPTURE << AR7240_MIB_FUNC_S));
 
 	/* Wait for the capturing to complete. */
-	ret = ar7240sw_reg_wait(as, AR7240_REG_MIB_FUNCTION0,
+	ret = ar7240sw_reg_wait(mii, AR7240_REG_MIB_FUNCTION0,
 				AR7240_MIB_BUSY, 0, 10);
 	return ret;
 }
 
 static void ar7240sw_disable_port(struct ar7240sw *as, unsigned port)
 {
-	ar7240sw_reg_write(as, AR7240_REG_PORT_CTRL(port),
+	ar7240sw_reg_write(as->mii_bus, AR7240_REG_PORT_CTRL(port),
 			   AR7240_PORT_CTRL_STATE_DISABLED);
 }
 
 static int ar7240sw_reset(struct ar7240sw *as)
 {
+	struct mii_bus *mii = as->mii_bus;
 	int ret;
 	int i;
 
@@ -410,41 +424,44 @@ static int ar7240sw_reset(struct ar7240sw *as)
 	msleep(2);
 
 	/* Reset the switch. */
-	ar7240sw_reg_write(as, AR7240_REG_MASK_CTRL,
+	ar7240sw_reg_write(mii, AR7240_REG_MASK_CTRL,
 			   AR7240_MASK_CTRL_SOFT_RESET);
 
-	ret = ar7240sw_reg_wait(as, AR7240_REG_MASK_CTRL,
+	ret = ar7240sw_reg_wait(mii, AR7240_REG_MASK_CTRL,
 				AR7240_MASK_CTRL_SOFT_RESET, 0, 1000);
 	return ret;
 }
 
 static void ar7240sw_setup(struct ar7240sw *as)
 {
+	struct mii_bus *mii = as->mii_bus;
+
 	/* Enable CPU port, and disable mirror port */
-	ar7240sw_reg_write(as, AR7240_REG_CPU_PORT,
+	ar7240sw_reg_write(mii, AR7240_REG_CPU_PORT,
 			   AR7240_CPU_PORT_EN |
 			   (15 << AR7240_MIRROR_PORT_S));
 
 	/* Setup TAG priority mapping */
-	ar7240sw_reg_write(as, AR7240_REG_TAG_PRIORITY, 0xfa50);
+	ar7240sw_reg_write(mii, AR7240_REG_TAG_PRIORITY, 0xfa50);
 
 	/* Enable ARP frame acknowledge */
-	ar7240sw_reg_set(as, AR7240_REG_AT_CTRL, AR7240_AT_CTRL_ARP_EN);
+	ar7240sw_reg_set(mii, AR7240_REG_AT_CTRL, AR7240_AT_CTRL_ARP_EN);
 
 	/* Enable Broadcast frames transmitted to the CPU */
-	ar7240sw_reg_set(as, AR7240_REG_FLOOD_MASK,
+	ar7240sw_reg_set(mii, AR7240_REG_FLOOD_MASK,
 			 AR7240_FLOOD_MASK_BROAD_TO_CPU);
 
 	/* setup MTU */
-	ar7240sw_reg_rmw(as, AR7240_REG_GLOBAL_CTRL, AR7240_GLOBAL_CTRL_MTU_M,
+	ar7240sw_reg_rmw(mii, AR7240_REG_GLOBAL_CTRL, AR7240_GLOBAL_CTRL_MTU_M,
 			 1536);
 
 	/* setup Service TAG */
-	ar7240sw_reg_rmw(as, AR7240_REG_SERVICE_TAG, AR7240_SERVICE_TAG_M, 0);
+	ar7240sw_reg_rmw(mii, AR7240_REG_SERVICE_TAG, AR7240_SERVICE_TAG_M, 0);
 }
 
 static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 {
+	struct mii_bus *mii = as->mii_bus;
 	u32 ctrl;
 	u32 dest_ports;
 	u32 vlan;
@@ -453,7 +470,7 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 		AR7240_PORT_CTRL_SINGLE_VLAN;
 
 	if (port == AR7240_PORT_CPU) {
-		ar7240sw_reg_write(as, AR7240_REG_PORT_STATUS(port),
+		ar7240sw_reg_write(mii, AR7240_REG_PORT_STATUS(port),
 				   AR7240_PORT_STATUS_SPEED_1000 |
 				   AR7240_PORT_STATUS_TXFLOW |
 				   AR7240_PORT_STATUS_RXFLOW |
@@ -461,7 +478,7 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 				   AR7240_PORT_STATUS_RXMAC |
 				   AR7240_PORT_STATUS_DUPLEX);
 	} else {
-		ar7240sw_reg_write(as, AR7240_REG_PORT_STATUS(port),
+		ar7240sw_reg_write(mii, AR7240_REG_PORT_STATUS(port),
 				   AR7240_PORT_STATUS_LINK_AUTO);
 	}
 
@@ -499,19 +516,20 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 	/* set default VID and and destination ports for this VLAN */
 	vlan |= (portmask << AR7240_PORT_VLAN_DEST_PORTS_S);
 
-	ar7240sw_reg_write(as, AR7240_REG_PORT_CTRL(port), ctrl);
-	ar7240sw_reg_write(as, AR7240_REG_PORT_VLAN(port), vlan);
+	ar7240sw_reg_write(mii, AR7240_REG_PORT_CTRL(port), ctrl);
+	ar7240sw_reg_write(mii, AR7240_REG_PORT_VLAN(port), vlan);
 }
 
 static int ar7240_set_addr(struct ar7240sw *as, u8 *addr)
 {
+	struct mii_bus *mii = as->mii_bus;
 	u32 t;
 
 	t = (addr[4] << 8) | addr[5];
-	ar7240sw_reg_write(as, AR7240_REG_MAC_ADDR0, t);
+	ar7240sw_reg_write(mii, AR7240_REG_MAC_ADDR0, t);
 
 	t = (addr[0] << 24) | (addr[1] << 16) | (addr[2] << 8) | addr[3];
-	ar7240sw_reg_write(as, AR7240_REG_MAC_ADDR1, t);
+	ar7240sw_reg_write(mii, AR7240_REG_MAC_ADDR1, t);
 
 	return 0;
 }
@@ -633,16 +651,18 @@ ar7240_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 static void
 ar7240_vtu_op(struct ar7240sw *as, u32 op, u32 val)
 {
-	if (ar7240sw_reg_wait(as, AR7240_REG_VTU, AR7240_VTU_ACTIVE, 0, 5))
+	struct mii_bus *mii = as->mii_bus;
+
+	if (ar7240sw_reg_wait(mii, AR7240_REG_VTU, AR7240_VTU_ACTIVE, 0, 5))
 		return;
 
 	if ((op & AR7240_VTU_OP) == AR7240_VTU_OP_LOAD) {
 		val &= AR7240_VTUDATA_MEMBER;
 		val |= AR7240_VTUDATA_VALID;
-		ar7240sw_reg_write(as, AR7240_REG_VTU_DATA, val);
+		ar7240sw_reg_write(mii, AR7240_REG_VTU_DATA, val);
 	}
 	op |= AR7240_VTU_ACTIVE;
-	ar7240sw_reg_write(as, AR7240_REG_VTU, op);
+	ar7240sw_reg_write(mii, AR7240_REG_VTU, op);
 }
 
 static int
@@ -766,7 +786,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 
 	ar7240sw_init(as, mii);
 
-	ctrl = ar7240sw_reg_read(as, AR7240_REG_MASK_CTRL);
+	ctrl = ar7240sw_reg_read(mii, AR7240_REG_MASK_CTRL);
 
 	ver = (ctrl >> AR7240_MASK_CTRL_VERSION_S) & AR7240_MASK_CTRL_VERSION_M;
 	if (ver != 1) {
@@ -775,8 +795,8 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 		return NULL;
 	}
 
-	phy_id1 = ar7240sw_phy_read(as, 0, MII_PHYSID1);
-	phy_id2 = ar7240sw_phy_read(as, 0, MII_PHYSID2);
+	phy_id1 = ar7240sw_phy_read(mii, 0, MII_PHYSID1);
+	phy_id2 = ar7240sw_phy_read(mii, 0, MII_PHYSID2);
 	if (phy_id1 != AR7240_PHY_ID1 || phy_id2 != AR7240_PHY_ID2) {
 		pr_err("%s: unknown phy id '%04x:%04x'\n",
 		       ag->dev->name, phy_id1, phy_id2);
