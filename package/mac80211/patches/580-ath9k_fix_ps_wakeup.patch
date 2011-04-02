@@ -1,0 +1,127 @@
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -324,7 +324,6 @@ static void ath_paprd_activate(struct at
+ 	if (!caldata || !caldata->paprd_done)
+ 		return;
+ 
+-	ath9k_ps_wakeup(sc);
+ 	ar9003_paprd_enable(ah, false);
+ 	for (chain = 0; chain < AR9300_MAX_CHAINS; chain++) {
+ 		if (!(common->tx_chainmask & BIT(chain)))
+@@ -334,7 +333,6 @@ static void ath_paprd_activate(struct at
+ 	}
+ 
+ 	ar9003_paprd_enable(ah, true);
+-	ath9k_ps_restore(sc);
+ }
+ 
+ static bool ath_paprd_send_frame(struct ath_softc *sc, struct sk_buff *skb, int chain)
+@@ -554,8 +552,11 @@ set_timer:
+ 	if ((sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_PAPRD) && ah->caldata) {
+ 		if (!ah->caldata->paprd_done)
+ 			ieee80211_queue_work(sc->hw, &sc->paprd_work);
+-		else if (!ah->paprd_table_write_done)
++		else if (!ah->paprd_table_write_done) {
++			ath9k_ps_wakeup(sc);
+ 			ath_paprd_activate(sc);
++			ath9k_ps_restore(sc);
++		}
+ 	}
+ }
+ 
+@@ -1376,7 +1377,6 @@ static void ath9k_calculate_summary_stat
+ 
+ 	ath9k_calculate_iter_data(hw, vif, &iter_data);
+ 
+-	ath9k_ps_wakeup(sc);
+ 	/* Set BSSID mask. */
+ 	memcpy(common->bssidmask, iter_data.mask, ETH_ALEN);
+ 	ath_hw_setbssidmask(common);
+@@ -1411,7 +1411,6 @@ static void ath9k_calculate_summary_stat
+ 	}
+ 
+ 	ath9k_hw_set_interrupts(ah, ah->imask);
+-	ath9k_ps_restore(sc);
+ 
+ 	/* Set up ANI */
+ 	if ((iter_data.naps + iter_data.nadhocs) > 0) {
+@@ -1457,6 +1456,7 @@ static int ath9k_add_interface(struct ie
+ 	struct ath_vif *avp = (void *)vif->drv_priv;
+ 	int ret = 0;
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	switch (vif->type) {
+@@ -1503,6 +1503,7 @@ static int ath9k_add_interface(struct ie
+ 	ath9k_do_vif_add_setup(hw, vif);
+ out:
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ 	return ret;
+ }
+ 
+@@ -1517,6 +1518,7 @@ static int ath9k_change_interface(struct
+ 
+ 	ath_dbg(common, ATH_DBG_CONFIG, "Change Interface\n");
+ 	mutex_lock(&sc->mutex);
++	ath9k_ps_wakeup(sc);
+ 
+ 	/* See if new interface type is valid. */
+ 	if ((new_type == NL80211_IFTYPE_ADHOC) &&
+@@ -1546,6 +1548,7 @@ static int ath9k_change_interface(struct
+ 
+ 	ath9k_do_vif_add_setup(hw, vif);
+ out:
++	ath9k_ps_restore(sc);
+ 	mutex_unlock(&sc->mutex);
+ 	return ret;
+ }
+@@ -1558,6 +1561,7 @@ static void ath9k_remove_interface(struc
+ 
+ 	ath_dbg(common, ATH_DBG_CONFIG, "Detach Interface\n");
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	sc->nvifs--;
+@@ -1569,6 +1573,7 @@ static void ath9k_remove_interface(struc
+ 	ath9k_calculate_summary_state(hw, NULL);
+ 
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ }
+ 
+ static void ath9k_enable_ps(struct ath_softc *sc)
+@@ -1830,6 +1835,7 @@ static int ath9k_conf_tx(struct ieee8021
+ 
+ 	txq = sc->tx.txq_map[queue];
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	memset(&qi, 0, sizeof(struct ath9k_tx_queue_info));
+@@ -1853,6 +1859,7 @@ static int ath9k_conf_tx(struct ieee8021
+ 			ath_beaconq_config(sc);
+ 
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ 
+ 	return ret;
+ }
+@@ -1929,6 +1936,7 @@ static void ath9k_bss_info_changed(struc
+ 	int slottime;
+ 	int error;
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	if (changed & BSS_CHANGED_BSSID) {
+@@ -2029,6 +2037,7 @@ static void ath9k_bss_info_changed(struc
+ 	}
+ 
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ }
+ 
+ static u64 ath9k_get_tsf(struct ieee80211_hw *hw)
