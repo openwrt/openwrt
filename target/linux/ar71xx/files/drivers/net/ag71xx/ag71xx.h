@@ -503,4 +503,12 @@ void ag71xx_ar7240_stop(struct ag71xx *ag);
 int ag71xx_ar7240_init(struct ag71xx *ag);
 void ag71xx_ar7240_cleanup(struct ag71xx *ag);
 
+int ag71xx_mdio_mii_read(struct ag71xx_mdio *am, int addr, int reg);
+void ag71xx_mdio_mii_write(struct ag71xx_mdio *am, int addr, int reg, u16 val);
+
+u16 ar7240sw_phy_read(struct mii_bus *mii, unsigned phy_addr,
+		      unsigned reg_addr);
+int ar7240sw_phy_write(struct mii_bus *mii, unsigned phy_addr,
+		       unsigned reg_addr, u16 reg_val);
+
 #endif /* _AG71XX_H */

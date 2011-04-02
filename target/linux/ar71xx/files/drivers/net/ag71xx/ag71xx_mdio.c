@@ -47,7 +47,7 @@ static void ag71xx_mdio_dump_regs(struct ag71xx_mdio *am)
 		ag71xx_mdio_rr(am, AG71XX_REG_MII_IND));
 }
 
-static int ag71xx_mdio_mii_read(struct ag71xx_mdio *am, int addr, int reg)
+int ag71xx_mdio_mii_read(struct ag71xx_mdio *am, int addr, int reg)
 {
 	int ret;
 	int i;
@@ -77,8 +77,7 @@ out:
 	return ret;
 }
 
-static void ag71xx_mdio_mii_write(struct ag71xx_mdio *am,
-				  int addr, int reg, u16 val)
+void ag71xx_mdio_mii_write(struct ag71xx_mdio *am, int addr, int reg, u16 val)
 {
 	int i;
 
@@ -122,14 +121,20 @@ static int ag71xx_mdio_read(struct mii_bus *bus, int addr, int reg)
 {
 	struct ag71xx_mdio *am = bus->priv;
 
-	return ag71xx_mdio_mii_read(am, addr, reg);
+	if (am->pdata->is_ar7240)
+		return ar7240sw_phy_read(bus, addr, reg);
+	else
+		return ag71xx_mdio_mii_read(am, addr, reg);
 }
 
 static int ag71xx_mdio_write(struct mii_bus *bus, int addr, int reg, u16 val)
 {
 	struct ag71xx_mdio *am = bus->priv;
 
-	ag71xx_mdio_mii_write(am, addr, reg, val);
+	if (am->pdata->is_ar7240)
+		ar7240sw_phy_write(bus, addr, reg, val);
+	else
+		ag71xx_mdio_mii_write(am, addr, reg, val);
 	return 0;
 }
 
