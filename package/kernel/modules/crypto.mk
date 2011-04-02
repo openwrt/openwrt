@@ -428,6 +428,7 @@ $(eval $(call KernelPackage,crypto-xts))
 
 define KernelPackage/crypto-mv-cesa
    TITLE:=Marvell crypto engine
+   DEPENDS:=+kmod-crypto-manager
    KCONFIG:=CONFIG_CRYPTO_DEV_MV_CESA
    FILES:=$(LINUX_DIR)/drivers/crypto/mv_cesa.ko
    AUTOLOAD:=$(call AutoLoad,09,mv_cesa)
