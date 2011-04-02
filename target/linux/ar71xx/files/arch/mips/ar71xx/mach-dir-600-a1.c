@@ -140,6 +140,7 @@ static void __init dir_600_a1_setup(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.phy_mask = BIT(4);
 
 	/* LAN ports */
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
