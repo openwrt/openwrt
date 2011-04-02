@@ -1,6 +1,15 @@
 --- a/src/crypto/random.c
 +++ b/src/crypto/random.c
-@@ -48,6 +48,8 @@
+@@ -38,6 +38,8 @@
+ #include "sha1.h"
+ #include "random.h"
+ 
++#define RANDOM_STAMPFILE "/var/run/.random_available"
++
+ #define POOL_WORDS 32
+ #define POOL_WORDS_MASK (POOL_WORDS - 1)
+ #define POOL_TAP1 26
+@@ -48,6 +50,8 @@
  #define EXTRACT_LEN 16
  #define MIN_READY_MARK 2
  
@@ -9,7 +18,7 @@
  static u32 pool[POOL_WORDS];
  static unsigned int input_rotate = 0;
  static unsigned int pool_pos = 0;
-@@ -122,7 +124,7 @@ static void random_extract(u8 *out)
+@@ -122,7 +126,7 @@ static void random_extract(u8 *out)
  }
  
  
@@ -18,7 +27,37 @@
  {
  	struct os_time t;
  	static unsigned int count = 0;
-@@ -335,3 +337,22 @@ void random_deinit(void)
+@@ -191,9 +195,13 @@ int random_get_bytes(void *buf, size_t l
+ int random_pool_ready(void)
+ {
+ #ifdef __linux__
++	struct stat st;
+ 	int fd;
+ 	ssize_t res;
+ 
++	if (stat(RANDOM_STAMPFILE, &st) == 0)
++		return 1;
++
+ 	/*
+ 	 * Make sure that there is reasonable entropy available before allowing
+ 	 * some key derivation operations to proceed.
+@@ -258,9 +266,15 @@ int random_pool_ready(void)
+ 
+ void random_mark_pool_ready(void)
+ {
++	int fd;
++
+ 	own_pool_ready++;
+ 	wpa_printf(MSG_DEBUG, "random: Mark internal entropy pool to be "
+ 		   "ready (count=%u/%u)", own_pool_ready, MIN_READY_MARK);
++
++	fd = open(RANDOM_STAMPFILE, O_CREAT | O_WRONLY | O_EXCL | O_NOFOLLOW, 0600);
++	if (fd >= 0)
++		close(fd);
+ }
+ 
+ 
+@@ -335,3 +349,22 @@ void random_deinit(void)
  	random_close_fd();
  #endif /* __linux__ */
  }
