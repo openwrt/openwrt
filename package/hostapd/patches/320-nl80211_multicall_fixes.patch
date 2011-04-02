@@ -1,22 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -1468,7 +1468,6 @@ nla_put_failure:
- }
- 
- 
--#ifndef HOSTAPD
- struct wiphy_info_data {
- 	int max_scan_ssids;
- 	int ap_supported;
-@@ -1613,7 +1612,6 @@ static int wpa_driver_nl80211_capa(struc
- 
- 	return 0;
- }
--#endif /* HOSTAPD */
- 
- 
- static int wpa_driver_nl80211_init_nl(struct wpa_driver_nl80211_data *drv)
-@@ -1825,6 +1823,7 @@ static void * wpa_driver_nl80211_init(vo
+@@ -1847,6 +1847,7 @@ static void * wpa_driver_nl80211_init(vo
  	drv->monitor_ifidx = -1;
  	drv->monitor_sock = -1;
  	drv->ioctl_sock = -1;
@@ -24,7 +8,7 @@
  
  	if (wpa_driver_nl80211_init_nl(drv)) {
  		os_free(drv);
-@@ -1988,32 +1987,32 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -2013,29 +2014,29 @@ wpa_driver_nl80211_finish_drv_init(struc
  	drv->ifindex = if_nametoindex(bss->ifname);
  	drv->first_bss.ifindex = drv->ifindex;
  
@@ -33,7 +17,12 @@
 -		wpa_printf(MSG_DEBUG, "nl80211: Could not configure driver to "
 -			   "use managed mode");
 -	}
--
++	if (drv->nlmode == NL80211_IFTYPE_STATION) {
++		if (wpa_driver_nl80211_set_mode(bss, IEEE80211_MODE_INFRA) < 0) {
++			wpa_printf(MSG_DEBUG, "nl80211: Could not configure driver to "
++				   "use managed mode");
++		}
+ 
 -	if (linux_set_iface_flags(drv->ioctl_sock, bss->ifname, 1)) {
 -		if (rfkill_is_blocked(drv->rfkill)) {
 -			wpa_printf(MSG_DEBUG, "nl80211: Could not yet enable "
@@ -45,12 +34,6 @@
 -			wpa_printf(MSG_ERROR, "nl80211: Could not set "
 -				   "interface '%s' UP", bss->ifname);
 -			return -1;
-+	if (drv->nlmode == NL80211_IFTYPE_STATION) {
-+		if (wpa_driver_nl80211_set_mode(bss, IEEE80211_MODE_INFRA) < 0) {
-+			wpa_printf(MSG_DEBUG, "nl80211: Could not configure driver to "
-+				   "use managed mode");
-+		}
-+
 +		if (linux_set_iface_flags(drv->ioctl_sock, bss->ifname, 1)) {
 +			if (rfkill_is_blocked(drv->rfkill)) {
 +				wpa_printf(MSG_DEBUG, "nl80211: Could not yet enable "
@@ -66,11 +49,6 @@
  		}
 -	}
  
--	if (wpa_driver_nl80211_capa(drv))
--		return -1;
-+		if (wpa_driver_nl80211_capa(drv))
-+			return -1;
- 
 -	netlink_send_oper_ifla(drv->netlink, drv->ifindex,
 -			       1, IF_OPER_DORMANT);
 -#endif /* HOSTAPD */
@@ -78,9 +56,9 @@
 +				       1, IF_OPER_DORMANT);
 +	}
  
- 	if (linux_get_ifhwaddr(drv->ioctl_sock, bss->ifname, drv->addr))
+ 	if (wpa_driver_nl80211_capa(drv))
  		return -1;
-@@ -3738,7 +3737,8 @@ static void nl80211_remove_iface(struct 
+@@ -3765,7 +3766,8 @@ static void nl80211_remove_iface(struct 
  
  #ifdef HOSTAPD
  	/* stop listening for EAPOL on this interface */
@@ -90,7 +68,7 @@
  #endif /* HOSTAPD */
  
  	msg = nlmsg_alloc();
-@@ -3811,7 +3811,8 @@ static int nl80211_create_iface_once(str
+@@ -3838,7 +3840,8 @@ static int nl80211_create_iface_once(str
  
  #ifdef HOSTAPD
  	/* start listening for EAPOL on this interface */

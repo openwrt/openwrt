@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -228,6 +228,7 @@ struct hostapd_iface {
+@@ -229,6 +229,7 @@ struct hostapd_iface {
  	int (*for_each_interface)(struct hapd_interfaces *interfaces,
  				  int (*cb)(struct hostapd_iface *iface,
  					    void *ctx), void *ctx);
@@ -22,7 +22,7 @@
  
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -35,6 +35,8 @@
+@@ -36,6 +36,8 @@
  extern int wpa_debug_level;
  extern int wpa_debug_show_keys;
  extern int wpa_debug_timestamp;
@@ -31,7 +31,7 @@
  
  
  struct hapd_interfaces {
-@@ -162,6 +164,15 @@ static void hostapd_logger_cb(void *ctx,
+@@ -163,6 +165,15 @@ static void hostapd_logger_cb(void *ctx,
  }
  #endif /* CONFIG_NO_HOSTAPD_LOGGER */
  
@@ -47,7 +47,7 @@
  
  /**
   * hostapd_init - Allocate and initialize per-interface data
-@@ -183,6 +194,7 @@ static struct hostapd_iface * hostapd_in
+@@ -184,6 +195,7 @@ static struct hostapd_iface * hostapd_in
  	if (hapd_iface == NULL)
  		goto fail;
  
@@ -55,7 +55,7 @@
  	hapd_iface->reload_config = hostapd_reload_config;
  	hapd_iface->config_read_cb = hostapd_config_read;
  	hapd_iface->config_fname = os_strdup(config_file);
-@@ -391,7 +403,7 @@ static int hostapd_global_init(struct ha
+@@ -399,7 +411,7 @@ static int hostapd_global_init(struct ha
  }
  
  
@@ -64,7 +64,7 @@
  {
  #ifdef EAP_SERVER_TNC
  	tncs_global_deinit();
-@@ -409,8 +421,7 @@ static void hostapd_global_deinit(const 
+@@ -419,8 +431,7 @@ static void hostapd_global_deinit(const 
  }
  
  
@@ -74,7 +74,7 @@
  {
  #ifdef EAP_SERVER_TNC
  	int tnc = 0;
-@@ -431,11 +442,6 @@ static int hostapd_global_run(struct hap
+@@ -441,11 +452,6 @@ static int hostapd_global_run(struct hap
  	}
  #endif /* EAP_SERVER_TNC */
  
@@ -86,7 +86,7 @@
  	eloop_run();
  
  	return 0;
-@@ -491,8 +497,7 @@ int main(int argc, char *argv[])
+@@ -501,8 +507,7 @@ int main(int argc, char *argv[])
  	struct hapd_interfaces interfaces;
  	int ret = 1;
  	size_t i;
@@ -96,7 +96,7 @@
  	const char *log_file = NULL;
  
  	if (os_program_init())
-@@ -566,7 +571,7 @@ int main(int argc, char *argv[])
+@@ -576,7 +581,7 @@ int main(int argc, char *argv[])
  			goto out;
  	}
  
@@ -105,7 +105,7 @@
  		goto out;
  
  	ret = 0;
-@@ -577,7 +582,7 @@ int main(int argc, char *argv[])
+@@ -587,7 +592,7 @@ int main(int argc, char *argv[])
  		hostapd_interface_deinit_free(interfaces.iface[i]);
  	os_free(interfaces.iface);
  
