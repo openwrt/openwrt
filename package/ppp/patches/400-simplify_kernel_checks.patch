@@ -90,3 +90,43 @@
  
      if (sfd < 0)
  	return 0;
+--- a/pppd/plugins/pppoatm/pppoatm.c
++++ b/pppd/plugins/pppoatm/pppoatm.c
+@@ -210,14 +210,6 @@ static void recv_config_pppoa(int mru,
+ 
+ void plugin_init(void)
+ {
+-#ifdef linux
+-	extern int new_style_driver;	/* From sys-linux.c */
+-	if (!ppp_available() && !new_style_driver)
+-		fatal("Kernel doesn't support ppp_generic - "
+-		    "needed for PPPoATM");
+-#else
+-	fatal("No PPPoATM support on this OS");
+-#endif
+ 	add_options(pppoa_options);
+ }
+ 
+--- a/pppd/plugins/rp-pppoe/plugin.c
++++ b/pppd/plugins/rp-pppoe/plugin.c
+@@ -55,9 +55,6 @@ static char const RCSID[] =
+ 
+ char pppd_version[] = VERSION;
+ 
+-/* From sys-linux.c in pppd -- MUST FIX THIS! */
+-extern int new_style_driver;
+-
+ char *pppd_pppoe_service = NULL;
+ static char *acName = NULL;
+ static char *existingSession = NULL;
+@@ -312,10 +309,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
+ void
+ plugin_init(void)
+ {
+-    if (!ppp_available() && !new_style_driver) {
+-	fatal("Linux kernel does not support PPPoE -- are you running 2.4.x?");
+-    }
+-
+     add_options(Options);
+ }
+ 
