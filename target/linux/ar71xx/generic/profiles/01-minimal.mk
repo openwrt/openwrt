@@ -7,7 +7,7 @@
 
 define Profile/Minimal
 	NAME:=Minimal Profile (no drivers)
-	PACKAGES:=uboot-ar71xx-nbg460n_550n_550nh
+	PACKAGES:=
 endef
 
 define Profile/Minimal/Description
