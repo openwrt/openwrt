@@ -56,6 +56,7 @@ struct rtl_priv {
 	int do_cpu;
 	struct mii_bus *bus;
 	char hwname[sizeof(RTL_NAME_UNKNOWN)];
+	bool fixup;
 };
 
 struct rtl_phyregs {
@@ -255,6 +256,9 @@ rtl_set_page(struct rtl_priv *priv, unsigned int page)
 {
 	struct mii_bus *bus = priv->bus;
 	u16 pgsel;
+
+	if (priv->fixup)
+		return;
 
 	if (priv->page == page)
 		return;
@@ -923,6 +927,8 @@ rtl8306_fixup(struct phy_device *pdev)
 	if (pdev->addr != 0 && pdev->addr != 4)
 		return 0;
 
+	memset(&priv, 0, sizeof(priv));
+	priv.fixup = true;
 	priv.page = -1;
 	priv.bus = pdev->bus;
 	chipid = rtl_get(&priv.dev, RTL_REG_CHIPID);
