@@ -12,7 +12,7 @@ BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs jffs2 pci usb
 CFLAGS:=-Os -pipe -march=octeon -fno-caller-saves
 
-LINUX_VERSION:=2.6.37.4
+LINUX_VERSION:=2.6.37.6
 
 include $(INCLUDE_DIR)/target.mk
 

@@ -13,7 +13,7 @@ FEATURES:=squashfs
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 SUBTARGETS=generic harddisk
 
-LINUX_VERSION:=2.6.37.4
+LINUX_VERSION:=2.6.37.6
 
 include $(INCLUDE_DIR)/target.mk
 

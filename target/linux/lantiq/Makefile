@@ -12,7 +12,7 @@ BOARDNAME:=Lantiq GPON/XWAY
 FEATURES:=squashfs jffs2
 SUBTARGETS:=falcon xway
 
-LINUX_VERSION:=2.6.37.4
+LINUX_VERSION:=2.6.37.6
 
 CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 
