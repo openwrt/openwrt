@@ -36,7 +36,7 @@ config BUSYBOX_CONFIG_FEATURE_DATE_ISOFMT
 config BUSYBOX_CONFIG_FEATURE_DATE_NANO
 	bool "Support %[num]N nanosecond format specifier"
 	default n
-	depends on BUSYBOX_CONFIG_DATE
+	depends on BUSYBOX_CONFIG_DATE && BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Support %[num]N format specifier. Adds ~250 bytes of code.
 
@@ -96,6 +96,11 @@ config BUSYBOX_CONFIG_FEATURE_TR_EQUIV
 	  replace all instances of 'a' with 'xyz'. This option is mainly
 	  useful for cases when no other way of expressing a character
 	  is possible.
+config BUSYBOX_CONFIG_BASE64
+	bool "base64"
+	default n
+	help
+	  Base64 encode and decode
 
 config BUSYBOX_CONFIG_CAL
 	bool "cal"
@@ -681,6 +686,7 @@ config BUSYBOX_CONFIG_FEATURE_SPLIT_FANCY
 config BUSYBOX_CONFIG_STAT
 	bool "stat"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  display file or filesystem status.
 

@@ -46,6 +46,17 @@ config BUSYBOX_CONFIG_USE_PORTABLE_CODE
 	  compiler other than gcc.
 	  If you do use gcc, this option may needlessly increase code size.
 
+config BUSYBOX_CONFIG_PLATFORM_LINUX
+	bool "Enable Linux-specific applets and features"
+	default y
+	help
+	  For the most part, busybox requires only POSIX compatibility
+	  from the target system, but some applets and features use
+	  Linux-specific interfaces.
+
+	  Answering 'N' here will disable such applets and hide the
+	  corresponding configuration options.
+
 choice
 	prompt "Buffer allocation policy"
 	default BUSYBOX_CONFIG_FEATURE_BUFFERS_GO_ON_STACK
@@ -111,6 +122,15 @@ config BUSYBOX_CONFIG_FEATURE_INSTALLER
 	  busybox at runtime to create hard links or symlinks for all the
 	  applets that are compiled into busybox.
 
+config BUSYBOX_CONFIG_INSTALL_NO_USR
+	bool "Don't use /usr"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_INSTALLER
+	help
+	  Disable use of /usr. busybox --install and "make install"
+	  will install applets only to /bin and /sbin,
+	  never to /usr/bin or /usr/sbin.
+
 config BUSYBOX_CONFIG_LOCALE_SUPPORT
 	bool "Enable locale support (system needs locale for this to work)"
 	default n
@@ -137,6 +157,7 @@ config BUSYBOX_CONFIG_UNICODE_USING_LOCALE
 	help
 	  With this option on, Unicode support is implemented using libc
 	  routines. Otherwise, internal implementation is used.
+	  Internal implementation is smaller.
 
 config BUSYBOX_CONFIG_FEATURE_CHECK_UNICODE_IN_ENV
 	bool "Check $LANG environment variable"
@@ -262,15 +283,6 @@ config BUSYBOX_CONFIG_FEATURE_CLEAN_UP
 	  Don't enable this unless you have a really good reason to clean
 	  things up manually.
 
-config BUSYBOX_CONFIG_FEATURE_UTMP
-	bool "Support utmp file"
-	default n
-	help
-	  The file /var/run/utmp is used to track who is currently logged in.
-	  With this option on, certain applets (getty, login, telnetd etc)
-	  will create and delete entries there.
-	  "who" applet requires this option.
-
 config BUSYBOX_CONFIG_FEATURE_WTMP
 	bool "Support wtmp file"
 	default n
@@ -281,6 +293,15 @@ config BUSYBOX_CONFIG_FEATURE_WTMP
 	  With this option on, certain applets (getty, login, telnetd etc)
 	  will append new entries there.
 	  "last" applet requires this option.
+
+config BUSYBOX_CONFIG_FEATURE_UTMP
+	bool "Support utmp file"
+	default n
+	help
+	  The file /var/run/utmp is used to track who is currently logged in.
+	  With this option on, certain applets (getty, login, telnetd etc)
+	  will create and delete entries there.
+	  "who" applet requires this option.
 
 config BUSYBOX_CONFIG_FEATURE_PIDFILE
 	bool "Support writing pidfiles"
@@ -294,14 +315,19 @@ config BUSYBOX_CONFIG_FEATURE_SUID
 	default y
 	help
 	  With this option you can install the busybox binary belonging
-	  to root with the suid bit set, and it will automatically drop
-	  priviledges for applets that don't need root access.
+	  to root with the suid bit set, enabling some applets to perform
+	  root-level operations even when run by ordinary users
+	  (for example, mounting of user mounts in fstab needs this).
+
+	  Busybox will automatically drop priviledges for applets
+	  that don't need root access.
 
 	  If you are really paranoid and don't want to do this, build two
 	  busybox binaries with different applets in them (and the appropriate
 	  symlinks pointing to each binary), and only set the suid bit on the
-	  one that needs it. The applets currently marked to need the suid bit
-	  are:
+	  one that needs it.
+
+	  The applets currently marked to need the suid bit are:
 
 	  crontab, dnsd, findfs, ipcrm, ipcs, login, passwd, ping, su,
 	  traceroute, vlock.
@@ -351,6 +377,7 @@ config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG_QUIET
 config BUSYBOX_CONFIG_SELINUX
 	bool "Support NSA Security Enhanced Linux"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Enable support for SELinux in applets ls, ps, and id. Also provide
 	  the option of compiling in SELinux applets.
@@ -637,20 +664,13 @@ endchoice
 
 endmenu
 
-menu 'Installation Options'
-
-config BUSYBOX_CONFIG_INSTALL_NO_USR
-	bool "Don't use /usr"
-	default n
-	help
-	  Disable use of /usr. Don't activate this option if you don't know
-	  that you really want this behaviour.
+menu 'Installation Options ("make install" behavior)'
 
 choice
-	prompt "Applets links"
+	prompt "What kind of applet links to install"
 	default BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
 	help
-	  Choose how you install applets links.
+	  Choose what kind of links to applets are created by "make install".
 
 config BUSYBOX_CONFIG_INSTALL_APPLET_SYMLINKS
 	bool "as soft-links"
@@ -674,8 +694,9 @@ config BUSYBOX_CONFIG_INSTALL_APPLET_DONT
 	bool "not installed"
 	depends on BUSYBOX_CONFIG_FEATURE_INSTALLER || BUSYBOX_CONFIG_FEATURE_SH_STANDALONE || BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
 	help
-	  Do not install applet links. Useful when using the -install feature
-	  or a standalone shell for rescue purposes.
+	  Do not install applet links. Useful when you plan to use
+	  busybox --install for installing links, or plan to use
+	  a standalone shell and thus don't need applet links.
 
 endchoice
 
@@ -699,8 +720,8 @@ config BUSYBOX_CONFIG_INSTALL_SH_APPLET_HARDLINK
 config BUSYBOX_CONFIG_INSTALL_SH_APPLET_SCRIPT_WRAPPER
 	bool "as script wrapper"
 	help
-	  Install /bin/sh applet as script wrapper that call the busybox
-	  binary.
+	  Install /bin/sh applet as script wrapper that calls
+	  the busybox binary.
 
 endchoice
 

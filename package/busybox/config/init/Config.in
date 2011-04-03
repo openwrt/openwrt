@@ -43,7 +43,31 @@ config BUSYBOX_CONFIG_FEATURE_BOOTCHARTD_CONFIG_FILE
 	help
 	  Enable reading and parsing of $PWD/bootchartd.conf
 	  and /etc/bootchartd.conf files.
+config BUSYBOX_CONFIG_HALT
+	bool "poweroff, halt, and reboot"
+	default y
+	help
+	  Stop all processes and either halt, reboot, or power off the system.
 
+config BUSYBOX_CONFIG_FEATURE_CALL_TELINIT
+	bool "Call telinit on shutdown and reboot"
+	default n
+	depends on BUSYBOX_CONFIG_HALT && !BUSYBOX_CONFIG_INIT
+	help
+	  Call an external program (normally telinit) to facilitate
+	  a switch to a proper runlevel.
+
+	  This option is only available if you selected halt and friends,
+	  but did not select init.
+
+config BUSYBOX_CONFIG_TELINIT_PATH
+	string "Path to telinit executable"
+	default "/sbin/telinit"
+	depends on BUSYBOX_CONFIG_FEATURE_CALL_TELINIT
+	help
+	  When busybox halt and friends have to call external telinit
+	  to facilitate proper shutdown, this path is to be used when
+	  locating telinit executable.
 config BUSYBOX_CONFIG_INIT
 	bool "init"
 	default y
@@ -126,32 +150,17 @@ config BUSYBOX_CONFIG_FEATURE_INITRD
 	  This does not apply to initramfs, which runs /init as PID 1 and
 	  requires no special support.
 
-config BUSYBOX_CONFIG_HALT
-	bool "poweroff, halt, and reboot"
-	default y
+config BUSYBOX_CONFIG_INIT_TERMINAL_TYPE
+	string "Initial terminal type"
+	default "linux"
+	depends on BUSYBOX_CONFIG_INIT
 	help
-	  Stop all processes and either halt, reboot, or power off the system.
+	  This is the initial value set by init for the TERM environment
+	  variable. This variable is used by programs which make use of
+	  extended terminal capabilities.
 
-config BUSYBOX_CONFIG_FEATURE_CALL_TELINIT
-	bool "Call telinit on shutdown and reboot"
-	default n
-	depends on BUSYBOX_CONFIG_HALT && !BUSYBOX_CONFIG_INIT
-	help
-	  Call an external program (normally telinit) to facilitate
-	  a switch to a proper runlevel.
-
-	  This option is only available if you selected halt and friends,
-	  but did not select init.
-
-config BUSYBOX_CONFIG_TELINIT_PATH
-	string "Path to telinit executable"
-	default "/sbin/telinit"
-	depends on BUSYBOX_CONFIG_FEATURE_CALL_TELINIT
-	help
-	  When busybox halt and friends have to call external telinit
-	  to facilitate proper shutdown, this path is to be used when
-	  locating telinit executable.
-
+	  Note that on Linux, init attempts to detect serial terminal and
+	  sets TERM to "vt102" if one is found.
 config BUSYBOX_CONFIG_MESG
 	bool "mesg"
 	default y

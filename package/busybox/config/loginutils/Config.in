@@ -5,6 +5,18 @@
 
 menu "Login/Password Management Utilities"
 
+config BUSYBOX_CONFIG_ADD_SHELL
+       bool "add-shell"
+       default n if BUSYBOX_CONFIG_DESKTOP
+       help
+         Add shells to /etc/shells.
+
+config BUSYBOX_CONFIG_REMOVE_SHELL
+       bool "remove-shell"
+       default n if BUSYBOX_CONFIG_DESKTOP
+       help
+         Remove shells from /etc/shells.
+
 config BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
 	bool "Support for shadow passwords"
 	default n
@@ -91,6 +103,47 @@ config BUSYBOX_CONFIG_USE_BB_CRYPT_SHA
 	  With this option off, login will fail password check for any
 	  user which has password encrypted with these algorithms.
 
+config BUSYBOX_CONFIG_ADDUSER
+	bool "adduser"
+	default n
+	help
+	  Utility for creating a new user account.
+
+config BUSYBOX_CONFIG_FEATURE_ADDUSER_LONG_OPTIONS
+	bool "Enable long options"
+	default n
+	depends on BUSYBOX_CONFIG_ADDUSER && BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Support long options for the adduser applet.
+
+config BUSYBOX_CONFIG_FEATURE_CHECK_NAMES
+	bool "Enable sanity check on user/group names in adduser and addgroup"
+	default n
+	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
+	help
+	  Enable sanity check on user and group names in adduser and addgroup.
+	  To avoid problems, the user or group name should consist only of
+	  letters, digits, underscores, periods, at signs and dashes,
+	  and not start with a dash (as defined by IEEE Std 1003.1-2001).
+	  For compatibility with Samba machine accounts "$" is also supported
+	  at the end of the user or group name.
+
+config BUSYBOX_CONFIG_FIRST_SYSTEM_ID
+	int "First valid system uid or gid for adduser and addgroup"
+	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
+	range 0 64900
+	default 100
+	help
+	  First valid system uid or gid for adduser and addgroup
+
+config BUSYBOX_CONFIG_LAST_SYSTEM_ID
+	int "Last valid system uid or gid for adduser and addgroup"
+	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
+	range 0 64900
+	default 999
+	help
+	  Last valid system uid or gid for adduser and addgroup
+
 config BUSYBOX_CONFIG_ADDGROUP
 	bool "addgroup"
 	default n
@@ -113,6 +166,12 @@ config BUSYBOX_CONFIG_FEATURE_ADDUSER_TO_GROUP
 	  addgroup will add an existing user to an
 	  existing group.
 
+config BUSYBOX_CONFIG_DELUSER
+	bool "deluser"
+	default n
+	help
+	  Utility for deleting a user account.
+
 config BUSYBOX_CONFIG_DELGROUP
 	bool "delgroup"
 	default n
@@ -127,53 +186,6 @@ config BUSYBOX_CONFIG_FEATURE_DEL_USER_FROM_GROUP
 	  If called with two non-option arguments, deluser
 	  or delgroup will remove an user from a specified group.
 
-config BUSYBOX_CONFIG_FEATURE_CHECK_NAMES
-	bool "Enable sanity check on user/group names in adduser and addgroup"
-	default n
-	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
-	help
-	  Enable sanity check on user and group names in adduser and addgroup.
-	  To avoid problems, the user or group name should consist only of
-	  letters, digits, underscores, periods, at signs and dashes,
-	  and not start with a dash (as defined by IEEE Std 1003.1-2001).
-	  For compatibility with Samba machine accounts "$" is also supported
-	  at the end of the user or group name.
-
-config BUSYBOX_CONFIG_ADDUSER
-	bool "adduser"
-	default n
-	help
-	  Utility for creating a new user account.
-
-config BUSYBOX_CONFIG_FEATURE_ADDUSER_LONG_OPTIONS
-	bool "Enable long options"
-	default n
-	depends on BUSYBOX_CONFIG_ADDUSER && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	  Support long options for the adduser applet.
-
-config BUSYBOX_CONFIG_FIRST_SYSTEM_ID
-	int "First valid system uid or gid for adduser and addgroup"
-	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
-	range 0 64900
-	default 100
-	help
-	  First valid system uid or gid for adduser and addgroup
-
-config BUSYBOX_CONFIG_LAST_SYSTEM_ID
-	int "Last valid system uid or gid for adduser and addgroup"
-	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
-	range 0 64900
-	default 999
-	help
-	  Last valid system uid or gid for adduser and addgroup
-
-config BUSYBOX_CONFIG_DELUSER
-	bool "deluser"
-	default n
-	help
-	  Utility for deleting a user account.
-
 config BUSYBOX_CONFIG_GETTY
 	bool "getty"
 	default n
@@ -184,7 +196,6 @@ config BUSYBOX_CONFIG_GETTY
 config BUSYBOX_CONFIG_LOGIN
 	bool "login"
 	default n
-	select BUSYBOX_CONFIG_FEATURE_SUID
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  login is used when signing onto a system.
@@ -227,7 +238,6 @@ config BUSYBOX_CONFIG_FEATURE_SECURETTY
 config BUSYBOX_CONFIG_PASSWD
 	bool "passwd"
 	default y
-	select BUSYBOX_CONFIG_FEATURE_SUID
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  passwd changes passwords for user and group accounts. A normal user
@@ -263,7 +273,6 @@ config BUSYBOX_CONFIG_CHPASSWD
 config BUSYBOX_CONFIG_SU
 	bool "su"
 	default n
-	select BUSYBOX_CONFIG_FEATURE_SUID
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  su is used to become another user during a login session.
@@ -293,7 +302,6 @@ config BUSYBOX_CONFIG_SULOGIN
 config BUSYBOX_CONFIG_VLOCK
 	bool "vlock"
 	default n
-	select BUSYBOX_CONFIG_FEATURE_SUID
 	help
 	  Build the "vlock" applet which allows you to lock (virtual) terminals.
 

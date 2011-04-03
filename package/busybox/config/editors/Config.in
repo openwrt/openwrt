@@ -5,6 +5,12 @@
 
 menu "Editors"
 
+config BUSYBOX_CONFIG_PATCH
+	bool "patch"
+	default n
+	help
+	  Apply a unified diff formatted patch.
+
 config BUSYBOX_CONFIG_AWK
 	bool "awk"
 	default y
@@ -57,12 +63,6 @@ config BUSYBOX_CONFIG_ED
 	  The original 1970's Unix text editor, from the days of teletypes.
 	  Small, simple, evil. Part of SUSv3. If you're not already using
 	  this, you don't need it.
-
-config BUSYBOX_CONFIG_PATCH
-	bool "patch"
-	default n
-	help
-	  Apply a unified diff formatted patch.
 
 config BUSYBOX_CONFIG_SED
 	bool "sed"

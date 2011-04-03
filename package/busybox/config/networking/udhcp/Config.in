@@ -1,11 +1,15 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
 #
 
+
+
 config BUSYBOX_CONFIG_UDHCPD
 	bool "udhcp server (udhcpd)"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  udhcpd is a DHCP server geared primarily toward embedded systems,
 	  while striving to be fully functional and RFC compliant.
@@ -49,6 +53,7 @@ config BUSYBOX_CONFIG_DHCPD_LEASES_FILE
 config BUSYBOX_CONFIG_UDHCPC
 	bool "udhcp client (udhcpc)"
 	default y
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  udhcpc is a DHCP client geared primarily toward embedded systems,
 	  while striving to be fully functional and RFC compliant.

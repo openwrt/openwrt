@@ -5,6 +5,11 @@
 
 menu "Linux System Utilities"
 
+config BUSYBOX_CONFIG_BLOCKDEV
+	bool "blockdev"
+	default n
+	help
+	  Performs some ioctls with block devices.
 config BUSYBOX_CONFIG_REV
 	bool "rev"
 	default n
@@ -14,6 +19,7 @@ config BUSYBOX_CONFIG_REV
 config BUSYBOX_CONFIG_ACPID
 	bool "acpid"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  acpid listens to ACPI events coming either in textual form from
 	  /proc/acpi/event (though it is marked deprecated it is still widely
@@ -36,6 +42,7 @@ config BUSYBOX_CONFIG_FEATURE_ACPID_COMPAT
 config BUSYBOX_CONFIG_BLKID
 	bool "blkid"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	select BUSYBOX_CONFIG_VOLUMEID
 	help
 	  Lists labels and UUIDs of all filesystems.
@@ -45,6 +52,7 @@ config BUSYBOX_CONFIG_BLKID
 config BUSYBOX_CONFIG_DMESG
 	bool "dmesg"
 	default y
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  dmesg is used to examine or control the kernel ring buffer. When the
 	  Linux kernel prints messages to the system log, they are stored in
@@ -78,6 +86,7 @@ config BUSYBOX_CONFIG_FEATURE_DMESG_PRETTY
 config BUSYBOX_CONFIG_FBSET
 	bool "fbset"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  fbset is used to show or change the settings of a Linux frame buffer
 	  device. The frame buffer device provides a simple and unique
@@ -106,6 +115,7 @@ config BUSYBOX_CONFIG_FEATURE_FBSET_READMODE
 config BUSYBOX_CONFIG_FDFLUSH
 	bool "fdflush"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  fdflush is only needed when changing media on slightly-broken
 	  removable media drives. It is used to make Linux believe that a
@@ -118,12 +128,14 @@ config BUSYBOX_CONFIG_FDFLUSH
 config BUSYBOX_CONFIG_FDFORMAT
 	bool "fdformat"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  fdformat is used to low-level format a floppy disk.
 
 config BUSYBOX_CONFIG_FDISK
 	bool "fdisk"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The fdisk utility is used to divide hard disks into one or more
 	  logical disks, which are generally called partitions. This utility
@@ -178,6 +190,14 @@ config BUSYBOX_CONFIG_FEATURE_OSF_LABEL
 	  Enabling this option allows you to create or change BSD disklabels
 	  and define and edit BSD disk slices.
 
+config BUSYBOX_CONFIG_FEATURE_GPT_LABEL
+	bool "Support GPT disklabels"
+	default n
+	depends on BUSYBOX_CONFIG_FDISK && BUSYBOX_CONFIG_FEATURE_FDISK_WRITABLE
+	help
+	  Enabling this option allows you to view GUID Partition Table
+	  disklabels.
+
 config BUSYBOX_CONFIG_FEATURE_FDISK_ADVANCED
 	bool "Support expert mode"
 	default n
@@ -191,6 +211,7 @@ config BUSYBOX_CONFIG_FEATURE_FDISK_ADVANCED
 config BUSYBOX_CONFIG_FINDFS
 	bool "findfs"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	select BUSYBOX_CONFIG_VOLUMEID
 	help
 	  Prints the name of a filesystem with given label or UUID.
@@ -206,6 +227,7 @@ config BUSYBOX_CONFIG_FLOCK
 config BUSYBOX_CONFIG_FREERAMDISK
 	bool "freeramdisk"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Linux allows you to create ramdisks. This utility allows you to
 	  delete them and completely free all memory that was used for the
@@ -228,12 +250,14 @@ config BUSYBOX_CONFIG_FSCK_MINIX
 config BUSYBOX_CONFIG_MKFS_EXT2
 	bool "mkfs_ext2"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Utility to create EXT2 filesystems.
 
 config BUSYBOX_CONFIG_MKFS_MINIX
 	bool "mkfs_minix"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The minix filesystem is a nice, small, compact, read-write filesystem
 	  with little overhead. If you wish to be able to create minix
@@ -251,6 +275,7 @@ config BUSYBOX_CONFIG_FEATURE_MINIX2
 config BUSYBOX_CONFIG_MKFS_REISER
 	bool "mkfs_reiser"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Utility to create ReiserFS filesystems.
 	  Note: this applet needs a lot of testing and polishing.
@@ -258,6 +283,7 @@ config BUSYBOX_CONFIG_MKFS_REISER
 config BUSYBOX_CONFIG_MKFS_VFAT
 	bool "mkfs_vfat"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Utility to create FAT32 filesystems.
 
@@ -306,6 +332,7 @@ config BUSYBOX_CONFIG_HD
 config BUSYBOX_CONFIG_HWCLOCK
 	bool "hwclock"
 	default y
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The hwclock utility is used to read and set the hardware clock
 	  on a system. This is primarily used to set the current time on
@@ -336,7 +363,6 @@ config BUSYBOX_CONFIG_FEATURE_HWCLOCK_ADJTIME_FHS
 config BUSYBOX_CONFIG_IPCRM
 	bool "ipcrm"
 	default n
-	select BUSYBOX_CONFIG_FEATURE_SUID
 	help
 	  The ipcrm utility allows the removal of System V interprocess
 	  communication (IPC) objects and the associated data structures
@@ -345,7 +371,7 @@ config BUSYBOX_CONFIG_IPCRM
 config BUSYBOX_CONFIG_IPCS
 	bool "ipcs"
 	default n
-	select BUSYBOX_CONFIG_FEATURE_SUID
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The ipcs utility is used to provide information on the currently
 	  allocated System V interprocess (IPC) objects in the system.
@@ -353,6 +379,7 @@ config BUSYBOX_CONFIG_IPCS
 config BUSYBOX_CONFIG_LOSETUP
 	bool "losetup"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  losetup is used to associate or detach a loop device with a regular
 	  file or block device, and to query the status of a loop device. This
@@ -379,6 +406,7 @@ config BUSYBOX_CONFIG_LSUSB
 config BUSYBOX_CONFIG_MDEV
 	bool "mdev"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  mdev is a mini-udev implementation for dynamically creating device
 	  nodes in the /dev directory.
@@ -463,20 +491,10 @@ config BUSYBOX_CONFIG_MORE
 	  you will probably find this utility very helpful. If you don't have
 	  any need to reading text files, you can leave this disabled.
 
-config BUSYBOX_CONFIG_FEATURE_USE_TERMIOS
-	bool "Use termios to manipulate the screen"
-	default n
-	depends on BUSYBOX_CONFIG_MORE || BUSYBOX_CONFIG_TOP
-	help
-	  This option allows utilities such as 'more' and 'top' to determine
-	  the size of the screen. If you leave this disabled, your utilities
-	  that display things on the screen will be especially primitive and
-	  will be unable to determine the current screen size, and will be
-	  unable to move the cursor.
-
 config BUSYBOX_CONFIG_MOUNT
 	bool "mount"
 	default y
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  All files and filesystems in Unix are arranged into one big directory
 	  tree. The 'mount' utility is used to graft a filesystem onto a
@@ -559,6 +577,7 @@ config BUSYBOX_CONFIG_FEATURE_MOUNT_FSTAB
 config BUSYBOX_CONFIG_PIVOT_ROOT
 	bool "pivot_root"
 	default y
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The pivot_root utility swaps the mount points for the root filesystem
 	  with some other mounted filesystem. This allows you to do all sorts
@@ -592,6 +611,7 @@ config BUSYBOX_CONFIG_READPROFILE
 config BUSYBOX_CONFIG_RTCWAKE
 	bool "rtcwake"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Enter a system sleep state until specified wakeup time.
 
@@ -611,6 +631,7 @@ config BUSYBOX_CONFIG_SCRIPTREPLAY
 config BUSYBOX_CONFIG_SETARCH
 	bool "setarch"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The linux32 utility is used to create a 32bit environment for the
 	  specified program (usually a shell). It only makes sense to have
@@ -620,6 +641,7 @@ config BUSYBOX_CONFIG_SETARCH
 config BUSYBOX_CONFIG_SWAPONOFF
 	bool "swaponoff"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This option enables both the 'swapon' and the 'swapoff' utilities.
 	  Once you have created some swap space using 'mkswap', you also need
@@ -638,6 +660,7 @@ config BUSYBOX_CONFIG_FEATURE_SWAPON_PRI
 config BUSYBOX_CONFIG_SWITCH_ROOT
 	bool "switch_root"
 	default y
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The switch_root utility is used from initramfs to select a new
 	  root device. Under initramfs, you have to use this instead of
@@ -657,6 +680,7 @@ config BUSYBOX_CONFIG_SWITCH_ROOT
 config BUSYBOX_CONFIG_UMOUNT
 	bool "umount"
 	default y
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  When you want to remove a mounted filesystem from its current mount
 	  point, for example when you are shutting down the system, the
@@ -777,7 +801,7 @@ config BUSYBOX_CONFIG_FEATURE_VOLUMEID_JFS
 
 ### config FEATURE_VOLUMEID_UFS
 ###	bool "ufs filesystem"
-###	default y
+###	default n
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
