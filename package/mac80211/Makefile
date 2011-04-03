@@ -362,7 +362,7 @@ endef
 
 define KernelPackage/rtl8187
 $(call KernelPackage/rtl818x/Default)
-  DEPENDS+= @USB_SUPPORT
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core
   TITLE+= (RTL8187 USB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8187/rtl8187.ko
   AUTOLOAD:=$(call AutoLoad,27,rtl8187)
