@@ -30,7 +30,7 @@ IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
 define BuildIPKGVariable
 ifdef Package/$(1)/$(2)
   $(call shexport,Package/$(1)/$(2))
-  $(1)_COMMANDS += $(SH_FUNC) var2file "$(call shvar,Package/$(1)/$(2))" $(2);
+  $(1)_COMMANDS += var2file "$(call shvar,Package/$(1)/$(2))" $(2);
 endif
 endef
 
@@ -113,7 +113,7 @@ ifeq ($(DUMP),)
 		echo -n "Description: "; $(SH_FUNC) getvar $(call shvar,Package/$(1)/description) | sed -e 's,^[[:space:]]*, ,g'; \
  	) > $$(IDIR_$(1))/CONTROL/control
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
-	(cd $$(IDIR_$(1))/CONTROL; \
+	$(SH_FUNC) (cd $$(IDIR_$(1))/CONTROL; \
 		$($(1)_COMMANDS) \
 	)
 
