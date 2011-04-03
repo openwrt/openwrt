@@ -854,6 +854,20 @@ endef
 
 $(eval $(call KernelPackage,usb-net-rndis))
 
+define KernelPackage/usb-net-sierrawireless
+  TITLE:=Support for Sierra Wireless devices
+  KCONFIG:=CONFIG_USB_SIERRA_NET
+  FILES:=$(LINUX_DIR)/drivers/net/usb/sierra_net.ko
+  AUTOLOAD:=$(call AutoLoad,65,sierra_net)
+  $(call AddDepends/usb-net)
+endef
+
+define KernelPackage/usb-net-sierrawireless/description
+ Kernel support for Sierra Wireless devices
+endef
+
+$(eval $(call KernelPackage,usb-net-sierrawireless))
+
 
 define KernelPackage/usb-hid
   TITLE:=Support for USB Human Input Devices
