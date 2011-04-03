@@ -42,6 +42,14 @@ ifneq ($(CONFIG_JFFS2_LZMA),y)
   JFFS2OPTS += -x lzma
 endif
 
+LZMA_XZ_OPTIONS := -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2
+ifeq ($(CONFIG_SQUASHFS_LZMA),y)
+  SQUASHFSCOMP := lzma $(LZMA_XZ_OPTIONS)
+endif
+ifeq ($(CONFIG_SQUASHFS_XZ),y)
+  SQUASHFSCOMP := xz $(LZMA_XZ_OPTIONS)
+endif
+
 JFFS2_BLOCKSIZE ?= 64k 128k
 
 define add_jffs2_mark
@@ -86,7 +94,7 @@ else
   ifneq ($(CONFIG_TARGET_ROOTFS_SQUASHFS),)
     define Image/mkfs/squashfs
 		@mkdir -p $(TARGET_DIR)/overlay
-		$(STAGING_DIR_HOST)/bin/mksquashfs4 $(TARGET_DIR) $(KDIR)/root.squashfs -nopad -noappend -root-owned -comp lzma -processors 1
+		$(STAGING_DIR_HOST)/bin/mksquashfs4 $(TARGET_DIR) $(KDIR)/root.squashfs -nopad -noappend -root-owned -comp $(SQUASHFSCOMP) -processors 1
 		$(call Image/Build,squashfs)
     endef
   endif
