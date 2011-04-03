@@ -25,7 +25,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2780,9 +2791,6 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -2780,10 +2791,7 @@ int shmem_zero_setup(struct vm_area_stru
  	if (IS_ERR(file))
  		return PTR_ERR(file);
  
@@ -34,6 +34,7 @@
 -	vma->vm_file = file;
 -	vma->vm_ops = &shmem_vm_ops;
 +	shmem_set_file(vma, file);
+ 	vma->vm_flags |= VM_CAN_NONLINEAR;
  	return 0;
  }
 --- a/fs/file.c

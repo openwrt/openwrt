@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -538,9 +538,9 @@
+@@ -538,9 +538,9 @@ endif # $(dot-config)
  all: vmlinux
  
  ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
@@ -12,7 +12,7 @@
  endif
  
  include $(srctree)/arch/$(SRCARCH)/Makefile
-@@ -595,6 +595,9 @@
+@@ -595,6 +595,9 @@ endif
  NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
  CHECKFLAGS     += $(NOSTDINC_FLAGS)
  
