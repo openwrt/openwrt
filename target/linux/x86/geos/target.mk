@@ -1,6 +1,6 @@
 BOARDNAME:=Traverse Geos
 FEATURES:=squashfs jffs2 ext4 pci usb gpio
-GEOS_GPIO = $(if $(findstring 1,$(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.38)),gpio-cs5535-new,gpio-cs5535)
+GEOS_GPIO = $(if $(findstring 2.6.32,$(LINUX_VERSION)),gpio-cs5535,gpio-cs5535-new)
 DEFAULT_PACKAGES += kmod-ata-via-sata \
             kmod-crypto-hw-geode kmod-crypto-ocf \
             kmod-$(GEOS_GPIO) kmod-gpio-nsc \
