@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=realview
 BOARDNAME:=ARM Ltd. Realview board (qemu)
-FEATURES:=squashfs jffs2 fpu
+FEATURES:=fpu ramdisk
 CFLAGS:=-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves
 
 LINUX_VERSION:=2.6.37.6
