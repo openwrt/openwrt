@@ -186,11 +186,11 @@ prepare_interface() {
 					config_get_bool stp "$config" stp 0
 					$DEBUG brctl addbr "br-$config"
 					$DEBUG brctl setfd "br-$config" 0
-					$DEBUG ifconfig "br-$config" up
 					$DEBUG ifconfig "$iface" 0.0.0.0
 					$DEBUG do_sysctl "net.ipv6.conf.$iface.disable_ipv6" 1
 					$DEBUG brctl addif "br-$config" "$iface"
 					$DEBUG brctl stp "br-$config" $stp
+					$DEBUG ifconfig "br-$config" up
 					# Creating the bridge here will have triggered a hotplug event, which will
 					# result in another setup_interface() call, so we simply stop processing
 					# the current event at this point.
