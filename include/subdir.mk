@@ -5,7 +5,12 @@
 # See /LICENSE for more information.
 #
 
-SUBTARGETS:=clean download prepare compile install update refresh prereq dist distcheck configure
+ifeq ($(MAKECMDGOALS),prereq)
+  SUBTARGETS:=prereq
+  PREREQ_ONLY:=1
+else
+  SUBTARGETS:=clean download prepare compile install update refresh prereq dist distcheck configure
+endif
 
 subtarget-default = $(filter-out ., \
 	$(if $($(1)/builddirs-$(2)),$($(1)/builddirs-$(2)), \
@@ -37,7 +42,7 @@ define subdir
         $(foreach variant,$(if $(BUILD_VARIANT),$(BUILD_VARIANT),$(if $(strip $($(1)/$(bd)/variants)),$($(1)/$(bd)/variants),$(if $($(1)/$(bd)/default-variant),$($(1)/$(bd)/default-variant),__default))),
 			$(if $(call debug,$(1)/$(bd),v),,@)+$(if $(BUILD_LOG),set -o pipefail;) $$(SUBMAKE) -C $(1)/$(bd) $(target) BUILD_VARIANT="$(filter-out __default,$(variant))" $(if $(BUILD_LOG),SILENT= 2>&1 | tee $(BUILD_LOG_DIR)/$(1)/$(bd)/$(target).txt) $(if $(findstring $(bd),$($(1)/builddirs-ignore-$(target))), || $(call MESSAGE,   ERROR: $(1)/$(bd) failed to build$(if $(filter-out __default,$(variant)), (build variant: $(variant))).))
         )
-      $(if $(DUMP_TARGET_DB),,
+      $(if $(PREREQ_ONLY)$(DUMP_TARGET_DB),,
         # legacy targets
         $(call warn_eval,$(1)/$(bd),l,T,$(1)/$(bd)-$(target): $(1)/$(bd)/$(target))
         # aliases
