@@ -28,8 +28,10 @@ IPKG_BUILD:= \
 IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
 
 define BuildIPKGVariable
+ifdef Package/$(1)/$(2)
   $(call shexport,Package/$(1)/$(2))
   $(1)_COMMANDS += $(SH_FUNC) var2file "$(call shvar,Package/$(1)/$(2))" $(2);
+endif
 endef
 
 PARENL :=(
