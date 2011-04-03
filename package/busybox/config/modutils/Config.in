@@ -1,9 +1,11 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
 #
 
 menu "Linux Module Utilities"
+depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 
 config BUSYBOX_CONFIG_MODINFO
 	bool "modinfo"

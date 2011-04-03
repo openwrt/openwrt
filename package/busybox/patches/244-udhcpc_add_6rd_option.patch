@@ -1,24 +1,26 @@
+diff --git a/networking/udhcp/common.c b/networking/udhcp/common.c
+index 0a60261..eaf2b4b 100644
 --- a/networking/udhcp/common.c
 +++ b/networking/udhcp/common.c
-@@ -54,6 +54,8 @@ const struct dhcp_optflag dhcp_optflags[
- 	{ OPTION_SIP_SERVERS                      , 0x78 }, /* DHCP_SIP_SERVERS   */
+@@ -56,6 +56,8 @@ const struct dhcp_optflag dhcp_optflags[] = {
  #endif
  	{ OPTION_STATIC_ROUTES                    , 0x79 }, /* DHCP_STATIC_ROUTES */
+ 	{ OPTION_STATIC_ROUTES                    , 0xf9 }, /* DHCP_MS_STATIC_ROUTES */
 +	{ OPTION_6RD                              , 0xd4 }, /* DHCP_6RD (RFC)     */
 +	{ OPTION_6RD                              , 0x96 }, /* DHCP_6RD (Comcast) */
  	{ OPTION_STRING                           , 0xfc }, /* DHCP_WPAD          */
  
  	/* Options below have no match in dhcp_option_strings[],
-@@ -114,6 +116,8 @@ const char dhcp_option_strings[] ALIGN1 
+@@ -118,6 +120,8 @@ const char dhcp_option_strings[] ALIGN1 =
  // doesn't work in udhcpd.conf since OPTION_STATIC_ROUTES
  // is not handled yet by "string->option" conversion code:
  	"staticroutes" "\0"/* DHCP_STATIC_ROUTES  */
 +	"ip6rd" "\0"       /* DHCP_6RD (RFC)      */
 +	"ip6rd" "\0"       /* DHCP_6RD (Comcast)  */
+ 	"msstaticroutes""\0"/* DHCP_MS_STATIC_ROUTES */
  	"wpad" "\0"        /* DHCP_WPAD           */
  	;
- 
-@@ -141,6 +145,7 @@ const uint8_t dhcp_option_lengths[] ALIG
+@@ -146,6 +150,7 @@ const uint8_t dhcp_option_lengths[] ALIGN1 = {
  	[OPTION_S32] =     4,
  	/* Just like OPTION_STRING, we use minimum length here */
  	[OPTION_STATIC_ROUTES] = 5,
@@ -26,9 +28,23 @@
  };
  
  
+diff --git a/networking/udhcp/common.h b/networking/udhcp/common.h
+index f8f18ff..56cd8b0 100644
+--- a/networking/udhcp/common.h
++++ b/networking/udhcp/common.h
+@@ -88,6 +88,7 @@ enum {
+ 	OPTION_S32,
+ 	OPTION_BIN,
+ 	OPTION_STATIC_ROUTES,
++	OPTION_6RD,
+ #if ENABLE_FEATURE_UDHCP_RFC3397
+ 	OPTION_DNS_STRING,  /* RFC1035 compressed domain name list */
+ 	OPTION_SIP_SERVERS,
+diff --git a/networking/udhcp/dhcpc.c b/networking/udhcp/dhcpc.c
+index 78aabed..993326f 100644
 --- a/networking/udhcp/dhcpc.c
 +++ b/networking/udhcp/dhcpc.c
-@@ -45,6 +45,7 @@ static const uint8_t len_of_option_as_st
+@@ -45,6 +45,7 @@ static const uint8_t len_of_option_as_string[] = {
  	[OPTION_IP              ] = sizeof("255.255.255.255 "),
  	[OPTION_IP_PAIR         ] = sizeof("255.255.255.255 ") * 2,
  	[OPTION_STATIC_ROUTES   ] = sizeof("255.255.255.255/32 255.255.255.255 "),
@@ -36,7 +52,7 @@
  	[OPTION_STRING          ] = 1,
  #if ENABLE_FEATURE_UDHCP_RFC3397
  	[OPTION_DNS_STRING      ] = 1, /* unused */
-@@ -68,6 +69,23 @@ static int sprint_nip(char *dest, const 
+@@ -68,6 +69,23 @@ static int sprint_nip(char *dest, const char *pre, const uint8_t *ip)
  	return sprintf(dest, "%s%u.%u.%u.%u", pre, ip[0], ip[1], ip[2], ip[3]);
  }
  
@@ -60,7 +76,7 @@
  /* really simple implementation, just count the bits */
  static int mton(uint32_t mask)
  {
-@@ -177,6 +195,70 @@ static NOINLINE char *xmalloc_optname_op
+@@ -177,6 +195,70 @@ static NOINLINE char *xmalloc_optname_optval(uint8_t *option, const struct dhcp_
  
  			return ret;
  		}
@@ -131,13 +147,3 @@
  #if ENABLE_FEATURE_UDHCP_RFC3397
  		case OPTION_DNS_STRING:
  			/* unpack option into dest; use ret for prefix (i.e., "optname=") */
---- a/networking/udhcp/common.h
-+++ b/networking/udhcp/common.h
-@@ -88,6 +88,7 @@ enum {
- 	OPTION_S32,
- 	OPTION_BIN,
- 	OPTION_STATIC_ROUTES,
-+	OPTION_6RD,
- #if ENABLE_FEATURE_UDHCP_RFC3397
- 	OPTION_DNS_STRING,  /* RFC1035 compressed domain name list */
- 	OPTION_SIP_SERVERS,

@@ -5,9 +5,12 @@
 
 menu "Console Utilities"
 
+
+
 config BUSYBOX_CONFIG_CHVT
 	bool "chvt"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program is used to change to another terminal.
 	  Example: chvt 4 (change to terminal /dev/tty4)
@@ -15,6 +18,7 @@ config BUSYBOX_CONFIG_CHVT
 config BUSYBOX_CONFIG_FGCONSOLE
 	bool "fgconsole"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program prints active (foreground) console number.
 
@@ -27,12 +31,14 @@ config BUSYBOX_CONFIG_CLEAR
 config BUSYBOX_CONFIG_DEALLOCVT
 	bool "deallocvt"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program deallocates unused virtual consoles.
 
 config BUSYBOX_CONFIG_DUMPKMAP
 	bool "dumpkmap"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program dumps the kernel's keyboard translation table to
 	  stdout, in binary format. You can then use loadkmap to load it.
@@ -40,18 +46,21 @@ config BUSYBOX_CONFIG_DUMPKMAP
 config BUSYBOX_CONFIG_KBD_MODE
 	bool "kbd_mode"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program reports and sets keyboard mode.
 
 config BUSYBOX_CONFIG_LOADFONT
 	bool "loadfont"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program loads a console font from standard input.
 
 config BUSYBOX_CONFIG_LOADKMAP
 	bool "loadkmap"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program loads a keyboard translation table from
 	  standard input.
@@ -59,6 +68,7 @@ config BUSYBOX_CONFIG_LOADKMAP
 config BUSYBOX_CONFIG_OPENVT
 	bool "openvt"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program is used to start a command on an unused
 	  virtual terminal.
@@ -90,6 +100,7 @@ config BUSYBOX_CONFIG_FEATURE_RESIZE_PRINT
 config BUSYBOX_CONFIG_SETCONSOLE
 	bool "setconsole"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program redirects the system console to another device,
 	  like the current tty while logged in via telnet.
@@ -104,6 +115,7 @@ config BUSYBOX_CONFIG_FEATURE_SETCONSOLE_LONG_OPTIONS
 config BUSYBOX_CONFIG_SETFONT
 	bool "setfont"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Allows to load console screen map. Useful for i18n.
 
@@ -125,6 +137,7 @@ config BUSYBOX_CONFIG_DEFAULT_SETFONT_DIR
 config BUSYBOX_CONFIG_SETKEYCODES
 	bool "setkeycodes"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program loads entries into the kernel's scancode-to-keycode
 	  map, allowing unusual keyboards to generate usable keycodes.
@@ -132,12 +145,14 @@ config BUSYBOX_CONFIG_SETKEYCODES
 config BUSYBOX_CONFIG_SETLOGCONS
 	bool "setlogcons"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  This program redirects the output console of kernel messages.
 
 config BUSYBOX_CONFIG_SHOWKEY
 	bool "showkey"
 	default n
+	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Shows keys pressed.
 

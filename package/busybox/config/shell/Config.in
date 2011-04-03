@@ -5,8 +5,6 @@
 
 menu "Shells"
 
-
-
 config BUSYBOX_CONFIG_ASH
 	bool "ash"
 	default y
@@ -110,19 +108,55 @@ config BUSYBOX_CONFIG_ASH_EXPAND_PRMT
 	  This option recreates the prompt string from the environment
 	  variable each time it is displayed.
 
+config BUSYBOX_CONFIG_CTTYHACK
+	bool "cttyhack"
+	default n
+	help
+	  One common problem reported on the mailing list is "can't access tty;
+	  job control turned off" error message which typically appears when
+	  one tries to use shell with stdin/stdout opened to /dev/console.
+	  This device is special - it cannot be a controlling tty.
+
+	  Proper solution is to use correct device instead of /dev/console.
+
+	  cttyhack provides "quick and dirty" solution to this problem.
+	  It analyzes stdin with various ioctls, trying to determine whether
+	  it is a /dev/ttyN or /dev/ttySN (virtual terminal or serial line).
+	  If it detects one, it closes stdin/out/err and reopens that device.
+	  Then it executes given program. Opening the device will make
+	  that device a controlling tty. This may require cttyhack
+	  to be a session leader.
+
+	  Example for /etc/inittab (for busybox init):
+
+	  ::respawn:/bin/cttyhack /bin/sh
+
+	  Starting an interactive shell from boot shell script:
+
+	  setsid cttyhack sh
+
+	  Giving controlling tty to shell running with PID 1:
+
+	  # exec cttyhack sh
+
+	  Without cttyhack, you need to know exact tty name,
+	  and do something like this:
+
+	  # exec setsid sh -c 'exec sh </dev/tty1 >/dev/tty1 2>&1'
+
 config BUSYBOX_CONFIG_HUSH
 	bool "hush"
 	default n
 	help
-	  hush is a small shell (22k). It handles the normal flow control
+	  hush is a small shell (25k). It handles the normal flow control
 	  constructs such as if/then/elif/else/fi, for/in/do/done, while loops,
 	  case/esac. Redirections, here documents, $((arithmetic))
 	  and functions are supported.
 
 	  It will compile and work on no-mmu systems.
 
-	  It does not handle select, aliases, brace expansion,
-	  tilde expansion, &>file and >&file redirection of stdout+stderr.
+	  It does not handle select, aliases, tilde expansion,
+	  &>file and >&file redirection of stdout+stderr.
 
 config BUSYBOX_CONFIG_HUSH_BASH_COMPAT
 	bool "bash-compatible extensions"
@@ -130,6 +164,13 @@ config BUSYBOX_CONFIG_HUSH_BASH_COMPAT
 	depends on BUSYBOX_CONFIG_HUSH
 	help
 	  Enable bash-compatible extensions.
+
+config BUSYBOX_CONFIG_HUSH_BRACE_EXPANSION
+	bool "Brace expansion"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH_BASH_COMPAT
+	help
+	  Enable {abc,def} extension.
 
 config BUSYBOX_CONFIG_HUSH_HELP
 	bool "help builtin"
@@ -147,6 +188,13 @@ config BUSYBOX_CONFIG_HUSH_INTERACTIVE
 	  Without this, hush simply reads and executes commands
 	  from stdin just like a shell script from a file.
 	  No prompt, no PS1/PS2 magic shell variables.
+
+config BUSYBOX_CONFIG_HUSH_SAVEHISTORY
+	bool "Save command history to .hush_history"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH_INTERACTIVE && BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
+	help
+	  Enable history saving in hush.
 
 config BUSYBOX_CONFIG_HUSH_JOB
 	bool "Job control"
@@ -201,13 +249,6 @@ config BUSYBOX_CONFIG_HUSH_LOCAL
 	help
 	  Enable support for local variables in functions.
 
-config BUSYBOX_CONFIG_HUSH_EXPORT_N
-	bool "Support export '-n' option"
-	default y
-	depends on BUSYBOX_CONFIG_HUSH
-	help
-	  Enable support for export '-n' option in hush. It is a bash extension.
-
 config BUSYBOX_CONFIG_HUSH_RANDOM_SUPPORT
 	bool "Pseudorandom generator and $RANDOM variable"
 	default n
@@ -215,6 +256,28 @@ config BUSYBOX_CONFIG_HUSH_RANDOM_SUPPORT
 	help
 	  Enable pseudorandom generator and dynamic variable "$RANDOM".
 	  Each read of "$RANDOM" will generate a new pseudorandom value.
+
+config BUSYBOX_CONFIG_HUSH_EXPORT_N
+	bool "Support 'export -n' option"
+	default y
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  export -n unexports variables. It is a bash extension.
+
+config BUSYBOX_CONFIG_HUSH_MODE_X
+	bool "Support 'hush -x' option and 'set -x' command"
+	default n
+	depends on BUSYBOX_CONFIG_HUSH
+	help
+	  This instructs hush to print commands before execution.
+	  Adds ~300 bytes.
+
+config BUSYBOX_CONFIG_MSH
+	bool "msh (deprecated: aliased to hush)"
+	default n
+	select BUSYBOX_CONFIG_HUSH
+	help
+	  msh is deprecated and will be removed, please migrate to hush.
 
 
 choice
@@ -269,29 +332,6 @@ config BUSYBOX_CONFIG_FEATURE_BASH_IS_NONE
 	bool "none"
 
 endchoice
-
-
-config BUSYBOX_CONFIG_LASH
-	bool "lash (deprecated: aliased to hush)"
-	default n
-	select BUSYBOX_CONFIG_HUSH
-	help
-	  lash is deprecated and will be removed, please migrate to hush.
-
-config BUSYBOX_CONFIG_MSH
-	bool "msh (deprecated: please use hush)"
-	default n
-	select BUSYBOX_CONFIG_HUSH
-	help
-	  msh is deprecated and will be removed, please migrate to hush.
-	  If there is a feature msh has but hush does not, please let us know.
-
-#	  The minix shell (adds just 30k) is quite complete and handles things
-#	  like for/do/done, case/esac and all the things you expect a Bourne
-#	  shell to do. It is not always pedantically correct about Bourne
-#	  shell grammar (try running the shell testscript "tests/sh.testcases"
-#	  on it and compare vs bash) but for most things it works quite well.
-#	  It uses only vfork, so it can be used on uClinux systems.
 
 
 config BUSYBOX_CONFIG_SH_MATH_SUPPORT
@@ -366,36 +406,5 @@ config BUSYBOX_CONFIG_FEATURE_SH_NOFORK
 	  This may significantly speed up some shell scripts.
 
 	  This feature is relatively new. Use with care.
-
-config BUSYBOX_CONFIG_CTTYHACK
-	bool "cttyhack"
-	default n
-	help
-	  One common problem reported on the mailing list is "can't access tty;
-	  job control turned off" error message which typically appears when
-	  one tries to use shell with stdin/stdout opened to /dev/console.
-	  This device is special - it cannot be a controlling tty.
-
-	  Proper solution is to use correct device instead of /dev/console.
-
-	  cttyhack provides "quick and dirty" solution to this problem.
-	  It analyzes stdin with various ioctls, trying to determine whether
-	  it is a /dev/ttyN or /dev/ttySN (virtual terminal or serial line).
-	  If it detects one, it closes stdin/out/err and reopens that device.
-	  Then it executes given program. Opening the device will make
-	  that device a controlling tty. This may require cttyhack
-	  to be a session leader.
-
-	  Example for /etc/inittab (for busybox init):
-
-	  ::respawn:/bin/cttyhack /bin/sh
-
-	  Giving controlling tty to shell running with PID 1:
-
-	  $ exec cttyhack sh
-
-	  Starting an interactive shell from boot shell script:
-
-	  setsid cttyhack sh
 
 endmenu
