@@ -37,7 +37,7 @@ define Package/busybox
   MAINTAINER:=Nicolas Thill <nico@openwrt.org>
   TITLE:=Core utilities for embedded Linux
   URL:=http://busybox.net/
-  DEPENDS:=+BUSYBOX_CONFIG_FEATURE_HAVE_RPC&&USE_UCLIBC:librpc
+  DEPENDS:=+BUSYBOX_USE_LIBRPC:librpc
   MENU:=1
 endef
 
