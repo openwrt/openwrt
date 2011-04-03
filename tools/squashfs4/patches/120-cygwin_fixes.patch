@@ -1,20 +1,6 @@
---- a/squashfs-tools/global.h
-+++ b/squashfs-tools/global.h
-@@ -44,6 +44,11 @@ typedef long long squashfs_fragment_inde
- typedef squashfs_inode_t squashfs_inode;
- typedef squashfs_block_t squashfs_block;
- 
-+#ifdef __CYGWIN__
-+#include <sys/termios.h>
-+#define FNM_EXTMATCH  (1 << 5)
-+#endif
-+
- #ifndef FNM_EXTMATCH
- #define FNM_EXTMATCH 0
- #endif
 --- a/squashfs-tools/mksquashfs.c
 +++ b/squashfs-tools/mksquashfs.c
-@@ -49,10 +49,12 @@
+@@ -51,15 +51,22 @@
  #include <sys/wait.h>
  
  #ifndef linux
@@ -27,7 +13,17 @@
  #else
  #include <endian.h>
  #include <sys/sysinfo.h>
-@@ -817,6 +819,7 @@ void sigusr1_handler()
+ #endif
+ 
++#ifdef __CYGWIN__
++#include <sys/termios.h>
++#define FNM_EXTMATCH  (1 << 5)
++#endif
++
+ #ifndef FNM_EXTMATCH
+ #define FNM_EXTMATCH 0
+ #endif
+@@ -844,6 +851,7 @@ void sigusr1_handler()
  
  void sigwinch_handler()
  {
@@ -35,7 +31,7 @@
  	struct winsize winsize;
  
  	if(ioctl(1, TIOCGWINSZ, &winsize) == -1) {
-@@ -826,6 +829,9 @@ void sigwinch_handler()
+@@ -853,6 +861,9 @@ void sigwinch_handler()
  		columns = 80;
  	} else
  		columns = winsize.ws_col;
@@ -45,28 +41,27 @@
  }
  
  
-@@ -3853,7 +3859,9 @@ void initialise_threads()
- 		BAD_ERROR("Failed to set signal mask in intialise_threads\n");
+@@ -4066,6 +4077,9 @@ void initialise_threads(int readb_mbytes
  
  	signal(SIGUSR1, sigusr1_handler);
--
+ 
 +#ifdef __CYGWIN__
 +	processors = atoi(getenv("NUMBER_OF_PROCESSORS"));
 +#else
  	if(processors == -1) {
  #ifndef linux
  		int mib[2];
-@@ -3875,6 +3883,7 @@ void initialise_threads()
- 		processors = get_nprocs();
+@@ -4087,6 +4101,7 @@ void initialise_threads(int readb_mbytes
+ 		processors = sysconf(_SC_NPROCESSORS_ONLN);
  #endif
  	}
 +#endif /* __CYGWIN__ */
  
- 	if((thread = malloc((2 + processors * 2) * sizeof(pthread_t))) == NULL)
- 		BAD_ERROR("Out of memory allocating thread descriptors\n");
+ 	thread = malloc((2 + processors * 2) * sizeof(pthread_t));
+ 	if(thread == NULL)
 --- a/squashfs-tools/read_fs.c
 +++ b/squashfs-tools/read_fs.c
-@@ -39,9 +39,11 @@ extern unsigned int get_guid(unsigned in
+@@ -33,9 +33,11 @@
  #include <sys/mman.h>
  
  #ifndef linux
@@ -94,7 +89,7 @@
  #endif
 --- a/squashfs-tools/unsquashfs.c
 +++ b/squashfs-tools/unsquashfs.c
-@@ -112,6 +112,7 @@ void update_progress_bar();
+@@ -117,6 +117,7 @@ void update_progress_bar();
  
  void sigwinch_handler()
  {
@@ -102,7 +97,7 @@
  	struct winsize winsize;
  
  	if(ioctl(1, TIOCGWINSZ, &winsize) == -1) {
-@@ -121,6 +122,9 @@ void sigwinch_handler()
+@@ -126,6 +127,9 @@ void sigwinch_handler()
  		columns = 80;
  	} else
  		columns = winsize.ws_col;
@@ -112,7 +107,7 @@
  }
  
  
-@@ -1787,7 +1791,9 @@ void initialise_threads(int fragment_buf
+@@ -1807,7 +1811,9 @@ void initialise_threads(int fragment_buf
  	if(sigprocmask(SIG_BLOCK, &sigmask, &old_mask) == -1)
  		EXIT_UNSQUASH("Failed to set signal mask in intialise_threads"
  			"\n");
@@ -123,17 +118,17 @@
  	if(processors == -1) {
  #ifndef linux
  		int mib[2];
-@@ -1809,6 +1815,7 @@ void initialise_threads(int fragment_buf
- 		processors = get_nprocs();
+@@ -1829,6 +1835,7 @@ void initialise_threads(int fragment_buf
+ 		processors = sysconf(_SC_NPROCESSORS_ONLN);
  #endif
  	}
 +#endif /* __CYGWIN__ */
  
- 	if((thread = malloc((3 + processors) * sizeof(pthread_t))) == NULL)
- 		EXIT_UNSQUASH("Out of memory allocating thread descriptors\n");
+ 	thread = malloc((3 + processors) * sizeof(pthread_t));
+ 	if(thread == NULL)
 --- a/squashfs-tools/unsquashfs.h
 +++ b/squashfs-tools/unsquashfs.h
-@@ -45,10 +45,12 @@
+@@ -46,15 +46,22 @@
  #include <sys/time.h>
  
  #ifndef linux
@@ -142,7 +137,17 @@
  #define __BIG_ENDIAN BIG_ENDIAN
  #define __LITTLE_ENDIAN LITTLE_ENDIAN
  #include <sys/sysctl.h>
-+#endif /* __CYGWIN__ */
++#endif
  #else
  #include <endian.h>
  #include <sys/sysinfo.h>
+ #endif
+ 
++#ifdef __CYGWIN__
++#include <sys/termios.h>
++#define FNM_EXTMATCH  (1 << 5)
++#endif
++
+ #ifndef FNM_EXTMATCH
+ #define FNM_EXTMATCH 0
+ #endif
