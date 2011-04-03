@@ -20,6 +20,7 @@ config BUSYBOX_CONFIG_HUSH
 	default n if !NOMMU
 
 config BUSYBOX_USE_LIBRPC
+	bool
 	depends USE_UCLIBC
 	default y if BUSYBOX_CONFIG_FEATURE_HAVE_RPC
 
