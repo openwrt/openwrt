@@ -262,6 +262,20 @@ endef
 $(eval $(call KernelPackage,ipt-ulog))
 
 
+define KernelPackage/ipt-led
+  TITLE:=Module to trigger a LED with a Netfilter rule
+  KCONFIG:=$(KCONFIG_IPT_LED)
+  FILES:=$(foreach mod,$(IPT_LED-m),$(LINUX_DIR)/net/$(mod).$(LINUX_KMOD_SUFFIX))
+  AUTOLOAD:=$(call AutoLoad,61,$(notdir $(IPT_LED-m)))
+  $(call AddDepends/ipt)
+endef
+
+define KernelPackage/ipt-led/description
+ Netfilter target to trigger a LED when a network packet is matched.
+endef
+
+$(eval $(call KernelPackage,ipt-led))
+
 define KernelPackage/ipt-tproxy
   TITLE:=Transparent proxying support
   KCONFIG:= \
