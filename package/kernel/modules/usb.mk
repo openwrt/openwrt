@@ -715,7 +715,7 @@ $(eval $(call KernelPackage,usb-atm-cxacru))
 
 define KernelPackage/usb-net
   TITLE:=Kernel modules for USB-to-Ethernet convertors
-  KCONFIG:=CONFIG_USB_USBNET
+  KCONFIG:=CONFIG_USB_USBNET CONFIG_MII=y
   AUTOLOAD:=$(call AutoLoad,60,usbnet)
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/usbnet.ko
   $(call AddDepends/usb)
