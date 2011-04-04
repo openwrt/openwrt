@@ -50,6 +50,12 @@ config RT305X_MACH_HW550_3G
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_MOFI3500_3GN
+	bool "MoFi Network MOFI3500-3GN support"
+	default y
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 endmenu
 
 endif

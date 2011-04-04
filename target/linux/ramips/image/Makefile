@@ -104,6 +104,9 @@ define Image/Build/Profile/HW5503G
 	$(call Image/Build/Template/GENERIC_8M,$(1),hw550-3g,HW550-3G)
 endef
 
+define Image/Build/Profile/MOFI35003GN
+	$(call Image/Build/Template/GENERIC_8M,$(1),mofi3500-3gn,MOFI3500-3GN)
+endef
 
 mtdlayout_wcr150gn=mtdparts=physmap-flash.0:192k(Bootloader)ro,64k(Config),64k(Factory),832k(Kernel),2944k(rootfs),3776k@0x50000(firmware)
 mtd_wcr150gn_kernel_part_size=851968
@@ -139,6 +142,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WCR150GN,$(1))
 	$(call Image/Build/Profile/F5D8235V2,$(1))
 	$(call Image/Build/Profile/HW5503G,$(1))
+	$(call Image/Build/Profile/MOFI35003GN,$(1))
 endef
 endif
 
