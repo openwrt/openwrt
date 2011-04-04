@@ -57,7 +57,7 @@ ifndef DUMP_TARGET_DB
 ifneq ($(ARCH),)
   $(TOOLCHAIN_DIR)/info.mk: .config
 	@for dir in $(TOOLCHAIN_DIR); do ( \
-		set -x; \
+		$(if $(QUIET),,set -x;) \
 		mkdir -p "$$dir"; \
 		cd "$$dir"; \
 		mkdir -p stamp lib usr/include usr/lib ; \
