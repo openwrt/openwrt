@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=block-mount
 PKG_VERSION:=0.2.0
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -50,7 +50,6 @@ define Package/block-mount/install
 	$(INSTALL_BIN) ./files/fstab.init $(1)/etc/init.d/fstab
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/fstab.config $(1)/etc/config/fstab
-	$(INSTALL_DIR) $(1)/lib/functions
 	$(INSTALL_DIR) $(1)/lib/functions/fsck
 	$(INSTALL_DATA) ./files/mount.sh $(1)/lib/functions/
 	$(INSTALL_DATA) ./files/fsck.sh $(1)/lib/functions/
@@ -59,13 +58,11 @@ define Package/block-mount/install
 	$(INSTALL_DATA) ./files/10-swap $(1)/etc/hotplug.d/block/
 	$(INSTALL_DATA) ./files/20-fsck $(1)/etc/hotplug.d/block/
 	$(INSTALL_DATA) ./files/40-mount $(1)/etc/hotplug.d/block/
-	$(INSTALL_DIR) $(1)/lib/functions
 	$(INSTALL_DATA) ./files/extmount.sh $(1)/lib/functions/
 	$(INSTALL_DIR) $(1)/lib/preinit
 	$(INSTALL_DATA) ./files/50_determine_usb_root $(1)/lib/preinit/
 	$(INSTALL_DATA) ./files/55_determine_extroot_sysupgrade $(1)/lib/preinit/
 	$(INSTALL_DATA) ./files/60_pivot_usb_root $(1)/lib/preinit/
-	$(INSTALL_DIR) $(1)/lib/preinit
 	echo "extroot_settle_time=\"$(CONFIG_EXTROOT_SETTLETIME)\"" >$(1)/lib/preinit/00_extroot.conf
 	$(INSTALL_DIR) $(1)/overlay
 endef
