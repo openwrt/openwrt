@@ -25,6 +25,9 @@ ramips_board_name() {
 	*"Aztech HW550-3G")
 		name="hw550-3g"
 		;;
+	*"MoFi Network MOFI3500-3GN")
+		name="mofi3500-3gn"
+		;;
 	*)
 		name="generic"
 		;;
