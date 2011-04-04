@@ -65,7 +65,7 @@ $(curdir)/builddirs-default := $(tools-y)
 ifndef DUMP_TARGET_DB
 define PrepareStaging
 	@for dir in $(1); do ( \
-		set -x; \
+		$(if $(QUIET),,set -x;) \
 		mkdir -p "$$dir"; \
 		cd "$$dir"; \
 		mkdir -p bin lib include stamp; \
