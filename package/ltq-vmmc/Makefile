@@ -74,6 +74,7 @@ ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_DANUBE),y)
   FW_FILE=fw_voip_danube-12.1.0.1.0.tar.gz
   FW_MD5SUM:=51868b88dee9dbc65d3dbba355ded91c
   FW_DOWNLOAD:=1
+  COEF_SRC:=danube_bbd_fxs.bin
   COEF_TARGET:=danube_bbd_fxs.bin
   COEF_FILE:=coef_voip_danube-0.9.0.tar.gz
   COEF_MD5SUM:=c8ac6592b304b03829a8123560e15710
