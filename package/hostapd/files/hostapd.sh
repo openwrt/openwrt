@@ -68,13 +68,23 @@ hostapd_set_bss_options() {
 		*wpa*)
 			# required fields? formats?
 			# hostapd is particular, maybe a default configuration for failures
-			config_get server "$vif" server
-			append "$var" "auth_server_addr=$server" "$N"
-			config_get port "$vif" port
-			port=${port:-1812}
-			append "$var" "auth_server_port=$port" "$N"
-			config_get secret "$vif" key
-			append "$var" "auth_server_shared_secret=$secret" "$N"
+			config_get auth_server "$vif" auth_server
+			[ -z "$auth_server" ] && config_get auth_server "$vif" server
+			append "$var" "auth_server_addr=$auth_server" "$N"
+			config_get auth_port "$vif" auth_port
+			[ -z "$auth_port" ] && config_get auth_port "$vif" port
+			auth_port=${auth_port:-1812}
+			append "$var" "auth_server_port=$auth_port" "$N"
+			config_get auth_secret "$vif" auth_secret
+			[ -z "$auth_secret" ] && config_get auth_secret "$vif" key
+			append "$var" "auth_server_shared_secret=$auth_secret" "$N"
+			config_get acct_server "$vif" acct_server
+			[ -n "$acct_server" ] && append "$var" "acct_server_addr=$acct_server" "$N"
+			config_get acct_port "$vif" acct_port
+			[ -n "$acct_port" ] && acct_port=${acct_port:-1813}
+			[ -n "$acct_port" ] && append "$var" "acct_server_port=$acct_port" "$N"
+			config_get acct_secret "$vif" acct_secret
+			[ -n "$acct_secret" ] && append "$var" "acct_server_shared_secret=$acct_secret" "$N"
 			config_get nasid "$vif" nasid
 			append "$var" "nas_identifier=$nasid" "$N"
 			append "$var" "eapol_key_index_workaround=1" "$N"
