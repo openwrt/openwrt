@@ -20,7 +20,7 @@ define Package/librpc
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=uClibc RPC library
-  DEPENDS:=@USE_UCLIBC
+  MDEPENDS:=@USE_UCLIBC
 endef
 
 ifdef CONFIG_USE_UCLIBC
