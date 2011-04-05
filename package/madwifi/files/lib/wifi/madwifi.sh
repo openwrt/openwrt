@@ -366,7 +366,7 @@ enable_atheros() {
 		config_get ssid "$vif" ssid
 		[ -n "$ssid" ] && {
 			iwconfig "$ifname" essid on
-			iwconfig "$ifname" essid "$ssid"
+			iwconfig "$ifname" essid ${ssid:+-- }"$ssid"
 		}
 
 		set_wifi_up "$vif" "$ifname"
