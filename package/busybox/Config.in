@@ -1,5 +1,5 @@
-menu "Configuration"
-	depends on PACKAGE_busybox
+
+if PACKAGE_busybox
 
 config BUSYBOX_CONFIG_NOMMU
 	bool
@@ -26,4 +26,4 @@ config BUSYBOX_USE_LIBRPC
 
 source "package/busybox/config/Config.in"
 
-endmenu
+endif
