@@ -16,7 +16,7 @@
  	rx_status->freq = hw->conf.channel->center_freq;
 -	rx_status->signal = ATH_DEFAULT_NOISE_FLOOR + rx_stats->rs_rssi;
 +
-+	if (ah->curchan)
++	if (ah->curchan && ah->curchan->noisefloor)
 +		noise = ah->curchan->noisefloor;
 +	else
 +		noise = ATH_DEFAULT_NOISE_FLOOR;
