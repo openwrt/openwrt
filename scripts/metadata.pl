@@ -530,6 +530,7 @@ sub print_package_config_category($) {
 				print "\t\tdefault $default\n";
 			}
 			print mconf_depends($pkg->{name}, $pkg->{depends}, 0);
+			print mconf_depends($pkg->{name}, $pkg->{mdepends}, 0);
 			print "\t\thelp\n";
 			print $pkg->{description};
 			print "\n";
