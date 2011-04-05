@@ -74,7 +74,7 @@ start() {
 	done
 
 	# create /dev/root if it doesn't exist
-	[ -e /dev/root ] || {
+	[ -e /dev/root -o -L /dev/root ] || {
 		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
 		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
 	}
