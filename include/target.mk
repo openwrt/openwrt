@@ -108,27 +108,61 @@ GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic
 GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/patches$(if $(wildcard $(GENERIC_PLATFORM_DIR)/patches-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
 GENERIC_FILES_DIR := $(foreach dir,$(wildcard $(GENERIC_PLATFORM_DIR)/files $(GENERIC_PLATFORM_DIR)/files-$(KERNEL_PATCHVER)),"$(dir)")
 
-GENERIC_LINUX_CONFIG?=$(firstword $(wildcard $(GENERIC_PLATFORM_DIR)/config-$(KERNEL_PATCHVER) $(GENERIC_PLATFORM_DIR)/config-default))
-LINUX_CONFIG?=$(firstword $(wildcard $(foreach subdir,$(PLATFORM_DIR) $(PLATFORM_SUBDIR),$(subdir)/config-$(KERNEL_PATCHVER) $(subdir)/config-default)) $(PLATFORM_DIR)/config-$(KERNEL_PATCHVER))
-LINUX_SUBCONFIG?=$(if $(SHARED_LINUX_CONFIG),,$(firstword $(wildcard $(PLATFORM_SUBDIR)/config-$(KERNEL_PATCHVER) $(PLATFORM_SUBDIR)/config-default)))
-ifeq ($(LINUX_CONFIG),$(LINUX_SUBCONFIG))
-  LINUX_SUBCONFIG:=
+__config_name_list = $(1)/config-$(KERNEL_PATCHVER) $(1)/config-default
+__config_list = $(firstword $(wildcard $(call __config_name_list,$(1))))
+find_kernel_config=$(if $(__config_list),$(__config_list),$(lastword $(__config_name_list)))
+
+GENERIC_LINUX_CONFIG:=$(call find_kernel_config,$(GENERIC_PLATFORM_DIR))
+LINUX_TARGET_CONFIG:=$(call find_kernel_config,$(PLATFORM_DIR))
+ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
+  LINUX_SUBTARGET_CONFIG:=$(call find_kernel_config,$(PLATFORM_SUBDIR))
 endif
-LINUX_CONFCMD=$(if $(LINUX_CONFIG), \
-	$(if $(GENERIC_LINUX_CONFIG),,$(error The generic kernel config for your kernel version is missing)) \
-	$(if $(LINUX_CONFIG),,$(error The target kernel config for your kernel version is missing)) \
-	$(SCRIPT_DIR)/kconfig.pl \
-		+ $(GENERIC_LINUX_CONFIG) \
-		$(if $(LINUX_SUBCONFIG),+ $(LINUX_CONFIG) $(LINUX_SUBCONFIG),$(LINUX_CONFIG)), \
-	true)
+
+# config file list used for compiling
+LINUX_KCONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG) $(TOPDIR)/env/kernel-config)
+
+# default config list for reconfiguring
+# defaults to subtarget if subtarget exists and target does not
+# defaults to target otherwise
+ifeq ($(if $(wildcard $(LINUX_TARGET_CONFIG)),,$(if $(LINUX_SUBTARGET_CONFIG),1)),1)
+  LINUX_RECONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG))
+  LINUX_RECONFIG_TARGET := $(LINUX_SUBTARGET_CONFIG)
+else
+  LINUX_RECONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG))
+  LINUX_RECONFIG_TARGET := $(LINUX_TARGET_CONFIG)
+endif
+
+# select the config file to be cahnged by kernel_menuconfig/kernel_oldconfig
+ifeq ($(CONFIG_TARGET),platform)
+  LINUX_RECONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG))
+  LINUX_RECONFIG_TARGET := $(LINUX_TARGET_CONFIG)
+endif
+ifeq ($(CONFIG_TARGET),subtarget)
+  ifeq ($(wildcard $(LINUX_SUBTARGET_CONFIG)),)
+    $(error Subtarget not available, cannot reconfigure)
+  else
+    LINUX_RECONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG))
+    LINUX_RECONFIG_TARGET := $(LINUX_SUBTARGET_CONFIG)
+  endif
+endif
+ifeq ($(CONFIG_TARGET),env)
+  LINUX_RECONFIG_LIST := $(LINUX_KCONFIG_LIST)
+  LINUX_RECONFIG_TARGET := $(TOPDIR)/env/kernel-config
+endif
+
+__linux_confcmd = $(SCRIPT_DIR)/kconfig.pl $(2) $(patsubst %,+,$(wordlist 2,9999,$(1))) $(1)
+
+LINUX_CONF_CMD = $(call __linux_confcmd,$(LINUX_KCONFIG_LIST),)
+LINUX_RECONF_CMD = $(call __linux_confcmd,$(LINUX_RECONFIG_LIST),)
+LINUX_RECONF_DIFF = $(call __linux_confcmd,$(filter-out $(LINUX_RECONFIG_TARGET),$(LINUX_RECONFIG_LIST)),'>')
 
 ifeq ($(DUMP),1)
   BuildTarget=$(BuildTargets/DumpCurrent)
 
   ifneq ($(BOARD),)
     TMP_CONFIG:=$(TMP_DIR)/.kconfig-$(call target_conf,$(TARGETID))
-    $(TMP_CONFIG): $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG) $(LINUX_SUBCONFIG)
-		$(LINUX_CONFCMD) > $@ || rm -f $@
+    $(TMP_CONFIG): $(LINUX_KCONFIG_LIST)
+		$(LINUX_CONF_CMD) > $@ || rm -f $@
     -include $(TMP_CONFIG)
     .SILENT: $(TMP_CONFIG)
     .PRECIOUS: $(TMP_CONFIG)
