@@ -89,7 +89,7 @@ define BuildKernel
 		echo; \
 	) > $$@
 
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_CONFIG) $(GENERIC_LINUX_CONFIG) $(TOPDIR)/.config
+  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(LINUX_KCONFIG_LIST) $(TOPDIR)/.config
 	$(Kernel/Configure)
 	touch $$@
 
@@ -114,13 +114,10 @@ define BuildKernel
 	$(MAKE) -C image compile TARGET_BUILD=
 
   oldconfig menuconfig nconfig: $(STAMP_PREPARED) $(STAMP_CHECKED) FORCE
-	[ -e "$(LINUX_CONFIG)" ] || touch "$(LINUX_CONFIG)"
-	$(LINUX_CONFCMD) > $(LINUX_DIR)/.config
-	touch $(LINUX_CONFIG)
+	rm -f $(STAMP_CONFIGURED)
+	$(LINUX_RECONF_CMD) > $(LINUX_DIR)/.config
 	$(_SINGLE)$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKEOPTS) $$@
-	$(SCRIPT_DIR)/kconfig.pl '>' $(if $(LINUX_SUBCONFIG),'+' $(GENERIC_LINUX_CONFIG) $(LINUX_CONFIG),$(GENERIC_LINUX_CONFIG)) \
-		$(LINUX_DIR)/.config > $(if $(LINUX_SUBCONFIG),$(LINUX_SUBCONFIG),$(LINUX_CONFIG))
-	$(Kernel/Configure)
+	$(LINUX_RECONF_DIFF) $(LINUX_DIR)/.config > $(LINUX_RECONFIG_TARGET)
 
   install: $(LINUX_DIR)/.image
 	+$(MAKE) -C image compile install TARGET_BUILD=
