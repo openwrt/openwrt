@@ -172,6 +172,12 @@ void __init ar71xx_gpio_init(void)
 		ar71xx_gpio_chip.ngpio = AR91XX_GPIO_COUNT;
 		break;
 
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		ar71xx_gpio_chip.ngpio = AR934X_GPIO_COUNT;
+		break;
+
 	default:
 		BUG();
 	}
