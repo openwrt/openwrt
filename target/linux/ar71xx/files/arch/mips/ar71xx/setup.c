@@ -1,10 +1,12 @@
 /*
  *  Atheros AR71xx SoC specific setup
  *
+ *  Copyright (C) 2010-2011 Jaiganesh Narayanan <jnarayanan@atheros.com>
  *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
- *  Parts of this file are based on Atheros' 2.6.15 BSP
+ *  Parts of this file are based on Atheros 2.6.15 BSP
+ *  Parts of this file are based on Atheros 2.6.31 BSP
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -38,6 +40,9 @@ EXPORT_SYMBOL_GPL(ar71xx_ahb_freq);
 
 u32 ar71xx_ddr_freq;
 EXPORT_SYMBOL_GPL(ar71xx_ddr_freq);
+
+u32 ar934x_ref_freq;
+EXPORT_SYMBOL_GPL(ar934x_ref_freq);
 
 enum ar71xx_soc_type ar71xx_soc;
 EXPORT_SYMBOL_GPL(ar71xx_soc);
@@ -141,11 +146,70 @@ static void __init ar71xx_detect_sys_type(void)
 		}
 		break;
 
+	case REV_ID_MAJOR_AR9341:
+		ar71xx_soc = AR71XX_SOC_AR9341;
+		chip = "9341";
+		rev = ar71xx_reset_rr(AR71XX_RESET_REG_REV_ID) &
+			AR934X_REV_ID_REVISION_MASK;
+		break;
+
+	case REV_ID_MAJOR_AR9342:
+		ar71xx_soc = AR71XX_SOC_AR9342;
+		chip = "9342";
+		rev = ar71xx_reset_rr(AR71XX_RESET_REG_REV_ID) &
+			AR934X_REV_ID_REVISION_MASK;
+		break;
+
+	case REV_ID_MAJOR_AR9344:
+		ar71xx_soc = AR71XX_SOC_AR9344;
+		chip = "9344";
+		rev = ar71xx_reset_rr(AR71XX_RESET_REG_REV_ID) &
+			AR934X_REV_ID_REVISION_MASK;
+		break;
+
 	default:
 		panic("ar71xx: unknown chip id:0x%08x\n", id);
 	}
 
 	sprintf(ar71xx_sys_type, "Atheros AR%s rev %u", chip, rev);
+}
+
+static void __init ar934x_detect_sys_frequency(void)
+{
+	u32 pll, out_div, ref_div, nint, frac, clk_ctrl, ref, postdiv;
+
+	if (ar71xx_reset_rr(AR934X_RESET_REG_BOOTSTRAP) & AR934X_REF_CLK_40)
+		ref = (40 * 1000000);
+	else
+		ref = (25 * 1000000);
+
+	ar934x_ref_freq = ref;
+
+	clk_ctrl = ar71xx_pll_rr(AR934X_PLL_REG_DDR_CTRL_CLOCK);
+
+	pll = ar71xx_pll_rr(AR934X_PLL_REG_CPU_CONFIG);
+	out_div	= AR934X_CPU_PLL_CFG_OUTDIV_GET(pll);
+	ref_div	= AR934X_CPU_PLL_CFG_REFDIV_GET(pll);
+	nint	= AR934X_CPU_PLL_CFG_NINT_GET(pll);
+	frac	= AR934X_CPU_PLL_CFG_NFRAC_GET(pll);
+	postdiv = AR934X_CPU_DDR_CLK_CTRL_CPU_POST_DIV_GET(clk_ctrl);
+	ar71xx_cpu_freq = ((nint * ref / ref_div) >> out_div) / (postdiv + 1);
+
+	out_div	= AR934X_DDR_PLL_CFG_OUTDIV_GET(pll);
+	ref_div	= AR934X_DDR_PLL_CFG_REFDIV_GET(pll);
+	nint	= AR934X_DDR_PLL_CFG_NINT_GET(pll);
+	frac	= AR934X_DDR_PLL_CFG_NFRAC_GET(pll);
+	postdiv = AR934X_CPU_DDR_CLK_CTRL_DDR_POST_DIV_GET(clk_ctrl);
+	ar71xx_ddr_freq = ((nint * ref / ref_div) >> out_div) / (postdiv + 1);
+
+	postdiv = AR934X_CPU_DDR_CLK_CTRL_AHB_POST_DIV_GET(clk_ctrl);
+
+	if (AR934X_CPU_DDR_CLK_CTRL_AHBCLK_FROM_DDRPLL_GET(clk_ctrl)) {
+		ar71xx_ahb_freq = ar71xx_ddr_freq / (postdiv + 1);
+	} else {
+		ar71xx_ahb_freq = ar71xx_cpu_freq / (postdiv + 1);
+	}
+
 }
 
 static void __init ar91xx_detect_sys_frequency(void)
@@ -232,6 +296,11 @@ static void __init detect_sys_frequency(void)
 		ar91xx_detect_sys_frequency();
 		break;
 
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		ar934x_detect_sys_frequency();
+		break;
 	default:
 		BUG();
 	}
