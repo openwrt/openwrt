@@ -39,6 +39,17 @@ endef
 
 $(eval $(call Profile,AP96))
 
+define Profile/DB120
+	NAME:=Atheros DB120 reference board
+	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2 kmod-usb-storage
+endef
+
+define Profile/DB120/Description
+	Package set optimized for the Atheros DB120 reference board.
+endef
+
+$(eval $(call Profile,DB120))
+
 define Profile/PB42
 	NAME:=Atheros PB42 reference board
 	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2
