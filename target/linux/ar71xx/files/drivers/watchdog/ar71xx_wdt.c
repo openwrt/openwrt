@@ -1,8 +1,11 @@
 /*
  * Driver for the Atheros AR71xx SoC's built-in hardware watchdog timer.
  *
+ * Copyright (C) 2010-2011 Jaiganesh Narayanan <jnarayanan@atheros.com>
  * Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ *
+ * Parts of this file are based on Atheros 2.6.31 BSP
  *
  * This driver was based on: drivers/watchdog/ixp4xx_wdt.c
  *	Author: Deepak Saxena <dsaxena@plexity.net>
@@ -28,6 +31,7 @@
 #include <linux/platform_device.h>
 #include <linux/types.h>
 #include <linux/watchdog.h>
+#include <linux/delay.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
@@ -53,16 +57,18 @@ static unsigned long wdt_flags;
 static int wdt_timeout = WDT_TIMEOUT;
 static int boot_status;
 static int max_timeout;
+static u32 wdt_clk_freq;
 
 static inline void ar71xx_wdt_keepalive(void)
 {
-	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG, ar71xx_ahb_freq * wdt_timeout);
+	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG, wdt_clk_freq * wdt_timeout);
 }
 
 static inline void ar71xx_wdt_enable(void)
 {
 	printk(KERN_DEBUG DRV_NAME ": enabling watchdog timer\n");
 	ar71xx_wdt_keepalive();
+	udelay(2);
 	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG_CTRL, WDOG_CTRL_ACTION_FCR);
 }
 
@@ -212,7 +218,19 @@ static int __devinit ar71xx_wdt_probe(struct platform_device *pdev)
 {
 	int ret;
 
-	max_timeout = (0xfffffffful / ar71xx_ahb_freq);
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		wdt_clk_freq = ar934x_ref_freq;
+		break;
+
+	default:
+		wdt_clk_freq = ar71xx_ahb_freq;
+		break;
+	}
+
+	max_timeout = (0xfffffffful / wdt_clk_freq);
 	wdt_timeout = (max_timeout < WDT_TIMEOUT) ? max_timeout : WDT_TIMEOUT;
 
 	if (ar71xx_reset_rr(AR71XX_RESET_REG_WDOG_CTRL) & WDOG_CTRL_LAST_RESET)
