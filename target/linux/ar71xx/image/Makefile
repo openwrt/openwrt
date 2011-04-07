@@ -246,6 +246,29 @@ define Image/Build/PB4X
 		$(call imgname,$(1),$(2))-sysupgrade.bin
 endef
 
+define Image/Build/DB120
+	$(call PatchKernelLzma,$(2),$(3))
+	if [ `stat -c%s $(KDIR)/vmlinux-$(2).bin.lzma` -gt 1441792 ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+	elif [ `stat -c%s $(KDIR)/root.$(1)` -gt 6488064 ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
+			0x80060000 \
+			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+			-d $(KDIR)/vmlinux-$(2).bin.lzma \
+			$(KDIR)/vmlinux-$(2).uImage; \
+		dd if=$(KDIR)/vmlinux-$(2).uImage \
+			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
+		dd if=$(KDIR)/root.$(1) \
+			of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync; \
+		( \
+			dd if=$(KDIR)/root.$(1); \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1408k conv=sync; \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+	fi
+endef
+
 define Image/Build/MyLoader
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(3) \
 		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
@@ -476,6 +499,10 @@ define Image/Build/Profile/AP83
 	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap83,board=AP83)
 endef
 
+define Image/Build/Profile/DB120
+	$(call Image/Build/Template/$(fs_64k)/$(1),DB120,db120,board=DB120)
+endef
+
 define Image/Build/Profile/PB42
 	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,pb42,board=PB42)
 endef
@@ -677,6 +704,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AP81,$(1))
 	$(call Image/Build/Profile/AP83,$(1))
 	$(call Image/Build/Profile/A02RBW300N,$(1))
+	$(call Image/Build/Profile/DB120,$(1))
 	$(call Image/Build/Profile/DIR600A1,$(1))
 	$(call Image/Build/Profile/DIR615C1,$(1))
 	$(call Image/Build/Profile/DIR825B1,$(1))
