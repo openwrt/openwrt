@@ -20,6 +20,7 @@
 #include "dev-leds-gpio.h"
 #include "dev-usb.h"
 #include "dev-ar934x-wmac.h"
+#include "dev-db120-pci.h"
 
 #define DB120_GPIO_LED_USB	11
 #define DB120_GPIO_LED_WLAN_5G	12
@@ -125,6 +126,8 @@ static void __init db120_setup(void)
 
 	ar934x_add_device_wmac(art + DB120_CALDATA_OFFSET,
 				art + DB120_WMAC_MAC_OFFSET);
+
+	db120_pci_init();
 }
 
 MIPS_MACHINE(AR71XX_MACH_DB120, "DB120", "Atheros DB120", db120_setup);
