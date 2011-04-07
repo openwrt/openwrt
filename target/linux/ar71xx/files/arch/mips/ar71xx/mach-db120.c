@@ -19,6 +19,7 @@
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-usb.h"
+#include "dev-ar934x-wmac.h"
 
 #define DB120_GPIO_LED_USB	11
 #define DB120_GPIO_LED_WLAN_5G	12
@@ -27,6 +28,9 @@
 #define DB120_GPIO_LED_WPS	15
 
 #define DB120_GPIO_BTN_SW1	16
+
+#define DB120_CALDATA_OFFSET	0x1000
+#define DB120_WMAC_MAC_OFFSET	0x1003
 
 #define DB120_BUTTONS_POLL_INTERVAL	20
 
@@ -106,6 +110,8 @@ static struct gpio_button db120_gpio_buttons[] __initdata = {
 
 static void __init db120_setup(void)
 {
+	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+
 	ar71xx_add_device_usb();
 
 	ar71xx_add_device_m25p80(&db120_flash_data);
@@ -116,6 +122,9 @@ static void __init db120_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, DB120_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(db120_gpio_buttons),
 					db120_gpio_buttons);
+
+	ar934x_add_device_wmac(art + DB120_CALDATA_OFFSET,
+				art + DB120_WMAC_MAC_OFFSET);
 }
 
 MIPS_MACHINE(AR71XX_MACH_DB120, "DB120", "Atheros DB120", db120_setup);
