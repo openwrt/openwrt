@@ -1,10 +1,12 @@
 /*
  *  Atheros AR71xx SoC platform devices
  *
+ *  Copyright (C) 2010-2011 Jaiganesh Narayanan <jnarayanan@atheros.com>
  *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
- *  Parts of this file are based on Atheros' 2.6.15 BSP
+ *  Parts of this file are based on Atheros 2.6.15 BSP
+ *  Parts of this file are based on Atheros 2.6.31 BSP
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -57,7 +59,28 @@ static struct platform_device ar71xx_uart_device = {
 
 void __init ar71xx_add_device_uart(void)
 {
-	ar71xx_uart_data[0].uartclk = ar71xx_ahb_freq;
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
+	case AR71XX_SOC_AR9130:
+	case AR71XX_SOC_AR9132:
+		ar71xx_uart_data[0].uartclk = ar71xx_ahb_freq;
+		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		ar71xx_uart_data[0].uartclk = ar934x_ref_freq;
+		break;
+
+	default:
+		BUG();
+
+	}
 	platform_device_register(&ar71xx_uart_device);
 }
 
