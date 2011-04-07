@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -202,6 +202,7 @@ struct ath_atx_ac {
+@@ -200,6 +200,7 @@ struct ath_atx_ac {
  	int sched;
  	struct list_head list;
  	struct list_head tid_q;
@@ -8,7 +8,7 @@
  };
  
  struct ath_frame_info {
-@@ -259,6 +260,8 @@ struct ath_node {
+@@ -257,6 +258,8 @@ struct ath_node {
  	struct ath_atx_ac ac[WME_NUM_AC];
  	u16 maxampdu;
  	u8 mpdudensity;
@@ -17,7 +17,7 @@
  };
  
  #define AGGR_CLEANUP         BIT(1)
-@@ -340,6 +343,9 @@ int ath_tx_aggr_start(struct ath_softc *
+@@ -338,6 +341,9 @@ int ath_tx_aggr_start(struct ath_softc *
  void ath_tx_aggr_stop(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid);
  void ath_tx_aggr_resume(struct ath_softc *sc, struct ieee80211_sta *sta, u16 tid);
  
@@ -29,7 +29,7 @@
  /********/
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1795,6 +1795,27 @@ static int ath9k_sta_remove(struct ieee8
+@@ -1800,6 +1800,27 @@ static int ath9k_sta_remove(struct ieee8
  	return 0;
  }
  
@@ -57,7 +57,7 @@
  static int ath9k_conf_tx(struct ieee80211_hw *hw, u16 queue,
  			 const struct ieee80211_tx_queue_params *params)
  {
-@@ -2197,6 +2218,7 @@ struct ieee80211_ops ath9k_ops = {
+@@ -2206,6 +2227,7 @@ struct ieee80211_ops ath9k_ops = {
  	.configure_filter   = ath9k_configure_filter,
  	.sta_add	    = ath9k_sta_add,
  	.sta_remove	    = ath9k_sta_remove,
@@ -209,8 +209,8 @@
  
 --- a/drivers/net/wireless/ath/ath9k/hw-ops.h
 +++ b/drivers/net/wireless/ath/ath9k/hw-ops.h
-@@ -128,6 +128,11 @@ static inline void ath9k_hw_set11n_virtu
- 	ath9k_hw_ops(ah)->set11n_virtualmorefrag(ah, ds, vmf);
+@@ -122,6 +122,11 @@ static inline void ath9k_hw_set11n_burst
+ 	ath9k_hw_ops(ah)->set11n_burstduration(ah, ds, burstDuration);
  }
  
 +static inline void ath9k_hw_set_clrdmask(struct ath_hw *ah, void *ds, bool val)
@@ -223,10 +223,10 @@
  /* PHY ops */
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -630,6 +630,7 @@ struct ath_hw_ops {
+@@ -626,6 +626,7 @@ struct ath_hw_ops {
+ 	void (*clr11n_aggr)(struct ath_hw *ah, void *ds);
+ 	void (*set11n_burstduration)(struct ath_hw *ah, void *ds,
  				     u32 burstDuration);
- 	void (*set11n_virtualmorefrag)(struct ath_hw *ah, void *ds,
- 				       u32 vmf);
 +	void (*set_clrdmask)(struct ath_hw *ah, void *ds, bool val);
  };
  
@@ -258,10 +258,10 @@
  static void ar9002_hw_set11n_ratescenario(struct ath_hw *ah, void *ds,
  					  void *lastds,
  					  u32 durUpdateEn, u32 rtsctsRate,
-@@ -460,4 +469,5 @@ void ar9002_hw_attach_mac_ops(struct ath
+@@ -448,4 +457,5 @@ void ar9002_hw_attach_mac_ops(struct ath
+ 	ops->set11n_aggr_last = ar9002_hw_set11n_aggr_last;
  	ops->clr11n_aggr = ar9002_hw_clr11n_aggr;
  	ops->set11n_burstduration = ar9002_hw_set11n_burstduration;
- 	ops->set11n_virtualmorefrag = ar9002_hw_set11n_virtualmorefrag;
 +	ops->set_clrdmask = ar9002_hw_set_clrdmask;
  }
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
@@ -291,10 +291,10 @@
  static void ar9003_hw_set11n_ratescenario(struct ath_hw *ah, void *ds,
  					  void *lastds,
  					  u32 durUpdateEn, u32 rtsctsRate,
-@@ -522,6 +531,7 @@ void ar9003_hw_attach_mac_ops(struct ath
+@@ -510,6 +519,7 @@ void ar9003_hw_attach_mac_ops(struct ath
+ 	ops->set11n_aggr_last = ar9003_hw_set11n_aggr_last;
  	ops->clr11n_aggr = ar9003_hw_clr11n_aggr;
  	ops->set11n_burstduration = ar9003_hw_set11n_burstduration;
- 	ops->set11n_virtualmorefrag = ar9003_hw_set11n_virtualmorefrag;
 +	ops->set_clrdmask = ar9003_hw_set_clrdmask;
  }
  

@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -935,6 +935,7 @@
+@@ -938,6 +938,7 @@ EXPORT_SYMBOL_GPL(rt2800_rfkill_poll);
  static void rt2800_brightness_set(struct led_classdev *led_cdev,
  				  enum led_brightness brightness)
  {
@@ -8,10 +8,10 @@
  	struct rt2x00_led *led =
  	    container_of(led_cdev, struct rt2x00_led, led_dev);
  	unsigned int enabled = brightness != LED_OFF;
-@@ -947,24 +948,46 @@
+@@ -950,24 +951,46 @@ static void rt2800_brightness_set(struct
  		rt2x00_get_field16(led->rt2x00dev->led_mcu_reg,
  				   EEPROM_FREQ_LED_MODE);
-
+ 
 -	if (led->type == LED_TYPE_RADIO) {
 -		rt2800_mcu_request(led->rt2x00dev, MCU_LED, 0xff, ledmode,
 -				      enabled ? 0x20 : 0);
@@ -72,4 +72,4 @@
 +		}
  	}
  }
-
+ 

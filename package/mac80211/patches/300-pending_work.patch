@@ -1,244 +1,352 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1048,6 +1048,8 @@ static int ath9k_start(struct ieee80211_
- 		"Starting driver with initial channel: %d MHz\n",
- 		curchan->center_freq);
- 
-+	ath9k_ps_wakeup(sc);
-+
- 	mutex_lock(&sc->mutex);
- 
- 	/* setup initial channel */
-@@ -1143,6 +1145,8 @@ static int ath9k_start(struct ieee80211_
- mutex_unlock:
- 	mutex_unlock(&sc->mutex);
- 
-+	ath9k_ps_restore(sc);
-+
- 	return r;
- }
- 
---- a/net/mac80211/ibss.c
-+++ b/net/mac80211/ibss.c
-@@ -661,7 +661,6 @@ static void ieee80211_sta_find_ibss(stru
- static void ieee80211_rx_mgmt_probe_req(struct ieee80211_sub_if_data *sdata,
- 					struct sk_buff *req)
- {
--	struct ieee80211_rx_status *rx_status = IEEE80211_SKB_RXCB(req);
- 	struct ieee80211_mgmt *mgmt = (void *)req->data;
- 	struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
- 	struct ieee80211_local *local = sdata->local;
-@@ -685,7 +684,7 @@ static void ieee80211_rx_mgmt_probe_req(
- 	       mgmt->bssid, tx_last_beacon);
- #endif /* CONFIG_MAC80211_IBSS_DEBUG */
- 
--	if (!tx_last_beacon && !(rx_status->rx_flags & IEEE80211_RX_RA_MATCH))
-+	if (!tx_last_beacon && is_multicast_ether_addr(mgmt->da))
+@@ -324,7 +324,6 @@ static void ath_paprd_activate(struct at
+ 	if (!caldata || !caldata->paprd_done)
  		return;
  
- 	if (memcmp(mgmt->bssid, ifibss->bssid, ETH_ALEN) != 0 &&
---- a/net/mac80211/rc80211_minstrel_ht.c
-+++ b/net/mac80211/rc80211_minstrel_ht.c
-@@ -659,18 +659,14 @@ minstrel_ht_update_caps(void *priv, stru
- 	struct ieee80211_mcs_info *mcs = &sta->ht_cap.mcs;
- 	struct ieee80211_local *local = hw_to_local(mp->hw);
- 	u16 sta_cap = sta->ht_cap.cap;
-+	int n_supported = 0;
- 	int ack_dur;
- 	int stbc;
- 	int i;
- 
- 	/* fall back to the old minstrel for legacy stations */
--	if (!sta->ht_cap.ht_supported) {
--		msp->is_ht = false;
--		memset(&msp->legacy, 0, sizeof(msp->legacy));
--		msp->legacy.r = msp->ratelist;
--		msp->legacy.sample_table = msp->sample_table;
--		return mac80211_minstrel.rate_init(priv, sband, sta, &msp->legacy);
--	}
-+	if (!sta->ht_cap.ht_supported)
-+		goto use_legacy;
- 
- 	BUILD_BUG_ON(ARRAY_SIZE(minstrel_mcs_groups) !=
- 		MINSTREL_MAX_STREAMS * MINSTREL_STREAM_GROUPS);
-@@ -725,7 +721,22 @@ minstrel_ht_update_caps(void *priv, stru
- 
- 		mi->groups[i].supported =
- 			mcs->rx_mask[minstrel_mcs_groups[i].streams - 1];
-+
-+		if (mi->groups[i].supported)
-+			n_supported++;
+-	ath9k_ps_wakeup(sc);
+ 	ar9003_paprd_enable(ah, false);
+ 	for (chain = 0; chain < AR9300_MAX_CHAINS; chain++) {
+ 		if (!(common->tx_chainmask & BIT(chain)))
+@@ -334,7 +333,6 @@ static void ath_paprd_activate(struct at
  	}
-+
-+	if (!n_supported)
-+		goto use_legacy;
-+
-+	return;
-+
-+use_legacy:
-+	msp->is_ht = false;
-+	memset(&msp->legacy, 0, sizeof(msp->legacy));
-+	msp->legacy.r = msp->ratelist;
-+	msp->legacy.sample_table = msp->sample_table;
-+	return mac80211_minstrel.rate_init(priv, sband, sta, &msp->legacy);
+ 
+ 	ar9003_paprd_enable(ah, true);
+-	ath9k_ps_restore(sc);
  }
  
- static void
---- a/net/mac80211/ieee80211_i.h
-+++ b/net/mac80211/ieee80211_i.h
-@@ -814,8 +814,8 @@ struct ieee80211_local {
- 
- 	struct rate_control_ref *rate_ctrl;
- 
--	struct crypto_blkcipher *wep_tx_tfm;
--	struct crypto_blkcipher *wep_rx_tfm;
-+	struct crypto_cipher *wep_tx_tfm;
-+	struct crypto_cipher *wep_rx_tfm;
- 	u32 wep_iv;
- 
- 	/* see iface.c */
---- a/net/mac80211/tkip.c
-+++ b/net/mac80211/tkip.c
-@@ -202,7 +202,7 @@ EXPORT_SYMBOL(ieee80211_get_tkip_key);
-  * @payload_len is the length of payload (_not_ including IV/ICV length).
-  * @ta is the transmitter addresses.
-  */
--int ieee80211_tkip_encrypt_data(struct crypto_blkcipher *tfm,
-+int ieee80211_tkip_encrypt_data(struct crypto_cipher *tfm,
- 				struct ieee80211_key *key,
- 				u8 *pos, size_t payload_len, u8 *ta)
- {
-@@ -223,7 +223,7 @@ int ieee80211_tkip_encrypt_data(struct c
-  * beginning of the buffer containing IEEE 802.11 header payload, i.e.,
-  * including IV, Ext. IV, real data, Michael MIC, ICV. @payload_len is the
-  * length of payload, including IV, Ext. IV, MIC, ICV.  */
--int ieee80211_tkip_decrypt_data(struct crypto_blkcipher *tfm,
-+int ieee80211_tkip_decrypt_data(struct crypto_cipher *tfm,
- 				struct ieee80211_key *key,
- 				u8 *payload, size_t payload_len, u8 *ta,
- 				u8 *ra, int only_iv, int queue,
---- a/net/mac80211/tkip.h
-+++ b/net/mac80211/tkip.h
-@@ -15,7 +15,7 @@
- 
- u8 *ieee80211_tkip_add_iv(u8 *pos, struct ieee80211_key *key, u16 iv16);
- 
--int ieee80211_tkip_encrypt_data(struct crypto_blkcipher *tfm,
-+int ieee80211_tkip_encrypt_data(struct crypto_cipher *tfm,
- 				 struct ieee80211_key *key,
- 				 u8 *pos, size_t payload_len, u8 *ta);
- enum {
-@@ -24,7 +24,7 @@ enum {
- 	TKIP_DECRYPT_INVALID_KEYIDX = -2,
- 	TKIP_DECRYPT_REPLAY = -3,
- };
--int ieee80211_tkip_decrypt_data(struct crypto_blkcipher *tfm,
-+int ieee80211_tkip_decrypt_data(struct crypto_cipher *tfm,
- 				struct ieee80211_key *key,
- 				u8 *payload, size_t payload_len, u8 *ta,
- 				u8 *ra, int only_iv, int queue,
---- a/net/mac80211/wep.c
-+++ b/net/mac80211/wep.c
-@@ -30,17 +30,15 @@ int ieee80211_wep_init(struct ieee80211_
- 	/* start WEP IV from a random value */
- 	get_random_bytes(&local->wep_iv, WEP_IV_LEN);
- 
--	local->wep_tx_tfm = crypto_alloc_blkcipher("ecb(arc4)", 0,
--						CRYPTO_ALG_ASYNC);
-+	local->wep_tx_tfm = crypto_alloc_cipher("arc4", 0, CRYPTO_ALG_ASYNC);
- 	if (IS_ERR(local->wep_tx_tfm)) {
- 		local->wep_rx_tfm = ERR_PTR(-EINVAL);
- 		return PTR_ERR(local->wep_tx_tfm);
+ static bool ath_paprd_send_frame(struct ath_softc *sc, struct sk_buff *skb, int chain)
+@@ -554,8 +552,11 @@ set_timer:
+ 	if ((sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_PAPRD) && ah->caldata) {
+ 		if (!ah->caldata->paprd_done)
+ 			ieee80211_queue_work(sc->hw, &sc->paprd_work);
+-		else if (!ah->paprd_table_write_done)
++		else if (!ah->paprd_table_write_done) {
++			ath9k_ps_wakeup(sc);
+ 			ath_paprd_activate(sc);
++			ath9k_ps_restore(sc);
++		}
  	}
- 
--	local->wep_rx_tfm = crypto_alloc_blkcipher("ecb(arc4)", 0,
--						CRYPTO_ALG_ASYNC);
-+	local->wep_rx_tfm = crypto_alloc_cipher("arc4", 0, CRYPTO_ALG_ASYNC);
- 	if (IS_ERR(local->wep_rx_tfm)) {
--		crypto_free_blkcipher(local->wep_tx_tfm);
-+		crypto_free_cipher(local->wep_tx_tfm);
- 		local->wep_tx_tfm = ERR_PTR(-EINVAL);
- 		return PTR_ERR(local->wep_rx_tfm);
- 	}
-@@ -51,9 +49,9 @@ int ieee80211_wep_init(struct ieee80211_
- void ieee80211_wep_free(struct ieee80211_local *local)
- {
- 	if (!IS_ERR(local->wep_tx_tfm))
--		crypto_free_blkcipher(local->wep_tx_tfm);
-+		crypto_free_cipher(local->wep_tx_tfm);
- 	if (!IS_ERR(local->wep_rx_tfm))
--		crypto_free_blkcipher(local->wep_rx_tfm);
-+		crypto_free_cipher(local->wep_rx_tfm);
  }
  
- static inline bool ieee80211_wep_weak_iv(u32 iv, int keylen)
-@@ -127,12 +125,11 @@ static void ieee80211_wep_remove_iv(stru
- /* Perform WEP encryption using given key. data buffer must have tailroom
-  * for 4-byte ICV. data_len must not include this ICV. Note: this function
-  * does _not_ add IV. data = RC4(data | CRC32(data)) */
--int ieee80211_wep_encrypt_data(struct crypto_blkcipher *tfm, u8 *rc4key,
-+int ieee80211_wep_encrypt_data(struct crypto_cipher *tfm, u8 *rc4key,
- 			       size_t klen, u8 *data, size_t data_len)
- {
--	struct blkcipher_desc desc = { .tfm = tfm };
--	struct scatterlist sg;
- 	__le32 icv;
-+	int i;
+@@ -1376,7 +1377,6 @@ static void ath9k_calculate_summary_stat
  
- 	if (IS_ERR(tfm))
+ 	ath9k_calculate_iter_data(hw, vif, &iter_data);
+ 
+-	ath9k_ps_wakeup(sc);
+ 	/* Set BSSID mask. */
+ 	memcpy(common->bssidmask, iter_data.mask, ETH_ALEN);
+ 	ath_hw_setbssidmask(common);
+@@ -1411,7 +1411,6 @@ static void ath9k_calculate_summary_stat
+ 	}
+ 
+ 	ath9k_hw_set_interrupts(ah, ah->imask);
+-	ath9k_ps_restore(sc);
+ 
+ 	/* Set up ANI */
+ 	if ((iter_data.naps + iter_data.nadhocs) > 0) {
+@@ -1457,6 +1456,7 @@ static int ath9k_add_interface(struct ie
+ 	struct ath_vif *avp = (void *)vif->drv_priv;
+ 	int ret = 0;
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	switch (vif->type) {
+@@ -1503,6 +1503,7 @@ static int ath9k_add_interface(struct ie
+ 	ath9k_do_vif_add_setup(hw, vif);
+ out:
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ 	return ret;
+ }
+ 
+@@ -1517,6 +1518,7 @@ static int ath9k_change_interface(struct
+ 
+ 	ath_dbg(common, ATH_DBG_CONFIG, "Change Interface\n");
+ 	mutex_lock(&sc->mutex);
++	ath9k_ps_wakeup(sc);
+ 
+ 	/* See if new interface type is valid. */
+ 	if ((new_type == NL80211_IFTYPE_ADHOC) &&
+@@ -1546,6 +1548,7 @@ static int ath9k_change_interface(struct
+ 
+ 	ath9k_do_vif_add_setup(hw, vif);
+ out:
++	ath9k_ps_restore(sc);
+ 	mutex_unlock(&sc->mutex);
+ 	return ret;
+ }
+@@ -1558,6 +1561,7 @@ static void ath9k_remove_interface(struc
+ 
+ 	ath_dbg(common, ATH_DBG_CONFIG, "Detach Interface\n");
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	sc->nvifs--;
+@@ -1569,6 +1573,7 @@ static void ath9k_remove_interface(struc
+ 	ath9k_calculate_summary_state(hw, NULL);
+ 
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ }
+ 
+ static void ath9k_enable_ps(struct ath_softc *sc)
+@@ -1809,6 +1814,7 @@ static int ath9k_conf_tx(struct ieee8021
+ 
+ 	txq = sc->tx.txq_map[queue];
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	memset(&qi, 0, sizeof(struct ath9k_tx_queue_info));
+@@ -1832,6 +1838,7 @@ static int ath9k_conf_tx(struct ieee8021
+ 			ath_beaconq_config(sc);
+ 
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ 
+ 	return ret;
+ }
+@@ -1908,6 +1915,7 @@ static void ath9k_bss_info_changed(struc
+ 	int slottime;
+ 	int error;
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	if (changed & BSS_CHANGED_BSSID) {
+@@ -2008,6 +2016,7 @@ static void ath9k_bss_info_changed(struc
+ 	}
+ 
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ }
+ 
+ static u64 ath9k_get_tsf(struct ieee80211_hw *hw)
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -392,14 +392,6 @@ void ath_beacon_tasklet(unsigned long da
+ 	tsf += TU_TO_USEC(ah->config.sw_beacon_response_time);
+ 	tsftu = TSF_TO_TU((tsf * ATH_BCBUF) >>32, tsf * ATH_BCBUF);
+ 	slot = (tsftu % (intval * ATH_BCBUF)) / intval;
+-	/*
+-	 * Reverse the slot order to get slot 0 on the TBTT offset that does
+-	 * not require TSF adjustment and other slots adding
+-	 * slot/ATH_BCBUF * beacon_int to timestamp. For example, with
+-	 * ATH_BCBUF = 4, we process beacon slots as follows: 3 2 1 0 3 2 1 ..
+-	 * and slot 0 is at correct offset to TBTT.
+-	 */
+-	slot = ATH_BCBUF - slot - 1;
+ 	vif = sc->beacon.bslot[slot];
+ 
+ 	ath_dbg(common, ATH_DBG_BEACON,
+@@ -708,7 +700,7 @@ void ath_beacon_config(struct ath_softc 
+ 	if (cur_conf->dtim_period == 0)
+ 		cur_conf->dtim_period = 1;
+ 
+-	switch (iftype) {
++	switch (sc->sc_ah->opmode) {
+ 	case NL80211_IFTYPE_AP:
+ 		ath_beacon_config_ap(sc, cur_conf);
+ 		break;
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1585,7 +1585,7 @@ ieee80211_drop_unencrypted_mgmt(struct i
+ }
+ 
+ static int
+-__ieee80211_data_to_8023(struct ieee80211_rx_data *rx)
++__ieee80211_data_to_8023(struct ieee80211_rx_data *rx, bool *port_control)
+ {
+ 	struct ieee80211_sub_if_data *sdata = rx->sdata;
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)rx->skb->data;
+@@ -1593,6 +1593,7 @@ __ieee80211_data_to_8023(struct ieee8021
+ 	struct ethhdr *ehdr;
+ 	int ret;
+ 
++	*port_control = false;
+ 	if (ieee80211_has_a4(hdr->frame_control) &&
+ 	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN && !sdata->u.vlan.sta)
  		return -1;
-@@ -140,9 +137,9 @@ int ieee80211_wep_encrypt_data(struct cr
- 	icv = cpu_to_le32(~crc32_le(~0, data, data_len));
- 	put_unaligned(icv, (__le32 *)(data + data_len));
+@@ -1611,12 +1612,16 @@ __ieee80211_data_to_8023(struct ieee8021
+ 		return -1;
  
--	crypto_blkcipher_setkey(tfm, rc4key, klen);
--	sg_init_one(&sg, data, data_len + WEP_ICV_LEN);
--	crypto_blkcipher_encrypt(&desc, &sg, &sg, sg.length);
-+	crypto_cipher_setkey(tfm, rc4key, klen);
-+	for (i = 0; i < data_len + WEP_ICV_LEN; i++)
-+		crypto_cipher_encrypt_one(tfm, data + i, data + i);
+ 	ret = ieee80211_data_to_8023(rx->skb, sdata->vif.addr, sdata->vif.type);
+-	if (ret < 0 || !check_port_control)
++	if (ret < 0)
+ 		return ret;
+ 
+ 	ehdr = (struct ethhdr *) rx->skb->data;
+-	if (ehdr->h_proto != rx->sdata->control_port_protocol)
+-		return -1;
++	if (ehdr->h_proto == rx->sdata->control_port_protocol) {
++		*port_control = true;
++
++		if (check_port_control)
++			return -1;
++	}
  
  	return 0;
  }
-@@ -186,19 +183,18 @@ int ieee80211_wep_encrypt(struct ieee802
- /* Perform WEP decryption using given key. data buffer includes encrypted
-  * payload, including 4-byte ICV, but _not_ IV. data_len must not include ICV.
-  * Return 0 on success and -1 on ICV mismatch. */
--int ieee80211_wep_decrypt_data(struct crypto_blkcipher *tfm, u8 *rc4key,
-+int ieee80211_wep_decrypt_data(struct crypto_cipher *tfm, u8 *rc4key,
- 			       size_t klen, u8 *data, size_t data_len)
+@@ -1916,6 +1921,7 @@ ieee80211_rx_h_data(struct ieee80211_rx_
+ 	struct net_device *dev = sdata->dev;
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)rx->skb->data;
+ 	__le16 fc = hdr->frame_control;
++	bool port_control;
+ 	int err;
+ 
+ 	if (unlikely(!ieee80211_is_data(hdr->frame_control)))
+@@ -1932,13 +1938,21 @@ ieee80211_rx_h_data(struct ieee80211_rx_
+ 	    sdata->vif.type == NL80211_IFTYPE_AP)
+ 		return RX_DROP_MONITOR;
+ 
+-	err = __ieee80211_data_to_8023(rx);
++	err = __ieee80211_data_to_8023(rx, &port_control);
+ 	if (unlikely(err))
+ 		return RX_DROP_UNUSABLE;
+ 
+ 	if (!ieee80211_frame_allowed(rx, fc))
+ 		return RX_DROP_MONITOR;
+ 
++	if (rx->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
++	    unlikely(port_control) && sdata->bss) {
++		sdata = container_of(sdata->bss, struct ieee80211_sub_if_data,
++				     u.ap);
++		dev = sdata->dev;
++		rx->sdata = sdata;
++	}
++
+ 	rx->skb->dev = dev;
+ 
+ 	dev->stats.rx_packets++;
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -75,7 +75,6 @@ static void ath_rx_buf_link(struct ath_s
+ 		*sc->rx.rxlink = bf->bf_daddr;
+ 
+ 	sc->rx.rxlink = &ds->ds_link;
+-	ath9k_hw_rxena(ah);
+ }
+ 
+ static void ath_setdefantenna(struct ath_softc *sc, u32 antenna)
+@@ -426,9 +425,7 @@ u32 ath_calcrxfilter(struct ath_softc *s
+ 	else
+ 		rfilt |= ATH9K_RX_FILTER_BEACON;
+ 
+-	if ((AR_SREV_9280_20_OR_LATER(sc->sc_ah) ||
+-	    AR_SREV_9285_12_OR_LATER(sc->sc_ah)) &&
+-	    (sc->sc_ah->opmode == NL80211_IFTYPE_AP) &&
++	if ((sc->sc_ah->opmode == NL80211_IFTYPE_AP) ||
+ 	    (sc->rx.rxfilter & FIF_PSPOLL))
+ 		rfilt |= ATH9K_RX_FILTER_PSPOLL;
+ 
+@@ -486,12 +483,12 @@ start_recv:
+ bool ath_stoprecv(struct ath_softc *sc)
  {
--	struct blkcipher_desc desc = { .tfm = tfm };
--	struct scatterlist sg;
- 	__le32 crc;
-+	int i;
+ 	struct ath_hw *ah = sc->sc_ah;
+-	bool stopped;
++	bool stopped, reset = false;
  
- 	if (IS_ERR(tfm))
- 		return -1;
+ 	spin_lock_bh(&sc->rx.rxbuflock);
+ 	ath9k_hw_abortpcurecv(ah);
+ 	ath9k_hw_setrxfilter(ah, 0);
+-	stopped = ath9k_hw_stopdmarecv(ah);
++	stopped = ath9k_hw_stopdmarecv(ah, &reset);
  
--	crypto_blkcipher_setkey(tfm, rc4key, klen);
--	sg_init_one(&sg, data, data_len + WEP_ICV_LEN);
--	crypto_blkcipher_decrypt(&desc, &sg, &sg, sg.length);
-+	crypto_cipher_setkey(tfm, rc4key, klen);
-+	for (i = 0; i < data_len + WEP_ICV_LEN; i++)
-+		crypto_cipher_decrypt_one(tfm, data + i, data + i);
+ 	if (sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
+ 		ath_edma_stop_recv(sc);
+@@ -506,7 +503,7 @@ bool ath_stoprecv(struct ath_softc *sc)
+ 			"confusing the DMA engine when we start RX up\n");
+ 		ATH_DBG_WARN_ON_ONCE(!stopped);
+ 	}
+-	return stopped;
++	return stopped || reset;
+ }
  
- 	crc = cpu_to_le32(~crc32_le(~0, data, data_len));
- 	if (memcmp(&crc, data + data_len, WEP_ICV_LEN) != 0)
---- a/net/mac80211/wep.h
-+++ b/net/mac80211/wep.h
-@@ -18,12 +18,12 @@
+ void ath_flushrecv(struct ath_softc *sc)
+@@ -1767,6 +1764,7 @@ requeue:
+ 		} else {
+ 			list_move_tail(&bf->list, &sc->rx.rxbuf);
+ 			ath_rx_buf_link(sc, bf);
++			ath9k_hw_rxena(ah);
+ 		}
+ 	} while (1);
  
- int ieee80211_wep_init(struct ieee80211_local *local);
- void ieee80211_wep_free(struct ieee80211_local *local);
--int ieee80211_wep_encrypt_data(struct crypto_blkcipher *tfm, u8 *rc4key,
-+int ieee80211_wep_encrypt_data(struct crypto_cipher *tfm, u8 *rc4key,
- 				size_t klen, u8 *data, size_t data_len);
- int ieee80211_wep_encrypt(struct ieee80211_local *local,
- 			  struct sk_buff *skb,
- 			  const u8 *key, int keylen, int keyidx);
--int ieee80211_wep_decrypt_data(struct crypto_blkcipher *tfm, u8 *rc4key,
-+int ieee80211_wep_decrypt_data(struct crypto_cipher *tfm, u8 *rc4key,
- 			       size_t klen, u8 *data, size_t data_len);
- bool ieee80211_wep_is_weak_iv(struct sk_buff *skb, struct ieee80211_key *key);
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -1244,6 +1244,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 	u32 saveDefAntenna;
+ 	u32 macStaId1;
+ 	u64 tsf = 0;
++	bool reset = false;
+ 	int i, r;
  
+ 	ah->txchainmask = common->tx_chainmask;
+@@ -1251,11 +1252,13 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 
+ 	if ((common->bus_ops->ath_bus_type != ATH_USB) && !ah->chip_fullsleep) {
+ 		ath9k_hw_abortpcurecv(ah);
+-		if (!ath9k_hw_stopdmarecv(ah)) {
++		if (!ath9k_hw_stopdmarecv(ah, &reset)) {
+ 			ath_dbg(common, ATH_DBG_XMIT,
+ 				"Failed to stop receive dma\n");
+ 			bChannelChange = false;
+ 		}
++		if (reset)
++			bChannelChange = false;
+ 	}
+ 
+ 	if (!ath9k_hw_setpower(ah, ATH9K_PM_AWAKE))
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -710,18 +710,36 @@ void ath9k_hw_abortpcurecv(struct ath_hw
+ }
+ EXPORT_SYMBOL(ath9k_hw_abortpcurecv);
+ 
+-bool ath9k_hw_stopdmarecv(struct ath_hw *ah)
++bool ath9k_hw_stopdmarecv(struct ath_hw *ah, bool *reset)
+ {
+ #define AH_RX_STOP_DMA_TIMEOUT 10000   /* usec */
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	u32 mac_status, last_mac_status = 0;
+ 	int i;
+ 
++	/* Enable access to the DMA observation bus */
++	REG_WRITE(ah, AR_MACMISC,
++		  ((AR_MACMISC_DMA_OBS_LINE_8 << AR_MACMISC_DMA_OBS_S) |
++		   (AR_MACMISC_MISC_OBS_BUS_1 <<
++		    AR_MACMISC_MISC_OBS_BUS_MSB_S)));
++
+ 	REG_WRITE(ah, AR_CR, AR_CR_RXD);
+ 
+ 	/* Wait for rx enable bit to go low */
+ 	for (i = AH_RX_STOP_DMA_TIMEOUT / AH_TIME_QUANTUM; i != 0; i--) {
+ 		if ((REG_READ(ah, AR_CR) & AR_CR_RXE) == 0)
+ 			break;
++
++		if (!AR_SREV_9300_20_OR_LATER(ah)) {
++			mac_status = REG_READ(ah, AR_DMADBG_7) & 0x7f0;
++			if (mac_status == 0x1c0 && mac_status == last_mac_status) {
++				*reset = true;
++				break;
++			}
++
++			last_mac_status = mac_status;
++		}
++
+ 		udelay(AH_TIME_QUANTUM);
+ 	}
+ 
+--- a/drivers/net/wireless/ath/ath9k/mac.h
++++ b/drivers/net/wireless/ath/ath9k/mac.h
+@@ -695,7 +695,7 @@ bool ath9k_hw_setrxabort(struct ath_hw *
+ void ath9k_hw_putrxbuf(struct ath_hw *ah, u32 rxdp);
+ void ath9k_hw_startpcureceive(struct ath_hw *ah, bool is_scanning);
+ void ath9k_hw_abortpcurecv(struct ath_hw *ah);
+-bool ath9k_hw_stopdmarecv(struct ath_hw *ah);
++bool ath9k_hw_stopdmarecv(struct ath_hw *ah, bool *reset);
+ int ath9k_hw_beaconq_setup(struct ath_hw *ah);
+ 
+ /* Interrupt Handling */

@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -957,6 +957,9 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -956,6 +956,9 @@ static int ath9k_rx_skb_preprocess(struc
  				   struct ieee80211_rx_status *rx_status,
  				   bool *decrypt_error)
  {
@@ -10,7 +10,7 @@
  	memset(rx_status, 0, sizeof(struct ieee80211_rx_status));
  
  	/*
-@@ -977,7 +980,13 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -976,7 +979,13 @@ static int ath9k_rx_skb_preprocess(struc
  
  	rx_status->band = hw->conf.channel->band;
  	rx_status->freq = hw->conf.channel->center_freq;
