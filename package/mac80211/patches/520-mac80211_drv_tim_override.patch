@@ -1,6 +1,6 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -2216,6 +2216,18 @@ static inline int ieee80211_sta_ps_trans
+@@ -2227,6 +2227,18 @@ static inline int ieee80211_sta_ps_trans
  #define IEEE80211_TX_STATUS_HEADROOM	13
  
  /**
@@ -31,7 +31,7 @@
  			sta_info_clear_tim_bit(sta);
  	}
  
-@@ -902,6 +903,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
+@@ -893,6 +894,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
  	struct ieee80211_local *local = sdata->local;
  	int sent, buffered;
  
@@ -39,7 +39,7 @@
  	if (!(local->hw.flags & IEEE80211_HW_AP_LINK_PS))
  		drv_sta_notify(local, sdata, STA_NOTIFY_AWAKE, &sta->sta);
  
-@@ -994,3 +996,12 @@ void ieee80211_sta_block_awake(struct ie
+@@ -985,3 +987,12 @@ void ieee80211_sta_block_awake(struct ie
  		ieee80211_queue_work(hw, &sta->drv_unblock_wk);
  }
  EXPORT_SYMBOL(ieee80211_sta_block_awake);
