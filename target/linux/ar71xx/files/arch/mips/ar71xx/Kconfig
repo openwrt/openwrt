@@ -28,6 +28,13 @@ config AR71XX_MACH_AP96
 	select AR71XX_DEV_USB
 	default n
 
+config AR71XX_MACH_DB120
+	bool "Atheros DB120 board support"
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
+	default n
+
 config AR71XX_MACH_DIR_600_A1
 	bool "D-Link DIR-600 rev. A1 support"
 	select AR71XX_DEV_AP91_PCI if PCI
