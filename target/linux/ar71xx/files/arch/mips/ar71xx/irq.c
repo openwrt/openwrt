@@ -1,10 +1,12 @@
 /*
  *  Atheros AR71xx SoC specific interrupt handling
  *
+ *  Copyright (C) 2010-2011 Jaiganesh Narayanan <jnarayanan@atheros.com>
  *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
- *  Parts of this file are based on Atheros' 2.6.15 BSP
+ *  Parts of this file are based on Atheros 2.6.15 BSP
+ *  Parts of this file are based on Atheros 2.6.31 BSP
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -146,6 +148,21 @@ static void ar71xx_misc_irq_dispatch(void)
 	else if (pending & MISC_INT_WDOG)
 		do_IRQ(AR71XX_MISC_IRQ_WDOG);
 
+	else if (pending & MISC_INT_TIMER2)
+		do_IRQ(AR71XX_MISC_IRQ_TIMER2);
+
+	else if (pending & MISC_INT_TIMER3)
+		do_IRQ(AR71XX_MISC_IRQ_TIMER3);
+
+	else if (pending & MISC_INT_TIMER4)
+		do_IRQ(AR71XX_MISC_IRQ_TIMER4);
+
+	else if (pending & MISC_INT_DDR_PERF)
+		do_IRQ(AR71XX_MISC_IRQ_DDR_PERF);
+
+	else if (pending & MISC_INT_ENET_LINK)
+		do_IRQ(AR71XX_MISC_IRQ_ENET_LINK);
+
 	else
 		spurious_interrupt();
 }
@@ -215,6 +232,9 @@ static void __init ar71xx_misc_irq_init(void)
 	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
 		ar71xx_misc_irq_chip.ack = ar724x_misc_irq_ack;
 		break;
 	default:
@@ -281,10 +301,17 @@ void __init arch_init_irq(void)
 	case AR71XX_SOC_AR9132:
 		ip2_flush_reg = AR91XX_DDR_REG_FLUSH_WMAC;
 		break;
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		ip2_flush_reg = AR934X_DDR_REG_FLUSH_PCIE;
+		break;
+
 	default:
 		ip2_flush_reg = AR71XX_DDR_REG_FLUSH_PCI;
 		break;
 	}
+
 	mips_cpu_irq_init();
 
 	ar71xx_misc_irq_init();
