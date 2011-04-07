@@ -1,0 +1,56 @@
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -92,3 +92,30 @@ int nvram_getenv(char *name, char *val,
+ 	return NVRAM_ERR_ENVNOTFOUND;
+ }
+ EXPORT_SYMBOL(nvram_getenv);
++
++char *nvram_get(const char *name)
++{
++	char *var, *value, *end, *eq;
++
++	if (!name)
++		return NULL;
++
++	if (!nvram_buf[0])
++		early_nvram_init();
++
++	/* Look for name=value and return value */
++	var = &nvram_buf[sizeof(struct nvram_header)];
++	end = nvram_buf + sizeof(nvram_buf) - 2;
++	end[0] = end[1] = '\0';
++	for (; *var; var = value + strlen(value) + 1) {
++		eq = strchr(var, '=');
++		if (!eq)
++			break;
++		value = eq + 1;
++		if ((eq - var) == strlen(name) && strncmp(var, name, (eq - var)) == 0)
++			return value;
++	}
++
++	return NULL;
++}
++EXPORT_SYMBOL(nvram_get);
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -226,3 +226,20 @@ void __init plat_mem_setup(void)
+ 	_machine_halt = bcm47xx_machine_halt;
+ 	pm_power_off = bcm47xx_machine_halt;
+ }
++
++static int __init bcm47xx_register_gpiodev(void)
++{
++	static struct resource res = {
++		.start = 0xFFFFFFFF,
++	};
++	struct platform_device *pdev;
++
++	pdev = platform_device_register_simple("GPIODEV", 0, &res, 1);
++	if (!pdev) {
++		printk(KERN_ERR "bcm47xx: GPIODEV init failed\n");
++		return -ENODEV;
++	}
++
++	return 0;
++}
++device_initcall(bcm47xx_register_gpiodev);

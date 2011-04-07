@@ -1,0 +1,328 @@
+--- a/drivers/net/tg3.c
++++ b/drivers/net/tg3.c
+@@ -43,6 +43,7 @@
+ #include <linux/prefetch.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/firmware.h>
++#include <linux/ssb/ssb_driver_gige.h>
+ 
+ #include <net/checksum.h>
+ #include <net/ip.h>
+@@ -488,8 +489,9 @@ static void _tw32_flush(struct tg3 *tp,
+ static inline void tw32_mailbox_flush(struct tg3 *tp, u32 off, u32 val)
+ {
+ 	tp->write32_mbox(tp, off, val);
+-	if (!(tp->tg3_flags & TG3_FLAG_MBOX_WRITE_REORDER) &&
+-	    !(tp->tg3_flags2 & TG3_FLG2_ICH_WORKAROUND))
++	if ((tp->tg3_flags3 & TG3_FLG3_FLUSH_POSTED_WRITES) ||
++	    (!(tp->tg3_flags & TG3_FLAG_MBOX_WRITE_REORDER) &&
++	     !(tp->tg3_flags2 & TG3_FLG2_ICH_WORKAROUND)))
+ 		tp->read32_mbox(tp, off);
+ }
+ 
+@@ -499,7 +501,7 @@ static void tg3_write32_tx_mbox(struct t
+ 	writel(val, mbox);
+ 	if (tp->tg3_flags & TG3_FLAG_TXD_MBOX_HWBUG)
+ 		writel(val, mbox);
+-	if (tp->tg3_flags & TG3_FLAG_MBOX_WRITE_REORDER)
++	if ((tp->tg3_flags & TG3_FLAG_MBOX_WRITE_REORDER) || (tp->tg3_flags3 & TG3_FLG3_FLUSH_POSTED_WRITES))
+ 		readl(mbox);
+ }
+ 
+@@ -782,7 +784,7 @@ static void tg3_switch_clocks(struct tg3
+ 
+ #define PHY_BUSY_LOOPS	5000
+ 
+-static int tg3_readphy(struct tg3 *tp, int reg, u32 *val)
++static int __tg3_readphy(struct tg3 *tp, unsigned int phy_addr, int reg, u32 *val)
+ {
+ 	u32 frame_val;
+ 	unsigned int loops;
+@@ -796,7 +798,7 @@ static int tg3_readphy(struct tg3 *tp, i
+ 
+ 	*val = 0x0;
+ 
+-	frame_val  = ((tp->phy_addr << MI_COM_PHY_ADDR_SHIFT) &
++	frame_val  = ((phy_addr << MI_COM_PHY_ADDR_SHIFT) &
+ 		      MI_COM_PHY_ADDR_MASK);
+ 	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
+ 		      MI_COM_REG_ADDR_MASK);
+@@ -831,7 +833,12 @@ static int tg3_readphy(struct tg3 *tp, i
+ 	return ret;
+ }
+ 
+-static int tg3_writephy(struct tg3 *tp, int reg, u32 val)
++static int tg3_readphy(struct tg3 *tp, int reg, u32 *val)
++{
++	return __tg3_readphy(tp, tp->phy_addr, reg, val);
++}
++
++static int __tg3_writephy(struct tg3 *tp, unsigned int phy_addr, int reg, u32 val)
+ {
+ 	u32 frame_val;
+ 	unsigned int loops;
+@@ -847,7 +854,7 @@ static int tg3_writephy(struct tg3 *tp,
+ 		udelay(80);
+ 	}
+ 
+-	frame_val  = ((tp->phy_addr << MI_COM_PHY_ADDR_SHIFT) &
++	frame_val  = ((phy_addr << MI_COM_PHY_ADDR_SHIFT) &
+ 		      MI_COM_PHY_ADDR_MASK);
+ 	frame_val |= ((reg << MI_COM_REG_ADDR_SHIFT) &
+ 		      MI_COM_REG_ADDR_MASK);
+@@ -880,6 +887,11 @@ static int tg3_writephy(struct tg3 *tp,
+ 	return ret;
+ }
+ 
++static int tg3_writephy(struct tg3 *tp, int reg, u32 val)
++{
++	return __tg3_writephy(tp, tp->phy_addr, reg, val);
++}
++
+ static int tg3_bmcr_reset(struct tg3 *tp)
+ {
+ 	u32 phy_control;
+@@ -2467,6 +2479,9 @@ static int tg3_nvram_read(struct tg3 *tp
+ {
+ 	int ret;
+ 
++	if (tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE)
++		return -ENODEV;
++
+ 	if (!(tp->tg3_flags & TG3_FLAG_NVRAM))
+ 		return tg3_nvram_read_using_eeprom(tp, offset, val);
+ 
+@@ -2791,8 +2806,10 @@ static int tg3_power_down_prepare(struct
+ 	tg3_frob_aux_power(tp);
+ 
+ 	/* Workaround for unstable PLL clock */
+-	if ((GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_AX) ||
+-	    (GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_BX)) {
++	if ((tp->phy_id & TG3_PHY_ID_MASK) != TG3_PHY_ID_BCM5750_2 &&
++				/* !!! FIXME !!! */
++	    ((GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_AX) ||
++	    (GET_CHIP_REV(tp->pci_chip_rev_id) == CHIPREV_5750_BX))) {
+ 		u32 val = tr32(0x7d00);
+ 
+ 		val &= ~((1 << 16) | (1 << 4) | (1 << 2) | (1 << 1) | 1);
+@@ -3311,6 +3328,14 @@ relink:
+ 	if (current_link_up == 0 || (tp->phy_flags & TG3_PHYFLG_IS_LOW_POWER)) {
+ 		tg3_phy_copper_begin(tp);
+ 
++		if (tp->tg3_flags3 & TG3_FLG3_ROBOSWITCH) {
++			current_link_up = 1;
++			current_speed = SPEED_1000; /* FIXME */
++			current_duplex = DUPLEX_FULL;
++			tp->link_config.active_speed = current_speed;
++			tp->link_config.active_duplex = current_duplex;
++		}
++
+ 		tg3_readphy(tp, MII_BMSR, &bmsr);
+ 		if (!tg3_readphy(tp, MII_BMSR, &bmsr) &&
+ 		    (bmsr & BMSR_LSTATUS))
+@@ -6887,6 +6912,11 @@ static int tg3_poll_fw(struct tg3 *tp)
+ 	int i;
+ 	u32 val;
+ 
++	if (tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE) {
++		/* We don't use firmware. */
++		return 0;
++	}
++
+ 	if (GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5906) {
+ 		/* Wait up to 20ms for init done. */
+ 		for (i = 0; i < 200; i++) {
+@@ -7177,6 +7207,14 @@ static int tg3_chip_reset(struct tg3 *tp
+ 		tw32(0x5000, 0x400);
+ 	}
+ 
++	if (tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE) {
++		/* BCM4785: In order to avoid repercussions from using potentially
++		 * defective internal ROM, stop the Rx RISC CPU, which is not
++		 * required. */
++		tg3_stop_fw(tp);
++		tg3_halt_cpu(tp, RX_CPU_BASE);
++	}
++
+ 	tw32(GRC_MODE, tp->grc_mode);
+ 
+ 	if (tp->pci_chip_rev_id == CHIPREV_ID_5705_A0) {
+@@ -7331,9 +7369,12 @@ static int tg3_halt_cpu(struct tg3 *tp,
+ 		return -ENODEV;
+ 	}
+ 
+-	/* Clear firmware's nvram arbitration. */
+-	if (tp->tg3_flags & TG3_FLAG_NVRAM)
+-		tw32(NVRAM_SWARB, SWARB_REQ_CLR0);
++	if (!(tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE)) {
++		/* Clear firmware's nvram arbitration. */
++		if (tp->tg3_flags & TG3_FLAG_NVRAM)
++			tw32(NVRAM_SWARB, SWARB_REQ_CLR0);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -7396,6 +7437,11 @@ static int tg3_load_5701_a0_firmware_fix
+ 	const __be32 *fw_data;
+ 	int err, i;
+ 
++	if (tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE) {
++		/* We don't use firmware. */
++		return 0;
++	}
++
+ 	fw_data = (void *)tp->fw->data;
+ 
+ 	/* Firmware blob starts with version numbers, followed by
+@@ -7454,6 +7500,11 @@ static int tg3_load_tso_firmware(struct
+ 	unsigned long cpu_base, cpu_scratch_base, cpu_scratch_size;
+ 	int err, i;
+ 
++	if (tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE) {
++		/* We don't use firmware. */
++		return 0;
++	}
++
+ 	if (tp->tg3_flags2 & TG3_FLG2_HW_TSO)
+ 		return 0;
+ 
+@@ -8671,6 +8722,11 @@ static void tg3_timer(unsigned long __op
+ 
+ 	spin_lock(&tp->lock);
+ 
++	if (tp->tg3_flags3 & TG3_FLG3_FLUSH_POSTED_WRITES) {
++		/* BCM4785: Flush posted writes from GbE to host memory. */
++		tr32(HOSTCC_MODE);
++	}
++
+ 	if (!(tp->tg3_flags & TG3_FLAG_TAGGED_STATUS)) {
+ 		/* All of this garbage is because when using non-tagged
+ 		 * IRQ status the mailbox/status_block protocol the chip
+@@ -10341,6 +10397,11 @@ static int tg3_test_nvram(struct tg3 *tp
+ 	if (tp->tg3_flags3 & TG3_FLG3_NO_NVRAM)
+ 		return 0;
+ 
++	if (tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE) {
++		/* We don't have NVRAM. */
++		return 0;
++	}
++
+ 	if (tg3_nvram_read(tp, 0, &magic) != 0)
+ 		return -EIO;
+ 
+@@ -11164,7 +11225,7 @@ static int tg3_ioctl(struct net_device *
+ 			return -EAGAIN;
+ 
+ 		spin_lock_bh(&tp->lock);
+-		err = tg3_readphy(tp, data->reg_num & 0x1f, &mii_regval);
++		err = __tg3_readphy(tp, data->phy_id & 0x1f, data->reg_num & 0x1f, &mii_regval);
+ 		spin_unlock_bh(&tp->lock);
+ 
+ 		data->val_out = mii_regval;
+@@ -11182,7 +11243,7 @@ static int tg3_ioctl(struct net_device *
+ 			return -EAGAIN;
+ 
+ 		spin_lock_bh(&tp->lock);
+-		err = tg3_writephy(tp, data->reg_num & 0x1f, data->val_in);
++		err = __tg3_writephy(tp, data->phy_id & 0x1f, data->reg_num & 0x1f, data->val_in);
+ 		spin_unlock_bh(&tp->lock);
+ 
+ 		return err;
+@@ -11802,6 +11863,12 @@ static void __devinit tg3_get_5717_nvram
+ /* Chips other than 5700/5701 use the NVRAM for fetching info. */
+ static void __devinit tg3_nvram_init(struct tg3 *tp)
+ {
++	if (tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE) {
++		/* No NVRAM and EEPROM on the SSB Broadcom GigE core. */
++		tp->tg3_flags &= ~(TG3_FLAG_NVRAM | TG3_FLAG_NVRAM_BUFFERED);
++		return;
++	}
++
+ 	tw32_f(GRC_EEPROM_ADDR,
+ 	     (EEPROM_ADDR_FSM_RESET |
+ 	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
+@@ -12065,6 +12132,9 @@ static int tg3_nvram_write_block(struct
+ {
+ 	int ret;
+ 
++	if (tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE)
++		return -ENODEV;
++
+ 	if (tp->tg3_flags & TG3_FLAG_EEPROM_WRITE_PROT) {
+ 		tw32_f(GRC_LOCAL_CTRL, tp->grc_local_ctrl &
+ 		       ~GRC_LCLCTRL_GPIO_OUTPUT1);
+@@ -13527,6 +13597,11 @@ static int __devinit tg3_get_invariants(
+ 	      GET_ASIC_REV(tp->pci_chip_rev_id) == ASIC_REV_5701)))
+ 		tp->tg3_flags |= TG3_FLAG_SRAM_USE_CONFIG;
+ 
++	if (tp->tg3_flags3 & TG3_FLG3_FLUSH_POSTED_WRITES) {
++		tp->write32_tx_mbox = tg3_write_flush_reg32;
++		tp->write32_rx_mbox = tg3_write_flush_reg32;
++	}
++
+ 	/* Get eeprom hw config before calling tg3_set_power_state().
+ 	 * In particular, the TG3_FLG2_IS_NIC flag must be
+ 	 * determined before calling tg3_set_power_state() so that
+@@ -13924,6 +13999,10 @@ static int __devinit tg3_get_device_addr
+ 	}
+ 
+ 	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
++		if (tp->tg3_flags3 & TG3_FLG3_IS_SSB_CORE)
++			ssb_gige_get_macaddr(tp->pdev, &dev->dev_addr[0]);
++	}
++	if (!is_valid_ether_addr(&dev->dev_addr[0])) {
+ #ifdef CONFIG_SPARC
+ 		if (!tg3_get_default_macaddr_sparc(tp))
+ 			return 0;
+@@ -14441,6 +14520,7 @@ static char * __devinit tg3_phy_string(s
+ 	case TG3_PHY_ID_BCM5704:	return "5704";
+ 	case TG3_PHY_ID_BCM5705:	return "5705";
+ 	case TG3_PHY_ID_BCM5750:	return "5750";
++	case TG3_PHY_ID_BCM5750_2:	return "5750-2";
+ 	case TG3_PHY_ID_BCM5752:	return "5752";
+ 	case TG3_PHY_ID_BCM5714:	return "5714";
+ 	case TG3_PHY_ID_BCM5780:	return "5780";
+@@ -14644,6 +14724,13 @@ static int __devinit tg3_init_one(struct
+ 		tp->msg_enable = tg3_debug;
+ 	else
+ 		tp->msg_enable = TG3_DEF_MSG_ENABLE;
++	if (pdev_is_ssb_gige_core(pdev)) {
++		tp->tg3_flags3 |= TG3_FLG3_IS_SSB_CORE;
++		if (ssb_gige_must_flush_posted_writes(pdev))
++			tp->tg3_flags3 |= TG3_FLG3_FLUSH_POSTED_WRITES;
++		if (ssb_gige_have_roboswitch(pdev))
++			tp->tg3_flags3 |= TG3_FLG3_ROBOSWITCH;
++	}
+ 
+ 	/* The word/byte swap controls here control register access byte
+ 	 * swapping.  DMA data byte swapping is controlled in the GRC_MODE
+--- a/drivers/net/tg3.h
++++ b/drivers/net/tg3.h
+@@ -2060,6 +2060,9 @@
+ #define  NIC_SRAM_RGMII_INBAND_DISABLE	 0x00000004
+ #define  NIC_SRAM_RGMII_EXT_IBND_RX_EN	 0x00000008
+ #define  NIC_SRAM_RGMII_EXT_IBND_TX_EN	 0x00000010
++#define TG3_FLG3_IS_SSB_CORE		0x00000800
++#define TG3_FLG3_FLUSH_POSTED_WRITES	0x00001000
++#define TG3_FLG3_ROBOSWITCH		0x00002000
+ 
+ #define NIC_SRAM_RX_MINI_BUFFER_DESC	0x00001000
+ 
+@@ -2962,6 +2965,7 @@ struct tg3 {
+ #define TG3_PHY_ID_BCM5704		0x60008190
+ #define TG3_PHY_ID_BCM5705		0x600081a0
+ #define TG3_PHY_ID_BCM5750		0x60008180
++#define TG3_PHY_ID_BCM5750_2		0xbc050cd0
+ #define TG3_PHY_ID_BCM5752		0x60008100
+ #define TG3_PHY_ID_BCM5714		0x60008340
+ #define TG3_PHY_ID_BCM5780		0x60008350
+@@ -2998,7 +3002,7 @@ struct tg3 {
+ 	 (X) == TG3_PHY_ID_BCM5906 || (X) == TG3_PHY_ID_BCM5761 || \
+ 	 (X) == TG3_PHY_ID_BCM5718C || (X) == TG3_PHY_ID_BCM5718S || \
+ 	 (X) == TG3_PHY_ID_BCM57765 || (X) == TG3_PHY_ID_BCM5719C || \
+-	 (X) == TG3_PHY_ID_BCM8002)
++	 (X) == TG3_PHY_ID_BCM8002 || (X) == TG3_PHY_ID_BCM5750_2)
+ 
+ 	u32				phy_flags;
+ #define TG3_PHYFLG_IS_LOW_POWER		0x00000001
