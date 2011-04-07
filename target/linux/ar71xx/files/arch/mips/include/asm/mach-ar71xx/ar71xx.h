@@ -427,6 +427,12 @@ static inline u32 ar71xx_usb_ctrl_rr(unsigned reg)
 
 #define AR91XX_GPIO_COUNT	22
 
+#define AR934X_GPIO_FUNC_SPI_CS_1_EN	BIT(14)
+#define AR934X_GPIO_FUNC_SPI_CS_0_EN	BIT(13)
+
+#define AR934X_GPIO_COUNT		32
+#define AR934X_GPIO_FUNC_DDR_DQOE_EN	BIT(17)
+
 extern void __iomem *ar71xx_gpio_base;
 
 static inline void ar71xx_gpio_wr(unsigned reg, u32 value)
