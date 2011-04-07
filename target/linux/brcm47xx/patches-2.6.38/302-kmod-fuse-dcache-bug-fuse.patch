@@ -1,0 +1,46 @@
+--- a/fs/fuse/dev.c
++++ b/fs/fuse/dev.c
+@@ -647,11 +647,20 @@ static int fuse_copy_fill(struct fuse_co
+ 	return lock_request(cs->fc, cs->req);
+ }
+ 
++#ifdef DCACHE_BUG
++extern void (*fuse_flush_cache_all)(void);
++#endif
++
+ /* Do as much copy to/from userspace buffer as we can */
+ static int fuse_copy_do(struct fuse_copy_state *cs, void **val, unsigned *size)
+ {
+ 	unsigned ncpy = min(*size, cs->len);
+ 	if (val) {
++#ifdef DCACHE_BUG
++		// patch from mailing list, it is very important, otherwise,
++		// can't mount, or ls mount point will hang
++		fuse_flush_cache_all();
++#endif
+ 		if (cs->write)
+ 			memcpy(cs->buf, *val, ncpy);
+ 		else
+--- a/fs/fuse/fuse_i.h
++++ b/fs/fuse/fuse_i.h
+@@ -8,6 +8,7 @@
+ 
+ #ifndef _FS_FUSE_I_H
+ #define _FS_FUSE_I_H
++#define DCACHE_BUG
+ 
+ #include <linux/fuse.h>
+ #include <linux/fs.h>
+--- a/fs/fuse/inode.c
++++ b/fs/fuse/inode.c
+@@ -1199,6 +1199,10 @@ static int __init fuse_init(void)
+ 	printk(KERN_INFO "fuse init (API version %i.%i)\n",
+ 	       FUSE_KERNEL_VERSION, FUSE_KERNEL_MINOR_VERSION);
+ 
++#ifdef DCACHE_BUG
++	printk("fuse init DCACHE_BUG workaround enabled\n");
++#endif
++
+ 	INIT_LIST_HEAD(&fuse_conn_list);
+ 	res = fuse_fs_init();
+ 	if (res)
