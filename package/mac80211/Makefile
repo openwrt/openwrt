@@ -682,6 +682,224 @@ define KernelPackage/net-hermes-pcmcia/description
  Kernel modules for Hermes based PCMCIA adaptors
 endef
 
+IWL3945_NAME:=iwlwifi-3945-ucode
+IWL3945_VERSION:=15.32.2.9
+IWL3945_MD5SUM:=d99a75ab1305d1532a09471b2f9a547a
+IWL4965_NAME:=iwlwifi-4965-ucode
+IWL4965_VERSION:=228.61.2.24
+IWL4965_MD5SUM:=2531028773cfc22aca5539c734f2a241
+IWL5000_NAME:=iwlwifi-5000-ucode
+IWL5000_VERSION:=8.83.5.1
+IWL5000_MD5SUM:=da82465019b3c7d1ee5156474ab4931d
+IWL5150_NAME:=iwlwifi-5150-ucode
+IWL5150_VERSION:=8.24.2.2
+IWL5150_MD5SUM:=f9cee16e455e8046b1bf62c93f882d5d
+IWL1000_NAME:=iwlwifi-1000-ucode
+IWL1000_VERSION:=39.31.5.1
+IWL1000_MD5SUM:=8098503cb2abcdeffffb3ddd2d8d6f60
+IWL6000_NAME:=iwlwifi-6000-ucode
+IWL6000_VERSION:=9.221.4.1
+IWL6000_MD5SUM:=c132a4c1946a9dbc0c36b41696e5c793
+IWL6050_NAME:=iwlwifi-6050-ucode
+IWL6050_VERSION:=41.28.5.1
+IWL6050_MD5SUM:=cb484a65b9139666d4ddebf60598a87b
+IWL6005_NAME:=iwlwifi-6000g2a-ucode
+IWL6005_VERSION:=17.168.5.2
+IWL6005_MD5SUM:=0b9579f4b8faf51c955295607a8e79a8
+IWL6030_NAME:=iwlwifi-6000g2b-ucode
+IWL6030_VERSION:=17.168.5.2
+IWL6030_MD5SUM:=d87411296b4eeda0c91322228e9f8437
+IWL100_NAME:=iwlwifi-100-ucode
+IWL100_VERSION:=39.31.5.1
+IWL100_MD5SUM:=b686f0ab94888ccca3ce74d2d6ee1133
+
+
+define Download/iwl-fw/Default
+  URL:=http://intellinuxwireless.org/iwlwifi/downloads/
+endef
+
+define Download/iwl3945-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL3945_NAME)-$(IWL3945_VERSION).tgz
+  MD5SUM:=$(IWL3945_MD5SUM)
+endef
+$(eval $(call Download,iwl3945-fw))
+
+define Download/iwl4965-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL4965_NAME)-$(IWL4965_VERSION).tgz
+  MD5SUM:=$(IWL4965_MD5SUM)
+endef
+$(eval $(call Download,iwl4965-fw))
+
+define Download/iwl5000-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL5000_NAME)-$(IWL5000_VERSION).tgz
+  MD5SUM:=$(IWL5000_MD5SUM)
+endef
+$(eval $(call Download,iwl5000-fw))
+
+define Download/iwl5150-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL5150_NAME)-$(IWL5150_VERSION).tgz
+  MD5SUM:=$(IWL5150_MD5SUM)
+endef
+$(eval $(call Download,iwl5150-fw))
+
+define Download/iwl1000-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL1000_NAME)-$(IWL1000_VERSION).tgz
+  MD5SUM:=$(IWL1000_MD5SUM)
+endef
+$(eval $(call Download,iwl1000-fw))
+
+define Download/iwl6000-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL6000_NAME)-$(IWL6000_VERSION).tgz
+  MD5SUM:=$(IWL6000_MD5SUM)
+endef
+$(eval $(call Download,iwl6000-fw))
+
+define Download/iwl6050-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL6050_NAME)-$(IWL6050_VERSION).tgz
+  MD5SUM:=$(IWL6050_MD5SUM)
+endef
+$(eval $(call Download,iwl6050-fw))
+
+define Download/iwl6005-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL6005_NAME)-$(IWL6005_VERSION).tgz
+  MD5SUM:=$(IWL6005_MD5SUM)
+endef
+$(eval $(call Download,iwl6005-fw))
+
+define Download/iwl6030-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL6030_NAME)-$(IWL6030_VERSION).tgz
+  MD5SUM:=$(IWL6030_MD5SUM)
+endef
+$(eval $(call Download,iwl6030-fw))
+
+define Download/iwl100-fw
+  $(call Download/iwl-fw/Default)
+  FILE:=$(IWL100_NAME)-$(IWL100_VERSION).tgz
+  MD5SUM:=$(IWL100_MD5SUM)
+endef
+$(eval $(call Download,iwl100-fw))
+
+define KernelPackage/iwlagn
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS:= +kmod-mac80211
+  TITLE:=Intel AGN Wireless support
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/iwlagn.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,iwlagn)
+  MENU:=1
+endef
+
+define KernelPackage/iwlagn/description
+ iwlagn kernel module for Intel 5000/5150/1000/6000/6050/6005/6030/100 support
+endef
+
+define KernelPackage/iwlagn/config
+	menu "Configuration"
+		depends on PACKAGE_kmod-iwlagn
+
+	config IWL5000_FW
+		bool "Intel 5000 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel 5000 wireless card into /lib/firmware.
+
+	config IWL5150_FW
+		bool "Intel 5150 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel 5150 wireless card into /lib/firmware.
+
+	config IWL1000_FW
+		bool "Intel 1000 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel 1000 wireless card into /lib/firmware.
+
+	config IWL6000_FW
+		bool "Intel 6000 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel 6000 wireless card into /lib/firmware.
+
+	config IWL6050_FW
+		bool "Intel 6050 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel 6050 wireless card into /lib/firmware.
+
+	config IWL6005_FW
+		bool "Intel 6005 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel 6005 wireless card into /lib/firmware.
+
+	config IWL6030_FW
+		bool "Intel 6030 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel 6030 wireless card into /lib/firmware.
+
+	config IWL100_FW
+		bool "Intel 100 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel 100 wireless card into /lib/firmware.
+
+	endmenu
+endef
+
+define KernelPackage/iwl-legacy
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS:= +kmod-mac80211
+  TITLE:=Intel legacy Wireless support
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl-legacy.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,60,iwl-legacy)
+endef
+
+define KernelPackage/iwl-legacy/description
+ iwl-legacy kernel module for legacy Intel wireless support
+endef
+
+define KernelPackage/iwl3945
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS:= +kmod-mac80211 +kmod-iwl-legacy
+  TITLE:=Intel iwl3945 Wireless support
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl3945.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,61,iwl3945)
+endef
+
+define KernelPackage/iwl3945/description
+ iwl3945 kernel module for Intel 3945 support
+endef
+
+define KernelPackage/iwl4965
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS:= +kmod-mac80211 +kmod-iwl-legacy
+  TITLE:=Intel iwl4965 Wireless support
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl4965.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,61,iwl4965)
+endef
+
+define KernelPackage/iwl4965/description
+ iwl4965 kernel module for Intel 4965 support
+endef
+
 
 define KernelPackage/mwl8k
   $(call KernelPackage/mac80211/Default)
@@ -940,7 +1158,9 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PACKAGE_kmod-rt2x00-pci),-DCONFIG_RT2X00_LIB_PCI) \
 	$(if $(CONFIG_PACKAGE_kmod-rt2x00-usb),-DCONFIG_RT2X00_LIB_USB) \
 	$(if $(CONFIG_PACKAGE_kmod-rt2x00-soc),-DCONFIG_RT2X00_LIB_SOC) \
-	$(if $(CONFIG_TARGET_atheros),-DCONFIG_ATH5K_AHB,-DCONFIG_ATH5K_PCI)
+	$(if $(CONFIG_TARGET_atheros),-DCONFIG_ATH5K_AHB,-DCONFIG_ATH5K_PCI) \
+	$(if $(CONFIG_PACKAGE_kmod-iwl3945),-DCONFIG_COMPAT_IWL3945) \
+	$(if $(CONFIG_PACKAGE_kmod-iwl4965),-DCONFIG_COMPAT_IWL4965)
 
 MAKE_OPTS:= \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
@@ -1018,9 +1238,10 @@ MAKE_OPTS:= \
 	CONFIG_LIB80211_CRYPT_WEP= \
 	CONFIG_LIB80211_CRYPT_CCMP= \
 	CONFIG_LIB80211_CRYPT_TKIP= \
-	CONFIG_COMPAT_IWLWIFI= \
-	CONFIG_IWLWIFI_LEGACY= \
-	CONFIG_IWLAGN= \
+	CONFIG_IWLAGN=$(if $(CONFIG_PACKAGE_kmod-iwlagn),m) \
+	CONFIG_IWLWIFI_LEGACY=$(if $(CONFIG_PACKAGE_kmod-iwl-legacy),m) \
+	CONFIG_COMPAT_IWL4965=$(if $(CONFIG_PACKAGE_kmod-iwl4965),m) \
+	CONFIG_IWL3945=$(if $(CONFIG_PACKAGE_kmod-iwl3945),m) \
 	CONFIG_MWL8K=$(if $(CONFIG_PACKAGE_kmod-mwl8k),m) \
 	CONFIG_ATMEL= \
 	CONFIG_PCMCIA_ATMEL= \
@@ -1049,7 +1270,6 @@ MAKE_OPTS:= \
 	CONFIG_MWIFIEX= \
 	CONFIG_MAC80211_RC_MINSTREL_HT=y \
 	MADWIFI= \
-	OLD_IWL= \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=: \
 	KLIB=$(TARGET_MODULES_DIR) \
@@ -1071,6 +1291,16 @@ define Build/Prepare
 	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2870FW)
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2100_NAME)-$(IPW2100_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL3945_NAME)-$(IWL3945_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL4965_NAME)-$(IWL4965_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL5000_NAME)-$(IWL5000_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL5150_NAME)-$(IWL5150_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL1000_NAME)-$(IWL1000_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL6000_NAME)-$(IWL6000_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL6050_NAME)-$(IWL6050_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL6005_NAME)-$(IWL6005_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL6030_NAME)-$(IWL6030_VERSION).tgz
+	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL100_NAME)-$(IWL100_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
@@ -1179,6 +1409,44 @@ define KernelPackage/net-ipw2200/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION)/ipw2200*.fw $(1)/lib/firmware
 endef
 
+define KernelPackage/iwlagn/install
+        $(INSTALL_DIR) $(1)/lib/firmware
+ifneq ($(CONFIG_IWL5000_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL5000_NAME)-$(IWL5000_VERSION)/iwlwifi-5000-*.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL5150_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL5150_NAME)-$(IWL5150_VERSION)/iwlwifi-5150-*.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL1000_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL1000_NAME)-$(IWL1000_VERSION)/iwlwifi-1000-*.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL6000_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL6000_NAME)-$(IWL6000_VERSION)/iwlwifi-6000-*.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL6050_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL6050_NAME)-$(IWL6050_VERSION)/iwlwifi-6050-*.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL6005_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL6005_NAME)-$(IWL6005_VERSION)/iwlwifi-6000g2a-*.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL6030_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL6030_NAME)-$(IWL6030_VERSION)/iwlwifi-6000g2b-*.ucode $(1)/lib/firmware
+endif
+ifneq ($(CONFIG_IWL100_FW),)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL100_NAME)-$(IWL100_VERSION)/iwlwifi-100-*.ucode $(1)/lib/firmware
+endif
+endef
+
+define KernelPackage/iwl3945/install
+        $(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL3945_NAME)-$(IWL3945_VERSION)/iwlwifi-3945-*.ucode $(1)/lib/firmware
+endef
+
+define KernelPackage/iwl4965/install
+        $(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL4965_NAME)-$(IWL4965_VERSION)/iwlwifi-4965-*.ucode $(1)/lib/firmware
+endef
+
 define Build/b43-common
 	tar xjf "$(DL_DIR)/$(PKG_B43_FWCUTTER_SOURCE)" -C "$(PKG_BUILD_DIR)"
 	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_OBJECT)" \
@@ -1262,6 +1530,10 @@ $(eval $(call KernelPackage,b43legacy))
 $(eval $(call KernelPackage,net-libipw))
 $(eval $(call KernelPackage,net-ipw2100))
 $(eval $(call KernelPackage,net-ipw2200))
+$(eval $(call KernelPackage,iwlagn))
+$(eval $(call KernelPackage,iwl-legacy))
+$(eval $(call KernelPackage,iwl4965))
+$(eval $(call KernelPackage,iwl3945))
 $(eval $(call KernelPackage,mwl8k))
 $(eval $(call KernelPackage,net-hermes))
 $(eval $(call KernelPackage,net-hermes-pci))
