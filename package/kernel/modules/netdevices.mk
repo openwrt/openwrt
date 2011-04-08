@@ -270,6 +270,13 @@ define KernelPackage/e100/description
  Kernel modules for Intel(R) PRO/100+ Ethernet adapters.
 endef
 
+define KernelPackage/e100/install
+	$(INSTALL_DIR) $(1)/lib/firmware/e100
+	$(foreach file,d101m_ucode.bin d101s_ucode.bin d102e_ucode.bin, \
+		$(TARGET_CROSS)objcopy -Iihex -Obinary $(LINUX_DIR)/firmware/e100/$(file).ihex $(1)/lib/firmware/e100/$(file); \
+	)
+endef
+
 $(eval $(call KernelPackage,e100))
 
 
