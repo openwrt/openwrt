@@ -110,6 +110,7 @@ enum {
 
 	/* Netgear */
 	WGT634U,
+	WNR834BV1,
 	WNR834BV2,
 
 	/* Trendware */
@@ -758,8 +759,19 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 3, .polarity = NORMAL },
 		},
 	},
+	/* Netgear */
+	[WNR834BV1] = {
+		.name		= "Netgear WNR834B V1",
+		.buttons	= { /* TODO: add reset button and confirm LEDs - GPIO from dd-wrt */ },
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 4, .polarity = REVERSE },
+			{ .name = "diag",	.gpio = 1 << 5, .polarity = REVERSE },
+			{ .name = "wlan",	.gpio = 1 << 6, .polarity = REVERSE },
+		},
+	},
+	/* Netgear */
 	[WNR834BV2] = {
-		.name		= "Netgear WNR834B V2",
+		.name	 	= "Netgear WNR834B V2",
 		.buttons	= {
 			{ .name = "reset",	.gpio = 1 << 6 },
 		},
@@ -1060,10 +1072,11 @@ static struct platform_t __init *platform_detect(void)
 			return &platforms[WDNetCenter];
 		}
 
-		if ((!strcmp(boardnum, "08") || !strcmp(boardnum, "01")) &&
-				!strcmp(boardtype,"0x0472") && !strcmp(getvar("cardbus"), "1")) { /* Netgear WNR834B  V1 and V2*/
-			/* TODO: Check for version. Default platform is V2 for now. */
-			return &platforms[WNR834BV2];
+		if (!strcmp(boardtype,"0x0472") && !strcmp(getvar("cardbus"), "1")) { /* Netgear WNR834B  V1 and V2*/
+			if (!strcmp(boardnum, "08") || !strcmp(boardnum, "8"))
+				return &platforms[WNR834BV1];
+			if (!strcmp(boardnum, "01") || !strcmp(boardnum, "1"))
+				return &platforms[WNR834BV2];
 		}
 
 	} else { /* PMON based - old stuff */
