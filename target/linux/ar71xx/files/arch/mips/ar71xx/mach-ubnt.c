@@ -138,7 +138,7 @@ static void __init ubnt_generic_setup(void)
  * Do not increase Secondary MAC address by 1 but do workaround
  * with 'Locally Administrated' bit.
  */
-static void ubnt_init_secondary_mac(unsigned char *mac_base)
+static void __init ubnt_init_secondary_mac(unsigned char *mac_base)
 {
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac_base, 0);
 	ar71xx_eth1_data.mac_addr[0] |= 0x02;
