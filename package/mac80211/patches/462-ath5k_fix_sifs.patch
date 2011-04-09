@@ -1,0 +1,23 @@
+--- a/drivers/net/wireless/ath/ath5k/ath5k.h
++++ b/drivers/net/wireless/ath/ath5k/ath5k.h
+@@ -224,8 +224,7 @@
+ 
+ /* SIFS */
+ #define	AR5K_INIT_SIFS_TURBO			6
+-/* XXX: 8 from initvals 10 from standard */
+-#define	AR5K_INIT_SIFS_DEFAULT_BG		8
++#define	AR5K_INIT_SIFS_DEFAULT_BG		10
+ #define	AR5K_INIT_SIFS_DEFAULT_A		16
+ #define	AR5K_INIT_SIFS_HALF_RATE		32
+ #define AR5K_INIT_SIFS_QUARTER_RATE		64
+--- a/drivers/net/wireless/ath/ath5k/qcu.c
++++ b/drivers/net/wireless/ath/ath5k/qcu.c
+@@ -519,7 +519,7 @@ int ath5k_hw_set_ifs_intervals(struct at
+ 		return -EINVAL;
+ 
+ 	sifs = ath5k_hw_get_default_sifs(ah);
+-	sifs_clock = ath5k_hw_htoclock(ah, sifs);
++	sifs_clock = ath5k_hw_htoclock(ah, sifs - 2);
+ 
+ 	/* EIFS
+ 	 * Txtime of ack at lowest rate + SIFS + DIFS
