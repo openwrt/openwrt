@@ -18,6 +18,7 @@ PKG_SOURCE_URL:=git://acx100.git.sourceforge.net/gitroot/acx100/acx-mac80211
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
+PKG_BUILD_DEPENDS:=mac80211
 
 include $(INCLUDE_DIR)/package.mk
 
