@@ -99,13 +99,29 @@ define AddDepends/sound
 endef
 
 
-define KernelPackage/sound-i8x0
-  TITLE:=Intel/SiS/nVidia/AMD/ALi AC97 Controller
-  KCONFIG:=CONFIG_SND_INTEL8X0
-  FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.ko \
+define KernelPackage/ac97
+  TITLE:=ac97 controller
+  KCONFIG:=CONFIG_SND_AC97_CODEC
+  FILES:= \
 	$(LINUX_DIR)/sound/ac97_bus.ko \
 	$(LINUX_DIR)/sound/pci/ac97/snd-ac97-codec.ko 
-  AUTOLOAD:=$(call AutoLoad,35,ac97_bus snd-ac97-codec snd-intel8x0)
+  AUTOLOAD:=$(call AutoLoad,35,ac97_bus snd-ac97-codec)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/ac97/description
+ The ac97 controller
+endef
+
+$(eval $(call KernelPackage,ac97))
+
+
+define KernelPackage/sound-i8x0
+  TITLE:=Intel/SiS/nVidia/AMD/ALi AC97 Controller
+  DEPENDS:=+kmod-ac97
+  KCONFIG:=CONFIG_SND_INTEL8X0
+  FILES:=$(LINUX_DIR)/sound/pci/snd-intel8x0.ko
+  AUTOLOAD:=$(call AutoLoad,36,snd-intel8x0)
   $(call AddDepends/sound)
 endef
 
@@ -120,11 +136,10 @@ $(eval $(call KernelPackage,sound-i8x0))
 
 define KernelPackage/sound-cs5535audio
   TITLE:=CS5535 PCI Controller
+  DEPENDS:=+kmod-ac97
   KCONFIG:=CONFIG_SND_CS5535AUDIO
-  FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.ko \
-	$(LINUX_DIR)/sound/ac97_bus.ko \
-	$(LINUX_DIR)/sound/pci/ac97/snd-ac97-codec.ko 
-  AUTOLOAD:=$(call AutoLoad,35, ac97_bus snd-ac97-codec snd-cs5535audio)
+  FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.ko
+  AUTOLOAD:=$(call AutoLoad,36,snd-cs5535audio)
   $(call AddDepends/sound)
 endef
 
