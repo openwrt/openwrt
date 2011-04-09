@@ -552,7 +552,7 @@
 +#endif /* __ASM_MACH_ATHEROS_CPU_FEATURE_OVERRIDES_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/dma-coherence.h
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,76 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -567,22 +567,34 @@
 +
 +#define PCI_DMA_OFFSET	0x20000000
 +
-+struct device;
++#include <linux/device.h>
++
++static inline dma_addr_t ar231x_dev_offset(struct device *dev)
++{
++#ifdef CONFIG_PCI
++	extern struct bus_type pci_bus_type;
++
++	if (dev && dev->bus == &pci_bus_type)
++		return PCI_DMA_OFFSET;
++	else
++#endif
++		return 0;
++}
 +
 +static inline dma_addr_t plat_map_dma_mem(struct device *dev, void *addr, size_t size)
 +{
-+	return virt_to_phys(addr) + (dev != NULL ? PCI_DMA_OFFSET : 0);
++	return virt_to_phys(addr) + ar231x_dev_offset(dev);
 +}
 +
 +static inline dma_addr_t plat_map_dma_mem_page(struct device *dev, struct page *page)
 +{
-+	return page_to_phys(page) + (dev != NULL ? PCI_DMA_OFFSET : 0);
++	return page_to_phys(page) + ar231x_dev_offset(dev);
 +}
 +
 +static inline unsigned long plat_dma_addr_to_phys(struct device *dev,
 +	dma_addr_t dma_addr)
 +{
-+	return (dma_addr > PCI_DMA_OFFSET ? dma_addr - PCI_DMA_OFFSET : dma_addr);
++	return dma_addr - ar231x_dev_offset(dev);
 +}
 +
 +static inline void plat_unmap_dma_mem(struct device *dev, dma_addr_t dma_addr,
@@ -773,14 +785,14 @@
 + * Address map
 + */
 +#define AR2315_SPI_READ         0x08000000      /* SPI FLASH */
-+#define AR2315_WLAN0            0xB0000000      /* Wireless MMR */
-+#define AR2315_PCI              0xB0100000      /* PCI MMR */
-+#define AR2315_SDRAMCTL         0xB0300000      /* SDRAM MMR */
-+#define AR2315_LOCAL            0xB0400000      /* LOCAL BUS MMR */
-+#define AR2315_ENET0            0xB0500000      /* ETHERNET MMR */
-+#define AR2315_DSLBASE          0xB1000000      /* RESET CONTROL MMR */
-+#define AR2315_UART0            0xB1100003      /* UART MMR */
-+#define AR2315_SPI              0xB1300000      /* SPI FLASH MMR */
++#define AR2315_WLAN0            0x10000000      /* Wireless MMR */
++#define AR2315_PCI              0x10100000      /* PCI MMR */
++#define AR2315_SDRAMCTL         0x10300000      /* SDRAM MMR */
++#define AR2315_LOCAL            0x10400000      /* LOCAL BUS MMR */
++#define AR2315_ENET0            0x10500000      /* ETHERNET MMR */
++#define AR2315_DSLBASE          0x11000000      /* RESET CONTROL MMR */
++#define AR2315_UART0            0x11100003      /* UART MMR */
++#define AR2315_SPI              0x11300000      /* SPI FLASH MMR */
 +#define AR2315_PCIEXT           0x80000000      /* pci external */
 +
 +/*
@@ -2462,7 +2474,7 @@
 +	.reset_base = AR2315_RESET,
 +	.reset_mac = AR2315_RESET_ENET0,
 +	.reset_phy = AR2315_RESET_EPHY0,
-+	.phy_base = AR2315_ENET0,
++	.phy_base = KSEG1ADDR(AR2315_ENET0),
 +	.config = &ar231x_board,
 +};
 +
@@ -2500,13 +2512,13 @@
 +static inline u32
 +spiflash_read_reg(int reg)
 +{
-+	return ar231x_read_reg(KSEG1ADDR(AR2315_SPI) + reg);
++	return ar231x_read_reg(AR2315_SPI + reg);
 +}
 +
 +static inline void
 +spiflash_write_reg(int reg, u32 data)
 +{
-+	ar231x_write_reg(KSEG1ADDR(AR2315_SPI) + reg, data);
++	ar231x_write_reg(AR2315_SPI + reg, data);
 +}
 +
 +static u32
@@ -2635,7 +2647,7 @@
 +	ar2315_init_gpio();
 +	platform_device_register(&ar2315_wdt);
 +	platform_device_register(&ar2315_spiflash);
-+	ar231x_add_ethernet(0, AR2315_ENET0, AR2315_IRQ_ENET0_INTRS,
++	ar231x_add_ethernet(0, KSEG1ADDR(AR2315_ENET0), AR2315_IRQ_ENET0_INTRS,
 +		&ar2315_eth_data);
 +	ar231x_add_wmac(0, AR2315_WLAN0, AR2315_IRQ_WLAN0_INTRS);
 +

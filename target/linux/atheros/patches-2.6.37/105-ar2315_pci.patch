@@ -186,7 +186,7 @@
 +	if (ar231x_devtype != DEV_TYPE_AR2315)
 +		return -ENODEV;
 +
-+	configspace = (unsigned long) ioremap_nocache(0x80000000, 1*1024*1024); /* Remap PCI config space */
++	configspace = (unsigned long) ioremap_nocache(AR2315_PCIEXT, 1*1024*1024); /* Remap PCI config space */
 +	ar231x_pci_controller.io_map_base =
 +		(unsigned long) ioremap_nocache(AR531X_MEM_BASE + AR531X_MEM_SIZE, AR531X_IO_SIZE);
 +	set_io_port_base(ar231x_pci_controller.io_map_base); /* PCI I/O space */
