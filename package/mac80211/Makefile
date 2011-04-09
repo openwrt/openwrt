@@ -562,7 +562,7 @@ define KernelPackage/libertas-sd
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas_sdio.ko
-  AUTOLOAD:=$(call AutoLoad,27,libertas libertas_sdio)
+  AUTOLOAD:=$(call AutoLoad,91,libertas libertas_sdio)
 endef
 
 define KernelPackage/mac80211-hwsim
