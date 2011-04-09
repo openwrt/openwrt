@@ -8,7 +8,7 @@
  
  #ifndef ERR
  #define ERR(fmt, args...) printk("%s: " fmt, __func__, ##args)
-@@ -283,6 +284,21 @@ int __init ar231x_probe(struct platform_
+@@ -298,6 +299,21 @@ int __init ar231x_probe(struct platform_
  
  	mdiobus_register(sp->mii_bus);
  
@@ -30,7 +30,7 @@
  	if (ar231x_mdiobus_probe(dev) != 0) {
  		printk(KERN_ERR "%s: mdiobus_probe failed\n", dev->name);
  		rx_tasklet_cleanup(dev);
-@@ -339,8 +355,10 @@ static int __devexit ar231x_remove(struc
+@@ -354,8 +370,10 @@ static int __devexit ar231x_remove(struc
  	rx_tasklet_cleanup(dev);
  	ar231x_init_cleanup(dev);
  	unregister_netdev(dev);
@@ -43,7 +43,7 @@
  	kfree(dev);
  	return 0;
  }
-@@ -841,7 +859,12 @@ static int ar231x_rx_int(struct net_devi
+@@ -856,7 +874,12 @@ static int ar231x_rx_int(struct net_devi
  				dev->stats.rx_bytes += skb->len;
  
  				/* pass the packet to upper layers */
@@ -57,7 +57,7 @@
  				skb_new->dev = dev;
  
  				/* 16 bit align */
-@@ -1138,6 +1161,9 @@ static int ar231x_ioctl(struct net_devic
+@@ -1153,6 +1176,9 @@ static int ar231x_ioctl(struct net_devic
  	struct ar231x_private *sp = netdev_priv(dev);
  	int ret;
  
