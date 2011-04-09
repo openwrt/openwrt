@@ -599,6 +599,7 @@ $(eval $(call KernelPackage,scsi-core))
 define KernelPackage/scsi-generic
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for SCSI generic
+  DEPENDS:=+!TARGET_x86:kmod-scsi-core
   KCONFIG:= \
 	CONFIG_CHR_DEV_SG
   FILES:= \
@@ -607,3 +608,20 @@ define KernelPackage/scsi-generic
 endef
 
 $(eval $(call KernelPackage,scsi-generic))
+
+
+define KernelPackage/scsi-cdrom
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for CD / DVD drives
+  DEPENDS:=+!TARGET_x86:kmod-scsi-core
+  KCONFIG:= \
+    CONFIG_BLK_DEV_SR \
+    CONFIG_BLK_DEV_SR_VENDOR=n
+  FILES:= \
+    $(LINUX_DIR)/drivers/cdrom/cdrom.ko \
+    $(LINUX_DIR)/drivers/scsi/sr_mod.ko
+  AUTOLOAD:=$(call AutoLoad,30,cdrom) $(call AutoLoad,45,sr_mod)
+endef
+
+$(eval $(call KernelPackage,scsi-cdrom))
+
