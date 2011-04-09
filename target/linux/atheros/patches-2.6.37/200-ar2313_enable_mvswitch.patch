@@ -1,6 +1,6 @@
 --- a/drivers/net/ar231x.c
 +++ b/drivers/net/ar231x.c
-@@ -740,6 +740,7 @@ static void ar231x_load_rx_ring(struct n
+@@ -755,6 +755,7 @@ static void ar231x_load_rx_ring(struct n
  	for (i = 0; i < nr_bufs; i++) {
  		struct sk_buff *skb;
  		ar231x_descr_t *rd;
@@ -8,7 +8,7 @@
  
  		if (sp->rx_skb[idx])
  			break;
-@@ -755,7 +756,9 @@ static void ar231x_load_rx_ring(struct n
+@@ -770,7 +771,9 @@ static void ar231x_load_rx_ring(struct n
  		 * Make sure IP header starts on a fresh cache line.
  		 */
  		skb->dev = dev;
@@ -19,7 +19,7 @@
  		sp->rx_skb[idx] = skb;
  
  		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
-@@ -829,20 +832,23 @@ static int ar231x_rx_int(struct net_devi
+@@ -844,20 +847,23 @@ static int ar231x_rx_int(struct net_devi
  			/* alloc new buffer. */
  			skb_new = netdev_alloc_skb(dev, AR2313_BUFSIZE + RX_OFFSET);
  			if (skb_new != NULL) {
@@ -48,7 +48,7 @@
  				/* reset descriptor's curr_addr */
  				rxdesc->addr = virt_to_phys(skb_new->data);
  
-@@ -1254,6 +1260,8 @@ static int ar231x_mdiobus_probe (struct 
+@@ -1269,6 +1275,8 @@ static int ar231x_mdiobus_probe (struct 
  		return PTR_ERR(phydev);
  	}
  
