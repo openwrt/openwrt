@@ -85,7 +85,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
 --- /dev/null
 +++ b/arch/mips/ar231x/board.c
-@@ -0,0 +1,251 @@
+@@ -0,0 +1,258 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -225,6 +225,7 @@
 +	u8 *bcfg, *rcfg;
 +	u8 *board_data;
 +	u8 *radio_data;
++	u8 *mac_addr;
 +	u32 offset;
 +
 +	ar231x_board.config = NULL;
@@ -281,6 +282,12 @@
 +	printk(KERN_INFO "Radio config found at offset 0x%x(0x%x)\n", rcfg - bcfg, offset);
 +	rcfg_size = BOARD_CONFIG_BUFSZ - offset;
 +	memcpy(radio_data, rcfg, rcfg_size);
++
++	mac_addr = &radio_data[0x1d * 2];
++	if (is_broadcast_ether_addr(mac_addr)) {
++		printk(KERN_INFO "Radio MAC is blank; using board-data\n");
++		memcpy(mac_addr, ar231x_board.config->wlan0_mac, ETH_ALEN);
++	}
 +
 +	return 0;
 +}
