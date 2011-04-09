@@ -215,9 +215,11 @@ $(eval $(call KernelPackage,crypto-des))
 
 define KernelPackage/crypto-deflate
   TITLE:=Deflate compression CryptoAPI module
-  KCONFIG:=CONFIG_CRYPTO_DEFLATE
-  FILES:=$(LINUX_DIR)/crypto/deflate.ko
-  AUTOLOAD:=$(call AutoLoad,09,deflate)
+  KCONFIG:=CONFIG_ZLIB_DEFLATE \
+	CONFIG_CRYPTO_DEFLATE
+  FILES:=$(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko \
+	$(LINUX_DIR)/crypto/deflate.ko
+  AUTOLOAD:=$(call AutoLoad,09,zlib_deflate deflate)
   $(call AddDepends/crypto)
 endef
 
@@ -317,9 +319,12 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/sha256$(SHA256_SUFFIX).ko \
 	$(LINUX_DIR)/crypto/sha512$(SHA512_SUFFIX).ko \
 	$(LINUX_DIR)/crypto/tea.ko \
-	$(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,2.6.35)),,$(LINUX_DIR)/crypto/twofish.ko) \
-	$(if $(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.36)),,$(LINUX_DIR)/crypto/twofish_generic.ko) \
 	$(LINUX_DIR)/crypto/wp512.ko
+  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,2.6.35)),1)
+    FILES += $(LINUX_DIR)/crypto/twofish.ko
+  else
+    FILES += $(LINUX_DIR)/crypto/twofish_generic.ko
+  endif
   $(call AddDepends/crypto)
 endef
 
