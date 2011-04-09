@@ -114,19 +114,19 @@ static void __init ar71xx_detect_sys_type(void)
 	case REV_ID_MAJOR_AR7240:
 		ar71xx_soc = AR71XX_SOC_AR7240;
 		chip = "7240";
-		rev = (id & AR724X_REV_ID_REVISION_MASK);
+		rev = id & AR724X_REV_ID_REVISION_MASK;
 		break;
 
 	case REV_ID_MAJOR_AR7241:
 		ar71xx_soc = AR71XX_SOC_AR7241;
 		chip = "7241";
-		rev = (id & AR724X_REV_ID_REVISION_MASK);
+		rev = id & AR724X_REV_ID_REVISION_MASK;
 		break;
 
 	case REV_ID_MAJOR_AR7242:
 		ar71xx_soc = AR71XX_SOC_AR7242;
 		chip = "7242";
-		rev = (id & AR724X_REV_ID_REVISION_MASK);
+		rev = id & AR724X_REV_ID_REVISION_MASK;
 		break;
 
 	case REV_ID_MAJOR_AR913X:
@@ -149,22 +149,19 @@ static void __init ar71xx_detect_sys_type(void)
 	case REV_ID_MAJOR_AR9341:
 		ar71xx_soc = AR71XX_SOC_AR9341;
 		chip = "9341";
-		rev = ar71xx_reset_rr(AR71XX_RESET_REG_REV_ID) &
-			AR934X_REV_ID_REVISION_MASK;
+		rev = id & AR934X_REV_ID_REVISION_MASK;
 		break;
 
 	case REV_ID_MAJOR_AR9342:
 		ar71xx_soc = AR71XX_SOC_AR9342;
 		chip = "9342";
-		rev = ar71xx_reset_rr(AR71XX_RESET_REG_REV_ID) &
-			AR934X_REV_ID_REVISION_MASK;
+		rev = id & AR934X_REV_ID_REVISION_MASK;
 		break;
 
 	case REV_ID_MAJOR_AR9344:
 		ar71xx_soc = AR71XX_SOC_AR9344;
 		chip = "9344";
-		rev = ar71xx_reset_rr(AR71XX_RESET_REG_REV_ID) &
-			AR934X_REV_ID_REVISION_MASK;
+		rev = id & AR934X_REV_ID_REVISION_MASK;
 		break;
 
 	default:
