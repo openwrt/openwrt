@@ -18,6 +18,15 @@
  	WLAN_STA_BLOCK_BA	= 1<<11,
 --- a/net/mac80211/debugfs_sta.c
 +++ b/net/mac80211/debugfs_sta.c
+@@ -59,7 +59,7 @@ static ssize_t sta_flags_read(struct fil
+ 	char buf[100];
+ 	struct sta_info *sta = file->private_data;
+ 	u32 staflags = get_sta_flags(sta);
+-	int res = scnprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s",
++	int res = scnprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s",
+ 		staflags & WLAN_STA_AUTH ? "AUTH\n" : "",
+ 		staflags & WLAN_STA_ASSOC ? "ASSOC\n" : "",
+ 		staflags & WLAN_STA_PS_STA ? "PS (sta)\n" : "",
 @@ -67,7 +67,6 @@ static ssize_t sta_flags_read(struct fil
  		staflags & WLAN_STA_AUTHORIZED ? "AUTHORIZED\n" : "",
  		staflags & WLAN_STA_SHORT_PREAMBLE ? "SHORT PREAMBLE\n" : "",
