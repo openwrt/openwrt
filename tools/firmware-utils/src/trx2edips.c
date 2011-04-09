@@ -5,6 +5,17 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define STORE32_LE(X)		bswap_32(X)
+#define LOAD32_LE(X)		bswap_32(X)
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#define STORE32_LE(X)		(X)
+#define LOAD32_LE(X)		(X)
+#else
+#error unkown endianness!
+#endif
+
 /**********************************************************************/
 /* from trxhdr.h */
 
@@ -21,6 +32,12 @@ struct trx_header {
 	uint32_t offsets[3];	/* Offsets of partitions from start of header */
 };
 
+
+struct edimax_header {
+	uint32_t sign;			/* signature for header */
+	uint32_t length;		/* start address but doesn't seems to be used... */
+	uint32_t start_addr;		/* length of data, not used too ...*/
+};
 
 
 #define EDIMAX_PS16	0x36315350	/* "PS16" */
@@ -93,15 +110,12 @@ int main(int argc, char *argv[])
 {
 	FILE *fpIn = NULL;
 	FILE *fpOut = NULL;
-	long  nImgSize;
-	uint32_t sign = EDIMAX_PS16;		/* signature for header */
-	uint32_t start_addr = 0x80500000; 	/* start address but doesn't seems to be used... */
-	uint32_t length; 			/* length of data, not used too ...*/
+	struct edimax_header eh;
 	size_t res;
+	int length;
 
 	char *buf;
 	struct trx_header *p;
-
 
 	if (argc != 3) {
 		printf("Usage: %s <input file> <output file>\n", argv[0]);
@@ -128,8 +142,8 @@ int main(int argc, char *argv[])
 	res = fread(buf, 1, length, fpIn);
 
 	p = (struct trx_header *)buf;
-	if (p->magic != TRX_MAGIC) {
-		fprintf(stderr, "Not a trx file...%x\n", p->magic);
+	if (LOAD32_LE(p->magic) != TRX_MAGIC) {
+		fprintf(stderr, "Not a trx file...%x\n", LOAD32_LE(p->magic));
 		return EXIT_FAILURE;
 	}
 
@@ -141,13 +155,16 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 	/* make the 3 partition beeing 12 bytes closer from the header */
-	memcpy(buf + p->offsets[2] - EDIMAX_HDR_LEN, buf + p->offsets[2], length - p->offsets[2]);
+	memcpy(buf + LOAD32_LE(p->offsets[2]) - EDIMAX_HDR_LEN, buf + LOAD32_LE(p->offsets[2]), length - LOAD32_LE(p->offsets[2]));
 	/* recompute the crc32 check */
-	p->crc32 = crc32buf((char *) &p->flag_version, length - offsetof(struct trx_header, flag_version));
+	p->crc32 = STORE32_LE(crc32buf((char *) &(LOAD32_LE(p->flag_version)), length - offsetof(struct trx_header, flag_version)));
+
+	eh.sign = STORE32_LE(EDIMAX_PS16);
+	eh.length = STORE32_LE(length);
+	eh.start_addr = STORE32_LE(0x80500000);
+
 	/* write the modified file */
-	fwrite(&sign,  sizeof(uint32_t), 1, fpOut);
-	fwrite(&length, sizeof(uint32_t), 1, fpOut);
-	fwrite(&start_addr, sizeof(uint32_t), 1, fpOut);
+	fwrite(&eh, sizeof(struct edimax_header), 1, fpOut);
 	fwrite(buf, sizeof(char), length, fpOut);
 	fclose(fpOut);
 }
