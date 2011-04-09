@@ -43,6 +43,18 @@ define Package/atm-tools/description
   This package contains the Linux ATM tools.
 endef
 
+define Package/atm-diagnostics
+  SECTION:=net
+  CATEGORY:=Network
+  DEPENDS:=linux-atm
+  TITLE:=Linux ATM Diagnostics
+  URL:=http://linux-atm.sourceforge.net/
+endef
+
+define Package/atm-diagnostics/description
+  This package contains the Linux ATM diagnostics.
+endef
+
 define Package/br2684ctl
   SECTION:=net
   CATEGORY:=Network
@@ -89,7 +101,6 @@ define Package/atm-tools/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/arpd/atmarp{,d} $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/lib/network
 	$(INSTALL_BIN) ./files/ipoa.sh $(1)/lib/network/
-	$(INSTALL_DIR) $(1)/usr/bin/
 
 #
 #The following is disabled by default but still useful for some debugging
@@ -121,6 +132,14 @@ define Package/atm-tools/install
 #	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/ttcp_atm $(1)/usr/bin/
 endef
 
+define Package/atm-diagnostics/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/aread $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/awrite $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/atmdiag $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/atmdump $(1)/usr/bin/
+endef
+
 define Package/br2684ctl/install
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(INSTALL_BIN) ./files/br2684ctl $(1)/etc/init.d/
@@ -130,4 +149,5 @@ endef
 
 $(eval $(call BuildPackage,linux-atm))
 $(eval $(call BuildPackage,atm-tools))
+$(eval $(call BuildPackage,atm-diagnostics))
 $(eval $(call BuildPackage,br2684ctl))
