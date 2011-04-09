@@ -169,6 +169,7 @@ static void __init ar71xx_detect_sys_type(void)
 	}
 
 	sprintf(ar71xx_sys_type, "Atheros AR%s rev %u", chip, rev);
+	pr_info("SoC: %s\n", ar71xx_sys_type);
 }
 
 static void __init ar934x_detect_sys_frequency(void)
@@ -335,9 +336,7 @@ void __init plat_mem_setup(void)
 	ar71xx_detect_sys_type();
 	detect_sys_frequency();
 
-	printk(KERN_INFO
-		"%s, CPU:%u.%03u MHz, AHB:%u.%03u MHz, DDR:%u.%03u MHz\n",
-		ar71xx_sys_type,
+	pr_info("Clocks: CPU:%u.%03u MHz, AHB:%u.%03u MHz, DDR:%u.%03u MHz\n",
 		ar71xx_cpu_freq / 1000000, (ar71xx_cpu_freq / 1000) % 1000,
 		ar71xx_ahb_freq / 1000000, (ar71xx_ahb_freq / 1000) % 1000,
 		ar71xx_ddr_freq / 1000000, (ar71xx_ddr_freq / 1000) % 1000);
