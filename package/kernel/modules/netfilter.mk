@@ -262,6 +262,24 @@ endef
 $(eval $(call KernelPackage,ipt-ulog))
 
 
+define KernelPackage/ipt-debug
+  TITLE:=Module for debugging/development
+  KCONFIG:=$(KCONFIG_IPT_DEBUG)
+  DEFAULT:=n
+  FILES:=$(foreach mod,$(IPT_DEBUG-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir $(IPT_DEBUG-m)))
+  $(call AddDepends/ipt)
+endef
+
+define KernelPackage/ipt-debug/description
+ Netfilter modules for debugging/development of the firewall
+ Includes:
+ - TRACE
+endef
+
+$(eval $(call KernelPackage,ipt-debug))
+
+
 define KernelPackage/ipt-led
   TITLE:=Module to trigger a LED with a Netfilter rule
   KCONFIG:=$(KCONFIG_IPT_LED)
