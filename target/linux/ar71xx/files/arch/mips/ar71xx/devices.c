@@ -74,7 +74,7 @@ void __init ar71xx_add_device_uart(void)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-		ar71xx_uart_data[0].uartclk = ar934x_ref_freq;
+		ar71xx_uart_data[0].uartclk = ar71xx_ref_freq;
 		break;
 
 	default:

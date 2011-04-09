@@ -222,7 +222,7 @@ static int __devinit ar71xx_wdt_probe(struct platform_device *pdev)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-		wdt_clk_freq = ar934x_ref_freq;
+		wdt_clk_freq = ar71xx_ref_freq;
 		break;
 
 	default:

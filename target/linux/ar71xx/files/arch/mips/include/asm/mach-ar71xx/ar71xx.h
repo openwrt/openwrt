@@ -115,7 +115,7 @@
 extern u32 ar71xx_ahb_freq;
 extern u32 ar71xx_cpu_freq;
 extern u32 ar71xx_ddr_freq;
-extern u32 ar934x_ref_freq;
+extern u32 ar71xx_ref_freq;
 
 enum ar71xx_soc_type {
 	AR71XX_SOC_UNKNOWN,

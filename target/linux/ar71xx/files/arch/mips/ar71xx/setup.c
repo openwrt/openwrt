@@ -28,9 +28,6 @@
 #include "devices.h"
 
 #define AR71XX_SYS_TYPE_LEN	64
-#define AR71XX_BASE_FREQ	40000000
-#define AR91XX_BASE_FREQ	5000000
-#define AR724X_BASE_FREQ	5000000
 
 u32 ar71xx_cpu_freq;
 EXPORT_SYMBOL_GPL(ar71xx_cpu_freq);
@@ -41,8 +38,8 @@ EXPORT_SYMBOL_GPL(ar71xx_ahb_freq);
 u32 ar71xx_ddr_freq;
 EXPORT_SYMBOL_GPL(ar71xx_ddr_freq);
 
-u32 ar934x_ref_freq;
-EXPORT_SYMBOL_GPL(ar934x_ref_freq);
+u32 ar71xx_ref_freq;
+EXPORT_SYMBOL_GPL(ar71xx_ref_freq);
 
 enum ar71xx_soc_type ar71xx_soc;
 EXPORT_SYMBOL_GPL(ar71xx_soc);
@@ -174,14 +171,12 @@ static void __init ar71xx_detect_sys_type(void)
 
 static void __init ar934x_detect_sys_frequency(void)
 {
-	u32 pll, out_div, ref_div, nint, frac, clk_ctrl, ref, postdiv;
+	u32 pll, out_div, ref_div, nint, frac, clk_ctrl, postdiv;
 
 	if (ar71xx_reset_rr(AR934X_RESET_REG_BOOTSTRAP) & AR934X_REF_CLK_40)
-		ref = (40 * 1000000);
+		ar71xx_ref_freq = 40 * 1000 * 1000;
 	else
-		ref = (25 * 1000000);
-
-	ar934x_ref_freq = ref;
+		ar71xx_ref_freq = 25 * 1000 * 1000;
 
 	clk_ctrl = ar71xx_pll_rr(AR934X_PLL_REG_DDR_CTRL_CLOCK);
 
@@ -191,14 +186,16 @@ static void __init ar934x_detect_sys_frequency(void)
 	nint	= AR934X_CPU_PLL_CFG_NINT_GET(pll);
 	frac	= AR934X_CPU_PLL_CFG_NFRAC_GET(pll);
 	postdiv = AR934X_CPU_DDR_CLK_CTRL_CPU_POST_DIV_GET(clk_ctrl);
-	ar71xx_cpu_freq = ((nint * ref / ref_div) >> out_div) / (postdiv + 1);
+	ar71xx_cpu_freq = ((nint * ar71xx_ref_freq / ref_div) >> out_div) /
+			  (postdiv + 1);
 
 	out_div	= AR934X_DDR_PLL_CFG_OUTDIV_GET(pll);
 	ref_div	= AR934X_DDR_PLL_CFG_REFDIV_GET(pll);
 	nint	= AR934X_DDR_PLL_CFG_NINT_GET(pll);
 	frac	= AR934X_DDR_PLL_CFG_NFRAC_GET(pll);
 	postdiv = AR934X_CPU_DDR_CLK_CTRL_DDR_POST_DIV_GET(clk_ctrl);
-	ar71xx_ddr_freq = ((nint * ref / ref_div) >> out_div) / (postdiv + 1);
+	ar71xx_ddr_freq = ((nint * ar71xx_ref_freq / ref_div) >> out_div) /
+			  (postdiv + 1);
 
 	postdiv = AR934X_CPU_DDR_CLK_CTRL_AHB_POST_DIV_GET(clk_ctrl);
 
@@ -216,10 +213,12 @@ static void __init ar91xx_detect_sys_frequency(void)
 	u32 freq;
 	u32 div;
 
+	ar71xx_ref_freq = 5 * 1000 * 1000;
+
 	pll = ar71xx_pll_rr(AR91XX_PLL_REG_CPU_CONFIG);
 
 	div = ((pll >> AR91XX_PLL_DIV_SHIFT) & AR91XX_PLL_DIV_MASK);
-	freq = div * AR91XX_BASE_FREQ;
+	freq = div * ar71xx_ref_freq;
 
 	ar71xx_cpu_freq = freq;
 
@@ -236,10 +235,12 @@ static void __init ar71xx_detect_sys_frequency(void)
 	u32 freq;
 	u32 div;
 
+	ar71xx_ref_freq = 40 * 1000 * 1000;
+
 	pll = ar71xx_pll_rr(AR71XX_PLL_REG_CPU_CONFIG);
 
 	div = ((pll >> AR71XX_PLL_DIV_SHIFT) & AR71XX_PLL_DIV_MASK) + 1;
-	freq = div * AR71XX_BASE_FREQ;
+	freq = div * ar71xx_ref_freq;
 
 	div = ((pll >> AR71XX_CPU_DIV_SHIFT) & AR71XX_CPU_DIV_MASK) + 1;
 	ar71xx_cpu_freq = freq / div;
@@ -257,10 +258,12 @@ static void __init ar724x_detect_sys_frequency(void)
 	u32 freq;
 	u32 div;
 
+	ar71xx_ref_freq = 5 * 1000 * 1000;
+
 	pll = ar71xx_pll_rr(AR724X_PLL_REG_CPU_CONFIG);
 
 	div = ((pll >> AR724X_PLL_DIV_SHIFT) & AR724X_PLL_DIV_MASK);
-	freq = div * AR724X_BASE_FREQ;
+	freq = div * ar71xx_ref_freq;
 
 	div = ((pll >> AR724X_PLL_REF_DIV_SHIFT) & AR724X_PLL_REF_DIV_MASK);
 	freq *= div;
@@ -336,10 +339,12 @@ void __init plat_mem_setup(void)
 	ar71xx_detect_sys_type();
 	detect_sys_frequency();
 
-	pr_info("Clocks: CPU:%u.%03u MHz, AHB:%u.%03u MHz, DDR:%u.%03u MHz\n",
+	pr_info("Clocks: CPU:%u.%03uMHz, DDR:%u.%03uMHz, AHB:%u.%03uMHz, "
+		"Ref:%u.%03uMHz",
 		ar71xx_cpu_freq / 1000000, (ar71xx_cpu_freq / 1000) % 1000,
+		ar71xx_ddr_freq / 1000000, (ar71xx_ddr_freq / 1000) % 1000,
 		ar71xx_ahb_freq / 1000000, (ar71xx_ahb_freq / 1000) % 1000,
-		ar71xx_ddr_freq / 1000000, (ar71xx_ddr_freq / 1000) % 1000);
+		ar71xx_ref_freq / 1000000, (ar71xx_ref_freq / 1000) % 1000);
 
 	_machine_restart = ar71xx_restart;
 	_machine_halt = ar71xx_halt;
