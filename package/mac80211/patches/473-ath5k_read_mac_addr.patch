@@ -1,0 +1,179 @@
+--- a/drivers/net/wireless/ath/ath5k/ath5k.h
++++ b/drivers/net/wireless/ath/ath5k/ath5k.h
+@@ -1159,6 +1159,7 @@ struct ath_bus_ops {
+ 	enum ath_bus_type ath_bus_type;
+ 	void (*read_cachesize)(struct ath_common *common, int *csz);
+ 	bool (*eeprom_read)(struct ath_common *common, u32 off, u16 *data);
++	int (*eeprom_read_mac)(struct ath5k_hw *ah, u8 *mac);
+ };
+ 
+ /*
+@@ -1244,7 +1245,6 @@ int ath5k_hw_dma_stop(struct ath5k_hw *a
+ /* EEPROM access functions */
+ int ath5k_eeprom_init(struct ath5k_hw *ah);
+ void ath5k_eeprom_detach(struct ath5k_hw *ah);
+-int ath5k_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac);
+ 
+ 
+ /* Protocol Control Unit Functions */
+--- a/drivers/net/wireless/ath/ath5k/eeprom.c
++++ b/drivers/net/wireless/ath/ath5k/eeprom.c
+@@ -1723,46 +1723,6 @@ ath5k_eeprom_read_spur_chans(struct ath5
+ 	return ret;
+ }
+ 
+-/*
+- * Read the MAC address from eeprom or platform_data
+- */
+-int ath5k_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac)
+-{
+-	u8 mac_d[ETH_ALEN] = {};
+-	u32 total, offset;
+-	u16 data;
+-	int octet;
+-	struct ath5k_platform_data *pdata = NULL;
+-
+-	if (ah->ah_sc->pdev)
+-		pdata = ah->ah_sc->pdev->dev.platform_data;
+-
+-	if (pdata && pdata->macaddr)
+-	{
+-		memcpy(mac, pdata->macaddr, ETH_ALEN);
+-		return 0;
+-	}
+-
+-	AR5K_EEPROM_READ(0x20, data);
+-
+-	for (offset = 0x1f, octet = 0, total = 0; offset >= 0x1d; offset--) {
+-		AR5K_EEPROM_READ(offset, data);
+-
+-		total += data;
+-		mac_d[octet + 1] = data & 0xff;
+-		mac_d[octet] = data >> 8;
+-		octet += 2;
+-	}
+-
+-	if (!total || total == 3 * 0xffff)
+-		return -EINVAL;
+-
+-	memcpy(mac, mac_d, ETH_ALEN);
+-
+-	return 0;
+-}
+-
+-
+ /***********************\
+ * Init/Detach functions *
+ \***********************/
+--- a/drivers/net/wireless/ath/ath5k/pci.c
++++ b/drivers/net/wireless/ath/ath5k/pci.c
+@@ -18,6 +18,7 @@
+ #include <linux/pci.h>
+ #include <linux/pci-aspm.h>
+ #include <linux/ath5k_platform.h>
++#include <linux/etherdevice.h>
+ #include "../ath.h"
+ #include "ath5k.h"
+ #include "debug.h"
+@@ -122,11 +123,52 @@ int ath5k_hw_read_srev(struct ath5k_hw *
+ 	return 0;
+ }
+ 
++/*
++ * Read the MAC address from eeprom or platform_data
++ */
++static int ath5k_pci_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac)
++{
++	u8 mac_d[ETH_ALEN] = {};
++	u32 total, offset;
++	u16 data;
++	int octet;
++	struct ath5k_platform_data *pdata = NULL;
++
++	if (ah->ah_sc->pdev)
++		pdata = ah->ah_sc->pdev->dev.platform_data;
++
++	if (pdata && pdata->macaddr)
++	{
++		memcpy(mac, pdata->macaddr, ETH_ALEN);
++		return 0;
++	}
++
++	AR5K_EEPROM_READ(0x20, data);
++
++	for (offset = 0x1f, octet = 0, total = 0; offset >= 0x1d; offset--) {
++		AR5K_EEPROM_READ(offset, data);
++
++		total += data;
++		mac_d[octet + 1] = data & 0xff;
++		mac_d[octet] = data >> 8;
++		octet += 2;
++	}
++
++	if (!total || total == 3 * 0xffff)
++		return -EINVAL;
++
++	memcpy(mac, mac_d, ETH_ALEN);
++
++	return 0;
++}
++
++
+ /* Common ath_bus_opts structure */
+ static const struct ath_bus_ops ath_pci_bus_ops = {
+ 	.ath_bus_type = ATH_PCI,
+ 	.read_cachesize = ath5k_pci_read_cachesize,
+ 	.eeprom_read = ath5k_pci_eeprom_read,
++	.eeprom_read_mac = ath5k_pci_eeprom_read_mac,
+ };
+ 
+ /********************\
+--- a/drivers/net/wireless/ath/ath5k/ahb.c
++++ b/drivers/net/wireless/ath/ath5k/ahb.c
+@@ -18,6 +18,7 @@
+ 
+ #include <linux/nl80211.h>
+ #include <linux/platform_device.h>
++#include <linux/etherdevice.h>
+ #include <ar231x_platform.h>
+ #include "ath5k.h"
+ #include "debug.h"
+@@ -62,10 +63,27 @@ int ath5k_hw_read_srev(struct ath5k_hw *
+ 	return 0;
+ }
+ 
++static int ath5k_ahb_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac)
++{
++	struct ath5k_softc *sc = ah->ah_sc;
++	struct platform_device *pdev = to_platform_device(sc->dev);
++	struct ar231x_board_config *bcfg = pdev->dev.platform_data;
++	u8 *cfg_mac;
++
++	if (to_platform_device(sc->dev)->id == 0)
++		cfg_mac = bcfg->config->wlan0_mac;
++	else
++		cfg_mac = bcfg->config->wlan1_mac;
++
++	memcpy(mac, cfg_mac, ETH_ALEN);
++	return 0;
++}
++
+ static const struct ath_bus_ops ath_ahb_bus_ops = {
+ 	.ath_bus_type = ATH_AHB,
+ 	.read_cachesize = ath5k_ahb_read_cachesize,
+ 	.eeprom_read = ath5k_ahb_eeprom_read,
++	.eeprom_read_mac = ath5k_ahb_eeprom_read_mac,
+ };
+ 
+ /*Initialization*/
+--- a/drivers/net/wireless/ath/ath5k/base.c
++++ b/drivers/net/wireless/ath/ath5k/base.c
+@@ -2880,7 +2880,7 @@ ath5k_init(struct ieee80211_hw *hw)
+ 	INIT_WORK(&sc->reset_work, ath5k_reset_work);
+ 	INIT_DELAYED_WORK(&sc->tx_complete_work, ath5k_tx_complete_poll_work);
+ 
+-	ret = ath5k_eeprom_read_mac(ah, mac);
++	ret = ath5k_hw_common(ah)->bus_ops->eeprom_read_mac(ah, mac);
+ 	if (ret) {
+ 		ATH5K_ERR(sc, "unable to read address from EEPROM\n");
+ 		goto err_queues;
