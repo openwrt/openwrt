@@ -183,7 +183,7 @@ define KernelPackage/gpio-cs5535
   SUBMENU:=$(OTHER_MENU)
   TITLE:=AMD CS5535/CS5536 GPIO driver
   DEPENDS:=@TARGET_x86 @LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_35||LINUX_2_6_36||LINUX_2_6_37
-  KCONFIG:=CONFIG_CS5535_GPIO CONFIG_GPIOLIB=y
+  KCONFIG:=CONFIG_CS5535_GPIO
   FILES:=$(LINUX_DIR)/drivers/char/cs5535_gpio.ko
   AUTOLOAD:=$(call AutoLoad,50,cs5535_gpio)
 endef
@@ -199,7 +199,7 @@ define KernelPackage/gpio-cs5535-new
   SUBMENU:=$(OTHER_MENU)
   TITLE:=AMD CS5535/CS5536 GPIO driver with improved sysfs support
   DEPENDS:=@TARGET_x86 @!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32)
-  KCONFIG:=CONFIG_GPIO_CS5535 CONFIG_GPIOLIB=y
+  KCONFIG:=CONFIG_GPIO_CS5535
   FILES:=$(LINUX_DIR)/drivers/gpio/cs5535-gpio.ko
   AUTOLOAD:=$(call AutoLoad,50,cs5535-gpio)
 endef
