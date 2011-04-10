@@ -10,12 +10,18 @@ ARCH:=mips
 BOARD:=amazon
 BOARDNAME:=Infineon Amazon
 FEATURES:=squashfs jffs2 broken
-LINUX_VERSION:=2.6.30.10
+LINUX_VERSION:=2.6.37.6
 
 include $(INCLUDE_DIR)/target.mk
 
 define Target/Description
 	Build firmware images for Infineon Amazon boards
+endef
+
+define Kernel/Prepare
+	$(call Kernel/Prepare/Default)
+	mkdir -p $(LINUX_DIR)/arch/mips/include/asm/amazon
+	$(CP) $(LINUX_DIR)/include/asm-mips/amazon/*.h $(LINUX_DIR)/arch/mips/include/asm/amazon
 endef
 
 $(eval $(call BuildTarget))

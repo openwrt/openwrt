@@ -1,0 +1,33 @@
+--- a/arch/mips/kernel/cevt-r4k.c
++++ b/arch/mips/kernel/cevt-r4k.c
+@@ -23,6 +23,22 @@
+ 
+ #ifndef CONFIG_MIPS_MT_SMTC
+ 
++/*
++ * Compare interrupt can be routed and latched outside the core,
++ * so a single execution hazard barrier may not be enough to give
++ * it time to clear as seen in the Cause register.  4 time the
++ * pipeline depth seems reasonably conservative, and empirically
++ * works better in configurations with high CPU/bus clock ratios.
++ */
++
++#define compare_change_hazard() \
++	do { \
++		irq_disable_hazard(); \
++		irq_disable_hazard(); \
++		irq_disable_hazard(); \
++		irq_disable_hazard(); \
++	} while (0)
++
+ static int mips_next_event(unsigned long delta,
+                            struct clock_event_device *evt)
+ {
+@@ -32,6 +48,7 @@ static int mips_next_event(unsigned long
+ 	cnt = read_c0_count();
+ 	cnt += delta;
+ 	write_c0_compare(cnt);
++	compare_change_hazard();
+ 	res = ((int)(read_c0_count() - cnt) >= 0) ? -ETIME : 0;
+ 	return res;
+ }
