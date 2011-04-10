@@ -17,6 +17,7 @@
  * Copyright (C) 2007 John Crispin <blogic@openwrt.org>
  */
 
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/sched.h>
@@ -118,7 +119,11 @@ void wdt_disable(void)
    	return;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))
+static long wdt_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+#else
 static int wdt_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+#endif
 {
 	int result=0;
 	static int timeout=-1;
@@ -201,7 +206,11 @@ int wdt_register_proc_read(char *buf, char **start, off_t offset,
 static struct file_operations wdt_fops = {
 	read:		wdt_read,
 	write:		wdt_write,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))
+	unlocked_ioctl:	wdt_ioctl,
+#else
 	ioctl:		wdt_ioctl,
+#endif
 	open:		wdt_open,
 	release:	wdt_release,	
 };

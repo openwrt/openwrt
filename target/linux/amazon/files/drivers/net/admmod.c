@@ -39,6 +39,7 @@
 /* 507281:linmars 2005/07/28 support MDIO/EEPROM config mode */
 /* 509201:linmars remove driver testing codes */
 
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/string.h>
 #include <linux/proc_fs.h>
@@ -948,7 +949,12 @@ int adm_release(struct inode *inode, struct file *filp)
 }
 
 /* IOCTL function */
-int adm_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long args)
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))
+static long adm_ioctl(struct file *filp, unsigned int cmd, unsigned long args)
+#else
+static int adm_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned long args)
+#endif
 {
     PREGRW uREGRW;
     unsigned int rtval;
@@ -1346,7 +1352,11 @@ struct file_operations adm_ops =
     write: adm_write,
     open: adm_open,
     release: adm_release,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))
+    unlocked_ioctl: adm_ioctl
+#else
     ioctl: adm_ioctl
+#endif
 };
 
 int adm_proc(char *buf, char **start, off_t offset, int count, int *eof, void *data)

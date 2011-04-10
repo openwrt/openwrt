@@ -73,6 +73,7 @@ int (*tpe_inject) (void);
 #endif							// AMAZON_DMA_TPE_AAL5_RECOVERY
 
 
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/sched.h>
@@ -266,7 +267,7 @@ inline void rx_chan_clear_isr(int chan_no)
 #endif
 }
 
-
+#ifdef AMAZON_DMA_TPE_AAL5_RECOVERY
 /* Brief:	hacking function, this will reset all descriptors back to DMA
  */
 static void dma_reset_all_descriptors(int chan_no)
@@ -285,7 +286,6 @@ static void dma_reset_all_descriptors(int chan_no)
 	}
 }
 
-#ifdef AMAZON_DMA_TPE_AAL5_RECOVERY
 /* Brief:	Reset DMA descriptors 
  */
 static void amazon_dma_reset_tpe_rx(int chan_no)
@@ -1344,10 +1344,13 @@ static int dma_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))
+static long dma_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+#else
 static int dma_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+#endif
 {
 	int value = 0;
-	int result = 0;
 	int chan_no = 0;
 
 	switch (cmd) {
@@ -1366,7 +1369,7 @@ static int dma_ioctl(struct inode *inode, struct file *file, unsigned int cmd, u
 	default:
 		break;
 	}
-	return result;
+	return 0;
 }
 
 
@@ -1374,7 +1377,11 @@ static struct file_operations dma_fops = {
   owner:THIS_MODULE,
   open:dma_open,
   release:dma_release,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))
+  unlocked_ioctl:dma_ioctl,
+#else
   ioctl:dma_ioctl,
+#endif
 };
 
 static int dma_init(void)
