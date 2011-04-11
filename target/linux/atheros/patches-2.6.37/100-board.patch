@@ -1345,7 +1345,7 @@
 +#endif /* __AR2315_REG_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,232 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1398,10 +1398,6 @@
 +#define AR5212_AR5312_REV2      0x0052          /* AR5312 WMAC (AP31) */
 +#define AR5212_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
 +#define AR5212_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
-+#define AR531X_RADIO_MASK_OFF  0xc8
-+#define AR531X_RADIO0_MASK     0x0003
-+#define AR531X_RADIO1_MASK     0x000c
-+#define AR531X_RADIO1_S        2
 +
 +/*
 + * AR531X_NUM_WMAC defines the number of Wireless MACs that\
@@ -1584,7 +1580,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,549 @@
+@@ -0,0 +1,529 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1885,7 +1881,6 @@
 +{
 +	struct ar231x_boarddata *config;
 +	u32 fctl = 0;
-+	const u8 *radio;
 +	u8 *c;
 +
 +	if (!is_5312())
@@ -1894,22 +1889,6 @@
 +	/* Locate board/radio config data */
 +	ar231x_find_config(ar5312_flash_limit());
 +	config = ar231x_board.config;
-+
-+
-+	/*
-+	 * Chip IDs and hardware detection for some Atheros
-+	 * models are really broken!
-+	 *
-+	 * Atheros uses a disabled WMAC0 and Silicon ID of AR5312
-+	 * as indication for AR2312, which is otherwise
-+	 * indistinguishable from the real AR5312.
-+	 */
-+	if (ar231x_board.radio) {
-+		radio = ar231x_board.radio + AR531X_RADIO_MASK_OFF;
-+		if ((*((const u32 *) radio) & AR531X_RADIO0_MASK) == 0)
-+			config->flags |= BD_ISCASPER;
-+	} else
-+		radio = NULL;
 +
 +	/* AR2313 has CPU minor rev. 10 */
 +	if ((current_cpu_data.processor_id & 0xff) == 0x0a)
@@ -1967,11 +1946,10 @@
 +		if (!ar231x_board.radio)
 +			return 0;
 +
-+		if ((*((u32 *) radio) & AR531X_RADIO0_MASK) &&
-+		    (config->flags & BD_WLAN0))
-+			ar231x_add_wmac(0, AR531X_WLAN0,
-+				AR5312_IRQ_WLAN0_INTRS);
++		if (!(config->flags & BD_WLAN0))
++			break;
 +
++		ar231x_add_wmac(0, AR531X_WLAN0, AR5312_IRQ_WLAN0_INTRS);
 +		break;
 +	/*
 +	 * AR2312/3 ethernet uses the PHY of ENET0, but the MAC
@@ -1992,10 +1970,8 @@
 +		break;
 +	}
 +
-+	if ((*((u32 *) radio) & AR531X_RADIO1_MASK) &&
-+	    (config->flags & BD_WLAN1))
-+		ar231x_add_wmac(1, AR531X_WLAN1,
-+			AR5312_IRQ_WLAN1_INTRS);
++	if (config->flags & BD_WLAN1)
++		ar231x_add_wmac(1, AR531X_WLAN1, AR5312_IRQ_WLAN1_INTRS);
 +
 +	return 0;
 +}
