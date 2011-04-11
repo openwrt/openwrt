@@ -38,6 +38,7 @@ define autoreconf
 				[ -d $(p)/autom4te.cache ] && rm -rf autom4te.cache; \
 				touch NEWS AUTHORS COPYING ChangeLog; \
 				$(AM_TOOL_PATHS) $(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
+					$(if $(word 2,$(3)),--no-recursive) \
 					-B $(STAGING_DIR_HOST)/share/aclocal \
 					$(patsubst %,-I %,$(5)) \
 					$(patsubst %,-I %,$(4)) $(4) || true; \
