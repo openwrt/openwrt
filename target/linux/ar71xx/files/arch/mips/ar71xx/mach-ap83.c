@@ -22,7 +22,7 @@
 
 #include "machtype.h"
 #include "devices.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-usb.h"
@@ -222,7 +222,7 @@ static void __init ap83_generic_setup(void)
 
 	ar71xx_add_device_usb();
 
-	ar913x_add_device_wmac(eeprom, NULL);
+	ar9xxx_add_device_wmac(eeprom, NULL);
 
 	platform_device_register(&ap83_flash_device);
 

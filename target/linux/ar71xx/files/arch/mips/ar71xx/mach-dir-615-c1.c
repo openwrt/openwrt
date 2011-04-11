@@ -17,7 +17,7 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "nvram.h"
@@ -167,7 +167,7 @@ static void __init dir_615c1_setup(void)
 					ARRAY_SIZE(dir_615c1_gpio_buttons),
 					dir_615c1_gpio_buttons);
 
-	ar913x_add_device_wmac(eeprom, wlan_mac);
+	ar9xxx_add_device_wmac(eeprom, wlan_mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_DIR_615_C1, "DIR-615-C1", "D-Link DIR-615 rev. C1",

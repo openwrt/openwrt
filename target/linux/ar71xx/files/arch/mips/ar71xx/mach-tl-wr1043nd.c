@@ -17,7 +17,7 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-usb.h"
@@ -148,7 +148,7 @@ static void __init tl_wr1043nd_setup(void)
 					ARRAY_SIZE(tl_wr1043nd_gpio_buttons),
 					tl_wr1043nd_gpio_buttons);
 
-	ar913x_add_device_wmac(eeprom, mac);
+	ar9xxx_add_device_wmac(eeprom, mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TL_WR1043ND, "TL-WR1043ND", "TP-LINK TL-WR1043ND",

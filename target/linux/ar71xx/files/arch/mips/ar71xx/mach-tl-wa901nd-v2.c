@@ -20,7 +20,7 @@
 #include "dev-m25p80.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 
 #define TL_WA901ND_V2_GPIO_LED_QSS		4
 #define TL_WA901ND_V2_GPIO_LED_SYSTEM		2
@@ -124,7 +124,7 @@ static void __init tl_wa901nd_v2_setup(void)
 					ARRAY_SIZE(tl_wa901nd_v2_gpio_buttons),
 					tl_wa901nd_v2_gpio_buttons);
 
-        ar913x_add_device_wmac(eeprom, mac);
+        ar9xxx_add_device_wmac(eeprom, mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TL_WA901ND_V2, "TL-WA901ND-v2",

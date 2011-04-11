@@ -15,7 +15,7 @@
 
 #include "machtype.h"
 #include "devices.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-m25p80.h"
@@ -158,7 +158,7 @@ static void __init mzk_w04nu_setup(void)
 					mzk_w04nu_gpio_buttons);
 	ar71xx_add_device_usb();
 
-	ar913x_add_device_wmac(eeprom, NULL);
+	ar9xxx_add_device_wmac(eeprom, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_MZK_W04NU, "MZK-W04NU", "Planex MZK-W04NU",

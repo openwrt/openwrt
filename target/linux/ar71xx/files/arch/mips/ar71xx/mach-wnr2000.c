@@ -18,7 +18,7 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 
@@ -143,7 +143,7 @@ static void __init wnr2000_setup(void)
 					wnr2000_gpio_buttons);
 
 
-	ar913x_add_device_wmac(eeprom, NULL);
+	ar9xxx_add_device_wmac(eeprom, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_WNR2000, "WNR2000", "NETGEAR WNR2000", wnr2000_setup);
