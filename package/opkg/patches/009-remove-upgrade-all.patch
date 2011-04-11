@@ -1,6 +1,6 @@
 --- a/libopkg/opkg_cmd.c
 +++ b/libopkg/opkg_cmd.c
-@@ -508,18 +508,6 @@ opkg_upgrade_cmd(int argc, char **argv)
+@@ -551,18 +551,6 @@ opkg_upgrade_cmd(int argc, char **argv)
  			    err = -1;
                 }
  	  }
@@ -19,7 +19,7 @@
       }
  
       if (opkg_configure_packages(NULL))
-@@ -1215,7 +1203,7 @@ opkg_print_architecture_cmd(int argc, ch
+@@ -1258,7 +1246,7 @@ opkg_print_architecture_cmd(int argc, ch
     array for easier maintenance */
  static opkg_cmd_t cmds[] = {
       {"update", 0, (opkg_cmd_fun_t)opkg_update_cmd, PFM_DESCRIPTION|PFM_SOURCE},
@@ -30,7 +30,7 @@
       {"list-installed", 0, (opkg_cmd_fun_t)opkg_list_installed_cmd, PFM_SOURCE},
 --- a/src/opkg-cl.c
 +++ b/src/opkg-cl.c
-@@ -214,7 +214,7 @@ usage()
+@@ -221,7 +221,7 @@ usage()
  
  	printf("\nPackage Manipulation:\n");
  	printf("\tupdate			Update list of available packages\n");
