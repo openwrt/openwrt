@@ -16,7 +16,7 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-usb.h"
@@ -143,9 +143,9 @@ static void __init wrt160nl_setup(void)
 
 	if (nvram_parse_mac_addr(nvram, WRT160NL_NVRAM_SIZE,
 				 "wl0_hwaddr=", mac) == 0)
-		ar913x_add_device_wmac(eeprom, mac);
+		ar9xxx_add_device_wmac(eeprom, mac);
 	else
-		ar913x_add_device_wmac(eeprom, NULL);
+		ar9xxx_add_device_wmac(eeprom, NULL);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wrt160nl_leds_gpio),
 					wrt160nl_leds_gpio);

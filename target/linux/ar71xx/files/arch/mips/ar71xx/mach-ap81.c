@@ -17,7 +17,7 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-usb.h"
@@ -135,7 +135,7 @@ static void __init ap81_setup(void)
 					ARRAY_SIZE(ap81_gpio_buttons),
 					ap81_gpio_buttons);
 
-	ar913x_add_device_wmac(eeprom, NULL);
+	ar9xxx_add_device_wmac(eeprom, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_AP81, "AP81", "Atheros AP81", ap81_setup);

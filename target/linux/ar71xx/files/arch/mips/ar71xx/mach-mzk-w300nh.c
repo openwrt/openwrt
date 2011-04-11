@@ -17,7 +17,7 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 
@@ -151,7 +151,7 @@ static void __init mzk_w300nh_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, MZK_W04NU_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(mzk_w300nh_gpio_buttons),
 					mzk_w300nh_gpio_buttons);
-	ar913x_add_device_wmac(eeprom, NULL);
+	ar9xxx_add_device_wmac(eeprom, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_MZK_W300NH, "MZK-W300NH", "Planex MZK-W300NH",

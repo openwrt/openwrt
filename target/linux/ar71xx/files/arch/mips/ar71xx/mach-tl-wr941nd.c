@@ -17,7 +17,7 @@
 #include "devices.h"
 #include "dev-dsa.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 
@@ -139,7 +139,7 @@ static void __init tl_wr941nd_setup(void)
 	ar71xx_add_device_gpio_buttons(-1, TL_WR941ND_BUTTONS_POLL_INTERVAL,
 					ARRAY_SIZE(tl_wr941nd_gpio_buttons),
 					tl_wr941nd_gpio_buttons);
-	ar913x_add_device_wmac(eeprom, mac);
+	ar9xxx_add_device_wmac(eeprom, mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TL_WR941ND, "TL-WR941ND", "TP-LINK TL-WR941ND",

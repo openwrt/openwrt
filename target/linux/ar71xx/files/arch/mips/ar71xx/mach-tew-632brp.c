@@ -17,7 +17,7 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "nvram.h"
@@ -143,7 +143,7 @@ static void __init tew_632brp_setup(void)
 					ARRAY_SIZE(tew_632brp_gpio_buttons),
 					tew_632brp_gpio_buttons);
 
-	ar913x_add_device_wmac(eeprom, wlan_mac);
+	ar9xxx_add_device_wmac(eeprom, wlan_mac);
 }
 
 MIPS_MACHINE(AR71XX_MACH_TEW_632BRP, "TEW-632BRP", "TRENDnet TEW-632BRP",

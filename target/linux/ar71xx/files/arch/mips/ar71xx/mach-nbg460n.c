@@ -25,7 +25,7 @@
 #include "machtype.h"
 #include "devices.h"
 #include "dev-m25p80.h"
-#include "dev-ar913x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 
@@ -206,7 +206,7 @@ static void __init nbg460n_setup(void)
 	/* register flash */
 	ar71xx_add_device_m25p80(&nbg460n_flash_data);
 
-	ar913x_add_device_wmac(eeprom, mac);
+	ar9xxx_add_device_wmac(eeprom, mac);
 
 	/* register RTC chip */
 	nbg460n_i2c_init();

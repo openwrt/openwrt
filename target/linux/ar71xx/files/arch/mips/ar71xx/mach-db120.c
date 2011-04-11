@@ -19,7 +19,7 @@
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 #include "dev-usb.h"
-#include "dev-ar934x-wmac.h"
+#include "dev-ar9xxx-wmac.h"
 #include "dev-db120-pci.h"
 
 #define DB120_GPIO_LED_USB	11
@@ -124,7 +124,7 @@ static void __init db120_setup(void)
 					ARRAY_SIZE(db120_gpio_buttons),
 					db120_gpio_buttons);
 
-	ar934x_add_device_wmac(art + DB120_CALDATA_OFFSET,
+	ar9xxx_add_device_wmac(art + DB120_CALDATA_OFFSET,
 				art + DB120_WMAC_MAC_OFFSET);
 
 	db120_pci_init();
