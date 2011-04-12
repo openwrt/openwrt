@@ -1,6 +1,6 @@
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2330,13 +2330,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2328,13 +2328,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -17,7 +17,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_DEAUTH):
  	case cpu_to_le16(IEEE80211_STYPE_DISASSOC):
-@@ -2716,7 +2717,10 @@ static int prepare_for_handlers(struct i
+@@ -2714,7 +2715,10 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
