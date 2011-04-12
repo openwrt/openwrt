@@ -34,7 +34,7 @@ fw_load_redirect() {
 			return 0
 		}
 
-		fwdchain="zone_${redirect_src}_forward"
+		fwdchain="zone_${redirect_src}${redirect_dest_ip:+_forward}"
 
 		natopt="--to-destination"
 		natchain="zone_${redirect_src}_prerouting"
@@ -100,9 +100,8 @@ fw_load_redirect() {
 			$natopt $nataddr${natports:+:$natports} \
 		}
 
-		[ -n "$destaddr" ] && \
 		fw add $mode f ${fwdchain:-forward} ACCEPT ^ { $redirect_src_ip $redirect_dest_ip } { \
-			$srcaddr $destaddr \
+			$srcaddr ${destaddr:--m conntrack --ctstate DNAT} \
 			${redirect_proto:+-p $redirect_proto} \
 			${srcports:+--sport $srcports} \
 			${destports:+--dport $destports} \
