@@ -218,7 +218,7 @@ define KernelPackage/crypto-deflate
   DEPENDS:=+kmod-zlib
   KCONFIG:=CONFIG_CRYPTO_DEFLATE
   FILES:=$(LINUX_DIR)/crypto/deflate.ko
-  AUTOLOAD:=$(call AutoLoad,09,zlib_deflate deflate)
+  AUTOLOAD:=$(call AutoLoad,09,deflate)
   $(call AddDepends/crypto)
 endef
 
