@@ -107,7 +107,7 @@ define KernelPackage/zlib
   TITLE:=zlib support is selected if needed
   KCONFIG:=CONFIG_ZLIB_DEFLATE
   FILES:=$(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko
-  AUTOLOAD:=$(call AutoLoad,20,zlib_deflate,1)
+  AUTOLOAD:=$(call AutoLoad,08,zlib_deflate,1)
 endef
 
 $(eval $(call KernelPackage,zlib))
