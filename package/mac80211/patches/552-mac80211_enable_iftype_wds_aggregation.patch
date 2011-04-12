@@ -33,7 +33,7 @@
  					  IEEE80211_STYPE_ACTION);
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2132,7 +2132,8 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2130,7 +2130,8 @@ ieee80211_rx_h_action(struct ieee80211_r
  		 */
  		if (sdata->vif.type != NL80211_IFTYPE_STATION &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
@@ -43,7 +43,7 @@
  			break;
  
  		/* verify action_code is present */
-@@ -2717,13 +2718,16 @@ static int prepare_for_handlers(struct i
+@@ -2715,13 +2716,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
