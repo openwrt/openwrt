@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -25,15 +25,13 @@ $(eval $(call KernelPackage,fs-autofs4))
 define KernelPackage/fs-btrfs
   SUBMENU:=$(FS_MENU)
   TITLE:=BTRFS filesystem support
-  DEPENDS:=+kmod-libcrc32c
+  DEPENDS:=+kmod-libcrc32c +kmod-zlib
   KCONFIG:=\
 	CONFIG_BTRFS_FS \
-	CONFIG_BTRFS_FS_POSIX_ACL=n \
-	CONFIG_ZLIB_DEFLATE
+	CONFIG_BTRFS_FS_POSIX_ACL=n
   FILES:=\
-	$(LINUX_DIR)/fs/btrfs/btrfs.ko \
-	$(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko
-  AUTOLOAD:=$(call AutoLoad,30,zlib_deflate btrfs,1)
+	$(LINUX_DIR)/fs/btrfs/btrfs.ko
+  AUTOLOAD:=$(call AutoLoad,30,btrfs,1)
 endef
 
 define KernelPackage/fs-btrfs/description

@@ -100,3 +100,14 @@ SUBMENU:=$(LIB_MENU)
 endef
 
 $(eval $(call KernelPackage,textsearch))
+
+
+define KernelPackage/zlib
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=zlib support is selected if needed
+  KCONFIG:=CONFIG_ZLIB_DEFLATE
+  FILES:=$(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko
+  AUTOLOAD:=$(call AutoLoad,20,zlib_deflate,1)
+endef
+
+$(eval $(call KernelPackage,zlib))
