@@ -377,6 +377,25 @@ endef
 $(eval $(call KernelPackage,input-gpio-keys))
 
 
+define KernelPackage/input-gpio-keys-polled
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Polled GPIO key support
+  DEPENDS:=@GPIO_SUPPORT @!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_34||LINUX_2_6_35||LINUX_2_6_36) +kmod-input-polldev
+  KCONFIG:= \
+	CONFIG_KEYBOARD_GPIO_POLLED \
+	CONFIG_INPUT_KEYBOARD=y
+  FILES:=$(LINUX_DIR)/drivers/input/keyboard/gpio_keys_polled.ko
+  AUTOLOAD:=$(call AutoLoad,62,gpio_keys_polled)
+  $(call AddDepends/input)
+endef
+
+define KernelPackage/input-gpio-keys-polled/description
+ Kernel module for support polled GPIO keys input device
+endef
+
+$(eval $(call KernelPackage,input-gpio-keys-polled))
+
+
 define KernelPackage/input-gpio-encoder
   SUBMENU:=$(OTHER_MENU)
   TITLE:=GPIO rotay encoder
