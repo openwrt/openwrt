@@ -27,7 +27,7 @@
  {
  	struct os_time t;
  	static unsigned int count = 0;
-@@ -191,9 +195,13 @@ int random_get_bytes(void *buf, size_t l
+@@ -191,16 +195,22 @@ int random_get_bytes(void *buf, size_t l
  int random_pool_ready(void)
  {
  #ifdef __linux__
@@ -41,7 +41,37 @@
  	/*
  	 * Make sure that there is reasonable entropy available before allowing
  	 * some key derivation operations to proceed.
-@@ -258,9 +266,15 @@ int random_pool_ready(void)
+ 	 */
+ 
+-	if (dummy_key_avail == sizeof(dummy_key))
++	if (dummy_key_avail == sizeof(dummy_key)) {
++		random_mark_pool_ready();
+ 		return 1; /* Already initialized - good to continue */
++	}
+ 
+ 	/*
+ 	 * Try to fetch some more data from the kernel high quality
+@@ -232,8 +242,10 @@ int random_pool_ready(void)
+ 	dummy_key_avail += res;
+ 	close(fd);
+ 
+-	if (dummy_key_avail == sizeof(dummy_key))
++	if (dummy_key_avail == sizeof(dummy_key)) {
++		random_mark_pool_ready();
+ 		return 1;
++	}
+ 
+ 	wpa_printf(MSG_INFO, "random: Only %u/%u bytes of strong "
+ 		   "random data available from /dev/random",
+@@ -243,6 +255,7 @@ int random_pool_ready(void)
+ 	    total_collected + 10 * own_pool_ready > MIN_COLLECT_ENTROPY) {
+ 		wpa_printf(MSG_INFO, "random: Allow operation to proceed "
+ 			   "based on internal entropy");
++		random_mark_pool_ready();
+ 		return 1;
+ 	}
+ 
+@@ -258,9 +271,15 @@ int random_pool_ready(void)
  
  void random_mark_pool_ready(void)
  {
@@ -57,7 +87,7 @@
  }
  
  
-@@ -335,3 +349,22 @@ void random_deinit(void)
+@@ -335,3 +354,22 @@ void random_deinit(void)
  	random_close_fd();
  #endif /* __linux__ */
  }
