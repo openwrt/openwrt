@@ -55,6 +55,7 @@ config OLPC_BOOTSCRIPT_IMAGES
 config TARGET_IMAGES_PAD
 	bool "Pad images to filesystem size (for JFFS2)"
 	depends OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
+	default y
 
 config TARGET_KERNEL_PARTSIZE
 	int "Kernel partition size (in MB)"
