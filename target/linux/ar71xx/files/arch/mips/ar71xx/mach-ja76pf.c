@@ -15,7 +15,8 @@
 #include "dev-usb.h"
 #include "dev-leds-gpio.h"
 
-#define JA76PF_BUTTONS_POLL_INTERVAL	20
+#define JA76PF_KEYS_POLL_INTERVAL	20	/* msecs */
+#define JA76PF_KEYS_DEBOUNCE_INTERVAL	(3 * JA76PF_KEYS_POLL_INTERVAL)
 
 #define JA76PF_GPIO_I2C_SCL		0
 #define JA76PF_GPIO_I2C_SDA		1
@@ -35,12 +36,12 @@ static struct gpio_led ja76pf_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button ja76pf_gpio_buttons[] __initdata = {
+static struct gpio_keys_button ja76pf_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = JA76PF_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= JA76PF_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}
@@ -85,9 +86,9 @@ static void __init ja76pf_init(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ja76pf_leds_gpio),
 					ja76pf_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, JA76PF_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(ja76pf_gpio_buttons),
-					ja76pf_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, JA76PF_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(ja76pf_gpio_keys),
+					 ja76pf_gpio_keys);
 
 	ar71xx_add_device_usb();
 	pb42_pci_init();

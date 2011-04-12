@@ -34,7 +34,8 @@
 #define ZCN_1523H_5_GPIO_LED_MEDIUM	15
 #define ZCN_1523H_5_GPIO_LED_STRONG	16
 
-#define ZCN_1523H_BUTTONS_POLL_INTERVAL	20
+#define ZCN_1523H_KEYS_POLL_INTERVAL	20	/* msecs */
+#define ZCN_1523H_KEYS_DEBOUNCE_INTERVAL (3 * ZCN_1523H_KEYS_POLL_INTERVAL)
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition zcn_1523h_partitions[] = {
@@ -86,12 +87,12 @@ static struct flash_platform_data zcn_1523h_flash_data = {
 #endif
 };
 
-static struct gpio_button zcn_1523h_gpio_buttons[] __initdata = {
+static struct gpio_keys_button zcn_1523h_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = ZCN_1523H_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= ZCN_1523H_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}
@@ -164,9 +165,9 @@ static void __init zcn_1523h_generic_setup(void)
 	ar71xx_add_device_leds_gpio(0, ARRAY_SIZE(zcn_1523h_leds_gpio),
 					zcn_1523h_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, ZCN_1523H_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(zcn_1523h_gpio_buttons),
-					zcn_1523h_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, ZCN_1523H_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(zcn_1523h_gpio_keys),
+					 zcn_1523h_gpio_keys);
 
 	ap91_pci_init(ee, mac);
 

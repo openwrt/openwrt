@@ -15,17 +15,19 @@
 #include "dev-pb42-pci.h"
 #include "dev-usb.h"
 
-#define JWAP003_BUTTONS_POLL_INTERVAL	20
+#define JWAP003_KEYS_POLL_INTERVAL	20	/* msecs */
+#define JWAP003_KEYS_DEBOUNCE_INTERVAL	(3 * JWAP003_KEYS_POLL_INTERVAL)
+
 #define JWAP003_GPIO_WPS	11
 #define JWAP003_GPIO_I2C_SCL	0
 #define JWAP003_GPIO_I2C_SDA	1
 
-static struct gpio_button jwap003_gpio_buttons[] __initdata = {
+static struct gpio_keys_button jwap003_gpio_keys[] __initdata = {
 	{
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = JWAP003_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= JWAP003_GPIO_WPS,
 		.active_low	= 1,
 	}
@@ -71,9 +73,9 @@ static void __init jwap003_init(void)
 
 	ar71xx_add_device_usb();
 
-	ar71xx_add_device_gpio_buttons(-1, JWAP003_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(jwap003_gpio_buttons),
-					jwap003_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, JWAP003_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(jwap003_gpio_keys),
+					 jwap003_gpio_keys);
 
 	pb42_pci_init();
 }

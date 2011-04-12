@@ -38,7 +38,8 @@
 #define AP83_050_GPIO_VSC7385_MOSI	16
 #define AP83_050_GPIO_VSC7385_SCK	17
 
-#define AP83_BUTTONS_POLL_INTERVAL	20
+#define AP83_KEYS_POLL_INTERVAL		20	/* msecs */
+#define AP83_KEYS_DEBOUNCE_INTERVAL	(3 * AP83_KEYS_POLL_INTERVAL)
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition ap83_flash_partitions[] = {
@@ -115,19 +116,19 @@ static struct gpio_led ap83_leds_gpio[] __initdata = {
 	},
 };
 
-static struct gpio_button ap83_gpio_buttons[] __initdata = {
+static struct gpio_keys_button ap83_gpio_keys[] __initdata = {
 	{
 		.desc		= "soft_reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = AP83_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= AP83_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "jumpstart",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = AP83_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= AP83_GPIO_BTN_JUMPSTART,
 		.active_low	= 1,
 	}
@@ -216,9 +217,9 @@ static void __init ap83_generic_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap83_leds_gpio),
 					ap83_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, AP83_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(ap83_gpio_buttons),
-					ap83_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, AP83_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(ap83_gpio_keys),
+					 ap83_gpio_keys);
 
 	ar71xx_add_device_usb();
 

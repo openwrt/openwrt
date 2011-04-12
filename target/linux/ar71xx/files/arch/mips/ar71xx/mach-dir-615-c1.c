@@ -35,7 +35,8 @@
 #define DIR_615C1_GPIO_BTN_WPS		12
 #define DIR_615C1_GPIO_BTN_RESET	21
 
-#define DIR_615C1_BUTTONS_POLL_INTERVAL	20
+#define DIR_615C1_KEYS_POLL_INTERVAL	20	/* msecs */
+#define DIR_615C1_KEYS_DEBOUNCE_INTERVAL (3 * DIR_615C1_KEYS_POLL_INTERVAL)
 
 #define DIR_615C1_CONFIG_ADDR		0x1f020000
 #define DIR_615C1_CONFIG_SIZE		0x10000
@@ -112,18 +113,18 @@ static struct gpio_led dir_615c1_leds_gpio[] __initdata = {
 
 };
 
-static struct gpio_button dir_615c1_gpio_buttons[] __initdata = {
+static struct gpio_keys_button dir_615c1_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = DIR_615C1_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= DIR_615C1_GPIO_BTN_RESET,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = DIR_615C1_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= DIR_615C1_GPIO_BTN_WPS,
 	}
 };
@@ -163,9 +164,9 @@ static void __init dir_615c1_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(dir_615c1_leds_gpio),
 					dir_615c1_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, DIR_615C1_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(dir_615c1_gpio_buttons),
-					dir_615c1_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, DIR_615C1_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(dir_615c1_gpio_keys),
+					 dir_615c1_gpio_keys);
 
 	ar9xxx_add_device_wmac(eeprom, wlan_mac);
 }

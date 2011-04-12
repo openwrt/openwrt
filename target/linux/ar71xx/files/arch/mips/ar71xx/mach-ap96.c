@@ -37,7 +37,8 @@
 /* WPS button - next to a led on right */
 #define AP96_GPIO_BTN_WPS		8
 
-#define AP96_BUTTONS_POLL_INTERVAL    20
+#define AP96_KEYS_POLL_INTERVAL		20	/* msecs */
+#define AP96_KEYS_DEBOUNCE_INTERVAL	(3 * AP96_KEYS_POLL_INTERVAL)
 
 #define AP96_WMAC0_MAC_OFFSET		0x120c
 #define AP96_WMAC1_MAC_OFFSET		0x520c
@@ -116,19 +117,19 @@ static struct gpio_led ap96_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button ap96_gpio_buttons[] __initdata = {
+static struct gpio_keys_button ap96_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = AP96_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= AP96_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = AP96_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= AP96_GPIO_BTN_WPS,
 		.active_low	= 1,
 	}
@@ -166,9 +167,9 @@ static void __init ap96_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap96_leds_gpio),
 					ap96_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, AP96_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(ap96_gpio_buttons),
-					ap96_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, AP96_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(ap96_gpio_keys),
+					 ap96_gpio_keys);
 
 	ap94_pci_init(art + AP96_CALDATA0_OFFSET,
 		      art + AP96_WMAC0_MAC_OFFSET,

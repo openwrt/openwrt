@@ -33,7 +33,8 @@
 #define TL_WR1043ND_GPIO_RTL8366_SDA	18
 #define TL_WR1043ND_GPIO_RTL8366_SCK	19
 
-#define TL_WR1043ND_BUTTONS_POLL_INTERVAL     20
+#define TL_WR1043ND_KEYS_POLL_INTERVAL	20	/* msecs */
+#define TL_WR1043ND_KEYS_DEBOUNCE_INTERVAL (3 * TL_WR1043ND_KEYS_POLL_INTERVAL)
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition tl_wr1043nd_partitions[] = {
@@ -90,19 +91,19 @@ static struct gpio_led tl_wr1043nd_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button tl_wr1043nd_gpio_buttons[] __initdata = {
+static struct gpio_keys_button tl_wr1043nd_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = TL_WR1043ND_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= TL_WR1043ND_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "qss",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = TL_WR1043ND_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= TL_WR1043ND_GPIO_BTN_QSS,
 		.active_low	= 1,
 	}
@@ -144,9 +145,9 @@ static void __init tl_wr1043nd_setup(void)
 
 	platform_device_register(&tl_wr1043nd_rtl8366rb_device);
 
-	ar71xx_add_device_gpio_buttons(-1, TL_WR1043ND_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(tl_wr1043nd_gpio_buttons),
-					tl_wr1043nd_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, TL_WR1043ND_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(tl_wr1043nd_gpio_keys),
+					 tl_wr1043nd_gpio_keys);
 
 	ar9xxx_add_device_wmac(eeprom, mac);
 }

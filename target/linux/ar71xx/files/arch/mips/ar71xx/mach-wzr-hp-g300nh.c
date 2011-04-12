@@ -49,7 +49,8 @@
 #define WZRHPG300NH_GPIO_BTN_ROUTER_AUTO (WZRHPG300NH_GPIO_EXP_BASE + 6)
 #define WZRHPG300NH_GPIO_BTN_QOS_OFF	(WZRHPG300NH_GPIO_EXP_BASE + 7)
 
-#define WZRHPG300NH_BUTTONS_POLL_INTERVAL	20
+#define WZRHPG300NH_KEYS_POLL_INTERVAL	20	/* msecs */
+#define WZRHPG300NH_KEYS_DEBOUNCE_INTERVAL (3 * WZRHPG300NH_KEYS_POLL_INTERVAL)
 
 #define WZRHPG300NH_MAC_OFFSET		0x20c
 
@@ -144,54 +145,54 @@ static struct gpio_led wzrhpg300nh_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button wzrhpg300nh_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wzrhpg300nh_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = WZRHPG300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WZRHPG300NH_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "aoss",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = WZRHPG300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WZRHPG300NH_GPIO_BTN_AOSS,
 		.active_low	= 1,
 	}, {
 		.desc		= "usb",
 		.type		= EV_KEY,
 		.code		= BTN_2,
-		.threshold	= 3,
+		.debounce_interval = WZRHPG300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WZRHPG300NH_GPIO_BTN_USB,
 		.active_low	= 1,
 	}, {
 		.desc		= "qos_on",
 		.type		= EV_KEY,
 		.code		= BTN_3,
-		.threshold	= 3,
+		.debounce_interval = WZRHPG300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WZRHPG300NH_GPIO_BTN_QOS_ON,
 		.active_low	= 0,
 	}, {
 		.desc		= "qos_off",
 		.type		= EV_KEY,
 		.code		= BTN_4,
-		.threshold	= 3,
+		.debounce_interval = WZRHPG300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WZRHPG300NH_GPIO_BTN_QOS_OFF,
 		.active_low	= 0,
 	}, {
 		.desc		= "router_on",
 		.type		= EV_KEY,
 		.code		= BTN_5,
-		.threshold	= 3,
+		.debounce_interval = WZRHPG300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WZRHPG300NH_GPIO_BTN_ROUTER_ON,
 		.active_low	= 0,
 	}, {
 		.desc		= "router_auto",
 		.type		= EV_KEY,
 		.code		= BTN_6,
-		.threshold	= 3,
+		.debounce_interval = WZRHPG300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WZRHPG300NH_GPIO_BTN_ROUTER_AUTO,
 		.active_low	= 0,
 	}
@@ -283,9 +284,9 @@ static void __init wzrhpg30xnh_setup(bool hasrtl8366rb)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wzrhpg300nh_leds_gpio),
 					wzrhpg300nh_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, WZRHPG300NH_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(wzrhpg300nh_gpio_buttons),
-					wzrhpg300nh_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, WZRHPG300NH_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(wzrhpg300nh_gpio_keys),
+					 wzrhpg300nh_gpio_keys);
 
 }
 

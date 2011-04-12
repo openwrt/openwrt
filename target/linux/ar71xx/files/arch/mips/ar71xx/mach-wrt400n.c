@@ -29,7 +29,8 @@
 #define WRT400N_GPIO_BTN_RESET	8
 #define WRT400N_GPIO_BTN_WLSEC	3
 
-#define WRT400N_BUTTONS_POLL_INTERVAL	20
+#define WRT400N_KEYS_POLL_INTERVAL	20	/* msecs */
+#define WRT400N_KEYS_DEBOUNE_INTERVAL	(3 * WRT400N_KEYS_POLL_INTERVAL)
 
 #define WRT400N_MAC_ADDR_OFFSET		0x120c
 #define WRT400N_CALDATA0_OFFSET		0x1000
@@ -110,19 +111,19 @@ static struct gpio_led wrt400n_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button wrt400n_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wrt400n_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = WRT400N_KEYS_DEBOUNE_INTERVAL,
 		.gpio		= WRT400N_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wlsec",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = WRT400N_KEYS_DEBOUNE_INTERVAL,
 		.gpio		= WRT400N_GPIO_BTN_WLSEC,
 		.active_low	= 1,
 	}
@@ -152,9 +153,9 @@ static void __init wrt400n_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wrt400n_leds_gpio),
 					wrt400n_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, WRT400N_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(wrt400n_gpio_buttons),
-					wrt400n_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, WRT400N_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(wrt400n_gpio_keys),
+					 wrt400n_gpio_keys);
 
 	ap94_pci_init(art + WRT400N_CALDATA0_OFFSET, NULL,
 		      art + WRT400N_CALDATA1_OFFSET, NULL);

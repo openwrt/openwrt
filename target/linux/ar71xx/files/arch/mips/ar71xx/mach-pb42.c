@@ -18,24 +18,25 @@
 #include "dev-pb42-pci.h"
 #include "dev-usb.h"
 
-#define PB42_BUTTONS_POLL_INTERVAL	20
+#define PB42_KEYS_POLL_INTERVAL		20	/* msecs */
+#define PB42_KEYS_DEBOUNCE_INTERVAL	(3 * PB42_KEYS_POLL_INTERVAL)
 
 #define PB42_GPIO_BTN_SW4	8
 #define PB42_GPIO_BTN_SW5	3
 
-static struct gpio_button pb42_gpio_buttons[] __initdata = {
+static struct gpio_keys_button pb42_gpio_keys[] __initdata = {
 	{
 		.desc		= "sw4",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 3,
+		.debounce_interval = PB42_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= PB42_GPIO_BTN_SW4,
 		.active_low	= 1,
 	}, {
 		.desc		= "sw5",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 3,
+		.debounce_interval = PB42_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= PB42_GPIO_BTN_SW5,
 		.active_low	= 1,
 	}
@@ -63,9 +64,9 @@ static void __init pb42_init(void)
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
 
-	ar71xx_add_device_gpio_buttons(-1, PB42_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(pb42_gpio_buttons),
-					pb42_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, PB42_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(pb42_gpio_keys),
+					 pb42_gpio_keys);
 
 	pb42_pci_init();
 }
