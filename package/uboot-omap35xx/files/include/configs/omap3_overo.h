@@ -163,7 +163,7 @@
 	"mmcdev=0\0" \
 	"mmcroot=/dev/mmcblk0p2 rw\0" \
 	"mmcrootfstype=ext3 rootwait\0" \
-	"nandroot='ubi0:rootfs ubi.mtd=4'\0" \
+	"nandroot='ubi0:rootfs ubi.mtd=5 ubi.mtd=6 ubi.mtd=7'\0" \
 	"nandrootfstype=ubifs\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"mpurate=${mpurate} " \
@@ -190,7 +190,7 @@
 		"bootm ${loadaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
-		"nand read ${loadaddr} 280000 400000; " \
+		"nand read ${loadaddr} 280000 200000; " \
 		"bootm ${loadaddr}\0" \
 
 #define CONFIG_BOOTCOMMAND \
