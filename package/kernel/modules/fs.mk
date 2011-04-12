@@ -28,10 +28,12 @@ define KernelPackage/fs-btrfs
   DEPENDS:=+kmod-libcrc32c
   KCONFIG:=\
 	CONFIG_BTRFS_FS \
-	CONFIG_BTRFS_FS_POSIX_ACL=n
+	CONFIG_BTRFS_FS_POSIX_ACL=n \
+	CONFIG_ZLIB_DEFLATE
   FILES:=\
-	$(LINUX_DIR)/fs/btrfs/btrfs.ko
-  AUTOLOAD:=$(call AutoLoad,30,btrfs,1)
+	$(LINUX_DIR)/fs/btrfs/btrfs.ko \
+	$(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko
+  AUTOLOAD:=$(call AutoLoad,30,zlib_deflate btrfs,1)
 endef
 
 define KernelPackage/fs-btrfs/description
