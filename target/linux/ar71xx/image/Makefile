@@ -491,28 +491,34 @@ define Image/Build/Template/128k/jffs2-128k
 	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7))
 endef
 
+ap81_cmdline=board=AP81 console=ttyS0,115200
 define Image/Build/Profile/AP81
-	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap81,board=AP81)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap81,$(ap81_cmdline))
 endef
 
+ap83_cmdline=board=AP83 console=ttyS0,115200
 define Image/Build/Profile/AP83
-	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap83,board=AP83)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap83,$(ap83_cmdline))
 endef
 
+db120_cmdline=board=DB120 console=ttyS0,115200
 define Image/Build/Profile/DB120
-	$(call Image/Build/Template/$(fs_64k)/$(1),DB120,db120,board=DB120)
+	$(call Image/Build/Template/$(fs_64k)/$(1),DB120,db120,$(db120_cmdline))
 endef
 
+pb42_cmdline=board=PB42 console=ttyS0,115200
 define Image/Build/Profile/PB42
-	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,pb42,board=PB42)
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,pb42,$(pb42_cmdline))
 endef
 
+pb44_cmdline=board=PB44 console=ttyS0,115200
 define Image/Build/Profile/PB44
-	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,pb44,board=PB44)
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,pb44,$(pb44_cmdline))
 endef
 
+pb92_cmdline=board=PB92 console=ttyS0,115200
 define Image/Build/Profile/PB92
-	$(call Image/Build/Template/$(fs_64k)/$(1),PB92,pb92,board=PB92)
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB92,pb92,$(pb92_cmdline))
 endef
 
 define Image/Build/Profile/WP543
@@ -522,69 +528,85 @@ define Image/Build/Profile/WP543
 	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x1000000,16M)
 endef
 
+dir600a1_cmdline=board=DIR-600-A1 console=ttyS0,115200
 define Image/Build/Profile/DIR600A1
-	$(call Image/Build/Template/$(fs_64k)/$(1),Cameo7240,dir-600-a1,board=DIR-600-A1,"AP91-AR7240-RT-090223-00")
+	$(call Image/Build/Template/$(fs_64k)/$(1),Cameo7240,dir-600-a1,$(dir600a1_cmdline),"AP91-AR7240-RT-090223-00")
 endef
 
+eap7660d_cmdline=board=EAP7660D console=ttyS0,115200
 define Image/Build/Profile/EAP7660D
-	$(call Image/Build/Template/$(fs_128k)/$(1),PB4X,eap7660d,board=EAP7660D)
+	$(call Image/Build/Template/$(fs_128k)/$(1),PB4X,eap7660d,$(eap7660d_cmdline))
 endef
 
+ja76pf_cmdline=board=JA76PF console=ttyS0,115200
 define Image/Build/Profile/JA76PF
-	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,ja76pf,board=JA76PF)
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,ja76pf,$(ja76pf_cmdline))
 endef
 
+jwap003_cmdline=board=JWAP003 console=ttyS0,115200
 define Image/Build/Profile/JWAP003
-	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,jwap003,board=JWAP003)
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,jwap003,$(jwap003_cmdline))
 endef
 
+fr54rtr_cmdline=board=DIR-600-A1 console=ttyS0,115200
 define Image/Build/Profile/FR54RTR
-	$(call Image/Build/Template/$(fs_64k)/$(1),Cameo7240,fr-54rtr,board=DIR-600-A1,"AP91-AR7240-RT-090223-01")
+	$(call Image/Build/Template/$(fs_64k)/$(1),Cameo7240,fr-54rtr,$(fr54rtr_cmdline),"AP91-AR7240-RT-090223-01")
 endef
 
+dir615c1_cmdline=board=DIR-615-C1 console=ttyS0,115200
 define Image/Build/Profile/DIR615C1
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,dir-615-c1,board=DIR-615-C1,"AP81-AR9130-RT-070614-02")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,dir-615-c1,$(dir615c1_cmdline),"AP81-AR9130-RT-070614-02")
 endef
 
+tew632brp_cmdline=board=TEW-632BRP console=ttyS0,115200
 define Image/Build/Profile/TEW632BRP
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-632brp,board=TEW-632BRP,"AP81-AR9130-RT-070614-00")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-632brp,$(tew632brp_cmdline),"AP81-AR9130-RT-070614-00")
 endef
 
+tew652brp_cmdline=board=TEW-632BRP console=ttyS0,115200
 define Image/Build/Profile/TEW652BRP
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-652brp,board=TEW-632BRP,"AP81-AR9130-RT-080609-05")
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-652brp-recovery,board=TEW-632BRP,"AP81-AR9130-RT-070614-02")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-652brp,$(tew652brp_cmdline),"AP81-AR9130-RT-080609-05")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-652brp-recovery,$(tew652brp_cmdline),"AP81-AR9130-RT-070614-02")
 endef
 
+a05rbw300n_cmdline=board=TEW-632BRP console=ttyS0,115200
 define Image/Build/Profile/A02RBW300N
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,a02-rb-w300n,board=TEW-632BRP,"AP81-AR9130-RT-070614-03")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,a02-rb-w300n,$(a05rbw300n_cmdline),"AP81-AR9130-RT-070614-03")
 endef
 
+ubntrs_cmdline=board=UBNT-RS console=ttyS0,115200
 define Image/Build/Profile/UBNTRS
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-rs,board=UBNT-RS,RS,RSx,ar7100)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-rs,$(ubntrs_cmdline),RS,RSx,ar7100)
 endef
 
+ubntrspro_cmdline=board=UBNT-RSPRO console=ttyS0,115200
 define Image/Build/Profile/UBNTRSPRO
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-rspro,board=UBNT-RSPRO,RSPRO,RSPRO,ar7100pro)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-rspro,$(ubntrspro_cmdline),RSPRO,RSPRO,ar7100pro)
 endef
 
+ubntlssr71_cmdline=board=UBNT-LS-SR71 console=ttyS0,115200
 define Image/Build/Profile/UBNTLSSR71
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-ls-sr71,board=UBNT-LS-SR71,LS-SR71,LS-SR71,ar7100)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNT,ubnt-ls-sr71,$(ubntlssr71_cmdline),LS-SR71,LS-SR71,ar7100)
 endef
 
+ubntbulletm_cmdline=board=UBNT-BM console=ttyS0,115200
 define Image/Build/Profile/UBNTBULLETM
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-bullet-m,board=UBNT-BM,XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-bullet-m,$(ubntbulletm_cmdline),XM,UBNTXM,ar7240)
 endef
 
+ubntrocketm_cmdline=board=UBNT-RM console=ttyS0,115200
 define Image/Build/Profile/UBNTROCKETM
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-rocket-m,board=UBNT-RM,XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-rocket-m,$(ubntrocketm_cmdline),XM,UBNTXM,ar7240)
 endef
 
+ubntnanom_cmdline=board=UBNT-NM console=ttyS0,115200
 define Image/Build/Profile/UBNTNANOM
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-nano-m,board=UBNT-NM,XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-nano-m,$(ubntnanom_cmdline),XM,UBNTXM,ar7240)
 endef
 
+ubntunifi_cmdline=board=UBNT-XM console=ttyS0,115200
 define Image/Build/Profile/UBNTUNIFI
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-unifi,board=UBNT-XM,XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-unifi,$(ubntunifi_cmdline),XM,UBNTXM,ar7240)
 endef
 
 define Image/Build/Profile/UBNT
@@ -597,108 +619,135 @@ define Image/Build/Profile/UBNT
 	$(call Image/Build/Profile/UBNTUNIFI,$(1))
 endef
 
+mzkw04nu_cmdline=board=MZK-W04NU console=ttyS0,115200
 define Image/Build/Profile/MZKW04NU
-	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w04nu,board=MZK-W04NU)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w04nu,$(mzkw04nu_cmdline))
 endef
 
+mzkw300nh_cmdline=board=MZK-W300NH console=ttyS0,115200
 define Image/Build/Profile/MZKW300NH
-	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w300nh,board=MZK-W300NH)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Planex,mzk-w300nh,$(mzkw300nh_cmdline))
 endef
 
+nbg460n_cmdline=board=NBG460N console=ttyS0,115200
 define Image/Build/Profile/NBG_460N_550N_550NH
-	$(call Image/Build/Template/$(fs_64k)/$(1),ZyXEL,nbg460n_550n_550nh,board=NBG460N,NBG-460N)
+	$(call Image/Build/Template/$(fs_64k)/$(1),ZyXEL,nbg460n_550n_550nh,$(nbg460n_cmdline),NBG-460N)
 endef
 
+tlmr3220_cmdline=board=TL-MR3220 console=ttyS0,115200
 define Image/Build/Profile/TLMR3220V1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3220-v1,board=TL-MR3220,TL-MR3220v1)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3220-v1,$(tlmr3220_cmdline),TL-MR3220v1)
 endef
 
+tlmr3420_cmdline=board=TL-MR3420 console=ttyS0,115200
 define Image/Build/Profile/TLMR3420V1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3420-v1,board=TL-MR3420,TL-MR3420v1)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3420-v1,$(tlmr3420_cmdline),TL-MR3420v1)
 endef
 
+tlwa901nd_cmdline=board=TL-WA901ND console=ttyS0,115200
 define Image/Build/Profile/TLWA901NDV1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wa901nd-v1,board=TL-WA901ND,TL-WA901NDv1)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wa901nd-v1,$(tlwa901nd_cmdline),TL-WA901NDv1)
 endef
 
+tlwa901ndv2_cmdline=board=TL-WA901ND-v2 console=ttyS0,115200
 define Image/Build/Profile/TLWA901NDV2
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wa901nd-v2,board=TL-WA901ND-v2,TL-WA901NDv2)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wa901nd-v2,$(tlwa901ndv2_cmdline),TL-WA901NDv2)
 endef
 
+tlwe741ndv1_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR741NDV1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr741nd-v1,board=TL-WR741ND,TL-WR741NDv1)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr741nd-v1,$(tlwe741ndv1_cmdline),TL-WR741NDv1)
 endef
 
+tlwe740nv1_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR740NV1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr740n-v1,board=TL-WR741ND,TL-WR740Nv1)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr740n-v1,$(tlwe740nv1_cmdline),TL-WR740Nv1)
 endef
 
+tlwr841nv15_cmdline=board=TL-WR841N-v1.5 console=ttyS0,115200
 define Image/Build/Profile/TLWR841NV15
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841n-v1.5,board=TL-WR841N-v1.5,TL-WR841Nv1.5)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841n-v1.5,$(tlwr841nv15_cmdline),TL-WR841Nv1.5)
 endef
 
+tlwr841ndv3_cmdline=board=TL-WR941ND console=ttyS0,115200
 define Image/Build/Profile/TLWR841NDV3
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841nd-v3,board=TL-WR941ND,TL-WR841NDv3)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841nd-v3,$(tlwr841ndv3_cmdline),TL-WR841NDv3)
 endef
 
+tlwr841ndv5_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR841NDV5
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr841nd-v5,board=TL-WR741ND,TL-WR841NDv5)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr841nd-v5,$(tlwr841ndv5_cmdline),TL-WR841NDv5)
 endef
 
+tlwr841ndv7_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR841NDV7
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr841nd-v7,board=TL-WR741ND,TL-WR841NDv7)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr841nd-v7,$(tlwr841ndv7_cmdline),TL-WR841NDv7)
 endef
 
+tlwr941ndv2_cmdline=board=TL-WR941ND console=ttyS0,115200
 define Image/Build/Profile/TLWR941NDV2
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v2,board=TL-WR941ND,TL-WR941NDv2)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v2,$(tlwr941ndv2_cmdline),TL-WR941NDv2)
 endef
 
+tlwr941ndv3_cmdline=board=TL-WR941ND console=ttyS0,115200
 define Image/Build/Profile/TLWR941NDV3
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v3,board=TL-WR941ND,TL-WR941NDv2)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v3,$(tlwr941ndv3_cmdline),TL-WR941NDv2)
 endef
 
+tlwr941ndv4_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR941NDV4
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr941nd-v4,board=TL-WR741ND,TL-WR941NDv4)
+	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr941nd-v4,$(tlwr941ndv4_cmdline),TL-WR941NDv4)
 endef
 
+tlwr1043nd_cmdline=board=TL-WR1043ND console=ttyS0,115200
 define Image/Build/Profile/TLWR1043NDV1
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr1043nd-v1,board=TL-WR1043ND,TL-WR1043NDv1)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr1043nd-v1,$(tlwr1043nd_cmdline),TL-WR1043NDv1)
 endef
 
+wndr3700_cmdline=board=WNDR3700 console=ttyS0,115200
 wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
+wndr3700v2_cmdline=board=WNDR3700v2 console=ttyS0,115200
 wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),14848k(rootfs),64k(art)ro,15872k@0x70000(firmware)
 define Image/Build/Profile/WNDR3700
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,board=WNDR3700,wndr3700_mtdlayout,3700,WNDR3700)
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,board=WNDR3700v2,wndr3700v2_mtdlayout,3701,WNDR3700v2)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,$(wndr3700_cmdline),wndr3700_mtdlayout,3700,WNDR3700)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,$(wndr3700v2_cmdline),wndr3700v2_mtdlayout,3701,WNDR3700v2)
 endef
 
+ap96_cmdline=board=AP96 console=ttyS0,115200
 define Image/Build/Profile/AP96
-	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap96,board=AP96)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap96,$(ap96_cmdline))
 endef
 
+wr400n_cmdline=board=WRT400N console=ttyS0,115200
 define Image/Build/Profile/WRT400N
-	$(call Image/Build/Template/$(fs_64k)/$(1),WRT400N,wrt400n,board=WRT400N)
+	$(call Image/Build/Template/$(fs_64k)/$(1),WRT400N,wrt400n,$(wr400n_cmdline))
 endef
 
+dir825b1_cmdline=board=DIR-825-B1 console=ttyS0,115200
 define Image/Build/Profile/DIR825B1
-	$(call Image/Build/Template/$(fs_64k)/$(1),DIR825B1,dir-825-b1,board=DIR-825-B1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),DIR825B1,dir-825-b1,$(dir825b1_cmdline))
 endef
 
+wrt160nl_cmdline=board=WRT160NL console=ttyS0,115200
 define Image/Build/Profile/WRT160NL
-	$(call Image/Build/Template/$(fs_64k)/$(1),CyberTAN,wrt160nl,board=WRT160NL,1.00.01)
+	$(call Image/Build/Template/$(fs_64k)/$(1),CyberTAN,wrt160nl,$(wrt160nl_cmdline),1.00.01)
 endef
 
+wzrhpg300nh_cmdline=board=WZR-HP-G300NH console=ttyS0,115200
+wzrhpg301nh_cmdline=board=WZR-HP-G301NH console=ttyS0,115200
 define Image/Build/Profile/WZRHPG30XNH
-	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh,board=WZR-HP-G300NH)
-	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g301nh,board=WZR-HP-G301NH)
+	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh,$(wzrhpg300nh_cmdline))
+	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g301nh,$(wzrhpg301nh_cmdline))
 endef
 
+zcn1523h28_cmdline=board=ZCN-1523H-2 console=ttyS0,115200
 define Image/Build/Profile/ZCN1523H28
-	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-2-8,board=ZCN-1523H-2)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-2-8,$(zcn1523h28_cmdline))
 endef
 
+zcn1523h516_cmdline=board=ZCN-1523H-5 console=ttyS0,115200
 define Image/Build/Profile/ZCN1523H516
-	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-5-16,board=ZCN-1523H-5)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-5-16,$(zcn1523h516_cmdline))
 endef
 
 define Image/Build/Profile/Default
