@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -215,10 +215,9 @@ $(eval $(call KernelPackage,crypto-des))
 
 define KernelPackage/crypto-deflate
   TITLE:=Deflate compression CryptoAPI module
-  KCONFIG:=CONFIG_ZLIB_DEFLATE \
-	CONFIG_CRYPTO_DEFLATE
-  FILES:=$(LINUX_DIR)/lib/zlib_deflate/zlib_deflate.ko \
-	$(LINUX_DIR)/crypto/deflate.ko
+  DEPENDS:=+kmod-zlib
+  KCONFIG:=CONFIG_CRYPTO_DEFLATE
+  FILES:=$(LINUX_DIR)/crypto/deflate.ko
   AUTOLOAD:=$(call AutoLoad,09,zlib_deflate deflate)
   $(call AddDepends/crypto)
 endef
