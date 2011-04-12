@@ -13,6 +13,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/nxp_74hc153.h>
 #include <linux/rtl8366s.h>
+#include <linux/rtl8366rb.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -225,21 +226,43 @@ static struct platform_device wzrhpg300nh_rtl8366s_device = {
 	}
 };
 
-static void __init wzrhpg300nh_setup(void)
+static struct rtl8366rb_platform_data wzrhpg301nh_rtl8366rb_data = {
+	.gpio_sda       = WZRHPG300NH_GPIO_RTL8366_SDA,
+	.gpio_sck       = WZRHPG300NH_GPIO_RTL8366_SCK,
+};
+
+static struct platform_device wzrhpg301nh_rtl8366rb_device = {
+	.name           = RTL8366RB_DRIVER_NAME,
+	.id             = -1,
+	.dev = {
+		.platform_data  = &wzrhpg301nh_rtl8366rb_data,
+	}
+};
+
+static void __init wzrhpg30xnh_setup(bool hasrtl8366rb)
 {
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 	u8 *mac = eeprom + WZRHPG300NH_MAC_OFFSET;
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
-	ar71xx_eth0_pll_data.pll_1000 = 0x1e000100;
-	ar71xx_eth0_data.mii_bus_dev = &wzrhpg300nh_rtl8366s_device.dev;
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
+
+	if (hasrtl8366rb) {
+		ar71xx_eth0_pll_data.pll_1000 = 0x1f000000;
+		ar71xx_eth0_data.mii_bus_dev = &wzrhpg301nh_rtl8366rb_device.dev;
+		ar71xx_eth1_pll_data.pll_1000 = 0x100;
+		ar71xx_eth1_data.mii_bus_dev = &wzrhpg301nh_rtl8366rb_device.dev;
+	} else {
+		ar71xx_eth0_pll_data.pll_1000 = 0x1e000100;
+		ar71xx_eth0_data.mii_bus_dev = &wzrhpg300nh_rtl8366s_device.dev;
+		ar71xx_eth1_pll_data.pll_1000 = 0x1e000100;
+		ar71xx_eth1_data.mii_bus_dev = &wzrhpg300nh_rtl8366s_device.dev;
+	}
+
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
-	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
-	ar71xx_eth1_pll_data.pll_1000 = 0x1e000100;
-	ar71xx_eth1_data.mii_bus_dev = &wzrhpg300nh_rtl8366s_device.dev;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.phy_mask = 0x10;
 
@@ -251,7 +274,11 @@ static void __init wzrhpg300nh_setup(void)
 
 	platform_device_register(&wzrhpg300nh_74hc153_device);
 	platform_device_register(&wzrhpg300nh_flash_device);
-	platform_device_register(&wzrhpg300nh_rtl8366s_device);
+
+	if (hasrtl8366rb)
+		platform_device_register(&wzrhpg301nh_rtl8366rb_device);
+	else
+		platform_device_register(&wzrhpg300nh_rtl8366s_device);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wzrhpg300nh_leds_gpio),
 					wzrhpg300nh_leds_gpio);
@@ -262,5 +289,18 @@ static void __init wzrhpg300nh_setup(void)
 
 }
 
+static void __init wzrhpg300nh_setup(void)
+{
+	wzrhpg30xnh_setup(false);
+}
+
+static void __init wzrhpg301nh_setup(void)
+{
+	wzrhpg30xnh_setup(true);
+}
+
 MIPS_MACHINE(AR71XX_MACH_WZR_HP_G300NH, "WZR-HP-G300NH",
 	     "Buffalo WZR-HP-G300NH", wzrhpg300nh_setup);
+
+MIPS_MACHINE(AR71XX_MACH_WZR_HP_G301NH, "WZR-HP-G301NH",
+	     "Buffalo WZR-HP-G301NH", wzrhpg301nh_setup);

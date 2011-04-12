@@ -118,7 +118,7 @@ define Image/Build/DIR825B1
 	fi; fi
 endef
 
-define Image/Build/WZRHPG300NH
+define Image/Build/WZRHPG30XNH
 	$(call PatchKernelLzma,$(2),$(3))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 1048576 ]; then \
 		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
@@ -688,8 +688,9 @@ define Image/Build/Profile/WRT160NL
 	$(call Image/Build/Template/$(fs_64k)/$(1),CyberTAN,wrt160nl,board=WRT160NL,1.00.01)
 endef
 
-define Image/Build/Profile/WZRHPG300NH
-	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG300NH,wzr-hp-g300nh,board=WZR-HP-G300NH)
+define Image/Build/Profile/WZRHPG30XNH
+	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh,board=WZR-HP-G300NH)
+	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g301nh,board=WZR-HP-G301NH)
 endef
 
 define Image/Build/Profile/ZCN1523H28
@@ -740,7 +741,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AP96,$(1))
 	$(call Image/Build/Profile/WRT400N,$(1))
 	$(call Image/Build/Profile/WRT160NL,$(1))
-	$(call Image/Build/Profile/WZRHPG300NH,$(1))
+	$(call Image/Build/Profile/WZRHPG30XNH,$(1))
 	$(call Image/Build/Profile/ZCN1523H28,$(1))
 	$(call Image/Build/Profile/ZCN1523H516,$(1))
 endef
