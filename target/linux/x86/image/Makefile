@@ -184,7 +184,7 @@ define Image/Build
   endif
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/$(IMG_PREFIX)-vmlinuz
-  ifeq ($(1),ext4)
+  ifneq (,$findstring($(1),ext4 jffs2))
 	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img
 	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
   endif
