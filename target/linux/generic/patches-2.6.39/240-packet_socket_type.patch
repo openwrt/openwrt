@@ -1,0 +1,132 @@
+This patch allows the user to specify desired packet types (outgoing,
+broadcast, unicast, etc.) on packet sockets via setsockopt.
+This can reduce the load in situations where only a limited number
+of packet types are necessary
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+--- a/include/linux/if_packet.h
++++ b/include/linux/if_packet.h
+@@ -29,6 +29,8 @@ struct sockaddr_ll {
+ /* These ones are invisible by user level */
+ #define PACKET_LOOPBACK		5		/* MC/BRD frame looped back */
+ #define PACKET_FASTROUTE	6		/* Fastrouted frame	*/
++#define PACKET_MASK_ANY		0xffffffff	/* mask for packet type bits */
++
+ 
+ /* Packet socket options */
+ 
+@@ -49,6 +51,7 @@ struct sockaddr_ll {
+ #define PACKET_VNET_HDR			15
+ #define PACKET_TX_TIMESTAMP		16
+ #define PACKET_TIMESTAMP		17
++#define PACKET_RECV_TYPE		18
+ 
+ struct tpacket_stats {
+ 	unsigned int	tp_packets;
+--- a/net/packet/af_packet.c
++++ b/net/packet/af_packet.c
+@@ -210,6 +210,7 @@ struct packet_sock {
+ 	unsigned int		tp_loss:1;
+ 	unsigned int		tp_tstamp;
+ 	struct packet_type	prot_hook ____cacheline_aligned_in_smp;
++	unsigned int		pkt_type;
+ };
+ 
+ struct packet_skb_cb {
+@@ -354,6 +355,7 @@ static int packet_rcv_spkt(struct sk_buf
+ {
+ 	struct sock *sk;
+ 	struct sockaddr_pkt *spkt;
++	struct packet_sock *po;
+ 
+ 	/*
+ 	 *	When we registered the protocol we saved the socket in the data
+@@ -361,6 +363,7 @@ static int packet_rcv_spkt(struct sk_buf
+ 	 */
+ 
+ 	sk = pt->af_packet_priv;
++	po = pkt_sk(sk);
+ 
+ 	/*
+ 	 *	Yank back the headers [hope the device set this
+@@ -373,7 +376,7 @@ static int packet_rcv_spkt(struct sk_buf
+ 	 *	so that this procedure is noop.
+ 	 */
+ 
+-	if (skb->pkt_type == PACKET_LOOPBACK)
++	if (!(po->pkt_type & (1 << skb->pkt_type)))
+ 		goto out;
+ 
+ 	if (!net_eq(dev_net(dev), sock_net(sk)))
+@@ -566,12 +569,12 @@ static int packet_rcv(struct sk_buff *sk
+ 	int skb_len = skb->len;
+ 	unsigned int snaplen, res;
+ 
+-	if (skb->pkt_type == PACKET_LOOPBACK)
+-		goto drop;
+-
+ 	sk = pt->af_packet_priv;
+ 	po = pkt_sk(sk);
+ 
++	if (!(po->pkt_type & (1 << skb->pkt_type)))
++		goto drop;
++
+ 	if (!net_eq(dev_net(dev), sock_net(sk)))
+ 		goto drop;
+ 
+@@ -687,12 +690,12 @@ static int tpacket_rcv(struct sk_buff *s
+ 	struct timespec ts;
+ 	struct skb_shared_hwtstamps *shhwtstamps = skb_hwtstamps(skb);
+ 
+-	if (skb->pkt_type == PACKET_LOOPBACK)
+-		goto drop;
+-
+ 	sk = pt->af_packet_priv;
+ 	po = pkt_sk(sk);
+ 
++	if (!(po->pkt_type & (1 << skb->pkt_type)))
++		goto drop;
++
+ 	if (!net_eq(dev_net(dev), sock_net(sk)))
+ 		goto drop;
+ 
+@@ -1523,6 +1526,7 @@ static int packet_create(struct net *net
+ 	spin_lock_init(&po->bind_lock);
+ 	mutex_init(&po->pg_vec_lock);
+ 	po->prot_hook.func = packet_rcv;
++	po->pkt_type = PACKET_MASK_ANY & ~(1 << PACKET_LOOPBACK);
+ 
+ 	if (sock->type == SOCK_PACKET)
+ 		po->prot_hook.func = packet_rcv_spkt;
+@@ -2091,6 +2095,16 @@ packet_setsockopt(struct socket *sock, i
+ 		po->tp_tstamp = val;
+ 		return 0;
+ 	}
++        case PACKET_RECV_TYPE:
++        {
++                unsigned int val;
++                if (optlen != sizeof(val))
++                        return -EINVAL;
++                if (copy_from_user(&val, optval, sizeof(val)))
++                        return -EFAULT;
++                po->pkt_type = val & ~PACKET_LOOPBACK;
++                return 0;
++        }
+ 	default:
+ 		return -ENOPROTOOPT;
+ 	}
+@@ -2148,6 +2162,13 @@ static int packet_getsockopt(struct sock
+ 
+ 		data = &val;
+ 		break;
++	case PACKET_RECV_TYPE:
++		if (len > sizeof(unsigned int))
++			len = sizeof(unsigned int);
++		val = po->pkt_type;
++
++		data = &val;
++		break;
+ 	case PACKET_VERSION:
+ 		if (len > sizeof(int))
+ 			len = sizeof(int);
