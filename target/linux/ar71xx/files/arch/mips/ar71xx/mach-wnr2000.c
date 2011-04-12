@@ -29,7 +29,8 @@
 #define WNR2000_GPIO_BTN_RESET		21
 #define WNR2000_GPIO_BTN_WPS		8
 
-#define WNR2000_BUTTONS_POLL_INTERVAL	20
+#define WNR2000_KEYS_POLL_INTERVAL	20	/* msecs */
+#define WNR2000_KEYS_DEBOUNCE_INTERVAL	(3 * WNR2000_KEYS_POLL_INTERVAL)
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wnr2000_partitions[] = {
@@ -98,18 +99,18 @@ static struct gpio_led wnr2000_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button wnr2000_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wnr2000_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = WNR2000_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNR2000_GPIO_BTN_RESET,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = WNR2000_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNR2000_GPIO_BTN_WPS,
 	}
 };
@@ -138,9 +139,9 @@ static void __init wnr2000_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wnr2000_leds_gpio),
 					wnr2000_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, WNR2000_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(wnr2000_gpio_buttons),
-					wnr2000_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, WNR2000_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(wnr2000_gpio_keys),
+					 wnr2000_gpio_keys);
 
 
 	ar9xxx_add_device_wmac(eeprom, NULL);

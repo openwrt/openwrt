@@ -30,7 +30,8 @@
 #define AP81_GPIO_BTN_SW4	12
 #define AP81_GPIO_BTN_SW1	21
 
-#define AP81_BUTTONS_POLL_INTERVAL	20
+#define AP81_KEYS_POLL_INTERVAL		20 /* msecs */
+#define AP81_KEYS_DEBOUNCE_INTERVAL	(3 * AP81_KEYS_POLL_INTERVAL)
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition ap81_partitions[] = {
@@ -87,19 +88,19 @@ static struct gpio_led ap81_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button ap81_gpio_buttons[] __initdata = {
+static struct gpio_keys_button ap81_gpio_keys[] __initdata = {
 	{
 		.desc		= "sw1",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 3,
+		.debounce_interval = AP81_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= AP81_GPIO_BTN_SW1,
 		.active_low	= 1,
 	}, {
 		.desc		= "sw4",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 3,
+		.debounce_interval = AP81_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= AP81_GPIO_BTN_SW4,
 		.active_low	= 1,
 	}
@@ -131,9 +132,9 @@ static void __init ap81_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ap81_leds_gpio),
 					ap81_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, AP81_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(ap81_gpio_buttons),
-					ap81_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, AP81_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(ap81_gpio_keys),
+					 ap81_gpio_keys);
 
 	ar9xxx_add_device_wmac(eeprom, NULL);
 }

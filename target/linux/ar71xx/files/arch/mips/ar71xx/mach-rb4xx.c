@@ -38,7 +38,8 @@
 #define RB4XX_GPIO_CPLD_LED4	(RB4XX_GPIO_CPLD_BASE + CPLD_GPIO_nLED4)
 #define RB4XX_GPIO_CPLD_LED5	(RB4XX_GPIO_CPLD_BASE + CPLD_GPIO_nLED5)
 
-#define RB4XX_BUTTONS_POLL_INTERVAL	20
+#define RB4XX_KEYS_POLL_INTERVAL	20	/* msecs */
+#define RB4XX_KEYS_DEBOUNCE_INTERVAL	(3 * RB4XX_KEYS_POLL_INTERVAL)
 
 static struct gpio_led rb4xx_leds_gpio[] __initdata = {
 	{
@@ -68,12 +69,12 @@ static struct gpio_led rb4xx_leds_gpio[] __initdata = {
 	},
 };
 
-static struct gpio_button rb4xx_gpio_buttons[] __initdata = {
+static struct gpio_keys_button rb4xx_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset_switch",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = RB4XX_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= RB4XX_GPIO_RESET_SWITCH,
 		.active_low	= 1,
 	}
@@ -201,9 +202,9 @@ static void __init rb4xx_generic_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
 					rb4xx_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, RB4XX_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(rb4xx_gpio_buttons),
-					rb4xx_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, RB4XX_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(rb4xx_gpio_keys),
+					 rb4xx_gpio_keys);
 
 	spi_register_board_info(rb4xx_spi_info, ARRAY_SIZE(rb4xx_spi_info));
 	platform_device_register(&rb4xx_spi_device);

@@ -13,13 +13,11 @@
 #define _AR71XX_DEV_GPIO_BUTTONS_H
 
 #include <linux/input.h>
-#include <linux/gpio_buttons.h>
+#include <linux/gpio_keys.h>
 
-#include <asm/mach-ar71xx/platform.h>
-
-void ar71xx_add_device_gpio_buttons(int id,
-				    unsigned poll_interval,
-				    unsigned nbuttons,
-				    struct gpio_button *buttons) __init;
+void ar71xx_register_gpio_keys_polled(int id,
+				      unsigned poll_interval,
+				      unsigned nbuttons,
+				      struct gpio_keys_button *buttons);
 
 #endif /* _AR71XX_DEV_GPIO_BUTTONS_H */

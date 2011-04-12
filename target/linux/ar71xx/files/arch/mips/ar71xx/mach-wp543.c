@@ -30,7 +30,8 @@
 #define WP543_GPIO_LED_DIAG	7
 #define WP543_GPIO_SW4		8
 
-#define WP543_BUTTONS_POLL_INTERVAL	20
+#define WP543_KEYS_POLL_INTERVAL	20	/* msecs */
+#define WP543_KEYS_DEBOUNCE_INTERVAL	(3 * WP543_KEYS_POLL_INTERVAL)
 
 static struct gpio_led wp543_leds_gpio[] __initdata = {
 	{
@@ -56,18 +57,18 @@ static struct gpio_led wp543_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button wp543_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wp543_gpio_keys[] __initdata = {
 	{
 		.desc		= "sw6",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 3,
+		.debounce_interval = WP543_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WP543_GPIO_SW6,
 	}, {
 		.desc		= "sw4",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 3,
+		.debounce_interval = WP543_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WP543_GPIO_SW4,
 	}
 };
@@ -92,9 +93,9 @@ static void __init wp543_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wp543_leds_gpio),
 					wp543_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, WP543_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(wp543_gpio_buttons),
-					wp543_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, WP543_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(wp543_gpio_keys),
+					 wp543_gpio_keys);
 }
 
 MIPS_MACHINE(AR71XX_MACH_WP543, "WP543", "Compex WP543", wp543_setup);

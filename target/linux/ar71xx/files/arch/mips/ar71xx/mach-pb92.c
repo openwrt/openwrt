@@ -56,25 +56,25 @@ static struct flash_platform_data pb92_flash_data = {
 #endif
 };
 
-
-#define PB92_BUTTONS_POLL_INTERVAL	20
+#define PB92_KEYS_POLL_INTERVAL		20	/* msecs */
+#define PB92_KEYS_DEBOUNCE_INTERVAL	(3 * PB92_KEYS_POLL_INTERVAL)
 
 #define PB92_GPIO_BTN_SW4	8
 #define PB92_GPIO_BTN_SW5	3
 
-static struct gpio_button pb92_gpio_buttons[] __initdata = {
+static struct gpio_keys_button pb92_gpio_keys[] __initdata = {
 	{
 		.desc		= "sw4",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 3,
+		.debounce_interval = PB92_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= PB92_GPIO_BTN_SW4,
 		.active_low	= 1,
 	}, {
 		.desc		= "sw5",
 		.type		= EV_KEY,
 		.code		= BTN_1,
-		.threshold	= 3,
+		.debounce_interval = PB92_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= PB92_GPIO_BTN_SW5,
 		.active_low	= 1,
 	}
@@ -100,9 +100,9 @@ static void __init pb92_init(void)
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
 
-	ar71xx_add_device_gpio_buttons(-1, PB92_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(pb92_gpio_buttons),
-					pb92_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, PB92_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(pb92_gpio_keys),
+					 pb92_gpio_keys);
 
 	pb9x_pci_init();
 }

@@ -33,7 +33,8 @@
 #define DB120_CALDATA_OFFSET	0x1000
 #define DB120_WMAC_MAC_OFFSET	0x1002
 
-#define DB120_BUTTONS_POLL_INTERVAL	20
+#define DB120_KEYS_POLL_INTERVAL	20	/* msecs */
+#define DB120_KEYS_DEBOUNCE_INTERVAL	(3 * DB120_KEYS_POLL_INTERVAL)
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition db120_partitions[] = {
@@ -98,12 +99,12 @@ static struct gpio_led db120_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button db120_gpio_buttons[] __initdata = {
+static struct gpio_keys_button db120_gpio_keys[] __initdata = {
 	{
 		.desc		= "sw1",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 3,
+		.debounce_interval = DB120_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= DB120_GPIO_BTN_SW1,
 		.active_low	= 1,
 	}
@@ -120,9 +121,9 @@ static void __init db120_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(db120_leds_gpio),
 					db120_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, DB120_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(db120_gpio_buttons),
-					db120_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, DB120_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(db120_gpio_keys),
+					 db120_gpio_keys);
 
 	ar9xxx_add_device_wmac(art + DB120_CALDATA_OFFSET,
 				art + DB120_WMAC_MAC_OFFSET);

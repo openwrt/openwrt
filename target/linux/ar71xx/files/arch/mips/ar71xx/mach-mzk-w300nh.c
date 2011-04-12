@@ -31,7 +31,8 @@
 #define MZK_W300NH_GPIO_BTN_WPS		12
 #define MZK_W300NH_GPIO_BTN_RESET	21
 
-#define MZK_W04NU_BUTTONS_POLL_INTERVAL	20
+#define MZK_W300NH_KEYS_POLL_INTERVAL	20	/* msecs */
+#define MZK_W300NH_KEYS_DEBOUNCE_INTERVAL (3 * MZK_W300NH_KEYS_POLL_INTERVAL)
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition mzk_w300nh_partitions[] = {
@@ -96,26 +97,26 @@ static struct gpio_led mzk_w300nh_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button mzk_w300nh_gpio_buttons[] __initdata = {
+static struct gpio_keys_button mzk_w300nh_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = MZK_W300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= MZK_W300NH_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = MZK_W300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= MZK_W300NH_GPIO_BTN_WPS,
 		.active_low	= 1,
 	}, {
 		.desc		= "aprouter",
 		.type		= EV_KEY,
 		.code		= BTN_2,
-		.threshold	= 3,
+		.debounce_interval = MZK_W300NH_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= MZK_W300NH_GPIO_BTN_APROUTER,
 		.active_low	= 0,
 	}
@@ -148,9 +149,9 @@ static void __init mzk_w300nh_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(mzk_w300nh_leds_gpio),
 					mzk_w300nh_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, MZK_W04NU_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(mzk_w300nh_gpio_buttons),
-					mzk_w300nh_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, MZK_W300NH_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(mzk_w300nh_gpio_keys),
+					 mzk_w300nh_gpio_keys);
 	ar9xxx_add_device_wmac(eeprom, NULL);
 }
 

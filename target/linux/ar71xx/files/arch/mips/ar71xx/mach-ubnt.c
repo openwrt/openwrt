@@ -38,7 +38,8 @@
 #define UBNT_M_GPIO_LED_L4	7
 #define UBNT_M_GPIO_BTN_RESET	12
 
-#define UBNT_BUTTONS_POLL_INTERVAL	20
+#define UBNT_KEYS_POLL_INTERVAL		20	/* msecs */
+#define UBNT_KEYS_DEBOUNCE_INTERVAL	(3 * UBNT_KEYS_POLL_INTERVAL)
 
 static struct gpio_led ubnt_rs_leds_gpio[] __initdata = {
 	{
@@ -100,23 +101,23 @@ static struct gpio_led ubnt_m_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button ubnt_gpio_buttons[] __initdata = {
+static struct gpio_keys_button ubnt_gpio_keys[] __initdata = {
 	{
 		.desc		= "sw4",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = UBNT_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= UBNT_RS_GPIO_SW4,
 		.active_low	= 1,
 	}
 };
 
-static struct gpio_button ubnt_m_gpio_buttons[] __initdata = {
+static struct gpio_keys_button ubnt_m_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = UBNT_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= UBNT_M_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}
@@ -126,9 +127,9 @@ static void __init ubnt_generic_setup(void)
 {
 	ar71xx_add_device_m25p80(NULL);
 
-	ar71xx_add_device_gpio_buttons(-1, UBNT_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(ubnt_gpio_buttons),
-					ubnt_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, UBNT_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(ubnt_gpio_keys),
+					 ubnt_gpio_keys);
 
 	pb42_pci_init();
 }
@@ -260,9 +261,9 @@ static void __init ubnt_m_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_m_leds_gpio),
 					ubnt_m_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, UBNT_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(ubnt_m_gpio_buttons),
-					ubnt_m_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, UBNT_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(ubnt_m_gpio_keys),
+					 ubnt_m_gpio_keys);
 }
 
 static void __init ubnt_rocket_m_setup(void)

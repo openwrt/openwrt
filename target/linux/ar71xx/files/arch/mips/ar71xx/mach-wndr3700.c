@@ -38,7 +38,8 @@
 #define WNDR3700_GPIO_RTL8366_SDA	5
 #define WNDR3700_GPIO_RTL8366_SCK	7
 
-#define WNDR3700_BUTTONS_POLL_INTERVAL    20
+#define WNDR3700_KEYS_POLL_INTERVAL	20	/* msecs */
+#define WNDR3700_KEYS_DEBOUNCE_INTERVAL (3 * WNDR3700_KEYS_POLL_INTERVAL)
 
 #define WNDR3700_ETH0_MAC_OFFSET	0
 #define WNDR3700_ETH1_MAC_OFFSET	0x6
@@ -179,26 +180,26 @@ static struct gpio_led wndr3700_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button wndr3700_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wndr3700_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = WNDR3700_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNDR3700_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = WNDR3700_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNDR3700_GPIO_BTN_WPS,
 		.active_low	= 1,
 	}, {
 		.desc		= "wifi",
 		.type		= EV_KEY,
 		.code		= BTN_2,
-		.threshold	= 3,
+		.debounce_interval = WNDR3700_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNDR3700_GPIO_BTN_WIFI,
 		.active_low	= 1,
 	}
@@ -246,9 +247,9 @@ static void __init wndr3700_common_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wndr3700_leds_gpio),
 					wndr3700_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, WNDR3700_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(wndr3700_gpio_buttons),
-					wndr3700_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, WNDR3700_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(wndr3700_gpio_keys),
+					 wndr3700_gpio_keys);
 
 	platform_device_register(&wndr3700_rtl8366s_device);
 	platform_device_register_simple("wndr3700-led-usb", -1, NULL, 0);

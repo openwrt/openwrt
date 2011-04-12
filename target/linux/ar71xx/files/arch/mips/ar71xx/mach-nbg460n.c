@@ -38,7 +38,9 @@
 /* Buttons */
 #define NBG460N_GPIO_BTN_WPS		12
 #define NBG460N_GPIO_BTN_RESET		21
-#define NBG460N_BUTTONS_POLL_INTERVAL	20
+
+#define NBG460N_KEYS_POLL_INTERVAL	20	/* msecs */
+#define NBG460N_KEYS_DEBOUNCE_INTERVAL	(3 * NBG460N_KEYS_POLL_INTERVAL)
 
 /* RTC chip PCF8563 I2C interface */
 #define NBG460N_GPIO_PCF8563_SDA	8
@@ -114,19 +116,19 @@ static struct gpio_led nbg460n_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button nbg460n_gpio_buttons[] __initdata = {
+static struct gpio_keys_button nbg460n_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = NBG460N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= NBG460N_GPIO_BTN_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = NBG460N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= NBG460N_GPIO_BTN_WPS,
 		.active_low	= 1,
 	}
@@ -214,9 +216,9 @@ static void __init nbg460n_setup(void)
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(nbg460n_leds_gpio),
 					nbg460n_leds_gpio);
 
-	ar71xx_add_device_gpio_buttons(-1, NBG460N_BUTTONS_POLL_INTERVAL,
-					ARRAY_SIZE(nbg460n_gpio_buttons),
-					nbg460n_gpio_buttons);
+	ar71xx_register_gpio_keys_polled(-1, NBG460N_KEYS_POLL_INTERVAL,
+					 ARRAY_SIZE(nbg460n_gpio_keys),
+					 nbg460n_gpio_keys);
 }
 
 MIPS_MACHINE(AR71XX_MACH_NBG460N, "NBG460N", "Zyxel NBG460N/550N/550NH",
