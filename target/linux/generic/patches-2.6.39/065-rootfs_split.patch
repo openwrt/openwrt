@@ -1,0 +1,619 @@
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -47,6 +47,16 @@ config MTD_PARTITIONS
+ 
+ if MTD_PARTITIONS
+ 
++config MTD_ROOTFS_ROOT_DEV
++	bool "Automatically set 'rootfs' partition to be root filesystem"
++	depends on MTD_PARTITIONS
++	default y
++
++config MTD_ROOTFS_SPLIT
++	bool "Automatically split 'rootfs' partition for squashfs"
++	depends on MTD_PARTITIONS
++	default y
++
+ config MTD_REDBOOT_PARTS
+ 	tristate "RedBoot partition table parsing"
+ 	---help---
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -29,6 +29,8 @@
+ #include <linux/kmod.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
++#include <linux/root_dev.h>
++#include <linux/magic.h>
+ #include <linux/err.h>
+ 
+ /* Our partition linked list */
+@@ -48,7 +50,7 @@ struct mtd_part {
+  * the pointer to that structure with this macro.
+  */
+ #define PART(x)  ((struct mtd_part *)(x))
+-
++#define IS_PART(mtd) (mtd->read == part_read)
+ 
+ /*
+  * MTD methods which simply translate the effective address and pass through
+@@ -636,6 +638,153 @@ int mtd_del_partition(struct mtd_info *m
+ }
+ EXPORT_SYMBOL_GPL(mtd_del_partition);
+ 
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
++#define ROOTFS_SPLIT_NAME "rootfs_data"
++#define ROOTFS_REMOVED_NAME "<removed>"
++
++struct squashfs_super_block {
++	__le32 s_magic;
++	__le32 pad0[9];
++	__le64 bytes_used;
++};
++
++
++static int split_squashfs(struct mtd_info *master, int offset, int *split_offset)
++{
++	struct squashfs_super_block sb;
++	int len, ret;
++
++	ret = master->read(master, offset, sizeof(sb), &len, (void *) &sb);
++	if (ret || (len != sizeof(sb))) {
++		printk(KERN_ALERT "split_squashfs: error occured while reading "
++			"from \"%s\"\n", master->name);
++		return -EINVAL;
++	}
++
++	if (SQUASHFS_MAGIC != le32_to_cpu(sb.s_magic) ) {
++		printk(KERN_ALERT "split_squashfs: no squashfs found in \"%s\"\n",
++			master->name);
++		*split_offset = 0;
++		return 0;
++	}
++
++	if (le64_to_cpu((sb.bytes_used)) <= 0) {
++		printk(KERN_ALERT "split_squashfs: squashfs is empty in \"%s\"\n",
++			master->name);
++		*split_offset = 0;
++		return 0;
++	}
++
++	len = (u32) le64_to_cpu(sb.bytes_used);
++	len += (offset & 0x000fffff);
++	len +=  (master->erasesize - 1);
++	len &= ~(master->erasesize - 1);
++	len -= (offset & 0x000fffff);
++	*split_offset = offset + len;
++
++	return 0;
++}
++
++static int split_rootfs_data(struct mtd_info *master, struct mtd_info *rpart, const struct mtd_partition *part)
++{
++	struct mtd_partition *dpart;
++	struct mtd_part *slave = NULL;
++	int ret, split_offset = 0;
++
++	ret = split_squashfs(master, part->offset, &split_offset);
++	if (ret)
++		return ret;
++
++	if (split_offset <= 0)
++		return 0;
++
++	dpart = kmalloc(sizeof(*part)+sizeof(ROOTFS_SPLIT_NAME)+1, GFP_KERNEL);
++	if (dpart == NULL) {
++		printk(KERN_INFO "split_squashfs: no memory for partition \"%s\"\n",
++			ROOTFS_SPLIT_NAME);
++		return -ENOMEM;
++	}
++
++	memcpy(dpart, part, sizeof(*part));
++	dpart->name = (unsigned char *)&dpart[1];
++	strcpy(dpart->name, ROOTFS_SPLIT_NAME);
++
++	dpart->size -= split_offset - dpart->offset;
++	dpart->offset = split_offset;
++
++	if (dpart == NULL)
++		return 1;
++
++	printk(KERN_INFO "mtd: partition \"%s\" created automatically, ofs=%llX, len=%llX \n",
++		ROOTFS_SPLIT_NAME, dpart->offset, dpart->size);
++
++	slave = allocate_partition(master, dpart, 0, split_offset);
++	if (IS_ERR(slave))
++		return PTR_ERR(slave);
++	mutex_lock(&mtd_partitions_mutex);
++	list_add(&slave->list, &mtd_partitions);
++	mutex_unlock(&mtd_partitions_mutex);
++
++	add_mtd_device(&slave->mtd);
++
++	rpart->split = &slave->mtd;
++
++	return 0;
++}
++
++static int refresh_rootfs_split(struct mtd_info *mtd)
++{
++	struct mtd_partition tpart;
++	struct mtd_part *part;
++	char *name;
++	//int index = 0;
++	int offset, size;
++	int ret;
++
++	part = PART(mtd);
++
++	/* check for the new squashfs offset first */
++	ret = split_squashfs(part->master, part->offset, &offset);
++	if (ret)
++		return ret;
++
++	if ((offset > 0) && !mtd->split) {
++		printk(KERN_INFO "%s: creating new split partition for \"%s\"\n", __func__, mtd->name);
++		/* if we don't have a rootfs split partition, create a new one */
++		tpart.name = (char *) mtd->name;
++		tpart.size = mtd->size;
++		tpart.offset = part->offset;
++
++		return split_rootfs_data(part->master, &part->mtd, &tpart);
++	} else if ((offset > 0) && mtd->split) {
++		/* update the offsets of the existing partition */
++		size = mtd->size + part->offset - offset;
++
++		part = PART(mtd->split);
++		part->offset = offset;
++		part->mtd.size = size;
++		printk(KERN_INFO "%s: %s partition \"" ROOTFS_SPLIT_NAME "\", offset: 0x%06x (0x%06x)\n",
++			__func__, (!strcmp(part->mtd.name, ROOTFS_SPLIT_NAME) ? "updating" : "creating"),
++			(u32) part->offset, (u32) part->mtd.size);
++		name = kmalloc(sizeof(ROOTFS_SPLIT_NAME) + 1, GFP_KERNEL);
++		strcpy(name, ROOTFS_SPLIT_NAME);
++		part->mtd.name = name;
++	} else if ((offset <= 0) && mtd->split) {
++		printk(KERN_INFO "%s: removing partition \"%s\"\n", __func__, mtd->split->name);
++
++		/* mark existing partition as removed */
++		part = PART(mtd->split);
++		name = kmalloc(sizeof(ROOTFS_SPLIT_NAME) + 1, GFP_KERNEL);
++		strcpy(name, ROOTFS_REMOVED_NAME);
++		part->mtd.name = name;
++		part->offset = 0;
++		part->mtd.size = 0;
++	}
++
++	return 0;
++}
++#endif /* CONFIG_MTD_ROOTFS_SPLIT */
++
+ /*
+  * This function, given a master MTD object and a partition table, creates
+  * and registers slave MTD objects which are bound to the master according to
+@@ -652,6 +801,9 @@ int add_mtd_partitions(struct mtd_info *
+ 	struct mtd_part *slave;
+ 	uint64_t cur_offset = 0;
+ 	int i;
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
++	int ret;
++#endif
+ 
+ 	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
+ 
+@@ -666,6 +818,21 @@ int add_mtd_partitions(struct mtd_info *
+ 
+ 		add_mtd_device(&slave->mtd);
+ 
++		if (!strcmp(parts[i].name, "rootfs")) {
++#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
++			if (ROOT_DEV == 0) {
++				printk(KERN_NOTICE "mtd: partition \"rootfs\" "
++					"set to be root filesystem\n");
++				ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, slave->mtd.index);
++			}
++#endif
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
++			ret = split_rootfs_data(master, &slave->mtd, &parts[i]);
++			/* if (ret == 0)
++			 * 	j++; */
++#endif
++		}
++
+ 		cur_offset = slave->offset + slave->mtd.size;
+ 	}
+ 
+@@ -673,6 +840,32 @@ int add_mtd_partitions(struct mtd_info *
+ }
+ EXPORT_SYMBOL(add_mtd_partitions);
+ 
++int refresh_mtd_partitions(struct mtd_info *mtd)
++{
++	int ret = 0;
++
++	if (IS_PART(mtd)) {
++		struct mtd_part *part;
++		struct mtd_info *master;
++
++		part = PART(mtd);
++		master = part->master;
++		if (master->refresh_device)
++			ret = master->refresh_device(master);
++	}
++
++	if (!ret && mtd->refresh_device)
++		ret = mtd->refresh_device(mtd);
++
++#ifdef CONFIG_MTD_ROOTFS_SPLIT
++	if (!ret && IS_PART(mtd) && !strcmp(mtd->name, "rootfs"))
++		refresh_rootfs_split(mtd);
++#endif
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(refresh_mtd_partitions);
++
+ static DEFINE_SPINLOCK(part_parser_lock);
+ static LIST_HEAD(part_parsers);
+ 
+--- a/drivers/mtd/devices/block2mtd.c
++++ b/drivers/mtd/devices/block2mtd.c
+@@ -30,6 +30,8 @@ struct block2mtd_dev {
+ 	struct block_device *blkdev;
+ 	struct mtd_info mtd;
+ 	struct mutex write_mutex;
++	rwlock_t bdev_mutex;
++	char devname[0];
+ };
+ 
+ 
+@@ -82,6 +84,12 @@ static int block2mtd_erase(struct mtd_in
+ 	size_t len = instr->len;
+ 	int err;
+ 
++	read_lock(&dev->bdev_mutex);
++	if (!dev->blkdev) {
++		err = -EINVAL;
++		goto done;
++	}
++
+ 	instr->state = MTD_ERASING;
+ 	mutex_lock(&dev->write_mutex);
+ 	err = _block2mtd_erase(dev, from, len);
+@@ -93,6 +101,10 @@ static int block2mtd_erase(struct mtd_in
+ 		instr->state = MTD_ERASE_DONE;
+ 
+ 	mtd_erase_callback(instr);
++
++done:
++	read_unlock(&dev->bdev_mutex);
++
+ 	return err;
+ }
+ 
+@@ -104,10 +116,14 @@ static int block2mtd_read(struct mtd_inf
+ 	struct page *page;
+ 	int index = from >> PAGE_SHIFT;
+ 	int offset = from & (PAGE_SIZE-1);
+-	int cpylen;
++	int cpylen, err = 0;
++
++	read_lock(&dev->bdev_mutex);
++	if (!dev->blkdev || (from > mtd->size)) {
++		err = -EINVAL;
++		goto done;
++	}
+ 
+-	if (from > mtd->size)
+-		return -EINVAL;
+ 	if (from + len > mtd->size)
+ 		len = mtd->size - from;
+ 
+@@ -122,10 +138,14 @@ static int block2mtd_read(struct mtd_inf
+ 		len = len - cpylen;
+ 
+ 		page = page_read(dev->blkdev->bd_inode->i_mapping, index);
+-		if (!page)
+-			return -ENOMEM;
+-		if (IS_ERR(page))
+-			return PTR_ERR(page);
++		if (!page) {
++			err = -ENOMEM;
++			goto done;
++		}
++		if (IS_ERR(page)) {
++			err = PTR_ERR(page);
++			goto done;
++		}
+ 
+ 		memcpy(buf, page_address(page) + offset, cpylen);
+ 		page_cache_release(page);
+@@ -136,7 +156,10 @@ static int block2mtd_read(struct mtd_inf
+ 		offset = 0;
+ 		index++;
+ 	}
+-	return 0;
++
++done:
++	read_unlock(&dev->bdev_mutex);
++	return err;
+ }
+ 
+ 
+@@ -188,12 +211,22 @@ static int block2mtd_write(struct mtd_in
+ 		size_t *retlen, const u_char *buf)
+ {
+ 	struct block2mtd_dev *dev = mtd->priv;
+-	int err;
++	int err = 0;
++
++	read_lock(&dev->bdev_mutex);
++	if (!dev->blkdev) {
++		err = -EINVAL;
++		goto done;
++	}
+ 
+ 	if (!len)
+-		return 0;
+-	if (to >= mtd->size)
+-		return -ENOSPC;
++		goto done;
++
++	if (to >= mtd->size) {
++		err = -ENOSPC;
++		goto done;
++	}
++
+ 	if (to + len > mtd->size)
+ 		len = mtd->size - to;
+ 
+@@ -202,6 +235,9 @@ static int block2mtd_write(struct mtd_in
+ 	mutex_unlock(&dev->write_mutex);
+ 	if (err > 0)
+ 		err = 0;
++
++done:
++	read_unlock(&dev->bdev_mutex);
+ 	return err;
+ }
+ 
+@@ -210,33 +246,109 @@ static int block2mtd_write(struct mtd_in
+ static void block2mtd_sync(struct mtd_info *mtd)
+ {
+ 	struct block2mtd_dev *dev = mtd->priv;
++	read_lock(&dev->bdev_mutex);
++	if (dev->blkdev)
+ 	sync_blockdev(dev->blkdev);
++	read_unlock(&dev->bdev_mutex);
++
+ 	return;
+ }
+ 
+ 
++static int _open_bdev(struct block2mtd_dev *dev)
++{
++	const fmode_t mode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
++	struct block_device *bdev;
++
++	/* Get a handle on the device */
++	bdev = blkdev_get_by_path(dev->devname, mode, dev);
++#ifndef MODULE
++	if (IS_ERR(bdev)) {
++
++		/* We might not have rootfs mounted at this point. Try
++		   to resolve the device name by other means. */
++
++		dev_t devt = name_to_dev_t(dev->devname);
++		if (devt)
++			bdev = blkdev_get_by_dev(devt, mode, dev);
++	}
++#endif
++
++	if (IS_ERR(bdev)) {
++		ERROR("error: cannot open device %s", dev->devname);
++		return 1;
++	}
++	dev->blkdev = bdev;
++
++	if (MAJOR(bdev->bd_dev) == MTD_BLOCK_MAJOR) {
++		ERROR("attempting to use an MTD device as a block device");
++		return 1;
++	}
++
++	return 0;
++}
++
++static void _close_bdev(struct block2mtd_dev *dev)
++{
++	struct block_device *bdev;
++
++	if (!dev->blkdev)
++		return;
++
++	bdev = dev->blkdev;
++	invalidate_mapping_pages(dev->blkdev->bd_inode->i_mapping, 0, -1);
++	blkdev_put(dev->blkdev, FMODE_READ|FMODE_WRITE|FMODE_EXCL);
++	dev->blkdev = NULL;
++}
++
+ static void block2mtd_free_device(struct block2mtd_dev *dev)
+ {
+ 	if (!dev)
+ 		return;
+ 
+ 	kfree(dev->mtd.name);
+-
+-	if (dev->blkdev) {
+-		invalidate_mapping_pages(dev->blkdev->bd_inode->i_mapping,
+-					0, -1);
+-		blkdev_put(dev->blkdev, FMODE_READ|FMODE_WRITE|FMODE_EXCL);
+-	}
+-
++	_close_bdev(dev);
+ 	kfree(dev);
+ }
+ 
+ 
+-/* FIXME: ensure that mtd->size % erase_size == 0 */
+-static struct block2mtd_dev *add_device(char *devname, int erase_size, const char *mtdname)
++static int block2mtd_refresh(struct mtd_info *mtd)
+ {
+-	const fmode_t mode = FMODE_READ | FMODE_WRITE | FMODE_EXCL;
++	struct block2mtd_dev *dev = mtd->priv;
+ 	struct block_device *bdev;
++	dev_t devt;
++	int err = 0;
++
++	/* no other mtd function can run at this point */
++	write_lock(&dev->bdev_mutex);
++
++	/* get the device number for the whole disk */
++	devt = MKDEV(MAJOR(dev->blkdev->bd_dev), 0);
++
++	/* close the old block device */
++	_close_bdev(dev);
++
++	/* open the whole disk, issue a partition rescan, then */
++	bdev = blkdev_get_by_dev(devt, FMODE_WRITE | FMODE_READ);
++	if (!bdev || !bdev->bd_disk)
++		err = -EINVAL;
++#ifndef CONFIG_MTD_BLOCK2MTD_MODULE
++	else
++		err = rescan_partitions(bdev->bd_disk, bdev);
++#endif
++	if (bdev)
++		blkdev_put(bdev, FMODE_READ|FMODE_WRITE|FMODE_EXCL);
++
++	/* try to open the partition block device again */
++	_open_bdev(dev);
++	write_unlock(&dev->bdev_mutex);
++
++	return err;
++}
++
++/* FIXME: ensure that mtd->size % erase_size == 0 */
++static struct block2mtd_dev *add_device(char *devname, int erase_size, char *mtdname)
++{
+ 	struct block2mtd_dev *dev;
+ 	struct mtd_partition *part;
+ 	char *name;
+@@ -244,36 +356,17 @@ static struct block2mtd_dev *add_device(
+ 	if (!devname)
+ 		return NULL;
+ 
+-	dev = kzalloc(sizeof(struct block2mtd_dev), GFP_KERNEL);
++	dev = kzalloc(sizeof(struct block2mtd_dev) + strlen(devname) + 1, GFP_KERNEL);
+ 	if (!dev)
+ 		return NULL;
+ 
+-	/* Get a handle on the device */
+-	bdev = blkdev_get_by_path(devname, mode, dev);
+-#ifndef MODULE
+-	if (IS_ERR(bdev)) {
+-
+-		/* We might not have rootfs mounted at this point. Try
+-		   to resolve the device name by other means. */
++	strcpy(dev->devname, devname);
+ 
+-		dev_t devt = name_to_dev_t(devname);
+-		if (devt)
+-			bdev = blkdev_get_by_dev(devt, mode, dev);
+-	}
+-#endif
+-
+-	if (IS_ERR(bdev)) {
+-		ERROR("error: cannot open device %s", devname);
++	if (_open_bdev(dev))
+ 		goto devinit_err;
+-	}
+-	dev->blkdev = bdev;
+-
+-	if (MAJOR(bdev->bd_dev) == MTD_BLOCK_MAJOR) {
+-		ERROR("attempting to use an MTD device as a block device");
+-		goto devinit_err;
+-	}
+ 
+ 	mutex_init(&dev->write_mutex);
++	rwlock_init(&dev->bdev_mutex);
+ 
+ 	/* Setup the MTD structure */
+ 	/* make the name contain the block device in */
+@@ -298,6 +391,7 @@ static struct block2mtd_dev *add_device(
+ 	dev->mtd.read = block2mtd_read;
+ 	dev->mtd.priv = dev;
+ 	dev->mtd.owner = THIS_MODULE;
++	dev->mtd.refresh_device = block2mtd_refresh;
+ 
+ 	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
+ 	part->name = dev->mtd.name;
+--- a/drivers/mtd/mtdchar.c
++++ b/drivers/mtd/mtdchar.c
+@@ -841,6 +841,13 @@ static int mtd_ioctl(struct file *file, 
+ 		file->f_pos = 0;
+ 		break;
+ 	}
++#ifdef CONFIG_MTD_PARTITIONS
++	case MTDREFRESH:
++	{
++		ret = refresh_mtd_partitions(mtd);
++		break;
++	}
++#endif
+ 
+ 	case OTPGETREGIONCOUNT:
+ 	case OTPGETREGIONINFO:
+--- a/include/linux/mtd/mtd.h
++++ b/include/linux/mtd/mtd.h
+@@ -125,6 +125,7 @@ struct nand_ecclayout {
+ 	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES_LARGE];
+ };
+ 
++struct mtd_info;
+ struct mtd_info {
+ 	u_char type;
+ 	uint32_t flags;
+@@ -277,6 +278,9 @@ struct mtd_info {
+ 	struct device dev;
+ 	int usecount;
+ 
++	int (*refresh_device)(struct mtd_info *mtd);
++	struct mtd_info *split;
++
+ 	/* If the driver is something smart, like UBI, it may need to maintain
+ 	 * its own reference counting. The below functions are only for driver.
+ 	 * The driver may register its callbacks. These callbacks are not
+--- a/include/linux/mtd/partitions.h
++++ b/include/linux/mtd/partitions.h
+@@ -34,12 +34,14 @@
+  * erasesize aligned (e.g. use MTDPART_OFS_NEXTBLK).
+  */
+ 
++struct mtd_partition;
+ struct mtd_partition {
+ 	char *name;			/* identifier string */
+ 	uint64_t size;			/* partition size */
+ 	uint64_t offset;		/* offset within the master MTD space */
+ 	uint32_t mask_flags;		/* master MTD flags to mask out for this partition */
+ 	struct nand_ecclayout *ecclayout;	/* out of band layout for this partition (NAND only) */
++	int (*refresh_partition)(struct mtd_info *);
+ };
+ 
+ #define MTDPART_OFS_NXTBLK	(-2)
+@@ -51,6 +53,7 @@ struct mtd_info;
+ 
+ int add_mtd_partitions(struct mtd_info *, const struct mtd_partition *, int);
+ int del_mtd_partitions(struct mtd_info *);
++int refresh_mtd_partitions(struct mtd_info *);
+ 
+ /*
+  * Functions dealing with the various ways of partitioning the space
+--- a/include/mtd/mtd-abi.h
++++ b/include/mtd/mtd-abi.h
+@@ -127,6 +127,7 @@ struct otp_info {
+ #define MEMWRITEOOB64		_IOWR('M', 21, struct mtd_oob_buf64)
+ #define MEMREADOOB64		_IOWR('M', 22, struct mtd_oob_buf64)
+ #define MEMISLOCKED		_IOR('M', 23, struct erase_info_user)
++#define MTDREFRESH		_IO('M', 23)
+ 
+ /*
+  * Obsolete legacy interface. Keep it in order not to break userspace

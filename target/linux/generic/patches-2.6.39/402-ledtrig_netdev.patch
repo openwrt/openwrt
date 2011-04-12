@@ -1,0 +1,43 @@
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -453,4 +453,11 @@ config LEDS_TRIGGER_MORSE
+ 	tristate "LED Morse Trigger"
+ 	depends on LEDS_TRIGGERS
+ 
++config LEDS_TRIGGER_NETDEV
++	tristate "LED Netdev Trigger"
++	depends on NET && LEDS_TRIGGERS
++	help
++	  This allows LEDs to be controlled by network device activity.
++	  If unsure, say Y.
++
+ endif # NEW_LEDS
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -54,3 +54,4 @@ obj-$(CONFIG_LEDS_TRIGGER_BACKLIGHT)	+= 
+ obj-$(CONFIG_LEDS_TRIGGER_GPIO)		+= ledtrig-gpio.o
+ obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o
+ obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
++obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= ledtrig-netdev.o
+--- a/drivers/leds/ledtrig-netdev.c
++++ b/drivers/leds/ledtrig-netdev.c
+@@ -307,8 +307,9 @@ done:
+ static void netdev_trig_timer(unsigned long arg)
+ {
+ 	struct led_netdev_data *trigger_data = (struct led_netdev_data *)arg;
+-	const struct net_device_stats *dev_stats;
++	struct rtnl_link_stats64 *dev_stats;
+ 	unsigned new_activity;
++	struct rtnl_link_stats64 temp;
+ 
+ 	write_lock(&trigger_data->lock);
+ 
+@@ -318,7 +319,7 @@ static void netdev_trig_timer(unsigned l
+ 		goto no_restart;
+ 	}
+ 
+-	dev_stats = dev_get_stats(trigger_data->net_dev);
++	dev_stats = dev_get_stats(trigger_data->net_dev, &temp);
+ 	new_activity =
+ 		((trigger_data->mode & MODE_TX) ? dev_stats->tx_packets : 0) +
+ 		((trigger_data->mode & MODE_RX) ? dev_stats->rx_packets : 0);
