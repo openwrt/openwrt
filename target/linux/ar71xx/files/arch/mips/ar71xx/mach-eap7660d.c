@@ -46,6 +46,7 @@ static char eap7660d_wmac1_mac[6];
 static u16 eap7660d_wmac0_eeprom[ATH5K_PLAT_EEP_MAX_WORDS];
 static u16 eap7660d_wmac1_eeprom[ATH5K_PLAT_EEP_MAX_WORDS];
 
+#ifdef CONFIG_PCI
 static struct ar71xx_pci_irq eap7660d_pci_irqs[] __initdata = {
 	{
 		.slot   = 0,
@@ -103,6 +104,12 @@ void __init eap7660d_pci_init(u8 *cal_data0, u8 *mac_addr0,
 	ar71xx_pci_plat_dev_init = eap7660d_pci_plat_dev_init;
 	ar71xx_pci_init(ARRAY_SIZE(eap7660d_pci_irqs), eap7660d_pci_irqs);
 }
+#else
+static inline void eap7660d_pci_init(u8 *cal_data0, u8 *mac_addr0,
+				     u8 *cal_data1, u8 *mac_addr1)
+{
+}
+#endif /* CONFIG_PCI */
 
 static struct gpio_led eap7660d_leds_gpio[] __initdata = {
 	{
