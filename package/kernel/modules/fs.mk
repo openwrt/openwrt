@@ -76,7 +76,7 @@ define KernelPackage/fs-ext2
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT2 filesystem support
   KCONFIG:=CONFIG_EXT2_FS
-  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
+  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache) @LINUX_2_6_30||LINUX_2_6_31
   FILES:=$(LINUX_DIR)/fs/ext2/ext2.ko
   AUTOLOAD:=$(call AutoLoad,32,ext2,1)
 endef
@@ -94,7 +94,7 @@ define KernelPackage/fs-ext3
   KCONFIG:= \
 	CONFIG_EXT3_FS \
 	CONFIG_JBD
-  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
+  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache) @LINUX_2_6_30||LINUX_2_6_31
   FILES:= \
 	$(LINUX_DIR)/fs/ext3/ext3.ko \
 	$(LINUX_DIR)/fs/jbd/jbd.ko
