@@ -5,7 +5,7 @@
  echo $CONTROL > $tmp_dir/tarX
  ( cd $pkg_dir && $TAR $ogargs -X $tmp_dir/tarX -czf $tmp_dir/data.tar.gz . )
 +
-+installed_size=`du -b $tmp_dir/data.tar.gz | cut -f1`
++installed_size=`stat -c "%s" $tmp_dir/data.tar.gz`
 +sed -i -e "s/^Installed-Size: .*/Installed-Size: $installed_size/" \
 +	$pkg_dir/$CONTROL/control
 +
