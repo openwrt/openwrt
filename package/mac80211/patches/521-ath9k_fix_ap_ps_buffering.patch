@@ -29,7 +29,7 @@
  /********/
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1800,6 +1800,27 @@ static int ath9k_sta_remove(struct ieee8
+@@ -1792,6 +1792,27 @@ static int ath9k_sta_remove(struct ieee8
  	return 0;
  }
  
@@ -57,7 +57,7 @@
  static int ath9k_conf_tx(struct ieee80211_hw *hw, u16 queue,
  			 const struct ieee80211_tx_queue_params *params)
  {
-@@ -2206,6 +2227,7 @@ struct ieee80211_ops ath9k_ops = {
+@@ -2198,6 +2219,7 @@ struct ieee80211_ops ath9k_ops = {
  	.configure_filter   = ath9k_configure_filter,
  	.sta_add	    = ath9k_sta_add,
  	.sta_remove	    = ath9k_sta_remove,
