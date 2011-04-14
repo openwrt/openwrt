@@ -1,0 +1,17 @@
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1483,14 +1483,6 @@ static int ath9k_add_interface(struct ie
+ 		}
+ 	}
+ 
+-	if ((vif->type == NL80211_IFTYPE_ADHOC) &&
+-	    sc->nvifs > 0) {
+-		ath_err(common, "Cannot create ADHOC interface when other"
+-			" interfaces already exist.\n");
+-		ret = -EINVAL;
+-		goto out;
+-	}
+-
+ 	ath_dbg(common, ATH_DBG_CONFIG,
+ 		"Attach a VIF of type: %d\n", vif->type);
+ 
