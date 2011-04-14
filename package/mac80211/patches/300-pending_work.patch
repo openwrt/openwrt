@@ -258,7 +258,7 @@
  		ATH_DBG_WARN_ON_ONCE(!stopped);
  	}
 -	return stopped;
-+	return stopped || reset;
++	return stopped && !reset;
  }
  
  void ath_flushrecv(struct ath_softc *sc)
