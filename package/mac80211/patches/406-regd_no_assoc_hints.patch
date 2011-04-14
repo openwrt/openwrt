@@ -1,0 +1,29 @@
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -1629,6 +1629,8 @@ void regulatory_hint_11d(struct wiphy *w
+ 	enum environment_cap env = ENVIRON_ANY;
+ 	struct regulatory_request *request;
+ 
++	return;
++
+ 	mutex_lock(&reg_mutex);
+ 
+ 	if (unlikely(!last_request))
+@@ -1791,6 +1793,8 @@ static void restore_regulatory_settings(
+ 
+ void regulatory_hint_disconnect(void)
+ {
++	return;
++
+ 	REG_DBG_PRINT("All devices are disconnected, going to "
+ 		      "restore regulatory settings\n");
+ 	restore_regulatory_settings(false);
+@@ -1811,6 +1815,8 @@ int regulatory_hint_found_beacon(struct 
+ {
+ 	struct reg_beacon *reg_beacon;
+ 
++	return;
++
+ 	if (likely((beacon_chan->beacon_found ||
+ 	    (beacon_chan->flags & IEEE80211_CHAN_RADAR) ||
+ 	    (beacon_chan->band == IEEE80211_BAND_2GHZ &&
