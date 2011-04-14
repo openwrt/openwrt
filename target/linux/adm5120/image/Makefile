@@ -15,6 +15,21 @@ define imgname
 $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(1))
 endef
 
+VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
+fs_squash:=squashfs-only
+fs_all:=all
+fs_4k:=4k
+fs_64k:=64k
+fs_128k:=128k
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	fs_squash:=initramfs
+	fs_all:=initramfs
+	fs_4k:=initramfs
+	fs_64k:=initramfs
+	fs_128k:=initramfs
+	VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs
+endif
+
 define Build/Clean
 	$(LOADER_MAKE) clean
 endef
@@ -91,6 +106,11 @@ endef
 
 define Image/Build/Initramfs
 	$(call Image/Build/Profile/$(PROFILE),Initramfs)
+endef
+
+define Image/BuildKernel
+	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
+	cp $(KDIR)/vmlinux $(VMLINUX).bin
 endef
 
 $(eval $(call BuildImage))
