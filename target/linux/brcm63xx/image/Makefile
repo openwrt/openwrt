@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -156,6 +156,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),V2500V_BB,6348,BTV2500V,,--layoutver 5)
 	# RTA1025W_16 (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,--layoutver 5)
+	# RTA1320_16M (numerous routers)
+	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
 	# Tecom GW6000
 	$(call Image/Build/CFEFIXUP,$(1),96348GW,6348,GW6000)
 	# Tecom GW6200
