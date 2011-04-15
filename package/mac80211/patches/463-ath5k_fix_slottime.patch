@@ -10,7 +10,7 @@
  	u32			ah_ant_ctl[AR5K_EEPROM_N_MODES][AR5K_ANT_MAX];
 --- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
 +++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
-@@ -282,6 +282,15 @@ ath5k_bss_info_changed(struct ieee80211_
+@@ -277,6 +277,15 @@ ath5k_bss_info_changed(struct ieee80211_
  	if (changes & BSS_CHANGED_BEACON_INT)
  		sc->bintval = bss_conf->beacon_int;
  
