@@ -962,10 +962,10 @@ static void adm5120_if_set_multicast_list(struct net_device *dev)
 	/* to the CPU, the Bridge Test Mode has to be activated.               */
 
 	/* Check if there is any vlan in promisc mode. */
-	if (t & (SWITCH_PORTS_NOCPU << CPUP_CONF_DUNP_SHIFT))
-		t &= ~CPUP_CONF_BTM; /* Disable Bridge Testing Mode */
-	else
+	if (~t & (SWITCH_PORTS_NOCPU << CPUP_CONF_DUNP_SHIFT))
 		t |= CPUP_CONF_BTM;  /* Enable Bridge Testing Mode */
+	else
+		t &= ~CPUP_CONF_BTM; /* Disable Bridge Testing Mode */
 
 	sw_write_reg(SWITCH_REG_CPUP_CONF, t);
 
