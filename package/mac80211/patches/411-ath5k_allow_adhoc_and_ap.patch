@@ -1,0 +1,38 @@
+--- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
++++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
+@@ -97,13 +97,8 @@ ath5k_add_interface(struct ieee80211_hw 
+ 		goto end;
+ 	}
+ 
+-	/* Don't allow other interfaces if one ad-hoc is configured.
+-	 * TODO: Fix the problems with ad-hoc and multiple other interfaces.
+-	 * We would need to operate the HW in ad-hoc mode to allow TSF updates
+-	 * for the IBSS, but this breaks with additional AP or STA interfaces
+-	 * at the moment. */
+-	if (sc->num_adhoc_vifs ||
+-	    (sc->nvifs && vif->type == NL80211_IFTYPE_ADHOC)) {
++	/* Don't allow more than one ad-hoc interface */
++	if (sc->num_adhoc_vifs && vif->type == NL80211_IFTYPE_ADHOC) {
+ 		ATH5K_ERR(sc, "Only one single ad-hoc interface is allowed.\n");
+ 		ret = -ELNRNG;
+ 		goto end;
+--- a/drivers/net/wireless/ath/ath5k/base.c
++++ b/drivers/net/wireless/ath/ath5k/base.c
+@@ -1857,7 +1857,7 @@ ath5k_beacon_send(struct ath5k_softc *sc
+ 		sc->bmisscount = 0;
+ 	}
+ 
+-	if ((sc->opmode == NL80211_IFTYPE_AP && sc->num_ap_vifs > 1) ||
++	if ((sc->opmode == NL80211_IFTYPE_AP && sc->num_ap_vifs + sc->num_adhoc_vifs > 1) ||
+ 			sc->opmode == NL80211_IFTYPE_MESH_POINT) {
+ 		u64 tsf = ath5k_hw_get_tsf64(ah);
+ 		u32 tsftu = TSF_TO_TU(tsf);
+@@ -1935,7 +1935,7 @@ ath5k_beacon_update_timers(struct ath5k_
+ 	u64 hw_tsf;
+ 
+ 	intval = sc->bintval & AR5K_BEACON_PERIOD;
+-	if (sc->opmode == NL80211_IFTYPE_AP && sc->num_ap_vifs > 1) {
++	if (sc->opmode == NL80211_IFTYPE_AP && sc->num_ap_vifs + sc->num_adhoc_vifs > 1) {
+ 		intval /= ATH_BCBUF;	/* staggered multi-bss beacons */
+ 		if (intval < 15)
+ 			ATH5K_WARN(sc, "intval %u is too low, min 15\n",
