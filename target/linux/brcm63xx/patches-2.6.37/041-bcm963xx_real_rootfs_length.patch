@@ -6,10 +6,10 @@
  	char kernel_crc[CRC_LEN];
 -	/* 228-235: Unused at present */
 -	char reserved1[8];
-+	/* 228-231: OpenWrt: real rootfs length */
++	/* 228-231: Image sequence number */
++	char image_sequence[4];
++	/* 222-235: Openwrt: real rootfs length */
 +	char real_rootfs_length[4];
-+	/* 222-235: Unused at present */
-+	char reserved1[4];
  	/* 236-239: CRC32 of header excluding tagVersion */
  	char header_crc[CRC_LEN];
  	/* 240-255: Unused at present */
