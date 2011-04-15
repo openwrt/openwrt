@@ -361,10 +361,6 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 	  strncpy(tag.information2, args->info2_arg, TAGINFO2_LEN);
 	}
 
-	if (args->reserved1_given) {
-	  strncpy(tag.reserved1, args->reserved1_arg, 8);
-	}
-
 	if (args->reserved2_given) {
 	  strncpy(tag.reserved2, args->reserved2_arg, 16);
 	}

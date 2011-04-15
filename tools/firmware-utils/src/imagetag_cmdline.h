@@ -104,9 +104,6 @@ struct gengetopt_args_info
   char * inactive_arg;	/**< @brief Inactive Flag (2=not-specified). (default='2').  */
   char * inactive_orig;	/**< @brief Inactive Flag (2=not-specified). original value given at command line.  */
   const char *inactive_help; /**< @brief Inactive Flag (2=not-specified). help description.  */
-  char * reserved1_arg;	/**< @brief String for first reserved section..  */
-  char * reserved1_orig;	/**< @brief String for first reserved section. original value given at command line.  */
-  const char *reserved1_help; /**< @brief String for first reserved section. help description.  */
   char * reserved2_arg;	/**< @brief String for second reserved section..  */
   char * reserved2_orig;	/**< @brief String for second reserved section. original value given at command line.  */
   const char *reserved2_help; /**< @brief String for second reserved section. help description.  */
@@ -137,7 +134,6 @@ struct gengetopt_args_info
   unsigned int rsa_signature_given ;	/**< @brief Whether rsa-signature was given.  */
   unsigned int second_image_flag_given ;	/**< @brief Whether second-image-flag was given.  */
   unsigned int inactive_given ;	/**< @brief Whether inactive was given.  */
-  unsigned int reserved1_given ;	/**< @brief Whether reserved1 was given.  */
   unsigned int reserved2_given ;	/**< @brief Whether reserved2 was given.  */
   unsigned int kernel_file_has_header_given ;	/**< @brief Whether kernel-file-has-header was given.  */
 

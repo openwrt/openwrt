@@ -56,7 +56,6 @@ const char *gengetopt_args_info_help[] = {
   "  -r, --rsa-signature=STRING    String for RSA Signature section.",
   "      --second-image-flag=flag-value\n                                Dual Image Flag (2=not-specified).  (possible \n                                  values=\"0\", \"1\", \"2\" default=`2')",
   "      --inactive=flag-value     Inactive Flag (2=not-specified).  (possible \n                                  values=\"0\", \"1\", \"2\" default=`2')",
-  "      --reserved1=STRING        String for first reserved section.",
   "      --reserved2=STRING        String for second reserved section.",
   "      --kernel-file-has-header  Indicates that the kernel file includes the \n                                  kernel header with correct load address and \n                                  entry point, so no changes are needed  \n                                  (default=off)",
     0
@@ -112,7 +111,6 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->rsa_signature_given = 0 ;
   args_info->second_image_flag_given = 0 ;
   args_info->inactive_given = 0 ;
-  args_info->reserved1_given = 0 ;
   args_info->reserved2_given = 0 ;
   args_info->kernel_file_has_header_given = 0 ;
 }
@@ -164,8 +162,6 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->second_image_flag_orig = NULL;
   args_info->inactive_arg = gengetopt_strdup ("2");
   args_info->inactive_orig = NULL;
-  args_info->reserved1_arg = NULL;
-  args_info->reserved1_orig = NULL;
   args_info->reserved2_arg = NULL;
   args_info->reserved2_orig = NULL;
   args_info->kernel_file_has_header_flag = 0;
@@ -201,9 +197,8 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->rsa_signature_help = gengetopt_args_info_help[21] ;
   args_info->second_image_flag_help = gengetopt_args_info_help[22] ;
   args_info->inactive_help = gengetopt_args_info_help[23] ;
-  args_info->reserved1_help = gengetopt_args_info_help[24] ;
-  args_info->reserved2_help = gengetopt_args_info_help[25] ;
-  args_info->kernel_file_has_header_help = gengetopt_args_info_help[26] ;
+  args_info->reserved2_help = gengetopt_args_info_help[24] ;
+  args_info->kernel_file_has_header_help = gengetopt_args_info_help[25] ;
   
 }
 
@@ -326,8 +321,6 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->second_image_flag_orig));
   free_string_field (&(args_info->inactive_arg));
   free_string_field (&(args_info->inactive_orig));
-  free_string_field (&(args_info->reserved1_arg));
-  free_string_field (&(args_info->reserved1_orig));
   free_string_field (&(args_info->reserved2_arg));
   free_string_field (&(args_info->reserved2_orig));
   
@@ -449,8 +442,6 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "second-image-flag", args_info->second_image_flag_orig, cmdline_parser_second_image_flag_values);
   if (args_info->inactive_given)
     write_into_file(outfile, "inactive", args_info->inactive_orig, cmdline_parser_inactive_values);
-  if (args_info->reserved1_given)
-    write_into_file(outfile, "reserved1", args_info->reserved1_orig, 0);
   if (args_info->reserved2_given)
     write_into_file(outfile, "reserved2", args_info->reserved2_orig, 0);
   if (args_info->kernel_file_has_header_given)
@@ -794,7 +785,6 @@ cmdline_parser_internal (
         { "rsa-signature",	1, NULL, 'r' },
         { "second-image-flag",	1, NULL, 0 },
         { "inactive",	1, NULL, 0 },
-        { "reserved1",	1, NULL, 0 },
         { "reserved2",	1, NULL, 0 },
         { "kernel-file-has-header",	0, NULL, 0 },
         { 0,  0, 0, 0 }
@@ -1086,20 +1076,6 @@ cmdline_parser_internal (
                 &(local_args_info.inactive_given), optarg, cmdline_parser_inactive_values, "2", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "inactive", '-',
-                additional_error))
-              goto failure;
-          
-          }
-          /* String for first reserved section..  */
-          else if (strcmp (long_options[option_index].name, "reserved1") == 0)
-          {
-          
-          
-            if (update_arg( (void *)&(args_info->reserved1_arg), 
-                 &(args_info->reserved1_orig), &(args_info->reserved1_given),
-                &(local_args_info.reserved1_given), optarg, 0, 0, ARG_STRING,
-                check_ambiguity, override, 0, 0,
-                "reserved1", '-',
                 additional_error))
               goto failure;
           
