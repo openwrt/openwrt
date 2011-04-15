@@ -37,6 +37,7 @@ define Package/uboot-ar71xx-$(1)
   SECTION:=boot
   CATEGORY:=Boot Loaders
   TITLE:=$(2)
+  DEPENDS:=@TARGET_ar71xx
   URL:=http://www.denx.de/wiki/U-Boot
   DEFAULT:=y if (TARGET_ar71xx_generic_NBG_460N_550N_550NH || TARGET_ar71xx_generic_Default || CONFIG_TARGET_ar71xx_generic_Minimal)
   VARIANT:=$(1)
