@@ -47,7 +47,7 @@
  
 -	if (add_mtd_device(&dev->mtd)) {
 +	part = kzalloc(sizeof(struct mtd_partition), GFP_KERNEL);
-+	part->name = dev->mtd.name;
++	part->name = name;
 +	part->offset = 0;
 +	part->size = dev->mtd.size;
 +	if (add_mtd_partitions(&dev->mtd, part, 1)) {
