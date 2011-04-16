@@ -1,7 +1,5 @@
-Index: linux-2.6.38.1/drivers/pci/Kconfig
-===================================================================
---- linux-2.6.38.1.orig/drivers/pci/Kconfig	2011-03-23 21:04:47.000000000 +0100
-+++ linux-2.6.38.1/drivers/pci/Kconfig	2011-03-28 16:48:00.052118712 +0200
+--- a/drivers/pci/Kconfig
++++ b/drivers/pci/Kconfig
 @@ -62,6 +62,12 @@ config XEN_PCIDEV_FE_DEBUG
  
  	  When in doubt, say N.
@@ -15,10 +13,8 @@ Index: linux-2.6.38.1/drivers/pci/Kconfig
  config HT_IRQ
  	bool "Interrupts on hypertransport devices"
  	default y
-Index: linux-2.6.38.1/drivers/pci/quirks.c
-===================================================================
---- linux-2.6.38.1.orig/drivers/pci/quirks.c	2011-03-23 21:04:47.000000000 +0100
-+++ linux-2.6.38.1/drivers/pci/quirks.c	2011-03-28 16:48:13.130041612 +0200
+--- a/drivers/pci/quirks.c
++++ b/drivers/pci/quirks.c
 @@ -104,6 +104,7 @@ static void __devinit quirk_mmio_always_
  }
  DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, quirk_mmio_always_on);
