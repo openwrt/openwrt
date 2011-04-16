@@ -1,0 +1,70 @@
+From e66a022a80d73b1a5d2e02c9db2c42e8b9853b40 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sat, 11 Dec 2010 20:17:54 +0000
+Subject: [PATCH] arm/ixp4xx: Rename FREQ macro to avoid collisions
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+FREQ is a ridiculously short name for a platform-specific macro in a
+generic header, and it now conflicts with an enumeration in the
+gspca/ov519 driver.
+
+Also delete conditional reference to ixp4xx_get_board_tick_rate()
+which is not defined anywhere.
+
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Krzysztof Hałasa <khc@pm.waw.pl>
+---
+ arch/arm/mach-ixp4xx/common.c             |    4 ++--
+ arch/arm/mach-ixp4xx/include/mach/timex.h |    5 +++--
+ drivers/input/misc/ixp4xx-beeper.c        |    6 +-----
+ 3 files changed, 6 insertions(+), 9 deletions(-)
+
+--- a/arch/arm/mach-ixp4xx/common.c
++++ b/arch/arm/mach-ixp4xx/common.c
+@@ -454,7 +454,7 @@ static struct clocksource clocksource_ix
+ 	.flags		= CLOCK_SOURCE_IS_CONTINUOUS,
+ };
+ 
+-unsigned long ixp4xx_timer_freq = FREQ;
++unsigned long ixp4xx_timer_freq = IXP4XX_TIMER_FREQ;
+ EXPORT_SYMBOL(ixp4xx_timer_freq);
+ static void __init ixp4xx_clocksource_init(void)
+ {
+@@ -530,7 +530,7 @@ static struct clock_event_device clockev
+ 
+ static void __init ixp4xx_clockevent_init(void)
+ {
+-	clockevent_ixp4xx.mult = div_sc(FREQ, NSEC_PER_SEC,
++	clockevent_ixp4xx.mult = div_sc(IXP4XX_TIMER_FREQ, NSEC_PER_SEC,
+ 					clockevent_ixp4xx.shift);
+ 	clockevent_ixp4xx.max_delta_ns =
+ 		clockevent_delta2ns(0xfffffffe, &clockevent_ixp4xx);
+--- a/arch/arm/mach-ixp4xx/include/mach/timex.h
++++ b/arch/arm/mach-ixp4xx/include/mach/timex.h
+@@ -10,6 +10,7 @@
+  * 66.66... MHz. We do a convulted calculation of CLOCK_TICK_RATE b/c the
+  * timer register ignores the bottom 2 bits of the LATCH value.
+  */
+-#define FREQ 66666000
+-#define CLOCK_TICK_RATE (((FREQ / HZ & ~IXP4XX_OST_RELOAD_MASK) + 1) * HZ)
++#define IXP4XX_TIMER_FREQ 66666000
++#define CLOCK_TICK_RATE \
++	(((IXP4XX_TIMER_FREQ / HZ & ~IXP4XX_OST_RELOAD_MASK) + 1) * HZ)
+ 
+--- a/drivers/input/misc/ixp4xx-beeper.c
++++ b/drivers/input/misc/ixp4xx-beeper.c
+@@ -69,11 +69,7 @@ static int ixp4xx_spkr_event(struct inpu
+ 	}
+ 
+ 	if (value > 20 && value < 32767)
+-#ifndef FREQ
+-		count = (ixp4xx_get_board_tick_rate() / (value * 4)) - 1;
+-#else
+-		count = (FREQ / (value * 4)) - 1;
+-#endif
++		count = (IXP4XX_TIMER_FREQ / (value * 4)) - 1;
+ 
+ 	ixp4xx_spkr_control(pin, count);
+ 
