@@ -25,7 +25,8 @@ PKG_DRIVERS = \
 	rt2500-pci rt2500-usb rt61-pci rt73-usb rt2800-pci rt2800-usb \
 	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
 	ath9k-common ath9k ath9k-htc ath net-libipw net-ipw2100 net-ipw2200 \
-	mwl8k net-hermes net-hermes-pci net-hermes-plx net-hermes-pcmcia
+	mwl8k net-hermes net-hermes-pci net-hermes-plx net-hermes-pcmcia \
+	iwl-legacy iwl3945 iwl4965 iwlagn
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-mac80211 \
