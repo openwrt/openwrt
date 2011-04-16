@@ -1,7 +1,5 @@
-Index: linux-2.6.38.2/mm/shmem.c
-===================================================================
---- linux-2.6.38.2.orig/mm/shmem.c	2011-03-27 20:37:20.000000000 +0200
-+++ linux-2.6.38.2/mm/shmem.c	2011-03-30 18:44:41.068346925 +0200
+--- a/mm/shmem.c
++++ b/mm/shmem.c
 @@ -2710,6 +2710,16 @@ out:
  
  /* common code */
@@ -32,10 +30,8 @@ Index: linux-2.6.38.2/mm/shmem.c
 +
  	return 0;
  }
-Index: linux-2.6.38.2/fs/file.c
-===================================================================
---- linux-2.6.38.2.orig/fs/file.c	2011-03-27 20:37:20.000000000 +0200
-+++ linux-2.6.38.2/fs/file.c	2011-03-28 22:44:57.267151662 +0200
+--- a/fs/file.c
++++ b/fs/file.c
 @@ -264,6 +264,7 @@ int expand_files(struct files_struct *fi
  	/* All good, so we try */
  	return expand_fdtable(files, nr);
@@ -44,10 +40,8 @@ Index: linux-2.6.38.2/fs/file.c
  
  static int count_open_files(struct fdtable *fdt)
  {
-Index: linux-2.6.38.2/kernel/exit.c
-===================================================================
---- linux-2.6.38.2.orig/kernel/exit.c	2011-03-27 20:37:20.000000000 +0200
-+++ linux-2.6.38.2/kernel/exit.c	2011-03-28 22:44:57.269151650 +0200
+--- a/kernel/exit.c
++++ b/kernel/exit.c
 @@ -513,6 +513,7 @@ struct files_struct *get_files_struct(st
  
  	return files;
@@ -64,10 +58,8 @@ Index: linux-2.6.38.2/kernel/exit.c
  
  void reset_files_struct(struct files_struct *files)
  {
-Index: linux-2.6.38.2/kernel/fork.c
-===================================================================
---- linux-2.6.38.2.orig/kernel/fork.c	2011-03-27 20:37:20.000000000 +0200
-+++ linux-2.6.38.2/kernel/fork.c	2011-03-28 22:44:57.270151644 +0200
+--- a/kernel/fork.c
++++ b/kernel/fork.c
 @@ -193,6 +193,7 @@ void __put_task_struct(struct task_struc
  	if (!profile_handoff_task(tsk))
  		free_task(tsk);
@@ -76,10 +68,8 @@ Index: linux-2.6.38.2/kernel/fork.c
  
  /*
   * macro override instead of weak attribute alias, to workaround
-Index: linux-2.6.38.2/kernel/sched.c
-===================================================================
---- linux-2.6.38.2.orig/kernel/sched.c	2011-03-27 20:37:20.000000000 +0200
-+++ linux-2.6.38.2/kernel/sched.c	2011-03-28 22:44:57.274151620 +0200
+--- a/kernel/sched.c
++++ b/kernel/sched.c
 @@ -4641,6 +4641,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
  		capable(CAP_SYS_NICE));
@@ -88,10 +78,8 @@ Index: linux-2.6.38.2/kernel/sched.c
  
  #ifdef __ARCH_WANT_SYS_NICE
  
-Index: linux-2.6.38.2/mm/memory.c
-===================================================================
---- linux-2.6.38.2.orig/mm/memory.c	2011-03-27 20:37:20.000000000 +0200
-+++ linux-2.6.38.2/mm/memory.c	2011-03-28 22:44:57.277151603 +0200
+--- a/mm/memory.c
++++ b/mm/memory.c
 @@ -1229,6 +1229,7 @@ unsigned long zap_page_range(struct vm_a
  		tlb_finish_mmu(tlb, address, end);
  	return end;
@@ -108,10 +96,8 @@ Index: linux-2.6.38.2/mm/memory.c
  
  /*
   * We enter with non-exclusive mmap_sem (to exclude vma changes,
-Index: linux-2.6.38.2/mm/vmalloc.c
-===================================================================
---- linux-2.6.38.2.orig/mm/vmalloc.c	2011-03-27 20:37:20.000000000 +0200
-+++ linux-2.6.38.2/mm/vmalloc.c	2011-03-28 22:44:57.278151598 +0200
+--- a/mm/vmalloc.c
++++ b/mm/vmalloc.c
 @@ -1193,6 +1193,7 @@ void unmap_kernel_range(unsigned long ad
  	vunmap_page_range(addr, end);
  	flush_tlb_kernel_range(addr, end);
@@ -128,10 +114,8 @@ Index: linux-2.6.38.2/mm/vmalloc.c
  
  struct vm_struct *get_vm_area_caller(unsigned long size, unsigned long flags,
  				void *caller)
-Index: linux-2.6.38.2/include/linux/mm.h
-===================================================================
---- linux-2.6.38.2.orig/include/linux/mm.h	2011-03-27 20:37:20.000000000 +0200
-+++ linux-2.6.38.2/include/linux/mm.h	2011-03-28 22:44:57.279151592 +0200
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
 @@ -863,6 +863,7 @@ extern void show_free_areas(void);
  
  int shmem_lock(struct file *file, int lock, struct user_struct *user);
