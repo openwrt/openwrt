@@ -22,11 +22,9 @@ Date:   Wed Mar 30 13:17:04 2011 +0000
  net/atm/common.c        |    1 +
  3 files changed, 3 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/atm/solos-pci.c b/drivers/atm/solos-pci.c
-index 968f022..cd0ff66 100644
 --- a/drivers/atm/solos-pci.c
 +++ b/drivers/atm/solos-pci.c
-@@ -165,7 +165,6 @@ static uint32_t fpga_tx(struct solos_card *);
+@@ -165,7 +165,6 @@ static uint32_t fpga_tx(struct solos_car
  static irqreturn_t solos_irq(int irq, void *dev_id);
  static struct atm_vcc* find_vcc(struct atm_dev *dev, short vpi, int vci);
  static int list_vccs(int vci);
@@ -34,7 +32,7 @@ index 968f022..cd0ff66 100644
  static int atm_init(struct solos_card *, struct device *);
  static void atm_remove(struct solos_card *);
  static int send_command(struct solos_card *card, int dev, const char *buf, size_t size);
-@@ -384,7 +383,6 @@ static int process_status(struct solos_card *card, int port, struct sk_buff *skb
+@@ -384,7 +383,6 @@ static int process_status(struct solos_c
  	/* Anything but 'Showtime' is down */
  	if (strcmp(state_str, "Showtime")) {
  		atm_dev_signal_change(card->atmdev[port], ATM_PHY_SIG_LOST);
@@ -71,7 +69,7 @@ index 968f022..cd0ff66 100644
  
  static int popen(struct atm_vcc *vcc)
  {
-@@ -1269,7 +1245,7 @@ static int atm_init(struct solos_card *card, struct device *parent)
+@@ -1269,7 +1245,7 @@ static int atm_init(struct solos_card *c
  		card->atmdev[i]->ci_range.vci_bits = 16;
  		card->atmdev[i]->dev_data = card;
  		card->atmdev[i]->phy_data = (void *)(unsigned long)i;
@@ -80,11 +78,9 @@ index 968f022..cd0ff66 100644
  
  		skb = alloc_skb(sizeof(*header), GFP_ATOMIC);
  		if (!skb) {
-diff --git a/include/linux/atmdev.h b/include/linux/atmdev.h
-index 475f8c4..381f4ce 100644
 --- a/include/linux/atmdev.h
 +++ b/include/linux/atmdev.h
-@@ -443,6 +443,7 @@ void atm_dev_signal_change(struct atm_dev *dev, char signal);
+@@ -443,6 +443,7 @@ void atm_dev_signal_change(struct atm_de
  
  void vcc_insert_socket(struct sock *sk);
  
@@ -92,11 +88,9 @@ index 475f8c4..381f4ce 100644
  
  /*
   * This is approximately the algorithm used by alloc_skb.
-diff --git a/net/atm/common.c b/net/atm/common.c
-index 1b9c52a..22b963d 100644
 --- a/net/atm/common.c
 +++ b/net/atm/common.c
-@@ -252,6 +252,7 @@ void atm_dev_release_vccs(struct atm_dev *dev)
+@@ -252,6 +252,7 @@ void atm_dev_release_vccs(struct atm_dev
  	}
  	write_unlock_irq(&vcc_sklist_lock);
  }
@@ -104,4 +98,3 @@ index 1b9c52a..22b963d 100644
  
  static int adjust_tp(struct atm_trafprm *tp, unsigned char aal)
  {
-

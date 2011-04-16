@@ -19,8 +19,6 @@ Date:   Wed Mar 30 12:59:26 2011 +0000
  drivers/atm/solos-pci.c |    9 ++++++++-
  1 files changed, 8 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/atm/solos-pci.c b/drivers/atm/solos-pci.c
-index 2c4146a..968f022 100644
 --- a/drivers/atm/solos-pci.c
 +++ b/drivers/atm/solos-pci.c
 @@ -697,7 +697,7 @@ void solos_bh(unsigned long card_arg)
@@ -32,7 +30,7 @@ index 2c4146a..968f022 100644
  				dev_info(&card->dev->dev, "size: %d VPI: %d VCI: %d\n",
  					 size, le16_to_cpu(header->vpi),
  					 le16_to_cpu(header->vci));
-@@ -1018,8 +1018,15 @@ static uint32_t fpga_tx(struct solos_card *card)
+@@ -1018,8 +1018,15 @@ static uint32_t fpga_tx(struct solos_car
  
  			/* Clean up and free oldskb now it's gone */
  			if (atmdebug) {
@@ -48,4 +46,3 @@ index 2c4146a..968f022 100644
  				print_buffer(oldskb);
  			}
  
-
