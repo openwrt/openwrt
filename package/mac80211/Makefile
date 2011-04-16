@@ -791,7 +791,7 @@ $(eval $(call Download,iwl100-fw))
 
 define KernelPackage/iwlagn
   $(call KernelPackage/mac80211/Default)
-  DEPENDS:= +kmod-mac80211
+  DEPENDS:= +kmod-mac80211 @PCI_SUPPORT
   TITLE:=Intel AGN Wireless support
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/iwlagn.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,iwlagn)
@@ -867,7 +867,7 @@ endef
 
 define KernelPackage/iwl-legacy
   $(call KernelPackage/mac80211/Default)
-  DEPENDS:= +kmod-mac80211
+  DEPENDS:= +kmod-mac80211 @PCI_SUPPORT
   TITLE:=Intel legacy Wireless support
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl-legacy.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,iwl-legacy)
