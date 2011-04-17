@@ -1,6 +1,6 @@
 --- a/Rules.mak
 +++ b/Rules.mak
-@@ -481,6 +481,17 @@ ifeq ($(TARGET_ARCH),i960)
+@@ -484,6 +484,17 @@ ifeq ($(TARGET_ARCH),i960)
        SYMBOL_PREFIX=_
  endif
  
@@ -30,7 +30,7 @@
  config TARGET_v850
  	bool "v850 (BROKEN)"
  
-@@ -203,6 +206,10 @@ if TARGET_sparc
+@@ -206,6 +209,10 @@ if TARGET_sparc
  source "extra/Configs/Config.sparc"
  endif
  
@@ -43,7 +43,7 @@
  endif
 --- a/extra/Configs/Config.in.arch
 +++ b/extra/Configs/Config.in.arch
-@@ -149,7 +149,7 @@ config UCLIBC_HAS_SOFT_FLOAT
+@@ -153,7 +153,7 @@ config UCLIBC_HAS_SOFT_FLOAT
  config DO_C99_MATH
  	bool "Enable full C99 math library support"
  	depends on UCLIBC_HAS_FLOATS
@@ -101,7 +101,7 @@
 +	string
 --- a/include/elf.h
 +++ b/include/elf.h
-@@ -337,6 +337,8 @@ typedef struct
+@@ -338,6 +338,8 @@ typedef struct
  
  #define EM_XSTORMY16		0xad45
  
@@ -110,9 +110,9 @@
  /* FRV magic number - no EABI available??.  */
  #define EM_CYGNUS_FRV	0x5441
  
-@@ -3063,6 +3065,55 @@ typedef Elf32_Addr Elf32_Conflict;
- /* Keep this the last entry.  */
- #define R_XTENSA_NUM		50
+@@ -3108,6 +3110,55 @@ typedef Elf32_Addr Elf32_Conflict;
+ 
+ #define DT_C6000_NUM    4
  
 +/* Ubicom32 ELF relocation types */
 +#define R_UBICOM32_NONE               0
@@ -168,7 +168,7 @@
  #endif
 --- a/include/features.h
 +++ b/include/features.h
-@@ -445,4 +445,10 @@ uClibc was built without large file supp
+@@ -448,4 +448,10 @@ uClibc was built without large file supp
  # include <libc-internal.h>
  #endif
  
@@ -197,7 +197,7 @@
  
 --- a/ldso/ldso/ldso.c
 +++ b/ldso/ldso/ldso.c
-@@ -327,10 +327,12 @@ void _dl_get_ready_to_run(struct elf_res
+@@ -325,10 +325,12 @@ void _dl_get_ready_to_run(struct elf_res
  		_dl_progname = argv[0];
  	}
  
@@ -4170,7 +4170,7 @@
 +	.set __GI_vfork,vfork
 --- a/libpthread/linuxthreads.old/pthread.c
 +++ b/libpthread/linuxthreads.old/pthread.c
-@@ -393,6 +393,10 @@ void __pthread_initialize_minimal(void)
+@@ -391,6 +391,10 @@ void __pthread_initialize_minimal(void)
  #endif
  
      __libc_multiple_threads_ptr = __libc_pthread_init (ptr_pthread_functions);
@@ -4181,17 +4181,13 @@
  }
  
  
-@@ -461,8 +465,11 @@ static void pthread_initialize(void)
-    * __pthread_initial_thread_bos at address 0. These bounds are refined as we
-    * malloc other stack frames such that they don't overlap. -StS
+@@ -467,7 +471,8 @@ static void pthread_initialize(void)
+    * for a few more details.
     */
--  __pthread_initial_thread_tos =
--    (char *)(((long)CURRENT_STACK_FRAME + getpagesize()) & ~(getpagesize() - 1));
-+  if (__pthread_initial_thread_tos == NULL) {
-+    __pthread_initial_thread_tos =
-+      (char *)(((long)CURRENT_STACK_FRAME + getpagesize()) & ~(getpagesize() - 1));
-+  }
-+
+   __pthread_initial_thread_mid = CURRENT_STACK_FRAME;
+-  __pthread_initial_thread_tos = (char *) -1;
++  if (__pthread_initial_thread_tos == NULL)
++    __pthread_initial_thread_tos = (char *) -1;
    __pthread_initial_thread_bos = (char *) 1; /* set it non-zero so we know we have been here */
    PDEBUG("initial thread stack bounds: bos=%p, tos=%p\n",
  	 __pthread_initial_thread_bos, __pthread_initial_thread_tos);

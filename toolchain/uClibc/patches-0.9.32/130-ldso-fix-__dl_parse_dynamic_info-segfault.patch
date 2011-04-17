@@ -20,7 +20,7 @@ Signed-off-by: Mark Mentovai <mark at moxienet.com>
 ldso/ldso/ldso.c |   12 +++++++++---
 --- a/ldso/ldso/ldso.c
 +++ b/ldso/ldso/ldso.c
-@@ -918,9 +918,15 @@ void _dl_get_ready_to_run(struct elf_res
+@@ -925,9 +925,15 @@ void _dl_get_ready_to_run(struct elf_res
  #ifdef __LDSO_LDD_SUPPORT__
  	/* End of the line for ldd.... */
  	if (trace_loaded_objects) {
