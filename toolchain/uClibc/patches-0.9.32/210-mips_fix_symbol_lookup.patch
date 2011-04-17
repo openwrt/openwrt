@@ -1,0 +1,13 @@
+--- a/ldso/ldso/mips/elfinterp.c
++++ b/ldso/ldso/mips/elfinterp.c
+@@ -378,8 +378,9 @@ void _dl_perform_mips_global_got_relocat
+ 					*got_entry += (unsigned long) tpnt->loadaddr;
+ 			}
+ 			else {
++				struct symbol_ref sym_ref = { sym, NULL };
+ 				*got_entry = (unsigned long) _dl_find_hash(strtab +
+-					sym->st_name, tpnt->symbol_scope, tpnt, ELF_RTYPE_CLASS_PLT, NULL);
++					sym->st_name, tpnt->symbol_scope, tpnt, ELF_RTYPE_CLASS_PLT, &sym_ref);
+ 			}
+ 
+ 			got_entry++;
