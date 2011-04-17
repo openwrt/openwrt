@@ -1,8 +1,0 @@
---- a/arch/mips/ar7/platform.c
-+++ b/arch/mips/ar7/platform.c
-@@ -606,4 +606,4 @@ static int __init ar7_register_devices(v
- 
- 	return res;
- }
--arch_initcall(ar7_register_devices);
-+device_initcall(ar7_register_devices);
