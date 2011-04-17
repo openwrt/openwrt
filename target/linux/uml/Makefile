@@ -21,11 +21,12 @@ ARCH:=$(shell uname -m | sed \
 BOARD:=uml
 BOARDNAME:=User Mode Linux
 FEATURES:=ext4 audio
-LINUX_CONFIG:=$(CURDIR)/config/$(ARCH)
 
 LINUX_VERSION:=2.6.37.6
 
 include $(INCLUDE_DIR)/target.mk
+
+LINUX_TARGET_CONFIG:=$(CURDIR)/config/$(ARCH)
 
 DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim
 
