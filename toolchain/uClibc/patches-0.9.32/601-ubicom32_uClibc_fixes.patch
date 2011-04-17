@@ -14,7 +14,7 @@
 @@ -166,7 +170,7 @@ unsigned int __dl_parse_dynamic_info(Elf
  	   we'd have to walk all the loadsegs to find out if it was
  	   actually unnecessary, so skip this optimization.  */
- #ifndef __FDPIC__
+ #if !defined __FDPIC__ && !defined __DSBT__
 -	if (load_off != 0)
 +	if (DL_LOADADDR_ISSET(load_off))
  #endif

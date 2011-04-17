@@ -22,7 +22,7 @@ Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
 
 --- a/Rules.mak
 +++ b/Rules.mak
-@@ -348,9 +348,10 @@ ifeq ($(TARGET_ARCH),arm)
+@@ -351,9 +351,10 @@ ifeq ($(TARGET_ARCH),arm)
  	CPU_CFLAGS-$(CONFIG_ARM_SA1100)+=-mtune=strongarm1100 -march=armv4
  	CPU_CFLAGS-$(CONFIG_ARM_XSCALE)+=$(call check_gcc,-mtune=xscale,-mtune=strongarm110)
  	CPU_CFLAGS-$(CONFIG_ARM_XSCALE)+=-march=armv5te -Wa,-mcpu=xscale

@@ -17,7 +17,7 @@ Cc: Carmelo AMOROSO <carmelo.amoroso@st.com>
 
 --- a/Rules.mak
 +++ b/Rules.mak
-@@ -332,25 +332,6 @@ ifeq ($(TARGET_ARCH),arm)
+@@ -335,25 +335,6 @@ ifeq ($(TARGET_ARCH),arm)
  	OPTIMIZATION+=-fstrict-aliasing
  	CPU_CFLAGS-$(ARCH_LITTLE_ENDIAN)+=-mlittle-endian
  	CPU_CFLAGS-$(ARCH_BIG_ENDIAN)+=-mbig-endian
