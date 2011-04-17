@@ -112,42 +112,35 @@ __config_name_list = $(1)/config-$(KERNEL_PATCHVER) $(1)/config-default
 __config_list = $(firstword $(wildcard $(call __config_name_list,$(1))))
 find_kernel_config=$(if $(__config_list),$(__config_list),$(lastword $(__config_name_list)))
 
-GENERIC_LINUX_CONFIG:=$(call find_kernel_config,$(GENERIC_PLATFORM_DIR))
-LINUX_TARGET_CONFIG:=$(call find_kernel_config,$(PLATFORM_DIR))
+GENERIC_LINUX_CONFIG = $(call find_kernel_config,$(GENERIC_PLATFORM_DIR))
+LINUX_TARGET_CONFIG = $(call find_kernel_config,$(PLATFORM_DIR))
 ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
-  LINUX_SUBTARGET_CONFIG:=$(call find_kernel_config,$(PLATFORM_SUBDIR))
+  LINUX_SUBTARGET_CONFIG = $(call find_kernel_config,$(PLATFORM_SUBDIR))
 endif
 
 # config file list used for compiling
-LINUX_KCONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG) $(TOPDIR)/env/kernel-config)
+LINUX_KCONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG) $(TOPDIR)/env/kernel-config)
 
 # default config list for reconfiguring
 # defaults to subtarget if subtarget exists and target does not
 # defaults to target otherwise
-ifeq ($(if $(wildcard $(LINUX_TARGET_CONFIG)),,$(if $(LINUX_SUBTARGET_CONFIG),1)),1)
-  LINUX_RECONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG))
-  LINUX_RECONFIG_TARGET := $(LINUX_SUBTARGET_CONFIG)
-else
-  LINUX_RECONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG))
-  LINUX_RECONFIG_TARGET := $(LINUX_TARGET_CONFIG)
-endif
+USE_SUBTARGET_CONFIG = $(if $(wildcard $(LINUX_TARGET_CONFIG)),,$(if $(LINUX_SUBTARGET_CONFIG),1))
+
+LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(if $(USE_SUBTARGET_CONFIG),$(LINUX_SUBTARGET_CONFIG)))
+LINUX_RECONFIG_TARGET = $(if $(USE_SUBTARGET_CONFIG),$(LINUX_SUBTARGET_CONFIG),$(LINUX_TARGET_CONFIG))
 
 # select the config file to be cahnged by kernel_menuconfig/kernel_oldconfig
 ifeq ($(CONFIG_TARGET),platform)
-  LINUX_RECONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG))
-  LINUX_RECONFIG_TARGET := $(LINUX_TARGET_CONFIG)
+  LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG))
+  LINUX_RECONFIG_TARGET = $(LINUX_TARGET_CONFIG)
 endif
 ifeq ($(CONFIG_TARGET),subtarget)
-  ifeq ($(wildcard $(LINUX_SUBTARGET_CONFIG)),)
-    $(error Subtarget not available, cannot reconfigure)
-  else
-    LINUX_RECONFIG_LIST := $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG))
-    LINUX_RECONFIG_TARGET := $(LINUX_SUBTARGET_CONFIG)
-  endif
+  LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG))
+  LINUX_RECONFIG_TARGET = $(LINUX_SUBTARGET_CONFIG)
 endif
 ifeq ($(CONFIG_TARGET),env)
-  LINUX_RECONFIG_LIST := $(LINUX_KCONFIG_LIST)
-  LINUX_RECONFIG_TARGET := $(TOPDIR)/env/kernel-config
+  LINUX_RECONFIG_LIST = $(LINUX_KCONFIG_LIST)
+  LINUX_RECONFIG_TARGET = $(TOPDIR)/env/kernel-config
 endif
 
 __linux_confcmd = $(SCRIPT_DIR)/kconfig.pl $(2) $(patsubst %,+,$(wordlist 2,9999,$(1))) $(1)
