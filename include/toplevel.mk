@@ -133,6 +133,7 @@ prereq:: prepare-tmpinfo .config
 	@+$(NO_TRACE_MAKE) -r -s $@
 
 %::
+	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
 	@( \
 		cp .config tmp/.config; \
 		./scripts/config/conf -D tmp/.config -w tmp/.config Config.in > /dev/null 2>&1; \
@@ -140,7 +141,6 @@ prereq:: prepare-tmpinfo .config
 			echo "WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!"; \
 		fi \
 	)
-	@+$(PREP_MK) $(NO_TRACE_MAKE) -r -s prereq
 	@+$(SUBMAKE) -r $@
 
 help:
