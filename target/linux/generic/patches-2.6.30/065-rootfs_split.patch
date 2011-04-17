@@ -37,7 +37,7 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -512,6 +514,155 @@ out_register:
+@@ -512,6 +514,157 @@ out_register:
  	return slave;
  }
  
@@ -93,10 +93,12 @@
 +{
 +	struct mtd_partition *dpart;
 +	struct mtd_part *slave = NULL;
++	struct mtd_part *spart;
 +	int split_offset = 0;
 +	int ret;
 +
-+	ret = split_squashfs(master, part->offset, &split_offset);
++	spart = PART(rpart);
++	ret = split_squashfs(master, spart->offset, &split_offset);
 +	if (ret)
 +		return ret;
 +
@@ -114,7 +116,7 @@
 +	dpart->name = (unsigned char *)&dpart[1];
 +	strcpy(dpart->name, ROOTFS_SPLIT_NAME);
 +
-+	dpart->size -= split_offset - dpart->offset;
++	dpart->size = rpart->size - (split_offset - spart->offset);
 +	dpart->offset = split_offset;
 +
 +	if (dpart == NULL)
@@ -193,7 +195,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -527,14 +678,29 @@ int add_mtd_partitions(struct mtd_info *
+@@ -527,14 +680,29 @@ int add_mtd_partitions(struct mtd_info *
  {
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
@@ -226,7 +228,7 @@
  		cur_offset = slave->offset + slave->mtd.size;
  	}
  
-@@ -542,6 +708,32 @@ int add_mtd_partitions(struct mtd_info *
+@@ -542,6 +710,32 @@ int add_mtd_partitions(struct mtd_info *
  }
  EXPORT_SYMBOL(add_mtd_partitions);
  

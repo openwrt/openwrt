@@ -37,7 +37,7 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -618,6 +620,153 @@ int mtd_del_partition(struct mtd_info *m
+@@ -618,6 +620,155 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -92,9 +92,11 @@
 +{
 +	struct mtd_partition *dpart;
 +	struct mtd_part *slave = NULL;
++	struct mtd_part *spart;
 +	int ret, split_offset = 0;
 +
-+	ret = split_squashfs(master, part->offset, &split_offset);
++	spart = PART(rpart);
++	ret = split_squashfs(master, spart->offset, &split_offset);
 +	if (ret)
 +		return ret;
 +
@@ -112,7 +114,7 @@
 +	dpart->name = (unsigned char *)&dpart[1];
 +	strcpy(dpart->name, ROOTFS_SPLIT_NAME);
 +
-+	dpart->size -= split_offset - dpart->offset;
++	dpart->size = rpart->size - (split_offset - spart->offset);
 +	dpart->offset = split_offset;
 +
 +	if (dpart == NULL)
