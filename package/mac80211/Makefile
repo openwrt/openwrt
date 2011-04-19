@@ -35,6 +35,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_ATH_DEBUG \
 	CONFIG_PACKAGE_B43_DEBUG \
 	CONFIG_PACKAGE_B43_PIO \
+	CONFIG_PACKAGE_B43_N_PHY \
 	CONFIG_ATH_USER_REGD \
 
 CARL9170_FW_VERSION:=1.9.2
@@ -1082,7 +1083,8 @@ define KernelPackage/b43/config
 	config B43_FW_SQUASH_COREREVS
 		string "Core revisions to include"
 		depends on B43_FW_SQUASH
-		default "5,6,7,8,9,10,13,14,15"
+		default "5,6,7,8,9,10,11,13,14,15,16" if PACKAGE_B43_PHY_N
+		default "5,6,7,8,9,10,13,14,15" if !PACKAGE_B43_PHY_N
 		help
 		  This is a comma seperated list of core revision numbers.
 
@@ -1095,7 +1097,8 @@ define KernelPackage/b43/config
 	config B43_FW_SQUASH_PHYTYPES
 		string "PHY types to include"
 		depends on B43_FW_SQUASH
-		default "G,LP"
+		default "G,LP,N" if PACKAGE_B43_PHY_N
+		default "G,LP" if !PACKAGE_B43_PHY_N
 		help
 		  This is a comma seperated list of PHY types:
 		    A  => A-PHY
@@ -1125,6 +1128,17 @@ define KernelPackage/b43/config
 		help
 		  Enable support for using PIO instead of DMA. Unless you have DMA
 		  transfer problems you don't need this.
+
+		  If unsure, say N.
+
+	config PACKAGE_B43_PHY_N
+		bool "Enable support for N-PHYs"
+		select B43_FW_5_10
+		default n
+		help
+		  Enable support for BCM4321 and BCM4322.
+
+		  Currently only 11g speed is available.
 
 		  If unsure, say N.
 
@@ -1190,6 +1204,7 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_ATH_USER_REGD),-DATH_USER_REGD=1) \
 	$(if $(CONFIG_PACKAGE_B43_DEBUG),-DCONFIG_B43_DEBUG) \
 	$(if $(CONFIG_PACKAGE_B43_PIO),-DCONFIG_B43_PIO) \
+	$(if $(CONFIG_PACKAGE_B43_PHY_N),-DCONFIG_B43_PHY_N) \
 	$(if $(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS),-DCONFIG_RT2X00_LIB_DEBUGFS) \
 	$(if $(CONFIG_PACKAGE_RT2X00_DEBUG),-DCONFIG_RT2X00_DEBUG) \
 	$(if $(NEED_RT2X00_LIB_HT),-DCONFIG_RT2X00_LIB_HT) \
@@ -1223,6 +1238,7 @@ MAKE_OPTS:= \
 	CONFIG_B43LEGACY=$(if $(CONFIG_PACKAGE_kmod-b43legacy),m) \
 	CONFIG_B43_DEBUG=$(if $(CONFIG_PACKAGE_B43_DEBUG),y) \
 	CONFIG_B43_PIO=$(if $(CONFIG_PACKAGE_B43_PIO),y) \
+	CONFIG_B43_PHY_N=$(if $(CONFIG_PACKAGE_B43_PHY_N),y) \
 	CONFIG_ATH_COMMON=$(if $(CONFIG_PACKAGE_kmod-ath),m) \
 	CONFIG_ATH_DEBUG=$(if $(CONFIG_PACKAGE_ATH_DEBUG),y) \
 	CONFIG_ATH5K_DEBUG=$(if $(CONFIG_PACKAGE_ATH_DEBUG),y) \
