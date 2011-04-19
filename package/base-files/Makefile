@@ -491,7 +491,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 			if [ -e "$$$$file" ]; then \
 				$(CP) $$$$file $(1)/lib/; \
 			fi; \
-		done; \ 
+		done; \
 	done
   endef
 
