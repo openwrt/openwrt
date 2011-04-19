@@ -18,12 +18,3 @@
  	REG_DBG_PRINT("All devices are disconnected, going to "
  		      "restore regulatory settings\n");
  	restore_regulatory_settings(false);
-@@ -1811,6 +1815,8 @@ int regulatory_hint_found_beacon(struct 
- {
- 	struct reg_beacon *reg_beacon;
- 
-+	return;
-+
- 	if (likely((beacon_chan->beacon_found ||
- 	    (beacon_chan->flags & IEEE80211_CHAN_RADAR) ||
- 	    (beacon_chan->band == IEEE80211_BAND_2GHZ &&
