@@ -916,7 +916,15 @@ define KernelPackage/mwl8k/description
 endef
 
 #Broadcom firmware
-ifneq ($(CONFIG_B43_EXPERIMENTAL),)
+ifneq ($(CONFIG_B43_FW_5_10),)
+  PKG_B43_FWV4_NAME:=broadcom-wl
+  PKG_B43_FWV4_VERSION:=5.10.56.27.3
+  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/driver/wl_apsta/wl_prebuilt.o
+  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)_mipsel.tar.bz2
+  PKG_B43_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
+  PKG_B43_FWV4_MD5SUM:=3363e3a6b3d9d73c49dea870c7834eac
+else
+ifneq ($(CONFIG_B43_FW_4_178),)
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=4.178.10.4
   PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/linux/wl_apsta.o
@@ -930,6 +938,7 @@ else
   PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
   PKG_B43_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
   PKG_B43_FWV4_MD5SUM:=0c6ba9687114c6b598e8019e262d9a60
+endif
 endif
 ifneq ($(CONFIG_B43_OPENFIRMWARE),)
   PKG_B43_FWV4_NAME:=broadcom-wl
@@ -957,11 +966,11 @@ ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
   PKG_B43_FWCUTTER_OBJECT:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/fwcutter/
 else
   PKG_B43_FWCUTTER_NAME:=b43-fwcutter
-  PKG_B43_FWCUTTER_VERSION:=013
+  PKG_B43_FWCUTTER_VERSION:=014
   PKG_B43_FWCUTTER_SOURCE:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION).tar.bz2
   PKG_B43_FWCUTTER_PROTO:=default
   PKG_B43_FWCUTTER_SOURCE_URL:=http://bu3sch.de/b43/fwcutter/
-  PKG_B43_FWCUTTER_MD5SUM:=3547ec6c474ac1bc2c4a5bb765b791a4
+  PKG_B43_FWCUTTER_MD5SUM:=dd63f9149510bd6e01b89314e955083b
   PKG_B43_FWCUTTER_SUBDIR:=b43-fwcutter-$(PKG_B43_FWCUTTER_VERSION)
   PKG_B43_FWCUTTER_OBJECT:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/
 endif
@@ -1013,23 +1022,32 @@ define KernelPackage/b43/config
 
 	choice
 		prompt "b43 firmware version"
-		default B43_STABLE
+		default B43_FW_4_150
 		help
 		  This option allows you to select the version of the b43 firmware.
 
-	config B43_STABLE
-		bool "4.150.10.5 (stable)"
+	config B43_FW_4_150
+		bool "Firmware 410.2160 from driver 4.150.10.5 (stable)"
 		help
 		  Stable firmware for BCM43xx devices.
 
 		  If unsure, select this.
 
-	config B43_EXPERIMENTAL
-		bool "4.178.10.4 (experimental)"
+	config B43_FW_4_178
+		bool "Firmware 478.104 from driver 4.178.10.4"
 		help
 		  Experimental firmware for BCM43xx devices.
 
 		  This firmware is not tested as much as the "stable" firmware.
+
+		  If unsure, select the "stable" firmware.
+
+	config B43_FW_5_10
+		bool "Firmware 508.1084 from driver 5.10.56.27"
+		help
+		  Newer experimental firmware for BCM43xx devices.
+
+		  This firmware is mostly untested. It is needed for some N-PHY devices.
 
 		  If unsure, select the "stable" firmware.
 

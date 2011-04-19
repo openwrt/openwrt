@@ -69,6 +69,7 @@ revmapping = {
 	"ucode13.fw"		: (13,),
 	"ucode14.fw"		: (14,),
 	"ucode15.fw"		: (15,),
+	"ucode16_mimo.fw"	: (16,),
 	"pcm4.fw"		: (1,2,3,4,),
 	"pcm5.fw"		: (5,6,7,8,9,10,),
 }
@@ -80,6 +81,7 @@ initvalmapping = {
 	"b0g0initvals5.fw"	: ( (5,6,7,8,9,10,),	("G",), ),
 	"b0g0initvals13.fw"	: ( (13,),		("G",), ),
 	"n0initvals11.fw"	: ( (11,12,),		("N",), ),
+	"n0initvals16.fw"	: ( (16,),		("N",), ),
 	"lp0initvals13.fw"	: ( (13,),		("LP",), ),
 	"lp0initvals14.fw"	: ( (14,),		("LP",), ),
 	"lp0initvals15.fw"	: ( (15,),		("LP",), ),
@@ -87,6 +89,7 @@ initvalmapping = {
 	"a0g0bsinitvals5.fw"	: ( (5,6,7,8,9,10,),	("A", "AG"), ),
 	"b0g0bsinitvals5.fw"	: ( (5,6,7,8,9,10,),	("G",), ),
 	"n0bsinitvals11.fw"	: ( (11,12,),		("N",), ),
+	"n0bsinitvals16.fw"	: ( (16,),		("N",), ),
 	"lp0bsinitvals13.fw"	: ( (13,),		("LP",), ),
 	"lp0bsinitvals14.fw"	: ( (14,),		("LP",), ),
 	"lp0bsinitvals15.fw"	: ( (15,),		("LP",), ),
