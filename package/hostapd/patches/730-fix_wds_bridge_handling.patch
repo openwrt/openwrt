@@ -1,0 +1,29 @@
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -5487,6 +5487,9 @@ static int i802_set_wds_sta(void *priv, 
+ 		linux_set_iface_flags(drv->ioctl_sock, name, 1);
+ 		return i802_set_sta_vlan(priv, addr, name, 0);
+ 	} else {
++		if (bridge_ifname)
++			linux_br_del_if(drv->ioctl_sock, bridge_ifname, name);
++
+ 		i802_set_sta_vlan(priv, addr, bss->ifname, 0);
+ 		return wpa_driver_nl80211_if_remove(priv, WPA_IF_AP_VLAN,
+ 						    name);
+@@ -5927,14 +5930,14 @@ static int wpa_driver_nl80211_if_remove(
+ 		return -1;
+ 
+ #ifdef HOSTAPD
+-	if (bss->added_if_into_bridge) {
++	if (type == WPA_IF_AP_BSS && bss->added_if_into_bridge) {
+ 		if (linux_br_del_if(drv->ioctl_sock, bss->brname, bss->ifname)
+ 		    < 0)
+ 			wpa_printf(MSG_INFO, "nl80211: Failed to remove "
+ 				   "interface %s from bridge %s: %s",
+ 				   bss->ifname, bss->brname, strerror(errno));
+ 	}
+-	if (bss->added_bridge) {
++	if (type == WPA_IF_AP_BSS && bss->added_bridge) {
+ 		if (linux_br_del(drv->ioctl_sock, bss->brname) < 0)
+ 			wpa_printf(MSG_INFO, "nl80211: Failed to remove "
+ 				   "bridge %s: %s",
