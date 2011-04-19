@@ -34,6 +34,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
 	CONFIG_PACKAGE_ATH_DEBUG \
 	CONFIG_PACKAGE_B43_DEBUG \
+	CONFIG_PACKAGE_B43_PIO \
 	CONFIG_ATH_USER_REGD \
 
 CARL9170_FW_VERSION:=1.9.2
@@ -1118,6 +1119,15 @@ define KernelPackage/b43/config
 
 		  If unsure, say N.
 
+	config PACKAGE_B43_PIO
+		bool "Enable support for PIO transfer mode"
+		default n
+		help
+		  Enable support for using PIO instead of DMA. Unless you have DMA
+		  transfer problems you don't need this.
+
+		  If unsure, say N.
+
 	endmenu
 endef
 
@@ -1179,6 +1189,7 @@ BUILDFLAGS:= \
 	-DCONFIG_MAC80211_RC_MINSTREL_HT \
 	$(if $(CONFIG_ATH_USER_REGD),-DATH_USER_REGD=1) \
 	$(if $(CONFIG_PACKAGE_B43_DEBUG),-DCONFIG_B43_DEBUG) \
+	$(if $(CONFIG_PACKAGE_B43_PIO),-DCONFIG_B43_PIO) \
 	$(if $(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS),-DCONFIG_RT2X00_LIB_DEBUGFS) \
 	$(if $(CONFIG_PACKAGE_RT2X00_DEBUG),-DCONFIG_RT2X00_DEBUG) \
 	$(if $(NEED_RT2X00_LIB_HT),-DCONFIG_RT2X00_LIB_HT) \
@@ -1211,6 +1222,7 @@ MAKE_OPTS:= \
 	CONFIG_B43=$(if $(CONFIG_PACKAGE_kmod-b43),m) \
 	CONFIG_B43LEGACY=$(if $(CONFIG_PACKAGE_kmod-b43legacy),m) \
 	CONFIG_B43_DEBUG=$(if $(CONFIG_PACKAGE_B43_DEBUG),y) \
+	CONFIG_B43_PIO=$(if $(CONFIG_PACKAGE_B43_PIO),y) \
 	CONFIG_ATH_COMMON=$(if $(CONFIG_PACKAGE_kmod-ath),m) \
 	CONFIG_ATH_DEBUG=$(if $(CONFIG_PACKAGE_ATH_DEBUG),y) \
 	CONFIG_ATH5K_DEBUG=$(if $(CONFIG_PACKAGE_ATH_DEBUG),y) \

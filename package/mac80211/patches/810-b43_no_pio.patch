@@ -5,7 +5,7 @@
  b43-y				+= wa.o
  b43-y				+= dma.o
 -b43-y				+= pio.o
-+# b43-y				+= pio.o
++b43-$(CONFIG_B43_PIO)		+= pio.o
  b43-y				+= rfkill.o
  b43-$(CONFIG_B43_LEDS)		+= leds.o
  b43-$(CONFIG_B43_PCMCIA)	+= pcmcia.o
@@ -15,7 +15,7 @@
  			       dma_reason[4], dma_reason[5]);
  			b43err(dev->wl, "This device does not support DMA "
  			       "on your system. It will now be switched to PIO.\n");
-+#if 0
++#ifdef CONFIG_B43_PIO
  			/* Fall back to PIO transfers if we get fatal DMA errors! */
  			dev->use_pio = 1;
  			b43_controller_restart(dev, "DMA error");
@@ -25,12 +25,20 @@
  		if (merged_dma_reason & B43_DMAIRQ_NONFATALMASK) {
 --- a/drivers/net/wireless/b43/pio.h
 +++ b/drivers/net/wireless/b43/pio.h
-@@ -151,15 +151,34 @@ static inline void b43_piorx_write32(str
+@@ -150,7 +150,7 @@ static inline void b43_piorx_write32(str
+ 	b43_write32(q->dev, q->mmio_base + offset, value);
  }
  
+-
++#ifdef CONFIG_B43_PIO
+ int b43_pio_init(struct b43_wldev *dev);
+ void b43_pio_free(struct b43_wldev *dev);
  
--int b43_pio_init(struct b43_wldev *dev);
--void b43_pio_free(struct b43_wldev *dev);
+@@ -161,5 +161,37 @@ void b43_pio_rx(struct b43_pio_rxqueue *
+ 
+ void b43_pio_tx_suspend(struct b43_wldev *dev);
+ void b43_pio_tx_resume(struct b43_wldev *dev);
++#else
 +static inline int b43_pio_init(struct b43_wldev *dev)
 +{
 +	return 0;
@@ -44,11 +52,7 @@
 +{
 +	return 0;
 +}
- 
--int b43_pio_tx(struct b43_wldev *dev, struct sk_buff *skb);
--void b43_pio_handle_txstatus(struct b43_wldev *dev,
--			     const struct b43_txstatus *status);
--void b43_pio_rx(struct b43_pio_rxqueue *q);
++
 +static inline void b43_pio_handle_txstatus(struct b43_wldev *dev,
 +					   const struct b43_txstatus *status)
 +{
@@ -57,14 +61,14 @@
 +static inline void b43_pio_rx(struct b43_pio_rxqueue *q)
 +{
 +}
- 
--void b43_pio_tx_suspend(struct b43_wldev *dev);
--void b43_pio_tx_resume(struct b43_wldev *dev);
++
 +static inline void b43_pio_tx_suspend(struct b43_wldev *dev)
 +{
 +}
++
 +static inline void b43_pio_tx_resume(struct b43_wldev *dev)
 +{
 +}
++#endif /* CONFIG_B43_PIO */
  
  #endif /* B43_PIO_H_ */
