@@ -1,11 +1,12 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1483,14 +1483,6 @@ static int ath9k_add_interface(struct ie
+@@ -1439,15 +1439,6 @@ static int ath9k_add_interface(struct ie
  		}
  	}
  
--	if ((vif->type == NL80211_IFTYPE_ADHOC) &&
--	    sc->nvifs > 0) {
+-	if ((ah->opmode == NL80211_IFTYPE_ADHOC) ||
+-	    ((vif->type == NL80211_IFTYPE_ADHOC) &&
+-	     sc->nvifs > 0)) {
 -		ath_err(common, "Cannot create ADHOC interface when other"
 -			" interfaces already exist.\n");
 -		ret = -EINVAL;
@@ -15,3 +16,19 @@
  	ath_dbg(common, ATH_DBG_CONFIG,
  		"Attach a VIF of type: %d\n", vif->type);
  
+@@ -1473,15 +1464,6 @@ static int ath9k_change_interface(struct
+ 	mutex_lock(&sc->mutex);
+ 	ath9k_ps_wakeup(sc);
+ 
+-	/* See if new interface type is valid. */
+-	if ((new_type == NL80211_IFTYPE_ADHOC) &&
+-	    (sc->nvifs > 1)) {
+-		ath_err(common, "When using ADHOC, it must be the only"
+-			" interface.\n");
+-		ret = -EINVAL;
+-		goto out;
+-	}
+-
+ 	if (ath9k_uses_beacons(new_type) &&
+ 	    !ath9k_uses_beacons(vif->type)) {
+ 		if (sc->nbcnvifs >= ATH_BCBUF) {
