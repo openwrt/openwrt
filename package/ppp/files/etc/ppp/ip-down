@@ -8,10 +8,13 @@ PPP_REMOTE="$5"
 PPP_IPPARAM="$(echo $6 | sed 's/\./_/g')"
 export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 [ -z "$PPP_IPPARAM" ] || {
-	env -i ACTION="ifdown" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
-
-	# remove the interface's network state
-	uci_revert_state network "$PPP_IPPARAM"
+	case "$PPP_IFACE" in
+		# only handle uci managed interfaces here, others are done by generic hotplug
+		3g-*|ppp-*|pppoa-*|pppoe-*|pptp-*)
+			env -i ACTION="ifdown" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
+			uci_revert_state network "$PPP_IPPARAM"
+		;;
+	esac
 }
 
 [ -d /etc/ppp/ip-down.d ] && {
