@@ -20,7 +20,14 @@ export PPP_IFACE PPP_TTY PPP_SPEED PPP_LOCAL PPP_REMOTE PPP_IPPARAM
 	[ -n "$dns" ] && add_dns "$PPP_IPPARAM" $dns
 }
 
-[ -z "$PPP_IPPARAM" ] || env -i ACTION="ifup" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
+[ -z "$PPP_IPPARAM" ] || {
+	case "$PPP_IFACE" in
+		# only handle uci managed interfaces here, others are done by generic hotplug
+		3g-*|ppp-*|pppoa-*|pppoe-*|pptp-*)
+			env -i ACTION="ifup" INTERFACE="$PPP_IPPARAM" DEVICE="$PPP_IFACE" PROTO=ppp /sbin/hotplug-call "iface"
+		;;
+	esac
+}
 
 [ -d /etc/ppp/ip-up.d ] && {
 	for SCRIPT in /etc/ppp/ip-up.d/*
