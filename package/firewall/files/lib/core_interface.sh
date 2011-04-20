@@ -8,6 +8,7 @@ fw__uci_state_add() {
 	val="${val// $item / }"
 	val="${val# }"
 	val="${val% }"
+	uci_revert_state firewall core $var
 	uci_set_state firewall core $var "${val:+$val }$item"
 }
 
@@ -19,6 +20,7 @@ fw__uci_state_del() {
 	val="${val// $item / }"
 	val="${val# }"
 	val="${val% }"
+	uci_revert_state firewall core $var
 	uci_set_state firewall core $var "$val"
 }
 
