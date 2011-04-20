@@ -1,6 +1,6 @@
 --- a/modutils/insmod.c
 +++ b/modutils/insmod.c
-@@ -129,7 +129,7 @@ int insmod_main(int argc, char **argv) M
+@@ -133,7 +133,7 @@ int insmod_main(int argc, char **argv) M
  int insmod_main(int argc UNUSED_PARAM, char **argv)
  {
  	char *filename;
@@ -9,7 +9,7 @@
  
  	/* Compat note:
  	 * 2.6 style insmod has no options and required filename
-@@ -139,10 +139,8 @@ int insmod_main(int argc UNUSED_PARAM, c
+@@ -143,10 +143,8 @@ int insmod_main(int argc UNUSED_PARAM, c
  	 * or in $MODPATH.
  	 */
  
@@ -22,7 +22,7 @@
  
  	filename = *++argv;
  	if (!filename)
-@@ -153,7 +151,7 @@ int insmod_main(int argc UNUSED_PARAM, c
+@@ -157,7 +155,7 @@ int insmod_main(int argc UNUSED_PARAM, c
  			goto done;
  
  	rc = bb_init_module(g_filename, parse_cmdline_module_options(argv));

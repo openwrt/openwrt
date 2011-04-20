@@ -1,8 +1,6 @@
-diff --git a/include/applets.src.h b/include/applets.src.h
-index f4fab53..f97f2d8 100644
 --- a/include/applets.src.h
 +++ b/include/applets.src.h
-@@ -256,6 +256,7 @@ IF_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_DROP))
+@@ -256,6 +256,7 @@ IF_MT(APPLET(mt, _BB_DIR_BIN, _BB_SUID_D
  IF_MV(APPLET(mv, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NAMEIF(APPLET(nameif, _BB_DIR_SBIN, _BB_SUID_DROP))
  IF_NC(APPLET(nc, _BB_DIR_USR_BIN, _BB_SUID_DROP))
@@ -10,8 +8,6 @@ index f4fab53..f97f2d8 100644
  IF_NETSTAT(APPLET(netstat, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NICE(APPLET(nice, _BB_DIR_BIN, _BB_SUID_DROP))
  IF_NMETER(APPLET(nmeter, _BB_DIR_USR_BIN, _BB_SUID_DROP))
-diff --git a/include/usage.src.h b/include/usage.src.h
-index 30fef24..ac78992 100644
 --- a/include/usage.src.h
 +++ b/include/usage.src.h
 @@ -1,3 +1,4 @@
@@ -29,8 +25,6 @@ index 30fef24..ac78992 100644
  #define nmeter_trivial_usage \
         "format_string"
  #define nmeter_full_usage "\n\n" \
-diff --git a/networking/Config.src b/networking/Config.src
-index 6dd7df7..4682dd3 100644
 --- a/networking/Config.src
 +++ b/networking/Config.src
 @@ -640,6 +640,12 @@ config FEATURE_NAMEIF_EXTENDED
@@ -46,8 +40,6 @@ index 6dd7df7..4682dd3 100644
  config NETSTAT
  	bool "netstat"
  	default y
-diff --git a/networking/Kbuild.src b/networking/Kbuild.src
-index f41a2df..6070a40 100644
 --- a/networking/Kbuild.src
 +++ b/networking/Kbuild.src
 @@ -27,6 +27,7 @@ lib-$(CONFIG_IP)           += ip.o
@@ -58,9 +50,6 @@ index f41a2df..6070a40 100644
  lib-$(CONFIG_NETSTAT)      += netstat.o
  lib-$(CONFIG_NSLOOKUP)     += nslookup.o
  lib-$(CONFIG_NTPD)         += ntpd.o
-diff --git a/networking/netmsg.c b/networking/netmsg.c
-new file mode 100644
-index 0000000..43aba0d
 --- /dev/null
 +++ b/networking/netmsg.c
 @@ -0,0 +1,63 @@

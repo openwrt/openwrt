@@ -1,6 +1,6 @@
 --- a/modutils/insmod.c
 +++ b/modutils/insmod.c
-@@ -9,6 +9,99 @@
+@@ -11,6 +11,99 @@
  
  #include "libbb.h"
  #include "modutils.h"
@@ -100,7 +100,7 @@
  
  /* 2.6 style insmod has no options and required filename
   * (not module name - .ko can't be omitted) */
-@@ -55,9 +148,15 @@ int insmod_main(int argc UNUSED_PARAM, c
+@@ -59,9 +152,15 @@ int insmod_main(int argc UNUSED_PARAM, c
  	if (!filename)
  		bb_show_usage();
  
@@ -119,7 +119,7 @@
  }
 --- a/modutils/Config.src
 +++ b/modutils/Config.src
-@@ -228,7 +228,7 @@ config FEATURE_MODUTILS_SYMBOLS
+@@ -229,7 +229,7 @@ config FEATURE_MODUTILS_SYMBOLS
  config DEFAULT_MODULES_DIR
  	string "Default directory containing modules"
  	default "/lib/modules"
