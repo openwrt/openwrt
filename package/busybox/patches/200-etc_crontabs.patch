@@ -7,7 +7,7 @@
 -#define CRONTABS        CONFIG_FEATURE_CROND_DIR "/crontabs"
 +#define CRONTABS        "/etc/crontabs"
  #ifndef SENDMAIL
- #define SENDMAIL        "sendmail"
+ # define SENDMAIL       "sendmail"
  #endif
 --- a/miscutils/crontab.c
 +++ b/miscutils/crontab.c

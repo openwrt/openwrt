@@ -1,8 +1,6 @@
-diff --git a/networking/udhcp/packet.c b/networking/udhcp/packet.c
-index 2b7528c..94e53dc 100644
 --- a/networking/udhcp/packet.c
 +++ b/networking/udhcp/packet.c
-@@ -165,6 +165,11 @@ uint16_t FAST_FUNC udhcp_checksum(void *addr, int count)
+@@ -165,6 +165,11 @@ uint16_t FAST_FUNC udhcp_checksum(void *
  	return ~sum;
  }
  
@@ -14,7 +12,7 @@ index 2b7528c..94e53dc 100644
  /* Construct a ip/udp header for a packet, send packet */
  int FAST_FUNC udhcp_send_raw_packet(struct dhcp_packet *dhcp_pkt,
  		uint32_t source_nip, int source_port,
-@@ -173,10 +178,10 @@ int FAST_FUNC udhcp_send_raw_packet(struct dhcp_packet *dhcp_pkt,
+@@ -173,10 +178,10 @@ int FAST_FUNC udhcp_send_raw_packet(stru
  {
  	struct sockaddr_ll dest_sll;
  	struct ip_udp_dhcp_packet packet;
@@ -26,7 +24,7 @@ index 2b7528c..94e53dc 100644
  
  	fd = socket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
  	if (fd < 0) {
-@@ -185,8 +190,8 @@ int FAST_FUNC udhcp_send_raw_packet(struct dhcp_packet *dhcp_pkt,
+@@ -185,8 +190,8 @@ int FAST_FUNC udhcp_send_raw_packet(stru
  	}
  
  	memset(&dest_sll, 0, sizeof(dest_sll));
@@ -37,7 +35,7 @@ index 2b7528c..94e53dc 100644
  
  	dest_sll.sll_family = AF_PACKET;
  	dest_sll.sll_protocol = htons(ETH_P_IP);
-@@ -199,36 +204,24 @@ int FAST_FUNC udhcp_send_raw_packet(struct dhcp_packet *dhcp_pkt,
+@@ -199,36 +204,24 @@ int FAST_FUNC udhcp_send_raw_packet(stru
  		goto ret_close;
  	}
  
@@ -80,7 +78,7 @@ index 2b7528c..94e53dc 100644
  			(struct sockaddr *) &dest_sll, sizeof(dest_sll));
  	msg = "sendto";
   ret_close:
-@@ -246,7 +239,6 @@ int FAST_FUNC udhcp_send_kernel_packet(struct dhcp_packet *dhcp_pkt,
+@@ -246,7 +239,6 @@ int FAST_FUNC udhcp_send_kernel_packet(s
  		uint32_t dest_nip, int dest_port)
  {
  	struct sockaddr_in client;
@@ -88,7 +86,7 @@ index 2b7528c..94e53dc 100644
  	int fd;
  	int result = -1;
  	const char *msg;
-@@ -277,9 +269,7 @@ int FAST_FUNC udhcp_send_kernel_packet(struct dhcp_packet *dhcp_pkt,
+@@ -277,9 +269,7 @@ int FAST_FUNC udhcp_send_kernel_packet(s
  	}
  
  	udhcp_dump_packet(dhcp_pkt);

@@ -1,15 +1,15 @@
 --- a/networking/udhcp/dhcpc.c
 +++ b/networking/udhcp/dhcpc.c
-@@ -428,6 +428,7 @@ static int raw_bcast_from_client_config_
- static int send_discover(uint32_t xid, uint32_t requested)
+@@ -436,6 +436,7 @@ static int raw_bcast_from_client_config_
+ static NOINLINE int send_discover(uint32_t xid, uint32_t requested)
  {
  	struct dhcp_packet packet;
 +	static int msgs = 0;
  
- 	init_packet(&packet, DHCPDISCOVER);
- 	packet.xid = xid;
-@@ -438,6 +439,7 @@ static int send_discover(uint32_t xid, u
- 	udhcp_add_simple_option(&packet, DHCP_MAX_SIZE, htons(576));
+ 	/* Fill in: op, htype, hlen, cookie, chaddr fields,
+ 	 * random xid field (we override it below),
+@@ -453,6 +454,7 @@ static NOINLINE int send_discover(uint32
+ 	 */
  	add_client_options(&packet);
  
 +	if (msgs++ < 3)
