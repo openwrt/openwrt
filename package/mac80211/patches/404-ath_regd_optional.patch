@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/regd.c
 +++ b/drivers/net/wireless/ath/regd.c
-@@ -192,6 +192,10 @@ ath_reg_apply_beaconing_flags(struct wip
+@@ -193,6 +193,10 @@ ath_reg_apply_beaconing_flags(struct wip
  	u32 bandwidth = 0;
  	int r;
  
@@ -11,7 +11,7 @@
  	for (band = 0; band < IEEE80211_NUM_BANDS; band++) {
  
  		if (!wiphy->bands[band])
-@@ -251,6 +255,10 @@ ath_reg_apply_active_scan_flags(struct w
+@@ -252,6 +256,10 @@ ath_reg_apply_active_scan_flags(struct w
  	u32 bandwidth = 0;
  	int r;
  
@@ -22,7 +22,7 @@
  	sband = wiphy->bands[IEEE80211_BAND_2GHZ];
  
  	/*
-@@ -298,6 +306,10 @@ static void ath_reg_apply_radar_flags(st
+@@ -299,6 +307,10 @@ static void ath_reg_apply_radar_flags(st
  	struct ieee80211_channel *ch;
  	unsigned int i;
  
@@ -33,7 +33,7 @@
  	if (!wiphy->bands[IEEE80211_BAND_5GHZ])
  		return;
  
-@@ -464,6 +476,10 @@ ath_regd_init_wiphy(struct ath_regulator
+@@ -466,6 +478,10 @@ ath_regd_init_wiphy(struct ath_regulator
  {
  	const struct ieee80211_regdomain *regd;
  

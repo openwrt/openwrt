@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2x00pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00pci.c
-@@ -199,6 +199,7 @@ void rt2x00pci_uninitialize(struct rt2x0
+@@ -208,6 +208,7 @@ void rt2x00pci_uninitialize(struct rt2x0
  }
  EXPORT_SYMBOL_GPL(rt2x00pci_uninitialize);
  
@@ -8,7 +8,7 @@
  /*
   * PCI driver handlers.
   */
-@@ -375,6 +376,7 @@ int rt2x00pci_resume(struct pci_dev *pci
+@@ -383,6 +384,7 @@ int rt2x00pci_resume(struct pci_dev *pci
  }
  EXPORT_SYMBOL_GPL(rt2x00pci_resume);
  #endif /* CONFIG_PM */
