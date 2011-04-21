@@ -52,9 +52,9 @@ echo "Erasing existing files..."
 rm -rf /tmp/wget2nand-rootfs/*
 
 echo "Copying filesystem..."
-( wget -O - $url/openwrt-adm5120-rootfs.tgz) | ( cd /tmp/wget2nand-rootfs/; tar xvz )
+( wget -O - $url/openwrt-adm5120-router_le-rootfs.tar.gz) | ( cd /tmp/wget2nand-rootfs/; tar xvz )
 # RouterBOOT is looking for a kernel named "kernel"
-wget -O /tmp/wget2nand-kernel/kernel $url/openwrt-adm5120-rb1xx-kernel
+wget -O /tmp/wget2nand-kernel/kernel $url/openwrt-adm5120-router_le-vmlinux.elf
 
 chmod +x /tmp/wget2nand-kernel/kernel
 
