@@ -1,0 +1,182 @@
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -1901,6 +1901,10 @@ struct hostapd_config * hostapd_config_r
+ 					   "ht_capab", line);
+ 				errors++;
+ 			}
++		} else if (os_strcmp(buf, "dynamic_ht40") == 0) {
++			conf->dynamic_ht40 = atoi(pos);
++			if (conf->dynamic_ht40 == 1)
++				conf->dynamic_ht40 = 1500;
+ 		} else if (os_strcmp(buf, "require_ht") == 0) {
+ 			conf->require_ht = atoi(pos);
+ #endif /* CONFIG_IEEE80211N */
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -393,6 +393,7 @@ struct hostapd_config {
+ 	int ieee80211n;
+ 	int secondary_channel;
+ 	int require_ht;
++	int dynamic_ht40;
+ };
+ 
+ 
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -285,6 +285,7 @@ static void hostapd_cleanup_iface_pre(st
+  */
+ static void hostapd_cleanup_iface(struct hostapd_iface *iface)
+ {
++	hostapd_deinit_ht(iface);
+ 	hostapd_free_hw_features(iface->hw_features, iface->num_hw_features);
+ 	iface->hw_features = NULL;
+ 	os_free(iface->current_rates);
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -220,6 +220,9 @@ struct hostapd_iface {
+ 	/* Overlapping BSS information */
+ 	int olbc_ht;
+ 
++	int force_20mhz;
++	struct os_time last_20mhz_trigger;
++
+ 	u16 ht_op_mode;
+ 	void (*scan_cb)(struct hostapd_iface *iface);
+ 
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -1242,6 +1242,9 @@ static void handle_beacon(struct hostapd
+ 					     sizeof(mgmt->u.beacon)), &elems,
+ 				      0);
+ 
++	if (!elems.ht_capabilities)
++		hostapd_trigger_20mhz(hapd->iface);
++
+ 	ap_list_process_beacon(hapd->iface, mgmt, &elems, fi);
+ }
+ 
+--- a/src/ap/ieee802_11.h
++++ b/src/ap/ieee802_11.h
+@@ -65,4 +65,17 @@ void hostapd_tx_status(struct hostapd_da
+ void ieee802_11_rx_from_unknown(struct hostapd_data *hapd, const u8 *src,
+ 				int wds);
+ 
++#ifdef CONFIG_IEEE80211N
++void hostapd_trigger_20mhz(struct hostapd_iface *iface);
++void hostapd_deinit_ht(struct hostapd_iface *iface);
++
++#else
++static inline void hostapd_deinit_ht(struct hostapd_iface *iface)
++{
++}
++static inline void hostapd_trigger_20mhz(struct hostapd_iface *iface)
++{
++}
++#endif /* CONFIG_IEEE80211N */
++
+ #endif /* IEEE802_11_H */
+--- a/src/ap/ieee802_11_ht.c
++++ b/src/ap/ieee802_11_ht.c
+@@ -70,12 +70,15 @@ u8 * hostapd_eid_ht_operation(struct hos
+ 
+ 	oper->control_chan = hapd->iconf->channel;
+ 	oper->operation_mode = host_to_le16(hapd->iface->ht_op_mode);
+-	if (hapd->iconf->secondary_channel == 1)
+-		oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE |
+-			HT_INFO_HT_PARAM_REC_TRANS_CHNL_WIDTH;
+-	if (hapd->iconf->secondary_channel == -1)
+-		oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW |
+-			HT_INFO_HT_PARAM_REC_TRANS_CHNL_WIDTH;
++
++	if (!hapd->iface->force_20mhz) {
++		if (hapd->iconf->secondary_channel == 1)
++			oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE |
++				HT_INFO_HT_PARAM_REC_TRANS_CHNL_WIDTH;
++		if (hapd->iconf->secondary_channel == -1)
++			oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW |
++				HT_INFO_HT_PARAM_REC_TRANS_CHNL_WIDTH;
++	}
+ 
+ 	pos += sizeof(*oper);
+ 
+@@ -265,3 +268,80 @@ void hostapd_get_ht_capab(struct hostapd
+ 
+ 	neg_ht_cap->ht_capabilities_info = host_to_le16(cap);
+ }
++
++static int hostapd_set_force_20mhz(struct hostapd_iface *iface);
++
++static int hostapd_restore_40mhz(void *eloop_data, void *user_ctx)
++{
++	struct hostapd_iface *iface = eloop_data;
++	struct os_time time;
++	int timeout;
++
++	if (!iface->last_20mhz_trigger.sec)
++	    return;
++
++	os_get_time(&time);
++	timeout = iface->last_20mhz_trigger.sec + iface->conf->dynamic_ht40 -
++		  time.sec;
++
++	if (timeout > 0) {
++		eloop_register_timeout(timeout, 0, hostapd_restore_40mhz,
++				       iface, NULL);
++		return;
++	}
++
++	iface->last_20mhz_trigger.sec = 0;
++	iface->last_20mhz_trigger.usec = 0;
++
++	iface->force_20mhz = 0;
++	hostapd_set_force_20mhz(iface);
++}
++
++static int hostapd_set_force_20mhz(struct hostapd_iface *iface)
++{
++	int secondary_channel;
++	int i;
++
++	ieee802_11_set_beacons(iface);
++
++	for (i = 0; i < iface->num_bss; i++) {
++		struct hostapd_data *hapd = iface->bss[i];
++
++		if (iface->force_20mhz)
++			secondary_channel = 0;
++		else
++			secondary_channel = hapd->iconf->secondary_channel;
++
++		if (hostapd_set_freq(hapd, hapd->iconf->hw_mode, iface->freq,
++					 hapd->iconf->channel,
++					 hapd->iconf->ieee80211n,
++					 secondary_channel)) {
++			wpa_printf(MSG_ERROR, "Could not set channel for "
++				   "kernel driver");
++		}
++	}
++}
++
++void hostapd_deinit_ht(struct hostapd_iface *iface)
++{
++	eloop_cancel_timeout(hostapd_restore_40mhz, iface, NULL);
++}
++
++void hostapd_trigger_20mhz(struct hostapd_iface *iface)
++{
++	if (!iface->conf->dynamic_ht40)
++		return;
++
++	if (!iface->force_20mhz) {
++		iface->force_20mhz = 1;
++		hostapd_set_force_20mhz(iface);
++	}
++
++	if (!iface->last_20mhz_trigger.sec) {
++		eloop_cancel_timeout(hostapd_restore_40mhz, iface, NULL);
++		eloop_register_timeout(iface->conf->dynamic_ht40, 0,
++				       hostapd_restore_40mhz, iface, NULL);
++	}
++
++	os_get_time(&iface->last_20mhz_trigger);
++}

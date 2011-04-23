@@ -115,7 +115,7 @@
  
  	eloop_cancel_timeout(wpa_driver_nl80211_scan_timeout, drv, drv->ctx);
  
-@@ -5693,7 +5711,9 @@ static void *i802_init(struct hostapd_da
+@@ -5708,7 +5726,9 @@ static void *i802_init(struct hostapd_da
  
  failed:
  	nl80211_remove_monitor_interface(drv);
