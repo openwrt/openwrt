@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -2092,23 +2092,41 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -2092,23 +2092,43 @@ wpa_driver_nl80211_finish_drv_init(struc
  }
  
  
@@ -33,18 +33,20 @@
 +
 +	for (bss = &drv->first_bss; bss; bss = bss->next)
 +		wpa_driver_nl80211_del_bss_beacon(bss);
++
++	return 0;
 +}
 +
 +static int wpa_driver_nl80211_stop_ap(void *priv)
 +{
 +	struct i802_bss *bss = priv;
 +
-+	wpa_driver_nl80211_del_beacon(bss->drv);
++	return wpa_driver_nl80211_del_beacon(bss->drv);
 +}
  
  /**
   * wpa_driver_nl80211_deinit - Deinitialize nl80211 driver interface
-@@ -6581,4 +6599,5 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -6581,4 +6601,5 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_intra_bss = nl80211_set_intra_bss,
  	.set_param = nl80211_set_param,
  	.get_radio_name = nl80211_get_radio_name,
