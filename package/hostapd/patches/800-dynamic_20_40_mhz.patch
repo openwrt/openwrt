@@ -23,7 +23,15 @@
  
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -285,6 +285,7 @@ static void hostapd_cleanup_iface_pre(st
+@@ -27,6 +27,7 @@
+ #include "beacon.h"
+ #include "iapp.h"
+ #include "ieee802_1x.h"
++#include "ieee802_11.h"
+ #include "ieee802_11_auth.h"
+ #include "vlan_init.h"
+ #include "wpa_auth.h"
+@@ -285,6 +286,7 @@ static void hostapd_cleanup_iface_pre(st
   */
  static void hostapd_cleanup_iface(struct hostapd_iface *iface)
  {
@@ -77,7 +85,19 @@
  #endif /* IEEE802_11_H */
 --- a/src/ap/ieee802_11_ht.c
 +++ b/src/ap/ieee802_11_ht.c
-@@ -70,12 +70,15 @@ u8 * hostapd_eid_ht_operation(struct hos
+@@ -20,9 +20,11 @@
+ #include "drivers/driver.h"
+ #include "hostapd.h"
+ #include "ap_config.h"
++#include "ap_drv_ops.h"
+ #include "sta_info.h"
+ #include "beacon.h"
+ #include "ieee802_11.h"
++#include "utils/eloop.h"
+ 
+ 
+ u8 * hostapd_eid_ht_capabilities(struct hostapd_data *hapd, u8 *eid)
+@@ -70,12 +72,15 @@ u8 * hostapd_eid_ht_operation(struct hos
  
  	oper->control_chan = hapd->iconf->channel;
  	oper->operation_mode = host_to_le16(hapd->iface->ht_op_mode);
@@ -99,14 +119,14 @@
  
  	pos += sizeof(*oper);
  
-@@ -265,3 +268,80 @@ void hostapd_get_ht_capab(struct hostapd
+@@ -265,3 +270,80 @@ void hostapd_get_ht_capab(struct hostapd
  
  	neg_ht_cap->ht_capabilities_info = host_to_le16(cap);
  }
 +
-+static int hostapd_set_force_20mhz(struct hostapd_iface *iface);
++static void hostapd_set_force_20mhz(struct hostapd_iface *iface);
 +
-+static int hostapd_restore_40mhz(void *eloop_data, void *user_ctx)
++static void hostapd_restore_40mhz(void *eloop_data, void *user_ctx)
 +{
 +	struct hostapd_iface *iface = eloop_data;
 +	struct os_time time;
@@ -132,7 +152,7 @@
 +	hostapd_set_force_20mhz(iface);
 +}
 +
-+static int hostapd_set_force_20mhz(struct hostapd_iface *iface)
++static void hostapd_set_force_20mhz(struct hostapd_iface *iface)
 +{
 +	int secondary_channel;
 +	int i;

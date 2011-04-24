@@ -212,7 +212,7 @@
  		wpa_debug_open_syslog();
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -501,6 +501,9 @@ static const char * hostapd_msg_ifname_c
+@@ -502,6 +502,9 @@ static const char * hostapd_msg_ifname_c
  	return NULL;
  }
  
@@ -222,7 +222,7 @@
  
  int main(int argc, char *argv[])
  {
-@@ -513,6 +516,7 @@ int main(int argc, char *argv[])
+@@ -514,6 +517,7 @@ int main(int argc, char *argv[])
  	if (os_program_init())
  		return -1;
  
