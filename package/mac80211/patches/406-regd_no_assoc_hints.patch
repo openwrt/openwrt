@@ -1,6 +1,6 @@
 --- a/net/wireless/reg.c
 +++ b/net/wireless/reg.c
-@@ -1644,6 +1644,8 @@ void regulatory_hint_11d(struct wiphy *w
+@@ -1629,6 +1629,8 @@ void regulatory_hint_11d(struct wiphy *w
  	enum environment_cap env = ENVIRON_ANY;
  	struct regulatory_request *request;
  
@@ -9,7 +9,7 @@
  	mutex_lock(&reg_mutex);
  
  	if (unlikely(!last_request))
-@@ -1850,6 +1852,8 @@ static void restore_regulatory_settings(
+@@ -1835,6 +1837,8 @@ static void restore_regulatory_settings(
  
  void regulatory_hint_disconnect(void)
  {
