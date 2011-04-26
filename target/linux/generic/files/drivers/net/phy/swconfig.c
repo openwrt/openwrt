@@ -36,7 +36,7 @@ MODULE_LICENSE("GPL");
 
 static int swdev_id = 0;
 static struct list_head swdevs;
-static spinlock_t swdevs_lock = SPIN_LOCK_UNLOCKED;
+static DEFINE_SPINLOCK(swdevs_lock);
 struct swconfig_callback;
 
 struct swconfig_callback
