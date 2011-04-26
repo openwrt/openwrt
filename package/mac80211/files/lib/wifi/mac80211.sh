@@ -36,6 +36,11 @@ mac80211_hostapd_setup_base() {
 		}
 	}
 
+	local country_ie=0
+	[ -n "$country" ] && country_ie=1
+	config_get_bool country_ie "$device" country_ie "$country_ie"
+	[ "$country_ie" -gt 0 ] && append base_cfg "ieee80211d=1" "$N"
+
 	config_get macfilter "$vif" macfilter
 	case "$macfilter" in
 		allow)
