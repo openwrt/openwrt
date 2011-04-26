@@ -1,0 +1,11 @@
+--- a/net80211/ieee80211_scan.c
++++ b/net80211/ieee80211_scan.c
+@@ -97,7 +97,7 @@ struct scan_state {
+ static void scan_restart_pwrsav(unsigned long);
+ static void scan_next(unsigned long);
+ 
+-spinlock_t channel_lock = SPIN_LOCK_UNLOCKED;
++DEFINE_SPINLOCK(channel_lock);
+ static LIST_HEAD(channels_inuse);
+ 
+ struct channel_inuse {
