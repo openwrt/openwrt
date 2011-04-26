@@ -1,0 +1,195 @@
+--- a/compat/compat-2.6.32.c
++++ b/compat/compat-2.6.32.c
+@@ -117,3 +117,100 @@ void __dev_addr_unsync(struct dev_addr_l
+ }
+ EXPORT_SYMBOL_GPL(__dev_addr_unsync);
+ 
++/*
++ * Nonzero if YEAR is a leap year (every 4 years,
++ * except every 100th isn't, and every 400th is).
++ */
++static int __isleap(long year)
++{
++	return (year) % 4 == 0 && ((year) % 100 != 0 || (year) % 400 == 0);
++}
++
++/* do a mathdiv for long type */
++static long math_div(long a, long b)
++{
++	return a / b - (a % b < 0);
++}
++
++/* How many leap years between y1 and y2, y1 must less or equal to y2 */
++static long leaps_between(long y1, long y2)
++{
++	long leaps1 = math_div(y1 - 1, 4) - math_div(y1 - 1, 100)
++		+ math_div(y1 - 1, 400);
++	long leaps2 = math_div(y2 - 1, 4) - math_div(y2 - 1, 100)
++		+ math_div(y2 - 1, 400);
++	return leaps2 - leaps1;
++}
++
++/* How many days come before each month (0-12). */
++static const unsigned short __mon_yday[2][13] = {
++	/* Normal years. */
++	{0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365},
++	/* Leap years. */
++	{0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}
++};
++
++#define SECS_PER_HOUR	(60 * 60)
++#define SECS_PER_DAY	(SECS_PER_HOUR * 24)
++
++/**
++ * time_to_tm - converts the calendar time to local broken-down time
++ *
++ * @totalsecs	the number of seconds elapsed since 00:00:00 on January 1, 1970,
++ *		Coordinated Universal Time (UTC).
++ * @offset	offset seconds adding to totalsecs.
++ * @result	pointer to struct tm variable to receive broken-down time
++ */
++void time_to_tm(time_t totalsecs, int offset, struct tm *result)
++{
++	long days, rem, y;
++	const unsigned short *ip;
++
++	days = totalsecs / SECS_PER_DAY;
++	rem = totalsecs % SECS_PER_DAY;
++	rem += offset;
++	while (rem < 0) {
++		rem += SECS_PER_DAY;
++		--days;
++	}
++	while (rem >= SECS_PER_DAY) {
++		rem -= SECS_PER_DAY;
++		++days;
++	}
++
++	result->tm_hour = rem / SECS_PER_HOUR;
++	rem %= SECS_PER_HOUR;
++	result->tm_min = rem / 60;
++	result->tm_sec = rem % 60;
++
++	/* January 1, 1970 was a Thursday. */
++	result->tm_wday = (4 + days) % 7;
++	if (result->tm_wday < 0)
++		result->tm_wday += 7;
++
++	y = 1970;
++
++	while (days < 0 || days >= (__isleap(y) ? 366 : 365)) {
++		/* Guess a corrected year, assuming 365 days per year. */
++		long yg = y + math_div(days, 365);
++
++		/* Adjust DAYS and Y to match the guessed year. */
++		days -= (yg - y) * 365 + leaps_between(y, yg);
++		y = yg;
++	}
++
++	result->tm_year = y - 1900;
++
++	result->tm_yday = days;
++
++	ip = __mon_yday[__isleap(y)];
++	for (y = 11; days < ip[y]; y--)
++		continue;
++	days -= ip[y];
++
++	result->tm_mon = y;
++	result->tm_mday = days + 1;
++}
++EXPORT_SYMBOL(time_to_tm);
++/* source: kernel/time/timeconv.c*/
++
+--- a/compat/compat-2.6.39.c
++++ b/compat/compat-2.6.39.c
+@@ -10,6 +10,7 @@
+ 
+ #include <linux/compat.h>
+ #include <linux/tty.h>
++#include <linux/sched.h>
+ 
+ #ifdef CONFIG_COMPAT_BLUETOOTH
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27))
+--- a/compat/kstrtox.c
++++ b/compat/kstrtox.c
+@@ -11,6 +11,14 @@
+  *
+  * If -E is returned, result is not touched.
+  */
++#include <linux/kernel.h>
++/* 
++ * kstrto* was included in kernel 2.6.38.4 and causes conflicts with the
++ * version included in compat-wireless. We use strict_strtol to check if
++ * kstrto* is already available.
++ */
++#ifndef strict_strtol
++
+ #include <linux/ctype.h>
+ #include <linux/errno.h>
+ #include <linux/kernel.h>
+@@ -225,3 +233,4 @@ int kstrtos8(const char *s, unsigned int
+ 	return 0;
+ }
+ EXPORT_SYMBOL(kstrtos8);
++#endif /* #ifndef strict_strtol */
+--- a/include/linux/compat-2.6.32.h
++++ b/include/linux/compat-2.6.32.h
+@@ -96,6 +96,34 @@ struct dev_pm_ops name = { \
+ 
+ #define lockdep_assert_held(l)			do { } while (0)
+ 
++/*
++ * Similar to the struct tm in userspace <time.h>, but it needs to be here so
++ * that the kernel source is self contained.
++ */
++struct tm {
++	/*
++	 * the number of seconds after the minute, normally in the range
++	 * 0 to 59, but can be up to 60 to allow for leap seconds
++	 */
++	int tm_sec;
++	/* the number of minutes after the hour, in the range 0 to 59*/
++	int tm_min;
++	/* the number of hours past midnight, in the range 0 to 23 */
++	int tm_hour;
++	/* the day of the month, in the range 1 to 31 */
++	int tm_mday;
++	/* the number of months since January, in the range 0 to 11 */
++	int tm_mon;
++	/* the number of years since 1900 */
++	long tm_year;
++	/* the number of days since Sunday, in the range 0 to 6 */
++	int tm_wday;
++	/* the number of days since January 1, in the range 0 to 365 */
++	int tm_yday;
++};
++
++void time_to_tm(time_t totalsecs, int offset, struct tm *result);
++
+ #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,32)) */
+ 
+ #endif /* LINUX_26_32_COMPAT_H */
+--- a/include/linux/compat-2.6.39.h
++++ b/include/linux/compat-2.6.39.h
+@@ -94,6 +94,12 @@ static inline struct msi_desc *irq_desc_
+ }
+ #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29)) */
+ 
++/* 
++ * kstrto* was included in kernel 2.6.38.4 and causes conflicts with the
++ * version included in compat-wireless. We use strict_strtol to check if
++ * kstrto* is already available.
++ */
++#ifndef strict_strtol
+ /* Internal, do not use. */
+ int __must_check _kstrtoul(const char *s, unsigned int base, unsigned long *res);
+ int __must_check _kstrtol(const char *s, unsigned int base, long *res);
+@@ -153,6 +159,7 @@ int __must_check kstrtou16(const char *s
+ int __must_check kstrtos16(const char *s, unsigned int base, s16 *res);
+ int __must_check kstrtou8(const char *s, unsigned int base, u8 *res);
+ int __must_check kstrtos8(const char *s, unsigned int base, s8 *res);
++#endif /* ifndef strict_strtol */
+ 
+ #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,39)) */
+ 
