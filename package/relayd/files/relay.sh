@@ -48,6 +48,10 @@ setup_interface_relay() {
 		resolve_ifname "$ifn"
 	done
 
+	local ipaddr
+	config_get ipaddr "$cfg" ipaddr
+	[ -n "$ipaddr" ] && append args "-L $ipaddr"
+
 	local gateway
 	config_get gateway "$cfg" gateway
 	[ -n "$gateway" ] && append args "-G $gateway"
