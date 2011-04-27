@@ -1,0 +1,11 @@
+--- a/drivers/watchdog/ar2315-wtd.c
++++ b/drivers/watchdog/ar2315-wtd.c
+@@ -132,7 +132,7 @@ static struct file_operations ar2315_wdt
+ 	.owner		= THIS_MODULE,
+ 	.llseek		= no_llseek,
+ 	.write		= ar2315_wdt_write,
+-	.ioctl		= ar2315_wdt_ioctl,
++	.unlocked_ioctl	= ar2315_wdt_ioctl,
+ 	.open		= ar2315_wdt_open,
+ 	.release	= ar2315_wdt_release,
+ };
