@@ -1,0 +1,175 @@
+--- a/arch/mips/ar231x/Makefile
++++ b/arch/mips/ar231x/Makefile
+@@ -8,7 +8,7 @@
+ # Copyright (C) 2006-2009 Felix Fietkau <nbd@openwrt.org>
+ #
+ 
+-obj-y += board.o prom.o devices.o
++obj-y += board.o prom.o devices.o reset.o
+ 
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+--- /dev/null
++++ b/arch/mips/ar231x/reset.c
+@@ -0,0 +1,161 @@
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/timer.h>
++#include <linux/interrupt.h>
++#include <linux/kobject.h>
++#include <linux/workqueue.h>
++#include <linux/skbuff.h>
++#include <linux/netlink.h>
++#include <net/sock.h>
++#include <asm/uaccess.h>
++#include <ar231x_platform.h>
++#include <ar231x.h>
++#include <gpio.h>
++#include "devices.h"
++
++#define AR531X_RESET_GPIO_IRQ	(AR531X_GPIO_IRQ(ar231x_board.config->resetConfigGpio))
++
++struct event_t {
++	struct work_struct wq;
++	int set;
++	unsigned long jiffies;
++};
++
++static struct timer_list rst_button_timer;
++static unsigned long seen;
++
++struct sock *uevent_sock = NULL;
++EXPORT_SYMBOL_GPL(uevent_sock);
++extern u64 uevent_next_seqnum(void);
++
++static int no_release_workaround = 1;
++module_param(no_release_workaround, int, 0);
++
++static inline void
++add_msg(struct sk_buff *skb, char *msg)
++{
++	char *scratch;
++	scratch = skb_put(skb, strlen(msg) + 1);
++	sprintf(scratch, msg);
++}
++
++static void
++hotplug_button(struct work_struct *wq)
++{
++	struct sk_buff *skb;
++	struct event_t *event;
++	size_t len;
++	char *scratch, *s;
++	char buf[128];
++
++	event = container_of(wq, struct event_t, wq);
++	if (!uevent_sock)
++		goto done;
++
++	/* allocate message with the maximum possible size */
++	s = event->set ? "pressed" : "released";
++	len = strlen(s) + 2;
++	skb = alloc_skb(NLMSG_GOODSIZE, GFP_KERNEL);
++	if (!skb)
++		goto done;
++
++	/* add header */
++	scratch = skb_put(skb, len);
++	sprintf(scratch, "%s@",s);
++
++	/* copy keys to our continuous event payload buffer */
++	add_msg(skb, "HOME=/");
++	add_msg(skb, "PATH=/sbin:/bin:/usr/sbin:/usr/bin");
++	add_msg(skb, "SUBSYSTEM=button");
++	add_msg(skb, "BUTTON=reset");
++	add_msg(skb, (event->set ? "ACTION=pressed" : "ACTION=released"));
++	sprintf(buf, "SEEN=%ld", (event->jiffies - seen)/HZ);
++	add_msg(skb, buf);
++	snprintf(buf, 128, "SEQNUM=%llu", uevent_next_seqnum());
++	add_msg(skb, buf);
++
++	NETLINK_CB(skb).dst_group = 1;
++	netlink_broadcast(uevent_sock, skb, 0, 1, GFP_KERNEL);
++
++done:
++	kfree(event);
++}
++
++static void
++reset_button_poll(unsigned long unused)
++{
++	struct event_t *event;
++	int gpio = ~0;
++
++	if(!no_release_workaround)
++		return;
++
++	gpio = ar231x_gpiodev->get();
++	gpio &= (1 << (AR531X_RESET_GPIO_IRQ - AR531X_GPIO_IRQ_BASE));
++	if(gpio) {
++		rst_button_timer.expires = jiffies + (HZ / 4);
++		add_timer(&rst_button_timer);
++		return;
++	}
++
++	event = (struct event_t *) kzalloc(sizeof(struct event_t), GFP_ATOMIC);
++	if (!event)
++		return;
++
++	event->set = 0;
++	event->jiffies = jiffies;
++	INIT_WORK(&event->wq, hotplug_button);
++	schedule_work(&event->wq);
++}
++
++static irqreturn_t
++button_handler(int irq, void *dev_id)
++{
++	static int pressed = 0;
++	struct event_t *event;
++	u32 gpio = ~0;
++
++	event = (struct event_t *) kzalloc(sizeof(struct event_t), GFP_ATOMIC);
++	if (!event)
++		return IRQ_NONE;
++
++	pressed = !pressed;
++
++	gpio = ar231x_gpiodev->get() & (1 << (irq - AR531X_GPIO_IRQ_BASE));
++
++	event->set = gpio;
++	if(!event->set)
++		no_release_workaround = 0;
++
++	event->jiffies = jiffies;
++
++	INIT_WORK(&event->wq, hotplug_button);
++	schedule_work(&event->wq);
++
++	seen = jiffies;
++	if(event->set && no_release_workaround)
++		mod_timer(&rst_button_timer, jiffies + (HZ / 4));
++
++	return IRQ_HANDLED;
++}
++
++
++static int __init
++ar231x_init_reset(void)
++{
++	seen = jiffies;
++
++	if (ar231x_board.config->resetConfigGpio == 0xffff)
++		return -ENODEV;
++
++	init_timer(&rst_button_timer);
++	rst_button_timer.function = reset_button_poll;
++	rst_button_timer.expires = jiffies + HZ / 50;
++	add_timer(&rst_button_timer);
++
++	request_irq(AR531X_RESET_GPIO_IRQ, &button_handler, IRQF_SAMPLE_RANDOM, "ar231x_reset", NULL);
++
++	return 0;
++}
++
++module_init(ar231x_init_reset);
