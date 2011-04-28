@@ -141,6 +141,7 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	switch (id) {
 	case 0x0101:
 		return AR8216;
+	case 0x1000:
 	case 0x1001:
 		return AR8316;
 	default:
