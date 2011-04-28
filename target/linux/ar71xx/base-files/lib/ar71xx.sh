@@ -61,6 +61,9 @@ ar71xx_board_name() {
 	*PB44)
 		name="pb44"
 		;;
+	*PB92)
+		name="pb92"
+		;;
 	*"RouterBOARD 411/A/AH")
 		name="rb-411"
 		;;

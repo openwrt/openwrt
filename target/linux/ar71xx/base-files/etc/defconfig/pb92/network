@@ -1,0 +1,31 @@
+config interface loopback
+	option ifname	lo
+	option proto	static
+	option ipaddr	127.0.0.1
+	option netmask	255.0.0.0
+
+config interface lan
+	option ifname	eth0.1
+	option type	bridge
+	option proto	static
+	option ipaddr	192.168.1.1
+	option netmask	255.255.255.0
+
+config interface wan
+	option ifname	eth0.2
+	option proto	dhcp
+
+config switch
+        option name     eth0
+        option reset    1
+        option enable_vlan 1
+
+config switch_vlan
+        option device   eth0
+        option vlan     1
+        option ports    "0t 1 3 4 5"
+
+config switch_vlan
+        option device   eth0
+        option vlan     2
+        option ports    "0t 2"
