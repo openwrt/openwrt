@@ -166,6 +166,8 @@ extern enum ar71xx_soc_type ar71xx_soc;
 #define AR724X_DDR_DIV_SHIFT		22
 #define AR724X_DDR_DIV_MASK		0x3
 
+#define AR7242_PLL_REG_ETH0_INT_CLOCK	0x2c
+
 #define AR91XX_PLL_REG_CPU_CONFIG	0x00
 #define AR91XX_PLL_REG_ETH_CONFIG	0x04
 #define AR91XX_PLL_REG_ETH0_INT_CLOCK	0x14
