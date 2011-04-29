@@ -637,6 +637,7 @@ $(eval $(call KernelPackage,mp-alg))
 
 define KernelPackage/pktgen
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  DEPENDS:=@!TARGET_uml
   TITLE:=Network packet generator
   KCONFIG:=CONFIG_NET_PKTGEN
   FILES:=$(LINUX_DIR)/net/core/pktgen.ko
