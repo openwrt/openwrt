@@ -17,7 +17,7 @@
  };
  
  static struct board_info __initdata board_rta1025w_16 = {
-@@ -1001,6 +1004,9 @@ int __init board_register_devices(void)
+@@ -1002,6 +1005,9 @@ int __init board_register_devices(void)
  	if (board.has_dsp)
  		bcm63xx_dsp_register(&board.dsp);
  
@@ -214,7 +214,7 @@
   * SPI clock
   */
  static void spi_set(struct clk *clk, int enable)
-@@ -208,6 +232,8 @@ struct clk *clk_get(struct device *dev, 
+@@ -208,6 +232,8 @@ struct clk *clk_get(struct device *dev,
  		return &clk_ephy;
  	if (!strcmp(id, "usbh"))
  		return &clk_usbh;

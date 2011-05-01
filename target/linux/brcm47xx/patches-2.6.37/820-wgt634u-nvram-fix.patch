@@ -253,8 +253,8 @@ out the configuration than the in kernel cfe config reader.
 +extern char *cfe_env_get(char *nv_buf, const char *name);
  
  /* Probe for NVRAM header */
- static void __init early_nvram_init(void)
-@@ -33,6 +35,25 @@ static void __init early_nvram_init(void
+ static void early_nvram_init(void)
+@@ -33,6 +35,25 @@ static void early_nvram_init(void)
  
  	base = mcore->flash_window;
  	lim = mcore->flash_window_size;

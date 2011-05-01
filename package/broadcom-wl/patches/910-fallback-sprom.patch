@@ -1,72 +1,68 @@
 --- a/driver/bcmsrom.c
 +++ b/driver/bcmsrom.c
-@@ -39,6 +39,10 @@
+@@ -39,6 +39,11 @@
  #include <sbsdpcmdev.h>
  #endif 
  
-+#ifdef CONFIG_SSB
++#if defined(CONFIG_SSB_PCIHOST) && defined(CONFIG_BOARD_BCM963XX)
 +#include <linux/ssb/ssb.h>
++extern struct ssb_sprom bcm63xx_sprom;
 +#endif
 +
  #ifdef WLTEST
  #include <sbsprom.h>
  #endif /* WLTEST */
-@@ -2058,6 +2062,11 @@ BCMATTACHFN(initvars_srom_pci)(si_t *sih
+@@ -2058,6 +2063,10 @@ BCMATTACHFN(initvars_srom_pci)(si_t *sih
  	bool flash = FALSE;
  	int err = 0;
  
-+#ifdef CONFIG_SSB
-+	struct ssb_sprom *fbrom;
++#if defined(CONFIG_SSB_PCIHOST) && defined(CONFIG_BOARD_BCM963XX)
 +	char eabuf[18];
 +#endif
 +
  	/*
  	 * Apply CRC over SROM content regardless SROM is present or not,
  	 * and use variable <devpath>sromrev's existance in flash to decide
-@@ -2120,6 +2129,62 @@ BCMATTACHFN(initvars_srom_pci)(si_t *sih
+@@ -2120,6 +2130,58 @@ BCMATTACHFN(initvars_srom_pci)(si_t *sih
  			goto varscont;
  		}
  
-+#ifdef CONFIG_SSB
++#if defined(CONFIG_SSB_PCIHOST) && defined(CONFIG_BOARD_BCM963XX)
 +		base = vp = MALLOC(osh, MAXSZ_NVRAM_VARS);
 +
 +		if( base != NULL )
 +		{
 +			varbuf_init(&b, base, MAXSZ_NVRAM_VARS);
 +
-+			/* Try to load ssb fallback sprom */
-+			if ((fbrom = ssb_get_fallback_sprom()) != NULL)
-+			{
-+				printk("Got version %i SPROM from SSB\n", fbrom->revision);
++			printk("Got version %i SPROM from SSB\n", bcm63xx_sprom.revision);
 +
-+				varbuf_append(&b, vstr_sromrev, fbrom->revision);
-+				varbuf_append(&b, vstr_boardrev, fbrom->board_rev);
++			varbuf_append(&b, vstr_sromrev, bcm63xx_sprom.revision);
++			varbuf_append(&b, vstr_boardrev, bcm63xx_sprom.board_rev);
 +
-+				/* ToDo: map fbrom->country_code */
-+				varbuf_append(&b, vstr_noccode);
++			/* ToDo: map bcm63xx_sprom.country_code */
++			varbuf_append(&b, vstr_noccode);
 +
-+				varbuf_append(&b, vstr_aa2g, fbrom->ant_available_bg);
++			varbuf_append(&b, vstr_aa2g, bcm63xx_sprom.ant_available_bg);
 +
-+				varbuf_append(&b, vstr_pa0b[0], fbrom->pa0b0);
-+				varbuf_append(&b, vstr_pa1b[0], fbrom->pa1b0);
-+				varbuf_append(&b, vstr_pa0b[1], fbrom->pa0b1);
-+				varbuf_append(&b, vstr_pa1b[1], fbrom->pa1b1);
-+				varbuf_append(&b, vstr_pa0b[2], fbrom->pa0b2);
-+				varbuf_append(&b, vstr_pa1b[2], fbrom->pa1b2);
++			varbuf_append(&b, vstr_pa0b[0], bcm63xx_sprom.pa0b0);
++			varbuf_append(&b, vstr_pa1b[0], bcm63xx_sprom.pa1b0);
++			varbuf_append(&b, vstr_pa0b[1], bcm63xx_sprom.pa0b1);
++			varbuf_append(&b, vstr_pa1b[1], bcm63xx_sprom.pa1b1);
++			varbuf_append(&b, vstr_pa0b[2], bcm63xx_sprom.pa0b2);
++			varbuf_append(&b, vstr_pa1b[2], bcm63xx_sprom.pa1b2);
 +
-+				varbuf_append(&b, vstr_pa0maxpwr, fbrom->maxpwr_bg);
-+				varbuf_append(&b, vstr_pa0itssit, fbrom->itssi_bg);
++			varbuf_append(&b, vstr_pa0maxpwr, bcm63xx_sprom.maxpwr_bg);
++			varbuf_append(&b, vstr_pa0itssit, bcm63xx_sprom.itssi_bg);
 +
-+				varbuf_append(&b, vstr_boardflags, (fbrom->boardflags_hi << 16) | fbrom->boardflags_lo);
-+				varbuf_append(&b, vstr_boardflags2, (fbrom->boardflags2_hi << 16) | fbrom->boardflags2_lo);
++			varbuf_append(&b, vstr_boardflags, (bcm63xx_sprom.boardflags_hi << 16) | bcm63xx_sprom.boardflags_lo);
++			varbuf_append(&b, vstr_boardflags2, (bcm63xx_sprom.boardflags2_hi << 16) | bcm63xx_sprom.boardflags2_lo);
 +
-+				snprintf(eabuf, sizeof(eabuf), "%02x:%02x:%02x:%02x:%02x:%02x",
-+					fbrom->il0mac[0], fbrom->il0mac[1], fbrom->il0mac[2],
-+					fbrom->il0mac[3], fbrom->il0mac[4], fbrom->il0mac[5]
-+				);
++			snprintf(eabuf, sizeof(eabuf), "%02x:%02x:%02x:%02x:%02x:%02x",
++				bcm63xx_sprom.il0mac[0], bcm63xx_sprom.il0mac[1], bcm63xx_sprom.il0mac[2],
++				bcm63xx_sprom.il0mac[3], bcm63xx_sprom.il0mac[4], bcm63xx_sprom.il0mac[5]
++			);
 +
-+				varbuf_append(&b, vstr_macaddr, eabuf);
-+			}
++			varbuf_append(&b, vstr_macaddr, eabuf);
 +
 +			/* final nullbyte terminator */
 +			ASSERT(b.size >= 1);
