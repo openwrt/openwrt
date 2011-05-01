@@ -1,20 +1,19 @@
---- a/drivers/ssb/sprom.c
-+++ b/drivers/ssb/sprom.c
-@@ -176,6 +176,7 @@ const struct ssb_sprom *ssb_get_fallback
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -1907,7 +1907,7 @@ static void __init nb4_nvram_fixup(void)
+  * bcm4318 WLAN work
+  */
+ #ifdef CONFIG_SSB_PCIHOST
+-static struct ssb_sprom bcm63xx_sprom = {
++struct ssb_sprom bcm63xx_sprom = {
+ 	.revision		= 0x02,
+ 	.board_rev		= 0x17,
+ 	.country_code		= 0x0,
+@@ -1927,6 +1927,7 @@ static struct ssb_sprom bcm63xx_sprom =
+ 	.boardflags_lo		= 0x2848,
+ 	.boardflags_hi		= 0x0000,
+ };
++EXPORT_SYMBOL(bcm63xx_sprom);
+ 
+ int bcm63xx_get_fallback_sprom(struct ssb_bus *bus)
  {
- 	return fallback_sprom;
- }
-+EXPORT_SYMBOL(ssb_get_fallback_sprom);
- 
- /* http://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */
- bool ssb_is_sprom_available(struct ssb_bus *bus)
---- a/include/linux/ssb/ssb.h
-+++ b/include/linux/ssb/ssb.h
-@@ -401,6 +401,7 @@ extern bool ssb_is_sprom_available(struc
- /* Set a fallback SPROM.
-  * See kdoc at the function definition for complete documentation. */
- extern int ssb_arch_set_fallback_sprom(const struct ssb_sprom *sprom);
-+extern const struct ssb_sprom *ssb_get_fallback_sprom(void);
- 
- /* Suspend a SSB bus.
-  * Call this from the parent bus suspend routine. */
