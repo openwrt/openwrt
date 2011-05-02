@@ -1,0 +1,24 @@
+--- a/arch/um/kernel/uml.lds.S
++++ b/arch/um/kernel/uml.lds.S
+@@ -35,6 +35,21 @@ SECTIONS
+     *(.gnu.warning)
+     *(.gnu.linkonce.t*)
+   }
++  /* Deal with multilib libc */
++  .rel.plt        :
++  {
++    *(.rel.plt)
++    PROVIDE_HIDDEN (__rel_iplt_start = .);
++    *(.rel.iplt)
++    PROVIDE_HIDDEN (__rel_iplt_end = .);
++  }
++  .rela.plt       :
++  {
++    *(.rela.plt)
++    PROVIDE_HIDDEN (__rela_iplt_start = .);
++    *(.rela.iplt)
++    PROVIDE_HIDDEN (__rela_iplt_end = .);
++  }
+ 
+   . = ALIGN(PAGE_SIZE);
+   .syscall_stub : {

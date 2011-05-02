@@ -22,7 +22,7 @@ BOARD:=uml
 BOARDNAME:=User Mode Linux
 FEATURES:=ext4 audio
 
-LINUX_VERSION:=2.6.37.6
+LINUX_VERSION:=2.6.38.2
 
 include $(INCLUDE_DIR)/target.mk
 
