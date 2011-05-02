@@ -1,55 +1,27 @@
-# Copyright (C) 2009-2011 OpenWrt.org
+# Copyright (C) 2009-2010 OpenWrt.org
 
 fw__uci_state_add() {
 	local var="$1"
 	local item="$2"
 
-	local list="$(uci_get_state firewall core $var)"
-	      list=" ${list:+$list }"
-
-	for item in $item; do
-		case "$list" in
-			"* $item *") continue;;
-			*) list="$list$item ";;
-		esac
-	done
-
-	list="${list% }"
-	list="${list# }"
-
+	local val=" $(uci_get_state firewall core $var) "
+	val="${val// $item / }"
+	val="${val# }"
+	val="${val% }"
 	uci_revert_state firewall core $var
-	uci_set_state firewall core $var "$list"
+	uci_set_state firewall core $var "${val:+$val }$item"
 }
 
 fw__uci_state_del() {
 	local var="$1"
 	local item="$2"
 
-	echo "del[$item]"
-
-	local list val
-	for val in $(uci_get_state firewall core "$var" | sort -u); do
-		list="${list:+$list }$val"
-	done
-
-	echo "list[$list]"
-
+	local val=" $(uci_get_state firewall core $var) "
+	val="${val// $item / }"
+	val="${val# }"
+	val="${val% }"
 	uci_revert_state firewall core $var
-
-	[ -n "$list" ] && {
-		list=" $list "
-
-		for item in $item; do
-			list="${list// $item / }"
-		done
-
-		list="${list# }"
-		list="${list% }"
-
-		echo "list2[$list]"
-
-		uci_set_state firewall core $var "$list"
-	}
+	uci_set_state firewall core $var "$val"
 }
 
 fw_configure_interface() {
