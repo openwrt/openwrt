@@ -54,8 +54,8 @@ define Package/comgt/install
 	$(INSTALL_DATA) ./files/3g.button $(1)/etc/hotplug.d/button/05-3g
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
 	$(INSTALL_DATA) ./files/3g.iface $(1)/etc/hotplug.d/iface/05-3g
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/usb
-	$(INSTALL_DATA) ./files/3g.usb $(1)/etc/hotplug.d/usb/30-3g
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/tty
+	$(INSTALL_DATA) ./files/3g.usb $(1)/etc/hotplug.d/tty/30-3g
 	$(INSTALL_DIR) $(1)/etc/gcom
 	$(INSTALL_DATA) ./files/setpin.gcom $(1)/etc/gcom/setpin.gcom
 	$(INSTALL_DATA) ./files/setmode.gcom $(1)/etc/gcom/setmode.gcom
