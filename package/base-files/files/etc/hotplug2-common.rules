@@ -6,17 +6,13 @@
 
 $include /etc/hotplug2-platform.rules
 
-DEVICENAME ~~ (^null$|^full$|^ptmx$|^tty|^zero$|^gpio|^hvc) {
+DEVICENAME ~~ (^null$|^full$|^ptmx$|^zero$|^gpio|^hvc) {
 	makedev /dev/%DEVICENAME% 0666
 	next-event
 }
 
 DEVICENAME ~~ (^tun|^tap[0-9]$) {
 	makedev /dev/net/%DEVICENAME% 0644
-}
-
-DEVICENAME ~~ ^ppp {
-	makedev /dev/%DEVICENAME% 0600
 }
 
 DEVICENAME ~~ (^controlC[0-9]$|^pcmC[0-9]D[0-9]|^timer$) {
@@ -35,10 +31,23 @@ DEVPATH is set, SUBSYSTEM == input {
 
 DEVICENAME == device-mapper {
 	makedev /dev/mapper/control 0600
+	next-event
 }
 
-DEVPATH is set {
+ACTION == add, DEVPATH is set {
 	makedev /dev/%DEVICENAME% 0644
+}
+
+ACTION == add, DEVPATH is set, DEVICENAME ~~ ^tty {
+	chmod 0666 /dev/%DEVICENAME%
+}
+
+ACTION == add, DEVPATH is set, DEVICENAME ~~ ^ppp {
+	chmod 0600 /dev/%DEVICENAME%
+}
+
+ACTION == remove, DEVPATH is set, MAJOR is set, MINOR is set {
+	remove /dev/%DEVICENAME%
 }
 
 FIRMWARE is set, ACTION == add {
