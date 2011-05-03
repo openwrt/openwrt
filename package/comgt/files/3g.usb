@@ -21,12 +21,9 @@ find_3g_iface() {
 		local dev
 		config_get dev "$cfg" device
 
-		if [ "${dev##*/}" = "${tty##*/}" ]; then
-			[ -z "$(ls /var/lock | grep ${dev##*/})" ] && {
-				log "Starting interface $cfg for device ${dev##*/}"
-				sleep 1
-				/sbin/ifup "$cfg"
-			}
+		if [ "${dev##*/}" = "${tty##*/}" ] && [ -z "$(ls /var/lock | grep ${dev##*/})" ]; then
+			log "Starting interface $cfg for device ${dev##*/}"
+			( sleep 1; /sbin/ifup "$cfg" ) &
 		fi
 	}
 }
