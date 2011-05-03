@@ -28,13 +28,6 @@ CRYPTOMGR_MODULES = \
 	MANAGER2=cryptomgr \
 	BLKCIPHER2=crypto_blkcipher
 
-CRYPTOIPSEC_MODULES = \
-	WORKQUEUE=crypto_wq \
-	RNG2=rng \
-	RNG2=krng \
-	BLKCIPHER2=eseqiv \
-	BLKCIPHER2=chainiv
-
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
 crypto_file=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).ko)
 crypto_name=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(word 2,$(subst =,$(space),$(1))))
@@ -114,15 +107,6 @@ define KernelPackage/crypto-iv
   $(call AddDepends/crypto)
 endef
 $(eval $(call KernelPackage,crypto-iv))
-
-define KernelPackage/crypto-ipsec
-  TITLE:=IPSEC CryptoAPI modules
-  KCONFIG:=$(foreach mod,$(CRYPTOIPSEC_MODULES),$(call crypto_confvar,$(mod)))
-  FILES:=$(foreach mod,$(CRYPTOIPSEC_MODULES),$(call crypto_file,$(mod)))
-  AUTOLOAD:=$(call AutoLoad,09,$(foreach mod,$(CRYPTOIPSEC_MODULES),$(call crypto_name,$(mod))))
-  $(call AddDepends/crypto)
-endef
-$(eval $(call KernelPackage,crypto-ipsec))
 
 define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
