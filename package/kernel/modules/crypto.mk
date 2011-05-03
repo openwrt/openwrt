@@ -76,6 +76,38 @@ define KernelPackage/crypto-manager
 endef
 $(eval $(call KernelPackage,crypto-manager))
 
+define KernelPackage/crypto-wq
+  TITLE:=CryptoAPI work queue handling
+  KCONFIG:=CONFIG_CRYPTO_WORKQUEUE
+  FILES:=$(LINUX_DIR)/crypto/crypto_wq.ko
+  AUTOLOAD:=$(call AutoLoad,09,crypto_wq)
+  $(call AddDepends/crypto)
+endef
+$(eval $(call KernelPackage,crypto-wq))
+
+define KernelPackage/crypto-rng
+  TITLE:=CryptoAPI random number generation
+  KCONFIG:=CONFIG_CRYPTO_RNG2
+  FILES:= \
+	$(LINUX_DIR)/crypto/rng.ko \
+	$(LINUX_DIR)/crypto/krng.ko
+  AUTOLOAD:=$(call AutoLoad,09,rng krng)
+  $(call AddDepends/crypto)
+endef
+$(eval $(call KernelPackage,crypto-rng))
+
+define KernelPackage/crypto-iv
+  TITLE:=CryptoAPI initialization vectors
+  DEPENDS:=+kmod-crypto-rng +kmod-crypto-wq
+  KCONFIG:= CONFIG_CRYPTO_BLKCIPHER2
+  FILES:= \
+	$(LINUX_DIR)/crypto/eseqiv.ko \
+	$(LINUX_DIR)/crypto/chainiv.ko
+  AUTOLOAD:=$(call AutoLoad,10,eseqiv chainiv)
+  $(call AddDepends/crypto)
+endef
+$(eval $(call KernelPackage,crypto-iv))
+
 define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
   DEPENDS:=+kmod-crypto-aes
