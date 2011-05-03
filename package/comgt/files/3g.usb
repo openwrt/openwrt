@@ -22,8 +22,11 @@ find_3g_iface() {
 		config_get dev "$cfg" device
 
 		if [ "${dev##*/}" = "${tty##*/}" ]; then
-			log "Starting interface $cfg for device ${tty##*/}"
-			( sleep 1; /sbin/ifup "$cfg" ) &
+			[ -z "$(ls /var/lock | grep ${dev##*/})" ] && {
+				log "Starting interface $cfg for device ${dev##*/}"
+				sleep 1
+				/sbin/ifup "$cfg"
+			}
 		fi
 	}
 }
@@ -31,13 +34,13 @@ find_3g_iface() {
 
 if [ "$ACTION" = add ]; then
 	case "$DEVICENAME" in
-		*-*:*.*) config_load network;;
+		tty*) config_load network;;
 		*) exit 0;;
 	esac
 
 	local tty
-	for tty in /sys/$DEVPATH/ttyUSB* /sys/$DEVPATH/tty/ttyACM* /sys/$DEVPATH/tty/ttyHS*; do
-		[ -d "$tty" ] || continue
+	for tty in /dev/ttyUSB* /dev/ttyACM* /dev/ttyHS*; do
+		[ -e "$tty" ] || continue
 		config_foreach find_3g_iface interface "$tty"
 	done
 fi
