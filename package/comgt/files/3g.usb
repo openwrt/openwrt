@@ -12,32 +12,31 @@ find_3g_iface() {
 
 	local proto
 	config_get proto "$cfg" proto
+	[ "$proto" = 3g ] || return 0
 
-	[ "$proto" = 3g ] && {
-		local auto
-		config_get_bool auto "$cfg" auto 1
-		[ "$auto" = 1 ] || return 0
+	local auto
+	config_get_bool auto "$cfg" auto 1
+	[ "$auto" = 1 ] || [ "$ACTION" = remove ] || return 0
 
-		local dev
-		config_get dev "$cfg" device
+	local dev
+	config_get dev "$cfg" device
 
-		if [ "${dev##*/}" = "${tty##*/}" ] && [ -z "$(ls /var/lock | grep ${dev##*/})" ]; then
+	if [ "${dev##*/}" = "${tty##*/}" ]; then
+		if [ "$ACTION" = add ]; then
 			log "Starting interface $cfg for device ${dev##*/}"
 			( sleep 1; /sbin/ifup "$cfg" ) &
+		else
+			log "Stopping interface $cfg for device ${dev##*/}"
+			/sbin/ifdown "$cfg" &
 		fi
-	}
+	fi
 }
 
+case "$DEVICENAME" in
+	tty*)
+		[ -e "/dev/$DEVICENAME" ] || [ "$ACTION" = remove ] || exit 0
+		config_load network
+		config_foreach find_3g_iface interface "/dev/$DEVICENAME"
+	;;
+esac
 
-if [ "$ACTION" = add ]; then
-	case "$DEVICENAME" in
-		tty*) config_load network;;
-		*) exit 0;;
-	esac
-
-	local tty
-	for tty in /dev/ttyUSB* /dev/ttyACM* /dev/ttyHS*; do
-		[ -e "$tty" ] || continue
-		config_foreach find_3g_iface interface "$tty"
-	done
-fi
