@@ -565,3 +565,55 @@
  			  HT_RX_REORDER_BUF_TIMEOUT);
  	} else {
  		del_timer(&tid_agg_rx->reorder_timer);
+--- a/drivers/net/wireless/ath/ath9k/calib.c
++++ b/drivers/net/wireless/ath/ath9k/calib.c
+@@ -69,15 +69,21 @@ static void ath9k_hw_update_nfcal_hist_b
+ 					      int16_t *nfarray)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	struct ieee80211_conf *conf = &common->hw->conf;
+ 	struct ath_nf_limits *limit;
+ 	struct ath9k_nfcal_hist *h;
+ 	bool high_nf_mid = false;
++	u8 chainmask = (ah->rxchainmask << 3) | ah->rxchainmask;
+ 	int i;
+ 
+ 	h = cal->nfCalHist;
+ 	limit = ath9k_hw_get_nf_limits(ah, ah->curchan);
+ 
+ 	for (i = 0; i < NUM_NF_READINGS; i++) {
++		if (!(chainmask & (1 << i)) ||
++		    ((i >= AR5416_MAX_CHAINS) && !conf_is_ht40(conf)))
++			continue;
++
+ 		h[i].nfCalBuffer[h[i].currIndex] = nfarray[i];
+ 
+ 		if (++h[i].currIndex >= ATH9K_NF_CAL_HIST_MAX)
+@@ -225,6 +231,7 @@ void ath9k_hw_loadnf(struct ath_hw *ah, 
+ 	int32_t val;
+ 	u8 chainmask = (ah->rxchainmask << 3) | ah->rxchainmask;
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	struct ieee80211_conf *conf = &common->hw->conf;
+ 	s16 default_nf = ath9k_hw_get_default_nf(ah, chan);
+ 
+ 	if (ah->caldata)
+@@ -234,6 +241,9 @@ void ath9k_hw_loadnf(struct ath_hw *ah, 
+ 		if (chainmask & (1 << i)) {
+ 			s16 nfval;
+ 
++			if ((i >= AR5416_MAX_CHAINS) && !conf_is_ht40(conf))
++				continue;
++
+ 			if (h)
+ 				nfval = h[i].privNF;
+ 			else
+@@ -293,6 +303,9 @@ void ath9k_hw_loadnf(struct ath_hw *ah, 
+ 	ENABLE_REGWRITE_BUFFER(ah);
+ 	for (i = 0; i < NUM_NF_READINGS; i++) {
+ 		if (chainmask & (1 << i)) {
++			if ((i >= AR5416_MAX_CHAINS) && !conf_is_ht40(conf))
++				continue;
++
+ 			val = REG_READ(ah, ah->nf_regs[i]);
+ 			val &= 0xFFFFFE00;
+ 			val |= (((u32) (-50) << 1) & 0x1ff);
