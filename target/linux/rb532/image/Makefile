@@ -28,8 +28,13 @@ define Image/Prepare
 	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile
 endef
 
+VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux-kernel
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs
+endif
+
 define Image/BuildKernel
-	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux
+	$(CP) $(KDIR)/loader.elf $(VMLINUX)
 endef
 
 define Image/cmdline/jffs2-64k
@@ -63,9 +68,6 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux '$(strip $(call Image/cmdline/yaffs2)) '
 	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
 	$(MAKE) -C $(GENERIC_PLATFORM_DIR)/image/lzma-loader $(LOADER_MAKEOPTS) clean compile	
-  endef
-  define Image/BuildKernel
-	$(CP) $(KDIR)/loader.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux
   endef
 endif
 
