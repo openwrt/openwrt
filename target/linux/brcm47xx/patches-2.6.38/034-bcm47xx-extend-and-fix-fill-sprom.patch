@@ -46,7 +46,7 @@
  	READ_FROM_NVRAM(revision, "sromrev", buf);
 -	if (nvram_getprefix(prefix, "il0macaddr", buf, sizeof(buf)) >= 0)
 +	if (nvram_getprefix(prefix, "il0macaddr", buf, sizeof(buf)) >= 0 ||
-++	    nvram_getprefix(prefix, "macaddr", buf, sizeof(buf)) >= 0)
++	    nvram_getprefix(prefix, "macaddr", buf, sizeof(buf)) >= 0)
  		nvram_parse_macaddr(buf, sprom->il0mac);
  	if (nvram_getprefix(prefix, "et0macaddr", buf, sizeof(buf)) >= 0)
  		nvram_parse_macaddr(buf, sprom->et0mac);
