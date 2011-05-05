@@ -15,7 +15,7 @@
  	}
  }
  
-+int bcm47xx_get_sprom(struct ssb_bus *bus)
++int bcm47xx_get_sprom(struct ssb_bus *bus, struct ssb_sprom *out)
 +{
 +	char prefix[10];
 +
@@ -23,7 +23,7 @@
 +		snprintf(prefix, sizeof(prefix), "pci/%x/%x/",
 +			 bus->host_pci->bus->number + 1,
 +			 PCI_SLOT(bus->host_pci->devfn));
-+		bcm47xx_fill_sprom(&bus->sprom, prefix);
++		bcm47xx_fill_sprom(out, prefix);
 +		return 0;
 +	} else {
 +		printk(KERN_WARNING "bcm47xx: unable to fill SPROM for given bustype.\n");
