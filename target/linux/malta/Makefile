@@ -12,7 +12,7 @@ CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 SUBTARGETS:=le be
 INITRAMFS_EXTRA_FILES:=
 
-LINUX_VERSION:=2.6.37.6
+LINUX_VERSION:=2.6.38.2
 
 include $(INCLUDE_DIR)/target.mk
 
