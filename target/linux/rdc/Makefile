@@ -11,6 +11,7 @@ BOARD:=rdc
 BOARDNAME:=RDC 321x
 FEATURES:=squashfs jffs2 pci usb pcmcia
 CFLAGS:=-Os -pipe -march=i486 -mtune=i486 -fno-caller-saves
+MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 LINUX_VERSION:=2.6.32.33
 

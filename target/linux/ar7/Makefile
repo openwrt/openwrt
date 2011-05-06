@@ -10,6 +10,7 @@ ARCH:=mipsel
 BOARD:=ar7
 BOARDNAME:=TI AR7
 FEATURES:=squashfs jffs2 atm
+MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 LINUX_VERSION:=2.6.37.6
 
