@@ -10,6 +10,7 @@ ARCH:=mipsel
 BOARD:=adm8668
 BOARDNAME:=Infineon WildPass ADM8668
 FEATURES:=squashfs
+MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 LINUX_VERSION:=2.6.36.4
 

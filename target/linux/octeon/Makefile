@@ -11,6 +11,7 @@ BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
 FEATURES:=squashfs jffs2 pci usb
 CFLAGS:=-Os -pipe -march=octeon -fno-caller-saves
+MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 LINUX_VERSION:=2.6.37.6
 
