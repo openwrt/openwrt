@@ -149,6 +149,94 @@ static const struct file_operations ag71xx_fops_napi_stats = {
 	.owner	= THIS_MODULE
 };
 
+#define DESC_PRINT_LEN	64
+
+static ssize_t read_file_ring(struct file *file, char __user *user_buf,
+			      size_t count, loff_t *ppos,
+			      struct ag71xx *ag,
+			      struct ag71xx_ring *ring,
+			      unsigned ring_size,
+			      unsigned desc_reg)
+{
+	char *buf;
+	unsigned int buflen;
+	unsigned int len = 0;
+	unsigned long flags;
+	ssize_t ret;
+	int curr;
+	int dirty;
+	u32 desc_hw;
+	int i;
+
+	buflen = (ring_size * DESC_PRINT_LEN);
+	buf = kmalloc(buflen, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
+
+	len += snprintf(buf + len, buflen - len,
+			"Idx ... %-8s %-8s %-8s %-8s . %-10s\n",
+			"desc", "next", "data", "ctrl", "timestamp");
+
+	spin_lock_irqsave(&ag->lock, flags);
+
+	curr = (ring->curr % ring_size);
+	dirty = (ring->dirty % ring_size);
+	desc_hw = ag71xx_rr(ag, desc_reg);
+	for (i = 0; i < ring_size; i++) {
+		struct ag71xx_buf *ab = &ring->buf[i];
+
+		len += snprintf(buf + len, buflen - len,
+			"%3d %c%c%c %08x %08x %08x %08x %c %10lu\n",
+			i,
+			(i == curr) ? 'C' : ' ',
+			(i == dirty) ? 'D' : ' ',
+			(desc_hw == ab->desc_dma) ? 'H' : ' ',
+			ab->desc_dma,
+			ab->desc->next,
+			ab->desc->data,
+			ab->desc->ctrl,
+			(ab->desc->ctrl & DESC_EMPTY) ? 'E' : '*',
+			ab->timestamp);
+	}
+
+	spin_unlock_irqrestore(&ag->lock, flags);
+
+	ret = simple_read_from_buffer(user_buf, count, ppos, buf, len);
+	kfree(buf);
+
+	return ret;
+}
+
+static ssize_t read_file_tx_ring(struct file *file, char __user *user_buf,
+				 size_t count, loff_t *ppos)
+{
+	struct ag71xx *ag = file->private_data;
+
+	return read_file_ring(file, user_buf, count, ppos, ag, &ag->tx_ring,
+			      AG71XX_TX_RING_SIZE, AG71XX_REG_TX_DESC);
+}
+
+static const struct file_operations ag71xx_fops_tx_ring = {
+	.open	= ag71xx_debugfs_generic_open,
+	.read	= read_file_tx_ring,
+	.owner	= THIS_MODULE
+};
+
+static ssize_t read_file_rx_ring(struct file *file, char __user *user_buf,
+				 size_t count, loff_t *ppos)
+{
+	struct ag71xx *ag = file->private_data;
+
+	return read_file_ring(file, user_buf, count, ppos, ag, &ag->rx_ring,
+			      AG71XX_RX_RING_SIZE, AG71XX_REG_RX_DESC);
+}
+
+static const struct file_operations ag71xx_fops_rx_ring = {
+	.open	= ag71xx_debugfs_generic_open,
+	.read	= read_file_rx_ring,
+	.owner	= THIS_MODULE
+};
+
 void ag71xx_debugfs_exit(struct ag71xx *ag)
 {
 	debugfs_remove_recursive(ag->debug.debugfs_dir);
@@ -165,6 +253,10 @@ int ag71xx_debugfs_init(struct ag71xx *ag)
 			    ag, &ag71xx_fops_int_stats);
 	debugfs_create_file("napi_stats", S_IRUGO, ag->debug.debugfs_dir,
 			    ag, &ag71xx_fops_napi_stats);
+	debugfs_create_file("tx_ring", S_IRUGO, ag->debug.debugfs_dir,
+			    ag, &ag71xx_fops_tx_ring);
+	debugfs_create_file("rx_ring", S_IRUGO, ag->debug.debugfs_dir,
+			    ag, &ag71xx_fops_rx_ring);
 
 	return 0;
 }
