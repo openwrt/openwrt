@@ -141,9 +141,7 @@ static const struct file_operations ag71xx_fops_napi_stats = {
 
 void ag71xx_debugfs_exit(struct ag71xx *ag)
 {
-	debugfs_remove(ag->debug.debugfs_napi_stats);
-	debugfs_remove(ag->debug.debugfs_int_stats);
-	debugfs_remove(ag->debug.debugfs_dir);
+	debugfs_remove_recursive(ag->debug.debugfs_dir);
 }
 
 int ag71xx_debugfs_init(struct ag71xx *ag)
@@ -151,31 +149,14 @@ int ag71xx_debugfs_init(struct ag71xx *ag)
 	ag->debug.debugfs_dir = debugfs_create_dir(ag->dev->name,
 						   ag71xx_debugfs_root);
 	if (!ag->debug.debugfs_dir)
-		goto err;
+		return -ENOMEM;
 
-	ag->debug.debugfs_int_stats =
-			debugfs_create_file("int_stats",
-					    S_IRUGO,
-					    ag->debug.debugfs_dir,
-					    ag,
-					    &ag71xx_fops_int_stats);
-	if (!ag->debug.debugfs_int_stats)
-		goto err;
-
-	ag->debug.debugfs_napi_stats =
-			debugfs_create_file("napi_stats",
-					    S_IRUGO,
-					    ag->debug.debugfs_dir,
-					    ag,
-					    &ag71xx_fops_napi_stats);
-	if (!ag->debug.debugfs_napi_stats)
-		goto err;
+	debugfs_create_file("int_stats", S_IRUGO, ag->debug.debugfs_dir,
+			    ag, &ag71xx_fops_int_stats);
+	debugfs_create_file("napi_stats", S_IRUGO, ag->debug.debugfs_dir,
+			    ag, &ag71xx_fops_napi_stats);
 
 	return 0;
-
-err:
-	ag71xx_debugfs_exit(ag);
-	return -ENOMEM;
 }
 
 int ag71xx_debugfs_root_init(void)
