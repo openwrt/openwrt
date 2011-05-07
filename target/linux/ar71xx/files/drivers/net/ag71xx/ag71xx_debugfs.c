@@ -99,11 +99,18 @@ static ssize_t read_file_napi_stats(struct file *file, char __user *user_buf,
 {
 	struct ag71xx *ag = file->private_data;
 	struct ag71xx_napi_stats *stats = &ag->debug.napi_stats;
-	char buf[2048];
+	char *buf;
+	unsigned int buflen;
 	unsigned int len = 0;
 	unsigned long rx_avg = 0;
 	unsigned long tx_avg = 0;
+	int ret;
 	int i;
+
+	buflen = 2048;
+	buf = kmalloc(buflen, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
 
 	if (stats->rx_count)
 		rx_avg = stats->rx_packets / stats->rx_count;
@@ -111,26 +118,29 @@ static ssize_t read_file_napi_stats(struct file *file, char __user *user_buf,
 	if (stats->tx_count)
 		tx_avg = stats->tx_packets / stats->tx_count;
 
-	len += snprintf(buf + len, sizeof(buf) - len, "%3s  %10s %10s\n",
+	len += snprintf(buf + len, buflen - len, "%3s  %10s %10s\n",
 			"len", "rx", "tx");
 
 	for (i = 1; i <= AG71XX_NAPI_WEIGHT; i++)
-		len += snprintf(buf + len, sizeof(buf) - len,
+		len += snprintf(buf + len, buflen - len,
 				"%3d: %10lu %10lu\n",
 				i, stats->rx[i], stats->tx[i]);
 
-	len += snprintf(buf + len, sizeof(buf) - len, "\n");
+	len += snprintf(buf + len, buflen - len, "\n");
 
-	len += snprintf(buf + len, sizeof(buf) - len, "%3s: %10lu %10lu\n",
+	len += snprintf(buf + len, buflen - len, "%3s: %10lu %10lu\n",
 			"sum", stats->rx_count, stats->tx_count);
-	len += snprintf(buf + len, sizeof(buf) - len, "%3s: %10lu %10lu\n",
+	len += snprintf(buf + len, buflen - len, "%3s: %10lu %10lu\n",
 			"avg", rx_avg, tx_avg);
-	len += snprintf(buf + len, sizeof(buf) - len, "%3s: %10lu %10lu\n",
+	len += snprintf(buf + len, buflen - len, "%3s: %10lu %10lu\n",
 			"max", stats->rx_packets_max, stats->tx_packets_max);
-	len += snprintf(buf + len, sizeof(buf) - len, "%3s: %10lu %10lu\n",
+	len += snprintf(buf + len, buflen - len, "%3s: %10lu %10lu\n",
 			"pkt", stats->rx_packets, stats->tx_packets);
 
-	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
+	ret = simple_read_from_buffer(user_buf, count, ppos, buf, len);
+	kfree(buf);
+
+	return ret;
 }
 
 static const struct file_operations ag71xx_fops_napi_stats = {
