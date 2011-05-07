@@ -652,6 +652,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 				  DMA_TO_DEVICE);
 
 	ring->buf[i].skb = skb;
+	ring->buf[i].timestamp = jiffies;
 
 	/* setup descriptor fields */
 	desc->data = (u32) dma_addr;

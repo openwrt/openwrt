@@ -91,7 +91,7 @@ struct ag71xx_buf {
 	struct sk_buff		*skb;
 	struct ag71xx_desc	*desc;
 	dma_addr_t		dma_addr;
-	u32			pad;
+	unsigned long		timestamp;
 };
 
 struct ag71xx_ring {
