@@ -1,6 +1,14 @@
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -23,7 +23,7 @@
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2005 Broadcom Corporation
+  * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
++ * Copyright (C) 2010-2011 Hauke Mehrtens <hauke@hauke-m.de>
+  *
+  * This program is free software; you can redistribute  it and/or modify it
+  * under  the terms of  the GNU General  Public License as published by the
+@@ -23,7 +24,7 @@
  static char nvram_buf[NVRAM_SPACE];
  
  /* Probe for NVRAM header */
@@ -11,7 +19,15 @@
  	struct nvram_header *header;
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -156,6 +156,22 @@ static void bcm47xx_fill_sprom(struct ss
+@@ -3,6 +3,7 @@
+  *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
+  *  Copyright (C) 2006 Michael Buesch <mb@bu3sch.de>
+  *  Copyright (C) 2010 Waldemar Brodkorb <wbx@openadk.org>
++ *  Copyright (C) 2010-2011 Hauke Mehrtens <hauke@hauke-m.de>
+  *
+  *  This program is free software; you can redistribute  it and/or modify it
+  *  under  the terms of  the GNU General  Public License as published by the
+@@ -156,6 +157,22 @@ static void bcm47xx_fill_sprom(struct ss
  	}
  }
  
@@ -20,7 +36,7 @@
 +	char prefix[10];
 +
 +	if (bus->bustype == SSB_BUSTYPE_PCI) {
-+		snprintf(prefix, sizeof(prefix), "pci/%x/%x/",
++		snprintf(prefix, sizeof(prefix), "pci/%u/%u/",
 +			 bus->host_pci->bus->number + 1,
 +			 PCI_SLOT(bus->host_pci->devfn));
 +		bcm47xx_fill_sprom(out, prefix);
@@ -34,7 +50,7 @@
  static int bcm47xx_get_invariants(struct ssb_bus *bus,
  				   struct ssb_init_invariants *iv)
  {
-@@ -212,6 +228,11 @@ void __init plat_mem_setup(void)
+@@ -212,6 +229,11 @@ void __init plat_mem_setup(void)
  	char buf[100];
  	struct ssb_mipscore *mcore;
  

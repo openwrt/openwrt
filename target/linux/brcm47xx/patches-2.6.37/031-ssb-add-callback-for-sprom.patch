@@ -40,7 +40,7 @@
  	int err;
  	u16 *buf;
  
-@@ -707,10 +706,14 @@ static int ssb_pci_sprom_get(struct ssb_
+@@ -707,10 +706,17 @@ static int ssb_pci_sprom_get(struct ssb_
  		if (err) {
  			/* All CRC attempts failed.
  			 * Maybe there is no SPROM on the device?
@@ -56,6 +56,9 @@
 +					   " fallback SPROM failed (err %d)\n",
 +					   err);
 +			} else {
++				ssb_dprintk(KERN_DEBUG PFX "Using SPROM"
++					    " revision %d provided by"
++					    " platform.\n", sprom->revision);
  				err = 0;
  				goto out_free;
  			}

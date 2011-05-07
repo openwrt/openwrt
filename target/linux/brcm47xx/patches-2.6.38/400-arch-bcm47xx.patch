@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -92,3 +92,30 @@ int nvram_getenv(char *name, char *val,
+@@ -93,3 +93,30 @@ int nvram_getenv(char *name, char *val,
  	return NVRAM_ERR_ENVNOTFOUND;
  }
  EXPORT_SYMBOL(nvram_getenv);
@@ -33,7 +33,7 @@
 +EXPORT_SYMBOL(nvram_get);
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -311,3 +311,20 @@ void __init plat_mem_setup(void)
+@@ -312,3 +312,20 @@ void __init plat_mem_setup(void)
  	_machine_halt = bcm47xx_machine_halt;
  	pm_power_off = bcm47xx_machine_halt;
  }

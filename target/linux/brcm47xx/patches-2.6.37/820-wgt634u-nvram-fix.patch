@@ -245,7 +245,7 @@ out the configuration than the in kernel cfe config reader.
 +
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -21,6 +21,8 @@
+@@ -22,6 +22,8 @@
  #include <asm/mach-bcm47xx/bcm47xx.h>
  
  static char nvram_buf[NVRAM_SPACE];
@@ -254,7 +254,7 @@ out the configuration than the in kernel cfe config reader.
  
  /* Probe for NVRAM header */
  static void early_nvram_init(void)
-@@ -33,6 +35,25 @@ static void early_nvram_init(void)
+@@ -34,6 +36,25 @@ static void early_nvram_init(void)
  
  	base = mcore->flash_window;
  	lim = mcore->flash_window_size;
@@ -280,7 +280,7 @@ out the configuration than the in kernel cfe config reader.
  
  	off = FLASH_MIN;
  	while (off <= lim) {
-@@ -74,6 +95,12 @@ int nvram_getenv(char *name, char *val,
+@@ -75,6 +96,12 @@ int nvram_getenv(char *name, char *val,
  	if (!nvram_buf[0])
  		early_nvram_init();
  
@@ -293,7 +293,7 @@ out the configuration than the in kernel cfe config reader.
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
  	end = nvram_buf + sizeof(nvram_buf) - 2;
-@@ -103,6 +130,9 @@ char *nvram_get(const char *name)
+@@ -104,6 +131,9 @@ char *nvram_get(const char *name)
  	if (!nvram_buf[0])
  		early_nvram_init();
  
