@@ -136,8 +136,6 @@ struct ag71xx_napi_stats {
 
 struct ag71xx_debug {
 	struct dentry		*debugfs_dir;
-	struct dentry		*debugfs_int_stats;
-	struct dentry		*debugfs_napi_stats;
 
 	struct ag71xx_int_stats int_stats;
 	struct ag71xx_napi_stats napi_stats;
