@@ -63,6 +63,7 @@ static void ar913x_wmac_init(void)
 
 static void ar934x_wmac_init(void)
 {
+	ar9xxx_wmac_device.name = "ar934x_wmac";
 	ar9xxx_wmac_resources[0].start = AR934X_WMAC_BASE;
 	ar9xxx_wmac_resources[0].end = AR934X_WMAC_BASE + AR934X_WMAC_SIZE - 1;
 }
