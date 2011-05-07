@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -62,6 +62,11 @@ static void bcm47xx_machine_halt(void)
+@@ -63,6 +63,11 @@ static void bcm47xx_machine_halt(void)
  	if (nvram_getprefix(prefix, name, buf, sizeof(buf)) >= 0)\
  		sprom->_outvar = simple_strtoul(buf, NULL, 0);
  
@@ -12,7 +12,7 @@
  static inline int nvram_getprefix(const char *prefix, char *name,
  				  char *buf, int len)
  {
-@@ -75,6 +80,27 @@ static inline int nvram_getprefix(const
+@@ -76,6 +81,27 @@ static inline int nvram_getprefix(const
  	return nvram_getenv(name, buf, len);
  }
  
@@ -40,7 +40,7 @@
  static void bcm47xx_fill_sprom(struct ssb_sprom *sprom, const char *prefix)
  {
  	char buf[100];
-@@ -84,7 +110,8 @@ static void bcm47xx_fill_sprom(struct ss
+@@ -85,7 +111,8 @@ static void bcm47xx_fill_sprom(struct ss
  
  	sprom->revision = 1; /* Fallback: Old hardware does not define this. */
  	READ_FROM_NVRAM(revision, "sromrev", buf);
@@ -50,7 +50,7 @@
  		nvram_parse_macaddr(buf, sprom->il0mac);
  	if (nvram_getprefix(prefix, "et0macaddr", buf, sizeof(buf)) >= 0)
  		nvram_parse_macaddr(buf, sprom->et0mac);
-@@ -110,20 +137,36 @@ static void bcm47xx_fill_sprom(struct ss
+@@ -111,20 +138,36 @@ static void bcm47xx_fill_sprom(struct ss
  	READ_FROM_NVRAM(pa1hib0, "pa1hib0", buf);
  	READ_FROM_NVRAM(pa1hib2, "pa1hib1", buf);
  	READ_FROM_NVRAM(pa1hib1, "pa1hib2", buf);
@@ -97,7 +97,7 @@
  	READ_FROM_NVRAM(rxpo2g, "rxpo2g", buf);
  	READ_FROM_NVRAM(rxpo5g, "rxpo5g", buf);
  	READ_FROM_NVRAM(rssisav2g, "rssisav2g", buf);
-@@ -135,10 +178,18 @@ static void bcm47xx_fill_sprom(struct ss
+@@ -136,10 +179,18 @@ static void bcm47xx_fill_sprom(struct ss
  	READ_FROM_NVRAM(rssismf5g, "rssismf5g", buf);
  	READ_FROM_NVRAM(bxa5g, "bxa5g", buf);
  	READ_FROM_NVRAM(cck2gpo, "cck2gpo", buf);
