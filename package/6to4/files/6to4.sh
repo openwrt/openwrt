@@ -160,7 +160,7 @@ setup_interface_6to4() {
 
 		[ "$defaultroute" = 1 ] && {
 			logger -t "$link" " * Adding default route"
-			ip -6 route add 2000::/3 via ::192.88.99.1 metric ${metric:-1} dev $link
+			ip -6 route add ::/0 via ::192.88.99.1 metric ${metric:-1} dev $link
 			uci_set_state network "$cfg" defaultroute 1
 		}
 
@@ -239,7 +239,7 @@ stop_interface_6to4() {
 		}
 
 		[ "$defaultroute" = "1" ] && {
-			ip -6 route del 2000::/3 via ::192.88.99.1 dev $link metric 1
+			ip -6 route del ::/0 via ::192.88.99.1 dev $link metric 1
 		}
 
 		ip addr del $local6 dev $link
