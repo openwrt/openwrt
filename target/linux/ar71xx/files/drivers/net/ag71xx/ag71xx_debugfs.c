@@ -184,14 +184,15 @@ static ssize_t read_file_ring(struct file *file, char __user *user_buf,
 	desc_hw = ag71xx_rr(ag, desc_reg);
 	for (i = 0; i < ring_size; i++) {
 		struct ag71xx_buf *ab = &ring->buf[i];
+		u32 desc_dma = ((u32) ring->descs_dma) + i * ring->desc_size;
 
 		len += snprintf(buf + len, buflen - len,
 			"%3d %c%c%c %08x %08x %08x %08x %c %10lu\n",
 			i,
 			(i == curr) ? 'C' : ' ',
 			(i == dirty) ? 'D' : ' ',
-			(desc_hw == ab->desc_dma) ? 'H' : ' ',
-			ab->desc_dma,
+			(desc_hw == desc_dma) ? 'H' : ' ',
+			desc_dma,
 			ab->desc->next,
 			ab->desc->data,
 			ab->desc->ctrl,
