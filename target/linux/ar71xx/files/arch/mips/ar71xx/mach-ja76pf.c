@@ -22,6 +22,7 @@
 #define JA76PF_GPIO_I2C_SDA		1
 #define JA76PF_GPIO_LED_1		5
 #define JA76PF_GPIO_LED_2		4
+#define JA76PF_GPIO_LED_3		3
 #define JA76PF_GPIO_BTN_RESET		11
 
 static struct gpio_led ja76pf_leds_gpio[] __initdata = {
@@ -32,6 +33,10 @@ static struct gpio_led ja76pf_leds_gpio[] __initdata = {
 	}, {
 		.name		= "ja76pf:green:led2",
 		.gpio		= JA76PF_GPIO_LED_2,
+		.active_low	= 1,
+	}, {
+		.name		= "ja76pf:green:led3",
+		.gpio		= JA76PF_GPIO_LED_3,
 		.active_low	= 1,
 	}
 };
