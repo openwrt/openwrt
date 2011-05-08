@@ -233,37 +233,39 @@ static inline u16 mk_high_addr(u32 reg)
 
 static u32 __ar7240sw_reg_read(struct mii_bus *mii, u32 reg)
 {
+	unsigned long flags;
 	u16 phy_addr;
 	u16 phy_reg;
 	u32 hi, lo;
 
 	reg = (reg & 0xfffffffc) >> 2;
-
-	ag71xx_mdio_mii_write(mii->priv, 0x1f, 0x10, mk_high_addr(reg));
-
 	phy_addr = mk_phy_addr(reg);
 	phy_reg = mk_phy_reg(reg);
 
+	local_irq_save(flags);
+	ag71xx_mdio_mii_write(mii->priv, 0x1f, 0x10, mk_high_addr(reg));
 	lo = (u32) ag71xx_mdio_mii_read(mii->priv, phy_addr, phy_reg);
 	hi = (u32) ag71xx_mdio_mii_read(mii->priv, phy_addr, phy_reg + 1);
+	local_irq_restore(flags);
 
 	return (hi << 16) | lo;
 }
 
 static void __ar7240sw_reg_write(struct mii_bus *mii, u32 reg, u32 val)
 {
+	unsigned long flags;
 	u16 phy_addr;
 	u16 phy_reg;
 
 	reg = (reg & 0xfffffffc) >> 2;
-
-	ag71xx_mdio_mii_write(mii->priv, 0x1f, 0x10, mk_high_addr(reg));
-
 	phy_addr = mk_phy_addr(reg);
 	phy_reg = mk_phy_reg(reg);
 
+	local_irq_save(flags);
+	ag71xx_mdio_mii_write(mii->priv, 0x1f, 0x10, mk_high_addr(reg));
 	ag71xx_mdio_mii_write(mii->priv, phy_addr, phy_reg + 1, (val >> 16));
 	ag71xx_mdio_mii_write(mii->priv, phy_addr, phy_reg, (val & 0xffff));
+	local_irq_restore(flags);
 }
 
 static u32 ar7240sw_reg_read(struct mii_bus *mii, u32 reg_addr)
