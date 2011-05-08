@@ -80,6 +80,11 @@ start() {
 	}
 
 	load_modules /etc/modules.d/*
+
+	# another round of USB coldplugging to kick devices into operation which lacked drivers before
+	for dev in /sys/bus/usb/devices/*/uevent; do
+		[ -e "$dev" ] && echo -n add > "$dev"
+	done
 }
 
 stop() {
