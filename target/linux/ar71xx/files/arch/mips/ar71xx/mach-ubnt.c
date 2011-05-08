@@ -250,9 +250,6 @@ static void __init ubnt_m_setup(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
-	ar71xx_eth0_data.fifo_cfg1 = 0x0010ffff;
-	ar71xx_eth0_data.fifo_cfg2 = 0x015500aa;
-	ar71xx_eth0_data.fifo_cfg3 = 0x01f00140;
 
 	ar71xx_add_device_eth(0);
 
@@ -287,9 +284,6 @@ static void __init ubnt_nano_m_setup(void)
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
-	ar71xx_eth1_data.fifo_cfg1 = 0x0010ffff;
-	ar71xx_eth1_data.fifo_cfg2 = 0x015500aa;
-	ar71xx_eth1_data.fifo_cfg3 = 0x01f00140;
 
 	ar71xx_add_device_eth(1);
 }
