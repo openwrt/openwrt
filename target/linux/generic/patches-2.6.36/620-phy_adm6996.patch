@@ -1,13 +1,15 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -93,6 +93,11 @@ config MICREL_PHY
+@@ -93,6 +93,13 @@ config MICREL_PHY
  	---help---
  	  Supports the KSZ9021, VSC8201, KS8001 PHYs.
  
 +config ADM6996_PHY
 +	tristate "Driver for ADM6996 switches"
++	select SWCONFIG
 +	---help---
-+	  Currently supports the ADM6996F switch
++	  Currently supports the ADM6996FC and ADM6996M switches.
++	  Support for FC is very limited.
 +
  config FIXED_PHY
  	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
