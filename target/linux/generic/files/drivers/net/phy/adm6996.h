@@ -2,6 +2,7 @@
  * ADM6996 switch driver
  *
  * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (c) 2010,2011 Peter Lebbing <peter@digitalbrains.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of the GNU General Public License v2 as published by the
@@ -10,9 +11,17 @@
 #ifndef __ADM6996_H
 #define __ADM6996_H
 
-#define ADM_PHY_PORTS	5
+/*
+ * ADM_PHY_PORTS: Number of ports with a PHY.
+ * We only control ports 0 to 3, because if 4 is connected, it is most likely
+ * not connected to the switch but to a separate MII and MAC for the WAN port.
+ */
+#define ADM_PHY_PORTS	4
+#define ADM_NUM_PORTS	6
 #define ADM_CPU_PORT	5
-#define ADM_WAN_PORT	0 /* FIXME: dynamic ? */
+
+#define ADM_NUM_VLANS 16
+#define ADM_VLAN_MAX_ID 4094
 
 enum admreg {
 	ADM_EEPROM_BASE		= 0x0,
@@ -22,7 +31,21 @@ enum admreg {
 		ADM_P3_CFG		= ADM_EEPROM_BASE + 7,
 		ADM_P4_CFG		= ADM_EEPROM_BASE + 8,
 		ADM_P5_CFG		= ADM_EEPROM_BASE + 9,
+		ADM_SYSC0		= ADM_EEPROM_BASE + 0xa,
+		ADM_VLAN_PRIOMAP	= ADM_EEPROM_BASE + 0xe,
+		ADM_SYSC3		= ADM_EEPROM_BASE + 0x11,
+		/* Input Force No Tag Enable */
+		ADM_IFNTE		= ADM_EEPROM_BASE + 0x20,
+		ADM_VID_CHECK		= ADM_EEPROM_BASE + 0x26,
+		ADM_P0_PVID		= ADM_EEPROM_BASE + 0x28,
+		ADM_P1_PVID		= ADM_EEPROM_BASE + 0x29,
+		/* Output Tag Bypass Enable and P2 PVID */
+		ADM_OTBE_P2_PVID	= ADM_EEPROM_BASE + 0x2a,
+		ADM_P3_P4_PVID		= ADM_EEPROM_BASE + 0x2b,
+		ADM_P5_PVID		= ADM_EEPROM_BASE + 0x2c,
 	ADM_EEPROM_EXT_BASE	= 0x40,
+#define ADM_VLAN_FILT_L(n) (ADM_EEPROM_EXT_BASE + 2 * (n))
+#define ADM_VLAN_FILT_H(n) (ADM_EEPROM_EXT_BASE + 1 + 2 * (n))
 	ADM_COUNTER_BASE	= 0xa0,
 		ADM_SIG0		= ADM_COUNTER_BASE + 0,
 		ADM_SIG1		= ADM_COUNTER_BASE + 1,
@@ -31,8 +54,8 @@ enum admreg {
 };
 
 /* Chip identification patterns */
-#define	ADM_SIG0_MASK	0xfff0
-#define ADM_SIG0_VAL	0x1020
+#define	ADM_SIG0_MASK	0xffff
+#define ADM_SIG0_VAL	0x1023
 #define ADM_SIG1_MASK	0xffff
 #define ADM_SIG1_VAL	0x0007
 
@@ -84,8 +107,32 @@ enum {
 	),
 };
 
-#define ADM_PORTCFG_PPID(N) ((n & 0x3) << 8)
+#define ADM_PORTCFG_PPID(n) ((n & 0x3) << 8)
 #define ADM_PORTCFG_PVID(n) ((n & 0xf) << 10)
+#define ADM_PORTCFG_PVID_MASK (0xf << 10)
+
+#define ADM_IFNTE_MASK (0x3f << 9)
+#define ADM_VID_CHECK_MASK (0x3f << 6)
+
+#define ADM_P0_PVID_VAL(n) ((((n) & 0xff0) >> 4) << 0)
+#define ADM_P1_PVID_VAL(n) ((((n) & 0xff0) >> 4) << 0)
+#define ADM_P2_PVID_VAL(n) ((((n) & 0xff0) >> 4) << 0)
+#define ADM_P3_PVID_VAL(n) ((((n) & 0xff0) >> 4) << 0)
+#define ADM_P4_PVID_VAL(n) ((((n) & 0xff0) >> 4) << 8)
+#define ADM_P5_PVID_VAL(n) ((((n) & 0xff0) >> 4) << 0)
+#define ADM_P2_PVID_MASK 0xff
+
+#define ADM_OTBE(n) (((n) & 0x3f) << 8)
+#define ADM_OTBE_MASK (0x3f << 8)
+
+/* ADM_SYSC0 */
+enum {
+	ADM_NTTE	= (1 << 2),	/* New Tag Transmit Enable */
+	ADM_RVID1	= (1 << 8)	/* Replace VLAN ID 1 */
+};
+
+/* Tag Based VLAN in ADM_SYSC3 */
+#define ADM_TBV (1 << 5)
 
 static const u8 adm_portcfg[] = {
 	[0] = ADM_P0_CFG,
@@ -95,6 +142,16 @@ static const u8 adm_portcfg[] = {
 	[4] = ADM_P4_CFG,
 	[5] = ADM_P5_CFG,
 };
+
+/* Fields in ADM_VLAN_FILT_L(x) */
+#define ADM_VLAN_FILT_FID(n) (((n) & 0xf) << 12)
+#define ADM_VLAN_FILT_TAGGED(n) (((n) & 0x3f) << 6)
+#define ADM_VLAN_FILT_MEMBER(n) (((n) & 0x3f) << 0)
+#define ADM_VLAN_FILT_MEMBER_MASK 0x3f
+/* Fields in ADM_VLAN_FILT_H(x) */
+#define ADM_VLAN_FILT_VALID (1 << 15)
+#define ADM_VLAN_FILT_VID(n) (((n) & 0xfff) << 0)
+
 
 /*
  * Split the register address in phy id and register
