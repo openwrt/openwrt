@@ -87,6 +87,21 @@ define Image/Build/RedBoot
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/openwrt-$(1)-vmlinux.gz bs=65536 conv=sync
 endef
 
+define Image/Build/SPW303V
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp \
+		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
+		$(6) $(7) $(8) $(9)
+	# Fix up header
+	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp \
+		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-sysupgrade.bin
+	$(STAGING_DIR_HOST)/bin/xorimage -i $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-sysupgrade.bin \
+		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-factory.bin
+	rm -f $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp
+endef
+
 define Image/Build/CFEOLD
 	$(TOPDIR)/scripts/brcmImage.pl -t -p	\
 		-b $(2) -c $(3)			\
@@ -209,6 +224,9 @@ define Image/Build
 
 	#HW553
 	$(call Image/Build/CFEHW553,$(1),HW553,6358,0x20000,HW553)
+
+	# T-Com Speedport W 303V Typ B
+	$(call Image/Build/SPW303V,$(1),96358-502V,6358,SPW303V)
 endef
 
 $(eval $(call BuildImage))
