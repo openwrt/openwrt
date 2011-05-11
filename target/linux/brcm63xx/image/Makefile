@@ -44,11 +44,11 @@ endef
 define Image/Build/CFEFIXUP
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin \
-		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
-		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
-		--info1 "+$(call Image/LimitName16,$(4))" --info2 $(1) \
-		$(6) $(7) $(8) $(9)
+		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
+		--boardid $(2) --chipid $(4) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --rsa-signature "$(6)" \
+		--info1 "+$(call Image/LimitName16,$(3))" --info2 $(1) \
+		$(7) $(8) $(9) $(10)
 endef
 
 define Image/Build/CFEHW553
@@ -159,13 +159,13 @@ define Image/Build
 	# RTA1320_16M (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
 	# Tecom GW6000
-	$(call Image/Build/CFEFIXUP,$(1),96348GW,6348,GW6000)
+	$(call Image/Build/CFEFIXUP,$(1),96348GW,GW6000,6348,GW6000)
 	# Tecom GW6200
-	$(call Image/Build/CFEFIXUP,$(1),96348GW,6348,GW6200,$(shell printf '\x99'))
+	$(call Image/Build/CFEFIXUP,$(1),96348GW,GW6200,6348,GW6200,$(shell printf '\x99'))
 	# Neufbox4
 	$(call Image/Build/CFE,$(1),96358VW,6358,NEUFBOX4,OpenWRT-$(REVISION))
 	# Comtrend 536, 5621
-	$(call Image/Build/CFEFIXUP,$(1),96348GW-11,6348,CT536_CT5621)
+	$(call Image/Build/CFEFIXUP,$(1),96348GW-11,CT536_CT5621,6348,CT536_CT5621)
 	# Davolink DV201AMR
 	$(call Image/Build/CFEOLD,$(1),DV201AMR,6348)
 	# USR 9108
@@ -203,7 +203,7 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),CPVA642,6358,CPA-ZNTE60T,,--signature "Telsey Tlc",--signature2 "99.99.999",--second-image-flag "0")
 
 	# T-Com Speedport W 500V
-	$(call Image/Build/CFEFIXUP,$(1),96348GW,6348,SPW500V)
+	$(call Image/Build/CFEFIXUP,$(1),96348GW,SPW500V,6348,SPW500V)
 
 	#HW553
 	$(call Image/Build/CFEHW553,$(1),HW553,6358,0x20000,HW553)
