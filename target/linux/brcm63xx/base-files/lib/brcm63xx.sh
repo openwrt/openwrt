@@ -39,8 +39,13 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
-	"bcm63xx/96358GW "* | "bcm63xx/SPW500V "*)
+	"bcm63xx/SPW500V "*)
 		status_led="power:green"
+		brcm63xx_has_reset_button="true"
+		ifname=eth0
+		;;
+	"bcm63xx/AW4139 "*)
+		status_led="dsl-274xb:green:power"
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
