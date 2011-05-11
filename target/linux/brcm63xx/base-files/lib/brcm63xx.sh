@@ -49,6 +49,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
+	"bcm63xx/96358-502V "*)
+		status_led="spw303v:green:power+adsl"
+		brcm63xx_has_reset_button="true"
+		ifname=eth0
+		;;
 	"bcm63xx/CPVA642 "* )
 		status_led="power:green"
 		brcm63xx_has_reset_button="true"
