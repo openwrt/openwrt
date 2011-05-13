@@ -52,8 +52,7 @@ if( opendir SD, "$Bin/../staging_dir" )
 	closedir SD;
 
 	# Find gdb
-	my ($gdb) = glob("$Bin/../staging_dir/toolchain-${arch}_*_${libc}/bin/*-gdb");
-
+	my ($gdb) = glob("$Bin/../staging_dir/toolchain-${arch}_*_${libc}*/bin/*-gdb");
 	if( defined($gdb) && -x $gdb )
 	{
 		my ( $fh, $fp ) = tempfile();
