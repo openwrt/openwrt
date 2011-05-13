@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/image.mk
 JFFS2_BLOCKSIZE=128k
 JFFS2OPTS += --little-endian --pagesize=0x800 --no-cleanmarkers --pad
 
-UBIFS_OPTS = -m 2048 -e 126KiB -c 1996
+UBIFS_OPTS = -m 2048 -e 126KiB -c 1996 -U
 UBINIZE_OPTS = -m 2048 -p 128KiB -s 512
 
 define Image/BuildKernel
