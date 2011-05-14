@@ -145,8 +145,8 @@ static void __init ubnt_init_secondary_mac(unsigned char *mac_base)
 	ar71xx_eth1_data.mac_addr[0] |= 0x02;
 }
 
-#define UBNT_RS_WAN_PHYMASK	(1 << 20)
-#define UBNT_RS_LAN_PHYMASK	((1 << 16) | (1 << 17) | (1 << 18) | (1 << 19))
+#define UBNT_RS_WAN_PHYMASK	BIT(20)
+#define UBNT_RS_LAN_PHYMASK	(BIT(16) | BIT(17) | BIT(18) | BIT(19))
 
 static void __init ubnt_rs_setup(void)
 {
@@ -175,8 +175,8 @@ static void __init ubnt_rs_setup(void)
 MIPS_MACHINE(AR71XX_MACH_UBNT_RS, "UBNT-RS", "Ubiquiti RouterStation",
 	     ubnt_rs_setup);
 
-#define UBNT_RSPRO_WAN_PHYMASK	(1 << 4)
-#define UBNT_RSPRO_LAN_PHYMASK	((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3))
+#define UBNT_RSPRO_WAN_PHYMASK	BIT(4)
+#define UBNT_RSPRO_LAN_PHYMASK	(BIT(0) | BIT(1) | BIT(2) | BIT(3))
 
 static void __init ubnt_rspro_setup(void)
 {
@@ -214,7 +214,7 @@ static void __init ubnt_lsx_setup(void)
 
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSX, "UBNT-LSX", "Ubiquiti LSX", ubnt_lsx_setup);
 
-#define UBNT_LSSR71_PHY_MASK	(1 << 1)
+#define UBNT_LSSR71_PHY_MASK	BIT(1)
 
 static void __init ubnt_lssr71_setup(void)
 {
