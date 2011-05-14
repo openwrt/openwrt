@@ -25,6 +25,7 @@
 #include <linux/platform_device.h>
 #include <linux/ethtool.h>
 #include <linux/etherdevice.h>
+#include <linux/if_vlan.h>
 #include <linux/phy.h>
 #include <linux/skbuff.h>
 #include <linux/dma-mapping.h>
@@ -34,8 +35,6 @@
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/platform.h>
-
-#define ETH_FCS_LEN	4
 
 #define AG71XX_DRV_NAME		"ag71xx"
 #define AG71XX_DRV_VERSION	"0.5.35"
@@ -54,7 +53,7 @@
 #define AG71XX_TX_MTU_LEN	1540
 #define AG71XX_RX_PKT_RESERVE	64
 #define AG71XX_RX_PKT_SIZE	\
-	(AG71XX_RX_PKT_RESERVE + ETH_HLEN + ETH_FRAME_LEN + ETH_FCS_LEN)
+	(AG71XX_RX_PKT_RESERVE + ETH_FRAME_LEN + ETH_FCS_LEN + VLAN_HLEN)
 
 #define AG71XX_TX_RING_SIZE	64
 #define AG71XX_TX_THRES_STOP	(AG71XX_TX_RING_SIZE - 4)
