@@ -235,6 +235,9 @@ static void __init ubnt_lssr71_setup(void)
 MIPS_MACHINE(AR71XX_MACH_UBNT_LSSR71, "UBNT-LS-SR71", "Ubiquiti LS-SR71",
 	     ubnt_lssr71_setup);
 
+#define UBNT_M_WAN_PHYMASK	BIT(4)
+#define UBNT_M_LAN_PHYMASK	BIT(0)
+
 static void __init ubnt_m_setup(void)
 {
 	u8 *mac1 = (u8 *) KSEG1ADDR(0x1fff0000);
@@ -243,13 +246,14 @@ static void __init ubnt_m_setup(void)
 
 	ar71xx_add_device_m25p80(NULL);
 
-	ar71xx_add_device_mdio(~0);
+	ar71xx_add_device_mdio(~(UBNT_M_WAN_PHYMASK | UBNT_M_LAN_PHYMASK));
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac1, 0);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac2, 0);
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.phy_mask = UBNT_M_WAN_PHYMASK;
 
 	ar71xx_add_device_eth(0);
 
@@ -310,12 +314,13 @@ static void __init ubnt_unifi_setup(void)
 
 	ar71xx_add_device_m25p80(NULL);
 
-	ar71xx_add_device_mdio(~0);
+	ar71xx_add_device_mdio(~UBNT_M_WAN_PHYMASK);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.phy_mask = UBNT_M_WAN_PHYMASK;
 
 	ar71xx_add_device_eth(0);
 
