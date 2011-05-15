@@ -60,7 +60,7 @@ define KernelPackage/net-zd1201
   TITLE:=Zydas ZD1201 support
   DEPENDS:=@USB_SUPPORT
   KCONFIG:=CONFIG_USB_ZD1201 +@DRIVER_WEXT_SUPPORT
-  FILES:=$(LINUX_DIR)/drivers/net/wireless/zd1201.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/wireless/zd1201.ko
   AUTOLOAD:=$(call AutoLoad,60,zd1201)
 endef
 

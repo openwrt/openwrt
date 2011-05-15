@@ -657,8 +657,8 @@ define KernelPackage/l2tp
   KCONFIG:=CONFIG_L2TP \
 	CONFIG_L2TP_V3=y \
 	CONFIG_L2TP_DEBUGFS=n
-  FILES:=$(LINUX_DIR)/net/l2tp/l2tp_core.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/net/l2tp/l2tp_netlink.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/l2tp/l2tp_core.ko \
+	$(LINUX_DIR)/net/l2tp/l2tp_netlink.ko
   AUTOLOAD:=$(call AutoLoad,32,l2tp_core l2tp_netlink)
 endef
 
@@ -674,7 +674,7 @@ define KernelPackage/l2tp-eth
   TITLE:=L2TP ethernet pseudowire support for L2TPv3
   DEPENDS:=+kmod-l2tp
   KCONFIG:=CONFIG_L2TP_ETH
-  FILES:=$(LINUX_DIR)/net/l2tp/l2tp_eth.$(LINUX_KMOD_SUFFIX) 
+  FILES:=$(LINUX_DIR)/net/l2tp/l2tp_eth.ko
   AUTOLOAD:=$(call AutoLoad,33,l2tp_eth)
 endef
 
@@ -689,7 +689,7 @@ define KernelPackage/l2tp-ip
   TITLE:=L2TP IP encapsulation for L2TPv3
   DEPENDS:=+kmod-l2tp
   KCONFIG:=CONFIG_L2TP_IP
-  FILES:=$(LINUX_DIR)/net/l2tp/l2tp_ip.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/l2tp/l2tp_ip.ko
   AUTOLOAD:=$(call AutoLoad,33,l2tp_ip)
 endef
 
@@ -710,7 +710,7 @@ define KernelPackage/sctp
      CONFIG_SCTP_HMAC_NONE=n \
      CONFIG_SCTP_HMAC_SHA1=n \
      CONFIG_SCTP_HMAC_MD5=y
-  FILES:= $(LINUX_DIR)/net/sctp/sctp.$(LINUX_KMOD_SUFFIX)
+  FILES:= $(LINUX_DIR)/net/sctp/sctp.ko
   AUTOLOAD:= $(call AutoLoad,32,sctp)
   DEPENDS:=+kmod-libcrc32c +kmod-crypto-md5 +kmod-crypto-hmac
 endef
