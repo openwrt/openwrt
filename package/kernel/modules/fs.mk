@@ -220,10 +220,6 @@ define KernelPackage/fs-msdos
 $(call AddDepends/nls)
 endef
 
-define KernelPackage/fs-msdos/2.4
-  FILES:=$(LINUX_DIR)/fs/msdos/msdos.ko
-endef
-
 define KernelPackage/fs-msdos/description
  Kernel module for MSDOS filesystem support
 endef
@@ -357,12 +353,6 @@ define KernelPackage/fs-vfat
 	$(LINUX_DIR)/fs/fat/vfat.ko
   AUTOLOAD:=$(call AutoLoad,30,fat vfat)
 $(call AddDepends/nls)
-endef
-
-define KernelPackage/fs-vfat/2.4
-  FILES:= \
-	$(LINUX_DIR)/fs/fat/fat.ko \
-	$(LINUX_DIR)/fs/vfat/vfat.ko
 endef
 
 define KernelPackage/fs-vfat/description

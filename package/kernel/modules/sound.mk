@@ -22,34 +22,7 @@ endef
 $(eval $(call KernelPackage,pcspkr))
 
 
-define KernelPackage/sound-core
-  SUBMENU:=$(SOUND_MENU)
-  TITLE:=Sound support
-  DEPENDS:=@AUDIO_SUPPORT
-  KCONFIG:= \
-	CONFIG_SOUND \
-	CONFIG_SND \
-	CONFIG_SND_HWDEP \
-	CONFIG_SND_RAWMIDI \
-	CONFIG_SND_TIMER \
-	CONFIG_SND_PCM \
-	CONFIG_SND_SEQUENCER \
-	CONFIG_SND_VIRMIDI \
-	CONFIG_SND_SEQ_DUMMY \
-	CONFIG_SND_SEQUENCER_OSS=y \
-	CONFIG_HOSTAUDIO \
-	CONFIG_SND_PCM_OSS \
-	CONFIG_SND_MIXER_OSS \
-	CONFIG_SOUND_OSS_CORE_PRECLAIM=y
-  $(call AddDepends/input)
-endef
-
-define KernelPackage/sound-core/2.4
-  FILES:=$(LINUX_DIR)/drivers/sound/soundcore.ko
-  AUTOLOAD:=$(call AutoLoad,30,soundcore)
-endef
-
-# allow 2.6 targets to override the soundcore stuff
+# allow targets to override the soundcore stuff
 SOUNDCORE_LOAD ?= \
 	soundcore \
 	snd \
@@ -74,9 +47,28 @@ SOUNDCORE_FILES ?= \
 	$(LINUX_DIR)/sound/core/oss/snd-mixer-oss.ko \
 	$(LINUX_DIR)/sound/core/oss/snd-pcm-oss.ko
 
-define KernelPackage/sound-core/2.6
+define KernelPackage/sound-core
+  SUBMENU:=$(SOUND_MENU)
+  TITLE:=Sound support
+  DEPENDS:=@AUDIO_SUPPORT
+  KCONFIG:= \
+	CONFIG_SOUND \
+	CONFIG_SND \
+	CONFIG_SND_HWDEP \
+	CONFIG_SND_RAWMIDI \
+	CONFIG_SND_TIMER \
+	CONFIG_SND_PCM \
+	CONFIG_SND_SEQUENCER \
+	CONFIG_SND_VIRMIDI \
+	CONFIG_SND_SEQ_DUMMY \
+	CONFIG_SND_SEQUENCER_OSS=y \
+	CONFIG_HOSTAUDIO \
+	CONFIG_SND_PCM_OSS \
+	CONFIG_SND_MIXER_OSS \
+	CONFIG_SOUND_OSS_CORE_PRECLAIM=y
   FILES:=$(SOUNDCORE_FILES)
   AUTOLOAD:=$(call AutoLoad,30,$(SOUNDCORE_LOAD))
+  $(call AddDepends/input)
 endef
 
 define KernelPackage/sound-core/uml
