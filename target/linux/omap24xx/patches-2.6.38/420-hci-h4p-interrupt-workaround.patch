@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc7/arch/arm/mach-omap2/omap_hwmod_2420_data.c
-===================================================================
---- linux-2.6.38-rc7.orig/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-03-07 16:07:00.174343135 +0100
-+++ linux-2.6.38-rc7/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-03-07 16:09:15.601997493 +0100
+--- a/arch/arm/mach-omap2/omap_hwmod_2420_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2420_data.c
 @@ -362,7 +362,7 @@ static struct omap_hwmod_class uart_clas
  /* UART1 */
  
@@ -11,10 +9,8 @@ Index: linux-2.6.38-rc7/arch/arm/mach-omap2/omap_hwmod_2420_data.c
  };
  
  static struct omap_hwmod_dma_info uart1_sdma_reqs[] = {
-Index: linux-2.6.38-rc7/arch/arm/mach-omap2/serial.c
-===================================================================
---- linux-2.6.38-rc7.orig/arch/arm/mach-omap2/serial.c	2011-03-07 16:06:21.934958270 +0100
-+++ linux-2.6.38-rc7/arch/arm/mach-omap2/serial.c	2011-03-07 16:08:59.649922915 +0100
+--- a/arch/arm/mach-omap2/serial.c
++++ b/arch/arm/mach-omap2/serial.c
 @@ -546,10 +546,12 @@ static void omap_uart_idle_init(struct o
  		uart->padconf = 0;
  	}

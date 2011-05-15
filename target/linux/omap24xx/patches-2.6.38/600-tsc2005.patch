@@ -5,11 +5,9 @@
  include/linux/spi/tsc2005.h         |   30 +
  4 files changed, 1000 insertions(+)
 
-Index: linux-2.6.38-rc6/drivers/input/touchscreen/Kconfig
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/input/touchscreen/Kconfig	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/drivers/input/touchscreen/Kconfig	2011-02-24 00:23:46.456893349 +0100
-@@ -629,6 +629,17 @@
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
+@@ -629,6 +629,17 @@ config TOUCHSCREEN_TOUCHIT213
  	  To compile this driver as a module, choose M here: the
  	  module will be called touchit213.
  
@@ -27,11 +25,9 @@ Index: linux-2.6.38-rc6/drivers/input/touchscreen/Kconfig
  config TOUCHSCREEN_TSC2007
  	tristate "TSC2007 based touchscreens"
  	depends on I2C
-Index: linux-2.6.38-rc6/drivers/input/touchscreen/Makefile
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/input/touchscreen/Makefile	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/drivers/input/touchscreen/Makefile	2011-02-24 00:23:46.457893305 +0100
-@@ -45,6 +45,7 @@
+--- a/drivers/input/touchscreen/Makefile
++++ b/drivers/input/touchscreen/Makefile
+@@ -45,6 +45,7 @@ obj-$(CONFIG_TOUCHSCREEN_TNETV107X)	+= t
  obj-$(CONFIG_TOUCHSCREEN_TOUCHIT213)	+= touchit213.o
  obj-$(CONFIG_TOUCHSCREEN_TOUCHRIGHT)	+= touchright.o
  obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
@@ -39,10 +35,8 @@ Index: linux-2.6.38-rc6/drivers/input/touchscreen/Makefile
  obj-$(CONFIG_TOUCHSCREEN_TSC2007)	+= tsc2007.o
  obj-$(CONFIG_TOUCHSCREEN_UCB1400)	+= ucb1400_ts.o
  obj-$(CONFIG_TOUCHSCREEN_WACOM_W8001)	+= wacom_w8001.o
-Index: linux-2.6.38-rc6/drivers/input/touchscreen/tsc2005.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/input/touchscreen/tsc2005.c	2011-02-24 00:23:46.459893217 +0100
+--- /dev/null
++++ b/drivers/input/touchscreen/tsc2005.c
 @@ -0,0 +1,958 @@
 +/*
 + * TSC2005 touchscreen driver
@@ -1002,10 +996,8 @@ Index: linux-2.6.38-rc6/drivers/input/touchscreen/tsc2005.c
 +MODULE_AUTHOR("Lauri Leukkunen <lauri.leukkunen@nokia.com>");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:tsc2005");
-Index: linux-2.6.38-rc6/include/linux/spi/tsc2005.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/include/linux/spi/tsc2005.h	2011-02-24 00:23:46.459893217 +0100
+--- /dev/null
++++ b/include/linux/spi/tsc2005.h
 @@ -0,0 +1,30 @@
 +#ifndef _LINUX_SPI_TSC2005_H
 +#define _LINUX_SPI_TSC2005_H

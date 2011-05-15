@@ -29,7 +29,7 @@ of the EP93xx SoC. In a future kernel (>2.6.34) there may be a new file
  #if defined(CONFIG_DEPRECATED_PARAM_STRUCT)
  #include "compat.h"
  #endif
-@@ -989,9 +995,16 @@ static int c_show(struct seq_file *m, vo
+@@ -986,9 +992,16 @@ static int c_show(struct seq_file *m, vo
  	seq_puts(m, "\n");
  
  	seq_printf(m, "Hardware\t: %s\n", machine_name);

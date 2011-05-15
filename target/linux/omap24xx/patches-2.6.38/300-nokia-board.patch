@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-24 12:09:31.427080051 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c	2011-02-24 12:09:59.754956253 +0100
+--- a/arch/arm/mach-omap2/board-n8x0.c
++++ b/arch/arm/mach-omap2/board-n8x0.c
 @@ -15,8 +15,10 @@
  #include <linux/delay.h>
  #include <linux/gpio.h>
@@ -21,7 +19,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  
  #include "mux.h"
  
-@@ -194,6 +197,114 @@
+@@ -194,6 +197,114 @@ static struct omap_onenand_platform_data
  };
  #endif
  
@@ -136,7 +134,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  #if defined(CONFIG_MENELAUS) &&						\
  	(defined(CONFIG_MMC_OMAP) || defined(CONFIG_MMC_OMAP_MODULE))
  
-@@ -628,11 +739,10 @@
+@@ -628,11 +739,10 @@ static void __init n8x0_map_io(void)
  	omap242x_map_common_io();
  }
  
@@ -149,7 +147,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  }
  
  #ifdef CONFIG_OMAP_MUX
-@@ -686,6 +796,8 @@
+@@ -686,6 +796,8 @@ static inline void board_serial_init(voi
  static void __init n8x0_init_machine(void)
  {
  	omap2420_mux_init(board_mux, OMAP_PACKAGE_ZAC);
@@ -158,7 +156,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  	/* FIXME: add n810 spi devices */
  	spi_register_board_info(n800_spi_board_info,
  				ARRAY_SIZE(n800_spi_board_info));
-@@ -703,27 +815,30 @@
+@@ -703,27 +815,30 @@ static void __init n8x0_init_machine(voi
  
  MACHINE_START(NOKIA_N800, "Nokia N800")
  	.boot_params	= 0x80000100,

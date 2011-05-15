@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc7/drivers/Makefile
-===================================================================
---- linux-2.6.38-rc7.orig/drivers/Makefile	2011-03-06 18:50:23.464476877 +0100
-+++ linux-2.6.38-rc7/drivers/Makefile	2011-03-06 18:51:09.485478381 +0100
+--- a/drivers/Makefile
++++ b/drivers/Makefile
 @@ -66,7 +66,7 @@ obj-$(CONFIG_TC)		+= tc/
  obj-$(CONFIG_UWB)		+= uwb/
  obj-$(CONFIG_USB_OTG_UTILS)	+= usb/otg/
@@ -11,10 +9,8 @@ Index: linux-2.6.38-rc7/drivers/Makefile
  obj-$(CONFIG_PCI)		+= usb/
  obj-$(CONFIG_USB_GADGET)	+= usb/gadget/
  obj-$(CONFIG_SERIO)		+= input/serio/
-Index: linux-2.6.38-rc7/drivers/usb/musb/Kconfig
-===================================================================
---- linux-2.6.38-rc7.orig/drivers/usb/musb/Kconfig	2011-03-06 18:50:23.514483397 +0100
-+++ linux-2.6.38-rc7/drivers/usb/musb/Kconfig	2011-03-06 18:51:09.486478512 +0100
+--- a/drivers/usb/musb/Kconfig
++++ b/drivers/usb/musb/Kconfig
 @@ -46,7 +46,7 @@ config USB_MUSB_DA8XX
  	depends on ARCH_DAVINCI_DA8XX
  
@@ -24,10 +20,8 @@ Index: linux-2.6.38-rc7/drivers/usb/musb/Kconfig
  	depends on ARCH_OMAP
  
  config USB_MUSB_OMAP2PLUS
-Index: linux-2.6.38-rc7/drivers/usb/musb/tusb6010.c
-===================================================================
---- linux-2.6.38-rc7.orig/drivers/usb/musb/tusb6010.c	2011-03-06 18:50:23.497481181 +0100
-+++ linux-2.6.38-rc7/drivers/usb/musb/tusb6010.c	2011-03-06 18:51:09.487478643 +0100
+--- a/drivers/usb/musb/tusb6010.c
++++ b/drivers/usb/musb/tusb6010.c
 @@ -55,6 +55,7 @@ u8 tusb_get_revision(struct musb *musb)
  
  	return rev;
@@ -76,10 +70,8 @@ Index: linux-2.6.38-rc7/drivers/usb/musb/tusb6010.c
  	platform_driver_unregister(&tusb_driver);
  }
 -module_exit(tusb_exit);
-Index: linux-2.6.38-rc7/drivers/usb/musb/Makefile
-===================================================================
---- linux-2.6.38-rc7.orig/drivers/usb/musb/Makefile	2011-03-06 18:50:23.481479093 +0100
-+++ linux-2.6.38-rc7/drivers/usb/musb/Makefile	2011-03-06 18:51:09.487478643 +0100
+--- a/drivers/usb/musb/Makefile
++++ b/drivers/usb/musb/Makefile
 @@ -13,13 +13,13 @@ musb_hdrc-$(CONFIG_USB_MUSB_HDRC_HCD)		+
  musb_hdrc-$(CONFIG_DEBUG_FS)			+= musb_debugfs.o
  
@@ -101,10 +93,8 @@ Index: linux-2.6.38-rc7/drivers/usb/musb/Makefile
  
  # the kconfig must guarantee that only one of the
  # possible I/O schemes will be enabled at a time ...
-Index: linux-2.6.38-rc7/drivers/usb/musb/musb_core.c
-===================================================================
---- linux-2.6.38-rc7.orig/drivers/usb/musb/musb_core.c	2011-03-06 18:50:23.538486528 +0100
-+++ linux-2.6.38-rc7/drivers/usb/musb/musb_core.c	2011-03-06 18:51:09.489478904 +0100
+--- a/drivers/usb/musb/musb_core.c
++++ b/drivers/usb/musb/musb_core.c
 @@ -2427,8 +2427,13 @@ static struct platform_driver musb_drive
  
  /*-------------------------------------------------------------------------*/

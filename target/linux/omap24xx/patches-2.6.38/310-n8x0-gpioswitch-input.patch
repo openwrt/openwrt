@@ -2,11 +2,9 @@
  arch/arm/mach-omap2/board-n8x0.c |   73 +++++++++++++++++++++++++++++++++++++++
  1 file changed, 73 insertions(+)
 
-Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-24 12:53:05.134457636 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c	2011-02-24 12:55:54.570320630 +0100
-@@ -225,6 +225,77 @@
+--- a/arch/arm/mach-omap2/board-n8x0.c
++++ b/arch/arm/mach-omap2/board-n8x0.c
+@@ -225,6 +225,77 @@ extern struct mipid_platform_data n8x0_m
  extern void n8x0_mipid_init(void);
  extern void n8x0_blizzard_init(void);
  
@@ -84,7 +82,7 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  static struct omap_gpio_switch n8x0_gpio_switches[] __initdata = {
  	{
  		.name			= "headphone",
-@@ -246,11 +317,13 @@
+@@ -246,11 +317,13 @@ static struct omap_gpio_switch n8x0_gpio
  		.gpio			= -1,
  		.debounce_rising	= 200,
  		.debounce_falling	= 200,

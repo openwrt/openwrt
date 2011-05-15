@@ -1,8 +1,6 @@
-Index: linux-2.6.38-rc6/drivers/mmc/host/omap.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/mmc/host/omap.c	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/drivers/mmc/host/omap.c	2011-02-27 00:58:54.735744872 +0100
-@@ -1456,6 +1456,7 @@
+--- a/drivers/mmc/host/omap.c
++++ b/drivers/mmc/host/omap.c
+@@ -1456,6 +1456,7 @@ static int __init mmc_omap_probe(struct
  	host->dma_ch = -1;
  
  	host->irq = irq;
@@ -10,7 +8,7 @@ Index: linux-2.6.38-rc6/drivers/mmc/host/omap.c
  	host->phys_base = host->mem_res->start;
  	host->virt_base = ioremap(res->start, res->end - res->start + 1);
  	if (!host->virt_base)
-@@ -1495,7 +1496,9 @@
+@@ -1495,7 +1496,9 @@ static int __init mmc_omap_probe(struct
  		}
  	}
  
@@ -21,11 +19,9 @@ Index: linux-2.6.38-rc6/drivers/mmc/host/omap.c
  
  	return 0;
  
-Index: linux-2.6.38-rc6/drivers/mmc/core/core.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/mmc/core/core.c	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/drivers/mmc/core/core.c	2011-02-27 00:57:32.633556994 +0100
-@@ -75,12 +75,13 @@
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -75,12 +75,13 @@ static int mmc_schedule_delayed_work(str
  }
  
  /*
@@ -41,11 +37,9 @@ Index: linux-2.6.38-rc6/drivers/mmc/core/core.c
  
  /**
   *	mmc_request_done - finish processing an MMC request
-Index: linux-2.6.38-rc6/include/linux/mmc/host.h
-===================================================================
---- linux-2.6.38-rc6.orig/include/linux/mmc/host.h	2011-02-22 02:25:52.000000000 +0100
-+++ linux-2.6.38-rc6/include/linux/mmc/host.h	2011-02-27 00:57:32.633556994 +0100
-@@ -326,5 +326,7 @@
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -325,5 +325,7 @@ static inline int mmc_card_is_powered_re
  	return host->pm_flags & MMC_PM_KEEP_POWER;
  }
  

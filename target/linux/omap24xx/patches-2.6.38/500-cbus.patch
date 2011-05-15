@@ -19,10 +19,8 @@
  drivers/cbus/user_retu_tahvo.h |   75 +++
  18 files changed, 4533 insertions(+), 1 deletion(-)
 
-Index: linux-2.6.38-rc6/drivers/cbus/cbus.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/cbus.c	2011-02-24 12:04:51.456189134 +0100
+--- /dev/null
++++ b/drivers/cbus/cbus.c
 @@ -0,0 +1,332 @@
 +/*
 + * drivers/cbus/cbus.c
@@ -356,10 +354,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/cbus.c
 +MODULE_AUTHOR("Mikko Ylinen");
 +MODULE_AUTHOR("Felipe Balbi <felipe.balbi@nokia.com>");
 +
-Index: linux-2.6.38-rc6/drivers/cbus/cbus.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/cbus.h	2011-02-24 12:04:51.456189134 +0100
+--- /dev/null
++++ b/drivers/cbus/cbus.h
 @@ -0,0 +1,29 @@
 +/*
 + * drivers/cbus/cbus.h
@@ -390,10 +386,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/cbus.h
 +extern int cbus_write_reg(unsigned dev, unsigned reg, unsigned val);
 +
 +#endif /* __DRIVERS_CBUS_CBUS_H */
-Index: linux-2.6.38-rc6/drivers/cbus/Kconfig
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/Kconfig	2011-02-24 12:04:51.457189107 +0100
+--- /dev/null
++++ b/drivers/cbus/Kconfig
 @@ -0,0 +1,75 @@
 +#
 +# CBUS device configuration
@@ -470,10 +464,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/Kconfig
 +	  sysfs.
 +
 +endmenu
-Index: linux-2.6.38-rc6/drivers/cbus/Makefile
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/Makefile	2011-02-24 12:04:51.458189081 +0100
+--- /dev/null
++++ b/drivers/cbus/Makefile
 @@ -0,0 +1,13 @@
 +#
 +# Makefile for CBUS.
@@ -488,10 +480,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/Makefile
 +obj-$(CONFIG_CBUS_RETU_RTC)	+= retu-rtc.o
 +obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.o
 +obj-$(CONFIG_CBUS_RETU_HEADSET)	+= retu-headset.o
-Index: linux-2.6.38-rc6/drivers/cbus/retu.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/retu.c	2011-02-24 12:04:51.458189081 +0100
+--- /dev/null
++++ b/drivers/cbus/retu.c
 @@ -0,0 +1,544 @@
 +/**
 + * drivers/cbus/retu.c
@@ -1037,10 +1027,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/retu.c
 +MODULE_AUTHOR("Juha Yrjölä");
 +MODULE_AUTHOR("David Weinehall");
 +MODULE_AUTHOR("Mikko Ylinen");
-Index: linux-2.6.38-rc6/drivers/cbus/retu.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/retu.h	2011-02-24 12:04:51.459189067 +0100
+--- /dev/null
++++ b/drivers/cbus/retu.h
 @@ -0,0 +1,66 @@
 +/**
 + * drivers/cbus/retu.h
@@ -1108,10 +1096,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/retu.h
 +int retu_read_adc(struct device *child, int channel);
 +
 +#endif /* __DRIVERS_CBUS_RETU_H */
-Index: linux-2.6.38-rc6/drivers/cbus/retu-headset.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/retu-headset.c	2011-02-24 12:04:51.460189032 +0100
+--- /dev/null
++++ b/drivers/cbus/retu-headset.c
 @@ -0,0 +1,359 @@
 +/**
 + * Retu/Vilma headset detection
@@ -1472,10 +1458,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/retu-headset.c
 +MODULE_DESCRIPTION("Retu/Vilma headset detection");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä");
-Index: linux-2.6.38-rc6/drivers/cbus/retu-pwrbutton.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/retu-pwrbutton.c	2011-02-24 12:04:51.460189032 +0100
+--- /dev/null
++++ b/drivers/cbus/retu-pwrbutton.c
 @@ -0,0 +1,165 @@
 +/**
 + * drivers/cbus/retu-pwrbutton.c
@@ -1642,10 +1626,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/retu-pwrbutton.c
 +MODULE_AUTHOR("Ari Saastamoinen");
 +MODULE_AUTHOR("Felipe Balbi <felipe.balbi@nokia.com>");
 +
-Index: linux-2.6.38-rc6/drivers/cbus/retu-rtc.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/retu-rtc.c	2011-02-24 12:04:51.461188993 +0100
+--- /dev/null
++++ b/drivers/cbus/retu-rtc.c
 @@ -0,0 +1,287 @@
 +/**
 + * drivers/cbus/retu-rtc.c
@@ -1934,10 +1916,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/retu-rtc.c
 +MODULE_AUTHOR("Igor Stoppa");
 +MODULE_AUTHOR("Felipe Balbi <felipe.balbi@nokia.com>");
 +
-Index: linux-2.6.38-rc6/drivers/cbus/retu-wdt.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/retu-wdt.c	2011-02-24 12:04:51.461188993 +0100
+--- /dev/null
++++ b/drivers/cbus/retu-wdt.c
 @@ -0,0 +1,358 @@
 +/**
 + * drivers/cbus/retu-wdt.c
@@ -2297,10 +2277,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/retu-wdt.c
 +MODULE_AUTHOR("Amit Kucheria");
 +MODULE_LICENSE("GPL");
 +
-Index: linux-2.6.38-rc6/drivers/cbus/tahvo.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/tahvo.c	2011-02-24 12:04:51.463188907 +0100
+--- /dev/null
++++ b/drivers/cbus/tahvo.c
 @@ -0,0 +1,391 @@
 +/**
 + * drivers/cbus/tahvo.c
@@ -2693,10 +2671,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/tahvo.c
 +MODULE_AUTHOR("David Weinehall");
 +MODULE_AUTHOR("Mikko Ylinen");
 +
-Index: linux-2.6.38-rc6/drivers/cbus/tahvo.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/tahvo.h	2011-02-24 12:04:51.463188907 +0100
+--- /dev/null
++++ b/drivers/cbus/tahvo.h
 @@ -0,0 +1,57 @@
 +/*
 + * drivers/cbus/tahvo.h
@@ -2755,10 +2731,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/tahvo.h
 +extern spinlock_t tahvo_lock;
 +
 +#endif /* __DRIVERS_CBUS_TAHVO_H */
-Index: linux-2.6.38-rc6/drivers/cbus/tahvo-usb.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/tahvo-usb.c	2011-02-24 12:04:51.464188862 +0100
+--- /dev/null
++++ b/drivers/cbus/tahvo-usb.c
 @@ -0,0 +1,773 @@
 +/**
 + * drivers/cbus/tahvo-usb.c
@@ -3533,11 +3507,9 @@ Index: linux-2.6.38-rc6/drivers/cbus/tahvo-usb.c
 +MODULE_DESCRIPTION("Tahvo USB OTG Transceiver Driver");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä, Tony Lindgren, and Timo Teräs");
-Index: linux-2.6.38-rc6/drivers/Makefile
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/Makefile	2011-02-24 12:03:07.439316519 +0100
-+++ linux-2.6.38-rc6/drivers/Makefile	2011-02-24 12:03:27.457522207 +0100
-@@ -74,7 +74,7 @@
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -74,7 +74,7 @@ obj-$(CONFIG_GAMEPORT)		+= input/gamepor
  obj-$(CONFIG_INPUT)		+= input/
  obj-$(CONFIG_I2O)		+= message/
  obj-$(CONFIG_RTC_LIB)		+= rtc/
@@ -3546,11 +3518,9 @@ Index: linux-2.6.38-rc6/drivers/Makefile
  obj-$(CONFIG_PPS)		+= pps/
  obj-$(CONFIG_W1)		+= w1/
  obj-$(CONFIG_POWER_SUPPLY)	+= power/
-Index: linux-2.6.38-rc6/arch/arm/Kconfig
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/Kconfig	2011-02-24 12:03:07.286322589 +0100
-+++ linux-2.6.38-rc6/arch/arm/Kconfig	2011-02-24 12:03:27.458522167 +0100
-@@ -1930,6 +1930,10 @@
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1930,6 +1930,10 @@ source "net/Kconfig"
  
  source "drivers/Kconfig"
  
