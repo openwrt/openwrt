@@ -24,7 +24,7 @@
   * All of these routines try to estimate how many bits of randomness a
   * particular randomness source.  They do this by keeping track of the
   * first and second order deltas of the event timings.
-@@ -715,6 +725,61 @@ void add_disk_randomness(struct gendisk 
+@@ -715,6 +725,61 @@ void add_disk_randomness(struct gendisk
  }
  #endif
  
@@ -160,7 +160,7 @@
  
 --- a/kernel/pid.c
 +++ b/kernel/pid.c
-@@ -424,6 +424,7 @@ struct task_struct *find_task_by_vpid(pi
+@@ -427,6 +427,7 @@ struct task_struct *find_task_by_vpid(pi
  {
  	return find_task_by_pid_ns(vnr, current->nsproxy->pid_ns);
  }

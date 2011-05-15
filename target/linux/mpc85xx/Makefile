@@ -13,7 +13,7 @@ CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=8540
 FEATURES:=spe_fpu ramdisk
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.38.2
+LINUX_VERSION:=2.6.38.6
 
 include $(INCLUDE_DIR)/target.mk
 

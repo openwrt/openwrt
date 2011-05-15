@@ -1081,7 +1081,7 @@
  ifdef CONFIG_FUNCTION_TRACER
  ORIG_CFLAGS := $(KBUILD_CFLAGS)
  KBUILD_CFLAGS = $(subst -pg,,$(ORIG_CFLAGS))
-@@ -71,6 +81,8 @@ obj-$(CONFIG_LZO_COMPRESS) += lzo/
+@@ -73,6 +83,8 @@ obj-$(CONFIG_LZO_COMPRESS) += lzo/
  obj-$(CONFIG_LZO_DECOMPRESS) += lzo/
  obj-$(CONFIG_XZ_DEC) += xz/
  obj-$(CONFIG_RAID6_PQ) += raid6/

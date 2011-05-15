@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc6/drivers/cbus/Kconfig
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/Kconfig	2011-03-01 19:56:10.396378152 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/Kconfig	2011-03-01 19:56:10.669365669 +0100
+--- a/drivers/cbus/Kconfig
++++ b/drivers/cbus/Kconfig
 @@ -72,4 +72,12 @@ config CBUS_RETU_HEADSET
  	  to Retu/Vilma. Detection state and events are exposed through
  	  sysfs.
@@ -15,10 +13,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/Kconfig
 +	  If unsure, say N.
 +
  endmenu
-Index: linux-2.6.38-rc6/drivers/cbus/Makefile
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/Makefile	2011-03-01 19:56:10.396378152 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/Makefile	2011-03-01 19:56:10.669365669 +0100
+--- a/drivers/cbus/Makefile
++++ b/drivers/cbus/Makefile
 @@ -11,3 +11,6 @@ obj-$(CONFIG_CBUS_RETU_POWERBUTTON) += r
  obj-$(CONFIG_CBUS_RETU_RTC)	+= retu-rtc.o
  obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.o
@@ -26,10 +22,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/Makefile
 +n810bm-y			+= n810bm_main.o
 +n810bm-y			+= lipocharge.o
 +obj-$(CONFIG_N810BM)		+= n810bm.o
-Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/n810bm_main.c	2011-03-01 21:15:45.484648402 +0100
+--- /dev/null
++++ b/drivers/cbus/n810bm_main.c
 @@ -0,0 +1,1586 @@
 +/*
 + *   Nokia n810 battery management
@@ -1617,10 +1611,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/n810bm_main.c
 +MODULE_FIRMWARE(N810BM_PMM_BLOCK_FILENAME);
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Michael Buesch");
-Index: linux-2.6.38-rc6/drivers/cbus/lipocharge.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/lipocharge.c	2011-03-01 19:56:10.672365533 +0100
+--- /dev/null
++++ b/drivers/cbus/lipocharge.c
 @@ -0,0 +1,183 @@
 +/*
 + *   Generic LIPO battery charger
@@ -1805,10 +1797,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/lipocharge.c
 +
 +	return 0;
 +}
-Index: linux-2.6.38-rc6/drivers/cbus/lipocharge.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/drivers/cbus/lipocharge.h	2011-03-01 21:07:15.483394264 +0100
+--- /dev/null
++++ b/drivers/cbus/lipocharge.h
 @@ -0,0 +1,60 @@
 +#ifndef LIPOCHARGE_H_
 +#define LIPOCHARGE_H_
@@ -1870,10 +1860,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/lipocharge.h
 +}
 +
 +#endif /* LIPOCHARGE_H_ */
-Index: linux-2.6.38-rc6/drivers/cbus/cbus.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/cbus.c	2011-03-01 19:56:10.396378152 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/cbus.c	2011-03-01 19:56:10.673365487 +0100
+--- a/drivers/cbus/cbus.c
++++ b/drivers/cbus/cbus.c
 @@ -35,6 +35,7 @@
  #include <linux/platform_device.h>
  
@@ -1896,10 +1884,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/cbus.c
  MODULE_DESCRIPTION("CBUS serial protocol");
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("Juha Yrjölä");
-Index: linux-2.6.38-rc6/drivers/cbus/cbus.h
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/cbus.h	2011-03-01 19:56:10.396378152 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/cbus.h	2011-03-01 19:56:10.673365487 +0100
+--- a/drivers/cbus/cbus.h
++++ b/drivers/cbus/cbus.h
 @@ -26,4 +26,6 @@
  extern int cbus_read_reg(unsigned dev, unsigned reg);
  extern int cbus_write_reg(unsigned dev, unsigned reg, unsigned val);
@@ -1907,10 +1893,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/cbus.h
 +NORET_TYPE void cbus_emergency(void) ATTRIB_NORET;
 +
  #endif /* __DRIVERS_CBUS_CBUS_H */
-Index: linux-2.6.38-rc6/drivers/cbus/retu.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/retu.c	2011-03-01 19:56:10.469374814 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/retu.c	2011-03-01 19:56:10.674365441 +0100
+--- a/drivers/cbus/retu.c
++++ b/drivers/cbus/retu.c
 @@ -425,6 +425,11 @@ static int retu_allocate_children(struct
  	if (!child)
  		return -ENOMEM;
@@ -1923,10 +1907,8 @@ Index: linux-2.6.38-rc6/drivers/cbus/retu.c
  	return 0;
  }
  
-Index: linux-2.6.38-rc6/drivers/cbus/tahvo.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/tahvo.c	2011-03-01 19:56:10.401377922 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/tahvo.c	2011-03-01 19:56:10.674365441 +0100
+--- a/drivers/cbus/tahvo.c
++++ b/drivers/cbus/tahvo.c
 @@ -54,6 +54,7 @@ static int tahvo_is_betty;
  
  static struct tasklet_struct tahvo_tasklet;

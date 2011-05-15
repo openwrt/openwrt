@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc6/arch/arm/plat-omap/bootreason.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/bootreason.c	2011-02-25 01:11:27.298563256 +0100
+--- /dev/null
++++ b/arch/arm/plat-omap/bootreason.c
 @@ -0,0 +1,79 @@
 +/*
 + * linux/arch/arm/plat-omap/bootreason.c
@@ -82,10 +80,8 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/bootreason.c
 +}
 +
 +late_initcall(bootreason_init);
-Index: linux-2.6.38-rc6/arch/arm/plat-omap/common.c
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/plat-omap/common.c	2011-02-25 01:10:25.645115298 +0100
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/common.c	2011-02-25 01:11:27.298563256 +0100
+--- a/arch/arm/plat-omap/common.c
++++ b/arch/arm/plat-omap/common.c
 @@ -21,17 +21,89 @@
  #include <plat/vram.h>
  #include <plat/dsp.h>
@@ -176,10 +172,8 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/common.c
  	/* Try to find the config from the board-specific structures
  	 * in the kernel. */
  	for (i = 0; i < omap_board_config_size; i++) {
-Index: linux-2.6.38-rc6/arch/arm/plat-omap/component-version.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/component-version.c	2011-02-25 01:11:27.299563117 +0100
+--- /dev/null
++++ b/arch/arm/plat-omap/component-version.c
 @@ -0,0 +1,64 @@
 +/*
 + *  linux/arch/arm/plat-omap/component-version.c
@@ -245,11 +239,9 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/component-version.c
 +MODULE_AUTHOR("Juha Yrjölä <juha.yrjola@nokia.com>");
 +MODULE_DESCRIPTION("Component version driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.38-rc6/arch/arm/plat-omap/Kconfig
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/plat-omap/Kconfig	2011-02-25 01:10:25.621118611 +0100
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/Kconfig	2011-02-25 01:11:27.299563117 +0100
-@@ -79,6 +79,38 @@
+--- a/arch/arm/plat-omap/Kconfig
++++ b/arch/arm/plat-omap/Kconfig
+@@ -79,6 +79,38 @@ config OMAP_RESET_CLOCKS
  	  probably do not want this option enabled until your
  	  device drivers work properly.
  
@@ -288,11 +280,9 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/Kconfig
  config OMAP_MUX
  	bool "OMAP multiplexing support"
  	depends on ARCH_OMAP
-Index: linux-2.6.38-rc6/arch/arm/plat-omap/Makefile
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/plat-omap/Makefile	2011-02-25 01:10:25.604120958 +0100
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/Makefile	2011-02-25 01:11:27.299563117 +0100
-@@ -23,6 +23,9 @@
+--- a/arch/arm/plat-omap/Makefile
++++ b/arch/arm/plat-omap/Makefile
+@@ -23,6 +23,9 @@ obj-$(CONFIG_OMAP_IOMMU_DEBUG) += iommu-
  
  obj-$(CONFIG_CPU_FREQ) += cpu-omap.o
  obj-$(CONFIG_OMAP_DM_TIMER) += dmtimer.o
@@ -302,11 +292,9 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/Makefile
  obj-$(CONFIG_OMAP_DEBUG_DEVICES) += debug-devices.o
  obj-$(CONFIG_OMAP_DEBUG_LEDS) += debug-leds.o
  i2c-omap-$(CONFIG_I2C_OMAP) := i2c.o
-Index: linux-2.6.38-rc6/arch/arm/include/asm/setup.h
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/include/asm/setup.h	2011-02-25 01:10:25.523132140 +0100
-+++ linux-2.6.38-rc6/arch/arm/include/asm/setup.h	2011-02-25 01:11:27.300562978 +0100
-@@ -136,6 +136,13 @@
+--- a/arch/arm/include/asm/setup.h
++++ b/arch/arm/include/asm/setup.h
+@@ -136,6 +136,13 @@ struct tag_acorn {
  	__u8 adfsdrives;
  };
  
@@ -320,7 +308,7 @@ Index: linux-2.6.38-rc6/arch/arm/include/asm/setup.h
  /* footbridge memory clock, see arch/arm/mach-footbridge/arch.c */
  #define ATAG_MEMCLK	0x41000402
  
-@@ -162,6 +169,11 @@
+@@ -162,6 +169,11 @@ struct tag {
  		struct tag_acorn	acorn;
  
  		/*
@@ -332,10 +320,8 @@ Index: linux-2.6.38-rc6/arch/arm/include/asm/setup.h
  		 * DC21285 specific
  		 */
  		struct tag_memclk	memclk;
-Index: linux-2.6.38-rc6/arch/arm/plat-omap/gpio-switch.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/gpio-switch.c	2011-02-25 01:11:27.301562839 +0100
+--- /dev/null
++++ b/arch/arm/plat-omap/gpio-switch.c
 @@ -0,0 +1,554 @@
 +/*
 + *  linux/arch/arm/plat-omap/gpio-switch.c
@@ -891,11 +877,9 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/gpio-switch.c
 +MODULE_AUTHOR("Juha Yrjölä <juha.yrjola@nokia.com>, Paul Mundt <paul.mundt@nokia.com");
 +MODULE_DESCRIPTION("GPIO switch driver");
 +MODULE_LICENSE("GPL");
-Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/board.h
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/plat-omap/include/plat/board.h	2011-02-25 01:10:25.553127998 +0100
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/board.h	2011-02-25 01:11:27.301562839 +0100
-@@ -151,6 +151,14 @@
+--- a/arch/arm/plat-omap/include/plat/board.h
++++ b/arch/arm/plat-omap/include/plat/board.h
+@@ -151,6 +151,14 @@ struct omap_board_config_kernel {
  	const void *data;
  };
  

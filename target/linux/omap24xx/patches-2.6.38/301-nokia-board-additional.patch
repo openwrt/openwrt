@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/board-n8x0.c	2011-02-28 16:48:12.972504055 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c	2011-02-28 21:03:41.761254167 +0100
+--- a/arch/arm/mach-omap2/board-n8x0.c
++++ b/arch/arm/mach-omap2/board-n8x0.c
 @@ -23,6 +23,9 @@
  #include <linux/spi/spi.h>
  #include <linux/usb/musb.h>
@@ -306,10 +304,8 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0.c
  	gpmc_onenand_init(board_onenand_data);
  	n8x0_mmc_init();
  	n8x0_usb_init();
-Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-02-28 21:08:50.105894872 +0100
+--- /dev/null
++++ b/arch/arm/mach-omap2/board-n8x0-lcd.c
 @@ -0,0 +1,141 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0.c
@@ -452,10 +448,8 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/board-n8x0-lcd.c
 +
 +	printk(KERN_INFO "N8x0 Blizzard initialized");
 +}
-Index: linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/Makefile	2011-02-28 16:45:53.321456871 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile	2011-02-28 16:48:12.997503690 +0100
+--- a/arch/arm/mach-omap2/Makefile
++++ b/arch/arm/mach-omap2/Makefile
 @@ -177,6 +177,7 @@ obj-$(CONFIG_MACH_OMAP_3430SDP)		+= boar
  					   hsmmc.o \
  					   board-flash.o
@@ -464,10 +458,8 @@ Index: linux-2.6.38-rc6/arch/arm/mach-omap2/Makefile
  obj-$(CONFIG_MACH_NOKIA_RM680)		+= board-rm680.o \
  					   sdram-nokia.o \
  					   hsmmc.o
-Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h	2011-02-28 16:48:12.997503690 +0100
+--- /dev/null
++++ b/arch/arm/plat-omap/include/plat/cbus.h
 @@ -0,0 +1,40 @@
 +/*
 + * cbus.h - CBUS platform_data definition
@@ -509,10 +501,8 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/cbus.h
 +};
 +
 +#endif /* __PLAT_CBUS_H */
-Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/plat-omap/include/plat/irqs.h	2011-02-28 16:45:53.350456485 +0100
-+++ linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h	2011-02-28 16:48:12.998503676 +0100
+--- a/arch/arm/plat-omap/include/plat/irqs.h
++++ b/arch/arm/plat-omap/include/plat/irqs.h
 @@ -411,7 +411,20 @@
  #define TWL_IRQ_END		TWL6030_IRQ_END
  #endif
@@ -535,10 +525,8 @@ Index: linux-2.6.38-rc6/arch/arm/plat-omap/include/plat/irqs.h
  
  #define OMAP_IRQ_BIT(irq)	(1 << ((irq) % 32))
  
-Index: linux-2.6.38-rc6/arch/arm/mach-omap2/omap_hwmod_2420_data.c
-===================================================================
---- linux-2.6.38-rc6.orig/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-02-28 21:09:41.170169165 +0100
-+++ linux-2.6.38-rc6/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-02-28 21:10:33.434425329 +0100
+--- a/arch/arm/mach-omap2/omap_hwmod_2420_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2420_data.c
 @@ -673,6 +673,7 @@ static struct omap_hwmod_ocp_if *omap242
  
  static struct omap_hwmod omap2420_gpio1_hwmod = {

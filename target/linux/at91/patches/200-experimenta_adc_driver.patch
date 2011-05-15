@@ -1,8 +1,6 @@
-Index: linux-2.6.38/drivers/misc/Kconfig
-===================================================================
---- linux-2.6.38.orig/drivers/misc/Kconfig	2011-03-15 02:20:32.000000000 +0100
-+++ linux-2.6.38/drivers/misc/Kconfig	2011-03-20 22:54:33.114794033 +0100
-@@ -104,6 +104,10 @@
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -104,6 +104,10 @@ config ATMEL_TCB_CLKSRC_BLOCK
  	  TC can be used for other purposes, such as PWM generation and
  	  interval timing.
  
@@ -13,11 +11,9 @@ Index: linux-2.6.38/drivers/misc/Kconfig
  config IBM_ASM
  	tristate "Device driver for IBM RSA service processor"
  	depends on X86 && PCI && INPUT && EXPERIMENTAL
-Index: linux-2.6.38/drivers/misc/Makefile
-===================================================================
---- linux-2.6.38.orig/drivers/misc/Makefile	2011-03-15 02:20:32.000000000 +0100
-+++ linux-2.6.38/drivers/misc/Makefile	2011-03-20 22:55:18.000000000 +0100
-@@ -9,6 +9,7 @@
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -9,6 +9,7 @@ obj-$(CONFIG_AD525X_DPOT_SPI)	+= ad525x_
  obj-$(CONFIG_ATMEL_PWM)		+= atmel_pwm.o
  obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
  obj-$(CONFIG_ATMEL_TCLIB)	+= atmel_tclib.o
@@ -25,4 +21,3 @@ Index: linux-2.6.38/drivers/misc/Makefile
  obj-$(CONFIG_BMP085)		+= bmp085.o
  obj-$(CONFIG_ICS932S401)	+= ics932s401.o
  obj-$(CONFIG_LKDTM)		+= lkdtm.o
-

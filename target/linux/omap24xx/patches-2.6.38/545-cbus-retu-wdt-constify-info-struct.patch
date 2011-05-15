@@ -1,7 +1,5 @@
-Index: linux-2.6.38-rc6/drivers/cbus/retu-wdt.c
-===================================================================
---- linux-2.6.38-rc6.orig/drivers/cbus/retu-wdt.c	2011-03-04 16:21:39.106113985 +0100
-+++ linux-2.6.38-rc6/drivers/cbus/retu-wdt.c	2011-03-04 16:21:48.503540758 +0100
+--- a/drivers/cbus/retu-wdt.c
++++ b/drivers/cbus/retu-wdt.c
 @@ -149,7 +149,7 @@ static long retu_wdt_ioctl(struct file *
  	struct retu_wdt_dev *wdev = container_of(mdev, struct retu_wdt_dev, miscdev);
  	int new_margin;
