@@ -76,7 +76,7 @@ define KernelPackage/cpu-msr
   TITLE:=x86 CPU MSR support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_X86_MSR
-  FILES:=$(LINUX_DIR)/arch/x86/kernel/msr.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/arch/x86/kernel/msr.ko
   AUTOLOAD:=$(call AutoLoad,20,msr)
 endef
 
@@ -431,7 +431,7 @@ define KernelPackage/oprofile
   SUBMENU:=$(OTHER_MENU)
   TITLE:=OProfile profiling support
   KCONFIG:=CONFIG_OPROFILE
-  FILES:=$(LINUX_DIR)/arch/$(LINUX_KARCH)/oprofile/oprofile.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/arch/$(LINUX_KARCH)/oprofile/oprofile.ko
   DEPENDS:=@KERNEL_PROFILING
 endef
 
@@ -624,7 +624,7 @@ define KernelPackage/rtc-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Real Time Clock class support
   KCONFIG:=CONFIG_RTC_CLASS
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-core.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-core.ko
   AUTOLOAD:=$(call AutoLoad,29,rtc-core)
 endef
 
@@ -639,7 +639,7 @@ define KernelPackage/rtc-pcf8563
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support
   DEPENDS:=+kmod-rtc-core
   KCONFIG:=CONFIG_RTC_DRV_PCF8563
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf8563.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf8563.ko
   AUTOLOAD:=$(call AutoLoad,60,rtc-pcf8563)
 endef
 
@@ -656,7 +656,7 @@ define KernelPackage/n810bm
   TITLE:=Nokia N810 battery management driver
   DEPENDS:=@TARGET_omap24xx
   KCONFIG:=CONFIG_N810BM
-  FILES:=$(LINUX_DIR)/drivers/cbus/n810bm.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/cbus/n810bm.ko
   AUTOLOAD:=$(call AutoLoad,01,n810bm)
 endef
 

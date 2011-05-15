@@ -214,7 +214,7 @@ define KernelPackage/md-mod
        CONFIG_BLK_DEV_MD=m \
        CONFIG_MD_AUTODETECT=y \
        CONFIG_MD_FAULTY=n
-  FILES:=$(LINUX_DIR)/drivers/md/md-mod.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/md/md-mod.ko
   AUTOLOAD:=$(call AutoLoad,27,md-mod)
 endef
 
@@ -236,7 +236,7 @@ define KernelPackage/md-linear
 $(call KernelPackage/md/Depends,)
   TITLE:=RAID Linear Module
   KCONFIG:=CONFIG_MD_LINEAR=m
-  FILES:=$(LINUX_DIR)/drivers/md/linear.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/md/linear.ko
   AUTOLOAD:=$(call AutoLoad,28,linear)
 endef
 
@@ -251,7 +251,7 @@ define KernelPackage/md-raid0
 $(call KernelPackage/md/Depends,)
   TITLE:=RAID0 Module
   KCONFIG:=CONFIG_MD_RAID0=m
-  FILES:=$(LINUX_DIR)/drivers/md/raid0.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/md/raid0.ko
   AUTOLOAD:=$(call AutoLoad,28,raid0)
 endef
 
@@ -266,7 +266,7 @@ define KernelPackage/md-raid1
 $(call KernelPackage/md/Depends,)
   TITLE:=RAID1 Module
   KCONFIG:=CONFIG_MD_RAID1=m
-  FILES:=$(LINUX_DIR)/drivers/md/raid1.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/md/raid1.ko
   AUTOLOAD:=$(call AutoLoad,28,raid1)
 endef
 
@@ -281,7 +281,7 @@ define KernelPackage/md-raid10
 $(call KernelPackage/md/Depends,)
   TITLE:=RAID10 Module
   KCONFIG:=CONFIG_MD_RAID10=m
-  FILES:=$(LINUX_DIR)/drivers/md/raid10.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/md/raid10.ko
   AUTOLOAD:=$(call AutoLoad,28,raid10)
 endef
 
@@ -307,22 +307,22 @@ $(call KernelPackage/md/Depends,)
        CONFIG_MD_RAID456=m \
        CONFIG_MULTICORE_RAID456=n
   FILES:= \
-	$(LINUX_DIR)/crypto/xor.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/async_tx/async_tx.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/async_tx/async_memcpy.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/async_tx/async_xor.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/async_tx/async_pq.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/crypto/async_tx/async_raid6_recov.$(LINUX_KMOD_SUFFIX) \
-	$(LINUX_DIR)/drivers/md/raid456.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/crypto/xor.ko \
+	$(LINUX_DIR)/crypto/async_tx/async_tx.ko \
+	$(LINUX_DIR)/crypto/async_tx/async_memcpy.ko \
+	$(LINUX_DIR)/crypto/async_tx/async_xor.ko \
+	$(LINUX_DIR)/crypto/async_tx/async_pq.ko \
+	$(LINUX_DIR)/crypto/async_tx/async_raid6_recov.ko \
+	$(LINUX_DIR)/drivers/md/raid456.ko
   # Additional files with kernel-dependent locations or presence
   # For Linux >= 2.6.36
   ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.36)), 1)
     FILES+= \
-	$(LINUX_DIR)/lib/raid6/raid6_pq.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/lib/raid6/raid6_pq.ko
   # For Linux < 2.6.36
   else
     FILES+= \
-	$(LINUX_DIR)/drivers/md/raid6_pq.$(LINUX_KMOD_SUFFIX)
+	$(LINUX_DIR)/drivers/md/raid6_pq.ko
   endif
   AUTOLOAD:=$(call AutoLoad,28, xor async_tx async_memcpy async_xor raid6_pq async_pq async_raid6_recov raid456)
 endef
@@ -348,7 +348,7 @@ define KernelPackage/md-multipath
 $(call KernelPackage/md/Depends,)
   TITLE:=MD Multipath Module
   KCONFIG:=CONFIG_MD_MULTIPATH=m
-  FILES:=$(LINUX_DIR)/drivers/md/multipath.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/md/multipath.ko
   AUTOLOAD:=$(call AutoLoad,29,multipath)
 endef
 

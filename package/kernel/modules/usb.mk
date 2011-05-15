@@ -355,7 +355,7 @@ $(eval $(call KernelPackage,usb-serial-ftdi))
 define KernelPackage/usb-serial-ipw
   TITLE:=Support for IPWireless 3G devices
   KCONFIG:=CONFIG_USB_SERIAL_IPW
-  FILES:=$(LINUX_DIR)/drivers/usb/serial/ipw.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/ipw.ko
   AUTOLOAD:=$(call AutoLoad,65,ipw)
   $(call AddDepends/usb-serial)
 endef
