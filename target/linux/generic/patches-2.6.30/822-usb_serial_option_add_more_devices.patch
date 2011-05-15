@@ -1,0 +1,37 @@
+--- a/drivers/usb/serial/option.c
++++ b/drivers/usb/serial/option.c
+@@ -161,6 +161,7 @@ static int  option_resume(struct usb_ser
+ #define HUAWEI_PRODUCT_E143D			0x143D
+ #define HUAWEI_PRODUCT_E143E			0x143E
+ #define HUAWEI_PRODUCT_E143F			0x143F
++#define HUAWEI_PRODUCT_E173S			0x1C05
+ 
+ #define QUANTA_VENDOR_ID			0x0408
+ #define QUANTA_PRODUCT_Q101			0xEA02
+@@ -304,6 +305,10 @@ static int  option_resume(struct usb_ser
+ #define DLINK_VENDOR_ID				0x1186
+ #define DLINK_PRODUCT_DWM_652			0x3e04
+ 
++/* ALCATEL PRODUCTS */
++#define ALCATEL_VENDOR_ID			0x1bbb
++#define ALCATEL_PRODUCT_X220D			0x0017
++
+ 
+ static struct usb_device_id option_ids[] = {
+ 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
+@@ -402,6 +407,7 @@ static struct usb_device_id option_ids[]
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E143D, 0xff, 0xff, 0xff) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E143E, 0xff, 0xff, 0xff) },
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E143F, 0xff, 0xff, 0xff) },
++	{ USB_DEVICE(HUAWEI_VENDOR_ID, HUAWEI_PRODUCT_E173S) },
+ 	{ USB_DEVICE(AMOI_VENDOR_ID, AMOI_PRODUCT_9508) },
+ 	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_V640) }, /* Novatel Merlin V640/XV620 */
+ 	{ USB_DEVICE(NOVATELWIRELESS_VENDOR_ID, NOVATELWIRELESS_PRODUCT_V620) }, /* Novatel Merlin V620/S620 */
+@@ -523,6 +529,7 @@ static struct usb_device_id option_ids[]
+ 	{ USB_DEVICE(BENQ_VENDOR_ID, BENQ_PRODUCT_H10) },
+ 	{ USB_DEVICE(DLINK_VENDOR_ID, DLINK_PRODUCT_DWM_652) },
+ 	{ USB_DEVICE(0x1da5, 0x4515) }, /* BenQ H20 */
++	{ USB_DEVICE(ALCATEL_VENDOR_ID, ALCATEL_PRODUCT_X220D) }, /* BenQ H20 */
+ 	{ } /* Terminating entry */
+ };
+ MODULE_DEVICE_TABLE(usb, option_ids);
