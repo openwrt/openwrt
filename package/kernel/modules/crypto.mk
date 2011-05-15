@@ -7,20 +7,6 @@
 
 CRYPTO_MENU:=Cryptographic API modules
 
-# XXX: added workarounds for modules renamed in 2.6 series:
-#  - aes > aes_generic (2.6.24)
-#  - blkcipher -> crypto_blkcipher (2.6.25)
-#  - des > des_generic (2.6.24)
-#  - sha1 > sha1_generic (2.6.24)
-#  - sha256 > sha256_generic (2.6.24)
-#  - sha512 > sha512_generic (2.6.26)
-CRYPTO_GENERIC:=_generic
-AES_SUFFIX:=$(CRYPTO_GENERIC)
-DES_SUFFIX:=$(CRYPTO_GENERIC)
-SHA1_SUFFIX:=$(CRYPTO_GENERIC)
-SHA256_SUFFIX:=$(CRYPTO_GENERIC)
-SHA512_SUFFIX:=$(CRYPTO_GENERIC)
-
 CRYPTO_MODULES = ALGAPI2=crypto_algapi
 
 CRYPTOMGR_MODULES = \
@@ -189,14 +175,14 @@ $(eval $(call KernelPackage,crypto-hw-ppc4xx))
 define KernelPackage/crypto-aes
   TITLE:=AES cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_AES CONFIG_CRYPTO_AES_586
-  FILES:=$(LINUX_DIR)/crypto/aes$(AES_SUFFIX).ko
-  AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX))
+  FILES:=$(LINUX_DIR)/crypto/aes_generic.ko
+  AUTOLOAD:=$(call AutoLoad,09,aes_generic)
   $(call AddDepends/crypto)
 endef
 
 define KernelPackage/crypto-aes/x86
   FILES+=$(LINUX_DIR)/arch/x86/crypto/aes-i586.ko
-  AUTOLOAD:=$(call AutoLoad,09,aes$(AES_SUFFIX) aes-i586)
+  AUTOLOAD:=$(call AutoLoad,09,aes_generic aes-i586)
 endef
 
 $(eval $(call KernelPackage,crypto-aes))
@@ -238,8 +224,8 @@ $(eval $(call KernelPackage,crypto-cbc))
 define KernelPackage/crypto-des
   TITLE:=DES/3DES cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_DES
-  FILES:=$(LINUX_DIR)/crypto/des$(DES_SUFFIX).ko
-  AUTOLOAD:=$(call AutoLoad,09,des$(DES_SUFFIX))
+  FILES:=$(LINUX_DIR)/crypto/des_generic.ko
+  AUTOLOAD:=$(call AutoLoad,09,des_generic)
   $(call AddDepends/crypto)
 endef
 
@@ -309,8 +295,8 @@ define KernelPackage/crypto-sha1
   TITLE:=SHA1 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:=CONFIG_CRYPTO_SHA1
-  FILES:=$(LINUX_DIR)/crypto/sha1$(SHA1_SUFFIX).ko
-  AUTOLOAD:=$(call AutoLoad,09,sha1$(SHA1_SUFFIX))
+  FILES:=$(LINUX_DIR)/crypto/sha1_generic.ko
+  AUTOLOAD:=$(call AutoLoad,09,sha1_generic)
   $(call AddDepends/crypto)
 endef
 
@@ -350,8 +336,8 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/khazad.ko \
 	$(LINUX_DIR)/crypto/md4.ko \
 	$(LINUX_DIR)/crypto/serpent.ko \
-	$(LINUX_DIR)/crypto/sha256$(SHA256_SUFFIX).ko \
-	$(LINUX_DIR)/crypto/sha512$(SHA512_SUFFIX).ko \
+	$(LINUX_DIR)/crypto/sha256_generic.ko \
+	$(LINUX_DIR)/crypto/sha512_generic.ko \
 	$(LINUX_DIR)/crypto/tea.ko \
 	$(LINUX_DIR)/crypto/tgr192.ko \
 	$(LINUX_DIR)/crypto/twofish_common.ko \
