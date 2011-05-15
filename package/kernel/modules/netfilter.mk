@@ -24,7 +24,7 @@ endef
 define KernelPackage/ipt-core/description
  Netfilter core kernel modules
  Includes:
- - comment (2.6)
+ - comment
  - limit
  - LOG
  - mac
@@ -54,7 +54,7 @@ define KernelPackage/ipt-conntrack/description
  Netfilter (IPv4) kernel modules for connection tracking
  Includes:
  - conntrack
- - defrag (2.6)
+ - defrag
  - iptables_raw
  - NOTRACK
  - state
@@ -116,14 +116,12 @@ define KernelPackage/ipt-ipopt/description
  - CLASSIFY
  - dscp/DSCP
  - ecn/ECN
- - hl/HL (2.6.30 and later)
+ - hl/HL
  - length
  - mark/MARK
- - statistic (2.6)
+ - statistic
  - tcpmss
  - time
- - tos/TOS (prior to 2.6.25)
- - ttl/TTL (prior to 2.6.30)
  - unclean
 endef
 
@@ -143,7 +141,7 @@ define KernelPackage/ipt-ipsec/description
  Includes:
  - ah
  - esp
- - policy (2.6)
+ - policy
 endef
 
 $(eval $(call KernelPackage,ipt-ipsec))
@@ -177,7 +175,6 @@ endef
 define KernelPackage/ipt-nat-extra/description
  Netfilter (IPv4) kernel modules for extra NAT targets
  Includes:
- - MIRROR (2.4)
  - NETMAP
  - REDIRECT
 endef
@@ -218,10 +215,10 @@ define KernelPackage/ipt-nathelper-extra/description
  - amanda
  - h323
  - mms
- - pptp (2.6)
- - proto_gre (2.6)
+ - pptp
+ - proto_gre
  - rtsp
- - sip (2.6)
+ - sip
  - snmp_basic
 endef
 
@@ -343,7 +340,6 @@ endef
 define KernelPackage/ipt-extra/description
  Other Netfilter (IPv4) kernel modules
  Includes:
- - condition (2.4 only)
  - owner
  - physdev (if bridge support was enabled in kernel)
  - pkttype
