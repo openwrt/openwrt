@@ -16,24 +16,6 @@ define KernelPackage/pcmcia-core
 	CONFIG_CARDBUS \
 	CONFIG_PCCARD \
 	PCMCIA_DEBUG=n
-endef
-
-define KernelPackage/pcmcia-core/2.4
-#  KCONFIG:= \
-#	CONFIG_PCMCIA \
-#	CONFIG_CARDBUS
-  FILES:= \
-	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.ko \
-	$(LINUX_DIR)/drivers/pcmcia/ds.ko \
-	$(LINUX_DIR)/drivers/pcmcia/yenta_socket.ko
-  AUTOLOAD:=$(call AutoLoad,25,pcmcia_core ds yenta_socket)
-endef
-
-define KernelPackage/pcmcia-core/2.6
-#  KCONFIG:= \
-#	CONFIG_PCCARD \
-#	CONFIG_PCMCIA \
-#	PCMCIA_DEBUG=n
   FILES:= \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia_core.ko \
 	$(LINUX_DIR)/drivers/pcmcia/pcmcia.ko

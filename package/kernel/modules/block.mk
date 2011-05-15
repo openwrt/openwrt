@@ -374,24 +374,10 @@ define KernelPackage/ide-core
 	CONFIG_BLK_DEV_IDEDMA_PCI=y \
 	CONFIG_BLK_DEV_IDEPCI=y
   FILES:= \
-	$(LINUX_DIR)/drivers/ide/ide-core.ko
+	$(LINUX_DIR)/drivers/ide/ide-core.ko \
+	$(LINUX_DIR)/drivers/ide/ide-gd_mod.ko
   AUTOLOAD:= \
-	$(call AutoLoad,20,ide-core,1)
-endef
-
-define KernelPackage/ide-core/2.4
-  FILES+= \
-	$(LINUX_DIR)/drivers/ide/ide-detect.ko \
-  	$(LINUX_DIR)/drivers/ide/ide-disk.ko
-  AUTOLOAD+= \
-	$(call AutoLoad,35,ide-detect,1) \
-	$(call AutoLoad,40,ide-disk,1)
-endef
-
-define KernelPackage/ide-core/2.6
-  FILES+= \
-  	$(LINUX_DIR)/drivers/ide/ide-gd_mod.ko
-  AUTOLOAD+= \
+	$(call AutoLoad,20,ide-core,1) \
 	$(call AutoLoad,40,ide-gd_mod,1)
 endef
 
@@ -399,8 +385,7 @@ define KernelPackage/ide-core/description
  Kernel support for IDE, useful for usb mass storage devices (e.g. on WL-HDD)
  Includes:
  - ide-core
- - ide-detect
- - ide-gd_mod (or ide-disk)
+ - ide-gd_mod
 endef
 
 $(eval $(call KernelPackage,ide-core))
@@ -417,21 +402,9 @@ define KernelPackage/ide-generic
   DEPENDS:=@PCI_SUPPORT
   TITLE:=Kernel support for generic PCI IDE chipsets
   KCONFIG:=CONFIG_BLK_DEV_GENERIC
+  FILES:=$(LINUX_DIR)/drivers/ide/ide-pci-generic.ko
+  AUTOLOAD:=$(call AutoLoad,30,ide-pci-generic,1)
   $(call AddDepends/ide)
-endef
-
-define KernelPackage/ide-generic/2.4
-  FILES+= \
-	$(LINUX_DIR)/drivers/ide/pci/generic.ko
-  AUTOLOAD+= \
-	$(call AutoLoad,30,generic,1)
-endef
-
-define KernelPackage/ide-generic/2.6
-  FILES+= \
-	$(LINUX_DIR)/drivers/ide/ide-pci-generic.ko
-  AUTOLOAD+= \
-	$(call AutoLoad,30,ide-pci-generic,1)
 endef
 
 $(eval $(call KernelPackage,ide-generic))
@@ -458,10 +431,6 @@ define KernelPackage/ide-aec62xx
   $(call AddDepends/ide)
 endef
 
-define KernelPackage/ide-aec62xx/2.4
-  FILES:=$(LINUX_DIR)/drivers/ide/pci/aec62xx.ko
-endef
-
 define KernelPackage/ide-aec62xx/description
  Support for Acard AEC62xx (Artop ATP8xx) IDE controllers.
 endef
@@ -476,10 +445,6 @@ define KernelPackage/ide-pdc202xx
   FILES:=$(LINUX_DIR)/drivers/ide/pdc202xx_old.ko
   AUTOLOAD:=$(call AutoLoad,30,pdc202xx_old,1)
   $(call AddDepends/ide)
-endef
-
-define KernelPackage/ide-pdc202xx/2.4
-  FILES:=$(LINUX_DIR)/drivers/ide/pci/pdc202xx_old.ko
 endef
 
 define KernelPackage/ide-pdc202xx/description

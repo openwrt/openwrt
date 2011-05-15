@@ -342,14 +342,19 @@ define KernelPackage/crypto-misc
   FILES:= \
 	$(LINUX_DIR)/crypto/anubis.ko \
 	$(LINUX_DIR)/crypto/blowfish.ko \
+	$(LINUX_DIR)/crypto/camellia.ko \
 	$(LINUX_DIR)/crypto/cast5.ko \
 	$(LINUX_DIR)/crypto/cast6.ko \
+	$(if $(findstring y,$(CONFIG_CRYPTO_CRC32C)),,$(LINUX_DIR)/crypto/crc32c.ko) \
+	$(LINUX_DIR)/crypto/fcrypt.ko \
 	$(LINUX_DIR)/crypto/khazad.ko \
 	$(LINUX_DIR)/crypto/md4.ko \
 	$(LINUX_DIR)/crypto/serpent.ko \
 	$(LINUX_DIR)/crypto/sha256$(SHA256_SUFFIX).ko \
 	$(LINUX_DIR)/crypto/sha512$(SHA512_SUFFIX).ko \
 	$(LINUX_DIR)/crypto/tea.ko \
+	$(LINUX_DIR)/crypto/tgr192.ko \
+	$(LINUX_DIR)/crypto/twofish_common.ko \
 	$(LINUX_DIR)/crypto/wp512.ko
   ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,2.6.35)),1)
     FILES += $(LINUX_DIR)/crypto/twofish.ko
@@ -359,14 +364,6 @@ define KernelPackage/crypto-misc
   $(call AddDepends/crypto)
 endef
 
-define KernelPackage/crypto-misc/2.6
-  FILES+= \
-	$(LINUX_DIR)/crypto/camellia.ko \
-	$(if $(findstring y,$(CONFIG_CRYPTO_CRC32C)),,$(LINUX_DIR)/crypto/crc32c.ko) \
-	$(LINUX_DIR)/crypto/fcrypt.ko \
-	$(LINUX_DIR)/crypto/tgr192.ko \
-	$(LINUX_DIR)/crypto/twofish_common.ko
-endef
 
 define KernelPackage/crypto-misc/x86
   FILES+=$(LINUX_DIR)/arch/x86/crypto/twofish-i586.ko
