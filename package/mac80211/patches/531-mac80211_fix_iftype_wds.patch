@@ -1,6 +1,6 @@
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2330,13 +2330,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2335,13 +2335,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -17,7 +17,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_DEAUTH):
  	case cpu_to_le16(IEEE80211_STYPE_DISASSOC):
-@@ -2716,7 +2717,10 @@ static int prepare_for_handlers(struct i
+@@ -2680,7 +2681,10 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
@@ -77,7 +77,7 @@
   err_stop:
  	if (!local->open_count)
  		drv_stop(local);
-@@ -717,6 +694,70 @@ static void ieee80211_if_setup(struct ne
+@@ -718,6 +695,70 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -148,7 +148,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -821,6 +862,9 @@ static void ieee80211_iface_work(struct 
+@@ -822,6 +863,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;

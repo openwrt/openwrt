@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -543,6 +543,7 @@ static ssize_t read_file_xmit(struct fil
+@@ -548,6 +548,7 @@ static ssize_t read_file_xmit(struct fil
  
  	PR("MPDUs Queued:    ", queued);
  	PR("MPDUs Completed: ", completed);
@@ -8,7 +8,7 @@
  	PR("Aggregates:      ", a_aggr);
  	PR("AMPDUs Queued HW:", a_queued_hw);
  	PR("AMPDUs Queued SW:", a_queued_sw);
-@@ -798,7 +799,10 @@ void ath_debug_stat_tx(struct ath_softc 
+@@ -803,7 +804,10 @@ void ath_debug_stat_tx(struct ath_softc 
  		else
  			TX_STAT_INC(qnum, a_completed);
  	} else {
@@ -22,7 +22,7 @@
  	if (ts->ts_status & ATH9K_TXERR_FIFO)
 --- a/drivers/net/wireless/ath/ath9k/debug.h
 +++ b/drivers/net/wireless/ath/ath9k/debug.h
-@@ -112,6 +112,7 @@ struct ath_tx_stats {
+@@ -116,6 +116,7 @@ struct ath_tx_stats {
  	u32 tx_bytes_all;
  	u32 queued;
  	u32 completed;
