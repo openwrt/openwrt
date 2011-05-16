@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2011-04-19
-PKG_RELEASE:=3
+PKG_VERSION:=2011-05-13
+PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=7b789b726927bcc8e3b06c7df40214d9
+PKG_MD5SUM:=8670d18633dbd28b19168abe3ecd0357
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -1367,7 +1367,6 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
-	rm $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
 endef
 
 ifneq ($(CONFIG_PACKAGE_kmod-cfg80211),)

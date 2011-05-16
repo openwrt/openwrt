@@ -10,7 +10,7 @@
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
-@@ -377,7 +378,8 @@ int ieee80211_start_tx_ba_session(struct
+@@ -388,7 +389,8 @@ int ieee80211_start_tx_ba_session(struct
  	 */
  	if (sdata->vif.type != NL80211_IFTYPE_STATION &&
  	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
@@ -22,7 +22,7 @@
  	if (test_sta_flags(sta, WLAN_STA_BLOCK_BA)) {
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
-@@ -160,6 +160,8 @@ static void ieee80211_send_addba_resp(st
+@@ -161,6 +161,8 @@ static void ieee80211_send_addba_resp(st
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
@@ -33,7 +33,7 @@
  					  IEEE80211_STYPE_ACTION);
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2132,7 +2132,8 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2137,7 +2137,8 @@ ieee80211_rx_h_action(struct ieee80211_r
  		 */
  		if (sdata->vif.type != NL80211_IFTYPE_STATION &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
@@ -43,7 +43,7 @@
  			break;
  
  		/* verify action_code is present */
-@@ -2717,13 +2718,16 @@ static int prepare_for_handlers(struct i
+@@ -2681,13 +2682,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
