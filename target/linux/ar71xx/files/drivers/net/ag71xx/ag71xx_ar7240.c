@@ -828,6 +828,30 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	return as;
 }
 
+static void link_function(struct work_struct *work) {
+	struct ag71xx *ag = container_of(work, struct ag71xx, link_work.work);
+	unsigned long flags;
+	int i;
+	int status = 0;
+
+	for (i = 0; i < 4; i++) {
+		int link = ar7240sw_phy_read(ag->mii_bus, i, MII_BMSR);
+		if(link & BMSR_LSTATUS) {
+			status = 1;
+			break;
+		}
+	}
+
+	spin_lock_irqsave(&ag->lock, flags);
+	if(status != ag->link) {
+		ag->link = status;
+		ag71xx_link_adjust(ag);
+	}
+	spin_unlock_irqrestore(&ag->lock, flags);
+
+	schedule_delayed_work(&ag->link_work, HZ / 2);
+}
+
 void ag71xx_ar7240_start(struct ag71xx *ag)
 {
 	struct ar7240sw *as = ag->phy_priv;
@@ -836,15 +860,17 @@ void ag71xx_ar7240_start(struct ag71xx *ag)
 	ar7240sw_setup(as);
 
 	ag->speed = SPEED_1000;
-	ag->link = 1;
 	ag->duplex = 1;
 
 	ar7240_set_addr(as, ag->dev->dev_addr);
 	ar7240_hw_apply(&as->swdev);
+
+	schedule_delayed_work(&ag->link_work, HZ / 10);
 }
 
 void ag71xx_ar7240_stop(struct ag71xx *ag)
 {
+	cancel_delayed_work_sync(&ag->link_work);
 }
 
 int __devinit ag71xx_ar7240_init(struct ag71xx *ag)
@@ -857,6 +883,8 @@ int __devinit ag71xx_ar7240_init(struct ag71xx *ag)
 
 	ag->phy_priv = as;
 	ar7240sw_reset(as);
+
+	INIT_DELAYED_WORK(&ag->link_work, link_function);
 
 	return 0;
 }
