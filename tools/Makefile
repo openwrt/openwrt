@@ -19,7 +19,7 @@ tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-cmdline quilt yaffs2 flock
 tools-y += mm-macros xorg-macros xfce-macros missing-macros xz cmake
 tools-$(CONFIG_TARGET_orion_generic) += wrt350nv2-builder upslug2
-tools-$(CONFIG_TARGET_x86) += qemu
+tools-$(CONFIG_TARGET_x86) += qemu mkelfimage
 ifneq ($(CONFIG_TARGET_ar71xx),)
 tools-y += lzma-old squashfs 
 endif
