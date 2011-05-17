@@ -10,7 +10,7 @@ ARCH:=i386
 BOARD:=x86
 BOARDNAME:=x86
 FEATURES:=squashfs jffs2 ext4 vdi vmdk pcmcia targz
-SUBTARGETS=generic olpc xen_domu ep80579 net5501 kvm_guest geos alix2
+SUBTARGETS=generic olpc xen_domu ep80579 net5501 kvm_guest geos alix2 thincan
 
 LINUX_VERSION:=2.6.37.6
 

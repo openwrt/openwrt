@@ -1,3 +1,18 @@
+config X86_ETHERBOOT_IMAGES
+	bool "Build Etherboot image"
+	depends TARGET_x86 && TARGET_x86_thincan_DBE61
+	default y
+	help
+	  Builds network bootable image for ThinCan DBE61 (Etherboot BIOS)
+
+config X86_ETHERBOOT_BOOTOPTS
+	string "Extra kernel boot options"
+	depends X86_ETHERBOOT_IMAGES
+	default "ip=dhcp nbdport=2000 " if TARGET_ROOTFS_SQUASHFS
+	default "ip=dhcp root=/dev/nfs nfsroot=192.168.0.1:/srv/dbe61"
+	help
+	  Kernel arguments to pass to the kernel eg. NFS root location etc.
+
 config X86_GRUB_IMAGES
 	bool "Build GRUB images (Linux x86 or x86_64 host only)"
 	depends TARGET_x86 && !TARGET_x86_olpc
