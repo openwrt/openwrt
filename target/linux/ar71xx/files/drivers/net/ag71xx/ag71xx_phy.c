@@ -48,9 +48,9 @@ void ag71xx_phy_start(struct ag71xx *ag)
 
 	if (ag->phy_dev) {
 		phy_start(ag->phy_dev);
+	} else if (pdata->has_ar7240_switch) {
+		ag71xx_ar7240_start(ag);
 	} else {
-		if (pdata->has_ar7240_switch)
-			ag71xx_ar7240_start(ag);
 		ag->link = 1;
 		ag71xx_link_adjust(ag);
 	}

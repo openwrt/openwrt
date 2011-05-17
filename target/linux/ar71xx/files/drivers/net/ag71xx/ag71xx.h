@@ -162,6 +162,7 @@ struct ag71xx {
 	int			duplex;
 
 	struct work_struct	restart_work;
+	struct delayed_work	link_work;
 	struct timer_list	oom_timer;
 
 #ifdef CONFIG_AG71XX_DEBUG_FS
