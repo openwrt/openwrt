@@ -227,6 +227,8 @@ EOF
 	}
 	if (@{$target->{subtargets}} > 0) {
 		$confstr .= "\tselect HAS_SUBTARGETS\n";
+	} else {
+		$confstr .= $features;
 	}
 
 	if ($target->{arch} =~ /\w/) {
@@ -246,7 +248,6 @@ EOF
 		$flags =~ /\+/ and $mode = "select";
 		$flags =~ /@/ and $confstr .= "\t$mode $name\n";
 	}
-	$confstr .= $features;
 	$confstr .= "$help\n\n";
 	print $confstr;
 }
