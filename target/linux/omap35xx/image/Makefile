@@ -29,10 +29,4 @@ define Image/Build
 	$(call Image/Build/$(1),$(1))
 endef
 
-ifdef CONFIG_TARGET_omap35xx_gumstix
-define Image/Prepare
-        $(CP) ../gumstix/base-files/lib/wifi/mac80211.sh $(TARGET_DIR)/lib/wifi
-endef
-endif
-
 $(eval $(call BuildImage))
