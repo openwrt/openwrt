@@ -467,7 +467,7 @@
  }
  
  static void ath_tx_complete_poll_work(struct work_struct *work)
-@@ -2237,17 +2193,17 @@ void ath_tx_tasklet(struct ath_softc *sc
+@@ -2237,17 +2193,16 @@ void ath_tx_tasklet(struct ath_softc *sc
  
  void ath_tx_edma_tasklet(struct ath_softc *sc)
  {
@@ -481,14 +481,13 @@
  	int status;
 -	int txok;
  
-+	spin_lock_bh(&txq->axq_lock);
  	for (;;) {
 -		status = ath9k_hw_txprocdesc(ah, NULL, (void *)&txs);
 +		status = ath9k_hw_txprocdesc(ah, NULL, (void *)&ts);
  		if (status == -EINPROGRESS)
  			break;
  		if (status == -EIO) {
-@@ -2257,16 +2213,16 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2257,12 +2212,13 @@ void ath_tx_edma_tasklet(struct ath_soft
  		}
  
  		/* Skip beacon completions */
@@ -497,22 +496,14 @@
  			continue;
  
 -		txq = &sc->tx.txq[txs.qid];
-+		ath_dbg(common, ATH_DBG_XMIT,
-+			"Tx status, descid=%04x\n", ts.desc_id);
- 
--		spin_lock_bh(&txq->axq_lock);
--		if (list_empty(&txq->txq_fifo[txq->txq_tailidx])) {
--			spin_unlock_bh(&txq->axq_lock);
--			return;
--		}
 +		txq = &sc->tx.txq[ts.qid];
-+
-+		if (list_empty(&txq->txq_fifo[txq->txq_tailidx]))
-+			break;
  
- 		bf = list_first_entry(&txq->txq_fifo[txq->txq_tailidx],
- 				      struct ath_buf, list);
-@@ -2275,43 +2231,24 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 		spin_lock_bh(&txq->axq_lock);
++
+ 		if (list_empty(&txq->txq_fifo[txq->txq_tailidx])) {
+ 			spin_unlock_bh(&txq->axq_lock);
+ 			return;
+@@ -2275,41 +2231,21 @@ void ath_tx_edma_tasklet(struct ath_soft
  		INIT_LIST_HEAD(&bf_head);
  		list_cut_position(&bf_head, &txq->txq_fifo[txq->txq_tailidx],
  				  &lastbf->list);
@@ -524,31 +515,25 @@
 -		spin_unlock_bh(&txq->axq_lock);
  
 -		txok = !(txs.ts_status & ATH9K_TXERR_MASK);
-+		if (list_empty(&txq->txq_fifo[txq->txq_tailidx])) {
-+			INCR(txq->txq_tailidx, ATH_TXFIFO_DEPTH);
- 
+-
 -		if (!bf_isampdu(bf)) {
 -			if (txs.ts_status & ATH9K_TXERR_XRETRY)
 -				bf->bf_state.bf_type |= BUF_XRETRY;
 -			ath_tx_rc_status(sc, bf, &txs, 1, txok ? 0 : 1, txok, true);
 -		}
-+			if (!list_empty(&txq->axq_q)) {
-+				struct list_head bf_q;
- 
+-
 -		if (bf_isampdu(bf))
 -			ath_tx_complete_aggr(sc, txq, bf, &bf_head, &txs,
 -					     txok, true);
 -		else
 -			ath_tx_complete_buf(sc, bf, txq, &bf_head,
 -					    &txs, txok, 0);
--
++		if (list_empty(&txq->txq_fifo[txq->txq_tailidx])) {
++			INCR(txq->txq_tailidx, ATH_TXFIFO_DEPTH);
+ 
 -		spin_lock_bh(&txq->axq_lock);
-+				INIT_LIST_HEAD(&bf_q);
-+				txq->axq_link = NULL;
-+				list_splice_tail_init(&txq->axq_q, &bf_q);
-+				ath_tx_txqaddbuf(sc, txq, &bf_q, true);
-+			}
-+		}
++			if (!list_empty(&txq->axq_q)) {
++				struct list_head bf_q;
  
 -		if (!list_empty(&txq->txq_fifo_pending)) {
 -			INIT_LIST_HEAD(&bf_head);
@@ -560,14 +545,17 @@
 -			ath_tx_txqaddbuf(sc, txq, &bf_head);
 -		} else if (sc->sc_flags & SC_OP_TXAGGR)
 -			ath_txq_schedule(sc, txq);
++				INIT_LIST_HEAD(&bf_q);
++				txq->axq_link = NULL;
++				list_splice_tail_init(&txq->axq_q, &bf_q);
++				ath_tx_txqaddbuf(sc, txq, &bf_q, true);
++			}
++		}
+ 
 +		ath_tx_process_buffer(sc, txq, &ts, bf, &bf_head);
- 
--		spin_unlock_bh(&txq->axq_lock);
+ 		spin_unlock_bh(&txq->axq_lock);
  	}
-+	spin_unlock_bh(&txq->axq_lock);
  }
- 
- /*****************/
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
 @@ -179,7 +179,7 @@ enum ATH_AGGR_STATUS {
