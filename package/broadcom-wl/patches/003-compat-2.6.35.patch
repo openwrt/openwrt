@@ -12,7 +12,7 @@
  	int i;
  
  	if (!dev)
-@@ -2098,14 +2102,23 @@ _wl_set_multicast_list(struct net_device
+@@ -2098,14 +2102,24 @@ _wl_set_multicast_list(struct net_device
  		wl->pub->allmulti = (dev->flags & IFF_ALLMULTI)? TRUE: FALSE;
  
  		/* copy the list of multicasts into our private table */
@@ -20,6 +20,7 @@
  		for (i = 0, mclist = dev->mc_list; mclist && (i < dev->mc_count);
  			i++, mclist = mclist->next) {
 +#else
++		i = 0;
 +		netdev_for_each_mc_addr(ha, dev) {
 +#endif
  			if (i >= MAXMULTILIST) {
