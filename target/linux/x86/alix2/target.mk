@@ -2,7 +2,7 @@ BOARDNAME:=PCEngines alix2
 FEATURES:=squashfs pci usb gpio
 ALIX2_GPIO = $(if $(findstring 2.6.32,$(LINUX_VERSION)),gpio-cs5535,gpio-cs5535-new)
 DEFAULT_PACKAGES += kmod-ata-via-sata \
-			kmod-crypto-hw-geode kmow-crypto-ocf \
+			kmod-crypto-hw-geode kmod-crypto-ocf \
 			kmod-$(ALIX2_GPIO) kmod-gpio-nsc \
 			kmod-wdt-geode kmod-hwmon-core kmod-hwmon-lm90 \
 			kmod-via-rhine kmod-leds-alix \
