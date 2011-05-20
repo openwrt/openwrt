@@ -8,6 +8,10 @@ START=05
 start() {
 	local board=$(awk 'BEGIN{FS="[ \t:/]+"} /system type/ {print $4}' /proc/cpuinfo)
 
+	if [ "$board" = "96358VW" ] && [ -e /proc/switch/eth1/enable ]; then
+		board="DVAG3810BN"
+	fi
+
 	[ ! -d /etc/defconfig/$board ] && board="generic"
 
 	for f in $( ls /etc/defconfig/$board ); do
