@@ -59,6 +59,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
+	"bcm63xx/D-4P-W "*)
+		status_led="power:green"
+		brcm63xx_has_reset_button="true"
+		ifname=eth0
+		;;
 	*)
 		;;
 	esac
