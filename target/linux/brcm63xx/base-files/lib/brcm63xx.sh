@@ -54,6 +54,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
+	"bcm63xx/V2110 "*)
+		status_led="V2110:power:green"
+		brcm63xx_has_reset_button="true"
+		ifname=eth0
+		;;
 	"bcm63xx/CPVA642 "* )
 		status_led="power:green"
 		brcm63xx_has_reset_button="true"
