@@ -195,6 +195,8 @@ define Image/Build
 	$(call Image/Build/CFEFIXUP,$(1),96358GW,AW4139,6358,DSL274XB-C2)
 	# D-Link DSL-2740B/DSL-2741B, rev C3
 	$(call Image/Build/CFE,$(1),AW4139,6358,DSL274XB-C3)
+	# D-Link DVA-G3810BN/TL
+	$(call Image/Build/CFE,$(1),96358GW,6358,DVAG3810BN)
 
 	# TP-Link TD-8810A, TD-8810B, TD-8811A, TD-8811B
 	$(call Image/Build/CFE,$(1),8L-2M-8M,6338,TP8810_8811)

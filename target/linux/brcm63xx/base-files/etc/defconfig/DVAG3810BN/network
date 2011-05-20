@@ -1,0 +1,29 @@
+# Copyright (C) 2008 OpenWrt.org
+
+config interface loopback
+        option ifname   lo
+        option proto    static
+        option ipaddr   127.0.0.1
+        option netmask  255.0.0.0
+
+config interface lan
+        option type     bridge
+        option ifname   eth1.1
+        option proto    static
+        option ipaddr   192.168.1.1
+        option netmask  255.255.255.0
+        option nat      1
+
+config interface wan
+	option ifname	eth0
+	option proto	dhcp
+
+config	switch	eth1
+	option	enable	1
+	option	enable_vlan 1
+	option	reset	1
+
+config	switch_vlan
+	option	vlan	1
+	option	device	eth1
+	option	ports	"0 1 2 3 5t"
