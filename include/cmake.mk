@@ -45,6 +45,7 @@ define Build/Configure/Default
 			-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=$(STAGING_DIR) \
 			-DCMAKE_STRIP=: \
 			-DCMAKE_INSTALL_PREFIX=/usr \
+			-DDL_LIBRARY=$(STAGING_DIR) \
 			$(CMAKE_OPTIONS) \
 		. \
 	)
