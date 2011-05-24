@@ -206,20 +206,19 @@ dhcp_vendorclass_add() {
 dhcp_host_add() {
 	local cfg="$1"
 
-	config_get name "$cfg" name
-
 	config_get networkid "$cfg" networkid
 	[ -n "$networkid" ] && dhcp_option_add "$cfg" "$networkid"
 
+	config_get name "$cfg" name
 	config_get ip "$cfg" ip
-	[ -n "$ip" ] || return 0
+	[ -n "$ip" ] || [ -n "$name" ] || return 0
 
 	macs=""
 	config_get mac "$cfg" mac
 	for m in $mac; do append macs "$m" ","; done
 	[ -n "$macs" ] || return 0
 
-	append args "--dhcp-host=$macs,${networkid:+net:$networkid,}$ip${name:+,$name}"
+	append args "--dhcp-host=$macs${networkid:+,net:$networkid}${ip:+,$ip}${name:+,$name}"
 }
 
 dhcp_mac_add() {
