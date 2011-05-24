@@ -84,7 +84,7 @@ $(eval $(call KernelPackage,crypto-rng))
 
 define KernelPackage/crypto-iv
   TITLE:=CryptoAPI initialization vectors
-  DEPENDS:=+kmod-crypto-rng +kmod-crypto-wq
+  DEPENDS:=+kmod-crypto-manager +kmod-crypto-rng +kmod-crypto-wq
   KCONFIG:= CONFIG_CRYPTO_BLKCIPHER2
   FILES:= \
 	$(LINUX_DIR)/crypto/eseqiv.ko \
