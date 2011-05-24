@@ -229,6 +229,27 @@ Includes:
 - libxt_TPROXY
 endef
 
+define Package/iptables-mod-tee
+$(call Package/iptables/Module, +kmod-ipt-tee)
+  TITLE:=TEE iptables extensions
+endef
+
+define Package/iptables-mod-tee/description
+TEE iptables extensions.
+Includes:
+- libxt_TEE
+endef
+
+define Package/iptables-mod-u32
+$(call Package/iptables/Module, +kmod-ipt-u32)
+  TITLE:=U32 iptables extensions
+endef
+
+define Package/iptables-mod-u32/description
+U32 iptables extensions.
+Includes:
+- libxt_u32
+endef
 
 define Package/iptables-utils
 $(call Package/iptables/Module, )
@@ -424,6 +445,8 @@ $(eval $(call BuildPlugin,iptables-mod-iprange,$(IPT_IPRANGE-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
 $(eval $(call BuildPlugin,iptables-mod-hashlimit,$(IPT_HASHLIMIT-m)))
 $(eval $(call BuildPlugin,iptables-mod-tproxy,$(IPT_TPROXY-m)))
+$(eval $(call BuildPlugin,iptables-mod-tee,$(IPT_TEE-m)))
+$(eval $(call BuildPlugin,iptables-mod-u32,$(IPT_U32-m)))
 $(eval $(call BuildPackage,ip6tables))
 $(eval $(call BuildPackage,ip6tables-utils))
 $(eval $(call BuildPackage,libiptc))

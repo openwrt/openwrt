@@ -311,6 +311,41 @@ endef
 
 $(eval $(call KernelPackage,ipt-tproxy))
 
+define KernelPackage/ipt-tee
+  TITLE:=TEE support
+  KCONFIG:= \
+  	CONFIG_NETFILTER_XT_TARGET_TEE
+  FILES:= \
+  	$(LINUX_DIR)/net/netfilter/xt_TEE.ko \
+  	$(foreach mod,$(IPT_TEE-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir nf_tee $(IPT_TEE-m)))
+  $(call AddDepends/ipt)
+endef
+
+define KernelPackage/ipt-tee/description
+  Kernel modules for TEE
+endef
+
+$(eval $(call KernelPackage,ipt-tee))
+
+
+define KernelPackage/ipt-u32
+  TITLE:=U32 support
+  KCONFIG:= \
+  	CONFIG_NETFILTER_XT_MATCH_U32
+  FILES:= \
+  	$(LINUX_DIR)/net/netfilter/xt_u32.ko \
+  	$(foreach mod,$(IPT_U32-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoLoad,45,$(notdir nf_tee $(IPT_U32-m)))
+  $(call AddDepends/ipt)
+endef
+
+define KernelPackage/ipt-u32/description
+  Kernel modules for U32
+endef
+
+$(eval $(call KernelPackage,ipt-u32))
+
 
 define KernelPackage/ipt-iprange
   TITLE:=Module for matching ip ranges
