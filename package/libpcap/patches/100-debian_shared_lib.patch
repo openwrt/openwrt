@@ -61,7 +61,7 @@ build a shared library.
  
  MAN1 = pcap-config.1
  
-@@ -324,7 +338,7 @@ EXTRA_DIST = \
+@@ -324,21 +338,14 @@ EXTRA_DIST = \
  	Win32/Src/inet_net.c \
  	Win32/Src/inet_pton.c
  
@@ -70,7 +70,22 @@ build a shared library.
  
  libpcap.a: $(OBJ)
  	@rm -f $@
-@@ -409,6 +423,13 @@ libpcap.shareda: $(OBJ)
+ 	ar rc $@ $(OBJ) $(ADDLARCHIVEOBJS)
+ 	$(RANLIB) $@
+ 
+-shared: libpcap.$(DYEXT)
+-
+-libpcap.so: $(OBJ)
+-	@rm -f $@
+-	VER=`cat $(srcdir)/VERSION`; \
+-	MAJOR_VER=`sed 's/\([0-9][0-9]*\)\..*/\1/' $(srcdir)/VERSION`; \
+-	@V_SHLIB_CMD@ @V_SHLIB_OPT@ @V_SONAME_OPT@$@.$$MAJOR_VER $(LDFLAGS) \
+-	    -o $@.$$VER $(OBJ) $(ADDLOBJS) $(LIBS)
++shared: $(SHAREDLIB)
+ 
+ #
+ # The following rule succeeds, but the result is untested.
+@@ -409,6 +416,13 @@ libpcap.shareda: $(OBJ)
  #
  libpcap.none:
  
@@ -84,7 +99,7 @@ build a shared library.
  scanner.c: $(srcdir)/scanner.l
  	@rm -f $@
  	$(srcdir)/runlex.sh $(LEX) -o$@ $<
-@@ -416,6 +437,9 @@ scanner.c: $(srcdir)/scanner.l
+@@ -416,6 +430,9 @@ scanner.c: $(srcdir)/scanner.l
  scanner.o: scanner.c tokdefs.h
  	$(CC) $(CFLAGS) -c scanner.c
  
@@ -94,7 +109,7 @@ build a shared library.
  pcap.o: version.h
  
  tokdefs.h: grammar.c
-@@ -429,9 +453,17 @@ grammar.o: grammar.c
+@@ -429,9 +446,17 @@ grammar.o: grammar.c
  	@rm -f $@
  	$(CC) $(CFLAGS) -Dyylval=pcap_lval -c grammar.c
  
@@ -112,7 +127,7 @@ build a shared library.
  snprintf.o: $(srcdir)/missing/snprintf.c
  	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/missing/snprintf.c
  
-@@ -469,6 +501,9 @@ bpf_filter.c: $(srcdir)/bpf/net/bpf_filt
+@@ -469,6 +494,9 @@ bpf_filter.c: $(srcdir)/bpf/net/bpf_filt
  bpf_filter.o: bpf_filter.c
  	$(CC) $(CFLAGS) -c bpf_filter.c
  
@@ -122,16 +137,25 @@ build a shared library.
  #
  # Generate the pcap-config script.
  #
-@@ -604,6 +639,9 @@ install-archive-so install-archive-dylib
+@@ -562,14 +590,12 @@ install: install-shared install-archive 
+ 		    $(DESTDIR)$(mandir)/man@MAN_MISC_INFO@/`echo $$i | sed 's/.manmisc.in/.@MAN_MISC_INFO@/'`; done
+ 
+ install-shared: install-shared-$(DYEXT)
+-install-shared-so: libpcap.so
++install-shared-so: $(SHAREDLIB)
+ 	[ -d $(DESTDIR)$(libdir) ] || \
  	    (mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir))
- 	$(INSTALL_DATA) libpcap.a $(DESTDIR)$(libdir)/libpcap.a
- 	$(RANLIB) $(DESTDIR)$(libdir)/libpcap.a
+-	VER=`cat $(srcdir)/VERSION`; \
+-	MAJOR_VER=`sed 's/\([0-9][0-9]*\)\..*/\1/' $(srcdir)/VERSION`; \
+-	$(INSTALL_PROGRAM) libpcap.so.$$VER $(DESTDIR)$(libdir)/libpcap.so.$$VER; \
+-	ln -sf libpcap.so.$$VER $(DESTDIR)$(libdir)/libpcap.so.$$MAJOR_VER; \
+-	ln -sf libpcap.so.$$MAJOR_VER $(DESTDIR)$(libdir)/libpcap.so
 +	$(INSTALL_DATA) $(SHAREDLIB) $(DESTDIR)$(libdir)/
 +	ln -sf $(SHAREDLIB) $(DESTDIR)$(libdir)/$(SOLIBRARY).$(MAJ)
 +	ln -sf $(SOLIBRARY).$(MAJ) $(DESTDIR)$(libdir)/$(SOLIBRARY)
- install-archive-shareda:
- 	#
- 	# AIX, however, doesn't, so we don't install the archive
+ install-shared-dylib: libpcap.dylib
+ 	[ -d $(DESTDIR)$(libdir) ] || \
+ 	    (mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir))
 --- a/configure
 +++ b/configure
 @@ -3229,7 +3229,7 @@ _ACEOF

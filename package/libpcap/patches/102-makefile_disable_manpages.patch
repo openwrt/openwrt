@@ -1,6 +1,6 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -539,62 +539,12 @@ install: install-shared install-archive 
+@@ -532,62 +532,12 @@ install: install-shared install-archive 
  	    (mkdir -p $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir))
  	[ -d $(DESTDIR)$(includedir)/pcap ] || \
  	    (mkdir -p $(DESTDIR)$(includedir)/pcap; chmod 755 $(DESTDIR)$(includedir)/pcap)
@@ -62,8 +62,8 @@
 -		    $(DESTDIR)$(mandir)/man@MAN_MISC_INFO@/`echo $$i | sed 's/.manmisc.in/.@MAN_MISC_INFO@/'`; done
  
  install-shared: install-shared-$(DYEXT)
- install-shared-so: libpcap.so
-@@ -654,23 +604,6 @@ uninstall: uninstall-shared
+ install-shared-so: $(SHAREDLIB)
+@@ -642,23 +592,6 @@ uninstall: uninstall-shared
  		rm -f $(DESTDIR)$(includedir)/$$i; done
  	-rmdir $(DESTDIR)$(includedir)/pcap
  	rm -f $(DESTDIR)/$(bindir)/pcap-config
