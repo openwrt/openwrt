@@ -105,10 +105,11 @@
  	return (p);
  }
  
-@@ -318,6 +320,15 @@ pcap_set_buffer_size(pcap_t *p, int buff
+@@ -317,6 +319,15 @@ pcap_set_buffer_size(pcap_t *p, int buff
+ 	return 0;
  }
  
- int
++int
 +pcap_set_protocol(pcap_t *p, unsigned short proto)
 +{
 +	if (pcap_check_activated(p))
@@ -117,10 +118,9 @@
 +	return 0;
 +}
 +
-+int
+ int
  pcap_activate(pcap_t *p)
  {
- 	int status;
 --- a/pcap/pcap.h
 +++ b/pcap/pcap.h
 @@ -68,6 +68,7 @@ extern "C" {
