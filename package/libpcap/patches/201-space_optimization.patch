@@ -1,6 +1,6 @@
 --- a/gencode.c
 +++ b/gencode.c
-@@ -439,20 +439,6 @@ pcap_compile_nopcap(int snaplen_arg, int
+@@ -491,20 +491,6 @@ pcap_compile_nopcap(int snaplen_arg, int
  }
  
  /*
@@ -23,7 +23,7 @@
   * back to another unresolved block (or nil).  At least one of the fields
 --- a/pcap.c
 +++ b/pcap.c
-@@ -698,6 +698,59 @@ static const u_char charmap[] = {
+@@ -748,6 +748,59 @@ static const u_char charmap[] = {
  	(u_char)'\374', (u_char)'\375', (u_char)'\376', (u_char)'\377',
  };
  
@@ -85,7 +85,7 @@
  {
 --- a/optimize.c
 +++ b/optimize.c
-@@ -2278,45 +2278,6 @@ icode_to_fcode(root, lenp)
+@@ -2292,45 +2292,6 @@ icode_to_fcode(root, lenp)
  	return fp;
  }
  

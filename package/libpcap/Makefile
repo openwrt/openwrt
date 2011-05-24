@@ -38,6 +38,7 @@ define Package/libpcap/config
 endef
 
 TARGET_CFLAGS += \
+	$(FPIC) \
 	-ffunction-sections \
 	-fdata-sections
 
