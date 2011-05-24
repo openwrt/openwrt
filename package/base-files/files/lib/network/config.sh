@@ -190,7 +190,8 @@ prepare_interface() {
 					$DEBUG do_sysctl "net.ipv6.conf.$iface.disable_ipv6" 1
 					$DEBUG brctl addif "br-$config" "$iface"
 					$DEBUG brctl stp "br-$config" $stp
-					$DEBUG ifconfig "br-$config" up
+					[ -z "$macaddr" ] && macaddr="$(cat /sys/class/net/$iface/address)"
+					$DEBUG ifconfig "br-$config" hw ether $macaddr up
 					# Creating the bridge here will have triggered a hotplug event, which will
 					# result in another setup_interface() call, so we simply stop processing
 					# the current event at this point.
