@@ -3,12 +3,12 @@
 
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -55,7 +55,7 @@ SHAREDLIB=$(SOLIBRARY).$(LIBVERSION)
+@@ -56,7 +56,7 @@ LD = /usr/bin/ld
  CC = @CC@
  CCOPT = @V_CCOPT@
  INCLS = -I. @V_INCLS@
 -DEFS = @DEFS@ @V_DEFS@
 +DEFS = -D_BSD_SOURCE @DEFS@ @V_DEFS@
- LIBS = @V_LIBS@
- DAGLIBS = @DAGLIBS@
- DEPLIBS = @DEPLIBS@
+ ADDLOBJS = @ADDLOBJS@
+ ADDLARCHIVEOBJS = @ADDLARCHIVEOBJS@
+ LIBS = @LIBS@

@@ -1,6 +1,6 @@
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -461,14 +461,6 @@ install: libpcap.a pcap-config
+@@ -539,62 +539,12 @@ install: install-shared install-archive
  	    (mkdir -p $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir))
  	[ -d $(DESTDIR)$(includedir)/pcap ] || \
  	    (mkdir -p $(DESTDIR)$(includedir)/pcap; chmod 755 $(DESTDIR)$(includedir)/pcap)
@@ -12,67 +12,78 @@
 -	    (mkdir -p $(DESTDIR)$(mandir)/man@MAN_FILE_FORMATS@; chmod 755 $(DESTDIR)$(mandir)/man@MAN_FILE_FORMATS@)
 -	[ -d $(DESTDIR)$(mandir)/man@MAN_MISC_INFO@ ] || \
 -	    (mkdir -p $(DESTDIR)$(mandir)/man@MAN_MISC_INFO@; chmod 755 $(DESTDIR)$(mandir)/man@MAN_MISC_INFO@)
- 	$(INSTALL_DATA) $(srcdir)/pcap/pcap.h \
- 	    $(DESTDIR)$(includedir)/pcap/pcap.h
- 	$(INSTALL_DATA) $(srcdir)/pcap/bpf.h \
-@@ -487,36 +479,6 @@ install: libpcap.a pcap-config
+ 	for i in $(PUBHDR); do \
+ 		$(INSTALL_DATA) $(srcdir)/$$i \
+ 		    $(DESTDIR)$(includedir)/$$i; done
  	[ -d $(DESTDIR)$(bindir) ] || \
  	    (mkdir -p $(DESTDIR)$(bindir); chmod 755 $(DESTDIR)$(bindir))
  	$(INSTALL_PROGRAM) pcap-config $(DESTDIR)$(bindir)/pcap-config
 -	for i in $(MAN1); do \
 -		$(INSTALL_DATA) $(srcdir)/$$i \
 -		    $(DESTDIR)$(mandir)/man1/$$i; done
--	for i in $(MAN3PCAP); do \
+-	for i in $(MAN3PCAP_NOEXPAND); do \
 -		$(INSTALL_DATA) $(srcdir)/$$i \
 -		    $(DESTDIR)$(mandir)/man3/$$i; done
+-	for i in $(MAN3PCAP_EXPAND:.in=); do \
+-		$(INSTALL_DATA) $$i \
+-		    $(DESTDIR)$(mandir)/man3/$$i; done
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_datalink_val_to_description.3pcap
 -	ln $(DESTDIR)$(mandir)/man3/pcap_datalink_val_to_name.3pcap \
 -		 $(DESTDIR)$(mandir)/man3/pcap_datalink_val_to_description.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_dump_fopen.3pcap
 -	ln $(DESTDIR)$(mandir)/man3/pcap_dump_open.3pcap \
 -		 $(DESTDIR)$(mandir)/man3/pcap_dump_fopen.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_perror.3pcap
 -	ln $(DESTDIR)$(mandir)/man3/pcap_geterr.3pcap \
 -		 $(DESTDIR)$(mandir)/man3/pcap_perror.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_sendpacket.3pcap
 -	ln $(DESTDIR)$(mandir)/man3/pcap_inject.3pcap \
 -		 $(DESTDIR)$(mandir)/man3/pcap_sendpacket.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_dispatch.3pcap
 -	ln $(DESTDIR)$(mandir)/man3/pcap_loop.3pcap \
 -		 $(DESTDIR)$(mandir)/man3/pcap_dispatch.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_minor_version.3pcap
 -	ln $(DESTDIR)$(mandir)/man3/pcap_major_version.3pcap \
 -		 $(DESTDIR)$(mandir)/man3/pcap_minor_version.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_next.3pcap
 -	ln $(DESTDIR)$(mandir)/man3/pcap_next_ex.3pcap \
 -		 $(DESTDIR)$(mandir)/man3/pcap_next.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_fopen_offline.3pcap
 -	ln $(DESTDIR)$(mandir)/man3/pcap_open_offline.3pcap \
 -		 $(DESTDIR)$(mandir)/man3/pcap_fopen_offline.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_getnonblock.3pcap
 -	ln $(DESTDIR)$(mandir)/man3/pcap_setnonblock.3pcap \
 -		 $(DESTDIR)$(mandir)/man3/pcap_getnonblock.3pcap
 -	for i in $(MANFILE); do \
--		$(INSTALL_DATA) $(srcdir)/`echo $$i | sed 's/.manfile.in/.manfile/'` \
+-		$(INSTALL_DATA) `echo $$i | sed 's/.manfile.in/.manfile/'` \
 -		    $(DESTDIR)$(mandir)/man@MAN_FILE_FORMATS@/`echo $$i | sed 's/.manfile.in/.@MAN_FILE_FORMATS@/'`; done
 -	for i in $(MANMISC); do \
--		$(INSTALL_DATA) $(srcdir)/`echo $$i | sed 's/.manmisc.in/.manmisc/'` \
+-		$(INSTALL_DATA) `echo $$i | sed 's/.manmisc.in/.manmisc/'` \
 -		    $(DESTDIR)$(mandir)/man@MAN_MISC_INFO@/`echo $$i | sed 's/.manmisc.in/.@MAN_MISC_INFO@/'`; done
  
  install-shared: install-shared-$(DYEXT)
  install-shared-so: libpcap.so
-@@ -536,23 +498,6 @@ uninstall:
- 	rm -f $(DESTDIR)$(includedir)/pcap.h
- 	rm -f $(DESTDIR)$(includedir)/pcap-bpf.h
- 	rm -f $(DESTDIR)$(includedir)/pcap-namedb.h
+@@ -654,23 +604,6 @@ uninstall: uninstall-shared
+ 		rm -f $(DESTDIR)$(includedir)/$$i; done
+ 	-rmdir $(DESTDIR)$(includedir)/pcap
+ 	rm -f $(DESTDIR)/$(bindir)/pcap-config
 -	for i in $(MAN1); do \
 -		rm -f $(DESTDIR)$(mandir)/man1/$$i; done
 -	for i in $(MAN3PCAP); do \
 -		rm -f $(DESTDIR)$(mandir)/man3/$$i; done
--	rm -f  $(DESTDIR)$(mandir)/man3/pcap_datalink_val_to_description.3pcap
--	rm -f  $(DESTDIR)$(mandir)/man3/pcap_dump_fopen.3pcap
--	rm -f  $(DESTDIR)$(mandir)/man3/pcap_perror.3pcap
--	rm -f  $(DESTDIR)$(mandir)/man3/pcap_sendpacket.3pcap
--	rm -f  $(DESTDIR)$(mandir)/man3/pcap_dispatch.3pcap
--	rm -f  $(DESTDIR)$(mandir)/man3/pcap_minor_version.3pcap
--	rm -f  $(DESTDIR)$(mandir)/man3/pcap_next.3pcap
--	rm -f  $(DESTDIR)$(mandir)/man3/pcap_fopen_offline.3pcap
--	rm -f  $(DESTDIR)$(mandir)/man3/pcap_getnonblock.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_datalink_val_to_description.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_dump_fopen.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_perror.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_sendpacket.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_dispatch.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_minor_version.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_next.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_fopen_offline.3pcap
+-	rm -f $(DESTDIR)$(mandir)/man3/pcap_getnonblock.3pcap
 -	for i in $(MANFILE); do \
 -		rm -f $(DESTDIR)$(mandir)/man@MAN_FILE_FORMATS@/`echo $$i | sed 's/.manfile.in/.@MAN_FILE_FORMATS@/'`; done
 -	for i in $(MANMISC); do \
 -		rm -f $(DESTDIR)$(mandir)/man@MAN_MISC_INFO@/`echo $$i | sed 's/.manmisc.in/.@MAN_MISC_INFO@/'`; done
  
- clean:
- 	rm -f $(CLEANFILES) libpcap*.dylib libpcap.so*
+ uninstall-shared: uninstall-shared-$(DYEXT)
+ uninstall-shared-so:

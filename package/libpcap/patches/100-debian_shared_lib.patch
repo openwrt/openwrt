@@ -13,8 +13,8 @@ build a shared library.
  VPATH = @srcdir@
  
 +# some defines for shared library compilation
-+MAJ=1.0
-+LIBVERSION=$(MAJ).0
++MAJ=1.1
++LIBVERSION=$(MAJ).1
 +LIBNAME=pcap
 +LIBRARY=lib$(LIBNAME).a
 +SOLIBRARY=lib$(LIBNAME).so
@@ -23,7 +23,7 @@ build a shared library.
  #
  # You shouldn't need to edit anything below.
  #
-@@ -56,6 +64,7 @@ PROG=libpcap
+@@ -59,6 +67,7 @@ PROG=libpcap
  
  # Standard CFLAGS
  CFLAGS = $(CCOPT) $(INCLS) $(DEFS)
@@ -31,7 +31,7 @@ build a shared library.
  
  INSTALL = @INSTALL@
  INSTALL_PROGRAM = @INSTALL_PROGRAM@
-@@ -75,7 +84,11 @@ YACC = @V_YACC@
+@@ -78,7 +87,11 @@ YACC = @V_YACC@
  # problem if you don't own the file but can write to the directory.
  .c.o:
  	@rm -f $@
@@ -42,38 +42,37 @@ build a shared library.
 +	@rm -f $@
 +	$(CC) -fPIC $(CFLAGS) -c -o $@ $(srcdir)/$*.c
  
- PSRC =	pcap-@V_PCAP@.c @USB_SRC@ @BT_SRC@
+ PSRC =	pcap-@V_PCAP@.c @USB_SRC@ @BT_SRC@ @CAN_SRC@
  FSRC =  fad-@V_FINDALLDEVS@.c
-@@ -90,6 +103,7 @@ SRC =	$(PSRC) $(FSRC) $(CSRC) $(SSRC) $(
+@@ -94,6 +107,7 @@ SRC =	$(PSRC) $(FSRC) $(CSRC) $(SSRC) $(
  # We would like to say "OBJ = $(SRC:.c=.o)" but Ultrix's make cannot
  # hack the extra indirection
  OBJ =	$(PSRC:.c=.o) $(FSRC:.c=.o) $(CSRC:.c=.o) $(SSRC:.c=.o) $(GENSRC:.c=.o) $(LIBOBJS)
 +OBJ_PIC = $(PSRC:.c=_pic.o) $(FSRC:.c=_pic.o) $(CSRC:.c=_pic.o) $(SSRC:.c=_pic.o) $(GENSRC:.c=_pic.o)
- HDR = \
- 	acconfig.h \
- 	arcnet.h \
-@@ -122,7 +136,8 @@ TAGHDR = \
- TAGFILES = \
- 	$(SRC) $(HDR) $(TAGHDR)
+ PUBHDR = \
+ 	pcap.h \
+ 	pcap-bpf.h \
+@@ -131,7 +145,7 @@ TAGFILES = \
  
--CLEANFILES = $(OBJ) libpcap.a $(GENSRC) $(GENHDR) lex.yy.c
-+CLEANFILES = $(OBJ) libpcap.a $(GENSRC) $(GENHDR) lex.yy.c \
-+	$(OBJ_PIC) libpcap.so*
+ CLEANFILES = $(OBJ) libpcap.* filtertest findalldevstest selpolltest \
+ 	opentest $(PROG)-`cat $(srcdir)/VERSION`.tar.gz $(GENSRC) $(GENHDR) \
+-	lex.yy.c pcap-config
++	lex.yy.c pcap-config $(OBJ_PIC)
  
  MAN1 = pcap-config.1
  
-@@ -311,7 +326,7 @@ EXTRA_DIST = \
+@@ -324,7 +338,7 @@ EXTRA_DIST = \
  	Win32/Src/inet_net.c \
  	Win32/Src/inet_pton.c
  
--all: libpcap.a pcap-config
-+all: libpcap.a pcap-config $(SHAREDLIB)
+-all: libpcap.a shared pcap-config
++all: libpcap.a shared pcap-config $(SHAREDLIB)
  
  libpcap.a: $(OBJ)
  	@rm -f $@
-@@ -344,6 +359,13 @@ libpcap.dylib: $(OBJ)
- 		-compatibility_version 1 \
- 		-current_version `sed 's/[^0-9.].*$$//' $(srcdir)/VERSION`
+@@ -409,6 +423,13 @@ libpcap.shareda: $(OBJ)
+ #
+ libpcap.none:
  
 +$(SHAREDLIB): $(OBJ_PIC)
 +	-@rm -f $@
@@ -84,8 +83,8 @@ build a shared library.
 +
  scanner.c: $(srcdir)/scanner.l
  	@rm -f $@
- 	./runlex.sh $(LEX) -o$@ $<
-@@ -351,6 +373,9 @@ scanner.c: $(srcdir)/scanner.l
+ 	$(srcdir)/runlex.sh $(LEX) -o$@ $<
+@@ -416,6 +437,9 @@ scanner.c: $(srcdir)/scanner.l
  scanner.o: scanner.c tokdefs.h
  	$(CC) $(CFLAGS) -c scanner.c
  
@@ -95,7 +94,7 @@ build a shared library.
  pcap.o: version.h
  
  tokdefs.h: grammar.c
-@@ -364,9 +389,17 @@ grammar.o: grammar.c
+@@ -429,9 +453,17 @@ grammar.o: grammar.c
  	@rm -f $@
  	$(CC) $(CFLAGS) -Dyylval=pcap_lval -c grammar.c
  
@@ -113,7 +112,7 @@ build a shared library.
  snprintf.o: $(srcdir)/missing/snprintf.c
  	$(CC) $(CFLAGS) -o $@ -c $(srcdir)/missing/snprintf.c
  
-@@ -392,6 +425,9 @@ bpf_filter.c: $(srcdir)/bpf/net/bpf_filt
+@@ -469,6 +501,9 @@ bpf_filter.c: $(srcdir)/bpf/net/bpf_filt
  bpf_filter.o: bpf_filter.c
  	$(CC) $(CFLAGS) -c bpf_filter.c
  
@@ -123,35 +122,33 @@ build a shared library.
  #
  # Generate the pcap-config script.
  #
-@@ -418,6 +454,9 @@ install: libpcap.a pcap-config
+@@ -604,6 +639,9 @@ install-archive-so install-archive-dylib
  	    (mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir))
  	$(INSTALL_DATA) libpcap.a $(DESTDIR)$(libdir)/libpcap.a
  	$(RANLIB) $(DESTDIR)$(libdir)/libpcap.a
 +	$(INSTALL_DATA) $(SHAREDLIB) $(DESTDIR)$(libdir)/
 +	ln -sf $(SHAREDLIB) $(DESTDIR)$(libdir)/$(SOLIBRARY).$(MAJ)
 +	ln -sf $(SOLIBRARY).$(MAJ) $(DESTDIR)$(libdir)/$(SOLIBRARY)
- 	[ -d $(DESTDIR)$(includedir) ] || \
- 	    (mkdir -p $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir))
- 	[ -d $(DESTDIR)$(includedir)/pcap ] || \
+ install-archive-shareda:
+ 	#
+ 	# AIX, however, doesn't, so we don't install the archive
 --- a/configure
 +++ b/configure
-@@ -8658,7 +8658,7 @@ irix*)
- 	;;
- 
- linux*)
--	V_CCOPT="$V_CCOPT -fPIC"
-+	V_CCOPT="$V_CCOPT"
- 	;;
- 
- osf*)
---- a/configure.in
-+++ b/configure.in
-@@ -943,7 +943,7 @@ irix*)
- 	;;
- 
- linux*)
--	V_CCOPT="$V_CCOPT -fPIC"
-+	V_CCOPT="$V_CCOPT"
- 	;;
- 
- osf*)
+@@ -3229,7 +3229,7 @@ _ACEOF
+ 		    # or accepts command-line arguments like
+ 		    # those the GNU linker accepts.
+ 		    #
+-		    V_CCOPT="$V_CCOPT -fpic"
++		    V_CCOPT="$V_CCOPT"
+ 		    V_SONAME_OPT="-Wl,-soname,"
+ 		    V_RPATH_OPT="-Wl,-rpath,"
+ 		    ;;
+@@ -3292,7 +3292,7 @@ _ACEOF
+ 		    #
+ 		    # "cc" is GCC.
+ 		    #
+-		    V_CCOPT="$V_CCOPT -fpic"
++		    V_CCOPT="$V_CCOPT"
+ 		    V_SHLIB_CMD="\$(CC)"
+ 		    V_SHLIB_OPT="-shared"
+ 		    V_SONAME_OPT="-Wl,-soname,"
