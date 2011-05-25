@@ -166,7 +166,7 @@ $(eval $(call KernelPackage,xen-netdev))
 define KernelPackage/xen-pcidev
   SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen PCI device frontend
-  DEPENDS:=@TARGET_x86_xen_domu @LINUX_2_6_37||LINUX_2_6_38
+  DEPENDS:=@TARGET_x86_xen_domu @LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39
   KCONFIG:=CONFIG_XEN_PCIDEV_FRONTEND
   FILES:=$(LINUX_DIR)/drivers/xen/platform-pci.ko
   AUTOLOAD:=$(call AutoLoad,10,xen-pcifront)
