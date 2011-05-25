@@ -1,6 +1,6 @@
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1595,6 +1595,7 @@ struct inode_operations {
+@@ -1594,6 +1594,7 @@ struct inode_operations {
  	void (*truncate_range)(struct inode *, loff_t, loff_t);
  	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
  		      u64 len);
@@ -8,7 +8,7 @@
  } ____cacheline_aligned;
  
  struct seq_file;
-@@ -1989,6 +1990,7 @@ extern long do_sys_open(int dfd, const c
+@@ -1988,6 +1989,7 @@ extern long do_sys_open(int dfd, const c
  extern struct file *filp_open(const char *, int, int);
  extern struct file *file_open_root(struct dentry *, struct vfsmount *,
  				   const char *, int);
@@ -184,7 +184,7 @@
  			       struct pipe_inode_info *opipe,
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1510,6 +1510,23 @@ void drop_collected_mounts(struct vfsmou
+@@ -1494,6 +1494,23 @@ void drop_collected_mounts(struct vfsmou
  	release_mounts(&umount_list);
  }
  
