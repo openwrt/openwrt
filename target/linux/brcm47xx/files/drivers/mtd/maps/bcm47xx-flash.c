@@ -90,6 +90,7 @@ struct trx_header {
 #define ROUTER_NETGEAR_WNR834B         2
 #define ROUTER_NETGEAR_WNDR3300        3
 #define ROUTER_NETGEAR_WNR3500L        4
+#define ROUTER_SIMPLETECH_SIMPLESHARE  5
 
 #ifdef CONFIG_SSB
 extern struct ssb_bus ssb_bcm47xx;
@@ -126,6 +127,7 @@ static struct mtd_partition bcm47xx_parts[] = {
 	{ name: "linux", offset: 0, size: 0, },
 	{ name: "rootfs", offset: 0, size: 0, },
 	{ name: "nvram", offset: 0, size: 0, },
+	{ name: NULL, }, /* Used to create custom partitons with the function get_router() */
 	{ name: NULL, },
 };
 
@@ -340,7 +342,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 	return -1;
 
  found:
-	printk(KERN_NOTICE"TRX offset : %lx\n", trxoff);
+	printk(KERN_NOTICE"TRX offset : %x\n", trxoff);
 	if (part->size == 0)
 		return 0;
 	
@@ -397,6 +399,7 @@ static int get_router(void)
 	u32 boardflags = 0;
 	u16 sdram_init = 0;
 	u16 cardbus = 0;
+	u16 strev = 0;
 
 	if (nvram_getenv("boardnum", buf, sizeof(buf)) >= 0)
 		boardnum = simple_strtoul(buf, NULL, 0);
@@ -410,6 +413,8 @@ static int get_router(void)
 		sdram_init = simple_strtoul(buf, NULL, 0);
 	if (nvram_getenv("cardbus", buf, sizeof(buf)) >= 0)
 		cardbus = simple_strtoul(buf, NULL, 0);
+	if (nvram_getenv("st_rev", buf, sizeof(buf)) >= 0)
+		strev = simple_strtoul(buf, NULL, 0);
 
 	if ((boardnum == 8 || boardnum == 01)
 	  && boardtype == 0x0472 && cardbus == 1) {
@@ -438,6 +443,14 @@ static int get_router(void)
 		return ROUTER_NETGEAR_WNR3500L;
 	}
 
+	if (boardtype == 0x042f
+	  && boardrev == 0x10
+	  && boardflags == 0 
+	  && strev == 0x11) { 
+		/* Simpletech Simpleshare */
+		return ROUTER_SIMPLETECH_SIMPLESHARE;
+	}
+
 	return 0;
 }
 
@@ -450,19 +463,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	 * part from our mapping to prevent overwriting len/checksum on e.g.
 	 * Netgear WGR614v8/L/WW
 	 */
-	int board_data_size = 0;
-
-	switch (get_router()) {
-	case ROUTER_NETGEAR_WGR614L:
-	case ROUTER_NETGEAR_WNR834B:
-	case ROUTER_NETGEAR_WNDR3300:
-	case ROUTER_NETGEAR_WNR3500L:
-		/* Netgear: checksum is @ 0x003AFFF8 for 4M flash or checksum
-		 * is @ 0x007AFFF8 for 8M flash
-		 */
-		board_data_size = 4 * mtd->erasesize;
-		break;
-	}
+	int custom_data_size = 0;
 
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
 		return NULL;
@@ -473,8 +474,46 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 
 	/* nvram */
 	if (cfe_size != 384 * 1024) {
-		bcm47xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-		bcm47xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+
+		switch (get_router()) {
+		case ROUTER_NETGEAR_WGR614L:
+		case ROUTER_NETGEAR_WNR834B:
+		case ROUTER_NETGEAR_WNDR3300:
+		case ROUTER_NETGEAR_WNR3500L:
+			/* Netgear: checksum is @ 0x003AFFF8 for 4M flash or checksum
+			 * is @ 0x007AFFF8 for 8M flash
+			 */
+			custom_data_size = mtd->erasesize;
+
+			bcm47xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+			bcm47xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+
+			/* Place CFE board_data into a partition */
+			bcm47xx_parts[4].name = "board_data";
+			bcm47xx_parts[4].offset = bcm47xx_parts[3].offset - custom_data_size;
+			bcm47xx_parts[4].size   =  custom_data_size;
+			break;
+
+		case ROUTER_SIMPLETECH_SIMPLESHARE:
+			/* Fixup Simpletech Simple share nvram  */
+
+			printk("Setting up simpletech nvram\n");
+			custom_data_size = mtd->erasesize;
+
+			bcm47xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize) * 2;
+			bcm47xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+
+			/* Place backup nvram into a partition */
+			bcm47xx_parts[4].name = "nvram_copy";
+			bcm47xx_parts[4].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+			bcm47xx_parts[4].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+			break;
+
+		default:
+			bcm47xx_parts[3].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+			bcm47xx_parts[3].size   = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		}
+
 	} else {
 		/* nvram (old 128kb config partition on netgear wgt634u) */
 		bcm47xx_parts[3].offset = bcm47xx_parts[0].size;
@@ -486,9 +525,15 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	dual_image_offset=find_dual_image_off(mtd,size);
 	/* linux (kernel and rootfs) */
 	if (cfe_size != 384 * 1024) {
-		bcm47xx_parts[1].offset = bcm47xx_parts[0].size;
-		bcm47xx_parts[1].size   = bcm47xx_parts[3].offset - dual_image_offset -
-			bcm47xx_parts[1].offset - board_data_size;
+		if (get_router() == ROUTER_SIMPLETECH_SIMPLESHARE) {
+			bcm47xx_parts[1].offset = bcm47xx_parts[0].size;
+			bcm47xx_parts[1].size   = bcm47xx_parts[4].offset - dual_image_offset -
+				bcm47xx_parts[1].offset - custom_data_size;
+		} else {
+			bcm47xx_parts[1].offset = bcm47xx_parts[0].size;
+			bcm47xx_parts[1].size   = bcm47xx_parts[3].offset - dual_image_offset -
+				bcm47xx_parts[1].offset - custom_data_size;
+		}
 	} else {
 		/* do not count the elf loader, which is on one block */
 		bcm47xx_parts[1].offset = bcm47xx_parts[0].size + 
@@ -496,14 +541,14 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		bcm47xx_parts[1].size   = size - 
 			bcm47xx_parts[0].size - 
 			(2*bcm47xx_parts[3].size) - 
-			mtd->erasesize - board_data_size;
+			mtd->erasesize - custom_data_size;
 	}
 
 	/* find and size rootfs */
 	find_root(mtd,size,&bcm47xx_parts[2]);
 	bcm47xx_parts[2].size = size - dual_image_offset -
 				bcm47xx_parts[2].offset -
-				bcm47xx_parts[3].size - board_data_size;
+				bcm47xx_parts[3].size - custom_data_size;
 
 	return bcm47xx_parts;
 }
