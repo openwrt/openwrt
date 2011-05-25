@@ -1,0 +1,69 @@
+From 9be402f069cc259ad5795b77567d66c4e7f6bef6 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 18 Jul 2010 14:59:24 +0200
+Subject: [PATCH 4/6] MIPS: BCM47xx: Setup and register serial early
+
+Swap the first and second serial if console=ttyS1 was set.
+Set it up and register it for early serial support.
+
+This patch has been in OpenWRT for a long time.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/bcm47xx/setup.c |   39 ++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 38 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -28,6 +28,8 @@
+ #include <linux/types.h>
+ #include <linux/ssb/ssb.h>
+ #include <linux/ssb/ssb_embedded.h>
++#include <linux/serial.h>
++#include <linux/serial_8250.h>
+ #include <asm/bootinfo.h>
+ #include <asm/reboot.h>
+ #include <asm/time.h>
+@@ -166,6 +168,31 @@ static int bcm47xx_get_invariants(struct
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_SERIAL_8250
++static void __init bcm47xx_early_serial_setup(struct ssb_mipscore *mcore)
++{
++	int i;
++
++	for (i = 0; i < mcore->nr_serial_ports; i++) {
++		struct ssb_serial_port *port = &(mcore->serial_ports[i]);
++		struct uart_port s;
++
++		memset(&s, 0, sizeof(s));
++		s.line = i;
++		s.mapbase = (unsigned int) port->regs;
++		s.membase = port->regs;
++		s.irq = port->irq + 2;
++		s.uartclk = port->baud_base;
++		s.flags = UPF_BOOT_AUTOCONF | UPF_SHARE_IRQ;
++		s.iotype = SERIAL_IO_MEM;
++		s.regshift = port->reg_shift;
++
++		early_serial_setup(&s);
++	}
++	printk(KERN_DEBUG "Serial init done.\n");
++}
++#endif
++
+ void __init plat_mem_setup(void)
+ {
+ 	int err;
+@@ -191,6 +218,10 @@ void __init plat_mem_setup(void)
+ 		}
+ 	}
+ 
++#ifdef CONFIG_SERIAL_8250
++	bcm47xx_early_serial_setup(mcore);
++#endif
++
+ 	_machine_restart = bcm47xx_machine_restart;
+ 	_machine_halt = bcm47xx_machine_halt;
+ 	pm_power_off = bcm47xx_machine_halt;
