@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -49,6 +49,13 @@ static unsigned int mac_addr_used;
+@@ -39,6 +39,13 @@ static unsigned int mac_addr_used;
  static struct board_info board;
  
  /*
@@ -14,7 +14,7 @@
   * known 6338 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_6338
-@@ -1444,6 +1451,7 @@ void __init board_prom_init(void)
+@@ -840,6 +847,7 @@ void __init board_prom_init(void)
  
  	/* extract nvram data */
  	memcpy(&nvram, boot_addr + BCM963XX_NVRAM_OFFSET, sizeof(nvram));
