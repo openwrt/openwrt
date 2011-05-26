@@ -23,7 +23,7 @@
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -774,6 +783,502 @@ static struct board_info __initdata boar
+@@ -780,6 +789,502 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -526,7 +526,7 @@
  #endif
  
  /*
-@@ -804,9 +1309,30 @@ static const struct board_info __initdat
+@@ -810,9 +1315,30 @@ static const struct board_info __initdat
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -557,7 +557,7 @@
  /*
   * Register a sane SPROMv2 to make the on-board
   * bcm4318 WLAN work
-@@ -953,6 +1479,9 @@ void __init board_prom_init(void)
+@@ -959,6 +1485,9 @@ void __init board_prom_init(void)
  		boardid_fixup(boot_addr);
  	}
  
