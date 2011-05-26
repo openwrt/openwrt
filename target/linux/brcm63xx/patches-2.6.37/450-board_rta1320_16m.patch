@@ -1,14 +1,15 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -142,6 +142,38 @@ static struct board_info __initdata boar
+@@ -178,6 +178,43 @@ static struct board_info __initdata boar
  		},
  	},
  };
 +
-+static struct board_info __initdata board_96338w2_e7t = {
-+	.name				= "96338W2_E7T",
++static struct board_info __initdata board_rta1320_16m = {
++	.name				= "RTA1320_16M",
 +	.expected_cpu_id		= 0x6338,
 +
++	.has_uart0			= 1,
 +	.has_enet0			= 1,
 +
 +	.enet0 = {
@@ -18,13 +19,13 @@
 +
 +		.leds = {
 +		{
-+			.name		= "ppp",
-+			.gpio		= 4,
++			.name		= "adsl",
++			.gpio		= 3,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "ppp-fail",
-+			.gpio		= 5,
++			.name		= "ppp",
++			.gpio		= 4,
 +			.active_low	= 1,
 +		},
 +		{
@@ -32,18 +33,22 @@
 +			.gpio		= 0,
 +			.active_low	= 1,
 +			.default_trigger = "default-on",
-+
++		},
++		{
++			.name		= "stop",
++			.gpio		= 1,
++			.active_low	= 1,
 +		},
 +	},
 +};
  #endif
  
  /*
-@@ -1271,6 +1303,7 @@ static const struct board_info __initdat
- #ifdef CONFIG_BCM63XX_CPU_6338
+@@ -1787,6 +1824,7 @@ static const struct board_info __initdat
  	&board_96338gw,
  	&board_96338w,
-+	&board_96338w2_e7t,
+ 	&board_96338w2_e7t,
++	&board_rta1320_16m,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6345
  	&board_96345gw2,
