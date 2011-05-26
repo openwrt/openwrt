@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -2071,6 +2071,17 @@ static struct ssb_sprom bcm63xx_sprom =
+@@ -2128,6 +2128,17 @@ static struct ssb_sprom bcm63xx_sprom =
  	.boardflags_lo		= 0x2848,
  	.boardflags_hi		= 0x0000,
  };
@@ -18,7 +18,7 @@
  #endif
  
  /*
-@@ -2271,8 +2282,9 @@ void __init board_prom_init(void)
+@@ -2328,8 +2339,9 @@ void __init board_prom_init(void)
  	if (!board_get_mac_address(bcm63xx_sprom.il0mac)) {
  		memcpy(bcm63xx_sprom.et0mac, bcm63xx_sprom.il0mac, ETH_ALEN);
  		memcpy(bcm63xx_sprom.et1mac, bcm63xx_sprom.il0mac, ETH_ALEN);
