@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -588,6 +588,99 @@ static struct board_info __initdata boar
+@@ -603,6 +603,99 @@ static struct board_info __initdata boar
  
  	.has_ohci0 = 1,
  	.has_ehci0 = 1,
@@ -102,7 +102,7 @@
  static struct board_info __initdata board_DWVS0 = {
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -56,7 +56,7 @@ struct board_info {
+@@ -57,7 +57,7 @@ struct board_info {
  	struct bcm63xx_dsp_platform_data dsp;
  
  	/* GPIO LEDs */

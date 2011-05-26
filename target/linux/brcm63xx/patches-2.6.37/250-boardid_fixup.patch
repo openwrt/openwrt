@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -35,6 +35,7 @@
+@@ -32,9 +32,13 @@
  #include <bcm63xx_dev_usb_udc.h>
  #include <bcm63xx_dev_spi.h>
  #include <board_bcm963xx.h>
@@ -8,17 +8,13 @@
  
  #define PFX	"board_bcm963xx: "
  
-@@ -44,6 +45,9 @@
- #define NB4_SPI_GPIO_CLK	6
- #define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
- 
 +#define CFE_OFFSET_64K		0x10000
 +#define CFE_OFFSET_128K		0x20000
 +
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -1566,6 +1570,29 @@ static int board_get_mac_address(u8 *mac
+@@ -723,6 +727,29 @@ static int board_get_mac_address(u8 *mac
  	return 0;
  }
  
@@ -48,9 +44,9 @@
  /*
   * early init callback, read nvram data from flash and checksum it
   */
-@@ -1617,6 +1644,11 @@ void __init board_prom_init(void)
- 	/* Fixup broken nb4 board name */
- 	nb4_nvram_fixup();
+@@ -771,6 +798,11 @@ void __init board_prom_init(void)
+ 		return;
+ 	}
  
 +	if (strcmp(cfe_version, "unknown") != 0) {
 +		/* cfe present */
