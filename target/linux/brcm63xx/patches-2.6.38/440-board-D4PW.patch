@@ -1,0 +1,66 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -489,6 +489,55 @@ static struct board_info __initdata boar
+ 		}
+ 	},
+ };
++
++static struct board_info __initdata board_96348_D4PW = {
++	.name				= "D-4P-W",
++	.expected_cpu_id		= 0x6348,
++
++	.has_enet1			= 1,
++	.has_pci			= 1,
++	.has_uart0 			= 1,
++
++	.enet1 = {
++		.force_speed_100	= 1,
++		.force_duplex_full	= 1,
++	},
++
++	.leds = {
++		{
++			.name		= "power:green",
++			.gpio		= 0,
++			.active_low	= 1,
++		},
++		{
++			.name		= "status",
++			.gpio		= 3,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internet:green",
++			.gpio		= 4,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internet:red",
++			.gpio		= 5,
++			.active_low	= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 7,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.threshold	= 3,
++		},
++	},
++};
++
+ #endif
+ 
+ /*
+@@ -753,6 +802,7 @@ static const struct board_info __initdat
+ 	&board_DV201AMR,
+ 	&board_96348gw_a,
+ 	&board_rta1025w_16,
++	&board_96348_D4PW,
+ #endif
+ 
+ #ifdef CONFIG_BCM63XX_CPU_6358
