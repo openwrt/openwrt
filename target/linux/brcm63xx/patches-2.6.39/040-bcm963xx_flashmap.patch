@@ -1,0 +1,137 @@
+From a4d005c91d403d9f3d0272db6cc46202c06ec774 Mon Sep 17 00:00:00 2001
+From: Axel Gembe <ago@bastart.eu.org>
+Date: Mon, 12 May 2008 18:54:09 +0200
+Subject: [PATCH] bcm963xx: flashmap support
+
+Signed-off-by: Axel Gembe <ago@bastart.eu.org>
+---
+ arch/mips/bcm63xx/boards/board_bcm963xx.c |   19 +----------------
+ drivers/mtd/maps/bcm963xx-flash.c         |   32 ++++++++++++++++++++++++----
+ drivers/mtd/redboot.c                     |   13 +++++++++--
+ 3 files changed, 38 insertions(+), 26 deletions(-)
+
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -816,20 +816,6 @@ void __init board_setup(void)
+ 		panic("unexpected CPU for bcm963xx board");
+ }
+ 
+-static struct mtd_partition mtd_partitions[] = {
+-	{
+-		.name		= "cfe",
+-		.offset		= 0x0,
+-		.size		= 0x40000,
+-	}
+-};
+-
+-static struct physmap_flash_data flash_data = {
+-	.width			= 2,
+-	.nr_parts		= ARRAY_SIZE(mtd_partitions),
+-	.parts			= mtd_partitions,
+-};
+-
+ static struct resource mtd_resources[] = {
+ 	{
+ 		.start		= 0,	/* filled at runtime */
+@@ -839,12 +825,9 @@ static struct resource mtd_resources[] =
+ };
+ 
+ static struct platform_device mtd_dev = {
+-	.name			= "physmap-flash",
++	.name			= "bcm963xx-flash",
+ 	.resource		= mtd_resources,
+ 	.num_resources		= ARRAY_SIZE(mtd_resources),
+-	.dev			= {
+-		.platform_data	= &flash_data,
+-	},
+ };
+ 
+ static struct gpio_led_platform_data bcm63xx_led_data;
+--- a/drivers/mtd/maps/bcm963xx-flash.c
++++ b/drivers/mtd/maps/bcm963xx-flash.c
+@@ -27,6 +27,8 @@
+ #include <linux/vmalloc.h>
+ #include <linux/platform_device.h>
+ #include <linux/io.h>
++#include <linux/magic.h>
++#include <linux/jffs2.h>
+ 
+ #include <asm/mach-bcm63xx/bcm963xx_tag.h>
+ 
+@@ -35,6 +37,14 @@
+ 
+ #define PFX KBUILD_MODNAME ": "
+ 
++struct squashfs_super_block {
++	__le32 s_magic;
++	__le32 pad0[9];
++	__le64 bytes_used;
++};
++
++extern int parse_redboot_partitions(struct mtd_info *master, struct mtd_partition **pparts, unsigned long fis_origin);
++
+ static struct mtd_partition *parsed_parts;
+ 
+ static struct mtd_info *bcm963xx_mtd_info;
+@@ -219,9 +229,21 @@ probe_ok:
+ 			}
+ 		}
+ 	} else {
+-		dev_info(&pdev->dev, "unsupported bootloader\n");
+-		err = -ENODEV;
+-		goto err_probe;
++		printk(KERN_INFO PFX "assuming RedBoot bootloader\n");
++		if (bcm963xx_mtd_info->size > 0x00400000) {
++			printk(KERN_INFO PFX "Support for extended flash memory size : 0x%lx ; ONLY 64MBIT SUPPORT\n", bcm963xx_mtd_info->size);
++			bcm963xx_map.virt = (u32)(BCM63XX_EXTENDED_SIZE);
++		}
++
++#ifdef CONFIG_MTD_REDBOOT_PARTS
++		if (parsed_nr_parts == 0) {
++			int ret = parse_redboot_partitions(bcm963xx_mtd_info, &parsed_parts, 0);
++			if (ret > 0) {
++				part_type = "RedBoot";
++				parsed_nr_parts = ret;
++			}
++		}
++#endif
+ 	}
+ 
+ 	return add_mtd_partitions(bcm963xx_mtd_info, parsed_parts,
+--- a/drivers/mtd/redboot.c
++++ b/drivers/mtd/redboot.c
+@@ -57,7 +57,7 @@ static inline int redboot_checksum(struc
+ 	return 1;
+ }
+ 
+-static int parse_redboot_partitions(struct mtd_info *master,
++int parse_redboot_partitions(struct mtd_info *master,
+                              struct mtd_partition **pparts,
+                              unsigned long fis_origin)
+ {
+@@ -180,6 +180,14 @@ static int parse_redboot_partitions(stru
+ 		goto out;
+ 	}
+ 
++	if (!fis_origin) {
++		for (i = 0; i < numslots; i++) {
++			if (!strncmp(buf[i].name, "RedBoot", 8)) {
++				fis_origin = (buf[i].flash_base & (master->size << 1) - 1);
++			}
++		}
++	}
++
+ 	for (i = 0; i < numslots; i++) {
+ 		struct fis_list *new_fl, **prev;
+ 
+@@ -202,9 +210,8 @@ static int parse_redboot_partitions(stru
+ 		new_fl->img = &buf[i];
+                 if (fis_origin) {
+                         buf[i].flash_base -= fis_origin;
+-                } else {
+-                        buf[i].flash_base &= master->size-1;
+                 }
++		buf[i].flash_base &= (master->size << 1) - 1;
+ 
+ 		/* I'm sure the JFFS2 code has done me permanent damage.
+ 		 * I now think the following is _normal_
