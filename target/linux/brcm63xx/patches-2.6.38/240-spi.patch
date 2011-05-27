@@ -1,0 +1,1002 @@
+--- a/arch/mips/bcm63xx/cpu.c
++++ b/arch/mips/bcm63xx/cpu.c
+@@ -58,6 +58,7 @@ static const unsigned long bcm96338_regs
+ 
+ static const int bcm96338_irqs[] = {
+ 	[IRQ_TIMER]		= BCM_6338_TIMER_IRQ,
++	[IRQ_SPI]		= BCM_6338_SPI_IRQ,
+ 	[IRQ_UART0]		= BCM_6338_UART0_IRQ,
+ 	[IRQ_DSL]		= BCM_6338_DSL_IRQ,
+ 	[IRQ_ENET0]		= BCM_6338_ENET0_IRQ,
+@@ -132,6 +133,7 @@ static const unsigned long bcm96348_regs
+ 
+ static const int bcm96348_irqs[] = {
+ 	[IRQ_TIMER]		= BCM_6348_TIMER_IRQ,
++	[IRQ_SPI]		= BCM_6348_SPI_IRQ,
+ 	[IRQ_UART0]		= BCM_6348_UART0_IRQ,
+ 	[IRQ_DSL]		= BCM_6348_DSL_IRQ,
+ 	[IRQ_ENET0]		= BCM_6348_ENET0_IRQ,
+@@ -175,6 +177,7 @@ static const unsigned long bcm96358_regs
+ 
+ static const int bcm96358_irqs[] = {
+ 	[IRQ_TIMER]		= BCM_6358_TIMER_IRQ,
++	[IRQ_SPI]		= BCM_6358_SPI_IRQ,
+ 	[IRQ_UART0]		= BCM_6358_UART0_IRQ,
+ 	[IRQ_UART1]		= BCM_6358_UART1_IRQ,
+ 	[IRQ_DSL]		= BCM_6358_DSL_IRQ,
+--- /dev/null
++++ b/arch/mips/bcm63xx/dev-spi.c
+@@ -0,0 +1,128 @@
++/*
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ *
++ * Copyright (C) 2009 Florian Fainelli <florian@openwrt.org>
++ * Copyright (C) 2010 Tanguy Bouzeloc <tanguy.bouzeloc@efixo.com>
++ */
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++
++#include <bcm63xx_cpu.h>
++#include <bcm63xx_dev_spi.h>
++#include <bcm63xx_regs.h>
++
++#ifdef BCMCPU_RUNTIME_DETECT
++/*
++ * register offsets
++ */
++static const unsigned long bcm96338_regs_spi[] = {
++	[SPI_CMD]		= SPI_BCM_6338_SPI_CMD,
++	[SPI_INT_STATUS]	= SPI_BCM_6338_SPI_INT_STATUS,
++	[SPI_INT_MASK_ST]	= SPI_BCM_6338_SPI_MASK_INT_ST,
++	[SPI_INT_MASK]		= SPI_BCM_6338_SPI_INT_MASK,
++	[SPI_ST]		= SPI_BCM_6338_SPI_ST,
++	[SPI_CLK_CFG]		= SPI_BCM_6338_SPI_CLK_CFG,
++	[SPI_FILL_BYTE]		= SPI_BCM_6338_SPI_FILL_BYTE,
++	[SPI_MSG_TAIL]		= SPI_BCM_6338_SPI_MSG_TAIL,
++	[SPI_RX_TAIL]		= SPI_BCM_6338_SPI_RX_TAIL,
++	[SPI_MSG_CTL]		= SPI_BCM_6338_SPI_MSG_CTL,
++	[SPI_MSG_DATA]		= SPI_BCM_6338_SPI_MSG_DATA,
++	[SPI_RX_DATA]		= SPI_BCM_6338_SPI_RX_DATA,
++};
++
++static const unsigned long bcm96348_regs_spi[] = {
++	[SPI_CMD]		= SPI_BCM_6348_SPI_CMD,
++	[SPI_INT_STATUS]	= SPI_BCM_6348_SPI_INT_STATUS,
++	[SPI_INT_MASK_ST]	= SPI_BCM_6348_SPI_MASK_INT_ST,
++	[SPI_INT_MASK]		= SPI_BCM_6348_SPI_INT_MASK,
++	[SPI_ST]		= SPI_BCM_6348_SPI_ST,
++	[SPI_CLK_CFG]		= SPI_BCM_6348_SPI_CLK_CFG,
++	[SPI_FILL_BYTE]		= SPI_BCM_6348_SPI_FILL_BYTE,
++	[SPI_MSG_TAIL]		= SPI_BCM_6348_SPI_MSG_TAIL,
++	[SPI_RX_TAIL]		= SPI_BCM_6348_SPI_RX_TAIL,
++	[SPI_MSG_CTL]		= SPI_BCM_6348_SPI_MSG_CTL,
++	[SPI_MSG_DATA]		= SPI_BCM_6348_SPI_MSG_DATA,
++	[SPI_RX_DATA]		= SPI_BCM_6348_SPI_RX_DATA,
++};
++
++static const unsigned long bcm96358_regs_spi[] = {
++	[SPI_CMD]		= SPI_BCM_6358_SPI_CMD,
++	[SPI_INT_STATUS]	= SPI_BCM_6358_SPI_INT_STATUS,
++	[SPI_INT_MASK_ST]	= SPI_BCM_6358_SPI_MASK_INT_ST,
++	[SPI_INT_MASK]		= SPI_BCM_6358_SPI_INT_MASK,
++	[SPI_ST]		= SPI_BCM_6358_SPI_STATUS,
++	[SPI_CLK_CFG]		= SPI_BCM_6358_SPI_CLK_CFG,
++	[SPI_FILL_BYTE]		= SPI_BCM_6358_SPI_FILL_BYTE,
++	[SPI_MSG_TAIL]		= SPI_BCM_6358_SPI_MSG_TAIL,
++	[SPI_RX_TAIL]		= SPI_BCM_6358_SPI_RX_TAIL,
++	[SPI_MSG_CTL]		= SPI_BCM_6358_MSG_CTL,
++	[SPI_MSG_DATA]		= SPI_BCM_6358_SPI_MSG_DATA,
++	[SPI_RX_DATA]		= SPI_BCM_6358_SPI_RX_DATA,
++};
++
++const unsigned long *bcm63xx_regs_spi;
++EXPORT_SYMBOL(bcm63xx_regs_spi);
++
++static __init void bcm63xx_spi_regs_init(void)
++{
++	if (BCMCPU_IS_6338())
++		bcm63xx_regs_spi = bcm96338_regs_spi;
++	if (BCMCPU_IS_6348())
++		bcm63xx_regs_spi = bcm96348_regs_spi;
++	if (BCMCPU_IS_6358())
++		bcm63xx_regs_spi = bcm96358_regs_spi;
++}
++#else
++static __init void bcm63xx_spi_regs_init(void) { }
++#endif
++
++static struct resource spi_resources[] = {
++	{
++		.start		= -1, /* filled at runtime */
++		.end		= -1, /* filled at runtime */
++		.flags		= IORESOURCE_MEM,
++	},
++	{
++		.start		= -1, /* filled at runtime */
++		.flags		= IORESOURCE_IRQ,
++	},
++};
++
++static struct bcm63xx_spi_pdata spi_pdata = {
++	.bus_num		= 0,
++	.num_chipselect		= 8,
++	.speed_hz		= 50000000,	/* Fclk */
++};
++
++static struct platform_device bcm63xx_spi_device = {
++	.name		= "bcm63xx-spi",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(spi_resources),
++	.resource	= spi_resources,
++	.dev		= {
++		.platform_data = &spi_pdata,
++	},
++};
++
++int __init bcm63xx_spi_register(void)
++{
++	spi_resources[0].start = bcm63xx_regset_address(RSET_SPI);
++	spi_resources[0].end = spi_resources[0].start;
++	spi_resources[0].end += RSET_SPI_SIZE - 1;
++	spi_resources[1].start = bcm63xx_get_irq_number(IRQ_SPI);
++
++	/* Fill in platform data */
++	if (BCMCPU_IS_6338() || BCMCPU_IS_6348())
++		spi_pdata.fifo_size = SPI_BCM_6338_SPI_MSG_DATA_SIZE;
++
++	if (BCMCPU_IS_6358())
++		spi_pdata.fifo_size = SPI_BCM_6358_SPI_MSG_DATA_SIZE;
++
++	bcm63xx_spi_regs_init();
++
++	return platform_device_register(&bcm63xx_spi_device);
++}
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h
+@@ -109,6 +109,7 @@ enum bcm63xx_regs_set {
+ #define RSET_WDT_SIZE			12
+ #define RSET_ENET_SIZE			2048
+ #define RSET_ENETDMA_SIZE		2048
++#define RSET_SPI_SIZE			256
+ #define RSET_UART_SIZE			24
+ #define RSET_UDC_SIZE			256
+ #define RSET_OHCI_SIZE			256
+@@ -214,7 +215,7 @@ enum bcm63xx_regs_set {
+ #define BCM_6358_UART0_BASE		(0xfffe0100)
+ #define BCM_6358_UART1_BASE		(0xfffe0120)
+ #define BCM_6358_GPIO_BASE		(0xfffe0080)
+-#define BCM_6358_SPI_BASE		(0xdeadbeef)
++#define BCM_6358_SPI_BASE		(0xfffe0800)
+ #define BCM_6358_UDC0_BASE		(0xfffe0400)
+ #define BCM_6358_OHCI0_BASE		(0xfffe1400)
+ #define BCM_6358_OHCI_PRIV_BASE		(0xdeadbeef)
+@@ -441,6 +442,7 @@ static inline unsigned long bcm63xx_regs
+  */
+ enum bcm63xx_irq {
+ 	IRQ_TIMER = 0,
++	IRQ_SPI,
+ 	IRQ_UART0,
+ 	IRQ_UART1,
+ 	IRQ_DSL,
+@@ -507,6 +509,7 @@ enum bcm63xx_irq {
+  * 6348 irqs
+  */
+ #define BCM_6348_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
++#define BCM_6348_SPI_IRQ		(IRQ_INTERNAL_BASE + 1)
+ #define BCM_6348_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
+ #define BCM_6348_DSL_IRQ		(IRQ_INTERNAL_BASE + 4)
+ #define BCM_6348_UDC0_IRQ		(IRQ_INTERNAL_BASE + 6)
+@@ -531,6 +534,7 @@ enum bcm63xx_irq {
+  * 6358 irqs
+  */
+ #define BCM_6358_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
++#define BCM_6358_SPI_IRQ		(IRQ_INTERNAL_BASE + 1)
+ #define BCM_6358_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
+ #define BCM_6358_UART1_IRQ		(IRQ_INTERNAL_BASE + 3)
+ #define BCM_6358_OHCI0_IRQ		(IRQ_INTERNAL_BASE + 5)
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+@@ -771,4 +771,116 @@
+ #define DMIPSPLLCFG_N2_SHIFT		29
+ #define DMIPSPLLCFG_N2_MASK		(0x7 << DMIPSPLLCFG_N2_SHIFT)
+ 
++/*************************************************************************
++ * _REG relative to RSET_SPI
++ *************************************************************************/
++
++/* BCM 6338 SPI core */
++#define SPI_BCM_6338_SPI_CMD		0x00	/* 16-bits register */
++#define SPI_BCM_6338_SPI_INT_STATUS	0x02
++#define SPI_BCM_6338_SPI_MASK_INT_ST	0x03
++#define SPI_BCM_6338_SPI_INT_MASK	0x04
++#define SPI_BCM_6338_SPI_ST		0x05
++#define SPI_BCM_6338_SPI_CLK_CFG	0x06
++#define SPI_BCM_6338_SPI_FILL_BYTE	0x07
++#define SPI_BCM_6338_SPI_MSG_TAIL	0x09
++#define SPI_BCM_6338_SPI_RX_TAIL	0x0b
++#define SPI_BCM_6338_SPI_MSG_CTL	0x40
++#define SPI_BCM_6338_SPI_MSG_DATA	0x41
++#define SPI_BCM_6338_SPI_MSG_DATA_SIZE	0x3f
++#define SPI_BCM_6338_SPI_RX_DATA	0x80
++#define SPI_BCM_6338_SPI_RX_DATA_SIZE	0x3f
++
++/* BCM 6348 SPI core */
++#define SPI_BCM_6348_SPI_MASK_INT_ST	0x00
++#define SPI_BCM_6348_SPI_INT_STATUS	0x01
++#define SPI_BCM_6348_SPI_CMD		0x02	/* 16-bits register */
++#define SPI_BCM_6348_SPI_FILL_BYTE	0x04
++#define SPI_BCM_6348_SPI_CLK_CFG	0x05
++#define SPI_BCM_6348_SPI_ST		0x06
++#define SPI_BCM_6348_SPI_INT_MASK	0x07
++#define SPI_BCM_6348_SPI_RX_TAIL	0x08
++#define SPI_BCM_6348_SPI_MSG_TAIL	0x10
++#define SPI_BCM_6348_SPI_MSG_DATA	0x40
++#define SPI_BCM_6348_SPI_MSG_CTL	0x42
++#define SPI_BCM_6348_SPI_MSG_DATA_SIZE	0x3f
++#define SPI_BCM_6348_SPI_RX_DATA	0x80
++#define SPI_BCM_6348_SPI_RX_DATA_SIZE	0x3f
++
++/* BCM 6358 SPI core */
++#define SPI_BCM_6358_MSG_CTL		0x00	/* 16-bits register */
++
++#define SPI_BCM_6358_SPI_MSG_DATA	0x02
++#define SPI_BCM_6358_SPI_MSG_DATA_SIZE	0x21e
++
++#define SPI_BCM_6358_SPI_RX_DATA	0x400
++#define SPI_BCM_6358_SPI_RX_DATA_SIZE	0x220
++
++#define SPI_BCM_6358_SPI_CMD		0x700	/* 16-bits register */
++
++#define SPI_BCM_6358_SPI_INT_STATUS	0x702
++#define SPI_BCM_6358_SPI_MASK_INT_ST	0x703
++
++#define SPI_BCM_6358_SPI_INT_MASK	0x704
++
++#define SPI_BCM_6358_SPI_STATUS		0x705
++
++#define SPI_BCM_6358_SPI_CLK_CFG	0x706
++
++#define SPI_BCM_6358_SPI_FILL_BYTE	0x707
++#define SPI_BCM_6358_SPI_MSG_TAIL	0x709
++#define SPI_BCM_6358_SPI_RX_TAIL	0x70B
++
++/* Shared SPI definitions */
++
++/* Message configuration */
++#define SPI_FD_RW			0x00
++#define SPI_HD_W			0x01
++#define SPI_HD_R			0x02
++#define SPI_BYTE_CNT_SHIFT		0
++#define SPI_MSG_TYPE_SHIFT		14
++
++/* Command */
++#define SPI_CMD_NOOP			0x01
++#define SPI_CMD_SOFT_RESET		0x02
++#define SPI_CMD_HARD_RESET		0x04
++#define SPI_CMD_START_IMMEDIATE		0x08
++#define SPI_CMD_COMMAND_SHIFT		0
++#define SPI_CMD_COMMAND_MASK		0x000f
++#define SPI_CMD_DEVICE_ID_SHIFT		4
++#define SPI_CMD_PREPEND_BYTE_CNT_SHIFT	8
++#define SPI_CMD_ONE_BYTE_SHIFT		11
++#define SPI_CMD_ONE_WIRE_SHIFT		12
++#define SPI_DEV_ID_0			0
++#define SPI_DEV_ID_1			1
++#define SPI_DEV_ID_2			2
++#define SPI_DEV_ID_3			3
++
++/* Interrupt mask */
++#define SPI_INTR_CMD_DONE		0x01
++#define SPI_INTR_RX_OVERFLOW		0x02
++#define SPI_INTR_TX_UNDERFLOW		0x04
++#define SPI_INTR_TX_OVERFLOW		0x08
++#define SPI_INTR_RX_UNDERFLOW		0x10
++#define SPI_INTR_CLEAR_ALL		0x1f
++
++/* Status */
++#define SPI_RX_EMPTY			0x02
++#define SPI_CMD_BUSY			0x04
++#define SPI_SERIAL_BUSY			0x08
++
++/* Clock configuration */
++#define SPI_CLK_20MHZ			0x00
++#define SPI_CLK_0_391MHZ		0x01
++#define SPI_CLK_0_781MHZ		0x02 /* default */
++#define SPI_CLK_1_563MHZ		0x03
++#define SPI_CLK_3_125MHZ		0x04
++#define SPI_CLK_6_250MHZ		0x05
++#define SPI_CLK_12_50MHZ		0x06
++#define SPI_CLK_25MHZ			0x07
++#define SPI_CLK_MASK			0x07
++#define SPI_SSOFFTIME_MASK		0x38
++#define SPI_SSOFFTIME_SHIFT		3
++#define SPI_BYTE_SWAP			0x80
++
+ #endif /* BCM63XX_REGS_H_ */
+--- /dev/null
++++ b/drivers/spi/bcm63xx_spi.c
+@@ -0,0 +1,496 @@
++/*
++ * Broadcom BCM63xx SPI controller support
++ *
++ * Copyright (C) 2009 Florian Fainelli <florian@openwrt.org>
++ * Copyright (C) 2010 Tanguy Bouzeloc <tanguy.bouzeloc@efixo.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the
++ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/clk.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/interrupt.h>
++#include <linux/spi/spi.h>
++#include <linux/completion.h>
++#include <linux/err.h>
++
++#include <bcm63xx_dev_spi.h>
++
++#define PFX 		KBUILD_MODNAME
++#define DRV_VER		"0.1.2"
++
++struct bcm63xx_spi {
++	spinlock_t              lock;
++	int			stopping;
++        struct completion	done;
++
++	void __iomem		*regs;
++	int			irq;
++
++	/* Platform data */
++        u32			speed_hz;
++	unsigned		fifo_size;
++
++	/* Data buffers */
++	const unsigned char	*tx_ptr;
++	unsigned char		*rx_ptr;
++
++	/* data iomem */
++	u8 __iomem		*tx_io;
++	const u8 __iomem	*rx_io;
++
++	int			remaining_bytes;
++
++	struct clk		*clk;
++	struct platform_device	*pdev;
++};
++
++static inline u8 bcm_spi_readb(struct bcm63xx_spi *bs,
++				unsigned int offset)
++{
++	return bcm_readw(bs->regs + bcm63xx_spireg(offset));
++}
++
++static inline u16 bcm_spi_readw(struct bcm63xx_spi *bs,
++				unsigned int offset)
++{
++	return bcm_readw(bs->regs + bcm63xx_spireg(offset));
++}
++
++static inline void bcm_spi_writeb(struct bcm63xx_spi *bs,
++				  u8 value, unsigned int offset)
++{
++	bcm_writeb(value, bs->regs + bcm63xx_spireg(offset));
++}
++
++static inline void bcm_spi_writew(struct bcm63xx_spi *bs,
++				  u16 value, unsigned int offset)
++{
++	bcm_writew(value, bs->regs + bcm63xx_spireg(offset));
++}
++
++static int bcm63xx_spi_setup_transfer(struct spi_device *spi,
++				      struct spi_transfer *t)
++{
++	u8 bits_per_word;
++	u8 clk_cfg;
++	u32 hz;
++	unsigned int div;
++
++	struct bcm63xx_spi *bs = spi_master_get_devdata(spi->master);
++
++	bits_per_word = (t) ? t->bits_per_word : spi->bits_per_word;
++	hz = (t) ? t->speed_hz : spi->max_speed_hz;
++	if (bits_per_word != 8) {
++		dev_err(&spi->dev, "%s, unsupported bits_per_word=%d\n",
++			__func__, bits_per_word);
++		return -EINVAL;
++        }
++
++	if (spi->chip_select > spi->master->num_chipselect) {
++		dev_err(&spi->dev, "%s, unsupported slave %d\n",
++			__func__, spi->chip_select);
++		return -EINVAL;
++	}
++
++	/* Check clock setting */
++	div = (bs->speed_hz / hz);
++	switch (div) {
++	case 2:
++		clk_cfg = SPI_CLK_25MHZ;
++		break;
++	case 4:
++		clk_cfg = SPI_CLK_12_50MHZ;
++		break;
++	case 8:
++		clk_cfg = SPI_CLK_6_250MHZ;
++		break;
++	case 16:
++		clk_cfg = SPI_CLK_3_125MHZ;
++		break;
++	case 32:
++		clk_cfg = SPI_CLK_1_563MHZ;
++		break;
++	case 64:
++		clk_cfg = SPI_CLK_0_781MHZ;
++		break;
++	case 128:
++	default:
++		/* Set to slowest mode for compatibility */
++		clk_cfg = SPI_CLK_0_391MHZ;
++		break;
++	}
++
++	bcm_spi_writeb(bs, clk_cfg, SPI_CLK_CFG);
++	dev_dbg(&spi->dev, "Setting clock register to %d (hz %d, cmd %02x)\n",
++		div, hz, clk_cfg);
++
++	return 0;
++}
++
++/* the spi->mode bits understood by this driver: */
++#define MODEBITS (SPI_CPOL | SPI_CPHA)
++
++static int bcm63xx_spi_setup(struct spi_device *spi)
++{
++	struct bcm63xx_spi *bs;
++	int ret;
++
++	bs = spi_master_get_devdata(spi->master);
++
++	if (bs->stopping)
++		return -ESHUTDOWN;
++
++	if (!spi->bits_per_word)
++		spi->bits_per_word = 8;
++
++	if (spi->mode & ~MODEBITS) {
++		dev_err(&spi->dev, "%s, unsupported mode bits %x\n",
++			__func__, spi->mode & ~MODEBITS);
++		return -EINVAL;
++	}
++
++	ret = bcm63xx_spi_setup_transfer(spi, NULL);
++	if (ret < 0) {
++		dev_err(&spi->dev, "setup: unsupported mode bits %x\n",
++			spi->mode & ~MODEBITS);
++		return ret;
++	}
++
++	dev_dbg(&spi->dev, "%s, mode %d, %u bits/w, %u nsec/bit\n",
++		__func__, spi->mode & MODEBITS, spi->bits_per_word, 0);
++
++	return 0;
++}
++
++/* Fill the TX FIFO with as many bytes as possible */
++static void bcm63xx_spi_fill_tx_fifo(struct bcm63xx_spi *bs)
++{
++	u8 size;
++
++        /* Fill the Tx FIFO with as many bytes as possible */
++	size = bs->remaining_bytes < bs->fifo_size ? bs->remaining_bytes :
++		bs->fifo_size;
++	memcpy_toio(bs->tx_io, bs->tx_ptr, size);
++	bs->remaining_bytes -= size;
++}
++
++static int bcm63xx_txrx_bufs(struct spi_device *spi, struct spi_transfer *t)
++{
++	struct bcm63xx_spi *bs = spi_master_get_devdata(spi->master);
++	u16 msg_ctl;
++	u16 cmd;
++
++	dev_dbg(&spi->dev, "txrx: tx %p, rx %p, len %d\n",
++		t->tx_buf, t->rx_buf, t->len);
++
++	/* Transmitter is inhibited */
++	bs->tx_ptr = t->tx_buf;
++	bs->rx_ptr = t->rx_buf;
++	init_completion(&bs->done);
++
++	if (t->tx_buf) {
++		bs->remaining_bytes = t->len;
++		bcm63xx_spi_fill_tx_fifo(bs);
++	}
++
++	/* Enable the command done interrupt which
++	 * we use to determine completion of a command */
++	bcm_spi_writeb(bs, SPI_INTR_CMD_DONE, SPI_INT_MASK);
++
++	/* Fill in the Message control register */
++	msg_ctl = (t->len << SPI_BYTE_CNT_SHIFT);
++
++	if (t->rx_buf && t->tx_buf)
++		msg_ctl |= (SPI_FD_RW << SPI_MSG_TYPE_SHIFT);
++	else if (t->rx_buf)
++		msg_ctl |= (SPI_HD_R << SPI_MSG_TYPE_SHIFT);
++	else if (t->tx_buf)
++		msg_ctl |= (SPI_HD_W << SPI_MSG_TYPE_SHIFT);
++
++	bcm_spi_writew(bs, msg_ctl, SPI_MSG_CTL);
++
++	/* Issue the transfer */
++	cmd = SPI_CMD_START_IMMEDIATE;
++	cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
++	cmd |= (spi->chip_select << SPI_CMD_DEVICE_ID_SHIFT);
++	bcm_spi_writew(bs, cmd, SPI_CMD);
++	wait_for_completion(&bs->done);
++
++	/* Disable the CMD_DONE interrupt */
++	bcm_spi_writeb(bs, 0, SPI_INT_MASK);
++
++	return t->len - bs->remaining_bytes;
++}
++
++static int bcm63xx_transfer(struct spi_device *spi, struct spi_message *m)
++{
++	struct bcm63xx_spi *bs = spi_master_get_devdata(spi->master);
++	struct spi_transfer *t;
++	int ret = 0;
++
++	if (unlikely(list_empty(&m->transfers)))
++		return -EINVAL;
++
++	if (bs->stopping)
++		return -ESHUTDOWN;
++
++	list_for_each_entry(t, &m->transfers, transfer_list) {
++		ret += bcm63xx_txrx_bufs(spi, t);
++	}
++
++	m->complete(m->context);
++
++	return ret;
++}
++
++/* This driver supports single master mode only. Hence
++ * CMD_DONE is the only interrupt we care about
++ */
++static irqreturn_t bcm63xx_spi_interrupt(int irq, void *dev_id)
++{
++	struct spi_master *master = (struct spi_master *)dev_id;
++	struct bcm63xx_spi *bs = spi_master_get_devdata(master);
++	u8 intr;
++	u16 cmd;
++
++	/* Read interupts and clear them immediately */
++	intr = bcm_spi_readb(bs, SPI_INT_STATUS);
++	bcm_spi_writeb(bs, SPI_INTR_CLEAR_ALL, SPI_INT_STATUS);
++	bcm_spi_writeb(bs, 0, SPI_INT_MASK);
++
++	/* A tansfer completed */
++	if (intr & SPI_INTR_CMD_DONE) {
++		u8 rx_tail;
++
++		rx_tail = bcm_spi_readb(bs, SPI_RX_TAIL);
++
++		/* Read out all the data */
++		if (rx_tail)
++			memcpy_fromio(bs->rx_ptr, bs->rx_io, rx_tail);
++
++		/* See if there is more data to send */
++		if (bs->remaining_bytes > 0) {
++			bcm63xx_spi_fill_tx_fifo(bs);
++
++			/* Start the transfer */
++			bcm_spi_writew(bs, SPI_HD_W << SPI_MSG_TYPE_SHIFT,
++				       SPI_MSG_CTL);
++			cmd = bcm_spi_readw(bs, SPI_CMD);
++			cmd |= SPI_CMD_START_IMMEDIATE;
++			cmd |= (0 << SPI_CMD_PREPEND_BYTE_CNT_SHIFT);
++			bcm_spi_writeb(bs, SPI_INTR_CMD_DONE, SPI_INT_MASK);
++			bcm_spi_writew(bs, cmd, SPI_CMD);
++		} else {
++			complete(&bs->done);
++		}
++	}
++
++	return IRQ_HANDLED;
++}
++
++
++static int __init bcm63xx_spi_probe(struct platform_device *pdev)
++{
++	struct resource *r;
++	struct device *dev = &pdev->dev;
++	struct bcm63xx_spi_pdata *pdata = pdev->dev.platform_data;
++	int irq;
++	struct spi_master *master;
++	struct clk *clk;
++	struct bcm63xx_spi *bs;
++	int ret;
++
++	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!r) {
++		dev_err(dev, "no iomem\n");
++		ret = -ENXIO;
++		goto out;
++	}
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_err(dev, "no irq\n");
++		ret = -ENXIO;
++		goto out;
++	}
++
++	clk = clk_get(dev, "spi");
++	if (IS_ERR(clk)) {
++		dev_err(dev, "no clock for device\n");
++		ret = -ENODEV;
++		goto out;
++	}
++
++	master = spi_alloc_master(dev, sizeof(*bs));
++	if (!master) {
++		dev_err(dev, "out of memory\n");
++		ret = -ENOMEM;
++		goto out_free;
++	}
++
++	bs = spi_master_get_devdata(master);
++	init_completion(&bs->done);
++
++	platform_set_drvdata(pdev, master);
++	bs->pdev = pdev;
++
++	if (!request_mem_region(r->start, r->end - r->start, PFX)) {
++		dev_err(dev, "iomem request failed\n");
++		ret = -ENXIO;
++		goto out_put_master;
++	}
++
++	bs->regs = ioremap_nocache(r->start, r->end - r->start);
++	if (!bs->regs) {
++		dev_err(dev, "unable to ioremap regs\n");
++		ret = -ENOMEM;
++		goto out_put_master;
++	}
++	bs->irq = irq;
++	bs->clk = clk;
++	bs->fifo_size = pdata->fifo_size;
++
++	ret = request_irq(irq, bcm63xx_spi_interrupt, 0, pdev->name, master);
++	if (ret) {
++		dev_err(dev, "unable to request irq\n");
++		goto out_unmap;
++	}
++
++	master->bus_num = pdata->bus_num;
++	master->num_chipselect = pdata->num_chipselect;
++	master->setup = bcm63xx_spi_setup;
++	master->transfer = bcm63xx_transfer;
++	bs->speed_hz = pdata->speed_hz;
++	bs->stopping = 0;
++	bs->tx_io = (u8*)(bs->regs + bcm63xx_spireg(SPI_MSG_DATA));
++	bs->rx_io = (const u8*)(bs->regs + bcm63xx_spireg(SPI_RX_DATA));
++	spin_lock_init(&bs->lock);
++
++	/* Initialize hardware */
++	clk_enable(bs->clk);
++	bcm_spi_writeb(bs, SPI_INTR_CLEAR_ALL, SPI_INT_STATUS);
++
++	/* register and we are done */
++	ret = spi_register_master(master);
++	if (ret) {
++		dev_err(dev, "spi register failed\n");
++		goto out_reset_hw;
++	}
++
++	dev_info(dev, "at 0x%08x (irq %d, FIFOs size %d) v%s\n",
++		 r->start, irq, bs->fifo_size, DRV_VER);
++
++	return 0;
++
++out_reset_hw:
++	clk_disable(clk);
++	free_irq(irq, master);
++out_unmap:
++	iounmap(bs->regs);
++out_put_master:
++	spi_master_put(master);
++out_free:
++	clk_put(clk);
++out:
++	return ret;
++}
++
++static int __exit bcm63xx_spi_remove(struct platform_device *pdev)
++{
++	struct spi_master	*master = platform_get_drvdata(pdev);
++	struct bcm63xx_spi	*bs = spi_master_get_devdata(master);
++	struct resource		*r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++
++	/* reset spi block */
++	bcm_spi_writeb(bs, 0, SPI_INT_MASK);
++	spin_lock(&bs->lock);
++	bs->stopping = 1;
++
++	/* HW shutdown */
++	clk_disable(bs->clk);
++	clk_put(bs->clk);
++
++	spin_unlock(&bs->lock);
++
++	free_irq(bs->irq, master);
++	iounmap(bs->regs);
++	release_mem_region(r->start, r->end - r->start);
++	platform_set_drvdata(pdev, 0);
++	spi_unregister_master(master);
++
++	return 0;
++}
++
++#ifdef CONFIG_PM
++static int bcm63xx_spi_suspend(struct platform_device *pdev, pm_message_t mesg)
++{
++	struct spi_master	*master = platform_get_drvdata(pdev);
++	struct bcm63xx_spi	*bs = spi_master_get_devdata(master);
++
++        clk_disable(bs->clk);
++
++	return 0;
++}
++
++static int bcm63xx_spi_resume(struct platform_device *pdev)
++{
++	struct spi_master	*master = platform_get_drvdata(pdev);
++	struct bcm63xx_spi	*bs = spi_master_get_devdata(master);
++
++	clk_enable(bs->clk);
++
++	return 0;
++}
++#else
++#define bcm63xx_spi_suspend	NULL
++#define bcm63xx_spi_resume	NULL
++#endif
++
++static struct platform_driver bcm63xx_spi_driver = {
++	.driver = {
++		.name	= "bcm63xx-spi",
++		.owner	= THIS_MODULE,
++	},
++	.probe		= bcm63xx_spi_probe,
++	.remove		= __exit_p(bcm63xx_spi_remove),
++	.suspend	= bcm63xx_spi_suspend,
++	.resume		= bcm63xx_spi_resume,
++};
++
++
++static int __init bcm63xx_spi_init(void)
++{
++	return platform_driver_register(&bcm63xx_spi_driver);
++}
++
++static void __exit bcm63xx_spi_exit(void)
++{
++	platform_driver_unregister(&bcm63xx_spi_driver);
++}
++
++module_init(bcm63xx_spi_init);
++module_exit(bcm63xx_spi_exit);
++
++MODULE_ALIAS("platform:bcm63xx_spi");
++MODULE_AUTHOR("Florian Fainelli <florian@openwrt.org>");
++MODULE_AUTHOR("Tanguy Bouzeloc <tanguy.bouzeloc@efixo.com>");
++MODULE_DESCRIPTION("Broadcom BCM63xx SPI Controller driver");
++MODULE_LICENSE("GPL");
++MODULE_VERSION(DRV_VER);
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -68,6 +68,12 @@ config SPI_ATMEL
+ 	  This selects a driver for the Atmel SPI Controller, present on
+ 	  many AT32 (AVR32) and AT91 (ARM) chips.
+ 
++config SPI_BCM63XX
++	tristate "Broadcom BCM63xx SPI controller"
++	depends on BCM63XX
++	help
++	  This is the SPI controller master driver for Broadcom BCM63xx SoC.
++
+ config SPI_BFIN
+ 	tristate "SPI controller driver for ADI Blackfin5xx"
+ 	depends on BLACKFIN
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -51,6 +51,7 @@ obj-$(CONFIG_SPI_SH_SCI)		+= spi_sh_sci.
+ obj-$(CONFIG_SPI_SH_MSIOF)		+= spi_sh_msiof.o
+ obj-$(CONFIG_SPI_STMP3XXX)		+= spi_stmp.o
+ obj-$(CONFIG_SPI_NUC900)		+= spi_nuc900.o
++obj-$(CONFIG_SPI_BCM63XX)		+= bcm63xx_spi.o
+ 
+ # special build for s3c24xx spi driver with fiq support
+ spi_s3c24xx_hw-y			:= spi_s3c24xx.o
+--- /dev/null
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_spi.h
+@@ -0,0 +1,126 @@
++#ifndef BCM63XX_DEV_SPI_H
++#define BCM63XX_DEV_SPI_H
++
++#include <linux/types.h>
++#include <bcm63xx_io.h>
++#include <bcm63xx_regs.h>
++
++int __init bcm63xx_spi_register(void);
++
++struct bcm63xx_spi_pdata {
++	unsigned int	fifo_size;
++	int		bus_num;
++	int		num_chipselect;
++	u32		speed_hz;
++};
++
++enum bcm63xx_regs_spi {
++        SPI_CMD,
++        SPI_INT_STATUS,
++        SPI_INT_MASK_ST,
++        SPI_INT_MASK,
++        SPI_ST,
++        SPI_CLK_CFG,
++        SPI_FILL_BYTE,
++        SPI_MSG_TAIL,
++        SPI_RX_TAIL,
++        SPI_MSG_CTL,
++        SPI_MSG_DATA,
++        SPI_RX_DATA,
++};
++
++static inline unsigned long bcm63xx_spireg(enum bcm63xx_regs_spi reg)
++{
++#ifdef BCMCPU_RUNTIME_DETECT
++	extern const unsigned long *bcm63xx_regs_spi;
++        return bcm63xx_regs_spi[reg];
++#else
++#ifdef CONFIG_BCM63XX_CPU_6338
++switch (reg) {
++	case SPI_CMD:
++		return SPI_BCM_6338_SPI_CMD;
++	case SPI_INT_STATUS:
++		return SPI_BCM_6338_SPI_INT_STATUS;
++	case SPI_INT_MASK_ST:
++		return SPI_BCM_6338_SPI_MASK_INT_ST;
++	case SPI_INT_MASK:
++		return SPI_BCM_6338_SPI_INT_MASK;
++	case SPI_ST:
++		return SPI_BCM_6338_SPI_ST;
++	case SPI_CLK_CFG:
++		return SPI_BCM_6338_SPI_CLK_CFG;
++	case SPI_FILL_BYTE:
++		return SPI_BCM_6338_SPI_FILL_BYTE;
++	case SPI_MSG_TAIL:
++		return SPI_BCM_6338_SPI_MSG_TAIL;
++	case SPI_RX_TAIL:
++		return SPI_BCM_6338_SPI_RX_TAIL;
++	case SPI_MSG_CTL:
++		return SPI_BCM_6338_SPI_MSG_CTL;
++	case SPI_MSG_DATA:
++		return SPI_BCM_6338_SPI_MSG_DATA;
++	case SPI_RX_DATA:
++		return SPI_BCM_6338_SPI_RX_DATA;
++}
++#endif
++#ifdef CONFIG_BCM63XX_CPU_6348
++switch (reg) {
++	case SPI_CMD:
++		return SPI_BCM_6348_SPI_CMD;
++	case SPI_INT_MASK_ST:
++		return SPI_BCM_6348_SPI_MASK_INT_ST;
++	case SPI_INT_MASK:
++		return SPI_BCM_6348_SPI_INT_MASK;
++	case SPI_INT_STATUS:
++		return SPI_BCM_6348_SPI_INT_STATUS;
++	case SPI_ST:
++		return SPI_BCM_6348_SPI_ST;
++	case SPI_CLK_CFG:
++		return SPI_BCM_6348_SPI_CLK_CFG;
++	case SPI_FILL_BYTE:
++		return SPI_BCM_6348_SPI_FILL_BYTE;
++	case SPI_MSG_TAIL:
++		return SPI_BCM_6348_SPI_MSG_TAIL;
++	case SPI_RX_TAIL:
++		return SPI_BCM_6348_SPI_RX_TAIL;
++	case SPI_MSG_CTL:
++		return SPI_BCM_6348_SPI_MSG_CTL;
++	case SPI_MSG_DATA:
++		return SPI_BCM_6348_SPI_MSG_DATA;
++	case SPI_RX_DATA:
++		return SPI_BCM_6348_SPI_RX_DATA;
++}
++#endif
++#ifdef CONFIG_BCM63XX_CPU_6358
++switch (reg) {
++	case SPI_CMD:
++		return SPI_BCM_6358_SPI_CMD;
++	case SPI_INT_STATUS:
++		return SPI_BCM_6358_SPI_INT_STATUS;
++	case SPI_INT_MASK_ST:
++		return SPI_BCM_6358_SPI_MASK_INT_ST;
++	case SPI_INT_MASK:
++		return SPI_BCM_6358_SPI_INT_MASK;
++	case SPI_ST:
++		return SPI_BCM_6358_SPI_STATUS;
++	case SPI_CLK_CFG:
++		return SPI_BCM_6358_SPI_CLK_CFG;
++	case SPI_FILL_BYTE:
++		return SPI_BCM_6358_SPI_FILL_BYTE;
++	case SPI_MSG_TAIL:
++		return SPI_BCM_6358_SPI_MSG_TAIL;
++	case SPI_RX_TAIL:
++		return SPI_BCM_6358_SPI_RX_TAIL;
++	case SPI_MSG_CTL:
++		return SPI_BCM_6358_MSG_CTL;
++	case SPI_MSG_DATA:
++		return SPI_BCM_6358_SPI_MSG_DATA;
++	case SPI_RX_DATA:
++		return SPI_BCM_6358_SPI_RX_DATA;
++}
++#endif
++#endif
++	return 0;
++}
++
++#endif /* BCM63XX_DEV_SPI_H */
+--- a/arch/mips/bcm63xx/Makefile
++++ b/arch/mips/bcm63xx/Makefile
+@@ -1,6 +1,6 @@
+ obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
+ 		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-uart.o dev-wdt.o \
+-		   dev-usb-ohci.o dev-usb-ehci.o dev-usb-udc.o
++		   dev-usb-ohci.o dev-usb-ehci.o dev-usb-udc.o dev-spi.o
+ obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
+ 
+ obj-y		+= boards/
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -30,6 +30,7 @@
+ #include <bcm63xx_dev_usb_ohci.h>
+ #include <bcm63xx_dev_usb_ehci.h>
+ #include <bcm63xx_dev_usb_udc.h>
++#include <bcm63xx_dev_spi.h>
+ #include <board_bcm963xx.h>
+ 
+ #define PFX	"board_bcm963xx: "
+@@ -931,6 +932,9 @@ int __init board_register_devices(void)
+ 	if (board.num_spis)
+ 		spi_register_board_info(board.spis, board.num_spis);
+ 
++	if (!BCMCPU_IS_6345())
++		bcm63xx_spi_register();
++
+ 	/* read base address of boot chip select (0) */
+ 	if (BCMCPU_IS_6345())
+ 		val = 0x1fc00000;
