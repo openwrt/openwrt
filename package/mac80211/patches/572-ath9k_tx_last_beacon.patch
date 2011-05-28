@@ -54,7 +54,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -2314,6 +2314,48 @@ static bool ath9k_tx_frames_pending(stru
+@@ -2316,6 +2316,48 @@ static bool ath9k_tx_frames_pending(stru
  	return false;
  }
  
@@ -103,7 +103,7 @@
  struct ieee80211_ops ath9k_ops = {
  	.tx 		    = ath9k_tx,
  	.start 		    = ath9k_start,
-@@ -2338,4 +2380,5 @@ struct ieee80211_ops ath9k_ops = {
+@@ -2340,4 +2382,5 @@ struct ieee80211_ops ath9k_ops = {
  	.set_coverage_class = ath9k_set_coverage_class,
  	.flush		    = ath9k_flush,
  	.tx_frames_pending  = ath9k_tx_frames_pending,
