@@ -1,0 +1,93 @@
+--- a/drivers/net/wireless/ath/ath9k/ar9002_calib.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_calib.c
+@@ -829,7 +829,7 @@ static bool ar9002_hw_init_cal(struct at
+ 	if (AR_SREV_9271(ah)) {
+ 		if (!ar9285_hw_cl_cal(ah, chan))
+ 			return false;
+-	} else if (AR_SREV_9285_12_OR_LATER(ah)) {
++	} else if (AR_SREV_9285(ah) && AR_SREV_9285_12_OR_LATER(ah)) {
+ 		if (!ar9285_hw_clc(ah, chan))
+ 			return false;
+ 	} else {
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -1381,3 +1381,25 @@ void ar9003_hw_bb_watchdog_dbg_info(stru
+ 		"==== BB update: done ====\n\n");
+ }
+ EXPORT_SYMBOL(ar9003_hw_bb_watchdog_dbg_info);
++
++void ar9003_hw_disable_phy_restart(struct ath_hw *ah)
++{
++	u32 val;
++
++	/* While receiving unsupported rate frame rx state machine
++	 * gets into a state 0xb and if phy_restart happens in that
++	 * state, BB would go hang. If RXSM is in 0xb state after
++	 * first bb panic, ensure to disable the phy_restart.
++	 */
++	if (!((MS(ah->bb_watchdog_last_status,
++		  AR_PHY_WATCHDOG_RX_OFDM_SM) == 0xb) ||
++	    ah->bb_hang_rx_ofdm))
++		return;
++
++	ah->bb_hang_rx_ofdm = true;
++	val = REG_READ(ah, AR_PHY_RESTART);
++	val &= ~AR_PHY_RESTART_ENA;
++
++	REG_WRITE(ah, AR_PHY_RESTART, val);
++}
++EXPORT_SYMBOL(ar9003_hw_disable_phy_restart);
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -1555,9 +1555,12 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 	if (ah->btcoex_hw.enabled)
+ 		ath9k_hw_btcoex_enable(ah);
+ 
+-	if (AR_SREV_9300_20_OR_LATER(ah))
++	if (AR_SREV_9300_20_OR_LATER(ah)) {
+ 		ar9003_hw_bb_watchdog_config(ah);
+ 
++		ar9003_hw_disable_phy_restart(ah);
++	}
++
+ 	ath9k_hw_apply_gpio_override(ah);
+ 
+ 	return 0;
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -842,6 +842,7 @@ struct ath_hw {
+ 
+ 	u32 bb_watchdog_last_status;
+ 	u32 bb_watchdog_timeout_ms; /* in ms, 0 to disable */
++	u8 bb_hang_rx_ofdm; /* true if bb hang due to rx_ofdm */
+ 
+ 	unsigned int paprd_target_power;
+ 	unsigned int paprd_training_power;
+@@ -990,6 +991,7 @@ void ar9002_hw_enable_wep_aggregation(st
+ void ar9003_hw_bb_watchdog_config(struct ath_hw *ah);
+ void ar9003_hw_bb_watchdog_read(struct ath_hw *ah);
+ void ar9003_hw_bb_watchdog_dbg_info(struct ath_hw *ah);
++void ar9003_hw_disable_phy_restart(struct ath_hw *ah);
+ void ar9003_paprd_enable(struct ath_hw *ah, bool val);
+ void ar9003_paprd_populate_single_table(struct ath_hw *ah,
+ 					struct ath9k_hw_cal_data *caldata,
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -670,7 +670,8 @@ void ath9k_tasklet(unsigned long data)
+ 	u32 status = sc->intrstatus;
+ 	u32 rxmask;
+ 
+-	if (status & ATH9K_INT_FATAL) {
++	if ((status & ATH9K_INT_FATAL) ||
++	    (status & ATH9K_INT_BB_WATCHDOG)) {
+ 		ath_reset(sc, true);
+ 		return;
+ 	}
+@@ -737,6 +738,7 @@ irqreturn_t ath_isr(int irq, void *dev)
+ {
+ #define SCHED_INTR (				\
+ 		ATH9K_INT_FATAL |		\
++		ATH9K_INT_BB_WATCHDOG |		\
+ 		ATH9K_INT_RXORN |		\
+ 		ATH9K_INT_RXEOL |		\
+ 		ATH9K_INT_RX |			\
