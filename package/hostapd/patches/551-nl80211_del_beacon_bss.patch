@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -2092,23 +2092,43 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -2135,23 +2135,43 @@ wpa_driver_nl80211_finish_drv_init(struc
  }
  
  
@@ -46,7 +46,7 @@
  
  /**
   * wpa_driver_nl80211_deinit - Deinitialize nl80211 driver interface
-@@ -6581,4 +6601,5 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -6658,4 +6678,5 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_intra_bss = nl80211_set_intra_bss,
  	.set_param = nl80211_set_param,
  	.get_radio_name = nl80211_get_radio_name,
@@ -54,10 +54,10 @@
  };
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -2241,6 +2241,8 @@ struct wpa_driver_ops {
- 	 * @signal_info: Connection info structure
-          */
- 	int (*signal_poll)(void *priv, struct wpa_signal_info *signal_info);
+@@ -2253,6 +2253,8 @@ struct wpa_driver_ops {
+ 	 * implementation, there is no need to implement this function.
+ 	 */
+ 	int (*set_authmode)(void *priv, int authmode);
 +
 +	int (*stop_ap)(void *priv);
  };
