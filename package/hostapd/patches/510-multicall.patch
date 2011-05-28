@@ -132,7 +132,7 @@
  wpa_cli.exe: wpa_cli
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -3187,8 +3187,8 @@ union wpa_event_data {
+@@ -3199,8 +3199,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -179,7 +179,7 @@
  	for (;;) {
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -1741,8 +1741,8 @@ static void wpa_supplicant_event_unprot_
+@@ -1746,8 +1746,8 @@ static void wpa_supplicant_event_unprot_
  }
  
  

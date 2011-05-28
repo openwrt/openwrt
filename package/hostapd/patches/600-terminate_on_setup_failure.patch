@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -717,11 +717,8 @@ int hostapd_setup_interface_complete(str
+@@ -723,11 +723,8 @@ int hostapd_setup_interface_complete(str
  	size_t j;
  	u8 *prev_addr;
  
@@ -14,7 +14,7 @@
  
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (hapd->iconf->channel) {
-@@ -737,7 +734,7 @@ int hostapd_setup_interface_complete(str
+@@ -743,7 +740,7 @@ int hostapd_setup_interface_complete(str
  				     hapd->iconf->secondary_channel)) {
  			wpa_printf(MSG_ERROR, "Could not set channel for "
  				   "kernel driver");
@@ -23,7 +23,7 @@
  		}
  	}
  
-@@ -748,7 +745,7 @@ int hostapd_setup_interface_complete(str
+@@ -754,7 +751,7 @@ int hostapd_setup_interface_complete(str
  			hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,
  				       HOSTAPD_LEVEL_WARNING,
  				       "Failed to prepare rates table.");
@@ -32,7 +32,7 @@
  		}
  	}
  
-@@ -756,14 +753,14 @@ int hostapd_setup_interface_complete(str
+@@ -762,14 +759,14 @@ int hostapd_setup_interface_complete(str
  	    hostapd_set_rts(hapd, hapd->iconf->rts_threshold)) {
  		wpa_printf(MSG_ERROR, "Could not set RTS threshold for "
  			   "kernel driver");
@@ -49,7 +49,7 @@
  	}
  
  	prev_addr = hapd->own_addr;
-@@ -773,7 +770,7 @@ int hostapd_setup_interface_complete(str
+@@ -779,7 +776,7 @@ int hostapd_setup_interface_complete(str
  		if (j)
  			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
  		if (hostapd_setup_bss(hapd, j == 0))
@@ -58,7 +58,7 @@
  		if (hostapd_mac_comp_empty(hapd->conf->bssid) == 0)
  			prev_addr = hapd->own_addr;
  	}
-@@ -785,7 +782,7 @@ int hostapd_setup_interface_complete(str
+@@ -791,7 +788,7 @@ int hostapd_setup_interface_complete(str
  	if (hostapd_driver_commit(hapd) < 0) {
  		wpa_printf(MSG_ERROR, "%s: Failed to commit driver "
  			   "configuration", __func__);
@@ -66,8 +66,8 @@
 +		goto error;
  	}
  
- 	if (hapd->setup_complete_cb)
-@@ -798,6 +795,11 @@ int hostapd_setup_interface_complete(str
+ 	/*
+@@ -815,6 +812,11 @@ int hostapd_setup_interface_complete(str
  		iface->init_complete(iface);
  
  	return 0;

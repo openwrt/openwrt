@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -5504,6 +5504,9 @@ static int i802_set_wds_sta(void *priv, 
+@@ -5660,6 +5660,9 @@ static int i802_set_wds_sta(void *priv, 
  		linux_set_iface_flags(drv->ioctl_sock, name, 1);
  		return i802_set_sta_vlan(priv, addr, name, 0);
  	} else {
@@ -10,7 +10,7 @@
  		i802_set_sta_vlan(priv, addr, bss->ifname, 0);
  		return wpa_driver_nl80211_if_remove(priv, WPA_IF_AP_VLAN,
  						    name);
-@@ -5944,14 +5947,14 @@ static int wpa_driver_nl80211_if_remove(
+@@ -6021,14 +6024,14 @@ static int wpa_driver_nl80211_if_remove(
  		return -1;
  
  #ifdef HOSTAPD

@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -1847,6 +1847,7 @@ static void * wpa_driver_nl80211_init(vo
+@@ -1890,6 +1890,7 @@ static void * wpa_driver_nl80211_init(vo
  	drv->monitor_ifidx = -1;
  	drv->monitor_sock = -1;
  	drv->ioctl_sock = -1;
@@ -8,7 +8,7 @@
  
  	if (wpa_driver_nl80211_init_nl(drv)) {
  		os_free(drv);
-@@ -2013,29 +2014,29 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -2056,29 +2057,29 @@ wpa_driver_nl80211_finish_drv_init(struc
  	drv->ifindex = if_nametoindex(bss->ifname);
  	drv->first_bss.ifindex = drv->ifindex;
  
@@ -58,7 +58,7 @@
  
  	if (wpa_driver_nl80211_capa(drv))
  		return -1;
-@@ -3765,7 +3766,8 @@ static void nl80211_remove_iface(struct 
+@@ -3849,7 +3850,8 @@ static void nl80211_remove_iface(struct 
  
  #ifdef HOSTAPD
  	/* stop listening for EAPOL on this interface */
@@ -68,7 +68,7 @@
  #endif /* HOSTAPD */
  
  	msg = nlmsg_alloc();
-@@ -3838,7 +3840,8 @@ static int nl80211_create_iface_once(str
+@@ -3922,7 +3924,8 @@ static int nl80211_create_iface_once(str
  
  #ifdef HOSTAPD
  	/* start listening for EAPOL on this interface */
