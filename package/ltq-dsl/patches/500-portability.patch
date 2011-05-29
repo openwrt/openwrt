@@ -1,7 +1,5 @@
-Index: drv_dsl_cpe_api-3.24.4.4/configure.in
-===================================================================
---- drv_dsl_cpe_api-3.24.4.4.orig/configure.in	2009-08-13 13:39:21.000000000 +0200
-+++ drv_dsl_cpe_api-3.24.4.4/configure.in	2010-10-14 02:14:55.000000000 +0200
+--- a/configure.in
++++ b/configure.in
 @@ -310,7 +310,7 @@
  AC_ARG_ENABLE(kernelbuild,
      AC_HELP_STRING(--enable-kernel-build=x,Set the target kernel build path),
@@ -167,10 +165,8 @@ Index: drv_dsl_cpe_api-3.24.4.4/configure.in
  ])
  
  AC_CONFIG_FILES([Makefile src/Makefile])
-Index: drv_dsl_cpe_api-3.24.4.4/src/Makefile.am
-===================================================================
---- drv_dsl_cpe_api-3.24.4.4.orig/src/Makefile.am	2009-07-03 14:06:34.000000000 +0200
-+++ drv_dsl_cpe_api-3.24.4.4/src/Makefile.am	2010-10-14 02:14:55.000000000 +0200
+--- a/src/Makefile.am
++++ b/src/Makefile.am
 @@ -303,7 +303,7 @@
  drv_dsl_cpe_api_OBJS = "$(subst .c,.o,$(filter %.c,$(drv_dsl_cpe_api_SOURCES)))"
  
@@ -195,10 +191,8 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/Makefile.am
  	$(MAKE) ARCH=@KERNEL_ARCH@ -C @KERNEL_BUILD_PATH@ O=@KERNEL_BUILD_PATH@ M=$(PWD) modules
  
  clean-generic:
-Index: drv_dsl_cpe_api-3.24.4.4/src/include/drv_dsl_cpe_os_linux.h
-===================================================================
---- drv_dsl_cpe_api-3.24.4.4.orig/src/include/drv_dsl_cpe_os_linux.h	2010-10-14 02:14:55.000000000 +0200
-+++ drv_dsl_cpe_api-3.24.4.4/src/include/drv_dsl_cpe_os_linux.h	2010-10-14 02:14:55.000000000 +0200
+--- a/src/include/drv_dsl_cpe_os_linux.h
++++ b/src/include/drv_dsl_cpe_os_linux.h
 @@ -16,8 +16,6 @@
     extern "C" {
  #endif
@@ -208,10 +202,25 @@ Index: drv_dsl_cpe_api-3.24.4.4/src/include/drv_dsl_cpe_os_linux.h
  #include <linux/module.h>
  #include <linux/kernel.h>
  #include <linux/init.h>
-@@ -40,6 +38,7 @@
+@@ -26,8 +24,10 @@
+ #include <linux/spinlock.h>
+ #include <linux/sched.h>
+ 
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+-   #include <generated/utsrelease.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
++#include <linux/utsrelease.h>
++#else
++#include <generated/utsrelease.h>
+ #endif
+ 
+ #include <linux/types.h>
+@@ -39,7 +39,8 @@
+ #include <linux/delay.h>
  #include <linux/poll.h>
  #include <asm/uaccess.h>
- #include <linux/smp_lock.h>
+-#include <linux/smp_lock.h>
++//#include <linux/smp_lock.h>
 +#include <asm/ioctl.h>
  
  #ifdef INCLUDE_DSL_CPE_API_IFXOS_SUPPORT

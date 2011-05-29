@@ -155,12 +155,12 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/src/include/drv_dsl_cpe_cmv_danube.h $(1)/usr/include
 endef
 
-define Package/ltq-dsl-firmware-a/install
+define Package/kmod-ltq-dsl-firmware-a/install
 	$(INSTALL_DIR) $(1)/lib/firmware/
 	$(CP) $(PKG_BUILD_DIR)/$(FW_BASE_NAME)_a_$(FW_A_FILE_VER).bin $(1)/lib/firmware/ModemHWE.bin
 endef
 
-define Package/ltq-dsl-firmware-b/install
+define Package/kmod-ltq-dsl-firmware-b/install
 	$(INSTALL_DIR) $(1)/lib/firmware/
 	$(CP) $(PKG_BUILD_DIR)/$(FW_BASE_NAME)_b_$(FW_B_FILE_VER).bin $(1)/lib/firmware/ModemHWE.bin
 endef

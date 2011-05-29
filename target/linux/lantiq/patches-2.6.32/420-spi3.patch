@@ -1,0 +1,49 @@
+From: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
+Date: Thu, 3 Mar 2011 20:42:26 +0000 (+0100)
+Subject: MIPS: lantiq: Add device register helper for SPI controller and devices
+X-Git-Url: http://nbd.name/gitweb.cgi?p=lantiq.git;a=commitdiff_plain;h=b35b07062b718ece9b9cb7b23b12d83a087eafb0;hp=653c95b8b9066c9c6ac08bd64d0ceee439e9fd90
+
+MIPS: lantiq: Add device register helper for SPI controller and devices
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
+---
+
+--- a/arch/mips/lantiq/xway/devices.c
++++ b/arch/mips/lantiq/xway/devices.c
+@@ -21,6 +21,7 @@
+ #include <linux/io.h>
+ #include <linux/gpio.h>
+ #include <linux/leds.h>
++#include <linux/spi/spi.h>
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/irq.h>
+@@ -119,3 +120,28 @@
+ 		platform_device_register(&ltq_etop);
+ 	}
+ }
++
++static struct resource ltq_spi_resources[] = {
++	{
++		.start  = LTQ_SSC_BASE_ADDR,
++		.end    = LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags  = IORESOURCE_MEM,
++	},
++	IRQ_RES(spi_tx, LTQ_SSC_TIR),
++	IRQ_RES(spi_rx, LTQ_SSC_RIR),
++	IRQ_RES(spi_err, LTQ_SSC_EIR),
++};
++
++static struct platform_device ltq_spi = {
++	.name		= "ltq-spi",
++	.resource	= ltq_spi_resources,
++	.num_resources	= ARRAY_SIZE(ltq_spi_resources),
++};
++
++void __init ltq_register_spi(struct ltq_spi_platform_data *pdata,
++		struct spi_board_info const *info, unsigned n)
++{
++	spi_register_board_info(info, n);
++	ltq_spi.dev.platform_data = pdata;
++	platform_device_register(&ltq_spi);
++}

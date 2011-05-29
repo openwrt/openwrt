@@ -1,0 +1,170 @@
+From 52a5369d1067d4feddbfa7ff4486a77ac9a2971e Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 30 Mar 2011 09:27:54 +0200
+Subject: [PATCH 06/13] MIPS: Lantiq: Add mips_machine support
+
+This patch adds support for Gabor's mips_machine patch.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Signed-off-by: Ralph Hempel <ralph.hempel@lantiq.com>
+Cc: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/2251/
+Patchwork: https://patchwork.linux-mips.org/patch/2358/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/Kconfig                  |    1 +
+ arch/mips/lantiq/machtypes.h       |   18 ++++++++++++++++++
+ arch/mips/lantiq/prom.h            |    1 +
+ arch/mips/lantiq/setup.c           |   25 +++++++++++++++++++++++++
+ arch/mips/lantiq/xway/Makefile     |    4 ++--
+ arch/mips/lantiq/xway/setup-ase.c  |   19 +++++++++++++++++++
+ arch/mips/lantiq/xway/setup-xway.c |   20 ++++++++++++++++++++
+ 7 files changed, 86 insertions(+), 2 deletions(-)
+ create mode 100644 arch/mips/lantiq/machtypes.h
+ create mode 100644 arch/mips/lantiq/xway/setup-ase.c
+ create mode 100644 arch/mips/lantiq/xway/setup-xway.c
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -190,6 +190,7 @@
+ 	select SWAP_IO_SPACE
+ 	select BOOT_RAW
+ 	select HAVE_CLK
++	select MIPS_MACHINE
+ 
+ config LASAT
+ 	bool "LASAT Networks platforms"
+--- /dev/null
++++ b/arch/mips/lantiq/machtypes.h
+@@ -0,0 +1,18 @@
++/*
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ *
++ *  Copyright (C) 2010 John Crispin <blogic@openwrt.org>
++ */
++
++#ifndef _LANTIQ_MACH_H__
++#define _LANTIQ_MACH_H__
++
++#include <asm/mips_machine.h>
++
++enum lantiq_mach_type {
++	LTQ_MACH_GENERIC = 0,
++};
++
++#endif
+--- a/arch/mips/lantiq/prom.h
++++ b/arch/mips/lantiq/prom.h
+@@ -20,5 +20,6 @@
+ };
+ 
+ extern void ltq_soc_detect(struct ltq_soc_info *i);
++extern void ltq_soc_setup(void);
+ 
+ #endif
+--- a/arch/mips/lantiq/setup.c
++++ b/arch/mips/lantiq/setup.c
+@@ -14,6 +14,12 @@
+ 
+ #include <lantiq_soc.h>
+ 
++#include "machtypes.h"
++#include "devices.h"
++#include "prom.h"
++
++unsigned long physical_memsize = 0L;
++
+ void __init plat_mem_setup(void)
+ {
+ 	/* assume 16M as default incase uboot fails to pass proper ramsize */
+@@ -32,10 +38,32 @@
+ 		if (!strncmp(e, "memsize=", 8)) {
+ 			e += 8;
+ 			if (strict_strtoul(e, 0, &memsize))
+-				pr_warn("bad memsize specified\n");
++				pr_warning("bad memsize specified\n");
+ 		}
+ 		envp++;
+ 	}
+ 	memsize *= 1024 * 1024;
+ 	add_memory_region(0x00000000, memsize, BOOT_MEM_RAM);
++	physical_memsize = memsize;
++}
++
++static int __init
++lantiq_setup(void)
++{
++	ltq_soc_setup();
++	mips_machine_setup();
++	return 0;
+ }
++
++arch_initcall(lantiq_setup);
++
++static void __init
++lantiq_generic_init(void)
++{
++	/* Nothing to do */
++}
++
++MIPS_MACHINE(LTQ_MACH_GENERIC,
++	     "Generic",
++	     "Generic Lantiq based board",
++	     lantiq_generic_init);
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
+@@ -1,4 +1,4 @@
+ obj-y := pmu.o ebu.o reset.o gpio.o devices.o
+ 
+-obj-$(CONFIG_SOC_XWAY) += clk-xway.o prom-xway.o
+-obj-$(CONFIG_SOC_AMAZON_SE) += clk-ase.o prom-ase.o
++obj-$(CONFIG_SOC_XWAY) += clk-xway.o prom-xway.o setup-xway.o
++obj-$(CONFIG_SOC_AMAZON_SE) += clk-ase.o prom-ase.o setup-ase.o
+--- /dev/null
++++ b/arch/mips/lantiq/xway/setup-ase.c
+@@ -0,0 +1,19 @@
++/*
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ *
++ *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
++ */
++
++#include <lantiq_soc.h>
++
++#include "../prom.h"
++#include "devices.h"
++
++void __init ltq_soc_setup(void)
++{
++	ltq_register_ase_asc();
++	ltq_register_gpio();
++	ltq_register_wdt();
++}
+--- /dev/null
++++ b/arch/mips/lantiq/xway/setup-xway.c
+@@ -0,0 +1,20 @@
++/*
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ *
++ *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
++ */
++
++#include <lantiq_soc.h>
++
++#include "../prom.h"
++#include "devices.h"
++
++void __init ltq_soc_setup(void)
++{
++	ltq_register_asc(0);
++	ltq_register_asc(1);
++	ltq_register_gpio();
++	ltq_register_wdt();
++}

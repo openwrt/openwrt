@@ -33,7 +33,7 @@
  
  #if defined SYSTEM_DANUBE
 -#include <asm/ifx/ifx_gpio.h>
-+#include <xway/xway.h>
++#include <lantiq_soc.h>
 +
  #else
  #error no system selected
@@ -158,7 +158,7 @@
 +#  define ifx_gptu_timer_free       lq_free_timer
 +
 +
-+#  define bsp_mask_and_ack_irq      lq_mask_and_ack_irq
++#  define bsp_mask_and_ack_irq      ltq_mask_and_ack_irq
 +#else
 +#  include <asm/ifx/ifx_regs.h>
 +#  include <asm/ifx/ifx_gptu.h>
@@ -443,14 +443,14 @@
 +#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,28))
 +IFX_uint32_t ifx_get_cp1_size(IFX_void_t)
 +{
-+	return 2;
++	return 1;
 +}
 +
-+unsigned int *lq_get_cp1_base(void);
++unsigned int *ltq_get_cp1_base(void);
 +
 +IFX_uint32_t *ifx_get_cp1_base(IFX_void_t)
 +{
-+	return lq_get_cp1_base();
++	return ltq_get_cp1_base();
 +}
 +#endif
 +
@@ -501,7 +501,7 @@
 +#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,28))
 +#  include <lantiq.h>
 +#  include <irq.h>
-+#  include <xway/xway.h>
++#  include <lantiq_soc.h>
 +#  include <gpio.h>
 +#define IFXMIPS_MPS_SRAM		((u32 *)(KSEG1 + 0x1F200000))
 +#define IFXMIPS_MPS_BASE_ADDR		(KSEG1 + 0x1F107000)

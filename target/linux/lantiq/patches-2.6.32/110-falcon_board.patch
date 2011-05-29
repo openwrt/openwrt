@@ -1,0 +1,1737 @@
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/Kconfig
+@@ -0,0 +1,11 @@
++if SOC_FALCON
++
++menu "Mips Machine"
++
++config LANTIQ_MACH_EASY98000
++	bool "Easy98000"
++	default y
++
++endmenu
++
++endif
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/Makefile
+@@ -0,0 +1,3 @@
++obj-y := clk-falcon.o devices.o gpio.o prom.o sysctrl.o reset.o
++obj-y += softdog_vpe.o
++obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/clk-falcon.c
+@@ -0,0 +1,48 @@
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * Copyright (C) 2010 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/init.h>
++
++#include <asm/time.h>
++#include <asm/irq.h>
++#include <asm/div64.h>
++
++#include <lantiq_soc.h>
++
++#include <falcon.h>
++#include <gpon_reg_base.h>
++#include <sys1_reg.h>
++
++static struct gpon_reg_sys1 * const pSYS1 = (struct gpon_reg_sys1 *)GPON_SYS1_BASE;
++
++unsigned int
++ltq_get_io_region_clock(void)
++{
++	return 200000000; /* 200 MHz */
++}
++EXPORT_SYMBOL(ltq_get_io_region_clock);
++
++unsigned int
++ltq_get_cpu_hz(void)
++{
++	if ((ltq_r32(&pSYS1->cpu0cc) & CPU0CC_CPUDIV) == CPU0CC_CPUDIV_SELFHALF)
++		return 200000000; /* 200 MHz */
++	else
++		return 400000000; /* 400 MHz */
++}
++EXPORT_SYMBOL(ltq_get_cpu_hz);
++
++unsigned int
++ltq_get_fpi_hz(void)
++{
++	return 100000000;
++}
++EXPORT_SYMBOL(ltq_get_fpi_hz);
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/devices.c
+@@ -0,0 +1,180 @@
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/string.h>
++#include <linux/mtd/physmap.h>
++#include <linux/kernel.h>
++#include <linux/reboot.h>
++#include <linux/platform_device.h>
++#include <linux/leds.h>
++#include <linux/etherdevice.h>
++#include <linux/reboot.h>
++#include <linux/time.h>
++#include <linux/io.h>
++#include <linux/gpio.h>
++#include <linux/leds.h>
++#include <linux/spi/spi.h>
++
++#include <asm/bootinfo.h>
++#include <asm/irq.h>
++
++#include <lantiq.h>
++
++#include <falcon/falcon_irq.h>
++#include <falcon/gpon_reg_base.h>
++#include <falcon/sys1_reg.h>
++#include <falcon/sys_eth_reg.h>
++
++#include <falcon/sysctrl.h>
++
++#include "devices.h"
++
++unsigned char ltq_ethaddr[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
++EXPORT_SYMBOL(ltq_ethaddr);
++
++static int __init
++falcon_set_ethaddr(char *str)
++{
++	sscanf(str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
++		&ltq_ethaddr[0], &ltq_ethaddr[1], &ltq_ethaddr[2],
++		&ltq_ethaddr[3], &ltq_ethaddr[4], &ltq_ethaddr[5]);
++	return 0;
++}
++__setup("ethaddr=", falcon_set_ethaddr);
++
++/* asc ports */
++static struct resource falcon_asc0_resources[] =
++{
++	MEM_RES("asc0",GPON_ASC0_BASE,GPON_ASC0_END),
++	IRQ_RES("tx",INT_NUM_IM3_IRL0),
++	IRQ_RES("rx",INT_NUM_IM3_IRL0+1),
++	IRQ_RES("err",INT_NUM_IM3_IRL0+2),
++};
++
++static struct resource falcon_asc1_resources[] =
++{
++	MEM_RES("asc1",GPON_ASC1_BASE,GPON_ASC1_END),
++	IRQ_RES("tx",INT_NUM_IM3_IRL0+8),
++	IRQ_RES("rx",INT_NUM_IM3_IRL0+9),
++	IRQ_RES("err",INT_NUM_IM3_IRL0+10),
++};
++
++void __init falcon_register_asc(int port)
++{
++	switch (port) {
++	case 0:
++		platform_device_register_simple("ltq_asc", 0,
++			falcon_asc0_resources, ARRAY_SIZE(falcon_asc0_resources));
++		break;
++	case 1:
++		platform_device_register_simple("ltq_asc", 1,
++			falcon_asc1_resources, ARRAY_SIZE(falcon_asc1_resources));
++		break;
++	default:
++		break;
++	}
++}
++
++/* nor flash */
++static struct resource ltq_nor_resource =
++	MEM_RES("nor",LTQ_FLASH_START,LTQ_FLASH_START + LTQ_FLASH_MAX - 1);
++
++static struct platform_device ltq_nor = {
++	.name			= "ltq_nor",
++	.resource		= &ltq_nor_resource,
++	.num_resources	= 1,
++};
++
++void __init falcon_register_nor(struct physmap_flash_data *data)
++{
++	ltq_nor.dev.platform_data = data;
++	platform_device_register(&ltq_nor);
++}
++
++/* spi flash */
++static struct resource ltq_spi_resources[] = {
++	MEM_RES("ebu", GPON_EBU_BASE, GPON_EBU_END),
++	MEM_RES("sys1", GPON_SYS1_BASE, GPON_SYS1_END)
++};
++
++static struct platform_device ltq_spi = {
++	.name			= "falcon_spi",
++	.resource		= ltq_spi_resources,
++	.num_resources		= ARRAY_SIZE(ltq_spi_resources)
++};
++
++void __init falcon_register_spi_flash(struct spi_board_info *data)
++{
++	spi_register_board_info(data, 1);
++	platform_device_register(&ltq_spi);
++}
++
++/* watchdog */
++static struct resource falcon_wdt_resource =
++	MEM_RES("watchdog",GPON_WDT_BASE,GPON_WDT_END);
++
++void __init falcon_register_wdt(void)
++{
++	platform_device_register_simple("ltq_wdt", 0, &falcon_wdt_resource, 1);
++}
++
++/* gpio */
++#define DECLARE_GPIO_RES(port) \
++static struct resource falcon_gpio ## port ## _resources[] = { \
++	MEM_RES("gpio"#port,GPON_GPIO ## port ## _BASE,GPON_GPIO ## port ## _END), \
++	MEM_RES("padctrl"#port,GPON_PADCTRL ## port ## _BASE,GPON_PADCTRL ## port ## _END), \
++	IRQ_RES("gpio_mux"#port,FALCON_IRQ_GPIO_P ## port ) \
++}
++DECLARE_GPIO_RES(0);
++DECLARE_GPIO_RES(1);
++DECLARE_GPIO_RES(2);
++#ifdef REGISTER_ALL_GPIO_PORTS
++#if NR_IRQS < 328
++#error NR_IRQS to low for all gpio irqs
++#endif
++DECLARE_GPIO_RES(3);
++DECLARE_GPIO_RES(4);
++#endif
++
++void __init falcon_register_gpio(void)
++{
++	platform_device_register_simple("falcon_gpio", 0,
++		falcon_gpio0_resources, ARRAY_SIZE(falcon_gpio0_resources));
++	platform_device_register_simple("falcon_gpio", 1,
++		falcon_gpio1_resources, ARRAY_SIZE(falcon_gpio1_resources));
++	platform_device_register_simple("falcon_gpio", 2,
++		falcon_gpio2_resources, ARRAY_SIZE(falcon_gpio2_resources));
++	sys1_hw_activate(ACTS_PADCTRL1 | ACTS_P1);
++	sys_eth_hw_activate(SYS_ETH_ACTS_PADCTRL0 | SYS_ETH_ACTS_PADCTRL2 |
++		SYS_ETH_ACTS_P0 | SYS_ETH_ACTS_P2);
++
++#ifdef REGISTER_ALL_GPIO_PORTS
++	/* optional gpio ports: not registered,
++	   as the pins are EBU specific and always used by linux */
++	platform_device_register_simple("falcon_gpio", 3,
++		falcon_gpio3_resources, ARRAY_SIZE(falcon_gpio3_resources));
++	platform_device_register_simple("falcon_gpio", 4,
++		falcon_gpio4_resources, ARRAY_SIZE(falcon_gpio4_resources));
++	sys1_hw_activate(ACTS_PADCTRL3 | ACTS_PADCTRL4 | ACTS_P3 | ACTS_P4);
++#endif
++}
++
++static struct resource falcon_i2c_resources[] = {
++	MEM_RES("i2c", GPON_I2C_BASE,GPON_I2C_END),
++	IRQ_RES("i2c_lb", FALCON_IRQ_I2C_LBREQ),
++	IRQ_RES("i2c_b", FALCON_IRQ_I2C_BREQ),
++	IRQ_RES("i2c_err", FALCON_IRQ_I2C_I2C_ERR),
++	IRQ_RES("i2c_p", FALCON_IRQ_I2C_I2C_P),
++};
++
++void __init falcon_register_i2c(void)
++{
++	platform_device_register_simple("i2c-falcon", 0,
++		falcon_i2c_resources, ARRAY_SIZE(falcon_i2c_resources));
++	sys1_hw_activate(ACTS_I2C_ACT);
++}
++
++void __init falcon_register_crypto(void)
++{
++	platform_device_register_simple("ltq_falcon_deu", 0, NULL, 0);
++}
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/devices.h
+@@ -0,0 +1,21 @@
++#ifndef _FALCON_DEVICES_H__
++#define _FALCON_DEVICES_H__
++
++#include <linux/mtd/physmap.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/flash.h>
++
++extern void __init falcon_register_asc(int port);
++extern void __init falcon_register_i2c(void);
++extern void __init falcon_register_spi_flash(struct spi_board_info *data);
++extern void __init falcon_register_gpio(void);
++extern void __init falcon_register_nor(struct physmap_flash_data *data);
++extern void __init falcon_register_wdt(void);
++extern void __init falcon_register_crypto(void);
++
++#define IRQ_RES(resname,irq) {.name=resname,.start=(irq),.flags=IORESOURCE_IRQ}
++#define MEM_RES(resname,adr_start,adr_end) \
++	{ .name=resname, .flags=IORESOURCE_MEM, \
++	  .start=((adr_start)&~KSEG1),.end=((adr_end)&~KSEG1) }
++
++#endif
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/prom.c
+@@ -0,0 +1,52 @@
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * Copyright (C) 2010 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/module.h>
++#include <linux/clk.h>
++#include <asm/bootinfo.h>
++#include <asm/time.h>
++
++#include <lantiq_soc.h>
++
++#include <falcon.h>
++
++#include <falcon/gpon_reg_base.h>
++#include <falcon/status_reg.h>
++#include <falcon/sys1_reg.h>
++
++#include "../prom.h"
++
++static struct gpon_reg_status * const pSTATUS = (struct gpon_reg_status *)GPON_STATUS_BASE;
++
++#define SOC_FALCON		"Falcon"
++
++void __init
++ltq_soc_setup(void)
++{
++	/* not used */
++}
++
++void __init
++ltq_soc_detect(struct ltq_soc_info *i)
++{
++	i->partnum = (ltq_r32(&pSTATUS->chipid) & STATUS_CHIPID_PARTNR_MASK) >> STATUS_CHIPID_PARTNR_OFFSET;
++	i->rev = (ltq_r32(&pSTATUS->chipid) & STATUS_CHIPID_VERSION_MASK) >> STATUS_CHIPID_VERSION_OFFSET;
++	switch (i->partnum)
++	{
++	case SOC_ID_FALCON:
++		i->name = SOC_FALCON;
++		i->type = SOC_TYPE_FALCON;
++		break;
++
++	default:
++		printk(KERN_ERR "unknown partnum : 0x%08X\n", i->partnum);
++		while(1) {	};
++		break;
++	}
++}
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/sysctrl.c
+@@ -0,0 +1,381 @@
++/*
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ *
++ * Copyright (C) 2010 Thomas Langer, Lantiq Deutschland
++ */
++
++#include <linux/cpu.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/pm.h>
++#include <linux/io.h>
++#include <linux/ioport.h>
++#include <linux/clk.h>
++#include <asm/reboot.h>
++
++#include <falcon/gpon_reg_base.h>
++#include <falcon/status_reg.h>
++#include <falcon/sys1_reg.h>
++#include <falcon/sys_eth_reg.h>
++#include <falcon/sys_gpe_reg.h>
++
++#include <falcon/sysctrl.h>
++
++/* mapping to linux hw-accessor routines */
++#define reg_r32(reg)			__raw_readl(reg)
++#define reg_w32(val, reg)		__raw_writel(val, reg)
++#define reg_w32_mask(clear, set, reg)	reg_w32((reg_r32(reg) & ~(clear)) | (set), reg)
++
++static struct gpon_reg_sys1 * const sys1 = (struct gpon_reg_sys1 *)GPON_SYS1_BASE;
++static struct gpon_reg_sys_eth * const sys_eth = (struct gpon_reg_sys_eth *)GPON_SYS_ETH_BASE;
++static struct gpon_reg_sys_gpe * const sys_gpe = (struct gpon_reg_sys_gpe *)GPON_SYS_GPE_BASE;
++static struct gpon_reg_status * const status = (struct gpon_reg_status *)GPON_STATUS_BASE;
++
++/**
++ * Activate the selected module(s)
++ * Enables the clock of the module and activates the module itself.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS1.ACT
++ * \return void
++ */
++void sys1_hw_activate(u32 mask)
++{
++	sys1_w32(mask, clken);
++	sys1_w32(mask, act);
++
++	while ( (sys1_r32(acts) & mask) != mask) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys1_hw_activate);
++
++/**
++ * Deactivate the selected module(s)
++ * Disables the clock of the module and deactivates the module itself.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS1.DEACT
++ * \return void
++ */
++void sys1_hw_deactivate(u32 mask)
++{
++	sys1_w32(mask, clkclr);
++	sys1_w32(mask, deact);
++
++	while ( (sys1_r32(acts) & mask) != 0) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys1_hw_deactivate);
++
++/**
++ * Clock enable for the selected module(s)
++ * Enables the clock of the module.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS1.CLKEN
++ * \return void
++ */
++void sys1_hw_clk_enable(u32 mask)
++{
++	sys1_w32(mask, clken);
++
++	while ( (sys1_r32(clks) & mask) != mask) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys1_hw_clk_enable);
++
++/**
++ * Clock disable for the selected module(s)
++ * disables the clock of the module.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS1.CLKCLR
++ * \return void
++ */
++void sys1_hw_clk_disable(u32 mask)
++{
++	sys1_w32(mask, clkclr);
++
++	while ( (sys1_r32(clks) & mask) != 0) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys1_hw_clk_disable);
++
++/**
++ * Reboots the selected module(s)
++ * Triggers the reboot of the module.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS1.RBT
++ * \return void
++ */
++void sys1_hw_activate_or_reboot(u32 mask)
++{
++	u32 acts = sys1_r32(acts);
++	/* is not already active? */
++	if ((~acts & mask) != 0)
++		sys1_hw_activate(~acts & mask);
++	sys1_w32(acts & mask, rbt);
++	while ( (sys1_r32(acts) & mask) != mask) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys1_hw_activate_or_reboot);
++
++/**
++ * Activate the selected module(s)
++ * Enables the clock of the module and activates the module itself.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_ETH.ACT
++ * \return void
++ */
++void sys_eth_hw_activate(u32 mask)
++{
++	sys_eth_w32(mask, clken);
++	sys_eth_w32(mask, act);
++
++	while ( (sys_eth_r32(acts) & mask) != mask) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_eth_hw_activate);
++
++/**
++ * Deactivate the selected module(s)
++ * Disables the clock of the module and deactivates the module itself.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_ETH.DEACT
++ * \return void
++ */
++void sys_eth_hw_deactivate(u32 mask)
++{
++	sys_eth_w32(mask, clkclr);
++	sys_eth_w32(mask, deact);
++
++	while ( (sys_eth_r32(acts) & mask) != 0) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_eth_hw_deactivate);
++
++/**
++ * Clock enable for the selected module(s)
++ * Enables the clock of the module.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_ETH.CLKEN
++ * \return void
++ */
++void sys_eth_hw_clk_enable(u32 mask)
++{
++	sys_eth_w32(mask, clken);
++
++	while ( (sys_eth_r32(clks) & mask) != mask) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_eth_hw_clk_enable);
++
++/**
++ * Clock disable for the selected module(s)
++ * disables the clock of the module.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_ETH.CLKCLR
++ * \return void
++ */
++void sys_eth_hw_clk_disable(u32 mask)
++{
++	sys_eth_w32(mask, clkclr);
++
++	while ( (sys_eth_r32(clks) & mask) != 0) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_eth_hw_clk_disable);
++
++/**
++ * Reboots the selected module(s)
++ * Triggers the reboot of the module.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_ETH.RBT
++ * \return void
++ */
++void sys_eth_hw_activate_or_reboot(u32 mask)
++{
++	u32 acts = sys_eth_r32(acts);
++	/* is not already active? */
++	if ((~acts & mask) != 0)
++		sys_eth_hw_activate(~acts & mask);
++	sys_eth_w32(acts & mask, rbt);
++	while ( (sys_eth_r32(acts) & mask) != mask) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_eth_hw_activate_or_reboot);
++
++static int gpe_clk_is_enabled(void)
++{
++	u32 rd_data;
++
++	rd_data = sys1_r32(infrac);
++	if (rd_data & (1<<(INFRAC_GP_OFFSET+1)))
++		return 1;
++	return 0;
++}
++
++static void enable_gpe_clk(void)
++{
++	u32 aeFreq;
++	u32 rd_data;
++	u32 rd_data_to_keep;
++	int i;
++
++	if (gpe_clk_is_enabled())
++		/* clock already active, no need to change here */
++		return;
++
++	if (status_r32(config) == 0)
++		aeFreq = 1; /* use 625MHz on unfused chip */
++	else
++		aeFreq = (status_r32(config) & STATUS_CONFIG_GPEFREQ_MASK) >> STATUS_CONFIG_GPEFREQ_OFFSET;
++	rd_data = sys1_r32(infrac);
++	/* clear gpe-fsel and enable bits */
++	rd_data_to_keep = rd_data & ~(7<<(INFRAC_GP_OFFSET+1));
++
++	/* set new fsel */
++	sys1_w32(rd_data_to_keep | (aeFreq<<(INFRAC_GP_OFFSET+2)), infrac);
++
++	for (i = 0; i <10; i++) /* wait 10 cycles */
++		{}
++
++	/* keep new fsel and enable */
++	sys1_w32(rd_data_to_keep | (aeFreq<<(INFRAC_GP_OFFSET+2)) |
++		(1<<(INFRAC_GP_OFFSET+1)), infrac);
++	for (i = 0; i <100; i++) /* wait 100 cycles */
++		{}
++}
++
++/**
++ * Activate the selected module(s)
++ * Enables the clock of the module and activates the module itself.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_GPE.ACT
++ * \return void
++ */
++void sys_gpe_hw_activate(u32 mask)
++{
++	enable_gpe_clk();
++	sys_gpe_w32(mask, clken);
++	sys_gpe_w32(mask, act);
++
++	while ( (sys_gpe_r32(acts) & mask) != mask) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_gpe_hw_activate);
++
++/**
++ * Deactivate the selected module(s)
++ * Disables the clock of the module and deactivates the module itself.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_GPE.DEACT
++ * \return void
++ */
++void sys_gpe_hw_deactivate(u32 mask)
++{
++	enable_gpe_clk();
++	sys_gpe_w32(mask, clkclr);
++	sys_gpe_w32(mask, deact);
++
++	while ( (sys_gpe_r32(acts) & mask) != 0) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_gpe_hw_deactivate);
++
++/**
++ * Clock enable for the selected module(s)
++ * Enables the clock of the module.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_GPE.CLKEN
++ * \return void
++ */
++void sys_gpe_hw_clk_enable(u32 mask)
++{
++	enable_gpe_clk();
++	sys_gpe_w32(mask, clken);
++
++	while ( (sys_gpe_r32(clks) & mask) != mask) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_gpe_hw_clk_enable);
++
++/**
++ * Clock disable for the selected module(s)
++ * disables the clock of the module.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_GPE.CLKCLR
++ * \return void
++ */
++void sys_gpe_hw_clk_disable(u32 mask)
++{
++	enable_gpe_clk();
++	sys_gpe_w32(mask, clkclr);
++
++	while ( (sys_gpe_r32(clks) & mask) != 0) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_gpe_hw_clk_disable);
++
++/**
++ * Reboots the selected module(s)
++ * Triggers the reboot of the module.
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_GPE.RBT
++ * \return void
++ */
++void sys_gpe_hw_activate_or_reboot(u32 mask)
++{
++	u32 acts;
++	enable_gpe_clk();
++	acts = sys_gpe_r32(acts);
++	/* is not already active? */
++	if ((~acts & mask) != 0)
++		sys_gpe_hw_activate(~acts & mask);
++	sys_gpe_w32(acts & mask, rbt);
++	while ( (sys_gpe_r32(acts) & mask) != mask) {
++		/*NOP;*/
++	};
++}
++EXPORT_SYMBOL(sys_gpe_hw_activate_or_reboot);
++
++/**
++ * Retrieve activation status of the selected hardware module(s)
++ *
++ * \param[in]   mask    bitmask of module(s), as for registers SYS_GPE.RBT
++ * \return int 1 - if hardware module(s) is activated (including clock)
++ */
++ int sys_gpe_hw_is_activated(u32 mask)
++{
++	if (gpe_clk_is_enabled() == 0)
++		return 0;
++
++	if ((sys_gpe_r32(clks) & mask) != mask)
++		return 0;
++
++	return ((sys_gpe_r32(acts) & mask) == mask);
++}
++EXPORT_SYMBOL(sys_gpe_hw_is_activated);
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/gpio.c
+@@ -0,0 +1,463 @@
++/*
++ *   This program is free software; you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; either version 2 of the License, or
++ *   (at your option) any later version.
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *   GNU General Public License for more details.
++ *
++ *   You should have received a copy of the GNU General Public License
++ *   along with this program; if not, write to the Free Software
++ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
++ *
++ *   Copyright (C) 2010 Thomas Langer, Lantiq Deutschland
++ */
++
++/**
++	TODO:
++		- add locking?
++		- provide mask of available pins per platform_data
++*/
++
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/errno.h>
++#include <linux/init.h>
++#include <linux/seq_file.h>
++#include <linux/platform_device.h>
++#include <linux/uaccess.h>
++#include <linux/gpio.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/slab.h>
++
++#include <falcon.h>
++#include <falcon/falcon_irq.h>
++
++#include <linux/version.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
++#define for_each_set_bit for_each_bit
++#endif
++
++#define gpio_r32(reg)			__raw_readl(reg)
++#define gpio_w32(val, reg)			__raw_writel(val, reg)
++#define gpio_w32_mask(clear, set, reg)	gpio_w32((gpio_r32(reg) & ~(clear)) | (set), reg)
++
++
++/** register structure for padctrl
++    (mainly needed for mux control) */
++typedef struct gpon_padctrl_s
++{
++	/** Multiplexer Control Register
++	    The value 0 (the reset-value) is always the default function corresponding to the pad's name. The value 1 selects always the GPIO functionality (if available). */
++	unsigned int muxc[32];
++	/** Pull Up Enable Register */
++	unsigned int puen; /* 0x00000080 */
++	/** Pull Down Enable Register */
++	unsigned int pden; /* 0x00000084 */
++	/** Slew Rate Control Register */
++	unsigned int src; /* 0x00000088 */
++	/** Drive Current Control Register */
++	unsigned int dcc; /* 0x0000008C */
++	/** Reserved */
++	unsigned int res_0[24]; /* 0x00000090 */
++	/** Pad Control Availability Register */
++	unsigned int avail; /* 0x000000F0 */
++} gpon_padctrl0_t;
++
++/** register structure for gpio port */
++typedef struct gpon_gpio_s
++{
++	/** Data Output Register
++	    Via this register the output values of the different bits can be set if they are switched as outputs. */
++	unsigned int out; /* 0x00000000 */
++	/** Data Input Register
++	    Via this register the input values of the different bits can be observed. */
++	unsigned int in; /* 0x00000004 */
++	/** Direction Register
++	    Via this register the input direction of the different bits can be determined. */
++	unsigned int dir; /* 0x00000008 */
++	/** Reserved */
++	unsigned int res_0[3]; /* 0x0000000C */
++	/** External Interrupt Control Register 0 */
++	unsigned int exintcr0; /* 0x00000018 */
++	/** External Interrupt Control Register 1 */
++	unsigned int exintcr1; /* 0x0000001C */
++	/** IRN Capture Register
++	    This register shows the currently active interrupt events masked with the corresponding enable bits of the IRNEN register. The interrupts can be acknowledged by a write operation. */
++	unsigned int irncr; /* 0x00000020 */
++	/** IRN Interrupt Control Register
++	    A write operation directly effects the interrupts. This can be used to trigger events under software control for testing purposes. A read operation returns the unmasked interrupt events. */
++	unsigned int irnicr; /* 0x00000024 */
++	/** IRN Interrupt Enable Register
++	    This register contains the enable (or mask) bits for the interrupts. Disabled interrupts are not visible in the IRNCR register and are not signalled via the interrupt line towards the controller. */
++	unsigned int irnen; /* 0x00000028 */
++	/** IRN Interrupt Configuration Register
++	    Configures the interrupts bitwise to be edge-senstivie or level-sensitive. */
++	unsigned int irncfg; /* 0x0000002C */
++	/** IRN Interrupt Enable Set Register
++	    The corresponding bit in the IRNEN register can be set with an atomic access. */
++	unsigned int irnenset; /* 0x00000030 */
++	/** IRN Interrupt Enable Clear Register
++	    The corresponding bit in the IRNEN register can be cleared with an atomic access. */
++	unsigned int irnenclr; /* 0x00000034 */
++	/** Reserved */
++	unsigned int res_1[2]; /* 0x00000038 */
++	/** Output Set Register
++	    This register can be used to set certain bits within the OUT register without touching the other bits. */
++	unsigned int outset; /* 0x00000040 */
++	/** Output Clear Register
++	    This register can be used to clear certain bits within the OUT register without touching the other bits. */
++	unsigned int outclr; /* 0x00000044 */
++	/** Direction Set Register
++	    This register can be used to set certain bits within the DIR register without touching the other bits. */
++	unsigned int dirset; /* 0x00000048 */
++	/** Direction Clear Register
++	    This register can be used to clear certain bits within the DIR register without touching the other bits. */
++	unsigned int dirclr; /* 0x0000004C */
++} gpon_gpio_t;
++
++struct falcon_gpio_port {
++	struct gpio_chip gpio_chip;
++	gpon_padctrl0_t __iomem *pad;
++	gpon_gpio_t __iomem *port;
++	struct resource	*pad_req;   /* resources requested */
++	struct resource *port_req;
++	unsigned int irq_base;
++	unsigned int chained_irq;
++};
++
++static int gpio_exported = 0;
++static int __init gpio_export_setup(char *str)
++{
++	get_option(&str, &gpio_exported);
++	return 1;
++}
++__setup("gpio_exported=", gpio_export_setup);
++
++static inline struct falcon_gpio_port *to_falcon_gpio_port(struct gpio_chip *chip)
++{
++	return container_of(chip, struct falcon_gpio_port, gpio_chip);
++}
++
++static int falcon_gpio_direction_input(struct gpio_chip *chip, unsigned int offset)
++{
++	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
++	gpio_w32(1<<offset, &gpio_port->port->dirclr);
++	return 0;
++}
++
++static int falcon_gpio_direction_output(struct gpio_chip *chip, unsigned int offset, int value)
++{
++	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
++	gpio_w32(1<<offset, &gpio_port->port->dirset);
++	return 0;
++}
++
++static void falcon_gpio_set(struct gpio_chip *chip, unsigned int offset, int value)
++{
++	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
++	if (value)
++		gpio_w32(1<<offset, &gpio_port->port->outset);
++	else
++		gpio_w32(1<<offset, &gpio_port->port->outclr);
++}
++
++static int falcon_gpio_get(struct gpio_chip *chip, unsigned int offset)
++{
++	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
++	if ((gpio_r32(&gpio_port->port->dir) >> offset) & 1)
++		return (gpio_r32(&gpio_port->port->out) >> offset) & 1;
++	else
++		return (gpio_r32(&gpio_port->port->in) >> offset) & 1;
++}
++
++static int falcon_gpio_request(struct gpio_chip *chip, unsigned offset)
++{
++	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
++	if ( (gpio_r32(&gpio_port->pad->avail) >> offset) & 1) {
++		if (gpio_r32(&gpio_port->pad->muxc[offset]) > 1)
++			return -EBUSY;
++		/* switch on gpio function */
++		gpio_w32(1, &gpio_port->pad->muxc[offset]);
++		return 0;
++	}
++
++	return -ENODEV;
++}
++
++static void falcon_gpio_free(struct gpio_chip *chip, unsigned offset)
++{
++	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
++	if ( (gpio_r32(&gpio_port->pad->avail) >> offset) & 1) {
++		if (gpio_r32(&gpio_port->pad->muxc[offset]) > 1)
++			return;
++		/* switch off gpio function */
++		gpio_w32(0, &gpio_port->pad->muxc[offset]);
++	}
++}
++
++static int falcon_gpio_to_irq(struct gpio_chip *chip, unsigned offset)
++{
++	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
++	/* no checks: this functions is only registered with valid irq_base */
++	return gpio_port->irq_base + offset;
++}
++
++static void falcon_gpio_disable_irq(unsigned int irq)
++{
++	struct falcon_gpio_port *gpio_port = get_irq_chip_data(irq);
++	unsigned int offset = irq-gpio_port->irq_base;
++	gpio_w32(1<<offset, &gpio_port->port->irnenclr);
++}
++
++static void falcon_gpio_enable_irq(unsigned int irq)
++{
++	struct falcon_gpio_port *gpio_port = get_irq_chip_data(irq);
++	unsigned int offset = irq-gpio_port->irq_base;
++
++	if (gpio_r32(&gpio_port->pad->muxc[offset]) < 1) {
++		/* switch on gpio function */
++		gpio_w32(1, &gpio_port->pad->muxc[offset]);
++	}
++
++	gpio_w32(1<<offset, &gpio_port->port->irnenset);
++}
++
++static void falcon_gpio_ack_irq(unsigned int irq)
++{
++	struct falcon_gpio_port *gpio_port = get_irq_chip_data(irq);
++	unsigned int offset = irq-gpio_port->irq_base;
++	gpio_w32(1<<offset, &gpio_port->port->irncr);
++}
++
++static void falcon_gpio_mask_and_ack_irq(unsigned int irq)
++{
++	struct falcon_gpio_port *gpio_port = get_irq_chip_data(irq);
++	unsigned int offset = irq-gpio_port->irq_base;
++	gpio_w32(1<<offset, &gpio_port->port->irnenclr);
++	gpio_w32(1<<offset, &gpio_port->port->irncr);
++}
++
++static struct irq_chip falcon_gpio_irq_chip;
++static int falcon_gpio_irq_type(unsigned irq, unsigned int type)
++{
++	struct falcon_gpio_port *gpio_port = get_irq_chip_data(irq);
++	unsigned int offset = irq-gpio_port->irq_base;
++	unsigned int mask = 1 << offset;
++
++	if ((type & IRQ_TYPE_SENSE_MASK) == IRQ_TYPE_NONE)
++		return 0;
++
++	if ((type & (IRQ_TYPE_LEVEL_HIGH | IRQ_TYPE_LEVEL_LOW)) != 0) {
++		/* level triggered */
++		gpio_w32_mask(0, mask, &gpio_port->port->irncfg);
++		set_irq_chip_and_handler_name(irq,
++				&falcon_gpio_irq_chip, handle_level_irq, "mux");
++	} else {
++		/* edge triggered */
++		gpio_w32_mask(mask, 0, &gpio_port->port->irncfg);
++		set_irq_chip_and_handler_name(irq,
++				&falcon_gpio_irq_chip, handle_simple_irq, "mux");
++	}
++
++	if ((type & IRQ_TYPE_EDGE_BOTH) == IRQ_TYPE_EDGE_BOTH) {
++		gpio_w32_mask(mask, 0, &gpio_port->port->exintcr0);
++		gpio_w32_mask(0, mask, &gpio_port->port->exintcr1);
++	} else {
++		if ((type & (IRQ_TYPE_EDGE_RISING |IRQ_TYPE_LEVEL_HIGH)) != 0) {
++			/* positive logic: rising edge, high level */
++			gpio_w32_mask(mask, 0, &gpio_port->port->exintcr0);
++		} else {
++			/* negative logic: falling edge, low level */
++			gpio_w32_mask(0, mask, &gpio_port->port->exintcr0);
++		}
++		gpio_w32_mask(mask, 0, &gpio_port->port->exintcr1);
++	}
++
++	return gpio_direction_input(gpio_port->gpio_chip.base + offset);
++}
++
++static void falcon_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
++{
++	struct falcon_gpio_port *gpio_port = get_irq_desc_data(desc);
++	unsigned long irncr;
++	int offset;
++
++	irncr = gpio_r32(&gpio_port->port->irncr);
++	/* acknowledge interrupt */
++	gpio_w32(irncr, &gpio_port->port->irncr);
++
++	desc->chip->ack(irq);
++
++	for_each_set_bit(offset, &irncr, gpio_port->gpio_chip.ngpio)
++		generic_handle_irq(gpio_port->irq_base + offset);
++}
++
++static struct irq_chip falcon_gpio_irq_chip = {
++	.name = "gpio_irq_mux",
++	.mask = falcon_gpio_disable_irq,
++	.unmask = falcon_gpio_enable_irq,
++	.ack = falcon_gpio_ack_irq,
++	.mask_ack = falcon_gpio_mask_and_ack_irq,
++	.set_type = falcon_gpio_irq_type,
++};
++
++static struct irqaction gpio_cascade = {
++	.handler = no_action,
++	.flags = IRQF_DISABLED,
++	.name = "gpio_cascade",
++};
++
++static int falcon_gpio_probe(struct platform_device *pdev)
++{
++	struct falcon_gpio_port *gpio_port;
++	int ret, i;
++	struct resource *gpiores, *padres;
++	int irq;
++
++	gpiores = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	padres = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	irq = platform_get_irq(pdev, 0);
++	if (!gpiores || !padres)
++		return -ENODEV;
++
++	gpio_port = kzalloc(sizeof(*gpio_port), GFP_KERNEL);
++	if (gpio_port == NULL)
++		return -ENOMEM;
++
++	gpio_port->gpio_chip.label = "falcon-gpio";
++	gpio_port->gpio_chip.direction_input = falcon_gpio_direction_input;
++	gpio_port->gpio_chip.direction_output = falcon_gpio_direction_output;
++	gpio_port->gpio_chip.get = falcon_gpio_get;
++	gpio_port->gpio_chip.set = falcon_gpio_set;
++	gpio_port->gpio_chip.request = falcon_gpio_request;
++	gpio_port->gpio_chip.free = falcon_gpio_free;
++	gpio_port->gpio_chip.base = 100 * pdev->id;
++	gpio_port->gpio_chip.ngpio = 32;
++	gpio_port->gpio_chip.dev = &pdev->dev;
++	gpio_port->gpio_chip.exported = gpio_exported;
++
++	gpio_port->port_req = request_mem_region(gpiores->start,
++		resource_size(gpiores), pdev->name);
++	gpio_port->pad_req = request_mem_region(padres->start,
++		resource_size(padres), pdev->name);
++	if (!gpio_port->port_req || !gpio_port->pad_req) {
++		dev_err(&pdev->dev, "cannot claim register area\n");
++		ret = -EIO;
++		goto err;
++	}
++
++	gpio_port->port = ioremap_nocache(gpiores->start,
++		resource_size(gpiores));
++	gpio_port->pad = ioremap_nocache(padres->start,
++		resource_size(padres));
++	if (!gpio_port->port || !gpio_port->pad) {
++		dev_err(&pdev->dev, "Could not map io ranges\n");
++		ret = -ENOMEM;
++		goto err;
++	}
++
++	if (irq>0) {
++		/*
++		 * irq_chip support
++		 */
++		gpio_port->gpio_chip.to_irq = falcon_gpio_to_irq;
++		gpio_port->irq_base = INT_NUM_EXTRA_START + 32 * pdev->id;
++
++		for (i = 0; i < 32; i++) {
++			set_irq_chip_and_handler_name(gpio_port->irq_base + i,
++				&falcon_gpio_irq_chip, handle_simple_irq, "mux");
++			set_irq_chip_data(gpio_port->irq_base + i, gpio_port);
++			/* FIXME: set default cfg to level triggered */
++			//gpio_w32_mask(0, 1<<i, &gpio_port->port->irncfg);
++			/* set to negative logic (falling edge, low level) */
++			gpio_w32_mask(0, 1<<i, &gpio_port->port->exintcr0);
++		}
++
++		gpio_port->chained_irq = irq;
++		setup_irq(irq, &gpio_cascade);
++		set_irq_data(irq, gpio_port);
++		set_irq_chained_handler(irq, falcon_gpio_irq_handler);
++	}
++
++	ret = gpiochip_add(&gpio_port->gpio_chip);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "Could not register gpiochip %d, %d\n",
++			pdev->id, ret);
++		goto err;
++	}
++	platform_set_drvdata(pdev, gpio_port);
++	return ret;
++
++err:
++	dev_err(&pdev->dev, "Error in gpio_probe %d, %d\n", pdev->id, ret);
++	if (gpio_port->port_req)
++		release_resource(gpio_port->port_req);
++	if (gpio_port->pad_req)
++		release_resource(gpio_port->pad_req);
++
++	if (gpio_port->port)
++		iounmap(gpio_port->port);
++	if (gpio_port->pad)
++		iounmap(gpio_port->pad);
++	kfree(gpio_port);
++	return ret;
++}
++
++static int falcon_gpio_remove(struct platform_device *pdev)
++{
++	struct falcon_gpio_port *gpio_port = platform_get_drvdata(pdev);
++	int ret;
++
++	ret = gpiochip_remove(&gpio_port->gpio_chip);
++	if (gpio_port->port_req)
++		release_resource(gpio_port->port_req);
++	if (gpio_port->pad_req)
++		release_resource(gpio_port->pad_req);
++	if (gpio_port->port)
++		iounmap(gpio_port->port);
++	if (gpio_port->pad)
++		iounmap(gpio_port->pad);
++	if (ret == 0)
++		kfree(gpio_port);
++
++	return ret;
++}
++
++static struct platform_driver falcon_gpio_driver = {
++	.probe = falcon_gpio_probe,
++	.remove = __devexit_p(falcon_gpio_remove),
++	.driver = {
++		.name = "falcon_gpio",
++		.owner = THIS_MODULE,
++	},
++};
++
++int __init falcon_gpio_init(void)
++{
++	int ret;
++
++	printk(KERN_INFO "FALC(tm) ON GPIO Driver, (C) 2011 Lantiq Deutschland Gmbh\n");
++	ret = platform_driver_register(&falcon_gpio_driver);
++	if (ret)
++		pr_err( "falcon_gpio: Error registering platform driver!");
++	return ret;
++}
++
++void __exit falcon_gpio_exit(void)
++{
++	platform_driver_unregister(&falcon_gpio_driver);
++}
++
++int gpio_to_irq(unsigned int gpio)
++{
++	return __gpio_to_irq(gpio);
++}
++EXPORT_SYMBOL(gpio_to_irq);
++
++module_init(falcon_gpio_init);
++module_exit(falcon_gpio_exit);
+--- /dev/null
++++ b/arch/mips/include/asm/mach-lantiq/falcon/falcon.h
+@@ -0,0 +1,16 @@
++/*
++ *   This program is free software; you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; either version 2 of the License, or
++ *   (at your option) any later version.
++ *
++ *   Copyright (C) 2005 infineon
++ *   Copyright (C) 2010 John Crispin <blogic@openwrt.org>
++ */
++
++#ifdef CONFIG_SOC_FALCON
++
++#include <lantiq_soc.h>
++#include <falcon/gpon_reg_base.h>
++
++#endif
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/reset.c
+@@ -0,0 +1,80 @@
++/*
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * Copyright (C) 2010 John Crispin <blogic@openwrt.org>
++ */
++
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/pm.h>
++#include <asm/reboot.h>
++#include <linux/module.h>
++
++#include <falcon.h>
++#include <falcon/gpon_reg_base.h>
++#include <falcon/status_reg.h>
++#include <falcon/sys1_reg.h>
++
++static struct gpon_reg_sys1 * const pSYS1 = (struct gpon_reg_sys1 *)GPON_SYS1_BASE;
++
++#define WDT_PW1			0x00BE0000
++#define WDT_PW2			0x00DC0000
++#define WDT_REG_BASE		(KSEG1 | 0x1F8803F0)
++
++/* This function is used by the watchdog driver */
++int ltq_reset_cause(void)
++{
++	return 0;
++}
++EXPORT_SYMBOL_GPL(ltq_reset_cause);
++
++static void
++ltq_machine_restart(char *command)
++{
++	printk(KERN_NOTICE "System restart\n");
++	local_irq_disable();
++	ltq_w32(0, (void*)0xBF200000); /* reset Bootreg RVEC */
++#if 0
++	ltq_w32(RBT_CPU_TRIG, &pSYS1->rbt);
++#else
++	/* use workaround via watchdog timer */
++	ltq_w32(WDT_PW1, (void*)WDT_REG_BASE);
++	ltq_w32(WDT_PW2 |
++		(0x3 << 26) | /* PWL */
++		(0x2 << 24) | /* CLKDIV */
++		(0x1 << 31) | /* enable */
++		(1), /* reload */
++		(void*)WDT_REG_BASE);
++#endif
++	for(;;);
++}
++
++static void
++ltq_machine_halt(void)
++{
++	printk(KERN_NOTICE "System halted.\n");
++	local_irq_disable();
++	for(;;);
++}
++
++static void
++ltq_machine_power_off(void)
++{
++	printk(KERN_NOTICE "Please turn off the power now.\n");
++	local_irq_disable();
++	for(;;);
++}
++
++static int __init
++mips_reboot_setup(void)
++{
++	_machine_restart = ltq_machine_restart;
++	_machine_halt = ltq_machine_halt;
++	pm_power_off = ltq_machine_power_off;
++	return 0;
++}
++
++arch_initcall(mips_reboot_setup);
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/mach-easy98000.c
+@@ -0,0 +1,247 @@
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/leds.h>
++#include <linux/gpio.h>
++#include <linux/gpio_buttons.h>
++#include <linux/etherdevice.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++#include <linux/mtd/physmap.h>
++#include <linux/input.h>
++#include <linux/interrupt.h>
++#include <linux/dm9000.h>
++#include <linux/i2c.h>
++#include <linux/i2c-gpio.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/spi_gpio.h>
++#include <linux/spi/eeprom.h>
++
++#include "../machtypes.h"
++
++#include "devices.h"
++#include "dev-leds-gpio.h"
++
++#define EASY98000_GPIO_LED_0 9
++#define EASY98000_GPIO_LED_1 10
++#define EASY98000_GPIO_LED_2 11
++#define EASY98000_GPIO_LED_3 12
++#define EASY98000_GPIO_LED_4 13
++#define EASY98000_GPIO_LED_5 14
++
++extern unsigned char ltq_ethaddr[6];
++
++#ifdef CONFIG_MTD_PARTITIONS
++static struct mtd_partition easy98000_nor_partitions[] =
++{
++	{
++		.name	= "uboot",
++		.offset	= 0x0,
++		.size	= 0x40000,
++	},
++	{
++		.name	= "uboot_env",
++		.offset	= 0x40000,
++		.size	= 0x40000,	/* 2 sectors for redundant env. */
++	},
++	{
++		.name	= "linux",
++		.offset	= 0x80000,
++		.size	= 0xF80000,	/* map only 16 MiB */
++	},
++};
++#endif
++
++static struct physmap_flash_data easy98000_nor_flash_data = {
++#ifdef CONFIG_MTD_PARTITIONS
++	.nr_parts	= ARRAY_SIZE(easy98000_nor_partitions),
++	.parts		= easy98000_nor_partitions,
++#endif
++};
++
++#ifdef CONFIG_MTD_PARTITIONS
++static struct flash_platform_data easy98000_spi_flash_platform_data = {
++	.name = "sflash",
++	.parts = easy98000_nor_partitions,
++	.nr_parts = ARRAY_SIZE(easy98000_nor_partitions)
++};
++#endif
++
++static struct spi_board_info easy98000_spi_flash_data __initdata = {
++	.modalias		= "m25p80",
++	.bus_num		= 0,
++	.chip_select		= 0,
++	.max_speed_hz		= 10 * 1000 * 1000,
++	.mode			= SPI_MODE_3,
++#ifdef CONFIG_MTD_PARTITIONS
++	.platform_data		= &easy98000_spi_flash_platform_data
++#endif
++};
++
++static struct gpio_led easy98000_leds_gpio[] __initdata = {
++	{
++		.name		= "easy98000:green:0",
++		.gpio		= EASY98000_GPIO_LED_0,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:1",
++		.gpio		= EASY98000_GPIO_LED_1,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:2",
++		.gpio		= EASY98000_GPIO_LED_2,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:3",
++		.gpio		= EASY98000_GPIO_LED_3,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:4",
++		.gpio		= EASY98000_GPIO_LED_4,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98000:green:5",
++		.gpio		= EASY98000_GPIO_LED_5,
++		.active_low	= 0,
++	}
++};
++
++#define CONFIG_DM9000_BASE		0x14000000
++#define DM9000_IO			(CONFIG_DM9000_BASE + 3)
++#define DM9000_DATA			(CONFIG_DM9000_BASE + 1)
++
++static struct dm9000_plat_data dm9000_plat_data = {
++	.flags = DM9000_PLATF_8BITONLY,
++	//.dev_addr = { }, /* possibility to provide an ethernet address for the chip */
++};
++
++static struct resource dm9000_resources[] = {
++	MEM_RES("dm9000_io", DM9000_IO, DM9000_IO),
++	MEM_RES("dm9000_data", DM9000_DATA, DM9000_DATA),
++	[2] = {
++		/* with irq (210 -> gpio 110) the driver is very unreliable */
++		.start	= -1,		/* use polling */
++		.end	= -1,
++		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_LOW,
++	},
++};
++
++static struct platform_device dm9000_platform = {
++	.name = "dm9000",
++	.id = 0,
++	.num_resources	= ARRAY_SIZE(dm9000_resources),
++	.resource	= dm9000_resources,
++	.dev = {
++		.platform_data = (void *) &dm9000_plat_data,
++	}
++};
++
++static void __init register_davicom(void)
++{
++	if (!is_valid_ether_addr(ltq_ethaddr))
++		random_ether_addr(dm9000_plat_data.dev_addr);
++	else {
++		memcpy(dm9000_plat_data.dev_addr, ltq_ethaddr, 6);
++		/* change to "Locally Administered Address" */
++		dm9000_plat_data.dev_addr[0] |= 0x2;
++	}
++	platform_device_register(&dm9000_platform);
++}
++
++static struct i2c_gpio_platform_data easy98000_i2c_gpio_data = {
++	.sda_pin	= 107,
++	.scl_pin	= 108,
++};
++
++static struct platform_device easy98000_i2c_gpio_device = {
++	.name		= "i2c-gpio",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &easy98000_i2c_gpio_data,
++	}
++};
++
++void __init register_easy98000_cpld_led(void)
++{
++	platform_device_register_simple("easy98000_cpld_led", 0, NULL, 0);
++}
++
++/* setup gpio based spi bus/device for access to the eeprom on the board */
++#define SPI_GPIO_MRST	102
++#define SPI_GPIO_MTSR	103
++#define SPI_GPIO_CLK	104
++#define SPI_GPIO_CS0	105
++#define SPI_GPIO_CS1	106
++#define SPI_GPIO_BUS_NUM	1
++
++static struct spi_gpio_platform_data easy98000_spi_gpio_data = {
++	.sck		= SPI_GPIO_CLK,
++	.mosi		= SPI_GPIO_MTSR,
++	.miso		= SPI_GPIO_MRST,
++	.num_chipselect	= 2,
++};
++
++static struct platform_device easy98000_spi_gpio_device = {
++	.name			= "spi_gpio",
++	.id			= SPI_GPIO_BUS_NUM,
++	.dev.platform_data	= &easy98000_spi_gpio_data,
++};
++
++static struct spi_eeprom at25160n = {
++	.byte_len	= 16 * 1024 / 8,
++	.name		= "at25160n",
++	.page_size	= 32,
++	.flags		= EE_ADDR2,
++};
++
++static struct spi_board_info easy98000_spi_gpio_devices __initdata = {
++	.modalias		= "at25",
++	.bus_num		= SPI_GPIO_BUS_NUM,
++	.max_speed_hz		= 1000 * 1000,
++	.mode			= SPI_MODE_3,
++	.chip_select		= 1,
++	.controller_data	= (void *) SPI_GPIO_CS1,
++	.platform_data		= &at25160n,
++};
++
++static void __init easy98000_spi_gpio_init(void)
++{
++	spi_register_board_info(&easy98000_spi_gpio_devices, 1);
++	platform_device_register(&easy98000_spi_gpio_device);
++}
++
++static void __init easy98000_init_common(void)
++{
++	falcon_register_asc(0);
++	falcon_register_gpio();
++	falcon_register_wdt();
++	falcon_register_i2c();
++	platform_device_register(&easy98000_i2c_gpio_device);
++	register_davicom();
++	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(easy98000_leds_gpio),
++					easy98000_leds_gpio);
++	register_easy98000_cpld_led();
++	falcon_register_crypto();
++	easy98000_spi_gpio_init();
++}
++
++static void __init easy98000_init(void)
++{
++	easy98000_init_common();
++	falcon_register_nor(&easy98000_nor_flash_data);
++}
++
++static void __init easy98000sf_init(void)
++{
++	easy98000_init_common();
++	falcon_register_spi_flash(&easy98000_spi_flash_data);
++}
++
++MIPS_MACHINE(LANTIQ_MACH_EASY98000,
++			"EASY98000",
++			"EASY98000 Eval Board",
++			easy98000_init);
++
++MIPS_MACHINE(LANTIQ_MACH_EASY98000SF,
++			"EASY98000SF",
++			"EASY98000 Eval Board (Serial Flash)",
++			easy98000sf_init);
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/softdog_vpe.c
+@@ -0,0 +1,109 @@
++/*
++** =============================================================================
++** FILE NAME     : softdog_vpe.c
++** MODULES       : LXDB
++** DATE          : 24-03-2008
++** AUTHOR        : LXDB Team
++** DESCRIPTION   : This header file contains the code for the watchdog
++**                 implentation on vpe1 side.
++** REFERENCES    :
++** COPYRIGHT     : Copyright (c) 2008
++**                 Am Campeon 1-12, 85579 Neubiberg, Germany
++** Any use of this software is subject to the conclusion of a respective
++** License agreement. Without such a License agreement no rights to the
++** software are granted
++**
++** HISTORY       :
++** $Date   $Author    $Comment
++** 24-03-2008   LXDB    Initial version
++** ============================================================================
++*/
++
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/types.h>
++#include <linux/timer.h>
++#include <linux/reboot.h>
++#include <linux/init.h>
++#include <linux/jiffies.h>
++
++#include <falcon/vpe.h>
++
++static unsigned long last_wdog_value;
++static unsigned long vpe1_wdog_cleared;
++
++static unsigned long vpe1_wdog_dead;
++static void watchdog_vpe0_fire(unsigned long); /* Called when vpe0 timer expires */
++static void keep_alive_vpe0(unsigned long);
++VPE_SW_WDOG_RESET reset_local_fn;
++
++
++static struct timer_list watchdog_vpe0_ticktock =
++                TIMER_INITIALIZER(watchdog_vpe0_fire, 0, 0);
++
++static void watchdog_vpe0_fire (unsigned long flags)
++{
++	volatile unsigned long *wdog_ctr_value;
++	wdog_ctr_value = (void*)vpe1_wdog_ctr;
++	if (*wdog_ctr_value == last_wdog_value) { /* VPE1 watchdog expiry handling */
++		vpe1_sw_wdog_stop(flags);
++		vpe1_wdog_dead++;
++		printk(KERN_DEBUG "VPE1 watchdog reset handler called\n");
++	/* Call the reset handler function */
++		reset_local_fn(flags);
++	} else { /* Everything is OK on vpe1 side. Continue. */
++		last_wdog_value = *wdog_ctr_value;
++		vpe1_wdog_cleared++;
++		keep_alive_vpe0(flags);
++	}
++}
++
++int32_t vpe1_sw_wdog_register_reset_handler (VPE_SW_WDOG_RESET reset_fn)
++{
++	reset_local_fn = (VPE_SW_WDOG_RESET)reset_fn;
++	return 0;
++}
++
++static void keep_alive_vpe0(unsigned long flags)
++{
++	mod_timer(&watchdog_vpe0_ticktock, jiffies+ vpe1_wdog_timeout );
++}
++
++unsigned long vpe1_sw_wdog_start(unsigned long flags)
++{
++	volatile unsigned long *wdog_ctr_value;
++	wdog_ctr_value = (void*)vpe1_wdog_ctr;
++	*wdog_ctr_value = 0;
++	last_wdog_value = 0;
++	keep_alive_vpe0(flags);
++	return 0;
++}
++
++unsigned long vpe1_sw_wdog_stop(unsigned long flags)
++{
++	del_timer(&watchdog_vpe0_ticktock);
++	return 0;
++}
++
++static int __init watchdog_vpe1_init(void)
++{
++	/* Nothing to be done here */
++	return 0;
++}
++
++static void __exit watchdog_vpe1_exit(void)
++{
++	unsigned long flags=0;
++	vpe1_sw_wdog_stop(flags);
++}
++
++module_init(watchdog_vpe1_init);
++module_exit(watchdog_vpe1_exit);
++
++EXPORT_SYMBOL(vpe1_sw_wdog_register_reset_handler);
++EXPORT_SYMBOL(vpe1_sw_wdog_start);
++EXPORT_SYMBOL(vpe1_sw_wdog_stop);
++
++MODULE_AUTHOR("LXDB");
++MODULE_DESCRIPTION("Software Watchdog For VPE1");
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/arch/mips/include/asm/mach-lantiq/falcon/vpe.h
+@@ -0,0 +1,44 @@
++/*
++ *   This program is free software; you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; either version 2 of the License, or
++ *   (at your option) any later version.
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *   GNU General Public License for more details.
++ *
++ *   You should have received a copy of the GNU General Public License
++ *   along with this program; if not, write to the Free Software
++ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
++ *
++ *   Copyright (C) 2005 infineon
++ *   Copyright (C) 2007 John Crispin <blogic@openwrt.org>
++ *
++ */
++#ifndef _IFXMIPS_VPE_H__
++#define _IFXMIPS_VPE_H__
++
++/* For the explanation of the APIs please refer the section "MT APRP Kernel
++ * Programming" in AR9 SW Architecture Specification
++ */
++int32_t vpe1_sw_start(void* sw_start_addr, uint32_t tcmask, uint32_t flags);
++int32_t vpe1_sw_stop(uint32_t flags);
++uint32_t vpe1_get_load_addr (uint32_t flags);
++uint32_t vpe1_get_max_mem (uint32_t flags);
++
++int32_t vpe1_set_boot_param(char *field, char *value, char flags);
++int32_t vpe1_get_boot_param(char *field, char **value, char flags);
++
++/* Watchdog APIs */
++extern unsigned long vpe1_wdog_ctr;
++extern unsigned long vpe1_wdog_timeout;
++
++unsigned long vpe1_sw_wdog_start(unsigned long);
++unsigned long vpe1_sw_wdog_stop(unsigned long);
++
++typedef int (*VPE_SW_WDOG_RESET)(unsigned long wdog_cleared_ok_count);
++int32_t vpe1_sw_wdog_register_reset_handler(VPE_SW_WDOG_RESET reset_fn);
++
++#endif
+--- a/arch/mips/lantiq/Kconfig
++++ b/arch/mips/lantiq/Kconfig
+@@ -16,8 +16,12 @@
+ 	bool "XWAY"
+ 	select SOC_TYPE_XWAY
+ 	select HW_HAS_PCI
++
++config SOC_FALCON
++	bool "FALCON"
+ endchoice
+ 
+ source "arch/mips/lantiq/xway/Kconfig"
++source "arch/mips/lantiq/falcon/Kconfig"
+ 
+ endif
+--- a/arch/mips/lantiq/Makefile
++++ b/arch/mips/lantiq/Makefile
+@@ -9,3 +9,4 @@
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+ obj-$(CONFIG_SOC_TYPE_XWAY) += xway/
++obj-$(CONFIG_SOC_FALCON) += falcon/
+--- a/arch/mips/lantiq/Platform
++++ b/arch/mips/lantiq/Platform
+@@ -6,3 +6,4 @@
+ cflags-$(CONFIG_LANTIQ)		+= -I$(srctree)/arch/mips/include/asm/mach-lantiq
+ load-$(CONFIG_LANTIQ)		= 0xffffffff80002000
+ cflags-$(CONFIG_SOC_TYPE_XWAY)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/xway
++cflags-$(CONFIG_SOC_FALCON)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/falcon
+--- a/arch/mips/lantiq/machtypes.h
++++ b/arch/mips/lantiq/machtypes.h
+@@ -15,6 +15,11 @@
+ 	LTQ_MACH_GENERIC = 0,
+ 	LTQ_MACH_EASY50712,	/* Danube evaluation board */
+ 	LTQ_MACH_EASY50601,	/* Amazon SE evaluation board */
++
++	/* FALCON */
++	LANTIQ_MACH_EASY98000,		/* Falcon Eval Board, NOR Flash */
++	LANTIQ_MACH_EASY98000SF,	/* Falcon Eval Board, Serial Flash */
++	LANTIQ_MACH_EASY98020,		/* Falcon Reference Board */
+ };
+ 
+ #endif
