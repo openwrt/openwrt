@@ -1,6 +1,6 @@
 --- a/src/drv_vmmc_init.c
 +++ b/src/drv_vmmc_init.c
-@@ -784,7 +784,7 @@ IFX_int32_t VMMC_TAPI_LL_FW_Start(IFX_TA
+@@ -784,7 +784,7 @@
        dwld.fwDwld.length = IoInit.pram_size;
  
       /* download firmware */
@@ -9,7 +9,7 @@
                            (IFX_uint32_t) &dwld.fwDwld);
     }
  
-@@ -1594,7 +1594,7 @@ IFX_void_t VMMC_DeviceDriverStop(IFX_voi
+@@ -1594,7 +1594,7 @@
  #ifdef VMMC_DRIVER_UNLOAD_HOOK
     if (VDevices[0].nDevState & DS_GPIO_RESERVED)
     {
@@ -20,7 +20,7 @@
        {
 --- a/src/mps/drv_mps_vmmc_linux.c
 +++ b/src/mps/drv_mps_vmmc_linux.c
-@@ -110,7 +110,7 @@ IFX_int32_t ifx_mps_get_status_proc (IFX
+@@ -110,7 +110,7 @@
  #ifndef __KERNEL__
  IFX_int32_t ifx_mps_open (struct inode *inode, struct file *file_p);
  IFX_int32_t ifx_mps_close (struct inode *inode, struct file *file_p);
@@ -29,7 +29,7 @@
                             IFX_uint32_t nCmd, IFX_ulong_t arg);
  IFX_int32_t ifx_mps_read_mailbox (mps_devices type, mps_message * rw);
  IFX_int32_t ifx_mps_write_mailbox (mps_devices type, mps_message * rw);
-@@ -171,7 +171,7 @@ IFX_char_t voice_channel_int_name[NUM_VO
+@@ -171,7 +171,7 @@
  static struct file_operations ifx_mps_fops = {
   owner:THIS_MODULE,
   poll:ifx_mps_poll,
@@ -38,7 +38,7 @@
   open:ifx_mps_open,
   release:ifx_mps_close
  };
-@@ -614,7 +614,7 @@ static IFX_uint32_t ifx_mps_poll (struct
+@@ -614,7 +614,7 @@
   * \return  -ENOIOCTLCMD Invalid command
   * \ingroup API
   */
@@ -47,7 +47,7 @@
                             IFX_uint32_t nCmd, IFX_ulong_t arg)
  {
     IFX_int32_t retvalue = -EINVAL;
-@@ -629,17 +629,18 @@ IFX_int32_t ifx_mps_ioctl (struct inode 
+@@ -629,17 +629,18 @@
        'mps_devices' enum type, which in fact is [0..8]; So, if inode value is
        [0..NUM_VOICE_CHANNEL+1], then we make sure that we are calling from
        kernel space. */
@@ -71,7 +71,7 @@
     {
 --- a/src/drv_vmmc_ioctl.c
 +++ b/src/drv_vmmc_ioctl.c
-@@ -427,18 +427,18 @@ IFX_int32_t VMMC_Dev_Spec_Ioctl (IFX_TAP
+@@ -427,18 +427,18 @@
           /* MPS driver will do the USR2KERN so just pass on the pointer. */
           dwnld_struct.data = (IFX_void_t *)IoInit.pPRAMfw;
  
@@ -95,7 +95,7 @@
        case FIO_LASTERR:
 --- a/src/mps/drv_mps_vmmc.h
 +++ b/src/mps/drv_mps_vmmc.h
-@@ -279,7 +279,7 @@ typedef struct
+@@ -279,7 +279,7 @@
  #include <linux/fs.h>
  IFX_int32_t ifx_mps_open (struct inode *inode, struct file *file_p);
  IFX_int32_t ifx_mps_close (struct inode *inode, struct file *filp);
@@ -104,3 +104,89 @@
                             IFX_uint32_t nCmd, unsigned long arg);
  IFX_int32_t ifx_mps_register_data_callback (mps_devices type, IFX_uint32_t dir,
                                              IFX_void_t (*callback) (mps_devices
+--- a/src/drv_vmmc_linux.c
++++ b/src/drv_vmmc_linux.c
+@@ -32,7 +32,11 @@
+ #ifdef LINUX_2_6
+ #include <linux/version.h>
+ #ifndef UTS_RELEASE
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
++#include <linux/utsrelease.h>
++#else
+ #include <generated/utsrelease.h>
++#endif
+ #endif /* UTC_RELEASE */
+ #undef CONFIG_DEVFS_FS
+ #endif /* LINUX_2_6 */
+--- a/src/mps/drv_mps_vmmc_common.c
++++ b/src/mps/drv_mps_vmmc_common.c
+@@ -22,7 +22,11 @@
+ #undef USE_PLAIN_VOICE_FIRMWARE
+ #undef PRINT_ON_ERR_INTERRUPT
+ #undef FAIL_ON_ERR_INTERRUPT
+-#include <generated/autoconf.h>
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
++#include <linux/utsrelease.h>
++#else
++#include <generated/utsrelease.h>
++#endif
+ #include <linux/interrupt.h>
+ #include <linux/delay.h>
+ 
+@@ -47,8 +51,19 @@
+ #  define ifx_gptu_timer_free       lq_free_timer
+ 
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,39))
+ #  define bsp_mask_and_ack_irq      ltq_mask_and_ack_irq
+ #else
++extern void ltq_mask_and_ack_irq(struct irq_data *d);
++static void inline bsp_mask_and_ack_irq(int x)
++{
++	struct irq_data d;
++	d.irq = x;
++	ltq_mask_and_ack_irq(&d);
++}
++#endif
++
++#else
+ #  include <asm/ifx/ifx_regs.h>
+ #  include <asm/ifx/ifx_gptu.h>
+ #endif
+@@ -107,7 +122,9 @@
+ extern mps_mbx_dev *ifx_mps_get_device (mps_devices type);
+ 
+ #ifdef LINUX_2_6
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,39))
+ extern IFX_void_t bsp_mask_and_ack_irq (IFX_uint32_t irq_nr);
++#endif
+ 
+ #else /* */
+ extern IFX_void_t mask_and_ack_danube_irq (IFX_uint32_t irq_nr);
+--- a/src/mps/drv_mps_vmmc_danube.c
++++ b/src/mps/drv_mps_vmmc_danube.c
+@@ -16,11 +16,16 @@
+ /* ============================= */
+ /* Includes                      */
+ /* ============================= */
++#include "linux/version.h"
+ #include "drv_config.h"
+ 
+ #ifdef SYSTEM_DANUBE            /* defined in drv_mps_vmmc_config.h */
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)) 
++#include <linux/autoconf.h>
++#else
+ #include <generated/autoconf.h>
++#endif
+ 
+ /* lib_ifxos headers */
+ #include "ifx_types.h"
+@@ -39,6 +44,7 @@
+ #  include <linux/dma-mapping.h>
+ 
+ 
++#define LQ_RCU_BASE_ADDR	(KSEG1 + LTQ_RCU_BASE_ADDR)
+ # define LQ_RCU_RST		((u32 *)(LQ_RCU_BASE_ADDR + 0x0010))
+ #define IFX_RCU_RST_REQ_CPU1             (1 << 3)
+ #  define IFX_RCU_RST_REQ        LQ_RCU_RST

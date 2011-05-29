@@ -1,0 +1,497 @@
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -16,6 +16,7 @@
+ obj-$(CONFIG_SPI_BITBANG)		+= spi_bitbang.o
+ obj-$(CONFIG_SPI_AU1550)		+= au1550_spi.o
+ obj-$(CONFIG_SPI_BUTTERFLY)		+= spi_butterfly.o
++obj-$(CONFIG_SPI_FALCON)		+= spi_falcon.o
+ obj-$(CONFIG_SPI_GPIO)			+= spi_gpio.o
+ obj-$(CONFIG_SPI_GPIO_OLD)		+= spi_gpio_old.o
+ obj-$(CONFIG_SPI_IMX)			+= spi_imx.o
+--- /dev/null
++++ b/drivers/spi/spi_falcon.c
+@@ -0,0 +1,471 @@
++/*
++ *   This program is free software; you can redistribute it and/or modify
++ *   it under the terms of the GNU General Public License as published by
++ *   the Free Software Foundation; either version 2 of the License, or
++ *   (at your option) any later version.
++ *
++ *   This program is distributed in the hope that it will be useful,
++ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *   GNU General Public License for more details.
++ *
++ *   You should have received a copy of the GNU General Public License
++ *   along with this program; if not, write to the Free Software
++ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
++ */
++
++#include <linux/module.h>
++#include <linux/device.h>
++#include <linux/platform_device.h>
++#include <linux/spi/spi.h>
++#include <linux/delay.h>
++#include <linux/workqueue.h>
++
++#include <lantiq.h> /* ebu_lock */
++#include <falcon/ebu_reg.h>
++#include <falcon/sys1_reg.h>
++
++#define DRV_NAME			"falcon_spi"
++
++#define FALCON_SPI_XFER_BEGIN		(1 << 0)
++#define FALCON_SPI_XFER_END		(1 << 1)
++
++/* mapping for access macros */
++#define reg_r32(reg)			__raw_readl(reg)
++#define reg_w32(val, reg)		__raw_writel(val, reg)
++#define reg_w32_mask(clear, set, reg)	reg_w32((reg_r32(reg) \
++						 & ~(clear)) | (set), reg)
++#define reg_r32_table(reg, idx)		reg_r32(&((uint32_t *)&reg)[idx])
++#define reg_w32_table(val, reg, idx)	reg_w32(val, &((uint32_t *)&reg)[idx])
++
++#define ebu				(priv->ebu_membase)
++#define sys1				(priv->sys1_membase)
++
++struct falcon_spi {
++	u32 sfcmd; /* for caching of opcode, direction, ... */
++
++	struct spi_master *master;
++
++	struct gpon_reg_ebu __iomem *ebu_membase;
++	struct gpon_reg_sys1 __iomem *sys1_membase;
++};
++
++int falcon_spi_xfer(struct spi_device *spi,
++		    struct spi_transfer *t,
++		    unsigned long flags)
++{
++	struct device *dev = &spi->dev;
++	struct falcon_spi *priv = spi_master_get_devdata(spi->master);
++	const u8 *txp = t->tx_buf;
++	u8 *rxp = t->rx_buf;
++	unsigned int bytelen = ((8 * t->len + 7) / 8);
++	unsigned int len, alen, dumlen;
++	u32 val;
++	enum {
++		state_init,
++		state_command_prepare,
++		state_write,
++		state_read,
++		state_disable_cs,
++		state_end
++	} state = state_init;
++
++	do {
++		switch (state) {
++		case state_init: /* detect phase of upper layer sequence */
++		{
++			/* initial write ? */
++			if (flags & FALCON_SPI_XFER_BEGIN) {
++				if (!txp) {
++					dev_err(dev,
++						"BEGIN without tx data!\n");
++					return -1;
++				}
++				/*
++				 * Prepare the parts of the sfcmd register,
++				 * which should not
++				 * change during a sequence!
++				 * Only exception are the length fields,
++				 * especially alen and dumlen.
++				 */
++
++				priv->sfcmd = ((spi->chip_select
++						<< SFCMD_CS_OFFSET)
++					       & SFCMD_CS_MASK);
++				priv->sfcmd |= SFCMD_KEEP_CS_KEEP_SELECTED;
++				priv->sfcmd |= *txp;
++				txp++;
++				bytelen--;
++				if (bytelen) {
++					/* more data:
++					 * maybe address and/or dummy */
++					state = state_command_prepare;
++					break;
++				} else {
++					dev_dbg(dev, "write cmd %02X\n",
++						priv->sfcmd & SFCMD_OPC_MASK);
++				}
++			}
++			/* continued write ? */
++			if (txp && bytelen) {
++				state = state_write;
++				break;
++			}
++			/* read data? */
++			if (rxp && bytelen) {
++				state = state_read;
++				break;
++			}
++			/* end of sequence? */
++			if (flags & FALCON_SPI_XFER_END)
++				state = state_disable_cs;
++			else
++				state = state_end;
++			break;
++		}
++		case state_command_prepare: /* collect tx data for
++					       address and dummy phase */
++		{
++			/* txp is valid, already checked */
++			val = 0;
++			alen = 0;
++			dumlen = 0;
++			while (bytelen > 0) {
++				if (alen < 3) {
++					val = (val<<8)|(*txp++);
++					alen++;
++				} else if ((dumlen < 15) && (*txp == 0)) {
++					/*
++					 * assume dummy bytes are set to 0
++					 * from upper layer
++					 */
++					dumlen++;
++					txp++;
++				} else
++					break;
++				bytelen--;
++			}
++			priv->sfcmd &= ~(SFCMD_ALEN_MASK | SFCMD_DUMLEN_MASK);
++			priv->sfcmd |= (alen << SFCMD_ALEN_OFFSET) |
++					 (dumlen << SFCMD_DUMLEN_OFFSET);
++			if (alen > 0)
++				ebu_w32(val, sfaddr);
++
++			dev_dbg(dev, "write cmd %02X, alen=%d "
++				"(addr=%06X) dumlen=%d\n",
++				priv->sfcmd & SFCMD_OPC_MASK,
++				alen, val, dumlen);
++
++			if (bytelen > 0) {
++				/* continue with write */
++				state = state_write;
++			} else if (flags & FALCON_SPI_XFER_END) {
++				/* end of sequence? */
++				state = state_disable_cs;
++			} else {
++				/* go to end and expect another
++				 * call (read or write) */
++				state = state_end;
++			}
++			break;
++		}
++		case state_write:
++		{
++			/* txp still valid */
++			priv->sfcmd |= SFCMD_DIR_WRITE;
++			len = 0;
++			val = 0;
++			do {
++				if (bytelen--)
++					val |= (*txp++) << (8 * len++);
++				if ((flags & FALCON_SPI_XFER_END)
++				    && (bytelen == 0)) {
++					priv->sfcmd &=
++						~SFCMD_KEEP_CS_KEEP_SELECTED;
++				}
++				if ((len == 4) || (bytelen == 0)) {
++					ebu_w32(val, sfdata);
++					ebu_w32(priv->sfcmd
++						| (len<<SFCMD_DLEN_OFFSET),
++						sfcmd);
++					len = 0;
++					val = 0;
++					priv->sfcmd &= ~(SFCMD_ALEN_MASK
++							 | SFCMD_DUMLEN_MASK);
++				}
++			} while (bytelen);
++			state = state_end;
++			break;
++		}
++		case state_read:
++		{
++			/* read data */
++			priv->sfcmd &= ~SFCMD_DIR_WRITE;
++			do {
++				if ((flags & FALCON_SPI_XFER_END)
++				    && (bytelen <= 4)) {
++					priv->sfcmd &=
++						~SFCMD_KEEP_CS_KEEP_SELECTED;
++				}
++				len = (bytelen > 4) ? 4 : bytelen;
++				bytelen -= len;
++				ebu_w32(priv->sfcmd
++					|(len<<SFCMD_DLEN_OFFSET), sfcmd);
++				priv->sfcmd &= ~(SFCMD_ALEN_MASK
++						 | SFCMD_DUMLEN_MASK);
++				do {
++					val = ebu_r32(sfstat);
++					if (val & SFSTAT_CMD_ERR) {
++						/* reset error status */
++						dev_err(dev, "SFSTAT: CMD_ERR "
++							"(%x)\n", val);
++						ebu_w32(SFSTAT_CMD_ERR, sfstat);
++						return -1;
++					}
++				} while (val & SFSTAT_CMD_PEND);
++				val = ebu_r32(sfdata);
++				do {
++					*rxp = (val & 0xFF);
++					rxp++;
++					val >>= 8;
++					len--;
++				} while (len);
++			} while (bytelen);
++			state = state_end;
++			break;
++		}
++		case state_disable_cs:
++		{
++			priv->sfcmd &= ~SFCMD_KEEP_CS_KEEP_SELECTED;
++			ebu_w32(priv->sfcmd | (0<<SFCMD_DLEN_OFFSET), sfcmd);
++			val = ebu_r32(sfstat);
++			if (val & SFSTAT_CMD_ERR) {
++				/* reset error status */
++				dev_err(dev, "SFSTAT: CMD_ERR (%x)\n", val);
++				ebu_w32(SFSTAT_CMD_ERR, sfstat);
++				return -1;
++			}
++			state = state_end;
++			break;
++		}
++		case state_end:
++			break;
++		}
++	} while (state != state_end);
++
++	return 0;
++}
++
++static int falcon_spi_setup(struct spi_device *spi)
++{
++	struct device *dev = &spi->dev;
++	struct falcon_spi *priv = spi_master_get_devdata(spi->master);
++	const u32 ebuclk = 100*1000*1000;
++	unsigned int i;
++	unsigned long flags;
++
++	dev_dbg(dev, "setup\n");
++
++	if (spi->master->bus_num > 0 || spi->chip_select > 0)
++		return -ENODEV;
++
++	spin_lock_irqsave(&ebu_lock, flags);
++
++	if (ebuclk < spi->max_speed_hz) {
++		/* set EBU clock to 100 MHz */
++		sys1_w32_mask(0, EBUCC_EBUDIV_SELF100, ebucc);
++		i = 1; /* divider */
++	} else {
++		/* set EBU clock to 50 MHz */
++		sys1_w32_mask(EBUCC_EBUDIV_SELF100, 0, ebucc);
++
++		/* search for suitable divider */
++		for (i = 1; i < 7; i++) {
++			if (ebuclk / i <= spi->max_speed_hz)
++				break;
++		}
++	}
++
++	/* setup period of serial clock */
++	ebu_w32_mask(SFTIME_SCKF_POS_MASK
++		     | SFTIME_SCKR_POS_MASK
++		     | SFTIME_SCK_PER_MASK,
++		     (i << SFTIME_SCKR_POS_OFFSET)
++		     | (i << (SFTIME_SCK_PER_OFFSET + 1)),
++		     sftime);
++
++	/* set some bits of unused_wd, to not trigger HOLD/WP
++	 * signals on non QUAD flashes */
++	ebu_w32((SFIO_UNUSED_WD_MASK & (0x8|0x4)), sfio);
++
++	ebu_w32(BUSRCON0_AGEN_SERIAL_FLASH | BUSRCON0_PORTW_8_BIT_MUX,
++		busrcon0);
++	ebu_w32(BUSWCON0_AGEN_SERIAL_FLASH, buswcon0);
++	/* set address wrap around to maximum for 24-bit addresses */
++	ebu_w32_mask(SFCON_DEV_SIZE_MASK, SFCON_DEV_SIZE_A23_0, sfcon);
++
++	spin_unlock_irqrestore(&ebu_lock, flags);
++
++	return 0;
++}
++
++static int falcon_spi_transfer(struct spi_device *spi, struct spi_message *m)
++{
++	struct falcon_spi *priv = spi_master_get_devdata(spi->master);
++	struct spi_transfer *t;
++	unsigned long spi_flags;
++	unsigned long flags;
++	int ret = 0;
++
++	priv->sfcmd = 0;
++	m->actual_length = 0;
++
++	spi_flags = FALCON_SPI_XFER_BEGIN;
++	list_for_each_entry(t, &m->transfers, transfer_list) {
++		if (list_is_last(&t->transfer_list, &m->transfers))
++			spi_flags |= FALCON_SPI_XFER_END;
++
++		spin_lock_irqsave(&ebu_lock, flags);
++		ret = falcon_spi_xfer(spi, t, spi_flags);
++		spin_unlock_irqrestore(&ebu_lock, flags);
++
++		if (ret)
++			break;
++
++		m->actual_length += t->len;
++
++		if (t->delay_usecs || t->cs_change)
++			BUG();
++
++		spi_flags = 0;
++	}
++
++	m->status = ret;
++	m->complete(m->context);
++
++	return 0;
++}
++
++static void falcon_spi_cleanup(struct spi_device *spi)
++{
++	struct device *dev = &spi->dev;
++
++	dev_dbg(dev, "cleanup\n");
++}
++
++static int __devinit falcon_spi_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct falcon_spi *priv;
++	struct spi_master *master;
++	struct resource *memres_ebu, *memres_sys1;
++	int ret;
++
++	dev_dbg(dev, "probing\n");
++
++	memres_ebu = platform_get_resource_byname(pdev, IORESOURCE_MEM, "ebu");
++	memres_sys1 = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++						   "sys1");
++
++	if (!memres_ebu || !memres_sys1) {
++		dev_err(dev, "no resources\n");
++		return -ENODEV;
++	}
++
++	master = spi_alloc_master(&pdev->dev, sizeof(*priv));
++	if (!master) {
++		dev_err(dev, "no memory for spi_master\n");
++		return -ENOMEM;
++	}
++
++	priv = spi_master_get_devdata(master);
++
++	priv->ebu_membase = ioremap_nocache(memres_ebu->start & ~KSEG1,
++					    resource_size(memres_ebu));
++
++	if (!priv->ebu_membase) {
++		dev_err(dev, "can't map ebu memory\n");
++
++		ret = -ENOMEM;
++		goto free_master;
++	}
++
++	priv->sys1_membase = ioremap_nocache(memres_sys1->start & ~KSEG1,
++					    resource_size(memres_sys1));
++
++	if (!priv->sys1_membase) {
++		dev_err(dev, "can't map sys1 memory\n");
++
++		ret = -ENOMEM;
++		goto unmap_ebu;
++	}
++
++	priv->master = master;
++
++	master->mode_bits = SPI_MODE_3;
++	master->num_chipselect = 1;
++	master->bus_num = 0;
++
++	master->setup = falcon_spi_setup;
++	master->transfer = falcon_spi_transfer;
++	master->cleanup = falcon_spi_cleanup;
++
++	platform_set_drvdata(pdev, priv);
++
++	ret = spi_register_master(master);
++	if (ret)
++		goto unmap_sys1;
++
++	return 0;
++
++unmap_sys1:
++	iounmap(priv->sys1_membase);
++
++unmap_ebu:
++	iounmap(priv->ebu_membase);
++
++free_master:
++	spi_master_put(master);
++
++	return ret;
++}
++
++static int __devexit falcon_spi_remove(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct falcon_spi *priv = platform_get_drvdata(pdev);
++
++	dev_dbg(dev, "removed\n");
++
++	spi_unregister_master(priv->master);
++
++	iounmap(priv->sys1_membase);
++	iounmap(priv->ebu_membase);
++
++	return 0;
++}
++
++static struct platform_driver falcon_spi_driver = {
++	.probe	= falcon_spi_probe,
++	.remove	= __devexit_p(falcon_spi_remove),
++	.driver = {
++		.name	= DRV_NAME,
++		.owner	= THIS_MODULE
++	}
++};
++
++static int __init falcon_spi_init(void)
++{
++	return platform_driver_register(&falcon_spi_driver);
++}
++
++static void __exit falcon_spi_exit(void)
++{
++	platform_driver_unregister(&falcon_spi_driver);
++}
++
++module_init(falcon_spi_init);
++module_exit(falcon_spi_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("Lantiq Falcon SPI controller driver");
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -142,6 +142,10 @@
+ 	  which interfaces to an LM70 temperature sensor using
+ 	  a parallel port.
+ 
++config SPI_FALCON
++	tristate "Falcon SPI controller support"
++	depends on SOC_FALCON
++
+ config SPI_MPC52xx_PSC
+ 	tristate "Freescale MPC52xx PSC SPI controller"
+ 	depends on PPC_MPC52xx && EXPERIMENTAL

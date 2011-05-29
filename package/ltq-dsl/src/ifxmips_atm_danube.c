@@ -45,8 +45,7 @@
 /*
  *  Chip Specific Head File
  */
-#include <lantiq.h>
-#include <lantiq_regs.h>
+#include <lantiq_soc.h>
 #include "ifxmips_compat.h"
 #include "ifxmips_atm_core.h"
 #include "ifxmips_atm_fw_danube.h"

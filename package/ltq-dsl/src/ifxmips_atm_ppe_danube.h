@@ -93,7 +93,7 @@
 /*
  *  Mailbox IGU1 Interrupt
  */
-#define PPE_MAILBOX_IGU1_INT            LQ_PPE_MBOX_INT
+#define PPE_MAILBOX_IGU1_INT            LTQ_PPE_MBOX_INT
 
 
 

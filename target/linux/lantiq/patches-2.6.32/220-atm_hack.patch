@@ -1,0 +1,42 @@
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -52,6 +52,8 @@
+ void (*_dma_cache_inv)(unsigned long start, unsigned long size);
+ 
+ EXPORT_SYMBOL(_dma_cache_wback_inv);
++EXPORT_SYMBOL(_dma_cache_wback);
++EXPORT_SYMBOL(_dma_cache_inv);
+ 
+ #endif /* CONFIG_DMA_NONCOHERENT */
+ 
+--- a/net/atm/proc.c
++++ b/net/atm/proc.c
+@@ -152,7 +152,7 @@
+ static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
+ {
+ 	static const char *const class_name[] =
+-		{"off","UBR","CBR","VBR","ABR"};
++		{"off","UBR","CBR","NTR-VBR","ABR","ANY","RT-VBR","UBR+","GFR"};
+ 	static const char *const aal_name[] = {
+ 		"---",	"1",	"2",	"3/4",	/*  0- 3 */
+ 		"???",	"5",	"???",	"???",	/*  4- 7 */
+--- a/net/atm/common.c
++++ b/net/atm/common.c
+@@ -57,11 +57,17 @@
+ }
+ 
+ 
++struct sk_buff* (*ifx_atm_alloc_tx)(struct atm_vcc *, unsigned int) = NULL;
++EXPORT_SYMBOL(ifx_atm_alloc_tx);
++
+ static struct sk_buff *alloc_tx(struct atm_vcc *vcc,unsigned int size)
+ {
+ 	struct sk_buff *skb;
+ 	struct sock *sk = sk_atm(vcc);
+ 
++	if (ifx_atm_alloc_tx != NULL)
++		return ifx_atm_alloc_tx(vcc, size);
++
+ 	if (sk_wmem_alloc_get(sk) && !atm_may_send(vcc, size)) {
+ 		pr_debug("Sorry: wmem_alloc = %d, size = %d, sndbuf = %d\n",
+ 			sk_wmem_alloc_get(sk), size,

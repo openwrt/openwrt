@@ -1,0 +1,36 @@
+From: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
+Date: Thu, 3 Mar 2011 17:15:58 +0000 (+0100)
+Subject: MIPS: lantiq: Add platform data for Lantiq SoC SPI controller driver
+X-Git-Url: http://nbd.name/gitweb.cgi?p=lantiq.git;a=commitdiff_plain;h=3d21b04682ae8eb1c1965aba39d1796e8c5ad84b;hp=06b420500fe98e37662837e78d8e51aead8aea81
+
+MIPS: lantiq: Add platform data for Lantiq SoC SPI controller driver
+
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
+---
+
+--- a/arch/mips/include/asm/mach-lantiq/lantiq_platform.h
++++ b/arch/mips/include/asm/mach-lantiq/lantiq_platform.h
+@@ -50,4 +50,13 @@
+ 	int mii_mode;
+ };
+ 
++
++struct ltq_spi_platform_data {
++	u16 num_chipselect;
++};
++
++struct ltq_spi_controller_data {
++	unsigned gpio;
++};
++
+ #endif
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -75,6 +75,7 @@
+ 
+ #define PMU_DMA			0x0020
+ #define PMU_USB			0x8041
++#define PMU_SPI			0x0100
+ #define PMU_LED			0x0800
+ #define PMU_GPT			0x1000
+ #define PMU_PPE			0x2000

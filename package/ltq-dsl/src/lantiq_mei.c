@@ -29,7 +29,11 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
+#include <linux/utsrelease.h>
+#else
 #include <generated/utsrelease.h>
+#endif
 #include <linux/types.h>
 #include <linux/fs.h>
 #include <linux/mm.h>
@@ -46,22 +50,21 @@
 #include <asm/uaccess.h>
 #include <asm/hardirq.h>
 
-#include <lantiq.h>
-#include <lantiq_regs.h>
+#include <lantiq_soc.h>
 #include "ifxmips_atm.h"
 #define IFX_MEI_BSP
 #include "ifxmips_mei_interface.h"
 
-/*#define LQ_RCU_RST                   IFX_RCU_RST_REQ
-#define LQ_RCU_RST_REQ_ARC_JTAG      IFX_RCU_RST_REQ_ARC_JTAG
-#define LQ_RCU_RST_REQ_DFE		  IFX_RCU_RST_REQ_DFE
-#define LQ_RCU_RST_REQ_AFE		  IFX_RCU_RST_REQ_AFE
+/*#define LTQ_RCU_RST                   IFX_RCU_RST_REQ
+#define LTQ_RCU_RST_REQ_ARC_JTAG      IFX_RCU_RST_REQ_ARC_JTAG
+#define LTQ_RCU_RST_REQ_DFE		  IFX_RCU_RST_REQ_DFE
+#define LTQ_RCU_RST_REQ_AFE		  IFX_RCU_RST_REQ_AFE
 #define IFXMIPS_FUSE_BASE_ADDR            IFX_FUSE_BASE_ADDR
 #define IFXMIPS_ICU_IM0_IER               IFX_ICU_IM0_IER
 #define IFXMIPS_ICU_IM2_IER               IFX_ICU_IM2_IER
-#define LQ_MEI_INT                   IFX_MEI_INT
-#define LQ_MEI_DYING_GASP_INT        IFX_MEI_DYING_GASP_INT
-#define LQ_MEI_BASE_ADDR  		  IFX_MEI_SPACE_ACCESS
+#define LTQ_MEI_INT                   IFX_MEI_INT
+#define LTQ_MEI_DYING_GASP_INT        IFX_MEI_DYING_GASP_INT
+#define LTQ_MEI_BASE_ADDR  		  IFX_MEI_SPACE_ACCESS
 #define IFXMIPS_PMU_PWDCR		  IFX_PMU_PWDCR
 #define IFXMIPS_MPS_CHIPID                IFX_MPS_CHIPID
 
@@ -73,40 +76,44 @@
 #define ifxmips_port_free_pin		  ifx_gpio_pin_free
 #define ifxmips_mask_and_ack_irq	  bsp_mask_and_ack_irq
 #define IFXMIPS_MPS_CHIPID_VERSION_GET    IFX_MCD_CHIPID_VERSION_GET
-#define lq_r32(reg)                        __raw_readl(reg)
-#define lq_w32(val, reg)                   __raw_writel(val, reg)
-#define lq_w32_mask(clear, set, reg)       lq_w32((lq_r32(reg) & ~clear) | set, reg)
+#define ltq_r32(reg)                        __raw_readl(reg)
+#define ltq_w32(val, reg)                   __raw_writel(val, reg)
+#define ltq_w32_mask(clear, set, reg)       ltq_w32((ltq_r32(reg) & ~clear) | set, reg)
 */
 
-#define LQ_RCU_RST_REQ_DFE		(1 << 7)
-#define LQ_RCU_RST_REQ_AFE		(1 << 11)
-#define LQ_PMU_PWDCR        ((u32 *)(LQ_PMU_BASE_ADDR + 0x001C))
-#define LQ_PMU_PWDSR        ((u32 *)(LQ_PMU_BASE_ADDR + 0x0020))
-#define LQ_RCU_RST          ((u32 *)(LQ_RCU_BASE_ADDR + 0x0010))
-#define LQ_RCU_RST_ALL      0x40000000
-#define LQ_ICU_BASE_ADDR    (KSEG1 | 0x1F880200)
+#define LTQ_RCU_RST_REQ_DFE		(1 << 7)
+#define LTQ_RCU_RST_REQ_AFE		(1 << 11)
 
-#define LQ_ICU_IM0_ISR      ((u32 *)(LQ_ICU_BASE_ADDR + 0x0000))
-#define LQ_ICU_IM0_IER      ((u32 *)(LQ_ICU_BASE_ADDR + 0x0008))
-#define LQ_ICU_IM0_IOSR     ((u32 *)(LQ_ICU_BASE_ADDR + 0x0010))
-#define LQ_ICU_IM0_IRSR     ((u32 *)(LQ_ICU_BASE_ADDR + 0x0018))
-#define LQ_ICU_IM0_IMR      ((u32 *)(LQ_ICU_BASE_ADDR + 0x0020))
+#define LTQ_PMU_BASE		(KSEG1 + LTQ_PMU_BASE_ADDR)
+#define LTQ_RCU_BASE		(KSEG1 + LTQ_RCU_BASE_ADDR)
+#define LTQ_ICU_BASE		(KSEG1 + LTQ_ICU_BASE_ADDR)
+
+#define LTQ_PMU_PWDCR        ((u32 *)(LTQ_PMU_BASE + 0x001C))
+#define LTQ_PMU_PWDSR        ((u32 *)(LTQ_PMU_BASE + 0x0020))
+#define LTQ_RCU_RST          ((u32 *)(LTQ_RCU_BASE + 0x0010))
+#define LTQ_RCU_RST_ALL      0x40000000
+
+#define LTQ_ICU_IM0_ISR      ((u32 *)(LTQ_ICU_BASE + 0x0000))
+#define LTQ_ICU_IM0_IER      ((u32 *)(LTQ_ICU_BASE + 0x0008))
+#define LTQ_ICU_IM0_IOSR     ((u32 *)(LTQ_ICU_BASE + 0x0010))
+#define LTQ_ICU_IM0_IRSR     ((u32 *)(LTQ_ICU_BASE + 0x0018))
+#define LTQ_ICU_IM0_IMR      ((u32 *)(LTQ_ICU_BASE + 0x0020))
 
 
-#define LQ_ICU_IM1_ISR      ((u32 *)(LQ_ICU_BASE_ADDR + 0x0028))
-#define LQ_ICU_IM2_ISR      ((u32 *)(LQ_ICU_BASE_ADDR + 0x0050))
-#define LQ_ICU_IM3_ISR      ((u32 *)(LQ_ICU_BASE_ADDR + 0x0078))
-#define LQ_ICU_IM4_ISR      ((u32 *)(LQ_ICU_BASE_ADDR + 0x00A0))
+#define LTQ_ICU_IM1_ISR      ((u32 *)(LTQ_ICU_BASE + 0x0028))
+#define LTQ_ICU_IM2_ISR      ((u32 *)(LTQ_ICU_BASE + 0x0050))
+#define LTQ_ICU_IM3_ISR      ((u32 *)(LTQ_ICU_BASE + 0x0078))
+#define LTQ_ICU_IM4_ISR      ((u32 *)(LTQ_ICU_BASE + 0x00A0))
 
-#define LQ_ICU_OFFSET       (LQ_ICU_IM1_ISR - LQ_ICU_IM0_ISR)
-#define LQ_ICU_IM2_IER		(LQ_ICU_IM0_IER + LQ_ICU_OFFSET)
+#define LTQ_ICU_OFFSET       (LTQ_ICU_IM1_ISR - LTQ_ICU_IM0_ISR)
+#define LTQ_ICU_IM2_IER		(LTQ_ICU_IM0_IER + LTQ_ICU_OFFSET)
 
 #define IFX_MEI_EMSG(fmt, args...) pr_err("[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
 #define IFX_MEI_DMSG(fmt, args...) pr_debug("[%s %d]: " fmt,__FUNCTION__, __LINE__, ## args)
 
-#define LQ_FUSE_BASE          (KSEG1 + 0x1F107354)
+#define LTQ_FUSE_BASE          (KSEG1 + 0x1F107354)
 
-#ifdef CONFIG_LQ_MEI_FW_LOOPBACK
+#ifdef CONFIG_LTQ_MEI_FW_LOOPBACK
 //#define DFE_MEM_TEST
 //#define DFE_PING_TEST
 #define DFE_ATM_LOOPBACK
@@ -193,9 +200,18 @@ static void *g_xdata_addr = NULL;
 
 static u32 *mei_arc_swap_buff = NULL;	//  holding swap pages
 
-extern void lq_mask_and_ack_irq(unsigned int irq_nr);
-#define MEI_MASK_AND_ACK_IRQ lq_mask_and_ack_irq
-
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,39))
+extern void ltq_mask_and_ack_irq(unsigned int irq_nr);
+#define MEI_MASK_AND_ACK_IRQ ltq_mask_and_ack_irq
+#else
+extern void ltq_mask_and_ack_irq(struct irq_data *d);
+static void inline MEI_MASK_AND_ACK_IRQ(int x)
+{
+	struct irq_data d;
+	d.irq = x;
+	ltq_mask_and_ack_irq(&d);
+}
+#endif
 #define MEI_MAJOR	105
 static int dev_major = MEI_MAJOR;
 
@@ -704,9 +720,9 @@ IFX_MEI_FuseProg (DSL_DEV_Device_t * pDev)
 	u32 reg_data, fuse_value;
 	int i = 0;
 
-	IFX_MEI_LongWordRead ((u32) LQ_RCU_RST, &reg_data);
+	IFX_MEI_LongWordRead ((u32) LTQ_RCU_RST, &reg_data);
 	while ((reg_data & 0x10000000) == 0) {
-		IFX_MEI_LongWordRead ((u32) LQ_RCU_RST,  &reg_data);
+		IFX_MEI_LongWordRead ((u32) LTQ_RCU_RST,  &reg_data);
 		i++;
 		/* 0x4000 translate to  about 16 ms@111M, so should be enough */
 		if (i == 0x4000)
@@ -714,12 +730,12 @@ IFX_MEI_FuseProg (DSL_DEV_Device_t * pDev)
 	}
 	// STEP a: Prepare memory for external accesses
 	// Write fuse_en bit24
-	IFX_MEI_LongWordRead ((u32) LQ_RCU_RST, &reg_data);
-	IFX_MEI_LongWordWrite ((u32) LQ_RCU_RST, reg_data | (1 << 24));
+	IFX_MEI_LongWordRead ((u32) LTQ_RCU_RST, &reg_data);
+	IFX_MEI_LongWordWrite ((u32) LTQ_RCU_RST, reg_data | (1 << 24));
 
 	IFX_MEI_FuseInit (pDev);
 	for (i = 0; i < 4; i++) {
-		IFX_MEI_LongWordRead ((u32) (LQ_FUSE_BASE) + i * 4, &fuse_value);
+		IFX_MEI_LongWordRead ((u32) (LTQ_FUSE_BASE) + i * 4, &fuse_value);
 		switch (fuse_value & 0xF0000) {
 		case 0x80000:
 			reg_data = ((fuse_value & RX_DILV_ADDR_BIT_MASK) |
@@ -765,9 +781,9 @@ IFX_MEI_FuseProg (DSL_DEV_Device_t * pDev)
 			break;
 		}
 	}
-	IFX_MEI_LongWordRead ((u32) LQ_RCU_RST, &reg_data);
-	IFX_MEI_LongWordWrite ((u32) LQ_RCU_RST, reg_data & ~(1 << 24));
-	IFX_MEI_LongWordRead ((u32) LQ_RCU_RST, &reg_data);
+	IFX_MEI_LongWordRead ((u32) LTQ_RCU_RST, &reg_data);
+	IFX_MEI_LongWordWrite ((u32) LTQ_RCU_RST, reg_data & ~(1 << 24));
+	IFX_MEI_LongWordRead ((u32) LTQ_RCU_RST, &reg_data);
 }
 
 /**
@@ -868,9 +884,9 @@ IFX_MEI_ResetARC (DSL_DEV_Device_t * pDev)
 
 	IFX_MEI_HaltArc (pDev);
 
-	IFX_MEI_LongWordRead ((u32) LQ_RCU_RST, &arc_debug_data);
-	IFX_MEI_LongWordWrite ((u32) LQ_RCU_RST,
-		arc_debug_data | LQ_RCU_RST_REQ_DFE | LQ_RCU_RST_REQ_AFE);
+	IFX_MEI_LongWordRead ((u32) LTQ_RCU_RST, &arc_debug_data);
+	IFX_MEI_LongWordWrite ((u32) LTQ_RCU_RST,
+		arc_debug_data | LTQ_RCU_RST_REQ_DFE | LTQ_RCU_RST_REQ_AFE);
 
 	// reset ARC
 	IFX_MEI_LongWordWriteOffset (pDev, (u32) ME_RST_CTRL, MEI_SOFT_RESET);
@@ -1034,8 +1050,8 @@ IFX_MEI_ArcJtagEnable (DSL_DEV_Device_t *dev, int enable)
 		ifxmips_port_clear_altsel1(0, 11);
 		ifxmips_port_set_open_drain(0, 11);
         //enable ARC JTAG
-        IFX_MEI_LongWordRead ((u32) LQ_RCU_RST, &reg_data);
-        IFX_MEI_LongWordWrite ((u32) LQ_RCU_RST, reg_data | LQ_RCU_RST_REQ_ARC_JTAG);
+        IFX_MEI_LongWordRead ((u32) LTQ_RCU_RST, &reg_data);
+        IFX_MEI_LongWordWrite ((u32) LTQ_RCU_RST, reg_data | LTQ_RCU_RST_REQ_ARC_JTAG);
 		break;
 	case 0:
 	default:
@@ -1045,8 +1061,6 @@ jtag_end:
 	if (meierr)
 		return DSL_DEV_MEI_ERR_FAILURE;
 */
-	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
-	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 
 	return DSL_DEV_MEI_ERR_SUCCESS;
 };
@@ -1333,17 +1347,17 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 
 	IFX_MEI_DownloadBootCode (pDev);
 
-	im0_register = (*LQ_ICU_IM0_IER) & (1 << 20);
-	im2_register = (*LQ_ICU_IM2_IER) & (1 << 20);
+	im0_register = (*LTQ_ICU_IM0_IER) & (1 << 20);
+	im2_register = (*LTQ_ICU_IM2_IER) & (1 << 20);
 	/* Turn off irq */
-	#ifdef CONFIG_LANTIQ_AMAZON_SE
+	#ifdef CONFIG_SOC_AMAZON_SE
 	disable_irq (IFXMIPS_USB_OC_INT0);
 	disable_irq (IFXMIPS_USB_OC_INT2);
 	#elif defined(CONFIG_LANTIQ_AR9)
 	disable_irq (IFXMIPS_USB_OC_INT0);
 	disable_irq (IFXMIPS_USB_OC_INT2);
-	#elif defined(CONFIG_SOC_LANTIQ_XWAY)
-	disable_irq (LQ_USB_OC_INT);
+	#elif defined(CONFIG_SOC_XWAY)
+	disable_irq (LTQ_USB_OC_INT);
 	#else
 	#error unkonwn arch
 	#endif
@@ -1353,14 +1367,14 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 
 	MEI_WAIT_EVENT_TIMEOUT (DSL_DEV_PRIVATE(pDev)->wait_queue_modemready, 1000);
 
-	#ifdef CONFIG_LANTIQ_AMAZON_SE
+	#ifdef CONFIG_SOC_AMAZON_SE
 	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT0);
 	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT2);
 	#elif defined(CONFIG_LANTIQ_AMAZON_S)
 	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT0);
 	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT2);
-	#elif defined(CONFIG_SOC_LANTIQ_XWAY)
-	MEI_MASK_AND_ACK_IRQ (LQ_USB_OC_INT);
+	#elif defined(CONFIG_SOC_XWAY)
+	MEI_MASK_AND_ACK_IRQ (LTQ_USB_OC_INT);
 	#else
 	#error unkonwn arch
 	#endif
@@ -1368,8 +1382,8 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 
 	/* Re-enable irq */
 	enable_irq(pDev->nIrq[IFX_DYING_GASP]);
-	*LQ_ICU_IM0_IER |= im0_register;
-	*LQ_ICU_IM2_IER |= im2_register;
+	*LTQ_ICU_IM0_IER |= im0_register;
+	*LTQ_ICU_IM2_IER |= im2_register;
 
 	if (DSL_DEV_PRIVATE(pDev)->modem_ready != 1) {
 		IFX_MEI_EMSG ("Modem failed to be ready!\n");
@@ -1780,7 +1794,7 @@ static irqreturn_t IFX_MEI_IrqHandle (int int1, void *void0)
 {
 	u32 scratch;
 	DSL_DEV_Device_t *pDev = (DSL_DEV_Device_t *) void0;
-#if defined(CONFIG_LQ_MEI_FW_LOOPBACK) && defined(DFE_PING_TEST)
+#if defined(CONFIG_LTQ_MEI_FW_LOOPBACK) && defined(DFE_PING_TEST)
 	dfe_loopback_irq_handler (pDev);
 	return IRQ_HANDLED;
 #endif //CONFIG_AMAZON_S_MEI_FW_LOOPBACK
@@ -1889,7 +1903,7 @@ DSL_BSP_GetEventCB (int (**ifx_adsl_callback)
 }
 #endif
 
-#ifdef CONFIG_LQ_MEI_FW_LOOPBACK
+#ifdef CONFIG_LTQ_MEI_FW_LOOPBACK
 #define mte_reg_base	(0x4800*4+0x20000)
 
 /* Iridia Registers Address Constants */
@@ -1949,20 +1963,20 @@ MEIWriteARCValue (u32 address, u32 value)
 	u32 i, check = 0;
 
 	/* Write address register */
-	IFX_MEI_WRITE_REGISTER_L (address,  ME_DBG_WR_AD + LQ_MEI_BASE_ADDR);
+	IFX_MEI_WRITE_REGISTER_L (address,  ME_DBG_WR_AD + LTQ_MEI_BASE_ADDR);
 
 	/* Write data register */
-	IFX_MEI_WRITE_REGISTER_L (value, ME_DBG_DATA + LQ_MEI_BASE_ADDR);
+	IFX_MEI_WRITE_REGISTER_L (value, ME_DBG_DATA + LTQ_MEI_BASE_ADDR);
 
 	/* wait until complete - timeout at 40 */
 	for (i = 0; i < 40; i++) {
-		check = IFX_MEI_READ_REGISTER_L (ME_ARC2ME_STAT + LQ_MEI_BASE_ADDR);
+		check = IFX_MEI_READ_REGISTER_L (ME_ARC2ME_STAT + LTQ_MEI_BASE_ADDR);
 
 		if ((check & ARC_TO_MEI_DBG_DONE))
 			break;
 	}
 	/* clear the flag */
-	IFX_MEI_WRITE_REGISTER_L (ARC_TO_MEI_DBG_DONE, ME_ARC2ME_STAT + LQ_MEI_BASE_ADDR);
+	IFX_MEI_WRITE_REGISTER_L (ARC_TO_MEI_DBG_DONE, ME_ARC2ME_STAT + LTQ_MEI_BASE_ADDR);
 }
 
 void
@@ -2145,7 +2159,7 @@ DFE_Loopback_Test (void)
 	IFX_MEI_ControlModeSet (pDev, MEI_MASTER_MODE);
 	temp = 0;
 	_IFX_MEI_DBGLongWordWrite (pDev, MEI_DEBUG_DEC_AUX_MASK,
-		(u32) ME_XDATA_BASE_SH +  LQ_MEI_BASE_ADDR, temp);
+		(u32) ME_XDATA_BASE_SH +  LTQ_MEI_BASE_ADDR, temp);
 	IFX_MEI_ControlModeSet (pDev, JTAG_MASTER_MODE);
 
 	i = IFX_MEI_DFEMemoryAlloc (pDev, SDRAM_SEGMENT_SIZE * 16);
@@ -2155,9 +2169,9 @@ DFE_Loopback_Test (void)
 		for (idx = 0; idx < i; idx++) {
 			DSL_DEV_PRIVATE(pDev)->adsl_mem_info[idx].type = FREE_RELOAD;
 			IFX_MEI_WRITE_REGISTER_L ((((uint32_t) DSL_DEV_PRIVATE(pDev)->adsl_mem_info[idx].address) & 0x0fffffff),
-							LQ_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  + idx * 4);
+							LTQ_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  + idx * 4);
 			IFX_MEI_DMSG("bar%d(%X)=%X\n", idx,
-				LQ_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  +
+				LTQ_MEI_BASE_ADDR + ME_XMEM_BAR_BASE  +
 				idx * 4, (((uint32_t)
 					   ((ifx_mei_device_private_t *)
 					    pDev->pPriv)->adsl_mem_info[idx].
@@ -2271,18 +2285,18 @@ IFX_MEI_InitDevice (int num)
 		sizeof (smmu_mem_info_t) * MAX_BAR_REGISTERS);
 
 	if (num == 0) {
-		pDev->nIrq[IFX_DFEIR]      = LQ_MEI_INT;
-		pDev->nIrq[IFX_DYING_GASP] = LQ_MEI_DYING_GASP_INT;
-		pDev->base_address = LQ_MEI_BASE_ADDR;
+		pDev->nIrq[IFX_DFEIR]      = LTQ_MEI_INT;
+		pDev->nIrq[IFX_DYING_GASP] = LTQ_MEI_DYING_GASP_INT;
+		pDev->base_address = KSEG1 + LTQ_MEI_BASE_ADDR;
 
                 /* Power up MEI */
 #ifdef CONFIG_LANTIQ_AMAZON_SE
-		*LQ_PMU_PWDCR &= ~(1 << 9);  // enable dsl
-                *LQ_PMU_PWDCR &= ~(1 << 15); // enable AHB base
+		*LTQ_PMU_PWDCR &= ~(1 << 9);  // enable dsl
+                *LTQ_PMU_PWDCR &= ~(1 << 15); // enable AHB base
 #else
-        	temp = lq_r32(LQ_PMU_PWDCR);
+        	temp = ltq_r32(LTQ_PMU_PWDCR);
         	temp &= 0xffff7dbe;
-        	lq_w32(temp, LQ_PMU_PWDCR);
+        	ltq_w32(temp, LTQ_PMU_PWDCR);
 #endif
 	}
 	pDev->nInUse = 0;
@@ -2443,7 +2457,7 @@ IFX_MEI_Ioctls (DSL_DEV_Device_t * pDev, int from_kernel, unsigned int command, 
 {
 	int i = 0;
 	int meierr = DSL_DEV_MEI_ERR_SUCCESS;
-	u32 base_address = LQ_MEI_BASE_ADDR;
+	u32 base_address = LTQ_MEI_BASE_ADDR;
 	DSL_DEV_WinHost_Message_t winhost_msg, m;
 	DSL_DEV_MeiDebug_t debugrdwr;
 	DSL_DEV_MeiReg_t regrdwr;
@@ -2569,10 +2583,10 @@ IFX_MEI_Ioctls (DSL_DEV_Device_t * pDev, int from_kernel, unsigned int command, 
 		IFX_MEI_IoctlCopyTo (from_kernel, (char *) lon, (char *) (&bsp_mei_version), sizeof (DSL_DEV_Version_t));
 		break;
 
-#define LQ_MPS_CHIPID_VERSION_GET(value)  (((value) >> 28) & ((1 << 4) - 1))
+#define LTQ_MPS_CHIPID_VERSION_GET(value)  (((value) >> 28) & ((1 << 4) - 1))
 	case DSL_FIO_BSP_GET_CHIP_INFO:
                 bsp_chip_info.major = 1;
-                bsp_chip_info.minor = LQ_MPS_CHIPID_VERSION_GET(*LQ_MPS_CHIPID);
+                bsp_chip_info.minor = LTQ_MPS_CHIPID_VERSION_GET(*LTQ_MPS_CHIPID);
                 IFX_MEI_IoctlCopyTo (from_kernel, (char *) lon, (char *) (&bsp_chip_info), sizeof (DSL_DEV_HwVersion_t));
                 meierr = DSL_DEV_MEI_ERR_SUCCESS;
 		break;
@@ -2608,7 +2622,7 @@ IFX_MEI_Ioctls (DSL_DEV_Device_t * pDev, int from_kernel, unsigned int command, 
 void AMAZON_SE_MEI_ARC_MUX_Test(void)
 {
 	u32 *p, i;
-	*LQ_RCU_RST |= LQ_RCU_RST_REQ_MUX_ARC;
+	*LTQ_RCU_RST |= LTQ_RCU_RST_REQ_MUX_ARC;
 
 	p = (u32*)(DFE_LDST_BASE_ADDR + IRAM0_BASE);
 	IFX_MEI_EMSG("Writing to IRAM0(%p)...\n", p);
@@ -2657,7 +2671,7 @@ void AMAZON_SE_MEI_ARC_MUX_Test(void)
 		if (*p != 0xdeadbeef)
 			IFX_MEI_EMSG("%p: %#x\n", p, *p);
 	}
-	*LQ_RCU_RST &= ~LQ_RCU_RST_REQ_MUX_ARC;
+	*LTQ_RCU_RST &= ~LTQ_RCU_RST_REQ_MUX_ARC;
 }
 #endif
 int
@@ -2959,7 +2973,7 @@ IFX_MEI_ModuleInit (void)
 		for (i = 0; i <= DSL_BSP_CB_LAST ; i++)
 		dsl_bsp_event_callback[i].function = NULL;
 
-#ifdef CONFIG_LQ_MEI_FW_LOOPBACK
+#ifdef CONFIG_LTQ_MEI_FW_LOOPBACK
 	IFX_MEI_DMSG("Start loopback test...\n");
 	DFE_Loopback_Test ();
 #endif

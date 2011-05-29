@@ -9,8 +9,9 @@ include $(INCLUDE_DIR)/image.mk
 
 JFFS2_BLOCKSIZE = 64k 128k 256k
 
-xway_cmdline=-console=ttyS1,115200 rootfstype=squashfs,jffs2
-falcon_cmdline=-console=ttyS0,115200 rootfstype=squashfs,jffs2
+ase_cmdline=-console=ttyLTQ1,115200 rootfstype=squashfs,jffs2
+xway_cmdline=-console=ttyLTQ1,115200 rootfstype=squashfs,jffs2
+falcon_cmdline=-console=ttyLTQ0,115200 rootfstype=squashfs,jffs2
 
 define CompressLzma
   $(STAGING_DIR_HOST)/bin/lzma e $(1) $(2)
@@ -179,6 +180,27 @@ endef
 define Image/Build/Profile/Generic
 	$(call Image/Build/$(1),$(1),EASY98000)
 	$(call Image/Build/$(1),$(1),EASY98020)
+	$(call Image/Build/$(1),$(1),NONE)
+	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
+endef
+endif
+
+ifeq ($(CONFIG_TARGET_lantiq_ase),y)
+define Image/BuildKernel/Profile/EASY50601
+	$(call Image/BuildKernel/Template,EASY50601,$(ase_cmdline))
+endef
+
+define Image/Build/Profile/EASY50601
+	$(call Image/Build/$(1),$(1),EASY50601)
+endef
+
+define Image/BuildKernel/Profile/Generic
+	$(call Image/BuildKernel/Template,EASY50601,$(ase_cmdline))
+	$(call Image/BuildKernel/Template,NONE)
+endef
+
+define Image/Build/Profile/Generic
+	$(call Image/Build/$(1),$(1),EASY50601)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
 endef

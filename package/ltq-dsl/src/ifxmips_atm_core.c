@@ -59,8 +59,7 @@
 /*
  *  Chip Specific Head File
  */
-#include <lantiq.h>
-#include <lantiq_regs.h>
+#include <lantiq_soc.h>
 #include "ifxmips_atm_core.h"
 
 
@@ -2403,7 +2402,11 @@ static int __devinit ifx_atm_init(void)
 
     /*  create devices  */
     for ( port_num = 0; port_num < ATM_PORT_NUMBER; port_num++ ) {
-        g_atm_priv_data.port[port_num].dev = atm_dev_register("ifxmips_atm", NULL, &g_ifx_atm_ops, -1, NULL);
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
+	g_atm_priv_data.port[port_num].dev = atm_dev_register("ifxmips_atm", &g_ifx_atm_ops, -1, NULL);
+#else
+	g_atm_priv_data.port[port_num].dev = atm_dev_register("ifxmips_atm", NULL, &g_ifx_atm_ops, -1, NULL);
+#endif
         if ( !g_atm_priv_data.port[port_num].dev ) {
             err("failed to register atm device %d!", port_num);
             ret = -EIO;
