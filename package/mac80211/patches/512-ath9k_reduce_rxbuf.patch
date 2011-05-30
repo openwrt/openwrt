@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -119,7 +119,7 @@ void ath_descdma_cleanup(struct ath_soft
+ /* RX / TX */
+ /***********/
+ 
+-#define ATH_RXBUF               512
++#define ATH_RXBUF               128
+ #define ATH_TXBUF               512
+ #define ATH_TXBUF_RESERVE       5
+ #define ATH_MAX_QDEPTH          (ATH_TXBUF / 4 - ATH_TXBUF_RESERVE)
