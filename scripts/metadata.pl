@@ -45,7 +45,6 @@ sub parse_target_metadata() {
 				$target->{parent} = $target{$1};
 			}
 		};
-		/^Target-Kernel:\s*(\d+\.\d+)\s*$/ and $target->{kernel} = $1;
 		/^Target-Name:\s*(.+)\s*$/ and $target->{name} = $1;
 		/^Target-Path:\s*(.+)\s*$/ and $target->{path} = $1;
 		/^Target-Arch:\s*(.+)\s*$/ and $target->{arch} = $1;
