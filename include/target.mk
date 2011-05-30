@@ -202,7 +202,6 @@ define BuildTargets/DumpCurrent
   dumpinfo:
 	@echo 'Target: $(TARGETID)'; \
 	 echo 'Target-Board: $(BOARD)'; \
-	 echo 'Target-Kernel: $(KERNEL)'; \
 	 echo 'Target-Name: $(BOARDNAME)$(if $(SUBTARGETS),$(if $(SUBTARGET),))'; \
 	 echo 'Target-Path: $(subst $(TOPDIR)/,,$(PWD))'; \
 	 echo 'Target-Arch: $(ARCH)'; \
