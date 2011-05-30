@@ -1,0 +1,14 @@
+--- a/drivers/mmc/host/sdhci-cns3xxx.c
++++ b/drivers/mmc/host/sdhci-cns3xxx.c
+@@ -90,8 +90,9 @@ struct sdhci_pltfm_data sdhci_cns3xxx_pd
+ 	.ops = &sdhci_cns3xxx_ops,
+ 	.quirks = SDHCI_QUIRK_BROKEN_DMA |
+ 		  SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK |
+-		  SDHCI_QUIRK_INVERTED_WRITE_PROTECT |
++		  //SDHCI_QUIRK_INVERTED_WRITE_PROTECT |
+ 		  SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN |
+ 		  SDHCI_QUIRK_BROKEN_TIMEOUT_VAL |
+-		  SDHCI_QUIRK_NONSTANDARD_CLOCK,
++		  SDHCI_QUIRK_NONSTANDARD_CLOCK |
++		  SDHCI_QUIRK_BROKEN_CARD_DETECTION,
+ };

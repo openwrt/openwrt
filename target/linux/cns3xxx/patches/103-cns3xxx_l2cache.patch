@@ -1,0 +1,61 @@
+--- a/arch/arm/mach-cns3xxx/core.c
++++ b/arch/arm/mach-cns3xxx/core.c
+@@ -15,6 +15,7 @@
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+ #include <asm/mach/irq.h>
++#include <asm/hardware/cache-l2x0.h>
+ #include <asm/hardware/gic.h>
+ #include <asm/smp_twd.h>
+ #include <mach/cns3xxx.h>
+@@ -71,15 +72,29 @@ static struct map_desc cns3xxx_io_desc[]
+ 		.pfn		= __phys_to_pfn(CNS3XXX_SSP_BASE),
+ 		.length		= SZ_4K,
+ 		.type		= MT_DEVICE,
++	}, {
++		.virtual	= CNS3XXX_L2C_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_L2C_BASE),
++		.length		= SZ_4K,
++		.type		= MT_DEVICE,
+ 	},
+ };
+ 
+ void __init cns3xxx_map_io(void)
+ {
++	iotable_init(cns3xxx_io_desc, ARRAY_SIZE(cns3xxx_io_desc));
++#ifdef CONFIG_CACHE_L2X0
++	void __iomem *l2x0_base = (void __iomem *) CNS3XXX_L2C_BASE_VIRT;
++
++	/* set RAM latencies to 1 cycle for this core tile. */
++	writel(0, l2x0_base + L2X0_TAG_LATENCY_CTRL);
++	writel(0, l2x0_base + L2X0_DATA_LATENCY_CTRL);
++
++	l2x0_init(l2x0_base, 0x00400000, 0xfe0fffff);
++#endif
+ #ifdef CONFIG_LOCAL_TIMERS
+ 	twd_base = (void __iomem *) CNS3XXX_TC11MP_TWD_BASE_VIRT;
+ #endif
+-	iotable_init(cns3xxx_io_desc, ARRAY_SIZE(cns3xxx_io_desc));
+ }
+ 
+ /* used by entry-macro.S */
+--- a/arch/arm/mm/Kconfig
++++ b/arch/arm/mm/Kconfig
+@@ -821,7 +821,7 @@ config CACHE_L2X0
+ 	depends on REALVIEW_EB_ARM11MP || MACH_REALVIEW_PB11MP || MACH_REALVIEW_PB1176 || \
+ 		   REALVIEW_EB_A9MP || SOC_IMX35 || SOC_IMX31 || MACH_REALVIEW_PBX || \
+ 		   ARCH_NOMADIK || ARCH_OMAP4 || ARCH_EXYNOS4 || ARCH_TEGRA || \
+-		   ARCH_U8500 || ARCH_VEXPRESS_CA9X4 || ARCH_SHMOBILE
++		   ARCH_U8500 || ARCH_VEXPRESS_CA9X4 || ARCH_SHMOBILE || ARCH_CNS3XXX
+ 	default y
+ 	select OUTER_CACHE
+ 	select OUTER_CACHE_SYNC
+@@ -866,7 +866,7 @@ config ARM_L1_CACHE_SHIFT
+ config ARM_DMA_MEM_BUFFERABLE
+ 	bool "Use non-cacheable memory for DMA" if (CPU_V6 || CPU_V6K) && !CPU_V7
+ 	depends on !(MACH_REALVIEW_PB1176 || REALVIEW_EB_ARM11MP || \
+-		     MACH_REALVIEW_PB11MP)
++		     MACH_REALVIEW_PB11MP || ARCH_CNS3XXX)
+ 	default y if CPU_V6 || CPU_V6K || CPU_V7
+ 	help
+ 	  Historically, the kernel has used strongly ordered mappings to

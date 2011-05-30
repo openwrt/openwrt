@@ -1,0 +1,142 @@
+--- a/arch/arm/mach-cns3xxx/cns3420vb.c
++++ b/arch/arm/mach-cns3xxx/cns3420vb.c
+@@ -191,7 +191,7 @@ static struct map_desc cns3420_io_desc[]
+ 
+ static void __init cns3420_map_io(void)
+ {
+-	cns3xxx_map_io();
++	cns3xxx_common_init();
+ 	iotable_init(cns3420_io_desc, ARRAY_SIZE(cns3420_io_desc));
+ 
+ 	cns3420_early_serial_setup();
+--- a/arch/arm/mach-cns3xxx/core.c
++++ b/arch/arm/mach-cns3xxx/core.c
+@@ -18,6 +18,7 @@
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/hardware/gic.h>
+ #include <asm/smp_twd.h>
++#include <asm/gpio.h>
+ #include <mach/cns3xxx.h>
+ #include "core.h"
+ 
+@@ -80,7 +81,89 @@ static struct map_desc cns3xxx_io_desc[]
+ 	},
+ };
+ 
+-void __init cns3xxx_map_io(void)
++int gpio_to_irq(int gpio)
++{
++	if (gpio > 63)
++		return -EINVAL;
++
++	if (gpio < 32)
++		return IRQ_CNS3XXX_GPIOA;
++	else
++		return IRQ_CNS3XXX_GPIOB;
++}
++EXPORT_SYMBOL(gpio_to_irq);
++
++int irq2gpio(int irq)
++{
++	if (irq == IRQ_CNS3XXX_GPIOA)
++		return 0;
++	else if (irq == IRQ_CNS3XXX_GPIOB)
++		return 32;
++	else
++		return -EINVAL;
++}
++EXPORT_SYMBOL(irq2gpio);
++
++static inline void gpio_line_config(u8 line, u32 direction)
++{
++	u32 reg;
++	if (direction) {
++		if (line < 32) {
++			reg = __raw_readl(CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
++			reg |= (1 << line);
++			__raw_writel(reg, CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
++		} else {
++			reg = __raw_readl(CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);
++			reg |= (1 << (line - 32));
++			__raw_writel(reg, CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);
++		}
++	} else {
++		if (line < 32) {
++			reg = __raw_readl(CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
++			reg &= ~(1 << line);
++			__raw_writel(reg, CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_DIR);
++		} else {
++			reg = __raw_readl(CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);
++			reg &= ~(1 << (line - 32));
++			__raw_writel(reg, CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_DIR);
++		}
++	}
++}
++
++static int cns3xxx_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
++{
++	gpio_line_config(gpio, CNS3XXX_GPIO_IN);
++	return 0;
++}
++
++static int cns3xxx_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int level)
++{
++	gpio_line_set(gpio, level);
++	gpio_line_config(gpio, CNS3XXX_GPIO_OUT);
++	return 0;
++}
++
++static int cns3xxx_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
++{
++	return gpio_get_value(gpio);
++}
++
++static void cns3xxx_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
++{
++	gpio_set_value(gpio, value);
++}
++
++static struct gpio_chip cns3xxx_gpio_chip = {
++	.label			= "CNS3XXX_GPIO_CHIP",
++	.direction_input	= cns3xxx_gpio_direction_input,
++	.direction_output	= cns3xxx_gpio_direction_output,
++	.get			= cns3xxx_gpio_get_value,
++	.set			= cns3xxx_gpio_set_value,
++	.base			= 0,
++	.ngpio			= 64,
++};
++
++void __init cns3xxx_common_init(void)
+ {
+ 	iotable_init(cns3xxx_io_desc, ARRAY_SIZE(cns3xxx_io_desc));
+ #ifdef CONFIG_CACHE_L2X0
+@@ -95,6 +178,7 @@ void __init cns3xxx_map_io(void)
+ #ifdef CONFIG_LOCAL_TIMERS
+ 	twd_base = (void __iomem *) CNS3XXX_TC11MP_TWD_BASE_VIRT;
+ #endif
++	gpiochip_add(&cns3xxx_gpio_chip);
+ }
+ 
+ /* used by entry-macro.S */
+--- a/arch/arm/mach-cns3xxx/core.h
++++ b/arch/arm/mach-cns3xxx/core.h
+@@ -13,7 +13,7 @@
+ 
+ extern struct sys_timer cns3xxx_timer;
+ 
+-void __init cns3xxx_map_io(void);
++void __init cns3xxx_common_init(void);
+ void __init cns3xxx_init_irq(void);
+ void cns3xxx_power_off(void);
+ 
+--- a/arch/arm/mach-cns3xxx/laguna.c
++++ b/arch/arm/mach-cns3xxx/laguna.c
+@@ -520,7 +520,7 @@ static struct map_desc laguna_io_desc[]
+ 
+ static void __init laguna_map_io(void)
+ {
+-	cns3xxx_map_io();
++	cns3xxx_common_init();
+ 	iotable_init(laguna_io_desc, ARRAY_SIZE(laguna_io_desc));
+ 
+ 	laguna_early_serial_setup();
