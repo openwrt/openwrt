@@ -71,6 +71,11 @@ void __init ar71xx_add_device_uart(void)
 		ar71xx_uart_data[0].uartclk = ar71xx_ahb_freq;
 		break;
 
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		/* These SoCs are using a different UART core */
+		return;
+
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
@@ -79,8 +84,8 @@ void __init ar71xx_add_device_uart(void)
 
 	default:
 		BUG();
-
 	}
+
 	platform_device_register(&ar71xx_uart_device);
 }
 
