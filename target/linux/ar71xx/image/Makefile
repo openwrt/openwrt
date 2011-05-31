@@ -276,6 +276,28 @@ define Image/Build/DB120
 	fi
 endef
 
+define Image/Build/AP121
+	$(call PatchKernelLzma,$(2),$(3) $($(4)))
+	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
+	if [ `stat -c%s $(KDIR)/vmlinux-$(2).uImage` -gt $(5) ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
+	elif [ `stat -c%s $(BIN_DIR)/$(IMG_PREFIX)-root.$(1)` -gt $(6) ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		cp $(KDIR)/vmlinux-$(2).uImage $(call imgname,kernel,$(2)).bin; \
+		cp $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) $(call imgname,$(1),$(2)-rootfs).bin; \
+		( \
+			dd if=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=$(6) conv=sync; \
+			dd if=$(KDIR)/vmlinux-$(2).uImage; \
+		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+	fi
+endef
+
+define Image/Build/AP121/initramfs
+	$(call PatchKernelLzma,$(2),$(3) $($(4)))
+	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(call imgname,$(1),$(2))-uImage.bin)
+endef
+
 define Image/Build/MyLoader
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(3) \
 		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
@@ -495,6 +517,18 @@ endef
 
 define Image/Build/Template/128k/jffs2-128k
 	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+endef
+
+ap121_cmdline=board=AP121 console=ttyATH0,115200
+ap121_mtdlayout=mtdparts=spi0.0:64k(u-boot)ro,1216k(rootfs),704k(kernel),64k(art)ro,1920k@0x10000(firmware)
+define Image/Build/Profile/AP121
+	$(call Image/Build/Template/$(fs_4k)/$(1),AP121,ap121,$(ap121_cmdline),ap121_mtdlayout,720896,1245184)
+endef
+
+ap121_mini_cmdline=board=AP121-MINI console=ttyATH0,115200
+ap121_mini_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
+define Image/Build/Profile/AP121MINI
+	$(call Image/Build/Template/$(fs_4k)/$(1),AP121,ap121-mini,$(ap121_mini_cmdline),ap121_mini_mtdlayout,917504,2818048)
 endef
 
 ap81_cmdline=board=AP81 console=ttyS0,115200
@@ -757,6 +791,8 @@ define Image/Build/Profile/ZCN1523H516
 endef
 
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/AP121,$(1))
+	$(call Image/Build/Profile/AP121MINI,$(1))
 	$(call Image/Build/Profile/AP81,$(1))
 	$(call Image/Build/Profile/AP83,$(1))
 	$(call Image/Build/Profile/A02RBW300N,$(1))
