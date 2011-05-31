@@ -471,6 +471,70 @@ endef
 $(eval $(call KernelPackage,ide-it821x))
 
 
+define KernelPackage/cs5535
+  TITLE:=NSC/AMD CS5535 chipset support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_BLK_DEV_CS5535
+  FILES=$(LINUX_DIR)/drivers/ide/cs5535.ko
+  AUTOLOAD:=$(call AutoLoad,30,cs5535,1)
+  $(call AddDepends/ide)
+endef
+
+define KernelPackage/cs5535/description
+  Kernel module for the NSC/AMD CS5535 companion chip
+endef
+
+$(eval $(call KernelPackage,cs5535))
+
+
+define KernelPackage/cs5536
+  TITLE:=AMD CS5536 chipset support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_BLK_DEV_CS5536
+  FILES=$(LINUX_DIR)/drivers/ide/cs5536.ko
+  AUTOLOAD:=$(call AutoLoad,30,cs5536,1)
+  $(call AddDepends/ide)
+endef
+
+define KernelPackage/cs5536/description
+  Kernel module for the AMD CS5536 Geode LX companion chip
+endef
+
+$(eval $(call KernelPackage,cs5536))
+
+
+define KernelPackage/pata-cs5535
+  TITLE:=CS5535 PATA support
+  DEPENDS:=@TARGET_x86 @PCI_SUPPORT
+  KCONFIG:=CONFIG_PATA_CS5535
+  FILES=$(LINUX_DIR)/drivers/ata/pata-cs5535.ko
+  AUTOLOAD:=$(call AutoLoad,30,pata-cs5535,1)
+  $(call AddDepends/ata)
+endef
+
+define KernelPackage/cs5535/description
+  Kernel module for the NSC/AMD CS5535 companion chip
+endef
+
+$(eval $(call KernelPackage,cs5535))
+
+
+define KernelPackage/pata-cs5536
+  TITLE:=CS5536 PATA support
+  DEPENDS:=@TARGET_x86 @PCI_SUPPORT
+  KCONFIG:=CONFIG_PATA_CS5536
+  FILES=$(LINUX_DIR)/drivers/ata/pata-cs5536.ko
+  AUTOLOAD:=$(call AutoLoad,30,pata-cs5536,1)
+  $(call AddDepends/ata)
+endef
+
+define KernelPackage/cs5536/description
+  Kernel module for the AMD CS5536 Geode LX companion chip
+endef
+
+$(eval $(call KernelPackage,cs5536))
+
+
 define KernelPackage/libsas
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SAS Domain Transport Attributes

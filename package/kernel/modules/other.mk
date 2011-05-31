@@ -519,7 +519,7 @@ $(eval $(call KernelPackage,ssb))
 define KernelPackage/wdt-geode
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Geode/LX Watchdog timer
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@TARGET_x86 +kmod-cs5535-mfgpt
   KCONFIG:=CONFIG_GEODE_WDT
   FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/geodewdt.ko
   AUTOLOAD:=$(call AutoLoad,50,geodewdt)
@@ -530,6 +530,38 @@ define KernelPackage/wdt-geode/description
 endef
 
 $(eval $(call KernelPackage,wdt-geode))
+
+
+define KernelPackage/cs5535-clockevt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=CS5535/CS5536 high-res timer (MFGPT) events
+  DEPENDS:=@TARGET_x86 +kmod-cs5535-mfgpt
+  KCONFIG:=CONFIG_CS5535_CLOCK_EVENT_SRC
+  FILES:=$(LINUX_DIR)/drivers/clocksource/cs5535-clockevt.ko
+  AUTOLOAD:=$(call AutoLoad,50,cs5535-clockevt)
+endef
+
+define KernelPackage/cs5535-clockevt/description
+  Kernel module for CS5535/6 high-res clock event source
+endef
+
+$(eval $(call KernelPackage,cs5535-clockevt))
+
+
+define KernelPackage/cs5535-mfgpt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=CS5535/6 Multifunction General Purpose Timer
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_CS5535_MFGPT
+  FILES:=$(LINUX_DIR)/drivers/misc/cs5535-mfgpt.ko
+  AUTOLOAD:=$(call AutoLoad,45,cs5535-mfgpt)
+endef
+
+define KernelPackage/cs5535-mfgpt/description
+  Kernel module for CS5535/6 multifunction general purpose timer.
+endef
+
+$(eval $(call KernelPackage,cs5535-mfgpt))
 
 
 define KernelPackage/wdt-omap
