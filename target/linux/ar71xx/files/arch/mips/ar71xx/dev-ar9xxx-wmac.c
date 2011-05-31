@@ -63,6 +63,15 @@ static void ar913x_wmac_init(void)
 	ar9xxx_wmac_resources[0].end = AR91XX_WMAC_BASE + AR91XX_WMAC_SIZE - 1;
 }
 
+static void ar933x_wmac_init(void)
+{
+	ar9xxx_wmac_device.name = "ar933x_wmac";
+	ar9xxx_wmac_resources[0].start = AR933X_WMAC_BASE;
+	ar9xxx_wmac_resources[0].end = AR933X_WMAC_BASE + AR933X_WMAC_SIZE - 1;
+	if (ar71xx_ref_freq == MHZ_25)
+		ar9xxx_wmac_data.is_clk_25mhz = true;
+}
+
 static void ar934x_wmac_init(void)
 {
 	ar9xxx_wmac_device.name = "ar934x_wmac";
@@ -78,6 +87,11 @@ void __init ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr)
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
 		ar913x_wmac_init();
+		break;
+
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		ar933x_wmac_init();
 		break;
 
 	case AR71XX_SOC_AR9341:
