@@ -219,6 +219,17 @@ static int __devinit ar71xx_wdt_probe(struct platform_device *pdev)
 	int ret;
 
 	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
+	case AR71XX_SOC_AR7242:
+		wdt_clk_freq = ar71xx_ahb_freq;
+		break;
+
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
@@ -226,8 +237,7 @@ static int __devinit ar71xx_wdt_probe(struct platform_device *pdev)
 		break;
 
 	default:
-		wdt_clk_freq = ar71xx_ahb_freq;
-		break;
+		BUG();
 	}
 
 	max_timeout = (0xfffffffful / wdt_clk_freq);
