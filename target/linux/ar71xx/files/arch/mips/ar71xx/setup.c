@@ -283,6 +283,56 @@ static void __init ar724x_detect_sys_frequency(void)
 	ar71xx_ahb_freq = ar71xx_cpu_freq / div;
 }
 
+static void __init ar933x_detect_sys_frequency(void)
+{
+	u32 clock_ctrl;
+	u32 cpu_config;
+	u32 freq;
+	u32 t;
+
+	t = ar71xx_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
+	if (t & AR933X_BOOTSTRAP_REF_CLK_40)
+		ar71xx_ref_freq = (40 * 1000 * 1000);
+	else
+		ar71xx_ref_freq = (25 * 1000 * 1000);
+
+	clock_ctrl = ar71xx_pll_rr(AR933X_PLL_CLOCK_CTRL_REG);
+	if (clock_ctrl & AR933X_PLL_CLOCK_CTRL_BYPASS) {
+		ar71xx_cpu_freq = ar71xx_ref_freq;
+		ar71xx_ahb_freq = ar71xx_ref_freq;
+		ar71xx_ddr_freq = ar71xx_ref_freq;
+	} else {
+		cpu_config = ar71xx_pll_rr(AR933X_PLL_CPU_CONFIG_REG);
+
+		t = (cpu_config >> AR933X_PLL_CPU_CONFIG_REFDIV_SHIFT) &
+		    AR933X_PLL_CPU_CONFIG_REFDIV_MASK;
+		freq = ar71xx_ref_freq / t;
+
+		t = (cpu_config >> AR933X_PLL_CPU_CONFIG_NINT_SHIFT) &
+		    AR933X_PLL_CPU_CONFIG_NINT_MASK;
+		freq *= t;
+
+		t = (cpu_config >> AR933X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
+		    AR933X_PLL_CPU_CONFIG_OUTDIV_MASK;
+		if (t == 0)
+			t = 1;
+
+		freq >>= t;
+
+		t = ((clock_ctrl >> AR933X_PLL_CLOCK_CTRL_CPU_DIV_SHIFT) &
+		     AR933X_PLL_CLOCK_CTRL_CPU_DIV_MASK) + 1;
+		ar71xx_cpu_freq = freq / t;
+
+		t = ((clock_ctrl >> AR933X_PLL_CLOCK_CTRL_DDR_DIV_SHIFT) &
+		      AR933X_PLL_CLOCK_CTRL_DDR_DIV_MASK) + 1;
+		ar71xx_ddr_freq = freq / t;
+
+		t = ((clock_ctrl >> AR933X_PLL_CLOCK_CTRL_AHB_DIV_SHIFT) &
+		     AR933X_PLL_CLOCK_CTRL_AHB_DIV_MASK) + 1;
+		ar71xx_ahb_freq = freq / t;
+	}
+}
+
 static void __init detect_sys_frequency(void)
 {
 	switch (ar71xx_soc) {
@@ -301,6 +351,11 @@ static void __init detect_sys_frequency(void)
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
 		ar91xx_detect_sys_frequency();
+		break;
+
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		ar933x_detect_sys_frequency();
 		break;
 
 	case AR71XX_SOC_AR9341:
