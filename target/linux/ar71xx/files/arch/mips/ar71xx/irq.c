@@ -232,6 +232,8 @@ static void __init ar71xx_misc_irq_init(void)
 	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
@@ -292,15 +294,28 @@ asmlinkage void plat_irq_dispatch(void)
 void __init arch_init_irq(void)
 {
 	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7130:
+	case AR71XX_SOC_AR7141:
+	case AR71XX_SOC_AR7161:
+		ip2_flush_reg = AR71XX_DDR_REG_FLUSH_PCI;
+		break;
+
 	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
 		ip2_flush_reg = AR724X_DDR_REG_FLUSH_PCIE;
 		break;
+
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
 		ip2_flush_reg = AR91XX_DDR_REG_FLUSH_WMAC;
 		break;
+
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		ip2_flush_reg = AR933X_DDR_REG_FLUSH_WMAC;
+		break;
+
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
@@ -308,8 +323,7 @@ void __init arch_init_irq(void)
 		break;
 
 	default:
-		ip2_flush_reg = AR71XX_DDR_REG_FLUSH_PCI;
-		break;
+		BUG();
 	}
 
 	mips_cpu_irq_init();
