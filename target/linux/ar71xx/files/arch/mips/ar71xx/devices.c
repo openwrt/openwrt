@@ -21,6 +21,7 @@
 #include <linux/serial_8250.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
+#include <asm/mach-ar71xx/ar933x_uart_platform.h>
 
 #include "devices.h"
 
@@ -57,8 +58,34 @@ static struct platform_device ar71xx_uart_device = {
 	},
 };
 
+static struct resource ar933x_uart_resources[] = {
+	{
+		.start  = AR933X_UART_BASE,
+		.end    = AR933X_UART_BASE + AR71XX_UART_SIZE - 1,
+		.flags  = IORESOURCE_MEM,
+	},
+	{
+		.start  = AR71XX_MISC_IRQ_UART,
+		.end    = AR71XX_MISC_IRQ_UART,
+		.flags  = IORESOURCE_IRQ,
+	},
+};
+
+static struct ar933x_uart_platform_data ar933x_uart_data;
+static struct platform_device ar933x_uart_device = {
+	.name           = "ar933x-uart",
+	.id             = -1,
+	.resource       = ar933x_uart_resources,
+	.num_resources  = ARRAY_SIZE(ar933x_uart_resources),
+	.dev = {
+		.platform_data  = &ar933x_uart_data,
+	},
+};
+
 void __init ar71xx_add_device_uart(void)
 {
+	struct platform_device *pdev;
+
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
@@ -68,17 +95,20 @@ void __init ar71xx_add_device_uart(void)
 	case AR71XX_SOC_AR7242:
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
+		pdev = &ar71xx_uart_device;
 		ar71xx_uart_data[0].uartclk = ar71xx_ahb_freq;
 		break;
 
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
-		/* These SoCs are using a different UART core */
-		return;
+		pdev = &ar933x_uart_device;
+		ar933x_uart_data.uartclk = ar71xx_ahb_freq;
+		break;
 
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
+		pdev = &ar71xx_uart_device;
 		ar71xx_uart_data[0].uartclk = ar71xx_ref_freq;
 		break;
 
@@ -86,7 +116,7 @@ void __init ar71xx_add_device_uart(void)
 		BUG();
 	}
 
-	platform_device_register(&ar71xx_uart_device);
+	platform_device_register(pdev);
 }
 
 static struct resource ar71xx_mdio_resources[] = {
