@@ -416,7 +416,7 @@ endef
 define KernelPackage/ath
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros common driver part
-  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT +kmod-mac80211
+  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ar71xx +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath.ko
   AUTOLOAD:=$(call AutoLoad,26,ath)
   MENU:=1
@@ -444,7 +444,7 @@ define KernelPackage/ath9k-common
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n wireless devices (common code for ath9k and ath9k_htc)
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
-  DEPENDS+= @PCI_SUPPORT +kmod-ath +@DRIVER_11N_SUPPORT
+  DEPENDS+= @PCI_SUPPORT||TARGET_ar71xx +kmod-ath +@DRIVER_11N_SUPPORT
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_common.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_hw.ko
@@ -455,7 +455,7 @@ define KernelPackage/ath9k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n PCI wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath9k
-  DEPENDS+= @PCI_SUPPORT +kmod-ath9k-common
+  DEPENDS+= @PCI_SUPPORT||TARGET_ar71xx +kmod-ath9k-common
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.ko
   AUTOLOAD:=$(call AutoLoad,28,ath9k)
@@ -1197,7 +1197,8 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PCI),-DCONFIG_B43_PCI_AUTOSELECT -DCONFIG_B43_PCICORE_AUTOSELECT) \
 	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS -DCONFIG_AR9170_LEDS) \
 	-DCONFIG_B43_HWRNG -DCONFIG_B43LEGACY_HWRNG \
-	-DCONFIG_ATH9K_PCI $(if $(CONFIG_TARGET_ar71xx),-DCONFIG_ATH9K_AHB) \
+	$(if $(CONFIG_PCI),-DCONFIG_ATH9K_PCI) \
+	$(if $(CONFIG_TARGET_ar71xx),-DCONFIG_ATH9K_AHB) \
 	$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),-DCONFIG_MAC80211_DEBUGFS -DCONFIG_ATH9K_DEBUGFS -DCONFIG_CARL9170_DEBUGFS -DCONFIG_ATH9K_HTC_DEBUGFS -DCONFIG_ATH5K_DEBUG) \
 	$(if $(CONFIG_PACKAGE_ATH_DEBUG),-DCONFIG_ATH_DEBUG -DCONFIG_ATH9K_PKTLOG) \
 	-D__CONFIG_MAC80211_RC_DEFAULT=minstrel \
@@ -1249,7 +1250,7 @@ MAKE_OPTS:= \
 	CONFIG_ATH5K_AHB=$(if $(CONFIG_TARGET_atheros),y) \
 	CONFIG_ATH5K_DEBUG=$(if $(CONFIG_PACKAGE_MAC80211_DEBUGFS),y) \
 	CONFIG_ATH9K=$(if $(CONFIG_PACKAGE_kmod-ath9k),m) \
-	CONFIG_ATH9K_PCI=y \
+	CONFIG_ATH9K_PCI=$(CONFIG_PCI) \
 	CONFIG_ATH9K_AHB=$(if $(CONFIG_TARGET_ar71xx),y) \
 	CONFIG_ATH9K_HTC=$(if $(CONFIG_PACKAGE_kmod-ath9k-htc),m) \
 	CONFIG_ATH9K_HW=$(if $(CONFIG_PACKAGE_kmod-ath9k-common),m) \
