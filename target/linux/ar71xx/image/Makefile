@@ -137,6 +137,13 @@ define Image/Build/WZRHPG30XNH
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
 			dd if=$(call imgname,$(1),$(2))-sysupgrade.bin; \
 		) > $(call imgname,$(1),$(2))-tftp.bin; \
+		buffalo-enc -p $(4) -v 1.76 \
+			-i $(call imgname,$(1),$(2))-sysupgrade.bin \
+			-o $(KDIR)/$(2).enc; \
+		buffalo-tag -b $(4) -p $(4) -a ath -v 1.76 -m 1.01 -l mlang8 \
+			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
+			-i $(KDIR)/$(2).enc \
+			-o $(call imgname,$(1),$(2))-factory.bin; \
 	fi; fi
 endef
 
@@ -736,8 +743,8 @@ endef
 wzrhpg300nh_cmdline=board=WZR-HP-G300NH console=ttyS0,115200
 wzrhpg301nh_cmdline=board=WZR-HP-G301NH console=ttyS0,115200
 define Image/Build/Profile/WZRHPG30XNH
-	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh,$(wzrhpg300nh_cmdline))
-	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g301nh,$(wzrhpg301nh_cmdline))
+	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh,$(wzrhpg300nh_cmdline),WZR-HP-G300NH)
+	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g301nh,$(wzrhpg301nh_cmdline),WZR-HP-G301NH)
 endef
 
 zcn1523h28_cmdline=board=ZCN-1523H-2 console=ttyS0,115200
