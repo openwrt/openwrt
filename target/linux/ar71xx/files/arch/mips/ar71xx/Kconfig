@@ -393,4 +393,8 @@ config AR71XX_NVRAM
 config AR71XX_PCI_ATH9K_FIXUP
 	def_bool n
 
+config SOC_AR933X
+	bool
+	select USB_ARCH_HAS_EHCI
+
 endif

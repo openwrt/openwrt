@@ -143,10 +143,16 @@ static void __init ar71xx_detect_sys_type(void)
 		}
 		break;
 
-	case REV_ID_MAJOR_AR9341:
-		ar71xx_soc = AR71XX_SOC_AR9341;
-		chip = "9341";
-		rev = id & AR934X_REV_ID_REVISION_MASK;
+	case REV_ID_MAJOR_AR9330:
+		ar71xx_soc = AR71XX_SOC_AR9330;
+		chip = "9330";
+		rev = id & AR933X_REV_ID_REVISION_MASK;
+		break;
+
+	case REV_ID_MAJOR_AR9331:
+		ar71xx_soc = AR71XX_SOC_AR9331;
+		chip = "9331";
+		rev = id & AR933X_REV_ID_REVISION_MASK;
 		break;
 
 	case REV_ID_MAJOR_AR9342:
