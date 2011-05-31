@@ -61,11 +61,64 @@ static void ag71xx_ethtool_set_msglevel(struct net_device *dev, u32 msg_level)
 	ag->msg_enable = msg_level;
 }
 
+static void ag71xx_ethtool_get_ringparam(struct net_device *dev,
+					 struct ethtool_ringparam *er)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+
+	er->tx_max_pending = AG71XX_TX_RING_SIZE_MAX;
+	er->rx_max_pending = AG71XX_RX_RING_SIZE_MAX;
+	er->rx_mini_max_pending = 0;
+	er->rx_jumbo_max_pending = 0;
+
+	er->tx_pending = ag->tx_ring.size;
+	er->rx_pending = ag->rx_ring.size;
+	er->rx_mini_pending = 0;
+	er->rx_jumbo_pending = 0;
+}
+
+static int ag71xx_ethtool_set_ringparam(struct net_device *dev,
+					struct ethtool_ringparam *er)
+{
+	struct ag71xx *ag = netdev_priv(dev);
+	unsigned tx_size;
+	unsigned rx_size;
+	int err;
+
+	if (er->rx_mini_pending != 0||
+	    er->rx_jumbo_pending != 0 ||
+	    er->rx_pending == 0 ||
+	    er->tx_pending == 0)
+		return -EINVAL;
+
+	tx_size = er->tx_pending < AG71XX_TX_RING_SIZE_MAX ?
+		  er->tx_pending : AG71XX_TX_RING_SIZE_MAX;
+
+	rx_size = er->rx_pending < AG71XX_RX_RING_SIZE_MAX ?
+		  er->rx_pending : AG71XX_RX_RING_SIZE_MAX;
+
+	if (netif_running(dev)) {
+		err = dev->netdev_ops->ndo_stop(dev);
+		if (err)
+			return err;
+	}
+
+	ag->tx_ring.size = tx_size;
+	ag->rx_ring.size = rx_size;
+
+	if (netif_running(dev))
+		err = dev->netdev_ops->ndo_open(dev);
+
+	return err;
+}
+
 struct ethtool_ops ag71xx_ethtool_ops = {
 	.set_settings	= ag71xx_ethtool_set_settings,
 	.get_settings	= ag71xx_ethtool_get_settings,
 	.get_drvinfo	= ag71xx_ethtool_get_drvinfo,
 	.get_msglevel	= ag71xx_ethtool_get_msglevel,
 	.set_msglevel	= ag71xx_ethtool_set_msglevel,
+	.get_ringparam	= ag71xx_ethtool_get_ringparam,
+	.set_ringparam	= ag71xx_ethtool_set_ringparam,
 	.get_link	= ethtool_op_get_link,
 };
