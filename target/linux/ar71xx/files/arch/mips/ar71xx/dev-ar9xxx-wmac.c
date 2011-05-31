@@ -23,6 +23,8 @@
 
 #include "dev-ar9xxx-wmac.h"
 
+#define MHZ_25	(25 * 1000 * 1000)
+
 static struct ath9k_platform_data ar9xxx_wmac_data = {
 	.led_pin = -1,
 };
@@ -66,6 +68,8 @@ static void ar934x_wmac_init(void)
 	ar9xxx_wmac_device.name = "ar934x_wmac";
 	ar9xxx_wmac_resources[0].start = AR934X_WMAC_BASE;
 	ar9xxx_wmac_resources[0].end = AR934X_WMAC_BASE + AR934X_WMAC_SIZE - 1;
+	if (ar71xx_ref_freq == MHZ_25)
+		ar9xxx_wmac_data.is_clk_25mhz = true;
 }
 
 void __init ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr)
