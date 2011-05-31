@@ -155,7 +155,6 @@ static ssize_t read_file_ring(struct file *file, char __user *user_buf,
 			      size_t count, loff_t *ppos,
 			      struct ag71xx *ag,
 			      struct ag71xx_ring *ring,
-			      unsigned ring_size,
 			      unsigned desc_reg)
 {
 	char *buf;
@@ -168,7 +167,7 @@ static ssize_t read_file_ring(struct file *file, char __user *user_buf,
 	u32 desc_hw;
 	int i;
 
-	buflen = (ring_size * DESC_PRINT_LEN);
+	buflen = (ring->size * DESC_PRINT_LEN);
 	buf = kmalloc(buflen, GFP_KERNEL);
 	if (!buf)
 		return -ENOMEM;
@@ -179,10 +178,10 @@ static ssize_t read_file_ring(struct file *file, char __user *user_buf,
 
 	spin_lock_irqsave(&ag->lock, flags);
 
-	curr = (ring->curr % ring_size);
-	dirty = (ring->dirty % ring_size);
+	curr = (ring->curr % ring->size);
+	dirty = (ring->dirty % ring->size);
 	desc_hw = ag71xx_rr(ag, desc_reg);
-	for (i = 0; i < ring_size; i++) {
+	for (i = 0; i < ring->size; i++) {
 		struct ag71xx_buf *ab = &ring->buf[i];
 		u32 desc_dma = ((u32) ring->descs_dma) + i * ring->desc_size;
 
@@ -214,7 +213,7 @@ static ssize_t read_file_tx_ring(struct file *file, char __user *user_buf,
 	struct ag71xx *ag = file->private_data;
 
 	return read_file_ring(file, user_buf, count, ppos, ag, &ag->tx_ring,
-			      AG71XX_TX_RING_SIZE, AG71XX_REG_TX_DESC);
+			      AG71XX_REG_TX_DESC);
 }
 
 static const struct file_operations ag71xx_fops_tx_ring = {
@@ -229,7 +228,7 @@ static ssize_t read_file_rx_ring(struct file *file, char __user *user_buf,
 	struct ag71xx *ag = file->private_data;
 
 	return read_file_ring(file, user_buf, count, ppos, ag, &ag->rx_ring,
-			      AG71XX_RX_RING_SIZE, AG71XX_REG_RX_DESC);
+			      AG71XX_REG_RX_DESC);
 }
 
 static const struct file_operations ag71xx_fops_rx_ring = {
