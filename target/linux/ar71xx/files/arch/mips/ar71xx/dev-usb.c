@@ -185,6 +185,8 @@ void __init ar71xx_add_device_usb(void)
 
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
