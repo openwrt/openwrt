@@ -398,14 +398,13 @@ define Image/Build/Netgear
 		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k; \
 	) > $(call imgname,$(1),$(2))-sysupgrade.bin
-	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(6) -v OpenWrt.$(REVISION) \
-		-i $(call imgname,$(1),$(2))-sysupgrade.bin \
-		-o $(call imgname,$(1),$(2))-factory.img
-	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(6) -v OpenWrt.$(REVISION) -r "NA" \
-		-i $(call imgname,$(1),$(2))-sysupgrade.bin \
-		-o $(call imgname,$(1),$(2))-factory-NA.img
+	for r in $(7) ; do \
+		[ -n "$$$$r" ] && dashr="-$$$$r" || dashr= ; \
+		$(STAGING_DIR_HOST)/bin/mkdniimg \
+			-B $(6) -v OpenWrt.$(REVISION) -r "$$$$r" $(8) \
+			-i $(call imgname,$(1),$(2))-sysupgrade.bin \
+			-o $(call imgname,$(1),$(2))-factory$$$$dashr.img; \
+	done
 endef
 
 define Image/Build/Netgear/initramfs
@@ -459,43 +458,43 @@ define Image/Build/Zcomax
 endef
 
 define Image/Build/Template/initramfs/initramfs
-	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/all/squashfs
-	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/all/jffs2-64k
-	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/all/jffs2-128k
-	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/squashfs-only/squashfs
-	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/4k/squashfs
-	$(call Image/Build/$(1),squashfs-4k,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1),squashfs-4k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/64k/squashfs
-	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/64k/jffs2-64k
-	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/128k/squashfs
-	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/128k/jffs2-128k
-	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7))
+	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 ap81_cmdline=board=AP81 console=ttyS0,115200
@@ -716,8 +715,8 @@ wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kerne
 wndr3700v2_cmdline=board=WNDR3700v2 console=ttyS0,115200
 wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),14848k(rootfs),64k(art)ro,15872k@0x70000(firmware)
 define Image/Build/Profile/WNDR3700
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,$(wndr3700_cmdline),wndr3700_mtdlayout,3700,WNDR3700)
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,$(wndr3700v2_cmdline),wndr3700v2_mtdlayout,3701,WNDR3700v2)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,$(wndr3700_cmdline),wndr3700_mtdlayout,3700,WNDR3700,"" NA,)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,$(wndr3700v2_cmdline),wndr3700v2_mtdlayout,3701,WNDR3700v2,"",-H 29763654+16+64)
 endef
 
 ap96_cmdline=board=AP96 console=ttyS0,115200
