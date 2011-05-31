@@ -28,6 +28,7 @@ static char *progname;
 static char *ofname;
 static char *version = "1.00.00";
 static char *region = "";
+static char *hd_id;
 
 static char *board_id;
 /*
@@ -60,6 +61,7 @@ void usage(int status)
 "  -o <file>       write output to the file <file>\n"
 "  -v <version>    set image version to <version>\n"
 "  -r <region>     set image region to <region>\n"
+"  -H <hd_id>      set image hardware id to <hd_id>\n"
 "  -h              show this screen\n"
 	);
 
@@ -73,7 +75,7 @@ int main(int argc, char *argv[])
 	int err;
 	struct stat st;
 	char *buf;
-	int i;
+	int pos, rem, i;
 	uint8_t csum;
 
 	FILE *outfile, *infile;
@@ -83,7 +85,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:i:o:v:r:h");
+		c = getopt(argc, argv, "B:i:o:v:r:H:h");
 		if (c == -1)
 			break;
 
@@ -102,6 +104,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'r':
 			region = optarg;
+			break;
+		case 'H':
+			hd_id = optarg;
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
@@ -141,8 +146,12 @@ int main(int argc, char *argv[])
 	}
 
 	memset(buf, 0, DNI_HDR_LEN);
-	snprintf(buf, DNI_HDR_LEN, "device:%s\nversion:V%s\nregion:%s\n",
-		 board_id, version, region);
+	pos = snprintf(buf, DNI_HDR_LEN, "device:%s\nversion:V%s\nregion:%s\n",
+		       board_id, version, region);
+	rem = DNI_HDR_LEN - pos;
+	if (pos >= 0 && rem > 1 && hd_id) {
+		snprintf(buf + pos, rem, "hd_id:%s\n", hd_id);
+	}
 
 	infile = fopen(ifname, "r");
 	if (infile == NULL) {
