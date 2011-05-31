@@ -1,0 +1,58 @@
+commit 24920fbc58c0183013db148f8be6fbc12d3bba9a
+Author: Gabor Juhos <juhosg@openwrt.org>
+Date:   Sun Mar 27 12:04:36 2011 +0200
+
+    serial: add driver for the built-in UART of the AR933X SoC
+    
+    Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+
+--- a/drivers/serial/Kconfig
++++ b/drivers/serial/Kconfig
+@@ -1632,4 +1632,27 @@ config SERIAL_ALTERA_UART_CONSOLE
+ 	help
+ 	  Enable a Altera UART port to be the system console.
+ 
++config SERIAL_AR933X
++	bool "AR933X serial port support"
++	depends on SOC_AR933X
++	select SERIAL_CORE
++	help
++	  If you have an Atheros AR933X SOC based board and want to use the
++	  built-in UART of the SoC, say Y to this option.
++
++config SERIAL_AR933X_CONSOLE
++	bool "Console on AR933X serial port"
++	depends on SERIAL_AR933X=y
++	select SERIAL_CORE_CONSOLE
++	help
++	  Enable a built-in UART port of the AR933X to be the system console.
++
++config SERIAL_AR933X_NR_UARTS
++	int "Maximum number of AR933X serial ports"
++	depends on SERIAL_AR933X
++	default "2"
++	help
++	  Set this to the number of serial ports you want the driver
++	  to support.
++
+ endmenu
+--- a/drivers/serial/Makefile
++++ b/drivers/serial/Makefile
+@@ -89,3 +89,5 @@ obj-$(CONFIG_SERIAL_ALTERA_UART) += alte
+ obj-$(CONFIG_SERIAL_MRST_MAX3110)	+= mrst_max3110.o
+ obj-$(CONFIG_SERIAL_MFD_HSU)	+= mfd.o
+ obj-$(CONFIG_SERIAL_OMAP) += omap-serial.o
++obj-$(CONFIG_SERIAL_AR933X)	+= ar933x_uart.o
++
+--- a/include/linux/serial_core.h
++++ b/include/linux/serial_core.h
+@@ -199,6 +199,9 @@
+ /* TI OMAP-UART */
+ #define PORT_OMAP	96
+ 
++/* Atheros AR933X SoC */
++#define PORT_AR933X	98
++
+ #ifdef __KERNEL__
+ 
+ #include <linux/compiler.h>
