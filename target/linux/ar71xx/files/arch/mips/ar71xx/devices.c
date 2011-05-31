@@ -155,6 +155,12 @@ void __init ar71xx_add_device_mdio(u32 phy_mask)
 			       AR7242_PLL_REG_ETH0_INT_CLOCK, 0x62000000,
 			       AR71XX_ETH0_PLL_SHIFT);
 		break;
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		ar71xx_mdio_data.is_ar7240 = 1;
+		ar71xx_mdio_resources[0].start = AR71XX_GE1_BASE;
+		ar71xx_mdio_resources[0].end = AR71XX_GE1_BASE + 0x200 - 1;
+		break;
 	default:
 		break;
 	}
@@ -250,6 +256,16 @@ static void ar91xx_set_pll_ge1(int speed)
 			 val, AR91XX_ETH1_PLL_SHIFT);
 }
 
+static void ar933x_set_pll_ge0(int speed)
+{
+	/* TODO */
+}
+
+static void ar933x_set_pll_ge1(int speed)
+{
+	/* TODO */
+}
+
 static void ar71xx_ddr_flush_ge0(void)
 {
 	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_GE0);
@@ -278,6 +294,16 @@ static void ar91xx_ddr_flush_ge0(void)
 static void ar91xx_ddr_flush_ge1(void)
 {
 	ar71xx_ddr_flush(AR91XX_DDR_REG_FLUSH_GE1);
+}
+
+static void ar933x_ddr_flush_ge0(void)
+{
+	ar71xx_ddr_flush(AR933X_DDR_REG_FLUSH_GE0);
+}
+
+static void ar933x_ddr_flush_ge1(void)
+{
+	ar71xx_ddr_flush(AR933X_DDR_REG_FLUSH_GE1);
 }
 
 static struct resource ar71xx_eth0_resources[] = {
@@ -362,6 +388,10 @@ struct platform_device ar71xx_eth1_device = {
 #define AR91XX_PLL_VAL_100	0x13000a44
 #define AR91XX_PLL_VAL_10	0x00441099
 
+#define AR933X_PLL_VAL_1000	0x00110000
+#define AR933X_PLL_VAL_100	0x00001099
+#define AR933X_PLL_VAL_10	0x00991099
+
 static void __init ar71xx_init_eth_pll_data(unsigned int id)
 {
 	struct ar71xx_eth_pll_data *pll_data;
@@ -406,6 +436,14 @@ static void __init ar71xx_init_eth_pll_data(unsigned int id)
 		pll_100 = AR91XX_PLL_VAL_100;
 		pll_1000 = AR91XX_PLL_VAL_1000;
 		break;
+
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		pll_10 = AR933X_PLL_VAL_10;
+		pll_100 = AR933X_PLL_VAL_100;
+		pll_1000 = AR933X_PLL_VAL_1000;
+		break;
+
 	default:
 		BUG();
 	}
@@ -541,6 +579,27 @@ void __init ar71xx_add_device_eth(unsigned int id)
 				      : ar91xx_set_pll_ge0;
 		pdata->is_ar91xx = 1;
 		pdata->has_gbit = 1;
+		break;
+
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		ar71xx_eth0_data.reset_bit = AR933X_RESET_GE0_MAC |
+					     AR933X_RESET_GE0_MDIO;
+		ar71xx_eth1_data.reset_bit = AR933X_RESET_GE1_MAC |
+					     AR933X_RESET_GE1_MDIO;
+		pdata->ddr_flush = id ? ar933x_ddr_flush_ge1
+				      : ar933x_ddr_flush_ge0;
+		pdata->set_pll =  id ? ar933x_set_pll_ge1
+				     : ar933x_set_pll_ge0;
+		pdata->has_gbit = 1;
+		pdata->is_ar724x = 1;
+
+		if (!pdata->fifo_cfg1)
+			pdata->fifo_cfg1 = 0x0010ffff;
+		if (!pdata->fifo_cfg2)
+			pdata->fifo_cfg2 = 0x015500aa;
+		if (!pdata->fifo_cfg3)
+			pdata->fifo_cfg3 = 0x01f00140;
 		break;
 
 	default:
