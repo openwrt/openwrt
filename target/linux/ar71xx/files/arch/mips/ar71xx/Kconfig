@@ -4,6 +4,7 @@ menu "Atheros AR71xx machine selection"
 
 config AR71XX_MACH_AP81
 	bool "Atheros AP81 board support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -13,6 +14,7 @@ config AR71XX_MACH_AP81
 
 config AR71XX_MACH_AP83
 	bool "Atheros AP83 board support"
+	select SOC_AR913X
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
@@ -21,6 +23,7 @@ config AR71XX_MACH_AP83
 
 config AR71XX_MACH_AP96
 	bool "Atheros AP96 board support"
+	select SOC_AR71XX
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AP94_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -30,6 +33,7 @@ config AR71XX_MACH_AP96
 
 config AR71XX_MACH_DB120
 	bool "Atheros DB120 board support"
+	select SOC_AR934X
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_DB120_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -39,6 +43,7 @@ config AR71XX_MACH_DB120
 
 config AR71XX_MACH_DIR_600_A1
 	bool "D-Link DIR-600 rev. A1 support"
+	select SOC_AR724X
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -48,6 +53,7 @@ config AR71XX_MACH_DIR_600_A1
 
 config AR71XX_MACH_DIR_615_C1
 	bool "D-Link DIR-615 rev. C1 support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -57,6 +63,7 @@ config AR71XX_MACH_DIR_615_C1
 
 config AR71XX_MACH_DIR_825_B1
 	bool "D-Link DIR-825 rev. B1 board support"
+	select SOC_AR71XX
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AP94_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -66,6 +73,7 @@ config AR71XX_MACH_DIR_825_B1
 
 config AR71XX_MACH_JA76PF
 	bool "jjPlus JA76PF board support"
+	select SOC_AR71XX
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
@@ -75,6 +83,7 @@ config AR71XX_MACH_JA76PF
 
 config AR71XX_MACH_JWAP003
 	bool "jjPlus JWAP003 board support"
+	select SOC_AR71XX
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
@@ -83,6 +92,7 @@ config AR71XX_MACH_JWAP003
 
 config AR71XX_MACH_PB42
 	bool "Atheros PB42 board support"
+	select SOC_AR71XX
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
@@ -90,6 +100,7 @@ config AR71XX_MACH_PB42
 
 config AR71XX_MACH_PB44
 	bool "Atheros PB44 board support"
+	select SOC_AR71XX
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_LEDS_GPIO
@@ -98,6 +109,7 @@ config AR71XX_MACH_PB44
 
 config AR71XX_MACH_PB92
 	bool "Atheros PB92 board support"
+	select SOC_AR724X
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB9X_PCI if PCI
 	select AR71XX_DEV_LEDS_GPIO
@@ -106,6 +118,7 @@ config AR71XX_MACH_PB92
 
 config AR71XX_MACH_AW_NR580
 	bool "AzureWave AW-NR580 board support"
+	select SOC_AR71XX
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
@@ -114,6 +127,7 @@ config AR71XX_MACH_AW_NR580
 
 config AR71XX_MACH_WZR_HP_G300NH
 	bool "Buffalo WZR-HP-G300NH board support"
+	select SOC_AR913X
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
@@ -122,6 +136,7 @@ config AR71XX_MACH_WZR_HP_G300NH
 
 config AR71XX_MACH_WP543
 	bool "Compex WP543/WPJ543 board support"
+	select SOC_AR71XX
 	select MYLOADER
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -132,6 +147,7 @@ config AR71XX_MACH_WP543
 
 config AR71XX_MACH_WRT160NL
 	bool "Linksys WRT160NL board support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -142,6 +158,7 @@ config AR71XX_MACH_WRT160NL
 
 config AR71XX_MACH_WRT400N
 	bool "Linksys WRT400N board support"
+	select SOC_AR71XX
 	select AR71XX_DEV_AP94_PCI if PCI
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -150,6 +167,7 @@ config AR71XX_MACH_WRT400N
 
 config AR71XX_MACH_RB4XX
 	bool "MikroTik RouterBOARD 4xx series support"
+	select SOC_AR71XX
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
@@ -157,10 +175,12 @@ config AR71XX_MACH_RB4XX
 
 config AR71XX_MACH_RB750
 	bool "MikroTik RouterBOARD 750 support"
+	select SOC_AR724X
 	default n
 
 config AR71XX_MACH_WNDR3700
 	bool "NETGEAR WNDR3700 board support"
+	select SOC_AR71XX
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AP94_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -170,6 +190,7 @@ config AR71XX_MACH_WNDR3700
 
 config AR71XX_MACH_WNR2000
 	bool "NETGEAR WNR2000 board support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -178,6 +199,7 @@ config AR71XX_MACH_WNR2000
 
 config AR71XX_MACH_MZK_W04NU
 	bool "Planex MZK-W04NU board support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -187,6 +209,7 @@ config AR71XX_MACH_MZK_W04NU
 
 config AR71XX_MACH_MZK_W300NH
 	bool "Planex MZK-W300NH board support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -195,6 +218,7 @@ config AR71XX_MACH_MZK_W300NH
 
 config AR71XX_MACH_NBG460N
 	bool "Zyxel NBG460N/550N/550NH board support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -203,6 +227,7 @@ config AR71XX_MACH_NBG460N
 
 config AR71XX_MACH_TL_MR3X20
 	bool "TP-LINK TL-MR3220/3420 support"
+	select SOC_AR724X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -212,6 +237,7 @@ config AR71XX_MACH_TL_MR3X20
 
 config AR71XX_MACH_TL_WA901ND
 	bool "TP-LINK TL-WA901ND support"
+	select SOC_AR724X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -220,6 +246,7 @@ config AR71XX_MACH_TL_WA901ND
 
 config AR71XX_MACH_TL_WA901ND_V2
 	bool "TP-LINK TL-WA901ND v2 support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -228,6 +255,7 @@ config AR71XX_MACH_TL_WA901ND_V2
 
 config AR71XX_MACH_TL_WR741ND
 	bool "TP-LINK TL-WR741ND support"
+	select SOC_AR724X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -236,6 +264,7 @@ config AR71XX_MACH_TL_WR741ND
 
 config AR71XX_MACH_TL_WR841N_V1
 	bool "TP-LINK TL-WR841N v1 support"
+	select SOC_AR71XX
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_DSA
@@ -245,6 +274,7 @@ config AR71XX_MACH_TL_WR841N_V1
 
 config AR71XX_MACH_TL_WR941ND
 	bool "TP-LINK TL-WR941ND support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_DSA
@@ -254,6 +284,7 @@ config AR71XX_MACH_TL_WR941ND
 
 config AR71XX_MACH_TL_WR1043ND
 	bool "TP-LINK TL-WR1043ND support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -263,6 +294,7 @@ config AR71XX_MACH_TL_WR1043ND
 
 config AR71XX_MACH_TEW_632BRP
 	bool "TRENDnet TEW-632BRP support"
+	select SOC_AR913X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -272,6 +304,8 @@ config AR71XX_MACH_TEW_632BRP
 
 config AR71XX_MACH_UBNT
 	bool "Ubiquiti AR71xx based boards support"
+	select SOC_AR71XX
+	select SOC_AR724X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -282,6 +316,7 @@ config AR71XX_MACH_UBNT
 
 config AR71XX_MACH_EAP7660D
 	bool "Senao EAP7660D support"
+	select SOC_AR71XX
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
@@ -289,6 +324,7 @@ config AR71XX_MACH_EAP7660D
 
 config AR71XX_MACH_ZCN_1523H
 	bool "Zcomax ZCN-1523H support"
+	select SOC_AR724X
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
@@ -296,6 +332,24 @@ config AR71XX_MACH_ZCN_1523H
 	default n
 
 endmenu
+
+config SOC_AR71XX
+	bool
+	select USB_ARCH_HAS_EHCI
+	select USB_ARCH_HAS_OHCI
+
+config SOC_AR724X
+	bool
+	select USB_ARCH_HAS_EHCI
+	select USB_ARCH_HAS_OHCI
+
+config SOC_AR913X
+	bool
+	select USB_ARCH_HAS_EHCI
+
+config SOC_AR934X
+	bool
+	select USB_ARCH_HAS_EHCI
 
 config AR71XX_DEV_M25P80
 	def_bool n
