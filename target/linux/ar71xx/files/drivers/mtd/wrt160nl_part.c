@@ -78,6 +78,10 @@ struct wrt160nl_header {
 
 static struct mtd_partition trx_parts[TRX_PARTS];
 
+#define WRT160NL_UBOOT_LEN	0x40000
+#define WRT160NL_ART_LEN	0x10000
+#define WRT160NL_NVRAM_LEN	0x10000
+
 static int wrt160nl_parse_partitions(struct mtd_info *master,
 				     struct mtd_partition **pparts,
 				     unsigned long origin)
@@ -87,6 +91,9 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 	struct uimage_header *uheader;
 	size_t retlen;
 	unsigned int kernel_len;
+	unsigned int uboot_len = max(master->erasesize, WRT160NL_UBOOT_LEN);
+	unsigned int nvram_len = max(master->erasesize, WRT160NL_NVRAM_LEN);
+	unsigned int art_len = max(master->erasesize, WRT160NL_ART_LEN);
 	int ret;
 
 	header = vmalloc(sizeof(*header));
@@ -95,7 +102,7 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 		goto out;
 	}
 
-	ret = master->read(master, 4 * master->erasesize, sizeof(*header),
+	ret = master->read(master, uboot_len, sizeof(*header),
 			   &retlen, (void *) header);
 	if (ret)
 		goto free_hdr;
@@ -128,7 +135,7 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 
 	trx_parts[0].name = "u-boot";
 	trx_parts[0].offset = 0;
-	trx_parts[0].size = 4 * master->erasesize;
+	trx_parts[0].size = uboot_len;
 	trx_parts[0].mask_flags = MTD_WRITEABLE;
 
 	trx_parts[1].name = "kernel";
@@ -138,23 +145,23 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 
 	trx_parts[2].name = "rootfs";
 	trx_parts[2].offset = trx_parts[1].offset + trx_parts[1].size;
-	trx_parts[2].size = master->size - 6 * master->erasesize -
+	trx_parts[2].size = master->size - uboot_len - nvram_len - art_len -
 		trx_parts[1].size;
 	trx_parts[2].mask_flags = 0;
 
 	trx_parts[3].name = "nvram";
-	trx_parts[3].offset = master->size - 2 * master->erasesize;
-	trx_parts[3].size = master->erasesize;
+	trx_parts[3].offset = master->size - nvram_len - art_len;
+	trx_parts[3].size = nvram_len;
 	trx_parts[3].mask_flags = MTD_WRITEABLE;
 
 	trx_parts[4].name = "art";
-	trx_parts[4].offset = master->size - master->erasesize;
-	trx_parts[4].size = master->erasesize;
+	trx_parts[4].offset = master->size - art_len;
+	trx_parts[4].size = art_len;
 	trx_parts[4].mask_flags = MTD_WRITEABLE;
 
 	trx_parts[5].name = "firmware";
-	trx_parts[5].offset = 4 * master->erasesize;
-	trx_parts[5].size = master->size - 6 * master->erasesize;
+	trx_parts[5].offset = uboot_len;
+	trx_parts[5].size = master->size - uboot_len - nvram_len - art_len;
 	trx_parts[5].mask_flags = 0;
 
 	*pparts = trx_parts;
