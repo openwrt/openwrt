@@ -32,6 +32,6 @@ commit system
 EOF
 }
 
-if [ "${board}" == "wzr-hp-g300nh" || "${board}" == "wzr-hp-g301nh" ]; then
+if [ "${board}" == "wzr-hp-g300nh" -o "${board}" == "wzr-hp-g301nh" ]; then
 	wzrhpg300nh_set_leds
 fi
