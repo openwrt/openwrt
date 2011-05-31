@@ -604,6 +604,7 @@ void ar71xx_ddr_flush(u32 reg);
 
 #define AR724X_RESET_REG_RESET_MODULE		0x1c
 
+#define AR933X_RESET_REG_RESET_MODULE		0x1c
 #define AR933X_RESET_REG_BOOTSTRAP		0xac
 #define AR933X_BOOTSTRAP_REF_CLK_40		BIT(0)
 
