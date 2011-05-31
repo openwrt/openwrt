@@ -90,7 +90,7 @@ static void ag71xx_ring_free(struct ag71xx_ring *ring)
 				  ring->descs_cpu, ring->descs_dma);
 }
 
-static int ag71xx_ring_alloc(struct ag71xx_ring *ring, unsigned int size)
+static int ag71xx_ring_alloc(struct ag71xx_ring *ring)
 {
 	int err;
 	int i;
@@ -103,22 +103,21 @@ static int ag71xx_ring_alloc(struct ag71xx_ring *ring, unsigned int size)
 		ring->desc_size = roundup(ring->desc_size, cache_line_size());
 	}
 
-	ring->descs_cpu = dma_alloc_coherent(NULL, size * ring->desc_size,
+	ring->descs_cpu = dma_alloc_coherent(NULL, ring->size * ring->desc_size,
 					     &ring->descs_dma, GFP_ATOMIC);
 	if (!ring->descs_cpu) {
 		err = -ENOMEM;
 		goto err;
 	}
 
-	ring->size = size;
 
-	ring->buf = kzalloc(size * sizeof(*ring->buf), GFP_KERNEL);
+	ring->buf = kzalloc(ring->size * sizeof(*ring->buf), GFP_KERNEL);
 	if (!ring->buf) {
 		err = -ENOMEM;
 		goto err;
 	}
 
-	for (i = 0; i < size; i++) {
+	for (i = 0; i < ring->size; i++) {
 		int idx = i * ring->desc_size;
 		ring->buf[i].desc = (struct ag71xx_desc *)&ring->descs_cpu[idx];
 		DBG("ag71xx: ring %p, desc %d at %p\n",
@@ -137,7 +136,7 @@ static void ag71xx_ring_tx_clean(struct ag71xx *ag)
 	struct net_device *dev = ag->dev;
 
 	while (ring->curr != ring->dirty) {
-		u32 i = ring->dirty % AG71XX_TX_RING_SIZE;
+		u32 i = ring->dirty % ring->size;
 
 		if (!ag71xx_desc_empty(ring->buf[i].desc)) {
 			ring->buf[i].desc->ctrl = 0;
@@ -162,9 +161,9 @@ static void ag71xx_ring_tx_init(struct ag71xx *ag)
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	int i;
 
-	for (i = 0; i < AG71XX_TX_RING_SIZE; i++) {
+	for (i = 0; i < ring->size; i++) {
 		ring->buf[i].desc->next = (u32) (ring->descs_dma +
-			ring->desc_size * ((i + 1) % AG71XX_TX_RING_SIZE));
+			ring->desc_size * ((i + 1) % ring->size));
 
 		ring->buf[i].desc->ctrl = DESC_EMPTY;
 		ring->buf[i].skb = NULL;
@@ -185,7 +184,7 @@ static void ag71xx_ring_rx_clean(struct ag71xx *ag)
 	if (!ring->buf)
 		return;
 
-	for (i = 0; i < AG71XX_RX_RING_SIZE; i++)
+	for (i = 0; i < ring->size; i++)
 		if (ring->buf[i].skb) {
 			dma_unmap_single(&ag->dev->dev, ring->buf[i].dma_addr,
 					 AG71XX_RX_PKT_SIZE, DMA_FROM_DEVICE);
@@ -219,16 +218,16 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 	int ret;
 
 	ret = 0;
-	for (i = 0; i < AG71XX_RX_RING_SIZE; i++) {
+	for (i = 0; i < ring->size; i++) {
 		ring->buf[i].desc->next = (u32) (ring->descs_dma +
-			ring->desc_size * ((i + 1) % AG71XX_RX_RING_SIZE));
+			ring->desc_size * ((i + 1) % ring->size));
 
 		DBG("ag71xx: RX desc at %p, next is %08x\n",
 			ring->buf[i].desc,
 			ring->buf[i].desc->next);
 	}
 
-	for (i = 0; i < AG71XX_RX_RING_SIZE; i++) {
+	for (i = 0; i < ring->size; i++) {
 		struct sk_buff *skb;
 		dma_addr_t dma_addr;
 
@@ -269,7 +268,7 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 	for (; ring->curr - ring->dirty > 0; ring->dirty++) {
 		unsigned int i;
 
-		i = ring->dirty % AG71XX_RX_RING_SIZE;
+		i = ring->dirty % ring->size;
 
 		if (ring->buf[i].skb == NULL) {
 			dma_addr_t dma_addr;
@@ -307,13 +306,13 @@ static int ag71xx_rings_init(struct ag71xx *ag)
 {
 	int ret;
 
-	ret = ag71xx_ring_alloc(&ag->tx_ring, AG71XX_TX_RING_SIZE);
+	ret = ag71xx_ring_alloc(&ag->tx_ring);
 	if (ret)
 		return ret;
 
 	ag71xx_ring_tx_init(ag);
 
-	ret = ag71xx_ring_alloc(&ag->rx_ring, AG71XX_RX_RING_SIZE);
+	ret = ag71xx_ring_alloc(&ag->rx_ring);
 	if (ret)
 		return ret;
 
@@ -631,7 +630,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	dma_addr_t dma_addr;
 	int i;
 
-	i = ring->curr % AG71XX_TX_RING_SIZE;
+	i = ring->curr % ring->size;
 	desc = ring->buf[i].desc;
 
 	if (!ag71xx_desc_empty(desc))
@@ -659,7 +658,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	wmb();
 
 	ring->curr++;
-	if (ring->curr == (ring->dirty + AG71XX_TX_THRES_STOP)) {
+	if (ring->curr == (ring->dirty + ring->size)) {
 		DBG("%s: tx queue full\n", ag->dev->name);
 		netif_stop_queue(dev);
 	}
@@ -760,7 +759,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 
 	sent = 0;
 	while (ring->dirty != ring->curr) {
-		unsigned int i = ring->dirty % AG71XX_TX_RING_SIZE;
+		unsigned int i = ring->dirty % ring->size;
 		struct ag71xx_desc *desc = ring->buf[i].desc;
 		struct sk_buff *skb = ring->buf[i].skb;
 
@@ -781,7 +780,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 
 	DBG("%s: %d packets sent out\n", ag->dev->name, sent);
 
-	if ((ring->curr - ring->dirty) < AG71XX_TX_THRES_WAKEUP)
+	if ((ring->curr - ring->dirty) < (ring->size * 3) / 4)
 		netif_wake_queue(ag->dev);
 
 	return sent;
@@ -797,7 +796,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 			dev->name, limit, ring->curr, ring->dirty);
 
 	while (done < limit) {
-		unsigned int i = ring->curr % AG71XX_RX_RING_SIZE;
+		unsigned int i = ring->curr % ring->size;
 		struct ag71xx_desc *desc = ring->buf[i].desc;
 		struct sk_buff *skb;
 		int pktlen;
@@ -806,7 +805,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		if (ag71xx_desc_empty(desc))
 			break;
 
-		if ((ring->dirty + AG71XX_RX_RING_SIZE) == ring->curr) {
+		if ((ring->dirty + ring->size) == ring->curr) {
 			ag71xx_assert(0);
 			break;
 		}
@@ -876,7 +875,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 	ag71xx_debugfs_update_napi_stats(ag, rx_done, tx_done);
 
 	rx_ring = &ag->rx_ring;
-	if (rx_ring->buf[rx_ring->dirty % AG71XX_RX_RING_SIZE].skb == NULL)
+	if (rx_ring->buf[rx_ring->dirty % rx_ring->size].skb == NULL)
 		goto oom;
 
 	status = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
@@ -1073,6 +1072,9 @@ static int __devinit ag71xx_probe(struct platform_device *pdev)
 	init_timer(&ag->oom_timer);
 	ag->oom_timer.data = (unsigned long) dev;
 	ag->oom_timer.function = ag71xx_oom_timer_handler;
+
+	ag->tx_ring.size = AG71XX_TX_RING_SIZE_DEFAULT;
+	ag->rx_ring.size = AG71XX_RX_RING_SIZE_DEFAULT;
 
 	memcpy(dev->dev_addr, pdata->mac_addr, ETH_ALEN);
 
