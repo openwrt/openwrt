@@ -48,7 +48,7 @@
  	    (ah->chip_fullsleep != true) &&
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -688,6 +688,7 @@ struct ath_hw {
+@@ -687,6 +687,7 @@ struct ath_hw {
  	enum nl80211_iftype opmode;
  	enum ath9k_power_mode power_mode;
  
@@ -58,7 +58,7 @@
  	struct ar5416Stats stats;
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -165,7 +165,7 @@ static void ath_update_survey_nf(struct 
+@@ -163,7 +163,7 @@ static void ath_update_survey_nf(struct 
  
  	if (chan->noisefloor) {
  		survey->filled |= SURVEY_INFO_NOISE_DBM;
