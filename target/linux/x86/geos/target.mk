@@ -4,11 +4,13 @@ GEOS_GPIO = $(if $(findstring 2.6.32,$(LINUX_VERSION)),gpio-cs5535,gpio-cs5535-n
 DEFAULT_PACKAGES += \
             kmod-crypto-hw-geode kmod-crypto-ocf \
             kmod-$(GEOS_GPIO) \
-            kmod-wdt-geode kmod-hwmon-core kmod-hwmon-lm90 \
+            kmod-wdt-geode kmod-cs5535-clockevt kmod-cs5535-mfgpt \
+            kmod-cs5536 \
+            kmod-hwmon-core kmod-hwmon-lm90 \
             kmod-8139cp kmod-solos-pci \
             kmod-i2c-core kmod-i2c-gpio \
             kmod-i2c-algo-bit kmod-i2c-algo-pca kmod-i2c-algo-pcf \
-            kmod-usb-core kmod-usb2 kmod-usb-uhci \
+            kmod-usb-core kmod-usb2 kmod-usb-ohci \
             kmod-cfg80211 kmod-mac80211 \
             kmod-mppe kmod-pppoe kmod-pppoa kmod-pppol2tp \
             kmod-ath kmod-ath5k kmod-ath9k \
