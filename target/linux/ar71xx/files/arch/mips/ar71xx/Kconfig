@@ -31,6 +31,16 @@ config AR71XX_MACH_AP96
 	select AR71XX_DEV_USB
 	default n
 
+config AR71XX_MACH_AP121
+	bool "Atheros AP121 board support"
+	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
+	select AR71XX_DEV_AR9XXX_WMAC
+	select SOC_AR933X
+	default n
+
 config AR71XX_MACH_DB120
 	bool "Atheros DB120 board support"
 	select SOC_AR934X
