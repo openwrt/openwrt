@@ -1,7 +1,7 @@
 /*
- *  Atheros AR71xx SoC GPIO API support
+ *  Atheros AR7XXX/AR9XXX SoC GPIO API support
  *
- *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
@@ -170,6 +170,11 @@ void __init ar71xx_gpio_init(void)
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
 		ar71xx_gpio_chip.ngpio = AR91XX_GPIO_COUNT;
+		break;
+
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		ar71xx_gpio_chip.ngpio = AR933X_GPIO_COUNT;
 		break;
 
 	case AR71XX_SOC_AR9341:

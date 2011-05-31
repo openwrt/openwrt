@@ -455,6 +455,8 @@ static inline u32 ar71xx_usb_ctrl_rr(unsigned reg)
 
 #define AR91XX_GPIO_COUNT	22
 
+#define AR933X_GPIO_COUNT	30
+
 #define AR934X_GPIO_FUNC_SPI_CS_1_EN	BIT(14)
 #define AR934X_GPIO_FUNC_SPI_CS_0_EN	BIT(13)
 
