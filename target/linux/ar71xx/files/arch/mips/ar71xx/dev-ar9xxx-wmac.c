@@ -63,6 +63,11 @@ static void ar913x_wmac_init(void)
 	ar9xxx_wmac_resources[0].end = AR91XX_WMAC_BASE + AR91XX_WMAC_SIZE - 1;
 }
 
+static int ar933x_r1_get_wmac_revision(void)
+{
+	return ar71xx_soc_rev;
+}
+
 static void ar933x_wmac_init(void)
 {
 	ar9xxx_wmac_device.name = "ar933x_wmac";
@@ -70,6 +75,9 @@ static void ar933x_wmac_init(void)
 	ar9xxx_wmac_resources[0].end = AR933X_WMAC_BASE + AR933X_WMAC_SIZE - 1;
 	if (ar71xx_ref_freq == MHZ_25)
 		ar9xxx_wmac_data.is_clk_25mhz = true;
+
+	if (ar71xx_soc_rev == 1)
+		ar9xxx_wmac_data.get_mac_revision = ar933x_r1_get_wmac_revision;
 }
 
 static void ar934x_wmac_init(void)
