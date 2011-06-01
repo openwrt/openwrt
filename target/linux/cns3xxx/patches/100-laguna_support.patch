@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/mach-cns3xxx/laguna.c
-@@ -0,0 +1,670 @@
+@@ -0,0 +1,671 @@
 +/*
 + * Gateworks Corporation Laguna Platform
 + *
@@ -653,7 +653,8 @@
 +			platform_device_register(&laguna_gpio_leds_device);
 +		} else if (strncmp(laguna_info.model, "GW2380", 6) == 0) {
 +			laguna_gpio_leds[0].gpio = 107;
-+			laguna_gpio_leds_data.num_leds = 1;
++			laguna_gpio_leds[1].gpio = 106;
++			laguna_gpio_leds_data.num_leds = 2;
 +			platform_device_register(&laguna_gpio_leds_device);
 +		}
 +	} else {
