@@ -135,6 +135,15 @@ config AR71XX_MACH_AW_NR580
 	select AR71XX_DEV_LEDS_GPIO
 	default n
 
+config AR71XX_MACH_WZR_HP_AG300H
+	bool "Buffalo WZR-HP-AG300H board support"
+	select SOC_AR71XX
+	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
+	default y
+
 config AR71XX_MACH_WZR_HP_G300NH
 	bool "Buffalo WZR-HP-G300NH board support"
 	select SOC_AR913X
