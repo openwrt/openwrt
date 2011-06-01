@@ -1,0 +1,15 @@
+diff --git a/drivers/net/wireless/ath/ath9k/ahb.c b/drivers/net/wireless/ath/ath9k/ahb.c
+index 5b49cd0..0b36fcf 100644
+--- a/drivers/net/wireless/ath/ath9k/ahb.c
++++ b/drivers/net/wireless/ath/ath9k/ahb.c
+@@ -27,6 +27,10 @@ static const struct platform_device_id ath9k_platform_id_table[] = {
+ 		.driver_data = AR5416_AR9100_DEVID,
+ 	},
+ 	{
++		.name = "ar933x_wmac",
++		.driver_data = AR9300_DEVID_AR9330,
++	},
++	{
+ 		.name = "ar934x_wmac",
+ 		.driver_data = AR9300_DEVID_AR9340,
+ 	},
