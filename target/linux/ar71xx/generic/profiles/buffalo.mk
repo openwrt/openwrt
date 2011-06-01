@@ -15,3 +15,14 @@ define Profile/WZRHPG30XNH/Description
 endef
 
 $(eval $(call Profile,WZRHPG30XNH))
+
+define Profile/WZRHPAG300H
+	NAME:=Buffalo WZR-HP-AG300H
+	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-ohci kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+endef
+
+define Profile/WZRHPG30XNH/Description
+	Package set optimized for the Buffalo WZR-HP-AG300H
+endef
+
+$(eval $(call Profile,WZRHPAG300H))
