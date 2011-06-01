@@ -68,6 +68,31 @@ static int ar933x_r1_get_wmac_revision(void)
 	return ar71xx_soc_rev;
 }
 
+static int ar933x_wmac_reset(void)
+{
+	unsigned retries = 0;
+
+	ar71xx_device_stop(AR933X_RESET_WMAC);
+	ar71xx_device_start(AR933X_RESET_WMAC);
+
+	while (1) {
+		u32 bootstrap;
+
+		bootstrap = ar71xx_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
+		if ((bootstrap & AR933X_BOOTSTRAP_EEPBUSY) == 0)
+			return 0;
+
+		if (retries > 20)
+			break;
+
+		udelay(10000);
+		retries++;
+	}
+
+	pr_err("ar93xx: WMAC reset timed out");
+	return -ETIMEDOUT;
+}
+
 static void ar933x_wmac_init(void)
 {
 	ar9xxx_wmac_device.name = "ar933x_wmac";
@@ -78,6 +103,10 @@ static void ar933x_wmac_init(void)
 
 	if (ar71xx_soc_rev == 1)
 		ar9xxx_wmac_data.get_mac_revision = ar933x_r1_get_wmac_revision;
+
+	ar9xxx_wmac_data.external_reset = ar933x_wmac_reset;
+
+	ar933x_wmac_reset();
 }
 
 static void ar934x_wmac_init(void)
