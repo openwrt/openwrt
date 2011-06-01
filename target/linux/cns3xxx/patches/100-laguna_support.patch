@@ -874,8 +874,8 @@
 +
  		iotable_init(cns3xxx_pcie[i].cfg_bases,
  			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));
- 		cns3xxx_pwr_clk_en(0x1 << PM_CLK_GATE_REG_OFFSET_PCIE(i));
-@@ -386,4 +389,3 @@ static int __init cns3xxx_pcie_init(void
+ 		cns3xxx_pcie_check_link(&cns3xxx_pcie[i]);
+@@ -384,4 +387,3 @@ static int __init cns3xxx_pcie_init(void
  
  	return 0;
  }
