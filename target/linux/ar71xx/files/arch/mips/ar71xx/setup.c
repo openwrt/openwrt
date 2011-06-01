@@ -44,6 +44,9 @@ EXPORT_SYMBOL_GPL(ar71xx_ref_freq);
 enum ar71xx_soc_type ar71xx_soc;
 EXPORT_SYMBOL_GPL(ar71xx_soc);
 
+u32 ar71xx_soc_rev;
+EXPORT_SYMBOL_GPL(ar71xx_soc_rev);
+
 static char ar71xx_sys_type[AR71XX_SYS_TYPE_LEN];
 
 static void ar71xx_restart(char *command)
@@ -170,6 +173,8 @@ static void __init ar71xx_detect_sys_type(void)
 	default:
 		panic("ar71xx: unknown chip id:0x%08x\n", id);
 	}
+
+	ar71xx_soc_rev = rev;
 
 	sprintf(ar71xx_sys_type, "Atheros AR%s rev %u", chip, rev);
 	pr_info("SoC: %s\n", ar71xx_sys_type);
