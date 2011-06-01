@@ -343,71 +343,6 @@ static unsigned char *ag71xx_speed_str(struct ag71xx *ag)
 	return "?";
 }
 
-static void ag71xx_dma_reset(struct ag71xx *ag)
-{
-	u32 val;
-	int i;
-
-	ag71xx_dump_dma_regs(ag);
-
-	/* stop RX and TX */
-	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
-	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, 0);
-
-	/*
-	 * give the hardware some time to really stop all rx/tx activity
-	 * clearing the descriptors too early causes random memory corruption
-	 */
-	mdelay(1);
-
-	/* clear descriptor addresses */
-	ag71xx_wr(ag, AG71XX_REG_TX_DESC, 0);
-	ag71xx_wr(ag, AG71XX_REG_RX_DESC, 0);
-
-	/* clear pending RX/TX interrupts */
-	for (i = 0; i < 256; i++) {
-		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
-		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
-	}
-
-	/* clear pending errors */
-	ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_BE | RX_STATUS_OF);
-	ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_BE | TX_STATUS_UR);
-
-	val = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
-	if (val)
-		printk(KERN_ALERT "%s: unable to clear DMA Rx status: %08x\n",
-			ag->dev->name, val);
-
-	val = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
-
-	/* mask out reserved bits */
-	val &= ~0xff000000;
-
-	if (val)
-		printk(KERN_ALERT "%s: unable to clear DMA Tx status: %08x\n",
-			ag->dev->name, val);
-
-	ag71xx_dump_dma_regs(ag);
-}
-
-static void ag71xx_hw_start(struct ag71xx *ag)
-{
-	/* start RX engine */
-	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
-
-	/* enable interrupts */
-	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, AG71XX_INT_INIT);
-}
-
-static void ag71xx_hw_stop(struct ag71xx *ag)
-{
-	/* disable all interrupts */
-	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, 0);
-
-	ag71xx_dma_reset(ag);
-}
-
 void ag71xx_link_adjust(struct ag71xx *ag)
 {
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
@@ -417,7 +352,6 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 	u32 mii_speed;
 
 	if (!ag->link) {
-		ag71xx_hw_stop(ag);
 		netif_carrier_off(ag->dev);
 		if (netif_msg_link(ag))
 			printk(KERN_INFO "%s: link down\n", ag->dev->name);
@@ -470,8 +404,6 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
 	ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
 
-	ag71xx_hw_start(ag);
-
 	netif_carrier_on(ag->dev);
 	if (netif_msg_link(ag))
 		printk(KERN_INFO "%s: link up (%sMbps/%s duplex)\n",
@@ -509,6 +441,54 @@ static void ag71xx_hw_set_macaddr(struct ag71xx *ag, unsigned char *mac)
 
 	t = (((u32) mac[1]) << 24) | (((u32) mac[0]) << 16);
 	ag71xx_wr(ag, AG71XX_REG_MAC_ADDR2, t);
+}
+
+static void ag71xx_dma_reset(struct ag71xx *ag)
+{
+	u32 val;
+	int i;
+
+	ag71xx_dump_dma_regs(ag);
+
+	/* stop RX and TX */
+	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
+	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, 0);
+
+	/*
+	 * give the hardware some time to really stop all rx/tx activity
+	 * clearing the descriptors too early causes random memory corruption
+	 */
+	mdelay(1);
+
+	/* clear descriptor addresses */
+	ag71xx_wr(ag, AG71XX_REG_TX_DESC, 0);
+	ag71xx_wr(ag, AG71XX_REG_RX_DESC, 0);
+
+	/* clear pending RX/TX interrupts */
+	for (i = 0; i < 256; i++) {
+		ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_PR);
+		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
+	}
+
+	/* clear pending errors */
+	ag71xx_wr(ag, AG71XX_REG_RX_STATUS, RX_STATUS_BE | RX_STATUS_OF);
+	ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_BE | TX_STATUS_UR);
+
+	val = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
+	if (val)
+		printk(KERN_ALERT "%s: unable to clear DMA Rx status: %08x\n",
+			ag->dev->name, val);
+
+	val = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
+
+	/* mask out reserved bits */
+	val &= ~0xff000000;
+
+	if (val)
+		printk(KERN_ALERT "%s: unable to clear DMA Tx status: %08x\n",
+			ag->dev->name, val);
+
+	ag71xx_dump_dma_regs(ag);
 }
 
 #define MAC_CFG1_INIT	(MAC_CFG1_RXE | MAC_CFG1_TXE | \
@@ -569,6 +549,23 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ag71xx_dma_reset(ag);
 }
 
+static void ag71xx_hw_start(struct ag71xx *ag)
+{
+	/* start RX engine */
+	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
+
+	/* enable interrupts */
+	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, AG71XX_INT_INIT);
+}
+
+static void ag71xx_hw_stop(struct ag71xx *ag)
+{
+	/* disable all interrupts */
+	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, 0);
+
+	ag71xx_dma_reset(ag);
+}
+
 static int ag71xx_open(struct net_device *dev)
 {
 	struct ag71xx *ag = netdev_priv(dev);
@@ -587,6 +584,8 @@ static int ag71xx_open(struct net_device *dev)
 	ag71xx_wr(ag, AG71XX_REG_RX_DESC, ag->rx_ring.descs_dma);
 
 	ag71xx_hw_set_macaddr(ag, dev->dev_addr);
+
+	ag71xx_hw_start(ag);
 
 	netif_start_queue(dev);
 
