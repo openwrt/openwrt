@@ -1,11 +1,15 @@
 --- a/soloscli/soloscli.c
 +++ b/soloscli/soloscli.c
-@@ -238,7 +238,7 @@
+@@ -238,7 +238,11 @@
  	}
  	if (strcmp(buf,pid) == 0) {
  /*		printf("Sequence matches.\n"); */
 -		printf("%s",bufp);
-+		printf("%s\n",bufp);
++		if(buf[(len-1)] == '\n'){
++			printf("%s",bufp);
++		} else {
++			printf("%s\n",bufp);
++		}
  	} else {
  		printf("Sequence incorrect.\n");
  		buf[i] = '\n';
