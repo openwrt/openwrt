@@ -104,7 +104,7 @@ ifeq ($(HOST_ARCH),x86_64)
 endif
 
 $(eval $(call Require,working-gcc-m32, \
-	Please install 32 bits development files. (gcc-multilib on Debian/Ubuntu, gcc.i686 and libgcc.i686 on CentOS/Fedora/RHEL) \
+	Please install 32 bit development files. (gcc-multilib on Debian/Ubuntu, gcc.i686, libgcc.i686, and glibc-devel.i686 on CentOS/Fedora/RHEL) \
 ))
 
 $(eval $(call HostBuild))
