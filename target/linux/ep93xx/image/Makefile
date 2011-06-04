@@ -28,7 +28,7 @@ define Image/Build/squashfs
 endef
 
 define Image/Build
-	cp $(KDIR)/uImage $(BIN_DIR)/uImage-$(board)
+	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
 	$(call Image/Build/$(1),$(1))
 endef
 
