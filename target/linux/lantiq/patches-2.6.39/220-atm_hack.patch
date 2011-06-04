@@ -1,6 +1,6 @@
 --- a/arch/mips/mm/cache.c
 +++ b/arch/mips/mm/cache.c
-@@ -52,6 +52,8 @@
+@@ -52,6 +52,8 @@ void (*_dma_cache_wback)(unsigned long s
  void (*_dma_cache_inv)(unsigned long start, unsigned long size);
  
  EXPORT_SYMBOL(_dma_cache_wback_inv);
@@ -11,7 +11,7 @@
  
 --- a/net/atm/proc.c
 +++ b/net/atm/proc.c
-@@ -154,7 +154,7 @@
+@@ -154,7 +154,7 @@ static void *vcc_seq_next(struct seq_fil
  static void pvc_info(struct seq_file *seq, struct atm_vcc *vcc)
  {
  	static const char *const class_name[] = {
@@ -22,7 +22,7 @@
  		"???",	"5",	"???",	"???",	/*  4- 7 */
 --- a/net/atm/common.c
 +++ b/net/atm/common.c
-@@ -62,11 +62,17 @@
+@@ -62,11 +62,17 @@ static void vcc_remove_socket(struct soc
  	write_unlock_irq(&vcc_sklist_lock);
  }
  

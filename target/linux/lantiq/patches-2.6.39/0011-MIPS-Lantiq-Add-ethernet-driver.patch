@@ -36,7 +36,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  
  /* struct used to pass info to the pci core */
  enum {
-@@ -43,4 +44,10 @@
+@@ -43,4 +44,10 @@ struct ltq_pci_data {
  	int irq[16];
  };
  
@@ -62,7 +62,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  #define LTQ_DMA_BASE_ADDR	0x1E104100
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -96,3 +96,26 @@
+@@ -96,3 +96,26 @@ void __init ltq_register_ase_asc(void)
  	platform_device_register_simple("ltq_asc", 0,
  		ltq_ase_asc_resources, ARRAY_SIZE(ltq_ase_asc_resources));
  }
@@ -100,7 +100,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  #endif
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -2017,6 +2017,13 @@
+@@ -2017,6 +2017,13 @@ config FTMAC100
  	  from Faraday. It is used on Faraday A320, Andes AG101 and some
  	  other ARM/NDS32 SoC's.
  
@@ -116,7 +116,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  source "drivers/net/octeon/Kconfig"
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -259,6 +259,7 @@
+@@ -259,6 +259,7 @@ obj-$(CONFIG_MLX4_CORE) += mlx4/
  obj-$(CONFIG_ENC28J60) += enc28j60.o
  obj-$(CONFIG_ETHOC) += ethoc.o
  obj-$(CONFIG_GRETH) += greth.o

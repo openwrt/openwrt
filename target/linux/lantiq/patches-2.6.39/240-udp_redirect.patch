@@ -249,7 +249,7 @@
 +#endif /* CONFIG_IFX_UDP_REDIRECT* */
 --- a/net/ipv4/Makefile
 +++ b/net/ipv4/Makefile
-@@ -14,6 +14,9 @@
+@@ -14,6 +14,9 @@ obj-y     := route.o inetpeer.o protocol
  	     inet_fragment.o
  
  obj-$(CONFIG_SYSCTL) += sysctl_net_ipv4.o
@@ -272,7 +272,7 @@
  struct udp_table udp_table __read_mostly;
  EXPORT_SYMBOL(udp_table);
  
-@@ -802,7 +806,7 @@
+@@ -802,7 +806,7 @@ int udp_sendmsg(struct kiocb *iocb, stru
  	u8  tos;
  	int err, is_udplite = IS_UDPLITE(sk);
  	int corkreq = up->corkflag || msg->msg_flags&MSG_MORE;
@@ -281,7 +281,7 @@
  	struct sk_buff *skb;
  
  	if (len > 0xFFFF)
-@@ -818,7 +822,13 @@
+@@ -818,7 +822,13 @@ int udp_sendmsg(struct kiocb *iocb, stru
  	ipc.opt = NULL;
  	ipc.tx_flags = 0;
  
@@ -296,7 +296,7 @@
  
  	if (up->pending) {
  		/*
-@@ -1608,6 +1618,7 @@
+@@ -1608,6 +1618,7 @@ int __udp4_lib_rcv(struct sk_buff *skb,
  	struct rtable *rt = skb_rtable(skb);
  	__be32 saddr, daddr;
  	struct net *net = dev_net(skb->dev);
@@ -304,7 +304,7 @@
  
  	/*
  	 *  Validate the packet.
-@@ -1640,7 +1651,16 @@
+@@ -1640,7 +1651,16 @@ int __udp4_lib_rcv(struct sk_buff *skb,
  	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
  
  	if (sk != NULL) {
@@ -322,7 +322,7 @@
  		sock_put(sk);
  
  		/* a return value > 0 means to resubmit the input, but
-@@ -1937,7 +1957,7 @@
+@@ -1937,7 +1957,7 @@ struct proto udp_prot = {
  	.clear_sk	   = sk_prot_clear_portaddr_nulls,
  };
  EXPORT_SYMBOL(udp_prot);
@@ -333,7 +333,7 @@
  
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -72,6 +72,12 @@
+@@ -72,6 +72,12 @@ config INET
  
  	  Short answer: say Y.
  

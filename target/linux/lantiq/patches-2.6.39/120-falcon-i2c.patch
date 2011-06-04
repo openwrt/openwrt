@@ -1,16 +1,15 @@
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -74,6 +74,7 @@
+@@ -82,5 +82,6 @@ obj-$(CONFIG_I2C_SIBYTE)	+= i2c-sibyte.o
  obj-$(CONFIG_I2C_STUB)		+= i2c-stub.o
  obj-$(CONFIG_SCx200_ACB)	+= scx200_acb.o
  obj-$(CONFIG_SCx200_I2C)	+= scx200_i2c.o
 +obj-$(CONFIG_I2C_FALCON)	+= i2c-falcon.o
  
- ifeq ($(CONFIG_I2C_DEBUG_BUS),y)
- EXTRA_CFLAGS += -DDEBUG
+ ccflags-$(CONFIG_I2C_DEBUG_BUS) := -DDEBUG
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -278,6 +278,10 @@
+@@ -282,6 +282,10 @@ config I2C_POWERMAC
  
  comment "I2C system bus drivers (mostly embedded / system-on-chip)"
  

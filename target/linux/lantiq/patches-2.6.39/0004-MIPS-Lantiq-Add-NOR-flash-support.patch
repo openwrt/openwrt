@@ -24,7 +24,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
-@@ -260,6 +260,13 @@
+@@ -260,6 +260,13 @@ config MTD_BCM963XX
  	  Support for parsing CFE image tag and creating MTD partitions on
  	  Broadcom BCM63xx boards.
  
@@ -40,7 +40,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  	depends on X86 && MTD_PARTITIONS && MTD_CFI_INTELEXT && BROKEN
 --- a/drivers/mtd/maps/Makefile
 +++ b/drivers/mtd/maps/Makefile
-@@ -60,3 +60,4 @@
+@@ -60,3 +60,4 @@ obj-$(CONFIG_MTD_VMU)		+= vmu-flash.o
  obj-$(CONFIG_MTD_GPIO_ADDR)	+= gpio-addr-flash.o
  obj-$(CONFIG_MTD_BCM963XX)	+= bcm963xx-flash.o
  obj-$(CONFIG_MTD_LATCH_ADDR)	+= latch-addr-flash.o

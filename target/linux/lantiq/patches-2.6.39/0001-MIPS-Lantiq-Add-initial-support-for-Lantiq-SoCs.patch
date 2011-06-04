@@ -48,7 +48,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -212,6 +212,23 @@
+@@ -212,6 +212,23 @@ config MACH_JZ4740
  	select HAVE_PWM
  	select HAVE_CLK
  
@@ -884,7 +884,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 +}
 --- a/arch/mips/Kbuild.platforms
 +++ b/arch/mips/Kbuild.platforms
-@@ -11,6 +11,7 @@
+@@ -11,6 +11,7 @@ platforms += dec
  platforms += emma
  platforms += jazz
  platforms += jz4740

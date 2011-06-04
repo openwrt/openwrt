@@ -100,7 +100,7 @@
 +			easy98020_init);
 --- a/arch/mips/lantiq/falcon/Kconfig
 +++ b/arch/mips/lantiq/falcon/Kconfig
-@@ -6,6 +6,10 @@
+@@ -6,6 +6,10 @@ config LANTIQ_MACH_EASY98000
  	bool "Easy98000"
  	default y
  
@@ -113,7 +113,7 @@
  endif
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
-@@ -2,3 +2,4 @@
+@@ -2,3 +2,4 @@ obj-y := clk-falcon.o devices.o gpio.o p
  obj-y += softdog_vpe.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += dev-leds-easy98000-cpld.o

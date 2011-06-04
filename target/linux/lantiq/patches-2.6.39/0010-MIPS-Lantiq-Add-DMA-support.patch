@@ -21,8 +21,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  create mode 100644 arch/mips/include/asm/mach-lantiq/xway/xway_dma.h
  create mode 100644 arch/mips/lantiq/xway/dma.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 343e82c..4827afb 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -86,7 +86,8 @@
@@ -35,9 +33,6 @@ index 343e82c..4827afb 100644
  
  /* PCI */
  #define PCI_CR_BASE_ADDR	0x1E105400
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/xway_dma.h b/arch/mips/include/asm/mach-lantiq/xway/xway_dma.h
-new file mode 100644
-index 0000000..872943a
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/xway/xway_dma.h
 @@ -0,0 +1,60 @@
@@ -101,8 +96,6 @@ index 0000000..872943a
 +extern void ltq_dma_init_port(int p);
 +
 +#endif
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index 6b5e07e..c517f2e 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,4 +1,4 @@
@@ -111,8 +104,6 @@ index 6b5e07e..c517f2e 100644
  
  obj-$(CONFIG_SOC_XWAY) += clk-xway.o prom-xway.o setup-xway.o
  obj-$(CONFIG_SOC_AMAZON_SE) += clk-ase.o prom-ase.o setup-ase.o
-diff --git a/arch/mips/lantiq/xway/devices.h b/arch/mips/lantiq/xway/devices.h
-index 51f56b5..d573084 100644
 --- a/arch/mips/lantiq/xway/devices.h
 +++ b/arch/mips/lantiq/xway/devices.h
 @@ -10,6 +10,7 @@
@@ -123,9 +114,6 @@ index 51f56b5..d573084 100644
  
  extern void ltq_register_gpio(void);
  extern void ltq_register_gpio_stp(void);
-diff --git a/arch/mips/lantiq/xway/dma.c b/arch/mips/lantiq/xway/dma.c
-new file mode 100644
-index 0000000..4278a45
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/dma.c
 @@ -0,0 +1,253 @@
@@ -382,6 +370,3 @@ index 0000000..4278a45
 +}
 +
 +postcore_initcall(ltq_dma_init);
--- 
-1.7.2.3
-
