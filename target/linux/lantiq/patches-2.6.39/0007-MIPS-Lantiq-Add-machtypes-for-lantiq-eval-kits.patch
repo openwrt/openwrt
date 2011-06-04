@@ -24,8 +24,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  create mode 100644 arch/mips/lantiq/xway/mach-easy50601.c
  create mode 100644 arch/mips/lantiq/xway/mach-easy50712.c
 
-diff --git a/arch/mips/lantiq/Kconfig b/arch/mips/lantiq/Kconfig
-index 2780461..3fccf21 100644
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
 @@ -18,4 +18,6 @@ config SOC_XWAY
@@ -35,8 +33,6 @@ index 2780461..3fccf21 100644
 +source "arch/mips/lantiq/xway/Kconfig"
 +
  endif
-diff --git a/arch/mips/lantiq/machtypes.h b/arch/mips/lantiq/machtypes.h
-index ffcacfc..7e01b8c 100644
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
 @@ -13,6 +13,8 @@
@@ -48,9 +44,6 @@ index ffcacfc..7e01b8c 100644
  };
  
  #endif
-diff --git a/arch/mips/lantiq/xway/Kconfig b/arch/mips/lantiq/xway/Kconfig
-new file mode 100644
-index 0000000..2b857de
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/Kconfig
 @@ -0,0 +1,23 @@
@@ -77,20 +70,15 @@ index 0000000..2b857de
 +endmenu
 +
 +endif
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index 8c06a97..b1d3640 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -2,3 +2,6 @@ obj-y := pmu.o ebu.o reset.o gpio.o devices.o
+@@ -2,3 +2,6 @@ obj-y := pmu.o ebu.o reset.o gpio.o devi
  
  obj-$(CONFIG_SOC_XWAY) += clk-xway.o prom-xway.o setup-xway.o
  obj-$(CONFIG_SOC_AMAZON_SE) += clk-ase.o prom-ase.o setup-ase.o
 +
 +obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
 +obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
-diff --git a/arch/mips/lantiq/xway/mach-easy50601.c b/arch/mips/lantiq/xway/mach-easy50601.c
-new file mode 100644
-index 0000000..d5aaf63
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-easy50601.c
 @@ -0,0 +1,57 @@
@@ -151,9 +139,6 @@ index 0000000..d5aaf63
 +			"EASY50601",
 +			"EASY50601 Eval Board",
 +			easy50601_init);
-diff --git a/arch/mips/lantiq/xway/mach-easy50712.c b/arch/mips/lantiq/xway/mach-easy50712.c
-new file mode 100644
-index 0000000..e5e7e09
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-easy50712.c
 @@ -0,0 +1,68 @@
@@ -225,6 +210,3 @@ index 0000000..e5e7e09
 +	     "EASY50712",
 +	     "EASY50712 Eval Board",
 +	      easy50712_init);
--- 
-1.7.2.3
-

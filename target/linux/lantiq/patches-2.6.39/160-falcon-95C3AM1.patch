@@ -106,7 +106,7 @@
 +			board_95C3AM1_init);
 --- a/arch/mips/lantiq/falcon/Kconfig
 +++ b/arch/mips/lantiq/falcon/Kconfig
-@@ -10,6 +10,10 @@
+@@ -10,6 +10,10 @@ config LANTIQ_MACH_EASY98020
  	bool "Easy98020"
  	default y
  
@@ -119,14 +119,14 @@
  endif
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
-@@ -3,3 +3,4 @@
+@@ -3,3 +3,4 @@ obj-y += softdog_vpe.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += dev-leds-easy98000-cpld.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98020) += mach-easy98020.o
 +obj-$(CONFIG_LANTIQ_MACH_95C3AM1)   += mach-95C3AM1.o
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
-@@ -20,6 +20,7 @@
+@@ -20,6 +20,7 @@ enum lantiq_mach_type {
  	LANTIQ_MACH_EASY98000,		/* Falcon Eval Board, NOR Flash */
  	LANTIQ_MACH_EASY98000SF,	/* Falcon Eval Board, Serial Flash */
  	LANTIQ_MACH_EASY98020,		/* Falcon Reference Board */

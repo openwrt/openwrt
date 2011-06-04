@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/xway/gpio_ebu.c
 +++ b/arch/mips/lantiq/xway/gpio_ebu.c
-@@ -63,7 +63,6 @@
+@@ -63,7 +63,6 @@ static struct gpio_chip ltq_ebu_chip = {
  	.set = ltq_ebu_set,
  	.base = 72,
  	.ngpio = 16,
@@ -10,7 +10,7 @@
  
 --- a/arch/mips/lantiq/xway/gpio_stp.c
 +++ b/arch/mips/lantiq/xway/gpio_stp.c
-@@ -72,7 +72,6 @@
+@@ -72,7 +72,6 @@ static struct gpio_chip ltq_stp_chip = {
  	.set = ltq_stp_set,
  	.base = 48,
  	.ngpio = 24,

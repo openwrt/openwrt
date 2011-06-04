@@ -10,7 +10,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -133,6 +133,14 @@
+@@ -193,6 +193,14 @@ config SPI_IMX
  	  This enables using the Freescale i.MX SPI controllers in master
  	  mode.
  
@@ -27,14 +27,14 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
  	depends on PARPORT && EXPERIMENTAL
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -20,6 +20,7 @@
+@@ -26,6 +26,7 @@ obj-$(CONFIG_SPI_EP93XX)		+= ep93xx_spi.
  obj-$(CONFIG_SPI_GPIO)			+= spi_gpio.o
  obj-$(CONFIG_SPI_GPIO_OLD)		+= spi_gpio_old.o
  obj-$(CONFIG_SPI_IMX)			+= spi_imx.o
 +obj-$(CONFIG_SPI_LANTIQ)		+= spi_lantiq.o
  obj-$(CONFIG_SPI_LM70_LLP)		+= spi_lm70llp.o
  obj-$(CONFIG_SPI_PXA2XX)		+= pxa2xx_spi.o
- obj-$(CONFIG_SPI_OMAP_UWIRE)		+= omap_uwire.o
+ obj-$(CONFIG_SPI_PXA2XX_PCI)		+= pxa2xx_spi_pci.o
 --- /dev/null
 +++ b/drivers/spi/spi_lantiq.c
 @@ -0,0 +1,1063 @@

@@ -780,7 +780,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 +MODULE_LICENSE("GPL");
 --- a/drivers/tty/serial/Kconfig
 +++ b/drivers/tty/serial/Kconfig
-@@ -1391,6 +1391,14 @@
+@@ -1391,6 +1391,14 @@ config SERIAL_OF_PLATFORM_NWPSERIAL_CONS
  	help
  	  Support for Console on the NWP serial ports.
  
@@ -797,7 +797,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  	depends on QUICC_ENGINE
 --- a/drivers/tty/serial/Makefile
 +++ b/drivers/tty/serial/Makefile
-@@ -94,3 +94,4 @@
+@@ -94,3 +94,4 @@ obj-$(CONFIG_SERIAL_IFX6X60)  	+= ifx6x6
  obj-$(CONFIG_SERIAL_PCH_UART)	+= pch_uart.o
  obj-$(CONFIG_SERIAL_MSM_SMD)	+= msm_smd_tty.o
  obj-$(CONFIG_SERIAL_MXS_AUART) += mxs-auart.o

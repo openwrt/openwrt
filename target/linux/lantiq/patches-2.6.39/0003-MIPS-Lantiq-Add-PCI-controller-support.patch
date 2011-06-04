@@ -28,9 +28,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  create mode 100644 arch/mips/pci/pci-lantiq.c
  create mode 100644 arch/mips/pci/pci-lantiq.h
 
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq_platform.h b/arch/mips/include/asm/mach-lantiq/lantiq_platform.h
-new file mode 100644
-index 0000000..1f1dba6
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq_platform.h
 @@ -0,0 +1,46 @@
@@ -80,11 +77,9 @@ index 0000000..1f1dba6
 +};
 +
 +#endif
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index f0d5329..4df8799 100644
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_SB1250)	+= fixup-sb1250.o pci-sb1250.o
+@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_SB1250)	+= fixup-sb1
  obj-$(CONFIG_SIBYTE_BCM112X)	+= fixup-sb1250.o pci-sb1250.o
  obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1480.o pci-bcm1480ht.o
  obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
@@ -92,9 +87,6 @@ index f0d5329..4df8799 100644
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
  obj-$(CONFIG_TANBAC_TB0287)	+= fixup-tb0287.o
-diff --git a/arch/mips/pci/ops-lantiq.c b/arch/mips/pci/ops-lantiq.c
-new file mode 100644
-index 0000000..1f2afb5
 --- /dev/null
 +++ b/arch/mips/pci/ops-lantiq.c
 @@ -0,0 +1,116 @@
@@ -214,9 +206,6 @@ index 0000000..1f2afb5
 +
 +	return PCIBIOS_SUCCESSFUL;
 +}
-diff --git a/arch/mips/pci/pci-lantiq.c b/arch/mips/pci/pci-lantiq.c
-new file mode 100644
-index 0000000..603d749
 --- /dev/null
 +++ b/arch/mips/pci/pci-lantiq.c
 @@ -0,0 +1,297 @@
@@ -517,9 +506,6 @@ index 0000000..603d749
 +}
 +
 +arch_initcall(pcibios_init);
-diff --git a/arch/mips/pci/pci-lantiq.h b/arch/mips/pci/pci-lantiq.h
-new file mode 100644
-index 0000000..66bf6cd
 --- /dev/null
 +++ b/arch/mips/pci/pci-lantiq.h
 @@ -0,0 +1,18 @@
@@ -541,6 +527,3 @@ index 0000000..66bf6cd
 +	unsigned int devfn, int where, int size, u32 val);
 +
 +#endif
--- 
-1.7.2.3
-

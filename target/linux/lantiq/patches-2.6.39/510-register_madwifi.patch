@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -144,6 +144,16 @@
+@@ -144,6 +144,16 @@ ltq_register_gpio_ebu(unsigned int value
  	platform_device_register(&ltq_ebu);
  }
  
@@ -19,7 +19,7 @@
  		.start  = LTQ_SSC_BASE_ADDR,
 --- a/arch/mips/lantiq/xway/devices.h
 +++ b/arch/mips/lantiq/xway/devices.h
-@@ -17,5 +17,6 @@
+@@ -17,5 +17,6 @@ extern void ltq_register_gpio_stp(void);
  extern void ltq_register_ase_asc(void);
  extern void ltq_register_etop(struct ltq_eth_data *eth);
  extern void ltq_register_gpio_ebu(unsigned int value);

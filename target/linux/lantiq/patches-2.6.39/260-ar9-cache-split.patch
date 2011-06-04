@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1653,6 +1653,28 @@
+@@ -1878,6 +1878,28 @@ config IFX_VPE_EXT
  	help
  	  IFX included extensions in APRP
  
@@ -31,7 +31,7 @@
  	depends on MIPS_MT && PROC_FS
 --- a/arch/mips/kernel/vpe.c
 +++ b/arch/mips/kernel/vpe.c
-@@ -129,6 +129,13 @@
+@@ -128,6 +128,13 @@ __setup("vpe1_wdog_timeout=", wdog_timeo
  EXPORT_SYMBOL(vpe1_wdog_timeout);
  
  #endif
@@ -45,7 +45,7 @@
  /* grab the likely amount of memory we will need. */
  #ifdef CONFIG_MIPS_VPE_LOADER_TOM
  #define P_SIZE (2 * 1024 * 1024)
-@@ -867,6 +874,65 @@
+@@ -866,6 +873,65 @@ static int vpe_run(struct vpe * v)
  	/* enable this VPE */
  	write_vpe_c0_vpeconf0(read_vpe_c0_vpeconf0() | VPECONF0_VPA);
  
@@ -113,7 +113,7 @@
  	write_vpe_c0_cause(0);
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -1348,6 +1348,106 @@
+@@ -1345,6 +1345,106 @@ static int __init setcoherentio(char *st
  __setup("coherentio", setcoherentio);
  #endif
  
@@ -220,7 +220,7 @@
  void __cpuinit r4k_cache_init(void)
  {
  	extern void build_clear_page(void);
-@@ -1367,6 +1467,78 @@
+@@ -1364,6 +1464,78 @@ void __cpuinit r4k_cache_init(void)
  		break;
  	}
  

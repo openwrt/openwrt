@@ -20,8 +20,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  create mode 100644 arch/mips/lantiq/xway/gpio_ebu.c
  create mode 100644 arch/mips/lantiq/xway/gpio_stp.c
 
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index b1d3640..6b5e07e 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,4 +1,4 @@
@@ -30,9 +28,6 @@ index b1d3640..6b5e07e 100644
  
  obj-$(CONFIG_SOC_XWAY) += clk-xway.o prom-xway.o setup-xway.o
  obj-$(CONFIG_SOC_AMAZON_SE) += clk-ase.o prom-ase.o setup-ase.o
-diff --git a/arch/mips/lantiq/xway/gpio_ebu.c b/arch/mips/lantiq/xway/gpio_ebu.c
-new file mode 100644
-index 0000000..a479355
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/gpio_ebu.c
 @@ -0,0 +1,126 @@
@@ -162,9 +157,6 @@ index 0000000..a479355
 +}
 +
 +postcore_initcall(ltq_ebu_init);
-diff --git a/arch/mips/lantiq/xway/gpio_stp.c b/arch/mips/lantiq/xway/gpio_stp.c
-new file mode 100644
-index 0000000..67d59d6
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/gpio_stp.c
 @@ -0,0 +1,157 @@
@@ -325,6 +317,3 @@ index 0000000..67d59d6
 +}
 +
 +postcore_initcall(ltq_stp_init);
--- 
-1.7.2.3
-

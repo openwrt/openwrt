@@ -1694,7 +1694,7 @@
 +#endif
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
-@@ -16,8 +16,12 @@
+@@ -16,8 +16,12 @@ config SOC_XWAY
  	bool "XWAY"
  	select SOC_TYPE_XWAY
  	select HW_HAS_PCI
@@ -1709,21 +1709,21 @@
  endif
 --- a/arch/mips/lantiq/Makefile
 +++ b/arch/mips/lantiq/Makefile
-@@ -9,3 +9,4 @@
+@@ -9,3 +9,4 @@ obj-y := irq.o setup.o clk.o prom.o devi
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
  obj-$(CONFIG_SOC_TYPE_XWAY) += xway/
 +obj-$(CONFIG_SOC_FALCON) += falcon/
 --- a/arch/mips/lantiq/Platform
 +++ b/arch/mips/lantiq/Platform
-@@ -6,3 +6,4 @@
+@@ -6,3 +6,4 @@ platform-$(CONFIG_LANTIQ)	+= lantiq/
  cflags-$(CONFIG_LANTIQ)		+= -I$(srctree)/arch/mips/include/asm/mach-lantiq
  load-$(CONFIG_LANTIQ)		= 0xffffffff80002000
  cflags-$(CONFIG_SOC_TYPE_XWAY)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/xway
 +cflags-$(CONFIG_SOC_FALCON)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/falcon
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
-@@ -15,6 +15,11 @@
+@@ -15,6 +15,11 @@ enum lantiq_mach_type {
  	LTQ_MACH_GENERIC = 0,
  	LTQ_MACH_EASY50712,	/* Danube evaluation board */
  	LTQ_MACH_EASY50601,	/* Amazon SE evaluation board */

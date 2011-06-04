@@ -27,7 +27,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -190,6 +190,7 @@
+@@ -228,6 +228,7 @@ config LANTIQ
  	select SWAP_IO_SPACE
  	select BOOT_RAW
  	select HAVE_CLK
@@ -58,7 +58,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 +#endif
 --- a/arch/mips/lantiq/prom.h
 +++ b/arch/mips/lantiq/prom.h
-@@ -20,5 +20,6 @@
+@@ -20,5 +20,6 @@ struct ltq_soc_info {
  };
  
  extern void ltq_soc_detect(struct ltq_soc_info *i);
@@ -80,7 +80,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  void __init plat_mem_setup(void)
  {
  	/* assume 16M as default incase uboot fails to pass proper ramsize */
-@@ -32,10 +38,32 @@
+@@ -32,10 +38,32 @@ void __init plat_mem_setup(void)
  		if (!strncmp(e, "memsize=", 8)) {
  			e += 8;
  			if (strict_strtoul(e, 0, &memsize))

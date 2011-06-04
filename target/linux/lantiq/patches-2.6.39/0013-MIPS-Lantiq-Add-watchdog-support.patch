@@ -21,7 +21,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -990,6 +990,12 @@
+@@ -990,6 +990,12 @@ config BCM63XX_WDT
  	  To compile this driver as a loadable module, choose M here.
  	  The module will be called bcm63xx_wdt.
  
@@ -36,7 +36,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  # POWERPC Architecture
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -123,6 +123,7 @@
+@@ -123,6 +123,7 @@ obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
  obj-$(CONFIG_OCTEON_WDT) += octeon-wdt.o
  octeon-wdt-y := octeon-wdt-main.o octeon-wdt-nmi.o

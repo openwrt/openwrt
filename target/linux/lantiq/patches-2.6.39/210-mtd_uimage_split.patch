@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -63,6 +63,10 @@
+@@ -57,6 +57,10 @@ config MTD_ROOTFS_SPLIT
  	depends on MTD_PARTITIONS
  	default y
  
@@ -10,10 +10,10 @@
 +
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
- 	depends on MTD_PARTITIONS
+ 	---help---
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -724,6 +724,82 @@
+@@ -860,6 +860,82 @@ static int refresh_rootfs_split(struct m
  }
  #endif /* CONFIG_MTD_ROOTFS_SPLIT */
  
@@ -96,9 +96,9 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -748,6 +824,17 @@
- 		if (!slave)
- 			return -ENOMEM;
+@@ -893,6 +969,17 @@ int add_mtd_partitions(struct mtd_info *
+ 
+ 		add_mtd_device(&slave->mtd);
  
 +#ifdef CONFIG_MTD_UIMAGE_SPLIT
 +		if (!strcmp(parts[i].name, "linux")) {
