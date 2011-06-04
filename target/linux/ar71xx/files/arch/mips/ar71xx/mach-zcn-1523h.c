@@ -191,6 +191,7 @@ static void __init zcn_1523h_generic_setup(void)
 static void __init zcn_1523h_2_setup(void)
 {
 	zcn_1523h_generic_setup();
+	ap91_pci_setup_wmac_gpio(BIT(9), 0);
 
 	ar71xx_add_device_leds_gpio(1, ARRAY_SIZE(zcn_1523h_2_leds_gpio),
 					zcn_1523h_2_leds_gpio);
@@ -202,6 +203,7 @@ MIPS_MACHINE(AR71XX_MACH_ZCN_1523H_2, "ZCN-1523H-2", "Zcomax ZCN-1523H-2",
 static void __init zcn_1523h_5_setup(void)
 {
 	zcn_1523h_generic_setup();
+	ap91_pci_setup_wmac_gpio(BIT(8), 0);
 
 	ar71xx_add_device_leds_gpio(1, ARRAY_SIZE(zcn_1523h_5_leds_gpio),
 					zcn_1523h_5_leds_gpio);
