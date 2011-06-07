@@ -512,7 +512,7 @@ define KernelPackage/pata-cs5535
   $(call AddDepends/ata)
 endef
 
-define KernelPackage/cs5535/description
+define KernelPackage/pata-cs5535/description
   Kernel module for the NSC/AMD CS5535 companion chip
 endef
 
@@ -528,7 +528,7 @@ define KernelPackage/pata-cs5536
   $(call AddDepends/ata)
 endef
 
-define KernelPackage/cs5536/description
+define KernelPackage/pata-cs5536/description
   Kernel module for the AMD CS5536 Geode LX companion chip
 endef
 
