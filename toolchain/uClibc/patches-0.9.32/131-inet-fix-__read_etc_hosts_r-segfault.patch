@@ -1,0 +1,10 @@
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -1631,6 +1631,7 @@ int attribute_hidden __read_etc_hosts_r(
+ 	 * struct in[6]_addr
+ 	 * char line_buffer[BUFSZ+];
+ 	 */
++	memset(buf, 0, buflen);
+ 	parser->data = buf;
+ 	parser->data_len = aliaslen;
+ 	parser->line_len = buflen - aliaslen;
