@@ -9313,7 +9313,7 @@
 +#define FATAL_EXIT_CODE 33
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -2497,6 +2497,34 @@ spu-*-elf*)
+@@ -2525,6 +2525,34 @@ spu-*-elf*)
  	c_target_objs="${c_target_objs} spu-c.o"
  	cxx_target_objs="${cxx_target_objs} spu-c.o"
  	;;
@@ -9350,7 +9350,7 @@
  	tm_file="dbxelf.h elfos.h svr4.h newlib-stdint.h v850/v850.h"
 --- a/libgcc/config.host
 +++ b/libgcc/config.host
-@@ -560,6 +560,15 @@ sparc64-*-netbsd*)
+@@ -562,6 +562,15 @@ sparc64-*-netbsd*)
  	;;
  spu-*-elf*)
  	;;

@@ -1,9 +1,9 @@
 --- a/gcc/config/arm/linux-eabi.h
 +++ b/gcc/config/arm/linux-eabi.h
-@@ -72,10 +72,6 @@
- #undef  LINK_SPEC
- #define LINK_SPEC LINUX_TARGET_LINK_SPEC BE8_LINK_SPEC TARGET_FIX_V4BX_SPEC
- 
+@@ -95,10 +95,6 @@
+ #define ENDFILE_SPEC \
+   LINUX_OR_ANDROID_LD (LINUX_TARGET_ENDFILE_SPEC, ANDROID_ENDFILE_SPEC)
+
 -/* Use the default LIBGCC_SPEC, not the version in linux-elf.h, as we
 -   do not use -lfloat.  */
 -#undef LIBGCC_SPEC
@@ -24,7 +24,7 @@
  #define LINUX_TARGET_LINK_SPEC  "%{h*} %{version:-v} \
 --- a/gcc/config/linux.h
 +++ b/gcc/config/linux.h
-@@ -104,6 +104,10 @@
+@@ -116,6 +116,10 @@
  #define USE_LD_AS_NEEDED 1
  #endif
  
@@ -33,8 +33,8 @@
 +#endif
 +
  /* Determine which dynamic linker to use depending on whether GLIBC or
-    uClibc is the default C library and whether -muclibc or -mglibc has
-    been passed to change the default.  */
+    uClibc or Bionic is the default C library and whether
+    -muclibc or -mglibc or -mbionic has been passed to change the default.  */
 --- a/gcc/mkmap-symver.awk
 +++ b/gcc/mkmap-symver.awk
 @@ -132,5 +132,5 @@
