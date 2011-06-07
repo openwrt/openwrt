@@ -325,7 +325,7 @@ setup_interface() {
 	}
 
 	# Interface settings
-	grep "$iface:" /proc/net/dev > /dev/null && {
+	grep -qE "^ *$iface:" /proc/net/dev && {
 		local mtu macaddr txqueuelen
 		config_get mtu "$config" mtu
 		config_get macaddr "$config" macaddr

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 
 /sbin/ifdown "$@"
 
@@ -18,6 +18,6 @@ include /lib/network
 scan_interfaces
 
 config_get ifname "$1" device
-for dev in $ifname; do
+for dev in ${ifname:-$1}; do
 	setup_interface "$dev" "$1"
 done
