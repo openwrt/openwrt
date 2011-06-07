@@ -9,11 +9,14 @@ boot() {
 
 	include /lib/network
 	setup_switch
-	/sbin/wifi detect >> /etc/config/wireless
+
+	/sbin/wifi detect > /tmp/wireless.tmp
+	[ -s /tmp/wireless.tmp ] && {
+		cat /tmp/wireless.tmp >> /etc/config/wireless
+	}
+	rm -f /tmp/wireless.tmp
 	grep -qs config /etc/config/wireless && {
 		/sbin/wifi up
-	} || {
-		rm -f /etc/config/wireless
 	}
 
 	scan_interfaces
