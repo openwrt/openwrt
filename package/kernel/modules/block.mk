@@ -516,7 +516,7 @@ define KernelPackage/cs5535/description
   Kernel module for the NSC/AMD CS5535 companion chip
 endef
 
-$(eval $(call KernelPackage,cs5535))
+$(eval $(call KernelPackage,pata-cs5535))
 
 
 define KernelPackage/pata-cs5536
@@ -532,7 +532,7 @@ define KernelPackage/cs5536/description
   Kernel module for the AMD CS5536 Geode LX companion chip
 endef
 
-$(eval $(call KernelPackage,cs5536))
+$(eval $(call KernelPackage,pata-cs5536))
 
 
 define KernelPackage/libsas
