@@ -214,14 +214,14 @@
 +
 --- a/gcc/config/arm/t-arm
 +++ b/gcc/config/arm/t-arm
-@@ -24,6 +24,7 @@ MD_INCLUDES= 	$(srcdir)/config/arm/arm-t
- 		$(srcdir)/config/arm/arm1020e.md \
- 		$(srcdir)/config/arm/arm1026ejs.md \
- 		$(srcdir)/config/arm/arm1136jfs.md \
-+		$(srcdir)/config/arm/fa526.md \
- 		$(srcdir)/config/arm/arm926ejs.md \
- 		$(srcdir)/config/arm/cirrus.md \
- 		$(srcdir)/config/arm/fpa.md \
+@@ -23,6 +23,7 @@ MD_INCLUDES= 	$(srcdir)/config/arm/arm-t
+ 		$(srcdir)/config/arm/arm-generic.md       	\
+ 	 	$(srcdir)/config/arm/arm1020e.md          	\
+ 	 	$(srcdir)/config/arm/arm1026ejs.md        	\
++		$(srcdir)/config/arm/fa526.md			\
+ 		$(srcdir)/config/arm/arm1136jfs.md        	\
+ 	 	$(srcdir)/config/arm/arm926ejs.md         	\
+ 		$(srcdir)/config/arm/cirrus.md            	\
 --- a/gcc/config/arm/t-arm-elf
 +++ b/gcc/config/arm/t-arm-elf
 @@ -36,6 +36,10 @@ MULTILIB_DIRNAMES    = arm thumb
@@ -245,7 +245,7 @@
  # MULTILIB_DIRNAMES   += ep9312
 --- a/gcc/doc/invoke.texi
 +++ b/gcc/doc/invoke.texi
-@@ -9900,7 +9900,8 @@ assembly code.  Permissible names are: @
+@@ -9923,7 +9923,8 @@ assembly code.  Permissible names are: @
  @samp{cortex-r4}, @samp{cortex-r4f}, @samp{cortex-m4}, @samp{cortex-m3},
  @samp{cortex-m1},
  @samp{cortex-m0},
