@@ -14,7 +14,7 @@ ifeq ($(SDK),1)
 else
   $(curdir)/builddirs-default:=. $(sort $(package-y) $(package-m))
   $(curdir)/builddirs-prereq:=. $(sort $(prereq-y) $(prereq-m))
-  $(curdir)/builddirs-install:=. $(sort $(package-y))
+  $(curdir)/builddirs-install:=. $(filter-out base-files,$(sort $(package-y))) $(filter base-files,$(package-y))
 endif
 ifneq ($(IGNORE_ERRORS),)
   $(curdir)/builddirs-ignore-compile:= $(if $(filter n m y, $(IGNORE_ERRORS)),$(foreach m,$(IGNORE_ERRORS),$(package-$(subst n,,$(m)))),$(package-m) $(package-))
