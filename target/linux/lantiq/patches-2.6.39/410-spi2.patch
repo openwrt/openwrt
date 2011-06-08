@@ -10,13 +10,13 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -193,6 +193,14 @@ config SPI_IMX
+@@ -193,6 +193,14 @@
  	  This enables using the Freescale i.MX SPI controllers in master
  	  mode.
  
 +config SPI_LANTIQ
 +	tristate "Lantiq SoC SPI controller"
-+	depends on SOC_LANTIQ_XWAY
++	depends on SOC_TYPE_XWAY
 +	select SPI_BITBANG
 +	help
 +	  This driver supports the Lantiq SoC SPI controller in master
@@ -27,7 +27,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
  	depends on PARPORT && EXPERIMENTAL
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -26,6 +26,7 @@ obj-$(CONFIG_SPI_EP93XX)		+= ep93xx_spi.
+@@ -26,6 +26,7 @@
  obj-$(CONFIG_SPI_GPIO)			+= spi_gpio.o
  obj-$(CONFIG_SPI_GPIO_OLD)		+= spi_gpio_old.o
  obj-$(CONFIG_SPI_IMX)			+= spi_imx.o
@@ -37,7 +37,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
  obj-$(CONFIG_SPI_PXA2XX_PCI)		+= pxa2xx_spi_pci.o
 --- /dev/null
 +++ b/drivers/spi/spi_lantiq.c
-@@ -0,0 +1,1063 @@
+@@ -0,0 +1,1062 @@
 +/*
 + * Lantiq SoC SPI controller
 + *
@@ -64,8 +64,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
 +#include <linux/spi/spi.h>
 +#include <linux/spi/spi_bitbang.h>
 +
-+#include <xway.h>
-+#include <xway_irq.h>
++#include <lantiq_soc.h>
 +#include <lantiq_platform.h>
 +
 +#define LTQ_SPI_CLC		0x00	/* Clock control */

@@ -18,7 +18,7 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
  
  #include <asm/bootinfo.h>
  #include <asm/irq.h>
-@@ -119,3 +120,28 @@ ltq_register_etop(struct ltq_eth_data *e
+@@ -119,3 +120,41 @@
  		platform_device_register(&ltq_etop);
  	}
  }
@@ -34,6 +34,17 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
 +	IRQ_RES(spi_err, LTQ_SSC_EIR),
 +};
 +
++static struct resource ltq_spi_resources_ar9[] = {
++	{
++		.start  = LTQ_SSC_BASE_ADDR,
++		.end    = LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags  = IORESOURCE_MEM,
++	},
++	IRQ_RES(spi_tx, LTQ_SSC_TIR_AR9),
++	IRQ_RES(spi_rx, LTQ_SSC_RIR_AR9),
++	IRQ_RES(spi_err, LTQ_SSC_EIR),
++};
++
 +static struct platform_device ltq_spi = {
 +	.name		= "ltq-spi",
 +	.resource	= ltq_spi_resources,
@@ -43,7 +54,20 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
 +void __init ltq_register_spi(struct ltq_spi_platform_data *pdata,
 +		struct spi_board_info const *info, unsigned n)
 +{
++	if(ltq_is_ar9())
++		ltq_spi.resource = ltq_spi_resources_ar9;
 +	spi_register_board_info(info, n);
 +	ltq_spi.dev.platform_data = pdata;
 +	platform_device_register(&ltq_spi);
 +}
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
+@@ -27,6 +27,8 @@
+ 
+ #define LTQ_SSC_TIR		(INT_NUM_IM0_IRL0 + 15)
+ #define LTQ_SSC_RIR		(INT_NUM_IM0_IRL0 + 14)
++#define LTQ_SSC_TIR_AR9		(INT_NUM_IM0_IRL0 + 14)
++#define LTQ_SSC_RIR_AR9		(INT_NUM_IM0_IRL0 + 15)
+ #define LTQ_SSC_EIR		(INT_NUM_IM0_IRL0 + 16)
+ 
+ #define LTQ_MEI_DYING_GASP_INT	(INT_NUM_IM1_IRL0 + 21)
