@@ -370,6 +370,7 @@ $(eval $(call KernelPackage,ip6-tunnel))
 define KernelPackage/gre
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=GRE support
+  DEPENDS:=+PACKAGE_kmod-ipv6:kmod-ipv6
   KCONFIG:=CONFIG_NET_IPGRE CONFIG_NET_IPGRE_DEMUX
  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.37)),1)
   FILES:=$(LINUX_DIR)/net/ipv4/ip_gre.ko $(LINUX_DIR)/net/ipv4/gre.ko
@@ -559,6 +560,7 @@ define KernelPackage/sched
 	CONFIG_NET_SCH_TBF \
 	CONFIG_NET_SCH_SFQ \
 	CONFIG_NET_SCH_TEQL \
+	CONFIG_NET_SCH_CBQ \
 	CONFIG_NET_CLS=y \
 	CONFIG_NET_CLS_ACT=y \
 	CONFIG_NET_CLS_BASIC \
