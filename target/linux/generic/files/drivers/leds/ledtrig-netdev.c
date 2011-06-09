@@ -182,13 +182,13 @@ static ssize_t led_mode_store(struct device *dev,
 {
 	struct led_classdev *led_cdev = dev_get_drvdata(dev);
 	struct led_netdev_data *trigger_data = led_cdev->trigger_data;
-	char copybuf[1024];
+	char copybuf[128];
 	int new_mode = -1;
 	char *p, *token;
 
 	/* take a copy since we don't want to trash the inbound buffer when using strsep */
 	strncpy(copybuf, buf, sizeof(copybuf));
-	copybuf[1023] = 0;
+	copybuf[sizeof(copybuf) - 1] = 0;
 	p = copybuf;
 
 	while ((token = strsep(&p, " \t\n")) != NULL) {
