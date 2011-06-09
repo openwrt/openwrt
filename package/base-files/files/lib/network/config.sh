@@ -237,7 +237,7 @@ setup_interface_static() {
 
 	case "$ip6addr" in
 		*/*) ;;
-		*:*) ip6addr="$ip6addr/128" ;;
+		*:*) ip6addr="$ip6addr/64" ;;
 	esac
 
 	[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
