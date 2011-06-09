@@ -235,6 +235,11 @@ setup_interface_static() {
 	config_get bcast "$config" broadcast
 	config_get metric "$config" metric
 
+	case "$ip6addr" in
+		*/*) ;;
+		*:*) ip6addr="$ip6addr/128" ;;
+	esac
+
 	[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
 	[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
 	[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" ${metric:+metric $metric} dev "$iface"
