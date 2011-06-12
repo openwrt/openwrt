@@ -144,6 +144,14 @@ define Image/Build/Profile/DGN3500B
 	$(call Image/Build/$(1),$(1),DGN3500B)
 endef
 
+define Image/BuildKernel/Profile/GIGASX76X
+	$(call Image/BuildKernel/Template,GIGASX76X,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/GIGASX76X
+	$(call Image/Build/$(1),$(1),GIGASX76X)
+endef
+
 define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,EASY4010,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
@@ -157,6 +165,7 @@ define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,ARV7518PW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV752DPW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV752DPW22,$(xway_cmdline))
+	$(call Image/BuildKernel/Template,GIGASX76X,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,DGN3500B,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
@@ -174,6 +183,7 @@ define Image/Build/Profile/Generic
 	$(call Image/Build/$(1),$(1),ARV7518PW)
 	$(call Image/Build/$(1),$(1),ARV752DPW)
 	$(call Image/Build/$(1),$(1),ARV752DPW22)
+	$(call Image/Build/$(1),$(1),GIGASX76X)
 	$(call Image/Build/$(1),$(1),DGN3500B)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
