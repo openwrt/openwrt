@@ -30,6 +30,7 @@ test_6to4_rfc1918()
 set_6to4_radvd_interface() {
 	local cfgid="$1"
 	local lanif="${2:-lan}"
+	local ifmtu="${3:-1280}"
 	local ifsection=""
 
 	find_ifsection() {
@@ -55,6 +56,7 @@ set_6to4_radvd_interface() {
 	uci_set_state radvd "$ifsection" IgnoreIfMissing   1
 	uci_set_state radvd "$ifsection" AdvSendAdvert     1
 	uci_set_state radvd "$ifsection" MaxRtrAdvInterval 30
+	uci_set_state radvd "$ifsection" AdvLinkMTU        "$ifmtu"
 }
 
 set_6to4_radvd_prefix() {
@@ -203,7 +205,7 @@ setup_interface_6to4() {
 					logger -t "$link" " * Advertising IPv6 subnet $subnet6 on ${adv_interface:-lan} ($adv_ifname)"
 					ip -6 addr add $subnet6 dev $adv_ifname
 
-					set_6to4_radvd_interface "$sid" "$adv_interface"
+					set_6to4_radvd_interface "$sid" "$adv_interface" "$mtu"
 					set_6to4_radvd_prefix    "$sid" "$adv_interface" \
 						"$wancfg" "$(printf "0:0:0:%x::/64" $adv_subnet)"
 
@@ -252,9 +254,8 @@ stop_interface_6to4() {
 			done
 		}
 
-		[ "$defaultroute" = "1" ] && {
-			ip -6 route del ::/0 via ::192.88.99.1 dev $link metric 1
-		}
+		[ "$defaultroute" = "1" ] && \
+			ip -6 route del ::/0 via ::192.88.99.1 dev $link
 
 		ip addr del $local6 dev $link
 		ip link set $link down
