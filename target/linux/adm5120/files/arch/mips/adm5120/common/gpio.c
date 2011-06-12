@@ -32,10 +32,10 @@ struct gpio1_desc {
 	u8		mode_shift;	/* shift amount for mode bits */
 };
 
-#define GPIO1_DESC(p, l) { 						\
+#define GPIO1_DESC(p, l) {						\
 		.reg = GPIO_REG(SWITCH_REG_PORT0_LED + ((p) * 4)),	\
-		.iv_shift = LED0_IV_SHIFT + (l), 			\
-		.mode_shift = (l) * 4 					\
+		.iv_shift = LED0_IV_SHIFT + (l),			\
+		.mode_shift = (l) * 4					\
 	}
 
 static struct gpio1_desc gpio1_table[15] = {

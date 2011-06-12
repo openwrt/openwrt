@@ -20,10 +20,12 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/io.h>
+#include <linux/reboot.h>
+#include <linux/time.h>
 
-#include <asm/bootinfo.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
+#include <asm/bootinfo.h>
 #include <asm/mips_machine.h>
 
 #include <asm/mach-adm5120/adm5120_info.h>
@@ -49,7 +51,7 @@ static void __init adm5120_report(void)
 {
 	printk(KERN_INFO "SoC      : %s\n", adm5120_sys_type);
 	printk(KERN_INFO "Bootdev  : %s flash\n",
-		adm5120_nand_boot ? "NAND":"NOR");
+		adm5120_nand_boot ? "NAND" : "NOR");
 	printk(KERN_INFO "Prom     : %s\n", prom_names[adm5120_prom_type]);
 }
 

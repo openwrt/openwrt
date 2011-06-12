@@ -16,10 +16,10 @@
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
 #include <linux/io.h>
+#include <linux/bitops.h>
 
 #include <asm/irq_cpu.h>
 #include <asm/mipsregs.h>
-#include <asm/bitops.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
 
@@ -42,16 +42,16 @@ static inline u32 intc_read_reg(unsigned int reg)
 }
 
 static struct irq_chip adm5120_intc_irq_chip = {
-	.name 		= "INTC",
-	.unmask 	= adm5120_intc_irq_unmask,
-	.mask 		= adm5120_intc_irq_mask,
+	.name		= "INTC",
+	.unmask		= adm5120_intc_irq_unmask,
+	.mask		= adm5120_intc_irq_mask,
 	.mask_ack	= adm5120_intc_irq_mask,
 	.set_type	= adm5120_intc_irq_set_type
 };
 
 static struct irqaction adm5120_intc_irq_action = {
-	.handler 	= no_action,
-	.name 		= "cascade [INTC]"
+	.handler	= no_action,
+	.name		= "cascade [INTC]"
 };
 
 static void adm5120_intc_irq_unmask(unsigned int irq)
@@ -170,7 +170,8 @@ static void __init adm5120_intc_irq_init(void)
 	setup_irq(ADM5120_IRQ_INTC, &adm5120_intc_irq_action);
 }
 
-void __init arch_init_irq(void) {
+void __init arch_init_irq(void)
+{
 	mips_cpu_irq_init();
 	adm5120_intc_irq_init();
 }

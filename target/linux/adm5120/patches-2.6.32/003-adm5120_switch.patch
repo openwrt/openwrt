@@ -1,6 +1,6 @@
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -602,6 +602,10 @@ config MIPS_AU1X00_ENET
+@@ -479,6 +479,10 @@ config MIPS_AU1X00_ENET
  	  If you have an Alchemy Semi AU1X00 based system
  	  say Y.  Otherwise, say N.
  
@@ -13,7 +13,7 @@
  	depends on PCI && SGI_IP27
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -208,6 +208,7 @@ obj-$(CONFIG_SC92031) += sc92031.o
+@@ -207,6 +207,7 @@ obj-$(CONFIG_SC92031) += sc92031.o
  # This is also a 82596 and should probably be merged
  obj-$(CONFIG_LP486E) += lp486e.o
  

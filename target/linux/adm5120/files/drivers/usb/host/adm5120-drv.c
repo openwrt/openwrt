@@ -114,7 +114,7 @@ static void admhc_adm5120_remove(struct usb_hcd *hcd,
 static int __devinit
 admhc_adm5120_start(struct usb_hcd *hcd)
 {
-	struct admhcd	*ahcd = hcd_to_admhcd (hcd);
+	struct admhcd	*ahcd = hcd_to_admhcd(hcd);
 	int		ret;
 
 	ret = admhc_init(ahcd);

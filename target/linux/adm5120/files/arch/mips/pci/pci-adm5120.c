@@ -21,12 +21,12 @@
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/io.h>
+#include <linux/delay.h>
 
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 #include <linux/pci_regs.h>
 
-#include <asm/delay.h>
 #include <asm/bootinfo.h>
 
 #include <asm/mach-adm5120/adm5120_defs.h>
@@ -71,8 +71,8 @@ static inline u32 read_cfgdata(void)
 
 static inline u32 mkaddr(struct pci_bus *bus, unsigned int devfn, int where)
 {
-	return (((bus->number & 0xFF) << 16) | ((devfn & 0xFF) << 8) | \
-		(where & 0xFC));
+	return ((bus->number & 0xFF) << 16) | ((devfn & 0xFF) << 8) | \
+		(where & 0xFC);
 }
 
 /* -------------------------------------------------------------------------*/

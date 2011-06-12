@@ -45,7 +45,7 @@
 
 struct adm5120_map_info {
 	struct map_info	map;
-	void 		(*switch_bank)(unsigned);
+	void		(*switch_bank)(unsigned);
 	unsigned long	window_size;
 };
 
@@ -89,7 +89,7 @@ static struct flash_desc flash_descs[2] = {
 	}
 };
 
-static const char *probe_types[] = {
+static const char const *probe_types[] = {
 	"cfi_probe",
 	"jedec_probe",
 	"map_rom",
@@ -97,7 +97,7 @@ static const char *probe_types[] = {
 };
 
 #ifdef CONFIG_MTD_PARTITIONS
-static const char *parse_types[] = {
+static const char const *parse_types[] = {
 	"cmdlinepart",
 #ifdef CONFIG_MTD_REDBOOT_PARTS
 	"RedBoot",

@@ -19,7 +19,7 @@
  * ADM5120 Root Hub ... the nonsharable stuff
  */
 
-#define dbg_port(hc,label,num,value) \
+#define dbg_port(hc, label, num, value) \
 	admhc_dbg(hc, \
 		"%s port%d " \
 		"= 0x%08x%s%s%s%s%s%s%s%s%s%s%s%s\n", \
@@ -40,7 +40,7 @@
 		(value & ADMHC_PS_CCS) ? " CCS" : "" \
 		);
 
-#define dbg_port_write(hc,label,num,value) \
+#define dbg_port_write(hc, label, num, value) \
 	admhc_dbg(hc, \
 		"%s port%d " \
 		"= 0x%08x%s%s%s%s%s%s%s%s%s%s%s%s\n", \
@@ -81,11 +81,11 @@ admhc_hub_status_data(struct usb_hcd *hcd, char *buf)
 	/* init status */
 	status = admhc_read_rhdesc(ahcd);
 	if (status & (ADMHC_RH_LPSC | ADMHC_RH_OCIC))
-		buf [0] = changed = 1;
+		buf[0] = changed = 1;
 	else
-		buf [0] = 0;
+		buf[0] = 0;
 	if (ahcd->num_ports > 7) {
-		buf [1] = 0;
+		buf[1] = 0;
 		length++;
 	}
 
@@ -100,9 +100,9 @@ admhc_hub_status_data(struct usb_hcd *hcd, char *buf)
 				| ADMHC_PS_OCIC | ADMHC_PS_PRSC)) {
 			changed = 1;
 			if (i < 7)
-			    buf [0] |= 1 << (i + 1);
+				buf[0] |= 1 << (i + 1);
 			else
-			    buf [1] |= 1 << (i - 7);
+				buf[1] |= 1 << (i - 7);
 		}
 	}
 
@@ -247,7 +247,7 @@ static void start_hnp(struct admhcd *ahcd);
 #define	PORT_RESET_HW_MSEC	10
 
 /* wrap-aware logic morphed from <linux/jiffies.h> */
-#define tick_before(t1,t2) ((s16)(((s16)(t1))-((s16)(t2))) < 0)
+#define tick_before(t1, t2) ((s16)(((s16)(t1)) - ((s16)(t2))) < 0)
 
 /* called from some task, normally khubd */
 static inline int admhc_port_reset(struct admhcd *ahcd, unsigned port)

@@ -44,25 +44,25 @@
 #define MPMC_REG_SC3    0x0260
 
 /* Control register bits */
-#define MPMC_CTRL_AM		( 1 << 1 )	/* Address Mirror */
-#define MPMC_CTRL_LPM		( 1 << 2 )	/* Low Power Mode */
-#define MPMC_CTRL_DWB		( 1 << 3 )	/* Drain Write Buffers */
+#define MPMC_CTRL_AM		(1 << 1)	/* Address Mirror */
+#define MPMC_CTRL_LPM		(1 << 2)	/* Low Power Mode */
+#define MPMC_CTRL_DWB		(1 << 3)	/* Drain Write Buffers */
 
 /* Status register bits */
-#define MPMC_STATUS_BUSY	( 1 << 0 )	/* Busy */
-#define MPMC_STATUS_WBS		( 1 << 1 )	/* Write Buffer Status */
-#define MPMC_STATUS_SRA		( 1 << 2 )	/* Self-Refresh Acknowledge*/
+#define MPMC_STATUS_BUSY	(1 << 0)	/* Busy */
+#define MPMC_STATUS_WBS		(1 << 1)	/* Write Buffer Status */
+#define MPMC_STATUS_SRA		(1 << 2)	/* Self-Refresh Acknowledge*/
 
 /* Dynamic Control register bits */
-#define MPMC_DC_CE		( 1 << 0 )
-#define MPMC_DC_DMC		( 1 << 1 )
-#define MPMC_DC_SRR		( 1 << 2 )
+#define MPMC_DC_CE		(1 << 0)
+#define MPMC_DC_DMC		(1 << 1)
+#define MPMC_DC_SRR		(1 << 2)
 #define MPMC_DC_SI_SHIFT	7
-#define MPMC_DC_SI_MASK		( 3 << 7 )
-#define MPMC_DC_SI_NORMAL	( 0 << 7 )
-#define MPMC_DC_SI_MODE		( 1 << 7 )
-#define MPMC_DC_SI_PALL		( 2 << 7 )
-#define MPMC_DC_SI_NOP		( 3 << 7 )
+#define MPMC_DC_SI_MASK		(3 << 7)
+#define MPMC_DC_SI_NORMAL	(0 << 7)
+#define MPMC_DC_SI_MODE		(1 << 7)
+#define MPMC_DC_SI_PALL		(2 << 7)
+#define MPMC_DC_SI_NOP		(3 << 7)
 
 #define SRAM_REG_CONF	0x00
 #define SRAM_REG_WWE	0x04

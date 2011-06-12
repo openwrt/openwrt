@@ -4,8 +4,8 @@
  
  #define admhc_dbg_sw(ahcd, next, size, format, arg...) \
  	do { \
--	if (next) { \
-+	if (next != NULL) { \
- 		unsigned s_len; \
- 		s_len = scnprintf(*next, *size, format, ## arg ); \
- 		*size -= s_len; *next += s_len; \
+-		if (next) { \
++		if (next != NULL) { \
+ 			unsigned s_len; \
+ 			s_len = scnprintf(*next, *size, format, ## arg); \
+ 			*size -= s_len; *next += s_len; \

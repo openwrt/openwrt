@@ -31,7 +31,7 @@ struct port_state {
 	unsigned int value;
 };
 
-#define PORT_STATE(n,v) {.name = (n), .value = (v)}
+#define PORT_STATE(n, v) {.name = (n), .value = (v)}
 
 static struct port_state port_states[] = {
 	PORT_STATE("off",		LED_OFF),

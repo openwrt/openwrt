@@ -140,7 +140,7 @@ static void rb153_pata_setup_port(struct ata_host *ah)
 	ap->pio_mask	= 0x1f; /* PIO4 */
 	ap->flags	= ATA_FLAG_NO_LEGACY | ATA_FLAG_MMIO;
 
-	ap->ioaddr.cmd_addr 	= info->iobase + RB153_CF_REG_CMD;
+	ap->ioaddr.cmd_addr	= info->iobase + RB153_CF_REG_CMD;
 	ap->ioaddr.ctl_addr	= info->iobase + RB153_CF_REG_CTRL;
 	ap->ioaddr.altstatus_addr = info->iobase + RB153_CF_REG_CTRL;
 

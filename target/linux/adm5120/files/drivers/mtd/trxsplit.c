@@ -28,7 +28,7 @@
 #define TRX_NO_HEADER	0x1	/* do not write TRX header */
 #define TRX_GZ_FILES	0x2     /* contains individual gzip files */
 #define TRX_MAX_OFFSET	3
-#define TRX_MIN_KERNEL_SIZE	256*1024
+#define TRX_MIN_KERNEL_SIZE	(256 * 1024)
 
 struct trx_header {
 	u32 magic;	/* "HDR0" */
