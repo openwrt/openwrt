@@ -1,5 +1,5 @@
 # 6to4.sh - IPv6-in-IPv4 tunnel backend
-# Copyright (c) 2010 OpenWrt.org
+# Copyright (c) 2010-2011 OpenWrt.org
 
 find_6to4_wanif() {
 	local if=$(ip -4 r l e 0.0.0.0/0); if="${if#default* dev }"; if="${if%% *}"
@@ -16,6 +16,15 @@ find_6to4_prefix() {
 	local oIFS="$IFS"; IFS="."; set -- $ip4; IFS="$oIFS"
 
 	printf "2002:%02x%02x:%02x%02x\n" $1 $2 $3 $4
+}
+
+test_6to4_rfc1918()
+{
+	local oIFS="$IFS"; IFS="."; set -- $1; IFS="$oIFS"
+	[ $1 -eq  10 ] && return 0
+	[ $1 -eq 192 ] && [ $2 -eq 168 ] && return 0
+	[ $1 -eq 172 ] && [ $2 -ge  16 ] && [ $2 -le  31 ] && return 0
+	return 1
 }
 
 set_6to4_radvd_interface() {
@@ -134,6 +143,11 @@ setup_interface_6to4() {
 			local4=$(find_6to4_wanip "$wanif")
 			uci_set_state network "$cfg" wan_device "$wanif"
 		}
+	}
+
+	test_6to4_rfc1918 "$local4" && {
+		logger -t "$link" "Local wan ip $local4 is private - aborting"
+		return
 	}
 
 	[ -n "$local4" ] && {
