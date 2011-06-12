@@ -36,8 +36,8 @@
 #include <linux/dmapool.h>
 #include <linux/reboot.h>
 #include <linux/debugfs.h>
+#include <linux/io.h>
 
-#include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/system.h>
 #include <asm/unaligned.h>
@@ -58,12 +58,12 @@
 #define	OHCI_CONTROL_INIT	OHCI_CTRL_CBSR
 
 #define	ADMHC_INTR_INIT \
-		( ADMHC_INTR_MIE | ADMHC_INTR_INSM | ADMHC_INTR_FATI \
-		| ADMHC_INTR_RESI | ADMHC_INTR_TDC | ADMHC_INTR_BABI )
+		(ADMHC_INTR_MIE | ADMHC_INTR_INSM | ADMHC_INTR_FATI \
+		| ADMHC_INTR_RESI | ADMHC_INTR_TDC | ADMHC_INTR_BABI)
 
 /*-------------------------------------------------------------------------*/
 
-static const char hcd_name [] = "admhc-hcd";
+static const char hcd_name[] = "admhc-hcd";
 
 #define	STATECHANGE_DELAY	msecs_to_jiffies(300)
 
@@ -128,7 +128,7 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct urb *urb,
 		else if ((urb->transfer_flags & URB_ZERO_PACKET) != 0
 			&& (urb->transfer_buffer_length
 				% usb_maxpacket(urb->dev, pipe,
-					usb_pipeout (pipe))) == 0)
+					usb_pipeout(pipe))) == 0)
 			td_cnt++;
 		break;
 	case PIPE_INTERRUPT:
@@ -302,8 +302,8 @@ sanitize:
 		goto rescan;
 	case ED_IDLE:		/* fully unlinked */
 		if (list_empty(&ed->td_list)) {
-			td_free (ahcd, ed->dummy);
-			ed_free (ahcd, ed);
+			td_free(ahcd, ed->dummy);
+			ed_free(ahcd, ed);
 			break;
 		}
 		/* else FALL THROUGH */
@@ -340,7 +340,7 @@ static void admhc_usb_reset(struct admhcd *ahcd)
 #else
 	/* FIXME */
 	ahcd->host_control = ADMHC_BUSS_RESET;
-	admhc_writel(ahcd, ahcd->host_control ,&ahcd->regs->host_control);
+	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
 #endif
 }
 
@@ -642,7 +642,7 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
 {
 	struct admhcd *ahcd = hcd_to_admhcd(hcd);
 	struct admhcd_regs __iomem *regs = ahcd->regs;
- 	u32 ints;
+	u32 ints;
 
 	ints = admhc_readl(ahcd, &regs->int_status);
 	if ((ints & ADMHC_INTR_INTA) == 0) {
@@ -798,7 +798,7 @@ static int __init admhc_hcd_mod_init(void)
 
 	pr_info("%s: " DRIVER_INFO "\n", hcd_name);
 	pr_info("%s: block sizes: ed %Zd td %Zd\n", hcd_name,
-		sizeof (struct ed), sizeof (struct td));
+		sizeof(struct ed), sizeof(struct td));
 
 #ifdef DEBUG
 	admhc_debug_root = debugfs_create_dir("admhc", NULL);

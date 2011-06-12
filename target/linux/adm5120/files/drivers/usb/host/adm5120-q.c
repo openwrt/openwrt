@@ -42,7 +42,7 @@ __acquires(ahcd->lock)
 	}
 
 #ifdef ADMHC_VERBOSE_DEBUG
-	urb_print(ahcd, urb, "RET", usb_pipeout (urb->pipe), status);
+	urb_print(ahcd, urb, "RET", usb_pipeout(urb->pipe), status);
 #endif
 
 	/* urb->complete() can reenter this HCD */
@@ -73,12 +73,12 @@ static int balance(struct admhcd *ahcd, int interval, int load)
 	 * that has enough bandwidth left unreserved.
 	 */
 	for (i = 0; i < interval ; i++) {
-		if (branch < 0 || ahcd->load [branch] > ahcd->load [i]) {
+		if (branch < 0 || ahcd->load[branch] > ahcd->load[i]) {
 			int	j;
 
 			/* usb 1.1 says 90% of one frame */
 			for (j = i; j < NUM_INTS; j += interval) {
-				if ((ahcd->load [j] + load) > 900)
+				if ((ahcd->load[j] + load) > 900)
 					break;
 			}
 			if (j < NUM_INTS)
@@ -97,17 +97,17 @@ static int balance(struct admhcd *ahcd, int interval, int load)
  * into the schedule tree in the apppropriate place.  most iso devices use
  * 1msec periods, but that's not required.
  */
-static void periodic_link (struct admhcd *ahcd, struct ed *ed)
+static void periodic_link(struct admhcd *ahcd, struct ed *ed)
 {
 	unsigned	i;
 
-	admhc_vdbg (ahcd, "link %sed %p branch %d [%dus.], interval %d\n",
+	admhc_vdbg(ahcd, "link %sed %p branch %d [%dus.], interval %d\n",
 		(ed->hwINFO & cpu_to_hc32(ahcd, ED_ISO)) ? "iso " : "",
 		ed, ed->branch, ed->load, ed->interval);
 
 	for (i = ed->branch; i < NUM_INTS; i += ed->interval) {
-		struct ed	**prev = &ahcd->periodic [i];
-		__hc32		*prev_p = &ahcd->hcca->int_table [i];
+		struct ed	**prev = &ahcd->periodic[i];
+		__hc32		*prev_p = &ahcd->hcca->int_table[i];
 		struct ed	*here = *prev;
 
 		/* sorting each branch by period (slow before fast)
@@ -125,12 +125,12 @@ static void periodic_link (struct admhcd *ahcd, struct ed *ed)
 			ed->ed_next = here;
 			if (here)
 				ed->hwNextED = *prev_p;
-			wmb ();
+			wmb();
 			*prev = ed;
 			*prev_p = cpu_to_hc32(ahcd, ed->dma);
 			wmb();
 		}
-		ahcd->load [i] += ed->load;
+		ahcd->load[i] += ed->load;
 	}
 	admhcd_to_hcd(ahcd)->self.bandwidth_allocated += ed->load / ed->interval;
 }
@@ -170,14 +170,14 @@ static int ed_schedule(struct admhcd *ahcd, struct ed *ed)
 
 #if 0	/* FIXME */
 /* scan the periodic table to find and unlink this ED */
-static void periodic_unlink (struct admhcd *ahcd, struct ed *ed)
+static void periodic_unlink(struct admhcd *ahcd, struct ed *ed)
 {
 	int	i;
 
 	for (i = ed->branch; i < NUM_INTS; i += ed->interval) {
 		struct ed	*temp;
-		struct ed	**prev = &ahcd->periodic [i];
-		__hc32		*prev_p = &ahcd->hcca->int_table [i];
+		struct ed	**prev = &ahcd->periodic[i];
+		__hc32		*prev_p = &ahcd->hcca->int_table[i];
 
 		while (*prev && (temp = *prev) != ed) {
 			prev_p = &temp->hwNextED;
@@ -187,11 +187,11 @@ static void periodic_unlink (struct admhcd *ahcd, struct ed *ed)
 			*prev_p = ed->hwNextED;
 			*prev = ed->ed_next;
 		}
-		ahcd->load [i] -= ed->load;
+		ahcd->load[i] -= ed->load;
 	}
 
 	admhcd_to_hcd(ahcd)->self.bandwidth_allocated -= ed->load / ed->interval;
-	admhc_vdbg (ahcd, "unlink %sed %p branch %d [%dus.], interval %d\n",
+	admhc_vdbg(ahcd, "unlink %sed %p branch %d [%dus.], interval %d\n",
 		(ed->hwINFO & cpu_to_hc32(ahcd, ED_ISO)) ? "iso " : "",
 		ed, ed->branch, ed->load, ed->interval);
 }
@@ -596,7 +596,7 @@ static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 		urb->iso_frame_desc[td->index].status = cc_to_error[cc];
 
 		if (cc != TD_CC_NOERROR)
-			admhc_vdbg (ahcd,
+			admhc_vdbg(ahcd,
 				"urb %p iso td %p (%d) len %d cc %d\n",
 				urb, td, 1 + td->index, dlen, cc);
 
@@ -615,9 +615,8 @@ static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 
 
 		/* count all non-empty packets except control SETUP packet */
-		if ((type != PIPE_CONTROL || td->index != 0) && tdDBP != 0) {
+		if ((type != PIPE_CONTROL || td->index != 0) && tdDBP != 0)
 			urb->actual_length += tdDBP - td->data_dma + bl;
-		}
 
 		if (cc != TD_CC_NOERROR && cc < TD_CC_HCD0)
 			admhc_vdbg(ahcd,
@@ -691,13 +690,13 @@ ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
 			break;
 		/* fallthrough */
 	default:
-		admhc_dbg (ahcd,
+		admhc_dbg(ahcd,
 			"urb %p path %s ep%d%s %08x cc %d --> status %d\n",
 			urb, urb->dev->devpath,
 			usb_pipeendpoint (urb->pipe),
-			usb_pipein (urb->pipe) ? "in" : "out",
+			usb_pipein(urb->pipe) ? "in" : "out",
 			hc32_to_cpu(ahcd, td->hwINFO),
-			cc, cc_to_error [cc]);
+			cc, cc_to_error[cc]);
 	}
 }
 
@@ -719,11 +718,10 @@ rescan_all:
 		 * frame counter wraps and EDs with partially retired TDs
 		 */
 		if (likely(HC_IS_RUNNING(admhcd_to_hcd(ahcd)->state))) {
-			if (tick_before (tick, ed->tick)) {
+			if (tick_before(tick, ed->tick))
 skip_ed:
 				last = &ed->ed_rm_next;
 				continue;
-			}
 #if 0
 			if (!list_empty(&ed->td_list)) {
 				struct td	*td;
@@ -828,7 +826,7 @@ rescan_this:
 
 static void ed_unhalt(struct admhcd *ahcd, struct ed *ed, struct urb *urb)
 {
-	struct list_head *entry,*tmp;
+	struct list_head *entry, *tmp;
 	__hc32 toggle = ed->hwHeadP & cpu_to_hc32(ahcd, ED_C);
 
 #ifdef ADMHC_VERBOSE_DEBUG
@@ -880,7 +878,7 @@ static inline int is_td_halted(struct admhcd *ahcd, struct ed *ed,
 
 static void ed_update(struct admhcd *ahcd, struct ed *ed)
 {
-	struct list_head *entry,*tmp;
+	struct list_head *entry, *tmp;
 
 #ifdef ADMHC_VERBOSE_DEBUG
 	admhc_dump_ed(ahcd, "UPDATE", ed, 1);
@@ -901,7 +899,7 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed)
 			ed_unhalt(ahcd, ed, urb);
 
 		if (ed->type == PIPE_INTERRUPT)
-			ed_intr_refill(ahcd,ed);
+			ed_intr_refill(ahcd, ed);
 
 		/* If all this urb's TDs are done, call complete() */
 		if (urb_priv->td_idx == urb_priv->td_cnt)
@@ -923,11 +921,11 @@ static void ed_update(struct admhcd *ahcd, struct ed *ed)
 				/* ... hc may need waking-up */
 				switch (ed->type) {
 				case PIPE_CONTROL:
-					admhc_writel (ahcd, OHCI_CLF,
+					admhc_writel(ahcd, OHCI_CLF,
 						&ahcd->regs->cmdstatus);
 					break;
 				case PIPE_BULK:
-					admhc_writel (ahcd, OHCI_BLF,
+					admhc_writel(ahcd, OHCI_BLF,
 						&ahcd->regs->cmdstatus);
 					break;
 				}

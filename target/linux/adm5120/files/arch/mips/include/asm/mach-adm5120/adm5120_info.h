@@ -89,7 +89,7 @@ enum {
 
 /*
  * TODO:remove adm5120_eth* variables when the switch driver will be
- * 	converted into a real platform driver
+ *	converted into a real platform driver
  */
 extern unsigned int adm5120_eth_num_ports;
 extern unsigned char adm5120_eth_macs[6][6];

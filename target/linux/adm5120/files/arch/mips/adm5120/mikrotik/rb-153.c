@@ -11,9 +11,9 @@
 
 #include "rb-1xx.h"
 
-#define RB153_GPIO_DEV_MASK	( 1 << ADM5120_GPIO_PIN0 \
+#define RB153_GPIO_DEV_MASK	(1 << ADM5120_GPIO_PIN0 \
 				| 1 << ADM5120_GPIO_PIN3 \
-				| 1 << ADM5120_GPIO_PIN4 )
+				| 1 << ADM5120_GPIO_PIN4)
 
 static struct resource rb153_cf_resources[] __initdata = {
 	{

@@ -14,12 +14,12 @@
 static struct gpio_led rb133_gpio_leds[] __initdata = {
 	GPIO_LED_STD(ADM5120_GPIO_PIN6, "power",	NULL),
 	GPIO_LED_STD(ADM5120_GPIO_PIN5, "user",		NULL),
-	GPIO_LED_INV(ADM5120_GPIO_P2L1, "lan1_speed", 	NULL),
-	GPIO_LED_INV(ADM5120_GPIO_P2L0, "lan1_lnkact", 	NULL),
-	GPIO_LED_INV(ADM5120_GPIO_P1L1, "lan2_speed", 	NULL),
-	GPIO_LED_INV(ADM5120_GPIO_P1L0, "lan2_lnkact", 	NULL),
-	GPIO_LED_INV(ADM5120_GPIO_P0L1, "lan3_speed", 	NULL),
-	GPIO_LED_INV(ADM5120_GPIO_P0L0, "lan3_lnkact", 	NULL),
+	GPIO_LED_INV(ADM5120_GPIO_P2L1,	"lan1_speed",	NULL),
+	GPIO_LED_INV(ADM5120_GPIO_P2L0,	"lan1_lnkact",	NULL),
+	GPIO_LED_INV(ADM5120_GPIO_P1L1,	"lan2_speed",	NULL),
+	GPIO_LED_INV(ADM5120_GPIO_P1L0,	"lan2_lnkact",	NULL),
+	GPIO_LED_INV(ADM5120_GPIO_P0L1,	"lan3_speed",	NULL),
+	GPIO_LED_INV(ADM5120_GPIO_P0L0,	"lan3_lnkact",	NULL),
 };
 
 static u8 rb133_vlans[6] __initdata = {

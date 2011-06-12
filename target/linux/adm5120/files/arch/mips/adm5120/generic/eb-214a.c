@@ -103,7 +103,7 @@ static void __init eb214a_setup(void)
 	adm5120_add_device_gpio(EB214A_GPIO_DEV_MASK);
 
 	adm5120_add_device_uart(0);
-	//adm5120_add_device_uart(1);
+	/* adm5120_add_device_uart(1); */
 
 	adm5120_add_device_switch(5, eb214a_vlans);
 
@@ -117,7 +117,7 @@ static void __init eb214a_setup(void)
 
 	adm5120_pci_set_irq_map(ARRAY_SIZE(eb214a_pci_irqs),
 					eb214a_pci_irqs);
-//	adm5120_add_device_usb();
+	/* adm5120_add_device_usb(); */
 }
 
 MIPS_MACHINE(MACH_ADM5120_EB_214A, "EB-214A", "Generic EB-214A", eb214a_setup);

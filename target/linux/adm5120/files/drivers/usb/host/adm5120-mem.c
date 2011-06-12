@@ -125,10 +125,10 @@ static void td_free(struct admhcd *ahcd, struct td *td)
 #if 0
 	/* TODO: remove */
 	else if ((td->hwINFO & cpu_to_hc32(ahcd, TD_DONE)) != 0)
-		admhc_dbg (ahcd, "no hash for td %p\n", td);
+		admhc_dbg(ahcd, "no hash for td %p\n", td);
 #else
 	else if ((td->flags & TD_FLAG_DONE) != 0)
-		admhc_dbg (ahcd, "no hash for td %p\n", td);
+		admhc_dbg(ahcd, "no hash for td %p\n", td);
 #endif
 	dma_pool_free(ahcd->td_cache, td, td->td_dma);
 }

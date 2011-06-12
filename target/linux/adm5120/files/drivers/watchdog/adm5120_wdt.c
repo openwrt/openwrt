@@ -32,8 +32,8 @@
 #define NAME "adm5120_wdt"
 #define VERSION "0.1"
 
-static int expect_close = 0;
-static int access = 0;
+static int expect_close;
+static int access;
 static unsigned int timeout = DEFAULT_TIMEOUT;
 
 static int nowayout = WATCHDOG_NOWAYOUT;
@@ -71,9 +71,8 @@ static int wdt_open(struct inode *inode, struct file *file)
 	if (access)
 		return -EBUSY;
 
-	if (nowayout) {
+	if (nowayout)
 		__module_get(THIS_MODULE);
-	}
 
 	/* Activate timer */
 	wdt_reset_counter();
@@ -86,16 +85,16 @@ static int wdt_open(struct inode *inode, struct file *file)
 static int wdt_release(struct inode *inode, struct file *file)
 {
 	/*
-	 *	Shut off the timer.
-	 * 	Lock it in if it's a module and we set nowayout
+	 * Shut off the timer.
+	 * Lock it in if it's a module and we set nowayout
 	 */
 	if (expect_close && (nowayout == 0)) {
 		wdt_disable();
 		printk(KERN_INFO NAME ": disabling watchdog timer\n");
 		module_put(THIS_MODULE);
-	} else {
+	} else
 		printk(KERN_CRIT NAME ": device closed unexpectedly.  WDT will not stop!\n");
-	}
+
 	access = 0;
 	return 0;
 }
@@ -136,46 +135,46 @@ static int wdt_ioctl(struct inode *inode, struct file *file,
 		.identity =		"ADM5120_WDT Watchdog",
 	};
 	switch (cmd) {
-		default:
-			return -ENOTTY;
-		case WDIOC_GETSUPPORT:
-			if(copy_to_user((struct watchdog_info *)arg, &ident, sizeof(ident)))
-				return -EFAULT;
-			return 0;
-		case WDIOC_GETSTATUS:
-		case WDIOC_GETBOOTSTATUS:
-			return put_user(0,(int *)arg);
-		case WDIOC_KEEPALIVE:
-			wdt_reset_counter();
-			return 0;
-		case WDIOC_SETTIMEOUT:
-			if (get_user(new_timeout, (int *)arg))
-				return -EFAULT;
-			if (new_timeout < 1)
-				return -EINVAL;
-			if (new_timeout > MAX_TIMEOUT)
-				return -EINVAL;
-			timeout = new_timeout;
-			wdt_set_timeout();
-			/* Fall */
-		case WDIOC_GETTIMEOUT:
-			return put_user(timeout, (int *)arg);
+	default:
+		return -ENOTTY;
+	case WDIOC_GETSUPPORT:
+		if (copy_to_user((struct watchdog_info *)arg, &ident, sizeof(ident)))
+			return -EFAULT;
+		return 0;
+	case WDIOC_GETSTATUS:
+	case WDIOC_GETBOOTSTATUS:
+		return put_user(0, (int *)arg);
+	case WDIOC_KEEPALIVE:
+		wdt_reset_counter();
+		return 0;
+	case WDIOC_SETTIMEOUT:
+		if (get_user(new_timeout, (int *)arg))
+			return -EFAULT;
+		if (new_timeout < 1)
+			return -EINVAL;
+		if (new_timeout > MAX_TIMEOUT)
+			return -EINVAL;
+		timeout = new_timeout;
+		wdt_set_timeout();
+		/* Fall */
+	case WDIOC_GETTIMEOUT:
+		return put_user(timeout, (int *)arg);
 	}
 }
 
-static struct file_operations wdt_fops = {
-	owner:		THIS_MODULE,
-	llseek:		no_llseek,
-	write:		wdt_write,
-	ioctl:		wdt_ioctl,
-	open:		wdt_open,
-	release:	wdt_release,
+static const struct file_operations wdt_fops = {
+	.owner		= THIS_MODULE,
+	.llseek		= no_llseek,
+	.write		= wdt_write,
+	.ioctl		= wdt_ioctl,
+	.open		= wdt_open,
+	.release	= wdt_release,
 };
 
 static struct miscdevice wdt_miscdev = {
-	minor:		WATCHDOG_MINOR,
-	name:		"watchdog",
-	fops:		&wdt_fops,
+	.minor		= WATCHDOG_MINOR,
+	.name		= "watchdog",
+	.fops		= &wdt_fops,
 };
 
 static char banner[] __initdata = KERN_INFO NAME ": Watchdog Timer version " VERSION "\n";

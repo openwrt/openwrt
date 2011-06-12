@@ -267,7 +267,7 @@
  }
  
  static void
-@@ -576,8 +575,8 @@ pl010_console_write(struct console *co, 
+@@ -576,8 +575,8 @@ pl010_console_write(struct console *co,
  	/*
  	 *	First save the CR then disable the interrupts
  	 */
@@ -278,7 +278,7 @@
  
  	uart_console_write(&uap->port, s, count, pl010_console_putchar);
  
-@@ -586,10 +585,10 @@ pl010_console_write(struct console *co, 
+@@ -586,10 +585,10 @@ pl010_console_write(struct console *co,
  	 *	and restore the TCR
  	 */
  	do {

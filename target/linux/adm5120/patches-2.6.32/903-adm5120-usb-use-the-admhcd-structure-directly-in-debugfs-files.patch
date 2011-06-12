@@ -35,7 +35,7 @@
  	struct admhcd		*ahcd;
  	struct ed		**seen, *ed;
  	unsigned long		flags;
-@@ -529,9 +523,7 @@ static ssize_t fill_periodic_buffer(stru
+@@ -530,9 +524,7 @@ static ssize_t fill_periodic_buffer(stru
  		return 0;
  	seen_count = 0;
  
@@ -46,7 +46,7 @@
  	next = buf->page;
  	size = PAGE_SIZE;
  
-@@ -613,7 +605,6 @@ static ssize_t fill_periodic_buffer(stru
+@@ -615,7 +607,6 @@ static ssize_t fill_periodic_buffer(stru
  
  static ssize_t fill_registers_buffer(struct debug_buffer *buf)
  {
@@ -54,7 +54,7 @@
  	struct usb_hcd		*hcd;
  	struct admhcd		*ahcd;
  	struct admhcd_regs __iomem *regs;
-@@ -622,9 +613,8 @@ static ssize_t fill_registers_buffer(str
+@@ -624,9 +615,8 @@ static ssize_t fill_registers_buffer(str
  	char			*next;
  	u32			rdata;
  
@@ -66,7 +66,7 @@
  	regs = ahcd->regs;
  	next = buf->page;
  	size = PAGE_SIZE;
-@@ -689,7 +679,7 @@ done:
+@@ -691,7 +681,7 @@ done:
  }
  
  
@@ -75,7 +75,7 @@
  				ssize_t (*fill_func)(struct debug_buffer *))
  {
  	struct debug_buffer *buf;
-@@ -697,7 +687,7 @@ static struct debug_buffer *alloc_buffer
+@@ -699,7 +689,7 @@ static struct debug_buffer *alloc_buffer
  	buf = kzalloc(sizeof(struct debug_buffer), GFP_KERNEL);
  
  	if (buf) {
@@ -84,7 +84,7 @@
  		buf->fill_func = fill_func;
  		mutex_init(&buf->mutex);
  	}
-@@ -790,26 +780,25 @@ static int debug_registers_open(struct i
+@@ -792,26 +782,25 @@ static int debug_registers_open(struct i
  static inline void create_debug_files(struct admhcd *ahcd)
  {
  	struct usb_bus *bus = &admhcd_to_hcd(ahcd)->self;

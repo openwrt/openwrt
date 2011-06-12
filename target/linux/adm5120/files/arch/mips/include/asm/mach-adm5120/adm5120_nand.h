@@ -46,7 +46,7 @@
 #define NAND_READ_REG(r) \
 	readb((void __iomem *)KSEG1ADDR(ADM5120_NAND_BASE) + (r))
 #define NAND_WRITE_REG(r, v) \
-	writeb((v),(void __iomem *)KSEG1ADDR(ADM5120_NAND_BASE) + (r))
+	writeb((v), (void __iomem *)KSEG1ADDR(ADM5120_NAND_BASE) + (r))
 
 /*-------------------------------------------------------------------------*/
 

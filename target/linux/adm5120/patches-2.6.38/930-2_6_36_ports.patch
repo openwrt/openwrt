@@ -22,14 +22,14 @@
  #define NO_IRQ		(-1)
 --- a/drivers/watchdog/adm5120_wdt.c
 +++ b/drivers/watchdog/adm5120_wdt.c
-@@ -167,7 +167,7 @@ static struct file_operations wdt_fops =
- 	owner:		THIS_MODULE,
- 	llseek:		no_llseek,
- 	write:		wdt_write,
--	ioctl:		wdt_ioctl,
-+	unlocked_ioctl:	wdt_ioctl,
- 	open:		wdt_open,
- 	release:	wdt_release,
+@@ -166,7 +166,7 @@ static const struct file_operations wdt_
+ 	.owner		= THIS_MODULE,
+ 	.llseek		= no_llseek,
+ 	.write		= wdt_write,
+-	.ioctl		= wdt_ioctl,
++	.unlocked_ioctl	= wdt_ioctl,
+ 	.open		= wdt_open,
+ 	.release	= wdt_release,
  };
 --- a/arch/mips/Kbuild.platforms
 +++ b/arch/mips/Kbuild.platforms

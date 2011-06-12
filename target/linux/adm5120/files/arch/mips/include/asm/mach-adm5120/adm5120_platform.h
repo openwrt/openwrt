@@ -45,7 +45,7 @@ struct adm5120_pci_irq {
 	unsigned irq;
 };
 
-#define PCIIRQ(s,f,p,i) {.slot = (s), .func = (f), .pin  = (p), .irq  = (i)}
+#define PCIIRQ(s, f, p, i) {.slot = (s), .func = (f), .pin  = (p), .irq  = (i)}
 
 #ifdef CONFIG_PCI
 extern void adm5120_pci_set_irq_map(unsigned int nr_irqs,
@@ -73,7 +73,7 @@ extern void adm5120_add_device_gpio_buttons(unsigned nbuttons,
 
 #define GPIO_LED_DEF(g, n, t, a) {	\
 	.name = (n),			\
-	.default_trigger = (t), 	\
+	.default_trigger = (t),		\
 	.gpio = (g),			\
 	.active_low = (a)		\
 }

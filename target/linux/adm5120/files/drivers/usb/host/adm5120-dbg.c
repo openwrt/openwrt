@@ -98,9 +98,9 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small, int status
 			"stat=%d\n",
 			str,
 			urb,
-			usb_pipedevice (pipe),
-			usb_pipeendpoint (pipe),
-			usb_pipeout(pipe)? "out" : "in",
+			usb_pipedevice(pipe),
+			usb_pipeendpoint(pipe),
+			usb_pipeout(pipe) ? "out" : "in",
 			pipestring(pipe),
 			urb->transfer_flags,
 			urb->actual_length,
@@ -114,18 +114,18 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small, int status
 		if (usb_pipecontrol(pipe)) {
 			admhc_dbg(ahcd, "setup(8):");
 			for (i = 0; i < 8 ; i++)
-				printk (" %02x", ((__u8 *) urb->setup_packet) [i]);
-			printk ("\n");
+				printk(KERN_INFO" %02x", ((__u8 *)urb->setup_packet)[i]);
+			printk(KERN_INFO "\n");
 		}
 		if (urb->transfer_buffer_length > 0 && urb->transfer_buffer) {
 			admhc_dbg(ahcd, "data(%d/%d):",
 				urb->actual_length,
 				urb->transfer_buffer_length);
-			len = usb_pipeout(pipe)?
-						urb->transfer_buffer_length: urb->actual_length;
+			len = usb_pipeout(pipe) ?
+						urb->transfer_buffer_length : urb->actual_length;
 			for (i = 0; i < 16 && i < len; i++)
-				printk(" %02x", ((__u8 *)urb->transfer_buffer)[i]);
-			printk("%s stat:%d\n", i < len? "...": "", status);
+				printk(KERN_INFO " %02x", ((__u8 *)urb->transfer_buffer)[i]);
+			printk(KERN_INFO "%s stat:%d\n", i < len ? "..." : "", status);
 		}
 	}
 #endif /* ADMHC_VERBOSE_DEBUG */
@@ -133,12 +133,12 @@ urb_print(struct admhcd *ahcd, struct urb *urb, char *str, int small, int status
 
 #define admhc_dbg_sw(ahcd, next, size, format, arg...) \
 	do { \
-	if (next) { \
-		unsigned s_len; \
-		s_len = scnprintf(*next, *size, format, ## arg ); \
-		*size -= s_len; *next += s_len; \
-	} else \
-		admhc_dbg(ahcd,format, ## arg ); \
+		if (next) { \
+			unsigned s_len; \
+			s_len = scnprintf(*next, *size, format, ## arg); \
+			*size -= s_len; *next += s_len; \
+		} else \
+			admhc_dbg(ahcd, format, ## arg); \
 	} while (0);
 
 
@@ -170,7 +170,7 @@ static void maybe_print_eds(struct admhcd *ahcd, char *label, u32 value,
 		admhc_dbg_sw(ahcd, next, size, "%s %08x\n", label, value);
 }
 
-static char *buss2string (int state)
+static char *buss2string(int state)
 {
 	switch (state) {
 	case ADMHC_BUSS_RESET:
@@ -220,7 +220,7 @@ admhc_dump_status(struct admhcd *ahcd, char **next, unsigned *size)
 			admhc_readl(ahcd, &regs->hosthead), next, size);
 }
 
-#define dbg_port_sw(hc,num,value,next,size) \
+#define dbg_port_sw(hc, num, value, next, size) \
 	admhc_dbg_sw(hc, next, size, \
 		"portstatus [%d] " \
 		"0x%08x%s%s%s%s%s%s%s%s%s%s%s%s\n", \
@@ -286,7 +286,7 @@ static void admhc_dump(struct admhcd *ahcd, int verbose)
 
 	/* dumps some of the state we know about */
 	admhc_dump_status(ahcd, NULL, NULL);
-	admhc_dbg(ahcd,"current frame #%04x\n",
+	admhc_dbg(ahcd, "current frame #%04x\n",
 		admhc_frame_no(ahcd));
 
 	admhc_dump_roothub(ahcd, verbose, NULL, NULL);
@@ -348,7 +348,7 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 	tmp = hc32_to_cpup(ahcd, &ed->hwHeadP);
 	admhc_dbg(ahcd, "  tds: head %08x tail %08x %s%s%s\n",
 		tmp & TD_MASK,
-		hc32_to_cpup (ahcd, &ed->hwTailP),
+		hc32_to_cpup(ahcd, &ed->hwTailP),
 		(tmp & ED_C) ? data1 : data0,
 		(tmp & ED_H) ? " HALT" : "",
 		verbose ? " td list follows" : " (not listing)");
@@ -362,7 +362,7 @@ admhc_dump_ed(const struct admhcd *ahcd, const char *label,
 		list_for_each(tmp, &ed->td_list) {
 			struct td		*td;
 			td = list_entry(tmp, struct td, td_list);
-			admhc_dump_td (ahcd, "  ->", td);
+			admhc_dump_td(ahcd, "  ->", td);
 		}
 	}
 }
@@ -447,7 +447,7 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 			" h:%08x t:%08x",
 			ed,
 			ed_statestring(ed->state),
-			ed_typestring (ed->type),
+			ed_typestring(ed->type),
 			(info & ED_SPEED_FULL) ? 'f' : 'l',
 			info & ED_FA_MASK,
 			(info >> ED_EN_SHIFT) & ED_EN_MASK,
@@ -458,7 +458,7 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 			(info & ED_SKIP) ? " S" : "",
 			(headp & ED_H) ? " H" : "",
 			(headp & ED_C) ? data1 : data0,
-			headp & ED_MASK,tailp);
+			headp & ED_MASK, tailp);
 		size -= temp;
 		buf += temp;
 
@@ -466,9 +466,9 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 			u32		dbp, cbl;
 
 			td = list_entry(entry, struct td, td_list);
-			info = hc32_to_cpup (ahcd, &td->hwINFO);
-			dbp = hc32_to_cpup (ahcd, &td->hwDBP);
-			cbl = hc32_to_cpup (ahcd, &td->hwCBL);
+			info = hc32_to_cpup(ahcd, &td->hwINFO);
+			dbp = hc32_to_cpup(ahcd, &td->hwDBP);
+			cbl = hc32_to_cpup(ahcd, &td->hwCBL);
 
 			temp = scnprintf(buf, size,
 				"\n\ttd/%p %s %d %s%scc=%x urb %p (%08x,%08x)",
@@ -477,7 +477,7 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 				TD_BL_GET(cbl),
 				(info & TD_OWN) ? "" : "DONE ",
 				(cbl & TD_IE) ? "IE " : "",
-				TD_CC_GET (info), td->urb, info, cbl);
+				TD_CC_GET(info), td->urb, info, cbl);
 			size -= temp;
 			buf += temp;
 		}
@@ -525,7 +525,8 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 	char			*next;
 	unsigned		i;
 
-	if (!(seen = kmalloc(DBG_SCHED_LIMIT * sizeof *seen, GFP_ATOMIC)))
+	seen = kmalloc(DBG_SCHED_LIMIT * sizeof(*seen), GFP_ATOMIC);
+	if (!seen)
 		return 0;
 	seen_count = 0;
 
@@ -542,10 +543,11 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 	/* dump a snapshot of the periodic schedule (and load) */
 	spin_lock_irqsave(&ahcd->lock, flags);
 	for (i = 0; i < NUM_INTS; i++) {
-		if (!(ed = ahcd->periodic [i]))
+		ed = ahcd->periodic[i];
+		if (!ed)
 			continue;
 
-		temp = scnprintf(next, size, "%2d [%3d]:", i, ahcd->load [i]);
+		temp = scnprintf(next, size, "%2d [%3d]:", i, ahcd->load[i]);
 		size -= temp;
 		next += temp;
 
@@ -555,18 +557,18 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 			size -= temp;
 			next += temp;
 			for (temp = 0; temp < seen_count; temp++) {
-				if (seen [temp] == ed)
+				if (seen[temp] == ed)
 					break;
 			}
 
 			/* show more info the first time around */
 			if (temp == seen_count) {
-				u32	info = hc32_to_cpu (ahcd, ed->hwINFO);
+				u32	info = hc32_to_cpu(ahcd, ed->hwINFO);
 				struct list_head	*entry;
 				unsigned		qlen = 0;
 
 				/* qlen measured here in TDs, not urbs */
-				list_for_each (entry, &ed->td_list)
+				list_for_each(entry, &ed->td_list)
 					qlen++;
 				temp = scnprintf(next, size,
 					" (%cs dev%d ep%d%s qlen %u"
@@ -586,7 +588,7 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 				next += temp;
 
 				if (seen_count < DBG_SCHED_LIMIT)
-					seen [seen_count++] = ed;
+					seen[seen_count++] = ed;
 
 				ed = ed->ed_next;
 
@@ -603,7 +605,7 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 		next += temp;
 	}
 	spin_unlock_irqrestore(&ahcd->lock, flags);
-	kfree (seen);
+	kfree(seen);
 
 	return PAGE_SIZE - size;
 }
