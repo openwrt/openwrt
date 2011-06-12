@@ -1,0 +1,149 @@
+--- a/arch/mips/lantiq/xway/Kconfig
++++ b/arch/mips/lantiq/xway/Kconfig
+@@ -14,6 +14,10 @@
+ 	bool "Netgear"
+ 	default y
+ 
++config LANTIQ_MACH_GIGASX76X
++	bool "GIGASX76X"
++	default y
++
+ endmenu
+ 
+ endif
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
+@@ -7,4 +7,5 @@
+ obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
+ obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
+ obj-$(CONFIG_LANTIQ_MACH_NETGEAR) += mach-netgear.o
++obj-$(CONFIG_LANTIQ_MACH_GIGASX76X) += mach-gigasx76x.o
+ obj-y += dev-dwc_otg.o
+--- /dev/null
++++ b/arch/mips/lantiq/xway/mach-gigasx76x.c
+@@ -0,0 +1,113 @@
++/*
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ *
++ *  Copyright (C) 2011 Andrej Vlašić
++ *  Copyright (C) 2011 Luka Perkov
++ *
++ */
++
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/leds.h>
++#include <linux/gpio.h>
++#include <linux/gpio_buttons.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++#include <linux/mtd/physmap.h>
++#include <linux/input.h>
++#include <linux/ath5k_platform.h>
++#include <linux/pci.h>
++#include <linux/phy.h>
++
++#include <irq.h>
++
++#include <lantiq_soc.h>
++#include <lantiq_platform.h>
++
++#include "../machtypes.h"
++#include "devices.h"
++#include "dev-dwc_otg.h"
++#include "dev-leds-gpio.h"
++
++#ifdef CONFIG_MTD_PARTITIONS
++static struct mtd_partition gigasx76x_partitions[] =
++{
++	{
++		.name	= "secondary_env",
++		.offset	= 0xe000,
++		.size	= 0x2000,
++	},
++	{
++		.name	= "secondary_boot",
++		.offset	= 0x10000,
++		.size	= 0x10000,
++	},
++	{
++		.name	= "uboot",
++		.offset	= 0x20000,
++		.size	= 0x30000,
++	},
++	{
++		.name	= "linux",
++		.offset	= 0x50000,
++		.size	= 0x7a0000,
++	},
++	{
++		.name	= "board_config",
++		.offset	= 0x7f0000,
++		.size	= 0x10000,
++	},
++};
++#endif
++
++static struct gpio_led
++gigasx76x_leds_gpio[] __initdata = {
++	{ .name = "soc:green:usb", .gpio = 50, },
++	{ .name = "soc:green:wlan", .gpio = 51, },
++	{ .name = "soc:green:phone2", .gpio = 52, },
++	{ .name = "soc:green:phone1", .gpio = 53, },
++	{ .name = "soc:green:line", .gpio = 54, },
++	{ .name = "soc:green:online", .gpio = 55, },
++};
++
++
++static struct physmap_flash_data gigasx76x_flash_data = {
++#ifdef CONFIG_MTD_PARTITIONS
++	.nr_parts	= ARRAY_SIZE(gigasx76x_partitions),
++	.parts		= gigasx76x_partitions,
++#endif
++};
++
++static struct ltq_pci_data ltq_pci_data = {
++	.clock      = PCI_CLOCK_INT,
++	.gpio   = PCI_GNT1 | PCI_REQ1,
++	.irq    = {
++		[14] = INT_NUM_IM0_IRL0 + 22,
++	},
++};
++
++static struct ltq_eth_data ltq_eth_data = {
++  .mii_mode = PHY_INTERFACE_MODE_MII,
++};
++
++static void __init
++gigasx76x_init(void)
++{
++#define GIGASX76X_USB			29
++
++	ltq_register_gpio_stp();
++	ltq_register_nor(&gigasx76x_flash_data);
++	ltq_register_pci(&ltq_pci_data);
++	ltq_register_etop(&ltq_eth_data);
++	xway_register_dwc(GIGASX76X_USB);
++	ltq_register_tapi();
++	ltq_register_madwifi_eep();
++	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(gigasx76x_leds_gpio), gigasx76x_leds_gpio);
++}
++
++MIPS_MACHINE(LANTIQ_MACH_GIGASX76X,
++			"GIGASX76X",
++			"GIGASX76X - Gigaset SX761,SX762,SX763",
++			gigasx76x_init);
+--- a/arch/mips/lantiq/machtypes.h
++++ b/arch/mips/lantiq/machtypes.h
+@@ -35,6 +35,9 @@
+ 
+ 	/* Netgear */
+ 	LANTIQ_MACH_DGN3500B,		/* Netgear DGN3500 */
++
++	/* Gigaset */
++	LANTIQ_MACH_GIGASX76X,		/* Gigaset SX76x */
+ };
+ 
+ #endif
