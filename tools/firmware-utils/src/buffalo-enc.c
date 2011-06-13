@@ -87,8 +87,10 @@ static int decrypt_file(void)
 	ep.key = (unsigned char *) crypt_key;
 
 	err = decrypt_buf(&ep, buf, src_len);
-	if (err)
+	if (err) {
+		ERR("unable to decrypt '%s'", ifname);
 		goto out;
+	}
 
 	printf("Magic\t\t: '%s'\n", ep.magic);
 	printf("Seed\t\t: 0x%02x\n", ep.seed);
