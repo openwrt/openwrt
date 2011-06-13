@@ -179,7 +179,7 @@ int bcrypt_buf(unsigned char seed, unsigned char *key, unsigned char *src,
 
 uint32_t buffalo_csum(uint32_t csum, void *buf, unsigned long len)
 {
-	unsigned char *p = buf;
+	char *p = buf;
 
 	while (len--) {
 		int i;
