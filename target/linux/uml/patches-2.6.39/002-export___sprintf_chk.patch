@@ -1,0 +1,14 @@
+diff --git a/arch/um/os-Linux/user_syms.c b/arch/um/os-Linux/user_syms.c
+index 05f5ea8..9e71e7e 100644
+--- a/arch/um/os-Linux/user_syms.c
++++ b/arch/um/os-Linux/user_syms.c
+@@ -18,6 +18,9 @@ extern void *memmove(void *, const void *, size_t);
+ extern void *memset(void *, int, size_t);
+ extern int printf(const char *, ...);
+ 
++extern int __sprintf_chk(char *str, int flag, size_t strlen, const char *format);
++EXPORT_SYMBOL(__sprintf_chk);
++
+ /* If it's not defined, the export is included in lib/string.c.*/
+ #ifdef __HAVE_ARCH_STRSTR
+ EXPORT_SYMBOL(strstr);
