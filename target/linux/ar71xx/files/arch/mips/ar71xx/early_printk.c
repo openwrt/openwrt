@@ -15,72 +15,82 @@
 #include <asm/addrspace.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
+#include <asm/mach-ar71xx/ar933x_uart.h>
 
-static void __iomem *prom_uart_base;
-static void (*_putchar)(unsigned char);
+static void (*_prom_putchar) (unsigned char);
 
-#define UART_READ(r) \
-	__raw_readl(prom_uart_base + 4 * (r))
+static inline void prom_putchar_wait(void __iomem *reg, u32 mask, u32 val)
+{
+	u32 t;
 
-#define UART_WRITE(r, v) \
-	__raw_writel((v), prom_uart_base + 4 * (r))
+	do {
+		t = __raw_readl(reg);
+		if ((t & mask) == val)
+			break;
+	} while (1);
+}
 
 static void prom_putchar_ar71xx(unsigned char ch)
 {
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0)
-		;
-	UART_WRITE(UART_TX, ch);
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0)
-		;
+	void __iomem *base = (void __iomem *)(KSEG1ADDR(AR71XX_UART_BASE));
+
+	prom_putchar_wait(base + UART_LSR * 4, UART_LSR_THRE, UART_LSR_THRE);
+	__raw_writel(ch, base + UART_TX * 4);
+	prom_putchar_wait(base + UART_LSR * 4, UART_LSR_THRE, UART_LSR_THRE);
 }
 
 static void prom_putchar_ar933x(unsigned char ch)
 {
-	while (((UART_READ(0)) & 0x200) == 0)
-		;
-	UART_WRITE(0, 0x200 | ch);
-	while (((UART_READ(0)) & 0x200) == 0)
-		;
+	void __iomem *base = (void __iomem *)(KSEG1ADDR(AR933X_UART_BASE));
+
+	prom_putchar_wait(base + AR933X_UART_DATA_REG, AR933X_UART_DATA_TX_CSR,
+			  AR933X_UART_DATA_TX_CSR);
+	__raw_writel(AR933X_UART_DATA_TX_CSR | ch, base + AR933X_UART_DATA_REG);
+	prom_putchar_wait(base + AR933X_UART_DATA_REG, AR933X_UART_DATA_TX_CSR,
+			  AR933X_UART_DATA_TX_CSR);
 }
 
-static int prom_putchar_init(void)
+static void prom_putchar_dummy(unsigned char ch)
 {
-	if (_putchar)
-		return 0;
+	/* nothing to do */
+}
 
-	switch(ar71xx_soc) {
-	case AR71XX_SOC_AR7130:
-	case AR71XX_SOC_AR7141:
-	case AR71XX_SOC_AR7161:
-	case AR71XX_SOC_AR7240:
-	case AR71XX_SOC_AR7241:
-	case AR71XX_SOC_AR7242:
-	case AR71XX_SOC_AR9130:
-	case AR71XX_SOC_AR9132:
-	case AR71XX_SOC_AR9341:
-	case AR71XX_SOC_AR9342:
-	case AR71XX_SOC_AR9344:
-		prom_uart_base = (void __iomem *) KSEG1ADDR(AR71XX_UART_BASE);
-		_putchar = prom_putchar_ar71xx;
+static void prom_putchar_init(void)
+{
+	void __iomem *base;
+	u32 id;
+
+	base = (void __iomem *)(KSEG1ADDR(AR71XX_RESET_BASE));
+	id = __raw_readl(base + AR71XX_RESET_REG_REV_ID);
+	id &= REV_ID_MAJOR_MASK;
+
+	switch (id) {
+	case REV_ID_MAJOR_AR71XX:
+	case REV_ID_MAJOR_AR7240:
+	case REV_ID_MAJOR_AR7241:
+	case REV_ID_MAJOR_AR7242:
+	case REV_ID_MAJOR_AR913X:
+	case REV_ID_MAJOR_AR9341:
+	case REV_ID_MAJOR_AR9342:
+	case REV_ID_MAJOR_AR9344:
+		_prom_putchar = prom_putchar_ar71xx;
 		break;
 
-	case AR71XX_SOC_AR9330:
-	case AR71XX_SOC_AR9331:
-		prom_uart_base = (void __iomem *) KSEG1ADDR(AR933X_UART_BASE);
-		_putchar = prom_putchar_ar933x;
+	case REV_ID_MAJOR_AR9330:
+	case REV_ID_MAJOR_AR9331:
+		_prom_putchar = prom_putchar_ar933x;
 		break;
 
 	default:
-		return -ENODEV;
+		_prom_putchar = prom_putchar_dummy;
+		break;
 	}
-
-	return 0;
 }
 
 void prom_putchar(unsigned char ch)
 {
-	if (prom_putchar_init())
-		return;
+	if (!_prom_putchar)
+		prom_putchar_init();
 
-	_putchar(ch);
+	_prom_putchar(ch);
 }
