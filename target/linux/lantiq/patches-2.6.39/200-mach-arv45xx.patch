@@ -276,7 +276,7 @@
 +arv45xx_register_ethernet(void)
 +{
 +#define ARV45XX_BRN_MAC			0x3f0016
-+	memcpy_fromio(&ltq_eth_data.mac,
++	memcpy_fromio(&ltq_eth_data.mac.sa_data,
 +		(void *)KSEG1ADDR(LTQ_FLASH_START + ARV45XX_BRN_MAC), 6);
 +	ltq_register_etop(&ltq_eth_data);
 +}
@@ -285,7 +285,7 @@
 +arv75xx_register_ethernet(void)
 +{
 +#define ARV75XX_BRN_MAC			0x7f0016
-+	memcpy_fromio(&ltq_eth_data.mac,
++	memcpy_fromio(&ltq_eth_data.mac.sa_data,
 +		(void *)KSEG1ADDR(LTQ_FLASH_START + ARV75XX_BRN_MAC), 6);
 +	ltq_register_etop(&ltq_eth_data);
 +}
@@ -294,7 +294,7 @@
 +bewan_register_ethernet(void)
 +{
 +#define BEWAN_BRN_MAC			0x3f0014
-+	memcpy_fromio(&ltq_eth_data.mac,
++	memcpy_fromio(&ltq_eth_data.mac.sa_data,
 +		(void *)KSEG1ADDR(LTQ_FLASH_START + BEWAN_BRN_MAC), 6);
 +	ltq_register_etop(&ltq_eth_data);
 +}
