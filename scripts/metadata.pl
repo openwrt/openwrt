@@ -188,7 +188,11 @@ sub target_name($) {
 sub kver($) {
 	my $v = shift;
 	$v =~ tr/\./_/;
-	$v =~ /(\d+_\d+_\d+)(_\d+)?/ and $v = $1;
+	if (substr($v,0,2) eq "2_") {
+		$v =~ /(\d+_\d+_\d+)(_\d+)?/ and $v = $1;
+	} else {
+		$v =~ /(\d+_\d+)(_\d+)?/ and $v = $1;
+	}
 	return $v;
 }
 
