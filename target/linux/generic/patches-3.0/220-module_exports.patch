@@ -1,0 +1,89 @@
+--- a/include/asm-generic/vmlinux.lds.h
++++ b/include/asm-generic/vmlinux.lds.h
+@@ -52,6 +52,27 @@
+ #define LOAD_OFFSET 0
+ #endif
+ 
++#ifndef SYMTAB_KEEP_STR
++#define SYMTAB_KEEP_STR *(__ksymtab_strings+*)
++#define SYMTAB_DISCARD_STR
++#else
++#define SYMTAB_DISCARD_STR *(__ksymtab_strings+*)
++#endif
++
++#ifndef SYMTAB_KEEP
++#define SYMTAB_KEEP *(SORT(___ksymtab+*))
++#define SYMTAB_DISCARD
++#else
++#define SYMTAB_DISCARD *(SORT(___ksymtab+*))
++#endif
++
++#ifndef SYMTAB_KEEP_GPL
++#define SYMTAB_KEEP_GPL *(SORT(___ksymtab_gpl+*))
++#define SYMTAB_DISCARD_GPL
++#else
++#define SYMTAB_DISCARD_GPL *(SORT(___ksymtab_gpl+*))
++#endif
++
+ #ifndef SYMBOL_PREFIX
+ #define VMLINUX_SYMBOL(sym) sym
+ #else
+@@ -276,14 +297,14 @@
+ 	/* Kernel symbol table: Normal symbols */			\
+ 	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
+ 		VMLINUX_SYMBOL(__start___ksymtab) = .;			\
+-		*(SORT(___ksymtab+*))					\
++		SYMTAB_KEEP						\
+ 		VMLINUX_SYMBOL(__stop___ksymtab) = .;			\
+ 	}								\
+ 									\
+ 	/* Kernel symbol table: GPL-only symbols */			\
+ 	__ksymtab_gpl     : AT(ADDR(__ksymtab_gpl) - LOAD_OFFSET) {	\
+ 		VMLINUX_SYMBOL(__start___ksymtab_gpl) = .;		\
+-		*(SORT(___ksymtab_gpl+*))				\
++		SYMTAB_KEEP_GPL						\
+ 		VMLINUX_SYMBOL(__stop___ksymtab_gpl) = .;		\
+ 	}								\
+ 									\
+@@ -345,7 +366,7 @@
+ 									\
+ 	/* Kernel symbol table: strings */				\
+         __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
+-		*(__ksymtab_strings)					\
++		SYMTAB_KEEP_STR						\
+ 	}								\
+ 									\
+ 	/* __*init sections */						\
+@@ -677,6 +698,9 @@
+ 	EXIT_TEXT							\
+ 	EXIT_DATA							\
+ 	EXIT_CALL							\
++	SYMTAB_DISCARD							\
++	SYMTAB_DISCARD_GPL						\
++	SYMTAB_DISCARD_STR						\
+ 	*(.discard)							\
+ 	*(.discard.*)							\
+ 	}
+--- a/include/linux/module.h
++++ b/include/linux/module.h
+@@ -230,12 +230,19 @@ struct module_use {
+ #define __CRC_SYMBOL(sym, sec)
+ #endif
+ 
++#ifdef MODULE
++#define __EXPORT_SUFFIX(sym)
++#else
++#define __EXPORT_SUFFIX(sym) "+" #sym
++#endif
++
+ /* For every exported symbol, place a struct in the __ksymtab section */
+ #define __EXPORT_SYMBOL(sym, sec)				\
+ 	extern typeof(sym) sym;					\
+ 	__CRC_SYMBOL(sym, sec)					\
+ 	static const char __kstrtab_##sym[]			\
+-	__attribute__((section("__ksymtab_strings"), aligned(1))) \
++	__attribute__((section("__ksymtab_strings"		\
++	  __EXPORT_SUFFIX(sym)), aligned(1)))			\
+ 	= MODULE_SYMBOL_PREFIX #sym;                    	\
+ 	static const struct kernel_symbol __ksymtab_##sym	\
+ 	__used							\
