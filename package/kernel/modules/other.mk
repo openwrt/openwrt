@@ -659,6 +659,7 @@ $(eval $(call KernelPackage,pwm-gpio))
 
 define KernelPackage/rtc-core
   SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=@(!LINUX_3_0||BROKEN)
   TITLE:=Real Time Clock class support
   KCONFIG:=CONFIG_RTC_CLASS
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-core.ko
