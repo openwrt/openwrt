@@ -1,0 +1,25 @@
+--- a/Makefile
++++ b/Makefile
+@@ -155,13 +155,15 @@ unload:
+ configcheck:
+ 	@echo -n "Checking kernel configuration... "
+ 	
+-	@# check version of kernel
+-	@echo $(KERNELRELEASE) | grep -q -i '^[2-9]\.[4-9]\.' || { \
+-	    echo "FAILED"; \
+-	    echo "Only kernel versions 2.4.x and above are supported."; \
+-	    echo "You have $(KERNELRELEASE)."; \
+-	    exit 1; \
+-	}
++	@# check kernel version
++	@case $(KERNELRELEASE) in \
++	    2.[456].*) ;; \
++	    [3-9].*) ;; \
++	    *) echo "FAILED"; \
++	       echo "Only kernel versions 2.4.x and above are supported."; \
++	       echo "You have $(KERNELRELEASE)."; \
++	       exit 1 ;; \
++	esac
+ 	
+ 	@# check kernel configuration
+ 	@if [ -z "$(CONFIG_SYSCTL)" ]; then \
