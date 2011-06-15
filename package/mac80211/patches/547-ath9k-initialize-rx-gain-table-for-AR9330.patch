@@ -1,8 +1,6 @@
-diff --git a/drivers/net/wireless/ath/ath9k/ar9003_hw.c b/drivers/net/wireless/ath/ath9k/ar9003_hw.c
-index 264a7ea..8efdec2 100644
 --- a/drivers/net/wireless/ath/ath9k/ar9003_hw.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_hw.c
-@@ -443,7 +443,17 @@ static void ar9003_rx_gain_table_apply(struct ath_hw *ah)
+@@ -443,7 +443,17 @@ static void ar9003_rx_gain_table_apply(s
  	switch (ar9003_hw_get_rx_gain_idx(ah)) {
  	case 0:
  	default:
@@ -21,7 +19,7 @@ index 264a7ea..8efdec2 100644
  			INIT_INI_ARRAY(&ah->iniModesRxGain,
  				       ar9340Common_rx_gain_table_1p0,
  				       ARRAY_SIZE(ar9340Common_rx_gain_table_1p0),
-@@ -460,7 +470,17 @@ static void ar9003_rx_gain_table_apply(struct ath_hw *ah)
+@@ -460,7 +470,17 @@ static void ar9003_rx_gain_table_apply(s
  				       2);
  		break;
  	case 1:
@@ -40,4 +38,3 @@ index 264a7ea..8efdec2 100644
  			INIT_INI_ARRAY(&ah->iniModesRxGain,
  				       ar9340Common_wo_xlna_rx_gain_table_1p0,
  				       ARRAY_SIZE(ar9340Common_wo_xlna_rx_gain_table_1p0),
-

@@ -1,6 +1,6 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -74,7 +74,7 @@ endif # build check
+@@ -87,7 +87,7 @@ endif # build check
  endif # kernel Makefile check
  
  # These both are needed by compat-wireless || compat-bluetooth so enable them
@@ -9,10 +9,10 @@
  
  ifeq ($(CONFIG_MAC80211),y)
  $(error "ERROR: you have MAC80211 compiled into the kernel, CONFIG_MAC80211=y, as such you cannot replace its mac80211 driver. You need this set to CONFIG_MAC80211=m. If you are using Fedora upgrade your kernel as later version should this set as modular. For further information on Fedora see https://bugzilla.redhat.com/show_bug.cgi?id=470143. If you are using your own kernel recompile it and make mac80211 modular")
-@@ -622,10 +622,10 @@ endif #CONFIG_COMPAT_KERNEL_27
+@@ -635,10 +635,10 @@ endif #CONFIG_COMPAT_KERNEL_2_6_27
  # We need the backported rfkill module on kernel < 2.6.31.
  # In more recent kernel versions use the in kernel rfkill module.
- ifdef CONFIG_COMPAT_KERNEL_31
+ ifdef CONFIG_COMPAT_KERNEL_2_6_31
 -CONFIG_RFKILL_BACKPORT=m
 +# CONFIG_RFKILL_BACKPORT=m
  ifdef CONFIG_LEDS_TRIGGERS
@@ -21,7 +21,7 @@
  endif #CONFIG_LEDS_TRIGGERS
 -CONFIG_RFKILL_BACKPORT_INPUT=y
 +# CONFIG_RFKILL_BACKPORT_INPUT=y
- endif #CONFIG_COMPAT_KERNEL_31
+ endif #CONFIG_COMPAT_KERNEL_2_6_31
  
 --- a/include/linux/rfkill.h
 +++ b/include/linux/rfkill.h

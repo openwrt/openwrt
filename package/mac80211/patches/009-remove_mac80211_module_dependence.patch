@@ -1,6 +1,6 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -42,23 +42,6 @@ $(error "ERROR: Your 2.6.27 kernel has C
+@@ -50,23 +50,6 @@ $(error "ERROR: Your 2.6.27 kernel has C
  endif
  endif
  
@@ -15,7 +15,7 @@
 -#
 -# In kernel 2.6.32 both attributes were removed.
 -#
--ifeq ($(shell test $(KERNEL_SUBLEVEL) -ge 27 -a $(KERNEL_SUBLEVEL) -le 31 && echo yes),yes)
+-ifeq ($(shell test $(KERNEL_VERSION) -eq 2 -a $(KERNEL_SUBLEVEL) -ge 27 -a $(KERNEL_SUBLEVEL) -le 31 && echo yes),yes)
 -ifeq ($(CONFIG_MAC80211),)
 -$(error "ERROR: Your >=2.6.27 and <= 2.6.31 kernel has CONFIG_MAC80211 disabled, you should have it CONFIG_MAC80211=m if you want to use this thing.")
 -endif
@@ -23,4 +23,4 @@
 -
  ifneq ($(KERNELRELEASE),) # This prevents a warning
  
- ifeq ($(CONFIG_NET_SCHED),)
+ # We will warn when you don't have MQ support or NET_SCHED enabled.

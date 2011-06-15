@@ -1,8 +1,6 @@
-diff --git a/drivers/net/wireless/ath/ath9k/ar9003_hw.c b/drivers/net/wireless/ath/ath9k/ar9003_hw.c
-index dc0ad4a..264a7ea 100644
 --- a/drivers/net/wireless/ath/ath9k/ar9003_hw.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_hw.c
-@@ -328,7 +328,17 @@ static void ar9003_tx_gain_table_apply(struct ath_hw *ah)
+@@ -328,7 +328,17 @@ static void ar9003_tx_gain_table_apply(s
  	switch (ar9003_hw_get_tx_gain_idx(ah)) {
  	case 0:
  	default:
@@ -21,7 +19,7 @@ index dc0ad4a..264a7ea 100644
  			INIT_INI_ARRAY(&ah->iniModesTxGain,
  					ar9340Modes_lowest_ob_db_tx_gain_table_1p0,
  				       ARRAY_SIZE(ar9340Modes_lowest_ob_db_tx_gain_table_1p0),
-@@ -345,7 +355,17 @@ static void ar9003_tx_gain_table_apply(struct ath_hw *ah)
+@@ -345,7 +355,17 @@ static void ar9003_tx_gain_table_apply(s
  				       5);
  		break;
  	case 1:
@@ -40,7 +38,7 @@ index dc0ad4a..264a7ea 100644
  			INIT_INI_ARRAY(&ah->iniModesTxGain,
  					ar9340Modes_lowest_ob_db_tx_gain_table_1p0,
  				       ARRAY_SIZE(ar9340Modes_lowest_ob_db_tx_gain_table_1p0),
-@@ -362,7 +382,17 @@ static void ar9003_tx_gain_table_apply(struct ath_hw *ah)
+@@ -362,7 +382,17 @@ static void ar9003_tx_gain_table_apply(s
  				       5);
  		break;
  	case 2:
@@ -59,7 +57,7 @@ index dc0ad4a..264a7ea 100644
  			INIT_INI_ARRAY(&ah->iniModesTxGain,
  					ar9340Modes_lowest_ob_db_tx_gain_table_1p0,
  				       ARRAY_SIZE(ar9340Modes_lowest_ob_db_tx_gain_table_1p0),
-@@ -379,7 +409,17 @@ static void ar9003_tx_gain_table_apply(struct ath_hw *ah)
+@@ -379,7 +409,17 @@ static void ar9003_tx_gain_table_apply(s
  				       5);
  		break;
  	case 3:
@@ -78,4 +76,3 @@ index dc0ad4a..264a7ea 100644
  			INIT_INI_ARRAY(&ah->iniModesTxGain,
  					ar9340Modes_lowest_ob_db_tx_gain_table_1p0,
  				       ARRAY_SIZE(ar9340Modes_lowest_ob_db_tx_gain_table_1p0),
-

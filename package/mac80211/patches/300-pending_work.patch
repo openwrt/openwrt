@@ -102,7 +102,7 @@
  	for (i = 0; i < ATH_TXFIFO_DEPTH; i++) {
  		snprintf(tmp, sizeof(tmp) - 1, "txq_fifo[%i] empty: ", i);
  		PRQLE(tmp, txq_fifo[i]);
-@@ -807,7 +807,10 @@ void ath_debug_stat_tx(struct ath_softc 
+@@ -807,7 +807,10 @@ void ath_debug_stat_tx(struct ath_softc
  		else
  			TX_STAT_INC(qnum, a_completed);
  	} else {
@@ -139,7 +139,7 @@
  static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf, int len);
  static void ath_tx_rc_status(struct ath_softc *sc, struct ath_buf *bf,
  			     struct ath_tx_status *ts, int nframes, int nbad,
-@@ -377,8 +377,7 @@ static void ath_tx_complete_aggr(struct 
+@@ -377,8 +377,7 @@ static void ath_tx_complete_aggr(struct
  			bf_next = bf->bf_next;
  
  			bf->bf_state.bf_type |= BUF_XRETRY;
@@ -149,7 +149,7 @@
  				list_move_tail(&bf->list, &bf_head);
  
  			ath_tx_rc_status(sc, bf, ts, 1, 1, 0, false);
-@@ -463,20 +462,14 @@ static void ath_tx_complete_aggr(struct 
+@@ -463,20 +462,14 @@ static void ath_tx_complete_aggr(struct
  			}
  		}
  
@@ -219,7 +219,7 @@
  {
  	struct ath_buf *bf, *lastbf;
  	struct list_head bf_head;
-@@ -1170,93 +1157,63 @@ void ath_draintxq(struct ath_softc *sc, 
+@@ -1170,93 +1157,63 @@ void ath_draintxq(struct ath_softc *sc,
  	memset(&ts, 0, sizeof(ts));
  	INIT_LIST_HEAD(&bf_head);
  
@@ -857,7 +857,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -822,6 +863,9 @@ static void ieee80211_iface_work(struct 
+@@ -822,6 +863,9 @@ static void ieee80211_iface_work(struct
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
