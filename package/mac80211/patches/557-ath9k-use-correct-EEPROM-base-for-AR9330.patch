@@ -1,8 +1,6 @@
-diff --git a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
-index dd09cae..d7741d2 100644
 --- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
-@@ -3324,6 +3324,8 @@ static int ar9300_eeprom_restore_internal(struct ath_hw *ah,
+@@ -3324,6 +3324,8 @@ static int ar9300_eeprom_restore_interna
  	read = ar9300_read_eeprom;
  	if (AR_SREV_9485(ah))
  		cptr = AR9300_BASE_ADDR_4K;

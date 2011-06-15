@@ -1,8 +1,6 @@
-diff --git a/drivers/net/wireless/ath/ath9k/ar9003_phy.c b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-index b9f0b27..d9117bd 100644
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -1215,7 +1215,10 @@ static void ar9003_hw_antdiv_comb_conf_get(struct ath_hw *ah,
+@@ -1215,7 +1215,10 @@ static void ar9003_hw_antdiv_comb_conf_g
  	antconf->fast_div_bias = (regval & AR_PHY_9485_ANT_FAST_DIV_BIAS) >>
  				  AR_PHY_9485_ANT_FAST_DIV_BIAS_S;
  
@@ -14,4 +12,3 @@ index b9f0b27..d9117bd 100644
  		antconf->lna1_lna2_delta = -9;
  		antconf->div_group = 2;
  	} else {
-

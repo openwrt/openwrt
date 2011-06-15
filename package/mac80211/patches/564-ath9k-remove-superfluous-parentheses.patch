@@ -1,8 +1,6 @@
-diff --git a/drivers/net/wireless/ath/ath9k/recv.c b/drivers/net/wireless/ath/ath9k/recv.c
-index d0af2f2..99f55b3 100644
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -1076,39 +1076,39 @@ static void ath_lnaconf_alt_good_scan(struct ath_ant_comb *antcomb,
+@@ -1078,39 +1078,39 @@ static void ath_lnaconf_alt_good_scan(st
  		antcomb->rssi_lna1 = main_rssi_avg;
  
  	switch ((ant_conf.main_lna_conf << 4) | ant_conf.alt_lna_conf) {
@@ -48,7 +46,7 @@ index d0af2f2..99f55b3 100644
  		antcomb->main_conf = ATH_ANT_DIV_COMB_LNA1_PLUS_LNA2;
  		antcomb->first_quick_scan_conf =
  			ATH_ANT_DIV_COMB_LNA1_MINUS_LNA2;
-@@ -1325,40 +1325,40 @@ static void ath_ant_div_conf_fast_divbias(struct ath_hw_antcomb_conf *ant_conf,
+@@ -1327,40 +1327,40 @@ static void ath_ant_div_conf_fast_divbia
  		/* Adjust the fast_div_bias based on main and alt lna conf */
  		switch ((ant_conf->main_lna_conf << 4) |
  				ant_conf->alt_lna_conf) {
@@ -101,7 +99,7 @@ index d0af2f2..99f55b3 100644
  			ant_conf->fast_div_bias = 0x3d;
  			break;
  		default:
-@@ -1368,22 +1368,22 @@ static void ath_ant_div_conf_fast_divbias(struct ath_hw_antcomb_conf *ant_conf,
+@@ -1370,22 +1370,22 @@ static void ath_ant_div_conf_fast_divbia
  		/* Adjust the fast_div_bias based on main and alt_lna_conf */
  		switch ((ant_conf->main_lna_conf << 4) |
  				ant_conf->alt_lna_conf) {
@@ -128,7 +126,7 @@ index d0af2f2..99f55b3 100644
  			if (!(antcomb->scan) &&
  				(alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO))
  				ant_conf->fast_div_bias = 0x1;
-@@ -1392,12 +1392,12 @@ static void ath_ant_div_conf_fast_divbias(struct ath_hw_antcomb_conf *ant_conf,
+@@ -1394,12 +1394,12 @@ static void ath_ant_div_conf_fast_divbia
  			ant_conf->main_gaintb = 0;
  			ant_conf->alt_gaintb = 0;
  			break;
@@ -143,7 +141,7 @@ index d0af2f2..99f55b3 100644
  			if (!(antcomb->scan) &&
  				(alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO))
  				ant_conf->fast_div_bias = 0x1;
-@@ -1406,7 +1406,7 @@ static void ath_ant_div_conf_fast_divbias(struct ath_hw_antcomb_conf *ant_conf,
+@@ -1408,7 +1408,7 @@ static void ath_ant_div_conf_fast_divbia
  			ant_conf->main_gaintb = 0;
  			ant_conf->alt_gaintb = 0;
  			break;
@@ -152,7 +150,7 @@ index d0af2f2..99f55b3 100644
  			if (!(antcomb->scan) &&
  				(alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO))
  				ant_conf->fast_div_bias = 0x1;
-@@ -1415,12 +1415,12 @@ static void ath_ant_div_conf_fast_divbias(struct ath_hw_antcomb_conf *ant_conf,
+@@ -1417,12 +1417,12 @@ static void ath_ant_div_conf_fast_divbia
  			ant_conf->main_gaintb = 0;
  			ant_conf->alt_gaintb = 0;
  			break;
@@ -167,7 +165,7 @@ index d0af2f2..99f55b3 100644
  			if (!(antcomb->scan) &&
  				(alt_ratio > ATH_ANT_DIV_COMB_ALT_ANT_RATIO))
  				ant_conf->fast_div_bias = 0x1;
-@@ -1429,17 +1429,17 @@ static void ath_ant_div_conf_fast_divbias(struct ath_hw_antcomb_conf *ant_conf,
+@@ -1431,17 +1431,17 @@ static void ath_ant_div_conf_fast_divbia
  			ant_conf->main_gaintb = 0;
  			ant_conf->alt_gaintb = 0;
  			break;
@@ -188,7 +186,7 @@ index d0af2f2..99f55b3 100644
  			ant_conf->fast_div_bias = 0x1;
  			ant_conf->main_gaintb = 0;
  			ant_conf->alt_gaintb = 0;
-@@ -1447,9 +1447,7 @@ static void ath_ant_div_conf_fast_divbias(struct ath_hw_antcomb_conf *ant_conf,
+@@ -1449,9 +1449,7 @@ static void ath_ant_div_conf_fast_divbia
  		default:
  			break;
  		}
@@ -198,4 +196,3 @@ index d0af2f2..99f55b3 100644
  }
  
  /* Antenna diversity and combining */
-

@@ -1,8 +1,6 @@
-diff --git a/drivers/net/wireless/ath/ath9k/hw.c b/drivers/net/wireless/ath/ath9k/hw.c
-index 323b6ab..5d373fc 100644
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1161,6 +1161,41 @@ static bool ath9k_hw_set_reset(struct ath_hw *ah, int type)
+@@ -1170,6 +1170,41 @@ static bool ath9k_hw_set_reset(struct at
  			rst_flags |= AR_RTC_RC_MAC_COLD;
  	}
  
@@ -44,8 +42,6 @@ index 323b6ab..5d373fc 100644
  	REG_WRITE(ah, AR_RTC_RC, rst_flags);
  
  	REGWRITE_BUFFER_FLUSH(ah);
-diff --git a/drivers/net/wireless/ath/ath9k/hw.h b/drivers/net/wireless/ath/ath9k/hw.h
-index 8d9ac49..f29a806 100644
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
 @@ -864,6 +864,7 @@ struct ath_hw {
@@ -56,11 +52,9 @@ index 8d9ac49..f29a806 100644
  };
  
  struct ath_bus_ops {
-diff --git a/drivers/net/wireless/ath/ath9k/init.c b/drivers/net/wireless/ath/ath9k/init.c
-index 5ffabb9..f517649 100644
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -576,6 +576,7 @@ static int ath9k_init_softc(u16 devid, struct ath_softc *sc, u16 subsysid,
+@@ -576,6 +576,7 @@ static int ath9k_init_softc(u16 devid, s
  		sc->sc_ah->led_pin = pdata->led_pin;
  		ah->is_clk_25mhz = pdata->is_clk_25mhz;
  		ah->get_mac_revision = pdata->get_mac_revision;
@@ -68,8 +62,6 @@ index 5ffabb9..f517649 100644
  	}
  
  	common = ath9k_hw_common(ah);
-diff --git a/include/linux/ath9k_platform.h b/include/linux/ath9k_platform.h
-index c207607..6e3f54f 100644
 --- a/include/linux/ath9k_platform.h
 +++ b/include/linux/ath9k_platform.h
 @@ -31,6 +31,7 @@ struct ath9k_platform_data {

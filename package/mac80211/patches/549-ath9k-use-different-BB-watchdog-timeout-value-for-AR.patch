@@ -1,8 +1,6 @@
-diff --git a/drivers/net/wireless/ath/ath9k/hw.c b/drivers/net/wireless/ath/ath9k/hw.c
-index 826ed5d..f53a3bf 100644
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -615,7 +615,10 @@ static int __ath9k_hw_init(struct ath_hw *ah)
+@@ -624,7 +624,10 @@ static int __ath9k_hw_init(struct ath_hw
  	else
  		ah->tx_trig_level = (AR_FTRIG_512B >> AR_FTRIG_S);
  
@@ -14,4 +12,3 @@ index 826ed5d..f53a3bf 100644
  
  	common->state = ATH_HW_INITIALIZED;
  
-

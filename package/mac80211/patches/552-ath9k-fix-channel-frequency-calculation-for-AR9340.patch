@@ -1,8 +1,6 @@
-diff --git a/drivers/net/wireless/ath/ath9k/ar9003_phy.c b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-index 2df72cb..1194eeb 100644
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -104,7 +104,7 @@ static int ar9003_hw_set_channel(struct ath_hw *ah, struct ath9k_channel *chan)
+@@ -104,7 +104,7 @@ static int ar9003_hw_set_channel(struct
  			u32 chan_frac;
  
  			channelSel = (freq * 2) / 75;
@@ -11,4 +9,3 @@ index 2df72cb..1194eeb 100644
  			channelSel = (channelSel << 17) | chan_frac;
  		} else {
  			channelSel = CHANSEL_5G(freq);
-
