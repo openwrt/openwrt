@@ -1,0 +1,60 @@
+Fix spi-gpio for hotplug.
+
+--mb
+
+
+
+--- a/drivers/spi/spi_gpio.c
++++ b/drivers/spi/spi_gpio.c
+@@ -255,7 +255,7 @@ static void spi_gpio_cleanup(struct spi_
+ 	spi_bitbang_cleanup(spi);
+ }
+ 
+-static int __init spi_gpio_alloc(unsigned pin, const char *label, bool is_in)
++static int __devinit spi_gpio_alloc(unsigned pin, const char *label, bool is_in)
+ {
+ 	int value;
+ 
+@@ -269,7 +269,7 @@ static int __init spi_gpio_alloc(unsigne
+ 	return value;
+ }
+ 
+-static int __init
++static int __devinit
+ spi_gpio_request(struct spi_gpio_platform_data *pdata, const char *label,
+ 	u16 *res_flags)
+ {
+@@ -311,7 +311,7 @@ done:
+ 	return value;
+ }
+ 
+-static int __init spi_gpio_probe(struct platform_device *pdev)
++static int __devinit spi_gpio_probe(struct platform_device *pdev)
+ {
+ 	int				status;
+ 	struct spi_master		*master;
+@@ -379,7 +379,7 @@ gpio_free:
+ 	return status;
+ }
+ 
+-static int __exit spi_gpio_remove(struct platform_device *pdev)
++static int __devexit spi_gpio_remove(struct platform_device *pdev)
+ {
+ 	struct spi_gpio			*spi_gpio;
+ 	struct spi_gpio_platform_data	*pdata;
+@@ -408,12 +408,13 @@ MODULE_ALIAS("platform:" DRIVER_NAME);
+ static struct platform_driver spi_gpio_driver = {
+ 	.driver.name	= DRIVER_NAME,
+ 	.driver.owner	= THIS_MODULE,
+-	.remove		= __exit_p(spi_gpio_remove),
++	.probe		= spi_gpio_probe,
++	.remove		= __devexit_p(spi_gpio_remove),
+ };
+ 
+ static int __init spi_gpio_init(void)
+ {
+-	return platform_driver_probe(&spi_gpio_driver, spi_gpio_probe);
++	return platform_driver_register(&spi_gpio_driver);
+ }
+ module_init(spi_gpio_init);
+ 

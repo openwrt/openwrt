@@ -1,0 +1,35 @@
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -157,6 +157,22 @@ config MTD_AR7_PARTS
+ 	---help---
+ 	  TI AR7 partitioning support
+ 
++config MTD_MYLOADER_PARTS
++	tristate "MyLoader partition parsing"
++	depends on MTD_PARTITIONS && (ADM5120 || ATHEROS_AR231X || ATHEROS_AR71XX)
++	---help---
++	  MyLoader is a bootloader which allows the user to define partitions
++	  in flash devices, by putting a table in the second erase block
++	  on the device, similar to a partition table. This table gives the 
++	  offsets and lengths of the user defined partitions.
++
++	  If you need code which can detect and parse these tables, and
++	  register MTD 'partitions' corresponding to each image detected,
++	  enable this option.
++
++	  You will still need the parsing functions to be called by the driver
++	  for your particular device. It won't happen automatically.
++
+ comment "User Modules And Translation Layers"
+ 
+ config MTD_CHAR
+--- a/drivers/mtd/Makefile
++++ b/drivers/mtd/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_MTD_REDBOOT_PARTS) += redbo
+ obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
+ obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
+ obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
++obj-$(CONFIG_MTD_MYLOADER_PARTS) += myloader.o
+ 
+ # 'Users' - code which presents functionality to userspace.
+ obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o

@@ -1,0 +1,61 @@
+--- a/arch/mips/include/asm/unistd.h
++++ b/arch/mips/include/asm/unistd.h
+@@ -363,17 +363,18 @@
+ #define __NR_open_by_handle_at		(__NR_Linux + 340)
+ #define __NR_clock_adjtime		(__NR_Linux + 341)
+ #define __NR_syncfs			(__NR_Linux + 342)
+-#define __NR_setns			(__NR_Linux + 343)
++#define __NR_sendmmsg			(__NR_Linux + 343)
++#define __NR_setns			(__NR_Linux + 344)
+ 
+ /*
+  * Offset of the last Linux o32 flavoured syscall
+  */
+-#define __NR_Linux_syscalls		343
++#define __NR_Linux_syscalls		344
+ 
+ #endif /* _MIPS_SIM == _MIPS_SIM_ABI32 */
+ 
+ #define __NR_O32_Linux			4000
+-#define __NR_O32_Linux_syscalls		343
++#define __NR_O32_Linux_syscalls		344
+ 
+ #if _MIPS_SIM == _MIPS_SIM_ABI64
+ 
+--- a/arch/mips/kernel/scall32-o32.S
++++ b/arch/mips/kernel/scall32-o32.S
+@@ -589,6 +589,7 @@ einval:	li	v0, -ENOSYS
+ 	sys	sys_open_by_handle_at	3	/* 4340 */
+ 	sys	sys_clock_adjtime	2
+ 	sys	sys_syncfs		1
++	sys	sys_sendmmsg		4
+ 	sys	sys_setns		2
+ 	.endm
+ 
+--- a/arch/mips/kernel/scall64-64.S
++++ b/arch/mips/kernel/scall64-64.S
+@@ -428,5 +428,6 @@ sys_call_table:
+ 	PTR	sys_open_by_handle_at
+ 	PTR	sys_clock_adjtime		/* 5300 */
+ 	PTR	sys_syncfs
++	PTR	sys_sendmmsg
+ 	PTR	sys_setns
+ 	.size	sys_call_table,.-sys_call_table
+--- a/arch/mips/kernel/scall64-n32.S
++++ b/arch/mips/kernel/scall64-n32.S
+@@ -428,5 +428,6 @@ EXPORT(sysn32_call_table)
+ 	PTR	sys_open_by_handle_at
+ 	PTR	compat_sys_clock_adjtime	/* 6305 */
+ 	PTR	sys_syncfs
++	PTR	compat_sys_sendmmsg
+ 	PTR	sys_setns
+ 	.size	sysn32_call_table,.-sysn32_call_table
+--- a/arch/mips/kernel/scall64-o32.S
++++ b/arch/mips/kernel/scall64-o32.S
+@@ -546,5 +546,6 @@ sys_call_table:
+ 	PTR	compat_sys_open_by_handle_at	/* 4340 */
+ 	PTR	compat_sys_clock_adjtime
+ 	PTR	sys_syncfs
++	PTR	compat_sys_sendmmsg
+ 	PTR	sys_setns
+ 	.size	sys_call_table,.-sys_call_table

@@ -1,0 +1,25 @@
+From f31b7c0efa255dd17a5f584022a319387f09b0d8 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 12 Apr 2011 19:55:41 +0200
+Subject: [PATCH] squashfs: update xz compressor options struct.
+
+Update the xz compressor options struct to match the squashfs userspace
+one.
+---
+ fs/squashfs/xz_wrapper.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+--- a/fs/squashfs/xz_wrapper.c
++++ b/fs/squashfs/xz_wrapper.c
+@@ -39,8 +39,10 @@ struct squashfs_xz {
+ };
+ 
+ struct comp_opts {
+-	__le32 dictionary_size;
+ 	__le32 flags;
++	__le16 bit_opts;
++	__le16 fb;
++	__le32 dictionary_size;
+ };
+ 
+ static void *squashfs_xz_init(struct squashfs_sb_info *msblk, void *buff,
