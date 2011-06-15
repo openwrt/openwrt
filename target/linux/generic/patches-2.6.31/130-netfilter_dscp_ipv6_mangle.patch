@@ -1,0 +1,26 @@
+From: Fernando Luis Vazquez Cao <fernando@oss.ntt.co.jp>
+Date: Tue, 10 May 2011 08:00:21 +0000 (+0200)
+Subject: netfilter: IPv6: fix DSCP mangle code
+X-Git-Tag: v2.6.39~15^2~13^2~1
+X-Git-Url: http://git390.marist.edu/cgi-bin/gitweb.cgi?p=linux-2.6.git;a=commitdiff_plain;h=1ed2f73d90fb49bcf5704aee7e9084adb882bfc5
+
+netfilter: IPv6: fix DSCP mangle code
+
+The mask indicates the bits one wants to zero out, so it needs to be
+inverted before applying to the original TOS field.
+
+Signed-off-by: Fernando Luis Vazquez Cao <fernando@oss.ntt.co.jp>
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+---
+
+--- a/net/netfilter/xt_DSCP.c
++++ b/net/netfilter/xt_DSCP.c
+@@ -135,7 +135,7 @@ tos_tg6(struct sk_buff *skb, const struc
+ 	u_int8_t orig, nv;
+ 
+ 	orig = ipv6_get_dsfield(iph);
+-	nv   = (orig & info->tos_mask) ^ info->tos_value;
++	nv   = (orig & ~info->tos_mask) ^ info->tos_value;
+ 
+ 	if (orig != nv) {
+ 		if (!skb_make_writable(skb, sizeof(struct iphdr)))
