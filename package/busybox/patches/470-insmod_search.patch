@@ -1,6 +1,6 @@
 --- a/modutils/insmod.c
 +++ b/modutils/insmod.c
-@@ -11,6 +11,99 @@
+@@ -11,6 +11,106 @@
  
  #include "libbb.h"
  #include "modutils.h"
@@ -37,20 +37,27 @@
 +	char *module_dir, real_module_dir[FILENAME_MAX];
 +	int len, slen, ret = ENOENT, k_version;
 +	struct utsname myuname;
-+	const char *suffix;
++	const char *suffix = ".ko";
 +	struct stat st;
 +
 +	/* check the kernel version */
-+	if ((uname(&myuname) != 0) || (myuname.release[0] != '2'))
++	if (uname(&myuname) != 0)
 +		return EINVAL;
 +
-+	k_version = myuname.release[2] - '0';
++	k_version = myuname.release[0] - '0';
++
++	if (k_version < 2 || k_version > 9)
++		return EINVAL;
++
++	if (k_version == 2) {
++		int k_patchlevel = myuname.release[2] - '0';
++		if (k_patchlevel <= 4)
 +#if ENABLE_FEATURE_2_4_MODULES
-+	if (k_version <= 4)
-+		suffix = ".o";
-+	else
++			suffix = ".o";
++#else
++			return EINVAL;
 +#endif
-+		suffix = ".ko";
++	}
 +
 +	len = strlen(filename);
 +	slen = strlen(suffix);
@@ -100,7 +107,7 @@
  
  /* 2.6 style insmod has no options and required filename
   * (not module name - .ko can't be omitted) */
-@@ -59,9 +152,15 @@ int insmod_main(int argc UNUSED_PARAM, c
+@@ -59,9 +159,15 @@ int insmod_main(int argc UNUSED_PARAM, c
  	if (!filename)
  		bb_show_usage();
  
