@@ -1,0 +1,19 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -2108,7 +2108,7 @@ static void __init nb4_nvram_fixup(void)
+  * bcm4318 WLAN work
+  */
+ #ifdef CONFIG_SSB_PCIHOST
+-static struct ssb_sprom bcm63xx_sprom = {
++struct ssb_sprom bcm63xx_sprom = {
+ 	.revision		= 0x02,
+ 	.board_rev		= 0x17,
+ 	.country_code		= 0x0,
+@@ -2128,6 +2128,7 @@ static struct ssb_sprom bcm63xx_sprom =
+ 	.boardflags_lo		= 0x2848,
+ 	.boardflags_hi		= 0x0000,
+ };
++EXPORT_SYMBOL(bcm63xx_sprom);
+ 
+ int bcm63xx_get_fallback_sprom(struct ssb_bus *bus, struct ssb_sprom *out)
+ {
