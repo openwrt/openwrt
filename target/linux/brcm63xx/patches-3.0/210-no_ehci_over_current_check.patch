@@ -1,0 +1,16 @@
+--- a/drivers/usb/host/ehci-hub.c
++++ b/drivers/usb/host/ehci-hub.c
+@@ -891,11 +891,13 @@ static int ehci_hub_control (
+ 			 * power switching; they're allowed to just limit the
+ 			 * current.  khubd will turn the power back on.
+ 			 */
++#ifndef CONFIG_BCM63XX
+ 			if (HCS_PPC (ehci->hcs_params)){
+ 				ehci_writel(ehci,
+ 					temp & ~(PORT_RWC_BITS | PORT_POWER),
+ 					status_reg);
+ 			}
++#endif
+ 		}
+ 
+ 		/* whoever resumes must GetPortStatus to complete it!! */

@@ -1,0 +1,90 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -1706,6 +1706,79 @@ static struct board_info __initdata boar
+ };
+ #endif
+ 
++static struct board_info __initdata board_HW553 = {
++	.name                           = "HW553",
++	.expected_cpu_id                = 0x6358,
++
++	.has_enet0                      = 1,
++	.has_enet1                      = 1,
++	.has_pci                        = 1,
++
++	.enet0 = {
++		.has_phy                = 1,
++		.use_internal_phy       = 1,
++	},
++
++	.enet1 = {
++		.force_speed_100        = 1,
++		.force_duplex_full      = 1,
++	},
++
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
++
++	.leds = {
++		/*Each led on HW553 is bi-color (except wifi) */		
++		{
++			.name		= "lan:red",
++			.gpio		= 34,
++			.active_low	= 1,
++		},
++		{
++			.name		= "lan:blue",
++			.gpio		= 35,
++			.active_low	= 1,
++		},
++		{
++			.name		= "adsl:red",
++			.gpio		= 22,
++			.active_low	= 1,
++		},
++		{
++			.name		= "adsl:blue",
++			.gpio		= 23,
++			.active_low	= 1,
++		},
++		{
++			.name		= "power:red",
++			.gpio		= 5,
++			.active_low	= 1,
++			.default_trigger = "default-on",
++		},
++
++		{
++			.name		= "power:blue",
++			.gpio		= 4,
++			.active_low	= 1,
++		},
++		{
++			.name		= "wifi:red",
++			.gpio		= 25,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internetkey:red",
++			.gpio		= 12,
++			.active_low	= 1,
++		},
++		{
++			.name		= "internetkey:blue",
++			.gpio		= 13,
++			.active_low	= 1,
++		},
++	},
++};
++
+ /*
+  * all boards
+  */
+@@ -1746,6 +1819,7 @@ static const struct board_info __initdat
+ 	&board_nb4_ser_r2,
+ 	&board_nb4_fxc_r1,
+ 	&board_nb4_fxc_r2,
++	&board_HW553,
+ #endif
+ };
+ 
