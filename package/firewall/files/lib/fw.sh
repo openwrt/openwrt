@@ -242,5 +242,6 @@ fw_get_subnet4() {
 				export -n -- "$_var=! $_flag $_ipaddr/${_netmask:-255.255.255.255}" || \
 				export -n -- "$_var=$_flag $_ipaddr/${_netmask:-255.255.255.255}"
 		;;
+		*) export -n -- "$_var=" ;;
 	esac
 }
