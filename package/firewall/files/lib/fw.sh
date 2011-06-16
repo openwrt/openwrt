@@ -227,3 +227,20 @@ fw_get_negation() {
 		export -n -- "$_var=! $_flag ${_ipaddr#!}" || \
 		export -n -- "$_var=${_ipaddr:+$_flag $_ipaddr}"
 }
+
+fw_get_subnet4() {
+	local _var="$1"
+	local _flag="$2"
+	local _name="$3"
+
+	local _ipaddr="$(uci_get_state network "${_name#!}" ipaddr)"
+	local _netmask="$(uci_get_state network "${_name#!}" netmask)"
+
+	case "$_ipaddr" in
+		*.*.*.*)
+			[ "${_name#!}" != "$_name" ] && \
+				export -n -- "$_var=! $_flag $_ipaddr/${_netmask:-255.255.255.255}" || \
+				export -n -- "$_var=$_flag $_ipaddr/${_netmask:-255.255.255.255}"
+		;;
+	esac
+}
