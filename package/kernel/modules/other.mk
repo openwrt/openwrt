@@ -32,7 +32,8 @@ define KernelPackage/bluetooth
 	CONFIG_BT_HCIUSB \
 	CONFIG_BT_HCIUART \
 	CONFIG_BT_HCIUART_H4 \
-	CONFIG_BT_HIDP
+	CONFIG_BT_HIDP \
+	CONFIG_HID_SUPPORT=y
   $(call AddDepends/crc16)
   $(call AddDepends/hid)
   $(call AddDepends/rfkill)
