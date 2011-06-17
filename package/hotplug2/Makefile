@@ -28,7 +28,7 @@ define Package/hotplug2
   VERSION:=1.0-beta-$(PKG_RELEASE)
   TITLE:=Version 1.0 Dynamic device management subsystem for embedded systems
   URL:=http://isteve.bofh.cz/~isteve/hotplug2/
-  DEPENDS:=+USE_EGLIBC:libbsd
+  DEPENDS:=+USE_EGLIBC:libbsd +USE_GLIBC:libbsd
 endef
 
 define Package/hotplug2/description
@@ -45,7 +45,7 @@ MAKE_FLAGS += \
 	COPTS="$(TARGET_CFLAGS)" \
 	STATIC_WORKER="fork"
 
-ifneq ($(CONFIG_USE_EGLIBC),)
+ifneq ($(CONFIG_USE_EGLIBC)$(CONFIG_USE_GLIBC),)
   TARGET_LDFLAGS += -lbsd
 endif
 
