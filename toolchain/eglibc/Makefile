@@ -60,6 +60,7 @@ EGLIBC_CONFIGURE:= \
 	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(EGLIBC_CFLAGS)" \
 	libc_cv_slibdir="/lib" \
+	use_ldconfig=no \
 	$(HOST_BUILD_DIR)/libc/configure \
 		--prefix= \
 		--build=$(GNU_HOST_NAME) \
