@@ -14,7 +14,7 @@ FEATURES:=squashfs jffs2 targz
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -fno-caller-saves
 SUBTARGETS:=netus tqma9263
 
-LINUX_VERSION:=2.6.38.6
+LINUX_VERSION:=2.6.38.8
 DEVICE_TYPE=
 
 include $(INCLUDE_DIR)/target.mk

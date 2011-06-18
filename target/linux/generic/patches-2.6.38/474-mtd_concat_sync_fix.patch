@@ -1,6 +1,6 @@
 --- a/drivers/mtd/mtdconcat.c
 +++ b/drivers/mtd/mtdconcat.c
-@@ -619,7 +619,8 @@ static void concat_sync(struct mtd_info 
+@@ -619,7 +619,8 @@ static void concat_sync(struct mtd_info
  
  	for (i = 0; i < concat->num_subdev; i++) {
  		struct mtd_info *subdev = concat->subdev[i];

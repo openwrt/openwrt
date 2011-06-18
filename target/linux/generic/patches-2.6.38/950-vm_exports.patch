@@ -1,6 +1,6 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2710,6 +2710,16 @@ out:
+@@ -2730,6 +2730,16 @@ out:
  
  /* common code */
  
@@ -17,7 +17,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2787,10 +2797,7 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -2807,10 +2817,7 @@ int shmem_zero_setup(struct vm_area_stru
  	if (IS_ERR(file))
  		return PTR_ERR(file);
  
@@ -88,7 +88,7 @@
  
  /**
   * zap_vma_ptes - remove ptes mapping the vma
-@@ -2701,6 +2702,7 @@ int vmtruncate_range(struct inode *inode
+@@ -2699,6 +2700,7 @@ int vmtruncate_range(struct inode *inode
  
  	return 0;
  }
