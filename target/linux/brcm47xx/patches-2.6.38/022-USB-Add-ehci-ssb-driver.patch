@@ -37,7 +37,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	depends on USB
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -1254,9 +1254,14 @@ MODULE_LICENSE ("GPL");
+@@ -1256,9 +1256,14 @@ MODULE_LICENSE ("GPL");
  #define PLATFORM_DRIVER		ehci_msm_driver
  #endif
  
@@ -53,7 +53,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #error "missing bus glue for ehci-hcd"
  #endif
  
-@@ -1316,10 +1321,20 @@ static int __init ehci_hcd_init(void)
+@@ -1318,10 +1323,20 @@ static int __init ehci_hcd_init(void)
  	if (retval < 0)
  		goto clean4;
  #endif
@@ -75,7 +75,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  clean4:
  #endif
  #ifdef OF_PLATFORM_DRIVER
-@@ -1350,6 +1365,9 @@ module_init(ehci_hcd_init);
+@@ -1352,6 +1367,9 @@ module_init(ehci_hcd_init);
  
  static void __exit ehci_hcd_cleanup(void)
  {
