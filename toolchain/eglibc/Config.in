@@ -28,6 +28,10 @@ choice
 		bool "eglibc 2.12"
 		depends !GCC_VERSION_LLVM
 
+	config EGLIBC_VERSION_2_13
+		bool "eglibc 2.13"
+		depends !GCC_VERSION_LLVM
+
 	config EGLIBC_VERSION_TRUNK
 		bool "eglibc trunk"
 
@@ -44,6 +48,7 @@ config EGLIBC_REVISION
 	default "10152" if EGLIBC_VERSION_2_10
 	default "10454" if EGLIBC_VERSION_2_11
 	default "10495" if EGLIBC_VERSION_2_12
+	default "13055" if EGLIBC_VERSION_2_13
 	default "HEAD"  if EGLIBC_VERSION_TRUNK
 	default ""
 
