@@ -72,9 +72,9 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -2051,6 +2109,22 @@ void __init board_prom_init(void)
- 	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
- 	val &= MPI_CSBASE_BASE_MASK;
+@@ -2057,6 +2115,22 @@ void __init board_prom_init(void)
+ 		val &= MPI_CSBASE_BASE_MASK;
+ 	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
 +	printk(KERN_INFO PFX "Boot address 0x%08x\n",(unsigned int)boot_addr);
 +
@@ -95,10 +95,11 @@
  
  	/* dump cfe version */
  	cfe = boot_addr + BCM963XX_CFE_VERSION_OFFSET;
-@@ -2255,6 +2329,13 @@ int __init board_register_devices(void)
- 	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
- 	val &= MPI_CSBASE_BASE_MASK;
- 
+@@ -2264,6 +2338,14 @@ int __init board_register_devices(void)
+ 		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
+ 		val &= MPI_CSBASE_BASE_MASK;
+ 	}
++
 +	/* BT Voyager 2500V has 8 Meg flash in two 4 Meg banks
 +	 * Loading from CFE always uses Bank 0 */
 +	if (!strcmp(board.name, "V2500V_BB")) {
