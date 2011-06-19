@@ -102,7 +102,7 @@ void __init ar71xx_add_device_uart(void)
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
 		pdev = &ar933x_uart_device;
-		ar933x_uart_data.uartclk = ar71xx_ahb_freq;
+		ar933x_uart_data.uartclk = ar71xx_ref_freq;
 		break;
 
 	case AR71XX_SOC_AR9341:
