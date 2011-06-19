@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -852,6 +852,10 @@ static struct platform_device mtd_dev =
+@@ -846,6 +846,10 @@ static struct platform_device mtd_dev =
  	.num_resources		= ARRAY_SIZE(mtd_resources),
  };
  
@@ -11,7 +11,7 @@
  static struct gpio_led_platform_data bcm63xx_led_data;
  
  static struct platform_device bcm63xx_gpio_leds = {
-@@ -916,6 +920,8 @@ int __init board_register_devices(void)
+@@ -907,6 +911,8 @@ int __init board_register_devices(void)
  
  	platform_device_register(&mtd_dev);
  
