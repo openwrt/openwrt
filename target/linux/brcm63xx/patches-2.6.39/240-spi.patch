@@ -26,7 +26,7 @@
  	[IRQ_DSL]		= BCM_6358_DSL_IRQ,
 --- /dev/null
 +++ b/arch/mips/bcm63xx/dev-spi.c
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,131 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -143,6 +143,9 @@
 +	spi_resources[0].end = spi_resources[0].start;
 +	spi_resources[0].end += RSET_SPI_SIZE - 1;
 +	spi_resources[1].start = bcm63xx_get_irq_number(IRQ_SPI);
++
++	if (BCMCPU_IS_6345())
++		return -ENODEV;
 +
 +	/* Fill in platform data */
 +	if (BCMCPU_IS_6338() || BCMCPU_IS_6348())
@@ -990,12 +993,11 @@
  #include <board_bcm963xx.h>
  
  #define PFX	"board_bcm963xx: "
-@@ -931,6 +932,9 @@ int __init board_register_devices(void)
+@@ -931,6 +932,8 @@ int __init board_register_devices(void)
  	if (board.num_spis)
  		spi_register_board_info(board.spis, board.num_spis);
  
-+	if (!BCMCPU_IS_6345())
-+		bcm63xx_spi_register();
++	bcm63xx_spi_register();
 +
  	/* read base address of boot chip select (0) */
  	if (BCMCPU_IS_6345())
