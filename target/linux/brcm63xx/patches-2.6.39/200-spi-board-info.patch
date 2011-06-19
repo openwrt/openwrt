@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -918,6 +918,9 @@ int __init board_register_devices(void)
+@@ -912,6 +912,9 @@ int __init board_register_devices(void)
  	if (board.num_devs)
  		platform_add_devices(board.devs, board.num_devs);
  
@@ -8,8 +8,8 @@
 +		spi_register_board_info(board.spis, board.num_spis);
 +
  	/* read base address of boot chip select (0) */
- 	if (BCMCPU_IS_6345())
- 		val = 0x1fc00000;
+ 	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
+ 	val &= MPI_CSBASE_BASE_MASK;
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 @@ -65,6 +65,10 @@ struct board_info {
