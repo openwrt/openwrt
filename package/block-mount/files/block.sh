@@ -119,17 +119,15 @@ config_create_swap_fstab_entry() {
 	[ -n "$device" ] || return 0
 
 	local fstabnew
-	
+
 	mkdir -p /var/lock
-	lock -w /var/lock/fstab.lck && {
-		lock /var/lock/fstab.lck
-		fstabnew="$(mktemp -t '.fstab.XXXXXXXX')"
-		cat /tmp/fstab | grep -E -v "^$device[[:blank:]]" >>"$fstabnew"
-		[ "$enabled" -eq 1 ] && echo "$device	none	swap	sw	0	0" >> "$fstabnew"
-		cat "$fstabnew" >/tmp/fstab
-		rm -f $fstabnew
-		lock -u /var/lock/fstab.lck
-	}
+	lock /var/lock/fstab.lck
+	fstabnew="$(mktemp -t '.fstab.XXXXXXXX')"
+	cat /tmp/fstab | grep -E -v "^$device[[:blank:]]" >>"$fstabnew"
+	[ "$enabled" -eq 1 ] && echo "$device	none	swap	sw	0	0" >> "$fstabnew"
+	cat "$fstabnew" >/tmp/fstab
+	rm -f $fstabnew
+	lock -u /var/lock/fstab.lck
 }
 
 config_create_mount_fstab_entry() {
@@ -144,17 +142,15 @@ config_create_mount_fstab_entry() {
 	[ -n "$device" ] || return 0
 
 	local fstabnew
-	
+
 	mkdir -p /var/lock
-	lock -w /var/lock/fstab.lck && {
-		lock /var/lock/fstab.lck
-		fstabnew="$(mktemp -t '.fstab.XXXXXXXX')"
-		cat /tmp/fstab | grep -E -v "^$device[[:blank:]]" | grep -v "$target" >>"$fstabnew"
-		echo "$device	$target	$fstype	$options	0	0" >>"$fstabnew"
-		cat "$fstabnew" >/tmp/fstab		
-		rm -f $fstabnew
-		lock -u /var/lock/fstab.lck
-	}
+	lock /var/lock/fstab.lck
+	fstabnew="$(mktemp -t '.fstab.XXXXXXXX')"
+	cat /tmp/fstab | grep -E -v "^$device[[:blank:]]" | grep -v "$target" >>"$fstabnew"
+	echo "$device	$target	$fstype	$options	0	0" >>"$fstabnew"
+	cat "$fstabnew" >/tmp/fstab		
+	rm -f $fstabnew
+	lock -u /var/lock/fstab.lck
 }
 
 libmount_find_token() {
