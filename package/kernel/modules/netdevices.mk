@@ -7,6 +7,72 @@
 
 NETWORK_DEVICES_MENU:=Network Devices
 
+define KernelPackage/sis190
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=SiS 190 Fast/Gigabit Ethernet support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_SIS190
+  FILES:=$(LINUX_DIR)/drivers/net/sis190.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,sis190)
+endef
+ 
+$(eval $(call KernelPackage,sis190))
+
+define KernelPackage/skge
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=SysKonnect Yukon support
+  DEPENDS:=@TARGET_x86
+  KCONFIG:=CONFIG_SKGE
+  FILES:=$(LINUX_DIR)/drivers/net/skge.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,skge)
+endef
+
+$(eval $(call KernelPackage,skge))
+
+define KernelPackage/atl2
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Atheros L2 Fast Ethernet support
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:=CONFIG_ATL2
+  FILES:=$(LINUX_DIR)/drivers/net/atlx/atl2.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,atl2)
+endef
+
+$(eval $(call KernelPackage,atl2))
+
+define KernelPackage/atl1
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Atheros L1 Gigabit Ethernet support
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:=CONFIG_ATL1
+  FILES:=$(LINUX_DIR)/drivers/net/atlx/atl1.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,atl1)
+endef
+
+$(eval $(call KernelPackage,atl1))
+
+define KernelPackage/atl1c
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Atheros L1C
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:=CONFIG_ATL1C
+  FILES:=$(LINUX_DIR)/drivers/net/atl1c/atl1c.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,atl1c)
+endef
+
+$(eval $(call KernelPackage,atl1c))
+
+define KernelPackage/atl1e
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Atheros L1E
+  DEPENDS:=@PCI_SUPPORT
+  KCONFIG:=CONFIG_ATL1E
+  FILES:=$(LINUX_DIR)/drivers/net/atl1e/atl1e.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,50,atl1e)
+endef
+
+$(eval $(call KernelPackage,atl1e))
+
 define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
