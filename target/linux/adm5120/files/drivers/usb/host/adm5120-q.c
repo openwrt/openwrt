@@ -718,10 +718,11 @@ rescan_all:
 		 * frame counter wraps and EDs with partially retired TDs
 		 */
 		if (likely(HC_IS_RUNNING(admhcd_to_hcd(ahcd)->state))) {
-			if (tick_before(tick, ed->tick))
+			if (tick_before(tick, ed->tick)) {
 skip_ed:
 				last = &ed->ed_rm_next;
 				continue;
+			}
 #if 0
 			if (!list_empty(&ed->td_list)) {
 				struct td	*td;
