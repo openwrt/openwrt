@@ -55,6 +55,10 @@ HOST_STAMP_INSTALLED:=$(TOOLCHAIN_DIR)/stamp/.eglibc_installed
 HOST_BUILD_DIR1:=$(HOST_BUILD_DIR)-initial
 HOST_BUILD_DIR2:=$(HOST_BUILD_DIR)-final
 
+# XXX: {e,}glibc does not build w/ -Os
+# http://sourceware.org/bugzilla/show_bug.cgi?id=5203
+EGLIBC_CFLAGS:=$(subst -Os,-O2,$(TARGET_CFLAGS))
+
 EGLIBC_CONFIGURE:= \
 	BUILD_CC="$(HOSTCC)" \
 	$(TARGET_CONFIGURE_OPTS) \
