@@ -24,7 +24,7 @@ $(eval $(call KernelPackage,bcm63xx-spi))
 define KernelPackage/pcmcia-bcm63xx
   SUBMENU:=$(PCMCIA_MENU)
   TITLE:=Broadcom BCM63xx PCMCIA support
-  DEPENDS:=@TARGET_brcm63xx kmod-pcmcia-core
+  DEPENDS:=@TARGET_brcm63xx +kmod-pcmcia-rsrc
   KCONFIG:=CONFIG_PCMCIA_BCM63XX
   FILES:=$(LINUX_DIR)/drivers/pcmcia/bcm63xx_pcmcia.ko
   AUTOLOAD:=$(call AutoLoad,41,bcm63xx_pcmcia)
