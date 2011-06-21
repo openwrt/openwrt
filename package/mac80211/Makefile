@@ -104,6 +104,23 @@ define KernelPackage/mac80211/description
 Generic IEEE 802.11 Networking Stack (mac80211)
 endef
 
+PKG_LINUX_FIRMWARE_NAME:=linux-firmware
+PKG_LINUX_FIRMWARE_VERSION:=97649b1e5449029c845ebf7500e780a8867c3e89
+PKG_LINUX_FIRMWARE_SOURCE:=$(PKG_LINUX_FIRMWARE_NAME)-$(PKG_LINUX_FIRMWARE_VERSION).tar.bz2
+PKG_LINUX_FIRMWARE_PROTO:=git
+PKG_LINUX_FIRMWARE_SOURCE_URL:=git://git.kernel.org/pub/scm/linux/kernel/git/dwmw2/linux-firmware.git
+PKG_LINUX_FIRMWARE_SUBDIR:=$(PKG_LINUX_FIRMWARE_NAME)-$(PKG_LINUX_FIRMWARE_VERSION)
+
+define Download/linux-firmware
+  FILE:=$(PKG_LINUX_FIRMWARE_SOURCE)
+  URL:=$(PKG_LINUX_FIRMWARE_SOURCE_URL)
+  MD5SUM:=$(PKG_LINUX_FIRMWARE_MD5SUM)
+  PROTO:=$(PKG_LINUX_FIRMWARE_PROTO)
+  VERSION:=$(PKG_LINUX_FIRMWARE_VERSION)
+  SUBDIR:=$(PKG_LINUX_FIRMWARE_SUBDIR)
+endef
+$(eval $(call Download,linux-firmware))
+
 # Prism54 drivers
 P54PCIFW:=2.13.12.0.arm
 P54USBFW:=2.13.24.0.lm87.arm
@@ -178,40 +195,6 @@ define KernelPackage/p54-spi
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54spi.ko
   AUTOLOAD:=$(call AutoLoad,31,p54spi)
 endef
-
-# Ralink rt2x00 drivers
-RT61FW:=RT61_Firmware_V1.2.zip
-RT71FW:=RT71W_Firmware_V1.8.zip
-RT2860FW:=RT2860_Firmware_V11.zip
-RT2870FW:=RT2870_Firmware_V8.zip
-
-define Download/rt61
-  FILE:=$(RT61FW)
-  URL:=http://www.ralinktech.com.tw/data/
-  MD5SUM:=d4c690c93b470bc9a681297c2adc6281
-endef
-$(eval $(call Download,rt61))
-
-define Download/rt71w
-  FILE:=$(RT71FW)
-  URL:=http://www.ralinktech.com.tw/data/
-  MD5SUM:=1e7a5dc574e0268574fcda3fd5cf52f7
-endef
-$(eval $(call Download,rt71w))
-
-define Download/rt2860
-  FILE:=$(RT2860FW)
-  URL:=http://www.ralinktech.com.tw/data/drivers
-  MD5SUM:=440a81756a52c53528f16faa41c40124
-endef
-$(eval $(call Download,rt2860))
-
-define Download/rt2870
-  FILE:=$(RT2870FW)
-  URL:=http://www.ralinktech.com.tw/data/drivers
-  MD5SUM:=a7aae1d8cfd68e4d86a73000df0b6584
-endef
-$(eval $(call Download,rt2870))
 
 NEED_RT2X00_LIB_CRYPTO:=y
 NEED_RT2X00_LIB_FIRMWARE:=y
@@ -457,31 +440,6 @@ This module adds support for wireless adapters based on
 Atheros IEEE 802.11n AR5008 and AR9001 family of chipsets.
 endef
 
-AR7010FW:=ar7010.fw
-AR7010_1_1_FW:=ar7010_1_1.fw
-AR9271FW:=ar9271.fw
-
-define Download/ar9271
-  FILE:=$(AR9271FW)
-  URL:=http://git.kernel.org/?p=linux/kernel/git/dwmw2/linux-firmware.git;a=blob_plain;f=ar9271.fw;h=d0ee74a1c8dccb7cc21f5be90f1d4048fa9dbf9e;hb=HEAD;?
-  MD5SUM:=2e6f5045ec4c5a42bb93ced242bad0ba
-endef
-$(eval $(call Download,ar9271))
-
-define Download/ar7010
-  FILE:=$(AR7010FW)
-  URL:=http://git.kernel.org/?p=linux/kernel/git/dwmw2/linux-firmware.git;a=blob_plain;f=ar7010.fw;h=840005d0f0c81838c581b8cd5d76c8dd3843731c;hb=HEAD;?
-  MD5SUM:=59823b82b1f72bed9b044e8cc78ad65c
-endef
-$(eval $(call Download,ar7010))
-
-define Download/ar7010_1_1
-  FILE:=$(AR7010_1_1_FW)
-  URL:=http://git.kernel.org/?p=linux/kernel/git/dwmw2/linux-firmware.git;a=blob_plain;f=ar7010_1_1.fw;h=684d4cd1a8cac4f58305589e31f9d856d03a8ef0;hb=HEAD;?
-  MD5SUM:=544fcbe5a93cfa53c7e6d3ded2b05347
-endef
-$(eval $(call Download,ar7010_1_1))
-
 define KernelPackage/ath9k-htc
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n USB device support
@@ -509,36 +467,6 @@ define KernelPackage/carl9170/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(DL_DIR)/$(CARL9170_FW)-$(CARL9170_FW_VERSION) $(1)/lib/firmware/$(CARL9170_FW)
 endef
-
-
-USB8388FW_NAME:=usb8388
-USB8388FW_VERSION:=5.110.22.p23
-
-define Download/usb8388
-  URL:=http://dev.laptop.org/pub/firmware/libertas/
-  FILE:=$(USB8388FW_NAME)-$(USB8388FW_VERSION).bin
-  MD5SUM=5e38f55719df3d0c58dd3bd02575a09c
-endef
-$(eval $(call Download,usb8388))
-
-SD8686FW_NAME:=sd8686
-SD8686FW_VERSION:=9.70.7.p0
-
-define Download/sd8686
-  URL:=http://dev.laptop.org/pub/firmware/libertas/
-  FILE:=$(SD8686FW_NAME)-$(SD8686FW_VERSION).bin
-  MD5SUM=b4f8be61e19780a14836f146c538c5dd
-endef
-$(eval $(call Download,sd8686))
-
-SD8686HELPER_NAME:=sd8686_helper
-
-define Download/sd8686_helper
-  URL:=http://dev.laptop.org/pub/firmware/libertas/
-  FILE:=$(SD8686HELPER_NAME).bin
-  MD5SUM=2a4d8f4df198ce949c350df5674f4ac6
-endef
-$(eval $(call Download,sd8686_helper))
 
 define KernelPackage/libertas-usb
   $(call KernelPackage/mac80211/Default)
@@ -676,112 +604,6 @@ endef
 define KernelPackage/net-hermes-pcmcia/description
  Kernel modules for Hermes based PCMCIA adaptors
 endef
-
-IWL3945_NAME:=iwlwifi-3945-ucode
-IWL3945_VERSION:=15.32.2.9
-IWL3945_MD5SUM:=d99a75ab1305d1532a09471b2f9a547a
-IWL4965_NAME:=iwlwifi-4965-ucode
-IWL4965_VERSION:=228.61.2.24
-IWL4965_MD5SUM:=2531028773cfc22aca5539c734f2a241
-IWL5000_NAME:=iwlwifi-5000-ucode
-IWL5000_VERSION:=8.83.5.1
-IWL5000_MD5SUM:=da82465019b3c7d1ee5156474ab4931d
-IWL5150_NAME:=iwlwifi-5150-ucode
-IWL5150_VERSION:=8.24.2.2
-IWL5150_MD5SUM:=f9cee16e455e8046b1bf62c93f882d5d
-IWL1000_NAME:=iwlwifi-1000-ucode
-IWL1000_VERSION:=39.31.5.1
-IWL1000_MD5SUM:=8098503cb2abcdeffffb3ddd2d8d6f60
-IWL6000_NAME:=iwlwifi-6000-ucode
-IWL6000_VERSION:=9.221.4.1
-IWL6000_MD5SUM:=c132a4c1946a9dbc0c36b41696e5c793
-IWL6050_NAME:=iwlwifi-6050-ucode
-IWL6050_VERSION:=41.28.5.1
-IWL6050_MD5SUM:=cb484a65b9139666d4ddebf60598a87b
-IWL6005_NAME:=iwlwifi-6000g2a-ucode
-IWL6005_VERSION:=17.168.5.2
-IWL6005_MD5SUM:=0b9579f4b8faf51c955295607a8e79a8
-IWL6030_NAME:=iwlwifi-6000g2b-ucode
-IWL6030_VERSION:=17.168.5.2
-IWL6030_MD5SUM:=d87411296b4eeda0c91322228e9f8437
-IWL100_NAME:=iwlwifi-100-ucode
-IWL100_VERSION:=39.31.5.1
-IWL100_MD5SUM:=b686f0ab94888ccca3ce74d2d6ee1133
-
-
-define Download/iwl-fw/Default
-  URL:=http://intellinuxwireless.org/iwlwifi/downloads/
-endef
-
-define Download/iwl3945-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL3945_NAME)-$(IWL3945_VERSION).tgz
-  MD5SUM:=$(IWL3945_MD5SUM)
-endef
-$(eval $(call Download,iwl3945-fw))
-
-define Download/iwl4965-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL4965_NAME)-$(IWL4965_VERSION).tgz
-  MD5SUM:=$(IWL4965_MD5SUM)
-endef
-$(eval $(call Download,iwl4965-fw))
-
-define Download/iwl5000-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL5000_NAME)-$(IWL5000_VERSION).tgz
-  MD5SUM:=$(IWL5000_MD5SUM)
-endef
-$(eval $(call Download,iwl5000-fw))
-
-define Download/iwl5150-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL5150_NAME)-$(IWL5150_VERSION).tgz
-  MD5SUM:=$(IWL5150_MD5SUM)
-endef
-$(eval $(call Download,iwl5150-fw))
-
-define Download/iwl1000-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL1000_NAME)-$(IWL1000_VERSION).tgz
-  MD5SUM:=$(IWL1000_MD5SUM)
-endef
-$(eval $(call Download,iwl1000-fw))
-
-define Download/iwl6000-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL6000_NAME)-$(IWL6000_VERSION).tgz
-  MD5SUM:=$(IWL6000_MD5SUM)
-endef
-$(eval $(call Download,iwl6000-fw))
-
-define Download/iwl6050-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL6050_NAME)-$(IWL6050_VERSION).tgz
-  MD5SUM:=$(IWL6050_MD5SUM)
-endef
-$(eval $(call Download,iwl6050-fw))
-
-define Download/iwl6005-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL6005_NAME)-$(IWL6005_VERSION).tgz
-  MD5SUM:=$(IWL6005_MD5SUM)
-endef
-$(eval $(call Download,iwl6005-fw))
-
-define Download/iwl6030-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL6030_NAME)-$(IWL6030_VERSION).tgz
-  MD5SUM:=$(IWL6030_MD5SUM)
-endef
-$(eval $(call Download,iwl6030-fw))
-
-define Download/iwl100-fw
-  $(call Download/iwl-fw/Default)
-  FILE:=$(IWL100_NAME)-$(IWL100_VERSION).tgz
-  MD5SUM:=$(IWL100_MD5SUM)
-endef
-$(eval $(call Download,iwl100-fw))
 
 define KernelPackage/iwlagn
   $(call KernelPackage/mac80211/Default)
@@ -1338,23 +1160,10 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(PKG_UNPACK)
 	$(Build/Patch)
-	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT61FW)
-	unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT71FW)
-	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2860FW)
-	-unzip -jod $(PKG_BUILD_DIR) $(DL_DIR)/$(RT2870FW)
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2100_NAME)-$(IPW2100_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL3945_NAME)-$(IWL3945_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL4965_NAME)-$(IWL4965_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL5000_NAME)-$(IWL5000_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL5150_NAME)-$(IWL5150_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL1000_NAME)-$(IWL1000_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL6000_NAME)-$(IWL6000_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL6050_NAME)-$(IWL6050_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL6005_NAME)-$(IWL6005_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL6030_NAME)-$(IWL6030_VERSION).tgz
-	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IWL100_NAME)-$(IWL100_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
+	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(PKG_LINUX_FIRMWARE_SOURCE)
 	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
 endef
@@ -1382,14 +1191,25 @@ endef
 
 define KernelPackage/libertas-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(USB8388FW_NAME)-$(USB8388FW_VERSION).bin $(1)/lib/firmware/$(USB8388FW_NAME).bin
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8388_v9.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8388_v5.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8682.bin \
+		$(1)/lib/firmware/
 endef
 
 define KernelPackage/libertas-sd/install
-	echo "Libertas install: $(CONFIG_PACKAGE_kmod-libertas-sd)"
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(SD8686FW_NAME)-$(SD8686FW_VERSION).bin $(1)/lib/firmware/$(SD8686FW_NAME).bin
-	$(INSTALL_DATA) $(DL_DIR)/$(SD8686HELPER_NAME).bin $(1)/lib/firmware/$(SD8686HELPER_NAME).bin
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8385_helper.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8385.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v9_helper.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v9.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v8_helper.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v8.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8688_helper.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8688.bin \
+		$(1)/lib/firmware/
 endef
 
 define KernelPackage/cfg80211/install
@@ -1414,22 +1234,26 @@ endef
 
 define KernelPackage/rt61-pci/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt2?61*.bin $(1)/lib/firmware/
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2561.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2561s.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2661.bin \
+		$(1)/lib/firmware/
 endef
 
 define KernelPackage/rt73-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt73.bin $(1)/lib/firmware/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt73.bin $(1)/lib/firmware/
 endef
 
 define KernelPackage/rt2800-pci/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt2860.bin $(1)/lib/firmware/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2860.bin $(1)/lib/firmware/
 endef
 
 define KernelPackage/rt2800-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rt2870.bin $(1)/lib/firmware/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2870.bin $(1)/lib/firmware/
 endef
 
 define KernelPackage/zd1211rw/install
@@ -1440,9 +1264,19 @@ endef
 define KernelPackage/ath9k-htc/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) \
-		$(DL_DIR)/$(AR9271FW) \
-		$(DL_DIR)/$(AR7010FW) \
-		$(DL_DIR)/$(AR7010_1_1_FW) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ar9271.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ar7010.fw \
+		$(1)/lib/firmware/
+endef
+
+define KernelPackage/mwl8k/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/fmimage_8366_ap-2.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/fmimage_8366.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/helper_8366.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/fmimage_8687.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/helper_8687.fw \
 		$(1)/lib/firmware/
 endef
 
@@ -1459,39 +1293,39 @@ endef
 define KernelPackage/iwlagn/install
         $(INSTALL_DIR) $(1)/lib/firmware
 ifneq ($(CONFIG_IWL5000_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL5000_NAME)-$(IWL5000_VERSION)/iwlwifi-5000-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-5000-5.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL5150_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL5150_NAME)-$(IWL5150_VERSION)/iwlwifi-5150-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-5150-2.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL1000_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL1000_NAME)-$(IWL1000_VERSION)/iwlwifi-1000-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-1000-5.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL6000_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL6000_NAME)-$(IWL6000_VERSION)/iwlwifi-6000-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6000-4.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL6050_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL6050_NAME)-$(IWL6050_VERSION)/iwlwifi-6050-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6050-5.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL6005_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL6005_NAME)-$(IWL6005_VERSION)/iwlwifi-6000g2a-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6000g2a-5.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL6030_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL6030_NAME)-$(IWL6030_VERSION)/iwlwifi-6000g2b-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-6000g2b-5.ucode $(1)/lib/firmware
 endif
 ifneq ($(CONFIG_IWL100_FW),)
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL100_NAME)-$(IWL100_VERSION)/iwlwifi-100-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-100-5.ucode $(1)/lib/firmware
 endif
 endef
 
 define KernelPackage/iwl3945/install
         $(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL3945_NAME)-$(IWL3945_VERSION)/iwlwifi-3945-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-3945-2.ucode $(1)/lib/firmware
 endef
 
 define KernelPackage/iwl4965/install
         $(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IWL4965_NAME)-$(IWL4965_VERSION)/iwlwifi-4965-*.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-4965-2.ucode $(1)/lib/firmware
 endef
 
 define Build/b43-common
