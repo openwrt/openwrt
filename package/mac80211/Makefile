@@ -213,15 +213,6 @@ define Download/rt2870
 endef
 $(eval $(call Download,rt2870))
 
-AR9170FW:=ar9170.fw
-
-define Download/ar9170
-  FILE:=$(AR9170FW)
-  URL:=http://www.kernel.org/pub/linux/kernel/people/mcgrof/firmware/ar9170
-  MD5SUM:=34feec4ec0eae3bb92c7c1ea2dfb4530
-endef
-$(eval $(call Download,ar9170))
-
 NEED_RT2X00_LIB_CRYPTO:=y
 NEED_RT2X00_LIB_FIRMWARE:=y
 NEED_RT2X00_LIB_HT:=y
@@ -1195,7 +1186,7 @@ BUILDFLAGS:= \
 	-I$(PKG_BUILD_DIR)/include \
 	$(foreach opt,$(CONFOPTS),-DCONFIG_$(opt)) \
 	$(if $(CONFIG_PCI),-DCONFIG_B43_PCI_AUTOSELECT -DCONFIG_B43_PCICORE_AUTOSELECT) \
-	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS -DCONFIG_AR9170_LEDS) \
+	$(if $(CONFIG_LEDS_TRIGGERS), -DCONFIG_MAC80211_LEDS -DCONFIG_LEDS_TRIGGERS -DCONFIG_B43_LEDS -DCONFIG_B43LEGACY_LEDS) \
 	-DCONFIG_B43_HWRNG -DCONFIG_B43LEGACY_HWRNG \
 	$(if $(CONFIG_PCI),-DCONFIG_ATH9K_PCI) \
 	$(if $(CONFIG_TARGET_ar71xx),-DCONFIG_ATH9K_AHB) \
@@ -1328,8 +1319,6 @@ MAKE_OPTS:= \
 	CONFIG_NORTEL_HERMES= \
 	CONFIG_PCMCIA_SPECTRUM= \
 	CONFIG_ORINOCO_USB= \
-	CONFIG_AR9170_USB=$(if $(CONFIG_PACKAGE_kmod-ar9170),m) \
-	CONFIG_AR9170_LEDS=$(CONFIG_LEDS_TRIGGERS) \
 	CONFIG_IWM= \
 	CONFIG_MWIFIEX= \
 	CONFIG_MAC80211_RC_MINSTREL_HT=y \
@@ -1446,11 +1435,6 @@ endef
 define KernelPackage/zd1211rw/install
 	$(INSTALL_DIR) $(1)/lib/firmware/zd1211
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
-endef
-
-define KernelPackage/ar9170/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(AR9170FW) $(1)/lib/firmware/
 endef
 
 define KernelPackage/ath9k-htc/install
