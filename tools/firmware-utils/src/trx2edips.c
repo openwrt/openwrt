@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 	/* make the 3 partition beeing 12 bytes closer from the header */
 	memcpy(buf + LOAD32_LE(p->offsets[2]) - EDIMAX_HDR_LEN, buf + LOAD32_LE(p->offsets[2]), length - LOAD32_LE(p->offsets[2]));
 	/* recompute the crc32 check */
-	p->crc32 = STORE32_LE(crc32buf((char *) &(LOAD32_LE(p->flag_version)), length - offsetof(struct trx_header, flag_version)));
+	p->crc32 = STORE32_LE(crc32buf((char *) &p->flag_version, length - offsetof(struct trx_header, flag_version)));
 
 	eh.sign = STORE32_LE(EDIMAX_PS16);
 	eh.length = STORE32_LE(length);
