@@ -70,7 +70,7 @@
  
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -1393,6 +1393,7 @@ unsigned long zap_page_range(struct vm_a
+@@ -1395,6 +1395,7 @@ unsigned long zap_page_range(struct vm_a
  	tlb_finish_mmu(&tlb, address, end);
  	return end;
  }
@@ -78,7 +78,7 @@
  
  /**
   * zap_vma_ptes - remove ptes mapping the vma
-@@ -2819,6 +2820,7 @@ int vmtruncate_range(struct inode *inode
+@@ -2821,6 +2822,7 @@ int vmtruncate_range(struct inode *inode
  
  	return 0;
  }
