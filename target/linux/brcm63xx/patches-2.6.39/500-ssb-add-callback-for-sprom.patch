@@ -18,7 +18,7 @@
  #endif
  
  /*
-@@ -2328,8 +2339,9 @@ void __init board_prom_init(void)
+@@ -2407,8 +2418,9 @@ int __init board_register_devices(void)
  	if (!board_get_mac_address(bcm63xx_sprom.il0mac)) {
  		memcpy(bcm63xx_sprom.et0mac, bcm63xx_sprom.il0mac, ETH_ALEN);
  		memcpy(bcm63xx_sprom.et1mac, bcm63xx_sprom.il0mac, ETH_ALEN);
@@ -29,7 +29,7 @@
 +			printk(KERN_ERR PFX "failed to register fallback SPROM\n");
  	}
  #endif
- }
+ 
 --- a/drivers/ssb/pci.c
 +++ b/drivers/ssb/pci.c
 @@ -662,7 +662,6 @@ static int sprom_extract(struct ssb_bus
