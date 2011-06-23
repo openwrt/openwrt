@@ -89,3 +89,11 @@ config INSTALL_LIBGCJ
 	default n
 	help
 	    Build/install java compiler and GNU classpath ?
+
+
+config INSTALL_GFORTRAN
+	bool
+	prompt "Build/install fortran compiler?" if TOOLCHAINOPTS
+	default n
+	help
+	    Build/install GNU fortran compiler ?
