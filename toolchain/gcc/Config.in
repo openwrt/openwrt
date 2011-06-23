@@ -66,6 +66,15 @@ config TLS_SUPPORT
 	help
 	    Enable Thread-local storage support
 
+config SJLJ_EXCEPTIONS
+	bool
+	prompt "Use setjump()/longjump() exceptions" if TOOLCHAINOPTS
+	default n
+	help
+	    Use old setjump()/longjump() exceptions instead of the newer
+	    frame unwinding exceptions handling routines.  Warning: increases
+	    code size and runtime memory usage.
+
 config INSTALL_LIBSTDCPP
 	bool
 	prompt "Build/install c++ compiler and libstdc++?" if TOOLCHAINOPTS

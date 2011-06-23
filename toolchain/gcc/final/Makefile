@@ -22,6 +22,11 @@ else
 	--disable-tls
 endif
 
+ifneq ($(CONFIG_SJLJ_EXCEPTIONS),)
+  GCC_CONFIGURE += \
+	--enable-sjlj-exceptions
+endif
+
 define Host/Configure
 	mkdir -p $(GCC_BUILD_DIR) $(TOOLCHAIN_DIR)/$(REAL_GNU_TARGET_NAME)
 	# Important!  Required for limits.h to be fixed.
