@@ -28,7 +28,7 @@ define Package/hotplug2
   VERSION:=1.0-beta-$(PKG_RELEASE)
   TITLE:=Version 1.0 Dynamic device management subsystem for embedded systems
   URL:=http://isteve.bofh.cz/~isteve/hotplug2/
-  DEPENDS:=+(USE_EGLIBC||USE_GLIBC):libbsd
+  DEPENDS:=+!USE_UCLIBC:libbsd
 endef
 
 define Package/hotplug2/description
