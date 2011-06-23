@@ -1,0 +1,16 @@
+diff --git a/trunk/libc/manual/Makefile b/trunk/libc/manual/Makefile
+index 754bf12..40c83be 100644
+--- a/libc/manual/Makefile
++++ b/libc/manual/Makefile
+@@ -243,7 +243,10 @@ ifdef objpfx
+ .PHONY: stubs
+ stubs: $(objpfx)stubs
+ endif
+-$(objpfx)stubs ../po/manual.pot $(objpfx)stamp%:
++$(objpfx)stubs ../po/manual.pot:
++	$(make-target-directory)
++	touch $@
++$(objpfx)stamp%:
+ 	$(make-target-directory)
+ 	touch $@
+ 
