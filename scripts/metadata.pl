@@ -696,10 +696,10 @@ sub gen_package_mk() {
 				my $depstr = "\$(curdir)/$idx$suffix/compile";
 				my $depline = get_conditional_dep($condition, $depstr);
 				if ($depline) {
-					$deplines{$dep} = $depline;
+					$deplines{$depline}++;
 				}
 			}
-			my $depline = join(" ", values %deplines);
+			my $depline = join(" ", sort keys %deplines);
 			if ($depline) {
 				$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/$type/compile += $depline\n";
 			}
@@ -756,12 +756,12 @@ sub gen_package_mk() {
 					}
 					$depline = get_conditional_dep($condition, $depstr);
 					if ($depline) {
-						$deplines{$idx.$dep} = $depline;
+						$deplines{$depline}++;
 					}
 				}
 			}
 		}
-		my $depline = join(" ", values %deplines);
+		my $depline = join(" ", sort keys %deplines);
 		if ($depline) {
 			$line .= "\$(curdir)/".$pkg->{subdir}."$pkg->{src}/compile += $depline\n";
 		}
