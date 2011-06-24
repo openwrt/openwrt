@@ -457,7 +457,13 @@ enable_mac80211() {
 						[ "$mcsub" -gt 0 ] && mcval="$mcval.$mcsub"
 					}
 
-					iw dev "$ifname" ibss join "$ssid" $freq \
+					config_get htmode "$device" htmode
+					case "$htmode" in
+						HT20|HT40+|HT40-) ;;
+						*) htmode= ;;
+					esac
+
+					iw dev "$ifname" ibss join "$ssid" $freq $htmode \
 						${fixed:+fixed-freq} $bssid \
 						${beacon_int:+beacon-interval $beacon_int} \
 						${brstr:+basic-rates $brstr} \
