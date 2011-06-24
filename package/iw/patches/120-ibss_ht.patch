@@ -1,0 +1,113 @@
+--- a/ibss.c
++++ b/ibss.c
+@@ -27,6 +27,7 @@ static int join_ibss(struct nl80211_stat
+ 	char *value = NULL, *sptr = NULL;
+ 	float rate;
+ 	int bintval;
++	unsigned int htval;
+ 
+ 	if (argc < 2)
+ 		return 1;
+@@ -44,6 +45,12 @@ static int join_ibss(struct nl80211_stat
+ 	argv++;
+ 	argc--;
+ 
++	if (argc && parse_channel_type(argv[0], &htval)) {
++		NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, htval);
++		argv++;
++		argc--;
++	}
++
+ 	if (argc && strcmp(argv[0], "fixed-freq") == 0) {
+ 		NLA_PUT_FLAG(msg, NL80211_ATTR_FREQ_FIXED);
+ 		argv++;
+@@ -134,7 +141,7 @@ COMMAND(ibss, leave, NULL,
+ 	NL80211_CMD_LEAVE_IBSS, 0, CIB_NETDEV, leave_ibss,
+ 	"Leave the current IBSS cell.");
+ COMMAND(ibss, join,
+-	"<SSID> <freq in MHz> [fixed-freq] [<fixed bssid>] [beacon-interval <TU>]"
++	"<SSID> <freq in MHz> [HT20|HT40+|HT40-] [fixed-freq] [<fixed bssid>] [beacon-interval <TU>]"
+ 	" [basic-rates <rate in Mbps,rate2,...>] [mcast-rate <rate in Mbps>] "
+ 	"[key d:0:abcde]",
+ 	NL80211_CMD_JOIN_IBSS, 0, CIB_NETDEV, join_ibss,
+--- a/iw.h
++++ b/iw.h
+@@ -130,6 +130,7 @@ void mac_addr_n2a(char *mac_addr, unsign
+ unsigned char *parse_hex(char *hex, size_t *outlen);
+ 
+ int parse_keys(struct nl_msg *msg, char **argv, int argc);
++int parse_channel_type(const char *str, unsigned int *htval);
+ 
+ void print_ht_mcs(const __u8 *mcs);
+ void print_ampdu_length(__u8 exponent);
+--- a/phy.c
++++ b/phy.c
+@@ -33,30 +33,14 @@ static int handle_freqchan(struct nl_msg
+ 			   int argc, char **argv)
+ {
+ 	char *end;
+-	static const struct {
+-		const char *name;
+-		unsigned int val;
+-	} htmap[] = {
+-		{ .name = "HT20", .val = NL80211_CHAN_HT20, },
+-		{ .name = "HT40+", .val = NL80211_CHAN_HT40PLUS, },
+-		{ .name = "HT40-", .val = NL80211_CHAN_HT40MINUS, },
+-	};
+ 	unsigned int htval = NL80211_CHAN_NO_HT;
+ 	unsigned int freq;
+-	int i;
+ 
+ 	if (!argc || argc > 2)
+ 		return 1;
+ 
+-	if (argc == 2) {
+-		for (i = 0; i < ARRAY_SIZE(htmap); i++) {
+-			if (strcasecmp(htmap[i].name, argv[1]) == 0) {
+-				htval = htmap[i].val;
+-				break;
+-			}
+-		}
+-		if (htval == NL80211_CHAN_NO_HT)
+-			return 1;
++	if (argc == 2 && !parse_channel_type(argv[1], &htval)) {
++		return 1;
+ 	}
+ 
+ 	if (!*argv[0])
+--- a/util.c
++++ b/util.c
+@@ -345,6 +345,33 @@ int parse_keys(struct nl_msg *msg, char 
+ 	return 2;
+ }
+ 
++/*
++ * Convert a string "HT20", "HT40+" or "HT40-" into nl80211
++ * value. Conversion is case insensitive. Returns 1 on success, 0 on error.
++ */
++
++int parse_channel_type(const char *str, unsigned int *htval)
++{
++	static const struct {
++		const char *name;
++		unsigned int val;
++	} htmap[] = {
++		{ .name = "HT20", .val = NL80211_CHAN_HT20, },
++		{ .name = "HT40+", .val = NL80211_CHAN_HT40PLUS, },
++		{ .name = "HT40-", .val = NL80211_CHAN_HT40MINUS, },
++	};
++	int i;
++
++	for (i = 0; i < ARRAY_SIZE(htmap); i++) {
++		if (strcasecmp(htmap[i].name, str) == 0) {
++			*htval = htmap[i].val;
++			return 1;
++		}
++	}
++
++	return 0;
++}
++
+ static void print_mcs_index(const __u8 *mcs)
+ {
+ 	unsigned int mcs_bit, prev_bit = -2, prev_cont = 0;
