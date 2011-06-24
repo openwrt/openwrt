@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath5k/mac80211-ops.c
 +++ b/drivers/net/wireless/ath/ath5k/mac80211-ops.c
-@@ -97,13 +97,8 @@ ath5k_add_interface(struct ieee80211_hw
+@@ -95,13 +95,8 @@ ath5k_add_interface(struct ieee80211_hw 
  		goto end;
  	}
  
@@ -18,7 +18,7 @@
  		goto end;
 --- a/drivers/net/wireless/ath/ath5k/base.c
 +++ b/drivers/net/wireless/ath/ath5k/base.c
-@@ -1880,7 +1880,7 @@ ath5k_beacon_send(struct ath5k_softc *sc
+@@ -1883,7 +1883,7 @@ ath5k_beacon_send(struct ath5k_softc *sc
  		sc->bmisscount = 0;
  	}
  
@@ -27,7 +27,7 @@
  			sc->opmode == NL80211_IFTYPE_MESH_POINT) {
  		u64 tsf = ath5k_hw_get_tsf64(ah);
  		u32 tsftu = TSF_TO_TU(tsf);
-@@ -1958,7 +1958,7 @@ ath5k_beacon_update_timers(struct ath5k_
+@@ -1961,7 +1961,7 @@ ath5k_beacon_update_timers(struct ath5k_
  	u64 hw_tsf;
  
  	intval = sc->bintval & AR5K_BEACON_PERIOD;

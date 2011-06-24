@@ -38,7 +38,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1344,6 +1344,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -1427,6 +1427,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  		memset(caldata, 0, sizeof(*caldata));
  		ath9k_init_nfcal_hist_buffer(ah, chan);
  	}
@@ -48,7 +48,7 @@
  	    (ah->chip_fullsleep != true) &&
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -687,6 +687,7 @@ struct ath_hw {
+@@ -688,6 +688,7 @@ struct ath_hw {
  	enum nl80211_iftype opmode;
  	enum ath9k_power_mode power_mode;
  
@@ -58,7 +58,7 @@
  	struct ar5416Stats stats;
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -163,7 +163,7 @@ static void ath_update_survey_nf(struct
+@@ -163,7 +163,7 @@ static void ath_update_survey_nf(struct 
  
  	if (chan->noisefloor) {
  		survey->filled |= SURVEY_INFO_NOISE_DBM;
@@ -69,7 +69,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -985,6 +985,8 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -986,6 +986,8 @@ static int ath9k_rx_skb_preprocess(struc
  				   struct ieee80211_rx_status *rx_status,
  				   bool *decrypt_error)
  {
@@ -78,7 +78,7 @@
  	memset(rx_status, 0, sizeof(struct ieee80211_rx_status));
  
  	/*
-@@ -1005,7 +1007,7 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -1006,7 +1008,7 @@ static int ath9k_rx_skb_preprocess(struc
  
  	rx_status->band = hw->conf.channel->band;
  	rx_status->freq = hw->conf.channel->center_freq;
