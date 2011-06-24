@@ -58,8 +58,8 @@ $(eval $(call KernelPackage,net-airo))
 define KernelPackage/net-zd1201
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=Zydas ZD1201 support
-  DEPENDS:=@USB_SUPPORT
-  KCONFIG:=CONFIG_USB_ZD1201 +@DRIVER_WEXT_SUPPORT
+  DEPENDS:=@USB_SUPPORT +@DRIVER_WEXT_SUPPORT
+  KCONFIG:=CONFIG_USB_ZD1201
   FILES:=$(LINUX_DIR)/drivers/net/wireless/zd1201.ko
   AUTOLOAD:=$(call AutoLoad,60,zd1201)
 endef
