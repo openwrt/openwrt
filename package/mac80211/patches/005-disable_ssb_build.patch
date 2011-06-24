@@ -4,8 +4,8 @@
  obj-$(CONFIG_COMPAT_NET_USB_MODULES) += drivers/net/usb/
  
  obj-$(CONFIG_COMPAT_NETWORK_MODULES) += drivers/net/
--obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/ssb/ drivers/misc/eeprom/
-+obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/misc/eeprom/
+-obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/ssb/ drivers/bcma/ drivers/misc/eeprom/
++obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/bcma/ drivers/misc/eeprom/
  
  ifeq ($(CONFIG_STAGING_EXCLUDE_BUILD),)
  obj-$(CONFIG_COMPAT_STAGING) += drivers/staging/ath6kl/
@@ -19,39 +19,26 @@
  else
  include $(KLIB_BUILD)/.config
  endif
-@@ -311,19 +310,18 @@ CONFIG_IPW2200_QOS=y
+@@ -314,7 +313,8 @@ CONFIG_IPW2200_QOS=y
  # % echo 1 > /sys/bus/pci/drivers/ipw2200/*/rtap_iface
  endif #CONFIG_WIRELESS_EXT
  
 -ifdef CONFIG_SSB
--# Sonics Silicon Backplane
--CONFIG_SSB_SPROM=y
--
--CONFIG_SSB_BLOCKIO=y
--CONFIG_SSB_PCIHOST=y
--CONFIG_SSB_B43_PCI_BRIDGE=y
--ifdef CONFIG_PCMCIA
--CONFIG_SSB_PCMCIAHOST=y
--endif #CONFIG_PCMCIA
--# CONFIG_SSB_DEBUG=y
--CONFIG_SSB_DRIVER_PCICORE=y
++# disabled
++ifdef __CONFIG_SSB
+ # Sonics Silicon Backplane
+ CONFIG_SSB_SPROM=y
+ 
+@@ -327,7 +327,7 @@ endif #CONFIG_PCMCIA
+ # CONFIG_SSB_DEBUG=y
+ CONFIG_SSB_DRIVER_PCICORE=y
+ CONFIG_B43_SSB=y
 -endif #CONFIG_SSB
-+# ifdef CONFIG_SSB
-+# # Sonics Silicon Backplane
-+# CONFIG_SSB_SPROM=y
-+# CONFIG_SSB_BLOCKIO=y
-+# CONFIG_SSB_PCIHOST=y
-+# CONFIG_SSB_B43_PCI_BRIDGE=y
-+# ifdef CONFIG_PCMCIA
-+# CONFIG_SSB_PCMCIAHOST=y
-+# endif #CONFIG_PCMCIA
-+# # CONFIG_SSB_DEBUG=y
-+# CONFIG_SSB_DRIVER_PCICORE=y
-+# endif #CONFIG_SSB
++endif #__CONFIG_SSB
  
- CONFIG_P54_PCI=m
- 
-@@ -524,7 +522,6 @@ endif #CONFIG_SPI_MASTER end of SPI driv
+ CONFIG_BCMA=m
+ CONFIG_BCMA_BLOCKIO=y
+@@ -534,7 +534,6 @@ endif #CONFIG_SPI_MASTER end of SPI driv
  
  ifdef CONFIG_MMC
  
