@@ -245,3 +245,196 @@
  	WLAN_STA_CLEAR_PS_FILT	= 1<<9,
  	WLAN_STA_MFP		= 1<<10,
  	WLAN_STA_BLOCK_BA	= 1<<11,
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -384,7 +384,9 @@ void ath_beacon_tasklet(unsigned long da
+ 			ath_dbg(common, ATH_DBG_BSTUCK,
+ 				"beacon is officially stuck\n");
+ 			sc->sc_flags |= SC_OP_TSF_RESET;
++			spin_lock(&sc->sc_pcu_lock);
+ 			ath_reset(sc, true);
++			spin_unlock(&sc->sc_pcu_lock);
+ 		}
+ 
+ 		return;
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -617,8 +617,11 @@ void ath_hw_check(struct work_struct *wo
+ 	ath_dbg(common, ATH_DBG_RESET, "Possible baseband hang, "
+ 		"busy=%d (try %d)\n", busy, sc->hw_busy_count + 1);
+ 	if (busy >= 99) {
+-		if (++sc->hw_busy_count >= 3)
++		if (++sc->hw_busy_count >= 3) {
++			spin_lock_bh(&sc->sc_pcu_lock);
+ 			ath_reset(sc, true);
++			spin_unlock_bh(&sc->sc_pcu_lock);
++		}
+ 	} else if (busy >= 0)
+ 		sc->hw_busy_count = 0;
+ 
+@@ -637,7 +640,9 @@ static void ath_hw_pll_rx_hang_check(str
+ 			/* Rx is hung for more than 500ms. Reset it */
+ 			ath_dbg(common, ATH_DBG_RESET,
+ 				"Possible RX hang, resetting");
++			spin_lock_bh(&sc->sc_pcu_lock);
+ 			ath_reset(sc, true);
++			spin_unlock_bh(&sc->sc_pcu_lock);
+ 			count = 0;
+ 		}
+ 	} else
+@@ -674,7 +679,9 @@ void ath9k_tasklet(unsigned long data)
+ 
+ 	if ((status & ATH9K_INT_FATAL) ||
+ 	    (status & ATH9K_INT_BB_WATCHDOG)) {
++		spin_lock(&sc->sc_pcu_lock);
+ 		ath_reset(sc, true);
++		spin_unlock(&sc->sc_pcu_lock);
+ 		return;
+ 	}
+ 
+@@ -980,7 +987,6 @@ int ath_reset(struct ath_softc *sc, bool
+ 	del_timer_sync(&common->ani.timer);
+ 
+ 	ath9k_ps_wakeup(sc);
+-	spin_lock_bh(&sc->sc_pcu_lock);
+ 
+ 	ieee80211_stop_queues(hw);
+ 
+@@ -1023,7 +1029,6 @@ int ath_reset(struct ath_softc *sc, bool
+ 	}
+ 
+ 	ieee80211_wake_queues(hw);
+-	spin_unlock_bh(&sc->sc_pcu_lock);
+ 
+ 	/* Start ANI */
+ 	if (!common->disable_ani)
+@@ -2326,9 +2331,9 @@ static void ath9k_flush(struct ieee80211
+ 	ath9k_ps_wakeup(sc);
+ 	spin_lock_bh(&sc->sc_pcu_lock);
+ 	drain_txq = ath_drain_all_txq(sc, false);
+-	spin_unlock_bh(&sc->sc_pcu_lock);
+ 	if (!drain_txq)
+ 		ath_reset(sc, false);
++	spin_unlock_bh(&sc->sc_pcu_lock);
+ 	ath9k_ps_restore(sc);
+ 	ieee80211_wake_queues(hw);
+ 
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -565,11 +565,8 @@ static void ath_tx_complete_aggr(struct 
+ 
+ 	rcu_read_unlock();
+ 
+-	if (needreset) {
+-		spin_unlock_bh(&sc->sc_pcu_lock);
++	if (needreset)
+ 		ath_reset(sc, false);
+-		spin_lock_bh(&sc->sc_pcu_lock);
+-	}
+ }
+ 
+ static u32 ath_lookup_rate(struct ath_softc *sc, struct ath_buf *bf,
+@@ -2169,7 +2166,9 @@ static void ath_tx_complete_poll_work(st
+ 	if (needreset) {
+ 		ath_dbg(ath9k_hw_common(sc->sc_ah), ATH_DBG_RESET,
+ 			"tx hung, resetting the chip\n");
++		spin_lock_bh(&sc->sc_pcu_lock);
+ 		ath_reset(sc, true);
++		spin_unlock_bh(&sc->sc_pcu_lock);
+ 	}
+ 
+ 	ieee80211_queue_delayed_work(sc->hw, &sc->tx_complete_work,
+--- a/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
+@@ -236,7 +236,7 @@ static void ar9003_paprd_get_gain_table(
+ 	memset(entry, 0, sizeof(ah->paprd_gain_table_entries));
+ 	memset(index, 0, sizeof(ah->paprd_gain_table_index));
+ 
+-	for (i = 0; i < 32; i++) {
++	for (i = 0; i < PAPRD_GAIN_TABLE_ENTRIES; i++) {
+ 		entry[i] = REG_READ(ah, reg);
+ 		index[i] = (entry[i] >> 24) & 0xff;
+ 		reg += 4;
+@@ -246,13 +246,13 @@ static void ar9003_paprd_get_gain_table(
+ static unsigned int ar9003_get_desired_gain(struct ath_hw *ah, int chain,
+ 					    int target_power)
+ {
+-	int olpc_gain_delta = 0;
++	int olpc_gain_delta = 0, cl_gain_mod;
+ 	int alpha_therm, alpha_volt;
+ 	int therm_cal_value, volt_cal_value;
+ 	int therm_value, volt_value;
+ 	int thermal_gain_corr, voltage_gain_corr;
+ 	int desired_scale, desired_gain = 0;
+-	u32 reg;
++	u32 reg_olpc  = 0, reg_cl_gain  = 0;
+ 
+ 	REG_CLR_BIT(ah, AR_PHY_PAPRD_TRAINER_STAT1,
+ 		    AR_PHY_PAPRD_TRAINER_STAT1_PAPRD_TRAIN_DONE);
+@@ -271,15 +271,29 @@ static unsigned int ar9003_get_desired_g
+ 	volt_value = REG_READ_FIELD(ah, AR_PHY_BB_THERM_ADC_4,
+ 				    AR_PHY_BB_THERM_ADC_4_LATEST_VOLT_VALUE);
+ 
+-	if (chain == 0)
+-		reg = AR_PHY_TPC_11_B0;
+-	else if (chain == 1)
+-		reg = AR_PHY_TPC_11_B1;
+-	else
+-		reg = AR_PHY_TPC_11_B2;
++	switch (chain) {
++	case 0:
++		reg_olpc = AR_PHY_TPC_11_B0;
++		reg_cl_gain = AR_PHY_CL_TAB_0;
++		break;
++	case 1:
++		reg_olpc = AR_PHY_TPC_11_B1;
++		reg_cl_gain = AR_PHY_CL_TAB_1;
++		break;
++	case 2:
++		reg_olpc = AR_PHY_TPC_11_B2;
++		reg_cl_gain = AR_PHY_CL_TAB_2;
++		break;
++	default:
++		ath_dbg(ath9k_hw_common(ah), ATH_DBG_CALIBRATE,
++		"Invalid chainmask: %d\n", chain);
++		break;
++	}
+ 
+-	olpc_gain_delta = REG_READ_FIELD(ah, reg,
++	olpc_gain_delta = REG_READ_FIELD(ah, reg_olpc,
+ 					 AR_PHY_TPC_11_OLPC_GAIN_DELTA);
++	cl_gain_mod = REG_READ_FIELD(ah, reg_cl_gain,
++					 AR_PHY_CL_TAB_CL_GAIN_MOD);
+ 
+ 	if (olpc_gain_delta >= 128)
+ 		olpc_gain_delta = olpc_gain_delta - 256;
+@@ -289,7 +303,7 @@ static unsigned int ar9003_get_desired_g
+ 	voltage_gain_corr = (alpha_volt * (volt_value - volt_cal_value) +
+ 			     (128 / 2)) / 128;
+ 	desired_gain = target_power - olpc_gain_delta - thermal_gain_corr -
+-	    voltage_gain_corr + desired_scale;
++	    voltage_gain_corr + desired_scale + cl_gain_mod;
+ 
+ 	return desired_gain;
+ }
+@@ -727,7 +741,7 @@ int ar9003_paprd_setup_gain_table(struct
+ 	desired_gain = ar9003_get_desired_gain(ah, chain, train_power);
+ 
+ 	gain_index = 0;
+-	for (i = 0; i < 32; i++) {
++	for (i = 0; i < PAPRD_GAIN_TABLE_ENTRIES; i++) {
+ 		if (ah->paprd_gain_table_index[i] >= desired_gain)
+ 			break;
+ 		gain_index++;
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
+@@ -1121,6 +1121,9 @@
+ #define AR_PHY_POWERTX_RATE8_POWERTXHT40_5	0x3F00
+ #define AR_PHY_POWERTX_RATE8_POWERTXHT40_5_S	8
+ 
++#define AR_PHY_CL_TAB_CL_GAIN_MOD		0x1f
++#define AR_PHY_CL_TAB_CL_GAIN_MOD_S		0
++
+ void ar9003_hw_set_chain_masks(struct ath_hw *ah, u8 rx, u8 tx);
+ 
+ #endif  /* AR9003_PHY_H */
