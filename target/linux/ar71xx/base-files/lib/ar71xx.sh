@@ -154,6 +154,9 @@ ar71xx_board_name() {
 	*WRT400N)
 		name="wrt400n"
 		;;
+	*WZR-HP-AG300H)
+		name="wzr-hp-ag300h"
+		;;
 	*WZR-HP-G300NH)
 		name="wzr-hp-g300nh"
 		;;
