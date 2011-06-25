@@ -919,7 +919,7 @@
  #include <board_bcm963xx.h>
  
  #define PFX	"board_bcm963xx: "
-@@ -943,6 +944,8 @@ int __init board_register_devices(void)
+@@ -939,6 +940,8 @@ int __init board_register_devices(void)
  	if (board.num_spis)
  		spi_register_board_info(board.spis, board.num_spis);
  
