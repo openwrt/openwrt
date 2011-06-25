@@ -189,11 +189,13 @@ static struct spi_board_info ar71xx_spi_info[] = {
 
 static void __init wzrhpag300h_setup(void)
 {
-	u8 *eeprom = (u8 *) KSEG1ADDR(0x1f051000);
-	u8 *mac = eeprom + WZRHPAG300H_MAC_OFFSET;
+	u8 *eeprom1 = (u8 *) KSEG1ADDR(0x1f051000);
+	u8 *eeprom2 = (u8 *) KSEG1ADDR(0x1f055000);
+	u8 *mac1 = eeprom1 + WZRHPAG300H_MAC_OFFSET;
+	u8 *mac2 = eeprom2 + WZRHPAG300H_MAC_OFFSET;
 
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
-	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac1, 0);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac2, 1);
 
 	ar71xx_add_device_mdio(~(BIT(0) | BIT(4)));
 
@@ -224,7 +226,7 @@ static void __init wzrhpag300h_setup(void)
 	add_mtd_concat_notifier();
 #endif
 
-	ap94_pci_init(eeprom, mac, NULL, NULL);
+	ap94_pci_init(eeprom1, mac1, eeprom2, mac2);
 }
 
 MIPS_MACHINE(AR71XX_MACH_WZR_HP_AG300H, "WZR-HP-AG300H",
