@@ -9,6 +9,19 @@
  
  	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
  					  IEEE80211_STYPE_ACTION);
+@@ -262,7 +264,11 @@ void ieee80211_process_addba_request(str
+ 				"%pM on tid %u\n",
+ 				mgmt->sa, tid);
+ #endif /* CONFIG_MAC80211_HT_DEBUG */
+-		goto end;
++
++		/* delete existing Rx BA session on the same tid */
++		___ieee80211_stop_rx_ba_session(sta, tid, WLAN_BACK_RECIPIENT,
++						WLAN_STATUS_UNSPECIFIED_QOS,
++						false);
+ 	}
+ 
+ 	/* prepare A-MPDU MLME for Rx aggregation */
 --- a/net/mac80211/agg-tx.c
 +++ b/net/mac80211/agg-tx.c
 @@ -79,7 +79,8 @@ static void ieee80211_send_addba_request
