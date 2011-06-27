@@ -1,0 +1,68 @@
+--- a/drivers/mtd/maps/bcm47xx-flash.c
++++ b/drivers/mtd/maps/bcm47xx-flash.c
+@@ -44,9 +44,7 @@
+ #include <linux/wait.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/map.h>
+-#ifdef CONFIG_MTD_PARTITIONS
+ #include <linux/mtd/partitions.h>
+-#endif
+ #include <linux/crc32.h>
+ #ifdef CONFIG_SSB
+ #include <linux/ssb/ssb.h>
+@@ -120,7 +118,6 @@ static struct map_info bcm47xx_map = {
+ 	phys: WINDOW_ADDR,
+ };
+ 
+-#ifdef CONFIG_MTD_PARTITIONS
+ 
+ static struct mtd_partition bcm47xx_parts[] = {
+ 	{ name: "cfe",	offset: 0, size: 0, mask_flags: MTD_WRITEABLE, },
+@@ -552,7 +549,6 @@ init_mtd_partitions(struct mtd_info *mtd
+ 
+ 	return bcm47xx_parts;
+ }
+-#endif
+ 
+ int __init init_bcm47xx_map(void)
+ {
+@@ -561,10 +557,8 @@ int __init init_bcm47xx_map(void)
+ #endif
+ 	size_t size;
+ 	int ret = 0;
+-#ifdef CONFIG_MTD_PARTITIONS
+ 	struct mtd_partition *parts;
+ 	int i;
+-#endif
+ 
+ #ifdef CONFIG_SSB
+ 	u32 window = mcore->flash_window;
+@@ -602,15 +596,13 @@ int __init init_bcm47xx_map(void)
+ 
+ 	printk(KERN_NOTICE "Flash device: 0x%x at 0x%x\n", size, WINDOW_ADDR);
+ 
+-#ifdef CONFIG_MTD_PARTITIONS
+ 	parts = init_mtd_partitions(bcm47xx_mtd, size);
+ 	for (i = 0; parts[i].name; i++);
+-	ret = add_mtd_partitions(bcm47xx_mtd, parts, i);
++	ret = mtd_device_register(bcm47xx_mtd, parts, i);
+ 	if (ret) {
+-		printk(KERN_ERR "Flash: add_mtd_partitions failed\n");
++		printk(KERN_ERR "Flash: mtd_device_register failed\n");
+ 		goto fail;
+ 	}
+-#endif
+ 	return 0;
+ 
+  fail:
+@@ -624,9 +616,7 @@ int __init init_bcm47xx_map(void)
+ 
+ void __exit cleanup_bcm47xx_map(void)
+ {
+-#ifdef CONFIG_MTD_PARTITIONS
+-	del_mtd_partitions(bcm47xx_mtd);
+-#endif
++	mtd_device_unregister(bcm47xx_mtd);
+ 	map_destroy(bcm47xx_mtd);
+ 	iounmap((void *)bcm47xx_map.virt);
+ }
