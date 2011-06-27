@@ -1,0 +1,190 @@
+--- a/drivers/ssb/driver_chipcommon_pmu.c
++++ b/drivers/ssb/driver_chipcommon_pmu.c
+@@ -417,9 +417,9 @@ static void ssb_pmu_resources_init(struc
+ 	u32 min_msk = 0, max_msk = 0;
+ 	unsigned int i;
+ 	const struct pmu_res_updown_tab_entry *updown_tab = NULL;
+-	unsigned int updown_tab_size;
++	unsigned int updown_tab_size = 0;
+ 	const struct pmu_res_depend_tab_entry *depend_tab = NULL;
+-	unsigned int depend_tab_size;
++	unsigned int depend_tab_size = 0;
+ 
+ 	switch (bus->chip_id) {
+ 	case 0x4312:
+--- a/drivers/ssb/driver_gige.c
++++ b/drivers/ssb/driver_gige.c
+@@ -106,8 +106,9 @@ void gige_pcicfg_write32(struct ssb_gige
+ 	gige_write32(dev, SSB_GIGE_PCICFG + offset, value);
+ }
+ 
+-static int ssb_gige_pci_read_config(struct pci_bus *bus, unsigned int devfn,
+-				    int reg, int size, u32 *val)
++static int __devinit ssb_gige_pci_read_config(struct pci_bus *bus,
++					      unsigned int devfn, int reg,
++					      int size, u32 *val)
+ {
+ 	struct ssb_gige *dev = container_of(bus->ops, struct ssb_gige, pci_ops);
+ 	unsigned long flags;
+@@ -136,8 +137,9 @@ static int ssb_gige_pci_read_config(stru
+ 	return PCIBIOS_SUCCESSFUL;
+ }
+ 
+-static int ssb_gige_pci_write_config(struct pci_bus *bus, unsigned int devfn,
+-				     int reg, int size, u32 val)
++static int __devinit ssb_gige_pci_write_config(struct pci_bus *bus,
++					       unsigned int devfn, int reg,
++					       int size, u32 val)
+ {
+ 	struct ssb_gige *dev = container_of(bus->ops, struct ssb_gige, pci_ops);
+ 	unsigned long flags;
+@@ -166,7 +168,8 @@ static int ssb_gige_pci_write_config(str
+ 	return PCIBIOS_SUCCESSFUL;
+ }
+ 
+-static int ssb_gige_probe(struct ssb_device *sdev, const struct ssb_device_id *id)
++static int __devinit ssb_gige_probe(struct ssb_device *sdev,
++				    const struct ssb_device_id *id)
+ {
+ 	struct ssb_gige *dev;
+ 	u32 base, tmslow, tmshigh;
+--- a/drivers/ssb/driver_pcicore.c
++++ b/drivers/ssb/driver_pcicore.c
+@@ -314,7 +314,7 @@ int ssb_pcicore_pcibios_map_irq(const st
+ 	return ssb_mips_irq(extpci_core->dev) + 2;
+ }
+ 
+-static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
++static void __devinit ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
+ {
+ 	u32 val;
+ 
+@@ -379,7 +379,7 @@ static void ssb_pcicore_init_hostmode(st
+ 	register_pci_controller(&ssb_pcicore_controller);
+ }
+ 
+-static int pcicore_is_in_hostmode(struct ssb_pcicore *pc)
++static int __devinit pcicore_is_in_hostmode(struct ssb_pcicore *pc)
+ {
+ 	struct ssb_bus *bus = pc->dev->bus;
+ 	u16 chipid_top;
+@@ -412,7 +412,7 @@ static int pcicore_is_in_hostmode(struct
+  * Workarounds.
+  **************************************************/
+ 
+-static void ssb_pcicore_fix_sprom_core_index(struct ssb_pcicore *pc)
++static void __devinit ssb_pcicore_fix_sprom_core_index(struct ssb_pcicore *pc)
+ {
+ 	u16 tmp = pcicore_read16(pc, SSB_PCICORE_SPROM(0));
+ 	if (((tmp & 0xF000) >> 12) != pc->dev->core_index) {
+@@ -514,13 +514,13 @@ static void ssb_pcicore_pcie_setup_worka
+  * Generic and Clientmode operation code.
+  **************************************************/
+ 
+-static void ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
++static void __devinit ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
+ {
+ 	/* Disable PCI interrupts. */
+ 	ssb_write32(pc->dev, SSB_INTVEC, 0);
+ }
+ 
+-void ssb_pcicore_init(struct ssb_pcicore *pc)
++void __devinit ssb_pcicore_init(struct ssb_pcicore *pc)
+ {
+ 	struct ssb_device *dev = pc->dev;
+ 
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -557,7 +557,7 @@ error:
+ }
+ 
+ /* Needs ssb_buses_lock() */
+-static int ssb_attach_queued_buses(void)
++static int __devinit ssb_attach_queued_buses(void)
+ {
+ 	struct ssb_bus *bus, *n;
+ 	int err = 0;
+@@ -768,9 +768,9 @@ out:
+ 	return err;
+ }
+ 
+-static int ssb_bus_register(struct ssb_bus *bus,
+-			    ssb_invariants_func_t get_invariants,
+-			    unsigned long baseaddr)
++static int __devinit ssb_bus_register(struct ssb_bus *bus,
++				      ssb_invariants_func_t get_invariants,
++				      unsigned long baseaddr)
+ {
+ 	int err;
+ 
+@@ -851,8 +851,8 @@ err_disable_xtal:
+ }
+ 
+ #ifdef CONFIG_SSB_PCIHOST
+-int ssb_bus_pcibus_register(struct ssb_bus *bus,
+-			    struct pci_dev *host_pci)
++int __devinit ssb_bus_pcibus_register(struct ssb_bus *bus,
++				      struct pci_dev *host_pci)
+ {
+ 	int err;
+ 
+@@ -875,9 +875,9 @@ EXPORT_SYMBOL(ssb_bus_pcibus_register);
+ #endif /* CONFIG_SSB_PCIHOST */
+ 
+ #ifdef CONFIG_SSB_PCMCIAHOST
+-int ssb_bus_pcmciabus_register(struct ssb_bus *bus,
+-			       struct pcmcia_device *pcmcia_dev,
+-			       unsigned long baseaddr)
++int __devinit ssb_bus_pcmciabus_register(struct ssb_bus *bus,
++					 struct pcmcia_device *pcmcia_dev,
++					 unsigned long baseaddr)
+ {
+ 	int err;
+ 
+@@ -897,8 +897,9 @@ EXPORT_SYMBOL(ssb_bus_pcmciabus_register
+ #endif /* CONFIG_SSB_PCMCIAHOST */
+ 
+ #ifdef CONFIG_SSB_SDIOHOST
+-int ssb_bus_sdiobus_register(struct ssb_bus *bus, struct sdio_func *func,
+-			     unsigned int quirks)
++int __devinit ssb_bus_sdiobus_register(struct ssb_bus *bus,
++				       struct sdio_func *func,
++				       unsigned int quirks)
+ {
+ 	int err;
+ 
+@@ -918,9 +919,9 @@ int ssb_bus_sdiobus_register(struct ssb_
+ EXPORT_SYMBOL(ssb_bus_sdiobus_register);
+ #endif /* CONFIG_SSB_PCMCIAHOST */
+ 
+-int ssb_bus_ssbbus_register(struct ssb_bus *bus,
+-			    unsigned long baseaddr,
+-			    ssb_invariants_func_t get_invariants)
++int __devinit ssb_bus_ssbbus_register(struct ssb_bus *bus,
++				      unsigned long baseaddr,
++				      ssb_invariants_func_t get_invariants)
+ {
+ 	int err;
+ 
+--- a/drivers/ssb/pcihost_wrapper.c
++++ b/drivers/ssb/pcihost_wrapper.c
+@@ -53,8 +53,8 @@ static int ssb_pcihost_resume(struct pci
+ # define ssb_pcihost_resume	NULL
+ #endif /* CONFIG_PM */
+ 
+-static int ssb_pcihost_probe(struct pci_dev *dev,
+-			     const struct pci_device_id *id)
++static int __devinit ssb_pcihost_probe(struct pci_dev *dev,
++				       const struct pci_device_id *id)
+ {
+ 	struct ssb_bus *ssb;
+ 	int err = -ENOMEM;
+@@ -110,7 +110,7 @@ static void ssb_pcihost_remove(struct pc
+ 	pci_set_drvdata(dev, NULL);
+ }
+ 
+-int ssb_pcihost_register(struct pci_driver *driver)
++int __devinit ssb_pcihost_register(struct pci_driver *driver)
+ {
+ 	driver->probe = ssb_pcihost_probe;
+ 	driver->remove = ssb_pcihost_remove;
