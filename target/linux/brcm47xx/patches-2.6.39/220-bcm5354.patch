@@ -1,6 +1,6 @@
 --- a/drivers/ssb/driver_chipcommon.c
 +++ b/drivers/ssb/driver_chipcommon.c
-@@ -285,6 +285,8 @@ void ssb_chipco_resume(struct ssb_chipco
+@@ -317,6 +317,8 @@ void ssb_chipco_resume(struct ssb_chipco
  void ssb_chipco_get_clockcpu(struct ssb_chipcommon *cc,
                               u32 *plltype, u32 *n, u32 *m)
  {
@@ -9,7 +9,7 @@
  	*n = chipco_read32(cc, SSB_CHIPCO_CLOCK_N);
  	*plltype = (cc->capabilities & SSB_CHIPCO_CAP_PLLT);
  	switch (*plltype) {
-@@ -308,6 +310,8 @@ void ssb_chipco_get_clockcpu(struct ssb_
+@@ -340,6 +342,8 @@ void ssb_chipco_get_clockcpu(struct ssb_
  void ssb_chipco_get_clockcontrol(struct ssb_chipcommon *cc,
  				 u32 *plltype, u32 *n, u32 *m)
  {
@@ -31,7 +31,7 @@
  	}
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -1103,6 +1103,8 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
+@@ -1104,6 +1104,8 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
  
  	if (bus->chip_id == 0x5365) {
  		rate = 100000000;

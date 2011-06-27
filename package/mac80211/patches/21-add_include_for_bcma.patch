@@ -1,0 +1,11 @@
+--- a/include/linux/compat-3.0.h
++++ b/include/linux/compat-3.0.h
+@@ -5,6 +5,8 @@
+ 
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,0,0))
+ 
++#include <linux/mod_devicetable.h>
++
+ /*
+  * since commit 1c5cae815d19ffe02bdfda1260949ef2b1806171
+  * "net: call dev_alloc_name from register_netdevice" dev_alloc_name is
