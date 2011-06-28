@@ -916,7 +916,7 @@
 +}
 --- /dev/null
 +++ b/drivers/bcma/main.c
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,255 @@
 +/*
 + * Broadcom specific AMBA
 + * Bus subsystem
@@ -926,6 +926,7 @@
 +
 +#include "bcma_private.h"
 +#include <linux/bcma/bcma.h>
++#include <linux/slab.h>
 +
 +MODULE_DESCRIPTION("Broadcom's specific AMBA driver");
 +MODULE_LICENSE("GPL");
