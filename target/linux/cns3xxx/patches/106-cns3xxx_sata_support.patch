@@ -1,0 +1,190 @@
+--- a/arch/arm/mach-cns3xxx/devices.c
++++ b/arch/arm/mach-cns3xxx/devices.c
+@@ -41,7 +41,7 @@ static struct resource cns3xxx_ahci_reso
+ static u64 cns3xxx_ahci_dmamask = DMA_BIT_MASK(32);
+ 
+ static struct platform_device cns3xxx_ahci_pdev = {
+-	.name		= "ahci",
++	.name		= "ahci-cns3xxx",
+ 	.id		= 0,
+ 	.resource	= cns3xxx_ahci_resource,
+ 	.num_resources	= ARRAY_SIZE(cns3xxx_ahci_resource),
+--- a/drivers/ata/Kconfig
++++ b/drivers/ata/Kconfig
+@@ -83,6 +83,17 @@ config SATA_AHCI_PLATFORM
+ 
+ 	  If unsure, say N.
+ 
++config SATA_AHCI_CNS3XXX
++	bool "AHCI Support on the Cavium Networks CNS3xxx SOC"
++	depends on ARCH_CNS3XXX
++	depends on SATA_AHCI_PLATFORM
++	help
++	  This option enables AHCI platform driver to support CNS3xxx
++	  System-on-Chip devices. This is only needed when using CNS3xxx AHCI
++	  controller.
++
++	  If unsure, say N.
++
+ config SATA_FSL
+ 	tristate "Freescale 3.0Gbps SATA support"
+ 	depends on FSL_SOC
+--- a/drivers/ata/Makefile
++++ b/drivers/ata/Makefile
+@@ -4,7 +4,10 @@ obj-$(CONFIG_ATA)		+= libata.o
+ # non-SFF interface
+ obj-$(CONFIG_SATA_AHCI)		+= ahci.o libahci.o
+ obj-$(CONFIG_SATA_ACARD_AHCI)	+= acard-ahci.o libahci.o
+-obj-$(CONFIG_SATA_AHCI_PLATFORM) += ahci_platform.o libahci.o
++obj-$(CONFIG_SATA_AHCI_PLATFORM) += ahci_platforms.o libahci.o
++ahci_platforms-y		+= ahci_platform.o
++ahci_platforms-$(CONFIG_SATA_AHCI_CNS3XXX) += ahci_cns3xxx.o
++
+ obj-$(CONFIG_SATA_FSL)		+= sata_fsl.o
+ obj-$(CONFIG_SATA_INIC162X)	+= sata_inic162x.o
+ obj-$(CONFIG_SATA_SIL24)	+= sata_sil24.o
+--- /dev/null
++++ b/drivers/ata/ahci_cns3xxx.c
+@@ -0,0 +1,52 @@
++/*
++ * AHCI support for CNS3xxx SoC
++ *
++ * Copyright 2010 MontaVista Software, LLC.
++ * Copyright 2010 Cavium Networks
++ *
++ * Authors: Anton Vorontsov <avorontsov@xxxxxxxxxx>
++ *	    Mac Lin <mkl0301@xxxxxxxxx>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/libata.h>
++#include <linux/ahci_platform.h>
++#include "ahci.h"
++
++/*
++ * TODO: move cns3xxx_ahci_init to here after cns3xxx_pwr*() calls are
++ * thread-safe
++ */
++
++static int cns3xxx_ahci_softreset(struct ata_link *link, unsigned int *class,
++			  unsigned long deadline)
++{
++	int pmp = sata_srst_pmp(link);
++	int ret;
++
++	ret = ahci_do_softreset(link, class, pmp, deadline, ahci_check_ready);
++	if (pmp && ret)
++		return ahci_do_softreset(link, class, 0, deadline,
++			ahci_check_ready);
++	return ret;
++}
++
++static struct ata_port_operations cns3xxx_ahci_ops = {
++	.inherits		= &ahci_ops,
++	.softreset		= cns3xxx_ahci_softreset,
++};
++
++static const struct ata_port_info cns3xxx_ata_port_info = {
++	.flags		= AHCI_FLAG_COMMON,
++	.pio_mask	= ATA_PIO4,
++	.udma_mask	= ATA_UDMA6,
++	.port_ops	= &cns3xxx_ahci_ops,
++};
++
++struct ahci_platform_data cns3xxx_ahci_platform_data = {
++	.ata_port_info	= &cns3xxx_ata_port_info,
++};
++
+--- a/drivers/ata/ahci_platform.c
++++ b/drivers/ata/ahci_platform.c
+@@ -19,9 +19,11 @@
+ #include <linux/interrupt.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
++#include <linux/mod_devicetable.h>
+ #include <linux/libata.h>
+ #include <linux/ahci_platform.h>
+ #include "ahci.h"
++#include "ahci_platform.h"
+ 
+ static struct scsi_host_template ahci_platform_sht = {
+ 	AHCI_SHT("ahci_platform"),
+@@ -29,6 +31,7 @@ static struct scsi_host_template ahci_pl
+ 
+ static int __init ahci_probe(struct platform_device *pdev)
+ {
++	const struct platform_device_id *platid = platform_get_device_id(pdev);
+ 	struct device *dev = &pdev->dev;
+ 	struct ahci_platform_data *pdata = dev->platform_data;
+ 	struct ata_port_info pi = {
+@@ -46,6 +49,9 @@ static int __init ahci_probe(struct plat
+ 	int i;
+ 	int rc;
+ 
++	if (!pdata && platid && platid->driver_data)
++		pdata = (void *)platid->driver_data;
++
+ 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!mem) {
+ 		dev_err(dev, "no mmio space\n");
+@@ -171,17 +177,28 @@ static int __devexit ahci_remove(struct
+ 	return 0;
+ }
+ 
++static const struct platform_device_id ahci_platform_ids[] = {
++	{ "ahci", },
++#ifdef CONFIG_SATA_AHCI_CNS3XXX
++	{ "ahci-cns3xxx", (kernel_ulong_t)&cns3xxx_ahci_platform_data},
++#endif
++	{ },
++};
++MODULE_DEVICE_TABLE(platform, ahci_platform_ids);
++
+ static struct platform_driver ahci_driver = {
+-	.remove = __devexit_p(ahci_remove),
+ 	.driver = {
+ 		.name = "ahci",
+ 		.owner = THIS_MODULE,
+ 	},
++	.probe	= ahci_probe,
++	.remove = __devexit_p(ahci_remove),
++	.id_table = ahci_platform_ids,
+ };
+ 
+ static int __init ahci_init(void)
+ {
+-	return platform_driver_probe(&ahci_driver, ahci_probe);
++	return platform_driver_register(&ahci_driver);
+ }
+ module_init(ahci_init);
+ 
+@@ -194,4 +211,3 @@ module_exit(ahci_exit);
+ MODULE_DESCRIPTION("AHCI SATA platform driver");
+ MODULE_AUTHOR("Anton Vorontsov <avorontsov@ru.mvista.com>");
+ MODULE_LICENSE("GPL");
+-MODULE_ALIAS("platform:ahci");
+--- /dev/null
++++ b/drivers/ata/ahci_platform.h
+@@ -0,0 +1,19 @@
++/*
++ * Copyright 2010 MontaVista Software, LLC.
++ * Copyright 2010 Cavium Networks
++ *
++ * Authors: Anton Vorontsov <avorontsov@xxxxxxxxxx>
++ *	    Mac Lin <mkl0301@xxxxxxxxx>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef _DRIVERS_SATA_AHCI_PLATFORMS_H
++#define _DRIVERS_SATA_AHCI_PLATFORMS_H
++
++extern struct ahci_platform_data cns3xxx_ahci_platform_data;
++
++#endif /*_DRIVERS_SATA_AHCI_PLATFORMS_H*/
++
