@@ -200,7 +200,15 @@
  };
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -89,6 +89,8 @@ static int bcma_register_cores(struct bc
+@@ -7,6 +7,7 @@
+ 
+ #include "bcma_private.h"
+ #include <linux/bcma/bcma.h>
++#include <linux/slab.h>
+ 
+ MODULE_DESCRIPTION("Broadcom's specific AMBA driver");
+ MODULE_LICENSE("GPL");
+@@ -89,6 +90,8 @@ static int bcma_register_cores(struct bc
  		switch (bus->hosttype) {
  		case BCMA_HOSTTYPE_PCI:
  			core->dev.parent = &bus->host_pci->dev;
@@ -209,7 +217,7 @@
  			break;
  		case BCMA_HOSTTYPE_NONE:
  		case BCMA_HOSTTYPE_SDIO:
-@@ -144,6 +146,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -144,6 +147,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_pci_init(&bus->drv_pci);
  	}
  
@@ -223,7 +231,7 @@
  	/* Register found cores */
  	bcma_register_cores(bus);
  
-@@ -151,13 +160,11 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -151,13 +161,11 @@ int bcma_bus_register(struct bcma_bus *b
  
  	return 0;
  }
