@@ -156,7 +156,7 @@
  {
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -1602,6 +1602,7 @@ struct inode_operations {
+@@ -1603,6 +1603,7 @@ struct inode_operations {
  	void (*truncate_range)(struct inode *, loff_t, loff_t);
  	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
  		      u64 len);
@@ -164,7 +164,7 @@
  } ____cacheline_aligned;
  
  struct seq_file;
-@@ -1996,6 +1997,7 @@ extern long do_sys_open(int dfd, const c
+@@ -1997,6 +1998,7 @@ extern long do_sys_open(int dfd, const c
  extern struct file *filp_open(const char *, int, int);
  extern struct file *file_open_root(struct dentry *, struct vfsmount *,
  				   const char *, int);
