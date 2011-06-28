@@ -149,9 +149,9 @@ static void __init bcm4780_init(void) {
 
 		/* Enables GPIO 3 that controls HDD and led power on ASUS WL-700gE */
 		printk(MODULE_NAME ": Spinning up HDD and enabling leds\n");
-		gpio_outen(pin, pin);
-		gpio_control(pin, 0);
-		gpio_out(pin, pin);
+		ssb_gpio_outen(&ssb_bcm47xx, pin, pin);
+		ssb_gpio_control(&ssb_bcm47xx, pin, 0);
+		ssb_gpio_out(&ssb_bcm47xx, pin, pin);
 
 		/* Wait 5s, so the HDD can spin up */
 		set_current_state(TASK_INTERRUPTIBLE);
@@ -161,14 +161,14 @@ static void __init bcm4780_init(void) {
 static void __init NetCenter_init(void) {
 		/* unset pin 6 (+12V) */
 		int pin = 1 << 6;
-		gpio_outen(pin, pin);
-		gpio_control(pin, 0);
-		gpio_out(pin, pin);
+		ssb_gpio_outen(&ssb_bcm47xx, pin, pin);
+		ssb_gpio_control(&ssb_bcm47xx, pin, 0);
+		ssb_gpio_out(&ssb_bcm47xx, pin, pin);
 		/* unset pin 1 (turn off red led, blue will light alone if +5V comes up) */
 		pin = 1 << 1;
-		gpio_outen(pin, pin);
-		gpio_control(pin, 0);
-		gpio_out(pin, pin);
+		ssb_gpio_outen(&ssb_bcm47xx, pin, pin);
+		ssb_gpio_control(&ssb_bcm47xx, pin, 0);
+		ssb_gpio_out(&ssb_bcm47xx, pin, pin);
 		/* unset pin 3 (+5V) and wait 5 seconds (harddisk spin up) */
 		bcm4780_init();
 }
@@ -177,9 +177,9 @@ static void __init bcm57xx_init(void) {
 	int pin = 1 << 2;
 
 	/* FIXME: switch comes up, but port mappings/vlans not right */
-	gpio_outen(pin, pin);
-	gpio_control(pin, 0);
-	gpio_out(pin, pin);
+	ssb_gpio_outen(&ssb_bcm47xx, pin, pin);
+	ssb_gpio_control(&ssb_bcm47xx, pin, 0);
+	ssb_gpio_out(&ssb_bcm47xx, pin, pin);
 }
 
 static struct platform_t __initdata platforms[] = {
@@ -1166,18 +1166,18 @@ static void register_buttons(struct button_t *b)
 
 	platform.button_mask &= ~gpiomask;
 
-	gpio_outen(platform.button_mask, 0);
-	gpio_control(platform.button_mask, 0);
-	platform.button_polarity = gpio_in() & platform.button_mask;
-	gpio_intpolarity(platform.button_mask, platform.button_polarity);
-	gpio_setintmask(platform.button_mask, platform.button_mask);
+	ssb_gpio_outen(&ssb_bcm47xx, platform.button_mask, 0);
+	ssb_gpio_control(&ssb_bcm47xx, platform.button_mask, 0);
+	platform.button_polarity = ssb_gpio_in(&ssb_bcm47xx, ~0) & platform.button_mask;
+	ssb_gpio_polarity(&ssb_bcm47xx, platform.button_mask, platform.button_polarity);
+	ssb_gpio_intmask(&ssb_bcm47xx, platform.button_mask, platform.button_mask);
 
 	gpio_set_irqenable(1, button_handler);
 }
 
 static void unregister_buttons(struct button_t *b)
 {
-	gpio_setintmask(platform.button_mask, 0);
+	ssb_gpio_intmask(&ssb_bcm47xx, platform.button_mask, 0);
 
 	gpio_set_irqenable(0, button_handler);
 }
@@ -1237,12 +1237,12 @@ static irqreturn_t button_handler(int irq, void *dev_id)
 	struct button_t *b;
 	u32 in, changed;
 
-	in = gpio_in() & platform.button_mask;
-	gpio_intpolarity(platform.button_mask, in);
+	in = ssb_gpio_in(&ssb_bcm47xx, ~0) & platform.button_mask;
+	ssb_gpio_polarity(&ssb_bcm47xx, platform.button_mask, in);
 	changed = platform.button_polarity ^ in;
 	platform.button_polarity = in;
 
-	changed &= ~gpio_outen(0, 0);
+	changed &= ~ssb_gpio_outen(&ssb_bcm47xx, 0, 0);
 
 	for (b = platform.buttons; b->name; b++) {
 		struct event_t *event;
@@ -1298,10 +1298,10 @@ static void register_leds(struct led_t *l)
 		}
 	}
 
-	gpio_outen(mask, oe_mask);
-	gpio_control(mask, 0);
-	gpio_out(mask, val);
-	gpio_setintmask(mask, 0);
+	ssb_gpio_outen(&ssb_bcm47xx, mask, oe_mask);
+	ssb_gpio_control(&ssb_bcm47xx, mask, 0);
+	ssb_gpio_out(&ssb_bcm47xx, mask, val);
+	ssb_gpio_intmask(&ssb_bcm47xx, mask, 0);
 }
 
 static void unregister_leds(struct led_t *l)
@@ -1336,11 +1336,11 @@ static void led_flash(unsigned long dummy) {
 
 	mask &= ~gpiomask;
 	if (mask) {
-		u32 val = ~gpio_in();
+		u32 val = ~ssb_gpio_in(&ssb_bcm47xx, ~0);
 
-		gpio_outen(mask, mask);
-		gpio_control(mask, 0);
-		gpio_out(mask, val);
+		ssb_gpio_outen(&ssb_bcm47xx, mask, mask);
+		ssb_gpio_control(&ssb_bcm47xx, mask, 0);
+		ssb_gpio_out(&ssb_bcm47xx, mask, val);
 	}
 	if (mask || extif_blink) {
 		mod_timer(&led_timer, jiffies + FLASH_TIME);
@@ -1367,7 +1367,7 @@ static ssize_t diag_proc_read(struct file *file, char *buf, size_t count, loff_t
 					if (led->gpio & GPIO_TYPE_EXTIF) {
 						len = sprintf(page, "%d\n", led->state);
 					} else {
-						u32 in = (gpio_in() & led->gpio ? 1 : 0);
+						u32 in = (ssb_gpio_in(&ssb_bcm47xx, ~0) & led->gpio ? 1 : 0);
 						u8 p = (led->polarity == NORMAL ? 0 : 1);
 						len = sprintf(page, "%d\n", ((in ^ p) ? 1 : 0));
 					}
@@ -1431,9 +1431,9 @@ static ssize_t diag_proc_write(struct file *file, const char *buf, size_t count,
 						led->state = p ^ ((page[0] == '1') ? 1 : 0);
 						set_led_extif(led);
 					} else {
-						gpio_outen(led->gpio, led->gpio);
-						gpio_control(led->gpio, 0);
-						gpio_out(led->gpio, ((p ^ (page[0] == '1')) ? led->gpio : 0));
+						ssb_gpio_outen(&ssb_bcm47xx, led->gpio, led->gpio);
+						ssb_gpio_control(&ssb_bcm47xx, led->gpio, 0);
+						ssb_gpio_out(&ssb_bcm47xx, led->gpio, ((p ^ (page[0] == '1')) ? led->gpio : 0));
 					}
 				}
 				break;
@@ -1463,6 +1463,13 @@ static int __init diag_init(void)
 {
 	static struct proc_dir_entry *p;
 	static struct platform_t *detected;
+
+#ifdef CONFIG_BCM47XX_SSB
+	if (bcm47xx_active_bus_type != BCM47XX_BUS_TYPE_SSB) {
+		printk(MODULE_NAME ": bcma bus is not supported.\n");
+		return -ENODEV;
+	}
+#endif
 
 	detected = platform_detect();
 	if (!detected) {

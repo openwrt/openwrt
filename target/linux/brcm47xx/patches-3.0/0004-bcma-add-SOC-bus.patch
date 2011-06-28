@@ -1,0 +1,323 @@
+From a807b2fb233af60028ed38ba237953bcffdf33e9 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 18 Jun 2011 14:31:53 +0200
+Subject: [PATCH 04/14] bcma: add SOC bus
+
+This patch adds support for using bcma on an embedded bus. An embedded
+system like the bcm4716 could register this bus and it searches for the
+bcma cores then.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/Kconfig          |    5 +
+ drivers/bcma/Makefile         |    1 +
+ drivers/bcma/host_soc.c       |  178 +++++++++++++++++++++++++++++++++++++++++
+ drivers/bcma/main.c           |    1 +
+ drivers/bcma/scan.c           |   24 +++++-
+ include/linux/bcma/bcma.h     |    4 +
+ include/linux/bcma/bcma_soc.h |   16 ++++
+ 7 files changed, 227 insertions(+), 2 deletions(-)
+ create mode 100644 drivers/bcma/host_soc.c
+ create mode 100644 include/linux/bcma/bcma_soc.h
+
+--- a/drivers/bcma/Kconfig
++++ b/drivers/bcma/Kconfig
+@@ -27,6 +27,11 @@ config BCMA_HOST_PCI
+ 	bool "Support for BCMA on PCI-host bus"
+ 	depends on BCMA_HOST_PCI_POSSIBLE
+ 
++config BCMA_HOST_SOC
++	bool
++	depends on BCMA && MIPS
++	default n
++
+ config BCMA_DEBUG
+ 	bool "BCMA debugging"
+ 	depends on BCMA
+--- a/drivers/bcma/Makefile
++++ b/drivers/bcma/Makefile
+@@ -2,6 +2,7 @@ bcma-y					+= main.o scan.o core.o sprom
+ bcma-y					+= driver_chipcommon.o driver_chipcommon_pmu.o
+ bcma-y					+= driver_pci.o
+ bcma-$(CONFIG_BCMA_HOST_PCI)		+= host_pci.o
++bcma-$(CONFIG_BCMA_HOST_SOC)		+= host_soc.o
+ obj-$(CONFIG_BCMA)			+= bcma.o
+ 
+ ccflags-$(CONFIG_BCMA_DEBUG)		:= -DDEBUG
+--- /dev/null
++++ b/drivers/bcma/host_soc.c
+@@ -0,0 +1,178 @@
++/*
++ * Broadcom specific AMBA
++ * System on Chip (SoC) Host
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include "bcma_private.h"
++#include "scan.h"
++#include <linux/bcma/bcma.h>
++#include <linux/bcma/bcma_soc.h>
++
++static u8 bcma_host_soc_read8(struct bcma_device *core, u16 offset)
++{
++	return readb(core->io_addr + offset);
++}
++
++static u16 bcma_host_soc_read16(struct bcma_device *core, u16 offset)
++{
++	return readw(core->io_addr + offset);
++}
++
++static u32 bcma_host_soc_read32(struct bcma_device *core, u16 offset)
++{
++	return readl(core->io_addr + offset);
++}
++
++static void bcma_host_soc_write8(struct bcma_device *core, u16 offset,
++				 u8 value)
++{
++	writeb(value, core->io_addr + offset);
++}
++
++static void bcma_host_soc_write16(struct bcma_device *core, u16 offset,
++				 u16 value)
++{
++	writew(value, core->io_addr + offset);
++}
++
++static void bcma_host_soc_write32(struct bcma_device *core, u16 offset,
++				 u32 value)
++{
++	writel(value, core->io_addr + offset);
++}
++
++#ifdef CONFIG_BCMA_BLOCKIO
++static void bcma_host_soc_block_read(struct bcma_device *core, void *buffer,
++				     size_t count, u16 offset, u8 reg_width)
++{
++	void __iomem *addr = core->io_addr + offset;
++
++	switch (reg_width) {
++	case sizeof(u8): {
++		u8 *buf = buffer;
++
++		while (count) {
++			*buf = __raw_readb(addr);
++			buf++;
++			count--;
++		}
++		break;
++	}
++	case sizeof(u16): {
++		__le16 *buf = buffer;
++
++		WARN_ON(count & 1);
++		while (count) {
++			*buf = (__force __le16)__raw_readw(addr);
++			buf++;
++			count -= 2;
++		}
++		break;
++	}
++	case sizeof(u32): {
++		__le32 *buf = buffer;
++
++		WARN_ON(count & 3);
++		while (count) {
++			*buf = (__force __le32)__raw_readl(addr);
++			buf++;
++			count -= 4;
++		}
++		break;
++	}
++	default:
++		WARN_ON(1);
++	}
++}
++
++static void bcma_host_soc_block_write(struct bcma_device *core,
++				      const void *buffer,
++				      size_t count, u16 offset, u8 reg_width)
++{
++	void __iomem *addr = core->io_addr + offset;
++
++	switch (reg_width) {
++	case sizeof(u8): {
++		const u8 *buf = buffer;
++
++		while (count) {
++			__raw_writeb(*buf, addr);
++			buf++;
++			count--;
++		}
++		break;
++	}
++	case sizeof(u16): {
++		const __le16 *buf = buffer;
++
++		WARN_ON(count & 1);
++		while (count) {
++			__raw_writew((__force u16)(*buf), addr);
++			buf++;
++			count -= 2;
++		}
++		break;
++	}
++	case sizeof(u32): {
++		const __le32 *buf = buffer;
++
++		WARN_ON(count & 3);
++		while (count) {
++			__raw_writel((__force u32)(*buf), addr);
++			buf++;
++			count -= 4;
++		}
++		break;
++	}
++	default:
++		WARN_ON(1);
++	}
++}
++#endif /* CONFIG_BCMA_BLOCKIO */
++
++static u32 bcma_host_soc_aread32(struct bcma_device *core, u16 offset)
++{
++	return readl(core->io_wrap + offset);
++}
++
++static void bcma_host_soc_awrite32(struct bcma_device *core, u16 offset,
++				  u32 value)
++{
++	writel(value, core->io_wrap + offset);
++}
++
++const struct bcma_host_ops bcma_host_soc_ops = {
++	.read8		= bcma_host_soc_read8,
++	.read16		= bcma_host_soc_read16,
++	.read32		= bcma_host_soc_read32,
++	.write8		= bcma_host_soc_write8,
++	.write16	= bcma_host_soc_write16,
++	.write32	= bcma_host_soc_write32,
++#ifdef CONFIG_BCMA_BLOCKIO
++	.block_read	= bcma_host_soc_block_read,
++	.block_write	= bcma_host_soc_block_write,
++#endif
++	.aread32	= bcma_host_soc_aread32,
++	.awrite32	= bcma_host_soc_awrite32,
++};
++
++int __init bcma_host_soc_register(struct bcma_soc *soc)
++{
++	struct bcma_bus *bus = &soc->bus;
++
++	/* iomap only first core. We have to read some register on this core
++	 * to scan the bus.
++	 */
++	bus->mmio = ioremap(BCMA_ADDR_BASE, BCMA_CORE_SIZE * 1);
++	if (!bus->mmio)
++		return -ENOMEM;
++
++	/* Host specific */
++	bus->hosttype = BCMA_HOSTTYPE_SOC;
++	bus->ops = &bcma_host_soc_ops;
++
++	/* Register */
++	return bcma_bus_early_register(bus, &soc->core_cc, &soc->core_mips);
++}
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -95,6 +95,7 @@ static int bcma_register_cores(struct bc
+ 			break;
+ 		case BCMA_HOSTTYPE_NONE:
+ 		case BCMA_HOSTTYPE_SDIO:
++		case BCMA_HOSTTYPE_SOC:
+ 			break;
+ 		}
+ 
+--- a/drivers/bcma/scan.c
++++ b/drivers/bcma/scan.c
+@@ -337,6 +337,14 @@ static int bcma_get_next_core(struct bcm
+ 			}
+ 		}
+ 	}
++	if (bus->hosttype == BCMA_HOSTTYPE_SOC) {
++		core->io_addr = ioremap(core->addr, BCMA_CORE_SIZE);
++		if (!core->io_addr)
++			return -ENOMEM;
++		core->io_wrap = ioremap(core->wrap, BCMA_CORE_SIZE);
++		if (!core->io_wrap)
++			return -ENOMEM;
++	}
+ 	return 0;
+ }
+ 
+@@ -369,7 +377,13 @@ int bcma_bus_scan(struct bcma_bus *bus)
+ 	bcma_init_bus(bus);
+ 
+ 	erombase = bcma_scan_read32(bus, 0, BCMA_CC_EROM);
+-	eromptr = bus->mmio;
++	if (bus->hosttype == BCMA_HOSTTYPE_SOC) {
++		eromptr = ioremap(erombase, BCMA_CORE_SIZE);
++		if (!eromptr)
++			return -ENOMEM;
++	} else
++		eromptr = bus->mmio;
++
+ 	eromend = eromptr + BCMA_CORE_SIZE / sizeof(u32);
+ 
+ 	bcma_scan_switch_core(bus, erombase);
+@@ -417,7 +431,13 @@ int __init bcma_bus_scan_early(struct bc
+ 	int err, core_num = 0;
+ 
+ 	erombase = bcma_scan_read32(bus, 0, BCMA_CC_EROM);
+-	eromptr = bus->mmio;
++	if (bus->hosttype == BCMA_HOSTTYPE_SOC) {
++		eromptr = ioremap(erombase, BCMA_CORE_SIZE);
++		if (!eromptr)
++			return -ENOMEM;
++	} else
++		eromptr = bus->mmio;
++
+ 	eromend = eromptr + BCMA_CORE_SIZE / sizeof(u32);
+ 
+ 	bcma_scan_switch_core(bus, erombase);
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -17,6 +17,7 @@ enum bcma_hosttype {
+ 	BCMA_HOSTTYPE_NONE,
+ 	BCMA_HOSTTYPE_PCI,
+ 	BCMA_HOSTTYPE_SDIO,
++	BCMA_HOSTTYPE_SOC,
+ };
+ 
+ struct bcma_chipinfo {
+@@ -133,6 +134,9 @@ struct bcma_device {
+ 	u32 addr;
+ 	u32 wrap;
+ 
++	void __iomem *io_addr;
++	void __iomem *io_wrap;
++
+ 	void *drvdata;
+ 	struct list_head list;
+ };
+--- /dev/null
++++ b/include/linux/bcma/bcma_soc.h
+@@ -0,0 +1,16 @@
++#ifndef LINUX_BCMA_SOC_H_
++#define LINUX_BCMA_SOC_H_
++
++#include <linux/bcma/bcma.h>
++
++struct bcma_soc {
++	struct bcma_bus bus;
++	struct bcma_device core_cc;
++	struct bcma_device core_mips;
++};
++
++int __init bcma_host_soc_register(struct bcma_soc *soc);
++
++int bcma_bus_register(struct bcma_bus *bus);
++
++#endif /* LINUX_BCMA_SOC_H_ */

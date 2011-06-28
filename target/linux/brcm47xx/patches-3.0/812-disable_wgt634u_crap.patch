@@ -1,14 +1,13 @@
 --- a/arch/mips/bcm47xx/Makefile
 +++ b/arch/mips/bcm47xx/Makefile
-@@ -3,4 +3,4 @@
- # under Linux.
+@@ -4,4 +4,3 @@
  #
  
--obj-y := gpio.o irq.o nvram.o prom.o serial.o setup.o time.o wgt634u.o
-+obj-y := gpio.o irq.o nvram.o prom.o serial.o setup.o time.o
+ obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o
+-obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- a/arch/mips/bcm47xx/wgt634u.c
 +++ /dev/null
-@@ -1,166 +0,0 @@
+@@ -1,169 +0,0 @@
 -/*
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
@@ -119,7 +118,7 @@
 -
 -	/* Interrupts are shared, check if the current one is
 -	   a GPIO interrupt. */
--	if (!ssb_chipco_irq_status(&ssb_bcm47xx.chipco,
+-	if (!ssb_chipco_irq_status(&bcm47xx_bus.ssb.chipco,
 -				   SSB_CHIPCO_IRQ_GPIO))
 -		return IRQ_NONE;
 -
@@ -144,21 +143,24 @@
 -	 * been allocated ranges 00:09:5b:xx:xx:xx and 00:0f:b5:xx:xx:xx.
 -	 */
 -
--	u8 *et0mac = ssb_bcm47xx.sprom.et0mac;
+-	if (bcm47xx_active_bus_type != BCM47XX_BUS_TYPE_SSB)
+-		return -ENODEV;
+-
+-	u8 *et0mac = bcm47xx_bus.ssb.sprom.et0mac;
 -
 -	if (et0mac[0] == 0x00 &&
 -	    ((et0mac[1] == 0x09 && et0mac[2] == 0x5b) ||
 -	     (et0mac[1] == 0x0f && et0mac[2] == 0xb5))) {
--		struct ssb_mipscore *mcore = &ssb_bcm47xx.mipscore;
+-		struct ssb_mipscore *mcore = &bcm47xx_bus.ssb.mipscore;
 -
 -		printk(KERN_INFO "WGT634U machine detected.\n");
 -
 -		if (!request_irq(gpio_to_irq(WGT634U_GPIO_RESET),
 -				 gpio_interrupt, IRQF_SHARED,
--				 "WGT634U GPIO", &ssb_bcm47xx.chipco)) {
+-				 "WGT634U GPIO", &bcm47xx_bus.ssb.chipco)) {
 -			gpio_direction_input(WGT634U_GPIO_RESET);
 -			gpio_intmask(WGT634U_GPIO_RESET, 1);
--			ssb_chipco_irq_mask(&ssb_bcm47xx.chipco,
+-			ssb_chipco_irq_mask(&bcm47xx_bus.ssb.chipco,
 -					    SSB_CHIPCO_IRQ_GPIO,
 -					    SSB_CHIPCO_IRQ_GPIO);
 -		}
