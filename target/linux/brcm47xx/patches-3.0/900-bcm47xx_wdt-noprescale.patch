@@ -8,7 +8,7 @@
  
  static int wdt_time = WDT_DEFAULT_TIME;
  static int nowayout = WATCHDOG_NOWAYOUT;
-@@ -50,11 +51,11 @@ static unsigned long bcm47xx_wdt_busy;
+@@ -50,20 +51,20 @@ static unsigned long bcm47xx_wdt_busy;
  static char expect_release;
  static struct timer_list wdt_timer;
  static atomic_t ticks;
@@ -18,12 +18,22 @@
 +static inline void bcm47xx_wdt_hw_start(u32 ticks)
  {
 -	/* this is 2,5s on 100Mhz clock  and 2s on 133 Mhz */
--	ssb_watchdog_timer_set(&ssb_bcm47xx, 0xfffffff);
-+ 	ssb_watchdog_timer_set(&ssb_bcm47xx, ticks);
- }
- 
- static inline int bcm47xx_wdt_hw_stop(void)
-@@ -65,33 +66,34 @@ static inline int bcm47xx_wdt_hw_stop(vo
+ 	switch (bcm47xx_active_bus_type) {
+ #ifdef CONFIG_BCM47XX_SSB
+ 	case BCM47XX_BUS_TYPE_SSB:
+-		ssb_watchdog_timer_set(&bcm47xx_bus.ssb, 0xfffffff);
++		ssb_watchdog_timer_set(&bcm47xx_bus.ssb, ticks);
+ 		break;
+ #endif
+ #ifdef CONFIG_BCM47XX_BCMA
+ 	case BCM47XX_BUS_TYPE_BCMA:
+ 		bcma_chipco_watchdog_timer_set(&bcm47xx_bus.bcma.bus.drv_cc,
+-					       0xfffffff);
++					       ticks);
+ 		break;
+ #endif
+ 	}
+@@ -88,33 +89,34 @@ static inline int bcm47xx_wdt_hw_stop(vo
  static void bcm47xx_timer_tick(unsigned long unused)
  {
  	if (!atomic_dec_and_test(&ticks)) {
@@ -70,20 +80,25 @@
  }
  
  static int bcm47xx_wdt_settimeout(int new_time)
-@@ -243,7 +245,15 @@ static int __init bcm47xx_wdt_init(void)
+@@ -266,7 +268,20 @@ static int __init bcm47xx_wdt_init(void)
  	if (bcm47xx_wdt_hw_stop() < 0)
  		return -ENODEV;
  
 -	setup_timer(&wdt_timer, bcm47xx_timer_tick, 0L);
 +	/* FIXME Other cores */
-+	if(ssb_bcm47xx.chip_id == 0x5354) {
++#ifdef BCM47XX_BUS_TYPE_BCMA
++	if(bcm47xx_active_bus_type == BCM47XX_BUS_TYPE_BCMA &&
++	   bcm47xx_bus.ssb.chip_id == 0x5354) {
 +		/* Slow WDT clock, no pre-scaling */
 +		needs_sw_scale = 0;
 +	} else {
++#endif
 +		/* Fast WDT clock, needs software pre-scaling */
 +		needs_sw_scale = 1;
 +		setup_timer(&wdt_timer, bcm47xx_timer_tick, 0L);
++#ifdef BCM47XX_BUS_TYPE_BCMA
 +	}
++#endif
  
  	if (bcm47xx_wdt_settimeout(wdt_time)) {
  		bcm47xx_wdt_settimeout(WDT_DEFAULT_TIME);
