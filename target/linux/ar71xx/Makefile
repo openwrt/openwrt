@@ -13,7 +13,7 @@ FEATURES:=squashfs jffs2 targz
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 SUBTARGETS:=generic nand
 
-LINUX_VERSION:=2.6.37.6
+LINUX_VERSION:=2.6.39.2
 
 include $(INCLUDE_DIR)/target.mk
 
