@@ -23,8 +23,6 @@
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
-static int ip2_flush_reg;
-
 static void ar71xx_gpio_irq_dispatch(void)
 {
 	void __iomem *base = ar71xx_gpio_base;
@@ -249,6 +247,46 @@ static void __init ar71xx_misc_irq_init(void)
 	setup_irq(AR71XX_CPU_IRQ_MISC, &ar71xx_misc_irqaction);
 }
 
+/*
+ * The IP2 line is tied to a PCI/WMAC device. Drivers for these
+ * devices typically allocate coherent DMA memory for the descriptor
+ * ring, however the DMA controller may still have some unsynchronized
+ * data in the FIFO.
+ * Issue a flush in the handlers to ensure that the driver sees
+ * the update.
+ */
+static void ar71xx_ip2_handler(void)
+{
+	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_PCI);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar724x_ip2_handler(void)
+{
+	ar71xx_ddr_flush(AR724X_DDR_REG_FLUSH_PCIE);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar913x_ip2_handler(void)
+{
+	ar71xx_ddr_flush(AR91XX_DDR_REG_FLUSH_WMAC);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar933x_ip2_handler(void)
+{
+	ar71xx_ddr_flush(AR933X_DDR_REG_FLUSH_WMAC);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar934x_ip2_handler(void)
+{
+	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_PCIE);
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void (*ip2_handler)(void);
+
 asmlinkage void plat_irq_dispatch(void)
 {
 	unsigned long pending;
@@ -258,17 +296,8 @@ asmlinkage void plat_irq_dispatch(void)
 	if (pending & STATUSF_IP7)
 		do_IRQ(AR71XX_CPU_IRQ_TIMER);
 
-	else if (pending & STATUSF_IP2) {
-		/*
-		 * This IRQ is meant for a PCI device. Drivers for PCI devices
-		 * typically allocate coherent DMA memory for the descriptor
-		 * ring, however the DMA controller may still have some
-		 * unsynchronized data in the FIFO.
-		 * Issue a flush here to ensure that the driver sees the update.
-		 */
-		ar71xx_ddr_flush(ip2_flush_reg);
-		do_IRQ(AR71XX_CPU_IRQ_IP2);
-	}
+	else if (pending & STATUSF_IP2)
+		ip2_handler();
 
 	else if (pending & STATUSF_IP4)
 		do_IRQ(AR71XX_CPU_IRQ_GE0);
@@ -282,8 +311,7 @@ asmlinkage void plat_irq_dispatch(void)
 	else if (pending & STATUSF_IP6)
 		ar71xx_misc_irq_dispatch();
 
-	else
-		spurious_interrupt();
+	spurious_interrupt();
 }
 
 void __init arch_init_irq(void)
@@ -292,29 +320,29 @@ void __init arch_init_irq(void)
 	case AR71XX_SOC_AR7130:
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
-		ip2_flush_reg = AR71XX_DDR_REG_FLUSH_PCI;
+		ip2_handler = ar71xx_ip2_handler;
 		break;
 
 	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
-		ip2_flush_reg = AR724X_DDR_REG_FLUSH_PCIE;
+		ip2_handler = ar724x_ip2_handler;
 		break;
 
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
-		ip2_flush_reg = AR91XX_DDR_REG_FLUSH_WMAC;
+		ip2_handler = ar913x_ip2_handler;
 		break;
 
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
-		ip2_flush_reg = AR933X_DDR_REG_FLUSH_WMAC;
+		ip2_handler = ar933x_ip2_handler;
 		break;
 
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-		ip2_flush_reg = AR934X_DDR_REG_FLUSH_PCIE;
+		ip2_handler = ar934x_ip2_handler;
 		break;
 
 	default:
