@@ -248,10 +248,9 @@ static void __init ar71xx_misc_irq_init(void)
 }
 
 /*
- * The IP2 line is tied to a PCI/WMAC device. Drivers for these
- * devices typically allocate coherent DMA memory for the descriptor
- * ring, however the DMA controller may still have some unsynchronized
- * data in the FIFO.
+ * The IP2/IP3 lines are tied to a PCI/WMAC/USB device. Drivers for
+ * these devices typically allocate coherent DMA memory, however the
+ * DMA controller may still have some unsynchronized data in the FIFO.
  * Issue a flush in the handlers to ensure that the driver sees
  * the update.
  */
@@ -285,7 +284,37 @@ static void ar934x_ip2_handler(void)
 	do_IRQ(AR71XX_CPU_IRQ_IP2);
 }
 
+static void ar71xx_ip3_handler(void)
+{
+	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void ar724x_ip3_handler(void)
+{
+	ar71xx_ddr_flush(AR724X_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void ar913x_ip3_handler(void)
+{
+	ar71xx_ddr_flush(AR91XX_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void ar933x_ip3_handler(void)
+{
+	ar71xx_ddr_flush(AR933X_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void ar934x_ip3_handler(void)
+{
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
 static void (*ip2_handler)(void);
+static void (*ip3_handler)(void);
 
 asmlinkage void plat_irq_dispatch(void)
 {
@@ -306,7 +335,7 @@ asmlinkage void plat_irq_dispatch(void)
 		do_IRQ(AR71XX_CPU_IRQ_GE1);
 
 	else if (pending & STATUSF_IP3)
-		do_IRQ(AR71XX_CPU_IRQ_USB);
+		ip3_handler();
 
 	else if (pending & STATUSF_IP6)
 		ar71xx_misc_irq_dispatch();
@@ -321,28 +350,33 @@ void __init arch_init_irq(void)
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
 		ip2_handler = ar71xx_ip2_handler;
+		ip3_handler = ar71xx_ip3_handler;
 		break;
 
 	case AR71XX_SOC_AR7240:
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
 		ip2_handler = ar724x_ip2_handler;
+		ip3_handler = ar724x_ip3_handler;
 		break;
 
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
 		ip2_handler = ar913x_ip2_handler;
+		ip3_handler = ar913x_ip3_handler;
 		break;
 
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
 		ip2_handler = ar933x_ip2_handler;
+		ip3_handler = ar933x_ip3_handler;
 		break;
 
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
 		ip2_handler = ar934x_ip2_handler;
+		ip3_handler = ar934x_ip3_handler;
 		break;
 
 	default:
