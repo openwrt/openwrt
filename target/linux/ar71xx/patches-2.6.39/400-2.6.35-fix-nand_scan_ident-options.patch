@@ -1,0 +1,22 @@
+--- a/drivers/mtd/nand/rb4xx_nand.c
++++ b/drivers/mtd/nand/rb4xx_nand.c
+@@ -223,7 +223,7 @@ static int __init rb4xx_nand_probe(struc
+ 
+ 	platform_set_drvdata(pdev, info);
+ 
+-	ret = nand_scan_ident(&info->mtd, 1);
++	ret = nand_scan_ident(&info->mtd, 1, NULL);
+ 	if (ret) {
+ 		ret = -ENXIO;
+ 		goto err_free_info;
+--- a/drivers/mtd/nand/rb750_nand.c
++++ b/drivers/mtd/nand/rb750_nand.c
+@@ -287,7 +287,7 @@ static int __init rb750_nand_probe(struc
+ 
+ 	platform_set_drvdata(pdev, info);
+ 
+-	ret = nand_scan_ident(&info->mtd, 1);
++	ret = nand_scan_ident(&info->mtd, 1, NULL);
+ 	if (ret) {
+ 		ret = -ENXIO;
+ 		goto err_free_info;

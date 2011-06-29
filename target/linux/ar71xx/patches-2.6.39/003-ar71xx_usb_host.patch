@@ -1,0 +1,58 @@
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -129,6 +129,13 @@ config XPS_USB_HCD_XILINX
+ config USB_FSL_MPH_DR_OF
+ 	tristate
+ 
++config USB_EHCI_AR71XX
++	bool "USB EHCI support for AR71xx"
++	depends on USB_EHCI_HCD && ATHEROS_AR71XX
++	default y
++	help
++	  Support for Atheros AR71xx built-in EHCI controller
++
+ config USB_EHCI_FSL
+ 	bool "Support for Freescale on-chip EHCI USB controller"
+ 	depends on USB_EHCI_HCD && FSL_SOC
+@@ -287,6 +294,13 @@ config USB_OHCI_HCD_OMAP3
+ 	  Enables support for the on-chip OHCI controller on
+ 	  OMAP3 and later chips.
+ 
++config USB_OHCI_AR71XX
++	bool "USB OHCI support for Atheros AR71xx"
++	depends on USB_OHCI_HCD && ATHEROS_AR71XX
++	default y
++	help
++	  Support for Atheros AR71xx built-in OHCI controller
++
+ config USB_OHCI_HCD_PPC_SOC
+ 	bool "OHCI support for on-chip PPC USB controller"
+ 	depends on USB_OHCI_HCD && (STB03xxx || PPC_MPC52xx)
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -1267,6 +1267,11 @@ MODULE_LICENSE ("GPL");
+ #define PLATFORM_DRIVER		tegra_ehci_driver
+ #endif
+ 
++#ifdef CONFIG_USB_EHCI_AR71XX
++#include "ehci-ar71xx.c"
++#define PLATFORM_DRIVER		ehci_ar71xx_driver
++#endif
++
+ #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \
+     !defined(PS3_SYSTEM_BUS_DRIVER) && !defined(OF_PLATFORM_DRIVER) && \
+     !defined(XILINX_OF_PLATFORM_DRIVER)
+--- a/drivers/usb/host/ohci-hcd.c
++++ b/drivers/usb/host/ohci-hcd.c
+@@ -1107,6 +1107,11 @@ MODULE_LICENSE ("GPL");
+ #define PLATFORM_DRIVER		ohci_hcd_cns3xxx_driver
+ #endif
+ 
++#ifdef CONFIG_USB_OHCI_AR71XX
++#include "ohci-ar71xx.c"
++#define PLATFORM_DRIVER		ohci_hcd_ar71xx_driver
++#endif
++
+ #if	!defined(PCI_DRIVER) &&		\
+ 	!defined(PLATFORM_DRIVER) &&	\
+ 	!defined(OMAP1_PLATFORM_DRIVER) &&	\
