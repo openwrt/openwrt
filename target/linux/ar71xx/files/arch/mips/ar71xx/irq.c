@@ -90,7 +90,6 @@ static struct irqaction ar71xx_gpio_irqaction = {
 	.name		= "cascade [AR71XX GPIO]",
 };
 
-#define GPIO_IRQ_INIT_STATUS (IRQ_LEVEL | IRQ_TYPE_LEVEL_HIGH | IRQ_DISABLED)
 #define GPIO_INT_ALL	0xffff
 
 static void __init ar71xx_gpio_irq_init(void)
@@ -108,11 +107,9 @@ static void __init ar71xx_gpio_irq_init(void)
 	__raw_writel(GPIO_INT_ALL, base + GPIO_REG_INT_POLARITY);
 
 	for (i = AR71XX_GPIO_IRQ_BASE;
-	     i < AR71XX_GPIO_IRQ_BASE + AR71XX_GPIO_IRQ_COUNT; i++) {
-		irq_desc[i].status = GPIO_IRQ_INIT_STATUS;
+	     i < AR71XX_GPIO_IRQ_BASE + AR71XX_GPIO_IRQ_COUNT; i++)
 		set_irq_chip_and_handler(i, &ar71xx_gpio_irq_chip,
 					 handle_level_irq);
-	}
 
 	setup_irq(AR71XX_MISC_IRQ_GPIO, &ar71xx_gpio_irqaction);
 }
@@ -245,11 +242,9 @@ static void __init ar71xx_misc_irq_init(void)
 	}
 
 	for (i = AR71XX_MISC_IRQ_BASE;
-	     i < AR71XX_MISC_IRQ_BASE + AR71XX_MISC_IRQ_COUNT; i++) {
-		irq_desc[i].status = IRQ_DISABLED;
+	     i < AR71XX_MISC_IRQ_BASE + AR71XX_MISC_IRQ_COUNT; i++)
 		set_irq_chip_and_handler(i, &ar71xx_misc_irq_chip,
 					 handle_level_irq);
-	}
 
 	setup_irq(AR71XX_CPU_IRQ_MISC, &ar71xx_misc_irqaction);
 }
