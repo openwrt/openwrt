@@ -37,12 +37,11 @@ static void ar71xx_gpio_irq_dispatch(void)
 		spurious_interrupt();
 }
 
-static void ar71xx_gpio_irq_unmask(unsigned int irq)
+static void ar71xx_gpio_irq_unmask(struct irq_data *d)
 {
+	unsigned int irq = d->irq - AR71XX_GPIO_IRQ_BASE;
 	void __iomem *base = ar71xx_gpio_base;
 	u32 t;
-
-	irq -= AR71XX_GPIO_IRQ_BASE;
 
 	t = __raw_readl(base + GPIO_REG_INT_ENABLE);
 	__raw_writel(t | (1 << irq), base + GPIO_REG_INT_ENABLE);
@@ -51,12 +50,11 @@ static void ar71xx_gpio_irq_unmask(unsigned int irq)
 	(void) __raw_readl(base + GPIO_REG_INT_ENABLE);
 }
 
-static void ar71xx_gpio_irq_mask(unsigned int irq)
+static void ar71xx_gpio_irq_mask(struct irq_data *d)
 {
+	unsigned int irq = d->irq - AR71XX_GPIO_IRQ_BASE;
 	void __iomem *base = ar71xx_gpio_base;
 	u32 t;
-
-	irq -= AR71XX_GPIO_IRQ_BASE;
 
 	t = __raw_readl(base + GPIO_REG_INT_ENABLE);
 	__raw_writel(t & ~(1 << irq), base + GPIO_REG_INT_ENABLE);
@@ -67,9 +65,9 @@ static void ar71xx_gpio_irq_mask(unsigned int irq)
 
 static struct irq_chip ar71xx_gpio_irq_chip = {
 	.name		= "AR71XX GPIO",
-	.unmask		= ar71xx_gpio_irq_unmask,
-	.mask		= ar71xx_gpio_irq_mask,
-	.mask_ack	= ar71xx_gpio_irq_mask,
+	.irq_unmask	= ar71xx_gpio_irq_unmask,
+	.irq_mask	= ar71xx_gpio_irq_mask,
+	.irq_mask_ack	= ar71xx_gpio_irq_mask,
 };
 
 static struct irqaction ar71xx_gpio_irqaction = {
@@ -95,7 +93,7 @@ static void __init ar71xx_gpio_irq_init(void)
 
 	for (i = AR71XX_GPIO_IRQ_BASE;
 	     i < AR71XX_GPIO_IRQ_BASE + AR71XX_GPIO_IRQ_COUNT; i++)
-		set_irq_chip_and_handler(i, &ar71xx_gpio_irq_chip,
+		irq_set_chip_and_handler(i, &ar71xx_gpio_irq_chip,
 					 handle_level_irq);
 
 	setup_irq(AR71XX_MISC_IRQ_GPIO, &ar71xx_gpio_irqaction);
@@ -151,12 +149,11 @@ static void ar71xx_misc_irq_dispatch(void)
 		spurious_interrupt();
 }
 
-static void ar71xx_misc_irq_unmask(unsigned int irq)
+static void ar71xx_misc_irq_unmask(struct irq_data *d)
 {
+	unsigned int irq = d->irq - AR71XX_MISC_IRQ_BASE;
 	void __iomem *base = ar71xx_reset_base;
 	u32 t;
-
-	irq -= AR71XX_MISC_IRQ_BASE;
 
 	t = __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 	__raw_writel(t | (1 << irq), base + AR71XX_RESET_REG_MISC_INT_ENABLE);
@@ -165,12 +162,11 @@ static void ar71xx_misc_irq_unmask(unsigned int irq)
 	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
-static void ar71xx_misc_irq_mask(unsigned int irq)
+static void ar71xx_misc_irq_mask(struct irq_data *d)
 {
+	unsigned int irq = d->irq - AR71XX_MISC_IRQ_BASE;
 	void __iomem *base = ar71xx_reset_base;
 	u32 t;
-
-	irq -= AR71XX_MISC_IRQ_BASE;
 
 	t = __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_MISC_INT_ENABLE);
@@ -179,12 +175,11 @@ static void ar71xx_misc_irq_mask(unsigned int irq)
 	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
-static void ar724x_misc_irq_ack(unsigned int irq)
+static void ar724x_misc_irq_ack(struct irq_data *d)
 {
+	unsigned int irq = d->irq - AR71XX_MISC_IRQ_BASE;
 	void __iomem *base = ar71xx_reset_base;
 	u32 t;
-
-	irq -= AR71XX_MISC_IRQ_BASE;
 
 	t = __raw_readl(base + AR71XX_RESET_REG_MISC_INT_STATUS);
 	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_MISC_INT_STATUS);
@@ -195,8 +190,8 @@ static void ar724x_misc_irq_ack(unsigned int irq)
 
 static struct irq_chip ar71xx_misc_irq_chip = {
 	.name		= "AR71XX MISC",
-	.unmask		= ar71xx_misc_irq_unmask,
-	.mask		= ar71xx_misc_irq_mask,
+	.irq_unmask	= ar71xx_misc_irq_unmask,
+	.irq_mask	= ar71xx_misc_irq_mask,
 };
 
 static struct irqaction ar71xx_misc_irqaction = {
@@ -221,16 +216,16 @@ static void __init ar71xx_misc_irq_init(void)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-		ar71xx_misc_irq_chip.ack = ar724x_misc_irq_ack;
+		ar71xx_misc_irq_chip.irq_ack = ar724x_misc_irq_ack;
 		break;
 	default:
-		ar71xx_misc_irq_chip.mask_ack = ar71xx_misc_irq_mask;
+		ar71xx_misc_irq_chip.irq_mask_ack = ar71xx_misc_irq_mask;
 		break;
 	}
 
 	for (i = AR71XX_MISC_IRQ_BASE;
 	     i < AR71XX_MISC_IRQ_BASE + AR71XX_MISC_IRQ_COUNT; i++)
-		set_irq_chip_and_handler(i, &ar71xx_misc_irq_chip,
+		irq_set_chip_and_handler(i, &ar71xx_misc_irq_chip,
 					 handle_level_irq);
 
 	setup_irq(AR71XX_CPU_IRQ_MISC, &ar71xx_misc_irqaction);
