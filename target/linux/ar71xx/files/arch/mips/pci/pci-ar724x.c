@@ -280,15 +280,13 @@ static void ar724x_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
 		spurious_interrupt();
 }
 
-static void ar724x_pci_irq_unmask(unsigned int irq)
+static void ar724x_pci_irq_unmask(struct irq_data *d)
 {
 	void __iomem *base = ar724x_pci_ctrl_base;
 	u32 t;
 
-	switch (irq) {
+	switch (d->irq) {
 	case AR71XX_PCI_IRQ_DEV0:
-		irq -= AR71XX_PCI_IRQ_BASE;
-
 		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
 		__raw_writel(t | AR724X_PCI_INT_DEV0,
 			     base + AR724X_PCI_REG_INT_MASK);
@@ -297,15 +295,13 @@ static void ar724x_pci_irq_unmask(unsigned int irq)
 	}
 }
 
-static void ar724x_pci_irq_mask(unsigned int irq)
+static void ar724x_pci_irq_mask(struct irq_data *d)
 {
 	void __iomem *base = ar724x_pci_ctrl_base;
 	u32 t;
 
-	switch (irq) {
+	switch (d->irq) {
 	case AR71XX_PCI_IRQ_DEV0:
-		irq -= AR71XX_PCI_IRQ_BASE;
-
 		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
 		__raw_writel(t & ~AR724X_PCI_INT_DEV0,
 			     base + AR724X_PCI_REG_INT_MASK);
@@ -324,9 +320,9 @@ static void ar724x_pci_irq_mask(unsigned int irq)
 
 static struct irq_chip ar724x_pci_irq_chip = {
 	.name		= "AR724X PCI ",
-	.mask		= ar724x_pci_irq_mask,
-	.unmask		= ar724x_pci_irq_unmask,
-	.mask_ack	= ar724x_pci_irq_mask,
+	.irq_mask	= ar724x_pci_irq_mask,
+	.irq_unmask	= ar724x_pci_irq_unmask,
+	.irq_mask_ack	= ar724x_pci_irq_mask,
 };
 
 static void __init ar724x_pci_irq_init(void)
@@ -346,10 +342,10 @@ static void __init ar724x_pci_irq_init(void)
 
 	for (i = AR71XX_PCI_IRQ_BASE;
 	     i < AR71XX_PCI_IRQ_BASE + AR71XX_PCI_IRQ_COUNT; i++)
-		set_irq_chip_and_handler(i, &ar724x_pci_irq_chip,
+		irq_set_chip_and_handler(i, &ar724x_pci_irq_chip,
 					 handle_level_irq);
 
-	set_irq_chained_handler(AR71XX_CPU_IRQ_IP2, ar724x_pci_irq_handler);
+	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, ar724x_pci_irq_handler);
 }
 
 int __init ar724x_pcibios_init(void)
