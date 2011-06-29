@@ -65,22 +65,11 @@ static void ar71xx_gpio_irq_mask(unsigned int irq)
 	(void) __raw_readl(base + GPIO_REG_INT_ENABLE);
 }
 
-#if 0
-static int ar71xx_gpio_irq_set_type(unsigned int irq, unsigned int flow_type)
-{
-	/* TODO: implement */
-	return 0;
-}
-#else
-#define ar71xx_gpio_irq_set_type	NULL
-#endif
-
 static struct irq_chip ar71xx_gpio_irq_chip = {
 	.name		= "AR71XX GPIO",
 	.unmask		= ar71xx_gpio_irq_unmask,
 	.mask		= ar71xx_gpio_irq_mask,
 	.mask_ack	= ar71xx_gpio_irq_mask,
-	.set_type	= ar71xx_gpio_irq_set_type,
 };
 
 static struct irqaction ar71xx_gpio_irqaction = {
