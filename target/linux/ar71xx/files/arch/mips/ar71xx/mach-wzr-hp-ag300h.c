@@ -28,8 +28,6 @@
 #define WZRHPAG300H_KEYS_POLL_INTERVAL     20      /* msecs */
 #define WZRHPAG300H_KEYS_DEBOUNCE_INTERVAL (3 * WZRHPAG300H_KEYS_POLL_INTERVAL)
 
-#ifdef CONFIG_MTD_CONCAT
-
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wzrhpag300h_flash_partitions[] = {
 	{
@@ -121,8 +119,6 @@ static void add_mtd_concat_notifier(void)
 
 	register_mtd_user(&not);
 }
-
-#endif
 
 static struct gpio_led wzrhpag300h_leds_gpio[] __initdata = {
 	{
@@ -222,9 +218,7 @@ static void __init wzrhpag300h_setup(void)
 	ar71xx_add_device_spi(NULL, ar71xx_spi_info,
 			      ARRAY_SIZE(ar71xx_spi_info));
 
-#ifdef CONFIG_MTD_CONCAT
 	add_mtd_concat_notifier();
-#endif
 
 	ap94_pci_init(eeprom1, mac1, eeprom2, mac2);
 }
