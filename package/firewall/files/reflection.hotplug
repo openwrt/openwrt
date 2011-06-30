@@ -56,6 +56,7 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 		[ "$src" = wan ] && [ "$target" = DNAT ] && {
 			local dest
 			config_get dest "$cfg" dest "lan"
+			[ "$dest" != "*" ] || return
 
 			local net
 			for net in $(find_networks "$dest"); do

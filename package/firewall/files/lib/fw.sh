@@ -137,10 +137,13 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 	case "$tgt" in
 		-) tgt= ;;
 	esac
+
+	local rule_offset
 	case "$pos" in
 		^) pos=1 ;;
 		$) pos= ;;
 		-) pos= ;;
+		+) eval "rule_offset=\${FW__RULE_OFS_${app}_${tab}_${chn}:-1}" ;;
 	esac
 
 	if ! fw__has - family || ! fw__has $tab ; then
@@ -159,13 +162,29 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 		fi
 	fi
 
-	local cmdline="$app --table ${tab} --${cmd} ${chn} ${pol} ${pos} ${tgt:+--jump "$tgt"}"
+	local cmdline="$app --table ${tab} --${cmd} ${chn} ${pol} ${rule_offset:-${pos}} ${tgt:+--jump "$tgt"}"
 	while [ $# -gt 1 ]; do
-		case "$app:$1" in
-			ip6tables:--icmp-type) cmdline="$cmdline --icmpv6-type" ;;
-			ip6tables:icmp|ip6tables:ICMP) cmdline="$cmdline icmpv6" ;;
-			iptables:--icmpv6-type) cmdline="$cmdline --icmp-type" ;;
-			iptables:icmpv6) cmdline="$cmdline icmp" ;;
+		# special parameter handling
+		case "$1:$2" in
+			-p:icmp*|--protocol:icmp*)
+				[ "$app" = ip6tables ] && \
+					cmdline="$cmdline -p icmpv6" || \
+					cmdline="$cmdline -p icmp"
+				shift
+			;;
+			--icmp-type:*|--icmpv6-type:*)
+				local icmp_type
+				if [ "$app" = ip6tables ] && fw_check_icmptype6 icmp_type "$2"; then
+					cmdline="$cmdline $icmp_type"
+				elif [ "$app" = iptables ] && fw_check_icmptype4 icmp_type "$2"; then
+					cmdline="$cmdline $icmp_type"
+				else
+					local fam=IPv4; [ "$app" = ip6tables ] && fam=IPv6
+					fw_log info "ICMP type '$2' is not valid for $fam address family, skipping rule"
+					return 1
+				fi
+				shift	
+			;;
 			*) cmdline="$cmdline $1" ;;
 		esac
 		shift
@@ -175,7 +194,10 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 
 	$cmdline
 
-	fw__rc $?
+	local rv=$?
+	[ $rv -eq 0 ] && [ -n "$rule_offset" ] && \
+		export -- "FW__RULE_OFS_${app}_${tab}_${chn}=$(($rule_offset + 1))"
+	fw__rc $rv
 }
 
 fw_get_port_range() {
@@ -189,8 +211,8 @@ fw_get_port_range() {
 
 	local _first=${_ports%-*}
 	local _last=${_ports#*-}
-	if [ "$_first" != "$_last" ]; then
-		export -- "$_var=$_first$_delim$_last"
+	if [ "${_first#!}" != "${_last#!}" ]; then
+		export -- "$_var=$_first$_delim${_last#!}"
 	else
 		export -- "$_var=$_first"
 	fi
@@ -221,11 +243,11 @@ fw_get_family_mode() {
 fw_get_negation() {
 	local _var="$1"
 	local _flag="$2"
-	local _ipaddr="$3"
+	local _value="$3"
 
-	[ "${_ipaddr#!}" != "$_ipaddr" ] && \
-		export -n -- "$_var=! $_flag ${_ipaddr#!}" || \
-		export -n -- "$_var=${_ipaddr:+$_flag $_ipaddr}"
+	[ "${_value#!}" != "$_value" ] && \
+		export -n -- "$_var=! $_flag ${_value#!}" || \
+		export -n -- "$_var=${_value:+$_flag $_value}"
 }
 
 fw_get_subnet4() {
@@ -244,4 +266,67 @@ fw_get_subnet4() {
 		;;
 		*) export -n -- "$_var=" ;;
 	esac
+}
+
+fw_check_icmptype4() {
+	local _var="$1"
+	local _type="$2"
+	case "$_type" in
+		![0-9]*) export -n -- "$_var=! --icmp-type ${_type#!}"; return 0 ;;
+		[0-9]*)  export -n -- "$_var=--icmp-type $_type";       return 0 ;;
+	esac
+
+	[ -z "$FW_ICMP4_TYPES" ] && \
+		export FW_ICMP4_TYPES=$(
+			iptables -p icmp -h 2>/dev/null | \
+			sed -n -e '/^Valid ICMP Types:/ {
+				n; :r;
+				/router-advertisement/d;
+				/router-solicitation/d;
+				s/[()]/ /g; s/[[:space:]]\+/\n/g; p; n; b r
+			}' | sort -u
+		)
+
+	local _check
+	for _check in $FW_ICMP4_TYPES; do
+		if [ "$_check" = "${_type#!}" ]; then
+			[ "${_type#!}" != "$_type" ] && \
+				export -n -- "$_var=! --icmp-type ${_type#!}" || \
+				export -n -- "$_var=--icmp-type $_type"
+			return 0
+		fi
+	done
+
+	export -n -- "$_var="
+	return 1
+}
+
+fw_check_icmptype6() {
+	local _var="$1"
+	local _type="$2"
+	case "$_type" in
+		![0-9]*) export -n -- "$_var=! --icmpv6-type ${_type#!}"; return 0 ;;
+		[0-9]*)  export -n -- "$_var=--icmpv6-type $_type";       return 0 ;;
+	esac
+
+	[ -z "$FW_ICMP6_TYPES" ] && \
+	 	export FW_ICMP6_TYPES=$(
+	 		ip6tables -p icmpv6 -h 2>/dev/null | \
+	 		sed -n -e '/^Valid ICMPv6 Types:/ {
+	 			n; :r; s/[()]/ /g; s/[[:space:]]\+/\n/g; p; n; b r
+	 		}' | sort -u
+	 	)
+
+	local _check
+	for _check in $FW_ICMP6_TYPES; do
+		if [ "$_check" = "${_type#!}" ]; then
+			[ "${_type#!}" != "$_type" ] && \
+				export -n -- "$_var=! --icmpv6-type ${_type#!}" || \
+				export -n -- "$_var=--icmpv6-type $_type"
+			return 0
+		fi
+	done
+
+	export -n -- "$_var="
+	return 1
 }
