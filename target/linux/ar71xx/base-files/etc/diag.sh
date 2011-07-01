@@ -144,7 +144,7 @@ set_state() {
 		status_led_set_timer 50 50
 		;;
 	done)
-		status_led_off
+		status_led_on
 		;;
 	esac
 }
