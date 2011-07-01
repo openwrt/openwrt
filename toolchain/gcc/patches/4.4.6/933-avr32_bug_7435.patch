@@ -1,6 +1,6 @@
 --- a/gcc/config/avr32/avr32.c
 +++ b/gcc/config/avr32/avr32.c
-@@ -222,14 +222,14 @@ void
+@@ -243,14 +243,14 @@ void
  avr32_override_options (void)
  {
    const struct part_type_s *part;
@@ -17,7 +17,7 @@
                 avr32_arch_name);
        avr32_arch_name="ucr1";
      }
-@@ -277,6 +277,12 @@ avr32_override_options (void)
+@@ -298,6 +298,12 @@ avr32_override_options (void)
    if (!arch->name)
      avr32_arch = &avr32_arch_types[avr32_part->arch_type];
  
