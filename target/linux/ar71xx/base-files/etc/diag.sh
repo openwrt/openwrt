@@ -124,7 +124,7 @@ get_status_led() {
 		status_led="wrt160nl:blue:wps"
 		;;
 	wzr-hp-g300nh | wzr-hp-g301nh)
-		status_led="wzr-hp-g300nh:red:diag"
+		status_led="wzr-hp-g300nh:green:router"
 		;;
 	zcn-1523h-2 | zcn-1523h-5)
 		status_led="zcn-1523h:amber:init"
