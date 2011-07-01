@@ -71,13 +71,13 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 				[ -n "$extport" ] || return
 
 				epmin="${extport%[-:]*}"; epmax="${extport#*[-:]}"
-				[ "$epmin" != "$epmax" ] || epmax=""
+				[ "${epmin#!}" != "$epmax" ] || epmax=""
 
 				local ipmin ipmax intport
 				config_get intport "$cfg" dest_port "$extport"
 
 				ipmin="${intport%[-:]*}"; ipmax="${intport#*[-:]}"
-				[ "$ipmin" != "$ipmax" ] || ipmax=""
+				[ "${ipmin#!}" != "$ipmax" ] || ipmax=""
 
 				local exthost
 				config_get exthost "$cfg" src_dip "$wanip"
