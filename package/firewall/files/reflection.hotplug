@@ -91,23 +91,31 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 				[ "${inthost#!}" = "$inthost" ] || return 0
 				[ "${exthost#!}" = "$exthost" ] || return 0
 
+				[ "${epmin#!}" != "$epmin" ] && \
+					extport="! --dport ${epmin#!}${epmax:+:$epmax}" || \
+					extport="--dport $epmin${epmax:+:$epmax}"
+
+				[ "${ipmin#!}" != "$ipmin" ] && \
+					intport="! --dport ${ipmin#!}${ipmax:+:$ipmax}" || \
+					intport="--dport $ipmin${ipmax:+:$ipmax}"
+
 				local p
 				for p in ${proto:-tcp udp}; do
 					case "$p" in
 						tcp|udp)
 							iptables -t nat -A nat_reflection_in \
 								-s $lanip/$lanmk -d $exthost \
-								-p $p --dport $epmin${epmax:+:$epmax} \
-								-j DNAT --to $inthost:$ipmin${ipmax:+-$ipmax}
+								-p $p $extport \
+								-j DNAT --to $inthost:${ipmin#!}${ipmax:+-$ipmax}
 
 							iptables -t nat -A nat_reflection_out \
 								-s $lanip/$lanmk -d $inthost \
-								-p $p --dport $ipmin${ipmax:+:$ipmax} \
+								-p $p $intport \
 								-j SNAT --to-source $lanip
 
 							iptables -t filter -A nat_reflection_fwd \
 								-s $lanip/$lanmk -d $inthost \
-								-p $p --dport $ipmin${ipmax:+:$ipmax} \
+								-p $p $intport \
 								-j ACCEPT
 						;;
 					esac
