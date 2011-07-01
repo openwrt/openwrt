@@ -32,6 +32,7 @@
 #include <linux/device.h>
 #include <linux/platform_device.h>
 #include <linux/gpio_dev.h>
+#include <linux/fs.h>
 
 #define DRVNAME		"gpiodev"
 #define DEVNAME		"gpio"
@@ -42,8 +43,7 @@ static struct class *gpiodev_class;
 
 /* third argument of user space ioctl ('arg' here) contains the <pin> */
 static int
-gpio_ioctl(struct inode * inode, struct file * file, unsigned int cmd,
-	   unsigned long arg)
+gpio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int retval = 0;
 
@@ -114,7 +114,7 @@ gpio_close(struct inode * inode, struct file * file)
 }
 
 struct file_operations gpio_fops = {
-	ioctl:		gpio_ioctl,
+	unlocked_ioctl:	gpio_ioctl,
 	open:		gpio_open,
 	release:	gpio_close
 };
