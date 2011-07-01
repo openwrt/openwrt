@@ -7,12 +7,12 @@ config GCC_DEFAULT_VERSION_4_3_3_CS
 
 config GCC_DEFAULT_VERSION_4_3_5
 	select GCC_DEFAULT_VERSION
-	default y if (avr32 || powerpc64 || TARGET_coldfire || TARGET_etrax)
+	default y if (TARGET_coldfire || TARGET_etrax)
 	bool
 
 config GCC_DEFAULT_VERSION_4_4_6
 	select GCC_DEFAULT_VERSION
-	default y if (powerpc || ubicom32)
+	default y if (avr32 || ubicom32)
 	bool
 
 config GCC_DEFAULT_VERSION_LINARO
