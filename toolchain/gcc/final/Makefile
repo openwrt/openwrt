@@ -8,7 +8,7 @@ GCC_CONFIGURE += \
 	--enable-threads \
 	--with-slibdir=$(TOOLCHAIN_DIR)/lib
 
-ifneq ($(CONFIG_GCC_VERSION_4_5),)
+ifneq ($(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6),)
   GCC_CONFIGURE += \
 	--enable-lto \
 	--with-libelf=$(TOPDIR)/staging_dir/host

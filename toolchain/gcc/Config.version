@@ -26,7 +26,7 @@ config GCC_VERSION
 	default "4.3.5"     if GCC_VERSION_4_3_5
 	default "4.4.1+cs"  if GCC_VERSION_4_4_1_CS
 	default "4.4.5"	    if GCC_VERSION_4_4_5
-	default "4.5.2"	    if GCC_VERSION_4_5_2
+	default "4.6.1"	    if GCC_VERSION_4_6_1
 	default "linaro"    if GCC_VERSION_LINARO
 	default "llvm"	    if GCC_VERSION_LLVM
 	default "linaro"
@@ -43,8 +43,11 @@ config GCC_VERSION_4_4
 
 config GCC_VERSION_4_5
 	bool
-	default y       if GCC_VERSION_4_5_2
 	default y       if GCC_VERSION_LINARO
+
+config GCC_VERSION_4_6
+	bool
+	default y       if GCC_VERSION_4_6_1
 
 if !TOOLCHAINOPTS
 

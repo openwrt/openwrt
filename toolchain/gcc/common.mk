@@ -2,7 +2,7 @@
 # Copyright (C) 2002-2003 Erik Andersen <andersen@uclibc.org>
 # Copyright (C) 2004 Manuel Novoa III <mjn3@uclibc.org>
 # Copyright (C) 2005-2006 Felix Fietkau <nbd@openwrt.org>
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,8 +60,8 @@ else
   ifeq ($(PKG_VERSION),4.4.5)
     PKG_MD5SUM:=44b3192c4c584b9be5243d9e8e7e0ed1
   endif
-  ifeq ($(PKG_VERSION),4.5.2)
-  PKG_MD5SUM:=d6559145853fbaaa0fd7556ed93bce9a
+  ifeq ($(PKG_VERSION),4.6.1)
+  PKG_MD5SUM:=c57a9170c677bf795bdc04ed796ca491
   endif
 endif
 endif
@@ -114,7 +114,7 @@ GCC_CONFIGURE:= \
 		$(if $(CONFIG_GCC_VERSION_LLVM),--enable-llvm=$(BUILD_DIR_BASE)/host/llvm) \
 		$(if $(CONFIG_GCC_VERSION_4_3_3_CS)$(CONFIG_GCC_VERSION_4_4_1_CS),--enable-poison-system-directories)
 
-ifneq ($(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5),)
+ifneq ($(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6),)
   ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
     GCC_CONFIGURE += --with-mips-plt
   endif
@@ -128,7 +128,7 @@ ifeq ($(CONFIG_GCC_LLVM),)
 		--disable-decimal-float
 endif
 
-ifneq ($(CONFIG_GCC_VERSION_4_5),)
+ifneq ($(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6),)
   GCC_BUILD_TARGET_LIBGCC:=y
   GCC_CONFIGURE+= \
                 --with-gmp=$(TOPDIR)/staging_dir/host \
