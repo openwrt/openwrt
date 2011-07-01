@@ -17,20 +17,20 @@
 	This patch was authored by Thorsten Glaser <tg at mirbsd.de>
 	with copyright assignment to the FSF in effect.
 
---- a/gcc/c-opts.c
-+++ b/gcc/c-opts.c
-@@ -105,6 +105,9 @@
+--- a/gcc/c-family/c-opts.c
++++ b/gcc/c-family/c-opts.c
+@@ -103,6 +103,9 @@ static size_t deferred_count;
  /* Number of deferred options scanned for -include.  */
  static size_t include_cursor;
  
 +/* Check if a port honours COPTS.  */
 +static int honour_copts = 0;
 +
- static void set_Wimplicit (int);
  static void handle_OPT_d (const char *);
  static void set_std_cxx98 (int);
-@@ -454,6 +457,9 @@
-       enable_warning_as_error ("implicit-function-declaration", value, CL_C | CL_ObjC); 
+ static void set_std_cxx0x (int);
+@@ -441,6 +444,9 @@ c_common_handle_option (size_t scode, co
+       global_dc->warning_as_error_requested = value;
        break;
  
 +    case OPT_Werror_maybe_reset:
@@ -39,20 +39,20 @@
      case OPT_Wformat:
        set_Wformat (value);
        break;
-@@ -690,6 +701,12 @@
-       flag_exceptions = value;
+@@ -584,6 +590,12 @@ c_common_handle_option (size_t scode, co
+       flag_no_builtin = !value;
        break;
  
 +    case OPT_fhonour_copts:
 +      if (c_language == clk_c) {
-+	honour_copts++;
++        honour_copts++;
 +      }
 +      break;
 +
-     case OPT_fimplement_inlines:
-       flag_implement_inlines = value;
+     case OPT_fconstant_string_class_:
+       constant_string_class_name = arg;
        break;
-@@ -1209,6 +1226,47 @@
+@@ -1058,6 +1070,47 @@ c_common_init (void)
        return false;
      }
  
@@ -75,35 +75,35 @@
 +    }
 +    if (evv == 1) {
 +      if (honour_copts == 0) {
-+	error ("someone does not honour COPTS at all in lenient mode");
-+	return false;
++        error ("someone does not honour COPTS at all in lenient mode");
++        return false;
 +      } else if (honour_copts != 1) {
-+	warning (0, "someone does not honour COPTS correctly, passed %d times",
-+	 honour_copts);
++        warning (0, "someone does not honour COPTS correctly, passed %d times",
++         honour_copts);
 +      }
 +    } else if (evv == 2) {
 +      if (honour_copts == 0) {
-+	error ("someone does not honour COPTS at all in strict mode");
-+	return false;
++        error ("someone does not honour COPTS at all in strict mode");
++        return false;
 +      } else if (honour_copts != 1) {
-+	error ("someone does not honour COPTS correctly, passed %d times",
-+	 honour_copts);
-+	return false;
++        error ("someone does not honour COPTS correctly, passed %d times",
++         honour_copts);
++        return false;
 +      }
 +    } else if (evv == 0) {
 +      if (honour_copts != 1)
-+	inform (0, "someone does not honour COPTS correctly, passed %d times",
-+	 honour_copts);
++        inform (0, "someone does not honour COPTS correctly, passed %d times",
++         honour_copts);
 +    }
 +  }
 +
    return true;
  }
  
---- a/gcc/c.opt
-+++ b/gcc/c.opt
-@@ -215,6 +215,10 @@
- C ObjC RejectNegative Warning
+--- a/gcc/c-family/c.opt
++++ b/gcc/c-family/c.opt
+@@ -363,6 +363,10 @@ Werror-implicit-function-declaration
+ C ObjC RejectNegative Warning Alias(Werror=, implicit-function-declaration)
  This switch is deprecated; use -Werror=implicit-function-declaration instead
  
 +Werror-maybe-reset
@@ -113,9 +113,9 @@
  Wfloat-equal
  C ObjC C++ ObjC++ Var(warn_float_equal) Warning
  Warn if testing floating point numbers for equality
-@@ -609,6 +613,9 @@
+@@ -794,6 +798,9 @@ C++ ObjC++ Optimization Alias(fexception
  fhonor-std
- C++ ObjC++
+ C++ ObjC++ Ignore Warn(switch %qs is no longer supported)
  
 +fhonour-copts
 +C ObjC C++ ObjC++ RejectNegative
@@ -125,7 +125,7 @@
  Assume normal C execution environment
 --- a/gcc/common.opt
 +++ b/gcc/common.opt
-@@ -102,6 +102,10 @@
+@@ -520,6 +520,10 @@ Werror=
  Common Joined
  Treat specified warning as error
  
@@ -134,9 +134,9 @@
 +If environment variable GCC_NO_WERROR is set, act as -Wno-error
 +
  Wextra
- Common Warning
+ Common Var(extra_warnings) Warning
  Print extra (possibly unwanted) warnings
-@@ -573,6 +577,9 @@
+@@ -1156,6 +1160,9 @@ fguess-branch-probability
  Common Report Var(flag_guess_branch_prob) Optimization
  Enable guessing of branch probabilities
  
@@ -148,33 +148,33 @@
  ; On SVR4 targets, it also controls whether or not to emit a
 --- a/gcc/opts.c
 +++ b/gcc/opts.c
-@@ -896,8 +896,6 @@
-   flag_schedule_insns_after_reload = opt2;
+@@ -477,8 +477,6 @@ static const struct default_options defa
+     { OPT_LEVELS_2_PLUS, OPT_fschedule_insns2, NULL, 1 },
  #endif
-   flag_regmove = opt2;
--  flag_strict_aliasing = opt2;
--  flag_strict_overflow = opt2;
-   flag_reorder_blocks = opt2;
-   flag_reorder_functions = opt2;
-   flag_tree_vrp = opt2;
-@@ -922,6 +919,8 @@
+     { OPT_LEVELS_2_PLUS, OPT_fregmove, NULL, 1 },
+-    { OPT_LEVELS_2_PLUS, OPT_fstrict_aliasing, NULL, 1 },
+-    { OPT_LEVELS_2_PLUS, OPT_fstrict_overflow, NULL, 1 },
+     { OPT_LEVELS_2_PLUS, OPT_freorder_blocks, NULL, 1 },
+     { OPT_LEVELS_2_PLUS, OPT_freorder_functions, NULL, 1 },
+     { OPT_LEVELS_2_PLUS, OPT_ftree_vrp, NULL, 1 },
+@@ -494,6 +492,8 @@ static const struct default_options defa
+     { OPT_LEVELS_2_PLUS, OPT_falign_functions, NULL, 1 },
  
-   /* -O3 optimizations.  */
-   opt3 = (optimize >= 3);
-+  flag_strict_aliasing = opt3;
-+  flag_strict_overflow = opt3;
-   flag_predictive_commoning = opt3;
-   flag_inline_functions = opt3;
-   flag_unswitch_loops = opt3;
-@@ -1601,6 +1601,17 @@
-       enable_warning_as_error (arg, value, lang_mask);
+     /* -O3 optimizations.  */
++    { OPT_LEVELS_3_PLUS, OPT_fstrict_aliasing, NULL, 1 },
++    { OPT_LEVELS_3_PLUS, OPT_fstrict_overflow, NULL, 1 },
+     { OPT_LEVELS_3_PLUS, OPT_ftree_loop_distribute_patterns, NULL, 1 },
+     { OPT_LEVELS_3_PLUS, OPT_fpredictive_commoning, NULL, 1 },
+     /* Inlining of functions reducing size is a good idea with -Os
+@@ -1399,6 +1399,17 @@ common_handle_option (struct gcc_options
+ 			       opts, opts_set, loc, dc);
        break;
  
 +    case OPT_Werror_maybe_reset:
 +      {
-+	char *ev = getenv ("GCC_NO_WERROR");
-+	if ((ev != NULL) && (*ev != '0'))
-+	  warnings_are_errors = 0;
++        char *ev = getenv ("GCC_NO_WERROR");
++        if ((ev != NULL) && (*ev != '0'))
++          warnings_are_errors = 0;
 +      }
 +      break;
 +
@@ -182,11 +182,11 @@
 +      break;
 +
      case OPT_Wlarger_than_:
-       /* This form corresponds to -Wlarger-than-. 
-          Kept for backward compatibility.
+       opts->x_larger_than_size = value;
+       opts->x_warn_larger_than = value != -1;
 --- a/gcc/doc/cppopts.texi
 +++ b/gcc/doc/cppopts.texi
-@@ -164,6 +164,11 @@
+@@ -164,6 +164,11 @@ in older programs.  This warning is on b
  Make all warnings into hard errors.  Source code which triggers warnings
  will be rejected.
  
@@ -200,16 +200,16 @@
  Issue warnings for code in system headers.  These are normally unhelpful
 --- a/gcc/doc/invoke.texi
 +++ b/gcc/doc/invoke.texi
-@@ -234,7 +234,7 @@
- -Wconversion  -Wcoverage-mismatch  -Wno-deprecated  @gol
+@@ -240,7 +240,7 @@ Objective-C and Objective-C++ Dialects}.
+ -Wconversion  -Wcoverage-mismatch  -Wno-cpp  -Wno-deprecated  @gol
  -Wno-deprecated-declarations -Wdisabled-optimization  @gol
- -Wno-div-by-zero -Wempty-body  -Wenum-compare -Wno-endif-labels @gol
---Werror  -Werror=* @gol
-+-Werror  -Werror=* -Werror-maybe-reset @gol
+ -Wno-div-by-zero -Wdouble-promotion -Wempty-body  -Wenum-compare @gol
+--Wno-endif-labels -Werror  -Werror=* @gol
++-Wno-endif-labels -Werror  -Werror=* -Werror-maybe-reset @gol
  -Wfatal-errors  -Wfloat-equal  -Wformat  -Wformat=2 @gol
  -Wno-format-contains-nul -Wno-format-extra-args -Wformat-nonliteral @gol
  -Wformat-security  -Wformat-y2k @gol
-@@ -4161,6 +4161,22 @@
+@@ -4495,6 +4495,22 @@ This option is only supported for C and
  @option{-Wall} and by @option{-pedantic}, which can be disabled with
  @option{-Wno-pointer-sign}.
  
@@ -232,7 +232,7 @@
  @item -Wstack-protector
  @opindex Wstack-protector
  @opindex Wno-stack-protector
-@@ -5699,7 +5715,7 @@
+@@ -6317,7 +6333,7 @@ so, the first branch is redirected to ei
  second branch or a point immediately following it, depending on whether
  the condition is known to be true or false.
  
@@ -243,7 +243,7 @@
  @opindex fsplit-wide-types
 --- a/gcc/java/jvspec.c
 +++ b/gcc/java/jvspec.c
-@@ -670,6 +670,7 @@
+@@ -627,6 +627,7 @@ lang_specific_pre_link (void)
       class name.  Append dummy `.c' that can be stripped by set_input so %b
       is correct.  */ 
    set_input (concat (main_class_name, "main.c", NULL));

@@ -11,15 +11,16 @@
  
 --- a/gcc/config/arm/t-linux
 +++ b/gcc/config/arm/t-linux
-@@ -4,7 +4,10 @@
+@@ -23,7 +23,11 @@ TARGET_LIBGCC2_CFLAGS = -fomit-frame-poi
  
  LIB1ASMSRC = arm/lib1funcs.asm
  LIB1ASMFUNCS = _udivsi3 _divsi3 _umodsi3 _modsi3 _dvmd_lnx _clzsi2 _clzdi2 \
 -	_arm_addsubdf3 _arm_addsubsf3
 +	_arm_addsubdf3 _arm_addsubsf3 \
-+	_negdf2 _addsubdf3 _muldivdf3 _cmpdf2 _unorddf2 _fixdfsi _fixunsdfsi \
-+	_truncdfsf2 _negsf2 _addsubsf3 _muldivsf3 _cmpsf2 _unordsf2 \
-+	_fixsfsi _fixunssfsi _floatdidf _floatundidf _floatdisf _floatundisf
++	_arm_negdf2 _arm_muldivdf3 _arm_cmpdf2 _arm_unorddf2 \
++	_arm_fixdfsi _arm_fixunsdfsi _arm_truncdfsf2 \
++	_arm_negsf2 _arm_muldivsf3 _arm_cmpsf2 _arm_unordsf2 \
++	_arm_fixsfsi _arm_fixunssfsi
  
  # MULTILIB_OPTIONS = mhard-float/msoft-float
  # MULTILIB_DIRNAMES = hard-float soft-float
