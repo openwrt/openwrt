@@ -1,0 +1,509 @@
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -123,6 +123,13 @@ config SPI_BUTTERFLY
+ 	  inexpensive battery powered microcontroller evaluation board.
+ 	  This same cable can be used to flash new firmware.
+ 
++config SPI_CNS3XXX
++	tristate "CNS3XXX SPI controller"
++	depends on ARCH_CNS3XXX && SPI_MASTER
++	select SPI_BITBANG
++	help
++	  This enables using the CNS3XXX SPI controller in master mode.
++
+ config SPI_COLDFIRE_QSPI
+ 	tristate "Freescale Coldfire QSPI controller"
+ 	depends on (M520x || M523x || M5249 || M527x || M528x || M532x)
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -56,6 +56,7 @@ obj-$(CONFIG_SPI_SH_SCI)		+= spi_sh_sci.
+ obj-$(CONFIG_SPI_SH_MSIOF)		+= spi_sh_msiof.o
+ obj-$(CONFIG_SPI_STMP3XXX)		+= spi_stmp.o
+ obj-$(CONFIG_SPI_NUC900)		+= spi_nuc900.o
++obj-$(CONFIG_SPI_CNS3XXX)		+= spi_cns3xxx.o
+ 
+ # special build for s3c24xx spi driver with fiq support
+ spi_s3c24xx_hw-y			:= spi_s3c24xx.o
+--- /dev/null
++++ b/drivers/spi/spi_cns3xxx.c
+@@ -0,0 +1,449 @@
++/*******************************************************************************
++ *
++ *  CNS3XXX SPI controller driver (master mode only)
++ *
++ *  Copyright (c) 2008 Cavium Networks
++ *  Copyright 2011 Gateworks Corporation
++ *		   Chris Lang <clang@gateworks.com>
++ *
++ *  This file is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License, Version 2, as
++ *  published by the Free Software Foundation.
++ *
++ *  This file is distributed in the hope that it will be useful,
++ *  but AS-IS and WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, TITLE, or
++ *  NONINFRINGEMENT.  See the GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this file; if not, write to the Free Software
++ *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA or
++ *  visit http://www.gnu.org/licenses/.
++ *
++ *  This file may also be available under a different license from Cavium.
++ *  Contact Cavium Networks for more information
++ *
++ ******************************************************************************/
++
++#include <linux/init.h>
++#include <linux/spinlock.h>
++#include <linux/workqueue.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <linux/errno.h>
++#include <linux/err.h>
++#include <linux/clk.h>
++#include <linux/platform_device.h>
++
++#include <linux/spi/spi.h>
++#include <linux/spi/spi_bitbang.h>
++#include <linux/mtd/partitions.h>
++#include <linux/dma-mapping.h>
++#include <linux/slab.h>
++
++#include <asm/io.h>
++#include <asm/memory.h>
++#include <asm/dma.h>
++#include <asm/delay.h>
++#include <mach/cns3xxx.h>
++#include <linux/module.h>
++#include <mach/pm.h>
++
++/*
++ * define access macros
++ */
++#define SPI_MEM_MAP_VALUE(reg_offset)		(*((u32 volatile *)(CNS3XXX_SSP_BASE_VIRT + reg_offset)))
++
++#define SPI_CONFIGURATION_REG			SPI_MEM_MAP_VALUE(0x40)
++#define SPI_SERVICE_STATUS_REG			SPI_MEM_MAP_VALUE(0x44)
++#define SPI_BIT_RATE_CONTROL_REG		SPI_MEM_MAP_VALUE(0x48)
++#define SPI_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x4C)
++#define SPI_TRANSMIT_BUFFER_REG			SPI_MEM_MAP_VALUE(0x50)
++#define SPI_RECEIVE_CONTROL_REG			SPI_MEM_MAP_VALUE(0x54)
++#define SPI_RECEIVE_BUFFER_REG			SPI_MEM_MAP_VALUE(0x58)
++#define SPI_FIFO_TRANSMIT_CONFIG_REG		SPI_MEM_MAP_VALUE(0x5C)
++#define SPI_FIFO_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x60)
++#define SPI_FIFO_RECEIVE_CONFIG_REG		SPI_MEM_MAP_VALUE(0x64)
++#define SPI_INTERRUPT_STATUS_REG		SPI_MEM_MAP_VALUE(0x68)
++#define SPI_INTERRUPT_ENABLE_REG		SPI_MEM_MAP_VALUE(0x6C)
++
++#define SPI_TRANSMIT_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x50)
++#define SPI_RECEIVE_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x58)
++
++/* Structure for SPI controller of CNS3XXX SOCs */
++struct cns3xxx_spi {
++	/* bitbang has to be first */
++	struct spi_bitbang bitbang;
++	struct completion done;
++	wait_queue_head_t wait;
++
++	int len;
++	int count;
++	int last_in_message_list;
++
++	/* data buffers */
++	const unsigned char *tx;
++	unsigned char *rx;
++
++	struct spi_master *master;
++	struct platform_device *pdev;
++	struct device *dev;
++};
++
++static inline u8 cns3xxx_spi_bus_idle(void)
++{
++	return ((SPI_SERVICE_STATUS_REG & 0x1) ? 0 : 1);
++}
++
++static inline u8 cns3xxx_spi_tx_buffer_empty(void)
++{
++	return ((SPI_INTERRUPT_STATUS_REG & (0x1 << 3)) ? 1 : 0);
++}
++
++static inline u8 cns3xxx_spi_rx_buffer_full(void)
++{
++	return ((SPI_INTERRUPT_STATUS_REG & (0x1 << 2)) ? 1 : 0);
++}
++
++u8 cns3xxx_spi_tx_rx(u8 tx_channel, u8 tx_eof, u32 tx_data,
++			    u32 * rx_data)
++{
++	u8 rx_channel;
++	u8 rx_eof;
++
++	while (!cns3xxx_spi_bus_idle()) ;	// do nothing
++
++	while (!cns3xxx_spi_tx_buffer_empty()) ;	// do nothing
++
++	SPI_TRANSMIT_CONTROL_REG &= ~(0x7);
++	SPI_TRANSMIT_CONTROL_REG |= (tx_channel & 0x3) | ((tx_eof & 0x1) << 2);
++
++	SPI_TRANSMIT_BUFFER_REG = tx_data;
++
++	while (!cns3xxx_spi_rx_buffer_full()) ;	// do nothing
++
++	rx_channel = SPI_RECEIVE_CONTROL_REG & 0x3;
++	rx_eof = (SPI_RECEIVE_CONTROL_REG & (0x1 << 2)) ? 1 : 0;
++
++	*rx_data = SPI_RECEIVE_BUFFER_REG;
++
++	if ((tx_channel != rx_channel) || (tx_eof != rx_eof)) {
++		return 0;
++	} else {
++		return 1;
++	}
++}
++
++u8 cns3xxx_spi_tx(u8 tx_channel, u8 tx_eof, u32 tx_data)
++{
++
++        while (!cns3xxx_spi_bus_idle()) ;       // do nothing
++
++        while (!cns3xxx_spi_tx_buffer_empty()) ;        // do nothing
++
++        SPI_TRANSMIT_CONTROL_REG &= ~(0x7);
++        SPI_TRANSMIT_CONTROL_REG |= (tx_channel & 0x3) | ((tx_eof & 0x1) << 2);
++
++        SPI_TRANSMIT_BUFFER_REG = tx_data;
++
++        return 1;
++}
++
++static inline struct cns3xxx_spi *to_hw(struct spi_device *sdev)
++{
++	return spi_master_get_devdata(sdev->master);
++}
++
++static int cns3xxx_spi_setup_transfer(struct spi_device *spi,
++				      struct spi_transfer *t)
++{
++	return 0;
++}
++
++static void cns3xxx_spi_chipselect(struct spi_device *spi, int value)
++{
++	unsigned int spi_config;
++
++	switch (value) {
++	case BITBANG_CS_INACTIVE:
++		break;
++
++	case BITBANG_CS_ACTIVE:
++		spi_config = SPI_CONFIGURATION_REG;
++
++		if (spi->mode & SPI_CPHA)
++			spi_config |= (0x1 << 13);
++		else
++			spi_config &= ~(0x1 << 13);
++
++		if (spi->mode & SPI_CPOL)
++			spi_config |= (0x1 << 14);
++		else
++			spi_config &= ~(0x1 << 14);
++
++		/* write new configration */
++		SPI_CONFIGURATION_REG = spi_config;
++
++		SPI_TRANSMIT_CONTROL_REG &= ~(0x7);
++		SPI_TRANSMIT_CONTROL_REG |= (spi->chip_select & 0x3);
++
++		break;
++	}
++}
++
++static int cns3xxx_spi_setup(struct spi_device *spi)
++{
++	if (!spi->bits_per_word)
++		spi->bits_per_word = 8;
++
++	return 0;
++}
++
++static int cns3xxx_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
++{
++	struct cns3xxx_spi *hw = to_hw(spi);
++
++	dev_dbg(&spi->dev, "txrx: tx %p, rx %p, len %d\n", t->tx_buf, t->rx_buf,
++		t->len);
++
++	hw->tx = t->tx_buf;
++	hw->rx = t->rx_buf;
++	hw->len = t->len;
++	hw->count = 0;
++	hw->last_in_message_list = t->last_in_message_list;
++
++	init_completion(&hw->done);
++
++	if (hw->tx) {
++		int i;
++		u32 rx_data;
++		for (i = 0; i < (hw->len - 1); i++) {
++			dev_dbg(&spi->dev,
++				"[SPI_CNS3XXX_DEBUG] hw->tx[%02d]: 0x%02x\n", i,
++				hw->tx[i]);
++			cns3xxx_spi_tx_rx(spi->chip_select, 0, hw->tx[i],
++					  &rx_data);
++			if (hw->rx) {
++				hw->rx[i] = rx_data;
++				dev_dbg(&spi->dev,
++					"[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n",
++					i, hw->rx[i]);
++			}
++		}
++
++		if (t->last_in_message_list) {
++			cns3xxx_spi_tx_rx(spi->chip_select, 1, hw->tx[i],
++					  &rx_data);
++			if (hw->rx) {
++				hw->rx[i] = rx_data;
++				dev_dbg(&spi->dev,
++					"[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n",
++					i, hw->rx[i]);
++			}
++		} else {
++			cns3xxx_spi_tx_rx(spi->chip_select, 0, hw->tx[i],
++					  &rx_data);
++		}
++		goto done;
++	}
++
++	if (hw->rx) {
++		int i;
++		u32 rx_data;
++		for (i = 0; i < (hw->len - 1); i++) {
++			cns3xxx_spi_tx_rx(spi->chip_select, 0, 0xff, &rx_data);
++			hw->rx[i] = rx_data;
++			dev_dbg(&spi->dev,
++				"[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n", i,
++				hw->rx[i]);
++		}
++
++		if (t->last_in_message_list) {
++			cns3xxx_spi_tx_rx(spi->chip_select, 1, 0xff, &rx_data);
++		} else {
++			cns3xxx_spi_tx_rx(spi->chip_select, 0, 0xff, &rx_data);
++		}
++		hw->rx[i] = rx_data;
++		dev_dbg(&spi->dev, "[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n",
++			i, hw->rx[i]);
++	}
++done:
++	return hw->len;
++}
++
++static void __init cns3xxx_spi_initial(void)
++{
++	u32 __iomem *gpiob = __io(CNS3XXX_MISC_BASE_VIRT + 0x0018);
++	u32 gpiob_pins = __raw_readl(gpiob);
++
++	/* MMC/SD pins share with GPIOA */
++	gpiob_pins |= 0xf80;
++	__raw_writel(gpiob_pins, gpiob);
++
++	/* share pin config. */
++	//PM_PLL_HM_PD_CTRL_REG &= ~(0x1 << 5);
++	//HAL_MISC_ENABLE_SPI_PINS();
++	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(SPI_PCM_I2C));
++	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(SPI_PCM_I2C));
++
++	SPI_CONFIGURATION_REG = (((0x0 & 0x3) << 0) |	/* 8bits shift length */
++				 (0x0 << 9) |	/* SPI mode */
++				 (0x0 << 10) |	/* disable FIFO */
++				 (0x1 << 11) |	/* SPI master mode */
++				 (0x0 << 12) |	/* disable SPI loopback mode */
++				 (0x1 << 13) |	/* clock phase */
++				 (0x1 << 14) |	/* clock polarity */
++				 (0x0 << 24) |	/* disable - SPI data swap */
++				 (0x1 << 29) |	/* enable - 2IO Read mode */
++				 (0x0 << 30) |	/* disable - SPI high speed read for system boot up */
++				 (0x0 << 31));	/* disable - SPI */
++
++	/* Set SPI bit rate PCLK/2 */
++	SPI_BIT_RATE_CONTROL_REG = 0x1;
++
++	/* Set SPI Tx channel 0 */
++	SPI_TRANSMIT_CONTROL_REG = 0x0;
++
++	/* Set Tx FIFO Threshold, Tx FIFO has 2 words */
++	SPI_FIFO_TRANSMIT_CONFIG_REG &= ~(0x03 << 4);
++	SPI_FIFO_TRANSMIT_CONFIG_REG |= ((0x0 & 0x03) << 4);
++
++	/* Set Rx FIFO Threshold, Rx FIFO has 2 words */
++	SPI_FIFO_RECEIVE_CONFIG_REG &= ~(0x03 << 4);
++	SPI_FIFO_RECEIVE_CONFIG_REG |= ((0x0 & 0x03) << 4);
++
++	/* Disable all interrupt */
++	SPI_INTERRUPT_ENABLE_REG = 0x0;
++
++	/* Clear spurious interrupt sources */
++	SPI_INTERRUPT_STATUS_REG = (0x0F << 4);
++
++	/* Enable SPI */
++	SPI_CONFIGURATION_REG |= (0x1 << 31);
++
++	return;
++}
++
++static int __init cns3xxx_spi_probe(struct platform_device *pdev)
++{
++	struct spi_master *master;
++	struct cns3xxx_spi *hw;
++	int err = 0;
++
++	printk("%s: setup CNS3XXX SPI Controller\n", __FUNCTION__);
++
++	/* Allocate master with space for cns3xxx_spi */
++	master = spi_alloc_master(&pdev->dev, sizeof(struct cns3xxx_spi));
++	if (master == NULL) {
++		dev_err(&pdev->dev, "No memory for spi_master\n");
++		err = -ENOMEM;
++		goto err_nomem;
++	}
++
++	hw = spi_master_get_devdata(master);
++	memset(hw, 0, sizeof(struct cns3xxx_spi));
++
++	hw->master = spi_master_get(master);
++	hw->dev = &pdev->dev;
++
++	platform_set_drvdata(pdev, hw);
++	init_completion(&hw->done);
++
++	/* setup the master state. */
++
++	master->num_chipselect = 4;
++	master->bus_num = 1;
++
++	/* setup the state for the bitbang driver */
++
++	hw->bitbang.master = hw->master;
++	hw->bitbang.setup_transfer = cns3xxx_spi_setup_transfer;
++	hw->bitbang.chipselect = cns3xxx_spi_chipselect;
++	hw->bitbang.txrx_bufs = cns3xxx_spi_txrx;
++	hw->bitbang.master->setup = cns3xxx_spi_setup;
++
++	dev_dbg(hw->dev, "bitbang at %p\n", &hw->bitbang);
++
++	/* SPI controller initializations */
++	cns3xxx_spi_initial();
++
++	/* register SPI controller */
++
++	err = spi_bitbang_start(&hw->bitbang);
++	if (err) {
++		dev_err(&pdev->dev, "Failed to register SPI master\n");
++		goto err_register;
++	}
++
++	return 0;
++
++err_register:
++	spi_master_put(hw->master);;
++
++err_nomem:
++	return err;
++}
++
++static int __devexit cns3xxx_spi_remove(struct platform_device *dev)
++{
++	struct cns3xxx_spi *hw = platform_get_drvdata(dev);
++
++	platform_set_drvdata(dev, NULL);
++
++	spi_unregister_master(hw->master);
++
++	spi_master_put(hw->master);
++	return 0;
++}
++
++#ifdef CONFIG_PM
++
++static int cns3xxx_spi_suspend(struct platform_device *pdev, pm_message_t msg)
++{
++	struct cns3xxx_spi *hw = platform_get_drvdata(pdev);
++
++	return 0;
++}
++
++static int cns3xxx_spi_resume(struct platform_device *pdev)
++{
++	struct cns3xxx_spi *hw = platform_get_drvdata(pdev);
++
++	return 0;
++}
++
++#else
++#define cns3xxx_spi_suspend	NULL
++#define cns3xxx_spi_resume	NULL
++#endif
++
++static struct platform_driver cns3xxx_spi_driver = {
++	.probe		= cns3xxx_spi_probe,
++	.remove		= __devexit_p(cns3xxx_spi_remove),
++	.suspend	= cns3xxx_spi_suspend,
++	.resume		= cns3xxx_spi_resume,
++	.driver		= {
++		.name = "cns3xxx_spi",
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init cns3xxx_spi_init(void)
++{
++	return platform_driver_register(&cns3xxx_spi_driver);
++}
++
++static void __exit cns3xxx_spi_exit(void)
++{
++	platform_driver_unregister(&cns3xxx_spi_driver);
++}
++
++module_init(cns3xxx_spi_init);
++module_exit(cns3xxx_spi_exit);
++
++MODULE_AUTHOR("Cavium Networks");
++MODULE_DESCRIPTION("CNS3XXX SPI Controller Driver");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:cns3xxx_spi");
++
++EXPORT_SYMBOL_GPL(cns3xxx_spi_tx_rx);
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -446,6 +446,13 @@ struct spi_transfer {
+ 	u32		speed_hz;
+ 
+ 	struct list_head transfer_list;
++
++#ifdef CONFIG_ARCH_CNS3XXX
++	unsigned	last_in_message_list;
++#ifdef CONFIG_SPI_CNS3XXX_2IOREAD
++	u8		dio_read;
++#endif
++#endif
+ };
+ 
+ /**
+--- a/drivers/spi/spi_bitbang.c
++++ b/drivers/spi/spi_bitbang.c
+@@ -329,6 +329,12 @@ static void bitbang_work(struct work_str
+ 				 */
+ 				if (!m->is_dma_mapped)
+ 					t->rx_dma = t->tx_dma = 0;
++
++				if (t->transfer_list.next == &m->transfers)
++					t->last_in_message_list = 1;
++				else
++					t->last_in_message_list = 0;
++
+ 				status = bitbang->txrx_bufs(spi, t);
+ 			}
+ 			if (status > 0)
