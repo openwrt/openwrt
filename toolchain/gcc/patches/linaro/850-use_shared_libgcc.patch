@@ -3,7 +3,7 @@
 @@ -95,10 +95,6 @@
  #define ENDFILE_SPEC \
    LINUX_OR_ANDROID_LD (LINUX_TARGET_ENDFILE_SPEC, ANDROID_ENDFILE_SPEC)
-
+ 
 -/* Use the default LIBGCC_SPEC, not the version in linux-elf.h, as we
 -   do not use -lfloat.  */
 -#undef LIBGCC_SPEC
@@ -24,7 +24,7 @@
  #define LINUX_TARGET_LINK_SPEC  "%{h*} %{version:-v} \
 --- a/gcc/config/linux.h
 +++ b/gcc/config/linux.h
-@@ -116,6 +116,10 @@
+@@ -116,6 +116,10 @@ see the files COPYING3 and COPYING.RUNTI
  #define USE_LD_AS_NEEDED 1
  #endif
  
@@ -37,7 +37,7 @@
     -muclibc or -mglibc or -mbionic has been passed to change the default.  */
 --- a/gcc/mkmap-symver.awk
 +++ b/gcc/mkmap-symver.awk
-@@ -132,5 +132,5 @@
+@@ -132,5 +132,5 @@ function output(lib) {
    else if (inherit[lib])
      printf("} %s;\n", inherit[lib]);
    else
@@ -46,7 +46,7 @@
  }
 --- a/libgcc/Makefile.in
 +++ b/libgcc/Makefile.in
-@@ -265,7 +265,7 @@
+@@ -265,7 +265,7 @@ ifeq ($(enable_shared),yes)
  # For -fvisibility=hidden.  We need both a -fvisibility=hidden on
  # the command line, and a #define to prevent libgcc2.h etc from
  # overriding that with #pragmas.
