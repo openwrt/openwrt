@@ -1,6 +1,6 @@
 --- a/gcc/builtins.c
 +++ b/gcc/builtins.c
-@@ -11092,7 +11092,7 @@ validate_gimple_arglist (const_gimple ca
+@@ -11108,7 +11108,7 @@ validate_gimple_arglist (const_gimple ca
  
    do
      {
@@ -21539,7 +21539,7 @@
  bfin*-elf*)
  	tm_file="${tm_file} dbxelf.h elfos.h bfin/elf.h"
  	tmake_file=bfin/t-bfin-elf
-@@ -2763,6 +2781,32 @@ case "${target}" in
+@@ -2764,6 +2782,32 @@ case "${target}" in
  		fi
  		;;
  
@@ -21588,7 +21588,7 @@
  changequote([,])dnl
      if test $as_major -eq 2 && test $as_minor -lt 11
      then :
-@@ -3296,7 +3295,7 @@ case "$target" in
+@@ -3308,7 +3307,7 @@ case "$target" in
    i?86*-*-* | mips*-*-* | alpha*-*-* | powerpc*-*-* | sparc*-*-* | m68*-*-* \
    | x86_64*-*-* | hppa*-*-* | arm*-*-* \
    | xstormy16*-*-* | cris-*-* | crisv32-*-* | xtensa*-*-* | bfin-*-* | score*-*-* \
@@ -21624,7 +21624,7 @@
  On ARMv7-M the interrupt type is ignored, and the attribute means the function
  may be called with a word aligned stack pointer.
  
-@@ -4224,6 +4233,23 @@ placed in either the @code{.bss_below100
+@@ -4188,6 +4197,23 @@ placed in either the @code{.bss_below100
  
  @end table
  
@@ -21750,7 +21750,7 @@
  -Wno-non-template-friend  -Wold-style-cast @gol
  -Woverloaded-virtual  -Wno-pmf-conversions @gol
  -Wsign-promo}
-@@ -637,6 +637,12 @@ Objective-C and Objective-C++ Dialects}.
+@@ -641,6 +641,12 @@ Objective-C and Objective-C++ Dialects}.
  -mauto-incdec  -minmax  -mlong-calls  -mshort @gol
  -msoft-reg-count=@var{count}}
  
@@ -22119,7 +22119,7 @@
      }
  
    dest = gen_rtx_MEM (mode, dest_addr);
-@@ -5772,7 +5774,8 @@ store_field (rtx target, HOST_WIDE_INT b
+@@ -5775,7 +5777,8 @@ store_field (rtx target, HOST_WIDE_INT b
       is a bit field, we cannot use addressing to access it.
       Use bit-field techniques or SUBREG to store in it.  */
  
@@ -22129,7 +22129,7 @@
        || (mode != BLKmode && ! direct_store[(int) mode]
  	  && GET_MODE_CLASS (mode) != MODE_COMPLEX_INT
  	  && GET_MODE_CLASS (mode) != MODE_COMPLEX_FLOAT)
-@@ -5929,7 +5932,18 @@ get_inner_reference (tree exp, HOST_WIDE
+@@ -5932,7 +5935,18 @@ get_inner_reference (tree exp, HOST_WIDE
      {
        tree field = TREE_OPERAND (exp, 1);
        size_tree = DECL_SIZE (field);
@@ -22149,7 +22149,7 @@
  	mode = DECL_MODE (field);
        else if (DECL_MODE (field) == BLKmode)
  	blkmode_bitfield = true;
-@@ -7912,7 +7926,8 @@ expand_expr_real_1 (tree exp, rtx target
+@@ -7915,7 +7929,8 @@ expand_expr_real_1 (tree exp, rtx target
  	   by doing the extract into an object as wide as the field
  	   (which we know to be the width of a basic mode), then
  	   storing into memory, and changing the mode to BLKmode.  */

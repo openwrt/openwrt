@@ -4,7 +4,7 @@ choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
 	default GCC_VERSION_4_3_3_CS if GCC_DEFAULT_VERSION_4_3_3_CS
 	default GCC_VERSION_4_3_5 if GCC_DEFAULT_VERSION_4_3_5
-	default GCC_VERSION_4_4_5 if GCC_DEFAULT_VERSION_4_4_5
+	default GCC_VERSION_4_4_6 if GCC_DEFAULT_VERSION_4_4_6
 	default GCC_VERSION_LINARO
 	help
 	  Select the version of gcc you wish to use.
@@ -12,8 +12,8 @@ choice
 	config GCC_VERSION_4_3_5
 		bool "gcc 4.3.5"
 
-	config GCC_VERSION_4_4_5
-		bool "gcc 4.4.5"
+	config GCC_VERSION_4_4_6
+		bool "gcc 4.4.6"
 
 	config GCC_VERSION_4_6_1
 		bool "gcc 4.6.1"
