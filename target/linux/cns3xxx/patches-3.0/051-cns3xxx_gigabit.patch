@@ -1,0 +1,1337 @@
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -2078,6 +2078,14 @@ config ACENIC_OMIT_TIGON_I
+ 
+ 	  The safe and default value for this is N.
+ 
++config CNS3XXX_ETH
++	tristate "Cavium CNS3xxx Ethernet support"
++	depends on ARCH_CNS3XXX
++	select PHYLIB
++	help
++	  Say Y here if you want to use built-in Ethernet ports
++	  on CNS3XXX processor.
++
+ config DL2K
+ 	tristate "DL2000/TC902x-based Gigabit Ethernet support"
+ 	depends on PCI
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -241,6 +241,7 @@ obj-$(CONFIG_MAC89x0) += mac89x0.o
+ obj-$(CONFIG_TUN) += tun.o
+ obj-$(CONFIG_VETH) += veth.o
+ obj-$(CONFIG_NET_NETX) += netx-eth.o
++obj-$(CONFIG_CNS3XXX_ETH) += cns3xxx_eth.o
+ obj-$(CONFIG_DL2K) += dl2k.o
+ obj-$(CONFIG_R8169) += r8169.o
+ obj-$(CONFIG_AMD8111_ETH) += amd8111e.o
+--- /dev/null
++++ b/drivers/net/cns3xxx_eth.c
+@@ -0,0 +1,1269 @@
++/*
++ * Cavium CNS3xxx Gigabit driver for Linux
++ *
++ * Copyright 2011 Gateworks Corporation
++ *		  Chris Lang <clang@gateworks.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of version 2 of the GNU General Public License
++ * as published by the Free Software Foundation.
++ *
++ */
++
++#include <linux/delay.h>
++#include <linux/dma-mapping.h>
++#include <linux/dmapool.h>
++#include <linux/etherdevice.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/phy.h>
++#include <linux/platform_device.h>
++#include <linux/skbuff.h>
++#include <mach/hardware.h>
++
++#define DRV_NAME "cns3xxx_eth"
++
++#define RX_DESCS 512
++#define TX_DESCS 512
++#define SKB_DMA_REALIGN ((PAGE_SIZE - NET_SKB_PAD) % SMP_CACHE_BYTES)
++
++#define RX_POOL_ALLOC_SIZE (sizeof(struct rx_desc) * RX_DESCS)
++#define TX_POOL_ALLOC_SIZE (sizeof(struct tx_desc) * TX_DESCS)
++#define REGS_SIZE 336
++#define MAX_MRU	9500
++
++#define NAPI_WEIGHT 64
++
++/* MDIO Defines */
++#define MDIO_CMD_COMPLETE 0x00008000
++#define MDIO_WRITE_COMMAND 0x00002000
++#define MDIO_READ_COMMAND 0x00004000
++#define MDIO_REG_OFFSET 8
++#define MDIO_VALUE_OFFSET 16
++
++/* Descritor Defines */
++#define END_OF_RING 0x40000000
++#define FIRST_SEGMENT 0x20000000
++#define LAST_SEGMENT 0x10000000
++#define FORCE_ROUTE 0x04000000
++#define IP_CHECKSUM 0x00040000
++#define UDP_CHECKSUM 0x00020000
++#define TCP_CHECKSUM 0x00010000
++
++/* Port Config Defines */
++#define PORT_DISABLE 0x00040000
++#define PROMISC_OFFSET 29
++
++/* Global Config Defines */
++#define UNKNOWN_VLAN_TO_CPU 0x02000000
++#define ACCEPT_CRC_PACKET 0x00200000
++#define CRC_STRIPPING 0x00100000
++
++/* VLAN Config Defines */
++#define NIC_MODE 0x00008000
++#define VLAN_UNAWARE 0x00000001
++
++/* DMA AUTO Poll Defines */
++#define TS_POLL_EN 0x00000020
++#define TS_SUSPEND 0x00000010
++#define FS_POLL_EN 0x00000002
++#define FS_SUSPEND 0x00000001
++
++/* DMA Ring Control Defines */
++#define QUEUE_THRESHOLD 0x000000f0
++#define CLR_FS_STATE 0x80000000
++
++struct tx_desc
++{
++	u32 sdp; /* segment data pointer */
++
++	union {
++		struct {
++			u32 sdl:16; /* segment data length */
++			u32 tco:1;
++			u32 uco:1;
++			u32 ico:1;
++			u32 rsv_1:3; /* reserve */
++			u32 pri:3;
++			u32 fp:1; /* force priority */
++			u32 fr:1;
++			u32 interrupt:1;
++			u32 lsd:1;
++			u32 fsd:1;
++			u32 eor:1;
++			u32 cown:1;
++		};
++		u32 config0;
++	};
++
++	union {
++		struct {
++			u32 ctv:1;
++			u32 stv:1;
++			u32 sid:4;
++			u32 inss:1;
++			u32 dels:1;
++			u32 rsv_2:9;
++			u32 pmap:5;
++			u32 mark:3;
++			u32 ewan:1;
++			u32 fewan:1;
++			u32 rsv_3:5;
++		};
++		u32 config1;
++	};
++
++	union {
++		struct {
++			u32 c_vid:12;
++			u32 c_cfs:1;
++			u32 c_pri:3;
++			u32 s_vid:12;
++			u32 s_dei:1;
++			u32 s_pri:3;
++		};
++		u32 config2;
++	};
++
++	u8 alignment[16]; /* for 32 byte */
++};
++
++struct rx_desc
++{
++	u32 sdp; /* segment data pointer */
++
++	union {
++		struct {
++			u32 sdl:16; /* segment data length */
++			u32 l4f:1;
++			u32 ipf:1;
++			u32 prot:4;
++			u32 hr:6;
++			u32 lsd:1;
++			u32 fsd:1;
++			u32 eor:1;
++			u32 cown:1;
++		};
++		u32 config0;
++	};
++
++	union {
++		struct {
++			u32 ctv:1;
++			u32 stv:1;
++			u32 unv:1;
++			u32 iwan:1;
++			u32 exdv:1;
++			u32 e_wan:1;
++			u32 rsv_1:2;
++			u32 sp:3;
++			u32 crc_err:1;
++			u32 un_eth:1;
++			u32 tc:2;
++			u32 rsv_2:1;
++			u32 ip_offset:5;
++			u32 rsv_3:11;
++		};
++		u32 config1;
++	};
++
++	union {
++		struct {
++			u32 c_vid:12;
++			u32 c_cfs:1;
++			u32 c_pri:3;
++			u32 s_vid:12;
++			u32 s_dei:1;
++			u32 s_pri:3;
++		};
++		u32 config2;
++	};
++
++	u8 alignment[16]; /* for 32 byte alignment */
++};
++
++
++struct switch_regs {
++	u32 phy_control;
++	u32 phy_auto_addr;
++	u32 mac_glob_cfg;
++	u32 mac_cfg[4];
++	u32 mac_pri_ctrl[5], __res;
++	u32 etype[2];
++	u32 udp_range[4];
++	u32 prio_etype_udp;
++	u32 prio_ipdscp[8];
++	u32 tc_ctrl;
++	u32 rate_ctrl;
++	u32 fc_glob_thrs;
++	u32 fc_port_thrs;
++	u32 mc_fc_glob_thrs;
++	u32 dc_glob_thrs;
++	u32 arl_vlan_cmd;
++	u32 arl_ctrl[3];
++	u32 vlan_cfg;
++	u32 pvid[2];
++	u32 vlan_ctrl[3];
++	u32 session_id[8];
++	u32 intr_stat;
++	u32 intr_mask;
++	u32 sram_test;
++	u32 mem_queue;
++	u32 farl_ctrl;
++	u32 fc_input_thrs, __res1[2];
++	u32 clk_skew_ctrl;
++	u32 mac_glob_cfg_ext, __res2[2];
++	u32 dma_ring_ctrl;
++	u32 dma_auto_poll_cfg;
++	u32 delay_intr_cfg, __res3;
++	u32 ts_dma_ctrl0;
++	u32 ts_desc_ptr0;
++	u32 ts_desc_base_addr0, __res4;
++	u32 fs_dma_ctrl0;
++	u32 fs_desc_ptr0;
++	u32 fs_desc_base_addr0, __res5;
++	u32 ts_dma_ctrl1;
++	u32 ts_desc_ptr1;
++	u32 ts_desc_base_addr1, __res6;
++	u32 fs_dma_ctrl1;
++	u32 fs_desc_ptr1;
++	u32 fs_desc_base_addr1;
++};
++
++struct _tx_ring {
++	struct tx_desc *desc;
++	dma_addr_t phys_addr;
++	struct tx_desc *cur_addr;
++	struct sk_buff *buff_tab[TX_DESCS];
++	u32 free_index;
++	u32 count_index;
++	u32 cur_index;
++	int num_used;
++	int num_count;
++};
++
++struct _rx_ring {
++	struct rx_desc *desc;
++	dma_addr_t phys_addr;
++	struct rx_desc *cur_addr;
++	struct sk_buff *buff_tab[RX_DESCS];
++	u32 cur_index;
++	u32 alloc_index;
++	int alloc_count;
++};
++
++struct sw {
++	struct resource *mem_res;
++	struct switch_regs __iomem *regs;
++	struct napi_struct napi;
++	struct cns3xxx_plat_info *plat;
++	struct _tx_ring *tx_ring;
++	struct _rx_ring *rx_ring;
++	u32 mtu;
++};
++
++struct port {
++	struct net_device *netdev;
++	struct phy_device *phydev;
++	struct sw *sw;
++	int id;			/* logical port ID */
++	int speed, duplex;
++	u32 mtu;
++};
++
++static spinlock_t mdio_lock;
++static spinlock_t tx_lock;
++static spinlock_t stat_lock;
++static struct switch_regs __iomem *mdio_regs; /* mdio command and status only */
++struct mii_bus *mdio_bus;
++static int ports_open;
++static struct port *switch_port_tab[3];
++static struct dma_pool *rx_dma_pool;
++static struct dma_pool *tx_dma_pool;
++struct net_device *napi_dev;
++
++static int cns3xxx_mdio_cmd(struct mii_bus *bus, int phy_id, int location,
++			   int write, u16 cmd)
++{
++	int cycles = 0;
++	u32 temp = 0;
++
++	temp = __raw_readl(&mdio_regs->phy_control);
++	temp |= MDIO_CMD_COMPLETE;
++	__raw_writel(temp, &mdio_regs->phy_control);
++	udelay(10);
++
++	if (write) {
++		temp = (cmd << MDIO_VALUE_OFFSET);
++		temp |= MDIO_WRITE_COMMAND;
++	} else {
++		temp = MDIO_READ_COMMAND;
++	}
++	temp |= ((location & 0x1f) << MDIO_REG_OFFSET);
++	temp |= (phy_id & 0x1f);
++
++	__raw_writel(temp, &mdio_regs->phy_control);
++
++	while (((__raw_readl(&mdio_regs->phy_control) & MDIO_CMD_COMPLETE) == 0)
++			&& cycles < 5000) {
++		udelay(1);
++		cycles++;
++	}
++
++	if (cycles == 5000) {
++		printk(KERN_ERR "%s #%i: MII transaction failed\n", bus->name,
++		       phy_id);
++		return -1;
++	}
++
++	temp = __raw_readl(&mdio_regs->phy_control);
++	temp |= MDIO_CMD_COMPLETE;
++	__raw_writel(temp, &mdio_regs->phy_control);
++
++	if (write)
++		return 0;
++
++	return ((temp >> MDIO_VALUE_OFFSET) & 0xFFFF);
++}
++
++static int cns3xxx_mdio_read(struct mii_bus *bus, int phy_id, int location)
++{
++	unsigned long flags;
++	int ret;
++
++	spin_lock_irqsave(&mdio_lock, flags);
++	ret = cns3xxx_mdio_cmd(bus, phy_id, location, 0, 0);
++	spin_unlock_irqrestore(&mdio_lock, flags);
++	return ret;
++}
++
++static int cns3xxx_mdio_write(struct mii_bus *bus, int phy_id, int location,
++			     u16 val)
++{
++	unsigned long flags;
++	int ret;
++
++	spin_lock_irqsave(&mdio_lock, flags);
++	ret = cns3xxx_mdio_cmd(bus, phy_id, location, 1, val);
++	spin_unlock_irqrestore(&mdio_lock, flags);
++	return ret;
++}
++
++static int cns3xxx_mdio_register(void)
++{
++	int err;
++
++	if (!(mdio_bus = mdiobus_alloc()))
++		return -ENOMEM;
++
++	mdio_regs = (struct switch_regs __iomem *)CNS3XXX_SWITCH_BASE_VIRT;
++
++	spin_lock_init(&mdio_lock);
++	mdio_bus->name = "CNS3xxx MII Bus";
++	mdio_bus->read = &cns3xxx_mdio_read;
++	mdio_bus->write = &cns3xxx_mdio_write;
++	strcpy(mdio_bus->id, "0");
++
++	if ((err = mdiobus_register(mdio_bus)))
++		mdiobus_free(mdio_bus);
++	return err;
++}
++
++static void cns3xxx_mdio_remove(void)
++{
++	mdiobus_unregister(mdio_bus);
++	mdiobus_free(mdio_bus);
++}
++
++static void cns3xxx_adjust_link(struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	struct phy_device *phydev = port->phydev;
++
++	if (!phydev->link) {
++		if (port->speed) {
++			port->speed = 0;
++			printk(KERN_INFO "%s: link down\n", dev->name);
++		}
++		return;
++	}
++
++	if (port->speed == phydev->speed && port->duplex == phydev->duplex)
++		return;
++
++	port->speed = phydev->speed;
++	port->duplex = phydev->duplex;
++
++	printk(KERN_INFO "%s: link up, speed %u Mb/s, %s duplex\n",
++	       dev->name, port->speed, port->duplex ? "full" : "half");
++}
++
++irqreturn_t eth_rx_irq(int irq, void *pdev)
++{
++	struct net_device *dev = pdev;
++	struct sw *sw = netdev_priv(dev);
++	if (likely(napi_schedule_prep(&sw->napi))) {
++		disable_irq_nosync(IRQ_CNS3XXX_SW_R0RXC);
++		__napi_schedule(&sw->napi);
++	}
++	return (IRQ_HANDLED);
++}
++
++
++static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
++{
++	struct _rx_ring *rx_ring = sw->rx_ring;
++	unsigned int i = rx_ring->alloc_index;
++	struct rx_desc *desc;
++	struct sk_buff *skb;
++	u32 mtu = sw->mtu;
++
++	rx_ring->alloc_count += received;
++
++	for (received = rx_ring->alloc_count; received > 0; received--) {
++		desc = &(rx_ring)->desc[i];
++
++		if ((skb = dev_alloc_skb(mtu))) {
++			if (SKB_DMA_REALIGN)
++				skb_reserve(skb, SKB_DMA_REALIGN);
++			skb_reserve(skb, NET_IP_ALIGN);
++			desc->sdp = dma_map_single(NULL, skb->data,
++				    mtu, DMA_FROM_DEVICE);
++			if (dma_mapping_error(NULL, desc->sdp)) {
++				dev_kfree_skb(skb);
++				/* Failed to map, better luck next time */
++				goto out;;
++			}
++		} else {
++			/* Failed to allocate skb, try again next time */
++			goto out;
++		}
++
++		/* put the new buffer on RX-free queue */
++		rx_ring->buff_tab[i] = skb;
++
++		if (++i == RX_DESCS) {
++			i = 0;
++			desc->config0 = END_OF_RING | FIRST_SEGMENT |
++					LAST_SEGMENT | mtu;
++		} else {
++			desc->config0 = FIRST_SEGMENT | LAST_SEGMENT | mtu;
++		}
++	}
++out:
++	rx_ring->alloc_count = received;
++	rx_ring->alloc_index = i;
++}
++
++static void update_tx_stats(struct sw *sw)
++{
++	struct _tx_ring *tx_ring = sw->tx_ring;
++	struct tx_desc *desc;
++	struct tx_desc *next_desc;
++	struct sk_buff *skb;
++	int i;
++	int index;
++	int num_count;
++
++	spin_lock_bh(&stat_lock);
++
++	num_count = tx_ring->num_count;
++
++	if (!num_count) {
++		spin_unlock_bh(&stat_lock);
++		return;
++	}
++
++	index = tx_ring->count_index;
++	desc = &(tx_ring)->desc[index];
++	for (i = 0; i < num_count; i++) {
++		skb = tx_ring->buff_tab[index];
++		if (desc->cown) {
++			tx_ring->buff_tab[index] = 0;
++			if (unlikely(++index == TX_DESCS)) index = 0;
++			next_desc = &(tx_ring)->desc[index];
++			prefetch(next_desc + 4);
++			if (likely(skb)) {
++				skb->dev->stats.tx_packets++;
++				skb->dev->stats.tx_bytes += skb->len;
++				dev_kfree_skb_any(skb);
++			}
++			desc = next_desc;
++		} else {
++			break;
++		}
++	}
++	tx_ring->num_count -= i;
++	tx_ring->count_index = index;
++
++	spin_unlock_bh(&stat_lock);
++}
++
++static void clear_tx_desc(struct sw *sw)
++{
++	struct _tx_ring *tx_ring = sw->tx_ring;
++	struct tx_desc *desc;
++	struct tx_desc *next_desc;
++	int i;
++	int index;
++	int num_used = tx_ring->num_used - tx_ring->num_count;
++
++	if (num_used < (TX_DESCS >> 1))
++		return;
++
++	index = tx_ring->free_index;
++	desc = &(tx_ring)->desc[index];
++	for (i = 0; i < num_used; i++) {
++		if (desc->cown) {
++			if (unlikely(++index == TX_DESCS)) index = 0;
++			next_desc = &(tx_ring)->desc[index];
++			prefetch(next_desc);
++			prefetch(next_desc + 4);
++			if (likely(desc->sdp))
++				dma_unmap_single(NULL, desc->sdp,
++					desc->sdl, DMA_TO_DEVICE);
++			desc = next_desc;
++		} else {
++			break;
++		}
++	}
++	tx_ring->free_index = index;
++	tx_ring->num_used -= i;
++}
++
++static int eth_poll(struct napi_struct *napi, int budget)
++{
++	struct sw *sw = container_of(napi, struct sw, napi);
++	struct net_device *dev;
++	struct _rx_ring *rx_ring = sw->rx_ring;
++	int received = 0;
++	unsigned int length;
++	unsigned int i = rx_ring->cur_index;
++	struct rx_desc *next_desc;
++	struct rx_desc *desc = &(rx_ring)->desc[i];
++	int port_id;
++
++	while (desc->cown) {
++		struct sk_buff *skb;
++
++		if (received >= budget)
++			break;
++
++		skb = rx_ring->buff_tab[i];
++
++		if (++i == RX_DESCS) i = 0;
++		next_desc = &(rx_ring)->desc[i];
++		prefetch(next_desc);
++
++		port_id = desc->sp;
++		if (port_id == 4)
++			dev = switch_port_tab[2]->netdev;
++		else
++			dev = switch_port_tab[port_id]->netdev;
++
++		length = desc->sdl;
++		/* process received frame */
++		dma_unmap_single(&dev->dev, desc->sdp,
++				 length, DMA_FROM_DEVICE);
++
++		skb_put(skb, length);
++
++		skb->dev = dev;
++		skb->protocol = eth_type_trans(skb, dev);
++
++		dev->stats.rx_packets++;
++		dev->stats.rx_bytes += length;
++
++		switch (desc->prot) {
++			case 1:
++			case 2:
++			case 5:
++			case 6:
++			case 13:
++			case 14:
++				if (desc->l4f)
++					skb->ip_summed = CHECKSUM_NONE;
++				else
++					skb->ip_summed = CHECKSUM_UNNECESSARY;
++			break;
++			default:
++				skb->ip_summed = CHECKSUM_NONE;
++			break;
++		}
++
++		napi_gro_receive(napi, skb);
++
++		received++;
++		desc = next_desc;
++	}
++
++	cns3xxx_alloc_rx_buf(sw, received);
++	rx_ring->cur_index = i;
++
++	if (received != budget) {
++		napi_complete(napi);
++		enable_irq(IRQ_CNS3XXX_SW_R0RXC);
++	}
++
++	return received;
++}
++
++static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	struct sw *sw = port->sw;
++	struct _tx_ring *tx_ring = sw->tx_ring;
++	struct tx_desc *tx_desc;
++	int index;
++	int len = skb->len;
++	char pmap = (1 << port->id);
++
++	if (pmap == 8)
++		pmap = (1 << 4);
++
++	if (unlikely(len > sw->mtu)) {
++		dev_kfree_skb(skb);
++		dev->stats.tx_errors++;
++		return NETDEV_TX_OK;
++	}
++
++	update_tx_stats(sw);
++
++	spin_lock_bh(&tx_lock);
++
++	clear_tx_desc(sw);
++
++	if (unlikely(tx_ring->num_used == TX_DESCS)) {
++		spin_unlock_bh(&tx_lock);
++		return NETDEV_TX_BUSY;
++	}
++
++	index = tx_ring->cur_index;
++
++	if (unlikely(++tx_ring->cur_index == TX_DESCS))
++		tx_ring->cur_index = 0;
++
++	tx_ring->num_used++;
++	tx_ring->num_count++;
++
++	spin_unlock_bh(&tx_lock);
++
++	tx_desc = &(tx_ring)->desc[index];
++
++	tx_desc->sdp = dma_map_single(NULL, skb->data, len,
++				      DMA_TO_DEVICE);
++
++	if (dma_mapping_error(NULL, tx_desc->sdp)) {
++		dev_kfree_skb(skb);
++		dev->stats.tx_errors++;
++		return NETDEV_TX_OK;
++	}
++
++	tx_desc->pmap = pmap;
++	tx_ring->buff_tab[index] = skb;
++
++	if (index == TX_DESCS - 1) {
++		tx_desc->config0 = END_OF_RING | FIRST_SEGMENT | LAST_SEGMENT |
++				   FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
++				   TCP_CHECKSUM | len;
++	} else {
++		tx_desc->config0 = FIRST_SEGMENT | LAST_SEGMENT |
++				   FORCE_ROUTE | IP_CHECKSUM | UDP_CHECKSUM |
++				   TCP_CHECKSUM | len;
++	}
++
++	return NETDEV_TX_OK;
++}
++
++static int eth_ioctl(struct net_device *dev, struct ifreq *req, int cmd)
++{
++	struct port *port = netdev_priv(dev);
++
++	if (!netif_running(dev))
++		return -EINVAL;
++	return phy_mii_ioctl(port->phydev, req, cmd);
++}
++
++/* ethtool support */
++
++static void cns3xxx_get_drvinfo(struct net_device *dev,
++			       struct ethtool_drvinfo *info)
++{
++	strcpy(info->driver, DRV_NAME);
++	strcpy(info->bus_info, "internal");
++}
++
++static int cns3xxx_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
++{
++	struct port *port = netdev_priv(dev);
++	return phy_ethtool_gset(port->phydev, cmd);
++}
++
++static int cns3xxx_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
++{
++	struct port *port = netdev_priv(dev);
++	return phy_ethtool_sset(port->phydev, cmd);
++}
++
++static int cns3xxx_nway_reset(struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	return phy_start_aneg(port->phydev);
++}
++
++static struct ethtool_ops cns3xxx_ethtool_ops = {
++	.get_drvinfo = cns3xxx_get_drvinfo,
++	.get_settings = cns3xxx_get_settings,
++	.set_settings = cns3xxx_set_settings,
++	.nway_reset = cns3xxx_nway_reset,
++	.get_link = ethtool_op_get_link,
++};
++
++
++static int init_rings(struct sw *sw)
++{
++	int i;
++	struct _rx_ring *rx_ring = sw->rx_ring;
++	struct _tx_ring *tx_ring = sw->tx_ring;
++
++	__raw_writel(0, &sw->regs->fs_dma_ctrl0);
++	__raw_writel(TS_SUSPEND | FS_SUSPEND, &sw->regs->dma_auto_poll_cfg);
++	__raw_writel(QUEUE_THRESHOLD, &sw->regs->dma_ring_ctrl);
++	__raw_writel(CLR_FS_STATE | QUEUE_THRESHOLD, &sw->regs->dma_ring_ctrl);
++
++	__raw_writel(QUEUE_THRESHOLD, &sw->regs->dma_ring_ctrl);
++
++	if (!(rx_dma_pool = dma_pool_create(DRV_NAME, NULL,
++					    RX_POOL_ALLOC_SIZE, 32, 0)))
++		return -ENOMEM;
++
++	if (!(rx_ring->desc = dma_pool_alloc(rx_dma_pool, GFP_KERNEL,
++					      &rx_ring->phys_addr)))
++		return -ENOMEM;
++	memset(rx_ring->desc, 0, RX_POOL_ALLOC_SIZE);
++
++	/* Setup RX buffers */
++	for (i = 0; i < RX_DESCS; i++) {
++		struct rx_desc *desc = &(rx_ring)->desc[i];
++		struct sk_buff *skb;
++		if (!(skb = dev_alloc_skb(sw->mtu)))
++			return -ENOMEM;
++		if (SKB_DMA_REALIGN)
++			skb_reserve(skb, SKB_DMA_REALIGN);
++		skb_reserve(skb, NET_IP_ALIGN);
++		desc->sdl = sw->mtu;
++		if (i == (RX_DESCS - 1))
++			desc->eor = 1;
++		desc->fsd = 1;
++		desc->lsd = 1;
++
++		desc->sdp = dma_map_single(NULL, skb->data,
++					    sw->mtu, DMA_FROM_DEVICE);
++		if (dma_mapping_error(NULL, desc->sdp)) {
++			return -EIO;
++		}
++		rx_ring->buff_tab[i] = skb;
++		desc->cown = 0;
++	}
++	__raw_writel(rx_ring->phys_addr, &sw->regs->fs_desc_ptr0);
++	__raw_writel(rx_ring->phys_addr, &sw->regs->fs_desc_base_addr0);
++
++	if (!(tx_dma_pool = dma_pool_create(DRV_NAME, NULL,
++					    TX_POOL_ALLOC_SIZE, 32, 0)))
++		return -ENOMEM;
++
++	if (!(tx_ring->desc = dma_pool_alloc(tx_dma_pool, GFP_KERNEL,
++					      &tx_ring->phys_addr)))
++		return -ENOMEM;
++	memset(tx_ring->desc, 0, TX_POOL_ALLOC_SIZE);
++
++	/* Setup TX buffers */
++	for (i = 0; i < TX_DESCS; i++) {
++		struct tx_desc *desc = &(tx_ring)->desc[i];
++		tx_ring->buff_tab[i] = 0;
++
++		if (i == (TX_DESCS - 1))
++			desc->eor = 1;
++		desc->cown = 1;
++	}
++	__raw_writel(tx_ring->phys_addr, &sw->regs->ts_desc_ptr0);
++	__raw_writel(tx_ring->phys_addr, &sw->regs->ts_desc_base_addr0);
++
++	return 0;
++}
++
++static void destroy_rings(struct sw *sw)
++{
++	int i;
++	if (sw->rx_ring->desc) {
++		for (i = 0; i < RX_DESCS; i++) {
++			struct _rx_ring *rx_ring = sw->rx_ring;
++			struct rx_desc *desc = &(rx_ring)->desc[i];
++			struct sk_buff *skb = sw->rx_ring->buff_tab[i];
++			if (skb) {
++				dma_unmap_single(NULL,
++						 desc->sdp,
++						 sw->mtu, DMA_FROM_DEVICE);
++				dev_kfree_skb(skb);
++			}
++		}
++		dma_pool_free(rx_dma_pool, sw->rx_ring->desc, sw->rx_ring->phys_addr);
++		dma_pool_destroy(rx_dma_pool);
++		rx_dma_pool = 0;
++		sw->rx_ring->desc = 0;
++	}
++	if (sw->tx_ring->desc) {
++		for (i = 0; i < TX_DESCS; i++) {
++			struct _tx_ring *tx_ring = sw->tx_ring;
++			struct tx_desc *desc = &(tx_ring)->desc[i];
++			struct sk_buff *skb = sw->tx_ring->buff_tab[i];
++			if (skb) {
++				dma_unmap_single(NULL, desc->sdp,
++					skb->len, DMA_TO_DEVICE);
++				dev_kfree_skb(skb);
++			}
++		}
++		dma_pool_free(tx_dma_pool, sw->tx_ring->desc, sw->tx_ring->phys_addr);
++		dma_pool_destroy(tx_dma_pool);
++		tx_dma_pool = 0;
++		sw->tx_ring->desc = 0;
++	}
++}
++
++static int eth_open(struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	struct sw *sw = port->sw;
++	u32 temp;
++
++	port->speed = 0;	/* force "link up" message */
++	phy_start(port->phydev);
++
++	netif_start_queue(dev);
++
++	if (!ports_open) {
++		request_irq(IRQ_CNS3XXX_SW_R0RXC, eth_rx_irq, IRQF_SHARED, "gig_switch", napi_dev);
++		napi_enable(&sw->napi);
++		netif_start_queue(napi_dev);
++		//enable_irq(IRQ_CNS3XXX_SW_R0RXC);
++
++		temp = __raw_readl(&sw->regs->mac_cfg[2]);
++		temp &= ~(PORT_DISABLE);
++		__raw_writel(temp, &sw->regs->mac_cfg[2]);
++
++		temp = __raw_readl(&sw->regs->dma_auto_poll_cfg);
++		temp &= ~(TS_SUSPEND | FS_SUSPEND);
++		__raw_writel(temp, &sw->regs->dma_auto_poll_cfg);
++
++		__raw_writel((TS_POLL_EN | FS_POLL_EN), &sw->regs->dma_auto_poll_cfg);
++	}
++	temp = __raw_readl(&sw->regs->mac_cfg[port->id]);
++	temp &= ~(PORT_DISABLE);
++	__raw_writel(temp, &sw->regs->mac_cfg[port->id]);
++
++	ports_open++;
++	netif_carrier_on(dev);
++
++	return 0;
++}
++
++static int eth_close(struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	struct sw *sw = port->sw;
++	u32 temp;
++
++	ports_open--;
++
++	temp = __raw_readl(&sw->regs->mac_cfg[port->id]);
++	temp |= (PORT_DISABLE);
++	__raw_writel(temp, &sw->regs->mac_cfg[port->id]);
++
++	netif_stop_queue(dev);
++
++	phy_stop(port->phydev);
++
++	if (!ports_open) {
++		disable_irq(IRQ_CNS3XXX_SW_R0RXC);
++		free_irq(IRQ_CNS3XXX_SW_R0RXC, napi_dev);
++		napi_disable(&sw->napi);
++		netif_stop_queue(napi_dev);
++		temp = __raw_readl(&sw->regs->mac_cfg[2]);
++		temp |= (PORT_DISABLE);
++		__raw_writel(temp, &sw->regs->mac_cfg[2]);
++
++		__raw_writel(TS_SUSPEND | FS_SUSPEND,
++			     &sw->regs->dma_auto_poll_cfg);
++	}
++
++	netif_carrier_off(dev);
++	return 0;
++}
++
++static void eth_rx_mode(struct net_device *dev)
++{
++	struct port *port = netdev_priv(dev);
++	struct sw *sw = port->sw;
++	u32 temp;
++
++	temp = __raw_readl(&sw->regs->mac_glob_cfg);
++
++	if (dev->flags & IFF_PROMISC) {
++		if (port->id == 3)
++			temp |= ((1 << 2) << PROMISC_OFFSET);
++		else
++			temp |= ((1 << port->id) << PROMISC_OFFSET);
++	} else {
++		if (port->id == 3)
++			temp &= ~((1 << 2) << PROMISC_OFFSET);
++		else
++			temp &= ~((1 << port->id) << PROMISC_OFFSET);
++	}
++	__raw_writel(temp, &sw->regs->mac_glob_cfg);
++}
++
++static int eth_set_mac(struct net_device *netdev, void *p)
++{
++	struct port *port = netdev_priv(netdev);
++	struct sw *sw = port->sw;
++	struct sockaddr *addr = p;
++	u32 cycles = 0;
++
++	if (!is_valid_ether_addr(addr->sa_data))
++		return -EADDRNOTAVAIL;
++
++	/* Invalidate old ARL Entry */
++	if (port->id == 3)
++		__raw_writel((port->id << 16) | (0x4 << 9), &sw->regs->arl_ctrl[0]);
++	else
++		__raw_writel(((port->id + 1) << 16) | (0x4 << 9), &sw->regs->arl_ctrl[0]);
++	__raw_writel( ((netdev->dev_addr[0] << 24) | (netdev->dev_addr[1] << 16) |
++			(netdev->dev_addr[2] << 8) | (netdev->dev_addr[3])),
++			&sw->regs->arl_ctrl[1]);
++
++	__raw_writel( ((netdev->dev_addr[4] << 24) | (netdev->dev_addr[5] << 16) |
++			(1 << 1)),
++			&sw->regs->arl_ctrl[2]);
++	__raw_writel((1 << 19), &sw->regs->arl_vlan_cmd);
++
++	while (((__raw_readl(&sw->regs->arl_vlan_cmd) & (1 << 21)) == 0)
++			&& cycles < 5000) {
++		udelay(1);
++		cycles++;
++	}
++
++	cycles = 0;
++	memcpy(netdev->dev_addr, addr->sa_data, netdev->addr_len);
++
++	if (port->id == 3)
++		__raw_writel((port->id << 16) | (0x4 << 9), &sw->regs->arl_ctrl[0]);
++	else
++		__raw_writel(((port->id + 1) << 16) | (0x4 << 9), &sw->regs->arl_ctrl[0]);
++	__raw_writel( ((addr->sa_data[0] << 24) | (addr->sa_data[1] << 16) |
++			(addr->sa_data[2] << 8) | (addr->sa_data[3])),
++			&sw->regs->arl_ctrl[1]);
++
++	__raw_writel( ((addr->sa_data[4] << 24) | (addr->sa_data[5] << 16) |
++			(7 << 4) | (1 << 1)), &sw->regs->arl_ctrl[2]);
++	__raw_writel((1 << 19), &sw->regs->arl_vlan_cmd);
++
++	while (((__raw_readl(&sw->regs->arl_vlan_cmd) & (1 << 21)) == 0)
++		&& cycles < 5000) {
++		udelay(1);
++		cycles++;
++	}
++	return 0;
++}
++
++static int cns3xxx_change_mtu(struct net_device *netdev, int new_mtu)
++{
++	struct port *port = netdev_priv(netdev);
++	struct sw *sw = port->sw;
++	u32 temp;
++	int i;
++	struct _rx_ring *rx_ring = sw->rx_ring;
++	struct rx_desc *desc;
++	struct sk_buff *skb;
++
++	if (new_mtu > MAX_MRU)
++		return -EINVAL;
++
++	netdev->mtu = new_mtu;
++
++	new_mtu += 36 + SKB_DMA_REALIGN;
++	port->mtu = new_mtu;
++
++	new_mtu = 0;
++	for (i = 0; i < 3; i++) {
++		if (switch_port_tab[i]) {
++			if (switch_port_tab[i]->mtu > new_mtu)
++				new_mtu = switch_port_tab[i]->mtu;
++		}
++	}
++
++
++	if (new_mtu == sw->mtu)
++		return 0;
++
++	disable_irq(IRQ_CNS3XXX_SW_R0RXC);
++
++	sw->mtu = new_mtu;
++
++	/* Disable DMA */
++	__raw_writel(TS_SUSPEND | FS_SUSPEND, &sw->regs->dma_auto_poll_cfg);
++
++	for (i = 0; i < RX_DESCS; i++) {
++		desc = &(rx_ring)->desc[i];
++		/* Check if we own it, if we do, it will get set correctly
++		 * when it is re-used */
++		if (!desc->cown) {
++			skb = rx_ring->buff_tab[i];
++			dma_unmap_single(NULL, desc->sdp, desc->sdl,
++					 DMA_FROM_DEVICE);
++			dev_kfree_skb(skb);
++
++			if ((skb = dev_alloc_skb(new_mtu))) {
++				if (SKB_DMA_REALIGN)
++					skb_reserve(skb, SKB_DMA_REALIGN);
++				skb_reserve(skb, NET_IP_ALIGN);
++				desc->sdp = dma_map_single(NULL, skb->data,
++					    new_mtu, DMA_FROM_DEVICE);
++				if (dma_mapping_error(NULL, desc->sdp)) {
++					dev_kfree_skb(skb);
++					skb = NULL;
++				}
++			}
++
++			/* put the new buffer on RX-free queue */
++			rx_ring->buff_tab[i] = skb;
++
++			if (i == RX_DESCS - 1)
++				desc->config0 = END_OF_RING | FIRST_SEGMENT |
++						LAST_SEGMENT | new_mtu;
++			else
++				desc->config0 = FIRST_SEGMENT |
++						LAST_SEGMENT | new_mtu;
++		}
++	}
++
++	/* Re-ENABLE DMA */
++	temp = __raw_readl(&sw->regs->dma_auto_poll_cfg);
++	temp &= ~(TS_SUSPEND | FS_SUSPEND);
++	__raw_writel(temp, &sw->regs->dma_auto_poll_cfg);
++
++	__raw_writel((TS_POLL_EN | FS_POLL_EN), &sw->regs->dma_auto_poll_cfg);
++
++	enable_irq(IRQ_CNS3XXX_SW_R0RXC);
++
++	return 0;
++}
++
++static const struct net_device_ops cns3xxx_netdev_ops = {
++	.ndo_open = eth_open,
++	.ndo_stop = eth_close,
++	.ndo_start_xmit = eth_xmit,
++	.ndo_set_rx_mode = eth_rx_mode,
++	.ndo_do_ioctl = eth_ioctl,
++	.ndo_change_mtu = cns3xxx_change_mtu,
++	.ndo_set_mac_address = eth_set_mac,
++	.ndo_validate_addr = eth_validate_addr,
++};
++
++static int __devinit eth_init_one(struct platform_device *pdev)
++{
++	int i;
++	struct port *port;
++	struct sw *sw;
++	struct net_device *dev;
++	struct cns3xxx_plat_info *plat = pdev->dev.platform_data;
++	u32 regs_phys;
++	char phy_id[MII_BUS_ID_SIZE + 3];
++	int err;
++	u32 temp;
++
++	spin_lock_init(&tx_lock);
++	spin_lock_init(&stat_lock);
++
++	if (!(napi_dev = alloc_etherdev(sizeof(struct sw))))
++		return -ENOMEM;
++	strcpy(napi_dev->name, "switch%d");
++
++	SET_NETDEV_DEV(napi_dev, &pdev->dev);
++	sw = netdev_priv(napi_dev);
++	memset(sw, 0, sizeof(struct sw));
++	sw->regs = (struct switch_regs __iomem *)CNS3XXX_SWITCH_BASE_VIRT;
++	regs_phys = CNS3XXX_SWITCH_BASE;
++	sw->mem_res = request_mem_region(regs_phys, REGS_SIZE, napi_dev->name);
++	if (!sw->mem_res) {
++		err = -EBUSY;
++		goto err_free;
++	}
++
++	sw->mtu = 1536 + SKB_DMA_REALIGN;
++
++	for (i = 0; i < 4; i++) {
++		temp = __raw_readl(&sw->regs->mac_cfg[i]);
++		temp |= (PORT_DISABLE) | 0x80000000;
++		__raw_writel(temp, &sw->regs->mac_cfg[i]);
++	}
++
++	temp = PORT_DISABLE;
++	__raw_writel(temp, &sw->regs->mac_cfg[2]);
++
++	temp = __raw_readl(&sw->regs->vlan_cfg);
++	temp |= NIC_MODE | VLAN_UNAWARE;
++	__raw_writel(temp, &sw->regs->vlan_cfg);
++
++	__raw_writel(UNKNOWN_VLAN_TO_CPU | ACCEPT_CRC_PACKET |
++		     CRC_STRIPPING, &sw->regs->mac_glob_cfg);
++
++	if (!(sw->rx_ring = kmalloc(sizeof(struct _rx_ring), GFP_KERNEL))) {
++		err = -ENOMEM;
++		goto err_free;
++	}
++	memset(sw->rx_ring, 0, sizeof(struct _rx_ring));
++
++	if (!(sw->tx_ring = kmalloc(sizeof(struct _tx_ring), GFP_KERNEL))) {
++		err = -ENOMEM;
++		goto err_free_rx;
++	}
++	memset(sw->tx_ring, 0, sizeof(struct _tx_ring));
++
++	if ((err = init_rings(sw)) != 0) {
++		destroy_rings(sw);
++		err = -ENOMEM;
++		goto err_free_rings;
++	}
++	platform_set_drvdata(pdev, napi_dev);
++
++	netif_napi_add(napi_dev, &sw->napi, eth_poll, NAPI_WEIGHT);
++
++	for (i = 0; i < 3; i++) {
++		if (!(plat->ports & (1 << i))) {
++			continue;
++		}
++
++		if (!(dev = alloc_etherdev(sizeof(struct port)))) {
++			goto free_ports;
++		}
++
++		//SET_NETDEV_DEV(dev, &pdev->dev);
++		port = netdev_priv(dev);
++		port->netdev = dev;
++		if (i == 2)
++			port->id = 3;
++		else
++			port->id = i;
++		port->sw = sw;
++		port->mtu = sw->mtu;
++
++		temp = __raw_readl(&sw->regs->mac_cfg[port->id]);
++		temp |= (PORT_DISABLE);
++		__raw_writel(temp, &sw->regs->mac_cfg[port->id]);
++
++		dev->netdev_ops = &cns3xxx_netdev_ops;
++		dev->ethtool_ops = &cns3xxx_ethtool_ops;
++		dev->tx_queue_len = 1000;
++		dev->features = NETIF_F_HW_CSUM;
++
++		dev->vlan_features = NETIF_F_HW_CSUM;
++
++		switch_port_tab[i] = port;
++		memcpy(dev->dev_addr, &plat->hwaddr[i], ETH_ALEN);
++
++		snprintf(phy_id, MII_BUS_ID_SIZE + 3, PHY_ID_FMT, "0", plat->phy[i]);
++		port->phydev = phy_connect(dev, phy_id, &cns3xxx_adjust_link, 0,
++			PHY_INTERFACE_MODE_RGMII);
++		if ((err = IS_ERR(port->phydev))) {
++			switch_port_tab[i] = 0;
++			free_netdev(dev);
++			goto free_ports;
++		}
++
++		port->phydev->irq = PHY_POLL;
++
++		if ((err = register_netdev(dev))) {
++			phy_disconnect(port->phydev);
++			switch_port_tab[i] = 0;
++			free_netdev(dev);
++			goto free_ports;
++		}
++
++		printk(KERN_INFO "%s: RGMII PHY %i on cns3xxx Switch\n", dev->name, plat->phy[i]);
++		netif_carrier_off(dev);
++		dev = 0;
++	}
++
++	return 0;
++
++free_ports:
++	err = -ENOMEM;
++	for (--i; i >= 0; i--) {
++		if (switch_port_tab[i]) {
++			port = switch_port_tab[i];
++			dev = port->netdev;
++			unregister_netdev(dev);
++			phy_disconnect(port->phydev);
++			switch_port_tab[i] = 0;
++			free_netdev(dev);
++		}
++	}
++err_free_rings:
++	kfree(sw->tx_ring);
++err_free_rx:
++	kfree(sw->rx_ring);
++err_free:
++	free_netdev(napi_dev);
++	return err;
++}
++
++static int __devexit eth_remove_one(struct platform_device *pdev)
++{
++	struct net_device *dev = platform_get_drvdata(pdev);
++	struct sw *sw = netdev_priv(dev);
++	int i;
++	destroy_rings(sw);
++
++	for (i = 2; i >= 0; i--) {
++		if (switch_port_tab[i]) {
++			struct port *port = switch_port_tab[i];
++			struct net_device *dev = port->netdev;
++			unregister_netdev(dev);
++			phy_disconnect(port->phydev);
++			switch_port_tab[i] = 0;
++			free_netdev(dev);
++		}
++	}
++
++	release_resource(sw->mem_res);
++	free_netdev(napi_dev);
++	return 0;
++}
++
++static struct platform_driver cns3xxx_eth_driver = {
++	.driver.name	= DRV_NAME,
++	.probe		= eth_init_one,
++	.remove		= eth_remove_one,
++};
++
++static int __init eth_init_module(void)
++{
++	int err;
++	if ((err = cns3xxx_mdio_register()))
++		return err;
++	return platform_driver_register(&cns3xxx_eth_driver);
++}
++
++static void __exit eth_cleanup_module(void)
++{
++	platform_driver_unregister(&cns3xxx_eth_driver);
++	cns3xxx_mdio_remove();
++}
++
++module_init(eth_init_module);
++module_exit(eth_cleanup_module);
++
++MODULE_AUTHOR("Chris Lang");
++MODULE_DESCRIPTION("Cavium CNS3xxx Ethernet driver");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:cns3xxx_eth");
+--- a/arch/arm/mach-cns3xxx/include/mach/hardware.h
++++ b/arch/arm/mach-cns3xxx/include/mach/hardware.h
+@@ -19,4 +19,6 @@
+ #define PCIBIOS_MIN_MEM		0x00000000
+ #define pcibios_assign_all_busses()	1
+ 
++#include "platform.h"
++
+ #endif
+--- /dev/null
++++ b/arch/arm/mach-cns3xxx/include/mach/platform.h
+@@ -0,0 +1,26 @@
++/*
++ * arch/arm/mach-cns3xxx/include/mach/platform.h
++ *
++ * Copyright 2011 Gateworks Corporation
++ *		  Chris Lang <clang@gateworks.com
++ *
++ * This file is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License, Version 2, as
++ * published by the Free Software Foundation.
++ *
++ */
++
++#ifndef __ASM_ARCH_PLATFORM_H
++#define __ASM_ARCH_PLATFORM_H
++
++#ifndef __ASSEMBLY__
++
++/* Information about built-in Ethernet MAC interfaces */
++struct cns3xxx_plat_info {
++	u8 ports; /* Bitmap of enabled Ports */
++	u8 hwaddr[4][6];
++	u32 phy[3];
++};
++
++#endif /* __ASM_ARCH_PLATFORM_H */
++#endif

@@ -1,0 +1,993 @@
+--- /dev/null
++++ b/arch/arm/mach-cns3xxx/laguna.c
+@@ -0,0 +1,761 @@
++/*
++ * Gateworks Corporation Laguna Platform
++ *
++ * Copyright 2000 Deep Blue Solutions Ltd
++ * Copyright 2008 ARM Limited
++ * Copyright 2008 Cavium Networks
++ *		  Scott Shu
++ * Copyright 2010 MontaVista Software, LLC.
++ *		  Anton Vorontsov <avorontsov@mvista.com>
++ * Copyright 2011 Gateworks Corporation
++ *		  Chris Lang <clang@gateworks.com>
++ *
++ * This file is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License, Version 2, as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/compiler.h>
++#include <linux/io.h>
++#include <linux/dma-mapping.h>
++#include <linux/serial_core.h>
++#include <linux/serial_8250.h>
++#include <linux/platform_device.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/physmap.h>
++#include <linux/mtd/partitions.h>
++#include <linux/leds.h>
++#include <linux/i2c.h>
++#include <linux/i2c/at24.h>
++#include <linux/i2c/pca953x.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/flash.h>
++#include <linux/if_ether.h>
++#include <asm/setup.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++#include <asm/mach/map.h>
++#include <asm/mach/time.h>
++#include <mach/hardware.h>
++#include <mach/cns3xxx.h>
++#include <mach/irqs.h>
++#include <mach/pm.h>
++#include "core.h"
++#include "devices.h"
++
++// Config 1 Bitmap
++#define ETH0_LOAD           BIT(0)
++#define ETH1_LOAD           BIT(1)
++#define ETH2_LOAD           BIT(2)
++#define SATA0_LOAD          BIT(3)
++#define SATA1_LOAD          BIT(4)
++#define PCM_LOAD            BIT(5)
++#define I2S_LOAD            BIT(6)
++#define SPI0_LOAD           BIT(7)
++#define SPI1_LOAD           BIT(8)
++#define PCIE0_LOAD          BIT(9)
++#define PCIE1_LOAD          BIT(10)
++#define USB0_LOAD           BIT(11)
++#define USB1_LOAD           BIT(12)
++#define USB1_ROUTE          BIT(13)
++#define SD_LOAD             BIT(14)
++#define UART0_LOAD          BIT(15)
++#define UART1_LOAD          BIT(16)
++#define UART2_LOAD          BIT(17)
++#define MPCI0_LOAD          BIT(18)
++#define MPCI1_LOAD          BIT(19)
++#define MPCI2_LOAD          BIT(20)
++#define MPCI3_LOAD          BIT(21)
++#define FP_BUT_LOAD         BIT(22)
++#define FP_BUT_HEADER_LOAD  BIT(23)
++#define FP_LED_LOAD         BIT(24)
++#define FP_LED_HEADER_LOAD  BIT(25)
++#define FP_TAMPER_LOAD      BIT(26)
++#define HEADER_33V_LOAD     BIT(27)
++#define SATA_POWER_LOAD     BIT(28)
++#define FP_POWER_LOAD       BIT(29)
++#define GPIO_HEADER_LOAD    BIT(30)
++#define GSP_BAT_LOAD        BIT(31)
++
++// Config 2 Bitmap
++#define FAN_LOAD            BIT(0)
++#define SPI_FLASH_LOAD      BIT(1)
++#define NOR_FLASH_LOAD      BIT(2)
++#define GPS_LOAD            BIT(3)
++#define SUPPLY_5V_LOAD      BIT(6)
++#define SUPPLY_33V_LOAD     BIT(7)
++
++struct laguna_board_info {
++	char model[16];
++	u32 config_bitmap;
++	u32 config2_bitmap;
++	u8 nor_flash_size;
++	u8 spi_flash_size;
++};
++
++static struct laguna_board_info laguna_info __initdata;
++
++/*
++ * NOR Flash
++ */
++static struct mtd_partition laguna_nor_partitions[] = {
++	{
++		.name		= "uboot",
++		.size		= SZ_256K,
++		.offset		= 0,
++		.mask_flags	= MTD_WRITEABLE,
++	}, {
++		.name		= "params",
++		.size		= SZ_128K,
++		.offset		= SZ_256K,
++	}, {
++		.name		= "kernel",
++		.size		= SZ_2M,
++		.offset		= SZ_256K + SZ_128K,
++	}, {
++		.name		= "rootfs",
++		.size		= SZ_16M - SZ_256K - SZ_128K - SZ_2M,
++		.offset		= SZ_256K + SZ_128K + SZ_2M,
++	},
++};
++
++static struct physmap_flash_data laguna_nor_pdata = {
++	.width = 2,
++	.parts = laguna_nor_partitions,
++	.nr_parts = ARRAY_SIZE(laguna_nor_partitions),
++};
++
++static struct resource laguna_nor_res = {
++	.start = CNS3XXX_FLASH_BASE,
++	.end = CNS3XXX_FLASH_BASE + SZ_128M - 1,
++	.flags = IORESOURCE_MEM | IORESOURCE_MEM_32BIT,
++};
++
++static struct platform_device laguna_nor_pdev = {
++	.name = "physmap-flash",
++	.id = 0,
++	.resource = &laguna_nor_res,
++	.num_resources = 1,
++	.dev = {
++		.platform_data = &laguna_nor_pdata,
++	},
++};
++
++/*
++ * SPI
++ */
++static struct mtd_partition laguna_spi_partitions[] = {
++	{
++		.name		= "uboot",
++		.size		= SZ_256K,
++		.offset		= 0,
++		.mask_flags	= MTD_WRITEABLE,
++	}, {
++		.name		= "params",
++		.size		= SZ_256K,
++		.offset		= SZ_256K,
++	}, {
++		.name		= "kernel",
++		.size		= SZ_1M + SZ_512K,
++		.offset		= SZ_512K,
++	}, {
++		.name		= "rootfs",
++		.size		= SZ_16M - SZ_2M,
++		.offset		= SZ_2M,
++	},
++};
++
++static struct flash_platform_data laguna_spi_pdata = {
++	.parts = laguna_spi_partitions,
++	.nr_parts = ARRAY_SIZE(laguna_spi_partitions),
++};
++
++static struct spi_board_info __initdata laguna_spi_devices[] = {
++	{
++		.modalias = "m25p80",
++		.platform_data = &laguna_spi_pdata,
++		.max_speed_hz = 50000000,
++		.bus_num = 1,
++		.chip_select = 0,
++	},
++};
++
++static struct platform_device laguna_spi_controller = {
++	.name = "cns3xxx_spi",
++};
++
++/*
++ * LED's
++ */
++static struct gpio_led laguna_gpio_leds[] = {
++	{
++		.name = "user1", /* Green Led */
++		.gpio = 115,
++		.active_low = 1,
++	},{
++		.name = "user2", /* Red Led */
++		.gpio = 114,
++		.active_low = 1,
++	},{
++		.name = "pwr1", /* Green Led */
++		.gpio = 116,
++		.active_low = 1,
++	},{
++		.name = "pwr2", /* Yellow Led */
++		.gpio = 117,
++		.active_low = 1,
++	},{
++		.name = "txd1", /* Green Led */
++		.gpio = 118,
++		.active_low = 1,
++	},{
++		.name = "txd2", /* Yellow Led */
++		.gpio = 119,
++		.active_low = 1,
++	},{
++		.name = "rxd1", /* Green Led */
++		.gpio = 120,
++		.active_low = 1,
++	},{
++		.name = "rxd2", /* Yellow Led */
++		.gpio = 121,
++		.active_low = 1,
++	},{
++		.name = "ser1", /* Green Led */
++		.gpio = 122,
++		.active_low = 1,
++	},{
++		.name = "ser2", /* Yellow Led */
++		.gpio = 123,
++		.active_low = 1,
++	},{
++		.name = "enet1", /* Green Led */
++		.gpio = 124,
++		.active_low = 1,
++	},{
++		.name = "enet2", /* Yellow Led */
++		.gpio = 125,
++		.active_low = 1,
++	},{
++		.name = "sig1_1", /* Green Led */
++		.gpio = 126,
++		.active_low = 1,
++	},{
++		.name = "sig1_2", /* Yellow Led */
++		.gpio = 127,
++		.active_low = 1,
++	},{
++		.name = "sig2_1", /* Green Led */
++		.gpio = 128,
++		.active_low = 1,
++	},{
++		.name = "sig2_2", /* Yellow Led */
++		.gpio = 129,
++		.active_low = 1,
++	},{
++		.name = "sig3_1", /* Green Led */
++		.gpio = 130,
++		.active_low = 1,
++	},{
++		.name = "sig3_2", /* Yellow Led */
++		.gpio = 131,
++		.active_low = 1,
++	},{
++		.name = "net1", /*Green Led */
++		.gpio = 109,
++		.active_low = 1,
++	},{
++		.name = "net2", /* Red Led */
++		.gpio = 110,
++		.active_low = 1,
++	},{
++		.name = "mod1", /* Green Led */
++		.gpio = 111,
++		.active_low = 1,
++	},{
++		.name = "mod2", /* Red Led */
++		.gpio = 112,
++		.active_low = 1,
++	},
++};
++
++static struct gpio_led_platform_data laguna_gpio_leds_data = {
++	.num_leds = 22,
++	.leds = laguna_gpio_leds,
++};
++
++static struct platform_device laguna_gpio_leds_device = {
++	.name = "leds-gpio",
++	.id = -1,
++	.dev.platform_data = &laguna_gpio_leds_data,
++};
++
++/*
++ * Ethernet
++ */
++static struct cns3xxx_plat_info laguna_net_data = {
++	.ports = 0,
++	.phy = {
++		0,
++		1,
++		2,
++	},
++};
++
++static struct platform_device laguna_net_device = {
++	.name = "cns3xxx_eth",
++	.id = 0,
++	.dev.platform_data = &laguna_net_data,
++};
++
++/*
++ * UART
++ */
++static void __init laguna_early_serial_setup(void)
++{
++#ifdef CONFIG_SERIAL_8250_CONSOLE
++	static struct uart_port laguna_serial_port = {
++		.membase        = (void __iomem *)CNS3XXX_UART0_BASE_VIRT,
++		.mapbase        = CNS3XXX_UART0_BASE,
++		.irq            = IRQ_CNS3XXX_UART0,
++		.iotype         = UPIO_MEM,
++		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE,
++		.regshift       = 2,
++		.uartclk        = 24000000,
++		.line           = 0,
++		.type           = PORT_16550A,
++		.fifosize       = 16,
++	};
++
++	early_serial_setup(&laguna_serial_port);
++#endif
++}
++
++static struct resource laguna_uart_resources[] = {
++	{
++		.start = CNS3XXX_UART0_BASE,
++		.end   = CNS3XXX_UART0_BASE + SZ_4K - 1,
++		.flags    = IORESOURCE_MEM
++	},{
++		.start = CNS3XXX_UART2_BASE,
++		.end   = CNS3XXX_UART2_BASE + SZ_4K - 1,
++		.flags    = IORESOURCE_MEM
++	},{
++		.start = CNS3XXX_UART2_BASE,
++		.end   = CNS3XXX_UART2_BASE + SZ_4K - 1,
++		.flags    = IORESOURCE_MEM
++	},
++};
++
++static struct plat_serial8250_port laguna_uart_data[] = {
++	{
++		.membase        = (char*) (CNS3XXX_UART0_BASE_VIRT),
++		.mapbase        = (CNS3XXX_UART0_BASE),
++		.irq            = IRQ_CNS3XXX_UART0,
++		.iotype         = UPIO_MEM,
++		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
++		.regshift       = 2,
++		.uartclk        = 24000000,
++		.type           = PORT_16550A,
++	},{
++		.membase        = (char*) (CNS3XXX_UART1_BASE_VIRT),
++		.mapbase        = (CNS3XXX_UART1_BASE),
++		.irq            = IRQ_CNS3XXX_UART1,
++		.iotype         = UPIO_MEM,
++		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
++		.regshift       = 2,
++		.uartclk        = 24000000,
++		.type           = PORT_16550A,
++	},{
++		.membase        = (char*) (CNS3XXX_UART2_BASE_VIRT),
++		.mapbase        = (CNS3XXX_UART2_BASE),
++		.irq            = IRQ_CNS3XXX_UART2,
++		.iotype         = UPIO_MEM,
++		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
++		.regshift       = 2,
++		.uartclk        = 24000000,
++		.type           = PORT_16550A,
++	},
++};
++
++static struct platform_device laguna_uart = {
++	.name     = "serial8250",
++	.id     = PLAT8250_DEV_PLATFORM,
++	.dev.platform_data  = laguna_uart_data,
++	.num_resources    = 3,
++	.resource   = laguna_uart_resources
++};
++
++/*
++ * USB
++ */
++static struct resource cns3xxx_usb_ehci_resources[] = {
++	[0] = {
++		.start = CNS3XXX_USB_BASE,
++		.end   = CNS3XXX_USB_BASE + SZ_16M - 1,
++		.flags = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start = IRQ_CNS3XXX_USB_EHCI,
++		.flags = IORESOURCE_IRQ,
++	},
++};
++
++static u64 cns3xxx_usb_ehci_dma_mask = DMA_BIT_MASK(32);
++
++static struct platform_device cns3xxx_usb_ehci_device = {
++	.name          = "cns3xxx-ehci",
++	.num_resources = ARRAY_SIZE(cns3xxx_usb_ehci_resources),
++	.resource      = cns3xxx_usb_ehci_resources,
++	.dev           = {
++		.dma_mask          = &cns3xxx_usb_ehci_dma_mask,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
++	},
++};
++
++static struct resource cns3xxx_usb_ohci_resources[] = {
++	[0] = {
++		.start = CNS3XXX_USB_OHCI_BASE,
++		.end   = CNS3XXX_USB_OHCI_BASE + SZ_16M - 1,
++		.flags = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start = IRQ_CNS3XXX_USB_OHCI,
++		.flags = IORESOURCE_IRQ,
++	},
++};
++
++static u64 cns3xxx_usb_ohci_dma_mask = DMA_BIT_MASK(32);
++
++static struct platform_device cns3xxx_usb_ohci_device = {
++	.name          = "cns3xxx-ohci",
++	.num_resources = ARRAY_SIZE(cns3xxx_usb_ohci_resources),
++	.resource      = cns3xxx_usb_ohci_resources,
++	.dev           = {
++		.dma_mask          = &cns3xxx_usb_ohci_dma_mask,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
++	},
++};
++
++static struct resource cns3xxx_usb_otg_resources[] = {
++	[0] = {
++		.start = CNS3XXX_USBOTG_BASE,
++		.end   = CNS3XXX_USBOTG_BASE + SZ_16M - 1,
++		.flags = IORESOURCE_MEM,
++	},
++	[1] = {
++		.start = IRQ_CNS3XXX_USB_OTG,
++		.flags = IORESOURCE_IRQ,
++	},
++};
++
++static u64 cns3xxx_usb_otg_dma_mask = DMA_BIT_MASK(32);
++
++static struct platform_device cns3xxx_usb_otg_device = {
++	.name          = "dwc_otg",
++	.num_resources = ARRAY_SIZE(cns3xxx_usb_otg_resources),
++	.resource      = cns3xxx_usb_otg_resources,
++	.dev           = {
++		.dma_mask          = &cns3xxx_usb_otg_dma_mask,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
++	},
++};
++
++/*
++ * I2C
++ */
++static struct resource laguna_i2c_resource[] = {
++	{
++		.start    = CNS3XXX_SSP_BASE + 0x20,
++		.end      = 0x7100003f,
++		.flags    = IORESOURCE_MEM,
++	},{
++		.start    = IRQ_CNS3XXX_I2C,
++		.flags    = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device laguna_i2c_controller = {
++	.name   = "cns3xxx-i2c",
++	.num_resources  = 2,
++	.resource = laguna_i2c_resource,
++};
++
++static struct memory_accessor *at24_mem_acc;
++
++static void at24_setup(struct memory_accessor *mem_acc, void *context)
++{
++	char buf[8];
++
++	at24_mem_acc = mem_acc;
++
++	/* Read MAC addresses */
++	if (at24_mem_acc->read(at24_mem_acc, buf, 0x100, 6) == 6)
++		memcpy(&laguna_net_data.hwaddr[0], buf, ETH_ALEN);
++	if (at24_mem_acc->read(at24_mem_acc, buf, 0x106, 6) == 6)
++		memcpy(&laguna_net_data.hwaddr[1], buf, ETH_ALEN);
++	if (at24_mem_acc->read(at24_mem_acc, buf, 0x10C, 6) == 6)
++		memcpy(&laguna_net_data.hwaddr[2], buf, ETH_ALEN);
++	if (at24_mem_acc->read(at24_mem_acc, buf, 0x112, 6) == 6)
++		memcpy(&laguna_net_data.hwaddr[3], buf, ETH_ALEN);
++
++	/* Read out Model Information */
++	if (at24_mem_acc->read(at24_mem_acc, buf, 0x130, 16) == 16)
++		memcpy(&laguna_info.model, buf, 16);
++	if (at24_mem_acc->read(at24_mem_acc, buf, 0x140, 1) == 1)
++		memcpy(&laguna_info.nor_flash_size, buf, 1);
++	if (at24_mem_acc->read(at24_mem_acc, buf, 0x141, 1) == 1)
++		memcpy(&laguna_info.spi_flash_size, buf, 1);
++	if (at24_mem_acc->read(at24_mem_acc, buf, 0x142, 4) == 4)
++		memcpy(&laguna_info.config_bitmap, buf, 4);
++	if (at24_mem_acc->read(at24_mem_acc, buf, 0x146, 4) == 4)
++		memcpy(&laguna_info.config2_bitmap, buf, 4);
++};
++
++static struct at24_platform_data laguna_eeprom_info = {
++	.byte_len = 1024,
++	.page_size = 16,
++	.flags = AT24_FLAG_READONLY,
++	.setup = at24_setup,
++};
++
++static struct pca953x_platform_data laguna_pca_data = {
++ 	.gpio_base = 100,
++	.irq_base = -1,
++};
++
++static struct pca953x_platform_data laguna_pca2_data = {
++ 	.gpio_base = 116,
++	.irq_base = -1,
++};
++
++static struct i2c_board_info __initdata laguna_i2c_devices[] = {
++	{
++		I2C_BOARD_INFO("pca9555", 0x23),
++		.platform_data = &laguna_pca_data,
++	},{
++		I2C_BOARD_INFO("pca9555", 0x27),
++		.platform_data = &laguna_pca2_data,
++	},{
++		I2C_BOARD_INFO("gsp", 0x29),
++	},{
++		I2C_BOARD_INFO ("24c08",0x50),
++		.platform_data = &laguna_eeprom_info,
++	},{
++		I2C_BOARD_INFO("ds1672", 0x68),
++	},
++};
++
++/*
++ * Watchdog
++ */
++
++static struct resource laguna_watchdog_resource[] = {
++	{
++		.start = CNS3XXX_TC11MP_TWD_BASE,
++		.end = CNS3XXX_TC11MP_TWD_BASE + SZ_4K - 1,
++		.flags = IORESOURCE_MEM,
++	},{
++		.start = IRQ_LOCALWDOG,
++		.end = IRQ_LOCALWDOG,
++		.flags = IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device laguna_watchdog = {
++	.name = "mpcore_wdt",
++	.id = -1,
++	.num_resources = ARRAY_SIZE(laguna_watchdog_resource),
++	.resource = laguna_watchdog_resource,
++};
++
++/*
++ * Initialization
++ */
++
++static void __init laguna_init(void)
++{
++	platform_device_register(&laguna_watchdog);
++
++	platform_device_register(&laguna_i2c_controller);
++
++	i2c_register_board_info(0, laguna_i2c_devices,
++			ARRAY_SIZE(laguna_i2c_devices));
++
++
++	pm_power_off = cns3xxx_power_off;
++}
++
++static struct map_desc laguna_io_desc[] __initdata = {
++	{
++		.virtual	= CNS3XXX_UART0_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_UART0_BASE),
++		.length		= SZ_4K,
++		.type		= MT_DEVICE,
++	},{
++		.virtual	= CNS3XXX_UART1_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_UART1_BASE),
++		.length		= SZ_4K,
++		.type		= MT_DEVICE,
++	},{
++		.virtual	= CNS3XXX_UART2_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_UART2_BASE),
++		.length		= SZ_4K,
++		.type		= MT_DEVICE,
++	},
++};
++
++static void __init laguna_map_io(void)
++{
++	cns3xxx_map_io();
++	iotable_init(laguna_io_desc, ARRAY_SIZE(laguna_io_desc));
++
++	laguna_early_serial_setup();
++}
++
++
++static int __init laguna_model_setup(void)
++{
++	u32 __iomem *mem;
++	u32 reg;
++	u8 pcie_bitmap = 0;
++
++	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
++
++	if (strncmp(laguna_info.model, "GW", 2) == 0) {
++		if (laguna_info.config_bitmap & ETH0_LOAD)
++			laguna_net_data.ports |= BIT(0);
++		if (laguna_info.config_bitmap & ETH1_LOAD)
++			laguna_net_data.ports |= BIT(1);
++		if (laguna_info.config_bitmap & ETH2_LOAD)
++			laguna_net_data.ports |= BIT(2);
++		if (laguna_net_data.ports)
++			platform_device_register(&laguna_net_device);
++
++		if ((laguna_info.config_bitmap & SATA0_LOAD) ||
++		    (laguna_info.config_bitmap & SATA1_LOAD))
++			cns3xxx_ahci_init();
++
++		if (laguna_info.config_bitmap & (PCIE0_LOAD))
++			pcie_bitmap |= 0x1;
++
++		if (laguna_info.config_bitmap & (PCIE1_LOAD))
++			pcie_bitmap |= 0x2;
++
++		cns3xxx_pcie_init(pcie_bitmap);
++
++		if (laguna_info.config_bitmap & (USB0_LOAD)) {
++			cns3xxx_pwr_power_up(1 << PM_PLL_HM_PD_CTRL_REG_OFFSET_PLL_USB);
++
++			/* DRVVBUS pins share with GPIOA */
++			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0014);
++			reg = __raw_readl(mem);
++			reg |= 0x8;
++			__raw_writel(reg, mem);
++
++			/* Enable OTG */
++			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0808);
++			reg = __raw_readl(mem);
++			reg &= ~(1 << 10);
++			__raw_writel(reg, mem);
++
++			platform_device_register(&cns3xxx_usb_otg_device);
++		}
++
++		if (laguna_info.config_bitmap & (USB1_LOAD)) {
++			platform_device_register(&cns3xxx_usb_ehci_device);
++			platform_device_register(&cns3xxx_usb_ohci_device);
++		}
++
++		if (laguna_info.config_bitmap & (SD_LOAD))
++			cns3xxx_sdhci_init();
++
++		if (laguna_info.config_bitmap & (UART0_LOAD))
++			laguna_uart.num_resources = 1;
++		if (laguna_info.config_bitmap & (UART1_LOAD))
++			laguna_uart.num_resources = 2;
++		if (laguna_info.config_bitmap & (UART2_LOAD))
++			laguna_uart.num_resources = 3;
++		platform_device_register(&laguna_uart);
++
++		if (laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) {
++			switch (laguna_info.nor_flash_size) {
++				case 1:
++					laguna_nor_partitions[3].size = SZ_8M - SZ_256K - SZ_128K - SZ_2M;
++					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_8M - 1;
++				break;
++				case 2:
++					laguna_nor_partitions[3].size = SZ_16M - SZ_256K - SZ_128K - SZ_2M;
++					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_16M - 1;
++				break;
++				case 3:
++					laguna_nor_partitions[3].size = SZ_32M - SZ_256K - SZ_128K - SZ_2M;
++					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_32M - 1;
++				break;
++				case 4:
++					laguna_nor_partitions[3].size = SZ_64M - SZ_256K - SZ_128K - SZ_2M;
++					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_64M - 1;
++				break;
++				case 5:
++					laguna_nor_partitions[3].size = SZ_128M - SZ_256K - SZ_128K - SZ_2M;
++					laguna_nor_res.end = CNS3XXX_FLASH_BASE + SZ_128M - 1;
++				break;
++			}
++			platform_device_register(&laguna_nor_pdev);
++		}
++
++		if (laguna_info.config2_bitmap & (SPI_FLASH_LOAD)) {
++			switch (laguna_info.spi_flash_size) {
++				case 1:
++					laguna_spi_partitions[3].size = SZ_4M - SZ_2M;
++				break;
++				case 2:
++					laguna_spi_partitions[3].size = SZ_8M - SZ_2M;
++				break;
++				case 3:
++					laguna_spi_partitions[3].size = SZ_16M - SZ_2M;
++				break;
++				case 4:
++					laguna_spi_partitions[3].size = SZ_32M - SZ_2M;
++				break;
++				case 5:
++					laguna_spi_partitions[3].size = SZ_64M - SZ_2M;
++				break;
++			}
++			spi_register_board_info(laguna_spi_devices, ARRAY_SIZE(laguna_spi_devices));
++		}
++
++		if ((laguna_info.config_bitmap & SPI0_LOAD) ||
++		    (laguna_info.config_bitmap & SPI1_LOAD))
++			platform_device_register(&laguna_spi_controller);
++
++		/*
++		 * Do any model specific setup not known by the bitmap by matching
++		 *  the first 6 characters of the model name
++		 */
++
++		if (strncmp(laguna_info.model, "GW2388", 6) == 0) {
++			laguna_gpio_leds_data.num_leds = 2;
++		} else if (strncmp(laguna_info.model, "GW2380", 6) == 0) {
++			laguna_gpio_leds[0].gpio = 107;
++			laguna_gpio_leds[1].gpio = 106;
++			laguna_gpio_leds_data.num_leds = 2;
++		}
++		platform_device_register(&laguna_gpio_leds_device);
++	} else {
++		// Do some defaults here, not sure what yet
++	}
++	return 0;
++}
++
++late_initcall(laguna_model_setup);
++
++MACHINE_START(GW2388, "Gateworks Corporation Laguna Platform")
++	.boot_params	= 0x00000100,
++	.map_io		= laguna_map_io,
++	.init_irq	= cns3xxx_init_irq,
++	.timer		= &cns3xxx_timer,
++	.init_machine	= laguna_init,
++MACHINE_END
+--- a/arch/arm/mach-cns3xxx/Kconfig
++++ b/arch/arm/mach-cns3xxx/Kconfig
+@@ -10,4 +10,13 @@ config MACH_CNS3420VB
+ 	  This is a platform with an on-board ARM11 MPCore and has support
+ 	  for USB, USB-OTG, MMC/SD/SDIO, SATA, PCI-E, etc.
+ 
++config MACH_GW2388
++	bool "Support for Gateworks Laguna Platform"
++	select MIGHT_HAVE_PCI
++	help
++	  Include support for the Gateworks Laguna Platform
++
++	  This is a platform with an on-board ARM11 MPCore and has support
++	  for USB, USB-OTG, MMC/SD/SDIO, SATA, PCI-E, I2C, GIG, etc.
++
+ endmenu
+--- a/arch/arm/mach-cns3xxx/core.c
++++ b/arch/arm/mach-cns3xxx/core.c
+@@ -16,6 +16,7 @@
+ #include <asm/mach/time.h>
+ #include <asm/mach/irq.h>
+ #include <asm/hardware/gic.h>
++#include <asm/smp_twd.h>
+ #include <mach/cns3xxx.h>
+ #include "core.h"
+ 
+@@ -60,11 +61,24 @@ static struct map_desc cns3xxx_io_desc[]
+ 		.pfn		= __phys_to_pfn(CNS3XXX_PM_BASE),
+ 		.length		= SZ_4K,
+ 		.type		= MT_DEVICE,
++	}, {
++		.virtual	= CNS3XXX_SWITCH_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_SWITCH_BASE),
++		.length		= SZ_4K,
++		.type		= MT_DEVICE,
++	}, {
++		.virtual	= CNS3XXX_SSP_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_SSP_BASE),
++		.length		= SZ_4K,
++		.type		= MT_DEVICE,
+ 	},
+ };
+ 
+ void __init cns3xxx_map_io(void)
+ {
++#ifdef CONFIG_LOCAL_TIMERS
++	twd_base = (void __iomem *) CNS3XXX_TC11MP_TWD_BASE_VIRT;
++#endif
+ 	iotable_init(cns3xxx_io_desc, ARRAY_SIZE(cns3xxx_io_desc));
+ }
+ 
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -322,6 +322,7 @@ config ARCH_CLPS711X
+ config ARCH_CNS3XXX
+ 	bool "Cavium Networks CNS3XXX family"
+ 	select CPU_V6
++	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select GENERIC_CLOCKEVENTS
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_PCI
+--- /dev/null
++++ b/arch/arm/mach-cns3xxx/include/mach/gpio.h
+@@ -0,0 +1,98 @@
++/*
++ * arch/arm/mach-cns3xxx/include/mach/gpio.h
++ *
++ * CNS3xxx GPIO wrappers for arch-neutral GPIO calls
++ *
++ * Copyright 2011 Gateworks Corporation
++ *		  Chris Lang <clang@gateworks.com>
++ *
++ * Based on IXP implementation by Milan Svoboda <msvoboda@ra.rockwell.com>
++ * Based on PXA implementation by Philipp Zabel <philipp.zabel@gmail.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ *
++ */
++
++#ifndef __ASM_ARCH_CNS3XXX_GPIO_H
++#define __ASM_ARCH_CNS3XXX_GPIO_H
++
++#include <linux/kernel.h>
++#include <linux/io.h>
++#include <mach/hardware.h>
++#include <asm-generic/gpio.h>			/* cansleep wrappers */
++
++#define NR_BUILTIN_GPIO 64
++
++#define CNS3XXX_GPIO_IN    0x0
++#define CNS3XXX_GPIO_OUT   0x1
++
++#define CNS3XXX_GPIO_LO   0
++#define CNS3XXX_GPIO_HI   1
++
++#define CNS3XXX_GPIO_OUTPUT         0x00
++#define CNS3XXX_GPIO_INPUT          0x04
++#define CNS3XXX_GPIO_DIR            0x08
++#define CNS3XXX_GPIO_SET            0x10
++#define CNS3XXX_GPIO_CLEAR          0x14
++
++static inline void gpio_line_get(u8 line, int *value)
++{
++	if (line < 32)
++		*value = ((__raw_readl(CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_INPUT) >> line) & 0x1);
++	else
++		*value = ((__raw_readl(CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_INPUT) >> (line - 32)) & 0x1);
++}
++
++static inline void gpio_line_set(u8 line, int value)
++{
++	if (line < 32) {
++		if (value)
++			__raw_writel((1 << line), CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_SET);
++		else
++			__raw_writel((1 << line), CNS3XXX_GPIOA_BASE_VIRT + CNS3XXX_GPIO_CLEAR);
++	} else {
++		if (value)
++			__raw_writel((1 << line), CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_SET);
++		else
++			__raw_writel((1 << line), CNS3XXX_GPIOB_BASE_VIRT + CNS3XXX_GPIO_CLEAR);
++	}
++}
++
++static inline int gpio_get_value(unsigned gpio)
++{
++	if (gpio < NR_BUILTIN_GPIO)
++	{
++		int value;
++		gpio_line_get(gpio, &value);
++		return value;
++	}
++	else
++		return __gpio_get_value(gpio);
++}
++
++static inline void gpio_set_value(unsigned gpio, int value)
++{
++	if (gpio < NR_BUILTIN_GPIO)
++		gpio_line_set(gpio, value);
++	else
++		__gpio_set_value(gpio, value);
++}
++
++#define gpio_cansleep __gpio_cansleep
++
++extern int gpio_to_irq(int gpio);
++extern int irq_to_gpio(int gpio);
++
++#endif
+--- a/arch/arm/mach-cns3xxx/Makefile
++++ b/arch/arm/mach-cns3xxx/Makefile
+@@ -1,6 +1,7 @@
+ obj-$(CONFIG_ARCH_CNS3XXX)		+= core.o pm.o devices.o
+ obj-$(CONFIG_PCI)			+= pcie.o
+ obj-$(CONFIG_MACH_CNS3420VB)		+= cns3420vb.o
++obj-$(CONFIG_MACH_GW2388)		+= laguna.o
+ obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o
+ obj-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o
+ obj-$(CONFIG_LOCAL_TIMERS)		+= localtimer.o
+--- a/arch/arm/tools/mach-types
++++ b/arch/arm/tools/mach-types
+@@ -444,6 +444,7 @@ icontrol		MACH_ICONTROL		ICONTROL		2624
+ qsd8x50a_st1_5		MACH_QSD8X50A_ST1_5	QSD8X50A_ST1_5		2627
+ mx23evk			MACH_MX23EVK		MX23EVK			2629
+ ap4evb			MACH_AP4EVB		AP4EVB			2630
++gw2388			MACH_GW2388		GW2388			2635
+ mityomapl138		MACH_MITYOMAPL138	MITYOMAPL138		2650
+ guruplug		MACH_GURUPLUG		GURUPLUG		2659
+ spear310		MACH_SPEAR310		SPEAR310		2660
+--- a/arch/arm/mach-cns3xxx/pcie.c
++++ b/arch/arm/mach-cns3xxx/pcie.c
+@@ -365,7 +365,7 @@ static int cns3xxx_pcie_abort_handler(un
+ 	return 0;
+ }
+ 
+-static int __init cns3xxx_pcie_init(void)
++int cns3xxx_pcie_init(u8 bitmap)
+ {
+ 	int i;
+ 
+@@ -373,6 +373,9 @@ static int __init cns3xxx_pcie_init(void
+ 			"imprecise external abort");
+ 
+ 	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
++		if (!(bitmap & (1 << i)))
++			continue;
++
+ 		iotable_init(cns3xxx_pcie[i].cfg_bases,
+ 			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));
+ 		cns3xxx_pcie_check_link(&cns3xxx_pcie[i]);
+@@ -384,4 +387,3 @@ static int __init cns3xxx_pcie_init(void
+ 
+ 	return 0;
+ }
+-device_initcall(cns3xxx_pcie_init);
+--- a/arch/arm/mach-cns3xxx/cns3420vb.c
++++ b/arch/arm/mach-cns3xxx/cns3420vb.c
+@@ -175,6 +175,8 @@ static void __init cns3420_init(void)
+ 	cns3xxx_ahci_init();
+ 	cns3xxx_sdhci_init();
+ 
++	cns3xxx_pcie_init(0x3);
++
+ 	pm_power_off = cns3xxx_power_off;
+ }
+ 
+--- a/arch/arm/mach-cns3xxx/include/mach/platform.h
++++ b/arch/arm/mach-cns3xxx/include/mach/platform.h
+@@ -22,5 +22,7 @@ struct cns3xxx_plat_info {
+ 	u32 phy[3];
+ };
+ 
++extern int cns3xxx_pcie_init(u8 bitmap);
++
+ #endif /* __ASM_ARCH_PLATFORM_H */
+ #endif

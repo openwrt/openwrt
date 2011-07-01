@@ -1,0 +1,88 @@
+--- a/arch/arm/mach-cns3xxx/core.c
++++ b/arch/arm/mach-cns3xxx/core.c
+@@ -78,6 +78,16 @@ static struct map_desc cns3xxx_io_desc[]
+ 		.pfn		= __phys_to_pfn(CNS3XXX_L2C_BASE),
+ 		.length		= SZ_4K,
+ 		.type		= MT_DEVICE,
++	}, {
++		.virtual	= CNS3XXX_PCIE0_IO_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_PCIE0_IO_BASE),
++		.length		= SZ_16M,
++		.type		= MT_DEVICE,
++	}, {
++		.virtual	= CNS3XXX_PCIE1_IO_BASE_VIRT,
++		.pfn		= __phys_to_pfn(CNS3XXX_PCIE1_IO_BASE),
++		.length		= SZ_16M,
++		.type		= MT_DEVICE,
+ 	},
+ };
+ 
+@@ -184,13 +194,13 @@ void __init cns3xxx_common_init(void)
+ /* used by entry-macro.S */
+ void __init cns3xxx_init_irq(void)
+ {
+-	gic_init(0, 29, __io(CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT),
+-		 __io(CNS3XXX_TC11MP_GIC_CPU_BASE_VIRT));
++	gic_init(0, 29, (void __iomem *) CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT,
++		 (void __iomem *) CNS3XXX_TC11MP_GIC_CPU_BASE_VIRT);
+ }
+ 
+ void cns3xxx_power_off(void)
+ {
+-	u32 __iomem *pm_base = __io(CNS3XXX_PM_BASE_VIRT);
++	u32 __iomem *pm_base = (void __iomem *) CNS3XXX_PM_BASE_VIRT;
+ 	u32 clkctrl;
+ 
+ 	printk(KERN_INFO "powering system down...\n");
+@@ -364,7 +374,7 @@ static void __init __cns3xxx_timer_init(
+ 
+ static void __init cns3xxx_timer_init(void)
+ {
+-	cns3xxx_tmr1 = __io(CNS3XXX_TIMER1_2_3_BASE_VIRT);
++	cns3xxx_tmr1 = (void __iomem *) CNS3XXX_TIMER1_2_3_BASE_VIRT;
+ 
+ 	__cns3xxx_timer_init(IRQ_CNS3XXX_TIMER0);
+ }
+--- a/arch/arm/mach-cns3xxx/devices.c
++++ b/arch/arm/mach-cns3xxx/devices.c
+@@ -98,7 +98,7 @@ static struct platform_device cns3xxx_sd
+ 
+ void __init cns3xxx_sdhci_init(void)
+ {
+-	u32 __iomem *gpioa = __io(CNS3XXX_MISC_BASE_VIRT + 0x0014);
++	u32 __iomem *gpioa = (void __iomem *) (CNS3XXX_MISC_BASE_VIRT + 0x0014);
+ 	u32 gpioa_pins = __raw_readl(gpioa);
+ 
+ 	/* MMC/SD pins share with GPIOA */
+--- a/arch/arm/mach-cns3xxx/include/mach/io.h
++++ b/arch/arm/mach-cns3xxx/include/mach/io.h
+@@ -9,9 +9,17 @@
+ #ifndef __MACH_IO_H
+ #define __MACH_IO_H
+ 
++#include "cns3xxx.h"
++
+ #define IO_SPACE_LIMIT 0xffffffff
+ 
+-#define __io(a)			__typesafe_io(a)
++static inline void __iomem *__io(unsigned long addr)
++{
++	return (void __iomem *)((addr - CNS3XXX_PCIE0_IO_BASE)
++		+ CNS3XXX_PCIE0_IO_BASE_VIRT);
++}
++
++#define __io(a)			__io(a)
+ #define __mem_pci(a)		(a)
+ 
+ #endif
+--- a/drivers/spi/spi_cns3xxx.c
++++ b/drivers/spi/spi_cns3xxx.c
+@@ -273,7 +273,7 @@ done:
+ 
+ static void __init cns3xxx_spi_initial(void)
+ {
+-	u32 __iomem *gpiob = __io(CNS3XXX_MISC_BASE_VIRT + 0x0018);
++	u32 __iomem *gpiob = (void __iomem *) (CNS3XXX_MISC_BASE_VIRT + 0x0018);
+ 	u32 gpiob_pins = __raw_readl(gpiob);
+ 
+ 	/* MMC/SD pins share with GPIOA */
