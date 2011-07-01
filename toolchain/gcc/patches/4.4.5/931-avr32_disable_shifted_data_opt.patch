@@ -1,0 +1,32 @@
+--- a/gcc/config/avr32/avr32.c
++++ b/gcc/config/avr32/avr32.c
+@@ -6726,7 +6726,28 @@ avr32_reorg_optimization (void)
+ 	}
+     }
+ 
+-  if (TARGET_MD_REORG_OPTIMIZATION && (optimize_size || (optimize > 0)))
++  /* Disabled this optimization since it has a bug */
++  /* In the case where the data instruction the shifted insn gets folded
++   * into is a branch destination, this breaks, i.e.
++   *
++   *    add r8, r10, r8 << 2
++   * 1:
++   *    ld.w r11, r8[0]
++   *    ...
++   *    mov r8, sp
++   *    rjmp 1b
++   *
++   * gets folded to:
++   *
++   * 1:
++   *    ld.w r11, r10[r8 << 2]
++   *    ...
++   *    mov r8, sp
++   *    rjmp 1b
++   *
++   * which is clearly wrong..
++   */
++  if (0 && TARGET_MD_REORG_OPTIMIZATION && (optimize_size || (optimize > 0)))
+     {
+ 
+       /* Scan through all insns looking for shifted add operations */

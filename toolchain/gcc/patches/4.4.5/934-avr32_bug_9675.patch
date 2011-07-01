@@ -1,0 +1,21 @@
+--- a/gcc/config/avr32/lib1funcs.S
++++ b/gcc/config/avr32/lib1funcs.S
+@@ -1460,7 +1460,6 @@ __avr32_f64_cmp_lt:
+ 0:      
+         ld.w    r7, sp++
+         popm    pc, r12=0
+-#endif
+  
+ 3:
+         cp.w    r7, 1          /* Check sign bit from r9 */
+@@ -1481,8 +1480,8 @@ __avr32_f64_cmp_lt:
+ 	reteq	0		       /* Both operands are zero. Return false. */
+ #endif
+ 	ret	r12
+-				        
+- 
++#endif
++			        
+ #if defined(L_avr32_f64_div) || defined(L_avr32_f64_div_fast)
+         .align  2
+ 

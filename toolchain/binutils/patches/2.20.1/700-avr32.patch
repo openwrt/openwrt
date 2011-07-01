@@ -4661,7 +4661,7 @@
 +{
 +  int i, x;
 +
-+  fprintf (stream, _("Known architecture names:"));
++  fprintf (stream, _("Architectures supported by the assembler:"));
 +  x = 1000;
 +
 +  for (i = 0; arch_types[i].name; i++)
@@ -4771,7 +4771,7 @@
 +          {
 +            as_warn("Deprecated arch `%s' specified. "
 +                    "Please use '-march=ucr1' instead. "
-+                    "Converting to arch 'ucr1'\n",
++                    "Using to arch 'ucr1'\n",
 +                     s);
 +            s="ucr1";
 +          }
