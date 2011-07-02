@@ -489,7 +489,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/libgcc/install
 	$(INSTALL_DIR) $(1)/lib
-	$(CP) $(PKG_BUILD_DIR)/libgcc_s.so.* $(1)/lib/
+	$(CP) $(TOOLCHAIN_DIR)/lib/libgcc_s.so.* $(1)/lib/
   endef
 
   define Package/libgfortran/install
