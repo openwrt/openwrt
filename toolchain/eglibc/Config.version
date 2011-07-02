@@ -1,12 +1,6 @@
 config EGLIBC_VERSION
 	string
 	depends on USE_EGLIBC
-	default "2.6.1"  if EGLIBC_VERSION_2_6
-	default "2.7"    if EGLIBC_VERSION_2_7
-	default "2.8"    if EGLIBC_VERSION_2_8
-	default "2.9"    if EGLIBC_VERSION_2_9
-	default "2.10.2" if EGLIBC_VERSION_2_10
-	default "2.11.1" if EGLIBC_VERSION_2_11
 	default "2.12"   if EGLIBC_VERSION_2_12
 	default "2.13"   if EGLIBC_VERSION_2_13
 	default "trunk"
