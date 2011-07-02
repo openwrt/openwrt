@@ -22,6 +22,8 @@ ifneq (,$(KERNEL_CC))
   KERNEL_MAKEOPTS += CC="$(KERNEL_CC)"
 endif
 
+export HOST_EXTRACFLAGS=-I$(STAGING_DIR_HOST)/include
+
 # defined in quilt.mk
 Kernel/Patch:=$(Kernel/Patch/Default)
 ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
