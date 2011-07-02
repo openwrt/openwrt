@@ -11,8 +11,7 @@ curdir:=tools
 # subdirectories to descend into
 tools-y :=
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN)$(CONFIG_GCC_LLVM),)
-tools-y += gmp mpfr
-tools-$(CONFIG_GCC_VERSION_4_5) += mpc libelf
+tools-y += gmp mpfr mpc libelf
 endif
 tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
 tools-y += sstrip ipkg-utils genext2fs e2fsprogs mtd-utils mkimage
