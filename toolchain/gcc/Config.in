@@ -25,7 +25,7 @@ endchoice
 config GCC_USE_GRAPHITE
 	bool
 	prompt "Compile in support for the new Graphite framework in GCC 4.4+" if TOOLCHAINOPTS
-	depends GCC_VERSION_4_4 || GCC_VERSION_4_5 || GCC_VERSION_4_6
+	depends !GCC_VERSION_LLVM
 
 config GCC_USE_SYSTEM_PPL_CLOOG
 	bool
