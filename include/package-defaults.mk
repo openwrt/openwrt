@@ -42,6 +42,7 @@ define Package/Default
   TITLE:=
   KCONFIG:=
   BUILDONLY:=
+  HIDDEN:=
   URL:=
   VARIANT:=
 endef

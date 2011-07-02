@@ -525,10 +525,12 @@ sub print_package_config_category($) {
 			if ($c > 0) {
 				$title .= ("." x $c). " ". $pkg->{title};
 			}
+			$title = "\"$title\"";
 			print "\t";
 			$pkg->{menu} and print "menu";
 			print "config PACKAGE_".$pkg->{name}."\n";
-			print "\t\t".($pkg->{tristate} ? 'tristate' : 'bool')." \"$title\"\n";
+			$pkg->{hidden} and $title = "";
+			print "\t\t".($pkg->{tristate} ? 'tristate' : 'bool')." $title\n";
 			print "\t\tdefault y if DEFAULT_".$pkg->{name}."\n";
 			foreach my $default (split /\s*,\s*/, $pkg->{default}) {
 				print "\t\tdefault $default\n";
