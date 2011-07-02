@@ -104,27 +104,20 @@ GCC_CONFIGURE:= \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 --with-abi=64) \
 		$(if $(CONFIG_GCC_VERSION_LLVM),--enable-llvm=$(BUILD_DIR_BASE)/host/llvm) \
 
-ifneq ($(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6),)
-  ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
-    GCC_CONFIGURE += --with-mips-plt
-  endif
-endif
-
 ifeq ($(CONFIG_GCC_LLVM),)
   GCC_BUILD_TARGET_LIBGCC:=y
   GCC_CONFIGURE+= \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
 		--with-mpfr=$(TOPDIR)/staging_dir/host \
 		--disable-decimal-float
+  ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
+    GCC_CONFIGURE += --with-mips-plt
+  endif
 endif
 
 ifneq ($(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6),)
-  GCC_BUILD_TARGET_LIBGCC:=y
   GCC_CONFIGURE+= \
-                --with-gmp=$(TOPDIR)/staging_dir/host \
-                --with-mpc=$(TOPDIR)/staging_dir/host \
-                --with-mpfr=$(TOPDIR)/staging_dir/host \
-                --disable-decimal-float
+		--with-mpc=$(TOPDIR)/staging_dir/host
 endif
 
 ifneq ($(CONFIG_SSP_SUPPORT),)
