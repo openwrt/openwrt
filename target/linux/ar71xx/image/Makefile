@@ -504,7 +504,7 @@ define Image/Build/Template/4k/squashfs
 endef
 
 define Image/Build/Template/64k/squashfs
-	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+	$(call Image/Build/$(1),squashfs-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/64k/jffs2-64k
@@ -528,7 +528,7 @@ endef
 ap121_mini_cmdline=board=AP121-MINI console=ttyATH0,115200
 ap121_mini_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
 define Image/Build/Profile/AP121MINI
-	$(call Image/Build/Template/$(fs_4k)/$(1),AP121,ap121-mini,$(ap121_mini_cmdline),ap121_mini_mtdlayout,917504,2818048)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AP121,ap121-mini,$(ap121_mini_cmdline),ap121_mini_mtdlayout,917504,2818048)
 endef
 
 ap81_cmdline=board=AP81 console=ttyS0,115200
@@ -676,32 +676,32 @@ endef
 
 tlmr3220_cmdline=board=TL-MR3220 console=ttyS0,115200
 define Image/Build/Profile/TLMR3220V1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3220-v1,$(tlmr3220_cmdline),TL-MR3220v1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-mr3220-v1,$(tlmr3220_cmdline),TL-MR3220v1)
 endef
 
 tlmr3420_cmdline=board=TL-MR3420 console=ttyS0,115200
 define Image/Build/Profile/TLMR3420V1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-mr3420-v1,$(tlmr3420_cmdline),TL-MR3420v1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-mr3420-v1,$(tlmr3420_cmdline),TL-MR3420v1)
 endef
 
 tlwa901nd_cmdline=board=TL-WA901ND console=ttyS0,115200
 define Image/Build/Profile/TLWA901NDV1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wa901nd-v1,$(tlwa901nd_cmdline),TL-WA901NDv1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wa901nd-v1,$(tlwa901nd_cmdline),TL-WA901NDv1)
 endef
 
 tlwa901ndv2_cmdline=board=TL-WA901ND-v2 console=ttyS0,115200
 define Image/Build/Profile/TLWA901NDV2
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wa901nd-v2,$(tlwa901ndv2_cmdline),TL-WA901NDv2)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wa901nd-v2,$(tlwa901ndv2_cmdline),TL-WA901NDv2)
 endef
 
 tlwe741ndv1_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR741NDV1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr741nd-v1,$(tlwe741ndv1_cmdline),TL-WR741NDv1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr741nd-v1,$(tlwe741ndv1_cmdline),TL-WR741NDv1)
 endef
 
 tlwe740nv1_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR740NV1
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr740n-v1,$(tlwe740nv1_cmdline),TL-WR740Nv1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v1,$(tlwe740nv1_cmdline),TL-WR740Nv1)
 endef
 
 tlwr841nv15_cmdline=board=TL-WR841N-v1.5 console=ttyS0,115200
@@ -716,12 +716,12 @@ endef
 
 tlwr841ndv5_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR841NDV5
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr841nd-v5,$(tlwr841ndv5_cmdline),TL-WR841NDv5)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr841nd-v5,$(tlwr841ndv5_cmdline),TL-WR841NDv5)
 endef
 
 tlwr841ndv7_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR841NDV7
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr841nd-v7,$(tlwr841ndv7_cmdline),TL-WR841NDv7)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr841nd-v7,$(tlwr841ndv7_cmdline),TL-WR841NDv7)
 endef
 
 tlwr941ndv2_cmdline=board=TL-WR941ND console=ttyS0,115200
@@ -736,7 +736,7 @@ endef
 
 tlwr941ndv4_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR941NDV4
-	$(call Image/Build/Template/$(fs_4k)/$(1),TPLINK,tl-wr941nd-v4,$(tlwr941ndv4_cmdline),TL-WR941NDv4)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr941nd-v4,$(tlwr941ndv4_cmdline),TL-WR941NDv4)
 endef
 
 tlwr1043nd_cmdline=board=TL-WR1043ND console=ttyS0,115200
@@ -856,10 +856,10 @@ define Image/Build/Profile/Madwifi
 endef
 
 define Image/Build/squashfs
-	dd if=$(KDIR)/root.squashfs of=$(KDIR)/root.squashfs-4k.tmp0 bs=4k conv=sync
-	$(call add_jffs2_mark,$(KDIR)/root.squashfs-4k.tmp0)
-	dd if=$(KDIR)/root.squashfs-4k.tmp0 of=$(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-4k bs=4k conv=sync
-	rm -f $(KDIR)/root.squashfs-4k.tmp0
+	cp $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-4k
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-4k 4
+	cp $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k 4 8 64
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
