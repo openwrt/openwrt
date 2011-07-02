@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=arm
 BOARD:=cns21xx
-BOARDNAME:=Cavium Networks CNS21xx
+BOARDNAME:=Cavium Networks Econa CNS21xx
 FEATURES:=squashfs broken
 CFLAGS:=-Os -pipe -march=armv4 -mtune=fa526 -fno-caller-saves
 
