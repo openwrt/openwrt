@@ -409,6 +409,9 @@ resume:
 				/* got an EOF marker - this is the place to add some jffs2 data */
 				skip = mtd_replace_jffs2(mtd, fd, e, jffs2file);
 
+				/* don't add it again */
+				jffs2file = NULL;
+
 				w += skip;
 				e += skip;
 				skip -= buflen;
