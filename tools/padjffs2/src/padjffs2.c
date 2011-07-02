@@ -83,7 +83,7 @@ static int pad_image(char *name, uint32_t pad_mask)
 				pad_mask &= ~mask;
 		}
 
-		printf("padding image to %08x\n", in_len);
+		printf("padding image to %08x\n", (unsigned int) in_len);
 
 		while (out_len < in_len) {
 			ssize_t len;
