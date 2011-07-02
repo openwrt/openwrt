@@ -10,7 +10,7 @@ ARCH:=cris
 BOARD:=etrax
 MAINTAINER:=Claudio Mignanti <c.mignanti@gmail.com>
 BOARDNAME:=Axis ETRAX 100LX
-FEATURES:=squashfs jffs2 usb
+FEATURES:=squashfs jffs2 usb broken
 LINUX_VERSION:=2.6.32.33
 DEVICE_TYPE=
 
