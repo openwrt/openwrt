@@ -48,20 +48,11 @@ else
   PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
   PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-  ifeq ($(PKG_VERSION),4.3.3)
-    PKG_MD5SUM:=cc3c5565fdb9ab87a05ddb106ba0bd1f
-  endif
-  ifeq ($(PKG_VERSION),4.3.5)
-    PKG_MD5SUM:=e588cfde3bf323f82918589b94f14a15
-  endif
-  ifeq ($(PKG_VERSION),4.4.1)
-    PKG_MD5SUM:=927eaac3d44b22f31f9c83df82f26436
-  endif
   ifeq ($(PKG_VERSION),4.4.6)
     PKG_MD5SUM:=ab525d429ee4425050a554bc9247d6c4
   endif
   ifeq ($(PKG_VERSION),4.6.1)
-  PKG_MD5SUM:=c57a9170c677bf795bdc04ed796ca491
+    PKG_MD5SUM:=c57a9170c677bf795bdc04ed796ca491
   endif
 endif
 endif
@@ -112,7 +103,6 @@ GCC_CONFIGURE:= \
 		$(call qstrip,$(CONFIG_EXTRA_GCC_CONFIG_OPTIONS)) \
 		$(if $(CONFIG_mips64)$(CONFIG_mips64el),--with-arch=mips64 --with-abi=64) \
 		$(if $(CONFIG_GCC_VERSION_LLVM),--enable-llvm=$(BUILD_DIR_BASE)/host/llvm) \
-		$(if $(CONFIG_GCC_VERSION_4_3_3_CS)$(CONFIG_GCC_VERSION_4_4_1_CS),--enable-poison-system-directories)
 
 ifneq ($(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5)$(CONFIG_GCC_VERSION_4_6),)
   ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
