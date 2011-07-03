@@ -239,6 +239,10 @@ else
   TAR_OPTIONS:=-xf -
 endif
 
+ifeq ($(CONFIG_BUILD_LOG),y)
+  BUILD_LOG:=1
+endif
+
 define shvar
 V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
 endef
