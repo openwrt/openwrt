@@ -1,0 +1,20 @@
+
+config 'interface' 'loopback'
+	option 'ifname' 'lo'
+	option 'proto' 'static'
+	option 'ipaddr' '127.0.0.1'
+	option 'netmask' '255.0.0.0'
+
+config 'interface' 'cfg'
+	option 'ifname' 'usb0'
+	option 'proto' 'static'
+	option 'netmask' '255.255.255.0'
+	option 'gateway' '192.168.119.1'
+	option 'ipaddr' '192.168.119.2'
+
+config 'interface' 'lan'
+	option 'ifname' 'wlan0'
+	option 'proto' 'dhcp'
+
+#config 'interface' 'wan'
+#	option 

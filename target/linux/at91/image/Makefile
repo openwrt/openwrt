@@ -23,6 +23,9 @@ endef
 define Image/BuildKernel
 	mkimage -A arm -T kernel -C none -a 0x20008000 -e 0x20008000 -n linux-2.6 \
 		-d $(LINUX_DIR)/arch/arm/boot/Image $(BIN_DIR)/$(IMG_PREFIX)-uImage
+	if [ $(CONFIG_FLEXIBITY_ROOT) ]; then \
+		$(INSTALL_BIN) $(BIN_DIR)/$(IMG_PREFIX)-uImage $(TARGET_DIR)/uImage ; \
+	fi
 endef
 
 define Image/Build
