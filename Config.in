@@ -425,6 +425,11 @@ menuconfig DEVEL
 		  In this instance, the --refererence option of git clone will
 		  be used thus creating a quick local clone of your repo.
 
+	config BUILD_LOG
+		bool "Enable log files during build process" if DEVEL
+		help
+		  If enabled log files will be written to the ./log directory
+
 menuconfig TARGET_OPTIONS
 	bool "Target Options"  if DEVEL
 
