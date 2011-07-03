@@ -1,0 +1,12 @@
+--- linux-2.6.38.8/drivers/misc/Kconfig.orig	2011-06-02 19:35:11.000000000 -0600
++++ linux-2.6.38.8/drivers/misc/Kconfig	2011-07-02 21:05:01.000000000 -0600
+@@ -224,8 +224,7 @@ config SGI_XP
+ 
+ config CS5535_MFGPT
+ 	tristate "CS5535/CS5536 Geode Multi-Function General Purpose Timer (MFGPT) support"
+-	depends on PCI
+-	depends on X86
++	depends on PCI && X86 && MFD_CS5536
+ 	default n
+ 	help
+ 	  This driver provides access to MFGPT functionality for other
