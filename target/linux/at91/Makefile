@@ -12,7 +12,7 @@ MAINTAINER:=Claudio Mignanti <c.mignanti@gmail.com>
 BOARDNAME:=Atmel AT91
 FEATURES:=squashfs jffs2 targz
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -fno-caller-saves
-SUBTARGETS:=netus tqma9263
+SUBTARGETS:=netus tqma9263 flexibity
 
 LINUX_VERSION:=2.6.38.8
 DEVICE_TYPE=

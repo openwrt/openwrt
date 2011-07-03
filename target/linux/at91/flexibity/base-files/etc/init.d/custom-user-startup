@@ -1,0 +1,22 @@
+#!/bin/sh /etc/rc.common
+START=90
+# place your own startup commands here
+#
+# REMEMBER: You *MUST* place an '&' after launching programs you 
+#   that are to continue running in the background.
+#
+#   i.e. 
+#   BAD:  upnpd
+#   GOOD: upnpd &
+# 
+# Failure to do this will result in the startup process halting
+# on this file and the diagnostic light remaining on (at least
+# for WRT54G(s) models).
+#
+
+# coldplug USB devices
+udevtrigger &
+
+# wait for coldplug and re-generate wireless config
+#wifi detect > /etc/config/wireless &
+

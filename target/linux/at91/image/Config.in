@@ -30,3 +30,8 @@ config UBOOT_SERVERIP
 	help
 	  IP address of TFTP server for U-Boot
 
+config FLEXIBITY_ROOT
+	bool "Build Flexibity RootFS (with embedded kernel)"
+	depends TARGET_at91_flexibity
+	default n
+
