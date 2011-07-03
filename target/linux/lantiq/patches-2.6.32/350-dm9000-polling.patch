@@ -1,0 +1,119 @@
+--- a/drivers/net/dm9000.c
++++ b/drivers/net/dm9000.c
+@@ -19,6 +19,7 @@
+  *	Sascha Hauer <s.hauer@pengutronix.de>
+  */
+ 
++#define DEBUG
+ #include <linux/module.h>
+ #include <linux/ioport.h>
+ #include <linux/netdevice.h>
+@@ -121,6 +122,8 @@ typedef struct board_info {
+ 	struct delayed_work phy_poll;
+ 	struct net_device  *ndev;
+ 
++	struct delayed_work irq_poll;	/* for use in irq polling mode */
++
+ 	spinlock_t	lock;
+ 
+ 	struct mii_if_info mii;
+@@ -790,12 +793,14 @@ static void dm9000_timeout(struct net_de
+ 	unsigned long flags;
+ 
+ 	/* Save previous register address */
+-	reg_save = readb(db->io_addr);
+ 	spin_lock_irqsave(&db->lock, flags);
++	reg_save = readb(db->io_addr);
+ 
+ 	netif_stop_queue(dev);
+ 	dm9000_reset(db);
+ 	dm9000_init_dm9000(dev);
++	dm9000_reset(db);
++	dm9000_init_dm9000(dev);
+ 	/* We can accept TX packets again */
+ 	dev->trans_start = jiffies;
+ 	netif_wake_queue(dev);
+@@ -867,6 +872,12 @@ dm9000_start_xmit(struct sk_buff *skb, s
+ 	/* free this SKB */
+ 	dev_kfree_skb(skb);
+ 
++	/* directly poll afterwards */
++	if (dev->irq == -1) {
++		cancel_delayed_work(&db->irq_poll);
++		schedule_delayed_work(&db->irq_poll, 1);
++	}
++
+ 	return NETDEV_TX_OK;
+ }
+ 
+@@ -1073,6 +1084,18 @@ static void dm9000_poll_controller(struc
+ }
+ #endif
+ 
++static void dm9000_poll_irq(struct work_struct *w)
++{
++	struct delayed_work *dw = to_delayed_work(w);
++	board_info_t *db = container_of(dw, board_info_t, irq_poll);
++	struct net_device *ndev = db->ndev;
++
++	dm9000_interrupt(0, ndev);
++
++	if (netif_running(ndev))
++		schedule_delayed_work(&db->irq_poll, HZ /100);
++}
++
+ /*
+  *  Open the interface.
+  *  The interface is opened whenever "ifconfig" actives it.
+@@ -1086,27 +1109,35 @@ dm9000_open(struct net_device *dev)
+ 	if (netif_msg_ifup(db))
+ 		dev_dbg(db->dev, "enabling %s\n", dev->name);
+ 
+-	/* If there is no IRQ type specified, default to something that
+-	 * may work, and tell the user that this is a problem */
++	if (dev->irq != -1) {
++		/* If there is no IRQ type specified, default to something that
++		 * may work, and tell the user that this is a problem */
+ 
+-	if (irqflags == IRQF_TRIGGER_NONE)
+-		dev_warn(db->dev, "WARNING: no IRQ resource flags set.\n");
++		if (irqflags == IRQF_TRIGGER_NONE)
++			dev_warn(db->dev, "WARNING: no IRQ resource flags set.\n");
+ 
+-	irqflags |= IRQF_SHARED;
++		irqflags |= IRQF_SHARED;
+ 
+-	if (request_irq(dev->irq, &dm9000_interrupt, irqflags, dev->name, dev))
+-		return -EAGAIN;
++		if (request_irq(dev->irq, dm9000_interrupt, irqflags, dev->name, dev))
++			return -EAGAIN;
++	}
+ 
+ 	/* Initialize DM9000 board */
+ 	dm9000_reset(db);
+ 	dm9000_init_dm9000(dev);
++	/* workaround: init a second time */
++	dm9000_reset(db);
++	dm9000_init_dm9000(dev);
+ 
+ 	/* Init driver variable */
+ 	db->dbug_cnt = 0;
+ 
+ 	mii_check_media(&db->mii, netif_msg_link(db), 1);
+ 	netif_start_queue(dev);
+-	
++
++	if (dev->irq == -1)
++		schedule_delayed_work(&db->irq_poll, HZ / 100);
++
+ 	dm9000_schedule_poll(db);
+ 
+ 	return 0;
+@@ -1303,6 +1334,7 @@ dm9000_probe(struct platform_device *pde
+ 	mutex_init(&db->addr_lock);
+ 
+ 	INIT_DELAYED_WORK(&db->phy_poll, dm9000_poll_work);
++	INIT_DELAYED_WORK(&db->irq_poll, dm9000_poll_irq);
+ 
+ 	db->addr_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	db->data_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);

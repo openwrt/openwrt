@@ -14,9 +14,10 @@
 +endif
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/Makefile
-@@ -0,0 +1,3 @@
+@@ -0,0 +1,4 @@
 +obj-y := clk-falcon.o devices.o gpio.o prom.o sysctrl.o reset.o
 +obj-y += softdog_vpe.o
++obj-$(CONFIG_LANTIQ_MACH_EASY98000) += addon-easy98000.o
 +obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/clk-falcon.c
@@ -71,7 +72,7 @@
 +EXPORT_SYMBOL(ltq_get_fpi_hz);
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/devices.c
-@@ -0,0 +1,180 @@
+@@ -0,0 +1,254 @@
 +#include <linux/init.h>
 +#include <linux/module.h>
 +#include <linux/types.h>
@@ -88,6 +89,7 @@
 +#include <linux/gpio.h>
 +#include <linux/leds.h>
 +#include <linux/spi/spi.h>
++#include <linux/mtd/nand.h>
 +
 +#include <asm/bootinfo.h>
 +#include <asm/irq.h>
@@ -96,6 +98,7 @@
 +
 +#include <falcon/falcon_irq.h>
 +#include <falcon/gpon_reg_base.h>
++#include <falcon/ebu_reg.h>
 +#include <falcon/sys1_reg.h>
 +#include <falcon/sys_eth_reg.h>
 +
@@ -183,6 +186,78 @@
 +	platform_device_register(&ltq_spi);
 +}
 +
++/* nand flash */
++static struct gpon_reg_ebu __iomem *membase_ebu;
++static const char *part_probes[] = { "cmdlinepart", NULL };
++
++static int falcon_nand_ready(struct mtd_info *mtd)
++{
++	u32 modcon = __raw_readl(&membase_ebu->modcon);
++
++	return (((modcon & (MODCON_STS|MODCON_STSEDGE)) ==
++						(MODCON_STS|MODCON_STSEDGE)));
++}
++
++/* address lines used for NAND control signals */
++#define NAND_ADDR_ALE		(1<<16)
++#define NAND_ADDR_CLE		(1<<17)
++
++static void falcon_hwcontrol(struct mtd_info *mtd, int cmd, unsigned int ctrl)
++{
++	struct nand_chip *this = mtd->priv;
++	unsigned long nandaddr = (unsigned long) this->IO_ADDR_W;
++
++	if (ctrl & NAND_CTRL_CHANGE) {
++		nandaddr &= ~(NAND_ADDR_ALE | NAND_ADDR_CLE);
++
++		if (ctrl & NAND_CLE)
++			nandaddr |= NAND_ADDR_CLE;
++		if (ctrl & NAND_ALE)
++			nandaddr |= NAND_ADDR_ALE;
++
++		this->IO_ADDR_W = (void __iomem *) nandaddr;
++	}
++
++	if (cmd != NAND_CMD_NONE)
++		writeb(cmd, this->IO_ADDR_W);
++}
++
++static struct platform_nand_data falcon_flash_nand_data = {
++	.chip = {
++		.nr_chips		= 1,
++		.chip_delay		= 25,
++		.part_probe_types 	= part_probes,
++	},
++	.ctrl = {
++		.cmd_ctrl 		= falcon_hwcontrol,
++		.dev_ready		= falcon_nand_ready,
++	}
++};
++
++static struct resource ltq_nand_resources[] = {
++	MEM_RES("nand", LTQ_FLASH_START, LTQ_FLASH_START + LTQ_FLASH_MAX - 1),
++	MEM_RES("ebu", GPON_EBU_BASE, GPON_EBU_END),
++};
++
++static struct platform_device ltq_flash_nand = {
++	.name		= "gen_nand",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(ltq_nand_resources),
++	.resource	= ltq_nand_resources,
++	.dev		= {
++		.platform_data = &falcon_flash_nand_data,
++	},
++};
++
++void __init falcon_register_nand(void)
++{
++	membase_ebu = ioremap_nocache(ltq_nand_resources[1].start,
++			resource_size(&ltq_nand_resources[1]));
++
++	if (membase_ebu)
++		platform_device_register(&ltq_flash_nand);
++}
++
 +/* watchdog */
 +static struct resource falcon_wdt_resource =
 +	MEM_RES("watchdog",GPON_WDT_BASE,GPON_WDT_END);
@@ -254,7 +329,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/devices.h
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,22 @@
 +#ifndef _FALCON_DEVICES_H__
 +#define _FALCON_DEVICES_H__
 +
@@ -267,6 +342,7 @@
 +extern void __init falcon_register_spi_flash(struct spi_board_info *data);
 +extern void __init falcon_register_gpio(void);
 +extern void __init falcon_register_nor(struct physmap_flash_data *data);
++extern void __init falcon_register_nand(void);
 +extern void __init falcon_register_wdt(void);
 +extern void __init falcon_register_crypto(void);
 +
@@ -1285,7 +1361,7 @@
 +arch_initcall(mips_reboot_setup);
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/mach-easy98000.c
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,263 @@
 +#include <linux/init.h>
 +#include <linux/platform_device.h>
 +#include <linux/leds.h>
@@ -1423,8 +1499,12 @@
 +	}
 +};
 +
++extern int easy98000_addon_has_dm9000(void);
 +static void __init register_davicom(void)
 +{
++	if (!easy98000_addon_has_dm9000())
++		return;
++
 +	if (!is_valid_ether_addr(ltq_ethaddr))
 +		random_ether_addr(dm9000_plat_data.dev_addr);
 +	else {
@@ -1448,9 +1528,10 @@
 +	}
 +};
 +
-+void __init register_easy98000_cpld_led(void)
++void __init register_easy98000_cpld(void)
 +{
 +	platform_device_register_simple("easy98000_cpld_led", 0, NULL, 0);
++	platform_device_register_simple("easy98000_addon", 0, NULL, 0);
 +}
 +
 +/* setup gpio based spi bus/device for access to the eeprom on the board */
@@ -1507,7 +1588,7 @@
 +	register_davicom();
 +	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(easy98000_leds_gpio),
 +					easy98000_leds_gpio);
-+	register_easy98000_cpld_led();
++	register_easy98000_cpld();
 +	falcon_register_crypto();
 +	easy98000_spi_gpio_init();
 +}
@@ -1524,6 +1605,12 @@
 +	falcon_register_spi_flash(&easy98000_spi_flash_data);
 +}
 +
++static void __init easy98000nand_init(void)
++{
++	easy98000_init_common();
++	falcon_register_nand();
++}
++
 +MIPS_MACHINE(LANTIQ_MACH_EASY98000,
 +			"EASY98000",
 +			"EASY98000 Eval Board",
@@ -1533,6 +1620,11 @@
 +			"EASY98000SF",
 +			"EASY98000 Eval Board (Serial Flash)",
 +			easy98000sf_init);
++
++MIPS_MACHINE(LANTIQ_MACH_EASY98000NAND,
++			"EASY98000NAND",
++			"EASY98000 Eval Board (NAND Flash)",
++			easy98000nand_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/softdog_vpe.c
 @@ -0,0 +1,109 @@
@@ -1731,7 +1823,223 @@
 +	/* FALCON */
 +	LANTIQ_MACH_EASY98000,		/* Falcon Eval Board, NOR Flash */
 +	LANTIQ_MACH_EASY98000SF,	/* Falcon Eval Board, Serial Flash */
++	LANTIQ_MACH_EASY98000NAND,	/* Falcon Eval Board, NAND Flash */
 +	LANTIQ_MACH_EASY98020,		/* Falcon Reference Board */
  };
  
  #endif
+--- /dev/null
++++ b/arch/mips/lantiq/falcon/addon-easy98000.c
+@@ -0,0 +1,212 @@
++/*
++ *  EASY98000 CPLD Addon driver
++ *
++ *  Copyright (C) 2011 Thomas Langer <thomas.langer@lantiq.com>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2  as published
++ *  by the Free Software Foundation.
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/version.h>
++#include <linux/types.h>
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/errno.h>
++#include <linux/slab.h>
++#include <linux/proc_fs.h>
++#include <linux/seq_file.h>
++
++struct easy98000_reg_cpld {
++	u16 cmdreg1;		/* 0x1 */
++	u16 cmdreg0;		/* 0x0 */
++	u16 idreg0;		/* 0x3 */
++	u16 resreg;		/* 0x2 */
++	u16 intreg;		/* 0x5 */
++	u16 idreg1;		/* 0x4 */
++	u16 ledreg;		/* 0x7 */
++	u16 pcmconconfig;	/* 0x6 */
++	u16 res0;		/* 0x9 */
++	u16 ethledreg;		/* 0x8 */
++	u16 res1[4];		/* 0xa-0xd */
++	u16 cpld1v;		/* 0xf */
++	u16 cpld2v;		/* 0xe */
++};
++static struct easy98000_reg_cpld * const cpld =
++	(struct easy98000_reg_cpld *)(KSEG1 | 0x17c00000);
++#define cpld_r8(reg) (__raw_readw(&cpld->reg) & 0xFF)
++#define cpld_w8(val, reg) __raw_writew((val) & 0xFF, &cpld->reg)
++
++int easy98000_addon_has_dm9000(void)
++{
++	if ((cpld_r8(idreg0) & 0xF) == 1)
++		return 1;
++	return 0;
++}
++
++#if defined(CONFIG_PROC_FS)
++typedef void (*cpld_dump) (struct seq_file *s);
++struct proc_entry {
++	char *name;
++	void *callback;
++};
++
++static int cpld_proc_show ( struct seq_file *s, void *p )
++{
++	cpld_dump dump = s->private;
++
++	if ( dump != NULL )
++		dump(s);
++
++	return 0;
++}
++
++static int cpld_proc_open ( struct inode *inode, struct file *file )
++{
++	return single_open ( file, cpld_proc_show, PDE(inode)->data );
++}
++
++static void cpld_versions_get ( struct seq_file *s )
++{
++	seq_printf(s, "CPLD1: V%d\n", cpld_r8(cpld1v));
++	seq_printf(s, "CPLD2: V%d\n", cpld_r8(cpld2v));
++}
++
++static void cpld_ebu_module_get ( struct seq_file *s )
++{
++	u8 addon_id;
++
++	addon_id = cpld_r8(idreg0) & 0xF;
++	switch (addon_id) {
++	case 0xF: /* nothing connected */
++		break;
++	case 1:
++		seq_printf(s, "Ethernet Controller module (dm9000)\n");
++		break;
++	default:
++		seq_printf(s, "Unknown EBU module (EBU_ID=0x%02X)\n", addon_id);
++		break;
++	}
++}
++
++static void cpld_xmii_module_get ( struct seq_file *s )
++{
++	u8 addon_id;
++	char *mod = NULL;
++
++	addon_id = cpld_r8(idreg1) & 0xF;
++	switch (addon_id) {
++	case 0xF:
++		mod = "no module";
++		break;
++	case 0x1:
++		mod = "RGMII module";
++		break;
++	case 0x4:
++		mod = "GMII MAC Mode (XWAY TANTOS-3G)";
++		break;
++	case 0x6:
++		mod = "TMII MAC Mode (XWAY TANTOS-3G)";
++		break;
++	case 0x8:
++		mod = "GMII PHY module";
++		break;
++	case 0x9:
++		mod = "MII PHY module";
++		break;
++	case 0xA:
++		mod = "RMII PHY module";
++		break;
++	default:
++		break;
++	}
++	if (mod)
++		seq_printf(s, "%s\n", mod);
++	else
++		seq_printf(s, "unknown xMII module (xMII_ID=0x%02X)\n", addon_id);
++}
++
++static struct proc_entry proc_entries[] = {
++	{"versions",	cpld_versions_get},
++	{"ebu",		cpld_ebu_module_get},
++	{"xmii",	cpld_xmii_module_get},
++};
++
++static struct file_operations ops = {
++	.owner   = THIS_MODULE,
++	.open    = cpld_proc_open,
++	.read    = seq_read,
++	.llseek  = seq_lseek,
++	.release = single_release,
++};
++
++static void cpld_proc_entry_create(struct proc_dir_entry *parent_node,
++				   struct proc_entry *proc_entry)
++{
++	proc_create_data ( proc_entry->name, (S_IFREG | S_IRUGO), parent_node,
++			   &ops, proc_entry->callback);
++}
++
++static int cpld_proc_install(void)
++{
++	struct proc_dir_entry *driver_proc_node;
++
++	driver_proc_node = proc_mkdir("cpld", NULL);
++	if (driver_proc_node != NULL) {
++		int i;
++		for (i = 0; i < ARRAY_SIZE(proc_entries); i++)
++			cpld_proc_entry_create(driver_proc_node,
++					      &proc_entries[i]);
++	} else {
++		printk("cannot create proc entry");
++		return -1;
++	}
++	return 0;
++}
++#else
++static inline int cpld_proc_install(void) {}
++#endif
++
++static int easy98000_addon_probe(struct platform_device *pdev)
++{
++	return cpld_proc_install();
++}
++
++static int easy98000_addon_remove(struct platform_device *pdev)
++{
++#if defined(CONFIG_PROC_FS)
++	char buf[64];
++	int i;
++
++	for (i = 0; i < sizeof(proc_entries) / sizeof(proc_entries[0]); i++) {
++		sprintf(buf, "cpld/%s", proc_entries[i].name);
++		remove_proc_entry(buf, 0);
++	}
++	remove_proc_entry("cpld", 0);
++#endif
++	return 0;
++}
++
++static struct platform_driver easy98000_addon_driver = {
++	.probe = easy98000_addon_probe,
++	.remove = __devexit_p(easy98000_addon_remove),
++	.driver = {
++		.name = "easy98000_addon",
++		.owner = THIS_MODULE,
++	},
++};
++
++int __init easy98000_addon_init(void)
++{
++	return platform_driver_register(&easy98000_addon_driver);
++}
++
++void __exit easy98000_addon_exit(void)
++{
++	platform_driver_unregister(&easy98000_addon_driver);
++}
++
++module_init(easy98000_addon_init);
++module_exit(easy98000_addon_exit);

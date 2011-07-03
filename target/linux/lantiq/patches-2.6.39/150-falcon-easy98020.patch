@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/mach-easy98020.c
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,117 @@
 +#include <linux/init.h>
 +#include <linux/platform_device.h>
 +#include <linux/leds.h>
@@ -21,6 +21,10 @@
 +#define EASY98020_GPIO_LED_1 10
 +#define EASY98020_GPIO_LED_2 11
 +#define EASY98020_GPIO_LED_3 12
++#define EASY98020_GPIO_LED_GE0_ACT 110
++#define EASY98020_GPIO_LED_GE0_LINK 109
++#define EASY98020_GPIO_LED_GE1_ACT 106
++#define EASY98020_GPIO_LED_GE1_LINK 105
 +
 +extern unsigned char ltq_ethaddr[6];
 +
@@ -78,6 +82,22 @@
 +	}, {
 +		.name		= "easy98020:green:3",
 +		.gpio		= EASY98020_GPIO_LED_3,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:ge0_act",
++		.gpio		= EASY98020_GPIO_LED_GE0_ACT,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:ge0_link",
++		.gpio		= EASY98020_GPIO_LED_GE0_LINK,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:ge1_act",
++		.gpio		= EASY98020_GPIO_LED_GE1_ACT,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:ge1_link",
++		.gpio		= EASY98020_GPIO_LED_GE1_LINK,
 +		.active_low	= 0,
 +	}
 +};
