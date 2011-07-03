@@ -86,6 +86,31 @@ ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_AR9),y)
   # TODO: add fw/coef
 endif
 
+COEF_SRC:=$(COEF_TARGET)
+
+ifeq ($(CONFIG_VOICE_VMMC_WITH_DEVICE_FALCON),y)
+  CONFIGURE_ARGS += --with-device=FALCON
+  FW_SOURCE:=voip_R1.1.0.6.0-enc.bin
+  FW_MD5SUM:=cd4366a52a8010b76793e3810a4f14b3
+  FW_TARGET:=falcon_voip_fw.bin
+  FW_FILE=fw_voip_falcon-1.1.0.6.0.tar.gz
+  FW_DOWNLOAD:=1
+  COEF_TARGET:=falcon_bbd.bin
+# FXS part
+ifeq ($(CONFIG_LTQ_VOICE_CPE_VMMC_COEF_FALCON_ETSI),y)
+	COEF_SRC:=ETSI_3_10.BIN
+endif
+ifeq ($(CONFIG_LTQ_VOICE_CPE_VMMC_COEF_FALCON_US600R),y)
+	COEF_SRC:=R600_3_10.BIN
+endif
+ifeq ($(CONFIG_LTQ_VOICE_CPE_VMMC_COEF_FALCON_USE_CUSTOM_FILE),y)
+	COEF_SRC:=$(CONFIG_LTQ_VOICE_CPE_VMMC_COEF_FALCON_CUSTOM_FILE)
+endif
+  COEF_FILE:=coef_voip_falcon.tar.gz
+  COEF_MD5SUM:=56c5a838f2bb9bd87d0e8dce271f810b
+  COEF_DOWNLOAD:=1
+endif
+
 ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_VR9),y)
   CONFIGURE_ARGS += --with-device=VR9
   # TODO: add fw/coef
