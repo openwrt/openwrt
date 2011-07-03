@@ -24,7 +24,7 @@ sub localmirrors {
 	open LM, "$scriptdir/localmirrors" and do {
 	    while (<LM>) {
 			chomp $_;
-			push @mlist, $_;
+			push @mlist, $_ if $_;
 		}
 		close LM;
 	};
