@@ -51,15 +51,15 @@ static struct mtd_partition dir_300b_partitions[] = {
 	}, {
 		.name	= "kernel",
 		.offset	= 0x050000,
-		.size	= 0x0f0000,
+		.size	= 0x0d0000,
 	}, {
 		.name	= "rootfs",
-		.offset	= 0x140000,
-		.size	= 0x2B0000,
+		.offset	= 0x120000,
+		.size	= 0x2e0000,
 	}, {
 		.name	= "firmware",
 		.offset	= 0x050000,
-		.size	= 0x3a0000,
+		.size	= 0x3b0000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
