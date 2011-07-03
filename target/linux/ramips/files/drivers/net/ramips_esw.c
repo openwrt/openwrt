@@ -339,7 +339,7 @@ rt305x_esw_init(void)
 	return platform_driver_register(&rt305x_esw_driver);
 }
 
-static void __exit
+static void
 rt305x_esw_exit(void)
 {
 	platform_driver_unregister(&rt305x_esw_driver);
