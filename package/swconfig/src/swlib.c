@@ -397,6 +397,9 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 		val.value.ports = ports;
 		break;
 	case SWITCH_TYPE_NOVAL:
+		if (str && !strcmp(str, "0"))
+			return 0;
+
 		break;
 	default:
 		return -1;
