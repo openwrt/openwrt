@@ -54,15 +54,12 @@ endef
 
 define BuildFirmware/Generic
 	$(call PatchKernelLzma,$(2),$(3) $($(4)))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt $(5) ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
+	$(call MkImage,lzma,"$(KDIR)/vmlinux-$(2).bin.lzma","$(KDIR)/vmlinux-$(2).uImage")
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).uImage"` -gt $(5) ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(6) ]; then \
 		echo "Warning: $(KDIR)/root.$(1) is too big"; \
 	else \
-		mkimage -A mips -O linux -T kernel -C lzma \
-			$(call kernel_entry) \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
 		( \
 			dd if=$(KDIR)/vmlinux-$(2).uImage bs=$(5) conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
