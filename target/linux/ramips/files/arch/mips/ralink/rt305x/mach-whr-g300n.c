@@ -63,7 +63,7 @@ static struct mtd_partition whr_g300n_partitions[] = {
 		.offset	= 0x3f0000,
 		.size	= 0x010000,
 	}, {
-		.name	= "openwrt",
+		.name	= "firmware",
 		.offset	= 0x050000,
 		.size	= 0x3a0000,
 	}

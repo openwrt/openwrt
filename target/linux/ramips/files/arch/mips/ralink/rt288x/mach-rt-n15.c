@@ -60,7 +60,7 @@ static struct mtd_partition rt_n15_partitions[] = {
 		.offset	= 0x100000,
 		.size	= 0x300000,
 	}, {
-		.name	= "openwrt",
+		.name	= "firmware",
 		.offset	= 0x050000,
 		.size	= 0x3b0000,
 	}
