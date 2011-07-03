@@ -108,6 +108,37 @@ endef
 $(eval $(call KernelPackage,eeprom-93cx6))
 
 
+define KernelPackage/eeprom-at24
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=EEPROM AT24 support
+  KCONFIG:=CONFIG_EEPROM_AT24
+  DEPENDS:=+kmod-i2c-core
+  FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at24.ko
+  AUTOLOAD:=$(call AutoLoad,60,at24)
+endef
+
+define KernelPackage/eeprom-at24/description
+ Kernel module for most I2C EEPROMs
+endef
+
+$(eval $(call KernelPackage,eeprom-at24))
+
+
+define KernelPackage/eeprom-at25
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=EEPROM AT25 support
+  KCONFIG:=CONFIG_EEPROM_AT25
+  FILES:=$(LINUX_DIR)/drivers/misc/eeprom/at25.ko
+  AUTOLOAD:=$(call AutoLoad,61,at25)
+endef
+
+define KernelPackage/eeprom-at25/description
+ Kernel module for most SPI EEPROMs
+endef
+
+$(eval $(call KernelPackage,eeprom-at25))
+
+
 define KernelPackage/gpio-cs5535
   SUBMENU:=$(OTHER_MENU)
   TITLE:=AMD CS5535/CS5536 GPIO driver
