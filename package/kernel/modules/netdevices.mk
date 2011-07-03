@@ -623,3 +623,17 @@ define KernelPackage/ifb/description
 endef
 
 $(eval $(call KernelPackage,ifb))
+
+define KernelPackage/dm9000
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Davicom 9000 Ethernet support (in-kernel)
+  KCONFIG:=CONFIG_DM9000=y \
+    CONFIG_DM9000_DEBUGLEVEL=4 \
+    CONFIG_DM9000_FORCE_SIMPLE_PHY_POLL=y
+endef
+
+define KernelPackage/dm9000/description
+ Kernel driver for Davicom 9000 Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,dm9000))
