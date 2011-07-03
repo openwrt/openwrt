@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/mach-easy98020.c
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,115 @@
 +#include <linux/init.h>
 +#include <linux/platform_device.h>
 +#include <linux/leds.h>
@@ -21,8 +21,10 @@
 +#define EASY98020_GPIO_LED_1 10
 +#define EASY98020_GPIO_LED_2 11
 +#define EASY98020_GPIO_LED_3 12
-+
-+extern unsigned char ltq_ethaddr[6];
++#define EASY98020_GPIO_LED_GE0_ACT 110
++#define EASY98020_GPIO_LED_GE0_LINK 109
++#define EASY98020_GPIO_LED_GE1_ACT 106
++#define EASY98020_GPIO_LED_GE1_LINK 105
 +
 +#ifdef CONFIG_MTD_PARTITIONS
 +static struct mtd_partition easy98020_spi_partitions[] =
@@ -79,6 +81,22 @@
 +		.name		= "easy98020:green:3",
 +		.gpio		= EASY98020_GPIO_LED_3,
 +		.active_low	= 0,
++	}, {
++		.name		= "easy98020:ge0_act",
++		.gpio		= EASY98020_GPIO_LED_GE0_ACT,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:ge0_link",
++		.gpio		= EASY98020_GPIO_LED_GE0_LINK,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:ge1_act",
++		.gpio		= EASY98020_GPIO_LED_GE1_ACT,
++		.active_low	= 0,
++	}, {
++		.name		= "easy98020:ge1_link",
++		.gpio		= EASY98020_GPIO_LED_GE1_LINK,
++		.active_low	= 0,
 +	}
 +};
 +
@@ -100,7 +118,7 @@
 +			easy98020_init);
 --- a/arch/mips/lantiq/falcon/Kconfig
 +++ b/arch/mips/lantiq/falcon/Kconfig
-@@ -6,6 +6,10 @@
+@@ -6,6 +6,10 @@ config LANTIQ_MACH_EASY98000
  	bool "Easy98000"
  	default y
  
@@ -113,8 +131,8 @@
  endif
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
-@@ -2,3 +2,4 @@
- obj-y += softdog_vpe.o
+@@ -3,3 +3,4 @@ obj-y += softdog_vpe.o
+ obj-$(CONFIG_LANTIQ_MACH_EASY98000) += addon-easy98000.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += dev-leds-easy98000-cpld.o
 +obj-$(CONFIG_LANTIQ_MACH_EASY98020) += mach-easy98020.o

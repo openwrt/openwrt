@@ -190,7 +190,7 @@ define Image/Build/Profile/Generic
 endef
 endif
 
-ifeq ($(CONFIG_TARGET_lantiq_falcon),y)
+ifeq ($(CONFIG_TARGET_lantiq_falcon)$(CONFIG_TARGET_lantiq_falcon_stable),y)
 define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,EASY98000,$(falcon_cmdline))
 	$(call Image/BuildKernel/Template,EASY98020,$(falcon_cmdline))

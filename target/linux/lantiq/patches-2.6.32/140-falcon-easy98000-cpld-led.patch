@@ -1,8 +1,8 @@
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
-@@ -1,3 +1,4 @@
- obj-y := clk-falcon.o devices.o gpio.o prom.o sysctrl.o reset.o
+@@ -2,3 +2,4 @@ obj-y := clk-falcon.o devices.o gpio.o p
  obj-y += softdog_vpe.o
+ obj-$(CONFIG_LANTIQ_MACH_EASY98000) += addon-easy98000.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
 +obj-$(CONFIG_LANTIQ_MACH_EASY98000) += dev-leds-easy98000-cpld.o
 --- /dev/null
@@ -141,7 +141,7 @@
 +
 +static struct platform_driver led_driver = {
 +	.probe = led_probe,
-+	.remove = led_remove,
++	.remove = __devexit_p(led_remove),
 +	.driver = {
 +		   .name = LED_NAME,
 +		   .owner = THIS_MODULE,
