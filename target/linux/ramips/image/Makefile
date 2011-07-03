@@ -115,7 +115,7 @@ define Image/Build/Profile/MOFI35003GN
 	$(call Image/Build/Template/GENERIC_8M,$(1),mofi3500-3gn,MOFI3500-3GN)
 endef
 
-mtdlayout_wcr150gn=mtdparts=physmap-flash.0:192k(Bootloader)ro,64k(Config),64k(Factory),832k(Kernel),2944k(rootfs),3776k@0x50000(firmware)
+mtdlayout_wcr150gn=mtdparts=physmap-flash.0:192k(bootloader)ro,64k(config),64k(factory),832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
 mtd_wcr150gn_kernel_part_size=851968
 mtd_wcr150gn_rootfs_part_size=3014656
 define Image/Build/Template/WCR150GN

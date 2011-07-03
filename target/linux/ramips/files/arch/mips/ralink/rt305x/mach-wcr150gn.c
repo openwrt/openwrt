@@ -25,20 +25,20 @@
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wcr150gn_partitions[] = {
 	{
-		.name	= "Bootloader",
+		.name	= "bootloader",
 		.offset	= 0,
 		.size	= 0x030000,
 		.mask_flags = MTD_WRITEABLE,
 	}, {
-		.name	= "Config",
+		.name	= "config",
 		.offset	= 0x030000,
 		.size	= 0x040000,
 	}, {
-		.name	= "Factory",
+		.name	= "factory",
 		.offset	= 0x040000,
 		.size	= 0x050000,
 	}, {
-		.name	= "Kernel",
+		.name	= "kernel",
 		.offset	= 0x050000,
 		.size	= 0x120000,
 	}, {
