@@ -38,6 +38,9 @@ static void rt305x_intc_irq_dispatch(void)
 	else if (pending & RT305X_INTC_INT_UART1)
 		do_IRQ(RT305X_INTC_IRQ_UART1);
 
+	else if (pending &  RT305X_INTC_INT_PERFC)
+		do_IRQ(RT305X_INTC_IRQ_PERFC);
+
 	else if (pending & RT305X_INTC_INT_OTG)
 		do_IRQ(RT305X_INTC_IRQ_OTG);
 
@@ -74,4 +77,6 @@ void __init arch_init_irq(void)
 	mips_cpu_irq_init();
 	ramips_intc_irq_init(RT305X_INTC_BASE, RT305X_CPU_IRQ_INTC,
 			     RT305X_INTC_IRQ_BASE);
+
+	cp0_perfcount_irq = RT305X_INTC_IRQ_PERFC;
 }
