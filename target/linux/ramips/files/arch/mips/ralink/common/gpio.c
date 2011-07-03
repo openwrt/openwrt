@@ -12,7 +12,6 @@
 #include <linux/io.h>
 
 #include <asm/mach-ralink/ramips_gpio.h>
-#include <ralink_soc.h>
 
 static inline struct ramips_gpio_chip *to_ramips_gpio(struct gpio_chip *chip)
 {
