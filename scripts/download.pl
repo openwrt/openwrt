@@ -136,9 +136,9 @@ foreach my $mirror (@ARGV) {
 		push @mirrors, "ftp://ftp.digex.net/pub/gnu/$1";
 	} elsif ($mirror =~ /^\@KERNEL\/(.+)$/) {
 		my @extra = ( $1 );
-		if ($filename =~ /linux-\d+\.\d+\.\d+-rc/) {
+		if ($filename =~ /linux-\d+\.\d+(?:\.\d+)?-rc/) {
 			push @extra, "$extra[0]/testing";
-		} elsif ($filename =~ /linux-(\d+\.\d+\.\d+)/) {
+		} elsif ($filename =~ /linux-(\d+\.\d+(?:\.\d+)?)/) {
 			push @extra, "$extra[0]/longterm/v$1";
 		}		
 		foreach my $dir (@extra) {
