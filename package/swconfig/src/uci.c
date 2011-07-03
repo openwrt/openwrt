@@ -46,8 +46,8 @@ struct swlib_setting {
 };
 
 struct swlib_setting early_settings[] = {
-	{ .name = "reset" },
-	{ .name = "enable_vlan" },
+	{ .name = "reset", .val = "1" },
+	{ .name = "enable_vlan", .val = "1" },
 };
 
 static struct swlib_setting *settings;
