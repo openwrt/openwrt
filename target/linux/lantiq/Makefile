@@ -16,10 +16,10 @@ LINUX_VERSION:=2.6.39.2
 
 CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 
-include $(INCLUDE_DIR)/target.mk
-
 define Target/Description
 	Build firmware images for Lantiq SoC
 endef
+
+include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))
