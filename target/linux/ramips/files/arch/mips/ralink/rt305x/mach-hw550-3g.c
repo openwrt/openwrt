@@ -53,19 +53,15 @@ static struct mtd_partition hw550_3g_partitions[] = {
 	}, {
 		.name	= "kernel",
 		.offset	= 0x050000,
-		.size	= 0x180000,
+		.size	= 0x0d0000,
 	}, {
 		.name	= "rootfs",
-		.offset	= 0x1d0000,
-		.size	= 0x580000,
-	}, {
-		.name	= "user",
-		.offset	= 0x750000,
-		.size	= 0x0b0000,
+		.offset	= 0x120000,
+		.size	= 0x6e0000,
 	}, {
 		.name	= "firmware",
 		.offset	= 0x050000,
-		.size	= 0x700000,
+		.size	= 0x7b0000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
