@@ -10,6 +10,7 @@ DEFAULT_PACKAGES += \
             kmod-8139cp kmod-solos-pci \
             kmod-i2c-core kmod-i2c-gpio \
             kmod-i2c-algo-bit kmod-i2c-algo-pca kmod-i2c-algo-pcf \
+            kmod-i2c-scx200-acb \
             kmod-usb-core kmod-usb2 kmod-usb-ohci \
             kmod-cfg80211 kmod-mac80211 \
             kmod-mppe kmod-pppoe kmod-pppoa kmod-pppol2tp \
