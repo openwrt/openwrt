@@ -56,9 +56,9 @@ define add_jffs2_mark
 	echo -ne '\xde\xad\xc0\xde' >> $(1)
 endef
 
-# pad to 4k, 8k, 64k, 128k and add jffs2 end-of-filesystem mark
+# pad to 4k, 8k, 64k, 128k 256k and add jffs2 end-of-filesystem mark
 define prepare_generic_squashfs
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(1) 4 8 64 128	
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(1) 4 8 64 128 256
 endef
 
 
