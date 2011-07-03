@@ -18,6 +18,8 @@ PKG_INSTALL:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/pjproject-$(PKG_VERSION)
 
+PKG_BUILD_DEPENDS:=TARGET_lantiq:kmod-ltq-tapi TARGET_lantiq:kmod-ltq-vmmc
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/pjsip-template
@@ -64,7 +66,7 @@ EXTRA_CFLAGS:=-I$(STAGING_DIR)/usr/include/drv_tapi -I$(STAGING_DIR)/usr/include
 endif
 
 Package/pjsip-oss=$(call Package/pjsip-template,oss,)
-Package/pjsip-ltq-tapi=$(call Package/pjsip-template,ltq-tapi,@TARGET_lantiq +TARGET_lantiq:kmod-ltq-tapi +TARGET_lantiq:kmod-ltq-vmmc)
+Package/pjsip-ltq-tapi=$(call Package/pjsip-template,ltq-tapi,@TARGET_lantiq +kmod-ltq-tapi +kmod-ltq-vmmc)
 
 define Build/Prepare
 	$(PKG_UNPACK)

@@ -22,7 +22,7 @@ define KernelPackage/ltq-vmmc
   SUBMENU:=Voice over IP
   TITLE:=TAPI LL driver for Voice Macro
   URL:=http://www.lantiq.com/
-  DEPENDS:=+kmod-ltq-tapi @TARGET_lantiq_xway
+  DEPENDS:=+kmod-ltq-tapi @TARGET_lantiq
   FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.ko
   AUTOLOAD:=$(call AutoLoad,25,drv_vmmc)
   MAINTAINER:=John Crispin <blogic@openwrt.org>
