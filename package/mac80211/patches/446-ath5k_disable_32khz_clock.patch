@@ -1,0 +1,18 @@
+--- a/drivers/net/wireless/ath/ath5k/reset.c
++++ b/drivers/net/wireless/ath/ath5k/reset.c
+@@ -1287,15 +1287,6 @@ int ath5k_hw_reset(struct ath5k_hw *ah, 
+ 	 */
+ 	ath5k_hw_dma_init(ah);
+ 
+-
+-	/* Enable 32KHz clock function for AR5212+ chips
+-	 * Set clocks to 32KHz operation and use an
+-	 * external 32KHz crystal when sleeping if one
+-	 * exists */
+-	if (ah->ah_version == AR5K_AR5212 &&
+-	    op_mode != NL80211_IFTYPE_AP)
+-		ath5k_hw_set_sleep_clock(ah, true);
+-
+ 	/*
+ 	 * Disable beacons and reset the TSF
+ 	 */
