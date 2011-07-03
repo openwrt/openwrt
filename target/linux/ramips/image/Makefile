@@ -18,13 +18,13 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	UIMAGE:=$(IMG_PREFIX)-uImage-initramfs
 endif
 
-ifeq ($(CONFIG_RALINK_RT305X),y)
+ifeq ($(CONFIG_RALINK_RT288X),y)
 define kernel_entry
--a 0x80000000 -e 0x80000000
+-a 0x88000000 -e 0x88000000
 endef
 else
 define kernel_entry
--a 0x88000000 -e 0x88000000
+-a 0x80000000 -e 0x80000000
 endef
 endif
 
