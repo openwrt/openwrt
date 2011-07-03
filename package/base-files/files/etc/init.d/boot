@@ -27,9 +27,13 @@ system_config() {
 		config_get log_type "$cfg" log_type circular
 		config_get log_file "$cfg" log_file "/var/log/messages"
 		if [ "$log_type" = "file" ]; then
-			syslogd -s $log_size -O $log_file ${log_ip:+-L -R ${log_ip}:${log_port}} -S
+			syslogd -s $log_size -O $log_file \
+				${log_ip:+-L -R ${log_ip}:${log_port}} \
+				${conloglevel:+-l $conloglevel} -S
 		else
-			syslogd -C${log_size} ${log_ip:+-L -R ${log_ip}:${log_port}}
+			syslogd -C${log_size} \
+				${log_ip:+-L -R ${log_ip}:${log_port}} \
+				${conloglevel:+-l $conloglevel}
 		fi
 	fi
 	config_get klogconloglevel "$cfg" klogconloglevel
