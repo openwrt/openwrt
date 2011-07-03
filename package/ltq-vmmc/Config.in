@@ -13,7 +13,47 @@ choice
 
 	config VOICE_CPE_VMMC_WITH_DEVICE_VR9
 		bool "VR9 family"
+	
+	config VOICE_VMMC_WITH_DEVICE_FALCON
+		bool "FALC-ON"
 
+endchoice
+
+choice
+	depends on PACKAGE_kmod-ltq-vmmc
+	prompt "FXS coefficients"
+	default LTQ_VOICE_CPE_VMMC_COEF_FALCON_ETSI
+	help
+		Select country specific FXS coefficient file.
+
+	config LTQ_VOICE_CPE_VMMC_COEF_FALCON_ETSI
+		bool "ETSI_T3R10: Vl:40V, Ic:25mA, Vid:25V, Vri:45Vrms, f:25Hz"	
+		help
+		  These coefficents contains a parameter set with line impedance Zr according to ETSI.
+
+		  T:   gain in transmit direction (attenuation 3dBr) [dBr]
+		  R:   gain in receive direction (attenuation 10dBr) [dBr]
+		  Vl:  on-hook voltage limit [V]
+		  Ic:  off-hook loop current [mA]
+		  Vid: low-power-standby voltage [V]
+		  Vri: ring voltage [v]
+		  f:   ring frequency [V]
+
+	config LTQ_VOICE_CPE_VMMC_COEF_FALCON_US600R
+		bool "USA_600R_T3R10: Vl:40V, Ic:25mA, Vid:25V, Vri:45V, f:20Hz"
+		help
+		  These coefficents contains a parameter set with line impedance e.g. for USA.
+ 
+		  T:   gain in transmit direction (attenuation 3dBr) [dBr]
+		  R:   gain in receive direction (attenuation 10dBr) [dBr]
+		  Vl:  on-hook voltage limit [V]
+		  Ic:  off-hook loop current [mA]
+		  Vid: low-power-standby voltage [V]
+		  Vri: ring voltage [v]
+		  f:   ring frequency [V]
+
+	config LTQ_VOICE_CPE_VMMC_COEF_FALCON_USE_CUSTOM_FILE
+		bool "Select own FXS coefficient file"
 endchoice
 
 config VOICE_CPE_VMMC_PMC
