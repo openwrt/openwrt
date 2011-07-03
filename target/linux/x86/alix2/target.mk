@@ -1,5 +1,5 @@
 BOARDNAME:=PCEngines alix2
-FEATURES:=squashfs pci usb gpio
+FEATURES:=squashfs jffs2 ext4 pci usb gpio
 ALIX2_GPIO = $(if $(findstring 2.6.32,$(LINUX_VERSION)),gpio-cs5535,gpio-cs5535-new)
 DEFAULT_PACKAGES += \
 			kmod-crypto-hw-geode kmod-crypto-ocf \
@@ -13,9 +13,10 @@ DEFAULT_PACKAGES += \
 			kmod-i2c-scx200-acb \
 			kmod-usb-core kmod-usb2 kmod-usb-ohci \
 			kmod-cfg80211 kmod-mac80211 \
-			kmod-mppe kmod-pppoe kmod-pppoa kmod-pppo2ltp \
+			kmod-mppe kmod-pppoe kmod-pppo2ltp \
 			kmod-ath kmod-ath5k kmod-ath9k \
-			bridge ppp ppp-mod-pppoa \
+			kmod-cpu-msr \
+			bridge ppp \
 			libopenssl ocf-crypto-headers zlib hwclock hostapd
 
 CS5535_MASK:=0x0a400000

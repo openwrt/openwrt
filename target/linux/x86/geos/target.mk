@@ -3,7 +3,7 @@ FEATURES:=squashfs jffs2 ext4 pci usb gpio
 GEOS_GPIO = $(if $(findstring 2.6.32,$(LINUX_VERSION)),gpio-cs5535,gpio-cs5535-new)
 DEFAULT_PACKAGES += \
             kmod-crypto-hw-geode kmod-crypto-ocf \
-            kmod-$(GEOS_GPIO) \
+            kmod-$(GEOS_GPIO) kmod-gpio-nsc \
             kmod-wdt-geode kmod-cs5535-clockevt kmod-cs5535-mfgpt \
             kmod-cs5536 \
             kmod-hwmon-core kmod-hwmon-lm90 \
