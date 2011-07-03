@@ -16,6 +16,7 @@
 #include <linux/etherdevice.h>
 #include <linux/err.h>
 #include <linux/clk.h>
+#include <linux/rt2x00_platform.h>
 
 #include <asm/addrspace.h>
 
@@ -113,17 +114,19 @@ static struct resource rt288x_wifi_resources[] = {
 	},
 };
 
+static struct rt2x00_platform_data rt288x_wifi_data;
 static struct platform_device rt288x_wifi_device = {
 	.name			= "rt2800_wmac",
 	.resource		= rt288x_wifi_resources,
 	.num_resources	= ARRAY_SIZE(rt288x_wifi_resources),
 	.dev = {
-		.platform_data = NULL,
+		.platform_data = &rt288x_wifi_data,
 	}
 };
 
 void __init rt288x_register_wifi(void)
 {
+	rt288x_wifi_data.eeprom_file_name = "RT288X.eeprom";
 	platform_device_register(&rt288x_wifi_device);
 }
 
