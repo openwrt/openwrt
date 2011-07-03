@@ -17,9 +17,6 @@ DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg hotplug2
 DEFAULT_PACKAGES.router:=dnsmasq iptables ppp ppp-mod-pppoe kmod-ipt-nathelper firewall
 DEFAULT_PACKAGES.bootloader:=
 
-# Add device specific packages
-DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
-
 ifneq ($(DUMP),)
   all: dumpinfo
 endif
@@ -30,6 +27,9 @@ ifeq ($(DUMP),)
   SUBTARGET:=$(strip $(foreach subdir,$(patsubst $(PLATFORM_DIR)/%/target.mk,%,$(wildcard $(PLATFORM_DIR)/*/target.mk)),$(if $(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(subdir))),$(subdir))))
 else
   PLATFORM_DIR:=${CURDIR}
+  ifeq ($(SUBTARGETS),)
+    SUBTARGETS:=$(strip $(patsubst $(PLATFORM_DIR)/%/target.mk,%,$(wildcard $(PLATFORM_DIR)/*/target.mk)))
+  endif
 endif
 
 TARGETID:=$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))
@@ -47,6 +47,9 @@ else
     -include ./$(SUBTARGET)/target.mk
   endif
 endif
+
+# Add device specific packages (here below to allow device type set from subtarget)
+DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
 
 define Profile/Default
   NAME:=
