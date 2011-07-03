@@ -127,7 +127,7 @@ $(eval $(call KernelPackage,gpio-cs5535))
 define KernelPackage/gpio-cs5535-new
   SUBMENU:=$(OTHER_MENU)
   TITLE:=AMD CS5535/CS5536 GPIO driver with improved sysfs support
-  DEPENDS:=@TARGET_x86 +kmod-cs5535-mfd @!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32)
+  DEPENDS:=@TARGET_x86 @!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32)
   KCONFIG:=CONFIG_GPIO_CS5535
   FILES:=$(LINUX_DIR)/drivers/gpio/cs5535-gpio.ko
   AUTOLOAD:=$(call AutoLoad,50,cs5535-gpio)
@@ -552,7 +552,7 @@ $(eval $(call KernelPackage,cs5535-clockevt))
 define KernelPackage/cs5535-mfgpt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=CS5535/6 Multifunction General Purpose Timer
-  DEPENDS:=@TARGET_x86 +kmod-cs5535-mfd
+  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_CS5535_MFGPT
   FILES:=$(LINUX_DIR)/drivers/misc/cs5535-mfgpt.ko
   AUTOLOAD:=$(call AutoLoad,45,cs5535-mfgpt)
@@ -563,24 +563,6 @@ define KernelPackage/cs5535-mfgpt/description
 endef
 
 $(eval $(call KernelPackage,cs5535-mfgpt))
-
-
-define KernelPackage/cs5535-mfd
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=CS5535/6 Multifunction General Purpose Driver
-  DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_MFD_CS5535
-  FILES:= \
-  	$(LINUX_DIR)/drivers/mfd/mfd-core.ko \
-  	$(LINUX_DIR)/drivers/mfd/cs5535-mfd.ko 
-  AUTOLOAD:=$(call AutoLoad,44,mfd-core cs5535-mfd)
-endef
-
-define KernelPackage/cs5535-mfd/description
-  Core driver for CS5535/CS5536 MFD functions.
-endef
-
-$(eval $(call KernelPackage,cs5535-mfd))
 
 
 define KernelPackage/wdt-omap
