@@ -57,7 +57,7 @@ static struct mtd_partition dir_300b_partitions[] = {
 		.offset	= 0x140000,
 		.size	= 0x2B0000,
 	}, {
-		.name	= "openwrt",
+		.name	= "firmware",
 		.offset	= 0x050000,
 		.size	= 0x3a0000,
 	}

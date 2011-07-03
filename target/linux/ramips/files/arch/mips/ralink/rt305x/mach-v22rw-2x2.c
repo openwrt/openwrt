@@ -55,7 +55,7 @@ static struct mtd_partition v22rw_2x2_partitions[] = {
 		.offset	= 0x150000,
 		.size	= 0x2b0000,
 	}, {
-		.name	= "openwrt",
+		.name	= "firmware",
 		.offset	= 0x050000,
 		.size	= 0x3b0000,
 	}

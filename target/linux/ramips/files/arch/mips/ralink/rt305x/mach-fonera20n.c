@@ -57,7 +57,7 @@ static struct mtd_partition fonera20n_partitions[] = {
 		.offset	= 0x150000,
 		.size	= 0x6b0000,
 	}, {
-		.name	= "openwrt",
+		.name	= "firmware",
 		.offset	= 0x050000,
 		.size	= 0x7b0000,
 	}
