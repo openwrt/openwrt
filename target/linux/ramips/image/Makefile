@@ -80,8 +80,15 @@ define Image/Build/Template/GENERIC_8M
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_8M,851968,7208960)
 endef
 
+mtdlayout_dir300b1=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
+mtd_dir300b1_kernel_part_size=851968
+mtd_dir300b1_rootfs_part_size=3014656
+define Image/Build/Template/DIR300B1
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_dir300b1,$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
+endef
+
 define Image/Build/Profile/DIR300B1
-	$(call Image/Build/Template/GENERIC_4M,$(1),dir-300-b1,DIR-300-revB)
+	$(call Image/Build/Template/DIR300B1,$(1),dir-300-b1,DIR-300-revB)
 endef
 
 define Image/Build/Profile/FONERA20N
