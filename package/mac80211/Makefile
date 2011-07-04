@@ -26,7 +26,7 @@ PKG_DRIVERS = \
 	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
 	ath9k-common ath9k ath9k-htc ath net-libipw net-ipw2100 net-ipw2200 \
 	mwl8k net-hermes net-hermes-pci net-hermes-plx net-hermes-pcmcia \
-	iwl-legacy iwl3945 iwl4965 iwlagn
+	iwl-legacy iwl3945 iwl4965 iwlagn lib80211
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-mac80211 \
@@ -467,6 +467,31 @@ endef
 define KernelPackage/carl9170/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(DL_DIR)/$(CARL9170_FW)-$(CARL9170_FW_VERSION) $(1)/lib/firmware/$(CARL9170_FW)
+endef
+
+define KernelPackage/lib80211
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=802.11 Networking stack
+  FILES:= \
+	$(PKG_BUILD_DIR)/net/wireless/lib80211.ko \
+	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_wep.ko \
+	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_ccmp.ko \
+	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_tkip.ko
+  AUTOLOAD:=$(call AutoLoad,10, \
+	lib80211 \
+	lib80211_crypt_wep \
+	lib80211_crypt_ccmp \
+	lib80211_crypt_tkip \
+  )
+endef
+
+define KernelPackage/lib80211/description
+ Kernel modules for 802.11 Networking stack
+ Includes:
+ - lib80211
+ - lib80211_crypt_wep
+ - lib80211_crypt_tkip
+ - lib80211_crytp_ccmp
 endef
 
 define KernelPackage/libertas-usb
@@ -1115,10 +1140,10 @@ MAKE_OPTS:= \
 	CONFIG_IPW2100=$(if $(CONFIG_PACKAGE_kmod-net-ipw2100),m) \
 	CONFIG_IPW2200=$(if $(CONFIG_PACKAGE_kmod-net-ipw2200),m) \
 	CONFIG_NL80211=y \
-	CONFIG_LIB80211= \
-	CONFIG_LIB80211_CRYPT_WEP= \
-	CONFIG_LIB80211_CRYPT_CCMP= \
-	CONFIG_LIB80211_CRYPT_TKIP= \
+	CONFIG_LIB80211=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
+	CONFIG_LIB80211_CRYPT_WEP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
+	CONFIG_LIB80211_CRYPT_CCMP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
+	CONFIG_LIB80211_CRYPT_TKIP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
 	CONFIG_IWLAGN=$(if $(CONFIG_PACKAGE_kmod-iwlagn),m) \
 	CONFIG_IWLWIFI_LEGACY=$(if $(CONFIG_PACKAGE_kmod-iwl-legacy),m) \
 	CONFIG_COMPAT_IWL4965=$(if $(CONFIG_PACKAGE_kmod-iwl4965),m) \
@@ -1386,6 +1411,7 @@ endif
 endef
 
 $(eval $(call KernelPackage,ath5k))
+$(eval $(call KernelPackage,lib80211))
 $(eval $(call KernelPackage,libertas-usb))
 $(eval $(call KernelPackage,libertas-sd))
 $(eval $(call KernelPackage,cfg80211))
