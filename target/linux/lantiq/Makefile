@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=lantiq
 BOARDNAME:=Lantiq GPON/XWAY
 FEATURES:=squashfs jffs2
-#SUBTARGETS:=xway falcon ase
+DEFAULT_SUBTARGET:=xway
 
 LINUX_VERSION:=2.6.39.2
 
