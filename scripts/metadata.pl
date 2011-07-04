@@ -56,6 +56,7 @@ sub parse_target_metadata() {
 		/^Linux-Version:\s*(.+)\s*$/ and $target->{version} = $1;
 		/^Linux-Release:\s*(.+)\s*$/ and $target->{release} = $1;
 		/^Linux-Kernel-Arch:\s*(.+)\s*$/ and $target->{karch} = $1;
+		/^Default-Subtarget:\s*(.+)\s*$/ and $target->{def_subtarget} = $1;
 		/^Default-Packages:\s*(.+)\s*$/ and $target->{packages} = [ split(/\s+/, $1) ];
 		/^Target-Profile:\s*(.+)\s*$/ and do {
 			$profile = {
@@ -282,6 +283,14 @@ endchoice
 
 choice
 	prompt "Subtarget" if HAS_SUBTARGETS
+EOF
+	foreach my $target (@target) {
+		next unless $target->{def_subtarget};
+		print <<EOF;
+	default TARGET_$target->{conf}_$target->{def_subtarget} if TARGET_$target->{conf}
+EOF
+	}
+	print <<EOF;
 
 EOF
 	foreach my $target (@target) {
