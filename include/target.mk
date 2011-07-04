@@ -215,6 +215,7 @@ define BuildTargets/DumpCurrent
 	 echo 'Linux-Version: $(LINUX_VERSION)'; \
 	 echo 'Linux-Release: $(LINUX_RELEASE)'; \
 	 echo 'Linux-Kernel-Arch: $(LINUX_KARCH)'; \
+	$(if $(SUBTARGET),,$(if $(DEFAULT_SUBTARGET), echo 'Default-Subtarget: $(DEFAULT_SUBTARGET)'; ))
 	 echo 'Target-Description:'; \
 	 $(SH_FUNC) getvar $(call shvar,Target/Description); \
 	 echo '@@'; \
