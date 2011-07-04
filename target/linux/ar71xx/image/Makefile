@@ -856,10 +856,12 @@ define Image/Build/Profile/Madwifi
 endef
 
 define Image/Build/squashfs
-	cp $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-4k
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-4k 4
-	cp $(KDIR)/root.squashfs $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k 4 8 64
+	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-4k
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs-4k 4
+	cp $(KDIR)/root.squashfs-4k $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-4k
+	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-64k
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs-64k 4 8 64
+	cp $(KDIR)/root.squashfs-64k $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
