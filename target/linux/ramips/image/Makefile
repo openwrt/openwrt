@@ -82,6 +82,9 @@ mtd_dir300b1_kernel_part_size=851968
 mtd_dir300b1_rootfs_part_size=3014656
 define Image/Build/Template/DIR300B1
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_dir300b1,$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
+	mkwrgimg -s wrgn23_dlwbr_dir300b -d /dev/mtdblock/2 \
+		-i $(call imgname,$(1),$(2))-sysupgrade.bin \
+		-o $(call imgname,$(1),$(2))-factory.bin
 endef
 
 define Image/Build/Profile/DIR300B1
