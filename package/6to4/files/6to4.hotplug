@@ -20,6 +20,11 @@ if [ "$ACTION" = ifup ]; then
 		local wanip=$(find_6to4_wanip "$wandev")
 
 		[ -n "$wanip" ] && {
+			lsmod | grep -q ^sit || {
+				logger -t 6to4 "Tunneling driver not loaded yet, deferring action"
+				exit 0
+			}
+
 			uci_set_state network "$cfg" ipaddr "$wanip"
 			( ifup "$cfg" )&
 		}
