@@ -20,6 +20,11 @@ if [ "$ACTION" = ifup ]; then
 		local wanip=$(find_6in4_wanip "$wandev")
 
 		[ -n "$wanip" ] && {
+			lsmod | grep -q ^sit || {
+				logger -t 6in4-update "Tunneling driver not loaded yet, deferring action"
+				exit 0
+			}
+
 			local tunnelid
 			config_get tunnelid "$cfg" tunnelid
 
