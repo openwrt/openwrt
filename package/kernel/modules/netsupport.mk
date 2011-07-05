@@ -727,3 +727,18 @@ endef
 $(eval $(call KernelPackage,sctp))
 
 
+define KernelPackage/netem
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Network emulation functionality
+  DEPENDS:=+kmod-sched
+  KCONFIG:=CONFIG_NET_SCH_NETEM
+  FILES:=$(LINUX_DIR)/net/sched/sch_netem.$(LINUX_KMOD_SUFFIX)
+  AUTOLOAD:=$(call AutoLoad,99,netem)
+endef
+
+define KernelPackage/netem/description
+  Kernel modules for emulating the properties of wide area networks
+endef
+
+$(eval $(call KernelPackage,netem))
+
