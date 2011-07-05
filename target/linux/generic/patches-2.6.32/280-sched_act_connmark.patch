@@ -140,7 +140,7 @@
 +module_exit(connmark_cleanup_module);
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
-@@ -546,6 +546,18 @@ config NET_ACT_SKBEDIT
+@@ -546,6 +546,19 @@ config NET_ACT_SKBEDIT
  	  To compile this code as a module, choose M here: the
  	  module will be called skbedit.
  
@@ -148,6 +148,7 @@
 +        tristate "Connection Tracking Marking"
 +        depends on NET_CLS_ACT
 +        depends on NF_CONNTRACK
++	 depends on NF_CONNTRACK_MARK
 +        ---help---
 +	  Say Y here to restore the connmark from a scheduler action
 +

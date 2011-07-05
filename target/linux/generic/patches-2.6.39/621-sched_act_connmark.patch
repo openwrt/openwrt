@@ -140,7 +140,7 @@
 +module_exit(connmark_cleanup_module);
 --- a/net/sched/Kconfig
 +++ b/net/sched/Kconfig
-@@ -590,6 +590,18 @@ config NET_ACT_CSUM
+@@ -590,6 +590,19 @@ config NET_ACT_CSUM
  	  To compile this code as a module, choose M here: the
  	  module will be called act_csum.
  
@@ -148,6 +148,7 @@
 +        tristate "Connection Tracking Marking"
 +        depends on NET_CLS_ACT
 +        depends on NF_CONNTRACK
++	 depends on NF_CONNTRACK_MARK
 +        ---help---
 +	  Say Y here to restore the connmark from a scheduler action
 +
