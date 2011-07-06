@@ -165,7 +165,7 @@
  	case UPIO_AU:
  	case UPIO_DWAPB:
  	case UPIO_DWAPB32:
-@@ -2521,6 +2541,7 @@ static int serial8250_request_std_resour
+@@ -2534,6 +2554,7 @@ static int serial8250_request_std_resour
  	case UPIO_MEM:
  	case UPIO_DWAPB:
  	case UPIO_DWAPB32:
@@ -173,7 +173,7 @@
  		if (!up->port.mapbase)
  			break;
  
-@@ -2559,6 +2580,7 @@ static void serial8250_release_std_resou
+@@ -2572,6 +2593,7 @@ static void serial8250_release_std_resou
  	case UPIO_MEM:
  	case UPIO_DWAPB:
  	case UPIO_DWAPB32:
@@ -181,7 +181,7 @@
  		if (!up->port.mapbase)
  			break;
  
-@@ -3074,6 +3096,7 @@ static int __devinit serial8250_probe(st
+@@ -3083,6 +3105,7 @@ static int __devinit serial8250_probe(st
  		port.set_termios	= p->set_termios;
  		port.pm			= p->pm;
  		port.dev		= &dev->dev;
@@ -189,7 +189,7 @@
  		port.irqflags		|= irqflag;
  		ret = serial8250_register_port(&port);
  		if (ret < 0) {
-@@ -3223,6 +3246,7 @@ int serial8250_register_port(struct uart
+@@ -3232,6 +3255,7 @@ int serial8250_register_port(struct uart
  		uart->port.iotype       = port->iotype;
  		uart->port.flags        = port->flags | UPF_BOOT_AUTOCONF;
  		uart->port.mapbase      = port->mapbase;
