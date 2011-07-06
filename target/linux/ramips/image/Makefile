@@ -80,7 +80,7 @@ define BuildFirmware/Buffalo
 			-o $(KDIR)/vmlinux-$(2).uImage.enc; \
 		buffalo-enc -p $(3) -v 1.76 \
 			-i $(KDIR)/root.$(1) \
-			-o $(KDIR)/root.$(1).enc; \
+			-o $(KDIR)/root.$(2).enc; \
 		buffalo-tag -b $(3) -p $(3) -a ram -v 1.76 -m 1.01 \
 			-l mlang8 -f 1 -r EU \
 			-i $(KDIR)/vmlinux-$(2).uImage.enc \
