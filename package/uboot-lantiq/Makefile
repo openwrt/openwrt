@@ -45,6 +45,9 @@ Package/uboot-lantiq-easy50812_DDR166M_ramboot=$(call Package/uboot-lantiq-templ
 DDR_CONFIG_easy50712_DDR166M_ramboot:=easy50712_DDR166M
 DDR_CONFIG_easy50812_DDR166M_ramboot:=easy50812
 
+#Siemens
+Package/uboot-lantiq-gigaSX76X_DDRsamsung166=$(call Package/uboot-lantiq-template,gigaSX76X_DDRsamsung166,NOR)
+
 #Arcadyan
 Package/uboot-lantiq-arv3527P_flash=$(call Package/uboot-lantiq-template,arv3527P_flash,NOR)
 Package/uboot-lantiq-arv3527P_ramboot=$(call Package/uboot-lantiq-template,arv3527P_ramboot,RAM)
@@ -137,6 +140,7 @@ $(eval $(call BuildPackage,uboot-lantiq-easy50712_DDR166M))
 $(eval $(call BuildPackage,uboot-lantiq-easy50712_DDR166M_ramboot))
 $(eval $(call BuildPackage,uboot-lantiq-easy50812_DDR166M))
 $(eval $(call BuildPackage,uboot-lantiq-easy50812_DDR166M_ramboot))
+$(eval $(call BuildPackage,uboot-lantiq-gigaSX76X_DDRsamsung166))
 #$(eval $(call BuildPackage,uboot-lantiq-arv3527P_flash))
 #$(eval $(call BuildPackage,uboot-lantiq-arv3527P_brnboot))
 #$(eval $(call BuildPackage,uboot-lantiq-arv3527P_ramboot))

@@ -1,0 +1,35 @@
+--- a/Makefile
++++ b/Makefile
+@@ -3613,6 +3613,32 @@
+ $(eval $(call arcadyan, arv752DPW%config))
+ $(eval $(call arcadyan, arv752DPW22%config))
+ 
++gigaSX76X%config	: unconfig
++	@mkdir -p $(obj)include
++	@mkdir -p $(obj)board/infineon/easy50712
++	@[ -z "$(findstring ramboot,$@)" ] || \
++		{ echo "TEXT_BASE = 0xA0400000" >$(obj)board/infineon/easy50712/config.tmp ; \
++			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
++			$(XECHO) "... with ramboot configuration" ; \
++		}
++	@if [ "$(findstring _DDR,$@)" -a -z "$(findstring ramboot,$@)" ] ; then \
++		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
++		echo "#define CONFIG_BOOTSTRAP"  >>$(obj)include/config.h ; \
++		DDR=$(subst DDR,,$(filter DDR%,$(subst _, ,$@))); \
++		case "$${DDR}" in \
++		111M|166M|e111M|e166M|promos400|samsung166|psc166) \
++			$(XECHO) "... with DDR RAM config $${DDR}" ; \
++			echo "#define CONFIG_USE_DDR_RAM_CFG_$${DDR}" >>$(obj)include/config.h ;; \
++		*)	$(XECHO) "... DDR RAM config \\\"$${DDR}\\\" unknown, use default"; \
++		esac; \
++	fi
++	echo "#define CONFIG_SWITCH_PORT1	1"  >>$(obj)include/config.h
++	echo "#define CONFIG_SWITCH_PIN		3"  >>$(obj)include/config.h
++	echo "#define CONFIG_BUTTON_PORT0	1"  >>$(obj)include/config.h
++	echo "#define CONFIG_BUTTON_PIN		14"  >>$(obj)include/config.h
++	echo "#define CONFIG_BUTTON_LEVEL	1"  >>$(obj)include/config.h
++	@$(MKCONFIG) -a easy50712 mips mips easy50712 infineon danube
++
+ easy50712%config	: unconfig
+ 	@mkdir -p $(obj)include
+ 	@mkdir -p $(obj)board/infineon/easy50712

@@ -180,6 +180,7 @@ int checkboard (void)
 	switch (part_num)
 	{
 	case 0x129:
+	case 0x12B:
 	case 0x12D:
 		puts("Danube/Twinpass/Vinax-VE ");
 		break;
@@ -233,6 +234,19 @@ static int external_switch_init(void)
 	unsigned short chipid0=0xdead, chipid1=0xbeef;
 	static char * const name = "lq_cpe_eth";
 
+#ifdef CONFIG_SWITCH_PORT0
+	*DANUBE_GPIO_P0_ALTSEL0 &= ~(1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P0_ALTSEL1 &= ~(1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P0_OD |= (1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P0_DIR |= (1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P0_OUT |= (1<<CONFIG_SWITCH_PIN);
+#elif defined(CONFIG_SWITCH_PORT1)
+	*DANUBE_GPIO_P1_ALTSEL0 &= ~(1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P1_ALTSEL1 &= ~(1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P1_OD |= (1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P1_DIR |= (1<<CONFIG_SWITCH_PIN);
+	*DANUBE_GPIO_P1_OUT |= (1<<CONFIG_SWITCH_PIN);
+#endif
 #ifdef CLK_OUT2_25MHZ
 	*DANUBE_GPIO_P0_DIR=0x0000ae78;
 	*DANUBE_GPIO_P0_ALTSEL0=0x00008078;
@@ -245,12 +259,12 @@ static int external_switch_init(void)
 	/* earlier no valid response is available, at least on Twinpass & Tantos @ 111MHz, M4530 platform */
 	udelay(100000);
 
-	debug("\nsearching for Samurai switch ... ");
+	printf("\nsearching for Samurai switch ... ");
 	if ( (miiphy_read(name, PHYADDR(SAMURAI_ID_REG0), &chipid0)==0) &&
 	     (miiphy_read(name, PHYADDR(SAMURAI_ID_REG1), &chipid1)==0) ) {
 		if (((chipid0 & 0xFFF0) == ID_SAMURAI_0) &&
 		    ((chipid1 & 0x000F) == ID_SAMURAI_1)) {
-			debug("found");
+			printf("found");
 
 			/* enable "Crossover Auto Detect" + defaults */
 			/* P0 */
@@ -274,10 +288,11 @@ static int external_switch_init(void)
 		}
 	}
 
-	debug("\nsearching for TANTOS switch ... ");
+	printf("%04X %04x\n", chipid0, chipid1);
+	printf("\nsearching for TANTOS switch ... ");
 	if (miiphy_read(name, PHYADDR(0x101), &chipid0) == 0) {
 		if (chipid0 == ID_TANTOS) {
-			debug("found");
+			printf("found");
 
 			/* P5 Basic Control: Force Link Up */
 			miiphy_write(name, PHYADDR(0xA1), 0x0004);
@@ -315,8 +330,36 @@ static int external_switch_init(void)
 }
 #endif /* CONFIG_EXTRA_SWITCH */
 
+int board_gpio_init(void)
+{
+#ifdef CONFIG_BUTTON_PORT0
+	*DANUBE_GPIO_P0_ALTSEL0 &= ~(1<<CONFIG_BUTTON_PIN);
+	*DANUBE_GPIO_P0_ALTSEL1 &= ~(1<<CONFIG_BUTTON_PIN);
+	*DANUBE_GPIO_P0_DIR &= ~(1<<CONFIG_BUTTON_PIN);
+	if(!!(*DANUBE_GPIO_P0_IN & (1<<CONFIG_BUTTON_PIN)) == CONFIG_BUTTON_LEVEL)
+	{
+		printf("button is pressed\n");
+		setenv("bootdelay", "0");
+		setenv("bootcmd", "httpd");
+	}
+#elif defined(CONFIG_BUTTON_PORT1)
+	*DANUBE_GPIO_P1_ALTSEL0 &= ~(1<<CONFIG_BUTTON_PIN);
+	*DANUBE_GPIO_P1_ALTSEL1 &= ~(1<<CONFIG_BUTTON_PIN);
+	*DANUBE_GPIO_P1_DIR &= ~(1<<CONFIG_BUTTON_PIN);
+	if(!!(*DANUBE_GPIO_P1_IN & (1<<CONFIG_BUTTON_PIN)) == CONFIG_BUTTON_LEVEL)
+	{
+		printf("button is pressed\n");
+		setenv("bootdelay", "0");
+		setenv("bootcmd", "httpd");
+	}
+#endif
+}
+
 int board_eth_init(bd_t *bis)
 {
+
+	board_gpio_init();
+
 #if defined(CONFIG_IFX_ETOP)
 
 	*DANUBE_PMU_PWDCR &= 0xFFFFEFDF;
