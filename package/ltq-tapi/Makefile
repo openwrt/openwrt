@@ -60,12 +60,10 @@ define Build/Configure
 	$(call Build/Configure/Default)
 endef
 
-ifdef CONFIG_TARGET_lantiq
-  define Build/InstallDev
+define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/drv_tapi
 	$(CP) --dereference $(PKG_BUILD_DIR)/include/* $(1)/usr/include/drv_tapi
 	(cd $(1)/usr/include/drv_tapi && ln -s . include && ln -s ../ifxos/ifx_types.h .)
-  endef
-endif
+endef
 
 $(eval $(call KernelPackage,ltq-tapi))
