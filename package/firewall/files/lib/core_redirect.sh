@@ -91,15 +91,15 @@ fw_load_redirect() {
 	fw_get_negation destports '--dport' "$destports"
 
 	[ "$redirect_proto" == "tcpudp" ] && redirect_proto="tcp udp"
-	for redirect_proto in $redirect_proto; do
-		fw_get_negation redirect_proto '-p' "$redirect_proto"
-		for redirect_src_mac in ${redirect_src_mac:-""}; do
-			fw_get_negation redirect_src_mac '--mac-source' "$redirect_src_mac"
+	local pr; for pr in $redirect_proto; do
+		fw_get_negation pr '-p' "$pr"
+		local sm; for sm in ${redirect_src_mac:-""}; do
+			fw_get_negation sm '--mac-source' "$sm"
 			fw add $mode n $natchain $redirect_target + \
 				{ $redirect_src_ip $redirect_dest_ip } { \
 				$srcaddr $srcdaddr $redirect_proto \
 				$srcports $srcdports \
-				${redirect_src_mac:+-m mac $redirect_src_mac} \
+				${sm:+-m mac $sm} \
 				$natopt $nataddr${natports:+:$natports} \
 				$redirect_options \
 			}

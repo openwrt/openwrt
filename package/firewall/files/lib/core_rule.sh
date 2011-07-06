@@ -65,32 +65,28 @@ fw_load_rule() {
 	fw_get_negation src_spec '-s' "${rule_src_ip:+$rule_src_ip/$rule_src_ip_prefixlen}"
 	fw_get_negation dest_spec '-d' "${rule_dest_ip:+$rule_dest_ip/$rule_dest_ip_prefixlen}"
 
-	local rule_src_port_copy
-	local rule_dest_port_copy
-
 	[ "$rule_proto" == "tcpudp" ] && rule_proto="tcp udp"
-	rule_src_port_copy="$rule_src_port"
-	rule_dest_port_copy="$rule_dest_port"
-	for rule_proto in $rule_proto; do
-		rule_src_port="$rule_src_port_copy"
-		rule_dest_port="$rule_dest_port_copy"
-		fw_get_negation rule_proto '-p' "$rule_proto"
-		for rule_src_port in ${rule_src_port:-""}; do
-			fw_get_port_range rule_src_port $rule_src_port
-			fw_get_negation rule_src_port '--sport' "$rule_src_port"
-			for rule_dest_port in ${rule_dest_port:-""}; do
-				fw_get_port_range rule_dest_port $rule_dest_port
-				fw_get_negation rule_dest_port '--dport' "$rule_dest_port"
-				for rule_src_mac in ${rule_src_mac:-""}; do
-					fw_get_negation rule_src_mac '--mac-source' "$rule_src_mac"
-					for rule_icmp_type in ${rule_icmp_type:-""}; do
-						[ "$rule_proto" = "-p icmp" ] || rule_icmp_type=""
+	local pr; for pr in $rule_proto; do
+		fw_get_negation pr '-p' "$pr"
+		local sp; for sp in ${rule_src_port:-""}; do
+			fw_get_port_range sp $sp
+			fw_get_negation sp '--sport' "$sp"
+			local dp; for dp in ${rule_dest_port:-""}; do
+				fw_get_port_range dp $dp
+				fw_get_negation dp '--dport' "$dp"
+				local sm; for sm in ${rule_src_mac:-""}; do
+					fw_get_negation sm '--mac-source' "$sm"
+					local it; for it in ${rule_icmp_type:-""}; do
+						fw_get_negation it '--icmp-type' "$it"
+						case "$pr" in
+							*" icmp"|*" icmpv6"|*" 1"|*" 58") sp=""; dp="" ;;
+							*) it="" ;;
+						esac
 						fw add $mode $table $chain $target + \
 							{ $rule_src_ip $rule_dest_ip } { \
-							$src_spec $dest_spec $rule_proto \
-							$rule_src_port $rule_dest_port \
-							${rule_src_mac:+-m mac $rule_src_mac} \
-							${rule_icmp_type:+--icmp-type $rule_icmp_type} \
+							$src_spec $dest_spec \
+							$pr $sp $dp $it \
+							${sm:+-m mac $sm} \
 							${rule_limit:+-m limit --limit $rule_limit \
 								${rule_limit_burst:+--limit-burst $rule_limit_burst}} \
 							$rule_extra \
