@@ -1,6 +1,6 @@
 --- a/MAKEALL
 +++ b/MAKEALL
-@@ -730,6 +730,12 @@ LIST_arm="			\
+@@ -730,6 +730,12 @@
  ## MIPS Systems		(default = big endian)
  #########################################################################
  
@@ -13,7 +13,7 @@
  LIST_mips4kc="		\
  	incaip		\
  	qemu_mips	\
-@@ -761,6 +767,7 @@ LIST_au1xx0="		\
+@@ -761,6 +767,7 @@
  "
  
  LIST_mips="		\
@@ -23,7 +23,7 @@
  	${LIST_au1xx0}	\
 --- a/Makefile
 +++ b/Makefile
-@@ -447,7 +447,7 @@ $(obj)include/autoconf.mk: $(obj)include
+@@ -447,7 +447,7 @@
  	set -e ; \
  	: Extract the config macros ; \
  	$(CPP) $(CFLAGS) -DDO_DEPS_ONLY -dM include/common.h | \
@@ -32,7 +32,7 @@
  	mv $@.tmp $@
  
  #########################################################################
-@@ -3370,7 +3370,7 @@ incaip_config: unconfig
+@@ -3370,7 +3370,7 @@
  		{ echo "#define CPU_CLOCK_RATE 150000000" >>$(obj)include/config.h ; \
  		  $(XECHO) "... with 150MHz system clock" ; \
  		}
@@ -41,7 +41,7 @@
  
  tb0229_config: unconfig
  	@$(MKCONFIG) $(@:_config=) mips mips tb0229
-@@ -3411,6 +3411,50 @@ vct_platinumavc_onenand_small_config: un
+@@ -3411,6 +3411,53 @@
  	@$(MKCONFIG) -a vct mips mips vct micronas
  
  #########################################################################
@@ -56,8 +56,9 @@
 +			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
 +			$(XECHO) "... with ramboot configuration" ; \
 +		}
-+	@if [ "$(findstring _DDR,$@)" ] ; then \
++	@if [ "$(findstring _DDR,$@)" -a -z "$(findstring ramboot,$@)" ] ; then \
 +		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
++		echo "#define CONFIG_BOOTSTRAP"  >>$(obj)include/config.h ; \
 +		DDR=$(subst DDR,,$(filter DDR%,$(subst _, ,$@))); \
 +		case "$${DDR}" in \
 +		111M|166M|e111M|e166M|promos400|samsung166|psc166) \
@@ -73,11 +74,13 @@
 +	@mkdir -p $(obj)board/infineon/easy50812
 +	@[ -z "$(findstring ramboot,$@)" ] || \
 +		{ echo "TEXT_BASE = 0xA0400000" >$(obj)board/infineon/easy50812/config.tmp ; \
++			echo "CONFIG_BOOTSTRAP = 0" >>$(obj)board/infineon/easy50812/config.tmp ; \
 +			echo "#define CONFIG_SYS_RAMBOOT" >>$(obj)include/config.h ; \
 +			$(XECHO) "... with ramboot configuration" ; \
 +		}
-+	@if [ "$(findstring _DDR,$@)" ] ; then \
++	@if [ "$(findstring _DDR,$@)" -a -z "$(findstring ramboot,$@)" ] ; then \
 +		echo "#define CONFIG_USE_DDR_RAM"  >>$(obj)include/config.h ; \
++		echo "#define CONFIG_BOOTSTRAP"  >>$(obj)include/config.h ; \
 +		DDR=$(subst DDR,,$(filter DDR%,$(subst _, ,$@))); \
 +		case "$${DDR}" in \
 +		111M|166M|e111M|e166M|promos400|samsung166|psc166) \
@@ -94,7 +97,7 @@
  
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -43,6 +43,7 @@ COBJS-$(CONFIG_FEC_MXC) += fec_mxc.o
+@@ -43,6 +43,7 @@
  COBJS-$(CONFIG_FSLDMAFEC) += fsl_mcdmafec.o mcfmii.o
  COBJS-$(CONFIG_FTMAC100) += ftmac100.o
  COBJS-$(CONFIG_GRETH) += greth.o
@@ -104,7 +107,7 @@
  COBJS-$(CONFIG_DRIVER_KS8695ETH) += ks8695eth.o
 --- a/drivers/serial/Makefile
 +++ b/drivers/serial/Makefile
-@@ -28,6 +28,7 @@ LIB	:= $(obj)libserial.a
+@@ -28,6 +28,7 @@
  COBJS-$(CONFIG_ARM_DCC) += arm_dcc.o
  COBJS-$(CONFIG_AT91RM9200_USART) += at91rm9200_usart.o
  COBJS-$(CONFIG_ATMEL_USART) += atmel_usart.o
@@ -114,7 +117,7 @@
  COBJS-$(CONFIG_SYS_NS16550) += ns16550.o
 --- a/include/netdev.h
 +++ b/include/netdev.h
-@@ -57,6 +57,7 @@ int fecmxc_initialize (bd_t *bis);
+@@ -57,6 +57,7 @@
  int ftmac100_initialize(bd_t *bits);
  int greth_initialize(bd_t *bis);
  void gt6426x_eth_initialize(bd_t *bis);
@@ -122,7 +125,7 @@
  int inca_switch_initialize(bd_t *bis);
  int kirkwood_egiga_initialize(bd_t *bis);
  int lan91c96_initialize(u8 dev_num, int base_addr);
-@@ -85,6 +86,7 @@ int uec_standard_init(bd_t *bis);
+@@ -85,6 +86,7 @@
  int uli526x_initialize(bd_t *bis);
  int sh_eth_initialize(bd_t *bis);
  int dm9000_initialize(bd_t *bis);
