@@ -166,7 +166,7 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 	while [ $# -gt 1 ]; do
 		# special parameter handling
 		case "$1:$2" in
-			-p:icmp*|--protocol:icmp*)
+			-p:icmp*|-p:1|-p:58|--protocol:icmp*|--protocol:1|--protocol:58)
 				[ "$app" = ip6tables ] && \
 					cmdline="$cmdline -p icmpv6" || \
 					cmdline="$cmdline -p icmp"
