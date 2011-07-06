@@ -934,16 +934,6 @@
  obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o
  obj-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o
  obj-$(CONFIG_LOCAL_TIMERS)		+= localtimer.o
---- a/arch/arm/tools/mach-types
-+++ b/arch/arm/tools/mach-types
-@@ -444,6 +444,7 @@ icontrol		MACH_ICONTROL		ICONTROL		2624
- qsd8x50a_st1_5		MACH_QSD8X50A_ST1_5	QSD8X50A_ST1_5		2627
- mx23evk			MACH_MX23EVK		MX23EVK			2629
- ap4evb			MACH_AP4EVB		AP4EVB			2630
-+gw2388			MACH_GW2388		GW2388			2635
- mityomapl138		MACH_MITYOMAPL138	MITYOMAPL138		2650
- guruplug		MACH_GURUPLUG		GURUPLUG		2659
- spear310		MACH_SPEAR310		SPEAR310		2660
 --- a/arch/arm/mach-cns3xxx/pcie.c
 +++ b/arch/arm/mach-cns3xxx/pcie.c
 @@ -365,7 +365,7 @@ static int cns3xxx_pcie_abort_handler(un
