@@ -22,7 +22,7 @@ define KernelPackage/ltq-tapi
   SUBMENU:=Voice over IP
   TITLE:=Lantiq TAPI subsystem
   URL:=http://www.lantiq.com/
-  DEPENDS:=+kmod-ltq-ifxos @TARGET_lantiq
+  DEPENDS:=+kmod-ltq-ifxos @TARGET_lantiq_xway
   FILES:=$(PKG_BUILD_DIR)/src/drv_tapi.ko
   AUTOLOAD:=$(call AutoLoad,20,drv_tapi)
   MAINTAINER:=John Crispin <blogic@openwrt.org>
@@ -60,10 +60,12 @@ define Build/Configure
 	$(call Build/Configure/Default)
 endef
 
-define Build/InstallDev
+ifdef CONFIG_TARGET_lantiq
+  define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/drv_tapi
 	$(CP) --dereference $(PKG_BUILD_DIR)/include/* $(1)/usr/include/drv_tapi
 	(cd $(1)/usr/include/drv_tapi && ln -s . include && ln -s ../ifxos/ifx_types.h .)
-endef
+  endef
+endif
 
 $(eval $(call KernelPackage,ltq-tapi))
