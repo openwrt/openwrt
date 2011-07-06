@@ -27,8 +27,12 @@ static char *region_table[] = {
 	"JP", "US", "EU", "AP", "TW", "KR"
 };
 
+#define MAX_INPUT_FILES	2
+
 static char *progname;
-static char *ifname;
+static char *ifname[MAX_INPUT_FILES];
+static ssize_t fsize[MAX_INPUT_FILES];
+static int num_files;
 static char *ofname;
 static char *product;
 static char *brand;
@@ -89,7 +93,9 @@ static int check_params(void)
 	}						\
 } while (0)
 
-	CHECKSTR(ifname, "input file", 0);
+	if (num_files == 0)
+		ERR("no input files specified");
+
 	CHECKSTR(ofname, "output file", 0);
 	CHECKSTR(brand, "brand", TAG_BRAND_LEN);
 	CHECKSTR(product, "product", TAG_PRODUCT_LEN);
@@ -139,7 +145,18 @@ static int process_region(char *reg)
 	return -1;
 }
 
-static void fixup_tag(unsigned char *buf, ssize_t buflen, ssize_t datalen)
+static int process_ifname(char *name)
+{
+	if (num_files >= ARRAY_SIZE(ifname)) {
+		ERR("too many input files specified");
+		return -1;
+	}
+
+	ifname[num_files++] = name;
+	return 0;
+}
+
+static void fixup_tag(unsigned char *buf, ssize_t buflen)
 {
 	struct buffalo_tag *tag = (struct buffalo_tag *) buf;
 
@@ -161,9 +178,44 @@ static void fixup_tag(unsigned char *buf, ssize_t buflen, ssize_t datalen)
 	}
 
 	tag->len = htonl(buflen);
-	tag->data_len = htonl(datalen);
+	tag->data_len = htonl(fsize[0]);
 	tag->base1 = htonl(base1);
 	tag->base2 = htonl(base2);
+	tag->flag = flag;
+
+	if (hwver) {
+		memcpy(tag->hwv, "hwv", 3);
+		memcpy(tag->hwv_val, hwver, strlen(hwver));
+	}
+
+	if (!skipcrc)
+		tag->crc = htonl(buffalo_crc(buf, buflen));
+}
+
+static void fixup_tag2(unsigned char *buf, ssize_t buflen)
+{
+	struct buffalo_tag2 *tag = (struct buffalo_tag2 *) buf;
+
+	memset(tag, '\0', sizeof(*tag));
+
+	memcpy(tag->brand, brand, strlen(brand));
+	memcpy(tag->product, product, strlen(product));
+	memcpy(tag->platform, platform, strlen(platform));
+	memcpy(tag->ver_major, major, strlen(major));
+	memcpy(tag->ver_minor, minor, strlen(minor));
+	memcpy(tag->language, language, strlen(language));
+
+	if (num_regions > 1) {
+		tag->region_code[0] = 'M';
+		tag->region_code[1] = '_';
+		tag->region_mask = htonl(region_mask);
+	} else {
+		memcpy(tag->region_code, region_code, 2);
+	}
+
+	tag->total_len = htonl(buflen);
+	tag->len1 = htonl(fsize[0]);
+	tag->len2 = htonl(fsize[1]);
 	tag->flag = flag;
 
 	if (hwver) {
@@ -178,32 +230,50 @@ static void fixup_tag(unsigned char *buf, ssize_t buflen, ssize_t datalen)
 static int tag_file(void)
 {
 	unsigned char *buf;
-	ssize_t fsize;
+	ssize_t offset;
+	ssize_t hdrlen;
 	ssize_t buflen;
 	int err;
 	int ret = -1;
+	int i;
 
-	fsize = get_file_size(ifname);
-	if (fsize < 0) {
-		ERR("unable to get size of '%s'", ifname);
-		goto out;
+	if (num_files == 1)
+		hdrlen = sizeof(struct buffalo_tag);
+	else
+		hdrlen = sizeof(struct buffalo_tag2);
+
+	buflen = hdrlen;
+
+	for (i = 0; i < num_files; i++) {
+		fsize[i] = get_file_size(ifname[i]);
+		if (fsize[i] < 0) {
+			ERR("unable to get size of '%s'", ifname[i]);
+			goto out;
+		}
+		buflen += fsize[i];
 	}
 
-	buflen = fsize + sizeof(struct buffalo_tag);
 	buf = malloc(buflen);
 	if (!buf) {
 		ERR("no memory for buffer\n");
 		goto out;
 	}
 
-	err = read_file_to_buf(ifname, buf + sizeof(struct buffalo_tag),
-			       fsize);
-	if (err) {
-		ERR("unable to read from file '%s'", ifname);
-		goto free_buf;
+	offset = hdrlen;
+	for (i = 0; i < num_files; i++) {
+		err = read_file_to_buf(ifname[i], buf + offset, fsize[i]);
+		if (err) {
+			ERR("unable to read from file '%s'", ifname[i]);
+			goto free_buf;
+		}
+
+		offset += fsize[i];
 	}
 
-	fixup_tag(buf, buflen, fsize);
+	if (num_files == 1)
+		fixup_tag(buf, buflen);
+	else
+		fixup_tag2(buf, buflen);
 
 	err = write_buf_to_file(ofname, buf, buflen);
 	if (err) {
@@ -250,7 +320,9 @@ int main(int argc, char *argv[])
 			flag = strtoul(optarg, NULL, 2);
 			break;
 		case 'i':
-			ifname = optarg;
+			err = process_ifname(optarg);
+			if (err)
+				goto out;
 			break;
 		case 'l':
 			language = optarg;
