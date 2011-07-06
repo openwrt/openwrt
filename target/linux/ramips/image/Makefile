@@ -67,6 +67,28 @@ define BuildFirmware/Generic
 	fi; fi
 endef
 
+define BuildFirmware/Buffalo
+	$(call PatchKernelLzma,$(2),board=$(3) $($(4)))
+	$(call MkImage,lzma,"$(KDIR)/vmlinux-$(2).bin.lzma","$(KDIR)/vmlinux-$(2).uImage")
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).uImage"` -gt $(5) ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(6) ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		buffalo-enc -p $(3) -v 1.76 \
+			-i $(KDIR)/vmlinux-$(2).uImage \
+			-o $(KDIR)/vmlinux-$(2).uImage.enc; \
+		buffalo-enc -p $(3) -v 1.76 \
+			-i $(KDIR)/root.$(1) \
+			-o $(KDIR)/root.$(1).enc; \
+		buffalo-tag -b $(3) -p $(3) -a ram -v 1.76 -m 1.01 \
+			-l mlang8 -f 1 -r EU \
+			-i $(KDIR)/vmlinux-$(2).uImage.enc \
+			-i $(KDIR)/root.$(2).enc \
+			-o $(call imgname,$(1),$(2))-factory-EU.bin; \
+	fi; fi
+endef
+
 mtdlayout_4M=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
 define Image/Build/Template/GENERIC_4M
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_4M,851968,3014656)
@@ -103,8 +125,10 @@ define Image/Build/Profile/V22RW2X2
 	$(call Image/Build/Template/GENERIC_4M,$(1),v22rw-2x2,V22RW-2X2)
 endef
 
+mtdlayout_whrg300n=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,960k(kernel),2752k(rootfs),64k(user)ro,3712k@0x50000(firmware)
 define Image/Build/Profile/WHRG300N
 	$(call Image/Build/Template/GENERIC_4M,$(1),whr-g300n,WHR-G300N)
+	$(call BuildFirmware/Buffalo,$(1),whr-g300n,WHR-G300N,mtdlayout_whrg300n,983040,3801088)
 endef
 
 define Image/Build/Profile/HW5503G
