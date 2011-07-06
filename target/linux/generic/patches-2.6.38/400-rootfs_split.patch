@@ -260,10 +260,10 @@
  
 --- a/drivers/mtd/mtdchar.c
 +++ b/drivers/mtd/mtdchar.c
-@@ -841,6 +841,13 @@ static int mtd_ioctl(struct file *file,
- 		file->f_pos = 0;
+@@ -956,6 +956,13 @@ static int mtd_ioctl(struct file *file,
  		break;
  	}
+ #endif
 +#ifdef CONFIG_MTD_PARTITIONS
 +	case MTDREFRESH:
 +	{
@@ -272,8 +272,8 @@
 +	}
 +#endif
  
- 	case OTPGETREGIONCOUNT:
- 	case OTPGETREGIONINFO:
+ 	default:
+ 		ret = -ENOTTY;
 --- a/include/linux/mtd/mtd.h
 +++ b/include/linux/mtd/mtd.h
 @@ -125,6 +125,7 @@ struct nand_ecclayout {
@@ -326,7 +326,7 @@
  #define MEMWRITEOOB64		_IOWR('M', 21, struct mtd_oob_buf64)
  #define MEMREADOOB64		_IOWR('M', 22, struct mtd_oob_buf64)
  #define MEMISLOCKED		_IOR('M', 23, struct erase_info_user)
-+#define MTDREFRESH		_IO('M', 23)
++#define MTDREFRESH		_IO('M', 24)
  
  /*
   * Obsolete legacy interface. Keep it in order not to break userspace
