@@ -52,6 +52,7 @@ define Host/Compile
 	$(call cc,xorimage)
 	$(call cc,buffalo-enc buffalo-lib, -Wall)
 	$(call cc,buffalo-tag buffalo-lib, -Wall)
+	$(call cc,buffalo-tftp buffalo-lib, -Wall)
 	$(call cc,mkwrgimg md5, -Wall)
 endef
 
