@@ -65,8 +65,15 @@ fw_load_rule() {
 	fw_get_negation src_spec '-s' "${rule_src_ip:+$rule_src_ip/$rule_src_ip_prefixlen}"
 	fw_get_negation dest_spec '-d' "${rule_dest_ip:+$rule_dest_ip/$rule_dest_ip_prefixlen}"
 
+	local rule_src_port_copy
+	local rule_dest_port_copy
+
 	[ "$rule_proto" == "tcpudp" ] && rule_proto="tcp udp"
+	rule_src_port_copy="$rule_src_port"
+	rule_dest_port_copy="$rule_dest_port"
 	for rule_proto in $rule_proto; do
+		rule_src_port="$rule_src_port_copy"
+		rule_dest_port="$rule_dest_port_copy"
 		fw_get_negation rule_proto '-p' "$rule_proto"
 		for rule_src_port in ${rule_src_port:-""}; do
 			fw_get_port_range rule_src_port $rule_src_port
