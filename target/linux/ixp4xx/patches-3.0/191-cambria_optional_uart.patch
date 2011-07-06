@@ -1,0 +1,217 @@
+--- a/arch/arm/mach-ixp4xx/cambria-setup.c
++++ b/arch/arm/mach-ixp4xx/cambria-setup.c
+@@ -34,6 +34,7 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+ #include <asm/setup.h>
++#include <linux/irq.h>
+ 
+ struct cambria_board_info {
+ 	unsigned char	*model;
+@@ -127,6 +128,45 @@ static struct platform_device cambria_ua
+ 	.resource	= &cambria_uart_resource,
+ };
+ 
++static struct resource cambria_optional_uart_resources[] = {
++	{
++		.start	= 0x52000000,
++		.end	= 0x52000fff,
++		.flags	= IORESOURCE_MEM
++	},
++	{
++		.start	= 0x53000000,
++		.end	= 0x53000fff,
++		.flags	= IORESOURCE_MEM
++	}
++};
++
++static struct plat_serial8250_port cambria_optional_uart_data[] = {
++	{
++		.flags		= UPF_BOOT_AUTOCONF,
++		.iotype		= UPIO_MEM_DELAY,
++		.regshift	= 0,
++		.uartclk	= 1843200,
++		.rw_delay	= 2,
++	},
++	{
++		.flags		= UPF_BOOT_AUTOCONF,
++		.iotype		= UPIO_MEM_DELAY,
++		.regshift	= 0,
++		.uartclk	= 1843200,
++		.rw_delay	= 2,
++	},
++  { },
++};
++
++static struct platform_device cambria_optional_uart = {
++	.name		= "serial8250",
++	.id		= PLAT8250_DEV_PLATFORM1,
++	.dev.platform_data	= cambria_optional_uart_data,
++	.num_resources	= 2,
++	.resource	= cambria_optional_uart_resources,
++};
++
+ static struct resource cambria_pata_resources[] = {
+ 	{
+ 		.flags	= IORESOURCE_MEM
+@@ -283,6 +323,19 @@ static void __init cambria_gw23xx_setup(
+ 
+ static void __init cambria_gw2350_setup(void)
+ {
++	*IXP4XX_EXP_CS2 = 0xBFFF3C43;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO3, IRQ_TYPE_EDGE_RISING);
++	cambria_optional_uart_data[0].mapbase	= 0x52FF0000;
++	cambria_optional_uart_data[0].membase	= (void __iomem *)ioremap(0x52FF0000, 0x0fff);
++	cambria_optional_uart_data[0].irq		= IRQ_IXP4XX_GPIO3;
++
++	*IXP4XX_EXP_CS3 = 0xBFFF3C43;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO4, IRQ_TYPE_EDGE_RISING);
++	cambria_optional_uart_data[1].mapbase	= 0x53FF0000;
++	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53FF0000, 0x0fff);
++	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
++
++	platform_device_register(&cambria_optional_uart);
+ 	platform_device_register(&cambria_npec_device);
+ 	platform_device_register(&cambria_npea_device);
+ 
+@@ -294,6 +347,19 @@ static void __init cambria_gw2350_setup(
+ 
+ static void __init cambria_gw2358_setup(void)
+ {
++	*IXP4XX_EXP_CS3 = 0xBFFF3C43;
++	irq_set_irq_type(IRQ_IXP4XX_GPIO3, IRQ_TYPE_EDGE_RISING);
++	cambria_optional_uart_data[0].mapbase	= 0x53FC0000;
++	cambria_optional_uart_data[0].membase	= (void __iomem *)ioremap(0x53FC0000, 0x0fff);
++	cambria_optional_uart_data[0].irq		= IRQ_IXP4XX_GPIO3;
++
++	irq_set_irq_type(IRQ_IXP4XX_GPIO4, IRQ_TYPE_EDGE_RISING);
++	cambria_optional_uart_data[1].mapbase	= 0x53F80000;
++	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53F80000, 0x0fff);
++	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
++
++	platform_device_register(&cambria_optional_uart);
++
+ 	platform_device_register(&cambria_npec_device);
+ 	platform_device_register(&cambria_npea_device);
+ 
+--- a/include/linux/serial_8250.h
++++ b/include/linux/serial_8250.h
+@@ -27,6 +27,7 @@ struct plat_serial8250_port {
+ 	void            *private_data;
+ 	unsigned char	regshift;	/* register shift */
+ 	unsigned char	iotype;		/* UPIO_* */
++	unsigned int rw_delay;	/* udelay for slower busses IXP4XX Expansion Bus */
+ 	unsigned char	hub6;
+ 	upf_t		flags;		/* UPF_* flags */
+ 	unsigned int	type;		/* If UPF_FIXED_TYPE */
+--- a/include/linux/serial_core.h
++++ b/include/linux/serial_core.h
+@@ -320,6 +320,7 @@ struct uart_port {
+ #define UPIO_DWAPB		(6)			/* DesignWare APB UART */
+ #define UPIO_RM9000		(7)			/* RM9000 type IO */
+ #define UPIO_DWAPB32		(8)			/* DesignWare APB UART (32 bit accesses) */
++#define UPIO_MEM_DELAY		(9)
+ 
+ 	unsigned int		read_status_mask;	/* driver specific */
+ 	unsigned int		ignore_status_mask;	/* driver specific */
+@@ -362,6 +363,7 @@ struct uart_port {
+ 
+ 	unsigned int		mctrl;			/* current modem ctrl settings */
+ 	unsigned int		timeout;		/* character-based timeout */
++	unsigned int		rw_delay;		/* udelay for slow busses, IXP4XX Expansion Bus */
+ 	unsigned int		type;			/* port type */
+ 	const struct uart_ops	*ops;
+ 	unsigned int		custom_divisor;
+--- a/drivers/tty/serial/8250.c
++++ b/drivers/tty/serial/8250.c
+@@ -419,6 +419,20 @@ static void mem_serial_out(struct uart_p
+ 	writeb(value, p->membase + offset);
+ }
+ 
++static unsigned int memdelay_serial_in(struct uart_port *p, int offset)
++{
++	struct uart_8250_port *up = (struct uart_8250_port *)p;
++	udelay(up->port.rw_delay);
++	return mem_serial_in(p, offset);
++}
++
++static void memdelay_serial_out(struct uart_port *p, int offset, int value)
++{
++	struct uart_8250_port *up = (struct uart_8250_port *)p;
++	udelay(up->port.rw_delay);
++	mem_serial_out(p, offset, value);
++}
++
+ static void mem32_serial_out(struct uart_port *p, int offset, int value)
+ {
+ 	offset = map_8250_out_reg(p, offset) << p->regshift;
+@@ -530,6 +544,11 @@ static void set_io_from_upio(struct uart
+ 		p->serial_out = mem32_serial_out;
+ 		break;
+ 
++	case UPIO_MEM_DELAY:
++		p->serial_in = memdelay_serial_in;
++		p->serial_out = memdelay_serial_out;
++		break;
++
+ 	case UPIO_AU:
+ 		p->serial_in = au_serial_in;
+ 		p->serial_out = au_serial_out;
+@@ -566,6 +585,7 @@ serial_out_sync(struct uart_8250_port *u
+ 	switch (p->iotype) {
+ 	case UPIO_MEM:
+ 	case UPIO_MEM32:
++	case UPIO_MEM_DELAY:
+ 	case UPIO_AU:
+ 	case UPIO_DWAPB:
+ 	case UPIO_DWAPB32:
+@@ -2570,6 +2590,7 @@ static int serial8250_request_std_resour
+ 	case UPIO_MEM:
+ 	case UPIO_DWAPB:
+ 	case UPIO_DWAPB32:
++	case UPIO_MEM_DELAY:
+ 		if (!up->port.mapbase)
+ 			break;
+ 
+@@ -2608,6 +2629,7 @@ static void serial8250_release_std_resou
+ 	case UPIO_MEM:
+ 	case UPIO_DWAPB:
+ 	case UPIO_DWAPB32:
++	case UPIO_MEM_DELAY:
+ 		if (!up->port.mapbase)
+ 			break;
+ 
+@@ -3119,6 +3141,7 @@ static int __devinit serial8250_probe(st
+ 		port.set_termios	= p->set_termios;
+ 		port.pm			= p->pm;
+ 		port.dev		= &dev->dev;
++		port.rw_delay		= p->rw_delay;
+ 		port.irqflags		|= irqflag;
+ 		ret = serial8250_register_port(&port);
+ 		if (ret < 0) {
+@@ -3268,6 +3291,7 @@ int serial8250_register_port(struct uart
+ 		uart->port.iotype       = port->iotype;
+ 		uart->port.flags        = port->flags | UPF_BOOT_AUTOCONF;
+ 		uart->port.mapbase      = port->mapbase;
++		uart->port.rw_delay			= port->rw_delay;
+ 		uart->port.private_data = port->private_data;
+ 		if (port->dev)
+ 			uart->port.dev = port->dev;
+--- a/drivers/tty/serial/serial_core.c
++++ b/drivers/tty/serial/serial_core.c
+@@ -2059,6 +2059,7 @@ uart_report_port(struct uart_driver *drv
+ 		snprintf(address, sizeof(address),
+ 			 "I/O 0x%lx offset 0x%x", port->iobase, port->hub6);
+ 		break;
++	case UPIO_MEM_DELAY:
+ 	case UPIO_MEM:
+ 	case UPIO_MEM32:
+ 	case UPIO_AU:
+@@ -2480,6 +2481,7 @@ int uart_match_port(struct uart_port *po
+ 	case UPIO_HUB6:
+ 		return (port1->iobase == port2->iobase) &&
+ 		       (port1->hub6   == port2->hub6);
++	case UPIO_MEM_DELAY:
+ 	case UPIO_MEM:
+ 	case UPIO_MEM32:
+ 	case UPIO_AU:
