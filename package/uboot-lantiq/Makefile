@@ -112,15 +112,15 @@ endef
 
 define Package/uboot-lantiq-$(BUILD_VARIANT)/install
 	mkdir -p $(1)
-ifneq ($(findstring flash,$(BUILD_VARIANT)),)
-	dd \
-		if=$(PKG_BUILD_DIR)/$(BUILD_VARIANT)/u-boot-bootstrap.bin \
-		of=$(1)/u-boot-bootstrap.bin \
-		bs=64k conv=sync
-else
+ifneq ($(findstring ramboot,$(BUILD_VARIANT)),)
 	dd \
 		if=$(PKG_BUILD_DIR)/$(BUILD_VARIANT)/u-boot.bin \
 		of=$(1)/u-boot.bin \
+		bs=64k conv=sync
+else
+	dd \
+		if=$(PKG_BUILD_DIR)/$(BUILD_VARIANT)/u-boot-bootstrap.bin \
+		of=$(1)/u-boot-bootstrap.bin \
 		bs=64k conv=sync
 endif
 ifneq ($(findstring ramboot,$(BUILD_VARIANT)),)

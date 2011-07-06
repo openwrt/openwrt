@@ -5647,13 +5647,11 @@
  
 --- a/common/main.c
 +++ b/common/main.c
-@@ -273,6 +273,10 @@ static __inline__ int abortboot(int boot
+@@ -273,6 +273,8 @@ static __inline__ int abortboot(int boot
  
  void main_loop (void)
  {
-+#ifdef CONFIG_CMD_HTTPD
 +	int ret;
-+#endif
 +
  #ifndef CONFIG_SYS_HUSH_PARSER
  	static char lastcommand[CONFIG_SYS_CBSIZE] = { 0, };
