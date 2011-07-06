@@ -1,0 +1,13 @@
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -737,7 +737,9 @@ bool ath9k_hw_stopdmarecv(struct ath_hw 
+ 
+ 		if (!AR_SREV_9300_20_OR_LATER(ah)) {
+ 			mac_status = REG_READ(ah, AR_DMADBG_7) & 0x7f0;
+-			if (mac_status == 0x1c0 && mac_status == last_mac_status) {
++			if (mac_status == last_mac_status &&
++			    (mac_status == 0x1c0 ||
++			     (AR_SREV_9100(ah) && mac_status == 0x020))) {
+ 				*reset = true;
+ 				break;
+ 			}
