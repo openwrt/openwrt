@@ -40,7 +40,7 @@ get_status_led() {
 		status_led="v22rw-2x2:green:security"
 		;;
 	whr-g300n)
-		status_led="whr-g300n:red:diag"
+		status_led="whr-g300n:green:router"
 		;;
 	hw550-3g)
 		status_led="hw550-3g:green:status"
