@@ -129,6 +129,13 @@ mtdlayout_whrg300n=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k
 define Image/Build/Profile/WHRG300N
 	$(call Image/Build/Template/GENERIC_4M,$(1),whr-g300n,WHR-G300N)
 	$(call BuildFirmware/Buffalo,$(1),whr-g300n,WHR-G300N,mtdlayout_whrg300n,983040,3801088)
+	( \
+		echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
+			dd bs=512 count=1 conv=sync; \
+		dd if=$(call imgname,$(1),whr-g300n)-sysupgrade.bin; \
+	) > $(KDIR)/whr-g300n-tftp.tmp
+	buffalo-tftp -i $(KDIR)/whr-g300n-tftp.tmp \
+		-o $(call imgname,$(1),whr-g300n)-tftp.bin
 endef
 
 define Image/Build/Profile/HW5503G
