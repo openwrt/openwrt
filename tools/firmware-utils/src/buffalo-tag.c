@@ -97,7 +97,9 @@ static int check_params(void)
 	CHECKSTR(major, "major version", TAG_VERSION_LEN);
 	CHECKSTR(minor, "minor version", TAG_VERSION_LEN);
 	CHECKSTR(language, "language", TAG_LANGUAGE_LEN);
-	CHECKSTR(hwver, "hardware version", 2);
+
+	if (hwver)
+		CHECKSTR(hwver, "hardware version", 2);
 
 	if (num_regions == 0) {
 		ERR("no region code specified");
