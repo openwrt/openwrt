@@ -1,6 +1,24 @@
 --- a/configure.in
 +++ b/configure.in
-@@ -986,6 +986,11 @@ AC_ARG_WITH(device,
+@@ -956,14 +956,15 @@ AC_DEFINE([VMMC],[1],[enable VMMC suppor
+ AM_CONDITIONAL(DANUBE, false)
+ AM_CONDITIONAL(AR9, false)
+ AM_CONDITIONAL(VR9, false)
++AM_CONDITIONAL(FALCON, false)
+ AC_ARG_WITH(device,
+    AC_HELP_STRING(
+-      [--with-device=DANUBE|TWINPASS|AR9|VR9],
++      [--with-device=DANUBE|TWINPASS|AR9|VR9|FALCON],
+       [Set device type, default is DANUBE]
+    ),
+    [
+       if test "$withval" = yes; then
+-         AC_MSG_ERROR([Set device type! Valid choices are DANUBE|TWINPASS|AR9|VR9]);
++         AC_MSG_ERROR([Set device type! Valid choices are DANUBE|TWINPASS|AR9|VR9|FALCON]);
+       else
+          case $withval in
+            DANUBE)
+@@ -986,8 +987,13 @@ AC_ARG_WITH(device,
                 AC_DEFINE([SYSTEM_VR9],[1],[enable VR9 specific code])
                 AM_CONDITIONAL(VR9, true)
             ;;
@@ -10,8 +28,11 @@
 +               AM_CONDITIONAL(FALCON, true)
 +           ;;
             *)
-                AC_MSG_ERROR([Set device type! Valid choices are DANUBE|TWINPASS|AR9|VR9]);
+-               AC_MSG_ERROR([Set device type! Valid choices are DANUBE|TWINPASS|AR9|VR9]);
++               AC_MSG_ERROR([Set device type! Valid choices are DANUBE|TWINPASS|AR9|VR9|FALCON]);
             ;;
+        esac
+       fi
 --- a/src/Makefile.am
 +++ b/src/Makefile.am
 @@ -70,6 +70,11 @@ drv_vmmc_SOURCES +=\
