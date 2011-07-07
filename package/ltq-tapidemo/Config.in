@@ -1,12 +1,9 @@
-#menu "Configuration"
-#	depends on PACKAGE_ltq-tapidemo
 choice
 	prompt "board selection"
 	depends on PACKAGE_ltq-tapidemo
-	default VOICE_CPE_TAPIDEMO_BOARD_EASY50712_V3  if TARGET_ifxmips_platform_danube
-	default VOICE_CPE_TAPIDEMO_BOARD_EASY508xx     if TARGET_ifxmips_platform_ar9
-	default VOICE_CPE_TAPIDEMO_BOARD_EASY80910     if TARGET_ifxmips_platform_vr9
-	default VOICE_CPE_TAPIDEMO_BOARD_EASY50812
+	default VOICE_CPE_TAPIDEMO_BOARD_EASY50712_V3	if TARGET_lantiq_xway
+	default VOICE_CPE_TAPIDEMO_BOARD_EASY508xx	if TARGET_lantiq_ar9
+	default VOICE_CPE_TAPIDEMO_BOARD_EASY80910	if TARGET_lantiq_vr9
 	help
 		Select the target platform.
 
@@ -26,16 +23,25 @@ endchoice
 config VOICE_CPE_TAPIDEMO_QOS
 	bool "enable QOS support"
 	depends on PACKAGE_ltq-tapidemo
-	default n
+	select PACKAGE_kmod-ltq-kpi2udp
+	default y
 	help
 		Option to enable the KPI2UDP RTP packet acceleration path
 		(highly recommended for VoIP).
 
 config  VOICE_CPE_TAPIDEMO_FAX_T.38_FW
 	bool "enable T.38 fax relay"
-	depends on (TARGET_ifxmips_platform_ar9 || TARGET_ifxmips_platform_vr9) && PACKAGE_ltq
+	depends on (TARGET_lantiq_ar9 || TARGET_lantiq_vr9) && PACKAGE_ltq-tapidemo
 	default n
 	help
 		enable T.38 fax relay demo.
 
-#endmenu
+config VOICE_CPE_TAPIDEMO_FW_FILE
+	string "override default firmware file"
+	depends on PACKAGE_ltq-tapidemo
+	default "falcon_voip_fw.bin" if TARGET_lantiq_falcon
+
+config VOICE_CPE_TAPIDEMO_BBD_FILE
+	string "override default coefficient file"
+	depends on PACKAGE_ltq-tapidemo
+	default "falcon_bbd.bin" if TARGET_lantiq_falcon

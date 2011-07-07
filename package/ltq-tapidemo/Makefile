@@ -9,18 +9,21 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=tapidemo
-PKG_VERSION:=5.0.1.27
+PKG_VERSION:=5.1.0.53
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=a38a7bf3242aad607f50f57b988bc87c
+PKG_MD5SUM:=c970becc46b2935fb9e18f795d4e8469
+
+PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ltq-tapidemo
-  SECTION:=utils
-  CATEGORY:=Utilities
+  SUBMENU:=Telephony
+  SECTION:=net
+  CATEGORY:=Network
   TITLE:=TAPIdemo application for Lantiq boards
   URL:=http://www.lantiq.com/
   DEPENDS:=+kmod-ltq-tapi +kmod-ltq-vmmc
@@ -41,6 +44,8 @@ CONFIGURE_ARGS += \
 	--enable-linux-26 \
 	--enable-kernelincl="$(LINUX_DIR)/include" \
 	--with-drvincl="$(STAGING_DIR)/usr/include" \
+	--with-ifxos-incl=$(STAGING_DIR)/usr/include/ifxos \
+	--with-ifxos-lib=$(STAGING_DIR)/usr/lib \
 	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_QOS,qos) \
 	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPIDEMO_FAX_T,fax-t38) \
 	--enable-trace \
@@ -57,6 +62,12 @@ ifeq ($(CONFIG_VOICE_CPE_TAPIDEMO_BOARD_EASY508xx),y)
 endif
 ifeq ($(CONFIG_VOICE_CPE_TAPIDEMO_BOARD_EASY80910),y)
   CONFIGURE_ARGS += --enable-boardname=EASY508XX
+endif
+ifneq ($(CONFIG_VOICE_CPE_TAPIDEMO_FW_FILE),)
+  CONFIGURE_ARGS += --with-fw-file="$(strip $(subst ",, $(CONFIG_VOICE_CPE_TAPIDEMO_FW_FILE)))"
+endif
+ifneq ($(CONFIG_VOICE_CPE_TAPIDEMO_BBD_FILE), "")
+CONFIGURE_ARGS += --with-bbd-file="$(strip $(subst ",, $(CONFIG_VOICE_CPE_TAPIDEMO_BBD_FILE)))"
 endif
 
 define Package/ltq-tapidemo/install
