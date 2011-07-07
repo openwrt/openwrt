@@ -20,7 +20,7 @@
 +obj-$(CONFIG_LANTIQ_MACH_GIGASX76X) += mach-gigasx76x.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-gigasx76x.c
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,109 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -54,7 +54,6 @@
 +#include "dev-dwc_otg.h"
 +#include "dev-leds-gpio.h"
 +
-+#ifdef CONFIG_MTD_PARTITIONS
 +static struct mtd_partition gigasx76x_partitions[] =
 +{
 +	{
@@ -83,7 +82,6 @@
 +		.size	= 0x10000,
 +	},
 +};
-+#endif
 +
 +static struct gpio_led
 +gigasx76x_leds_gpio[] __initdata = {
@@ -97,10 +95,8 @@
 +
 +
 +static struct physmap_flash_data gigasx76x_flash_data = {
-+#ifdef CONFIG_MTD_PARTITIONS
 +	.nr_parts	= ARRAY_SIZE(gigasx76x_partitions),
 +	.parts		= gigasx76x_partitions,
-+#endif
 +};
 +
 +static struct ltq_pci_data ltq_pci_data = {
