@@ -109,7 +109,7 @@ fw_load_redirect() {
 				$srcaddr ${destaddr:--m conntrack --ctstate DNAT} \
 				$pr \
 				$srcports $destports \
-				$sm \
+				${sm:+-m mac $sm} \
 				$redirect_extra \
 			}
 		done
