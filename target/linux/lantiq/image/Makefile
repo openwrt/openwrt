@@ -55,7 +55,7 @@ define Image/BuildKernel/Template
 	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
 endef
 
-ifeq ($(CONFIG_TARGET_lantiq_xway),y)
+ifeq ($(CONFIG_TARGET_lantiq_danube),y)
 define Image/BuildKernel/Profile/EASY50712
 	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
 endef

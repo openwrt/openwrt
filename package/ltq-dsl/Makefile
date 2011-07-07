@@ -33,7 +33,7 @@ define KernelPackage/ltq-dsl
   SUBMENU:=Network Devices
   TITLE:=Lantiq dsl driver
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_xway +kmod-atm
+  DEPENDS:=@TARGET_lantiq_danube +kmod-atm
   FILES:=$(PKG_BUILD_DIR)/src/mei/lantiq_mei.ko \
 	$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.ko \
 	$(PKG_BUILD_DIR)/src/mei/lantiq_atm.ko
@@ -47,7 +47,7 @@ define Package/kmod-ltq-dsl-firmware/default
   SUBMENU:=Network Devices
   TITLE:=Firmware
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_xway kmod-ltq-dsl
+  DEPENDS:=@TARGET_lantiq_danube kmod-ltq-dsl
   MAINTAINER:=John Crispin <blogic@openwrt.org>
 endef
 
