@@ -519,16 +519,19 @@ define Image/Build/Template/128k/jffs2-128k
 	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
+
+ap121_mtdlayout_2M=mtdparts=spi0.0:64k(u-boot)ro,1216k(rootfs),704k(kernel),64k(art)ro,1920k@0x10000(firmware)
+ap121_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
+
 ap121_cmdline=board=AP121 console=ttyATH0,115200
-ap121_mtdlayout=mtdparts=spi0.0:64k(u-boot)ro,1216k(rootfs),704k(kernel),64k(art)ro,1920k@0x10000(firmware)
 define Image/Build/Profile/AP121
-	$(call Image/Build/Template/$(fs_4k)/$(1),AP121,ap121,$(ap121_cmdline),ap121_mtdlayout,720896,1245184)
+	$(call Image/Build/Template/$(fs_4k)/$(1),AP121,ap121-2M,$(ap121_cmdline),ap121_mtdlayout_2M,720896,1245184)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AP121,ap121-4M,$(ap121_cmdline),ap121_mtdlayout_4M,917504,2818048)
 endef
 
 ap121_mini_cmdline=board=AP121-MINI console=ttyATH0,115200
-ap121_mini_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
 define Image/Build/Profile/AP121MINI
-	$(call Image/Build/Template/$(fs_64k)/$(1),AP121,ap121-mini,$(ap121_mini_cmdline),ap121_mini_mtdlayout,917504,2818048)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AP121,ap121-mini,$(ap121_mini_cmdline),ap121_mtdlayout_4M,917504,2818048)
 endef
 
 ap81_cmdline=board=AP81 console=ttyS0,115200
