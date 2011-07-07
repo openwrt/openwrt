@@ -1,0 +1,26 @@
+--- a/arch/mips/lantiq/early_printk.c
++++ b/arch/mips/lantiq/early_printk.c
+@@ -20,7 +20,12 @@
+ #endif
+ #define ASC_BUF		1024
+ #define LTQ_ASC_FSTAT	((u32 *)(LTQ_ASC_BASE + 0x0048))
+-#define LTQ_ASC_TBUF	((u32 *)(LTQ_ASC_BASE + 0x0020))
++#ifdef __BIG_ENDIAN
++#define LTQ_ASC_TBUF	((u8 *)(LTQ_ASC_BASE + 0x0023))
++#else
++#define LTQ_ASC_TBUF	((u8 *)(LTQ_ASC_BASE + 0x0020))
++#endif
++
+ #define TXMASK		0x3F00
+ #define TXOFFSET	8
+ 
+@@ -30,8 +35,6 @@ void prom_putchar(char c)
+ 
+ 	local_irq_save(flags);
+ 	do { } while ((ltq_r32(LTQ_ASC_FSTAT) & TXMASK) >> TXOFFSET);
+-	if (c == '\n')
+-		ltq_w32('\r', LTQ_ASC_TBUF);
+-	ltq_w32(c, LTQ_ASC_TBUF);
++	ltq_w8(c, LTQ_ASC_TBUF);
+ 	local_irq_restore(flags);
+ }
