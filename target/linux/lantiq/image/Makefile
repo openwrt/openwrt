@@ -202,6 +202,22 @@ endef
 endif
 
 ifeq ($(CONFIG_TARGET_lantiq_falcon)$(CONFIG_TARGET_lantiq_falcon_stable),y)
+define Image/BuildKernel/Profile/EASY98000
+	$(call Image/BuildKernel/Template,EASY98000,$(falcon_cmdline))
+endef
+
+define Image/Build/Profile/EASY98000
+	$(call Image/Build/$(1),$(1),EASY98000)
+endef
+
+define Image/BuildKernel/Profile/EASY98020
+	$(call Image/BuildKernel/Template,EASY98020,$(falcon_cmdline))
+endef
+
+define Image/Build/Profile/EASY98020
+	$(call Image/Build/$(1),$(1),EASY98020)
+endef
+
 define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,EASY98000,$(falcon_cmdline))
 	$(call Image/BuildKernel/Template,EASY98020,$(falcon_cmdline))
