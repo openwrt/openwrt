@@ -29,7 +29,7 @@ USB_MENU:=USB Support
 define KernelPackage/usb-dwc-otg
   TITLE:=Synopsis DWC_OTG support
   SUBMENU:=$(USB_MENU)
-  DEPENDS+=@TARGET_lantiq_xway +kmod-usb-core
+  DEPENDS+=@TARGET_lantiq_danube +kmod-usb-core
   KCONFIG:=CONFIG_DWC_OTG \
   	CONFIG_DWC_OTG_DEBUG=n \
 	CONFIG_DWC_OTG_LANTIQ=y \

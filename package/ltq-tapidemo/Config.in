@@ -1,7 +1,7 @@
 choice
 	prompt "board selection"
 	depends on PACKAGE_ltq-tapidemo
-	default VOICE_CPE_TAPIDEMO_BOARD_EASY50712_V3	if TARGET_lantiq_xway
+	default VOICE_CPE_TAPIDEMO_BOARD_EASY50712_V3	if TARGET_lantiq_danube
 	default VOICE_CPE_TAPIDEMO_BOARD_EASY508xx	if TARGET_lantiq_ar9
 	default VOICE_CPE_TAPIDEMO_BOARD_EASY80910	if TARGET_lantiq_vr9
 	help

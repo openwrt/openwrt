@@ -29,7 +29,7 @@ endif
 define Package/uboot-lantiq-template
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_lantiq
+  DEPENDS:=@TARGET_lantiq_danube
   URL:=http://www.denx.de/wiki/U-Boot
   VARIANT:=$(1)
   TITLE:=$(1) ($(2))

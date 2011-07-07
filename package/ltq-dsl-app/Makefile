@@ -23,7 +23,7 @@ define Package/ltq-dsl-app
   CATEGORY:=Network
   TITLE:=Lantiq DSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_xway +kmod-ltq-dsl +libpthread
+  DEPENDS:=@TARGET_lantiq_danube +kmod-ltq-dsl +libpthread
   MAINTAINER:=John Crispin <blogic@openwrt.org> 
 endef
 
