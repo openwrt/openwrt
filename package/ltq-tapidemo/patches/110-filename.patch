@@ -1,0 +1,141 @@
+--- a/configure.in
++++ b/configure.in
+@@ -1665,6 +1665,30 @@ AC_ARG_WITH(cflags,
+     ]
+ )
+ 
++dnl overwrite default FW file name
++AC_ARG_WITH(fw-file,
++    AS_HELP_STRING(
++        [--with-fw-file=val],
++        [overwrite default FW file name]
++    ),
++    [
++        AC_MSG_RESULT([using firmware file $withval])
++        AC_DEFINE_UNQUOTED([TD_FW_FILE], ["$withval"], [using firmware file])
++    ]
++)
++
++dnl overwrite default BBD file name
++AC_ARG_WITH(bbd-file,
++    AS_HELP_STRING(
++        [--with-bbd-file=val],
++        [overwrite default BBD file name]
++    ),
++    [
++        AC_MSG_RESULT([using BBD file $withval])
++        AC_DEFINE_UNQUOTED([TD_BBD_FILE], ["$withval"], [using BBD file])
++    ]
++)
++
+ AC_CONFIG_FILES([Makefile])
+ AC_CONFIG_FILES([src/Makefile])
+ 
+--- a/src/device_vmmc.c
++++ b/src/device_vmmc.c
+@@ -49,40 +49,55 @@
+ 
+ 
+ #ifdef USE_FILESYSTEM
++#ifdef TD_BBD_FILE
++   IFX_char_t* sBBD_CRAM_File_VMMC = TD_BBD_FILE;
++   IFX_char_t* sBBD_CRAM_File_VMMC_Old = TD_BBD_FILE;
++#else
++   /** File holding coefficients. */
++#ifdef DANUBE
++   /** Prepare file names for DANUBE */
++   IFX_char_t* sBBD_CRAM_File_VMMC = "danube_bbd.bin";
++   IFX_char_t* sBBD_CRAM_File_VMMC_Old = "danube_bbd_fxs.bin";
++#elif AR9
++   IFX_char_t* sBBD_CRAM_File_VMMC = "ar9_bbd.bin";
++   IFX_char_t* sBBD_CRAM_File_VMMC_Old = "ar9_bbd_fxs.bin";
++#elif VINAX
++   IFX_char_t* sBBD_CRAM_File_VMMC = "bbd.bin";
++   IFX_char_t* sBBD_CRAM_File_VMMC_Old = "";
++#elif VR9
++   IFX_char_t* sBBD_CRAM_File_VMMC = "vr9_bbd.bin";
++   IFX_char_t* sBBD_CRAM_File_VMMC_Old = "vr9_bbd_fxs.bin";
++#else
++#endif
++#endif /* TD_BBD_FILE */
++#ifdef TD_FW_FILE
++   IFX_char_t* sPRAMFile_VMMC = TD_FW_FILE;
++   IFX_char_t* sPRAMFile_VMMC_Old = TD_FW_FILE;
++   IFX_char_t* sDRAMFile_VMMC = "";
++#else
+ #ifdef DANUBE
+    /** Prepare file names for DANUBE */
+    IFX_char_t* sPRAMFile_VMMC = "voice_danube_firmware.bin";
+    IFX_char_t* sPRAMFile_VMMC_Old = "danube_firmware.bin";
+    IFX_char_t* sDRAMFile_VMMC = "";
+-   /** File holding coefficients. */
+-   IFX_char_t* sBBD_CRAM_File_VMMC = "danube_bbd.bin";
+-   IFX_char_t* sBBD_CRAM_File_VMMC_Old = "danube_bbd_fxs.bin";
+ #elif AR9
+    /** Prepare file names for AR9 */
+    IFX_char_t* sPRAMFile_VMMC = "voice_ar9_firmware.bin";
+    IFX_char_t* sPRAMFile_VMMC_Old = "ar9_firmware.bin";
+    IFX_char_t* sDRAMFile_VMMC = "";
+-   /** File holding coefficients. */
+-   IFX_char_t* sBBD_CRAM_File_VMMC = "ar9_bbd.bin";
+-   IFX_char_t* sBBD_CRAM_File_VMMC_Old = "ar9_bbd_fxs.bin";
+ #elif VINAX
+    /** Prepare file names for VINAX */
+    IFX_char_t* sPRAMFile_VMMC = "voice_vinax_firmware.bin";
+    IFX_char_t* sPRAMFile_VMMC_Old = "firmware.bin";
+    IFX_char_t* sDRAMFile_VMMC = "";
+-   /** File holding coefficients. */
+-   IFX_char_t* sBBD_CRAM_File_VMMC = "bbd.bin";
+-   IFX_char_t* sBBD_CRAM_File_VMMC_Old = "";
+ #elif VR9
+    /** Prepare file names for VR9 */
+    IFX_char_t* sPRAMFile_VMMC = "voice_vr9_firmware.bin";
+    IFX_char_t* sPRAMFile_VMMC_Old = "vr9_firmware.bin";
+    IFX_char_t* sDRAMFile_VMMC = "";
+-   /** File holding coefficients. */
+-   IFX_char_t* sBBD_CRAM_File_VMMC = "vr9_bbd.bin";
+-   IFX_char_t* sBBD_CRAM_File_VMMC_Old = "vr9_bbd_fxs.bin";
+ #else
+ #endif
++#endif /* TD_FW_FILE */
+ #endif /* USE_FILESYSTEM */
+ 
+ /** Device names */
+--- a/src/common.c
++++ b/src/common.c
+@@ -509,6 +509,10 @@ IFX_return_t Common_CheckDownloadPath(IF
+    if (IFX_TRUE != Common_FindBBD_CRAM(pCpuDevice, psPath, psFile))
+    {
+       ret = IFX_ERROR;
++      if(bPrintTrace)
++         TRACE(TAPIDEMO, DBG_LEVEL_LOW,
++               ("Download path %s does not contain the required file %s.\n",
++                psPath, psFile));
+    }
+ 
+    if ((IFX_SUCCESS == ret) &&
+@@ -521,6 +525,10 @@ IFX_return_t Common_CheckDownloadPath(IF
+       {
+          ret = Common_CheckFileExists(psFile);
+       }
++      if(bPrintTrace && ret != IFX_SUCCESS)
++         TRACE(TAPIDEMO, DBG_LEVEL_LOW,
++               ("Download path %s does not contain the required file %s.\n",
++                psPath, psFile));
+    }
+ #ifndef TAPI_VERSION4
+    if (IFX_SUCCESS == ret)
+@@ -532,13 +540,6 @@ IFX_return_t Common_CheckDownloadPath(IF
+    }
+ #endif
+ 
+-   if (IFX_ERROR == ret)
+-   {
+-      if(bPrintTrace)
+-         TRACE(TAPIDEMO, DBG_LEVEL_LOW,
+-               ("Download path %s does not contain the required files.\n",
+-                psPath));
+-   }
+ 
+    return ret;
+ } /* Common_CheckDownloadPath */
