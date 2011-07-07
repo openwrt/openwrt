@@ -11,21 +11,6 @@
  /* ============================= */
  /* Global Defines                */
  /* ============================= */
---- a/src/drv_vmmc_bbd.c
-+++ b/src/drv_vmmc_bbd.c
-@@ -1072,7 +1072,11 @@ static IFX_int32_t vmmc_BBD_DownloadChCr
-    IFX_uint8_t  padBytes = 0;
- #endif
-    IFX_uint16_t cram_offset, cram_crc,
--                pCmd [MAX_CMD_WORD]  = {0};
-+                pCmd [MAX_CMD_WORD]
-+#if defined (__GNUC__) || defined (__GNUG__)
-+                   __attribute__ ((aligned(4)))
-+#endif
-+                   = {0};
- 
-    /* read offset */
-    cpb2w (&cram_offset, &bbd_cram->pData[0], sizeof (IFX_uint16_t));
 --- a/src/drv_vmmc_danube.h
 +++ b/src/drv_vmmc_danube.h
 @@ -15,56 +15,18 @@
@@ -88,7 +73,7 @@
  } while(0);
  
  /**
-@@ -72,11 +34,6 @@ do { \
+@@ -72,11 +34,6 @@
  */
  #define VMMC_DRIVER_UNLOAD_HOOK(ret) \
  do { \
@@ -117,6 +102,15 @@
  
  /* ============================= */
  /* Local Macros & Definitions    */
+@@ -1591,7 +1599,7 @@
+ #ifdef VMMC_DRIVER_UNLOAD_HOOK
+    if (VDevices[0].nDevState & DS_GPIO_RESERVED)
+    {
+-      IFX_int32_t ret;
++      IFX_int32_t ret = 0;
+       VMMC_DRIVER_UNLOAD_HOOK(ret);
+       if (!VMMC_SUCCESS(ret))
+       {
 --- a/src/drv_vmmc_init_cap.c
 +++ b/src/drv_vmmc_init_cap.c
 @@ -22,6 +22,11 @@
@@ -141,7 +135,7 @@
  
  #undef USE_PLAIN_VOICE_FIRMWARE
  #undef PRINT_ON_ERR_INTERRUPT
-@@ -35,8 +36,22 @@
+@@ -39,8 +40,32 @@
  #include "ifxos_interrupt.h"
  #include "ifxos_time.h"
  
@@ -158,7 +152,17 @@
 +#  define ifx_gptu_timer_free       lq_free_timer
 +
 +
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,39))
 +#  define bsp_mask_and_ack_irq      ltq_mask_and_ack_irq
++#else
++extern void ltq_mask_and_ack_irq(struct irq_data *d);
++static void inline bsp_mask_and_ack_irq(int x)
++{
++	struct irq_data d;
++	d.irq = x;
++	ltq_mask_and_ack_irq(&d);
++}
++#endif
 +#else
 +#  include <asm/ifx/ifx_regs.h>
 +#  include <asm/ifx/ifx_gptu.h>
@@ -166,7 +170,7 @@
  
  #include "drv_mps_vmmc.h"
  #include "drv_mps_vmmc_dbg.h"
-@@ -98,6 +113,9 @@ extern IFX_void_t bsp_mask_and_ack_irq (
+@@ -104,6 +129,9 @@
  extern IFX_void_t mask_and_ack_danube_irq (IFX_uint32_t irq_nr);
  
  #endif /* */
@@ -176,7 +180,7 @@
  extern IFXOS_event_t fw_ready_evt;
  /* callback function to free all data buffers currently used by voice FW */
  IFX_void_t (*ifx_mps_bufman_freeall)(IFX_void_t) = IFX_NULL;
-@@ -201,7 +219,8 @@ IFX_boolean_t ifx_mps_ext_bufman ()
+@@ -207,7 +235,8 @@
   */
  IFX_void_t *ifx_mps_fastbuf_malloc (IFX_size_t size, IFX_int32_t priority)
  {
@@ -186,7 +190,7 @@
     IFX_int32_t index = fastbuf_index;
  
     if (fastbuf_initialized == 0)
-@@ -255,7 +274,7 @@ IFX_void_t *ifx_mps_fastbuf_malloc (IFX_
+@@ -261,7 +290,7 @@
   */
  IFX_void_t ifx_mps_fastbuf_free (const IFX_void_t * ptr)
  {
@@ -195,7 +199,7 @@
     IFX_int32_t index = fastbuf_index;
  
     IFXOS_LOCKINT (flags);
-@@ -451,7 +470,7 @@ static mps_buffer_state_e ifx_mps_bufman
+@@ -457,7 +486,7 @@
   */
  static IFX_int32_t ifx_mps_bufman_inc_level (IFX_uint32_t value)
  {
@@ -204,7 +208,7 @@
  
     if (mps_buffer.buf_level + value > MPS_BUFFER_MAX_LEVEL)
     {
-@@ -478,7 +497,7 @@ static IFX_int32_t ifx_mps_bufman_inc_le
+@@ -484,7 +513,7 @@
   */
  static IFX_int32_t ifx_mps_bufman_dec_level (IFX_uint32_t value)
  {
@@ -213,7 +217,7 @@
  
     if (mps_buffer.buf_level < value)
     {
-@@ -630,7 +649,7 @@ IFX_int32_t ifx_mps_bufman_buf_provide (
+@@ -636,7 +665,7 @@
        mem_seg_ptr[i] =
           (IFX_uint32_t *) CPHYSADDR ((IFX_uint32_t) mps_buffer.
                                       malloc (segment_size, FASTBUF_FW_OWNED));
@@ -222,7 +226,7 @@
        {
           TRACE (MPS, DBG_LEVEL_HIGH,
                  ("%s(): cannot allocate buffer\n", __FUNCTION__));
-@@ -946,7 +965,7 @@ IFX_int32_t ifx_mps_common_open (mps_com
+@@ -952,7 +981,7 @@
                                   mps_mbx_dev * pMBDev, IFX_int32_t bcommand,
                                   IFX_boolean_t from_kernel)
  {
@@ -231,7 +235,7 @@
  
     IFXOS_LOCKINT (flags);
  
-@@ -1062,7 +1081,7 @@ IFX_int32_t ifx_mps_common_close (mps_mb
+@@ -1068,7 +1097,7 @@
  IFX_void_t ifx_mps_release_structures (mps_comm_dev * pDev)
  {
     IFX_int32_t count;
@@ -240,7 +244,7 @@
  
     IFXOS_LOCKINT (flags);
     IFXOS_BlockFree (pFW_img_data);
-@@ -1111,7 +1130,7 @@ IFX_uint32_t ifx_mps_init_structures (mp
+@@ -1117,7 +1146,7 @@
  
     /* Initialize MPS main structure */
     memset ((IFX_void_t *) pDev, 0, sizeof (mps_comm_dev));
@@ -249,7 +253,7 @@
     pDev->flags = 0x00000000;
     MBX_Memory = pDev->base_global;
  
-@@ -1119,9 +1138,11 @@ IFX_uint32_t ifx_mps_init_structures (mp
+@@ -1125,9 +1154,11 @@
        for MBX communication. These are: mailbox base address, mailbox size, *
        mailbox read index and mailbox write index. for command and voice
        mailbox, * upstream and downstream direction. */
@@ -264,7 +268,7 @@
     MBX_Memory->MBX_UPSTR_CMD_BASE =
        (IFX_uint32_t *) CPHYSADDR ((IFX_uint32_t) MBX_UPSTRM_CMD_FIFO_BASE);
     MBX_Memory->MBX_UPSTR_CMD_SIZE = MBX_CMD_FIFO_SIZE;
-@@ -1558,7 +1579,7 @@ IFX_int32_t ifx_mps_mbx_read_message (mp
+@@ -1564,7 +1595,7 @@
                                        IFX_uint32_t * bytes)
  {
     IFX_int32_t i, ret;
@@ -273,7 +277,7 @@
  
     IFXOS_LOCKINT (flags);
  
-@@ -1768,7 +1789,7 @@ IFX_int32_t ifx_mps_mbx_write_message (m
+@@ -1774,7 +1805,7 @@
  {
     mps_fifo *mbx;
     IFX_uint32_t i;
@@ -282,7 +286,7 @@
     IFX_int32_t retval = -EAGAIN;
     IFX_int32_t retries = 0;
     IFX_uint32_t word = 0;
-@@ -2163,6 +2184,7 @@ IFX_int32_t ifx_mps_mbx_write_cmd (mps_m
+@@ -2169,6 +2200,7 @@
        TRACE (MPS, DBG_LEVEL_HIGH,
               ("%s(): Invalid device ID %d !\n", __FUNCTION__, pMBDev->devID));
     }
@@ -290,7 +294,7 @@
     return retval;
  }
  
-@@ -2186,7 +2208,7 @@ IFX_void_t ifx_mps_mbx_data_upstream (IF
+@@ -2192,7 +2224,7 @@
     mps_mbx_dev *mbx_dev;
     MbxMsg_s msg;
     IFX_uint32_t bytes_read = 0;
@@ -299,7 +303,7 @@
     IFX_int32_t ret;
  
     /* set pointer to data upstream mailbox, no matter if 0,1,2 or 3 because
-@@ -2277,7 +2299,7 @@ IFX_void_t ifx_mps_mbx_data_upstream (IF
+@@ -2283,7 +2315,7 @@
           {
              ifx_mps_bufman_dec_level (1);
              if ((ifx_mps_bufman_get_level () <= mps_buffer.buf_threshold) &&
@@ -308,7 +312,7 @@
              {
                 IFXOS_LockRelease (pMPSDev->provide_buffer);
              }
-@@ -2320,7 +2342,7 @@ IFX_void_t ifx_mps_mbx_data_upstream (IF
+@@ -2326,7 +2358,7 @@
  #endif /* CONFIG_PROC_FS */
              ifx_mps_bufman_dec_level (1);
              if ((ifx_mps_bufman_get_level () <= mps_buffer.buf_threshold) &&
@@ -317,7 +321,7 @@
              {
                 IFXOS_LockRelease (pMPSDev->provide_buffer);
              }
-@@ -2350,7 +2372,7 @@ IFX_void_t ifx_mps_mbx_data_upstream (IF
+@@ -2356,7 +2388,7 @@
  IFX_void_t ifx_mps_mbx_cmd_upstream (IFX_ulong_t dummy)
  {
     mps_fifo *mbx;
@@ -326,7 +330,7 @@
  
     /* set pointer to upstream command mailbox */
     mbx = &(pMPSDev->cmd_upstrm_fifo);
-@@ -2398,7 +2420,7 @@ IFX_void_t ifx_mps_mbx_event_upstream (I
+@@ -2404,7 +2436,7 @@
     mps_event_msg msg;
     IFX_int32_t length = 0;
     IFX_int32_t read_length = 0;
@@ -335,7 +339,7 @@
  
     /* set pointer to upstream event mailbox */
     mbx = &(pMPSDev->event_upstrm_fifo);
-@@ -2613,6 +2635,7 @@ IFX_void_t ifx_mps_enable_mailbox_int ()
+@@ -2619,6 +2651,7 @@
  #endif
  
     *IFX_MPS_AD0ENR = Ad0Reg.val;
@@ -343,7 +347,7 @@
  }
  
  /**
-@@ -2641,7 +2664,7 @@ IFX_void_t ifx_mps_disable_mailbox_int (
+@@ -2647,7 +2680,7 @@
  */
  IFX_void_t ifx_mps_dd_mbx_int_enable (IFX_void_t)
  {
@@ -352,7 +356,7 @@
     MPS_Ad0Reg_u Ad0Reg;
  
     IFXOS_LOCKINT (flags);
-@@ -2667,7 +2690,7 @@ IFX_void_t ifx_mps_dd_mbx_int_enable (IF
+@@ -2673,7 +2706,7 @@
  */
  IFX_void_t ifx_mps_dd_mbx_int_disable (IFX_void_t)
  {
@@ -361,7 +365,7 @@
     MPS_Ad0Reg_u Ad0Reg;
  
     IFXOS_LOCKINT (flags);
-@@ -2732,7 +2755,6 @@ irqreturn_t ifx_mps_ad0_irq (IFX_int32_t
+@@ -2738,7 +2771,6 @@
  #else /* */
     mask_and_ack_danube_irq (irq);
  #endif /* */
@@ -369,7 +373,7 @@
     /* FW is up and ready to process commands */
     if (MPS_Ad0StatusReg.fld.dl_end)
     {
-@@ -2794,6 +2816,7 @@ irqreturn_t ifx_mps_ad0_irq (IFX_int32_t
+@@ -2800,6 +2832,7 @@
        }
     }
  
@@ -377,7 +381,7 @@
     if (MPS_Ad0StatusReg.fld.du_mbx)
     {
  #ifdef CONFIG_PROC_FS
-@@ -2938,12 +2961,12 @@ irqreturn_t ifx_mps_vc_irq (IFX_int32_t 
+@@ -2944,12 +2977,12 @@
     IFX_MPS_CVC0SR[chan] = MPS_VCStatusReg.val;
     /* handle only enabled interrupts */
     MPS_VCStatusReg.val &= IFX_MPS_VC0ENR[chan];
@@ -391,7 +395,7 @@
     pMPSDev->event.MPS_VCStatReg[chan].val = MPS_VCStatusReg.val;
  #ifdef PRINT_ON_ERR_INTERRUPT
     if (MPS_VCStatusReg.fld.rcv_ov)
-@@ -3087,7 +3110,8 @@ IFX_int32_t ifx_mps_get_fw_version (IFX_
+@@ -3093,7 +3126,8 @@
   */
  IFX_return_t ifx_mps_init_gpt ()
  {
@@ -401,7 +405,7 @@
     IFX_ulong_t count;
  #if defined(SYSTEM_AR9) || defined(SYSTEM_VR9)
     timer = TIMER1A;
-@@ -3160,6 +3184,7 @@ IFX_void_t ifx_mps_shutdown_gpt (IFX_voi
+@@ -3166,6 +3200,7 @@
  #else /* Danube */
     timer = TIMER1B;
  #endif /* SYSTEM_AR9 || SYSTEM_VR9 */
@@ -411,7 +415,15 @@
  
 --- a/src/mps/drv_mps_vmmc_danube.c
 +++ b/src/mps/drv_mps_vmmc_danube.c
-@@ -32,9 +32,21 @@
+@@ -16,6 +16,7 @@
+ /* ============================= */
+ /* Includes                      */
+ /* ============================= */
++#include "linux/version.h"
+ #include "drv_config.h"
+ 
+ #ifdef SYSTEM_DANUBE            /* defined in drv_mps_vmmc_config.h */
+@@ -36,9 +37,22 @@
  #include "ifxos_select.h"
  #include "ifxos_interrupt.h"
  
@@ -425,6 +437,7 @@
 +#  include <linux/dma-mapping.h>
 +
 +
++#define LQ_RCU_BASE_ADDR	(KSEG1 + LTQ_RCU_BASE_ADDR)
 +# define LQ_RCU_RST		((u32 *)(LQ_RCU_BASE_ADDR + 0x0010))
 +#define IFX_RCU_RST_REQ_CPU1             (1 << 3)
 +#  define IFX_RCU_RST_REQ        LQ_RCU_RST
@@ -436,7 +449,7 @@
  
  #include "drv_mps_vmmc.h"
  #include "drv_mps_vmmc_dbg.h"
-@@ -71,6 +83,20 @@ IFX_void_t ifx_mps_release (IFX_void_t);
+@@ -75,6 +89,20 @@
  /* Local function definition     */
  /* ============================= */
  
@@ -457,7 +470,7 @@
  /******************************************************************************
   * DANUBE Specific Routines
   ******************************************************************************/
-@@ -130,6 +156,15 @@ IFX_int32_t ifx_mps_download_firmware (m
+@@ -134,6 +162,15 @@
     }
  
     /* check if FW image fits in available memory space */
@@ -473,7 +486,7 @@
     if (mem > ifx_get_cp1_size())
     {
        TRACE (MPS, DBG_LEVEL_HIGH,
-@@ -137,6 +172,7 @@ IFX_int32_t ifx_mps_download_firmware (m
+@@ -141,6 +178,7 @@
                   __FILE__, __func__, __LINE__, mem, ifx_get_cp1_size()));
        return IFX_ERROR;
     }
@@ -481,7 +494,7 @@
  
     /* reset the driver */
     ifx_mps_reset ();
-@@ -357,7 +393,7 @@ IFX_void_t ifx_mps_release (IFX_void_t)
+@@ -361,7 +399,7 @@
   */
  IFX_void_t ifx_mps_wdog_expiry()
  {
@@ -647,56 +660,20 @@
  {
 --- a/src/mps/drv_mps_vmmc_linux.c
 +++ b/src/mps/drv_mps_vmmc_linux.c
-@@ -19,11 +19,16 @@
- #include "drv_config.h"
- 
- #include "drv_mps_version.h"
-+#include <linux/version.h>
- 
- #ifdef CONFIG_DEBUG_MINI_BOOT
- #define IKOS_MINI_BOOT
- #endif /* */
-+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
-+#include <linux/autoconf.h>
-+#else
- #include <generated/autoconf.h>
-+#endif
- #include <linux/module.h>
- #include <linux/init.h>
- #include <linux/poll.h>
-@@ -34,16 +39,27 @@
- #include <linux/delay.h>
- #include <linux/interrupt.h>
- #ifdef LINUX_2_6
-+#ifndef UTS_RELEASE
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
-+#include <linux/utsrelease.h>
-+#else
- #include <generated/utsrelease.h>
-+#endif
-+#endif /* UTC_RELEASE */
- #else /* */
- #include <linux/uts.h>
+@@ -57,10 +57,11 @@
  #include <linux/moduleparam.h>
  #endif /* */
  
 -
--#include <asm/ifx/irq.h>
--#include <asm/ifx/ifx_regs.h>
--#include <asm/ifx_vpe.h>
-+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,28))
-+#include "drv_vmmc_init.h"
-+#  include <lantiq.h>
-+#  include <irq.h>
-+#else
-+#  include <asm/ifx/irq.h>
-+#  include <asm/ifx/ifx_regs.h>
-+#  include <asm/ifx_vpe.h>
++#if !defined CONFIG_LANTIQ
+ #include <asm/ifx/irq.h>
+ #include <asm/ifx/ifx_regs.h>
+ #include <asm/ifx_vpe.h>
 +#endif
  
  /* lib_ifxos headers */
  #include "ifx_types.h"
-@@ -915,7 +931,7 @@ IFX_int32_t ifx_mps_ioctl (struct inode 
+@@ -959,7 +960,7 @@
  #endif /* MPS_FIFO_BLOCKING_WRITE */
        case FIO_MPS_GET_STATUS:
           {
@@ -705,7 +682,7 @@
  
              /* get the status of the channel */
              if (!from_kernel)
-@@ -949,7 +965,7 @@ IFX_int32_t ifx_mps_ioctl (struct inode 
+@@ -993,7 +994,7 @@
  #if CONFIG_MPS_HISTORY_SIZE > 0
        case FIO_MPS_GET_CMD_HISTORY:
           {
@@ -714,7 +691,7 @@
  
              if (from_kernel)
              {
-@@ -1641,6 +1657,7 @@ IFX_int32_t ifx_mps_get_status_proc (IFX
+@@ -1685,6 +1686,7 @@
           sprintf (buf + len, "   minLv: \t  %8d\n",
                    ifx_mps_dev.voice_mb[i].upstrm_fifo->min_space);
     }
@@ -722,7 +699,7 @@
     return len;
  }
  
-@@ -2247,9 +2264,11 @@ IFX_int32_t __init ifx_mps_init_module (
+@@ -2291,9 +2293,11 @@
           return result;
     }
  
@@ -735,7 +712,7 @@
     /* enable mailbox interrupts */
     ifx_mps_enable_mailbox_int ();
     /* init FW ready event */
-@@ -2377,9 +2396,11 @@ ifx_mps_cleanup_module (IFX_void_t)
+@@ -2421,9 +2425,11 @@
     /* disable mailbox interrupts */
     ifx_mps_disable_mailbox_int ();
  
