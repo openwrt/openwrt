@@ -815,10 +815,10 @@
  
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -322,6 +322,7 @@ config ARCH_CLPS711X
+@@ -323,6 +323,7 @@ config ARCH_CLPS711X
  config ARCH_CNS3XXX
  	bool "Cavium Networks CNS3XXX family"
- 	select CPU_V6
+ 	select CPU_V6K
 +	select ARCH_WANT_OPTIONAL_GPIOLIB
  	select GENERIC_CLOCKEVENTS
  	select ARM_GIC
