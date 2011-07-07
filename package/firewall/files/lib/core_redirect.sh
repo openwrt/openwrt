@@ -97,7 +97,7 @@ fw_load_redirect() {
 			fw_get_negation sm '--mac-source' "$sm"
 			fw add $mode n $natchain $redirect_target + \
 				{ $redirect_src_ip $redirect_dest_ip } { \
-				$srcaddr $srcdaddr $redirect_proto \
+				$srcaddr $srcdaddr $pr \
 				$srcports $srcdports \
 				${sm:+-m mac $sm} \
 				$natopt $nataddr${natports:+:$natports} \
@@ -107,7 +107,7 @@ fw_load_redirect() {
 			fw add $mode f ${fwdchain:-forward} ACCEPT + \
 				{ $redirect_src_ip $redirect_dest_ip } { \
 				$srcaddr ${destaddr:--m conntrack --ctstate DNAT} \
-				$redirect_proto \
+				$pr \
 				$srcports $destports \
 				$redirect_src_mac \
 				$redirect_extra \
