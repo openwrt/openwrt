@@ -626,10 +626,12 @@ $(eval $(call KernelPackage,ifb))
 
 define KernelPackage/dm9000
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Davicom 9000 Ethernet support (in-kernel)
-  KCONFIG:=CONFIG_DM9000=y \
+  TITLE:=Davicom 9000 Ethernet support
+  KCONFIG:=CONFIG_DM9000 \
     CONFIG_DM9000_DEBUGLEVEL=4 \
     CONFIG_DM9000_FORCE_SIMPLE_PHY_POLL=y
+  FILES:=$(LINUX_DIR)/drivers/net/dm9000.ko
+  AUTOLOAD:=$(call AutoLoad,34,dm9000)
 endef
 
 define KernelPackage/dm9000/description
