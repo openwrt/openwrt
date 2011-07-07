@@ -21,7 +21,7 @@ config PJSIP_SOUND
 
 config PJSIP_LTQ_TAPI
 	bool "Lantiq TAPI sound device support"
-	depends on PACKAGE_pjsip && TARGET_lantiq_xway
+	depends on PACKAGE_pjsip && TARGET_lantiq
 	default n
 	help
 		Enable Lantiq Tapi.
