@@ -20,7 +20,7 @@
 +obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-arv45xx.c
-@@ -0,0 +1,504 @@
+@@ -0,0 +1,495 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -50,7 +50,6 @@
 +#include "dev-leds-gpio.h"
 +#include "dev-dwc_otg.h"
 +
-+#ifdef CONFIG_MTD_PARTITIONS
 +static struct mtd_partition arv4510_partitions[] =
 +{
 +	{
@@ -123,27 +122,19 @@
 +	},
 +};
 +
-+#endif
-+
 +static struct physmap_flash_data arv4510_flash_data = {
-+#ifdef CONFIG_MTD_PARTITIONS
 +	.nr_parts	= ARRAY_SIZE(arv4510_partitions),
 +	.parts		= arv4510_partitions,
-+#endif
 +};
 +
 +static struct physmap_flash_data arv45xx_flash_data = {
-+#ifdef CONFIG_MTD_PARTITIONS
 +	.nr_parts	= ARRAY_SIZE(arv45xx_partitions),
 +	.parts		= arv45xx_partitions,
-+#endif
 +};
 +
 +static struct physmap_flash_data arv75xx_flash_data = {
-+#ifdef CONFIG_MTD_PARTITIONS
 +	.nr_parts	= ARRAY_SIZE(arv75xx_partitions),
 +	.parts		= arv75xx_partitions,
-+#endif
 +};
 +
 +static struct ltq_pci_data ltq_pci_data = {
