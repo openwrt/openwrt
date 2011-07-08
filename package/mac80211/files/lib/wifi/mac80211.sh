@@ -274,6 +274,9 @@ enable_mac80211() {
 	fixed=""
 	local hostapd_ctrl=""
 
+	config_get ath9k_chanbw "$device" ath9k_chanbw
+	[ -n "$ath9k_chanbw" -a -d /sys/kernel/debug/ieee80211/$phy/ath9k ] && echo "$ath9k_chanbw" > /sys/kernel/debug/ieee80211/$phy/ath9k/chanbw
+
 	[ -n "$country" ] && iw reg set "$country"
 	[ "$channel" = "auto" -o "$channel" = "0" ] || {
 		fixed=1
