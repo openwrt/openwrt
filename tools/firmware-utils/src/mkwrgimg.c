@@ -49,7 +49,7 @@ static char *progname;
 static char *ifname;
 static char *ofname;
 static char *signature;
-static char *devname;
+static char *dev_name;
 static uint32_t offset;
 static int big_endian;
 
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 			big_endian = 1;
 			break;
 		case 'd':
-			devname = optarg;
+			dev_name = optarg;
 			break;
 		case 'i':
 			ifname = optarg;
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 		goto err;
 	}
 
-	if (devname == NULL) {
+	if (dev_name == NULL) {
 		ERR("no device name specified");
 		goto err;
 	}
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
 	memset(header, '\0', sizeof(struct wrg_header));
 
 	strncpy(header->signature, signature, sizeof(header->signature));
-	strncpy(header->devname, devname, sizeof(header->signature));
+	strncpy(header->devname, dev_name, sizeof(header->signature));
 	put_u32(&header->magic1, WRG_MAGIC);
 	put_u32(&header->magic2, WRG_MAGIC);
 	put_u32(&header->size, st.st_size);
