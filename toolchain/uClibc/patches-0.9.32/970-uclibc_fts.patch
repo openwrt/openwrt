@@ -24,7 +24,7 @@ diff --git a/extra/Configs/Config.in b/extra/Configs/Config.in
 index 8628f28..ca51aa0 100644
 --- a/extra/Configs/Config.in
 +++ b/extra/Configs/Config.in
-@@ -1898,6 +1898,18 @@ config UCLIBC_HAS_FTW
+@@ -1904,6 +1904,18 @@ config UCLIBC_HAS_FTW
  	  This interface is rarely used, and adds around 4.5k.  Unless you have
  	  a pressing need for ftw(), you should probably answer N.
  
@@ -46,7 +46,7 @@ index 8628f28..ca51aa0 100644
 diff --git a/include/fts.h b/include/fts.h
 new file mode 100644
 index 0000000..0a070ba
---- a/dev/null
+--- a/include/fts.h
 +++ b/include/fts.h
 @@ -0,0 +1,131 @@
 +/*
@@ -184,7 +184,7 @@ diff --git a/libc/misc/Makefile.in b/libc/misc/Makefile.in
 index 6c09d31..e01b3dc 100644
 --- a/libc/misc/Makefile.in
 +++ b/libc/misc/Makefile.in
-@@ -16,6 +16,7 @@ include $(top_srcdir)libc/misc/elf/Makefile.in
+@@ -18,6 +18,7 @@ @@ include $(top_srcdir)libc/misc/elf/Makefile.in
  include $(top_srcdir)libc/misc/file/Makefile.in
  include $(top_srcdir)libc/misc/fnmatch/Makefile.in
  include $(top_srcdir)libc/misc/ftw/Makefile.in
@@ -195,7 +195,7 @@ index 6c09d31..e01b3dc 100644
 diff --git a/libc/misc/fts/Makefile b/libc/misc/fts/Makefile
 new file mode 100644
 index 0000000..1361db3
---- a/dev/null
+--- a/libc/misc/fts/Makefile
 +++ b/libc/misc/fts/Makefile
 @@ -0,0 +1,14 @@
 +# Makefile for uClibc
@@ -215,7 +215,7 @@ index 0000000..1361db3
 diff --git a/libc/misc/fts/Makefile.in b/libc/misc/fts/Makefile.in
 new file mode 100644
 index 0000000..a1d0efa
---- a/dev/null
+--- a/libc/misc/fts/Makefile.in
 +++ b/libc/misc/fts/Makefile.in
 @@ -0,0 +1,23 @@
 +# FTS Makefile for uClibc
@@ -244,7 +244,7 @@ index 0000000..a1d0efa
 diff --git a/libc/misc/fts/fts.c b/libc/misc/fts/fts.c
 new file mode 100644
 index 0000000..ce5d158
---- a/dev/null
+--- a/libc/misc/fts/fts.c
 +++ b/libc/misc/fts/fts.c
 @@ -0,0 +1,1145 @@
 +/*-
