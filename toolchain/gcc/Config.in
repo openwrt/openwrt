@@ -49,7 +49,6 @@ config SSP_SUPPORT
 
 config TLS_SUPPORT
 	bool
-	depends UCLIBC_VERSION_NPTL
 	prompt "Enable Thread-local storage (TLS) support" if TOOLCHAINOPTS
 	default n
 	help
