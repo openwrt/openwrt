@@ -532,3 +532,547 @@
  	ts->desc_id = MS(ads->status1, AR_TxDescId);
  	ts->ts_tstamp = ads->status4;
  	ts->ts_status = 0;
+--- a/net/mac80211/wpa.c
++++ b/net/mac80211/wpa.c
+@@ -15,6 +15,7 @@
+ #include <linux/gfp.h>
+ #include <asm/unaligned.h>
+ #include <net/mac80211.h>
++#include <crypto/aes.h>
+ 
+ #include "ieee80211_i.h"
+ #include "michael.h"
+@@ -86,6 +87,11 @@ ieee80211_rx_h_michael_mic_verify(struct
+ 	struct sk_buff *skb = rx->skb;
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	int queue = rx->queue;
++
++	/* otherwise, TKIP is vulnerable to TID 0 vs. non-QoS replays */
++	if (rx->queue == NUM_RX_DATA_QUEUES - 1)
++		queue = 0;
+ 
+ 	/*
+ 	 * it makes no sense to check for MIC errors on anything other
+@@ -148,8 +154,8 @@ ieee80211_rx_h_michael_mic_verify(struct
+ 
+ update_iv:
+ 	/* update IV in key information to be able to detect replays */
+-	rx->key->u.tkip.rx[rx->queue].iv32 = rx->tkip_iv32;
+-	rx->key->u.tkip.rx[rx->queue].iv16 = rx->tkip_iv16;
++	rx->key->u.tkip.rx[queue].iv32 = rx->tkip_iv32;
++	rx->key->u.tkip.rx[queue].iv16 = rx->tkip_iv16;
+ 
+ 	return RX_CONTINUE;
+ 
+@@ -165,6 +171,7 @@ static int tkip_encrypt_skb(struct ieee8
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
+ 	struct ieee80211_key *key = tx->key;
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
++	unsigned long flags;
+ 	unsigned int hdrlen;
+ 	int len, tail;
+ 	u8 *pos;
+@@ -192,11 +199,12 @@ static int tkip_encrypt_skb(struct ieee8
+ 	pos += hdrlen;
+ 
+ 	/* Increase IV for the frame */
++	spin_lock_irqsave(&key->u.tkip.txlock, flags);
+ 	key->u.tkip.tx.iv16++;
+ 	if (key->u.tkip.tx.iv16 == 0)
+ 		key->u.tkip.tx.iv32++;
+-
+-	pos = ieee80211_tkip_add_iv(pos, key, key->u.tkip.tx.iv16);
++	pos = ieee80211_tkip_add_iv(pos, key);
++	spin_unlock_irqrestore(&key->u.tkip.txlock, flags);
+ 
+ 	/* hwaccel - with software IV */
+ 	if (info->control.hw_key)
+@@ -205,9 +213,8 @@ static int tkip_encrypt_skb(struct ieee8
+ 	/* Add room for ICV */
+ 	skb_put(skb, TKIP_ICV_LEN);
+ 
+-	hdr = (struct ieee80211_hdr *) skb->data;
+ 	return ieee80211_tkip_encrypt_data(tx->local->wep_tx_tfm,
+-					   key, pos, len, hdr->addr2);
++					   key, skb, pos, len);
+ }
+ 
+ 
+@@ -235,6 +242,11 @@ ieee80211_crypto_tkip_decrypt(struct iee
+ 	struct ieee80211_key *key = rx->key;
+ 	struct sk_buff *skb = rx->skb;
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
++	int queue = rx->queue;
++
++	/* otherwise, TKIP is vulnerable to TID 0 vs. non-QoS replays */
++	if (rx->queue == NUM_RX_DATA_QUEUES - 1)
++		queue = 0;
+ 
+ 	hdrlen = ieee80211_hdrlen(hdr->frame_control);
+ 
+@@ -255,7 +267,7 @@ ieee80211_crypto_tkip_decrypt(struct iee
+ 	res = ieee80211_tkip_decrypt_data(rx->local->wep_rx_tfm,
+ 					  key, skb->data + hdrlen,
+ 					  skb->len - hdrlen, rx->sta->sta.addr,
+-					  hdr->addr1, hwaccel, rx->queue,
++					  hdr->addr1, hwaccel, queue,
+ 					  &rx->tkip_iv32,
+ 					  &rx->tkip_iv16);
+ 	if (res != TKIP_DECRYPT_OK)
+@@ -283,6 +295,8 @@ static void ccmp_special_blocks(struct s
+ 	unsigned int hdrlen;
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 
++	memset(scratch, 0, 6 * AES_BLOCK_LEN);
++
+ 	b_0 = scratch + 3 * AES_BLOCK_LEN;
+ 	aad = scratch + 4 * AES_BLOCK_LEN;
+ 
+@@ -373,8 +387,10 @@ static int ccmp_encrypt_skb(struct ieee8
+ 	struct ieee80211_key *key = tx->key;
+ 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+ 	int hdrlen, len, tail;
+-	u8 *pos, *pn;
+-	int i;
++	u8 *pos;
++	u8 pn[6];
++	u64 pn64;
++	u8 scratch[6 * AES_BLOCK_LEN];
+ 
+ 	if (info->control.hw_key &&
+ 	    !(info->control.hw_key->flags & IEEE80211_KEY_FLAG_GENERATE_IV)) {
+@@ -402,14 +418,14 @@ static int ccmp_encrypt_skb(struct ieee8
+ 	hdr = (struct ieee80211_hdr *) pos;
+ 	pos += hdrlen;
+ 
+-	/* PN = PN + 1 */
+-	pn = key->u.ccmp.tx_pn;
++	pn64 = atomic64_inc_return(&key->u.ccmp.tx_pn);
+ 
+-	for (i = CCMP_PN_LEN - 1; i >= 0; i--) {
+-		pn[i]++;
+-		if (pn[i])
+-			break;
+-	}
++	pn[5] = pn64;
++	pn[4] = pn64 >> 8;
++	pn[3] = pn64 >> 16;
++	pn[2] = pn64 >> 24;
++	pn[1] = pn64 >> 32;
++	pn[0] = pn64 >> 40;
+ 
+ 	ccmp_pn2hdr(pos, pn, key->conf.keyidx);
+ 
+@@ -418,8 +434,8 @@ static int ccmp_encrypt_skb(struct ieee8
+ 		return 0;
+ 
+ 	pos += CCMP_HDR_LEN;
+-	ccmp_special_blocks(skb, pn, key->u.ccmp.tx_crypto_buf, 0);
+-	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, key->u.ccmp.tx_crypto_buf, pos, len,
++	ccmp_special_blocks(skb, pn, scratch, 0);
++	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, scratch, pos, len,
+ 				  pos, skb_put(skb, CCMP_MIC_LEN));
+ 
+ 	return 0;
+@@ -475,11 +491,12 @@ ieee80211_crypto_ccmp_decrypt(struct iee
+ 	}
+ 
+ 	if (!(status->flag & RX_FLAG_DECRYPTED)) {
++		u8 scratch[6 * AES_BLOCK_LEN];
+ 		/* hardware didn't decrypt/verify MIC */
+-		ccmp_special_blocks(skb, pn, key->u.ccmp.rx_crypto_buf, 1);
++		ccmp_special_blocks(skb, pn, scratch, 1);
+ 
+ 		if (ieee80211_aes_ccm_decrypt(
+-			    key->u.ccmp.tfm, key->u.ccmp.rx_crypto_buf,
++			    key->u.ccmp.tfm, scratch,
+ 			    skb->data + hdrlen + CCMP_HDR_LEN, data_len,
+ 			    skb->data + skb->len - CCMP_MIC_LEN,
+ 			    skb->data + hdrlen + CCMP_HDR_LEN))
+--- a/drivers/net/wireless/b43/xmit.c
++++ b/drivers/net/wireless/b43/xmit.c
+@@ -323,8 +323,7 @@ int b43_generate_txhdr(struct b43_wldev 
+ 			/* we give the phase1key and iv16 here, the key is stored in
+ 			 * shm. With that the hardware can do phase 2 and encryption.
+ 			 */
+-			ieee80211_get_tkip_key(info->control.hw_key, skb_frag,
+-					IEEE80211_TKIP_P1_KEY, (u8*)phase1key);
++			ieee80211_get_tkip_p1k(info->control.hw_key, skb_frag, phase1key);
+ 			/* phase1key is in host endian. Copy to little-endian txhdr->iv. */
+ 			for (i = 0; i < 5; i++) {
+ 				txhdr->iv[i * 2 + 0] = phase1key[i];
+--- a/drivers/net/wireless/iwlegacy/iwl-4965-tx.c
++++ b/drivers/net/wireless/iwlegacy/iwl-4965-tx.c
+@@ -240,8 +240,7 @@ static void iwl4965_tx_cmd_build_hwcrypt
+ 
+ 	case WLAN_CIPHER_SUITE_TKIP:
+ 		tx_cmd->sec_ctl = TX_CMD_SEC_TKIP;
+-		ieee80211_get_tkip_key(keyconf, skb_frag,
+-			IEEE80211_TKIP_P2_KEY, tx_cmd->key);
++		ieee80211_get_tkip_p2k(keyconf, skb_frag, tx_cmd->key);
+ 		IWL_DEBUG_TX(priv, "tx_cmd with tkip hwcrypto\n");
+ 		break;
+ 
+--- a/drivers/net/wireless/iwlwifi/iwl-agn-tx.c
++++ b/drivers/net/wireless/iwlwifi/iwl-agn-tx.c
+@@ -497,8 +497,7 @@ static void iwlagn_tx_cmd_build_hwcrypto
+ 
+ 	case WLAN_CIPHER_SUITE_TKIP:
+ 		tx_cmd->sec_ctl = TX_CMD_SEC_TKIP;
+-		ieee80211_get_tkip_key(keyconf, skb_frag,
+-			IEEE80211_TKIP_P2_KEY, tx_cmd->key);
++		ieee80211_get_tkip_p2k(keyconf, skb_frag, tx_cmd->key);
+ 		IWL_DEBUG_TX(priv, "tx_cmd with tkip hwcrypto\n");
+ 		break;
+ 
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -960,21 +960,6 @@ enum sta_notify_cmd {
+ };
+ 
+ /**
+- * enum ieee80211_tkip_key_type - get tkip key
+- *
+- * Used by drivers which need to get a tkip key for skb. Some drivers need a
+- * phase 1 key, others need a phase 2 key. A single function allows the driver
+- * to get the key, this enum indicates what type of key is required.
+- *
+- * @IEEE80211_TKIP_P1_KEY: the driver needs a phase 1 key
+- * @IEEE80211_TKIP_P2_KEY: the driver needs a phase 2 key
+- */
+-enum ieee80211_tkip_key_type {
+-	IEEE80211_TKIP_P1_KEY,
+-	IEEE80211_TKIP_P2_KEY,
+-};
+-
+-/**
+  * enum ieee80211_hw_flags - hardware flags
+  *
+  * These flags are used to indicate hardware capabilities to
+@@ -2568,21 +2553,33 @@ struct sk_buff *
+ ieee80211_get_buffered_bc(struct ieee80211_hw *hw, struct ieee80211_vif *vif);
+ 
+ /**
+- * ieee80211_get_tkip_key - get a TKIP rc4 for skb
++ * ieee80211_get_tkip_p1k - get a TKIP phase 1 key
++ *
++ * This function returns the TKIP phase 1 key for the IV32 taken
++ * from the given packet.
++ *
++ * @keyconf: the parameter passed with the set key
++ * @skb: the packet to take the IV32 value from that will be encrypted
++ *	with this P1K
++ * @p1k: a buffer to which the key will be written, as 5 u16 values
++ */
++void ieee80211_get_tkip_p1k(struct ieee80211_key_conf *keyconf,
++			    struct sk_buff *skb, u16 *p1k);
++
++/**
++ * ieee80211_get_tkip_p2k - get a TKIP phase 2 key
+  *
+- * This function computes a TKIP rc4 key for an skb. It computes
+- * a phase 1 key if needed (iv16 wraps around). This function is to
+- * be used by drivers which can do HW encryption but need to compute
+- * to phase 1/2 key in SW.
++ * This function computes the TKIP RC4 key for the IV values
++ * in the packet.
+  *
+  * @keyconf: the parameter passed with the set key
+- * @skb: the skb for which the key is needed
+- * @type: TBD
+- * @key: a buffer to which the key will be written
+- */
+-void ieee80211_get_tkip_key(struct ieee80211_key_conf *keyconf,
+-				struct sk_buff *skb,
+-				enum ieee80211_tkip_key_type type, u8 *key);
++ * @skb: the packet to take the IV32/IV16 values from that will be
++ *	encrypted with this key
++ * @p2k: a buffer to which the key will be written, 16 bytes
++ */
++void ieee80211_get_tkip_p2k(struct ieee80211_key_conf *keyconf,
++			    struct sk_buff *skb, u8 *p2k);
++
+ /**
+  * ieee80211_wake_queue - wake specific queue
+  * @hw: pointer as obtained from ieee80211_alloc_hw().
+--- a/net/mac80211/key.c
++++ b/net/mac80211/key.c
+@@ -333,6 +333,7 @@ struct ieee80211_key *ieee80211_key_allo
+ 					get_unaligned_le16(seq);
+ 			}
+ 		}
++		spin_lock_init(&key->u.tkip.txlock);
+ 		break;
+ 	case WLAN_CIPHER_SUITE_CCMP:
+ 		key->conf.iv_len = CCMP_HDR_LEN;
+--- a/net/mac80211/key.h
++++ b/net/mac80211/key.h
+@@ -52,9 +52,10 @@ enum ieee80211_internal_tkip_state {
+ };
+ 
+ struct tkip_ctx {
+-	u32 iv32;
+-	u16 iv16;
+-	u16 p1k[5];
++	u32 iv32;	/* current iv32 */
++	u16 iv16;	/* current iv16 */
++	u16 p1k[5];	/* p1k cache */
++	u32 p1k_iv32;	/* iv32 for which p1k computed */
+ 	enum ieee80211_internal_tkip_state state;
+ };
+ 
+@@ -71,6 +72,9 @@ struct ieee80211_key {
+ 
+ 	union {
+ 		struct {
++			/* protects tx context */
++			spinlock_t txlock;
++
+ 			/* last used TSC */
+ 			struct tkip_ctx tx;
+ 
+@@ -78,7 +82,7 @@ struct ieee80211_key {
+ 			struct tkip_ctx rx[NUM_RX_DATA_QUEUES];
+ 		} tkip;
+ 		struct {
+-			u8 tx_pn[6];
++			atomic64_t tx_pn;
+ 			/*
+ 			 * Last received packet number. The first
+ 			 * NUM_RX_DATA_QUEUES counters are used with Data
+@@ -88,12 +92,9 @@ struct ieee80211_key {
+ 			u8 rx_pn[NUM_RX_DATA_QUEUES + 1][6];
+ 			struct crypto_cipher *tfm;
+ 			u32 replays; /* dot11RSNAStatsCCMPReplays */
+-			/* scratch buffers for virt_to_page() (crypto API) */
+ #ifndef AES_BLOCK_LEN
+ #define AES_BLOCK_LEN 16
+ #endif
+-			u8 tx_crypto_buf[6 * AES_BLOCK_LEN];
+-			u8 rx_crypto_buf[6 * AES_BLOCK_LEN];
+ 		} ccmp;
+ 		struct {
+ 			u8 tx_pn[6];
+--- a/net/mac80211/tkip.c
++++ b/net/mac80211/tkip.c
+@@ -101,6 +101,7 @@ static void tkip_mixing_phase1(const u8 
+ 		p1k[4] += tkipS(p1k[3] ^ get_unaligned_le16(tk + 0 + j)) + i;
+ 	}
+ 	ctx->state = TKIP_STATE_PHASE1_DONE;
++	ctx->p1k_iv32 = tsc_IV32;
+ }
+ 
+ static void tkip_mixing_phase2(const u8 *tk, struct tkip_ctx *ctx,
+@@ -140,60 +141,72 @@ static void tkip_mixing_phase2(const u8 
+ /* Add TKIP IV and Ext. IV at @pos. @iv0, @iv1, and @iv2 are the first octets
+  * of the IV. Returns pointer to the octet following IVs (i.e., beginning of
+  * the packet payload). */
+-u8 *ieee80211_tkip_add_iv(u8 *pos, struct ieee80211_key *key, u16 iv16)
++u8 *ieee80211_tkip_add_iv(u8 *pos, struct ieee80211_key *key)
+ {
+-	pos = write_tkip_iv(pos, iv16);
++	lockdep_assert_held(&key->u.tkip.txlock);
++
++	pos = write_tkip_iv(pos, key->u.tkip.tx.iv16);
+ 	*pos++ = (key->conf.keyidx << 6) | (1 << 5) /* Ext IV */;
+ 	put_unaligned_le32(key->u.tkip.tx.iv32, pos);
+ 	return pos + 4;
+ }
+ 
+-void ieee80211_get_tkip_key(struct ieee80211_key_conf *keyconf,
+-			struct sk_buff *skb, enum ieee80211_tkip_key_type type,
+-			u8 *outkey)
++static void ieee80211_compute_tkip_p1k(struct ieee80211_key *key, u32 iv32)
+ {
+-	struct ieee80211_key *key = (struct ieee80211_key *)
+-			container_of(keyconf, struct ieee80211_key, conf);
+-	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+-	u8 *data;
+-	const u8 *tk;
+-	struct tkip_ctx *ctx;
+-	u16 iv16;
+-	u32 iv32;
+-
+-	data = (u8 *)hdr + ieee80211_hdrlen(hdr->frame_control);
+-	iv16 = data[2] | (data[0] << 8);
+-	iv32 = get_unaligned_le32(&data[4]);
+-
+-	tk = &key->conf.key[NL80211_TKIP_DATA_OFFSET_ENCR_KEY];
+-	ctx = &key->u.tkip.tx;
+-
+-#ifdef CONFIG_MAC80211_TKIP_DEBUG
+-	printk(KERN_DEBUG "TKIP encrypt: iv16 = 0x%04x, iv32 = 0x%08x\n",
+-			iv16, iv32);
++	struct ieee80211_sub_if_data *sdata = key->sdata;
++	struct tkip_ctx *ctx = &key->u.tkip.tx;
++	const u8 *tk = &key->conf.key[NL80211_TKIP_DATA_OFFSET_ENCR_KEY];
+ 
+-	if (iv32 != ctx->iv32) {
+-		printk(KERN_DEBUG "skb: iv32 = 0x%08x key: iv32 = 0x%08x\n",
+-			iv32, ctx->iv32);
+-		printk(KERN_DEBUG "Wrap around of iv16 in the middle of a "
+-			"fragmented packet\n");
+-	}
+-#endif
++	lockdep_assert_held(&key->u.tkip.txlock);
+ 
+-	/* Update the p1k only when the iv16 in the packet wraps around, this
+-	 * might occur after the wrap around of iv16 in the key in case of
+-	 * fragmented packets. */
+-	if (iv16 == 0 || ctx->state == TKIP_STATE_NOT_INIT)
+-		tkip_mixing_phase1(tk, ctx, hdr->addr2, iv32);
++	/*
++	 * Update the P1K when the IV32 is different from the value it
++	 * had when we last computed it (or when not initialised yet).
++	 * This might flip-flop back and forth if packets are processed
++	 * out-of-order due to the different ACs, but then we have to
++	 * just compute the P1K more often.
++	 */
++	if (ctx->p1k_iv32 != iv32 || ctx->state == TKIP_STATE_NOT_INIT)
++		tkip_mixing_phase1(tk, ctx, sdata->vif.addr, iv32);
++}
+ 
+-	if (type == IEEE80211_TKIP_P1_KEY) {
+-		memcpy(outkey, ctx->p1k, sizeof(u16) * 5);
+-		return;
+-	}
++void ieee80211_get_tkip_p1k(struct ieee80211_key_conf *keyconf,
++			    struct sk_buff *skb, u16 *p1k)
++{
++	struct ieee80211_key *key = (struct ieee80211_key *)
++			container_of(keyconf, struct ieee80211_key, conf);
++	struct tkip_ctx *ctx = &key->u.tkip.tx;
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	const u8 *data = (u8 *)hdr + ieee80211_hdrlen(hdr->frame_control);
++	u32 iv32 = get_unaligned_le32(&data[4]);
++	unsigned long flags;
++
++	spin_lock_irqsave(&key->u.tkip.txlock, flags);
++	ieee80211_compute_tkip_p1k(key, iv32);
++	memcpy(p1k, ctx->p1k, sizeof(ctx->p1k));
++	spin_unlock_irqrestore(&key->u.tkip.txlock, flags);
++}
++EXPORT_SYMBOL(ieee80211_get_tkip_p1k);
+ 
+-	tkip_mixing_phase2(tk, ctx, iv16, outkey);
++void ieee80211_get_tkip_p2k(struct ieee80211_key_conf *keyconf,
++			    struct sk_buff *skb, u8 *p2k)
++{
++	struct ieee80211_key *key = (struct ieee80211_key *)
++			container_of(keyconf, struct ieee80211_key, conf);
++	const u8 *tk = &key->conf.key[NL80211_TKIP_DATA_OFFSET_ENCR_KEY];
++	struct tkip_ctx *ctx = &key->u.tkip.tx;
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	const u8 *data = (u8 *)hdr + ieee80211_hdrlen(hdr->frame_control);
++	u32 iv32 = get_unaligned_le32(&data[4]);
++	u16 iv16 = data[2] | (data[0] << 8);
++	unsigned long flags;
++
++	spin_lock_irqsave(&key->u.tkip.txlock, flags);
++	ieee80211_compute_tkip_p1k(key, iv32);
++	tkip_mixing_phase2(tk, ctx, iv16, p2k);
++	spin_unlock_irqrestore(&key->u.tkip.txlock, flags);
+ }
+-EXPORT_SYMBOL(ieee80211_get_tkip_key);
++EXPORT_SYMBOL(ieee80211_get_tkip_p2k);
+ 
+ /*
+  * Encrypt packet payload with TKIP using @key. @pos is a pointer to the
+@@ -204,19 +217,15 @@ EXPORT_SYMBOL(ieee80211_get_tkip_key);
+  */
+ int ieee80211_tkip_encrypt_data(struct crypto_cipher *tfm,
+ 				struct ieee80211_key *key,
+-				u8 *pos, size_t payload_len, u8 *ta)
++				struct sk_buff *skb,
++				u8 *payload, size_t payload_len)
+ {
+ 	u8 rc4key[16];
+-	struct tkip_ctx *ctx = &key->u.tkip.tx;
+-	const u8 *tk = &key->conf.key[NL80211_TKIP_DATA_OFFSET_ENCR_KEY];
+-
+-	/* Calculate per-packet key */
+-	if (ctx->iv16 == 0 || ctx->state == TKIP_STATE_NOT_INIT)
+-		tkip_mixing_phase1(tk, ctx, ta, ctx->iv32);
+ 
+-	tkip_mixing_phase2(tk, ctx, ctx->iv16, rc4key);
++	ieee80211_get_tkip_p2k(&key->conf, skb, rc4key);
+ 
+-	return ieee80211_wep_encrypt_data(tfm, rc4key, 16, pos, payload_len);
++	return ieee80211_wep_encrypt_data(tfm, rc4key, 16,
++					  payload, payload_len);
+ }
+ 
+ /* Decrypt packet payload with TKIP using @key. @pos is a pointer to the
+--- a/net/mac80211/tkip.h
++++ b/net/mac80211/tkip.h
+@@ -13,11 +13,13 @@
+ #include <linux/crypto.h>
+ #include "key.h"
+ 
+-u8 *ieee80211_tkip_add_iv(u8 *pos, struct ieee80211_key *key, u16 iv16);
++u8 *ieee80211_tkip_add_iv(u8 *pos, struct ieee80211_key *key);
+ 
+ int ieee80211_tkip_encrypt_data(struct crypto_cipher *tfm,
+-				 struct ieee80211_key *key,
+-				 u8 *pos, size_t payload_len, u8 *ta);
++				struct ieee80211_key *key,
++				struct sk_buff *skb,
++				u8 *payload, size_t payload_len);
++
+ enum {
+ 	TKIP_DECRYPT_OK = 0,
+ 	TKIP_DECRYPT_NO_EXT_IV = -1,
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -209,6 +209,7 @@ static int ieee80211_get_key(struct wiph
+ 	u8 seq[6] = {0};
+ 	struct key_params params;
+ 	struct ieee80211_key *key = NULL;
++	u64 pn64;
+ 	u32 iv32;
+ 	u16 iv16;
+ 	int err = -ENOENT;
+@@ -256,12 +257,13 @@ static int ieee80211_get_key(struct wiph
+ 		params.seq_len = 6;
+ 		break;
+ 	case WLAN_CIPHER_SUITE_CCMP:
+-		seq[0] = key->u.ccmp.tx_pn[5];
+-		seq[1] = key->u.ccmp.tx_pn[4];
+-		seq[2] = key->u.ccmp.tx_pn[3];
+-		seq[3] = key->u.ccmp.tx_pn[2];
+-		seq[4] = key->u.ccmp.tx_pn[1];
+-		seq[5] = key->u.ccmp.tx_pn[0];
++		pn64 = atomic64_read(&key->u.ccmp.tx_pn);
++		seq[0] = pn64;
++		seq[1] = pn64 >> 8;
++		seq[2] = pn64 >> 16;
++		seq[3] = pn64 >> 24;
++		seq[4] = pn64 >> 32;
++		seq[5] = pn64 >> 40;
+ 		params.seq = seq;
+ 		params.seq_len = 6;
+ 		break;
+--- a/net/mac80211/debugfs_key.c
++++ b/net/mac80211/debugfs_key.c
+@@ -79,6 +79,7 @@ static ssize_t key_tx_spec_read(struct f
+ 				size_t count, loff_t *ppos)
+ {
+ 	const u8 *tpn;
++	u64 pn;
+ 	char buf[20];
+ 	int len;
+ 	struct ieee80211_key *key = file->private_data;
+@@ -94,9 +95,10 @@ static ssize_t key_tx_spec_read(struct f
+ 				key->u.tkip.tx.iv16);
+ 		break;
+ 	case WLAN_CIPHER_SUITE_CCMP:
+-		tpn = key->u.ccmp.tx_pn;
++		pn = atomic64_read(&key->u.ccmp.tx_pn);
+ 		len = scnprintf(buf, sizeof(buf), "%02x%02x%02x%02x%02x%02x\n",
+-				tpn[0], tpn[1], tpn[2], tpn[3], tpn[4], tpn[5]);
++				(u8)(pn >> 40), (u8)(pn >> 32), (u8)(pn >> 24),
++				(u8)(pn >> 16), (u8)(pn >> 8), (u8)pn);
+ 		break;
+ 	case WLAN_CIPHER_SUITE_AES_CMAC:
+ 		tpn = key->u.aes_cmac.tx_pn;
