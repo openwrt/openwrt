@@ -1,0 +1,28 @@
+To get hundredths of MHz the rate needs to be divided by 10'000.
+Here is an example:
+ twd_timer_rate = 123456789
+ Before the patch:
+    twd_timer_rate / 1000000 = 123
+    (twd_timer_rate / 1000000) % 100 = 23
+    Result: 123.23MHz.
+ After being fixed:
+    twd_timer_rate / 1000000 = 123
+    (twd_timer_rate / 10000) % 100 = 45
+    Result: 123.45MHz.
+
+Signed-off-by: Vitaly Kuzmichev <vkuzmichev@mvista.com>
+---
+ arch/arm/kernel/smp_twd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/arch/arm/kernel/smp_twd.c
++++ b/arch/arm/kernel/smp_twd.c
+@@ -115,7 +115,7 @@ static void __cpuinit twd_calibrate_rate
+ 		twd_timer_rate = (0xFFFFFFFFU - count) * (HZ / 5);
+ 
+ 		printk("%lu.%02luMHz.\n", twd_timer_rate / 1000000,
+-			(twd_timer_rate / 1000000) % 100);
++			(twd_timer_rate / 10000) % 100);
+ 	}
+ }
+ 
