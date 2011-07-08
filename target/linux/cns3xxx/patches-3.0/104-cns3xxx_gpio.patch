@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -191,7 +191,7 @@ static struct map_desc cns3420_io_desc[]
+@@ -215,7 +215,7 @@ static struct map_desc cns3420_io_desc[]
  
  static void __init cns3420_map_io(void)
  {
@@ -12,14 +12,14 @@
 --- a/arch/arm/mach-cns3xxx/core.c
 +++ b/arch/arm/mach-cns3xxx/core.c
 @@ -18,6 +18,7 @@
- #include <asm/hardware/cache-l2x0.h>
  #include <asm/hardware/gic.h>
  #include <asm/smp_twd.h>
+ #include <asm/hardware/cache-l2x0.h>
 +#include <asm/gpio.h>
  #include <mach/cns3xxx.h>
  #include "core.h"
  
-@@ -80,7 +81,89 @@ static struct map_desc cns3xxx_io_desc[]
+@@ -75,12 +76,96 @@ static struct map_desc cns3xxx_io_desc[]
  	},
  };
  
@@ -108,21 +108,20 @@
 +
 +void __init cns3xxx_common_init(void)
  {
- 	iotable_init(cns3xxx_io_desc, ARRAY_SIZE(cns3xxx_io_desc));
- #ifdef CONFIG_CACHE_L2X0
-@@ -95,6 +178,7 @@ void __init cns3xxx_map_io(void)
  #ifdef CONFIG_LOCAL_TIMERS
  	twd_base = (void __iomem *) CNS3XXX_TC11MP_TWD_BASE_VIRT;
  #endif
+ 	iotable_init(cns3xxx_io_desc, ARRAY_SIZE(cns3xxx_io_desc));
++
 +	gpiochip_add(&cns3xxx_gpio_chip);
  }
  
  /* used by entry-macro.S */
 --- a/arch/arm/mach-cns3xxx/core.h
 +++ b/arch/arm/mach-cns3xxx/core.h
-@@ -13,7 +13,7 @@
- 
- extern struct sys_timer cns3xxx_timer;
+@@ -19,7 +19,7 @@ void __init cns3xxx_l2x0_init(void);
+ static inline void cns3xxx_l2x0_init(void) {}
+ #endif /* CONFIG_CACHE_L2X0 */
  
 -void __init cns3xxx_map_io(void);
 +void __init cns3xxx_common_init(void);
@@ -131,12 +130,12 @@
  
 --- a/arch/arm/mach-cns3xxx/laguna.c
 +++ b/arch/arm/mach-cns3xxx/laguna.c
-@@ -609,7 +609,7 @@ static struct map_desc laguna_io_desc[]
+@@ -611,7 +611,7 @@ static struct map_desc laguna_io_desc[]
  
  static void __init laguna_map_io(void)
  {
 -	cns3xxx_map_io();
 +	cns3xxx_common_init();
  	iotable_init(laguna_io_desc, ARRAY_SIZE(laguna_io_desc));
- 
  	laguna_early_serial_setup();
+ }

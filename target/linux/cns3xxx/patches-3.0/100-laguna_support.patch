@@ -555,23 +555,24 @@
 + * Watchdog
 + */
 +
-+static struct resource laguna_watchdog_resource[] = {
-+	{
-+		.start = CNS3XXX_TC11MP_TWD_BASE,
-+		.end = CNS3XXX_TC11MP_TWD_BASE + SZ_4K - 1,
-+		.flags = IORESOURCE_MEM,
-+	},{
-+		.start = IRQ_LOCALWDOG,
-+		.end = IRQ_LOCALWDOG,
-+		.flags = IORESOURCE_IRQ,
++static struct resource laguna_watchdog_resources[] = {
++	[0] = {
++		.start	= CNS3XXX_TC11MP_TWD_BASE,
++		.end	= CNS3XXX_TC11MP_TWD_BASE + SZ_4K - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= IRQ_LOCALWDOG,
++		.end	= IRQ_LOCALWDOG,
++		.flags	= IORESOURCE_IRQ,
 +	}
 +};
 +
 +static struct platform_device laguna_watchdog = {
-+	.name = "mpcore_wdt",
-+	.id = -1,
-+	.num_resources = ARRAY_SIZE(laguna_watchdog_resource),
-+	.resource = laguna_watchdog_resource,
++	.name		= "mpcore_wdt",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(laguna_watchdog_resources),
++	.resource	= laguna_watchdog_resources,
 +};
 +
 +/*
@@ -580,13 +581,14 @@
 +
 +static void __init laguna_init(void)
 +{
++	cns3xxx_l2x0_init();
++
 +	platform_device_register(&laguna_watchdog);
 +
 +	platform_device_register(&laguna_i2c_controller);
 +
 +	i2c_register_board_info(0, laguna_i2c_devices,
 +			ARRAY_SIZE(laguna_i2c_devices));
-+
 +
 +	pm_power_off = cns3xxx_power_off;
 +}
@@ -614,10 +616,8 @@
 +{
 +	cns3xxx_map_io();
 +	iotable_init(laguna_io_desc, ARRAY_SIZE(laguna_io_desc));
-+
 +	laguna_early_serial_setup();
 +}
-+
 +
 +static int __init laguna_model_setup(void)
 +{
@@ -764,12 +764,13 @@
 +MACHINE_END
 --- a/arch/arm/mach-cns3xxx/Kconfig
 +++ b/arch/arm/mach-cns3xxx/Kconfig
-@@ -10,4 +10,13 @@ config MACH_CNS3420VB
+@@ -11,4 +11,14 @@ config MACH_CNS3420VB
  	  This is a platform with an on-board ARM11 MPCore and has support
  	  for USB, USB-OTG, MMC/SD/SDIO, SATA, PCI-E, etc.
  
 +config MACH_GW2388
 +	bool "Support for Gateworks Laguna Platform"
++	select HAVE_ARM_SCU if SMP
 +	select MIGHT_HAVE_PCI
 +	help
 +	  Include support for the Gateworks Laguna Platform
@@ -785,10 +786,10 @@
  #include <asm/mach/irq.h>
  #include <asm/hardware/gic.h>
 +#include <asm/smp_twd.h>
+ #include <asm/hardware/cache-l2x0.h>
  #include <mach/cns3xxx.h>
  #include "core.h"
- 
-@@ -60,11 +61,24 @@ static struct map_desc cns3xxx_io_desc[]
+@@ -61,11 +62,24 @@ static struct map_desc cns3xxx_io_desc[]
  		.pfn		= __phys_to_pfn(CNS3XXX_PM_BASE),
  		.length		= SZ_4K,
  		.type		= MT_DEVICE,
@@ -962,7 +963,7 @@
 -device_initcall(cns3xxx_pcie_init);
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -175,6 +175,8 @@ static void __init cns3420_init(void)
+@@ -199,6 +199,8 @@ static void __init cns3420_init(void)
  	cns3xxx_ahci_init();
  	cns3xxx_sdhci_init();
  
