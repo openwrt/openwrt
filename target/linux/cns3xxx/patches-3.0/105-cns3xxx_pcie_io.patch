@@ -1,7 +1,7 @@
 --- a/arch/arm/mach-cns3xxx/core.c
 +++ b/arch/arm/mach-cns3xxx/core.c
-@@ -78,6 +78,16 @@ static struct map_desc cns3xxx_io_desc[]
- 		.pfn		= __phys_to_pfn(CNS3XXX_L2C_BASE),
+@@ -73,6 +73,16 @@ static struct map_desc cns3xxx_io_desc[]
+ 		.pfn		= __phys_to_pfn(CNS3XXX_SSP_BASE),
  		.length		= SZ_4K,
  		.type		= MT_DEVICE,
 +	}, {
@@ -17,7 +17,7 @@
  	},
  };
  
-@@ -184,13 +194,13 @@ void __init cns3xxx_common_init(void)
+@@ -171,13 +181,13 @@ void __init cns3xxx_common_init(void)
  /* used by entry-macro.S */
  void __init cns3xxx_init_irq(void)
  {
@@ -34,7 +34,7 @@
  	u32 clkctrl;
  
  	printk(KERN_INFO "powering system down...\n");
-@@ -364,7 +374,7 @@ static void __init __cns3xxx_timer_init(
+@@ -351,7 +361,7 @@ static void __init __cns3xxx_timer_init(
  
  static void __init cns3xxx_timer_init(void)
  {
