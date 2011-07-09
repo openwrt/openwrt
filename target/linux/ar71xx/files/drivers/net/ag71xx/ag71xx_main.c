@@ -742,10 +742,6 @@ static void ag71xx_restart_work_func(struct work_struct *work)
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 
 	ag71xx_stop(ag->dev);
-
-	if (pdata->is_ar724x)
-		ag71xx_hw_init(ag);
-
 	ag71xx_open(ag->dev);
 }
 
