@@ -13,7 +13,7 @@ PKG_VERSION:=1.5.14
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_RELEASE:=3
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=ba775356bdd5e1b73b3e11a152710ed6
+PKG_MD5SUM:=bc107f9d8ff6bed4c2760a2817bbb029
 
 include $(INCLUDE_DIR)/package.mk
 
