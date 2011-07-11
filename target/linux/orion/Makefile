@@ -10,10 +10,10 @@ ARCH:=arm
 BOARD:=orion
 BOARDNAME:=Marvell Orion
 SUBTARGETS:=generic harddisk
-CFLAGS=-Os -pipe -march=armv5t -mtune=xscale -fno-caller-saves
+CFLAGS=-Os -pipe -march=armv5te -mtune=xscale -fno-caller-saves
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.37.6
+LINUX_VERSION:=3.0-rc6
 
 include $(INCLUDE_DIR)/target.mk
 
