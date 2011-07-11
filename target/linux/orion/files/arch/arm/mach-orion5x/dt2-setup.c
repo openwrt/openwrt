@@ -119,11 +119,11 @@ void __init dt2_pci_preinit(void)
 	if (gpio_request(pin, "PCI IntA") == 0) {
 		if (gpio_direction_input(pin) == 0) {
 			irq = gpio_to_irq(pin);
-			set_irq_type(irq, IRQ_TYPE_LEVEL_LOW);
+			irq_set_irq_type(irq, IRQ_TYPE_LEVEL_LOW);
 			printk (KERN_INFO "PCI IntA IRQ: %d\n", irq);
 		} else {
 			printk(KERN_ERR "dt2_pci_preinit failed to "
-					"set_irq_type pin %d\n", pin);
+					"irq_set_irq_type pin %d\n", pin);
 			gpio_free(pin);
 		}
 	} else {
@@ -134,11 +134,11 @@ void __init dt2_pci_preinit(void)
 	if (gpio_request(pin, "PCI IntB") == 0) {
 		if (gpio_direction_input(pin) == 0) {
 			irq = gpio_to_irq(pin);
-			set_irq_type(irq, IRQ_TYPE_LEVEL_LOW);
+			irq_set_irq_type(irq, IRQ_TYPE_LEVEL_LOW);
 			printk (KERN_INFO "PCI IntB IRQ: %d\n", irq);
 		} else {
 			printk(KERN_ERR "dt2_pci_preinit failed to "
-					"set_irq_type pin %d\n", pin);
+					"irq_set_irq_type pin %d\n", pin);
 			gpio_free(pin);
 		}
 	} else {
@@ -240,28 +240,28 @@ static struct mv_sata_platform_data dt2_sata_data = {
 /*****************************************************************************
  * General Setup
  ****************************************************************************/
-static struct orion5x_mpp_mode dt2_mpp_modes[] __initdata = {
-	{  0, MPP_GPIO },		// RTC interrupt
-	{  1, MPP_GPIO },		// 88e6131 interrupt
-	{  2, MPP_GPIO },		// PCI_intB
-	{  3, MPP_GPIO },		// PCI_intA
-	{  4, MPP_GPIO },		// reset button switch
-	{  5, MPP_GPIO },
-	{  6, MPP_GPIO },
-	{  7, MPP_GPIO },
-	{  8, MPP_GPIO },
-	{  9, MPP_GIGE },		/* GE_RXERR */
-	{ 10, MPP_GPIO },		// usb
-	{ 11, MPP_GPIO },		// usb
-	{ 12, MPP_GIGE },		// GE_TXD[4]
-	{ 13, MPP_GIGE },		// GE_TXD[5]
-	{ 14, MPP_GIGE },		// GE_TXD[6]
-	{ 15, MPP_GIGE },		// GE_TXD[7]
-	{ 16, MPP_GIGE },		// GE_RXD[4]
-	{ 17, MPP_GIGE },		// GE_RXD[5]
-	{ 18, MPP_GIGE },		// GE_RXD[6]
-	{ 19, MPP_GIGE },		// GE_RXD[7]
-	{ -1 },
+static unsigned int dt2_mpp_modes[] __initdata = {
+	MPP0_GPIO,		// RTC interrupt
+	MPP1_GPIO,		// 88e6131 interrupt
+	MPP2_GPIO,		// PCI_intB
+	MPP3_GPIO,		// PCI_intA
+	MPP4_GPIO,		// reset button switch
+	MPP5_GPIO,
+	MPP6_GPIO,
+	MPP7_GPIO,
+	MPP8_GPIO,
+	MPP9_GIGE,		/* GE_RXERR */
+	MPP10_GPIO,		// usb
+	MPP11_GPIO,		// usb
+	MPP12_GIGE,		// GE_TXD[4]
+	MPP13_GIGE,		// GE_TXD[5]
+	MPP14_GIGE,		// GE_TXD[6]
+	MPP15_GIGE,		// GE_TXD[7]
+	MPP16_GIGE,		// GE_RXD[4]
+	MPP17_GIGE,		// GE_RXD[5]
+	MPP18_GIGE,		// GE_RXD[6]
+	MPP19_GIGE,		// GE_RXD[7]
+	0,
 };
 
 /*****************************************************************************
