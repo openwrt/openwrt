@@ -41,7 +41,7 @@ endef
 
 define KernelPackage/crypto-hash
   TITLE:=CryptoAPI hash support
-  KCONFIG:=CONFIG_CRYPTO_HASH
+  KCONFIG:=CONFIG_CRYPTO_HASH2
   FILES:=$(LINUX_DIR)/crypto/crypto_hash.ko
   AUTOLOAD:=$(call AutoLoad,02,crypto_hash)
   $(call AddDepends/crypto)
