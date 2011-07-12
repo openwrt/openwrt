@@ -70,13 +70,13 @@
  	return true;
  }
  
-@@ -1882,6 +1881,9 @@ int ath_rx_tasklet(struct ath_softc *sc,
- 			ath9k_rx_skb_postprocess(common, hdr_skb, &rs,
- 						 rxs, decrypt_error);
+@@ -1940,6 +1939,9 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 			sc->rx.rxotherant = 0;
+ 		}
  
 +		if (rxs->flag & RX_FLAG_MMIC_STRIPPED)
 +			skb_trim(skb, skb->len - 8);
 +
- 		/* We will now give hardware our shiny new allocated skb */
- 		bf->bf_mpdu = requeue_skb;
- 		bf->bf_buf_addr = dma_map_single(sc->dev, requeue_skb->data,
+ 		spin_lock_irqsave(&sc->sc_pm_lock, flags);
+ 
+ 		if ((sc->ps_flags & (PS_WAIT_FOR_BEACON |
