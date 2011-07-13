@@ -847,7 +847,7 @@
 +
 +#define __GEN_SPI_RSET_BASE(__cpu, __rset)				\
 +	case SPI_## __rset:						\
-+		return SPI_BCM_## __cpu ##_SPI_## __rset ##;
++		return SPI_BCM_## __cpu ##_SPI_## __rset;
 +
 +#define __GEN_SPI_RSET(__cpu)						\
 +	switch (reg) {							\
