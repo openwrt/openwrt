@@ -34,9 +34,11 @@
  #endif /* LINUX_26_31_COMPAT_H */
 --- /dev/null
 +++ b/compat/compat_atomic.c
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,33 @@
 +#include <linux/spinlock.h>
 +#include <linux/module.h>
++
++#if !defined(CONFIG_X86) && !((LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)) && defined(CONFIG_ARM) && !defined(CONFIG_GENERIC_ATOMIC64))
 +
 +static DEFINE_SPINLOCK(lock);
 +
@@ -64,6 +66,8 @@
 +}
 +EXPORT_SYMBOL(atomic64_add_return);
 +
++#endif
++
 --- a/include/linux/compat-3.1.h
 +++ b/include/linux/compat-3.1.h
 @@ -24,6 +24,18 @@
@@ -78,7 +82,7 @@
 + */
 +#include <asm/atomic.h>
 +
-+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)) && !defined(ATOMIC64_INIT)
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)) && !defined(ATOMIC64_INIT) && !defined(CONFIG_X86) && !((LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33)) && defined(CONFIG_ARM) && !defined(CONFIG_GENERIC_ATOMIC64))
 +#include <asm-generic/atomic64.h>
 +#endif
 +
