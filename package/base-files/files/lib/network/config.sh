@@ -96,8 +96,8 @@ add_dns() {
 	done
 
 	[ -n "$cfg" ] && {
-		uci_set_state network "$cfg" dns "$add"
-		uci_set_state network "$cfg" resolv_dns "$add"
+		uci_toggle_state network "$cfg" dns "$add"
+		uci_toggle_state network "$cfg" resolv_dns "$add"
 	}
 }
 
@@ -176,7 +176,7 @@ prepare_interface() {
 					for dev in $(sort_list "$devices" "$iface"); do
 						append newdevs "$dev"
 					done
-					uci_set_state network "$config" device "$newdevs"
+					uci_toggle_state network "$config" device "$newdevs"
 					$DEBUG ifconfig "$iface" 0.0.0.0
 					$DEBUG do_sysctl "net.ipv6.conf.$iface.disable_ipv6" 1
 					$DEBUG brctl addif "br-$config" "$iface"
@@ -210,8 +210,8 @@ set_interface_ifname() {
 
 	local device
 	config_get device "$1" device
-	uci_set_state network "$config" ifname "$ifname"
-	uci_set_state network "$config" device "$device"
+	uci_toggle_state network "$config" ifname "$ifname"
+	uci_toggle_state network "$config" device "$device"
 }
 
 setup_interface_none() {
