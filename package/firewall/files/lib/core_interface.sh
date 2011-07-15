@@ -1,27 +1,34 @@
-# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2009-2011 OpenWrt.org
 
 fw__uci_state_add() {
 	local var="$1"
 	local item="$2"
 
-	local val=" $(uci_get_state firewall core $var) "
-	val="${val// $item / }"
-	val="${val# }"
-	val="${val% }"
-	uci_revert_state firewall core $var
-	uci_set_state firewall core $var "${val:+$val }$item"
+	local val="$(uci_get_state firewall core $var)"
+	local e1; for e1 in $item; do
+		local e2; for e2 in $val; do
+			[ "$e1" = "$e2" ] && e1=""
+		done
+		val="${val:+$val${e1:+ }}$e1"
+	done
+
+	uci_toggle_state $var "$val"
 }
 
 fw__uci_state_del() {
 	local var="$1"
 	local item="$2"
 
-	local val=" $(uci_get_state firewall core $var) "
-	val="${val// $item / }"
-	val="${val# }"
-	val="${val% }"
-	uci_revert_state firewall core $var
-	uci_set_state firewall core $var "$val"
+	local rest=""
+	local val="$(uci_get_state firewall core $var)"
+	local e1; for e1 in $val; do
+		local e2; for e2 in $item; do
+			[ "$e1" = "$e2" ] && e1=""
+		done
+		rest="${rest:+$rest${e1:+ }}$e1"
+	done
+
+	uci_toggle_state $var "$val"
 }
 
 fw_configure_interface() {
@@ -154,14 +161,14 @@ fw_configure_interface() {
 		fw_sysctl_interface $ifname
 		fw_callback post interface
 
-		uci_set_state firewall core "${iface}_aliases" "$aliases"
+		uci_toggle_state firewall core "${iface}_aliases" "$aliases"
 	} || {
 		local subnets=
 		config_get subnets core "${iface}_subnets"
 		append subnets "$aliasnet"
 
 		config_set core "${iface}_subnets" "$subnets"
-		uci_set_state firewall core "${iface}_subnets" "$subnets"
+		uci_toggle_state firewall core "${iface}_subnets" "$subnets"
 	}
 
 	local new_zones=
@@ -180,8 +187,8 @@ fw_configure_interface() {
 	}
 	config_foreach load_zone zone
 
-	uci_set_state firewall core "${iface}_zone" "$new_zones"
-	uci_set_state firewall core "${iface}_ifname" "$ifname"
+	uci_toggle_state firewall core "${iface}_zone" "$new_zones"
+	uci_toggle_state firewall core "${iface}_ifname" "$ifname"
 }
 
 fw_sysctl_interface() {
