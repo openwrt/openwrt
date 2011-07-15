@@ -71,6 +71,11 @@ uci_set_state() {
 	/sbin/uci ${UCI_CONFIG_DIR:+-c $UCI_CONFIG_DIR} -P /var/state set "$PACKAGE.$CONFIG${OPTION:+.$OPTION}=$VALUE"
 }
 
+uci_toggle_state() {
+	uci_revert_state "$1" "$2" "$3"
+	uci_set_state "$1" "$2" "$3" "$4"
+}
+
 uci_set() {
 	local PACKAGE="$1"
 	local CONFIG="$2"

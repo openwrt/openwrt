@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ UCI_RELEASE=2
 
 PKG_NAME:=uci
 PKG_VERSION:=$(UCI_VERSION)$(if $(UCI_RELEASE),.$(UCI_RELEASE))
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_REV:=5b6e96336d6a615a72c274cceaea8c2fe74d7642
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
