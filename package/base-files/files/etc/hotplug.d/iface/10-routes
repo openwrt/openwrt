@@ -84,7 +84,7 @@ case "$ACTION" in
 		# Save alias references in state vars
 		local aliases
 		config_get aliases "$INTERFACE" aliases
-		[ -z "$aliases" ] || uci_set_state network "$INTERFACE" aliases "$aliases"
+		[ -z "$aliases" ] || uci_toggle_state network "$INTERFACE" aliases "$aliases"
 
 		# Make ip6addr of parent iface the main address again
 		local ip6addr
