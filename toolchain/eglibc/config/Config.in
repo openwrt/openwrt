@@ -49,7 +49,6 @@ config EGLIBC_OPTION_EGLIBC_BACKTRACE
 config EGLIBC_OPTION_EGLIBC_BIG_MACROS
 	bool "Use extensive inline code"
 	default y
-	depends EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group specifies whether certain pieces of code
 	  should be inlined to achieve maximum speed.  If this option
@@ -173,7 +172,6 @@ config EGLIBC_OPTION_EGLIBC_CHARSETS
 config EGLIBC_OPTION_EGLIBC_CRYPT
 	bool "Encryption library"
 	default y
-	depends EGLIBC_VERSION_2_12
 	help
 	  This option group includes the `libcrypt' library which
 	  provides functions for one-way encryption.  Supported
@@ -183,7 +181,6 @@ config EGLIBC_OPTION_EGLIBC_CRYPT
 config EGLIBC_OPTION_EGLIBC_CRYPT_UFC
 	bool "Ultra fast `crypt' implementation"
 	default y
-	depends EGLIBC_VERSION_2_12
 	select EGLIBC_OPTION_EGLIBC_CRYPT
 	help
 	  This option group provides ultra fast DES-based implementation of
@@ -233,7 +230,6 @@ config EGLIBC_OPTION_EGLIBC_ENVZ
 config EGLIBC_OPTION_EGLIBC_FCVT
 	bool "Functions for converting floating-point numbers to strings"
 	default y
-	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes functions for converting
 	  floating-point numbers to strings.
@@ -250,7 +246,6 @@ config EGLIBC_OPTION_EGLIBC_FCVT
 config EGLIBC_OPTION_EGLIBC_FMTMSG
 	bool "Functions for formatting messages"
 	default y
-	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes the following functions:
 
@@ -276,7 +271,6 @@ config EGLIBC_OPTION_EGLIBC_FSTAB
 config EGLIBC_OPTION_EGLIBC_FTRAVERSE
 	bool "Functions for traversing file hierarchies"
 	default y
-	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes functions for traversing file
 	  UNIX file hierachies.
@@ -307,7 +301,6 @@ config EGLIBC_OPTION_EGLIBC_GETLOGIN
 config EGLIBC_OPTION_EGLIBC_IDN
 	bool "International domain names support"
 	default y
-	depends EGLIBC_VERSION_2_12
 	help
 	  This option group includes the `libcidn' library which
 	  provides support for international domain names.
@@ -443,7 +436,6 @@ config EGLIBC_OPTION_EGLIBC_INET
 config EGLIBC_OPTION_EGLIBC_INET_ANL
 	bool "Asynchronous name lookup"
 	default y
-	depends EGLIBC_VERSION_2_12
 	select EGLIBC_OPTION_EGLIBC_INET
 	help
 	  This option group includes the `libanl' library which
@@ -473,7 +465,6 @@ config EGLIBC_OPTION_EGLIBC_LIBM
 config EGLIBC_OPTION_EGLIBC_LIBM_BIG
 	bool "Math library size"
 	default y
-	depends EGLIBC_VERSION_2_12
 	help
 	  This option group enables default configuration of the math library.
 	  Not selecting this option group removes most of the extended and
@@ -498,7 +489,7 @@ config EGLIBC_OPTION_EGLIBC_LOCALES
 config EGLIBC_OPTION_EGLIBC_LOCALE_CODE
 	bool "Locale functions"
 	default y
-	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
+	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR
 	help
 	  This option group includes locale support functions, programs,
 	  and libraries.  With EGLIBC_OPTION_EGLIBC_LOCALE_CODE disabled,
@@ -523,7 +514,6 @@ config EGLIBC_OPTION_EGLIBC_LOCALE_CODE
 config EGLIBC_OPTION_EGLIBC_MEMUSAGE
 	bool "Memory profiling library"
 	default y
-	depends EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes the `libmemusage' library and
 	  the `memusage' and `memusagestat' utilities.
@@ -660,7 +650,6 @@ config EGLIBC_OPTION_EGLIBC_RCMD
 config EGLIBC_OPTION_EGLIBC_RTLD_DEBUG
 	bool "Runtime linker debug print outs"
 	default y
-	depends EGLIBC_VERSION_2_12
 	help
 	  This option group enables debug output of the runtime linker
 	  which is activated via LD_DEBUG and LD_TRACE_PRELINKING
@@ -802,7 +791,6 @@ config EGLIBC_OPTION_EGLIBC_WORDEXP
 config EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR
 	bool "ISO C library wide character functions, excluding I/O"
 	default y
-	depends EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	help
 	  This option group includes the functions defined by the ISO C
 	  standard for working with wide and multibyte characters in
@@ -857,7 +845,6 @@ config EGLIBC_OPTION_POSIX_REGEXP
 config EGLIBC_OPTION_POSIX_REGEXP_GLIBC
 	bool "Regular expressions from GLIBC"
 	default y
-	depends EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
 	select EGLIBC_OPTION_POSIX_REGEXP
 	help
 	  This option group specifies which regular expression
@@ -871,7 +858,7 @@ config EGLIBC_OPTION_POSIX_REGEXP_GLIBC
 config EGLIBC_OPTION_POSIX_WIDE_CHAR_DEVICE_IO
 	bool "Input and output functions for wide characters"
 	default y
-	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR if EGLIBC_VERSION_2_8 || EGLIBC_VERSION_2_9 || EGLIBC_VERSION_2_10 || EGLIBC_VERSION_2_11 ||  EGLIBC_VERSION_2_12
+	select EGLIBC_OPTION_POSIX_C_LANG_WIDE_CHAR
 	help
 	  This option group includes functions for reading and writing
 	  wide characters to and from <stdio.h> streams.
