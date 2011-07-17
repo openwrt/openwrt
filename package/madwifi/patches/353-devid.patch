@@ -1,9 +1,10 @@
 --- a/ath/if_ath_pci.c
 +++ b/ath/if_ath_pci.c
-@@ -114,11 +114,13 @@ static struct pci_device_id ath_pci_id_t
+@@ -114,11 +114,15 @@ static struct pci_device_id ath_pci_id_t
  	{ 0x168c, 0x0023, PCI_ANY_ID, PCI_ANY_ID },
  	{ 0x168c, 0x0024, PCI_ANY_ID, PCI_ANY_ID },
  	{ 0x168c, 0x9013, PCI_ANY_ID, PCI_ANY_ID }, /* sonicwall */
++	{ 0x168c, 0xff16, PCI_ANY_ID, PCI_ANY_ID },
 +	{ 0x168c, 0xff1a, PCI_ANY_ID, PCI_ANY_ID },
  	{ 0 }
  };
@@ -11,6 +12,7 @@
  static u16 ath_devidmap[][2] = {
 -	{ 0x9013, 0x0013 }
 +	{ 0x9013, 0x0013 },
++	{ 0xff16, 0x0013 },
 +	{ 0xff1a, 0x001a }
  };
  
