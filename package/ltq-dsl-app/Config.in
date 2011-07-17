@@ -1,0 +1,14 @@
+menu "Configuration"
+	depends on PACKAGE_ltq-dsl-app
+
+config LTQ_DSL_ENABLE_CLI
+	bool "Enable CLI support"
+	depends on PACKAGE_ltq-dsl-app
+	default n
+
+config LTQ_DSL_ENABLE_DSL_EVENT_POLLING
+	bool "Include Event Polling support"
+	depends on PACKAGE_ltq-dsl-app
+	default n
+
+endmenu
