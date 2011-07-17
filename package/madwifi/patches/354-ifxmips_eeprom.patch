@@ -1,12 +1,13 @@
 --- a/ath_hal/ah_os.c
 +++ b/ath_hal/ah_os.c
-@@ -343,6 +343,45 @@
+@@ -343,6 +343,46 @@ EXPORT_SYMBOL(ath_hal_func);
   * NB: see the comments in ah_osdep.h about byte-swapping register
   *     reads and writes to understand what's going on below.
   */
 +
 +#ifdef CONFIG_LANTIQ
 +extern int lantiq_emulate_madwifi_eep;
++extern unsigned long long lantiq_madwifi_eep_addr;
 +#define EEPROM_EMULATION 1
 +#endif
 +
@@ -31,7 +32,7 @@
 +				val = 0x00000002;
 +			break;
 +		case 0x6004:
-+			val = cpu_to_le16(__raw_readw((u16 *) KSEG1ADDR(0xb07f0400 + addrsel)));
++			val = cpu_to_le16(__raw_readw((u16 *) KSEG1ADDR(lantiq_madwifi_eep_addr + addrsel)));
 +			/* this forces the regdomain to 0x00 (worldwide), as the original setting
 +			 * causes issues with the HAL */
 +			if (addrsel == 0x17e)
@@ -46,7 +47,7 @@
  void __ahdecl
  ath_hal_reg_write(struct ath_hal *ah, u_int reg, u_int32_t val)
  {
-@@ -351,20 +390,33 @@
+@@ -351,20 +391,33 @@ ath_hal_reg_write(struct ath_hal *ah, u_
  		ath_hal_printf(ah, "%s: WRITE 0x%x <= 0x%x\n", 
  				(ath_hal_func ?: "unknown"), reg, val);
  #endif
@@ -84,7 +85,7 @@
  				(ath_hal_func ?: "unknown"), reg, val);
  #endif
  	return val;
-@@ -581,7 +633,6 @@
+@@ -581,7 +634,6 @@ init_ath_hal(void)
  {
  	const char *sep;
  	int i;
