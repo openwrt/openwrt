@@ -52,14 +52,27 @@ endef
 
 define Package/iptables/description
 IPv4 firewall administration tool.
-Includes support for:
-- comment
-- limit
-- LOG
-- mac
-- multiport
-- REJECT
-- TCPMSS
+
+ Matches:
+  - icmp
+  - tcp
+  - udp
+  - comment
+  - limit
+  - mac
+  - multiport
+
+ Targets:
+  - ACCEPT
+  - DROP
+  - REJECT
+  - LOG
+  - TCPMSS
+
+ Tables:
+  - filter
+  - mangle
+
 endef
 
 define Package/iptables-mod-conntrack
@@ -69,10 +82,17 @@ endef
 
 define Package/iptables-mod-conntrack/description
 Basic iptables extensions for connection tracking.
-Includes:
-- state
-- raw
-- NOTRACK
+
+ Matches:
+  - state
+  - conntrack
+
+ Targets:
+  - NOTRACK
+
+ Tables:
+  - raw
+
 endef
 
 define Package/iptables-mod-conntrack-extra
@@ -82,10 +102,16 @@ endef
 
 define Package/iptables-mod-conntrack-extra/description
 Extra iptables extensions for connection tracking.
-Includes:
-- libipt_conntrack
-- libipt_helper
-- libipt_connmark/CONNMARK
+
+ Matches:
+  - connbytes
+  - connmark
+  - recent
+  - helper
+
+ Targets:
+  - CONNMARK
+
 endef
 
 define Package/iptables-mod-filter
@@ -95,9 +121,12 @@ endef
 
 define Package/iptables-mod-filter/description
 iptables extensions for packet content inspection.
-Includes:
-- libipt_string
-- libipt_layer7
+Includes support for:
+
+ Matches:
+  - layer7
+  - string
+
 endef
 
 define Package/iptables-mod-ipopt
@@ -107,18 +136,26 @@ endef
 
 define Package/iptables-mod-ipopt/description
 iptables extensions for matching/changing IP packet options.
-Includes:
-- libipt_CLASSIFY
-- libipt_dscp/DSCP
-- libipt_ecn/ECN
-- libipt_length
-- libipt_mac
-- libipt_mark/MARK
-- libipt_statistic
-- libipt_tcpmms
-- libipt_tos/TOS
-- libipt_ttl/TTL
-- libipt_unclean
+
+ Matches:
+  - dscp
+  - hashlimit
+  - ecn
+  - length
+  - mark
+  - statistic
+  - tcpmss
+  - time
+  - unclean
+  - hl
+
+ Targets:
+  - DSCP
+  - CLASSIFY
+  - ECN
+  - MARK
+  - HL
+
 endef
 
 define Package/iptables-mod-ipsec
@@ -128,10 +165,12 @@ endef
 
 define Package/iptables-mod-ipsec/description
 iptables extensions for matching ipsec traffic.
-Includes:
-- libipt_ah
-- libipt_esp
-- libipt_policy
+
+ Matches:
+  - ah
+  - esp
+  - policy
+
 endef
 
 define Package/iptables-mod-ipset
@@ -141,9 +180,13 @@ endef
 
 define Package/iptables-mod-ipset/description
 IPset iptables extensions.
-Includes:
-- libipt_set
-- libipt_SET
+
+ Matches:
+  - set
+
+ Targets:
+  - SET
+
 endef
 
 define Package/iptables-mod-nat
@@ -153,10 +196,15 @@ endef
 
 define Package/iptables-mod-nat/description
 iptables extensions for basic NAT targets.
-Includes:
-- MASQUERADE
-- SNAT
-- DNAT
+
+ Targets:
+  - SNAT
+  - DNAT
+  - MASQUERADE
+
+ Tables:
+  - nat
+
 endef
 
 define Package/iptables-mod-nat-extra
@@ -166,8 +214,11 @@ endef
 
 define Package/iptables-mod-nat-extra/description
 iptables extensions for extra NAT targets.
-Includes:
-- REDIRECT
+
+ Targets:
+  - MIRROR
+  - NETMAP
+  - REDIRECT
 endef
 
 define Package/iptables-mod-ulog
@@ -177,8 +228,10 @@ endef
 
 define Package/iptables-mod-ulog/description
 iptables extensions for user-space packet logging.
-Includes:
-- libipt_ULOG
+
+ Targets:
+  - ULOG
+
 endef
 
 define Package/iptables-mod-hashlimit
@@ -188,8 +241,10 @@ endef
 
 define Package/iptables-mod-hashlimit/description
 iptables extensions for hashlimit matching
-Includes:
-- libipt_hashlimit
+
+ Matches:
+  - hashlimit
+
 endef
 
 define Package/iptables-mod-iprange
@@ -199,8 +254,10 @@ endef
 
 define Package/iptables-mod-iprange/description
 iptables extensions for matching ip ranges.
-Includes:
-- libipt_iprange
+
+ Matches:
+  - iprange
+
 endef
 
 define Package/iptables-mod-extra
@@ -210,11 +267,14 @@ endef
 
 define Package/iptables-mod-extra/description
 Other extra iptables extensions.
-Includes:
-- libipt_owner
-- libipt_physdev
-- libipt_pkttype
-- libipt_recent
+
+ Matches:
+  - condition
+  - owner
+  - physdev (if ebtables is enabled)
+  - pkttype
+  - quota
+
 endef
 
 define Package/iptables-mod-led
@@ -224,8 +284,10 @@ endef
 
 define Package/iptables-mod-led/description
 iptables extension for triggering a LED.
-Includes:
-- libxt_LED
+
+ Targets:
+  - LED
+
 endef
 
 define Package/iptables-mod-tproxy
@@ -235,9 +297,13 @@ endef
 
 define Package/iptables-mod-tproxy/description
 Transparent proxy iptables extensions.
-Includes:
-- libxt_socket
-- libxt_TPROXY
+
+ Matches:
+  - socket
+
+ Targets:
+  - TPROXY
+
 endef
 
 define Package/iptables-mod-tee
@@ -247,8 +313,10 @@ endef
 
 define Package/iptables-mod-tee/description
 TEE iptables extensions.
-Includes:
-- libxt_TEE
+
+ Targets:
+  - TEE
+
 endef
 
 define Package/iptables-mod-u32
@@ -258,8 +326,10 @@ endef
 
 define Package/iptables-mod-u32/description
 U32 iptables extensions.
-Includes:
-- libxt_u32
+
+ Matches:
+  - u32
+
 endef
 
 define Package/iptables-utils
