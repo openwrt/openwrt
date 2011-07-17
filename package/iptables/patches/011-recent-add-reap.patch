@@ -10,11 +10,9 @@ Signed-off-by: Tim Gardner <tim.gardner@canonical.com>
  include/linux/netfilter/xt_recent.h |    7 +++++++
  3 files changed, 32 insertions(+), 0 deletions(-)
 
-diff --git a/extensions/libxt_recent.c b/extensions/libxt_recent.c
-index 4ac32f7..7e3d280 100644
 --- a/extensions/libxt_recent.c
 +++ b/extensions/libxt_recent.c
-@@ -20,6 +20,7 @@ static const struct option recent_opts[] = {
+@@ -20,6 +20,7 @@ static const struct option recent_opts[]
  	{.name = "name",     .has_arg = true,  .val = 208},
  	{.name = "rsource",  .has_arg = false, .val = 209},
  	{.name = "rdest",    .has_arg = false, .val = 210},
@@ -22,7 +20,7 @@ index 4ac32f7..7e3d280 100644
  	XT_GETOPT_TABLEEND,
  };
  
-@@ -36,6 +37,7 @@ static void recent_help(void)
+@@ -37,6 +38,7 @@ static void recent_help(void)
  "    --hitcount hits             For check and update commands above.\n"
  "                                Specifies that the match will only occur if source address seen hits times.\n"
  "                                May be used in conjunction with the seconds option.\n"
@@ -30,7 +28,7 @@ index 4ac32f7..7e3d280 100644
  "    --rttl                      For check and update commands above.\n"
  "                                Specifies that the match will only occur if the source address and the TTL\n"
  "                                match between this packet and the one which was set.\n"
-@@ -62,6 +64,8 @@ static void recent_init(struct xt_entry_match *match)
+@@ -63,6 +65,8 @@ static void recent_init(struct xt_entry_
  	(XT_RECENT_SET | XT_RECENT_CHECK | \
  	XT_RECENT_UPDATE | XT_RECENT_REMOVE)
  
@@ -39,7 +37,7 @@ index 4ac32f7..7e3d280 100644
  static int recent_parse(int c, char **argv, int invert, unsigned int *flags,
                          const void *entry, struct xt_entry_match **match)
  {
-@@ -103,6 +107,7 @@ static int recent_parse(int c, char **argv, int invert, unsigned int *flags,
+@@ -104,6 +108,7 @@ static int recent_parse(int c, char **ar
  
  		case 204:
  			info->seconds = atoi(optarg);
@@ -47,7 +45,7 @@ index 4ac32f7..7e3d280 100644
  			break;
  
  		case 205:
-@@ -138,6 +143,11 @@ static int recent_parse(int c, char **argv, int invert, unsigned int *flags,
+@@ -139,6 +144,11 @@ static int recent_parse(int c, char **ar
  			info->side = XT_RECENT_DEST;
  			break;
  
@@ -59,7 +57,7 @@ index 4ac32f7..7e3d280 100644
  		default:
  			return 0;
  	}
-@@ -156,6 +166,12 @@ static void recent_check(unsigned int flags)
+@@ -157,6 +167,12 @@ static void recent_check(unsigned int fl
  		xtables_error(PARAMETER_PROBLEM,
  		           "recent: --rttl may only be used with --rcheck or "
  		           "--update");
@@ -72,7 +70,7 @@ index 4ac32f7..7e3d280 100644
  }
  
  static void recent_print(const void *ip, const struct xt_entry_match *match,
-@@ -185,6 +201,8 @@
+@@ -185,6 +201,8 @@ static void recent_print(const void *ip,
  		printf("side: source ");
  	if (info->side == XT_RECENT_DEST)
  		printf("side: dest ");
@@ -81,7 +79,7 @@ index 4ac32f7..7e3d280 100644
  }
  
  static void recent_save(const void *ip, const struct xt_entry_match *match)
-@@ -210,6 +228,8 @@ static void recent_save(const void *ip, const struct xt_entry_match *match)
+@@ -211,6 +229,8 @@ static void recent_save(const void *ip, 
  		printf("--rsource ");
  	if (info->side == XT_RECENT_DEST)
  		printf("--rdest ");
@@ -90,11 +88,9 @@ index 4ac32f7..7e3d280 100644
  }
  
  static struct xtables_match recent_mt_reg = {
-diff --git a/extensions/libxt_recent.man b/extensions/libxt_recent.man
-index 532c328..26e4fb9 100644
 --- a/extensions/libxt_recent.man
 +++ b/extensions/libxt_recent.man
-@@ -41,6 +41,11 @@ This option must be used in conjunction with one of \fB\-\-rcheck\fP or
+@@ -41,6 +41,11 @@ This option must be used in conjunction 
  \fB\-\-update\fP. When used, this will narrow the match to only happen when the
  address is in the list and was seen within the last given number of seconds.
  .TP
@@ -106,13 +102,11 @@ index 532c328..26e4fb9 100644
  \fB\-\-hitcount\fP \fIhits\fP
  This option must be used in conjunction with one of \fB\-\-rcheck\fP or
  \fB\-\-update\fP. When used, this will narrow the match to only happen when the
-diff --git a/include/linux/netfilter/xt_recent.h b/include/linux/netfilter/xt_recent.h
-index d2c2766..e21acdf 100644
 --- a/include/linux/netfilter/xt_recent.h
 +++ b/include/linux/netfilter/xt_recent.h
-@@ -16,6 +17,9 @@ enum {
- 	XT_RECENT_NAME_LEN = 200,
- };
+@@ -23,6 +23,9 @@ enum {
+ #define XT_RECENT_VALID_FLAGS (XT_RECENT_CHECK|XT_RECENT_SET|XT_RECENT_UPDATE|\
+ 			       XT_RECENT_REMOVE|XT_RECENT_TTL|XT_RECENT_REAP)
  
 +/* Only allowed with --rcheck and --update */
 +#define XT_RECENT_MODIFIERS (XT_RECENT_TTL|XT_RECENT_REAP)
