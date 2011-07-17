@@ -259,12 +259,12 @@ static int external_switch_init(void)
 	/* earlier no valid response is available, at least on Twinpass & Tantos @ 111MHz, M4530 platform */
 	udelay(100000);
 
-	printf("\nsearching for Samurai switch ... ");
+	debug("\nsearching for Samurai switch ... ");
 	if ( (miiphy_read(name, PHYADDR(SAMURAI_ID_REG0), &chipid0)==0) &&
 	     (miiphy_read(name, PHYADDR(SAMURAI_ID_REG1), &chipid1)==0) ) {
 		if (((chipid0 & 0xFFF0) == ID_SAMURAI_0) &&
 		    ((chipid1 & 0x000F) == ID_SAMURAI_1)) {
-			printf("found");
+			debug("found");
 
 			/* enable "Crossover Auto Detect" + defaults */
 			/* P0 */
@@ -288,11 +288,10 @@ static int external_switch_init(void)
 		}
 	}
 
-	printf("%04X %04x\n", chipid0, chipid1);
-	printf("\nsearching for TANTOS switch ... ");
+	debug("\nsearching for TANTOS switch ... ");
 	if (miiphy_read(name, PHYADDR(0x101), &chipid0) == 0) {
 		if (chipid0 == ID_TANTOS) {
-			printf("found");
+			debug("found");
 
 			/* P5 Basic Control: Force Link Up */
 			miiphy_write(name, PHYADDR(0xA1), 0x0004);
