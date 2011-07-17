@@ -621,7 +621,7 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 }
 
 #ifdef HAVE_TLS
-static inline uh_inittls(struct config *conf)
+static inline int uh_inittls(struct config *conf)
 {
 	/* library handle */
 	void *lib;
