@@ -9,6 +9,23 @@ do_sysctl() {
 		sysctl -n -e "$1"
 }
 
+map_sysctls() {
+	local cfg="$1"
+	local ifn="$2"
+
+	local fam
+	for fam in ipv4 ipv6; do
+		if [ -d /proc/sys/net/$fam ]; then
+			local key
+			for key in /proc/sys/net/$fam/*/$ifn/*; do
+				local val
+				config_get val "$cfg" "${fam}_${key##*/}"
+				[ -n "$val" ] && echo -n "$val" > "$key"
+			done
+		fi
+	done
+}
+
 find_config() {
 	local iftype device iface ifaces ifn
 	for ifn in $interfaces; do
@@ -156,6 +173,9 @@ prepare_interface() {
 			ifconfig "$iface" down
 			ifconfig "$iface" hw ether "$vifmac" up
 		}
+
+		# Apply sysctl settings
+		map_sysctls "$config" "$iface"
 	}
 
 	# Setup VLAN interfaces
