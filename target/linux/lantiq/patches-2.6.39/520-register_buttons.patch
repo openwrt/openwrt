@@ -1,46 +1,101 @@
---- a/arch/mips/lantiq/xway/devices.c
-+++ b/arch/mips/lantiq/xway/devices.c
-@@ -154,6 +154,26 @@ ltq_register_madwifi_eep(void)
- 	lantiq_emulate_madwifi_eep = 1;
- }
+--- a/arch/mips/lantiq/Makefile
++++ b/arch/mips/lantiq/Makefile
+@@ -4,7 +4,7 @@
+ # under the terms of the GNU General Public License version 2 as published
+ # by the Free Software Foundation.
  
-+/* gpio buttons */
-+static struct gpio_buttons_platform_data ltq_gpio_buttons_platform_data;
+-obj-y := irq.o setup.o clk.o prom.o devices.o
++obj-y := irq.o setup.o clk.o prom.o devices.o dev-gpio-buttons.o
+ 
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
+--- /dev/null
++++ b/arch/mips/lantiq/dev-gpio-buttons.c
+@@ -0,0 +1,58 @@
++/*
++ *  Lantiq GPIO button support
++ *
++ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
 +
-+static struct platform_device ltq_gpio_buttons_platform_device =
-+{
-+	.name = "gpio-buttons",
-+	.id = 0,
-+	.dev = {
-+		.platform_data = (void *) &ltq_gpio_buttons_platform_data,
-+	},
-+};
++#include "linux/init.h"
++#include "linux/slab.h"
++#include <linux/platform_device.h>
 +
-+void __init
-+ltq_register_gpio_buttons(struct gpio_button *buttons, int cnt)
++#include "dev-gpio-buttons.h"
++
++void __init ltq_register_gpio_keys_polled(int id,
++					     unsigned poll_interval,
++					     unsigned nbuttons,
++					     struct gpio_keys_button *buttons)
 +{
-+	ltq_gpio_buttons_platform_data.buttons = buttons;
-+	ltq_gpio_buttons_platform_data.nbuttons = cnt;
-+	platform_device_register(&ltq_gpio_buttons_platform_device);
++	struct platform_device *pdev;
++	struct gpio_keys_platform_data pdata;
++	struct gpio_keys_button *p;
++	int err;
++
++	p = kmalloc(nbuttons * sizeof(*p), GFP_KERNEL);
++	if (!p)
++		return;
++
++	memcpy(p, buttons, nbuttons * sizeof(*p));
++
++	pdev = platform_device_alloc("gpio-keys-polled", id);
++	if (!pdev)
++		goto err_free_buttons;
++
++	memset(&pdata, 0, sizeof(pdata));
++	pdata.poll_interval = poll_interval;
++	pdata.nbuttons = nbuttons;
++	pdata.buttons = p;
++
++	err = platform_device_add_data(pdev, &pdata, sizeof(pdata));
++	if (err)
++		goto err_put_pdev;
++
++	err = platform_device_add(pdev);
++	if (err)
++		goto err_put_pdev;
++
++	return;
++
++err_put_pdev:
++	platform_device_put(pdev);
++
++err_free_buttons:
++	kfree(p);
 +}
+--- /dev/null
++++ b/arch/mips/lantiq/dev-gpio-buttons.h
+@@ -0,0 +1,26 @@
++/*
++ *  Lantiq GPIO button support
++ *
++ *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
 +
- static struct resource ltq_spi_resources[] = {
- 	{
- 		.start  = LTQ_SSC_BASE_ADDR,
---- a/arch/mips/lantiq/xway/devices.h
-+++ b/arch/mips/lantiq/xway/devices.h
-@@ -11,6 +11,7 @@
- 
- #include "../devices.h"
- #include <linux/phy.h>
-+#include <linux/gpio_buttons.h>
- 
- extern void ltq_register_gpio(void);
- extern void ltq_register_gpio_stp(void);
-@@ -18,5 +19,6 @@ extern void ltq_register_ase_asc(void);
- extern void ltq_register_etop(struct ltq_eth_data *eth);
- extern void ltq_register_gpio_ebu(unsigned int value);
- extern void ltq_register_madwifi_eep(void);
-+extern void ltq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
- 
- #endif
++#ifndef _LANTIQ_DEV_GPIO_BUTTONS_H
++#define _LANTIQ_DEV_GPIO_BUTTONS_H
++
++#include <linux/input.h>
++#include <linux/gpio_keys.h>
++
++#define LTQ_KEYS_POLL_INTERVAL		20 /* msecs */
++#define LTQ_KEYS_DEBOUNCE_INTERVAL	(3 * LTQ_KEYS_POLL_INTERVAL)
++
++void ltq_register_gpio_keys_polled(int id,
++				      unsigned poll_interval,
++				      unsigned nbuttons,
++				      struct gpio_keys_button *buttons);
++
++#endif /* _LANTIQ_DEV_GPIO_BUTTONS_H */

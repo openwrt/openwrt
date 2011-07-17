@@ -61,6 +61,19 @@ endef
 
 $(eval $(call Profile,ARV4525PW))
 
+define Profile/ARV7525PW
+  NAME:=ARV7525PW - Speedport W303V Typ A
+  PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
+  	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
+	kmod-rt2800-pci wpad-mini kmod-ltq-dsl-firmware-b
+endef
+
+define Profile/ARV4525PW/Description
+	Package set optimized for the ARV4525PW
+endef
+
+$(eval $(call Profile,ARV7525PW))
+
 define Profile/ARV452CPW
   NAME:=ARV452CPW - Arcor Easybox 801
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
@@ -73,6 +86,19 @@ define Profile/ARV452CPW/Description
 endef
 
 $(eval $(call Profile,ARV452CPW))
+
+define Profile/ARV752DPW
+  NAME:=ARV752DPW - Arcor Easybox 802
+  PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
+  	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
+	kmod-rt2800-pci kmod-ltq-dsl-firmware-b
+endef
+
+define Profile/ARV752DPW/Description
+	Package set optimized for the ARV752PW
+endef
+
+$(eval $(call Profile,ARV752DPW))
 
 define Profile/ARV752DPW22
   NAME:=ARV752DPW22 - Arcor Easybox 803

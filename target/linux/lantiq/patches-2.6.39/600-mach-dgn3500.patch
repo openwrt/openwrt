@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
-@@ -32,6 +32,9 @@
+@@ -34,6 +34,9 @@ enum lantiq_mach_type {
  	LANTIQ_MACH_ARV752DPW,		/* Arcor easybox a802 */
  	LANTIQ_MACH_ARV752DPW22,	/* Arcor easybox a803 */
  	LANTIQ_MACH_ARV7518PW,		/* ASTORIA */
@@ -12,7 +12,7 @@
  #endif
 --- a/arch/mips/lantiq/xway/Kconfig
 +++ b/arch/mips/lantiq/xway/Kconfig
-@@ -10,6 +10,10 @@
+@@ -10,6 +10,10 @@ config LANTIQ_MACH_ARV45XX
  	bool "ARV45XX"
  	default y
  
@@ -25,7 +25,7 @@
  endif
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -6,4 +6,5 @@
+@@ -6,4 +6,5 @@ obj-$(CONFIG_SOC_AMAZON_SE) += clk-ase.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
  obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
@@ -33,18 +33,18 @@
  obj-y += dev-dwc_otg.o
 --- a/arch/mips/lantiq/xway/devices.h
 +++ b/arch/mips/lantiq/xway/devices.h
-@@ -12,6 +12,7 @@
+@@ -11,6 +11,7 @@
+ 
  #include "../devices.h"
  #include <linux/phy.h>
- #include <linux/gpio_buttons.h>
 +#include <linux/spi/spi.h>
  
  extern void ltq_register_gpio(void);
  extern void ltq_register_gpio_stp(void);
-@@ -20,5 +21,7 @@
+@@ -18,5 +19,7 @@ extern void ltq_register_ase_asc(void);
+ extern void ltq_register_etop(struct ltq_eth_data *eth);
  extern void ltq_register_gpio_ebu(unsigned int value);
- extern void ltq_register_madwifi_eep(void);
- extern void ltq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
+ extern void ltq_register_madwifi_eep(unsigned long long addr);
 +extern void ltq_register_spi(struct ltq_spi_platform_data *pdata,
 +		struct spi_board_info const *info, unsigned n);
  

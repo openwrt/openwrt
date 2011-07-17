@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/xway/Kconfig
 +++ b/arch/mips/lantiq/xway/Kconfig
-@@ -6,6 +6,10 @@ config LANTIQ_MACH_EASY50712
+@@ -6,6 +6,10 @@
  	bool "Easy50712 - Danube"
  	default y
  
@@ -13,14 +13,14 @@
  endif
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -5,3 +5,4 @@ obj-$(CONFIG_SOC_AMAZON_SE) += clk-ase.o
+@@ -5,3 +5,4 @@
  
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
 +obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mach-arv45xx.c
-@@ -0,0 +1,504 @@
+@@ -0,0 +1,634 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -33,7 +33,6 @@
 +#include <linux/platform_device.h>
 +#include <linux/leds.h>
 +#include <linux/gpio.h>
-+#include <linux/gpio_buttons.h>
 +#include <linux/mtd/mtd.h>
 +#include <linux/mtd/partitions.h>
 +#include <linux/mtd/physmap.h>
@@ -49,6 +48,7 @@
 +#include "devices.h"
 +#include "dev-leds-gpio.h"
 +#include "dev-dwc_otg.h"
++#include "../dev-gpio-buttons.h"
 +
 +#ifdef CONFIG_MTD_PARTITIONS
 +static struct mtd_partition arv4510_partitions[] =
@@ -123,6 +123,29 @@
 +	},
 +};
 +
++static struct mtd_partition arv7525_partitions[] =
++{
++	{
++		.name	= "uboot",
++		.offset	= 0x0,
++		.size	= 0x10000,
++	},
++	{
++		.name	= "uboot_env",
++		.offset	= 0x10000,
++		.size	= 0x10000,
++	},
++	{
++		.name	= "linux",
++		.offset	= 0x20000,
++		.size	= 0x3d0000,
++	},
++	{
++		.name	= "board_config",
++		.offset	= 0x3f0000,
++		.size	= 0x10000,
++	},
++};
 +#endif
 +
 +static struct physmap_flash_data arv4510_flash_data = {
@@ -143,6 +166,13 @@
 +#ifdef CONFIG_MTD_PARTITIONS
 +	.nr_parts	= ARRAY_SIZE(arv75xx_partitions),
 +	.parts		= arv75xx_partitions,
++#endif
++};
++
++static struct physmap_flash_data arv7525_flash_data = {
++#ifdef CONFIG_MTD_PARTITIONS
++	.nr_parts	= ARRAY_SIZE(arv7525_partitions),
++	.parts		= arv7525_partitions,
 +#endif
 +};
 +
@@ -178,11 +208,32 @@
 +	{ .name = "soc:green:fxo", .gpio = 75, .active_low = 1, .default_trigger = "default-on" },
 +};
 +
-+static struct gpio_button
-+arv4518pw_gpio_buttons[] __initdata = {
-+	{ .desc = "wlan", .type = EV_KEY, .code = BTN_0, .threshold = 3, .gpio = 28, .active_low = 1, },
-+	{ .desc = "wps", .type = EV_KEY, .code = BTN_1, .threshold = 3, .gpio = 29, .active_low = 1, },
-+	{ .desc = "reset", .type = EV_KEY, .code = BTN_2, .threshold = 3, .gpio = 30, .active_low = 1, },
++static struct gpio_keys_button
++arv4518pw_gpio_keys[] __initdata = {
++	{
++		.desc		= "wlan",
++		.type		= EV_KEY,
++		.code		= BTN_0,
++		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
++		.gpio	= 28,
++		.active_low	= 1,
++	},
++	{
++		.desc		= "wps",
++		.type		= EV_KEY,
++		.code		= BTN_1,
++		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
++		.gpio		= 29,
++		.active_low	= 1,
++	},
++	{
++		.desc		= "reset",
++		.type		= EV_KEY,
++		.code		= BTN_2,
++		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
++		.gpio		= 30,
++		.active_low	= 1,
++	},
 +};
 +
 +static struct gpio_led
@@ -249,11 +300,32 @@
 +	{ .name = "soc:green:eth4", .gpio = 86, .active_low = 1, .default_trigger = "default-on", },
 +};
 +
-+static struct gpio_button
-+arv752dpw22_gpio_buttons[] __initdata = {
-+	{ .desc = "btn0", .type = EV_KEY, .code = BTN_0, .threshold = 3, .gpio = 12, .active_low = 1, },
-+	{ .desc = "btn1", .type = EV_KEY, .code = BTN_1, .threshold = 3, .gpio = 13, .active_low = 1, },
-+	{ .desc = "btn2", .type = EV_KEY, .code = BTN_2, .threshold = 3, .gpio = 28, .active_low = 1, },
++static struct gpio_keys_button
++arv752dpw22_gpio_keys[] __initdata = {
++	{
++		.desc = "btn0",
++		.type = EV_KEY,
++		.code = BTN_0,
++		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
++		.gpio = 12,
++		.active_low = 1,
++	},
++	{
++		.desc = "btn1",
++		.type = EV_KEY,
++		.code = BTN_1,
++		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
++		.gpio = 13,
++		.active_low = 1,
++	},
++	{
++		.desc = "btn2",
++		.type = EV_KEY,
++		.code = BTN_2,
++		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
++		.gpio = 28,
++		.active_low = 1,
++	},
 +};
 +
 +static struct gpio_led
@@ -266,10 +338,24 @@
 +	{ .name = "soc:green:usb", .gpio = 19, .active_low = 1, },
 +};
 +
-+static struct gpio_button
-+arv7518pw_gpio_buttons[] __initdata = {
-+	{ .desc = "reset", .type = EV_KEY, .code = BTN_0, .threshold = 3, .gpio = 23, .active_low = 1, },
-+	{ .desc = "wlan", .type = EV_KEY, .code = BTN_1, .threshold = 3, .gpio = 25, .active_low = 1, },
++static struct gpio_keys_button
++arv7518pw_gpio_keys[] __initdata = {
++	{
++		.desc = "reset",
++		.type = EV_KEY,
++		.code = BTN_0,
++		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
++		.gpio = 23,
++		.active_low = 1,
++	},
++	{
++		.desc = "wlan",
++		.type = EV_KEY,
++		.code = BTN_1,
++		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
++		.gpio = 25,
++		.active_low = 1,
++	},
 +};
 +
 +static void
@@ -328,7 +414,7 @@
 +		p[i] = ((eeprom_data[(i<<1)+1]&0xff)<<24)|((eeprom_data[(i<<1)+1]&0xff00)<<8)|((eeprom_data[i<<1]&0xff)<<8)|((eeprom_data[i<<1]&0xff00)>>8);
 +		if (i == 0xbf>>1){
 +			// printk ("regdomain: 0x%x --> 0x%x\n", p[i], (p[i] & 0xffff0000)|0x67);
-+			/* regdomain is invalid?? how did original fw convert 
++			/* regdomain is invalid?? how did original fw convert
 +			* value to 0x82d4 ??
 +			* for now, force to 0x67 */
 +			p[i] &= 0xffff0000;
@@ -378,14 +464,15 @@
 +#define ARV4518PW_EBU			0
 +#define ARV4518PW_USB			14
 +#define ARV4518PW_SWITCH_RESET		13
++#define ARV4518PW_MADWIFI_ADDR		0xb07f0400
 +
 +	ltq_register_gpio_ebu(ARV4518PW_EBU);
 +	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(arv4518pw_leds_gpio), arv4518pw_leds_gpio);
-+	ltq_register_gpio_buttons(arv4518pw_gpio_buttons, ARRAY_SIZE(arv4518pw_gpio_buttons));
++	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(arv4518pw_gpio_keys), arv4518pw_gpio_keys);
 +	ltq_register_nor(&arv45xx_flash_data);
 +	ltq_pci_data.gpio = PCI_GNT2 | PCI_REQ2;
 +	ltq_register_pci(&ltq_pci_data);
-+	ltq_register_madwifi_eep();
++	ltq_register_madwifi_eep(ARV4518PW_MADWIFI_ADDR);
 +	xway_register_dwc(ARV4518PW_USB);
 +	arv45xx_register_ethernet();
 +	arv45xx_register_ath5k();
@@ -432,12 +519,13 @@
 +#define ARV452CPW_RELAY1		31
 +#define ARV452CPW_RELAY2		79
 +#define ARV452CPW_SWITCH_RESET		82
++#define ARV452CPW_MADWIFI_ADDR		0xb07f0400
 +
 +	ltq_register_gpio_ebu(ARV452CPW_EBU);
 +	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(arv452cpw_leds_gpio), arv452cpw_leds_gpio);
 +	ltq_register_nor(&arv45xx_flash_data);
 +	ltq_register_pci(&ltq_pci_data);
-+	ltq_register_madwifi_eep();
++	ltq_register_madwifi_eep(ARV452CPW_MADWIFI_ADDR);
 +	xway_register_dwc(ARV452CPW_USB);
 +	arv45xx_register_ethernet();
 +	arv45xx_register_ath5k();
@@ -463,11 +551,13 @@
 +static void __init
 +arv4525pw_init(void)
 +{
++#define ARV4525PW_MADWIFI_ADDR	0xb07f0400
++
 +	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(arv4525pw_leds_gpio), arv4525pw_leds_gpio);
 +	ltq_register_nor(&arv45xx_flash_data);
 +	ltq_pci_data.clock = PCI_CLOCK_INT;
 +	ltq_register_pci(&ltq_pci_data);
-+	ltq_register_madwifi_eep();
++	ltq_register_madwifi_eep(ARV4525PW_MADWIFI_ADDR);
 +	ltq_eth_data.mii_mode = PHY_INTERFACE_MODE_MII;
 +	arv45xx_register_ethernet();
 +}
@@ -478,6 +568,22 @@
 +			arv4525pw_init);
 +
 +static void __init
++arv7525pw_init(void)
++{
++	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(arv4525pw_leds_gpio), arv4525pw_leds_gpio);
++	ltq_register_nor(&arv7525_flash_data);
++	ltq_register_pci(&ltq_pci_data);
++	ltq_eth_data.mii_mode = PHY_INTERFACE_MODE_MII;
++	ltq_register_tapi();
++	arv45xx_register_ethernet();
++}
++
++MIPS_MACHINE(LANTIQ_MACH_ARV7525PW,
++			"ARV7525PW",
++			"ARV7525PW - Speedport W303V",
++			arv7525pw_init);
++
++static void __init
 +arv7518pw_init(void)
 +{
 +#define ARV7518PW_EBU			0x2
@@ -485,7 +591,7 @@
 +
 +	ltq_register_gpio_ebu(ARV7518PW_EBU);
 +	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(arv7518pw_leds_gpio), arv7518pw_leds_gpio);
-+	ltq_register_gpio_buttons(arv7518pw_gpio_buttons, ARRAY_SIZE(arv7518pw_gpio_buttons));
++	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(arv7518pw_gpio_keys), arv7518pw_gpio_keys);
 +	ltq_register_nor(&arv75xx_flash_data);
 +	ltq_register_pci(&ltq_pci_data);
 +	ltq_register_tapi();
@@ -499,6 +605,30 @@
 +			"ARV7518PW - ASTORIA",
 +			arv7518pw_init);
 +
++
++static void __init
++arv752dpw_init(void)
++{
++#define ARV752DPW22_EBU                 0x2
++#define ARV752DPW22_USB                 72
++#define ARV752DPW22_RELAY               73
++	ltq_register_gpio_ebu(ARV752DPW22_EBU);
++	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(arv752dpw22_leds_gpio), arv752dpw22_leds_gpio);
++	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(arv752dpw22_gpio_keys), arv752dpw22_gpio_keys);
++	ltq_register_nor(&arv75xx_flash_data);
++	ltq_register_pci(&ltq_pci_data);
++	xway_register_dwc(ARV752DPW22_USB);
++	arv75xx_register_ethernet();
++	gpio_request(ARV752DPW22_RELAY, "relay");
++	gpio_set_value(ARV752DPW22_RELAY, 1);
++	gpio_export(ARV752DPW22_RELAY, 0);
++}
++
++MIPS_MACHINE(LANTIQ_MACH_ARV752DPW,
++                        "ARV752DPW",
++                        "ARV752DPW - Arcor A802",
++                        arv752dpw_init);
++
 +static void __init
 +arv752dpw22_init(void)
 +{
@@ -508,9 +638,9 @@
 +
 +	ltq_register_gpio_ebu(ARV752DPW22_EBU);
 +	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(arv752dpw22_leds_gpio), arv752dpw22_leds_gpio);
-+	ltq_register_gpio_buttons(arv752dpw22_gpio_buttons, ARRAY_SIZE(arv752dpw22_gpio_buttons));
++	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(arv752dpw22_gpio_keys), arv752dpw22_gpio_keys);
 +	ltq_register_nor(&arv75xx_flash_data);
-+	ltq_pci_data.irq[15] = (INT_NUM_IM2_IRL0 + 31);
++	ltq_pci_data.irq[15] = (INT_NUM_IM3_IRL0 + 31);
 +	ltq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
 +	ltq_register_pci(&ltq_pci_data);
 +	xway_register_dwc(ARV752DPW22_USB);
@@ -527,8 +657,8 @@
 +			arv752dpw22_init);
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
-@@ -21,6 +21,17 @@ enum lantiq_mach_type {
- 	LANTIQ_MACH_EASY98000SF,	/* Falcon Eval Board, Serial Flash */
+@@ -22,6 +22,18 @@
+ 	LANTIQ_MACH_EASY98000NAND,	/* Falcon Eval Board, NAND Flash */
  	LANTIQ_MACH_EASY98020,		/* Falcon Reference Board */
  	LANTIQ_MACH_95C3AM1,		/* Board 95C3AM1 */
 +
@@ -539,6 +669,7 @@
 +	LANTIQ_MACH_ARV4520PW,		/* Airties WAV-281, Arcor EasyboxA800 */
 +	LANTIQ_MACH_ARV452CPW,		/* Arcor EasyboxA801 */
 +	LANTIQ_MACH_ARV4525PW,		/* Speedport W502V */
++	LANTIQ_MACH_ARV7525PW,		/* Speedport W303V Typ A */
 +	LANTIQ_MACH_ARV752DPW,		/* Arcor easybox a802 */
 +	LANTIQ_MACH_ARV752DPW22,	/* Arcor easybox a803 */
 +	LANTIQ_MACH_ARV7518PW,		/* ASTORIA */
