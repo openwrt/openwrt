@@ -133,8 +133,8 @@
  endif
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
-@@ -2,3 +2,4 @@ obj-y := clk-falcon.o devices.o gpio.o p
- obj-y += softdog_vpe.o
+@@ -3,3 +3,4 @@ obj-y += softdog_vpe.o
+ obj-$(CONFIG_LANTIQ_MACH_EASY98000) += addon-easy98000.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += dev-leds-easy98000-cpld.o
 +obj-$(CONFIG_LANTIQ_MACH_EASY98020) += mach-easy98020.o

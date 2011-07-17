@@ -112,6 +112,14 @@ define Image/Build/Profile/ARV4525PW
 	$(call Image/Build/$(1),$(1),ARV4525PW)
 endef
 
+define Image/BuildKernel/Profile/ARV7525PW
+	$(call Image/BuildKernel/Template,ARV7525PW,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV7525PW
+	$(call Image/Build/$(1),$(1),ARV7525PW)
+endef
+
 define Image/BuildKernel/Profile/ARV452CPW
 	$(call Image/BuildKernel/Template,ARV452CPW,$(xway_cmdline))
 endef
@@ -126,6 +134,14 @@ endef
 
 define Image/Build/Profile/ARV7518PW
 	$(call Image/Build/$(1),$(1),ARV7518PW)
+endef
+
+define Image/BuildKernel/Profile/ARV752DPW
+	$(call Image/BuildKernel/Template,ARV752DPW,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/ARV752DPW
+	$(call Image/Build/$(1),$(1),ARV752DPW)
 endef
 
 define Image/BuildKernel/Profile/ARV752DPW22
@@ -154,6 +170,7 @@ define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,ARV4520PW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV452CPW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4525PW,$(xway_cmdline))
+	$(call Image/BuildKernel/Template,ARV7525PW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV7518PW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV752DPW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV752DPW22,$(xway_cmdline))
@@ -171,6 +188,7 @@ define Image/Build/Profile/Generic
 	$(call Image/Build/$(1),$(1),ARV4520PW)
 	$(call Image/Build/$(1),$(1),ARV452CPW)
 	$(call Image/Build/$(1),$(1),ARV4525PW)
+	$(call Image/Build/$(1),$(1),ARV7525PW)
 	$(call Image/Build/$(1),$(1),ARV7518PW)
 	$(call Image/Build/$(1),$(1),ARV752DPW)
 	$(call Image/Build/$(1),$(1),ARV752DPW22)

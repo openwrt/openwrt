@@ -1,17 +1,20 @@
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -144,6 +144,16 @@ ltq_register_gpio_ebu(unsigned int value
+@@ -144,6 +144,19 @@ ltq_register_gpio_ebu(unsigned int value
  	platform_device_register(&ltq_ebu);
  }
  
 +/* madwifi */
 +int lantiq_emulate_madwifi_eep = 0;
++unsigned long long lantiq_madwifi_eep_addr = 0;
 +EXPORT_SYMBOL(lantiq_emulate_madwifi_eep);
++EXPORT_SYMBOL(lantiq_madwifi_eep_addr);
 +
 +void __init
-+ltq_register_madwifi_eep(void)
++ltq_register_madwifi_eep(unsigned long long addr)
 +{
 +	lantiq_emulate_madwifi_eep = 1;
++	lantiq_madwifi_eep_addr = addr;
 +}
 +
  static struct resource ltq_spi_resources[] = {
@@ -23,6 +26,6 @@
  extern void ltq_register_ase_asc(void);
  extern void ltq_register_etop(struct ltq_eth_data *eth);
  extern void ltq_register_gpio_ebu(unsigned int value);
-+extern void ltq_register_madwifi_eep(void);
++extern void ltq_register_madwifi_eep(unsigned long long addr);
  
  #endif
