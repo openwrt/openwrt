@@ -8,6 +8,9 @@ scan_pptp() {
 
 stop_interface_pptp() {
 	stop_interface_ppp "$1"
+	for ip in $(uci_get_state network "$1" serv_addrs); do
+		route del -host "$ip" 2>/dev/null
+	done
 }
 
 coldplug_interface_pptp() {
@@ -39,8 +42,13 @@ setup_interface_pptp() {
 	setup_interface "$device" "$config" "${ipproto:-dhcp}"
 	local gw="$(find_gw)"
 	[ -n "$gw" ] && {
-		[ "$gw" != 0.0.0.0 ] && route delete "$server" 2>/dev/null >/dev/null
-		route add "$server" gw "$gw"
+		local serv_addrs=""
+		for ip in $(resolveip -4 -t 3 "$server"); do
+			append serv_addrs "$ip"
+			route delete -host "$ip" 2>/dev/null
+			route add -host "$ip" gw "$gw"
+		done
+		uci_toggle_state network "$config" serv_addrs "$serv_addrs"
 	}
 
 	# fix up the netmask
