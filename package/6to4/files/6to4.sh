@@ -64,6 +64,8 @@ set_6to4_radvd_prefix() {
 	local lanif="${2:-lan}"
 	local wanif="${3:-wan}"
 	local prefix="${4:-0:0:0:1::/64}"
+	local vlt="${5:-300}"
+	local plt="${6:-120}"
 	local pfxsection=""
 
 	find_pfxsection() {
@@ -88,8 +90,8 @@ set_6to4_radvd_prefix() {
 		uci_set_state radvd "$pfxsection" prefix               "$prefix"
 		uci_set_state radvd "$pfxsection" AdvOnLink            1
 		uci_set_state radvd "$pfxsection" AdvAutonomous        1
-		uci_set_state radvd "$pfxsection" AdvValidLifetime     300
-		uci_set_state radvd "$pfxsection" AdvPreferredLifetime 120
+		uci_set_state radvd "$pfxsection" AdvValidLifetime     "$vlt"
+		uci_set_state radvd "$pfxsection" AdvPreferredLifetime "$plt"
 		uci_set_state radvd "$pfxsection" Base6to4Interface    "$wanif"
 	}
 }
@@ -200,6 +202,10 @@ setup_interface_6to4() {
 				config_get adv_ifname "${adv_interface:-lan}" ifname
 
 				grep -qs "^ *$adv_ifname:" /proc/net/dev && {
+					local adv_valid_lifetime adv_preferred_lifetime
+					config_get adv_valid_lifetime     "${adv_interface:-lan}" adv_valid_lifetime
+					config_get adv_preferred_lifetime "${adv_interface:-lan}" adv_preferred_lifetime
+
 					local subnet6="$(printf "%s:%x::1/64" "$prefix6" $adv_subnet)"
 
 					logger -t "$link" " * Advertising IPv6 subnet $subnet6 on ${adv_interface:-lan} ($adv_ifname)"
@@ -207,7 +213,8 @@ setup_interface_6to4() {
 
 					set_6to4_radvd_interface "$sid" "$adv_interface" "$mtu"
 					set_6to4_radvd_prefix    "$sid" "$adv_interface" \
-						"$wancfg" "$(printf "0:0:0:%x::/64" $adv_subnet)"
+						"$wancfg" "$(printf "0:0:0:%x::/64" $adv_subnet)" \
+						"$adv_valid_lifetime" "$adv_preferred_lifetime"
 
 					adv_subnets="${adv_subnets:+$adv_subnets }$adv_ifname:$subnet6"
 					adv_subnet=$(($adv_subnet + 1))
