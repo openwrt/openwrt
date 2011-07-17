@@ -312,6 +312,107 @@ static int external_switch_rtl8306(void)
 }
 #endif
 
+#ifdef CONFIG_RTL8306G_SWITCH
+#define ID_RTL8306	0x5988
+
+static int external_switch_rtl8306G(void)
+{
+	unsigned short chipid,val;
+	int i;
+	static char * const name = "lq_cpe_eth";
+	unsigned int chipid2, chipver, chiptype;
+	char str[128];
+	int cpu_mask = 1 << 5;
+	udelay(100000);
+
+	puts("\nsearching for rtl8306 switch ... ");
+	if (miiphy_read(name, 4, 30, &chipid) == 0) {
+		if (chipid == ID_RTL8306) {
+			puts("found\nReset Hard\n");
+#ifdef CONFIG_ARV752DPW
+			//gpio 19
+			//reset reset ping to high
+			*DANUBE_GPIO_P1_DIR |= 8;
+			*DANUBE_GPIO_P1_OUT |= 8;
+			udelay(500*1000);
+			*DANUBE_GPIO_P1_OUT &= ~(8); // now low again for at least 10 ms
+			udelay(500*1000);
+			*DANUBE_GPIO_P1_OUT |= 8;
+			udelay(500*1000);
+			puts("Done\n");
+#endif
+			/* set led mode */
+
+			miiphy_write(name, 0, 0, 0x3100);
+			miiphy_write(name, 0, 18, 0x7fff);
+			miiphy_write(name, 0, 19, 0xffff);
+			miiphy_write(name, 0, 22, 0x877f);
+			miiphy_write(name, 0, 24, 0x0ed1);
+
+			miiphy_write(name, 1, 0, 0x3100);
+			miiphy_write(name, 1, 22, 0x877f);
+			miiphy_write(name, 1, 24, 0x1ed2);
+
+			miiphy_write(name, 2, 0, 0x3100);
+			miiphy_write(name, 2, 22, 0x877f);
+			miiphy_write(name, 2, 23, 0x0020);
+			miiphy_write(name, 2, 24, 0x2ed4);
+
+			miiphy_write(name, 3, 0, 0x3100);
+			miiphy_write(name, 3, 22, 0x877f);
+			miiphy_write(name, 3, 24, 0x3ed8);
+
+			miiphy_write(name, 4, 0, 0x3100);
+			miiphy_write(name, 4, 22, 0x877f);
+			miiphy_write(name, 4, 24, 0x4edf);
+
+			miiphy_write(name, 5, 0, 0x3100);
+			miiphy_write(name, 6, 0, 0x2100);
+
+			//important. enable phy 5 link status, for rmii
+			miiphy_write(name, 6, 22, 0x873f);
+
+			miiphy_write(name, 6, 24, 0x8eff);
+			//disable ports
+			for (i=0;i<5;i++) {
+				miiphy_read(name, 0, 24, &val);
+				val&=~(1<<10);
+				val&=~(1<<11);
+				miiphy_write(name, 0, 24, val);
+			}
+
+			puts("Reset Soft\n");
+			miiphy_write(name,0 ,0 ,1<<15);
+			for (i=0;i<1000;i++)
+			{
+				miiphy_read(name,0 ,0 ,&val);
+				if (!(val&1<<15))
+					break;
+				udelay(1000);
+			}
+			if (i==1000)
+				puts("Failed\n");
+			else
+				puts("Success\n");
+			//enable ports egain
+			for (i=0;i<5;i++) // enable ports
+			{
+				miiphy_read(name, 0, 24, &val);
+				val|=(1<<10);
+				val|=(1<<11);
+				miiphy_write(name, 0, 24, val);
+			}
+			puts("\n");
+			return 0;
+		}
+		puts("failed\n");
+	}
+	puts("\nno known switch found ... \n");
+
+	return 0;
+}
+#endif
+
 #ifdef CONFIG_AR8216_SWITCH
 static int external_switch_ar8216(void)
 {
@@ -345,6 +446,10 @@ int board_eth_init(bd_t *bis)
 	*DANUBE_RCU_RST_REQ &=(unsigned long)~1;
 	udelay(1000);
 
+#ifdef CONFIG_RTL8306G_SWITCH
+	if (external_switch_rtl8306G()<0)
+		return -1;
+#endif
 #ifdef CONFIG_RTL8306_SWITCH
 	if (external_switch_rtl8306()<0)
 		return -1;
