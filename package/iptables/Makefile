@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=iptables
 PKG_VERSION:=1.4.10
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_MD5SUM:=f382fe693f0b59d87bd47bea65eca198
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -380,7 +380,9 @@ endef
 
 define Package/iptables-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/iptables-{save,restore} $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/iptables-multi $(1)/usr/sbin/
+	$(LN) iptables-multi $(1)/usr/sbin/iptables-save
+	$(LN) iptables-multi $(1)/usr/sbin/iptables-restore
 endef
 
 define Package/ip6tables/install
@@ -394,7 +396,9 @@ endef
 
 define Package/ip6tables-utils/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables-{save,restore} $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ip6tables-multi $(1)/usr/sbin/
+	$(LN) ip6tables-multi $(1)/usr/sbin/ip6tables-save
+	$(LN) ip6tables-multi $(1)/usr/sbin/ip6tables-restore
 endef
 
 define Package/libiptc/install
