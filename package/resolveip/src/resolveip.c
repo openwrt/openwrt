@@ -36,16 +36,16 @@ int main(int argc, char **argv)
 {
 	int timeout = 3;
 	char opt;
-    char ipaddr[INET6_ADDRSTRLEN];
-    void *addr;
-    struct addrinfo *res, *rp;
+	char ipaddr[INET6_ADDRSTRLEN];
+	void *addr;
+	struct addrinfo *res, *rp;
 	struct sigaction sa = {	.sa_handler = &abort_query };
-    struct addrinfo hints = {
-    	.ai_family   = AF_UNSPEC,
-    	.ai_socktype = SOCK_STREAM,
-    	.ai_protocol = IPPROTO_TCP,
-    	.ai_flags    = 0
-    };
+	struct addrinfo hints = {
+		.ai_family   = AF_UNSPEC,
+		.ai_socktype = SOCK_STREAM,
+		.ai_protocol = IPPROTO_TCP,
+		.ai_flags    = 0
+	};
 
 	while ((opt = getopt(argc, argv, "46t:h")) > -1)
 	{
@@ -80,8 +80,8 @@ int main(int argc, char **argv)
 	if (getaddrinfo(argv[optind], NULL, &hints, &res))
 		exit(2);
 
-    for (rp = res; rp != NULL; rp = rp->ai_next)
-    {
+	for (rp = res; rp != NULL; rp = rp->ai_next)
+	{
 		addr = (rp->ai_family == AF_INET)
 			? (void *)&((struct sockaddr_in *)rp->ai_addr)->sin_addr
 			: (void *)&((struct sockaddr_in6 *)rp->ai_addr)->sin6_addr
