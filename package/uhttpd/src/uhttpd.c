@@ -512,7 +512,22 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 #ifdef HAVE_TLS
 							/* setup client tls context */
 							if( conf->tls )
-								conf->tls_accept(cl);
+							{
+								if( conf->tls_accept(cl) < 1 )
+								{
+									fprintf(stderr,
+										"tls_accept failed, "
+										"connection dropped\n");
+
+									/* close client socket */
+									close(new_fd);
+
+									/* remove from global client list */
+									uh_client_remove(new_fd);
+
+									continue;
+								}
+							}
 #endif
 
 							/* add client socket to global fdset */

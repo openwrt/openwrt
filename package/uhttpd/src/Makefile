@@ -1,17 +1,28 @@
 CGI_SUPPORT ?= 1
 LUA_SUPPORT ?= 1
 TLS_SUPPORT ?= 1
+UHTTPD_TLS ?= cyassl
 
-CFLAGS ?= -I./lua-5.1.4/src -I./cyassl-1.4.0/include -O0 -ggdb3
-LDFLAGS ?= -L./lua-5.1.4/src -L./cyassl-1.4.0/src/.libs
+CFLAGS ?= -I./lua-5.1.4/src -I$(TLS_INCLUDE_DIR) -O0 -ggdb3
+LDFLAGS ?= -L./lua-5.1.4/src -L$(TLS_LIB_DIR)
 
 CFLAGS += -Wall --std=gnu99
 
-OBJ = uhttpd.o uhttpd-file.o uhttpd-utils.o
-LIB = -Wl,--export-dynamic -lcrypt -ldl
+ifeq ($(UHTTPD_TLS),openssl)
+  TLS_LDFLAGS := -lssl
+  TLS_INCLUDE_DIR := ./openssl-0.9.8m/include
+  TLS_LIB_DIR := ./openssl-0.9.8m
+else
+  TLS_LDFLAGS := -lcyassl
+  TLS_INCLUDE_DIR := ./cyassl-1.4.0/include
+  TLS_LIB_DIR := ./cyassl-1.4.0/src/.libs
+endif
 
-TLSLIB =
-LUALIB =
+OBJ := uhttpd.o uhttpd-file.o uhttpd-utils.o
+LIB := -Wl,--export-dynamic -lcrypt -ldl
+
+TLSLIB :=
+LUALIB :=
 
 HAVE_SHADOW=$(shell echo 'int main(void){ return !getspnam("root"); }' | \
 	$(CC) -include shadow.h -xc -o/dev/null - 2>/dev/null && echo yes)
@@ -29,7 +40,7 @@ endif
 
 ifeq ($(LUA_SUPPORT),1)
   CFLAGS += -DHAVE_LUA
-  LUALIB = uhttpd_lua.so
+  LUALIB := uhttpd_lua.so
 
   $(LUALIB): uhttpd-lua.c
 		$(CC) $(CFLAGS) $(LDFLAGS) $(FPIC) \
@@ -39,11 +50,11 @@ endif
 
 ifeq ($(TLS_SUPPORT),1)
   CFLAGS += -DHAVE_TLS
-  TLSLIB = uhttpd_tls.so
+  TLSLIB := uhttpd_tls.so
 
   $(TLSLIB): uhttpd-tls.c
 		$(CC) $(CFLAGS) $(LDFLAGS) $(FPIC) \
-			-shared -lcyassl \
+			-shared $(TLS_LDFLAGS) \
 			-o $(TLSLIB) uhttpd-tls.c
 endif
 
@@ -55,4 +66,3 @@ compile: $(OBJ) $(TLSLIB) $(LUALIB)
 
 clean:
 	rm -f *.o *.so uhttpd
-
