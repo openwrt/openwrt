@@ -98,7 +98,7 @@ struct config {
 	int (*tls_cert) (SSL_CTX *c, const char *file);
 	int (*tls_key) (SSL_CTX *c, const char *file);
 	void (*tls_free) (struct listener *l);
-	void (*tls_accept) (struct client *c);
+	int (*tls_accept) (struct client *c);
 	void (*tls_close) (struct client *c);
 	int (*tls_recv) (struct client *c, void *buf, int len);
 	int (*tls_send) (struct client *c, void *buf, int len);
@@ -159,4 +159,3 @@ struct interpreter {
 #endif
 
 #endif
-

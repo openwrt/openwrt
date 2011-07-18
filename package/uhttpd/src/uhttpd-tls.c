@@ -23,7 +23,8 @@
 
 SSL_CTX * uh_tls_ctx_init()
 {
-	SSL_CTX *c = NULL;
+	SSL_CTX *c;
+
 	SSL_load_error_strings();
 	SSL_library_init();
 
@@ -59,13 +60,36 @@ void uh_tls_ctx_free(struct listener *l)
 }
 
 
-void uh_tls_client_accept(struct client *c)
+int uh_tls_client_accept(struct client *c)
 {
+	int rv;
+
 	if( c->server && c->server->tls )
 	{
 		c->tls = SSL_new(c->server->tls);
-		SSL_set_fd(c->tls, c->socket);
+		if( c->tls )
+		{
+			if( (rv = SSL_set_fd(c->tls, c->socket)) < 1 )
+				goto cleanup;
+			if( (rv = SSL_accept(c->tls)) < 1 )
+				goto cleanup;
+		}
+		else
+			rv = 0;
 	}
+	else
+	{
+		c->tls = NULL;
+		rv = 1;
+	}
+
+done:
+	return rv;
+
+cleanup:
+	SSL_free(c->tls);
+	c->tls = NULL;
+	goto done;
 }
 
 int uh_tls_client_recv(struct client *c, void *buf, int len)
@@ -90,5 +114,3 @@ void uh_tls_client_close(struct client *c)
 		c->tls = NULL;
 	}
 }
-
-

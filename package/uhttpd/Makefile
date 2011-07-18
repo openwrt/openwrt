@@ -8,10 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_RELEASE:=23
+PKG_RELEASE:=24
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
-PKG_BUILD_DEPENDS := libcyassl liblua
+PKG_CONFIG_DEPENDS := \
+	CONFIG_PACKAGE_uhttpd-mod-tls_cyassl \
+	CONFIG_PACKAGE_uhttpd-mod-tls_openssl
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -38,12 +40,38 @@ endef
 define Package/uhttpd-mod-tls
   $(Package/uhttpd/default)
   TITLE+= (TLS plugin)
-  DEPENDS:=uhttpd +libcyassl
+  DEPENDS:=uhttpd +PACKAGE_uhttpd-mod-tls_cyassl:libcyassl +PACKAGE_uhttpd-mod-tls_openssl:libopenssl
 endef
 
 define Package/uhttpd-mod-tls/description
  The TLS plugin adds HTTPS support to uHTTPd.
 endef
+
+define Package/uhttpd-mod-tls/config
+        choice
+                depends on PACKAGE_uhttpd-mod-tls
+                prompt "TLS Provider"
+                default PACKAGE_uhttpd-mod-tls_cyassl
+
+                config PACKAGE_uhttpd-mod-tls_cyassl
+                        bool "CyaSSL"
+
+                config PACKAGE_uhttpd-mod-tls_openssl
+                        bool "OpenSSL"
+        endchoice
+endef
+
+UHTTPD_TLS:=
+TLS_CFLAGS:=
+
+ifneq ($(CONFIG_PACKAGE_uhttpd-mod-tls_cyassl),)
+  UHTTPD_TLS:=cyassl
+  TLS_CFLAGS:=-I$(STAGING_DIR)/usr/include/cyassl
+endif
+
+ifneq ($(CONFIG_PACKAGE_uhttpd-mod-tls_openssl),)
+  UHTTPD_TLS:=openssl
+endif
 
 
 define Package/uhttpd-mod-lua
@@ -57,10 +85,8 @@ define Package/uhttpd-mod-lua/description
 endef
 
 
-# hack to use CyASSL headers
-TARGET_CFLAGS += -I$(firstword $(wildcard $(BUILD_DIR)/cyassl-*/include))
-TARGET_LDFLAGS += -lm
-MAKE_VARS += FPIC="$(FPIC)"
+TARGET_CFLAGS += $(TLS_CFLAGS)
+MAKE_VARS += FPIC="$(FPIC)" UHTTPD_TLS="$(UHTTPD_TLS)"
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
