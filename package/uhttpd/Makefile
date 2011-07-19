@@ -12,6 +12,8 @@ PKG_RELEASE:=24
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 PKG_CONFIG_DEPENDS := \
+	CONFIG_PACKAGE_uhttpd-mod-lua \
+	CONFIG_PACKAGE_uhttpd-mod-tls \
 	CONFIG_PACKAGE_uhttpd-mod-tls_cyassl \
 	CONFIG_PACKAGE_uhttpd-mod-tls_openssl
 
@@ -86,7 +88,11 @@ endef
 
 
 TARGET_CFLAGS += $(TLS_CFLAGS)
-MAKE_VARS += FPIC="$(FPIC)" UHTTPD_TLS="$(UHTTPD_TLS)"
+MAKE_VARS += \
+	FPIC="$(FPIC)" \
+	LUA_SUPPORT="$(if $(CONFIG_PACKAGE_uhttpd-mod-lua),1)" \
+	TLS_SUPPORT="$(if $(CONFIG_PACKAGE_uhttpd-mod-tls),1)" \
+	UHTTPD_TLS="$(UHTTPD_TLS)"
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
