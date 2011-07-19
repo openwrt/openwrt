@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/image.mk
 
 JFFS2_BLOCKSIZE = 64k 128k 256k
 
-ase_cmdline=-console=ttyLTQ1,115200 rootfstype=squashfs,jffs2
+ase_cmdline=-console=ttyLTQ0,115200 rootfstype=squashfs,jffs2
 xway_cmdline=-console=ttyLTQ1,115200 rootfstype=squashfs,jffs2
 falcon_cmdline=-console=ttyLTQ0,115200 rootfstype=squashfs,jffs2
 
@@ -199,6 +199,14 @@ endef
 endif
 
 ifeq ($(CONFIG_TARGET_lantiq_ar9),y)
+define Image/BuildKernel/Profile/WBMR
+	$(call Image/BuildKernel/Template,WBMR,$(xway_cmdline))
+endef
+
+define Image/Build/Profile/WBMR
+	$(call Image/Build/$(1),$(1),WBMR)
+endef
+
 define Image/BuildKernel/Profile/DGN3500B
 	$(call Image/BuildKernel/Template,DGN3500B,$(xway_cmdline))
 endef
@@ -208,11 +216,13 @@ define Image/Build/Profile/DGN3500B
 endef
 
 define Image/BuildKernel/Profile/Generic
+	$(call Image/BuildKernel/Template,WBMR,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,DGN3500B,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
 
 define Image/Build/Profile/Generic
+	$(call Image/Build/$(1),$(1),WBMR)
 	$(call Image/Build/$(1),$(1),DGN3500B)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs
