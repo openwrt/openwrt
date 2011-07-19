@@ -1,0 +1,98 @@
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
+@@ -40,6 +40,15 @@
+ 
+ #define MIPS_CPU_TIMER_IRQ		7
+ 
++#ifdef CONFIG_SOC_AMAZON_SE
++#define LTQ_DMA_CH0_INT		(INT_NUM_IM3_IRL0)
++#define LTQ_DMA_CH1_INT		(INT_NUM_IM3_IRL0 + 1)
++#define LTQ_DMA_CH2_INT		(INT_NUM_IM3_IRL0 + 2)
++#define LTQ_DMA_CH3_INT		(INT_NUM_IM3_IRL0 + 3)
++#define LTQ_DMA_CH4_INT		(INT_NUM_IM3_IRL0 + 4)
++#define LTQ_DMA_CH5_INT		(INT_NUM_IM3_IRL0 + 5)
++#define LTQ_DMA_CH6_INT		(INT_NUM_IM3_IRL0 + 6)
++#else
+ #define LTQ_DMA_CH0_INT		(INT_NUM_IM2_IRL0)
+ #define LTQ_DMA_CH1_INT		(INT_NUM_IM2_IRL0 + 1)
+ #define LTQ_DMA_CH2_INT		(INT_NUM_IM2_IRL0 + 2)
+@@ -47,6 +56,7 @@
+ #define LTQ_DMA_CH4_INT		(INT_NUM_IM2_IRL0 + 4)
+ #define LTQ_DMA_CH5_INT		(INT_NUM_IM2_IRL0 + 5)
+ #define LTQ_DMA_CH6_INT		(INT_NUM_IM2_IRL0 + 6)
++#endif
+ #define LTQ_DMA_CH7_INT		(INT_NUM_IM2_IRL0 + 7)
+ #define LTQ_DMA_CH8_INT		(INT_NUM_IM2_IRL0 + 8)
+ #define LTQ_DMA_CH9_INT		(INT_NUM_IM2_IRL0 + 9)
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -128,6 +128,11 @@
+ extern void ltq_pmu_enable(unsigned int module);
+ extern void ltq_pmu_disable(unsigned int module);
+ 
++static inline int ltq_is_ase(void)
++{
++	return (ltq_get_soc_type() == SOC_TYPE_AMAZON_SE);
++}
++
+ static inline int ltq_is_ar9(void)
+ {
+ 	return (ltq_get_soc_type() == SOC_TYPE_AR9);
+--- a/arch/mips/lantiq/xway/mach-easy50601.c
++++ b/arch/mips/lantiq/xway/mach-easy50601.c
+@@ -41,9 +41,14 @@
+ 	.parts		= easy50601_partitions,
+ };
+ 
++static struct ltq_eth_data ltq_eth_data = {
++	.mii_mode = -1, /* use EPHY */
++};
++
+ static void __init easy50601_init(void)
+ {
+ 	ltq_register_nor(&easy50601_flash_data);
++	ltq_register_etop(&ltq_eth_data);
+ }
+ 
+ MIPS_MACHINE(LTQ_MACH_EASY50601,
+--- a/drivers/net/lantiq_etop.c
++++ b/drivers/net/lantiq_etop.c
+@@ -72,7 +72,11 @@
+ 
+ /* use 2 static channels for TX/RX */
+ #define LTQ_ETOP_TX_CHANNEL	1
++#ifdef CONFIG_SOC_AMAZON_SE
++#define LTQ_ETOP_RX_CHANNEL	5
++#else
+ #define LTQ_ETOP_RX_CHANNEL	6
++#endif
+ #define IS_TX(x)		(x == LTQ_ETOP_TX_CHANNEL)
+ #define IS_RX(x)		(x == LTQ_ETOP_RX_CHANNEL)
+ 
+@@ -255,6 +259,9 @@
+ }
+ 
+ static int
++ltq_etop_mdio_wr(struct mii_bus *bus, int phy_addr, int phy_reg, u16 phy_data);
++
++static int
+ ltq_etop_hw_init(struct net_device *dev)
+ {
+ 	struct ltq_etop_priv *priv = netdev_priv(dev);
+@@ -274,6 +281,16 @@
+ 		break;
+ 
+ 	default:
++		if (ltq_is_ase()) {
++#define PMU_EPHY	0x80
++#define LTQ_CGU_IFCCR	0x0018
++			ltq_pmu_enable(PMU_EPHY);
++			ltq_etop_w32_mask(0, 1, LTQ_ETOP_CFG);
++			ltq_cgu_w32(ltq_cgu_r32(LTQ_CGU_IFCCR) | (0x1 << 4), LTQ_CGU_IFCCR);
++			ltq_etop_mdio_wr(NULL, 0x8, 0x12, 0xC020);
++			printk("Selected EPHY mode \n");
++			break;
++		}
+ 		netdev_err(dev, "unknown mii mode %d\n",
+ 			priv->pldata->mii_mode);
+ 		return -ENOTSUPP;
