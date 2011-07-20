@@ -558,8 +558,10 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		break;
 
 	case AR71XX_SOC_AR7242:
-		ar71xx_eth0_data.reset_bit |= AR724X_RESET_GE0_MDIO;
-		ar71xx_eth1_data.reset_bit |= AR724X_RESET_GE1_MDIO;
+		ar71xx_eth0_data.reset_bit |= AR724X_RESET_GE0_MDIO |
+					      RESET_MODULE_GE0_PHY;
+		ar71xx_eth1_data.reset_bit |= AR724X_RESET_GE1_MDIO |
+					      RESET_MODULE_GE1_PHY;
 		pdata->ddr_flush = id ? ar724x_ddr_flush_ge1
 				      : ar724x_ddr_flush_ge0;
 		pdata->set_pll =  id ? ar724x_set_pll_ge1
@@ -580,6 +582,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		ar71xx_eth1_data.reset_bit |= AR724X_RESET_GE1_MDIO;
 		/* fall through */
 	case AR71XX_SOC_AR7240:
+		ar71xx_eth0_data.reset_bit |= RESET_MODULE_GE0_PHY;
+		ar71xx_eth1_data.reset_bit |= RESET_MODULE_GE1_PHY;
 		pdata->ddr_flush = id ? ar724x_ddr_flush_ge1
 				      : ar724x_ddr_flush_ge0;
 		pdata->set_pll =  id ? ar724x_set_pll_ge1
