@@ -418,28 +418,6 @@ static void ar7240sw_disable_port(struct ar7240sw *as, unsigned port)
 			   AR7240_PORT_CTRL_STATE_DISABLED);
 }
 
-static int ar7240sw_reset(struct ar7240sw *as)
-{
-	struct mii_bus *mii = as->mii_bus;
-	int ret;
-	int i;
-
-	/* Set all ports to disabled state. */
-	for (i = 0; i < AR7240_NUM_PORTS; i++)
-		ar7240sw_disable_port(as, i);
-
-	/* Wait for transmit queues to drain. */
-	msleep(2);
-
-	/* Reset the switch. */
-	ar7240sw_reg_write(mii, AR7240_REG_MASK_CTRL,
-			   AR7240_MASK_CTRL_SOFT_RESET);
-
-	ret = ar7240sw_reg_wait(mii, AR7240_REG_MASK_CTRL,
-				AR7240_MASK_CTRL_SOFT_RESET, 0, 1000);
-	return ret;
-}
-
 static void ar7240sw_setup(struct ar7240sw *as)
 {
 	struct mii_bus *mii = as->mii_bus;
@@ -469,6 +447,30 @@ static void ar7240sw_setup(struct ar7240sw *as)
 
 	/* setup Service TAG */
 	ar7240sw_reg_rmw(mii, AR7240_REG_SERVICE_TAG, AR7240_SERVICE_TAG_M, 0);
+}
+
+static int ar7240sw_reset(struct ar7240sw *as)
+{
+	struct mii_bus *mii = as->mii_bus;
+	int ret;
+	int i;
+
+	/* Set all ports to disabled state. */
+	for (i = 0; i < AR7240_NUM_PORTS; i++)
+		ar7240sw_disable_port(as, i);
+
+	/* Wait for transmit queues to drain. */
+	msleep(2);
+
+	/* Reset the switch. */
+	ar7240sw_reg_write(mii, AR7240_REG_MASK_CTRL,
+			   AR7240_MASK_CTRL_SOFT_RESET);
+
+	ret = ar7240sw_reg_wait(mii, AR7240_REG_MASK_CTRL,
+				AR7240_MASK_CTRL_SOFT_RESET, 0, 1000);
+
+	ar7240sw_setup(as);
+	return ret;
 }
 
 static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
@@ -867,7 +869,6 @@ void ag71xx_ar7240_start(struct ag71xx *ag)
 	struct ar7240sw *as = ag->phy_priv;
 
 	ar7240sw_reset(as);
-	ar7240sw_setup(as);
 
 	ag->speed = SPEED_1000;
 	ag->duplex = 1;
