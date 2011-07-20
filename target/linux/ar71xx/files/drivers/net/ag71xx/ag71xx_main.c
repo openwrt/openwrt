@@ -739,7 +739,6 @@ static void ag71xx_tx_timeout(struct net_device *dev)
 static void ag71xx_restart_work_func(struct work_struct *work)
 {
 	struct ag71xx *ag = container_of(work, struct ag71xx, restart_work);
-	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 
 	ag71xx_stop(ag->dev);
 	ag71xx_open(ag->dev);
