@@ -12,7 +12,7 @@ fw__uci_state_add() {
 		val="${val:+$val${e1:+ }}$e1"
 	done
 
-	uci_toggle_state $var "$val"
+	uci_toggle_state firewall core $var "$val"
 }
 
 fw__uci_state_del() {
@@ -28,7 +28,7 @@ fw__uci_state_del() {
 		rest="${rest:+$rest${e1:+ }}$e1"
 	done
 
-	uci_toggle_state $var "$val"
+	uci_toggle_state firewall core $var "$val"
 }
 
 fw_configure_interface() {
