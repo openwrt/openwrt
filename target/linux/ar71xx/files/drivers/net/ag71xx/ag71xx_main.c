@@ -423,9 +423,18 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 			 FIFO_CFG5_LE | FIFO_CFG5_FT | FIFO_CFG5_16 | \
 			 FIFO_CFG5_17 | FIFO_CFG5_SF)
 
+static void ag71xx_hw_stop(struct ag71xx *ag)
+{
+	/* disable all interrupts and stop the rx engine */
+	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, 0);
+	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
+}
+
 static void ag71xx_hw_init(struct ag71xx *ag)
 {
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+
+	ag71xx_hw_stop(ag);
 
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_SR);
 	udelay(20);
@@ -469,13 +478,6 @@ static void ag71xx_hw_start(struct ag71xx *ag)
 
 	/* enable interrupts */
 	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, AG71XX_INT_INIT);
-}
-
-static void ag71xx_hw_stop(struct ag71xx *ag)
-{
-	/* disable all interrupts and stop the rx engine */
-	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, 0);
-	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
 }
 
 void ag71xx_link_adjust(struct ag71xx *ag)
