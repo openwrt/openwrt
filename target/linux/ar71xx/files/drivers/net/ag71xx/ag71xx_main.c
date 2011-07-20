@@ -433,8 +433,21 @@ static void ag71xx_hw_stop(struct ag71xx *ag)
 static void ag71xx_hw_init(struct ag71xx *ag)
 {
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+	u32 reset_mask = pdata->reset_bit;
 
 	ag71xx_hw_stop(ag);
+
+	if (pdata->is_ar724x) {
+		u32 reset_phy = reset_mask;
+
+		reset_phy &= RESET_MODULE_GE0_PHY | RESET_MODULE_GE1_PHY;
+		reset_mask &= ~(RESET_MODULE_GE0_PHY | RESET_MODULE_GE1_PHY);
+
+		ar71xx_device_stop(reset_phy);
+		mdelay(50);
+		ar71xx_device_start(reset_phy);
+		mdelay(200);
+	}
 
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_SR);
 	udelay(20);
