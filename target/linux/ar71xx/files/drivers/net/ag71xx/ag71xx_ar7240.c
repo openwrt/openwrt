@@ -57,7 +57,13 @@
 #define   AR7240_VTUDATA_MEMBER		BITS(0, 10)
 #define   AR7240_VTUDATA_VALID		BIT(11)
 
+#define AR7240_REG_ATU			0x50
+#define AR7240_ATU_FLUSH_ALL		0x1
+
 #define AR7240_REG_AT_CTRL		0x5c
+#define AR7240_AT_CTRL_AGE_TIME		BITS(0, 15)
+#define AR7240_AT_CTRL_AGE_EN		BIT(17)
+#define AR7240_AT_CTRL_LEARN_CHANGE	BIT(18)
 #define AR7240_AT_CTRL_ARP_EN		BIT(20)
 
 #define AR7240_REG_TAG_PRIORITY		0x70
@@ -446,8 +452,12 @@ static void ar7240sw_setup(struct ar7240sw *as)
 	/* Setup TAG priority mapping */
 	ar7240sw_reg_write(mii, AR7240_REG_TAG_PRIORITY, 0xfa50);
 
-	/* Enable ARP frame acknowledge */
-	ar7240sw_reg_set(mii, AR7240_REG_AT_CTRL, AR7240_AT_CTRL_ARP_EN);
+	/* Enable ARP frame acknowledge, aging, MAC replacing */
+	ar7240sw_reg_write(mii, AR7240_REG_AT_CTRL,
+		0x2b /* 5 min age time */ |
+		AR7240_AT_CTRL_AGE_EN |
+		AR7240_AT_CTRL_ARP_EN |
+		AR7240_AT_CTRL_LEARN_CHANGE);
 
 	/* Enable Broadcast frames transmitted to the CPU */
 	ar7240sw_reg_set(mii, AR7240_REG_FLOOD_MASK,
