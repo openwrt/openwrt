@@ -37,12 +37,14 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		gcom
+		LDFLAGS="" \
+		comgt
 endef
-	
+
 define Package/comgt/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/gcom $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/comgt $(1)/usr/bin/
+	ln -s comgt $(1)/usr/bin/gcom
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_BIN) ./files/3g.connect $(1)/etc/ppp/3g.connect
 	$(INSTALL_DIR) $(1)/etc/chatscripts
