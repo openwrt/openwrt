@@ -1,0 +1,37 @@
+From f3007275d7706afb1381adb0003f3ba69d359c8f Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 22 Jul 2011 17:09:36 +0200
+Subject: [PATCH 20/22] bcma: small fixes needed to get b43 up with SoC
+
+When using an SoC these small cahnges are neede to get it up
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/core.c |    2 ++
+ drivers/bcma/main.c |    3 +++
+ 2 files changed, 5 insertions(+), 0 deletions(-)
+
+--- a/drivers/bcma/core.c
++++ b/drivers/bcma/core.c
+@@ -110,6 +110,8 @@ EXPORT_SYMBOL_GPL(bcma_core_pll_ctl);
+ u32 bcma_core_dma_translation(struct bcma_device *core)
+ {
+ 	switch (core->bus->hosttype) {
++	case BCMA_HOSTTYPE_SOC:
++		return 0;
+ 	case BCMA_HOSTTYPE_PCI:
+ 		if (bcma_aread32(core, BCMA_IOST) & BCMA_IOST_DMA64)
+ 			return BCMA_DMA_TRANSLATION_DMA64_CMT;
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -99,7 +99,10 @@ static int bcma_register_cores(struct bc
+ 			core->irq = bus->host_pci->irq;
+ 			break;
+ 		case BCMA_HOSTTYPE_SDIO:
++			break;
+ 		case BCMA_HOSTTYPE_SOC:
++			core->dev.dma_mask = &core->dev.coherent_dma_mask;
++			core->dma_dev = &core->dev;
+ 			break;
+ 		}
+ 

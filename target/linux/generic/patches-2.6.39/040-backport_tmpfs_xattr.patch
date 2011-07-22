@@ -409,7 +409,7 @@
  
  static struct dentry *shmem_get_parent(struct dentry *child)
  {
-@@ -2402,8 +2606,10 @@ int shmem_fill_super(struct super_block 
+@@ -2402,8 +2606,10 @@ int shmem_fill_super(struct super_block
  	sb->s_magic = TMPFS_MAGIC;
  	sb->s_op = &shmem_ops;
  	sb->s_time_gran = 1;

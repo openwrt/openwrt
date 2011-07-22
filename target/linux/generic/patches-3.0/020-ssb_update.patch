@@ -179,6 +179,36 @@
  	case SSB_PLLTYPE_1: /* 48Mhz base, 3 dividers */
  	case SSB_PLLTYPE_3: /* 25Mhz, 2 dividers */
  	case SSB_PLLTYPE_4: /* 48Mhz, 4 dividers */
+@@ -1265,7 +1266,10 @@ u32 ssb_dma_translation(struct ssb_devic
+ 	case SSB_BUSTYPE_SSB:
+ 		return 0;
+ 	case SSB_BUSTYPE_PCI:
+-		return SSB_PCI_DMA;
++		if (ssb_read32(dev, SSB_TMSHIGH) & SSB_TMSHIGH_DMA64)
++			return SSB_PCIE_DMA_H32;
++		else
++			return SSB_PCI_DMA;
+ 	default:
+ 		__ssb_dma_not_implemented(dev);
+ 	}
+--- a/drivers/ssb/pci.c
++++ b/drivers/ssb/pci.c
+@@ -734,12 +734,9 @@ out_free:
+ static void ssb_pci_get_boardinfo(struct ssb_bus *bus,
+ 				  struct ssb_boardinfo *bi)
+ {
+-	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_VENDOR_ID,
+-			     &bi->vendor);
+-	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_ID,
+-			     &bi->type);
+-	pci_read_config_word(bus->host_pci, PCI_REVISION_ID,
+-			     &bi->rev);
++	bi->vendor = bus->host_pci->subsystem_vendor;
++	bi->type = bus->host_pci->subsystem_device;
++	bi->rev = bus->host_pci->revision;
+ }
+ 
+ int ssb_pci_get_invariants(struct ssb_bus *bus,
 --- a/drivers/ssb/pcihost_wrapper.c
 +++ b/drivers/ssb/pcihost_wrapper.c
 @@ -53,8 +53,8 @@ static int ssb_pcihost_resume(struct pci
@@ -213,3 +243,23 @@
  			bus->chip_package = 0;
  		} else {
  			bus->chip_id = 0x4710;
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -27,6 +27,8 @@ struct ssb_sprom {
+ 	u8 et1mdcport;		/* MDIO for enet1 */
+ 	u8 board_rev;		/* Board revision number from SPROM. */
+ 	u8 country_code;	/* Country Code */
++	u16 leddc_on_time;	/* LED Powersave Duty Cycle On Count */
++	u16 leddc_off_time;	/* LED Powersave Duty Cycle Off Count */
+ 	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
+ 	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
+ 	u16 pa0b0;
+@@ -99,7 +101,7 @@ struct ssb_sprom {
+ struct ssb_boardinfo {
+ 	u16 vendor;
+ 	u16 type;
+-	u16 rev;
++	u8  rev;
+ };
+ 
+ 

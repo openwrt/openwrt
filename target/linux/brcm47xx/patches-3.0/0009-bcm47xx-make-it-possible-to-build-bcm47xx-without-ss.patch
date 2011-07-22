@@ -1,7 +1,7 @@
-From 82d03f33ba3e41511e56bd6ae5ae93b3b1bd0b63 Mon Sep 17 00:00:00 2001
+From 1f25ff1b0bb5a8deae3aba2ea9c58f9b83f367bb Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Wed, 22 Jun 2011 22:16:35 +0200
-Subject: [PATCH 11/14] bcm47xx: make it possible to build bcm47xx without ssb.
+Subject: [PATCH 09/22] bcm47xx: make it possible to build bcm47xx without ssb.
 
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
@@ -63,9 +63,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	select SSB_PCICORE_HOSTMODE if PCI
 +	default y
 +	help
-+	 Add support for old Broadcom BCM47xx boards with Sonics Silicon Backplane support bus.
++	 Add support for old Broadcom BCM47xx boards with Sonics Silicon Backplane support.
 +
-+	 This will generate an image with support for SSB and MIPS32 R2 instruction set.
++	 This will generate an image with support for SSB and MIPS32 R1 instruction set.
 +
 +endif
 --- a/arch/mips/bcm47xx/Makefile

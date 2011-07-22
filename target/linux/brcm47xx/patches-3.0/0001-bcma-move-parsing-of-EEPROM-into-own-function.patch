@@ -1,12 +1,16 @@
-From c4fb5adbe45b3a1cfc509a64bb92429ab0d6fc37 Mon Sep 17 00:00:00 2001
+From e6defe46ea936ebb309c9cab4f7fd14bdc0c5416 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sat, 11 Jun 2011 16:47:38 +0200
-Subject: [PATCH 01/14] bcma: move parsing of EEPROM into own function.
+Subject: [PATCH 01/22] bcma: move parsing of EEPROM into own function.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 Move the parsing of the EEPROM data in scan function for one core into
 an own function. Now we are able to use it in some other scan function
 as well.
 
+Acked-by: Rafał Miłecki <zajec5@gmail.com>
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/bcma/scan.c |  230 ++++++++++++++++++++++++++-------------------------

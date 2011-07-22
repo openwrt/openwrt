@@ -1,0 +1,675 @@
+From b5be6e3037650ff5615cb869f1972dea5a49bcb6 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 17 Jul 2011 14:53:07 +0200
+Subject: [PATCH 13/22] bcma: add serial flash support to bcma
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/Kconfig                        |    5 +
+ drivers/bcma/Makefile                       |    1 +
+ drivers/bcma/bcma_private.h                 |    5 +
+ drivers/bcma/driver_chipcommon_sflash.c     |  554 +++++++++++++++++++++++++++
+ drivers/bcma/driver_mips.c                  |    8 +-
+ include/linux/bcma/bcma_driver_chipcommon.h |   24 ++
+ 6 files changed, 596 insertions(+), 1 deletions(-)
+ create mode 100644 drivers/bcma/driver_chipcommon_sflash.c
+
+--- a/drivers/bcma/Kconfig
++++ b/drivers/bcma/Kconfig
+@@ -38,6 +38,11 @@ config BCMA_HOST_SOC
+ 	bool
+ 	depends on BCMA_DRIVER_MIPS
+ 
++config BCMA_SFLASH
++	bool
++	depends on BCMA_DRIVER_MIPS
++	default y
++
+ config BCMA_DRIVER_MIPS
+ 	bool "BCMA Broadcom MIPS core driver"
+ 	depends on BCMA && MIPS
+--- a/drivers/bcma/Makefile
++++ b/drivers/bcma/Makefile
+@@ -1,5 +1,6 @@
+ bcma-y					+= main.o scan.o core.o sprom.o
+ bcma-y					+= driver_chipcommon.o driver_chipcommon_pmu.o
++bcma-$(CONFIG_BCMA_SFLASH)		+= driver_chipcommon_sflash.o
+ bcma-y					+= driver_pci.o
+ bcma-$(CONFIG_BCMA_DRIVER_PCI_HOSTMODE)	+= driver_pci_host.o
+ bcma-$(CONFIG_BCMA_DRIVER_MIPS)		+= driver_mips.o
+--- a/drivers/bcma/bcma_private.h
++++ b/drivers/bcma/bcma_private.h
+@@ -38,6 +38,11 @@ void bcma_chipco_serial_init(struct bcma
+ u32 bcma_pmu_alp_clock(struct bcma_drv_cc *cc);
+ u32 bcma_pmu_get_clockcpu(struct bcma_drv_cc *cc);
+ 
++#ifdef CONFIG_BCMA_SFLASH
++/* driver_chipcommon_sflash.c */
++int bcma_sflash_init(struct bcma_drv_cc *cc);
++#endif /* CONFIG_BCMA_SFLASH */
++
+ #ifdef CONFIG_BCMA_HOST_PCI
+ /* host_pci.c */
+ extern int __init bcma_host_pci_init(void);
+--- /dev/null
++++ b/drivers/bcma/driver_chipcommon_sflash.c
+@@ -0,0 +1,554 @@
++/*
++ * Broadcom SiliconBackplane chipcommon serial flash interface
++ *
++ * Copyright 2011, Jonas Gorski <jonas.gorski@gmail.com>
++ * Copyright 2010, Broadcom Corporation
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <linux/bcma/bcma.h>
++#include <linux/bcma/bcma_driver_chipcommon.h>
++#include <linux/delay.h>
++
++#include "bcma_private.h"
++
++#define NUM_RETRIES	3
++
++
++/* Issue a serial flash command */
++static inline void bcma_sflash_cmd(struct bcma_drv_cc *cc, u32 opcode)
++{
++	bcma_cc_write32(cc, BCMA_CC_FLASHCTL,
++			BCMA_CC_FLASHCTL_START | opcode);
++	while (bcma_cc_read32(cc, BCMA_CC_FLASHCTL)
++			& BCMA_CC_FLASHCTL_BUSY);
++}
++
++
++static inline void bcma_sflash_write_u8(struct bcma_drv_cc *cc,
++					      u32 offset, u8 byte)
++{
++	bcma_cc_write32(cc, BCMA_CC_FLASHADDR, offset);
++	bcma_cc_write32(cc, BCMA_CC_FLASHDATA, byte);
++}
++
++/* Initialize serial flash access */
++int bcma_sflash_init(struct bcma_drv_cc *cc)
++{
++	u32 id, id2;
++
++	memset(&cc->flash.sflash, 0, sizeof(struct bcma_sflash));
++
++	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
++	case BCMA_CC_FLASHT_STSER:
++		/* Probe for ST chips */
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_DP);
++		bcma_cc_write32(cc, BCMA_CC_FLASHADDR, 0);
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_RES);
++		id = bcma_cc_read32(cc, BCMA_CC_FLASHDATA);
++		cc->flash.sflash.blocksize = 64 * 1024;
++		switch (id) {
++		case 0x11:
++			/* ST M25P20 2 Mbit Serial Flash */
++			cc->flash.sflash.numblocks = 4;
++			break;
++		case 0x12:
++			/* ST M25P40 4 Mbit Serial Flash */
++			cc->flash.sflash.numblocks = 8;
++			break;
++		case 0x13:
++			/* ST M25P80 8 Mbit Serial Flash */
++			cc->flash.sflash.numblocks = 16;
++			break;
++		case 0x14:
++			/* ST M25P16 16 Mbit Serial Flash */
++			cc->flash.sflash.numblocks = 32;
++			break;
++		case 0x15:
++			/* ST M25P32 32 Mbit Serial Flash */
++			cc->flash.sflash.numblocks = 64;
++			break;
++		case 0x16:
++			/* ST M25P64 64 Mbit Serial Flash */
++			cc->flash.sflash.numblocks = 128;
++			break;
++		case 0x17:
++			/* ST M25FL128 128 Mbit Serial Flash */
++			cc->flash.sflash.numblocks = 256;
++			break;
++		case 0xbf:
++			/* All of the following flashes are SST with
++			 * 4KB subsectors. Others should be added but
++			 * We'll have to revamp the way we identify them
++			 * since RES is not eough to disambiguate them.
++			 */
++			cc->flash.sflash.blocksize = 4 * 1024;
++			bcma_cc_write32(cc, BCMA_CC_FLASHADDR, 1);
++			bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_RES);
++			id2 = bcma_cc_read32(cc, BCMA_CC_FLASHDATA);
++			switch (id2) {
++			case 1:
++				/* SST25WF512 512 Kbit Serial Flash */
++			case 0x48:
++				/* SST25VF512 512 Kbit Serial Flash */
++				cc->flash.sflash.numblocks = 16;
++				break;
++			case 2:
++				/* SST25WF010 1 Mbit Serial Flash */
++			case 0x49:
++				/* SST25VF010 1 Mbit Serial Flash */
++				cc->flash.sflash.numblocks = 32;
++				break;
++			case 3:
++				/* SST25WF020 2 Mbit Serial Flash */
++			case 0x43:
++				/* SST25VF020 2 Mbit Serial Flash */
++				cc->flash.sflash.numblocks = 64;
++				break;
++			case 4:
++				/* SST25WF040 4 Mbit Serial Flash */
++			case 0x44:
++				/* SST25VF040 4 Mbit Serial Flash */
++			case 0x8d:
++				/* SST25VF040B 4 Mbit Serial Flash */
++				cc->flash.sflash.numblocks = 128;
++				break;
++			case 5:
++				/* SST25WF080 8 Mbit Serial Flash */
++			case 0x8e:
++				/* SST25VF080B 8 Mbit Serial Flash */
++				cc->flash.sflash.numblocks = 256;
++				break;
++			case 0x41:
++				/* SST25VF016 16 Mbit Serial Flash */
++				cc->flash.sflash.numblocks = 512;
++				break;
++			case 0x4a:
++				/* SST25VF032 32 Mbit Serial Flash */
++				cc->flash.sflash.numblocks = 1024;
++				break;
++			case 0x4b:
++				/* SST25VF064 64 Mbit Serial Flash */
++				cc->flash.sflash.numblocks = 2048;
++				break;
++			}
++			break;
++		}
++		break;
++
++	case BCMA_CC_FLASHT_ATSER:
++		/* Probe for Atmel chips */
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_AT_STATUS);
++		id = bcma_cc_read32(cc, BCMA_CC_FLASHDATA) & 0x3c;
++		switch (id) {
++		case 0xc:
++			/* Atmel AT45DB011 1Mbit Serial Flash */
++			cc->flash.sflash.blocksize = 256;
++			cc->flash.sflash.numblocks = 512;
++			break;
++		case 0x14:
++			/* Atmel AT45DB021 2Mbit Serial Flash */
++			cc->flash.sflash.blocksize = 256;
++			cc->flash.sflash.numblocks = 1024;
++			break;
++		case 0x1c:
++			/* Atmel AT45DB041 4Mbit Serial Flash */
++			cc->flash.sflash.blocksize = 256;
++			cc->flash.sflash.numblocks = 2048;
++			break;
++		case 0x24:
++			/* Atmel AT45DB081 8Mbit Serial Flash */
++			cc->flash.sflash.blocksize = 256;
++			cc->flash.sflash.numblocks = 4096;
++			break;
++		case 0x2c:
++			/* Atmel AT45DB161 16Mbit Serial Flash */
++			cc->flash.sflash.blocksize = 512;
++			cc->flash.sflash.numblocks = 4096;
++			break;
++		case 0x34:
++			/* Atmel AT45DB321 32Mbit Serial Flash */
++			cc->flash.sflash.blocksize = 512;
++			cc->flash.sflash.numblocks = 8192;
++			break;
++		case 0x3c:
++			/* Atmel AT45DB642 64Mbit Serial Flash */
++			cc->flash.sflash.blocksize = 1024;
++			cc->flash.sflash.numblocks = 8192;
++			break;
++		}
++		break;
++	}
++
++	cc->flash.sflash.size = cc->flash.sflash.blocksize * cc->flash.sflash.numblocks;
++
++	return cc->flash.sflash.size ? 0 : -ENODEV;
++}
++
++/* Read len bytes starting at offset into buf. Returns number of bytes read. */
++int bcma_sflash_read(struct bcma_drv_cc *cc, u32 offset, u32 len,
++			   u8 *buf)
++{
++	u8 *from, *to;
++	u32 cnt, i;
++
++	if (!len)
++		return 0;
++
++	if ((offset + len) > cc->flash.sflash.size)
++		return -EINVAL;
++
++	if ((len >= 4) && (offset & 3))
++		cnt = 4 - (offset & 3);
++	else if ((len >= 4) && ((u32)buf & 3))
++		cnt = 4 - ((u32)buf & 3);
++	else
++		cnt = len;
++
++
++	if (cc->core->id.rev == 12)
++		from = (u8 *)KSEG1ADDR(BCMA_FLASH2 + offset);
++	else
++		from = (u8 *)KSEG0ADDR(BCMA_FLASH2 + offset);
++
++	to = (u8 *)buf;
++
++	if (cnt < 4) {
++		for (i = 0; i < cnt; i++) {
++			*to = readb(from);
++			from++;
++			to++;
++		}
++		return cnt;
++	}
++
++	while (cnt >= 4) {
++		*(u32 *)to = readl(from);
++		from += 4;
++		to += 4;
++		cnt -= 4;
++	}
++
++	return len - cnt;
++}
++
++/* Poll for command completion. Returns zero when complete. */
++int bcma_sflash_poll(struct bcma_drv_cc *cc, u32 offset)
++{
++	if (offset >= cc->flash.sflash.size)
++		return -22;
++
++	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
++	case BCMA_CC_FLASHT_STSER:
++		/* Check for ST Write In Progress bit */
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_RDSR);
++		return bcma_cc_read32(cc, BCMA_CC_FLASHDATA)
++				& BCMA_CC_FLASHDATA_ST_WIP;
++	case BCMA_CC_FLASHT_ATSER:
++		/* Check for Atmel Ready bit */
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_AT_STATUS);
++		return !(bcma_cc_read32(cc, BCMA_CC_FLASHDATA)
++				& BCMA_CC_FLASHDATA_AT_READY);
++	}
++
++	return 0;
++}
++
++
++static int sflash_st_write(struct bcma_drv_cc *cc, u32 offset, u32 len,
++			   const u8 *buf)
++{
++	struct bcma_bus *bus = cc->core->bus;
++	int ret = 0;
++	bool is4712b0 = (bus->chipinfo.id == 0x4712) && (bus->chipinfo.rev == 3);
++	u32 mask;
++
++
++	/* Enable writes */
++	bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_WREN);
++	if (is4712b0) {
++		mask = 1 << 14;
++		bcma_sflash_write_u8(cc, offset, *buf++);
++		/* Set chip select */
++		bcma_cc_set32(cc, BCMA_CC_GPIOOUT, mask);
++		/* Issue a page program with the first byte */
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_PP);
++		ret = 1;
++		offset++;
++		len--;
++		while (len > 0) {
++			if ((offset & 255) == 0) {
++				/* Page boundary, drop cs and return */
++				bcma_cc_mask32(cc, BCMA_CC_GPIOOUT, ~mask);
++				udelay(1);
++				if (!bcma_sflash_poll(cc, offset)) {
++					/* Flash rejected command */
++					return -EAGAIN;
++				}
++				return ret;
++			} else {
++				/* Write single byte */
++				bcma_sflash_cmd(cc, *buf++);
++			}
++			ret++;
++			offset++;
++			len--;
++		}
++		/* All done, drop cs */
++		bcma_cc_mask32(cc, BCMA_CC_GPIOOUT, ~mask);
++		udelay(1);
++		if (!bcma_sflash_poll(cc, offset)) {
++			/* Flash rejected command */
++			return -EAGAIN;
++		}
++	} else if (cc->core->id.rev >= 20) {
++		bcma_sflash_write_u8(cc, offset, *buf++);
++		/* Issue a page program with CSA bit set */
++		bcma_sflash_cmd(cc,
++				BCMA_CC_FLASHCTL_ST_CSA |
++				BCMA_CC_FLASHCTL_ST_PP);
++		ret = 1;
++		offset++;
++		len--;
++		while (len > 0) {
++			if ((offset & 255) == 0) {
++				/* Page boundary, poll droping cs and return */
++				bcma_cc_write32(cc, BCMA_CC_FLASHCTL, 0);
++				udelay(1);
++				if (!bcma_sflash_poll(cc, offset)) {
++					/* Flash rejected command */
++					return -EAGAIN;
++				}
++				return ret;
++			} else {
++				/* Write single byte */
++				bcma_sflash_cmd(cc,
++						BCMA_CC_FLASHCTL_ST_CSA |
++						*buf++);
++			}
++			ret++;
++			offset++;
++			len--;
++		}
++		/* All done, drop cs & poll */
++		bcma_cc_write32(cc, BCMA_CC_FLASHCTL, 0);
++		udelay(1);
++		if (!bcma_sflash_poll(cc, offset)) {
++			/* Flash rejected command */
++			return -EAGAIN;
++		}
++	} else {
++		ret = 1;
++		bcma_sflash_write_u8(cc, offset, *buf);
++		/* Page program */
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_PP);
++	}
++	return ret;
++}
++
++static int sflash_at_write(struct bcma_drv_cc *cc, u32 offset, u32 len,
++			   const u8 *buf)
++{
++	struct bcma_sflash *sfl = &cc->flash.sflash;
++	u32 page, byte, mask;
++	int ret = 0;
++	mask = sfl->blocksize - 1;
++	page = (offset & ~mask) << 1;
++	byte = offset & mask;
++	/* Read main memory page into buffer 1 */
++	if (byte || (len < sfl->blocksize)) {
++		int i = 100;
++		bcma_cc_write32(cc, BCMA_CC_FLASHADDR, page);
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_AT_BUF1_LOAD);
++		/* 250 us for AT45DB321B */
++		while (i > 0 && bcma_sflash_poll(cc, offset)) {
++			udelay(10);
++			i--;
++		}
++		BUG_ON(!bcma_sflash_poll(cc, offset));
++	}
++	/* Write into buffer 1 */
++	for (ret = 0; (ret < (int)len) && (byte < sfl->blocksize); ret++) {
++		bcma_sflash_write_u8(cc, byte++, *buf++);
++		bcma_sflash_cmd(cc,
++				BCMA_CC_FLASHCTL_AT_BUF1_WRITE);
++	}
++	/* Write buffer 1 into main memory page */
++	bcma_cc_write32(cc, BCMA_CC_FLASHADDR, page);
++	bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_AT_BUF1_PROGRAM);
++
++	return ret;
++}
++
++/* Write len bytes starting at offset into buf. Returns number of bytes
++ * written. Caller should poll for completion.
++ */
++int bcma_sflash_write(struct bcma_drv_cc *cc, u32 offset, u32 len,
++			    const u8 *buf)
++{
++	struct bcma_sflash *sfl;
++	int ret = 0, tries = NUM_RETRIES;
++
++	if (!len)
++		return 0;
++
++	if ((offset + len) > cc->flash.sflash.size)
++		return -EINVAL;
++
++	sfl = &cc->flash.sflash;
++	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
++	case BCMA_CC_FLASHT_STSER:
++		do {
++			ret = sflash_st_write(cc, offset, len, buf);
++			tries--;
++		} while (ret == -EAGAIN && tries > 0);
++
++		if (ret == -EAGAIN && tries == 0) {
++			pr_info("ST Flash rejected write\n");
++			ret = -EIO;
++		}
++		break;
++	case BCMA_CC_FLASHT_ATSER:
++		ret = sflash_at_write(cc, offset, len, buf);
++		break;
++	}
++
++	return ret;
++}
++
++/* Erase a region. Returns number of bytes scheduled for erasure.
++ * Caller should poll for completion.
++ */
++int bcma_sflash_erase(struct bcma_drv_cc *cc, u32 offset)
++{
++	struct bcma_sflash *sfl;
++
++	if (offset >= cc->flash.sflash.size)
++		return -EINVAL;
++
++	sfl = &cc->flash.sflash;
++	switch (cc->capabilities & BCMA_CC_CAP_FLASHT) {
++	case BCMA_CC_FLASHT_STSER:
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_WREN);
++		bcma_cc_write32(cc, BCMA_CC_FLASHADDR, offset);
++		/* Newer flashes have "sub-sectors" which can be erased independently
++		 * with a new command: ST_SSE. The ST_SE command erases 64KB just as
++		 * before.
++		 */
++		bcma_sflash_cmd(cc, (sfl->blocksize < (64 * 1024)) ? BCMA_CC_FLASHCTL_ST_SSE : BCMA_CC_FLASHCTL_ST_SE);
++		return sfl->blocksize;
++	case BCMA_CC_FLASHT_ATSER:
++		bcma_cc_write32(cc, BCMA_CC_FLASHADDR, offset << 1);
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_AT_PAGE_ERASE);
++		return sfl->blocksize;
++	}
++
++	return 0;
++}
++
++/*
++ * writes the appropriate range of flash, a NULL buf simply erases
++ * the region of flash
++ */
++int bcma_sflash_commit(struct bcma_drv_cc *cc, u32 offset, u32 len,
++			     const u8 *buf)
++{
++	struct bcma_sflash *sfl;
++	u8 *block = NULL, *cur_ptr, *blk_ptr;
++	u32 blocksize = 0, mask, cur_offset, cur_length, cur_retlen, remainder;
++	u32 blk_offset, blk_len, copied;
++	int bytes, ret = 0;
++
++	/* Check address range */
++	if (len <= 0)
++		return 0;
++
++	sfl = &cc->flash.sflash;
++	if ((offset + len) > sfl->size)
++		return -EINVAL;
++
++	blocksize = sfl->blocksize;
++	mask = blocksize - 1;
++
++	/* Allocate a block of mem */
++	block = kmalloc(blocksize, GFP_KERNEL);
++	if (!block)
++		return -ENOMEM;
++
++	while (len) {
++		/* Align offset */
++		cur_offset = offset & ~mask;
++		cur_length = blocksize;
++		cur_ptr = block;
++
++		remainder = blocksize - (offset & mask);
++		if (len < remainder)
++			cur_retlen = len;
++		else
++			cur_retlen = remainder;
++
++		/* buf == NULL means erase only */
++		if (buf) {
++			/* Copy existing data into holding block if necessary */
++			if ((offset & mask) || (len < blocksize)) {
++				blk_offset = cur_offset;
++				blk_len = cur_length;
++				blk_ptr = cur_ptr;
++
++				/* Copy entire block */
++				while (blk_len) {
++					copied = bcma_sflash_read(cc,
++							blk_offset,
++							blk_len, blk_ptr);
++					blk_offset += copied;
++					blk_len -= copied;
++					blk_ptr += copied;
++				}
++			}
++
++			/* Copy input data into holding block */
++			memcpy(cur_ptr + (offset & mask), buf, cur_retlen);
++		}
++
++		/* Erase block */
++		ret = bcma_sflash_erase(cc, cur_offset);
++		if (ret < 0)
++			goto done;
++
++		while (bcma_sflash_poll(cc, cur_offset));
++
++		/* buf == NULL means erase only */
++		if (!buf) {
++			offset += cur_retlen;
++			len -= cur_retlen;
++			continue;
++		}
++
++		/* Write holding block */
++		while (cur_length > 0) {
++			bytes = bcma_sflash_write(cc, cur_offset,
++					cur_length, cur_ptr);
++
++			if (bytes < 0) {
++				ret = bytes;
++				goto done;
++			}
++
++			while (bcma_sflash_poll(cc, cur_offset));
++
++			cur_offset += bytes;
++			cur_length -= bytes;
++			cur_ptr += bytes;
++		}
++
++		offset += cur_retlen;
++		len -= cur_retlen;
++		buf += cur_retlen;
++	}
++
++	ret = len;
++done:
++	kfree(block);
++	return ret;
++}
+--- a/drivers/bcma/driver_mips.c
++++ b/drivers/bcma/driver_mips.c
+@@ -185,7 +185,13 @@ static void bcma_core_mips_flash_detect(
+ 	switch (bus->drv_cc.capabilities & BCMA_CC_CAP_FLASHT) {
+ 	case BCMA_CC_FLASHT_STSER:
+ 	case BCMA_CC_FLASHT_ATSER:
+-		pr_err("Serial flash not supported.\n");
++#ifdef CONFIG_BCMA_SFLASH
++		pr_info("found serial flash.\n");
++		bus->drv_cc.flash_type = BCMA_SFLASH;
++		bcma_sflash_init(&bus->drv_cc);
++#else
++		pr_info("serial flash not supported.\n");
++#endif /* CONFIG_BCMA_SFLASH */
+ 		break;
+ 	case BCMA_CC_FLASHT_PARA:
+ 		pr_info("found parallel flash.\n");
+--- a/include/linux/bcma/bcma_driver_chipcommon.h
++++ b/include/linux/bcma/bcma_driver_chipcommon.h
+@@ -358,6 +358,7 @@ struct bcma_chipcommon_pmu {
+ #ifdef CONFIG_BCMA_DRIVER_MIPS
+ enum bcma_flash_type {
+ 	BCMA_PFLASH,
++	BCMA_SFLASH,
+ };
+ 
+ struct bcma_pflash {
+@@ -366,8 +367,19 @@ struct bcma_pflash {
+ 	u32 window_size;
+ };
+ 
++#ifdef CONFIG_BCMA_SFLASH
++struct bcma_sflash {
++	u32 blocksize;		/* Block size */
++	u32 numblocks;		/* Number of blocks */
++	u32 size;		/* Total size in bytes */
++};
++#endif /* CONFIG_BCMA_SFLASH */
++
+ union bcma_flash {
+ 	struct bcma_pflash pflash;
++#ifdef CONFIG_BCMA_SFLASH
++	struct bcma_sflash sflash;
++#endif /* CONFIG_BCMA_SFLASH */
+ };
+ 
+ struct bcma_serial_port {
+@@ -433,4 +445,16 @@ u32 bcma_chipco_gpio_polarity(struct bcm
+ /* PMU support */
+ extern void bcma_pmu_init(struct bcma_drv_cc *cc);
+ 
++#ifdef CONFIG_BCMA_SFLASH
++/* Chipcommon sflash support. */
++int bcma_sflash_read(struct bcma_drv_cc *cc, u32 offset, u32 len,
++			   u8 *buf);
++int bcma_sflash_poll(struct bcma_drv_cc *cc, u32 offset);
++int bcma_sflash_write(struct bcma_drv_cc *cc, u32 offset, u32 len,
++			    const u8 *buf);
++int bcma_sflash_erase(struct bcma_drv_cc *cc, u32 offset);
++int bcma_sflash_commit(struct bcma_drv_cc *cc, u32 offset, u32 len,
++			     const u8 *buf);
++#endif /* CONFIG_BCMA_SFLASH */
++
+ #endif /* LINUX_BCMA_DRIVER_CC_H_ */

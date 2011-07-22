@@ -7,7 +7,7 @@
 -obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- a/arch/mips/bcm47xx/wgt634u.c
 +++ /dev/null
-@@ -1,169 +0,0 @@
+@@ -1,170 +0,0 @@
 -/*
 - * This file is subject to the terms and conditions of the GNU General Public
 - * License.  See the file "COPYING" in the main directory of this archive
@@ -142,11 +142,12 @@
 -	 * machine. Use the MAC address as an heuristic. Netgear Inc. has
 -	 * been allocated ranges 00:09:5b:xx:xx:xx and 00:0f:b5:xx:xx:xx.
 -	 */
+-	u8 *et0mac;
 -
 -	if (bcm47xx_active_bus_type != BCM47XX_BUS_TYPE_SSB)
 -		return -ENODEV;
 -
--	u8 *et0mac = bcm47xx_bus.ssb.sprom.et0mac;
+-	et0mac = bcm47xx_bus.ssb.sprom.et0mac;
 -
 -	if (et0mac[0] == 0x00 &&
 -	    ((et0mac[1] == 0x09 && et0mac[2] == 0x5b) ||

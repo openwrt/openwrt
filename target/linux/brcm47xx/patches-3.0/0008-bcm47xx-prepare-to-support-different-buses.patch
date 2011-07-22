@@ -1,24 +1,26 @@
-From c0886db6357de20fba4f7c0602eceefba3ad343b Mon Sep 17 00:00:00 2001
+From 1db44bc4e7d5abb2966154ac57d1f035dc3e4ec1 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 6 Jun 2011 00:07:36 +0200
-Subject: [PATCH 10/14] bcm47xx: prepare to support different buses
+Subject: [PATCH 08/22] bcm47xx: prepare to support different buses
 
-The ssb bus is not hod directly any more. there is now a union which
-contains all the supported buses, now just ssb. As just one system bus
-can be used at a time the union does not cause any problems.
+Prepare bcm47xx to support different System buses. Before adding
+support for bcma it should be possible to build bcm47xx without the
+need of ssb. With this patch bcm47xx does not directly contain a
+ssb_bus, but a union contain all the supported system buses. As a SoC
+just uses one system bus a union is a good choice.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  arch/mips/bcm47xx/gpio.c                     |   56 ++++++++++++++++----------
  arch/mips/bcm47xx/nvram.c                    |   15 +++++--
  arch/mips/bcm47xx/serial.c                   |   13 +++++-
- arch/mips/bcm47xx/setup.c                    |   32 +++++++++++---
+ arch/mips/bcm47xx/setup.c                    |   33 ++++++++++++---
  arch/mips/bcm47xx/time.c                     |    9 +++-
- arch/mips/bcm47xx/wgt634u.c                  |   13 ++++--
+ arch/mips/bcm47xx/wgt634u.c                  |   14 ++++--
  arch/mips/include/asm/mach-bcm47xx/bcm47xx.h |   14 ++++++-
  arch/mips/include/asm/mach-bcm47xx/gpio.h    |   55 ++++++++++++++++++-------
  drivers/watchdog/bcm47xx_wdt.c               |   12 +++++-
- 9 files changed, 158 insertions(+), 61 deletions(-)
+ 9 files changed, 160 insertions(+), 61 deletions(-)
 
 --- a/arch/mips/bcm47xx/gpio.c
 +++ b/arch/mips/bcm47xx/gpio.c
@@ -277,15 +279,17 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  				   SSB_CHIPCO_IRQ_GPIO))
  		return IRQ_NONE;
  
-@@ -133,21 +133,24 @@ static int __init wgt634u_init(void)
+@@ -132,22 +132,26 @@ static int __init wgt634u_init(void)
+ 	 * machine. Use the MAC address as an heuristic. Netgear Inc. has
  	 * been allocated ranges 00:09:5b:xx:xx:xx and 00:0f:b5:xx:xx:xx.
  	 */
++	u8 *et0mac;
  
 -	u8 *et0mac = ssb_bcm47xx.sprom.et0mac;
 +	if (bcm47xx_active_bus_type != BCM47XX_BUS_TYPE_SSB)
 +		return -ENODEV;
 +
-+	u8 *et0mac = bcm47xx_bus.ssb.sprom.et0mac;
++	et0mac = bcm47xx_bus.ssb.sprom.et0mac;
  
  	if (et0mac[0] == 0x00 &&
  	    ((et0mac[1] == 0x09 && et0mac[2] == 0x5b) ||

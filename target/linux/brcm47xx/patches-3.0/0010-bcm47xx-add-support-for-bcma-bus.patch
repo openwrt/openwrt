@@ -1,7 +1,7 @@
-From 0b7b4817579b5b283e48b96de24b7b2c1a861644 Mon Sep 17 00:00:00 2001
+From 27aa4f76cfe54b6ce3bf98f4d5fd70ab1f60071f Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 6 Jun 2011 00:07:37 +0200
-Subject: [PATCH 12/14] bcm47xx: add support for bcma bus
+Subject: [PATCH 10/22] bcm47xx: add support for bcma bus
 
 This patch add support for the bcma bus. Broadcom uses only Mips 74K
 CPUs on the new SoC and on the old ons using ssb bus there are no Mips
@@ -24,10 +24,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +++ b/arch/mips/bcm47xx/Kconfig
 @@ -15,4 +15,17 @@ config BCM47XX_SSB
  
- 	 This will generate an image with support for SSB and MIPS32 R2 instruction set.
+ 	 This will generate an image with support for SSB and MIPS32 R1 instruction set.
  
 +config BCM47XX_BCMA
-+	bool "SSB Support for Broadcom BCM47XX"
++	bool "BCMA Support for Broadcom BCM47XX"
 +	select SYS_HAS_CPU_MIPS32_R2
 +	select BCMA
 +	select BCMA_HOST_SOC
@@ -48,7 +48,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #endif
 +#ifdef CONFIG_BCM47XX_BCMA
 +	case BCM47XX_BUS_TYPE_BCMA:
-+		if ((unsigned)gpio >= BCM47XX_CHIPCO_GPIO_LINES)
++		if (gpio >= BCM47XX_CHIPCO_GPIO_LINES)
 +			return -EINVAL;
 +
 +		if (test_and_set_bit(gpio, gpio_in_use))
@@ -65,7 +65,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #endif
 +#ifdef CONFIG_BCM47XX_BCMA
 +	case BCM47XX_BUS_TYPE_BCMA:
-+		if ((unsigned)gpio >= BCM47XX_CHIPCO_GPIO_LINES)
++		if (gpio >= BCM47XX_CHIPCO_GPIO_LINES)
 +			return;
 +
 +		clear_bit(gpio, gpio_in_use);
@@ -92,7 +92,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	struct ssb_mipscore *mcore_ssb;
  #endif
 +#ifdef CONFIG_BCM47XX_BCMA
-+	struct bcma_drv_mips *mcore_bcma;
++	struct bcma_drv_cc *bcma_cc;
 +#endif
  	struct nvram_header *header;
  	int i;
@@ -103,9 +103,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #endif
 +#ifdef CONFIG_BCM47XX_BCMA
 +	case BCM47XX_BUS_TYPE_BCMA:
-+		mcore_bcma = &bcm47xx_bus.bcma.bus.drv_mips;
-+		base = mcore_bcma->flash_window;
-+		lim = mcore_bcma->flash_window_size;
++		bcma_cc = &bcm47xx_bus.bcma.bus.drv_cc;
++		base = bcma_cc->pflash.window;
++		lim = bcma_cc->pflash.window_size;
 +		break;
 +#endif
  	}
@@ -121,14 +121,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +static int __init uart8250_init_bcma(void)
 +{
 +	int i;
-+	struct bcma_drv_mips *mcore = &(bcm47xx_bus.bcma.bus.drv_mips);
++	struct bcma_drv_cc *cc = &(bcm47xx_bus.bcma.bus.drv_cc);
 +
 +	memset(&uart8250_data, 0,  sizeof(uart8250_data));
 +
-+	for (i = 0; i < mcore->nr_serial_ports; i++) {
++	for (i = 0; i < cc->nr_serial_ports; i++) {
 +		struct plat_serial8250_port *p = &(uart8250_data[i]);
-+		struct bcma_drv_mips_serial_port *bcma_port;
-+		bcma_port = &(mcore->serial_ports[i]);
++		struct bcma_serial_port *bcma_port;
++		bcma_port = &(cc->serial_ports[i]);
 +
 +		p->mapbase = (unsigned int) bcma_port->regs;
 +		p->membase = (void *) bcma_port->regs;

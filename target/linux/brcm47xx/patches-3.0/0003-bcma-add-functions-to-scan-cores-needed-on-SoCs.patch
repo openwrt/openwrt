@@ -1,7 +1,10 @@
-From 9a920f4d8eed485f7b73e9b13dab0e49c64d3ff8 Mon Sep 17 00:00:00 2001
+From beb36a1a49227ca6c5778a667aefc8cd3fd56a4f Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sat, 18 Jun 2011 14:30:55 +0200
-Subject: [PATCH 03/14] bcma: add functions to scan cores needed on SoCs
+Subject: [PATCH 03/22] bcma: add functions to scan cores needed on SoCs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 The chip common and mips core have to be setup early in the boot
 process to get the cpu clock.
@@ -10,17 +13,19 @@ data and searches for the chip common and mips core and initializes
 chip common. After that was done and the kernel is out of early boot we
 just have to run bcma_bus_register() and it will search for the other
 cores, initialize and register them.
+The cores are getting the same numbers as before.
 
+Acked-by: Rafał Miłecki <zajec5@gmail.com>
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/bcma/bcma_private.h                 |    7 ++
  drivers/bcma/driver_chipcommon.c            |    5 ++
- drivers/bcma/driver_pci.c                   |    3 +
- drivers/bcma/main.c                         |   45 +++++++++++++
+ drivers/bcma/driver_pci.c                   |    5 ++
+ drivers/bcma/main.c                         |   46 +++++++++++++
  drivers/bcma/scan.c                         |   95 +++++++++++++++++++++++++--
  include/linux/bcma/bcma.h                   |    1 +
  include/linux/bcma/bcma_driver_chipcommon.h |    1 +
- 7 files changed, 151 insertions(+), 6 deletions(-)
+ 7 files changed, 154 insertions(+), 6 deletions(-)
 
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
@@ -43,20 +48,20 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  int bcma_sprom_get(struct bcma_bus *bus);
 --- a/drivers/bcma/driver_chipcommon.c
 +++ b/drivers/bcma/driver_chipcommon.c
-@@ -23,6 +23,9 @@ static inline u32 bcma_cc_write32_masked
+@@ -26,6 +26,9 @@ void bcma_core_chipcommon_init(struct bc
+ 	u32 leddc_on = 10;
+ 	u32 leddc_off = 90;
  
- void bcma_core_chipcommon_init(struct bcma_drv_cc *cc)
- {
 +	if (cc->setup_done)
 +		return;
 +
  	if (cc->core->id.rev >= 11)
  		cc->status = bcma_cc_read32(cc, BCMA_CC_CHIPSTAT);
  	cc->capabilities = bcma_cc_read32(cc, BCMA_CC_CAP);
-@@ -38,6 +41,8 @@ void bcma_core_chipcommon_init(struct bc
- 		bcma_pmu_init(cc);
- 	if (cc->capabilities & BCMA_CC_CAP_PCTL)
- 		pr_err("Power control not implemented!\n");
+@@ -52,6 +55,8 @@ void bcma_core_chipcommon_init(struct bc
+ 			((leddc_on << BCMA_CC_GPIOTIMER_ONTIME_SHIFT) |
+ 			 (leddc_off << BCMA_CC_GPIOTIMER_OFFTIME_SHIFT)));
+ 	}
 +
 +	cc->setup_done = true;
  }
@@ -64,20 +69,28 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /* Set chip watchdog reset timer to fire in 'ticks' backplane cycles */
 --- a/drivers/bcma/driver_pci.c
 +++ b/drivers/bcma/driver_pci.c
-@@ -159,7 +159,10 @@ static void bcma_pcicore_serdes_workarou
+@@ -187,6 +187,9 @@ static bool bcma_core_pci_is_in_hostmode
  
  void bcma_core_pci_init(struct bcma_drv_pci *pc)
  {
 +	if (pc->setup_done)
 +		return;
- 	bcma_pcicore_serdes_workaround(pc);
++
+ 	if (bcma_core_pci_is_in_hostmode(pc)) {
+ #ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
+ 		bcma_core_pci_hostmode_init(pc);
+@@ -196,6 +199,8 @@ void bcma_core_pci_init(struct bcma_drv_
+ 	} else {
+ 		bcma_core_pci_clientmode_init(pc);
+ 	}
++
 +	pc->setup_done = true;
  }
  
  int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc, struct bcma_device *core,
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -167,6 +167,51 @@ void bcma_bus_unregister(struct bcma_bus
+@@ -169,6 +169,52 @@ void bcma_bus_unregister(struct bcma_bus
  	bcma_unregister_cores(bus);
  }
  
@@ -96,7 +109,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	match.class = BCMA_CL_SIM;
 +	match.rev = BCMA_ANY_REV;
 +
-+	/* Scan for devices (cores) */
++	/* Scan for chip common core */
 +	err = bcma_bus_scan_early(bus, &match, core_cc);
 +	if (err) {
 +		pr_err("Failed to scan for common core: %d\n", err);
@@ -108,6 +121,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	match.class = BCMA_CL_SIM;
 +	match.rev = BCMA_ANY_REV;
 +
++	/* Scan for mips core */
 +	err = bcma_bus_scan_early(bus, &match, core_mips);
 +	if (err) {
 +		pr_err("Failed to scan for mips core: %d\n", err);
@@ -287,7 +301,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +}
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -185,6 +185,7 @@ struct bcma_bus {
+@@ -190,6 +190,7 @@ struct bcma_bus {
  	struct bcma_device *mapped_core;
  	struct list_head cores;
  	u8 nr_cores;
@@ -297,7 +311,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	struct bcma_drv_pci drv_pci;
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -259,6 +259,7 @@ struct bcma_drv_cc {
+@@ -252,6 +252,7 @@ struct bcma_drv_cc {
  	u32 status;
  	u32 capabilities;
  	u32 capabilities_ext;

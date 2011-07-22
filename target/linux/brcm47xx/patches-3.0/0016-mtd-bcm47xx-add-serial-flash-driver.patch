@@ -1,0 +1,312 @@
+From 8a6398687998886c451c6df381c2320b6dddb3fe Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 17 Jul 2011 14:55:45 +0200
+Subject: [PATCH 16/22] mtd: bcm47xx: add serial flash driver
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/mtd/maps/Kconfig          |    9 ++
+ drivers/mtd/maps/Makefile         |    1 +
+ drivers/mtd/maps/bcm47xx-sflash.c |  270 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 280 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/mtd/maps/bcm47xx-sflash.c
+
+--- a/drivers/mtd/maps/Kconfig
++++ b/drivers/mtd/maps/Kconfig
+@@ -273,6 +273,15 @@ config MTD_BCM47XX_PFLASH
+ 	help
+ 	  Support for bcm47xx parallel flash
+ 
++config MTD_BCM47XX_SFLASH
++	tristate "bcm47xx serial flash support"
++	default y
++	depends on BCM47XX
++	select MTD_PARTITIONS
++	select MTD_BCM47XX_PARTS
++	help
++	  Support for bcm47xx parallel flash
++
+ config MTD_DILNETPC
+ 	tristate "CFI Flash device mapped on DIL/Net PC"
+ 	depends on X86 && MTD_CFI_INTELEXT && BROKEN
+--- a/drivers/mtd/maps/Makefile
++++ b/drivers/mtd/maps/Makefile
+@@ -61,3 +61,4 @@ obj-$(CONFIG_MTD_BCM963XX)	+= bcm963xx-f
+ obj-$(CONFIG_MTD_LATCH_ADDR)	+= latch-addr-flash.o
+ obj-$(CONFIG_MTD_LANTIQ)	+= lantiq-flash.o
+ obj-$(CONFIG_MTD_BCM47XX_PFLASH)+= bcm47xx-pflash.o
++obj-$(CONFIG_MTD_BCM47XX_SFLASH)+= bcm47xx-sflash.o
+--- /dev/null
++++ b/drivers/mtd/maps/bcm47xx-sflash.c
+@@ -0,0 +1,270 @@
++/*
++ * Broadcom SiliconBackplane chipcommon serial flash interface
++ *
++ * Copyright 2006, Broadcom Corporation      
++ * All Rights Reserved.      
++ *       
++ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
++ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
++ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
++ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
++ *
++ * $Id$
++ */
++
++#define pr_fmt(fmt) "bcm47xx_sflash: " fmt
++#include <linux/module.h>
++#include <linux/slab.h>
++#include <linux/ioport.h>
++#include <linux/sched.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/map.h>
++#include <linux/mtd/partitions.h>
++#include <linux/errno.h>
++#include <linux/delay.h>
++
++#include <bcm47xx.h>
++
++#include <linux/bcma/bcma.h>
++#include <linux/bcma/bcma_driver_chipcommon.h>
++#include <linux/platform_device.h>
++
++struct sflash_mtd {
++	struct bcma_drv_cc *cc;
++	struct mtd_info mtd;
++	struct mtd_erase_region_info region;
++};
++
++static struct sflash_mtd *sflash;
++
++static int
++sflash_mtd_poll(struct sflash_mtd *sflash, unsigned int offset, int timeout)
++{
++	unsigned long now = jiffies;
++	int ret = 0;
++
++	for (;;) {
++		if (!bcma_sflash_poll(sflash->cc, offset)) {
++			ret = 0;
++			break;
++		}
++		if (time_after(jiffies, now + timeout)) {
++			pr_err("timeout while polling\n");
++			ret = -ETIMEDOUT;
++			break;
++		}
++		udelay(1);
++	}
++
++	return ret;
++}
++
++static int
++sflash_mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
++{
++	struct sflash_mtd *sflash = (struct sflash_mtd *) mtd->priv;
++
++	/* Check address range */
++	if (!len)
++		return 0;
++
++	if ((from + len) > mtd->size)
++		return -EINVAL;
++	
++	*retlen = 0;
++
++	while (len) {
++		int ret = bcma_sflash_read(sflash->cc, from, len, buf);
++		if (ret < 0)
++			return ret;
++
++		from += (loff_t) ret;
++		len -= ret;
++		buf += ret;
++		*retlen += ret;
++	}
++
++	return 0;
++}
++
++static int
++sflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf)
++{
++	struct sflash_mtd *sflash = (struct sflash_mtd *) mtd->priv;
++
++	/* Check address range */
++	if (!len)
++		return 0;
++
++	if ((to + len) > mtd->size)
++		return -EINVAL;
++
++	*retlen = 0;
++	while (len) {
++		int bytes;
++		int ret = bcma_sflash_write(sflash->cc, to, len, buf);
++		if (ret < 0)
++			return ret;
++
++		bytes = ret;
++
++		ret = sflash_mtd_poll(sflash, (unsigned int) to, HZ / 10);
++		if (ret)
++			return ret;
++
++		to += (loff_t) bytes;
++		len -= bytes;
++		buf += bytes;
++		*retlen += bytes;
++	}
++
++	return 0;
++}
++
++static int
++sflash_mtd_erase(struct mtd_info *mtd, struct erase_info *erase)
++{
++	struct sflash_mtd *sflash = (struct sflash_mtd *) mtd->priv;
++	int i, j, ret = 0;
++	unsigned int addr, len;
++
++	/* Check address range */
++	if (!erase->len)
++		return 0;
++	if ((erase->addr + erase->len) > mtd->size)
++		return -EINVAL;
++
++	addr = erase->addr;
++	len = erase->len;
++
++	/* Ensure that requested regions are aligned */
++	for (i = 0; i < mtd->numeraseregions; i++) {
++		for (j = 0; j < mtd->eraseregions[i].numblocks; j++) {
++			if (addr == mtd->eraseregions[i].offset +
++					mtd->eraseregions[i].erasesize * j &&
++			    len >= mtd->eraseregions[i].erasesize) {
++				if ((ret = bcma_sflash_erase(sflash->cc, addr)) < 0)
++					break;
++				if ((ret = sflash_mtd_poll(sflash, addr, 10 * HZ)))
++					break;
++				addr += mtd->eraseregions[i].erasesize;
++				len -= mtd->eraseregions[i].erasesize;
++			}
++		}
++		if (ret)
++			break;
++	}
++
++	/* Set erase status */
++	if (ret)
++		erase->state = MTD_ERASE_FAILED;
++	else 
++		erase->state = MTD_ERASE_DONE;
++
++	/* Call erase callback */
++	if (erase->callback)
++		erase->callback(erase);
++
++	return ret;
++}
++
++static const char *probes[] = { "bcm47xx", NULL };
++
++static int bcm47xx_sflash_probe(struct platform_device *pdev)
++{
++	int ret = 0;
++
++	struct mtd_partition *parts;
++	int num_partitions = 0;
++
++	sflash = kzalloc(sizeof(struct sflash_mtd), GFP_KERNEL);
++	if (!sflash)
++		return -ENOMEM;
++
++	sflash->cc = &bcm47xx_bus.bcma.bus.drv_cc;
++	if (sflash->cc->flash_type != BCMA_SFLASH)
++		return -ENODEV;
++
++	pr_info("found serial flash: blocksize=%dKB, numblocks=%d, size=%dKB\n",
++			sflash->cc->flash.sflash.blocksize/1024,
++			sflash->cc->flash.sflash.numblocks,
++			sflash->cc->flash.sflash.size/1024);
++
++	/* Setup region info */
++	sflash->region.offset = 0;
++	sflash->region.erasesize = sflash->cc->flash.sflash.blocksize;
++	sflash->region.numblocks = sflash->cc->flash.sflash.numblocks;
++	if (sflash->region.erasesize > sflash->mtd.erasesize)
++		sflash->mtd.erasesize = sflash->region.erasesize;
++	sflash->mtd.size = sflash->cc->flash.sflash.size;
++	sflash->mtd.numeraseregions = 1;
++
++	/* Register with MTD */
++	sflash->mtd.name = "bcm47xx-sflash";
++	sflash->mtd.type = MTD_NORFLASH;
++	sflash->mtd.flags = MTD_CAP_NORFLASH;
++	sflash->mtd.eraseregions = &sflash->region;
++	sflash->mtd.erase = sflash_mtd_erase;
++	sflash->mtd.read = sflash_mtd_read;
++	sflash->mtd.write = sflash_mtd_write;
++	sflash->mtd.writesize = 1;
++	sflash->mtd.priv = sflash;
++	sflash->mtd.owner = THIS_MODULE;
++
++	num_partitions = parse_mtd_partitions(&sflash->mtd, probes, &parts, 0);
++	if (num_partitions < 0) {
++		ret = num_partitions;
++		goto err_destroy;
++	}
++
++	ret = mtd_device_register(&sflash->mtd, parts, num_partitions);
++
++//	ret = mtd_device_parse_register(bcm47xx_mtd, "bcm47xx", NULL, NULL, 0);
++
++	if (ret) {
++		pr_err("mtd_device_register failed\n");
++		return ret;
++	}
++	return 0;
++
++err_destroy:
++	map_destroy(&sflash->mtd);
++	return ret;
++}
++
++static int __devexit bcm47xx_sflash_remove(struct platform_device *pdev)
++{
++	if (sflash) {
++		mtd_device_unregister(&sflash->mtd);
++		map_destroy(&sflash->mtd);
++	}
++	return 0;
++}
++
++static struct platform_driver bcm47xx_sflash_driver = {
++	.remove = __devexit_p(bcm47xx_sflash_remove),
++	.driver = {
++		.name = "bcm47xx_sflash",
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init init_bcm47xx_sflash(void)
++{
++	int ret = platform_driver_probe(&bcm47xx_sflash_driver, bcm47xx_sflash_probe);
++
++	if (ret)
++		pr_err("error registering platform driver: %i\n", ret);
++	return ret;
++}
++
++static void __exit exit_bcm47xx_sflash(void)
++{
++	platform_driver_unregister(&bcm47xx_sflash_driver);
++}
++
++module_init(init_bcm47xx_sflash);
++module_exit(exit_bcm47xx_sflash);
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("BCM47XX parallel flash driver");
