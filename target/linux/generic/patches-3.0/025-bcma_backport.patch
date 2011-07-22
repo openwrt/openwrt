@@ -12,17 +12,33 @@
  config BCMA_HOST_PCI_POSSIBLE
  	bool
  	depends on BCMA && PCI = y
+@@ -22,6 +27,12 @@ config BCMA_HOST_PCI
+ 	bool "Support for BCMA on PCI-host bus"
+ 	depends on BCMA_HOST_PCI_POSSIBLE
+ 
++config BCMA_DRIVER_PCI_HOSTMODE
++	bool "Driver for PCI core working in hostmode"
++	depends on BCMA && MIPS
++	help
++	  PCI core hostmode operation (external PCI bus).
++
+ config BCMA_DEBUG
+ 	bool "BCMA debugging"
+ 	depends on BCMA
 --- a/drivers/bcma/Makefile
 +++ b/drivers/bcma/Makefile
-@@ -1,4 +1,4 @@
+@@ -1,6 +1,7 @@
 -bcma-y					+= main.o scan.o core.o
 +bcma-y					+= main.o scan.o core.o sprom.o
  bcma-y					+= driver_chipcommon.o driver_chipcommon_pmu.o
  bcma-y					+= driver_pci.o
++bcma-$(CONFIG_BCMA_DRIVER_PCI_HOSTMODE)	+= driver_pci_host.o
  bcma-$(CONFIG_BCMA_HOST_PCI)		+= host_pci.o
+ obj-$(CONFIG_BCMA)			+= bcma.o
+ 
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -13,12 +13,15 @@
+@@ -13,16 +13,23 @@
  struct bcma_bus;
  
  /* main.c */
@@ -40,6 +56,14 @@
  #ifdef CONFIG_BCMA_HOST_PCI
  /* host_pci.c */
  extern int __init bcma_host_pci_init(void);
+ extern void __exit bcma_host_pci_exit(void);
+ #endif /* CONFIG_BCMA_HOST_PCI */
+ 
++#ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
++void bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc);
++#endif /* CONFIG_BCMA_DRIVER_PCI_HOSTMODE */
++
+ #endif
 --- a/drivers/bcma/core.c
 +++ b/drivers/bcma/core.c
 @@ -19,7 +19,7 @@ bool bcma_core_is_enabled(struct bcma_de
@@ -59,6 +83,82 @@
  
  int bcma_core_enable(struct bcma_device *core, u32 flags)
  {
+@@ -49,3 +50,75 @@ int bcma_core_enable(struct bcma_device
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(bcma_core_enable);
++
++void bcma_core_set_clockmode(struct bcma_device *core,
++			     enum bcma_clkmode clkmode)
++{
++	u16 i;
++
++	WARN_ON(core->id.id != BCMA_CORE_CHIPCOMMON &&
++		core->id.id != BCMA_CORE_PCIE &&
++		core->id.id != BCMA_CORE_80211);
++
++	switch (clkmode) {
++	case BCMA_CLKMODE_FAST:
++		bcma_set32(core, BCMA_CLKCTLST, BCMA_CLKCTLST_FORCEHT);
++		udelay(64);
++		for (i = 0; i < 1500; i++) {
++			if (bcma_read32(core, BCMA_CLKCTLST) &
++			    BCMA_CLKCTLST_HAVEHT) {
++				i = 0;
++				break;
++			}
++			udelay(10);
++		}
++		if (i)
++			pr_err("HT force timeout\n");
++		break;
++	case BCMA_CLKMODE_DYNAMIC:
++		pr_warn("Dynamic clockmode not supported yet!\n");
++		break;
++	}
++}
++EXPORT_SYMBOL_GPL(bcma_core_set_clockmode);
++
++void bcma_core_pll_ctl(struct bcma_device *core, u32 req, u32 status, bool on)
++{
++	u16 i;
++
++	WARN_ON(req & ~BCMA_CLKCTLST_EXTRESREQ);
++	WARN_ON(status & ~BCMA_CLKCTLST_EXTRESST);
++
++	if (on) {
++		bcma_set32(core, BCMA_CLKCTLST, req);
++		for (i = 0; i < 10000; i++) {
++			if ((bcma_read32(core, BCMA_CLKCTLST) & status) ==
++			    status) {
++				i = 0;
++				break;
++			}
++			udelay(10);
++		}
++		if (i)
++			pr_err("PLL enable timeout\n");
++	} else {
++		pr_warn("Disabling PLL not supported yet!\n");
++	}
++}
++EXPORT_SYMBOL_GPL(bcma_core_pll_ctl);
++
++u32 bcma_core_dma_translation(struct bcma_device *core)
++{
++	switch (core->bus->hosttype) {
++	case BCMA_HOSTTYPE_PCI:
++		if (bcma_aread32(core, BCMA_IOST) & BCMA_IOST_DMA64)
++			return BCMA_DMA_TRANSLATION_DMA64_CMT;
++		else
++			return BCMA_DMA_TRANSLATION_DMA32_CMT;
++	default:
++		pr_err("DMA translation unknown for host %d\n",
++		       core->bus->hosttype);
++	}
++	return BCMA_DMA_TRANSLATION_NONE;
++}
++EXPORT_SYMBOL(bcma_core_dma_translation);
 --- a/drivers/bcma/driver_chipcommon_pmu.c
 +++ b/drivers/bcma/driver_chipcommon_pmu.c
 @@ -53,6 +53,7 @@ static void bcma_pmu_resources_init(stru
@@ -94,10 +194,51 @@
  			bus->chipinfo.id);
 --- a/drivers/bcma/driver_pci.c
 +++ b/drivers/bcma/driver_pci.c
-@@ -161,3 +161,27 @@ void bcma_core_pci_init(struct bcma_drv_
+@@ -157,7 +157,67 @@ static void bcma_pcicore_serdes_workarou
+  * Init.
+  **************************************************/
+ 
+-void bcma_core_pci_init(struct bcma_drv_pci *pc)
++static void bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
  {
  	bcma_pcicore_serdes_workaround(pc);
  }
++
++static bool bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc)
++{
++	struct bcma_bus *bus = pc->core->bus;
++	u16 chipid_top;
++
++	chipid_top = (bus->chipinfo.id & 0xFF00);
++	if (chipid_top != 0x4700 &&
++	    chipid_top != 0x5300)
++		return false;
++
++	if (bus->sprom.boardflags_lo & SSB_PCICORE_BFL_NOPCI)
++		return false;
++
++#if 0
++	/* TODO: on BCMA we use address from EROM instead of magic formula */
++	u32 tmp;
++	return !mips_busprobe32(tmp, (bus->mmio +
++		(pc->core->core_index * BCMA_CORE_SIZE)));
++#endif
++
++	return true;
++}
++
++void bcma_core_pci_init(struct bcma_drv_pci *pc)
++{
++	if (bcma_core_pci_is_in_hostmode(pc)) {
++#ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
++		bcma_core_pci_hostmode_init(pc);
++#else
++		pr_err("Driver compiled without support for hostmode PCI\n");
++#endif /* CONFIG_BCMA_DRIVER_PCI_HOSTMODE */
++	} else {
++		bcma_core_pci_clientmode_init(pc);
++	}
++}
 +
 +int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc, struct bcma_device *core,
 +			  bool enable)
@@ -217,13 +358,15 @@
  			break;
  		case BCMA_HOSTTYPE_NONE:
  		case BCMA_HOSTTYPE_SDIO:
-@@ -144,6 +147,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -144,6 +147,15 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_pci_init(&bus->drv_pci);
  	}
  
 +	/* Try to get SPROM */
 +	err = bcma_sprom_get(bus);
-+	if (err) {
++	if (err == -ENOENT) {
++		pr_err("No SPROM available\n");
++	} else if (err) {
 +		pr_err("Failed to get SPROM: %d\n", err);
 +		return -ENOENT;
 +	}
@@ -231,7 +374,7 @@
  	/* Register found cores */
  	bcma_register_cores(bus);
  
-@@ -151,13 +161,11 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -151,13 +163,11 @@ int bcma_bus_register(struct bcma_bus *b
  
  	return 0;
  }
@@ -247,7 +390,7 @@
  {
 --- /dev/null
 +++ b/drivers/bcma/sprom.c
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,171 @@
 +/*
 + * Broadcom specific AMBA
 + * SPROM reading
@@ -270,12 +413,12 @@
 + * R/W ops.
 + **************************************************/
 +
-+static void bcma_sprom_read(struct bcma_bus *bus, u16 *sprom)
++static void bcma_sprom_read(struct bcma_bus *bus, u16 offset, u16 *sprom)
 +{
 +	int i;
 +	for (i = 0; i < SSB_SPROMSIZE_WORDS_R4; i++)
 +		sprom[i] = bcma_read16(bus->drv_cc.core,
-+				       BCMA_CC_SPROM + (i * 2));
++				       offset + (i * 2));
 +}
 +
 +/**************************************************
@@ -362,7 +505,7 @@
 +		return err;
 +
 +	revision = sprom[SSB_SPROMSIZE_WORDS_R4 - 1] & SSB_SPROM_REVISION_REV;
-+	if (revision != 8) {
++	if (revision != 8 && revision != 9) {
 +		pr_err("Unsupported SPROM revision: %d\n", revision);
 +		return -ENOENT;
 +	}
@@ -387,18 +530,27 @@
 +
 +int bcma_sprom_get(struct bcma_bus *bus)
 +{
++	u16 offset;
 +	u16 *sprom;
 +	int err = 0;
 +
 +	if (!bus->drv_cc.core)
 +		return -EOPNOTSUPP;
 +
++	if (!(bus->drv_cc.capabilities & BCMA_CC_CAP_SPROM))
++		return -ENOENT;
++
 +	sprom = kcalloc(SSB_SPROMSIZE_WORDS_R4, sizeof(u16),
 +			GFP_KERNEL);
 +	if (!sprom)
 +		return -ENOMEM;
 +
-+	bcma_sprom_read(bus, sprom);
++	/* Most cards have SPROM moved by additional offset 0x30 (48 dwords).
++	 * According to brcm80211 this applies to cards with PCIe rev >= 6
++	 * TODO: understand this condition and use it */
++	offset = (bus->chipinfo.id == 0x4331) ? BCMA_CC_SPROM :
++		BCMA_CC_SPROM_PCIE6;
++	bcma_sprom_read(bus, offset, sprom);
 +
 +	err = bcma_sprom_valid(sprom);
 +	if (err)
@@ -420,7 +572,19 @@
  
  #include "bcma_regs.h"
  
-@@ -31,6 +32,12 @@ struct bcma_host_ops {
+@@ -24,6 +25,11 @@ struct bcma_chipinfo {
+ 	u8 pkg;
+ };
+ 
++enum bcma_clkmode {
++	BCMA_CLKMODE_FAST,
++	BCMA_CLKMODE_DYNAMIC,
++};
++
+ struct bcma_host_ops {
+ 	u8 (*read8)(struct bcma_device *core, u16 offset);
+ 	u16 (*read16)(struct bcma_device *core, u16 offset);
+@@ -31,6 +37,12 @@ struct bcma_host_ops {
  	void (*write8)(struct bcma_device *core, u16 offset, u8 value);
  	void (*write16)(struct bcma_device *core, u16 offset, u16 value);
  	void (*write32)(struct bcma_device *core, u16 offset, u32 value);
@@ -433,7 +597,7 @@
  	/* Agent ops */
  	u32 (*aread32)(struct bcma_device *core, u16 offset);
  	void (*awrite32)(struct bcma_device *core, u16 offset, u32 value);
-@@ -117,6 +124,8 @@ struct bcma_device {
+@@ -117,6 +129,8 @@ struct bcma_device {
  	struct bcma_device_id id;
  
  	struct device dev;
@@ -442,7 +606,7 @@
  	bool dev_registered;
  
  	u8 core_index;
-@@ -179,6 +188,10 @@ struct bcma_bus {
+@@ -179,6 +193,10 @@ struct bcma_bus {
  
  	struct bcma_drv_cc drv_cc;
  	struct bcma_drv_pci drv_pci;
@@ -453,7 +617,7 @@
  };
  
  extern inline u32 bcma_read8(struct bcma_device *core, u16 offset)
-@@ -208,6 +221,18 @@ void bcma_write32(struct bcma_device *co
+@@ -208,6 +226,18 @@ void bcma_write32(struct bcma_device *co
  {
  	core->bus->ops->write32(core, offset, value);
  }
@@ -472,21 +636,56 @@
  extern inline u32 bcma_aread32(struct bcma_device *core, u16 offset)
  {
  	return core->bus->ops->aread32(core, offset);
-@@ -219,6 +244,7 @@ void bcma_awrite32(struct bcma_device *c
+@@ -218,7 +248,24 @@ void bcma_awrite32(struct bcma_device *c
+ 	core->bus->ops->awrite32(core, offset, value);
  }
  
++#define bcma_mask32(cc, offset, mask) \
++	bcma_write32(cc, offset, bcma_read32(cc, offset) & (mask))
++#define bcma_set32(cc, offset, set) \
++	bcma_write32(cc, offset, bcma_read32(cc, offset) | (set))
++#define bcma_maskset32(cc, offset, mask, set) \
++	bcma_write32(cc, offset, (bcma_read32(cc, offset) & (mask)) | (set))
++
  extern bool bcma_core_is_enabled(struct bcma_device *core);
 +extern void bcma_core_disable(struct bcma_device *core, u32 flags);
  extern int bcma_core_enable(struct bcma_device *core, u32 flags);
++extern void bcma_core_set_clockmode(struct bcma_device *core,
++				    enum bcma_clkmode clkmode);
++extern void bcma_core_pll_ctl(struct bcma_device *core, u32 req, u32 status,
++			      bool on);
++#define BCMA_DMA_TRANSLATION_MASK	0xC0000000
++#define  BCMA_DMA_TRANSLATION_NONE	0x00000000
++#define  BCMA_DMA_TRANSLATION_DMA32_CMT	0x40000000 /* Client Mode Translation for 32-bit DMA */
++#define  BCMA_DMA_TRANSLATION_DMA64_CMT	0x80000000 /* Client Mode Translation for 64-bit DMA */
++extern u32 bcma_core_dma_translation(struct bcma_device *core);
  
  #endif /* LINUX_BCMA_H_ */
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -244,6 +244,7 @@
+@@ -179,15 +179,7 @@
+ #define BCMA_CC_PROG_WAITCNT		0x0124
+ #define BCMA_CC_FLASH_CFG		0x0128
+ #define BCMA_CC_FLASH_WAITCNT		0x012C
+-#define BCMA_CC_CLKCTLST		0x01E0 /* Clock control and status (rev >= 20) */
+-#define  BCMA_CC_CLKCTLST_FORCEALP	0x00000001 /* Force ALP request */
+-#define  BCMA_CC_CLKCTLST_FORCEHT	0x00000002 /* Force HT request */
+-#define  BCMA_CC_CLKCTLST_FORCEILP	0x00000004 /* Force ILP request */
+-#define  BCMA_CC_CLKCTLST_HAVEALPREQ	0x00000008 /* ALP available request */
+-#define  BCMA_CC_CLKCTLST_HAVEHTREQ	0x00000010 /* HT available request */
+-#define  BCMA_CC_CLKCTLST_HWCROFF	0x00000020 /* Force HW clock request off */
+-#define  BCMA_CC_CLKCTLST_HAVEHT	0x00010000 /* HT available */
+-#define  BCMA_CC_CLKCTLST_HAVEALP	0x00020000 /* APL available */
++/* 0x1E0 is defined as shared BCMA_CLKCTLST */
+ #define BCMA_CC_HW_WORKAROUND		0x01E4 /* Hardware workaround (rev >= 20) */
+ #define BCMA_CC_UART0_DATA		0x0300
+ #define BCMA_CC_UART0_IMR		0x0304
+@@ -244,6 +236,8 @@
  #define BCMA_CC_REGCTL_DATA		0x065C
  #define BCMA_CC_PLLCTL_ADDR		0x0660
  #define BCMA_CC_PLLCTL_DATA		0x0664
-+#define BCMA_CC_SPROM			0x0830 /* SPROM beginning */
++#define BCMA_CC_SPROM			0x0800 /* SPROM beginning */
++#define BCMA_CC_SPROM_PCIE6		0x0830 /* SPROM beginning on PCIe rev >= 6 */
  
  /* Data for the PMU, if available.
   * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
@@ -500,3 +699,92 @@
 +				 struct bcma_device *core, bool enable);
  
  #endif /* LINUX_BCMA_DRIVER_PCI_H_ */
+--- a/drivers/bcma/driver_chipcommon.c
++++ b/drivers/bcma/driver_chipcommon.c
+@@ -23,6 +23,9 @@ static inline u32 bcma_cc_write32_masked
+ 
+ void bcma_core_chipcommon_init(struct bcma_drv_cc *cc)
+ {
++	u32 leddc_on = 10;
++	u32 leddc_off = 90;
++
+ 	if (cc->core->id.rev >= 11)
+ 		cc->status = bcma_cc_read32(cc, BCMA_CC_CHIPSTAT);
+ 	cc->capabilities = bcma_cc_read32(cc, BCMA_CC_CAP);
+@@ -38,6 +41,17 @@ void bcma_core_chipcommon_init(struct bc
+ 		bcma_pmu_init(cc);
+ 	if (cc->capabilities & BCMA_CC_CAP_PCTL)
+ 		pr_err("Power control not implemented!\n");
++
++	if (cc->core->id.rev >= 16) {
++		if (cc->core->bus->sprom.leddc_on_time &&
++		    cc->core->bus->sprom.leddc_off_time) {
++			leddc_on = cc->core->bus->sprom.leddc_on_time;
++			leddc_off = cc->core->bus->sprom.leddc_off_time;
++		}
++		bcma_cc_write32(cc, BCMA_CC_GPIOTIMER,
++			((leddc_on << BCMA_CC_GPIOTIMER_ONTIME_SHIFT) |
++			 (leddc_off << BCMA_CC_GPIOTIMER_OFFTIME_SHIFT)));
++	}
+ }
+ 
+ /* Set chip watchdog reset timer to fire in 'ticks' backplane cycles */
+--- /dev/null
++++ b/drivers/bcma/driver_pci_host.c
+@@ -0,0 +1,14 @@
++/*
++ * Broadcom specific AMBA
++ * PCI Core in hostmode
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include "bcma_private.h"
++#include <linux/bcma/bcma.h>
++
++void bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc)
++{
++	pr_err("No support for PCI core in hostmode yet\n");
++}
+--- a/include/linux/bcma/bcma_regs.h
++++ b/include/linux/bcma/bcma_regs.h
+@@ -1,13 +1,38 @@
+ #ifndef LINUX_BCMA_REGS_H_
+ #define LINUX_BCMA_REGS_H_
+ 
++/* Some single registers are shared between many cores */
++/* BCMA_CLKCTLST: ChipCommon (rev >= 20), PCIe, 80211 */
++#define BCMA_CLKCTLST			0x01E0 /* Clock control and status */
++#define  BCMA_CLKCTLST_FORCEALP		0x00000001 /* Force ALP request */
++#define  BCMA_CLKCTLST_FORCEHT		0x00000002 /* Force HT request */
++#define  BCMA_CLKCTLST_FORCEILP		0x00000004 /* Force ILP request */
++#define  BCMA_CLKCTLST_HAVEALPREQ	0x00000008 /* ALP available request */
++#define  BCMA_CLKCTLST_HAVEHTREQ	0x00000010 /* HT available request */
++#define  BCMA_CLKCTLST_HWCROFF		0x00000020 /* Force HW clock request off */
++#define  BCMA_CLKCTLST_EXTRESREQ	0x00000700 /* Mask of external resource requests */
++#define  BCMA_CLKCTLST_HAVEALP		0x00010000 /* ALP available */
++#define  BCMA_CLKCTLST_HAVEHT		0x00020000 /* HT available */
++#define  BCMA_CLKCTLST_BP_ON_ALP	0x00040000 /* RO: running on ALP clock */
++#define  BCMA_CLKCTLST_BP_ON_HT		0x00080000 /* RO: running on HT clock */
++#define  BCMA_CLKCTLST_EXTRESST		0x07000000 /* Mask of external resource status */
++/* Is there any BCM4328 on BCMA bus? */
++#define  BCMA_CLKCTLST_4328A0_HAVEHT	0x00010000 /* 4328a0 has reversed bits */
++#define  BCMA_CLKCTLST_4328A0_HAVEALP	0x00020000 /* 4328a0 has reversed bits */
++
+ /* Agent registers (common for every core) */
+-#define BCMA_IOCTL			0x0408
++#define BCMA_IOCTL			0x0408 /* IO control */
+ #define  BCMA_IOCTL_CLK			0x0001
+ #define  BCMA_IOCTL_FGC			0x0002
+ #define  BCMA_IOCTL_CORE_BITS		0x3FFC
+ #define  BCMA_IOCTL_PME_EN		0x4000
+ #define  BCMA_IOCTL_BIST_EN		0x8000
++#define BCMA_IOST			0x0500 /* IO status */
++#define  BCMA_IOST_CORE_BITS		0x0FFF
++#define  BCMA_IOST_DMA64		0x1000
++#define  BCMA_IOST_GATED_CLK		0x2000
++#define  BCMA_IOST_BIST_ERROR		0x4000
++#define  BCMA_IOST_BIST_DONE		0x8000
+ #define BCMA_RESET_CTL			0x0800
+ #define  BCMA_RESET_CTL_RESET		0x0001
+ 

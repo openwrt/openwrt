@@ -185,7 +185,7 @@
  {
  	struct ssb_bus *bus = pc->dev->bus;
  	u16 chipid_top;
-@@ -403,28 +408,129 @@ static int pcicore_is_in_hostmode(struct
+@@ -403,25 +408,133 @@ static int pcicore_is_in_hostmode(struct
  }
  #endif /* CONFIG_SSB_PCICORE_HOSTMODE */
  
@@ -298,8 +298,17 @@
 -static void ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
 +static void __devinit ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
  {
++	ssb_pcicore_fix_sprom_core_index(pc);
++
  	/* Disable PCI interrupts. */
  	ssb_write32(pc->dev, SSB_INTVEC, 0);
++
++	/* Additional PCIe always once-executed workarounds */
++	if (pc->dev->id.coreid == SSB_DEV_PCIE) {
++		ssb_pcicore_serdes_workaround(pc);
++		/* TODO: ASPM */
++		/* TODO: Clock Request Update */
++	}
  }
  
 -void ssb_pcicore_init(struct ssb_pcicore *pc)
@@ -314,25 +323,6 @@
  	if (!ssb_device_is_enabled(dev))
  		ssb_device_enable(dev, 0);
  
-+	ssb_pcicore_fix_sprom_core_index(pc);
-+
- #ifdef CONFIG_SSB_PCICORE_HOSTMODE
- 	pc->hostmode = pcicore_is_in_hostmode(pc);
- 	if (pc->hostmode)
-@@ -432,6 +538,13 @@ void ssb_pcicore_init(struct ssb_pcicore
- #endif /* CONFIG_SSB_PCICORE_HOSTMODE */
- 	if (!pc->hostmode)
- 		ssb_pcicore_init_clientmode(pc);
-+
-+	/* Additional PCIe always once-executed workarounds */
-+	if (dev->id.coreid == SSB_DEV_PCIE) {
-+		ssb_pcicore_serdes_workaround(pc);
-+		/* TODO: ASPM */
-+		/* TODO: Clock Request Update */
-+	}
- }
- 
- static u32 ssb_pcie_read(struct ssb_pcicore *pc, u32 address)
 @@ -446,11 +559,35 @@ static void ssb_pcie_write(struct ssb_pc
  	pcicore_write32(pc, 0x134, data);
  }
@@ -629,7 +619,19 @@
  }
  
  int ssb_device_is_enabled(struct ssb_device *dev)
-@@ -1309,20 +1309,20 @@ EXPORT_SYMBOL(ssb_bus_may_powerdown);
+@@ -1266,7 +1266,10 @@ u32 ssb_dma_translation(struct ssb_devic
+ 	case SSB_BUSTYPE_SSB:
+ 		return 0;
+ 	case SSB_BUSTYPE_PCI:
+-		return SSB_PCI_DMA;
++		if (ssb_read32(dev, SSB_TMSHIGH) & SSB_TMSHIGH_DMA64)
++			return SSB_PCIE_DMA_H32;
++		else
++			return SSB_PCI_DMA;
+ 	default:
+ 		__ssb_dma_not_implemented(dev);
+ 	}
+@@ -1309,20 +1312,20 @@ EXPORT_SYMBOL(ssb_bus_may_powerdown);
  
  int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl)
  {
@@ -654,7 +656,7 @@
  	return 0;
  error:
  	ssb_printk(KERN_ERR PFX "Bus powerup failed\n");
-@@ -1330,6 +1330,37 @@ error:
+@@ -1330,6 +1333,37 @@ error:
  }
  EXPORT_SYMBOL(ssb_bus_powerup);
  
@@ -724,6 +726,22 @@
  				err = 0;
  				goto out_free;
  			}
+@@ -728,12 +734,9 @@ out_free:
+ static void ssb_pci_get_boardinfo(struct ssb_bus *bus,
+ 				  struct ssb_boardinfo *bi)
+ {
+-	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_VENDOR_ID,
+-			     &bi->vendor);
+-	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_ID,
+-			     &bi->type);
+-	pci_read_config_word(bus->host_pci, PCI_REVISION_ID,
+-			     &bi->rev);
++	bi->vendor = bus->host_pci->subsystem_vendor;
++	bi->type = bus->host_pci->subsystem_device;
++	bi->rev = bus->host_pci->revision;
+ }
+ 
+ int ssb_pci_get_invariants(struct ssb_bus *bus,
 --- a/drivers/ssb/pcihost_wrapper.c
 +++ b/drivers/ssb/pcihost_wrapper.c
 @@ -53,8 +53,8 @@ static int ssb_pcihost_resume(struct pci
@@ -856,7 +874,25 @@
  /* core.c */
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -308,7 +308,7 @@ struct ssb_bus {
+@@ -27,6 +27,8 @@ struct ssb_sprom {
+ 	u8 et1mdcport;		/* MDIO for enet1 */
+ 	u8 board_rev;		/* Board revision number from SPROM. */
+ 	u8 country_code;	/* Country Code */
++	u16 leddc_on_time;	/* LED Powersave Duty Cycle On Count */
++	u16 leddc_off_time;	/* LED Powersave Duty Cycle Off Count */
+ 	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
+ 	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
+ 	u16 pa0b0;
+@@ -99,7 +101,7 @@ struct ssb_sprom {
+ struct ssb_boardinfo {
+ 	u16 vendor;
+ 	u16 type;
+-	u16 rev;
++	u8  rev;
+ };
+ 
+ 
+@@ -308,7 +310,7 @@ struct ssb_bus {
  
  	/* ID information about the Chip. */
  	u16 chip_id;
@@ -865,7 +901,7 @@
  	u16 sprom_offset;
  	u16 sprom_size;		/* number of words in sprom */
  	u8 chip_package;
-@@ -404,7 +404,9 @@ extern bool ssb_is_sprom_available(struc
+@@ -404,7 +406,9 @@ extern bool ssb_is_sprom_available(struc
  
  /* Set a fallback SPROM.
   * See kdoc at the function definition for complete documentation. */
@@ -876,7 +912,7 @@
  
  /* Suspend a SSB bus.
   * Call this from the parent bus suspend routine. */
-@@ -518,6 +520,7 @@ extern int ssb_bus_may_powerdown(struct
+@@ -518,6 +522,7 @@ extern int ssb_bus_may_powerdown(struct
   * Otherwise static always-on powercontrol will be used. */
  extern int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl);
  
