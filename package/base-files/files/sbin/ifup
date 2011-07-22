@@ -5,14 +5,42 @@
 
 . /etc/functions.sh
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
-[ "x$1" = "x-a" ] && {
-	[ -e "/tmp/resolv.conf.auto" ] && rm /tmp/resolv.conf.auto
-	config_cb() {
-		[ interface != "$1" -o -z "$2" ] || eval "$0 $2"
+
+setup_wifi=1
+
+case "$1" in
+	"-a")
+		[ -e "/tmp/resolv.conf.auto" ] && rm /tmp/resolv.conf.auto
+		config_cb() {
+			[ interface != "$1" -o -z "$2" ] || eval "$0 -w $2"
+		}
+		config_load network
+		exit 0
+	;;
+	"-w") setup_wifi=0; shift ;;
+esac
+
+if [ $setup_wifi -gt 0 ] && grep -q config /etc/config/wireless; then
+	find_related_radios() {
+		local wdev wnet
+		config_get wdev "$1" device
+		config_get wnet "$1" network
+
+		if [ -n "$wdev" ] && [ "$wnet" = "$network" ]; then
+			append radio_devs "$wdev" "$N"
+		fi
 	}
-	config_load network
-	exit
-}
+
+	local radio_devs
+	local network="$1"
+	config_load wireless
+	config_foreach find_related_radios wifi-iface
+
+	local dev
+	for dev in $(echo "$radio_devs" | sort -u); do
+		/sbin/wifi up "$dev"
+	done
+fi
 
 include /lib/network
 scan_interfaces
