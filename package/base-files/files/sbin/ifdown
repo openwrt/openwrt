@@ -1,16 +1,20 @@
 #!/bin/sh
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 
 . /etc/functions.sh
 [ $# = 0 ] && { echo "  $0 <group>"; exit; }
-[ "x$1" = "x-a" ] && {
-	[ -e "/tmp/resolv.conf.auto" ] && rm /tmp/resolv.conf.auto
-	config_cb() {
-		[ interface != "$1" -o -z "$2" ] || eval "$0 $2"
-	}
-	config_load network
-	exit
-}
+
+case "$1" in
+	"-a")
+		[ -e "/tmp/resolv.conf.auto" ] && rm /tmp/resolv.conf.auto
+		config_cb() {
+			[ interface != "$1" -o -z "$2" ] || eval "$0 -w $2"
+		}
+		config_load network
+		exit 0
+	;;
+	"-w") shift ;;
+esac
 
 include /lib/network
 scan_interfaces
