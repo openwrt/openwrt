@@ -982,19 +982,21 @@ define KernelPackage/b43/config
 
 	config PACKAGE_B43_PHY_HT
 		bool "Enable support for HT-PHYs"
+		depends on BROKEN
 		select B43_FW_5_10
 		default n
 		help
-		  Currently borken.
+		  Currently broken.
 
 		  If unsure, say N.
 
 	config PACKAGE_B43_PHY_LCN
 		bool "Enable support for LCN-PHYs"
+		depends on BROKEN
 		select B43_FW_5_10
 		default n
 		help
-		  Currently borken.
+		  Currently broken.
 
 		  If unsure, say N.
 
