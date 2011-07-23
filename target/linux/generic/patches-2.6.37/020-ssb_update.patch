@@ -44,6 +44,119 @@
  };
  
  static void ssb_buses_lock(void)
+@@ -527,7 +557,7 @@ error:
+ }
+ 
+ /* Needs ssb_buses_lock() */
+-static int ssb_attach_queued_buses(void)
++static int __devinit ssb_attach_queued_buses(void)
+ {
+ 	struct ssb_bus *bus, *n;
+ 	int err = 0;
+@@ -738,9 +768,9 @@ out:
+ 	return err;
+ }
+ 
+-static int ssb_bus_register(struct ssb_bus *bus,
+-			    ssb_invariants_func_t get_invariants,
+-			    unsigned long baseaddr)
++static int __devinit ssb_bus_register(struct ssb_bus *bus,
++				      ssb_invariants_func_t get_invariants,
++				      unsigned long baseaddr)
+ {
+ 	int err;
+ 
+@@ -821,8 +851,8 @@ err_disable_xtal:
+ }
+ 
+ #ifdef CONFIG_SSB_PCIHOST
+-int ssb_bus_pcibus_register(struct ssb_bus *bus,
+-			    struct pci_dev *host_pci)
++int __devinit ssb_bus_pcibus_register(struct ssb_bus *bus,
++				      struct pci_dev *host_pci)
+ {
+ 	int err;
+ 
+@@ -845,9 +875,9 @@ EXPORT_SYMBOL(ssb_bus_pcibus_register);
+ #endif /* CONFIG_SSB_PCIHOST */
+ 
+ #ifdef CONFIG_SSB_PCMCIAHOST
+-int ssb_bus_pcmciabus_register(struct ssb_bus *bus,
+-			       struct pcmcia_device *pcmcia_dev,
+-			       unsigned long baseaddr)
++int __devinit ssb_bus_pcmciabus_register(struct ssb_bus *bus,
++					 struct pcmcia_device *pcmcia_dev,
++					 unsigned long baseaddr)
+ {
+ 	int err;
+ 
+@@ -867,8 +897,9 @@ EXPORT_SYMBOL(ssb_bus_pcmciabus_register
+ #endif /* CONFIG_SSB_PCMCIAHOST */
+ 
+ #ifdef CONFIG_SSB_SDIOHOST
+-int ssb_bus_sdiobus_register(struct ssb_bus *bus, struct sdio_func *func,
+-			     unsigned int quirks)
++int __devinit ssb_bus_sdiobus_register(struct ssb_bus *bus,
++				       struct sdio_func *func,
++				       unsigned int quirks)
+ {
+ 	int err;
+ 
+@@ -888,9 +919,9 @@ int ssb_bus_sdiobus_register(struct ssb_
+ EXPORT_SYMBOL(ssb_bus_sdiobus_register);
+ #endif /* CONFIG_SSB_PCMCIAHOST */
+ 
+-int ssb_bus_ssbbus_register(struct ssb_bus *bus,
+-			    unsigned long baseaddr,
+-			    ssb_invariants_func_t get_invariants)
++int __devinit ssb_bus_ssbbus_register(struct ssb_bus *bus,
++				      unsigned long baseaddr,
++				      ssb_invariants_func_t get_invariants)
+ {
+ 	int err;
+ 
+@@ -971,8 +1002,8 @@ u32 ssb_calc_clock_rate(u32 plltype, u32
+ 	switch (plltype) {
+ 	case SSB_PLLTYPE_6: /* 100/200 or 120/240 only */
+ 		if (m & SSB_CHIPCO_CLK_T6_MMASK)
+-			return SSB_CHIPCO_CLK_T6_M0;
+-		return SSB_CHIPCO_CLK_T6_M1;
++			return SSB_CHIPCO_CLK_T6_M1;
++		return SSB_CHIPCO_CLK_T6_M0;
+ 	case SSB_PLLTYPE_1: /* 48Mhz base, 3 dividers */
+ 	case SSB_PLLTYPE_3: /* 25Mhz, 2 dividers */
+ 	case SSB_PLLTYPE_4: /* 48Mhz, 4 dividers */
+@@ -1087,23 +1118,22 @@ static u32 ssb_tmslow_reject_bitmask(str
+ {
+ 	u32 rev = ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_SSBREV;
+ 
+-	/* The REJECT bit changed position in TMSLOW between
+-	 * Backplane revisions. */
++	/* The REJECT bit seems to be different for Backplane rev 2.3 */
+ 	switch (rev) {
+ 	case SSB_IDLOW_SSBREV_22:
+-		return SSB_TMSLOW_REJECT_22;
++	case SSB_IDLOW_SSBREV_24:
++	case SSB_IDLOW_SSBREV_26:
++		return SSB_TMSLOW_REJECT;
+ 	case SSB_IDLOW_SSBREV_23:
+ 		return SSB_TMSLOW_REJECT_23;
+-	case SSB_IDLOW_SSBREV_24:     /* TODO - find the proper REJECT bits */
+-	case SSB_IDLOW_SSBREV_25:     /* same here */
+-	case SSB_IDLOW_SSBREV_26:     /* same here */
++	case SSB_IDLOW_SSBREV_25:     /* TODO - find the proper REJECT bit */
+ 	case SSB_IDLOW_SSBREV_27:     /* same here */
+-		return SSB_TMSLOW_REJECT_23;	/* this is a guess */
++		return SSB_TMSLOW_REJECT;	/* this is a guess */
+ 	default:
+ 		printk(KERN_INFO "ssb: Backplane Revision 0x%.8X\n", rev);
+ 		WARN_ON(1);
+ 	}
+-	return (SSB_TMSLOW_REJECT_22 | SSB_TMSLOW_REJECT_23);
++	return (SSB_TMSLOW_REJECT | SSB_TMSLOW_REJECT_23);
+ }
+ 
+ int ssb_device_is_enabled(struct ssb_device *dev)
 @@ -1162,10 +1192,10 @@ void ssb_device_enable(struct ssb_device
  }
  EXPORT_SYMBOL(ssb_device_enable);
@@ -115,6 +228,81 @@
  
  	ssb_write32(dev, SSB_TMSLOW,
  		    reject | SSB_TMSLOW_RESET |
+@@ -1218,7 +1266,10 @@ u32 ssb_dma_translation(struct ssb_devic
+ 	case SSB_BUSTYPE_SSB:
+ 		return 0;
+ 	case SSB_BUSTYPE_PCI:
+-		return SSB_PCI_DMA;
++		if (ssb_read32(dev, SSB_TMSHIGH) & SSB_TMSHIGH_DMA64)
++			return SSB_PCIE_DMA_H32;
++		else
++			return SSB_PCI_DMA;
+ 	default:
+ 		__ssb_dma_not_implemented(dev);
+ 	}
+@@ -1261,20 +1312,20 @@ EXPORT_SYMBOL(ssb_bus_may_powerdown);
+ 
+ int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl)
+ {
+-	struct ssb_chipcommon *cc;
+ 	int err;
+ 	enum ssb_clkmode mode;
+ 
+ 	err = ssb_pci_xtal(bus, SSB_GPIO_XTAL | SSB_GPIO_PLL, 1);
+ 	if (err)
+ 		goto error;
+-	cc = &bus->chipco;
+-	mode = dynamic_pctl ? SSB_CLKMODE_DYNAMIC : SSB_CLKMODE_FAST;
+-	ssb_chipco_set_clockmode(cc, mode);
+ 
+ #ifdef CONFIG_SSB_DEBUG
+ 	bus->powered_up = 1;
+ #endif
++
++	mode = dynamic_pctl ? SSB_CLKMODE_DYNAMIC : SSB_CLKMODE_FAST;
++	ssb_chipco_set_clockmode(&bus->chipco, mode);
++
+ 	return 0;
+ error:
+ 	ssb_printk(KERN_ERR PFX "Bus powerup failed\n");
+@@ -1282,6 +1333,37 @@ error:
+ }
+ EXPORT_SYMBOL(ssb_bus_powerup);
+ 
++static void ssb_broadcast_value(struct ssb_device *dev,
++				u32 address, u32 data)
++{
++#ifdef CONFIG_SSB_DRIVER_PCICORE
++	/* This is used for both, PCI and ChipCommon core, so be careful. */
++	BUILD_BUG_ON(SSB_PCICORE_BCAST_ADDR != SSB_CHIPCO_BCAST_ADDR);
++	BUILD_BUG_ON(SSB_PCICORE_BCAST_DATA != SSB_CHIPCO_BCAST_DATA);
++#endif
++
++	ssb_write32(dev, SSB_CHIPCO_BCAST_ADDR, address);
++	ssb_read32(dev, SSB_CHIPCO_BCAST_ADDR); /* flush */
++	ssb_write32(dev, SSB_CHIPCO_BCAST_DATA, data);
++	ssb_read32(dev, SSB_CHIPCO_BCAST_DATA); /* flush */
++}
++
++void ssb_commit_settings(struct ssb_bus *bus)
++{
++	struct ssb_device *dev;
++
++#ifdef CONFIG_SSB_DRIVER_PCICORE
++	dev = bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev;
++#else
++	dev = bus->chipco.dev;
++#endif
++	if (WARN_ON(!dev))
++		return;
++	/* This forces an update of the cached registers. */
++	ssb_broadcast_value(dev, 0xFD8, 0);
++}
++EXPORT_SYMBOL(ssb_commit_settings);
++
+ u32 ssb_admatch_base(u32 adm)
+ {
+ 	u32 base = 0;
 --- a/drivers/ssb/pci.c
 +++ b/drivers/ssb/pci.c
 @@ -406,6 +406,46 @@ static void sprom_extract_r123(struct ss
@@ -256,16 +444,25 @@
  	}
  
  	if (out->boardflags_lo == 0xFFFF)
-@@ -618,7 +663,7 @@ static int ssb_pci_sprom_get(struct ssb_
+@@ -617,15 +662,14 @@ static int sprom_extract(struct ssb_bus
+ static int ssb_pci_sprom_get(struct ssb_bus *bus,
  			     struct ssb_sprom *sprom)
  {
- 	const struct ssb_sprom *fallback;
+-	const struct ssb_sprom *fallback;
 -	int err = -ENOMEM;
 +	int err;
  	u16 *buf;
  
  	if (!ssb_is_sprom_available(bus)) {
-@@ -645,7 +690,7 @@ static int ssb_pci_sprom_get(struct ssb_
+ 		ssb_printk(KERN_ERR PFX "No SPROM available!\n");
+ 		return -ENODEV;
+ 	}
+-	if (bus->chipco.dev) {	/* can be unavailible! */
++	if (bus->chipco.dev) {	/* can be unavailable! */
+ 		/*
+ 		 * get SPROM offset: SSB_SPROM_BASE1 except for
+ 		 * chipcommon rev >= 31 or chip ID is 0x4312 and
+@@ -645,7 +689,7 @@ static int ssb_pci_sprom_get(struct ssb_
  
  	buf = kcalloc(SSB_SPROMSIZE_WORDS_R123, sizeof(u16), GFP_KERNEL);
  	if (!buf)
@@ -274,7 +471,7 @@
  	bus->sprom_size = SSB_SPROMSIZE_WORDS_R123;
  	sprom_do_read(bus, buf);
  	err = sprom_check_crc(buf, bus->sprom_size);
-@@ -655,7 +700,7 @@ static int ssb_pci_sprom_get(struct ssb_
+@@ -655,17 +699,24 @@ static int ssb_pci_sprom_get(struct ssb_
  		buf = kcalloc(SSB_SPROMSIZE_WORDS_R4, sizeof(u16),
  			      GFP_KERNEL);
  		if (!buf)
@@ -283,7 +480,28 @@
  		bus->sprom_size = SSB_SPROMSIZE_WORDS_R4;
  		sprom_do_read(bus, buf);
  		err = sprom_check_crc(buf, bus->sprom_size);
-@@ -677,7 +722,6 @@ static int ssb_pci_sprom_get(struct ssb_
+ 		if (err) {
+ 			/* All CRC attempts failed.
+ 			 * Maybe there is no SPROM on the device?
+-			 * If we have a fallback, use that. */
+-			fallback = ssb_get_fallback_sprom();
+-			if (fallback) {
+-				memcpy(sprom, fallback, sizeof(*sprom));
++			 * Now we ask the arch code if there is some sprom
++			 * available for this device in some other storage */
++			err = ssb_fill_sprom_with_fallback(bus, sprom);
++			if (err) {
++				ssb_printk(KERN_WARNING PFX "WARNING: Using"
++					   " fallback SPROM failed (err %d)\n",
++					   err);
++			} else {
++				ssb_dprintk(KERN_DEBUG PFX "Using SPROM"
++					    " revision %d provided by"
++					    " platform.\n", sprom->revision);
+ 				err = 0;
+ 				goto out_free;
+ 			}
+@@ -677,19 +728,15 @@ static int ssb_pci_sprom_get(struct ssb_
  
  out_free:
  	kfree(buf);
@@ -291,9 +509,32 @@
  	return err;
  }
  
+ static void ssb_pci_get_boardinfo(struct ssb_bus *bus,
+ 				  struct ssb_boardinfo *bi)
+ {
+-	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_VENDOR_ID,
+-			     &bi->vendor);
+-	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_ID,
+-			     &bi->type);
+-	pci_read_config_word(bus->host_pci, PCI_REVISION_ID,
+-			     &bi->rev);
++	bi->vendor = bus->host_pci->subsystem_vendor;
++	bi->type = bus->host_pci->subsystem_device;
++	bi->rev = bus->host_pci->revision;
+ }
+ 
+ int ssb_pci_get_invariants(struct ssb_bus *bus,
 --- a/drivers/ssb/pcihost_wrapper.c
 +++ b/drivers/ssb/pcihost_wrapper.c
-@@ -59,6 +59,7 @@ static int ssb_pcihost_probe(struct pci_
+@@ -53,12 +53,13 @@ static int ssb_pcihost_resume(struct pci
+ # define ssb_pcihost_resume	NULL
+ #endif /* CONFIG_PM */
+ 
+-static int ssb_pcihost_probe(struct pci_dev *dev,
+-			     const struct pci_device_id *id)
++static int __devinit ssb_pcihost_probe(struct pci_dev *dev,
++				       const struct pci_device_id *id)
+ {
  	struct ssb_bus *ssb;
  	int err = -ENOMEM;
  	const char *name;
@@ -314,9 +555,40 @@
  	err = ssb_bus_pcibus_register(ssb, dev);
  	if (err)
  		goto err_pci_release_regions;
+@@ -103,7 +110,7 @@ static void ssb_pcihost_remove(struct pc
+ 	pci_set_drvdata(dev, NULL);
+ }
+ 
+-int ssb_pcihost_register(struct pci_driver *driver)
++int __devinit ssb_pcihost_register(struct pci_driver *driver)
+ {
+ 	driver->probe = ssb_pcihost_probe;
+ 	driver->remove = ssb_pcihost_remove;
 --- a/drivers/ssb/scan.c
 +++ b/drivers/ssb/scan.c
-@@ -405,10 +405,10 @@ int ssb_bus_scan(struct ssb_bus *bus,
+@@ -258,7 +258,10 @@ static int we_support_multiple_80211_cor
+ #ifdef CONFIG_SSB_PCIHOST
+ 	if (bus->bustype == SSB_BUSTYPE_PCI) {
+ 		if (bus->host_pci->vendor == PCI_VENDOR_ID_BROADCOM &&
+-		    bus->host_pci->device == 0x4324)
++		    ((bus->host_pci->device == 0x4313) ||
++		     (bus->host_pci->device == 0x431A) ||
++		     (bus->host_pci->device == 0x4321) ||
++		     (bus->host_pci->device == 0x4324)))
+ 			return 1;
+ 	}
+ #endif /* CONFIG_SSB_PCIHOST */
+@@ -307,8 +310,7 @@ int ssb_bus_scan(struct ssb_bus *bus,
+ 	} else {
+ 		if (bus->bustype == SSB_BUSTYPE_PCI) {
+ 			bus->chip_id = pcidev_to_chipid(bus->host_pci);
+-			pci_read_config_word(bus->host_pci, PCI_REVISION_ID,
+-					     &bus->chip_rev);
++			bus->chip_rev = bus->host_pci->revision;
+ 			bus->chip_package = 0;
+ 		} else {
+ 			bus->chip_id = 0x4710;
+@@ -405,10 +407,10 @@ int ssb_bus_scan(struct ssb_bus *bus,
  				/* Ignore PCI cores on PCI-E cards.
  				 * Ignore PCI-E cores on PCI cards. */
  				if (dev->id.coreid == SSB_DEV_PCI) {
@@ -329,7 +601,7 @@
  						continue;
  				}
  			}
-@@ -420,6 +420,16 @@ int ssb_bus_scan(struct ssb_bus *bus,
+@@ -420,6 +422,16 @@ int ssb_bus_scan(struct ssb_bus *bus,
  			bus->pcicore.dev = dev;
  #endif /* CONFIG_SSB_DRIVER_PCICORE */
  			break;
@@ -348,7 +620,16 @@
  		}
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -55,6 +55,10 @@ struct ssb_sprom {
+@@ -27,6 +27,8 @@ struct ssb_sprom {
+ 	u8 et1mdcport;		/* MDIO for enet1 */
+ 	u8 board_rev;		/* Board revision number from SPROM. */
+ 	u8 country_code;	/* Country Code */
++	u16 leddc_on_time;	/* LED Powersave Duty Cycle On Count */
++	u16 leddc_off_time;	/* LED Powersave Duty Cycle Off Count */
+ 	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
+ 	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
+ 	u16 pa0b0;
+@@ -55,6 +57,10 @@ struct ssb_sprom {
  	u8 tri5gl;		/* 5.2GHz TX isolation */
  	u8 tri5g;		/* 5.3GHz TX isolation */
  	u8 tri5gh;		/* 5.8GHz TX isolation */
@@ -359,6 +640,43 @@
  	u8 rxpo2g;		/* 2GHz RX power offset */
  	u8 rxpo5g;		/* 5GHz RX power offset */
  	u8 rssisav2g;		/* 2GHz RSSI params */
+@@ -95,7 +101,7 @@ struct ssb_sprom {
+ struct ssb_boardinfo {
+ 	u16 vendor;
+ 	u16 type;
+-	u16 rev;
++	u8  rev;
+ };
+ 
+ 
+@@ -304,7 +310,7 @@ struct ssb_bus {
+ 
+ 	/* ID information about the Chip. */
+ 	u16 chip_id;
+-	u16 chip_rev;
++	u8 chip_rev;
+ 	u16 sprom_offset;
+ 	u16 sprom_size;		/* number of words in sprom */
+ 	u8 chip_package;
+@@ -400,7 +406,9 @@ extern bool ssb_is_sprom_available(struc
+ 
+ /* Set a fallback SPROM.
+  * See kdoc at the function definition for complete documentation. */
+-extern int ssb_arch_set_fallback_sprom(const struct ssb_sprom *sprom);
++extern int ssb_arch_register_fallback_sprom(
++		int (*sprom_callback)(struct ssb_bus *bus,
++		struct ssb_sprom *out));
+ 
+ /* Suspend a SSB bus.
+  * Call this from the parent bus suspend routine. */
+@@ -514,6 +522,7 @@ extern int ssb_bus_may_powerdown(struct
+  * Otherwise static always-on powercontrol will be used. */
+ extern int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl);
+ 
++extern void ssb_commit_settings(struct ssb_bus *bus);
+ 
+ /* Various helper functions */
+ extern u32 ssb_admatch_base(u32 adm);
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
 @@ -85,6 +85,8 @@
@@ -370,9 +688,12 @@
  #define SSB_INTVEC		0x0F94     /* SB Interrupt Mask */
  #define  SSB_INTVEC_PCI		0x00000001 /* Enable interrupts for PCI */
  #define  SSB_INTVEC_ENET0	0x00000002 /* Enable interrupts for enet 0 */
-@@ -97,7 +99,6 @@
+@@ -95,9 +97,8 @@
+ #define  SSB_INTVEC_ENET1	0x00000040 /* Enable interrupts for enet 1 */
+ #define SSB_TMSLOW		0x0F98     /* SB Target State Low */
  #define  SSB_TMSLOW_RESET	0x00000001 /* Reset */
- #define  SSB_TMSLOW_REJECT_22	0x00000002 /* Reject (Backplane rev 2.2) */
+-#define  SSB_TMSLOW_REJECT_22	0x00000002 /* Reject (Backplane rev 2.2) */
++#define  SSB_TMSLOW_REJECT	0x00000002 /* Reject (Standard Backplane) */
  #define  SSB_TMSLOW_REJECT_23	0x00000004 /* Reject (Backplane rev 2.3) */
 -#define  SSB_TMSLOW_PHYCLK	0x00000010 /* MAC PHY Clock Control Enable */
  #define  SSB_TMSLOW_CLOCK	0x00010000 /* Clock Enable */
@@ -443,3 +764,636 @@
  #define SSB_SPROM5_IL0MAC		0x0052	/* 6 byte MAC address for a/b/g/n */
  #define SSB_SPROM5_GPIOA		0x0076	/* Gen. Purpose IO # 0 and 1 */
  #define  SSB_SPROM5_GPIOA_P0		0x00FF	/* Pin 0 */
+--- a/drivers/ssb/driver_chipcommon.c
++++ b/drivers/ssb/driver_chipcommon.c
+@@ -46,40 +46,66 @@ void ssb_chipco_set_clockmode(struct ssb
+ 	if (!ccdev)
+ 		return;
+ 	bus = ccdev->bus;
++
++	/* We support SLOW only on 6..9 */
++	if (ccdev->id.revision >= 10 && mode == SSB_CLKMODE_SLOW)
++		mode = SSB_CLKMODE_DYNAMIC;
++
++	if (cc->capabilities & SSB_CHIPCO_CAP_PMU)
++		return; /* PMU controls clockmode, separated function needed */
++	SSB_WARN_ON(ccdev->id.revision >= 20);
++
+ 	/* chipcommon cores prior to rev6 don't support dynamic clock control */
+ 	if (ccdev->id.revision < 6)
+ 		return;
+-	/* chipcommon cores rev10 are a whole new ball game */
++
++	/* ChipCommon cores rev10+ need testing */
+ 	if (ccdev->id.revision >= 10)
+ 		return;
++
+ 	if (!(cc->capabilities & SSB_CHIPCO_CAP_PCTL))
+ 		return;
+ 
+ 	switch (mode) {
+-	case SSB_CLKMODE_SLOW:
++	case SSB_CLKMODE_SLOW: /* For revs 6..9 only */
+ 		tmp = chipco_read32(cc, SSB_CHIPCO_SLOWCLKCTL);
+ 		tmp |= SSB_CHIPCO_SLOWCLKCTL_FSLOW;
+ 		chipco_write32(cc, SSB_CHIPCO_SLOWCLKCTL, tmp);
+ 		break;
+ 	case SSB_CLKMODE_FAST:
+-		ssb_pci_xtal(bus, SSB_GPIO_XTAL, 1); /* Force crystal on */
+-		tmp = chipco_read32(cc, SSB_CHIPCO_SLOWCLKCTL);
+-		tmp &= ~SSB_CHIPCO_SLOWCLKCTL_FSLOW;
+-		tmp |= SSB_CHIPCO_SLOWCLKCTL_IPLL;
+-		chipco_write32(cc, SSB_CHIPCO_SLOWCLKCTL, tmp);
++		if (ccdev->id.revision < 10) {
++			ssb_pci_xtal(bus, SSB_GPIO_XTAL, 1); /* Force crystal on */
++			tmp = chipco_read32(cc, SSB_CHIPCO_SLOWCLKCTL);
++			tmp &= ~SSB_CHIPCO_SLOWCLKCTL_FSLOW;
++			tmp |= SSB_CHIPCO_SLOWCLKCTL_IPLL;
++			chipco_write32(cc, SSB_CHIPCO_SLOWCLKCTL, tmp);
++		} else {
++			chipco_write32(cc, SSB_CHIPCO_SYSCLKCTL,
++				(chipco_read32(cc, SSB_CHIPCO_SYSCLKCTL) |
++				 SSB_CHIPCO_SYSCLKCTL_FORCEHT));
++			/* udelay(150); TODO: not available in early init */
++		}
+ 		break;
+ 	case SSB_CLKMODE_DYNAMIC:
+-		tmp = chipco_read32(cc, SSB_CHIPCO_SLOWCLKCTL);
+-		tmp &= ~SSB_CHIPCO_SLOWCLKCTL_FSLOW;
+-		tmp &= ~SSB_CHIPCO_SLOWCLKCTL_IPLL;
+-		tmp &= ~SSB_CHIPCO_SLOWCLKCTL_ENXTAL;
+-		if ((tmp & SSB_CHIPCO_SLOWCLKCTL_SRC) != SSB_CHIPCO_SLOWCLKCTL_SRC_XTAL)
+-			tmp |= SSB_CHIPCO_SLOWCLKCTL_ENXTAL;
+-		chipco_write32(cc, SSB_CHIPCO_SLOWCLKCTL, tmp);
+-
+-		/* for dynamic control, we have to release our xtal_pu "force on" */
+-		if (tmp & SSB_CHIPCO_SLOWCLKCTL_ENXTAL)
+-			ssb_pci_xtal(bus, SSB_GPIO_XTAL, 0);
++		if (ccdev->id.revision < 10) {
++			tmp = chipco_read32(cc, SSB_CHIPCO_SLOWCLKCTL);
++			tmp &= ~SSB_CHIPCO_SLOWCLKCTL_FSLOW;
++			tmp &= ~SSB_CHIPCO_SLOWCLKCTL_IPLL;
++			tmp &= ~SSB_CHIPCO_SLOWCLKCTL_ENXTAL;
++			if ((tmp & SSB_CHIPCO_SLOWCLKCTL_SRC) !=
++			    SSB_CHIPCO_SLOWCLKCTL_SRC_XTAL)
++				tmp |= SSB_CHIPCO_SLOWCLKCTL_ENXTAL;
++			chipco_write32(cc, SSB_CHIPCO_SLOWCLKCTL, tmp);
++
++			/* For dynamic control, we have to release our xtal_pu
++			 * "force on" */
++			if (tmp & SSB_CHIPCO_SLOWCLKCTL_ENXTAL)
++				ssb_pci_xtal(bus, SSB_GPIO_XTAL, 0);
++		} else {
++			chipco_write32(cc, SSB_CHIPCO_SYSCLKCTL,
++				(chipco_read32(cc, SSB_CHIPCO_SYSCLKCTL) &
++				 ~SSB_CHIPCO_SYSCLKCTL_FORCEHT));
++		}
+ 		break;
+ 	default:
+ 		SSB_WARN_ON(1);
+@@ -260,6 +286,12 @@ void ssb_chipcommon_init(struct ssb_chip
+ 	if (cc->dev->id.revision >= 11)
+ 		cc->status = chipco_read32(cc, SSB_CHIPCO_CHIPSTAT);
+ 	ssb_dprintk(KERN_INFO PFX "chipcommon status is 0x%x\n", cc->status);
++
++	if (cc->dev->id.revision >= 20) {
++		chipco_write32(cc, SSB_CHIPCO_GPIOPULLUP, 0);
++		chipco_write32(cc, SSB_CHIPCO_GPIOPULLDOWN, 0);
++	}
++
+ 	ssb_pmu_init(cc);
+ 	chipco_powercontrol_init(cc);
+ 	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
+--- a/drivers/ssb/driver_chipcommon_pmu.c
++++ b/drivers/ssb/driver_chipcommon_pmu.c
+@@ -417,12 +417,14 @@ static void ssb_pmu_resources_init(struc
+ 	u32 min_msk = 0, max_msk = 0;
+ 	unsigned int i;
+ 	const struct pmu_res_updown_tab_entry *updown_tab = NULL;
+-	unsigned int updown_tab_size;
++	unsigned int updown_tab_size = 0;
+ 	const struct pmu_res_depend_tab_entry *depend_tab = NULL;
+-	unsigned int depend_tab_size;
++	unsigned int depend_tab_size = 0;
+ 
+ 	switch (bus->chip_id) {
+ 	case 0x4312:
++		 min_msk = 0xCBB;
++		 break;
+ 	case 0x4322:
+ 		/* We keep the default settings:
+ 		 * min_msk = 0xCBB
+--- a/drivers/ssb/driver_gige.c
++++ b/drivers/ssb/driver_gige.c
+@@ -106,8 +106,9 @@ void gige_pcicfg_write32(struct ssb_gige
+ 	gige_write32(dev, SSB_GIGE_PCICFG + offset, value);
+ }
+ 
+-static int ssb_gige_pci_read_config(struct pci_bus *bus, unsigned int devfn,
+-				    int reg, int size, u32 *val)
++static int __devinit ssb_gige_pci_read_config(struct pci_bus *bus,
++					      unsigned int devfn, int reg,
++					      int size, u32 *val)
+ {
+ 	struct ssb_gige *dev = container_of(bus->ops, struct ssb_gige, pci_ops);
+ 	unsigned long flags;
+@@ -136,8 +137,9 @@ static int ssb_gige_pci_read_config(stru
+ 	return PCIBIOS_SUCCESSFUL;
+ }
+ 
+-static int ssb_gige_pci_write_config(struct pci_bus *bus, unsigned int devfn,
+-				     int reg, int size, u32 val)
++static int __devinit ssb_gige_pci_write_config(struct pci_bus *bus,
++					       unsigned int devfn, int reg,
++					       int size, u32 val)
+ {
+ 	struct ssb_gige *dev = container_of(bus->ops, struct ssb_gige, pci_ops);
+ 	unsigned long flags;
+@@ -166,7 +168,8 @@ static int ssb_gige_pci_write_config(str
+ 	return PCIBIOS_SUCCESSFUL;
+ }
+ 
+-static int ssb_gige_probe(struct ssb_device *sdev, const struct ssb_device_id *id)
++static int __devinit ssb_gige_probe(struct ssb_device *sdev,
++				    const struct ssb_device_id *id)
+ {
+ 	struct ssb_gige *dev;
+ 	u32 base, tmslow, tmshigh;
+--- a/drivers/ssb/driver_pcicore.c
++++ b/drivers/ssb/driver_pcicore.c
+@@ -15,6 +15,11 @@
+ 
+ #include "ssb_private.h"
+ 
++static u32 ssb_pcie_read(struct ssb_pcicore *pc, u32 address);
++static void ssb_pcie_write(struct ssb_pcicore *pc, u32 address, u32 data);
++static u16 ssb_pcie_mdio_read(struct ssb_pcicore *pc, u8 device, u8 address);
++static void ssb_pcie_mdio_write(struct ssb_pcicore *pc, u8 device,
++				u8 address, u16 data);
+ 
+ static inline
+ u32 pcicore_read32(struct ssb_pcicore *pc, u16 offset)
+@@ -309,7 +314,7 @@ int ssb_pcicore_pcibios_map_irq(const st
+ 	return ssb_mips_irq(extpci_core->dev) + 2;
+ }
+ 
+-static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
++static void __devinit ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
+ {
+ 	u32 val;
+ 
+@@ -374,7 +379,7 @@ static void ssb_pcicore_init_hostmode(st
+ 	register_pci_controller(&ssb_pcicore_controller);
+ }
+ 
+-static int pcicore_is_in_hostmode(struct ssb_pcicore *pc)
++static int __devinit pcicore_is_in_hostmode(struct ssb_pcicore *pc)
+ {
+ 	struct ssb_bus *bus = pc->dev->bus;
+ 	u16 chipid_top;
+@@ -403,25 +408,133 @@ static int pcicore_is_in_hostmode(struct
+ }
+ #endif /* CONFIG_SSB_PCICORE_HOSTMODE */
+ 
++/**************************************************
++ * Workarounds.
++ **************************************************/
++
++static void __devinit ssb_pcicore_fix_sprom_core_index(struct ssb_pcicore *pc)
++{
++	u16 tmp = pcicore_read16(pc, SSB_PCICORE_SPROM(0));
++	if (((tmp & 0xF000) >> 12) != pc->dev->core_index) {
++		tmp &= ~0xF000;
++		tmp |= (pc->dev->core_index << 12);
++		pcicore_write16(pc, SSB_PCICORE_SPROM(0), tmp);
++	}
++}
++
++static u8 ssb_pcicore_polarity_workaround(struct ssb_pcicore *pc)
++{
++	return (ssb_pcie_read(pc, 0x204) & 0x10) ? 0xC0 : 0x80;
++}
++
++static void ssb_pcicore_serdes_workaround(struct ssb_pcicore *pc)
++{
++	const u8 serdes_pll_device = 0x1D;
++	const u8 serdes_rx_device = 0x1F;
++	u16 tmp;
++
++	ssb_pcie_mdio_write(pc, serdes_rx_device, 1 /* Control */,
++			    ssb_pcicore_polarity_workaround(pc));
++	tmp = ssb_pcie_mdio_read(pc, serdes_pll_device, 1 /* Control */);
++	if (tmp & 0x4000)
++		ssb_pcie_mdio_write(pc, serdes_pll_device, 1, tmp & ~0x4000);
++}
++
++static void ssb_pcicore_pci_setup_workarounds(struct ssb_pcicore *pc)
++{
++	struct ssb_device *pdev = pc->dev;
++	struct ssb_bus *bus = pdev->bus;
++	u32 tmp;
++
++	tmp = pcicore_read32(pc, SSB_PCICORE_SBTOPCI2);
++	tmp |= SSB_PCICORE_SBTOPCI_PREF;
++	tmp |= SSB_PCICORE_SBTOPCI_BURST;
++	pcicore_write32(pc, SSB_PCICORE_SBTOPCI2, tmp);
++
++	if (pdev->id.revision < 5) {
++		tmp = ssb_read32(pdev, SSB_IMCFGLO);
++		tmp &= ~SSB_IMCFGLO_SERTO;
++		tmp |= 2;
++		tmp &= ~SSB_IMCFGLO_REQTO;
++		tmp |= 3 << SSB_IMCFGLO_REQTO_SHIFT;
++		ssb_write32(pdev, SSB_IMCFGLO, tmp);
++		ssb_commit_settings(bus);
++	} else if (pdev->id.revision >= 11) {
++		tmp = pcicore_read32(pc, SSB_PCICORE_SBTOPCI2);
++		tmp |= SSB_PCICORE_SBTOPCI_MRM;
++		pcicore_write32(pc, SSB_PCICORE_SBTOPCI2, tmp);
++	}
++}
++
++static void ssb_pcicore_pcie_setup_workarounds(struct ssb_pcicore *pc)
++{
++	u32 tmp;
++	u8 rev = pc->dev->id.revision;
++
++	if (rev == 0 || rev == 1) {
++		/* TLP Workaround register. */
++		tmp = ssb_pcie_read(pc, 0x4);
++		tmp |= 0x8;
++		ssb_pcie_write(pc, 0x4, tmp);
++	}
++	if (rev == 1) {
++		/* DLLP Link Control register. */
++		tmp = ssb_pcie_read(pc, 0x100);
++		tmp |= 0x40;
++		ssb_pcie_write(pc, 0x100, tmp);
++	}
++
++	if (rev == 0) {
++		const u8 serdes_rx_device = 0x1F;
++
++		ssb_pcie_mdio_write(pc, serdes_rx_device,
++					2 /* Timer */, 0x8128);
++		ssb_pcie_mdio_write(pc, serdes_rx_device,
++					6 /* CDR */, 0x0100);
++		ssb_pcie_mdio_write(pc, serdes_rx_device,
++					7 /* CDR BW */, 0x1466);
++	} else if (rev == 3 || rev == 4 || rev == 5) {
++		/* TODO: DLLP Power Management Threshold */
++		ssb_pcicore_serdes_workaround(pc);
++		/* TODO: ASPM */
++	} else if (rev == 7) {
++		/* TODO: No PLL down */
++	}
++
++	if (rev >= 6) {
++		/* Miscellaneous Configuration Fixup */
++		tmp = pcicore_read16(pc, SSB_PCICORE_SPROM(5));
++		if (!(tmp & 0x8000))
++			pcicore_write16(pc, SSB_PCICORE_SPROM(5),
++					tmp | 0x8000);
++	}
++}
+ 
+ /**************************************************
+  * Generic and Clientmode operation code.
+  **************************************************/
+ 
+-static void ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
++static void __devinit ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
+ {
++	ssb_pcicore_fix_sprom_core_index(pc);
++
+ 	/* Disable PCI interrupts. */
+ 	ssb_write32(pc->dev, SSB_INTVEC, 0);
++
++	/* Additional PCIe always once-executed workarounds */
++	if (pc->dev->id.coreid == SSB_DEV_PCIE) {
++		ssb_pcicore_serdes_workaround(pc);
++		/* TODO: ASPM */
++		/* TODO: Clock Request Update */
++	}
+ }
+ 
+-void ssb_pcicore_init(struct ssb_pcicore *pc)
++void __devinit ssb_pcicore_init(struct ssb_pcicore *pc)
+ {
+ 	struct ssb_device *dev = pc->dev;
+-	struct ssb_bus *bus;
+ 
+ 	if (!dev)
+ 		return;
+-	bus = dev->bus;
+ 	if (!ssb_device_is_enabled(dev))
+ 		ssb_device_enable(dev, 0);
+ 
+@@ -446,11 +559,35 @@ static void ssb_pcie_write(struct ssb_pc
+ 	pcicore_write32(pc, 0x134, data);
+ }
+ 
+-static void ssb_pcie_mdio_write(struct ssb_pcicore *pc, u8 device,
+-				u8 address, u16 data)
++static void ssb_pcie_mdio_set_phy(struct ssb_pcicore *pc, u8 phy)
++{
++	const u16 mdio_control = 0x128;
++	const u16 mdio_data = 0x12C;
++	u32 v;
++	int i;
++
++	v = (1 << 30); /* Start of Transaction */
++	v |= (1 << 28); /* Write Transaction */
++	v |= (1 << 17); /* Turnaround */
++	v |= (0x1F << 18);
++	v |= (phy << 4);
++	pcicore_write32(pc, mdio_data, v);
++
++	udelay(10);
++	for (i = 0; i < 200; i++) {
++		v = pcicore_read32(pc, mdio_control);
++		if (v & 0x100 /* Trans complete */)
++			break;
++		msleep(1);
++	}
++}
++
++static u16 ssb_pcie_mdio_read(struct ssb_pcicore *pc, u8 device, u8 address)
+ {
+ 	const u16 mdio_control = 0x128;
+ 	const u16 mdio_data = 0x12C;
++	int max_retries = 10;
++	u16 ret = 0;
+ 	u32 v;
+ 	int i;
+ 
+@@ -458,46 +595,68 @@ static void ssb_pcie_mdio_write(struct s
+ 	v |= 0x2; /* MDIO Clock Divisor */
+ 	pcicore_write32(pc, mdio_control, v);
+ 
++	if (pc->dev->id.revision >= 10) {
++		max_retries = 200;
++		ssb_pcie_mdio_set_phy(pc, device);
++	}
++
+ 	v = (1 << 30); /* Start of Transaction */
+-	v |= (1 << 28); /* Write Transaction */
++	v |= (1 << 29); /* Read Transaction */
+ 	v |= (1 << 17); /* Turnaround */
+-	v |= (u32)device << 22;
++	if (pc->dev->id.revision < 10)
++		v |= (u32)device << 22;
+ 	v |= (u32)address << 18;
+-	v |= data;
+ 	pcicore_write32(pc, mdio_data, v);
+ 	/* Wait for the device to complete the transaction */
+ 	udelay(10);
+-	for (i = 0; i < 10; i++) {
++	for (i = 0; i < max_retries; i++) {
+ 		v = pcicore_read32(pc, mdio_control);
+-		if (v & 0x100 /* Trans complete */)
++		if (v & 0x100 /* Trans complete */) {
++			udelay(10);
++			ret = pcicore_read32(pc, mdio_data);
+ 			break;
++		}
+ 		msleep(1);
+ 	}
+ 	pcicore_write32(pc, mdio_control, 0);
++	return ret;
+ }
+ 
+-static void ssb_broadcast_value(struct ssb_device *dev,
+-				u32 address, u32 data)
++static void ssb_pcie_mdio_write(struct ssb_pcicore *pc, u8 device,
++				u8 address, u16 data)
+ {
+-	/* This is used for both, PCI and ChipCommon core, so be careful. */
+-	BUILD_BUG_ON(SSB_PCICORE_BCAST_ADDR != SSB_CHIPCO_BCAST_ADDR);
+-	BUILD_BUG_ON(SSB_PCICORE_BCAST_DATA != SSB_CHIPCO_BCAST_DATA);
++	const u16 mdio_control = 0x128;
++	const u16 mdio_data = 0x12C;
++	int max_retries = 10;
++	u32 v;
++	int i;
+ 
+-	ssb_write32(dev, SSB_PCICORE_BCAST_ADDR, address);
+-	ssb_read32(dev, SSB_PCICORE_BCAST_ADDR); /* flush */
+-	ssb_write32(dev, SSB_PCICORE_BCAST_DATA, data);
+-	ssb_read32(dev, SSB_PCICORE_BCAST_DATA); /* flush */
+-}
++	v = 0x80; /* Enable Preamble Sequence */
++	v |= 0x2; /* MDIO Clock Divisor */
++	pcicore_write32(pc, mdio_control, v);
+ 
+-static void ssb_commit_settings(struct ssb_bus *bus)
+-{
+-	struct ssb_device *dev;
++	if (pc->dev->id.revision >= 10) {
++		max_retries = 200;
++		ssb_pcie_mdio_set_phy(pc, device);
++	}
+ 
+-	dev = bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev;
+-	if (WARN_ON(!dev))
+-		return;
+-	/* This forces an update of the cached registers. */
+-	ssb_broadcast_value(dev, 0xFD8, 0);
++	v = (1 << 30); /* Start of Transaction */
++	v |= (1 << 28); /* Write Transaction */
++	v |= (1 << 17); /* Turnaround */
++	if (pc->dev->id.revision < 10)
++		v |= (u32)device << 22;
++	v |= (u32)address << 18;
++	v |= data;
++	pcicore_write32(pc, mdio_data, v);
++	/* Wait for the device to complete the transaction */
++	udelay(10);
++	for (i = 0; i < max_retries; i++) {
++		v = pcicore_read32(pc, mdio_control);
++		if (v & 0x100 /* Trans complete */)
++			break;
++		msleep(1);
++	}
++	pcicore_write32(pc, mdio_control, 0);
+ }
+ 
+ int ssb_pcicore_dev_irqvecs_enable(struct ssb_pcicore *pc,
+@@ -550,48 +709,10 @@ int ssb_pcicore_dev_irqvecs_enable(struc
+ 	if (pc->setup_done)
+ 		goto out;
+ 	if (pdev->id.coreid == SSB_DEV_PCI) {
+-		tmp = pcicore_read32(pc, SSB_PCICORE_SBTOPCI2);
+-		tmp |= SSB_PCICORE_SBTOPCI_PREF;
+-		tmp |= SSB_PCICORE_SBTOPCI_BURST;
+-		pcicore_write32(pc, SSB_PCICORE_SBTOPCI2, tmp);
+-
+-		if (pdev->id.revision < 5) {
+-			tmp = ssb_read32(pdev, SSB_IMCFGLO);
+-			tmp &= ~SSB_IMCFGLO_SERTO;
+-			tmp |= 2;
+-			tmp &= ~SSB_IMCFGLO_REQTO;
+-			tmp |= 3 << SSB_IMCFGLO_REQTO_SHIFT;
+-			ssb_write32(pdev, SSB_IMCFGLO, tmp);
+-			ssb_commit_settings(bus);
+-		} else if (pdev->id.revision >= 11) {
+-			tmp = pcicore_read32(pc, SSB_PCICORE_SBTOPCI2);
+-			tmp |= SSB_PCICORE_SBTOPCI_MRM;
+-			pcicore_write32(pc, SSB_PCICORE_SBTOPCI2, tmp);
+-		}
++		ssb_pcicore_pci_setup_workarounds(pc);
+ 	} else {
+ 		WARN_ON(pdev->id.coreid != SSB_DEV_PCIE);
+-		//TODO: Better make defines for all these magic PCIE values.
+-		if ((pdev->id.revision == 0) || (pdev->id.revision == 1)) {
+-			/* TLP Workaround register. */
+-			tmp = ssb_pcie_read(pc, 0x4);
+-			tmp |= 0x8;
+-			ssb_pcie_write(pc, 0x4, tmp);
+-		}
+-		if (pdev->id.revision == 0) {
+-			const u8 serdes_rx_device = 0x1F;
+-
+-			ssb_pcie_mdio_write(pc, serdes_rx_device,
+-					    2 /* Timer */, 0x8128);
+-			ssb_pcie_mdio_write(pc, serdes_rx_device,
+-					    6 /* CDR */, 0x0100);
+-			ssb_pcie_mdio_write(pc, serdes_rx_device,
+-					    7 /* CDR BW */, 0x1466);
+-		} else if (pdev->id.revision == 1) {
+-			/* DLLP Link Control register. */
+-			tmp = ssb_pcie_read(pc, 0x100);
+-			tmp |= 0x40;
+-			ssb_pcie_write(pc, 0x100, tmp);
+-		}
++		ssb_pcicore_pcie_setup_workarounds(pc);
+ 	}
+ 	pc->setup_done = 1;
+ out:
+--- a/drivers/ssb/sprom.c
++++ b/drivers/ssb/sprom.c
+@@ -17,7 +17,7 @@
+ #include <linux/slab.h>
+ 
+ 
+-static const struct ssb_sprom *fallback_sprom;
++static int(*get_fallback_sprom)(struct ssb_bus *dev, struct ssb_sprom *out);
+ 
+ 
+ static int sprom2hex(const u16 *sprom, char *buf, size_t buf_len,
+@@ -145,36 +145,43 @@ out:
+ }
+ 
+ /**
+- * ssb_arch_set_fallback_sprom - Set a fallback SPROM for use if no SPROM is found.
++ * ssb_arch_register_fallback_sprom - Registers a method providing a
++ * fallback SPROM if no SPROM is found.
+  *
+- * @sprom: The SPROM data structure to register.
++ * @sprom_callback: The callback function.
+  *
+- * With this function the architecture implementation may register a fallback
+- * SPROM data structure. The fallback is only used for PCI based SSB devices,
+- * where no valid SPROM can be found in the shadow registers.
++ * With this function the architecture implementation may register a
++ * callback handler which fills the SPROM data structure. The fallback is
++ * only used for PCI based SSB devices, where no valid SPROM can be found
++ * in the shadow registers.
+  *
+- * This function is useful for weird architectures that have a half-assed SSB device
+- * hardwired to their PCI bus.
++ * This function is useful for weird architectures that have a half-assed
++ * SSB device hardwired to their PCI bus.
+  *
+- * Note that it does only work with PCI attached SSB devices. PCMCIA devices currently
+- * don't use this fallback.
+- * Architectures must provide the SPROM for native SSB devices anyway,
+- * so the fallback also isn't used for native devices.
++ * Note that it does only work with PCI attached SSB devices. PCMCIA
++ * devices currently don't use this fallback.
++ * Architectures must provide the SPROM for native SSB devices anyway, so
++ * the fallback also isn't used for native devices.
+  *
+- * This function is available for architecture code, only. So it is not exported.
++ * This function is available for architecture code, only. So it is not
++ * exported.
+  */
+-int ssb_arch_set_fallback_sprom(const struct ssb_sprom *sprom)
++int ssb_arch_register_fallback_sprom(int (*sprom_callback)(struct ssb_bus *bus,
++				     struct ssb_sprom *out))
+ {
+-	if (fallback_sprom)
++	if (get_fallback_sprom)
+ 		return -EEXIST;
+-	fallback_sprom = sprom;
++	get_fallback_sprom = sprom_callback;
+ 
+ 	return 0;
+ }
+ 
+-const struct ssb_sprom *ssb_get_fallback_sprom(void)
++int ssb_fill_sprom_with_fallback(struct ssb_bus *bus, struct ssb_sprom *out)
+ {
+-	return fallback_sprom;
++	if (!get_fallback_sprom)
++		return -ENOENT;
++
++	return get_fallback_sprom(bus, out);
+ }
+ 
+ /* http://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */
+@@ -185,7 +192,7 @@ bool ssb_is_sprom_available(struct ssb_b
+ 	/* this routine differs from specs as we do not access SPROM directly
+ 	   on PCMCIA */
+ 	if (bus->bustype == SSB_BUSTYPE_PCI &&
+-	    bus->chipco.dev &&	/* can be unavailible! */
++	    bus->chipco.dev &&	/* can be unavailable! */
+ 	    bus->chipco.dev->id.revision >= 31)
+ 		return bus->chipco.capabilities & SSB_CHIPCO_CAP_SPROM;
+ 
+--- a/drivers/ssb/ssb_private.h
++++ b/drivers/ssb/ssb_private.h
+@@ -171,7 +171,8 @@ ssize_t ssb_attr_sprom_store(struct ssb_
+ 			     const char *buf, size_t count,
+ 			     int (*sprom_check_crc)(const u16 *sprom, size_t size),
+ 			     int (*sprom_write)(struct ssb_bus *bus, const u16 *sprom));
+-extern const struct ssb_sprom *ssb_get_fallback_sprom(void);
++extern int ssb_fill_sprom_with_fallback(struct ssb_bus *bus,
++					struct ssb_sprom *out);
+ 
+ 
+ /* core.c */
+--- a/include/linux/ssb/ssb_driver_chipcommon.h
++++ b/include/linux/ssb/ssb_driver_chipcommon.h
+@@ -123,6 +123,8 @@
+ #define SSB_CHIPCO_FLASHDATA		0x0048
+ #define SSB_CHIPCO_BCAST_ADDR		0x0050
+ #define SSB_CHIPCO_BCAST_DATA		0x0054
++#define SSB_CHIPCO_GPIOPULLUP		0x0058		/* Rev >= 20 only */
++#define SSB_CHIPCO_GPIOPULLDOWN		0x005C		/* Rev >= 20 only */
+ #define SSB_CHIPCO_GPIOIN		0x0060
+ #define SSB_CHIPCO_GPIOOUT		0x0064
+ #define SSB_CHIPCO_GPIOOUTEN		0x0068
+@@ -131,6 +133,9 @@
+ #define SSB_CHIPCO_GPIOIRQ		0x0074
+ #define SSB_CHIPCO_WATCHDOG		0x0080
+ #define SSB_CHIPCO_GPIOTIMER		0x0088		/* LED powersave (corerev >= 16) */
++#define  SSB_CHIPCO_GPIOTIMER_OFFTIME	0x0000FFFF
++#define  SSB_CHIPCO_GPIOTIMER_OFFTIME_SHIFT	0
++#define  SSB_CHIPCO_GPIOTIMER_ONTIME	0xFFFF0000
+ #define  SSB_CHIPCO_GPIOTIMER_ONTIME_SHIFT	16
+ #define SSB_CHIPCO_GPIOTOUTM		0x008C		/* LED powersave (corerev >= 16) */
+ #define SSB_CHIPCO_CLOCK_N		0x0090
+@@ -189,8 +194,10 @@
+ #define  SSB_CHIPCO_CLKCTLST_HAVEALPREQ	0x00000008 /* ALP available request */
+ #define  SSB_CHIPCO_CLKCTLST_HAVEHTREQ	0x00000010 /* HT available request */
+ #define  SSB_CHIPCO_CLKCTLST_HWCROFF	0x00000020 /* Force HW clock request off */
+-#define  SSB_CHIPCO_CLKCTLST_HAVEHT	0x00010000 /* HT available */
+-#define  SSB_CHIPCO_CLKCTLST_HAVEALP	0x00020000 /* APL available */
++#define  SSB_CHIPCO_CLKCTLST_HAVEALP	0x00010000 /* ALP available */
++#define  SSB_CHIPCO_CLKCTLST_HAVEHT	0x00020000 /* HT available */
++#define  SSB_CHIPCO_CLKCTLST_4328A0_HAVEHT	0x00010000 /* 4328a0 has reversed bits */
++#define  SSB_CHIPCO_CLKCTLST_4328A0_HAVEALP	0x00020000 /* 4328a0 has reversed bits */
+ #define SSB_CHIPCO_HW_WORKAROUND	0x01E4 /* Hardware workaround (rev >= 20) */
+ #define SSB_CHIPCO_UART0_DATA		0x0300
+ #define SSB_CHIPCO_UART0_IMR		0x0304
