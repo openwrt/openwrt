@@ -17,3 +17,13 @@
  
  config SSB_PCMCIAHOST_POSSIBLE
  	bool
+--- a/drivers/bcma/Kconfig
++++ b/drivers/bcma/Kconfig
+@@ -17,6 +17,7 @@ config BCMA
+ config BCMA_BLOCKIO
+ 	bool
+ 	depends on BCMA
++	default y
+ 
+ config BCMA_HOST_PCI_POSSIBLE
+ 	bool
