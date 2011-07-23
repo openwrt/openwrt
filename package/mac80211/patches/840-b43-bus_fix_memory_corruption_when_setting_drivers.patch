@@ -1,0 +1,26 @@
+Fixes bug described in:
+https://bugzilla.kernel.org/show_bug.cgi?id=39172
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+John: this is trivial and fixes quite ugly memory (linked list exactly)
+corruption. I believe this fix should be taken for 3.1.
+---
+ drivers/net/wireless/b43/bus.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+--- a/drivers/net/wireless/b43/bus.c
++++ b/drivers/net/wireless/b43/bus.c
+@@ -244,10 +244,12 @@ void b43_bus_set_wldev(struct b43_bus_de
+ #ifdef CONFIG_B43_BCMA
+ 	case B43_BUS_BCMA:
+ 		bcma_set_drvdata(dev->bdev, wldev);
++		break;
+ #endif
+ #ifdef CONFIG_B43_SSB
+ 	case B43_BUS_SSB:
+ 		ssb_set_drvdata(dev->sdev, wldev);
++		break;
+ #endif
+ 	}
+ }

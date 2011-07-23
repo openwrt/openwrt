@@ -852,6 +852,7 @@ endef
 
 define KernelPackage/b43
 $(call KernelPackage/b43-common)
+  DEPENDS+= +@DRIVER_11N_SUPPORT +!TARGET_brcm47xx:kmod-bcma
   TITLE:=Broadcom 43xx wireless support
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/b43/b43.ko
   AUTOLOAD:=$(call AutoLoad,30,b43)
@@ -864,7 +865,7 @@ define KernelPackage/b43/config
 
 	choice
 		prompt "b43 firmware version"
-		default B43_FW_4_150
+		default B43_FW_5_10
 		help
 		  This option allows you to select the version of the b43 firmware.
 
@@ -922,8 +923,7 @@ define KernelPackage/b43/config
 	config B43_FW_SQUASH_COREREVS
 		string "Core revisions to include"
 		depends on B43_FW_SQUASH
-		default "5,6,7,8,9,10,11,13,14,15,16" if PACKAGE_B43_PHY_N
-		default "5,6,7,8,9,10,13,14,15" if !PACKAGE_B43_PHY_N
+		default "5,6,7,8,9,10,11,13,14,15,16"
 		help
 		  This is a comma seperated list of core revision numbers.
 
@@ -936,8 +936,7 @@ define KernelPackage/b43/config
 	config B43_FW_SQUASH_PHYTYPES
 		string "PHY types to include"
 		depends on B43_FW_SQUASH
-		default "G,LP,N" if PACKAGE_B43_PHY_N
-		default "G,LP" if !PACKAGE_B43_PHY_N
+		default "G,LP,N"
 		help
 		  This is a comma seperated list of PHY types:
 		    A  => A-PHY
@@ -973,11 +972,29 @@ define KernelPackage/b43/config
 	config PACKAGE_B43_PHY_N
 		bool "Enable support for N-PHYs"
 		select B43_FW_5_10
-		default n
+		default y
 		help
 		  Enable support for BCM4321 and BCM4322.
 
 		  Currently only 11g speed is available.
+
+		  If unsure, say Y.
+
+	config PACKAGE_B43_PHY_HT
+		bool "Enable support for HT-PHYs"
+		select B43_FW_5_10
+		default n
+		help
+		  Currently borken.
+
+		  If unsure, say N.
+
+	config PACKAGE_B43_PHY_LCN
+		bool "Enable support for LCN-PHYs"
+		select B43_FW_5_10
+		default n
+		help
+		  Currently borken.
 
 		  If unsure, say N.
 
@@ -1045,7 +1062,12 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_ATH_USER_REGD),-DATH_USER_REGD=1) \
 	$(if $(CONFIG_PACKAGE_B43_DEBUG),-DCONFIG_B43_DEBUG) \
 	$(if $(CONFIG_PACKAGE_B43_PIO),-DCONFIG_B43_PIO) \
+	$(if $(CONFIG_PACKAGE_B43_PIO),-DCONFIG_B43_BCMA_PIO) \
 	$(if $(CONFIG_PACKAGE_B43_PHY_N),-DCONFIG_B43_PHY_N) \
+	$(if $(CONFIG_PACKAGE_B43_PHY_HT),-DCONFIG_B43_PHY_HT) \
+	$(if $(CONFIG_PACKAGE_B43_PHY_LCN),-DCONFIG_B43_PHY_LCN) \
+	-DCONFIG_B43_BCMA \
+	-DCONFIG_B43_SSB \
 	$(if $(CONFIG_PACKAGE_RT2X00_LIB_DEBUGFS),-DCONFIG_RT2X00_LIB_DEBUGFS) \
 	$(if $(CONFIG_PACKAGE_RT2X00_DEBUG),-DCONFIG_RT2X00_DEBUG) \
 	$(if $(NEED_RT2X00_LIB_HT),-DCONFIG_RT2X00_LIB_HT) \
@@ -1081,7 +1103,12 @@ MAKE_OPTS:= \
 	CONFIG_B43LEGACY=$(if $(CONFIG_PACKAGE_kmod-b43legacy),m) \
 	CONFIG_B43_DEBUG=$(if $(CONFIG_PACKAGE_B43_DEBUG),y) \
 	CONFIG_B43_PIO=$(if $(CONFIG_PACKAGE_B43_PIO),y) \
+	CONFIG_B43_BCMA_PIO=$(if $(CONFIG_PACKAGE_B43_PIO),y) \
 	CONFIG_B43_PHY_N=$(if $(CONFIG_PACKAGE_B43_PHY_N),y) \
+	CONFIG_B43_PHY_HT=$(if $(CONFIG_PACKAGE_B43_PHY_HT),y) \
+	CONFIG_B43_PHY_LCN=$(if $(CONFIG_PACKAGE_B43_PHY_LCN),y) \
+	CONFIG_B43_BCMA=y \
+	CONFIG_B43_SSB=y \
 	CONFIG_ATH_COMMON=$(if $(CONFIG_PACKAGE_kmod-ath),m) \
 	CONFIG_ATH_DEBUG=$(if $(CONFIG_PACKAGE_ATH_DEBUG),y) \
 	CONFIG_ATH9K_PKTLOG=$(if $(CONFIG_PACKAGE_ATH_DEBUG),y) \
@@ -1199,6 +1226,7 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(PKG_LINUX_FIRMWARE_SOURCE)
 	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
+	rm -rf $(PKG_BUILD_DIR)/include/linux/bcma
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
 endef
 
