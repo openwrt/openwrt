@@ -1,0 +1,21 @@
+From 46c79b0cdc60a974da409d641a69086694046ea0 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 22 Jul 2011 17:47:46 +0200
+Subject: [PATCH 23/23] b43: add core rev 17 used on bcma SoC
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/net/wireless/b43/main.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -120,6 +120,7 @@ MODULE_PARM_DESC(pio, "Use PIO accesses
+ 
+ #ifdef CONFIG_B43_BCMA
+ static const struct bcma_device_id b43_bcma_tbl[] = {
++	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x11, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x17, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x18, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x1D, BCMA_ANY_CLASS),
