@@ -548,6 +548,29 @@ endef
 $(eval $(call KernelPackage,ssb))
 
 
+define KernelPackage/bcma
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BCMA support
+  DEPENDS:=@PCI_SUPPORT @!TARGET_brcm47xx
+  KCONFIG:=\
+	CONFIG_BCMA \
+	CONFIG_BCMA_POSSIBLE=y \
+	CONFIG_BCMA_BLOCKIO=y \
+	CONFIG_BCMA_HOST_PCI_POSSIBLE=y \
+	CONFIG_BCMA_HOST_PCI=y \
+	CONFIG_BCMA_DRIVER_PCI_HOSTMODE=n \
+	CONFIG_BCMA_DEBUG=n
+  FILES:=$(LINUX_DIR)/drivers/bcma/bcma.ko
+  AUTOLOAD:=$(call AutoLoad,29,bcma)
+endef
+
+define KernelPackage/bcma/description
+   Bus driver for Broadcom specific Advanced Microcontroller Bus Architecture.
+endef
+
+$(eval $(call KernelPackage,bcma))
+
+
 define KernelPackage/wdt-geode
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Geode/LX Watchdog timer
