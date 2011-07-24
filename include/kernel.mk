@@ -33,7 +33,12 @@ else
   KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
   LINUX_DIR ?= $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
 
-  MODULES_SUBDIR:=lib/modules/$(LINUX_VERSION)
+  LINUX_UNAME_VERSION:=$(if $(word 3,$(subst ., ,$(KERNEL_BASE))),$(KERNEL_BASE),$(KERNEL_BASE).0)
+  ifneq ($(findstring -rc,$(LINUX_VERSION)),)
+    LINUX_UNAME_VERSION:=$(LINUX_UNAME_VERSION)-$(strip $(lastword $(subst -, ,$(LINUX_VERSION))))
+  endif
+
+  MODULES_SUBDIR:=lib/modules/$(LINUX_UNAME_VERSION)
   TARGET_MODULES_DIR := $(LINUX_TARGET_DIR)/$(MODULES_SUBDIR)
 
   LINUX_KERNEL:=$(KERNEL_BUILD_DIR)/vmlinux
@@ -139,8 +144,8 @@ $(call KernelPackage/$(1)/config)
   ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     ifneq ($(strip $(FILES)),)
       define Package/kmod-$(1)/install
-		  mkdir -p $$(1)/lib/modules/$(LINUX_VERSION)
-		  $(CP) -L $$(FILES) $$(1)/lib/modules/$(LINUX_VERSION)/
+		  mkdir -p $$(1)/$(MODULES_SUBDIR)
+		  $(CP) -L $$(FILES) $$(1)/$(MODULES_SUBDIR)/
 		  $(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
 		  $(call KernelPackage/$(1)/install,$$(1))
       endef
