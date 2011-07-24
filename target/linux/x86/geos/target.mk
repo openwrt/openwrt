@@ -17,6 +17,7 @@ DEFAULT_PACKAGES += \
             kmod-ath kmod-ath5k kmod-ath9k \
             kmod-cpu-msr \
             soloscli linux-atm br2684ctl bridge ppp ppp-mod-pppoa \
+            pppdump pppstats \
             libopenssl ocf-crypto-headers zlib hwclock hostapd \
             flashrom
 
