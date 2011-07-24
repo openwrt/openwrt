@@ -14,7 +14,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
 
-#include <linux/rtl8366rb.h>
+#include <linux/rtl8366.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -109,7 +109,7 @@ static struct physmap_flash_data f5d8235v2_flash_data = {
 };
 
 
-static struct rtl8366rb_platform_data f5d8235v2_switch_data = {
+static struct rtl8366_platform_data f5d8235v2_switch_data = {
 	.gpio_sda	= RT305X_GPIO_I2C_SD,
 	.gpio_sck	= RT305X_GPIO_I2C_SCLK,
 };

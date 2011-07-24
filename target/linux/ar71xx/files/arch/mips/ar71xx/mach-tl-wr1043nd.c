@@ -11,7 +11,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/platform_device.h>
-#include <linux/rtl8366rb.h>
+#include <linux/rtl8366.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "machtype.h"
@@ -109,7 +109,7 @@ static struct gpio_keys_button tl_wr1043nd_gpio_keys[] __initdata = {
 	}
 };
 
-static struct rtl8366rb_platform_data tl_wr1043nd_rtl8366rb_data = {
+static struct rtl8366_platform_data tl_wr1043nd_rtl8366rb_data = {
 	.gpio_sda        = TL_WR1043ND_GPIO_RTL8366_SDA,
 	.gpio_sck        = TL_WR1043ND_GPIO_RTL8366_SCK,
 };

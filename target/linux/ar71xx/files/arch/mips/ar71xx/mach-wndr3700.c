@@ -13,7 +13,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/delay.h>
-#include <linux/rtl8366s.h>
+#include <linux/rtl8366.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
@@ -205,7 +205,7 @@ static struct gpio_keys_button wndr3700_gpio_keys[] __initdata = {
 	}
 };
 
-static struct rtl8366s_platform_data wndr3700_rtl8366s_data = {
+static struct rtl8366_platform_data wndr3700_rtl8366s_data = {
 	.gpio_sda	= WNDR3700_GPIO_RTL8366_SDA,
 	.gpio_sck	= WNDR3700_GPIO_RTL8366_SCK,
 };

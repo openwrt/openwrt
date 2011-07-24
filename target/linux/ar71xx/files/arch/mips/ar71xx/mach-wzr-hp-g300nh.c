@@ -12,8 +12,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/nxp_74hc153.h>
-#include <linux/rtl8366s.h>
-#include <linux/rtl8366rb.h>
+#include <linux/rtl8366.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -214,7 +213,7 @@ static struct platform_device wzrhpg300nh_74hc153_device = {
 	}
 };
 
-static struct rtl8366s_platform_data wzrhpg300nh_rtl8366s_data = {
+static struct rtl8366_platform_data wzrhpg300nh_rtl8366_data = {
 	.gpio_sda	= WZRHPG300NH_GPIO_RTL8366_SDA,
 	.gpio_sck	= WZRHPG300NH_GPIO_RTL8366_SCK,
 };
@@ -223,20 +222,15 @@ static struct platform_device wzrhpg300nh_rtl8366s_device = {
 	.name		= RTL8366S_DRIVER_NAME,
 	.id		= -1,
 	.dev = {
-		.platform_data	= &wzrhpg300nh_rtl8366s_data,
+		.platform_data	= &wzrhpg300nh_rtl8366_data,
 	}
-};
-
-static struct rtl8366rb_platform_data wzrhpg301nh_rtl8366rb_data = {
-	.gpio_sda       = WZRHPG300NH_GPIO_RTL8366_SDA,
-	.gpio_sck       = WZRHPG300NH_GPIO_RTL8366_SCK,
 };
 
 static struct platform_device wzrhpg301nh_rtl8366rb_device = {
 	.name           = RTL8366RB_DRIVER_NAME,
 	.id             = -1,
 	.dev = {
-		.platform_data  = &wzrhpg301nh_rtl8366rb_data,
+		.platform_data  = &wzrhpg300nh_rtl8366_data,
 	}
 };
 

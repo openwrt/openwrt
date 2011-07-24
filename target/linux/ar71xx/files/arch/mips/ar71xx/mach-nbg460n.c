@@ -14,7 +14,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/delay.h>
-#include <linux/rtl8366s.h>
+#include <linux/rtl8366.h>
 
 #include <linux/i2c.h>
 #include <linux/i2c-algo-bit.h>
@@ -166,7 +166,7 @@ static void __devinit nbg460n_i2c_init(void)
 }
 
 
-static struct rtl8366s_platform_data nbg460n_rtl8366s_data = {
+static struct rtl8366_platform_data nbg460n_rtl8366s_data = {
 	.gpio_sda	= NBG460N_GPIO_RTL8366_SDA,
 	.gpio_sck	= NBG460N_GPIO_RTL8366_SCK,
 };
