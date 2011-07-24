@@ -234,13 +234,17 @@ static struct platform_device wzrhpg301nh_rtl8366rb_device = {
 	}
 };
 
-static void __init wzrhpg30xnh_setup(bool hasrtl8366rb)
+static void __init wzrhpg30xnh_setup(void)
 {
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 	u8 *mac = eeprom + WZRHPG300NH_MAC_OFFSET;
+	bool hasrtl8366rb = false;
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
+
+	if (rtl8366_smi_detect(&wzrhpg300nh_rtl8366_data) == RTL8366_TYPE_RB)
+		hasrtl8366rb = true;
 
 	if (hasrtl8366rb) {
 		ar71xx_eth0_pll_data.pll_1000 = 0x1f000000;
@@ -284,18 +288,8 @@ static void __init wzrhpg30xnh_setup(bool hasrtl8366rb)
 
 }
 
-static void __init wzrhpg300nh_setup(void)
-{
-	wzrhpg30xnh_setup(false);
-}
-
-static void __init wzrhpg301nh_setup(void)
-{
-	wzrhpg30xnh_setup(true);
-}
-
 MIPS_MACHINE(AR71XX_MACH_WZR_HP_G300NH, "WZR-HP-G300NH",
-	     "Buffalo WZR-HP-G300NH", wzrhpg300nh_setup);
+	     "Buffalo WZR-HP-G300NH", wzrhpg30xnh_setup);
 
 MIPS_MACHINE(AR71XX_MACH_WZR_HP_G301NH, "WZR-HP-G301NH",
-	     "Buffalo WZR-HP-G301NH", wzrhpg301nh_setup);
+	     "Buffalo WZR-HP-G301NH", wzrhpg30xnh_setup);
