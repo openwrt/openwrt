@@ -4,7 +4,7 @@
  * from Intel in order to operate (or compile).
  *
  * Written by David McCullough <david_mccullough@mcafee.com>
- * Copyright (C) 2006-2010 David McCullough
+ * Copyright (C) 2006-2011 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
@@ -34,10 +34,8 @@
  */
 
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-#include <generated/autoconf.h>
-#else
-#include <linux/autoconf.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
+#include <linux/config.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
@@ -448,14 +446,28 @@ ixp_q_process(struct ixp_q *q)
 	dprintk("%s(%p)\n", __FUNCTION__, q);
 
 	if (q->ixp_q_ccrd) {
-		if (q->ixp_q_ccrd->crd_flags & CRD_F_IV_EXPLICIT) {
-			q->ixp_q_iv = q->ixp_q_ccrd->crd_iv;
+		if (q->ixp_q_ccrd->crd_flags & CRD_F_ENCRYPT) {
+			if (q->ixp_q_ccrd->crd_flags & CRD_F_IV_EXPLICIT) {
+				q->ixp_q_iv = q->ixp_q_ccrd->crd_iv;
+			} else {
+				q->ixp_q_iv = q->ixp_q_iv_data;
+				read_random(q->ixp_q_iv, ixp->ixp_ctx.cipherCtx.cipherInitialVectorLen);
+			}
+			if ((q->ixp_q_ccrd->crd_flags & CRD_F_IV_PRESENT) == 0)
+				crypto_copyback(q->ixp_q_crp->crp_flags, q->ixp_q_crp->crp_buf,
+						q->ixp_q_ccrd->crd_inject,
+						ixp->ixp_ctx.cipherCtx.cipherInitialVectorLen,
+						(caddr_t) q->ixp_q_iv);
 		} else {
-			q->ixp_q_iv = q->ixp_q_iv_data;
-			crypto_copydata(q->ixp_q_crp->crp_flags, q->ixp_q_crp->crp_buf,
-					q->ixp_q_ccrd->crd_inject,
-					ixp->ixp_ctx.cipherCtx.cipherInitialVectorLen,
-					(caddr_t) q->ixp_q_iv);
+			if (q->ixp_q_ccrd->crd_flags & CRD_F_IV_EXPLICIT)
+				q->ixp_q_iv = q->ixp_q_ccrd->crd_iv;
+			else {
+				q->ixp_q_iv = q->ixp_q_iv_data;
+				crypto_copydata(q->ixp_q_crp->crp_flags, q->ixp_q_crp->crp_buf,
+						q->ixp_q_ccrd->crd_inject,
+						ixp->ixp_ctx.cipherCtx.cipherInitialVectorLen,
+						(caddr_t) q->ixp_q_iv);
+			}
 		}
 
 		if (q->ixp_q_acrd) {

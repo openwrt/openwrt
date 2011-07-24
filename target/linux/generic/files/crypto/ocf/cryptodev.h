@@ -156,7 +156,8 @@
 #define CRYPTO_SHA2_384			23
 #define CRYPTO_SHA2_512			24
 #define CRYPTO_RIPEMD160		25
-#define CRYPTO_ALGORITHM_MAX	25 /* Keep updated - see below */
+#define	CRYPTO_LZS_COMP			26
+#define CRYPTO_ALGORITHM_MAX	26 /* Keep updated - see above */
 
 /* Algorithm flags */
 #define CRYPTO_ALG_FLAG_SUPPORTED	0x01 /* Algorithm is supported */

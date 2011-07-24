@@ -113,7 +113,6 @@ struct hifn_dma {
 struct hifn_session {
 	int hs_used;
 	int hs_mlen;
-	u_int8_t hs_iv[HIFN_MAX_IV_LENGTH];
 };
 
 #define	HIFN_RING_SYNC(sc, r, i, f)					\

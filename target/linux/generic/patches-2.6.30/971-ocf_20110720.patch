@@ -1,3 +1,4 @@
+
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -129,6 +129,9 @@
@@ -24,7 +25,7 @@
   * All of these routines try to estimate how many bits of randomness a
   * particular randomness source.  They do this by keeping track of the
   * first and second order deltas of the event timings.
-@@ -714,6 +724,61 @@ void add_disk_randomness(struct gendisk
+@@ -712,6 +722,61 @@ void add_disk_randomness(struct gendisk
  }
  #endif
  
@@ -88,14 +89,14 @@
  /*********************************************************************
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
-@@ -141,6 +141,7 @@ SYSCALL_DEFINE1(dup, unsigned int, filde
- 	}
- 	return ret;
+@@ -196,6 +196,7 @@ static int setfl(int fd, struct file * f
+  out:
+ 	return error;
  }
 +EXPORT_SYMBOL(sys_dup);
  
- #define SETFL_MASK (O_APPEND | O_NONBLOCK | O_NDELAY | O_DIRECT | O_NOATIME)
- 
+ static void f_modown(struct file *filp, struct pid *pid, enum pid_type type,
+                      uid_t uid, uid_t euid, int force)
 --- a/include/linux/miscdevice.h
 +++ b/include/linux/miscdevice.h
 @@ -12,6 +12,7 @@
@@ -108,46 +109,7 @@
  #define RTC_MINOR		135
 --- a/include/linux/random.h
 +++ b/include/linux/random.h
-@@ -9,6 +9,7 @@
- 
- #include <linux/types.h>
- #include <linux/ioctl.h>
-+#include <linux/types.h> /* for __u32 in user space */
- #include <linux/irqnr.h>
- 
- /* ioctl()'s for the random number generator */
-@@ -34,6 +35,30 @@
- /* Clear the entropy pool and associated counters.  (Superuser only.) */
- #define RNDCLEARPOOL	_IO( 'R', 0x06 )
- 
-+#ifdef CONFIG_FIPS_RNG
-+
-+/* Size of seed value - equal to AES blocksize */
-+#define AES_BLOCK_SIZE_BYTES	16
-+#define SEED_SIZE_BYTES			AES_BLOCK_SIZE_BYTES
-+/* Size of AES key */
-+#define KEY_SIZE_BYTES		16
-+
-+/* ioctl() structure used by FIPS 140-2 Tests */
-+struct rand_fips_test {
-+	unsigned char key[KEY_SIZE_BYTES];			/* Input */
-+	unsigned char datetime[SEED_SIZE_BYTES];	/* Input */
-+	unsigned char seed[SEED_SIZE_BYTES];		/* Input */
-+	unsigned char result[SEED_SIZE_BYTES];		/* Output */
-+};
-+
-+/* FIPS 140-2 RNG Variable Seed Test. (Superuser only.) */
-+#define RNDFIPSVST	_IOWR('R', 0x10, struct rand_fips_test)
-+
-+/* FIPS 140-2 RNG Monte Carlo Test. (Superuser only.) */
-+#define RNDFIPSMCT	_IOWR('R', 0x11, struct rand_fips_test)
-+
-+#endif /* #ifdef CONFIG_FIPS_RNG */
-+
- struct rand_pool_info {
- 	int	entropy_count;
- 	int	buf_size;
-@@ -50,6 +75,10 @@ extern void add_input_randomness(unsigne
+@@ -50,6 +50,10 @@ extern void add_input_randomness(unsigne
  				 unsigned int value);
  extern void add_interrupt_randomness(int irq);
  
@@ -160,11 +122,11 @@
  
 --- a/kernel/pid.c
 +++ b/kernel/pid.c
-@@ -387,6 +387,7 @@ struct task_struct *find_task_by_vpid(pi
+@@ -383,6 +383,7 @@ struct task_struct *find_task_by_pid_typ
  {
- 	return find_task_by_pid_ns(vnr, current->nsproxy->pid_ns);
+ 	return pid_task(find_pid_ns(nr, ns), type);
  }
 +EXPORT_SYMBOL(find_task_by_vpid);
  
- struct pid *get_task_pid(struct task_struct *task, enum pid_type type)
- {
+ EXPORT_SYMBOL(find_task_by_pid_type_ns);
+ 

@@ -103,6 +103,12 @@ config OCF_C7108
 	help
 	  OCF driver for the Microna 7108 Cipher processors.
 
+config OCF_UBSEC_SSB
+	tristate "uBsec BCM5365 (HW crypto engine)"
+	depends on OCF_OCF
+	help
+	  OCF driver for uBsec BCM5365 hardware crypto accelerator.
+
 config OCF_OCFNULL
 	tristate "ocfnull (fake crypto engine)"
 	depends on OCF_OCF

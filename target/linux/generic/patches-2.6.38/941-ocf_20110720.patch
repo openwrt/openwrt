@@ -1,3 +1,13 @@
+--- a/kernel/pid.c
++++ b/kernel/pid.c
+@@ -427,6 +427,7 @@ struct task_struct *find_task_by_vpid(pi
+ {
+ 	return find_task_by_pid_ns(vnr, current->nsproxy->pid_ns);
+ }
++EXPORT_SYMBOL(find_task_by_vpid);
+ 
+ struct pid *get_task_pid(struct task_struct *task, enum pid_type type)
+ {
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -129,6 +129,9 @@
@@ -24,7 +34,7 @@
   * All of these routines try to estimate how many bits of randomness a
   * particular randomness source.  They do this by keeping track of the
   * first and second order deltas of the event timings.
-@@ -715,6 +725,61 @@ void add_disk_randomness(struct gendisk 
+@@ -715,6 +725,63 @@ void add_disk_randomness(struct gendisk
  }
  #endif
  
@@ -40,12 +50,12 @@
 + */
 +void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
 +{
-+        mix_pool_bytes(&input_pool, buf, wordcount*4);
++	mix_pool_bytes(&input_pool, buf, wordcount*4);
 +
-+        credit_entropy_bits(&input_pool, ent_count);
++	credit_entropy_bits(&input_pool, ent_count);
 +
-+        DEBUG_ENT("crediting %d bits => %d\n",
-+                  ent_count, input_pool.entropy_count);
++	DEBUG_ENT("crediting %d bits => %d\n",
++		  ent_count, input_pool.entropy_count);
 +	/*
 +	 * Wake up waiting processes if we have enough
 +	 * entropy.
@@ -66,22 +76,24 @@
 +{
 +	int count;
 +
-+	wait_event_interruptible(random_write_wait,
-+		input_pool.entropy_count < random_write_wakeup_thresh);
++	wait_event_interruptible(random_write_wait, 
++			 input_pool.entropy_count < random_write_wakeup_thresh);
 +
 +	count = random_write_wakeup_thresh - input_pool.entropy_count;
 +
-+	/* likely we got woken up due to a signal */
-+	if (count <= 0) count = random_read_wakeup_thresh;
++        /* likely we got woken up due to a signal */
++	if (count <= 0) count = random_read_wakeup_thresh; 
 +
 +	DEBUG_ENT("requesting %d bits from input_wait()er %d<%d\n",
-+		count,
-+		input_pool.entropy_count, random_write_wakeup_thresh);
++		  count,
++		  input_pool.entropy_count, random_write_wakeup_thresh);
 +
 +	return count;
 +}
 +EXPORT_SYMBOL(random_input_wait);
 +
++
++#define EXTRACT_SIZE 10
 +
  /*********************************************************************
   *
@@ -108,46 +120,7 @@
  #define RTC_MINOR		135
 --- a/include/linux/random.h
 +++ b/include/linux/random.h
-@@ -9,6 +9,7 @@
- 
- #include <linux/types.h>
- #include <linux/ioctl.h>
-+#include <linux/types.h> /* for __u32 in user space */
- #include <linux/irqnr.h>
- 
- /* ioctl()'s for the random number generator */
-@@ -34,6 +35,30 @@
- /* Clear the entropy pool and associated counters.  (Superuser only.) */
- #define RNDCLEARPOOL	_IO( 'R', 0x06 )
- 
-+#ifdef CONFIG_FIPS_RNG
-+
-+/* Size of seed value - equal to AES blocksize */
-+#define AES_BLOCK_SIZE_BYTES	16
-+#define SEED_SIZE_BYTES			AES_BLOCK_SIZE_BYTES
-+/* Size of AES key */
-+#define KEY_SIZE_BYTES		16
-+
-+/* ioctl() structure used by FIPS 140-2 Tests */
-+struct rand_fips_test {
-+	unsigned char key[KEY_SIZE_BYTES];			/* Input */
-+	unsigned char datetime[SEED_SIZE_BYTES];	/* Input */
-+	unsigned char seed[SEED_SIZE_BYTES];		/* Input */
-+	unsigned char result[SEED_SIZE_BYTES];		/* Output */
-+};
-+
-+/* FIPS 140-2 RNG Variable Seed Test. (Superuser only.) */
-+#define RNDFIPSVST	_IOWR('R', 0x10, struct rand_fips_test)
-+
-+/* FIPS 140-2 RNG Monte Carlo Test. (Superuser only.) */
-+#define RNDFIPSMCT	_IOWR('R', 0x11, struct rand_fips_test)
-+
-+#endif /* #ifdef CONFIG_FIPS_RNG */
-+
- struct rand_pool_info {
- 	int	entropy_count;
- 	int	buf_size;
-@@ -54,6 +79,10 @@ extern void add_input_randomness(unsigne
+@@ -54,6 +54,10 @@ extern void add_input_randomness(unsigne
  				 unsigned int value);
  extern void add_interrupt_randomness(int irq);
  
@@ -158,13 +131,3 @@
  extern void get_random_bytes(void *buf, int nbytes);
  void generate_random_uuid(unsigned char uuid_out[16]);
  
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -423,6 +423,7 @@ struct task_struct *find_task_by_vpid(pi
- {
- 	return find_task_by_pid_ns(vnr, current->nsproxy->pid_ns);
- }
-+EXPORT_SYMBOL(find_task_by_vpid);
- 
- struct pid *get_task_pid(struct task_struct *task, enum pid_type type)
- {

@@ -28,10 +28,8 @@
  */
 
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-#include <generated/autoconf.h>
-#else
-#include <linux/autoconf.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
+#include <linux/config.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
@@ -69,15 +67,6 @@ struct octo_sess {
 	int					 octo_mlen;
 	int					 octo_ivsize;
 
-#if 0
-	int					(*octo_decrypt)(struct scatterlist *sg, int sg_len,
-							uint8_t *key, int key_len, uint8_t * iv,
-							uint64_t *hminner, uint64_t *hmouter);
-
-	int					(*octo_encrypt)(struct scatterlist *sg, int sg_len,
-							uint8_t *key, int key_len, uint8_t * iv,
-							uint64_t *hminner, uint64_t *hmouter);
-#else
 	int					(*octo_encrypt)(struct octo_sess *od,
 	                      struct scatterlist *sg, int sg_len,
 						  int auth_off, int auth_len,
@@ -88,7 +77,6 @@ struct octo_sess {
 						  int auth_off, int auth_len,
 						  int crypt_off, int crypt_len,
 						  int icv_off, uint8_t *ivp);
-#endif
 
 	uint64_t			 octo_hminner[3];
 	uint64_t			 octo_hmouter[3];
@@ -264,7 +252,7 @@ octo_newsession(device_t dev, u_int32_t *sid, struct cryptoini *cri)
 			break;
 		case CRYPTO_SHA1_HMAC:
 			(*ocd)->octo_encrypt = octo_des_cbc_sha1_encrypt;
-			(*ocd)->octo_decrypt = octo_des_cbc_sha1_encrypt;
+			(*ocd)->octo_decrypt = octo_des_cbc_sha1_decrypt;
 			octo_calc_hash(1, macini->cri_key, (*ocd)->octo_hminner,
 					(*ocd)->octo_hmouter);
 			break;
@@ -305,13 +293,13 @@ octo_newsession(device_t dev, u_int32_t *sid, struct cryptoini *cri)
 		break;
 	case CRYPTO_MD5_HMAC:
 		(*ocd)->octo_encrypt = octo_null_md5_encrypt;
-		(*ocd)->octo_decrypt = octo_null_md5_encrypt;
+		(*ocd)->octo_decrypt = octo_null_md5_encrypt; /* encrypt == decrypt */
 		octo_calc_hash(0, macini->cri_key, (*ocd)->octo_hminner,
 				(*ocd)->octo_hmouter);
 		break;
 	case CRYPTO_SHA1_HMAC:
 		(*ocd)->octo_encrypt = octo_null_sha1_encrypt;
-		(*ocd)->octo_decrypt = octo_null_sha1_encrypt;
+		(*ocd)->octo_decrypt = octo_null_sha1_encrypt; /* encrypt == decrypt */
 		octo_calc_hash(1, macini->cri_key, (*ocd)->octo_hminner,
 				(*ocd)->octo_hmouter);
 		break;
@@ -433,12 +421,22 @@ octo_process(device_t dev, struct cryptop *crp, int hint)
 	}
 
 	if (enccrd) {
-		if (enccrd->crd_flags & CRD_F_IV_EXPLICIT) {
-			ivp = enccrd->crd_iv;
+		if (enccrd->crd_flags & CRD_F_ENCRYPT) {
+			if (enccrd->crd_flags & CRD_F_IV_EXPLICIT)
+				ivp = enccrd->crd_iv;
+			else
+				read_random((ivp = iv_data), od->octo_ivsize);
+			if ((enccrd->crd_flags & CRD_F_IV_PRESENT) == 0)
+				crypto_copyback(crp->crp_flags, crp->crp_buf,
+						enccrd->crd_inject, od->octo_ivsize, ivp);
 		} else {
-			ivp = iv_data;
-			crypto_copydata(crp->crp_flags, crp->crp_buf,
-					enccrd->crd_inject, od->octo_ivsize, (caddr_t) ivp);
+			if (enccrd->crd_flags & CRD_F_IV_EXPLICIT) {
+				ivp = enccrd->crd_iv;
+			} else {
+				ivp = iv_data;
+				crypto_copydata(crp->crp_flags, crp->crp_buf,
+						enccrd->crd_inject, od->octo_ivsize, (caddr_t) ivp);
+			}
 		}
 
 		if (maccrd) {

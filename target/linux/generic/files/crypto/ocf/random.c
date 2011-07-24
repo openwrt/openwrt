@@ -36,10 +36,8 @@
  */
 
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-#include <generated/autoconf.h>
-#else
-#include <linux/autoconf.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
+#include <linux/config.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
@@ -48,7 +46,6 @@
 #include <linux/wait.h>
 #include <linux/sched.h>
 #include <linux/spinlock.h>
-#include <linux/version.h>
 #include <linux/unistd.h>
 #include <linux/poll.h>
 #include <linux/random.h>
@@ -60,11 +57,6 @@
 
 #ifndef HAS_RANDOM_INPUT_WAIT
 #error "Please do not enable OCF_RANDOMHARVEST unless you have applied patches"
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
-#include <linux/sched.h>
-#define	kill_proc(p,s,v)	send_sig(s,find_task_by_vpid(p),0)
 #endif
 
 /*
