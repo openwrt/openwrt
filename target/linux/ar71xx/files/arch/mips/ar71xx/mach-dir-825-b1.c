@@ -14,7 +14,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/delay.h>
-#include <linux/rtl8366s.h>
+#include <linux/rtl8366.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
@@ -131,11 +131,11 @@ static struct gpio_keys_button dir825b1_gpio_keys[] __initdata = {
 	}
 };
 
-static struct rtl8366s_initval dir825b1_rtl8366s_initvals[] = {
+static struct rtl8366_initval dir825b1_rtl8366s_initvals[] = {
 	{ .reg = 0x06, .val = 0x0108 },
 };
 
-static struct rtl8366s_platform_data dir825b1_rtl8366s_data = {
+static struct rtl8366_platform_data dir825b1_rtl8366s_data = {
 	.gpio_sda	= DIR825B1_GPIO_RTL8366_SDA,
 	.gpio_sck	= DIR825B1_GPIO_RTL8366_SCK,
 	.num_initvals	= ARRAY_SIZE(dir825b1_rtl8366s_initvals),
