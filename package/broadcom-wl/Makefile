@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=broadcom-wl
 PKG_VERSION:=5.10.56.27.3
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)_$(ARCH).tar.bz2
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
@@ -34,8 +34,8 @@ define KernelPackage/brcm-wl/Default
   SECTION:=kernel
   DEPENDS:=@TARGET_brcm47xx||TARGET_brcm63xx +wireless-tools
   TITLE:=Kernel driver for BCM43xx chipsets
-  FILES:=$(PKG_BUILD_DIR)/driver$(1)/wl.ko
-  AUTOLOAD:=$(call AutoLoad,30,wl)
+  FILES:=$(PKG_BUILD_DIR)/driver$(1)/wl.ko $(PKG_BUILD_DIR)/glue/wl_glue.ko
+  AUTOLOAD:=$(call AutoLoad,30,wl_glue wl)
 endef
 
 define KernelPackage/brcm-wl/Default/description
@@ -100,6 +100,7 @@ MAKE_KMOD := $(MAKE) -C "$(LINUX_DIR)" \
 define Build/Prepare
 	$(call Build/Prepare/Default)
 	$(CP) $(PKG_BUILD_DIR)/driver $(PKG_BUILD_DIR)/driver-mini
+	$(CP) ./src/glue $(PKG_BUILD_DIR)/glue
 endef
 
 define Build/Compile
@@ -114,6 +115,11 @@ define Build/Compile
 		MODFLAGS="-DMODULE -mlong-calls" \
 		BUILD_TYPE="wl_apsta_mini" \
 		modules
+
+	# Compile glue driver
+	$(MAKE_KMOD) -C "$(LINUX_DIR)" \
+		SUBDIRS="$(PKG_BUILD_DIR)/glue" \
+		modules                                        
 
 	# Compile libshared
 	$(MAKE) -C $(PKG_BUILD_DIR)/shared \
