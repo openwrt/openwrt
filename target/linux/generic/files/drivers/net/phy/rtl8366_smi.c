@@ -15,6 +15,7 @@
 #include <linux/gpio.h>
 #include <linux/spinlock.h>
 #include <linux/skbuff.h>
+#include <linux/rtl8366.h>
 
 #ifdef CONFIG_RTL8366S_PHY_DEBUG_FS
 #include <linux/debugfs.h>
@@ -1160,6 +1161,75 @@ struct rtl8366_smi *rtl8366_smi_alloc(struct device *parent)
 }
 EXPORT_SYMBOL_GPL(rtl8366_smi_alloc);
 
+static int __rtl8366_smi_init(struct rtl8366_smi *smi, const char *name)
+{
+	int err;
+
+	err = gpio_request(smi->gpio_sda, name);
+	if (err) {
+		printk(KERN_ERR "rtl8366_smi: gpio_request failed for %u, err=%d\n",
+			smi->gpio_sda, err);
+		goto err_out;
+	}
+
+	err = gpio_request(smi->gpio_sck, name);
+	if (err) {
+		printk(KERN_ERR "rtl8366_smi: gpio_request failed for %u, err=%d\n",
+			smi->gpio_sck, err);
+		goto err_free_sda;
+	}
+
+	spin_lock_init(&smi->lock);
+	return 0;
+
+ err_free_sda:
+	gpio_free(smi->gpio_sda);
+ err_out:
+	return err;
+}
+
+static void __rtl8366_smi_cleanup(struct rtl8366_smi *smi)
+{
+	gpio_free(smi->gpio_sck);
+	gpio_free(smi->gpio_sda);
+}
+
+enum rtl8366_type rtl8366_smi_detect(struct rtl8366_platform_data *pdata)
+{
+	static struct rtl8366_smi smi;
+	enum rtl8366_type type = RTL8366_TYPE_UNKNOWN;
+	u32 reg = 0;
+
+	memset(&smi, 0, sizeof(smi));
+	smi.gpio_sda = pdata->gpio_sda;
+	smi.gpio_sck = pdata->gpio_sck;
+
+	if (__rtl8366_smi_init(&smi, "rtl8366"))
+		goto out;
+
+	if (rtl8366_smi_read_reg(&smi, 0x5c, &reg))
+		goto cleanup;
+
+	switch(reg) {
+	case 0x6027:
+		printk("Found an RTL8366S switch\n");
+		type = RTL8366_TYPE_S;
+		break;
+	case 0x5937:
+		printk("Found an RTL8366RB switch\n");
+		type = RTL8366_TYPE_RB;
+		break;
+	default:
+		printk("Found an Unknown RTL8366 switch (id=0x%04x)\n", reg);
+		break;
+	}
+
+cleanup:
+	__rtl8366_smi_cleanup(&smi);
+out:
+	return type;
+}
+
 int rtl8366_smi_init(struct rtl8366_smi *smi)
 {
 	int err;
@@ -1167,19 +1237,9 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	if (!smi->ops)
 		return -EINVAL;
 
-	err = gpio_request(smi->gpio_sda, dev_name(smi->parent));
-	if (err) {
-		dev_err(smi->parent, "gpio_request failed for %u, err=%d\n",
-			smi->gpio_sda, err);
+	err = __rtl8366_smi_init(smi, dev_name(smi->parent));
+	if (err)
 		goto err_out;
-	}
-
-	err = gpio_request(smi->gpio_sck, dev_name(smi->parent));
-	if (err) {
-		dev_err(smi->parent, "gpio_request failed for %u, err=%d\n",
-			smi->gpio_sck, err);
-		goto err_free_sda;
-	}
 
 	spin_lock_init(&smi->lock);
 
@@ -1218,9 +1278,7 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 	return 0;
 
  err_free_sck:
-	gpio_free(smi->gpio_sck);
- err_free_sda:
-	gpio_free(smi->gpio_sda);
+	__rtl8366_smi_cleanup(smi);
  err_out:
 	return err;
 }

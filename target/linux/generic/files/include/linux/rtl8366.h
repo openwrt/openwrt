@@ -15,6 +15,12 @@
 #define RTL8366S_DRIVER_NAME	"rtl8366s"
 #define RTL8366RB_DRIVER_NAME	"rtl8366rb"
 
+enum rtl8366_type {
+	RTL8366_TYPE_UNKNOWN,
+	RTL8366_TYPE_S,
+	RTL8366_TYPE_RB,
+};
+
 struct rtl8366_initval {
 	unsigned	reg;
 	u16		val;
@@ -26,5 +32,7 @@ struct rtl8366_platform_data {
 	unsigned	num_initvals;
 	struct rtl8366_initval *initvals;
 };
+
+enum rtl8366_type rtl8366_smi_detect(struct rtl8366_platform_data *pdata);
 
 #endif /*  _RTL8366_H */
