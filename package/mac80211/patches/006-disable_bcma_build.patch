@@ -1,3 +1,14 @@
+--- a/Makefile
++++ b/Makefile
+@@ -30,7 +30,7 @@ obj-$(CONFIG_COMPAT_WIRELESS_MODULES) +=
+ obj-$(CONFIG_COMPAT_NET_USB_MODULES) += drivers/net/usb/
+ 
+ obj-$(CONFIG_COMPAT_NETWORK_MODULES) += drivers/net/
+-obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/bcma/ drivers/misc/eeprom/
++obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/misc/eeprom/
+ 
+ ifeq ($(CONFIG_STAGING_EXCLUDE_BUILD),)
+ obj-$(CONFIG_COMPAT_STAGING) += drivers/staging/ath6kl/
 --- a/config.mk
 +++ b/config.mk
 @@ -329,9 +329,9 @@ CONFIG_SSB_DRIVER_PCICORE=y
