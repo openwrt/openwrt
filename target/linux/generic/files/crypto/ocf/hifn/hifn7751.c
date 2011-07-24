@@ -47,10 +47,8 @@ __FBSDID("$FreeBSD: src/sys/dev/hifn/hifn7751.c,v 1.40 2007/03/21 03:42:49 sam E
  * Driver for various Hifn encryption processors.
  */
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-#include <generated/autoconf.h>
-#else
-#include <linux/autoconf.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
+#include <linux/config.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
@@ -63,7 +61,6 @@ __FBSDID("$FreeBSD: src/sys/dev/hifn/hifn7751.c,v 1.40 2007/03/21 03:42:49 sam E
 #include <linux/interrupt.h>
 #include <linux/spinlock.h>
 #include <linux/random.h>
-#include <linux/version.h>
 #include <linux/skbuff.h>
 #include <asm/io.h>
 
@@ -437,7 +434,7 @@ hifn_probe(struct pci_dev *dev, const struct pci_device_id *ent)
 	if (pci_enable_device(dev) < 0)
 		return(-ENODEV);
 
-#ifdef CONFIG_HAVE_PCI_SET_MWI
+#ifdef HAVE_PCI_SET_MWI
 	if (pci_set_mwi(dev))
 		return(-ENODEV);
 #endif
@@ -873,7 +870,7 @@ hifn_set_retry(struct hifn_softc *sc)
 	DPRINTF("%s()\n", __FUNCTION__);
 	/* NB: RETRY only responds to 8-bit reads/writes */
 	pci_write_config_byte(sc->sc_pcidev, HIFN_RETRY_TIMEOUT, 0);
-	pci_write_config_dword(sc->sc_pcidev, HIFN_TRDY_TIMEOUT, 0);
+	pci_write_config_byte(sc->sc_pcidev, HIFN_TRDY_TIMEOUT, 0);
 	/* piggy back the cache line setting here */
 	pci_write_config_byte(sc->sc_pcidev, PCI_CACHE_LINE_SIZE, hifn_cache_linesize);
 }
@@ -2380,11 +2377,6 @@ hifn_newsession(device_t dev, u_int32_t *sidp, struct cryptoini *cri)
 		case CRYPTO_DES_CBC:
 		case CRYPTO_3DES_CBC:
 		case CRYPTO_AES_CBC:
-			/* XXX this may read fewer, does it matter? */
-			read_random(ses->hs_iv,
-				c->cri_alg == CRYPTO_AES_CBC ?
-					HIFN_AES_IV_LENGTH : HIFN_IV_LENGTH);
-			/*FALLTHROUGH*/
 		case CRYPTO_ARC4:
 			if (cry) {
 				DPRINTF("%s,%d: %s - EINVAL\n",__FILE__,__LINE__,__FUNCTION__);
@@ -2580,8 +2572,7 @@ hifn_process(device_t dev, struct cryptop *crp, int hint)
 				if (enccrd->crd_flags & CRD_F_IV_EXPLICIT)
 					bcopy(enccrd->crd_iv, cmd->iv, ivlen);
 				else
-					bcopy(sc->sc_sessions[session].hs_iv,
-					    cmd->iv, ivlen);
+					read_random(cmd->iv, ivlen);
 
 				if ((enccrd->crd_flags & CRD_F_IV_PRESENT)
 				    == 0) {
@@ -2786,7 +2777,7 @@ hifn_callback(struct hifn_softc *sc, struct hifn_command *cmd, u_int8_t *macbuf)
 	struct hifn_dma *dma = sc->sc_dma;
 	struct cryptop *crp = cmd->crp;
 	struct cryptodesc *crd;
-	int i, u, ivlen;
+	int i, u;
 
 	DPRINTF("%s()\n", __FUNCTION__);
 
@@ -2850,22 +2841,6 @@ hifn_callback(struct hifn_softc *sc, struct hifn_command *cmd, u_int8_t *macbuf)
 	dma->dstk = i; dma->dstu = u;
 
 	hifnstats.hst_obytes += cmd->dst_mapsize;
-
-	if ((cmd->base_masks & (HIFN_BASE_CMD_CRYPT | HIFN_BASE_CMD_DECODE)) ==
-	    HIFN_BASE_CMD_CRYPT) {
-		for (crd = crp->crp_desc; crd; crd = crd->crd_next) {
-			if (crd->crd_alg != CRYPTO_DES_CBC &&
-			    crd->crd_alg != CRYPTO_3DES_CBC &&
-			    crd->crd_alg != CRYPTO_AES_CBC)
-				continue;
-			ivlen = ((crd->crd_alg == CRYPTO_AES_CBC) ?
-				HIFN_AES_IV_LENGTH : HIFN_IV_LENGTH);
-			crypto_copydata(crp->crp_flags, crp->crp_buf,
-			    crd->crd_skip + crd->crd_len - ivlen, ivlen,
-			    cmd->softc->sc_sessions[cmd->session_num].hs_iv);
-			break;
-		}
-	}
 
 	if (macbuf != NULL) {
 		for (crd = crp->crp_desc; crd; crd = crd->crd_next) {

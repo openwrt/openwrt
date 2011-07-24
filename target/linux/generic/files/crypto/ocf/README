@@ -1,167 +1,246 @@
-README - ocf-linux-20100325
----------------------------
+###########################
+README - ocf-linux-20100530
+###########################
 
 This README provides instructions for getting ocf-linux compiled and
-operating in a generic linux environment.  For other information you
-might like to visit the home page for this project:
+operating in a generic linux environment.  Other information on the project
+can be found at the home page:
 
     http://ocf-linux.sourceforge.net/
 
-Adding OCF to linux
--------------------
+Embedded systems and applications requiring userspace acceleration will need
+to patch the kernel source to get full OCF support.  See "Adding OCF to
+linux source" below.  Otherwise the "OCF Quickstart" that follows is the
+easiest way to get started.
 
-    Not much in this file for now,  just some notes.  I usually build
-    the ocf support as modules but it can be built into the kernel as
-    well.  To use it:
+If your goal is to accelerate Openswan on Ubuntu or CentOS,  you may find
+that the required binaries are already available on openswan.org:
 
-    * mknod /dev/crypto c 10 70
+    ftp://ftp.openswan.org/ocf/
+    ftp://ftp.openswan.org/openswan/binaries/ubuntu/
 
-    * to add OCF to your kernel source,  you have two options.  Apply
-      the kernel specific patch:
+#####################################################
+OCF Quickstart for Ubuntu/Others (including Openswan)
+#####################################################
 
-          cd linux-2.4*; gunzip < ocf-linux-24-XXXXXXXX.patch.gz | patch -p1
-          cd linux-2.6*; gunzip < ocf-linux-26-XXXXXXXX.patch.gz | patch -p1
-    
-      if you do one of the above,  then you can proceed to the next step,
-      or you can do the above process by hand with using the patches against
-      linux-2.4.35 and 2.6.33 to include the ocf code under crypto/ocf.
-      Here's how to add it:
+This section provides instructions on how to quickly add kernel only support
+for OCF to a GNU/Linux system.  It is only suitable for in-kernel use such as
+Openswan MAST/KLIPS.
 
-      for 2.4.35 (and later)
+If the target is an embedded system, or, userspace acceleration of
+applications such as OpenVPN and OpenSSL, the section below titled
+"Adding OCF to linux source" is more appropriate.
 
-          cd linux-2.4.35/crypto
-          tar xvzf ocf-linux.tar.gz
-          cd ..
-          patch -p1 < crypto/ocf/patches/linux-2.4.35-ocf.patch
+Before building kernel only support for OCF ensure that the appropriate
+linux-headers package is installed:
 
-      for 2.6.23 (and later),  find the kernel patch specific (or nearest)
-      to your kernel versions and then:
+    cd ocf
+    make ocf_modules
+    sudo make ocf_install
+    OCF_DIR=`pwd`            # remember where OCF sources were built
 
-          cd linux-2.6.NN/crypto
-          tar xvzf ocf-linux.tar.gz
-          cd ..
-          patch -p1 < crypto/ocf/patches/linux-2.6.NN-ocf.patch
+At this point the ocf, cryptosoft, ocfnull, hifn7751 and ocf-bench modules
+should have been built and installed.  The OCF installation can be tested
+with the following commands:
 
-      It should be easy to take this patch and apply it to other more
-      recent versions of the kernels.  The same patches should also work
-      relatively easily on kernels as old as 2.6.11 and 2.4.18.
-      
-    * under 2.4 if you are on a non-x86 platform,  you may need to:
+    modprobe ocf
+    modprobe cryptosoft
+    modprobe ocf-bench
+    dmesg | tail -5
 
-        cp linux-2.X.x/include/asm-i386/kmap_types.h linux-2.X.x/include/asm-YYY
+The final modprobe of ocf-bench will fail,  this is intentional as ocf-bench
+is a short lived module that tests in-kernel performance of OCF.  If
+everything worked correctly the "dmesg | tail -5" should include a line
+like:
 
-      so that you can build the kernel crypto support needed for the cryptosoft
-      driver.
+    [  583.128741] OCF: 45133 requests of 1488 bytes in 251 jiffies (535.122 Mbps)
 
-    * For simplicity you should enable all the crypto support in your kernel
-      except for the test driver.  Likewise for the OCF options.  Do not
-      enable OCF crypto drivers for HW that you do not have (for example
-      ixp4xx will not compile on non-Xscale systems).
+This shows the in-kernel performance of OCF using the cryptosoft driver.
+For addition driver load options,  see "How to load the OCF modules" below.
 
-    * make sure that cryptodev.h (from ocf-linux.tar.gz) is installed as
-      crypto/cryptodev.h in an include directory that is used for building
-      applications for your platform.  For example on a host system that
-      might be:
+If the intention is to run an OCF accelerated Openswan (KLIPS/MAST) then use
+these steps to compile openswan downloaded from openswan.org (2.6.34 or later).
 
-              /usr/include/crypto/cryptodev.h
+    tar xf openswan-2.6.34.tar.gz
+    cd openswan-2.6.34
+    make programs
+    make KERNELSRC=/lib/modules/`uname -r`/build \
+        KBUILD_EXTRA_SYMBOLS=$OCF_DIR/Module.symvers \
+        MODULE_DEF_INCLUDE=`pwd`/packaging/ocf/config-all.hmodules \
+        MODULE_DEFCONFIG=`pwd`/packaging/ocf/defconfig \
+        module
+    sudo make KERNELSRC=/lib/modules/`uname -r`/build \
+        KBUILD_EXTRA_SYMBOLS=$OCF_DIR/Module.symvers \
+        MODULE_DEF_INCLUDE=`pwd`/packaging/ocf/config-all.hmodules \
+        MODULE_DEFCONFIG=`pwd`/packaging/ocf/defconfig \
+        install minstall
 
-    * patch your openssl-0.9.8n code with the openssl-0.9.8n.patch.
-      (NOTE: there is no longer a need to patch ssh). The patch is against:
-      openssl-0_9_8e
+The rest of this document is only required for more complex build
+requirements.
 
-      If you need a patch for an older version of openssl,  you should look
-      to older OCF releases.  This patch is unlikely to work on older
-      openssl versions.
+##########################
+Adding OCF to linux source
+##########################
 
-      openssl-0.9.8n.patch
-                - enables --with-cryptodev for non BSD systems
-                - adds -cpu option to openssl speed for calculating CPU load
-                  under linux
-                - fixes null pointer in openssl speed multi thread output.
-                - fixes test keys to work with linux crypto's more stringent
-                  key checking.
-                - adds MD5/SHA acceleration (Ronen Shitrit), only enabled
-                  with the --with-cryptodev-digests option
-                - fixes bug in engine code caching.
+It is recommended that OCF be built as modules as it increases the
+flexibility and ease of debugging the system.
 
-    * build crypto-tools-XXXXXXXX.tar.gz if you want to try some of the BSD
-      tools for testing OCF (ie., cryptotest).
+Ensure that the system has /dev/crypto for userspace access to OCF:
 
-How to load the OCF drivers
----------------------------
+    mknod /dev/crypto c 10 70
 
-    First insert the base modules:
+Generate the kernel patches and apply the appropriate one.
 
-        insmod ocf
-        insmod cryptodev
+    cd ocf
+    make patch
 
-    You can then install the software OCF driver with:
+This will provide three files:
 
-        insmod cryptosoft
+    linux-2.4.*-ocf.patch
+    linux-2.6.*-ocf.patch
+    ocf-linux-base.patch
 
-    and one or more of the OCF HW drivers with:
+If either of the first two patches applies to the targets kernel,  then one
+of the following as required:
 
-        insmod safe
-        insmod hifn7751
-        insmod ixp4xx
-        ...
+    cd linux-2.X.Y; patch -p1 < linux-2.4.*-ocf.patch
+    cd linux-2.6.Y; patch -p1 < linux-2.6.*-ocf.patch
 
-    all the drivers take a debug option to enable verbose debug so that
-    you can see what is going on.  For debug you load them as:
+Otherwise,  locate the appropriate kernel patch in the patches directory and
+apply that as well as the ocf-linux-base.patch using '-p1'.
 
-        insmod ocf crypto_debug=1
-        insmod cryptodev cryptodev_debug=1
-        insmod cryptosoft swcr_debug=1
+When using a linux-2.4 system on a non-x86 platform,  the following may be
+required to build cryptosoft:
 
-    You may load more than one OCF crypto driver but then there is no guarantee
-    as to which will be used.
+    cp linux-2.X.x/include/asm-i386/kmap_types.h linux-2.X.x/include/asm-YYY
 
-    You can also enable debug at run time on 2.6 systems with the following:
+When using cryptosoft, for simplicity, enable all the crypto support in the
+kernel except for the test driver.  Likewise for the OCF options.  Do not
+enable OCF crypto drivers for HW that is not present (for example the ixp4xx
+driver will not compile on non-Xscale systems).
 
-        echo 1 > /sys/module/ocf/parameters/crypto_debug
-        echo 1 > /sys/module/cryptodev/parameters/cryptodev_debug
-        echo 1 > /sys/module/cryptosoft/parameters/swcr_debug
-        echo 1 > /sys/module/hifn7751/parameters/hifn_debug
-        echo 1 > /sys/module/safe/parameters/safe_debug
-        echo 1 > /sys/module/ixp4xx/parameters/ixp_debug
-        ...
+Make sure that cryptodev.h from the ocf directory is installed as
+crypto/cryptodev.h in an include directory that is used for building
+applications for the target platform.  For example on a host system that
+might be:
 
+    /usr/include/crypto/cryptodev.h
+
+Patch the openssl-0.9.8r code the openssl-0.9.8r.patch from the patches
+directory.  There are many older patch versions in the patches directory
+if required.
+
+The openssl patches provide the following functionality:
+
+    * enables --with-cryptodev for non BSD systems
+    * adds -cpu option to openssl speed for calculating CPU load under linux
+    * fixes null pointer in openssl speed multi thread output.
+    * fixes test keys to work with linux crypto's more stringent key checking.
+    * adds MD5/SHA acceleration (Ronen Shitrit), only enabled with the
+      --with-cryptodev-digests option
+    * fixes bug in engine code caching.
+
+Build the crypto-tools directory for the target to obtain a userspace
+testing tool call cryptotest.
+
+###########################
+How to load the OCF modules
+###########################
+
+First insert the base modules (cryptodev is optional,  it is only used
+for userspace acceleration):
+
+    modprobe ocf
+    modprobe cryptodev
+
+Load the software OCF driver with:
+
+    modprobe cryptosoft
+
+and zero or more of the OCF HW drivers with:
+
+    modprobe safe
+    modprobe hifn7751
+    modprobe ixp4xx
+    ...
+
+All the drivers take a debug option to enable verbose debug so that
+OCF operation may be observed via "dmesg" or the console.  For debug
+load the modules as:
+
+    modprobe ocf crypto_debug=1
+    modprobe cryptodev cryptodev_debug=1
+    modprobe cryptosoft swcr_debug=1
+
+More than one OCF crypto driver may be loaded but then there is no
+guarantee as to which will be used (other than a preference for HW
+drivers over SW drivers by most applications).
+
+It is also possible to enable debug at run time on linux-2.6 systems
+with the following:
+
+    echo 1 > /sys/module/ocf/parameters/crypto_debug
+    echo 1 > /sys/module/cryptodev/parameters/cryptodev_debug
+    echo 1 > /sys/module/cryptosoft/parameters/swcr_debug
+    echo 1 > /sys/module/hifn7751/parameters/hifn_debug
+    echo 1 > /sys/module/safe/parameters/safe_debug
+    echo 1 > /sys/module/ixp4xx/parameters/ixp_debug
+    ...
+
+The ocf-bench driver accepts the following parameters:
+
+    request_q_len - Maximum number of outstanding requests to OCF
+    request_num   - run for at least this many requests
+    request_size  - size of each request (multiple of 16 bytes recommended)
+    request_batch - enable OCF request batching
+    request_cbimm - enable OCF immediate callback on completion
+
+For example:
+
+    modprobe ocf-bench request_size=1024 request_cbimm=0
+
+#######################
 Testing the OCF support
------------------------
+#######################
 
-    run "cryptotest",  it should do a short test for a couple of
-    des packets.  If it does everything is working.
+run "cryptotest",  it should do a short test for a couple of
+des packets.  If it does everything is working.
 
-    If this works,  then ssh will use the driver when invoked as:
+If this works,  then ssh will use the driver when invoked as:
 
-        ssh -c 3des username@host
+    ssh -c 3des username@host
 
-    to see for sure that it is operating, enable debug as defined above.
+to see for sure that it is operating, enable debug as defined above.
 
-    To get a better idea of performance run:
+To get a better idea of performance run:
 
-        cryptotest 100 4096
+    cryptotest 100 4096
 
-    There are more options to cryptotest,  see the help.
+There are more options to cryptotest,  see the help.
 
-    It is also possible to use openssl to test the speed of the crypto
-    drivers.
+It is also possible to use openssl to test the speed of the crypto
+drivers.
 
-        openssl speed -evp des -engine cryptodev -elapsed
-        openssl speed -evp des3 -engine cryptodev -elapsed
-        openssl speed -evp aes128 -engine cryptodev -elapsed
+    openssl speed -evp des -engine cryptodev -elapsed
+    openssl speed -evp des3 -engine cryptodev -elapsed
+    openssl speed -evp aes128 -engine cryptodev -elapsed
 
-    and multiple threads (10) with:
+and multiple threads (10) with:
 
-        openssl speed -evp des -engine cryptodev -elapsed -multi 10
-        openssl speed -evp des3 -engine cryptodev -elapsed -multi 10
-        openssl speed -evp aes128 -engine cryptodev -elapsed -multi 10
+    openssl speed -evp des -engine cryptodev -elapsed -multi 10
+    openssl speed -evp des3 -engine cryptodev -elapsed -multi 10
+    openssl speed -evp aes128 -engine cryptodev -elapsed -multi 10
 
-    for public key testing you can try:
+for public key testing you can try:
 
-        cryptokeytest
-        openssl speed -engine cryptodev rsa -elapsed
-        openssl speed -engine cryptodev dsa -elapsed
+    cryptokeytest
+    openssl speed -engine cryptodev rsa -elapsed
+    openssl speed -engine cryptodev dsa -elapsed
 
-David McCullough
-david_mccullough@mcafee.com
+
+#############################
+#
+# David McCullough
+# david_mccullough@mcafee.com
+#
+#############################

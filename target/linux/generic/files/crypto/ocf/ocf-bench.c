@@ -31,10 +31,8 @@
 
 
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-#include <generated/autoconf.h>
-#else
-#include <linux/autoconf.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
+#include <linux/config.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
@@ -43,7 +41,6 @@
 #include <linux/wait.h>
 #include <linux/sched.h>
 #include <linux/spinlock.h>
-#include <linux/version.h>
 #include <linux/interrupt.h>
 #include <cryptodev.h>
 
@@ -70,21 +67,37 @@
 /*
  * the number of simultaneously active requests
  */
-static int request_q_len = 20;
+static int request_q_len = 40;
 module_param(request_q_len, int, 0);
 MODULE_PARM_DESC(request_q_len, "Number of outstanding requests");
+
 /*
  * how many requests we want to have processed
  */
 static int request_num = 1024;
 module_param(request_num, int, 0);
 MODULE_PARM_DESC(request_num, "run for at least this many requests");
+
 /*
  * the size of each request
  */
-static int request_size = 1500;
+static int request_size = 1488;
 module_param(request_size, int, 0);
 MODULE_PARM_DESC(request_size, "size of each request");
+
+/*
+ * OCF batching of requests
+ */
+static int request_batch = 1;
+module_param(request_batch, int, 0);
+MODULE_PARM_DESC(request_batch, "enable OCF request batching");
+
+/*
+ * OCF immediate callback on completion
+ */
+static int request_cbimm = 1;
+module_param(request_cbimm, int, 0);
+MODULE_PARM_DESC(request_cbimm, "enable OCF immediate callback on completion");
 
 /*
  * a structure for each request
@@ -99,6 +112,7 @@ typedef struct  {
 
 static request_t *requests;
 
+static spinlock_t ocfbench_counter_lock;
 static int outstanding;
 static int total;
 
@@ -108,6 +122,8 @@ static int total;
  */
 
 static uint64_t ocf_cryptoid;
+static unsigned long jstart, jstop;
+
 static int ocf_init(void);
 static int ocf_cb(struct cryptop *crp);
 static void ocf_request(void *arg);
@@ -131,13 +147,15 @@ ocf_init(void)
 	cria.cri_klen = 20 * 8;
 	cria.cri_key  = "0123456789abcdefghij";
 
-	crie.cri_alg  = CRYPTO_3DES_CBC;
+	//crie.cri_alg  = CRYPTO_3DES_CBC;
+	crie.cri_alg  = CRYPTO_AES_CBC;
 	crie.cri_klen = 24 * 8;
 	crie.cri_key  = "0123456789abcdefghijklmn";
 
 	crie.cri_next = &cria;
 
-	error = crypto_newsession(&ocf_cryptoid, &crie, 0);
+	error = crypto_newsession(&ocf_cryptoid, &crie,
+				CRYPTOCAP_F_HARDWARE | CRYPTOCAP_F_SOFTWARE);
 	if (error) {
 		printk("crypto_newsession failed %d\n", error);
 		return -1;
@@ -149,23 +167,23 @@ static int
 ocf_cb(struct cryptop *crp)
 {
 	request_t *r = (request_t *) crp->crp_opaque;
+	unsigned long flags;
 
 	if (crp->crp_etype)
 		printk("Error in OCF processing: %d\n", crp->crp_etype);
-	total++;
 	crypto_freereq(crp);
 	crp = NULL;
 
-	if (total > request_num) {
+	/* do all requests  but take at least 1 second */
+	spin_lock_irqsave(&ocfbench_counter_lock, flags);
+	total++;
+	if (total > request_num && jstart + HZ < jiffies) {
 		outstanding--;
+		spin_unlock_irqrestore(&ocfbench_counter_lock, flags);
 		return 0;
 	}
+	spin_unlock_irqrestore(&ocfbench_counter_lock, flags);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
-	INIT_WORK(&r->work, ocf_request_wq);
-#else
-	INIT_WORK(&r->work, ocf_request, r);
-#endif
 	schedule_work(&r->work);
 	return 0;
 }
@@ -177,9 +195,12 @@ ocf_request(void *arg)
 	request_t *r = arg;
 	struct cryptop *crp = crypto_getreq(2);
 	struct cryptodesc *crde, *crda;
+	unsigned long flags;
 
 	if (!crp) {
+		spin_lock_irqsave(&ocfbench_counter_lock, flags);
 		outstanding--;
+		spin_unlock_irqrestore(&ocfbench_counter_lock, flags);
 		return;
 	}
 
@@ -198,12 +219,17 @@ ocf_request(void *arg)
 	crde->crd_flags = CRD_F_IV_EXPLICIT | CRD_F_ENCRYPT;
 	crde->crd_len = request_size;
 	crde->crd_inject = request_size;
-	crde->crd_alg = CRYPTO_3DES_CBC;
+	//crde->crd_alg = CRYPTO_3DES_CBC;
+	crde->crd_alg = CRYPTO_AES_CBC;
 	crde->crd_key = "0123456789abcdefghijklmn";
 	crde->crd_klen = 24 * 8;
 
 	crp->crp_ilen = request_size + 64;
-	crp->crp_flags = CRYPTO_F_CBIMM;
+	crp->crp_flags = 0;
+	if (request_batch)
+		crp->crp_flags |= CRYPTO_F_BATCH;
+	if (request_cbimm)
+		crp->crp_flags |= CRYPTO_F_CBIMM;
 	crp->crp_buf = (caddr_t) r->buffer;
 	crp->crp_callback = ocf_cb;
 	crp->crp_sid = ocf_cryptoid;
@@ -219,6 +245,12 @@ ocf_request_wq(struct work_struct *work)
 	ocf_request(r);
 }
 #endif
+
+static void
+ocf_done(void)
+{
+	crypto_freesession(ocf_cryptoid);
+}
 
 /*************************************************************************/
 #ifdef BENCH_IXP_ACCESS_LIB
@@ -306,24 +338,25 @@ ixp_perform_cb(
 	IxCryptoAccStatus status)
 {
 	request_t *r = NULL;
+	unsigned long flags;
 
+	/* do all requests  but take at least 1 second */
+	spin_lock_irqsave(&ocfbench_counter_lock, flags);
 	total++;
-	if (total > request_num) {
+	if (total > request_num && jstart + HZ < jiffies) {
 		outstanding--;
+		spin_unlock_irqrestore(&ocfbench_counter_lock, flags);
 		return;
 	}
 
 	if (!sbufp || !(r = IX_MBUF_PRIV(sbufp))) {
 		printk("crappo %p %p\n", sbufp, r);
 		outstanding--;
+		spin_unlock_irqrestore(&ocfbench_counter_lock, flags);
 		return;
 	}
+	spin_unlock_irqrestore(&ocfbench_counter_lock, flags);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
-	INIT_WORK(&r->work, ixp_request_wq);
-#else
-	INIT_WORK(&r->work, ixp_request, r);
-#endif
 	schedule_work(&r->work);
 }
 
@@ -332,6 +365,7 @@ ixp_request(void *arg)
 {
 	request_t *r = arg;
 	IxCryptoAccStatus status;
+	unsigned long flags;
 
 	memset(&r->mbuf, 0, sizeof(r->mbuf));
 	IX_MBUF_MLEN(&r->mbuf) = IX_MBUF_PKT_LEN(&r->mbuf) = request_size + 64;
@@ -341,7 +375,9 @@ ixp_request(void *arg)
 			0, request_size, 0, request_size, request_size, r->buffer);
 	if (IX_CRYPTO_ACC_STATUS_SUCCESS != status) {
 		printk("status1 = %d\n", status);
+		spin_lock_irqsave(&ocfbench_counter_lock, flags);
 		outstanding--;
+		spin_unlock_irqrestore(&ocfbench_counter_lock, flags);
 		return;
 	}
 	return;
@@ -356,6 +392,12 @@ ixp_request_wq(struct work_struct *work)
 }
 #endif
 
+static void
+ixp_done(void)
+{
+	/* we should free the session here but I am lazy :-) */
+}
+
 /*************************************************************************/
 #endif /* BENCH_IXP_ACCESS_LIB */
 /*************************************************************************/
@@ -363,7 +405,9 @@ ixp_request_wq(struct work_struct *work)
 int
 ocfbench_init(void)
 {
-	int i, jstart, jstop;
+	int i;
+	unsigned long mbps;
+	unsigned long flags;
 
 	printk("Crypto Speed tests\n");
 
@@ -375,6 +419,11 @@ ocfbench_init(void)
 
 	for (i = 0; i < request_q_len; i++) {
 		/* +64 for return data */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+		INIT_WORK(&requests[i].work, ocf_request_wq);
+#else
+		INIT_WORK(&requests[i].work, ocf_request, &requests[i]);
+#endif
 		requests[i].buffer = kmalloc(request_size + 128, GFP_DMA);
 		if (!requests[i].buffer) {
 			printk("malloc failed\n");
@@ -387,19 +436,31 @@ ocfbench_init(void)
 	 * OCF benchmark
 	 */
 	printk("OCF: testing ...\n");
-	ocf_init();
+	if (ocf_init() == -1)
+		return -EINVAL;
+
+	spin_lock_init(&ocfbench_counter_lock);
 	total = outstanding = 0;
 	jstart = jiffies;
 	for (i = 0; i < request_q_len; i++) {
+		spin_lock_irqsave(&ocfbench_counter_lock, flags);
 		outstanding++;
+		spin_unlock_irqrestore(&ocfbench_counter_lock, flags);
 		ocf_request(&requests[i]);
 	}
 	while (outstanding > 0)
 		schedule();
 	jstop = jiffies;
 
-	printk("OCF: %d requests of %d bytes in %d jiffies\n", total, request_size,
-			jstop - jstart);
+	mbps = 0;
+	if (jstop > jstart) {
+		mbps = (unsigned long) total * (unsigned long) request_size * 8;
+		mbps /= ((jstop - jstart) * 1000) / HZ;
+	}
+	printk("OCF: %d requests of %d bytes in %d jiffies (%d.%03d Mbps)\n",
+			total, request_size, (int)(jstop - jstart),
+			((int)mbps) / 1000, ((int)mbps) % 1000);
+	ocf_done();
 
 #ifdef BENCH_IXP_ACCESS_LIB
 	/*
@@ -410,15 +471,29 @@ ocfbench_init(void)
 	total = outstanding = 0;
 	jstart = jiffies;
 	for (i = 0; i < request_q_len; i++) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+		INIT_WORK(&requests[i].work, ixp_request_wq);
+#else
+		INIT_WORK(&requests[i].work, ixp_request, &requests[i]);
+#endif
+		spin_lock_irqsave(&ocfbench_counter_lock, flags);
 		outstanding++;
+		spin_unlock_irqrestore(&ocfbench_counter_lock, flags);
 		ixp_request(&requests[i]);
 	}
 	while (outstanding > 0)
 		schedule();
 	jstop = jiffies;
 
-	printk("IXP: %d requests of %d bytes in %d jiffies\n", total, request_size,
-			jstop - jstart);
+	mbps = 0;
+	if (jstop > jstart) {
+		mbps = (unsigned long) total * (unsigned long) request_size * 8;
+		mbps /= ((jstop - jstart) * 1000) / HZ;
+	}
+	printk("IXP: %d requests of %d bytes in %d jiffies (%d.%03d Mbps)\n",
+			total, request_size, jstop - jstart,
+			((int)mbps) / 1000, ((int)mbps) % 1000);
+	ixp_done();
 #endif /* BENCH_IXP_ACCESS_LIB */
 
 	for (i = 0; i < request_q_len; i++)

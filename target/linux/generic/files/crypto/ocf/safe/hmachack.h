@@ -2,7 +2,6 @@
  * until we find a cleaner way, include the BSD md5/sha1 code
  * here
  */
-#define HMAC_HACK 1
 #ifdef HMAC_HACK
 #define LITTLE_ENDIAN 1234
 #define BIG_ENDIAN 4321

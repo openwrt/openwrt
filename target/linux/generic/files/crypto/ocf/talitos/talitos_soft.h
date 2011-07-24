@@ -69,7 +69,6 @@ struct talitos_session {
 	u_int32_t	ses_key[8];		/* DES/3DES/AES key */
 	u_int32_t	ses_hmac[5];		/* hmac inner state */
 	u_int32_t	ses_hmac_len;		/* hmac length */
-	u_int32_t	ses_iv[4];		/* DES/3DES/AES iv */
 	u_int32_t	ses_mlen;		/* desired hash result len (12=ipsec or 16) */
 };
 

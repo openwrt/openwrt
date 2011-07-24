@@ -47,9 +47,19 @@ $(_obj)-$(CONFIG_OCF_CRYPTOCTEON) += cryptocteon$(_slash)
 $(_obj)-$(CONFIG_OCF_KIRKWOOD) += kirkwood$(_slash)
 $(_obj)-$(CONFIG_OCF_OCFNULL) += ocfnull$(_slash)
 $(_obj)-$(CONFIG_OCF_C7108) += c7108$(_slash)
+$(_obj)-$(CONFIG_OCF_UBSEC_SSB) += ubsec_ssb$(_slash)
 
 ocf-objs := $(OCF_OBJS)
 
+dummy:
+	@echo "Please consult the README for how to build OCF."
+	@echo "If you can't wait then the following should do it:"
+	@echo ""
+	@echo "    make ocf_modules"
+	@echo "    sudo make ocf_install"
+	@echo ""
+	@exit 1
+	
 $(list-multi) dummy1: $(ocf-objs)
 	$(LD) -r -o $@ $(ocf-objs)
 
@@ -57,21 +67,44 @@ $(list-multi) dummy1: $(ocf-objs)
 clean:
 	rm -f *.o *.ko .*.o.flags .*.ko.cmd .*.o.cmd .*.mod.o.cmd *.mod.c
 	rm -f */*.o */*.ko */.*.o.cmd */.*.ko.cmd */.*.mod.o.cmd */*.mod.c */.*.o.flags
+	rm -f */modules.order */modules.builtin modules.order modules.builtin
 
 ifdef TOPDIR
 -include $(TOPDIR)/Rules.make
 endif
 
 #
-# release gen targets
+# targets to build easily on the current machine
+#
+
+ocf_make:
+	make -C /lib/modules/$(shell uname -r)/build M=`pwd` $(OCF_TARGET) CONFIG_OCF_OCF=m
+	make -C /lib/modules/$(shell uname -r)/build M=`pwd` $(OCF_TARGET) CONFIG_OCF_OCF=m CONFIG_OCF_CRYPTOSOFT=m
+	-make -C /lib/modules/$(shell uname -r)/build M=`pwd` $(OCF_TARGET) CONFIG_OCF_OCF=m CONFIG_OCF_BENCH=m
+	-make -C /lib/modules/$(shell uname -r)/build M=`pwd` $(OCF_TARGET) CONFIG_OCF_OCF=m CONFIG_OCF_OCFNULL=m
+	-make -C /lib/modules/$(shell uname -r)/build M=`pwd` $(OCF_TARGET) CONFIG_OCF_OCF=m CONFIG_OCF_HIFN=m
+
+ocf_modules:
+	$(MAKE) ocf_make OCF_TARGET=modules
+
+ocf_install:
+	$(MAKE) ocf_make OCF_TARGET="modules modules_install"
+	depmod
+	mkdir -p /usr/include/crypto
+	cp cryptodev.h /usr/include/crypto/.
+
+#
+# generate full kernel patches for 2.4 and 2.6 kernels to make patching
+# your kernel easier
 #
 
 .PHONY: patch
 patch:
-	REL=`date +%Y%m%d`; \
-		patch=ocf-linux-$$REL.patch; \
-		patch24=ocf-linux-24-$$REL.patch; \
-		patch26=ocf-linux-26-$$REL.patch; \
+	patchbase=.; \
+		[ -d $$patchbase/patches ] || patchbase=..; \
+		patch=ocf-linux-base.patch; \
+		patch24=ocf-linux-24.patch; \
+		patch26=ocf-linux-26.patch; \
 		( \
 			find . -name Makefile; \
 			find . -name Config.in; \
@@ -81,44 +114,32 @@ patch:
 		) | while read t; do \
 			diff -Nau /dev/null $$t | sed 's?^+++ \./?+++ linux/crypto/ocf/?'; \
 		done > $$patch; \
-		cat patches/linux-2.4.35-ocf.patch $$patch > $$patch24; \
-		cat patches/linux-2.6.33-ocf.patch $$patch > $$patch26
+		cat $$patchbase/patches/linux-2.4.35-ocf.patch $$patch > $$patch24; \
+		cat $$patchbase/patches/linux-2.6.38-ocf.patch $$patch > $$patch26; \
 
-.PHONY: tarball
-tarball:
+#
+# this target probably does nothing for anyone but me - davidm
+#
+
+.PHONY: release
+release:
 	REL=`date +%Y%m%d`; RELDIR=/tmp/ocf-linux-$$REL; \
 		CURDIR=`pwd`; \
 		rm -rf /tmp/ocf-linux-$$REL*; \
-		mkdir -p $$RELDIR/tools; \
-		cp README* $$RELDIR; \
-		cp patches/openss*.patch $$RELDIR; \
-		cp patches/crypto-tools.patch $$RELDIR; \
-		cp tools/[!C]* $$RELDIR/tools; \
-		cd ..; \
-		tar cvf $$RELDIR/ocf-linux.tar \
-					--exclude=CVS \
-					--exclude=.* \
-					--exclude=*.o \
-					--exclude=*.ko \
-					--exclude=*.mod.* \
-					--exclude=README* \
-					--exclude=ocf-*.patch \
-					--exclude=ocf/patches/openss*.patch \
-					--exclude=ocf/patches/crypto-tools.patch \
-					--exclude=ocf/tools \
-					ocf; \
-		gzip -9 $$RELDIR/ocf-linux.tar; \
-		cd /tmp; \
+		mkdir -p $$RELDIR/ocf; \
+		mkdir -p $$RELDIR/patches; \
+		mkdir -p $$RELDIR/crypto-tools; \
+		cp README* $$RELDIR/.; \
+		cp patches/[!C]* $$RELDIR/patches/.; \
+		cp tools/[!C]* $$RELDIR/crypto-tools/.; \
+		cp -r [!C]* Config.in $$RELDIR/ocf/.; \
+		rm -rf $$RELDIR/ocf/patches $$RELDIR/ocf/tools; \
+		rm -f $$RELDIR/ocf/README*; \
+		cp $$CURDIR/../../user/crypto-tools/[!C]* $$RELDIR/crypto-tools/.; \
+		make -C $$RELDIR/crypto-tools clean; \
+		make -C $$RELDIR/ocf clean; \
+		find $$RELDIR/ocf -name CVS | xargs rm -rf; \
+		cd $$RELDIR/..; \
 		tar cvf ocf-linux-$$REL.tar ocf-linux-$$REL; \
-		gzip -9 ocf-linux-$$REL.tar; \
-		cd $$CURDIR/../../user; \
-		rm -rf /tmp/crypto-tools-$$REL*; \
-		tar cvf /tmp/crypto-tools-$$REL.tar \
-					--exclude=CVS \
-					--exclude=.* \
-					--exclude=*.o \
-					--exclude=cryptotest \
-					--exclude=cryptokeytest \
-					crypto-tools; \
-		gzip -9 /tmp/crypto-tools-$$REL.tar
+		gzip -9 ocf-linux-$$REL.tar
 

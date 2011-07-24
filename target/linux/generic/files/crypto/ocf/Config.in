@@ -27,6 +27,8 @@ dep_tristate '  ep80579 (HW crypto engine)' \
 				CONFIG_OCF_EP80579 $CONFIG_OCF_OCF
 dep_tristate '  Micronas c7108 (HW crypto engine)' \
 				CONFIG_OCF_C7108 $CONFIG_OCF_OCF
+dep_tristate '  uBsec BCM5365 (HW crypto engine)'
+				CONFIG_OCF_UBSEC_SSB $CONFIG_OCF_OCF
 dep_tristate '  ocfnull (does no crypto)' \
 				CONFIG_OCF_OCFNULL $CONFIG_OCF_OCF
 dep_tristate '  ocf-bench (HW crypto in-kernel benchmark)' \

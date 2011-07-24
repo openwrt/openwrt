@@ -62,24 +62,26 @@
 /*
  * BSD queue
  */
-#include "bsdqueue.h"
+//#include "bsdqueue.h"
 
 /* 
  * OCF
  */
-#include "cryptodev.h"
-#include "uio.h"
+#include <cryptodev.h>
+#include <uio.h>
 
 #define HMAC_HACK 1
 
+#define HMAC_HACK 1
 #ifdef HMAC_HACK
-#include "hmachack.h"
-#include "md5.h"
-#include "md5.c"
-#include "sha1.h"
-#include "sha1.c"
+#include <safe/hmachack.h>
+#include <safe/md5.h>
+#include <safe/md5.c>
+#include <safe/sha1.h>
+#include <safe/sha1.c>
 #endif
 
+#include "bsdqueue.h"
 #include "ubsecreg.h"
 #include "ubsecvar.h"
 
@@ -503,7 +505,7 @@ __devinit ubsec_ssb_probe(struct ssb_device *sdev,
         goto err_out_powerdown;
     }
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))
     err = dma_set_mask(sdev->dma_dev, DMA_BIT_MASK(32)) || 
 	  dma_set_coherent_mask(sdev->dma_dev, DMA_BIT_MASK(32));
 #else

@@ -4,7 +4,7 @@
  * but is mostly unrecognisable,
  *
  * Written by David McCullough <david_mccullough@mcafee.com>
- * Copyright (C) 2004-2010 David McCullough
+ * Copyright (C) 2004-2011 David McCullough
  * Copyright (C) 2004-2005 Intel Corporation.
  *
  * LICENSE TERMS
@@ -35,10 +35,8 @@
  */
 
 #include <linux/version.h>
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-#include <generated/autoconf.h>
-#else
-#include <linux/autoconf.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38) && !defined(AUTOCONF_INCLUDED)
+#include <linux/config.h>
 #endif
 #include <linux/module.h>
 #include <linux/init.h>
@@ -50,7 +48,8 @@
 #include <linux/mm.h>
 #include <linux/skbuff.h>
 #include <linux/random.h>
-#include <linux/version.h>
+#include <linux/interrupt.h>
+#include <linux/spinlock.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10)
 #include <linux/scatterlist.h>
 #endif
@@ -76,6 +75,8 @@ struct {
 
 #define SW_TYPE_ASYNC		0x8000
 
+#define SW_TYPE_INUSE		0x10000000
+
 /* We change some of the above if we have an async interface */
 
 #define SW_TYPE_ALG_AMASK	(SW_TYPE_ALG_MASK | SW_TYPE_ASYNC)
@@ -87,9 +88,11 @@ struct {
 #define SCATTERLIST_MAX 16
 
 struct swcr_data {
+	struct work_struct  workq;
 	int					sw_type;
 	int					sw_alg;
 	struct crypto_tfm	*sw_tfm;
+	spinlock_t			sw_tfm_lock;
 	union {
 		struct {
 			char *sw_key;
@@ -153,6 +156,9 @@ static struct kmem_cache *swcr_req_cache;
 	#define crypto_blkcipher_decrypt_iv(W, X, Y, Z)	\
 				crypto_cipher_decrypt_iv((W)->tfm, X, Y, Z, (u8 *)((W)->info))
 	#define crypto_blkcipher_set_flags(x, y)	/* nop */
+	#define crypto_free_blkcipher(x)			crypto_free_tfm(x)
+	#define crypto_free_comp					crypto_free_tfm
+	#define crypto_free_hash					crypto_free_tfm
 
 	/* Hash/HMAC/Digest */
 	struct hash_desc
@@ -279,6 +285,54 @@ MODULE_PARM_DESC(swcr_debug, "Enable debug");
 static void swcr_process_req(struct swcr_req *req);
 
 /*
+ * somethings just need to be run with user context no matter whether
+ * the kernel compression libs use vmalloc/vfree for example.
+ */
+
+typedef struct {
+	struct work_struct wq;
+	void	(*func)(void *arg);
+	void	*arg;
+} execute_later_t;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+static void
+doing_it_now(struct work_struct *wq)
+{
+	execute_later_t *w = container_of(wq, execute_later_t, wq);
+	(w->func)(w->arg);
+	kfree(w);
+}
+#else
+static void
+doing_it_now(void *arg)
+{
+	execute_later_t *w = (execute_later_t *) arg;
+	(w->func)(w->arg);
+	kfree(w);
+}
+#endif
+
+static void
+execute_later(void (fn)(void *), void *arg)
+{
+	execute_later_t *w;
+
+	w = (execute_later_t *) kmalloc(sizeof(execute_later_t), SLAB_ATOMIC);
+	if (w) {
+		memset(w, '\0', sizeof(w));
+		w->func = fn;
+		w->arg = arg;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
+		INIT_WORK(&w->wq, doing_it_now);
+#else
+		INIT_WORK(&w->wq, doing_it_now, w);
+#endif
+		schedule_work(&w->wq);
+	}
+}
+
+/*
  * Generate a new software session.
  */
 static int
@@ -363,6 +417,8 @@ swcr_newsession(device_t dev, u_int32_t *sid, struct cryptoini *cri)
 		(*swd)->sw_type = crypto_details[cri->cri_alg].sw_type;
 		(*swd)->sw_alg = cri->cri_alg;
 
+		spin_lock_init(&(*swd)->sw_tfm_lock);
+
 		/* Algorithm specific configuration */
 		switch (cri->cri_alg) {
 		case CRYPTO_NULL_CBC:
@@ -379,19 +435,23 @@ swcr_newsession(device_t dev, u_int32_t *sid, struct cryptoini *cri)
 			/* try async first */
 			(*swd)->sw_tfm = swcr_no_ablk ? NULL :
 					crypto_ablkcipher_tfm(crypto_alloc_ablkcipher(algo, 0, 0));
-			if ((*swd)->sw_tfm) {
+			if ((*swd)->sw_tfm && !IS_ERR((*swd)->sw_tfm)) {
 				dprintk("%s %s cipher is async\n", __FUNCTION__, algo);
 				(*swd)->sw_type |= SW_TYPE_ASYNC;
 			} else {
-				dprintk("%s %s cipher is sync\n", __FUNCTION__, algo);
 				(*swd)->sw_tfm = crypto_blkcipher_tfm(
 						crypto_alloc_blkcipher(algo, 0, CRYPTO_ALG_ASYNC));
+				if ((*swd)->sw_tfm && !IS_ERR((*swd)->sw_tfm))
+					dprintk("%s %s cipher is sync\n", __FUNCTION__, algo);
 			}
-			if (!(*swd)->sw_tfm) {
+			if (!(*swd)->sw_tfm || IS_ERR((*swd)->sw_tfm)) {
+				int err;
 				dprintk("cryptosoft: crypto_alloc_blkcipher failed(%s, 0x%x)\n",
 						algo,mode);
+				err = IS_ERR((*swd)->sw_tfm) ? -(PTR_ERR((*swd)->sw_tfm)) : EINVAL;
+				(*swd)->sw_tfm = NULL; /* ensure NULL */
 				swcr_freesession(NULL, i);
-				return EINVAL;
+				return err;
 			}
 
 			if (debug) {
@@ -536,7 +596,11 @@ swcr_freesession(device_t dev, u_int64_t tid)
 				crypto_free_hash(crypto_hash_cast(swd->sw_tfm));
 				break;
 			case SW_TYPE_COMP:
-				crypto_free_comp(crypto_comp_cast(swd->sw_tfm));
+				if (in_interrupt())
+					execute_later((void (*)(void *))crypto_free_comp, (void *)crypto_comp_cast(swd->sw_tfm));
+				else
+					crypto_free_comp(crypto_comp_cast(swd->sw_tfm));
+				break;
 			default:
 				crypto_free_tfm(swd->sw_tfm);
 				break;
@@ -555,31 +619,39 @@ swcr_freesession(device_t dev, u_int64_t tid)
 	return 0;
 }
 
-#if defined(HAVE_ABLKCIPHER) || defined(HAVE_AHASH)
-/* older kernels had no async interface */
-
-static void swcr_process_callback(struct crypto_async_request *creq, int err)
+static void swcr_process_req_complete(struct swcr_req *req)
 {
-	struct swcr_req *req = creq->data;
-
 	dprintk("%s()\n", __FUNCTION__);
-	if (err) {
-		if (err == -EINPROGRESS)
-			return;
-		dprintk("%s() fail %d\n", __FUNCTION__, -err);
-		req->crp->crp_etype = -err;
-		goto done;
+
+	if (req->sw->sw_type & SW_TYPE_INUSE) {
+		unsigned long flags;
+		spin_lock_irqsave(&req->sw->sw_tfm_lock, flags);
+		req->sw->sw_type &= ~SW_TYPE_INUSE;
+		spin_unlock_irqrestore(&req->sw->sw_tfm_lock, flags);
 	}
 
+	if (req->crp->crp_etype)
+		goto done;
+
 	switch (req->sw->sw_type & SW_TYPE_ALG_AMASK) {
+#if defined(HAVE_AHASH)
 	case SW_TYPE_AHMAC:
 	case SW_TYPE_AHASH:
 		crypto_copyback(req->crp->crp_flags, req->crp->crp_buf,
 				req->crd->crd_inject, req->sw->u.hmac.sw_mlen, req->result);
 		ahash_request_free(req->crypto_req);
 		break;
+#endif
+#if defined(HAVE_ABLKCIPHER)
 	case SW_TYPE_ABLKCIPHER:
 		ablkcipher_request_free(req->crypto_req);
+		break;
+#endif
+	case SW_TYPE_CIPHER:
+	case SW_TYPE_HMAC:
+	case SW_TYPE_HASH:
+	case SW_TYPE_COMP:
+	case SW_TYPE_BLKCIPHER:
 		break;
 	default:
 		req->crp->crp_etype = EINVAL;
@@ -596,6 +668,22 @@ done:
 	dprintk("%s crypto_done %p\n", __FUNCTION__, req);
 	crypto_done(req->crp);
 	kmem_cache_free(swcr_req_cache, req);
+}
+
+#if defined(HAVE_ABLKCIPHER) || defined(HAVE_AHASH)
+static void swcr_process_callback(struct crypto_async_request *creq, int err)
+{
+	struct swcr_req *req = creq->data;
+
+	dprintk("%s()\n", __FUNCTION__);
+	if (err) {
+		if (err == -EINPROGRESS)
+			return;
+		dprintk("%s() fail %d\n", __FUNCTION__, -err);
+		req->crp->crp_etype = -err;
+	}
+
+	swcr_process_req_complete(req);
 }
 #endif /* defined(HAVE_ABLKCIPHER) || defined(HAVE_AHASH) */
 
@@ -629,6 +717,29 @@ static void swcr_process_req(struct swcr_req *req)
 		crp->crp_etype = EINVAL;
 		dprintk("%s,%d: EINVAL\n", __FILE__, __LINE__);
 		goto done;
+	}
+
+	/*
+	 * for some types we need to ensure only one user as info is stored in
+	 * the tfm during an operation that can get corrupted
+	 */
+	switch (sw->sw_type & SW_TYPE_ALG_AMASK) {
+#ifdef HAVE_AHASH
+	case SW_TYPE_AHMAC:
+	case SW_TYPE_AHASH:
+#endif
+	case SW_TYPE_HMAC:
+	case SW_TYPE_HASH: {
+		unsigned long flags;
+		spin_lock_irqsave(&sw->sw_tfm_lock, flags);
+		if (sw->sw_type & SW_TYPE_INUSE) {
+			spin_unlock_irqrestore(&sw->sw_tfm_lock, flags);
+			execute_later((void (*)(void *))swcr_process_req, (void *)req);
+			return;
+		}
+		sw->sw_type |= SW_TYPE_INUSE;
+		spin_unlock_irqrestore(&sw->sw_tfm_lock, flags);
+		} break;
 	}
 
 	req->sw = sw;
@@ -722,7 +833,7 @@ static void swcr_process_req(struct swcr_req *req)
 		}
 
 		req->crypto_req =
-				ahash_request_alloc(__crypto_ahash_cast(sw->sw_tfm),GFP_KERNEL);
+				ahash_request_alloc(__crypto_ahash_cast(sw->sw_tfm),GFP_ATOMIC);
 		if (!req->crypto_req) {
 			crp->crp_etype = ENOMEM;
 			dprintk("%s,%d: ENOMEM ahash_request_alloc", __FILE__, __LINE__);
@@ -747,7 +858,6 @@ static void swcr_process_req(struct swcr_req *req)
 		case 0:
 			dprintk("hash OP %s %d\n", ret ? "failed" : "success", ret);
 			crp->crp_etype = ret;
-			ahash_request_free(req->crypto_req);
 			goto done;
 		}
 		} break;
@@ -776,7 +886,7 @@ static void swcr_process_req(struct swcr_req *req)
 		}
 
 		req->crypto_req = ablkcipher_request_alloc(
-				__crypto_ablkcipher_cast(sw->sw_tfm), GFP_KERNEL);
+				__crypto_ablkcipher_cast(sw->sw_tfm), GFP_ATOMIC);
 		if (!req->crypto_req) {
 			crp->crp_etype = ENOMEM;
 			dprintk("%s,%d: ENOMEM ablkcipher_request_alloc",
@@ -1028,8 +1138,6 @@ static void swcr_process_req(struct swcr_req *req)
 					crd->crd_inject, olen, obuf);
 			crp->crp_olen = olen;
 		}
-
-
 		} break;
 
 	default:
@@ -1040,8 +1148,7 @@ static void swcr_process_req(struct swcr_req *req)
 	}
 
 done:
-	crypto_done(crp);
-	kmem_cache_free(swcr_req_cache, req);
+	swcr_process_req_complete(req);
 }
 
 
@@ -1209,5 +1316,5 @@ late_initcall(cryptosoft_init);
 module_exit(cryptosoft_exit);
 
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_AUTHOR("David McCullough <david_mccullough@securecomputing.com>");
+MODULE_AUTHOR("David McCullough <david_mccullough@mcafee.com>");
 MODULE_DESCRIPTION("Cryptosoft (OCF module for kernel crypto)");
