@@ -1198,7 +1198,7 @@
 +	case SIOCGMIIPHY:
 +	case SIOCGMIIREG:
 +	case SIOCSMIIREG:
-+		return phy_mii_ioctl(sp->phy_dev, data, cmd);
++		return phy_mii_ioctl(sp->phy_dev, ifr, cmd);
 +
 +	default:
 +		break;
