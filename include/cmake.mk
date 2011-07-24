@@ -15,9 +15,13 @@ ifeq ($(CONFIG_CCACHE),)
   CMAKE_CXX_COMPILER_ARG1:=
  endif
 else
-  CMAKE_C_COMPILER:=$(STAGING_DIR_HOST)/bin/ccache
+  CCACHE:=$(shell which ccache)
+  ifeq ($(CCACHE),)
+    CCACHE:=$(STAGING_DIR_HOST)/bin/ccache
+  endif
+  CMAKE_C_COMPILER:=$(CCACHE)
   CMAKE_C_COMPILER_ARG1:=$(filter-out ccache,$(TARGET_CC))
-  CMAKE_CXX_COMPILER:=$(STAGING_DIR_HOST)/bin/ccache
+  CMAKE_CXX_COMPILER:=$(CCACHE)
   CMAKE_CXX_COMPILER_ARG1:=$(filter-out ccache,$(TARGET_CXX))
 endif
 
