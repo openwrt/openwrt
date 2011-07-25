@@ -14,7 +14,9 @@ ifeq ($(DUMP),1)
   BOARD?=<BOARD>
   LINUX_VERSION?=<LINUX_VERSION>
 else
-  export GCC_HONOUR_COPTS=s
+  ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
+    export GCC_HONOUR_COPTS=s
+  endif
 
   LINUX_KMOD_SUFFIX=ko
 
