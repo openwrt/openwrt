@@ -6,11 +6,9 @@ Date:   Tue May 24 14:36:42 2011 +0200
     
     this eliminates a source of reproduceable freezes
 
-diff --git a/libc/stdio/_vfprintf.c b/libc/stdio/_vfprintf.c
-index 3db8cdf..069db16 100644
 --- a/libc/stdio/_vfprintf.c
 +++ b/libc/stdio/_vfprintf.c
-@@ -1229,7 +1229,7 @@ static size_t _fp_out_narrow(FILE *fp, intptr_t type, intptr_t len, intptr_t buf
+@@ -1229,7 +1229,7 @@ static size_t _fp_out_narrow(FILE *fp, i
  #define STRLEN  wcslen
  #define _PPFS_init _ppwfs_init
  /* Pulls in fseek: */
