@@ -67,21 +67,30 @@ fw_load_rule() {
 
 	[ "$rule_proto" == "tcpudp" ] && rule_proto="tcp udp"
 	local pr; for pr in $rule_proto; do
+		local sports dports itypes
+		case "$pr" in
+			icmp|icmpv6|1|58)
+				sports=""; dports=""
+				itypes="$rule_icmp_type"
+			;;
+			*)
+				sports="$rule_src_port"
+				dports="$rule_dest_port"
+				itypes=""
+			;;
+		esac
+	
 		fw_get_negation pr '-p' "$pr"
-		local sp; for sp in ${rule_src_port:-""}; do
+		local sp; for sp in ${sports:-""}; do
 			fw_get_port_range sp $sp
 			fw_get_negation sp '--sport' "$sp"
-			local dp; for dp in ${rule_dest_port:-""}; do
+			local dp; for dp in ${dports:-""}; do
 				fw_get_port_range dp $dp
 				fw_get_negation dp '--dport' "$dp"
 				local sm; for sm in ${rule_src_mac:-""}; do
 					fw_get_negation sm '--mac-source' "$sm"
-					local it; for it in ${rule_icmp_type:-""}; do
+					local it; for it in ${itypes:-""}; do
 						fw_get_negation it '--icmp-type' "$it"
-						case "$pr" in
-							*" icmp"|*" icmpv6"|*" 1"|*" 58") sp=""; dp="" ;;
-							*) it="" ;;
-						esac
 						fw add $mode $table $chain $target + \
 							{ $rule_src_ip $rule_dest_ip } { \
 							$src_spec $dest_spec \
