@@ -1,0 +1,125 @@
+--- a/drivers/net/wireless/ath/ath9k/eeprom_4k.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_4k.c
+@@ -247,8 +247,7 @@ static u32 ath9k_hw_4k_get_eeprom(struct
+ }
+ 
+ static void ath9k_hw_set_4k_power_cal_table(struct ath_hw *ah,
+-				  struct ath9k_channel *chan,
+-				  int16_t *pTxPowerIndexOffset)
++				  struct ath9k_channel *chan)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ar5416_eeprom_4k *pEepData = &ah->eeprom.map4k;
+@@ -358,8 +357,6 @@ static void ath9k_hw_set_4k_power_cal_ta
+ 			REGWRITE_BUFFER_FLUSH(ah);
+ 		}
+ 	}
+-
+-	*pTxPowerIndexOffset = 0;
+ }
+ 
+ static void ath9k_hw_set_4k_power_per_rate_table(struct ath_hw *ah,
+@@ -582,7 +579,6 @@ static void ath9k_hw_4k_set_txpower(stru
+ 	struct ar5416_eeprom_4k *pEepData = &ah->eeprom.map4k;
+ 	struct modal_eep_4k_header *pModal = &pEepData->modalHeader;
+ 	int16_t ratesArray[Ar5416RateSize];
+-	int16_t txPowerIndexOffset = 0;
+ 	u8 ht40PowerIncForPdadc = 2;
+ 	int i;
+ 
+@@ -599,11 +595,10 @@ static void ath9k_hw_4k_set_txpower(stru
+ 					     twiceMaxRegulatoryPower,
+ 					     powerLimit);
+ 
+-	ath9k_hw_set_4k_power_cal_table(ah, chan, &txPowerIndexOffset);
++	ath9k_hw_set_4k_power_cal_table(ah, chan);
+ 
+ 	regulatory->max_power_level = 0;
+ 	for (i = 0; i < ARRAY_SIZE(ratesArray); i++) {
+-		ratesArray[i] =	(int16_t)(txPowerIndexOffset + ratesArray[i]);
+ 		if (ratesArray[i] > MAX_RATE_POWER)
+ 			ratesArray[i] = MAX_RATE_POWER;
+ 
+--- a/drivers/net/wireless/ath/ath9k/eeprom_9287.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_9287.c
+@@ -306,8 +306,7 @@ static void ar9287_eeprom_olpc_set_pdadc
+ }
+ 
+ static void ath9k_hw_set_ar9287_power_cal_table(struct ath_hw *ah,
+-						struct ath9k_channel *chan,
+-						int16_t *pTxPowerIndexOffset)
++						struct ath9k_channel *chan)
+ {
+ 	struct cal_data_per_freq_ar9287 *pRawDataset;
+ 	struct cal_data_op_loop_ar9287 *pRawDatasetOpenLoop;
+@@ -446,8 +445,6 @@ static void ath9k_hw_set_ar9287_power_ca
+ 			REGWRITE_BUFFER_FLUSH(ah);
+ 		}
+ 	}
+-
+-	*pTxPowerIndexOffset = 0;
+ }
+ 
+ static void ath9k_hw_set_ar9287_power_per_rate_table(struct ath_hw *ah,
+@@ -722,7 +719,6 @@ static void ath9k_hw_ar9287_set_txpower(
+ 	struct ar9287_eeprom *pEepData = &ah->eeprom.map9287;
+ 	struct modal_eep_ar9287_header *pModal = &pEepData->modalHeader;
+ 	int16_t ratesArray[Ar5416RateSize];
+-	int16_t txPowerIndexOffset = 0;
+ 	u8 ht40PowerIncForPdadc = 2;
+ 	int i;
+ 
+@@ -738,11 +734,10 @@ static void ath9k_hw_ar9287_set_txpower(
+ 						 twiceMaxRegulatoryPower,
+ 						 powerLimit);
+ 
+-	ath9k_hw_set_ar9287_power_cal_table(ah, chan, &txPowerIndexOffset);
++	ath9k_hw_set_ar9287_power_cal_table(ah, chan);
+ 
+ 	regulatory->max_power_level = 0;
+ 	for (i = 0; i < ARRAY_SIZE(ratesArray); i++) {
+-		ratesArray[i] = (int16_t)(txPowerIndexOffset + ratesArray[i]);
+ 		if (ratesArray[i] > MAX_RATE_POWER)
+ 			ratesArray[i] = MAX_RATE_POWER;
+ 
+--- a/drivers/net/wireless/ath/ath9k/eeprom_def.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_def.c
+@@ -692,8 +692,7 @@ static void ath9k_adjust_pdadc_values(st
+ }
+ 
+ static void ath9k_hw_set_def_power_cal_table(struct ath_hw *ah,
+-				  struct ath9k_channel *chan,
+-				  int16_t *pTxPowerIndexOffset)
++				  struct ath9k_channel *chan)
+ {
+ #define SM_PD_GAIN(x) SM(0x38, AR_PHY_TPCRG5_PD_GAIN_BOUNDARY_##x)
+ #define SM_PDGAIN_B(x, y) \
+@@ -857,7 +856,6 @@ static void ath9k_hw_set_def_power_cal_t
+ 		}
+ 	}
+ 
+-	*pTxPowerIndexOffset = 0;
+ #undef SM_PD_GAIN
+ #undef SM_PDGAIN_B
+ }
+@@ -1145,7 +1143,6 @@ static void ath9k_hw_def_set_txpower(str
+ 	struct modal_eep_header *pModal =
+ 		&(pEepData->modalHeader[IS_CHAN_2GHZ(chan)]);
+ 	int16_t ratesArray[Ar5416RateSize];
+-	int16_t txPowerIndexOffset = 0;
+ 	u8 ht40PowerIncForPdadc = 2;
+ 	int i, cck_ofdm_delta = 0;
+ 
+@@ -1162,11 +1159,10 @@ static void ath9k_hw_def_set_txpower(str
+ 					       twiceMaxRegulatoryPower,
+ 					       powerLimit);
+ 
+-	ath9k_hw_set_def_power_cal_table(ah, chan, &txPowerIndexOffset);
++	ath9k_hw_set_def_power_cal_table(ah, chan);
+ 
+ 	regulatory->max_power_level = 0;
+ 	for (i = 0; i < ARRAY_SIZE(ratesArray); i++) {
+-		ratesArray[i] =	(int16_t)(txPowerIndexOffset + ratesArray[i]);
+ 		if (ratesArray[i] > MAX_RATE_POWER)
+ 			ratesArray[i] = MAX_RATE_POWER;
+ 		if (ratesArray[i] > regulatory->max_power_level)

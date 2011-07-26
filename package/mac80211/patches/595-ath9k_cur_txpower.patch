@@ -1,0 +1,35 @@
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1724,6 +1724,8 @@ static int ath9k_config(struct ieee80211
+ 			return -EINVAL;
+ 		}
+ 
++		conf->cur_power_level = sc->curtxpow / 2;
++
+ 		/*
+ 		 * The most recent snapshot of channel->noisefloor for the old
+ 		 * channel is only available after the hardware reset. Copy it to
+@@ -1741,6 +1743,7 @@ static int ath9k_config(struct ieee80211
+ 		ath9k_cmn_update_txpow(ah, sc->curtxpow,
+ 				       sc->config.txpowlimit, &sc->curtxpow);
+ 		ath9k_ps_restore(sc);
++		conf->cur_power_level = sc->curtxpow / 2;
+ 	}
+ 
+ 	if (disable_radio) {
+--- a/drivers/net/wireless/ath/ath9k/common.c
++++ b/drivers/net/wireless/ath/ath9k/common.c
+@@ -161,10 +161,12 @@ EXPORT_SYMBOL(ath9k_cmn_count_streams);
+ void ath9k_cmn_update_txpow(struct ath_hw *ah, u16 cur_txpow,
+ 			    u16 new_txpow, u16 *txpower)
+ {
++	struct ath_regulatory *reg = ath9k_hw_regulatory(ah);
++
+ 	if (cur_txpow != new_txpow) {
+ 		ath9k_hw_set_txpowerlimit(ah, new_txpow, false);
+ 		/* read back in case value is clamped */
+-		*txpower = ath9k_hw_regulatory(ah)->power_limit;
++		*txpower = min_t(u16, reg->power_limit, reg->max_power_level);
+ 	}
+ }
+ EXPORT_SYMBOL(ath9k_cmn_update_txpow);
