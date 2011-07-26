@@ -74,6 +74,7 @@ define Build/Configure
 endef
 
 TARGET_CFLAGS += -I$(LINUX_DIR)/include -I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include
+unexport PREFIX
 
 define Build/Compile
 	# src/qgen is built with HOSTCC, which does not really like our LDFLAGS
