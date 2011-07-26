@@ -28,6 +28,6 @@ define Target/Description
 	Build firmware images for PCEngines alix2 board
 endef
 
-define KernelPackage/$(GEOS_GPIO)/install
-     sed -i -r -e 's/$$$$$$$$/ mask=$(CS5535_MASK)/' $(1)/etc/modules.d/??-$(GEOS_GPIO)
+define KernelPackage/$(ALIX2_GPIO)/install
+     sed -i -r -e 's/$$$$$$$$/ mask=$(CS5535_MASK)/' $(1)/etc/modules.d/??-$(ALIX2_GPIO)
 endef
