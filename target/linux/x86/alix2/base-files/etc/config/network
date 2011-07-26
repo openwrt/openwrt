@@ -6,9 +6,15 @@ config interface loopback
 	option ipaddr	127.0.0.1
 	option netmask	255.0.0.0
 
+# N.B. the labels on the Netgate boxes actually reverse the LAN and WAN
+# port markings.
 config interface lan
-	option ifname	"eth0 eth1"
+	option ifname	eth1
 	option type 	bridge
 	option proto	static
 	option ipaddr	192.168.1.1
 	option netmask	255.255.255.0
+
+config interface wan
+	option ifname	eth0
+	option proto	dhcp
