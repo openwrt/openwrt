@@ -31,6 +31,8 @@
 #define DPRINTF(...) do {} while(0)
 #endif
 
+#define SWCONFIG_DEVNAME	"switch%d"
+
 MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
 MODULE_LICENSE("GPL");
 
@@ -760,8 +762,9 @@ swconfig_send_switch(struct sk_buff *msg, u32 pid, u32 seq, int flags,
 		return -1;
 
 	NLA_PUT_U32(msg, SWITCH_ATTR_ID, dev->id);
-	NLA_PUT_STRING(msg, SWITCH_ATTR_NAME, dev->name);
 	NLA_PUT_STRING(msg, SWITCH_ATTR_DEV_NAME, dev->devname);
+	NLA_PUT_STRING(msg, SWITCH_ATTR_ALIAS, dev->alias);
+	NLA_PUT_STRING(msg, SWITCH_ATTR_NAME, dev->name);
 	NLA_PUT_U32(msg, SWITCH_ATTR_VLANS, dev->vlans);
 	NLA_PUT_U32(msg, SWITCH_ATTR_PORTS, dev->ports);
 	NLA_PUT_U32(msg, SWITCH_ATTR_CPU_PORT, dev->cpu_port);
@@ -857,13 +860,18 @@ static struct genl_ops swconfig_ops[] = {
 int
 register_switch(struct switch_dev *dev, struct net_device *netdev)
 {
+	struct switch_dev *sdev;
+	const int max_switches = 8 * sizeof(unsigned long);
+	unsigned long in_use = 0;
+	int i;
+
 	INIT_LIST_HEAD(&dev->dev_list);
 	if (netdev) {
 		dev->netdev = netdev;
-		if (!dev->devname)
-			dev->devname = netdev->name;
+		if (!dev->alias)
+			dev->alias = netdev->name;
 	}
-	BUG_ON(!dev->devname);
+	BUG_ON(!dev->alias);
 
 	if (dev->ports > 0) {
 		dev->portbuf = kzalloc(sizeof(struct switch_port) * dev->ports,
@@ -871,10 +879,27 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 		if (!dev->portbuf)
 			return -ENOMEM;
 	}
-	dev->id = ++swdev_id;
 	swconfig_defaults_init(dev);
 	spin_lock_init(&dev->lock);
 	swconfig_lock();
+	dev->id = ++swdev_id;
+
+	list_for_each_entry(sdev, &swdevs, dev_list) {
+		if (!sscanf(sdev->devname, SWCONFIG_DEVNAME, &i))
+			continue;
+		if (i < 0 || i > max_switches)
+			continue;
+
+		set_bit(i, &in_use);
+	}
+	i = find_first_zero_bit(&in_use, max_switches);
+
+	if (i == max_switches)
+		return -ENFILE;
+
+	/* fill device name */
+	snprintf(dev->devname, IFNAMSIZ, SWCONFIG_DEVNAME, i);
+
 	list_add(&dev->dev_list, &swdevs);
 	swconfig_unlock();
 

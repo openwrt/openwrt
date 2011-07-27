@@ -36,8 +36,9 @@ enum {
 	SWITCH_ATTR_TYPE,
 	/* device */
 	SWITCH_ATTR_ID,
-	SWITCH_ATTR_NAME,
 	SWITCH_ATTR_DEV_NAME,
+	SWITCH_ATTR_ALIAS,
+	SWITCH_ATTR_NAME,
 	SWITCH_ATTR_VLANS,
 	SWITCH_ATTR_PORTS,
 	SWITCH_ATTR_CPU_PORT,
@@ -146,10 +147,12 @@ struct switch_dev_ops {
 
 struct switch_dev {
 	const struct switch_dev_ops *ops;
-	const char *name;
+	/* will be automatically filled */
+	char devname[IFNAMSIZ];
 
-	/* NB: either devname or netdev must be set */
-	const char *devname;
+	const char *name;
+	/* NB: either alias or netdev must be set */
+	const char *alias;
 	struct net_device *netdev;
 
 	int ports;

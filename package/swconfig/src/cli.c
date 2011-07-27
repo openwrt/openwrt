@@ -74,7 +74,7 @@ print_attrs(const struct switch_attr *attr)
 static void
 list_attributes(struct switch_dev *dev)
 {
-	printf("Switch %d: %s(%s), ports: %d (cpu @ %d), vlans: %d\n", dev->id, dev->dev_name, dev->name, dev->ports, dev->cpu_port, dev->vlans);
+	printf("%s: %s(%s), ports: %d (cpu @ %d), vlans: %d\n", dev->dev_name, dev->alias, dev->name, dev->ports, dev->cpu_port, dev->vlans);
 	printf("     --switch\n");
 	print_attrs(dev->ops);
 	printf("     --vlan\n");

@@ -945,7 +945,7 @@ static int rtl8366s_switch_init(struct rtl8366_smi *smi)
 	dev->ports = RTL8366S_NUM_PORTS;
 	dev->vlans = RTL8366S_NUM_VIDS;
 	dev->ops = &rtl8366_ops;
-	dev->devname = dev_name(smi->parent);
+	dev->alias = dev_name(smi->parent);
 
 	err = register_switch(dev, NULL);
 	if (err)
