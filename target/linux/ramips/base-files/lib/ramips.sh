@@ -34,6 +34,9 @@ ramips_board_name() {
 	*"PWH2004")
 		name="pwh2004"
 		;;
+	*"RT-G32 B1")
+		name="rt-g32-b1"
+		;;
 	*"RT-N15")
 		name="rt-n15"
 		;;
