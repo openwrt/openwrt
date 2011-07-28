@@ -73,15 +73,15 @@ static struct physmap_flash_data dir_300b_flash_data = {
 
 static struct gpio_led dir_300b_leds_gpio[] __initdata = {
 	{
-		.name		= "dir-300b:amber:status",
+		.name		= "d-link:amber:status",
 		.gpio		= DIR_300B_GPIO_LED_STATUS_AMBER,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-300b:green:status",
+		.name		= "d-link:green:status",
 		.gpio		= DIR_300B_GPIO_LED_STATUS_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-300b:blue:wps",
+		.name		= "d-link:blue:wps",
 		.gpio		= DIR_300B_GPIO_LED_WPS,
 		.active_low	= 1,
 	}
