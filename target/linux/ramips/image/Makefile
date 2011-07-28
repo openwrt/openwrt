@@ -117,7 +117,7 @@ define Image/Build/Profile/FONERA20N
 	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N)
 endef
 
-define Image/Build/Template/PWH2004
+define Image/Build/Profile/PWH2004
 	$(call Image/Build/Template/GENERIC_8M,$(1),pwh2004,PWH2004)
 endef
 
