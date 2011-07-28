@@ -31,7 +31,7 @@ status_led_off() {
 get_status_led() {
 	case $(ramips_board_name) in
 	dir-300-b1)
-		status_led="dir-300b:green:status"
+		status_led="d-link:green:status"
 		;;
 	fonera20n)
 		status_led="fonera20n:green:power"
