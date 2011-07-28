@@ -30,7 +30,7 @@ status_led_off() {
 
 get_status_led() {
 	case $(ramips_board_name) in
-	dir-300-b1)
+	dir-300-b1 | dir-600-b1 | dir-600-b2)
 		status_led="d-link:green:status"
 		;;
 	fonera20n)

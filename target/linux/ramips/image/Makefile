@@ -104,13 +104,15 @@ mtd_dir300b1_kernel_part_size=851968
 mtd_dir300b1_rootfs_part_size=3014656
 define Image/Build/Template/DIR300B1
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_dir300b1,$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
-	mkwrgimg -s wrgn23_dlwbr_dir300b -d /dev/mtdblock/2 \
+	mkwrgimg -s $(4) -d /dev/mtdblock/2 \
 		-i $(call imgname,$(1),$(2))-sysupgrade.bin \
 		-o $(call imgname,$(1),$(2))-factory.bin
 endef
 
 define Image/Build/Profile/DIR300B1
-	$(call Image/Build/Template/DIR300B1,$(1),dir-300-b1,DIR-300-B1)
+	$(call Image/Build/Template/DIR300B1,$(1),dir-300-b1,DIR-300-B1,wrgn23_dlwbr_dir300b)
+	$(call Image/Build/Template/DIR300B1,$(1),dir-600-b1,DIR-600-B1,wrgn23_dlwbr_dir600b)
+	$(call Image/Build/Template/DIR300B1,$(1),dir-600-b2,DIR-600-B2,wrgn23_dlwbr_dir600b)
 endef
 
 define Image/Build/Profile/FONERA20N
