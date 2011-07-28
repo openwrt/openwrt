@@ -115,6 +115,17 @@ define Image/Build/Profile/DIR300B1
 	$(call Image/Build/Template/DIR300B1,$(1),dir-600-b2,DIR-600-B2,wrgn23_dlwbr_dir600b)
 endef
 
+mtdlayout_rtg32b1=mtdparts=spi0.0:192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
+mtd_rtg32b1_kernel_part_size=851968
+mtd_rtg32b1_rootfs_part_size=3014656
+define Image/Build/Template/RTG32B1
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_rtg32b1,$(mtd_rtg32b1_kernel_part_size),$(mtd_rtg32b1_rootfs_part_size))
+endef
+
+define Image/Build/Profile/RTG32B1
+	$(call Image/Build/Template/RTG32B1,$(1),rt-g32-b1,RT-G32-B1)
+endef
+
 define Image/Build/Profile/FONERA20N
 	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N)
 endef
@@ -175,6 +186,7 @@ endef
 ifeq ($(CONFIG_RALINK_RT305X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR300B1,$(1))
+	$(call Image/Build/Profile/RTG32B1,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))
 	$(call Image/Build/Profile/V22RW2X2,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
