@@ -13,7 +13,7 @@ ramips_board_name() {
 	*"Aztech HW550-3G")
 		name="hw550-3g"
 		;;
-	*"DIR-300 revB")
+	*"DIR-300 B1")
 		name="dir-300-b1"
 		;;
 	*"F5D8235 v2")

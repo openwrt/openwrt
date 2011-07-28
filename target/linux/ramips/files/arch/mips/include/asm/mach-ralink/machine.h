@@ -18,7 +18,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_WZR_AGL300NH,	/* Buffalo WZR-AGL300NH */
 
 	/* RT3050 based machines */
-	RAMIPS_MACH_DIR_300_REVB,	/* D-Link DIR-300 rev B */
+	RAMIPS_MACH_DIR_300_B1,		/* D-Link DIR-300 B1 */
 
 	/* RT3052 based machines */
 	RAMIPS_MACH_F5D8235_V2,         /* Belkin F5D8235 v2 */
