@@ -53,6 +53,12 @@ struct swlib_setting early_settings[] = {
 static struct swlib_setting *settings;
 static struct swlib_setting **head;
 
+static bool swlib_match_name(struct switch_dev *dev, const char *name)
+{
+	return (strcmp(name, dev->dev_name) == 0 ||
+		strcmp(name, dev->alias) == 0);
+}
+
 static int
 swlib_map_settings(struct switch_dev *dev, int type, int port_vlan, struct uci_section *s)
 {
@@ -131,13 +137,13 @@ int swlib_apply_from_uci(struct switch_dev *dev, struct uci_package *p)
 			if (o->type != UCI_TYPE_STRING)
 				continue;
 
-			if (!strcmp(o->v.string, dev->dev_name))
+			if (swlib_match_name(dev, o->v.string))
 				goto found;
 
 			break;
 		}
 
-		if (strcmp(e->name, dev->dev_name) != 0)
+		if (!swlib_match_name(dev, e->name))
 			continue;
 
 		goto found;
@@ -171,7 +177,7 @@ found:
 
 				if (!strcmp(os->name, "device")) {
 					devn = o->v.string;
-					if (strcmp(devn, dev->dev_name) != 0)
+					if (!swlib_match_name(dev, devn))
 						devn = NULL;
 				} else if (!strcmp(os->name, "port")) {
 					port = o->v.string;
@@ -196,7 +202,7 @@ found:
 
 				if (!strcmp(os->name, "device")) {
 					devn = o->v.string;
-					if (strcmp(devn, dev->dev_name) != 0)
+					if (!swlib_match_name(dev, devn))
 						devn = NULL;
 				} else if (!strcmp(os->name, "vlan")) {
 					vlan = o->v.string;
