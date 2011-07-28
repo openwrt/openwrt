@@ -1,6 +1,6 @@
 --- a/pppd/ipcp.c
 +++ b/pppd/ipcp.c
-@@ -197,6 +197,14 @@ static option_t ipcp_option_list[] = {
+@@ -198,6 +198,14 @@ static option_t ipcp_option_list[] = {
        "disable defaultroute option", OPT_ALIAS | OPT_A2CLR,
        &ipcp_wantoptions[0].default_route },
  
@@ -15,7 +15,7 @@
      { "proxyarp", o_bool, &ipcp_wantoptions[0].proxy_arp,
        "Add proxy ARP entry", OPT_ENABLE|1, &ipcp_allowoptions[0].proxy_arp },
      { "noproxyarp", o_bool, &ipcp_allowoptions[0].proxy_arp,
-@@ -263,7 +271,7 @@ struct protent ipcp_protent = {
+@@ -271,7 +279,7 @@ struct protent ipcp_protent = {
      ip_active_pkt
  };
  
@@ -24,7 +24,7 @@
  static void ipcp_script __P((char *, int));	/* Run an up/down script */
  static void ipcp_script_done __P((void *));
  
-@@ -1660,7 +1668,8 @@ ip_demand_conf(u)
+@@ -1742,7 +1750,8 @@ ip_demand_conf(u)
      if (!sifnpmode(u, PPP_IP, NPMODE_QUEUE))
  	return 0;
      if (wo->default_route)
@@ -34,7 +34,7 @@
  	    default_route_set[u] = 1;
      if (wo->proxy_arp)
  	if (sifproxyarp(u, wo->hisaddr))
-@@ -1742,7 +1751,8 @@ ipcp_up(f)
+@@ -1830,7 +1839,8 @@ ipcp_up(f)
       */
      if (demand) {
  	if (go->ouraddr != wo->ouraddr || ho->hisaddr != wo->hisaddr) {
@@ -44,7 +44,7 @@
  	    if (go->ouraddr != wo->ouraddr) {
  		warn("Local IP address changed to %I", go->ouraddr);
  		script_setenv("OLDIPLOCAL", ip_ntoa(wo->ouraddr), 0);
-@@ -1767,7 +1777,8 @@ ipcp_up(f)
+@@ -1855,7 +1865,8 @@ ipcp_up(f)
  
  	    /* assign a default route through the interface if required */
  	    if (ipcp_wantoptions[f->unit].default_route) 
@@ -54,7 +54,7 @@
  		    default_route_set[f->unit] = 1;
  
  	    /* Make a proxy ARP entry if requested. */
-@@ -1817,7 +1828,8 @@ ipcp_up(f)
+@@ -1905,7 +1916,8 @@ ipcp_up(f)
  
  	/* assign a default route through the interface if required */
  	if (ipcp_wantoptions[f->unit].default_route) 
@@ -64,7 +64,7 @@
  		default_route_set[f->unit] = 1;
  
  	/* Make a proxy ARP entry if requested. */
-@@ -1894,7 +1906,7 @@ ipcp_down(f)
+@@ -1983,7 +1995,7 @@ ipcp_down(f)
  	sifnpmode(f->unit, PPP_IP, NPMODE_DROP);
  	sifdown(f->unit);
  	ipcp_clear_addrs(f->unit, ipcp_gotoptions[f->unit].ouraddr,
@@ -73,7 +73,7 @@
      }
  
      /* Execute the ip-down script */
-@@ -1910,16 +1922,25 @@ ipcp_down(f)
+@@ -1999,16 +2011,25 @@ ipcp_down(f)
   * proxy arp entries, etc.
   */
  static void
@@ -125,7 +125,7 @@
  .B disconnect \fIscript
  Execute the command specified by \fIscript\fR, by passing it to a
  shell, after
-@@ -706,7 +711,12 @@ disable both forms of hardware flow cont
+@@ -717,7 +722,12 @@ disable both forms of hardware flow cont
  .TP
  .B nodefaultroute
  Disable the \fIdefaultroute\fR option.  The system administrator who
@@ -141,7 +141,7 @@
  .B nodeflate
 --- a/pppd/pppd.h
 +++ b/pppd/pppd.h
-@@ -644,7 +644,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
+@@ -645,7 +645,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
  int  cif6addr __P((int, eui64_t, eui64_t));
  				/* Remove an IPv6 address from i/f */
  #endif
@@ -161,7 +161,7 @@
  static u_int32_t proxy_arp_addr;	/* Addr for proxy arp entry added */
  static char proxy_arp_dev[16];		/* Device for proxy arp entry */
  static u_int32_t our_old_addr;		/* for detecting address changes */
-@@ -1520,6 +1522,9 @@ static int read_route_table(struct rtent
+@@ -1544,6 +1546,9 @@ static int read_route_table(struct rtent
  	p = NULL;
      }
  
@@ -171,7 +171,7 @@
      SIN_ADDR(rt->rt_dst) = strtoul(cols[route_dest_col], NULL, 16);
      SIN_ADDR(rt->rt_gateway) = strtoul(cols[route_gw_col], NULL, 16);
      SIN_ADDR(rt->rt_genmask) = strtoul(cols[route_mask_col], NULL, 16);
-@@ -1589,20 +1594,51 @@ int have_route_to(u_int32_t addr)
+@@ -1613,20 +1618,51 @@ int have_route_to(u_int32_t addr)
  /********************************************************************
   *
   * sifdefaultroute - assign a default route through the address given.
@@ -236,7 +236,7 @@
      }
  
      memset (&rt, 0, sizeof (rt));
-@@ -1617,10 +1653,16 @@ int sifdefaultroute (int unit, u_int32_t
+@@ -1641,10 +1677,16 @@ int sifdefaultroute (int unit, u_int32_t
  
      rt.rt_flags = RTF_UP;
      if (ioctl(sock_fd, SIOCADDRT, &rt) < 0) {
@@ -254,7 +254,7 @@
  
      have_default_route = 1;
      return 1;
-@@ -1649,11 +1691,21 @@ int cifdefaultroute (int unit, u_int32_t
+@@ -1675,11 +1717,21 @@ int cifdefaultroute (int unit, u_int32_t
      rt.rt_flags = RTF_UP;
      if (ioctl(sock_fd, SIOCDELRT, &rt) < 0 && errno != ESRCH) {
  	if (still_ppp()) {

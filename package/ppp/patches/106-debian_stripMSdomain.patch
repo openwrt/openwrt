@@ -1,6 +1,6 @@
 --- a/pppd/chap-new.c
 +++ b/pppd/chap-new.c
-@@ -57,6 +57,7 @@ int (*chap_verify_hook)(char *name, char
+@@ -58,6 +58,7 @@ int (*chap_verify_hook)(char *name, char
  int chap_timeout_time = 3;
  int chap_max_transmits = 10;
  int chap_rechallenge_time = 0;
@@ -8,7 +8,7 @@
  
  /*
   * Command-line options.
-@@ -68,6 +69,8 @@ static option_t chap_option_list[] = {
+@@ -69,6 +70,8 @@ static option_t chap_option_list[] = {
  	  "Set max #xmits for challenge", OPT_PRIO },
  	{ "chap-interval", o_int, &chap_rechallenge_time,
  	  "Set interval for rechallenge", OPT_PRIO },
@@ -17,7 +17,7 @@
  	{ NULL }
  };
  
-@@ -335,6 +338,14 @@ chap_handle_response(struct chap_server_
+@@ -336,6 +339,14 @@ chap_handle_response(struct chap_server_
  			/* Null terminate and clean remote name. */
  			slprintf(rname, sizeof(rname), "%.*v", len, name);
  			name = rname;

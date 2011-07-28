@@ -1,6 +1,6 @@
 --- a/pppd/ipcp.c
 +++ b/pppd/ipcp.c
-@@ -1850,7 +1850,7 @@ ipcp_up(f)
+@@ -1939,7 +1939,7 @@ ipcp_up(f)
       */
      if (ipcp_script_state == s_down && ipcp_script_pid == 0) {
  	ipcp_script_state = s_up;
@@ -9,7 +9,7 @@
      }
  }
  
-@@ -1900,7 +1900,7 @@ ipcp_down(f)
+@@ -1989,7 +1989,7 @@ ipcp_down(f)
      /* Execute the ip-down script */
      if (ipcp_script_state == s_up && ipcp_script_pid == 0) {
  	ipcp_script_state = s_down;
@@ -18,7 +18,7 @@
      }
  }
  
-@@ -1954,13 +1954,13 @@ ipcp_script_done(arg)
+@@ -2043,13 +2043,13 @@ ipcp_script_done(arg)
      case s_up:
  	if (ipcp_fsm[0].state != OPENED) {
  	    ipcp_script_state = s_down;
@@ -36,7 +36,7 @@
      }
 --- a/pppd/main.c
 +++ b/pppd/main.c
-@@ -315,6 +315,9 @@ main(argc, argv)
+@@ -316,6 +316,9 @@ main(argc, argv)
      struct protent *protp;
      char numbuf[16];
  
@@ -73,7 +73,7 @@
        "Enable multilink operation", OPT_PRIO | 1 },
 --- a/pppd/pppd.h
 +++ b/pppd/pppd.h
-@@ -312,6 +312,8 @@ extern bool	tune_kernel;	/* May alter ke
+@@ -313,6 +313,8 @@ extern bool	tune_kernel;	/* May alter ke
  extern int	connect_delay;	/* Time to delay after connect script */
  extern int	max_data_rate;	/* max bytes/sec through charshunt */
  extern int	req_unit;	/* interface unit number to use */

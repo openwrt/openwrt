@@ -1,6 +1,6 @@
 --- a/pppd/main.c
 +++ b/pppd/main.c
-@@ -742,8 +742,11 @@ void
+@@ -743,8 +743,11 @@ void
  set_ifunit(iskey)
      int iskey;
  {
@@ -47,7 +47,7 @@
  /*
   * Limits.
   */
-@@ -308,6 +312,7 @@ extern char	*record_file;	/* File to rec
+@@ -309,6 +313,7 @@ extern char	*record_file;	/* File to rec
  extern bool	sync_serial;	/* Device is synchronous serial device */
  extern int	maxfail;	/* Max # of unsuccessful connection attempts */
  extern char	linkname[MAXPATHLEN]; /* logical name for link */
@@ -115,12 +115,12 @@
      if (argc > 0)
  	interface = argv[0];
  
-+/*
++#if 0
      if (sscanf(interface, PPP_DRV_NAME "%d", &unit) != 1) {
  	fprintf(stderr, "%s: invalid interface '%s' specified\n",
  		progname, interface);
      }
-+*/
++#endif
  
  #ifndef STREAMS
      {
