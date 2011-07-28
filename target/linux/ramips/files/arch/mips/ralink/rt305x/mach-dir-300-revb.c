@@ -120,5 +120,5 @@ static void __init dir_300b_init(void)
 	rt305x_register_wdt();
 }
 
-MIPS_MACHINE(RAMIPS_MACH_DIR_300_REVB, "DIR-300-revB", "D-Link DIR-300 revB",
+MIPS_MACHINE(RAMIPS_MACH_DIR_300_B1, "DIR-300-B1", "D-Link DIR-300 B1",
 	     dir_300b_init);

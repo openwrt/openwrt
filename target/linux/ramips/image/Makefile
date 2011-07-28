@@ -110,7 +110,7 @@ define Image/Build/Template/DIR300B1
 endef
 
 define Image/Build/Profile/DIR300B1
-	$(call Image/Build/Template/DIR300B1,$(1),dir-300-b1,DIR-300-revB)
+	$(call Image/Build/Template/DIR300B1,$(1),dir-300-b1,DIR-300-B1)
 endef
 
 define Image/Build/Profile/FONERA20N
