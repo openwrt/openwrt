@@ -46,7 +46,7 @@
  
 --- a/pppd/plugins/rp-pppoe/Makefile.linux
 +++ b/pppd/plugins/rp-pppoe/Makefile.linux
-@@ -39,9 +39,9 @@ rp-pppoe.so: libplugin.a plugin.o
+@@ -43,9 +43,9 @@ rp-pppoe.so: plugin.o discovery.o if.o c
  
  install: all
  	$(INSTALL) -d -m 755 $(LIBDIR)
@@ -57,7 +57,7 @@
 +	$(INSTALL) -c -m 555 pppoe-discovery $(BINDIR)
  
  clean:
- 	rm -f *.o *.so
+ 	rm -f *.o *.so pppoe-discovery
 --- a/pppdump/Makefile.linux
 +++ b/pppdump/Makefile.linux
 @@ -17,5 +17,5 @@ clean:

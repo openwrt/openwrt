@@ -9,27 +9,9 @@
   *
   *  NOTE TO MAINTAINERS:
   *     If you modify this file at all, please set the above date.
-@@ -86,7 +86,7 @@ struct compressor {
- 
- 	/* Compress a packet */
- 	int     (*compress) (void *state, unsigned char *rptr,
--			      unsigned char *obuf, int isize, int osize);
-+			     unsigned char *obuf, int isize, int osize);
- 
- 	/* Return compression statistics */
- 	void	(*comp_stat) (void *state, struct compstat *stats);
-@@ -107,7 +107,7 @@ struct compressor {
- 
- 	/* Decompress a packet. */
- 	int	(*decompress) (void *state, unsigned char *ibuf, int isize,
--				unsigned char *obuf, int osize);
-+			       unsigned char *obuf, int osize);
- 
- 	/* Update state for an incompressible packet received */
- 	void	(*incomp) (void *state, unsigned char *ibuf, int icnt);
-@@ -288,6 +288,33 @@ struct compressor {
- 	    opts |= MPPE_OPT_UNKNOWN;		\
-     } while (/* CONSTCOND */ 0)
+@@ -201,6 +201,33 @@ struct compressor {
+ #define CI_MPPE			18	/* config option for MPPE */
+ #define CILEN_MPPE		6	/* length of config option */
  
 +/* MPPE/MPPC definitions by J.D.*/
 +#define MPPE_STATELESS          MPPE_H_BIT	/* configuration bit H */
@@ -63,9 +45,9 @@
   */
 --- a/include/net/ppp-comp.h
 +++ b/include/net/ppp-comp.h
-@@ -255,6 +255,33 @@ struct compressor {
- 	    opts |= MPPE_OPT_UNKNOWN;		\
-     } while (/* CONSTCOND */ 0)
+@@ -168,6 +168,33 @@ struct compressor {
+ #define CI_MPPE			18	/* config option for MPPE */
+ #define CILEN_MPPE		6	/* length of config option */
  
 +/* MPPE/MPPC definitions by J.D.*/
 +#define MPPE_STATELESS          MPPE_H_BIT	/* configuration bit H */
@@ -705,15 +687,6 @@
      if (go->deflate) {
  	if (len < CILEN_DEFLATE
  	    || p[0] != (go->deflate_correct? CI_DEFLATE: CI_DEFLATE_DRAFT)
-@@ -891,7 +1070,7 @@ ccp_ackci(f, p, len)
- 
- /*
-  * ccp_nakci - process received configure-nak.
-- * Returns 1 iff the nak was OK.
-+ * Returns 1 if the nak was OK.
-  */
- static int
- ccp_nakci(f, p, len, treat_as_reject)
 @@ -901,6 +1080,8 @@ ccp_nakci(f, p, len, treat_as_reject)
      int treat_as_reject;
  {
@@ -930,6 +903,10 @@
 -
 -		/* Nak if anything unsupported or unknown are set. */
 -		if (ho->mppe & MPPE_OPT_UNSUPPORTED) {
+-		    newret = CONFNAK;
+-		    ho->mppe &= ~MPPE_OPT_UNSUPPORTED;
+-		}
+-		if (ho->mppe & MPPE_OPT_UNKNOWN) {
 + 		p2 = p[2];
 + 		p5 = p[5];
 + 		/* not sure what they want, tell 'em what we got */
@@ -938,10 +915,6 @@
 + 			       MPPE_MPPC)) != 0 || p[5] == 0) ||
 + 		    (p[2] == 0 && p[3] == 0 && p[4] == 0 &&  p[5] == 0)) {
  		    newret = CONFNAK;
--		    ho->mppe &= ~MPPE_OPT_UNSUPPORTED;
--		}
--		if (ho->mppe & MPPE_OPT_UNKNOWN) {
--		    newret = CONFNAK;
 -		    ho->mppe &= ~MPPE_OPT_UNKNOWN;
 -		}
 -
@@ -1471,11 +1444,6 @@
  	     * Send a reset-request to reset the peer's compressor.
  	     * We don't do that if we are still waiting for an
  	     * acknowledgement to a previous reset-request.
-@@ -1675,4 +2180,3 @@ ccp_rack_timeout(arg)
-     } else
- 	ccp_localstate[f->unit] &= ~RACK_PENDING;
- }
--
 --- a/pppd/ccp.h
 +++ b/pppd/ccp.h
 @@ -37,9 +37,17 @@ typedef struct ccp_options {
@@ -1498,7 +1466,7 @@
  
 --- a/pppd/chap_ms.c
 +++ b/pppd/chap_ms.c
-@@ -897,13 +897,17 @@ set_mppe_enc_types(int policy, int types
+@@ -898,13 +898,17 @@ set_mppe_enc_types(int policy, int types
      /*
       * Disable undesirable encryption types.  Note that we don't ENABLE
       * any encryption types, to avoid overriding manual configuration.

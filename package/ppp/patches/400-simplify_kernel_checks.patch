@@ -19,7 +19,7 @@
  
  #define MAX_IFS		100
  
-@@ -1414,11 +1414,12 @@ int ccp_fatal_error (int unit)
+@@ -1438,11 +1438,12 @@ int ccp_fatal_error (int unit)
   *
   * path_to_procfs - find the path to the proc file system mount point
   */
@@ -34,7 +34,7 @@
      struct mntent *mntent;
      FILE *fp;
  
-@@ -1440,6 +1441,7 @@ static char *path_to_procfs(const char *
+@@ -1464,6 +1465,7 @@ static char *path_to_procfs(const char *
  	    fclose (fp);
  	}
      }
@@ -42,9 +42,9 @@
  
      strlcpy(proc_path + proc_path_len, tail,
  	    sizeof(proc_path) - proc_path_len);
-@@ -2098,11 +2100,13 @@ int ppp_available(void)
- 	"ppp.o exists in /lib/modules/`uname -r`/net.\n"
- 	"See README.linux file in the ppp distribution for more details.\n";
+@@ -2116,15 +2118,19 @@ int ppp_available(void)
+     int    my_version, my_modification, my_patch;
+     int osmaj, osmin, ospatch;
  
 +#if 0
      /* get the kernel version now, since we are called before sys_init */
@@ -55,10 +55,6 @@
 +#endif
  
      fd = open("/dev/ppp", O_RDWR);
- #if 0
-@@ -2121,7 +2125,9 @@ int ppp_available(void)
-     }
- #endif /* 0 */
      if (fd >= 0) {
 +#if 0
  	new_style_driver = 1;
@@ -66,7 +62,7 @@
  
  	/* XXX should get from driver */
  	driver_version = 2;
-@@ -2168,6 +2174,7 @@ int ppp_available(void)
+@@ -2185,6 +2191,7 @@ int ppp_available(void)
  
      if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
  	ok = 0;
@@ -74,7 +70,7 @@
  
  /*
   *  This is the PPP device. Validate the version of the driver at this
-@@ -2659,6 +2666,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2678,6 +2685,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
      }
  #endif /* TIOCGPTN */
  
@@ -82,7 +78,7 @@
      if (sfd < 0) {
  	/* the old way - scan through the pty name space */
  	for (i = 0; i < 64; ++i) {
-@@ -2677,6 +2685,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2696,6 +2704,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
  	    }
  	}
      }
@@ -92,7 +88,7 @@
  	return 0;
 --- a/pppd/plugins/pppoatm/pppoatm.c
 +++ b/pppd/plugins/pppoatm/pppoatm.c
-@@ -210,14 +210,6 @@ static void recv_config_pppoa(int mru,
+@@ -171,14 +171,6 @@ static void disconnect_pppoatm(void)
  
  void plugin_init(void)
  {
@@ -104,12 +100,12 @@
 -#else
 -	fatal("No PPPoATM support on this OS");
 -#endif
+ 	info("PPPoATM plugin_init");
  	add_options(pppoa_options);
  }
- 
 --- a/pppd/plugins/rp-pppoe/plugin.c
 +++ b/pppd/plugins/rp-pppoe/plugin.c
-@@ -55,9 +55,6 @@ static char const RCSID[] =
+@@ -60,9 +60,6 @@ static char const RCSID[] =
  
  char pppd_version[] = VERSION;
  
@@ -119,7 +115,7 @@
  char *pppd_pppoe_service = NULL;
  static char *acName = NULL;
  static char *existingSession = NULL;
-@@ -312,10 +309,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
+@@ -340,10 +337,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
  void
  plugin_init(void)
  {
@@ -128,5 +124,5 @@
 -    }
 -
      add_options(Options);
- }
  
+     info("RP-PPPoE plugin version %s compiled against pppd %s",

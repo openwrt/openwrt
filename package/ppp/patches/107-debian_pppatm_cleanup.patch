@@ -1,14 +1,7 @@
 --- a/pppd/plugins/pppoatm/pppoatm.c
 +++ b/pppd/plugins/pppoatm/pppoatm.c
-@@ -70,18 +70,20 @@ static int setdevname_pppoatm(const char
- {
- 	struct sockaddr_atmpvc addr;
- 	extern struct stat devstat;
-+
- 	if (device_got_set)
- 		return 0;
--	//info("PPPoATM setdevname_pppoatm: '%s'", cp);
-+
+@@ -75,13 +75,14 @@ static int setdevname_pppoatm(const char
+ 	//info("PPPoATM setdevname_pppoatm: '%s'", cp);
  	memset(&addr, 0, sizeof addr);
  	if (text2atm(cp, (struct sockaddr *) &addr, sizeof(addr),
 -	    T2A_PVC | T2A_NAME) < 0) {
@@ -28,52 +21,7 @@
  	memcpy(&pvcaddr, &addr, sizeof pvcaddr);
  	strlcpy(devnam, cp, sizeof devnam);
  	devstat.st_mode = S_IFSOCK;
-@@ -93,7 +95,6 @@ static int setdevname_pppoatm(const char
- 		lcp_allowoptions[0].neg_asyncmap = 0;
- 		lcp_wantoptions[0].neg_pcompression = 0;
- 	}
--	info("PPPoATM setdevname_pppoatm - SUCCESS:%s", cp);
- 	device_got_set = 1;
- 	return 1;
- }
-@@ -108,6 +109,7 @@ static void no_device_given_pppoatm(void
- static void set_line_discipline_pppoatm(int fd)
- {
- 	struct atm_backend_ppp be;
-+
- 	be.backend_num = ATM_BACKEND_PPP;
- 	if (!llc_encaps)
- 		be.encaps = PPPOATM_ENCAPS_VC;
-@@ -115,6 +117,7 @@ static void set_line_discipline_pppoatm(
- 		be.encaps = PPPOATM_ENCAPS_LLC;
- 	else
- 		be.encaps = PPPOATM_ENCAPS_AUTODETECT;
-+
- 	if (ioctl(fd, ATM_SETBACKEND, &be) < 0)
- 		fatal("ioctl(ATM_SETBACKEND): %m");
- }
-@@ -175,16 +178,19 @@ static void send_config_pppoa(int mtu,
- {
- 	int sock;
- 	struct ifreq ifr;
-+
- 	if (mtu > pppoatm_max_mtu)
- 		error("Couldn't increase MTU to %d", mtu);
-+
- 	sock = socket(AF_INET, SOCK_DGRAM, 0);
- 	if (sock < 0)
- 		fatal("Couldn't create IP socket: %m");
-+
- 	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
- 	ifr.ifr_mtu = mtu;
- 	if (ioctl(sock, SIOCSIFMTU, (caddr_t) &ifr) < 0)
- 		fatal("ioctl(SIOCSIFMTU): %m");
--	(void) close (sock);
-+	close(sock);
- }
- 
- static void recv_config_pppoa(int mru,
-@@ -198,7 +204,7 @@ static void recv_config_pppoa(int mru,
+@@ -170,7 +171,7 @@ static void disconnect_pppoatm(void)
  
  void plugin_init(void)
  {
@@ -82,14 +30,3 @@
  	extern int new_style_driver;	/* From sys-linux.c */
  	if (!ppp_available() && !new_style_driver)
  		fatal("Kernel doesn't support ppp_generic - "
-@@ -206,9 +212,9 @@ void plugin_init(void)
- #else
- 	fatal("No PPPoATM support on this OS");
- #endif
--	info("PPPoATM plugin_init");
- 	add_options(pppoa_options);
- }
-+
- struct channel pppoa_channel = {
-     options: pppoa_options,
-     process_extra_options: NULL,
