@@ -31,6 +31,9 @@ ramips_board_name() {
 	*"MoFi Network MOFI3500-3GN")
 		name="mofi3500-3gn"
 		;;
+	*"NW718")
+		name="nw718"
+		;;
 	*"PWH2004")
 		name="pwh2004"
 		;;

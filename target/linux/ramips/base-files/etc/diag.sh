@@ -42,6 +42,9 @@ get_status_led() {
 	mofi3500-3gn)
 		status_led="mofi3500-3gn:green:status"
 		;;
+	nw718)
+		status_led="nw718:amber:cpu"
+		;;
 	pwh2004)
 		status_led="pwh2004:green:power"
 		;;

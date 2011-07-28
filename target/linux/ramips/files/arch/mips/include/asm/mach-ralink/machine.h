@@ -22,6 +22,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_DIR_600_B1,		/* D-Link DIR-600 B1 */
 	RAMIPS_MACH_DIR_600_B2,		/* D-Link DIR-600 B2 */
 	RAMIPS_MACH_RT_G32_B1,		/* Asus RT-G32 B1 */
+	RAMIPS_MACH_NW718,		/* Netcore NW718 */
 
 	/* RT3052 based machines */
 	RAMIPS_MACH_F5D8235_V2,         /* Belkin F5D8235 v2 */
