@@ -122,3 +122,9 @@ static void __init dir_300b_init(void)
 
 MIPS_MACHINE(RAMIPS_MACH_DIR_300_B1, "DIR-300-B1", "D-Link DIR-300 B1",
 	     dir_300b_init);
+
+MIPS_MACHINE(RAMIPS_MACH_DIR_600_B1, "DIR-600-B1", "D-Link DIR-600 B1",
+	     dir_300b_init);
+
+MIPS_MACHINE(RAMIPS_MACH_DIR_600_B2, "DIR-600-B2", "D-Link DIR-600 B2",
+	     dir_300b_init);

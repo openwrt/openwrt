@@ -31,7 +31,9 @@ case "$FIRMWARE" in
 	local board=$(ramips_board_name)
 
 	case $board in
-	dir-300-b1)
+	dir-300-b1 | \
+	dir-600-b1 | \
+	dir-600-b2)
 		rt2x00_eeprom_extract "devdata" 16384 272
 		;;
 

@@ -16,6 +16,12 @@ ramips_board_name() {
 	*"DIR-300 B1")
 		name="dir-300-b1"
 		;;
+	*"DIR-600 B1")
+		name="dir-600-b1"
+		;;
+	*"DIR-600 B2")
+		name="dir-600-b2"
+		;;
 	*"F5D8235 v2")
 		name="f5d8235-v2"
 		;;
