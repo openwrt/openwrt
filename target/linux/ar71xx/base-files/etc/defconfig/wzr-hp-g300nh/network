@@ -16,11 +16,11 @@ config interface wan
 	option proto	dhcp
 
 config switch
-	option name	rtl8366s
+	option name	switch0
 	option reset	1
 	option enable_vlan 1
 
 config switch_vlan
-	option device	rtl8366s
+	option device	switch0
 	option vlan 	1
 	option ports	"0 1 2 3 5t"

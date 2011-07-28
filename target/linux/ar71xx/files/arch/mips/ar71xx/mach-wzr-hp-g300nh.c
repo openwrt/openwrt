@@ -226,7 +226,7 @@ static struct platform_device wzrhpg300nh_rtl8366s_device = {
 	}
 };
 
-static struct platform_device wzrhpg301nh_rtl8366rb_device = {
+static struct platform_device wzrhpg300nh_rtl8366rb_device = {
 	.name           = RTL8366RB_DRIVER_NAME,
 	.id             = -1,
 	.dev = {
@@ -234,7 +234,7 @@ static struct platform_device wzrhpg301nh_rtl8366rb_device = {
 	}
 };
 
-static void __init wzrhpg30xnh_setup(void)
+static void __init wzrhpg300nh_setup(void)
 {
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
 	u8 *mac = eeprom + WZRHPG300NH_MAC_OFFSET;
@@ -248,9 +248,9 @@ static void __init wzrhpg30xnh_setup(void)
 
 	if (hasrtl8366rb) {
 		ar71xx_eth0_pll_data.pll_1000 = 0x1f000000;
-		ar71xx_eth0_data.mii_bus_dev = &wzrhpg301nh_rtl8366rb_device.dev;
+		ar71xx_eth0_data.mii_bus_dev = &wzrhpg300nh_rtl8366rb_device.dev;
 		ar71xx_eth1_pll_data.pll_1000 = 0x100;
-		ar71xx_eth1_data.mii_bus_dev = &wzrhpg301nh_rtl8366rb_device.dev;
+		ar71xx_eth1_data.mii_bus_dev = &wzrhpg300nh_rtl8366rb_device.dev;
 	} else {
 		ar71xx_eth0_pll_data.pll_1000 = 0x1e000100;
 		ar71xx_eth0_data.mii_bus_dev = &wzrhpg300nh_rtl8366s_device.dev;
@@ -275,7 +275,7 @@ static void __init wzrhpg30xnh_setup(void)
 	platform_device_register(&wzrhpg300nh_flash_device);
 
 	if (hasrtl8366rb)
-		platform_device_register(&wzrhpg301nh_rtl8366rb_device);
+		platform_device_register(&wzrhpg300nh_rtl8366rb_device);
 	else
 		platform_device_register(&wzrhpg300nh_rtl8366s_device);
 
@@ -289,7 +289,4 @@ static void __init wzrhpg30xnh_setup(void)
 }
 
 MIPS_MACHINE(AR71XX_MACH_WZR_HP_G300NH, "WZR-HP-G300NH",
-	     "Buffalo WZR-HP-G300NH", wzrhpg30xnh_setup);
-
-MIPS_MACHINE(AR71XX_MACH_WZR_HP_G301NH, "WZR-HP-G301NH",
-	     "Buffalo WZR-HP-G301NH", wzrhpg30xnh_setup);
+	     "Buffalo WZR-HP-G300NH", wzrhpg300nh_setup);
