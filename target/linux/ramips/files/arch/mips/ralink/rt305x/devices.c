@@ -14,6 +14,7 @@
 #include <linux/clk.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/physmap.h>
+#include <linux/spi/spi.h>
 #include <linux/rt2x00_platform.h>
 
 #include <asm/addrspace.h>
@@ -219,4 +220,25 @@ void __init rt305x_register_wdt(void)
 	rt305x_sysc_wr(t, SYSC_REG_SYSTEM_CONFIG);
 
 	platform_device_register(&rt305x_wdt_device);
+}
+
+static struct resource rt305x_spi_resources[] = {
+	{
+		.flags	= IORESOURCE_MEM,
+		.start	= RT305X_SPI_BASE,
+		.end	= RT305X_SPI_BASE + RT305X_SPI_SIZE - 1,
+	},
+};
+
+static struct platform_device rt305x_spi_device = {
+	.name		= "ramips-spi",
+	.id		= 0,
+	.resource	= rt305x_spi_resources,
+	.num_resources	= ARRAY_SIZE(rt305x_spi_resources),
+};
+
+void __init rt305x_register_spi(struct spi_board_info *info, int n)
+{
+	spi_register_board_info(info, n);
+	platform_device_register(&rt305x_spi_device);
 }
