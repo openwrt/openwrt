@@ -28,6 +28,7 @@
 +
 +static void fixup_perwe(void)
 +{
++
 +#define DCRN_CPC0_PCI_BASE	0xf9
 +
 +	/* Turn on PerWE instead of PCIINT */
@@ -39,6 +40,7 @@
 +
 +static void fixup_cf_card(void)
 +{
++
 +#define CF_CS0_BASE	0xff100000
 +#define CF_CS1_BASE	0xff200000
 +
@@ -68,20 +70,18 @@
 +	/* Magicbox v1 has only one ethernet, one serial and no
 +	 * CF slot -- detect it using it's fake enet1addr
 +	 */
-+	if ((bd.bi_enet1addr[0] == 0x00) &&
-+	    (bd.bi_enet1addr[1] == 0x00) &&
-+	    (bd.bi_enet1addr[2] == 0x02) &&
++	if ((bd.bi_enet1addr[2] == 0x02) &&
 +	    (bd.bi_enet1addr[3] == 0xfa) &&
 +	    (bd.bi_enet1addr[4] == 0xf0) &&
 +	    (bd.bi_enet1addr[5] == 0x80)) {
 +		void *devp;
-+
 +		devp = finddevice("/plb/opb/ethernet@ef600900");
 +		del_node(devp);
 +		devp = finddevice("/plb/opb/serial@ef600400");
 +		del_node(devp);
 +		devp = finddevice("/plb/ebc/cf_card@ff100000");
 +		del_node(devp);
++
 +	} else {
 +		fixup_perwe();
 +		fixup_cf_card();
@@ -395,19 +395,19 @@
  $(obj)/cuboot-acadia.o: BOOTCFLAGS += -mcpu=405
 +$(obj)/cuboot-magicbox.o: BOOTCFLAGS += -mcpu=405
  $(obj)/treeboot-walnut.o: BOOTCFLAGS += -mcpu=405
+ $(obj)/treeboot-iss4xx.o: BOOTCFLAGS += -mcpu=405
  $(obj)/virtex405-head.o: BOOTAFLAGS += -mcpu=405
- 
-@@ -76,7 +77,8 @@ src-plat := of.c cuboot-52xx.c cuboot-82
- 		cuboot-katmai.c cuboot-rainier.c redboot-8xx.c ep8248e.c \
+@@ -79,7 +80,8 @@ src-plat := of.c cuboot-52xx.c cuboot-82
  		cuboot-warp.c cuboot-85xx-cpm2.c cuboot-yosemite.c simpleboot.c \
  		virtex405-head.S virtex.c redboot-83xx.c cuboot-sam440ep.c \
--		cuboot-acadia.c cuboot-amigaone.c cuboot-kilauea.c
-+		cuboot-acadia.c cuboot-amigaone.c cuboot-kilauea.c \
+ 		cuboot-acadia.c cuboot-amigaone.c cuboot-kilauea.c \
+-		gamecube-head.S gamecube.c wii-head.S wii.c treeboot-iss4xx.c
++		gamecube-head.S gamecube.c wii-head.S wii.c treeboot-iss4xx.c \
 +		cuboot-magicbox.c
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -194,6 +196,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
+@@ -198,6 +200,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
  image-$(CONFIG_HOTFOOT)			+= cuImage.hotfoot
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
@@ -417,7 +417,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -60,6 +60,16 @@ config KILAUEA
+@@ -62,6 +62,16 @@ config KILAUEA
  	help
  	  This option enables support for the AMCC PPC405EX evaluation board.
  
@@ -436,7 +436,7 @@
  	depends on 40x
 --- a/arch/powerpc/platforms/40x/ppc40x_simple.c
 +++ b/arch/powerpc/platforms/40x/ppc40x_simple.c
-@@ -55,7 +55,8 @@ static char *board[] __initdata = {
+@@ -55,7 +55,8 @@ static const char *board[] __initdata =
  	"amcc,haleakala",
  	"amcc,kilauea",
  	"amcc,makalu",

@@ -1,6 +1,6 @@
 --- a/arch/powerpc/boot/dts/kilauea.dts
 +++ b/arch/powerpc/boot/dts/kilauea.dts
-@@ -93,8 +93,8 @@
+@@ -102,8 +102,8 @@
  			compatible = "ibm,sdram-405ex", "ibm,sdram-4xx-ddr2";
  			dcr-reg = <0x010 0x002>;
  			interrupt-parent = <&UIC2>;
@@ -11,7 +11,7 @@
  		};
  
  		CRYPTO: crypto@ef700000 {
-@@ -148,30 +148,30 @@
+@@ -157,30 +157,30 @@
  					reg = <0x00000000 0x00000000 0x04000000>;
  					#address-cells = <1>;
  					#size-cells = <1>;
@@ -28,14 +28,14 @@
 -					partition@200000 {
 -						label = "root";
 -						reg = <0x00200000 0x00200000>;
+-					};
+-					partition@400000 {
+-						label = "user";
+-						reg = <0x00400000 0x03b60000>;
 +					partition2@200000 {
 +						label = "rootfs";
 +						reg = <0x00200000 0x03d60000>;
  					};
--					partition@400000 {
--						label = "user";
--						reg = <0x00400000 0x03b60000>;
--					};
 -					partition@3f60000 {
 +					partition3@3f60000 {
  						label = "env";

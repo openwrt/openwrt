@@ -1,26 +1,13 @@
 --- a/drivers/usb/host/isp116x-hcd.c
 +++ b/drivers/usb/host/isp116x-hcd.c
-@@ -1531,8 +1531,11 @@ static struct hc_driver isp116x_hc_drive
- 	.bus_resume = isp116x_bus_resume,
- };
+@@ -1535,6 +1535,7 @@ static struct hc_driver isp116x_hc_drive
  
-+#define resource_len(r) (((r)->end - (r)->start) + 1)
-+
  /*----------------------------------------------------------------*/
  
 +#ifdef CONFIG_USB_ISP116X_HCD_PLATFORM
  static int isp116x_remove(struct platform_device *pdev)
  {
  	struct usb_hcd *hcd = platform_get_drvdata(pdev);
-@@ -1556,8 +1559,6 @@ static int isp116x_remove(struct platfor
- 	return 0;
- }
- 
--#define resource_len(r) (((r)->end - (r)->start) + 1)
--
- static int __devinit isp116x_probe(struct platform_device *pdev)
- {
- 	struct usb_hcd *hcd;
 @@ -1708,22 +1709,253 @@ static struct platform_driver isp116x_dr
  	},
  };
@@ -88,23 +75,23 @@
 +	if (board == NULL)
 +		return -ENOMEM;
 +
-+	if (!request_mem_region(addr.start, resource_len(&addr), hcd_name)) {
++	if (!request_mem_region(addr.start, resource_size(&addr), hcd_name)) {
 +		ret = -EBUSY;
 +		goto err_free_board;
 +	}
 +
-+	addr_reg = ioremap_nocache(addr.start, resource_len(&addr));
++	addr_reg = ioremap_nocache(addr.start, resource_size(&addr));
 +	if (addr_reg == NULL) {
 +		ret = -ENOMEM;
 +		goto err_release_addr;
 +	}
 +
-+	if (!request_mem_region(data.start, resource_len(&data), hcd_name)) {
++	if (!request_mem_region(data.start, resource_size(&data), hcd_name)) {
 +		ret = -EBUSY;
 +		goto err_unmap_addr;
 +	}
 +
-+	data_reg = ioremap_nocache(data.start, resource_len(&data));
++	data_reg = ioremap_nocache(data.start, resource_size(&data));
 +	if (data_reg == NULL) {
 +		ret = -ENOMEM;
 +		goto err_release_data;
@@ -166,11 +153,11 @@
 + err_unmap_data:
 +	iounmap(data_reg);
 + err_release_data:
-+	release_mem_region(data.start, resource_len(&data));
++	release_mem_region(data.start, resource_size(&data));
 + err_unmap_addr:
 +	iounmap(addr_reg);
 + err_release_addr:
-+	release_mem_region(addr.start, resource_len(&addr));
++	release_mem_region(addr.start, resource_size(&addr));
 + err_free_board:
 +	kfree(board);
 +	return ret;
@@ -195,11 +182,11 @@
 +
 +	iounmap(isp116x->data_reg);
 +	(void) of_address_to_resource(op->node, 0, &res);
-+	release_mem_region(res.start, resource_len(&res));
++	release_mem_region(res.start, resource_size(&res));
 +
 +	iounmap(isp116x->addr_reg);
 +	(void) of_address_to_resource(op->node, 1, &res);
-+	release_mem_region(res.start, resource_len(&res));
++	release_mem_region(res.start, resource_size(&res));
 +
 +	kfree(isp116x->board);
 +	usb_put_hcd(hcd);
@@ -279,7 +266,7 @@
  module_exit(isp116x_cleanup);
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -144,6 +144,24 @@ config USB_ISP116X_HCD
+@@ -242,6 +242,24 @@ config USB_ISP116X_HCD
  	  To compile this driver as a module, choose M here: the
  	  module will be called isp116x-hcd.
  
