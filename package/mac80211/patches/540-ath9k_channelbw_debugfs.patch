@@ -30,7 +30,7 @@
  	int r;
  
  	if (sc->sc_flags & SC_OP_INVALID)
-@@ -268,6 +269,21 @@ static int ath_set_channel(struct ath_so
+@@ -268,6 +269,24 @@ static int ath_set_channel(struct ath_so
  	if (!stopped || !(sc->sc_flags & SC_OP_OFFCHANNEL))
  		fastcc = false;
  
@@ -43,6 +43,9 @@
 +	case 10:
 +		hchan->channelFlags &= ~CHANNEL_QUARTER;
 +		hchan->channelFlags |= CHANNEL_HALF;
++		break;
++	default:
++		hchan->channelFlags &= ~(CHANNEL_HALF | CHANNEL_QUARTER);
 +		break;
 +	}
 +
