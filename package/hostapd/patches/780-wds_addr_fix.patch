@@ -55,12 +55,11 @@
  		new_addr[0] ^= idx << 2;
  		if (!nl80211_addr_in_use(drv->global, new_addr))
  			break;
-@@ -5980,6 +5980,8 @@ static int wpa_driver_nl80211_if_add(voi
- 	}
- #endif /* CONFIG_P2P */
- 
-+	memcpy(new_bss->addr, addr ? addr : if_addr, ETH_ALEN);
-+
- #ifdef HOSTAPD
- 	if (bridge &&
- 	    i802_check_bridge(drv, new_bss, bridge, ifname) < 0) {
+@@ -5996,6 +5996,7 @@ static int wpa_driver_nl80211_if_add(voi
+ 			os_free(new_bss);
+ 			return -1;
+ 		}
++		memcpy(new_bss->addr, addr ? addr : if_addr, ETH_ALEN);
+ 		os_strlcpy(new_bss->ifname, ifname, IFNAMSIZ);
+ 		new_bss->ifindex = ifidx;
+ 		new_bss->drv = drv;
