@@ -1,0 +1,66 @@
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -111,6 +111,7 @@ struct i802_bss {
+ 	struct wpa_driver_nl80211_data *drv;
+ 	struct i802_bss *next;
+ 	int ifindex;
++	u8 addr[ETH_ALEN];
+ 	char ifname[IFNAMSIZ + 1];
+ 	char brname[IFNAMSIZ];
+ 	unsigned int beacon_set:1;
+@@ -121,7 +122,6 @@ struct i802_bss {
+ struct wpa_driver_nl80211_data {
+ 	struct nl80211_global *global;
+ 	struct dl_list list;
+-	u8 addr[ETH_ALEN];
+ 	char phyname[32];
+ 	void *ctx;
+ 	struct netlink_data *netlink;
+@@ -2111,7 +2111,7 @@ wpa_driver_nl80211_finish_drv_init(struc
+ 	if (wpa_driver_nl80211_capa(drv))
+ 		return -1;
+ 
+-	if (linux_get_ifhwaddr(drv->ioctl_sock, bss->ifname, drv->addr))
++	if (linux_get_ifhwaddr(drv->ioctl_sock, bss->ifname, bss->addr))
+ 		return -1;
+ 
+ 	if (nl80211_register_action_frames(drv) < 0) {
+@@ -5650,7 +5650,7 @@ static int i802_set_wds_sta(void *priv, 
+ 		if (!if_nametoindex(name)) {
+ 			if (nl80211_create_iface(drv, name,
+ 						 NL80211_IFTYPE_AP_VLAN,
+-						 NULL, 1) < 0)
++						 bss->addr, 1) < 0)
+ 				return -1;
+ 			if (bridge_ifname &&
+ 			    linux_br_add_if(drv->ioctl_sock, bridge_ifname,
+@@ -5878,7 +5878,7 @@ static int nl80211_addr_in_use(struct nl
+ 	struct wpa_driver_nl80211_data *drv;
+ 	dl_list_for_each(drv, &global->interfaces,
+ 			 struct wpa_driver_nl80211_data, list) {
+-		if (os_memcmp(addr, drv->addr, ETH_ALEN) == 0)
++		if (os_memcmp(addr, drv->first_bss.addr, ETH_ALEN) == 0)
+ 			return 1;
+ 	}
+ 	return 0;
+@@ -5893,9 +5893,9 @@ static int nl80211_p2p_interface_addr(st
+ 	if (!drv->global)
+ 		return -1;
+ 
+-	os_memcpy(new_addr, drv->addr, ETH_ALEN);
++	os_memcpy(new_addr, drv->first_bss.addr, ETH_ALEN);
+ 	for (idx = 0; idx < 64; idx++) {
+-		new_addr[0] = drv->addr[0] | 0x02;
++		new_addr[0] = drv->first_bss.addr[0] | 0x02;
+ 		new_addr[0] ^= idx << 2;
+ 		if (!nl80211_addr_in_use(drv->global, new_addr))
+ 			break;
+@@ -5980,6 +5980,8 @@ static int wpa_driver_nl80211_if_add(voi
+ 	}
+ #endif /* CONFIG_P2P */
+ 
++	memcpy(new_bss->addr, addr ? addr : if_addr, ETH_ALEN);
++
+ #ifdef HOSTAPD
+ 	if (bridge &&
+ 	    i802_check_bridge(drv, new_bss, bridge, ifname) < 0) {
