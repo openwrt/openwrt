@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/squashfs-tools/lzma_xz_options.h
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,115 @@
 +#ifndef LZMA_XZ_OPTIONS_H
 +#define LZMA_XZ_OPTIONS_H
 +/*
@@ -27,6 +27,9 @@
 +#include <stdint.h>
 +
 +#ifndef linux
++#ifdef __FreeBSD__
++#include <machine/endian.h>
++#endif
 +#define __BYTE_ORDER BYTE_ORDER
 +#define __BIG_ENDIAN BIG_ENDIAN
 +#define __LITTLE_ENDIAN LITTLE_ENDIAN
