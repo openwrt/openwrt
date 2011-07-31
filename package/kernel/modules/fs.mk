@@ -76,7 +76,7 @@ define KernelPackage/fs-ext2
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT2 filesystem support
   KCONFIG:=CONFIG_EXT2_FS
-  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache) @LINUX_2_6_30||LINUX_2_6_31
+  DEPENDS:=@LINUX_2_6_30||LINUX_2_6_31
   FILES:=$(LINUX_DIR)/fs/ext2/ext2.ko
   AUTOLOAD:=$(call AutoLoad,32,ext2,1)
 endef
@@ -94,7 +94,7 @@ define KernelPackage/fs-ext3
   KCONFIG:= \
 	CONFIG_EXT3_FS \
 	CONFIG_JBD
-  DEPENDS:=$(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache) @LINUX_2_6_30||LINUX_2_6_31
+  DEPENDS:=@LINUX_2_6_30||LINUX_2_6_31
   FILES:= \
 	$(LINUX_DIR)/fs/ext3/ext3.ko \
 	$(LINUX_DIR)/fs/jbd/jbd.ko
@@ -114,11 +114,16 @@ define KernelPackage/fs-ext4
   KCONFIG:= \
 	CONFIG_EXT4_FS \
 	CONFIG_JBD2
-  DEPENDS:= $(if $(DUMP)$(CONFIG_FS_MBCACHE),+kmod-fs-mbcache)
   FILES:= \
 	$(LINUX_DIR)/fs/ext4/ext4.ko \
 	$(LINUX_DIR)/fs/jbd2/jbd2.ko
-  AUTOLOAD:=$(call AutoLoad,30,jbd2 ext4,1)
+ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.37)),1)
+    FILES+= \
+	$(LINUX_DIR)/fs/mbcache.ko
+    AUTOLOAD:=$(call AutoLoad,30,mbcache jbd2 ext4,1)
+ else
+    AUTOLOAD:=$(call AutoLoad,30,jbd2 ext4,1)
+ endif
   $(call AddDepends/crc16)
 endef
 
@@ -175,25 +180,6 @@ define KernelPackage/fs-isofs/description
 endef
 
 $(eval $(call KernelPackage,fs-isofs))
-
-
-define KernelPackage/fs-mbcache
-  SUBMENU:=$(FS_MENU)
-  TITLE:=mbcache (used by ext2/ext3/ext4)
-  KCONFIG:=CONFIG_FS_MBCACHE
-  ifneq ($(CONFIG_FS_MBCACHE),)
-    FILES:=$(LINUX_DIR)/fs/mbcache.ko
-    AUTOLOAD:=$(call AutoLoad,20,mbcache,1)
-  endif
-endef
-
-define KernelPackage/fs-mbcache/description
- Meta Block cache used by ext2/ext3
- This package will only be installed if extended attributes 
- are enabled for ext2/ext3
-endef
-
-$(eval $(call KernelPackage,fs-mbcache))
 
 
 define KernelPackage/fs-minix
