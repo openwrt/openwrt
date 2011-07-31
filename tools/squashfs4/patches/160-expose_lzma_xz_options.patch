@@ -417,7 +417,7 @@
 +		if (size != sizeof(struct lzma_opts))
 +			goto failed;
 +		
-+		SQUASHFS_INSWAP_LZMA_COMP_OPTS(&comp_opts);
++		SQUASHFS_INSWAP_LZMA_COMP_OPTS(comp_opts);
 +		
 +		options.flags = comp_opts->flags & LZMA_OPT_FLT_MASK;
 +		options.preset  = (comp_opts->flags & LZMA_OPT_PRE_MASK) >> LZMA_OPT_PRE_OFF;
