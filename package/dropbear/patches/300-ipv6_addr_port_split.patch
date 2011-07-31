@@ -1,0 +1,11 @@
+--- a/svr-runopts.c
++++ b/svr-runopts.c
+@@ -325,7 +325,7 @@ static void addportandaddress(char* spec
+ 		myspec = m_strdup(spec);
+ 
+ 		/* search for ':', that separates address and port */
+-		svr_opts.ports[svr_opts.portcount] = strchr(myspec, ':');
++		svr_opts.ports[svr_opts.portcount] = strrchr(myspec, ':');
+ 
+ 		if (svr_opts.ports[svr_opts.portcount] == NULL) {
+ 			/* no ':' -> the whole string specifies just a port */

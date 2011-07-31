@@ -12,6 +12,27 @@ EXTRA_HELP="	killclients Kill ${NAME} processes except servers and yourself"
 
 dropbear_start()
 {
+	append_ports()
+	{
+		local ifname="$1"
+		local port="$2"
+
+		grep -qs "^ *$ifname:" /proc/net/dev || {
+			append args "-p $port"
+			return
+		}
+
+		for addr in $(
+			ifconfig "$ifname" | sed -ne '
+				/addr: *fe[89ab][0-9a-f]:/d
+				s/.* addr: *\([0-9a-f:\.]*\).*/\1/p
+			'
+		); do
+			append args "-p $addr:$port"
+		done
+	}
+
+
 	local section="$1"
 
 	# check if section is enabled (default)
@@ -33,13 +54,12 @@ dropbear_start()
 	config_get_bool val "${section}" PasswordAuth 1
 	[ "${val}" -eq 0 ] && append args "-s"
 	# B) listen interface and port
+	local port
 	local interface
-	local address
 	config_get interface "${section}" Interface
-	config_get address "${interface}" ipaddr
-	config_get val "${section}" Port
-	val="${address:+${address}:}${val}"
-	[ -n "${val}" ] && append args "-p ${val}"
+	config_get interface "${interface}" ifname "$interface"
+	config_get port "${section}" Port 22
+	append_ports "$interface" "$port"
 	# C) banner file
 	config_get val "${section}" BannerFile
 	[ -f "${val}" ] && append args "-b ${val}"
