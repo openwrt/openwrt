@@ -44,6 +44,15 @@
  		return -EINVAL;
  
  	if (test_sta_flags(sta, WLAN_STA_BLOCK_BA)) {
+@@ -809,7 +811,7 @@ void ieee80211_process_addba_resp(struct
+ 		 * of at least 1.
+ 		 */
+ 		if (!buf_size)
+-			goto out;
++			buf_size = 1;
+ 
+ 		if (test_and_set_bit(HT_AGG_STATE_RESPONSE_RECEIVED,
+ 				     &tid_tx->state)) {
 --- a/net/mac80211/debugfs_sta.c
 +++ b/net/mac80211/debugfs_sta.c
 @@ -59,7 +59,7 @@ static ssize_t sta_flags_read(struct fil
@@ -1144,3 +1153,493 @@
  			ieee80211_hw_config(local, 0);
  
  		/* At the least, we need to disable offchannel_ps,
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -627,6 +627,11 @@ static void ar5008_hw_init_bb(struct ath
+ 	else
+ 		synthDelay /= 10;
+ 
++	if (IS_CHAN_HALF_RATE(chan))
++		synthDelay *= 2;
++	else if (IS_CHAN_QUARTER_RATE(chan))
++		synthDelay *= 4;
++
+ 	REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_EN);
+ 
+ 	udelay(synthDelay + BASE_ACTIVATE_DELAY);
+--- a/drivers/net/wireless/ath/ath9k/ar9002_hw.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_hw.c
+@@ -499,45 +499,6 @@ void ar9002_hw_enable_async_fifo(struct 
+ 	}
+ }
+ 
+-/*
+- * If Async FIFO is enabled, the following counters change as MAC now runs
+- * at 117 Mhz instead of 88/44MHz when async FIFO is disabled.
+- *
+- * The values below tested for ht40 2 chain.
+- * Overwrite the delay/timeouts initialized in process ini.
+- */
+-void ar9002_hw_update_async_fifo(struct ath_hw *ah)
+-{
+-	if (AR_SREV_9287_13_OR_LATER(ah)) {
+-		REG_WRITE(ah, AR_D_GBL_IFS_SIFS,
+-			  AR_D_GBL_IFS_SIFS_ASYNC_FIFO_DUR);
+-		REG_WRITE(ah, AR_D_GBL_IFS_SLOT,
+-			  AR_D_GBL_IFS_SLOT_ASYNC_FIFO_DUR);
+-		REG_WRITE(ah, AR_D_GBL_IFS_EIFS,
+-			  AR_D_GBL_IFS_EIFS_ASYNC_FIFO_DUR);
+-
+-		REG_WRITE(ah, AR_TIME_OUT, AR_TIME_OUT_ACK_CTS_ASYNC_FIFO_DUR);
+-		REG_WRITE(ah, AR_USEC, AR_USEC_ASYNC_FIFO_DUR);
+-
+-		REG_SET_BIT(ah, AR_MAC_PCU_LOGIC_ANALYZER,
+-			    AR_MAC_PCU_LOGIC_ANALYZER_DISBUG20768);
+-		REG_RMW_FIELD(ah, AR_AHB_MODE, AR_AHB_CUSTOM_BURST_EN,
+-			      AR_AHB_CUSTOM_BURST_ASYNC_FIFO_VAL);
+-	}
+-}
+-
+-/*
+- * We don't enable WEP aggregation on mac80211 but we keep this
+- * around for HAL unification purposes.
+- */
+-void ar9002_hw_enable_wep_aggregation(struct ath_hw *ah)
+-{
+-	if (AR_SREV_9287_13_OR_LATER(ah)) {
+-		REG_SET_BIT(ah, AR_PCU_MISC_MODE2,
+-			    AR_PCU_MISC_MODE2_ENABLE_AGGWEP);
+-	}
+-}
+-
+ /* Sets up the AR5008/AR9001/AR9002 hardware familiy callbacks */
+ void ar9002_hw_attach_ops(struct ath_hw *ah)
+ {
+--- a/drivers/net/wireless/ath/ath9k/ar9002_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_phy.c
+@@ -111,7 +111,9 @@ static int ar9002_hw_set_channel(struct 
+ 
+ 		switch (ah->eep_ops->get_eeprom(ah, EEP_FRAC_N_5G)) {
+ 		case 0:
+-			if ((freq % 20) == 0)
++			if (IS_CHAN_HALF_RATE(chan) || IS_CHAN_QUARTER_RATE(chan))
++				aModeRefSel = 0;
++			else if ((freq % 20) == 0)
+ 				aModeRefSel = 3;
+ 			else if ((freq % 10) == 0)
+ 				aModeRefSel = 2;
+@@ -129,8 +131,9 @@ static int ar9002_hw_set_channel(struct 
+ 			channelSel = CHANSEL_5G(freq);
+ 
+ 			/* RefDivA setting */
+-			REG_RMW_FIELD(ah, AR_AN_SYNTH9,
+-				      AR_AN_SYNTH9_REFDIVA, refDivA);
++			ath9k_hw_analog_shift_rmw(ah, AR_AN_SYNTH9,
++				      AR_AN_SYNTH9_REFDIVA,
++				      AR_AN_SYNTH9_REFDIVA_S, refDivA);
+ 
+ 		}
+ 
+@@ -447,26 +450,27 @@ static void ar9002_olc_init(struct ath_h
+ static u32 ar9002_hw_compute_pll_control(struct ath_hw *ah,
+ 					 struct ath9k_channel *chan)
+ {
++	int ref_div = 5;
++	int pll_div = 0x2c;
+ 	u32 pll;
+ 
+-	pll = SM(0x5, AR_RTC_9160_PLL_REFDIV);
++	if (chan && IS_CHAN_5GHZ(chan) && !IS_CHAN_A_FAST_CLOCK(ah, chan)) {
++		if (AR_SREV_9280_20(ah)) {
++			ref_div = 10;
++			pll_div = 0x50;
++		} else {
++			pll_div = 0x28;
++		}
++	}
++
++	pll = SM(ref_div, AR_RTC_9160_PLL_REFDIV);
++	pll |= SM(pll_div, AR_RTC_9160_PLL_DIV);
+ 
+ 	if (chan && IS_CHAN_HALF_RATE(chan))
+ 		pll |= SM(0x1, AR_RTC_9160_PLL_CLKSEL);
+ 	else if (chan && IS_CHAN_QUARTER_RATE(chan))
+ 		pll |= SM(0x2, AR_RTC_9160_PLL_CLKSEL);
+ 
+-	if (chan && IS_CHAN_5GHZ(chan)) {
+-		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
+-			pll = 0x142c;
+-		else if (AR_SREV_9280_20(ah))
+-			pll = 0x2850;
+-		else
+-			pll |= SM(0x28, AR_RTC_9160_PLL_DIV);
+-	} else {
+-		pll |= SM(0x2c, AR_RTC_9160_PLL_DIV);
+-	}
+-
+ 	return pll;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -87,7 +87,10 @@ static void ath9k_hw_set_clockrate(struc
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	unsigned int clockrate;
+ 
+-	if (!ah->curchan) /* should really check for CCK instead */
++	/* AR9287 v1.3+ uses async FIFO and runs the MAC at 117 MHz */
++	if (AR_SREV_9287(ah) && AR_SREV_9287_13_OR_LATER(ah))
++		clockrate = 117;
++	else if (!ah->curchan) /* should really check for CCK instead */
+ 		clockrate = ATH9K_CLOCK_RATE_CCK;
+ 	else if (conf->channel->band == IEEE80211_BAND_2GHZ)
+ 		clockrate = ATH9K_CLOCK_RATE_2GHZ_OFDM;
+@@ -99,6 +102,13 @@ static void ath9k_hw_set_clockrate(struc
+ 	if (conf_is_ht40(conf))
+ 		clockrate *= 2;
+ 
++	if (ah->curchan) {
++		if (IS_CHAN_HALF_RATE(ah->curchan))
++			clockrate /= 2;
++		if (IS_CHAN_QUARTER_RATE(ah->curchan))
++			clockrate /= 4;
++	}
++
+ 	common->clockrate = clockrate;
+ }
+ 
+@@ -895,6 +905,13 @@ static void ath9k_hw_init_interrupt_mask
+ 	}
+ }
+ 
++static void ath9k_hw_set_sifs_time(struct ath_hw *ah, u32 us)
++{
++	u32 val = ath9k_hw_mac_to_clks(ah, us - 2);
++	val = min(val, (u32) 0xFFFF);
++	REG_WRITE(ah, AR_D_GBL_IFS_SIFS, val);
++}
++
+ static void ath9k_hw_setslottime(struct ath_hw *ah, u32 us)
+ {
+ 	u32 val = ath9k_hw_mac_to_clks(ah, us);
+@@ -932,25 +949,60 @@ static bool ath9k_hw_set_global_txtimeou
+ 
+ void ath9k_hw_init_global_settings(struct ath_hw *ah)
+ {
+-	struct ieee80211_conf *conf = &ath9k_hw_common(ah)->hw->conf;
++	struct ath_common *common = ath9k_hw_common(ah);
++	struct ieee80211_conf *conf = &common->hw->conf;
++	const struct ath9k_channel *chan = ah->curchan;
+ 	int acktimeout;
+ 	int slottime;
+ 	int sifstime;
++	int rx_lat = 0, tx_lat = 0, eifs = 0;
++	u32 reg;
+ 
+ 	ath_dbg(ath9k_hw_common(ah), ATH_DBG_RESET, "ah->misc_mode 0x%x\n",
+ 		ah->misc_mode);
+ 
++	if (!chan)
++		return;
++
+ 	if (ah->misc_mode != 0)
+ 		REG_SET_BIT(ah, AR_PCU_MISC, ah->misc_mode);
+ 
+-	if (conf->channel && conf->channel->band == IEEE80211_BAND_5GHZ)
+-		sifstime = 16;
+-	else
+-		sifstime = 10;
++	rx_lat = 37;
++	tx_lat = 54;
++
++	if (IS_CHAN_HALF_RATE(chan)) {
++		eifs = 175;
++		rx_lat *= 2;
++		tx_lat *= 2;
++		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
++		    tx_lat += 11;
++
++		slottime = 13;
++		sifstime = 32;
++	} else if (IS_CHAN_QUARTER_RATE(chan)) {
++		eifs = 340;
++		rx_lat *= 4;
++		tx_lat *= 4;
++		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
++		    tx_lat += 22;
++
++		slottime = 21;
++		sifstime = 64;
++	} else {
++		eifs = REG_READ(ah, AR_D_GBL_IFS_EIFS);
++		reg = REG_READ(ah, AR_USEC);
++		rx_lat = MS(reg, AR_USEC_RX_LAT);
++		tx_lat = MS(reg, AR_USEC_TX_LAT);
++
++		slottime = ah->slottime;
++		if (IS_CHAN_5GHZ(chan))
++			sifstime = 16;
++		else
++			sifstime = 10;
++	}
+ 
+ 	/* As defined by IEEE 802.11-2007 17.3.8.6 */
+-	slottime = ah->slottime + 3 * ah->coverage_class;
+-	acktimeout = slottime + sifstime;
++	acktimeout = slottime + sifstime + 3 * ah->coverage_class;
+ 
+ 	/*
+ 	 * Workaround for early ACK timeouts, add an offset to match the
+@@ -962,11 +1014,20 @@ void ath9k_hw_init_global_settings(struc
+ 	if (conf->channel && conf->channel->band == IEEE80211_BAND_2GHZ)
+ 		acktimeout += 64 - sifstime - ah->slottime;
+ 
+-	ath9k_hw_setslottime(ah, ah->slottime);
++	ath9k_hw_set_sifs_time(ah, sifstime);
++	ath9k_hw_setslottime(ah, slottime);
+ 	ath9k_hw_set_ack_timeout(ah, acktimeout);
+ 	ath9k_hw_set_cts_timeout(ah, acktimeout);
+ 	if (ah->globaltxtimeout != (u32) -1)
+ 		ath9k_hw_set_global_txtimeout(ah, ah->globaltxtimeout);
++
++	REG_WRITE(ah, AR_D_GBL_IFS_EIFS, ath9k_hw_mac_to_clks(ah, eifs));
++	REG_RMW(ah, AR_USEC,
++		(common->clockrate - 1) |
++		SM(rx_lat, AR_USEC_RX_LAT) |
++		SM(tx_lat, AR_USEC_TX_LAT),
++		AR_USEC_TX_LAT | AR_USEC_RX_LAT | AR_USEC_USEC);
++
+ }
+ EXPORT_SYMBOL(ath9k_hw_init_global_settings);
+ 
+@@ -1570,9 +1631,13 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 
+ 	ath9k_hw_init_global_settings(ah);
+ 
+-	if (!AR_SREV_9300_20_OR_LATER(ah)) {
+-		ar9002_hw_update_async_fifo(ah);
+-		ar9002_hw_enable_wep_aggregation(ah);
++	if (AR_SREV_9287(ah) && AR_SREV_9287_13_OR_LATER(ah)) {
++		REG_SET_BIT(ah, AR_MAC_PCU_LOGIC_ANALYZER,
++			    AR_MAC_PCU_LOGIC_ANALYZER_DISBUG20768);
++		REG_RMW_FIELD(ah, AR_AHB_MODE, AR_AHB_CUSTOM_BURST_EN,
++			      AR_AHB_CUSTOM_BURST_ASYNC_FIFO_VAL);
++		REG_SET_BIT(ah, AR_PCU_MISC_MODE2,
++			    AR_PCU_MISC_MODE2_ENABLE_AGGWEP);
+ 	}
+ 
+ 	REG_SET_BIT(ah, AR_STA_ID1, AR_STA_ID1_PRESERVE_SEQNUM);
+@@ -1932,12 +1997,22 @@ EXPORT_SYMBOL(ath9k_hw_set_sta_beacon_ti
+ /* HW Capabilities */
+ /*******************/
+ 
++static u8 fixup_chainmask(u8 chip_chainmask, u8 eeprom_chainmask)
++{
++	eeprom_chainmask &= chip_chainmask;
++	if (eeprom_chainmask)
++		return eeprom_chainmask;
++	else
++		return chip_chainmask;
++}
++
+ int ath9k_hw_fill_cap_info(struct ath_hw *ah)
+ {
+ 	struct ath9k_hw_capabilities *pCap = &ah->caps;
+ 	struct ath_regulatory *regulatory = ath9k_hw_regulatory(ah);
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ath_btcoex_hw *btcoex_hw = &ah->btcoex_hw;
++	unsigned int chip_chainmask;
+ 
+ 	u16 eeval;
+ 	u8 ant_div_ctl1, tx_chainmask, rx_chainmask;
+@@ -1974,6 +2049,15 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 	if (eeval & AR5416_OPFLAGS_11G)
+ 		pCap->hw_caps |= ATH9K_HW_CAP_2GHZ;
+ 
++	if (AR_SREV_9485(ah) || AR_SREV_9285(ah) || AR_SREV_9330(ah))
++		chip_chainmask = 1;
++	else if (!AR_SREV_9280_20_OR_LATER(ah))
++		chip_chainmask = 7;
++	else if (!AR_SREV_9300_20_OR_LATER(ah) || AR_SREV_9340(ah))
++		chip_chainmask = 3;
++	else
++		chip_chainmask = 7;
++
+ 	pCap->tx_chainmask = ah->eep_ops->get_eeprom(ah, EEP_TX_MASK);
+ 	/*
+ 	 * For AR9271 we will temporarilly uses the rx chainmax as read from
+@@ -1990,6 +2074,9 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 		/* Use rx_chainmask from EEPROM. */
+ 		pCap->rx_chainmask = ah->eep_ops->get_eeprom(ah, EEP_RX_MASK);
+ 
++	pCap->tx_chainmask = fixup_chainmask(chip_chainmask, pCap->tx_chainmask);
++	pCap->rx_chainmask = fixup_chainmask(chip_chainmask, pCap->rx_chainmask);
++
+ 	ah->misc_mode |= AR_PCU_MIC_NEW_LOC_ENA;
+ 
+ 	/* enable key search for every frame in an aggregate */
+@@ -2079,10 +2166,7 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+ 			pCap->hw_caps |= ATH9K_HW_CAP_PAPRD;
+ 	} else {
+ 		pCap->tx_desc_len = sizeof(struct ath_desc);
+-		if (AR_SREV_9280_20(ah) &&
+-		    ((ah->eep_ops->get_eeprom(ah, EEP_MINOR_REV) <=
+-		      AR5416_EEP_MINOR_VER_16) ||
+-		     ah->eep_ops->get_eeprom(ah, EEP_FSTCLK_5G)))
++		if (AR_SREV_9280_20(ah))
+ 			pCap->hw_caps |= ATH9K_HW_CAP_FASTCLOCK;
+ 	}
+ 
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -983,8 +983,6 @@ void ath9k_hw_get_delta_slope_vals(struc
+ void ar9002_hw_cck_chan14_spread(struct ath_hw *ah);
+ int ar9002_hw_rf_claim(struct ath_hw *ah);
+ void ar9002_hw_enable_async_fifo(struct ath_hw *ah);
+-void ar9002_hw_update_async_fifo(struct ath_hw *ah);
+-void ar9002_hw_enable_wep_aggregation(struct ath_hw *ah);
+ 
+ /*
+  * Code specific to AR9003, we stuff these here to avoid callbacks
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -814,16 +814,19 @@ static bool ath9k_rx_accept(struct ath_c
+ 			    struct ath_rx_status *rx_stats,
+ 			    bool *decrypt_error)
+ {
+-#define is_mc_or_valid_tkip_keyix ((is_mc ||			\
+-		(rx_stats->rs_keyix != ATH9K_RXKEYIX_INVALID && \
+-		test_bit(rx_stats->rs_keyix, common->tkip_keymap))))
+-
++	bool is_mc, is_valid_tkip, strip_mic, mic_error = false;
+ 	struct ath_hw *ah = common->ah;
+ 	__le16 fc;
+ 	u8 rx_status_len = ah->caps.rx_status_len;
+ 
+ 	fc = hdr->frame_control;
+ 
++	is_mc = !!is_multicast_ether_addr(hdr->addr1);
++	is_valid_tkip = rx_stats->rs_keyix != ATH9K_RXKEYIX_INVALID &&
++		test_bit(rx_stats->rs_keyix, common->tkip_keymap);
++	strip_mic = is_valid_tkip && !(rx_stats->rs_status &
++		(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_CRC | ATH9K_RXERR_MIC));
++
+ 	if (!rx_stats->rs_datalen)
+ 		return false;
+         /*
+@@ -838,6 +841,11 @@ static bool ath9k_rx_accept(struct ath_c
+ 	if (rx_stats->rs_more)
+ 		return true;
+ 
++	mic_error = is_valid_tkip && !ieee80211_is_ctl(fc) &&
++		!ieee80211_has_morefrags(fc) &&
++		!(le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_FRAG) &&
++		(rx_stats->rs_status & ATH9K_RXERR_MIC);
++
+ 	/*
+ 	 * The rx_stats->rs_status will not be set until the end of the
+ 	 * chained descriptors so it can be ignored if rs_more is set. The
+@@ -845,30 +853,18 @@ static bool ath9k_rx_accept(struct ath_c
+ 	 * descriptors.
+ 	 */
+ 	if (rx_stats->rs_status != 0) {
+-		if (rx_stats->rs_status & ATH9K_RXERR_CRC)
++		if (rx_stats->rs_status & ATH9K_RXERR_CRC) {
+ 			rxs->flag |= RX_FLAG_FAILED_FCS_CRC;
++			mic_error = false;
++		}
+ 		if (rx_stats->rs_status & ATH9K_RXERR_PHY)
+ 			return false;
+ 
+ 		if (rx_stats->rs_status & ATH9K_RXERR_DECRYPT) {
+ 			*decrypt_error = true;
+-		} else if (rx_stats->rs_status & ATH9K_RXERR_MIC) {
+-			bool is_mc;
+-			/*
+-			 * The MIC error bit is only valid if the frame
+-			 * is not a control frame or fragment, and it was
+-			 * decrypted using a valid TKIP key.
+-			 */
+-			is_mc = !!is_multicast_ether_addr(hdr->addr1);
+-
+-			if (!ieee80211_is_ctl(fc) &&
+-			    !ieee80211_has_morefrags(fc) &&
+-			    !(le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_FRAG) &&
+-			    is_mc_or_valid_tkip_keyix)
+-				rxs->flag |= RX_FLAG_MMIC_ERROR;
+-			else
+-				rx_stats->rs_status &= ~ATH9K_RXERR_MIC;
++			mic_error = false;
+ 		}
++
+ 		/*
+ 		 * Reject error frames with the exception of
+ 		 * decryption and MIC failures. For monitor mode,
+@@ -886,6 +882,18 @@ static bool ath9k_rx_accept(struct ath_c
+ 			}
+ 		}
+ 	}
++
++	/*
++	 * For unicast frames the MIC error bit can have false positives,
++	 * so all MIC error reports need to be validated in software.
++	 * False negatives are not common, so skip software verification
++	 * if the hardware considers the MIC valid.
++	 */
++	if (strip_mic)
++		rxs->flag |= RX_FLAG_MMIC_STRIPPED;
++	else if (is_mc && mic_error)
++		rxs->flag |= RX_FLAG_MMIC_ERROR;
++
+ 	return true;
+ }
+ 
+@@ -1938,6 +1946,9 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 			sc->rx.rxotherant = 0;
+ 		}
+ 
++		if (rxs->flag & RX_FLAG_MMIC_STRIPPED)
++			skb_trim(skb, skb->len - 8);
++
+ 		spin_lock_irqsave(&sc->sc_pm_lock, flags);
+ 
+ 		if ((sc->ps_flags & (PS_WAIT_FOR_BEACON |
+--- a/drivers/net/wireless/ath/ath9k/reg.h
++++ b/drivers/net/wireless/ath/ath9k/reg.h
+@@ -600,7 +600,6 @@
+ 
+ #define AR_D_GBL_IFS_SIFS         0x1030
+ #define AR_D_GBL_IFS_SIFS_M       0x0000FFFF
+-#define AR_D_GBL_IFS_SIFS_ASYNC_FIFO_DUR 0x000003AB
+ #define AR_D_GBL_IFS_SIFS_RESV0   0xFFFFFFFF
+ 
+ #define AR_D_TXBLK_BASE            0x1038
+@@ -616,12 +615,10 @@
+ #define AR_D_GBL_IFS_SLOT         0x1070
+ #define AR_D_GBL_IFS_SLOT_M       0x0000FFFF
+ #define AR_D_GBL_IFS_SLOT_RESV0   0xFFFF0000
+-#define AR_D_GBL_IFS_SLOT_ASYNC_FIFO_DUR   0x00000420
+ 
+ #define AR_D_GBL_IFS_EIFS         0x10b0
+ #define AR_D_GBL_IFS_EIFS_M       0x0000FFFF
+ #define AR_D_GBL_IFS_EIFS_RESV0   0xFFFF0000
+-#define AR_D_GBL_IFS_EIFS_ASYNC_FIFO_DUR   0x0000A5EB
+ 
+ #define AR_D_GBL_IFS_MISC        0x10f0
+ #define AR_D_GBL_IFS_MISC_LFSR_SLICE_SEL        0x00000007
+@@ -1477,7 +1474,6 @@ enum {
+ #define AR_TIME_OUT_ACK_S    0
+ #define AR_TIME_OUT_CTS      0x3FFF0000
+ #define AR_TIME_OUT_CTS_S    16
+-#define AR_TIME_OUT_ACK_CTS_ASYNC_FIFO_DUR    0x16001D56
+ 
+ #define AR_RSSI_THR          0x8018
+ #define AR_RSSI_THR_MASK     0x000000FF
+@@ -1493,7 +1489,6 @@ enum {
+ #define AR_USEC_TX_LAT_S     14
+ #define AR_USEC_RX_LAT       0x1F800000
+ #define AR_USEC_RX_LAT_S     23
+-#define AR_USEC_ASYNC_FIFO_DUR    0x12e00074
+ 
+ #define AR_RESET_TSF        0x8020
+ #define AR_RESET_TSF_ONCE   0x01000000
