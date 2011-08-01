@@ -15,3 +15,63 @@
  # Compat kernel compatibility code
  compat-$(CONFIG_COMPAT_KERNEL_2_6_14) += compat-2.6.14.o
  compat-$(CONFIG_COMPAT_KERNEL_2_6_18) += compat-2.6.18.o
+--- a/compat/compat_firmware_class.c
++++ b/compat/compat_firmware_class.c
+@@ -729,19 +729,16 @@ request_firmware_nowait(
+ 	return 0;
+ }
+ 
+-static int __init firmware_class_init(void)
++int __init firmware_class_init(void)
+ {
+ 	return class_register(&firmware_class);
+ }
+ 
+-static void __exit firmware_class_exit(void)
++void __exit firmware_class_exit(void)
+ {
+ 	class_unregister(&firmware_class);
+ }
+ 
+-fs_initcall(firmware_class_init);
+-module_exit(firmware_class_exit);
+-
+ EXPORT_SYMBOL(release_firmware);
+ EXPORT_SYMBOL(request_firmware);
+ EXPORT_SYMBOL(request_firmware_nowait);
+--- a/compat/main.c
++++ b/compat/main.c
+@@ -32,6 +32,14 @@ module_param(compat_version, charp, 0400
+ MODULE_PARM_DESC(compat_version,
+ 		 "Version of the kernel compat backport work");
+ 
++#if defined(CONFIG_FW_LOADER) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
++int __init firmware_class_init(void);
++void __exit firmware_class_exit(void);
++#else
++static inline int firmware_class_init(void) {}
++static inline void firmware_class_exit(void) {}
++#endif
++
+ static int __init compat_init(void)
+ {
+ 	/* pm-qos for kernels <= 2.6.24, this is a no-op on newer kernels */
+@@ -45,15 +53,15 @@ static int __init compat_init(void)
+ 	       COMPAT_BASE_TREE " " COMPAT_BASE_TREE_VERSION
+ 	       "\n");
+ 
+-        return 0;
++	firmware_class_init();
++	return 0;
+ }
+ module_init(compat_init);
+ 
+ static void __exit compat_exit(void)
+ {
+ 	compat_pm_qos_power_deinit();
+-
+-        return;
++	firmware_class_exit();
+ }
+ module_exit(compat_exit);
+ 
