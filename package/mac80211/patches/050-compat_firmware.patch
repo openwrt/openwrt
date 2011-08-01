@@ -1,0 +1,17 @@
+--- a/compat/Makefile
++++ b/compat/Makefile
+@@ -1,10 +1,13 @@
+ obj-m += compat.o
+ #compat-objs :=
+ 
+-obj-$(CONFIG_COMPAT_FIRMWARE_CLASS) += compat_firmware_class.o
+ 
+ compat-y += main.o
+ 
++ifdef CONFIG_COMPAT_FIRMWARE_CLASS
++  compat-y += compat_firmware_class.o
++endif
++
+ # Compat kernel compatibility code
+ compat-$(CONFIG_COMPAT_KERNEL_2_6_14) += compat-2.6.14.o
+ compat-$(CONFIG_COMPAT_KERNEL_2_6_18) += compat-2.6.18.o
