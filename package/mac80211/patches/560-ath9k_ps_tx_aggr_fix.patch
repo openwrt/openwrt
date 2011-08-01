@@ -1,0 +1,22 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -550,7 +550,8 @@ static void ath_tx_complete_aggr(struct 
+ 		if (clear_filter)
+ 			tid->ac->clear_ps_filter = true;
+ 		list_splice(&bf_pending, &tid->buf_q);
+-		ath_tx_queue_tid(txq, tid);
++		if (!an->sleeping)
++			ath_tx_queue_tid(txq, tid);
+ 		spin_unlock_bh(&txq->axq_lock);
+ 	}
+ 
+@@ -1410,7 +1411,8 @@ static void ath_tx_send_ampdu(struct ath
+ 		 */
+ 		TX_STAT_INC(txctl->txq->axq_qnum, a_queued_sw);
+ 		list_add_tail(&bf->list, &tid->buf_q);
+-		ath_tx_queue_tid(txctl->txq, tid);
++		if (!txctl->an || !txctl->an->sleeping)
++			ath_tx_queue_tid(txctl->txq, tid);
+ 		return;
+ 	}
+ 
