@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2010 OpenWrt.org
+# Copyright (C) 2007-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -49,6 +49,20 @@ define autoreconf
 	);
 endef
 
+# 1: build dir
+define patch_libtool
+	(cd $(1); \
+		for lt in $$$$($$(STAGING_DIR_HOST)/bin/find . -name ltmain.sh); do \
+			lt_version="$$$$($$(STAGING_DIR_HOST)/bin/sed -ne 's,^[[:space:]]*VERSION=\([0-9]\.[0-9]\+\).*,\1,p' $$$$lt)"; \
+			case "$$$$lt_version" in \
+				1.5|2.2|2.4) echo "autotools.mk: Found libtool v$$$$lt_version - applying patch to $$$$lt"; \
+					(cd $$$$(dirname $$$$lt) && $$(PATCH) -s -p1 < $$(TOPDIR)/tools/libtool/files/libtool-v$$$$lt_version.patch) ;; \
+				*) echo "autotools.mk: error: Unsupported libtool version v$$$$lt_version - cannot patch $$$$lt"; exit 1 ;; \
+			esac; \
+		done; \
+	);
+endef
+
 
 PKG_LIBTOOL_PATHS?=$(CONFIGURE_PATH)
 PKG_AUTOMAKE_PATHS?=$(CONFIGURE_PATH)
@@ -63,6 +77,15 @@ define autoreconf_target
     $(PKG_AUTOMAKE_PATHS), $(PKG_LIBTOOL_PATHS), \
     $(STAGING_DIR)/host/share/aclocal $(STAGING_DIR)/usr/share/aclocal $(PKG_MACRO_PATHS)))
 endef
+
+define patch_libtool_target
+  $(strip $(call patch_libtool, \
+    $(PKG_BUILD_DIR)))
+endef
+
+ifneq ($(filter patch-libtool,$(PKG_FIXUP)),)
+  Hooks/Configure/Pre += patch_libtool_target
+endif
 
 ifneq ($(filter libtool,$(PKG_FIXUP)),)
   PKG_BUILD_DEPENDS += libtool libintl libiconv
@@ -97,6 +120,19 @@ define autoreconf_host
     $(HOST_AUTOMAKE_PATHS), $(HOST_LIBTOOL_PATHS), \
     $(HOST_MACRO_PATHS)))
 endef
+
+define patch_libtool_host
+  $(strip $(call patch_libtool, \
+    $(HOST_BUILD_DIR)))
+endef
+
+ifneq ($(filter patch-libtool,$(PKG_FIXUP)),)
+  Hooks/HostConfigure/Pre += patch_libtool_host
+endif
+
+ifneq ($(filter patch-libtool,$(HOST_FIXUP)),)
+  Hooks/HostConfigure/Pre += $(strip $(call patch_libtool,$(HOST_BUILD_DIR)))
+endif
 
 ifneq ($(filter libtool,$(HOST_FIXUP)),)
  ifeq ($(filter no-autoreconf,$(HOST_FIXUP)),)
