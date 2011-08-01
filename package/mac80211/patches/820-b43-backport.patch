@@ -309,7 +309,7 @@
  #endif /* B43_BUS_H_ */
 --- a/drivers/net/wireless/b43/dma.c
 +++ b/drivers/net/wireless/b43/dma.c
-@@ -174,7 +174,7 @@ static void op64_fill_descriptor(struct
+@@ -174,7 +174,7 @@ static void op64_fill_descriptor(struct 
  	addrhi = (((u64) dmaaddr >> 32) & ~SSB_DMA_TRANSLATION_MASK);
  	addrext = (((u64) dmaaddr >> 32) & SSB_DMA_TRANSLATION_MASK)
  	    >> SSB_DMA_TRANSLATION_SHIFT;
