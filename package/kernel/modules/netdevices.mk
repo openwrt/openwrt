@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -22,7 +22,8 @@ define KernelPackage/skge
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SysKonnect Yukon support
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_SKGE
+  KCONFIG:=CONFIG_SKGE \
+    CONFIG_SKGE_DEBUG=n
   FILES:=$(LINUX_DIR)/drivers/net/skge.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,50,skge)
 endef
