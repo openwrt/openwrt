@@ -1,0 +1,18 @@
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -273,13 +273,10 @@ $(patsubst %.in,%,$(wildcard bin/*.in qu
+ lib/backup-files.o :: Makefile
+ 
+ configure : configure.ac aclocal.m4
+-	autoconf
+-	@echo "Please run ./configure"
+-	@false
++	@touch $@
+ 
+ Makefile : Makefile.in configure
+-	@echo "Please run ./configure"
+-	@false
++	@touch $@
+ 
+ compat_leftover := $(filter-out $(COMPAT),$(shell $(FIND) compat -maxdepth 1 -type f -perm +111))
+ 
