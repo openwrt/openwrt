@@ -41,7 +41,7 @@
  EXPORT_SYMBOL(request_firmware_nowait);
 --- a/compat/main.c
 +++ b/compat/main.c
-@@ -32,6 +32,14 @@ module_param(compat_version, charp, 0400
+@@ -32,6 +32,17 @@ module_param(compat_version, charp, 0400
  MODULE_PARM_DESC(compat_version,
  		 "Version of the kernel compat backport work");
  
@@ -49,14 +49,17 @@
 +int __init firmware_class_init(void);
 +void __exit firmware_class_exit(void);
 +#else
-+static inline int firmware_class_init(void) {}
++static inline int firmware_class_init(void)
++{
++	return 0;
++}
 +static inline void firmware_class_exit(void) {}
 +#endif
 +
  static int __init compat_init(void)
  {
  	/* pm-qos for kernels <= 2.6.24, this is a no-op on newer kernels */
-@@ -45,15 +53,15 @@ static int __init compat_init(void)
+@@ -45,15 +56,15 @@ static int __init compat_init(void)
  	       COMPAT_BASE_TREE " " COMPAT_BASE_TREE_VERSION
  	       "\n");
  
