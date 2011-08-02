@@ -1,33 +1,3 @@
-The original code does not work well when the number of mulitcast
-address to handle is greater than MCAST_MAX. It only enable promiscous
-mode instead of multicast hash table mode, so the hash table function
-will not be activated and all multicast frames will be recieved in this
-condition.
-
-This patch fixes the following issues with the r6040 NIC operating in
-multicast:
-
-1) When the IFF_ALLMULTI flag is set, we should write 0xffff to the NIC
-hash table registers to make it process multicast traffic.
-
-2) When the number of multicast address to handle is smaller than
-MCAST_MAX, we should use the NIC multicast registers MID1_{L,M,H}.
-
-3) The hashing of the address was not correct, due to an invalid
-substraction (15 - (crc & 0x0f)) instead of (crc & 0x0f) and an
-incorrect crc algorithm (ether_crc_le) instead of (ether_crc).
-
-4) If necessary, we should set HASH_EN flag in MCR0 to enable multicast
-hash table function.
-
-
-The version is for net-next-2.6:
-
-Reported-by: Marc Leclerc <marc-leclerc@signaturealpha.com>
-Tested-by: Marc Leclerc <marc-leclerc@signaturealpha.com>
-Signed-off-by: Shawn Lin <shawn@dmp.com.tw>
-Signed-off-by: Albert Chen <albert.chen@rdc.com.tw>
----
 --- a/drivers/net/r6040.c
 +++ b/drivers/net/r6040.c
 @@ -70,6 +70,8 @@
@@ -39,7 +9,7 @@ Signed-off-by: Albert Chen <albert.chen@rdc.com.tw>
  #define MCR1		0x04	/* Control register 1 */
  #define  MAC_RST	0x0001	/* Reset the MAC */
  #define MBCR		0x08	/* Bus control */
-@@ -837,76 +839,88 @@ static void r6040_multicast_list(struct
+@@ -837,76 +839,96 @@
  {
  	struct r6040_private *lp = netdev_priv(dev);
  	void __iomem *ioaddr = lp->base;
@@ -48,17 +18,21 @@ Signed-off-by: Albert Chen <albert.chen@rdc.com.tw>
  	unsigned long flags;
  	struct dev_mc_list *dmi = dev->mc_list;
  	int i;
++	u16 *adrp;
 +	u16 hash_table[4] = { 0 };
++
++	spin_lock_irqsave(&lp->lock, flags);
  
 -	/* MAC Address */
--	adrp = (u16 *)dev->dev_addr;
--	iowrite16(adrp[0], ioaddr + MID_0L);
--	iowrite16(adrp[1], ioaddr + MID_0M);
--	iowrite16(adrp[2], ioaddr + MID_0H);
--
--	/* Promiscous Mode */
- 	spin_lock_irqsave(&lp->lock, flags);
++	/* Keep our MAC Address */
+ 	adrp = (u16 *)dev->dev_addr;
+ 	iowrite16(adrp[0], ioaddr + MID_0L);
+ 	iowrite16(adrp[1], ioaddr + MID_0M);
+ 	iowrite16(adrp[2], ioaddr + MID_0H);
  
+-	/* Promiscous Mode */
+-	spin_lock_irqsave(&lp->lock, flags);
+-
  	/* Clear AMCP & PROM bits */
 -	reg = ioread16(ioaddr) & ~0x0120;
 +	lp->mcr0 = ioread16(ioaddr + MCR0) & ~(PROMISC | HASH_EN);
@@ -123,29 +97,29 @@ Signed-off-by: Albert Chen <albert.chen@rdc.com.tw>
 +	/* Otherwise, Enable multicast hash table function. */
 +	else {
 +		u32 crc;
++
++		lp->mcr0 |= HASH_EN;
  
 -			if (!(*addrs & 1))
 -				continue;
-+		lp->mcr0 |= HASH_EN;
- 
--			crc = ether_crc_le(6, addrs);
--			crc >>= 26;
--			hash_table[crc >> 4] |= 1 << (15 - (crc & 0xf));
 +		for (i = 0; i < MCAST_MAX ; i++) {
 +			iowrite16(0, ioaddr + MID_1L + 8 * i);
 +			iowrite16(0, ioaddr + MID_1M + 8 * i);
 +			iowrite16(0, ioaddr + MID_1H + 8 * i);
- 		}
--		/* Fill the MAC hash tables with their values */
++		}
 +
 +		/* Build multicast hash table */
 +		for (i = 0; i < dev->mc_count; i++) {
 +			u8 *addrs = dmi->dmi_addr;
 +			dmi = dmi->next;
-+
+ 
+-			crc = ether_crc_le(6, addrs);
 +			crc = ether_crc(ETH_ALEN, addrs);
+ 			crc >>= 26;
+-			hash_table[crc >> 4] |= 1 << (15 - (crc & 0xf));
 +			hash_table[crc >> 4] |= 1 << (crc & 0xf);
-+		}
+ 		}
+-		/* Fill the MAC hash tables with their values */
 +	}
 +	iowrite16(lp->mcr0, ioaddr + MCR0);
 +
