@@ -12,7 +12,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -828,20 +828,6 @@ void __init board_setup(void)
+@@ -822,20 +822,6 @@ void __init board_setup(void)
  		panic("unexpected CPU for bcm963xx board");
  }
  
@@ -33,7 +33,7 @@ Signed-off-by: Axel Gembe <ago@bastart.eu.org>
  static struct resource mtd_resources[] = {
  	{
  		.start		= 0,	/* filled at runtime */
-@@ -851,12 +837,9 @@ static struct resource mtd_resources[] =
+@@ -845,12 +831,9 @@ static struct resource mtd_resources[] =
  };
  
  static struct platform_device mtd_dev = {

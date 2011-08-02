@@ -18,7 +18,7 @@
  #endif
  
  /*
-@@ -2406,8 +2417,9 @@ int __init board_register_devices(void)
+@@ -2400,8 +2411,9 @@ int __init board_register_devices(void)
  	if (!board_get_mac_address(bcm63xx_sprom.il0mac)) {
  		memcpy(bcm63xx_sprom.et0mac, bcm63xx_sprom.il0mac, ETH_ALEN);
  		memcpy(bcm63xx_sprom.et1mac, bcm63xx_sprom.il0mac, ETH_ALEN);
