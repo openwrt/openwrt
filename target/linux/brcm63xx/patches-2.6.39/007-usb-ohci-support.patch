@@ -52,7 +52,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  #include <board_bcm963xx.h>
  
  #define PFX	"board_bcm963xx: "
-@@ -877,6 +878,9 @@ int __init board_register_devices(void)
+@@ -871,6 +872,9 @@ int __init board_register_devices(void)
  	    !board_get_mac_address(board.enet1.mac_addr))
  		bcm63xx_enet_register(1, &board.enet1);
  

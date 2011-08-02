@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -889,6 +889,7 @@ int __init board_register_devices(void)
+@@ -883,6 +883,7 @@ int __init board_register_devices(void)
  {
  	u32 val;
  	int button_count = 0;
@@ -8,7 +8,7 @@
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -928,7 +929,11 @@ int __init board_register_devices(void)
+@@ -919,7 +920,11 @@ int __init board_register_devices(void)
  
  	platform_device_register(&mtd_dev);
  

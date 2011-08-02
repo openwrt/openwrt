@@ -43,7 +43,7 @@
  };
  
  static struct board_info __initdata board_FAST2404 = {
-@@ -850,12 +872,23 @@ static struct platform_device bcm63xx_gp
+@@ -844,12 +866,23 @@ static struct platform_device bcm63xx_gp
  	.dev.platform_data	= &bcm63xx_led_data,
  };
  
@@ -67,7 +67,7 @@
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -900,5 +933,16 @@ int __init board_register_devices(void)
+@@ -891,5 +924,16 @@ int __init board_register_devices(void)
  
  	platform_device_register(&bcm63xx_gpio_leds);
  

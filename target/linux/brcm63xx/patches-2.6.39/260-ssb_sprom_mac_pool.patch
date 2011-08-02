@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -856,17 +856,6 @@ void __init board_prom_init(void)
+@@ -850,17 +850,6 @@ void __init board_prom_init(void)
  	}
  
  	bcm_gpio_writel(val, GPIO_MODE_REG);
@@ -18,7 +18,7 @@
  }
  
  /*
-@@ -942,6 +931,18 @@ int __init board_register_devices(void)
+@@ -936,6 +925,18 @@ int __init board_register_devices(void)
  	    !board_get_mac_address(board.enet1.mac_addr))
  		bcm63xx_enet_register(1, &board.enet1);
  
