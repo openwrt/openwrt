@@ -47,17 +47,20 @@
 #include <linux/miscdevice.h>
 #include <linux/ioport.h>
 #include <linux/fcntl.h>
+#include <linux/mc146818rtc.h>
 #include <linux/init.h>
 #include <linux/spinlock.h>
 #include <linux/rtc.h>
 #include <linux/delay.h>
 #include <linux/version.h>
-#include <linux/smp_lock.h>
+#include <linux/gpio.h>
+#include <linux/uaccess.h>
 
-#include <asm/uaccess.h>
+#include <asm/current.h>
 #include <asm/system.h>
 
-#include "gpio.h"
+#include <bcm47xx.h>
+#include <nvram.h>
 
 #define RTC_IS_OPEN		0x01	/* Means /dev/rtc is in use.  */
 
@@ -65,8 +68,6 @@
 static int rtc_debug = 0;
 
 static unsigned long rtc_status = 0;	/* Bitmapped status byte.	*/
-
-static spinlock_t rtc_lock = SPIN_LOCK_UNLOCKED;
 
 /* These settings are platform dependents.  */
 unsigned int sda_index = 0;
@@ -98,11 +99,7 @@ MODULE_AUTHOR("Andreas Engel");
 MODULE_LICENSE("GPL");
 
 /* Test stolen from switch-adm.c.  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,52)
 module_param(rtc_debug, int, 0);
-#else
-MODULE_PARM(rtc_debug, "i");
-#endif
 
 static inline void sdalo(void)
 {
@@ -237,7 +234,7 @@ static int i2c_inb(int ack)
 static void i2c_init(void)
 {
     /* no gpio_control for EXTIF */
-	// gpio_control(sda_mask | scl_mask, 0);
+	// ssb_gpio_control(&ssb, sda_mask | scl_mask, 0);
 
    gpio_set_value(sda_index, 0);
    gpio_set_value(scl_index, 0);
@@ -308,6 +305,7 @@ static void get_rtc_time(struct rtc_time *rtc_tm)
 	 * Read date and time from the RTC. We use read method (3).
 	 */
 
+	spin_lock_irq(&rtc_lock);
 	i2c_start();
 	i2c_outb(RTC_I2C_ADDRESS | I2C_READ_MASK);
 	cr2             = i2c_inb(I2C_ACK);
@@ -319,6 +317,7 @@ static void get_rtc_time(struct rtc_time *rtc_tm)
 	rtc_tm->tm_mon  = i2c_inb(I2C_ACK);
 	rtc_tm->tm_year = i2c_inb(I2C_NAK);
 	i2c_stop();
+	spin_unlock_irq(&rtc_lock);
 
 	if (cr2 & RTC_VDET_MASK) {
 		printk(KERN_WARNING "***RTC BATTERY FAILURE***\n");
@@ -354,6 +353,7 @@ static void set_rtc_time(struct rtc_time *rtc_tm)
 		rtc_tm->tm_mon |= RTC_Y2K_MASK;
 	}
 
+	spin_lock_irq(&rtc_lock);
 	i2c_start();
 	i2c_outb(RTC_I2C_ADDRESS | I2C_WRITE_MASK);
 	i2c_outb(0x00);	/* set starting register to 0 (=seconds) */
@@ -365,6 +365,7 @@ static void set_rtc_time(struct rtc_time *rtc_tm)
 	i2c_outb(rtc_tm->tm_mon);
 	i2c_outb(rtc_tm->tm_year);
 	i2c_stop();
+	spin_unlock_irq(&rtc_lock);
 }
 
 static ssize_t rtc_write(UNUSED struct file *filp, const char *buf,
@@ -495,9 +496,7 @@ static int rtc_do_ioctl(unsigned int cmd, unsigned long arg)
 static long rtc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	long ret;
-	lock_kernel();
 	ret = rtc_do_ioctl(cmd, arg);
-	unlock_kernel();
 	return ret;
 }
 
@@ -518,27 +517,33 @@ static struct miscdevice rtc_dev = {
 };
 
 /* Savagely ripped from diag.c.  */
-extern char *nvram_get(char *str);
-#define getvar(str) (nvram_get(str)?:"")
 static inline int startswith (char *source, char *cmp)
-{	return !strncmp(source,cmp,strlen(cmp)); }
+{
+	return !strncmp(source, cmp, strlen(cmp));
+}
+
 static void platform_detect(void)
 {
-	char *buf;
+	char buf[20];
+	int et0phyaddr, et1phyaddr;
 
 	/* Based on "model_no".  */
-	if ((buf = nvram_get("model_no"))) {
-		if (startswith(buf,"WL700")) { /* WL700* */
+	if (nvram_getenv("model_no", buf, sizeof(buf)) >= 0) {
+		if (startswith(buf, "WL700")) { /* WL700* */
 			sda_index = 2;
 			scl_index = 5;
 			return;
 		}
 	}
 
-	if (startswith(getvar("hardware_version"), "WL300-")) {
+	if (nvram_getenv("et0phyaddr", buf, sizeof(buf)) >= 0 )
+		et0phyaddr = simple_strtoul(buf, NULL, 0);
+	if (nvram_getenv("et1phyaddr", buf, sizeof(buf)) >= 0 )
+		et1phyaddr = simple_strtoul(buf, NULL, 0);
+
+	if (nvram_getenv("hardware_version", buf, sizeof(buf)) >= 0) {
 		/* Either WL-300g or WL-HDD, do more extensive checks */
-		if ((simple_strtoul(getvar("et0phyaddr"), NULL, 0) == 0) &&
-			 (simple_strtoul(getvar("et1phyaddr"), NULL, 0) == 1)) {
+		if (startswith(buf, "WL300-") && et0phyaddr == 0 && et1phyaddr == 1) {
 			sda_index = 4;
 			scl_index = 5;
 			return;
@@ -563,19 +568,23 @@ static int __init rtc_init(void)
 	/*
 	 * Switch RTC to 24h mode
 	 */
+	spin_lock_irq(&rtc_lock);
 	i2c_start();
 	i2c_outb(RTC_I2C_ADDRESS | I2C_WRITE_MASK);
 	i2c_outb(0xE4); /* start at address 0xE, transmission mode 4 */
 	cr1 = i2c_inb(I2C_NAK);
 	i2c_stop();
+	spin_unlock_irq(&rtc_lock);
 	if ((cr1 & RTC_24HOUR_MODE_MASK) == 0) {
 		/* RTC is running in 12h mode */
 		printk(KERN_INFO "rtc.o: switching to 24h mode\n");
+		spin_lock_irq(&rtc_lock);
 		i2c_start();
 		i2c_outb(RTC_I2C_ADDRESS | I2C_WRITE_MASK);
 		i2c_outb(0xE0);
 		i2c_outb(cr1 | RTC_24HOUR_MODE_MASK);
 		i2c_stop();
+		spin_unlock_irq(&rtc_lock);
 	}
 
 	misc_register(&rtc_dev);
