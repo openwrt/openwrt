@@ -394,7 +394,6 @@ switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 
 int switch_device_registered (char* device) {
 	struct list_head *pos;
-	switch_driver *new;
 
 	list_for_each(pos, &drivers.list) {
 		if (strcmp(list_entry(pos, switch_driver, list)->interface, device) == 0) {

@@ -34,6 +34,10 @@
 #include "switch-core.h"
 #include "etc53xx.h"
 
+#ifdef CONFIG_BCM47XX
+#include <nvram.h>
+#endif
+
 #define DRIVER_NAME		"bcm53xx"
 #define DRIVER_VERSION		"0.02"
 #define PFX			"roboswitch: "
@@ -62,14 +66,6 @@
 /* Private et.o ioctls */
 #define SIOCGETCPHYRD           (SIOCDEVPRIVATE + 9)
 #define SIOCSETCPHYWR           (SIOCDEVPRIVATE + 10)
-
-/* Only available on brcm47xx */
-#ifdef BROADCOM
-extern char *nvram_get(const char *name);
-#define getvar(str) (nvram_get(str)?:"")
-#else
-#define getvar(str) ""
-#endif
 
 /* Data structure for a Roboswitch device. */
 struct robo_switch {
@@ -258,6 +254,9 @@ static int robo_switch_enable(void)
 {
 	unsigned int i, last_port;
 	u16 val;
+#ifdef CONFIG_BCM47XX
+	char buf[20];
+#endif
 
 	val = robo_read16(ROBO_CTRL_PAGE, ROBO_SWITCH_MODE);
 	if (!(val & (1 << 1))) {
@@ -278,10 +277,13 @@ static int robo_switch_enable(void)
 			robo_write16(ROBO_CTRL_PAGE, i, 0);
 	}
 
+#ifdef CONFIG_BCM47XX
 	/* WAN port LED, except for Netgear WGT634U */
-	if (strcmp(getvar("nvram_type"), "cfe") != 0)
-		robo_write16(ROBO_CTRL_PAGE, 0x16, 0x1F);
-
+	if (nvram_getenv("nvram_type", buf, sizeof(buf)) >= 0) {
+		if (strcmp(buf, "cfe") != 0)
+			robo_write16(ROBO_CTRL_PAGE, 0x16, 0x1F);
+	}
+#endif
 	return 0;
 }
 
