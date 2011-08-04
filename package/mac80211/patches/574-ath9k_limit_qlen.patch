@@ -1,0 +1,176 @@
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -235,6 +235,7 @@ struct ath_atx_tid {
+ 	struct ath_node *an;
+ 	struct ath_atx_ac *ac;
+ 	unsigned long tx_buf[BITS_TO_LONGS(ATH_TID_MAX_BUFS)];
++	int buf_pending;
+ 	u16 seq_start;
+ 	u16 seq_next;
+ 	u16 baw_size;
+@@ -283,6 +284,9 @@ struct ath_tx_control {
+  *  (axq_qnum).
+  */
+ struct ath_tx {
++	u32 qlen_single;
++	u32 qlen_aggr;
++
+ 	u16 seq_no;
+ 	u32 txqsetup;
+ 	spinlock_t txbuflock;
+--- a/drivers/net/wireless/ath/ath9k/debug.c
++++ b/drivers/net/wireless/ath/ath9k/debug.c
+@@ -1250,6 +1250,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+ 			    sc, &fops_wiphy);
+ 	debugfs_create_file("xmit", S_IRUSR, sc->debug.debugfs_phy, sc,
+ 			    &fops_xmit);
++	debugfs_create_u32("qlen_single", S_IRUSR | S_IWUSR,
++			   sc->debug.debugfs_phy, &sc->tx.qlen_single);
++	debugfs_create_u32("qlen_aggr", S_IRUSR | S_IWUSR,
++			   sc->debug.debugfs_phy, &sc->tx.qlen_aggr);
+ 	debugfs_create_file("stations", S_IRUSR, sc->debug.debugfs_phy, sc,
+ 			    &fops_stations);
+ 	debugfs_create_file("misc", S_IRUSR, sc->debug.debugfs_phy, sc,
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -339,6 +339,14 @@ static void ath_tx_count_frames(struct a
+ 	}
+ }
+ 
++static struct ath_atx_tid *ath_get_tid(struct ath_node *an, struct sk_buff *skb)
++{
++	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	u8 tidno;
++
++	tidno = ieee80211_get_qos_ctl(hdr)[0] & IEEE80211_QOS_CTL_TID_MASK;
++	return ATH_AN_2_TID(an, tidno);
++}
+ 
+ static void ath_tx_complete_aggr(struct ath_softc *sc, struct ath_txq *txq,
+ 				 struct ath_buf *bf, struct list_head *bf_q,
+@@ -433,6 +441,8 @@ static void ath_tx_complete_aggr(struct 
+ 	__skb_queue_head_init(&bf_pending);
+ 
+ 	ath_tx_count_frames(sc, bf, ts, txok, &nframes, &nbad);
++	tid->buf_pending -= nframes;
++
+ 	while (bf) {
+ 		txfail = txpending = 0;
+ 		bf_next = bf->bf_next;
+@@ -790,6 +800,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+ 			ath_tx_addto_baw(sc, tid, fi->seqno);
+ 		ath9k_hw_set11n_aggr_middle(sc->sc_ah, bf->bf_desc, ndelim);
+ 
++		tid->buf_pending++;
+ 		__skb_unlink(skb, &tid->buf_q);
+ 		list_add_tail(&bf->list, bf_q);
+ 		if (bf_prev) {
+@@ -1441,6 +1452,8 @@ static void ath_tx_send_ampdu(struct ath
+ 	if (!fi->retries)
+ 		ath_tx_addto_baw(sc, tid, fi->seqno);
+ 
++	tid->buf_pending++;
++
+ 	/* Queue to h/w without aggregation */
+ 	TX_STAT_INC(txctl->txq->axq_qnum, a_queued_hw);
+ 	bf->bf_lastbf = bf;
+@@ -1505,7 +1518,6 @@ static void setup_frame_info(struct ieee
+ 	struct ath_atx_tid *tid;
+ 	enum ath9k_key_type keytype;
+ 	u16 seqno = 0;
+-	u8 tidno;
+ 
+ 	keytype = ath9k_cmn_get_hw_crypto_keytype(skb);
+ 
+@@ -1516,13 +1528,11 @@ static void setup_frame_info(struct ieee
+ 	if (an && ieee80211_is_data_qos(hdr->frame_control) &&
+ 		conf_is_ht(&hw->conf) && (sc->sc_flags & SC_OP_TXAGGR)) {
+ 
+-		tidno = ieee80211_get_qos_ctl(hdr)[0] & IEEE80211_QOS_CTL_TID_MASK;
+-
+ 		/*
+ 		 * Override seqno set by upper layer with the one
+ 		 * in tx aggregation state.
+ 		 */
+-		tid = ATH_AN_2_TID(an, tidno);
++		tid = ath_get_tid(an, skb);
+ 		seqno = tid->seq_next;
+ 		hdr->seq_ctrl = cpu_to_le16(seqno << IEEE80211_SEQ_SEQ_SHIFT);
+ 		INCR(tid->seq_next, IEEE80211_SEQ_MAX);
+@@ -1766,24 +1776,14 @@ static struct ath_buf *ath_tx_setup_buff
+ 
+ /* FIXME: tx power */
+ static void ath_tx_start_dma(struct ath_softc *sc, struct ath_buf *bf,
+-			     struct ath_tx_control *txctl)
++			     struct ath_tx_control *txctl,
++			     struct ath_atx_tid *tid)
+ {
+ 	struct sk_buff *skb = bf->bf_mpdu;
+ 	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
+-	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+ 	struct list_head bf_head;
+-	struct ath_atx_tid *tid = NULL;
+-	u8 tidno;
+ 
+ 	spin_lock_bh(&txctl->txq->axq_lock);
+-	if ((sc->sc_flags & SC_OP_TXAGGR) && txctl->an &&
+-		ieee80211_is_data_qos(hdr->frame_control)) {
+-		tidno = ieee80211_get_qos_ctl(hdr)[0] &
+-			IEEE80211_QOS_CTL_TID_MASK;
+-		tid = ATH_AN_2_TID(txctl->an, tidno);
+-
+-		WARN_ON(tid->ac->txq != txctl->txq);
+-	}
+ 
+ 	if ((tx_info->flags & IEEE80211_TX_CTL_AMPDU) && tid) {
+ 		/*
+@@ -1824,6 +1824,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 	struct ieee80211_vif *vif = info->control.vif;
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_txq *txq = txctl->txq;
++	struct ath_atx_tid *tid = NULL;
+ 	struct ath_buf *bf;
+ 	int padpos, padsize;
+ 	int frmlen = skb->len + FCS_LEN;
+@@ -1857,6 +1858,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 
+ 		skb_push(skb, padsize);
+ 		memmove(skb->data, skb->data + padsize, padpos);
++		hdr = (struct ieee80211_hdr *) skb->data;
+ 	}
+ 
+ 	if ((vif && vif->type != NL80211_IFTYPE_AP &&
+@@ -1866,6 +1868,24 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 
+ 	setup_frame_info(hw, skb, frmlen);
+ 
++	if ((sc->sc_flags & SC_OP_TXAGGR) && txctl->an &&
++	    ieee80211_is_data_qos(hdr->frame_control)) {
++		tid = ath_get_tid(txctl->an, skb);
++
++		WARN_ON(tid->ac->txq != txq);
++	}
++
++	if ((info->flags & IEEE80211_TX_CTL_AMPDU) && tid) {
++		if (sc->tx.qlen_aggr > 0 && skb_queue_len(&tid->buf_q) +
++		    tid->buf_pending >= sc->tx.qlen_aggr)
++			return -ENOMEM;
++	} else {
++		if (sc->tx.qlen_single > 0 &&
++		    txq->axq_depth - txq->axq_ampdu_depth >=
++		      sc->tx.qlen_single)
++			return -ENOMEM;
++	}
++
+ 	/*
+ 	 * At this point, the vif, hw_key and sta pointers in the tx control
+ 	 * info are no longer valid (overwritten by the ath_frame_info data.
+@@ -1884,7 +1904,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+ 	}
+ 	spin_unlock_bh(&txq->axq_lock);
+ 
+-	ath_tx_start_dma(sc, bf, txctl);
++	ath_tx_start_dma(sc, bf, txctl, tid);
+ 
+ 	return 0;
+ }
