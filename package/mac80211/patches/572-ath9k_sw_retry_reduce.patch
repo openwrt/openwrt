@@ -1,0 +1,61 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -247,13 +247,16 @@ static void ath_tid_drain(struct ath_sof
+ }
+ 
+ static void ath_tx_set_retry(struct ath_softc *sc, struct ath_txq *txq,
+-			     struct sk_buff *skb)
++			     struct sk_buff *skb, int count)
+ {
+ 	struct ath_frame_info *fi = get_frame_info(skb);
+ 	struct ieee80211_hdr *hdr;
++	int prev = fi->retries;
+ 
+ 	TX_STAT_INC(txq->axq_qnum, a_retries);
+-	if (fi->retries++ > 0)
++	fi->retries += count;
++
++	if (prev > 0)
+ 		return;
+ 
+ 	hdr = (struct ieee80211_hdr *)skb->data;
+@@ -358,6 +361,7 @@ static void ath_tx_complete_aggr(struct 
+ 	int nframes;
+ 	u8 tidno;
+ 	bool clear_filter;
++	int i, retries;
+ 
+ 	skb = bf->bf_mpdu;
+ 	hdr = (struct ieee80211_hdr *)skb->data;
+@@ -366,6 +370,10 @@ static void ath_tx_complete_aggr(struct 
+ 
+ 	memcpy(rates, tx_info->control.rates, sizeof(rates));
+ 
++	retries = ts->ts_longretry + 1;
++	for (i = 0; i < ts->ts_rateindex; i++)
++		retries += rates[i].count;
++
+ 	rcu_read_lock();
+ 
+ 	sta = ieee80211_find_sta_by_ifaddr(hw, hdr->addr1, hdr->addr2);
+@@ -449,7 +457,8 @@ static void ath_tx_complete_aggr(struct 
+ 			} else if (fi->retries < ATH_MAX_SW_RETRIES) {
+ 				if (!(ts->ts_status & ATH9K_TXERR_FILT) ||
+ 				    !an->sleeping)
+-					ath_tx_set_retry(sc, txq, bf->bf_mpdu);
++					ath_tx_set_retry(sc, txq, bf->bf_mpdu,
++							 retries);
+ 
+ 				clear_filter = true;
+ 				txpending = 1;
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -535,7 +535,7 @@ struct ath_ant_comb {
+ #define DEFAULT_CACHELINE       32
+ #define ATH_REGCLASSIDS_MAX     10
+ #define ATH_CABQ_READY_TIME     80      /* % of beacon interval */
+-#define ATH_MAX_SW_RETRIES      10
++#define ATH_MAX_SW_RETRIES      20
+ #define ATH_CHAN_MAX            255
+ 
+ #define ATH_TXPOWER_MAX         100     /* .5 dBm units */
