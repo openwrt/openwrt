@@ -452,9 +452,9 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_SR);
 	udelay(20);
 
-	ar71xx_device_stop(pdata->reset_bit);
+	ar71xx_device_stop(reset_mask);
 	mdelay(100);
-	ar71xx_device_start(pdata->reset_bit);
+	ar71xx_device_start(reset_mask);
 	mdelay(200);
 
 	/* setup MAC configuration registers */
