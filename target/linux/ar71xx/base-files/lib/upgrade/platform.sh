@@ -69,8 +69,8 @@ platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$board" in
-	ap121 | ap121-mini)
-		[ "$magic_long" != "68737173" ] && {
+	ap121 | ap121-mini | zcn-1523h-2 | zcn-1523h-5)
+		[ "$magic" != "68737173" -a "$magic" != "19852003" ] && {
 			echo "Invalid image type."
 			return 1
 		}
@@ -106,13 +106,6 @@ platform_check_image() {
 		;;
 	wrt160nl)
 		[ "$magic" != "4e4c" ] && {
-			echo "Invalid image type."
-			return 1
-		}
-		return 0
-		;;
-	zcn-1523h-2 | zcn-1523h-5)
-		[ "$magic" != "6873" -a "$magic" != "1985" ] && {
 			echo "Invalid image type."
 			return 1
 		}
