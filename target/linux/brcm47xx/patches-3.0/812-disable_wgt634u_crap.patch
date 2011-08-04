@@ -3,7 +3,7 @@
 @@ -4,4 +4,3 @@
  #
  
- obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o
+ obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o
 -obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
 --- a/arch/mips/bcm47xx/wgt634u.c
 +++ /dev/null
@@ -144,7 +144,7 @@
 -	 */
 -	u8 *et0mac;
 -
--	if (bcm47xx_active_bus_type != BCM47XX_BUS_TYPE_SSB)
+-	if (bcm47xx_bus_type != BCM47XX_BUS_TYPE_SSB)
 -		return -ENODEV;
 -
 -	et0mac = bcm47xx_bus.ssb.sprom.et0mac;
@@ -166,10 +166,10 @@
 -					    SSB_CHIPCO_IRQ_GPIO);
 -		}
 -
--		wgt634u_flash_data.width = mcore->flash_buswidth;
--		wgt634u_flash_resource.start = mcore->flash_window;
--		wgt634u_flash_resource.end = mcore->flash_window
--					   + mcore->flash_window_size
+-		wgt634u_flash_data.width = mcore->pflash.buswidth;
+-		wgt634u_flash_resource.start = mcore->pflash.window;
+-		wgt634u_flash_resource.end = mcore->pflash.window
+-					   + mcore->pflash.window_size
 -					   - 1;
 -		return platform_add_devices(wgt634u_devices,
 -					    ARRAY_SIZE(wgt634u_devices));

@@ -1,7 +1,7 @@
-From 27aa4f76cfe54b6ce3bf98f4d5fd70ab1f60071f Mon Sep 17 00:00:00 2001
+From d3fb63a710e1f04fed2c2703c6dce3531490c451 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 6 Jun 2011 00:07:37 +0200
-Subject: [PATCH 10/22] bcm47xx: add support for bcma bus
+Subject: [PATCH 10/26] bcm47xx: add support for bcma bus
 
 This patch add support for the bcma bus. Broadcom uses only Mips 74K
 CPUs on the new SoC and on the old ons using ssb bus there are no Mips
@@ -144,7 +144,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
  static int __init uart8250_init(void)
  {
- 	switch (bcm47xx_active_bus_type) {
+ 	switch (bcm47xx_bus_type) {
 @@ -54,6 +79,10 @@ static int __init uart8250_init(void)
  	case BCM47XX_BUS_TYPE_SSB:
  		return uart8250_init_ssb();
@@ -212,15 +212,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (c->cputype == CPU_74K) {
 +		printk(KERN_INFO "bcm47xx: using bcma bus\n");
 +#ifdef CONFIG_BCM47XX_BCMA
-+		bcm47xx_active_bus_type = BCM47XX_BUS_TYPE_BCMA;
++		bcm47xx_bus_type = BCM47XX_BUS_TYPE_BCMA;
 +		bcm47xx_register_bcma();
 +#endif
 +	} else {
 +		printk(KERN_INFO "bcm47xx: using ssb bus\n");
  #ifdef CONFIG_BCM47XX_SSB
--	bcm47xx_active_bus_type = BCM47XX_BUS_TYPE_SSB;
+-	bcm47xx_bus_type = BCM47XX_BUS_TYPE_SSB;
 -	bcm47xx_register_ssb();
-+		bcm47xx_active_bus_type = BCM47XX_BUS_TYPE_SSB;
++		bcm47xx_bus_type = BCM47XX_BUS_TYPE_SSB;
 +		bcm47xx_register_ssb();
  #endif
 +	}
@@ -232,7 +232,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +static int __init bcm47xx_register_bus_complete(void)
 +{
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +#ifdef CONFIG_BCM47XX_SSB
 +	case BCM47XX_BUS_TYPE_SSB:
 +		/* Nothing to do */

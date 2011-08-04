@@ -1,17 +1,38 @@
-From 8a6398687998886c451c6df381c2320b6dddb3fe Mon Sep 17 00:00:00 2001
+From 6a615274708fff685952139fee00ebccc0cf3266 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 17 Jul 2011 14:55:45 +0200
-Subject: [PATCH 16/22] mtd: bcm47xx: add serial flash driver
+Subject: [PATCH 19/26] mtd: bcm47xx: add serial flash driver
 
+sflash get the sflash ops from platform device
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- drivers/mtd/maps/Kconfig          |    9 ++
- drivers/mtd/maps/Makefile         |    1 +
- drivers/mtd/maps/bcm47xx-sflash.c |  270 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 280 insertions(+), 0 deletions(-)
+ arch/mips/include/asm/mach-bcm47xx/bus.h |    3 +
+ drivers/mtd/maps/Kconfig                 |    9 +
+ drivers/mtd/maps/Makefile                |    1 +
+ drivers/mtd/maps/bcm47xx-sflash.c        |  267 ++++++++++++++++++++++++++++++
+ 4 files changed, 280 insertions(+), 0 deletions(-)
  create mode 100644 drivers/mtd/maps/bcm47xx-sflash.c
 
+--- a/arch/mips/include/asm/mach-bcm47xx/bus.h
++++ b/arch/mips/include/asm/mach-bcm47xx/bus.h
+@@ -11,6 +11,7 @@
+ 
+ #include <linux/ssb/ssb.h>
+ #include <linux/bcma/bcma.h>
++#include <linux/mtd/mtd.h>
+ #include <bcm47xx.h>
+ 
+ struct bcm47xx_sflash {
+@@ -29,6 +30,8 @@ struct bcm47xx_sflash {
+ 	u32 blocksize;		/* Block size */
+ 	u32 numblocks;		/* Number of blocks */
+ 	u32 size;		/* Total size in bytes */
++
++	struct mtd_info *mtd;
+ };
+ 
+ void bcm47xx_sflash_struct_bcma_init(struct bcm47xx_sflash *sflash, struct bcma_drv_cc *bcc);
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
 @@ -273,6 +273,15 @@ config MTD_BCM47XX_PFLASH
@@ -39,17 +60,17 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_MTD_BCM47XX_SFLASH)+= bcm47xx-sflash.o
 --- /dev/null
 +++ b/drivers/mtd/maps/bcm47xx-sflash.c
-@@ -0,0 +1,270 @@
+@@ -0,0 +1,267 @@
 +/*
 + * Broadcom SiliconBackplane chipcommon serial flash interface
 + *
-+ * Copyright 2006, Broadcom Corporation      
-+ * All Rights Reserved.      
-+ *       
-+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
-+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
-+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
-+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
++ * Copyright 2006, Broadcom Corporation
++ * All Rights Reserved.
++ *
++ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
++ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
++ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
++ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 + *
 + * $Id$
 + */
@@ -64,29 +85,18 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <linux/mtd/partitions.h>
 +#include <linux/errno.h>
 +#include <linux/delay.h>
-+
-+#include <bcm47xx.h>
-+
-+#include <linux/bcma/bcma.h>
-+#include <linux/bcma/bcma_driver_chipcommon.h>
 +#include <linux/platform_device.h>
-+
-+struct sflash_mtd {
-+	struct bcma_drv_cc *cc;
-+	struct mtd_info mtd;
-+	struct mtd_erase_region_info region;
-+};
-+
-+static struct sflash_mtd *sflash;
++#include <bcm47xx.h>
++#include <bus.h>
 +
 +static int
-+sflash_mtd_poll(struct sflash_mtd *sflash, unsigned int offset, int timeout)
++sflash_mtd_poll(struct bcm47xx_sflash *sflash, unsigned int offset, int timeout)
 +{
 +	unsigned long now = jiffies;
 +	int ret = 0;
 +
 +	for (;;) {
-+		if (!bcma_sflash_poll(sflash->cc, offset)) {
++		if (!sflash->poll(sflash, offset)) {
 +			ret = 0;
 +			break;
 +		}
@@ -104,7 +114,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +static int
 +sflash_mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char *buf)
 +{
-+	struct sflash_mtd *sflash = (struct sflash_mtd *) mtd->priv;
++	struct bcm47xx_sflash *sflash = (struct bcm47xx_sflash *) mtd->priv;
 +
 +	/* Check address range */
 +	if (!len)
@@ -112,11 +122,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	if ((from + len) > mtd->size)
 +		return -EINVAL;
-+	
++
 +	*retlen = 0;
 +
 +	while (len) {
-+		int ret = bcma_sflash_read(sflash->cc, from, len, buf);
++		int ret = sflash->read(sflash, from, len, buf);
 +		if (ret < 0)
 +			return ret;
 +
@@ -132,7 +142,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +static int
 +sflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char *buf)
 +{
-+	struct sflash_mtd *sflash = (struct sflash_mtd *) mtd->priv;
++	struct bcm47xx_sflash *sflash = (struct bcm47xx_sflash *) mtd->priv;
 +
 +	/* Check address range */
 +	if (!len)
@@ -144,7 +154,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	*retlen = 0;
 +	while (len) {
 +		int bytes;
-+		int ret = bcma_sflash_write(sflash->cc, to, len, buf);
++		int ret = sflash->write(sflash, to, len, buf);
 +		if (ret < 0)
 +			return ret;
 +
@@ -166,7 +176,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +static int
 +sflash_mtd_erase(struct mtd_info *mtd, struct erase_info *erase)
 +{
-+	struct sflash_mtd *sflash = (struct sflash_mtd *) mtd->priv;
++	struct bcm47xx_sflash *sflash = (struct bcm47xx_sflash *) mtd->priv;
 +	int i, j, ret = 0;
 +	unsigned int addr, len;
 +
@@ -185,9 +195,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			if (addr == mtd->eraseregions[i].offset +
 +					mtd->eraseregions[i].erasesize * j &&
 +			    len >= mtd->eraseregions[i].erasesize) {
-+				if ((ret = bcma_sflash_erase(sflash->cc, addr)) < 0)
++				ret = sflash->erase(sflash, addr);
++				if (ret < 0)
 +					break;
-+				if ((ret = sflash_mtd_poll(sflash, addr, 10 * HZ)))
++				ret = sflash_mtd_poll(sflash, addr, 10 * HZ);
++				if (ret)
 +					break;
 +				addr += mtd->eraseregions[i].erasesize;
 +				len -= mtd->eraseregions[i].erasesize;
@@ -200,7 +212,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	/* Set erase status */
 +	if (ret)
 +		erase->state = MTD_ERASE_FAILED;
-+	else 
++	else
 +		erase->state = MTD_ERASE_DONE;
 +
 +	/* Call erase callback */
@@ -214,52 +226,53 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +static int bcm47xx_sflash_probe(struct platform_device *pdev)
 +{
++	struct bcm47xx_sflash *sflash = dev_get_platdata(&pdev->dev);
++	struct mtd_info *mtd;
++	struct mtd_erase_region_info *regions;
 +	int ret = 0;
 +
 +	struct mtd_partition *parts;
 +	int num_partitions = 0;
 +
-+	sflash = kzalloc(sizeof(struct sflash_mtd), GFP_KERNEL);
-+	if (!sflash)
++	mtd = kzalloc(sizeof(struct mtd_info), GFP_KERNEL);
++	if (!mtd)
 +		return -ENOMEM;
 +
-+	sflash->cc = &bcm47xx_bus.bcma.bus.drv_cc;
-+	if (sflash->cc->flash_type != BCMA_SFLASH)
-+		return -ENODEV;
++	regions = kzalloc(sizeof(struct mtd_erase_region_info), GFP_KERNEL);
++	if (!mtd)
++		return -ENOMEM;
 +
 +	pr_info("found serial flash: blocksize=%dKB, numblocks=%d, size=%dKB\n",
-+			sflash->cc->flash.sflash.blocksize/1024,
-+			sflash->cc->flash.sflash.numblocks,
-+			sflash->cc->flash.sflash.size/1024);
++		sflash->blocksize/1024, sflash->numblocks, sflash->size / 1024);
 +
 +	/* Setup region info */
-+	sflash->region.offset = 0;
-+	sflash->region.erasesize = sflash->cc->flash.sflash.blocksize;
-+	sflash->region.numblocks = sflash->cc->flash.sflash.numblocks;
-+	if (sflash->region.erasesize > sflash->mtd.erasesize)
-+		sflash->mtd.erasesize = sflash->region.erasesize;
-+	sflash->mtd.size = sflash->cc->flash.sflash.size;
-+	sflash->mtd.numeraseregions = 1;
++	regions->offset = 0;
++	regions->erasesize = sflash->blocksize;
++	regions->numblocks = sflash->numblocks;
++	if (regions->erasesize > mtd->erasesize)
++		mtd->erasesize = regions->erasesize;
++	mtd->size = sflash->size;
++	mtd->numeraseregions = 1;
 +
 +	/* Register with MTD */
-+	sflash->mtd.name = "bcm47xx-sflash";
-+	sflash->mtd.type = MTD_NORFLASH;
-+	sflash->mtd.flags = MTD_CAP_NORFLASH;
-+	sflash->mtd.eraseregions = &sflash->region;
-+	sflash->mtd.erase = sflash_mtd_erase;
-+	sflash->mtd.read = sflash_mtd_read;
-+	sflash->mtd.write = sflash_mtd_write;
-+	sflash->mtd.writesize = 1;
-+	sflash->mtd.priv = sflash;
-+	sflash->mtd.owner = THIS_MODULE;
++	mtd->name = "bcm47xx-sflash";
++	mtd->type = MTD_NORFLASH;
++	mtd->flags = MTD_CAP_NORFLASH;
++	mtd->eraseregions = regions;
++	mtd->erase = sflash_mtd_erase;
++	mtd->read = sflash_mtd_read;
++	mtd->write = sflash_mtd_write;
++	mtd->writesize = 1;
++	mtd->priv = sflash;
++	mtd->owner = THIS_MODULE;
 +
-+	num_partitions = parse_mtd_partitions(&sflash->mtd, probes, &parts, 0);
++	num_partitions = parse_mtd_partitions(mtd, probes, &parts, 0);
 +	if (num_partitions < 0) {
 +		ret = num_partitions;
 +		goto err_destroy;
 +	}
 +
-+	ret = mtd_device_register(&sflash->mtd, parts, num_partitions);
++	ret = mtd_device_register(mtd, parts, num_partitions);
 +
 +//	ret = mtd_device_parse_register(bcm47xx_mtd, "bcm47xx", NULL, NULL, 0);
 +
@@ -267,18 +280,23 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		pr_err("mtd_device_register failed\n");
 +		return ret;
 +	}
++	sflash->mtd = mtd;
 +	return 0;
 +
 +err_destroy:
-+	map_destroy(&sflash->mtd);
++	map_destroy(mtd);
 +	return ret;
 +}
 +
 +static int __devexit bcm47xx_sflash_remove(struct platform_device *pdev)
 +{
++	struct bcm47xx_sflash *sflash = dev_get_platdata(&pdev->dev);
++
 +	if (sflash) {
-+		mtd_device_unregister(&sflash->mtd);
-+		map_destroy(&sflash->mtd);
++		mtd_device_unregister(sflash->mtd);
++		map_destroy(sflash->mtd);
++		kfree(sflash->mtd->eraseregions);
++		kfree(sflash->mtd);
 +	}
 +	return 0;
 +}

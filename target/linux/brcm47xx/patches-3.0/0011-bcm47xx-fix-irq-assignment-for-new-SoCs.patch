@@ -1,7 +1,7 @@
-From a277b0b02837a167a5766c048dedef8dfc2fb707 Mon Sep 17 00:00:00 2001
+From 1c44f60e3fd9336d19f56a67c1efc1129fd728a6 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 6 Jun 2011 00:07:38 +0200
-Subject: [PATCH 11/22] bcm47xx: fix irq assignment for new SoCs.
+Subject: [PATCH 11/26] bcm47xx: fix irq assignment for new SoCs.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
@@ -23,7 +23,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  void __init arch_init_irq(void)
  {
 +#ifdef CONFIG_BCM47XX_BCMA
-+	if (bcm47xx_active_bus_type == BCM47XX_BUS_TYPE_BCMA) {
++	if (bcm47xx_bus_type == BCM47XX_BUS_TYPE_BCMA) {
 +		bcma_write32(bcm47xx_bus.bcma.bus.drv_mips.core,
 +			     BCMA_MIPS_MIPS74K_INTMASK(5), 1 << 31);
 +		/*

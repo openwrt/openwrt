@@ -1,7 +1,7 @@
-From 5961a1401605cd1941d5260a03b1dc2e8ae80619 Mon Sep 17 00:00:00 2001
+From 3be3bbe24a1d49283864a1e1ea1d88a2e1700b50 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 6 Jun 2011 00:07:32 +0200
-Subject: [PATCH 05/22] bcma: add mips driver
+Subject: [PATCH 05/26] bcma: add mips driver
 
 This adds a mips driver to bcma. This is only found on embedded
 devices. For now the driver just initializes the irqs used on this
@@ -305,7 +305,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  			continue;
  		}
  
-@@ -144,6 +145,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -147,6 +148,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_chipcommon_init(&bus->drv_cc);
  	}
  
@@ -319,7 +319,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	/* Init PCIE core */
  	core = bcma_find_core(bus, BCMA_CORE_PCIE);
  	if (core) {
-@@ -214,6 +222,13 @@ int __init bcma_bus_early_register(struc
+@@ -217,6 +225,13 @@ int __init bcma_bus_early_register(struc
  		bcma_core_chipcommon_init(&bus->drv_cc);
  	}
  

@@ -9,8 +9,8 @@ out the configuration than the in kernel cfe config reader.
  # under Linux.
  #
  
--obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o
-+obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o cfe_env.o
+-obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o
++obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o cfe_env.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/cfe_env.c
 @@ -0,0 +1,229 @@
@@ -245,16 +245,16 @@ out the configuration than the in kernel cfe config reader.
 +
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -22,6 +22,8 @@
- #include <asm/mach-bcm47xx/bcm47xx.h>
+@@ -23,6 +23,8 @@
+ #include <asm/mach-bcm47xx/bus.h>
  
  static char nvram_buf[NVRAM_SPACE];
 +static int cfe_env;
 +extern char *cfe_env_get(char *nv_buf, const char *name);
  
  /* Probe for NVRAM header */
- static void early_nvram_init(void)
-@@ -58,6 +60,25 @@ static void early_nvram_init(void)
+ static void early_nvram_init_pflash(void)
+@@ -59,6 +61,25 @@ static void early_nvram_init_pflash(void
  		break;
  #endif
  	}
@@ -280,7 +280,7 @@ out the configuration than the in kernel cfe config reader.
  
  	off = FLASH_MIN;
  	while (off <= lim) {
-@@ -99,6 +120,12 @@ int nvram_getenv(char *name, char *val,
+@@ -181,6 +202,12 @@ int nvram_getenv(char *name, char *val,
  	if (!nvram_buf[0])
  		early_nvram_init();
  
@@ -293,7 +293,7 @@ out the configuration than the in kernel cfe config reader.
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
  	end = nvram_buf + sizeof(nvram_buf) - 2;
-@@ -128,6 +155,9 @@ char *nvram_get(const char *name)
+@@ -210,6 +237,9 @@ char *nvram_get(const char *name)
  	if (!nvram_buf[0])
  		early_nvram_init();
  

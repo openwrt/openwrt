@@ -1,7 +1,7 @@
-From 1db44bc4e7d5abb2966154ac57d1f035dc3e4ec1 Mon Sep 17 00:00:00 2001
+From 18fe82b600f9563e59e28746211a2ce3176a81de Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 6 Jun 2011 00:07:36 +0200
-Subject: [PATCH 08/22] bcm47xx: prepare to support different buses
+Subject: [PATCH 08/26] bcm47xx: prepare to support different buses
 
 Prepare bcm47xx to support different System buses. Before adding
 support for bcma it should be possible to build bcm47xx without the
@@ -40,7 +40,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 -		return -EBUSY;
 -
 -	return 0;
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		if (ssb_chipco_available(&bcm47xx_bus.ssb.chipco) &&
 +		    ((unsigned)gpio >= BCM47XX_CHIPCO_GPIO_LINES))
@@ -64,7 +64,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 -	if (ssb_chipco_available(&ssb_bcm47xx.chipco) &&
 -	    ((unsigned)gpio >= BCM47XX_CHIPCO_GPIO_LINES))
 -		return;
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		if (ssb_chipco_available(&bcm47xx_bus.ssb.chipco) &&
 +		    ((unsigned)gpio >= BCM47XX_CHIPCO_GPIO_LINES))
@@ -92,7 +92,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 -		return ssb_mips_irq(ssb_bcm47xx.extif.dev) + 2;
 -	else
 -		return -EINVAL;
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		if (ssb_chipco_available(&bcm47xx_bus.ssb.chipco))
 +			return ssb_mips_irq(bcm47xx_bus.ssb.chipco.dev) + 2;
@@ -122,7 +122,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 -	base = mcore->flash_window;
 -	lim = mcore->flash_window_size;
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		mcore_ssb = &bcm47xx_bus.ssb.mipscore;
 +		base = mcore_ssb->flash_window;
@@ -153,7 +153,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 +static int __init uart8250_init(void)
 +{
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		return uart8250_init_ssb();
 +	}
@@ -174,8 +174,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +union bcm47xx_bus bcm47xx_bus;
 +EXPORT_SYMBOL(bcm47xx_bus);
 +
-+enum bcm47xx_bus_type bcm47xx_active_bus_type;
-+EXPORT_SYMBOL(bcm47xx_active_bus_type);
++enum bcm47xx_bus_type bcm47xx_bus_type;
++EXPORT_SYMBOL(bcm47xx_bus_type);
  
  static void bcm47xx_machine_restart(char *command)
  {
@@ -183,7 +183,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	local_irq_disable();
  	/* Set the watchdog timer to reset immediately */
 -	ssb_watchdog_timer_set(&ssb_bcm47xx, 1);
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		ssb_watchdog_timer_set(&bcm47xx_bus.ssb, 1);
 +		break;
@@ -196,7 +196,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	/* Disable interrupts and watchdog and spin forever */
  	local_irq_disable();
 -	ssb_watchdog_timer_set(&ssb_bcm47xx, 0);
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		ssb_watchdog_timer_set(&bcm47xx_bus.ssb, 0);
 +		break;
@@ -238,7 +238,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +{
 +	struct cpuinfo_mips *c = &current_cpu_data;
 +
-+	bcm47xx_active_bus_type = BCM47XX_BUS_TYPE_SSB;
++	bcm47xx_bus_type = BCM47XX_BUS_TYPE_SSB;
 +	bcm47xx_register_ssb();
  
  	_machine_restart = bcm47xx_machine_restart;
@@ -259,7 +259,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	write_c0_compare(0xffff);
  
 -	hz = ssb_cpu_clock(&ssb_bcm47xx.mipscore) / 2;
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		hz = ssb_cpu_clock(&bcm47xx_bus.ssb.mipscore) / 2;
 +		break;
@@ -286,7 +286,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	u8 *et0mac;
  
 -	u8 *et0mac = ssb_bcm47xx.sprom.et0mac;
-+	if (bcm47xx_active_bus_type != BCM47XX_BUS_TYPE_SSB)
++	if (bcm47xx_bus_type != BCM47XX_BUS_TYPE_SSB)
 +		return -ENODEV;
 +
 +	et0mac = bcm47xx_bus.ssb.sprom.et0mac;
@@ -329,7 +329,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +};
 +
 +extern union bcm47xx_bus bcm47xx_bus;
-+extern enum bcm47xx_bus_type bcm47xx_active_bus_type;
++extern enum bcm47xx_bus_type bcm47xx_bus_type;
  
  #endif /* __ASM_BCM47XX_H */
 --- a/arch/mips/include/asm/mach-bcm47xx/gpio.h
@@ -339,7 +339,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static inline int gpio_get_value(unsigned gpio)
  {
 -	return ssb_gpio_in(&ssb_bcm47xx, 1 << gpio);
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		return ssb_gpio_in(&bcm47xx_bus.ssb, 1 << gpio);
 +	}
@@ -349,7 +349,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static inline void gpio_set_value(unsigned gpio, int value)
  {
 -	ssb_gpio_out(&ssb_bcm47xx, 1 << gpio, value ? 1 << gpio : 0);
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		ssb_gpio_out(&bcm47xx_bus.ssb, 1 << gpio,
 +			     value ? 1 << gpio : 0);
@@ -360,7 +360,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  {
 -	ssb_gpio_outen(&ssb_bcm47xx, 1 << gpio, 0);
 -	return 0;
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		ssb_gpio_outen(&bcm47xx_bus.ssb, 1 << gpio, 0);
 +		return 0;
@@ -375,7 +375,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 -	/* then set the gpio mode */
 -	ssb_gpio_outen(&ssb_bcm47xx, 1 << gpio, 1 << gpio);
 -	return 0;
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		/* first set the gpio out value */
 +		ssb_gpio_out(&bcm47xx_bus.ssb, 1 << gpio,
@@ -392,7 +392,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 -	ssb_gpio_intmask(&ssb_bcm47xx, 1 << gpio,
 -			 value ? 1 << gpio : 0);
 -	return 0;
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		ssb_gpio_intmask(&bcm47xx_bus.ssb, 1 << gpio,
 +				 value ? 1 << gpio : 0);
@@ -406,7 +406,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 -	ssb_gpio_polarity(&ssb_bcm47xx, 1 << gpio,
 -			  value ? 1 << gpio : 0);
 -	return 0;
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		ssb_gpio_polarity(&bcm47xx_bus.ssb, 1 << gpio,
 +				  value ? 1 << gpio : 0);
@@ -423,7 +423,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  {
  	/* this is 2,5s on 100Mhz clock  and 2s on 133 Mhz */
 -	ssb_watchdog_timer_set(&ssb_bcm47xx, 0xfffffff);
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		ssb_watchdog_timer_set(&bcm47xx_bus.ssb, 0xfffffff);
 +		break;
@@ -433,7 +433,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static inline int bcm47xx_wdt_hw_stop(void)
  {
 -	return ssb_watchdog_timer_set(&ssb_bcm47xx, 0);
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +	case BCM47XX_BUS_TYPE_SSB:
 +		return ssb_watchdog_timer_set(&bcm47xx_bus.ssb, 0);
 +	}
