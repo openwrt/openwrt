@@ -374,8 +374,8 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 	mdelay(1);
 
 	/* clear descriptor addresses */
-	ag71xx_wr(ag, AG71XX_REG_TX_DESC, 0);
-	ag71xx_wr(ag, AG71XX_REG_RX_DESC, 0);
+	ag71xx_wr(ag, AG71XX_REG_TX_DESC, ag->stop_desc_dma);
+	ag71xx_wr(ag, AG71XX_REG_RX_DESC, ag->stop_desc_dma);
 
 	/* clear pending RX/TX interrupts */
 	for (i = 0; i < 256; i++) {
@@ -1085,6 +1085,16 @@ static int __devinit ag71xx_probe(struct platform_device *pdev)
 	ag->tx_ring.size = AG71XX_TX_RING_SIZE_DEFAULT;
 	ag->rx_ring.size = AG71XX_RX_RING_SIZE_DEFAULT;
 
+	ag->stop_desc = dma_alloc_coherent(NULL,
+		sizeof(struct ag71xx_desc), &ag->stop_desc_dma, GFP_KERNEL);
+
+	if (!ag->stop_desc)
+		goto err_free_irq;
+
+	ag->stop_desc->data = 0;
+	ag->stop_desc->ctrl = 0;
+	ag->stop_desc->next = (u32) ag->stop_desc_dma;
+
 	memcpy(dev->dev_addr, pdata->mac_addr, ETH_ALEN);
 
 	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
@@ -1092,7 +1102,7 @@ static int __devinit ag71xx_probe(struct platform_device *pdev)
 	err = register_netdev(dev);
 	if (err) {
 		dev_err(&pdev->dev, "unable to register net device\n");
-		goto err_free_irq;
+		goto err_free_desc;
 	}
 
 	printk(KERN_INFO "%s: Atheros AG71xx at 0x%08lx, irq %d\n",
@@ -1120,6 +1130,9 @@ err_phy_disconnect:
 	ag71xx_phy_disconnect(ag);
 err_unregister_netdev:
 	unregister_netdev(dev);
+err_free_desc:
+	dma_free_coherent(NULL, sizeof(struct ag71xx_desc), ag->stop_desc,
+			  ag->stop_desc_dma);
 err_free_irq:
 	free_irq(dev->irq, dev);
 err_unmap_mii_ctrl:
