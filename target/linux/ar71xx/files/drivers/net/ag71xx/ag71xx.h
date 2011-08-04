@@ -148,6 +148,9 @@ struct ag71xx {
 	struct napi_struct	napi;
 	u32			msg_enable;
 
+	struct ag71xx_desc	*stop_desc;
+	dma_addr_t		stop_desc_dma;
+
 	struct ag71xx_ring	rx_ring;
 	struct ag71xx_ring	tx_ring;
 
