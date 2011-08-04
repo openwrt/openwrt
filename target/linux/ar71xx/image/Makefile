@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2010 OpenWrt.org
+# Copyright (C) 2008-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,6 +9,14 @@ include $(INCLUDE_DIR)/image.mk
 
 define imgname
 $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
+endef
+
+define sysupname
+$(call imgname,$(1),$(2))-sysupgrade.bin
+endef
+
+define factoryname
+$(call imgname,$(1),$(2))-factory.bin
 endef
 
 VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
@@ -44,16 +52,38 @@ define PatchKernelGzip
 	gzip -9 -c $(KDIR)/vmlinux-$(1) > $(KDIR)/vmlinux-$(1).bin.gz
 endef
 
-define MkImageLzma
-	mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma \
+define MkuImage
+	mkimage -A mips -O linux -T kernel -a 0x80060000 -C $(1) \
 		-e 0x80060000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(1) $(2)
+		-d $(2) $(3)
 endef
 
-define MkImageGzip
-	mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip \
-		-e 0x80060000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(1) $(2)
+define MkuImageLzma
+	$(call PatchKernelLzma,$(1),$(2))
+	$(call MkImage,lzma,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage)
+endef
+
+define MkuImageGzip
+	$(call PatchKernelGzip,$(1),$(2))
+	$(call MkImage,gzip,$(KDIR)/vmlinux-$(1).bin.gz,$(KDIR)/vmlinux-$(1).uImage)
+endef
+
+define CatFiles
+	if [ `stat -c%s "$(1)"` -gt $(2) ]; then \
+		echo "Warning: $(1) is too big"; \
+	else if [ `stat -c%s $(3)` -gt $(4) ]; then \
+		echo "Warning: $(3) is too big"; \
+	else \
+		( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
+	fi; fi
+endef
+
+define Sysupgrade/KR
+	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)))
+endef
+
+define Sysupgrade/RK
+	$(call CatFiles,$(KDIR)/root.$(1),$(4),$(KDIR)/vmlinux-$(2).uImage,$(3),$(call sysupname,$(1),$(2)))
 endef
 
 define Image/BuildKernel
@@ -63,182 +93,105 @@ define Image/BuildKernel
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 	dd if=$(KDIR)/vmlinux.bin.lzma of=$(VMLINUX).lzma bs=65536 conv=sync
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(VMLINUX).gz bs=65536 conv=sync
-	$(call MkImageGzip,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
-	$(call MkImageLzma,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
+	$(call MkuImage,gzip,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
+	$(call MkuImage,lzma,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
 	$(call Image/Build/Initramfs)
 endef
 
 define Image/Build/WRT400N
-	$(call PatchKernelLzma,$(2),$(3))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 1310720 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 6488064 ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1280k conv=sync; \
-			dd if=$(KDIR)/root.$(1) \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
-		wrt400n $(KDIR)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call imgname,$(1),$(2))-factory.bin; \
-	fi; fi
+	$(call MkuImageLzma,$(2),$(3))
+	$(call Sysupgrade/KR,$(1),$(2),1310720,6488064)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		wrt400n $(KDIR)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call factoryname,$(1),$(2)); \
+	fi
 endef
 
 dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,1600k(unknown)ro,6208k@0x50000(firmware)
 define Image/Build/DIR825B1
-	$(call PatchKernelLzma,$(2),$(3) $(dir825b1_mtdlayout))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 1048576 ]; then \
-	        echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 5308416 ]; then \
-	        echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
+	$(call MkuImageLzma,$(2),$(3) $(dir825b1_mtdlayout))
+	$(call Sysupgrade/KR,$(1),$(2),1048576,5308416)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync; \
-			dd if=$(KDIR)/root.$(1) \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
-		( \
-			dd if=$(call imgname,$(1),$(2))-sysupgrade.bin; \
+			dd if=$(call sysupname,$(1),$(2)); \
 			echo -n "01AP94-AR7161-RT-080619-00"; \
 		) > $(call imgname,$(1),$(2))-backup-loader.bin; \
-		if [ `stat -c%s $(call imgname,$(1),$(2))-sysupgrade.bin` -gt 4194304 ]; then \
-			echo "Warning: $(call imgname,$(1),$(2))-sysupgrade.bin is too big"; \
+		if [ `stat -c%s $(call sysupname,$(1),$(2))` -gt 4194304 ]; then \
+			echo "Warning: $(call sysupname,$(1),$(2)) is too big"; \
 		else \
 			( \
-				dd if=$(call imgname,$(1),$(2))-sysupgrade.bin bs=4096k conv=sync; \
+				dd if=$(call sysupname,$(1),$(2)) bs=4096k conv=sync; \
 				echo -n "00AP94-AR7161-RT-080619-00"; \
-			) > $(call imgname,$(1),$(2))-factory.bin; \
+			) > $(call factoryname,$(1),$(2)); \
 		fi; \
-	fi; fi
+	fi
 endef
 
 define Image/Build/WZRHPG30XNH
-	$(call PatchKernelLzma,$(2),$(3))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 1048576 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 31850496 ]; then \
-	        echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync; \
-			dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+	$(call MkuImageLzma,$(2),$(3) $(dir825b1_mtdlayout))
+	$(call Sysupgrade/KR,$(1),$(2),1048576,31850496)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
-			dd if=$(call imgname,$(1),$(2))-sysupgrade.bin; \
+			dd if=$(call sysupname,$(1),$(2)); \
 		) > $(call imgname,$(1),$(2))-tftp.bin; \
 		buffalo-enc -p $(4) -v 1.76 \
-			-i $(call imgname,$(1),$(2))-sysupgrade.bin \
+			-i $(call sysupname,$(1),$(2)) \
 			-o $(KDIR)/$(2).enc; \
 		buffalo-tag -b $(4) -p $(4) -a ath -v 1.76 -m 1.01 -l mlang8 \
 			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
 			-i $(KDIR)/$(2).enc \
-			-o $(call imgname,$(1),$(2))-factory.bin; \
-	fi; fi
+			-o $(call factoryname,$(1),$(2)); \
+	fi
 endef
 
-cameo_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,896k(kernel),2944k(rootfs),64k(art)ro,3840k@0x30000(firmware)
 define Image/Build/Cameo
-	$(call PatchKernelLzma,$(2),$(3) $(cameo_mtdlayout))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 917504 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 2949120 ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
+	$(call MkuImageLzma,$(2),$(3) $($(4)))
+	$(call Sysupgrade/KR,$(1),$(2),$(5),$(6))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
-			dd if=$(KDIR)/root.$(1) \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
-			dd if=$(KDIR)/root.$(1) bs=2880k conv=sync; \
-			echo -n $(4); \
-		) > $(call imgname,$(1),$(2))-factory.bin; \
-	fi; fi
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=$(5) conv=sync; \
+			dd if=$(KDIR)/root.$(1) bs=$(6) conv=sync; \
+			echo -n $(7); \
+		) > $(call factoryname,$(1),$(2)); \
+	fi
+endef
+
+cameo913x_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,896k(kernel),2944k(rootfs),64k(art)ro,3840k@0x30000(firmware)
+define Image/Build/Cameo913x
+	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo913x_mtdlayout),917504,2949120,$(4))
 endef
 
 cameo7240_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,896k(kernel),2816k(rootfs),64k(mac)ro,64k(art)ro,3712k@0x40000(firmware)
 define Image/Build/Cameo7240
-	$(call PatchKernelLzma,$(2),$(3) $(cameo7240_mtdlayout))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 917504 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 2818048 ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
-			dd if=$(KDIR)/root.$(1) \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
-			dd if=$(KDIR)/root.$(1) bs=2752k conv=sync; \
-			echo -n $(4); \
-		) > $(call imgname,$(1),$(2))-factory.bin; \
-	fi; fi
+	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo7240_mtdlayout),917504,2818048,$(4))
 endef
 
-define Image/Build/AP83
-	$(call PatchKernelGzip,$(2),$(3))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.gz"` -gt 1310720 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.gz is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 6619136 ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.gz \
-			$(KDIR)/vmlinux-$(2).uImage; \
+define Image/Build/Ath
+	$(call Sysupgrade/$(7),$(1),$(2),$(5),$(6))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		dd if=$(KDIR)/vmlinux-$(2).uImage \
 			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
 		dd if=$(KDIR)/root.$(1) \
 			of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync; \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1280k conv=sync; \
-			dd if=$(KDIR)/root.$(1); \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
-	fi; fi
-endef
-
-define Image/Build/PB92
-	$(call PatchKernelLzma,$(2),$(3))
-	if [ `stat -c%s $(KDIR)/vmlinux-$(2).bin.lzma` -gt 917504 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-	elif [ `stat -c%s $(KDIR)/root.$(1)` -gt 2818048 ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.lzma \
-			$(KDIR)/vmlinux-$(2).uImage; \
-		dd if=$(KDIR)/vmlinux-$(2).uImage \
-			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
-		dd if=$(KDIR)/root.$(1) \
-			of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync; \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
-			dd if=$(KDIR)/root.$(1); \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
 	fi
+endef
+
+define Image/Build/AthGzip
+	$(call MkuImageGzip,$(2),$(3) $($(4)))
+	$(call Image/Build/Ath,$(1),$(2),$(3),$(4),$(5),$(6),$(7))
+endef
+
+define Image/Build/AthGzip/initramfs
+	$(call MkuImageLzma,$(2),$(3) $($(4)))
+endef
+
+define Image/Build/AthLzma
+	$(call MkuImageLzma,$(2),$(3) $($(4)))
+	$(call Image/Build/Ath,$(1),$(2),$(3),$(4),$(5),$(6),$(7))
+endef
+
+define Image/Build/AthLzma/initramfs
+	$(call MkuImageLzma,$(2),$(3) $($(4)))
 endef
 
 define Image/Build/PB4X
@@ -250,53 +203,9 @@ define Image/Build/PB4X
 	-sh $(TOPDIR)/scripts/combined-image.sh \
 		"$(call imgname,kernel,$(2)).bin" \
 		"$(call imgname,$(1),$(2)-rootfs).bin" \
-		$(call imgname,$(1),$(2))-sysupgrade.bin
+		$(call sysupname,$(1),$(2))
 endef
 
-define Image/Build/DB120
-	$(call PatchKernelLzma,$(2),$(3))
-	if [ `stat -c%s $(KDIR)/vmlinux-$(2).bin.lzma` -gt 1441792 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-	elif [ `stat -c%s $(KDIR)/root.$(1)` -gt 6488064 ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.lzma \
-			$(KDIR)/vmlinux-$(2).uImage; \
-		dd if=$(KDIR)/vmlinux-$(2).uImage \
-			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
-		dd if=$(KDIR)/root.$(1) \
-			of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync; \
-		( \
-			dd if=$(KDIR)/root.$(1); \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1408k conv=sync; \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
-	fi
-endef
-
-define Image/Build/AP121
-	$(call PatchKernelLzma,$(2),$(3) $($(4)))
-	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
-	if [ `stat -c%s $(KDIR)/vmlinux-$(2).uImage` -gt $(5) ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
-	elif [ `stat -c%s $(BIN_DIR)/$(IMG_PREFIX)-root.$(1)` -gt $(6) ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		cp $(KDIR)/vmlinux-$(2).uImage $(call imgname,kernel,$(2)).bin; \
-		cp $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) $(call imgname,$(1),$(2)-rootfs).bin; \
-		( \
-			dd if=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=$(6) conv=sync; \
-			dd if=$(KDIR)/vmlinux-$(2).uImage; \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
-	fi
-endef
-
-define Image/Build/AP121/initramfs
-	$(call PatchKernelLzma,$(2),$(3) $($(4)))
-	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(call imgname,$(1),$(2))-uImage.bin)
-endef
 
 define Image/Build/MyLoader
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(3) \
@@ -307,18 +216,14 @@ endef
 
 ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6528k(rootfs),256k(cfg)ro,64k(EEPROM)ro,7552k@0x50000(firmware)
 define Image/Build/UBNTXM
-	$(call PatchKernelLzma,$(2),$(3) $(ubntxm_mtdlayout))
-	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage.bin)
+	$(call MkuImageLzma,$(2),$(3) $(ubntxm_mtdlayout))
+	$(call Sysupgrade/KR,$(1),$(2),1048576,6684672)
 	dd if=$(KDIR)/vmlinux-$(2).uImage.bin of=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).uImage \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
-		-o $(call imgname,$(1),$(2))-factory.bin
-	( \
-		dd if=$(KDIR)/vmlinux-$(2).uImage; \
-		dd if=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1); \
-	) > $(call imgname,$(1),$(2))-sysupgrade.bin
+		-o $(call factoryname,$(1),$(2))
 endef
 
 define Image/Build/UBNT
@@ -328,34 +233,23 @@ define Image/Build/UBNT
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
 		-k $(KDIR)/vmlinux-$(2).lzma \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
-		-o $(call imgname,$(1),$(2))-factory.bin
+		-o $(call factoryname,$(1),$(2))
 	-sh $(TOPDIR)/scripts/combined-image.sh \
 		"$(KDIR)/vmlinux-$(2).lzma" \
 		"$(BIN_DIR)/$(IMG_PREFIX)-root.$(1)" \
-		$(call imgname,$(1),$(2))-sysupgrade.bin
+  $(call sysupname,$(1),$(2))
 endef
 
 define Image/Build/Planex
-	$(call PatchKernelGzip,$(2),$(3))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.gz"` -gt 1441792 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.gz is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 6356992 ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C gzip -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.gz $(KDIR)/vmlinux-$(2).uImage; \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=1408k conv=sync; \
-			dd if=$(KDIR)/root.$(1); \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
+	$(call MkuImageGzip,$(2),$(3))
+	$(call Sysupgrade/KR,$(1),$(2),1441792,6356992)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkplanexfw \
 			-B $(2) \
 			-v 2.00.00 \
-			-i $(call imgname,$(1),$(2))-sysupgrade.bin \
-			-o $(call imgname,$(1),$(2))-factory.bin; \
-	fi; fi
+			-i $(call sysupname,$(1),$(2)) \
+			-o $(call factoryname,$(1),$(2)); \
+	fi
 endef
 
 define Image/Build/TPLINK
@@ -364,12 +258,12 @@ define Image/Build/TPLINK
 		-B $(4) -N OpenWrt -V $(REVISION)\
 		-k $(KDIR)/vmlinux-$(2).bin.gz \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
-		-o $(call imgname,$(1),$(2))-factory.bin
+		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-B $(4) -N OpenWrt -V $(REVISION) -s \
 		-k $(KDIR)/vmlinux-$(2).bin.gz \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
-		-o $(call imgname,$(1),$(2))-sysupgrade.bin
+		-o $(call sysupname,$(1),$(2))
 endef
 
 define Image/Build/TPLINK/initramfs
@@ -381,22 +275,20 @@ define Image/Build/TPLINK/initramfs
 endef
 
 define Image/Build/CyberTAN
-	$(call PatchKernelGzip,$(2),$(3))
-	$(call MkImageGzip,$(KDIR)/vmlinux-$(2).bin.gz,$(KDIR)/vmlinux-$(2).uImage)
+	$(call MkuImageGzip,$(2),$(3))
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR)/vmlinux-$(2).uImage \
 		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) \
 		-i $(KDIR)/image.tmp \
-		-o $(call imgname,$(1),$(2))-sysupgrade.bin
+		-o $(call sysupname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) -g \
 		-i $(KDIR)/image.tmp \
-		-o $(call imgname,$(1),$(2))-factory.bin
+		-o $(call factoryname,$(1),$(2))
 	rm $(KDIR)/image.tmp
 endef
 
 define Image/Build/Netgear
-	$(call PatchKernelLzma,$(2),$(3) $($(4)))
-	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
+	$(call MkuImageLzma,$(2),$(3) $($(4)))
 	mkdir -p $(KDIR)/wndr3700/image
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
 		$(KDIR)/vmlinux-$(2).uImage \
@@ -419,19 +311,18 @@ define Image/Build/Netgear
 	( \
 		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs bs=1024k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k; \
-	) > $(call imgname,$(1),$(2))-sysupgrade.bin
+	) > $(call sysupname,$(1),$(2))
 	for r in $(7) ; do \
 		[ -n "$$$$r" ] && dashr="-$$$$r" || dashr= ; \
 		$(STAGING_DIR_HOST)/bin/mkdniimg \
 			-B $(6) -v OpenWrt.$(REVISION) -r "$$$$r" $(8) \
-			-i $(call imgname,$(1),$(2))-sysupgrade.bin \
+			-i $(call sysupname,$(1),$(2)) \
 			-o $(call imgname,$(1),$(2))-factory$$$$dashr.img; \
 	done
 endef
 
 define Image/Build/Netgear/initramfs
-	$(call PatchKernelLzma,$(2),$(3) $($(4)))
-	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage)
+	$(call MkuImageLzma,$(2),$(3) $($(4)))
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
 		$(KDIR)/vmlinux-$(2).uImage \
 		$(call imgname,$(1),$(2))-uImage.bin \
@@ -440,43 +331,31 @@ endef
 
 ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
   define Image/Build/ZyXEL
-	$(call PatchKernelLzma,$(2),$(3))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt 917504 ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).bin.lzma is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt 2752512 ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else if [ ! -f $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin ]; then \
-		echo "Warning: $(IMG_PREFIX)-$(2)-u-boot.bin not found"; \
-	else \
-		mkimage -A mips -O linux -T kernel -a 0x80060000 -C lzma -e \
-			0x80060000 \
-			-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-			-d $(KDIR)/vmlinux-$(2).bin.lzma $(KDIR)/vmlinux-$(2).uImage; \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=896k conv=sync; \
-			dd if=$(KDIR)/root.$(1); \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
-		$(STAGING_DIR_HOST)/bin/mkzynfw \
-			-B $(4) \
-			-b $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin \
-			-r $(call imgname,$(1),$(2))-sysupgrade.bin:0x10000 \
-			-o $(call imgname,$(1),$(2))-factory.bin; \
-	fi; fi; fi
+	$(call MkuImageLzma,$(2),$(3))
+	$(call Sysupgrade/KR,$(1),$(2),917504,2752512)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		if [ ! -f $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin ]; then \
+			echo "Warning: $(IMG_PREFIX)-$(2)-u-boot.bin not found"; \
+		else \
+			$(STAGING_DIR_HOST)/bin/mkzynfw \
+				-B $(4) \
+				-b $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin \
+				-r $(call sysupname,$(1),$(2)):0x10000 \
+				-o $(call factoryname,$(1),$(2)); \
+	fi; fi
   endef
 endif
 
 define Image/Build/Zcomax
-	$(call PatchKernelLzma,$(2),$(3))
-	$(call MkImageLzma,$(KDIR)/vmlinux-$(2).bin.lzma,$(KDIR)/vmlinux-$(2).uImage.bin)
-	-$(STAGING_DIR_HOST)/bin/mkzcfw \
-		-B $(2) \
-		-k $(KDIR)/vmlinux-$(2).uImage.bin \
-		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
-		-o $(call imgname,$(1),$(2))-factory.img
-	( \
-		dd if=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=6208k count=1 conv=sync; \
-		dd if=$(KDIR)/vmlinux-$(2).uImage.bin bs=1472k count=1; \
-	) > $(call imgname,$(1),$(2))-sysupgrade.bin
+	$(call MkuImageLzma,$(2),$(3))
+	$(call Sysupgrade/RK,$(1),$(2),1507328,6356992)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		$(STAGING_DIR_HOST)/bin/mkzcfw \
+			-B $(2) \
+			-k $(KDIR)/vmlinux-$(2).uImage.bin \
+			-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+			-o $(call imgname,$(1),$(2))-factory.img; \
+	fi
 endef
 
 define Image/Build/Template/initramfs/initramfs
@@ -525,28 +404,33 @@ ap121_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs
 
 ap121_cmdline=board=AP121 console=ttyATH0,115200
 define Image/Build/Profile/AP121
-	$(call Image/Build/Template/$(fs_4k)/$(1),AP121,ap121-2M,$(ap121_cmdline),ap121_mtdlayout_2M,720896,1245184)
-	$(call Image/Build/Template/$(fs_64k)/$(1),AP121,ap121-4M,$(ap121_cmdline),ap121_mtdlayout_4M,917504,2818048)
+	$(call Image/Build/Template/$(fs_4k)/$(1),AthLzma,ap121-2M,$(ap121_cmdline),ap121_mtdlayout_2M,720896,1245184,RK)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap121-4M,$(ap121_cmdline),ap121_mtdlayout_4M,917504,2818048,RK)
 endef
 
 ap121_mini_cmdline=board=AP121-MINI console=ttyATH0,115200
 define Image/Build/Profile/AP121MINI
-	$(call Image/Build/Template/$(fs_64k)/$(1),AP121,ap121-mini,$(ap121_mini_cmdline),ap121_mtdlayout_4M,917504,2818048)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap121-mini,$(ap121_mini_cmdline),ap121_mtdlayout_4M,917504,2818048,RK)
 endef
 
 ap81_cmdline=board=AP81 console=ttyS0,115200
 define Image/Build/Profile/AP81
-	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap81,$(ap81_cmdline))
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthGzip,ap81,$(ap81_cmdline),,1310720,6619136,KR)
 endef
 
 ap83_cmdline=board=AP83 console=ttyS0,115200
 define Image/Build/Profile/AP83
-	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap83,$(ap83_cmdline))
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthGzip,ap83,$(ap83_cmdline),,1310720,6619136,KR)
+endef
+
+ap96_cmdline=board=AP96 console=ttyS0,115200
+define Image/Build/Profile/AP96
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthGzip,ap96,$(ap96_cmdline),ap96_mtdlayout,1769472,6291456,RK)
 endef
 
 db120_cmdline=board=DB120 console=ttyS0,115200
 define Image/Build/Profile/DB120
-	$(call Image/Build/Template/$(fs_64k)/$(1),DB120,db120,$(db120_cmdline))
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,db120,$(db120_cmdline),,1441792,6488064,RK)
 endef
 
 pb42_cmdline=board=PB42 console=ttyS0,115200
@@ -561,7 +445,7 @@ endef
 
 pb92_cmdline=board=PB92 console=ttyS0,115200
 define Image/Build/Profile/PB92
-	$(call Image/Build/Template/$(fs_64k)/$(1),PB92,pb92,$(pb92_cmdline))
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,pb92,$(pb92_cmdline),,917504,2818048,KR)
 endef
 
 define Image/Build/Profile/WP543
@@ -598,23 +482,23 @@ endef
 
 dir615c1_cmdline=board=DIR-615-C1 console=ttyS0,115200
 define Image/Build/Profile/DIR615C1
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,dir-615-c1,$(dir615c1_cmdline),"AP81-AR9130-RT-070614-02")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,dir-615-c1,$(dir615c1_cmdline),"AP81-AR9130-RT-070614-02")
 endef
 
 tew632brp_cmdline=board=TEW-632BRP console=ttyS0,115200
 define Image/Build/Profile/TEW632BRP
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-632brp,$(tew632brp_cmdline),"AP81-AR9130-RT-070614-00")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,tew-632brp,$(tew632brp_cmdline),"AP81-AR9130-RT-070614-00")
 endef
 
 tew652brp_cmdline=board=TEW-632BRP console=ttyS0,115200
 define Image/Build/Profile/TEW652BRP
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-652brp,$(tew652brp_cmdline),"AP81-AR9130-RT-080609-05")
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,tew-652brp-recovery,$(tew652brp_cmdline),"AP81-AR9130-RT-070614-02")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,tew-652brp,$(tew652brp_cmdline),"AP81-AR9130-RT-080609-05")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,tew-652brp-recovery,$(tew652brp_cmdline),"AP81-AR9130-RT-070614-02")
 endef
 
 a05rbw300n_cmdline=board=TEW-632BRP console=ttyS0,115200
 define Image/Build/Profile/A02RBW300N
-	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo,a02-rb-w300n,$(a05rbw300n_cmdline),"AP81-AR9130-RT-070614-03")
+	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,a02-rb-w300n,$(a05rbw300n_cmdline),"AP81-AR9130-RT-070614-03")
 endef
 
 ubntrs_cmdline=board=UBNT-RS console=ttyS0,115200
@@ -756,11 +640,6 @@ define Image/Build/Profile/WNDR3700
 	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,$(wndr3700v2_cmdline),wndr3700v2_mtdlayout,3701,WNDR3700v2,"",-H 29763654+16+64)
 endef
 
-ap96_cmdline=board=AP96 console=ttyS0,115200
-define Image/Build/Profile/AP96
-	$(call Image/Build/Template/$(fs_64k)/$(1),AP83,ap96,$(ap96_cmdline))
-endef
-
 wr400n_cmdline=board=WRT400N console=ttyS0,115200
 define Image/Build/Profile/WRT400N
 	$(call Image/Build/Template/$(fs_64k)/$(1),WRT400N,wrt400n,$(wr400n_cmdline))
@@ -873,7 +752,6 @@ endef
 define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
-
 	$(call Image/Build/Profile/$(PROFILE),$(1))
 endef
 
