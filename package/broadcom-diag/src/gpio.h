@@ -1,13 +1,104 @@
 #ifndef __DIAG_GPIO_H
 #define __DIAG_GPIO_H
+
 #include <linux/interrupt.h>
+#include <linux/ssb/ssb_embedded.h>
 #include <linux/gpio.h>
-#include <asm/mach-bcm47xx/bcm47xx.h>
+#include <bcm47xx.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,0)
-#define ssb_bcm47xx bcm47xx_bus.ssb
+static inline u32 gpio_in(void)
+{
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		return ssb_gpio_in(&bcm47xx_bus.ssb, ~0);
 #endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		return bcma_chipco_gpio_in(&bcm47xx_bus.bcma.bus.drv_cc, ~0);
+#endif
+	}
+	return -EINVAL;
+}
 
+static inline u32 gpio_out(u32 mask, u32 value)
+{
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		return ssb_gpio_out(&bcm47xx_bus.ssb, mask, value);
+#endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		return bcma_chipco_gpio_out(&bcm47xx_bus.bcma.bus.drv_cc, mask, value);
+#endif
+	}
+	return -EINVAL;
+}
+
+static inline u32 gpio_outen(u32 mask, u32 value)
+{
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		ssb_gpio_outen(&bcm47xx_bus.ssb, mask, value);
+		return 0;
+#endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		bcma_chipco_gpio_outen(&bcm47xx_bus.bcma.bus.drv_cc, mask, value);
+		return 0;
+#endif
+	}
+	return -EINVAL;
+}
+
+static inline u32 gpio_control(u32 mask, u32 value)
+{
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		return ssb_gpio_control(&bcm47xx_bus.ssb, mask, value);
+#endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		return bcma_chipco_gpio_control(&bcm47xx_bus.bcma.bus.drv_cc, mask, value);
+#endif
+	}
+	return -EINVAL;
+}
+
+static inline u32 gpio_setintmask(u32 mask, u32 value)
+{
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		return ssb_gpio_intmask(&bcm47xx_bus.ssb, mask, value);
+#endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		return bcma_chipco_gpio_intmask(&bcm47xx_bus.bcma.bus.drv_cc, mask, value);
+#endif
+	}
+	return -EINVAL;
+}
+
+static inline u32 gpio_intpolarity(u32 mask, u32 value)
+{
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		return ssb_gpio_polarity(&bcm47xx_bus.ssb, mask, value);
+#endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		return bcma_chipco_gpio_polarity(&bcm47xx_bus.bcma.bus.drv_cc, mask, value);
+#endif
+	}
+	return -EINVAL;
+}
+
+#ifdef CONFIG_BCM47XX_SSB
 static inline u32 __ssb_write32_masked(struct ssb_device *dev, u16 offset,
 				       u32 mask, u32 value)
 {
@@ -16,6 +107,18 @@ static inline u32 __ssb_write32_masked(struct ssb_device *dev, u16 offset,
 	ssb_write32(dev, offset, value);
 	return value;
 }
+#endif
+
+#ifdef CONFIG_BCM47XX_BCMA
+static inline u32 __bcma_write32_masked(struct bcma_device *dev, u16 offset,
+				       u32 mask, u32 value)
+{
+	value &= mask;
+	value |= bcma_read32(dev, offset) & ~mask;
+	bcma_write32(dev, offset, value);
+	return value;
+}
+#endif
 
 static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 {
@@ -31,8 +134,18 @@ static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 		free_irq(irq, handler);
 	}
 
-	if (ssb_bcm47xx.chipco.dev)
-		__ssb_write32_masked(ssb_bcm47xx.chipco.dev, SSB_CHIPCO_IRQMASK, SSB_CHIPCO_IRQ_GPIO, (enabled ? SSB_CHIPCO_IRQ_GPIO : 0));
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		if (bcm47xx_bus.ssb.chipco.dev)
+			__ssb_write32_masked(bcm47xx_bus.ssb.chipco.dev, SSB_CHIPCO_IRQMASK, SSB_CHIPCO_IRQ_GPIO, (enabled ? SSB_CHIPCO_IRQ_GPIO : 0));
+#endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		if (bcm47xx_bus.bcma.bus.drv_cc.core)
+			__bcma_write32_masked(bcm47xx_bus.bcma.bus.drv_cc.core, BCMA_CC_IRQMASK, BCMA_CC_IRQ_GPIO, (enabled ? BCMA_CC_IRQ_GPIO : 0));
+#endif
+	}
 }
 
 #define EXTIF_ADDR 0x1f000000
