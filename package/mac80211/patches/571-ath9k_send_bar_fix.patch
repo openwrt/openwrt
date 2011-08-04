@@ -1,6 +1,14 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -275,7 +275,6 @@ struct ath_tx_control {
+@@ -246,6 +246,7 @@ struct ath_atx_tid {
+ };
+ 
+ struct ath_node {
++	struct ieee80211_vif *vif;
+ #ifdef CONFIG_ATH9K_DEBUGFS
+ 	struct list_head list; /* for sc->nodes */
+ 	struct ieee80211_sta *sta; /* station struct we're part of */
+@@ -274,7 +275,6 @@ struct ath_tx_control {
  
  #define ATH_TX_ERROR        0x01
  #define ATH_TX_XRETRY       0x02
