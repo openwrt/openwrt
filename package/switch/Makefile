@@ -33,10 +33,6 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-ifeq ($(BOARD),brcm47xx)
-    BUILDFLAGS := -DBROADCOM
-endif
-
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \

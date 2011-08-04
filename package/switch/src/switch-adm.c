@@ -37,6 +37,10 @@
 #include "switch-core.h"
 #include "gpio.h"
 
+#ifdef CONFIG_BCM47XX
+#include <nvram.h>
+#endif
+
 #define DRIVER_NAME "adm6996"
 #define DRIVER_VERSION "0.01"
 
@@ -48,19 +52,11 @@ static int force = 0;
 
 MODULE_AUTHOR("Felix Fietkau <openwrt@nbd.name>");
 MODULE_LICENSE("GPL");
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,52)
 module_param(eecs, int, 0);
 module_param(eesk, int, 0);
 module_param(eedi, int, 0);
 module_param(eerc, int, 0);
 module_param(force, int, 0);
-#else
-MODULE_PARM(eecs, "i");
-MODULE_PARM(eesk, "i");
-MODULE_PARM(eedi, "i");
-MODULE_PARM(eerc, "i");
-MODULE_PARM(force, "i");
-#endif
 
 /* Minimum timing constants */
 #define EECK_EDGE_TIME  3   /* 3us - max(adm 2.5us, 93c 1us) */
@@ -74,8 +70,7 @@ MODULE_PARM(force, "i");
 
 #define atoi(str) simple_strtoul(((str != NULL) ? str : ""), NULL, 0)
 
-#ifdef BROADCOM
-extern char *nvram_get(char *name);
+#ifdef CONFIG_BCM47XX
 
 /* Return gpio pin number assigned to the named pin */
 /*
@@ -88,15 +83,16 @@ extern char *nvram_get(char *name);
 static unsigned int get_gpiopin(char *pin_name, unsigned int def_pin)
 {
 	char name[] = "gpioXXXX";
-	char *val;
+	char val[10];
 	unsigned int pin;
 
 	/* Go thru all possibilities till a match in pin name */
 	for (pin = 0; pin < 16; pin ++) {
 		sprintf(name, "gpio%d", pin);
-		val = nvram_get(name);
-		if (val && !strcmp(val, pin_name))
-			return pin;
+		if (nvram_getenv(name, val, sizeof(val)) >= 0) {
+			if (!strcmp(val, pin_name))
+				return pin;
+		}
 	}
 	return def_pin;
 }
@@ -495,9 +491,16 @@ static int detect_adm(void)
 {
 	int ret = 0;
 
-#ifdef BROADCOM
-	int boardflags = atoi(nvram_get("boardflags"));
-        int boardnum = atoi(nvram_get("boardnum"));
+#ifdef CONFIG_BCM47XX
+	char buf[20];
+	int boardflags = 0;
+	int boardnum = 0;
+		
+	if (nvram_getenv("boardflags", buf, sizeof(buf)) >= 0)
+		boardflags = simple_strtoul(buf, NULL, 0);
+
+	if (nvram_getenv("boardnum", buf, sizeof(buf)) >= 0)
+		boardnum = simple_strtoul(buf, NULL, 0);
 
 	if ((boardnum == 44) && (boardflags == 0x0388)) {  /* Trendware TEW-411BRP+ */
 		ret = 1;
@@ -515,14 +518,19 @@ static int detect_adm(void)
 		eedi = get_gpiopin("adm_eedi", 4);
 		eerc = get_gpiopin("adm_rc", 0);
 
-	} else if ((strcmp(nvram_get("boardtype") ?: "", "bcm94710dev") == 0) &&
-			(strncmp(nvram_get("boardnum") ?: "", "42", 2) == 0)) {
-		/* WRT54G v1.1 hack */
-		eecs = 2;
-		eesk = 3;
-		eedi = 5;
+	} else if (nvram_getenv("boardtype", buf, sizeof(buf)) >= 0) {
+		if (strcmp(buf, "bcm94710dev") == 0) {
+			if (nvram_getenv("boardnum", buf, sizeof(buf)) >= 0) {
+				if (strncmp(buf, "42", 2) == 0) {
+					/* WRT54G v1.1 hack */
+					eecs = 2;
+					eesk = 3;
+					eedi = 5;
 
-		ret = 1;
+					ret = 1;
+				}
+			}
+		}
 	}
 
 	if (eecs)
