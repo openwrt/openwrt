@@ -425,9 +425,39 @@ static void ag71xx_dma_reset(struct ag71xx *ag)
 
 static void ag71xx_hw_stop(struct ag71xx *ag)
 {
-	/* disable all interrupts and stop the rx engine */
+	/* disable all interrupts and stop the rx/tx engine */
 	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, 0);
 	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
+	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, 0);
+}
+
+static void ag71xx_hw_setup(struct ag71xx *ag)
+{
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+
+	/* setup MAC configuration registers */
+	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
+
+	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
+		  MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK);
+
+	/* setup max frame length */
+	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
+
+	/* setup MII interface type */
+	ag71xx_mii_ctrl_set_if(ag, pdata->mii_if);
+
+	/* setup FIFO configuration registers */
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
+	if (pdata->is_ar724x) {
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, pdata->fifo_cfg1);
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, pdata->fifo_cfg2);
+	} else {
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0fff0000);
+		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, 0x00001fff);
+	}
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG4, FIFO_CFG4_INIT);
+	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, FIFO_CFG5_INIT);
 }
 
 static void ag71xx_hw_init(struct ag71xx *ag)
@@ -457,31 +487,38 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 	ar71xx_device_start(reset_mask);
 	mdelay(200);
 
-	/* setup MAC configuration registers */
-	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
-
-	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
-		  MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK);
-
-	/* setup max frame length */
-	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
-
-	/* setup MII interface type */
-	ag71xx_mii_ctrl_set_if(ag, pdata->mii_if);
-
-	/* setup FIFO configuration registers */
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
-	if (pdata->is_ar724x) {
-		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, pdata->fifo_cfg1);
-		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, pdata->fifo_cfg2);
-	} else {
-		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG1, 0x0fff0000);
-		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG2, 0x00001fff);
-	}
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG4, FIFO_CFG4_INIT);
-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, FIFO_CFG5_INIT);
+	ag71xx_hw_setup(ag);
 
 	ag71xx_dma_reset(ag);
+}
+
+static void ag71xx_fast_reset(struct ag71xx *ag)
+{
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+	struct net_device *dev = ag->dev;
+	u32 reset_mask = pdata->reset_bit;
+	u32 rx_ds, tx_ds;
+	u32 mii_reg;
+
+	reset_mask &= RESET_MODULE_GE0_MAC | RESET_MODULE_GE1_MAC;
+
+	mii_reg = ag71xx_rr(ag, AG71XX_REG_MII_CFG);
+	rx_ds = ag71xx_rr(ag, AG71XX_REG_RX_DESC);
+	tx_ds = ag71xx_rr(ag, AG71XX_REG_TX_DESC);
+
+	ar71xx_device_stop(reset_mask);
+	udelay(10);
+	ar71xx_device_start(reset_mask);
+	udelay(10);
+
+	ag71xx_dma_reset(ag);
+	ag71xx_hw_setup(ag);
+
+	ag71xx_wr(ag, AG71XX_REG_RX_DESC, rx_ds);
+	ag71xx_wr(ag, AG71XX_REG_TX_DESC, tx_ds);
+	ag71xx_wr(ag, AG71XX_REG_MII_CFG, mii_reg);
+
+	ag71xx_hw_set_macaddr(ag, dev->dev_addr);
 }
 
 static void ag71xx_hw_start(struct ag71xx *ag)
@@ -508,6 +545,9 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 			printk(KERN_INFO "%s: link down\n", ag->dev->name);
 		return;
 	}
+
+	if (pdata->is_ar724x)
+		ag71xx_fast_reset(ag);
 
 	cfg2 = ag71xx_rr(ag, AG71XX_REG_MAC_CFG2);
 	cfg2 &= ~(MAC_CFG2_IF_1000 | MAC_CFG2_IF_10_100 | MAC_CFG2_FDX);
