@@ -1,0 +1,143 @@
+From be495ba9c365a31cf6a9fa0f67df9a9a9e0f1a1f Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 23 Jul 2011 23:57:06 +0200
+Subject: [PATCH 14/26] ssb: move flash to chipcommon
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/bcm47xx/nvram.c                 |    8 +++---
+ arch/mips/bcm47xx/wgt634u.c               |    8 +++---
+ drivers/ssb/driver_mipscore.c             |   31 +++++++++++++++++++---------
+ include/linux/ssb/ssb_driver_chipcommon.h |   18 ++++++++++++++++
+ include/linux/ssb/ssb_driver_mips.h       |    4 ---
+ 5 files changed, 47 insertions(+), 22 deletions(-)
+
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -27,7 +27,7 @@ static char nvram_buf[NVRAM_SPACE];
+ static void early_nvram_init(void)
+ {
+ #ifdef CONFIG_BCM47XX_SSB
+-	struct ssb_mipscore *mcore_ssb;
++	struct ssb_chipcommon *ssb_cc;
+ #endif
+ #ifdef CONFIG_BCM47XX_BCMA
+ 	struct bcma_drv_cc *bcma_cc;
+@@ -42,9 +42,9 @@ static void early_nvram_init(void)
+ 	switch (bcm47xx_bus_type) {
+ #ifdef CONFIG_BCM47XX_SSB
+ 	case BCM47XX_BUS_TYPE_SSB:
+-		mcore_ssb = &bcm47xx_bus.ssb.mipscore;
+-		base = mcore_ssb->flash_window;
+-		lim = mcore_ssb->flash_window_size;
++		ssb_cc = &bcm47xx_bus.ssb.chipco;
++		base = ssb_cc->pflash.window;
++		lim = ssb_cc->pflash.window_size;
+ 		break;
+ #endif
+ #ifdef CONFIG_BCM47XX_BCMA
+--- a/arch/mips/bcm47xx/wgt634u.c
++++ b/arch/mips/bcm47xx/wgt634u.c
+@@ -156,10 +156,10 @@ static int __init wgt634u_init(void)
+ 					    SSB_CHIPCO_IRQ_GPIO);
+ 		}
+ 
+-		wgt634u_flash_data.width = mcore->flash_buswidth;
+-		wgt634u_flash_resource.start = mcore->flash_window;
+-		wgt634u_flash_resource.end = mcore->flash_window
+-					   + mcore->flash_window_size
++		wgt634u_flash_data.width = mcore->pflash.buswidth;
++		wgt634u_flash_resource.start = mcore->pflash.window;
++		wgt634u_flash_resource.end = mcore->pflash.window
++					   + mcore->pflash.window_size
+ 					   - 1;
+ 		return platform_add_devices(wgt634u_devices,
+ 					    ARRAY_SIZE(wgt634u_devices));
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -190,16 +190,27 @@ static void ssb_mips_flash_detect(struct
+ {
+ 	struct ssb_bus *bus = mcore->dev->bus;
+ 
+-	mcore->flash_buswidth = 2;
+-	if (bus->chipco.dev) {
+-		mcore->flash_window = 0x1c000000;
+-		mcore->flash_window_size = 0x02000000;
+-		if ((ssb_read32(bus->chipco.dev, SSB_CHIPCO_FLASH_CFG)
+-		               & SSB_CHIPCO_CFG_DS16) == 0)
+-			mcore->flash_buswidth = 1;
+-	} else {
+-		mcore->flash_window = 0x1fc00000;
+-		mcore->flash_window_size = 0x00400000;
++	switch (bus->chipco.capabilities & SSB_CHIPCO_CAP_FLASHT) {
++	case SSB_CHIPCO_FLASHT_STSER:
++	case SSB_CHIPCO_FLASHT_ATSER:
++		pr_info("serial flash not supported.\n");
++		break;
++	case SSB_CHIPCO_FLASHT_PARA:
++		pr_info("found parallel flash.\n");
++		bus->chipco.flash_type = SSB_PFLASH;
++		bus->chipco.pflash.buswidth = 2;
++		if (bus->chipco.dev) {
++			bus->chipco.pflash.window = 0x1c000000;
++			bus->chipco.pflash.window_size = 0x02000000;
++			if ((ssb_read32(bus->chipco.dev, SSB_CHIPCO_FLASH_CFG)
++			     & SSB_CHIPCO_CFG_DS16) == 0)
++				bus->chipco.pflash.buswidth = 1;
++		} else {
++			bus->chipco.pflash.window = 0x1fc00000;
++			bus->chipco.pflash.window_size = 0x00400000;
++		}
++	default:
++		pr_err("flash not supported.\n");
+ 	}
+ }
+ 
+--- a/include/linux/ssb/ssb_driver_chipcommon.h
++++ b/include/linux/ssb/ssb_driver_chipcommon.h
+@@ -582,6 +582,18 @@ struct ssb_chipcommon_pmu {
+ 	u32 crystalfreq;	/* The active crystal frequency (in kHz) */
+ };
+ 
++#ifdef CONFIG_SSB_DRIVER_MIPS
++enum ssb_flash_type {
++	SSB_PFLASH,
++};
++
++struct ssb_pflash {
++	u8 buswidth;
++	u32 window;
++	u32 window_size;
++};
++#endif /* CONFIG_SSB_DRIVER_MIPS */
++
+ struct ssb_chipcommon {
+ 	struct ssb_device *dev;
+ 	u32 capabilities;
+@@ -589,6 +601,12 @@ struct ssb_chipcommon {
+ 	/* Fast Powerup Delay constant */
+ 	u16 fast_pwrup_delay;
+ 	struct ssb_chipcommon_pmu pmu;
++#ifdef CONFIG_SSB_DRIVER_MIPS
++	enum ssb_flash_type flash_type;
++	union {
++		struct ssb_pflash pflash;
++	};
++#endif /* CONFIG_SSB_DRIVER_MIPS */
+ };
+ 
+ static inline bool ssb_chipco_available(struct ssb_chipcommon *cc)
+--- a/include/linux/ssb/ssb_driver_mips.h
++++ b/include/linux/ssb/ssb_driver_mips.h
+@@ -19,10 +19,6 @@ struct ssb_mipscore {
+ 
+ 	int nr_serial_ports;
+ 	struct ssb_serial_port serial_ports[4];
+-
+-	u8 flash_buswidth;
+-	u32 flash_window;
+-	u32 flash_window_size;
+ };
+ 
+ extern void ssb_mipscore_init(struct ssb_mipscore *mcore);

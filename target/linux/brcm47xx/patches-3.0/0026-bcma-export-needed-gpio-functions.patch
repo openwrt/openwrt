@@ -1,0 +1,47 @@
+From f6e41db3ee7ead99e1398def222c14893fc265de Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 4 Aug 2011 21:09:48 +0200
+Subject: [PATCH 26/26] bcma: export needed gpio functions
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/driver_chipcommon.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+--- a/drivers/bcma/driver_chipcommon.c
++++ b/drivers/bcma/driver_chipcommon.c
+@@ -80,16 +80,19 @@ u32 bcma_chipco_gpio_in(struct bcma_drv_
+ {
+ 	return bcma_cc_read32(cc, BCMA_CC_GPIOIN) & mask;
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_in);
+ 
+ u32 bcma_chipco_gpio_out(struct bcma_drv_cc *cc, u32 mask, u32 value)
+ {
+ 	return bcma_cc_write32_masked(cc, BCMA_CC_GPIOOUT, mask, value);
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_out);
+ 
+ u32 bcma_chipco_gpio_outen(struct bcma_drv_cc *cc, u32 mask, u32 value)
+ {
+ 	return bcma_cc_write32_masked(cc, BCMA_CC_GPIOOUTEN, mask, value);
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_outen);
+ 
+ u32 bcma_chipco_gpio_control(struct bcma_drv_cc *cc, u32 mask, u32 value)
+ {
+@@ -101,11 +104,13 @@ u32 bcma_chipco_gpio_intmask(struct bcma
+ {
+ 	return bcma_cc_write32_masked(cc, BCMA_CC_GPIOIRQ, mask, value);
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_intmask);
+ 
+ u32 bcma_chipco_gpio_polarity(struct bcma_drv_cc *cc, u32 mask, u32 value)
+ {
+ 	return bcma_cc_write32_masked(cc, BCMA_CC_GPIOPOL, mask, value);
+ }
++EXPORT_SYMBOL_GPL(bcma_chipco_gpio_polarity);
+ 
+ #ifdef CONFIG_BCMA_DRIVER_MIPS
+ void bcma_chipco_serial_init(struct bcma_drv_cc *cc)

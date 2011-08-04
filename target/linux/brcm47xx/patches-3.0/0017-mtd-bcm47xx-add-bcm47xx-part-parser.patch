@@ -1,7 +1,7 @@
-From 4b449ce15d74e5973cde18381c2a3fa0616b2b3d Mon Sep 17 00:00:00 2001
+From 1934b89b42976a083c2ad8d8fdc526ab5b05c5e4 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 17 Jul 2011 14:54:11 +0200
-Subject: [PATCH 14/18] mtd: bcm47xx: add bcm47xx part parser
+Subject: [PATCH 17/26] mtd: bcm47xx: add bcm47xx part parser
 
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
@@ -46,7 +46,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
 + *
-+ *  original functions for finding root filesystem from Mike Baker 
++ *  original functions for finding root filesystem from Mike Baker
 + *
 + *  This program is free software; you can redistribute  it and/or modify it
 + *  under  the terms of  the GNU General  Public License as published by the
@@ -67,10 +67,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + *  You should have received a copy of the  GNU General Public License along
 + *  with this program; if not, write  to the Free Software Foundation, Inc.,
 + *  675 Mass Ave, Cambridge, MA 02139, USA.
-+ * 
++ *
 + *  Copyright 2001-2003, Broadcom Corporation
 + *  All Rights Reserved.
-+ * 
++ *
 + *  THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
 + *  KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
 + *  SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
@@ -89,7 +89,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <linux/mtd/mtd.h>
 +#include <linux/mtd/partitions.h>
 +#include <linux/crc32.h>
-+#include <asm/io.h>
++#include <linux/io.h>
 +#include <asm/mach-bcm47xx/nvram.h>
 +#include <asm/mach-bcm47xx/bcm47xx.h>
 +#include <asm/fw/cfe/cfe_api.h>
@@ -98,7 +98,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#define TRX_MAGIC	0x30524448	/* "HDR0" */
 +#define TRX_VERSION	1
 +#define TRX_MAX_LEN	0x3A0000
-+#define TRX_NO_HEADER	1		/* Do not write TRX header */	
++#define TRX_NO_HEADER	1		/* Do not write TRX header */
 +#define TRX_GZ_FILES	0x2     /* Contains up to TRX_MAX_OFFSET individual gzip files */
 +#define TRX_MAX_OFFSET	3
 +
@@ -128,10 +128,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#define ROUTER_SIMPLETECH_SIMPLESHARE  5
 +
 +static struct mtd_partition bcm47xx_parts[] = {
-+	{ name: "cfe",	offset: 0, size: 0, mask_flags: MTD_WRITEABLE, },
-+	{ name: "linux", offset: 0, size: 0, },
-+	{ name: "rootfs", offset: 0, size: 0, },
-+	{ name: "nvram", offset: 0, size: 0, },
++	{ name: "cfe",	offset:0, size:0, mask_flags:MTD_WRITEABLE, },
++	{ name: "linux", offset:0, size:0, },
++	{ name: "rootfs", offset:0, size:0, },
++	{ name: "nvram", offset:0, size:0, },
 +	{ name: NULL, }, /* Used to create custom partitons with the function get_router() */
 +	{ name: NULL, },
 +};
@@ -155,7 +155,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		memset(buf, 0xe5, sizeof(buf));
 +
 +		/*
-+		 * Read into buffer 
++		 * Read into buffer
 +		 */
 +		if (mtd->read(mtd, off, sizeof(buf), &len, buf) ||
 +		    len != sizeof(buf))
@@ -171,9 +171,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		}
 +
 +		/* found a TRX header */
-+		if (le32_to_cpu(trx->magic) == TRX_MAGIC) {
++		if (le32_to_cpu(trx->magic) == TRX_MAGIC)
 +			goto found;
-+		}
 +	}
 +
 +	pr_notice("%s: Couldn't find bootloader size\n", mtd->name);
@@ -189,7 +188,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + * Copied from mtdblock.c
 + *
 + * Cache stuff...
-+ * 
++ *
 + * Since typical flash erasable sectors are much larger than what Linux's
 + * buffer cache can handle, we must implement read-modify-write on flash
 + * sectors for each block write requests.  To avoid over-erasing flash sectors
@@ -203,7 +202,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	wake_up(wait_q);
 +}
 +
-+static int erase_write (struct mtd_info *mtd, unsigned long pos, 
++static int erase_write(struct mtd_info *mtd, unsigned long pos,
 +			int len, const char *buf)
 +{
 +	struct erase_info erase;
@@ -242,7 +241,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	 * Next, write data to flash.
 +	 */
 +
-+	ret = mtd->write (mtd, pos, len, &retlen, buf);
++	ret = mtd->write(mtd, pos, len, &retlen, buf);
 +	if (ret)
 +		return ret;
 +	if (retlen != len)
@@ -252,7 +251,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +
 +static int
-+find_dual_image_off (struct mtd_info *mtd)
++find_dual_image_off(struct mtd_info *mtd)
 +{
 +	struct trx_header trx;
 +	int off, blocksize;
@@ -265,14 +264,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	for (off = (128*1024); off < mtd->size; off += blocksize) {
 +		memset(&trx, 0xe5, sizeof(trx));
 +		/*
-+		* Read into buffer 
++		* Read into buffer
 +		*/
 +		if (mtd->read(mtd, off, sizeof(trx), &len, (char *) &trx) ||
 +		    len != sizeof(trx))
 +			continue;
 +		/* found last TRX header */
-+		if (le32_to_cpu(trx.magic) == TRX_MAGIC){ 
-+			if (le32_to_cpu(trx.flag_version >> 16)==2){
++		if (le32_to_cpu(trx.magic) == TRX_MAGIC) {
++			if (le32_to_cpu(trx.flag_version >> 16) == 2) {
 +				pr_notice("dual image TRX header found\n");
 +				return mtd->size / 2;
 +			} else {
@@ -302,7 +301,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		memset(&trx, 0xe5, sizeof(trx));
 +
 +		/*
-+		 * Read into buffer 
++		 * Read into buffer
 +		 */
 +		if (mtd->read(mtd, off, sizeof(trx), &len, (char *) &trx) ||
 +		    len != sizeof(trx))
@@ -323,9 +322,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +		/* found a TRX header */
 +		if (le32_to_cpu(trx.magic) == TRX_MAGIC) {
-+			part->offset = le32_to_cpu(trx.offsets[2]) ? : 
++			part->offset = le32_to_cpu(trx.offsets[2]) ? :
 +				le32_to_cpu(trx.offsets[1]);
-+			part->size = le32_to_cpu(trx.len); 
++			part->size = le32_to_cpu(trx.len);
 +
 +			part->size -= part->offset;
 +			part->offset += off;
@@ -346,7 +345,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	pr_notice("TRX offset : %x\n", trxoff);
 +	if (part->size == 0)
 +		return 0;
-+	
++
 +	if (mtd->read(mtd, part->offset, sizeof(buf), &len, buf) || len != sizeof(buf))
 +		return 0;
 +
@@ -356,7 +355,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (trx.len != part->offset + part->size - off) {
 +		/* Update the trx offsets and length */
 +		trx.len = part->offset + part->size - off;
-+	
++
 +		/* Update the trx crc32 */
 +		for (i = (u32) &(((struct trx_header *)NULL)->flag_version); i <= trx.len; i += sizeof(buf)) {
 +			if (mtd->read(mtd, off + i, sizeof(buf), &len, buf) || len != sizeof(buf))
@@ -372,7 +371,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			pr_err("Error accessing the first trx eraseblock\n");
 +			return 0;
 +		}
-+		
++
 +		pr_notice("Updating TRX offsets and length:\n");
 +		pr_notice("old trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n", trx2->offsets[0], trx2->offsets[1], trx2->offsets[2], trx2->len, trx2->crc32);
 +		pr_notice("new trx = [0x%08x, 0x%08x, 0x%08x], len=0x%08x crc32=0x%08x\n",   trx.offsets[0],   trx.offsets[1],   trx.offsets[2],   trx.len, trx.crc32);
@@ -387,7 +386,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		kfree(block);
 +		pr_notice("Done\n");
 +	}
-+	
++
 +	return part->size;
 +}
 +
@@ -446,8 +445,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	if (boardtype == 0x042f
 +	  && boardrev == 0x10
-+	  && boardflags == 0 
-+	  && strev == 0x11) { 
++	  && boardflags == 0
++	  && strev == 0x11) {
 +		/* Simpletech Simpleshare */
 +		return ROUTER_SIMPLETECH_SIMPLESHARE;
 +	}
@@ -468,7 +467,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	 */
 +	int custom_data_size = 0;
 +
-+	if ((cfe_size = find_cfe_size(mtd)) < 0)
++	cfe_size = find_cfe_size(mtd);
++	if (cfe_size < 0)
 +		return 0;
 +
 +	/* boot loader */
@@ -525,7 +525,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	/* dual image offset*/
 +	pr_notice("Looking for dual image\n");
-+	dual_image_offset=find_dual_image_off(mtd);
++	dual_image_offset = find_dual_image_off(mtd);
 +	/* linux (kernel and rootfs) */
 +	if (cfe_size != 384 * 1024) {
 +		if (get_router() == ROUTER_SIMPLETECH_SIMPLESHARE) {
@@ -539,11 +539,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		}
 +	} else {
 +		/* do not count the elf loader, which is on one block */
-+		bcm47xx_parts[1].offset = bcm47xx_parts[0].size + 
++		bcm47xx_parts[1].offset = bcm47xx_parts[0].size +
 +			bcm47xx_parts[3].size + mtd->erasesize;
-+		bcm47xx_parts[1].size   = mtd->size - 
-+			bcm47xx_parts[0].size - 
-+			(2*bcm47xx_parts[3].size) - 
++		bcm47xx_parts[1].size   = mtd->size -
++			bcm47xx_parts[0].size -
++			(2*bcm47xx_parts[3].size) -
 +			mtd->erasesize - custom_data_size;
 +	}
 +

@@ -274,7 +274,7 @@ static int __init wl_glue_init(void)
 	 * determine the used one from the info set by the
 	 * platform setup code.
 	 */
-	switch (bcm47xx_active_bus_type)
+	switch (bcm47xx_bus_type)
 	{
 #ifdef CONFIG_SSB
 	case BCM47XX_BUS_TYPE_SSB:

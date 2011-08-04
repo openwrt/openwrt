@@ -1,54 +1,38 @@
-From a1d9c96a6c9b37b26dc1149706f3061b57a62b50 Mon Sep 17 00:00:00 2001
+From b7d9f9cd6a8e463c1061ea29ed3e614403625024 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 17 Jul 2011 14:51:47 +0200
-Subject: [PATCH 12/22] bcma: move parallel flash into a union
+Subject: [PATCH 12/26] bcma: move parallel flash into a union
 
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- arch/mips/bcm47xx/nvram.c                   |    7 ++-
- drivers/bcma/driver_mips.c                  |    9 ++--
- include/linux/bcma/bcma_driver_chipcommon.h |   75 ++++++++++++++++++++++++++-
- 3 files changed, 84 insertions(+), 7 deletions(-)
+ arch/mips/bcm47xx/nvram.c                   |    3 +
+ drivers/bcma/driver_mips.c                  |    1 +
+ include/linux/bcma/bcma_driver_chipcommon.h |   73 ++++++++++++++++++++++++++-
+ 3 files changed, 76 insertions(+), 1 deletions(-)
 
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -50,8 +50,11 @@ static void early_nvram_init(void)
+@@ -50,6 +50,9 @@ static void early_nvram_init(void)
  #ifdef CONFIG_BCM47XX_BCMA
  	case BCM47XX_BUS_TYPE_BCMA:
  		bcma_cc = &bcm47xx_bus.bcma.bus.drv_cc;
--		base = bcma_cc->pflash.window;
--		lim = bcma_cc->pflash.window_size;
 +		if (bcma_cc->flash_type != BCMA_PFLASH)
 +			return;
 +
-+		base = bcma_cc->flash.pflash.window;
-+		lim = bcma_cc->flash.pflash.window_size;
+ 		base = bcma_cc->pflash.window;
+ 		lim = bcma_cc->pflash.window_size;
  		break;
- #endif
- 	}
 --- a/drivers/bcma/driver_mips.c
 +++ b/drivers/bcma/driver_mips.c
-@@ -189,14 +189,15 @@ static void bcma_core_mips_flash_detect(
+@@ -189,6 +189,7 @@ static void bcma_core_mips_flash_detect(
  		break;
  	case BCMA_CC_FLASHT_PARA:
  		pr_info("found parallel flash.\n");
--		bus->drv_cc.pflash.window = 0x1c000000;
--		bus->drv_cc.pflash.window_size = 0x02000000;
 +		bus->drv_cc.flash_type = BCMA_PFLASH;
-+		bus->drv_cc.flash.pflash.window = 0x1c000000;
-+		bus->drv_cc.flash.pflash.window_size = 0x02000000;
+ 		bus->drv_cc.pflash.window = 0x1c000000;
+ 		bus->drv_cc.pflash.window_size = 0x02000000;
  
- 		if ((bcma_read32(bus->drv_cc.core, BCMA_CC_FLASH_CFG) &
- 		     BCMA_CC_FLASH_CFG_DS) == 0)
--			bus->drv_cc.pflash.buswidth = 1;
-+			bus->drv_cc.flash.pflash.buswidth = 1;
- 		else
--			bus->drv_cc.pflash.buswidth = 2;
-+			bus->drv_cc.flash.pflash.buswidth = 2;
- 		break;
- 	default:
- 		pr_err("flash not supported.\n");
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
 @@ -108,10 +108,68 @@
@@ -133,7 +117,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /* Data for the PMU, if available.
   * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
   */
-@@ -292,12 +356,20 @@ struct bcma_chipcommon_pmu {
+@@ -292,6 +356,10 @@ struct bcma_chipcommon_pmu {
  };
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
@@ -144,23 +128,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  struct bcma_pflash {
  	u8 buswidth;
  	u32 window;
- 	u32 window_size;
- };
- 
-+union bcma_flash {
-+	struct bcma_pflash pflash;
-+};
-+
- struct bcma_serial_port {
- 	void *regs;
- 	unsigned long clockspeed;
-@@ -317,7 +389,8 @@ struct bcma_drv_cc {
+@@ -317,7 +385,10 @@ struct bcma_drv_cc {
  	u16 fast_pwrup_delay;
  	struct bcma_chipcommon_pmu pmu;
  #ifdef CONFIG_BCMA_DRIVER_MIPS
 -	struct bcma_pflash pflash;
 +	enum bcma_flash_type flash_type;
-+	union bcma_flash flash;
++	union {
++		struct bcma_pflash pflash;
++	};
  
  	int nr_serial_ports;
  	struct bcma_serial_port serial_ports[4];

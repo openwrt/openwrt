@@ -20,7 +20,7 @@
  	switch (*plltype) {
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
-@@ -217,6 +217,8 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
+@@ -234,6 +234,8 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
  
  	if ((pll_type == SSB_PLLTYPE_5) || (bus->chip_id == 0x5365)) {
  		rate = 200000000;

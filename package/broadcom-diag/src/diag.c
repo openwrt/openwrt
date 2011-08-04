@@ -1465,7 +1465,7 @@ static int __init diag_init(void)
 	static struct platform_t *detected;
 
 #ifdef CONFIG_BCM47XX_SSB
-	if (bcm47xx_active_bus_type != BCM47XX_BUS_TYPE_SSB) {
+	if (bcm47xx_bus_type != BCM47XX_BUS_TYPE_SSB) {
 		printk(MODULE_NAME ": bcma bus is not supported.\n");
 		return -ENODEV;
 	}

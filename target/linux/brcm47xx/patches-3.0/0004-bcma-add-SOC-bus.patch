@@ -1,7 +1,7 @@
-From 22573303ad477fa07c948a9944e9c18fea9af724 Mon Sep 17 00:00:00 2001
+From d743a740b76a6be9e88fe1ae6991682927a7769c Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sat, 18 Jun 2011 14:31:53 +0200
-Subject: [PATCH 04/22] bcma: add SOC bus
+Subject: [PATCH 04/26] bcma: add SOC bus
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -18,12 +18,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/bcma/Kconfig          |    4 +
  drivers/bcma/Makefile         |    1 +
+ drivers/bcma/core.c           |    2 +
+ drivers/bcma/driver_pci.c     |    9 ++-
  drivers/bcma/host_soc.c       |  183 +++++++++++++++++++++++++++++++++++++++++
- drivers/bcma/main.c           |    6 +-
+ drivers/bcma/main.c           |    9 ++-
  drivers/bcma/scan.c           |   42 ++++++++-
  include/linux/bcma/bcma.h     |    5 +-
  include/linux/bcma/bcma_soc.h |   16 ++++
- 7 files changed, 250 insertions(+), 7 deletions(-)
+ 9 files changed, 263 insertions(+), 8 deletions(-)
  create mode 100644 drivers/bcma/host_soc.c
  create mode 100644 include/linux/bcma/bcma_soc.h
 
@@ -50,6 +52,35 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  obj-$(CONFIG_BCMA)			+= bcma.o
  
  ccflags-$(CONFIG_BCMA_DEBUG)		:= -DDEBUG
+--- a/drivers/bcma/core.c
++++ b/drivers/bcma/core.c
+@@ -110,6 +110,8 @@ EXPORT_SYMBOL_GPL(bcma_core_pll_ctl);
+ u32 bcma_core_dma_translation(struct bcma_device *core)
+ {
+ 	switch (core->bus->hosttype) {
++	case BCMA_HOSTTYPE_SOC:
++		return 0;
+ 	case BCMA_HOSTTYPE_PCI:
+ 		if (bcma_aread32(core, BCMA_IOST) & BCMA_IOST_DMA64)
+ 			return BCMA_DMA_TRANSLATION_DMA64_CMT;
+--- a/drivers/bcma/driver_pci.c
++++ b/drivers/bcma/driver_pci.c
+@@ -208,7 +208,14 @@ int bcma_core_pci_irq_ctl(struct bcma_dr
+ {
+ 	struct pci_dev *pdev = pc->core->bus->host_pci;
+ 	u32 coremask, tmp;
+-	int err;
++	int err = 0;
++
++	if (core->bus->hosttype != BCMA_HOSTTYPE_PCI) {
++		/* This bcma device is not on a PCI host-bus. So the IRQs are
++		 * not routed through the PCI core.
++		 * So we must not enable routing through the PCI core. */
++		goto out;
++	}
+ 
+ 	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
+ 	if (err)
 --- /dev/null
 +++ b/drivers/bcma/host_soc.c
 @@ -0,0 +1,183 @@
@@ -249,16 +280,18 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	kfree(core);
  }
  
-@@ -93,8 +97,8 @@ static int bcma_register_cores(struct bc
+@@ -93,7 +97,10 @@ static int bcma_register_cores(struct bc
  			core->dma_dev = &bus->host_pci->dev;
  			core->irq = bus->host_pci->irq;
  			break;
 -		case BCMA_HOSTTYPE_NONE:
- 		case BCMA_HOSTTYPE_SDIO:
 +		case BCMA_HOSTTYPE_SOC:
++			core->dev.dma_mask = &core->dev.coherent_dma_mask;
++			core->dma_dev = &core->dev;
++			break;
+ 		case BCMA_HOSTTYPE_SDIO:
  			break;
  		}
- 
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
 @@ -337,6 +337,16 @@ static int bcma_get_next_core(struct bcm

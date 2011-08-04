@@ -1,0 +1,51 @@
+From 3e889f1cf928c6d87229761a0bc4c18c775a988b Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 17 Jul 2011 21:13:32 +0200
+Subject: [PATCH 21/26] add workarround for wndr3400
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/mtd/bcm47xxpart.c |   17 ++++++++++++-----
+ 1 files changed, 12 insertions(+), 5 deletions(-)
+
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -78,11 +78,12 @@ struct trx_header {
+ 
+ #define NVRAM_SPACE 0x8000
+ 
+-#define ROUTER_NETGEAR_WGR614L         1
+-#define ROUTER_NETGEAR_WNR834B         2
+-#define ROUTER_NETGEAR_WNDR3300        3
+-#define ROUTER_NETGEAR_WNR3500L        4
+-#define ROUTER_SIMPLETECH_SIMPLESHARE  5
++#define ROUTER_NETGEAR_WGR614L		1
++#define ROUTER_NETGEAR_WNR834B		2
++#define ROUTER_NETGEAR_WNDR3300		3
++#define ROUTER_NETGEAR_WNR3500L		4
++#define ROUTER_SIMPLETECH_SIMPLESHARE	5
++#define ROUTER_NETGEAR_WNDR3400		6
+ 
+ static struct mtd_partition bcm47xx_parts[] = {
+ 	{ name: "cfe",	offset:0, size:0, mask_flags:MTD_WRITEABLE, },
+@@ -400,6 +401,11 @@ static int get_router(void)
+ 		return ROUTER_NETGEAR_WNR3500L;
+ 	}
+ 
++	if (boardnum == 1 && boardtype == 0xb4cf && boardrev == 0x1100) {
++		/* Netgear WNDR3400 */
++		return ROUTER_NETGEAR_WNDR3400;
++	}
++
+ 	if (boardtype == 0x042f
+ 	  && boardrev == 0x10
+ 	  && boardflags == 0
+@@ -440,6 +446,7 @@ static int parse_bcm47xx_partitions(stru
+ 		case ROUTER_NETGEAR_WNR834B:
+ 		case ROUTER_NETGEAR_WNDR3300:
+ 		case ROUTER_NETGEAR_WNR3500L:
++		case ROUTER_NETGEAR_WNDR3400:
+ 			/* Netgear: checksum is @ 0x003AFFF8 for 4M flash or checksum
+ 			 * is @ 0x007AFFF8 for 8M flash
+ 			 */

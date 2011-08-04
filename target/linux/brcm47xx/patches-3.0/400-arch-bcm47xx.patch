@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -117,3 +117,30 @@ int nvram_getenv(char *name, char *val,
+@@ -199,3 +199,30 @@ int nvram_getenv(char *name, char *val,
  	return NVRAM_ERR_ENVNOTFOUND;
  }
  EXPORT_SYMBOL(nvram_getenv);
@@ -33,8 +33,8 @@
 +EXPORT_SYMBOL(nvram_get);
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -438,3 +438,20 @@ static int __init bcm47xx_register_flash
- 	return 0;
+@@ -468,3 +468,20 @@ static int __init bcm47xx_register_flash
+ 	return -1;
  }
  fs_initcall(bcm47xx_register_flash);
 +

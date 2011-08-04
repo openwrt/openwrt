@@ -1,15 +1,15 @@
-From 941c7a12af5d985c9dabc6813db3b75908bd619c Mon Sep 17 00:00:00 2001
+From fb261916ee9cd9eede57f6255ffd39e4145da48e Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 17 Jul 2011 14:55:18 +0200
-Subject: [PATCH 15/22] mtd: bcm47xx: add parallel flash driver
+Subject: [PATCH 18/26] mtd: bcm47xx: add parallel flash driver
 
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/mtd/maps/Kconfig          |    9 ++
  drivers/mtd/maps/Makefile         |    1 +
- drivers/mtd/maps/bcm47xx-pflash.c |  196 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 206 insertions(+), 0 deletions(-)
+ drivers/mtd/maps/bcm47xx-pflash.c |  198 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 208 insertions(+), 0 deletions(-)
  create mode 100644 drivers/mtd/maps/bcm47xx-pflash.c
 
 --- a/drivers/mtd/maps/Kconfig
@@ -39,13 +39,13 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_MTD_BCM47XX_PFLASH)+= bcm47xx-pflash.o
 --- /dev/null
 +++ b/drivers/mtd/maps/bcm47xx-pflash.c
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,198 @@
 +/*
 + *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 + *  Copyright (C) 2005 Waldemar Brodkorb <wbx@openwrt.org>
 + *  Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
 + *
-+ *  original functions for finding root filesystem from Mike Baker 
++ *  original functions for finding root filesystem from Mike Baker
 + *
 + *  This program is free software; you can redistribute  it and/or modify it
 + *  under  the terms of  the GNU General  Public License as published by the
@@ -66,10 +66,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + *  You should have received a copy of the  GNU General Public License along
 + *  with this program; if not, write  to the Free Software Foundation, Inc.,
 + *  675 Mass Ave, Cambridge, MA 02139, USA.
-+ * 
++ *
 + *  Copyright 2001-2003, Broadcom Corporation
 + *  All Rights Reserved.
-+ * 
++ *
 + *  THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
 + *  KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
 + *  SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
@@ -87,7 +87,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <linux/mtd/mtd.h>
 +#include <linux/mtd/map.h>
 +#include <linux/mtd/partitions.h>
-+#include <asm/io.h>
++#include <linux/io.h>
 +#include <asm/mach-bcm47xx/bcm47xx.h>
 +#include <linux/platform_device.h>
 +
@@ -99,15 +99,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +static void bcm47xx_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
 +{
-+	if (len==1) {
++	if (len == 1) {
 +		memcpy_fromio(to, map->virt + from, len);
 +	} else {
 +		int i;
 +		u16 *dest = (u16 *) to;
 +		u16 *src  = (u16 *) (map->virt + from);
-+		for (i = 0; i < (len / 2); i++) {
++		for (i = 0; i < (len / 2); i++)
 +			dest[i] = src[i];
-+		}
 +		if (len & 1)
 +			*((u8 *)dest+len-1) = src[i] & 0xff;
 +	}
@@ -115,9 +114,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +static struct map_info bcm47xx_map = {
 +	name: "Physically mapped flash",
-+	size: WINDOW_SIZE,
-+	bankwidth: BUSWIDTH,
-+	phys: WINDOW_ADDR,
++	size : WINDOW_SIZE,
++	bankwidth : BUSWIDTH,
++	phys : WINDOW_ADDR,
 +};
 +
 +static const char *probes[] = { "bcm47xx", NULL };
@@ -125,7 +124,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +static int bcm47xx_mtd_probe(struct platform_device *pdev)
 +{
 +#ifdef CONFIG_BCM47XX_SSB
-+	struct ssb_mipscore *mcore_ssb;
++	struct ssb_chipcommon *ssb_cc;
 +#endif
 +#ifdef CONFIG_BCM47XX_BCMA
 +	struct bcma_drv_cc *bcma_cc;
@@ -134,13 +133,16 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct mtd_partition *partitions = NULL;
 +	int num_partitions = 0;
 +
-+	switch (bcm47xx_active_bus_type) {
++	switch (bcm47xx_bus_type) {
 +#ifdef CONFIG_BCM47XX_SSB
 +	case BCM47XX_BUS_TYPE_SSB:
-+		mcore_ssb = &bcm47xx_bus.ssb.mipscore;
-+		bcm47xx_map.phys = mcore_ssb->flash_window;
-+		bcm47xx_map.size = mcore_ssb->flash_window_size;
-+		bcm47xx_map.bankwidth = mcore_ssb->flash_buswidth;
++		ssb_cc = &bcm47xx_bus.ssb.chipco;
++		if (ssb_cc->flash_type != SSB_PFLASH)
++			return -ENODEV;
++
++		bcm47xx_map.phys = ssb_cc->pflash.window;
++		bcm47xx_map.size = ssb_cc->pflash.window_size;
++		bcm47xx_map.bankwidth = ssb_cc->pflash.buswidth;
 +		break;
 +#endif
 +#ifdef CONFIG_BCM47XX_BCMA
@@ -149,9 +151,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		if (bcma_cc->flash_type != BCMA_PFLASH)
 +			return -ENODEV;
 +
-+		bcm47xx_map.phys = bcma_cc->flash.pflash.window;
-+		bcm47xx_map.size = bcma_cc->flash.pflash.window_size;
-+		bcm47xx_map.bankwidth = bcma_cc->flash.pflash.buswidth;
++		bcm47xx_map.phys = bcma_cc->pflash.window;
++		bcm47xx_map.size = bcma_cc->pflash.window_size;
++		bcm47xx_map.bankwidth = bcma_cc->pflash.buswidth;
 +		break;
 +#endif
 +	}
@@ -166,7 +168,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	simple_map_init(&bcm47xx_map);
 +	/* override copy_from routine */
-+ 	bcm47xx_map.copy_from = bcm47xx_map_copy_from;
++	bcm47xx_map.copy_from = bcm47xx_map_copy_from;
 +
 +	bcm47xx_mtd = do_map_probe("cfi_probe", &bcm47xx_map);
 +	if (!bcm47xx_mtd) {
