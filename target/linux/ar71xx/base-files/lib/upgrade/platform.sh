@@ -69,7 +69,7 @@ platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$board" in
-	ap121 | ap121-mini | zcn-1523h-2 | zcn-1523h-5)
+	ap121 | ap121-mini | ap96 | db120 | zcn-1523h-2 | zcn-1523h-5)
 		[ "$magic" != "68737173" -a "$magic" != "19852003" ] && {
 			echo "Invalid image type."
 			return 1
