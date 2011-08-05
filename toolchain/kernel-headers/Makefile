@@ -31,6 +31,8 @@ ifeq ($(strip $(BOARD)),uml)
   LINUX_KARCH:=$(subst x86_64,x86,$(subst i386,x86,$(ARCH)))
 endif
 
+HOST_EXTRACFLAGS=
+
 LINUX_HAS_HEADERS_INSTALL:=y
 
 KMAKE := $(MAKE) -C $(HOST_BUILD_DIR) \
@@ -41,7 +43,7 @@ KMAKE := $(MAKE) -C $(HOST_BUILD_DIR) \
 	KBUILD_HAVE_NLS=no \
 	CONFIG_SHELL=$(BASH)
 
-define Host/Prepare/all
+define Host/Configure/all
 	mkdir -p $(BUILD_DIR_TOOLCHAIN)/linux-dev
 	$(KMAKE) \
 		INSTALL_HDR_PATH="$(BUILD_DIR_TOOLCHAIN)/linux-dev/" \
@@ -50,7 +52,7 @@ endef
 
 # XXX: the following is needed to build lzma-loader
 ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
-  define Host/Prepare/lzma
+  define Host/Configure/lzma
 	$(CP) \
 		$(HOST_BUILD_DIR)/arch/mips/include/asm/asm.h \
 		$(HOST_BUILD_DIR)/arch/mips/include/asm/regdef.h \
@@ -58,7 +60,7 @@ ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
   endef
 endif
 
-define Host/Prepare/post/cris
+define Host/Configure/post/cris
 	$(CP) \
 		$(HOST_BUILD_DIR)/include/linux/user.h \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/linux/
@@ -67,7 +69,7 @@ define Host/Prepare/post/cris
 	$(SED) '/#include <asm\/page\.h>/d' $(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/user.h
 endef
 
-define Host/Prepare/post/ubicom32
+define Host/Configure/post/ubicom32
 	$(CP) \
 		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/elf.h \
 		$(HOST_BUILD_DIR)/arch/ubicom32/include/asm/user.h \
@@ -76,24 +78,25 @@ define Host/Prepare/post/ubicom32
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/
 endef
 
-define Host/Prepare/post/mips
-	$(call Host/Prepare/lzma)
+define Host/Configure/post/mips
+	$(call Host/Configure/lzma)
 endef
 
-define Host/Prepare/post/mipsel
-	$(call Host/Prepare/lzma)
+define Host/Configure/post/mipsel
+	$(call Host/Configure/lzma)
 endef
 
 define Host/Prepare
 	$(call Kernel/Prepare/Default)
 	ln -sf linux-$(LINUX_VERSION) $(BUILD_DIR_TOOLCHAIN)/linux
 	$(SED) 's/@expr length/@-expr length/' $(HOST_BUILD_DIR)/Makefile
-	yes '' | $(KMAKE) oldconfig
-	$(call Host/Prepare/all)
-	$(call Host/Prepare/post/$(ARCH))
 endef
 
 define Host/Configure
+	env
+	yes '' | $(KMAKE) oldconfig
+	$(call Host/Configure/all)
+	$(call Host/Configure/post/$(ARCH))
 endef
 
 define Host/Compile
