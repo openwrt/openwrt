@@ -1,0 +1,166 @@
+From d9a056919c4fa46cd9e094f969032bd4e15bffef Mon Sep 17 00:00:00 2001
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Sat, 28 May 2011 15:27:59 +0100
+Subject: [PATCH] MIPS: Malta: Fix crash SMP kernel on non-CMP systems.
+
+Since 6be63bbbdab66b9185dc6f67c8b1bacb6f37f946 (lmo) rsp.
+af3a1f6f4813907e143f87030cde67a9971db533 (kernel.org) the Malta code does
+no longer probe for presence of GCMP if CMP is not configured.  This means
+that the variable gcmp_present well be left at its default value of -1
+which normally is meant to indicate that GCMP has not yet been mmapped.
+This non-zero value is now interpreted as GCMP being present resulting
+in a write attempt to a GCMP register resulting in a crash.
+
+Reported and a build fix on top of my fix by Rob Landley <rob@landley.net>.
+
+Reported-by: Rob Landley <rob@landley.net>
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+Patchwork: https://patchwork.linux-mips.org/patch/2413/
+(cherry picked from commit c3ddf592134eaab38d051b2e7b23e81201ae423a)
+---
+ arch/mips/include/asm/smp-ops.h          |   41 +++++++++++++++++++++++++++--
+ arch/mips/mipssim/sim_setup.c            |   17 ++++++------
+ arch/mips/mti-malta/malta-init.c         |   14 +++++-----
+ arch/mips/pmc-sierra/msp71xx/msp_setup.c |    8 ++---
+ 4 files changed, 56 insertions(+), 24 deletions(-)
+
+diff --git a/arch/mips/include/asm/smp-ops.h b/arch/mips/include/asm/smp-ops.h
+index 9e09af3..48b03ff 100644
+--- a/arch/mips/include/asm/smp-ops.h
++++ b/arch/mips/include/asm/smp-ops.h
+@@ -56,8 +56,43 @@ static inline void register_smp_ops(struct plat_smp_ops *ops)
+ 
+ #endif /* !CONFIG_SMP */
+ 
+-extern struct plat_smp_ops up_smp_ops;
+-extern struct plat_smp_ops cmp_smp_ops;
+-extern struct plat_smp_ops vsmp_smp_ops;
++static inline int register_up_smp_ops(void)
++{
++#ifdef CONFIG_SMP_UP
++	extern struct plat_smp_ops up_smp_ops;
++
++	register_smp_ops(&up_smp_ops);
++
++	return 0;
++#else
++	return -ENODEV;
++#endif
++}
++
++static inline int register_cmp_smp_ops(void)
++{
++#ifdef CONFIG_MIPS_CMP
++	extern struct plat_smp_ops cmp_smp_ops;
++
++	register_smp_ops(&cmp_smp_ops);
++
++	return 0;
++#else
++	return -ENODEV;
++#endif
++}
++
++static inline int register_vsmp_smp_ops(void)
++{
++#ifdef CONFIG_MIPS_MT_SMP
++	extern struct plat_smp_ops vsmp_smp_ops;
++
++	register_smp_ops(&vsmp_smp_ops);
++
++	return 0;
++#else
++	return -ENODEV;
++#endif
++}
+ 
+ #endif /* __ASM_SMP_OPS_H */
+diff --git a/arch/mips/mipssim/sim_setup.c b/arch/mips/mipssim/sim_setup.c
+index 55f22a3..1970069 100644
+--- a/arch/mips/mipssim/sim_setup.c
++++ b/arch/mips/mipssim/sim_setup.c
+@@ -59,18 +59,17 @@ void __init prom_init(void)
+ 
+ 	prom_meminit();
+ 
+-#ifdef CONFIG_MIPS_MT_SMP
+-	if (cpu_has_mipsmt)
+-		register_smp_ops(&vsmp_smp_ops);
+-	else
+-		register_smp_ops(&up_smp_ops);
+-#endif
++	if (cpu_has_mipsmt) {
++		if (!register_vsmp_smp_ops())
++			return;
++
+ #ifdef CONFIG_MIPS_MT_SMTC
+-	if (cpu_has_mipsmt)
+ 		register_smp_ops(&ssmtc_smp_ops);
+-	else
+-		register_smp_ops(&up_smp_ops);
++			return;
+ #endif
++	}
++
++	register_up_smp_ops();
+ }
+ 
+ static void __init serial_init(void)
+diff --git a/arch/mips/mti-malta/malta-init.c b/arch/mips/mti-malta/malta-init.c
+index 31180c3..4b988b9 100644
+--- a/arch/mips/mti-malta/malta-init.c
++++ b/arch/mips/mti-malta/malta-init.c
+@@ -28,6 +28,7 @@
+ #include <asm/io.h>
+ #include <asm/system.h>
+ #include <asm/cacheflush.h>
++#include <asm/smp-ops.h>
+ #include <asm/traps.h>
+ 
+ #include <asm/gcmpregs.h>
+@@ -358,15 +359,14 @@ void __init prom_init(void)
+ #ifdef CONFIG_SERIAL_8250_CONSOLE
+ 	console_config();
+ #endif
+-#ifdef CONFIG_MIPS_CMP
+ 	/* Early detection of CMP support */
+ 	if (gcmp_probe(GCMP_BASE_ADDR, GCMP_ADDRSPACE_SZ))
+-		register_smp_ops(&cmp_smp_ops);
+-	else
+-#endif
+-#ifdef CONFIG_MIPS_MT_SMP
+-		register_smp_ops(&vsmp_smp_ops);
+-#endif
++		if (!register_cmp_smp_ops())
++			return;
++
++	if (!register_vsmp_smp_ops())
++		return;
++
+ #ifdef CONFIG_MIPS_MT_SMTC
+ 	register_smp_ops(&msmtc_smp_ops);
+ #endif
+diff --git a/arch/mips/pmc-sierra/msp71xx/msp_setup.c b/arch/mips/pmc-sierra/msp71xx/msp_setup.c
+index 2413ea6..0abfbe0 100644
+--- a/arch/mips/pmc-sierra/msp71xx/msp_setup.c
++++ b/arch/mips/pmc-sierra/msp71xx/msp_setup.c
+@@ -228,13 +228,11 @@ void __init prom_init(void)
+ 	 */
+ 	msp_serial_setup();
+ 
+-#ifdef CONFIG_MIPS_MT_SMP
+-	register_smp_ops(&vsmp_smp_ops);
+-#endif
+-
++	if (register_vsmp_smp_ops()) {
+ #ifdef CONFIG_MIPS_MT_SMTC
+-	register_smp_ops(&msp_smtc_smp_ops);
++		register_smp_ops(&msp_smtc_smp_ops);
+ #endif
++	}
+ 
+ #ifdef CONFIG_PMCTWILED
+ 	/*
+-- 
+1.7.3.4
+
