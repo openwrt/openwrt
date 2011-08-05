@@ -60,12 +60,12 @@ endef
 
 define MkuImageLzma
 	$(call PatchKernelLzma,$(1),$(2))
-	$(call MkImage,lzma,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage)
+	$(call MkuImage,lzma,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage)
 endef
 
 define MkuImageGzip
 	$(call PatchKernelGzip,$(1),$(2))
-	$(call MkImage,gzip,$(KDIR)/vmlinux-$(1).bin.gz,$(KDIR)/vmlinux-$(1).uImage)
+	$(call MkuImage,gzip,$(KDIR)/vmlinux-$(1).bin.gz,$(KDIR)/vmlinux-$(1).uImage)
 endef
 
 define CatFiles
@@ -218,10 +218,10 @@ ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),
 define Image/Build/UBNTXM
 	$(call MkuImageLzma,$(2),$(3) $(ubntxm_mtdlayout))
 	$(call Sysupgrade/KR,$(1),$(2),1048576,6684672)
-	dd if=$(KDIR)/vmlinux-$(2).uImage.bin of=$(KDIR)/vmlinux-$(2).uImage bs=1024k conv=sync
+	dd if=$(KDIR)/vmlinux-$(2).uImage of=$(KDIR)/vmlinux-$(2).uImage.bin bs=1024k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
-		-k $(KDIR)/vmlinux-$(2).uImage \
+		-k $(KDIR)/vmlinux-$(2).uImage.bin \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call factoryname,$(1),$(2))
 endef
@@ -352,7 +352,7 @@ define Image/Build/Zcomax
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkzcfw \
 			-B $(2) \
-			-k $(KDIR)/vmlinux-$(2).uImage.bin \
+			-k $(KDIR)/vmlinux-$(2).uImage \
 			-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 			-o $(call imgname,$(1),$(2))-factory.img; \
 	fi
