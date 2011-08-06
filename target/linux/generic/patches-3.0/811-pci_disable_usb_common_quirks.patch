@@ -1,7 +1,7 @@
 
 --- a/drivers/usb/host/pci-quirks.c
 +++ b/drivers/usb/host/pci-quirks.c
-@@ -427,6 +427,8 @@ reset_needed:
+@@ -429,6 +429,8 @@ reset_needed:
  }
  EXPORT_SYMBOL_GPL(uhci_check_and_reset_hc);
  
@@ -10,7 +10,7 @@
  static inline int io_type_enabled(struct pci_dev *pdev, unsigned int mask)
  {
  	u16 cmd;
-@@ -841,3 +843,5 @@ static void __devinit quirk_usb_early_ha
+@@ -869,3 +871,5 @@ static void __devinit quirk_usb_early_ha
  		quirk_usb_handoff_xhci(pdev);
  }
  DECLARE_PCI_FIXUP_FINAL(PCI_ANY_ID, PCI_ANY_ID, quirk_usb_early_handoff);
