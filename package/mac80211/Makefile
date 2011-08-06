@@ -1386,6 +1386,7 @@ endef
 
 define Build/b43-common
 	tar xjf "$(DL_DIR)/$(PKG_B43_FWCUTTER_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	patch -p1 -d  "$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_OBJECT)" < ./files/b43-fwcutter-fw-dirname.patch
 	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWCUTTER_OBJECT)" \
 		CFLAGS="-I$(STAGING_DIR_HOST)/include -include endian.h" \
 		QUIET_SPARSE=:
