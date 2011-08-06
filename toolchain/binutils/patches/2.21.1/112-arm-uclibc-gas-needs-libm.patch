@@ -1,0 +1,35 @@
+Source: Khem Raj <raj.khem@gmail.com>
+Disposition: submit upstream.
+
+Description:
+
+We do not need to have the libtool patch anymore for binutils after
+libtool has been updated upstream it include support for it. However
+for building gas natively on uclibc systems we have to link it with
+-lm so that it picks up missing symbols.
+
+/local/build_area/BUILD/arm_v5t_le_uclibc/binutils-2.17.50/objdir/libiberty/pic/libiberty.a(floatformat.o): In function `floatformat_from_double':
+floatformat.c:(.text+0x1ec): undefined reference to `frexp'
+floatformat.c:(.text+0x2f8): undefined reference to `ldexp'
+/local/build_area/BUILD/arm_v5t_le_uclibc/binutils-2.17.50/objdir/libiberty/pic/libiberty.a(floatformat.o): In function `floatformat_to_double':
+floatformat.c:(.text+0x38a): undefined reference to `ldexp'
+floatformat.c:(.text+0x3d2): undefined reference to `ldexp'
+floatformat.c:(.text+0x43e): undefined reference to `ldexp'                     floatformat.c:(.text+0x4e2): undefined reference to `ldexp'
+collect2: ld returned 1 exit status
+make[4]: *** [as-new] Error 1
+
+--- a/gas/configure.tgt
++++ b/gas/configure.tgt
+@@ -431,6 +431,12 @@ case ${generic_target} in
+   *-*-netware)				fmt=elf em=netware ;;
+ esac
+ 
++case ${generic_target} in
++  arm-*-*uclibc*)
++    need_libm=yes
++    ;;
++esac
++
+ case ${cpu_type} in
+   alpha | arm | i386 | ia64 | microblaze | mips | ns32k | pdp11 | ppc | sparc | z80 | z8k)
+     bfd_gas=yes
