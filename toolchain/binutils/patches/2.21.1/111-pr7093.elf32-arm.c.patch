@@ -1,0 +1,13 @@
+--- a/bfd/elf32-arm.c
++++ b/bfd/elf32-arm.c
+@@ -5631,6 +5631,10 @@ bfd_elf32_arm_init_maps (bfd *abfd)
+   if (! is_arm_elf (abfd))
+     return;
+ 
++  /* PR 7093: Make sure that we are dealing with an arm elf binary.  */
++  if (! is_arm_elf (abfd))
++    return;
++
+   if ((abfd->flags & DYNAMIC) != 0)
+     return;
+ 
