@@ -9,7 +9,7 @@
 +		  (ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
  		  IPT_INV_SRCIP) ||
 -	    FWINV((ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
-+	    FWINV(ipinfo->smsk.s_addr &&
++	    FWINV(ipinfo->dmsk.s_addr &&
 +		  (ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
  		  IPT_INV_DSTIP)) {
  		dprintf("Source or dest mismatch.\n");
