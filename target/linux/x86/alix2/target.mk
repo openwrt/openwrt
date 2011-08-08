@@ -15,11 +15,14 @@ DEFAULT_PACKAGES += \
 			kmod-cfg80211 kmod-mac80211 \
 			kmod-mppe kmod-pppoe kmod-pppo2ltp \
 			kmod-ath kmod-ath5k kmod-ath9k \
+			kmod-leds-gpio kmod-input-gpio-buttons \
+			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
+			kmod-ledtrig-netdev kmod-ledtrig-netfilter \
 			kmod-cpu-msr \
 			bridge ppp \
 			libopenssl ocf-crypto-headers zlib hwclock hostapd
 
-CS5535_MASK:=0x0a400000
+CS5535_MASK:=0x0b000042
 
 CFLAGS += -Os -pipe -march=k6-2 -fno-align-functions -fno-align-loops -fno-align-jumps \
 	  -fno-align-labels
