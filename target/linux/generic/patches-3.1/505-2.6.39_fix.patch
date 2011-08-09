@@ -1,0 +1,147 @@
+--- a/fs/yaffs2/yaffs_vfs_glue.c
++++ b/fs/yaffs2/yaffs_vfs_glue.c
+@@ -72,7 +72,7 @@
+ #include <linux/init.h>
+ #include <linux/fs.h>
+ #include <linux/proc_fs.h>
+-#include <linux/smp_lock.h>
++#include <linux/mutex.h>
+ #include <linux/pagemap.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/interrupt.h>
+@@ -97,6 +97,8 @@
+ 
+ #include <asm/div64.h>
+ 
++static DEFINE_MUTEX(yaffs_mutex);
++
+ #if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 0))
+ 
+ #include <linux/statfs.h>
+@@ -1538,7 +1540,7 @@ static loff_t yaffs_dir_llseek(struct fi
+ {
+ 	long long retval;
+ 
+-	lock_kernel();
++	mutex_lock(&yaffs_mutex);
+ 
+ 	switch (origin){
+ 	case 2:
+@@ -1555,7 +1557,7 @@ static loff_t yaffs_dir_llseek(struct fi
+ 
+ 		retval = offset;
+ 	}
+-	unlock_kernel();
++	mutex_unlock(&yaffs_mutex);
+ 	return retval;
+ }
+ 
+@@ -3087,98 +3089,52 @@ static struct super_block *yaffs_interna
+ 	return sb;
+ }
+ 
+-
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 0))
+ static int yaffs_internal_read_super_mtd(struct super_block *sb, void *data,
+ 					 int silent)
+ {
+ 	return yaffs_internal_read_super(1, sb, data, silent) ? 0 : -EINVAL;
+ }
+ 
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
+-static int yaffs_read_super(struct file_system_type *fs,
++static struct dentry *yaffs_read_super(struct file_system_type *fs,
+ 			    int flags, const char *dev_name,
+-			    void *data, struct vfsmount *mnt)
+-{
+-
+-	return get_sb_bdev(fs, flags, dev_name, data,
+-			   yaffs_internal_read_super_mtd, mnt);
+-}
+-#else
+-static struct super_block *yaffs_read_super(struct file_system_type *fs,
+-					    int flags, const char *dev_name,
+-					    void *data)
++			    void *data)
+ {
+ 
+-	return get_sb_bdev(fs, flags, dev_name, data,
++	return mount_bdev(fs, flags, dev_name, data,
+ 			   yaffs_internal_read_super_mtd);
+ }
+-#endif
+ 
+ static struct file_system_type yaffs_fs_type = {
+ 	.owner = THIS_MODULE,
+ 	.name = "yaffs",
+-	.get_sb = yaffs_read_super,
++	.mount = yaffs_read_super,
+ 	.kill_sb = kill_block_super,
+ 	.fs_flags = FS_REQUIRES_DEV,
+ };
+-#else
+-static struct super_block *yaffs_read_super(struct super_block *sb, void *data,
+-					    int silent)
+-{
+-	return yaffs_internal_read_super(1, sb, data, silent);
+-}
+-
+-static DECLARE_FSTYPE(yaffs_fs_type, "yaffs", yaffs_read_super,
+-		      FS_REQUIRES_DEV);
+-#endif
+-
+ 
+ #ifdef CONFIG_YAFFS_YAFFS2
+ 
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 5, 0))
+ static int yaffs2_internal_read_super_mtd(struct super_block *sb, void *data,
+ 					  int silent)
+ {
+ 	return yaffs_internal_read_super(2, sb, data, silent) ? 0 : -EINVAL;
+ }
+ 
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 17))
+-static int yaffs2_read_super(struct file_system_type *fs,
+-			int flags, const char *dev_name, void *data,
+-			struct vfsmount *mnt)
++static struct dentry *yaffs2_read_super(struct file_system_type *fs,
++			int flags, const char *dev_name,
++			void *data)
+ {
+-	return get_sb_bdev(fs, flags, dev_name, data,
+-			yaffs2_internal_read_super_mtd, mnt);
++	return mount_bdev(fs, flags, dev_name, data,
++		yaffs_internal_read_super_mtd);
+ }
+-#else
+-static struct super_block *yaffs2_read_super(struct file_system_type *fs,
+-					     int flags, const char *dev_name,
+-					     void *data)
+-{
+-
+-	return get_sb_bdev(fs, flags, dev_name, data,
+-			   yaffs2_internal_read_super_mtd);
+-}
+-#endif
+ 
+ static struct file_system_type yaffs2_fs_type = {
+ 	.owner = THIS_MODULE,
+ 	.name = "yaffs2",
+-	.get_sb = yaffs2_read_super,
++	.mount = yaffs2_read_super,
+ 	.kill_sb = kill_block_super,
+ 	.fs_flags = FS_REQUIRES_DEV,
+ };
+-#else
+-static struct super_block *yaffs2_read_super(struct super_block *sb,
+-					     void *data, int silent)
+-{
+-	return yaffs_internal_read_super(2, sb, data, silent);
+-}
+-
+-static DECLARE_FSTYPE(yaffs2_fs_type, "yaffs2", yaffs2_read_super,
+-		      FS_REQUIRES_DEV);
+-#endif
+ 
+ #endif				/* CONFIG_YAFFS_YAFFS2 */
+ 

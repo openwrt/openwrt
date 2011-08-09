@@ -1,0 +1,21 @@
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -125,6 +125,7 @@
+ #define FB_ACCEL_TRIDENT_BLADE3D 52	/* Trident Blade3D		*/
+ #define FB_ACCEL_TRIDENT_BLADEXP 53	/* Trident BladeXP		*/
+ #define FB_ACCEL_CIRRUS_ALPINE   53	/* Cirrus Logic 543x/544x/5480	*/
++#define FB_ACCEL_GLAMO		50	/* SMedia Glamo                 */
+ #define FB_ACCEL_NEOMAGIC_NM2070 90	/* NeoMagic NM2070              */
+ #define FB_ACCEL_NEOMAGIC_NM2090 91	/* NeoMagic NM2090              */
+ #define FB_ACCEL_NEOMAGIC_NM2093 92	/* NeoMagic NM2093              */
+--- a/include/linux/Kbuild
++++ b/include/linux/Kbuild
+@@ -144,6 +144,8 @@ header-y += generic_serial.h
+ header-y += genetlink.h
+ header-y += gfs2_ondisk.h
+ header-y += gigaset_dev.h
++header-y += glamofb.h
++header-y += glamo-engine.h
+ header-y += hdlc.h
+ header-y += hdlcdrv.h
+ header-y += hdreg.h
