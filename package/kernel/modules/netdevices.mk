@@ -106,7 +106,7 @@ $(eval $(call KernelPackage,swconfig))
 define KernelPackage/mvswitch
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell 88E6060 switch support
-  DEPENDS:=+kmod-swconfig
+  DEPENDS:=+kmod-swconfig @!LINUX_3_1||BROKEN
   KCONFIG:=CONFIG_MVSWITCH_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/mvswitch.ko
   AUTOLOAD:=$(call AutoLoad,41,mvswitch)
