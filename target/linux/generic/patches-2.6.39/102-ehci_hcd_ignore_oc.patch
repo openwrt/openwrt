@@ -1,0 +1,41 @@
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -744,7 +744,7 @@ static int ehci_run (struct usb_hcd *hcd
+ 		"USB %x.%x started, EHCI %x.%02x%s\n",
+ 		((ehci->sbrn & 0xf0)>>4), (ehci->sbrn & 0x0f),
+ 		temp >> 8, temp & 0xff,
+-		ignore_oc ? ", overcurrent ignored" : "");
++		(ignore_oc || ehci->ignore_oc) ? ", overcurrent ignored" : "");
+ 
+ 	ehci_writel(ehci, INTR_MASK,
+ 		    &ehci->regs->intr_enable); /* Turn On Interrupts */
+--- a/drivers/usb/host/ehci-hub.c
++++ b/drivers/usb/host/ehci-hub.c
+@@ -655,7 +655,7 @@ ehci_hub_status_data (struct usb_hcd *hc
+ 	 * always set, seem to clear PORT_OCC and PORT_CSC when writing to
+ 	 * PORT_POWER; that's surprising, but maybe within-spec.
+ 	 */
+-	if (!ignore_oc)
++	if (!ignore_oc || !ehci->ignore_oc)
+ 		mask = PORT_CSC | PORT_PEC | PORT_OCC;
+ 	else
+ 		mask = PORT_CSC | PORT_PEC;
+@@ -873,7 +873,7 @@ static int ehci_hub_control (
+ 		if (temp & PORT_PEC)
+ 			status |= USB_PORT_STAT_C_ENABLE << 16;
+ 
+-		if ((temp & PORT_OCC) && !ignore_oc){
++		if ((temp & PORT_OCC) && (!ignore_oc || !ehci->ignore_oc)){
+ 			status |= USB_PORT_STAT_C_OVERCURRENT << 16;
+ 
+ 			/*
+--- a/drivers/usb/host/ehci.h
++++ b/drivers/usb/host/ehci.h
+@@ -134,6 +134,7 @@ struct ehci_hcd {			/* one per controlle
+ 	unsigned		amd_pll_fix:1;
+ 	unsigned		fs_i_thresh:1;	/* Intel iso scheduling */
+ 	unsigned		use_dummy_qh:1;	/* AMD Frame List table quirk*/
++	unsigned		ignore_oc:1;
+ 
+ 	/* required for usb32 quirk */
+ 	#define OHCI_CTRL_HCFS          (3 << 6)
