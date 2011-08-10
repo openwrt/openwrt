@@ -7,7 +7,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
 
 --- /dev/null
 +++ b/drivers/usb/host/ehci-bcm63xx.c
-@@ -0,0 +1,154 @@
+@@ -0,0 +1,155 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -118,9 +118,10 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
 +	ehci->big_endian_desc = 0;
 +	ehci->caps = hcd->regs;
 +	ehci->regs = hcd->regs +
-+		HC_LENGTH(ehci, ehci_readl(ehci, &ehci->caps->hc_capbase));
++		HC_LENGTH(ehci_readl(ehci, &ehci->caps->hc_capbase));
 +	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
 +	ehci->sbrn = 0x20;
++	ehci->ignore_oc = 1;
 +
 +	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED);
 +	if (ret)
