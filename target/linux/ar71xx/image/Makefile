@@ -127,7 +127,7 @@ define Image/Build/DIR825B1
 endef
 
 define Image/Build/WZRHPG30XNH
-	$(call MkuImageLzma,$(2),$(3) $(dir825b1_mtdlayout))
+	$(call MkuImageLzma,$(2),$(3))
 	$(call Sysupgrade/KR,$(1),$(2),1048576,31850496)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
