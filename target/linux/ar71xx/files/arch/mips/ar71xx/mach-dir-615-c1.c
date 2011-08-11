@@ -55,11 +55,11 @@ static struct mtd_partition dir_615c1_partitions[] = {
 	}, {
 		.name		= "kernel",
 		.offset		= 0x030000,
-		.size		= 0x0d0000,
+		.size		= 0x0e0000,
 	}, {
 		.name		= "rootfs",
-		.offset		= 0x100000,
-		.size		= 0x2f0000,
+		.offset		= 0x110000,
+		.size		= 0x2e0000,
 	}, {
 		.name		= "art",
 		.offset		= 0x3f0000,
