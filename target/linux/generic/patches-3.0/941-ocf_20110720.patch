@@ -1,13 +1,3 @@
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -427,6 +427,7 @@ struct task_struct *find_task_by_vpid(pi
- {
- 	return find_task_by_pid_ns(vnr, current->nsproxy->pid_ns);
- }
-+EXPORT_SYMBOL(find_task_by_vpid);
- 
- struct pid *get_task_pid(struct task_struct *task, enum pid_type type)
- {
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -130,6 +130,9 @@
