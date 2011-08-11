@@ -120,13 +120,3 @@
  extern void get_random_bytes(void *buf, int nbytes);
  void generate_random_uuid(unsigned char uuid_out[16]);
  
---- a/kernel/pid.c
-+++ b/kernel/pid.c
-@@ -383,6 +383,7 @@ struct task_struct *find_task_by_pid_typ
- {
- 	return pid_task(find_pid_ns(nr, ns), type);
- }
-+EXPORT_SYMBOL(find_task_by_vpid);
- 
- EXPORT_SYMBOL(find_task_by_pid_type_ns);
- 
