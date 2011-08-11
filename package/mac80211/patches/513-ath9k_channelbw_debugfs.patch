@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -586,6 +586,7 @@ struct ath_softc {
+@@ -588,6 +588,7 @@ struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
  
@@ -10,7 +10,7 @@
  	struct survey_info *cur_survey;
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1281,6 +1281,9 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1323,6 +1323,9 @@ int ath9k_init_debug(struct ath_hw *ah)
  	debugfs_create_file("eeprom", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_eeprom);
  

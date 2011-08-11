@@ -11,9 +11,9 @@
 +endif
 --- a/include/linux/compat-2.6.31.h
 +++ b/include/linux/compat-2.6.31.h
-@@ -199,6 +199,20 @@ void compat_synchronize_threaded_irq(str
- #define list_entry_rcu(ptr, type, member) \
- 	container_of(rcu_dereference(ptr), type, member)
+@@ -202,6 +202,20 @@ void compat_synchronize_threaded_irq(str
+ #define skb_walk_frags(skb, iter)	\
+ 	for (iter = skb_shinfo(skb)->frag_list; iter; iter = iter->next)
  
 +#ifndef CONFIG_64BIT
 +
@@ -70,9 +70,9 @@
 +
 --- a/include/linux/compat-3.1.h
 +++ b/include/linux/compat-3.1.h
-@@ -24,6 +24,18 @@
- 
- #define genl_dump_check_consistent(...) do {} while(0)
+@@ -36,6 +36,18 @@
+ 	.prod_id = { NULL, NULL, (v3), NULL }, \
+ 	.prod_id_hash = { 0, 0, (vh3), 0 }, }
  
 +/*
 + * In many versions, several architectures do not seem to include an

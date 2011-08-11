@@ -1,6 +1,107 @@
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -320,6 +320,10 @@ static void b43_wireless_core_exit(struc
+ static int b43_wireless_core_init(struct b43_wldev *dev);
+ static struct b43_wldev * b43_wireless_core_stop(struct b43_wldev *dev);
+ static int b43_wireless_core_start(struct b43_wldev *dev);
++static void b43_op_bss_info_changed(struct ieee80211_hw *hw,
++				    struct ieee80211_vif *vif,
++				    struct ieee80211_bss_conf *conf,
++				    u32 changed);
+ 
+ static int b43_ratelimit(struct b43_wl *wl)
+ {
+@@ -3754,14 +3758,24 @@ static int b43_op_config(struct ieee8021
+ 	struct ieee80211_conf *conf = &hw->conf;
+ 	int antenna;
+ 	int err = 0;
++	bool reload_bss = false;
+ 
+ 	mutex_lock(&wl->mutex);
+ 
++	dev = wl->current_dev;
++
+ 	/* Switch the band (if necessary). This might change the active core. */
+ 	err = b43_switch_band(wl, conf->channel);
+ 	if (err)
+ 		goto out_unlock_mutex;
+-	dev = wl->current_dev;
++
++	/* Need to reload all settings if the core changed */
++	if (dev != wl->current_dev) {
++		dev = wl->current_dev;
++		changed = ~0;
++		reload_bss = true;
++	}
++
+ 	phy = &dev->phy;
+ 
+ 	if (conf_is_ht(conf))
+@@ -3822,6 +3836,9 @@ out_mac_enable:
+ out_unlock_mutex:
+ 	mutex_unlock(&wl->mutex);
+ 
++	if (wl->vif && reload_bss)
++		b43_op_bss_info_changed(hw, wl->vif, &wl->vif->bss_conf, ~0);
++
+ 	return err;
+ }
+ 
+@@ -3910,7 +3927,8 @@ static void b43_op_bss_info_changed(stru
+ 	if (changed & BSS_CHANGED_BEACON_INT &&
+ 	    (b43_is_mode(wl, NL80211_IFTYPE_AP) ||
+ 	     b43_is_mode(wl, NL80211_IFTYPE_MESH_POINT) ||
+-	     b43_is_mode(wl, NL80211_IFTYPE_ADHOC)))
++	     b43_is_mode(wl, NL80211_IFTYPE_ADHOC)) &&
++	    conf->beacon_int)
+ 		b43_set_beacon_int(dev, conf->beacon_int);
+ 
+ 	if (changed & BSS_CHANGED_BASIC_RATES)
+@@ -4691,6 +4709,9 @@ static int b43_op_add_interface(struct i
+  out_mutex_unlock:
+ 	mutex_unlock(&wl->mutex);
+ 
++	if (err == 0)
++		b43_op_bss_info_changed(hw, vif, &vif->bss_conf, ~0);
++
+ 	return err;
+ }
+ 
+@@ -4761,6 +4782,9 @@ static int b43_op_start(struct ieee80211
+  out_mutex_unlock:
+ 	mutex_unlock(&wl->mutex);
+ 
++	/* reload configuration */
++	b43_op_config(hw, ~0);
++
+ 	return err;
+ }
+ 
+@@ -4917,10 +4941,18 @@ out:
+ 	if (err)
+ 		wl->current_dev = NULL; /* Failed to init the dev. */
+ 	mutex_unlock(&wl->mutex);
+-	if (err)
++
++	if (err) {
+ 		b43err(wl, "Controller restart FAILED\n");
+-	else
+-		b43info(wl, "Controller restarted\n");
++		return;
++	}
++
++	/* reload configuration */
++	b43_op_config(wl->hw, ~0);
++	if (wl->vif)
++		b43_op_bss_info_changed(wl->hw, wl->vif, &wl->vif->bss_conf, ~0);
++
++	b43info(wl, "Controller restarted\n");
+ }
+ 
+ static int b43_setup_bands(struct b43_wldev *dev,
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
-@@ -176,6 +176,8 @@ static void ieee80211_send_addba_resp(st
+@@ -184,6 +184,8 @@ static void ieee80211_send_addba_resp(st
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
@@ -9,19 +110,6 @@
  
  	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
  					  IEEE80211_STYPE_ACTION);
-@@ -262,7 +264,11 @@ void ieee80211_process_addba_request(str
- 				"%pM on tid %u\n",
- 				mgmt->sa, tid);
- #endif /* CONFIG_MAC80211_HT_DEBUG */
--		goto end;
-+
-+		/* delete existing Rx BA session on the same tid */
-+		___ieee80211_stop_rx_ba_session(sta, tid, WLAN_BACK_RECIPIENT,
-+						WLAN_STATUS_UNSPECIFIED_QOS,
-+						false);
- 	}
- 
- 	/* prepare A-MPDU MLME for Rx aggregation */
 --- a/net/mac80211/agg-tx.c
 +++ b/net/mac80211/agg-tx.c
 @@ -79,7 +79,8 @@ static void ieee80211_send_addba_request
@@ -44,15 +132,6 @@
  		return -EINVAL;
  
  	if (test_sta_flags(sta, WLAN_STA_BLOCK_BA)) {
-@@ -809,7 +811,7 @@ void ieee80211_process_addba_resp(struct
- 		 * of at least 1.
- 		 */
- 		if (!buf_size)
--			goto out;
-+			buf_size = 1;
- 
- 		if (test_and_set_bit(HT_AGG_STATE_RESPONSE_RECEIVED,
- 				     &tid_tx->state)) {
 --- a/net/mac80211/debugfs_sta.c
 +++ b/net/mac80211/debugfs_sta.c
 @@ -59,7 +59,7 @@ static ssize_t sta_flags_read(struct fil
@@ -203,7 +282,7 @@
  			break;
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2137,7 +2137,8 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2147,7 +2147,8 @@ ieee80211_rx_h_action(struct ieee80211_r
  		 */
  		if (sdata->vif.type != NL80211_IFTYPE_STATION &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
@@ -213,7 +292,7 @@
  			break;
  
  		/* verify action_code is present */
-@@ -2335,13 +2336,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2345,13 +2346,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -230,7 +309,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_DEAUTH):
  	case cpu_to_le16(IEEE80211_STYPE_DISASSOC):
-@@ -2680,10 +2682,16 @@ static int prepare_for_handlers(struct i
+@@ -2692,10 +2694,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
@@ -267,1379 +346,56 @@
  	WLAN_STA_CLEAR_PS_FILT	= 1<<9,
  	WLAN_STA_MFP		= 1<<10,
  	WLAN_STA_BLOCK_BA	= 1<<11,
---- a/drivers/net/wireless/ath/ath9k/beacon.c
-+++ b/drivers/net/wireless/ath/ath9k/beacon.c
-@@ -360,6 +360,7 @@ void ath_beacon_tasklet(unsigned long da
- 	struct ath_common *common = ath9k_hw_common(ah);
- 	struct ath_buf *bf = NULL;
- 	struct ieee80211_vif *vif;
-+	struct ath_tx_status ts;
- 	int slot;
- 	u32 bfaddr, bc = 0;
- 
-@@ -384,7 +385,9 @@ void ath_beacon_tasklet(unsigned long da
- 			ath_dbg(common, ATH_DBG_BSTUCK,
- 				"beacon is officially stuck\n");
- 			sc->sc_flags |= SC_OP_TSF_RESET;
-+			spin_lock(&sc->sc_pcu_lock);
- 			ath_reset(sc, true);
-+			spin_unlock(&sc->sc_pcu_lock);
- 		}
- 
- 		return;
-@@ -464,6 +467,11 @@ void ath_beacon_tasklet(unsigned long da
- 		ath9k_hw_txstart(ah, sc->beacon.beaconq);
- 
- 		sc->beacon.ast_be_xmit += bc;     /* XXX per-vif? */
-+		if (ah->caps.hw_caps & ATH9K_HW_CAP_EDMA) {
-+			spin_lock_bh(&sc->sc_pcu_lock);
-+			ath9k_hw_txprocdesc(ah, bf->bf_desc, (void *)&ts);
-+			spin_unlock_bh(&sc->sc_pcu_lock);
-+		}
- 	}
- }
- 
---- a/drivers/net/wireless/ath/ath9k/main.c
-+++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -617,8 +617,11 @@ void ath_hw_check(struct work_struct *wo
- 	ath_dbg(common, ATH_DBG_RESET, "Possible baseband hang, "
- 		"busy=%d (try %d)\n", busy, sc->hw_busy_count + 1);
- 	if (busy >= 99) {
--		if (++sc->hw_busy_count >= 3)
-+		if (++sc->hw_busy_count >= 3) {
-+			spin_lock_bh(&sc->sc_pcu_lock);
- 			ath_reset(sc, true);
-+			spin_unlock_bh(&sc->sc_pcu_lock);
-+		}
- 	} else if (busy >= 0)
- 		sc->hw_busy_count = 0;
- 
-@@ -637,7 +640,9 @@ static void ath_hw_pll_rx_hang_check(str
- 			/* Rx is hung for more than 500ms. Reset it */
- 			ath_dbg(common, ATH_DBG_RESET,
- 				"Possible RX hang, resetting");
-+			spin_lock_bh(&sc->sc_pcu_lock);
- 			ath_reset(sc, true);
-+			spin_unlock_bh(&sc->sc_pcu_lock);
- 			count = 0;
- 		}
- 	} else
-@@ -674,7 +679,9 @@ void ath9k_tasklet(unsigned long data)
- 
- 	if ((status & ATH9K_INT_FATAL) ||
- 	    (status & ATH9K_INT_BB_WATCHDOG)) {
-+		spin_lock(&sc->sc_pcu_lock);
- 		ath_reset(sc, true);
-+		spin_unlock(&sc->sc_pcu_lock);
- 		return;
- 	}
- 
-@@ -980,7 +987,6 @@ int ath_reset(struct ath_softc *sc, bool
- 	del_timer_sync(&common->ani.timer);
- 
- 	ath9k_ps_wakeup(sc);
--	spin_lock_bh(&sc->sc_pcu_lock);
- 
- 	ieee80211_stop_queues(hw);
- 
-@@ -1023,7 +1029,6 @@ int ath_reset(struct ath_softc *sc, bool
- 	}
- 
- 	ieee80211_wake_queues(hw);
--	spin_unlock_bh(&sc->sc_pcu_lock);
- 
- 	/* Start ANI */
- 	if (!common->disable_ani)
-@@ -2326,9 +2331,9 @@ static void ath9k_flush(struct ieee80211
- 	ath9k_ps_wakeup(sc);
- 	spin_lock_bh(&sc->sc_pcu_lock);
- 	drain_txq = ath_drain_all_txq(sc, false);
--	spin_unlock_bh(&sc->sc_pcu_lock);
- 	if (!drain_txq)
- 		ath_reset(sc, false);
-+	spin_unlock_bh(&sc->sc_pcu_lock);
- 	ath9k_ps_restore(sc);
- 	ieee80211_wake_queues(hw);
- 
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -565,11 +565,8 @@ static void ath_tx_complete_aggr(struct 
- 
- 	rcu_read_unlock();
- 
--	if (needreset) {
--		spin_unlock_bh(&sc->sc_pcu_lock);
-+	if (needreset)
- 		ath_reset(sc, false);
--		spin_lock_bh(&sc->sc_pcu_lock);
--	}
- }
- 
- static u32 ath_lookup_rate(struct ath_softc *sc, struct ath_buf *bf,
-@@ -664,7 +661,8 @@ static int ath_compute_num_delims(struct
- 	 * TODO - this could be improved to be dependent on the rate.
- 	 *      The hardware can keep up at lower rates, but not higher rates
- 	 */
--	if (fi->keyix != ATH9K_TXKEYIX_INVALID)
-+	if ((fi->keyix != ATH9K_TXKEYIX_INVALID) &&
-+	    !(sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA))
- 		ndelim += ATH_AGGR_ENCRYPTDELIM;
- 
- 	/*
-@@ -2169,7 +2167,9 @@ static void ath_tx_complete_poll_work(st
- 	if (needreset) {
- 		ath_dbg(ath9k_hw_common(sc->sc_ah), ATH_DBG_RESET,
- 			"tx hung, resetting the chip\n");
-+		spin_lock_bh(&sc->sc_pcu_lock);
- 		ath_reset(sc, true);
-+		spin_unlock_bh(&sc->sc_pcu_lock);
+@@ -551,7 +551,8 @@ static void ath_tx_complete_aggr(struct 
+ 		if (clear_filter)
+ 			tid->ac->clear_ps_filter = true;
+ 		list_splice(&bf_pending, &tid->buf_q);
+-		ath_tx_queue_tid(txq, tid);
++		if (!an->sleeping)
++			ath_tx_queue_tid(txq, tid);
+ 		spin_unlock_bh(&txq->axq_lock);
  	}
  
- 	ieee80211_queue_delayed_work(sc->hw, &sc->tx_complete_work,
---- a/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
-@@ -236,7 +236,7 @@ static void ar9003_paprd_get_gain_table(
- 	memset(entry, 0, sizeof(ah->paprd_gain_table_entries));
- 	memset(index, 0, sizeof(ah->paprd_gain_table_index));
- 
--	for (i = 0; i < 32; i++) {
-+	for (i = 0; i < PAPRD_GAIN_TABLE_ENTRIES; i++) {
- 		entry[i] = REG_READ(ah, reg);
- 		index[i] = (entry[i] >> 24) & 0xff;
- 		reg += 4;
-@@ -246,13 +246,13 @@ static void ar9003_paprd_get_gain_table(
- static unsigned int ar9003_get_desired_gain(struct ath_hw *ah, int chain,
- 					    int target_power)
- {
--	int olpc_gain_delta = 0;
-+	int olpc_gain_delta = 0, cl_gain_mod;
- 	int alpha_therm, alpha_volt;
- 	int therm_cal_value, volt_cal_value;
- 	int therm_value, volt_value;
- 	int thermal_gain_corr, voltage_gain_corr;
- 	int desired_scale, desired_gain = 0;
--	u32 reg;
-+	u32 reg_olpc  = 0, reg_cl_gain  = 0;
- 
- 	REG_CLR_BIT(ah, AR_PHY_PAPRD_TRAINER_STAT1,
- 		    AR_PHY_PAPRD_TRAINER_STAT1_PAPRD_TRAIN_DONE);
-@@ -271,15 +271,29 @@ static unsigned int ar9003_get_desired_g
- 	volt_value = REG_READ_FIELD(ah, AR_PHY_BB_THERM_ADC_4,
- 				    AR_PHY_BB_THERM_ADC_4_LATEST_VOLT_VALUE);
- 
--	if (chain == 0)
--		reg = AR_PHY_TPC_11_B0;
--	else if (chain == 1)
--		reg = AR_PHY_TPC_11_B1;
--	else
--		reg = AR_PHY_TPC_11_B2;
-+	switch (chain) {
-+	case 0:
-+		reg_olpc = AR_PHY_TPC_11_B0;
-+		reg_cl_gain = AR_PHY_CL_TAB_0;
-+		break;
-+	case 1:
-+		reg_olpc = AR_PHY_TPC_11_B1;
-+		reg_cl_gain = AR_PHY_CL_TAB_1;
-+		break;
-+	case 2:
-+		reg_olpc = AR_PHY_TPC_11_B2;
-+		reg_cl_gain = AR_PHY_CL_TAB_2;
-+		break;
-+	default:
-+		ath_dbg(ath9k_hw_common(ah), ATH_DBG_CALIBRATE,
-+		"Invalid chainmask: %d\n", chain);
-+		break;
-+	}
- 
--	olpc_gain_delta = REG_READ_FIELD(ah, reg,
-+	olpc_gain_delta = REG_READ_FIELD(ah, reg_olpc,
- 					 AR_PHY_TPC_11_OLPC_GAIN_DELTA);
-+	cl_gain_mod = REG_READ_FIELD(ah, reg_cl_gain,
-+					 AR_PHY_CL_TAB_CL_GAIN_MOD);
- 
- 	if (olpc_gain_delta >= 128)
- 		olpc_gain_delta = olpc_gain_delta - 256;
-@@ -289,7 +303,7 @@ static unsigned int ar9003_get_desired_g
- 	voltage_gain_corr = (alpha_volt * (volt_value - volt_cal_value) +
- 			     (128 / 2)) / 128;
- 	desired_gain = target_power - olpc_gain_delta - thermal_gain_corr -
--	    voltage_gain_corr + desired_scale;
-+	    voltage_gain_corr + desired_scale + cl_gain_mod;
- 
- 	return desired_gain;
- }
-@@ -727,7 +741,7 @@ int ar9003_paprd_setup_gain_table(struct
- 	desired_gain = ar9003_get_desired_gain(ah, chain, train_power);
- 
- 	gain_index = 0;
--	for (i = 0; i < 32; i++) {
-+	for (i = 0; i < PAPRD_GAIN_TABLE_ENTRIES; i++) {
- 		if (ah->paprd_gain_table_index[i] >= desired_gain)
- 			break;
- 		gain_index++;
---- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
-@@ -1121,6 +1121,9 @@
- #define AR_PHY_POWERTX_RATE8_POWERTXHT40_5	0x3F00
- #define AR_PHY_POWERTX_RATE8_POWERTXHT40_5_S	8
- 
-+#define AR_PHY_CL_TAB_CL_GAIN_MOD		0x1f
-+#define AR_PHY_CL_TAB_CL_GAIN_MOD_S		0
-+
- void ar9003_hw_set_chain_masks(struct ath_hw *ah, u8 rx, u8 tx);
- 
- #endif  /* AR9003_PHY_H */
---- a/drivers/net/wireless/ath/ath5k/eeprom.c
-+++ b/drivers/net/wireless/ath/ath5k/eeprom.c
-@@ -691,14 +691,12 @@ ath5k_eeprom_free_pcal_info(struct ath5k
- 		if (!chinfo[pier].pd_curves)
- 			continue;
- 
--		for (pdg = 0; pdg < ee->ee_pd_gains[mode]; pdg++) {
-+		for (pdg = 0; pdg < AR5K_EEPROM_N_PD_CURVES; pdg++) {
- 			struct ath5k_pdgain_info *pd =
- 					&chinfo[pier].pd_curves[pdg];
- 
--			if (pd != NULL) {
--				kfree(pd->pd_step);
--				kfree(pd->pd_pwr);
--			}
-+			kfree(pd->pd_step);
-+			kfree(pd->pd_pwr);
- 		}
- 
- 		kfree(chinfo[pier].pd_curves);
---- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -229,6 +229,7 @@ static void ar9003_hw_fill_txdesc(struct
- static int ar9003_hw_proc_txdesc(struct ath_hw *ah, void *ds,
- 				 struct ath_tx_status *ts)
- {
-+	struct ar9003_txc *txc = (struct ar9003_txc *) ds;
- 	struct ar9003_txs *ads;
- 	u32 status;
- 
-@@ -238,7 +239,11 @@ static int ar9003_hw_proc_txdesc(struct 
- 	if ((status & AR_TxDone) == 0)
- 		return -EINPROGRESS;
- 
--	ah->ts_tail = (ah->ts_tail + 1) % ah->ts_size;
-+	ts->qid = MS(ads->ds_info, AR_TxQcuNum);
-+	if (!txc || (MS(txc->info, AR_TxQcuNum) == ts->qid))
-+		ah->ts_tail = (ah->ts_tail + 1) % ah->ts_size;
-+	else
-+		return -ENOENT;
- 
- 	if ((MS(ads->ds_info, AR_DescId) != ATHEROS_VENDOR_ID) ||
- 	    (MS(ads->ds_info, AR_TxRxDesc) != 1)) {
-@@ -254,7 +259,6 @@ static int ar9003_hw_proc_txdesc(struct 
- 	ts->ts_seqnum = MS(status, AR_SeqNum);
- 	ts->tid = MS(status, AR_TxTid);
- 
--	ts->qid = MS(ads->ds_info, AR_TxQcuNum);
- 	ts->desc_id = MS(ads->status1, AR_TxDescId);
- 	ts->ts_tstamp = ads->status4;
- 	ts->ts_status = 0;
---- a/net/mac80211/wpa.c
-+++ b/net/mac80211/wpa.c
-@@ -15,6 +15,7 @@
- #include <linux/gfp.h>
- #include <asm/unaligned.h>
- #include <net/mac80211.h>
-+#include <crypto/aes.h>
- 
- #include "ieee80211_i.h"
- #include "michael.h"
-@@ -86,6 +87,11 @@ ieee80211_rx_h_michael_mic_verify(struct
- 	struct sk_buff *skb = rx->skb;
- 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
- 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
-+	int queue = rx->queue;
-+
-+	/* otherwise, TKIP is vulnerable to TID 0 vs. non-QoS replays */
-+	if (rx->queue == NUM_RX_DATA_QUEUES - 1)
-+		queue = 0;
- 
- 	/*
- 	 * it makes no sense to check for MIC errors on anything other
-@@ -148,8 +154,8 @@ ieee80211_rx_h_michael_mic_verify(struct
- 
- update_iv:
- 	/* update IV in key information to be able to detect replays */
--	rx->key->u.tkip.rx[rx->queue].iv32 = rx->tkip_iv32;
--	rx->key->u.tkip.rx[rx->queue].iv16 = rx->tkip_iv16;
-+	rx->key->u.tkip.rx[queue].iv32 = rx->tkip_iv32;
-+	rx->key->u.tkip.rx[queue].iv16 = rx->tkip_iv16;
- 
- 	return RX_CONTINUE;
- 
-@@ -165,6 +171,7 @@ static int tkip_encrypt_skb(struct ieee8
- 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
- 	struct ieee80211_key *key = tx->key;
- 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
-+	unsigned long flags;
- 	unsigned int hdrlen;
- 	int len, tail;
- 	u8 *pos;
-@@ -192,11 +199,12 @@ static int tkip_encrypt_skb(struct ieee8
- 	pos += hdrlen;
- 
- 	/* Increase IV for the frame */
-+	spin_lock_irqsave(&key->u.tkip.txlock, flags);
- 	key->u.tkip.tx.iv16++;
- 	if (key->u.tkip.tx.iv16 == 0)
- 		key->u.tkip.tx.iv32++;
--
--	pos = ieee80211_tkip_add_iv(pos, key, key->u.tkip.tx.iv16);
-+	pos = ieee80211_tkip_add_iv(pos, key);
-+	spin_unlock_irqrestore(&key->u.tkip.txlock, flags);
- 
- 	/* hwaccel - with software IV */
- 	if (info->control.hw_key)
-@@ -205,9 +213,8 @@ static int tkip_encrypt_skb(struct ieee8
- 	/* Add room for ICV */
- 	skb_put(skb, TKIP_ICV_LEN);
- 
--	hdr = (struct ieee80211_hdr *) skb->data;
- 	return ieee80211_tkip_encrypt_data(tx->local->wep_tx_tfm,
--					   key, pos, len, hdr->addr2);
-+					   key, skb, pos, len);
- }
- 
- 
-@@ -235,6 +242,11 @@ ieee80211_crypto_tkip_decrypt(struct iee
- 	struct ieee80211_key *key = rx->key;
- 	struct sk_buff *skb = rx->skb;
- 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
-+	int queue = rx->queue;
-+
-+	/* otherwise, TKIP is vulnerable to TID 0 vs. non-QoS replays */
-+	if (rx->queue == NUM_RX_DATA_QUEUES - 1)
-+		queue = 0;
- 
- 	hdrlen = ieee80211_hdrlen(hdr->frame_control);
- 
-@@ -255,7 +267,7 @@ ieee80211_crypto_tkip_decrypt(struct iee
- 	res = ieee80211_tkip_decrypt_data(rx->local->wep_rx_tfm,
- 					  key, skb->data + hdrlen,
- 					  skb->len - hdrlen, rx->sta->sta.addr,
--					  hdr->addr1, hwaccel, rx->queue,
-+					  hdr->addr1, hwaccel, queue,
- 					  &rx->tkip_iv32,
- 					  &rx->tkip_iv16);
- 	if (res != TKIP_DECRYPT_OK)
-@@ -283,6 +295,8 @@ static void ccmp_special_blocks(struct s
- 	unsigned int hdrlen;
- 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
- 
-+	memset(scratch, 0, 6 * AES_BLOCK_LEN);
-+
- 	b_0 = scratch + 3 * AES_BLOCK_LEN;
- 	aad = scratch + 4 * AES_BLOCK_LEN;
- 
-@@ -373,8 +387,10 @@ static int ccmp_encrypt_skb(struct ieee8
- 	struct ieee80211_key *key = tx->key;
- 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
- 	int hdrlen, len, tail;
--	u8 *pos, *pn;
--	int i;
-+	u8 *pos;
-+	u8 pn[6];
-+	u64 pn64;
-+	u8 scratch[6 * AES_BLOCK_LEN];
- 
- 	if (info->control.hw_key &&
- 	    !(info->control.hw_key->flags & IEEE80211_KEY_FLAG_GENERATE_IV)) {
-@@ -402,14 +418,14 @@ static int ccmp_encrypt_skb(struct ieee8
- 	hdr = (struct ieee80211_hdr *) pos;
- 	pos += hdrlen;
- 
--	/* PN = PN + 1 */
--	pn = key->u.ccmp.tx_pn;
-+	pn64 = atomic64_inc_return(&key->u.ccmp.tx_pn);
- 
--	for (i = CCMP_PN_LEN - 1; i >= 0; i--) {
--		pn[i]++;
--		if (pn[i])
--			break;
--	}
-+	pn[5] = pn64;
-+	pn[4] = pn64 >> 8;
-+	pn[3] = pn64 >> 16;
-+	pn[2] = pn64 >> 24;
-+	pn[1] = pn64 >> 32;
-+	pn[0] = pn64 >> 40;
- 
- 	ccmp_pn2hdr(pos, pn, key->conf.keyidx);
- 
-@@ -418,8 +434,8 @@ static int ccmp_encrypt_skb(struct ieee8
- 		return 0;
- 
- 	pos += CCMP_HDR_LEN;
--	ccmp_special_blocks(skb, pn, key->u.ccmp.tx_crypto_buf, 0);
--	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, key->u.ccmp.tx_crypto_buf, pos, len,
-+	ccmp_special_blocks(skb, pn, scratch, 0);
-+	ieee80211_aes_ccm_encrypt(key->u.ccmp.tfm, scratch, pos, len,
- 				  pos, skb_put(skb, CCMP_MIC_LEN));
- 
- 	return 0;
-@@ -475,11 +491,12 @@ ieee80211_crypto_ccmp_decrypt(struct iee
- 	}
- 
- 	if (!(status->flag & RX_FLAG_DECRYPTED)) {
-+		u8 scratch[6 * AES_BLOCK_LEN];
- 		/* hardware didn't decrypt/verify MIC */
--		ccmp_special_blocks(skb, pn, key->u.ccmp.rx_crypto_buf, 1);
-+		ccmp_special_blocks(skb, pn, scratch, 1);
- 
- 		if (ieee80211_aes_ccm_decrypt(
--			    key->u.ccmp.tfm, key->u.ccmp.rx_crypto_buf,
-+			    key->u.ccmp.tfm, scratch,
- 			    skb->data + hdrlen + CCMP_HDR_LEN, data_len,
- 			    skb->data + skb->len - CCMP_MIC_LEN,
- 			    skb->data + hdrlen + CCMP_HDR_LEN))
---- a/drivers/net/wireless/b43/xmit.c
-+++ b/drivers/net/wireless/b43/xmit.c
-@@ -323,8 +323,7 @@ int b43_generate_txhdr(struct b43_wldev 
- 			/* we give the phase1key and iv16 here, the key is stored in
- 			 * shm. With that the hardware can do phase 2 and encryption.
- 			 */
--			ieee80211_get_tkip_key(info->control.hw_key, skb_frag,
--					IEEE80211_TKIP_P1_KEY, (u8*)phase1key);
-+			ieee80211_get_tkip_p1k(info->control.hw_key, skb_frag, phase1key);
- 			/* phase1key is in host endian. Copy to little-endian txhdr->iv. */
- 			for (i = 0; i < 5; i++) {
- 				txhdr->iv[i * 2 + 0] = phase1key[i];
---- a/drivers/net/wireless/iwlegacy/iwl-4965-tx.c
-+++ b/drivers/net/wireless/iwlegacy/iwl-4965-tx.c
-@@ -240,8 +240,7 @@ static void iwl4965_tx_cmd_build_hwcrypt
- 
- 	case WLAN_CIPHER_SUITE_TKIP:
- 		tx_cmd->sec_ctl = TX_CMD_SEC_TKIP;
--		ieee80211_get_tkip_key(keyconf, skb_frag,
--			IEEE80211_TKIP_P2_KEY, tx_cmd->key);
-+		ieee80211_get_tkip_p2k(keyconf, skb_frag, tx_cmd->key);
- 		IWL_DEBUG_TX(priv, "tx_cmd with tkip hwcrypto\n");
- 		break;
- 
---- a/drivers/net/wireless/iwlwifi/iwl-agn-tx.c
-+++ b/drivers/net/wireless/iwlwifi/iwl-agn-tx.c
-@@ -497,8 +497,7 @@ static void iwlagn_tx_cmd_build_hwcrypto
- 
- 	case WLAN_CIPHER_SUITE_TKIP:
- 		tx_cmd->sec_ctl = TX_CMD_SEC_TKIP;
--		ieee80211_get_tkip_key(keyconf, skb_frag,
--			IEEE80211_TKIP_P2_KEY, tx_cmd->key);
-+		ieee80211_get_tkip_p2k(keyconf, skb_frag, tx_cmd->key);
- 		IWL_DEBUG_TX(priv, "tx_cmd with tkip hwcrypto\n");
- 		break;
- 
---- a/include/net/mac80211.h
-+++ b/include/net/mac80211.h
-@@ -960,21 +960,6 @@ enum sta_notify_cmd {
- };
- 
- /**
-- * enum ieee80211_tkip_key_type - get tkip key
-- *
-- * Used by drivers which need to get a tkip key for skb. Some drivers need a
-- * phase 1 key, others need a phase 2 key. A single function allows the driver
-- * to get the key, this enum indicates what type of key is required.
-- *
-- * @IEEE80211_TKIP_P1_KEY: the driver needs a phase 1 key
-- * @IEEE80211_TKIP_P2_KEY: the driver needs a phase 2 key
-- */
--enum ieee80211_tkip_key_type {
--	IEEE80211_TKIP_P1_KEY,
--	IEEE80211_TKIP_P2_KEY,
--};
--
--/**
-  * enum ieee80211_hw_flags - hardware flags
-  *
-  * These flags are used to indicate hardware capabilities to
-@@ -2568,21 +2553,33 @@ struct sk_buff *
- ieee80211_get_buffered_bc(struct ieee80211_hw *hw, struct ieee80211_vif *vif);
- 
- /**
-- * ieee80211_get_tkip_key - get a TKIP rc4 for skb
-+ * ieee80211_get_tkip_p1k - get a TKIP phase 1 key
-+ *
-+ * This function returns the TKIP phase 1 key for the IV32 taken
-+ * from the given packet.
-+ *
-+ * @keyconf: the parameter passed with the set key
-+ * @skb: the packet to take the IV32 value from that will be encrypted
-+ *	with this P1K
-+ * @p1k: a buffer to which the key will be written, as 5 u16 values
-+ */
-+void ieee80211_get_tkip_p1k(struct ieee80211_key_conf *keyconf,
-+			    struct sk_buff *skb, u16 *p1k);
-+
-+/**
-+ * ieee80211_get_tkip_p2k - get a TKIP phase 2 key
-  *
-- * This function computes a TKIP rc4 key for an skb. It computes
-- * a phase 1 key if needed (iv16 wraps around). This function is to
-- * be used by drivers which can do HW encryption but need to compute
-- * to phase 1/2 key in SW.
-+ * This function computes the TKIP RC4 key for the IV values
-+ * in the packet.
-  *
-  * @keyconf: the parameter passed with the set key
-- * @skb: the skb for which the key is needed
-- * @type: TBD
-- * @key: a buffer to which the key will be written
-- */
--void ieee80211_get_tkip_key(struct ieee80211_key_conf *keyconf,
--				struct sk_buff *skb,
--				enum ieee80211_tkip_key_type type, u8 *key);
-+ * @skb: the packet to take the IV32/IV16 values from that will be
-+ *	encrypted with this key
-+ * @p2k: a buffer to which the key will be written, 16 bytes
-+ */
-+void ieee80211_get_tkip_p2k(struct ieee80211_key_conf *keyconf,
-+			    struct sk_buff *skb, u8 *p2k);
-+
- /**
-  * ieee80211_wake_queue - wake specific queue
-  * @hw: pointer as obtained from ieee80211_alloc_hw().
---- a/net/mac80211/key.c
-+++ b/net/mac80211/key.c
-@@ -333,6 +333,7 @@ struct ieee80211_key *ieee80211_key_allo
- 					get_unaligned_le16(seq);
- 			}
- 		}
-+		spin_lock_init(&key->u.tkip.txlock);
- 		break;
- 	case WLAN_CIPHER_SUITE_CCMP:
- 		key->conf.iv_len = CCMP_HDR_LEN;
---- a/net/mac80211/key.h
-+++ b/net/mac80211/key.h
-@@ -52,9 +52,10 @@ enum ieee80211_internal_tkip_state {
- };
- 
- struct tkip_ctx {
--	u32 iv32;
--	u16 iv16;
--	u16 p1k[5];
-+	u32 iv32;	/* current iv32 */
-+	u16 iv16;	/* current iv16 */
-+	u16 p1k[5];	/* p1k cache */
-+	u32 p1k_iv32;	/* iv32 for which p1k computed */
- 	enum ieee80211_internal_tkip_state state;
- };
- 
-@@ -71,6 +72,9 @@ struct ieee80211_key {
- 
- 	union {
- 		struct {
-+			/* protects tx context */
-+			spinlock_t txlock;
-+
- 			/* last used TSC */
- 			struct tkip_ctx tx;
- 
-@@ -78,7 +82,7 @@ struct ieee80211_key {
- 			struct tkip_ctx rx[NUM_RX_DATA_QUEUES];
- 		} tkip;
- 		struct {
--			u8 tx_pn[6];
-+			atomic64_t tx_pn;
- 			/*
- 			 * Last received packet number. The first
- 			 * NUM_RX_DATA_QUEUES counters are used with Data
-@@ -88,12 +92,9 @@ struct ieee80211_key {
- 			u8 rx_pn[NUM_RX_DATA_QUEUES + 1][6];
- 			struct crypto_cipher *tfm;
- 			u32 replays; /* dot11RSNAStatsCCMPReplays */
--			/* scratch buffers for virt_to_page() (crypto API) */
- #ifndef AES_BLOCK_LEN
- #define AES_BLOCK_LEN 16
- #endif
--			u8 tx_crypto_buf[6 * AES_BLOCK_LEN];
--			u8 rx_crypto_buf[6 * AES_BLOCK_LEN];
- 		} ccmp;
- 		struct {
- 			u8 tx_pn[6];
---- a/net/mac80211/tkip.c
-+++ b/net/mac80211/tkip.c
-@@ -101,6 +101,7 @@ static void tkip_mixing_phase1(const u8 
- 		p1k[4] += tkipS(p1k[3] ^ get_unaligned_le16(tk + 0 + j)) + i;
- 	}
- 	ctx->state = TKIP_STATE_PHASE1_DONE;
-+	ctx->p1k_iv32 = tsc_IV32;
- }
- 
- static void tkip_mixing_phase2(const u8 *tk, struct tkip_ctx *ctx,
-@@ -140,60 +141,72 @@ static void tkip_mixing_phase2(const u8 
- /* Add TKIP IV and Ext. IV at @pos. @iv0, @iv1, and @iv2 are the first octets
-  * of the IV. Returns pointer to the octet following IVs (i.e., beginning of
-  * the packet payload). */
--u8 *ieee80211_tkip_add_iv(u8 *pos, struct ieee80211_key *key, u16 iv16)
-+u8 *ieee80211_tkip_add_iv(u8 *pos, struct ieee80211_key *key)
- {
--	pos = write_tkip_iv(pos, iv16);
-+	lockdep_assert_held(&key->u.tkip.txlock);
-+
-+	pos = write_tkip_iv(pos, key->u.tkip.tx.iv16);
- 	*pos++ = (key->conf.keyidx << 6) | (1 << 5) /* Ext IV */;
- 	put_unaligned_le32(key->u.tkip.tx.iv32, pos);
- 	return pos + 4;
- }
- 
--void ieee80211_get_tkip_key(struct ieee80211_key_conf *keyconf,
--			struct sk_buff *skb, enum ieee80211_tkip_key_type type,
--			u8 *outkey)
-+static void ieee80211_compute_tkip_p1k(struct ieee80211_key *key, u32 iv32)
- {
--	struct ieee80211_key *key = (struct ieee80211_key *)
--			container_of(keyconf, struct ieee80211_key, conf);
--	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
--	u8 *data;
--	const u8 *tk;
--	struct tkip_ctx *ctx;
--	u16 iv16;
--	u32 iv32;
--
--	data = (u8 *)hdr + ieee80211_hdrlen(hdr->frame_control);
--	iv16 = data[2] | (data[0] << 8);
--	iv32 = get_unaligned_le32(&data[4]);
--
--	tk = &key->conf.key[NL80211_TKIP_DATA_OFFSET_ENCR_KEY];
--	ctx = &key->u.tkip.tx;
--
--#ifdef CONFIG_MAC80211_TKIP_DEBUG
--	printk(KERN_DEBUG "TKIP encrypt: iv16 = 0x%04x, iv32 = 0x%08x\n",
--			iv16, iv32);
-+	struct ieee80211_sub_if_data *sdata = key->sdata;
-+	struct tkip_ctx *ctx = &key->u.tkip.tx;
-+	const u8 *tk = &key->conf.key[NL80211_TKIP_DATA_OFFSET_ENCR_KEY];
- 
--	if (iv32 != ctx->iv32) {
--		printk(KERN_DEBUG "skb: iv32 = 0x%08x key: iv32 = 0x%08x\n",
--			iv32, ctx->iv32);
--		printk(KERN_DEBUG "Wrap around of iv16 in the middle of a "
--			"fragmented packet\n");
--	}
--#endif
-+	lockdep_assert_held(&key->u.tkip.txlock);
- 
--	/* Update the p1k only when the iv16 in the packet wraps around, this
--	 * might occur after the wrap around of iv16 in the key in case of
--	 * fragmented packets. */
--	if (iv16 == 0 || ctx->state == TKIP_STATE_NOT_INIT)
--		tkip_mixing_phase1(tk, ctx, hdr->addr2, iv32);
-+	/*
-+	 * Update the P1K when the IV32 is different from the value it
-+	 * had when we last computed it (or when not initialised yet).
-+	 * This might flip-flop back and forth if packets are processed
-+	 * out-of-order due to the different ACs, but then we have to
-+	 * just compute the P1K more often.
-+	 */
-+	if (ctx->p1k_iv32 != iv32 || ctx->state == TKIP_STATE_NOT_INIT)
-+		tkip_mixing_phase1(tk, ctx, sdata->vif.addr, iv32);
-+}
- 
--	if (type == IEEE80211_TKIP_P1_KEY) {
--		memcpy(outkey, ctx->p1k, sizeof(u16) * 5);
--		return;
--	}
-+void ieee80211_get_tkip_p1k(struct ieee80211_key_conf *keyconf,
-+			    struct sk_buff *skb, u16 *p1k)
-+{
-+	struct ieee80211_key *key = (struct ieee80211_key *)
-+			container_of(keyconf, struct ieee80211_key, conf);
-+	struct tkip_ctx *ctx = &key->u.tkip.tx;
-+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
-+	const u8 *data = (u8 *)hdr + ieee80211_hdrlen(hdr->frame_control);
-+	u32 iv32 = get_unaligned_le32(&data[4]);
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&key->u.tkip.txlock, flags);
-+	ieee80211_compute_tkip_p1k(key, iv32);
-+	memcpy(p1k, ctx->p1k, sizeof(ctx->p1k));
-+	spin_unlock_irqrestore(&key->u.tkip.txlock, flags);
-+}
-+EXPORT_SYMBOL(ieee80211_get_tkip_p1k);
- 
--	tkip_mixing_phase2(tk, ctx, iv16, outkey);
-+void ieee80211_get_tkip_p2k(struct ieee80211_key_conf *keyconf,
-+			    struct sk_buff *skb, u8 *p2k)
-+{
-+	struct ieee80211_key *key = (struct ieee80211_key *)
-+			container_of(keyconf, struct ieee80211_key, conf);
-+	const u8 *tk = &key->conf.key[NL80211_TKIP_DATA_OFFSET_ENCR_KEY];
-+	struct tkip_ctx *ctx = &key->u.tkip.tx;
-+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
-+	const u8 *data = (u8 *)hdr + ieee80211_hdrlen(hdr->frame_control);
-+	u32 iv32 = get_unaligned_le32(&data[4]);
-+	u16 iv16 = data[2] | (data[0] << 8);
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&key->u.tkip.txlock, flags);
-+	ieee80211_compute_tkip_p1k(key, iv32);
-+	tkip_mixing_phase2(tk, ctx, iv16, p2k);
-+	spin_unlock_irqrestore(&key->u.tkip.txlock, flags);
- }
--EXPORT_SYMBOL(ieee80211_get_tkip_key);
-+EXPORT_SYMBOL(ieee80211_get_tkip_p2k);
- 
- /*
-  * Encrypt packet payload with TKIP using @key. @pos is a pointer to the
-@@ -204,19 +217,15 @@ EXPORT_SYMBOL(ieee80211_get_tkip_key);
-  */
- int ieee80211_tkip_encrypt_data(struct crypto_cipher *tfm,
- 				struct ieee80211_key *key,
--				u8 *pos, size_t payload_len, u8 *ta)
-+				struct sk_buff *skb,
-+				u8 *payload, size_t payload_len)
- {
- 	u8 rc4key[16];
--	struct tkip_ctx *ctx = &key->u.tkip.tx;
--	const u8 *tk = &key->conf.key[NL80211_TKIP_DATA_OFFSET_ENCR_KEY];
--
--	/* Calculate per-packet key */
--	if (ctx->iv16 == 0 || ctx->state == TKIP_STATE_NOT_INIT)
--		tkip_mixing_phase1(tk, ctx, ta, ctx->iv32);
- 
--	tkip_mixing_phase2(tk, ctx, ctx->iv16, rc4key);
-+	ieee80211_get_tkip_p2k(&key->conf, skb, rc4key);
- 
--	return ieee80211_wep_encrypt_data(tfm, rc4key, 16, pos, payload_len);
-+	return ieee80211_wep_encrypt_data(tfm, rc4key, 16,
-+					  payload, payload_len);
- }
- 
- /* Decrypt packet payload with TKIP using @key. @pos is a pointer to the
---- a/net/mac80211/tkip.h
-+++ b/net/mac80211/tkip.h
-@@ -13,11 +13,13 @@
- #include <linux/crypto.h>
- #include "key.h"
- 
--u8 *ieee80211_tkip_add_iv(u8 *pos, struct ieee80211_key *key, u16 iv16);
-+u8 *ieee80211_tkip_add_iv(u8 *pos, struct ieee80211_key *key);
- 
- int ieee80211_tkip_encrypt_data(struct crypto_cipher *tfm,
--				 struct ieee80211_key *key,
--				 u8 *pos, size_t payload_len, u8 *ta);
-+				struct ieee80211_key *key,
-+				struct sk_buff *skb,
-+				u8 *payload, size_t payload_len);
-+
- enum {
- 	TKIP_DECRYPT_OK = 0,
- 	TKIP_DECRYPT_NO_EXT_IV = -1,
---- a/net/mac80211/cfg.c
-+++ b/net/mac80211/cfg.c
-@@ -209,6 +209,7 @@ static int ieee80211_get_key(struct wiph
- 	u8 seq[6] = {0};
- 	struct key_params params;
- 	struct ieee80211_key *key = NULL;
-+	u64 pn64;
- 	u32 iv32;
- 	u16 iv16;
- 	int err = -ENOENT;
-@@ -256,12 +257,13 @@ static int ieee80211_get_key(struct wiph
- 		params.seq_len = 6;
- 		break;
- 	case WLAN_CIPHER_SUITE_CCMP:
--		seq[0] = key->u.ccmp.tx_pn[5];
--		seq[1] = key->u.ccmp.tx_pn[4];
--		seq[2] = key->u.ccmp.tx_pn[3];
--		seq[3] = key->u.ccmp.tx_pn[2];
--		seq[4] = key->u.ccmp.tx_pn[1];
--		seq[5] = key->u.ccmp.tx_pn[0];
-+		pn64 = atomic64_read(&key->u.ccmp.tx_pn);
-+		seq[0] = pn64;
-+		seq[1] = pn64 >> 8;
-+		seq[2] = pn64 >> 16;
-+		seq[3] = pn64 >> 24;
-+		seq[4] = pn64 >> 32;
-+		seq[5] = pn64 >> 40;
- 		params.seq = seq;
- 		params.seq_len = 6;
- 		break;
---- a/net/mac80211/debugfs_key.c
-+++ b/net/mac80211/debugfs_key.c
-@@ -79,6 +79,7 @@ static ssize_t key_tx_spec_read(struct f
- 				size_t count, loff_t *ppos)
- {
- 	const u8 *tpn;
-+	u64 pn;
- 	char buf[20];
- 	int len;
- 	struct ieee80211_key *key = file->private_data;
-@@ -94,9 +95,10 @@ static ssize_t key_tx_spec_read(struct f
- 				key->u.tkip.tx.iv16);
- 		break;
- 	case WLAN_CIPHER_SUITE_CCMP:
--		tpn = key->u.ccmp.tx_pn;
-+		pn = atomic64_read(&key->u.ccmp.tx_pn);
- 		len = scnprintf(buf, sizeof(buf), "%02x%02x%02x%02x%02x%02x\n",
--				tpn[0], tpn[1], tpn[2], tpn[3], tpn[4], tpn[5]);
-+				(u8)(pn >> 40), (u8)(pn >> 32), (u8)(pn >> 24),
-+				(u8)(pn >> 16), (u8)(pn >> 8), (u8)pn);
- 		break;
- 	case WLAN_CIPHER_SUITE_AES_CMAC:
- 		tpn = key->u.aes_cmac.tx_pn;
---- a/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_2p2_initvals.h
-@@ -653,8 +653,8 @@ static const u32 ar9300_2p2_baseband_pos
- 	{0x0000a288, 0x00000110, 0x00000110, 0x00000110, 0x00000110},
- 	{0x0000a28c, 0x00022222, 0x00022222, 0x00022222, 0x00022222},
- 	{0x0000a2c4, 0x00158d18, 0x00158d18, 0x00158d18, 0x00158d18},
--	{0x0000a2d0, 0x00071981, 0x00071981, 0x00071981, 0x00071982},
--	{0x0000a2d8, 0x7999a83a, 0x7999a83a, 0x7999a83a, 0x7999a83a},
-+	{0x0000a2d0, 0x00041981, 0x00041981, 0x00041981, 0x00041982},
-+	{0x0000a2d8, 0x7999a83b, 0x7999a83b, 0x7999a83b, 0x7999a83b},
- 	{0x0000a358, 0x00000000, 0x00000000, 0x00000000, 0x00000000},
- 	{0x0000a830, 0x0000019c, 0x0000019c, 0x0000019c, 0x0000019c},
- 	{0x0000ae04, 0x001c0000, 0x001c0000, 0x001c0000, 0x001c0000},
-@@ -761,7 +761,7 @@ static const u32 ar9300_2p2_baseband_cor
- 	{0x0000a3ec, 0x20202020},
- 	{0x0000a3f0, 0x00000000},
- 	{0x0000a3f4, 0x00000246},
--	{0x0000a3f8, 0x0cdbd380},
-+	{0x0000a3f8, 0x0c9bd380},
- 	{0x0000a3fc, 0x000f0f01},
- 	{0x0000a400, 0x8fa91f01},
- 	{0x0000a404, 0x00000000},
-@@ -780,7 +780,7 @@ static const u32 ar9300_2p2_baseband_cor
- 	{0x0000a43c, 0x00100000},
- 	{0x0000a440, 0x00000000},
- 	{0x0000a444, 0x00000000},
--	{0x0000a448, 0x06000080},
-+	{0x0000a448, 0x05000080},
- 	{0x0000a44c, 0x00000001},
- 	{0x0000a450, 0x00010000},
- 	{0x0000a458, 0x00000000},
-@@ -1500,8 +1500,6 @@ static const u32 ar9300_2p2_mac_core[][2
- 	{0x0000816c, 0x00000000},
- 	{0x000081c0, 0x00000000},
- 	{0x000081c4, 0x33332210},
--	{0x000081c8, 0x00000000},
--	{0x000081cc, 0x00000000},
- 	{0x000081ec, 0x00000000},
- 	{0x000081f0, 0x00000000},
- 	{0x000081f4, 0x00000000},
---- a/net/mac80211/work.c
-+++ b/net/mac80211/work.c
-@@ -1075,14 +1075,13 @@ static void ieee80211_work_work(struct w
- 			continue;
- 		if (wk->chan != local->tmp_channel)
- 			continue;
--		if (ieee80211_work_ct_coexists(wk->chan_type,
--					       local->tmp_channel_type))
-+		if (!ieee80211_work_ct_coexists(wk->chan_type,
-+						local->tmp_channel_type))
- 			continue;
- 		remain_off_channel = true;
- 	}
- 
- 	if (!remain_off_channel && local->tmp_channel) {
--		bool on_oper_chan = ieee80211_cfg_on_oper_channel(local);
- 		local->tmp_channel = NULL;
- 		/* If tmp_channel wasn't operating channel, then
- 		 * we need to go back on-channel.
-@@ -1092,7 +1091,7 @@ static void ieee80211_work_work(struct w
- 		 * we still need to do a hardware config.  Currently,
- 		 * we cannot be here while scanning, however.
+@@ -1413,7 +1414,8 @@ static void ath_tx_send_ampdu(struct ath
  		 */
--		if (ieee80211_cfg_on_oper_channel(local) && !on_oper_chan)
-+		if (!ieee80211_cfg_on_oper_channel(local))
- 			ieee80211_hw_config(local, 0);
- 
- 		/* At the least, we need to disable offchannel_ps,
---- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-+++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-@@ -627,6 +627,11 @@ static void ar5008_hw_init_bb(struct ath
- 	else
- 		synthDelay /= 10;
- 
-+	if (IS_CHAN_HALF_RATE(chan))
-+		synthDelay *= 2;
-+	else if (IS_CHAN_QUARTER_RATE(chan))
-+		synthDelay *= 4;
-+
- 	REG_WRITE(ah, AR_PHY_ACTIVE, AR_PHY_ACTIVE_EN);
- 
- 	udelay(synthDelay + BASE_ACTIVATE_DELAY);
---- a/drivers/net/wireless/ath/ath9k/ar9002_hw.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9002_hw.c
-@@ -499,45 +499,6 @@ void ar9002_hw_enable_async_fifo(struct 
- 	}
- }
- 
--/*
-- * If Async FIFO is enabled, the following counters change as MAC now runs
-- * at 117 Mhz instead of 88/44MHz when async FIFO is disabled.
-- *
-- * The values below tested for ht40 2 chain.
-- * Overwrite the delay/timeouts initialized in process ini.
-- */
--void ar9002_hw_update_async_fifo(struct ath_hw *ah)
--{
--	if (AR_SREV_9287_13_OR_LATER(ah)) {
--		REG_WRITE(ah, AR_D_GBL_IFS_SIFS,
--			  AR_D_GBL_IFS_SIFS_ASYNC_FIFO_DUR);
--		REG_WRITE(ah, AR_D_GBL_IFS_SLOT,
--			  AR_D_GBL_IFS_SLOT_ASYNC_FIFO_DUR);
--		REG_WRITE(ah, AR_D_GBL_IFS_EIFS,
--			  AR_D_GBL_IFS_EIFS_ASYNC_FIFO_DUR);
--
--		REG_WRITE(ah, AR_TIME_OUT, AR_TIME_OUT_ACK_CTS_ASYNC_FIFO_DUR);
--		REG_WRITE(ah, AR_USEC, AR_USEC_ASYNC_FIFO_DUR);
--
--		REG_SET_BIT(ah, AR_MAC_PCU_LOGIC_ANALYZER,
--			    AR_MAC_PCU_LOGIC_ANALYZER_DISBUG20768);
--		REG_RMW_FIELD(ah, AR_AHB_MODE, AR_AHB_CUSTOM_BURST_EN,
--			      AR_AHB_CUSTOM_BURST_ASYNC_FIFO_VAL);
--	}
--}
--
--/*
-- * We don't enable WEP aggregation on mac80211 but we keep this
-- * around for HAL unification purposes.
-- */
--void ar9002_hw_enable_wep_aggregation(struct ath_hw *ah)
--{
--	if (AR_SREV_9287_13_OR_LATER(ah)) {
--		REG_SET_BIT(ah, AR_PCU_MISC_MODE2,
--			    AR_PCU_MISC_MODE2_ENABLE_AGGWEP);
--	}
--}
--
- /* Sets up the AR5008/AR9001/AR9002 hardware familiy callbacks */
- void ar9002_hw_attach_ops(struct ath_hw *ah)
- {
---- a/drivers/net/wireless/ath/ath9k/ar9002_phy.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9002_phy.c
-@@ -111,7 +111,9 @@ static int ar9002_hw_set_channel(struct 
- 
- 		switch (ah->eep_ops->get_eeprom(ah, EEP_FRAC_N_5G)) {
- 		case 0:
--			if ((freq % 20) == 0)
-+			if (IS_CHAN_HALF_RATE(chan) || IS_CHAN_QUARTER_RATE(chan))
-+				aModeRefSel = 0;
-+			else if ((freq % 20) == 0)
- 				aModeRefSel = 3;
- 			else if ((freq % 10) == 0)
- 				aModeRefSel = 2;
-@@ -129,8 +131,9 @@ static int ar9002_hw_set_channel(struct 
- 			channelSel = CHANSEL_5G(freq);
- 
- 			/* RefDivA setting */
--			REG_RMW_FIELD(ah, AR_AN_SYNTH9,
--				      AR_AN_SYNTH9_REFDIVA, refDivA);
-+			ath9k_hw_analog_shift_rmw(ah, AR_AN_SYNTH9,
-+				      AR_AN_SYNTH9_REFDIVA,
-+				      AR_AN_SYNTH9_REFDIVA_S, refDivA);
- 
- 		}
- 
-@@ -447,26 +450,27 @@ static void ar9002_olc_init(struct ath_h
- static u32 ar9002_hw_compute_pll_control(struct ath_hw *ah,
- 					 struct ath9k_channel *chan)
- {
-+	int ref_div = 5;
-+	int pll_div = 0x2c;
- 	u32 pll;
- 
--	pll = SM(0x5, AR_RTC_9160_PLL_REFDIV);
-+	if (chan && IS_CHAN_5GHZ(chan) && !IS_CHAN_A_FAST_CLOCK(ah, chan)) {
-+		if (AR_SREV_9280_20(ah)) {
-+			ref_div = 10;
-+			pll_div = 0x50;
-+		} else {
-+			pll_div = 0x28;
-+		}
-+	}
-+
-+	pll = SM(ref_div, AR_RTC_9160_PLL_REFDIV);
-+	pll |= SM(pll_div, AR_RTC_9160_PLL_DIV);
- 
- 	if (chan && IS_CHAN_HALF_RATE(chan))
- 		pll |= SM(0x1, AR_RTC_9160_PLL_CLKSEL);
- 	else if (chan && IS_CHAN_QUARTER_RATE(chan))
- 		pll |= SM(0x2, AR_RTC_9160_PLL_CLKSEL);
- 
--	if (chan && IS_CHAN_5GHZ(chan)) {
--		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
--			pll = 0x142c;
--		else if (AR_SREV_9280_20(ah))
--			pll = 0x2850;
--		else
--			pll |= SM(0x28, AR_RTC_9160_PLL_DIV);
--	} else {
--		pll |= SM(0x2c, AR_RTC_9160_PLL_DIV);
--	}
--
- 	return pll;
- }
- 
---- a/drivers/net/wireless/ath/ath9k/hw.c
-+++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -87,7 +87,10 @@ static void ath9k_hw_set_clockrate(struc
- 	struct ath_common *common = ath9k_hw_common(ah);
- 	unsigned int clockrate;
- 
--	if (!ah->curchan) /* should really check for CCK instead */
-+	/* AR9287 v1.3+ uses async FIFO and runs the MAC at 117 MHz */
-+	if (AR_SREV_9287(ah) && AR_SREV_9287_13_OR_LATER(ah))
-+		clockrate = 117;
-+	else if (!ah->curchan) /* should really check for CCK instead */
- 		clockrate = ATH9K_CLOCK_RATE_CCK;
- 	else if (conf->channel->band == IEEE80211_BAND_2GHZ)
- 		clockrate = ATH9K_CLOCK_RATE_2GHZ_OFDM;
-@@ -99,6 +102,13 @@ static void ath9k_hw_set_clockrate(struc
- 	if (conf_is_ht40(conf))
- 		clockrate *= 2;
- 
-+	if (ah->curchan) {
-+		if (IS_CHAN_HALF_RATE(ah->curchan))
-+			clockrate /= 2;
-+		if (IS_CHAN_QUARTER_RATE(ah->curchan))
-+			clockrate /= 4;
-+	}
-+
- 	common->clockrate = clockrate;
- }
- 
-@@ -895,6 +905,13 @@ static void ath9k_hw_init_interrupt_mask
- 	}
- }
- 
-+static void ath9k_hw_set_sifs_time(struct ath_hw *ah, u32 us)
-+{
-+	u32 val = ath9k_hw_mac_to_clks(ah, us - 2);
-+	val = min(val, (u32) 0xFFFF);
-+	REG_WRITE(ah, AR_D_GBL_IFS_SIFS, val);
-+}
-+
- static void ath9k_hw_setslottime(struct ath_hw *ah, u32 us)
- {
- 	u32 val = ath9k_hw_mac_to_clks(ah, us);
-@@ -932,25 +949,60 @@ static bool ath9k_hw_set_global_txtimeou
- 
- void ath9k_hw_init_global_settings(struct ath_hw *ah)
- {
--	struct ieee80211_conf *conf = &ath9k_hw_common(ah)->hw->conf;
-+	struct ath_common *common = ath9k_hw_common(ah);
-+	struct ieee80211_conf *conf = &common->hw->conf;
-+	const struct ath9k_channel *chan = ah->curchan;
- 	int acktimeout;
- 	int slottime;
- 	int sifstime;
-+	int rx_lat = 0, tx_lat = 0, eifs = 0;
-+	u32 reg;
- 
- 	ath_dbg(ath9k_hw_common(ah), ATH_DBG_RESET, "ah->misc_mode 0x%x\n",
- 		ah->misc_mode);
- 
-+	if (!chan)
-+		return;
-+
- 	if (ah->misc_mode != 0)
- 		REG_SET_BIT(ah, AR_PCU_MISC, ah->misc_mode);
- 
--	if (conf->channel && conf->channel->band == IEEE80211_BAND_5GHZ)
--		sifstime = 16;
--	else
--		sifstime = 10;
-+	rx_lat = 37;
-+	tx_lat = 54;
-+
-+	if (IS_CHAN_HALF_RATE(chan)) {
-+		eifs = 175;
-+		rx_lat *= 2;
-+		tx_lat *= 2;
-+		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
-+		    tx_lat += 11;
-+
-+		slottime = 13;
-+		sifstime = 32;
-+	} else if (IS_CHAN_QUARTER_RATE(chan)) {
-+		eifs = 340;
-+		rx_lat *= 4;
-+		tx_lat *= 4;
-+		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
-+		    tx_lat += 22;
-+
-+		slottime = 21;
-+		sifstime = 64;
-+	} else {
-+		eifs = REG_READ(ah, AR_D_GBL_IFS_EIFS);
-+		reg = REG_READ(ah, AR_USEC);
-+		rx_lat = MS(reg, AR_USEC_RX_LAT);
-+		tx_lat = MS(reg, AR_USEC_TX_LAT);
-+
-+		slottime = ah->slottime;
-+		if (IS_CHAN_5GHZ(chan))
-+			sifstime = 16;
-+		else
-+			sifstime = 10;
-+	}
- 
- 	/* As defined by IEEE 802.11-2007 17.3.8.6 */
--	slottime = ah->slottime + 3 * ah->coverage_class;
--	acktimeout = slottime + sifstime;
-+	acktimeout = slottime + sifstime + 3 * ah->coverage_class;
- 
- 	/*
- 	 * Workaround for early ACK timeouts, add an offset to match the
-@@ -962,11 +1014,20 @@ void ath9k_hw_init_global_settings(struc
- 	if (conf->channel && conf->channel->band == IEEE80211_BAND_2GHZ)
- 		acktimeout += 64 - sifstime - ah->slottime;
- 
--	ath9k_hw_setslottime(ah, ah->slottime);
-+	ath9k_hw_set_sifs_time(ah, sifstime);
-+	ath9k_hw_setslottime(ah, slottime);
- 	ath9k_hw_set_ack_timeout(ah, acktimeout);
- 	ath9k_hw_set_cts_timeout(ah, acktimeout);
- 	if (ah->globaltxtimeout != (u32) -1)
- 		ath9k_hw_set_global_txtimeout(ah, ah->globaltxtimeout);
-+
-+	REG_WRITE(ah, AR_D_GBL_IFS_EIFS, ath9k_hw_mac_to_clks(ah, eifs));
-+	REG_RMW(ah, AR_USEC,
-+		(common->clockrate - 1) |
-+		SM(rx_lat, AR_USEC_RX_LAT) |
-+		SM(tx_lat, AR_USEC_TX_LAT),
-+		AR_USEC_TX_LAT | AR_USEC_RX_LAT | AR_USEC_USEC);
-+
- }
- EXPORT_SYMBOL(ath9k_hw_init_global_settings);
- 
-@@ -1570,9 +1631,13 @@ int ath9k_hw_reset(struct ath_hw *ah, st
- 
- 	ath9k_hw_init_global_settings(ah);
- 
--	if (!AR_SREV_9300_20_OR_LATER(ah)) {
--		ar9002_hw_update_async_fifo(ah);
--		ar9002_hw_enable_wep_aggregation(ah);
-+	if (AR_SREV_9287(ah) && AR_SREV_9287_13_OR_LATER(ah)) {
-+		REG_SET_BIT(ah, AR_MAC_PCU_LOGIC_ANALYZER,
-+			    AR_MAC_PCU_LOGIC_ANALYZER_DISBUG20768);
-+		REG_RMW_FIELD(ah, AR_AHB_MODE, AR_AHB_CUSTOM_BURST_EN,
-+			      AR_AHB_CUSTOM_BURST_ASYNC_FIFO_VAL);
-+		REG_SET_BIT(ah, AR_PCU_MISC_MODE2,
-+			    AR_PCU_MISC_MODE2_ENABLE_AGGWEP);
+ 		TX_STAT_INC(txctl->txq->axq_qnum, a_queued_sw);
+ 		list_add_tail(&bf->list, &tid->buf_q);
+-		ath_tx_queue_tid(txctl->txq, tid);
++		if (!txctl->an || !txctl->an->sleeping)
++			ath_tx_queue_tid(txctl->txq, tid);
+ 		return;
  	}
  
- 	REG_SET_BIT(ah, AR_STA_ID1, AR_STA_ID1_PRESERVE_SEQNUM);
-@@ -1932,12 +1997,22 @@ EXPORT_SYMBOL(ath9k_hw_set_sta_beacon_ti
- /* HW Capabilities */
- /*******************/
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -421,6 +421,7 @@ struct station_parameters {
+  * @STATION_INFO_RX_BITRATE: @rxrate fields are filled
+  * @STATION_INFO_BSS_PARAM: @bss_param filled
+  * @STATION_INFO_CONNECTED_TIME: @connected_time filled
++ * @STATION_INFO_ASSOC_REQ_IES: @assoc_req_ies filled
+  */
+ enum station_info_flags {
+ 	STATION_INFO_INACTIVE_TIME	= 1<<0,
+@@ -439,7 +440,8 @@ enum station_info_flags {
+ 	STATION_INFO_SIGNAL_AVG		= 1<<13,
+ 	STATION_INFO_RX_BITRATE		= 1<<14,
+ 	STATION_INFO_BSS_PARAM          = 1<<15,
+-	STATION_INFO_CONNECTED_TIME	= 1<<16
++	STATION_INFO_CONNECTED_TIME	= 1<<16,
++	STATION_INFO_ASSOC_REQ_IES	= 1<<17
+ };
  
-+static u8 fixup_chainmask(u8 chip_chainmask, u8 eeprom_chainmask)
-+{
-+	eeprom_chainmask &= chip_chainmask;
-+	if (eeprom_chainmask)
-+		return eeprom_chainmask;
-+	else
-+		return chip_chainmask;
-+}
-+
- int ath9k_hw_fill_cap_info(struct ath_hw *ah)
- {
- 	struct ath9k_hw_capabilities *pCap = &ah->caps;
- 	struct ath_regulatory *regulatory = ath9k_hw_regulatory(ah);
- 	struct ath_common *common = ath9k_hw_common(ah);
- 	struct ath_btcoex_hw *btcoex_hw = &ah->btcoex_hw;
-+	unsigned int chip_chainmask;
- 
- 	u16 eeval;
- 	u8 ant_div_ctl1, tx_chainmask, rx_chainmask;
-@@ -1974,6 +2049,15 @@ int ath9k_hw_fill_cap_info(struct ath_hw
- 	if (eeval & AR5416_OPFLAGS_11G)
- 		pCap->hw_caps |= ATH9K_HW_CAP_2GHZ;
- 
-+	if (AR_SREV_9485(ah) || AR_SREV_9285(ah) || AR_SREV_9330(ah))
-+		chip_chainmask = 1;
-+	else if (!AR_SREV_9280_20_OR_LATER(ah))
-+		chip_chainmask = 7;
-+	else if (!AR_SREV_9300_20_OR_LATER(ah) || AR_SREV_9340(ah))
-+		chip_chainmask = 3;
-+	else
-+		chip_chainmask = 7;
-+
- 	pCap->tx_chainmask = ah->eep_ops->get_eeprom(ah, EEP_TX_MASK);
- 	/*
- 	 * For AR9271 we will temporarilly uses the rx chainmax as read from
-@@ -1990,6 +2074,9 @@ int ath9k_hw_fill_cap_info(struct ath_hw
- 		/* Use rx_chainmask from EEPROM. */
- 		pCap->rx_chainmask = ah->eep_ops->get_eeprom(ah, EEP_RX_MASK);
- 
-+	pCap->tx_chainmask = fixup_chainmask(chip_chainmask, pCap->tx_chainmask);
-+	pCap->rx_chainmask = fixup_chainmask(chip_chainmask, pCap->rx_chainmask);
-+
- 	ah->misc_mode |= AR_PCU_MIC_NEW_LOC_ENA;
- 
- 	/* enable key search for every frame in an aggregate */
-@@ -2079,10 +2166,7 @@ int ath9k_hw_fill_cap_info(struct ath_hw
- 			pCap->hw_caps |= ATH9K_HW_CAP_PAPRD;
- 	} else {
- 		pCap->tx_desc_len = sizeof(struct ath_desc);
--		if (AR_SREV_9280_20(ah) &&
--		    ((ah->eep_ops->get_eeprom(ah, EEP_MINOR_REV) <=
--		      AR5416_EEP_MINOR_VER_16) ||
--		     ah->eep_ops->get_eeprom(ah, EEP_FSTCLK_5G)))
-+		if (AR_SREV_9280_20(ah))
- 			pCap->hw_caps |= ATH9K_HW_CAP_FASTCLOCK;
+ /**
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -2236,7 +2236,7 @@ static int nl80211_send_station(struct s
  	}
+ 	nla_nest_end(msg, sinfoattr);
  
---- a/drivers/net/wireless/ath/ath9k/hw.h
-+++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -983,8 +983,6 @@ void ath9k_hw_get_delta_slope_vals(struc
- void ar9002_hw_cck_chan14_spread(struct ath_hw *ah);
- int ar9002_hw_rf_claim(struct ath_hw *ah);
- void ar9002_hw_enable_async_fifo(struct ath_hw *ah);
--void ar9002_hw_update_async_fifo(struct ath_hw *ah);
--void ar9002_hw_enable_wep_aggregation(struct ath_hw *ah);
+-	if (sinfo->assoc_req_ies)
++	if (sinfo->filled & STATION_INFO_ASSOC_REQ_IES)
+ 		NLA_PUT(msg, NL80211_ATTR_IE, sinfo->assoc_req_ies_len,
+ 			sinfo->assoc_req_ies);
  
- /*
-  * Code specific to AR9003, we stuff these here to avoid callbacks
---- a/drivers/net/wireless/ath/ath9k/recv.c
-+++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -814,16 +814,19 @@ static bool ath9k_rx_accept(struct ath_c
- 			    struct ath_rx_status *rx_stats,
- 			    bool *decrypt_error)
- {
--#define is_mc_or_valid_tkip_keyix ((is_mc ||			\
--		(rx_stats->rs_keyix != ATH9K_RXKEYIX_INVALID && \
--		test_bit(rx_stats->rs_keyix, common->tkip_keymap))))
--
-+	bool is_mc, is_valid_tkip, strip_mic, mic_error = false;
- 	struct ath_hw *ah = common->ah;
- 	__le16 fc;
- 	u8 rx_status_len = ah->caps.rx_status_len;
- 
- 	fc = hdr->frame_control;
- 
-+	is_mc = !!is_multicast_ether_addr(hdr->addr1);
-+	is_valid_tkip = rx_stats->rs_keyix != ATH9K_RXKEYIX_INVALID &&
-+		test_bit(rx_stats->rs_keyix, common->tkip_keymap);
-+	strip_mic = is_valid_tkip && !(rx_stats->rs_status &
-+		(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_CRC | ATH9K_RXERR_MIC));
-+
- 	if (!rx_stats->rs_datalen)
- 		return false;
-         /*
-@@ -838,6 +841,11 @@ static bool ath9k_rx_accept(struct ath_c
- 	if (rx_stats->rs_more)
- 		return true;
- 
-+	mic_error = is_valid_tkip && !ieee80211_is_ctl(fc) &&
-+		!ieee80211_has_morefrags(fc) &&
-+		!(le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_FRAG) &&
-+		(rx_stats->rs_status & ATH9K_RXERR_MIC);
-+
- 	/*
- 	 * The rx_stats->rs_status will not be set until the end of the
- 	 * chained descriptors so it can be ignored if rs_more is set. The
-@@ -845,30 +853,18 @@ static bool ath9k_rx_accept(struct ath_c
- 	 * descriptors.
- 	 */
- 	if (rx_stats->rs_status != 0) {
--		if (rx_stats->rs_status & ATH9K_RXERR_CRC)
-+		if (rx_stats->rs_status & ATH9K_RXERR_CRC) {
- 			rxs->flag |= RX_FLAG_FAILED_FCS_CRC;
-+			mic_error = false;
-+		}
- 		if (rx_stats->rs_status & ATH9K_RXERR_PHY)
- 			return false;
- 
- 		if (rx_stats->rs_status & ATH9K_RXERR_DECRYPT) {
- 			*decrypt_error = true;
--		} else if (rx_stats->rs_status & ATH9K_RXERR_MIC) {
--			bool is_mc;
--			/*
--			 * The MIC error bit is only valid if the frame
--			 * is not a control frame or fragment, and it was
--			 * decrypted using a valid TKIP key.
--			 */
--			is_mc = !!is_multicast_ether_addr(hdr->addr1);
--
--			if (!ieee80211_is_ctl(fc) &&
--			    !ieee80211_has_morefrags(fc) &&
--			    !(le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_FRAG) &&
--			    is_mc_or_valid_tkip_keyix)
--				rxs->flag |= RX_FLAG_MMIC_ERROR;
--			else
--				rx_stats->rs_status &= ~ATH9K_RXERR_MIC;
-+			mic_error = false;
- 		}
-+
- 		/*
- 		 * Reject error frames with the exception of
- 		 * decryption and MIC failures. For monitor mode,
-@@ -886,6 +882,18 @@ static bool ath9k_rx_accept(struct ath_c
- 			}
- 		}
- 	}
-+
-+	/*
-+	 * For unicast frames the MIC error bit can have false positives,
-+	 * so all MIC error reports need to be validated in software.
-+	 * False negatives are not common, so skip software verification
-+	 * if the hardware considers the MIC valid.
-+	 */
-+	if (strip_mic)
-+		rxs->flag |= RX_FLAG_MMIC_STRIPPED;
-+	else if (is_mc && mic_error)
-+		rxs->flag |= RX_FLAG_MMIC_ERROR;
-+
- 	return true;
- }
- 
-@@ -1938,6 +1946,9 @@ int ath_rx_tasklet(struct ath_softc *sc,
- 			sc->rx.rxotherant = 0;
- 		}
- 
-+		if (rxs->flag & RX_FLAG_MMIC_STRIPPED)
-+			skb_trim(skb, skb->len - 8);
-+
- 		spin_lock_irqsave(&sc->sc_pm_lock, flags);
- 
- 		if ((sc->ps_flags & (PS_WAIT_FOR_BEACON |
---- a/drivers/net/wireless/ath/ath9k/reg.h
-+++ b/drivers/net/wireless/ath/ath9k/reg.h
-@@ -600,7 +600,6 @@
- 
- #define AR_D_GBL_IFS_SIFS         0x1030
- #define AR_D_GBL_IFS_SIFS_M       0x0000FFFF
--#define AR_D_GBL_IFS_SIFS_ASYNC_FIFO_DUR 0x000003AB
- #define AR_D_GBL_IFS_SIFS_RESV0   0xFFFFFFFF
- 
- #define AR_D_TXBLK_BASE            0x1038
-@@ -616,12 +615,10 @@
- #define AR_D_GBL_IFS_SLOT         0x1070
- #define AR_D_GBL_IFS_SLOT_M       0x0000FFFF
- #define AR_D_GBL_IFS_SLOT_RESV0   0xFFFF0000
--#define AR_D_GBL_IFS_SLOT_ASYNC_FIFO_DUR   0x00000420
- 
- #define AR_D_GBL_IFS_EIFS         0x10b0
- #define AR_D_GBL_IFS_EIFS_M       0x0000FFFF
- #define AR_D_GBL_IFS_EIFS_RESV0   0xFFFF0000
--#define AR_D_GBL_IFS_EIFS_ASYNC_FIFO_DUR   0x0000A5EB
- 
- #define AR_D_GBL_IFS_MISC        0x10f0
- #define AR_D_GBL_IFS_MISC_LFSR_SLICE_SEL        0x00000007
-@@ -1477,7 +1474,6 @@ enum {
- #define AR_TIME_OUT_ACK_S    0
- #define AR_TIME_OUT_CTS      0x3FFF0000
- #define AR_TIME_OUT_CTS_S    16
--#define AR_TIME_OUT_ACK_CTS_ASYNC_FIFO_DUR    0x16001D56
- 
- #define AR_RSSI_THR          0x8018
- #define AR_RSSI_THR_MASK     0x000000FF
-@@ -1493,7 +1489,6 @@ enum {
- #define AR_USEC_TX_LAT_S     14
- #define AR_USEC_RX_LAT       0x1F800000
- #define AR_USEC_RX_LAT_S     23
--#define AR_USEC_ASYNC_FIFO_DUR    0x12e00074
- 
- #define AR_RESET_TSF        0x8020
- #define AR_RESET_TSF_ONCE   0x01000000
