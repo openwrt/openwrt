@@ -1,13 +1,3 @@
---- a/drivers/net/wireless/iwlwifi/iwl-agn.c
-+++ b/drivers/net/wireless/iwlwifi/iwl-agn.c
-@@ -27,6 +27,7 @@
-  *
-  *****************************************************************************/
- 
-+#undef pr_fmt
- #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
- 
- #include <linux/kernel.h>
 --- a/drivers/net/wireless/iwlegacy/iwl3945-base.c
 +++ b/drivers/net/wireless/iwlegacy/iwl3945-base.c
 @@ -27,6 +27,7 @@
@@ -27,7 +17,7 @@
 +#undef pr_fmt
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
  
- #include <linux/slab.h>
+ #include <linux/hardirq.h>
 --- a/drivers/net/wireless/libertas_tf/if_usb.c
 +++ b/drivers/net/wireless/libertas_tf/if_usb.c
 @@ -9,6 +9,7 @@
@@ -47,7 +37,7 @@
 +#undef pr_fmt
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
  
- #include <linux/slab.h>
+ #include <linux/hardirq.h>
 --- a/net/wireless/core.c
 +++ b/net/wireless/core.c
 @@ -4,6 +4,7 @@
@@ -107,7 +97,7 @@
 +#undef pr_fmt
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
  
- #include <linux/sched.h>
+ #include <linux/hardirq.h>
 --- a/drivers/net/wireless/libertas/if_cs.c
 +++ b/drivers/net/wireless/libertas/if_cs.c
 @@ -21,6 +21,7 @@
@@ -137,7 +127,7 @@
 +#undef pr_fmt
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
  
- #include <linux/moduleparam.h>
+ #include <linux/hardirq.h>
 --- a/drivers/net/wireless/libertas/if_usb.c
 +++ b/drivers/net/wireless/libertas/if_usb.c
 @@ -2,6 +2,7 @@

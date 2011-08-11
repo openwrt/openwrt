@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/b43/b43.h
 +++ b/drivers/net/wireless/b43/b43.h
-@@ -740,6 +740,7 @@ struct b43_wldev {
+@@ -746,6 +746,7 @@ struct b43_wldev {
  	bool qos_enabled;		/* TRUE, if QoS is used. */
  	bool hwcrypto_enabled;		/* TRUE, if HW crypto acceleration is enabled. */
  	bool use_pio;			/* TRUE if next init should use PIO */
@@ -10,7 +10,7 @@
  	struct b43_phy phy;
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -76,6 +76,11 @@ MODULE_FIRMWARE("b43/ucode16_mimo.fw");
+@@ -75,6 +75,11 @@ MODULE_FIRMWARE("b43/ucode16_mimo.fw");
  MODULE_FIRMWARE("b43/ucode5.fw");
  MODULE_FIRMWARE("b43/ucode9.fw");
  
@@ -22,7 +22,7 @@
  static int modparam_bad_frames_preempt;
  module_param_named(bad_frames_preempt, modparam_bad_frames_preempt, int, 0444);
  MODULE_PARM_DESC(bad_frames_preempt,
-@@ -2575,10 +2580,10 @@ static int b43_gpio_init(struct b43_wlde
+@@ -2671,10 +2676,10 @@ static int b43_gpio_init(struct b43_wlde
  		    & ~B43_MACCTL_GPOUTSMSK);
  
  	b43_write16(dev, B43_MMIO_GPIO_MASK, b43_read16(dev, B43_MMIO_GPIO_MASK)
@@ -35,7 +35,7 @@
  	if (dev->dev->chip_id == 0x4301) {
  		mask |= 0x0060;
  		set |= 0x0060;
-@@ -5137,10 +5142,10 @@ static void b43_print_driverinfo(void)
+@@ -5441,10 +5446,10 @@ static void b43_print_driverinfo(void)
  	feat_sdio = "S";
  #endif
  	printk(KERN_INFO "Broadcom 43xx driver loaded "

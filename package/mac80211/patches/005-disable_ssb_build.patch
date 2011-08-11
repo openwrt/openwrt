@@ -19,7 +19,7 @@
  else
  include $(KLIB_BUILD)/.config
  endif
-@@ -314,7 +313,8 @@ CONFIG_IPW2200_QOS=y
+@@ -315,7 +314,8 @@ CONFIG_IPW2200_QOS=y
  # % echo 1 > /sys/bus/pci/drivers/ipw2200/*/rtap_iface
  endif #CONFIG_WIRELESS_EXT
  
@@ -29,7 +29,7 @@
  # Sonics Silicon Backplane
  CONFIG_SSB_SPROM=y
  
-@@ -327,7 +327,7 @@ endif #CONFIG_PCMCIA
+@@ -328,7 +328,7 @@ endif #CONFIG_PCMCIA
  # CONFIG_SSB_DEBUG=y
  CONFIG_SSB_DRIVER_PCICORE=y
  CONFIG_B43_SSB=y
@@ -38,7 +38,7 @@
  
  CONFIG_BCMA=m
  CONFIG_BCMA_BLOCKIO=y
-@@ -534,7 +534,6 @@ endif #CONFIG_SPI_MASTER end of SPI driv
+@@ -537,7 +537,6 @@ endif #CONFIG_SPI_MASTER end of SPI driv
  
  ifdef CONFIG_MMC
  
