@@ -8,6 +8,19 @@ INITRAMFS=1
 set_state init
 echo "- init -"
 
+[ -n "$SWITCH_ROOT_TMPFS" ] && {
+  mount none /mnt -t tmpfs
+  ( cd /; find -xdev -type d ) | ( cd /mnt; xargs mkdir -p )
+  find / \! -type d -xdev | tar -cT /proc/self/fd/0 | tar -xC /mnt
+  mkdir /mnt/proc /mnt/dev /mnt/tmp /mnt/sys
+  mount -o move /proc /mnt/proc
+  mount -o move /dev /mnt/dev
+  mount -o move /tmp /mnt/tmp
+  mount -o move /sys /mnt/sys
+  rm -rf /proc /dev /tmp /sys
+  exec switch_root -c /dev/console /mnt /sbin/init
+}
+
 # if we have no root parameter, just go to running from ramfs
 [ -z $rootfs ] && {
   export NOMOUNT="No Root"
