@@ -795,6 +795,12 @@ static void ag71xx_restart_work_func(struct work_struct *work)
 {
 	struct ag71xx *ag = container_of(work, struct ag71xx, restart_work);
 
+	if (ag71xx_get_pdata(ag)->is_ar724x) {
+		ag->link = 0;
+		ag71xx_link_adjust(ag);
+		return;
+	}
+
 	ag71xx_stop(ag->dev);
 	ag71xx_open(ag->dev);
 }
