@@ -17,7 +17,13 @@ mac80211_hostapd_setup_base() {
 	config_get basic_rate_list "$device" basic_rate
 	config_get_bool noscan "$device" noscan
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
-	[ "$channel" = auto ] && channel=
+
+	[ "$channel" = auto ] && {
+		channel=$(iw phy "$phy" info | \
+			sed -ne '/MHz/ { /disabled\|passive\|radar/d; s/.*\[//; s/\].*//; p; q }')
+		config_set "$device" channel "$channel"
+	}
+
 	[ -n "$hwmode" ] && {
 		config_get hwmode_11n "$device" hwmode_11n
 		[ -n "$hwmode_11n" ] && {
