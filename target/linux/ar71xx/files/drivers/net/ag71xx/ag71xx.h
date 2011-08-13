@@ -236,6 +236,10 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define AG71XX_REG_INT_ENABLE	0x0198
 #define AG71XX_REG_INT_STATUS	0x019c
 
+#define AG71XX_REG_FIFO_DEPTH	0x01a8
+#define AG71XX_REG_RX_SM	0x01b0
+#define AG71XX_REG_TX_SM	0x01b4
+
 #define MAC_CFG1_TXE		BIT(0)	/* Tx Enable */
 #define MAC_CFG1_STX		BIT(1)	/* Synchronize Tx Enable */
 #define MAC_CFG1_RXE		BIT(2)	/* Rx Enable */

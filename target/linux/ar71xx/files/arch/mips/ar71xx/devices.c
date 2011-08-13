@@ -589,6 +589,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		pdata->set_pll =  id ? ar724x_set_pll_ge1
 				     : ar724x_set_pll_ge0;
 		pdata->is_ar724x = 1;
+		if (ar71xx_soc == AR71XX_SOC_AR7240)
+			pdata->is_ar7240 = 1;
 
 		if (!pdata->fifo_cfg1)
 			pdata->fifo_cfg1 = 0x0010ffff;
