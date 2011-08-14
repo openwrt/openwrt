@@ -102,7 +102,7 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 				local p
 				for p in ${proto:-tcp udp}; do
 					case "$p" in
-						tcp|udp)
+						tcp|udp|6|17)
 							iptables -t nat -A nat_reflection_in \
 								-s $lanip/$lanmk -d $exthost \
 								-p $p $extport \
