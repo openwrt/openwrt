@@ -136,6 +136,7 @@ static void __init mofi3500_3gn_init(void)
 				     mofi3500_3gn_gpio_buttons);
 	rt305x_register_wifi();
 	rt305x_register_wdt();
+	rt305x_register_usb();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_MOFI3500_3GN, "MOFI3500-3GN", "MoFi Network MOFI3500-3GN",

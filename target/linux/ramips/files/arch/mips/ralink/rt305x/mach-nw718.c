@@ -139,6 +139,7 @@ static void __init nw718_init(void)
 	rt305x_register_wifi();
 	rt305x_register_wdt();
 	rt305x_register_spi(nw718_spi_info, ARRAY_SIZE(nw718_spi_info));
+	rt305x_register_usb();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_WHR_G300N, "NW718", "Netcore NW718", nw718_init);
