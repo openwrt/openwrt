@@ -1,0 +1,24 @@
+config DWC_OTG
+	tristate "Ralink RT305X DWC_OTG support"
+	depends on SOC_RT305X
+	---help---
+	  This driver supports Ralink DWC_OTG
+
+choice
+	prompt "USB Operation Mode"
+	depends on DWC_OTG
+	default DWC_OTG_HOST_ONLY
+
+config DWC_OTG_HOST_ONLY
+	bool "HOST ONLY MODE"
+	depends on DWC_OTG
+
+config DWC_OTG_DEVICE_ONLY
+	bool "DEVICE ONLY MODE"
+	depends on DWC_OTG
+
+endchoice
+
+config DWC_OTG_DEBUG
+	bool "Enable debug mode"
+	depends on DWC_OTG
