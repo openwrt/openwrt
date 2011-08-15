@@ -72,6 +72,9 @@
 #define RT305X_ESW_PORTS_ALL	\
 		(RT305X_ESW_PORTS_NOCPU | RT305X_ESW_PORTS_CPU)
 
+#define RT305X_ESW_NUM_VLANS	16
+#define RT305X_ESW_NUM_PORTS	7
+
 struct rt305x_esw {
 	void __iomem *base;
 	struct rt305x_esw_platform_data *pdata;
@@ -221,8 +224,6 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 		       (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISBC2CPU_S)),
 		      RT305X_ESW_REG_SOCPC);
 
-	rt305x_esw_set_pvid(esw, RT305X_ESW_PORT4, 2);
-	rt305x_esw_set_pvid(esw, RT305X_ESW_PORT5, 1);
 	rt305x_esw_wr(esw, 0x3f502b28, RT305X_ESW_REG_FPA2);
 	rt305x_esw_wr(esw, 0x00000000, RT305X_ESW_REG_FPA);
 
@@ -252,17 +253,47 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 	/* select local register */
 	rt305x_mii_write(esw, 0, 31, 0x8000);
 
-	/* set default vlan */
-	rt305x_esw_set_vlan_id(esw, 0, 1);
-	rt305x_esw_set_vlan_id(esw, 1, 2);
-	rt305x_esw_set_vmsc(esw, 0,
-			    (BIT(RT305X_ESW_PORT0) | BIT(RT305X_ESW_PORT1) |
-			     BIT(RT305X_ESW_PORT2) | BIT(RT305X_ESW_PORT3) |
-			     BIT(RT305X_ESW_PORT6)));
-	rt305x_esw_set_vmsc(esw, 1,
-			    (BIT(RT305X_ESW_PORT4) | BIT(RT305X_ESW_PORT6)));
-	rt305x_esw_set_vmsc(esw, 2, 0);
-	rt305x_esw_set_vmsc(esw, 3, 0);
+	for (i = 0; i < RT305X_ESW_NUM_VLANS; i++) {
+		rt305x_esw_set_vlan_id(esw, i, 0);
+		rt305x_esw_set_vmsc(esw, i, 0);
+	}
+
+	for (i = 0; i < RT305X_ESW_NUM_PORTS; i++)
+		rt305x_esw_set_pvid(esw, i, 1);
+
+	switch (esw->pdata->vlan_config) {
+	case RT305X_ESW_VLAN_CONFIG_NONE:
+		break;
+
+	case RT305X_ESW_VLAN_CONFIG_LLLLW:
+		rt305x_esw_set_vlan_id(esw, 0, 1);
+		rt305x_esw_set_vlan_id(esw, 1, 2);
+		rt305x_esw_set_pvid(esw, RT305X_ESW_PORT4, 2);
+
+		rt305x_esw_set_vmsc(esw, 0,
+				BIT(RT305X_ESW_PORT0) | BIT(RT305X_ESW_PORT1) |
+				BIT(RT305X_ESW_PORT2) | BIT(RT305X_ESW_PORT3) |
+				BIT(RT305X_ESW_PORT6));
+		rt305x_esw_set_vmsc(esw, 1,
+				BIT(RT305X_ESW_PORT4) | BIT(RT305X_ESW_PORT6));
+		break;
+
+	case RT305X_ESW_VLAN_CONFIG_WLLLL:
+		rt305x_esw_set_vlan_id(esw, 0, 1);
+		rt305x_esw_set_vlan_id(esw, 1, 2);
+		rt305x_esw_set_pvid(esw, RT305X_ESW_PORT0, 2);
+
+		rt305x_esw_set_vmsc(esw, 0,
+				BIT(RT305X_ESW_PORT1) | BIT(RT305X_ESW_PORT2) |
+				BIT(RT305X_ESW_PORT3) | BIT(RT305X_ESW_PORT4) |
+				BIT(RT305X_ESW_PORT6));
+		rt305x_esw_set_vmsc(esw, 1,
+				BIT(RT305X_ESW_PORT0) | BIT(RT305X_ESW_PORT6));
+		break;
+
+	default:
+		BUG();
+	}
 }
 
 static int

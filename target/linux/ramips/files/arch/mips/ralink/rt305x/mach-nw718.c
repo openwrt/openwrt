@@ -129,6 +129,7 @@ static void __init nw718_init(void)
 	rt305x_gpio_init(RT305X_GPIO_MODE_I2C |
 			 RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(nw718_leds_gpio),
 				  nw718_leds_gpio);
