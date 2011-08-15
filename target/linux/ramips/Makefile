@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2010 OpenWrt.org
+# Copyright (C) 2008-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -16,7 +16,9 @@ FEATURES:=squashfs
 LINUX_VERSION:=2.6.39.2
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES+=kmod-leds-gpio wpad-mini
+DEFAULT_PACKAGES+=\
+	kmod-leds-gpio kmod-input-core kmod-input-polldev kmod-gpio-buttons \
+	kmod-button-hotplug kmod-wpad-mini
 
 define Target/Description
 	Build firmware images for Ralink RT288x/RT305x based boards.
