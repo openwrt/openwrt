@@ -242,3 +242,29 @@ void __init rt305x_register_spi(struct spi_board_info *info, int n)
 	spi_register_board_info(info, n);
 	platform_device_register(&rt305x_spi_device);
 }
+
+static struct resource rt305x_usb_resources[] = {
+	{
+		.start	= RT305X_OTG_BASE,
+		.end	= RT305X_OTG_BASE + 0x3FFFF,
+		.flags	= IORESOURCE_MEM,
+	}, {
+		.start	= RT305X_INTC_IRQ_OTG,
+		.end	= RT305X_INTC_IRQ_OTG,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct platform_device rt305x_usb_device = {
+	.name			= "dwc_otg",
+	.resource		= rt305x_usb_resources,
+	.num_resources	= ARRAY_SIZE(rt305x_usb_resources),
+	.dev = {
+		.platform_data = NULL,
+	}
+};
+
+void __init rt305x_register_usb(void)
+{
+	platform_device_register(&rt305x_usb_device);
+}

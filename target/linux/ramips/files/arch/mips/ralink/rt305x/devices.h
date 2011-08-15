@@ -23,6 +23,7 @@ void rt305x_register_ethernet(void);
 void rt305x_register_wifi(void);
 void rt305x_register_wdt(void);
 void rt305x_register_spi(struct spi_board_info *info, int n);
+void rt305x_register_usb(void);
 
 #endif  /* __RT305X_DEVICES_H */
 
