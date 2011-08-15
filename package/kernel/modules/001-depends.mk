@@ -27,11 +27,11 @@ endef
 
 
 define SetDepends/input
-  DEPENDS:= @!TARGET_x86
+  DEPENDS:= @!(TARGET_x86_generic||TARGET_x86_kvm_guest)
 endef
 
 define AddDepends/input
-  DEPENDS+= +!TARGET_x86:kmod-input-core $(1)
+  DEPENDS+= +!(TARGET_x86_generic||TARGET_x86_kvm_guest):kmod-input-core $(1)
 endef
 
 
