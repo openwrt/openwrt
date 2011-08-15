@@ -103,6 +103,7 @@ static void __init rt_g32b_init(void)
 	rt305x_register_spi(rt_g32b_spi_slave_info,
 			    ARRAY_SIZE(rt_g32b_spi_slave_info));
 
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	ramips_register_gpio_buttons(-1, RT_G32B_BUTTONS_POLL_INTERVAL,
 				     ARRAY_SIZE(rt_g32b_gpio_buttons),

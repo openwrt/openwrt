@@ -132,6 +132,7 @@ static void __init f5d8235v2_init(void)
 	rt305x_register_flash(0, &f5d8235v2_flash_data);
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(f5d8235v2_leds_gpio),
 						f5d8235v2_leds_gpio);
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_NONE;
 	rt305x_register_ethernet();
 	platform_device_register(&f5d8235v2_switch);
 	rt305x_register_wifi();

@@ -95,6 +95,7 @@ static void __init pwh2004_init(void)
 	ramips_register_gpio_buttons(-1, PWH2004_BUTTONS_POLL_INTERVAL,
 				     ARRAY_SIZE(pwh2004_gpio_buttons),
 				     pwh2004_gpio_buttons);
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
 	rt305x_register_wdt();

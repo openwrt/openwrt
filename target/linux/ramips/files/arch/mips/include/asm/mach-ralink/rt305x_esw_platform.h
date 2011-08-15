@@ -11,8 +11,15 @@
 #ifndef _RT305X_ESW_PLATFORM_H
 #define _RT305X_ESW_PLATFORM_H
 
+enum {
+	RT305X_ESW_VLAN_CONFIG_NONE = 0,
+	RT305X_ESW_VLAN_CONFIG_LLLLW,
+	RT305X_ESW_VLAN_CONFIG_WLLLL,
+};
+
 struct rt305x_esw_platform_data
 {
+	u8 vlan_config;
 };
 
 #endif /* _RT305X_ESW_PLATFORM_H */

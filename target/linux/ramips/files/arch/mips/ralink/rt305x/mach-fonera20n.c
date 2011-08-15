@@ -118,6 +118,7 @@ static void __init fonera20n_init(void)
 				     ARRAY_SIZE(fonera20n_gpio_buttons),
 				     fonera20n_gpio_buttons);
 
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
 	rt305x_register_wdt();
