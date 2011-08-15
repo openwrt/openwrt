@@ -199,6 +199,18 @@ define Image/Build/Profile/WCR150GN
 endef
 
 
+mtdlayout_argus_atp52b=mtdparts=physmap-flash.0:192k(bootloader)ro,64k(config),64k(factory),1152k(kernel),6656k(rootfs),7808k@0x50000(firmware)
+mtd_argus_atp52b_kernel_part_size=1179648
+mtd_argus_atp52b_rootfs_part_size=6815744
+define Image/Build/Template/ARGUS_ATP52B
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_argus_atp52b,$(mtd_argus_atp52b_kernel_part_size),$(mtd_argus_atp52b_rootfs_part_size))
+endef
+
+define Image/Build/Profile/ARGUS_ATP52B
+	$(call Image/Build/Template/ARGUS_ATP52B,$(1),argus_atp52b,ARGUS_ATP52B)
+endef
+
+
 mtdlayout_f5d8235=mtdparts=physmap-flash.0:320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(factory),7744k@0x50000(firmware)
 mtd_f5d8235_kernel_part_size=1572864
 mtd_f5d8235_rootfs_part_size=6356992
@@ -213,6 +225,7 @@ endef
 
 ifeq ($(CONFIG_RALINK_RT305X),y)
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
 	$(call Image/Build/Profile/DIR300B1,$(1))
 	$(call Image/Build/Profile/RTG32B1,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))

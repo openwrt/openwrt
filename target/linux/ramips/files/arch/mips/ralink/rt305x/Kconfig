@@ -2,6 +2,12 @@ if RALINK_RT305X
 
 menu "Ralink RT350x machine selection"
 
+config RT305X_MACH_ARGUS_ATP52B
+	bool "Argus ATP-52B support"
+	default y
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_RT_G32_REVB
 	bool "Asus RT-G32 revB board support"
 	default y

@@ -10,6 +10,9 @@ ramips_board_name() {
 	machine=$(awk 'BEGIN{FS="[ \t]+:[ \t]"} /machine/ {print $2}' /proc/cpuinfo)
 
 	case "$machine" in
+	*"Argus ATP-52B")
+		name="argus-atp52b"
+		;;
 	*"Aztech HW550-3G")
 		name="hw550-3g"
 		;;
