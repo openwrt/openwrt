@@ -8,15 +8,16 @@ nw718_set_macs() {
 	local lan_mac
 	local wan_mac
 
+	[ -z $(which maccalc) ] && return
+
 	. /etc/functions.sh
 
 	part=$(find_mtd_part "factory")
 	[ -z $part ] && return
 
-	lan_mac=$(dd bs=1 skip=4 count=6 if=$part 2>/dev/null | hexdump -v -e '1/1 "%02x"' | sed 's/\(..\)/\1:/g;s/:$//')
+	lan_mac=$(dd bs=1 skip=4 count=6 if=$part 2>/dev/null | maccalc bin2mac)
 	[ -z $lan_mac ] && return
 
-	[ -z $(which maccalc) ] && return
 	wan_mac=$(maccalc add $lan_mac 1)
 
 	uci batch <<EOF
