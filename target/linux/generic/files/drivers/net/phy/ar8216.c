@@ -46,6 +46,7 @@ struct ar8216_priv {
 	int chip;
 	bool initialized;
 	bool port4_phy;
+	char buf[80];
 
 	/* all fields below are cleared on reset */
 	bool vlan;
@@ -217,6 +218,59 @@ ar8216_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 	return 0;
 }
 
+static const char *ar8216_speed_str(unsigned speed)
+{
+	switch (speed) {
+	case AR8216_PORT_SPEED_10M:
+		return "10baseT";
+	case AR8216_PORT_SPEED_100M:
+		return "100baseT";
+	case AR8216_PORT_SPEED_1000M:
+		return "1000baseT";
+	}
+
+	return "unknown";
+}
+
+static int ar8216_port_get_link(struct switch_dev *dev,
+				const struct switch_attr *attr,
+				struct switch_val *val)
+{
+	struct ar8216_priv *priv = to_ar8216(dev);
+	u32 len;
+	u32 status;
+	int port;
+
+	port = val->port_vlan;
+
+	memset(priv->buf, '\0', sizeof(priv->buf));
+	status = priv->read(priv, AR8216_REG_PORT_STATUS(port));
+
+	if (status & AR8216_PORT_STATUS_LINK_UP) {
+		len = snprintf(priv->buf, sizeof(priv->buf),
+				"port:%d link:up speed:%s %s-duplex %s%s%s",
+				port,
+				ar8216_speed_str((status &
+						  AR8216_PORT_STATUS_SPEED) >>
+						 AR8216_PORT_STATUS_SPEED_S),
+				(status & AR8216_PORT_STATUS_DUPLEX) ?
+					"full" : "half",
+				(status & AR8216_PORT_STATUS_TXFLOW) ?
+					"txflow ": "",
+				(status & AR8216_PORT_STATUS_RXFLOW) ?
+					"rxflow " : "",
+				(status & AR8216_PORT_STATUS_LINK_AUTO) ?
+					"auto ": "");
+	} else {
+		len = snprintf(priv->buf, sizeof(priv->buf), "port:%d link:down",
+				port);
+	}
+
+	val->value.s = priv->buf;
+	val->len = len;
+
+	return 0;
+}
 
 static int
 ar8216_mangle_tx(struct sk_buff *skb, struct net_device *dev)
@@ -327,6 +381,14 @@ static struct switch_attr ar8216_globals[] = {
 };
 
 static struct switch_attr ar8216_port[] = {
+	{
+		.type = SWITCH_TYPE_STRING,
+		.name = "link",
+		.description = "Get port link information",
+		.max = 1,
+		.set = NULL,
+		.get = ar8216_port_get_link,
+	},
 };
 
 static struct switch_attr ar8216_vlan[] = {
