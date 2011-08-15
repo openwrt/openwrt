@@ -25,6 +25,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_NW718,		/* Netcore NW718 */
 
 	/* RT3052 based machines */
+	RAMIPS_MACH_ARGUS_ATP52B,	/* Argus ATP-52B */
 	RAMIPS_MACH_F5D8235_V2,         /* Belkin F5D8235 v2 */
 	RAMIPS_MACH_PWH2004,		/* Prolink 2004H / Abocom 5205 */
 	RAMIPS_MACH_WCR150GN,		/* Sparklan WCR-150GN */
