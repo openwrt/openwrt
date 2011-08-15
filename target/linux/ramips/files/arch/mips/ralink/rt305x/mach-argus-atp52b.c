@@ -72,10 +72,12 @@ static struct mtd_partition argus_atp52b_partitions[] = {
 		.name	= "config",
 		.offset	= 0x030000,
 		.size	= 0x010000,
+		.mask_flags = MTD_WRITEABLE,
 	}, {
 		.name	= "factory",
 		.offset	= 0x040000,
 		.size	= 0x010000,
+		.mask_flags = MTD_WRITEABLE,
 	}, {
 		.name	= "kernel",
 		.offset	= 0x050000,
