@@ -3,6 +3,29 @@
 # Copyright (C) 2011 OpenWrt.org
 #
 
+nw718_set_macs() {
+	local part
+	local lan_mac
+	local wan_mac
+
+	. /etc/functions.sh
+
+	part=$(find_mtd_part "factory")
+	[ -z $part ] && return
+
+	lan_mac=$(dd bs=1 skip=4 count=6 if=$part 2>/dev/null | hexdump -v -e '1/1 "%02x"' | sed 's/\(..\)/\1:/g;s/:$//')
+	[ -z $lan_mac ] && return
+
+	[ -z $(which maccalc) ] && return
+	wan_mac=$(maccalc add $lan_mac 1)
+
+	uci batch <<EOF
+set network.lan.macaddr='$lan_mac'
+set network.wan.macaddr='$wan_mac'
+commit network
+EOF
+}
+
 nw718_set_leds() {
 	uci batch <<EOF
 set system.usb_led=led
@@ -21,4 +44,5 @@ board=$(ramips_board_name)
 
 if [ "${board}" == "nw718" ]; then
 	nw718_set_leds
+	nw718_set_macs
 fi
