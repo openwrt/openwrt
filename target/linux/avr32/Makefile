@@ -12,7 +12,7 @@ BOARDNAME:=Atmel AVR32
 FEATURES:=squashfs
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.39.2
+LINUX_VERSION:=2.6.39.4
 
 include $(INCLUDE_DIR)/target.mk
 
