@@ -62,6 +62,22 @@ define KernelPackage/crypto-manager
 endef
 $(eval $(call KernelPackage,crypto-manager))
 
+define KernelPackage/crypto-user
+  TITLE:=CryptoAPI userspace interface
+  DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager @LINUX_2_6_38||LINUX_2_6_39||LINUX_3_0
+  KCONFIG:= \
+	CONFIG_CRYPTO_USER_API \
+	CONFIG_CRYPTO_USER_API_HASH \
+	CONFIG_CRYPTO_USER_API_SKCIPHER
+  FILES:= \
+	$(LINUX_DIR)/crypto/af_alg.ko \
+	$(LINUX_DIR)/crypto/algif_hash.ko \
+	$(LINUX_DIR)/crypto/algif_skcipher.ko
+  AUTOLOAD:=$(call AutoLoad,09,af_alg algif_hash algif_skcipher)
+  $(call AddDepends/crypto)
+endef
+$(eval $(call KernelPackage,crypto-user))
+
 define KernelPackage/crypto-wq
   TITLE:=CryptoAPI work queue handling
   KCONFIG:=CONFIG_CRYPTO_WORKQUEUE
