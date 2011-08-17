@@ -104,8 +104,8 @@ start() {
 		}
 		if (model == "ASUS WL-330gE") {
 			c["wan_ifname"] = ""
-			c["lan_ifname"] = "eth0"
-			c["vlan0ports"] = ""
+			c["lan_ifname"] = "eth0.0"
+			c["vlan0ports"] = "4 5"
 			c["vlan1ports"] = ""
 		}
 		if ((model == "ASUS WL-500g") || (model == "Microsoft MN-700")) {
