@@ -601,7 +601,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +}
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
-@@ -193,7 +193,13 @@ static void ssb_mips_flash_detect(struct
+@@ -203,7 +203,13 @@ static void ssb_mips_flash_detect(struct
  	switch (bus->chipco.capabilities & SSB_CHIPCO_CAP_FLASHT) {
  	case SSB_CHIPCO_FLASHT_STSER:
  	case SSB_CHIPCO_FLASHT_ATSER:
