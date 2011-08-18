@@ -4,7 +4,7 @@
  	tmake_file="rs6000/t-fprules rs6000/t-fprules-fpbit rs6000/t-rtems t-rtems rs6000/t-ppccomm"
  	;;
  powerpc-*-linux* | powerpc64-*-linux*)
--	tm_file="${tm_file} dbxelf.h elfos.h svr4.h freebsd-spec.h rs6000/sysv4.h"
+-	tm_file="${tm_file} dbxelf.h elfos.h linux.h freebsd-spec.h rs6000/sysv4.h"
 +	tm_file="${tm_file} dbxelf.h elfos.h svr4.h linux.h freebsd-spec.h rs6000/sysv4.h"
  	extra_options="${extra_options} rs6000/sysv4.opt"
  	tmake_file="t-dfprules rs6000/t-fprules rs6000/t-ppcos ${tmake_file} rs6000/t-ppccomm"
