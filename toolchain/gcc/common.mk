@@ -36,7 +36,7 @@ ifdef CONFIG_GCC_VERSION_LLVM
   PKG_SOURCE_SUBDIR:=$(GCC_DIR)
   HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)
 else
-ifeq ($(CONFIG_GCC_VERSION),"linaro")
+ifeq ($(CONFIG_GCC_VERSION),"4.5-linaro")
     PKG_REV:=4.5-2011.06-0
     PKG_VERSION:=4.5.4
     PKG_SOURCE_URL:=http://launchpad.net/gcc-linaro/4.5/$(PKG_REV)/+download/
