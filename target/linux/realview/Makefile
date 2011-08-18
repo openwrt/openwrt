@@ -13,7 +13,7 @@ FEATURES:=fpu ramdisk
 CFLAGS:=-Os -pipe -march=armv6k -mtune=mpcore -mfloat-abi=softfp -mfpu=vfp -fno-caller-saves
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.0.1
+LINUX_VERSION:=3.0.3
 
 include $(INCLUDE_DIR)/target.mk
 
