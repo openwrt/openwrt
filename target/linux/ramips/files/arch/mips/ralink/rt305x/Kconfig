@@ -49,6 +49,11 @@ config RT305X_MACH_MOFI3500_3GN
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_WR512_3GN
+	bool "SH-WR512NU/WS-WR512N1-like 3GN router"
+	default n
+
+
 config RT305X_MACH_NW718
 	bool "Netcore NW718"
 	default y
