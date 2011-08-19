@@ -110,6 +110,7 @@ static void __init argus_atp52b_init(void)
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
 	rt305x_register_wdt();
+	rt305x_register_usb();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_ARGUS_ATP52B, "ARGUS_ATP52B", "Argus ATP-52B",
