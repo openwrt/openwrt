@@ -2,7 +2,7 @@
 # Copyright (C) 2010 OpenWrt.org
 
 ttyS1_noecho() {
-	stty -echo < /dev/ttyS1
+	stty -echo < /dev/ttyO1
 }
 
 boot_hook_add preinit_main ttyS1_noecho
