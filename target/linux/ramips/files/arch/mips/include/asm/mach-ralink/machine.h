@@ -34,4 +34,5 @@ enum ramips_mach_type {
 	RAMIPS_MACH_FONERA20N,		/* La Fonera 2.0N */
 	RAMIPS_MACH_HW550_3G,		/* Aztech HW550-3G */
 	RAMIPS_MACH_MOFI3500_3GN,	/* MoFi Network MOFI3500-3GN */
+	RAMIPS_MACH_WR512_3GN,		/* SH-WR512NU/WS-WR512N1-like 3GN*/
 };

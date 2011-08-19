@@ -146,6 +146,16 @@ define Image/Build/Template/RTG32B1
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_rtg32b1,$(mtd_rtg32b1_kernel_part_size),$(mtd_rtg32b1_rootfs_part_size))
 endef
 
+mtdlayout_wr5123gn=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
+mtdlayout_wr5123gn8m=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),7040k(rootfs),7872k@0x50000(firmware)
+define Image/Build/Template/WR5123GN
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_wr5123gn,851968,3014656)
+endef
+
+define Image/Build/Template/WR5123GN8M
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_wr5123gn8m,851968,3014656)
+endef
+
 define Image/Build/Profile/RTG32B1
 	$(call Image/Build/Template/RTG32B1,$(1),rt-g32-b1,RT-G32-B1)
 endef
@@ -210,7 +220,6 @@ define Image/Build/Profile/ARGUS_ATP52B
 	$(call Image/Build/Template/ARGUS_ATP52B,$(1),argus_atp52b,ARGUS_ATP52B)
 endef
 
-
 mtdlayout_f5d8235=mtdparts=physmap-flash.0:320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(factory),7744k@0x50000(firmware)
 mtd_f5d8235_kernel_part_size=1572864
 mtd_f5d8235_rootfs_part_size=6356992
@@ -220,6 +229,10 @@ endef
 
 define Image/Build/Profile/F5D8235V2
 	$(call Image/Build/Template/F5D8235V2,$(1),f5d8235v2,F5D8235_V2)
+endef
+
+define Image/Build/Profile/WR5123GN
+$(call Image/Build/Template/WR5123GN,$(1),wr512-3gn,WR512-3GN)
 endef
 
 
@@ -237,6 +250,8 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/F5D8235V2,$(1))
 	$(call Image/Build/Profile/HW5503G,$(1))
 	$(call Image/Build/Profile/MOFI35003GN,$(1))
+	$(call Image/Build/Profile/WR5123GN,$(1))
+	$(call Image/Build/Profile/WR5123GN8M,$(1))
 endef
 endif
 

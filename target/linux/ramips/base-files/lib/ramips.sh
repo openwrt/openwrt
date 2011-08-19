@@ -58,6 +58,9 @@ ramips_board_name() {
 	*"WZR-AGL300NH")
 		name="wzr-agl300nh"
 		;;
+	*"SH-WR512NU/WS-WR512N1-like 3GN router")
+		name="wr512-3gn"
+		;;
 	*)
 		name="generic"
 		;;
