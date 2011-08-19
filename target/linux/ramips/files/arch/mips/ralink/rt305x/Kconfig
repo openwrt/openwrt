@@ -4,77 +4,65 @@ menu "Ralink RT350x machine selection"
 
 config RT305X_MACH_ARGUS_ATP52B
 	bool "Argus ATP-52B support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_RT_G32_REVB
 	bool "Asus RT-G32 revB board support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 
 config RT305X_MACH_HW550_3G
 	bool "Aztech HW550-3G support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_F5D8235_V2
 	bool "Belkin F5D8235 v2 support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_WHR_G300N
 	bool "Buffalo WHR-G300N support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_DIR_300_REVB
 	bool "D-Link DIR-300 revB board support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_FONERA20N
 	bool "La Fonera20N board support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_MOFI3500_3GN
 	bool "MoFi Network MOFI3500-3GN support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_WR512_3GN
 	bool "SH-WR512NU/WS-WR512N1-like 3GN router"
-	default n
-
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_NW718
 	bool "Netcore NW718"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_PWH2004
 	bool "Prolink PWH2004 / Abocom WR5205 support (32M RAM, 8M flash)"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_V22RW_2X2
 	bool "Ralink AP-RT3052-V22RW-2X2 board support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
 config RT305X_MACH_WCR150GN
 	bool "Sparklan WCR-150GN support"
-	default y
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
