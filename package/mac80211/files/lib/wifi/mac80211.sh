@@ -16,6 +16,9 @@ mac80211_hostapd_setup_base() {
 	config_get beacon_int "$device" beacon_int
 	config_get basic_rate_list "$device" basic_rate
 	config_get_bool noscan "$device" noscan
+
+	hostapd_set_log_options base_cfg "$device"
+
 	[ -n "$channel" -a -z "$hwmode" ] && wifi_fixup_hwmode "$device"
 
 	[ "$channel" = auto ] && {
