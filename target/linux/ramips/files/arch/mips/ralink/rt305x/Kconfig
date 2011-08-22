@@ -66,6 +66,11 @@ config RT305X_MACH_WCR150GN
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_NBG_419N
+	bool "ZyXEL NBG-419N support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 endmenu
 
 endif

@@ -154,6 +154,10 @@ define Image/Build/Profile/FONERA20N
 	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N)
 endef
 
+define Image/Build/Profile/NBG419N
+	$(call Image/Build/Template/GENERIC_4M,$(1),nbg-419n,NBG-419N)
+endef
+
 define Image/Build/Profile/NW718
 	$(call Image/Build/Template/NW718,$(1),nw718,NW718)
 endef
@@ -237,6 +241,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/RTG32B1,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))
 	$(call Image/Build/Profile/V22RW2X2,$(1))
+	$(call Image/Build/Profile/NBG419N,$(1))
 	$(call Image/Build/Profile/NW718,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
 	$(call Image/Build/Profile/WHRG300N,$(1))
