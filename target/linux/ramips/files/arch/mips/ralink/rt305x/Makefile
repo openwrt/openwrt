@@ -17,11 +17,11 @@ obj-$(CONFIG_RT305X_MACH_F5D8235_V2)    += mach-f5d8235-v2.o
 obj-$(CONFIG_RT305X_MACH_FONERA20N)	+= mach-fonera20n.o
 obj-$(CONFIG_RT305X_MACH_HW550_3G)	+= mach-hw550-3g.o
 obj-$(CONFIG_RT305X_MACH_MOFI3500_3GN)	+= mach-mofi3500-3gn.o
-obj-$(CONFIG_RT305X_MACH_WR512_3GN)	+= mach-wr512-3gn.o
 obj-$(CONFIG_RT305X_MACH_NW718)		+= mach-nw718.o
 obj-$(CONFIG_RT305X_MACH_PWH2004)	+= mach-pwh2004.o
 obj-$(CONFIG_RT305X_MACH_RT_G32_REVB)	+= mach-rt-g32-revb.o
 obj-$(CONFIG_RT305X_MACH_V22RW_2X2)	+= mach-v22rw-2x2.o
 obj-$(CONFIG_RT305X_MACH_WCR150GN)	+= mach-wcr150gn.o
 obj-$(CONFIG_RT305X_MACH_WHR_G300N)	+= mach-whr-g300n.o
+obj-$(CONFIG_RT305X_MACH_WR512_3GN)	+= mach-wr512-3gn.o
 
