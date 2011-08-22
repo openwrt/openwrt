@@ -956,7 +956,7 @@ define KernelPackage/usb-rt305x-dwc_otg
 	CONFIG_DWC_OTG_DEVICE_ONLY=n \
 	CONFIG_DWC_OTG_DEBUG=n
   FILES:=$(LINUX_DIR)/drivers/usb/dwc_otg/dwc_otg.ko
-  AUTOLOAD:=$(call AutoLoad,54,dwc_otg)
+  AUTOLOAD:=$(call AutoLoad,54,dwc_otg,1)
   $(call AddDepends/usb)
 endef
 
