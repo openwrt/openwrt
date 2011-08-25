@@ -17,6 +17,13 @@ config UDEV_ENABLE_DEBUG
 	 Compile in udev debug messages.  If unsure, choose
 	 the default N.
 
+config UDEV_EXTRA_accelerometer
+	bool "Install udev acceleroometer callout"
+	default y
+	help
+	 accelerometer - udev callout to export device orientation
+	 through property
+
 config UDEV_EXTRA_ata_id
 	bool "Install udev ata_id callout"
 	default y
@@ -58,11 +65,17 @@ config UDEV_EXTRA_floppy
 	 create_floppy_devices - udev callout to create all
 	 possible floppy device based on the CMOS type
 
-config UDEV_EXTRA_fstab_import
-	bool "Install fstab import"
+config UDEV_EXTRA_input_id
+	bool "Install input_id callout"
 	default y
 	help
-	 find matching entry in fstab and export it
+	 input_id - udev callout to classify input devices
+
+config UDEV_EXTRA_mtd_probe
+	bool "Install mtd_probe callout"
+	default y
+	help
+	 mtd_probe - udev callout to probe mtd devices
 
 config UDEV_EXTRA_path_id
 	bool "Install udev path_id callout"
@@ -71,6 +84,13 @@ config UDEV_EXTRA_path_id
 	 path_id - udev callout to create a device path based
 	 unique name for a device to implement the Linux
 	 Persistent Device Naming scheme
+
+config UDEV_EXTRA_qemu
+	bool "Install qemu specific rules"
+	default y
+	help
+	 Install rules for autosuspension of QEMU emulated
+	 USB HID devices
 
 config UDEV_EXTRA_rule_generator
 	bool "Install udev rule_generator"
@@ -88,5 +108,11 @@ config UDEV_EXTRA_usb_id
 	default y
 	help
 	  usb_id - can find the unique id of USB devices
+
+config UDEV_EXTRA_v4l_id
+	bool "Install udev v4l_id callout"
+	default y
+	help
+	 v4l_id - udev callout to identify Video4Linux devices
 
 endmenu

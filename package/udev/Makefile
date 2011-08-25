@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=udev
-PKG_VERSION:=142
+PKG_VERSION:=173
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/hotplug/
-PKG_MD5SUM:=3edc4cf383dccb06d866c5156d59ddd5
+PKG_MD5SUM:=91a88a359b60bbd074b024883cc0dbde
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -26,6 +26,7 @@ define Package/udev
   URL:=http://www.kernel.org/pub/linux/utils/kernel/hotplug/udev.html
   MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
   MENU:=1
+  DEPENDS:=+librt
 endef
 
 define Package/udev/description
@@ -43,9 +44,18 @@ endef
 
 udev-args-$(CONFIG_UDEV_DISABLE_LOGGING) += --disable-logging
 udev-args-$(CONFIG_UDEV_ENABLE_DEBUG) += --enable-debug
+udev-args-$(CONFIG_UDEV_EXTRA_edd_id) += --enable-edd
+udev-args-$(CONFIG_UDEV_EXTRA_floppy) += --enable-floppy
+
+# TODO: make hwdb and introspection work
 
 CONFIGURE_ARGS += --prefix=/usr --exec-prefix= --sysconfdir=/etc \
+	--disable-hwdb --disable-keymap --disable-gudev --disable-introspection \
+	--libexecdir=/lib/udev --disable-gtk-doc-html \
 	--sbindir=/sbin $(udev-args-y)
+
+udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_accelerometer) += accelerometer
+udev-extra-rules-$(CONFIG_UDEV_EXTRA_accelerometer) += 61-accelerometer.rules
 
 udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_ata_id) += ata_id
 
@@ -57,15 +67,23 @@ udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_collect) += collect
 udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_edd_id) += edd_id
 udev-extra-rules-$(CONFIG_UDEV_EXTRA_edd_id) += 61-persistent-storage-edd.rules
 
-udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_firmware) += firmware.sh
+udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_firmware) += firmware
 udev-extra-rules-$(CONFIG_UDEV_EXTRA_firmware) += 50-firmware.rules
 
 udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_floppy) += create_floppy_devices
 
-udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_fstab_import) += fstab_import
-udev-extra-rules-$(CONFIG_UDEV_EXTRA_fstab_import) += 79-fstab_import.rules
+# TODO: make gudev work
+
+udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_input_id) += input_id
+
+# TODO: make keymap work
+
+udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_mtd_probe) += mtd_probe
+udev-extra-rules-$(CONFIG_UDEV_EXTRA_mtd_probe) += 75-probe_mtd.rules
 
 udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_path_id) += path_id
+
+udev-extra-rules-$(CONFIG_UDEV_EXTRA_qemu) += 42-qemu-usb.rules
 
 udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_rule_generator) += \
 	write_cd_rules write_net_rules
@@ -76,17 +94,22 @@ udev-extra-rules-$(CONFIG_UDEV_EXTRA_rule_generator) += \
 
 udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_scsi_id) += scsi_id
 
+# TODO: make udev-acl work
+
 udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_usb_id) += usb_id
+
+udev-extra-lib-bin-$(CONFIG_UDEV_EXTRA_v4l_id) += v4l_id
+udev-extra-rules-$(CONFIG_UDEV_EXTRA_v4l_id) += 60-persistent-v4l.rules
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/libudev.h $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/share/pkgconfig
+	$(CP) $(PKG_INSTALL_DIR)/usr/share/pkgconfig/udev.pc $(1)/usr/share/pkgconfig
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) $(PKG_INSTALL_DIR)/lib/libudev.so* $(1)/lib
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libudev.so $(1)/usr/lib
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libudev.pc $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_INSTALL_DIR)/lib/pkgconfig/libudev.pc $(1)/usr/lib/pkgconfig
 endef
 
 define Package/udev/install
@@ -113,9 +136,7 @@ define Package/udev/install
 		$(1)/lib/udev/rules.d
 
 	$(INSTALL_DIR) $(1)/lib
-	$(INSTALL_BIN) \
-		$(PKG_INSTALL_DIR)/lib/libudev.so.* \
-		$(1)/lib
+	$(CP) $(PKG_INSTALL_DIR)/lib/libudev.so* $(1)/lib
 
 	$(INSTALL_DIR) $(1)/lib/udev
 ifneq ($(udev-extra-lib-bin-y),)
