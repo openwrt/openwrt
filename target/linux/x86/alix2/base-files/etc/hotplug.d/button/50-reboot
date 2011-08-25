@@ -1,0 +1,13 @@
+#!/bin/sh
+
+logger -t button -p daemon.info "$BUTTON/$ACTION"
+
+case "$BUTTON/$ACTION" in
+
+reset/released)
+  reboot -f
+  ;;
+
+esac
+
+exit 0

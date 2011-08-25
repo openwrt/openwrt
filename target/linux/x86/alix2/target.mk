@@ -15,7 +15,8 @@ DEFAULT_PACKAGES += \
 			kmod-cfg80211 kmod-mac80211 \
 			kmod-mppe kmod-pppoe kmod-pppo2ltp \
 			kmod-ath kmod-ath5k kmod-ath9k \
-			kmod-leds-gpio kmod-input-gpio-buttons \
+			kmod-leds-gpio kmod-input-gpio-keys-polled \
+			kmod-button-hotplug \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
 			kmod-ledtrig-netdev kmod-ledtrig-netfilter \
 			kmod-cpu-msr \
