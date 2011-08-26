@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2008 OpenWrt.org
+# Copyright (C) 2007-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,8 +9,8 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=acx-mac80211
-PKG_REV:=11145e4b4895d0a8ead16cbe052baf3dde4627bd
-PKG_VERSION:=20110123
+PKG_REV:=0da6e533679c177c1f5efffd22e345304d273e49
+PKG_VERSION:=20110821
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
