@@ -1,8 +1,8 @@
 --- a/compat/Makefile
 +++ b/compat/Makefile
-@@ -34,3 +34,8 @@ compat-$(CONFIG_COMPAT_KERNEL_2_6_39) +=
- 	compat-2.6.39.o \
- 	kstrtox.o
+@@ -38,3 +38,8 @@ compat-$(CONFIG_COMPAT_KERNEL_3_1) += \
+ 	cordic.o \
+ 	crc8.o
  
 +ifndef CONFIG_64BIT
 +ifndef CONFIG_GENERIC_ATOMIC64
@@ -70,7 +70,7 @@
 +
 --- a/include/linux/compat-3.1.h
 +++ b/include/linux/compat-3.1.h
-@@ -36,6 +36,18 @@
+@@ -19,6 +19,18 @@
  	.prod_id = { NULL, NULL, (v3), NULL }, \
  	.prod_id_hash = { 0, 0, (vh3), 0 }, }
  
