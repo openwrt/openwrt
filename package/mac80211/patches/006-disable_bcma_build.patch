@@ -1,17 +1,16 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -30,7 +30,7 @@ obj-$(CONFIG_COMPAT_WIRELESS_MODULES) +=
+@@ -29,7 +29,6 @@ obj-$(CONFIG_COMPAT_WIRELESS_MODULES) +=
+ 
  obj-$(CONFIG_COMPAT_NET_USB_MODULES) += drivers/net/usb/
  
- obj-$(CONFIG_COMPAT_NETWORK_MODULES) += drivers/net/
--obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/bcma/ drivers/misc/eeprom/
-+obj-$(CONFIG_COMPAT_VAR_MODULES) +=  drivers/misc/eeprom/
+-obj-$(CONFIG_COMPAT_VAR_MODULES) += drivers/bcma/
+ obj-$(CONFIG_COMPAT_VAR_MODULES) += drivers/misc/eeprom/
  
  ifeq ($(CONFIG_STAGING_EXCLUDE_BUILD),)
- obj-$(CONFIG_COMPAT_STAGING) += drivers/staging/ath6kl/
 --- a/config.mk
 +++ b/config.mk
-@@ -330,9 +330,9 @@ CONFIG_SSB_DRIVER_PCICORE=y
+@@ -331,12 +331,12 @@ CONFIG_SSB_DRIVER_PCICORE=y
  CONFIG_B43_SSB=y
  endif #__CONFIG_SSB
  
@@ -22,5 +21,10 @@
 +# CONFIG_BCMA_BLOCKIO=y
 +# CONFIG_BCMA_HOST_PCI=y
  # CONFIG_BCMA_DEBUG=y
- CONFIG_B43_BCMA=y
- CONFIG_B43_BCMA_PIO=y
+-CONFIG_B43_BCMA=y
+-CONFIG_B43_BCMA_PIO=y
++# CONFIG_B43_BCMA=y
++# CONFIG_B43_BCMA_PIO=y
+ 
+ CONFIG_P54_PCI=m
+ 

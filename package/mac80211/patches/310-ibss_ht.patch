@@ -1,6 +1,6 @@
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1045,6 +1045,7 @@ struct cfg80211_ibss_params {
+@@ -1085,6 +1085,7 @@ struct cfg80211_ibss_params {
  	u8 *ssid;
  	u8 *bssid;
  	struct ieee80211_channel *channel;
@@ -8,7 +8,7 @@
  	u8 *ie;
  	u8 ssid_len, ie_len;
  	u16 beacon_interval;
-@@ -2478,6 +2479,12 @@ struct cfg80211_bss *cfg80211_get_bss(st
+@@ -2584,6 +2585,12 @@ struct cfg80211_bss *cfg80211_get_bss(st
  				      const u8 *bssid,
  				      const u8 *ssid, size_t ssid_len,
  				      u16 capa_mask, u16 capa_val);
@@ -23,7 +23,7 @@
  		  struct ieee80211_channel *channel,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -4351,13 +4351,41 @@ static int nl80211_join_ibss(struct sk_b
+@@ -4470,13 +4470,41 @@ static int nl80211_join_ibss(struct sk_b
  		ibss.ie_len = nla_len(info->attrs[NL80211_ATTR_IE]);
  	}
  
@@ -169,7 +169,7 @@
  
  	unsigned long ibss_join_req;
  	/* probe response/beacon for IBSS */
-@@ -1151,6 +1152,7 @@ void ieee80211_ibss_notify_scan_complete
+@@ -1089,6 +1090,7 @@ void ieee80211_ibss_notify_scan_complete
  void ieee80211_ibss_setup_sdata(struct ieee80211_sub_if_data *sdata);
  struct sta_info *ieee80211_ibss_add_sta(struct ieee80211_sub_if_data *sdata,
  					u8 *bssid, u8 *addr, u32 supp_rates,
@@ -177,7 +177,7 @@
  					gfp_t gfp);
  int ieee80211_ibss_join(struct ieee80211_sub_if_data *sdata,
  			struct cfg80211_ibss_params *params);
-@@ -1405,6 +1407,12 @@ void ieee80211_recalc_smps(struct ieee80
+@@ -1343,6 +1345,12 @@ void ieee80211_recalc_smps(struct ieee80
  size_t ieee80211_ie_split(const u8 *ies, size_t ielen,
  			  const u8 *ids, int n_ids, size_t offset);
  size_t ieee80211_ie_split_vendor(const u8 *ies, size_t ielen, size_t offset);
@@ -190,7 +190,7 @@
  
  /* internal work items */
  void ieee80211_work_init(struct ieee80211_local *local);
-@@ -1433,6 +1441,8 @@ ieee80211_get_channel_mode(struct ieee80
+@@ -1371,6 +1379,8 @@ ieee80211_get_channel_mode(struct ieee80
  bool ieee80211_set_channel_type(struct ieee80211_local *local,
  				struct ieee80211_sub_if_data *sdata,
  				enum nl80211_channel_type chantype);
@@ -201,7 +201,7 @@
  #define debug_noinline noinline
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -1008,23 +1008,8 @@ int ieee80211_build_preq_ies(struct ieee
+@@ -841,23 +841,8 @@ int ieee80211_build_preq_ies(struct ieee
  		offset = noffset;
  	}
  
@@ -227,7 +227,7 @@
  
  	/*
  	 * If adding more here, adjust code in main.c
-@@ -1548,3 +1533,100 @@ void ieee80211_disable_rssi_reports(stru
+@@ -1381,3 +1366,100 @@ void ieee80211_disable_rssi_reports(stru
  	_ieee80211_enable_rssi_reports(sdata, 0, 0);
  }
  EXPORT_SYMBOL(ieee80211_disable_rssi_reports);
@@ -687,7 +687,7 @@
  	if (params->ie) {
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2148,7 +2148,8 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2161,7 +2161,8 @@ ieee80211_rx_h_action(struct ieee80211_r
  		if (sdata->vif.type != NL80211_IFTYPE_STATION &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  		    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -697,7 +697,7 @@
  			break;
  
  		/* verify action_code is present */
-@@ -2666,7 +2667,8 @@ static int prepare_for_handlers(struct i
+@@ -2696,7 +2697,8 @@ static int prepare_for_handlers(struct i
  			else
  				rate_idx = status->rate_idx;
  			rx->sta = ieee80211_ibss_add_sta(sdata, bssid,

@@ -11,7 +11,7 @@
  b43-$(CONFIG_B43_PCMCIA)	+= pcmcia.o
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -1884,9 +1884,11 @@ static void b43_do_interrupt_thread(stru
+@@ -1883,9 +1883,11 @@ static void b43_do_interrupt_thread(stru
  			       dma_reason[4], dma_reason[5]);
  			b43err(dev->wl, "This device does not support DMA "
  			       "on your system. It will now be switched to PIO.\n");
