@@ -85,7 +85,7 @@
 -			channel->center_freq, r);
 -		goto ps_restore;
 -	}
-+static bool ath_complete_reset(struct ath_softc *sc)
++static bool ath_complete_reset(struct ath_softc *sc, bool start)
 +{
 +	struct ath_hw *ah = sc->sc_ah;
 +	struct ath_common *common = ath9k_hw_common(ah);
@@ -98,8 +98,12 @@
  	}
  
  	ath9k_cmn_update_txpow(ah, sc->curtxpow,
-@@ -299,18 +255,84 @@ static int ath_set_channel(struct ath_so
- 	if (!(sc->sc_flags & (SC_OP_OFFCHANNEL))) {
+@@ -296,21 +252,87 @@ static int ath_set_channel(struct ath_so
+ 	ath9k_hw_set_interrupts(ah, ah->imask);
+ 	ath9k_hw_enable_interrupts(ah);
+ 
+-	if (!(sc->sc_flags & (SC_OP_OFFCHANNEL))) {
++	if (!(sc->sc_flags & (SC_OP_OFFCHANNEL)) && start) {
  		if (sc->sc_flags & SC_OP_BEACONS)
  			ath_set_beacon(sc);
 +
@@ -154,7 +158,7 @@
 +		return r;
 +	}
 +
-+	if (!ath_complete_reset(sc))
++	if (!ath_complete_reset(sc, true))
 +		return -EIO;
 +
 +	return 0;
@@ -201,7 +205,7 @@
 -	/* Re-Enable  interrupts */
 -	ath9k_hw_set_interrupts(ah, ah->imask);
 -	ath9k_hw_enable_interrupts(ah);
-+	ath_complete_reset(sc);
++	ath_complete_reset(sc, true);
  
  	/* Enable LED */
  	ath9k_hw_cfg_output(ah, ah->led_pin,
@@ -330,7 +334,7 @@
 -	ath9k_hw_enable_interrupts(ah);
  
 -	ieee80211_wake_queues(hw);
-+	if (!ath_complete_reset(sc)) {
++	if (!ath_complete_reset(sc, false)) {
 +		r = -EIO;
 +		spin_unlock_bh(&sc->sc_pcu_lock);
 +		goto mutex_unlock;
