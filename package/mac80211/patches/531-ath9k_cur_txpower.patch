@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1734,6 +1734,8 @@ static int ath9k_config(struct ieee80211
+@@ -1732,6 +1732,8 @@ static int ath9k_config(struct ieee80211
  			return -EINVAL;
  		}
  
@@ -9,7 +9,7 @@
  		/*
  		 * The most recent snapshot of channel->noisefloor for the old
  		 * channel is only available after the hardware reset. Copy it to
-@@ -1751,6 +1753,7 @@ static int ath9k_config(struct ieee80211
+@@ -1749,6 +1751,7 @@ static int ath9k_config(struct ieee80211
  		ath9k_cmn_update_txpow(ah, sc->curtxpow,
  				       sc->config.txpowlimit, &sc->curtxpow);
  		ath9k_ps_restore(sc);
