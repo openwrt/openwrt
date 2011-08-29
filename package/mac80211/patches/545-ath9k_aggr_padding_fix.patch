@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -728,7 +728,9 @@ static int ath_compute_num_delims(struct
+@@ -709,7 +709,9 @@ static int ath_compute_num_delims(struct
  	 * Add delimiter when using RTS/CTS with aggregation
  	 * and non enterprise AR9003 card
  	 */
@@ -13,11 +13,12 @@
  	/*
 --- a/drivers/net/wireless/ath/ath9k/reg.h
 +++ b/drivers/net/wireless/ath/ath9k/reg.h
-@@ -1132,6 +1132,7 @@ enum {
+@@ -1132,7 +1132,7 @@ enum {
  #define AR_INTR_PRIO_ASYNC_ENABLE (AR_SREV_9340(ah) ? 0x4094 : 0x40d4)
  #define AR_ENT_OTP		  0x40d8
  #define AR_ENT_OTP_CHAIN2_DISABLE               0x00020000
+-#define AR_ENT_OTP_MPSD		0x00800000
 +#define AR_ENT_OTP_MIN_PKT_SIZE_DISABLE		0x00800000
- #define AR_ENT_OTP_MPSD		0x00800000
  
  #define AR_CH0_BB_DPLL1		 0x16180
+ #define AR_CH0_BB_DPLL1_REFDIV	 0xF8000000
