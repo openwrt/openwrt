@@ -20,7 +20,7 @@ define Image/Prepare
 		clean install
 	echo -ne "\\x00" >> $(KDIR)/loader.gz
 	rm -f $(KDIR)/fs_mark
-	touch $(KDIR)/fs_mark
+	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/fs_mark
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
 
