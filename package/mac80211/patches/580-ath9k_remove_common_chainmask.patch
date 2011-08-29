@@ -90,7 +90,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -1655,7 +1655,7 @@ u8 ath_txchainmask_reduction(struct ath_
+@@ -1657,7 +1657,7 @@ u8 ath_txchainmask_reduction(struct ath_
  
  static void ath_buf_set_rate(struct ath_softc *sc, struct ath_buf *bf, int len)
  {
@@ -99,7 +99,7 @@
  	struct ath9k_11n_rate_series series[4];
  	struct sk_buff *skb;
  	struct ieee80211_tx_info *tx_info;
-@@ -1715,7 +1715,7 @@ static void ath_buf_set_rate(struct ath_
+@@ -1717,7 +1717,7 @@ static void ath_buf_set_rate(struct ath_
  			/* MCS rates */
  			series[i].Rate = rix | 0x80;
  			series[i].ChSel = ath_txchainmask_reduction(sc,
@@ -108,7 +108,7 @@
  			series[i].PktDuration = ath_pkt_duration(sc, rix, len,
  				 is_40, is_sgi, is_sp);
  			if (rix < 8 && (tx_info->flags & IEEE80211_TX_CTL_STBC))
-@@ -1740,10 +1740,10 @@ static void ath_buf_set_rate(struct ath_
+@@ -1742,10 +1742,10 @@ static void ath_buf_set_rate(struct ath_
  		}
  
  		if (bf->bf_state.bfs_paprd)
