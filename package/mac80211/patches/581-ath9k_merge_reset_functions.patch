@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -212,83 +212,39 @@ static int ath_update_survey_stats(struc
+@@ -212,83 +212,45 @@ static int ath_update_survey_stats(struc
  	return ret;
  }
  
@@ -11,7 +11,7 @@
 -*/
 -static int ath_set_channel(struct ath_softc *sc, struct ieee80211_hw *hw,
 -		    struct ath9k_channel *hchan)
-+static bool ath_prepare_reset(struct ath_softc *sc, bool retry_tx)
++static bool ath_prepare_reset(struct ath_softc *sc, bool retry_tx, bool flush)
  {
  	struct ath_hw *ah = sc->sc_ah;
 -	struct ath_common *common = ath9k_hw_common(ah);
@@ -52,15 +52,15 @@
  
 -	if (!ath_stoprecv(sc))
 -		stopped = false;
--
++	ret = ath_drain_all_txq(sc, retry_tx);
+ 
 -	if (!ath9k_hw_check_alive(ah))
 -		stopped = false;
 -
 -	/* XXX: do not flush receive queue here. We don't want
 -	 * to flush data frames already in queue because of
 -	 * changing channel. */
-+	ret = ath_drain_all_txq(sc, retry_tx);
- 
+-
 -	if (!stopped || !(sc->sc_flags & SC_OP_OFFCHANNEL))
 -		fastcc = false;
 +	if (!ath_stoprecv(sc))
@@ -68,7 +68,13 @@
  
 -	if (!(sc->sc_flags & SC_OP_OFFCHANNEL))
 -		caldata = &sc->caldata;
-+	ath_flushrecv(sc);
++	if (!flush) {
++		if (ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
++			ath_rx_tasklet(sc, 0, true);
++		ath_rx_tasklet(sc, 0, false);
++	} else {
++		ath_flushrecv(sc);
++	}
  
 -	ath_dbg(common, ATH_DBG_CONFIG,
 -		"(%u MHz) -> (%u MHz), conf_is_ht40: %d fastcc: %d\n",
@@ -98,7 +104,7 @@
  	}
  
  	ath9k_cmn_update_txpow(ah, sc->curtxpow,
-@@ -296,21 +252,87 @@ static int ath_set_channel(struct ath_so
+@@ -296,21 +258,89 @@ static int ath_set_channel(struct ath_so
  	ath9k_hw_set_interrupts(ah, ah->imask);
  	ath9k_hw_enable_interrupts(ah);
  
@@ -127,22 +133,24 @@
 +	struct ath_common *common = ath9k_hw_common(ah);
 +	struct ath9k_hw_cal_data *caldata = NULL;
 +	bool fastcc = true;
++	bool flush = false;
 +	int r;
 +
 +	if (!(sc->sc_flags & SC_OP_OFFCHANNEL)) {
 +		fastcc = false;
 +		caldata = &sc->caldata;
 +	}
- 
++
 +	if (!hchan) {
 +		fastcc = false;
++		flush = true;
 +		hchan = ah->curchan;
 +	}
 +
 +	if (fastcc && !ath9k_hw_check_alive(ah))
 +		fastcc = false;
 +
-+	if (!ath_prepare_reset(sc, retry_tx))
++	if (!ath_prepare_reset(sc, retry_tx, flush))
 +		fastcc = false;
 +
 +	ath_dbg(common, ATH_DBG_CONFIG,
@@ -164,7 +172,7 @@
 +	return 0;
 +}
 +
-+
+ 
 +/*
 + * Set/change channels.  If the channel is really being changed, it's done
 + * by reseting the chip.  To accomplish this we must first cleanup any pending
@@ -189,7 +197,7 @@
  	return r;
  }
  
-@@ -893,28 +915,13 @@ static void ath_radio_enable(struct ath_
+@@ -893,28 +923,13 @@ static void ath_radio_enable(struct ath_
  			channel->center_freq, r);
  	}
  
@@ -219,7 +227,20 @@
  	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	ath9k_ps_restore(sc);
-@@ -942,13 +949,7 @@ void ath_radio_disable(struct ath_softc 
+@@ -927,12 +942,8 @@ void ath_radio_disable(struct ath_softc 
+ 	int r;
+ 
+ 	ath9k_ps_wakeup(sc);
+-	cancel_delayed_work_sync(&sc->hw_pll_work);
+-
+ 	spin_lock_bh(&sc->sc_pcu_lock);
+ 
+-	ieee80211_stop_queues(hw);
+-
+ 	/*
+ 	 * Keep the LED on when the radio is disabled
+ 	 * during idle unassociated state.
+@@ -942,13 +953,7 @@ void ath_radio_disable(struct ath_softc 
  		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
  	}
  
@@ -230,11 +251,11 @@
 -
 -	ath_stoprecv(sc);		/* turn off frame recv */
 -	ath_flushrecv(sc);		/* flush recv queue */
-+	ath_prepare_reset(sc, false);
++	ath_prepare_reset(sc, false, true);
  
  	if (!ah->curchan)
  		ah->curchan = ath9k_cmn_get_curchannel(hw, ah);
-@@ -970,48 +971,11 @@ void ath_radio_disable(struct ath_softc 
+@@ -970,48 +975,11 @@ void ath_radio_disable(struct ath_softc 
  
  int ath_reset(struct ath_softc *sc, bool retry_tx)
  {
@@ -284,7 +305,7 @@
  
  	if (retry_tx) {
  		int i;
-@@ -1024,12 +988,6 @@ int ath_reset(struct ath_softc *sc, bool
+@@ -1024,12 +992,6 @@ int ath_reset(struct ath_softc *sc, bool
  		}
  	}
  
@@ -297,7 +318,7 @@
  	ath9k_ps_restore(sc);
  
  	return r;
-@@ -1081,28 +1039,6 @@ static int ath9k_start(struct ieee80211_
+@@ -1081,28 +1043,6 @@ static int ath9k_start(struct ieee80211_
  		goto mutex_unlock;
  	}
  
@@ -326,7 +347,7 @@
  	/* Setup our intr mask. */
  	ah->imask = ATH9K_INT_TX | ATH9K_INT_RXEOL |
  		    ATH9K_INT_RXORN | ATH9K_INT_FATAL |
-@@ -1125,12 +1061,14 @@ static int ath9k_start(struct ieee80211_
+@@ -1125,12 +1065,14 @@ static int ath9k_start(struct ieee80211_
  
  	/* Disable BMISS interrupt when we're not associated */
  	ah->imask &= ~(ATH9K_INT_SWBA | ATH9K_INT_BMISS);
