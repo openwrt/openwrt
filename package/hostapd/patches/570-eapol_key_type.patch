@@ -1,0 +1,18 @@
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -725,6 +725,7 @@ void wpa_receive(struct wpa_authenticato
+ 		return;
+ 	}
+ 
++#if 0
+ 	if (sm->wpa == WPA_VERSION_WPA2) {
+ 		if (key->type != EAPOL_KEY_TYPE_RSN) {
+ 			wpa_printf(MSG_DEBUG, "Ignore EAPOL-Key with "
+@@ -740,6 +741,7 @@ void wpa_receive(struct wpa_authenticato
+ 			return;
+ 		}
+ 	}
++#endif
+ 
+ 	wpa_hexdump(MSG_DEBUG, "WPA: Received Key Nonce", key->key_nonce,
+ 		    WPA_NONCE_LEN);
