@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -212,83 +212,45 @@ static int ath_update_survey_stats(struc
+@@ -212,83 +212,46 @@ static int ath_update_survey_stats(struc
  	return ret;
  }
  
@@ -28,7 +28,7 @@
  
  	sc->hw_busy_count = 0;
 -
--	del_timer_sync(&common->ani.timer);
+ 	del_timer_sync(&common->ani.timer);
  	cancel_work_sync(&sc->paprd_work);
  	cancel_work_sync(&sc->hw_check_work);
  	cancel_delayed_work_sync(&sc->tx_complete_work);
@@ -104,7 +104,7 @@
  	}
  
  	ath9k_cmn_update_txpow(ah, sc->curtxpow,
-@@ -296,21 +258,89 @@ static int ath_set_channel(struct ath_so
+@@ -296,21 +259,89 @@ static int ath_set_channel(struct ath_so
  	ath9k_hw_set_interrupts(ah, ah->imask);
  	ath9k_hw_enable_interrupts(ah);
  
@@ -125,7 +125,7 @@
 +
 +	return true;
 +}
-+
+ 
 +static int ath_reset_internal(struct ath_softc *sc, struct ath9k_channel *hchan,
 +			      bool retry_tx)
 +{
@@ -172,7 +172,7 @@
 +	return 0;
 +}
 +
- 
++
 +/*
 + * Set/change channels.  If the channel is really being changed, it's done
 + * by reseting the chip.  To accomplish this we must first cleanup any pending
@@ -197,7 +197,7 @@
  	return r;
  }
  
-@@ -893,28 +923,13 @@ static void ath_radio_enable(struct ath_
+@@ -893,28 +924,13 @@ static void ath_radio_enable(struct ath_
  			channel->center_freq, r);
  	}
  
@@ -227,7 +227,7 @@
  	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	ath9k_ps_restore(sc);
-@@ -927,12 +942,8 @@ void ath_radio_disable(struct ath_softc 
+@@ -927,12 +943,8 @@ void ath_radio_disable(struct ath_softc 
  	int r;
  
  	ath9k_ps_wakeup(sc);
@@ -240,7 +240,7 @@
  	/*
  	 * Keep the LED on when the radio is disabled
  	 * during idle unassociated state.
-@@ -942,13 +953,7 @@ void ath_radio_disable(struct ath_softc 
+@@ -942,13 +954,7 @@ void ath_radio_disable(struct ath_softc 
  		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
  	}
  
@@ -255,7 +255,7 @@
  
  	if (!ah->curchan)
  		ah->curchan = ath9k_cmn_get_curchannel(hw, ah);
-@@ -970,48 +975,11 @@ void ath_radio_disable(struct ath_softc 
+@@ -970,48 +976,11 @@ void ath_radio_disable(struct ath_softc 
  
  int ath_reset(struct ath_softc *sc, bool retry_tx)
  {
@@ -305,7 +305,7 @@
  
  	if (retry_tx) {
  		int i;
-@@ -1024,12 +992,6 @@ int ath_reset(struct ath_softc *sc, bool
+@@ -1024,12 +993,6 @@ int ath_reset(struct ath_softc *sc, bool
  		}
  	}
  
@@ -318,7 +318,7 @@
  	ath9k_ps_restore(sc);
  
  	return r;
-@@ -1081,28 +1043,6 @@ static int ath9k_start(struct ieee80211_
+@@ -1081,28 +1044,6 @@ static int ath9k_start(struct ieee80211_
  		goto mutex_unlock;
  	}
  
@@ -347,7 +347,7 @@
  	/* Setup our intr mask. */
  	ah->imask = ATH9K_INT_TX | ATH9K_INT_RXEOL |
  		    ATH9K_INT_RXORN | ATH9K_INT_FATAL |
-@@ -1125,12 +1065,14 @@ static int ath9k_start(struct ieee80211_
+@@ -1125,12 +1066,14 @@ static int ath9k_start(struct ieee80211_
  
  	/* Disable BMISS interrupt when we're not associated */
  	ah->imask &= ~(ATH9K_INT_SWBA | ATH9K_INT_BMISS);
