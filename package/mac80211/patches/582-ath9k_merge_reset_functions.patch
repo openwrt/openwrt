@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -212,83 +212,47 @@ static int ath_update_survey_stats(struc
+@@ -212,83 +212,57 @@ static int ath_update_survey_stats(struc
  	return ret;
  }
  
@@ -11,33 +11,42 @@
 -*/
 -static int ath_set_channel(struct ath_softc *sc, struct ieee80211_hw *hw,
 -		    struct ath9k_channel *hchan)
-+static bool ath_prepare_reset(struct ath_softc *sc, bool retry_tx, bool flush)
++static void __ath_cancel_work(struct ath_softc *sc)
  {
- 	struct ath_hw *ah = sc->sc_ah;
- 	struct ath_common *common = ath9k_hw_common(ah);
+-	struct ath_hw *ah = sc->sc_ah;
+-	struct ath_common *common = ath9k_hw_common(ah);
 -	struct ieee80211_conf *conf = &common->hw->conf;
 -	bool fastcc = true, stopped;
 -	struct ieee80211_channel *channel = hw->conf.channel;
 -	struct ath9k_hw_cal_data *caldata = NULL;
 -	int r;
-+	bool ret;
- 
+-
 -	if (sc->sc_flags & SC_OP_INVALID)
 -		return -EIO;
-+	ieee80211_stop_queues(sc->hw);
- 
- 	sc->hw_busy_count = 0;
 -
- 	del_timer_sync(&common->ani.timer);
+-	sc->hw_busy_count = 0;
+-
+-	del_timer_sync(&common->ani.timer);
  	cancel_work_sync(&sc->paprd_work);
  	cancel_work_sync(&sc->hw_check_work);
  	cancel_delayed_work_sync(&sc->tx_complete_work);
  	cancel_delayed_work_sync(&sc->hw_pll_work);
++}
  
 -	ath9k_ps_wakeup(sc);
--
++static void ath_cancel_work(struct ath_softc *sc)
++{
++	__ath_cancel_work(sc);
++	cancel_work_sync(&sc->hw_reset_work);
++}
+ 
 -	spin_lock_bh(&sc->sc_pcu_lock);
--
++static bool ath_prepare_reset(struct ath_softc *sc, bool retry_tx, bool flush)
++{
++	struct ath_hw *ah = sc->sc_ah;
++	struct ath_common *common = ath9k_hw_common(ah);
++	bool ret;
+ 
 -	/*
 -	 * This is only performed if the channel settings have
 -	 * actually changed.
@@ -47,20 +56,24 @@
 -	 * hardware at the new frequency, and then re-enable
 -	 * the relevant bits of the h/w.
 -	 */
- 	ath9k_hw_disable_interrupts(ah);
+-	ath9k_hw_disable_interrupts(ah);
 -	stopped = ath_drain_all_txq(sc, false);
--
++	ieee80211_stop_queues(sc->hw);
+ 
 -	if (!ath_stoprecv(sc))
 -		stopped = false;
++	sc->hw_busy_count = 0;
++	del_timer_sync(&common->ani.timer);
  
 -	if (!ath9k_hw_check_alive(ah))
 -		stopped = false;
-+	ret = ath_drain_all_txq(sc, retry_tx);
++	ath9k_hw_disable_interrupts(ah);
  
 -	/* XXX: do not flush receive queue here. We don't want
 -	 * to flush data frames already in queue because of
 -	 * changing channel. */
--
++	ret = ath_drain_all_txq(sc, retry_tx);
+ 
 -	if (!stopped || !(sc->sc_flags & SC_OP_OFFCHANNEL))
 -		fastcc = false;
 +	if (!ath_stoprecv(sc))
@@ -104,7 +117,7 @@
  	}
  
  	ath9k_cmn_update_txpow(ah, sc->curtxpow,
-@@ -296,21 +260,89 @@ static int ath_set_channel(struct ath_so
+@@ -296,21 +270,93 @@ static int ath_set_channel(struct ath_so
  	ath9k_hw_set_interrupts(ah, ah->imask);
  	ath9k_hw_enable_interrupts(ah);
  
@@ -136,6 +149,10 @@
 +	bool flush = false;
 +	int r;
 +
++	__ath_cancel_work(sc);
++
++	spin_lock_bh(&sc->sc_pcu_lock);
+ 
 +	if (!(sc->sc_flags & SC_OP_OFFCHANNEL)) {
 +		fastcc = false;
 +		caldata = &sc->caldata;
@@ -163,12 +180,14 @@
 +	if (r) {
 +		ath_err(common,
 +			"Unable to reset channel, reset status %d\n", r);
-+		return r;
++		goto out;
 +	}
 +
 +	if (!ath_complete_reset(sc, true))
-+		return -EIO;
++		r = -EIO;
 +
++out:
+ 	spin_unlock_bh(&sc->sc_pcu_lock);
 +	return 0;
 +}
 +
@@ -182,22 +201,20 @@
 +		    struct ath9k_channel *hchan)
 +{
 +	int r;
- 
++
 +	if (sc->sc_flags & SC_OP_INVALID)
 +		return -EIO;
 +
 +	ath9k_ps_wakeup(sc);
 +
-+	spin_lock_bh(&sc->sc_pcu_lock);
 +	r = ath_reset_internal(sc, hchan, false);
- 	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	ath9k_ps_restore(sc);
 +
  	return r;
  }
  
-@@ -893,28 +925,13 @@ static void ath_radio_enable(struct ath_
+@@ -823,28 +869,13 @@ static void ath_radio_enable(struct ath_
  			channel->center_freq, r);
  	}
  
@@ -227,20 +244,21 @@
  	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	ath9k_ps_restore(sc);
-@@ -927,12 +944,8 @@ void ath_radio_disable(struct ath_softc 
+@@ -857,11 +888,10 @@ void ath_radio_disable(struct ath_softc 
  	int r;
  
  	ath9k_ps_wakeup(sc);
 -	cancel_delayed_work_sync(&sc->hw_pll_work);
--
- 	spin_lock_bh(&sc->sc_pcu_lock);
+ 
+-	spin_lock_bh(&sc->sc_pcu_lock);
++	ath_cancel_work(sc);
  
 -	ieee80211_stop_queues(hw);
--
++	spin_lock_bh(&sc->sc_pcu_lock);
+ 
  	/*
  	 * Keep the LED on when the radio is disabled
- 	 * during idle unassociated state.
-@@ -942,13 +955,7 @@ void ath_radio_disable(struct ath_softc 
+@@ -872,13 +902,7 @@ void ath_radio_disable(struct ath_softc 
  		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
  	}
  
@@ -255,9 +273,9 @@
  
  	if (!ah->curchan)
  		ah->curchan = ath9k_cmn_get_curchannel(hw, ah);
-@@ -970,48 +977,11 @@ void ath_radio_disable(struct ath_softc 
+@@ -900,48 +924,11 @@ void ath_radio_disable(struct ath_softc 
  
- int ath_reset(struct ath_softc *sc, bool retry_tx)
+ static int ath_reset(struct ath_softc *sc, bool retry_tx)
  {
 -	struct ath_hw *ah = sc->sc_ah;
 -	struct ath_common *common = ath9k_hw_common(ah);
@@ -305,7 +323,7 @@
  
  	if (retry_tx) {
  		int i;
-@@ -1024,12 +994,6 @@ int ath_reset(struct ath_softc *sc, bool
+@@ -954,12 +941,6 @@ static int ath_reset(struct ath_softc *s
  		}
  	}
  
@@ -318,7 +336,42 @@
  	ath9k_ps_restore(sc);
  
  	return r;
-@@ -1081,28 +1045,6 @@ static int ath9k_start(struct ieee80211_
+@@ -969,9 +950,7 @@ void ath_reset_work(struct work_struct *
+ {
+ 	struct ath_softc *sc = container_of(work, struct ath_softc, hw_check_work);
+ 
+-	spin_lock_bh(&sc->sc_pcu_lock);
+ 	ath_reset(sc, true);
+-	spin_unlock_bh(&sc->sc_pcu_lock);
+ }
+ 
+ void ath_hw_check(struct work_struct *work)
+@@ -992,11 +971,8 @@ void ath_hw_check(struct work_struct *wo
+ 	ath_dbg(common, ATH_DBG_RESET, "Possible baseband hang, "
+ 		"busy=%d (try %d)\n", busy, sc->hw_busy_count + 1);
+ 	if (busy >= 99) {
+-		if (++sc->hw_busy_count >= 3) {
+-			spin_lock_bh(&sc->sc_pcu_lock);
+-			ath_reset(sc, true);
+-			spin_unlock_bh(&sc->sc_pcu_lock);
+-		}
++		if (++sc->hw_busy_count >= 3)
++			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
+ 
+ 	} else if (busy >= 0)
+ 		sc->hw_busy_count = 0;
+@@ -1016,9 +992,7 @@ static void ath_hw_pll_rx_hang_check(str
+ 			/* Rx is hung for more than 500ms. Reset it */
+ 			ath_dbg(common, ATH_DBG_RESET,
+ 				"Possible RX hang, resetting");
+-			spin_lock_bh(&sc->sc_pcu_lock);
+-			ath_reset(sc, true);
+-			spin_unlock_bh(&sc->sc_pcu_lock);
++			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
+ 			count = 0;
+ 		}
+ 	} else
+@@ -1089,28 +1063,6 @@ static int ath9k_start(struct ieee80211_
  		goto mutex_unlock;
  	}
  
@@ -347,7 +400,7 @@
  	/* Setup our intr mask. */
  	ah->imask = ATH9K_INT_TX | ATH9K_INT_RXEOL |
  		    ATH9K_INT_RXORN | ATH9K_INT_FATAL |
-@@ -1125,12 +1067,14 @@ static int ath9k_start(struct ieee80211_
+@@ -1133,12 +1085,14 @@ static int ath9k_start(struct ieee80211_
  
  	/* Disable BMISS interrupt when we're not associated */
  	ah->imask &= ~(ATH9K_INT_SWBA | ATH9K_INT_BMISS);
@@ -366,3 +419,28 @@
  
  	if ((ah->btcoex_hw.scheme != ATH_BTCOEX_CFG_NONE) &&
  	    !ah->btcoex_hw.enabled) {
+@@ -1231,10 +1185,7 @@ static void ath9k_stop(struct ieee80211_
+ 
+ 	mutex_lock(&sc->mutex);
+ 
+-	cancel_delayed_work_sync(&sc->tx_complete_work);
+-	cancel_delayed_work_sync(&sc->hw_pll_work);
+-	cancel_work_sync(&sc->paprd_work);
+-	cancel_work_sync(&sc->hw_check_work);
++	ath_cancel_work(sc);
+ 
+ 	if (sc->sc_flags & SC_OP_INVALID) {
+ 		ath_dbg(common, ATH_DBG_ANY, "Device not present\n");
+@@ -2351,9 +2302,11 @@ static void ath9k_flush(struct ieee80211
+ 	ath9k_ps_wakeup(sc);
+ 	spin_lock_bh(&sc->sc_pcu_lock);
+ 	drain_txq = ath_drain_all_txq(sc, false);
++	spin_unlock_bh(&sc->sc_pcu_lock);
++
+ 	if (!drain_txq)
+ 		ath_reset(sc, false);
+-	spin_unlock_bh(&sc->sc_pcu_lock);
++
+ 	ath9k_ps_restore(sc);
+ 	ieee80211_wake_queues(hw);
+ 
