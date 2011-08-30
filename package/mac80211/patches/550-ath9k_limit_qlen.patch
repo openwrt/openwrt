@@ -33,7 +33,7 @@
  	debugfs_create_file("misc", S_IRUSR, sc->debug.debugfs_phy, sc,
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -348,6 +348,14 @@ static void ath_tx_count_frames(struct a
+@@ -351,6 +351,14 @@ static void ath_tx_count_frames(struct a
  	}
  }
  
@@ -48,7 +48,7 @@
  
  static void ath_tx_complete_aggr(struct ath_softc *sc, struct ath_txq *txq,
  				 struct ath_buf *bf, struct list_head *bf_q,
-@@ -438,6 +446,8 @@ static void ath_tx_complete_aggr(struct 
+@@ -441,6 +449,8 @@ static void ath_tx_complete_aggr(struct 
  	__skb_queue_head_init(&bf_pending);
  
  	ath_tx_count_frames(sc, bf, ts, txok, &nframes, &nbad);
@@ -57,7 +57,7 @@
  	while (bf) {
  		u16 seqno = bf->bf_state.seqno;
  
-@@ -836,6 +846,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+@@ -839,6 +849,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_
  			ath_tx_addto_baw(sc, tid, seqno);
  		ath9k_hw_set11n_aggr_middle(sc->sc_ah, bf->bf_desc, ndelim);
  
@@ -65,7 +65,7 @@
  		__skb_unlink(skb, &tid->buf_q);
  		list_add_tail(&bf->list, bf_q);
  		if (bf_prev) {
-@@ -1491,6 +1502,8 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1494,6 +1505,8 @@ static void ath_tx_send_ampdu(struct ath
  	/* Add sub-frame to BAW */
  	ath_tx_addto_baw(sc, tid, bf->bf_state.seqno);
  
@@ -74,7 +74,7 @@
  	/* Queue to h/w without aggregation */
  	TX_STAT_INC(txctl->txq->axq_qnum, a_queued_hw);
  	bf->bf_lastbf = bf;
-@@ -1819,23 +1832,13 @@ error:
+@@ -1822,23 +1835,13 @@ error:
  
  /* FIXME: tx power */
  static void ath_tx_start_dma(struct ath_softc *sc, struct sk_buff *skb,
@@ -100,7 +100,7 @@
  
  	if ((tx_info->flags & IEEE80211_TX_CTL_AMPDU) && tid) {
  		/*
-@@ -1877,6 +1880,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1880,6 +1883,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ieee80211_vif *vif = info->control.vif;
  	struct ath_softc *sc = hw->priv;
  	struct ath_txq *txq = txctl->txq;
@@ -108,7 +108,7 @@
  	int padpos, padsize;
  	int frmlen = skb->len + FCS_LEN;
  	int q;
-@@ -1909,6 +1913,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1912,6 +1916,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  
  		skb_push(skb, padsize);
  		memmove(skb->data, skb->data + padsize, padpos);
@@ -116,7 +116,7 @@
  	}
  
  	if ((vif && vif->type != NL80211_IFTYPE_AP &&
-@@ -1918,6 +1923,24 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1921,6 +1926,24 @@ int ath_tx_start(struct ieee80211_hw *hw
  
  	setup_frame_info(hw, skb, frmlen);
  
@@ -141,7 +141,7 @@
  	/*
  	 * At this point, the vif, hw_key and sta pointers in the tx control
  	 * info are no longer valid (overwritten by the ath_frame_info data.
-@@ -1932,7 +1955,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1935,7 +1958,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  	}
  	spin_unlock_bh(&txq->axq_lock);
  

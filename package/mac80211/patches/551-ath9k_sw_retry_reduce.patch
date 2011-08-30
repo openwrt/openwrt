@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -260,13 +260,16 @@ static void ath_tid_drain(struct ath_sof
+@@ -260,14 +260,17 @@ static void ath_tid_drain(struct ath_sof
  }
  
  static void ath_tx_set_retry(struct ath_softc *sc, struct ath_txq *txq,
@@ -8,6 +8,7 @@
 +			     struct sk_buff *skb, int count)
  {
  	struct ath_frame_info *fi = get_frame_info(skb);
+ 	struct ath_buf *bf = fi->bf;
  	struct ieee80211_hdr *hdr;
 +	int prev = fi->retries;
  
@@ -19,7 +20,7 @@
  		return;
  
  	hdr = (struct ieee80211_hdr *)skb->data;
-@@ -380,6 +383,7 @@ static void ath_tx_complete_aggr(struct 
+@@ -383,6 +386,7 @@ static void ath_tx_complete_aggr(struct 
  	int nframes;
  	u8 tidno;
  	bool clear_filter;
@@ -27,7 +28,7 @@
  
  	skb = bf->bf_mpdu;
  	hdr = (struct ieee80211_hdr *)skb->data;
-@@ -388,6 +392,10 @@ static void ath_tx_complete_aggr(struct 
+@@ -391,6 +395,10 @@ static void ath_tx_complete_aggr(struct 
  
  	memcpy(rates, tx_info->control.rates, sizeof(rates));
  
@@ -38,7 +39,7 @@
  	rcu_read_lock();
  
  	sta = ieee80211_find_sta_by_ifaddr(hw, hdr->addr1, hdr->addr2);
-@@ -475,7 +483,8 @@ static void ath_tx_complete_aggr(struct 
+@@ -478,7 +486,8 @@ static void ath_tx_complete_aggr(struct 
  			} else if (fi->retries < ATH_MAX_SW_RETRIES) {
  				if (!(ts->ts_status & ATH9K_TXERR_FILT) ||
  				    !an->sleeping)
