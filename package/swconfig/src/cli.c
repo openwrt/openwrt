@@ -144,12 +144,23 @@ show_port(struct switch_dev *dev, int port)
 }
 
 static void
-show_vlan(struct switch_dev *dev, int vlan)
+show_vlan(struct switch_dev *dev, int vlan, bool all)
 {
 	struct switch_val val;
+	struct switch_attr *attr;
+
+	val.port_vlan = vlan;
+
+	if (all) {
+		attr = swlib_lookup_attr(dev, SWLIB_ATTR_GROUP_VLAN, "ports");
+		if (swlib_get_attr(dev, attr, &val) < 0)
+			return;
+
+		if (!val.len)
+			return;
+	}
 
 	printf("VLAN %d:\n", vlan);
-	val.port_vlan = vlan;
 	show_attrs(dev, dev->vlan_ops, &val);
 }
 
@@ -312,13 +323,13 @@ int main(int argc, char **argv)
 			if (cport >= 0)
 				show_port(dev, cport);
 			else
-				show_vlan(dev, cvlan);
+				show_vlan(dev, cvlan, false);
 		} else {
 			show_global(dev);
 			for (i=0; i < dev->ports; i++)
 				show_port(dev, i);
 			for (i=0; i < dev->vlans; i++)
-				show_vlan(dev, i);
+				show_vlan(dev, i, true);
 		}
 		break;
 	}
