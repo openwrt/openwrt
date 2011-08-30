@@ -246,7 +246,7 @@
  /**********************/
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -600,8 +600,10 @@ static void ath_tx_complete_aggr(struct 
+@@ -603,8 +603,10 @@ static void ath_tx_complete_aggr(struct 
  
  	rcu_read_unlock();
  
@@ -259,7 +259,7 @@
  }
  
  static bool ath_lookup_legacy(struct ath_buf *bf)
-@@ -2181,6 +2183,9 @@ static void ath_tx_processq(struct ath_s
+@@ -2184,6 +2186,9 @@ static void ath_tx_processq(struct ath_s
  
  	spin_lock_bh(&txq->axq_lock);
  	for (;;) {
@@ -269,7 +269,7 @@
  		if (list_empty(&txq->axq_q)) {
  			txq->axq_link = NULL;
  			if (sc->sc_flags & SC_OP_TXAGGR)
-@@ -2268,9 +2273,7 @@ static void ath_tx_complete_poll_work(st
+@@ -2271,9 +2276,7 @@ static void ath_tx_complete_poll_work(st
  	if (needreset) {
  		ath_dbg(ath9k_hw_common(sc->sc_ah), ATH_DBG_RESET,
  			"tx hung, resetting the chip\n");
@@ -280,7 +280,7 @@
  	}
  
  	ieee80211_queue_delayed_work(sc->hw, &sc->tx_complete_work,
-@@ -2303,6 +2306,9 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2306,6 +2309,9 @@ void ath_tx_edma_tasklet(struct ath_soft
  	int status;
  
  	for (;;) {
