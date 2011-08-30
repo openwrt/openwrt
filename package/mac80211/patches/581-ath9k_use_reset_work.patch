@@ -8,7 +8,15 @@
  void ath_hw_check(struct work_struct *work);
  void ath_hw_pll_work(struct work_struct *work);
  void ath_paprd_calibrate(struct work_struct *work);
-@@ -609,6 +610,7 @@ struct ath_softc {
+@@ -559,6 +560,7 @@ struct ath_ant_comb {
+ #define SC_OP_RXFLUSH                BIT(7)
+ #define SC_OP_LED_ASSOCIATED         BIT(8)
+ #define SC_OP_LED_ON                 BIT(9)
++#define SC_OP_HW_RESET               BIT(10)
+ #define SC_OP_TSF_RESET              BIT(11)
+ #define SC_OP_BT_PRIORITY_DETECTED   BIT(12)
+ #define SC_OP_BT_SCAN		     BIT(13)
+@@ -609,6 +611,7 @@ struct ath_softc {
  	struct mutex mutex;
  	struct work_struct paprd_work;
  	struct work_struct hw_check_work;
@@ -16,7 +24,7 @@
  	struct completion paprd_complete;
  
  	unsigned int hw_busy_count;
-@@ -655,7 +657,6 @@ struct ath_softc {
+@@ -655,7 +658,6 @@ struct ath_softc {
  };
  
  void ath9k_tasklet(unsigned long data);
@@ -24,6 +32,19 @@
  int ath_cabq_update(struct ath_softc *);
  
  static inline void ath_read_cachesize(struct ath_common *common, int *csz)
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -386,9 +386,7 @@ void ath_beacon_tasklet(unsigned long da
+ 			ath_dbg(common, ATH_DBG_BSTUCK,
+ 				"beacon is officially stuck\n");
+ 			sc->sc_flags |= SC_OP_TSF_RESET;
+-			spin_lock(&sc->sc_pcu_lock);
+-			ath_reset(sc, true);
+-			spin_unlock(&sc->sc_pcu_lock);
++			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
+ 		}
+ 
+ 		return;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
 @@ -776,6 +776,7 @@ int ath9k_init_device(u16 devid, struct 
@@ -122,7 +143,7 @@
  		return;
  	}
  
-@@ -968,7 +898,7 @@ void ath_radio_disable(struct ath_softc 
+@@ -968,13 +898,14 @@ void ath_radio_disable(struct ath_softc 
  	ath9k_ps_restore(sc);
  }
  
@@ -131,7 +152,14 @@
  {
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1035,6 +965,84 @@ int ath_reset(struct ath_softc *sc, bool
+ 	struct ieee80211_hw *hw = sc->hw;
+ 	int r;
+ 
++	sc->sc_flags &= ~SC_OP_HW_RESET;
+ 	sc->hw_busy_count = 0;
+ 
+ 	/* Stop ANI */
+@@ -1035,6 +966,84 @@ int ath_reset(struct ath_softc *sc, bool
  	return r;
  }
  
@@ -218,16 +246,30 @@
  /**********************/
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -601,7 +601,7 @@ static void ath_tx_complete_aggr(struct 
+@@ -600,8 +600,10 @@ static void ath_tx_complete_aggr(struct 
+ 
  	rcu_read_unlock();
  
- 	if (needreset)
+-	if (needreset)
 -		ath_reset(sc, false);
++	if (needreset) {
++		sc->sc_flags |= SC_OP_HW_RESET;
 +		ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
++	}
  }
  
  static bool ath_lookup_legacy(struct ath_buf *bf)
-@@ -2268,9 +2268,7 @@ static void ath_tx_complete_poll_work(st
+@@ -2181,6 +2183,9 @@ static void ath_tx_processq(struct ath_s
+ 
+ 	spin_lock_bh(&txq->axq_lock);
+ 	for (;;) {
++		if (sc->sc_flags & SC_OP_HW_RESET)
++			break;
++
+ 		if (list_empty(&txq->axq_q)) {
+ 			txq->axq_link = NULL;
+ 			if (sc->sc_flags & SC_OP_TXAGGR)
+@@ -2268,9 +2273,7 @@ static void ath_tx_complete_poll_work(st
  	if (needreset) {
  		ath_dbg(ath9k_hw_common(sc->sc_ah), ATH_DBG_RESET,
  			"tx hung, resetting the chip\n");
@@ -238,16 +280,13 @@
  	}
  
  	ieee80211_queue_delayed_work(sc->hw, &sc->tx_complete_work,
---- a/drivers/net/wireless/ath/ath9k/beacon.c
-+++ b/drivers/net/wireless/ath/ath9k/beacon.c
-@@ -386,9 +386,7 @@ void ath_beacon_tasklet(unsigned long da
- 			ath_dbg(common, ATH_DBG_BSTUCK,
- 				"beacon is officially stuck\n");
- 			sc->sc_flags |= SC_OP_TSF_RESET;
--			spin_lock(&sc->sc_pcu_lock);
--			ath_reset(sc, true);
--			spin_unlock(&sc->sc_pcu_lock);
-+			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
- 		}
+@@ -2303,6 +2306,9 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 	int status;
  
- 		return;
+ 	for (;;) {
++		if (sc->sc_flags & SC_OP_HW_RESET)
++			break;
++
+ 		status = ath9k_hw_txprocdesc(ah, NULL, (void *)&ts);
+ 		if (status == -EINPROGRESS)
+ 			break;

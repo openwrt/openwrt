@@ -57,7 +57,7 @@
  }
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -654,6 +654,7 @@ struct ath_softc {
+@@ -655,6 +655,7 @@ struct ath_softc {
  	struct ath_descdma txsdma;
  
  	struct ath_ant_comb ant_comb;
@@ -65,7 +65,7 @@
  };
  
  void ath9k_tasklet(unsigned long data);
-@@ -674,6 +675,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -675,6 +676,7 @@ int ath9k_init_device(u16 devid, struct 
  		    const struct ath_bus_ops *bus_ops);
  void ath9k_deinit_device(struct ath_softc *sc);
  void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw);
@@ -98,7 +98,7 @@
  	ieee80211_wake_queues(sc->hw);
  
  	return true;
-@@ -2383,6 +2399,59 @@ static int ath9k_get_stats(struct ieee80
+@@ -2385,6 +2401,59 @@ static int ath9k_get_stats(struct ieee80
  	return 0;
  }
  
@@ -158,7 +158,7 @@
  struct ieee80211_ops ath9k_ops = {
  	.tx 		    = ath9k_tx,
  	.start 		    = ath9k_start,
-@@ -2409,4 +2478,6 @@ struct ieee80211_ops ath9k_ops = {
+@@ -2411,4 +2480,6 @@ struct ieee80211_ops ath9k_ops = {
  	.tx_frames_pending  = ath9k_tx_frames_pending,
  	.tx_last_beacon     = ath9k_tx_last_beacon,
  	.get_stats	    = ath9k_get_stats,

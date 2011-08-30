@@ -117,7 +117,7 @@
  	}
  
  	ath9k_cmn_update_txpow(ah, sc->curtxpow,
-@@ -296,21 +270,93 @@ static int ath_set_channel(struct ath_so
+@@ -296,21 +270,95 @@ static int ath_set_channel(struct ath_so
  	ath9k_hw_set_interrupts(ah, ah->imask);
  	ath9k_hw_enable_interrupts(ah);
  
@@ -152,6 +152,8 @@
 +	__ath_cancel_work(sc);
 +
 +	spin_lock_bh(&sc->sc_pcu_lock);
++
++	sc->sc_flags &= ~SC_OP_HW_RESET;
  
 +	if (!(sc->sc_flags & SC_OP_OFFCHANNEL)) {
 +		fastcc = false;
@@ -188,7 +190,7 @@
 +
 +out:
  	spin_unlock_bh(&sc->sc_pcu_lock);
-+	return 0;
++	return r;
 +}
 +
 +
@@ -214,7 +216,7 @@
  	return r;
  }
  
-@@ -823,28 +869,13 @@ static void ath_radio_enable(struct ath_
+@@ -823,28 +871,13 @@ static void ath_radio_enable(struct ath_
  			channel->center_freq, r);
  	}
  
@@ -244,7 +246,7 @@
  	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	ath9k_ps_restore(sc);
-@@ -857,11 +888,10 @@ void ath_radio_disable(struct ath_softc 
+@@ -857,11 +890,10 @@ void ath_radio_disable(struct ath_softc 
  	int r;
  
  	ath9k_ps_wakeup(sc);
@@ -258,7 +260,7 @@
  
  	/*
  	 * Keep the LED on when the radio is disabled
-@@ -872,13 +902,7 @@ void ath_radio_disable(struct ath_softc 
+@@ -872,13 +904,7 @@ void ath_radio_disable(struct ath_softc 
  		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
  	}
  
@@ -273,7 +275,7 @@
  
  	if (!ah->curchan)
  		ah->curchan = ath9k_cmn_get_curchannel(hw, ah);
-@@ -900,48 +924,11 @@ void ath_radio_disable(struct ath_softc 
+@@ -900,49 +926,11 @@ void ath_radio_disable(struct ath_softc 
  
  static int ath_reset(struct ath_softc *sc, bool retry_tx)
  {
@@ -282,6 +284,7 @@
 -	struct ieee80211_hw *hw = sc->hw;
  	int r;
  
+-	sc->sc_flags &= ~SC_OP_HW_RESET;
 -	sc->hw_busy_count = 0;
 -
 -	/* Stop ANI */
@@ -323,7 +326,7 @@
  
  	if (retry_tx) {
  		int i;
-@@ -954,12 +941,6 @@ static int ath_reset(struct ath_softc *s
+@@ -955,12 +943,6 @@ static int ath_reset(struct ath_softc *s
  		}
  	}
  
@@ -336,7 +339,7 @@
  	ath9k_ps_restore(sc);
  
  	return r;
-@@ -969,9 +950,7 @@ void ath_reset_work(struct work_struct *
+@@ -970,9 +952,7 @@ void ath_reset_work(struct work_struct *
  {
  	struct ath_softc *sc = container_of(work, struct ath_softc, hw_check_work);
  
@@ -346,7 +349,7 @@
  }
  
  void ath_hw_check(struct work_struct *work)
-@@ -992,11 +971,8 @@ void ath_hw_check(struct work_struct *wo
+@@ -993,11 +973,8 @@ void ath_hw_check(struct work_struct *wo
  	ath_dbg(common, ATH_DBG_RESET, "Possible baseband hang, "
  		"busy=%d (try %d)\n", busy, sc->hw_busy_count + 1);
  	if (busy >= 99) {
@@ -360,7 +363,7 @@
  
  	} else if (busy >= 0)
  		sc->hw_busy_count = 0;
-@@ -1016,9 +992,7 @@ static void ath_hw_pll_rx_hang_check(str
+@@ -1017,9 +994,7 @@ static void ath_hw_pll_rx_hang_check(str
  			/* Rx is hung for more than 500ms. Reset it */
  			ath_dbg(common, ATH_DBG_RESET,
  				"Possible RX hang, resetting");
@@ -371,7 +374,7 @@
  			count = 0;
  		}
  	} else
-@@ -1089,28 +1063,6 @@ static int ath9k_start(struct ieee80211_
+@@ -1090,28 +1065,6 @@ static int ath9k_start(struct ieee80211_
  		goto mutex_unlock;
  	}
  
@@ -400,7 +403,7 @@
  	/* Setup our intr mask. */
  	ah->imask = ATH9K_INT_TX | ATH9K_INT_RXEOL |
  		    ATH9K_INT_RXORN | ATH9K_INT_FATAL |
-@@ -1133,12 +1085,14 @@ static int ath9k_start(struct ieee80211_
+@@ -1134,12 +1087,14 @@ static int ath9k_start(struct ieee80211_
  
  	/* Disable BMISS interrupt when we're not associated */
  	ah->imask &= ~(ATH9K_INT_SWBA | ATH9K_INT_BMISS);
@@ -419,7 +422,7 @@
  
  	if ((ah->btcoex_hw.scheme != ATH_BTCOEX_CFG_NONE) &&
  	    !ah->btcoex_hw.enabled) {
-@@ -1231,10 +1185,7 @@ static void ath9k_stop(struct ieee80211_
+@@ -1232,10 +1187,7 @@ static void ath9k_stop(struct ieee80211_
  
  	mutex_lock(&sc->mutex);
  
@@ -431,7 +434,7 @@
  
  	if (sc->sc_flags & SC_OP_INVALID) {
  		ath_dbg(common, ATH_DBG_ANY, "Device not present\n");
-@@ -2351,9 +2302,11 @@ static void ath9k_flush(struct ieee80211
+@@ -2352,9 +2304,11 @@ static void ath9k_flush(struct ieee80211
  	ath9k_ps_wakeup(sc);
  	spin_lock_bh(&sc->sc_pcu_lock);
  	drain_txq = ath_drain_all_txq(sc, false);
