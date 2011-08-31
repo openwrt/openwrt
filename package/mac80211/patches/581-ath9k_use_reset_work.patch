@@ -173,7 +173,7 @@
  
 +void ath_reset_work(struct work_struct *work)
 +{
-+	struct ath_softc *sc = container_of(work, struct ath_softc, hw_check_work);
++	struct ath_softc *sc = container_of(work, struct ath_softc, hw_reset_work);
 +
 +	spin_lock_bh(&sc->sc_pcu_lock);
 +	ath_reset(sc, true);
