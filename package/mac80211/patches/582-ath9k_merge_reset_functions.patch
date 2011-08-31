@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -212,83 +212,57 @@ static int ath_update_survey_stats(struc
+@@ -212,84 +212,57 @@ static int ath_update_survey_stats(struc
  	return ret;
  }
  
@@ -29,6 +29,7 @@
 -	del_timer_sync(&common->ani.timer);
  	cancel_work_sync(&sc->paprd_work);
  	cancel_work_sync(&sc->hw_check_work);
+-	cancel_work_sync(&sc->hw_reset_work);
  	cancel_delayed_work_sync(&sc->tx_complete_work);
  	cancel_delayed_work_sync(&sc->hw_pll_work);
 +}
@@ -117,7 +118,7 @@
  	}
  
  	ath9k_cmn_update_txpow(ah, sc->curtxpow,
-@@ -296,21 +270,95 @@ static int ath_set_channel(struct ath_so
+@@ -297,21 +270,95 @@ static int ath_set_channel(struct ath_so
  	ath9k_hw_set_interrupts(ah, ah->imask);
  	ath9k_hw_enable_interrupts(ah);
  
@@ -216,7 +217,7 @@
  	return r;
  }
  
-@@ -823,28 +871,13 @@ static void ath_radio_enable(struct ath_
+@@ -824,28 +871,13 @@ static void ath_radio_enable(struct ath_
  			channel->center_freq, r);
  	}
  
@@ -246,7 +247,7 @@
  	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	ath9k_ps_restore(sc);
-@@ -857,11 +890,10 @@ void ath_radio_disable(struct ath_softc 
+@@ -858,11 +890,10 @@ void ath_radio_disable(struct ath_softc 
  	int r;
  
  	ath9k_ps_wakeup(sc);
@@ -260,7 +261,7 @@
  
  	/*
  	 * Keep the LED on when the radio is disabled
-@@ -872,13 +904,7 @@ void ath_radio_disable(struct ath_softc 
+@@ -873,13 +904,7 @@ void ath_radio_disable(struct ath_softc 
  		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
  	}
  
@@ -275,7 +276,7 @@
  
  	if (!ah->curchan)
  		ah->curchan = ath9k_cmn_get_curchannel(hw, ah);
-@@ -900,49 +926,11 @@ void ath_radio_disable(struct ath_softc 
+@@ -901,49 +926,11 @@ void ath_radio_disable(struct ath_softc 
  
  static int ath_reset(struct ath_softc *sc, bool retry_tx)
  {
@@ -326,7 +327,7 @@
  
  	if (retry_tx) {
  		int i;
-@@ -955,12 +943,6 @@ static int ath_reset(struct ath_softc *s
+@@ -956,12 +943,6 @@ static int ath_reset(struct ath_softc *s
  		}
  	}
  
@@ -339,7 +340,7 @@
  	ath9k_ps_restore(sc);
  
  	return r;
-@@ -970,9 +952,7 @@ void ath_reset_work(struct work_struct *
+@@ -971,9 +952,7 @@ void ath_reset_work(struct work_struct *
  {
  	struct ath_softc *sc = container_of(work, struct ath_softc, hw_check_work);
  
@@ -349,7 +350,7 @@
  }
  
  void ath_hw_check(struct work_struct *work)
-@@ -993,11 +973,8 @@ void ath_hw_check(struct work_struct *wo
+@@ -994,11 +973,8 @@ void ath_hw_check(struct work_struct *wo
  	ath_dbg(common, ATH_DBG_RESET, "Possible baseband hang, "
  		"busy=%d (try %d)\n", busy, sc->hw_busy_count + 1);
  	if (busy >= 99) {
@@ -363,7 +364,7 @@
  
  	} else if (busy >= 0)
  		sc->hw_busy_count = 0;
-@@ -1017,9 +994,7 @@ static void ath_hw_pll_rx_hang_check(str
+@@ -1018,9 +994,7 @@ static void ath_hw_pll_rx_hang_check(str
  			/* Rx is hung for more than 500ms. Reset it */
  			ath_dbg(common, ATH_DBG_RESET,
  				"Possible RX hang, resetting");
@@ -374,7 +375,7 @@
  			count = 0;
  		}
  	} else
-@@ -1090,28 +1065,6 @@ static int ath9k_start(struct ieee80211_
+@@ -1091,28 +1065,6 @@ static int ath9k_start(struct ieee80211_
  		goto mutex_unlock;
  	}
  
@@ -403,7 +404,7 @@
  	/* Setup our intr mask. */
  	ah->imask = ATH9K_INT_TX | ATH9K_INT_RXEOL |
  		    ATH9K_INT_RXORN | ATH9K_INT_FATAL |
-@@ -1134,12 +1087,14 @@ static int ath9k_start(struct ieee80211_
+@@ -1135,12 +1087,14 @@ static int ath9k_start(struct ieee80211_
  
  	/* Disable BMISS interrupt when we're not associated */
  	ah->imask &= ~(ATH9K_INT_SWBA | ATH9K_INT_BMISS);
@@ -422,7 +423,7 @@
  
  	if ((ah->btcoex_hw.scheme != ATH_BTCOEX_CFG_NONE) &&
  	    !ah->btcoex_hw.enabled) {
-@@ -1232,10 +1187,7 @@ static void ath9k_stop(struct ieee80211_
+@@ -1233,11 +1187,7 @@ static void ath9k_stop(struct ieee80211_
  
  	mutex_lock(&sc->mutex);
  
@@ -430,11 +431,12 @@
 -	cancel_delayed_work_sync(&sc->hw_pll_work);
 -	cancel_work_sync(&sc->paprd_work);
 -	cancel_work_sync(&sc->hw_check_work);
+-	cancel_work_sync(&sc->hw_reset_work);
 +	ath_cancel_work(sc);
  
  	if (sc->sc_flags & SC_OP_INVALID) {
  		ath_dbg(common, ATH_DBG_ANY, "Device not present\n");
-@@ -2352,9 +2304,11 @@ static void ath9k_flush(struct ieee80211
+@@ -2354,9 +2304,11 @@ static void ath9k_flush(struct ieee80211
  	ath9k_ps_wakeup(sc);
  	spin_lock_bh(&sc->sc_pcu_lock);
  	drain_txq = ath_drain_all_txq(sc, false);

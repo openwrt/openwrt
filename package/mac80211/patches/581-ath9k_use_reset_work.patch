@@ -57,7 +57,15 @@
  	INIT_DELAYED_WORK(&sc->hw_pll_work, ath_hw_pll_work);
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -595,74 +595,6 @@ static void ath_node_detach(struct ath_s
+@@ -236,6 +236,7 @@ static int ath_set_channel(struct ath_so
+ 	del_timer_sync(&common->ani.timer);
+ 	cancel_work_sync(&sc->paprd_work);
+ 	cancel_work_sync(&sc->hw_check_work);
++	cancel_work_sync(&sc->hw_reset_work);
+ 	cancel_delayed_work_sync(&sc->tx_complete_work);
+ 	cancel_delayed_work_sync(&sc->hw_pll_work);
+ 
+@@ -595,74 +596,6 @@ static void ath_node_detach(struct ath_s
  		ath_tx_node_cleanup(sc, an);
  }
  
@@ -132,7 +140,7 @@
  
  void ath9k_tasklet(unsigned long data)
  {
-@@ -675,9 +607,7 @@ void ath9k_tasklet(unsigned long data)
+@@ -675,9 +608,7 @@ void ath9k_tasklet(unsigned long data)
  
  	if ((status & ATH9K_INT_FATAL) ||
  	    (status & ATH9K_INT_BB_WATCHDOG)) {
@@ -143,7 +151,7 @@
  		return;
  	}
  
-@@ -968,13 +898,14 @@ void ath_radio_disable(struct ath_softc 
+@@ -968,13 +899,14 @@ void ath_radio_disable(struct ath_softc 
  	ath9k_ps_restore(sc);
  }
  
@@ -159,7 +167,7 @@
  	sc->hw_busy_count = 0;
  
  	/* Stop ANI */
-@@ -1035,6 +966,84 @@ int ath_reset(struct ath_softc *sc, bool
+@@ -1035,6 +967,84 @@ int ath_reset(struct ath_softc *sc, bool
  	return r;
  }
  
@@ -244,6 +252,14 @@
  /**********************/
  /* mac80211 callbacks */
  /**********************/
+@@ -1227,6 +1237,7 @@ static void ath9k_stop(struct ieee80211_
+ 	cancel_delayed_work_sync(&sc->hw_pll_work);
+ 	cancel_work_sync(&sc->paprd_work);
+ 	cancel_work_sync(&sc->hw_check_work);
++	cancel_work_sync(&sc->hw_reset_work);
+ 
+ 	if (sc->sc_flags & SC_OP_INVALID) {
+ 		ath_dbg(common, ATH_DBG_ANY, "Device not present\n");
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
 @@ -603,8 +603,10 @@ static void ath_tx_complete_aggr(struct 
@@ -259,6 +275,15 @@
  }
  
  static bool ath_lookup_legacy(struct ath_buf *bf)
+@@ -1357,7 +1359,7 @@ void ath_txq_schedule(struct ath_softc *
+ 	struct ath_atx_ac *ac, *ac_tmp, *last_ac;
+ 	struct ath_atx_tid *tid, *last_tid;
+ 
+-	if (list_empty(&txq->axq_acq) ||
++	if ((sc->sc_flags & SC_OP_HW_RESET) || list_empty(&txq->axq_acq) ||
+ 	    txq->axq_ampdu_depth >= ATH_AGGR_MIN_QDEPTH)
+ 		return;
+ 
 @@ -2184,6 +2186,9 @@ static void ath_tx_processq(struct ath_s
  
  	spin_lock_bh(&txq->axq_lock);

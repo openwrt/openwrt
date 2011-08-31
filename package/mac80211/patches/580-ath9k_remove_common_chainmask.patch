@@ -69,7 +69,7 @@
  	ath9k_ps_restore(sc);
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1485,9 +1485,6 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -1488,9 +1488,6 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  	u64 tsf = 0;
  	int i, r;
  
@@ -79,7 +79,7 @@
  	if (!ath9k_hw_setpower(ah, ATH9K_PM_AWAKE))
  		return -EIO;
  
-@@ -2105,6 +2102,8 @@ int ath9k_hw_fill_cap_info(struct ath_hw
+@@ -2108,6 +2105,8 @@ int ath9k_hw_fill_cap_info(struct ath_hw
  
  	pCap->tx_chainmask = fixup_chainmask(chip_chainmask, pCap->tx_chainmask);
  	pCap->rx_chainmask = fixup_chainmask(chip_chainmask, pCap->rx_chainmask);
