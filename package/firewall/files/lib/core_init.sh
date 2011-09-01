@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2009-2011 OpenWrt.org
 # Copyright (C) 2008 John Crispin <blogic@openwrt.org>
 
 FW_INITIALIZED=
@@ -66,16 +66,16 @@ fw_load_defaults() {
 	done
 	fw_sysctl_interface all
 
+	fw add i f INPUT   ACCEPT { -m conntrack --ctstate RELATED,ESTABLISHED }
+	fw add i f OUTPUT  ACCEPT { -m conntrack --ctstate RELATED,ESTABLISHED }
+	fw add i f FORWARD ACCEPT { -m conntrack --ctstate RELATED,ESTABLISHED }
+
 	[ $defaults_drop_invalid == 1 ] && {
-		fw add i f INPUT   DROP { -m state --state INVALID }
-		fw add i f OUTPUT  DROP { -m state --state INVALID }
-		fw add i f FORWARD DROP { -m state --state INVALID }
+		fw add i f INPUT   DROP { -m conntrack --ctstate INVALID }
+		fw add i f OUTPUT  DROP { -m conntrack --ctstate INVALID }
+		fw add i f FORWARD DROP { -m conntrack --ctstate INVALID }
 		FW_NOTRACK_DISABLED=1
 	}
-
-	fw add i f INPUT   ACCEPT { -m state --state RELATED,ESTABLISHED }
-	fw add i f OUTPUT  ACCEPT { -m state --state RELATED,ESTABLISHED }
-	fw add i f FORWARD ACCEPT { -m state --state RELATED,ESTABLISHED }
 
 	fw add i f INPUT  ACCEPT { -i lo }
 	fw add i f OUTPUT ACCEPT { -o lo }
