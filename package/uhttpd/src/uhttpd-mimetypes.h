@@ -76,6 +76,9 @@ static struct mimetype uh_mime_types[] = {
 	{ "cfg",     "text/plain" },
 	{ "conf",    "text/plain" },
 
+	{ "pac",		"application/x-ns-proxy-autoconfig" },
+	{ "wpad.dat",	"application/x-ns-proxy-autoconfig" },
+
 	{ NULL, NULL }
 };
 
