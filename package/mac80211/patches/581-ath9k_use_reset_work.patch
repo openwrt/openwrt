@@ -8,15 +8,7 @@
  void ath_hw_check(struct work_struct *work);
  void ath_hw_pll_work(struct work_struct *work);
  void ath_paprd_calibrate(struct work_struct *work);
-@@ -559,6 +560,7 @@ struct ath_ant_comb {
- #define SC_OP_RXFLUSH                BIT(7)
- #define SC_OP_LED_ASSOCIATED         BIT(8)
- #define SC_OP_LED_ON                 BIT(9)
-+#define SC_OP_HW_RESET               BIT(10)
- #define SC_OP_TSF_RESET              BIT(11)
- #define SC_OP_BT_PRIORITY_DETECTED   BIT(12)
- #define SC_OP_BT_SCAN		     BIT(13)
-@@ -609,6 +611,7 @@ struct ath_softc {
+@@ -609,6 +610,7 @@ struct ath_softc {
  	struct mutex mutex;
  	struct work_struct paprd_work;
  	struct work_struct hw_check_work;
@@ -24,7 +16,7 @@
  	struct completion paprd_complete;
  
  	unsigned int hw_busy_count;
-@@ -655,7 +658,6 @@ struct ath_softc {
+@@ -655,7 +657,6 @@ struct ath_softc {
  };
  
  void ath9k_tasklet(unsigned long data);
@@ -151,7 +143,7 @@
  		return;
  	}
  
-@@ -968,13 +899,14 @@ void ath_radio_disable(struct ath_softc 
+@@ -968,7 +899,7 @@ void ath_radio_disable(struct ath_softc 
  	ath9k_ps_restore(sc);
  }
  
@@ -160,14 +152,7 @@
  {
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
- 	struct ieee80211_hw *hw = sc->hw;
- 	int r;
- 
-+	sc->sc_flags &= ~SC_OP_HW_RESET;
- 	sc->hw_busy_count = 0;
- 
- 	/* Stop ANI */
-@@ -1035,6 +967,84 @@ int ath_reset(struct ath_softc *sc, bool
+@@ -1035,6 +966,84 @@ int ath_reset(struct ath_softc *sc, bool
  	return r;
  }
  
@@ -252,7 +237,7 @@
  /**********************/
  /* mac80211 callbacks */
  /**********************/
-@@ -1227,6 +1237,7 @@ static void ath9k_stop(struct ieee80211_
+@@ -1227,6 +1236,7 @@ static void ath9k_stop(struct ieee80211_
  	cancel_delayed_work_sync(&sc->hw_pll_work);
  	cancel_work_sync(&sc->paprd_work);
  	cancel_work_sync(&sc->hw_check_work);
@@ -262,39 +247,35 @@
  		ath_dbg(common, ATH_DBG_ANY, "Device not present\n");
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -603,8 +603,10 @@ static void ath_tx_complete_aggr(struct 
- 
+@@ -604,7 +604,7 @@ static void ath_tx_complete_aggr(struct 
  	rcu_read_unlock();
  
--	if (needreset)
+ 	if (needreset)
 -		ath_reset(sc, false);
-+	if (needreset) {
-+		sc->sc_flags |= SC_OP_HW_RESET;
 +		ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
-+	}
  }
  
  static bool ath_lookup_legacy(struct ath_buf *bf)
-@@ -1357,7 +1359,7 @@ void ath_txq_schedule(struct ath_softc *
+@@ -1357,7 +1357,7 @@ void ath_txq_schedule(struct ath_softc *
  	struct ath_atx_ac *ac, *ac_tmp, *last_ac;
  	struct ath_atx_tid *tid, *last_tid;
  
 -	if (list_empty(&txq->axq_acq) ||
-+	if ((sc->sc_flags & SC_OP_HW_RESET) || list_empty(&txq->axq_acq) ||
++	if (work_pending(&sc->hw_reset_work) || list_empty(&txq->axq_acq) ||
  	    txq->axq_ampdu_depth >= ATH_AGGR_MIN_QDEPTH)
  		return;
  
-@@ -2184,6 +2186,9 @@ static void ath_tx_processq(struct ath_s
+@@ -2184,6 +2184,9 @@ static void ath_tx_processq(struct ath_s
  
  	spin_lock_bh(&txq->axq_lock);
  	for (;;) {
-+		if (sc->sc_flags & SC_OP_HW_RESET)
++		if (work_pending(&sc->hw_reset_work))
 +			break;
 +
  		if (list_empty(&txq->axq_q)) {
  			txq->axq_link = NULL;
  			if (sc->sc_flags & SC_OP_TXAGGR)
-@@ -2271,9 +2276,7 @@ static void ath_tx_complete_poll_work(st
+@@ -2271,9 +2274,7 @@ static void ath_tx_complete_poll_work(st
  	if (needreset) {
  		ath_dbg(ath9k_hw_common(sc->sc_ah), ATH_DBG_RESET,
  			"tx hung, resetting the chip\n");
@@ -305,11 +286,11 @@
  	}
  
  	ieee80211_queue_delayed_work(sc->hw, &sc->tx_complete_work,
-@@ -2306,6 +2309,9 @@ void ath_tx_edma_tasklet(struct ath_soft
+@@ -2306,6 +2307,9 @@ void ath_tx_edma_tasklet(struct ath_soft
  	int status;
  
  	for (;;) {
-+		if (sc->sc_flags & SC_OP_HW_RESET)
++		if (work_pending(&sc->hw_reset_work))
 +			break;
 +
  		status = ath9k_hw_txprocdesc(ah, NULL, (void *)&ts);
