@@ -1,7 +1,7 @@
 /*
  * uhttpd - Tiny single-threaded httpd - Static file handler
  *
- *   Copyright (C) 2010 Jo-Philipp Wich <xm@subsignal.org>
+ *   Copyright (C) 2010-2011 Jo-Philipp Wich <xm@subsignal.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ static const char * uh_file_mime_lookup(const char *path)
 
 		while( e >= path )
 		{
-			if( (*e == '.') && !strcasecmp(&e[1], m->extn) )
+			if( (*e == '.' || *e == '/') && !strcasecmp(&e[1], m->extn) )
 				return m->mime;
 
 			e--;
