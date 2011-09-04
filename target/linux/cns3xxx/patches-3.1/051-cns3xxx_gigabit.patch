@@ -1,6 +1,6 @@
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -2078,6 +2078,14 @@ config ACENIC_OMIT_TIGON_I
+@@ -2071,6 +2071,14 @@ config ACENIC_OMIT_TIGON_I
  
  	  The safe and default value for this is N.
  
@@ -17,7 +17,7 @@
  	depends on PCI
 --- a/drivers/net/Makefile
 +++ b/drivers/net/Makefile
-@@ -241,6 +241,7 @@ obj-$(CONFIG_MAC89x0) += mac89x0.o
+@@ -240,6 +240,7 @@ obj-$(CONFIG_MAC89x0) += mac89x0.o
  obj-$(CONFIG_TUN) += tun.o
  obj-$(CONFIG_VETH) += veth.o
  obj-$(CONFIG_NET_NETX) += netx-eth.o
@@ -44,12 +44,14 @@
 +#include <linux/dma-mapping.h>
 +#include <linux/dmapool.h>
 +#include <linux/etherdevice.h>
++#include <linux/interrupt.h>
 +#include <linux/io.h>
 +#include <linux/kernel.h>
 +#include <linux/phy.h>
 +#include <linux/platform_device.h>
 +#include <linux/skbuff.h>
-+#include <mach/hardware.h>
++#include <mach/irqs.h>
++#include <mach/platform.h>
 +
 +#define DRV_NAME "cns3xxx_eth"
 +
@@ -211,7 +213,6 @@
 +
 +	u8 alignment[16]; /* for 32 byte alignment */
 +};
-+
 +
 +struct switch_regs {
 +	u32 phy_control;
@@ -438,7 +439,6 @@
 +	}
 +	return (IRQ_HANDLED);
 +}
-+
 +
 +static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 +{
@@ -1297,15 +1297,6 @@
 +MODULE_DESCRIPTION("Cavium CNS3xxx Ethernet driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:cns3xxx_eth");
---- a/arch/arm/mach-cns3xxx/include/mach/hardware.h
-+++ b/arch/arm/mach-cns3xxx/include/mach/hardware.h
-@@ -19,4 +19,6 @@
- #define PCIBIOS_MIN_MEM		0x00000000
- #define pcibios_assign_all_busses()	1
- 
-+#include "platform.h"
-+
- #endif
 --- /dev/null
 +++ b/arch/arm/mach-cns3xxx/include/mach/platform.h
 @@ -0,0 +1,26 @@

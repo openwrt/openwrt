@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/pcie.c
 +++ b/arch/arm/mach-cns3xxx/pcie.c
-@@ -375,8 +375,6 @@ static int __init cns3xxx_pcie_init(void
+@@ -378,8 +378,6 @@ static int __init cns3xxx_pcie_init(void
  	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
  		iotable_init(cns3xxx_pcie[i].cfg_bases,
  			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));

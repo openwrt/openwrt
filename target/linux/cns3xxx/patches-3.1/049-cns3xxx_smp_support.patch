@@ -231,6 +231,7 @@
 + *
 + * Copyright 2011 Gateworks Corporation
 + *		   Chris Lang <clang@gateworks.com>
++ *
 + * Cloned from linux/arch/arm/mach-vexpress/platsmp.c
 + *
 + *  Copyright (C) 2002 ARM Ltd.
@@ -254,7 +255,6 @@
 +#include <asm/smp_scu.h>
 +#include <asm/unified.h>
 +
-+#include <mach/hardware.h>
 +#include <mach/cns3xxx.h>
 +
 +extern void cns3xxx_secondary_startup(void);
@@ -404,7 +404,7 @@
 +}
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1313,7 +1313,7 @@ config SMP
+@@ -1350,7 +1350,7 @@ config SMP
  	depends on REALVIEW_EB_ARM11MP || REALVIEW_EB_A9MP || \
  		 MACH_REALVIEW_PB11MP || MACH_REALVIEW_PBX || ARCH_OMAP4 || \
  		 ARCH_EXYNOS4 || ARCH_TEGRA || ARCH_U8500 || ARCH_VEXPRESS_CA9X4 || \
