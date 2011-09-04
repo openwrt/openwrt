@@ -13,7 +13,7 @@ arch/arm/Kconfig                     |    1 +
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -327,6 +327,7 @@ config ARCH_CNS3XXX
+@@ -333,6 +333,7 @@ config ARCH_CNS3XXX
  	select ARM_GIC
  	select MIGHT_HAVE_PCI
  	select PCI_DOMAINS if PCI
@@ -34,7 +34,7 @@ arch/arm/Kconfig                     |    1 +
  CONFIG_MMC=y
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -159,10 +159,32 @@ static struct platform_device cns3xxx_us
+@@ -158,10 +158,32 @@ static struct platform_device cns3xxx_us
  	},
  };
  

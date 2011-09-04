@@ -41,9 +41,9 @@
 +#include <asm/mach/arch.h>
 +#include <asm/mach/map.h>
 +#include <asm/mach/time.h>
-+#include <mach/hardware.h>
 +#include <mach/cns3xxx.h>
 +#include <mach/irqs.h>
++#include <mach/platform.h>
 +#include <mach/pm.h>
 +#include "core.h"
 +#include "devices.h"
@@ -816,7 +816,7 @@
  
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -323,6 +323,7 @@ config ARCH_CLPS711X
+@@ -329,6 +329,7 @@ config ARCH_CLPS711X
  config ARCH_CNS3XXX
  	bool "Cavium Networks CNS3XXX family"
  	select CPU_V6K
@@ -859,7 +859,7 @@
 +
 +#include <linux/kernel.h>
 +#include <linux/io.h>
-+#include <mach/hardware.h>
++#include <mach/platform.h>
 +#include <asm-generic/gpio.h>			/* cansleep wrappers */
 +
 +#define NR_BUILTIN_GPIO 64
@@ -946,7 +946,7 @@
  {
  	int i;
  
-@@ -373,6 +373,9 @@ static int __init cns3xxx_pcie_init(void
+@@ -376,6 +376,9 @@ static int __init cns3xxx_pcie_init(void
  			"imprecise external abort");
  
  	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
@@ -956,14 +956,22 @@
  		iotable_init(cns3xxx_pcie[i].cfg_bases,
  			     ARRAY_SIZE(cns3xxx_pcie[i].cfg_bases));
  		cns3xxx_pcie_check_link(&cns3xxx_pcie[i]);
-@@ -384,4 +387,3 @@ static int __init cns3xxx_pcie_init(void
+@@ -387,4 +390,3 @@ static int __init cns3xxx_pcie_init(void
  
  	return 0;
  }
 -device_initcall(cns3xxx_pcie_init);
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -199,6 +199,8 @@ static void __init cns3420_init(void)
+@@ -31,6 +31,7 @@
+ #include <asm/mach/time.h>
+ #include <mach/cns3xxx.h>
+ #include <mach/irqs.h>
++#include <mach/platform.h>
+ #include "core.h"
+ #include "devices.h"
+ 
+@@ -198,6 +199,8 @@ static void __init cns3420_init(void)
  	cns3xxx_ahci_init();
  	cns3xxx_sdhci_init();
  

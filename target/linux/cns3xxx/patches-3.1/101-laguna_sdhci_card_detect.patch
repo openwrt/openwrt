@@ -1,6 +1,6 @@
 --- a/drivers/mmc/host/sdhci-cns3xxx.c
 +++ b/drivers/mmc/host/sdhci-cns3xxx.c
-@@ -90,8 +90,9 @@ struct sdhci_pltfm_data sdhci_cns3xxx_pd
+@@ -88,10 +88,11 @@ static struct sdhci_pltfm_data sdhci_cns
  	.ops = &sdhci_cns3xxx_ops,
  	.quirks = SDHCI_QUIRK_BROKEN_DMA |
  		  SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK |
@@ -12,3 +12,5 @@
 +		  SDHCI_QUIRK_NONSTANDARD_CLOCK |
 +		  SDHCI_QUIRK_BROKEN_CARD_DETECTION,
  };
+ 
+ static int __devinit sdhci_cns3xxx_probe(struct platform_device *pdev)

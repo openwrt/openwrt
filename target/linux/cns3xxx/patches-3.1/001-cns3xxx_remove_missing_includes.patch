@@ -1,0 +1,45 @@
+From b1bd6bd7c230e00b40b0b859f3c23eb56ef39f0c Mon Sep 17 00:00:00 2001
+From: Imre Kaloz <kaloz@openwrt.org>
+Date: Fri, 2 Sep 2011 08:07:00 +0200
+Subject: [PATCH] ARM: remove missing cns3xxx includes
+
+Commit c9d95fbe59e426eed7f16e7cac812e46ac4772d0 deleted cns3xxx' hardware.h,
+but didn't remove references for it, breaking the build.
+
+Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
+---
+ arch/arm/mach-cns3xxx/include/mach/entry-macro.S |    1 -
+ arch/arm/mach-cns3xxx/include/mach/system.h      |    1 -
+ arch/arm/mach-cns3xxx/include/mach/uncompress.h  |    1 -
+ 3 files changed, 0 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/mach-cns3xxx/include/mach/entry-macro.S
++++ b/arch/arm/mach-cns3xxx/include/mach/entry-macro.S
+@@ -8,7 +8,6 @@
+  * published by the Free Software Foundation.
+  */
+ 
+-#include <mach/hardware.h>
+ #include <asm/hardware/entry-macro-gic.S>
+ 
+ 		.macro	disable_fiq
+--- a/arch/arm/mach-cns3xxx/include/mach/system.h
++++ b/arch/arm/mach-cns3xxx/include/mach/system.h
+@@ -13,7 +13,6 @@
+ 
+ #include <linux/io.h>
+ #include <asm/proc-fns.h>
+-#include <mach/hardware.h>
+ 
+ static inline void arch_idle(void)
+ {
+--- a/arch/arm/mach-cns3xxx/include/mach/uncompress.h
++++ b/arch/arm/mach-cns3xxx/include/mach/uncompress.h
+@@ -8,7 +8,6 @@
+  */
+ 
+ #include <asm/mach-types.h>
+-#include <mach/hardware.h>
+ #include <mach/cns3xxx.h>
+ 
+ #define AMBA_UART_DR(base)	(*(volatile unsigned char *)((base) + 0x00))
