@@ -7,7 +7,7 @@
 
 define Profile/A02RBW300N
 	NAME:=Atlantis-Land A02-RB-W300N
-	PACKAGES:=kmod-ath9k wpad-mini
+	PACKAGES:=
 endef
 
 define Profile/A02RBW300N/Description
