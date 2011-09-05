@@ -7,7 +7,7 @@
 
 define Profile/ath5k
 	NAME:=Atheros 802.11abg WiFi (ath5k)
-	PACKAGES:=kmod-ath5k wpad-mini
+	PACKAGES:=kmod-ath5k -kmod-ath9k wpad-mini
 endef
 
 define Profile/ath5k/Description

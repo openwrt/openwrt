@@ -7,7 +7,7 @@
 
 define Profile/AP121
 	NAME:=Atheros AP121 reference board
-	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb2
 endef
 
 define Profile/AP121/Description
@@ -18,7 +18,7 @@ $(eval $(call Profile,AP121))
 
 define Profile/AP121MINI
 	NAME:=Atheros AP121-MINI reference board
-	PACKAGES:=wpad-mini kmod-ath9k
+	PACKAGES:=
 endef
 
 define Profile/AP121MINI/Description
@@ -29,7 +29,7 @@ $(eval $(call Profile,AP121MINI))
 
 define Profile/AP81
 	NAME:=Atheros AP81 reference board
-	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb2
 endef
 
 define Profile/AP81/Description
@@ -40,7 +40,7 @@ $(eval $(call Profile,AP81))
 
 define Profile/AP83
 	NAME:=Atheros AP83 reference board
-	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2 \
+	PACKAGES:=kmod-usb-core kmod-usb2 \
 		  vsc7385-ucode-ap83 vsc7395-ucode-ap83
 endef
 
@@ -52,7 +52,7 @@ $(eval $(call Profile,AP83))
 
 define Profile/AP96
 	NAME:=Atheros AP96 reference board
-	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb2
 endef
 
 define Profile/AP96/Description
@@ -63,7 +63,7 @@ $(eval $(call Profile,AP96))
 
 define Profile/DB120
 	NAME:=Atheros DB120 reference board
-	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2 kmod-usb-storage
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-usb-storage
 endef
 
 define Profile/DB120/Description
@@ -74,7 +74,7 @@ $(eval $(call Profile,DB120))
 
 define Profile/PB42
 	NAME:=Atheros PB42 reference board
-	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
 endef
 
 define Profile/PB42/Description
@@ -85,7 +85,7 @@ $(eval $(call Profile,PB42))
 
 define Profile/PB44
 	NAME:=Atheros PB44 reference board
-	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb-ohci kmod-usb2 \
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 \
 		  vsc7385-ucode-pb44 vsc7395-ucode-pb44
 endef
 
@@ -97,7 +97,7 @@ $(eval $(call Profile,PB44))
 
 define Profile/PB92
 	NAME:=Atheros PB92 reference board
-	PACKAGES:=wpad-mini kmod-ath9k kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb2
 endef
 
 define Profile/PB92/Description

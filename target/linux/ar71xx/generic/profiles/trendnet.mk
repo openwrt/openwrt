@@ -7,7 +7,7 @@
 
 define Profile/TEW632BRP
 	NAME:=TRENDNet TEW-632BRP
-	PACKAGES:=kmod-ath9k wpad-mini
+	PACKAGES:=
 endef
 
 define Profile/TEW632BRP/Description
@@ -18,7 +18,7 @@ $(eval $(call Profile,TEW632BRP))
 
 define Profile/TEW652BRP
 	NAME:=TRENDNet TEW-652BRP
-	PACKAGES:=kmod-ath9k
+	PACKAGES:=
 endef
 
 define Profile/TEW652BRP/Description

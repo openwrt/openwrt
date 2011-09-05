@@ -7,7 +7,7 @@
 
 define Profile/ZCN1523H28
 	NAME:=Zcomax ZCN-1523H-2-8
-	PACKAGES:=kmod-ath9k wpad-mini
+	PACKAGES:=
 endef
 
 define Profile/ZCN1523H28/Description
@@ -18,7 +18,7 @@ $(eval $(call Profile,ZCN1523H28))
 
 define Profile/ZCN1523H516
 	NAME:=Zcomax ZCN-1523H-5-16
-	PACKAGES:=kmod-ath9k wpad-mini
+	PACKAGES:=
 endef
 
 define Profile/ZCN1523H516/Description

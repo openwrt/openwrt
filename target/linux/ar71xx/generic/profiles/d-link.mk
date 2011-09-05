@@ -7,7 +7,7 @@
 
 define Profile/DIR600A1
 	NAME:=D-Link DIR-600 rev. A1
-	PACKAGES:=kmod-ath9k wpad-mini
+	PACKAGES:=
 endef
 
 define Profile/DIR600A1/Description
@@ -19,7 +19,7 @@ $(eval $(call Profile,DIR600A1))
 
 define Profile/DIR615C1
 	NAME:=D-Link DIR-615 rev. C1
-	PACKAGES:=kmod-ath9k wpad-mini
+	PACKAGES:=
 endef
 
 define Profile/DIR615C1/Description
@@ -31,9 +31,7 @@ $(eval $(call Profile,DIR615C1))
 
 define Profile/DIR825B1
 	NAME:=D-Link DIR-825 rev. B1
-	PACKAGES:=\
-		kmod-ath9k wpad-mini kmod-usb-core kmod-usb-ohci kmod-usb2 \
-		kmod-ledtrig-usbdev
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/DIR825B1/Description

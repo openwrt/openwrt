@@ -7,7 +7,7 @@
 
 define Profile/NBG_460N_550N_550NH
 	NAME:=Zyxel NBG 460N/550N/550NH
-	PACKAGES:=kmod-ath9k kmod-rtc-pcf8563 swconfig
+	PACKAGES:=kmod-rtc-pcf8563 swconfig
 endef
 
 define Profile/NBG_460N_550N_550NH/Description
