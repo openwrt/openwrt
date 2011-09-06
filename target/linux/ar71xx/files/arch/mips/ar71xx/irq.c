@@ -324,7 +324,8 @@ asmlinkage void plat_irq_dispatch(void)
 	else if (pending & STATUSF_IP6)
 		ar71xx_misc_irq_dispatch();
 
-	spurious_interrupt();
+	else
+		spurious_interrupt();
 }
 
 void __init arch_init_irq(void)
