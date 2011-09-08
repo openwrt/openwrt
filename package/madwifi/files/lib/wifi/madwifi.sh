@@ -28,13 +28,15 @@ find_atheros_phy() {
 scan_atheros() {
 	local device="$1"
 	local wds
-	local adhoc ahdemo sta ap monitor
+	local adhoc ahdemo sta ap monitor disabled
 
 	[ ${device%[0-9]} = "wifi" ] && config_set "$device" phy "$device"
 	
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
-	
+		config_get_bool disabled "$vif" disabled 0
+		[ $disabled = 0 ] || continue
+
 		config_get ifname "$vif" ifname
 		config_set "$vif" ifname "${ifname:-ath}"
 		
