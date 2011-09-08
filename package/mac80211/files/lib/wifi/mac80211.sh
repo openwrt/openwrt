@@ -206,10 +206,13 @@ find_mac80211_phy() {
 
 scan_mac80211() {
 	local device="$1"
-	local adhoc sta ap monitor mesh
+	local adhoc sta ap monitor mesh disabled
 
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
+		config_get_bool disabled "$vif" disabled 0
+		[ $disabled = 0 ] || continue
+
 		config_get mode "$vif" mode
 		case "$mode" in
 			adhoc|sta|ap|monitor|mesh)
