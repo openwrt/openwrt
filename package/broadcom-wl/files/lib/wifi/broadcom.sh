@@ -3,12 +3,15 @@ append DRIVERS "broadcom"
 scan_broadcom() {
 	local device="$1"
 	local wds
-	local adhoc sta apmode mon
+	local adhoc sta apmode mon disabled
 	local adhoc_if sta_if ap_if mon_if
 	local _c=0
 
 	config_get vifs "$device" vifs
 	for vif in $vifs; do
+		config_get_bool disabled "$vif" disabled 0
+		[ $disabled -eq 0 ] || continue
+
 		config_get mode "$vif" mode
 		_c=$(($_c + 1))
 		case "$mode" in
