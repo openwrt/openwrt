@@ -236,8 +236,11 @@ enable_broadcom() {
 					*tkip*) wsec=2;;
 				esac
 
+				# group rekey interval
+				config_get rekey "$vif" wpa_group_rekey
+
 				eval "${vif}_key=\"\$key\""
-				nasopts="-k \"\$${vif}_key\""
+				nasopts="-k \"\$${vif}_key\"${rekey:+ -g $rekey}"
 			;;
 			*wpa*)
 				wsec_r=1
@@ -260,8 +263,11 @@ enable_broadcom() {
 					*tkip*) wsec=2;;
 				esac
 
+				# group rekey interval
+				config_get rekey "$vif" wpa_group_rekey
+
 				eval "${vif}_key=\"\$key\""
-				nasopts="-r \"\$${vif}_key\" -h $server -p ${port:-1812}"
+				nasopts="-r \"\$${vif}_key\" -h $server -p ${port:-1812}${rekey:+ -g $rekey}"
 			;;
 		esac
 		append vif_do_up "wsec $wsec" "$N"
