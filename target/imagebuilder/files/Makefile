@@ -100,7 +100,13 @@ _call_image:
 	echo
 	rm -rf $(TARGET_DIR)
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR)
-	$(MAKE) package_index
+	if [ ! -f "$(PACKAGE_DIR)/Packages" ] || [ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || [ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ]; then \
+		echo "Package list missing or not up-to-date, generating it.";\
+		$(MAKE) package_index; \
+	else \
+		mkdir -p $(TARGET_DIR)/tmp; \
+		$(OPKG) update; \
+	fi
 	$(MAKE) package_install
 ifneq ($(USER_FILES),)
 	$(MAKE) copy_files
@@ -112,7 +118,7 @@ package_index: FORCE
 	@echo
 	@echo Building package index...
 	@mkdir -p $(TOPDIR)/tmp $(TOPDIR)/dl $(TARGET_DIR)/tmp
-	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages && \
+	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
 		gzip -9c Packages > Packages.gz \
 	) >/dev/null 2>/dev/null
 	$(OPKG) update
@@ -121,6 +127,7 @@ package_install: FORCE
 	@echo
 	@echo Installing packages...
 	$(OPKG) install $(BUILD_PACKAGES)
+	rm -f $(TARGET_DIR)/usr/lib/opkg/lists/*
 
 copy_files: FORCE
 	@echo
