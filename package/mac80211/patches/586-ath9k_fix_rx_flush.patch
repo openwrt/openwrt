@@ -1,0 +1,34 @@
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -1845,7 +1845,7 @@ int ath_rx_tasklet(struct ath_softc *sc,
+ 		 * If we're asked to flush receive queue, directly
+ 		 * chain it back at the queue without processing it.
+ 		 */
+-		if (flush)
++		if (sc->sc_flags & SC_OP_RXFLUSH)
+ 			goto requeue_drop_frag;
+ 
+ 		retval = ath9k_rx_skb_preprocess(common, hw, hdr, &rs,
+@@ -1973,7 +1973,8 @@ requeue:
+ 		} else {
+ 			list_move_tail(&bf->list, &sc->rx.rxbuf);
+ 			ath_rx_buf_link(sc, bf);
+-			ath9k_hw_rxena(ah);
++			if (!flush)
++				ath9k_hw_rxena(ah);
+ 		}
+ 	} while (1);
+ 
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -246,8 +246,8 @@ static bool ath_prepare_reset(struct ath
+ 
+ 	if (!flush) {
+ 		if (ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
+-			ath_rx_tasklet(sc, 0, true);
+-		ath_rx_tasklet(sc, 0, false);
++			ath_rx_tasklet(sc, 1, true);
++		ath_rx_tasklet(sc, 1, false);
+ 	} else {
+ 		ath_flushrecv(sc);
+ 	}
