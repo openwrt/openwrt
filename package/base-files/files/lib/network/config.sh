@@ -242,10 +242,10 @@ setup_interface_static() {
 	local iface="$1"
 	local config="$2"
 
-	local ipaddr netmask ip6addr
+	local ipaddr netmask ip6addrs ipaddr
 	config_get ipaddr "$config" ipaddr
 	config_get netmask "$config" netmask
-	config_get ip6addr "$config" ip6addr
+	config_get ip6addrs "$config" ip6addr
 	[ -z "$ipaddr" -o -z "$netmask" ] && [ -z "$ip6addr" ] && return 1
 
 	local gateway ip6gw dns bcast metric
@@ -255,13 +255,14 @@ setup_interface_static() {
 	config_get bcast "$config" broadcast
 	config_get metric "$config" metric
 
-	case "$ip6addr" in
-		*/*) ;;
-		*:*) ip6addr="$ip6addr/64" ;;
-	esac
-
 	[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
-	[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
+	for ip6addr in $ip6addrs; do          
+		case "$ip6addr" in
+			*/*) ;;
+			*:*) ip6addr="$ip6addr/64" ;;
+		esac
+		$DEBUG ifconfig "$iface" add "$ip6addr"
+	done 
 	[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" ${metric:+metric $metric} dev "$iface"
 	[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw" ${metric:+metric $metric} dev "$iface"
 	[ -z "$dns" ] || add_dns "$config" $dns
