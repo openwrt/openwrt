@@ -203,8 +203,8 @@ setup_interface_6to4() {
 
 				grep -qs "^ *$adv_ifname:" /proc/net/dev && {
 					local adv_valid_lifetime adv_preferred_lifetime
-					config_get adv_valid_lifetime     "${adv_interface:-lan}" adv_valid_lifetime
-					config_get adv_preferred_lifetime "${adv_interface:-lan}" adv_preferred_lifetime
+					config_get adv_valid_lifetime     "$cfg" adv_valid_lifetime
+					config_get adv_preferred_lifetime "$cfg" adv_preferred_lifetime
 
 					local subnet6="$(printf "%s:%x::1/64" "$prefix6" $adv_subnet)"
 
