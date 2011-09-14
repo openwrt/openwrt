@@ -261,9 +261,9 @@ setup_interface_static() {
 	esac
 
 	[ -z "$ipaddr" ] || $DEBUG ifconfig "$iface" "$ipaddr" netmask "$netmask" broadcast "${bcast:-+}"
-	[ -z "$ip6addr" ] || $DEBUG ifconfig "$iface" add "$ip6addr"
+	[ -z "$ip6addr" ] || $DEBUG ifconfig "${iface%:*}" add "$ip6addr"
 	[ -z "$gateway" ] || $DEBUG route add default gw "$gateway" ${metric:+metric $metric} dev "$iface"
-	[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw" ${metric:+metric $metric} dev "$iface"
+	[ -z "$ip6gw" ] || $DEBUG route -A inet6 add default gw "$ip6gw" ${metric:+metric $metric} dev "${iface%:*}"
 	[ -z "$dns" ] || add_dns "$config" $dns
 
 	config_get type "$config" TYPE
