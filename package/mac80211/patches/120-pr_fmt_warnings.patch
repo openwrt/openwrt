@@ -165,3 +165,13 @@
  #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
  
  #include <linux/etherdevice.h>
+--- a/compat/crc8.c
++++ b/compat/crc8.c
+@@ -14,6 +14,7 @@
+  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
++#undef pr_fmt
+ #define pr_fmt(fmt)		KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/module.h>

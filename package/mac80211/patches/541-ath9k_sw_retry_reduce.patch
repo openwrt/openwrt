@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -260,14 +260,17 @@ static void ath_tid_drain(struct ath_sof
+@@ -259,14 +259,17 @@ static void ath_tid_drain(struct ath_sof
  }
  
  static void ath_tx_set_retry(struct ath_softc *sc, struct ath_txq *txq,
@@ -20,7 +20,7 @@
  		return;
  
  	hdr = (struct ieee80211_hdr *)skb->data;
-@@ -383,6 +386,7 @@ static void ath_tx_complete_aggr(struct 
+@@ -382,6 +385,7 @@ static void ath_tx_complete_aggr(struct 
  	int nframes;
  	u8 tidno;
  	bool clear_filter;
@@ -28,7 +28,7 @@
  
  	skb = bf->bf_mpdu;
  	hdr = (struct ieee80211_hdr *)skb->data;
-@@ -391,6 +395,10 @@ static void ath_tx_complete_aggr(struct 
+@@ -390,6 +394,10 @@ static void ath_tx_complete_aggr(struct 
  
  	memcpy(rates, tx_info->control.rates, sizeof(rates));
  
@@ -39,7 +39,7 @@
  	rcu_read_lock();
  
  	sta = ieee80211_find_sta_by_ifaddr(hw, hdr->addr1, hdr->addr2);
-@@ -478,7 +486,8 @@ static void ath_tx_complete_aggr(struct 
+@@ -475,7 +483,8 @@ static void ath_tx_complete_aggr(struct 
  			} else if (fi->retries < ATH_MAX_SW_RETRIES) {
  				if (!(ts->ts_status & ATH9K_TXERR_FILT) ||
  				    !an->sleeping)
@@ -51,7 +51,7 @@
  				txpending = 1;
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -543,7 +543,7 @@ struct ath_ant_comb {
+@@ -540,7 +540,7 @@ struct ath_ant_comb {
  #define DEFAULT_CACHELINE       32
  #define ATH_REGCLASSIDS_MAX     10
  #define ATH_CABQ_READY_TIME     80      /* % of beacon interval */
