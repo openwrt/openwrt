@@ -2811,3 +2811,40 @@
  	ath9k_hw_start_nfcal(ah, true);
  
  	if (ah->caldata)
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -671,7 +671,6 @@ enum queue_stop_reason {
+ 	IEEE80211_QUEUE_STOP_REASON_AGGREGATION,
+ 	IEEE80211_QUEUE_STOP_REASON_SUSPEND,
+ 	IEEE80211_QUEUE_STOP_REASON_SKB_ADD,
+-	IEEE80211_QUEUE_STOP_REASON_CHTYPE_CHANGE,
+ };
+ 
+ #ifdef CONFIG_MAC80211_LEDS
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1921,24 +1921,8 @@ static void ieee80211_rx_mgmt_beacon(str
+ 
+ 		rcu_read_unlock();
+ 
+-		/*
+-		 * Whenever the AP announces the HT mode change that can be
+-		 * 40MHz intolerant or etc., it would be safer to stop tx
+-		 * queues before doing hw config to avoid buffer overflow.
+-		 */
+-		ieee80211_stop_queues_by_reason(&sdata->local->hw,
+-				IEEE80211_QUEUE_STOP_REASON_CHTYPE_CHANGE);
+-
+-		/* flush out all packets */
+-		synchronize_net();
+-
+-		drv_flush(local, false);
+-
+ 		changed |= ieee80211_enable_ht(sdata, elems.ht_info_elem,
+ 					       bssid, ap_ht_cap_flags);
+-
+-		ieee80211_wake_queues_by_reason(&sdata->local->hw,
+-				IEEE80211_QUEUE_STOP_REASON_CHTYPE_CHANGE);
+ 	}
+ 
+ 	/* Note: country IE parsing is done for us by cfg80211 */
