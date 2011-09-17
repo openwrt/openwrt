@@ -36,7 +36,17 @@
  #define ATH9K_RX_MORE_AGGR        0x02
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -854,6 +854,8 @@ static bool ath9k_rx_accept(struct ath_c
+@@ -826,7 +826,8 @@ static bool ath9k_rx_accept(struct ath_c
+ 		test_bit(rx_stats->rs_keyix, common->tkip_keymap);
+ 	strip_mic = is_valid_tkip && ieee80211_is_data(fc) &&
+ 		!(rx_stats->rs_status &
+-		(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_CRC | ATH9K_RXERR_MIC));
++		(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_CRC | ATH9K_RXERR_MIC |
++		 ATH9K_RXERR_KEYMISS));
+ 
+ 	if (!rx_stats->rs_datalen)
+ 		return false;
+@@ -854,6 +855,8 @@ static bool ath9k_rx_accept(struct ath_c
  	 * descriptors.
  	 */
  	if (rx_stats->rs_status != 0) {
@@ -45,7 +55,7 @@
  		if (rx_stats->rs_status & ATH9K_RXERR_CRC) {
  			rxs->flag |= RX_FLAG_FAILED_FCS_CRC;
  			mic_error = false;
-@@ -861,7 +863,8 @@ static bool ath9k_rx_accept(struct ath_c
+@@ -861,7 +864,8 @@ static bool ath9k_rx_accept(struct ath_c
  		if (rx_stats->rs_status & ATH9K_RXERR_PHY)
  			return false;
  
@@ -55,7 +65,7 @@
  			*decrypt_error = true;
  			mic_error = false;
  		}
-@@ -871,17 +874,14 @@ static bool ath9k_rx_accept(struct ath_c
+@@ -871,17 +875,14 @@ static bool ath9k_rx_accept(struct ath_c
  		 * decryption and MIC failures. For monitor mode,
  		 * we also ignore the CRC error.
  		 */
