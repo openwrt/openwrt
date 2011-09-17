@@ -1,0 +1,54 @@
+--- a/drivers/net/wireless/ath/ath9k/eeprom_def.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_def.c
+@@ -415,8 +415,6 @@ static u32 ath9k_hw_def_get_eeprom(struc
+ 		return get_unaligned_be16(pBase->macAddr + 4);
+ 	case EEP_REG_0:
+ 		return pBase->regDmn[0];
+-	case EEP_REG_1:
+-		return pBase->regDmn[1];
+ 	case EEP_OP_CAP:
+ 		return pBase->deviceCap;
+ 	case EEP_OP_MODE:
+--- a/drivers/net/wireless/ath/ath9k/eeprom_4k.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_4k.c
+@@ -322,8 +322,6 @@ static u32 ath9k_hw_4k_get_eeprom(struct
+ 		return get_unaligned_be16(pBase->macAddr + 4);
+ 	case EEP_REG_0:
+ 		return pBase->regDmn[0];
+-	case EEP_REG_1:
+-		return pBase->regDmn[1];
+ 	case EEP_OP_CAP:
+ 		return pBase->deviceCap;
+ 	case EEP_OP_MODE:
+--- a/drivers/net/wireless/ath/ath9k/eeprom_9287.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_9287.c
+@@ -308,8 +308,6 @@ static u32 ath9k_hw_ar9287_get_eeprom(st
+ 		return get_unaligned_be16(pBase->macAddr + 4);
+ 	case EEP_REG_0:
+ 		return pBase->regDmn[0];
+-	case EEP_REG_1:
+-		return pBase->regDmn[1];
+ 	case EEP_OP_CAP:
+ 		return pBase->deviceCap;
+ 	case EEP_OP_MODE:
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -3014,8 +3014,6 @@ static u32 ath9k_hw_ar9300_get_eeprom(st
+ 		return get_unaligned_be16(eep->macAddr + 4);
+ 	case EEP_REG_0:
+ 		return le16_to_cpu(pBase->regDmn[0]);
+-	case EEP_REG_1:
+-		return le16_to_cpu(pBase->regDmn[1]);
+ 	case EEP_OP_CAP:
+ 		return pBase->deviceCap;
+ 	case EEP_OP_MODE:
+--- a/drivers/net/wireless/ath/ath9k/eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/eeprom.h
+@@ -225,7 +225,6 @@ enum eeprom_param {
+ 	EEP_MAC_MID,
+ 	EEP_MAC_LSW,
+ 	EEP_REG_0,
+-	EEP_REG_1,
+ 	EEP_OP_CAP,
+ 	EEP_OP_MODE,
+ 	EEP_RF_SILENT,
