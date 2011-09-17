@@ -1,0 +1,155 @@
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -515,7 +515,7 @@ static void ath_beacon_config_ap(struct 
+ 	sc->sc_flags |= SC_OP_TSF_RESET;
+ 	ath9k_beacon_init(sc, nexttbtt, intval);
+ 	sc->beacon.bmisscnt = 0;
+-	ath9k_hw_set_interrupts(ah, ah->imask);
++	ath9k_hw_set_interrupts(ah);
+ 	ath9k_hw_enable_interrupts(ah);
+ }
+ 
+@@ -643,7 +643,7 @@ static void ath_beacon_config_sta(struct
+ 	ath9k_hw_set_sta_beacon_timers(ah, &bs);
+ 	ah->imask |= ATH9K_INT_BMISS;
+ 
+-	ath9k_hw_set_interrupts(ah, ah->imask);
++	ath9k_hw_set_interrupts(ah);
+ 	ath9k_hw_enable_interrupts(ah);
+ }
+ 
+@@ -679,7 +679,7 @@ static void ath_beacon_config_adhoc(stru
+ 	ath9k_beacon_init(sc, nexttbtt, intval);
+ 	sc->beacon.bmisscnt = 0;
+ 
+-	ath9k_hw_set_interrupts(ah, ah->imask);
++	ath9k_hw_set_interrupts(ah);
+ 	ath9k_hw_enable_interrupts(ah);
+ }
+ 
+@@ -821,11 +821,11 @@ void ath9k_set_beaconing_status(struct a
+ 	if (status) {
+ 		/* Re-enable beaconing */
+ 		ah->imask |= ATH9K_INT_SWBA;
+-		ath9k_hw_set_interrupts(ah, ah->imask);
++		ath9k_hw_set_interrupts(ah);
+ 	} else {
+ 		/* Disable SWBA interrupt */
+ 		ah->imask &= ~ATH9K_INT_SWBA;
+-		ath9k_hw_set_interrupts(ah, ah->imask);
++		ath9k_hw_set_interrupts(ah);
+ 		tasklet_kill(&sc->bcon_tasklet);
+ 		ath9k_hw_stop_dma_queue(ah, sc->beacon.beaconq);
+ 	}
+--- a/drivers/net/wireless/ath/ath9k/gpio.c
++++ b/drivers/net/wireless/ath/ath9k/gpio.c
+@@ -151,7 +151,7 @@ static void ath9k_gen_timer_start(struct
+ 	if ((ah->imask & ATH9K_INT_GENTIMER) == 0) {
+ 		ath9k_hw_disable_interrupts(ah);
+ 		ah->imask |= ATH9K_INT_GENTIMER;
+-		ath9k_hw_set_interrupts(ah, ah->imask);
++		ath9k_hw_set_interrupts(ah);
+ 		ath9k_hw_enable_interrupts(ah);
+ 	}
+ }
+@@ -166,7 +166,7 @@ static void ath9k_gen_timer_stop(struct 
+ 	if (timer_table->timer_mask.val == 0) {
+ 		ath9k_hw_disable_interrupts(ah);
+ 		ah->imask &= ~ATH9K_INT_GENTIMER;
+-		ath9k_hw_set_interrupts(ah, ah->imask);
++		ath9k_hw_set_interrupts(ah);
+ 		ath9k_hw_enable_interrupts(ah);
+ 	}
+ }
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -273,7 +273,7 @@ static bool ath_complete_reset(struct at
+ 
+ 	ath9k_cmn_update_txpow(ah, sc->curtxpow,
+ 			       sc->config.txpowlimit, &sc->curtxpow);
+-	ath9k_hw_set_interrupts(ah, ah->imask);
++	ath9k_hw_set_interrupts(ah);
+ 	ath9k_hw_enable_interrupts(ah);
+ 
+ 	if (!(sc->sc_flags & (SC_OP_OFFCHANNEL)) && start) {
+@@ -833,7 +833,7 @@ irqreturn_t ath_isr(int irq, void *dev)
+ 
+ 	if (status & ATH9K_INT_RXEOL) {
+ 		ah->imask &= ~(ATH9K_INT_RXEOL | ATH9K_INT_RXORN);
+-		ath9k_hw_set_interrupts(ah, ah->imask);
++		ath9k_hw_set_interrupts(ah);
+ 	}
+ 
+ 	if (status & ATH9K_INT_MIB) {
+@@ -1409,7 +1409,7 @@ static void ath9k_calculate_summary_stat
+ 		ah->imask &= ~ATH9K_INT_TSFOOR;
+ 	}
+ 
+-	ath9k_hw_set_interrupts(ah, ah->imask);
++	ath9k_hw_set_interrupts(ah);
+ 
+ 	/* Set up ANI */
+ 	if (iter_data.naps > 0) {
+@@ -1566,7 +1566,7 @@ static void ath9k_enable_ps(struct ath_s
+ 	if (!(ah->caps.hw_caps & ATH9K_HW_CAP_AUTOSLEEP)) {
+ 		if ((ah->imask & ATH9K_INT_TIM_TIMER) == 0) {
+ 			ah->imask |= ATH9K_INT_TIM_TIMER;
+-			ath9k_hw_set_interrupts(ah, ah->imask);
++			ath9k_hw_set_interrupts(ah);
+ 		}
+ 		ath9k_hw_setrxabort(ah, 1);
+ 	}
+@@ -1586,7 +1586,7 @@ static void ath9k_disable_ps(struct ath_
+ 				  PS_WAIT_FOR_TX_ACK);
+ 		if (ah->imask & ATH9K_INT_TIM_TIMER) {
+ 			ah->imask &= ~ATH9K_INT_TIM_TIMER;
+-			ath9k_hw_set_interrupts(ah, ah->imask);
++			ath9k_hw_set_interrupts(ah);
+ 		}
+ 	}
+ 
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -1977,7 +1977,7 @@ requeue:
+ 
+ 	if (!(ah->imask & ATH9K_INT_RXEOL)) {
+ 		ah->imask |= (ATH9K_INT_RXEOL | ATH9K_INT_RXORN);
+-		ath9k_hw_set_interrupts(ah, ah->imask);
++		ath9k_hw_set_interrupts(ah);
+ 	}
+ 
+ 	return 0;
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -827,9 +827,9 @@ void ath9k_hw_enable_interrupts(struct a
+ }
+ EXPORT_SYMBOL(ath9k_hw_enable_interrupts);
+ 
+-void ath9k_hw_set_interrupts(struct ath_hw *ah, enum ath9k_int ints)
++void ath9k_hw_set_interrupts(struct ath_hw *ah)
+ {
+-	enum ath9k_int omask = ah->imask;
++	enum ath9k_int ints = ah->imask;
+ 	u32 mask, mask2;
+ 	struct ath9k_hw_capabilities *pCap = &ah->caps;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+@@ -837,7 +837,7 @@ void ath9k_hw_set_interrupts(struct ath_
+ 	if (!(ints & ATH9K_INT_GLOBAL))
+ 		ath9k_hw_disable_interrupts(ah);
+ 
+-	ath_dbg(common, ATH_DBG_INTERRUPT, "0x%x => 0x%x\n", omask, ints);
++	ath_dbg(common, ATH_DBG_INTERRUPT, "New interrupt mask 0x%x\n", ints);
+ 
+ 	mask = ints & ATH9K_INT_COMMON;
+ 	mask2 = 0;
+--- a/drivers/net/wireless/ath/ath9k/mac.h
++++ b/drivers/net/wireless/ath/ath9k/mac.h
+@@ -734,7 +734,7 @@ int ath9k_hw_beaconq_setup(struct ath_hw
+ 
+ /* Interrupt Handling */
+ bool ath9k_hw_intrpend(struct ath_hw *ah);
+-void ath9k_hw_set_interrupts(struct ath_hw *ah, enum ath9k_int ints);
++void ath9k_hw_set_interrupts(struct ath_hw *ah);
+ void ath9k_hw_enable_interrupts(struct ath_hw *ah);
+ void ath9k_hw_disable_interrupts(struct ath_hw *ah);
+ 
