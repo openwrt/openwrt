@@ -42,7 +42,7 @@ static struct http_response * uh_cgi_header_parse(char *buf, int len, int *off)
 
 		bufptr = &buf[0];
 
-		for( pos = 0; pos < off; pos++ )
+		for( pos = 0; pos < *off; pos++ )
 		{
 			if( !hdrname && (buf[pos] == ':') )
 			{
