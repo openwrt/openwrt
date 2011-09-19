@@ -2848,3 +2848,15 @@
  	}
  
  	/* Note: country IE parsing is done for us by cfg80211 */
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -1613,7 +1613,8 @@ static void handle_irq_beacon(struct b43
+ 	u32 cmd, beacon0_valid, beacon1_valid;
+ 
+ 	if (!b43_is_mode(wl, NL80211_IFTYPE_AP) &&
+-	    !b43_is_mode(wl, NL80211_IFTYPE_MESH_POINT))
++	    !b43_is_mode(wl, NL80211_IFTYPE_MESH_POINT) &&
++	    !b43_is_mode(wl, NL80211_IFTYPE_ADHOC))
+ 		return;
+ 
+ 	/* This is the bottom half of the asynchronous beacon update. */
