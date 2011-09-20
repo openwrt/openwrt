@@ -155,7 +155,7 @@
 +	channel = chan->chan;
 +	chan_pwr = min_t(int, channel->max_power * 2, MAX_RATE_POWER);
 +	new_pwr = min_t(int, chan_pwr, reg->power_limit);
-+	max_gain = new_pwr - chan_pwr + channel->max_antenna_gain * 2;
++	max_gain = chan_pwr - new_pwr + channel->max_antenna_gain * 2;
 +
 +	ant_gain = get_antenna_gain(ah, chan);
 +	if (ant_gain > max_gain)
@@ -175,7 +175,7 @@
 -	int reg_pwr = min_t(int, MAX_RATE_POWER, limit);
 -	int chan_pwr = channel->max_power * 2;
  
-+	reg->power_limit = min_t(int, limit * 2, MAX_RATE_POWER);
++	reg->power_limit = min_t(int, limit, MAX_RATE_POWER);
  	if (test)
 -		reg_pwr = chan_pwr = MAX_RATE_POWER;
 +		channel->max_power = MAX_RATE_POWER / 2;
