@@ -9,6 +9,7 @@
  *
  */
 
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -124,6 +125,34 @@ static int maccalc_do_mac2bin(int argc, const char *argv[])
 	return 0;
 }
 
+static ssize_t read_safe(int fd, void *buf, size_t count)
+{
+	ssize_t total = 0;
+	ssize_t r;
+
+	while(count > 0) {
+		r = read(fd, buf, count);
+		if (r == 0)
+			/* EOF */
+			break;
+		if (r < 0) {
+			if (errno == EINTR)
+				/* interrupted by a signal, restart */
+				continue;
+			/* error */
+			total = -1;
+			break;
+		}
+
+		/* ok */
+		total += r;
+		count -= r;
+		buf += r;
+	}
+
+	return total;
+}
+
 static int maccalc_do_bin2mac(int argc, const char *argv[])
 {
 	unsigned char mac[MAC_ADDRESS_LEN];
@@ -134,7 +163,7 @@ static int maccalc_do_bin2mac(int argc, const char *argv[])
 		return ERR_INVALID;
 	}
 
-	c = read(STDIN_FILENO, mac, sizeof(mac));
+	c = read_safe(STDIN_FILENO, mac, sizeof(mac));
 	if (c != sizeof(mac)) {
 		fprintf(stderr, "failed to read from stdin\n");
 		return ERR_IO;
