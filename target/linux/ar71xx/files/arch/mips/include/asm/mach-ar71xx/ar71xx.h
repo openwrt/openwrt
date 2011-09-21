@@ -724,6 +724,7 @@ static inline u32 ar71xx_reset_rr(unsigned reg)
 
 void ar71xx_device_stop(u32 mask);
 void ar71xx_device_start(u32 mask);
+void ar71xx_device_reset_rmw(u32 clear, u32 set);
 int ar71xx_device_stopped(u32 mask);
 
 /*
