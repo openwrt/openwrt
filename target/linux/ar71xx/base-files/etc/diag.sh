@@ -96,6 +96,9 @@ get_status_led() {
 	tl-wr1043nd)
 		status_led="tl-wr1043nd:green:system"
 		;;
+	tl-wr703n)
+		status_led="tl-wr703n:blue:system"
+		;;
 	tl-wr741nd)
 		status_led="tl-wr741nd:green:system"
 		;;

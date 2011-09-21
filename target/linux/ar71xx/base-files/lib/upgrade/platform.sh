@@ -83,7 +83,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	tl-mr3220 | tl-mr3420 | tl-wa901nd | tl-wa901nd-v2 | tl-wr741nd | tl-wr841n-v1 | tl-wr941nd | tl-wr1043nd)
+	tl-mr3220 | tl-mr3420 | tl-wa901nd | tl-wa901nd-v2 | tl-wr703n | tl-wr741nd | tl-wr841n-v1 | tl-wr941nd | tl-wr1043nd)
 		[ "$magic" != "0100" ] && {
 			echo "Invalid image type."
 			return 1
