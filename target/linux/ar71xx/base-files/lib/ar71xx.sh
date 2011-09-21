@@ -133,6 +133,9 @@ ar71xx_board_name() {
 	*TL-WR941ND)
 		name="tl-wr941nd"
 		;;
+	*"TL-WR703N v1")
+		name="tl-wr703n"
+		;;
 	*UniFi)
 		name="unifi"
 		;;
