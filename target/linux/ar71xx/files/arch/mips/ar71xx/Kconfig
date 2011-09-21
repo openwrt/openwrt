@@ -10,7 +10,6 @@ config AR71XX_MACH_AP81
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_AP83
 	bool "Atheros AP83 board support"
@@ -19,7 +18,6 @@ config AR71XX_MACH_AP83
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_AP96
 	bool "Atheros AP96 board support"
@@ -29,7 +27,6 @@ config AR71XX_MACH_AP96
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_AP121
 	bool "Atheros AP121 board support"
@@ -39,7 +36,6 @@ config AR71XX_MACH_AP121
 	select AR71XX_DEV_USB
 	select AR71XX_DEV_AR9XXX_WMAC
 	select SOC_AR933X
-	default n
 
 config AR71XX_MACH_DB120
 	bool "Atheros DB120 board support"
@@ -49,7 +45,6 @@ config AR71XX_MACH_DB120
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_DIR_600_A1
 	bool "D-Link DIR-600 rev. A1 support"
@@ -59,7 +54,6 @@ config AR71XX_MACH_DIR_600_A1
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_NVRAM
-	default n
 
 config AR71XX_MACH_DIR_615_C1
 	bool "D-Link DIR-615 rev. C1 support"
@@ -69,7 +63,6 @@ config AR71XX_MACH_DIR_615_C1
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_NVRAM
-	default n
 
 config AR71XX_MACH_DIR_825_B1
 	bool "D-Link DIR-825 rev. B1 board support"
@@ -79,7 +72,6 @@ config AR71XX_MACH_DIR_825_B1
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_JA76PF
 	bool "jjPlus JA76PF board support"
@@ -89,7 +81,6 @@ config AR71XX_MACH_JA76PF
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_JWAP003
 	bool "jjPlus JWAP003 board support"
@@ -98,7 +89,6 @@ config AR71XX_MACH_JWAP003
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_PB42
 	bool "Atheros PB42 board support"
@@ -106,7 +96,6 @@ config AR71XX_MACH_PB42
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
-	default n
 
 config AR71XX_MACH_PB44
 	bool "Atheros PB44 board support"
@@ -115,7 +104,6 @@ config AR71XX_MACH_PB44
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_PB92
 	bool "Atheros PB92 board support"
@@ -124,7 +112,6 @@ config AR71XX_MACH_PB92
 	select AR71XX_DEV_PB9X_PCI if PCI
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_AW_NR580
 	bool "AzureWave AW-NR580 board support"
@@ -133,7 +120,6 @@ config AR71XX_MACH_AW_NR580
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_WZR_HP_AG300H
 	bool "Buffalo WZR-HP-AG300H board support"
@@ -142,7 +128,6 @@ config AR71XX_MACH_WZR_HP_AG300H
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default y
 
 config AR71XX_MACH_WZR_HP_G300NH
 	bool "Buffalo WZR-HP-G300NH board support"
@@ -152,7 +137,6 @@ config AR71XX_MACH_WZR_HP_G300NH
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
 	select RTL8366_SMI
-	default y
 
 config AR71XX_MACH_WP543
 	bool "Compex WP543/WPJ543 board support"
@@ -163,7 +147,6 @@ config AR71XX_MACH_WP543
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_WRT160NL
 	bool "Linksys WRT160NL board support"
@@ -174,7 +157,6 @@ config AR71XX_MACH_WRT160NL
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
 	select AR71XX_NVRAM
-	default n
 
 config AR71XX_MACH_WRT400N
 	bool "Linksys WRT400N board support"
@@ -183,7 +165,6 @@ config AR71XX_MACH_WRT400N
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_RB4XX
 	bool "MikroTik RouterBOARD 4xx series support"
@@ -191,12 +172,10 @@ config AR71XX_MACH_RB4XX
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_RB750
 	bool "MikroTik RouterBOARD 750 support"
 	select SOC_AR724X
-	default n
 
 config AR71XX_MACH_WNDR3700
 	bool "NETGEAR WNDR3700 board support"
@@ -206,7 +185,6 @@ config AR71XX_MACH_WNDR3700
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_WNR2000
 	bool "NETGEAR WNR2000 board support"
@@ -215,7 +193,6 @@ config AR71XX_MACH_WNR2000
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_MZK_W04NU
 	bool "Planex MZK-W04NU board support"
@@ -225,7 +202,6 @@ config AR71XX_MACH_MZK_W04NU
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_MZK_W300NH
 	bool "Planex MZK-W300NH board support"
@@ -234,7 +210,6 @@ config AR71XX_MACH_MZK_W300NH
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_NBG460N
 	bool "Zyxel NBG460N/550N/550NH board support"
@@ -243,7 +218,6 @@ config AR71XX_MACH_NBG460N
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_TL_MR3X20
 	bool "TP-LINK TL-MR3220/3420 support"
@@ -253,7 +227,6 @@ config AR71XX_MACH_TL_MR3X20
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_TL_WA901ND
 	bool "TP-LINK TL-WA901ND support"
@@ -262,7 +235,6 @@ config AR71XX_MACH_TL_WA901ND
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_TL_WA901ND_V2
 	bool "TP-LINK TL-WA901ND v2 support"
@@ -271,7 +243,6 @@ config AR71XX_MACH_TL_WA901ND_V2
 	select AR71XX_DEV_AR9XXX_WMAC
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_TL_WR741ND
 	bool "TP-LINK TL-WR741ND support"
@@ -280,7 +251,6 @@ config AR71XX_MACH_TL_WR741ND
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_TL_WR841N_V1
 	bool "TP-LINK TL-WR841N v1 support"
@@ -290,7 +260,6 @@ config AR71XX_MACH_TL_WR841N_V1
 	select AR71XX_DEV_DSA
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_TL_WR941ND
 	bool "TP-LINK TL-WR941ND support"
@@ -300,7 +269,6 @@ config AR71XX_MACH_TL_WR941ND
 	select AR71XX_DEV_DSA
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_TL_WR1043ND
 	bool "TP-LINK TL-WR1043ND support"
@@ -310,7 +278,6 @@ config AR71XX_MACH_TL_WR1043ND
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_TEW_632BRP
 	bool "TRENDnet TEW-632BRP support"
@@ -320,7 +287,6 @@ config AR71XX_MACH_TEW_632BRP
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_NVRAM
-	default n
 
 config AR71XX_MACH_UBNT
 	bool "Ubiquiti AR71xx based boards support"
@@ -332,7 +298,6 @@ config AR71XX_MACH_UBNT
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_PB42_PCI if PCI
 	select AR71XX_DEV_USB
-	default n
 
 config AR71XX_MACH_EAP7660D
 	bool "Senao EAP7660D support"
@@ -340,7 +305,6 @@ config AR71XX_MACH_EAP7660D
 	select AR71XX_DEV_M25P80
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 config AR71XX_MACH_ZCN_1523H
 	bool "Zcomax ZCN-1523H support"
@@ -349,7 +313,6 @@ config AR71XX_MACH_ZCN_1523H
 	select AR71XX_DEV_AP91_PCI if PCI
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
-	default n
 
 endmenu
 
