@@ -596,6 +596,10 @@ define Image/Build/Profile/TLWR740NV3
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v3,$(tlwe740nv3_cmdline),TL-WR740Nv3)
 endef
 
+define Image/Build/Profile/TLWR743NDV1
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr743nd-v1,$(tlwe741ndv1_cmdline),TL-WR743NDv1)
+endef
+
 tlwr841nv15_cmdline=board=TL-WR841N-v1.5 console=ttyS0,115200
 define Image/Build/Profile/TLWR841NV15
 	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841n-v1.5,$(tlwr841nv15_cmdline),TL-WR841Nv1.5)
@@ -709,6 +713,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLWR741NDV1,$(1))
 	$(call Image/Build/Profile/TLWR740NV1,$(1))
 	$(call Image/Build/Profile/TLWR740NV3,$(1))
+	$(call Image/Build/Profile/TLWR743NDV1,$(1))
 	$(call Image/Build/Profile/TLWR841NV15,$(1))
 	$(call Image/Build/Profile/TLWR841NDV3,$(1))
 	$(call Image/Build/Profile/TLWR841NDV5,$(1))
