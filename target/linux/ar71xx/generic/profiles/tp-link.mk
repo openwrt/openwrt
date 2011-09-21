@@ -84,6 +84,17 @@ endef
 $(eval $(call Profile,TLWR740NV3))
 
 
+define Profile/TLWR743NDV1
+	NAME:=TP-LINK TL-WR743ND v1
+	PACKAGES:=
+endef
+
+define Profile/TLWR743NDV1/Description
+	Package set optimized for the TP-LINK TL-WR743ND v1.
+endef
+
+$(eval $(call Profile,TLWR743NDV1))
+
 define Profile/TLWR841NV15
 	NAME:=TP-LINK TL-WR841N v1.5
 	PACKAGES:=
