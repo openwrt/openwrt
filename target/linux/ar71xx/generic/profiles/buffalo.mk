@@ -21,7 +21,7 @@ define Profile/WZRHPAG300H
 	PACKAGES:=kmod-usb-ohci kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
-define Profile/WZRHPG30XNH/Description
+define Profile/WZRHPAG300H/Description
 	Package set optimized for the Buffalo WZR-HP-AG300H
 endef
 
