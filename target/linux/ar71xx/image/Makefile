@@ -274,6 +274,20 @@ define Image/Build/TPLINK/initramfs
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
+define Image/Build/TPLINK-LZMA
+	$(call PatchKernelLzma,$(2),$(3))
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-B $(4) -N OpenWrt -V $(REVISION)\
+		-k $(KDIR)/vmlinux-$(2).bin.lzma \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		-o $(call factoryname,$(1),$(2))
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-B $(4) -N OpenWrt -V $(REVISION) -s \
+		-k $(KDIR)/vmlinux-$(2).bin.lzma \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		-o $(call sysupname,$(1),$(2))
+endef
+
 define Image/Build/CyberTAN
 	$(call MkuImageGzip,$(2),$(3))
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR)/vmlinux-$(2).uImage \
@@ -640,6 +654,11 @@ define Image/Build/Profile/TLWR1043NDV1
 	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr1043nd-v1,$(tlwr1043nd_cmdline),TL-WR1043NDv1)
 endef
 
+tlwr703n_cmdline=board=TL-WR703N console=ttyATH0,115200
+define Image/Build/Profile/TLWR703NV1
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK-LZMA,tl-wr703n-v1,$(tlwr703n_cmdline),TL-WR703Nv1)
+endef
+
 wndr3700_cmdline=board=WNDR3700 console=ttyS0,115200
 wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
 wndr3700v2_cmdline=board=WNDR3700v2 console=ttyS0,115200
@@ -722,6 +741,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLWR941NDV3,$(1))
 	$(call Image/Build/Profile/TLWR941NDV4,$(1))
 	$(call Image/Build/Profile/TLWR1043NDV1,$(1))
+	$(call Image/Build/Profile/TLWR703NV1,$(1))
 	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 	$(call Image/Build/Profile/WNDR3700,$(1))
