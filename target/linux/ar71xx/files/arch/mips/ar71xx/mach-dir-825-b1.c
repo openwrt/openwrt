@@ -1,7 +1,7 @@
 /*
  *  D-Link DIR-825 rev. B1 board support
  *
- *  Copyright (C) 2009 Lukas Kuna, Evkanet, s.r.o.
+ *  Copyright (C) 2009-2011 Lukas Kuna, Evkanet, s.r.o.
  *
  *  based on mach-wndr3700.c
  *
@@ -45,8 +45,8 @@
 #define DIR825B1_CAL_LOCATION_0			0x1f661000
 #define DIR825B1_CAL_LOCATION_1			0x1f665000
 
-#define DIR825B1_MAC_LOCATION_0			0x2ffa81b8
-#define DIR825B1_MAC_LOCATION_1			0x2ffa8370
+#define DIR825B1_MAC_LOCATION_0			0x1f66ffa0
+#define DIR825B1_MAC_LOCATION_1			0x1f66ffb4
 
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition dir825b1_partitions[] = {
@@ -150,20 +150,35 @@ static struct platform_device dir825b1_rtl8366s_device = {
 	}
 };
 
+static void dir825b1_read_ascii_mac(u8 *dest, unsigned int src_addr)
+{
+	int ret;
+	u8 *src = (u8 *)KSEG1ADDR(src_addr);
+
+	ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+		     &dest[0], &dest[1], &dest[2],
+		     &dest[3], &dest[4], &dest[5]);
+
+	if (ret != ETH_ALEN) memset(dest, 0, ETH_ALEN);
+}
+
 static void __init dir825b1_setup(void)
 {
-	u8 *mac = (u8 *) KSEG1ADDR(DIR825B1_MAC_LOCATION_1);
+	u8 mac1[ETH_ALEN], mac2[ETH_ALEN];
+
+	dir825b1_read_ascii_mac(mac1, DIR825B1_MAC_LOCATION_0);
+	dir825b1_read_ascii_mac(mac2, DIR825B1_MAC_LOCATION_1);
 
 	ar71xx_add_device_mdio(0x0);
 
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac1, 2);
 	ar71xx_eth0_data.mii_bus_dev = &dir825b1_rtl8366s_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_pll_data.pll_1000 = 0x11110000;
 
-	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 2);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 3);
 	ar71xx_eth1_data.mii_bus_dev = &dir825b1_rtl8366s_device.dev;
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth1_data.phy_mask = 0x10;
@@ -188,10 +203,8 @@ static void __init dir825b1_setup(void)
 	ap94_pci_setup_wmac_led_pin(0, 5);
 	ap94_pci_setup_wmac_led_pin(1, 5);
 
-	ap94_pci_init((u8 *) KSEG1ADDR(DIR825B1_CAL_LOCATION_0),
-		      (u8 *) KSEG1ADDR(DIR825B1_MAC_LOCATION_0),
-		      (u8 *) KSEG1ADDR(DIR825B1_CAL_LOCATION_1),
-		      (u8 *) KSEG1ADDR(DIR825B1_MAC_LOCATION_1));
+	ap94_pci_init((u8 *) KSEG1ADDR(DIR825B1_CAL_LOCATION_0), mac1,
+		      (u8 *) KSEG1ADDR(DIR825B1_CAL_LOCATION_1), mac2);
 }
 
 MIPS_MACHINE(AR71XX_MACH_DIR_825_B1, "DIR-825-B1", "D-Link DIR-825 rev. B1",
