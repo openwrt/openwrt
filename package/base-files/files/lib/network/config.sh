@@ -106,7 +106,7 @@ add_dns() {
 	local dns
 	local add
 	for dns in "$@"; do
-		grep -qsF "nameserver $dns" /tmp/resolv.conf.auto || {
+		grep -qsE "^nameserver ${dns//./\\.}$" /tmp/resolv.conf.auto || {
 			add="${add:+$add }$dns"
 			echo "nameserver $dns" >> /tmp/resolv.conf.auto
 		}
@@ -126,7 +126,7 @@ remove_dns() {
 		[ -f /tmp/resolv.conf.auto ] && {
 			local dns=$(uci_get_state network "$cfg" resolv_dns)
 			for dns in $dns; do
-				sed -i -e "/^nameserver $dns$/d" /tmp/resolv.conf.auto
+				sed -i -e "/^nameserver ${dns//./\\.}$/d" /tmp/resolv.conf.auto
 			done
 		}
 
