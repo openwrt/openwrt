@@ -152,7 +152,7 @@ sort_list() {
 prepare_interface() {
 	local iface="$1"
 	local config="$2"
-	local vifmac="$3"
+	local macaddr="$3"
 
 	# if we're called for the bridge interface itself, don't bother trying
 	# to create any interfaces here. The scripts have already done that, otherwise
@@ -166,13 +166,15 @@ prepare_interface() {
 		# make sure the interface is removed from any existing bridge and deconfigured,
 		# (deconfigured only if the interface is not set to proto=none)
 		unbridge "$iface"
-		[ "$proto" = none ] || ifconfig "$iface" 0.0.0.0
 
-		# Change interface MAC address if requested
-		[ -n "$vifmac" ] && {
-			ifconfig "$iface" down
-			ifconfig "$iface" hw ether "$vifmac" up
-		}
+		local mtu macaddr txqueuelen
+		config_get mtu "$config" mtu
+		[ -n "$macaddr" ] || config_get macaddr "$config" macaddr
+		config_get txqueuelen "$config" txqueuelen
+		[ -n "$macaddr" ] && $DEBUG ifconfig "$iface" down
+		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} ${txqueuelen:+txqueuelen $txqueuelen} up
+
+		[ "$proto" = none ] || ifconfig "$iface" 0.0.0.0
 
 		# Apply sysctl settings
 		map_sysctls "$config" "$iface"
@@ -350,14 +352,6 @@ setup_interface() {
 	}
 
 	# Interface settings
-	grep -qE "^ *$iface:" /proc/net/dev && {
-		local mtu macaddr txqueuelen
-		config_get mtu "$config" mtu
-		config_get macaddr "$config" macaddr
-		config_get txqueuelen "$config" txqueuelen
-		[ -n "$macaddr" ] && $DEBUG ifconfig "$iface" down
-		$DEBUG ifconfig "$iface" ${macaddr:+hw ether "$macaddr"} ${mtu:+mtu $mtu} ${txqueuelen:+txqueuelen $txqueuelen} up
-	}
 	set_interface_ifname "$config" "$iface"
 
 	[ -n "$proto" ] || config_get proto "$config" proto
