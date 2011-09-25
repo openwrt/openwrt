@@ -262,11 +262,27 @@ disable_mac80211() (
 
 	return 0
 )
+
 get_freq() {
 	local phy="$1"
 	local chan="$2"
 	iw "$phy" info | grep -E -m1 "(\* ${chan:-....} MHz${chan:+|\\[$chan\\]})" | grep MHz | awk '{print $2}'
 }
+
+mac80211_generate_mac() {
+	local off="$1"
+	local mac="$2"
+	local oIFS="$IFS"; IFS=":"; set -- $mac; IFS="$oIFS"
+
+	local b2mask=0x00
+	[ $off -gt 0 ] && b2mask=0x02
+
+	printf "%02x:%s:%s:%s:%02x:%02x" \
+		$(( 0x$1 | $b2mask )) $2 $3 $4 \
+		$(( (0x$5 + ($off / 0x100)) % 0x100 )) \
+		$(( (0x$6 + $off) % 0x100 ))
+}
+
 enable_mac80211() {
 	local device="$1"
 	config_get channel "$device" channel
@@ -353,17 +369,9 @@ enable_mac80211() {
 		# which can either be explicitly set in the device
 		# section, or automatically generated
 		config_get macaddr "$device" macaddr
-		local mac_1="${macaddr%%:*}"
-		local mac_2="${macaddr#*:}"
-
 		config_get vif_mac "$vif" macaddr
 		[ -n "$vif_mac" ] || {
-			if [ "$macidx" -gt 0 ]; then
-				offset="$(( 2 + $macidx * 4 ))"
-			else
-				offset="0"
-			fi
-			vif_mac="$( printf %02x $((0x$mac_1 + $offset)) ):$mac_2"
+			vif_mac="$(mac80211_generate_mac $macidx $macaddr)"
 			macidx="$(($macidx + 1))"
 		}
 		[ "$mode" = "ap" ] || ifconfig "$ifname" hw ether "$vif_mac"
