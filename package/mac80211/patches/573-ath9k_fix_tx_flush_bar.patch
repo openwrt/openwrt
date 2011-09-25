@@ -1,0 +1,51 @@
+--- a/drivers/net/wireless/ath/ath9k/mac.h
++++ b/drivers/net/wireless/ath/ath9k/mac.h
+@@ -75,9 +75,10 @@
+ #define ATH9K_TXERR_XTXOP          0x08
+ #define ATH9K_TXERR_TIMER_EXPIRED  0x10
+ #define ATH9K_TX_ACKED		   0x20
++#define ATH9K_TX_FLUSH		   0x40
+ #define ATH9K_TXERR_MASK						\
+ 	(ATH9K_TXERR_XRETRY | ATH9K_TXERR_FILT | ATH9K_TXERR_FIFO |	\
+-	 ATH9K_TXERR_XTXOP | ATH9K_TXERR_TIMER_EXPIRED)
++	 ATH9K_TXERR_XTXOP | ATH9K_TXERR_TIMER_EXPIRED | ATH9K_TX_FLUSH)
+ 
+ #define ATH9K_TX_BA                0x01
+ #define ATH9K_TX_PWRMGMT           0x02
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -389,6 +389,7 @@ static void ath_tx_complete_aggr(struct 
+ 	u8 tidno;
+ 	bool clear_filter;
+ 	int i, retries;
++	bool flush = !!(ts->ts_status & ATH9K_TX_FLUSH);
+ 
+ 	skb = bf->bf_mpdu;
+ 	hdr = (struct ieee80211_hdr *)skb->data;
+@@ -483,6 +484,8 @@ static void ath_tx_complete_aggr(struct 
+ 				 * the un-acked sub-frames
+ 				 */
+ 				txfail = 1;
++			} else if (flush) {
++				txpending = 1;
+ 			} else if (fi->retries < ATH_MAX_SW_RETRIES) {
+ 				if (!(ts->ts_status & ATH9K_TXERR_FILT) &&
+ 				    !an->sleeping)
+@@ -543,7 +546,8 @@ static void ath_tx_complete_aggr(struct 
+ 
+ 						ath_tx_complete_buf(sc, bf, txq,
+ 								    &bf_head,
+-								    ts, 0, 1,
++								    ts, 0,
++								    !flush,
+ 								    sta);
+ 						break;
+ 					}
+@@ -1447,6 +1451,7 @@ static void ath_drain_txq_list(struct at
+ 	struct ath_tx_status ts;
+ 
+ 	memset(&ts, 0, sizeof(ts));
++	ts.ts_status = ATH9K_TX_FLUSH;
+ 	INIT_LIST_HEAD(&bf_head);
+ 
+ 	while (!list_empty(list)) {
