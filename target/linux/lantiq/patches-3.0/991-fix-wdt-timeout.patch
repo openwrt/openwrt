@@ -1,0 +1,40 @@
+From 14ea48a5f5702ddc97425cbe520600e187e14e4a Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 11 Aug 2011 13:58:39 +0200
+Subject: [PATCH 03/16] MIPS: lantiq: fix watchdogs timeout handling
+
+The enable function was using the global timeout variable for local operations.
+This resulted in the value of the global variable being corrupted, thus
+breaking the code.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
+Cc: linux-watchdog@vger.kernel.org
+Cc: linux-mips@linux-mips.org
+---
+ drivers/watchdog/lantiq_wdt.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/watchdog/lantiq_wdt.c
++++ b/drivers/watchdog/lantiq_wdt.c
+@@ -51,16 +51,16 @@ static int ltq_wdt_ok_to_close;
+ static void
+ ltq_wdt_enable(void)
+ {
+-	ltq_wdt_timeout = ltq_wdt_timeout *
++	unsigned long int timeout = ltq_wdt_timeout *
+ 			(ltq_io_region_clk_rate / LTQ_WDT_DIVIDER) + 0x1000;
+-	if (ltq_wdt_timeout > LTQ_MAX_TIMEOUT)
+-		ltq_wdt_timeout = LTQ_MAX_TIMEOUT;
++	if (timeout > LTQ_MAX_TIMEOUT)
++		timeout = LTQ_MAX_TIMEOUT;
+ 
+ 	/* write the first password magic */
+ 	ltq_w32(LTQ_WDT_PW1, ltq_wdt_membase + LTQ_WDT_CR);
+ 	/* write the second magic plus the configuration and new timeout */
+ 	ltq_w32(LTQ_WDT_SR_EN | LTQ_WDT_SR_PWD | LTQ_WDT_SR_CLKDIV |
+-		LTQ_WDT_PW2 | ltq_wdt_timeout, ltq_wdt_membase + LTQ_WDT_CR);
++		LTQ_WDT_PW2 | timeout, ltq_wdt_membase + LTQ_WDT_CR);
+ }
+ 
+ static void
