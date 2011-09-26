@@ -250,7 +250,7 @@
 --- a/net/ipv4/Makefile
 +++ b/net/ipv4/Makefile
 @@ -14,6 +14,9 @@ obj-y     := route.o inetpeer.o protocol
- 	     inet_fragment.o
+ 	     inet_fragment.o ping.o
  
  obj-$(CONFIG_SYSCTL) += sysctl_net_ipv4.o
 +ifneq ($(CONFIG_IFX_UDP_REDIRECT),)
@@ -279,9 +279,9 @@
 -	int (*getfrag)(void *, char *, int, int, int, struct sk_buff *);
 +	int (*getfrag)(void *, char *, int, int, int, struct sk_buff *) = NULL;
  	struct sk_buff *skb;
+ 	struct ip_options_data opt_copy;
  
- 	if (len > 0xFFFF)
-@@ -818,7 +822,13 @@ int udp_sendmsg(struct kiocb *iocb, stru
+@@ -819,7 +823,13 @@ int udp_sendmsg(struct kiocb *iocb, stru
  	ipc.opt = NULL;
  	ipc.tx_flags = 0;
  
@@ -294,9 +294,9 @@
 +#endif /* IFX_UDP_REDIRECT */
 +		getfrag = is_udplite ? udplite_getfrag : ip_generic_getfrag;
  
+ 	fl4 = &inet->cork.fl.u.ip4;
  	if (up->pending) {
- 		/*
-@@ -1608,6 +1618,7 @@ int __udp4_lib_rcv(struct sk_buff *skb,
+@@ -1619,6 +1629,7 @@ int __udp4_lib_rcv(struct sk_buff *skb,
  	struct rtable *rt = skb_rtable(skb);
  	__be32 saddr, daddr;
  	struct net *net = dev_net(skb->dev);
@@ -304,7 +304,7 @@
  
  	/*
  	 *  Validate the packet.
-@@ -1640,7 +1651,16 @@ int __udp4_lib_rcv(struct sk_buff *skb,
+@@ -1651,7 +1662,16 @@ int __udp4_lib_rcv(struct sk_buff *skb,
  	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
  
  	if (sk != NULL) {
@@ -322,7 +322,7 @@
  		sock_put(sk);
  
  		/* a return value > 0 means to resubmit the input, but
-@@ -1937,7 +1957,7 @@ struct proto udp_prot = {
+@@ -1948,7 +1968,7 @@ struct proto udp_prot = {
  	.clear_sk	   = sk_prot_clear_portaddr_nulls,
  };
  EXPORT_SYMBOL(udp_prot);

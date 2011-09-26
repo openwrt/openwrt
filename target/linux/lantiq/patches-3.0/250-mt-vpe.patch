@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1871,6 +1871,28 @@ config MIPS_VPE_LOADER
+@@ -1905,6 +1905,28 @@ config MIPS_VPE_LOADER
  	  Includes a loader for loading an elf relocatable object
  	  onto another VPE and running it.
  
@@ -140,7 +140,7 @@
  #define read_tc_gpr_sp()		mftgpr(29)
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
-@@ -85,7 +85,8 @@ obj-$(CONFIG_MIPS32_O32)	+= binfmt_elfo3
+@@ -86,7 +86,8 @@ obj-$(CONFIG_MIPS32_O32)	+= binfmt_elfo3
  
  obj-$(CONFIG_KGDB)		+= kgdb.o
  obj-$(CONFIG_PROC_FS)		+= proc.o

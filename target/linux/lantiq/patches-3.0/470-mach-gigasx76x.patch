@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/xway/Kconfig
 +++ b/arch/mips/lantiq/xway/Kconfig
-@@ -14,6 +14,10 @@
+@@ -14,6 +14,10 @@ config LANTIQ_MACH_NETGEAR
  	bool "Netgear"
  	default y
  
@@ -13,7 +13,7 @@
  endif
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -7,3 +7,4 @@
+@@ -7,3 +7,4 @@ obj-$(CONFIG_LANTIQ_MACH_EASY50712) += m
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
  obj-$(CONFIG_LANTIQ_MACH_ARV45XX) += mach-arv45xx.o
  obj-$(CONFIG_LANTIQ_MACH_NETGEAR) += mach-netgear.o
@@ -132,7 +132,7 @@
 +			gigasx76x_init);
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
-@@ -36,6 +36,9 @@
+@@ -36,6 +36,9 @@ enum lantiq_mach_type {
  
  	/* Netgear */
  	LANTIQ_MACH_DGN3500B,		/* Netgear DGN3500 */

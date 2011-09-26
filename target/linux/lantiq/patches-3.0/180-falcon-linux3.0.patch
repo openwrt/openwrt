@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
-@@ -51,6 +51,7 @@
+@@ -52,6 +52,7 @@
  #define ltq_eiu_w32(x, y)	ltq_w32((x), ltq_eiu_membase + (y))
  #define ltq_eiu_r32(x)		ltq_r32(ltq_eiu_membase + (x))
  
@@ -8,7 +8,7 @@
  static unsigned short ltq_eiu_irq[MAX_EIU] = {
  	LTQ_EIU_IR0,
  	LTQ_EIU_IR1,
-@@ -59,6 +60,7 @@
+@@ -60,6 +61,7 @@ static unsigned short ltq_eiu_irq[MAX_EI
  	LTQ_EIU_IR4,
  	LTQ_EIU_IR5,
  };
@@ -16,7 +16,7 @@
  
  static struct resource ltq_icu_resource = {
  	.name	= "icu",
-@@ -67,15 +69,19 @@
+@@ -68,15 +70,19 @@ static struct resource ltq_icu_resource
  	.flags	= IORESOURCE_MEM,
  };
  
@@ -36,7 +36,7 @@
  
  void ltq_disable_irq(struct irq_data *d)
  {
-@@ -120,6 +126,7 @@
+@@ -122,6 +128,7 @@ void ltq_enable_irq(struct irq_data *d)
  	ltq_icu_w32(ltq_icu_r32(ier) | (1 << irq_nr), ier);
  }
  
@@ -44,7 +44,7 @@
  static unsigned int ltq_startup_eiu_irq(struct irq_data *d)
  {
  	int i;
-@@ -159,6 +166,7 @@
+@@ -161,6 +168,7 @@ static void ltq_shutdown_eiu_irq(struct
  		}
  	}
  }
@@ -52,7 +52,7 @@
  
  static struct irq_chip ltq_irq_type = {
  	"icu",
-@@ -170,6 +178,7 @@
+@@ -172,6 +180,7 @@ static struct irq_chip ltq_irq_type = {
  	.irq_mask_ack = ltq_mask_and_ack_irq,
  };
  
@@ -60,7 +60,7 @@
  static struct irq_chip ltq_eiu_type = {
  	"eiu",
  	.irq_startup = ltq_startup_eiu_irq,
-@@ -181,6 +190,7 @@
+@@ -183,6 +192,7 @@ static struct irq_chip ltq_eiu_type = {
  	.irq_mask = ltq_disable_irq,
  	.irq_mask_ack = ltq_mask_and_ack_irq,
  };
@@ -68,7 +68,7 @@
  
  static void ltq_hw_irqdispatch(int module)
  {
-@@ -196,10 +206,12 @@
+@@ -198,10 +208,12 @@ static void ltq_hw_irqdispatch(int modul
  	irq = __fls(irq);
  	do_IRQ((int)irq + INT_NUM_IM0_IRL0 + (INT_NUM_IM_OFFSET * module));
  
@@ -81,7 +81,7 @@
  }
  
  #define DEFINE_HWx_IRQDISPATCH(x)					\
-@@ -262,6 +274,7 @@
+@@ -264,6 +276,7 @@ void __init arch_init_irq(void)
  	if (!ltq_icu_membase)
  		panic("Failed to remap icu memory\n");
  
@@ -89,7 +89,7 @@
  	if (insert_resource(&iomem_resource, &ltq_eiu_resource) < 0)
  		panic("Failed to insert eiu memory\n");
  
-@@ -273,6 +286,7 @@
+@@ -275,6 +288,7 @@ void __init arch_init_irq(void)
  				resource_size(&ltq_eiu_resource));
  	if (!ltq_eiu_membase)
  		panic("Failed to remap eiu memory\n");
@@ -97,7 +97,7 @@
  
  	/* make sure all irqs are turned off by default */
  	for (i = 0; i < 5; i++)
-@@ -298,6 +312,7 @@
+@@ -300,6 +314,7 @@ void __init arch_init_irq(void)
  
  	for (i = INT_NUM_IRQ0;
  		i <= (INT_NUM_IRQ0 + (5 * INT_NUM_IM_OFFSET)); i++)
@@ -105,7 +105,7 @@
  		if ((i == LTQ_EIU_IR0) || (i == LTQ_EIU_IR1) ||
  			(i == LTQ_EIU_IR2))
  			irq_set_chip_and_handler(i, &ltq_eiu_type,
-@@ -308,6 +323,7 @@
+@@ -310,6 +325,7 @@ void __init arch_init_irq(void)
  			irq_set_chip_and_handler(i, &ltq_eiu_type,
  				handle_level_irq);
  		else
@@ -115,7 +115,7 @@
  
 --- a/arch/mips/lantiq/clk.c
 +++ b/arch/mips/lantiq/clk.c
-@@ -46,6 +46,7 @@
+@@ -46,6 +46,7 @@ static struct clk cpu_clk_generic[] = {
  	},
  };
  
@@ -123,7 +123,7 @@
  static struct resource ltq_cgu_resource = {
  	.name	= "cgu",
  	.start	= LTQ_CGU_BASE_ADDR,
-@@ -55,6 +56,7 @@
+@@ -55,6 +56,7 @@ static struct resource ltq_cgu_resource
  
  /* remapped clock register range */
  void __iomem *ltq_cgu_membase;
@@ -131,7 +131,7 @@
  
  void clk_init(void)
  {
-@@ -120,6 +122,7 @@
+@@ -131,6 +133,7 @@ void __init plat_time_init(void)
  {
  	struct clk *clk;
  
@@ -139,7 +139,7 @@
  	if (insert_resource(&iomem_resource, &ltq_cgu_resource) < 0)
  		panic("Failed to insert cgu memory\n");
  
-@@ -133,6 +136,7 @@
+@@ -144,6 +147,7 @@ void __init plat_time_init(void)
  		pr_err("Failed to remap cgu memory\n");
  		unreachable();
  	}

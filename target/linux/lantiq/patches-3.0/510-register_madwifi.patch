@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -121,6 +121,16 @@
+@@ -121,6 +121,16 @@ ltq_register_etop(struct ltq_eth_data *e
  	}
  }
  
@@ -19,7 +19,7 @@
  		.start  = LTQ_SSC_BASE_ADDR,
 --- a/arch/mips/lantiq/xway/devices.h
 +++ b/arch/mips/lantiq/xway/devices.h
-@@ -19,5 +19,6 @@
+@@ -19,5 +19,6 @@ extern void ltq_register_ase_asc(void);
  extern void ltq_register_etop(struct ltq_eth_data *eth);
  extern void ltq_register_spi(struct ltq_spi_platform_data *pdata,
  	struct spi_board_info const *info, unsigned n);

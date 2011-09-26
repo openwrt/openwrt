@@ -9,7 +9,7 @@
  ccflags-$(CONFIG_I2C_DEBUG_BUS) := -DDEBUG
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -282,6 +282,10 @@ config I2C_POWERMAC
+@@ -284,6 +284,10 @@ config I2C_POWERMAC
  
  comment "I2C system bus drivers (mostly embedded / system-on-chip)"
  
@@ -22,41 +22,49 @@
  	depends on ARCH_AT91 && EXPERIMENTAL && BROKEN
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-falcon.c
-@@ -0,0 +1,803 @@
+@@ -0,0 +1,815 @@
 +/*
-+ *   This program is free software; you can redistribute it and/or modify
-+ *   it under the terms of the GNU General Public License as published by
-+ *   the Free Software Foundation; either version 2 of the License, or
-+ *   (at your option) any later version.
++ * Lantiq FALC(tm) ON - I2C bus adapter
 + *
-+ *   This program is distributed in the hope that it will be useful,
-+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ *   GNU General Public License for more details.
++ * Parts based on i2c-designware.c and other i2c drivers from Linux 2.6.33
 + *
-+ *   You should have received a copy of the GNU General Public License
-+ *   along with this program; if not, write to the Free Software
-+ *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 + */
 +
 +/* #define DEBUG */
 +
++#include <linux/kernel.h>
 +#include <linux/module.h>
-+#include <linux/ioport.h>
-+#include <linux/init.h>
-+#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/slab.h> /* for kzalloc, kfree */
 +#include <linux/i2c.h>
-+#include <linux/interrupt.h>
-+#include <linux/spinlock.h>
-+#include <linux/io.h>
 +#include <linux/clk.h>
++#include <linux/errno.h>
++#include <linux/sched.h>
 +#include <linux/err.h>
-+#include <linux/slab.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/gpio.h>
++
++#include <falcon/lantiq_soc.h>
 +
 +/* CURRENT ISSUES:
 + * - no high speed support
-+ * - rx issue with "address mode" & "tx end" interrupts
-+ * - ten bit mode is not tested
++ * - supports only master mode
++ * - ten bit mode is not tested (no slave devices)
 + */
 +
 +/* mapping for access macros */
@@ -69,18 +77,24 @@
 +#define i2c	(priv->membase)
 +#include <falcon/i2c_reg.h>
 +
-+/* enable hacks to overcome current issue */
-+#define FALCON_FIX_ME
-+
-+#define FALCON_I2C_ADDR			0x00
-+#define FALCON_I2C_READY_TIMEOUT	1000
-+#define FALCON_I2C_WAIT_TIMEOUT		10
-+
 +#define DRV_NAME "i2c-falcon"
++#define DRV_VERSION "1.01"
 +
-+#if defined(DEBUG)
-+#define static /* no static functions for better debugging */
++#define FALCON_I2C_BUSY_TIMEOUT		20 /* ms */
++
++#ifdef DEBUG
++#define FALCON_I2C_XFER_TIMEOUT		25*HZ
++#else
++#define FALCON_I2C_XFER_TIMEOUT		HZ
 +#endif
++#if defined(DEBUG) && 0
++#define PRINTK(arg...) printk(arg)
++#else
++#define PRINTK(arg...) do {} while (0)
++#endif
++
++#define FALCON_I2C_IMSC_DEFAULT_MASK	(I2C_IMSC_I2C_P_INT_EN | \
++					 I2C_IMSC_I2C_ERR_INT_EN)
 +
 +#define FALCON_I2C_ARB_LOST	(1 << 0)
 +#define FALCON_I2C_NACK		(1 << 1)
@@ -88,13 +102,9 @@
 +#define FALCON_I2C_RX_OFL	(1 << 3)
 +#define FALCON_I2C_TX_UFL	(1 << 4)
 +#define FALCON_I2C_TX_OFL	(1 << 5)
-+#define FALCON_I2C_BURST_REQ	(1 << 6)
-+#define FALCON_I2C_RX		(1 << 7)
-+#define FALCON_I2C_TX_END	(1 << 8)
-+#define FALCON_I2C_ADDR_MATCH	(1 << 9) /* doesn't trigger */
 +
 +struct falcon_i2c {
-+	spinlock_t lock;
++	struct mutex mutex;
 +
 +	enum {
 +		FALCON_I2C_MODE_100	= 1,
@@ -102,433 +112,90 @@
 +		FALCON_I2C_MODE_3400	= 3
 +	} mode;				/* current speed mode */
 +
-+	int ten_bit;			/* current address mode */
-+	unsigned long status;		/* bus events holder */
 +	struct clk *clk;		/* clock input for i2c hardware block */
 +	struct gpon_reg_i2c __iomem *membase;	/* base of mapped registers */
 +	int irq_lb, irq_b, irq_err, irq_p;	/* last burst, burst, error,
 +						   protocol IRQs */
-+	struct completion done;
++
 +	struct i2c_adapter adap;
 +	struct device *dev;
++
++	struct completion	cmd_complete;
++
++	/* message transfer data */
++	/* current message */
++	struct i2c_msg		*current_msg;
++	/* number of messages to handle */
++	int			msgs_num;
++	/* current buffer */
++	u8			*msg_buf;
++	/* remaining length of current buffer */
++	u32			msg_buf_len;
++	/* error status of the current transfer */
++	int			msg_err;
++
++	/* master status codes */
++	enum {
++		STATUS_IDLE,
++		STATUS_ADDR,	/* address phase */
++		STATUS_WRITE,
++		STATUS_READ,
++		STATUS_READ_END,
++		STATUS_STOP
++	} status;
 +};
 +
-+#define FALCON_I2C_ERROR_MASK		(FALCON_I2C_NACK \
-+					| FALCON_I2C_ARB_LOST \
-+					| FALCON_I2C_RX_OFL \
-+					| FALCON_I2C_RX_UFL \
-+					| FALCON_I2C_TX_OFL \
-+					| FALCON_I2C_TX_UFL)
++static irqreturn_t falcon_i2c_isr(int irq, void *dev_id);
 +
-+#define FALCON_I2C_ERROR(priv)		(priv->status & FALCON_I2C_ERROR_MASK)
-+#define FALCON_I2C_ERROR_CLEAR(priv)	do { \
-+						priv->status &= \
-+						~FALCON_I2C_ERROR_MASK; \
-+					} while (0)
-+
-+static void falcon_addr_configure(struct falcon_i2c *priv, int ten_bit)
++static inline void enable_burst_irq(struct falcon_i2c *priv)
 +{
-+	u32 ten_bit_mask = ten_bit ? I2C_ADDR_CFG_TBAM_10bit : 0;
-+
-+	/* configure address */
-+	i2c_w32(I2C_ADDR_CFG_SOPE_EN /* generate stop when no more data in the
-+					fifo */
-+		| I2C_ADDR_CFG_SONA_EN /* generate stop when NA received */
-+		| I2C_ADDR_CFG_MnS_EN /* we are master device */
-+		| ten_bit_mask
-+		| FALCON_I2C_ADDR, /* our address */
-+		addr_cfg);
-+}
-+
-+static irqreturn_t falcon_i2c_isr(int irq, void *dev_id)
-+{
-+	u32 i_raw, i_pro, i_err;
-+	struct falcon_i2c *priv = dev_id;
-+	unsigned long flags;
-+	unsigned int old_status;
-+
-+	spin_lock_irqsave(&priv->lock, flags);
-+
-+	old_status = (unsigned int)priv->status;
-+
-+	i_raw = i2c_r32(mis);
-+
-+	/* protocol interrupt */
-+	if (i_raw & I2C_RIS_I2C_P_INT_INTOCC) {
-+		i_pro = i2c_r32(p_irqss);
-+
-+		/* tx -> rx switch */
-+		if (i_pro & I2C_P_IRQSS_RX)
-+			priv->status |= FALCON_I2C_RX;
-+
-+		/* tx end */
-+		if (i_pro & I2C_P_IRQSS_TX_END)
-+			priv->status |= FALCON_I2C_TX_END;
-+
-+		/* not acknowledge */
-+		if (i_pro & I2C_P_IRQSS_NACK)
-+			priv->status |= FALCON_I2C_NACK;
-+
-+		/* arbitration lost */
-+		if (i_pro & I2C_P_IRQSS_AL)
-+			priv->status |= FALCON_I2C_ARB_LOST;
-+
-+		/* address match */
-+		if (i_pro & I2C_P_IRQSS_AM)
-+			priv->status |= FALCON_I2C_ADDR_MATCH;
-+
-+		i2c_w32(i_pro, p_irqsc);
-+	}
-+
-+	/* error interrupt */
-+	if (i_raw & I2C_RIS_I2C_ERR_INT_INTOCC) {
-+		i_err = i2c_r32(err_irqss);
-+
-+		/* tx fifo overflow */
-+		if (i_err & I2C_ERR_IRQSS_TXF_OFL)
-+			priv->status |= FALCON_I2C_TX_OFL;
-+
-+		/* tx fifo underflow */
-+		if (i_err & I2C_ERR_IRQSS_TXF_UFL)
-+			priv->status |= FALCON_I2C_TX_UFL;
-+
-+		/* rx fifo overflow */
-+		if (i_err & I2C_ERR_IRQSS_RXF_OFL)
-+			priv->status |= FALCON_I2C_RX_OFL;
-+
-+		/* rx fifo underflow */
-+		if (i_err & I2C_ERR_IRQSS_RXF_UFL)
-+			priv->status |= FALCON_I2C_RX_UFL;
-+
-+		i2c_w32(i_err, err_irqsc);
-+	}
-+
-+	/* burst request */
-+	if (i_raw & I2C_RIS_BREQ_INT_INTOCC) {
-+		i2c_w32_mask(I2C_IMSC_BREQ_INT_EN, 0, imsc);
-+		i2c_w32_mask(0, I2C_ICR_BREQ_INT_CLR, icr);
-+
-+		priv->status |= FALCON_I2C_BURST_REQ;
-+	}
-+
-+	/* last burst request */
-+	if (i_raw & I2C_RIS_LBREQ_INT_INTOCC) {
-+		i2c_w32_mask(I2C_IMSC_LBREQ_INT_EN, 0, imsc);
-+		i2c_w32_mask(0, I2C_ICR_LBREQ_INT_CLR, icr);
-+
-+		priv->status |= FALCON_I2C_BURST_REQ;
-+	}
-+
-+	if (old_status != (unsigned int)priv->status)
-+		complete(&priv->done);
-+
-+	spin_unlock_irqrestore(&priv->lock, flags);
-+
-+	return IRQ_HANDLED;
-+}
-+
-+static int falcon_i2c_ready(struct falcon_i2c *priv)
-+{
-+	int timeout;
-+	u32 bus_stat;
-+	unsigned long flags;
-+	int ret;
-+
-+	for (timeout = 0; timeout < FALCON_I2C_READY_TIMEOUT; timeout++) {
-+		bus_stat = i2c_r32(bus_stat);
-+
-+		if (bus_stat & I2C_BUS_STAT_BS_SC) {
-+			cpu_relax();
-+		} else {
-+			spin_lock_irqsave(&priv->lock, flags);
-+
-+			if (FALCON_I2C_ERROR(priv)) {
-+				ret = priv->status;
-+
-+				dev_dbg(priv->dev, "bus ready wait error 0x%08lx\n", priv->status);
-+
-+				FALCON_I2C_ERROR_CLEAR(priv);
-+			} else {
-+				ret = 0;
-+			}
-+
-+			spin_unlock_irqrestore(&priv->lock, flags);
-+
-+			return ret;
-+		}
-+	}
-+
-+	dev_dbg(priv->dev, "bus ready wait timeout\n");
-+
-+	return -ETIME;
-+}
-+
-+static int falcon_i2c_wait(struct falcon_i2c *priv, unsigned long status)
-+{
-+	int ret = 0;
-+	unsigned long flags;
-+	unsigned int timeout;
-+
-+	spin_lock_irqsave(&priv->lock, flags);
-+
-+	priv->status &= FALCON_I2C_BURST_REQ;
-+
-+	/* check if the event already occurred */
-+	if ((priv->status & status) == status) {
-+		priv->status &= ~status;
-+		spin_unlock_irqrestore(&priv->lock, flags);
-+
-+		return 0;
-+	}
-+
-+	spin_unlock_irqrestore(&priv->lock, flags);
-+
-+	/* unmask burst interrupts */
 +	i2c_w32_mask(0, I2C_IMSC_LBREQ_INT_EN | I2C_IMSC_BREQ_INT_EN, imsc);
-+
-+	for (timeout = 0; timeout < FALCON_I2C_WAIT_TIMEOUT; timeout++) {
-+		/* wait for the data request */
-+		wait_for_completion_timeout(&priv->done, HZ / 10);
-+
-+		/* handle errors */
-+		spin_lock_irqsave(&priv->lock, flags);
-+
-+		if (FALCON_I2C_ERROR(priv)) {
-+			dev_dbg(priv->dev, "wait error 0x%08lx (waiting for 0x%08lx)\n",
-+			    priv->status,
-+			    status);
-+
-+			if (priv->status & FALCON_I2C_NACK)
-+				ret = -ENXIO;
-+			else
-+				ret = -EREMOTEIO;
-+
-+			FALCON_I2C_ERROR_CLEAR(priv);
-+		} else {
-+			if ((priv->status & status) == status) {
-+				priv->status &= ~status;
-+				spin_unlock_irqrestore(&priv->lock, flags);
-+
-+				return 0;
-+			}
-+		}
-+
-+		spin_unlock_irqrestore(&priv->lock, flags);
-+
-+		if (ret)
-+			return ret;
-+	}
-+
-+	dev_dbg(priv->dev, "wait timeout error 0x%08lx (waiting for 0x%08lx)\n",
-+	    priv->status,
-+	    status);
-+
-+	return -ETIME;
++}
++static inline void disable_burst_irq(struct falcon_i2c *priv)
++{
++	i2c_w32_mask(I2C_IMSC_LBREQ_INT_EN | I2C_IMSC_BREQ_INT_EN, 0, imsc);
 +}
 +
-+static int falcon_i2c_tx(struct falcon_i2c *priv, int ten_bit, u16 addr,
-+			 u8 *buf, int len)
++static void prepare_msg_send_addr(struct falcon_i2c *priv)
 +{
-+	int i;
-+	int ret;
++	struct i2c_msg *msg = priv->current_msg;
++	int rd = !!(msg->flags & I2C_M_RD);	/* extends to 0 or 1 */
++	u16 addr = msg->addr;
 +
-+	dev_dbg(priv->dev, "%s\n", __func__);
-+
-+	/* tell fifo the number of bytes we are going to send */
-+	i2c_w32(len + (ten_bit ? 2 : 1), tps_ctrl);
-+
-+	/* wait for the data request */
-+	ret = falcon_i2c_wait(priv, FALCON_I2C_BURST_REQ);
-+	if (ret)
-+		return ret;
++	/* new i2c_msg */
++	priv->msg_buf = msg->buf;
++	priv->msg_buf_len = msg->len;
++	if (rd)
++		priv->status = STATUS_READ;
++	else
++		priv->status = STATUS_WRITE;
 +
 +	/* send slave address */
-+	if (ten_bit) {
-+		i2c_w32(0x78 | ((addr >> 7) & 0x7), txd);
-+		i2c_w32(0x78 | ((addr & 0x7f) << 1) | 0, txd);
++	if (msg->flags & I2C_M_TEN) {
++		i2c_w32(0xf0 | ((addr & 0x300) >> 7) | rd, txd);
++		i2c_w32(addr & 0xff, txd);
++	} else
++		i2c_w32((addr & 0x7f) << 1 | rd, txd);
++}
++
++static void set_tx_len(struct falcon_i2c *priv)
++{
++	struct i2c_msg *msg = priv->current_msg;
++	int len = (msg->flags & I2C_M_TEN) ? 2 : 1;
++
++	PRINTK("set_tx_len %cX\n", (msg->flags & I2C_M_RD)?'R':'T');
++
++	priv->status = STATUS_ADDR;
++
++	if (!(msg->flags & I2C_M_RD)) {
++		len += msg->len;
 +	} else {
-+		i2c_w32((addr << 1) | 0, txd);
++		/* set maximum received packet size (before rx int!) */
++		i2c_w32(msg->len, mrps_ctrl);
 +	}
-+
-+	/* fill fifo */
-+	for (i = 0; i < len; i++) {
-+		ret = falcon_i2c_wait(priv, FALCON_I2C_BURST_REQ);
-+		if (ret)
-+			return ret;
-+
-+		i2c_w32(buf[i], txd);
-+	}
-+
-+	return falcon_i2c_wait(priv, FALCON_I2C_TX_END);
++	i2c_w32(len, tps_ctrl);
++	enable_burst_irq(priv);
 +}
-+
-+static int falcon_i2c_rx(struct falcon_i2c *priv, int ten_bit, u16 addr,
-+			 u8 *buf, int len)
-+{
-+	int i;
-+	int ret;
-+
-+	dev_dbg(priv->dev, "%s\n", __func__);
-+
-+	/* we need to transmit address only */
-+	i2c_w32(ten_bit ? 2 : 1, tps_ctrl);
-+
-+	/* set maximum received packet size */
-+	i2c_w32(len, mrps_ctrl);
-+
-+	/* wait for the data request */
-+	ret = falcon_i2c_wait(priv, FALCON_I2C_BURST_REQ);
-+	if (ret)
-+		return ret;
-+
-+	/* write down the address */
-+	if (ten_bit) {
-+		i2c_w32(0x78 | ((addr >> 7) & 0x7), txd);
-+		i2c_w32(0x78 | ((addr & 0x7f) << 1) | 1, txd);
-+	} else {
-+		i2c_w32((addr << 1) | 1, txd);
-+	}
-+
-+	/* wait for the read request */
-+	ret = falcon_i2c_wait(priv, FALCON_I2C_TX_END
-+#ifndef FALCON_FIX_ME
-+			      | FALCON_I2C_ADDR_MATCH
-+#endif
-+			      | FALCON_I2C_RX);
-+
-+	if (ret)
-+		return ret;
-+
-+	/* read bytes */
-+	for (i = 0; i < len; i++) {
-+#ifdef FALCON_FIX_ME
-+		while (i2c_r32(rps_stat) == 0)
-+			cpu_relax();
-+#else
-+		ret = falcon_i2c_wait(priv, FALCON_I2C_BURST_REQ);
-+
-+		if (ret)
-+			return ret;
-+#endif
-+
-+		buf[i] = i2c_r32(rxd);
-+	}
-+
-+#ifndef FALCON_FIX_ME
-+	/* wait for transmission end */
-+	return falcon_i2c_wait(priv, FALCON_I2C_TX_END);
-+#else
-+	return 0;
-+#endif
-+}
-+
-+static int falcon_i2c_xfer_msg(struct falcon_i2c *priv, struct i2c_msg *msg)
-+{
-+	int ret;
-+	int ten_bit;
-+	unsigned long flags;
-+
-+	dev_dbg(priv->dev, "%s %u byte(s) %s 0x%02x\n",
-+		(msg->flags & I2C_M_RD) ? "read" : "write", msg->len,
-+		(msg->flags & I2C_M_RD) ? "from" : "to", msg->addr);
-+
-+	if (msg->flags & I2C_M_TEN)
-+		ten_bit = 1;
-+	else
-+		ten_bit = 0;
-+
-+	/* reconfigure bus if need to send message in different address mode */
-+	spin_lock_irqsave(&priv->lock, flags);
-+	if (ten_bit != priv->ten_bit) {
-+
-+		/* disable bus */
-+		i2c_w32_mask(I2C_RUN_CTRL_RUN_EN, 0, run_ctrl);
-+
-+		/* reconfigure address */
-+		falcon_addr_configure(priv, ten_bit);
-+
-+		/* enable bus */
-+		i2c_w32_mask(0, I2C_RUN_CTRL_RUN_EN, run_ctrl);
-+
-+		priv->ten_bit = ten_bit;
-+	}
-+	spin_unlock_irqrestore(&priv->lock, flags);
-+
-+	/* read/write actual message */
-+	if (msg->flags & I2C_M_RD)
-+		ret = falcon_i2c_rx(priv, ten_bit, msg->addr, msg->buf,
-+				    msg->len);
-+	else
-+		ret = falcon_i2c_tx(priv, ten_bit, msg->addr, msg->buf,
-+				    msg->len);
-+
-+	if (ret)
-+		return ret;
-+
-+	return 0;
-+}
-+
-+static int falcon_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg *msg,
-+			   int num)
-+{
-+	int i;
-+	int ret;
-+	unsigned long flags;
-+	struct falcon_i2c *priv = i2c_get_adapdata(adap);
-+
-+	dev_dbg(priv->dev, "xfer %u messages\n", num);
-+
-+	/* transfer each message */
-+	for (i = 0; i < num; i++) {
-+#ifdef FALCON_FIX_ME
-+		/* disable bus */
-+		i2c_w32_mask(I2C_RUN_CTRL_RUN_EN, 0, run_ctrl);
-+		/* enable bus */
-+		i2c_w32_mask(0, I2C_RUN_CTRL_RUN_EN, run_ctrl);
-+#endif
-+
-+		/* clear bus status */
-+		spin_lock_irqsave(&priv->lock, flags);
-+		priv->status = 0;
-+		spin_unlock_irqrestore(&priv->lock, flags);
-+
-+		/* wait for the bus to become ready */
-+		ret = falcon_i2c_ready(priv);
-+		if (ret)
-+			return ret;
-+
-+		/* transfer message */
-+		ret = falcon_i2c_xfer_msg(priv, &msg[i]);
-+
-+		if (ret)
-+			return ret;
-+
-+		/* check for unhandled errors */
-+		spin_lock_irqsave(&priv->lock, flags);
-+		if (FALCON_I2C_ERROR(priv))
-+			ret = priv->status;
-+		spin_unlock_irqrestore(&priv->lock, flags);
-+
-+		if (ret) {
-+			dev_warn(priv->dev, "message %u unhandled error 0x%x\n",
-+				i, ret);
-+
-+			return ret;
-+		}
-+	}
-+
-+	return 0;
-+}
-+
-+static u32 falcon_i2c_func(struct i2c_adapter *adap)
-+{
-+	return I2C_FUNC_I2C | I2C_FUNC_10BIT_ADDR | I2C_FUNC_SMBUS_EMUL;
-+}
-+
-+static struct i2c_algorithm falcon_i2c_algorithm = {
-+	.master_xfer	= falcon_i2c_xfer,
-+	.functionality	= falcon_i2c_func,
-+};
 +
 +static int falcon_i2c_hw_init(struct i2c_adapter *adap)
 +{
@@ -537,68 +204,389 @@
 +	/* disable bus */
 +	i2c_w32_mask(I2C_RUN_CTRL_RUN_EN, 0, run_ctrl);
 +
++#ifndef DEBUG
 +	/* set normal operation clock divider */
 +	i2c_w32(1 << I2C_CLC_RMC_OFFSET, clc);
++#else
++	/* for debugging a higher divider value! */
++	i2c_w32(0xF0 << I2C_CLC_RMC_OFFSET, clc);
++#endif
 +
 +	/* set frequency */
 +	if (priv->mode == FALCON_I2C_MODE_100) {
 +		dev_dbg(priv->dev, "set standard mode (100 kHz)\n");
-+
 +		i2c_w32(0, fdiv_high_cfg);
-+
-+		i2c_w32((1 << I2C_FDIV_CFG_INC_OFFSET)
-+			| (499 << I2C_FDIV_CFG_DEC_OFFSET),
++		i2c_w32((1 << I2C_FDIV_CFG_INC_OFFSET) |
++			(499 << I2C_FDIV_CFG_DEC_OFFSET),
 +			fdiv_cfg);
 +	} else if (priv->mode == FALCON_I2C_MODE_400) {
 +		dev_dbg(priv->dev, "set fast mode (400 kHz)\n");
-+
 +		i2c_w32(0, fdiv_high_cfg);
-+
-+		i2c_w32((1 << I2C_FDIV_CFG_INC_OFFSET)
-+			| (124 << I2C_FDIV_CFG_DEC_OFFSET),
++		i2c_w32((1 << I2C_FDIV_CFG_INC_OFFSET) |
++			(124 << I2C_FDIV_CFG_DEC_OFFSET),
 +			fdiv_cfg);
 +	} else if (priv->mode == FALCON_I2C_MODE_3400) {
 +		dev_dbg(priv->dev, "set high mode (3.4 MHz)\n");
-+
 +		i2c_w32(0, fdiv_cfg);
-+
 +		/* TODO recalculate value for 100MHz input */
-+		i2c_w32((41 << I2C_FDIV_CFG_INC_OFFSET)
-+			| (152 << I2C_FDIV_CFG_DEC_OFFSET),
++		i2c_w32((41 << I2C_FDIV_HIGH_CFG_INC_OFFSET) |
++			(152 << I2C_FDIV_HIGH_CFG_DEC_OFFSET),
 +			fdiv_high_cfg);
 +	} else {
 +		dev_warn(priv->dev, "unknown mode\n");
-+
 +		return -ENODEV;
 +	}
 +
 +	/* configure fifo */
-+	i2c_w32(I2C_FIFO_CFG_TXFC /* tx fifo as flow controller */
-+		| I2C_FIFO_CFG_RXFC /* rx fifo as flow controller */
-+		| I2C_FIFO_CFG_TXFA_TXFA2 /* tx fifo 4-byte aligned */
-+		| I2C_FIFO_CFG_RXFA_RXFA2 /* rx fifo 4-byte aligned */
-+		| I2C_FIFO_CFG_TXBS_TXBS0 /* tx fifo burst size is 1 word */
-+		| I2C_FIFO_CFG_RXBS_RXBS0, /* rx fifo burst size is 1 word */
++	i2c_w32(I2C_FIFO_CFG_TXFC | /* tx fifo as flow controller */
++		I2C_FIFO_CFG_RXFC | /* rx fifo as flow controller */
++		I2C_FIFO_CFG_TXFA_TXFA2 | /* tx fifo 4-byte aligned */
++		I2C_FIFO_CFG_RXFA_RXFA2 | /* rx fifo 4-byte aligned */
++		I2C_FIFO_CFG_TXBS_TXBS0 | /* tx fifo burst size is 1 word */
++		I2C_FIFO_CFG_RXBS_RXBS0,  /* rx fifo burst size is 1 word */
 +		fifo_cfg);
 +
 +	/* configure address */
-+	falcon_addr_configure(priv, priv->ten_bit);
++	i2c_w32(I2C_ADDR_CFG_SOPE_EN |	/* generate stop when no more data in the
++					   fifo */
++		I2C_ADDR_CFG_SONA_EN |	/* generate stop when NA received */
++		I2C_ADDR_CFG_MnS_EN |	/* we are master device */
++		0,			/* our slave address (not used!) */
++		addr_cfg);
 +
 +	/* enable bus */
 +	i2c_w32_mask(0, I2C_RUN_CTRL_RUN_EN, run_ctrl);
 +
-+	/* mask burst interrupts */
-+	i2c_w32_mask(I2C_IMSC_LBREQ_INT_EN | I2C_IMSC_BREQ_INT_EN, 0, imsc);
++	return 0;
++}
 +
-+	/* enable interrupts */
-+	i2c_w32(I2C_IMSC_LBREQ_INT_EN
-+		| I2C_IMSC_BREQ_INT_EN
-+		| I2C_IMSC_I2C_P_INT_EN
-+		| I2C_IMSC_I2C_ERR_INT_EN,
-+		imsc);
++static int falcon_i2c_wait_bus_not_busy(struct falcon_i2c *priv)
++{
++	int timeout = FALCON_I2C_BUSY_TIMEOUT;
++
++	while ((i2c_r32(bus_stat) & I2C_BUS_STAT_BS_MASK)
++				 != I2C_BUS_STAT_BS_FREE) {
++		if (timeout <= 0) {
++			dev_warn(priv->dev, "timeout waiting for bus ready\n");
++			return -ETIMEDOUT;
++		}
++		timeout--;
++		mdelay(1);
++	}
 +
 +	return 0;
 +}
++
++static void falcon_i2c_tx(struct falcon_i2c *priv, int last)
++{
++	if (priv->msg_buf_len && priv->msg_buf) {
++		i2c_w32(*priv->msg_buf, txd);
++
++		if (--priv->msg_buf_len)
++			priv->msg_buf++;
++		else
++			priv->msg_buf = NULL;
++	} else
++		last = 1;
++
++	if (last) {
++		disable_burst_irq(priv);
++	}
++}
++
++static void falcon_i2c_rx(struct falcon_i2c *priv, int last)
++{
++	u32 fifo_stat,timeout;
++	if (priv->msg_buf_len && priv->msg_buf) {
++		timeout = 5000000;
++		do {
++			fifo_stat = i2c_r32(ffs_stat);
++		} while (!fifo_stat && --timeout);
++		if (!timeout) {
++			last = 1;
++			PRINTK("\nrx timeout\n");
++			goto err;
++		}
++		while (fifo_stat) {
++			*priv->msg_buf = i2c_r32(rxd);
++			if (--priv->msg_buf_len)
++				priv->msg_buf++;
++			else {
++				priv->msg_buf = NULL;
++				last = 1;
++				break;
++			}
++			#if 0
++			fifo_stat = i2c_r32(ffs_stat);
++			#else
++			/* do not read more than burst size, otherwise no "last
++			burst" is generated and the transaction is blocked! */
++			fifo_stat = 0;
++			#endif
++		}
++	} else {
++		last = 1;
++	}
++err:
++	if (last) {
++		disable_burst_irq(priv);
++
++		if (priv->status == STATUS_READ_END) {
++			/* do the STATUS_STOP and complete() here, as sometimes
++			   the tx_end is already seen before this is finished */
++			priv->status = STATUS_STOP;
++			complete(&priv->cmd_complete);
++		} else {
++			i2c_w32(I2C_ENDD_CTRL_SETEND, endd_ctrl);
++			priv->status = STATUS_READ_END;
++		}
++	}
++}
++
++static void falcon_i2c_xfer_init(struct falcon_i2c *priv)
++{
++	/* enable interrupts */
++	i2c_w32(FALCON_I2C_IMSC_DEFAULT_MASK, imsc);
++
++	/* trigger transfer of first msg */
++	set_tx_len(priv);
++}
++
++static void dump_msgs(struct i2c_msg msgs[], int num, int rx)
++{
++#if defined(DEBUG)
++	int i, j;
++	printk("Messages %d %s\n", num, rx ? "out" : "in");
++	for (i = 0; i < num; i++) {
++		printk("%2d %cX Msg(%d) addr=0x%X: ", i,
++			(msgs[i].flags & I2C_M_RD)?'R':'T',
++			msgs[i].len, msgs[i].addr);
++		if (!(msgs[i].flags & I2C_M_RD) || rx) {
++			for (j = 0; j < msgs[i].len; j++)
++				printk("%02X ", msgs[i].buf[j]);
++		}
++		printk("\n");
++	}
++#endif
++}
++
++static void falcon_i2c_release_bus(struct falcon_i2c *priv)
++{
++	if ((i2c_r32(bus_stat) & I2C_BUS_STAT_BS_MASK) == I2C_BUS_STAT_BS_BM)
++		i2c_w32(I2C_ENDD_CTRL_SETEND, endd_ctrl);
++}
++
++static int falcon_i2c_xfer(struct i2c_adapter *adap, struct i2c_msg msgs[],
++			   int num)
++{
++	struct falcon_i2c *priv = i2c_get_adapdata(adap);
++	int ret;
++
++	dev_dbg(priv->dev, "xfer %u messages\n", num);
++	dump_msgs(msgs, num, 0);
++
++	mutex_lock(&priv->mutex);
++
++	INIT_COMPLETION(priv->cmd_complete);
++	priv->current_msg = msgs;
++	priv->msgs_num = num;
++	priv->msg_err = 0;
++	priv->status = STATUS_IDLE;
++
++	/* wait for the bus to become ready */
++	ret = falcon_i2c_wait_bus_not_busy(priv);
++	if (ret)
++		goto done;
++
++	while (priv->msgs_num) {
++		/* start the transfers */
++		falcon_i2c_xfer_init(priv);
++
++		/* wait for transfers to complete */
++		ret = wait_for_completion_interruptible_timeout(
++			&priv->cmd_complete, FALCON_I2C_XFER_TIMEOUT);
++		if (ret == 0) {
++			dev_err(priv->dev, "controller timed out\n");
++			falcon_i2c_hw_init(adap);
++			ret = -ETIMEDOUT;
++			goto done;
++		} else if (ret < 0)
++			goto done;
++
++		if (priv->msg_err) {
++			if (priv->msg_err & FALCON_I2C_NACK)
++				ret = -ENXIO;
++			else
++				ret = -EREMOTEIO;
++			goto done;
++		}
++		if (--priv->msgs_num) {
++			priv->current_msg++;
++		}
++	}
++	/* no error? */
++	ret = num;
++
++done:
++	falcon_i2c_release_bus(priv);
++
++	mutex_unlock(&priv->mutex);
++
++	if (ret>=0)
++		dump_msgs(msgs, num, 1);
++
++	PRINTK("XFER ret %d\n", ret);
++	return ret;
++}
++
++static irqreturn_t falcon_i2c_isr_burst(int irq, void *dev_id)
++{
++	struct falcon_i2c *priv = dev_id;
++	struct i2c_msg *msg = priv->current_msg;
++	int last = (irq == priv->irq_lb);
++
++	if (last)
++		PRINTK("LB ");
++	else
++		PRINTK("B ");
++
++	if (msg->flags & I2C_M_RD) {
++		switch (priv->status) {
++		case STATUS_ADDR:
++			PRINTK("X");
++			prepare_msg_send_addr(priv);
++			disable_burst_irq(priv);
++			break;
++		case STATUS_READ:
++		case STATUS_READ_END:
++			PRINTK("R");
++			falcon_i2c_rx(priv, last);
++			break;
++		default:
++			disable_burst_irq(priv);
++			printk("Status R %d\n", priv->status);
++			break;
++		}
++	} else {
++		switch (priv->status) {
++		case STATUS_ADDR:
++			PRINTK("x");
++			prepare_msg_send_addr(priv);
++			break;
++		case STATUS_WRITE:
++			PRINTK("w");
++			falcon_i2c_tx(priv, last);
++			break;
++		default:
++			disable_burst_irq(priv);
++			printk("Status W %d\n", priv->status);
++			break;
++		}
++	}
++
++	i2c_w32(I2C_ICR_BREQ_INT_CLR | I2C_ICR_LBREQ_INT_CLR, icr);
++	return IRQ_HANDLED;
++}
++
++static void falcon_i2c_isr_prot(struct falcon_i2c *priv)
++{
++	u32 i_pro = i2c_r32(p_irqss);
++
++	PRINTK("i2c-p");
++
++	/* not acknowledge */
++	if (i_pro & I2C_P_IRQSS_NACK) {
++		priv->msg_err |= FALCON_I2C_NACK;
++		PRINTK(" nack");
++	}
++
++	/* arbitration lost */
++	if (i_pro & I2C_P_IRQSS_AL) {
++		priv->msg_err |= FALCON_I2C_ARB_LOST;
++		PRINTK(" arb-lost");
++	}
++	/* tx -> rx switch */
++	if (i_pro & I2C_P_IRQSS_RX)
++		PRINTK(" rx");
++
++	/* tx end */
++	if (i_pro & I2C_P_IRQSS_TX_END)
++		PRINTK(" txend");
++	PRINTK("\n");
++
++	if (!priv->msg_err) {
++		/* tx -> rx switch */
++		if (i_pro & I2C_P_IRQSS_RX) {
++			priv->status = STATUS_READ;
++			enable_burst_irq(priv);
++		}
++		if (i_pro & I2C_P_IRQSS_TX_END) {
++			if (priv->status == STATUS_READ)
++				priv->status = STATUS_READ_END;
++			else {
++				disable_burst_irq(priv);
++				priv->status = STATUS_STOP;
++			}
++		}
++	}
++
++	i2c_w32(i_pro, p_irqsc);
++}
++
++static irqreturn_t falcon_i2c_isr(int irq, void *dev_id)
++{
++	u32 i_raw, i_err=0;
++	struct falcon_i2c *priv = dev_id;
++
++	i_raw = i2c_r32(mis);
++	PRINTK("i_raw 0x%08X\n", i_raw);
++
++	/* error interrupt */
++	if (i_raw & I2C_RIS_I2C_ERR_INT_INTOCC) {
++		i_err = i2c_r32(err_irqss);
++		PRINTK("i_err 0x%08X bus_stat 0x%04X\n",
++			i_err, i2c_r32(bus_stat));
++
++		/* tx fifo overflow (8) */
++		if (i_err & I2C_ERR_IRQSS_TXF_OFL)
++			priv->msg_err |= FALCON_I2C_TX_OFL;
++
++		/* tx fifo underflow (4) */
++		if (i_err & I2C_ERR_IRQSS_TXF_UFL)
++			priv->msg_err |= FALCON_I2C_TX_UFL;
++
++		/* rx fifo overflow (2) */
++		if (i_err & I2C_ERR_IRQSS_RXF_OFL)
++			priv->msg_err |= FALCON_I2C_RX_OFL;
++
++		/* rx fifo underflow (1) */
++		if (i_err & I2C_ERR_IRQSS_RXF_UFL)
++			priv->msg_err |= FALCON_I2C_RX_UFL;
++
++		i2c_w32(i_err, err_irqsc);
++	}
++
++	/* protocol interrupt */
++	if (i_raw & I2C_RIS_I2C_P_INT_INTOCC)
++		falcon_i2c_isr_prot(priv);
++
++	if ((priv->msg_err) || (priv->status == STATUS_STOP))
++		complete(&priv->cmd_complete);
++
++	return IRQ_HANDLED;
++}
++
++static u32 falcon_i2c_functionality(struct i2c_adapter *adap)
++{
++	return	I2C_FUNC_I2C |
++		I2C_FUNC_10BIT_ADDR |
++		I2C_FUNC_SMBUS_EMUL;
++}
++
++static struct i2c_algorithm falcon_i2c_algorithm = {
++	.master_xfer	= falcon_i2c_xfer,
++	.functionality	= falcon_i2c_functionality,
++};
 +
 +static int __devinit falcon_i2c_probe(struct platform_device *pdev)
 +{
@@ -649,12 +637,26 @@
 +	strlcpy(adap->name, DRV_NAME "-adapter", sizeof(adap->name));
 +	adap->algo = &falcon_i2c_algorithm;
 +
-+	priv->ten_bit = 0;
 +	priv->mode = FALCON_I2C_MODE_100;
 +	priv->clk = clk;
 +	priv->dev = &pdev->dev;
 +
-+	spin_lock_init(&priv->lock);
++	init_completion(&priv->cmd_complete);
++	mutex_init(&priv->mutex);
++
++	ret = ltq_gpio_request(107, 0, 0, 0, DRV_NAME":sda");
++	if (ret) {
++		dev_err(&pdev->dev, "I2C gpio 107 (sda) not available\n");
++		ret = -ENXIO;
++		goto err_free_priv;
++	}
++	ret = ltq_gpio_request(108, 0, 0, 0, DRV_NAME":scl");
++	if (ret) {
++		gpio_free(107);
++		dev_err(&pdev->dev, "I2C gpio 108 (scl) not available\n");
++		ret = -ENXIO;
++		goto err_free_priv;
++	}
 +
 +	ioarea = request_mem_region(mmres->start, resource_size(mmres),
 +					 pdev->name);
@@ -662,7 +664,7 @@
 +	if (ioarea == NULL) {
 +		dev_err(&pdev->dev, "I2C region already claimed\n");
 +		ret = -ENXIO;
-+		goto err_free_priv;
++		goto err_free_gpio;
 +	}
 +
 +	/* map memory */
@@ -674,7 +676,7 @@
 +	}
 +
 +	priv->irq_lb = irqres_lb->start;
-+	ret = request_irq(priv->irq_lb, falcon_i2c_isr, IRQF_DISABLED,
++	ret = request_irq(priv->irq_lb, falcon_i2c_isr_burst, IRQF_DISABLED,
 +			  irqres_lb->name, priv);
 +	if (ret) {
 +		dev_err(&pdev->dev, "can't get last burst IRQ %d\n", irqres_lb->start);
@@ -683,7 +685,7 @@
 +	}
 +
 +	priv->irq_b = irqres_b->start;
-+	ret = request_irq(priv->irq_b, falcon_i2c_isr, IRQF_DISABLED,
++	ret = request_irq(priv->irq_b, falcon_i2c_isr_burst, IRQF_DISABLED,
 +			  irqres_b->name, priv);
 +	if (ret) {
 +		dev_err(&pdev->dev, "can't get burst IRQ %d\n", irqres_b->start);
@@ -728,14 +730,14 @@
 +		(i2c_r32(id) & I2C_ID_ID_MASK) >> I2C_ID_ID_OFFSET,
 +		(i2c_r32(id) & I2C_ID_REV_MASK) >> I2C_ID_REV_OFFSET);
 +
-+	init_completion(&priv->done);
-+
 +	/* initialize HW */
 +	ret = falcon_i2c_hw_init(adap);
 +	if (ret) {
 +		dev_err(&pdev->dev, "can't configure adapter\n");
 +		goto err_remove_adapter;
 +	}
++
++	dev_info(&pdev->dev, "version %s\n", DRV_VERSION);
 +
 +	return 0;
 +
@@ -761,6 +763,10 @@
 +err_release_region:
 +	release_mem_region(mmres->start, resource_size(mmres));
 +
++err_free_gpio:
++	gpio_free(108);
++	gpio_free(107);
++
 +err_free_priv:
 +	kfree(priv);
 +
@@ -783,6 +789,11 @@
 +	free_irq(priv->irq_b, priv);
 +	free_irq(priv->irq_err, priv);
 +	free_irq(priv->irq_p, priv);
++
++	iounmap(priv->membase);
++
++	gpio_free(108);
++	gpio_free(107);
 +
 +	kfree(priv);
 +
@@ -810,7 +821,7 @@
 +	ret = platform_driver_register(&falcon_i2c_driver);
 +
 +	if (ret)
-+		printk(KERN_DEBUG DRV_NAME ": can't register platform driver");
++		pr_debug(DRV_NAME ": can't register platform driver\n");
 +
 +	return ret;
 +}
@@ -824,5 +835,6 @@
 +module_exit(falcon_i2c_exit);
 +
 +MODULE_DESCRIPTION("Lantiq FALC(tm) ON - I2C bus adapter");
-+MODULE_ALIAS("platform:i2c_falcon");
++MODULE_ALIAS("platform:" DRV_NAME);
 +MODULE_LICENSE("GPL");
++MODULE_VERSION(DRV_VERSION);

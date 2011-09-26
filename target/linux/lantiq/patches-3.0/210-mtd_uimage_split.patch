@@ -1,7 +1,7 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -57,6 +57,10 @@ config MTD_ROOTFS_SPLIT
- 	depends on MTD_PARTITIONS
+@@ -41,6 +41,10 @@ config MTD_ROOTFS_SPLIT
+ 	bool "Automatically split 'rootfs' partition for squashfs"
  	default y
  
 +config MTD_UIMAGE_SPLIT
@@ -13,7 +13,7 @@
  	---help---
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -860,6 +860,82 @@ static int refresh_rootfs_split(struct m
+@@ -861,6 +861,82 @@ static int refresh_rootfs_split(struct m
  }
  #endif /* CONFIG_MTD_ROOTFS_SPLIT */
  
@@ -96,7 +96,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -893,6 +969,17 @@ int add_mtd_partitions(struct mtd_info *
+@@ -894,6 +970,17 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
