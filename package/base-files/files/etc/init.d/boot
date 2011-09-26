@@ -19,6 +19,9 @@ system_config() {
 	config_get timezone "$cfg" timezone 'UTC'
 	echo "$timezone" > /tmp/TZ
 
+	config_get zonename "$cfg" zonename
+	[ -n "$zonename" ] && [ -f "/usr/share/zoneinfo/$zonename" ] && ln -s "/usr/share/zoneinfo/$zonename" /tmp/localtime
+
 	if [ -x /sbin/syslogd ]; then
 		local log_ip log_size log_port log_type log_file
 		config_get log_ip "$cfg" log_ip 

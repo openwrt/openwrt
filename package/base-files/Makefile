@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=80
+PKG_RELEASE:=81
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
 PKG_BUILD_DEPENDS:=opkg/host
@@ -513,6 +513,8 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/glibc/install
 	$(CP) ./glibc-files/* $(1)/
+	rm -f $(1)/etc/localtime
+	ln -sf /tmp/localtime $(1)/etc/localtime
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
