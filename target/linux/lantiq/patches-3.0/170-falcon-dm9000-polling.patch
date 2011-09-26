@@ -8,7 +8,7 @@
  #include <linux/module.h>
  #include <linux/ioport.h>
  #include <linux/netdevice.h>
-@@ -125,6 +126,8 @@
+@@ -125,6 +126,8 @@ typedef struct board_info {
  	struct delayed_work phy_poll;
  	struct net_device  *ndev;
  
@@ -17,7 +17,7 @@
  	spinlock_t	lock;
  
  	struct mii_if_info mii;
-@@ -824,6 +827,8 @@
+@@ -824,6 +827,8 @@ static void dm9000_timeout(struct net_de
  	netif_stop_queue(dev);
  	dm9000_reset(db);
  	dm9000_init_dm9000(dev);
@@ -26,7 +26,7 @@
  	/* We can accept TX packets again */
  	dev->trans_start = jiffies; /* prevent tx timeout */
  	netif_wake_queue(dev);
-@@ -895,6 +900,12 @@
+@@ -895,6 +900,12 @@ dm9000_start_xmit(struct sk_buff *skb, s
  	/* free this SKB */
  	dev_kfree_skb(skb);
  
@@ -39,7 +39,7 @@
  	return NETDEV_TX_OK;
  }
  
-@@ -1136,6 +1147,18 @@
+@@ -1136,6 +1147,18 @@ static void dm9000_poll_controller(struc
  }
  #endif
  
@@ -58,7 +58,7 @@
  /*
   *  Open the interface.
   *  The interface is opened whenever "ifconfig" actives it.
-@@ -1149,14 +1172,15 @@
+@@ -1149,14 +1172,15 @@ dm9000_open(struct net_device *dev)
  	if (netif_msg_ifup(db))
  		dev_dbg(db->dev, "enabling %s\n", dev->name);
  
@@ -80,7 +80,7 @@
  	/* GPIO0 on pre-activate PHY, Reg 1F is not set by reset */
  	iow(db, DM9000_GPR, 0);	/* REG_1F bit0 activate phyxcer */
  	mdelay(1); /* delay needs by DM9000B */
-@@ -1165,8 +1189,14 @@
+@@ -1165,8 +1189,14 @@ dm9000_open(struct net_device *dev)
  	dm9000_reset(db);
  	dm9000_init_dm9000(dev);
  
@@ -97,7 +97,7 @@
  
  	/* Init driver variable */
  	db->dbug_cnt = 0;
-@@ -1174,6 +1204,9 @@
+@@ -1174,6 +1204,9 @@ dm9000_open(struct net_device *dev)
  	mii_check_media(&db->mii, netif_msg_link(db), 1);
  	netif_start_queue(dev);
  	
@@ -107,7 +107,7 @@
  	dm9000_schedule_poll(db);
  
  	return 0;
-@@ -1371,6 +1404,7 @@
+@@ -1371,6 +1404,7 @@ dm9000_probe(struct platform_device *pde
  	mutex_init(&db->addr_lock);
  
  	INIT_DELAYED_WORK(&db->phy_poll, dm9000_poll_work);

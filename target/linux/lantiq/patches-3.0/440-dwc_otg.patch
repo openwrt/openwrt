@@ -1,6 +1,6 @@
 --- a/drivers/usb/Kconfig
 +++ b/drivers/usb/Kconfig
-@@ -116,6 +116,8 @@
+@@ -116,6 +116,8 @@ source "drivers/usb/wusbcore/Kconfig"
  
  source "drivers/usb/host/Kconfig"
  
@@ -11,7 +11,7 @@
  source "drivers/usb/renesas_usbhs/Kconfig"
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
-@@ -28,6 +28,8 @@
+@@ -28,6 +28,8 @@ obj-$(CONFIG_USB_C67X00_HCD)	+= c67x00/
  
  obj-$(CONFIG_USB_WUSB)		+= wusbcore/
  
@@ -15615,7 +15615,7 @@
 +#endif
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -2879,11 +2879,11 @@
+@@ -2885,11 +2885,11 @@ hub_port_init (struct usb_hub *hub, stru
  		udev->ttport = hdev->ttport;
  	} else if (udev->speed != USB_SPEED_HIGH
  			&& hdev->speed == USB_SPEED_HIGH) {

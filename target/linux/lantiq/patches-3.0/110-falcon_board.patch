@@ -72,7 +72,7 @@
 +EXPORT_SYMBOL(ltq_get_fpi_hz);
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/devices.c
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,258 @@
 +#include <linux/init.h>
 +#include <linux/module.h>
 +#include <linux/types.h>
@@ -108,6 +108,10 @@
 +
 +unsigned char ltq_ethaddr[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 +EXPORT_SYMBOL(ltq_ethaddr);
++
++/* create dummy ebu spinlock for drivers shared with XWAY targets */
++DEFINE_SPINLOCK(ebu_lock);
++EXPORT_SYMBOL_GPL(ebu_lock);
 +
 +static int __init
 +falcon_set_ethaddr(char *str)
@@ -793,7 +797,7 @@
 +EXPORT_SYMBOL(sys_gpe_hw_is_activated);
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/gpio.c
-@@ -0,0 +1,463 @@
+@@ -0,0 +1,505 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
@@ -842,6 +846,8 @@
 +#define gpio_w32(val, reg)			__raw_writel(val, reg)
 +#define gpio_w32_mask(clear, set, reg)	gpio_w32((gpio_r32(reg) & ~(clear)) | (set), reg)
 +
++#define MAX_PORTS			5
++#define PINS_PER_PORT			32
 +
 +/** register structure for padctrl
 +    (mainly needed for mux control) */
@@ -926,6 +932,8 @@
 +	unsigned int chained_irq;
 +};
 +
++static struct falcon_gpio_port ltq_gpio_port[MAX_PORTS];
++
 +static int gpio_exported = 0;
 +static int __init gpio_export_setup(char *str)
 +{
@@ -946,13 +954,6 @@
 +	return 0;
 +}
 +
-+static int falcon_gpio_direction_output(struct gpio_chip *chip, unsigned int offset, int value)
-+{
-+	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
-+	gpio_w32(1<<offset, &gpio_port->port->dirset);
-+	return 0;
-+}
-+
 +static void falcon_gpio_set(struct gpio_chip *chip, unsigned int offset, int value)
 +{
 +	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
@@ -960,6 +961,14 @@
 +		gpio_w32(1<<offset, &gpio_port->port->outset);
 +	else
 +		gpio_w32(1<<offset, &gpio_port->port->outclr);
++}
++
++static int falcon_gpio_direction_output(struct gpio_chip *chip, unsigned int offset, int value)
++{
++	struct falcon_gpio_port *gpio_port = to_falcon_gpio_port(chip);
++	falcon_gpio_set(chip, offset, value);
++	gpio_w32(1<<offset, &gpio_port->port->dirset);
++	return 0;
 +}
 +
 +static int falcon_gpio_get(struct gpio_chip *chip, unsigned int offset)
@@ -1038,6 +1047,46 @@
 +	gpio_w32(1<<offset, &gpio_port->port->irncr);
 +}
 +
++int ltq_gpio_mux_set(unsigned int pin, unsigned int mux)
++{
++	int port = pin / 100;
++	int offset = pin % 100;
++	struct falcon_gpio_port *gpio_port;
++
++	if (offset >= PINS_PER_PORT || port >= MAX_PORTS)
++		return -EINVAL;
++
++	gpio_port = &ltq_gpio_port[port];
++	gpio_w32(mux, &gpio_port->pad->muxc[offset]);
++
++	return 0;
++}
++EXPORT_SYMBOL(ltq_gpio_mux_set);
++
++int ltq_gpio_request(unsigned int pin, unsigned int alt0,
++		     unsigned int alt1, unsigned int dir, const char *name)
++{
++	int port = pin / 100;
++	int offset = pin % 100;
++	unsigned int mux = (alt0 & 1) + (alt1 & 1) * 2;
++
++	if (offset >= PINS_PER_PORT || port >= MAX_PORTS)
++		return -EINVAL;
++
++	if (gpio_request(pin, name)) {
++		pr_err("failed to setup lantiq gpio: %s\n", name);
++		return -EBUSY;
++	}
++
++	if (dir)
++		gpio_direction_output(pin, 1);
++	else
++		gpio_direction_input(pin);
++
++	return ltq_gpio_mux_set(pin, mux);
++}
++EXPORT_SYMBOL(ltq_gpio_request);
++
 +static struct irq_chip falcon_gpio_irq_chip;
 +static int falcon_gpio_irq_type(struct irq_data *d, unsigned int type)
 +{
@@ -1115,16 +1164,16 @@
 +	struct resource *gpiores, *padres;
 +	int irq;
 +
++	if (pdev->id >= MAX_PORTS)
++		return -ENODEV;
++
 +	gpiores = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 +	padres = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 +	irq = platform_get_irq(pdev, 0);
 +	if (!gpiores || !padres)
 +		return -ENODEV;
 +
-+	gpio_port = kzalloc(sizeof(*gpio_port), GFP_KERNEL);
-+	if (gpio_port == NULL)
-+		return -ENOMEM;
-+
++	gpio_port = &ltq_gpio_port[pdev->id];
 +	gpio_port->gpio_chip.label = "falcon-gpio";
 +	gpio_port->gpio_chip.direction_input = falcon_gpio_direction_input;
 +	gpio_port->gpio_chip.direction_output = falcon_gpio_direction_output;
@@ -1200,7 +1249,6 @@
 +		iounmap(gpio_port->port);
 +	if (gpio_port->pad)
 +		iounmap(gpio_port->pad);
-+	kfree(gpio_port);
 +	return ret;
 +}
 +
@@ -1218,8 +1266,6 @@
 +		iounmap(gpio_port->port);
 +	if (gpio_port->pad)
 +		iounmap(gpio_port->pad);
-+	if (ret == 0)
-+		kfree(gpio_port);
 +
 +	return ret;
 +}
@@ -1278,7 +1324,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/reset.c
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,95 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -1305,6 +1351,22 @@
 +#define WDT_PW2			0x00DC0000
 +#define WDT_REG_BASE		(KSEG1 | 0x1F8803F0)
 +
++struct gpon_reg_boot {
++	/* bootrom related virtual registers */
++	unsigned int rvec;
++	unsigned int nvec;
++	unsigned int evec;
++	unsigned int cp0_status;
++	unsigned int cp0_epc;
++	unsigned int cp0_eepc;
++	unsigned int size;
++	unsigned int cfg_stat;
++	/* additional virtual registers */
++	unsigned int magic0; /* magic for valid reboot */
++	unsigned int magic1; /*  -"-  */
++	unsigned int bcount; /* reboot counter, used by u-boot */
++} * const pBOOT = (struct gpon_reg_boot *)GPON_SBS0RAM_BASE;
++
 +/* This function is used by the watchdog driver */
 +int ltq_reset_cause(void)
 +{
@@ -1317,11 +1379,11 @@
 +{
 +	printk(KERN_NOTICE "System restart\n");
 +	local_irq_disable();
-+	ltq_w32(0, (void*)0xBF200000); /* reset Bootreg RVEC */
-+#if 0
-+	ltq_w32(RBT_CPU_TRIG, &pSYS1->rbt);
-+#else
-+	/* use workaround via watchdog timer */
++	/* write magic to signal a valid restart */
++	ltq_w32(0x4C545100, &pBOOT->magic0); /* 'LTQ\0' */
++	ltq_w32(0x0051544C, &pBOOT->magic1); /* '\0QTL' */
++	ltq_w32(0, &pBOOT->rvec); /* reset Bootreg RVEC */
++	/* reset via watchdog timer, to ensure reset of all hardware components */
 +	ltq_w32(WDT_PW1, (void*)WDT_REG_BASE);
 +	ltq_w32(WDT_PW2 |
 +		(0x3 << 26) | /* PWL */
@@ -1329,7 +1391,6 @@
 +		(0x1 << 31) | /* enable */
 +		(1), /* reload */
 +		(void*)WDT_REG_BASE);
-+#endif
 +	for(;;);
 +}
 +
@@ -1778,7 +1839,7 @@
 +#endif
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
-@@ -16,8 +16,12 @@
+@@ -16,8 +16,12 @@ config SOC_XWAY
  	bool "XWAY"
  	select SOC_TYPE_XWAY
  	select HW_HAS_PCI
@@ -1793,21 +1854,21 @@
  endif
 --- a/arch/mips/lantiq/Makefile
 +++ b/arch/mips/lantiq/Makefile
-@@ -9,3 +9,4 @@
+@@ -9,3 +9,4 @@ obj-y := irq.o setup.o clk.o prom.o devi
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
  obj-$(CONFIG_SOC_TYPE_XWAY) += xway/
 +obj-$(CONFIG_SOC_FALCON) += falcon/
 --- a/arch/mips/lantiq/Platform
 +++ b/arch/mips/lantiq/Platform
-@@ -6,3 +6,4 @@
+@@ -6,3 +6,4 @@ platform-$(CONFIG_LANTIQ)	+= lantiq/
  cflags-$(CONFIG_LANTIQ)		+= -I$(srctree)/arch/mips/include/asm/mach-lantiq
  load-$(CONFIG_LANTIQ)		= 0xffffffff80002000
  cflags-$(CONFIG_SOC_TYPE_XWAY)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/xway
 +cflags-$(CONFIG_SOC_FALCON)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/falcon
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
-@@ -15,6 +15,12 @@
+@@ -15,6 +15,12 @@ enum lantiq_mach_type {
  	LTQ_MACH_GENERIC = 0,
  	LTQ_MACH_EASY50712,	/* Danube evaluation board */
  	LTQ_MACH_EASY50601,	/* Amazon SE evaluation board */
@@ -2035,3 +2096,20 @@
 +
 +module_init(easy98000_addon_init);
 +module_exit(easy98000_addon_exit);
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -45,10 +45,12 @@ static void __init prom_init_cmdline(voi
+ 	char **argv = (char **) KSEG1ADDR(fw_arg1);
+ 	int i;
+ 
++	arcs_cmdline[0] = '\0';
++
+ 	for (i = 0; i < argc; i++) {
+-		char *p = (char *)  KSEG1ADDR(argv[i]);
++		char *p = (char *) KSEG1ADDR(argv[i]);
+ 
+-		if (p && *p) {
++		if (CPHYSADDR(p) && *p) {
+ 			strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
+ 			strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
+ 		}

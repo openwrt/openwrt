@@ -11,7 +11,7 @@
  
 --- a/arch/mips/lantiq/clk.c
 +++ b/arch/mips/lantiq/clk.c
-@@ -100,6 +100,17 @@
+@@ -100,6 +100,17 @@ void clk_put(struct clk *clk)
  }
  EXPORT_SYMBOL(clk_put);
  
@@ -39,7 +39,7 @@
  
  #include <asm/bootinfo.h>
  #include <asm/irq_cpu.h>
-@@ -105,6 +106,7 @@
+@@ -99,6 +100,7 @@ void ltq_mask_and_ack_irq(struct irq_dat
  	ltq_icu_w32(ltq_icu_r32(ier) & ~(1 << irq_nr), ier);
  	ltq_icu_w32((1 << irq_nr), isr);
  }
@@ -58,7 +58,7 @@
  void __init plat_mem_setup(void)
  {
  	/* assume 16M as default incase uboot fails to pass proper ramsize */
-@@ -40,8 +42,8 @@
+@@ -40,8 +42,8 @@ void __init plat_mem_setup(void)
  		}
  		envp++;
  	}

@@ -1,0 +1,59 @@
+activate serial driver for ASC1 if "use_asc1=x" is given on kernel commandline
+mux setup for pins is done via late_initcall, when the gpio driver is initialized
+
+only implemented for EASY98000, generic version t.b.d.
+--- a/arch/mips/lantiq/falcon/devices.c
++++ b/arch/mips/lantiq/falcon/devices.c
+@@ -75,6 +75,7 @@ void __init falcon_register_asc(int port
+ 	case 1:
+ 		platform_device_register_simple("ltq_asc", 1,
+ 			falcon_asc1_resources, ARRAY_SIZE(falcon_asc1_resources));
++		sys1_hw_activate(ACTS_ASC1_ACT);
+ 		break;
+ 	default:
+ 		break;
+--- a/arch/mips/lantiq/falcon/mach-easy98000.c
++++ b/arch/mips/lantiq/falcon/mach-easy98000.c
+@@ -15,6 +15,7 @@
+ #include <linux/spi/spi.h>
+ #include <linux/spi/spi_gpio.h>
+ #include <linux/spi/eeprom.h>
++#include <falcon/lantiq_soc.h>
+ 
+ #include "../machtypes.h"
+ 
+@@ -206,9 +207,34 @@ static void __init easy98000_spi_gpio_in
+ 	platform_device_register(&easy98000_spi_gpio_device);
+ }
+ 
++static int register_asc1 = 0;
++static int __init parse_asc1(char *p)
++{
++	register_asc1 = 1;
++	return 0;
++}
++__setup("use_asc1", parse_asc1);
++
++#define MUXC_SIF_RX_PIN		112
++#define MUXC_SIF_TX_PIN		113
++
++static int __init asc1_mux_setup(void)
++{
++	if (register_asc1) {
++		if (ltq_gpio_request(MUXC_SIF_RX_PIN, 1, 1, 0, "asc1-rx"))
++			return -1;
++		if (ltq_gpio_request(MUXC_SIF_TX_PIN, 1, 1, 1, "asc1-tx"))
++			return -1;
++	}
++	return 0;
++}
++late_initcall(asc1_mux_setup);
++
+ static void __init easy98000_init_common(void)
+ {
+ 	falcon_register_asc(0);
++	if (register_asc1)
++		falcon_register_asc(1);
+ 	falcon_register_gpio();
+ 	falcon_register_wdt();
+ 	falcon_register_i2c();

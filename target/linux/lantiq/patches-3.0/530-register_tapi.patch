@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/devices.c
 +++ b/arch/mips/lantiq/devices.c
-@@ -120,3 +120,20 @@
+@@ -120,3 +120,20 @@ void __init ltq_register_pci(struct ltq_
  	pr_err("kernel is compiled without PCI support\n");
  }
  #endif
@@ -23,7 +23,7 @@
 +}
 --- a/arch/mips/lantiq/devices.h
 +++ b/arch/mips/lantiq/devices.h
-@@ -19,5 +19,6 @@
+@@ -19,5 +19,6 @@ extern void ltq_register_nor(struct phys
  extern void ltq_register_wdt(void);
  extern void ltq_register_asc(int port);
  extern void ltq_register_pci(struct ltq_pci_data *data);
@@ -32,7 +32,7 @@
  #endif
 --- a/arch/mips/lantiq/xway/mach-easy50712.c
 +++ b/arch/mips/lantiq/xway/mach-easy50712.c
-@@ -61,6 +61,7 @@
+@@ -61,6 +61,7 @@ static void __init easy50712_init(void)
  	ltq_register_nor(&easy50712_flash_data);
  	ltq_register_pci(&ltq_pci_data);
  	ltq_register_etop(&ltq_eth_data);
