@@ -186,7 +186,6 @@ $(eval $(call KernelPackage,sis900))
 define KernelPackage/sky2
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=SysKonnect Yukon2 support
-  DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SKY2
   FILES:=$(LINUX_DIR)/drivers/net/sky2.ko
   AUTOLOAD:=$(call AutoLoad,50,sky2)
