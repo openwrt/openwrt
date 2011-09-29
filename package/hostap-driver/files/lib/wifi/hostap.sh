@@ -39,6 +39,9 @@ scan_prism2() {
 	config_get vifs "$device" vifs
 	local _c=0
 	for vif in $vifs; do
+		config_get_bool disabled "$vif" disabled 0
+		[ $disabled = 0 ] || continue
+
 		config_get mode "$vif" mode
 		case "$mode" in
 			adhoc|sta|ap|monitor)
