@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.57
-PKG_RELEASE:=2
+PKG_VERSION:=2.58
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_MD5SUM:=d10faeb409717eae94718d7716ca63a4
+PKG_MD5SUM:=14c5c81debb324adc261db971730f4c6
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -25,7 +25,7 @@ define Package/dnsmasq
 endef
 
 define Package/dnsmasq/description
- It is intended to provide coupled DNS and DHCP service to a LAN.
+  It is intended to provide coupled DNS and DHCP service to a LAN.
 endef
 
 define Package/dnsmasq/conffiles
@@ -39,7 +39,8 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		BINDIR="/usr/sbin" MANDIR="/usr/man" \
+		BINDIR="/usr/sbin" \
+		MANDIR="/usr/man" \
 		AWK="awk" \
 		LDFLAGS="-Wl,--gc-sections" \
 		all
