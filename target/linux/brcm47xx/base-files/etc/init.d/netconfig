@@ -189,8 +189,7 @@ start() {
 			c["vlan0ports"]="1 2 3 4 5"
 			c["vlan1ports"]="0 5"
 		}
-
-		if (model == "Motorola WR850G V2/V3") {
+		if ((model == "Motorola WR850G V2/V3") || (model == "Siemens SE505 V2")) {
 			c["vlan0ports"]="0 1 2 3 5"
 			c["vlan1ports"]="4 5"
 		}
@@ -211,7 +210,7 @@ start() {
 			print "#### VLAN configuration "
 			print "config switch eth0"
 			print "	option enable   1"
-			print ""		
+			print ""
 			vlan(0, "vlan0ports")
 			vlan(1, "vlan1ports")
 		}
