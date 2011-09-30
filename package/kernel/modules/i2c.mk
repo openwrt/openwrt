@@ -213,4 +213,96 @@ define KernelPackage/octeon-i2c/description
   Kernel module to use the I2C master driver on Cavium Octeon
 endef
 
+
+I2C_TINY_USB_MODULES:= \
+  CONFIG_I2C_TINY_USB:drivers/i2c/busses/i2c-tiny-usb
+
+define KernelPackage/i2c-tiny-usb
+  $(call i2c_defaults,$(I2C_TINY_USB_MODULES),59)
+  TITLE:=I2C Tiny USB adaptor
+  DEPENDS:=@USB_SUPPORT kmod-i2c-core
+endef
+
+define KernelPackage/i2c-tiny-usb/description
+ Kernel module for the I2C Tiny USB adaptor developed
+ by Till Harbaum (http://www.harbaum.org/till/i2c_tiny_usb).
+endef
+
+$(eval $(call KernelPackage,i2c-tiny-usb))
+
+I2C_MUX_MODULES:= \
+  CONFIG_I2C_MUX:drivers/i2c/i2c-mux
+
+define KernelPackage/i2c-mux
+  $(call i2c_defaults,$(I2C_MUX_MODULES),51)
+  TITLE:=I2C bus multiplexing support
+  DEPENDS:=kmod-i2c-core
+endef
+
+define KernelPackage/i2c-mux/description
+ Kernel modules for I2C bus multiplexing support.
+endef
+
+$(eval $(call KernelPackage,i2c-mux))
+
+I2C_MUX_PCA954x_MODULES:= \
+  CONFIG_I2C_MUX_PCA954x:drivers/i2c/muxes/pca954x
+
+define KernelPackage/i2c-mux-pca954x
+  $(call i2c_defaults,$(I2C_MUX_PCA954x_MODULES),51)
+  TITLE:=Philips PCA954x I2C mux/switches
+  DEPENDS:=kmod-i2c-mux
+endef
+
+define KernelPackage/i2c-mux-pca954x/description
+ Kernel modules for PCA954x I2C bus mux/switching devices.
+endef
+
+$(eval $(call KernelPackage,i2c-mux-pca954x))
+## Support for pca954x seems to be in kernel since 2.6.36
+
+I2C_MUX_PCA9541_MODULES:= \
+  CONFIG_I2C_MUX_PCA9541:drivers/i2c/muxes/pca9541
+
+define KernelPackage/i2c-mux-pca9541
+  $(call i2c_defaults,$(I2C_MUX_PCA9541_MODULES),51)
+  TITLE:=Philips PCA9541 I2C mux/switches
+  DEPENDS:=kmod-i2c-mux
+endef
+
+define KernelPackage/i2c-mux-pca9541/description
+ Kernel modules for PCA9541 I2C bus mux/switching devices.
+endef
+
+$(eval $(call KernelPackage,i2c-mux-pca9541))
+
+GPIO_PCA953X_MODULES:= \
+  CONFIG_GPIO_PCA953X:drivers/gpio/pca953x
+
+define KernelPackage/pca953x
+  $(call i2c_defaults,$(GPIO_PCA953X_MODULES),51)
+  TITLE:=Philips PCA953x I2C GPIO extenders
+  DEPENDS:=kmod-i2c-core
+endef
+
+define KernelPackage/pca953x/description
+ Kernel modules for PCA953x I2C GPIO extenders.
+endef
+
+$(eval $(call KernelPackage,pca953x))
+
+GPIO_PCF857X_MODULES:= \
+  CONFIG_GPIO_PCF857X:drivers/gpio/pcf857x
+
+define KernelPackage/pcf857x
+  $(call i2c_defaults,$(GPIO_PCF857X_MODULES),51)
+  TITLE:=Philips PCF857x I2C GPIO extenders
+  DEPENDS:=kmod-i2c-core
+endef
+
+define KernelPackage/pcf857x/description
+ Kernel modules for PCF857x I2C GPIO extenders.
+endef
+
+$(eval $(call KernelPackage,pcf857x))
 $(eval $(call KernelPackage,octeon-i2c))
