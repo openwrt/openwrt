@@ -100,6 +100,11 @@ define Build/DefaultTargets
   $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
   $(call Build/Autoclean)
 
+  download:
+	$(foreach hook,$(Hooks/Download),
+		$(call $(hook))$(sep)
+	)
+
   $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_PREPARED):
 	@-rm -rf $(PKG_BUILD_DIR)
