@@ -245,6 +245,21 @@ endef
 
 $(eval $(call KernelPackage,i2c-mux))
 
+I2C_MUX_GPIO_MODULES:= \
+  CONFIG_I2C_MUX_GPIO:drivers/i2c/muxes/gpio-i2cmux
+
+define KernelPackage/i2c-mux-gpio
+  $(call i2c_defaults,$(I2C_MUX_GPIO_MODULES),51)
+  TITLE:=GPIO-based I2C mux/switches
+  DEPENDS:=kmod-i2c-mux
+endef
+
+define KernelPackage/i2c-mux-gpio/description
+ Kernel modules for GENERIC_GPIO I2C bus mux/switching devices.
+endef
+
+$(eval $(call KernelPackage,i2c-mux-gpio))
+
 I2C_MUX_PCA954x_MODULES:= \
   CONFIG_I2C_MUX_PCA954x:drivers/i2c/muxes/pca954x
 
