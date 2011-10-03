@@ -160,8 +160,13 @@ define KernelPackage/gpio-cs5535-new
   TITLE:=AMD CS5535/CS5536 GPIO driver with improved sysfs support
   DEPENDS:=@TARGET_x86 +kmod-cs5535-mfd @!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32)
   KCONFIG:=CONFIG_GPIO_CS5535
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.1.0)),1)
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-cs5535.ko
+  AUTOLOAD:=$(call AutoLoad,50,gpio-cs5535)
+else
   FILES:=$(LINUX_DIR)/drivers/gpio/cs5535-gpio.ko
   AUTOLOAD:=$(call AutoLoad,50,cs5535-gpio)
+endif
 endef
 
 define KernelPackage/gpio-cs5535-new/description
