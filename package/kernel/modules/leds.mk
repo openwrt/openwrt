@@ -8,6 +8,7 @@
 LEDS_MENU:=LED modules
 
 
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,2.6.39)),1)
 define KernelPackage/leds-alix
   SUBMENU:=$(LEDS_MENU)
   TITLE:=PCengines ALIX LED support
@@ -22,6 +23,7 @@ define KernelPackage/leds-alix/description
 endef
 
 $(eval $(call KernelPackage,leds-alix))
+endif
 
 
 define KernelPackage/leds-gpio
