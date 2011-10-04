@@ -23,8 +23,8 @@ setup_interface_pppoe() {
 	#     end of the argument list by start_pppd()
 	start_pppd "$config" \
 		"nic-$iface" \
+		plugin rp-pppoe.so \
 		${ac:+rp_pppoe_ac "$ac"} \
 		${service:+rp_pppoe_service "$service"} \
-		plugin rp-pppoe.so \
 		mtu $mtu mru $mtu
 }
