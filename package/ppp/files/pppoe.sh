@@ -13,7 +13,7 @@ setup_interface_pppoe() {
 	config_get mtu "$config" mtu
 	mtu=${mtu:-1492}
 	start_pppd "$config" \
+		"nic-$iface" \
 		plugin rp-pppoe.so \
-		mtu $mtu mru $mtu \
-		"nic-$iface"
+		mtu $mtu mru $mtu
 }

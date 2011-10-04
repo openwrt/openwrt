@@ -16,6 +16,13 @@ stop_interface_ppp() {
 start_pppd() {
 	local cfg="$1"; shift
 
+	# Workaround for PPPoE service and AC name options,
+	# filter out the nic-* argument and append it as last option
+	local nic=""
+	case "$1" in
+		nic-*) nic="$1"; shift ;;
+	esac
+
 	local proto
 	config_get proto "$cfg" proto
 
@@ -110,7 +117,8 @@ start_pppd() {
 		${disconnect:+disconnect "$disconnect"} \
 		${ipv6} \
 		${pppd_options} \
-		nodetach
+		nodetach \
+		${nic}
 
 	lock -u "/var/lock/ppp-${link}"
 }
