@@ -110,7 +110,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -1977,7 +1977,7 @@ requeue:
+@@ -1974,7 +1974,7 @@ requeue:
  
  	if (!(ah->imask & ATH9K_INT_RXEOL)) {
  		ah->imask |= (ATH9K_INT_RXEOL | ATH9K_INT_RXORN);
