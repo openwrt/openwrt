@@ -4,12 +4,13 @@
 
 --- a/include/linux/netfilter_ipv4/ip_tables.h
 +++ b/include/linux/netfilter_ipv4/ip_tables.h
-@@ -113,7 +113,10 @@ struct ipt_entry {
+@@ -113,8 +113,11 @@ struct ipt_entry {
  #define IPT_CONTINUE XT_CONTINUE
  #define IPT_RETURN XT_RETURN
  
 +#include <linux/version.h> 
 +#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+ /* This group is older than old (iptables < v1.4.0-rc1~89) */
  #include <linux/netfilter/xt_tcpudp.h>
 +#endif
  #define ipt_udp xt_udp

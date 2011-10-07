@@ -5,9 +5,9 @@
  TCMODULES += m_pedit.o
  TCMODULES += m_skbedit.o
 +TCMODULES += m_connmark.o
+ TCMODULES += m_csum.o
  TCMODULES += p_ip.o
  TCMODULES += p_icmp.o
- TCMODULES += p_tcp.o
 --- /dev/null
 +++ b/tc/m_connmark.c
 @@ -0,0 +1,71 @@
