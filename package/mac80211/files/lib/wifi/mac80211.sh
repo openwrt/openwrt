@@ -302,6 +302,13 @@ enable_mac80211() {
 	fixed=""
 	local hostapd_ctrl=""
 
+	[ -n "$country" ] && {
+		iw reg get | grep -q "^country $country:" || {
+			iw reg set "$country"
+			sleep 1
+		}
+	}
+
 	config_get ath9k_chanbw "$device" ath9k_chanbw
 	[ -n "$ath9k_chanbw" -a -d /sys/kernel/debug/ieee80211/$phy/ath9k ] && echo "$ath9k_chanbw" > /sys/kernel/debug/ieee80211/$phy/ath9k/chanbw
 
