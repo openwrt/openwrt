@@ -32,7 +32,7 @@
  	NL80211_CMD_JOIN_IBSS, 0, CIB_NETDEV, join_ibss,
 --- a/iw.h
 +++ b/iw.h
-@@ -130,6 +130,7 @@ void mac_addr_n2a(char *mac_addr, unsign
+@@ -133,6 +133,7 @@ int parse_hex_mask(char *hexmask, unsign
  unsigned char *parse_hex(char *hex, size_t *outlen);
  
  int parse_keys(struct nl_msg *msg, char **argv, int argc);
@@ -77,7 +77,7 @@
  	if (!*argv[0])
 --- a/util.c
 +++ b/util.c
-@@ -345,6 +345,33 @@ int parse_keys(struct nl_msg *msg, char 
+@@ -382,6 +382,33 @@ int parse_keys(struct nl_msg *msg, char 
  	return 2;
  }
  
