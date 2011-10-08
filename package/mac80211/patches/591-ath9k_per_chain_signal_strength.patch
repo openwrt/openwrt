@@ -1,0 +1,374 @@
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -666,6 +666,9 @@ enum mac80211_rx_flags {
+  * @mactime: value in microseconds of the 64-bit Time Synchronization Function
+  * 	(TSF) timer when the first data symbol (MPDU) arrived at the hardware.
+  * @band: the active band when this frame was received
++ * @chains: bitmask of receive chains for which separate signal strength
++ *	values were filled.
++ * @chain_signal: per-chain signal strength, same format as @signal
+  * @freq: frequency the radio was tuned to when receiving this frame, in MHz
+  * @signal: signal strength when receiving this frame, either in dBm, in dB or
+  *	unspecified depending on the hardware capabilities flags
+@@ -679,6 +682,10 @@ enum mac80211_rx_flags {
+ struct ieee80211_rx_status {
+ 	u64 mactime;
+ 	enum ieee80211_band band;
++
++	u8 chains;
++	s8 chain_signal[4];
++
+ 	int freq;
+ 	int signal;
+ 	int antenna;
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -292,6 +292,11 @@ struct sta_info {
+ 	unsigned long rx_dropped;
+ 	int last_signal;
+ 	struct ewma avg_signal;
++
++	u8 chains;
++	s8 chain_signal_last[4];
++	struct ewma chain_signal_avg[4];
++
+ 	/* Plus 1 for non-QoS frames */
+ 	__le16 last_seq_ctrl[NUM_RX_DATA_QUEUES + 1];
+ 
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1169,6 +1169,7 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 	struct sk_buff *skb = rx->skb;
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+ 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
++	int i;
+ 
+ 	if (!sta)
+ 		return RX_CONTINUE;
+@@ -1211,6 +1212,19 @@ ieee80211_rx_h_sta_process(struct ieee80
+ 	sta->last_signal = status->signal;
+ 	ewma_add(&sta->avg_signal, -status->signal);
+ 
++	if (status->chains) {
++		sta->chains = status->chains;
++		for (i = 0; i < 4; i++) {
++			int signal = status->chain_signal[i];
++
++			if (!(status->chains & BIT(i)))
++				continue;
++
++			sta->chain_signal_last[i] = signal;
++			ewma_add(&sta->chain_signal_avg[i], -signal);
++		}
++	}
++
+ 	/*
+ 	 * Change STA power saving mode only at the end of a frame
+ 	 * exchange sequence.
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -295,6 +295,8 @@ struct sta_info *sta_info_alloc(struct i
+ 	do_posix_clock_monotonic_gettime(&uptime);
+ 	sta->last_connected = uptime.tv_sec;
+ 	ewma_init(&sta->avg_signal, 1024, 8);
++	for (i = 0; i < ARRAY_SIZE(sta->chain_signal_avg); i++)
++		ewma_init(&sta->chain_signal_avg[i], 1024, 8);
+ 
+ 	if (sta_prepare_rate_control(local, sta, gfp)) {
+ 		kfree(sta);
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -481,6 +481,8 @@ struct station_parameters {
+  * @STATION_INFO_BSS_PARAM: @bss_param filled
+  * @STATION_INFO_CONNECTED_TIME: @connected_time filled
+  * @STATION_INFO_ASSOC_REQ_IES: @assoc_req_ies filled
++ * @STATION_INFO_CHAIN_SIGNAL: @chain_signal filled
++ * @STATION_INFO_CHAIN_SIGNAL_AVG: @chain_signal_avg filled
+  */
+ enum station_info_flags {
+ 	STATION_INFO_INACTIVE_TIME	= 1<<0,
+@@ -500,7 +502,9 @@ enum station_info_flags {
+ 	STATION_INFO_RX_BITRATE		= 1<<14,
+ 	STATION_INFO_BSS_PARAM          = 1<<15,
+ 	STATION_INFO_CONNECTED_TIME	= 1<<16,
+-	STATION_INFO_ASSOC_REQ_IES	= 1<<17
++	STATION_INFO_ASSOC_REQ_IES	= 1<<17,
++	STATION_INFO_CHAIN_SIGNAL	= 1<<18,
++	STATION_INFO_CHAIN_SIGNAL_AVG	= 1<<19,
+ };
+ 
+ /**
+@@ -580,6 +584,9 @@ struct sta_bss_parameters {
+  * @plink_state: mesh peer link state
+  * @signal: signal strength of last received packet in dBm
+  * @signal_avg: signal strength average in dBm
++ * @chains: bitmask for filled values in @chain_signal, @chain_signal_avg
++ * @chain_signal: per-chain signal strength of last received packet in dBm
++ * @chain_signal_avg: per-chain signal strength average in dBm
+  * @txrate: current unicast bitrate from this station
+  * @rxrate: current unicast bitrate to this station
+  * @rx_packets: packets received from this station
+@@ -609,6 +616,11 @@ struct station_info {
+ 	u8 plink_state;
+ 	s8 signal;
+ 	s8 signal_avg;
++
++	u8 chains;
++	s8 chain_signal[4];
++	s8 chain_signal_avg[4];
++
+ 	struct rate_info txrate;
+ 	struct rate_info rxrate;
+ 	u32 rx_packets;
+--- a/drivers/net/wireless/ath/ath9k/mac.h
++++ b/drivers/net/wireless/ath/ath9k/mac.h
+@@ -133,12 +133,8 @@ struct ath_rx_status {
+ 	u8 rs_rate;
+ 	u8 rs_antenna;
+ 	u8 rs_more;
+-	int8_t rs_rssi_ctl0;
+-	int8_t rs_rssi_ctl1;
+-	int8_t rs_rssi_ctl2;
+-	int8_t rs_rssi_ext0;
+-	int8_t rs_rssi_ext1;
+-	int8_t rs_rssi_ext2;
++	int8_t rs_rssi_ctl[3];
++	int8_t rs_rssi_ext[3];
+ 	u8 rs_isaggr;
+ 	u8 rs_moreaggr;
+ 	u8 rs_num_delims;
+--- a/drivers/net/wireless/ath/ath9k/recv.c
++++ b/drivers/net/wireless/ath/ath9k/recv.c
+@@ -983,6 +983,7 @@ static int ath9k_rx_skb_preprocess(struc
+ 				   bool *decrypt_error)
+ {
+ 	struct ath_hw *ah = common->ah;
++	int i, j;
+ 
+ 	memset(rx_status, 0, sizeof(struct ieee80211_rx_status));
+ 
+@@ -1008,6 +1009,20 @@ static int ath9k_rx_skb_preprocess(struc
+ 	rx_status->antenna = rx_stats->rs_antenna;
+ 	rx_status->flag |= RX_FLAG_MACTIME_MPDU;
+ 
++	for (i = 0, j = 0; i < ARRAY_SIZE(rx_stats->rs_rssi_ctl); i++) {
++		s8 rssi;
++
++		if (!(ah->rxchainmask & BIT(i)))
++			continue;
++
++		rssi = rx_stats->rs_rssi_ctl[i];
++		if (rssi != ATH9K_RSSI_BAD) {
++		    rx_status->chains |= BIT(j);
++		    rx_status->chain_signal[j] = ah->noise + rssi;
++		}
++		j++;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -1538,14 +1553,14 @@ static void ath_ant_comb_scan(struct ath
+ 	struct ath_ant_comb *antcomb = &sc->ant_comb;
+ 	int alt_ratio = 0, alt_rssi_avg = 0, main_rssi_avg = 0, curr_alt_set;
+ 	int curr_main_set;
+-	int main_rssi = rs->rs_rssi_ctl0;
+-	int alt_rssi = rs->rs_rssi_ctl1;
++	int main_rssi = rs->rs_rssi_ctl[0];
++	int alt_rssi = rs->rs_rssi_ctl[1];
+ 	int rx_ant_conf,  main_ant_conf;
+ 	bool short_scan = false;
+ 
+-	rx_ant_conf = (rs->rs_rssi_ctl2 >> ATH_ANT_RX_CURRENT_SHIFT) &
++	rx_ant_conf = (rs->rs_rssi_ctl[2] >> ATH_ANT_RX_CURRENT_SHIFT) &
+ 		       ATH_ANT_RX_MASK;
+-	main_ant_conf = (rs->rs_rssi_ctl2 >> ATH_ANT_RX_MAIN_SHIFT) &
++	main_ant_conf = (rs->rs_rssi_ctl[2] >> ATH_ANT_RX_MAIN_SHIFT) &
+ 			 ATH_ANT_RX_MASK;
+ 
+ 	/* Record packet only when both main_rssi and  alt_rssi is positive */
+--- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
+@@ -451,12 +451,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
+ 
+ 	/* XXX: Keycache */
+ 	rxs->rs_rssi = MS(rxsp->status5, AR_RxRSSICombined);
+-	rxs->rs_rssi_ctl0 = MS(rxsp->status1, AR_RxRSSIAnt00);
+-	rxs->rs_rssi_ctl1 = MS(rxsp->status1, AR_RxRSSIAnt01);
+-	rxs->rs_rssi_ctl2 = MS(rxsp->status1, AR_RxRSSIAnt02);
+-	rxs->rs_rssi_ext0 = MS(rxsp->status5, AR_RxRSSIAnt10);
+-	rxs->rs_rssi_ext1 = MS(rxsp->status5, AR_RxRSSIAnt11);
+-	rxs->rs_rssi_ext2 = MS(rxsp->status5, AR_RxRSSIAnt12);
++	rxs->rs_rssi_ctl[0] = MS(rxsp->status1, AR_RxRSSIAnt00);
++	rxs->rs_rssi_ctl[1] = MS(rxsp->status1, AR_RxRSSIAnt01);
++	rxs->rs_rssi_ctl[2] = MS(rxsp->status1, AR_RxRSSIAnt02);
++	rxs->rs_rssi_ext[0] = MS(rxsp->status5, AR_RxRSSIAnt10);
++	rxs->rs_rssi_ext[1] = MS(rxsp->status5, AR_RxRSSIAnt11);
++	rxs->rs_rssi_ext[2] = MS(rxsp->status5, AR_RxRSSIAnt12);
+ 
+ 	if (rxsp->status11 & AR_RxKeyIdxValid)
+ 		rxs->rs_keyix = MS(rxsp->status11, AR_KeyIdx);
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -558,25 +558,25 @@ int ath9k_hw_rxprocdesc(struct ath_hw *a
+ 
+ 	if (ads.ds_rxstatus8 & AR_PostDelimCRCErr) {
+ 		rs->rs_rssi = ATH9K_RSSI_BAD;
+-		rs->rs_rssi_ctl0 = ATH9K_RSSI_BAD;
+-		rs->rs_rssi_ctl1 = ATH9K_RSSI_BAD;
+-		rs->rs_rssi_ctl2 = ATH9K_RSSI_BAD;
+-		rs->rs_rssi_ext0 = ATH9K_RSSI_BAD;
+-		rs->rs_rssi_ext1 = ATH9K_RSSI_BAD;
+-		rs->rs_rssi_ext2 = ATH9K_RSSI_BAD;
++		rs->rs_rssi_ctl[0] = ATH9K_RSSI_BAD;
++		rs->rs_rssi_ctl[1] = ATH9K_RSSI_BAD;
++		rs->rs_rssi_ctl[2] = ATH9K_RSSI_BAD;
++		rs->rs_rssi_ext[0] = ATH9K_RSSI_BAD;
++		rs->rs_rssi_ext[1] = ATH9K_RSSI_BAD;
++		rs->rs_rssi_ext[2] = ATH9K_RSSI_BAD;
+ 	} else {
+ 		rs->rs_rssi = MS(ads.ds_rxstatus4, AR_RxRSSICombined);
+-		rs->rs_rssi_ctl0 = MS(ads.ds_rxstatus0,
++		rs->rs_rssi_ctl[0] = MS(ads.ds_rxstatus0,
+ 						AR_RxRSSIAnt00);
+-		rs->rs_rssi_ctl1 = MS(ads.ds_rxstatus0,
++		rs->rs_rssi_ctl[1] = MS(ads.ds_rxstatus0,
+ 						AR_RxRSSIAnt01);
+-		rs->rs_rssi_ctl2 = MS(ads.ds_rxstatus0,
++		rs->rs_rssi_ctl[2] = MS(ads.ds_rxstatus0,
+ 						AR_RxRSSIAnt02);
+-		rs->rs_rssi_ext0 = MS(ads.ds_rxstatus4,
++		rs->rs_rssi_ext[0] = MS(ads.ds_rxstatus4,
+ 						AR_RxRSSIAnt10);
+-		rs->rs_rssi_ext1 = MS(ads.ds_rxstatus4,
++		rs->rs_rssi_ext[1] = MS(ads.ds_rxstatus4,
+ 						AR_RxRSSIAnt11);
+-		rs->rs_rssi_ext2 = MS(ads.ds_rxstatus4,
++		rs->rs_rssi_ext[2] = MS(ads.ds_rxstatus4,
+ 						AR_RxRSSIAnt12);
+ 	}
+ 	if (ads.ds_rxstatus8 & AR_RxKeyIdxValid)
+--- a/drivers/net/wireless/ath/ath9k/debug.c
++++ b/drivers/net/wireless/ath/ath9k/debug.c
+@@ -1032,12 +1032,12 @@ void ath_debug_stat_rx(struct ath_softc 
+ 
+ 	spin_lock(&sc->debug.samp_lock);
+ 	RX_SAMP_DBG(jiffies) = jiffies;
+-	RX_SAMP_DBG(rssi_ctl0) = rs->rs_rssi_ctl0;
+-	RX_SAMP_DBG(rssi_ctl1) = rs->rs_rssi_ctl1;
+-	RX_SAMP_DBG(rssi_ctl2) = rs->rs_rssi_ctl2;
+-	RX_SAMP_DBG(rssi_ext0) = rs->rs_rssi_ext0;
+-	RX_SAMP_DBG(rssi_ext1) = rs->rs_rssi_ext1;
+-	RX_SAMP_DBG(rssi_ext2) = rs->rs_rssi_ext2;
++	RX_SAMP_DBG(rssi_ctl0) = rs->rs_rssi_ctl[0];
++	RX_SAMP_DBG(rssi_ctl1) = rs->rs_rssi_ctl[1];
++	RX_SAMP_DBG(rssi_ctl2) = rs->rs_rssi_ctl[2];
++	RX_SAMP_DBG(rssi_ext0) = rs->rs_rssi_ext[0];
++	RX_SAMP_DBG(rssi_ext1) = rs->rs_rssi_ext[1];
++	RX_SAMP_DBG(rssi_ext2) = rs->rs_rssi_ext[2];
+ 	RX_SAMP_DBG(antenna) = rs->rs_antenna;
+ 	RX_SAMP_DBG(rssi) = rs->rs_rssi;
+ 	RX_SAMP_DBG(rate) = rs->rs_rate;
+--- a/include/linux/nl80211.h
++++ b/include/linux/nl80211.h
+@@ -1497,6 +1497,8 @@ enum nl80211_sta_bss_param {
+  * @NL80211_STA_INFO_BSS_PARAM: current station's view of BSS, nested attribute
+  *     containing info as possible, see &enum nl80211_sta_bss_param
+  * @NL80211_STA_INFO_CONNECTED_TIME: time since the station is last connected
++ * @NL80211_STA_INFO_CHAIN_SIGNAL: per-chain signal strength of last PPDU
++ * @NL80211_STA_INFO_CHAIN_SIGNAL_AVG: per-chain signal strength average
+  * @__NL80211_STA_INFO_AFTER_LAST: internal
+  * @NL80211_STA_INFO_MAX: highest possible station info attribute
+  */
+@@ -1518,6 +1520,8 @@ enum nl80211_sta_info {
+ 	NL80211_STA_INFO_RX_BITRATE,
+ 	NL80211_STA_INFO_BSS_PARAM,
+ 	NL80211_STA_INFO_CONNECTED_TIME,
++	NL80211_STA_INFO_CHAIN_SIGNAL,
++	NL80211_STA_INFO_CHAIN_SIGNAL_AVG,
+ 
+ 	/* keep last */
+ 	__NL80211_STA_INFO_AFTER_LAST,
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -2238,6 +2238,33 @@ nla_put_failure:
+ 	return false;
+ }
+ 
++static bool nl80211_put_signal(struct sk_buff *msg, u8 mask, s8 *signal,
++			       int id)
++{
++	void *attr;
++	int i = 0;
++
++	if (!mask)
++		return true;
++
++	attr = nla_nest_start(msg, id);
++	if (!attr)
++		goto nla_put_failure;
++
++	for (i = 0; i < 4; i++) {
++		if (!(mask & BIT(i)))
++			continue;
++
++		NLA_PUT_U8(msg, i, signal[i]);
++	}
++
++	nla_nest_end(msg, attr);
++
++	return true;
++nla_put_failure:
++	return false;
++}
++
+ static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
+ 				int flags, struct net_device *dev,
+ 				const u8 *mac_addr, struct station_info *sinfo)
+@@ -2284,6 +2311,18 @@ static int nl80211_send_station(struct s
+ 	if (sinfo->filled & STATION_INFO_SIGNAL_AVG)
+ 		NLA_PUT_U8(msg, NL80211_STA_INFO_SIGNAL_AVG,
+ 			   sinfo->signal_avg);
++	if (sinfo->filled & STATION_INFO_CHAIN_SIGNAL) {
++		if (!nl80211_put_signal(msg, sinfo->chains,
++					sinfo->chain_signal,
++					NL80211_STA_INFO_CHAIN_SIGNAL))
++			goto nla_put_failure;
++	}
++	if (sinfo->filled & STATION_INFO_CHAIN_SIGNAL_AVG) {
++		if (!nl80211_put_signal(msg, sinfo->chains,
++					sinfo->chain_signal_avg,
++					NL80211_STA_INFO_CHAIN_SIGNAL_AVG))
++			goto nla_put_failure;
++	}
+ 	if (sinfo->filled & STATION_INFO_TX_BITRATE) {
+ 		if (!nl80211_put_sta_rate(msg, &sinfo->txrate,
+ 					  NL80211_STA_INFO_TX_BITRATE))
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -329,6 +329,7 @@ static void sta_set_sinfo(struct sta_inf
+ {
+ 	struct ieee80211_sub_if_data *sdata = sta->sdata;
+ 	struct timespec uptime;
++	int i;
+ 
+ 	sinfo->generation = sdata->local->sta_generation;
+ 
+@@ -363,6 +364,17 @@ static void sta_set_sinfo(struct sta_inf
+ 		sinfo->signal = (s8)sta->last_signal;
+ 		sinfo->signal_avg = (s8) -ewma_read(&sta->avg_signal);
+ 	}
++	if (sta->chains) {
++		sinfo->filled |= STATION_INFO_CHAIN_SIGNAL |
++				 STATION_INFO_CHAIN_SIGNAL_AVG;
++
++		sinfo->chains = sta->chains;
++		for (i = 0; i < ARRAY_SIZE(sinfo->chain_signal); i++) {
++			sinfo->chain_signal[i] = sta->chain_signal_last[i];
++			sinfo->chain_signal_avg[i] =
++				(s8) -ewma_read(&sta->chain_signal_avg[i]);
++		}
++	}
+ 
+ 	sinfo->txrate.flags = 0;
+ 	if (sta->last_tx_rate.flags & IEEE80211_TX_RC_MCS)

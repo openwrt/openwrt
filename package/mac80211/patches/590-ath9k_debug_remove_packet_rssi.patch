@@ -1,0 +1,70 @@
+--- a/drivers/net/wireless/ath/ath9k/debug.c
++++ b/drivers/net/wireless/ath/ath9k/debug.c
+@@ -954,34 +954,6 @@ static ssize_t read_file_recv(struct fil
+ 			"%18s : %10u\n", "DECRYPT BUSY ERR",
+ 			sc->debug.stats.rxstats.decrypt_busy_err);
+ 
+-	len += snprintf(buf + len, size - len,
+-			"%18s : %10d\n", "RSSI-CTL0",
+-			sc->debug.stats.rxstats.rs_rssi_ctl0);
+-
+-	len += snprintf(buf + len, size - len,
+-			"%18s : %10d\n", "RSSI-CTL1",
+-			sc->debug.stats.rxstats.rs_rssi_ctl1);
+-
+-	len += snprintf(buf + len, size - len,
+-			"%18s : %10d\n", "RSSI-CTL2",
+-			sc->debug.stats.rxstats.rs_rssi_ctl2);
+-
+-	len += snprintf(buf + len, size - len,
+-			"%18s : %10d\n", "RSSI-EXT0",
+-			sc->debug.stats.rxstats.rs_rssi_ext0);
+-
+-	len += snprintf(buf + len, size - len,
+-			"%18s : %10d\n", "RSSI-EXT1",
+-			sc->debug.stats.rxstats.rs_rssi_ext1);
+-
+-	len += snprintf(buf + len, size - len,
+-			"%18s : %10d\n", "RSSI-EXT2",
+-			sc->debug.stats.rxstats.rs_rssi_ext2);
+-
+-	len += snprintf(buf + len, size - len,
+-			"%18s : %10d\n", "Rx Antenna",
+-			sc->debug.stats.rxstats.rs_antenna);
+-
+ 	PHY_ERR("UNDERRUN", ATH9K_PHYERR_UNDERRUN);
+ 	PHY_ERR("TIMING", ATH9K_PHYERR_TIMING);
+ 	PHY_ERR("PARITY", ATH9K_PHYERR_PARITY);
+@@ -1058,16 +1030,6 @@ void ath_debug_stat_rx(struct ath_softc 
+ 		RX_PHY_ERR_INC(phyerr);
+ 	}
+ 
+-	sc->debug.stats.rxstats.rs_rssi_ctl0 = rs->rs_rssi_ctl0;
+-	sc->debug.stats.rxstats.rs_rssi_ctl1 = rs->rs_rssi_ctl1;
+-	sc->debug.stats.rxstats.rs_rssi_ctl2 = rs->rs_rssi_ctl2;
+-
+-	sc->debug.stats.rxstats.rs_rssi_ext0 = rs->rs_rssi_ext0;
+-	sc->debug.stats.rxstats.rs_rssi_ext1 = rs->rs_rssi_ext1;
+-	sc->debug.stats.rxstats.rs_rssi_ext2 = rs->rs_rssi_ext2;
+-
+-	sc->debug.stats.rxstats.rs_antenna = rs->rs_antenna;
+-
+ 	spin_lock(&sc->debug.samp_lock);
+ 	RX_SAMP_DBG(jiffies) = jiffies;
+ 	RX_SAMP_DBG(rssi_ctl0) = rs->rs_rssi_ctl0;
+--- a/drivers/net/wireless/ath/ath9k/debug.h
++++ b/drivers/net/wireless/ath/ath9k/debug.h
+@@ -164,13 +164,6 @@ struct ath_rx_stats {
+ 	u32 post_delim_crc_err;
+ 	u32 decrypt_busy_err;
+ 	u32 phy_err_stats[ATH9K_PHYERR_MAX];
+-	int8_t rs_rssi_ctl0;
+-	int8_t rs_rssi_ctl1;
+-	int8_t rs_rssi_ctl2;
+-	int8_t rs_rssi_ext0;
+-	int8_t rs_rssi_ext1;
+-	int8_t rs_rssi_ext2;
+-	u8 rs_antenna;
+ };
+ 
+ enum ath_reset_type {
