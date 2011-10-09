@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
 PKG_VERSION:=6.8
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/gdb
@@ -29,7 +29,7 @@ endef
 define Package/gdb
 $(call Package/gdb/Default)
   TITLE:=GNU Debugger
-  DEPENDS+=+libreadline +libncurses +PACKAGE_libexpat:libexpat
+  DEPENDS+=+libreadline +libncurses
 endef
 
 define Package/gdb/description
@@ -51,7 +51,7 @@ endef
 # XXX: add --disable-werror to prevent build failure with arm
 CONFIGURE_ARGS+= \
 	--with-system-readline \
-	--without-libexpat-prefix \
+	--without-expat \
 	--disable-werror
 
 CONFIGURE_VARS+= \
