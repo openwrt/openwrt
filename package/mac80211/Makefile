@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2011-09-14
+PKG_VERSION:=2011-10-05
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=a5627e6079e8d0f0baf7045141503a3d
+PKG_MD5SUM:=328dd4c42fb5baa2d96c78009b11af7e
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -627,7 +627,7 @@ define KernelPackage/iwlagn
   $(call KernelPackage/mac80211/Default)
   DEPENDS:= +kmod-mac80211 @PCI_SUPPORT
   TITLE:=Intel AGN Wireless support
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/iwlagn.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/iwlwifi.$(LINUX_KMOD_SUFFIX)
   AUTOLOAD:=$(call AutoLoad,60,iwlagn)
   MENU:=1
 endef
@@ -1165,7 +1165,7 @@ MAKE_OPTS:= \
 	CONFIG_LIB80211_CRYPT_WEP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
 	CONFIG_LIB80211_CRYPT_CCMP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
 	CONFIG_LIB80211_CRYPT_TKIP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
-	CONFIG_IWLAGN=$(if $(CONFIG_PACKAGE_kmod-iwlagn),m) \
+	CONFIG_IWLWIFI=$(if $(CONFIG_PACKAGE_kmod-iwlagn),m) \
 	CONFIG_IWLWIFI_LEGACY=$(if $(CONFIG_PACKAGE_kmod-iwl-legacy),m) \
 	CONFIG_COMPAT_IWL4965=$(if $(CONFIG_PACKAGE_kmod-iwl4965),m) \
 	CONFIG_IWL3945=$(if $(CONFIG_PACKAGE_kmod-iwl3945),m) \
