@@ -430,6 +430,14 @@ menuconfig DEVEL
 		help
 		  If enabled log files will be written to the ./log directory
 
+	config SRC_TREE_OVERRIDE
+		bool "Enable package source tree override" if DEVEL
+		help
+		  If enabled, you can force a package to use a git tree as source
+		  code instead of the normal tarball. Create a symlink 'git-src'
+		  in the package directory, pointing to the .git tree that you want
+		  to pull the source code from
+
 menuconfig TARGET_OPTIONS
 	bool "Target Options"  if DEVEL
 

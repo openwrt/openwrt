@@ -37,6 +37,10 @@ STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_NAME)_installed
 
 STAGING_FILES_LIST:=$(PKG_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).list
+ifneq ($(if $(CONFIG_SRC_TREE_OVERRIDE),$(wildcard ./git-src)),)
+  USE_GIT_TREE:=1
+  QUILT:=1
+endif
 
 include $(INCLUDE_DIR)/download.mk
 include $(INCLUDE_DIR)/quilt.mk
@@ -84,6 +88,14 @@ define Download/default
   MD5SUM:=$(PKG_MD5SUM)
 endef
 
+ifdef USE_GIT_TREE
+  define Build/Prepare/Default
+	mkdir -p $(PKG_BUILD_DIR)
+	ln -s $(CURDIR)/git-src $(PKG_BUILD_DIR)/.git
+	( cd $(PKG_BUILD_DIR); git checkout .)
+  endef
+endif
+
 define Build/Exports/Default
   $(1) : export ACLOCAL_INCLUDE=$$(foreach p,$$(wildcard $$(STAGING_DIR)/usr/share/aclocal $$(STAGING_DIR)/usr/share/aclocal-* $$(STAGING_DIR)/host/share/aclocal $$(STAGING_DIR)/host/share/aclocal-*),-I $$(p))
   $(1) : export STAGING_PREFIX=$$(STAGING_DIR)/usr
@@ -97,7 +109,7 @@ Build/Exports=$(Build/Exports/Default)
 
 define Build/DefaultTargets
   $(if $(QUILT),$(Build/Quilt))
-  $(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
+  $(if $(USE_GIT_TREE),$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
   $(call Build/Autoclean)
 
   download:
