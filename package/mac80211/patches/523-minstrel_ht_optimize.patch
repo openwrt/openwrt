@@ -40,7 +40,7 @@
  /*
   * Update rate statistics and select new primary rates
   *
-@@ -292,6 +307,7 @@ minstrel_ht_update_stats(struct minstrel
+@@ -294,6 +309,7 @@ minstrel_ht_update_stats(struct minstrel
  		}
  	}
  
@@ -48,7 +48,7 @@
  	mi->stats_update = jiffies;
  }
  
-@@ -330,8 +346,8 @@ minstrel_next_sample_idx(struct minstrel
+@@ -332,8 +348,8 @@ minstrel_next_sample_idx(struct minstrel
  }
  
  static void
@@ -59,7 +59,7 @@
  {
  	int group, orig_group;
  
-@@ -350,6 +366,7 @@ minstrel_downgrade_rate(struct minstrel_
+@@ -352,6 +368,7 @@ minstrel_downgrade_rate(struct minstrel_
  			*idx = mi->groups[group].max_tp_rate;
  		else
  			*idx = mi->groups[group].max_tp_rate2;
@@ -67,7 +67,7 @@
  		break;
  	}
  }
-@@ -450,13 +467,13 @@ minstrel_ht_tx_status(void *priv, struct
+@@ -452,13 +469,13 @@ minstrel_ht_tx_status(void *priv, struct
  	if (rate->attempts > 30 &&
  	    MINSTREL_FRAC(rate->success, rate->attempts) <
  	    MINSTREL_FRAC(20, 100))
@@ -83,7 +83,7 @@
  
  	if (time_after(jiffies, mi->stats_update + (mp->update_interval / 2 * HZ) / 1000)) {
  		minstrel_ht_update_stats(mp, mi);
-@@ -521,7 +538,6 @@ minstrel_calc_retransmit(struct minstrel
+@@ -523,7 +540,6 @@ minstrel_calc_retransmit(struct minstrel
  static void
  minstrel_ht_set_rate(struct minstrel_priv *mp, struct minstrel_ht_sta *mi,
                       struct ieee80211_tx_rate *rate, int index,
@@ -91,7 +91,7 @@
                       bool sample, bool rtscts)
  {
  	const struct mcs_group *group = &minstrel_mcs_groups[index / MCS_GROUP_RATES];
-@@ -609,6 +625,7 @@ minstrel_ht_get_rate(void *priv, struct 
+@@ -611,6 +627,7 @@ minstrel_ht_get_rate(void *priv, struct 
  	struct minstrel_priv *mp = priv;
  	int sample_idx;
  	bool sample = false;
@@ -99,7 +99,7 @@
  
  	if (rate_control_send_low(sta, priv_sta, txrc))
  		return;
-@@ -634,11 +651,10 @@ minstrel_ht_get_rate(void *priv, struct 
+@@ -636,11 +653,10 @@ minstrel_ht_get_rate(void *priv, struct 
  	if (sample_idx >= 0) {
  		sample = true;
  		minstrel_ht_set_rate(mp, mi, &ar[0], sample_idx,
@@ -113,7 +113,7 @@
  	}
  
  	if (mp->hw->max_rates >= 3) {
-@@ -648,33 +664,27 @@ minstrel_ht_get_rate(void *priv, struct 
+@@ -650,33 +666,27 @@ minstrel_ht_get_rate(void *priv, struct 
  		 * max_tp_rate -> max_tp_rate2 -> max_prob_rate by default.
  		 */
  		if (sample_idx >= 0)
@@ -157,7 +157,7 @@
  
  	mi->total_packets++;
  
-@@ -766,6 +776,7 @@ minstrel_ht_update_caps(void *priv, stru
+@@ -768,6 +778,7 @@ minstrel_ht_update_caps(void *priv, stru
  	if (!n_supported)
  		goto use_legacy;
  
