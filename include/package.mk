@@ -109,7 +109,7 @@ Build/Exports=$(Build/Exports/Default)
 
 define Build/DefaultTargets
   $(if $(QUILT),$(Build/Quilt))
-  $(if $(USE_GIT_TREE),$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
+  $(if $(USE_GIT_TREE),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
   $(call Build/Autoclean)
 
   download:
