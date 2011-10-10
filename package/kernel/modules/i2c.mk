@@ -213,6 +213,8 @@ define KernelPackage/octeon-i2c/description
   Kernel module to use the I2C master driver on Cavium Octeon
 endef
 
+$(eval $(call KernelPackage,octeon-i2c))
+
 
 I2C_TINY_USB_MODULES:= \
   CONFIG_I2C_TINY_USB:drivers/i2c/busses/i2c-tiny-usb
@@ -320,4 +322,3 @@ define KernelPackage/pcf857x/description
 endef
 
 $(eval $(call KernelPackage,pcf857x))
-$(eval $(call KernelPackage,octeon-i2c))
