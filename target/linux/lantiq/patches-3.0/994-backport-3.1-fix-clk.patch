@@ -1,0 +1,22 @@
+Index: linux-3.0.3/arch/mips/lantiq/clk.c
+===================================================================
+--- linux-3.0.3.orig/arch/mips/lantiq/clk.c	2011-09-29 20:43:07.000000000 +0200
++++ linux-3.0.3/arch/mips/lantiq/clk.c	2011-09-29 20:45:14.785132132 +0200
+@@ -91,6 +91,17 @@
+ }
+ EXPORT_SYMBOL(clk_put);
+ 
++int clk_enable(struct clk *clk)
++{
++	/* clocks are always enabled*/
++	return 0;
++}
++
++void clk_disable(struct clk *clk)
++{
++	/* clocks are always enabled*/
++}
++
+ static inline u32 ltq_get_counter_resolution(void)
+ {
+ 	u32 res;

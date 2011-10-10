@@ -1,0 +1,69 @@
+Index: linux-3.0.3/drivers/net/lantiq_etop.c
+===================================================================
+--- linux-3.0.3.orig/drivers/net/lantiq_etop.c	2011-10-07 11:03:00.140000754 +0200
++++ linux-3.0.3/drivers/net/lantiq_etop.c	2011-10-07 11:03:06.088001008 +0200
+@@ -397,7 +397,10 @@
+ {
+ 	struct ltq_etop_priv *priv = netdev_priv(dev);
+ 
+-	return phy_ethtool_gset(priv->phydev, cmd);
++	if (priv->phydev)
++		return phy_ethtool_gset(priv->phydev, cmd);
++	else
++		return 0;
+ }
+ 
+ static int
+@@ -405,7 +408,10 @@
+ {
+ 	struct ltq_etop_priv *priv = netdev_priv(dev);
+ 
+-	return phy_ethtool_sset(priv->phydev, cmd);
++	if (priv->phydev)
++		return phy_ethtool_sset(priv->phydev, cmd);
++	else
++		return 0;
+ }
+ 
+ static int
+@@ -413,7 +419,10 @@
+ {
+ 	struct ltq_etop_priv *priv = netdev_priv(dev);
+ 
+-	return phy_start_aneg(priv->phydev);
++	if (priv->phydev)
++		return phy_start_aneg(priv->phydev);
++	else
++		return 0;
+ }
+ 
+ static const struct ethtool_ops ltq_etop_ethtool_ops = {
+@@ -615,7 +624,8 @@
+ 		ltq_dma_open(&ch->dma);
+ 		napi_enable(&ch->napi);
+ 	}
+-	phy_start(priv->phydev);
++	if (priv->phydev)
++		phy_start(priv->phydev);
+ 	netif_tx_start_all_queues(dev);
+ 	return 0;
+ }
+@@ -627,7 +637,8 @@
+ 	int i;
+ 
+ 	netif_tx_stop_all_queues(dev);
+-	phy_stop(priv->phydev);
++	if (priv->phydev)
++		phy_stop(priv->phydev);
+ 	for (i = 0; i < MAX_DMA_CHAN; i++) {
+ 		struct ltq_etop_chan *ch = &priv->ch[i];
+ 
+@@ -775,7 +786,7 @@
+ 	ltq_etop_set_multicast_list(dev);
+ 	err = ltq_etop_mdio_init(dev);
+ 	if (err)
+-		goto err_netdev;
++		pr_warn("etop: mdio probe failed\n");;
+ 	return 0;
+ 
+ err_netdev:
