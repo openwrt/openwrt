@@ -31,7 +31,7 @@
 
 #define IFX_ATM_VER_MAJOR               1
 #define IFX_ATM_VER_MID                 0
-#define IFX_ATM_VER_MINOR               8
+#define IFX_ATM_VER_MINOR               19
 
 
 
@@ -45,6 +45,7 @@
  *  Common Head File
  */
 #include <linux/kernel.h>
+#include <linux/vmalloc.h>
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/types.h>
@@ -60,6 +61,9 @@
  *  Chip Specific Head File
  */
 #include <lantiq_soc.h>
+#include "ifxmips_compat.h"
+#define IFX_MEI_BSP	1
+#include "ifxmips_mei_interface.h"
 #include "ifxmips_atm_core.h"
 
 
@@ -182,7 +186,9 @@ MODULE_PARM_DESC(dma_rx_clp1_descriptor_threshold, "Descriptor threshold for cel
  * ####################################
  */
 
-#define DUMP_SKB_LEN                          ~0
+#define ENABLE_LED_FRAMEWORK                    1
+
+#define DUMP_SKB_LEN                            ~0
 
 
 
@@ -205,7 +211,7 @@ static int ppe_change_qos(struct atm_vcc *, struct atm_qos *, int);
 /*
  *  ADSL LED
  */
-static INLINE int adsl_led_flash(void);
+static INLINE void adsl_led_flash(void);
 
 /*
  *  64-bit operation used by MIB calculation
@@ -251,12 +257,27 @@ static INLINE int find_vpivci(unsigned int, unsigned int);
 static INLINE int find_vcc(struct atm_vcc *);
 
 /*
+ *  ReTX functions
+ */
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+  static void retx_polling_func(unsigned long);
+  static int init_atm_tc_retrans_param(void);
+  static void clear_atm_tc_retrans_param(void);
+#endif
+
+
+/*
  *  Debug Functions
  */
 #if defined(DEBUG_DUMP_SKB) && DEBUG_DUMP_SKB
-  static void dump_skb(struct sk_buff *, u32, char *, int, int, int);
+  static void dump_skb(struct sk_buff *, unsigned int, char *, int, int, int);
 #else
   #define dump_skb(skb, len, title, port, ch, is_tx)    do {} while (0)
+#endif
+#if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
+  static void skb_swap(struct sk_buff *, unsigned int);
+#else
+  #define skb_swap(skb, byteoff)                        do {} while (0)
 #endif
 
 /*
@@ -267,13 +288,30 @@ static INLINE void proc_file_delete(void);
 static int proc_read_version(char *, char **, off_t, int, int *, void *);
 static int proc_read_mib(char *, char **, off_t, int, int *, void *);
 static int proc_write_mib(struct file *, const char *, unsigned long, void *);
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+  static int proc_read_retx_mib(char *, char **, off_t, int, int *, void *);
+  static int proc_write_retx_mib(struct file *, const char *, unsigned long, void *);
+#endif
 #if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
   static int proc_read_dbg(char *, char **, off_t, int, int *, void *);
   static int proc_write_dbg(struct file *, const char *, unsigned long, void *);
+  static int proc_write_mem(struct file *, const char *, unsigned long, void *);
+ #if defined(CONFIG_AR9) || defined(CONFIG_VR9) || defined(CONFIG_DANUBE) || defined(CONFIG_AMAZON_SE)
+  static int proc_read_pp32(char *, char **, off_t, int, int *, void *);
+  static int proc_write_pp32(struct file *, const char *, unsigned long, void *);
+ #endif
 #endif
 #if defined(ENABLE_FW_PROC) && ENABLE_FW_PROC
   static int proc_read_htu(char *, char **, off_t, int, int *, void *);
   static int proc_read_txq(char *, char **, off_t, int, int *, void *);
+ #if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+  static int proc_read_retx_fw(char *, char **, off_t, int, int *, void *);
+  static int proc_read_retx_stats(char *, char **, off_t, int, int *, void *);
+  static int proc_write_retx_stats(struct file *, const char *, unsigned long, void *);
+  static int proc_read_retx_cfg(char *, char **, off_t, int, int *, void *);
+  static int proc_write_retx_cfg(struct file *, const char *, unsigned long, void *);
+  static int proc_read_retx_dsl_param(char *, char **, off_t, int, int *, void *);
+ #endif
 #endif
 
 /*
@@ -282,17 +320,15 @@ static int proc_write_mib(struct file *, const char *, unsigned long, void *);
 static int stricmp(const char *, const char *);
 #if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
   static int strincmp(const char *, const char *, int);
+  static int get_token(char **, char **, int *, int *);
+  static unsigned int get_number(char **, int *, int);
+  static void ignore_space(char **, int *);
 #endif
 static INLINE int ifx_atm_version(char *);
-//static INLINE int print_reset_domain(char *, int);
-//static INLINE int print_reset_handler(char *, int, ifx_rcu_handler_t *);
 
 /*
  *  Init & clean-up functions
  */
-#ifdef MODULE
-  static INLINE void reset_ppe(void);
-#endif
 static INLINE void check_parameters(void);
 static INLINE int init_priv_data(void);
 static INLINE void clear_priv_data(void);
@@ -308,10 +344,14 @@ static INLINE void init_tx_tables(void);
   static inline void ifx_push_oam(unsigned char *dummy) {}
 #endif
 #if defined(CONFIG_IFXMIPS_DSL_CPE_MEI) || defined(CONFIG_IFXMIPS_DSL_CPE_MEI_MODULE)
-  extern int ifx_mei_atm_led_blink(void);
-  extern int ifx_mei_atm_showtime_check(int *is_showtime, struct port_cell_info *port_cell, void **xdata_addr);
+ #if !defined(ENABLE_LED_FRAMEWORK) || !ENABLE_LED_FRAMEWORK
+  extern int ifx_mei_atm_led_blink(void) __attribute__ ((weak));
+ #endif
+  extern int ifx_mei_atm_showtime_check(int *is_showtime, struct port_cell_info *port_cell, void **xdata_addr) __attribute__ ((weak));
 #else
+ #if !defined(ENABLE_LED_FRAMEWORK) || !ENABLE_LED_FRAMEWORK
   static inline int ifx_mei_atm_led_blink(void) { return IFX_SUCCESS; }
+ #endif
   static inline int ifx_mei_atm_showtime_check(int *is_showtime, struct port_cell_info *port_cell, void **xdata_addr)
   {
     if ( is_showtime != NULL )
@@ -323,10 +363,13 @@ static INLINE void init_tx_tables(void);
 /*
  *  External variable
  */
-extern struct sk_buff* (*ifx_atm_alloc_tx)(struct atm_vcc *, unsigned int);
+struct sk_buff* (*ifx_atm_alloc_tx)(struct atm_vcc *, unsigned int) = NULL;
+
+
+//extern struct sk_buff* (*ifx_atm_alloc_tx)(struct atm_vcc *, unsigned int);
 #if defined(CONFIG_IFXMIPS_DSL_CPE_MEI) || defined(CONFIG_IFXMIPS_DSL_CPE_MEI_MODULE)
-  extern int (*ifx_mei_atm_showtime_enter)(struct port_cell_info *, void *);
-  extern int (*ifx_mei_atm_showtime_exit)(void);
+  extern int (*ifx_mei_atm_showtime_enter)(struct port_cell_info *, void *) __attribute__ ((weak));
+  extern int (*ifx_mei_atm_showtime_exit)(void) __attribute__ ((weak));
 #else
   int (*ifx_mei_atm_showtime_enter)(struct port_cell_info *, void *) = NULL;
   EXPORT_SYMBOL(ifx_mei_atm_showtime_enter);
@@ -349,8 +392,8 @@ static struct atmdev_ops g_ifx_atm_ops = {
     .close      = ppe_close,
     .ioctl      = ppe_ioctl,
     .send       = ppe_send,
-    .send_oam	= ppe_send_oam,
-    .change_qos	= ppe_change_qos,
+    .send_oam   = ppe_send_oam,
+    .change_qos = ppe_change_qos,
     .owner      = THIS_MODULE,
 };
 
@@ -360,6 +403,20 @@ static struct atmdev_ops g_ifx_atm_ops = {
 
 static int g_showtime = 0;
 static void *g_xdata_addr = NULL;
+
+#if 0 /*--- defined(ENABLE_LED_FRAMEWORK) && ENABLE_LED_FRAMEWORK ---*/
+  static void *g_data_led_trigger = NULL;
+#endif
+
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+  static unsigned long g_retx_playout_buffer = 0;
+
+  static volatile int g_retx_htu = 1;
+  static struct dsl_param g_dsl_param = {0};
+  static int g_retx_polling_cnt = HZ;
+  static struct timeval g_retx_polling_start = {0}, g_retx_polling_end = {0};
+  static struct timer_list g_retx_polling_timer;
+#endif
 
 unsigned int ifx_atm_dbg_enable = 0;
 
@@ -467,15 +524,41 @@ static int ppe_open(struct atm_vcc *vcc)
     if ( vcc->qos.aal != ATM_AAL5 && vcc->qos.aal != ATM_AAL0 )
         return -EPROTONOSUPPORT;
 
+#if !defined(DISABLE_QOS_WORKAROUND) || !DISABLE_QOS_WORKAROUND
     /*  check bandwidth */
-    if ( (vcc->qos.txtp.traffic_class == ATM_CBR && vcc->qos.txtp.max_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
-      || (vcc->qos.txtp.traffic_class == ATM_VBR_RT && vcc->qos.txtp.max_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
-      || (vcc->qos.txtp.traffic_class == ATM_VBR_NRT && vcc->qos.txtp.scr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
-      || (vcc->qos.txtp.traffic_class == ATM_UBR_PLUS && vcc->qos.txtp.min_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate)) )
+
+    if (vcc->qos.txtp.traffic_class == ATM_CBR && 
+                vcc->qos.txtp.max_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
     {
+        printk("CBR set. %s, line %d returns EINVAL\n", __FUNCTION__, __LINE__);
         ret = -EINVAL;
         goto PPE_OPEN_EXIT;
     }
+    if(vcc->qos.txtp.traffic_class == ATM_VBR_RT && 
+                vcc->qos.txtp.max_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
+    {
+        printk("VBR RT set. %s, line %d returns EINVAL\n", __FUNCTION__, __LINE__);
+        ret = -EINVAL;
+        goto PPE_OPEN_EXIT;
+    }
+
+    if (vcc->qos.txtp.traffic_class == ATM_VBR_NRT && 
+                vcc->qos.txtp.scr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
+    {
+        printk("VBR NRT set. %s, line %d returns EINVAL\n", __FUNCTION__, __LINE__);
+        ret = -EINVAL;
+        goto PPE_OPEN_EXIT;
+    }
+
+    if (vcc->qos.txtp.traffic_class == ATM_UBR_PLUS && 
+                vcc->qos.txtp.min_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate)) 
+    {
+        printk("UBR PLUS set. %s, line %d returns EINVAL\n", __FUNCTION__, __LINE__);
+        ret = -EINVAL;
+        goto PPE_OPEN_EXIT;
+    }
+
+#endif
 
     /*  check existing vpi,vci  */
     conn = find_vpivci(vpi, vci);
@@ -497,6 +580,7 @@ static int ppe_open(struct atm_vcc *vcc)
     }
     if ( conn == MAX_PVC_NUMBER )
     {
+        printk("max_pvc_number reached\n");
         ret = -EINVAL;
         goto PPE_OPEN_EXIT;
     }
@@ -535,7 +619,7 @@ static int ppe_open(struct atm_vcc *vcc)
     }
 
     /*  set port    */
-    WTX_QUEUE_CONFIG(conn)->sbid = (int)vcc->dev->dev_data;
+    WTX_QUEUE_CONFIG(conn + FIRST_QSB_QID)->sbid = (int)vcc->dev->dev_data;
 
     /*  set htu entry   */
     set_htu_entry(vpi, vci, conn, vcc->qos.aal == ATM_AAL5 ? 1 : 0, 0);
@@ -566,6 +650,9 @@ static void ppe_close(struct atm_vcc *vcc)
     int conn;
     struct port *port;
     struct connection *connection;
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    int sys_flag;
+#endif
 
     if ( vcc == NULL )
         return;
@@ -582,11 +669,29 @@ static void ppe_close(struct atm_vcc *vcc)
     /*  clear htu   */
     clear_htu_entry(conn);
 
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    //  ReTX: release second QID
+    local_irq_save(sys_flag);
+    if ( g_retx_htu && vcc->qos.aal == ATM_AAL5 )
+    {
+        int retx_conn = (conn + 8) % 16;    //  ReTX queue
+
+        if ( retx_conn < MAX_PVC_NUMBER && g_atm_priv_data.conn[retx_conn].vcc == vcc ) {
+            clear_htu_entry(retx_conn);
+            g_atm_priv_data.conn[retx_conn].vcc = NULL;
+            g_atm_priv_data.conn[retx_conn].aal5_vcc_crc_err = 0;
+            g_atm_priv_data.conn[retx_conn].aal5_vcc_oversize_sdu = 0;
+            clear_bit(retx_conn, &g_atm_priv_data.conn_table);
+        }
+    }
+    local_irq_restore(sys_flag);
+#endif
+
     /*  release connection  */
-    clear_bit(conn, &g_atm_priv_data.conn_table);
     connection->vcc = NULL;
     connection->aal5_vcc_crc_err = 0;
     connection->aal5_vcc_oversize_sdu = 0;
+    clear_bit(conn, &g_atm_priv_data.conn_table);
 
     /*  disable irq */
     if ( g_atm_priv_data.conn_table == 0 ) {
@@ -623,6 +728,7 @@ static int ppe_send(struct atm_vcc *vcc, struct sk_buff *skb)
     if ( vcc == NULL || skb == NULL )
         return -EINVAL;
 
+    skb_orphan(skb);
     skb_get(skb);
     atm_free_tx_skb_vcc(skb, vcc);
 
@@ -732,9 +838,14 @@ static int ppe_send(struct atm_vcc *vcc, struct sk_buff *skb)
     g_atm_priv_data.conn[conn].tx_skb[desc_base] = skb;
 
     /*  write discriptor to memory and write back cache */
-    g_atm_priv_data.conn[conn].tx_desc[desc_base] = reg_desc;
+#ifdef CONFIG_DEBUG_SLAB
+    /* be sure that "redzone 1" is written back to memory */
+    dma_cache_wback((unsigned long)skb->head, 32);
+#endif
+    dma_cache_wback((unsigned long)skb_shinfo(skb), sizeof(struct skb_shared_info));
     dma_cache_wback((unsigned long)skb->data, skb->len);
-
+    g_atm_priv_data.conn[conn].tx_desc[desc_base] = reg_desc;
+     
     dump_skb(skb, DUMP_SKB_LEN, (char *)__func__, 0, conn, 1);
 
     mailbox_signal(conn, 1);
@@ -820,6 +931,10 @@ static int ppe_send_oam(struct atm_vcc *vcc, void *cell, int flags)
 
     dump_skb(skb, DUMP_SKB_LEN, (char *)__func__, 0, conn, 1);
 
+    if ( vcc->qos.aal == ATM_AAL5 && (ifx_atm_dbg_enable & DBG_ENABLE_MASK_MAC_SWAP) ) {
+        skb_swap(skb, reg_desc.byteoff);
+    }
+
     mailbox_signal(conn, 1);
 
     adsl_led_flash();
@@ -843,9 +958,17 @@ static int ppe_change_qos(struct atm_vcc *vcc, struct atm_qos *qos, int flags)
     return 0;
 }
 
-static INLINE int adsl_led_flash(void)
+static INLINE void adsl_led_flash(void)
 {
-    return ifx_mei_atm_led_blink();
+#if 0
+#if defined(ENABLE_LED_FRAMEWORK) && ENABLE_LED_FRAMEWORK
+    if ( g_data_led_trigger != NULL )
+        ifx_led_trigger_activate(g_data_led_trigger);
+#else
+    if (!IS_ERR(&ifx_mei_atm_led_blink) && &ifx_mei_atm_led_blink )
+        ifx_mei_atm_led_blink();
+#endif
+#endif
 }
 
 /*
@@ -997,7 +1120,6 @@ static INLINE void mailbox_oam_rx_handler(void)
                 vcc->push_oam(vcc, header);
             else
                 ifx_push_oam((unsigned char *)header);
-
             adsl_led_flash();
         }
 
@@ -1133,14 +1255,19 @@ static irqreturn_t mailbox_irq_handler(int irq, void *dev_id)
 
 static INLINE void mailbox_signal(unsigned int queue, int is_tx)
 {
+    int count = 1000;
+
     if ( is_tx ) {
-        while ( MBOX_IGU3_ISR_ISR(queue + FIRST_QSB_QID + 16) );
+        while ( MBOX_IGU3_ISR_ISR(queue + FIRST_QSB_QID + 16) && count)
+		count--;
         *MBOX_IGU3_ISRS = MBOX_IGU3_ISRS_SET(queue + FIRST_QSB_QID + 16);
     }
     else {
-        while ( MBOX_IGU3_ISR_ISR(queue) );
+        while ( MBOX_IGU3_ISR_ISR(queue) && count)
+		count--;
         *MBOX_IGU3_ISRS = MBOX_IGU3_ISRS_SET(queue);
     }
+    ASSERT(count != 0, "MBOX_IGU3_ISR = 0x%08x", ltq_r32(MBOX_IGU3_ISR));
 }
 
 static void set_qsb(struct atm_vcc *vcc, struct atm_qos *qos, unsigned int queue)
@@ -1482,8 +1609,225 @@ static INLINE int find_vcc(struct atm_vcc *vcc)
     return -1;
 }
 
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+
+static void retx_polling_func(unsigned long arg)
+{
+    int sys_flag;
+    volatile struct dsl_param *p_dsl_param;
+    int new_retx_htu;
+    int retx_en;
+    int i, max_htu;
+
+    local_irq_save(sys_flag);
+    if ( g_retx_playout_buffer == 0 && g_xdata_addr != NULL && (((volatile struct dsl_param *)g_xdata_addr)->RetxEnable || ((volatile struct dsl_param *)g_xdata_addr)->ServiceSpecificReTx) ) {
+        local_irq_restore(sys_flag);
+        g_retx_playout_buffer = __get_free_pages(GFP_KERNEL, RETX_PLAYOUT_BUFFER_ORDER);
+        if ( g_retx_playout_buffer == 0 )
+            panic("no memory for g_retx_playout_buffer\n");
+        memset((void *)g_retx_playout_buffer, 0, RETX_PLAYOUT_BUFFER_SIZE);
+        dma_cache_inv(g_retx_playout_buffer, RETX_PLAYOUT_BUFFER_SIZE);
+    }
+    else
+        local_irq_restore(sys_flag);
+
+
+    local_irq_save(sys_flag);
+    if ( g_xdata_addr != NULL ) {
+        p_dsl_param = (volatile struct dsl_param *)g_xdata_addr;
+        g_retx_polling_cnt += RETX_POLLING_INTERVAL;
+
+        if ( p_dsl_param->update_flag ) {
+            do_gettimeofday(&g_retx_polling_start);
+
+            g_dsl_param = *p_dsl_param;
+
+            // we always enable retx (just for test purpose)
+            //g_dsl_param.RetxEnable = 1;
+            //RETX_TSYNC_CFG->fw_alpha = 0;
+
+            if ( g_dsl_param.RetxEnable || g_dsl_param.ServiceSpecificReTx ) {
+                //  ReTX enabled
+                // MIB counter updated for each polling
+                p_dsl_param->RxDtuCorruptedCNT          = *RxDTUCorruptedCNT;
+                p_dsl_param->RxRetxDtuUnCorrectedCNT    = *RxRetxDTUUncorrectedCNT;
+                p_dsl_param->RxLastEFB                  = *RxLastEFBCNT;
+                p_dsl_param->RxDtuCorrectedCNT          = *RxDTUCorrectedCNT;
+
+                // for RETX paramters, we check only once for every second
+                if ( g_retx_polling_cnt < HZ )
+                    goto _clear_update_flag;
+
+                g_retx_polling_cnt -= HZ;
+
+                if ( g_dsl_param.ServiceSpecificReTx && g_dsl_param.ReTxPVC == 0 )
+                    new_retx_htu = 1;
+                else
+                    new_retx_htu = 0;
+
+                // default fw_alpha equals to default hardware alpha
+                RETX_TSYNC_CFG->fw_alpha    = 0;
+
+                RETX_TD_CFG->td_max         = g_dsl_param.MaxDelayrt;
+                RETX_TD_CFG->td_min         = g_dsl_param.MinDelayrt;
+
+                *RETX_PLAYOUT_BUFFER_BASE   = ((((unsigned int)g_retx_playout_buffer | KSEG1) + 15) & 0xFFFFFFF0) >> 2;
+
+                if ( g_dsl_param.ServiceSpecificReTx ) {
+                    *RETX_SERVICE_HEADER_CFG= g_dsl_param.ReTxPVC << 4;
+                    if ( g_dsl_param.ReTxPVC == 0 )
+                        *RETX_MASK_HEADER_CFG = 1;
+                    else
+                        *RETX_MASK_HEADER_CFG = 0;
+                }
+                else {
+                    *RETX_SERVICE_HEADER_CFG= 0;
+                    *RETX_MASK_HEADER_CFG   = 0;
+                }
+
+                retx_en = 1;
+            }
+            else {
+                //  ReTX disabled
+
+                new_retx_htu = 0;
+
+                RETX_TSYNC_CFG->fw_alpha    = 7;
+
+                *RETX_SERVICE_HEADER_CFG    = 0;
+                *RETX_MASK_HEADER_CFG       = 0;
+
+                retx_en = 0;
+            }
+
+
+            if ( retx_en != RETX_MODE_CFG->retx_en ) {
+                unsigned int pid_mask, vci_mask;
+
+                if ( retx_en ) {
+                    pid_mask = 0x03;
+                    vci_mask = 0xFF00;
+                }
+                else {
+                    pid_mask = 0x02;
+                    vci_mask = 0x0000;
+                }
+
+                max_htu = *CFG_WRX_HTUTS;
+                for ( i = OAM_HTU_ENTRY_NUMBER; i < max_htu; i++ )
+                    if ( HTU_ENTRY(i)->vld ) {
+                        HTU_MASK(i)->pid_mask = pid_mask;
+                        HTU_MASK(i)->vci_mask = vci_mask;
+                    }
+            }
+
+            if ( new_retx_htu != g_retx_htu ) {
+                int conn, retx_conn;
+
+                g_retx_htu = new_retx_htu;
+
+                if ( g_retx_htu ) {
+                    max_htu = *CFG_WRX_HTUTS;
+                    for ( i = OAM_HTU_ENTRY_NUMBER; i < max_htu; i++ )
+                        if ( HTU_ENTRY(i)->vld )
+                            HTU_MASK(i)->clp = 0;
+
+                    for ( conn = 0; conn < MAX_PVC_NUMBER; conn++ )
+                        if ( g_atm_priv_data.conn[conn].vcc && g_atm_priv_data.conn[conn].vcc->qos.aal == ATM_AAL5 && !HTU_ENTRY(conn + OAM_HTU_ENTRY_NUMBER)->clp ) {
+                            retx_conn = (conn + 8) % 16;    //  ReTX queue
+
+                            if ( retx_conn < MAX_PVC_NUMBER && test_and_set_bit(retx_conn, &g_atm_priv_data.conn_table) == 0 ) {
+                                g_atm_priv_data.conn[retx_conn].vcc = g_atm_priv_data.conn[conn].vcc;
+                                set_htu_entry(g_atm_priv_data.conn[conn].vcc->vpi, g_atm_priv_data.conn[conn].vcc->vci, retx_conn, g_atm_priv_data.conn[conn].vcc->qos.aal == ATM_AAL5 ? 1 : 0, 1);
+                            }
+                            else {
+                                err("Queue number %d for ReTX queue of PVC(%d.%d) is not available!", retx_conn, g_atm_priv_data.conn[conn].vcc->vpi, g_atm_priv_data.conn[conn].vcc->vci);
+                            }
+                        }
+                }
+                else
+                {
+                    for ( retx_conn = 0; retx_conn < MAX_PVC_NUMBER; retx_conn++ )
+                        if ( g_atm_priv_data.conn[retx_conn].vcc && HTU_ENTRY(retx_conn + OAM_HTU_ENTRY_NUMBER)->clp ) {
+                            clear_htu_entry(retx_conn);
+                            g_atm_priv_data.conn[retx_conn].vcc = NULL;
+                            g_atm_priv_data.conn[retx_conn].aal5_vcc_crc_err = 0;
+                            g_atm_priv_data.conn[retx_conn].aal5_vcc_oversize_sdu = 0;
+                            clear_bit(retx_conn, &g_atm_priv_data.conn_table);
+                        }
+
+                    max_htu = *CFG_WRX_HTUTS;
+                    for ( i = OAM_HTU_ENTRY_NUMBER; i < max_htu; i++ )
+                        if ( HTU_ENTRY(i)->vld )
+                            HTU_MASK(i)->clp = 1;
+                }
+            }
+
+            RETX_MODE_CFG->retx_en = retx_en;
+
+_clear_update_flag:
+            p_dsl_param->update_flag = 0;
+
+            do_gettimeofday(&g_retx_polling_end);
+        }
+
+        g_retx_polling_timer.expires = jiffies + RETX_POLLING_INTERVAL;
+        add_timer(&g_retx_polling_timer);
+    }
+    local_irq_restore(sys_flag);
+}
+
+static int init_atm_tc_retrans_param(void)
+{
+    int i = 0;
+    struct DTU_stat_info reset_val;
+
+    RETX_MODE_CFG->invld_range  = 128;
+    RETX_MODE_CFG->buff_size    = RETX_PLAYOUT_FW_BUFF_SIZE > 4096/32 ? 4096/32 : RETX_PLAYOUT_FW_BUFF_SIZE ;
+    RETX_MODE_CFG->retx_en      = 1;
+
+    // default fw_alpha equals to default hardware alpha
+    RETX_TSYNC_CFG->fw_alpha    = 7;
+    RETX_TSYNC_CFG->sync_inp    = 0;
+
+    RETX_TD_CFG->td_max         = 0;
+    RETX_TD_CFG->td_min         = 0;
+
+    // *RETX_PLAYOUT_BUFFER_BASE   = KSEG1ADDR(g_retx_playout_buffer); //  need " >> 2 " ?
+    *RETX_PLAYOUT_BUFFER_BASE       = ((((unsigned int)g_retx_playout_buffer | KSEG1) + 15) & 0xFFFFFFF0) >> 2;
+
+    *RETX_SERVICE_HEADER_CFG    = 0;
+    *RETX_MASK_HEADER_CFG       = 0;
+
+    // 20us
+    RETX_MIB_TIMER_CFG->tick_cycle = 4800;
+    RETX_MIB_TIMER_CFG->ticks_per_sec = 50000;
+
+    *LAST_DTU_SID_IN            = 255;
+    *RFBI_FIRST_CW              = 1;
+    // init DTU_STAT_INFO
+
+    memset(&reset_val, 0, sizeof(reset_val));
+    reset_val.dtu_rd_ptr = reset_val.dtu_wr_ptr = 0xffff;
+
+    for(i = 0 ; i < 256; i ++) {
+        DTU_STAT_INFO[i] = reset_val;
+    }
+    return 0;
+}
+
+static void clear_atm_tc_retrans_param(void)
+{
+    if ( g_retx_playout_buffer ) {
+        free_pages(g_retx_playout_buffer, RETX_PLAYOUT_BUFFER_ORDER);
+        g_retx_playout_buffer = 0;
+    }
+}
+
+#endif
+
 #if defined(DEBUG_DUMP_SKB) && DEBUG_DUMP_SKB
-static void dump_skb(struct sk_buff *skb, u32 len, char *title, int port, int ch, int is_tx)
+static void dump_skb(struct sk_buff *skb, unsigned int len, char *title, int port, int ch, int is_tx)
 {
     int i;
 
@@ -1494,7 +1838,7 @@ static void dump_skb(struct sk_buff *skb, u32 len, char *title, int port, int ch
         len = skb->len;
 
     if ( len > RX_DMA_CH_AAL_BUF_SIZE ) {
-        printk("too big data length: skb = %08x, skb->data = %08x, skb->len = %d\n", (u32)skb, (u32)skb->data, skb->len);
+        printk("too big data length: skb = %08x, skb->data = %08x, skb->len = %d\n", (unsigned int)skb, (unsigned int)skb->data, skb->len);
         return;
     }
 
@@ -1502,7 +1846,7 @@ static void dump_skb(struct sk_buff *skb, u32 len, char *title, int port, int ch
         printk("%s (port %d, ch %d)\n", title, port, ch);
     else
         printk("%s\n", title);
-    printk("  skb->data = %08X, skb->tail = %08X, skb->len = %d\n", (u32)skb->data, (u32)skb->tail, (int)skb->len);
+    printk("  skb->data = %08X, skb->tail = %08X, skb->len = %d\n", (unsigned int)skb->data, (unsigned int)skb->tail, (int)skb->len);
     for ( i = 1; i <= len; i++ ) {
         if ( i % 16 == 1 )
             printk("  %4d:", i - 1);
@@ -1515,36 +1859,151 @@ static void dump_skb(struct sk_buff *skb, u32 len, char *title, int port, int ch
 }
 #endif
 
+#if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
+static void skb_swap(struct sk_buff *skb, unsigned int byteoff)
+{
+    unsigned int mac_offset = ~0;
+    unsigned int ip_offset = ~0;
+    unsigned char tmp[8];
+    unsigned char *p = NULL;
+
+    skb_pull(skb, byteoff + TX_INBAND_HEADER_LENGTH);
+
+    if ( skb->data[0] == 0xAA && skb->data[1] == 0xAA && skb->data[2] == 0x03 ) {
+        //  LLC
+        if ( skb->data[3] == 0x00 && skb->data[4] == 0x80 && skb->data[5] == 0xC2 ) {
+            //  EoA
+            if ( skb->data[22] == 0x08 && skb->data[23] == 0x00 ) {
+                //  IPv4
+                mac_offset = 10;
+                ip_offset = 24;
+            }
+            else if ( skb->data[31] == 0x21 ) {
+                //  PPPoE IPv4
+                mac_offset = 10;
+                ip_offset = 32;
+            }
+        }
+        else {
+            //  IPoA
+            if ( skb->data[6] == 0x08 && skb->data[7] == 0x00 ) {
+                //  IPv4
+                ip_offset = 8;
+            }
+        }
+    }
+    else if ( skb->data[0] == 0xFE && skb->data[1] == 0xFE && skb->data[2] == 0x03 ) {
+        //  LLC PPPoA
+        if ( skb->data[4] == 0x00 && skb->data[5] == 0x21 ) {
+            //  IPv4
+            ip_offset = 6;
+        }
+    }
+    else {
+        //  VC-mux
+        if ( skb->data[0] == 0x00 && skb->data[1] == 0x21 ) {
+            //  PPPoA IPv4
+            ip_offset = 2;
+        }
+        else if ( skb->data[0] == 0x00 && skb->data[1] == 0x00 ) {
+            //  EoA
+            if ( skb->data[14] == 0x08 && skb->data[15] ==0x00 ) {
+                //  IPv4
+                mac_offset = 2;
+                ip_offset = 16;
+            }
+            else if ( skb->data[23] == 0x21 ) {
+                //  PPPoE IPv4
+                mac_offset = 2;
+                ip_offset = 26;
+            }
+        }
+        else {
+            //  IPoA
+            ip_offset = 0;
+        }
+    }
+
+    if ( mac_offset != ~0 && !(skb->data[mac_offset] & 0x01) ) {
+        p = skb->data + mac_offset;
+        //  swap MAC
+        memcpy(tmp, p, 6);
+        memcpy(p, p + 6, 6);
+        memcpy(p + 6, tmp, 6);
+        p += 12;
+    }
+
+    if ( ip_offset != ~0 ) {
+        p = skb->data + ip_offset + 12;
+        //  swap IP
+        memcpy(tmp, p, 4);
+        memcpy(p, p + 4, 4);
+        memcpy(p + 4, tmp, 4);
+        p += 8;
+    }
+
+    if ( p != NULL ) {
+        dma_cache_wback((unsigned long)skb->data, (unsigned long)p - (unsigned long)skb->data);
+    }
+
+    skb_push(skb, byteoff + TX_INBAND_HEADER_LENGTH);
+}
+#endif
+
 static INLINE void proc_file_create(void)
 {
-#if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
     struct proc_dir_entry *res;
-#endif
 
     g_atm_dir = proc_mkdir("driver/ifx_atm", NULL);
 
     create_proc_read_entry("version",
-                            0,
-                            g_atm_dir,
-                            proc_read_version,
-                            NULL);
+                           0,
+                           g_atm_dir,
+                           proc_read_version,
+                           NULL);
 
     res = create_proc_entry("mib",
                             0,
                             g_atm_dir);
     if ( res != NULL ) {
-        res->read_proc  = proc_read_mib;
-        res->write_proc = proc_write_mib;
+       res->read_proc  = proc_read_mib;
+       res->write_proc = proc_write_mib;
     }
+
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    res = create_proc_entry("retx_mib",
+                            0,
+                            g_atm_dir);
+    if ( res != NULL ) {
+       res->read_proc  = proc_read_retx_mib;
+       res->write_proc = proc_write_retx_mib;
+    }
+#endif
 
 #if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
     res = create_proc_entry("dbg",
                             0,
                             g_atm_dir);
     if ( res != NULL ) {
-        res->read_proc  = proc_read_dbg;
-        res->write_proc = proc_write_dbg;
+       res->read_proc  = proc_read_dbg;
+       res->write_proc = proc_write_dbg;
     }
+
+    res = create_proc_entry("mem",
+                            0,
+                            g_atm_dir);
+    if ( res != NULL )
+       res->write_proc = proc_write_mem;
+
+ #if defined(CONFIG_AR9) || defined(CONFIG_VR9) || defined(CONFIG_DANUBE) || defined(CONFIG_AMAZON_SE)
+    res = create_proc_entry("pp32",
+                            0,
+                            g_atm_dir);
+    if ( res != NULL ) {
+       res->read_proc  = proc_read_pp32;
+       res->write_proc = proc_write_pp32;
+    }
+ #endif
 #endif
 
 #if defined(ENABLE_FW_PROC) && ENABLE_FW_PROC
@@ -1555,24 +2014,76 @@ static INLINE void proc_file_create(void)
                             NULL);
 
     create_proc_read_entry("txq",
+                           0,
+                           g_atm_dir,
+                           proc_read_txq,
+                           NULL);
+
+ #if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    create_proc_read_entry("retx_fw",
+                           0,
+                           g_atm_dir,
+                           proc_read_retx_fw,
+                           NULL);
+
+    res = create_proc_entry("retx_stats",
+                            0,
+                            g_atm_dir);
+    if ( res != NULL ) {
+        res->read_proc  = proc_read_retx_stats;
+        res->write_proc = proc_write_retx_stats;
+    }
+
+    res = create_proc_entry("retx_cfg",
+                            0,
+                            g_atm_dir);
+    if ( res != NULL ) {
+        res->read_proc  = proc_read_retx_cfg;
+        res->write_proc = proc_write_retx_cfg;
+    }
+
+    create_proc_read_entry("retx_dsl_param",
                             0,
                             g_atm_dir,
-                            proc_read_txq,
+                            proc_read_retx_dsl_param,
                             NULL);
+ #endif
 #endif
 }
 
 static INLINE void proc_file_delete(void)
 {
 #if defined(ENABLE_FW_PROC) && ENABLE_FW_PROC
+ #if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    remove_proc_entry("retx_dsl_param", g_atm_dir);
+
+    remove_proc_entry("retx_cfg", g_atm_dir);
+
+    remove_proc_entry("retx_stats", g_atm_dir);
+
+    remove_proc_entry("retx_fw", g_atm_dir);
+ #endif
+
     remove_proc_entry("txq", g_atm_dir);
 
     remove_proc_entry("htu", g_atm_dir);
 #endif
 
 #if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
+ #if defined(CONFIG_AR9) || defined(CONFIG_VR9) || defined(CONFIG_DANUBE) || defined(CONFIG_AMAZON_SE)
+    remove_proc_entry("pp32", g_atm_dir);
+ #endif
+
+    remove_proc_entry("mem", g_atm_dir);
+
     remove_proc_entry("dbg", g_atm_dir);
 #endif
+
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    remove_proc_entry("retx_mib", g_atm_dir);
+#endif
+
+    remove_proc_entry("mib", g_atm_dir);
 
     remove_proc_entry("version", g_atm_dir);
 
@@ -1627,7 +2138,7 @@ static int proc_read_mib(char *page, char **start, off_t off, int count, int *eo
 
 static int proc_write_mib(struct file *file, const char *buf, unsigned long count, void *data)
 {
-    char str[2048];
+    char str[1024];
     char *p;
     int len, rlen;
 
@@ -1653,6 +2164,172 @@ static int proc_write_mib(struct file *file, const char *buf, unsigned long coun
     return count;
 }
 
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+
+static int proc_read_retx_mib(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+    int len = 0;
+
+    printk("Retx FW DTU MIB :\n");
+    printk("  rx_total_dtu            = %u\n", *URETX_RX_TOTAL_DTU);
+    printk("  rx_bad_dtu              = %u\n", *URETX_RX_BAD_DTU);
+    printk("  rx_good_dtu             = %u\n", *URETX_RX_GOOD_DTU);
+    printk("  rx_corrected_dtu        = %u\n", *URETX_RX_CORRECTED_DTU);
+    printk("  rx_outofdate_dtu        = %u\n", *URETX_RX_OUTOFDATE_DTU);
+    printk("  rx_duplicate_dtu        = %u\n", *URETX_RX_DUPLICATE_DTU);
+    printk("  rx_timeout_dtu          = %u\n", *URETX_RX_TIMEOUT_DTU);
+    printk("  RxDTURetransmittedCNT   = %u\n", *RxDTURetransmittedCNT);
+    printk("\n");
+
+    printk("Retx Standard DTU MIB:\n");
+    printk("  RxLastEFB               = %u\n", *RxLastEFBCNT);
+    printk("  RxDTUCorrectedCNT       = %u\n", *RxDTUCorrectedCNT);
+    printk("  RxDTUCorruptedCNT       = %u\n", *RxDTUCorruptedCNT);
+    printk("  RxRetxDTUUncorrectedCNT = %u\n", *RxRetxDTUUncorrectedCNT);
+    printk("\n");
+
+    printk("Retx FW Cell MIB :\n");
+    printk("  bc0_total_cell          = %u\n", *WRX_BC0_CELL_NUM);
+    printk("  bc0_drop_cell           = %u\n", *WRX_BC0_DROP_CELL_NUM);
+    printk("  bc0_nonretx_cell        = %u\n", *WRX_BC0_NONRETX_CELL_NUM);
+    printk("  bc0_retx_cell           = %u\n", *WRX_BC0_RETX_CELL_NUM);
+    printk("  bc0_outofdate_cell      = %u\n", *WRX_BC0_OUTOFDATE_CELL_NUM);
+    printk("  bc0_directup_cell       = %u\n", *WRX_BC0_DIRECTUP_NUM);
+    printk("  bc0_to_pb_total_cell    = %u\n", *WRX_BC0_PBW_TOTAL_NUM);
+    printk("  bc0_to_pb_succ_cell     = %u\n", *WRX_BC0_PBW_SUCC_NUM);
+    printk("  bc0_to_pb_fail_cell     = %u\n", *WRX_BC0_PBW_FAIL_NUM);
+    printk("  bc1_total_cell          = %u\n", *WRX_BC1_CELL_NUM);
+
+    printk("\n");
+
+    printk("ATM Rx AAL5/OAM MIB:\n");
+    printk("  wrx_drophtu_cell  = %u\n", WAN_MIB_TABLE->wrx_drophtu_cell);
+    printk("  wrx_dropdes_pdu   = %u\n", WAN_MIB_TABLE->wrx_dropdes_pdu);
+
+    printk("  wrx_correct_pdu   = %-10u  ", WAN_MIB_TABLE->wrx_correct_pdu);
+    if ( WAN_MIB_TABLE->wrx_correct_pdu == 0 )
+        printk("\n");
+    else {
+        int i = 0;
+
+        printk("[ ");
+        for ( i = 0; i < 16; ++i ) {
+            if ( WRX_PER_PVC_CORRECT_PDU_BASE[i] )
+                printk("q%-2d = %-10u , ", i, WRX_PER_PVC_CORRECT_PDU_BASE[i]);
+        }
+        printk("]\n");
+    }
+
+    printk("  wrx_err_pdu       = %-10u  ", WAN_MIB_TABLE->wrx_err_pdu);
+    if ( WAN_MIB_TABLE->wrx_err_pdu == 0 )
+        printk("\n");
+    else {
+        int i = 0;
+
+        printk("[ ");
+        for ( i = 0; i < 16; ++i ) {
+            if ( WRX_PER_PVC_ERROR_PDU_BASE[i] )
+                printk("q%-2d = %-10u , ", i,  WRX_PER_PVC_ERROR_PDU_BASE[i] );
+        }
+        printk("]\n");
+    }
+
+    printk("  wrx_dropdes_cell  = %u\n", WAN_MIB_TABLE->wrx_dropdes_cell);
+    printk("  wrx_correct_cell  = %u\n", WAN_MIB_TABLE->wrx_correct_cell);
+    printk("  wrx_err_cell      = %u\n", WAN_MIB_TABLE->wrx_err_cell);
+    printk("  wrx_total_byte    = %u\n", WAN_MIB_TABLE->wrx_total_byte);
+    printk("\n");
+
+    printk("ATM Tx MIB:\n");
+    printk("  wtx_total_pdu     = %u\n", WAN_MIB_TABLE->wtx_total_pdu);
+    printk("  wtx_total_cell    = %u\n", WAN_MIB_TABLE->wtx_total_cell);
+    printk("  wtx_total_byte    = %u\n", WAN_MIB_TABLE->wtx_total_byte);
+    printk("\n");
+
+    printk("Debugging Info:\n");
+    printk("  Firmware version                 = %d.%d.%d.%d.%d.%d\n",
+            (int)FW_VER_ID->family, (int)FW_VER_ID->fwtype, (int)FW_VER_ID->interface,
+            (int)FW_VER_ID->fwmode, (int)FW_VER_ID->major, (int)FW_VER_ID->minor);
+
+    printk("  retx_alpha_switch_to_hunt_times  = %u\n", *URETX_ALPHA_SWITCH_TO_HUNT_TIMES);
+
+    printk("\n");
+
+    *eof = 1;
+
+    return len;
+}
+
+static int proc_write_retx_mib(struct file *file, const char *buf, unsigned long count, void *data)
+{
+    char str[2048];
+    char *p;
+    int len, rlen;
+    int i;
+
+    len = count < sizeof(str) ? count : sizeof(str) - 1;
+    rlen = len - copy_from_user(str, buf, len);
+    while ( rlen && str[rlen - 1] <= ' ' )
+        rlen--;
+    str[rlen] = 0;
+    for ( p = str; *p && *p <= ' '; p++, rlen-- );
+    if ( !*p )
+        return 0;
+
+    if ( stricmp(p, "clean") == 0 || stricmp(p, "clear") == 0 || stricmp(p, "clear_all") == 0) {
+        *URETX_RX_TOTAL_DTU         = 0;
+        *URETX_RX_BAD_DTU           = 0;
+        *URETX_RX_GOOD_DTU          = 0;
+        *URETX_RX_CORRECTED_DTU     = 0;
+        *URETX_RX_OUTOFDATE_DTU     = 0;
+        *URETX_RX_DUPLICATE_DTU     = 0;
+        *URETX_RX_TIMEOUT_DTU       = 0;
+        *RxDTURetransmittedCNT      = 0;
+
+        *WRX_BC0_CELL_NUM           = 0;
+        *WRX_BC0_DROP_CELL_NUM      = 0;
+        *WRX_BC0_NONRETX_CELL_NUM   = 0;
+        *WRX_BC0_RETX_CELL_NUM      = 0;
+        *WRX_BC0_OUTOFDATE_CELL_NUM = 0;
+        *WRX_BC0_DIRECTUP_NUM       = 0;
+        *WRX_BC0_PBW_TOTAL_NUM      = 0;
+        *WRX_BC0_PBW_SUCC_NUM       = 0;
+        *WRX_BC0_PBW_FAIL_NUM       = 0;
+        *WRX_BC1_CELL_NUM           = 0;
+
+        for ( i = 0; i < 16; ++i ) {
+            WRX_PER_PVC_CORRECT_PDU_BASE[i] = 0;
+            WRX_PER_PVC_ERROR_PDU_BASE[i]   = 0;
+        }
+
+        WAN_MIB_TABLE->wrx_drophtu_cell = 0;
+        WAN_MIB_TABLE->wrx_dropdes_pdu  = 0;
+        WAN_MIB_TABLE->wrx_correct_pdu  = 0;
+        WAN_MIB_TABLE->wrx_err_pdu      = 0;
+        WAN_MIB_TABLE->wrx_dropdes_cell = 0;
+        WAN_MIB_TABLE->wrx_correct_cell = 0;
+        WAN_MIB_TABLE->wrx_err_cell     = 0;
+        WAN_MIB_TABLE->wrx_total_byte   = 0;
+
+        WAN_MIB_TABLE->wtx_total_pdu    = 0;
+        WAN_MIB_TABLE->wtx_total_cell   = 0;
+        WAN_MIB_TABLE->wtx_total_byte   = 0;
+
+        *URETX_ALPHA_SWITCH_TO_HUNT_TIMES   = 0;
+
+        if (stricmp(p, "clear_all") == 0) {
+            *RxLastEFBCNT      = 0;
+            *RxDTUCorrectedCNT = 0;
+            *RxDTUCorruptedCNT = 0;
+            *RxRetxDTUUncorrectedCNT = 0;
+        }
+    }
+
+    return count;
+}
+
+#endif
+
 #if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
 
 static int proc_read_dbg(char *page, char **start, off_t off, int count, int *eof, void *data)
@@ -1666,6 +2343,7 @@ static int proc_read_dbg(char *page, char **start, off_t off, int count, int *eo
     len += sprintf(page + off + len, "dump tx skb - %s\n", (ifx_atm_dbg_enable & DBG_ENABLE_MASK_DUMP_SKB_TX)   ? "enabled" : "disabled");
     len += sprintf(page + off + len, "qos         - %s\n", (ifx_atm_dbg_enable & DBG_ENABLE_MASK_DUMP_QOS)      ? "enabled" : "disabled");
     len += sprintf(page + off + len, "dump init   - %s\n", (ifx_atm_dbg_enable & DBG_ENABLE_MASK_DUMP_INIT)     ? "enabled" : "disabled");
+    len += sprintf(page + off + len, "mac swap    - %s\n", (ifx_atm_dbg_enable & DBG_ENABLE_MASK_MAC_SWAP)      ? "enabled" : "disabled");
 
     *eof = 1;
 
@@ -1689,6 +2367,8 @@ static int proc_write_dbg(struct file *file, const char *buf, unsigned long coun
         " qos",
         " dump init",
         " init",
+        " mac swap",
+        " swap",
         " all"
     };
     static const int dbg_enable_mask_str_len[] = {
@@ -1699,9 +2379,10 @@ static int proc_write_dbg(struct file *file, const char *buf, unsigned long coun
         12, 3,
         9,  4,
         10, 5,
+        9,  5,
         4
     };
-    u32 dbg_enable_mask[] = {
+    unsigned int dbg_enable_mask[] = {
         DBG_ENABLE_MASK_ERR,
         DBG_ENABLE_MASK_DEBUG_PRINT,
         DBG_ENABLE_MASK_ASSERT,
@@ -1709,25 +2390,34 @@ static int proc_write_dbg(struct file *file, const char *buf, unsigned long coun
         DBG_ENABLE_MASK_DUMP_SKB_TX,
         DBG_ENABLE_MASK_DUMP_QOS,
         DBG_ENABLE_MASK_DUMP_INIT,
+        DBG_ENABLE_MASK_MAC_SWAP,
         DBG_ENABLE_MASK_ALL
     };
 
-    char str[2048];
+    char *str;
+	int str_buff_len = 1024;
     char *p;
 
     int len, rlen;
 
     int f_enable = 0;
     int i;
+	
+	str = vmalloc(str_buff_len);
+	if(!str){
+		return 0;
+	}
 
-    len = count < sizeof(str) ? count : sizeof(str) - 1;
+    len = count < str_buff_len ? count : str_buff_len - 1;
     rlen = len - copy_from_user(str, buf, len);
     while ( rlen && str[rlen - 1] <= ' ' )
         rlen--;
     str[rlen] = 0;
     for ( p = str; *p && *p <= ' '; p++, rlen-- );
-    if ( !*p )
+    if ( !*p ){
+		vfree(str);
         return 0;
+	}
 
     if ( strincmp(p, "enable", 6) == 0 ) {
         p += 6;
@@ -1744,9 +2434,9 @@ static int proc_write_dbg(struct file *file, const char *buf, unsigned long coun
     if ( f_enable ) {
         if ( *p == 0 ) {
             if ( f_enable > 0 )
-                ifx_atm_dbg_enable |= DBG_ENABLE_MASK_ALL;
+                ifx_atm_dbg_enable |= DBG_ENABLE_MASK_ALL & ~DBG_ENABLE_MASK_MAC_SWAP;
             else
-                ifx_atm_dbg_enable &= ~DBG_ENABLE_MASK_ALL;
+                ifx_atm_dbg_enable &= ~DBG_ENABLE_MASK_ALL | DBG_ENABLE_MASK_MAC_SWAP;
         }
         else {
             do {
@@ -1763,8 +2453,729 @@ static int proc_write_dbg(struct file *file, const char *buf, unsigned long coun
         }
     }
 
+	vfree(str);
     return count;
 }
+
+static inline unsigned long sb_addr_to_fpi_addr_convert(unsigned long sb_addr)
+{
+ #define PP32_SB_ADDR_END        0xFFFF
+
+    if ( sb_addr < PP32_SB_ADDR_END )
+        return (unsigned long)SB_BUFFER(sb_addr);
+    else
+        return sb_addr;
+}
+
+static int proc_write_mem(struct file *file, const char *buf, unsigned long count, void *data)
+{
+    char *p1, *p2;
+    int len;
+    int colon;
+    unsigned long *p;
+    int i, n, l;
+	int local_buf_size = 1024;
+    char *local_buf = NULL;
+
+	local_buf = vmalloc(local_buf_size);
+	if ( !local_buf ){
+		return 0;
+	}
+
+    len = local_buf_size < count ? local_buf_size - 1 : count;
+    len = len - copy_from_user(local_buf, buf, len);
+    local_buf[len] = 0;
+
+    p1 = local_buf;
+    colon = 1;
+    while ( get_token(&p1, &p2, &len, &colon) ) {
+        if ( stricmp(p1, "w") == 0 || stricmp(p1, "write") == 0 || stricmp(p1, "r") == 0 || stricmp(p1, "read") == 0 )
+            break;
+
+        p1 = p2;
+        colon = 1;
+    }
+
+    if ( *p1 == 'w' ) {
+        ignore_space(&p2, &len);
+        p = (unsigned long *)get_number(&p2, &len, 1);
+        p = (unsigned long *)sb_addr_to_fpi_addr_convert((unsigned long)p);
+
+        if ( (unsigned int)p >= KSEG0 )
+            while ( 1 ) {
+                ignore_space(&p2, &len);
+                if ( !len || !((*p2 >= '0' && *p2 <= '9') || (*p2 >= 'a' && *p2 <= 'f') || (*p2 >= 'A' && *p2 <= 'F')) )
+                    break;
+
+                *p++ = (unsigned int)get_number(&p2, &len, 1);
+            }
+    }
+    else if ( *p1 == 'r' ) {
+        ignore_space(&p2, &len);
+        p = (unsigned long *)get_number(&p2, &len, 1);
+        p = (unsigned long *)sb_addr_to_fpi_addr_convert((unsigned long)p);
+
+        if ( (unsigned int)p >= KSEG0 ) {
+            ignore_space(&p2, &len);
+            n = (int)get_number(&p2, &len, 0);
+            if ( n ) {
+                char str[32] = {0};
+                char *pch = str;
+                int k;
+                unsigned int data;
+                char c;
+
+                n += (l = ((int)p >> 2) & 0x03);
+                p = (unsigned long *)((unsigned int)p & ~0x0F);
+                for ( i = 0; i < n; i++ ) {
+                    if ( (i & 0x03) == 0 ) {
+                        printk("%08X:", (unsigned int)p);
+                        pch = str;
+                    }
+                    if ( i < l ) {
+                        printk("         ");
+                        sprintf(pch, "    ");
+                    }
+                    else {
+                        data = (unsigned int)*p;
+                        printk(" %08X", data);
+                        for ( k = 0; k < 4; k++ ) {
+                            c = ((char*)&data)[k];
+                            pch[k] = c < ' ' ? '.' : c;
+                        }
+                    }
+                    p++;
+                    pch += 4;
+                    if ( (i & 0x03) == 0x03 ) {
+                        pch[0] = 0;
+                        printk(" ; %s\n", str);
+                    }
+                }
+                if ( (n & 0x03) != 0x00 ) {
+                    for ( k = 4 - (n & 0x03); k > 0; k-- )
+                        printk("         ");
+                    pch[0] = 0;
+                    printk(" ; %s\n", str);
+                }
+            }
+        }
+    }
+
+	vfree(local_buf);
+    return count;
+}
+
+ #if defined(CONFIG_AR9) || defined(CONFIG_VR9)
+
+static int proc_read_pp32(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+    static const char *stron = " on";
+    static const char *stroff = "off";
+
+    int len = 0;
+    int cur_context;
+    int f_stopped;
+    char str[256];
+    char strlength;
+    int i, j;
+
+    int pp32;
+
+    for ( pp32 = 0; pp32 < NUM_OF_PP32; pp32++ ) {
+        f_stopped = 0;
+
+        len += sprintf(page + off + len, "===== pp32 core %d =====\n", pp32);
+
+  #ifdef CONFIG_VR9
+        if ( (*PP32_FREEZE & (1 << (pp32 << 4))) != 0 ) {
+            sprintf(str, "freezed");
+            f_stopped = 1;
+        }
+  #else
+        if ( 0 ) {
+        }
+  #endif
+        else if ( PP32_CPU_USER_STOPPED(pp32) || PP32_CPU_USER_BREAKIN_RCV(pp32) || PP32_CPU_USER_BREAKPOINT_MET(pp32) ) {
+            strlength = 0;
+            if ( PP32_CPU_USER_STOPPED(pp32) )
+                strlength += sprintf(str + strlength, "stopped");
+            if ( PP32_CPU_USER_BREAKPOINT_MET(pp32) )
+                strlength += sprintf(str + strlength, strlength ? " | breakpoint" : "breakpoint");
+            if ( PP32_CPU_USER_BREAKIN_RCV(pp32) )
+                strlength += sprintf(str + strlength, strlength ? " | breakin" : "breakin");
+            f_stopped = 1;
+        }
+  #if 0
+        else if ( PP32_CPU_CUR_PC(pp32) == PP32_CPU_CUR_PC(pp32) ) {
+            sprintf(str, "hang");
+            f_stopped = 1;
+        }
+  #endif
+        else
+            sprintf(str, "running");
+        cur_context = PP32_BRK_CUR_CONTEXT(pp32);
+        len += sprintf(page + off + len, "Context: %d, PC: 0x%04x, %s\n", cur_context, PP32_CPU_CUR_PC(pp32), str);
+
+        if ( PP32_CPU_USER_BREAKPOINT_MET(pp32) ) {
+            strlength = 0;
+            if ( PP32_BRK_PC_MET(pp32, 0) )
+                strlength += sprintf(str + strlength, "pc0");
+            if ( PP32_BRK_PC_MET(pp32, 1) )
+                strlength += sprintf(str + strlength, strlength ? " | pc1" : "pc1");
+            if ( PP32_BRK_DATA_ADDR_MET(pp32, 0) )
+                strlength += sprintf(str + strlength, strlength ? " | daddr0" : "daddr0");
+            if ( PP32_BRK_DATA_ADDR_MET(pp32, 1) )
+                strlength += sprintf(str + strlength, strlength ? " | daddr1" : "daddr1");
+            if ( PP32_BRK_DATA_VALUE_RD_MET(pp32, 0) ) {
+                strlength += sprintf(str + strlength, strlength ? " | rdval0" : "rdval0");
+                if ( PP32_BRK_DATA_VALUE_RD_LO_EQ(pp32, 0) ) {
+                    if ( PP32_BRK_DATA_VALUE_RD_GT_EQ(pp32, 0) )
+                        strlength += sprintf(str + strlength, " ==");
+                    else
+                        strlength += sprintf(str + strlength, " <=");
+                }
+                else if ( PP32_BRK_DATA_VALUE_RD_GT_EQ(pp32, 0) )
+                    strlength += sprintf(str + strlength, " >=");
+            }
+            if ( PP32_BRK_DATA_VALUE_RD_MET(pp32, 1) ) {
+                strlength += sprintf(str + strlength, strlength ? " | rdval1" : "rdval1");
+                if ( PP32_BRK_DATA_VALUE_RD_LO_EQ(pp32, 1) ) {
+                    if ( PP32_BRK_DATA_VALUE_RD_GT_EQ(pp32, 1) )
+                        strlength += sprintf(str + strlength, " ==");
+                    else
+                        strlength += sprintf(str + strlength, " <=");
+                }
+                else if ( PP32_BRK_DATA_VALUE_RD_GT_EQ(pp32, 1) )
+                    strlength += sprintf(str + strlength, " >=");
+            }
+            if ( PP32_BRK_DATA_VALUE_WR_MET(pp32, 0) ) {
+                strlength += sprintf(str + strlength, strlength ? " | wtval0" : "wtval0");
+                if ( PP32_BRK_DATA_VALUE_WR_LO_EQ(pp32, 0) ) {
+                    if ( PP32_BRK_DATA_VALUE_WR_GT_EQ(pp32, 0) )
+                        strlength += sprintf(str + strlength, " ==");
+                    else
+                        strlength += sprintf(str + strlength, " <=");
+                }
+                else if ( PP32_BRK_DATA_VALUE_WR_GT_EQ(pp32, 0) )
+                    strlength += sprintf(str + strlength, " >=");
+            }
+            if ( PP32_BRK_DATA_VALUE_WR_MET(pp32, 1) ) {
+                strlength += sprintf(str + strlength, strlength ? " | wtval1" : "wtval1");
+                if ( PP32_BRK_DATA_VALUE_WR_LO_EQ(pp32, 1) ) {
+                    if ( PP32_BRK_DATA_VALUE_WR_GT_EQ(pp32, 1) )
+                        strlength += sprintf(str + strlength, " ==");
+                    else
+                        strlength += sprintf(str + strlength, " <=");
+                }
+                else if ( PP32_BRK_DATA_VALUE_WR_GT_EQ(pp32, 1) )
+                    strlength += sprintf(str + strlength, " >=");
+            }
+            len += sprintf(page + off + len, "break reason: %s\n", str);
+        }
+
+        if ( f_stopped )
+        {
+            len += sprintf(page + off + len, "General Purpose Register (Context %d):\n", cur_context);
+            for ( i = 0; i < 4; i++ ) {
+                for ( j = 0; j < 4; j++ )
+                    len += sprintf(page + off + len, "   %2d: %08x", i + j * 4, *PP32_GP_CONTEXTi_REGn(pp32, cur_context, i + j * 4));
+                len += sprintf(page + off + len, "\n");
+            }
+        }
+
+        len += sprintf(page + off + len, "break out on: break in - %s, stop - %s\n",
+                                            PP32_CTRL_OPT_BREAKOUT_ON_BREAKIN(pp32) ? stron : stroff,
+                                            PP32_CTRL_OPT_BREAKOUT_ON_STOP(pp32) ? stron : stroff);
+        len += sprintf(page + off + len, "     stop on: break in - %s, break point - %s\n",
+                                            PP32_CTRL_OPT_STOP_ON_BREAKIN(pp32) ? stron : stroff,
+                                            PP32_CTRL_OPT_STOP_ON_BREAKPOINT(pp32) ? stron : stroff);
+        len += sprintf(page + off + len, "breakpoint:\n");
+        len += sprintf(page + off + len, "     pc0: 0x%08x, %s\n", *PP32_BRK_PC(pp32, 0), PP32_BRK_GRPi_PCn(pp32, 0, 0) ? "group 0" : "off");
+        len += sprintf(page + off + len, "     pc1: 0x%08x, %s\n", *PP32_BRK_PC(pp32, 1), PP32_BRK_GRPi_PCn(pp32, 1, 1) ? "group 1" : "off");
+        len += sprintf(page + off + len, "  daddr0: 0x%08x, %s\n", *PP32_BRK_DATA_ADDR(pp32, 0), PP32_BRK_GRPi_DATA_ADDRn(pp32, 0, 0) ? "group 0" : "off");
+        len += sprintf(page + off + len, "  daddr1: 0x%08x, %s\n", *PP32_BRK_DATA_ADDR(pp32, 1), PP32_BRK_GRPi_DATA_ADDRn(pp32, 1, 1) ? "group 1" : "off");
+        len += sprintf(page + off + len, "  rdval0: 0x%08x\n", *PP32_BRK_DATA_VALUE_RD(pp32, 0));
+        len += sprintf(page + off + len, "  rdval1: 0x%08x\n", *PP32_BRK_DATA_VALUE_RD(pp32, 1));
+        len += sprintf(page + off + len, "  wrval0: 0x%08x\n", *PP32_BRK_DATA_VALUE_WR(pp32, 0));
+        len += sprintf(page + off + len, "  wrval1: 0x%08x\n", *PP32_BRK_DATA_VALUE_WR(pp32, 1));
+    }
+
+    *eof = 1;
+
+    return len;
+}
+
+static int proc_write_pp32(struct file *file, const char *buf, unsigned long count, void *data)
+{
+    char *str = NULL;
+    char *p;
+    unsigned int addr;
+	int str_buff_len = 1024;
+
+    int len, rlen;
+
+    int pp32 = 0;
+
+	str = vmalloc(str_buff_len);
+	if (!str) {
+		return 0;	
+	}
+
+    len = count <  str_buff_len ? count : str_buff_len - 1;
+    rlen = len - copy_from_user(str, buf, len);
+    while ( rlen && str[rlen - 1] <= ' ' )
+        rlen--;
+    str[rlen] = 0;
+    for ( p = str; *p && *p <= ' '; p++, rlen-- );
+    if ( !*p ){
+		vfree(str);
+        return 0;
+	}
+
+    if ( strincmp(p, "pp32 ", 5) == 0 ) {
+        p += 5;
+        rlen -= 5;
+
+        while ( rlen > 0 && *p >= '0' && *p <= '9' ) {
+            pp32 += *p - '0';
+            p++;
+            rlen--;
+        }
+        while ( rlen > 0 && *p && *p <= ' ' ) {
+            p++;
+            rlen--;
+        }
+
+        if ( pp32 >= NUM_OF_PP32 ) {
+            err("incorrect pp32 index - %d", pp32);
+			vfree(str);
+            return count;
+        }
+    }
+
+    if ( stricmp(p, "start") == 0 )
+        *PP32_CTRL_CMD(pp32) = PP32_CTRL_CMD_RESTART;
+    else if ( stricmp(p, "stop") == 0 )
+        *PP32_CTRL_CMD(pp32) = PP32_CTRL_CMD_STOP;
+    else if ( stricmp(p, "step") == 0 )
+        *PP32_CTRL_CMD(pp32) = PP32_CTRL_CMD_STEP;
+  #ifdef CONFIG_VR9
+    else if ( stricmp(p, "restart") == 0 )
+        *PP32_FREEZE &= ~(1 << (pp32 << 4));
+    else if ( stricmp(p, "freeze") == 0 )
+        *PP32_FREEZE |= 1 << (pp32 << 4);
+  #endif
+    else if ( strincmp(p, "pc0 ", 4) == 0 ) {
+        p += 4;
+        rlen -= 4;
+        if ( stricmp(p, "off") == 0 ) {
+            *PP32_BRK_TRIG(pp32) = PP32_BRK_GRPi_PCn_OFF(0, 0);
+            *PP32_BRK_PC_MASK(pp32, 0) = PP32_BRK_CONTEXT_MASK_EN;
+            *PP32_BRK_PC(pp32, 0) = 0;
+        }
+        else {
+            addr = get_number(&p, &rlen, 1);
+            *PP32_BRK_PC(pp32, 0) = addr;
+            *PP32_BRK_PC_MASK(pp32, 0) = PP32_BRK_CONTEXT_MASK_EN | PP32_BRK_CONTEXT_MASK(0) | PP32_BRK_CONTEXT_MASK(1) | PP32_BRK_CONTEXT_MASK(2) | PP32_BRK_CONTEXT_MASK(3);
+            *PP32_BRK_TRIG(pp32) = PP32_BRK_GRPi_PCn_ON(0, 0);
+        }
+    }
+    else if ( strincmp(p, "pc1 ", 4) == 0 ) {
+        p += 4;
+        rlen -= 4;
+        if ( stricmp(p, "off") == 0 ) {
+            *PP32_BRK_TRIG(pp32) = PP32_BRK_GRPi_PCn_OFF(1, 1);
+            *PP32_BRK_PC_MASK(pp32, 1) = PP32_BRK_CONTEXT_MASK_EN;
+            *PP32_BRK_PC(pp32, 1) = 0;
+        }
+        else {
+            addr = get_number(&p, &rlen, 1);
+            *PP32_BRK_PC(pp32, 1) = addr;
+            *PP32_BRK_PC_MASK(pp32, 1) = PP32_BRK_CONTEXT_MASK_EN | PP32_BRK_CONTEXT_MASK(0) | PP32_BRK_CONTEXT_MASK(1) | PP32_BRK_CONTEXT_MASK(2) | PP32_BRK_CONTEXT_MASK(3);
+            *PP32_BRK_TRIG(pp32) = PP32_BRK_GRPi_PCn_ON(1, 1);
+        }
+    }
+    else if ( strincmp(p, "daddr0 ", 7) == 0 ) {
+        p += 7;
+        rlen -= 7;
+        if ( stricmp(p, "off") == 0 ) {
+            *PP32_BRK_TRIG(pp32) = PP32_BRK_GRPi_DATA_ADDRn_OFF(0, 0);
+            *PP32_BRK_DATA_ADDR_MASK(pp32, 0) = PP32_BRK_CONTEXT_MASK_EN;
+            *PP32_BRK_DATA_ADDR(pp32, 0) = 0;
+        }
+        else {
+            addr = get_number(&p, &rlen, 1);
+            *PP32_BRK_DATA_ADDR(pp32, 0) = addr;
+            *PP32_BRK_DATA_ADDR_MASK(pp32, 0) = PP32_BRK_CONTEXT_MASK_EN | PP32_BRK_CONTEXT_MASK(0) | PP32_BRK_CONTEXT_MASK(1) | PP32_BRK_CONTEXT_MASK(2) | PP32_BRK_CONTEXT_MASK(3);
+            *PP32_BRK_TRIG(pp32) = PP32_BRK_GRPi_DATA_ADDRn_ON(0, 0);
+        }
+    }
+    else if ( strincmp(p, "daddr1 ", 7) == 0 ) {
+        p += 7;
+        rlen -= 7;
+        if ( stricmp(p, "off") == 0 ) {
+            *PP32_BRK_TRIG(pp32) = PP32_BRK_GRPi_DATA_ADDRn_OFF(1, 1);
+            *PP32_BRK_DATA_ADDR_MASK(pp32, 1) = PP32_BRK_CONTEXT_MASK_EN;
+            *PP32_BRK_DATA_ADDR(pp32, 1) = 0;
+        }
+        else {
+            addr = get_number(&p, &rlen, 1);
+            *PP32_BRK_DATA_ADDR(pp32, 1) = addr;
+            *PP32_BRK_DATA_ADDR_MASK(pp32, 1) = PP32_BRK_CONTEXT_MASK_EN | PP32_BRK_CONTEXT_MASK(0) | PP32_BRK_CONTEXT_MASK(1) | PP32_BRK_CONTEXT_MASK(2) | PP32_BRK_CONTEXT_MASK(3);
+            *PP32_BRK_TRIG(pp32) = PP32_BRK_GRPi_DATA_ADDRn_ON(1, 1);
+        }
+    }
+    else {
+
+        printk("echo \"<command>\" > /proc/driver/ifx_ptm/pp32\n");
+        printk("  command:\n");
+        printk("    start  - run pp32\n");
+        printk("    stop   - stop pp32\n");
+        printk("    step   - run pp32 with one step only\n");
+        printk("    pc0    - pc0 <addr>/off, set break point PC0\n");
+        printk("    pc1    - pc1 <addr>/off, set break point PC1\n");
+        printk("    daddr0 - daddr0 <addr>/off, set break point data address 0\n");
+        printk("    daddr0 - daddr1 <addr>/off, set break point data address 1\n");
+        printk("    help   - print this screen\n");
+    }
+
+    if ( *PP32_BRK_TRIG(pp32) )
+        *PP32_CTRL_OPT(pp32) = PP32_CTRL_OPT_STOP_ON_BREAKPOINT_ON;
+    else
+        *PP32_CTRL_OPT(pp32) = PP32_CTRL_OPT_STOP_ON_BREAKPOINT_OFF;
+	vfree(str);
+    return count;
+}
+
+#elif defined(CONFIG_DANUBE)
+
+static int proc_read_pp32(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+    static const char *halt_stat[] = {
+        "reset",
+        "break in line",
+        "stop",
+        "step",
+        "code",
+        "data0",
+        "data1"
+    };
+    static const char *brk_src_data[] = {
+        "off",
+        "read",
+        "write",
+        "read/write",
+        "write_equal",
+        "N/A",
+        "N/A",
+        "N/A"
+    };
+    static const char *brk_src_code[] = {
+        "off",
+        "on"
+    };
+
+    int len = 0;
+    int i;
+    int k;
+    unsigned long bit;
+    int tsk;
+
+    tsk = *PP32_DBG_TASK_NO & 0x03;
+    len += sprintf(page + off + len, "Task No %d, PC %04x\n", tsk, *PP32_DBG_CUR_PC & 0xFFFF);
+
+    if ( !(*PP32_HALT_STAT & 0x01) )
+        len += sprintf(page + off + len, "  Halt State: Running\n");
+    else {
+        len += sprintf(page + off + len, "  Halt State: Stopped");
+        k = 0;
+        for ( bit = 2, i = 0; bit <= (1 << 7); bit <<= 1, i++ )
+            if ( (*PP32_HALT_STAT & bit) ) {
+                if ( !k ) {
+                    len += sprintf(page + off + len, ", ");
+                    k++;
+                }
+                else
+                    len += sprintf(page + off + len, " | ");
+                len += sprintf(page + off + len, halt_stat[i]);
+            }
+
+        len += sprintf(page + off + len, "\n");
+
+        len += sprintf(page + off + len, "  Regs (Task %d):\n", tsk);
+        for ( i = 0; i < 8; i++ )
+            len += sprintf(page + off + len, "    %2d. %08x    %2d. %08x\n", i, *PP32_DBG_REG_BASE(tsk, i), i + 8, *PP32_DBG_REG_BASE(tsk, i + 8));
+    }
+
+    len += sprintf(page + off + len, "  Break Src:  data1 - %s, data0 - %s, pc3 - %s, pc2 - %s, pc1 - %s, pc0 - %s\n",
+                            brk_src_data[(*PP32_BRK_SRC >> 11) & 0x07],
+                            brk_src_data[(*PP32_BRK_SRC >> 8) & 0x07],
+                            brk_src_code[(*PP32_BRK_SRC >> 3) & 0x01],
+                            brk_src_code[(*PP32_BRK_SRC >> 2) & 0x01],
+                            brk_src_code[(*PP32_BRK_SRC >> 1) & 0x01],
+                            brk_src_code[*PP32_BRK_SRC & 0x01]);
+
+    for ( i = 0; i < 4; i++ )
+        len += sprintf(page + off + len, "    pc%d:      %04x - %04x\n", i, *PP32_DBG_PC_MIN(i), *PP32_DBG_PC_MAX(i));
+
+    for ( i = 0; i < 2; i++ )
+        len += sprintf(page + off + len, "    data%d:    %04x - %04x (%08x)\n", i, *PP32_DBG_DATA_MIN(i), *PP32_DBG_DATA_MAX(i), *PP32_DBG_DATA_VAL(i));
+
+    *eof = 1;
+
+    return len;
+}
+
+static int proc_write_pp32(struct file *file, const char *buf, unsigned long count, void *data)
+{
+    char *str;
+    char *p;
+
+    int len, rlen;
+	int str_buff_len = 2048;
+	str = vmalloc(str_buff_len);
+	if (!str){
+		return 0;
+	}
+    len = count < str_buff_len ? count : str_buff_len - 1;
+    rlen = len - copy_from_user(str, buf, len);
+    while ( rlen && str[rlen - 1] <= ' ' )
+        rlen--;
+    str[rlen] = 0;
+    for ( p = str; *p && *p <= ' '; p++, rlen-- );
+    if ( !*p )
+		vfree(str);
+        return 0;
+
+    if ( stricmp(p, "start") == 0 )
+        *PP32_DBG_CTRL = DBG_CTRL_START_SET(1);
+    else if ( stricmp(p, "stop") == 0 )
+        *PP32_DBG_CTRL = DBG_CTRL_STOP_SET(1);
+    else if ( stricmp(p, "step") == 0 )
+        *PP32_DBG_CTRL = DBG_CTRL_STEP_SET(1);
+    else if ( strincmp(p, "pc", 2) == 0 && p[2] >= '0' && p[2] <= '3' && p[3] <= ' ' ) {
+        int n = p[2] - '0';
+        int on_off_flag = -1;
+        int addr_min, addr_max;
+
+        p += 4;
+        rlen -= 4;
+        ignore_space(&p, &rlen);
+
+        if ( strincmp(p, "off", 3) == 0 && p[3] <= ' ' ) {
+            p += 3;
+            rlen -= 3;
+            on_off_flag = 0;
+        }
+        else if ( strincmp(p, "on", 2) == 0 && p[2] <= ' ' ) {
+            p += 2;
+            rlen -= 2;
+            on_off_flag = 1;
+        }
+        ignore_space(&p, &rlen);
+
+        if ( rlen ) {
+            addr_min = get_number(&p, &rlen, 1);
+            ignore_space(&p, &rlen);
+            if ( rlen )
+                addr_max = get_number(&p, &rlen, 1);
+            else
+                addr_max = addr_min;
+
+            *PP32_DBG_PC_MIN(n) = addr_min;
+            *PP32_DBG_PC_MAX(n) = addr_max;
+        }
+
+        if ( on_off_flag == 0 )
+            *PP32_BRK_SRC &= ~(1 << n);
+        else if ( on_off_flag > 0 )
+            *PP32_BRK_SRC |= 1 << n;
+    }
+    else if ( strincmp(p, "data", 4) == 0 && p[4] >= '0' && p[4] <= '1' && p[5] <= ' ' ) {
+        const static char *data_cmd_str[] = {"r", "w", "rw", "w=", "off", "min", "min addr", "max", "max addr", "val", "value"};
+        const static int data_cmd_len[] = {1, 1, 2, 2, 3, 3, 8, 3, 8, 3, 5};
+        const static int data_cmd_idx[] = {1, 2, 3, 4, 0, 5, 5, 6, 6, 7, 7};
+        int n = p[4] - '0';
+        int on_off_flag = -1, on_off_mask = 0;
+        int addr_min = -1, addr_max = -1;
+        int value = 0, f_got_value = 0;
+        int stat = 0;
+        int i;
+        int tmp;
+
+        p += 6;
+        rlen -= 6;
+
+        while ( 1 ) {
+            ignore_space(&p, &rlen);
+            if ( rlen <= 0 )
+                break;
+            for ( i = 0; i < NUM_ENTITY(data_cmd_str); i++ )
+                if ( strincmp(p, data_cmd_str[i], data_cmd_len[i]) == 0 && p[data_cmd_len[i]] <= ' ' ) {
+                    p += data_cmd_len[i];
+                    rlen -= data_cmd_len[i];
+                    stat = data_cmd_idx[i];
+                    if ( stat <= 4 ) {
+                        on_off_mask = 7;
+                        on_off_flag = stat;
+                    }
+                    break;
+                }
+            if ( i == NUM_ENTITY(data_cmd_str) ) {
+                if ( (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f') || (*p >= 'A' && *p <= 'F') ) {
+                    tmp = get_number(&p, &rlen, 1);
+                    if ( stat <= 5 ) {
+                        addr_min = tmp;
+                        stat = 6;
+                    }
+                    else if ( stat >= 7 ) {
+                        value = tmp;
+                        f_got_value = 1;
+                    }
+                    else {
+                        addr_max = tmp;
+                        stat = 7;
+                    }
+                }
+                else
+                    for ( ; rlen && *p > ' '; rlen--, p++ );
+            }
+        }
+
+        if ( addr_min >= 0 )
+            *PP32_DBG_DATA_MIN(n) = *PP32_DBG_DATA_MAX(n) = addr_min;
+        if ( addr_max >= 0 )
+            *PP32_DBG_DATA_MAX(n) = addr_max;
+        if ( f_got_value )
+            *PP32_DBG_DATA_VAL(n) = value;
+        if ( on_off_mask && on_off_flag >= 0 ) {
+            on_off_flag <<= n ? 11 : 8;
+            on_off_mask <<= n ? 11 : 8;
+            *PP32_BRK_SRC = (*PP32_BRK_SRC & ~on_off_mask) | on_off_flag;
+        }
+    }
+    else {
+        printk("echo \"<command>\" > /proc/eth/etop\n");
+        printk("  command:\n");
+        printk("    start - run pp32\n");
+        printk("    stop  - stop pp32\n");
+        printk("    step  - run pp32 with one step only\n");
+        printk("    pc    - pc? [on/off] [min addr] [max addr], set PC break point\n");
+        printk("    data  - data? [r/w/rw/w=/off] [min <addr>] [max <addr>] [val <value>], set data break point\n");
+        printk("    help  - print this screen\n");
+    }
+
+	vfree(str);
+    return count;
+}
+
+ #elif defined(CONFIG_AMAZON_SE)
+
+static int proc_read_pp32(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+    static const char *halt_stat[] = {
+        "reset",
+        "break in line",
+        "stop",
+        "step",
+        "code",
+        "data0",
+        "data1"
+    };
+    static const char *brk_src_data[] = {
+        "off",
+        "read",
+        "write",
+        "read/write",
+        "write_equal",
+        "N/A",
+        "N/A",
+        "N/A"
+    };
+    static const char *brk_src_code[] = {
+        "off",
+        "on"
+    };
+
+    int len = 0;
+    int i;
+    int k;
+    unsigned long bit;
+
+    len += sprintf(page + off + len, "Task No %d, PC %04x\n", *PP32_DBG_TASK_NO & 0x03, *PP32_DBG_CUR_PC & 0xFFFF);
+
+    if ( !(*PP32_HALT_STAT & 0x01) )
+        len += sprintf(page + off + len, "  Halt State: Running\n");
+    else
+    {
+        len += sprintf(page + off + len, "  Halt State: Stopped");
+        k = 0;
+        for ( bit = 2, i = 0; bit <= (1 << 7); bit <<= 1, i++ )
+            if ( (*PP32_HALT_STAT & bit) )
+            {
+                if ( !k )
+                {
+                    len += sprintf(page + off + len, ", ");
+                    k++;
+                }
+                else
+                    len += sprintf(page + off + len, " | ");
+                len += sprintf(page + off + len, halt_stat[i]);
+            }
+
+        len += sprintf(page + off + len, "\n");
+    }
+
+    len += sprintf(page + off + len, "  Break Src:  data1 - %s, data0 - %s, pc3 - %s, pc2 - %s, pc1 - %s, pc0 - %s\n",
+                                                    brk_src_data[(*PP32_BRK_SRC >> 11) & 0x07], brk_src_data[(*PP32_BRK_SRC >> 8) & 0x07], brk_src_code[(*PP32_BRK_SRC >> 3) & 0x01], brk_src_code[(*PP32_BRK_SRC >> 2) & 0x01], brk_src_code[(*PP32_BRK_SRC >> 1) & 0x01], brk_src_code[*PP32_BRK_SRC & 0x01]);
+
+//    for ( i = 0; i < 4; i++ )
+//        len += sprintf(page + off + len, "    pc%d:      %04x - %04x\n", i, *PP32_DBG_PC_MIN(i), *PP32_DBG_PC_MAX(i));
+
+//    for ( i = 0; i < 2; i++ )
+//        len += sprintf(page + off + len, "    data%d:    %04x - %04x (%08x)\n", i, *PP32_DBG_DATA_MIN(i), *PP32_DBG_DATA_MAX(i), *PP32_DBG_DATA_VAL(i));
+
+    *eof = 1;
+
+    return len;
+}
+
+static int proc_write_pp32(struct file *file, const char *buf, unsigned long count, void *data)
+{
+    char str[2048];
+    char *p;
+
+    int len, rlen;
+
+    len = count < sizeof(str) ? count : sizeof(str) - 1;
+    rlen = len - copy_from_user(str, buf, len);
+    while ( rlen && str[rlen - 1] <= ' ' )
+        rlen--;
+    str[rlen] = 0;
+    for ( p = str; *p && *p <= ' '; p++, rlen-- );
+    if ( !*p )
+        return 0;
+
+    if ( stricmp(str, "start") == 0 )
+        *PP32_DBG_CTRL = DBG_CTRL_RESTART;
+    else if ( stricmp(str, "stop") == 0 )
+        *PP32_DBG_CTRL = DBG_CTRL_STOP;
+//    else if ( stricmp(str, "step") == 0 )
+//        *PP32_DBG_CTRL = DBG_CTRL_STEP_SET(1);
+    else
+    {
+        printk("echo \"<command>\" > /proc/eth/etop\n");
+        printk("  command:\n");
+        printk("    start - run pp32\n");
+        printk("    stop  - stop pp32\n");
+//        printk("    step  - run pp32 with one step only\n");
+        printk("    help  - print this screen\n");
+    }
+
+    return count;
+}
+
+ #endif
 
 #endif
 
@@ -1776,9 +3187,9 @@ static INLINE int print_htu(char *buf, int i)
 
     if ( HTU_ENTRY(i)->vld ) {
         len += sprintf(buf + len, "%2d. valid\n", i);
-        len += sprintf(buf + len, "    entry  0x%08x - pid %01x vpi %02x vci %04x pti %01x\n", *(u32*)HTU_ENTRY(i), HTU_ENTRY(i)->pid, HTU_ENTRY(i)->vpi, HTU_ENTRY(i)->vci, HTU_ENTRY(i)->pti);
-        len += sprintf(buf + len, "    mask   0x%08x - pid %01x vpi %02x vci %04x pti %01x\n", *(u32*)HTU_MASK(i), HTU_MASK(i)->pid_mask, HTU_MASK(i)->vpi_mask, HTU_MASK(i)->vci_mask, HTU_MASK(i)->pti_mask);
-        len += sprintf(buf + len, "    result 0x%08x - type: %s, qid: %d", *(u32*)HTU_RESULT(i), HTU_RESULT(i)->type ? "cell" : "AAL5", HTU_RESULT(i)->qid);
+        len += sprintf(buf + len, "    entry  0x%08x - pid %01x vpi %02x vci %04x pti %01x\n", *(unsigned int*)HTU_ENTRY(i), HTU_ENTRY(i)->pid, HTU_ENTRY(i)->vpi, HTU_ENTRY(i)->vci, HTU_ENTRY(i)->pti);
+        len += sprintf(buf + len, "    mask   0x%08x - pid %01x vpi %02x vci %04x pti %01x\n", *(unsigned int*)HTU_MASK(i), HTU_MASK(i)->pid_mask, HTU_MASK(i)->vpi_mask, HTU_MASK(i)->vci_mask, HTU_MASK(i)->pti_mask);
+        len += sprintf(buf + len, "    result 0x%08x - type: %s, qid: %d", *(unsigned int*)HTU_RESULT(i), HTU_RESULT(i)->type ? "cell" : "AAL5", HTU_RESULT(i)->qid);
         if ( HTU_RESULT(i)->type )
             len += sprintf(buf + len, ", cell id: %d, verification: %s", HTU_RESULT(i)->cellid, HTU_RESULT(i)->ven ? "on" : "off");
         len += sprintf(buf + len, "\n");
@@ -1794,11 +3205,14 @@ static int proc_read_htu(char *page, char **start, off_t off, int count, int *eo
     int len = 0;
     int len_max = off + count;
     char *pstr;
-    char str[1024];
     int llen;
-
+    char *str;
     int htuts = *CFG_WRX_HTUTS;
     int i;
+		
+	str = vmalloc (1024);
+	if (!str)
+		return 0;
 
     pstr = *start = page;
 
@@ -1822,7 +3236,7 @@ static int proc_read_htu(char *page, char **start, off_t off, int count, int *eo
     }
 
     *eof = 1;
-
+	vfree(str);
     return len - off;
 
 PROC_READ_HTU_OVERRUN_END:
@@ -1836,8 +3250,8 @@ static INLINE int print_tx_queue(char *buf, int i)
 
     if ( (*WTX_DMACH_ON & (1 << i)) ) {
         len += sprintf(buf + len, "%2d. valid\n", i);
-        len += sprintf(buf + len, "    queue 0x%08x - sbid %u, qsb %s\n", *(u32*)WTX_QUEUE_CONFIG(i), (unsigned int)WTX_QUEUE_CONFIG(i)->sbid, WTX_QUEUE_CONFIG(i)->qsben ? "enable" : "disable");
-        len += sprintf(buf + len, "    dma   0x%08x - base %08x, len %u, vlddes %u\n", *(u32*)WTX_DMA_CHANNEL_CONFIG(i), WTX_DMA_CHANNEL_CONFIG(i)->desba, WTX_DMA_CHANNEL_CONFIG(i)->deslen, WTX_DMA_CHANNEL_CONFIG(i)->vlddes);
+        len += sprintf(buf + len, "    queue 0x%08x - sbid %u, qsb vcid %u, qsb %s\n", (unsigned int)WTX_QUEUE_CONFIG(i), (unsigned int)WTX_QUEUE_CONFIG(i)->sbid, (unsigned int)WTX_QUEUE_CONFIG(i)->qsb_vcid, WTX_QUEUE_CONFIG(i)->qsben ? "enable" : "disable");
+        len += sprintf(buf + len, "    dma   0x%08x - base %08x, len %u, vlddes %u\n", (unsigned int)WTX_DMA_CHANNEL_CONFIG(i), WTX_DMA_CHANNEL_CONFIG(i)->desba, WTX_DMA_CHANNEL_CONFIG(i)->deslen, WTX_DMA_CHANNEL_CONFIG(i)->vlddes);
     }
     else
         len += sprintf(buf + len, "%2d. invalid\n", i);
@@ -1850,11 +3264,16 @@ static int proc_read_txq(char *page, char **start, off_t off, int count, int *eo
     int len = 0;
     int len_max = off + count;
     char *pstr;
-    char str[1024];
     int llen;
+	int str_buff_len = 1024;
+    char *str;
 
     int i;
-
+	
+	str = vmalloc(str_buff_len);
+	if (!str){
+		return 0;
+	}
     pstr = *start = page;
 
     llen = sprintf(pstr, "TX Queue Config (Max %d):\n", *CFG_WTX_DCHNUM);
@@ -1876,8 +3295,10 @@ static int proc_read_txq(char *page, char **start, off_t off, int count, int *eo
             goto PROC_READ_HTU_OVERRUN_END;
     }
 
+
     *eof = 1;
 
+	vfree(str);
     return len - off;
 
 PROC_READ_HTU_OVERRUN_END:
@@ -1885,14 +3306,716 @@ PROC_READ_HTU_OVERRUN_END:
     return len - llen - off;
 }
 
+ #if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+
+static int proc_read_retx_fw(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+    int len = 0;
+
+    unsigned int next_dtu_sid_out, last_dtu_sid_in, next_cell_sid_out, isr_cell_id;
+    unsigned int curr_time, sec_counter, curr_efb;
+    struct Retx_adsl_ppe_intf adsl_ppe_intf;
+
+    adsl_ppe_intf       = *RETX_ADSL_PPE_INTF;
+    next_dtu_sid_out    = *NEXT_DTU_SID_OUT;
+    last_dtu_sid_in     = *LAST_DTU_SID_IN;
+    next_cell_sid_out   = *NEXT_CELL_SID_OUT;
+    isr_cell_id         = *ISR_CELL_ID;
+
+    curr_time   = *URetx_curr_time;
+    sec_counter = *URetx_sec_counter;
+    curr_efb    = *RxCURR_EFB;
+
+
+    len += sprintf(page + off + len, "Adsl-PPE Interface:\n");
+    len += sprintf(page + off + len, "  dtu_sid                = 0x%02x [%3u]\n", adsl_ppe_intf.dtu_sid, adsl_ppe_intf.dtu_sid);
+    len += sprintf(page + off + len, "  dtu_timestamp          = 0x%02x\n", adsl_ppe_intf.dtu_timestamp);
+    len += sprintf(page + off + len, "  local_time             = 0x%02x\n", adsl_ppe_intf.local_time);
+    len += sprintf(page + off + len, "  is_last_cw             = %u\n", adsl_ppe_intf.is_last_cw);
+    len += sprintf(page + off + len, "  reinit_flag            = %u\n", adsl_ppe_intf.reinit_flag);
+    len += sprintf(page + off + len, "  is_bad_cw              = %u\n", adsl_ppe_intf.is_bad_cw);
+    len += sprintf(page + off + len, "\n");
+
+
+    len += sprintf(page + off + len, "Retx Firmware Context:\n");
+    len += sprintf(page + off + len, "  next_dtu_sid_out       (0x%08x)  = 0x%02x [%3u]\n", (unsigned int )NEXT_DTU_SID_OUT,   next_dtu_sid_out, next_dtu_sid_out);
+    len += sprintf(page + off + len, "  last_dtu_sid_in        (0x%08x)  = 0x%02x [%3u]\n", (unsigned int )LAST_DTU_SID_IN,    last_dtu_sid_in,  last_dtu_sid_in);
+    len += sprintf(page + off + len, "  next_cell_sid_out      (0x%08x)  = %u\n", (unsigned int )NEXT_CELL_SID_OUT,  next_cell_sid_out);
+    len += sprintf(page + off + len, "  isr_cell_id            (0x%08x)  = %u\n", (unsigned int )ISR_CELL_ID,        isr_cell_id);
+    len += sprintf(page + off + len, "  pb_cell_search_idx     (0x%08x)  = %u\n", (unsigned int )PB_CELL_SEARCH_IDX, *PB_CELL_SEARCH_IDX);
+    len += sprintf(page + off + len, "  pb_read_pend_flag      (0x%08x)  = %u\n", (unsigned int )PB_READ_PEND_FLAG,  *PB_READ_PEND_FLAG);
+    len += sprintf(page + off + len, "  rfbi_first_cw          (0x%08x)  = %u\n", (unsigned int )RFBI_FIRST_CW,      *RFBI_FIRST_CW);
+    len += sprintf(page + off + len, "  rfbi_bad_cw            (0x%08x)  = %u\n", (unsigned int )RFBI_BAD_CW,        *RFBI_BAD_CW);
+    len += sprintf(page + off + len, "  rfbi_invalid_cw        (0x%08x)  = %u\n", (unsigned int )RFBI_INVALID_CW,    *RFBI_INVALID_CW);
+    len += sprintf(page + off + len, "  rfbi_retx_cw           (0x%08x)  = %u\n", (unsigned int )RFBI_RETX_CW,       *RFBI_RETX_CW);
+    len += sprintf(page + off + len, "  rfbi_chk_dtu_status    (0x%08x)  = %u\n", (unsigned int )RFBI_CHK_DTU_STATUS,*RFBI_CHK_DTU_STATUS);
+    len += sprintf(page + off + len, "\n");
+
+
+    len += sprintf(page + off + len, "SFSM Status:  bc0                      bc1  \n\n");
+    len += sprintf(page + off + len, "  state     = %-22s , %s\n",
+          (*__WRXCTXT_PortState(0) & 3) == 0 ? "Hunt" :
+          (*__WRXCTXT_PortState(0) & 3) == 1 ? "Pre_sync" :
+          (*__WRXCTXT_PortState(0) & 3) == 2 ? "Sync" :
+                                               "Unknown(error)",
+          (*__WRXCTXT_PortState(1) & 3) == 0 ? "Hunt" :
+          (*__WRXCTXT_PortState(1) & 3) == 1 ? "Pre_sync" :
+          (*__WRXCTXT_PortState(1) & 3) == 2 ? "Sync" :
+                                               "Unknown(error)"  );
+    len += sprintf(page + off + len, "  dbase     = 0x%04x  ( 0x%08x ) , 0x%04x  ( 0x%08x )\n",
+            SFSM_DBA(0)->dbase, (unsigned int)PPM_INT_UNIT_ADDR(SFSM_DBA(0)->dbase + 0x2000),
+            SFSM_DBA(1)->dbase, (unsigned int)PPM_INT_UNIT_ADDR(SFSM_DBA(1)->dbase + 0x2000));
+    len += sprintf(page + off + len, "  cbase     = 0x%04x  ( 0x%08x ) , 0x%04x  ( 0x%08x )\n",
+            SFSM_CBA(0)->cbase, (unsigned int)PPM_INT_UNIT_ADDR(SFSM_CBA(0)->cbase + 0x2000),
+            SFSM_CBA(1)->cbase, (unsigned int)PPM_INT_UNIT_ADDR(SFSM_CBA(1)->cbase + 0x2000));
+    len += sprintf(page + off + len, "  sen       = %-22d , %d\n", SFSM_CFG(0)->sen,        SFSM_CFG(1)->sen );
+    len += sprintf(page + off + len, "  idlekeep  = %-22d , %d\n", SFSM_CFG(0)->idlekeep,   SFSM_CFG(1)->idlekeep );
+    len += sprintf(page + off + len, "  pnum      = %-22d , %d\n", SFSM_CFG(0)->pnum,       SFSM_CFG(1)->pnum );
+    len += sprintf(page + off + len, "  pptr      = %-22d , %d\n", SFSM_PGCNT(0)->pptr,     SFSM_PGCNT(1)->pptr);
+    len += sprintf(page + off + len, "  upage     = %-22d , %d\n", SFSM_PGCNT(0)->upage,    SFSM_PGCNT(1)->upage);
+    len += sprintf(page + off + len, "  l2_rdptr  = %-22d , %d\n", *__WRXCTXT_L2_RdPtr(0),  *__WRXCTXT_L2_RdPtr(1) );
+    len += sprintf(page + off + len, "  l2_page   = %-22d , %d\n", *__WRXCTXT_L2Pages(0),   *__WRXCTXT_L2Pages(1) );
+    len += sprintf(page + off + len, "\n");
+
+
+    len += sprintf(page + off + len, "FFSM Status:  bc0                      bc1  \n\n");
+    len += sprintf(page + off + len, "  dbase     = 0x%04x  ( 0x%08x ) , 0x%04x  ( 0x%08x )\n",
+            FFSM_DBA(0)->dbase, (unsigned int)PPM_INT_UNIT_ADDR(FFSM_DBA(0)->dbase + 0x2000),
+            FFSM_DBA(1)->dbase, (unsigned int)PPM_INT_UNIT_ADDR(FFSM_DBA(1)->dbase + 0x2000));
+    len += sprintf(page + off + len, "  pnum      = %-22d , %d\n", FFSM_CFG(0)->pnum,       FFSM_CFG(1)->pnum);
+    len += sprintf(page + off + len, "  vpage     = %-22d , %d\n", FFSM_PGCNT(0)->vpage,    FFSM_PGCNT(1)->vpage);
+    len += sprintf(page + off + len, "  ival      = %-22d , %d\n", FFSM_PGCNT(0)->ival,     FFSM_PGCNT(1)->ival);
+    len += sprintf(page + off + len, "  tc_wrptr  = %-22d , %d\n", *__WTXCTXT_TC_WRPTR(0),  *__WTXCTXT_TC_WRPTR(1));
+    len += sprintf(page + off + len, "\n");
+
+
+    len += sprintf(page + off + len, "Misc:  \n\n");
+    len += sprintf(page + off + len, "  curr_time   = %08x\n", curr_time );
+    len += sprintf(page + off + len, "  sec_counter = %d\n", sec_counter );
+    len += sprintf(page + off + len, "  curr_efb    = %d\n", curr_efb );
+    len += sprintf(page + off + len, "\n");
+
+    *eof = 1;
+
+    return len;
+}
+
+static inline int is_valid(unsigned int * dtu_vld_stat, int dtu_sid)
+{
+    int dw_idx = (dtu_sid / 32) & 7;
+    int bit_pos = dtu_sid % 32;
+
+    return dtu_vld_stat[dw_idx] & (0x80000000 >> bit_pos);
+}
+
+static int proc_read_retx_stats(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+    int i;
+    int len = 0;
+    int len_max = off + count;
+    char *pstr;
+    char str[2048];
+    int llen = 0;
+
+    unsigned int next_dtu_sid_out, last_dtu_sid_in, next_cell_sid_out;
+    unsigned int dtu_vld_stat[8];
+    struct DTU_stat_info dtu_stat_info[256];
+    struct Retx_adsl_ppe_intf adsl_ppe_intf;
+
+    pstr = *start = page;
+
+    __sync();
+
+    // capture a snapshot of internal status
+    next_dtu_sid_out    = *NEXT_DTU_SID_OUT;
+    last_dtu_sid_in     = *LAST_DTU_SID_IN;
+    next_cell_sid_out   = *NEXT_CELL_SID_OUT;
+    adsl_ppe_intf       = *RETX_ADSL_PPE_INTF;
+
+    memcpy(&dtu_vld_stat, (void *)DTU_VLD_STAT, sizeof(dtu_vld_stat));
+    memcpy(&dtu_stat_info, (void *)DTU_STAT_INFO, sizeof(dtu_stat_info));
+
+
+    llen += sprintf(str + llen, "Adsl-PPE Interface:\n");
+    llen += sprintf(str + llen, "  dtu_sid                = 0x%02x [%3u]\n", adsl_ppe_intf.dtu_sid, adsl_ppe_intf.dtu_sid);
+    llen += sprintf(str + llen, "  dtu_timestamp          = 0x%02x\n", adsl_ppe_intf.dtu_timestamp);
+    llen += sprintf(str + llen, "  local_time             = 0x%02x\n", adsl_ppe_intf.local_time);
+    llen += sprintf(str + llen, "  is_last_cw             = %u\n", adsl_ppe_intf.is_last_cw);
+    llen += sprintf(str + llen, "  reinit_flag            = %u\n", adsl_ppe_intf.reinit_flag);
+    llen += sprintf(str + llen, "  is_bad_cw              = %u\n", adsl_ppe_intf.is_bad_cw);
+    llen += sprintf(str + llen, "\n");
+
+    llen += sprintf(str + llen, "Retx Internal State:\n");
+    llen += sprintf(str + llen, "  next_dtu_sid_out       (0x%08x)  = 0x%02x [%3u]\n", (unsigned int )NEXT_DTU_SID_OUT,   next_dtu_sid_out, next_dtu_sid_out);
+    llen += sprintf(str + llen, "  last_dtu_sid_in        (0x%08x)  = 0x%02x [%3u]\n", (unsigned int )LAST_DTU_SID_IN,    last_dtu_sid_in, last_dtu_sid_in);
+    llen += sprintf(str + llen, "  next_cell_sid_out      (0x%08x)  = %u\n", (unsigned int )NEXT_CELL_SID_OUT,  next_cell_sid_out);
+    llen += sprintf(str + llen, "  dtu_valid_stat         (0x%08x)\n", (unsigned int )DTU_VLD_STAT);
+    llen += sprintf(str + llen, "  dtu_stat_info          (0x%08x)\n", (unsigned int )DTU_STAT_INFO);
+    llen += sprintf(str + llen, "  pb_buffer_usage        (0x%08x)\n", (unsigned int )PB_BUFFER_USAGE);
+
+    if ( len <= off && len + llen > off ) {
+        memcpy(pstr, str + off - len, len + llen - off);
+        pstr += len + llen - off;
+    }
+    else if ( len > off ) {
+        memcpy(pstr, str, llen);
+        pstr += llen;
+    }
+    len += llen;
+    if ( len >= len_max )
+        goto PROC_READ_RETX_STATS_OVERRUN_END;
+    llen = 0;
+
+
+    llen += sprintf(str + llen, "\n");
+    llen += sprintf(str + llen, "DTU_VALID_STAT: [0x%08x]:\n", (unsigned int)DTU_VLD_STAT);
+    llen += sprintf(str + llen, "%08X: %08X %08X %08X %08X    %08X %08X %08X %08X\n",
+                    (unsigned int)DTU_VLD_STAT,
+                    dtu_vld_stat[0], dtu_vld_stat[1], dtu_vld_stat[2], dtu_vld_stat[3],
+                    dtu_vld_stat[4], dtu_vld_stat[5], dtu_vld_stat[6], dtu_vld_stat[7]);
+
+    if ( len <= off && len + llen > off ) {
+        memcpy(pstr, str + off - len, len + llen - off);
+        pstr += len + llen - off;
+    }
+    else if ( len > off ) {
+        memcpy(pstr, str, llen);
+        pstr += llen;
+    }
+    len += llen;
+    if ( len >= len_max )
+        goto PROC_READ_RETX_STATS_OVERRUN_END;
+    llen = 0;
+
+
+    llen += sprintf(str + llen, "\n");
+    llen += sprintf(str + llen, "DTU_STAT_INFO: [0x%08x]:\n", (unsigned int)DTU_STAT_INFO);
+    llen += sprintf(str + llen, "dtu_id        ts   complete   bad  cell_cnt  dtu_rd_ptr  dtu_wr_ptr\n");
+    llen += sprintf(str + llen, "---------------------------------------------------------------------\n");
+    for ( i = 0; i < 256; i++ ) {
+        if ( !is_valid(dtu_vld_stat, i) )
+            continue;
+
+        llen += sprintf(str + llen, "0x%02x [%3u]   0x%02x      %d       %d     %3d        %5d      %5d\n",
+                        i, i,
+                        DTU_STAT_INFO[i].time_stamp,
+                        DTU_STAT_INFO[i].complete,
+                        DTU_STAT_INFO[i].bad,
+                        DTU_STAT_INFO[i].cell_cnt,
+                        DTU_STAT_INFO[i].dtu_rd_ptr,
+                        DTU_STAT_INFO[i].dtu_wr_ptr );
+
+        if ( len <= off && len + llen > off ) {
+            memcpy(pstr, str + off - len, len + llen - off);
+            pstr += len + llen - off;
+        }
+        else if ( len > off )
+        {
+            memcpy(pstr, str, llen);
+            pstr += llen;
+        }
+        len += llen;
+        if ( len >= len_max )
+            goto PROC_READ_RETX_STATS_OVERRUN_END;
+        llen = 0;
+    }
+
+
+    llen += sprintf(str + llen, "\n");
+    llen += sprintf(str + llen, "Playout buffer status --- valid status [0x%08x]:\n", (unsigned int)PB_BUFFER_USAGE);
+    for( i = 0; i <  RETX_MODE_CFG->buff_size; i += 8 ) {
+        llen += sprintf(str + llen, "%08X: %08X %08X %08X %08X    %08X %08X %08X %08X\n",
+                        (unsigned int)PB_BUFFER_USAGE + i * sizeof(unsigned int),
+                        PB_BUFFER_USAGE[i],   PB_BUFFER_USAGE[i+1], PB_BUFFER_USAGE[i+2], PB_BUFFER_USAGE[i+3],
+                        PB_BUFFER_USAGE[i+4], PB_BUFFER_USAGE[i+5], PB_BUFFER_USAGE[i+6], PB_BUFFER_USAGE[i+7]);
+    }
+
+    if ( len <= off && len + llen > off ) {
+        memcpy(pstr, str + off - len, len + llen - off);
+        pstr += len + llen - off;
+    }
+    else if ( len > off ) {
+        memcpy(pstr, str, llen);
+        pstr += llen;
+    }
+    len += llen;
+    if ( len >= len_max )
+        goto PROC_READ_RETX_STATS_OVERRUN_END;
+    llen = 0;
+
+
+    *eof = 1;
+
+    return len - off;
+
+PROC_READ_RETX_STATS_OVERRUN_END:
+    return len - llen - off;
+}
+
+static int proc_write_retx_stats(struct file *file, const char *buf, unsigned long count, void *data)
+{
+    char str[2048];
+    char *p;
+
+    int len, rlen;
+
+    len = count < sizeof(str) ? count : sizeof(str) - 1;
+    rlen = len - copy_from_user(str, buf, len);
+    while ( rlen && str[rlen - 1] <= ' ' )
+        rlen--;
+    str[rlen] = 0;
+    for ( p = str; *p && *p <= ' '; p++, rlen-- );
+    if ( !*p )
+        return 0;
+
+    if ( stricmp(p, "help") == 0 ) {
+        printk("echo clear_pb > /proc/driver/ifx_atm/retx_stats \n");
+        printk("   :clear context in playout buffer\n\n");
+        printk("echo read_pb <pb_index> <cell_num> > /proc/driver/ifx_atm/retx_stats\n");
+        printk("   : read playout buffer contents\n\n");
+        printk("echo read_[r|t]x_cb > /proc/driver/ifx_atm/retx_stats\n");
+        printk("   : read cell buffer\n\n");
+        printk("echo clear_[r|t]x_cb > /proc/driver/ifx_atm/retx_stats\n");
+        printk("   : clear cell buffer\n\n");
+        printk("echo read_bad_dtu_intf_rec > /proc/driver/ifx_atm/retx_stats\n");
+        printk("   : read bad dtu intrface information record\n\n");
+        printk("echo clear_bad_dtu_intf_rec > /proc/driver/ifx_atm/retx_stats\n");
+        printk("   : clear bad dtu interface information record\n\n");
+        printk("echo read_wrx_context [i] > /proc/driver/ifx_atm/retx_stats\n");
+        printk("   : clear bad dtu interface information record\n\n");
+        printk("echo read_intf_rec > /proc/driver/ifx_atm/retx_stats\n");
+        printk("   : read interface info record buffer\n\n");
+        printk("echo reinit_intf_rec > /proc/driver/ifx_atm/retx_stats\n");
+        printk("   : reinit intf record, must be called before showtime\n\n");
+    }
+    else if ( stricmp(p, "reinit_intf_rec") == 0 ) {
+        int i = 0;
+        struct Retx_adsl_ppe_intf_rec rec[16];
+
+        *DBG_DTU_INTF_WRPTR             = 0;
+        *DBG_INTF_FCW_DUP_CNT           = 0;
+        *DBG_INTF_SID_CHANGE_IN_DTU_CNT = 0;
+        *DBG_INTF_LCW_DUP_CNT           = 0;
+
+        *DBG_RFBI_DONE_INT_CNT          = 0;
+        *DBG_RFBI_INTV0                 = 0;
+        *DBG_RFBI_INTV1                 = 0;
+        *DBG_RFBI_BC0_INVALID_CNT       = 0;
+        *DBG_RFBI_LAST_T                = 0;
+        *DBG_DREG_BEG_END               = 0;
+
+        memset((void *) DBG_INTF_INFO(0), 0, sizeof(rec));
+        for( i = 0; i < 16; i++ )
+            DBG_INTF_INFO(i)->res1_1 = 1;
+        DBG_INTF_INFO(15)->dtu_sid = 255;
+    }
+    else if ( stricmp(p, "read_intf_rec") == 0 ) {
+        int i, cnt;
+        unsigned int dtu_intf_wrptr, fcw_dup_cnt, sid_change_in_dtu_cnt, lcw_dup_cnt ;
+        unsigned int rfbi_done_int_cnt, rfbi_intv0, rfbi_intv1, rfbi_bc0_invalid_cnt, dreg_beg_end;
+        struct Retx_adsl_ppe_intf_rec rec[16];
+
+        memcpy((void *) rec, (void *) DBG_INTF_INFO(0), sizeof(rec));
+
+        dtu_intf_wrptr          = *DBG_DTU_INTF_WRPTR;
+        fcw_dup_cnt             = *DBG_INTF_FCW_DUP_CNT;
+        sid_change_in_dtu_cnt   = *DBG_INTF_SID_CHANGE_IN_DTU_CNT;
+        lcw_dup_cnt             = *DBG_INTF_LCW_DUP_CNT;
+
+        rfbi_done_int_cnt       = *DBG_RFBI_DONE_INT_CNT;
+        rfbi_intv0              = *DBG_RFBI_INTV0;
+        rfbi_intv1              = *DBG_RFBI_INTV1;
+        rfbi_bc0_invalid_cnt    = *DBG_RFBI_BC0_INVALID_CNT;
+        dreg_beg_end            = *DBG_DREG_BEG_END;
+
+        printk("PPE-Adsl Interface recrod [addr 0x23F0]:\n\n");
+
+        printk("    rfbi_done_int_cnt   = %d [0x%x] \n", rfbi_done_int_cnt, rfbi_done_int_cnt);
+        printk("    rfbi_intv           = 0x%08x  0x%08x [%d, %d, %d, %d, %d, %d, %d, %d]\n",
+                    rfbi_intv0, rfbi_intv1,
+                    rfbi_intv0 >> 24, (rfbi_intv0>>16) & 0xff, (rfbi_intv0>>8) & 0xff, rfbi_intv0 & 0xff,
+                    rfbi_intv1 >> 24, (rfbi_intv1>>16) & 0xff, (rfbi_intv1>>8) & 0xff, rfbi_intv1 & 0xff
+                    );
+        printk("    rfbi_bc0_invld_cnt  = %d\n", rfbi_bc0_invalid_cnt);
+        printk("    dreg_beg_end        = %d, %d\n\n", dreg_beg_end >> 16, dreg_beg_end & 0xffff);
+
+        printk("    wrptr       = %d [0x%x] \n", dtu_intf_wrptr, dtu_intf_wrptr);
+        printk("    fcw_dup_cnt = %d\n", fcw_dup_cnt);
+        printk("    sid_chg_cnt = %d\n", sid_change_in_dtu_cnt);
+        printk("    lcw_dup_cnt = %d\n\n", lcw_dup_cnt);
+
+
+        printk("    idx  itf_dw0  itf_dw1  dtu_sid  timestamp  local_time   res1  last_cw  bad_flag  reinit\n");
+        printk("    -------------------------------------------------------------------------------------\n");
+        for ( i = (dtu_intf_wrptr + 1) % 16, cnt = 0; cnt < 16; cnt ++, i = (i + 1) % 16 ) {
+            if(cnt < 15)
+                printk("    ");
+            else
+                printk("   *");
+            printk("%3d    %04x    %04x    %3d[%02x]   %3d[%02x]     %3d[%02x]    0x%02x       %d       %d       %d\n",
+                i,
+                (*(unsigned int *)&rec[i]) & 0xffff,
+                (*(unsigned int *)&rec[i]) >> 16,
+                rec[i].dtu_sid, rec[i].dtu_sid,
+                rec[i].dtu_timestamp, rec[i].dtu_timestamp,
+                rec[i].local_time, rec[i].local_time,
+                rec[i].res1_1,
+                rec[i].is_last_cw,
+                rec[i].is_bad_cw,
+                rec[i].reinit_flag );
+        }
+    }
+    else if ( stricmp(p, "read_wrx_context") == 0 ) {
+        int i = 0;
+        int flag = 0;
+        for( i = 0; i < 8; ++i ) {
+            if ( !WRX_QUEUE_CONTEXT(i)->curr_des0 || !WRX_QUEUE_CONTEXT(i)->curr_des1 )
+                continue;
+
+            flag = 1;
+            printk("WRX queue context [ %d ]: \n", i);
+            printk("    curr_len = %4d, mfs = %d, ec = %d, clp1 = %d, aal5dp = %d\n",
+                    WRX_QUEUE_CONTEXT(i)->curr_len, WRX_QUEUE_CONTEXT(i)->mfs,
+                    WRX_QUEUE_CONTEXT(i)->ec, WRX_QUEUE_CONTEXT(i)->clp1,
+                    WRX_QUEUE_CONTEXT(i)->aal5dp);
+            printk("    initcrc  = %08x\n", WRX_QUEUE_CONTEXT(i)->intcrc);
+            printk("    currdes  = %08x %08x\n",
+                    WRX_QUEUE_CONTEXT(i)->curr_des0, WRX_QUEUE_CONTEXT(i)->curr_des1);
+            printk("    last_dw  = %08x\n\n", WRX_QUEUE_CONTEXT(i)->last_dword);
+            if( WRX_QUEUE_CONTEXT(i)->curr_len ) {
+                int j = 0;
+                unsigned char *p_char;
+                struct rx_descriptor *desc = (struct rx_descriptor *)&(WRX_QUEUE_CONTEXT(i)->curr_des0);
+                p_char = (unsigned char *)(((unsigned int)desc->dataptr << 2) | KSEG1);
+                printk("    Data in SDRAM:\n        ");
+
+                for ( j = 0 ; j < WRX_QUEUE_CONTEXT(i)->curr_len; ++j ) {
+                    printk ("%02x", p_char[j]);
+                    if ( j % 16 == 15 )
+                        printk("\n        ");
+                    else if ( j % 4 == 3 )
+                        printk (" ");
+                }
+                printk("\n\n");
+            }
+        }
+        if ( !flag ) {
+            printk("No active wrx queue context\n");
+        }
+    }
+    else if ( stricmp(p, "clear_pb") == 0 ) {
+        if ( g_retx_playout_buffer )
+            memset((void *)g_retx_playout_buffer, 0,  RETX_PLAYOUT_BUFFER_SIZE);
+    }
+    else if ( stricmp(p, "read_bad_dtu_intf_rec") == 0 ) {
+        struct Retx_adsl_ppe_intf first_dtu_intf, last_dtu_intf;
+        first_dtu_intf = *FIRST_BAD_REC_RETX_ADSL_PPE_INTF;
+        last_dtu_intf = *BAD_REC_RETX_ADSL_PPE_INTF;
+
+        printk("\nAdsl-PPE Interface for first and last DTU of recent noise:\n\n");
+        printk("  dtu_sid                = 0x%02x [%3u], 0x%02x [%3u]\n",
+                first_dtu_intf.dtu_sid, first_dtu_intf.dtu_sid,
+                last_dtu_intf.dtu_sid, last_dtu_intf.dtu_sid);
+        printk("  dtu_timestamp          = 0x%02x      , 0x%02x\n",
+                first_dtu_intf.dtu_timestamp, last_dtu_intf.dtu_timestamp);
+        printk("  local_time             = 0x%02x      , 0x%02x\n",
+                first_dtu_intf.local_time, last_dtu_intf.local_time);
+        printk("  is_last_cw             = %u          , %u\n",
+                first_dtu_intf.is_last_cw, last_dtu_intf.is_last_cw);
+        printk("  reinit_flag            = %u          , %u\n",
+                first_dtu_intf.reinit_flag, last_dtu_intf.reinit_flag);
+        printk("  is_bad_cw              = %u          , %u\n\n",
+                first_dtu_intf.is_bad_cw, last_dtu_intf.is_bad_cw);
+    }
+    else if ( stricmp(p, "clear_bad_dtu_intf_rec") == 0 ) {
+        memset((void *)BAD_REC_RETX_ADSL_PPE_INTF, 0, sizeof(struct Retx_adsl_ppe_intf));
+        memset((void *)FIRST_BAD_REC_RETX_ADSL_PPE_INTF, 0, sizeof(struct Retx_adsl_ppe_intf));
+    }
+    else if ( stricmp(p, "clear_tx_cb") == 0 ) {
+        unsigned int *dbase0;
+        unsigned int pnum0;
+
+        dbase0 = (unsigned int *)PPM_INT_UNIT_ADDR( FFSM_DBA(0)->dbase + 0x2000);
+        pnum0 = FFSM_CFG(0)->pnum;
+        memset(dbase0, 0,  14 * sizeof(unsigned int ) * pnum0);
+    }
+    else if ( stricmp(p, "clear_rx_cb") == 0 ) {
+        unsigned int *dbase0, *cbase0, *dbase1, *cbase1;
+        unsigned int pnum0;
+
+        dbase0 = (unsigned int *)PPM_INT_UNIT_ADDR( SFSM_DBA(0)->dbase + 0x2000);
+        cbase0 = (unsigned int *)PPM_INT_UNIT_ADDR( SFSM_CBA(0)->cbase + 0x2000);
+
+        dbase1 = (unsigned int *)PPM_INT_UNIT_ADDR( SFSM_DBA(1)->dbase + 0x2000);
+        cbase1 = (unsigned int *)PPM_INT_UNIT_ADDR( SFSM_CBA(1)->cbase + 0x2000);
+
+        pnum0 = SFSM_CFG(0)->pnum;
+
+        memset(dbase0, 0,  14 * sizeof(unsigned int ) * pnum0);
+        memset(cbase0, 0,  sizeof(unsigned int ) * pnum0);
+
+        memset(dbase1, 0,  14 * sizeof(unsigned int ));
+        memset(cbase1, 0,  sizeof(unsigned int ));
+    }
+    else if ( strnicmp(p, "read_tx_cb", 10) == 0 ) {
+        unsigned int *dbase0;
+        unsigned int pnum0, i;
+        unsigned int * cell;
+
+        dbase0 = (unsigned int *)PPM_INT_UNIT_ADDR( FFSM_DBA(0)->dbase + 0x2000);
+        pnum0 = FFSM_CFG(0)->pnum;
+
+        printk("ATM TX BC 0 CELL data/ctrl buffer:\n\n");
+        for(i = 0; i < pnum0 ; ++ i) {
+            cell = dbase0 + i * 14;
+            printk("cell %2d:                   %08x %08x\n", i, cell[0], cell[1]);
+            printk("         %08x %08x %08x %08x\n",  cell[2], cell[3], cell[4], cell[5]);
+            printk("         %08x %08x %08x %08x\n",  cell[6], cell[7], cell[8], cell[9]);
+            printk("         %08x %08x %08x %08x\n",  cell[10], cell[11], cell[12], cell[13]);
+        }
+    }
+    else if ( strnicmp(p, "read_rx_cb", 10) == 0 ) {
+        unsigned int *dbase0, *cbase0, *dbase1, *cbase1;
+        unsigned int pnum0, i;
+        unsigned int * cell;
+
+        dbase0 = (unsigned int *)PPM_INT_UNIT_ADDR( SFSM_DBA(0)->dbase + 0x2000);
+        cbase0 = (unsigned int *)PPM_INT_UNIT_ADDR( SFSM_CBA(0)->cbase + 0x2000);
+
+        dbase1 = (unsigned int *)PPM_INT_UNIT_ADDR( SFSM_DBA(1)->dbase + 0x2000);
+        cbase1 = (unsigned int *)PPM_INT_UNIT_ADDR( SFSM_CBA(1)->cbase + 0x2000);
+
+        pnum0 = SFSM_CFG(0)->pnum;
+
+        printk("ATM RX BC 0 CELL data/ctrl buffer:\n\n");
+        for(i = 0; i < pnum0 ; ++ i) {
+            struct Retx_ctrl_field * p_ctrl;
+
+            cell = dbase0 + i * 14;
+            p_ctrl = (struct Retx_ctrl_field *) ( &cbase0[i]);
+            printk("cell %2d:                   %08x %08x  -- [%08x]:", i, cell[0], cell[1], cbase0[i]);
+
+            printk("l2_drop: %d, retx: %d", p_ctrl->l2_drop, p_ctrl->retx);
+            if ( p_ctrl->retx ) {
+                printk(", dtu_sid = %u, cell_sid = %u", p_ctrl->dtu_sid, p_ctrl->cell_sid);
+            }
+
+            printk("\n");
+
+            printk("         %08x %08x %08x %08x\n",  cell[2], cell[3], cell[4], cell[5]);
+            printk("         %08x %08x %08x %08x\n",  cell[6], cell[7], cell[8], cell[9]);
+            printk("         %08x %08x %08x %08x\n",  cell[10], cell[11], cell[12], cell[13]);
+        }
+
+        printk("\n");
+        printk("ATM RX BC 1 CELL data/ctrl buffer:\n\n");
+        cell = dbase1;
+        printk("cell %2d:                   %08x %08x  -- [%08x]: dtu_sid:%3d, cell_sid:%3d, next_ptr: %4d\n",
+                0, cell[0], cell[1], cbase0[i], ( cell[1] >> 16) & 0xff, (cell[1] >> 24) & 0xff,    cell[1] & 0xffff );
+        printk("         %08x %08x %08x %08x\n",  cell[2], cell[3], cell[4], cell[5]);
+        printk("         %08x %08x %08x %08x\n",  cell[6], cell[7], cell[8], cell[9]);
+        printk("         %08x %08x %08x %08x\n",  cell[10], cell[11], cell[12], cell[13]);
+    }
+    else if ( strnicmp(p, "read_pb ", 8) == 0 )
+    {
+        int start_cell_idx = 0;
+        int cell_num = 0;
+        unsigned int *cell;
+        unsigned int pb_buff_size = RETX_MODE_CFG->buff_size * 32;
+
+        p += 8;
+        rlen -= 8;
+        ignore_space(&p, &rlen);
+
+        start_cell_idx = get_number(&p, &rlen, 0);
+        ignore_space(&p, &rlen);
+        cell_num = get_number(&p, &rlen, 0);
+
+        if ( start_cell_idx >= pb_buff_size ) {
+            printk(" Invalid cell index\n");
+        }
+        else {
+            int i;
+            if ( cell_num < 0 )
+                cell_num = 1;
+
+            if ( cell_num + start_cell_idx > pb_buff_size )
+                cell_num = pb_buff_size - start_cell_idx;
+
+            for ( i = 0; i < cell_num ; ++i ) {
+                cell = (unsigned int *)((unsigned int *)g_retx_playout_buffer + (14 * (start_cell_idx + i)));
+                printk("cell %4d:          %08x %08x [next_ptr = %4u, dtu_sid = %3u, cell_sid = %3u]\n",
+                        start_cell_idx + i, cell[0], cell[1], cell[1] & 0xffff, (cell[1] >> 16) & 0xff, (cell[1] >> 24) & 0xff);
+                printk("  %08x %08x %08x %08x\n",  cell[2], cell[3], cell[4], cell[5]);
+                printk("  %08x %08x %08x %08x\n",  cell[6], cell[7], cell[8], cell[9]);
+                printk("  %08x %08x %08x %08x\n",  cell[10], cell[11], cell[12], cell[13]);
+            }
+        }
+    }
+
+    return count;
+}
+
+static int proc_read_retx_cfg(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+    int len = 0;
+
+    len += sprintf(page + off + len, "ReTX FW Config:\n");
+    len += sprintf(page + off + len, "  RETX_MODE_CFG            = 0x%08x, invld_range=%u, buff_size=%u, retx=%u\n", *(volatile unsigned int *)RETX_MODE_CFG, (unsigned int)RETX_MODE_CFG->invld_range, (unsigned int)RETX_MODE_CFG->buff_size * 32, (unsigned int)RETX_MODE_CFG->retx_en);
+    len += sprintf(page + off + len, "  RETX_TSYNC_CFG           = 0x%08x, fw_alpha=%u, sync_inp=%u\n", *(volatile unsigned int *)RETX_TSYNC_CFG, (unsigned int)RETX_TSYNC_CFG->fw_alpha, (unsigned int)RETX_TSYNC_CFG->sync_inp);
+    len += sprintf(page + off + len, "  RETX_TD_CFG              = 0x%08x, td_max=%u, td_min=%u\n", *(volatile unsigned int *)RETX_TD_CFG, (unsigned int)RETX_TD_CFG->td_max, (unsigned int)RETX_TD_CFG->td_min);
+    len += sprintf(page + off + len, "  RETX_PLAYOUT_BUFFER_BASE = 0x%08x\n", *RETX_PLAYOUT_BUFFER_BASE);
+    len += sprintf(page + off + len, "  RETX_SERVICE_HEADER_CFG  = 0x%08x\n", *RETX_SERVICE_HEADER_CFG);
+    len += sprintf(page + off + len, "  RETX_MASK_HEADER_CFG     = 0x%08x\n", *RETX_MASK_HEADER_CFG);
+    len += sprintf(page + off + len, "  RETX_MIB_TIMER_CFG       = 0x%08x, tick_cycle = %d, ticks_per_sec = %d\n",
+                    *(unsigned int *)RETX_MIB_TIMER_CFG, RETX_MIB_TIMER_CFG->tick_cycle, RETX_MIB_TIMER_CFG->ticks_per_sec);
+
+    *eof = 1;
+
+    return len;
+}
+
+static int proc_write_retx_cfg(struct file *file, const char *buf, unsigned long count, void *data)
+{
+    char *p1, *p2;
+    int len;
+    int colon;
+    char local_buf[1024];
+    char *tokens[4] = {0};
+    unsigned int token_num = 0;
+
+    len = sizeof(local_buf) < count ? sizeof(local_buf) - 1 : count;
+    len = len - copy_from_user(local_buf, buf, len);
+    local_buf[len] = 0;
+
+    p1 = local_buf;
+    colon = 0;
+    while ( token_num < NUM_ENTITY(tokens) && get_token(&p1, &p2, &len, &colon) ) {
+        tokens[token_num++] = p1;
+
+        p1 = p2;
+    }
+
+    if ( token_num > 0 ) {
+        if ( stricmp(tokens[0], "help") == 0 ) {
+            printk("echo help > /proc/driver/ifx_atm/retx_cfg ==> \n\tprint this help message\n\n");
+
+            printk("echo set retx <enable|disable|0|1|on|off> > /proc/driver/ifx_atm/retx_cfg\n");
+            printk("\t:enable or disable retx feature\n\n");
+
+            printk("echo set <td_max|td_min|fw_alpha|sync_inp|invld_range|buff_size> <number> > /proc/driver/ifx_atm/retx_cfg\n");
+            printk("\t: set td_max, td_min, fw_alpha, sync_inp, invalid_range, buff_size\n\n");
+
+            printk("echo set <service_header|service_mask> <hex_number> /proc/driver/ifx_atm/retx_cfg \n");
+            printk("\t: set service_header, service_mask\n\n");
+        }
+        else if ( stricmp(tokens[0], "set") == 0 && token_num >= 3 ) {
+
+            if ( stricmp(tokens[1], "retx") == 0 ) {
+                if ( stricmp(tokens[2], "enable") == 0 ||
+                     stricmp(tokens[2], "on") == 0 ||
+                     stricmp(tokens[2], "1") == 0 )
+                    RETX_MODE_CFG->retx_en = 1;
+                else if ( stricmp(tokens[2], "disable") == 0 ||
+                     stricmp(tokens[2], "off") == 0 ||
+                     stricmp(tokens[2], "0") == 0 )
+                    RETX_MODE_CFG->retx_en = 0;
+                printk("RETX_MODE_CFG->retx_en - %d\n", RETX_MODE_CFG->retx_en);
+            }
+            else {
+                unsigned int dec_val, hex_val;
+
+                p1 = tokens[2];
+                dec_val = (unsigned int)get_number(&p1, NULL, 0);
+                p2 = tokens[2];
+                hex_val = (unsigned int)get_number(&p2, NULL, 1);
+
+                if ( *p2 == 0 ) {
+                    if ( stricmp(tokens[1], "service_header") == 0 ) {
+                        *RETX_SERVICE_HEADER_CFG = hex_val;
+                        printk("RETX_SERVICE_HEADER_CFG - 0x%08x\n", *RETX_SERVICE_HEADER_CFG);
+                    }
+                    else if ( stricmp(tokens[1], "service_mask") == 0 ) {
+                        *RETX_MASK_HEADER_CFG = hex_val;
+                        printk("RETX_MASK_HEADER_CFG - 0x%08x\n", *RETX_MASK_HEADER_CFG);
+                    }
+                }
+                if ( *p1 == 0 ) {
+                    if ( stricmp(tokens[1], "td_max") == 0 ) {
+                        (unsigned int)RETX_TD_CFG->td_max = (dec_val >= 0xff ? 0Xff : dec_val);
+                        printk("RETX_TD_CFG->td_max - %d\n", RETX_TD_CFG->td_max);
+                    }
+                    else if ( stricmp(tokens[1], "td_min") == 0 ) {
+                        (unsigned int)RETX_TD_CFG->td_min = (dec_val >= 0xff ? 0Xff : dec_val);
+                        printk("RETX_TD_CFG->td_min - %d\n", RETX_TD_CFG->td_min);
+                    }
+                    else if ( stricmp(tokens[1], "fw_alpha") == 0 ) {
+                        RETX_TSYNC_CFG->fw_alpha = dec_val >= 0x7FFE ? 0X7EEE : dec_val;
+                        printk("RETX_TSYNC_CFG->fw_alpha - %d\n", RETX_TSYNC_CFG->fw_alpha);
+                    }
+                    else if ( stricmp(tokens[1], "sync_inp") == 0 ) {
+                        RETX_TSYNC_CFG->sync_inp = dec_val >= 0x7FFE ? 0X7EEE : dec_val;
+                        printk("RETX_TSYNC_CFG->sync_inp - %d\n", RETX_TSYNC_CFG->sync_inp);
+                    }
+                    else if ( stricmp(tokens[1], "invld_range") == 0 ) {
+                        RETX_MODE_CFG->invld_range = dec_val >= 250 ? 250 : dec_val;
+                        printk("RETX_MODE_CFG->invld_range - %d\n", RETX_MODE_CFG->invld_range);
+                    }
+                    else if ( stricmp(tokens[1], "buff_size") == 0 ) {
+                        dec_val = (dec_val + 31) / 32;
+                        RETX_MODE_CFG->buff_size = dec_val >= 4096 / 32 ? 4096 / 32 : dec_val;
+                        printk("RETX_MODE_CFG->buff_size - %d\n", RETX_MODE_CFG->buff_size);
+                    }
+                }
+            }
+
+        }
+    }
+
+    return count;
+}
+
+static int proc_read_retx_dsl_param(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+    int len = 0;
+
+    len += sprintf(page + off + len, "DSL Param [timestamp %ld.%ld]:\n", g_retx_polling_start.tv_sec, g_retx_polling_start.tv_usec);
+
+    if ( g_xdata_addr == NULL )
+        len += sprintf(page + off + len, "  DSL parameters not available !\n");
+    else {
+        volatile struct dsl_param *p_dsl_param = (volatile struct dsl_param *)g_xdata_addr;
+
+        len += sprintf(page + off + len, "  update_flag             = %u\n",     p_dsl_param->update_flag);
+        len += sprintf(page + off + len, "  MinDelayrt              = %u\n",     p_dsl_param->MinDelayrt);
+        len += sprintf(page + off + len, "  MaxDelayrt              = %u\n",     p_dsl_param->MaxDelayrt);
+        len += sprintf(page + off + len, "  RetxEnable              = %u\n",     p_dsl_param->RetxEnable);
+        len += sprintf(page + off + len, "  ServiceSpecificReTx     = %u\n",     p_dsl_param->ServiceSpecificReTx);
+        len += sprintf(page + off + len, "  ReTxPVC                 = 0x%08x\n", p_dsl_param->ReTxPVC);
+        len += sprintf(page + off + len, "  RxDtuCorruptedCNT       = %u\n",     p_dsl_param->RxDtuCorruptedCNT);
+        len += sprintf(page + off + len, "  RxRetxDtuUnCorrectedCNT = %u\n",     p_dsl_param->RxRetxDtuUnCorrectedCNT);
+        len += sprintf(page + off + len, "  RxLastEFB               = %u\n",     p_dsl_param->RxLastEFB);
+        len += sprintf(page + off + len, "  RxDtuCorrectedCNT       = %u\n",     p_dsl_param->RxDtuCorrectedCNT);
+    }
+    if ( g_retx_polling_end.tv_sec != 0 || g_retx_polling_end.tv_usec != 0 ) {
+        unsigned long polling_time_usec;
+
+        polling_time_usec = (g_retx_polling_end.tv_sec - g_retx_polling_start.tv_sec) * 1000000 + (g_retx_polling_end.tv_usec - g_retx_polling_start.tv_usec);
+        len += sprintf(page + off + len, "DSL Param Update Time: %lu.%03lums\n", polling_time_usec / 1000, polling_time_usec % 1000);
+    }
+
+    return len;
+}
+
+ #endif
+
 #endif
 
 static int stricmp(const char *p1, const char *p2)
 {
     int c1, c2;
 
-    while ( *p1 && *p2 )
-    {
+    while ( *p1 && *p2 ) {
         c1 = *p1 >= 'A' && *p1 <= 'Z' ? *p1 + 'a' - 'A' : *p1;
         c2 = *p2 >= 'A' && *p2 <= 'Z' ? *p2 + 'a' - 'A' : *p2;
         if ( (c1 -= c2) )
@@ -1905,12 +4028,12 @@ static int stricmp(const char *p1, const char *p2)
 }
 
 #if defined(ENABLE_DBG_PROC) && ENABLE_DBG_PROC
+
 static int strincmp(const char *p1, const char *p2, int n)
 {
     int c1 = 0, c2;
 
-    while ( n && *p1 && *p2 )
-    {
+    while ( n && *p1 && *p2 ) {
         c1 = *p1 >= 'A' && *p1 <= 'Z' ? *p1 + 'a' - 'A' : *p1;
         c2 = *p2 >= 'A' && *p2 <= 'Z' ? *p2 + 'a' - 'A' : *p2;
         if ( (c1 -= c2) )
@@ -1922,6 +4045,104 @@ static int strincmp(const char *p1, const char *p2, int n)
 
     return n ? *p1 - *p2 : c1;
 }
+
+static int get_token(char **p1, char **p2, int *len, int *colon)
+{
+    int tlen = 0;
+
+    while ( *len && !((**p1 >= 'A' && **p1 <= 'Z') || (**p1 >= 'a' && **p1<= 'z') || (**p1 >= '0' && **p1<= '9')) )
+    {
+        (*p1)++;
+        (*len)--;
+    }
+    if ( !*len )
+        return 0;
+
+    if ( *colon )
+    {
+        *colon = 0;
+        *p2 = *p1;
+        while ( *len && **p2 > ' ' && **p2 != ',' )
+        {
+            if ( **p2 == ':' )
+            {
+                *colon = 1;
+                break;
+            }
+            (*p2)++;
+            (*len)--;
+            tlen++;
+        }
+        **p2 = 0;
+    }
+    else
+    {
+        *p2 = *p1;
+        while ( *len && **p2 > ' ' && **p2 != ',' )
+        {
+            (*p2)++;
+            (*len)--;
+            tlen++;
+        }
+        **p2 = 0;
+    }
+
+    return tlen;
+}
+
+static unsigned int get_number(char **p, int *len, int is_hex)
+{
+    unsigned int ret = 0;
+    unsigned int n = 0;
+
+    if ( (*p)[0] == '0' && (*p)[1] == 'x' )
+    {
+        is_hex = 1;
+        (*p) += 2;
+        if ( len )
+            (*len) -= 2;
+    }
+
+    if ( is_hex )
+    {
+        while ( (!len || *len) && ((**p >= '0' && **p <= '9') || (**p >= 'a' && **p <= 'f') || (**p >= 'A' && **p <= 'F')) )
+        {
+            if ( **p >= '0' && **p <= '9' )
+                n = **p - '0';
+            else if ( **p >= 'a' && **p <= 'f' )
+               n = **p - 'a' + 10;
+            else if ( **p >= 'A' && **p <= 'F' )
+                n = **p - 'A' + 10;
+            ret = (ret << 4) | n;
+            (*p)++;
+            if ( len )
+                (*len)--;
+        }
+    }
+    else
+    {
+        while ( (!len || *len) && **p >= '0' && **p <= '9' )
+        {
+            n = **p - '0';
+            ret = ret * 10 + n;
+            (*p)++;
+            if ( len )
+                (*len)--;
+        }
+    }
+
+    return ret;
+}
+
+static void ignore_space(char **p, int *len)
+{
+    while ( *len && (**p <= ' ' || **p == ':' || **p == '.' || **p == ',') )
+    {
+        (*p)++;
+        (*len)--;
+    }
+}
+
 #endif
 
 static INLINE int ifx_atm_version(char *buf)
@@ -1931,18 +4152,10 @@ static INLINE int ifx_atm_version(char *buf)
 
     ifx_atm_get_fw_ver(&major, &minor);
 
-    len += sprintf(buf + len, "Infineon Technologies ATM driver version %d.%d.%d\n", IFX_ATM_VER_MAJOR, IFX_ATM_VER_MID, IFX_ATM_VER_MINOR);
-    len += sprintf(buf + len, "Infineon Technologies ATM (A1) firmware version %d.%d\n", major, minor);
+    len += sprintf(buf + len, "    ATM (A1) firmware version %d.%d.%d\n", IFX_ATM_VER_MAJOR, IFX_ATM_VER_MID,IFX_ATM_VER_MINOR);
 
     return len;
 }
-
-#ifdef MODULE
-static INLINE void reset_ppe(void)
-{
-    //  TODO:
-}
-#endif
 
 static INLINE void check_parameters(void)
 {
@@ -2155,7 +4368,9 @@ static INLINE void init_rx_tables(void)
      *  General Registers
      */
     *CFG_WRX_HTUTS  = MAX_PVC_NUMBER + OAM_HTU_ENTRY_NUMBER;
+#ifndef CONFIG_AMAZON_SE
     *CFG_WRX_QNUM   = MAX_QUEUE_NUMBER;
+#endif
     *CFG_WRX_DCHNUM = RX_DMA_CH_TOTAL;
     *WRX_DMACH_ON   = (1 << RX_DMA_CH_TOTAL) - 1;
     *WRX_HUNT_BITTH = DEFAULT_RX_HUNT_BITTH;
@@ -2279,11 +4494,12 @@ static INLINE void init_tx_tables(void)
     /*
      *  WTX Queue Configuration Table
      */
-    wtx_queue_config.type  = 0x0;
     wtx_queue_config.qsben = 1;
     wtx_queue_config.sbid  = 0;
-    for ( i = 0; i < MAX_TX_DMA_CHANNEL_NUMBER; i++ )
+    for ( i = 0; i < MAX_TX_DMA_CHANNEL_NUMBER; i++ ) {
+        wtx_queue_config.qsb_vcid = i;
         *WTX_QUEUE_CONFIG(i) = wtx_queue_config;
+    }
 
     /*
      *  WTX DMA Channel Configuration Table
@@ -2337,13 +4553,29 @@ static int atm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr
     IFX_REG_W32(0x0F, UTP_CFG);
 #endif
 
-    pr_debug("enter showtime, cell rate: 0 - %d, 1 - %d, xdata addr: 0x%08x\n", g_atm_priv_data.port[0].tx_max_cell_rate, g_atm_priv_data.port[1].tx_max_cell_rate, (unsigned int)g_xdata_addr);
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    if ( !timer_pending(&g_retx_polling_timer) ) {
+        g_retx_polling_cnt = HZ;
+        g_retx_polling_timer.expires = jiffies + RETX_POLLING_INTERVAL;
+        add_timer(&g_retx_polling_timer);
+    }
+#endif
+
+    //printk("enter showtime, cell rate: 0 - %d, 1 - %d, xdata addr: 0x%08x\n", g_atm_priv_data.port[0].tx_max_cell_rate, g_atm_priv_data.port[1].tx_max_cell_rate, (unsigned int)g_xdata_addr);
 
     return IFX_SUCCESS;
 }
 
 static int atm_showtime_exit(void)
 {
+    if ( !g_showtime )
+        return IFX_ERROR;
+
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    RETX_MODE_CFG->retx_en = 0; //  disable ReTX
+    del_timer(&g_retx_polling_timer);
+#endif
+
 #if defined(CONFIG_VR9)
     IFX_REG_W32(0x00, UTP_CFG);
 #endif
@@ -2353,7 +4585,7 @@ static int atm_showtime_exit(void)
     //  TODO: ReTX clean state
     g_xdata_addr = NULL;
 
-    pr_debug("leave showtime\n");
+    printk("leave showtime\n");
 
     return IFX_SUCCESS;
 }
@@ -2384,10 +4616,6 @@ static int __devinit ifx_atm_init(void)
     int i, j;
     char ver_str[256];
 
-#ifdef MODULE
-    reset_ppe();
-#endif
-
     check_parameters();
 
     ret = init_priv_data();
@@ -2407,6 +4635,7 @@ static int __devinit ifx_atm_init(void)
 #else
 	g_atm_priv_data.port[port_num].dev = atm_dev_register("ifxmips_atm", NULL, &g_ifx_atm_ops, -1, NULL);
 #endif
+
         if ( !g_atm_priv_data.port[port_num].dev ) {
             err("failed to register atm device %d!", port_num);
             ret = -EIO;
@@ -2433,6 +4662,13 @@ static int __devinit ifx_atm_init(void)
     }
     disable_irq(PPE_MAILBOX_IGU1_INT);
 
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    init_atm_tc_retrans_param();
+
+    init_timer(&g_retx_polling_timer);
+    g_retx_polling_timer.function = retx_polling_func;
+#endif
+
     ret = ifx_pp32_start(0);
     if ( ret ) {
         err("ifx_pp32_start fail!");
@@ -2440,7 +4676,8 @@ static int __devinit ifx_atm_init(void)
     }
 
     port_cell.port_num = ATM_PORT_NUMBER;
-    ifx_mei_atm_showtime_check(&g_showtime, &port_cell, &g_xdata_addr);
+    if( !IS_ERR(&ifx_mei_atm_showtime_check) && &ifx_mei_atm_showtime_check)
+        ifx_mei_atm_showtime_check(&g_showtime, &port_cell, &g_xdata_addr);
     if ( g_showtime ) {
         for ( i = 0; i < ATM_PORT_NUMBER; i++ )
             if ( port_cell.tx_link_rate[i] != 0 )
@@ -2452,11 +4689,18 @@ static int __devinit ifx_atm_init(void)
     qsb_global_set();
     validate_oam_htu_entry();
 
+#if 0 /*defined(ENABLE_LED_FRAMEWORK) && ENABLE_LED_FRAMEWORK*/
+    ifx_led_trigger_register("dsl_data", &g_data_led_trigger);
+#endif
+
     /*  create proc file    */
     proc_file_create();
 
-    ifx_mei_atm_showtime_enter = atm_showtime_enter;
-    ifx_mei_atm_showtime_exit  = atm_showtime_exit;
+    if( !IS_ERR(&ifx_mei_atm_showtime_enter) && &ifx_mei_atm_showtime_enter )
+        ifx_mei_atm_showtime_enter = atm_showtime_enter;
+
+    if( !IS_ERR(&ifx_mei_atm_showtime_exit) && !ifx_mei_atm_showtime_exit )
+        ifx_mei_atm_showtime_exit  = atm_showtime_exit;
 
     ifx_atm_version(ver_str);
     printk(KERN_INFO "%s", ver_str);
@@ -2489,14 +4733,26 @@ static void __exit ifx_atm_exit(void)
 {
     int port_num;
 
-    ifx_mei_atm_showtime_enter = NULL;
-    ifx_mei_atm_showtime_exit  = NULL;
+    if( !IS_ERR(&ifx_mei_atm_showtime_enter) && &ifx_mei_atm_showtime_enter )
+        ifx_mei_atm_showtime_enter = NULL;
+    if( !IS_ERR(&ifx_mei_atm_showtime_exit) && !ifx_mei_atm_showtime_exit )
+        ifx_mei_atm_showtime_exit  = NULL;
 
     proc_file_delete();
+
+#if 0 /*defined(ENABLE_LED_FRAMEWORK) && ENABLE_LED_FRAMEWORK*/
+    ifx_led_trigger_deregister(g_data_led_trigger);
+    g_data_led_trigger = NULL;
+#endif
 
     invalidate_oam_htu_entry();
 
     ifx_pp32_stop(0);
+
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+    del_timer(&g_retx_polling_timer);
+    clear_atm_tc_retrans_param();
+#endif
 
     free_irq(PPE_MAILBOX_IGU1_INT, &g_atm_priv_data);
 

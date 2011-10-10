@@ -1,6 +1,6 @@
 /******************************************************************************
 **
-** FILE NAME    : ifxmips_atm_danube.c
+** FILE NAME    : ifxmips_atm_vr9.c
 ** PROJECT      : UEIP
 ** MODULES      : ATM
 **
@@ -45,30 +45,21 @@
 /*
  *  Chip Specific Head File
  */
-#include <lantiq_soc.h>
-#include "ifxmips_compat.h"
+#include <ifx_types.h>
+#include <ifx_regs.h>
+#include <common_routines.h>
+#include <ifx_pmu.h>
+#include <ifx_rcu.h>
 #include "ifxmips_atm_core.h"
-#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
-  #include "ifxmips_atm_fw_danube_retx.h"
-#else
-  #include "ifxmips_atm_fw_danube.h"
-#endif
+#include "ifxmips_atm_fw_vr9.h"
+
+
 
 /*
  * ####################################
  *              Definition
  * ####################################
  */
-
-/*
- *  EMA Settings
- */
-#define EMA_CMD_BUF_LEN      0x0040
-#define EMA_CMD_BASE_ADDR    (0x00001580 << 2)
-#define EMA_DATA_BUF_LEN     0x0100
-#define EMA_DATA_BASE_ADDR   (0x00001900 << 2)
-#define EMA_WRITE_BURST      0x2
-#define EMA_READ_BURST       0x2
 
 
 
@@ -84,7 +75,7 @@
 static inline void init_pmu(void);
 static inline void uninit_pmu(void);
 static inline void reset_ppe(void);
-static inline void init_ema(void);
+static inline void init_pdma(void);
 static inline void init_mailbox(void);
 static inline void init_atm_tc(void);
 static inline void clear_share_buffer(void);
@@ -107,7 +98,7 @@ static inline void clear_share_buffer(void);
 
 static inline void init_pmu(void)
 {
-    //*(unsigned long *)0xBF10201C &= ~((1 << 15) | (1 << 13) | (1 << 9));
+    //*PMU_PWDCR &= ~((1 << 29) | (1 << 22) | (1 << 21) | (1 << 19) | (1 << 18));
     //PPE_TOP_PMU_SETUP(IFX_PMU_ENABLE);
     PPE_SLL01_PMU_SETUP(IFX_PMU_ENABLE);
     PPE_TC_PMU_SETUP(IFX_PMU_ENABLE);
@@ -130,35 +121,26 @@ static inline void uninit_pmu(void)
 
 static inline void reset_ppe(void)
 {
-#if 0 //def MODULE
-    unsigned int etop_cfg;
-    unsigned int etop_mdio_cfg;
-    unsigned int etop_ig_plen_ctrl;
-    unsigned int enet_mac_cfg;
-
-    etop_cfg            = *IFX_PP32_ETOP_CFG;
-    etop_mdio_cfg       = *IFX_PP32_ETOP_MDIO_CFG;
-    etop_ig_plen_ctrl   = *IFX_PP32_ETOP_IG_PLEN_CTRL;
-    enet_mac_cfg        = *IFX_PP32_ENET_MAC_CFG;
-
-    *IFX_PP32_ETOP_CFG &= ~0x03C0;
-
+#ifdef MODULE
     //  reset PPE
+    ifx_rcu_rst(IFX_RCU_DOMAIN_DSLDFE, IFX_RCU_MODULE_ATM);
+    udelay(1000);
+    ifx_rcu_rst(IFX_RCU_DOMAIN_DSLTC, IFX_RCU_MODULE_ATM);
+    udelay(1000);
     ifx_rcu_rst(IFX_RCU_DOMAIN_PPE, IFX_RCU_MODULE_ATM);
-
-    *IFX_PP32_ETOP_MDIO_CFG     = etop_mdio_cfg;
-    *IFX_PP32_ETOP_IG_PLEN_CTRL = etop_ig_plen_ctrl;
-    *IFX_PP32_ENET_MAC_CFG      = enet_mac_cfg;
-    *IFX_PP32_ETOP_CFG          = etop_cfg;
+    udelay(1000);
+    *PP32_SRST &= ~0x000303CF;
+    udelay(1000);
+    *PP32_SRST |= 0x000303CF;
+    udelay(1000);
 #endif
 }
 
-static inline void init_ema(void)
+static inline void init_pdma(void)
 {
-    IFX_REG_W32((EMA_CMD_BUF_LEN << 16) | (EMA_CMD_BASE_ADDR >> 2), EMA_CMDCFG);
-    IFX_REG_W32((EMA_DATA_BUF_LEN << 16) | (EMA_DATA_BASE_ADDR >> 2), EMA_DATACFG);
-    IFX_REG_W32(0x000000FF, EMA_IER);
-    IFX_REG_W32(EMA_READ_BURST | (EMA_WRITE_BURST << 2), EMA_CFG);
+    IFX_REG_W32(0x08,       PDMA_CFG);
+    IFX_REG_W32(0x00203580, SAR_PDMA_RX_CMDBUF_CFG);
+    IFX_REG_W32(0x004035A0, SAR_PDMA_RX_FW_CMDBUF_CFG);
 }
 
 static inline void init_mailbox(void)
@@ -171,33 +153,26 @@ static inline void init_mailbox(void)
 
 static inline void init_atm_tc(void)
 {
-    IFX_REG_W32(0x0000,     DREG_AT_CTRL);
-    IFX_REG_W32(0x0000,     DREG_AR_CTRL);
-    IFX_REG_W32(0x0,        DREG_AT_IDLE0);
-    IFX_REG_W32(0x0,        DREG_AT_IDLE1);
-    IFX_REG_W32(0x0,        DREG_AR_IDLE0);
-    IFX_REG_W32(0x0,        DREG_AR_IDLE1);
-    IFX_REG_W32(0x40,       RFBI_CFG);
-    IFX_REG_W32(0x1600,     SFSM_DBA0);
-    IFX_REG_W32(0x1718,     SFSM_DBA1);
-    IFX_REG_W32(0x1830,     SFSM_CBA0);
-    IFX_REG_W32(0x1844,     SFSM_CBA1);
-    IFX_REG_W32(0x14014,    SFSM_CFG0);
-    IFX_REG_W32(0x14014,    SFSM_CFG1);
-    IFX_REG_W32(0x1858,     FFSM_DBA0);
-    IFX_REG_W32(0x18AC,     FFSM_DBA1);
-    IFX_REG_W32(0x10006,    FFSM_CFG0);
-    IFX_REG_W32(0x10006,    FFSM_CFG1);
-    IFX_REG_W32(0x00000001, FFSM_IDLE_HEAD_BC0);
-    IFX_REG_W32(0x00000001, FFSM_IDLE_HEAD_BC1);
+    /*  clear sync state    */
+    *SFSM_STATE0    = 0;
+    *SFSM_STATE1    = 0;
+
+    /*  enable keep IDLE    */
+//    *SFSM_CFG0     |= 1 << 15;
+//    *SFSM_CFG1     |= 1 << 15;
 }
 
 static inline void clear_share_buffer(void)
 {
-    volatile u32 *p = SB_RAM0_ADDR(0);
+    volatile u32 *p;
     unsigned int i;
 
+    p = SB_RAM0_ADDR(0);
     for ( i = 0; i < SB_RAM0_DWLEN + SB_RAM1_DWLEN + SB_RAM2_DWLEN + SB_RAM3_DWLEN; i++ )
+        IFX_REG_W32(0, p++);
+
+    p = SB_RAM6_ADDR(0);
+    for ( i = 0; i < SB_RAM6_DWLEN; i++ )
         IFX_REG_W32(0, p++);
 }
 
@@ -205,32 +180,36 @@ static inline void clear_share_buffer(void)
  *  Description:
  *    Download PPE firmware binary code.
  *  Input:
+ *    pp32      --- int, which pp32 core
  *    src       --- u32 *, binary code buffer
  *    dword_len --- unsigned int, binary code length in DWORD (32-bit)
  *  Output:
  *    int       --- IFX_SUCCESS:    Success
  *                  else:           Error Code
  */
-static inline int pp32_download_code(u32 *code_src, unsigned int code_dword_len, u32 *data_src, unsigned int data_dword_len)
+static inline int pp32_download_code(int pp32, u32 *code_src, unsigned int code_dword_len, u32 *data_src, unsigned int data_dword_len)
 {
+    unsigned int clr, set;
     volatile u32 *dest;
 
     if ( code_src == 0 || ((unsigned long)code_src & 0x03) != 0
         || data_src == 0 || ((unsigned long)data_src & 0x03) != 0 )
         return IFX_ERROR;
 
+    clr = pp32 ? 0xF0 : 0x0F;
     if ( code_dword_len <= CDM_CODE_MEMORYn_DWLEN(0) )
-        IFX_REG_W32(0x00, CDM_CFG);
+        set = pp32 ? (3 << 6): (2 << 2);
     else
-        IFX_REG_W32(0x04, CDM_CFG);
+        set = 0x00;
+    IFX_REG_W32_MASK(clr, set, CDM_CFG);
 
     /*  copy code   */
-    dest = CDM_CODE_MEMORY(0, 0);
+    dest = CDM_CODE_MEMORY(pp32, 0);
     while ( code_dword_len-- > 0 )
         IFX_REG_W32(*code_src++, dest++);
 
     /*  copy data   */
-    dest = CDM_DATA_MEMORY(0, 0);
+    dest = CDM_DATA_MEMORY(pp32, 0);
     while ( data_dword_len-- > 0 )
         IFX_REG_W32(*data_src++, dest++);
 
@@ -250,7 +229,7 @@ extern void ifx_atm_get_fw_ver(unsigned int *major, unsigned int *minor)
     ASSERT(major != NULL, "pointer is NULL");
     ASSERT(minor != NULL, "pointer is NULL");
 
-#if (defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX) || defined(VER_IN_FIRMWARE)
+#ifdef VER_IN_FIRMWARE
     *major = FW_VER_ID->major;
     *minor = FW_VER_ID->minor;
 #else
@@ -265,7 +244,7 @@ void ifx_atm_init_chip(void)
 
     reset_ppe();
 
-    init_ema();
+    init_pdma();
 
     init_mailbox();
 
@@ -290,15 +269,16 @@ void ifx_atm_uninit_chip(void)
  */
 int ifx_pp32_start(int pp32)
 {
+    unsigned int mask = 1 << (pp32 << 4);
     int ret;
 
     /*  download firmware   */
-    ret = pp32_download_code(firmware_binary_code, sizeof(firmware_binary_code) / sizeof(*firmware_binary_code), firmware_binary_data, sizeof(firmware_binary_data) / sizeof(*firmware_binary_data));
+    ret = pp32_download_code(pp32, firmware_binary_code, sizeof(firmware_binary_code) / sizeof(*firmware_binary_code), firmware_binary_data, sizeof(firmware_binary_data) / sizeof(*firmware_binary_data));
     if ( ret != IFX_SUCCESS )
         return ret;
 
     /*  run PP32    */
-    IFX_REG_W32(DBG_CTRL_START_SET(1), PP32_DBG_CTRL);
+    IFX_REG_W32_MASK(mask, 0, PP32_FREEZE);
 
     /*  idle for a while to let PP32 init itself    */
     udelay(10);
@@ -316,6 +296,8 @@ int ifx_pp32_start(int pp32)
  */
 void ifx_pp32_stop(int pp32)
 {
+    unsigned int mask = 1 << (pp32 << 4);
+
     /*  halt PP32   */
-    IFX_REG_W32(DBG_CTRL_STOP_SET(1), PP32_DBG_CTRL);
+    IFX_REG_W32_MASK(0, mask, PP32_FREEZE);
 }

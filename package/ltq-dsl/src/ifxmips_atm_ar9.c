@@ -1,6 +1,6 @@
 /******************************************************************************
 **
-** FILE NAME    : ifxmips_atm_danube.c
+** FILE NAME    : ifxmips_atm_ar9.c
 ** PROJECT      : UEIP
 ** MODULES      : ATM
 **
@@ -47,12 +47,17 @@
  */
 #include <lantiq_soc.h>
 #include "ifxmips_compat.h"
+#define IFX_MEI_BSP 1
+#include "ifxmips_mei_interface.h"
 #include "ifxmips_atm_core.h"
-#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
-  #include "ifxmips_atm_fw_danube_retx.h"
+#include "ifxmips_atm_ppe_common.h"
+ #if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+  #include "ifxmips_atm_fw_ar9_retx.h"
 #else
-  #include "ifxmips_atm_fw_danube.h"
+  #include "ifxmips_atm_fw_ar9.h"
 #endif
+
+
 
 /*
  * ####################################
@@ -64,9 +69,9 @@
  *  EMA Settings
  */
 #define EMA_CMD_BUF_LEN      0x0040
-#define EMA_CMD_BASE_ADDR    (0x00001580 << 2)
+#define EMA_CMD_BASE_ADDR    (0x00003B80 << 2)
 #define EMA_DATA_BUF_LEN     0x0100
-#define EMA_DATA_BASE_ADDR   (0x00001900 << 2)
+#define EMA_DATA_BASE_ADDR   (0x00003C00 << 2)
 #define EMA_WRITE_BURST      0x2
 #define EMA_READ_BURST       0x2
 
@@ -130,26 +135,9 @@ static inline void uninit_pmu(void)
 
 static inline void reset_ppe(void)
 {
-#if 0 //def MODULE
-    unsigned int etop_cfg;
-    unsigned int etop_mdio_cfg;
-    unsigned int etop_ig_plen_ctrl;
-    unsigned int enet_mac_cfg;
-
-    etop_cfg            = *IFX_PP32_ETOP_CFG;
-    etop_mdio_cfg       = *IFX_PP32_ETOP_MDIO_CFG;
-    etop_ig_plen_ctrl   = *IFX_PP32_ETOP_IG_PLEN_CTRL;
-    enet_mac_cfg        = *IFX_PP32_ENET_MAC_CFG;
-
-    *IFX_PP32_ETOP_CFG &= ~0x03C0;
-
+#ifdef MODULE
     //  reset PPE
-    ifx_rcu_rst(IFX_RCU_DOMAIN_PPE, IFX_RCU_MODULE_ATM);
-
-    *IFX_PP32_ETOP_MDIO_CFG     = etop_mdio_cfg;
-    *IFX_PP32_ETOP_IG_PLEN_CTRL = etop_ig_plen_ctrl;
-    *IFX_PP32_ENET_MAC_CFG      = enet_mac_cfg;
-    *IFX_PP32_ETOP_CFG          = etop_cfg;
+    //ifx_rcu_rst(IFX_RCU_DOMAIN_PPE, IFX_RCU_MODULE_ATM);
 #endif
 }
 
@@ -171,25 +159,6 @@ static inline void init_mailbox(void)
 
 static inline void init_atm_tc(void)
 {
-    IFX_REG_W32(0x0000,     DREG_AT_CTRL);
-    IFX_REG_W32(0x0000,     DREG_AR_CTRL);
-    IFX_REG_W32(0x0,        DREG_AT_IDLE0);
-    IFX_REG_W32(0x0,        DREG_AT_IDLE1);
-    IFX_REG_W32(0x0,        DREG_AR_IDLE0);
-    IFX_REG_W32(0x0,        DREG_AR_IDLE1);
-    IFX_REG_W32(0x40,       RFBI_CFG);
-    IFX_REG_W32(0x1600,     SFSM_DBA0);
-    IFX_REG_W32(0x1718,     SFSM_DBA1);
-    IFX_REG_W32(0x1830,     SFSM_CBA0);
-    IFX_REG_W32(0x1844,     SFSM_CBA1);
-    IFX_REG_W32(0x14014,    SFSM_CFG0);
-    IFX_REG_W32(0x14014,    SFSM_CFG1);
-    IFX_REG_W32(0x1858,     FFSM_DBA0);
-    IFX_REG_W32(0x18AC,     FFSM_DBA1);
-    IFX_REG_W32(0x10006,    FFSM_CFG0);
-    IFX_REG_W32(0x10006,    FFSM_CFG1);
-    IFX_REG_W32(0x00000001, FFSM_IDLE_HEAD_BC0);
-    IFX_REG_W32(0x00000001, FFSM_IDLE_HEAD_BC1);
 }
 
 static inline void clear_share_buffer(void)
@@ -197,7 +166,7 @@ static inline void clear_share_buffer(void)
     volatile u32 *p = SB_RAM0_ADDR(0);
     unsigned int i;
 
-    for ( i = 0; i < SB_RAM0_DWLEN + SB_RAM1_DWLEN + SB_RAM2_DWLEN + SB_RAM3_DWLEN; i++ )
+    for ( i = 0; i < SB_RAM0_DWLEN + SB_RAM1_DWLEN + SB_RAM2_DWLEN + SB_RAM3_DWLEN + SB_RAM4_DWLEN; i++ )
         IFX_REG_W32(0, p++);
 }
 
@@ -298,7 +267,7 @@ int ifx_pp32_start(int pp32)
         return ret;
 
     /*  run PP32    */
-    IFX_REG_W32(DBG_CTRL_START_SET(1), PP32_DBG_CTRL);
+    IFX_REG_W32(DBG_CTRL_RESTART, PP32_DBG_CTRL(0));
 
     /*  idle for a while to let PP32 init itself    */
     udelay(10);
@@ -317,5 +286,5 @@ int ifx_pp32_start(int pp32)
 void ifx_pp32_stop(int pp32)
 {
     /*  halt PP32   */
-    IFX_REG_W32(DBG_CTRL_STOP_SET(1), PP32_DBG_CTRL);
+    IFX_REG_W32(DBG_CTRL_STOP, PP32_DBG_CTRL(0));
 }

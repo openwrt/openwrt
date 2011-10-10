@@ -26,10 +26,52 @@
 
 
 
+/*!
+  \defgroup IFX_ATM UEIP Project - ATM driver module
+  \brief UEIP Project - ATM driver module, support Danube, Amazon-SE, AR9, VR9.
+ */
+
+/*!
+  \defgroup IFX_ATM_IOCTL IOCTL Commands
+  \ingroup IFX_ATM
+  \brief IOCTL Commands used by user application.
+ */
+
+/*!
+  \defgroup IFX_ATM_STRUCT Structures
+  \ingroup IFX_ATM
+  \brief Structures used by user application.
+ */
+
+/*!
+  \file ifx_atm.h
+  \ingroup IFX_ATM
+  \brief ATM driver header file
+ */
+
+
+
+/*
+ * ####################################
+ *              Definition
+ * ####################################
+ */
+
+/*!
+  \addtogroup IFX_ATM_STRUCT
+ */
+/*@{*/
+
 /*
  *  ATM MIB
  */
 
+/*!
+  \struct atm_cell_ifEntry_t
+  \brief Structure used for Cell Level MIB Counters.
+
+  User application use this structure to call IOCTL command "PPE_ATM_MIB_CELL".
+ */
 typedef struct {
 	__u32	ifHCInOctets_h;     /*!< byte counter of ingress cells (upper 32 bits, total 64 bits)   */
 	__u32	ifHCInOctets_l;     /*!< byte counter of ingress cells (lower 32 bits, total 64 bits)   */
@@ -40,6 +82,12 @@ typedef struct {
 	__u32	ifOutErrors;        /*!< counter of error egress cells      */
 } atm_cell_ifEntry_t;
 
+/*!
+  \struct atm_aal5_ifEntry_t
+  \brief Structure used for AAL5 Frame Level MIB Counters.
+
+  User application use this structure to call IOCTL command "PPE_ATM_MIB_AAL5".
+ */
 typedef struct {
 	__u32	ifHCInOctets_h;     /*!< byte counter of ingress packets (upper 32 bits, total 64 bits) */
 	__u32	ifHCInOctets_l;     /*!< byte counter of ingress packets (lower 32 bits, total 64 bits) */
@@ -53,18 +101,48 @@ typedef struct {
 	__u32	ifOutDiscards;      /*!< counter of dropped egress packets  */
 } atm_aal5_ifEntry_t;
 
+/*!
+  \struct atm_aal5_vcc_t
+  \brief Structure used for per PVC AAL5 Frame Level MIB Counters.
+
+  This structure is a part of structure "atm_aal5_vcc_x_t".
+ */
 typedef struct {
 	__u32	aal5VccCrcErrors;       /*!< counter of ingress packets with CRC error  */
 	__u32	aal5VccSarTimeOuts;     /*!< counter of ingress packets with Re-assemble timeout    */  //no timer support yet
 	__u32	aal5VccOverSizedSDUs;   /*!< counter of oversized ingress packets       */
 } atm_aal5_vcc_t;
 
+/*!
+  \struct atm_aal5_vcc_x_t
+  \brief Structure used for per PVC AAL5 Frame Level MIB Counters.
+
+  User application use this structure to call IOCTL command "PPE_ATM_MIB_VCC".
+ */
 typedef struct {
 	int             vpi;        /*!< VPI of the VCC to get MIB counters */
 	int             vci;        /*!< VCI of the VCC to get MIB counters */
 	atm_aal5_vcc_t  mib_vcc;    /*!< structure to get MIB counters      */
 } atm_aal5_vcc_x_t;
 
+/*@}*/
+
+
+
+/*
+ * ####################################
+ *                IOCTL
+ * ####################################
+ */
+
+/*!
+  \addtogroup IFX_ATM_IOCTL
+ */
+/*@{*/
+
+/*
+ *  ioctl Command
+ */
 /*!
   \brief ATM IOCTL Magic Number
  */
@@ -99,10 +177,20 @@ typedef struct {
 
 
 
+/*
+ * ####################################
+ *                 API
+ * ####################################
+ */
+
 #ifdef __KERNEL__
 struct port_cell_info {
     unsigned int    port_num;
     unsigned int    tx_link_rate[2];
 };
 #endif
-#endif
+
+
+
+#endif  //  IFX_ATM_H
+

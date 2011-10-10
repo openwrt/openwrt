@@ -52,6 +52,8 @@
 
 #define DEBUG_QOS                       1
 
+#define DISABLE_QOS_WORKAROUND          0
+
 #define ENABLE_DBG_PROC                 1
 
 #define ENABLE_FW_PROC                  1
@@ -60,6 +62,13 @@
   #define ENABLE_TASKLET                1
 #endif
 
+#ifdef CONFIG_IFX_ATM_RETX
+  #define ENABLE_ATM_RETX               1
+#endif
+
+#if defined(CONFIG_DSL_MEI_CPE_DRV) && !defined(CONFIG_IFXMIPS_DSL_CPE_MEI)
+  #define CONFIG_IFXMIPS_DSL_CPE_MEI    1
+#endif
 
 /*
  *  Debug/Assert/Error Message
@@ -72,7 +81,8 @@
 #define DBG_ENABLE_MASK_DUMP_SKB_TX     (1 << 9)
 #define DBG_ENABLE_MASK_DUMP_QOS        (1 << 10)
 #define DBG_ENABLE_MASK_DUMP_INIT       (1 << 11)
-#define DBG_ENABLE_MASK_ALL             (DBG_ENABLE_MASK_ERR | DBG_ENABLE_MASK_DEBUG_PRINT | DBG_ENABLE_MASK_ASSERT | DBG_ENABLE_MASK_DUMP_SKB_RX | DBG_ENABLE_MASK_DUMP_SKB_TX | DBG_ENABLE_MASK_DUMP_QOS | DBG_ENABLE_MASK_DUMP_INIT)
+#define DBG_ENABLE_MASK_MAC_SWAP        (1 << 12)
+#define DBG_ENABLE_MASK_ALL             (DBG_ENABLE_MASK_ERR | DBG_ENABLE_MASK_DEBUG_PRINT | DBG_ENABLE_MASK_ASSERT | DBG_ENABLE_MASK_DUMP_SKB_RX | DBG_ENABLE_MASK_DUMP_SKB_TX | DBG_ENABLE_MASK_DUMP_QOS | DBG_ENABLE_MASK_DUMP_INIT | DBG_ENABLE_MASK_MAC_SWAP)
 
 #define err(format, arg...)             do { if ( (ifx_atm_dbg_enable & DBG_ENABLE_MASK_ERR) ) printk(KERN_ERR __FILE__ ":%d:%s: " format "\n", __LINE__, __FUNCTION__, ##arg); } while ( 0 )
 
@@ -131,11 +141,11 @@
 #define OAM_F5_HTU_ENTRY                2
 #define OAM_F4_CELL_ID                  0
 #define OAM_F5_CELL_ID                  15
-//#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
-//  #undef  OAM_HTU_ENTRY_NUMBER
-//  #define OAM_HTU_ENTRY_NUMBER          4
-//  #define OAM_ARQ_HTU_ENTRY             3
-//#endif
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+  #undef  OAM_HTU_ENTRY_NUMBER
+  #define OAM_HTU_ENTRY_NUMBER          4
+  #define OAM_ARQ_HTU_ENTRY             3
+#endif
 
 /*
  *  RX Frame Definitions
@@ -158,6 +168,16 @@
  *  Cell Constant
  */
 #define CELL_SIZE                       ATM_AAL0_SDU
+
+/*
+ *  ReTX Constant
+ */
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+  #define RETX_PLAYOUT_BUFFER_ORDER     6
+  #define RETX_PLAYOUT_BUFFER_SIZE      (PAGE_SIZE * (1 << RETX_PLAYOUT_BUFFER_ORDER))
+  #define RETX_PLAYOUT_FW_BUFF_SIZE     (RETX_PLAYOUT_BUFFER_SIZE / (32 * 56 /* cell size */))
+  #define RETX_POLLING_INTERVAL         (HZ / 100 > 0 ? HZ / 100 : 1)
+#endif
 
 
 
@@ -243,6 +263,8 @@ extern void ifx_atm_uninit_chip(void);
 
 extern int ifx_pp32_start(int pp32);
 extern void ifx_pp32_stop(int pp32);
+
+extern void ifx_reset_ppe(void);
 
 
 
