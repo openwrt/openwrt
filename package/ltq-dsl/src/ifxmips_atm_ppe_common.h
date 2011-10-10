@@ -1,10 +1,33 @@
+/******************************************************************************
+**
+** FILE NAME    : ifxmips_atm_ppe_common.h
+** PROJECT      : UEIP
+** MODULES     	: ATM (ADSL)
+**
+** DATE         : 1 AUG 2005
+** AUTHOR       : Xu Liang
+** DESCRIPTION  : ATM Driver (PPE Registers)
+** COPYRIGHT    : 	Copyright (c) 2006
+**			Infineon Technologies AG
+**			Am Campeon 1-12, 85579 Neubiberg, Germany
+**
+**    This program is free software; you can redistribute it and/or modify
+**    it under the terms of the GNU General Public License as published by
+**    the Free Software Foundation; either version 2 of the License, or
+**    (at your option) any later version.
+**
+** HISTORY
+** $Date        $Author         $Comment
+**  4 AUG 2005  Xu Liang        Initiate Version
+** 23 OCT 2006  Xu Liang        Add GPL header.
+**  9 JAN 2007  Xu Liang        First version got from Anand (IC designer)
+*******************************************************************************/
+
+
+
 #ifndef IFXMIPS_ATM_PPE_COMMON_H
 #define IFXMIPS_ATM_PPE_COMMON_H
-
-#if defined(CONFIG_LANTIQ)
-  #include "ifxmips_atm_ppe_danube.h"
-  #define CONFIG_DANUBE
-#elif defined(CONFIG_DANUBE) 
+#if defined(CONFIG_DANUBE) 
   #include "ifxmips_atm_ppe_danube.h"
 #elif defined(CONFIG_AMAZON_SE)
   #include "ifxmips_atm_ppe_amazon_se.h"
@@ -15,6 +38,7 @@
 #else
   #error Platform is not specified!
 #endif
+
 
 
 /*
@@ -207,24 +231,134 @@
 /*
  *  RTHA/TTHA Registers
  */
-#define SFSM_STATE0                             PPE_REG_ADDR(0x0410)
-#define SFSM_STATE1                             PPE_REG_ADDR(0x0411)
-#define SFSM_DBA0                               PPE_REG_ADDR(0x0412)
-#define SFSM_DBA1                               PPE_REG_ADDR(0x0413)
-#define SFSM_CBA0                               PPE_REG_ADDR(0x0414)
-#define SFSM_CBA1                               PPE_REG_ADDR(0x0415)
-#define SFSM_CFG0                               PPE_REG_ADDR(0x0416)
-#define SFSM_CFG1                               PPE_REG_ADDR(0x0417)
-#define SFSM_PGCNT0                             PPE_REG_ADDR(0x041C)
-#define SFSM_PGCNT1                             PPE_REG_ADDR(0x041D)
-#define FFSM_DBA0                               PPE_REG_ADDR(0x0508)
-#define FFSM_DBA1                               PPE_REG_ADDR(0x0509)
-#define FFSM_CFG0                               PPE_REG_ADDR(0x050A)
-#define FFSM_CFG1                               PPE_REG_ADDR(0x050B)
-#define FFSM_IDLE_HEAD_BC0                      PPE_REG_ADDR(0x050E)
-#define FFSM_IDLE_HEAD_BC1                      PPE_REG_ADDR(0x050F)
-#define FFSM_PGCNT0                             PPE_REG_ADDR(0x0514)
-#define FFSM_PGCNT1                             PPE_REG_ADDR(0x0515)
+#define RFBI_CFG                        PPE_REG_ADDR(0x0400)
+#define RBA_CFG0                        PPE_REG_ADDR(0x0404)
+#define RBA_CFG1                        PPE_REG_ADDR(0x0405)
+#define RCA_CFG0                        PPE_REG_ADDR(0x0408)
+#define RCA_CFG1                        PPE_REG_ADDR(0x0409)
+#define RDES_CFG0                       PPE_REG_ADDR(0x040C)
+#define RDES_CFG1                       PPE_REG_ADDR(0x040D)
+#define SFSM_STATE0                     PPE_REG_ADDR(0x0410)
+#define SFSM_STATE1                     PPE_REG_ADDR(0x0411)
+#define SFSM_DBA0                       PPE_REG_ADDR(0x0412)
+#define SFSM_DBA1                       PPE_REG_ADDR(0x0413)
+#define SFSM_CBA0                       PPE_REG_ADDR(0x0414)
+#define SFSM_CBA1                       PPE_REG_ADDR(0x0415)
+#define SFSM_CFG0                       PPE_REG_ADDR(0x0416)
+#define SFSM_CFG1                       PPE_REG_ADDR(0x0417)
+#define SFSM_PGCNT0                     PPE_REG_ADDR(0x041C)
+#define SFSM_PGCNT1                     PPE_REG_ADDR(0x041D)
+#define FFSM_DBA0                       PPE_REG_ADDR(0x0508)
+#define FFSM_DBA1                       PPE_REG_ADDR(0x0509)
+#define FFSM_CFG0                       PPE_REG_ADDR(0x050A)
+#define FFSM_CFG1                       PPE_REG_ADDR(0x050B)
+#define FFSM_IDLE_HEAD_BC0              PPE_REG_ADDR(0x050E)
+#define FFSM_IDLE_HEAD_BC1              PPE_REG_ADDR(0x050F)
+#define FFSM_PGCNT0                     PPE_REG_ADDR(0x0514)
+#define FFSM_PGCNT1                     PPE_REG_ADDR(0x0515)
+
+/*
+ *  PPE TC Logic Registers (partial)
+ */
+#define DREG_A_VERSION                  PPE_REG_ADDR(0x0D00)
+#define DREG_A_CFG                      PPE_REG_ADDR(0x0D01)
+#define DREG_AT_CTRL                    PPE_REG_ADDR(0x0D02)
+#define DREG_AT_CB_CFG0                 PPE_REG_ADDR(0x0D03)
+#define DREG_AT_CB_CFG1                 PPE_REG_ADDR(0x0D04)
+#define DREG_AR_CTRL                    PPE_REG_ADDR(0x0D08)
+#define DREG_AR_CB_CFG0                 PPE_REG_ADDR(0x0D09)
+#define DREG_AR_CB_CFG1                 PPE_REG_ADDR(0x0D0A)
+#define DREG_A_UTPCFG                   PPE_REG_ADDR(0x0D0E)
+#define DREG_A_STATUS                   PPE_REG_ADDR(0x0D0F)
+#define DREG_AT_CFG0                    PPE_REG_ADDR(0x0D20)
+#define DREG_AT_CFG1                    PPE_REG_ADDR(0x0D21)
+#define DREG_AT_FB_SIZE0                PPE_REG_ADDR(0x0D22)
+#define DREG_AT_FB_SIZE1                PPE_REG_ADDR(0x0D23)
+#define DREG_AT_CELL0                   PPE_REG_ADDR(0x0D24)
+#define DREG_AT_CELL1                   PPE_REG_ADDR(0x0D25)
+#define DREG_AT_IDLE_CNT0               PPE_REG_ADDR(0x0D26)
+#define DREG_AT_IDLE_CNT1               PPE_REG_ADDR(0x0D27)
+#define DREG_AT_IDLE0                   PPE_REG_ADDR(0x0D28)
+#define DREG_AT_IDLE1                   PPE_REG_ADDR(0x0D29)
+#define DREG_AR_CFG0                    PPE_REG_ADDR(0x0D60)
+#define DREG_AR_CFG1                    PPE_REG_ADDR(0x0D61)
+#define DREG_AR_CELL0                   PPE_REG_ADDR(0x0D68)
+#define DREG_AR_CELL1                   PPE_REG_ADDR(0x0D69)
+#define DREG_AR_IDLE_CNT0               PPE_REG_ADDR(0x0D6A)
+#define DREG_AR_IDLE_CNT1               PPE_REG_ADDR(0x0D6B)
+#define DREG_AR_AIIDLE_CNT0             PPE_REG_ADDR(0x0D6C)
+#define DREG_AR_AIIDLE_CNT1             PPE_REG_ADDR(0x0D6D)
+#define DREG_AR_BE_CNT0                 PPE_REG_ADDR(0x0D6E)
+#define DREG_AR_BE_CNT1                 PPE_REG_ADDR(0x0D6F)
+#define DREG_AR_HEC_CNT0                PPE_REG_ADDR(0x0D70)
+#define DREG_AR_HEC_CNT1                PPE_REG_ADDR(0x0D71)
+#define DREG_AR_IDLE0                   PPE_REG_ADDR(0x0D74)
+#define DREG_AR_IDLE1                   PPE_REG_ADDR(0x0D75)
+#define DREG_AR_CVN_CNT0                PPE_REG_ADDR(0x0DA4)
+#define DREG_AR_CVN_CNT1                PPE_REG_ADDR(0x0DA5)
+#define DREG_AR_CVNP_CNT0               PPE_REG_ADDR(0x0DA6)
+#define DREG_AR_CVNP_CNT1               PPE_REG_ADDR(0x0DA7)
+#define DREG_B0_LADR                    PPE_REG_ADDR(0x0DA8)
+#define DREG_B1_LADR                    PPE_REG_ADDR(0x0DA9)
+
+#define SFSM_DBA(i)                     ( (SFSM_dba * )   PPE_REG_ADDR(0x0412 + (i)))
+#define SFSM_CBA(i)                     ( (SFSM_cba * )   PPE_REG_ADDR(0x0414 + (i)))
+#define SFSM_CFG(i)                     ( (SFSM_cfg * )   PPE_REG_ADDR(0x0416 + (i)))
+#define SFSM_PGCNT(i)                   ( (SFSM_pgcnt * ) PPE_REG_ADDR(0x041C + (i)))
+
+#define FFSM_DBA(i)                     ( (FFSM_dba * )   PPE_REG_ADDR(0x0508 + (i)))
+#define FFSM_CFG(i)                     ( (FFSM_cfg * )   PPE_REG_ADDR(0x050A + (i)))
+#define FFSM_PGCNT(i)                   ( (FFSM_pgcnt * ) PPE_REG_ADDR(0x0514 + (i)))
+
+typedef struct  {
+    unsigned int    res     : 19;
+    unsigned int    dbase   : 13;
+} SFSM_dba;
+
+typedef struct  {
+    unsigned int    res     : 19;
+    unsigned int    cbase   : 13;
+} SFSM_cba;
+
+typedef struct  {
+    unsigned int    res     : 15;
+    unsigned int    endian  : 1;
+    unsigned int    idlekeep: 1;
+    unsigned int    sen     : 1;
+    unsigned int    res1    : 8;
+    unsigned int    pnum    : 6;
+} SFSM_cfg;
+
+typedef struct  {
+    unsigned int    res     : 17;
+    unsigned int    pptr    : 6;
+    unsigned int    dcmd    : 1;
+    unsigned int    res1    : 2;
+    unsigned int    upage   : 6;
+} SFSM_pgcnt;
+
+typedef struct  {
+    unsigned int    res     : 19;
+    unsigned int    dbase   : 13;
+} FFSM_dba;
+
+typedef struct  {
+    unsigned int    res     : 12;
+    unsigned int    rstptr  : 1;
+    unsigned int    clvpage : 1;
+    unsigned int    fidle   : 1;
+    unsigned int    endian  : 1;
+    unsigned int    res1    : 10;
+    unsigned int    pnum    : 6;
+} FFSM_cfg;
+
+typedef struct  {
+    unsigned int    res     : 17;
+    unsigned int    ival    : 6;
+    unsigned int    icmd    : 1;
+    unsigned int    res1    : 2;
+    unsigned int    vpage   : 6;
+} FFSM_pgcnt;
 
 
 

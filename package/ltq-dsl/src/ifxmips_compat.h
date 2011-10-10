@@ -15,6 +15,14 @@
     (((x) & ~(((1 << ((msb) + 1)) - 1) ^ ((1 << (lsb)) - 1))) | (((value) & ((1 << (1 + (msb) - (lsb))) - 1)) << (lsb)))
 
 
+#define IFX_PP32_ETOP_CFG		0x16020
+#define IFX_PP32_ETOP_MDIO_CFG		0x11804
+#define IFX_PP32_ETOP_IG_PLEN_CTRL	0x16080
+#define IFX_PP32_ENET_MAC_CFG		0x1840
+
+#define IFX_RCU_DOMAIN_PPE		(1 << 8)
+#define IFX_RCU_MODULE_ATM
+
 #define IFX_PMU_ENABLE    1
 #define IFX_PMU_DISABLE   0
 
@@ -39,5 +47,7 @@
 #define IFX_REG_W32(_v, _r)               __raw_writel((_v), (_r))
 
 #define CONFIG_IFXMIPS_DSL_CPE_MEI	y
+
+#define INT_NUM_IM2_IRL24	(INT_NUM_IM2_IRL0 + 24)
 
 #endif

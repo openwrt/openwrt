@@ -1351,11 +1351,13 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 	im2_register = (*LTQ_ICU_IM2_IER) & (1 << 20);
 	/* Turn off irq */
 	#ifdef CONFIG_SOC_AMAZON_SE
+#define	IFXMIPS_USB_OC_INT0 (INT_NUM_IM4_IRL0 + 23)
 	disable_irq (IFXMIPS_USB_OC_INT0);
-	disable_irq (IFXMIPS_USB_OC_INT2);
-	#elif defined(CONFIG_LANTIQ_AR9)
+//	disable_irq (IFXMIPS_USB_OC_INT2);
+	#elif defined(CONFIG_SOC_AR9)
+#define	IFXMIPS_USB_OC_INT0 (INT_NUM_IM4_IRL1 + 28)
 	disable_irq (IFXMIPS_USB_OC_INT0);
-	disable_irq (IFXMIPS_USB_OC_INT2);
+//	disable_irq (IFXMIPS_USB_OC_INT2);
 	#elif defined(CONFIG_SOC_XWAY)
 	disable_irq (LTQ_USB_OC_INT);
 	#else
@@ -1369,10 +1371,10 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 
 	#ifdef CONFIG_SOC_AMAZON_SE
 	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT0);
-	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT2);
-	#elif defined(CONFIG_LANTIQ_AMAZON_S)
+//	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT2);
+	#elif defined(CONFIG_SOC_AR9)
 	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT0);
-	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT2);
+//	MEI_MASK_AND_ACK_IRQ (IFXMIPS_USB_OC_INT2);
 	#elif defined(CONFIG_SOC_XWAY)
 	MEI_MASK_AND_ACK_IRQ (LTQ_USB_OC_INT);
 	#else

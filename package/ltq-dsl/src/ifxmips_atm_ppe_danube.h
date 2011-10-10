@@ -1,3 +1,30 @@
+/******************************************************************************
+**
+** FILE NAME    : ifxmips_atm_ppe_danube.h
+** PROJECT      : UEIP
+** MODULES     	: ATM (ADSL)
+**
+** DATE         : 1 AUG 2005
+** AUTHOR       : Xu Liang
+** DESCRIPTION  : ATM Driver (PPE Registers)
+** COPYRIGHT    : 	Copyright (c) 2006
+**			Infineon Technologies AG
+**			Am Campeon 1-12, 85579 Neubiberg, Germany
+**
+**    This program is free software; you can redistribute it and/or modify
+**    it under the terms of the GNU General Public License as published by
+**    the Free Software Foundation; either version 2 of the License, or
+**    (at your option) any later version.
+**
+** HISTORY
+** $Date        $Author         $Comment
+**  4 AUG 2005  Xu Liang        Initiate Version
+** 23 OCT 2006  Xu Liang        Add GPL header.
+**  9 JAN 2007  Xu Liang        First version got from Anand (IC designer)
+*******************************************************************************/
+
+
+
 #ifndef IFXMIPS_ATM_PPE_DANUBE_H
 #define IFXMIPS_ATM_PPE_DANUBE_H
 
@@ -75,6 +102,8 @@
 #define PP32_DBG_CUR_PC                 PP32_DEBUG_REG_ADDR(0, 0x0080)
 
 #define PP32_DBG_TASK_NO                PP32_DEBUG_REG_ADDR(0, 0x0081)
+
+#define PP32_DBG_REG_BASE(tsk, i)       PP32_DEBUG_REG_ADDR(0, 0x0100 + (tsk) * 16 + (i))
 
 /*
  *  EMA Registers

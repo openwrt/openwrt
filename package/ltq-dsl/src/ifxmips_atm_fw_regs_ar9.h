@@ -1,6 +1,6 @@
 /******************************************************************************
 **
-** FILE NAME    : ifxmips_atm_fw_regs_danube.h
+** FILE NAME    : ifxmips_atm_fw_regs_ar9.h
 ** PROJECT      : UEIP
 ** MODULES     	: ATM (ADSL)
 **
@@ -25,8 +25,8 @@
 
 
 
-#ifndef IFXMIPS_ATM_FW_REGS_DANUBE_H
-#define IFXMIPS_ATM_FW_REGS_DANUBE_H
+#ifndef IFXMIPS_ATM_FW_REGS_AR9_H
+#define IFXMIPS_ATM_FW_REGS_AR9_H
 
 
 
@@ -47,18 +47,12 @@
 #define WRX_DMA_CHANNEL_CONFIG(i)       ((struct wrx_dma_channel_config*)   SB_BUFFER(0x2640 + (i) * 7))
 #define WRX_DESC_CONTEXT(i)             ((struct wrx_desc_context*)         SB_BUFFER(0x2643 + (i) * 7))
 #define WTX_PORT_CONFIG(i)              ((struct wtx_port_config*)          SB_BUFFER(0x2440 + (i)))
-#define WTX_QUEUE_CONFIG(i)             ((struct wtx_queue_config*)         SB_BUFFER(0x2710 + (i) * 27))
-#define WTX_DMA_CHANNEL_CONFIG(i)       ((struct wtx_dma_channel_config*)   SB_BUFFER(0x2711 + (i) * 27))
+#define WTX_QUEUE_CONFIG(i)             ((struct wtx_queue_config*)         SB_BUFFER(0x3800 + (i) * 27))
+#define WTX_DMA_CHANNEL_CONFIG(i)       ((struct wtx_dma_channel_config*)   SB_BUFFER(0x3801 + (i) * 27))
 #define WAN_MIB_TABLE                   ((struct wan_mib_table*)            SB_BUFFER(0x2410))
-#if !defined(ENABLE_ATM_RETX) || !ENABLE_ATM_RETX
-  #define HTU_ENTRY(i)                  ((struct htu_entry*)                SB_BUFFER(0x2000 + (i)))
-  #define HTU_MASK(i)                   ((struct htu_mask*)                 SB_BUFFER(0x2020 + (i)))
-  #define HTU_RESULT(i)                 ((struct htu_result*)               SB_BUFFER(0x2040 + (i)))
-#else
-  #define HTU_ENTRY(i)                  ((struct htu_entry*)                SB_BUFFER(0x2020 + (i)))
-  #define HTU_MASK(i)                   ((struct htu_mask*)                 SB_BUFFER(0x2040 + (i)))
-  #define HTU_RESULT(i)                 ((struct htu_result*)               SB_BUFFER(0x2060 + (i)))
-#endif
+#define HTU_ENTRY(i)                    ((struct htu_entry*)                SB_BUFFER(0x2010 + (i)))
+#define HTU_MASK(i)                     ((struct htu_mask*)                 SB_BUFFER(0x2030 + (i)))
+#define HTU_RESULT(i)                   ((struct htu_result*)               SB_BUFFER(0x2050 + (i)))
 
 #if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
 
@@ -175,4 +169,4 @@
 
 
 
-#endif  //  IFXMIPS_ATM_FW_REGS_DANUBE_H
+#endif  //  IFXMIPS_ATM_FW_REGS_AR9_H

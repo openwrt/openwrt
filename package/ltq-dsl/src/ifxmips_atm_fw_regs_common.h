@@ -1,3 +1,30 @@
+/******************************************************************************
+**
+** FILE NAME    : ifxmips_atm_fw_regs_common.h
+** PROJECT      : UEIP
+** MODULES     	: ATM (ADSL)
+**
+** DATE         : 1 AUG 2005
+** AUTHOR       : Xu Liang
+** DESCRIPTION  : ATM Driver (Firmware Register Structures)
+** COPYRIGHT    : 	Copyright (c) 2006
+**			Infineon Technologies AG
+**			Am Campeon 1-12, 85579 Neubiberg, Germany
+**
+**    This program is free software; you can redistribute it and/or modify
+**    it under the terms of the GNU General Public License as published by
+**    the Free Software Foundation; either version 2 of the License, or
+**    (at your option) any later version.
+**
+** HISTORY
+** $Date        $Author         $Comment
+**  4 AUG 2005  Xu Liang        Initiate Version
+** 23 OCT 2006  Xu Liang        Add GPL header.
+**  9 JAN 2007  Xu Liang        First version got from Anand (IC designer)
+*******************************************************************************/
+
+
+
 #ifndef IFXMIPS_ATM_FW_REGS_COMMON_H
 #define IFXMIPS_ATM_FW_REGS_COMMON_H
 
@@ -143,6 +170,15 @@ struct wan_mib_table {
  */
 
 #if defined(__BIG_ENDIAN)
+    struct fw_ver_id {
+        unsigned int    family      :4;
+        unsigned int    fwtype      :4;
+        unsigned int    interface   :4;
+        unsigned int    fwmode      :4;
+        unsigned int    major       :8;
+        unsigned int    minor       :8;
+    };
+
     struct wrx_queue_config {
         /*  0h  */
         unsigned int    res2        :27;
@@ -161,6 +197,28 @@ struct wan_mib_table {
         unsigned int    cpiexp      :8;
     };
 
+    struct wrx_queue_context {
+        /*  0h  */
+        unsigned int    curr_len    :16;
+        unsigned int    res0        :12;
+        unsigned int    mfs         :1;
+        unsigned int    ec          :1;
+        unsigned int    clp1        :1;
+        unsigned int    aal5dp      :1;
+
+        /*  1h  */
+        unsigned int    intcrc;
+
+        /*  2h, 3h  */
+        unsigned int    curr_des0;
+        unsigned int    curr_des1;
+
+        /*  4h - 0xE    */
+        unsigned int    res1[11];
+
+        unsigned int    last_dword;
+    };
+
     struct wtx_port_config {
         unsigned int    res1        :27;
         unsigned int    qid         :4;
@@ -170,9 +228,25 @@ struct wan_mib_table {
     struct wtx_queue_config {
         unsigned int    res1        :25;
         unsigned int    sbid        :1;
-        unsigned int    res2        :3;
-        unsigned int    type        :2;
+        unsigned int    qsb_vcid    :4; //  Which QSB queue (VCID) does this TX queue map to.
+        unsigned int    res2        :1;
         unsigned int    qsben       :1;
+    };
+
+    struct wrx_desc_context {
+        unsigned int dmach_wrptr    : 16;
+        unsigned int dmach_rdptr    : 16;
+
+        unsigned int res0           : 16;
+        unsigned int dmach_fcnt     : 16;
+
+        unsigned int res1           : 11;
+        unsigned int desbuf_wrptr   : 5;
+        unsigned int res2           : 11;
+        unsigned int desbuf_rdptr   : 5;
+
+        unsigned int res3           : 27;
+        unsigned int desbuf_vcnt    : 5;
     };
 
     struct wrx_dma_channel_config {
@@ -291,8 +365,8 @@ struct wan_mib_table {
 
     struct wtx_queue_config {
         unsigned int    qsben       :1;
-        unsigned int    type        :2;
-        unsigned int    res2        :3;
+        unsigned int    res2        :1;
+        unsigned int    qsb_vcid    :4; //  Which QSB queue (VCID) does this TX queue map to.
         unsigned int    sbid        :1;
         unsigned int    res1        :25;
     };
@@ -358,6 +432,114 @@ struct wan_mib_table {
         unsigned int    own         :1;
     };
 #endif  //  defined(__BIG_ENDIAN)
+
+#if defined(ENABLE_ATM_RETX) && ENABLE_ATM_RETX
+  #if defined(__BIG_ENDIAN)
+
+    struct Retx_adsl_ppe_intf {
+        unsigned int res0_0             : 16;
+        unsigned int dtu_sid            : 8;
+        unsigned int dtu_timestamp      : 8;
+
+        unsigned int res1_0             : 16;
+        unsigned int local_time         : 8;
+        unsigned int res1_1             : 5;
+        unsigned int is_last_cw         : 1;
+        unsigned int reinit_flag        : 1;
+        unsigned int is_bad_cw          : 1;
+    };
+
+    struct Retx_adsl_ppe_intf_rec {
+
+        unsigned int local_time         : 8;
+        unsigned int res1_1             : 5;
+        unsigned int is_last_cw         : 1;
+        unsigned int reinit_flag        : 1;
+        unsigned int is_bad_cw          : 1;
+
+        unsigned int dtu_sid            : 8;
+        unsigned int dtu_timestamp      : 8;
+
+    };
+
+    struct Retx_mode_cfg {
+        unsigned int    res0            :8;
+        unsigned int    invld_range     :8;     //  used for rejecting the too late arrival of the retransmitted DTU
+        unsigned int    buff_size       :8;     //  the total number of cells in playout buffer is 32 * buff_size
+        unsigned int    res1            :7;
+        unsigned int    retx_en         :1;
+      };
+
+    struct Retx_Tsync_cfg {
+        unsigned int    fw_alpha        :16;    //  number of consecutive HEC error cell causes that the cell delineation state machine transit from SYNC to HUNT (0 means never)
+        unsigned int    sync_inp        :16;    //  reserved
+    };
+
+    struct Retx_Td_cfg {
+        unsigned int    res0            :8;
+        unsigned int    td_max          :8;    //  maximum delay between the time a DTU is first created at transmitter and the time the DTU is sent out of ReTX layer at receiver
+        unsigned int    res1            :8;
+        unsigned int    td_min          :8;     //  minimum delay between the time a DTU is first created at transmitter and the time the DTU is sent out of ReTX layer at receiver
+    };
+
+    struct Retx_MIB_Timer_cfg {
+        unsigned int    ticks_per_sec   : 16;
+        unsigned int    tick_cycle      : 16;
+    };
+
+    struct DTU_stat_info {
+        unsigned int complete           : 1;
+        unsigned int bad                : 1;
+        unsigned int res0_0             : 14;
+        unsigned int time_stamp         : 8;
+        unsigned int cell_cnt           : 8;
+
+        unsigned int dtu_rd_ptr         : 16;
+        unsigned int dtu_wr_ptr         : 16;
+    };
+
+    struct Retx_ctrl_field {
+        unsigned int res0               : 1;
+
+        unsigned int l2_drop            : 1;
+        unsigned int res1               : 13;
+        unsigned int retx               : 1;
+
+        unsigned int dtu_sid            : 8;
+        unsigned int cell_sid           : 8;
+    };
+
+  #else
+    #error Little Endian is not supported yet.
+  #endif
+
+  struct dsl_param {
+    unsigned int    update_flag;            //  00
+    unsigned int    res0;                   //  04
+    unsigned int    MinDelayrt;             //  08
+    unsigned int    MaxDelayrt;             //  0C
+    unsigned int    res1;                   //  10
+    unsigned int    res2;                   //  14
+    unsigned int    RetxEnable;             //  18
+    unsigned int    ServiceSpecificReTx;    //  1C
+    unsigned int    res3;                   //  20
+    unsigned int    ReTxPVC;                //  24
+    unsigned int    res4;                   //  28
+    unsigned int    res5;                   //  2C
+    unsigned int    res6;                   //  30
+    unsigned int    res7;                   //  34
+    unsigned int    res8;                   //  38
+    unsigned int    res9;                   //  3C
+    unsigned int    res10;                  //  40
+    unsigned int    res11;                  //  44
+    unsigned int    res12;                  //  48
+    unsigned int    res13;                  //  4C
+    unsigned int    RxDtuCorruptedCNT;      //  50
+    unsigned int    RxRetxDtuUnCorrectedCNT;//  54
+    unsigned int    RxLastEFB;              //  58
+    unsigned int    RxDtuCorrectedCNT;      //  5C
+  };
+#endif
 
 
 
