@@ -1,6 +1,6 @@
 define Profile/ARV3527P
   NAME:=ARV3527P - Arcor Easybox 401
-  PACKAGES:=kmod-ledtrig-netdev kmod-leds-gpio kmod-button-hotplug kmod-ltq-dsl-firmware-b
+  PACKAGES:=kmod-ledtrig-netdev kmod-leds-gpio kmod-button-hotplug kmod-ltq-dsl-firmware-b-danube
 endef
 
 define Profile/ARV3527P/Description
@@ -13,7 +13,7 @@ define Profile/ARV4510PW
   NAME:=ARV4510PW - Wippies Homebox
   PACKAGES:= kmod-usb-core \
   	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
-	kmod-rt61-pci wpad-mini kmod-ltq-dsl-firmware-a
+	kmod-rt61-pci wpad-mini kmod-ltq-dsl-firmware-a-danube
 endef
 
 define Profile/ARV4510PW/Description
@@ -26,7 +26,7 @@ define Profile/ARV4518PW
   NAME:=ARV4518PW - SMC7908A
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
   	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
-	kmod-madwifi wpad-mini kmod-ltq-dsl-firmware-a
+	kmod-madwifi wpad-mini kmod-ltq-dsl-firmware-a-danube
 endef
 
 define Profile/ARV4518PW/Description
@@ -39,7 +39,7 @@ define Profile/ARV4520PW
   NAME:=ARV4520PW - Arcor Easybox 800
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
   	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
-	kmod-rt61-pci wpad-mini kmod-ltq-dsl-firmware-b 
+	kmod-rt61-pci wpad-mini kmod-ltq-dsl-firmware-b-danube 
 endef
 
 define Profile/ARV4520PW/Description
@@ -52,7 +52,7 @@ define Profile/ARV4525PW
   NAME:=ARV4525PW - Speedport W502V
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
   	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
-	kmod-madwifi wpad-mini kmod-ltq-dsl-firmware-b
+	kmod-madwifi wpad-mini kmod-ltq-dsl-firmware-b-danube
 endef
 
 define Profile/ARV4525PW/Description
@@ -65,7 +65,7 @@ define Profile/ARV7525PW
   NAME:=ARV7525PW - Speedport W303V Typ A
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
   	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
-	kmod-rt2800-pci wpad-mini kmod-ltq-dsl-firmware-b
+	kmod-rt2800-pci wpad-mini kmod-ltq-dsl-firmware-b-danube
 endef
 
 define Profile/ARV4525PW/Description
@@ -78,7 +78,7 @@ define Profile/ARV452CPW
   NAME:=ARV452CPW - Arcor Easybox 801
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
   	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
-	kmod-madwifi wpad-mini kmod-ltq-dsl-firmware-b
+	kmod-madwifi wpad-mini kmod-ltq-dsl-firmware-b-danube
 endef
 
 define Profile/ARV452CPW/Description
@@ -91,7 +91,7 @@ define Profile/ARV752DPW
   NAME:=ARV752DPW - Arcor Easybox 802
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg \
   	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
-	kmod-rt2800-pci kmod-ltq-dsl-firmware-b
+	kmod-rt2800-pci kmod-ltq-dsl-firmware-b-danube
 endef
 
 define Profile/ARV752DPW/Description
@@ -104,7 +104,7 @@ define Profile/ARV752DPW22
   NAME:=ARV752DPW22 - Arcor Easybox 803
   PACKAGES:= kmod-usb-core kmod-usb2 kmod-usb-uhci kmod-usb-dwc-otg \
   	kmod-ledtrig-netdev kmod-ledtrig-usbdev kmod-leds-gpio kmod-button-hotplug \
-	kmod-ltq-dsl-firmware-b
+	kmod-ltq-dsl-firmware-b-danube
 endef
 
 define Profile/ARV752DPW22/Description

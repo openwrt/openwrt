@@ -1,0 +1,20 @@
+--- a/arch/mips/lantiq/irq.c
++++ b/arch/mips/lantiq/irq.c
+@@ -132,7 +132,7 @@
+ static unsigned int ltq_startup_eiu_irq(struct irq_data *d)
+ {
+ 	int i;
+-	int irq_nr = d->irq - INT_NUM_IRQ0;
++	int irq_nr = d->irq;
+ 
+ 	ltq_enable_irq(d);
+ 	for (i = 0; i < MAX_EIU; i++) {
+@@ -156,7 +156,7 @@
+ static void ltq_shutdown_eiu_irq(struct irq_data *d)
+ {
+ 	int i;
+-	int irq_nr = d->irq - INT_NUM_IRQ0;
++	int irq_nr = d->irq;
+ 
+ 	ltq_disable_irq(d);
+ 	for (i = 0; i < MAX_EIU; i++) {
