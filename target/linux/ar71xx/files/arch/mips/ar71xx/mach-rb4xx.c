@@ -11,6 +11,7 @@
 
 #include <linux/platform_device.h>
 #include <linux/irq.h>
+#include <linux/mdio-gpio.h>
 #include <linux/mmc/host.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
@@ -342,3 +343,64 @@ static void __init rb493_setup(void)
 
 MIPS_MACHINE(AR71XX_MACH_RB_493, "493", "MikroTik RouterBOARD 493/AH",
 	     rb493_setup);
+
+#define RB493G_GPIO_MDIO_MDC		7
+#define RB493G_GPIO_MDIO_DATA		8
+
+#define RB493G_MDIO_PHYMASK		BIT(0)
+
+static struct mdio_gpio_platform_data rb493g_mdio_data = {
+	.mdc		= RB493G_GPIO_MDIO_MDC,
+	.mdio		= RB493G_GPIO_MDIO_DATA,
+
+	.phy_mask	= ~RB493G_MDIO_PHYMASK,
+};
+
+static struct platform_device rb493g_mdio_device = {
+	.name 		= "mdio-gpio",
+	.id 		= -1,
+	.dev 		= {
+		.platform_data	= &rb493g_mdio_data,
+	},
+};
+
+static void __init rb493g_setup(void)
+{
+	ar71xx_gpio_function_enable(AR71XX_GPIO_FUNC_SPI_CS1_EN |
+				    AR71XX_GPIO_FUNC_SPI_CS2_EN);
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(rb4xx_leds_gpio),
+				    rb4xx_leds_gpio);
+
+	spi_register_board_info(rb4xx_spi_info, ARRAY_SIZE(rb4xx_spi_info));
+	platform_device_register(&rb4xx_spi_device);
+	platform_device_register(&rb4xx_nand_device);
+
+	ar71xx_add_device_mdio(~RB493G_MDIO_PHYMASK);
+
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = RB493G_MDIO_PHYMASK;
+	ar71xx_eth0_data.speed = SPEED_1000;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 1);
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth1_data.mii_bus_dev = &rb493g_mdio_device.dev;
+	ar71xx_eth1_data.phy_mask = RB493G_MDIO_PHYMASK;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+
+	platform_device_register(&rb493g_mdio_device);
+
+	ar71xx_add_device_eth(1);
+	ar71xx_add_device_eth(0);
+
+	ar71xx_add_device_usb();
+
+	ar71xx_pci_init(ARRAY_SIZE(rb4xx_pci_irqs), rb4xx_pci_irqs);
+}
+
+MIPS_MACHINE(AR71XX_MACH_RB_493G, "493G", "MikroTik RouterBOARD 493G",
+	     rb493g_setup);
