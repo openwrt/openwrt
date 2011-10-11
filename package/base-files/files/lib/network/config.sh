@@ -204,8 +204,9 @@ prepare_interface() {
 					$DEBUG brctl addif "br-$config" "$iface"
 					# Bridge existed already. No further processing necesary
 				} || {
-					local stp
+					local stp igmp_snooping
 					config_get_bool stp "$config" stp 0
+					config_get_bool igmp_snooping "$config" igmp_snooping 1
 					$DEBUG brctl addbr "br-$config"
 					$DEBUG brctl setfd "br-$config" 0
 					$DEBUG ifconfig "$iface" 0.0.0.0
@@ -213,6 +214,7 @@ prepare_interface() {
 					$DEBUG brctl addif "br-$config" "$iface"
 					$DEBUG brctl stp "br-$config" $stp
 					[ -z "$macaddr" ] && macaddr="$(cat /sys/class/net/$iface/address)"
+					echo $igmp_snooping > /sys/devices/virtual/net/br-$config/bridge/multicast_snooping 2>/dev/null
 					$DEBUG ifconfig "br-$config" hw ether $macaddr up
 					# Creating the bridge here will have triggered a hotplug event, which will
 					# result in another setup_interface() call, so we simply stop processing
