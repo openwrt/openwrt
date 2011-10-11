@@ -79,10 +79,10 @@ ar8216_mii_read(struct ar8216_priv *priv, int reg)
 	u16 lo, hi;
 
 	split_addr((u32) reg, &r1, &r2, &page);
-	phy->bus->write(phy->bus, 0x18, 0, page);
+	mdiobus_write(phy->bus, 0x18, 0, page);
 	msleep(1); /* wait for the page switch to propagate */
-	lo = phy->bus->read(phy->bus, 0x10 | r2, r1);
-	hi = phy->bus->read(phy->bus, 0x10 | r2, r1 + 1);
+	lo = mdiobus_read(phy->bus, 0x10 | r2, r1);
+	hi = mdiobus_read(phy->bus, 0x10 | r2, r1 + 1);
 
 	return (hi << 16) | lo;
 }
@@ -95,13 +95,13 @@ ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
 	u16 lo, hi;
 
 	split_addr((u32) reg, &r1, &r2, &r3);
-	phy->bus->write(phy->bus, 0x18, 0, r3);
+	mdiobus_write(phy->bus, 0x18, 0, r3);
 	msleep(1); /* wait for the page switch to propagate */
 
 	lo = val & 0xffff;
 	hi = (u16) (val >> 16);
-	phy->bus->write(phy->bus, 0x10 | r2, r1 + 1, hi);
-	phy->bus->write(phy->bus, 0x10 | r2, r1, lo);
+	mdiobus_write(phy->bus, 0x10 | r2, r1 + 1, hi);
+	mdiobus_write(phy->bus, 0x10 | r2, r1, lo);
 }
 
 static u32
@@ -152,8 +152,8 @@ ar8216_id_chip(struct ar8216_priv *priv)
 			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
 			(int)(id >> AR8216_CTRL_VERSION_S),
 			(int)(id & AR8216_CTRL_REVISION),
-			priv->phy->bus->read(priv->phy->bus, priv->phy->addr, 2),
-			priv->phy->bus->read(priv->phy->bus, priv->phy->addr, 3));
+			mdiobus_read(priv->phy->bus, priv->phy->addr, 2),
+			mdiobus_read(priv->phy->bus, priv->phy->addr, 3));
 
 		return UNKNOWN;
 	}
@@ -614,22 +614,22 @@ ar8316_hw_init(struct ar8216_priv *priv) {
 		if ((i == 4) && priv->port4_phy &&
 		    priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
 			/* work around for phy4 rgmii mode */
-			bus->write(bus, i, MII_ATH_DBG_ADDR, 0x12);
-			bus->write(bus, i, MII_ATH_DBG_DATA, 0x480c);
+			mdiobus_write(bus, i, MII_ATH_DBG_ADDR, 0x12);
+			mdiobus_write(bus, i, MII_ATH_DBG_DATA, 0x480c);
 			/* rx delay */
-			bus->write(bus, i, MII_ATH_DBG_ADDR, 0x0);
-			bus->write(bus, i, MII_ATH_DBG_DATA, 0x824e);
+			mdiobus_write(bus, i, MII_ATH_DBG_ADDR, 0x0);
+			mdiobus_write(bus, i, MII_ATH_DBG_DATA, 0x824e);
 			/* tx delay */
-			bus->write(bus, i, MII_ATH_DBG_ADDR, 0x5);
-			bus->write(bus, i, MII_ATH_DBG_DATA, 0x3d47);
+			mdiobus_write(bus, i, MII_ATH_DBG_ADDR, 0x5);
+			mdiobus_write(bus, i, MII_ATH_DBG_DATA, 0x3d47);
 			msleep(1000);
 		}
 
 		/* initialize the port itself */
-		bus->write(bus, i, MII_ADVERTISE,
+		mdiobus_write(bus, i, MII_ADVERTISE,
 			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
-		bus->write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
-		bus->write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
+		mdiobus_write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
+		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
 		msleep(1000);
 	}
 
