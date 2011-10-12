@@ -1,0 +1,156 @@
+--- a/src/compress.cpp
++++ b/src/compress.cpp
+@@ -41,7 +41,7 @@
+     if (len == 0)
+         return adler;
+     assert(buf != NULL);
+-#if 0
++#if !(WITH_UCL)
+     return adler32(adler, (const Bytef *) buf, len); // zlib
+ #elif (WITH_UCL)
+     return ucl_adler32(adler, (const ucl_bytep) buf, len);
+--- a/src/conf.h
++++ b/src/conf.h
+@@ -179,7 +179,7 @@
+ #  undef __unix
+ #endif
+ 
+-#if !defined(WITH_UCL)
++#if defined(WITH_UCL)
+ #  define WITH_UCL 1
+ #endif
+ #if 0 && !defined(WITH_LZMA)
+@@ -645,7 +645,11 @@
+ };
+ 
+ 
++#if (WITH_UCL)
+ struct ucl_compress_config_t : public REAL_ucl_compress_config_t
++#else
++struct ucl_compress_config_t
++#endif
+ {
+     void reset() { memset(this, 0xff, sizeof(*this)); }
+ };
+@@ -697,7 +701,9 @@
+ 
+ struct ucl_compress_result_t
+ {
++#if (WITH_UCL)
+     ucl_uint result[16];
++#endif
+ 
+     void reset() { memset(this, 0, sizeof(*this)); }
+ };
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -618,7 +618,9 @@
+         opt->method = -1;
+         opt->all_filters = true;
+         opt->filter = -1;
++#if (WITH_UCL)
+         opt->crp.crp_ucl.m_size = 999999;
++#endif
+         /* fallthrough */
+     case 900:                               // --best
+         if (!set_method(-1, 10))
+@@ -709,6 +711,7 @@
+         opt->exact = true;
+         break;
+     // compression runtime parameters
++#if (WITH_UCL)
+     case 801:
+         getoptvar(&opt->crp.crp_ucl.c_flags, 0, 3, arg);
+         break;
+@@ -730,6 +733,7 @@
+     case 807:
+         getoptvar(&opt->crp.crp_ucl.m_size, 10000u, 999999u, arg);
+         break;
++#endif
+     case 811:
+         getoptvar(&opt->crp.crp_lzma.pos_bits, arg);
+         break;
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -57,7 +57,10 @@
+ INCLUDES += -I$(UPX_UCLDIR)/include
+ LIBS += $(addprefix -L,$(dir $(wildcard $(UPX_UCLDIR)/libucl$(libext) $(UPX_UCLDIR)/src/.libs/libucl$(libext))))
+ endif
+-LIBS += -lucl -lz
++ifeq ($(WITH_UCL),1)
++LIBS += -lucl
++endif
++LIBS += -lz
+ # you should set envvar UPX_LZMADIR to point to your unpacked LZMA SDK
+ include $(top_srcdir)/src/stub/src/c/Makevars.lzma
+ ifneq ($(UPX_LZMA_VERSION),)
+--- a/src/packer.cpp
++++ b/src/packer.cpp
+@@ -199,6 +199,7 @@
+     if (cconf_parm)
+         cconf = *cconf_parm;
+     // cconf options
++#if (WITH_UCL)
+     if (M_IS_NRV2B(ph.method) || M_IS_NRV2D(ph.method) || M_IS_NRV2E(ph.method))
+     {
+         if (opt->crp.crp_ucl.c_flags != -1)
+@@ -216,6 +217,7 @@
+             step = 0;
+ #endif
+     }
++#endif
+     if (M_IS_LZMA(ph.method))
+     {
+         oassign(cconf.conf_lzma.pos_bits, opt->crp.crp_lzma.pos_bits);
+@@ -250,6 +252,7 @@
+     if (r != UPX_E_OK)
+         throwInternalError("compression failed");
+ 
++#if (WITH_UCL)
+     if (M_IS_NRV2B(ph.method) || M_IS_NRV2D(ph.method) || M_IS_NRV2E(ph.method))
+     {
+         const ucl_uint *res = ph.compress_result.result_ucl.result;
+@@ -267,6 +270,7 @@
+             assert(cconf.conf_ucl.max_match == 0 || cconf.conf_ucl.max_match >= ph.max_match_found);
+         }
+     }
++#endif
+ 
+     //printf("\nPacker::compress: %d/%d: %7d -> %7d\n", ph.method, ph.level, ph.u_len, ph.c_len);
+     if (!checkCompressionRatio(ph.u_len, ph.c_len))
+--- a/src/p_exe.cpp
++++ b/src/p_exe.cpp
+@@ -506,7 +506,9 @@
+     Filter ft(ph.level);
+     // compress (max_match = 8192)
+     upx_compress_config_t cconf; cconf.reset();
++#if (WITH_UCL)
+     cconf.conf_ucl.max_match = MAXMATCH;
++#endif
+     cconf.conf_lzma.max_num_probs = 1846 + (768 << 4); // ushort: ~28 KiB stack
+     compressWithFilters(&ft, 32, &cconf);
+ 
+--- a/src/p_ps1.cpp
++++ b/src/p_ps1.cpp
+@@ -499,7 +499,9 @@
+ 
+     // compress (max_match = 65535)
+     upx_compress_config_t cconf; cconf.reset();
++#if (WITH_UCL)
+     cconf.conf_ucl.max_match = 65535;
++#endif
+     cconf.conf_lzma.max_num_probs = 1846 + (768 << 4); // ushort: ~28 KiB stack
+     compressWithFilters(&ft, sa_cnt, &cconf);
+ 
+--- a/src/p_tos.cpp
++++ b/src/p_tos.cpp
+@@ -506,7 +506,9 @@
+     Filter ft(ph.level);
+     // compress (max_match = 65535)
+     upx_compress_config_t cconf; cconf.reset();
++#if (WITH_UCL)
+     cconf.conf_ucl.max_match = 65535;
++#endif
+     cconf.conf_lzma.max_num_probs = 1846 + (768 << 4); // ushort: ~28 KiB stack
+     compressWithFilters(&ft, 512, &cconf);
+ 
