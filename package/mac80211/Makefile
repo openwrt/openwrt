@@ -38,7 +38,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_B43_N_PHY \
 	CONFIG_ATH_USER_REGD \
 
-CARL9170_FW_VERSION:=1.9.2
+CARL9170_FW_VERSION:=1.9.4
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -144,7 +144,7 @@ $(eval $(call Download,p54spi))
 define Download/carl9170
   FILE:=$(CARL9170_FW)-$(CARL9170_FW_VERSION)
   URL:=http://downloads.openwrt.org/sources/
-  MD5SUM:=9e33ac39dcd610aa1ad80bbf4f1abccf
+  MD5SUM:=30e2ae80c33b3008d271556d1a14e3ea
 endef
 $(eval $(call Download,carl9170))
 
