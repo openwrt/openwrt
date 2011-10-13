@@ -441,7 +441,7 @@ define KernelPackage/ath9k-htc
   DEPENDS+= @USB_SUPPORT +kmod-ath9k-common +kmod-usb-core
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_htc.ko
-  AUTOLOAD:=$(call AutoLoad,28,ath9k_htc)
+  AUTOLOAD:=$(call AutoLoad,55,ath9k_htc)
 endef
 
 define KernelPackage/ath9k-htc/description
