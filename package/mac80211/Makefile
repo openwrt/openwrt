@@ -489,7 +489,7 @@ endef
 
 define KernelPackage/libertas-usb
   $(call KernelPackage/mac80211/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-mac80211 +kmod-usb-core +kmod-lib80211
+  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +kmod-usb-core +kmod-lib80211 +@DRIVER_WEXT_SUPPORT
   TITLE:=Marvell 88W8015 Wireless Driver
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.ko \
@@ -499,7 +499,7 @@ endef
 
 define KernelPackage/libertas-sd
   $(call KernelPackage/mac80211/Default)
-  DEPENDS+= +kmod-mac80211 +kmod-lib80211 +@DRIVER_WEXT_SUPPORT
+  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +@DRIVER_WEXT_SUPPORT
   TITLE:=Marvell 88W8686 Wireless Driver
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.ko \
@@ -518,7 +518,7 @@ endef
 define KernelPackage/net-libipw
   $(call KernelPackage/mac80211/Default)
   TITLE:=libipw for ipw2100 and ipw2200
-  DEPENDS:=@PCI_SUPPORT +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic +kmod-lib80211 +kmod-cfg80211
+  DEPENDS:=@PCI_SUPPORT +kmod-crypto-core +kmod-crypto-arc4 +kmod-crypto-aes +kmod-crypto-michael-mic +kmod-lib80211 +kmod-cfg80211 +@DRIVER_WEXT_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ipw2x00/libipw.ko
   AUTOLOAD:=$(call AutoLoad,49,libipw)
 endef
@@ -591,7 +591,7 @@ endef
 define KernelPackage/net-hermes-pci
   $(call KernelPackage/mac80211/Default)
   TITLE:=Intersil Prism 2.5 PCI support
-  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes +kmod-cfg80211
+  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_pci.ko
   AUTOLOAD:=$(call AutoLoad,55,orinoco_pci)
 endef
@@ -603,7 +603,7 @@ endef
 define KernelPackage/net-hermes-plx
   $(call KernelPackage/mac80211/Default)
   TITLE:=PLX9052 based PCI adaptor
-  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes +kmod-cfg80211
+  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_plx.ko
   AUTOLOAD:=$(call AutoLoad,55,orinoco_plx)
 endef
@@ -615,7 +615,7 @@ endef
 define KernelPackage/net-hermes-pcmcia
   $(call KernelPackage/mac80211/Default)
   TITLE:=Hermes based PCMCIA adaptors
-  DEPENDS:=@PCMCIA_SUPPORT +kmod-net-hermes +kmod-cfg80211 @BROKEN
+  DEPENDS:=@PCMCIA_SUPPORT +kmod-net-hermes @BROKEN
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_cs.ko
   AUTOLOAD:=$(call AutoLoad,55,orinoco_cs)
 endef
@@ -1082,6 +1082,7 @@ MAKE_OPTS:= \
 	ARCH="$(LINUX_KARCH)" \
 	EXTRA_CFLAGS="$(BUILDFLAGS)" \
 	$(foreach opt,$(CONFOPTS),CONFIG_$(opt)=m) \
+	CONFIG_CFG80211=$(if $(CONFIG_PACKAGE_kmod-cfg80211),m) \
 	CONFIG_MAC80211=$(if $(CONFIG_PACKAGE_kmod-mac80211),m) \
 	CONFIG_MAC80211_RC_MINSTREL=y \
 	CONFIG_MAC80211_LEDS=$(CONFIG_LEDS_TRIGGERS) \
@@ -1225,7 +1226,7 @@ define Build/Prepare
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
 endef
 
-ifneq ($(CONFIG_PACKAGE_kmod-cfg80211),)
+ifneq ($(CONFIG_PACKAGE_kmod-cfg80211)$(CONFIG_PACKAGE_kmod-lib80211),)
  define Build/Compile/kmod
 	rm -rf $(PKG_BUILD_DIR)/modules
 	$(MAKE) $(PKG_JOBS) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) all
