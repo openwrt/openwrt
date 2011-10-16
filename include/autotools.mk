@@ -36,14 +36,14 @@ define autoreconf
 		$(foreach p,$(3), \
 			if [ -f $(p)/configure.ac ] || [ -f $(p)/configure.in ]; then \
 				[ -d $(p)/autom4te.cache ] && rm -rf autom4te.cache; \
-				touch NEWS AUTHORS COPYING ChangeLog; \
+				[ -e $(p)/config.rpath ] || \
+						ln -s $(SCRIPT_DIR)/config.rpath $(p)/config.rpath; \
+				touch NEWS AUTHORS COPYING ABOUT-NLS ChangeLog; \
 				$(AM_TOOL_PATHS) $(STAGING_DIR_HOST)/bin/autoreconf -v -f -i -s \
 					$(if $(word 2,$(3)),--no-recursive) \
 					-B $(STAGING_DIR_HOST)/share/aclocal \
 					$(patsubst %,-I %,$(5)) \
 					$(patsubst %,-I %,$(4)) $(4) || true; \
-				[ -e $(p)/config.rpath ] || \
-						ln -s $(SCRIPT_DIR)/config.rpath $(p)/config.rpath;
 			fi; \
 		) \
 	);
