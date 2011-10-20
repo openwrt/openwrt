@@ -61,7 +61,7 @@
  {
 --- a/kernel/sched.c
 +++ b/kernel/sched.c
-@@ -4967,6 +4967,7 @@ int can_nice(const struct task_struct *p
+@@ -4953,6 +4953,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
  		capable(CAP_SYS_NICE));
  }

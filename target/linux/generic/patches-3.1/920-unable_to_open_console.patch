@@ -1,6 +1,6 @@
 --- a/init/main.c
 +++ b/init/main.c
-@@ -809,7 +809,7 @@ static int __init kernel_init(void * unu
+@@ -818,7 +818,7 @@ static int __init kernel_init(void * unu
  
  	/* Open the /dev/console on the rootfs, this should never fail */
  	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
