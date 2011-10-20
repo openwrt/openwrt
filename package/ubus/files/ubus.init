@@ -1,0 +1,11 @@
+#!/bin/sh /etc/rc.common
+START=11
+PIDFILE=/var/run/ubusd.pid
+
+start() {
+	start-stop-daemon -S -b -m -p $PIDFILE -x /sbin/ubusd
+}
+
+stop() {
+	start-stop-daemon -K -x /sbin/ubusd -p $PIDFILE
+}
