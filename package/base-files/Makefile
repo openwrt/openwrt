@@ -34,6 +34,7 @@ endif
 define Package/base-files
   SECTION:=base
   CATEGORY:=Base system
+  DEPENDS:=+base-files-network
   TITLE:=Base filesystem for OpenWrt
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REVISION)
