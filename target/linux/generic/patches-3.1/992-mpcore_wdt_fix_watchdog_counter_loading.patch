@@ -39,8 +39,8 @@ Signed-off-by: Vitaly Kuzmichev <vkuzmichev@mvista.com>
 --- a/arch/arm/kernel/smp_twd.c
 +++ b/arch/arm/kernel/smp_twd.c
 @@ -142,3 +142,10 @@ void __cpuinit twd_timer_setup(struct cl
- 
- 	clockevents_register_device(clk);
+ 	/* Make sure our local interrupt controller has this enabled */
+ 	gic_enable_ppi(clk->irq);
  }
 +
 +/* Needed by mpcore_wdt */

@@ -202,7 +202,7 @@
 +a crash or deadlock.
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -4783,6 +4783,13 @@ F:	drivers/scsi/osd/
+@@ -4792,6 +4792,13 @@ F:	drivers/scsi/osd/
  F:	include/scsi/osd_*
  F:	fs/exofs/
  
@@ -3121,7 +3121,7 @@
  			       struct pipe_inode_info *opipe,
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -483,6 +483,12 @@ struct iattr {
+@@ -481,6 +481,12 @@ struct iattr {
   */
  #include <linux/quota.h>
  
@@ -3134,7 +3134,7 @@
  /** 
   * enum positive_aop_returns - aop return codes with specific semantics
   *
-@@ -1463,6 +1469,11 @@ struct super_block {
+@@ -1461,6 +1467,11 @@ struct super_block {
  	int cleancache_poolid;
  
  	struct shrinker s_shrink;	/* per-sb shrinker handle */
@@ -3146,7 +3146,7 @@
  };
  
  /* superblock cache pruning functions */
-@@ -1620,6 +1631,7 @@ struct inode_operations {
+@@ -1618,6 +1629,7 @@ struct inode_operations {
  	void (*truncate_range)(struct inode *, loff_t, loff_t);
  	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
  		      u64 len);
@@ -3154,7 +3154,7 @@
  } ____cacheline_aligned;
  
  struct seq_file;
-@@ -2024,6 +2036,7 @@ extern long do_sys_open(int dfd, const c
+@@ -2022,6 +2034,7 @@ extern long do_sys_open(int dfd, const c
  extern struct file *filp_open(const char *, int, int);
  extern struct file *file_open_root(struct dentry *, struct vfsmount *,
  				   const char *, int);
