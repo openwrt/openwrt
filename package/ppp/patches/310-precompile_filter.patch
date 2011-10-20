@@ -35,7 +35,7 @@
  /*
   * There have been 3 or 4 different names for this in libpcap CVS, but
   * this seems to be what they have settled on...
-@@ -160,6 +161,13 @@ static int setlogfile __P((char **));
+@@ -162,6 +163,13 @@ static int setlogfile __P((char **));
  static int loadplugin __P((char **));
  #endif
  
@@ -49,7 +49,7 @@
  #ifdef PPP_FILTER
  static int setpassfilter __P((char **));
  static int setactivefilter __P((char **));
-@@ -317,6 +325,14 @@ option_t general_options[] = {
+@@ -326,6 +334,14 @@ option_t general_options[] = {
        "set filter for active pkts", OPT_PRIO },
  #endif
  
@@ -64,7 +64,7 @@
  #ifdef MAXOCTETS
      { "maxoctets", o_int, &maxoctets,
        "Set connection traffic limit",
-@@ -1463,6 +1479,29 @@ callfile(argv)
+@@ -1472,6 +1488,29 @@ callfile(argv)
      return ok;
  }
  

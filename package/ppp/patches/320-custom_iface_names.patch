@@ -1,6 +1,6 @@
 --- a/pppd/main.c
 +++ b/pppd/main.c
-@@ -743,8 +743,11 @@ void
+@@ -745,8 +745,11 @@ void
  set_ifunit(iskey)
      int iskey;
  {
@@ -24,7 +24,7 @@
  bool	tune_kernel;		/* may alter kernel settings */
  int	connect_delay = 1000;	/* wait this many ms after connect script */
  int	req_unit = -1;		/* requested interface unit */
-@@ -264,6 +265,9 @@ option_t general_options[] = {
+@@ -266,6 +267,9 @@ option_t general_options[] = {
      { "linkname", o_string, linkname,
        "Set logical name for link",
        OPT_PRIO | OPT_PRIV | OPT_STATIC, NULL, MAXPATHLEN },

@@ -1,6 +1,6 @@
 --- a/pppd/main.c
 +++ b/pppd/main.c
-@@ -880,14 +880,17 @@ struct protocol_list {
+@@ -882,14 +882,17 @@ struct protocol_list {
      const char	*name;
  } protocol_list[] = {
      { 0x21,	"IP" },
@@ -18,7 +18,7 @@
      { 0x33,	"Stream Protocol ST-II" },
      { 0x35,	"Banyan Vines" },
      { 0x39,	"AppleTalk EDDP" },
-@@ -901,8 +904,11 @@ struct protocol_list {
+@@ -903,8 +906,11 @@ struct protocol_list {
      { 0x49,	"Serial Data Transport Protocol (PPP-SDTP)" },
      { 0x4b,	"SNA over 802.2" },
      { 0x4d,	"SNA" },
@@ -30,7 +30,7 @@
      { 0x53,	"Encryption" },
      { 0x55,	"Individual Link Encryption" },
      { 0x57,	"IPv6" },
-@@ -913,12 +919,15 @@ struct protocol_list {
+@@ -915,12 +921,15 @@ struct protocol_list {
      { 0x65,	"RTP IPHC Compressed non-TCP" },
      { 0x67,	"RTP IPHC Compressed UDP 8" },
      { 0x69,	"RTP IPHC Compressed RTP 8" },
@@ -46,7 +46,7 @@
      { 0x0203,	"IBM Source Routing BPDU" },
      { 0x0205,	"DEC LANBridge100 Spanning Tree" },
      { 0x0207,	"Cisco Discovery Protocol" },
-@@ -930,15 +939,19 @@ struct protocol_list {
+@@ -932,15 +941,19 @@ struct protocol_list {
      { 0x0231,	"Luxcom" },
      { 0x0233,	"Sigma Network Systems" },
      { 0x0235,	"Apple Client Server Protocol" },
@@ -66,7 +66,7 @@
      { 0x4001,	"Cray Communications Control Protocol" },
      { 0x4003,	"CDPD Mobile Network Registration Protocol" },
      { 0x4005,	"Expand accelerator protocol" },
-@@ -949,8 +962,10 @@ struct protocol_list {
+@@ -951,8 +964,10 @@ struct protocol_list {
      { 0x4023,	"RefTek Protocol" },
      { 0x4025,	"Fibre Channel" },
      { 0x4027,	"EMIT Protocols" },
@@ -77,7 +77,7 @@
      { 0x8023,	"OSI Network Layer Control Protocol" },
      { 0x8025,	"Xerox NS IDP Control Protocol" },
      { 0x8027,	"DECnet Phase IV Control Protocol" },
-@@ -959,7 +974,9 @@ struct protocol_list {
+@@ -961,7 +976,9 @@ struct protocol_list {
      { 0x8031,	"Bridging NCP" },
      { 0x8033,	"Stream Protocol Control Protocol" },
      { 0x8035,	"Banyan Vines Control Protocol" },
@@ -87,7 +87,7 @@
      { 0x803f,	"NETBIOS Framing Control Protocol" },
      { 0x8041,	"Cisco Systems Control Protocol" },
      { 0x8043,	"Ascom Timeplex" },
-@@ -968,18 +985,24 @@ struct protocol_list {
+@@ -970,18 +987,24 @@ struct protocol_list {
      { 0x8049,	"Serial Data Control Protocol (PPP-SDCP)" },
      { 0x804b,	"SNA over 802.2 Control Protocol" },
      { 0x804d,	"SNA Control Protocol" },
@@ -112,7 +112,7 @@
      { 0x8207,	"Cisco Discovery Protocol Control" },
      { 0x8209,	"Netcs Twin Routing" },
      { 0x820b,	"STP - Control Protocol" },
-@@ -988,24 +1011,29 @@ struct protocol_list {
+@@ -990,24 +1013,29 @@ struct protocol_list {
      { 0x8281,	"MPLSCP" },
      { 0x8285,	"IEEE p1284.4 standard - Protocol Control" },
      { 0x8287,	"ETSI TETRA TNP1 Control Protocol" },

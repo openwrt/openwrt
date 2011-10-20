@@ -16,7 +16,7 @@
  static void setup_signals __P((void));
  static void create_pidfile __P((int pid));
  static void create_linkpidfile __P((int pid));
-@@ -533,6 +535,7 @@ main(argc, argv)
+@@ -535,6 +537,7 @@ main(argc, argv)
  	    info("Starting link");
  	}
  
@@ -24,7 +24,7 @@
  	gettimeofday(&start_time, NULL);
  	script_unsetenv("CONNECT_TIME");
  	script_unsetenv("BYTES_SENT");
-@@ -1265,6 +1268,36 @@ struct	callout {
+@@ -1267,6 +1270,36 @@ struct	callout {
  
  static struct callout *callout = NULL;	/* Callout list */
  static struct timeval timenow;		/* Current time */
@@ -61,7 +61,7 @@
  
  /*
   * timeout - Schedule a timeout.
-@@ -1335,6 +1368,8 @@ calltimeout()
+@@ -1337,6 +1370,8 @@ calltimeout()
  {
      struct callout *p;
  
@@ -70,7 +70,7 @@
      while (callout != NULL) {
  	p = callout;
  
-@@ -1362,6 +1397,8 @@ timeleft(tvp)
+@@ -1364,6 +1399,8 @@ timeleft(tvp)
  {
      if (callout == NULL)
  	return NULL;
