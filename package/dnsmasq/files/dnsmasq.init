@@ -364,6 +364,19 @@ dhcp_srv_add() {
 	append args "-W $service"
 }
 
+dhcp_cname_add() {
+	local cfg="$1"
+	local cname target
+
+	config_get cname "$cfg" cname
+	[ -n "$cname" ] || return 0
+
+	config_get target "$cfg" target
+	[ -n "$target" ] || return 0
+
+	append args "--cname=${cname},${target}"
+}
+
 start() {
 	include /lib/network
 	scan_interfaces
@@ -382,6 +395,7 @@ start() {
 	config_foreach dhcp_domain_add domain
 	config_foreach dhcp_srv_add srvhost
 	config_foreach dhcp_add dhcp
+	config_foreach dhcp_cname_add cname
 
 	/usr/sbin/dnsmasq $args && {
 		rm -f /tmp/resolv.conf
