@@ -1,9 +1,12 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
 #
 
 menu "Archival Utilities"
+
+
 
 config BUSYBOX_CONFIG_FEATURE_SEAMLESS_XZ
 	bool "Make tar, rpm, modprobe etc understand .xz data"
@@ -37,7 +40,7 @@ config BUSYBOX_CONFIG_FEATURE_SEAMLESS_Z
 
 config BUSYBOX_CONFIG_AR
 	bool "ar"
-	default n
+	default n  # needs to be improved to be able to replace binutils ar
 	help
 	  ar is an archival utility program used to create, modify, and
 	  extract contents from archives. An archive is a single file holding
@@ -192,7 +195,7 @@ config BUSYBOX_CONFIG_LZOP
 	  Lzop compression/decompresion.
 
 config BUSYBOX_CONFIG_LZOP_COMPR_HIGH
-	bool "lzop complession levels 7,8,9 (not very useful)"
+	bool "lzop compression levels 7,8,9 (not very useful)"
 	default n
 	depends on BUSYBOX_CONFIG_LZOP
 	help

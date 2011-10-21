@@ -1,0 +1,47 @@
+--- a/networking/inetd.c
++++ b/networking/inetd.c
+@@ -1278,6 +1278,7 @@ int inetd_main(int argc UNUSED_PARAM, ch
+ 							sep->se_count = 0;
+ 							rearm_alarm(); /* will revive it in RETRYTIME sec */
+ 							restore_sigmask(&omask);
++							maybe_close(new_udp_fd);
+ 							maybe_close(accepted_fd);
+ 							continue; /* -> check next fd in fd set */
+ 						}
+@@ -1298,17 +1299,18 @@ int inetd_main(int argc UNUSED_PARAM, ch
+ 					bb_perror_msg("vfork"+1);
+ 					sleep(1);
+ 					restore_sigmask(&omask);
++					maybe_close(new_udp_fd);
+ 					maybe_close(accepted_fd);
+ 					continue; /* -> check next fd in fd set */
+ 				}
+ 				if (pid == 0)
+ 					pid--; /* -1: "we did fork and we are child" */
+ 			}
+-			/* if pid == 0 here, we never forked */
++			/* if pid == 0 here, we didn't fork */
+ 
+ 			if (pid > 0) { /* parent */
+ 				if (sep->se_wait) {
+-					/* tcp wait: we passed listening socket to child,
++					/* wait: we passed socket to child,
+ 					 * will wait for child to terminate */
+ 					sep->se_wait = pid;
+ 					remove_fd_from_set(sep->se_fd);
+@@ -1345,9 +1347,13 @@ int inetd_main(int argc UNUSED_PARAM, ch
+ 			setsid();
+ 			/* "nowait" udp */
+ 			if (new_udp_fd >= 0) {
+-				len_and_sockaddr *lsa = xzalloc_lsa(sep->se_family);
++				len_and_sockaddr *lsa;
++				int r;
++
++				close(new_udp_fd);
++				lsa = xzalloc_lsa(sep->se_family);
+ 				/* peek at the packet and remember peer addr */
+-				int r = recvfrom(ctrl, NULL, 0, MSG_PEEK|MSG_DONTWAIT,
++				r = recvfrom(ctrl, NULL, 0, MSG_PEEK|MSG_DONTWAIT,
+ 					&lsa->u.sa, &lsa->len);
+ 				if (r < 0)
+ 					goto do_exit1;

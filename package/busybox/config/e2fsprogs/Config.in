@@ -1,9 +1,12 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
 #
 
 menu "Linux Ext2 FS Progs"
+
+
 
 config BUSYBOX_CONFIG_CHATTR
 	bool "chattr"
@@ -31,7 +34,7 @@ config BUSYBOX_CONFIG_FSCK
 config BUSYBOX_CONFIG_LSATTR
 	bool "lsattr"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  lsattr lists the file attributes on a second extended file system.
 
@@ -44,7 +47,7 @@ config BUSYBOX_CONFIG_LSATTR
 
 config BUSYBOX_CONFIG_TUNE2FS
 	bool "tune2fs"
-	default n
+	default n  # off: it is too limited compared to upstream version
 	help
 	  tune2fs allows the system administrator to adjust various tunable
 	  filesystem parameters on Linux ext2/ext3 filesystems.

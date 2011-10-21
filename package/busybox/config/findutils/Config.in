@@ -1,3 +1,4 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
@@ -60,11 +61,11 @@ config BUSYBOX_CONFIG_FEATURE_FIND_XDEV
 	  This option allows find to restrict searches to a single filesystem.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_MAXDEPTH
-	bool "Enable -maxdepth N"
+	bool "Enable -mindepth N and -maxdepth N"
 	default y
 	depends on BUSYBOX_CONFIG_FIND
 	help
-	  This option enables -maxdepth N option.
+	  This option enables -mindepth N and -maxdepth N option.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_NEWER
 	bool "Enable -newer: compare file modification times"
@@ -72,7 +73,7 @@ config BUSYBOX_CONFIG_FEATURE_FIND_NEWER
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Support the 'find -newer' option for finding any files which have
-	  a modified time that is more recent than the specified FILE.
+	  modification time that is more recent than the specified FILE.
 
 config BUSYBOX_CONFIG_FEATURE_FIND_INUM
 	bool "Enable -inum: inode number matching"
@@ -177,7 +178,6 @@ config BUSYBOX_CONFIG_FEATURE_FIND_LINKS
 	depends on BUSYBOX_CONFIG_FIND
 	help
 	  Support the 'find -links' option for matching number of links.
-
 config BUSYBOX_CONFIG_GREP
 	bool "grep"
 	default y
@@ -210,7 +210,6 @@ config BUSYBOX_CONFIG_FEATURE_GREP_CONTEXT
 	  Print the specified number of leading (-B) and/or trailing (-A)
 	  context surrounding our matching lines.
 	  Print the specified number of context lines (-C).
-
 config BUSYBOX_CONFIG_XARGS
 	bool "xargs"
 	default y

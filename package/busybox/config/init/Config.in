@@ -1,3 +1,4 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
@@ -167,5 +168,17 @@ config BUSYBOX_CONFIG_MESG
 	help
 	  Mesg controls access to your terminal by others. It is typically
 	  used to allow or disallow other users to write to your terminal
+
+config BUSYBOX_CONFIG_FEATURE_MESG_ENABLE_ONLY_GROUP
+	bool "Enable writing to tty only by group, not by everybody"
+	default n
+	depends on BUSYBOX_CONFIG_MESG
+	help
+	  Usually, ttys are owned by group "tty", and "write" tool is
+	  setgid to this group. This way, "mesg y" only needs to enable
+	  "write by owning group" bit in tty mode.
+
+	  If you set this option to N, "mesg y" will enable writing
+	  by anybody at all. This is not recommended.
 
 endmenu

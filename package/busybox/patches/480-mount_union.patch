@@ -1,6 +1,6 @@
 --- a/util-linux/mount.c
 +++ b/util-linux/mount.c
-@@ -77,6 +77,10 @@
+@@ -136,6 +136,10 @@
  # include <rpc/pmap_clnt.h>
  #endif
  
@@ -11,19 +11,19 @@
  
  #if defined(__dietlibc__)
  // 16.12.2006, Sampo Kellomaki (sampo@iki.fi)
-@@ -194,6 +198,7 @@ static const int32_t mount_options[] = {
+@@ -254,6 +258,7 @@ static const int32_t mount_options[] = {
  		/* "rslave"      */ MS_SLAVE|MS_RECURSIVE,
- 		/* "rprivate"    */ MS_SLAVE|MS_RECURSIVE,
+ 		/* "rprivate"    */ MS_PRIVATE|MS_RECURSIVE,
  		/* "runbindable" */ MS_UNBINDABLE|MS_RECURSIVE,
 +		/* "union"       */ MS_UNION,
  	)
  
  	// Always understood.
-@@ -249,6 +254,7 @@ static const char mount_option_str[] =
- 		"rslave\0"
- 		"rprivate\0"
- 		"runbindable\0"
-+		"union" "\0"
+@@ -310,6 +315,7 @@ static const char mount_option_str[] =
+ 		"make-rslave\0"
+ 		"make-rprivate\0"
+ 		"make-runbindable\0"
++		"make-union\0"
  	)
  
  	// Always understood.

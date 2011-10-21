@@ -1,9 +1,25 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
 #
 
 menu "Busybox Library Tuning"
+
+config BUSYBOX_CONFIG_FEATURE_SYSTEMD
+	bool "Enable systemd support"
+	default n
+	help
+	  If you plan to use busybox daemons on a system where daemons
+	  are controlled by systemd, enable this option.
+	  If you don't use systemd, it is still safe to enable it,
+	  but the downside is increased code size.
+config BUSYBOX_CONFIG_FEATURE_RTMINMAX
+	bool "Support RTMIN[+n] and RTMAX[-n] signal names"
+	default n
+	help
+	  Support RTMIN[+n] and RTMAX[-n] signal names
+	  in kill, killall etc. This costs ~250 bytes.
 
 config BUSYBOX_CONFIG_PASSWORD_MINLEN
 	int "Minimum password length"
@@ -78,11 +94,12 @@ config BUSYBOX_CONFIG_FEATURE_EDITING_VI
 
 config BUSYBOX_CONFIG_FEATURE_EDITING_HISTORY
 	int "History size"
-	range 0 99999
+	# Don't allow way too big values here, code uses fixed "char *history[N]" struct member
+	range 0 9999
 	default 256
 	depends on BUSYBOX_CONFIG_FEATURE_EDITING
 	help
-	  Specify command history size.
+	  Specify command history size (0 - disable).
 
 config BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
 	bool "History saving"
@@ -90,6 +107,14 @@ config BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
 	depends on BUSYBOX_CONFIG_FEATURE_EDITING
 	help
 	  Enable history saving in shells.
+
+config BUSYBOX_CONFIG_FEATURE_REVERSE_SEARCH
+	bool "Reverse history search"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_EDITING_SAVEHISTORY
+	help
+	  Enable readline-like Ctrl-R combination for reverse history search.
+	  Increases code by about 0.5k.
 
 config BUSYBOX_CONFIG_FEATURE_TAB_COMPLETION
 	bool "Tab completion"
@@ -133,7 +158,7 @@ config BUSYBOX_CONFIG_FEATURE_NON_POSIX_CP
 	  and create a regular file. This does not conform to POSIX,
 	  but prevents a symlink attack.
 	  Similarly, "cp file device" will not send file's data
-	  to the device.
+	  to the device. (To do that, use "cat file >device")
 
 config BUSYBOX_CONFIG_FEATURE_VERBOSE_CP_MESSAGE
 	bool "Give more precise messages when copy fails (cp, mv etc)"
@@ -154,15 +179,34 @@ config BUSYBOX_CONFIG_FEATURE_COPYBUF_KB
 	range 1 1024
 	default 4
 	help
-	  Size of buffer used by cp, mv, install etc.
+	  Size of buffer used by cp, mv, install, wget etc.
 	  Buffers which are 4 kb or less will be allocated on stack.
 	  Bigger buffers will be allocated with mmap, with fallback to 4 kb
 	  stack buffer if mmap fails.
 
+config BUSYBOX_CONFIG_FEATURE_SKIP_ROOTFS
+	bool "Skip rootfs in mount table"
+	default n
+	help
+	  Ignore rootfs entry in mount table.
+
+	  In Linux, kernel has a special filesystem, rootfs, which is initially
+	  mounted on /. It contains initramfs data, if kernel is configured
+	  to have one. Usually, another file system is mounted over / early
+	  in boot process, and therefore most tools which manipulate
+	  mount table, such as df, will skip rootfs entry.
+
+	  However, some systems do not mount anything on /.
+	  If you need to configure busybox for one of these systems,
+	  you may find useful to turn this option off to make df show
+	  initramfs statistic.
+
+	  Otherwise, choose Y.
+
 config BUSYBOX_CONFIG_MONOTONIC_SYSCALL
 	bool "Use clock_gettime(CLOCK_MONOTONIC) syscall"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Use clock_gettime(CLOCK_MONOTONIC) syscall for measuring
 	  time intervals (time, ping, traceroute etc need this).

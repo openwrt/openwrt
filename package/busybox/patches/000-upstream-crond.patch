@@ -1,0 +1,12 @@
+--- a/miscutils/crond.c
++++ b/miscutils/crond.c
+@@ -861,7 +861,8 @@ int crond_main(int argc UNUSED_PARAM, ch
+ 
+ 	/* "-b after -f is ignored", and so on for every pair a-b */
+ 	opt_complementary = "f-b:b-f:S-L:L-S" IF_FEATURE_CROND_D(":d-l")
+-			":l+:d+"; /* -l and -d have numeric param */
++			/* -l and -d have numeric param */
++			":l+" IF_FEATURE_CROND_D(":d+");
+ 	opts = getopt32(argv, "l:L:fbSc:" IF_FEATURE_CROND_D("d:"),
+ 			&G.log_level, &G.log_filename, &G.crontab_dir_name
+ 			IF_FEATURE_CROND_D(,&G.log_level));

@@ -9,7 +9,7 @@
 config BUSYBOX_CONFIG_UDHCPD
 	bool "udhcp server (udhcpd)"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  udhcpd is a DHCP server geared primarily toward embedded systems,
 	  while striving to be fully functional and RFC compliant.
@@ -40,7 +40,21 @@ config BUSYBOX_CONFIG_FEATURE_UDHCPD_WRITE_LEASES_EARLY
 	  If selected, udhcpd will write a new file with leases every
 	  time a new lease has been accepted, thus eliminating the need
 	  to send SIGUSR1 for the initial writing or updating. Any timed
-	  rewriting remains undisturbed
+	  rewriting remains undisturbed.
+
+config BUSYBOX_CONFIG_FEATURE_UDHCPD_BASE_IP_ON_MAC
+	bool "Select IP address based on client MAC"
+	default n
+	depends on BUSYBOX_CONFIG_UDHCPD
+	help
+	  If selected, udhcpd will base its selection of IP address to offer
+	  on the client's hardware address. Otherwise udhcpd uses the next
+	  consecutive free address.
+
+	  This reduces the frequency of IP address changes for clients
+	  which let their lease expire, and makes consecutive DHCPOFFERS
+	  for the same client to (almost always) contain the same
+	  IP address.
 
 config BUSYBOX_CONFIG_DHCPD_LEASES_FILE
 	string "Absolute path to lease file"
@@ -53,7 +67,7 @@ config BUSYBOX_CONFIG_DHCPD_LEASES_FILE
 config BUSYBOX_CONFIG_UDHCPC
 	bool "udhcp client (udhcpc)"
 	default y
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  udhcpc is a DHCP client geared primarily toward embedded systems,
 	  while striving to be fully functional and RFC compliant.
@@ -86,7 +100,7 @@ config BUSYBOX_CONFIG_UDHCP_DEBUG
 	depends on BUSYBOX_CONFIG_UDHCPD || BUSYBOX_CONFIG_UDHCPC || BUSYBOX_CONFIG_DHCPRELAY
 	help
 	  Verbosity can be increased with multiple -v options.
-	  This options controls how high it can be cranked up.
+	  This option controls how high it can be cranked up.
 
 	  Bigger values result in bigger code. Levels above 1
 	  are very verbose and useful for debugging only.
@@ -99,6 +113,14 @@ config BUSYBOX_CONFIG_FEATURE_UDHCP_RFC3397
 	  If selected, both client and server will support passing of domain
 	  search lists via option 119, specified in RFC 3397,
 	  and SIP servers option 120, specified in RFC 3361.
+
+config BUSYBOX_CONFIG_FEATURE_UDHCP_8021Q
+	bool "Support for 802.1Q VLAN parameters"
+	default n
+	depends on BUSYBOX_CONFIG_UDHCPD || BUSYBOX_CONFIG_UDHCPC
+	help
+	  If selected, both client and server will support passing of VLAN
+	  ID and priority via options 132 and 133 as per 802.1Q.
 
 config BUSYBOX_CONFIG_UDHCPC_DEFAULT_SCRIPT
 	string "Absolute path to config script"
