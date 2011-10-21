@@ -34,7 +34,7 @@ endif
 define Package/base-files
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+base-files-network
+  DEPENDS:=+!USE_NETIFD:base-files-network +USE_NETIFD:netifd
   TITLE:=Base filesystem for OpenWrt
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REVISION)
@@ -66,6 +66,11 @@ define Package/base-files/description
  This package contains a base filesystem and system scripts for OpenWrt.
 endef
 
+define Package/base-files/config
+  config USE_NETIFD
+    bool "Use netifd instead of the old network init scripts (experimental!)"
+	default n
+endef
 
 define Package/gcc/Default
   SECTION:=libs

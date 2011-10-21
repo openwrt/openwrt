@@ -18,6 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/base-files-network
   SECTION:=base
   CATEGORY:=Base system
+  DEPENDS:=@!USE_NETIFD
   TITLE:=Network scripts for the OpenWrt base system
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)

@@ -1,0 +1,5 @@
+[ ifup = "$ACTION" ] && {
+	uci_toggle_state network "$INTERFACE" up 1
+	uci_toggle_state network "$INTERFACE" connect_time $(sed -ne 's![^0-9].*$!!p' /proc/uptime)
+	[ -n "$DEVICE" ] && uci_toggle_state network "$INTERFACE" ifname "$DEVICE"
+}
