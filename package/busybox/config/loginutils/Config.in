@@ -1,3 +1,4 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
@@ -191,7 +192,19 @@ config BUSYBOX_CONFIG_GETTY
 	default n
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
-	  getty lets you log in on a tty, it is normally invoked by init.
+	  getty lets you log in on a tty. It is normally invoked by init.
+
+	  Note that you can save a few bytes by disabling it and
+	  using login applet directly.
+	  If you need to reset tty attributes before calling login,
+	  this script approximates getty:
+
+	  exec </dev/$1 >/dev/$1 2>&1 || exit 1
+	  reset
+	  stty sane; stty ispeed 38400; stty ospeed 38400
+	  printf "%s login: " "`hostname`"
+	  read -r login
+	  exec /bin/login "$login"
 
 config BUSYBOX_CONFIG_LOGIN
 	bool "login"

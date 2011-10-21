@@ -1,3 +1,4 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
@@ -33,10 +34,12 @@ config BUSYBOX_CONFIG_FEATURE_DATE_ISOFMT
 	  Enable option (-I) to output an ISO-8601 compliant
 	  date/time string.
 
+# defaults to "no": stat's nanosecond field is a bit non-portable
 config BUSYBOX_CONFIG_FEATURE_DATE_NANO
 	bool "Support %[num]N nanosecond format specifier"
 	default n
-	depends on BUSYBOX_CONFIG_DATE && BUSYBOX_CONFIG_PLATFORM_LINUX
+	depends on BUSYBOX_CONFIG_DATE  # syscall(__NR_clock_gettime)
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Support %[num]N format specifier. Adds ~250 bytes of code.
 
@@ -55,7 +58,16 @@ config BUSYBOX_CONFIG_FEATURE_DATE_COMPAT
 	  With this option off, 'date DATE' is 'date -s DATE' support
 	  the same format. With it on, 'date DATE' additionally supports
 	  MMDDhhmm[[YY]YY][.ss] format.
-
+config BUSYBOX_CONFIG_ID
+	bool "id"
+	default y
+	help
+	  id displays the current user and group ID names.
+config BUSYBOX_CONFIG_GROUPS
+	bool "groups"
+	default n
+	help
+	  Print the group names associated with current user id.
 config BUSYBOX_CONFIG_TEST
 	bool "test"
 	default y
@@ -70,7 +82,12 @@ config BUSYBOX_CONFIG_FEATURE_TEST_64
 	depends on BUSYBOX_CONFIG_TEST || BUSYBOX_CONFIG_ASH_BUILTIN_TEST || BUSYBOX_CONFIG_HUSH
 	help
 	  Enable 64-bit support in test.
-
+config BUSYBOX_CONFIG_TOUCH
+	bool "touch"
+	default y
+	help
+	  touch is used to create or change the access and/or
+	  modification timestamp of specified files.
 config BUSYBOX_CONFIG_TR
 	bool "tr"
 	default y
@@ -101,6 +118,18 @@ config BUSYBOX_CONFIG_BASE64
 	default n
 	help
 	  Base64 encode and decode
+config BUSYBOX_CONFIG_WHO
+      bool "who"
+      default n
+      depends on BUSYBOX_CONFIG_FEATURE_UTMP
+      help
+        who is used to show who is logged on.
+config BUSYBOX_CONFIG_USERS
+      bool "users"
+      default n
+      depends on BUSYBOX_CONFIG_FEATURE_UTMP
+      help
+        Print users currently logged on.
 
 config BUSYBOX_CONFIG_CAL
 	bool "cal"
@@ -371,12 +400,6 @@ config BUSYBOX_CONFIG_HOSTID
 	  hostid prints the numeric identifier (in hexadecimal) for
 	  the current host.
 
-config BUSYBOX_CONFIG_ID
-	bool "id"
-	default y
-	help
-	  id displays the current user and group ID names.
-
 config BUSYBOX_CONFIG_INSTALL
 	bool "install"
 	default n
@@ -390,11 +413,11 @@ config BUSYBOX_CONFIG_FEATURE_INSTALL_LONG_OPTIONS
 	help
 	  Support long options for the install applet.
 
-config BUSYBOX_CONFIG_LENGTH
-	bool "length"
-	default y
-	help
-	  length is used to print out the length of a specified string.
+####config LENGTH
+####	bool "length"
+####	default y
+####	help
+####	  length is used to print out the length of a specified string.
 
 config BUSYBOX_CONFIG_LN
 	bool "ln"
@@ -686,7 +709,7 @@ config BUSYBOX_CONFIG_FEATURE_SPLIT_FANCY
 config BUSYBOX_CONFIG_STAT
 	bool "stat"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX # statfs()
 	help
 	  display file or filesystem status.
 
@@ -755,13 +778,6 @@ config BUSYBOX_CONFIG_FEATURE_TEE_USE_BLOCK_IO
 	depends on BUSYBOX_CONFIG_TEE
 	help
 	  Enable this option for a faster tee, at expense of size.
-
-config BUSYBOX_CONFIG_TOUCH
-	bool "touch"
-	default y
-	help
-	  touch is used to create or change the access and/or
-	  modification timestamp of specified files.
 
 config BUSYBOX_CONFIG_TRUE
 	bool "true"
@@ -832,13 +848,6 @@ config BUSYBOX_CONFIG_FEATURE_WC_LARGE
 	depends on BUSYBOX_CONFIG_WC
 	help
 	  Use "unsigned long long" in wc for counter variables.
-
-config BUSYBOX_CONFIG_WHO
-	bool "who"
-	default n
-	depends on BUSYBOX_CONFIG_FEATURE_UTMP
-	help
-	  who is used to show who is logged on.
 
 config BUSYBOX_CONFIG_WHOAMI
 	bool "whoami"

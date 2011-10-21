@@ -1,10 +1,10 @@
 --- a/networking/telnetd.c
 +++ b/networking/telnetd.c
-@@ -313,6 +313,7 @@ make_new_session(
+@@ -330,6 +330,7 @@ make_new_session(
  
  	/* Restore default signal handling ASAP */
  	bb_signals((1 << SIGCHLD) + (1 << SIGPIPE), SIG_DFL);
 +	signal(SIGINT, SIG_DFL);
  
- 	if (ENABLE_FEATURE_UTMP) {
- 		len_and_sockaddr *lsa = get_peer_lsa(sock);
+ 	pid = getpid();
+ 

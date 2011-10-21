@@ -1,6 +1,6 @@
 --- a/networking/udhcp/dhcpc.c
 +++ b/networking/udhcp/dhcpc.c
-@@ -436,6 +436,7 @@ static int raw_bcast_from_client_config_
+@@ -540,6 +540,7 @@ static int raw_bcast_from_client_config_
  static NOINLINE int send_discover(uint32_t xid, uint32_t requested)
  {
  	struct dhcp_packet packet;
@@ -8,7 +8,7 @@
  
  	/* Fill in: op, htype, hlen, cookie, chaddr fields,
  	 * random xid field (we override it below),
-@@ -453,6 +454,7 @@ static NOINLINE int send_discover(uint32
+@@ -557,6 +558,7 @@ static NOINLINE int send_discover(uint32
  	 */
  	add_client_options(&packet);
  

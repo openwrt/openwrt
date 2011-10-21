@@ -1,24 +1,24 @@
 --- a/networking/udhcp/common.c
 +++ b/networking/udhcp/common.c
-@@ -56,6 +56,8 @@ const struct dhcp_optflag dhcp_optflags[
+@@ -60,6 +60,8 @@ const struct dhcp_optflag dhcp_optflags[
+ 	{ OPTION_U8                               , 0x85 }, /* DHCP_VLAN_PRIORITY */
  #endif
- 	{ OPTION_STATIC_ROUTES                    , 0x79 }, /* DHCP_STATIC_ROUTES */
  	{ OPTION_STATIC_ROUTES                    , 0xf9 }, /* DHCP_MS_STATIC_ROUTES */
 +	{ OPTION_6RD                              , 0xd4 }, /* DHCP_6RD (RFC)     */
 +	{ OPTION_6RD                              , 0x96 }, /* DHCP_6RD (Comcast) */
  	{ OPTION_STRING                           , 0xfc }, /* DHCP_WPAD          */
  
  	/* Options below have no match in dhcp_option_strings[],
-@@ -119,6 +121,8 @@ const char dhcp_option_strings[] ALIGN1 
- // is not handled yet by "string->option" conversion code:
- 	"staticroutes" "\0"/* DHCP_STATIC_ROUTES  */
+@@ -127,6 +129,8 @@ const char dhcp_option_strings[] ALIGN1 
+ 	"vlanpriority" "\0"/* DHCP_VLAN_PRIORITY  */
+ #endif
  	"msstaticroutes""\0"/* DHCP_MS_STATIC_ROUTES */
 +	"ip6rd" "\0"       /* DHCP_6RD (RFC)      */
 +	"ip6rd" "\0"       /* DHCP_6RD (Comcast)  */
  	"wpad" "\0"        /* DHCP_WPAD           */
  	;
  
-@@ -146,6 +150,7 @@ const uint8_t dhcp_option_lengths[] ALIG
+@@ -154,6 +158,7 @@ const uint8_t dhcp_option_lengths[] ALIG
  	[OPTION_S32] =     4,
  	/* Just like OPTION_STRING, we use minimum length here */
  	[OPTION_STATIC_ROUTES] = 5,
@@ -38,7 +38,7 @@
  	OPTION_SIP_SERVERS,
 --- a/networking/udhcp/dhcpc.c
 +++ b/networking/udhcp/dhcpc.c
-@@ -45,6 +45,7 @@ static const uint8_t len_of_option_as_st
+@@ -100,6 +100,7 @@ static const uint8_t len_of_option_as_st
  	[OPTION_IP              ] = sizeof("255.255.255.255 "),
  	[OPTION_IP_PAIR         ] = sizeof("255.255.255.255 ") * 2,
  	[OPTION_STATIC_ROUTES   ] = sizeof("255.255.255.255/32 255.255.255.255 "),
@@ -46,7 +46,7 @@
  	[OPTION_STRING          ] = 1,
  #if ENABLE_FEATURE_UDHCP_RFC3397
  	[OPTION_DNS_STRING      ] = 1, /* unused */
-@@ -68,6 +69,23 @@ static int sprint_nip(char *dest, const 
+@@ -123,6 +124,23 @@ static int sprint_nip(char *dest, const 
  	return sprintf(dest, "%s%u.%u.%u.%u", pre, ip[0], ip[1], ip[2], ip[3]);
  }
  
@@ -70,7 +70,7 @@
  /* really simple implementation, just count the bits */
  static int mton(uint32_t mask)
  {
-@@ -177,6 +195,70 @@ static NOINLINE char *xmalloc_optname_op
+@@ -232,6 +250,70 @@ static NOINLINE char *xmalloc_optname_op
  
  			return ret;
  		}

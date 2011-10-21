@@ -1,3 +1,4 @@
+# DO NOT EDIT. This file is generated from Config.src
 #
 # For a description of the syntax of this configuration file,
 # see scripts/kbuild/config-language.txt.
@@ -5,12 +6,40 @@
 
 menu "Networking Utilities"
 
+config BUSYBOX_CONFIG_NAMEIF
+	bool "nameif"
+	default n
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
+	help
+	  nameif is used to rename network interface by its MAC address.
+	  Renamed interfaces MUST be in the down state.
+	  It is possible to use a file (default: /etc/mactab)
+	  with list of new interface names and MACs.
+	  Maximum interface name length: IFNAMSIZ = 16
+	  File fields are separated by space or tab.
+	  File format:
+	  # Comment
+	  new_interface_name    XX:XX:XX:XX:XX:XX
+
+config BUSYBOX_CONFIG_FEATURE_NAMEIF_EXTENDED
+	bool "Extended nameif"
+	default n
+	depends on BUSYBOX_CONFIG_NAMEIF
+	help
+	  This extends the nameif syntax to support the bus_info, driver,
+	  phyaddr selectors. The syntax is compatible to the normal nameif.
+	  File format:
+	    new_interface_name  driver=asix bus=usb-0000:00:08.2-3
+	    new_interface_name  bus=usb-0000:00:08.2-3 00:80:C8:38:91:B5
+	    new_interface_name  phy_address=2 00:80:C8:38:91:B5
+	    new_interface_name  mac=00:80:C8:38:91:B5
+	    new_interface_name  00:80:C8:38:91:B5
 config BUSYBOX_CONFIG_NBDCLIENT
 	bool "nbd-client"
 	default n
 	help
 	  Network block device client
-
 config BUSYBOX_CONFIG_NC
 	bool "nc"
 	default y
@@ -36,13 +65,40 @@ config BUSYBOX_CONFIG_NC_EXTRA
 
 config BUSYBOX_CONFIG_NC_110_COMPAT
 	bool "Netcat 1.10 compatibility (+2.5k)"
-	default n
+	default n  # off specially for Rob
 	depends on BUSYBOX_CONFIG_NC
 	help
 	  This option makes nc closely follow original nc-1.10.
 	  The code is about 2.5k bigger. It enables
 	  -s ADDR, -n, -u, -v, -o FILE, -z options, but loses
 	  busybox-specific extensions: -f FILE and -ll.
+config BUSYBOX_CONFIG_PING
+	bool "ping"
+	default y
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  ping uses the ICMP protocol's mandatory ECHO_REQUEST datagram to
+	  elicit an ICMP ECHO_RESPONSE from a host or gateway.
+
+config BUSYBOX_CONFIG_PING6
+	bool "ping6"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_IPV6 && BUSYBOX_CONFIG_PING
+	help
+	  This will give you a ping that can talk IPv6.
+
+config BUSYBOX_CONFIG_FEATURE_FANCY_PING
+	bool "Enable fancy ping output"
+	default y
+	depends on BUSYBOX_CONFIG_PING
+	help
+	  Make the output from the ping applet include statistics, and at the
+	  same time provide full support for ICMP packets.
+config BUSYBOX_CONFIG_WHOIS
+	bool "whois"
+	default n
+	help
+	  whois is a client for the whois directory service
 
 config BUSYBOX_CONFIG_FEATURE_IPV6
 	bool "Enable IPv6 support"
@@ -88,21 +144,21 @@ config BUSYBOX_CONFIG_VERBOSE_RESOLUTION_ERRORS
 config BUSYBOX_CONFIG_ARP
 	bool "arp"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Manipulate the system ARP cache.
 
 config BUSYBOX_CONFIG_ARPING
 	bool "arping"
 	default y
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Ping hosts by ARP packets.
 
 config BUSYBOX_CONFIG_BRCTL
 	bool "brctl"
 	default y
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Manage ethernet bridges.
 	  Supports addbr/delbr and addif/delif.
@@ -135,7 +191,7 @@ config BUSYBOX_CONFIG_DNSD
 config BUSYBOX_CONFIG_ETHER_WAKE
 	bool "ether-wake"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Send a magic packet to wake up sleeping machines.
 
@@ -318,7 +374,7 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_GZIP
 config BUSYBOX_CONFIG_IFCONFIG
 	bool "ifconfig"
 	default y
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Ifconfig is used to configure the kernel-resident network interfaces.
 
@@ -366,7 +422,7 @@ config BUSYBOX_CONFIG_FEATURE_IFCONFIG_BROADCAST_PLUS
 config BUSYBOX_CONFIG_IFENSLAVE
 	bool "ifenslave"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Userspace application to bind several interfaces
 	  to a logical interface (use with kernel bonding driver).
@@ -374,7 +430,7 @@ config BUSYBOX_CONFIG_IFENSLAVE
 config BUSYBOX_CONFIG_IFPLUGD
 	bool "ifplugd"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Network interface plug detection daemon.
 
@@ -416,7 +472,8 @@ config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP
 config BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP_BUILTIN
 	bool "Use busybox ip applet"
 	default n
-	depends on BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP && BUSYBOX_CONFIG_PLATFORM_LINUX
+	depends on BUSYBOX_CONFIG_FEATURE_IFUPDOWN_IP
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	select BUSYBOX_CONFIG_IP
 	select BUSYBOX_CONFIG_FEATURE_IP_ADDRESS
 	select BUSYBOX_CONFIG_FEATURE_IP_LINK
@@ -535,7 +592,7 @@ config BUSYBOX_CONFIG_FEATURE_INETD_RPC
 config BUSYBOX_CONFIG_IP
 	bool "ip"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The "ip" applet is a TCP/IP interface configuration and routing
 	  utility. You generally don't need "ip" to use busybox with
@@ -648,35 +705,6 @@ config BUSYBOX_CONFIG_FEATURE_IPCALC_LONG_OPTIONS
 	help
 	  Support long options for the ipcalc applet.
 
-config BUSYBOX_CONFIG_NAMEIF
-	bool "nameif"
-	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
-	select BUSYBOX_CONFIG_FEATURE_SYSLOG
-	help
-	  nameif is used to rename network interface by its MAC address.
-	  Renamed interfaces MUST be in the down state.
-	  It is possible to use a file (default: /etc/mactab)
-	  with list of new interface names and MACs.
-	  Maximum interface name length: IFNAMSIZ = 16
-	  File fields are separated by space or tab.
-	  File format:
-	  # Comment
-	  new_interface_name    XX:XX:XX:XX:XX:XX
-
-config BUSYBOX_CONFIG_FEATURE_NAMEIF_EXTENDED
-	bool "Extended nameif"
-	default n
-	depends on BUSYBOX_CONFIG_NAMEIF
-	help
-	  This extends the nameif syntax to support the bus_info and driver
-	  checks. The syntax is compatible to the normal nameif.
-	  File format:
-	    new_interface_name  driver=asix bus=usb-0000:00:08.2-3
-	    new_interface_name  bus=usb-0000:00:08.2-3 00:80:C8:38:91:B5
-	    new_interface_name  mac=00:80:C8:38:91:B5
-	    new_interface_name  00:80:C8:38:91:B5
-
 config BUSYBOX_CONFIG_NETMSG
 	bool "netmsg"
 	default y
@@ -686,7 +714,7 @@ config BUSYBOX_CONFIG_NETMSG
 config BUSYBOX_CONFIG_NETSTAT
 	bool "netstat"
 	default y
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  netstat prints information about the Linux networking subsystem.
 
@@ -715,7 +743,7 @@ config BUSYBOX_CONFIG_NSLOOKUP
 config BUSYBOX_CONFIG_NTPD
 	bool "ntpd"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The NTP client/server daemon.
 
@@ -727,29 +755,6 @@ config BUSYBOX_CONFIG_FEATURE_NTPD_SERVER
 	  Make ntpd usable as a NTP server. If you disable this option
 	  ntpd will be usable only as a NTP client.
 
-config BUSYBOX_CONFIG_PING
-	bool "ping"
-	default y
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  ping uses the ICMP protocol's mandatory ECHO_REQUEST datagram to
-	  elicit an ICMP ECHO_RESPONSE from a host or gateway.
-
-config BUSYBOX_CONFIG_PING6
-	bool "ping6"
-	default y
-	depends on BUSYBOX_CONFIG_FEATURE_IPV6 && BUSYBOX_CONFIG_PING
-	help
-	  This will give you a ping that can talk IPv6.
-
-config BUSYBOX_CONFIG_FEATURE_FANCY_PING
-	bool "Enable fancy ping output"
-	default y
-	depends on BUSYBOX_CONFIG_PING
-	help
-	  Make the output from the ping applet include statistics, and at the
-	  same time provide full support for ICMP packets.
-
 config BUSYBOX_CONFIG_PSCAN
 	bool "pscan"
 	default n
@@ -759,14 +764,14 @@ config BUSYBOX_CONFIG_PSCAN
 config BUSYBOX_CONFIG_ROUTE
 	bool "route"
 	default y
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Route displays or manipulates the kernel's IP routing tables.
 
 config BUSYBOX_CONFIG_SLATTACH
 	bool "slattach"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  slattach is a small utility to attach network interfaces to serial
 	  lines.
@@ -953,7 +958,7 @@ config BUSYBOX_CONFIG_TFTP_DEBUG
 config BUSYBOX_CONFIG_TRACEROUTE
 	bool "traceroute"
 	default y
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Utility to trace the route of IP packets.
 
@@ -990,7 +995,7 @@ config BUSYBOX_CONFIG_FEATURE_TRACEROUTE_USE_ICMP
 config BUSYBOX_CONFIG_TUNCTL
 	bool "tunctl"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  tunctl creates or deletes tun devices.
 
@@ -1023,7 +1028,7 @@ config BUSYBOX_CONFIG_UDPSVD
 config BUSYBOX_CONFIG_VCONFIG
 	bool "vconfig"
 	default y
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Creates, removes, and configures VLAN interfaces
 
@@ -1070,7 +1075,7 @@ config BUSYBOX_CONFIG_FEATURE_WGET_TIMEOUT
 config BUSYBOX_CONFIG_ZCIP
 	bool "zcip"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	select BUSYBOX_CONFIG_FEATURE_SYSLOG
 	help
 	  ZCIP provides ZeroConf IPv4 address selection, according to RFC 3927.

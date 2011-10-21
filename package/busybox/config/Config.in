@@ -125,7 +125,6 @@ config BUSYBOX_CONFIG_FEATURE_INSTALLER
 config BUSYBOX_CONFIG_INSTALL_NO_USR
 	bool "Don't use /usr"
 	default n
-	depends on BUSYBOX_CONFIG_FEATURE_INSTALLER
 	help
 	  Disable use of /usr. busybox --install and "make install"
 	  will install applets only to /bin and /sbin,
@@ -248,8 +247,9 @@ config BUSYBOX_CONFIG_UNICODE_PRESERVE_BROKEN
 	default n
 	depends on BUSYBOX_CONFIG_UNICODE_SUPPORT
 	help
-	  With this option on, invalid UTF-8 bytes are not substituted
-	  with the selected substitution character.
+	  With this option on, on line-editing input (such as used by shells)
+	  invalid UTF-8 bytes are not substituted with the selected
+	  substitution character.
 	  For example, this means that entering 'l', 's', ' ', 0xff, [Enter]
 	  at shell prompt will list file named 0xff (single char name
 	  with char value 255), not file named '?'.
@@ -283,17 +283,6 @@ config BUSYBOX_CONFIG_FEATURE_CLEAN_UP
 	  Don't enable this unless you have a really good reason to clean
 	  things up manually.
 
-config BUSYBOX_CONFIG_FEATURE_WTMP
-	bool "Support wtmp file"
-	default n
-	select BUSYBOX_CONFIG_FEATURE_UTMP
-	help
-	  The file /var/run/wtmp is used to track when users have logged into
-	  and logged out of the system.
-	  With this option on, certain applets (getty, login, telnetd etc)
-	  will append new entries there.
-	  "last" applet requires this option.
-
 config BUSYBOX_CONFIG_FEATURE_UTMP
 	bool "Support utmp file"
 	default n
@@ -302,6 +291,17 @@ config BUSYBOX_CONFIG_FEATURE_UTMP
 	  With this option on, certain applets (getty, login, telnetd etc)
 	  will create and delete entries there.
 	  "who" applet requires this option.
+
+config BUSYBOX_CONFIG_FEATURE_WTMP
+	bool "Support wtmp file"
+	default n
+	depends on BUSYBOX_CONFIG_FEATURE_UTMP
+	help
+	  The file /var/run/wtmp is used to track when users have logged into
+	  and logged out of the system.
+	  With this option on, certain applets (getty, login, telnetd etc)
+	  will append new entries there.
+	  "last" applet requires this option.
 
 config BUSYBOX_CONFIG_FEATURE_PIDFILE
 	bool "Support writing pidfiles"
@@ -327,21 +327,39 @@ config BUSYBOX_CONFIG_FEATURE_SUID
 	  symlinks pointing to each binary), and only set the suid bit on the
 	  one that needs it.
 
-	  The applets currently marked to need the suid bit are:
+	  The applets which require root rights (need suid bit or
+	  to be run by root) and will refuse to execute otherwise:
+	  crontab, login, passwd, su, vlock, wall.
 
-	  crontab, dnsd, findfs, ipcrm, ipcs, login, passwd, ping, su,
-	  traceroute, vlock.
+	  The applets which will use root rights if they have them
+	  (via suid bit, or because run by root), but would try to work
+	  without root right nevertheless:
+	  findfs, ping[6], traceroute[6], mount.
+
+	  Note that if you DONT select this option, but DO make busybox
+	  suid root, ALL applets will run under root, which is a huge
+	  security hole (think "cp /some/file /etc/passwd").
 
 config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
 	bool "Runtime SUID/SGID configuration via /etc/busybox.conf"
-	default n if BUSYBOX_CONFIG_FEATURE_SUID
+	default n
 	depends on BUSYBOX_CONFIG_FEATURE_SUID
 	help
 	  Allow the SUID / SGID state of an applet to be determined at runtime
 	  by checking /etc/busybox.conf. (This is sort of a poor man's sudo.)
 	  The format of this file is as follows:
 
-	  <applet> = [Ssx-][Ssx-][x-] (<username>|<uid>).(<groupname>|<gid>)
+	  APPLET = [Ssx-][Ssx-][x-] [USER.GROUP]
+
+	  s: USER or GROUP is allowed to execute APPLET.
+	     APPLET will run under USER or GROUP
+	     (reagardless of who's running it).
+	  S: USER or GROUP is NOT allowed to execute APPLET.
+	     APPLET will run under USER or GROUP.
+	     This option is not very sensical.
+	  x: USER/GROUP/others are allowed to execute APPLET.
+	     No UID/GID change will be done when it is run.
+	  -: USER/GROUP/others are not allowed to execute APPLET.
 
 	  An example might help:
 
@@ -351,7 +369,8 @@ config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG
 	  su = ssx        # exactly the same
 
 	  mount = sx- root.disk # applet mount can be run by root and members
-	                        # of group disk and runs with euid=0
+	                        # of group disk (but not anyone else)
+	                        # and runs with euid=0 (egid is not changed)
 
 	  cp = --- # disable applet cp for everyone
 
@@ -377,7 +396,7 @@ config BUSYBOX_CONFIG_FEATURE_SUID_CONFIG_QUIET
 config BUSYBOX_CONFIG_SELINUX
 	bool "Support NSA Security Enhanced Linux"
 	default n
-	depends on BUSYBOX_CONFIG_PLATFORM_LINUX
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Enable support for SELinux in applets ls, ps, and id. Also provide
 	  the option of compiling in SELinux applets.
@@ -458,7 +477,10 @@ config BUSYBOX_CONFIG_PIE
 	default n
 	depends on !BUSYBOX_CONFIG_STATIC
 	help
-	  (TODO: what is it and why/when is it useful?)
+	  Hardened code option. PIE binaries are loaded at a different
+	  address at each invocation. This has some overhead,
+	  particularly on x86-32 which is short on registers.
+
 	  Most people will leave this set to 'N'.
 
 config BUSYBOX_CONFIG_NOMMU
@@ -555,7 +577,6 @@ config BUSYBOX_CONFIG_FEATURE_SHARED_BUSYBOX
 config BUSYBOX_CONFIG_LFS
 	bool
 	default y
-	select BUSYBOX_CONFIG_FDISK_SUPPORT_LARGE_DISKS
 	help
 	  If you want to build BusyBox with large file support, then enable
 	  this option. This will have no effect if your kernel or your C
@@ -659,9 +680,6 @@ config BUSYBOX_CONFIG_EFENCE
 
 endchoice
 
-### config PARSE
-###	bool "Uniform config file parser debugging applet: parse"
-
 endmenu
 
 menu 'Installation Options ("make install" behavior)'
@@ -692,7 +710,6 @@ config BUSYBOX_CONFIG_INSTALL_APPLET_SCRIPT_WRAPPERS
 
 config BUSYBOX_CONFIG_INSTALL_APPLET_DONT
 	bool "not installed"
-	depends on BUSYBOX_CONFIG_FEATURE_INSTALLER || BUSYBOX_CONFIG_FEATURE_SH_STANDALONE || BUSYBOX_CONFIG_FEATURE_PREFER_APPLETS
 	help
 	  Do not install applet links. Useful when you plan to use
 	  busybox --install for installing links, or plan to use
