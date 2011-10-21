@@ -20,7 +20,8 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
 	rm -f $(HOST_BUILD_DIR)/src/.depend
-	$(MAKE) UPX_LZMADIR="$(BUILD_DIR_HOST)/lzma-4.65" -C $(HOST_BUILD_DIR)/src
+	$(MAKE) UPX_LZMADIR="$(BUILD_DIR_HOST)/lzma-4.65" -C $(HOST_BUILD_DIR)/src \
+		CXXFLAGS_WERROR=
 endef
 
 define Host/Install
