@@ -1,0 +1,27 @@
+#!/bin/sh
+
+case "$0" in
+	*ifdown) modes=down;;
+	*ifup) modes="down up";;
+	*) echo "Invalid command: $0";;
+esac
+
+if_call() {
+	local interface="$1"
+	for mode in $modes; do
+		ubus call $interface $mode
+	done
+}
+
+[[ "$1" == "-a" ]] && {
+	for interface in `ubus -S list 'network.interface.*'`; do
+		if_call "$interface"
+	done
+	exit
+}
+
+ubus -S list "network.interface.$1" > /dev/null || {
+	echo "Interface $1 not found"
+	exit
+}
+if_call "network.interface.$1"

@@ -1,0 +1,20 @@
+#!/bin/sh /etc/rc.common
+START=40
+STOP=90
+
+start() {
+	setup_switch() { return 0; }
+
+	include /lib/network
+	setup_switch
+
+	ubus call network reload
+}
+
+restart() {
+	start
+}
+
+stop() {
+	/sbin/ifdown -a
+}

@@ -1,0 +1,59 @@
+#!/bin/sh
+[ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
+
+. /etc/functions.sh
+. /lib/netifd/netifd-proto.sh
+
+set_classless_routes() {
+	local max=128
+	local type
+	while [ -n "$1" -a -n "$2" -a $max -gt 0 ]; do
+		proto_add_ipv4_route "${1%%/*}" "${1##*/}" "$2"
+		max=$(($max-1))
+		shift 2
+	done
+}
+
+setup_interface () {
+	proto_init_update "*" 1
+	proto_add_ipv4_address "$ip" "${subnet:-255.255.255.0}"
+	# TODO: apply $broadcast
+
+	for i in $router; do
+		proto_add_ipv4_route 0.0.0.0 0 "$i"
+	done
+
+	# CIDR STATIC ROUTES (rfc3442)
+	[ -n "$staticroutes" ] && set_classless_routes $staticroutes
+	[ -n "$msstaticroutes" ] && set_classless_routes $msstaticroutes
+
+	for dns in $dns; do
+		proto_add_dns_server "$dns"
+	done
+	for domain in $domain; do
+		proto_add_dns_search "$domain"
+	done
+	proto_send_update "$INTERFACE"
+
+	# TODO
+	# [ -n "$ntpsrv" ] && 	change_state network "$ifc" lease_ntpsrv "$ntpsrv"
+	# [ -n "$timesvr" ] && 	change_state network "$ifc" lease_timesrv "$timesvr"
+	# [ -n "$hostname" ] &&	change_state network "$ifc" lease_hostname "$hostname"
+	# [ -n "$timezone" ] && 	change_state network "$ifc" lease_timezone "$timezone"
+}
+
+deconfig_interface() {
+	proto_init_update "*" 0
+	proto_send_update "$INTERFACE"
+}
+
+case "$1" in
+	deconfig)
+		deconfig_interface
+	;;
+	renew|bound)
+		setup_interface
+	;;
+esac
+
+exit 0
