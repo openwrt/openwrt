@@ -311,9 +311,9 @@
 +	UInt64 m_offset;
 +};
 +
-+ZEXTERN int ZEXPORT compress2 OF((Bytef *dest,   uLongf *destLen,
++ZEXTERN int ZEXPORT compress2 (Bytef *dest,   uLongf *destLen,
 +                                  const Bytef *source, uLong sourceLen,
-+                                  int level))
++                                  int level)
 +{
 +	CInMemoryStream *inStreamSpec = new CInMemoryStream(source, sourceLen);
 +	CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
@@ -374,8 +374,8 @@
 +	return Z_OK;
 +}
 +
-+ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
-+                                   const Bytef *source, uLong sourceLen))
++ZEXTERN int ZEXPORT uncompress (Bytef *dest,   uLongf *destLen,
++                                   const Bytef *source, uLong sourceLen)
 +{
 +	CInMemoryStream *inStreamSpec = new CInMemoryStream(source, sourceLen);
 +	CMyComPtr<ISequentialInStream> inStream = inStreamSpec;
