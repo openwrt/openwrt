@@ -74,21 +74,7 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 			fw__rc $(($? & 1))
 			return
 		fi
-		local mod
-		eval "mod=\$FW_${fam#G}_${tab}"
-		if [ "$mod" ]; then
-			fw__rc $mod
-			return
-		fi
-		case "$fam" in
-			*4) mod=iptable_${tab} ;;
-			*6) mod=ip6table_${tab} ;;
-			*) mod=. ;;
-		esac
-		grep -q "^${mod} " /proc/modules
-		mod=$?
-		export FW_${fam}_${tab}=$mod
-		fw__rc $mod
+		fw__rc 0
 	}
 
 	fw__err() {
