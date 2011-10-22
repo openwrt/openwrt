@@ -211,12 +211,17 @@ fw_get_family_mode() {
 	local _mode="$4"
 
 	local _ipv4 _ipv6
-	[ -n "$FW_ZONES4$FW_ZONES6" ] && {
-		list_contains FW_ZONES4 $_zone && _ipv4=1 || _ipv4=0
-		list_contains FW_ZONES6 $_zone && _ipv6=1 || _ipv6=0
+	[ "$_zone" != "*" ] && {
+		[ -n "$FW_ZONES4$FW_ZONES6" ] && {
+			list_contains FW_ZONES4 "$_zone" && _ipv4=1 || _ipv4=0
+			list_contains FW_ZONES6 "$_zone" && _ipv6=1 || _ipv6=0
+		} || {
+			_ipv4=$(uci_get_state firewall core "${_zone}_ipv4" 0)
+			_ipv6=$(uci_get_state firewall core "${_zone}_ipv6" 0)
+		}
 	} || {
-		_ipv4=$(uci_get_state firewall core ${_zone}_ipv4 0)
-		_ipv6=$(uci_get_state firewall core ${_zone}_ipv6 0)
+		_ipv4=1
+		_ipv6=1
 	}
 
 	case "$_hint:$_ipv4:$_ipv6" in
