@@ -59,7 +59,7 @@ fw_load_rule() {
 	fi
 
 	local mode
-	fw_get_family_mode mode ${rule_family:-x} $rule_src I
+	fw_get_family_mode mode ${rule_family:-x} "$rule_src" I
 
 	local src_spec dest_spec
 	fw_get_negation src_spec '-s' "${rule_src_ip:+$rule_src_ip/$rule_src_ip_prefixlen}"
