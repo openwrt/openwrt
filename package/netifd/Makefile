@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/cmake.mk
 define Package/netifd
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+libuci +libnl-tiny +libubus +ubus +ubusd @USE_NETIFD
+  DEPENDS:=+libuci +libnl-tiny +libubus +ubus +ubusd +jshn @USE_NETIFD
   TITLE:=OpenWrt Network Interface Configuration Daemon
 endef
 
