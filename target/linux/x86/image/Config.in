@@ -50,14 +50,14 @@ config X86_GRUB_BOOTOPTS
 config X86_VDI_IMAGES
 	bool "Build VirtualBox image files (VDI)"
 	depends X86_GRUB_IMAGES
-	depends TARGET_x86_generic
+	depends TARGET_x86
 	depends TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-pcnet32
 
 config X86_VMDK_IMAGES
 	bool "Build VMware image files (VMDK)"
 	depends X86_GRUB_IMAGES
-	depends TARGET_x86_generic
+	depends TARGET_x86
 	depends TARGET_ROOTFS_EXT4FS
 	select PACKAGE_kmod-e1000
 
