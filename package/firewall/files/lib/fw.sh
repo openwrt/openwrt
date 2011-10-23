@@ -74,7 +74,8 @@ fw__exec() { # <action> <family> <table> <chain> <target> <position> { <rules> }
 			fw__rc $(($? & 1))
 			return
 		fi
-		fw__rc 0
+		[ "$app" != ip6tables ] || [ "$tab" != nat ]
+		fw__rc $?
 	}
 
 	fw__err() {
