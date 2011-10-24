@@ -144,6 +144,24 @@ define Image/Build/WZRHPG30XNH
 	fi
 endef
 
+define Image/Build/WHRHPG300N
+	$(call MkuImageLzma,$(2),$(3))
+	$(call Sysupgrade/KR,$(1),$(2),917504,2883584)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		( \
+			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
+			dd if=$(call sysupname,$(1),$(2)); \
+		) > $(call imgname,$(1),$(2))-tftp.bin; \
+		buffalo-enc -p $(4) -v 1.76 \
+			-i $(call sysupname,$(1),$(2)) \
+			-o $(KDIR)/$(2).enc; \
+		buffalo-tag -b $(4) -p $(4) -a ath -v 1.76 -m 1.01 -l mlang8 \
+			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
+			-i $(KDIR)/$(2).enc \
+			-o $(call factoryname,$(1),$(2)); \
+	fi
+endef
+
 define Image/Build/Cameo
 	$(call MkuImageLzma,$(2),$(3) $($(4)))
 	$(call Sysupgrade/KR,$(1),$(2),$(5),$(6))
@@ -683,6 +701,11 @@ define Image/Build/Profile/WRT160NL
 	$(call Image/Build/Template/$(fs_64k)/$(1),CyberTAN,wrt160nl,$(wrt160nl_cmdline),1.00.01)
 endef
 
+whrhpg300n_cmdline=board=WHR-HP-G300N console=ttyS0,115200
+define Image/Build/Profile/WHRHPG300N
+	$(call Image/Build/Template/$(fs_64k)/$(1),WHRHPG300N,whr-hp-g300n,$(whrhpg300n_cmdline),whrhpg300n_mtdlayout,WHR-HP-G300N)
+endef
+
 wzrhpg300nh_cmdline=board=WZR-HP-G300NH console=ttyS0,115200
 define Image/Build/Profile/WZRHPG300NH
 	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh,$(wzrhpg300nh_cmdline),WZR-HP-G300NH)
@@ -754,6 +777,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AP96,$(1))
 	$(call Image/Build/Profile/WRT400N,$(1))
 	$(call Image/Build/Profile/WRT160NL,$(1))
+	$(call Image/Build/Profile/WHRHPG300N,$(1))
 	$(call Image/Build/Profile/WZRHPG300NH,$(1))
 	$(call Image/Build/Profile/WZRHPAG300H,$(1))
 	$(call Image/Build/Profile/ZCN1523H28,$(1))
