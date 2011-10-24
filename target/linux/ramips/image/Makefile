@@ -154,6 +154,10 @@ define Image/Build/Profile/FONERA20N
 	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N)
 endef
 
+define Image/Build/Profile/BC2
+	$(call Image/Build/Template/GENERIC_8M,$(1),bc2,BC2)
+endef
+
 define Image/Build/Profile/NBG419N
 	$(call Image/Build/Template/GENERIC_4M,$(1),nbg-419n,NBG-419N)
 endef
@@ -237,6 +241,7 @@ endef
 ifeq ($(CONFIG_RALINK_RT305X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
+	$(call Image/Build/Profile/BC2,$(1))
 	$(call Image/Build/Profile/DIR300B1,$(1))
 	$(call Image/Build/Profile/RTG32B1,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))

@@ -24,7 +24,7 @@ preinit_set_mac_address() {
 	. /lib/ramips.sh
 
 	case $(ramips_board_name) in
-	nw718)
+	bc2 | nw718)
 		nw718_set_mac
 		;;
 	esac

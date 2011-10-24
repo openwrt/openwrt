@@ -19,6 +19,9 @@ EOF
 board=$(ramips_board_name)
 
 case $board in
+	bc2)
+		set_usb_led "bc2:blue:usb"
+		;;
 	fonera20n)
 		set_usb_led "fonera20n:amber:usb"
 		;;

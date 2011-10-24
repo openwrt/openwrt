@@ -51,6 +51,11 @@ config RT305X_MACH_NW718
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_BC2
+	bool "NexAira BC2"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_PWH2004
 	bool "Prolink PWH2004 / Abocom WR5205 support (32M RAM, 8M flash)"
 	select RALINK_DEV_GPIO_BUTTONS
