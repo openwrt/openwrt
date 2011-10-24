@@ -76,7 +76,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	ap81 | ap83 | dir-600-a1 | dir-615-c1 | dir-825-b1 | mzk-w04nu | mzk-w300nh | tew-632brp | wrt400n | bullet-m | nanostation-m | rocket-m | wzr-hp-g300nh | wzr-hp-ag300h | nbg460n_550n_550nh | unifi )
+	ap81 | ap83 | dir-600-a1 | dir-615-c1 | dir-825-b1 | mzk-w04nu | mzk-w300nh | tew-632brp | wrt400n | bullet-m | nanostation-m | rocket-m | wzr-hp-g300nh | wzr-hp-ag300h | whr-hp-g300n | nbg460n_550n_550nh | unifi )
 		[ "$magic" != "2705" ] && {
 			echo "Invalid image type."
 			return 1
