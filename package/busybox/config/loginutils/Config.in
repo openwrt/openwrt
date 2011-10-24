@@ -219,9 +219,14 @@ config BUSYBOX_CONFIG_LOGIN
 config BUSYBOX_CONFIG_PAM
 	bool "Support for PAM (Pluggable Authentication Modules)"
 	default n
+	depends on DEVEL
 	depends on BUSYBOX_CONFIG_LOGIN
 	help
 	  Use PAM in login(1) instead of direct access to password database.
+
+	  OpenWrt specific:
+	    You should install libpam from the packages feed and compile it
+	    before trying to build busysbox.
 
 config BUSYBOX_CONFIG_LOGIN_SCRIPTS
 	bool "Support for login scripts"
