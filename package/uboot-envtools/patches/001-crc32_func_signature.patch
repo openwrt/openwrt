@@ -1,18 +1,33 @@
 --- a/crc32.c
 +++ b/crc32.c
-@@ -8,11 +8,7 @@
+@@ -8,21 +8,16 @@
   * For conditions of distribution and use, see copyright notice in zlib.h
   */
  
--#ifndef USE_HOSTCC	/* Shut down "ANSI does not permit..." warnings */
+-#ifndef USE_HOSTCC
 -#include <common.h>
--#else
- #include <stdint.h>
 -#endif
+-#include <compiler.h>
+-#include <u-boot/crc.h>
++#include <stdint.h>
++#include <asm/byteorder.h>
++
++#include "zlib.h"
  
- #if defined(CONFIG_HW_WATCHDOG) || defined(CONFIG_WATCHDOG)
- #include <watchdog.h>
-@@ -136,7 +132,7 @@ local const uint32_t crc_table[256] = {
+-#if defined(CONFIG_HW_WATCHDOG) || defined(CONFIG_WATCHDOG)
+-#include <watchdog.h>
+-#endif
+-#include "u-boot/zlib.h"
+ 
+ #define local static
+ #define ZEXPORT	/* empty */
+ 
+-#define tole(x) cpu_to_le32(x)
++#define tole(x) __constant_cpu_to_le32(x)
+ 
+ #ifdef DYNAMIC_CRC_TABLE
+ 
+@@ -151,7 +146,7 @@ tole(0xb40bbe37L), tole(0xc30c8ea1L), to
  
  #if 0
  /* =========================================================================
@@ -21,16 +36,30 @@
   */
  const uint32_t * ZEXPORT get_crc_table()
  {
-@@ -154,7 +150,7 @@ const uint32_t * ZEXPORT get_crc_table()
- #define DO8(buf)  DO4(buf); DO4(buf);
- 
- /* ========================================================================= */
--uint32_t ZEXPORT crc32 (uint32_t crc, const Bytef *buf, uInt len)
-+uint32_t ZEXPORT uboot_crc32 (uint32_t crc, const Bytef *buf, uInt len)
- {
- #ifdef DYNAMIC_CRC_TABLE
+@@ -183,7 +178,7 @@ uint32_t ZEXPORT crc32_no_comp(uint32_t
      if (crc_table_empty)
-@@ -217,12 +213,12 @@ uint32_t ZEXPORT crc32_wd (uint32_t crc,
+       make_crc_table();
+ #endif
+-    crc = cpu_to_le32(crc);
++    crc = __cpu_to_le32(crc);
+     /* Align it */
+     if (((long)b) & 3 && len) {
+ 	 uint8_t *p = (uint8_t *)b;
+@@ -212,11 +207,11 @@ uint32_t ZEXPORT crc32_no_comp(uint32_t
+ 	 } while (--len);
+     }
+ 
+-    return le32_to_cpu(crc);
++    return __le32_to_cpu(crc);
+ }
+ #undef DO_CRC
+ 
+-uint32_t ZEXPORT crc32 (uint32_t crc, const Bytef *p, uInt len)
++uint32_t ZEXPORT uboot_crc32 (uint32_t crc, const Bytef *p, uInt len)
+ {
+      return crc32_no_comp(crc ^ 0xffffffffL, p, len) ^ 0xffffffffL;
+ }
+@@ -239,12 +234,12 @@ uint32_t ZEXPORT crc32_wd (uint32_t crc,
  		chunk = end - curr;
  		if (chunk > chunk_sz)
  			chunk = chunk_sz;
@@ -47,7 +76,20 @@
  	return crc;
 --- a/fw_env.c
 +++ b/fw_env.c
-@@ -216,9 +216,9 @@ static int parse_config (void);
+@@ -34,6 +34,7 @@
+ #include <sys/ioctl.h>
+ #include <sys/stat.h>
+ #include <unistd.h>
++#include <zlib.h>
+ 
+ #ifdef MTD_OLD
+ # include <stdint.h>
+@@ -210,13 +211,14 @@ static char default_environment[] = {
+ static int flash_io (int mode);
+ static char *envmatch (char * s1, char * s2);
+ static int parse_config (void);
++uint32_t uboot_crc32 (uint32_t crc, const Bytef *p, uInt len);
+ 
  #if defined(CONFIG_FILE)
  static int get_config (char *);
  #endif
@@ -59,16 +101,16 @@
  
  	if (HaveRedundEnv)
  		rc -= sizeof (char);
-@@ -437,7 +437,7 @@ int fw_setenv (int argc, char *argv[])
+@@ -346,7 +348,7 @@ int fw_env_close(void)
  	/*
  	 * Update CRC
  	 */
--	*environment.crc = crc32 (0, (uint8_t *) environment.data, ENV_SIZE);
-+	*environment.crc = uboot_crc32 (0, (uint8_t *) environment.data, ENV_SIZE);
+-	*environment.crc = crc32(0, (uint8_t *) environment.data, ENV_SIZE);
++	*environment.crc = uboot_crc32(0, (uint8_t *) environment.data, ENV_SIZE);
  
  	/* write environment back to flash */
- 	if (flash_io (O_RDWR)) {
-@@ -627,7 +627,7 @@ static int flash_write_buf (int dev, int
+ 	if (flash_io(O_RDWR)) {
+@@ -802,7 +804,7 @@ static int flash_write_buf (int dev, int
  		data = malloc (erase_len);
  		if (!data) {
  			fprintf (stderr,
@@ -77,21 +119,7 @@
  				 erase_len, strerror (errno));
  			return -1;
  		}
-@@ -883,11 +883,11 @@ static char *envmatch (char * s1, char *
- static int env_init (void)
- {
- 	int crc0, crc0_ok;
--	char flag0;
-+	unsigned char flag0;
- 	void *addr0;
- 
- 	int crc1, crc1_ok;
--	char flag1;
-+	unsigned char flag1;
- 	void *addr1;
- 
- 	struct env_image_single *single;
-@@ -923,7 +923,7 @@ static int env_init (void)
+@@ -1107,7 +1109,7 @@ int fw_env_open(void)
  	if (flash_io (O_RDONLY))
  		return -1;
  
@@ -100,7 +128,7 @@
  	crc0_ok = (crc0 == *environment.crc);
  	if (!HaveRedundEnv) {
  		if (!crc0_ok) {
-@@ -964,7 +964,7 @@ static int env_init (void)
+@@ -1151,7 +1153,7 @@ int fw_env_open(void)
  			return -1;
  		}
  
@@ -109,17 +137,3 @@
  		crc1_ok = (crc1 == redundant->crc);
  		flag1 = redundant->flags;
  
---- a/fw_env.h
-+++ b/fw_env.h
-@@ -47,8 +47,10 @@
- 	"ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}:${hostname}::off; "	\
- 	"bootm"
- 
-+# include <stdint.h>
-+
- extern int   fw_printenv(int argc, char *argv[]);
- extern char *fw_getenv  (char *name);
- extern int fw_setenv  (int argc, char *argv[]);
- 
--extern unsigned	long  crc32	 (unsigned long, const unsigned char *, unsigned);
-+extern uint32_t  uboot_crc32 (uint32_t, const unsigned char *, unsigned);

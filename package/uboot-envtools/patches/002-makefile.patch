@@ -1,31 +1,39 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -21,12 +21,10 @@
+@@ -21,37 +21,16 @@
  # MA 02111-1307 USA
  #
  
 -include $(TOPDIR)/config.mk
 -
- SRCS	:= $(obj)crc32.c  fw_env.c  fw_env_main.c
+-HOSTSRCS := $(obj)crc32.c  fw_env.c  fw_env_main.c
++SRCS := crc32.c  fw_env.c  fw_env_main.c
  HEADERS	:= fw_env.h
  
--CPPFLAGS := -Wall -DUSE_HOSTCC -I$(SRCTREE)/include
+-# Compile for a hosted environment on the target
+-HOSTCPPFLAGS  = -idirafter $(SRCTREE)/include \
+-		-idirafter $(OBJTREE)/include2 \
+-		-idirafter $(OBJTREE)/include \
+-		-DUSE_HOSTCC
+-
+-ifeq ($(MTD_VERSION),old)
+-HOSTCPPFLAGS += -DMTD_OLD
+-endif
 +CPPFLAGS := -Wall $(CFLAGS)
  
- ifeq ($(MTD_VERSION),old)
- CPPFLAGS += -DMTD_OLD
-@@ -35,18 +33,7 @@ endif
  all:	$(obj)fw_printenv
  
- $(obj)fw_printenv:	$(SRCS) $(HEADERS)
--	$(CROSS_COMPILE)gcc $(CPPFLAGS) $(SRCS) -o $(obj)fw_printenv
+ # Some files complain if compiled with -pedantic, use HOSTCFLAGS_NOPED
+-$(obj)fw_printenv:	$(HOSTSRCS) $(HEADERS)
+-	$(HOSTCC) $(HOSTCFLAGS_NOPED) $(HOSTLDFLAGS) -o $@ $(HOSTSRCS)
++$(obj)fw_printenv:	$(SRCS) $(HEADERS)
 +	$(CC) $(CPPFLAGS) $(SRCS) -o $(obj)fw_printenv
  
  clean:
- 	rm -f $(obj)fw_printenv $(obj)crc32.c
+-	rm -f $(obj)fw_printenv $(obj)crc32.c
 -
 -$(obj)crc32.c:
--	ln -s $(src)../../lib_generic/crc32.c $(obj)crc32.c
+-	ln -s $(src)../../lib/crc32.c $(obj)crc32.c
 -
 -#########################################################################
 -
@@ -34,3 +42,4 @@
 -sinclude $(obj).depend
 -
 -#########################################################################
++	rm -f $(obj)fw_printenv

@@ -1,7 +1,7 @@
 --- a/fw_env.c
 +++ b/fw_env.c
-@@ -605,7 +605,10 @@ static int flash_write_buf (int dev, int
- 	erase_offset = offset & ~(blocklen - 1);
+@@ -779,7 +779,10 @@ static int flash_write_buf (int dev, int
+ 	erase_offset = (offset / blocklen) * blocklen;
  
  	/* Maximum area we may use */
 -	erase_len = top_of_range - erase_offset;
