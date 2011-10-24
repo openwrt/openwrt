@@ -82,7 +82,7 @@ config BUSYBOX_CONFIG_PING
 
 config BUSYBOX_CONFIG_PING6
 	bool "ping6"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_FEATURE_IPV6 && BUSYBOX_CONFIG_PING
 	help
 	  This will give you a ping that can talk IPv6.
