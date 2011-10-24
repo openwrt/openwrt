@@ -1,6 +1,13 @@
 if ATHEROS_AR71XX
 
 menu "Atheros AR71xx machine selection"
+config AR71XX_MACH_ALL0258N
+	bool "Allnet ALL0258N support"
+	select SOC_AR724X
+	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_AP91_PCI if PCI
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
 
 config AR71XX_MACH_AP81
 	bool "Atheros AP81 board support"
