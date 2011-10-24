@@ -169,6 +169,9 @@ ar71xx_board_name() {
 	*WZR-HP-G300NH)
 		name="wzr-hp-g300nh"
 		;;
+	*WHR-HP-G300N)
+		name="whr-hp-g300n"
+		;;
 	*ZCN-1523H-2)
 		name="zcn-1523h-2"
 		;;
