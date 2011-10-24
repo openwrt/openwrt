@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Copyright (C) 2011 OpenWrt.org
+#
+
+bc2_set_macs() {
+	local part
+	local lan_mac
+	local wan_mac
+
+	[ -z $(which maccalc) ] && return
+
+	. /etc/functions.sh
+
+	part=$(find_mtd_part "factory")
+	[ -z $part ] && return
+
+	lan_mac=$(dd bs=1 skip=4 count=6 if=$part 2>/dev/null | maccalc bin2mac)
+	[ -z $lan_mac ] && return
+
+	wan_mac=$(maccalc add $lan_mac 1)
+
+	uci batch <<EOF
+set network.lan.macaddr='$lan_mac'
+set network.wan.macaddr='$wan_mac'
+commit network
+EOF
+}
+
+. /lib/ramips.sh
+
+board=$(ramips_board_name)
+
+if [ "${board}" == "bc2" ]; then
+	bc2_set_macs
+fi

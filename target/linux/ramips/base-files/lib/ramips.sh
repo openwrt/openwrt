@@ -37,6 +37,9 @@ ramips_board_name() {
 	*"NBG-419N")
 		name="nbg-419n"
 		;;
+	*"NexAira BC2")
+		name="bc2"
+		;;
 	*"NW718")
 		name="nw718"
 		;;
