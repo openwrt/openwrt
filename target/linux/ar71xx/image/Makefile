@@ -703,7 +703,13 @@ define Image/Build/Profile/ZCN1523H516
 	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-5-16,$(zcn1523h516_cmdline))
 endef
 
+all0258n_cmdline=board=ALL0258N console=ttyS0,115200
+define Image/Build/Profile/ALL0258N
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,all0258n,$(all0258n_cmdline),,917504,5505024,KR)
+endef
+
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/ALL0258N,$(1))
 	$(call Image/Build/Profile/AP121,$(1))
 	$(call Image/Build/Profile/AP121MINI,$(1))
 	$(call Image/Build/Profile/AP81,$(1))
