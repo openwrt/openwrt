@@ -1,0 +1,34 @@
+#!/bin/sh
+
+. /lib/ramips.sh
+
+set_usb_led() {
+	local sysfs="$1"
+
+	uci batch <<EOF
+set system.usb_led=led
+set system.usb_led.name='usb'
+set system.usb_led.sysfs='$sysfs'
+set system.usb_led.trigger='usbdev'
+set system.usb_led.dev='1-1'
+set system.usb_led.interval='50'
+commit system
+EOF
+}
+
+board=$(ramips_board_name)
+
+case $board in
+	fonera20n)
+		set_usb_led "fonera20n:amber:usb"
+		;;
+	hw550-3g)
+		set_usb_led "hw550-3g:green:usb"
+		;;
+	mofi3500-3gn)
+		set_usb_led "mofi3500-3gn:green:usb"
+		;;
+	nw718)
+		set_usb_led "nw718:amber:usb"
+		;;
+esac
