@@ -16,6 +16,7 @@
 
 enum ar71xx_mach_type {
 	AR71XX_MACH_GENERIC = 0,
+	AR71XX_MACH_ALL0258N,	/* Allnet ALL0258N */
 	AR71XX_MACH_AP121,	/* Atheros AP121 */
 	AR71XX_MACH_AP121_MINI,	/* Atheros AP121-MINI */
 	AR71XX_MACH_AP81,	/* Atheros AP81 */
