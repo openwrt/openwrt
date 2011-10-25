@@ -56,6 +56,9 @@ define Build/InstallDev
 	mkdir -p $(1)/usr/lib
 	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/libz.{a,so*} \
 		$(1)/usr/lib/
+	mkdir -p $(1)/usr/lib/pkgconfig
+	$(CP)	$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/zlib.pc \
+		$(1)/usr/lib/pkgconfig/
 endef
 
 # libz.so is needed for openssl (zlib-dynamic)
