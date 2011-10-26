@@ -732,7 +732,7 @@ define KernelPackage/netem
   TITLE:=Network emulation functionality
   DEPENDS:=+kmod-sched
   KCONFIG:=CONFIG_NET_SCH_NETEM
-  FILES:=$(LINUX_DIR)/net/sched/sch_netem.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/net/sched/sch_netem.ko
   AUTOLOAD:=$(call AutoLoad,99,netem)
 endef
 
