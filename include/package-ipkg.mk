@@ -123,7 +123,7 @@ ifeq ($(DUMP),)
 			for x in $$(KEEP_$(1)); do \
 				[ -f "$$(IDIR_$(1))/$$$$x" ] || keepfiles="$$$${keepfiles:+$$$$keepfiles }$$$$x"; \
 			done; \
-			[ -z "$keepfiles" ] || { \
+			[ -z "$$$$keepfiles" ] || { \
 				mkdir -p $$(IDIR_$(1))/lib/upgrade/keep.d; \
 				for x in $$$$keepfiles; do echo $$$$x >> $$(IDIR_$(1))/lib/upgrade/keep.d/$(1); done; \
 			}; \
