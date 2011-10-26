@@ -684,6 +684,7 @@ wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(ker
 define Image/Build/Profile/WNDR3700
 	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,$(wndr3700_cmdline),wndr3700_mtdlayout,3700,WNDR3700,"" NA,)
 	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,$(wndr3700v2_cmdline),wndr3700v2_mtdlayout,3701,WNDR3700v2,"",-H 29763654+16+64)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3800,$(wndr3700v2_cmdline),wndr3700v2_mtdlayout,3701,WNDR3800,"",-H 29763654+16+128)
 endef
 
 wr400n_cmdline=board=WRT400N console=ttyS0,115200
