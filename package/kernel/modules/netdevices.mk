@@ -12,7 +12,7 @@ define KernelPackage/sis190
   TITLE:=SiS 190 Fast/Gigabit Ethernet support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SIS190
-  FILES:=$(LINUX_DIR)/drivers/net/sis190.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/sis190.ko
   AUTOLOAD:=$(call AutoLoad,50,sis190)
 endef
  
@@ -24,7 +24,7 @@ define KernelPackage/skge
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SKGE \
     CONFIG_SKGE_DEBUG=n
-  FILES:=$(LINUX_DIR)/drivers/net/skge.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/skge.ko
   AUTOLOAD:=$(call AutoLoad,50,skge)
 endef
 
@@ -35,7 +35,7 @@ define KernelPackage/atl2
   TITLE:=Atheros L2 Fast Ethernet support
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_ATL2
-  FILES:=$(LINUX_DIR)/drivers/net/atlx/atl2.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/atlx/atl2.ko
   AUTOLOAD:=$(call AutoLoad,50,atl2)
 endef
 
@@ -46,7 +46,7 @@ define KernelPackage/atl1
   TITLE:=Atheros L1 Gigabit Ethernet support
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_ATL1
-  FILES:=$(LINUX_DIR)/drivers/net/atlx/atl1.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/atlx/atl1.ko
   AUTOLOAD:=$(call AutoLoad,50,atl1)
 endef
 
@@ -57,7 +57,7 @@ define KernelPackage/atl1c
   TITLE:=Atheros L1C
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_ATL1C
-  FILES:=$(LINUX_DIR)/drivers/net/atl1c/atl1c.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/atl1c/atl1c.ko
   AUTOLOAD:=$(call AutoLoad,50,atl1c)
 endef
 
@@ -68,7 +68,7 @@ define KernelPackage/atl1e
   TITLE:=Atheros L1E
   DEPENDS:=@PCI_SUPPORT
   KCONFIG:=CONFIG_ATL1E
-  FILES:=$(LINUX_DIR)/drivers/net/atl1e/atl1e.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(LINUX_DIR)/drivers/net/atl1e/atl1e.ko
   AUTOLOAD:=$(call AutoLoad,50,atl1e)
 endef
 
