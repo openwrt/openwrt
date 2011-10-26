@@ -4,7 +4,12 @@ PIDFILE=/var/run/netifd.pid
 
 start() {
 	stop
+	[ -e /proc/sys/kernel/core_pattern ] && {
+		ulimit -c unlimited
+		echo '/tmp/%e.%p.%s.%t.core' > /proc/sys/kernel/core_pattern
+	}
 	start-stop-daemon -S -b -m -p $PIDFILE -x /sbin/netifd
+	sleep 1
 }
 
 reload() {
