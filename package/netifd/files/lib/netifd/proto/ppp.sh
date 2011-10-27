@@ -94,6 +94,7 @@ ppp_init_config() {
 	proto_config_add_string "device"
 	ppp_generic_init_config
 	no_device=1
+	available=1
 }
 
 ppp_setup() {
@@ -105,10 +106,6 @@ ppp_setup() {
 
 ppp_teardown() {
 	ppp_generic_teardown "$@"
-}
-
-ppp_init() {
-	return
 }
 
 pppoe_init_config() {
@@ -140,10 +137,6 @@ pppoe_setup() {
 
 pppoe_teardown() {
 	ppp_generic_teardown "$@"
-}
-
-pppoe_init() {
-	return
 }
 
 pppoa_init_config() {
@@ -180,10 +173,6 @@ pppoa_setup() {
 
 pppoa_teardown() {
 	ppp_generic_teardown "$@"
-}
-
-pppoa_init() {
-	return
 }
 
 [ -n "$INCLUDE_ONLY" ] || {

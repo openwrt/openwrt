@@ -48,9 +48,5 @@ dhcp_teardown() {
 	proto_kill_command
 }
 
-dhcp_init() {
-	return
-}
-
 add_protocol dhcp
 
