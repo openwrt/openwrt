@@ -1,0 +1,22 @@
+--- a/sierra_net.c
++++ b/sierra_net.c
+@@ -840,8 +840,8 @@ static int sierra_net_bind(struct usbnet
+ 	init_timer(&priv->sync_timer);
+ 	/* verify fw attributes */
+ 	status = sierra_net_get_fw_attr(dev, &fwattr);
+-	dev_dbg(&dev->udev->dev, "Fw attr: %x\n", fwattr); 
+-	if (status == sizeof(fwattr) && (fwattr & SWI_GET_FW_ATTR_APM)) {
++	dev_dbg(&dev->udev->dev, "Fw attr: %x\n", cpu_to_le16(fwattr));
++	if (status == sizeof(fwattr) && (cpu_to_le16(fwattr) & SWI_GET_FW_ATTR_APM)) {
+ /******************************************************************************* 
+  * If you want the default /sys/bus/usb/devices/.../.../power/level to be forced
+  * to auto, the following needs to be compiled in.
+@@ -856,7 +856,7 @@ static int sierra_net_bind(struct usbnet
+ 		usb_disable_autosuspend(dev->udev);
+ 	}
+ 	/* test whether firmware supports DHCP */
+-	if (!(status == sizeof(fwattr) && (fwattr & SWI_GET_FW_ATTR_MASK))) {
++	if (!(status == sizeof(fwattr) && (cpu_to_le16(fwattr) & SWI_GET_FW_ATTR_MASK))) {
+ 		/* found incompatible firmware version */
+ 		dev_err(&dev->udev->dev, "Incompatible driver and firmware"
+ 			" versions\n");
