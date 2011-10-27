@@ -64,6 +64,9 @@ ar71xx_board_name() {
 	*"NBG460N/550N/550NH")
 		name="nbg460n_550n_550nh"
 		;;
+	*OM2P)
+		name="om2p"
+		;;
 	*PB42)
 		name="pb42"
 		;;

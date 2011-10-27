@@ -33,6 +33,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_MZK_W04NU,	/* Planex MZK-W04NU */
 	AR71XX_MACH_MZK_W300NH,	/* Planex MZK-W300NH */
 	AR71XX_MACH_NBG460N,	/* Zyxel NBG460N/550N/550NH */
+	AR71XX_MACH_OM2P,       /* OpenMesh OM2P */
 	AR71XX_MACH_PB42,	/* Atheros PB42 */
 	AR71XX_MACH_PB44,	/* Atheros PB44 */
 	AR71XX_MACH_PB92,	/* Atheros PB92 */
