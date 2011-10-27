@@ -72,6 +72,9 @@ get_status_led() {
 	nbg460n_550n_550nh)
 		status_led="nbg460n:green:power"
 		;;
+	om2p)
+		status_led="om2p:blue:power"
+		;;
 	pb44)
 		status_led="pb44:amber:jump1"
 		;;

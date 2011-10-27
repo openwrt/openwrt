@@ -209,6 +209,14 @@ config AR71XX_MACH_WNR2000
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 
+config AR71XX_MACH_OM2P
+	bool "OpenMesh OM2P board support"
+	select SOC_AR724X
+	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_AP91_PCI if PCI
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
+
 config AR71XX_MACH_MZK_W04NU
 	bool "Planex MZK-W04NU board support"
 	select SOC_AR913X
