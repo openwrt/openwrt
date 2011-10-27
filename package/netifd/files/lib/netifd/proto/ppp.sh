@@ -54,8 +54,8 @@ ppp_generic_setup() {
 	json_get_var username username
 	json_get_var password password
 
-	json_get_var connect connect
-	json_get_var disconnect disconnect
+	[ -n "$connect" ] || json_get_var connect connect
+	[ -n "$disconnect" ] || json_get_var disconnect disconnect
 	json_get_var pppd_options pppd_options
 
 	proto_run_command "$config" /usr/sbin/pppd \
