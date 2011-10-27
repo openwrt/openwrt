@@ -77,6 +77,30 @@ run_ramfs() { # <command> [...]
 	exec /bin/busybox ash -c "$*"
 }
 
+kill_remaining() { # [ <signal> ]
+	local sig="${1:-TERM}"
+	echo -n "Sending $sig to remaing processes ... "
+	top -bn1 | while read pid ppid user stat vsz pvsz pcpu cmd args; do
+		case "$pid" in
+			[0-9]*) : ;;
+			*) continue ;;
+		esac
+		case "$cmd" in
+			# Skip kernel threads and essential services
+			\[*\]|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*) : ;;
+
+			# Killable process
+			*)
+				if [ $pid -ne $$ ] && [ $ppid -ne $$ ]; then
+					echo -n "${cmd##*/} "
+					kill -$sig $pid 2>/dev/null
+				fi
+			;;
+		esac
+	done
+	echo ""
+}
+
 run_hooks() {
 	local arg="$1"; shift
 	for func in "$@"; do
