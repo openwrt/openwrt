@@ -255,9 +255,12 @@ fw_get_subnet4() {
 			[ "${_name#!}" != "$_name" ] && \
 				export -n -- "$_var=! $_flag $_ipaddr/${_netmask:-255.255.255.255}" || \
 				export -n -- "$_var=$_flag $_ipaddr/${_netmask:-255.255.255.255}"
+			return 0
 		;;
-		*) export -n -- "$_var=" ;;
 	esac
+
+	export -n -- "$_var="
+	return 1
 }
 
 fw_check_icmptype4() {
