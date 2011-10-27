@@ -66,7 +66,7 @@ static struct mtd_partition all0258n_partitions[] = {
 	}, {
 		.name		= "firmware",
 		.offset		= 0x050000,
-		.size		= 0x630000,
+		.size		= 0x620000,
 	}, {
 		.name		= "art",
 		.offset		= 0x7F0000,
