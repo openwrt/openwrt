@@ -2,5 +2,8 @@ config system
 	option hostname	OpenWrt
 	option timezone	UTC
 
-config rdate
-	option interface	wan
+config timeserver
+	list server	0.openwrt.pool.ntp.org
+	list server	1.openwrt.pool.ntp.org
+	list server	2.openwrt.pool.ntp.org
+	list server	3.openwrt.pool.ntp.org

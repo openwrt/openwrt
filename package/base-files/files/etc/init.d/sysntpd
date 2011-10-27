@@ -1,0 +1,35 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2011 OpenWrt.org
+
+START=98
+
+BIN=/usr/sbin/ntpd
+PID=/var/run/sysntpd.pid
+
+start() {
+	[ -x $BIN ] || exit 0
+
+	local peers
+
+	getpeers() {
+		config_get peers "$1" server
+	}
+
+	config_load system
+	config_foreach getpeers timeserver
+
+	if [ -n "$peers" ]; then
+		local peer
+		local args="-n"
+		for peer in $peers; do
+			append args "-p $peer"
+		done
+
+		start-stop-daemon -x $BIN -m -p $PID -b -S -- $args
+	fi
+}
+
+stop() {
+	service_kill ${BIN##*/} $PID
+	rm -f $PID
+}
