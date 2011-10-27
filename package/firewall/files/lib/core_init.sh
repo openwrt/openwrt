@@ -247,13 +247,13 @@ fw_load_zone() {
 		for msrc in ${zone_masq_src:-0.0.0.0/0}; do
 			case "$msrc" in
 				*.*) fw_get_negation msrc '-s' "$msrc" ;;
-				*)   fw_get_subnet4 msrc '-s' "$msrc" ;;
+				*)   fw_get_subnet4 msrc '-s' "$msrc" || break ;;
 			esac
 
 			for mdst in ${zone_masq_dest:-0.0.0.0/0}; do
 				case "$mdst" in
 					*.*) fw_get_negation mdst '-d' "$mdst" ;;
-					*)   fw_get_subnet4 mdst '-d' "$mdst" ;;
+					*)   fw_get_subnet4 mdst '-d' "$mdst" || break ;;
 				esac
 
 				fw add $mode n ${chain}_nat MASQUERADE $ { $msrc $mdst }
