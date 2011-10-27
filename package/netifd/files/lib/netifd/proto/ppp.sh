@@ -90,31 +90,31 @@ ppp_generic_teardown() {
 
 # PPP on serial device
 
-ppp_init_config() {
+proto_ppp_init_config() {
 	proto_config_add_string "device"
 	ppp_generic_init_config
 	no_device=1
 	available=1
 }
 
-ppp_setup() {
+proto_ppp_setup() {
 	local config="$1"
 
 	json_get_var device device
 	ppp_generic_setup "$config" "$device"
 }
 
-ppp_teardown() {
+proto_ppp_teardown() {
 	ppp_generic_teardown "$@"
 }
 
-pppoe_init_config() {
+proto_pppoe_init_config() {
 	ppp_generic_init_config
 	proto_config_add_string "ac"
 	proto_config_add_string "service"
 }
 
-pppoe_setup() {
+proto_pppoe_setup() {
 	local config="$1"
 	local iface="$2"
 
@@ -135,11 +135,11 @@ pppoe_setup() {
 		"nic-$iface"
 }
 
-pppoe_teardown() {
+proto_pppoe_teardown() {
 	ppp_generic_teardown "$@"
 }
 
-pppoa_init_config() {
+proto_pppoa_init_config() {
 	ppp_generic_init_config
 	proto_config_add_int "atmdev"
 	proto_config_add_int "vci"
@@ -147,7 +147,7 @@ pppoa_init_config() {
 	proto_config_add_string "encaps"
 }
 
-pppoa_setup() {
+proto_pppoa_setup() {
 	local config="$1"
 	local iface="$2"
 
@@ -171,7 +171,7 @@ pppoa_setup() {
 		${encaps}
 }
 
-pppoa_teardown() {
+proto_pppoa_teardown() {
 	ppp_generic_teardown "$@"
 }
 
