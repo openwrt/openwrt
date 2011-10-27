@@ -742,14 +742,14 @@ config BUSYBOX_CONFIG_NSLOOKUP
 
 config BUSYBOX_CONFIG_NTPD
 	bool "ntpd"
-	default n
+	default y
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  The NTP client/server daemon.
 
 config BUSYBOX_CONFIG_FEATURE_NTPD_SERVER
 	bool "Make ntpd usable as a NTP server"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_NTPD
 	help
 	  Make ntpd usable as a NTP server. If you disable this option
