@@ -50,6 +50,8 @@ proto_3g_setup() {
 					*) CODE=3;;
 				esac
 				export MODE="AT_OPSYS=${CODE}"
+			elif echo "$cardinfo" | grep -q "Sierra Wireless"; then
+				SIERRA=1
 			fi
 
 			if [ -n "$pincode" ]; then
@@ -60,6 +62,11 @@ proto_3g_setup() {
 				}
 			fi
 			[ -n "$MODE" ] && gcom -d "$device" -s /etc/gcom/setmode.gcom
+
+			# wait for carrier to avoid firmware stability bugs
+			[ -n "$SIERRA" ] && {
+				gcom -d "$device" -s /etc/gcom/getcarrier.gcom || return 1
+			}
 		;;
 	esac
 
