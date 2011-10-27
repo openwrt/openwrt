@@ -613,23 +613,23 @@ define Image/Build/Profile/TLWA901NDV2
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wa901nd-v2,$(tlwa901ndv2_cmdline),TL-WA901NDv2)
 endef
 
-tlwe741ndv1_cmdline=board=TL-WR741ND console=ttyS0,115200
+tlwr741ndv1_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR741NDV1
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr741nd-v1,$(tlwe741ndv1_cmdline),TL-WR741NDv1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr741nd-v1,$(tlwr741ndv1_cmdline),TL-WR741NDv1)
 endef
 
-tlwe740nv1_cmdline=board=TL-WR741ND console=ttyS0,115200
+tlwr740nv1_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR740NV1
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v1,$(tlwe740nv1_cmdline),TL-WR740Nv1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v1,$(tlwr740nv1_cmdline),TL-WR740Nv1)
 endef
 
-tlwe740nv3_cmdline=board=TL-WR741ND console=ttyS0,115200
+tlwr740nv3_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR740NV3
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v3,$(tlwe740nv3_cmdline),TL-WR740Nv3)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v3,$(tlwr740nv3_cmdline),TL-WR740Nv3)
 endef
 
 define Image/Build/Profile/TLWR743NDV1
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr743nd-v1,$(tlwe741ndv1_cmdline),TL-WR743NDv1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr743nd-v1,$(tlwr741ndv1_cmdline),TL-WR743NDv1)
 endef
 
 tlwr841nv15_cmdline=board=TL-WR841N-v1.5 console=ttyS0,115200
