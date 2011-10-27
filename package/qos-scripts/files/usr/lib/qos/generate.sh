@@ -486,6 +486,13 @@ case "$1" in
 		start_interfaces
 	;;
 	firewall)
-		start_firewall
+		case "$2" in
+			stop)
+				stop_firewall
+			;;
+			start|"")
+				start_firewall
+			;;
+		esac
 	;;
 esac
