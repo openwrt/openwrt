@@ -127,6 +127,11 @@ elif ask_bool $SAVE_CONFIG "Keep config files over reflash"; then
 else
 	export SAVE_CONFIG=0
 fi
+
+kill_remaining TERM
+sleep 3
+kill_remaining KILL
+
 run_hooks "" $sysupgrade_pre_upgrade
 
 if [ -n "$(rootfs_type)" ]; then
