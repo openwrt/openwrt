@@ -12,7 +12,7 @@ proto_3g_init_config() {
 	proto_config_add_string "device"
 	proto_config_add_string "apn"
 	proto_config_add_string "service"
-	proto_config_add_int "pincode"
+	proto_config_add_string "pincode"
 }
 
 proto_3g_setup() {
