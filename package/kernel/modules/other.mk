@@ -260,7 +260,6 @@ define KernelPackage/hid
   KCONFIG:=CONFIG_HID
   FILES:=$(LINUX_DIR)/drivers/hid/hid.ko
   AUTOLOAD:=$(call AutoLoad,61,hid)
-  $(call SetDepends/hid)
   $(call AddDepends/input,+kmod-input-evdev)
 endef
 
@@ -275,7 +274,6 @@ define KernelPackage/input-core
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Input device core
   KCONFIG:=CONFIG_INPUT
-  $(call SetDepends/input)
   FILES:=$(LINUX_DIR)/drivers/input/input-core.ko
   AUTOLOAD:=$(call AutoLoad,19,input-core)
 endef

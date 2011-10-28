@@ -58,7 +58,6 @@ define KernelPackage/crc16
   KCONFIG:=CONFIG_CRC16
   FILES:=$(LINUX_DIR)/lib/crc16.ko
   AUTOLOAD:=$(call AutoLoad,20,crc16,1)
-  $(call SetDepends/crc16)
 endef
 
 define KernelPackage/crc16/description
