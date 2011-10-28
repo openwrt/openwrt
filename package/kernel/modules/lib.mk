@@ -72,9 +72,9 @@ define KernelPackage/libcrc32c
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC32 library support
   KCONFIG:=CONFIG_LIBCRC32C
-  DEPENDS:=+kmod-crypto-core +kmod-crypto-misc
+  DEPENDS:=+kmod-crypto-crc32c
   FILES:=$(LINUX_DIR)/lib/libcrc32c.ko
-  AUTOLOAD:=$(call AutoLoad,20,crc32c libcrc32c,1)
+  AUTOLOAD:=$(call AutoLoad,20,libcrc32c,1)
 endef
 
 define KernelPackage/libcrc32c/description
