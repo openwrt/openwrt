@@ -90,7 +90,8 @@ define ModuleAutoLoad
 		done; \
 		if [ -e $(2)/etc/modules.d/$$$$$$$$priority-$(1) ]; then \
 			if [ "$$$$$$$$boot" = "1" ]; then \
-				echo '# May be required for rootfs' >> $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
+				mkdir -p $(2)/etc/modules-boot.d; \
+				ln -s ../modules.d/$$$$$$$$priority-$(1) $(2)/etc/modules-boot.d/; \
 			fi; \
 			modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$priority-$(1)"; \
 		fi; \
