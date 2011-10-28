@@ -1,5 +1,6 @@
 #!/bin/sh
-# Copyright 2010 Vertical Communications
+# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
 
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -15,9 +16,9 @@ set_jffs_mp() {
 er_load_modules() {
 	mkdir -p /tmp/extroot_modules/modules.d
 	mkdir -p /tmp/extroot_modules/modules
-	ln -sf /etc/modules.d/* /tmp/overlay/etc/modules.d/* /tmp/extroot_modules/modules.d
+	cp -L /etc/modules-boot.d/* /tmp/overlay/etc/modules-boot.d/* /tmp/extroot_modules/modules.d
 	ln -sf /lib/modules/*/* /tmp/overlay/lib/modules/*/* /tmp/extroot_modules/modules
-    	local modules="$(grep -l '# May be required for rootfs' /tmp/extroot_modules/modules.d/* 2>/dev/null)"
+	local modules="$(cat /tmp/extroot_modules/modules.d/* 2>/dev/null)"
 	cd /tmp/extroot_modules/modules && [ -n "$modules" ] && {
 		cat $modules | sed -e 's/^\([^#].*\)/insmod \.\/\1.ko/'| sh 2>&- || :
 	}
