@@ -237,6 +237,17 @@ endef
 
 $(eval $(call KernelPackage,crypto-cbc))
 
+define KernelPackage/crypto-crc32c
+  TITLE:=CRC32c CRC module
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:=CONFIG_CRYPTO_CRC32C
+  FILES:=$(LINUX_DIR)/crypto/crc32c.ko
+  AUTOLOAD:=$(call AutoLoad,04,crc32c,1)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-crc32c))
+
 define KernelPackage/crypto-des
   TITLE:=DES/3DES cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_DES
@@ -328,7 +339,6 @@ define KernelPackage/crypto-misc
 	CONFIG_CRYPTO_CAMELLIA \
 	CONFIG_CRYPTO_CAST5 \
 	CONFIG_CRYPTO_CAST6 \
-	CONFIG_CRYPTO_CRC32C \
 	CONFIG_CRYPTO_FCRYPT \
 	CONFIG_CRYPTO_KHAZAD \
 	CONFIG_CRYPTO_MD4 \
@@ -347,7 +357,6 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/camellia.ko \
 	$(LINUX_DIR)/crypto/cast5.ko \
 	$(LINUX_DIR)/crypto/cast6.ko \
-	$(if $(findstring y,$(CONFIG_CRYPTO_CRC32C)),,$(LINUX_DIR)/crypto/crc32c.ko) \
 	$(LINUX_DIR)/crypto/fcrypt.ko \
 	$(LINUX_DIR)/crypto/khazad.ko \
 	$(LINUX_DIR)/crypto/md4.ko \
