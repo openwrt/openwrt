@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -82,16 +82,18 @@ define ModuleAutoLoad
 		mods="$$$$$$$$2"; \
 		boot="$$$$$$$$3"; \
 		shift 3; \
-		mkdir -p $(2)/etc/modules.d; \
-		( \
-			[ "$$$$$$$$boot" = "1" ] && { \
-				echo '# May be required for rootfs' ; \
-			} ; \
-			for mod in $$$$$$$$mods; do \
-				echo "$$$$$$$$mod"; \
-			done \
-		) > $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
-		modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$priority-$(1)"; \
+		for mod in $$$$$$$$mods; do \
+			if [ -e $(2)/$(MODULES_SUBDIR)/$$$$$$$$mod.ko ]; then \
+				mkdir -p $(2)/etc/modules.d; \
+				echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
+			fi; \
+		done; \
+		if [ -e $(2)/etc/modules.d/$$$$$$$$priority-$(1) ]; then \
+			if [ "$$$$$$$$boot" = "1" ]; then \
+				echo '# May be required for rootfs' >> $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
+			fi; \
+			modules="$$$$$$$${modules:+$$$$$$$$modules }$$$$$$$$priority-$(1)"; \
+		fi; \
 	}; \
 	$(3) \
 	if [ -n "$$$$$$$$modules" ]; then \
@@ -147,11 +149,17 @@ $(call KernelPackage/$(1)/config)
 
   $(call KernelPackage/depends)
 
-  ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
+  ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m y,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     ifneq ($(strip $(FILES)),)
       define Package/kmod-$(1)/install
-		  mkdir -p $$(1)/$(MODULES_SUBDIR)
-		  $(CP) -L $$(FILES) $$(1)/$(MODULES_SUBDIR)/
+		  @for mod in $$(FILES); do \
+			if [ -e $$$$$$$$mod ]; then \
+				mkdir -p $$(1)/$(MODULES_SUBDIR) ; \
+				$(CP) -L $$$$$$$$mod $$(1)/$(MODULES_SUBDIR)/ ; \
+			else \
+				echo "WARNING: module '$$$$$$$$mod' does not exist, is it built-in?" ; \
+			fi; \
+		  done;
 		  $(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
 		  $(call KernelPackage/$(1)/install,$$(1))
       endef
