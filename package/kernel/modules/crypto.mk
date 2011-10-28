@@ -294,6 +294,18 @@ endef
 $(eval $(call KernelPackage,crypto-hmac))
 
 
+define KernelPackage/crypto-md4
+  TITLE:=MD4 digest CryptoAPI module
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:=CONFIG_CRYPTO_MD4
+  FILES:=$(LINUX_DIR)/crypto/md4.ko
+  AUTOLOAD:=$(call AutoLoad,09,md4)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-md4))
+
+
 define KernelPackage/crypto-md5
   TITLE:=MD5 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-hash
@@ -341,7 +353,6 @@ define KernelPackage/crypto-misc
 	CONFIG_CRYPTO_CAST6 \
 	CONFIG_CRYPTO_FCRYPT \
 	CONFIG_CRYPTO_KHAZAD \
-	CONFIG_CRYPTO_MD4 \
 	CONFIG_CRYPTO_SERPENT \
 	CONFIG_CRYPTO_SHA256 \
 	CONFIG_CRYPTO_SHA512 \
@@ -359,7 +370,6 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/cast6.ko \
 	$(LINUX_DIR)/crypto/fcrypt.ko \
 	$(LINUX_DIR)/crypto/khazad.ko \
-	$(LINUX_DIR)/crypto/md4.ko \
 	$(LINUX_DIR)/crypto/serpent.ko \
 	$(LINUX_DIR)/crypto/sha256_generic.ko \
 	$(LINUX_DIR)/crypto/sha512_generic.ko \
