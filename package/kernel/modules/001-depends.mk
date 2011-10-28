@@ -6,7 +6,7 @@
 #
 
 define AddDepends/crc16
-  DEPENDS+= +kmod-crc16 $(1)
+  DEPENDS+= +kmod-lib-crc16 $(1)
 endef
 
 define AddDepends/hid

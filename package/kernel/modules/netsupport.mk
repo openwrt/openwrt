@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -410,7 +410,7 @@ $(eval $(call KernelPackage,tun))
 define KernelPackage/ppp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPP modules
-  DEPENDS:=+kmod-crc-ccitt
+  DEPENDS:=+kmod-lib-crc-ccitt
   KCONFIG:= \
 	CONFIG_PPP \
 	CONFIG_PPP_ASYNC \
@@ -717,7 +717,7 @@ define KernelPackage/sctp
      CONFIG_SCTP_HMAC_MD5=y
   FILES:= $(LINUX_DIR)/net/sctp/sctp.ko
   AUTOLOAD:= $(call AutoLoad,32,sctp)
-  DEPENDS:=+kmod-libcrc32c +kmod-crypto-md5 +kmod-crypto-hmac
+  DEPENDS:=+kmod-lib-crc32c +kmod-crypto-md5 +kmod-crypto-hmac
 endef
 
 define KernelPackage/sctp/description
