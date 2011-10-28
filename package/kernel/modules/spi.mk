@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,7 +10,7 @@ SPI_MENU:=SPI Support
 define KernelPackage/mmc-spi
   SUBMENU:=$(SPI_MENU)
   TITLE:=MMC/SD over SPI Support
-  DEPENDS:=+kmod-mmc +kmod-crc-itu-t +kmod-crc7
+  DEPENDS:=+kmod-mmc +kmod-lib-crc-itu-t +kmod-lib-crc7
   KCONFIG:=CONFIG_MMC_SPI \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y

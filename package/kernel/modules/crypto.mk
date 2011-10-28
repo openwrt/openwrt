@@ -260,7 +260,7 @@ $(eval $(call KernelPackage,crypto-des))
 
 define KernelPackage/crypto-deflate
   TITLE:=Deflate compression CryptoAPI module
-  DEPENDS:=+kmod-zlib
+  DEPENDS:=+kmod-lib-zlib
   KCONFIG:=CONFIG_CRYPTO_DEFLATE
   FILES:=$(LINUX_DIR)/crypto/deflate.ko
   AUTOLOAD:=$(call AutoLoad,09,deflate)
