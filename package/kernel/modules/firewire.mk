@@ -130,7 +130,7 @@ $(eval $(call KernelPackage,firewire-ohci))
 define KernelPackage/firewire-sbp2
   SUBMENU:=$(FIREWIRE_MENU)
   TITLE:=Support for SBP-2 devices over FireWire
-  DEPENDS:=kmod-firewire +!TARGET_x86:kmod-scsi-core
+  DEPENDS:=kmod-firewire +kmod-scsi-core
   KCONFIG:=CONFIG_FIREWIRE_SBP2
   FILES:=$(LINUX_DIR)/drivers/firewire/firewire-sbp2.ko
   AUTOLOAD:=$(call AutoLoad,50,firewire-sbp2)

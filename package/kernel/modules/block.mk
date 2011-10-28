@@ -25,7 +25,7 @@ $(eval $(call KernelPackage,aoe))
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
-  DEPENDS:=@PCI_SUPPORT +kmod-scsi-core @(!TARGET_ubicom32||!TARGET_etrax||!TARGET_x86)
+  DEPENDS:=@PCI_SUPPORT +kmod-scsi-core @(!TARGET_ubicom32||!TARGET_etrax)
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.ko
   AUTOLOAD:=$(call AutoLoad,21,libata,1)
@@ -36,7 +36,7 @@ $(eval $(call KernelPackage,ata-core))
 
 define AddDepends/ata
   SUBMENU:=$(BLOCK_MENU)
-  DEPENDS+=!TARGET_x86:kmod-ata-core $(1)
+  DEPENDS+=kmod-ata-core $(1)
 endef
 
 
@@ -612,7 +612,6 @@ $(eval $(call KernelPackage,nbd))
 define KernelPackage/scsi-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=SCSI device support
-  DEPENDS:=@!TARGET_x86
   KCONFIG:= \
 	CONFIG_SCSI \
 	CONFIG_BLK_DEV_SD
@@ -628,7 +627,7 @@ $(eval $(call KernelPackage,scsi-core))
 define KernelPackage/scsi-generic
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for SCSI generic
-  DEPENDS:=+!TARGET_x86:kmod-scsi-core
+  DEPENDS:=+kmod-scsi-core
   KCONFIG:= \
 	CONFIG_CHR_DEV_SG
   FILES:= \
@@ -642,7 +641,7 @@ $(eval $(call KernelPackage,scsi-generic))
 define KernelPackage/scsi-cdrom
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for CD / DVD drives
-  DEPENDS:=+!TARGET_x86:kmod-scsi-core
+  DEPENDS:=+kmod-scsi-core
   KCONFIG:= \
     CONFIG_BLK_DEV_SR \
     CONFIG_BLK_DEV_SR_VENDOR=n
