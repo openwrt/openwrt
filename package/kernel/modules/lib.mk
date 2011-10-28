@@ -83,6 +83,25 @@ endef
 $(eval $(call KernelPackage,libcrc32c))
 
 
+define KernelPackage/lib-lzo
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=LZO library support
+  KCONFIG:= \
+	CONFIG_LZO_COMPRESS \
+	CONFIG_LZO_DECOMPRESS
+  FILES:= \
+	$(LINUX_DIR)/lib/lzo/lzo_compress.ko \
+	$(LINUX_DIR)/lib/lzo/lzo_decompress.ko
+  AUTOLOAD:=$(call AutoLoad,20, lzo_compress lzo_decompress,1)
+endef
+
+define KernelPackage/lib-lzo/description
+ Kernel module for LZO compression/decompression support
+endef
+
+$(eval $(call KernelPackage,lib-lzo))
+
+
 define KernelPackage/textsearch
 SUBMENU:=$(LIB_MENU)
   TITLE:=Textsearch support is selected if needed
