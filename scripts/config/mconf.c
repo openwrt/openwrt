@@ -872,6 +872,8 @@ static void show_help(struct menu *menu)
 	struct gstr help = str_new();
 	struct symbol *sym = menu->sym;
 
+	help.max_width = cols - 10;
+
 	if (sym->help)
 	{
 		if (sym->name) {
