@@ -1,7 +1,7 @@
-Index: linux-3.1-rc4/drivers/mmc/host/omap.c
+Index: linux-3.1/drivers/mmc/host/omap.c
 ===================================================================
---- linux-3.1-rc4.orig/drivers/mmc/host/omap.c	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/drivers/mmc/host/omap.c	2011-10-27 16:48:04.389148259 +0200
+--- linux-3.1.orig/drivers/mmc/host/omap.c	2011-10-30 00:48:27.429058258 +0200
++++ linux-3.1/drivers/mmc/host/omap.c	2011-10-30 00:48:55.981038523 +0200
 @@ -1456,6 +1456,7 @@ static int __init mmc_omap_probe(struct
  	host->dma_ch = -1;
  
@@ -21,10 +21,10 @@ Index: linux-3.1-rc4/drivers/mmc/host/omap.c
  
  	return 0;
  
-Index: linux-3.1-rc4/drivers/mmc/core/core.c
+Index: linux-3.1/drivers/mmc/core/core.c
 ===================================================================
---- linux-3.1-rc4.orig/drivers/mmc/core/core.c	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/drivers/mmc/core/core.c	2011-10-27 16:48:04.389148259 +0200
+--- linux-3.1.orig/drivers/mmc/core/core.c	2011-10-30 00:48:27.437058255 +0200
++++ linux-3.1/drivers/mmc/core/core.c	2011-10-30 00:48:55.981038523 +0200
 @@ -76,12 +76,13 @@ static int mmc_schedule_delayed_work(str
  }
  
@@ -41,10 +41,10 @@ Index: linux-3.1-rc4/drivers/mmc/core/core.c
  
  /**
   *	mmc_request_done - finish processing an MMC request
-Index: linux-3.1-rc4/include/linux/mmc/host.h
+Index: linux-3.1/include/linux/mmc/host.h
 ===================================================================
---- linux-3.1-rc4.orig/include/linux/mmc/host.h	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/include/linux/mmc/host.h	2011-10-27 16:49:05.240930665 +0200
+--- linux-3.1.orig/include/linux/mmc/host.h	2011-10-30 00:48:27.445058249 +0200
++++ linux-3.1/include/linux/mmc/host.h	2011-10-30 00:48:55.981038523 +0200
 @@ -394,4 +394,7 @@ static inline int mmc_host_cmd23(struct
  {
  	return host->caps & MMC_CAP_CMD23;

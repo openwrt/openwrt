@@ -1,7 +1,7 @@
-Index: linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c
+Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 20:35:03.620973158 +0200
-+++ linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 20:35:48.268866718 +0200
+--- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:29.505056863 +0200
++++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:47.357044479 +0200
 @@ -15,8 +15,10 @@
  #include <linux/delay.h>
  #include <linux/gpio.h>
@@ -145,10 +145,10 @@ Index: linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c
  	/* FIXME: add n810 spi devices */
  	spi_register_board_info(n800_spi_board_info,
  				ARRAY_SIZE(n800_spi_board_info));
-Index: linux-3.1-rc4/arch/arm/plat-omap/include/plat/irqs.h
+Index: linux-3.1/arch/arm/plat-omap/include/plat/irqs.h
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/plat-omap/include/plat/irqs.h	2011-10-29 20:35:01.620977933 +0200
-+++ linux-3.1-rc4/arch/arm/plat-omap/include/plat/irqs.h	2011-10-29 20:35:48.268866718 +0200
+--- linux-3.1.orig/arch/arm/plat-omap/include/plat/irqs.h	2011-10-30 00:48:29.517056855 +0200
++++ linux-3.1/arch/arm/plat-omap/include/plat/irqs.h	2011-10-30 00:48:47.357044479 +0200
 @@ -428,8 +428,16 @@
  #define OMAP_GPMC_NR_IRQS	8
  #define OMAP_GPMC_IRQ_END	(OMAP_GPMC_IRQ_BASE + OMAP_GPMC_NR_IRQS)

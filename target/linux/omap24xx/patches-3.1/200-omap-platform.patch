@@ -1,7 +1,7 @@
-Index: linux-3.1-rc4/arch/arm/plat-omap/bootreason.c
+Index: linux-3.1/arch/arm/plat-omap/bootreason.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/arch/arm/plat-omap/bootreason.c	2011-10-27 19:30:06.790989882 +0200
++++ linux-3.1/arch/arm/plat-omap/bootreason.c	2011-10-30 00:48:34.877053219 +0200
 @@ -0,0 +1,79 @@
 +/*
 + * linux/arch/arm/plat-omap/bootreason.c
@@ -82,10 +82,10 @@ Index: linux-3.1-rc4/arch/arm/plat-omap/bootreason.c
 +}
 +
 +late_initcall(bootreason_init);
-Index: linux-3.1-rc4/arch/arm/plat-omap/common.c
+Index: linux-3.1/arch/arm/plat-omap/common.c
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/plat-omap/common.c	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/arch/arm/plat-omap/common.c	2011-10-27 19:30:06.790989882 +0200
+--- linux-3.1.orig/arch/arm/plat-omap/common.c	2011-10-30 00:48:32.781054651 +0200
++++ linux-3.1/arch/arm/plat-omap/common.c	2011-10-30 00:48:34.877053219 +0200
 @@ -21,18 +21,90 @@
  #include <plat/vram.h>
  #include <plat/dsp.h>
@@ -177,10 +177,10 @@ Index: linux-3.1-rc4/arch/arm/plat-omap/common.c
  	/* Try to find the config from the board-specific structures
  	 * in the kernel. */
  	for (i = 0; i < omap_board_config_size; i++) {
-Index: linux-3.1-rc4/arch/arm/plat-omap/component-version.c
+Index: linux-3.1/arch/arm/plat-omap/component-version.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/arch/arm/plat-omap/component-version.c	2011-10-27 19:30:06.790989882 +0200
++++ linux-3.1/arch/arm/plat-omap/component-version.c	2011-10-30 00:48:34.877053219 +0200
 @@ -0,0 +1,64 @@
 +/*
 + *  linux/arch/arm/plat-omap/component-version.c
@@ -246,10 +246,10 @@ Index: linux-3.1-rc4/arch/arm/plat-omap/component-version.c
 +MODULE_AUTHOR("Juha Yrjölä <juha.yrjola@nokia.com>");
 +MODULE_DESCRIPTION("Component version driver");
 +MODULE_LICENSE("GPL");
-Index: linux-3.1-rc4/arch/arm/plat-omap/Kconfig
+Index: linux-3.1/arch/arm/plat-omap/Kconfig
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/plat-omap/Kconfig	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/arch/arm/plat-omap/Kconfig	2011-10-27 19:30:06.790989882 +0200
+--- linux-3.1.orig/arch/arm/plat-omap/Kconfig	2011-10-30 00:48:32.933054543 +0200
++++ linux-3.1/arch/arm/plat-omap/Kconfig	2011-10-30 00:48:34.877053219 +0200
 @@ -82,6 +82,38 @@ config OMAP_RESET_CLOCKS
  	  probably do not want this option enabled until your
  	  device drivers work properly.
@@ -289,10 +289,10 @@ Index: linux-3.1-rc4/arch/arm/plat-omap/Kconfig
  config OMAP_MUX
  	bool "OMAP multiplexing support"
  	depends on ARCH_OMAP
-Index: linux-3.1-rc4/arch/arm/plat-omap/Makefile
+Index: linux-3.1/arch/arm/plat-omap/Makefile
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/plat-omap/Makefile	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/arch/arm/plat-omap/Makefile	2011-10-27 19:30:06.790989882 +0200
+--- linux-3.1.orig/arch/arm/plat-omap/Makefile	2011-10-30 00:48:32.953054530 +0200
++++ linux-3.1/arch/arm/plat-omap/Makefile	2011-10-30 00:48:34.877053219 +0200
 @@ -23,6 +23,9 @@ obj-$(CONFIG_OMAP_IOMMU_DEBUG) += iommu-
  
  obj-$(CONFIG_CPU_FREQ) += cpu-omap.o
@@ -303,10 +303,10 @@ Index: linux-3.1-rc4/arch/arm/plat-omap/Makefile
  obj-$(CONFIG_OMAP_DEBUG_DEVICES) += debug-devices.o
  obj-$(CONFIG_OMAP_DEBUG_LEDS) += debug-leds.o
  i2c-omap-$(CONFIG_I2C_OMAP) := i2c.o
-Index: linux-3.1-rc4/arch/arm/include/asm/setup.h
+Index: linux-3.1/arch/arm/include/asm/setup.h
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/include/asm/setup.h	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/arch/arm/include/asm/setup.h	2011-10-27 19:30:06.790989882 +0200
+--- linux-3.1.orig/arch/arm/include/asm/setup.h	2011-10-30 00:48:32.965054522 +0200
++++ linux-3.1/arch/arm/include/asm/setup.h	2011-10-30 00:48:34.877053219 +0200
 @@ -136,6 +136,13 @@ struct tag_acorn {
  	__u8 adfsdrives;
  };
@@ -333,10 +333,10 @@ Index: linux-3.1-rc4/arch/arm/include/asm/setup.h
  		 * DC21285 specific
  		 */
  		struct tag_memclk	memclk;
-Index: linux-3.1-rc4/arch/arm/plat-omap/gpio-switch.c
+Index: linux-3.1/arch/arm/plat-omap/gpio-switch.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/arch/arm/plat-omap/gpio-switch.c	2011-10-27 21:23:03.726610115 +0200
++++ linux-3.1/arch/arm/plat-omap/gpio-switch.c	2011-10-30 00:48:34.877053219 +0200
 @@ -0,0 +1,554 @@
 +/*
 + *  linux/arch/arm/plat-omap/gpio-switch.c
@@ -892,10 +892,10 @@ Index: linux-3.1-rc4/arch/arm/plat-omap/gpio-switch.c
 +MODULE_AUTHOR("Juha Yrjölä <juha.yrjola@nokia.com>, Paul Mundt <paul.mundt@nokia.com");
 +MODULE_DESCRIPTION("GPIO switch driver");
 +MODULE_LICENSE("GPL");
-Index: linux-3.1-rc4/arch/arm/plat-omap/include/plat/board.h
+Index: linux-3.1/arch/arm/plat-omap/include/plat/board.h
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/plat-omap/include/plat/board.h	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/arch/arm/plat-omap/include/plat/board.h	2011-10-27 19:30:06.790989882 +0200
+--- linux-3.1.orig/arch/arm/plat-omap/include/plat/board.h	2011-10-30 00:48:32.949054532 +0200
++++ linux-3.1/arch/arm/plat-omap/include/plat/board.h	2011-10-30 00:48:34.877053219 +0200
 @@ -151,6 +151,14 @@ struct omap_board_config_kernel {
  	const void *data;
  };

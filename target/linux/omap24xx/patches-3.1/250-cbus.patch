@@ -1,7 +1,7 @@
-Index: linux-3.1-rc4/drivers/cbus/cbus.c
+Index: linux-3.1/drivers/cbus/cbus.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/cbus.c	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/cbus.c	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,333 @@
 +/*
 + * drivers/cbus/cbus.c
@@ -336,10 +336,10 @@ Index: linux-3.1-rc4/drivers/cbus/cbus.c
 +MODULE_AUTHOR("Mikko Ylinen");
 +MODULE_AUTHOR("Felipe Balbi <felipe.balbi@nokia.com>");
 +
-Index: linux-3.1-rc4/drivers/cbus/cbus.h
+Index: linux-3.1/drivers/cbus/cbus.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/cbus.h	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/cbus.h	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,30 @@
 +/*
 + * drivers/cbus/cbus.h
@@ -371,10 +371,10 @@ Index: linux-3.1-rc4/drivers/cbus/cbus.h
 +		unsigned val);
 +
 +#endif /* __DRIVERS_CBUS_CBUS_H */
-Index: linux-3.1-rc4/drivers/cbus/Kconfig
+Index: linux-3.1/drivers/cbus/Kconfig
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/Kconfig	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/Kconfig	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,86 @@
 +#
 +# CBUS device configuration
@@ -462,10 +462,10 @@ Index: linux-3.1-rc4/drivers/cbus/Kconfig
 +endif # CBUS_RETU
 +
 +endmenu
-Index: linux-3.1-rc4/drivers/cbus/Makefile
+Index: linux-3.1/drivers/cbus/Makefile
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/Makefile	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/Makefile	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,13 @@
 +#
 +# Makefile for CBUS.
@@ -480,10 +480,10 @@ Index: linux-3.1-rc4/drivers/cbus/Makefile
 +obj-$(CONFIG_CBUS_RETU_RTC)	+= retu-rtc.o
 +obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.o
 +obj-$(CONFIG_CBUS_RETU_HEADSET)	+= retu-headset.o
-Index: linux-3.1-rc4/drivers/cbus/retu.c
+Index: linux-3.1/drivers/cbus/retu.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/retu.c	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/retu.c	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,549 @@
 +/**
 + * drivers/cbus/retu.c
@@ -1034,10 +1034,10 @@ Index: linux-3.1-rc4/drivers/cbus/retu.c
 +MODULE_AUTHOR("Juha Yrjölä");
 +MODULE_AUTHOR("David Weinehall");
 +MODULE_AUTHOR("Mikko Ylinen");
-Index: linux-3.1-rc4/drivers/cbus/retu.h
+Index: linux-3.1/drivers/cbus/retu.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/retu.h	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/retu.h	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,85 @@
 +/**
 + * drivers/cbus/retu.h
@@ -1124,10 +1124,10 @@ Index: linux-3.1-rc4/drivers/cbus/retu.h
 +int retu_read_adc(struct device *child, int channel);
 +
 +#endif /* __DRIVERS_CBUS_RETU_H */
-Index: linux-3.1-rc4/drivers/cbus/retu-headset.c
+Index: linux-3.1/drivers/cbus/retu-headset.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/retu-headset.c	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/retu-headset.c	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,359 @@
 +/**
 + * Retu/Vilma headset detection
@@ -1488,10 +1488,10 @@ Index: linux-3.1-rc4/drivers/cbus/retu-headset.c
 +MODULE_DESCRIPTION("Retu/Vilma headset detection");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä");
-Index: linux-3.1-rc4/drivers/cbus/retu-pwrbutton.c
+Index: linux-3.1/drivers/cbus/retu-pwrbutton.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/retu-pwrbutton.c	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/retu-pwrbutton.c	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,165 @@
 +/**
 + * drivers/cbus/retu-pwrbutton.c
@@ -1658,10 +1658,10 @@ Index: linux-3.1-rc4/drivers/cbus/retu-pwrbutton.c
 +MODULE_AUTHOR("Ari Saastamoinen");
 +MODULE_AUTHOR("Felipe Balbi <felipe.balbi@nokia.com>");
 +
-Index: linux-3.1-rc4/drivers/cbus/retu-rtc.c
+Index: linux-3.1/drivers/cbus/retu-rtc.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/retu-rtc.c	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/retu-rtc.c	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,287 @@
 +/**
 + * drivers/cbus/retu-rtc.c
@@ -1950,10 +1950,10 @@ Index: linux-3.1-rc4/drivers/cbus/retu-rtc.c
 +MODULE_AUTHOR("Igor Stoppa");
 +MODULE_AUTHOR("Felipe Balbi <felipe.balbi@nokia.com>");
 +
-Index: linux-3.1-rc4/drivers/cbus/retu-wdt.c
+Index: linux-3.1/drivers/cbus/retu-wdt.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/retu-wdt.c	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/retu-wdt.c	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,272 @@
 +/**
 + * drivers/cbus/retu-wdt.c
@@ -2227,10 +2227,10 @@ Index: linux-3.1-rc4/drivers/cbus/retu-wdt.c
 +MODULE_DESCRIPTION("Retu WatchDog");
 +MODULE_AUTHOR("Amit Kucheria");
 +MODULE_LICENSE("GPL");
-Index: linux-3.1-rc4/drivers/cbus/tahvo.c
+Index: linux-3.1/drivers/cbus/tahvo.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/tahvo.c	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/tahvo.c	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,423 @@
 +/**
 + * drivers/cbus/tahvo.c
@@ -2655,10 +2655,10 @@ Index: linux-3.1-rc4/drivers/cbus/tahvo.c
 +MODULE_AUTHOR("David Weinehall");
 +MODULE_AUTHOR("Mikko Ylinen");
 +
-Index: linux-3.1-rc4/drivers/cbus/tahvo.h
+Index: linux-3.1/drivers/cbus/tahvo.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/tahvo.h	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/tahvo.h	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,58 @@
 +/*
 + * drivers/cbus/tahvo.h
@@ -2718,10 +2718,10 @@ Index: linux-3.1-rc4/drivers/cbus/tahvo.h
 +		u16 clear);
 +
 +#endif /* __DRIVERS_CBUS_TAHVO_H */
-Index: linux-3.1-rc4/drivers/cbus/tahvo-usb.c
+Index: linux-3.1/drivers/cbus/tahvo-usb.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/drivers/cbus/tahvo-usb.c	2011-10-27 23:56:44.917514371 +0200
++++ linux-3.1/drivers/cbus/tahvo-usb.c	2011-10-30 00:48:42.989047642 +0200
 @@ -0,0 +1,740 @@
 +/**
 + * drivers/cbus/tahvo-usb.c
@@ -3463,10 +3463,10 @@ Index: linux-3.1-rc4/drivers/cbus/tahvo-usb.c
 +MODULE_DESCRIPTION("Tahvo USB OTG Transceiver Driver");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Juha Yrjölä, Tony Lindgren, and Timo Teräs");
-Index: linux-3.1-rc4/drivers/Makefile
+Index: linux-3.1/drivers/Makefile
 ===================================================================
---- linux-3.1-rc4.orig/drivers/Makefile	2011-10-27 23:56:12.861639678 +0200
-+++ linux-3.1-rc4/drivers/Makefile	2011-10-27 23:56:44.917514371 +0200
+--- linux-3.1.orig/drivers/Makefile	2011-10-30 00:48:29.709056726 +0200
++++ linux-3.1/drivers/Makefile	2011-10-30 00:48:42.989047642 +0200
 @@ -76,7 +76,7 @@ obj-$(CONFIG_GAMEPORT)		+= input/gamepor
  obj-$(CONFIG_INPUT)		+= input/
  obj-$(CONFIG_I2O)		+= message/
@@ -3476,10 +3476,10 @@ Index: linux-3.1-rc4/drivers/Makefile
  obj-$(CONFIG_PPS)		+= pps/
  obj-$(CONFIG_PTP_1588_CLOCK)	+= ptp/
  obj-$(CONFIG_W1)		+= w1/
-Index: linux-3.1-rc4/drivers/Kconfig
+Index: linux-3.1/drivers/Kconfig
 ===================================================================
---- linux-3.1-rc4.orig/drivers/Kconfig	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/drivers/Kconfig	2011-10-27 23:57:05.977432050 +0200
+--- linux-3.1.orig/drivers/Kconfig	2011-10-30 00:48:29.653056764 +0200
++++ linux-3.1/drivers/Kconfig	2011-10-30 00:48:42.989047642 +0200
 @@ -2,6 +2,8 @@ menu "Device Drivers"
  
  source "drivers/base/Kconfig"

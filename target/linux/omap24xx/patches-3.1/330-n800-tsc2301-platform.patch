@@ -8,10 +8,10 @@ This patch adds TSC2301 init logic to N800 board file
  arch/arm/mach-omap2/board-n8x0.c |  141 ++++++++++++++++++++++++++++++++++++--
  1 files changed, 135 insertions(+), 6 deletions(-)
 
-Index: linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c
+Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 22:14:18.752777837 +0200
-+++ linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 22:16:59.040112725 +0200
+--- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:49.837042881 +0200
++++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:50.813042079 +0200
 @@ -26,6 +26,7 @@
  #include <linux/spi/tsc2005.h>
  #include <linux/input.h>
