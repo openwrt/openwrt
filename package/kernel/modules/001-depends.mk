@@ -18,6 +18,11 @@ define AddDepends/input
 endef
 
 
+define AddDepends/nls
+  DEPENDS+= +kmod-nls-base $(foreach cp,$(1),+kmod-nls-$(cp))
+endef
+
+
 define SetDepends/rfkill
   DEPENDS:= @(TARGET_ar71xx||TARGET_brcm47xx||TARGET_s3c24xx||TARGET_x86||TARGET_gemini)
 endef
