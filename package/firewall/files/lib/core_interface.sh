@@ -96,7 +96,9 @@ fw_configure_interface() {
 		fw $action $mode f ${chain}_REJECT reject $ { -o "$ifname" $onet }
 		fw $action $mode f ${chain}_REJECT reject $ { -i "$ifname" $inet }
 
-		fw $action $mode f ${chain}_MSSFIX TCPMSS  $ { -o "$ifname" -p tcp --tcp-flags SYN,RST SYN --clamp-mss-to-pmtu $onet }
+		[ "$(uci_get_state firewall core "${zone}_tcpmss")" == 1 ] && \
+			fw $action $mode m ${chain}_MSSFIX TCPMSS $ \
+				{ -o "$ifname" -p tcp --tcp-flags SYN,RST SYN --clamp-mss-to-pmtu $onet }
 
 		fw $action $mode f input   ${chain}         $ { -i "$ifname" $inet }
 		fw $action $mode f forward ${chain}_forward $ { -i "$ifname" $inet }
