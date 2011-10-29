@@ -1,15 +1,3 @@
-Index: linux-3.1-rc4/drivers/Makefile
-===================================================================
---- linux-3.1-rc4.orig/drivers/Makefile	2011-10-30 00:12:03.959808922 +0200
-+++ linux-3.1-rc4/drivers/Makefile	2011-10-30 00:12:06.543770526 +0200
-@@ -71,6 +71,7 @@ obj-$(CONFIG_USB_OTG_UTILS)	+= usb/
- obj-$(CONFIG_USB)		+= usb/
- obj-$(CONFIG_PCI)		+= usb/
- obj-$(CONFIG_USB_GADGET)	+= usb/
-+obj-y				+= usb/
- obj-$(CONFIG_SERIO)		+= input/serio/
- obj-$(CONFIG_GAMEPORT)		+= input/gameport/
- obj-$(CONFIG_INPUT)		+= input/
 Index: linux-3.1-rc4/drivers/usb/musb/tusb6010.c
 ===================================================================
 --- linux-3.1-rc4.orig/drivers/usb/musb/tusb6010.c	2011-10-30 00:12:03.951809040 +0200
