@@ -1,0 +1,100 @@
+---
+ arch/arm/mach-omap2/board-n8x0.c |   73 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 73 insertions(+)
+
+Index: linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c
+===================================================================
+--- linux-3.1-rc4.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 20:35:58.476842416 +0200
++++ linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 20:36:02.012833998 +0200
+@@ -216,6 +216,77 @@ void __init n8x0_bt_init(void)
+ 		BUG();
+ }
+ 
++struct gpio_switch_input_dev {
++	struct input_dev *idev;
++	unsigned int swcode;
++};
++
++static struct gpio_switch_input_dev *slide_input;
++static struct gpio_switch_input_dev *kblock_input;
++
++static void n8x0_gpio_switch_input_notify(struct gpio_switch_input_dev *gdev,
++					  int state)
++{
++	if (gdev) {
++		input_report_switch(gdev->idev, gdev->swcode, state);
++		input_sync(gdev->idev);
++	}
++}
++
++static void n8x0_slide_notify(void *data, int state)
++{
++	n8x0_gpio_switch_input_notify(slide_input, state);
++}
++
++static void n8x0_kb_lock_notify(void *data, int state)
++{
++	n8x0_gpio_switch_input_notify(kblock_input, state);
++}
++
++static struct gpio_switch_input_dev * __init gpioswitch_input_init(
++			const char *name,
++			unsigned int swcode)
++{
++	struct gpio_switch_input_dev *gdev;
++	int err;
++
++	gdev = kzalloc(sizeof(*gdev), GFP_KERNEL);
++	if (!gdev)
++		goto error;
++	gdev->swcode = swcode;
++
++	gdev->idev = input_allocate_device();
++	if (!gdev->idev)
++		goto err_free;
++
++	gdev->idev->evbit[0] = BIT_MASK(EV_SW);
++	gdev->idev->swbit[BIT_WORD(swcode)] = BIT_MASK(swcode);
++	gdev->idev->name = name;
++
++	err = input_register_device(gdev->idev);
++	if (err)
++		goto err_free_idev;
++
++	return gdev;
++
++err_free_idev:
++	input_free_device(gdev->idev);
++err_free:
++	kfree(gdev);
++error:
++	return NULL;
++}
++
++static int __init n8x0_gpio_switches_input_init(void)
++{
++	slide_input = gpioswitch_input_init("slide", SW_KEYPAD_SLIDE);
++	kblock_input = gpioswitch_input_init("kb_lock", SW_LID);
++	if (WARN_ON(!slide_input || !kblock_input))
++		return -ENODEV;
++	return 0;
++}
++late_initcall(n8x0_gpio_switches_input_init);
++
+ static struct omap_gpio_switch n8x0_gpio_switches[] __initdata = {
+ 	{
+ 		.name			= "headphone",
+@@ -237,11 +308,13 @@ static struct omap_gpio_switch n8x0_gpio
+ 		.gpio			= -1,
+ 		.debounce_rising	= 200,
+ 		.debounce_falling	= 200,
++		.notify			= n8x0_slide_notify,
+ 	}, {
+ 		.name			= "kb_lock",
+ 		.gpio			= -1,
+ 		.debounce_rising	= 200,
+ 		.debounce_falling	= 200,
++		.notify			= n8x0_kb_lock_notify,
+ 	},
+ };
+ 

@@ -1,0 +1,39 @@
+Index: linux-3.1-rc4/drivers/cbus/cbus.c
+===================================================================
+--- linux-3.1-rc4.orig/drivers/cbus/cbus.c	2011-10-29 20:45:09.335547837 +0200
++++ linux-3.1-rc4/drivers/cbus/cbus.c	2011-10-29 20:47:55.399163717 +0200
+@@ -33,7 +33,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/gpio.h>
+ #include <linux/platform_device.h>
+-#include <linux/platform_data/cbus.h>
++#include <plat/cbus.h>
+ 
+ #include "cbus.h"
+ 
+Index: linux-3.1-rc4/drivers/cbus/retu.c
+===================================================================
+--- linux-3.1-rc4.orig/drivers/cbus/retu.c	2011-10-29 20:47:55.395163726 +0200
++++ linux-3.1-rc4/drivers/cbus/retu.c	2011-10-29 20:48:32.463078350 +0200
+@@ -34,7 +34,7 @@
+ #include <linux/irq.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
+-#include <linux/platform_data/cbus.h>
++#include <plat/cbus.h>
+ 
+ #include <asm/bitops.h>
+ 
+Index: linux-3.1-rc4/drivers/cbus/tahvo.c
+===================================================================
+--- linux-3.1-rc4.orig/drivers/cbus/tahvo.c	2011-10-29 20:47:55.383163754 +0200
++++ linux-3.1-rc4/drivers/cbus/tahvo.c	2011-10-29 20:49:01.375011851 +0200
+@@ -33,7 +33,7 @@
+ #include <linux/irq.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
+-#include <linux/platform_data/cbus.h>
++#include <plat/cbus.h>
+ #include <linux/mutex.h>
+ 
+ #include "cbus.h"

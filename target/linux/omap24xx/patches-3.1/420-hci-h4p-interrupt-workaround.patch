@@ -1,0 +1,58 @@
+Index: linux-3.1-rc4/arch/arm/mach-omap2/serial.c
+===================================================================
+--- linux-3.1-rc4.orig/arch/arm/mach-omap2/serial.c	2011-08-29 06:16:01.000000000 +0200
++++ linux-3.1-rc4/arch/arm/mach-omap2/serial.c	2011-10-27 16:38:20.539265654 +0200
+@@ -546,10 +546,12 @@ static void omap_uart_idle_init(struct o
+ 		uart->padconf = 0;
+ 	}
+ 
+-	uart->irqflags |= IRQF_SHARED;
+-	ret = request_threaded_irq(uart->irq, NULL, omap_uart_interrupt,
+-				   IRQF_SHARED, "serial idle", (void *)uart);
+-	WARN_ON(ret);
++	if (uart->irq) {
++		uart->irqflags |= IRQF_SHARED;
++		ret = request_threaded_irq(uart->irq, NULL, omap_uart_interrupt,
++					   IRQF_SHARED, "serial idle", (void *)uart);
++		WARN_ON(ret);
++	}
+ }
+ 
+ void omap_uart_enable_irqs(int enable)
+@@ -560,14 +562,17 @@ void omap_uart_enable_irqs(int enable)
+ 	list_for_each_entry(uart, &uart_list, node) {
+ 		if (enable) {
+ 			pm_runtime_put_sync(&uart->pdev->dev);
+-			ret = request_threaded_irq(uart->irq, NULL,
+-						   omap_uart_interrupt,
+-						   IRQF_SHARED,
+-						   "serial idle",
+-						   (void *)uart);
++			if (uart->irq) {
++				ret = request_threaded_irq(uart->irq, NULL,
++							   omap_uart_interrupt,
++							   IRQF_SHARED,
++							   "serial idle",
++							   (void *)uart);
++			}
+ 		} else {
+ 			pm_runtime_get_noresume(&uart->pdev->dev);
+-			free_irq(uart->irq, (void *)uart);
++			if (uart->irq)
++				free_irq(uart->irq, (void *)uart);
+ 		}
+ 	}
+ }
+Index: linux-3.1-rc4/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c
+===================================================================
+--- linux-3.1-rc4.orig/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c	2011-08-29 06:16:01.000000000 +0200
++++ linux-3.1-rc4/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c	2011-10-27 16:44:39.065885130 +0200
+@@ -253,7 +253,7 @@ struct omap_hwmod_irq_info omap2_timer11
+ };
+ 
+ struct omap_hwmod_irq_info omap2_uart1_mpu_irqs[] = {
+-	{ .irq = INT_24XX_UART1_IRQ, },
++	{ .irq = 0, },
+ 	{ .irq = -1 }
+ };
+ 
