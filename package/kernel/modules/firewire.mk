@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -94,7 +94,7 @@ $(eval $(call KernelPackage,video1394))
 define KernelPackage/firewire
   SUBMENU:=$(FIREWIRE_MENU)
   TITLE:=Support for FireWire (new stack)
-  DEPENDS:=@PCI_SUPPORT
+  DEPENDS:=@PCI_SUPPORT +kmod-lib-crc-itu-t
   KCONFIG:=CONFIG_FIREWIRE
   FILES:=$(LINUX_DIR)/drivers/firewire/firewire-core.ko
   AUTOLOAD:=$(call AutoLoad,20,firewire-core)
