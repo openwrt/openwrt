@@ -145,6 +145,7 @@ $(eval $(call KernelPackage,nop-usb-xceiv))
 define KernelPackage/tusb6010
   TITLE:=Support for TUSB 6010
   KCONFIG:= \
+	CONFIG_USB_MUSB_TUSB6010 \
 	CONFIG_USB_TUSB6010=y
   DEPENDS:=+kmod-musb-hdrc +kmod-nop-usb-xceiv
   $(call AddDepends/usb)
