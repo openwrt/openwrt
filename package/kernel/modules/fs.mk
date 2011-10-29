@@ -325,6 +325,7 @@ define KernelPackage/fs-udf
   KCONFIG:=CONFIG_UDF_FS
   FILES:=$(LINUX_DIR)/fs/udf/udf.ko
   AUTOLOAD:=$(call AutoLoad,30,udf)
+  DEPENDS:=+kmod-lib-crc-itu-t
 $(call AddDepends/nls)
 endef
 
