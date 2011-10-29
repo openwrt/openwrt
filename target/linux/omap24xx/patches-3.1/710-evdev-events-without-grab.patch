@@ -1,0 +1,33 @@
+---
+ drivers/input/evdev.c |   10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+Index: linux-3.1-rc4/drivers/input/evdev.c
+===================================================================
+--- linux-3.1-rc4.orig/drivers/input/evdev.c	2011-08-29 06:16:01.000000000 +0200
++++ linux-3.1-rc4/drivers/input/evdev.c	2011-10-27 16:47:54.773182635 +0200
+@@ -92,7 +92,7 @@ static void evdev_event(struct input_han
+ 			unsigned int type, unsigned int code, int value)
+ {
+ 	struct evdev *evdev = handle->private;
+-	struct evdev_client *client;
++	struct evdev_client *client, *c;
+ 	struct input_event event;
+ 
+ 	do_gettimeofday(&event.time);
+@@ -103,9 +103,13 @@ static void evdev_event(struct input_han
+ 	rcu_read_lock();
+ 
+ 	client = rcu_dereference(evdev->grab);
+-	if (client)
++	if (client) {
+ 		evdev_pass_event(client, &event);
+-	else
++		/* Also pass events to clients that did not grab the device. */
++		list_for_each_entry_rcu(c, &evdev->client_list, node)
++			if (c != client)
++				evdev_pass_event(c, &event);
++	} else
+ 		list_for_each_entry_rcu(client, &evdev->client_list, node)
+ 			evdev_pass_event(client, &event);
+ 

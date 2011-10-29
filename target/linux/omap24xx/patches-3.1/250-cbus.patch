@@ -1,0 +1,3491 @@
+Index: linux-3.1-rc4/drivers/cbus/cbus.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/cbus.c	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,333 @@
++/*
++ * drivers/cbus/cbus.c
++ *
++ * Support functions for CBUS serial protocol
++ *
++ * Copyright (C) 2004-2010 Nokia Corporation
++ * Contact: Felipe Balbi <felipe.balbi@nokia.com>
++ *
++ * Written by Juha Yrjölä <juha.yrjola@nokia.com>,
++ *	      David Weinehall <david.weinehall@nokia.com>, and
++ *	      Mikko Ylinen <mikko.k.ylinen@nokia.com>
++ *
++ * Several updates and cleanups by Felipe Balbi <felipe.balbi@nokia.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/device.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
++#include <linux/gpio.h>
++#include <linux/platform_device.h>
++#include <linux/platform_data/cbus.h>
++
++#include "cbus.h"
++
++#define CBUS_XFER_READ		1
++#define CBUS_XFER_WRITE		0
++
++struct cbus_host {
++	/* host lock */
++	spinlock_t	lock;
++
++	struct device	*dev;
++
++	int		clk_gpio;
++	int		dat_gpio;
++	int		sel_gpio;
++};
++
++/**
++ * cbus_send_bit - sends one bit over the bus
++ * @host: the host we're using
++ * @bit: one bit of information to send
++ * @input: whether to set data pin as input after sending
++ */
++static int cbus_send_bit(struct cbus_host *host, unsigned bit,
++		unsigned input)
++{
++	int ret = 0;
++
++	gpio_set_value(host->dat_gpio, bit ? 1 : 0);
++	gpio_set_value(host->clk_gpio, 1);
++
++	/* The data bit is read on the rising edge of CLK */
++	if (input)
++		ret = gpio_direction_input(host->dat_gpio);
++
++	gpio_set_value(host->clk_gpio, 0);
++
++	return ret;
++}
++
++/**
++ * cbus_send_data - sends @len amount of data over the bus
++ * @host: the host we're using
++ * @data: the data to send
++ * @len: size of the transfer
++ * @input: whether to set data pin as input after sending
++ */
++static int cbus_send_data(struct cbus_host *host, unsigned data, unsigned len,
++		unsigned input)
++{
++	int ret = 0;
++	int i;
++
++	for (i = len; i > 0; i--) {
++		ret = cbus_send_bit(host, data & (1 << (i - 1)),
++				input && (i == 1));
++		if (ret < 0)
++			goto out;
++	}
++
++out:
++	return ret;
++}
++
++/**
++ * cbus_receive_bit - receives one bit from the bus
++ * @host: the host we're using
++ */
++static int cbus_receive_bit(struct cbus_host *host)
++{
++	int ret;
++
++	gpio_set_value(host->clk_gpio, 1);
++	ret = gpio_get_value(host->dat_gpio);
++	if (ret < 0)
++		goto out;
++	gpio_set_value(host->clk_gpio, 0);
++
++out:
++	return ret;
++}
++
++/**
++ * cbus_receive_data - receives @len data from the bus
++ * @host: the host we're using
++ * @len: the length of data to receive
++ */
++static int cbus_receive_data(struct cbus_host *host, unsigned len)
++{
++	int ret = 0;
++	int i;
++
++	for (i = 16; i > 0; i--) {
++		int bit = cbus_receive_bit(host);
++
++		if (bit < 0)
++			goto out;
++
++		if (bit)
++			ret |= 1 << (i - 1);
++	}
++
++out:
++	return ret;
++}
++
++/**
++ * cbus_transfer - transfers data over the bus
++ * @host: the host we're using
++ * @rw: read/write flag
++ * @dev: device address
++ * @reg: register address
++ * @data: if @rw == 0 data to send otherwise 0
++ */
++static int cbus_transfer(struct cbus_host *host, unsigned rw, unsigned dev,
++		unsigned reg, unsigned data)
++{
++	unsigned long flags;
++	int input = 0;
++	int ret = 0;
++
++	/* We don't want interrupts disturbing our transfer */
++	spin_lock_irqsave(&host->lock, flags);
++
++	/* Reset state and start of transfer, SEL stays down during transfer */
++	gpio_set_value(host->sel_gpio, 0);
++
++	/* Set the DAT pin to output */
++	gpio_direction_output(host->dat_gpio, 1);
++
++	/* Send the device address */
++	ret = cbus_send_data(host, dev, 3, 0);
++	if (ret < 0) {
++		dev_dbg(host->dev, "failed sending device addr\n");
++		goto out;
++	}
++
++	/* Send the rw flag */
++	ret = cbus_send_bit(host, rw, 0);
++	if (ret < 0) {
++		dev_dbg(host->dev, "failed sending read/write flag\n");
++		goto out;
++	}
++
++	/* Send the register address */
++	if (rw)
++		input = true;
++
++	ret = cbus_send_data(host, reg, 5, input);
++	if (ret < 0) {
++		dev_dbg(host->dev, "failed sending register addr\n");
++		goto out;
++	}
++
++	if (!rw) {
++		ret = cbus_send_data(host, data, 16, 0);
++		if (ret < 0) {
++			dev_dbg(host->dev, "failed sending data\n");
++			goto out;
++		}
++	} else {
++		gpio_set_value(host->clk_gpio, 1);
++
++		ret = cbus_receive_data(host, 16);
++		if (ret < 0) {
++			dev_dbg(host->dev, "failed receiving data\n");
++			goto out;
++		}
++	}
++
++	/* Indicate end of transfer, SEL goes up until next transfer */
++	gpio_set_value(host->sel_gpio, 1);
++	gpio_set_value(host->clk_gpio, 1);
++	gpio_set_value(host->clk_gpio, 0);
++
++out:
++	spin_unlock_irqrestore(&host->lock, flags);
++
++	return ret;
++}
++
++/**
++ * cbus_read_reg - reads a given register from the device
++ * @child: the child device
++ * @dev: device address
++ * @reg: register address
++ */
++int cbus_read_reg(struct device *child, unsigned dev, unsigned reg)
++{
++	struct cbus_host	*host = dev_get_drvdata(child->parent);
++
++	return cbus_transfer(host, CBUS_XFER_READ, dev, reg, 0);
++}
++EXPORT_SYMBOL(cbus_read_reg);
++
++/**
++ * cbus_write_reg - writes to a given register of the device
++ * @child: the child device
++ * @dev: device address
++ * @reg: register address
++ * @val: data to be written to @reg
++ */
++int cbus_write_reg(struct device *child, unsigned dev, unsigned reg,
++		unsigned val)
++{
++	struct cbus_host	*host = dev_get_drvdata(child->parent);
++
++	return cbus_transfer(host, CBUS_XFER_WRITE, dev, reg, val);
++}
++EXPORT_SYMBOL(cbus_write_reg);
++
++static int __init cbus_bus_probe(struct platform_device *pdev)
++{
++	struct cbus_host *chost;
++	struct cbus_host_platform_data *pdata = pdev->dev.platform_data;
++	int ret;
++
++	chost = kzalloc(sizeof(*chost), GFP_KERNEL);
++	if (chost == NULL)
++		return -ENOMEM;
++
++	spin_lock_init(&chost->lock);
++
++	chost->clk_gpio = pdata->clk_gpio;
++	chost->dat_gpio = pdata->dat_gpio;
++	chost->sel_gpio = pdata->sel_gpio;
++	chost->dev = &pdev->dev;
++
++	ret = gpio_request(chost->clk_gpio, "CBUS clk");
++	if (ret < 0)
++		goto exit1;
++
++	ret = gpio_request(chost->dat_gpio, "CBUS data");
++	if (ret < 0)
++		goto exit2;
++
++	ret = gpio_request(chost->sel_gpio, "CBUS sel");
++	if (ret < 0)
++		goto exit3;
++
++	gpio_direction_output(chost->clk_gpio, 0);
++	gpio_direction_input(chost->dat_gpio);
++	gpio_direction_output(chost->sel_gpio, 1);
++
++	gpio_set_value(chost->clk_gpio, 1);
++	gpio_set_value(chost->clk_gpio, 0);
++
++	platform_set_drvdata(pdev, chost);
++
++	return 0;
++exit3:
++	gpio_free(chost->dat_gpio);
++exit2:
++	gpio_free(chost->clk_gpio);
++exit1:
++	kfree(chost);
++
++	return ret;
++}
++
++static void __exit cbus_bus_remove(struct platform_device *pdev)
++{
++	struct cbus_host	*chost = platform_get_drvdata(pdev);
++
++	gpio_free(chost->sel_gpio);
++	gpio_free(chost->dat_gpio);
++	gpio_free(chost->clk_gpio);
++
++	kfree(chost);
++}
++
++static struct platform_driver cbus_driver = {
++	.remove		= __exit_p(cbus_bus_remove),
++	.driver		= {
++		.name	= "cbus",
++	},
++};
++
++static int __init cbus_bus_init(void)
++{
++	return platform_driver_probe(&cbus_driver, cbus_bus_probe);
++}
++subsys_initcall(cbus_bus_init);
++
++static void __exit cbus_bus_exit(void)
++{
++	platform_driver_unregister(&cbus_driver);
++}
++module_exit(cbus_bus_exit);
++
++MODULE_DESCRIPTION("CBUS serial protocol");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Juha Yrjölä");
++MODULE_AUTHOR("David Weinehall");
++MODULE_AUTHOR("Mikko Ylinen");
++MODULE_AUTHOR("Felipe Balbi <felipe.balbi@nokia.com>");
++
+Index: linux-3.1-rc4/drivers/cbus/cbus.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/cbus.h	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,30 @@
++/*
++ * drivers/cbus/cbus.h
++ *
++ * Copyright (C) 2004, 2005 Nokia Corporation
++ *
++ * Written by Juha Yrjölä <juha.yrjola@nokia.com> and
++ *	      David Weinehall <david.weinehall@nokia.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#ifndef __DRIVERS_CBUS_CBUS_H
++#define __DRIVERS_CBUS_CBUS_H
++
++extern int cbus_read_reg(struct device *, unsigned dev, unsigned reg);
++extern int cbus_write_reg(struct device *, unsigned dev, unsigned reg,
++		unsigned val);
++
++#endif /* __DRIVERS_CBUS_CBUS_H */
+Index: linux-3.1-rc4/drivers/cbus/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/Kconfig	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,86 @@
++#
++# CBUS device configuration
++#
++
++menu "CBUS support"
++
++config CBUS
++	bool "CBUS support on OMAP"
++	---help---
++	  CBUS is a proprietary serial protocol by Nokia.  It is mainly
++	  used for accessing Energy Management auxiliary chips.
++
++	  If you want CBUS support, you should say Y here.
++
++config CBUS_TAHVO
++	depends on CBUS
++	bool "Support for Tahvo"
++	---help---
++	  Tahvo is a mixed signal ASIC with some system features
++
++	  If you want Tahvo support, you should say Y here.
++
++if CBUS_TAHVO
++
++config CBUS_TAHVO_USB
++	depends on USB
++	depends on ARCH_OMAP
++	select USB_OTG_UTILS
++	tristate "Support for Tahvo USB transceiver"
++	---help---
++	  If you want Tahvo support for USB transceiver, say Y or M here.
++
++config CBUS_TAHVO_USB_HOST_BY_DEFAULT
++	depends on CBUS_TAHVO_USB && USB_OTG
++	boolean "Device in USB host mode by default"
++	---help---
++	  Say Y here, if you want the device to enter USB host mode
++	  by default on bootup.
++
++endif # CBUS_TAHVO
++
++config CBUS_RETU
++	depends on CBUS
++	bool "Support for Retu"
++	---help---
++	  Retu is a mixed signal ASIC with some system features
++
++	  If you want Retu support, you should say Y here.
++
++if CBUS_RETU
++
++config CBUS_RETU_POWERBUTTON
++	depends on INPUT
++	bool "Support for Retu power button"
++	---help---
++	  The power button on Nokia 770 is connected to the Retu ASIC.
++
++	  If you want support for the Retu power button, you should say Y here.
++
++config CBUS_RETU_RTC
++	depends on RTC_CLASS
++	depends on ARCH_OMAP
++	tristate "Support for Retu pseudo-RTC"
++	---help---
++	  Say Y here if you want support for the device that alleges to be an
++	  RTC in Retu. This will expose a sysfs interface for it.
++
++config CBUS_RETU_WDT
++	depends on SYSFS && WATCHDOG
++	depends on ARCH_OMAP
++	tristate "Support for Retu watchdog timer"
++	---help---
++	  Say Y here if you want support for the watchdog in Retu. This will
++	  expose a sysfs interface to grok it.
++
++config CBUS_RETU_HEADSET
++	depends on SYSFS
++	tristate "Support for headset detection with Retu/Vilma"
++	---help---
++	  Say Y here if you want support detecting a headset that's connected
++	  to Retu/Vilma. Detection state and events are exposed through
++	  sysfs.
++
++endif # CBUS_RETU
++
++endmenu
+Index: linux-3.1-rc4/drivers/cbus/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/Makefile	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,13 @@
++#
++# Makefile for CBUS.
++#
++
++obj-$(CONFIG_CBUS)		+= cbus.o
++obj-$(CONFIG_CBUS_TAHVO)	+= tahvo.o
++obj-$(CONFIG_CBUS_RETU)		+= retu.o
++obj-$(CONFIG_CBUS_TAHVO_USB)	+= tahvo-usb.o
++
++obj-$(CONFIG_CBUS_RETU_POWERBUTTON) += retu-pwrbutton.o
++obj-$(CONFIG_CBUS_RETU_RTC)	+= retu-rtc.o
++obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.o
++obj-$(CONFIG_CBUS_RETU_HEADSET)	+= retu-headset.o
+Index: linux-3.1-rc4/drivers/cbus/retu.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/retu.c	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,549 @@
++/**
++ * drivers/cbus/retu.c
++ *
++ * Support functions for Retu ASIC
++ *
++ * Copyright (C) 2004, 2005 Nokia Corporation
++ *
++ * Written by Juha Yrjölä <juha.yrjola@nokia.com>,
++ *	      David Weinehall <david.weinehall@nokia.com>, and
++ *	      Mikko Ylinen <mikko.k.ylinen@nokia.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++
++#include <linux/slab.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <linux/device.h>
++#include <linux/mutex.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/platform_data/cbus.h>
++
++#include <asm/bitops.h>
++
++#include "cbus.h"
++#include "retu.h"
++
++struct retu {
++	/* Device lock */
++	struct mutex		mutex;
++	struct device		*dev;
++
++	int			devid;
++
++	int			irq_base;
++	int			irq_end;
++
++	int			irq;
++
++	int			ack;
++	bool			ack_pending;
++
++	int			mask;
++	bool			mask_pending;
++
++	bool			is_vilma;
++};
++
++static struct retu *the_retu;
++
++/**
++ * __retu_read_reg - Read a value from a register in Retu
++ * @retu: pointer to retu structure
++ * @reg: the register address to read from
++ */
++static int __retu_read_reg(struct retu *retu, unsigned reg)
++{
++	return cbus_read_reg(retu->dev, retu->devid, reg);
++}
++
++/**
++ * __retu_write_reg - Writes a value to a register in Retu
++ * @retu: pointer to retu structure
++ * @reg: the register address to write to
++ * @val: the value to write to the register
++ */
++static void __retu_write_reg(struct retu *retu, unsigned reg, u16 val)
++{
++	cbus_write_reg(retu->dev, retu->devid, reg, val);
++}
++
++/**
++ * retu_read_reg - Read a value from a register in Retu
++ * @child: device pointer for the calling child
++ * @reg: the register to read from
++ *
++ * This function returns the contents of the specified register
++ */
++int retu_read_reg(struct device *child, unsigned reg)
++{
++	struct retu		*retu = dev_get_drvdata(child->parent);
++
++	return __retu_read_reg(retu, reg);
++}
++EXPORT_SYMBOL_GPL(retu_read_reg);
++
++/**
++ * retu_write_reg - Write a value to a register in Retu
++ * @child: the pointer to our calling child
++ * @reg: the register to write to
++ * @val: the value to write to the register
++ *
++ * This function writes a value to the specified register
++ */
++void retu_write_reg(struct device *child, unsigned reg, u16 val)
++{
++	struct retu		*retu = dev_get_drvdata(child->parent);
++
++	mutex_lock(&retu->mutex);
++	__retu_write_reg(retu, reg, val);
++	mutex_unlock(&retu->mutex);
++}
++EXPORT_SYMBOL_GPL(retu_write_reg);
++
++/**
++ * retu_set_clear_reg_bits - helper function to read/set/clear bits
++ * @child: device pointer to calling child
++ * @reg: the register address
++ * @set: mask for setting bits
++ * @clear: mask for clearing bits
++ */
++void retu_set_clear_reg_bits(struct device *child, unsigned reg, u16 set,
++		u16 clear)
++{
++	struct retu		*retu = dev_get_drvdata(child->parent);
++	u16			w;
++
++	mutex_lock(&retu->mutex);
++	w = __retu_read_reg(retu, reg);
++	w &= ~clear;
++	w |= set;
++	__retu_write_reg(retu, reg, w);
++	mutex_unlock(&retu->mutex);
++}
++EXPORT_SYMBOL_GPL(retu_set_clear_reg_bits);
++
++#define ADC_MAX_CHAN_NUMBER	13
++
++/**
++ * retu_read_adc - Reads AD conversion result
++ * @child: device pointer to calling child
++ * @channel: the ADC channel to read from
++ */
++int retu_read_adc(struct device *child, int channel)
++{
++	struct retu		*retu = dev_get_drvdata(child->parent);
++	int			res;
++
++	if (!retu)
++		return -ENODEV;
++
++	if (channel < 0 || channel > ADC_MAX_CHAN_NUMBER)
++		return -EINVAL;
++
++	mutex_lock(&retu->mutex);
++
++	if ((channel == 8) && retu->is_vilma) {
++		int scr = __retu_read_reg(retu, RETU_REG_ADCSCR);
++		int ch = (__retu_read_reg(retu, RETU_REG_ADCR) >> 10) & 0xf;
++		if (((scr & 0xff) != 0) && (ch != 8))
++			__retu_write_reg(retu, RETU_REG_ADCSCR, (scr & ~0xff));
++	}
++
++	/* Select the channel and read result */
++	__retu_write_reg(retu, RETU_REG_ADCR, channel << 10);
++	res = __retu_read_reg(retu, RETU_REG_ADCR) & 0x3ff;
++
++	if (retu->is_vilma)
++		__retu_write_reg(retu, RETU_REG_ADCR, (1 << 13));
++
++	/* Unlock retu */
++	mutex_unlock(&retu->mutex);
++
++	return res;
++}
++EXPORT_SYMBOL_GPL(retu_read_adc);
++
++static irqreturn_t retu_irq_handler(int irq, void *_retu)
++{
++	struct retu		*retu = _retu;
++
++	u16			idr;
++	u16			imr;
++
++	mutex_lock(&retu->mutex);
++	idr = __retu_read_reg(retu, RETU_REG_IDR);
++	imr = __retu_read_reg(retu, RETU_REG_IMR);
++	mutex_unlock(&retu->mutex);
++
++	idr &= ~imr;
++	if (!idr) {
++		dev_vdbg(retu->dev, "No IRQ, spurious?\n");
++		return IRQ_NONE;
++	}
++
++	while (idr) {
++		unsigned long	pending = __ffs(idr);
++		unsigned int	irq;
++
++		idr &= ~BIT(pending);
++		irq = pending + retu->irq_base;
++		handle_nested_irq(irq);
++	}
++
++	return IRQ_HANDLED;
++}
++
++/* -------------------------------------------------------------------------- */
++
++static void retu_irq_mask(struct irq_data *data)
++{
++	struct retu		*retu = irq_data_get_irq_chip_data(data);
++	int			irq = data->irq;
++
++	retu->mask |= (1 << (irq - retu->irq_base));
++	retu->mask_pending = true;
++}
++
++static void retu_irq_unmask(struct irq_data *data)
++{
++	struct retu		*retu = irq_data_get_irq_chip_data(data);
++	int			irq = data->irq;
++
++	retu->mask &= ~(1 << (irq - retu->irq_base));
++	retu->mask_pending = true;
++
++}
++
++static void retu_irq_ack(struct irq_data *data)
++{
++	struct retu		*retu = irq_data_get_irq_chip_data(data);
++	int			irq = data->irq;
++
++	retu->ack |= (1 << (irq - retu->irq_base));
++	retu->ack_pending = true;
++}
++
++static void retu_bus_lock(struct irq_data *data)
++{
++	struct retu		*retu = irq_data_get_irq_chip_data(data);
++
++	mutex_lock(&retu->mutex);
++}
++
++static void retu_bus_sync_unlock(struct irq_data *data)
++{
++	struct retu		*retu = irq_data_get_irq_chip_data(data);
++
++	if (retu->mask_pending) {
++		__retu_write_reg(retu, RETU_REG_IMR, retu->mask);
++		retu->mask_pending = false;
++	}
++
++	if (retu->ack_pending) {
++		__retu_write_reg(retu, RETU_REG_IDR, retu->ack);
++		retu->ack_pending = false;
++	}
++
++	mutex_unlock(&retu->mutex);
++}
++
++static struct irq_chip retu_irq_chip = {
++	.name			= "retu",
++	.irq_bus_lock		= retu_bus_lock,
++	.irq_bus_sync_unlock	= retu_bus_sync_unlock,
++	.irq_mask		= retu_irq_mask,
++	.irq_unmask		= retu_irq_unmask,
++	.irq_ack		= retu_irq_ack,
++};
++
++static inline void retu_irq_setup(int irq)
++{
++#ifdef CONFIG_ARM
++	set_irq_flags(irq, IRQF_VALID);
++#else
++	irq_set_noprobe(irq);
++#endif
++}
++
++static void retu_irq_init(struct retu *retu)
++{
++	int			base = retu->irq_base;
++	int			end = retu->irq_end;
++	int			irq;
++
++	for (irq = base; irq < end; irq++) {
++		irq_set_chip_data(irq, retu);
++		irq_set_chip_and_handler(irq, &retu_irq_chip,
++				handle_simple_irq);
++		irq_set_nested_thread(irq, 1);
++		retu_irq_setup(irq);
++	}
++}
++
++static void retu_irq_exit(struct retu *retu)
++{
++	int			base = retu->irq_base;
++	int			end = retu->irq_end;
++	int			irq;
++
++	for (irq = base; irq < end; irq++) {
++#ifdef CONFIG_ARM
++		set_irq_flags(irq, 0);
++#endif
++		irq_set_chip_and_handler(irq, NULL, NULL);
++		irq_set_chip_data(irq, NULL);
++	}
++}
++
++/* -------------------------------------------------------------------------- */
++
++/**
++ * retu_power_off - Shut down power to system
++ *
++ * This function puts the system in power off state
++ */
++static void retu_power_off(void)
++{
++	struct retu		*retu = the_retu;
++	unsigned		reg;
++
++	reg = __retu_read_reg(retu, RETU_REG_CC1);
++
++	/* Ignore power button state */
++	__retu_write_reg(retu, RETU_REG_CC1, reg | 2);
++	/* Expire watchdog immediately */
++	__retu_write_reg(retu, RETU_REG_WATCHDOG, 0);
++	/* Wait for poweroff*/
++	for (;;);
++}
++
++static struct resource generic_resources[] = {
++	{
++		.start	= -EINVAL,	/* fixed later */
++		.flags	= IORESOURCE_IRQ,
++	},
++	{
++		.start	= -EINVAL,	/* fixed later */
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++/**
++ * retu_allocate_child - Allocates one Retu child
++ * @name: name of new child
++ * @parent: parent device for this child
++ */
++static struct device *retu_allocate_child(char *name, struct device *parent,
++		int irq_base, int irq1, int irq2, int num)
++{
++	struct platform_device		*pdev;
++	int				status;
++
++	pdev = platform_device_alloc(name, -1);
++	if (!pdev) {
++		dev_dbg(parent, "can't allocate %s\n", name);
++		goto err;
++	}
++
++	pdev->dev.parent = parent;
++
++	if (num) {
++		generic_resources[0].start = irq_base + irq1;
++		generic_resources[1].start = irq_base + irq2;
++
++		status = platform_device_add_resources(pdev,
++				generic_resources, num);
++		if (status < 0) {
++			dev_dbg(parent, "can't add resources to %s\n", name);
++			goto err;
++		}
++	}
++
++	status = platform_device_add(pdev);
++	if (status < 0) {
++		dev_dbg(parent, "can't add %s\n", name);
++		goto err;
++	}
++
++	return &pdev->dev;
++
++err:
++	platform_device_put(pdev);
++
++	return NULL;
++}
++
++/**
++ * retu_allocate_children - Allocates Retu's children
++ */
++static int retu_allocate_children(struct device *parent, int irq_base)
++{
++	struct device	*child;
++
++	child = retu_allocate_child("retu-pwrbutton", parent, irq_base,
++			RETU_INT_PWR, -1, 1);
++	if (!child)
++		return -ENOMEM;
++
++	child = retu_allocate_child("retu-headset", parent, irq_base,
++			RETU_INT_HOOK, -1, 1);
++	if (!child)
++		return -ENOMEM;
++
++	child = retu_allocate_child("retu-rtc", parent, irq_base,
++			RETU_INT_RTCS, RETU_INT_RTCA, 2);
++	if (!child)
++		return -ENOMEM;
++
++	child = retu_allocate_child("retu-wdt", parent, -1, -1, -1, 0);
++	if (!child)
++		return -ENOMEM;
++
++	return 0;
++}
++
++/**
++ * retu_probe - Probe for Retu ASIC
++ * @dev: the Retu device
++ *
++ * Probe for the Retu ASIC and allocate memory
++ * for its device-struct if found
++ */
++static int __devinit retu_probe(struct platform_device *pdev)
++{
++	struct retu	*retu;
++	struct cbus_retu_platform_data *pdata = pdev->dev.platform_data;
++
++	int		ret = -ENOMEM;
++	int		rev;
++
++	retu = kzalloc(sizeof(*retu), GFP_KERNEL);
++	if (!retu) {
++		dev_err(&pdev->dev, "not enough memory\n");
++		goto err0;
++	}
++
++	platform_set_drvdata(pdev, retu);
++
++	ret = irq_alloc_descs(-1, 0, MAX_RETU_IRQ_HANDLERS, 0);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "failed to allocate IRQ descs\n");
++		goto err1;
++	}
++
++	retu->irq	= platform_get_irq(pdev, 0);
++	retu->irq_base	= ret;
++	retu->irq_end	= ret + MAX_RETU_IRQ_HANDLERS;
++	retu->devid	= pdata->devid;
++	retu->dev	= &pdev->dev;
++	the_retu	= retu;
++
++	mutex_init(&retu->mutex);
++
++	retu_irq_init(retu);
++
++	rev = __retu_read_reg(retu, RETU_REG_ASICR) & 0xff;
++	if (rev & (1 << 7))
++		retu->is_vilma = true;
++
++	dev_info(&pdev->dev, "%s v%d.%d found\n",
++			retu->is_vilma ? "Vilma" : "Retu",
++			(rev >> 4) & 0x07, rev & 0x0f);
++
++	/* Mask all RETU interrupts */
++	__retu_write_reg(retu, RETU_REG_IMR, 0xffff);
++
++	ret = request_threaded_irq(retu->irq, NULL, retu_irq_handler,
++			IRQF_ONESHOT, "retu", retu);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "Unable to register IRQ handler\n");
++		goto err2;
++	}
++
++	irq_set_irq_wake(retu->irq, 1);
++
++	/* Register power off function */
++	pm_power_off = retu_power_off;
++
++	ret = retu_allocate_children(&pdev->dev, retu->irq_base);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "Unable to allocate Retu children\n");
++		goto err3;
++	}
++
++	return 0;
++
++err3:
++	pm_power_off = NULL;
++	free_irq(retu->irq, retu);
++
++err2:
++	retu_irq_exit(retu);
++	irq_free_descs(retu->irq_base, MAX_RETU_IRQ_HANDLERS);
++
++err1:
++	kfree(retu);
++	the_retu = NULL;
++
++err0:
++	return ret;
++}
++
++static int __devexit retu_remove(struct platform_device *pdev)
++{
++	struct retu		*retu = platform_get_drvdata(pdev);
++
++	pm_power_off = NULL;
++	the_retu = NULL;
++
++	free_irq(retu->irq, retu);
++	retu_irq_exit(retu);
++	irq_free_descs(retu->irq_base, MAX_RETU_IRQ_HANDLERS);
++	kfree(retu);
++
++	return 0;
++}
++
++static struct platform_driver retu_driver = {
++	.probe		= retu_probe,
++	.remove		= __devexit_p(retu_remove),
++	.driver		= {
++		.name	= "retu",
++	},
++};
++
++static int __init retu_init(void)
++{
++	return platform_driver_register(&retu_driver);
++}
++subsys_initcall(retu_init);
++
++static void __exit retu_exit(void)
++{
++	platform_driver_unregister(&retu_driver);
++}
++module_exit(retu_exit);
++
++MODULE_DESCRIPTION("Retu ASIC control");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Juha Yrjölä");
++MODULE_AUTHOR("David Weinehall");
++MODULE_AUTHOR("Mikko Ylinen");
+Index: linux-3.1-rc4/drivers/cbus/retu.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/retu.h	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,85 @@
++/**
++ * drivers/cbus/retu.h
++ *
++ * Copyright (C) 2004, 2005 Nokia Corporation
++ *
++ * Written by Juha Yrjölä <juha.yrjola@nokia.com> and
++ *	      David Weinehall <david.weinehall@nokia.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#ifndef __DRIVERS_CBUS_RETU_H
++#define __DRIVERS_CBUS_RETU_H
++
++#include <linux/types.h>
++
++/* Registers */
++#define RETU_REG_ASICR		0x00	/* ASIC ID & revision */
++#define RETU_REG_IDR		0x01	/* Interrupt ID */
++#define RETU_REG_IMR		0x02	/* Interrupt mask */
++#define RETU_REG_RTCDSR		0x03	/* RTC seconds register */
++#define RETU_REG_RTCHMR		0x04	/* RTC hours and minutes register */
++#define RETU_REG_RTCHMAR	0x05	/* RTC hours and minutes alarm and time set register */
++#define RETU_REG_RTCCALR	0x06	/* RTC calibration register */
++#define RETU_REG_ADCR		0x08	/* ADC result */
++#define RETU_REG_ADCSCR		0x09	/* ADC sample ctrl */
++#define RETU_REG_CC1		0x0d	/* Common control register 1 */
++#define RETU_REG_CC2		0x0e	/* Common control register 2 */
++#define RETU_REG_CTRL_CLR	0x0f	/* Regulator clear register */
++#define RETU_REG_CTRL_SET	0x10	/* Regulator set register */
++#define RETU_REG_STATUS		0x16	/* Status register */
++#define  RETU_REG_STATUS_BATAVAIL	0x0100 /* Battery available */
++#define  RETU_REG_STATUS_CHGPLUG	0x1000 /* Charger is plugged in */
++#define RETU_REG_WATCHDOG	0x17	/* Watchdog register */
++#define RETU_REG_AUDTXR		0x18	/* Audio Codec Tx register */
++#define RETU_REG_MAX		0x1f
++
++/* Interrupt sources */
++#define RETU_INT_PWR		0
++#define RETU_INT_CHAR		1
++#define RETU_INT_RTCS		2
++#define RETU_INT_RTCM		3
++#define RETU_INT_RTCD		4
++#define RETU_INT_RTCA		5
++#define RETU_INT_HOOK		6
++#define RETU_INT_HEAD		7
++#define RETU_INT_ADCS		8
++
++#define	MAX_RETU_IRQ_HANDLERS	16
++
++/* ADC channels */
++#define RETU_ADC_GND		0x00 /* Ground */
++#define RETU_ADC_BSI		0x01 /* Battery Size Indicator */
++#define RETU_ADC_BATTEMP	0x02 /* Battery temperature */
++#define RETU_ADC_CHGVOLT	0x03 /* Charger voltage */
++#define RETU_ADC_HEADSET	0x04 /* Headset detection */
++#define RETU_ADC_HOOKDET	0x05 /* Hook detection */
++#define RETU_ADC_RFGP		0x06 /* RF GP */
++#define RETU_ADC_WBTX		0x07 /* Wideband Tx detection */
++#define RETU_ADC_BATTVOLT	0x08 /* Battery voltage measurement */
++#define RETU_ADC_GND2		0x09 /* Ground */
++#define RETU_ADC_LIGHTSENS	0x0A /* Light sensor */
++#define RETU_ADC_LIGHTTEMP	0x0B /* Light sensor temperature */
++#define RETU_ADC_BKUPVOLT	0x0C /* Backup battery voltage */
++#define RETU_ADC_TEMP		0x0D /* RETU temperature */
++
++
++int retu_read_reg(struct device *child, unsigned reg);
++void retu_write_reg(struct device *child, unsigned reg, u16 val);
++void retu_set_clear_reg_bits(struct device *child, unsigned reg, u16 set,
++		u16 clear);
++int retu_read_adc(struct device *child, int channel);
++
++#endif /* __DRIVERS_CBUS_RETU_H */
+Index: linux-3.1-rc4/drivers/cbus/retu-headset.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/retu-headset.c	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,359 @@
++/**
++ * Retu/Vilma headset detection
++ *
++ * Copyright (C) 2006 Nokia Corporation
++ *
++ * Written by Juha Yrjölä
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/slab.h>
++#include <linux/delay.h>
++#include <linux/input.h>
++#include <linux/platform_device.h>
++
++#include "retu.h"
++
++#define RETU_ADC_CHANNEL_HOOKDET	0x05
++
++#define RETU_HEADSET_KEY		KEY_PHONE
++
++struct retu_headset {
++	spinlock_t			lock;
++	struct mutex			mutex;
++	struct device			*dev;
++	struct input_dev		*idev;
++	unsigned			bias_enabled;
++	unsigned			detection_enabled;
++	unsigned			pressed;
++	struct timer_list		enable_timer;
++	struct timer_list		detect_timer;
++	int				irq;
++};
++
++static void retu_headset_set_bias(struct retu_headset *hs, int enable)
++{
++	if (enable) {
++		retu_set_clear_reg_bits(hs->dev, RETU_REG_AUDTXR,
++					(1 << 0) | (1 << 1), 0);
++		msleep(2);
++		retu_set_clear_reg_bits(hs->dev, RETU_REG_AUDTXR,
++				1 << 3, 0);
++	} else {
++		retu_set_clear_reg_bits(hs->dev, RETU_REG_AUDTXR, 0,
++					(1 << 0) | (1 << 1) | (1 << 3));
++	}
++}
++
++static void retu_headset_enable(struct retu_headset *hs)
++{
++	mutex_lock(&hs->mutex);
++	if (!hs->bias_enabled) {
++		hs->bias_enabled = 1;
++		retu_headset_set_bias(hs, 1);
++	}
++	mutex_unlock(&hs->mutex);
++}
++
++static void retu_headset_disable(struct retu_headset *hs)
++{
++	mutex_lock(&hs->mutex);
++	if (hs->bias_enabled) {
++		hs->bias_enabled = 0;
++		retu_headset_set_bias(hs, 0);
++	}
++	mutex_unlock(&hs->mutex);
++}
++
++static void retu_headset_det_enable(struct retu_headset *hs)
++{
++	mutex_lock(&hs->mutex);
++	if (!hs->detection_enabled) {
++		hs->detection_enabled = 1;
++		retu_set_clear_reg_bits(hs->dev, RETU_REG_CC1,
++				(1 << 10) | (1 << 8), 0);
++	}
++	mutex_unlock(&hs->mutex);
++}
++
++static void retu_headset_det_disable(struct retu_headset *hs)
++{
++	unsigned long flags;
++
++	mutex_lock(&hs->mutex);
++	if (hs->detection_enabled) {
++		hs->detection_enabled = 0;
++		del_timer_sync(&hs->enable_timer);
++		del_timer_sync(&hs->detect_timer);
++		spin_lock_irqsave(&hs->lock, flags);
++		if (hs->pressed)
++			input_report_key(hs->idev, RETU_HEADSET_KEY, 0);
++		spin_unlock_irqrestore(&hs->lock, flags);
++		retu_set_clear_reg_bits(hs->dev, RETU_REG_CC1, 0,
++				(1 << 10) | (1 << 8));
++	}
++	mutex_unlock(&hs->mutex);
++}
++
++static ssize_t retu_headset_hookdet_show(struct device *dev,
++					 struct device_attribute *attr,
++					 char *buf)
++{
++	int val;
++
++	val = retu_read_adc(dev, RETU_ADC_CHANNEL_HOOKDET);
++	return sprintf(buf, "%d\n", val);
++}
++
++static DEVICE_ATTR(hookdet, S_IRUGO, retu_headset_hookdet_show, NULL);
++
++static ssize_t retu_headset_enable_show(struct device *dev,
++					struct device_attribute *attr,
++					char *buf)
++{
++	struct retu_headset *hs = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%u\n", hs->bias_enabled);
++}
++
++static ssize_t retu_headset_enable_store(struct device *dev,
++					 struct device_attribute *attr,
++					 const char *buf, size_t count)
++{
++	struct retu_headset *hs = dev_get_drvdata(dev);
++	int enable;
++
++	if (sscanf(buf, "%u", &enable) != 1)
++		return -EINVAL;
++	if (enable)
++		retu_headset_enable(hs);
++	else
++	        retu_headset_disable(hs);
++	return count;
++}
++
++static DEVICE_ATTR(enable, S_IRUGO | S_IWUSR | S_IWGRP,
++		   retu_headset_enable_show, retu_headset_enable_store);
++
++static ssize_t retu_headset_enable_det_show(struct device *dev,
++					    struct device_attribute *attr,
++					    char *buf)
++{
++	struct retu_headset *hs = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%u\n", hs->detection_enabled);
++}
++
++static ssize_t retu_headset_enable_det_store(struct device *dev,
++					     struct device_attribute *attr,
++					     const char *buf, size_t count)
++{
++	struct retu_headset *hs = dev_get_drvdata(dev);
++	int enable;
++
++	if (sscanf(buf, "%u", &enable) != 1)
++		return -EINVAL;
++	if (enable)
++		retu_headset_det_enable(hs);
++	else
++	        retu_headset_det_disable(hs);
++	return count;
++}
++
++static DEVICE_ATTR(enable_det, S_IRUGO | S_IWUSR | S_IWGRP,
++		   retu_headset_enable_det_show,
++		   retu_headset_enable_det_store);
++
++static irqreturn_t retu_headset_hook_interrupt(int irq, void *_hs)
++{
++	struct retu_headset	*hs = _hs;
++	unsigned long		flags;
++
++	spin_lock_irqsave(&hs->lock, flags);
++	if (!hs->pressed) {
++		/* Headset button was just pressed down. */
++		hs->pressed = 1;
++		input_report_key(hs->idev, RETU_HEADSET_KEY, 1);
++	}
++	spin_unlock_irqrestore(&hs->lock, flags);
++	retu_set_clear_reg_bits(hs->dev, RETU_REG_CC1, 0,
++			(1 << 10) | (1 << 8));
++	mod_timer(&hs->enable_timer, jiffies + msecs_to_jiffies(50));
++
++	return IRQ_HANDLED;
++}
++
++static void retu_headset_enable_timer(unsigned long arg)
++{
++	struct retu_headset *hs = (struct retu_headset *) arg;
++
++	retu_set_clear_reg_bits(hs->dev, RETU_REG_CC1,
++			(1 << 10) | (1 << 8), 0);
++	mod_timer(&hs->detect_timer, jiffies + msecs_to_jiffies(350));
++}
++
++static void retu_headset_detect_timer(unsigned long arg)
++{
++	struct retu_headset *hs = (struct retu_headset *) arg;
++	unsigned long flags;
++
++	spin_lock_irqsave(&hs->lock, flags);
++	if (hs->pressed) {
++		hs->pressed = 0;
++		input_report_key(hs->idev, RETU_HEADSET_KEY, 0);
++	}
++	spin_unlock_irqrestore(&hs->lock, flags);
++}
++
++static int __init retu_headset_probe(struct platform_device *pdev)
++{
++	struct retu_headset *hs;
++	int irq;
++	int r;
++
++	hs = kzalloc(sizeof(*hs), GFP_KERNEL);
++	if (hs == NULL)
++		return -ENOMEM;
++
++	hs->dev = &pdev->dev;
++
++	hs->idev = input_allocate_device();
++	if (hs->idev == NULL) {
++		r = -ENOMEM;
++		goto err1;
++	}
++	hs->idev->name = "retu-headset";
++	hs->idev->dev.parent = &pdev->dev;
++	set_bit(EV_KEY, hs->idev->evbit);
++	set_bit(RETU_HEADSET_KEY, hs->idev->keybit);
++	r = input_register_device(hs->idev);
++	if (r < 0)
++		goto err2;
++
++	r = device_create_file(&pdev->dev, &dev_attr_hookdet);
++	if (r < 0)
++		goto err3;
++	r = device_create_file(&pdev->dev, &dev_attr_enable);
++	if (r < 0)
++		goto err4;
++	r = device_create_file(&pdev->dev, &dev_attr_enable_det);
++	if (r < 0)
++		goto err5;
++	platform_set_drvdata(pdev, hs);
++
++	spin_lock_init(&hs->lock);
++	mutex_init(&hs->mutex);
++	setup_timer(&hs->enable_timer, retu_headset_enable_timer,
++		    (unsigned long) hs);
++	setup_timer(&hs->detect_timer, retu_headset_detect_timer,
++		    (unsigned long) hs);
++
++	irq = platform_get_irq(pdev, 0);
++	hs->irq = irq;
++
++	r = request_threaded_irq(irq, NULL, retu_headset_hook_interrupt, 0,
++			"hookdet", hs);
++	if (r != 0) {
++		dev_err(&pdev->dev, "hookdet IRQ not available\n");
++		goto err6;
++	}
++
++	return 0;
++err6:
++	device_remove_file(&pdev->dev, &dev_attr_enable_det);
++err5:
++	device_remove_file(&pdev->dev, &dev_attr_enable);
++err4:
++	device_remove_file(&pdev->dev, &dev_attr_hookdet);
++err3:
++	input_unregister_device(hs->idev);
++err2:
++	input_free_device(hs->idev);
++err1:
++	kfree(hs);
++	return r;
++}
++
++static int retu_headset_remove(struct platform_device *pdev)
++{
++	struct retu_headset *hs = platform_get_drvdata(pdev);
++
++	device_remove_file(&pdev->dev, &dev_attr_hookdet);
++	device_remove_file(&pdev->dev, &dev_attr_enable);
++	device_remove_file(&pdev->dev, &dev_attr_enable_det);
++	retu_headset_disable(hs);
++	retu_headset_det_disable(hs);
++	free_irq(hs->irq, hs);
++	input_unregister_device(hs->idev);
++	input_free_device(hs->idev);
++
++	return 0;
++}
++
++static int retu_headset_suspend(struct platform_device *pdev,
++				pm_message_t mesg)
++{
++	struct retu_headset *hs = platform_get_drvdata(pdev);
++
++	mutex_lock(&hs->mutex);
++	if (hs->bias_enabled)
++		retu_headset_set_bias(hs, 0);
++	mutex_unlock(&hs->mutex);
++
++	return 0;
++}
++
++static int retu_headset_resume(struct platform_device *pdev)
++{
++	struct retu_headset *hs = platform_get_drvdata(pdev);
++
++	mutex_lock(&hs->mutex);
++	if (hs->bias_enabled)
++		retu_headset_set_bias(hs, 1);
++	mutex_unlock(&hs->mutex);
++
++	return 0;
++}
++
++static struct platform_driver retu_headset_driver = {
++	.remove		= retu_headset_remove,
++	.suspend	= retu_headset_suspend,
++	.resume		= retu_headset_resume,
++	.driver		= {
++		.name	= "retu-headset",
++	},
++};
++
++static int __init retu_headset_init(void)
++{
++	return platform_driver_probe(&retu_headset_driver, retu_headset_probe);
++}
++
++static void __exit retu_headset_exit(void)
++{
++	platform_driver_unregister(&retu_headset_driver);
++}
++
++module_init(retu_headset_init);
++module_exit(retu_headset_exit);
++
++MODULE_DESCRIPTION("Retu/Vilma headset detection");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Juha Yrjölä");
+Index: linux-3.1-rc4/drivers/cbus/retu-pwrbutton.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/retu-pwrbutton.c	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,165 @@
++/**
++ * drivers/cbus/retu-pwrbutton.c
++ *
++ * Driver for sending retu power button event to input-layer
++ *
++ * Copyright (C) 2004-2010 Nokia Corporation
++ *
++ * Written by
++ *	Ari Saastamoinen <ari.saastamoinen@elektrobit.com>
++ *	Juha Yrjola <juha.yrjola@solidboot.com>
++ *
++ * Contact: Felipe Balbi <felipe.balbi@nokia.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <linux/input.h>
++#include <linux/jiffies.h>
++#include <linux/bitops.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++
++#include "retu.h"
++
++#define RETU_STATUS_PWRONX	(1 << 5)
++
++#define PWRBTN_DELAY		20
++#define PWRBTN_UP		0
++#define PWRBTN_PRESSED		1
++
++struct retu_pwrbutton {
++	struct input_dev	*idev;
++	struct device		*dev;
++
++	int			state;
++	int			irq;
++};
++
++static irqreturn_t retubutton_irq(int irq, void *_pwr)
++{
++	struct retu_pwrbutton *pwr = _pwr;
++	int state;
++
++	if (retu_read_reg(pwr->dev, RETU_REG_STATUS) & RETU_STATUS_PWRONX)
++		state = PWRBTN_UP;
++	else
++		state = PWRBTN_PRESSED;
++
++	if (pwr->state != state) {
++		input_report_key(pwr->idev, KEY_POWER, state);
++		input_sync(pwr->idev);
++		pwr->state = state;
++	}
++
++	return IRQ_HANDLED;
++}
++
++static int __init retubutton_probe(struct platform_device *pdev)
++{
++	struct retu_pwrbutton		*pwr;
++	int				ret = 0;
++
++	pwr = kzalloc(sizeof(*pwr), GFP_KERNEL);
++	if (!pwr) {
++		dev_err(&pdev->dev, "not enough memory\n");
++		ret = -ENOMEM;
++		goto err0;
++	}
++
++	pwr->dev = &pdev->dev;
++	pwr->irq = platform_get_irq(pdev, 0);
++	platform_set_drvdata(pdev, pwr);
++
++	ret = request_threaded_irq(pwr->irq, NULL, retubutton_irq, 0,
++			"retu-pwrbutton", pwr);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "Cannot allocate irq\n");
++		goto err1;
++	}
++
++	pwr->idev = input_allocate_device();
++	if (!pwr->idev) {
++		dev_err(&pdev->dev, "can't allocate input device\n");
++		ret = -ENOMEM;
++		goto err2;
++	}
++
++	pwr->idev->evbit[0] = BIT_MASK(EV_KEY);
++	pwr->idev->keybit[BIT_WORD(KEY_POWER)] = BIT_MASK(KEY_POWER);
++	pwr->idev->name = "retu-pwrbutton";
++
++	ret = input_register_device(pwr->idev);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "failed to register input device\n");
++		goto err3;
++	}
++
++	return 0;
++
++err3:
++	input_free_device(pwr->idev);
++
++err2:
++	free_irq(pwr->irq, pwr);
++
++err1:
++	kfree(pwr);
++
++err0:
++	return ret;
++}
++
++static int __exit retubutton_remove(struct platform_device *pdev)
++{
++	struct retu_pwrbutton		*pwr = platform_get_drvdata(pdev);
++
++	free_irq(pwr->irq, pwr);
++	input_unregister_device(pwr->idev);
++	input_free_device(pwr->idev);
++	kfree(pwr);
++
++	return 0;
++}
++
++static struct platform_driver retu_pwrbutton_driver = {
++	.remove		= __exit_p(retubutton_remove),
++	.driver		= {
++		.name	= "retu-pwrbutton",
++	},
++};
++
++static int __init retubutton_init(void)
++{
++	return platform_driver_probe(&retu_pwrbutton_driver, retubutton_probe);
++}
++module_init(retubutton_init);
++
++static void __exit retubutton_exit(void)
++{
++	platform_driver_unregister(&retu_pwrbutton_driver);
++}
++module_exit(retubutton_exit);
++
++MODULE_DESCRIPTION("Retu Power Button");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Ari Saastamoinen");
++MODULE_AUTHOR("Felipe Balbi <felipe.balbi@nokia.com>");
++
+Index: linux-3.1-rc4/drivers/cbus/retu-rtc.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/retu-rtc.c	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,287 @@
++/**
++ * drivers/cbus/retu-rtc.c
++ *
++ * Support for Retu RTC
++ *
++ * Copyright (C) 2004, 2005 Nokia Corporation
++ *
++ * Written by Paul Mundt <paul.mundt@nokia.com> and
++ *            Igor Stoppa <igor.stoppa@nokia.com>
++ *
++ * The Retu RTC is essentially a partial read-only RTC that gives us Retu's
++ * idea of what time actually is. It's left as a userspace excercise to map
++ * this back to time in the real world and ensure that calibration settings
++ * are sane to compensate for any horrible drift (on account of not being able
++ * to set the clock to anything).
++ *
++ * Days are semi-writeable. Namely, Retu will only track 255 days for us
++ * consecutively, after which the counter is explicitly stuck at 255 until
++ * someone comes along and clears it with a write. In the event that no one
++ * comes along and clears it, we no longer have any idea what day it is.
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/device.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/mutex.h>
++#include <linux/rtc.h>
++
++#include "cbus.h"
++#include "retu.h"
++
++struct retu_rtc {
++	/* device lock */
++	struct mutex		mutex;
++	struct device		*dev;
++	struct rtc_device	*rtc;
++
++	u16			alarm_expired;
++	int			irq_rtcs;
++	int			irq_rtca;
++};
++
++static void retu_rtc_do_reset(struct retu_rtc *rtc)
++{
++	u16 ccr1;
++
++	ccr1 = retu_read_reg(rtc->dev, RETU_REG_CC1);
++	/* RTC in reset */
++	retu_write_reg(rtc->dev, RETU_REG_CC1, ccr1 | 0x0001);
++	/* RTC in normal operating mode */
++	retu_write_reg(rtc->dev, RETU_REG_CC1, ccr1 & ~0x0001);
++
++	/* Disable alarm and RTC WD */
++	retu_write_reg(rtc->dev, RETU_REG_RTCHMAR, 0x7f3f);
++	/* Set Calibration register to default value */
++	retu_write_reg(rtc->dev, RETU_REG_RTCCALR, 0x00c0);
++
++	rtc->alarm_expired = 0;
++}
++
++static irqreturn_t retu_rtc_interrupt(int irq, void *_rtc)
++{
++	struct retu_rtc		*rtc = _rtc;
++
++	mutex_lock(&rtc->mutex);
++	rtc->alarm_expired = 1;
++	retu_write_reg(rtc->dev, RETU_REG_RTCHMAR, (24 << 8) | 60);
++	mutex_unlock(&rtc->mutex);
++
++	return IRQ_HANDLED;
++}
++
++static int retu_rtc_init_irq(struct retu_rtc *rtc)
++{
++	int irq;
++	int ret;
++
++	irq = platform_get_irq(to_platform_device(rtc->dev), 0);
++	rtc->irq_rtcs = irq;
++
++	irq = platform_get_irq(to_platform_device(rtc->dev), 1);
++	rtc->irq_rtca = irq;
++
++	ret = request_threaded_irq(rtc->irq_rtcs, NULL, retu_rtc_interrupt,
++			0, "RTCS", rtc);
++	if (ret != 0)
++		return ret;
++
++	ret = request_threaded_irq(rtc->irq_rtca, NULL, retu_rtc_interrupt,
++			0, "RTCA", rtc);
++	if (ret != 0) {
++		free_irq(rtc->irq_rtcs, rtc);
++		return ret;
++	}
++
++	return 0;
++}
++
++static int retu_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alm)
++{
++	struct retu_rtc		*rtc = dev_get_drvdata(dev);
++	u16			chmar;
++
++	mutex_lock(&rtc->mutex);
++
++	chmar = ((alm->time.tm_hour & 0x1f) << 8) | (alm->time.tm_min & 0x3f);
++	retu_write_reg(rtc->dev, RETU_REG_RTCHMAR, chmar);
++
++	mutex_unlock(&rtc->mutex);
++
++	return 0;
++}
++
++static int retu_rtc_read_alarm(struct device *dev, struct rtc_wkalrm *alm)
++{
++	struct retu_rtc		*rtc = dev_get_drvdata(dev);
++	u16			chmar;
++
++	mutex_lock(&rtc->mutex);
++
++	chmar = retu_read_reg(rtc->dev, RETU_REG_RTCHMAR);
++
++	alm->time.tm_hour	= (chmar >> 8) & 0x1f;
++	alm->time.tm_min	= chmar & 0x3f;
++	alm->enabled		= !!rtc->alarm_expired;
++
++	mutex_unlock(&rtc->mutex);
++
++	return 0;
++}
++
++static int retu_rtc_set_time(struct device *dev, struct rtc_time *tm)
++{
++	struct retu_rtc		*rtc = dev_get_drvdata(dev);
++	u16			dsr;
++	u16			hmr;
++
++	dsr = ((tm->tm_mday & 0xff) << 8) | (tm->tm_hour & 0xff);
++	hmr = ((tm->tm_min & 0xff) << 8) | (tm->tm_sec & 0xff);
++
++	mutex_lock(&rtc->mutex);
++
++	retu_write_reg(rtc->dev, RETU_REG_RTCDSR, dsr);
++	retu_write_reg(rtc->dev, RETU_REG_RTCHMR, hmr);
++
++	mutex_unlock(&rtc->mutex);
++
++	return 0;
++}
++
++static int retu_rtc_read_time(struct device *dev, struct rtc_time *tm)
++{
++	struct retu_rtc		*rtc = dev_get_drvdata(dev);
++	u16			dsr;
++	u16			hmr;
++
++	/*
++	 * DSR holds days and hours
++	 * HMR hols minutes and seconds
++	 *
++	 * both are 16 bit registers with 8-bit for each field.
++	 */
++
++	mutex_lock(&rtc->mutex);
++
++	dsr	= retu_read_reg(rtc->dev, RETU_REG_RTCDSR);
++	hmr	= retu_read_reg(rtc->dev, RETU_REG_RTCHMR);
++
++	tm->tm_sec	= hmr & 0xff;
++	tm->tm_min	= hmr >> 8;
++	tm->tm_hour	= dsr & 0xff;
++	tm->tm_mday	= dsr >> 8;
++
++	mutex_unlock(&rtc->mutex);
++
++	return 0;
++}
++
++static struct rtc_class_ops retu_rtc_ops = {
++	.read_time		= retu_rtc_read_time,
++	.set_time		= retu_rtc_set_time,
++	.read_alarm		= retu_rtc_read_alarm,
++	.set_alarm		= retu_rtc_set_alarm,
++};
++
++static int __init retu_rtc_probe(struct platform_device *pdev)
++{
++	struct retu_rtc		*rtc;
++	int			r;
++
++	rtc = kzalloc(sizeof(*rtc), GFP_KERNEL);
++	if (!rtc) {
++		dev_err(&pdev->dev, "not enough memory\n");
++		r = -ENOMEM;
++		goto err0;
++	}
++
++	rtc->dev = &pdev->dev;
++	platform_set_drvdata(pdev, rtc);
++	mutex_init(&rtc->mutex);
++
++	rtc->alarm_expired = retu_read_reg(rtc->dev, RETU_REG_IDR) &
++		(0x1 << RETU_INT_RTCA);
++
++	r = retu_rtc_init_irq(rtc);
++	if (r < 0) {
++		dev_err(&pdev->dev, "failed to request retu irq\n");
++		goto err1;
++	}
++
++	/* If the calibration register is zero, we've probably lost power */
++	if (!(retu_read_reg(rtc->dev, RETU_REG_RTCCALR) & 0x00ff))
++		retu_rtc_do_reset(rtc);
++
++	rtc->rtc = rtc_device_register(pdev->name, &pdev->dev, &
++			retu_rtc_ops, THIS_MODULE);
++	if (IS_ERR(rtc->rtc)) {
++		dev_err(&pdev->dev, "can't register RTC device\n");
++		goto err2;
++	}
++
++	return 0;
++
++err2:
++	free_irq(rtc->irq_rtcs, rtc);
++	free_irq(rtc->irq_rtca, rtc);
++
++err1:
++	kfree(rtc);
++
++err0:
++	return r;
++}
++
++static int __devexit retu_rtc_remove(struct platform_device *pdev)
++{
++	struct retu_rtc		*rtc = platform_get_drvdata(pdev);
++
++	free_irq(rtc->irq_rtcs, rtc);
++	free_irq(rtc->irq_rtca, rtc);
++	rtc_device_unregister(rtc->rtc);
++	kfree(rtc);
++
++	return 0;
++}
++
++static struct platform_driver retu_rtc_driver = {
++	.remove		= __exit_p(retu_rtc_remove),
++	.driver		= {
++		.name	= "retu-rtc",
++	},
++};
++
++static int __init retu_rtc_init(void)
++{
++	return platform_driver_probe(&retu_rtc_driver, retu_rtc_probe);
++}
++module_init(retu_rtc_init);
++
++static void __exit retu_rtc_exit(void)
++{
++	platform_driver_unregister(&retu_rtc_driver);
++}
++module_exit(retu_rtc_exit);
++
++MODULE_DESCRIPTION("Retu RTC");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Paul Mundt");
++MODULE_AUTHOR("Igor Stoppa");
++MODULE_AUTHOR("Felipe Balbi <felipe.balbi@nokia.com>");
++
+Index: linux-3.1-rc4/drivers/cbus/retu-wdt.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/retu-wdt.c	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,272 @@
++/**
++ * drivers/cbus/retu-wdt.c
++ *
++ * Driver for Retu watchdog
++ *
++ * Copyright (C) 2004, 2005 Nokia Corporation
++ *
++ * Written by Amit Kucheria <amit.kucheria@nokia.com>
++ *
++ * Cleanups by Michael Buesch <mb@bu3sch.de> (C) 2011
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/module.h>
++#include <linux/device.h>
++#include <linux/init.h>
++#include <linux/fs.h>
++#include <linux/io.h>
++#include <linux/platform_device.h>
++
++#include <linux/completion.h>
++#include <linux/errno.h>
++#include <linux/moduleparam.h>
++#include <linux/miscdevice.h>
++#include <linux/watchdog.h>
++
++#include <asm/uaccess.h>
++
++#include <plat/prcm.h>
++
++#include "cbus.h"
++#include "retu.h"
++
++/* Watchdog timeout in seconds */
++#define RETU_WDT_MIN_TIMER 0
++#define RETU_WDT_DEFAULT_TIMER 32
++#define RETU_WDT_MAX_TIMER 63
++
++struct retu_wdt_dev {
++	struct device		*dev;
++	unsigned int		period_val;	/* Current period of watchdog */
++	unsigned long		users;
++	struct miscdevice	miscdev;
++	struct delayed_work	ping_work;
++	struct mutex		mutex;
++};
++
++
++static inline void _retu_modify_counter(struct retu_wdt_dev *wdev,
++					unsigned int new)
++{
++	retu_write_reg(wdev->dev, RETU_REG_WATCHDOG, (u16)new);
++}
++
++static int retu_modify_counter(struct retu_wdt_dev *wdev, unsigned int new)
++{
++	if (new < RETU_WDT_MIN_TIMER || new > RETU_WDT_MAX_TIMER)
++		return -EINVAL;
++
++	mutex_lock(&wdev->mutex);
++	wdev->period_val = new;
++	_retu_modify_counter(wdev, wdev->period_val);
++	mutex_unlock(&wdev->mutex);
++
++	return 0;
++}
++
++/*
++ * Since retu watchdog cannot be disabled in hardware, we must kick it
++ * with a timer until userspace watchdog software takes over. Do this
++ * unless /dev/watchdog is open or CONFIG_WATCHDOG_NOWAYOUT is set.
++ */
++static void retu_wdt_ping_enable(struct retu_wdt_dev *wdev)
++{
++	_retu_modify_counter(wdev, RETU_WDT_MAX_TIMER);
++	schedule_delayed_work(&wdev->ping_work,
++			      round_jiffies_relative(RETU_WDT_DEFAULT_TIMER * HZ));
++}
++
++static void retu_wdt_ping_disable(struct retu_wdt_dev *wdev)
++{
++	_retu_modify_counter(wdev, RETU_WDT_MAX_TIMER);
++	cancel_delayed_work_sync(&wdev->ping_work);
++}
++
++static void retu_wdt_ping_work(struct work_struct *work)
++{
++	struct retu_wdt_dev *wdev = container_of(to_delayed_work(work),
++					struct retu_wdt_dev, ping_work);
++	retu_wdt_ping_enable(wdev);
++}
++
++static int retu_wdt_open(struct inode *inode, struct file *file)
++{
++	struct miscdevice *mdev = file->private_data;
++	struct retu_wdt_dev *wdev = container_of(mdev, struct retu_wdt_dev, miscdev);
++
++	if (test_and_set_bit(0, &wdev->users))
++		return -EBUSY;
++
++	retu_wdt_ping_disable(wdev);
++
++	return nonseekable_open(inode, file);
++}
++
++static int retu_wdt_release(struct inode *inode, struct file *file)
++{
++	struct miscdevice *mdev = file->private_data;
++	struct retu_wdt_dev *wdev = container_of(mdev, struct retu_wdt_dev, miscdev);
++
++#ifndef CONFIG_WATCHDOG_NOWAYOUT
++	retu_wdt_ping_enable(wdev);
++#endif
++	clear_bit(0, &wdev->users);
++
++	return 0;
++}
++
++static ssize_t retu_wdt_write(struct file *file, const char __user *data,
++						size_t len, loff_t *ppos)
++{
++	struct miscdevice *mdev = file->private_data;
++	struct retu_wdt_dev *wdev = container_of(mdev, struct retu_wdt_dev, miscdev);
++
++	if (len)
++		retu_modify_counter(wdev, RETU_WDT_MAX_TIMER);
++
++	return len;
++}
++
++static long retu_wdt_ioctl(struct file *file, unsigned int cmd,
++			   unsigned long arg)
++{
++	struct miscdevice *mdev = file->private_data;
++	struct retu_wdt_dev *wdev = container_of(mdev, struct retu_wdt_dev, miscdev);
++	int new_margin;
++
++	static const struct watchdog_info ident = {
++		.identity = "Retu Watchdog",
++		.options = WDIOF_SETTIMEOUT,
++		.firmware_version = 0,
++	};
++
++	switch (cmd) {
++	default:
++		return -ENOTTY;
++	case WDIOC_GETSUPPORT:
++		return copy_to_user((struct watchdog_info __user *)arg, &ident,
++							sizeof(ident));
++	case WDIOC_GETSTATUS:
++		return put_user(0, (int __user *)arg);
++	case WDIOC_GETBOOTSTATUS:
++		if (cpu_is_omap16xx())
++			return put_user(omap_readw(ARM_SYSST),
++					(int __user *)arg);
++		if (cpu_is_omap24xx())
++			return put_user(omap_prcm_get_reset_sources(),
++					(int __user *)arg);
++	case WDIOC_KEEPALIVE:
++		retu_modify_counter(wdev, RETU_WDT_MAX_TIMER);
++		break;
++	case WDIOC_SETTIMEOUT:
++		if (get_user(new_margin, (int __user *)arg))
++			return -EFAULT;
++		retu_modify_counter(wdev, new_margin);
++		/* Fall through */
++	case WDIOC_GETTIMEOUT:
++		return put_user(wdev->period_val, (int __user *)arg);
++	}
++
++	return 0;
++}
++
++static const struct file_operations retu_wdt_fops = {
++	.owner		= THIS_MODULE,
++	.write		= retu_wdt_write,
++	.unlocked_ioctl	= retu_wdt_ioctl,
++	.open		= retu_wdt_open,
++	.release	= retu_wdt_release,
++};
++
++static int __init retu_wdt_probe(struct platform_device *pdev)
++{
++	struct retu_wdt_dev *wdev;
++	int ret;
++
++	wdev = kzalloc(sizeof(struct retu_wdt_dev), GFP_KERNEL);
++	if (!wdev)
++		return -ENOMEM;
++
++	wdev->dev = &pdev->dev;
++	wdev->period_val = RETU_WDT_DEFAULT_TIMER;
++	mutex_init(&wdev->mutex);
++
++	platform_set_drvdata(pdev, wdev);
++
++	wdev->miscdev.parent = &pdev->dev;
++	wdev->miscdev.minor = WATCHDOG_MINOR;
++	wdev->miscdev.name = "watchdog";
++	wdev->miscdev.fops = &retu_wdt_fops;
++
++	ret = misc_register(&wdev->miscdev);
++	if (ret)
++		goto err_free_wdev;
++
++	INIT_DELAYED_WORK(&wdev->ping_work, retu_wdt_ping_work);
++
++	/* Kick the watchdog for kernel booting to finish.
++	 * If nowayout is not set, we start the ping work. */
++#ifdef CONFIG_WATCHDOG_NOWAYOUT
++	retu_modify_counter(wdev, RETU_WDT_MAX_TIMER);
++#else
++	retu_wdt_ping_enable(wdev);
++#endif
++
++	return 0;
++
++err_free_wdev:
++	kfree(wdev);
++
++	return ret;
++}
++
++static int __devexit retu_wdt_remove(struct platform_device *pdev)
++{
++	struct retu_wdt_dev *wdev;
++
++	wdev = platform_get_drvdata(pdev);
++	misc_deregister(&wdev->miscdev);
++	cancel_delayed_work_sync(&wdev->ping_work);
++	kfree(wdev);
++
++	return 0;
++}
++
++static struct platform_driver retu_wdt_driver = {
++	.remove		= __exit_p(retu_wdt_remove),
++	.driver		= {
++		.name	= "retu-wdt",
++	},
++};
++
++static int __init retu_wdt_init(void)
++{
++	return platform_driver_probe(&retu_wdt_driver, retu_wdt_probe);
++}
++
++static void __exit retu_wdt_exit(void)
++{
++	platform_driver_unregister(&retu_wdt_driver);
++}
++
++module_init(retu_wdt_init);
++module_exit(retu_wdt_exit);
++
++MODULE_DESCRIPTION("Retu WatchDog");
++MODULE_AUTHOR("Amit Kucheria");
++MODULE_LICENSE("GPL");
+Index: linux-3.1-rc4/drivers/cbus/tahvo.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/tahvo.c	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,423 @@
++/**
++ * drivers/cbus/tahvo.c
++ *
++ * Support functions for Tahvo ASIC
++ *
++ * Copyright (C) 2004, 2005 Nokia Corporation
++ *
++ * Written by Juha Yrjölä <juha.yrjola@nokia.com>,
++ *	      David Weinehall <david.weinehall@nokia.com>, and
++ *	      Mikko Ylinen <mikko.k.ylinen@nokia.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/module.h>
++#include <linux/init.h>
++
++#include <linux/slab.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <linux/device.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/platform_data/cbus.h>
++#include <linux/mutex.h>
++
++#include "cbus.h"
++#include "tahvo.h"
++
++struct tahvo {
++	/* device lock */
++	struct mutex	mutex;
++	struct device	*dev;
++
++	int		irq_base;
++	int		irq_end;
++	int		irq;
++
++	int		ack;
++	int		mask;
++
++	unsigned int	mask_pending:1;
++	unsigned int	ack_pending:1;
++	unsigned int	is_betty:1;
++};
++
++/**
++ * __tahvo_read_reg - Reads a value from a register in Tahvo
++ * @tahvo: pointer to tahvo structure
++ * @reg: the register address to read from
++ */
++static int __tahvo_read_reg(struct tahvo *tahvo, unsigned reg)
++{
++	return cbus_read_reg(tahvo->dev, CBUS_TAHVO_DEVICE_ID, reg);
++}
++
++/**
++ * __tahvo_write_reg - Writes a value to a register in Tahvo
++ * @tahvo: pointer to tahvo structure
++ * @reg: register address to write to
++ * @val: the value to be written to @reg
++ */
++static void __tahvo_write_reg(struct tahvo *tahvo, unsigned reg, u16 val)
++{
++	cbus_write_reg(tahvo->dev, CBUS_TAHVO_DEVICE_ID, reg, val);
++}
++
++/**
++ * tahvo_read_reg - Read a value from a register in Tahvo
++ * @child: device pointer from the calling child
++ * @reg: the register to read from
++ *
++ * This function returns the contents of the specified register
++ */
++int tahvo_read_reg(struct device *child, unsigned reg)
++{
++	struct tahvo		*tahvo = dev_get_drvdata(child->parent);
++
++	return __tahvo_read_reg(tahvo, reg);
++}
++EXPORT_SYMBOL(tahvo_read_reg);
++
++/**
++ * tahvo_write_reg - Write a value to a register in Tahvo
++ * @child: device pointer from the calling child
++ * @reg: the register to write to
++ * @val : the value to write to the register
++ *
++ * This function writes a value to the specified register
++ */
++void tahvo_write_reg(struct device *child, unsigned reg, u16 val)
++{
++	struct tahvo		*tahvo = dev_get_drvdata(child->parent);
++
++	__tahvo_write_reg(tahvo, reg, val);
++}
++EXPORT_SYMBOL(tahvo_write_reg);
++
++/**
++ * tahvo_set_clear_reg_bits - set and clear register bits atomically
++ * @child: device pointer from the calling child
++ * @reg: the register to write to
++ * @bits: the bits to set
++ *
++ * This function sets and clears the specified Tahvo register bits atomically
++ */
++void tahvo_set_clear_reg_bits(struct device *child, unsigned reg, u16 set,
++		u16 clear)
++{
++	struct tahvo		*tahvo = dev_get_drvdata(child->parent);
++	u16			w;
++
++	mutex_lock(&tahvo->mutex);
++	w = __tahvo_read_reg(tahvo, reg);
++	w &= ~clear;
++	w |= set;
++	__tahvo_write_reg(tahvo, reg, w);
++	mutex_unlock(&tahvo->mutex);
++}
++
++static irqreturn_t tahvo_irq_handler(int irq, void *_tahvo)
++{
++	struct tahvo		*tahvo = _tahvo;
++	u16			id;
++	u16			im;
++
++	id = __tahvo_read_reg(tahvo, TAHVO_REG_IDR);
++	im = __tahvo_read_reg(tahvo, TAHVO_REG_IMR);
++	id &= ~im;
++
++	if (!id) {
++		dev_vdbg(tahvo->dev, "No IRQ, spurious ?\n");
++		return IRQ_NONE;
++	}
++
++	while (id) {
++		unsigned long	pending = __ffs(id);
++		unsigned int	irq;
++
++		id &= ~BIT(pending);
++		irq = pending + tahvo->irq_base;
++		handle_nested_irq(irq);
++	}
++
++	return IRQ_HANDLED;
++}
++
++/* -------------------------------------------------------------------------- */
++
++static void tahvo_irq_bus_lock(struct irq_data *data)
++{
++	struct tahvo		*tahvo = irq_data_get_irq_chip_data(data);
++
++	mutex_lock(&tahvo->mutex);
++}
++
++static void tahvo_irq_bus_sync_unlock(struct irq_data *data)
++{
++	struct tahvo		*tahvo = irq_data_get_irq_chip_data(data);
++
++	if (tahvo->mask_pending) {
++		__tahvo_write_reg(tahvo, TAHVO_REG_IMR, tahvo->mask);
++		tahvo->mask_pending = false;
++	}
++
++	if (tahvo->ack_pending) {
++		__tahvo_write_reg(tahvo, TAHVO_REG_IDR, tahvo->ack);
++		tahvo->ack_pending = false;
++	}
++
++	mutex_unlock(&tahvo->mutex);
++}
++
++static void tahvo_irq_mask(struct irq_data *data)
++{
++	struct tahvo		*tahvo = irq_data_get_irq_chip_data(data);
++	int			irq = data->irq;
++
++	tahvo->mask |= (1 << (irq - tahvo->irq_base));
++	tahvo->mask_pending = true;
++}
++
++static void tahvo_irq_unmask(struct irq_data *data)
++{
++	struct tahvo		*tahvo = irq_data_get_irq_chip_data(data);
++	int			irq = data->irq;
++
++	tahvo->mask &= ~(1 << (irq - tahvo->irq_base));
++	tahvo->mask_pending = true;
++}
++
++static void tahvo_irq_ack(struct irq_data *data)
++{
++	struct tahvo		*tahvo = irq_data_get_irq_chip_data(data);
++	int			irq = data->irq;
++
++	tahvo->ack |= (1 << (irq - tahvo->irq_base));
++	tahvo->ack_pending = true;
++}
++
++static struct irq_chip tahvo_irq_chip = {
++	.name			= "tahvo",
++	.irq_bus_lock		= tahvo_irq_bus_lock,
++	.irq_bus_sync_unlock	= tahvo_irq_bus_sync_unlock,
++	.irq_mask		= tahvo_irq_mask,
++	.irq_unmask		= tahvo_irq_unmask,
++	.irq_ack		= tahvo_irq_ack,
++};
++
++static inline void tahvo_irq_setup(int irq)
++{
++#ifdef CONFIG_ARM
++	set_irq_flags(irq, IRQF_VALID);
++#else
++	irq_set_noprobe(irq);
++#endif
++}
++
++static void tahvo_irq_init(struct tahvo *tahvo)
++{
++	int			base = tahvo->irq_base;
++	int			end = tahvo->irq_end;
++	int			irq;
++
++	for (irq = base; irq < end; irq++) {
++		irq_set_chip_data(irq, tahvo);
++		irq_set_chip_and_handler(irq, &tahvo_irq_chip,
++				handle_simple_irq);
++		irq_set_nested_thread(irq, 1);
++		tahvo_irq_setup(irq);
++	}
++}
++
++/* -------------------------------------------------------------------------- */
++
++static struct resource generic_resources[] = {
++	{
++		.start		= -EINVAL,	/* fixed later */
++		.flags		= IORESOURCE_IRQ,
++	},
++};
++
++static struct device *tahvo_allocate_child(const char *name,
++		struct device *parent, int irq)
++{
++	struct platform_device	*pdev;
++	int			ret;
++
++	pdev = platform_device_alloc(name, -1);
++	if (!pdev) {
++		dev_dbg(parent, "can't allocate %s\n", name);
++		goto err0;
++	}
++
++	pdev->dev.parent = parent;
++
++	if (irq > 0) {
++		generic_resources[0].start = irq;
++
++		ret = platform_device_add_resources(pdev, generic_resources,
++				ARRAY_SIZE(generic_resources));
++		if (ret < 0) {
++			dev_dbg(parent, "can't add resources to %s\n", name);
++			goto err1;
++		}
++	}
++
++	ret = platform_device_add(pdev);
++	if (ret < 0) {
++		dev_dbg(parent, "can't add %s\n", name);
++		goto err1;
++	}
++
++	return &pdev->dev;
++
++err1:
++	platform_device_put(pdev);
++
++err0:
++	return NULL;
++}
++
++static int tahvo_allocate_children(struct device *parent, int irq_base)
++{
++	struct device		*child;
++
++	child = tahvo_allocate_child("tahvo-usb", parent,
++			irq_base + TAHVO_INT_VBUSON);
++	if (!child)
++		return -ENOMEM;
++
++	child = tahvo_allocate_child("tahvo-pwm", parent, -1);
++	if (!child)
++		return -ENOMEM;
++
++	return 0;
++}
++
++static int __devinit tahvo_probe(struct platform_device *pdev)
++{
++	struct tahvo		*tahvo;
++	int			rev;
++	int			ret;
++	int			irq;
++	int			id;
++
++	tahvo = kzalloc(sizeof(*tahvo), GFP_KERNEL);
++	if (!tahvo) {
++		dev_err(&pdev->dev, "not enough memory\n");
++		ret = -ENOMEM;
++		goto err0;
++	}
++
++	irq = platform_get_irq(pdev, 0);
++	platform_set_drvdata(pdev, tahvo);
++
++	mutex_init(&tahvo->mutex);
++
++	ret = irq_alloc_descs(-1, 0, MAX_TAHVO_IRQ_HANDLERS, 0);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "failed to allocate IRQ descs\n");
++		goto err1;
++	}
++
++	tahvo->irq_base	= ret;
++	tahvo->irq_end	= ret + MAX_TAHVO_IRQ_HANDLERS;
++	tahvo->dev	= &pdev->dev;
++	tahvo->irq	= irq;
++
++	tahvo_irq_init(tahvo);
++
++	rev = __tahvo_read_reg(tahvo, TAHVO_REG_ASICR);
++
++	id = (rev >> 8) & 0xff;
++
++	if (id == 0x0b)
++		tahvo->is_betty = true;
++
++	ret = tahvo_allocate_children(&pdev->dev, tahvo->irq_base);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "failed to allocate children\n");
++		goto err2;
++	}
++
++	dev_err(&pdev->dev, "%s v%d.%d found\n",
++			tahvo->is_betty ? "Betty" : "Tahvo",
++			(rev >> 4) & 0x0f, rev & 0x0f);
++
++	/* Mask all TAHVO interrupts */
++	__tahvo_write_reg(tahvo, TAHVO_REG_IMR, 0xffff);
++
++	ret = request_threaded_irq(irq, NULL, tahvo_irq_handler,
++			IRQF_TRIGGER_RISING | IRQF_ONESHOT,
++			"tahvo", tahvo);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "Unable to register IRQ handler\n");
++		goto err2;
++	}
++
++	return 0;
++
++err2:
++	irq_free_descs(tahvo->irq_base, MAX_TAHVO_IRQ_HANDLERS);
++
++err1:
++	kfree(tahvo);
++
++err0:
++	return ret;
++}
++
++static int __devexit tahvo_remove(struct platform_device *pdev)
++{
++	struct tahvo		*tahvo = platform_get_drvdata(pdev);
++	int			irq;
++
++	irq = platform_get_irq(pdev, 0);
++
++	free_irq(irq, 0);
++	irq_free_descs(tahvo->irq_base, MAX_TAHVO_IRQ_HANDLERS);
++	kfree(tahvo);
++
++	return 0;
++}
++
++static struct platform_driver tahvo_driver = {
++	.probe		= tahvo_probe,
++	.remove		= __devexit_p(tahvo_remove),
++	.driver		= {
++		.name	= "tahvo",
++	},
++};
++
++static int __init tahvo_init(void)
++{
++	return platform_driver_register(&tahvo_driver);
++}
++subsys_initcall(tahvo_init);
++
++static void __exit tahvo_exit(void)
++{
++	platform_driver_unregister(&tahvo_driver);
++}
++module_exit(tahvo_exit);
++
++MODULE_DESCRIPTION("Tahvo ASIC control");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Juha Yrjölä");
++MODULE_AUTHOR("David Weinehall");
++MODULE_AUTHOR("Mikko Ylinen");
++
+Index: linux-3.1-rc4/drivers/cbus/tahvo.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/tahvo.h	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,58 @@
++/*
++ * drivers/cbus/tahvo.h
++ *
++ * Copyright (C) 2004, 2005 Nokia Corporation
++ *
++ * Written by Juha Yrjölä <juha.yrjola@nokia.com> and
++ *	      David Weinehall <david.weinehall@nokia.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#ifndef __DRIVERS_CBUS_TAHVO_H
++#define __DRIVERS_CBUS_TAHVO_H
++
++#include <linux/types.h>
++
++/* Registers */
++#define TAHVO_REG_ASICR		0x00	/* ASIC ID & revision */
++#define TAHVO_REG_IDR		0x01	/* Interrupt ID */
++#define TAHVO_REG_IDSR		0x02	/* Interrupt status */
++#define TAHVO_REG_IMR		0x03	/* Interrupt mask */
++#define TAHVO_REG_CHGCURR	0x04	/* Charge current control PWM (8-bit) */
++#define TAHVO_REG_LEDPWMR	0x05	/* LED PWM */
++#define TAHVO_REG_USBR		0x06	/* USB control */
++#define TAHVO_REG_CHGCTL	0x08	/* Charge control register */
++#define  TAHVO_REG_CHGCTL_EN		0x0001	/* Global charge enable */
++#define  TAHVO_REG_CHGCTL_PWMOVR	0x0004	/* PWM override. Force charge PWM to 0%/100% duty cycle. */
++#define  TAHVO_REG_CHGCTL_PWMOVRZERO	0x0008	/* If set, PWM override is 0% (If unset -> 100%) */
++#define  TAHVO_REG_CHGCTL_CURMEAS	0x0040	/* Enable battery current measurement. */
++#define  TAHVO_REG_CHGCTL_CURTIMRST	0x0080	/* Current measure timer reset. */
++#define TAHVO_REG_BATCURRTIMER	0x0c	/* Battery current measure timer (8-bit) */
++#define TAHVO_REG_BATCURR	0x0d	/* Battery (dis)charge current (signed 16-bit) */
++
++#define TAHVO_REG_MAX		0x0d
++
++/* Interrupt sources */
++#define TAHVO_INT_VBUSON	0
++#define TAHVO_INT_BATCURR	7 /* Battery current measure timer */
++
++#define MAX_TAHVO_IRQ_HANDLERS	8
++
++int tahvo_read_reg(struct device *child, unsigned reg);
++void tahvo_write_reg(struct device *child, unsigned reg, u16 val);
++void tahvo_set_clear_reg_bits(struct device *child, unsigned reg, u16 set,
++		u16 clear);
++
++#endif /* __DRIVERS_CBUS_TAHVO_H */
+Index: linux-3.1-rc4/drivers/cbus/tahvo-usb.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/cbus/tahvo-usb.c	2011-10-27 23:56:44.917514371 +0200
+@@ -0,0 +1,740 @@
++/**
++ * drivers/cbus/tahvo-usb.c
++ *
++ * Tahvo USB transeiver
++ *
++ * Copyright (C) 2005-2006 Nokia Corporation
++ *
++ * Parts copied from drivers/i2c/chips/isp1301_omap.c
++ * Copyright (C) 2004 Texas Instruments
++ * Copyright (C) 2004 David Brownell
++ *
++ * Written by Juha Yrjölä <juha.yrjola@nokia.com>,
++ *	      Tony Lindgren <tony@atomide.com>, and
++ *	      Timo Teräs <timo.teras@nokia.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General
++ * Public License. See the file "COPYING" in the main directory of this
++ * archive for more details.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/slab.h>
++#include <linux/io.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/usb/ch9.h>
++#include <linux/usb/gadget.h>
++#include <linux/usb.h>
++#include <linux/usb/otg.h>
++#include <linux/i2c.h>
++#include <linux/workqueue.h>
++#include <linux/kobject.h>
++#include <linux/clk.h>
++#include <linux/mutex.h>
++
++#include <asm/irq.h>
++#include <plat/usb.h>
++
++#include "cbus.h"
++#include "tahvo.h"
++
++#define DRIVER_NAME     "tahvo-usb"
++
++#define USBR_SLAVE_CONTROL	(1 << 8)
++#define USBR_VPPVIO_SW		(1 << 7)
++#define USBR_SPEED		(1 << 6)
++#define USBR_REGOUT		(1 << 5)
++#define USBR_MASTER_SW2		(1 << 4)
++#define USBR_MASTER_SW1		(1 << 3)
++#define USBR_SLAVE_SW		(1 << 2)
++#define USBR_NSUSPEND		(1 << 1)
++#define USBR_SEMODE		(1 << 0)
++
++/* bits in OTG_CTRL */
++
++/* Bits that are controlled by OMAP OTG and are read-only */
++#define OTG_CTRL_OMAP_MASK	(OTG_PULLDOWN|OTG_PULLUP|OTG_DRV_VBUS|\
++				OTG_PD_VBUS|OTG_PU_VBUS|OTG_PU_ID)
++/* Bits that are controlled by transceiver */
++#define OTG_CTRL_XCVR_MASK	(OTG_ASESSVLD|OTG_BSESSEND|\
++				OTG_BSESSVLD|OTG_VBUSVLD|OTG_ID)
++/* Bits that are controlled by system */
++#define OTG_CTRL_SYS_MASK	(OTG_A_BUSREQ|OTG_A_SETB_HNPEN|OTG_B_BUSREQ|\
++				OTG_B_HNPEN|OTG_BUSDROP)
++
++#if defined(CONFIG_USB_OHCI_HCD) && !defined(CONFIG_USB_OTG)
++#error tahvo-otg.c does not work with OCHI yet!
++#endif
++
++#define TAHVO_MODE_HOST		0
++#define TAHVO_MODE_PERIPHERAL	1
++
++#ifdef CONFIG_USB_OTG
++#define TAHVO_MODE(tu)		(tu)->tahvo_mode
++#elif defined(CONFIG_USB_GADGET_OMAP)
++#define TAHVO_MODE(tu)		TAHVO_MODE_PERIPHERAL
++#else
++#define TAHVO_MODE(tu)		TAHVO_MODE_HOST
++#endif
++
++struct tahvo_usb {
++	struct device		*dev;
++	struct platform_device *pt_dev;
++	struct otg_transceiver otg;
++	int vbus_state;
++	struct mutex serialize;
++#ifdef CONFIG_USB_OTG
++	int tahvo_mode;
++#endif
++	struct clk *ick;
++
++	int		irq;
++};
++static struct tahvo_usb *tahvo_usb_device;
++
++/*
++ * ---------------------------------------------------------------------------
++ * OTG related functions
++ *
++ * These shoud be separated into omap-otg.c driver module, as they are used
++ * by various transceivers. These functions are needed in the UDC-only case
++ * as well. These functions are copied from GPL isp1301_omap.c
++ * ---------------------------------------------------------------------------
++ */
++static struct platform_device *tahvo_otg_dev;
++
++static irqreturn_t omap_otg_irq(int irq, void *arg)
++{
++	u16 otg_irq;
++
++	otg_irq = omap_readw(OTG_IRQ_SRC);
++	if (otg_irq & OPRT_CHG) {
++		omap_writew(OPRT_CHG, OTG_IRQ_SRC);
++	} else if (otg_irq & B_SRP_TMROUT) {
++		omap_writew(B_SRP_TMROUT, OTG_IRQ_SRC);
++	} else if (otg_irq & B_HNP_FAIL) {
++		omap_writew(B_HNP_FAIL, OTG_IRQ_SRC);
++	} else if (otg_irq & A_SRP_DETECT) {
++		omap_writew(A_SRP_DETECT, OTG_IRQ_SRC);
++	} else if (otg_irq & A_REQ_TMROUT) {
++		omap_writew(A_REQ_TMROUT, OTG_IRQ_SRC);
++	} else if (otg_irq & A_VBUS_ERR) {
++		omap_writew(A_VBUS_ERR, OTG_IRQ_SRC);
++	} else if (otg_irq & DRIVER_SWITCH) {
++#ifdef CONFIG_USB_OTG
++		if ((!(omap_readl(OTG_CTRL) & OTG_DRIVER_SEL)) &&
++		   tu->otg.host && tu->otg.state == OTG_STATE_A_HOST) {
++			/* role is host */
++			usb_bus_start_enum(tu->otg.host,
++					   tu->otg.host->otg_port);
++		}
++#endif
++		omap_writew(DRIVER_SWITCH, OTG_IRQ_SRC);
++	} else
++		return IRQ_NONE;
++
++	return IRQ_HANDLED;
++
++}
++
++static int tahvo_otg_init(void)
++{
++	u32 l;
++
++#ifdef CONFIG_USB_OTG
++	if (!tahvo_otg_dev) {
++		printk("tahvo-usb: no tahvo_otg_dev\n");
++		return -ENODEV;
++	}
++#endif
++
++	l = omap_readl(OTG_SYSCON_1);
++	l &= ~OTG_IDLE_EN;
++	omap_writel(l, OTG_SYSCON_1);
++	udelay(100);
++
++	/* some of these values are board-specific... */
++	l = omap_readl(OTG_SYSCON_2);
++	l |= OTG_EN
++		/* for B-device: */
++		| SRP_GPDATA		/* 9msec Bdev D+ pulse */
++		| SRP_GPDVBUS		/* discharge after VBUS pulse */
++		// | (3 << 24)		/* 2msec VBUS pulse */
++		/* for A-device: */
++		| (0 << 20)		/* 200ms nominal A_WAIT_VRISE timer */
++		| SRP_DPW		/* detect 167+ns SRP pulses */
++		| SRP_DATA | SRP_VBUS;	/* accept both kinds of SRP pulse */
++	omap_writel(l, OTG_SYSCON_2);
++
++	omap_writew(DRIVER_SWITCH | OPRT_CHG
++			| B_SRP_TMROUT | B_HNP_FAIL
++				  | A_VBUS_ERR | A_SRP_DETECT | A_REQ_TMROUT,
++					OTG_IRQ_EN);
++	l = omap_readl(OTG_SYSCON_2);
++	l |= OTG_EN;
++	omap_writel(l, OTG_SYSCON_2);
++
++	return 0;
++}
++
++static int __init omap_otg_probe(struct platform_device *pdev)
++{
++	int ret;
++
++	tahvo_otg_dev = pdev;
++	ret = tahvo_otg_init();
++	if (ret != 0) {
++		printk(KERN_ERR "tahvo-usb: tahvo_otg_init failed\n");
++		return ret;
++	}
++
++	return request_irq(tahvo_otg_dev->resource[1].start,
++			   omap_otg_irq, IRQF_DISABLED, DRIVER_NAME,
++			   tahvo_usb_device);
++}
++
++static int __exit omap_otg_remove(struct platform_device *pdev)
++{
++	free_irq(tahvo_otg_dev->resource[1].start, tahvo_usb_device);
++	tahvo_otg_dev = NULL;
++
++	return 0;
++}
++
++struct platform_driver omap_otg_driver = {
++	.driver		= {
++		.name	= "omap_otg",
++	},
++	.remove		= __exit_p(omap_otg_remove),
++};
++
++/*
++ * ---------------------------------------------------------------------------
++ * Tahvo related functions
++ * These are Nokia proprietary code, except for the OTG register settings,
++ * which are copied from isp1301.c
++ * ---------------------------------------------------------------------------
++ */
++static ssize_t vbus_state_show(struct device *device,
++			       struct device_attribute *attr, char *buf)
++{
++	struct tahvo_usb *tu = dev_get_drvdata(device);
++	return sprintf(buf, "%d\n", tu->vbus_state);
++}
++static DEVICE_ATTR(vbus_state, 0444, vbus_state_show, NULL);
++
++int vbus_active = 0;
++
++static void check_vbus_state(struct tahvo_usb *tu)
++{
++	int reg, prev_state;
++
++	reg = tahvo_read_reg(tu->dev, TAHVO_REG_IDSR);
++	if (reg & 0x01) {
++		u32 l;
++
++		vbus_active = 1;
++		switch (tu->otg.state) {
++		case OTG_STATE_B_IDLE:
++			/* Enable the gadget driver */
++			if (tu->otg.gadget)
++				usb_gadget_vbus_connect(tu->otg.gadget);
++			/* Set B-session valid and not B-sessio ended to indicate
++			 * Vbus to be ok. */
++			l = omap_readl(OTG_CTRL);
++			l &= ~OTG_BSESSEND;
++			l |= OTG_BSESSVLD;
++			omap_writel(l, OTG_CTRL);
++
++			tu->otg.state = OTG_STATE_B_PERIPHERAL;
++			break;
++		case OTG_STATE_A_IDLE:
++			/* Session is now valid assuming the USB hub is driving Vbus */
++			tu->otg.state = OTG_STATE_A_HOST;
++			break;
++		default:
++			break;
++		}
++		printk("USB cable connected\n");
++	} else {
++		switch (tu->otg.state) {
++		case OTG_STATE_B_PERIPHERAL:
++			if (tu->otg.gadget)
++				usb_gadget_vbus_disconnect(tu->otg.gadget);
++			tu->otg.state = OTG_STATE_B_IDLE;
++			break;
++		case OTG_STATE_A_HOST:
++			tu->otg.state = OTG_STATE_A_IDLE;
++			break;
++		default:
++			break;
++		}
++		printk("USB cable disconnected\n");
++		vbus_active = 0;
++	}
++
++	prev_state = tu->vbus_state;
++	tu->vbus_state = reg & 0x01;
++	if (prev_state != tu->vbus_state)
++		sysfs_notify(&tu->pt_dev->dev.kobj, NULL, "vbus_state");
++}
++
++static void tahvo_usb_become_host(struct tahvo_usb *tu)
++{
++	u32 l;
++
++	/* Clear system and transceiver controlled bits
++	 * also mark the A-session is always valid */
++	tahvo_otg_init();
++
++	l = omap_readl(OTG_CTRL);
++	l &= ~(OTG_CTRL_XCVR_MASK | OTG_CTRL_SYS_MASK);
++	l |= OTG_ASESSVLD;
++	omap_writel(l, OTG_CTRL);
++
++	/* Power up the transceiver in USB host mode */
++	tahvo_write_reg(tu->dev, TAHVO_REG_USBR, USBR_REGOUT | USBR_NSUSPEND |
++			USBR_MASTER_SW2 | USBR_MASTER_SW1);
++	tu->otg.state = OTG_STATE_A_IDLE;
++
++	check_vbus_state(tu);
++}
++
++static void tahvo_usb_stop_host(struct tahvo_usb *tu)
++{
++	tu->otg.state = OTG_STATE_A_IDLE;
++}
++
++static void tahvo_usb_become_peripheral(struct tahvo_usb *tu)
++{
++	u32 l;
++
++	/* Clear system and transceiver controlled bits
++	 * and enable ID to mark peripheral mode and
++	 * BSESSEND to mark no Vbus */
++	tahvo_otg_init();
++	l = omap_readl(OTG_CTRL);
++	l &= ~(OTG_CTRL_XCVR_MASK | OTG_CTRL_SYS_MASK | OTG_BSESSVLD);
++	l |= OTG_ID | OTG_BSESSEND;
++	omap_writel(l, OTG_CTRL);
++
++	/* Power up transceiver and set it in USB perhiperal mode */
++	tahvo_write_reg(tu->dev, TAHVO_REG_USBR, USBR_SLAVE_CONTROL | USBR_REGOUT | USBR_NSUSPEND | USBR_SLAVE_SW);
++	tu->otg.state = OTG_STATE_B_IDLE;
++
++	check_vbus_state(tu);
++}
++
++static void tahvo_usb_stop_peripheral(struct tahvo_usb *tu)
++{
++	u32 l;
++
++	l = omap_readl(OTG_CTRL);
++	l &= ~OTG_BSESSVLD;
++	l |= OTG_BSESSEND;
++	omap_writel(l, OTG_CTRL);
++
++	if (tu->otg.gadget)
++		usb_gadget_vbus_disconnect(tu->otg.gadget);
++	tu->otg.state = OTG_STATE_B_IDLE;
++
++}
++
++static void tahvo_usb_power_off(struct tahvo_usb *tu)
++{
++	u32 l;
++	int id;
++
++	/* Disable gadget controller if any */
++	if (tu->otg.gadget)
++		usb_gadget_vbus_disconnect(tu->otg.gadget);
++
++	/* Disable OTG and interrupts */
++	if (TAHVO_MODE(tu) == TAHVO_MODE_PERIPHERAL)
++		id = OTG_ID;
++	else
++		id = 0;
++	l = omap_readl(OTG_CTRL);
++	l &= ~(OTG_CTRL_XCVR_MASK | OTG_CTRL_SYS_MASK | OTG_BSESSVLD);
++	l |= id | OTG_BSESSEND;
++	omap_writel(l, OTG_CTRL);
++	omap_writew(0, OTG_IRQ_EN);
++
++	l = omap_readl(OTG_SYSCON_2);
++	l &= ~OTG_EN;
++	omap_writel(l, OTG_SYSCON_2);
++
++	l = omap_readl(OTG_SYSCON_1);
++	l |= OTG_IDLE_EN;
++	omap_writel(l, OTG_SYSCON_1);
++
++	/* Power off transceiver */
++	tahvo_write_reg(tu->dev, TAHVO_REG_USBR, 0);
++	tu->otg.state = OTG_STATE_UNDEFINED;
++}
++
++
++static int tahvo_usb_set_power(struct otg_transceiver *dev, unsigned mA)
++{
++	struct tahvo_usb *tu = container_of(dev, struct tahvo_usb, otg);
++
++	dev_dbg(&tu->pt_dev->dev, "set_power %d mA\n", mA);
++
++	if (dev->state == OTG_STATE_B_PERIPHERAL) {
++		/* REVISIT: Can Tahvo charge battery from VBUS? */
++	}
++	return 0;
++}
++
++static int tahvo_usb_set_suspend(struct otg_transceiver *dev, int suspend)
++{
++	struct tahvo_usb *tu = container_of(dev, struct tahvo_usb, otg);
++	u16 w;
++
++	dev_dbg(&tu->pt_dev->dev, "set_suspend\n");
++
++	w = tahvo_read_reg(tu->dev, TAHVO_REG_USBR);
++	if (suspend)
++		w &= ~USBR_NSUSPEND;
++	else
++		w |= USBR_NSUSPEND;
++	tahvo_write_reg(tu->dev, TAHVO_REG_USBR, w);
++
++	return 0;
++}
++
++static int tahvo_usb_start_srp(struct otg_transceiver *dev)
++{
++	struct tahvo_usb *tu = container_of(dev, struct tahvo_usb, otg);
++	u32 otg_ctrl;
++
++	dev_dbg(&tu->pt_dev->dev, "start_srp\n");
++
++	if (!dev || tu->otg.state != OTG_STATE_B_IDLE)
++		return -ENODEV;
++
++	otg_ctrl = omap_readl(OTG_CTRL);
++	if (!(otg_ctrl & OTG_BSESSEND))
++		return -EINVAL;
++
++	otg_ctrl |= OTG_B_BUSREQ;
++	otg_ctrl &= ~OTG_A_BUSREQ & OTG_CTRL_SYS_MASK;
++	omap_writel(otg_ctrl, OTG_CTRL);
++	tu->otg.state = OTG_STATE_B_SRP_INIT;
++
++	return 0;
++}
++
++static int tahvo_usb_start_hnp(struct otg_transceiver *otg)
++{
++	struct tahvo_usb *tu = container_of(otg, struct tahvo_usb, otg);
++
++	dev_dbg(&tu->pt_dev->dev, "start_hnp\n");
++#ifdef CONFIG_USB_OTG
++	/* REVISIT: Add this for OTG */
++#endif
++	return -EINVAL;
++}
++
++static int tahvo_usb_set_host(struct otg_transceiver *otg, struct usb_bus *host)
++{
++	struct tahvo_usb *tu = container_of(otg, struct tahvo_usb, otg);
++	u32 l;
++
++	dev_dbg(&tu->pt_dev->dev, "set_host %p\n", host);
++
++	if (otg == NULL)
++		return -ENODEV;
++
++#if defined(CONFIG_USB_OTG) || !defined(CONFIG_USB_GADGET_OMAP)
++
++	mutex_lock(&tu->serialize);
++
++	if (host == NULL) {
++		if (TAHVO_MODE(tu) == TAHVO_MODE_HOST)
++			tahvo_usb_power_off(tu);
++		tu->otg.host = NULL;
++		mutex_unlock(&tu->serialize);
++		return 0;
++	}
++
++	l = omap_readl(OTG_SYSCON_1);
++	l &= ~(OTG_IDLE_EN | HST_IDLE_EN | DEV_IDLE_EN);
++	omap_writel(l, OTG_SYSCON_1);
++
++	if (TAHVO_MODE(tu) == TAHVO_MODE_HOST) {
++		tu->otg.host = NULL;
++		tahvo_usb_become_host(tu);
++	}
++
++	tu->otg.host = host;
++
++	mutex_unlock(&tu->serialize);
++#else
++	/* No host mode configured, so do not allow host controlled to be set */
++	return -EINVAL;
++#endif
++
++	return 0;
++}
++
++static int tahvo_usb_set_peripheral(struct otg_transceiver *otg, struct usb_gadget *gadget)
++{
++	struct tahvo_usb *tu = container_of(otg, struct tahvo_usb, otg);
++
++	dev_dbg(&tu->pt_dev->dev, "set_peripheral %p\n", gadget);
++
++	if (!otg)
++		return -ENODEV;
++
++#if defined(CONFIG_USB_OTG) || defined(CONFIG_USB_GADGET_OMAP)
++
++	mutex_lock(&tu->serialize);
++
++	if (!gadget) {
++		if (TAHVO_MODE(tu) == TAHVO_MODE_PERIPHERAL)
++			tahvo_usb_power_off(tu);
++		tu->otg.gadget = NULL;
++		mutex_unlock(&tu->serialize);
++		return 0;
++	}
++
++	tu->otg.gadget = gadget;
++	if (TAHVO_MODE(tu) == TAHVO_MODE_PERIPHERAL)
++		tahvo_usb_become_peripheral(tu);
++
++	mutex_unlock(&tu->serialize);
++#else
++	/* No gadget mode configured, so do not allow host controlled to be set */
++	return -EINVAL;
++#endif
++
++	return 0;
++}
++
++static irqreturn_t tahvo_usb_vbus_interrupt(int irq, void *_tu)
++{
++	struct tahvo_usb *tu = _tu;
++
++	check_vbus_state(tu);
++
++	return IRQ_HANDLED;
++}
++
++#ifdef CONFIG_USB_OTG
++static ssize_t otg_mode_show(struct device *device,
++			     struct device_attribute *attr, char *buf)
++{
++	struct tahvo_usb *tu = dev_get_drvdata(device);
++	switch (tu->tahvo_mode) {
++	case TAHVO_MODE_HOST:
++		return sprintf(buf, "host\n");
++	case TAHVO_MODE_PERIPHERAL:
++		return sprintf(buf, "peripheral\n");
++	}
++	return sprintf(buf, "unknown\n");
++}
++
++static ssize_t otg_mode_store(struct device *device,
++			      struct device_attribute *attr,
++			      const char *buf, size_t count)
++{
++	struct tahvo_usb *tu = dev_get_drvdata(device);
++	int r;
++
++	r = strlen(buf);
++	mutex_lock(&tu->serialize);
++	if (strncmp(buf, "host", 4) == 0) {
++		if (tu->tahvo_mode == TAHVO_MODE_PERIPHERAL)
++			tahvo_usb_stop_peripheral(tu);
++		tu->tahvo_mode = TAHVO_MODE_HOST;
++		if (tu->otg.host) {
++			printk(KERN_INFO "Selected HOST mode: host controller present.\n");
++			tahvo_usb_become_host(tu);
++		} else {
++			printk(KERN_INFO "Selected HOST mode: no host controller, powering off.\n");
++			tahvo_usb_power_off(tu);
++		}
++	} else if (strncmp(buf, "peripheral", 10) == 0) {
++		if (tu->tahvo_mode == TAHVO_MODE_HOST)
++			tahvo_usb_stop_host(tu);
++		tu->tahvo_mode = TAHVO_MODE_PERIPHERAL;
++		if (tu->otg.gadget) {
++			printk(KERN_INFO "Selected PERIPHERAL mode: gadget driver present.\n");
++			tahvo_usb_become_peripheral(tu);
++		} else {
++			printk(KERN_INFO "Selected PERIPHERAL mode: no gadget driver, powering off.\n");
++			tahvo_usb_power_off(tu);
++		}
++	} else
++		r = -EINVAL;
++
++	mutex_unlock(&tu->serialize);
++	return r;
++}
++
++static DEVICE_ATTR(otg_mode, 0644, otg_mode_show, otg_mode_store);
++#endif
++
++static int __init tahvo_usb_probe(struct platform_device *pdev)
++{
++	struct tahvo_usb *tu;
++	struct device *dev = &pdev->dev;
++	int ret;
++	int irq;
++
++	dev_dbg(dev, "probe\n");
++
++	/* Create driver data */
++	tu = kzalloc(sizeof(*tu), GFP_KERNEL);
++	if (!tu)
++		return -ENOMEM;
++	tahvo_usb_device = tu;
++
++	tu->dev = dev;
++	tu->pt_dev = pdev;
++#ifdef CONFIG_USB_OTG
++	/* Default mode */
++#ifdef CONFIG_CBUS_TAHVO_USB_HOST_BY_DEFAULT
++	tu->tahvo_mode = TAHVO_MODE_HOST;
++#else
++	tu->tahvo_mode = TAHVO_MODE_PERIPHERAL;
++#endif
++#endif
++
++	mutex_init(&tu->serialize);
++
++	tu->ick = clk_get(NULL, "usb_l4_ick");
++	if (IS_ERR(tu->ick)) {
++		dev_err(dev, "Failed to get usb_l4_ick\n");
++		ret = PTR_ERR(tu->ick);
++		goto err_free_tu;
++	}
++	clk_enable(tu->ick);
++
++	/* Set initial state, so that we generate kevents only on
++	 * state changes */
++	tu->vbus_state = tahvo_read_reg(tu->dev, TAHVO_REG_IDSR) & 0x01;
++
++	irq = platform_get_irq(pdev, 0);
++	tu->irq = irq;
++
++	/* We cannot enable interrupt until omap_udc is initialized */
++	ret = request_threaded_irq(irq, NULL, tahvo_usb_vbus_interrupt,
++			IRQF_ONESHOT, "tahvo-vbus", tu);
++	if (ret != 0) {
++		printk(KERN_ERR "Could not register Tahvo interrupt for VBUS\n");
++		goto err_release_clk;
++	}
++
++	/* Attributes */
++	ret = device_create_file(dev, &dev_attr_vbus_state);
++#ifdef CONFIG_USB_OTG
++	ret |= device_create_file(dev, &dev_attr_otg_mode);
++#endif
++	if (ret)
++		printk(KERN_ERR "attribute creation failed: %d\n", ret);
++
++	/* Create OTG interface */
++	tahvo_usb_power_off(tu);
++	tu->otg.state = OTG_STATE_UNDEFINED;
++	tu->otg.label = DRIVER_NAME;
++	tu->otg.set_host = tahvo_usb_set_host;
++	tu->otg.set_peripheral = tahvo_usb_set_peripheral;
++	tu->otg.set_power = tahvo_usb_set_power;
++	tu->otg.set_suspend = tahvo_usb_set_suspend;
++	tu->otg.start_srp = tahvo_usb_start_srp;
++	tu->otg.start_hnp = tahvo_usb_start_hnp;
++
++	ret = otg_set_transceiver(&tu->otg);
++	if (ret < 0) {
++		printk(KERN_ERR "Cannot register USB transceiver\n");
++		goto err_free_irq;
++	}
++
++	dev_set_drvdata(dev, tu);
++
++	return 0;
++
++err_free_irq:
++	free_irq(tu->irq, tu);
++err_release_clk:
++	clk_disable(tu->ick);
++	clk_put(tu->ick);
++err_free_tu:
++	kfree(tu);
++	tahvo_usb_device = NULL;
++
++	return ret;
++}
++
++static int __exit tahvo_usb_remove(struct platform_device *pdev)
++{
++	struct tahvo_usb *tu = platform_get_drvdata(pdev);
++
++	dev_dbg(&pdev->dev, "remove\n");
++
++	free_irq(tu->irq, tu);
++	flush_scheduled_work();
++	otg_set_transceiver(0);
++	device_remove_file(&pdev->dev, &dev_attr_vbus_state);
++#ifdef CONFIG_USB_OTG
++	device_remove_file(&pdev->dev, &dev_attr_otg_mode);
++#endif
++	clk_disable(tu->ick);
++	clk_put(tu->ick);
++
++	kfree(tu);
++	tahvo_usb_device = NULL;
++
++	return 0;
++}
++
++static struct platform_driver tahvo_usb_driver = {
++	.driver		= {
++		.name	= "tahvo-usb",
++	},
++	.remove		= __exit_p(tahvo_usb_remove),
++};
++
++static int __init tahvo_usb_init(void)
++{
++	int ret = 0;
++
++	ret = platform_driver_probe(&tahvo_usb_driver, tahvo_usb_probe);
++	if (ret)
++		return ret;
++
++	ret = platform_driver_probe(&omap_otg_driver, omap_otg_probe);
++	if (ret) {
++		platform_driver_unregister(&tahvo_usb_driver);
++		return ret;
++	}
++
++	return 0;
++}
++
++subsys_initcall(tahvo_usb_init);
++
++static void __exit tahvo_usb_exit(void)
++{
++	platform_driver_unregister(&omap_otg_driver);
++	platform_driver_unregister(&tahvo_usb_driver);
++}
++module_exit(tahvo_usb_exit);
++
++MODULE_DESCRIPTION("Tahvo USB OTG Transceiver Driver");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Juha Yrjölä, Tony Lindgren, and Timo Teräs");
+Index: linux-3.1-rc4/drivers/Makefile
+===================================================================
+--- linux-3.1-rc4.orig/drivers/Makefile	2011-10-27 23:56:12.861639678 +0200
++++ linux-3.1-rc4/drivers/Makefile	2011-10-27 23:56:44.917514371 +0200
+@@ -76,7 +76,7 @@ obj-$(CONFIG_GAMEPORT)		+= input/gamepor
+ obj-$(CONFIG_INPUT)		+= input/
+ obj-$(CONFIG_I2O)		+= message/
+ obj-$(CONFIG_RTC_LIB)		+= rtc/
+-obj-y				+= i2c/ media/
++obj-y				+= i2c/ media/ cbus/
+ obj-$(CONFIG_PPS)		+= pps/
+ obj-$(CONFIG_PTP_1588_CLOCK)	+= ptp/
+ obj-$(CONFIG_W1)		+= w1/
+Index: linux-3.1-rc4/drivers/Kconfig
+===================================================================
+--- linux-3.1-rc4.orig/drivers/Kconfig	2011-08-29 06:16:01.000000000 +0200
++++ linux-3.1-rc4/drivers/Kconfig	2011-10-27 23:57:05.977432050 +0200
+@@ -2,6 +2,8 @@ menu "Device Drivers"
+ 
+ source "drivers/base/Kconfig"
+ 
++source "drivers/cbus/Kconfig"
++
+ source "drivers/connector/Kconfig"
+ 
+ source "drivers/mtd/Kconfig"

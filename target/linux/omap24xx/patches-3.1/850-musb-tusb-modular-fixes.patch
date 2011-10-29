@@ -1,0 +1,134 @@
+Index: linux-3.1-rc4/drivers/usb/musb/tusb6010.c
+===================================================================
+--- linux-3.1-rc4.orig/drivers/usb/musb/tusb6010.c	2011-08-29 06:16:01.000000000 +0200
++++ linux-3.1-rc4/drivers/usb/musb/tusb6010.c	2011-10-27 17:04:58.637191966 +0200
+@@ -56,6 +56,7 @@ u8 tusb_get_revision(struct musb *musb)
+ 
+ 	return rev;
+ }
++EXPORT_SYMBOL(tusb_get_revision);
+ 
+ static int tusb_print_revision(struct musb *musb)
+ {
+@@ -220,6 +221,7 @@ void musb_write_fifo(struct musb_hw_ep *
+ 	if (len > 0)
+ 		tusb_fifo_write_unaligned(fifo, buf, len);
+ }
++EXPORT_SYMBOL(musb_write_fifo);
+ 
+ void musb_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *buf)
+ {
+@@ -267,6 +269,7 @@ void musb_read_fifo(struct musb_hw_ep *h
+ 	if (len > 0)
+ 		tusb_fifo_read_unaligned(fifo, buf, len);
+ }
++EXPORT_SYMBOL(musb_read_fifo);
+ 
+ static struct musb *the_musb;
+ 
+@@ -1244,18 +1247,16 @@ static struct platform_driver tusb_drive
+ 	},
+ };
+ 
+-MODULE_DESCRIPTION("TUSB6010 MUSB Glue Layer");
+-MODULE_AUTHOR("Felipe Balbi <balbi@ti.com>");
+-MODULE_LICENSE("GPL v2");
++//MODULE_DESCRIPTION("TUSB6010 MUSB Glue Layer");
++//MODULE_AUTHOR("Felipe Balbi <balbi@ti.com>");
++//MODULE_LICENSE("GPL v2");
+ 
+-static int __init tusb_init(void)
++int musb_hdrc_glue_init(void)
+ {
+ 	return platform_driver_probe(&tusb_driver, tusb_probe);
+ }
+-subsys_initcall(tusb_init);
+ 
+-static void __exit tusb_exit(void)
++void musb_hdrc_glue_exit(void)
+ {
+ 	platform_driver_unregister(&tusb_driver);
+ }
+-module_exit(tusb_exit);
+Index: linux-3.1-rc4/drivers/usb/musb/Makefile
+===================================================================
+--- linux-3.1-rc4.orig/drivers/usb/musb/Makefile	2011-08-29 06:16:01.000000000 +0200
++++ linux-3.1-rc4/drivers/usb/musb/Makefile	2011-10-27 17:04:58.637191966 +0200
+@@ -11,13 +11,13 @@ musb_hdrc-y					+= musb_virthub.o musb_h
+ musb_hdrc-$(CONFIG_DEBUG_FS)			+= musb_debugfs.o
+ 
+ # Hardware Glue Layer
+-obj-$(CONFIG_USB_MUSB_OMAP2PLUS)		+= omap2430.o
+-obj-$(CONFIG_USB_MUSB_AM35X)			+= am35x.o
+-obj-$(CONFIG_USB_MUSB_TUSB6010)			+= tusb6010.o
+-obj-$(CONFIG_USB_MUSB_DAVINCI)			+= davinci.o
+-obj-$(CONFIG_USB_MUSB_DA8XX)			+= da8xx.o
+-obj-$(CONFIG_USB_MUSB_BLACKFIN)			+= blackfin.o
+-obj-$(CONFIG_USB_MUSB_UX500)			+= ux500.o
++musb_hdrc-$(CONFIG_USB_MUSB_OMAP2PLUS)		+= omap2430.o
++musb_hdrc-$(CONFIG_USB_MUSB_AM35X)		+= am35x.o
++musb_hdrc-$(CONFIG_USB_MUSB_TUSB6010)		+= tusb6010.o
++musb_hdrc-$(CONFIG_USB_MUSB_DAVINCI)		+= davinci.o
++musb_hdrc-$(CONFIG_USB_MUSB_DA8XX)		+= da8xx.o
++musb_hdrc-$(CONFIG_USB_MUSB_BLACKFIN)		+= blackfin.o
++musb_hdrc-$(CONFIG_USB_MUSB_UX500)		+= ux500.o
+ 
+ # the kconfig must guarantee that only one of the
+ # possible I/O schemes will be enabled at a time ...
+Index: linux-3.1-rc4/drivers/usb/musb/musb_core.c
+===================================================================
+--- linux-3.1-rc4.orig/drivers/usb/musb/musb_core.c	2011-08-29 06:16:01.000000000 +0200
++++ linux-3.1-rc4/drivers/usb/musb/musb_core.c	2011-10-27 17:09:45.216071368 +0200
+@@ -2376,8 +2376,13 @@ static struct platform_driver musb_drive
+ 
+ /*-------------------------------------------------------------------------*/
+ 
++extern int musb_hdrc_glue_init(void);
++extern void musb_hdrc_glue_exit(void);
++
+ static int __init musb_init(void)
+ {
++	int err;
++
+ 	if (usb_disabled())
+ 		return 0;
+ 
+@@ -2386,7 +2391,17 @@ static int __init musb_init(void)
+ 		", "
+ 		"otg (peripheral+host)",
+ 		musb_driver_name);
+-	return platform_driver_probe(&musb_driver, musb_probe);
++
++	err = musb_hdrc_glue_init();
++	if (err)
++		return err;
++	err = platform_driver_probe(&musb_driver, musb_probe);
++	if (err) {
++		musb_hdrc_glue_exit();
++		return err;
++	}
++
++	return 0;
+ }
+ 
+ /* make us init after usbcore and i2c (transceivers, regulators, etc)
+@@ -2397,5 +2412,6 @@ fs_initcall(musb_init);
+ static void __exit musb_cleanup(void)
+ {
+ 	platform_driver_unregister(&musb_driver);
++	musb_hdrc_glue_exit();
+ }
+ module_exit(musb_cleanup);
+Index: linux-3.1-rc4/drivers/usb/Makefile
+===================================================================
+--- linux-3.1-rc4.orig/drivers/usb/Makefile	2011-08-29 06:16:01.000000000 +0200
++++ linux-3.1-rc4/drivers/usb/Makefile	2011-10-27 17:07:22.608628530 +0200
+@@ -47,7 +47,7 @@ obj-$(CONFIG_EARLY_PRINTK_DBGP)	+= early
+ obj-$(CONFIG_USB_ATM)		+= atm/
+ obj-$(CONFIG_USB_SPEEDTOUCH)	+= atm/
+ 
+-obj-$(CONFIG_USB_MUSB_HDRC)	+= musb/
++obj-y				+= musb/
+ obj-$(CONFIG_USB_RENESAS_USBHS)	+= renesas_usbhs/
+ obj-$(CONFIG_USB_OTG_UTILS)	+= otg/
+ obj-$(CONFIG_USB_GADGET)	+= gadget/

@@ -1,0 +1,169 @@
+Index: linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c
+===================================================================
+--- linux-3.1-rc4.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 20:35:03.620973158 +0200
++++ linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 20:35:48.268866718 +0200
+@@ -15,8 +15,10 @@
+ #include <linux/delay.h>
+ #include <linux/gpio.h>
+ #include <linux/init.h>
++#include <linux/irq.h>
+ #include <linux/io.h>
+ #include <linux/stddef.h>
++#include <linux/platform_device.h>
+ #include <linux/i2c.h>
+ #include <linux/spi/spi.h>
+ #include <linux/usb/musb.h>
+@@ -33,6 +35,7 @@
+ #include <plat/onenand.h>
+ #include <plat/mmc.h>
+ #include <plat/serial.h>
++#include <plat/cbus.h>
+ 
+ #include "mux.h"
+ 
+@@ -193,6 +196,114 @@ static struct omap_onenand_platform_data
+ };
+ #endif
+ 
++#if defined(CONFIG_CBUS) || defined(CONFIG_CBUS_MODULE)
++
++static struct cbus_host_platform_data n8x0_cbus_data = {
++	.clk_gpio	= 66,
++	.dat_gpio	= 65,
++	.sel_gpio	= 64,
++};
++
++static struct platform_device n8x0_cbus_device = {
++	.name		= "cbus",
++	.id		= -1,
++	.dev		= {
++		.platform_data = &n8x0_cbus_data,
++	},
++};
++
++static struct resource retu_resource[] = {
++	{
++		.start	= -EINVAL, /* set later */
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct cbus_retu_platform_data n8x0_retu_data = {
++	.irq_base	= CBUS_RETU_IRQ_BASE,
++	.irq_end	= CBUS_RETU_IRQ_END,
++	.devid		= CBUS_RETU_DEVICE_ID,
++};
++
++static struct platform_device retu_device = {
++	.name		= "retu",
++	.id		= -1,
++	.resource	= retu_resource,
++	.num_resources	= ARRAY_SIZE(retu_resource),
++	.dev		= {
++		.platform_data = &n8x0_retu_data,
++	},
++};
++
++static struct resource tahvo_resource[] = {
++	{
++		.start	= -EINVAL, /* set later */
++		.flags	= IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device tahvo_device = {
++	.name		= "tahvo",
++	.id		= -1,
++	.resource	= tahvo_resource,
++	.num_resources	= ARRAY_SIZE(tahvo_resource),
++};
++
++static struct platform_device tahvo_usb_device = {
++	.name		= "tahvo-usb",
++	.id		= -1,
++};
++
++static void __init n8x0_cbus_init(void)
++{
++	int		ret;
++
++	platform_device_register(&n8x0_cbus_device);
++
++	ret = gpio_request(108, "RETU irq");
++	if (ret < 0) {
++		pr_err("retu: Unable to reserve IRQ GPIO\n");
++		return;
++	}
++
++	ret = gpio_direction_input(108);
++	if (ret < 0) {
++		pr_err("retu: Unable to change gpio direction\n");
++		gpio_free(108);
++		return;
++	}
++
++	irq_set_irq_type(gpio_to_irq(108), IRQ_TYPE_EDGE_RISING);
++	retu_resource[0].start = gpio_to_irq(108);
++	platform_device_register(&retu_device);
++
++	ret = gpio_request(111, "TAHVO irq");
++	if (ret) {
++		pr_err("tahvo: Unable to reserve IRQ GPIO\n");
++		gpio_free(108);
++		return;
++	}
++
++	/* Set the pin as input */
++	ret = gpio_direction_input(111);
++	if (ret) {
++		pr_err("tahvo: Unable to change direction\n");
++		gpio_free(108);
++		gpio_free(111);
++		return;
++	}
++
++	tahvo_resource[0].start = gpio_to_irq(111);
++	platform_device_register(&tahvo_device);
++	platform_device_register(&tahvo_usb_device);
++}
++
++#else
++static inline void __init n8x0_cbus_init(void)
++{
++}
++#endif
++
+ #if defined(CONFIG_MENELAUS) &&						\
+ 	(defined(CONFIG_MMC_OMAP) || defined(CONFIG_MMC_OMAP_MODULE))
+ 
+@@ -679,6 +790,8 @@ static inline void board_serial_init(voi
+ static void __init n8x0_init_machine(void)
+ {
+ 	omap2420_mux_init(board_mux, OMAP_PACKAGE_ZAC);
++	n8x0_cbus_init();
++
+ 	/* FIXME: add n810 spi devices */
+ 	spi_register_board_info(n800_spi_board_info,
+ 				ARRAY_SIZE(n800_spi_board_info));
+Index: linux-3.1-rc4/arch/arm/plat-omap/include/plat/irqs.h
+===================================================================
+--- linux-3.1-rc4.orig/arch/arm/plat-omap/include/plat/irqs.h	2011-10-29 20:35:01.620977933 +0200
++++ linux-3.1-rc4/arch/arm/plat-omap/include/plat/irqs.h	2011-10-29 20:35:48.268866718 +0200
+@@ -428,8 +428,16 @@
+ #define OMAP_GPMC_NR_IRQS	8
+ #define OMAP_GPMC_IRQ_END	(OMAP_GPMC_IRQ_BASE + OMAP_GPMC_NR_IRQS)
+ 
++/* CBUS */
++#define CBUS_RETU_IRQ_BASE	OMAP_GPMC_IRQ_END
++#ifdef CONFIG_CBUS_RETU
++#define CBUS_RETU_NR_IRQS	16
++#else
++#define CBUS_RETU_NR_IRQS	0
++#endif
++#define CBUS_RETU_IRQ_END	(CBUS_RETU_IRQ_BASE + CBUS_RETU_NR_IRQS)
+ 
+-#define NR_IRQS			OMAP_GPMC_IRQ_END
++#define NR_IRQS			CBUS_RETU_IRQ_END
+ 
+ #define OMAP_IRQ_BIT(irq)	(1 << ((irq) % 32))
+ 
