@@ -195,7 +195,6 @@ fw_load_zone() {
 	fw add $mode f ${chain}_ACCEPT
 	fw add $mode f ${chain}_DROP
 	fw add $mode f ${chain}_REJECT
-	fw add $mode f ${chain}_MSSFIX
 
 	# TODO: Rename to ${chain}_input
 	fw add $mode f ${chain}
@@ -213,8 +212,11 @@ fw_load_zone() {
 
 	fw add $mode r ${chain}_notrack
 
-	[ $zone_mtu_fix == 1 ] && \
-		fw add $mode f FORWARD ${chain}_MSSFIX ^
+	[ $zone_mtu_fix == 1 ] && {
+		fw add $mode m ${chain}_MSSFIX
+		fw add $mode m FORWARD ${chain}_MSSFIX ^
+		uci_set_state firewall core ${zone_name}_tcpmss 1
+	}
 
 	[ $zone_custom_chains == 1 ] && {
 		[ $FW_ADD_CUSTOM_CHAINS == 1 ] || \
@@ -235,10 +237,14 @@ fw_load_zone() {
 			zone_log_limit="$zone_log_limit/minute"
 
 		local t
-		for t in REJECT DROP MSSFIX; do
+		for t in REJECT DROP; do
 			fw add $mode f ${chain}_${t} LOG ^ \
-				{ -m limit --limit $zone_log_limit --log-prefix "$t($zone_name): "  }
+				{ -m limit --limit $zone_log_limit --log-prefix "$t($zone_name): " }
 		done
+
+		[ $zone_mtu_fix == 1 ] && \
+			fw add $mode m ${chain}_MSSFIX LOG ^ \
+				{ -m limit --limit $zone_log_limit --log-prefix "MSSFIX($zone_name): " }
 	}
 
 	# NB: if MASQUERADING for IPv6 becomes available we'll need a family check here
