@@ -1,0 +1,2813 @@
+From 63e56392b9024aceb610d7b4e1979e2d2cebd217 Mon Sep 17 00:00:00 2001
+From: Marat Radchenko <marat@slonopotamus.org>
+Date: Tue, 18 Oct 2011 21:48:23 +0400
+Subject: [PATCH 1/2] TSC2301 driver (touchscreen and keypad)
+
+This patch adds support for TSC2301 touchscreen/keypad/audio chip found on Nokia N800.
+Touchscreen and keypad are fully functional, audio part only provides power management.
+---
+ drivers/input/keyboard/Kconfig         |    6 +
+ drivers/input/keyboard/Makefile        |    1 +
+ drivers/input/keyboard/tsc2301_kp.c    |  475 +++++++++++++++
+ drivers/input/touchscreen/Kconfig      |    6 +
+ drivers/input/touchscreen/Makefile     |    1 +
+ drivers/input/touchscreen/tsc2301_ts.c |  676 +++++++++++++++++++++
+ drivers/spi/Kconfig                    |   22 +
+ drivers/spi/Makefile                   |    3 +
+ drivers/spi/tsc2301-core.c             |  297 ++++++++++
+ drivers/spi/tsc2301-mixer.c            | 1003 ++++++++++++++++++++++++++++++++
+ include/linux/spi/tsc2301.h            |  208 +++++++
+ 11 files changed, 2698 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/input/keyboard/tsc2301_kp.c
+ create mode 100644 drivers/input/touchscreen/tsc2301_ts.c
+ create mode 100644 drivers/spi/tsc2301-core.c
+ create mode 100644 drivers/spi/tsc2301-mixer.c
+ create mode 100644 include/linux/spi/tsc2301.h
+
+Index: linux-3.1-rc4/drivers/input/keyboard/Kconfig
+===================================================================
+--- linux-3.1-rc4.orig/drivers/input/keyboard/Kconfig	2011-10-29 22:14:01.548849676 +0200
++++ linux-3.1-rc4/drivers/input/keyboard/Kconfig	2011-10-29 22:14:10.444812519 +0200
+@@ -530,6 +530,12 @@ config KEYBOARD_TNETV107X
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called tnetv107x-keypad.
+ 
++config KEYBOARD_TSC2301
++	tristate "TSC2301 keypad support"
++	depends on SPI_TSC2301
++	help
++	  Say Y here for if you are using the keypad features of TSC2301.
++
+ config KEYBOARD_TWL4030
+ 	tristate "TI TWL4030/TWL5030/TPS659x0 keypad support"
+ 	depends on TWL4030_CORE
+Index: linux-3.1-rc4/drivers/input/keyboard/Makefile
+===================================================================
+--- linux-3.1-rc4.orig/drivers/input/keyboard/Makefile	2011-10-29 22:14:01.560849628 +0200
++++ linux-3.1-rc4/drivers/input/keyboard/Makefile	2011-10-29 22:14:10.444812519 +0200
+@@ -48,6 +48,7 @@ obj-$(CONFIG_KEYBOARD_SUNKBD)		+= sunkbd
+ obj-$(CONFIG_KEYBOARD_TC3589X)		+= tc3589x-keypad.o
+ obj-$(CONFIG_KEYBOARD_TEGRA)		+= tegra-kbc.o
+ obj-$(CONFIG_KEYBOARD_TNETV107X)	+= tnetv107x-keypad.o
++obj-$(CONFIG_KEYBOARD_TSC2301)		+= tsc2301_kp.o
+ obj-$(CONFIG_KEYBOARD_TWL4030)		+= twl4030_keypad.o
+ obj-$(CONFIG_KEYBOARD_XTKBD)		+= xtkbd.o
+ obj-$(CONFIG_KEYBOARD_W90P910)		+= w90p910_keypad.o
+Index: linux-3.1-rc4/drivers/input/keyboard/tsc2301_kp.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/input/keyboard/tsc2301_kp.c	2011-10-29 22:27:48.875046931 +0200
+@@ -0,0 +1,475 @@
++/*
++ * TSC2301 keypad driver
++ *
++ * Copyright (C) 2005-2006 Nokia Corporation
++ *
++ * Written by Jarkko Oikarinen
++ * Rewritten by Juha Yrjola <juha.yrjola@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/input.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/delay.h>
++#include <linux/spi/spi.h>
++
++#include <linux/spi/tsc2301.h>
++
++#define TSC2301_KEYBOARD_PRODUCT_ID      0x0051
++#define TSC2301_KEYBOARD_PRODUCT_VERSION 0x0001
++#define TSC2301_DEBOUNCE_TIME_2MS        0x0000
++#define TSC2301_DEBOUNCE_TIME_10MS       0x0800
++#define TSC2301_DEBOUNCE_TIME_20MS       0x1000
++#define TSC2301_DEBOUNCE_TIME_50MS       0x1800
++#define TSC2301_DEBOUNCE_TIME_60MS       0x2000
++#define TSC2301_DEBOUNCE_TIME_80MS       0x2800
++#define TSC2301_DEBOUNCE_TIME_100MS      0x3000
++#define TSC2301_DEBOUNCE_TIME_120MS      0x3800
++
++#define TSC2301_DEBOUNCE_TIME		TSC2301_DEBOUNCE_TIME_20MS
++
++#define TSC2301_RELEASE_TIMEOUT		50
++
++struct tsc2301_kp {
++	struct input_dev	*idev;
++	char			phys[32];
++	spinlock_t		lock;
++	struct mutex		mutex;
++	struct timer_list	timer;
++	u16			keys_pressed;
++	unsigned		pending:1;
++	unsigned		user_disabled:1;
++	unsigned		disable_depth;
++
++	struct spi_transfer	read_xfer[4];
++	struct spi_message	read_msg;
++
++	u16			data;
++	u16			mask;
++
++	int			irq;
++	s16			keymap[16];
++};
++
++static inline int tsc2301_kp_disabled(struct tsc2301 *tsc)
++{
++	return tsc->kp->disable_depth != 0;
++}
++
++static void tsc2301_kp_send_key_events(struct tsc2301 *tsc,
++				       u16 prev_state,
++				       u16 new_state)
++{
++	struct tsc2301_kp *kp = tsc->kp;
++	u16 common, released, pressed;
++	int i;
++
++	common = prev_state & new_state;
++	released = common ^ prev_state;
++	pressed = common ^ new_state;
++	if (!released && !pressed)
++		return;
++	for (i = 0; i < 16 && (released || pressed); i++) {
++		if (released & 1) {
++			dev_dbg(&tsc->spi->dev, "key %d released\n", i);
++			input_report_key(kp->idev, kp->keymap[i], 0);
++		}
++		released >>= 1;
++		if (pressed & 1) {
++			dev_dbg(&tsc->spi->dev, "key %d pressed\n", i);
++			input_report_key(kp->idev, kp->keymap[i], 1);
++		}
++		pressed >>= 1;
++	}
++	input_sync(kp->idev);
++}
++
++static inline void _filter_out(struct tsc2301 *tsc, u16 prev_state,
++			       u16 *new_state, int row1, int row2, u8 rect_pat)
++{
++	u16 mask;
++
++	mask = (rect_pat << (row1 * 4)) | (rect_pat << (row2 * 4));
++	mask &= ~prev_state;
++	*new_state &= ~mask;
++	dev_dbg(&tsc->spi->dev, "filtering ghost keys %02x\n", mask);
++}
++
++static void tsc2301_filter_ghost_keys(struct tsc2301 *tsc, u16 prev_state,
++				      u16 *new_state)
++{
++	int row1, row2;
++	u16 key_map;
++	u16 row1_map;
++	static const u8 rect_pat[] = {
++		0x3, 0x5, 0x9, 0x6, 0xa, 0xc, 0,
++	};
++
++	key_map = *new_state;
++	for (row1 = 0; row1 < 4; row1++) {
++		row1_map = (key_map >> (row1 * 4)) & 0xf;
++		if (!row1_map)
++			continue;
++		for (row2 = row1 + 1; row2 < 4; row2++) {
++			u16 rect_map = (key_map >> (row2 * 4)) & 0xf;
++			const u8 *rp;
++
++			rect_map &= row1_map;
++			if (!rect_map)
++				continue;
++			for (rp = rect_pat; *rp; rp++)
++				if ((rect_map & *rp) == *rp)
++					_filter_out(tsc, prev_state, new_state,
++						    row1, row2, *rp);
++		}
++	}
++}
++
++static void tsc2301_kp_timer(unsigned long arg)
++{
++	struct tsc2301 *tsc = (void *) arg;
++	struct tsc2301_kp *kp = tsc->kp;
++	unsigned long flags;
++
++	tsc2301_kp_send_key_events(tsc, kp->keys_pressed, 0);
++	spin_lock_irqsave(&kp->lock, flags);
++	kp->keys_pressed = 0;
++	spin_unlock_irqrestore(&kp->lock, flags);
++}
++
++static void tsc2301_kp_rx(void *arg)
++{
++	struct tsc2301 *tsc = arg;
++	struct tsc2301_kp *kp = tsc->kp;
++	unsigned long flags;
++	u16 kp_data;
++
++	kp_data = kp->data;
++	dev_dbg(&tsc->spi->dev, "KP data %04x\n", kp_data);
++
++	tsc2301_filter_ghost_keys(tsc, kp->keys_pressed, &kp_data);
++	tsc2301_kp_send_key_events(tsc, kp->keys_pressed, kp_data);
++	spin_lock_irqsave(&kp->lock, flags);
++	kp->keys_pressed = kp_data;
++	kp->pending = 0;
++	spin_unlock_irqrestore(&kp->lock, flags);
++}
++
++static irqreturn_t tsc2301_kp_irq_handler(int irq, void *dev_id)
++{
++	struct tsc2301 *tsc = dev_id;
++	struct tsc2301_kp *kp = tsc->kp;
++	unsigned long flags;
++	int r;
++
++	spin_lock_irqsave(&kp->lock, flags);
++	if (tsc2301_kp_disabled(tsc)) {
++		spin_unlock_irqrestore(&kp->lock, flags);
++		return IRQ_HANDLED;
++	}
++	kp->pending = 1;
++	spin_unlock_irqrestore(&kp->lock, flags);
++	mod_timer(&kp->timer,
++		 jiffies + msecs_to_jiffies(TSC2301_RELEASE_TIMEOUT));
++	r = spi_async(tsc->spi, &tsc->kp->read_msg);
++	if (r)
++		dev_err(&tsc->spi->dev, "kp: spi_async() failed");
++	return IRQ_HANDLED;
++}
++
++static void tsc2301_kp_start_scan(struct tsc2301 *tsc)
++{
++	tsc2301_write_reg(tsc, TSC2301_REG_KPMASK, tsc->kp->mask);
++	tsc2301_write_reg(tsc, TSC2301_REG_KEY, TSC2301_DEBOUNCE_TIME);
++}
++
++static void tsc2301_kp_stop_scan(struct tsc2301 *tsc)
++{
++	tsc2301_write_reg(tsc, TSC2301_REG_KEY, 1 << 14);
++}
++
++/* Must be called with the mutex held */
++static void tsc2301_kp_enable(struct tsc2301 *tsc)
++{
++	struct tsc2301_kp *kp = tsc->kp;
++	unsigned long flags;
++
++	spin_lock_irqsave(&kp->lock, flags);
++	BUG_ON(!tsc2301_kp_disabled(tsc));
++	if (--kp->disable_depth != 0) {
++		spin_unlock_irqrestore(&kp->lock, flags);
++		return;
++	}
++	spin_unlock_irqrestore(&kp->lock, flags);
++
++	irq_set_irq_type(kp->irq, IRQ_TYPE_EDGE_FALLING);
++	tsc2301_kp_start_scan(tsc);
++	enable_irq(kp->irq);
++}
++
++/* Must be called with the mutex held */
++static int tsc2301_kp_disable(struct tsc2301 *tsc, int release_keys)
++{
++	struct tsc2301_kp *kp = tsc->kp;
++	unsigned long flags;
++
++	spin_lock_irqsave(&kp->lock, flags);
++	if (kp->disable_depth++ != 0) {
++		spin_unlock_irqrestore(&kp->lock, flags);
++		goto out;
++	}
++	disable_irq_nosync(kp->irq);
++	irq_set_irq_type(kp->irq, IRQ_TYPE_NONE);
++	spin_unlock_irqrestore(&kp->lock, flags);
++
++	while (kp->pending) {
++		msleep(1);
++	}
++
++	tsc2301_kp_stop_scan(tsc);
++out:
++	if (!release_keys)
++		del_timer(&kp->timer); /* let timeout release keys */
++
++	return 0;
++}
++
++/* The following workaround is needed for a HW bug triggered by the
++ * following:
++ * 1. keep any key pressed
++ * 2. disable keypad
++ * 3. release all keys
++ * 4. reenable keypad
++ * 5. disable touch screen controller
++ *
++ * After this the keypad scanner will get stuck in busy state and won't
++ * report any interrupts for further keypresses. One way to recover is to
++ * restart the keypad scanner whenever we enable / disable the
++ * touchscreen controller.
++ */
++void tsc2301_kp_restart(struct tsc2301 *tsc)
++{
++	if (!tsc2301_kp_disabled(tsc)) {
++		tsc2301_kp_start_scan(tsc);
++	}
++}
++
++static ssize_t tsc2301_kp_disable_show(struct device *dev,
++				       struct device_attribute *attr, char *buf)
++{
++	struct tsc2301		*tsc = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%u\n", tsc2301_kp_disabled(tsc) ? 1 : 0);
++}
++
++static ssize_t tsc2301_kp_disable_store(struct device *dev,
++					struct device_attribute *attr,
++					const char *buf, size_t count)
++{
++	struct tsc2301		*tsc = dev_get_drvdata(dev);
++	struct tsc2301_kp	*kp = tsc->kp;
++	char *endp;
++	int i;
++
++	i = simple_strtoul(buf, &endp, 10);
++	i = i ? 1 : 0;
++
++	mutex_lock(&kp->mutex);
++	if (i == kp->user_disabled) {
++		mutex_unlock(&kp->mutex);
++		return count;
++	}
++	kp->user_disabled = i;
++
++	if (i)
++		tsc2301_kp_disable(tsc, 1);
++	else
++		tsc2301_kp_enable(tsc);
++	mutex_unlock(&kp->mutex);
++
++	return count;
++}
++
++static DEVICE_ATTR(disable_kp, 0664, tsc2301_kp_disable_show,
++		   tsc2301_kp_disable_store);
++
++static const u16 tsc2301_kp_read_data = 0x8000 | TSC2301_REG_KPDATA;
++
++static void tsc2301_kp_setup_spi_xfer(struct tsc2301 *tsc)
++{
++	struct tsc2301_kp *kp = tsc->kp;
++	struct spi_message *m = &kp->read_msg;
++	struct spi_transfer *x = &kp->read_xfer[0];
++
++	spi_message_init(&kp->read_msg);
++
++	x->tx_buf = &tsc2301_kp_read_data;
++	x->len = 2;
++	spi_message_add_tail(x, m);
++	x++;
++
++	x->rx_buf = &kp->data;
++	x->len = 2;
++	spi_message_add_tail(x, m);
++
++	m->complete = tsc2301_kp_rx;
++	m->context = tsc;
++}
++
++#ifdef CONFIG_PM
++int tsc2301_kp_suspend(struct tsc2301 *tsc)
++{
++	struct tsc2301_kp *kp = tsc->kp;
++
++	mutex_lock(&kp->mutex);
++	tsc2301_kp_disable(tsc, 1);
++	mutex_unlock(&kp->mutex);
++	return 0;
++}
++
++void tsc2301_kp_resume(struct tsc2301 *tsc)
++{
++	struct tsc2301_kp *kp = tsc->kp;
++
++	mutex_lock(&kp->mutex);
++	tsc2301_kp_enable(tsc);
++	mutex_unlock(&kp->mutex);
++}
++#endif
++
++int __devinit tsc2301_kp_init(struct tsc2301 *tsc,
++			      struct tsc2301_platform_data *pdata)
++{
++	struct input_dev *idev;
++	struct tsc2301_kp *kp;
++	int r, i;
++	u16 mask;
++
++	if (pdata->keyb_int < 0) {
++		dev_err(&tsc->spi->dev, "need kbirq");
++		return -EINVAL;
++	}
++
++	kp = kzalloc(sizeof(*kp), GFP_KERNEL);
++	if (kp == NULL)
++		return -ENOMEM;
++	tsc->kp = kp;
++
++	kp->irq = pdata->keyb_int;
++	spin_lock_init(&kp->lock);
++	mutex_init(&kp->mutex);
++
++	init_timer(&kp->timer);
++	kp->timer.data = (unsigned long) tsc;
++	kp->timer.function = tsc2301_kp_timer;
++
++	idev = input_allocate_device();
++	if (idev == NULL) {
++		r = -ENOMEM;
++		goto err1;
++	}
++	if (pdata->keyb_name)
++		idev->name = pdata->keyb_name;
++	else
++		idev->name = "TSC2301 keypad";
++	snprintf(kp->phys, sizeof(kp->phys), "%s/input-kp", dev_name(&tsc->spi->dev));
++	idev->phys = kp->phys;
++
++	mask = 0;
++	idev->evbit[0] = BIT(EV_KEY);
++	for (i = 0; i < 16; i++) {
++		if (pdata->keymap[i] > 0) {
++			set_bit(pdata->keymap[i], idev->keybit);
++			kp->keymap[i] = pdata->keymap[i];
++		} else {
++			kp->keymap[i] = -1;
++			mask |= 1 << i;
++		}
++	}
++
++	if (pdata->kp_rep)
++		set_bit(EV_REP, idev->evbit);
++
++	kp->idev = idev;
++
++	tsc2301_kp_setup_spi_xfer(tsc);
++
++	r = device_create_file(&tsc->spi->dev, &dev_attr_disable_kp);
++	if (r < 0)
++		goto err2;
++
++	tsc2301_kp_start_scan(tsc);
++
++	/* IRQ mode 0 is faulty, it can cause the KBIRQ to get stuck.
++	 * Mode 2 deasserts the IRQ at:
++	 * - HW or SW reset
++	 * - Setting SCS flag in REG_KEY register
++	 * - Releasing all keys
++	 * - Reading the REG_KPDATA
++	 */
++	tsc2301_write_kbc(tsc, 2);
++
++	tsc2301_write_reg(tsc, TSC2301_REG_KPMASK, mask);
++	kp->mask = mask;
++
++	irq_set_irq_type(kp->irq, IRQ_TYPE_EDGE_FALLING);
++
++	r = request_irq(kp->irq, tsc2301_kp_irq_handler, IRQF_SAMPLE_RANDOM,
++			"tsc2301-kp", tsc);
++	if (r < 0) {
++		dev_err(&tsc->spi->dev, "unable to get kbirq IRQ");
++		goto err3;
++	}
++	irq_set_irq_wake(kp->irq, 1);
++
++	/* We need to read the register once..? */
++	tsc2301_read_reg(tsc, TSC2301_REG_KPDATA);
++
++	r = input_register_device(idev);
++	if (r < 0) {
++		dev_err(&tsc->spi->dev, "can't register keypad device\n");
++		goto err4;
++	}
++
++	return 0;
++
++err4:
++	free_irq(kp->irq, tsc);
++err3:
++	tsc2301_kp_stop_scan(tsc);
++	device_remove_file(&tsc->spi->dev, &dev_attr_disable_kp);
++err2:
++	input_free_device(kp->idev);
++err1:
++	kfree(kp);
++	return r;
++}
++
++void __devexit tsc2301_kp_exit(struct tsc2301 *tsc)
++{
++	struct tsc2301_kp *kp = tsc->kp;
++
++	tsc2301_kp_disable(tsc, 1);
++	input_unregister_device(kp->idev);
++	free_irq(kp->irq, tsc);
++	device_remove_file(&tsc->spi->dev, &dev_attr_disable_kp);
++
++	kfree(kp);
++}
+Index: linux-3.1-rc4/drivers/input/touchscreen/Kconfig
+===================================================================
+--- linux-3.1-rc4.orig/drivers/input/touchscreen/Kconfig	2011-10-29 22:14:01.532849745 +0200
++++ linux-3.1-rc4/drivers/input/touchscreen/Kconfig	2011-10-29 22:14:10.444812519 +0200
+@@ -673,6 +673,12 @@ config TOUCHSCREEN_TSC2007
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called tsc2007.
+ 
++config TOUCHSCREEN_TSC2301
++	tristate "TSC2301 touchscreen support"
++	depends on SPI_TSC2301
++	help
++	  Say Y here for if you are using the touchscreen features of TSC2301.
++
+ config TOUCHSCREEN_W90X900
+ 	tristate "W90P910 touchscreen driver"
+ 	depends on HAVE_CLK
+Index: linux-3.1-rc4/drivers/input/touchscreen/Makefile
+===================================================================
+--- linux-3.1-rc4.orig/drivers/input/touchscreen/Makefile	2011-10-29 22:14:01.544849693 +0200
++++ linux-3.1-rc4/drivers/input/touchscreen/Makefile	2011-10-29 22:14:10.444812519 +0200
+@@ -48,6 +48,7 @@ obj-$(CONFIG_TOUCHSCREEN_TOUCHRIGHT)	+=
+ obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
+ obj-$(CONFIG_TOUCHSCREEN_TSC2005)	+= tsc2005.o
+ obj-$(CONFIG_TOUCHSCREEN_TSC2007)	+= tsc2007.o
++obj-$(CONFIG_TOUCHSCREEN_TSC2301)	+= tsc2301_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_UCB1400)	+= ucb1400_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_WACOM_W8001)	+= wacom_w8001.o
+ obj-$(CONFIG_TOUCHSCREEN_WM831X)	+= wm831x-ts.o
+Index: linux-3.1-rc4/drivers/input/touchscreen/tsc2301_ts.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/input/touchscreen/tsc2301_ts.c	2011-10-29 22:29:36.693801882 +0200
+@@ -0,0 +1,676 @@
++/*
++ * TSC2301 touchscreen driver
++ *
++ * Copyright (C) 2005-2008 Nokia Corporation
++ *
++ * Written by Jarkko Oikarinen, Imre Deak and Juha Yrjola
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/input.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <linux/spi/spi.h>
++
++#include <linux/spi/tsc2301.h>
++
++/**
++ * The touchscreen interface operates as follows:
++ *
++ * Initialize:
++ *    Request access to GPIO103 (DAV)
++ *    tsc2301_ts_irq_handler will trigger when DAV line goes down
++ *
++ *  1) Pen is pressed against touchscreeen
++ *  2) TSC2301 performs AD conversion
++ *  3) After the conversion is done TSC2301 drives DAV line down
++ *  4) GPIO IRQ is received and tsc2301_ts_irq_handler is called
++ *  5) tsc2301_ts_irq_handler queues up an spi transfer to fetch
++ *     the x, y, z1, z2 values
++ *  6) SPI framework calls tsc2301_ts_rx after the coordinates are read
++ *  7) When the penup_timer expires, there have not been DAV interrupts
++ *     during the last 20ms which means the pen has been lifted.
++ */
++
++
++#define TSC2301_TOUCHSCREEN_PRODUCT_ID      		0x0052
++#define TSC2301_TOUCHSCREEN_PRODUCT_VERSION 		0x0001
++
++#define TSC2301_TS_PENUP_TIME		     		20
++
++#define TSC2301_ADCREG_CONVERSION_CTRL_BY_TSC2301	0x8000
++#define TSC2301_ADCREG_CONVERSION_CTRL_BY_HOST		0x0000
++
++#define TSC2301_ADCREG_FUNCTION_NONE			0x0000
++#define TSC2301_ADCREG_FUNCTION_XY			0x0400
++#define TSC2301_ADCREG_FUNCTION_XYZ			0x0800
++#define TSC2301_ADCREG_FUNCTION_X			0x0C00
++#define TSC2301_ADCREG_FUNCTION_Y			0x1000
++#define TSC2301_ADCREG_FUNCTION_Z			0x1400
++#define TSC2301_ADCREG_FUNCTION_DAT1			0x1800
++#define TSC2301_ADCREG_FUNCTION_DAT2			0x1C00
++#define TSC2301_ADCREG_FUNCTION_AUX1			0x2000
++#define TSC2301_ADCREG_FUNCTION_AUX2			0x2400
++#define TSC2301_ADCREG_FUNCTION_TEMP			0x2800
++
++#define TSC2301_ADCREG_RESOLUTION_8BIT			0x0100
++#define TSC2301_ADCREG_RESOLUTION_10BIT			0x0200
++#define TSC2301_ADCREG_RESOLUTION_12BIT			0x0300
++
++#define TSC2301_ADCREG_AVERAGING_NONE			0x0000
++#define TSC2301_ADCREG_AVERAGING_4AVG			0x0040
++#define TSC2301_ADCREG_AVERAGING_8AVG			0x0080
++#define TSC2301_ADCREG_AVERAGING_16AVG			0x00C0
++
++#define TSC2301_ADCREG_CLOCK_8MHZ			0x0000
++#define TSC2301_ADCREG_CLOCK_4MHZ			0x0010
++#define TSC2301_ADCREG_CLOCK_2MHZ			0x0020
++#define TSC2301_ADCREG_CLOCK_1MHZ			0x0030
++
++#define TSC2301_ADCREG_VOLTAGE_STAB_0US			0x0000
++#define TSC2301_ADCREG_VOLTAGE_STAB_100US		0x0002
++#define TSC2301_ADCREG_VOLTAGE_STAB_500US		0x0004
++#define TSC2301_ADCREG_VOLTAGE_STAB_1MS			0x0006
++#define TSC2301_ADCREG_VOLTAGE_STAB_5MS			0x0008
++#define TSC2301_ADCREG_VOLTAGE_STAB_10MS		0x000A
++#define TSC2301_ADCREG_VOLTAGE_STAB_50MS		0x000C
++#define TSC2301_ADCREG_VOLTAGE_STAB_100MS		0x000E
++
++#define TSC2301_ADCREG_STOP_CONVERSION			0x4000
++
++#define MAX_12BIT					((1 << 12) - 1)
++
++#define TS_RECT_SIZE					8
++#define TSF_MIN_Z1					100
++#define TSF_MAX_Z2					4000
++
++#define TSF_SAMPLES					4
++
++struct ts_filter {
++	int			sample_cnt;
++
++	int 			avg_x;
++	int 			avg_y;
++	int 			avg_z1;
++	int 			avg_z2;
++};
++
++struct ts_coords {
++	u16 			x;
++	u16 			y;
++	u16 			z1;
++	u16 			z2;
++};
++
++struct tsc2301_ts {
++	struct input_dev	*idev;
++	char			phys[32];
++	struct timer_list	penup_timer;
++	struct mutex		mutex;
++
++	struct spi_transfer	read_xfer[2];
++	struct spi_message	read_msg;
++	struct ts_coords	*coords;
++
++	struct ts_filter	filter;
++
++	int			hw_avg_max;
++	u16			x;
++	u16			y;
++	u16			p;
++
++	u16			x_plate_ohm;
++	int			stab_time;
++	int			max_pressure;
++	int			touch_pressure;
++
++	u8			event_sent;
++	u8			pen_down;
++	u8			disabled;
++	u8			disable_depth;
++
++	int			hw_flags;
++	int			irq;
++};
++
++
++static const u16 tsc2301_ts_read_data = 0x8000 | TSC2301_REG_X;
++
++static int tsc2301_ts_check_config(struct tsc2301_ts *ts, int *hw_flags)
++{
++	int flags;
++
++	flags = 0;
++	switch (ts->hw_avg_max) {
++	case 0:
++		flags |= TSC2301_ADCREG_AVERAGING_NONE;
++		break;
++	case 4:
++		flags |= TSC2301_ADCREG_AVERAGING_4AVG;
++		break;
++	case 8:
++		flags |= TSC2301_ADCREG_AVERAGING_8AVG;
++		break;
++	case 16:
++		flags |= TSC2301_ADCREG_AVERAGING_16AVG;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	switch (ts->stab_time) {
++	case 0:
++		flags |= TSC2301_ADCREG_VOLTAGE_STAB_0US;
++		break;
++	case 100:
++		flags |= TSC2301_ADCREG_VOLTAGE_STAB_100US;
++		break;
++	case 500:
++		flags |= TSC2301_ADCREG_VOLTAGE_STAB_500US;
++		break;
++	case 1000:
++		flags |= TSC2301_ADCREG_VOLTAGE_STAB_1MS;
++		break;
++	case 5000:
++		flags |= TSC2301_ADCREG_VOLTAGE_STAB_5MS;
++		break;
++	case 10000:
++		flags |= TSC2301_ADCREG_VOLTAGE_STAB_10MS;
++		break;
++	case 50000:
++		flags |= TSC2301_ADCREG_VOLTAGE_STAB_50MS;
++		break;
++	case 100000:
++		flags |= TSC2301_ADCREG_VOLTAGE_STAB_100MS;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	*hw_flags = flags;
++	return 0;
++}
++
++/*
++ * This odd three-time initialization is to work around a bug in TSC2301.
++ * See TSC2301 errata for details.
++ */
++static int tsc2301_ts_configure(struct tsc2301 *tsc, int flags)
++{
++	struct spi_transfer xfer[5];
++	struct spi_transfer *x;
++	struct spi_message m;
++	int i;
++	u16 val1, val2, val3;
++	u16 data[10];
++
++	val1 = TSC2301_ADCREG_CONVERSION_CTRL_BY_HOST |
++		TSC2301_ADCREG_STOP_CONVERSION |
++		TSC2301_ADCREG_FUNCTION_NONE |
++		TSC2301_ADCREG_RESOLUTION_12BIT |
++		TSC2301_ADCREG_AVERAGING_NONE |
++		TSC2301_ADCREG_CLOCK_2MHZ |
++		TSC2301_ADCREG_VOLTAGE_STAB_100MS;
++
++	val2 = TSC2301_ADCREG_CONVERSION_CTRL_BY_HOST |
++		TSC2301_ADCREG_FUNCTION_XYZ |
++		TSC2301_ADCREG_RESOLUTION_12BIT |
++		TSC2301_ADCREG_AVERAGING_16AVG |
++		TSC2301_ADCREG_CLOCK_1MHZ |
++		TSC2301_ADCREG_VOLTAGE_STAB_100MS;
++
++	/* Averaging and voltage stabilization settings in flags */
++	val3 = TSC2301_ADCREG_CONVERSION_CTRL_BY_TSC2301 |
++		TSC2301_ADCREG_FUNCTION_XYZ |
++		TSC2301_ADCREG_RESOLUTION_12BIT |
++		TSC2301_ADCREG_CLOCK_2MHZ |
++		flags;
++
++	/* Now we prepare the command for transferring */
++	data[0] = TSC2301_REG_ADC;
++	data[1] = val1;
++	data[2] = TSC2301_REG_ADC;
++	data[3] = val2;
++	data[4] = TSC2301_REG_ADC;
++	data[5] = val3;
++	data[6] = TSC2301_REG_REF;
++	data[7] = 1 << 4 | 1 << 2 | 1; /* intref, 100uS settl, 2.5V ref */
++	data[8] = TSC2301_REG_CONFIG;
++	data[9] = 3 << 3 | 2 << 0; /* 340uS pre-chrg, 544us delay */
++
++	spi_message_init(&m);
++	m.spi = tsc->spi;
++
++	memset(xfer, 0, sizeof(xfer));
++	x = &xfer[0];
++
++	for (i = 0; i < 10; i += 2) {
++		x->tx_buf = &data[i];
++		x->len = 4;
++		if (i != 8)
++			x->cs_change = 1;
++		spi_message_add_tail(x, &m);
++		x++;
++	}
++	spi_sync(m.spi, &m);
++
++	return 0;
++}
++
++static void tsc2301_ts_start_scan(struct tsc2301 *tsc)
++{
++	tsc2301_ts_configure(tsc, tsc->ts->hw_flags);
++	tsc2301_kp_restart(tsc);
++}
++
++static void tsc2301_ts_stop_scan(struct tsc2301 *tsc)
++{
++	tsc2301_write_reg(tsc, TSC2301_REG_ADC, TSC2301_ADCREG_STOP_CONVERSION);
++	tsc2301_kp_restart(tsc);
++}
++
++static void update_pen_state(struct tsc2301_ts *ts, int x, int y, int pressure)
++{
++	if (pressure) {
++		input_report_abs(ts->idev, ABS_X, x);
++		input_report_abs(ts->idev, ABS_Y, y);
++		input_report_abs(ts->idev, ABS_PRESSURE, pressure);
++		if (!ts->pen_down)
++			input_report_key(ts->idev, BTN_TOUCH, 1);
++		ts->pen_down = 1;
++	} else {
++		input_report_abs(ts->idev, ABS_PRESSURE, 0);
++		if (ts->pen_down)
++			input_report_key(ts->idev, BTN_TOUCH, 0);
++		ts->pen_down = 0;
++	}
++
++	input_sync(ts->idev);
++
++#ifdef VERBOSE
++	dev_dbg(&tsc->spi->dev, "x %4d y %4d p %4d\n", x, y, pressure);
++#endif
++}
++
++static int filter(struct tsc2301_ts *ts, int x, int y, int z1, int z2)
++{
++	int inside_rect, pressure_limit, Rt;
++	struct ts_filter *tsf = &ts->filter;
++
++	/* validate pressure and position */
++	if (x > MAX_12BIT || y > MAX_12BIT)
++		return 0;
++
++	/* skip coords if the pressure-components are out of range */
++	if (z1 < TSF_MIN_Z1 || z2 > TSF_MAX_Z2)
++		return 0;
++
++	/* Use the x,y,z1,z2 directly on the first "pen down" event */
++	if (ts->event_sent) {
++		tsf->avg_x  += x;
++		tsf->avg_y  += y;
++		tsf->avg_z1 += z1;
++		tsf->avg_z2 += z2;
++
++		if (++tsf->sample_cnt < TSF_SAMPLES)
++			return 0;
++		x = tsf->avg_x / TSF_SAMPLES;
++		y = tsf->avg_y / TSF_SAMPLES;
++		z1 = tsf->avg_z1 / TSF_SAMPLES;
++		z2 = tsf->avg_z2 / TSF_SAMPLES;
++	}
++	tsf->sample_cnt = 0;
++	tsf->avg_x  = 0;
++	tsf->avg_y  = 0;
++	tsf->avg_z1 = 0;
++	tsf->avg_z2 = 0;
++
++	pressure_limit = ts->event_sent? ts->max_pressure: ts->touch_pressure;
++
++	/* z1 is always at least 100: */
++	Rt = x * (z2 - z1) / z1;
++	Rt = Rt * ts->x_plate_ohm / 4096;
++	if (Rt > pressure_limit)
++		return 0;
++
++	/* discard the event if it still is within the previous rect - unless
++	 * if the pressure is harder, but then use previous x,y position */
++	inside_rect = (
++	    x > (int)ts->x - TS_RECT_SIZE && x < (int)ts->x + TS_RECT_SIZE &&
++	    y > (int)ts->y - TS_RECT_SIZE && y < (int)ts->y + TS_RECT_SIZE);
++
++	if (!ts->event_sent || !inside_rect) {
++		ts->x = x;
++		ts->y = y;
++		ts->p = Rt;
++		return 1;
++	} else if (Rt < ts->p) {
++		ts->p = Rt;
++		return 1;
++	}
++	return 0;
++}
++
++/*
++ * This procedure is called by the SPI framework after the coordinates
++ * have been read from TSC2301
++ */
++static void tsc2301_ts_rx(void *arg)
++{
++	struct tsc2301 *tsc = arg;
++	struct tsc2301_ts *ts = tsc->ts;
++	int send_event;
++	int x, y, z1, z2;
++
++	x  = ts->coords->x;
++	y  = ts->coords->y;
++	z1 = ts->coords->z1;
++	z2 = ts->coords->z2;
++
++	send_event = filter(ts, x, y, z1, z2);
++	if (send_event) {
++		update_pen_state(ts, ts->x, ts->y, ts->p);
++		ts->event_sent = 1;
++	}
++
++	mod_timer(&ts->penup_timer,
++		  jiffies + msecs_to_jiffies(TSC2301_TS_PENUP_TIME));
++}
++
++/*
++ * Timer is called TSC2301_TS_PENUP_TIME after pen is up
++ */
++static void tsc2301_ts_timer_handler(unsigned long data)
++{
++	struct tsc2301 *tsc = (struct tsc2301 *)data;
++	struct tsc2301_ts *ts = tsc->ts;
++
++	if (ts->event_sent) {
++		ts->event_sent = 0;
++		update_pen_state(ts, 0, 0, 0);
++	}
++}
++
++/*
++ * This interrupt is called when pen is down and coordinates are
++ * available. That is indicated by a falling edge on DEV line.
++ */
++static irqreturn_t tsc2301_ts_irq_handler(int irq, void *dev_id)
++{
++	struct tsc2301 *tsc = dev_id;
++	struct tsc2301_ts *ts = tsc->ts;
++	int r;
++
++	r = spi_async(tsc->spi, &ts->read_msg);
++	if (r)
++		dev_err(&tsc->spi->dev, "ts: spi_async() failed");
++
++	mod_timer(&ts->penup_timer,
++		  jiffies + msecs_to_jiffies(TSC2301_TS_PENUP_TIME));
++
++	return IRQ_HANDLED;
++}
++
++static void tsc2301_ts_disable(struct tsc2301 *tsc)
++{
++	struct tsc2301_ts *ts = tsc->ts;
++
++	if (ts->disable_depth++ != 0)
++		return;
++
++	disable_irq(ts->irq);
++
++	/* wait until penup timer expire normally */
++	do {
++		msleep(1);
++	} while (ts->event_sent);
++
++	tsc2301_ts_stop_scan(tsc);
++}
++
++static void tsc2301_ts_enable(struct tsc2301 *tsc)
++{
++	struct tsc2301_ts *ts = tsc->ts;
++
++	if (--ts->disable_depth != 0)
++		return;
++
++	enable_irq(ts->irq);
++
++	tsc2301_ts_start_scan(tsc);
++}
++
++#ifdef CONFIG_PM
++int tsc2301_ts_suspend(struct tsc2301 *tsc)
++{
++	struct tsc2301_ts *ts = tsc->ts;
++
++	mutex_lock(&ts->mutex);
++	tsc2301_ts_disable(tsc);
++	mutex_unlock(&ts->mutex);
++
++	return 0;
++}
++
++void tsc2301_ts_resume(struct tsc2301 *tsc)
++{
++	struct tsc2301_ts *ts = tsc->ts;
++
++	mutex_lock(&ts->mutex);
++	tsc2301_ts_enable(tsc);
++	mutex_unlock(&ts->mutex);
++}
++#endif
++
++static void tsc2301_ts_setup_spi_xfer(struct tsc2301 *tsc)
++{
++	struct tsc2301_ts *ts = tsc->ts;
++	struct spi_message *m = &ts->read_msg;
++	struct spi_transfer *x = &ts->read_xfer[0];
++
++	spi_message_init(m);
++
++	x->tx_buf = &tsc2301_ts_read_data;
++	x->len = 2;
++	spi_message_add_tail(x, m);
++
++	x++;
++	x->rx_buf = ts->coords;
++	x->len = 8;
++	spi_message_add_tail(x, m);
++
++	m->complete = tsc2301_ts_rx;
++	m->context = tsc;
++}
++
++static ssize_t tsc2301_ts_pen_down_show(struct device *dev,
++					struct device_attribute *attr,
++					char *buf)
++{
++	struct tsc2301 *tsc = dev_get_drvdata(dev);
++
++	return sprintf(buf, "%u\n", tsc->ts->pen_down);
++}
++
++static DEVICE_ATTR(pen_down, S_IRUGO, tsc2301_ts_pen_down_show, NULL);
++
++static ssize_t tsc2301_ts_disable_show(struct device *dev,
++				       struct device_attribute *attr, char *buf)
++{
++	struct tsc2301		*tsc = dev_get_drvdata(dev);
++	struct tsc2301_ts	*ts = tsc->ts;
++
++	return sprintf(buf, "%u\n", ts->disabled);
++}
++
++static ssize_t tsc2301_ts_disable_store(struct device *dev,
++					struct device_attribute *attr,
++					const char *buf, size_t count)
++{
++	struct tsc2301		*tsc = dev_get_drvdata(dev);
++	struct tsc2301_ts	*ts = tsc->ts;
++	char *endp;
++	int i;
++
++	i = simple_strtoul(buf, &endp, 10);
++	i = i ? 1 : 0;
++	mutex_lock(&ts->mutex);
++	if (i == ts->disabled) goto out;
++	ts->disabled = i;
++
++	if (i)
++		tsc2301_ts_disable(tsc);
++	else
++		tsc2301_ts_enable(tsc);
++out:
++	mutex_unlock(&ts->mutex);
++	return count;
++}
++
++static DEVICE_ATTR(disable_ts, 0664, tsc2301_ts_disable_show,
++		   tsc2301_ts_disable_store);
++
++int __devinit tsc2301_ts_init(struct tsc2301 *tsc,
++			      struct tsc2301_platform_data *pdata)
++{
++	struct tsc2301_ts *ts;
++	struct input_dev *idev;
++	int r;
++	int x_max, y_max;
++	int x_fudge, y_fudge, p_fudge;
++
++	if (pdata->dav_int <= 0) {
++		dev_err(&tsc->spi->dev, "need DAV IRQ");
++		return -EINVAL;
++	}
++
++	ts = kzalloc(sizeof(*ts), GFP_KERNEL);
++	if (ts == NULL)
++		return -ENOMEM;
++	tsc->ts = ts;
++
++	ts->coords = kzalloc(sizeof(*ts->coords), GFP_KERNEL);
++	if (ts->coords == NULL) {
++		kfree(ts);
++		return -ENOMEM;
++	}
++
++	ts->irq = pdata->dav_int;
++
++	init_timer(&ts->penup_timer);
++	setup_timer(&ts->penup_timer, tsc2301_ts_timer_handler,
++			(unsigned long)tsc);
++
++	mutex_init(&ts->mutex);
++
++	ts->x_plate_ohm	= pdata->ts_x_plate_ohm ? : 280;
++	ts->hw_avg_max	= pdata->ts_hw_avg;
++	ts->max_pressure = pdata->ts_max_pressure ? : MAX_12BIT;
++	ts->touch_pressure = pdata->ts_touch_pressure ? : ts->max_pressure;
++	ts->stab_time	= pdata->ts_stab_time;
++
++	x_max		= pdata->ts_x_max ? : 4096;
++	y_max		= pdata->ts_y_max ? : 4096;
++	x_fudge		= pdata->ts_x_fudge ? : 4;
++	y_fudge		= pdata->ts_y_fudge ? : 8;
++	p_fudge		= pdata->ts_pressure_fudge ? : 2;
++
++	if ((r = tsc2301_ts_check_config(ts, &ts->hw_flags))) {
++		dev_err(&tsc->spi->dev, "invalid configuration\n");
++		goto err2;
++	}
++
++	idev = input_allocate_device();
++	if (idev == NULL) {
++		r = -ENOMEM;
++		goto err2;
++	}
++	idev->name = "TSC2301 touchscreen";
++	snprintf(ts->phys, sizeof(ts->phys),
++		 "%s/input-ts", dev_name(&tsc->spi->dev));
++	idev->phys = ts->phys;
++	idev->dev.parent = &tsc->spi->dev;
++
++	idev->evbit[0] = BIT(EV_ABS) | BIT(EV_KEY);
++	idev->absbit[0] = BIT(ABS_X) | BIT(ABS_Y) | BIT(ABS_PRESSURE);
++	ts->idev = idev;
++
++	tsc2301_ts_setup_spi_xfer(tsc);
++
++	/* These parameters should perhaps be configurable? */
++	input_set_abs_params(idev, ABS_X, 0, x_max, x_fudge, 0);
++	input_set_abs_params(idev, ABS_Y, 0, y_max, y_fudge, 0);
++	input_set_abs_params(idev, ABS_PRESSURE, 0, ts->max_pressure,
++			     p_fudge, 0);
++
++	tsc2301_ts_start_scan(tsc);
++
++	r = request_irq(ts->irq, tsc2301_ts_irq_handler,
++			IRQF_SAMPLE_RANDOM | IRQF_TRIGGER_FALLING,
++			"tsc2301-ts", tsc);
++	if (r < 0) {
++		dev_err(&tsc->spi->dev, "unable to get DAV IRQ");
++		goto err3;
++	}
++	irq_set_irq_wake(ts->irq, 1);
++
++	if (device_create_file(&tsc->spi->dev, &dev_attr_pen_down) < 0)
++		goto err4;
++	if (device_create_file(&tsc->spi->dev, &dev_attr_disable_ts) < 0)
++		goto err5;
++
++	r = input_register_device(idev);
++	if (r < 0) {
++		dev_err(&tsc->spi->dev, "can't register touchscreen device\n");
++		goto err6;
++	}
++
++	return 0;
++err6:
++	device_remove_file(&tsc->spi->dev, &dev_attr_disable_ts);
++err5:
++	device_remove_file(&tsc->spi->dev, &dev_attr_pen_down);
++err4:
++	free_irq(ts->irq, tsc);
++err3:
++	tsc2301_ts_stop_scan(tsc);
++	input_free_device(idev);
++err2:
++	kfree(ts->coords);
++	kfree(ts);
++	return r;
++}
++
++void __devexit tsc2301_ts_exit(struct tsc2301 *tsc)
++{
++	struct tsc2301_ts *ts = tsc->ts;
++
++	tsc2301_ts_disable(tsc);
++
++	device_remove_file(&tsc->spi->dev, &dev_attr_disable_ts);
++	device_remove_file(&tsc->spi->dev, &dev_attr_pen_down);
++
++	free_irq(ts->irq, tsc);
++	input_unregister_device(ts->idev);
++
++	kfree(ts->coords);
++	kfree(ts);
++}
++MODULE_AUTHOR("Jarkko Oikarinen <jarkko.oikarinen@nokia.com>");
++MODULE_LICENSE("GPL");
+Index: linux-3.1-rc4/drivers/spi/Kconfig
+===================================================================
+--- linux-3.1-rc4.orig/drivers/spi/Kconfig	2011-10-29 22:14:10.260813287 +0200
++++ linux-3.1-rc4/drivers/spi/Kconfig	2011-10-29 22:14:10.448812502 +0200
+@@ -435,6 +435,28 @@ config SPI_TLE62X0
+ 	  sysfs interface, with each line presented as a kind of GPIO
+ 	  exposing both switch control and diagnostic feedback.
+ 
++config SPI_TSC2301
++	tristate "TSC2301 driver"
++	depends on SPI_MASTER
++	help
++	  Say Y here if you have a TSC2301 chip connected to an SPI
++	  bus on your board.
++
++	  The TSC2301 is a highly integrated PDA analog interface circuit.
++	  It contains a complete 12-bit A/D resistive touch screen
++	  converter (ADC) including drivers, touch pressure measurement
++	  capability, keypad controller, and 8-bit D/A converter (DAC) output
++	  for LCD contrast control.
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called tsc2301.
++
++config SPI_TSC2301_AUDIO
++	boolean "TSC2301 audio support"
++	depends on SPI_TSC2301 && SND
++	help
++	  Say Y here for if you are using the audio features of TSC2301.
++
+ #
+ # Add new SPI protocol masters in alphabetical order above this line
+ #
+Index: linux-3.1-rc4/drivers/spi/Makefile
+===================================================================
+--- linux-3.1-rc4.orig/drivers/spi/Makefile	2011-10-29 22:14:10.260813287 +0200
++++ linux-3.1-rc4/drivers/spi/Makefile	2011-10-29 22:14:10.448812502 +0200
+@@ -59,4 +59,6 @@ obj-$(CONFIG_SPI_TLE62X0)		+= spi-tle62x
+ obj-$(CONFIG_SPI_TOPCLIFF_PCH)		+= spi-topcliff-pch.o
+ obj-$(CONFIG_SPI_TXX9)			+= spi-txx9.o
+ obj-$(CONFIG_SPI_XILINX)		+= spi-xilinx.o
+-
++obj-$(CONFIG_SPI_TSC2301)		+= tsc2301.o
++tsc2301-objs				:= tsc2301-core.o
++tsc2301-$(CONFIG_SPI_TSC2301_AUDIO)	+= tsc2301-mixer.o
+Index: linux-3.1-rc4/drivers/spi/tsc2301-core.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/spi/tsc2301-core.c	2011-10-29 22:14:10.448812502 +0200
+@@ -0,0 +1,297 @@
++/*
++ * TSC2301 driver
++ *
++ * Copyright (C) 2005, 2006 Nokia Corporation
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/device.h>
++#include <linux/delay.h>
++#include <linux/gpio.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/tsc2301.h>
++
++u16 tsc2301_read_reg(struct tsc2301 *tsc, int reg)
++{
++	struct spi_transfer t[2];
++	struct spi_message m;
++	u16 data = 0, cmd;
++
++	cmd = reg;
++	cmd |= 0x8000;
++
++	memset(t, 0, sizeof(t));
++	spi_message_init(&m);
++	m.spi = tsc->spi;
++
++	t[0].tx_buf = &cmd;
++	t[0].rx_buf = NULL;
++	t[0].len = 2;
++	spi_message_add_tail(&t[0], &m);
++
++	t[1].tx_buf = NULL;
++	t[1].rx_buf = &data;
++	t[1].len = 2;
++	spi_message_add_tail(&t[1], &m);
++
++	spi_sync(m.spi, &m);
++
++	return data;
++}
++
++void tsc2301_write_reg(struct tsc2301 *tsc, int reg, u16 val)
++{
++	struct spi_transfer t;
++	struct spi_message m;
++	u16 data[2];
++
++	/* Now we prepare the command for transferring */
++	data[0] = reg;
++	data[1] = val;
++
++	spi_message_init(&m);
++	m.spi = tsc->spi;
++
++	memset(&t, 0, sizeof(t));
++	t.tx_buf = data;
++	t.rx_buf = NULL;
++	t.len = 4;
++	spi_message_add_tail(&t, &m);
++
++	spi_sync(m.spi, &m);
++}
++
++void tsc2301_write_kbc(struct tsc2301 *tsc, int val)
++{
++	u16 w;
++
++	w = tsc->config2_shadow;
++	w &= ~(0x03 << 14);
++	w |= (val & 0x03) << 14;
++	tsc2301_write_reg(tsc, TSC2301_REG_CONFIG2, w);
++	tsc->config2_shadow = w;
++}
++
++void tsc2301_write_pll(struct tsc2301 *tsc,
++		       int pll_n, int pll_a, int pll_pdc, int pct_e, int pll_o)
++{
++	u16 w;
++
++	w = tsc->config2_shadow;
++	w &= ~0x3fff;
++	w |= (pll_n & 0x0f) | ((pll_a & 0x0f) << 4) | ((pll_pdc & 0x0f) << 8);
++	w |= pct_e ? (1 << 12) : 0;
++	w |= pll_o ? (1 << 13) : 0;
++	tsc2301_write_reg(tsc, TSC2301_REG_CONFIG2, w);
++	tsc->config2_shadow = w;
++}
++
++void tsc2301_read_buf(struct tsc2301 *tsc, int reg, u16 *rx_buf, int len)
++{
++	struct spi_transfer t[2];
++	struct spi_message m;
++	u16 cmd, i;
++
++	cmd = reg;
++	cmd |= 0x8000;
++
++	spi_message_init(&m);
++	m.spi = tsc->spi;
++
++	memset(t, 0, sizeof(t));
++	t[0].tx_buf = &cmd;
++	t[0].rx_buf = NULL;
++	t[0].len = 2;
++	spi_message_add_tail(&t[0], &m);
++
++	t[1].tx_buf = NULL;
++	t[1].rx_buf = rx_buf;
++	t[1].len = 2 * len;
++	spi_message_add_tail(&t[1], &m);
++
++	spi_sync(m.spi, &m);
++
++	for (i = 0; i < len; i++)
++		printk(KERN_DEBUG "rx_buf[%d]: %04x\n", i, rx_buf[i]);
++}
++
++static int __devinit tsc2301_probe(struct spi_device *spi)
++{
++	struct tsc2301			*tsc;
++	struct tsc2301_platform_data	*pdata = spi->dev.platform_data;
++	int r;
++	u16 w;
++
++	if (!pdata) {
++		dev_dbg(&spi->dev, "no platform data?\n");
++		return -ENODEV;
++	}
++
++	tsc = kzalloc(sizeof(*tsc), GFP_KERNEL);
++	if (tsc == NULL)
++		return -ENOMEM;
++
++	dev_set_drvdata(&spi->dev, tsc);
++	tsc->spi = spi;
++
++	tsc->enable_clock = pdata->enable_clock;
++	tsc->disable_clock = pdata->disable_clock;
++
++	if (pdata->reset_gpio >= 0) {
++		tsc->reset_gpio = pdata->reset_gpio;
++		r = gpio_request(tsc->reset_gpio, "TSC2301 reset");
++		if (r < 0)
++			goto err1;
++		gpio_direction_output(tsc->reset_gpio, 1);
++		mdelay(1);
++		gpio_set_value(tsc->reset_gpio, 0);
++	} else
++		tsc->reset_gpio = -1;
++
++	spi->mode = SPI_MODE_1;
++	spi->bits_per_word = 16;
++	/* The max speed might've been defined by the board-specific
++	 * struct */
++	if (!spi->max_speed_hz)
++		spi->max_speed_hz = TSC2301_HZ;
++	spi_setup(spi);
++
++	/* Soft reset */
++	tsc2301_write_reg(tsc, TSC2301_REG_RESET, 0xbb00);
++	msleep(1);
++
++	w = tsc2301_read_reg(tsc, TSC2301_REG_ADC);
++	if (!(w & (1 << 14))) {
++		dev_err(&spi->dev, "invalid ADC reg value: %04x\n", w);
++		r = -ENODEV;
++		goto err1;
++	}
++
++	w = tsc2301_read_reg(tsc, TSC2301_REG_DAC);
++	if (!(w & (1 << 15))) {
++		dev_err(&spi->dev, "invalid DAC reg value: %04x\n", w);
++		r = -ENODEV;
++		goto err1;
++	}
++
++	/* Stop keypad scanning */
++	tsc2301_write_reg(tsc, TSC2301_REG_KEY, 0x4000);
++
++	/* We have to cache this for read-modify-write, since we can't
++	 * read back BIT15 */
++	w = tsc2301_read_reg(tsc, TSC2301_REG_CONFIG2);
++	/* By default BIT15 is set */
++	w |= 1 << 15;
++	tsc->config2_shadow = w;
++
++	r = tsc2301_kp_init(tsc, pdata);
++	if (r)
++		goto err1;
++	r = tsc2301_ts_init(tsc, pdata);
++	if (r)
++		goto err2;
++	r = tsc2301_mixer_init(tsc, pdata);
++	if (r)
++		goto err3;
++	return 0;
++
++err3:
++	tsc2301_ts_exit(tsc);
++err2:
++	tsc2301_kp_exit(tsc);
++err1:
++	kfree(tsc);
++	return r;
++}
++
++static int __devexit tsc2301_remove(struct spi_device *spi)
++{
++	struct tsc2301 *tsc = dev_get_drvdata(&spi->dev);
++
++	tsc2301_mixer_exit(tsc);
++	tsc2301_ts_exit(tsc);
++	tsc2301_kp_exit(tsc);
++	if (tsc->reset_gpio >= 0)
++		gpio_free(tsc->reset_gpio);
++	kfree(tsc);
++
++	return 0;
++}
++
++#ifdef CONFIG_PM
++static int tsc2301_suspend(struct spi_device *spi, pm_message_t mesg)
++{
++	struct tsc2301 *tsc = dev_get_drvdata(&spi->dev);
++	int r;
++
++	if ((r = tsc2301_mixer_suspend(tsc)) < 0)
++		return r;
++	if ((r = tsc2301_kp_suspend(tsc)) < 0)
++		goto err1;
++	if ((r = tsc2301_ts_suspend(tsc)) < 0)
++		goto err2;
++
++	return 0;
++err2:
++	tsc2301_kp_resume(tsc);
++err1:
++	tsc2301_mixer_resume(tsc);
++	return r;
++}
++
++static int tsc2301_resume(struct spi_device *spi)
++{
++	struct tsc2301 *tsc = dev_get_drvdata(&spi->dev);
++
++	tsc2301_ts_resume(tsc);
++	tsc2301_kp_resume(tsc);
++	tsc2301_mixer_resume(tsc);
++	return 0;
++}
++#endif
++
++static struct spi_driver tsc2301_driver = {
++	.driver = {
++		   .name = "tsc2301",
++		   .bus = &spi_bus_type,
++		   .owner = THIS_MODULE,
++	},
++#ifdef CONFIG_PM
++	.suspend = tsc2301_suspend,
++	.resume = tsc2301_resume,
++#endif
++	.probe = tsc2301_probe,
++	.remove = __devexit_p(tsc2301_remove),
++};
++
++static int __init tsc2301_init(void)
++{
++	printk("TSC2301 driver initializing\n");
++
++	return spi_register_driver(&tsc2301_driver);
++}
++module_init(tsc2301_init);
++
++static void __exit tsc2301_exit(void)
++{
++	spi_unregister_driver(&tsc2301_driver);
++}
++module_exit(tsc2301_exit);
++
++MODULE_AUTHOR("Juha Yrjölä <juha.yrjola@nokia.com>");
++MODULE_LICENSE("GPL");
+Index: linux-3.1-rc4/drivers/spi/tsc2301-mixer.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/drivers/spi/tsc2301-mixer.c	2011-10-29 22:14:10.448812502 +0200
+@@ -0,0 +1,1003 @@
++/*
++ * ALSA Mixer implementation for TSC2301
++ *
++ * Copyright (C) 2006 Nokia Corporation.
++ *
++ * Contact: Jarkko Nikula <jarkko.nikula@nokia.com>
++ *          Juha Yrjola
++ *
++ * Some notes about TSC2301:
++ * - PLL will stop when DAC and ADC's are powered down.
++ * - Touchscreen will stop working when audio part is powered up and if audio
++ *   MCLK is stopped. Problem is avoided if audio is powered down before
++ *   stopping MCLK.
++ * - Audio DAC or audio outputs will activate only after 100 msec from the
++ *   chip power-up. Reason seems to be VCM since there is no this delay if the
++ *   chip and VCM (bit AVPD on PD/MISC) were not powered down. The chip will
++ *   consume about 1 mA if all other audio blocks are powered down except the
++ *   chip itself and VCM. Full power down consumes only about few uA.
++ * - Power-down transition could happen earliest about 100 msec after the chip
++ *   power-up. Otherwise power-down will fail if there is no that 100 msec
++ *   on time before it. It's not obvious why is that since chip reports
++ *   power-up to be completed and also PLL output on GPIO_0 is active in few
++ *   milliseconds.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
++ * 02110-1301 USA
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/device.h>
++#include <linux/errno.h>
++#include <linux/delay.h>
++#include <linux/slab.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/tsc2301.h>
++
++#include <sound/core.h>
++#include <sound/control.h>
++
++/* shadow register indexes */
++enum {
++	/* audio control and volume registers */
++	AUDCNTL_INDEX,
++	ADCVOL_INDEX,
++	DACVOL_INDEX,
++	BPVOL_INDEX,
++	/* keyclick control register (not needed here) */
++	/* audio power control register */
++	PD_MISC_INDEX,
++	/* TSC2301 GPIO control register */
++	GPIO_INDEX,
++
++	SHADOW_REG_COUNT,
++};
++
++/* structure for driver private data */
++struct tsc2301_mixer {
++	struct tsc2301 *tsc;
++	struct mutex mutex;
++
++	/* shadow registers holding TSC2301 audio registers. Used to hold
++	 * their states during the sleep and also to reduce communication with
++	 * the chip since get callback functions could get register values
++	 * directly from these shadow registers without needing to read them
++	 * from the chip */
++	u16 shadow_regs[SHADOW_REG_COUNT];
++
++	/* audio controller driver usage of the ADC and DAC */
++	unsigned adc_enabled:1, dac_enabled:1;
++	unsigned pll_output:1;
++	unsigned mclk_enabled;
++
++	/* latest audio power-up timestamp */
++	unsigned long pu_jiffies;
++
++	/* these are used when upper layer(s) are going to power-down TSC2301
++	 * before 100 msec is passed from power-up */
++	struct delayed_work delayed_power_down;
++	unsigned delayed_pd_active:1;
++
++	int (* platform_init)(struct device *);
++	void (* platform_cleanup)(struct device *);
++
++	struct tsc2301_mixer_gpio *mixer_gpios;
++	int n_mixer_gpios;
++};
++
++#define TSC2301_DAC_DELAY		msecs_to_jiffies(100)
++#define TSC2301_MIN_PU_PERIOD		msecs_to_jiffies(100)
++
++#define TSC2301_REG_TO_PVAL(reg)	\
++	(TSC2301_REG_TO_PAGE(reg) << 6 | TSC2301_REG_TO_ADDR(reg))
++#define  TSC2301_PVAL_TO_REG(v)		\
++	(TSC2301_REG((((v) >> 6) & 3),((v) & 0x1f)))
++
++#define TSC2301_VOLUME_MASK		0x7f
++#define TSC2301_MIN_ADCVOL		6
++#define TSC2301_MIN_DACVOL		0
++#define TSC2301_MIN_BPVOL		31
++#define TSC2301_MUTE_LEFT_SHIFT		15
++#define TSC2301_VOL_LEFT_SHIFT		8
++#define TSC2301_MUTE_RIGHT_SHIFT	7
++#define TSC2301_VOL_RIGHT_SHIFT		0
++
++#define TSC2301_INM_MASK		3
++#define TSC2301_INML_SHIFT		12
++#define TSC2301_INMR_SHIFT		10
++
++#define TSC2301_MICG_MASK		3
++#define TSC2301_MICG_MIN		1 /* values 0 & 1 both mean 0 dB */
++#define TSC2301_MICG_SHIFT		8
++
++#define TSC2301_REG_AUDCNTL_MCLK(v)	(((v) & 3) << 6)
++#define TSC2301_REG_AUDCNTL_I2SFS(v)	(((v) & 0xf) << 2)
++#define TSC2301_REG_AUDCNTL_I2SFM(v)	(((v) & 3) << 0)
++
++#define TSC2301_SINGLE(xname, xindex, reg, shadow_index, shift, mask, min) \
++{\
++	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, \
++	.name = xname, \
++	.index = xindex, \
++	.info = snd_tsc2301_info_single, \
++	.get = snd_tsc2301_get_single, \
++	.put = snd_tsc2301_put_single, \
++	.private_value = TSC2301_REG_TO_PVAL(reg) | \
++		(shadow_index << 8) | (shift << 16) | (mask << 24) | \
++		(min << 28) \
++}
++#define TSC2301_SINGLE_MINVAL(v)	(((v) >> 28) & 15)
++#define TSC2301_SINGLE_SHIFT(v)		(((v) >> 16) & 15)
++#define TSC2301_SINGLE_MASK(v)		(((v) >> 24) & 15)
++
++#define TSC2301_DOUBLE(xname, xindex, reg, shadow_index, ls, rs, mask, min) \
++{\
++	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, \
++	.name = xname, \
++	.index = xindex, \
++	.info = snd_tsc2301_info_double, \
++	.get = snd_tsc2301_get_double, \
++	.put = snd_tsc2301_put_double, \
++	.private_value = TSC2301_REG_TO_PVAL(reg) | \
++		(shadow_index << 8) | (min << 11) | \
++		(ls << 16) | (rs << 20) | (mask << 24) \
++}
++#define TSC2301_DOUBLE_MINVAL(v)	(((v) >> 11) & 0x1f)
++#define TSC2301_DOUBLE_LEFT_SHIFT(v)	(((v) >> 16) & 15)
++#define TSC2301_DOUBLE_RIGHT_SHIFT(v)	(((v) >> 20) & 15)
++#define TSC2301_DOUBLE_MASK(v)		(((v) >> 24) & TSC2301_VOLUME_MASK)
++
++#define TSC2301_MUX(xname, xindex, reg, shadow_index, ls, rs, mask) \
++{\
++	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, \
++	.name = xname, \
++	.index = xindex, \
++	.info = snd_tsc2301_info_mux, \
++	.get = snd_tsc2301_get_mux, \
++	.put = snd_tsc2301_put_mux, \
++	.private_value = TSC2301_REG_TO_PVAL(reg) | \
++		(shadow_index << 8) | (ls << 16) | (rs << 20) | (mask << 24) \
++}
++#define TSC2301_MUX_LEFT_SHIFT(v)	(((v) >> 16) & 15)
++#define TSC2301_MUX_RIGHT_SHIFT(v)	(((v) >> 20) & 15)
++#define TSC2301_MUX_MASK(v)		(((v) >> 24) & TSC2301_VOLUME_MASK)
++
++#define TSC2301_BOOL(xname, xindex, reg, shadow_index, shift, invert, state) \
++{ \
++	.iface = SNDRV_CTL_ELEM_IFACE_MIXER, \
++	.name = xname, \
++	.index = xindex, \
++	.info = snd_tsc2301_info_bool, \
++	.get = snd_tsc2301_get_bool, \
++	.put = snd_tsc2301_put_bool, \
++	.private_value = TSC2301_REG_TO_PVAL(reg) | \
++		(shadow_index << 8) | (shift << 16) | \
++		(invert << 24) | (state << 25) \
++}
++#define TSC2301_BOOL_SHIFT(v)		(((v) >> 16) & 7)
++#define TSC2301_BOOL_INVERT(v)		(((v) >> 24) & 1)
++#define TSC2301_BOOL_STATE(v)		(((v) >> 25) & 1)
++
++#define TSC2301_SHADOW_INDEX(v)		(((v) >> 8) & 7)
++
++/*
++ * Power-down handler for additional GPIO mixer controls. GPIO state of GPIO
++ * controls whose power-down flag is enabled are set to their false/deactivate
++ * state
++ *
++ * Must be called tsc->mixer->mutex locked
++ */
++static void tsc2301_gpio_power_down(struct tsc2301 *tsc)
++{
++	struct tsc2301_mixer *mix = tsc->mixer;
++	u16 temp;
++	int i;
++
++	temp = mix->shadow_regs[GPIO_INDEX];
++	for (i = 0; i < mix->n_mixer_gpios; i++) {
++		const struct tsc2301_mixer_gpio *mg;
++
++		mg = mix->mixer_gpios + i;
++		if (mg->deactivate_on_pd) {
++			int gpio = mg->gpio;
++
++			temp &= ~(1 << gpio);
++			temp |= mg->inverted << gpio;
++		}
++	}
++	tsc2301_write_reg(tsc, TSC2301_REG_GPIO, temp);
++}
++
++/*
++ * Powers down/up audio blocks which are muted or become unused.
++ * shadow_index >= 0, changes power state of single audio block
++ * shadow_index < 0, changes power state of all blocks
++ *
++ * Must be called tsc->mixer->mutex locked
++ */
++#define TSC2301_MUTE_MASK \
++	((1 << TSC2301_MUTE_LEFT_SHIFT) | (1 << TSC2301_MUTE_RIGHT_SHIFT))
++static void tsc2301_power_ctrl(struct tsc2301 *tsc, int shadow_index,
++			       int poll_pdsts)
++{
++	struct tsc2301_mixer *mix = tsc->mixer;
++	u16 pd_ctrl, pd_ctrl_old, w;
++	unsigned long timeout;
++	int power_up = 0;
++
++	if (mix->delayed_pd_active) {
++		mix->delayed_pd_active = 0;
++		mix->mclk_enabled--;
++		cancel_delayed_work(&mix->delayed_power_down);
++	}
++
++	pd_ctrl = pd_ctrl_old = mix->shadow_regs[PD_MISC_INDEX];
++	/* power control helper based on used space mixer selections. See
++	 * actual power control decisions below */
++	if (shadow_index < 0 || shadow_index == ADCVOL_INDEX) {
++		/* ADC left and right power down control */
++		if (mix->shadow_regs[ADCVOL_INDEX] &
++		    (1 << TSC2301_MUTE_LEFT_SHIFT))
++			/* left ADC muted. Power down the left ADC */
++			pd_ctrl |= TSC2301_REG_PD_MISC_ADPDL;
++		else
++			pd_ctrl &= ~TSC2301_REG_PD_MISC_ADPDL;
++		if (mix->shadow_regs[ADCVOL_INDEX] &
++		    (1 << TSC2301_MUTE_LEFT_SHIFT))
++			/* right ADC muted. Power down the right ADC */
++			pd_ctrl |= TSC2301_REG_PD_MISC_ADPDR;
++		else
++			pd_ctrl &= ~TSC2301_REG_PD_MISC_ADPDR;
++	}
++	if (shadow_index < 0 || shadow_index == DACVOL_INDEX) {
++		/* DAC power down control */
++		if ((mix->shadow_regs[DACVOL_INDEX] &
++		     TSC2301_MUTE_MASK) == TSC2301_MUTE_MASK)
++			/* both DACs muted. Power down the DAC */
++			pd_ctrl |= TSC2301_REG_PD_MISC_DAPD;
++		else
++			pd_ctrl &= ~TSC2301_REG_PD_MISC_DAPD;
++	}
++	if (shadow_index < 0 || shadow_index == BPVOL_INDEX) {
++		/* line bypass power down control */
++		if ((mix->shadow_regs[BPVOL_INDEX] &
++		     TSC2301_MUTE_MASK) == TSC2301_MUTE_MASK)
++			/* both line bypasses muted. Power down the bypass
++			 * path */
++			pd_ctrl |= TSC2301_REG_PD_MISC_ABPD;
++		else
++			pd_ctrl &= ~TSC2301_REG_PD_MISC_ABPD;
++	}
++	if (shadow_index < 0 || shadow_index == AUDCNTL_INDEX) {
++		/* mic bias power down control */
++		if ((mix->shadow_regs[AUDCNTL_INDEX] &
++		     (3 << TSC2301_INML_SHIFT)) &&
++		    (mix->shadow_regs[AUDCNTL_INDEX] &
++		     (3 << TSC2301_INMR_SHIFT)))
++			/* both ADC channels use other than mic input. Power
++			 * down the mic bias output */
++			pd_ctrl |= TSC2301_REG_PD_MISC_MIBPD;
++		else
++			pd_ctrl &= ~TSC2301_REG_PD_MISC_MIBPD;
++	}
++
++	/* power control decisions based on codec usage and user space mixer
++	 * selections detected above */
++	pd_ctrl &= ~TSC2301_REG_PD_MISC_APD; /* audio not powered down */
++	if (mix->mclk_enabled) {
++		if (!mix->adc_enabled) {
++			/* ADC not used, power down both ADC's and mic bias
++			 * output independently of user space mixer
++			 * selections */
++			pd_ctrl |= TSC2301_REG_PD_MISC_ADPDL;
++			pd_ctrl |= TSC2301_REG_PD_MISC_ADPDR;
++			pd_ctrl |= TSC2301_REG_PD_MISC_MIBPD;
++		}
++		if (!mix->dac_enabled) {
++			/* DAC not used, power down DAC independently of user
++			 * space mixer selections */
++			pd_ctrl |= TSC2301_REG_PD_MISC_DAPD;
++		}
++
++		if (mix->pll_output) {
++			/* GPIO_0 is configured as PLL output so audio
++			 * controller is expecting clock from TSC2301. Either
++			 * ADC or DAC must be active in order to keep PLL on */
++			if ((pd_ctrl & TSC2301_REG_PD_MISC_ADPDL) &&
++			    (pd_ctrl & TSC2301_REG_PD_MISC_ADPDR) &&
++			    (pd_ctrl & TSC2301_REG_PD_MISC_DAPD)) {
++				/* neither ADC or DAC used. Force ADC on in
++				 * order to keep PLL active */
++				pd_ctrl &= ~(TSC2301_REG_PD_MISC_ADPDL |
++					     TSC2301_REG_PD_MISC_ADPDR);
++			}
++		}
++	} else {
++		/* audio input clock is not enabled so power down DAC and ADC
++		 * in order to shutdown PLL and to keep touchscreen and keypad
++		 * parts working. Touchscreen and keypad use audio clock when
++		 * PLL is on and internal clock otherwise */
++		pd_ctrl |= TSC2301_REG_PD_MISC_DAPD |
++			   TSC2301_REG_PD_MISC_ADPDL |
++			   TSC2301_REG_PD_MISC_ADPDR;
++	}
++
++	if ((pd_ctrl & TSC2301_REG_PD_MISC_ADPDL) &&
++	    (pd_ctrl & TSC2301_REG_PD_MISC_ADPDR) &&
++	    (pd_ctrl & TSC2301_REG_PD_MISC_DAPD) &&
++	    (pd_ctrl & TSC2301_REG_PD_MISC_ABPD)) {
++		/* all ADC, DAC and line bypass path unused. Power down the
++		 * whole audio part of the TSC2301 */
++		pd_ctrl |= TSC2301_REG_PD_MISC_APD;
++	}
++
++	if (pd_ctrl == pd_ctrl_old)
++		return;
++
++	/* power down control changed. Update into TSC2301 */
++	if ((pd_ctrl ^ pd_ctrl_old) & TSC2301_REG_PD_MISC_APD) {
++		/* whole audio power state changed. Update GPIO states */
++		if (pd_ctrl & TSC2301_REG_PD_MISC_APD) {
++			/* power down GPIO controls before powering down
++			 * the codec */
++			tsc2301_gpio_power_down(tsc);
++			/* we must really ensure that codec has been on no less
++			 * than 100 msec before doing power-down */
++			timeout = mix->pu_jiffies + TSC2301_MIN_PU_PERIOD -
++				  jiffies;
++			if (timeout <= TSC2301_MIN_PU_PERIOD) {
++				mix->delayed_pd_active = 1;
++				mix->mclk_enabled++;
++				schedule_delayed_work(&mix->delayed_power_down,
++						      timeout + 1);
++				return;
++			}
++		} else
++			/* restore GPIOs after codec is powered up */
++			power_up = 1;
++	}
++	mix->shadow_regs[PD_MISC_INDEX] = pd_ctrl;
++	tsc2301_write_reg(tsc, TSC2301_REG_PD_MISC, pd_ctrl);
++	if (power_up)
++		mix->pu_jiffies = jiffies;
++	if (!poll_pdsts) {
++		if (power_up)
++			tsc2301_write_reg(tsc, TSC2301_REG_GPIO,
++					  mix->shadow_regs[GPIO_INDEX]);
++		return;
++	}
++
++	/* wait until power-up/-down is completed */
++	timeout = jiffies + msecs_to_jiffies(100);
++	w = 0;
++	do {
++		if (time_after(jiffies, timeout)) {
++			/* Print a warning only if the I2S clock is not
++			 * present / out of sync. This can happen during
++			 * init time, when that clock will be turned on
++			 * by another driver like in the OMAP EAC with
++			 * external clock case.
++			 */
++			if (w & TSC2301_REG_PD_MISC_OTSYN) {
++				dev_warn(&tsc->spi->dev,
++				   "I2S clock not in sync or off.\n");
++			} else {
++				dev_err(&tsc->spi->dev,
++				   "power-up/-down timed out "
++				   "(0x%04x, 0x%04x -> 0x%04x)\n",
++				   w, pd_ctrl_old, pd_ctrl);
++			}
++			goto out;
++		}
++		w = tsc2301_read_reg(tsc, TSC2301_REG_PD_MISC);
++	} while (!(w & TSC2301_REG_PD_MISC_PDSTS));
++
++out:
++	if (((pd_ctrl ^ pd_ctrl_old) & TSC2301_REG_PD_MISC_DAPD) &&
++	    !(pd_ctrl & TSC2301_REG_PD_MISC_DAPD)) {
++		/* DAC powered up now. Ensure that DAC and audio outputs are
++		 * activated. They are up 100 msec after the chip power-up
++		 * command */
++		timeout = mix->pu_jiffies + TSC2301_DAC_DELAY - jiffies;
++		if (timeout <= TSC2301_DAC_DELAY)
++			schedule_timeout_interruptible(timeout);
++		/* FIXME: This is lazy. We restore GPIOs only after activating
++		 * the DAC. It would be better to do some kind of delayed GPIO
++		 * restore. That ensures that we restore them also if only ADC
++		 * path is activated. But this is required only if there is
++		 * some input amplifier, bias control, etc. and their power
++		 * state is under TSC GPIO control */
++		tsc2301_write_reg(tsc, TSC2301_REG_GPIO,
++				  mix->shadow_regs[GPIO_INDEX]);
++	}
++}
++
++static int snd_tsc2301_info_single(struct snd_kcontrol *kcontrol,
++				   struct snd_ctl_elem_info *uinfo)
++{
++	int mask = TSC2301_SINGLE_MASK(kcontrol->private_value);
++	int minval = TSC2301_SINGLE_MINVAL(kcontrol->private_value);
++
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = 1;
++	uinfo->value.integer.min = minval;
++	uinfo->value.integer.max = mask;
++
++	return 0;
++}
++
++static int snd_tsc2301_get_single(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct tsc2301 *tsc = kcontrol->private_data;
++	unsigned long priv = kcontrol->private_value;
++	int mask = TSC2301_SINGLE_MASK(priv);
++	int shift = TSC2301_SINGLE_SHIFT(priv);
++	int shadow_index = TSC2301_SHADOW_INDEX(priv);
++	u16 shadow_reg;
++
++	shadow_reg = tsc->mixer->shadow_regs[shadow_index];
++
++	ucontrol->value.integer.value[0] = (shadow_reg >> shift) & mask;
++
++	return 0;
++}
++
++static int snd_tsc2301_put_single(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct tsc2301 *tsc = kcontrol->private_data;
++	unsigned long priv = kcontrol->private_value;
++	int mask = TSC2301_SINGLE_MASK(priv);
++	int shadow_index = TSC2301_SHADOW_INDEX(priv);
++	u16 shadow_reg, shadow_reg_old;
++	int shift = TSC2301_SINGLE_SHIFT(priv);
++	int reg = TSC2301_PVAL_TO_REG(priv);
++	int changed;
++
++	mutex_lock(&tsc->mixer->mutex);
++	shadow_reg = shadow_reg_old = tsc->mixer->shadow_regs[shadow_index];
++
++	/* zero bits to be modified */
++	shadow_reg &= ~(mask << shift);
++	/* modify with new value */
++	shadow_reg |= ((ucontrol->value.integer.value[0] & mask) << shift);
++
++	changed = (shadow_reg != shadow_reg_old);
++	tsc->mixer->shadow_regs[shadow_index] = shadow_reg;
++
++	/* update into TSC2301 if necessary */
++	if (changed)
++		tsc2301_write_reg(tsc, reg, shadow_reg);
++	mutex_unlock(&tsc->mixer->mutex);
++
++	return changed;
++}
++
++static int snd_tsc2301_info_double(struct snd_kcontrol *kcontrol,
++				   struct snd_ctl_elem_info *uinfo)
++{
++	/* mask == 1 : Switch
++	 * mask > 1 : Max volume */
++	int mask = TSC2301_DOUBLE_MASK(kcontrol->private_value);
++	int minval = TSC2301_DOUBLE_MINVAL(kcontrol->private_value);
++
++	uinfo->type = mask == 1 ? SNDRV_CTL_ELEM_TYPE_BOOLEAN :
++		SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = 2;
++	uinfo->value.integer.min = minval;
++	uinfo->value.integer.max = mask;
++
++	return 0;
++}
++
++static int snd_tsc2301_get_double(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct tsc2301 *tsc = kcontrol->private_data;
++	unsigned long priv = kcontrol->private_value;
++	/* mask == 1 : Switch
++	 * mask > 1 : Volume */
++	int mask = TSC2301_DOUBLE_MASK(priv);
++	int ls = TSC2301_DOUBLE_LEFT_SHIFT(priv);
++	int rs = TSC2301_DOUBLE_RIGHT_SHIFT(priv);
++	int shadow_index = TSC2301_SHADOW_INDEX(priv);
++	u16 shadow_reg;
++
++	shadow_reg = tsc->mixer->shadow_regs[shadow_index];
++
++	/* invert mute bits for the switches */
++	if (mask == 1)
++		shadow_reg = ~shadow_reg;
++
++	ucontrol->value.integer.value[0] = (shadow_reg >> ls) & mask;
++	ucontrol->value.integer.value[1] = (shadow_reg >> rs) & mask;
++
++	return 0;
++}
++
++static int snd_tsc2301_put_double(struct snd_kcontrol *kcontrol,
++				  struct snd_ctl_elem_value *ucontrol)
++{
++	struct tsc2301 *tsc = kcontrol->private_data;
++	unsigned long priv = kcontrol->private_value;
++	/* mask == 1 : Switch
++	 * mask > 1 : Volume */
++	int mask = TSC2301_DOUBLE_MASK(priv);
++	int shadow_index = TSC2301_SHADOW_INDEX(priv);
++	u16 shadow_reg, shadow_reg_old;
++	int ls = TSC2301_DOUBLE_LEFT_SHIFT(priv);
++	int rs = TSC2301_DOUBLE_RIGHT_SHIFT(priv);
++	int reg = TSC2301_PVAL_TO_REG(priv);
++	int changed;
++
++	mutex_lock(&tsc->mixer->mutex);
++	shadow_reg = shadow_reg_old = tsc->mixer->shadow_regs[shadow_index];
++
++	/* zero bits to be modified */
++	shadow_reg &= ~((mask << ls) | (mask << rs));
++	/* modify with new value */
++	if (mask == 1) {
++		/* switch. Invert switch values for the mute bits */
++		shadow_reg |=
++			((~ucontrol->value.integer.value[0] & mask) << ls) |
++			((~ucontrol->value.integer.value[1] & mask) << rs);
++	} else {
++		/* volume */
++		shadow_reg |=
++			(ucontrol->value.integer.value[0] << ls) |
++			(ucontrol->value.integer.value[1] << rs);
++	}
++
++	changed = (shadow_reg != shadow_reg_old);
++	tsc->mixer->shadow_regs[shadow_index] = shadow_reg;
++
++	/* update into TSC2301 if necessary */
++	if (changed)
++		tsc2301_write_reg(tsc, reg, shadow_reg);
++
++	if (mask == 1)
++		/* check is need to power down/up audio blocks in case of
++		 * muted state change */
++		tsc2301_power_ctrl(tsc, shadow_index, 0);
++	mutex_unlock(&tsc->mixer->mutex);
++
++	return changed;
++}
++
++static int snd_tsc2301_info_mux(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_info *uinfo)
++{
++	static char *texts[4] = {"Mic", "Line", "Line swapped", "Line mono"};
++
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_ENUMERATED;
++	uinfo->count = 2;
++	uinfo->value.enumerated.items = 4;
++	if (uinfo->value.enumerated.item > 3)
++		uinfo->value.enumerated.item = 3;
++	strcpy(uinfo->value.enumerated.name,
++	       texts[uinfo->value.enumerated.item]);
++
++	return 0;
++}
++
++static int snd_tsc2301_get_mux(struct snd_kcontrol *kcontrol,
++			       struct snd_ctl_elem_value *ucontrol)
++{
++	struct tsc2301 *tsc = kcontrol->private_data;
++	unsigned long priv = kcontrol->private_value;
++	int mask = TSC2301_MUX_MASK(priv);
++	int ls = TSC2301_MUX_LEFT_SHIFT(priv);
++	int rs = TSC2301_MUX_RIGHT_SHIFT(priv);
++	int shadow_index = TSC2301_SHADOW_INDEX(priv);
++	u16 shadow_reg;
++
++	shadow_reg = tsc->mixer->shadow_regs[shadow_index];
++	ucontrol->value.enumerated.item[0] = (shadow_reg >> ls) & mask;
++	ucontrol->value.enumerated.item[1] = (shadow_reg >> rs) & mask;
++
++	return 0;
++}
++
++static int snd_tsc2301_put_mux(struct snd_kcontrol *kcontrol,
++			       struct snd_ctl_elem_value *ucontrol)
++{
++	struct tsc2301 *tsc = kcontrol->private_data;
++	unsigned long priv = kcontrol->private_value;
++	int mask = TSC2301_MUX_MASK(priv);
++	int shadow_index = TSC2301_SHADOW_INDEX(priv);
++	u16 shadow_reg, shadow_reg_old;
++	int ls = TSC2301_MUX_LEFT_SHIFT(priv);
++	int rs = TSC2301_MUX_RIGHT_SHIFT(priv);
++	int reg = TSC2301_PVAL_TO_REG(priv);
++	int changed;
++
++	mutex_lock(&tsc->mixer->mutex);
++	shadow_reg = shadow_reg_old = tsc->mixer->shadow_regs[shadow_index];
++
++	/* zero bits to be modified */
++	shadow_reg &= ~((mask << ls) | (mask << rs));
++	/* modify with new value */
++	shadow_reg |= (ucontrol->value.enumerated.item[0] << ls);
++	shadow_reg |= (ucontrol->value.enumerated.item[1] << rs);
++
++	changed = (shadow_reg != shadow_reg_old);
++
++	/* update into TSC2301 if necessary */
++	if (changed) {
++		tsc->mixer->shadow_regs[shadow_index] = shadow_reg;
++		tsc2301_write_reg(tsc, reg, shadow_reg);
++	}
++
++	/* check is need to power up/down audio blocks in case of ADC input
++	 * change */
++	tsc2301_power_ctrl(tsc, shadow_index, 0);
++	mutex_unlock(&tsc->mixer->mutex);
++
++	return changed;
++}
++
++static int snd_tsc2301_info_bool(struct snd_kcontrol *kcontrol,
++				 struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_BOOLEAN;
++	uinfo->count = 1;
++	uinfo->value.integer.min = 0;
++	uinfo->value.integer.max = 1;
++
++	return 0;
++}
++
++static int snd_tsc2301_get_bool(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct tsc2301 *tsc = kcontrol->private_data;
++	unsigned long priv = kcontrol->private_value;
++	int shadow_index = TSC2301_SHADOW_INDEX(priv);
++	int shift = TSC2301_BOOL_SHIFT(priv);
++	int invert = TSC2301_BOOL_INVERT(priv);
++	u16 shadow_reg;
++
++	shadow_reg = tsc->mixer->shadow_regs[shadow_index];
++	ucontrol->value.integer.value[0] =
++		invert ^ ((shadow_reg >> shift) & 1);
++
++	return 0;
++}
++
++static int snd_tsc2301_put_bool(struct snd_kcontrol *kcontrol,
++				struct snd_ctl_elem_value *ucontrol)
++{
++	struct tsc2301 *tsc = kcontrol->private_data;
++	unsigned long priv = kcontrol->private_value;
++	int shadow_index = TSC2301_SHADOW_INDEX(priv);
++	int shift = TSC2301_BOOL_SHIFT(priv);
++	int invert = TSC2301_BOOL_INVERT(priv);
++	int reg = TSC2301_PVAL_TO_REG(priv);
++	u16 shadow_reg, shadow_reg_old;
++	int changed;
++
++	mutex_lock(&tsc->mixer->mutex);
++	shadow_reg = shadow_reg_old = tsc->mixer->shadow_regs[shadow_index];
++
++	/* zero bit to be modified */
++	shadow_reg &= ~(1 << shift);
++	/* modify with new value */
++	shadow_reg |=
++		(invert ^ (ucontrol->value.integer.value[0] & 1)) << shift;
++
++	changed = (shadow_reg != shadow_reg_old);
++
++	/* update into TSC2301 if necessary */
++	if (changed) {
++		tsc->mixer->shadow_regs[shadow_index] = shadow_reg;
++		if ((shadow_index == GPIO_INDEX) &&
++		    (tsc->mixer->shadow_regs[PD_MISC_INDEX] &
++		     TSC2301_REG_PD_MISC_APD)) {
++			/* changing GPIO control and audio is powered down.
++			 * Update GPIO states according to their power-down
++			 * flag */
++			tsc2301_gpio_power_down(tsc);
++		} else
++			tsc2301_write_reg(tsc, reg, shadow_reg);
++	}
++	mutex_unlock(&tsc->mixer->mutex);
++
++	return changed;
++}
++
++/* TSC2301 internal mixer controls */
++static struct snd_kcontrol_new snd_tsc2301_controls[] = {
++	/* stereo ADC input switches and volumes */
++	TSC2301_DOUBLE("Capture Switch", 0,
++		TSC2301_REG_ADCVOL, ADCVOL_INDEX,
++		TSC2301_MUTE_LEFT_SHIFT, TSC2301_MUTE_RIGHT_SHIFT,
++		1, 0),
++	TSC2301_DOUBLE("Capture Volume", 0,
++		TSC2301_REG_ADCVOL, ADCVOL_INDEX,
++		TSC2301_VOL_LEFT_SHIFT, TSC2301_VOL_RIGHT_SHIFT,
++		TSC2301_VOLUME_MASK, TSC2301_MIN_ADCVOL),
++
++	/* stereo DAC output switches and volumes */
++	TSC2301_DOUBLE("PCM Playback Switch", 0,
++		TSC2301_REG_DACVOL, DACVOL_INDEX,
++		TSC2301_MUTE_LEFT_SHIFT, TSC2301_MUTE_RIGHT_SHIFT,
++		1, 0),
++	TSC2301_DOUBLE("PCM Playback Volume", 0,
++		TSC2301_REG_DACVOL, DACVOL_INDEX,
++		TSC2301_VOL_LEFT_SHIFT, TSC2301_VOL_RIGHT_SHIFT,
++		TSC2301_VOLUME_MASK, TSC2301_MIN_DACVOL),
++
++	/* stereo line input bypass switches and volumes */
++	TSC2301_DOUBLE("Line Playback Switch", 0,
++		TSC2301_REG_BPVOL, BPVOL_INDEX,
++		TSC2301_MUTE_LEFT_SHIFT, TSC2301_MUTE_RIGHT_SHIFT,
++		1, 0),
++	TSC2301_DOUBLE("Line Playback Volume", 0,
++		TSC2301_REG_BPVOL, BPVOL_INDEX,
++		TSC2301_VOL_LEFT_SHIFT, TSC2301_VOL_RIGHT_SHIFT,
++		TSC2301_VOLUME_MASK, TSC2301_MIN_BPVOL),
++
++	/* mono microphone input gain */
++	TSC2301_SINGLE("Mic Boost", 0,
++		TSC2301_REG_AUDCNTL, AUDCNTL_INDEX,
++		TSC2301_MICG_SHIFT,
++		TSC2301_MICG_MASK, TSC2301_MICG_MIN),
++
++	/* ADC input sources. Both channels could be selected separately */
++	TSC2301_MUX("Capture Source", 0,
++		TSC2301_REG_AUDCNTL, AUDCNTL_INDEX,
++		TSC2301_INML_SHIFT, TSC2301_INMR_SHIFT,
++		TSC2301_INM_MASK),
++};
++
++/* must be called tsc->mixer->mutex locked */
++static void tsc2301_flush_shadow_regs(struct tsc2301 *tsc)
++{
++	int i, page, addr;
++	u16 temp;
++
++	page = TSC2301_REG_TO_PAGE(TSC2301_REG_AUDCNTL);
++	addr = TSC2301_REG_TO_ADDR(TSC2301_REG_AUDCNTL);
++
++	for (i = 0; i < 4; i++) {
++		temp = tsc->mixer->shadow_regs[i];
++		tsc2301_write_reg(tsc, TSC2301_REG(page, addr + i), temp);
++	}
++	temp = tsc->mixer->shadow_regs[GPIO_INDEX];
++	tsc2301_write_reg(tsc, TSC2301_REG_GPIO, temp);
++
++	/* Update power state of all audio blocks depending are they
++	 * muted or unused. */
++	tsc2301_power_ctrl(tsc, -1, 0);
++}
++
++#ifdef CONFIG_PM
++int tsc2301_mixer_suspend(struct tsc2301 *tsc)
++{
++	/* power down entire audio section inside TSC2301 in case the
++	 * chip is still powered during the system sleep. However this driver
++	 * doesn't require that chip is powered because registers are restored
++	 * in function tsc2301_mixer_resume */
++	mutex_lock(&tsc->mixer->mutex);
++	tsc2301_gpio_power_down(tsc);
++	tsc->mixer->shadow_regs[PD_MISC_INDEX] |= TSC2301_REG_PD_MISC_APD;
++	tsc2301_write_reg(tsc, TSC2301_REG_PD_MISC,
++			  tsc->mixer->shadow_regs[PD_MISC_INDEX]);
++	mutex_unlock(&tsc->mixer->mutex);
++	return 0;
++}
++
++void tsc2301_mixer_resume(struct tsc2301 *tsc)
++{
++	/* power up the TSC2301 audio section and restore registers */
++	mutex_lock(&tsc->mixer->mutex);
++	tsc->mixer->shadow_regs[PD_MISC_INDEX] &= ~TSC2301_REG_PD_MISC_APD;
++	tsc2301_flush_shadow_regs(tsc);
++	mutex_unlock(&tsc->mixer->mutex);
++}
++#endif
++
++void tsc2301_mixer_enable_mclk(struct device *dev)
++{
++	struct tsc2301 *tsc = dev_get_drvdata(dev);
++	struct tsc2301_mixer *mix = tsc->mixer;
++
++	mutex_lock(&mix->mutex);
++	if (!mix->mclk_enabled++ && tsc->enable_clock != NULL) {
++		tsc->enable_clock(dev);
++	}
++	tsc2301_power_ctrl(tsc, -1, 1);
++	mutex_unlock(&mix->mutex);
++}
++
++void tsc2301_mixer_disable_mclk(struct device *dev)
++{
++	struct tsc2301 *tsc = dev_get_drvdata(dev);
++	struct tsc2301_mixer *mix = tsc->mixer;
++
++	mutex_lock(&mix->mutex);
++	mix->mclk_enabled--;
++	tsc2301_power_ctrl(tsc, -1, 1);
++	if (!mix->mclk_enabled && tsc->disable_clock != NULL) {
++		tsc->disable_clock(dev);
++	}
++	mutex_unlock(&mix->mutex);
++}
++
++static void tsc2301_mixer_delayed_power_down(struct work_struct *work)
++{
++	struct tsc2301_mixer *mix = container_of(work, struct tsc2301_mixer,
++						 delayed_power_down.work);
++	struct tsc2301 *tsc = mix->tsc;
++
++	mutex_lock(&mix->mutex);
++	if (!mix->delayed_pd_active) {
++		mutex_unlock(&mix->mutex);
++		return;
++	}
++	mix->delayed_pd_active = 0;
++	mutex_unlock(&mix->mutex);
++	tsc2301_mixer_disable_mclk(&tsc->spi->dev);
++}
++
++/*
++ * Allows audio controller driver to notify its usage of ADC and DAC
++ */
++void tsc2301_mixer_set_power(struct device *dev, int dac, int adc)
++{
++	struct tsc2301 *tsc = dev_get_drvdata(dev);
++
++	mutex_lock(&tsc->mixer->mutex);
++	tsc->mixer->adc_enabled = adc;
++	tsc->mixer->dac_enabled = dac;
++
++	/* update power state of all audio blocks */
++	tsc2301_power_ctrl(tsc, -1, 1);
++	mutex_unlock(&tsc->mixer->mutex);
++}
++
++/*
++ * Registers TSC2301 ALSA Mixer controls for the given sound card
++ */
++int tsc2301_mixer_register_controls(struct device *dev, struct snd_card *card)
++{
++	struct tsc2301 *tsc = dev_get_drvdata(dev);
++	struct tsc2301_mixer *mix = tsc->mixer;
++	int i, err;
++
++	/* Register ALSA mixer controls */
++	for (i = 0; i < ARRAY_SIZE(snd_tsc2301_controls); i++) {
++		err = snd_ctl_add(card,
++				  snd_ctl_new1(&snd_tsc2301_controls[i], tsc));
++		if (err < 0)
++			return err;
++	}
++
++	if (!mix->n_mixer_gpios)
++		return 0;
++
++	/* Register additional GPIO controls if defined */
++	for (i = 0; i < mix->n_mixer_gpios; i++) {
++		const struct tsc2301_mixer_gpio *mg = mix->mixer_gpios + i;
++		struct snd_kcontrol *ctrlp;
++		struct snd_kcontrol_new ctrl =
++			TSC2301_BOOL((char *)mg->name, 0,
++				     TSC2301_REG_GPIO, GPIO_INDEX,
++				     mg->gpio, mg->inverted, mg->def_enable);
++
++		ctrlp = snd_ctl_new1(&ctrl, tsc);
++		err = snd_ctl_add(card, ctrlp);
++		if (err < 0)
++			return err;
++	}
++
++	return 0;
++}
++
++int tsc2301_mixer_init(struct tsc2301 *tsc,
++		       struct tsc2301_platform_data *pdata)
++{
++	struct tsc2301_mixer *mix;
++	int err = 0;
++	u16 w;
++
++	mix = kzalloc(sizeof(*mix), GFP_KERNEL);
++	if (mix == NULL)
++		return -ENOMEM;
++	tsc->mixer = mix;
++
++	mix->tsc = tsc;
++	mutex_init(&mix->mutex);
++	mix->platform_init = pdata->codec_init;
++	mix->platform_cleanup = pdata->codec_cleanup;
++	mix->pll_output = pdata->pll_output;
++
++	INIT_DELAYED_WORK(&mix->delayed_power_down,
++			  tsc2301_mixer_delayed_power_down);
++
++	/* initialize shadow register default values */
++	w = 0xc000;
++	w |= (pdata->mclk_ratio << 6) | (pdata->i2s_sample_rate << 2);
++	w |= pdata->i2s_format;
++	mix->shadow_regs[AUDCNTL_INDEX] = w;
++	mix->shadow_regs[ADCVOL_INDEX] = 0xd7d7;
++	mix->shadow_regs[DACVOL_INDEX] = 0xffff;
++	mix->shadow_regs[BPVOL_INDEX] = 0xe7e7;
++	mix->shadow_regs[PD_MISC_INDEX] = pdata->power_down_blocks;
++
++	/* if extra mixer controls configured, then configure associated
++	 * GPIOs as output and drive their default state */
++	if (pdata->n_mixer_gpios) {
++		int i;
++
++		w = 0;
++		for (i = 0; i < pdata->n_mixer_gpios; i++) {
++			const struct tsc2301_mixer_gpio *mg;
++			int gpio;
++
++			mg = pdata->mixer_gpios + i;
++			gpio = mg->gpio;
++			w |= (1 << gpio) << 8;
++			w |= (mg->inverted ^ mg->def_enable) << gpio;
++		}
++		mix->shadow_regs[GPIO_INDEX] = w;
++
++		mix->mixer_gpios = kmalloc(sizeof(*pdata->mixer_gpios) *
++					   pdata->n_mixer_gpios,
++					   GFP_KERNEL);
++		if (mix->mixer_gpios == NULL) {
++			err = -ENOMEM;
++			goto err1;
++		}
++		memcpy(mix->mixer_gpios, pdata->mixer_gpios,
++		       sizeof(*pdata->mixer_gpios) * pdata->n_mixer_gpios);
++		mix->n_mixer_gpios = pdata->n_mixer_gpios;
++	}
++
++	/* PLL control */
++	tsc2301_write_pll(tsc, pdata->pll_n, pdata->pll_a, pdata->pll_pdc,
++			  0, mix->pll_output ? 0 : 1);
++
++	tsc2301_flush_shadow_regs(tsc);
++
++	if (mix->platform_init != NULL) {
++		err = mix->platform_init(&tsc->spi->dev);
++		if (err < 0)
++			goto err2;
++	}
++
++	return 0;
++err2:
++	if (mix->mixer_gpios != NULL)
++		kfree(mix->mixer_gpios);
++err1:
++	kfree(mix);
++	return err;
++}
++
++void tsc2301_mixer_exit(struct tsc2301 *tsc)
++{
++	struct tsc2301_mixer *mixer = tsc->mixer;
++
++	if (mixer->platform_cleanup != NULL)
++		mixer->platform_cleanup(&tsc->spi->dev);
++
++	if (mixer->mixer_gpios != NULL)
++		kfree(mixer->mixer_gpios);
++}
++
++MODULE_AUTHOR("Jarkko Nikula <jarkko.nikula@nokia.com>");
++MODULE_LICENSE("GPL");
+Index: linux-3.1-rc4/include/linux/spi/tsc2301.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1-rc4/include/linux/spi/tsc2301.h	2011-10-29 22:14:10.448812502 +0200
+@@ -0,0 +1,208 @@
++#ifndef _LINUX_SPI_TSC2301_H
++#define _LINUX_SPI_TSC2301_H
++
++#include <linux/types.h>
++#include <linux/timer.h>
++
++struct tsc2301_platform_data {
++	/*
++	 * Keypad
++	 */
++	s16	reset_gpio;
++	s16	keyb_int;
++	s16	keymap[16];	/* Set a key to a negative value if not used */
++	unsigned kp_rep:1;	/* Enable keypad repeating */
++	char    *keyb_name;     /* Keyboard device name */
++
++	/*
++	 * Touchscreen
++	 */
++	s16	dav_int;
++	u16	ts_x_plate_ohm;
++	u32	ts_stab_time;	/* voltage settling time */
++	u8	ts_hw_avg;	/* HW assiseted averaging. Can be
++				   0, 4, 8, 16 samples per reading */
++	u32	ts_max_pressure;/* Samples with bigger pressure value will
++				   be ignored, since the corresponding X, Y
++				   values are unreliable */
++	u32	ts_touch_pressure;	/* Pressure limit until we report a
++					   touch event. After that we switch
++					   to ts_max_pressure. */
++	u32	ts_pressure_fudge;
++	u32	ts_x_max;
++	u32	ts_x_fudge;
++	u32	ts_y_max;
++	u32	ts_y_fudge;
++
++	/*
++	 * Audio
++	 */
++	unsigned	pll_pdc:4;
++	unsigned	pll_a:4;
++	unsigned	pll_n:4;
++	unsigned	pll_output:1; /* Output PLL on GPIO_0 */
++
++	unsigned	mclk_ratio:2;
++	unsigned	i2s_sample_rate:4;
++	unsigned	i2s_format:2;
++	/* Mask for audio blocks to be powered down */
++	u16		power_down_blocks;
++
++	/* Called after codec has been initialized, can be NULL */
++	int (* codec_init)(struct device *tsc2301_dev);
++	/* Called when codec is being removed, can be NULL */
++	void (* codec_cleanup)(struct device *tsc2301_dev);
++	int	(*enable_clock)(struct device *dev);
++	void	(*disable_clock)(struct device *dev);
++
++	const struct tsc2301_mixer_gpio {
++		const char	*name;
++		unsigned	gpio:4;
++		unsigned	inverted:1;
++		unsigned	def_enable:1; /* enable by default */
++		unsigned	deactivate_on_pd:1; /* power-down flag */
++	} *mixer_gpios;
++	int	n_mixer_gpios;
++};
++
++struct tsc2301_kp;
++struct tsc2301_ts;
++struct tsc2301_mixer;
++
++struct tsc2301 {
++	struct spi_device	*spi;
++
++	s16			reset_gpio;
++	u16			config2_shadow;
++
++        struct tsc2301_kp	*kp;
++	struct tsc2301_ts	*ts;
++	struct tsc2301_mixer	*mixer;
++
++	int			(*enable_clock)(struct device *dev);
++	void			(*disable_clock)(struct device *dev);
++};
++
++
++#define TSC2301_HZ	33000000
++
++#define TSC2301_REG(page, addr)  (((page) << 11) | ((addr) << 5))
++#define TSC2301_REG_TO_PAGE(reg) (((reg) >> 11) & 0x03)
++#define TSC2301_REG_TO_ADDR(reg) (((reg) >> 5)  & 0x1f)
++
++#define TSC2301_REG_X		TSC2301_REG(0, 0)
++#define TSC2301_REG_Y		TSC2301_REG(0, 1)
++#define TSC2301_REG_Z1		TSC2301_REG(0, 2)
++#define TSC2301_REG_Z2		TSC2301_REG(0, 3)
++#define TSC2301_REG_KPDATA	TSC2301_REG(0, 4)
++#define TSC2301_REG_ADC		TSC2301_REG(1, 0)
++#define TSC2301_REG_KEY		TSC2301_REG(1, 1)
++#define TSC2301_REG_DAC		TSC2301_REG(1, 2)
++#define TSC2301_REG_REF		TSC2301_REG(1, 3)
++#define TSC2301_REG_RESET	TSC2301_REG(1, 4)
++#define TSC2301_REG_CONFIG	TSC2301_REG(1, 5)
++#define TSC2301_REG_CONFIG2	TSC2301_REG(1, 6)
++#define TSC2301_REG_KPMASK	TSC2301_REG(1, 16)
++#define TSC2301_REG_AUDCNTL	TSC2301_REG(2, 0)
++#define TSC2301_REG_ADCVOL	TSC2301_REG(2, 1)
++#define TSC2301_REG_DACVOL	TSC2301_REG(2, 2)
++#define TSC2301_REG_BPVOL	TSC2301_REG(2, 3)
++#define TSC2301_REG_KEYCTL	TSC2301_REG(2, 4)
++#define TSC2301_REG_PD_MISC	TSC2301_REG(2, 5)
++#define TSC2301_REG_GPIO	TSC2301_REG(2, 6)
++#define TSC2301_REG_ADCLKCFG	TSC2301_REG(2, 27)
++
++#define TSC2301_REG_PD_MISC_APD		(1 << 15)
++#define TSC2301_REG_PD_MISC_AVPD	(1 << 14)
++#define TSC2301_REG_PD_MISC_ABPD	(1 << 13)
++#define TSC2301_REG_PD_MISC_HAPD	(1 << 12)
++#define TSC2301_REG_PD_MISC_MOPD	(1 << 11)
++#define TSC2301_REG_PD_MISC_DAPD	(1 << 10)
++#define TSC2301_REG_PD_MISC_ADPDL	(1 << 9)
++#define TSC2301_REG_PD_MISC_ADPDR	(1 << 8)
++#define TSC2301_REG_PD_MISC_PDSTS	(1 << 7)
++#define TSC2301_REG_PD_MISC_MIBPD	(1 << 6)
++#define TSC2301_REG_PD_MISC_OTSYN	(1 << 2)
++
++/* I2S sample rate */
++#define TSC2301_I2S_SR_48000	0x00
++#define TSC2301_I2S_SR_44100	0x01
++#define TSC2301_I2S_SR_32000	0x02
++#define TSC2301_I2S_SR_24000	0x03
++#define TSC2301_I2S_SR_22050	0x04
++#define TSC2301_I2S_SR_16000	0x05
++#define TSC2301_I2S_SR_12000	0x06
++#define TSC2301_I2S_SR_11050	0x07
++#define TSC2301_I2S_SR_8000	0x08
++
++/* 16-bit, MSB-first. DAC Right-Justified, ADC Left-Justified */
++#define TSC2301_I2S_FORMAT0	0x00
++/* 20-bit, MSB-first. DAC Right-Justified, ADC Left-Justified */
++#define TSC2301_I2S_FORMAT1	0x01
++/* 20-bit, MSB-first. DAC Left-Justified, ADC Left-Justified */
++#define TSC2301_I2S_FORMAT2	0x02
++/* 20-bit, MSB-first */
++#define TSC2301_I2S_FORMAT3	0x03
++
++/* Master Clock Ratio */
++#define TSC2301_MCLK_256xFS	0x00 /* default */
++#define TSC2301_MCLK_384xFS	0x01
++#define TSC2301_MCLK_512xFS	0x02
++
++
++extern u16 tsc2301_read_reg(struct tsc2301 *tsc, int reg);
++extern void tsc2301_write_reg(struct tsc2301 *tsc, int reg, u16 val);
++extern void tsc2301_write_kbc(struct tsc2301 *tsc, int val);
++extern void tsc2301_write_pll(struct tsc2301 *tsc, int pll_n, int pll_a,
++			      int pll_pdc, int pct_e, int pll_o);
++extern void tsc2301_read_buf(struct tsc2301 *tsc, int reg, u16 *buf, int len);
++
++#define TSC2301_DECL_MOD(module)					\
++extern int  tsc2301_##module##_init(struct tsc2301 *tsc,		\
++			   struct tsc2301_platform_data *pdata);	\
++extern void tsc2301_##module##_exit(struct tsc2301 *tsc);		\
++extern int  tsc2301_##module##_suspend(struct tsc2301 *tsc);		\
++extern void tsc2301_##module##_resume(struct tsc2301 *tsc);
++
++#define TSC2301_DECL_EMPTY_MOD(module)					\
++static inline int tsc2301_##module##_init(struct tsc2301 *tsc,		\
++			   struct tsc2301_platform_data *pdata)		\
++{									\
++	return 0;							\
++}									\
++static inline void tsc2301_##module##_exit(struct tsc2301 *tsc) {}	\
++static inline int  tsc2301_##module##_suspend(struct tsc2301 *tsc)	\
++{									\
++	return 0;							\
++}									\
++static inline void tsc2301_##module##_resume(struct tsc2301 *tsc) {}
++
++#ifdef CONFIG_KEYBOARD_TSC2301
++TSC2301_DECL_MOD(kp)
++void tsc2301_kp_restart(struct tsc2301 *tsc);
++#else
++TSC2301_DECL_EMPTY_MOD(kp)
++static inline void tsc2301_kp_restart(struct tsc2301 *tsc) {}
++#endif
++
++#ifdef CONFIG_TOUCHSCREEN_TSC2301
++TSC2301_DECL_MOD(ts)
++#else
++TSC2301_DECL_EMPTY_MOD(ts)
++#endif
++
++#ifdef CONFIG_SPI_TSC2301_AUDIO
++TSC2301_DECL_MOD(mixer)
++extern void tsc2301_mixer_set_power(struct device *tsc_dev, int dac, int adc);
++
++struct snd_card;
++extern int tsc2301_mixer_register_controls(struct device *tsc_dev,
++					   struct snd_card *card);
++#else
++TSC2301_DECL_EMPTY_MOD(mixer)
++#endif
++
++extern void tsc2301_mixer_enable_mclk(struct device *tsc_dev);
++extern void tsc2301_mixer_disable_mclk(struct device *tsc_dev);
++
++#endif
