@@ -2,10 +2,10 @@
  drivers/input/evdev.c |   10 +++++++---
  1 file changed, 7 insertions(+), 3 deletions(-)
 
-Index: linux-3.1-rc4/drivers/input/evdev.c
+Index: linux-3.1/drivers/input/evdev.c
 ===================================================================
---- linux-3.1-rc4.orig/drivers/input/evdev.c	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/drivers/input/evdev.c	2011-10-27 16:47:54.773182635 +0200
+--- linux-3.1.orig/drivers/input/evdev.c	2011-10-30 00:48:28.025057860 +0200
++++ linux-3.1/drivers/input/evdev.c	2011-10-30 00:48:55.309039009 +0200
 @@ -92,7 +92,7 @@ static void evdev_event(struct input_han
  			unsigned int type, unsigned int code, int value)
  {

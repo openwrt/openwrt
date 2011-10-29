@@ -1,7 +1,7 @@
-Index: linux-3.1-rc4/arch/arm/mach-omap2/serial.c
+Index: linux-3.1/arch/arm/mach-omap2/serial.c
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/mach-omap2/serial.c	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/arch/arm/mach-omap2/serial.c	2011-10-27 16:38:20.539265654 +0200
+--- linux-3.1.orig/arch/arm/mach-omap2/serial.c	2011-10-30 00:48:28.997057205 +0200
++++ linux-3.1/arch/arm/mach-omap2/serial.c	2011-10-30 00:48:53.917039979 +0200
 @@ -546,10 +546,12 @@ static void omap_uart_idle_init(struct o
  		uart->padconf = 0;
  	}
@@ -43,10 +43,10 @@ Index: linux-3.1-rc4/arch/arm/mach-omap2/serial.c
  		}
  	}
  }
-Index: linux-3.1-rc4/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c
+Index: linux-3.1/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c	2011-08-29 06:16:01.000000000 +0200
-+++ linux-3.1-rc4/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c	2011-10-27 16:44:39.065885130 +0200
+--- linux-3.1.orig/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c	2011-10-30 00:48:29.005057199 +0200
++++ linux-3.1/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c	2011-10-30 00:48:53.917039979 +0200
 @@ -253,7 +253,7 @@ struct omap_hwmod_irq_info omap2_timer11
  };
  

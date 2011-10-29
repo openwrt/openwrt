@@ -1,7 +1,7 @@
-Index: linux-3.1-rc4/drivers/usb/musb/tusb6010.c
+Index: linux-3.1/drivers/usb/musb/tusb6010.c
 ===================================================================
---- linux-3.1-rc4.orig/drivers/usb/musb/tusb6010.c	2011-10-30 00:12:03.951809040 +0200
-+++ linux-3.1-rc4/drivers/usb/musb/tusb6010.c	2011-10-30 00:12:06.543770526 +0200
+--- linux-3.1.orig/drivers/usb/musb/tusb6010.c	2011-10-30 00:48:24.637060127 +0200
++++ linux-3.1/drivers/usb/musb/tusb6010.c	2011-10-30 00:48:58.045037045 +0200
 @@ -56,6 +56,7 @@ u8 tusb_get_revision(struct musb *musb)
  
  	return rev;
@@ -52,10 +52,10 @@ Index: linux-3.1-rc4/drivers/usb/musb/tusb6010.c
  }
 -module_exit(tusb_exit);
 +EXPORT_SYMBOL(musb_hdrc_glue_exit);
-Index: linux-3.1-rc4/drivers/usb/musb/musb_core.c
+Index: linux-3.1/drivers/usb/musb/musb_core.c
 ===================================================================
---- linux-3.1-rc4.orig/drivers/usb/musb/musb_core.c	2011-10-30 00:12:03.943809160 +0200
-+++ linux-3.1-rc4/drivers/usb/musb/musb_core.c	2011-10-30 00:20:44.156218000 +0200
+--- linux-3.1.orig/drivers/usb/musb/musb_core.c	2011-10-30 00:48:24.629060132 +0200
++++ linux-3.1/drivers/usb/musb/musb_core.c	2011-10-30 00:48:58.045037045 +0200
 @@ -207,7 +207,7 @@ static struct otg_io_access_ops musb_ulp
  
  /*-------------------------------------------------------------------------*/
@@ -123,10 +123,10 @@ Index: linux-3.1-rc4/drivers/usb/musb/musb_core.c
 +	musb_hdrc_glue_exit();
  }
  module_exit(musb_cleanup);
-Index: linux-3.1-rc4/drivers/usb/Makefile
+Index: linux-3.1/drivers/usb/Makefile
 ===================================================================
---- linux-3.1-rc4.orig/drivers/usb/Makefile	2011-10-30 00:12:03.939809220 +0200
-+++ linux-3.1-rc4/drivers/usb/Makefile	2011-10-30 00:12:06.543770526 +0200
+--- linux-3.1.orig/drivers/usb/Makefile	2011-10-30 00:48:24.625060136 +0200
++++ linux-3.1/drivers/usb/Makefile	2011-10-30 00:48:58.045037045 +0200
 @@ -47,7 +47,7 @@ obj-$(CONFIG_EARLY_PRINTK_DBGP)	+= early
  obj-$(CONFIG_USB_ATM)		+= atm/
  obj-$(CONFIG_USB_SPEEDTOUCH)	+= atm/
@@ -136,10 +136,10 @@ Index: linux-3.1-rc4/drivers/usb/Makefile
  obj-$(CONFIG_USB_RENESAS_USBHS)	+= renesas_usbhs/
  obj-$(CONFIG_USB_OTG_UTILS)	+= otg/
  obj-$(CONFIG_USB_GADGET)	+= gadget/
-Index: linux-3.1-rc4/drivers/usb/musb/Makefile
+Index: linux-3.1/drivers/usb/musb/Makefile
 ===================================================================
---- linux-3.1-rc4.orig/drivers/usb/musb/Makefile	2011-10-30 00:11:34.852241963 +0200
-+++ linux-3.1-rc4/drivers/usb/musb/Makefile	2011-10-30 00:14:52.945312862 +0200
+--- linux-3.1.orig/drivers/usb/musb/Makefile	2011-10-30 00:48:24.645060124 +0200
++++ linux-3.1/drivers/usb/musb/Makefile	2011-10-30 00:48:58.045037045 +0200
 @@ -13,7 +13,7 @@ musb_hdrc-$(CONFIG_DEBUG_FS)			+= musb_d
  # Hardware Glue Layer
  obj-$(CONFIG_USB_MUSB_OMAP2PLUS)		+= omap2430.o

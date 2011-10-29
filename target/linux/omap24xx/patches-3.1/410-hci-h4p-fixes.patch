@@ -1,5 +1,7 @@
---- a/drivers/bluetooth/hci_h4p/core.c
-+++ b/drivers/bluetooth/hci_h4p/core.c
+Index: linux-3.1/drivers/bluetooth/hci_h4p/core.c
+===================================================================
+--- linux-3.1.orig/drivers/bluetooth/hci_h4p/core.c	2011-10-30 00:48:52.285041210 +0200
++++ linux-3.1/drivers/bluetooth/hci_h4p/core.c	2011-10-30 00:48:53.101040400 +0200
 @@ -36,9 +36,9 @@
  #include <linux/clk.h>
  #include <linux/gpio.h>
@@ -13,8 +15,10 @@
  #include <plat/serial.h>
  
  #include <net/bluetooth/bluetooth.h>
---- a/drivers/bluetooth/hci_h4p/hci_h4p.h
-+++ b/drivers/bluetooth/hci_h4p/hci_h4p.h
+Index: linux-3.1/drivers/bluetooth/hci_h4p/hci_h4p.h
+===================================================================
+--- linux-3.1.orig/drivers/bluetooth/hci_h4p/hci_h4p.h	2011-10-30 00:48:52.285041210 +0200
++++ linux-3.1/drivers/bluetooth/hci_h4p/hci_h4p.h	2011-10-30 00:48:53.101040400 +0200
 @@ -21,7 +21,7 @@
   *
   */
@@ -24,8 +28,10 @@
  
  #include <net/bluetooth/bluetooth.h>
  #include <net/bluetooth/hci_core.h>
---- a/drivers/bluetooth/hci_h4p/sysfs.c
-+++ b/drivers/bluetooth/hci_h4p/sysfs.c
+Index: linux-3.1/drivers/bluetooth/hci_h4p/sysfs.c
+===================================================================
+--- linux-3.1.orig/drivers/bluetooth/hci_h4p/sysfs.c	2011-10-30 00:48:52.285041210 +0200
++++ linux-3.1/drivers/bluetooth/hci_h4p/sysfs.c	2011-10-30 00:48:53.101040400 +0200
 @@ -48,15 +48,8 @@ static ssize_t hci_h4p_store_bdaddr(stru
  		return -EINVAL;
  	}

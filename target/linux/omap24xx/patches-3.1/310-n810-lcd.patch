@@ -1,7 +1,7 @@
-Index: linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c
+Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 20:49:08.122996341 +0200
-+++ linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c	2011-10-29 20:57:46.528713116 +0200
+--- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:47.357044479 +0200
++++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:48.205044041 +0200
 @@ -23,6 +23,7 @@
  #include <linux/spi/spi.h>
  #include <linux/usb/musb.h>
@@ -124,10 +124,10 @@ Index: linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0.c
  	gpmc_onenand_init(board_onenand_data);
  	n8x0_mmc_init();
  	n8x0_usb_init();
-Index: linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0-lcd.c
+Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-10-29 20:58:54.648257704 +0200
++++ linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-10-30 00:48:48.205044041 +0200
 @@ -0,0 +1,140 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0.c
@@ -269,10 +269,10 @@ Index: linux-3.1-rc4/arch/arm/mach-omap2/board-n8x0-lcd.c
 +
 +	printk(KERN_INFO "N8x0 Blizzard initialized");
 +}
-Index: linux-3.1-rc4/arch/arm/mach-omap2/Makefile
+Index: linux-3.1/arch/arm/mach-omap2/Makefile
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/mach-omap2/Makefile	2011-10-29 20:47:55.923162509 +0200
-+++ linux-3.1-rc4/arch/arm/mach-omap2/Makefile	2011-10-29 20:49:08.130996323 +0200
+--- linux-3.1.orig/arch/arm/mach-omap2/Makefile	2011-10-30 00:48:29.461056893 +0200
++++ linux-3.1/arch/arm/mach-omap2/Makefile	2011-10-30 00:48:48.205044041 +0200
 @@ -209,6 +209,7 @@ obj-$(CONFIG_MACH_OMAP_3430SDP)		+= boar
  					   hsmmc.o \
  					   board-flash.o
@@ -281,10 +281,10 @@ Index: linux-3.1-rc4/arch/arm/mach-omap2/Makefile
  obj-$(CONFIG_MACH_NOKIA_RM680)		+= board-rm680.o \
  					   sdram-nokia.o \
  					   hsmmc.o
-Index: linux-3.1-rc4/arch/arm/mach-omap2/omap_hwmod_2420_data.c
+Index: linux-3.1/arch/arm/mach-omap2/omap_hwmod_2420_data.c
 ===================================================================
---- linux-3.1-rc4.orig/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-29 20:47:55.903162555 +0200
-+++ linux-3.1-rc4/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-29 20:49:08.130996323 +0200
+--- linux-3.1.orig/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-30 00:48:29.441056907 +0200
++++ linux-3.1/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-30 00:48:48.205044041 +0200
 @@ -1181,6 +1181,7 @@ static struct omap_hwmod_ocp_if *omap242
  
  static struct omap_hwmod omap2420_gpio1_hwmod = {
