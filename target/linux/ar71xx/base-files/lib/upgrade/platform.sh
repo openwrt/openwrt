@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2011 OpenWrt.org
 #
 
 . /lib/ar71xx.sh
@@ -70,7 +70,7 @@ platform_check_image() {
 
 	case "$board" in
 	ap121 | ap121-mini | ap96 | db120 | zcn-1523h-2 | zcn-1523h-5)
-		[ "$magic" != "68737173" -a "$magic" != "19852003" ] && {
+		[ "$magic_long" != "68737173" -a "$magic_long" != "19852003" ] && {
 			echo "Invalid image type."
 			return 1
 		}
