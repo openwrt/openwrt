@@ -1,8 +1,8 @@
 Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:48.205044041 +0200
-+++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:49.837042881 +0200
-@@ -24,6 +24,8 @@
+--- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 19:31:56.000000000 +0100
++++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 19:32:22.288178756 +0100
+@@ -25,6 +25,8 @@
  #include <linux/usb/musb.h>
  #include <sound/tlv320aic3x.h>
  #include <linux/spi/tsc2005.h>
@@ -12,9 +12,9 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
  #include <asm/mach/arch.h>
  #include <asm/mach-types.h>
 @@ -37,6 +39,7 @@
+ #include <plat/onenand.h>
  #include <plat/mmc.h>
  #include <plat/serial.h>
- #include <plat/cbus.h>
 +#include <plat/gpio-switch.h>
  
  #include "mux.h"
@@ -172,7 +172,7 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
  #define TUSB6010_ASYNC_CS	1
  #define TUSB6010_SYNC_CS	4
  #define TUSB6010_GPIO_INT	58
-@@ -799,6 +948,11 @@ static struct aic3x_pdata n810_aic33_dat
+@@ -795,6 +944,11 @@ static struct aic3x_pdata n810_aic33_dat
  };
  
  static struct i2c_board_info n810_i2c_board_info_2[] __initdata = {
@@ -184,7 +184,7 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
  	{
  		I2C_BOARD_INFO("tlv320aic3x", 0x18),
  		.platform_data = &n810_aic33_data,
-@@ -868,7 +1022,9 @@ static inline void board_serial_init(voi
+@@ -864,7 +1018,9 @@ static inline void board_serial_init(voi
  static void __init n8x0_init_machine(void)
  {
  	omap2420_mux_init(board_mux, OMAP_PACKAGE_ZAC);
@@ -194,48 +194,3 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
  
  	/* FIXME: add n810 spi devices */
  	tsc2005_set_config();
-Index: linux-3.1/arch/arm/plat-omap/include/plat/cbus.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/arch/arm/plat-omap/include/plat/cbus.h	2011-10-30 00:48:49.837042881 +0200
-@@ -0,0 +1,40 @@
-+/*
-+ * cbus.h - CBUS platform_data definition
-+ *
-+ * Copyright (C) 2004 - 2009 Nokia Corporation
-+ *
-+ * Written by Felipe Balbi <felipe.balbi@nokia.com>
-+ *
-+ * This file is subject to the terms and conditions of the GNU General
-+ * Public License. See the file "COPYING" in the main directory of this
-+ * archive for more details.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ */
-+
-+#ifndef __PLAT_CBUS_H
-+#define __PLAT_CBUS_H
-+
-+#define CBUS_RETU_DEVICE_ID	0x01
-+#define CBUS_TAHVO_DEVICE_ID	0x02
-+
-+struct cbus_host_platform_data {
-+	int	dat_gpio;
-+	int	clk_gpio;
-+	int	sel_gpio;
-+};
-+
-+struct cbus_retu_platform_data {
-+	int	irq_base;
-+	int	irq_end;
-+	int	devid;
-+};
-+
-+#endif /* __PLAT_CBUS_H */

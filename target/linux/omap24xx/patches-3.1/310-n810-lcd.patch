@@ -1,8 +1,8 @@
 Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:47.357044479 +0200
-+++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 00:48:48.205044041 +0200
-@@ -23,6 +23,7 @@
+--- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 19:31:22.825292085 +0100
++++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 19:31:25.817235793 +0100
+@@ -24,6 +24,7 @@
  #include <linux/spi/spi.h>
  #include <linux/usb/musb.h>
  #include <sound/tlv320aic3x.h>
@@ -107,7 +107,7 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
  };
  
  #if defined(CONFIG_MTD_ONENAND_OMAP2) || \
-@@ -793,6 +871,7 @@ static void __init n8x0_init_machine(voi
+@@ -789,6 +867,7 @@ static void __init n8x0_init_machine(voi
  	n8x0_cbus_init();
  
  	/* FIXME: add n810 spi devices */
@@ -115,7 +115,7 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
  	spi_register_board_info(n800_spi_board_info,
  				ARRAY_SIZE(n800_spi_board_info));
  	omap_register_i2c_bus(1, 400, n8x0_i2c_board_info_1,
-@@ -802,6 +881,8 @@ static void __init n8x0_init_machine(voi
+@@ -798,6 +877,8 @@ static void __init n8x0_init_machine(voi
  		i2c_register_board_info(2, n810_i2c_board_info_2,
  					ARRAY_SIZE(n810_i2c_board_info_2));
  	board_serial_init();
@@ -127,8 +127,8 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
 Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-10-30 00:48:48.205044041 +0200
-@@ -0,0 +1,140 @@
++++ linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-10-30 19:31:25.817235793 +0100
+@@ -0,0 +1,229 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0.c
 + *
@@ -150,6 +150,92 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 +#include <plat/lcd_mipid.h>
 +#include <plat/blizzard.h>
 +
++#include "../../../drivers/cbus/tahvo.h"
++
++
++struct tahvo_pwm_device {
++	struct device *dev;
++	int tahvo_7bit_backlight;
++};
++
++static struct tahvo_pwm_device *tahvo_pwm;
++
++static unsigned int tahvo_pwm_get_backlight_level(struct tahvo_pwm_device *pd)
++{
++	unsigned int mask;
++
++	if (pd->tahvo_7bit_backlight)
++		mask = 0x7f;
++	else
++		mask = 0x0f;
++	return tahvo_read_reg(pd->dev, TAHVO_REG_LEDPWMR) & mask;
++}
++
++static unsigned int tahvo_pwm_get_max_backlight_level(struct tahvo_pwm_device *pd)
++{
++	if (pd->tahvo_7bit_backlight)
++		return 0x7f;
++	return 0x0f;
++}
++
++static void tahvo_pwm_set_backlight_level(struct tahvo_pwm_device *pd, unsigned int level)
++{
++	unsigned int max_level;
++
++	max_level = tahvo_pwm_get_max_backlight_level(pd);
++	if (level > max_level)
++		level = max_level;
++	tahvo_write_reg(pd->dev, TAHVO_REG_LEDPWMR, level);
++}
++
++static int __init n8x0_tahvo_pwm_probe(struct platform_device *pdev)
++{
++	struct tahvo_pwm_device *pd;
++	unsigned int rev, id;
++
++	pd = kzalloc(sizeof(*pd), GFP_KERNEL);
++	if (WARN_ON(!pd))
++		return -ENOMEM;
++	pd->dev = &pdev->dev;
++
++	rev = tahvo_read_reg(pd->dev, TAHVO_REG_ASICR);
++	id = (rev >> 8) & 0xff;
++	if (id == 0x03) {
++		if ((rev & 0xff) >= 0x50)
++			pd->tahvo_7bit_backlight = 1;
++	} else if (id == 0x0b)
++		pd->tahvo_7bit_backlight = 1;
++
++	dev_set_drvdata(pd->dev, pd);
++	tahvo_pwm = pd;
++}
++
++static struct platform_driver n8x0_tahvo_pwm_driver = {
++	.driver		= {
++		.name	= "tahvo-pwm",
++	},
++};
++
++static int __init n8x0_tahvo_pwm_init(void)
++{
++	return platform_driver_probe(&n8x0_tahvo_pwm_driver, n8x0_tahvo_pwm_probe);
++}
++fs_initcall(n8x0_tahvo_pwm_init);
++
++static int n8x0_get_backlight_level(struct mipid_platform_data *pdata)
++{
++	return tahvo_pwm_get_backlight_level(tahvo_pwm);
++}
++
++static int n8x0_get_max_backlight_level(struct mipid_platform_data *pdata)
++{
++	return tahvo_pwm_get_max_backlight_level(tahvo_pwm);
++}
++
++static void n8x0_set_backlight_level(struct mipid_platform_data *pdata, int level)
++{
++	tahvo_pwm_set_backlight_level(tahvo_pwm, level);
++}
 +
 +#define N8X0_BLIZZARD_POWERDOWN_GPIO	15
 +
@@ -166,6 +252,9 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 +
 +struct mipid_platform_data n8x0_mipid_platform_data = {
 +	.shutdown = mipid_shutdown,
++	.get_bklight_level = n8x0_get_backlight_level,
++	.set_bklight_level = n8x0_set_backlight_level,
++	.get_bklight_max = n8x0_get_max_backlight_level,
 +};
 +
 +void __init n8x0_mipid_init(void)
@@ -229,7 +318,7 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 +static void blizzard_power_up(struct device *dev)
 +{
 +	/* Vcore to 1.475V */
-+//FIXME	tahvo_set_clear_reg_bits(0x07, 0, 0xf);
++	tahvo_set_clear_reg_bits(tahvo_pwm->dev, 0x07, 0, 0xf);
 +	msleep(10);
 +
 +	blizzard_enable_clocks(1);
@@ -242,7 +331,7 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 +	blizzard_enable_clocks(0);
 +
 +	/* Vcore to 1.005V */
-+//FIXME	tahvo_set_clear_reg_bits(0x07, 0xf, 0);
++	tahvo_set_clear_reg_bits(tahvo_pwm->dev, 0x07, 0xf, 0);
 +}
 +
 +static struct blizzard_platform_data n8x0_blizzard_data = {
@@ -271,8 +360,8 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 +}
 Index: linux-3.1/arch/arm/mach-omap2/Makefile
 ===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/Makefile	2011-10-30 00:48:29.461056893 +0200
-+++ linux-3.1/arch/arm/mach-omap2/Makefile	2011-10-30 00:48:48.205044041 +0200
+--- linux-3.1.orig/arch/arm/mach-omap2/Makefile	2011-10-30 19:14:57.705562343 +0100
++++ linux-3.1/arch/arm/mach-omap2/Makefile	2011-10-30 19:31:25.817235793 +0100
 @@ -209,6 +209,7 @@ obj-$(CONFIG_MACH_OMAP_3430SDP)		+= boar
  					   hsmmc.o \
  					   board-flash.o
@@ -283,8 +372,8 @@ Index: linux-3.1/arch/arm/mach-omap2/Makefile
  					   hsmmc.o
 Index: linux-3.1/arch/arm/mach-omap2/omap_hwmod_2420_data.c
 ===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-30 00:48:29.441056907 +0200
-+++ linux-3.1/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-30 00:48:48.205044041 +0200
+--- linux-3.1.orig/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-30 19:14:57.689562700 +0100
++++ linux-3.1/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-30 19:31:25.817235793 +0100
 @@ -1181,6 +1181,7 @@ static struct omap_hwmod_ocp_if *omap242
  
  static struct omap_hwmod omap2420_gpio1_hwmod = {
