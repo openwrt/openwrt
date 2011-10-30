@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -54,6 +54,7 @@ define Host/Compile
 	$(call cc,buffalo-tag buffalo-lib, -Wall)
 	$(call cc,buffalo-tftp buffalo-lib, -Wall)
 	$(call cc,mkwrgimg md5, -Wall)
+	$(call cc,mkedimaximg)
 endef
 
 define Host/Install
