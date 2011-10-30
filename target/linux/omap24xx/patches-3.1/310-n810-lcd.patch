@@ -1,7 +1,7 @@
 Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
 ===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 19:31:22.825292085 +0100
-+++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 19:31:25.817235793 +0100
+--- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 21:14:31.600257909 +0100
++++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 21:14:46.712140689 +0100
 @@ -24,6 +24,7 @@
  #include <linux/spi/spi.h>
  #include <linux/usb/musb.h>
@@ -127,8 +127,8 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
 Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-10-30 19:31:25.817235793 +0100
-@@ -0,0 +1,229 @@
++++ linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-10-30 21:14:46.712140689 +0100
+@@ -0,0 +1,231 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0.c
 + *
@@ -208,6 +208,8 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 +
 +	dev_set_drvdata(pd->dev, pd);
 +	tahvo_pwm = pd;
++
++	return 0;
 +}
 +
 +static struct platform_driver n8x0_tahvo_pwm_driver = {
@@ -360,8 +362,8 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 +}
 Index: linux-3.1/arch/arm/mach-omap2/Makefile
 ===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/Makefile	2011-10-30 19:14:57.705562343 +0100
-+++ linux-3.1/arch/arm/mach-omap2/Makefile	2011-10-30 19:31:25.817235793 +0100
+--- linux-3.1.orig/arch/arm/mach-omap2/Makefile	2011-10-30 21:14:31.608257847 +0100
++++ linux-3.1/arch/arm/mach-omap2/Makefile	2011-10-30 21:14:46.712140689 +0100
 @@ -209,6 +209,7 @@ obj-$(CONFIG_MACH_OMAP_3430SDP)		+= boar
  					   hsmmc.o \
  					   board-flash.o
@@ -370,15 +372,3 @@ Index: linux-3.1/arch/arm/mach-omap2/Makefile
  obj-$(CONFIG_MACH_NOKIA_RM680)		+= board-rm680.o \
  					   sdram-nokia.o \
  					   hsmmc.o
-Index: linux-3.1/arch/arm/mach-omap2/omap_hwmod_2420_data.c
-===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-30 19:14:57.689562700 +0100
-+++ linux-3.1/arch/arm/mach-omap2/omap_hwmod_2420_data.c	2011-10-30 19:31:25.817235793 +0100
-@@ -1181,6 +1181,7 @@ static struct omap_hwmod_ocp_if *omap242
- 
- static struct omap_hwmod omap2420_gpio1_hwmod = {
- 	.name		= "gpio1",
-+	.flags		= HWMOD_INIT_NO_RESET, /* Workaround: Don't reset the n810 MIPID */
- 	.flags		= HWMOD_CONTROL_OPT_CLKS_IN_RESET,
- 	.mpu_irqs	= omap2_gpio1_irqs,
- 	.main_clk	= "gpios_fck",

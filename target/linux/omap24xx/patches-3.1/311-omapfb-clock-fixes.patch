@@ -1,0 +1,34 @@
+Index: linux-3.1/drivers/video/omap/dispc.c
+===================================================================
+--- linux-3.1.orig/drivers/video/omap/dispc.c	2011-10-30 21:14:30.228268542 +0100
++++ linux-3.1/drivers/video/omap/dispc.c	2011-10-30 21:14:49.416119695 +0100
+@@ -922,14 +922,14 @@ static int get_dss_clocks(void)
+ 		return PTR_ERR(dispc.dss_ick);
+ 	}
+ 
+-	dispc.dss1_fck = clk_get(&dispc.fbdev->dssdev->dev, "fck");
++	dispc.dss1_fck = clk_get(&dispc.fbdev->dssdev->dev, "dss1_fck");
+ 	if (IS_ERR(dispc.dss1_fck)) {
+ 		dev_err(dispc.fbdev->dev, "can't get dss1_fck\n");
+ 		clk_put(dispc.dss_ick);
+ 		return PTR_ERR(dispc.dss1_fck);
+ 	}
+ 
+-	dispc.dss_54m_fck = clk_get(&dispc.fbdev->dssdev->dev, "tv_clk");
++	dispc.dss_54m_fck = clk_get(&dispc.fbdev->dssdev->dev, "dss_54m_fck");
+ 	if (IS_ERR(dispc.dss_54m_fck)) {
+ 		dev_err(dispc.fbdev->dev, "can't get tv_fck\n");
+ 		clk_put(dispc.dss_ick);
+Index: linux-3.1/drivers/video/omap/rfbi.c
+===================================================================
+--- linux-3.1.orig/drivers/video/omap/rfbi.c	2011-10-30 21:14:30.220268604 +0100
++++ linux-3.1/drivers/video/omap/rfbi.c	2011-10-30 21:14:49.416119695 +0100
+@@ -90,7 +90,7 @@ static int rfbi_get_clocks(void)
+ 		return PTR_ERR(rfbi.dss_ick);
+ 	}
+ 
+-	rfbi.dss1_fck = clk_get(&rfbi.fbdev->dssdev->dev, "fck");
++	rfbi.dss1_fck = clk_get(&rfbi.fbdev->dssdev->dev, "dss1_fck");
+ 	if (IS_ERR(rfbi.dss1_fck)) {
+ 		dev_err(rfbi.fbdev->dev, "can't get dss1_fck\n");
+ 		clk_put(rfbi.dss_ick);
