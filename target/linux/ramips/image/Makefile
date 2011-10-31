@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2010 OpenWrt.org
+# Copyright (C) 2008-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -107,6 +107,12 @@ define BuildFirmware/NW718
 	fi; fi
 endef
 
+define BuildFirmware/Edimax
+	mkedimaximg -i $(call imgname,$(1),$(2))-sysupgrade.bin \
+		-o $(call imgname,$(1),$(2))-factory.bin \
+		-s $(3) -m $(4) -f $(5) -S $(6)
+endef
+
 mtdlayout_4M=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
 define Image/Build/Template/GENERIC_4M
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_4M,851968,3014656)
@@ -152,6 +158,7 @@ endef
 
 define Image/Build/Profile/FONERA20N
 	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N)
+	$(call BuildFirmware/Edimax,$(1),fonera20n,RSDK,NL1T,0x50000,0xc0000)
 endef
 
 define Image/Build/Profile/BC2
