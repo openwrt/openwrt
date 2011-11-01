@@ -1,6 +1,6 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -681,6 +681,9 @@ enum mac80211_rx_flags {
+@@ -683,6 +683,9 @@ enum mac80211_rx_flags {
   * @mactime: value in microseconds of the 64-bit Time Synchronization Function
   * 	(TSF) timer when the first data symbol (MPDU) arrived at the hardware.
   * @band: the active band when this frame was received
@@ -10,7 +10,7 @@
   * @freq: frequency the radio was tuned to when receiving this frame, in MHz
   * @signal: signal strength when receiving this frame, either in dBm, in dB or
   *	unspecified depending on the hardware capabilities flags
-@@ -694,6 +697,10 @@ enum mac80211_rx_flags {
+@@ -696,6 +699,10 @@ enum mac80211_rx_flags {
  struct ieee80211_rx_status {
  	u64 mactime;
  	enum ieee80211_band band;
@@ -78,27 +78,27 @@
  		kfree(sta);
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -497,6 +497,8 @@ struct station_parameters {
-  * @STATION_INFO_BSS_PARAM: @bss_param filled
+@@ -498,6 +498,8 @@ struct station_parameters {
   * @STATION_INFO_CONNECTED_TIME: @connected_time filled
   * @STATION_INFO_ASSOC_REQ_IES: @assoc_req_ies filled
+  * @STATION_INFO_STA_FLAGS: @sta_flags filled
 + * @STATION_INFO_CHAIN_SIGNAL: @chain_signal filled
 + * @STATION_INFO_CHAIN_SIGNAL_AVG: @chain_signal_avg filled
   */
  enum station_info_flags {
  	STATION_INFO_INACTIVE_TIME	= 1<<0,
-@@ -516,7 +518,9 @@ enum station_info_flags {
- 	STATION_INFO_RX_BITRATE		= 1<<14,
+@@ -518,7 +520,9 @@ enum station_info_flags {
  	STATION_INFO_BSS_PARAM          = 1<<15,
  	STATION_INFO_CONNECTED_TIME	= 1<<16,
--	STATION_INFO_ASSOC_REQ_IES	= 1<<17
-+	STATION_INFO_ASSOC_REQ_IES	= 1<<17,
-+	STATION_INFO_CHAIN_SIGNAL	= 1<<18,
-+	STATION_INFO_CHAIN_SIGNAL_AVG	= 1<<19,
+ 	STATION_INFO_ASSOC_REQ_IES	= 1<<17,
+-	STATION_INFO_STA_FLAGS		= 1<<18
++	STATION_INFO_STA_FLAGS		= 1<<18,
++	STATION_INFO_CHAIN_SIGNAL	= 1<<19,
++	STATION_INFO_CHAIN_SIGNAL_AVG	= 1<<20,
  };
  
  /**
-@@ -596,6 +600,9 @@ struct sta_bss_parameters {
+@@ -598,6 +602,9 @@ struct sta_bss_parameters {
   * @plink_state: mesh peer link state
   * @signal: signal strength of last received packet in dBm
   * @signal_avg: signal strength average in dBm
@@ -108,7 +108,7 @@
   * @txrate: current unicast bitrate from this station
   * @rxrate: current unicast bitrate to this station
   * @rx_packets: packets received from this station
-@@ -625,6 +632,11 @@ struct station_info {
+@@ -627,6 +634,11 @@ struct station_info {
  	u8 plink_state;
  	s8 signal;
  	s8 signal_avg;
@@ -271,19 +271,19 @@
  	RX_SAMP_DBG(rate) = rs->rs_rate;
 --- a/include/linux/nl80211.h
 +++ b/include/linux/nl80211.h
-@@ -1548,6 +1548,8 @@ enum nl80211_sta_bss_param {
-  * @NL80211_STA_INFO_BSS_PARAM: current station's view of BSS, nested attribute
+@@ -1549,6 +1549,8 @@ enum nl80211_sta_bss_param {
   *     containing info as possible, see &enum nl80211_sta_bss_param
   * @NL80211_STA_INFO_CONNECTED_TIME: time since the station is last connected
+  * @NL80211_STA_INFO_STA_FLAGS: Contains a struct nl80211_sta_flag_update.
 + * @NL80211_STA_INFO_CHAIN_SIGNAL: per-chain signal strength of last PPDU
 + * @NL80211_STA_INFO_CHAIN_SIGNAL_AVG: per-chain signal strength average
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -1569,6 +1571,8 @@ enum nl80211_sta_info {
- 	NL80211_STA_INFO_RX_BITRATE,
+@@ -1571,6 +1573,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_BSS_PARAM,
  	NL80211_STA_INFO_CONNECTED_TIME,
+ 	NL80211_STA_INFO_STA_FLAGS,
 +	NL80211_STA_INFO_CHAIN_SIGNAL,
 +	NL80211_STA_INFO_CHAIN_SIGNAL_AVG,
  
@@ -354,7 +354,7 @@
  
  	sinfo->generation = sdata->local->sta_generation;
  
-@@ -364,6 +365,17 @@ static void sta_set_sinfo(struct sta_inf
+@@ -365,6 +366,17 @@ static void sta_set_sinfo(struct sta_inf
  		sinfo->signal = (s8)sta->last_signal;
  		sinfo->signal_avg = (s8) -ewma_read(&sta->avg_signal);
  	}
