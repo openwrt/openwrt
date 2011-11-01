@@ -123,7 +123,7 @@ static void add_mtd_concat_notifier(void)
 
 static struct gpio_led wzrhpag300h_leds_gpio[] __initdata = {
 	{
-		.name		= "wzr-hp-ag300h:red:diag",
+		.name		= "buffalo:red:diag",
 		.gpio		= 1,
 		.active_low	= 1,
 	},

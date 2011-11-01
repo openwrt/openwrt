@@ -83,15 +83,15 @@ static struct flash_platform_data whrhpg300n_flash_data = {
 
 static struct gpio_led whrhpg300n_leds_gpio[] __initdata = {
 	{
-		.name		= "whr-hp-g300n:orange:security",
+		.name		= "buffalo:orange:security",
 		.gpio		= WHRHPG300N_GPIO_LED_SECURITY,
 		.active_low	= 1,
 	}, {
-		.name		= "whr-hp-g300n:red:diag",
+		.name		= "buffalo:red:diag",
 		.gpio		= WHRHPG300N_GPIO_LED_DIAG,
 		.active_low	= 1,
 	}, {
-		.name		= "whr-hp-g300n:green:router",
+		.name		= "buffalo:green:router",
 		.gpio		= WHRHPG300N_GPIO_LED_ROUTER,
 		.active_low	= 1,
 	}
