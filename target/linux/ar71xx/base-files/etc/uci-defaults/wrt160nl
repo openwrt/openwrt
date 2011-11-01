@@ -11,17 +11,6 @@ wrt160nl_fixtrx() {
 	mtd -o 32 fixtrx firmware
 }
 
-wrt160nl_setup_leds() {
-	uci batch <<EOF
-set system.wlan_led=led
-set system.wlan_led.name='WLAN'
-set system.wlan_led.sysfs='wrt160nl:blue:wlan'
-set system.wlan_led.trigger='phy0tpt'
-commit system
-EOF
-}
-
 if [ "${board}" == "wrt160nl" ]; then
 	wrt160nl_fixtrx
-	wrt160nl_setup_leds
 fi

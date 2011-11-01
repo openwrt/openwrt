@@ -1,0 +1,144 @@
+#!/bin/sh
+#
+# Copyright (C) 2011 OpenWrt.org
+#
+
+COMMIT_SYSTEM=0
+
+set_led_netdev() {
+	local cfg="led_$1"
+	local name=$2
+	local sysfs=$3
+	local dev=$4
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.name='$name'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.trigger='netdev'
+set system.$cfg.dev='$dev'
+set system.$cfg.mode='link tx rx'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+set_led_usbdev() {
+	local cfg="led_$1"
+	local name=$2
+	local sysfs=$3
+	local dev=$4
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.name='$name'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.trigger='usbdev'
+set system.$cfg.dev='$dev'
+set system.$cfg.interval='50'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+set_led_wlan() {
+	local cfg="led_$1"
+	local name=$2
+	local sysfs=$3
+	local trigger=$4
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.name='$name'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.trigger='$trigger'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+set_led_default() {
+	local cfg="led_$1"
+	local name=$2
+	local sysfs=$3
+	local default=$4
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.name='$name'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.default='$default'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+. /lib/ar71xx.sh
+
+board=$(ar71xx_board_name)
+
+case "$board" in
+rb750)
+	set_led_default "act" "act" "rb750:green:act" "1"
+	set_led_netdev "port1" "port1" "rb750:green:port1" "eth1"
+	;;
+
+dir-825-b1)
+	set_led_usbdev "usb" "USB" "dir825b1:blue:usb" "1-1"
+	;;
+
+mzk-w04u)
+	set_led_usbdev "usb" "USB" "planex:green:usb" "1-1"
+	;;
+
+nbg460n_550n_550nh)
+	set_led_wlan "wlan" "WLAN" "nbg460n:green:wlan" "phy0tpt"
+	;;
+
+tl-mr3220 | \
+tl-mr3420 )
+	set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
+	;;
+
+tl-wr941nd)
+	set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
+	;;
+
+tl-wr1043nd)
+	set_led_usbdev "usb" "USB" "tp-link:green:usb" "1-1"
+	set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
+	;;
+
+wrt160nl)
+	set_led_wlan "wlan" "WLAN" "wrt160nl:blue:wlan" "phy0tpt"
+	;;
+
+wndr3700 | \
+wndr3700v2)
+	set_led_default "wan" "WAN LED (green)" "wndr3700:green:wan" "0"
+	set_led_usbdev "usb" "USB" "wndr3700:green:usb" "1-1"
+	;;
+
+wzr-hp-g300nh)
+	set_led_wlan "wlan" "Wireless" "buffalo:green:wireless" "phy0tpt"
+	set_led_netdev "router" "Router" "buffalo:green:router" "eth1"
+	set_led_usbdev "usb" "USB" "buffalo:blue:usb" "1-1"
+	;;
+
+zcn-1523h-2)
+	set_led_netdev "lan1" "lan1" "zcn-1523h:green:lan1" "eth0"
+	;;
+
+zcn-1523h-5)
+	set_led_netdev "lan1" "lan1" "zcn-1523h:green:lan1" "eth0"
+	set_led_netdev "lan2" "lan2" "zcn-1523h:green:lan2" "eth1"
+	;;
+esac
+
+[ "$COMMIT_SYSTEM" == "1" ] && uci commit system
+
+exit 0
