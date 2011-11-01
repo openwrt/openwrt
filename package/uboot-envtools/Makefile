@@ -10,11 +10,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
 PKG_VERSION:=2011.06
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
 PKG_MD5SUM:=
+PKG_BUILD_DEPENDS:=zlib
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -24,7 +25,6 @@ define Package/uboot-envtools
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=read/modify U-Boot bootloader environment
-  DEPENDS:= +zlib
   URL:=http://www.denx.de/wiki/U-Boot
 endef
 
