@@ -63,11 +63,9 @@ get_status_led() {
 	ls-sr71)
 		status_led="ubnt:green:d22"
 		;;
-	mzk-w04nu)
-		status_led="mzk-w04nu:green:status"
-		;;
+	mzk-w04nu | \
 	mzk-w300nh)
-		status_led="mzk-w300nh:green:status"
+		status_led="planex:green:status"
 		;;
 	nbg460n_550n_550nh)
 		status_led="nbg460n:green:power"
