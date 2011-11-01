@@ -69,6 +69,10 @@ platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$board" in
+	all0258n )
+		platform_check_image_all0258n "$1" && return 0
+		return 1
+		;;
 	ap121 | ap121-mini | ap96 | db120 | zcn-1523h-2 | zcn-1523h-5)
 		[ "$magic_long" != "68737173" -a "$magic_long" != "19852003" ] && {
 			echo "Invalid image type."
@@ -140,6 +144,9 @@ platform_do_upgrade() {
 	case "$board" in
 	routerstation | routerstation-pro | ls-sr71 | eap7660d | ja76pf )
 		platform_do_upgrade_combined "$ARGV"
+		;;
+	all0258n )
+		platform_do_upgrade_all0258n "$ARGV"
 		;;
 	*)
 		default_do_upgrade "$ARGV"
