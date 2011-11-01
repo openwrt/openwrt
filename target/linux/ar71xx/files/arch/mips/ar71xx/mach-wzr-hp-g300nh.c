@@ -122,23 +122,23 @@ static struct platform_device wzrhpg300nh_flash_device = {
 
 static struct gpio_led wzrhpg300nh_leds_gpio[] __initdata = {
 	{
-		.name		= "wzr-hp-g300nh:orange:security",
+		.name		= "buffalo:orange:security",
 		.gpio		= WZRHPG300NH_GPIO_LED_SECURITY,
 		.active_low	= 1,
 	}, {
-		.name		= "wzr-hp-g300nh:green:wireless",
+		.name		= "buffalo:green:wireless",
 		.gpio		= WZRHPG300NH_GPIO_LED_WIRELESS,
 		.active_low	= 1,
 	}, {
-		.name		= "wzr-hp-g300nh:green:router",
+		.name		= "buffalo:green:router",
 		.gpio		= WZRHPG300NH_GPIO_LED_ROUTER,
 		.active_low	= 1,
 	}, {
-		.name		= "wzr-hp-g300nh:red:diag",
+		.name		= "buffalo:red:diag",
 		.gpio		= WZRHPG300NH_GPIO_LED_DIAG,
 		.active_low	= 1,
 	}, {
-		.name		= "wzr-hp-g300nh:blue:usb",
+		.name		= "buffalo:blue:usb",
 		.gpio		= WZRHPG300NH_GPIO_LED_USB,
 		.active_low	= 1,
 	}

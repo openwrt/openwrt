@@ -103,8 +103,9 @@ get_status_led() {
 	unifi)
 		status_led="ubnt:green:dome"
 		;;
-	whr-hp-g300n)
-		status_led="whr-hp-g300n:green:router"
+	whr-hp-g300n | \
+	wzr-hp-g300nh)
+		status_led="buffalo:green:router"
 		;;
 	wndr3700 | wndr3700v2)
 		status_led="wndr3700:green:power"
@@ -120,9 +121,6 @@ get_status_led() {
 		;;
 	wrt160nl)
 		status_led="wrt160nl:blue:wps"
-		;;
-	wzr-hp-g300nh)
-		status_led="wzr-hp-g300nh:green:router"
 		;;
 	zcn-1523h-2 | zcn-1523h-5)
 		status_led="zcn-1523h:amber:init"
