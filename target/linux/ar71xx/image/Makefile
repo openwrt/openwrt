@@ -618,6 +618,11 @@ define Image/Build/Profile/TLWR741NDV1
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr741nd-v1,$(tlwr741ndv1_cmdline),TL-WR741NDv1)
 endef
 
+tlwr741ndv4_cmdline=board=TL-WR741ND-v4 console=ttyATH0,115200
+define Image/Build/Profile/TLWR741NDV4
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK-LZMA,tl-wr741nd-v4,$(tlwr741ndv4_cmdline),TL-WR741NDv4)
+endef
+
 tlwr740nv1_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR740NV1
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v1,$(tlwr740nv1_cmdline),TL-WR740Nv1)
@@ -760,6 +765,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLWA901NDV1,$(1))
 	$(call Image/Build/Profile/TLWA901NDV2,$(1))
 	$(call Image/Build/Profile/TLWR741NDV1,$(1))
+	$(call Image/Build/Profile/TLWR741NDV4,$(1))
 	$(call Image/Build/Profile/TLWR740NV1,$(1))
 	$(call Image/Build/Profile/TLWR740NV3,$(1))
 	$(call Image/Build/Profile/TLWR743NDV1,$(1))
