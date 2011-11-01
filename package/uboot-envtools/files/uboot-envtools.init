@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+# (C) 2011 OpenWrt.org
+# Creates /etc/fw_env.conf for fw_printenv (and fw_setenv)
+
+START=80
+
+create_fwenv_config() {
+	local dev
+	local offset
+	local envsize
+	local secsize
+	local numsec
+	config_get dev "$1" dev
+	config_get offset "$1" offset "0x0000"
+	config_get envsize "$1" envsize
+	config_get secsize "$1" secsize
+	config_get numsec "$1" numsec
+	echo "$dev		$offset		$envsize		$secsize		$numsec" >>/etc/fw_env.config
+}
+
+start() {
+	[ ! -e /etc/fw_env.config ] && {
+		echo "# MTD device name	Device offset	Env. size	Flash sector size	Number of sectors" >/etc/fw_env.config
+		config_load ubootenv
+		config_foreach create_fwenv_config ubootenv
+	}
+}
