@@ -4,7 +4,7 @@
 . ../netifd-proto.sh
 init_proto "$@"
 
-dhcp_init_config() {
+proto_dhcp_init_config() {
 	proto_config_add_string "ipaddr"
 	proto_config_add_string "netmask"
 	proto_config_add_string "hostname"
@@ -14,7 +14,7 @@ dhcp_init_config() {
 	proto_config_add_string "reqopts"
 }
 
-dhcp_setup() {
+proto_dhcp_setup() {
 	local config="$1"
 	local iface="$2"
 
@@ -44,7 +44,7 @@ dhcp_setup() {
 		$broadcast $dhcpopts
 }
 
-dhcp_teardown() {
+proto_dhcp_teardown() {
 	proto_kill_command
 }
 
