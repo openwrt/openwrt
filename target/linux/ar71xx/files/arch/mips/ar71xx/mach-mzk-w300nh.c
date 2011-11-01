@@ -75,23 +75,23 @@ static struct flash_platform_data mzk_w300nh_flash_data = {
 
 static struct gpio_led mzk_w300nh_leds_gpio[] __initdata = {
 	{
-		.name		= "mzk-w300nh:green:status",
+		.name		= "planex:green:status",
 		.gpio		= MZK_W300NH_GPIO_LED_STATUS,
 		.active_low	= 1,
 	}, {
-		.name		= "mzk-w300nh:blue:wps",
+		.name		= "planex:blue:wps",
 		.gpio		= MZK_W300NH_GPIO_LED_WPS,
 		.active_low	= 1,
 	}, {
-		.name		= "mzk-w300nh:green:wlan",
+		.name		= "planex:green:wlan",
 		.gpio		= MZK_W300NH_GPIO_LED_WLAN,
 		.active_low	= 1,
 	}, {
-		.name		= "mzk-w300nh:green:ap",
+		.name		= "planex:green:ap",
 		.gpio		= MZK_W300NH_GPIO_LED_AP,
 		.active_low	= 1,
 	}, {
-		.name		= "mzk-w300nh:green:router",
+		.name		= "planex:green:router",
 		.gpio		= MZK_W300NH_GPIO_LED_ROUTER,
 		.active_low	= 1,
 	}

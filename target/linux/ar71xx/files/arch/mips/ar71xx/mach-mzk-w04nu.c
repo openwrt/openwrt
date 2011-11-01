@@ -76,27 +76,27 @@ static struct flash_platform_data mzk_w04nu_flash_data = {
 
 static struct gpio_led mzk_w04nu_leds_gpio[] __initdata = {
 	{
-		.name		= "mzk-w04nu:green:status",
+		.name		= "planex:green:status",
 		.gpio		= MZK_W04NU_GPIO_LED_STATUS,
 		.active_low	= 1,
 	}, {
-		.name		= "mzk-w04nu:blue:wps",
+		.name		= "planex:blue:wps",
 		.gpio		= MZK_W04NU_GPIO_LED_WPS,
 		.active_low	= 1,
 	}, {
-		.name		= "mzk-w04nu:green:wlan",
+		.name		= "planex:green:wlan",
 		.gpio		= MZK_W04NU_GPIO_LED_WLAN,
 		.active_low	= 1,
 	}, {
-		.name		= "mzk-w04nu:green:usb",
+		.name		= "planex:green:usb",
 		.gpio		= MZK_W04NU_GPIO_LED_USB,
 		.active_low	= 1,
 	}, {
-		.name		= "mzk-w04nu:green:ap",
+		.name		= "planex:green:ap",
 		.gpio		= MZK_W04NU_GPIO_LED_AP,
 		.active_low	= 1,
 	}, {
-		.name		= "mzk-w04nu:green:router",
+		.name		= "planex:green:router",
 		.gpio		= MZK_W04NU_GPIO_LED_ROUTER,
 		.active_low	= 1,
 	}

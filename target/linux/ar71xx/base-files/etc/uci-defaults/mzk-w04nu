@@ -11,7 +11,7 @@ mzk_w04nu_setup_leds() {
 	uci batch <<EOF
 set system.usb_led=led
 set system.usb_led.name='USB'
-set system.usb_led.sysfs='mzk-w04nu:green:usb'
+set system.usb_led.sysfs='planex:green:usb'
 set system.usb_led.trigger='usbdev'
 set system.usb_led.dev='1-1'
 set system.usb_led.interval='50'
