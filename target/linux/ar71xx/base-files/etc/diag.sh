@@ -87,29 +87,18 @@ get_status_led() {
 	tew-632brp)
 		status_led="tew-632brp:green:status"
 		;;
-	tl-mr3220 | tl-mr3420)
-		status_led="tl-mr3x20:green:system"
-		;;
-	tl-wa901nd)
-		status_led="tl-wa901nd:green:system"
-		;;
-	tl-wa901nd-v2)
-		status_led="tl-wa901nd-v2:green:system"
-		;;
-	tl-wr1043nd)
-		status_led="tl-wr1043nd:green:system"
+	tl-mr3220 | \
+	tl-mr3420 | \
+	tl-wa901nd | \
+	tl-wa901nd-v2 | \
+	tl-wr1043nd | \
+	tl-wr741nd | \
+	tl-wr841n-v1 | \
+	tl-wr941nd)
+		status_led="tp-link:green:system"
 		;;
 	tl-wr703n)
-		status_led="tl-wr703n:blue:system"
-		;;
-	tl-wr741nd)
-		status_led="tl-wr741nd:green:system"
-		;;
-	tl-wr841n-v1)
-		status_led="tl-wr841n:green:system"
-		;;
-	tl-wr941nd)
-		status_led="tl-wr941nd:green:system"
+		status_led="tp-link:blue:system"
 		;;
 	unifi)
 		status_led="ubnt:green:dome"

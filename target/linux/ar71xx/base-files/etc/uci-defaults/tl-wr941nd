@@ -11,7 +11,7 @@ tl_wr941nd_set_wlan_led() {
 	uci batch <<EOF
 set system.wlan_led=led
 set system.wlan_led.name='WLAN'
-set system.wlan_led.sysfs='tl-wr941nd:green:wlan'
+set system.wlan_led.sysfs='tp-link:green:wlan'
 set system.wlan_led.trigger='phy0tpt'
 commit system
 EOF

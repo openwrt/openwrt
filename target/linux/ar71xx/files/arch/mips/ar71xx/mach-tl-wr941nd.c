@@ -69,17 +69,17 @@ static struct flash_platform_data tl_wr941nd_flash_data = {
 
 static struct gpio_led tl_wr941nd_leds_gpio[] __initdata = {
 	{
-		.name		= "tl-wr941nd:green:system",
+		.name		= "tp-link:green:system",
 		.gpio		= TL_WR941ND_GPIO_LED_SYSTEM,
 		.active_low	= 1,
 	}, {
-		.name		= "tl-wr941nd:red:qss",
+		.name		= "tp-link:red:qss",
 		.gpio		= TL_WR941ND_GPIO_LED_QSS_RED,
 	}, {
-		.name		= "tl-wr941nd:green:qss",
+		.name		= "tp-link:green:qss",
 		.gpio		= TL_WR941ND_GPIO_LED_QSS_GREEN,
 	}, {
-		.name		= "tl-wr941nd:green:wlan",
+		.name		= "tp-link:green:wlan",
 		.gpio		= TL_WR941ND_GPIO_LED_WLAN,
 		.active_low	= 1,
 	}

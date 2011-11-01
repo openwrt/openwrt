@@ -67,11 +67,11 @@ static struct flash_platform_data tl_wa901nd_flash_data = {
 
 static struct gpio_led tl_wa901nd_leds_gpio[] __initdata = {
 	{
-		.name		= "tl-wa901nd:green:system",
+		.name		= "tp-link:green:system",
 		.gpio		= TL_WA901ND_GPIO_LED_SYSTEM,
 		.active_low	= 1,
 	}, {
-		.name		= "tl-wa901nd:green:qss",
+		.name		= "tp-link:green:qss",
 		.gpio		= TL_WA901ND_GPIO_LED_QSS,
 		.active_low	= 1,
 	}

@@ -73,15 +73,15 @@ static struct flash_platform_data tl_mr3x20_flash_data = {
 
 static struct gpio_led tl_mr3x20_leds_gpio[] __initdata = {
 	{
-		.name		= "tl-mr3x20:green:system",
+		.name		= "tp-link:green:system",
 		.gpio		= TL_MR3X20_GPIO_LED_SYSTEM,
 		.active_low	= 1,
 	}, {
-		.name		= "tl-mr3x20:green:qss",
+		.name		= "tp-link:green:qss",
 		.gpio		= TL_MR3X20_GPIO_LED_QSS,
 		.active_low	= 1,
 	}, {
-		.name		= "tl-mr3x20:green:3g",
+		.name		= "tp-link:green:3g",
 		.gpio		= TL_MR3X20_GPIO_LED_3G,
 		.active_low	= 1,
 	}
