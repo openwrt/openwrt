@@ -20,7 +20,7 @@ er_load_modules() {
 	ln -sf /lib/modules/*/* /tmp/overlay/lib/modules/*/* /tmp/extroot_modules/modules
 	local modules="$(cat /tmp/extroot_modules/modules.d/* 2>/dev/null)"
 	cd /tmp/extroot_modules/modules && [ -n "$modules" ] && {
-		cat $modules | sed -e 's/^\([^#].*\)/insmod \.\/\1.ko/'| sh 2>&- || :
+		echo "$modules" | sed -e 's/^\([^#].*\)/insmod \.\/\1.ko/'| sh 2>&- || :
 	}
 	rm -rf /tmp/extroot_modules
 }
