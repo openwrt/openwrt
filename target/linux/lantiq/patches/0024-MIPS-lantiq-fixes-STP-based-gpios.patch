@@ -1,0 +1,36 @@
+From 2dfa2b3e50c5ac49052233d15fa427a9b9136df8 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 27 Oct 2011 20:06:05 +0200
+Subject: [PATCH 10/22] MIPS: lantiq: fixes STP based gpios
+
+The STP engine has 3 groups of 8 pins. Only the first was activated by default.
+
+Signed-off-by: Matti Laakso <malaakso@elisanet.fi>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/lantiq/xway/gpio_stp.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/lantiq/xway/gpio_stp.c
++++ b/arch/mips/lantiq/xway/gpio_stp.c
+@@ -35,6 +35,8 @@
+ #define LTQ_STP_ADSL_SRC	(3 << 24)
+ 
+ #define LTQ_STP_GROUP0		(1 << 0)
++#define LTQ_STP_GROUP1		(1 << 1)
++#define LTQ_STP_GROUP2		(1 << 2)
+ 
+ #define LTQ_STP_RISING		0
+ #define LTQ_STP_FALLING		(1 << 26)
+@@ -93,8 +95,9 @@ static int ltq_stp_hw_init(void)
+ 	/* rising or falling edge */
+ 	ltq_stp_w32_mask(LTQ_STP_EDGE_MASK, LTQ_STP_FALLING, LTQ_STP_CON0);
+ 
+-	/* per default stp 15-0 are set */
+-	ltq_stp_w32_mask(0, LTQ_STP_GROUP0, LTQ_STP_CON1);
++	/* enable all three led groups */
++	ltq_stp_w32_mask(0, LTQ_STP_GROUP0 | LTQ_STP_GROUP1 | LTQ_STP_GROUP2,
++		LTQ_STP_CON1);
+ 
+ 	/* stp are update periodically by the FPI bus */
+ 	ltq_stp_w32_mask(LTQ_STP_UPD_MASK, LTQ_STP_UPD_FPI, LTQ_STP_CON1);

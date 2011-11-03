@@ -68,7 +68,7 @@ define Profile/ARV7525PW
 	kmod-rt2800-pci wpad-mini kmod-ltq-dsl-firmware-b-danube
 endef
 
-define Profile/ARV4525PW/Description
+define Profile/ARV7525PW/Description
 	Package set optimized for the ARV4525PW
 endef
 

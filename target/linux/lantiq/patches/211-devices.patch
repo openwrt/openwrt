@@ -1,0 +1,190 @@
+--- a/arch/mips/lantiq/devices.c
++++ b/arch/mips/lantiq/devices.c
+@@ -18,6 +18,7 @@
+ #include <linux/time.h>
+ #include <linux/io.h>
+ #include <linux/gpio.h>
++#include <linux/dma-mapping.h>
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/irq.h>
+@@ -100,3 +101,20 @@ void __init ltq_register_pci(struct ltq_
+ 	pr_err("kernel is compiled without PCI support\n");
+ }
+ #endif
++
++static unsigned int *cp1_base = 0;
++unsigned int*
++ltq_get_cp1_base(void)
++{
++	return cp1_base;
++}
++EXPORT_SYMBOL(ltq_get_cp1_base);
++
++void __init
++ltq_register_tapi(void)
++{
++#define CP1_SIZE       (1 << 20)
++	dma_addr_t dma;
++	cp1_base =
++		(void*)CPHYSADDR(dma_alloc_coherent(NULL, CP1_SIZE, &dma, GFP_ATOMIC));
++}
+--- a/arch/mips/lantiq/devices.h
++++ b/arch/mips/lantiq/devices.h
+@@ -23,5 +23,6 @@ extern void ltq_register_nor(struct phys
+ extern void ltq_register_wdt(void);
+ extern void ltq_register_asc(int port);
+ extern void ltq_register_pci(struct ltq_pci_data *data);
++extern void ltq_register_tapi(void);
+ 
+ #endif
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
+@@ -1,5 +1,7 @@
+ obj-y := sysctrl.o reset.o gpio.o gpio_stp.o gpio_ebu.o devices.o dma.o nand.o timer.o
+ 
++obj-y += dev-dwc_otg.o
++
+ obj-$(CONFIG_SOC_XWAY) += clk-xway.o prom-xway.o
+ obj-$(CONFIG_SOC_AMAZON_SE) += clk-ase.o prom-ase.o
+ obj-$(CONFIG_SOC_VR9) += clk-vr9.o prom-vr9.o
+--- a/arch/mips/lantiq/xway/devices.c
++++ b/arch/mips/lantiq/xway/devices.c
+@@ -19,6 +19,7 @@
+ #include <linux/time.h>
+ #include <linux/io.h>
+ #include <linux/gpio.h>
++#include <linux/spi/spi.h>
+ 
+ #include <asm/bootinfo.h>
+ #include <asm/irq.h>
+@@ -99,3 +100,98 @@ ltq_register_etop(struct ltq_eth_data *e
+ 		platform_device_register(&ltq_etop);
+ 	}
+ }
++
++/* madwifi */
++int lantiq_emulate_madwifi_eep = 0;
++EXPORT_SYMBOL(lantiq_emulate_madwifi_eep);
++
++int lantiq_madwifi_eep_addr = 0;
++EXPORT_SYMBOL(lantiq_madwifi_eep_addr);
++
++void __init
++ltq_register_madwifi_eep(unsigned long long addr)
++{
++	lantiq_madwifi_eep_addr = addr;
++	lantiq_emulate_madwifi_eep = 1;
++}
++
++/* ebu */
++static struct resource ltq_ebu_resource =
++{
++	.name   = "gpio_ebu",
++	.start  = LTQ_EBU_GPIO_START,
++	.end    = LTQ_EBU_GPIO_START + LTQ_EBU_GPIO_SIZE - 1,
++	.flags  = IORESOURCE_MEM,
++};
++
++static struct platform_device ltq_ebu =
++{
++	.name           = "ltq_ebu",
++	.resource       = &ltq_ebu_resource,
++	.num_resources  = 1,
++};
++
++void __init
++ltq_register_gpio_ebu(unsigned int value)
++{
++	ltq_ebu.dev.platform_data = (void*) value;
++	platform_device_register(&ltq_ebu);
++}
++
++/* gpio buttons */
++static struct gpio_buttons_platform_data ltq_gpio_buttons_platform_data;
++
++static struct platform_device ltq_gpio_buttons_platform_device =
++{
++	.name = "gpio-buttons",
++	.id = 0,
++	.dev = {
++		.platform_data = (void *) &ltq_gpio_buttons_platform_data,
++	},
++};
++
++void __init
++ltq_register_gpio_buttons(struct gpio_button *buttons, int cnt)
++{
++	ltq_gpio_buttons_platform_data.buttons = buttons;
++	ltq_gpio_buttons_platform_data.nbuttons = cnt;
++	platform_device_register(&ltq_gpio_buttons_platform_device);
++}
++
++static struct resource ltq_spi_resources[] = {
++	{
++		.start  = LTQ_SSC_BASE_ADDR,
++		.end    = LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags  = IORESOURCE_MEM,
++	},
++	IRQ_RES(spi_tx, LTQ_SSC_TIR),
++	IRQ_RES(spi_rx, LTQ_SSC_RIR),
++	IRQ_RES(spi_err, LTQ_SSC_EIR),
++};
++
++static struct resource ltq_spi_resources_ar9[] = {
++	{
++		.start  = LTQ_SSC_BASE_ADDR,
++		.end    = LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags  = IORESOURCE_MEM,
++	},
++	IRQ_RES(spi_tx, LTQ_SSC_TIR_AR9),
++	IRQ_RES(spi_rx, LTQ_SSC_RIR_AR9),
++	IRQ_RES(spi_err, LTQ_SSC_EIR),
++};
++
++static struct platform_device ltq_spi = {
++	.name		= "ltq-spi",
++	.resource	= ltq_spi_resources,
++	.num_resources	= ARRAY_SIZE(ltq_spi_resources),
++};
++
++void __init ltq_register_spi(struct ltq_spi_platform_data *pdata,
++		struct spi_board_info const *info, unsigned n)
++{
++	if(ltq_is_ar9())
++		ltq_spi.resource = ltq_spi_resources_ar9;
++	spi_register_board_info(info, n);
++	ltq_spi.dev.platform_data = pdata;
++	platform_device_register(&ltq_spi);
++}
+--- a/arch/mips/lantiq/xway/devices.h
++++ b/arch/mips/lantiq/xway/devices.h
+@@ -11,10 +11,17 @@
+ 
+ #include "../devices.h"
+ #include <linux/phy.h>
++#include <linux/spi/spi.h>
++#include <linux/gpio_buttons.h>
+ 
+ extern void ltq_register_gpio(void);
+ extern void ltq_register_gpio_stp(void);
+ extern void ltq_register_ase_asc(void);
+ extern void ltq_register_etop(struct ltq_eth_data *eth);
++extern void ltq_register_gpio_ebu(unsigned int value);
++extern void ltq_register_spi(struct ltq_spi_platform_data *pdata,
++	struct spi_board_info const *info, unsigned n);
++extern void ltq_register_madwifi_eep(unsigned long long addr);
++extern void ltq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
+ 
+ #endif
+--- a/arch/mips/lantiq/Makefile
++++ b/arch/mips/lantiq/Makefile
+@@ -4,7 +4,7 @@
+ # under the terms of the GNU General Public License version 2 as published
+ # by the Free Software Foundation.
+ 
+-obj-y := irq.o setup.o clk.o prom.o devices.o
++obj-y := irq.o setup.o clk.o prom.o devices.o dev-gpio-leds.o dev-gpio-buttons.o
+ 
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
