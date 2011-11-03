@@ -1,6 +1,6 @@
 --- a/net/ipv4/netfilter/ip_tables.c
 +++ b/net/ipv4/netfilter/ip_tables.c
-@@ -307,6 +307,33 @@ struct ipt_entry *ipt_next_entry(const s
+@@ -310,6 +310,33 @@ struct ipt_entry *ipt_next_entry(const s
  	return (void *)entry + entry->next_offset;
  }
  
@@ -34,7 +34,7 @@
  /* Returns one of the generic firewall policies, like NF_ACCEPT. */
  unsigned int
  ipt_do_table(struct sk_buff *skb,
-@@ -331,6 +358,25 @@ ipt_do_table(struct sk_buff *skb,
+@@ -334,6 +361,25 @@ ipt_do_table(struct sk_buff *skb,
  	ip = ip_hdr(skb);
  	indev = in ? in->name : nulldevname;
  	outdev = out ? out->name : nulldevname;
@@ -60,7 +60,7 @@
  	/* We handle fragments by dealing with the first fragment as
  	 * if it was a normal packet.  All other fragments are treated
  	 * normally, except that they will NEVER match rules that ask
-@@ -345,18 +391,6 @@ ipt_do_table(struct sk_buff *skb,
+@@ -348,18 +394,6 @@ ipt_do_table(struct sk_buff *skb,
  	acpar.family  = NFPROTO_IPV4;
  	acpar.hooknum = hook;
  
