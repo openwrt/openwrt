@@ -9,6 +9,10 @@ start() {
 	setup_switch
 
 	ubus call network reload
+
+	grep -qs config /etc/config/wireless && {
+		/sbin/wifi up
+	}
 }
 
 restart() {
