@@ -62,8 +62,13 @@ define KernelPackage/spi-gpio
   TITLE:=GPIO-based bitbanging SPI Master
   DEPENDS:=@GPIO_SUPPORT +kmod-spi-bitbang
   KCONFIG:=CONFIG_SPI_GPIO
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.1.0)),1)
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-gpio.ko
+  AUTOLOAD:=$(call AutoLoad,92,spi-gpio)
+else
   FILES:=$(LINUX_DIR)/drivers/spi/spi_gpio.ko
   AUTOLOAD:=$(call AutoLoad,92,spi_gpio)
+endif
 endef
 
 define KernelPackage/spi-gpio/description
