@@ -1,0 +1,40 @@
+http://wl500g.googlecode.com/svn/trunk/dropbear/011-fwd-all-segfault.patch
+https://dev.openwrt.org/ticket/10339
+
+--- a/svr-tcpfwd.c
++++ b/svr-tcpfwd.c
+@@ -210,15 +210,13 @@ static int svr_remotetcpreq() {
+ 	tcpinfo->chantype = &svr_chan_tcpremote;
+ 	tcpinfo->tcp_type = forwarded;
+ 
+-	if (!opts.listen_fwd_all 
+-			|| (strcmp(tcpinfo->listenaddr, "localhost") == 0) ) {
+-        // NULL means "localhost only"
+-        tcpinfo->listenaddr = NULL;
+-	}
+-    else
+-    {
+-        tcpinfo->listenaddr = bindaddr;
+-    }
++	if (!opts.listen_fwd_all || (strcmp(bindaddr, "localhost") == 0) ) {
++		// NULL means "localhost only"
++		tcpinfo->listenaddr = NULL;
++	}
++	else {
++		tcpinfo->listenaddr = bindaddr;
++	}
+ 
+ 	ret = listen_tcpfwd(tcpinfo);
+ 
+--- a/tcp-accept.c
++++ b/tcp-accept.c
+@@ -80,6 +80,9 @@ static void tcp_acceptor(struct Listener
+ 			addr = tcpinfo->listenaddr;
+ 			port = tcpinfo->listenport;
+ 		}
++		if (!addr) {
++			addr = "localhost";
++		}
+ 
+ 		buf_putstring(ses.writepayload, addr, strlen(addr));
+ 		buf_putint(ses.writepayload, port);
