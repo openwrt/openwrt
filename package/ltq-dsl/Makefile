@@ -140,7 +140,7 @@ endef
 define Build/Compile
 	cd $(LINUX_DIR); \
 		ARCH=mips CROSS_COMPILE="$(KERNEL_CROSS)" \
-		BUILD_VARIANT=$(BUILD_VARIANT) $(MAKE) M=$(PKG_BUILD_DIR)/src/mei/ V=1 modules
+		$(MAKE) BUILD_VARIANT=$(BUILD_VARIANT) M=$(PKG_BUILD_DIR)/src/mei/ V=1 modules
 	$(call Build/Compile/Default)
 endef
 
@@ -163,10 +163,6 @@ define Package/kmod-ltq-dsl-firmware-$(BUILD_VARIANT)/install
 	$(CP) $(PKG_BUILD_DIR)/$(FW_NAME)/ltq-dsl-fw-$(BUILD_VARIANT).bin $(1)/lib/firmware/ModemHWE.bin
 endef
 
-$(eval $(call KernelPackage,ltq-dsl-danube))
-$(eval $(call KernelPackage,ltq-dsl-ase))
-$(eval $(call KernelPackage,ltq-dsl-ar9))
-#$(eval $(call KernelPackage,ltq-dsl-vr9))
 $(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a-danube))
 $(eval $(call BuildPackage,kmod-ltq-dsl-firmware-b-danube))
 $(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a-ase))
@@ -175,3 +171,7 @@ $(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a-ar9))
 $(eval $(call BuildPackage,kmod-ltq-dsl-firmware-b-ar9))
 #$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a-vr9))
 #$(eval $(call BuildPackage,kmod-ltq-dsl-firmware-b-vr9))
+$(eval $(call KernelPackage,ltq-dsl-danube))
+$(eval $(call KernelPackage,ltq-dsl-ase))
+$(eval $(call KernelPackage,ltq-dsl-ar9))
+#$(eval $(call KernelPackage,ltq-dsl-vr9))
