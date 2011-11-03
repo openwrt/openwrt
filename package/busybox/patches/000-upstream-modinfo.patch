@@ -1,0 +1,10 @@
+--- a/modutils/modinfo.c
++++ b/modutils/modinfo.c
+@@ -13,6 +13,7 @@
+ //config:config MODINFO
+ //config:	bool "modinfo"
+ //config:	default y
++//config:	select PLATFORM_LINUX
+ //config:	help
+ //config:	  Show information about a Linux Kernel module
+ 

@@ -9,6 +9,7 @@ menu "Linux Module Utilities"
 config BUSYBOX_CONFIG_MODINFO
 	bool "modinfo"
 	default n
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Show information about a Linux Kernel module
 
