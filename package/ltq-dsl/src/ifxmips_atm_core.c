@@ -56,6 +56,7 @@
 #include <linux/atmdev.h>
 #include <linux/atm.h>
 #include <linux/clk.h>
+#include <linux/interrupt.h>
 
 /*
  *  Chip Specific Head File
