@@ -36,7 +36,7 @@
  
  build_libs: build_crypto build_ssl build_engines
  
-@@ -494,7 +494,7 @@ dist:
+@@ -494,7 +494,7 @@ dist:   
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -47,7 +47,7 @@
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -492,7 +492,7 @@ dist:
+@@ -492,7 +492,7 @@ dist:   
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
