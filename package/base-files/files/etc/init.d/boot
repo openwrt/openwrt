@@ -52,10 +52,6 @@ start() {
 	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
 	[ -f /proc/net/vlan/config ] && vconfig set_name_type DEV_PLUS_VID_NO_PAD
 
-	apply_uci_config
-	config_load system
-	config_foreach system_config system
-	
 	mkdir -p /var/run
 	mkdir -p /var/log
 	mkdir -p /var/lock
@@ -68,6 +64,18 @@ start() {
 	ln -sf /tmp/resolv.conf.auto /tmp/resolv.conf
 	grep -q debugfs /proc/filesystems && mount -t debugfs debugfs /sys/kernel/debug
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
+
+	load_modules /etc/modules.d/*
+
+	/sbin/wifi detect > /tmp/wireless.tmp
+	[ -s /tmp/wireless.tmp ] && {
+		cat /tmp/wireless.tmp >> /etc/config/wireless
+	}
+	rm -f /tmp/wireless.tmp
+
+	apply_uci_config
+	config_load system
+	config_foreach system_config system
 
 	killall -q hotplug2
 	[ -x /sbin/hotplug2 ] && /sbin/hotplug2 --override --persistent \
@@ -85,8 +93,6 @@ start() {
 		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
 		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
 	}
-
-	load_modules /etc/modules.d/*
 
 	# another round of USB coldplugging to kick devices into operation which lacked drivers before
 	for dev in /sys/bus/usb/devices/*/uevent; do
