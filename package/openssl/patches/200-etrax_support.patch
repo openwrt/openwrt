@@ -1,8 +1,8 @@
 --- a/Configure
 +++ b/Configure
-@@ -403,6 +403,10 @@ my %table=(
- "QNX6",       "gcc:-DTERMIOS::::-lsocket::${no_asm}:dlfcn:bsd-gcc-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
- "QNX6-i386",  "gcc:-DL_ENDIAN -DTERMIOS -O2 -Wall::::-lsocket:${x86_gcc_des} ${x86_gcc_opts}:${x86_elf_asm}:dlfcn:bsd-gcc-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
+@@ -414,6 +414,10 @@ my %table=(
+ "beos-x86-r5",   "gcc:-DL_ENDIAN -DTERMIOS -O3 -fomit-frame-pointer -mcpu=pentium -Wall::-D_REENTRANT:BEOS:-lbe -lnet:BN_LLONG ${x86_gcc_des} ${x86_gcc_opts}:${x86_elf_asm}:beos:beos-shared:-fPIC -DPIC:-shared:.so",
+ "beos-x86-bone", "gcc:-DL_ENDIAN -DTERMIOS -O3 -fomit-frame-pointer -mcpu=pentium -Wall::-D_REENTRANT:BEOS:-lbe -lbind -lsocket:BN_LLONG ${x86_gcc_des} ${x86_gcc_opts}:${x86_elf_asm}:beos:beos-shared:-fPIC:-shared:.so",
  
 +# cris
 +"linux-cris",	"\$(TARGET_CC):-DL_ENDIAN -DTERMIO -fomit-frame-pointer::-D_REENTRANT::-ldl:BN_LLONG THIRTY_TWO_BIT RC4_CHAR::::::::::::dlfcn:linux-shared:-fpic::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)::",
