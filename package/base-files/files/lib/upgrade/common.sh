@@ -87,7 +87,7 @@ kill_remaining() { # [ <signal> ]
 		esac
 		case "$cmd" in
 			# Skip kernel threads and essential services
-			\[*\]|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*) : ;;
+			\[*\]|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*|*ubusd*|*netifd*|*hostapd*|*wpa_supplicant*) : ;;
 
 			# Killable process
 			*)
