@@ -1,0 +1,17 @@
+--- a/drivers/net/lantiq_etop.c
++++ b/drivers/net/lantiq_etop.c
+@@ -190,8 +190,12 @@ ltq_etop_hw_receive(struct ltq_etop_chan
+ 
+ 	skb_put(skb, len);
+ 	skb->dev = ch->netdev;
+-	skb->protocol = eth_type_trans(skb, ch->netdev);
+-	netif_receive_skb(skb);
++	if (priv->phydev && priv->phydev->netif_receive_skb) {
++		priv->phydev->netif_receive_skb(skb);
++	} else {
++		skb->protocol = eth_type_trans(skb, ch->netdev);
++		netif_receive_skb(skb);
++	}
+ }
+ 
+ static int

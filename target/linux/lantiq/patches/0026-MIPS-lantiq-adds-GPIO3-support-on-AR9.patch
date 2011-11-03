@@ -1,0 +1,199 @@
+From 92b24777385cd8388e0fa8b9f1d24e5bc4466641 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 13 Aug 2011 13:59:50 +0200
+Subject: [PATCH 12/22] MIPS: lantiq: make GPIO3 work on AR9
+
+There are 3 16bit and 1 8bit gpio ports on AR9. The gpio driver needs a hack
+at 2 places to make the different register layout of the GPIO3 work properly
+with the driver. Before only GPIO0-2 were supported. As the GPIO number scheme
+clashes with the new size, we also move the other gpio chips to new offsets.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
+---
+ .../mips/include/asm/mach-lantiq/xway/lantiq_soc.h |    2 +
+ arch/mips/lantiq/xway/devices.c                    |    3 +
+ arch/mips/lantiq/xway/gpio.c                       |   62 ++++++++++++++++----
+ arch/mips/lantiq/xway/gpio_ebu.c                   |    3 +-
+ arch/mips/lantiq/xway/gpio_stp.c                   |    3 +-
+ 5 files changed, 57 insertions(+), 16 deletions(-)
+
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -113,7 +113,9 @@
+ #define LTQ_GPIO0_BASE_ADDR	0x1E100B10
+ #define LTQ_GPIO1_BASE_ADDR	0x1E100B40
+ #define LTQ_GPIO2_BASE_ADDR	0x1E100B70
++#define LTQ_GPIO3_BASE_ADDR	0x1E100BA0
+ #define LTQ_GPIO_SIZE		0x30
++#define LTQ_GPIO3_SIZE		0x10
+ 
+ /* SSC */
+ #define LTQ_SSC_BASE_ADDR	0x1e100800
+--- a/arch/mips/lantiq/xway/devices.c
++++ b/arch/mips/lantiq/xway/devices.c
+@@ -34,6 +34,7 @@ static struct resource ltq_gpio_resource
+ 	MEM_RES("gpio0", LTQ_GPIO0_BASE_ADDR, LTQ_GPIO_SIZE),
+ 	MEM_RES("gpio1", LTQ_GPIO1_BASE_ADDR, LTQ_GPIO_SIZE),
+ 	MEM_RES("gpio2", LTQ_GPIO2_BASE_ADDR, LTQ_GPIO_SIZE),
++	MEM_RES("gpio3", LTQ_GPIO3_BASE_ADDR, LTQ_GPIO3_SIZE),
+ };
+ 
+ void __init ltq_register_gpio(void)
+@@ -47,6 +48,8 @@ void __init ltq_register_gpio(void)
+ 	if (ltq_is_ar9() || ltq_is_vr9()) {
+ 		platform_device_register_simple("ltq_gpio", 2,
+ 			&ltq_gpio_resource[2], 1);
++		platform_device_register_simple("ltq_gpio", 3,
++			&ltq_gpio_resource[3], 1);
+ 	}
+ }
+ 
+--- a/arch/mips/lantiq/xway/gpio.c
++++ b/arch/mips/lantiq/xway/gpio.c
+@@ -23,9 +23,15 @@
+ #define LTQ_GPIO_OD		0x14
+ #define LTQ_GPIO_PUDSEL		0x1C
+ #define LTQ_GPIO_PUDEN		0x20
++#define LTQ_GPIO3_OD		0x24
++#define LTQ_GPIO3_ALTSEL1	0x24
+ 
++/* PORT3 only has 8 pins and its register layout
++   is slightly different */
+ #define PINS_PER_PORT		16
+-#define MAX_PORTS		3
++#define PINS_PORT3		8
++#define MAX_PORTS		4
++#define MAX_PIN			56
+ 
+ #define ltq_gpio_getbit(m, r, p)	(!!(ltq_r32(m + r) & (1 << p)))
+ #define ltq_gpio_setbit(m, r, p)	ltq_w32_mask(0, (1 << p), m + r)
+@@ -55,7 +61,7 @@ int ltq_gpio_request(unsigned int pin, u
+ {
+ 	int id = 0;
+ 
+-	if (pin >= (MAX_PORTS * PINS_PER_PORT))
++	if (pin >= MAX_PIN)
+ 		return -EINVAL;
+ 	if (gpio_request(pin, name)) {
+ 		pr_err("failed to setup lantiq gpio: %s\n", name);
+@@ -75,12 +81,21 @@ int ltq_gpio_request(unsigned int pin, u
+ 	else
+ 		ltq_gpio_clearbit(ltq_gpio_port[id].membase,
+ 			LTQ_GPIO_ALTSEL0, pin);
+-	if (alt1)
+-		ltq_gpio_setbit(ltq_gpio_port[id].membase,
+-			LTQ_GPIO_ALTSEL1, pin);
+-	else
+-		ltq_gpio_clearbit(ltq_gpio_port[id].membase,
+-			LTQ_GPIO_ALTSEL1, pin);
++	if (id == 3) {
++		if (alt1)
++			ltq_gpio_setbit(ltq_gpio_port[1].membase,
++				LTQ_GPIO3_ALTSEL1, pin);
++		else
++			ltq_gpio_clearbit(ltq_gpio_port[1].membase,
++				LTQ_GPIO3_ALTSEL1, pin);
++	} else {
++		if (alt1)
++			ltq_gpio_setbit(ltq_gpio_port[id].membase,
++				LTQ_GPIO_ALTSEL1, pin);
++		else
++			ltq_gpio_clearbit(ltq_gpio_port[id].membase,
++				LTQ_GPIO_ALTSEL1, pin);
++	}
+ 	return 0;
+ }
+ EXPORT_SYMBOL(ltq_gpio_request);
+@@ -106,7 +121,11 @@ static int ltq_gpio_direction_input(stru
+ {
+ 	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
+ 
+-	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
++	if (chip->ngpio == PINS_PORT3)
++		ltq_gpio_clearbit(ltq_gpio_port[0].membase,
++				LTQ_GPIO3_OD, offset);
++	else
++		ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
+ 	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
+ 	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_PUDSEL, offset);
+ 	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_PUDEN, offset);
+@@ -119,7 +138,10 @@ static int ltq_gpio_direction_output(str
+ {
+ 	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
+ 
+-	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
++	if (chip->ngpio == PINS_PORT3)
++		ltq_gpio_setbit(ltq_gpio_port[0].membase, LTQ_GPIO3_OD, offset);
++	else
++		ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
+ 	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
+ 	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_PUDSEL, offset);
+ 	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_PUDEN, offset);
+@@ -133,7 +155,11 @@ static int ltq_gpio_req(struct gpio_chip
+ 	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
+ 
+ 	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_ALTSEL0, offset);
+-	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_ALTSEL1, offset);
++	if (chip->ngpio == PINS_PORT3)
++		ltq_gpio_clearbit(ltq_gpio_port[1].membase,
++				LTQ_GPIO3_ALTSEL1, offset);
++	else
++		ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_ALTSEL1, offset);
+ 	return 0;
+ }
+ 
+@@ -146,6 +172,15 @@ static int ltq_gpio_probe(struct platfor
+ 			pdev->id);
+ 		return -EINVAL;
+ 	}
++
++	/* dirty hack - The registers of port3 are not mapped linearly.
++	   Port 3 may only load if Port 1/2 are mapped */
++	if ((pdev->id == 3) && (!ltq_gpio_port[1].membase || !ltq_gpio_port[2].membase)) {
++		dev_err(&pdev->dev,
++			"ports 1/2 need to be loaded before port 3 works\n");
++		return -ENOMEM;
++	}
++
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+ 		dev_err(&pdev->dev, "failed to get memory for gpio port %d\n",
+@@ -175,7 +210,10 @@ static int ltq_gpio_probe(struct platfor
+ 	ltq_gpio_port[pdev->id].chip.set = ltq_gpio_set;
+ 	ltq_gpio_port[pdev->id].chip.request = ltq_gpio_req;
+ 	ltq_gpio_port[pdev->id].chip.base = PINS_PER_PORT * pdev->id;
+-	ltq_gpio_port[pdev->id].chip.ngpio = PINS_PER_PORT;
++	if (pdev->id == 3)
++		ltq_gpio_port[pdev->id].chip.ngpio = PINS_PORT3;
++	else
++		ltq_gpio_port[pdev->id].chip.ngpio = PINS_PER_PORT;
+ 	platform_set_drvdata(pdev, &ltq_gpio_port[pdev->id]);
+ 	return gpiochip_add(&ltq_gpio_port[pdev->id].chip);
+ }
+--- a/arch/mips/lantiq/xway/gpio_ebu.c
++++ b/arch/mips/lantiq/xway/gpio_ebu.c
+@@ -61,9 +61,8 @@ static struct gpio_chip ltq_ebu_chip = {
+ 	.label = "ltq_ebu",
+ 	.direction_output = ltq_ebu_direction_output,
+ 	.set = ltq_ebu_set,
+-	.base = 72,
++	.base = 100,
+ 	.ngpio = 16,
+-	.can_sleep = 1,
+ 	.owner = THIS_MODULE,
+ };
+ 
+--- a/arch/mips/lantiq/xway/gpio_stp.c
++++ b/arch/mips/lantiq/xway/gpio_stp.c
+@@ -72,9 +72,8 @@ static struct gpio_chip ltq_stp_chip = {
+ 	.label = "ltq_stp",
+ 	.direction_output = ltq_stp_direction_output,
+ 	.set = ltq_stp_set,
+-	.base = 48,
++	.base = 200,
+ 	.ngpio = 24,
+-	.can_sleep = 1,
+ 	.owner = THIS_MODULE,
+ };
+ 

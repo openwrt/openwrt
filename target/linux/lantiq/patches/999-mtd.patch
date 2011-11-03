@@ -1,0 +1,11 @@
+--- a/drivers/mtd/maps/lantiq-flash.c
++++ b/drivers/mtd/maps/lantiq-flash.c
+@@ -20,6 +20,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/mtd/physmap.h>
+ 
++#include "../mtdcore.h"
++
+ #include <lantiq_soc.h>
+ #include <lantiq_platform.h>
+ 

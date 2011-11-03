@@ -1,0 +1,32 @@
+From b85d5204f2fe8c3b5e6172f7cc1741ad6e849334 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 12 Aug 2011 16:27:38 +0200
+Subject: [PATCH 02/24] MIPS: lantiq: fix cmdline parsing
+
+The code tested if the KSEG1 mapped address of argv was != 0. We need to use
+CPHYSADDR instead to make the conditional actually work.
+
+Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Cc: linux-mips@linux-mips.org
+---
+ arch/mips/lantiq/prom.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -45,10 +45,12 @@ static void __init prom_init_cmdline(voi
+ 	char **argv = (char **) KSEG1ADDR(fw_arg1);
+ 	int i;
+ 
++	arcs_cmdline[0] = '\0';
++
+ 	for (i = 0; i < argc; i++) {
+-		char *p = (char *)  KSEG1ADDR(argv[i]);
++		char *p = (char *) KSEG1ADDR(argv[i]);
+ 
+-		if (p && *p) {
++		if (CPHYSADDR(p) && *p) {
+ 			strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
+ 			strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
+ 		}

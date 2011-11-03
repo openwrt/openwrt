@@ -1,0 +1,43 @@
+From 6efd9a5f303c4561eee14ae429b8c0fafa6c5a83 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 27 Oct 2011 20:06:30 +0200
+Subject: [PATCH 11/22] MIPS: lantiq: activate pull up resistors when gpio is
+ a input
+
+The register that enables a gpios internal pullups was not set.
+
+Signed-off-by: Matti Laakso <malaakso@elisanet.fi>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/lantiq/xway/gpio.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/lantiq/xway/gpio.c
++++ b/arch/mips/lantiq/xway/gpio.c
+@@ -21,6 +21,8 @@
+ #define LTQ_GPIO_ALTSEL0	0x0C
+ #define LTQ_GPIO_ALTSEL1	0x10
+ #define LTQ_GPIO_OD		0x14
++#define LTQ_GPIO_PUDSEL		0x1C
++#define LTQ_GPIO_PUDEN		0x20
+ 
+ #define PINS_PER_PORT		16
+ #define MAX_PORTS		3
+@@ -106,6 +108,8 @@ static int ltq_gpio_direction_input(stru
+ 
+ 	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
+ 	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
++	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_PUDSEL, offset);
++	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_PUDEN, offset);
+ 
+ 	return 0;
+ }
+@@ -117,6 +121,8 @@ static int ltq_gpio_direction_output(str
+ 
+ 	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
+ 	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
++	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_PUDSEL, offset);
++	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_PUDEN, offset);
+ 	ltq_gpio_set(chip, offset, value);
+ 
+ 	return 0;
