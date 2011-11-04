@@ -1,29 +1,32 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -1890,6 +1890,7 @@ static void * wpa_driver_nl80211_init(vo
+@@ -2289,6 +2289,7 @@ static void * wpa_driver_nl80211_init(vo
  	drv->monitor_ifidx = -1;
  	drv->monitor_sock = -1;
- 	drv->ioctl_sock = -1;
+ 	drv->ap_scan_as_station = NL80211_IFTYPE_UNSPECIFIED;
 +	drv->nlmode = NL80211_IFTYPE_STATION;
  
  	if (wpa_driver_nl80211_init_nl(drv)) {
  		os_free(drv);
-@@ -2056,29 +2057,29 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -2446,37 +2447,37 @@ wpa_driver_nl80211_finish_drv_init(struc
  	drv->ifindex = if_nametoindex(bss->ifname);
  	drv->first_bss.ifindex = drv->ifindex;
  
 -#ifndef HOSTAPD
--	if (wpa_driver_nl80211_set_mode(bss, IEEE80211_MODE_INFRA) < 0) {
--		wpa_printf(MSG_DEBUG, "nl80211: Could not configure driver to "
+-	/*
+-	 * Make sure the interface starts up in station mode unless this is a
+-	 * dynamically added interface (e.g., P2P) that was already configured
+-	 * with proper iftype.
+-	 */
+-	if ((drv->global == NULL ||
+-	     drv->ifindex != drv->global->if_add_ifindex) &&
+-	    wpa_driver_nl80211_set_mode(bss, NL80211_IFTYPE_STATION) < 0) {
+-		wpa_printf(MSG_ERROR, "nl80211: Could not configure driver to "
 -			   "use managed mode");
+-		return -1;
 -	}
-+	if (drv->nlmode == NL80211_IFTYPE_STATION) {
-+		if (wpa_driver_nl80211_set_mode(bss, IEEE80211_MODE_INFRA) < 0) {
-+			wpa_printf(MSG_DEBUG, "nl80211: Could not configure driver to "
-+				   "use managed mode");
-+		}
- 
--	if (linux_set_iface_flags(drv->ioctl_sock, bss->ifname, 1)) {
+-
+-	if (linux_set_iface_flags(drv->global->ioctl_sock, bss->ifname, 1)) {
 -		if (rfkill_is_blocked(drv->rfkill)) {
 -			wpa_printf(MSG_DEBUG, "nl80211: Could not yet enable "
 -				   "interface '%s' due to rfkill",
@@ -33,8 +36,25 @@
 -		} else {
 -			wpa_printf(MSG_ERROR, "nl80211: Could not set "
 -				   "interface '%s' UP", bss->ifname);
--			return -1;
-+		if (linux_set_iface_flags(drv->ioctl_sock, bss->ifname, 1)) {
++	if (drv->nlmode == NL80211_IFTYPE_STATION) {
++		/*
++		 * Make sure the interface starts up in station mode unless this is a
++		 * dynamically added interface (e.g., P2P) that was already configured
++		 * with proper iftype.
++		 */
++		if ((drv->global == NULL ||
++			 drv->ifindex != drv->global->if_add_ifindex) &&
++			wpa_driver_nl80211_set_mode(bss, NL80211_IFTYPE_STATION) < 0) {
++			wpa_printf(MSG_ERROR, "nl80211: Could not configure driver to "
++				   "use managed mode");
+ 			return -1;
+ 		}
+-	}
+ 
+-	netlink_send_oper_ifla(drv->global->netlink, drv->ifindex,
+-			       1, IF_OPER_DORMANT);
+-#endif /* HOSTAPD */
++		if (linux_set_iface_flags(drv->global->ioctl_sock, bss->ifname, 1)) {
 +			if (rfkill_is_blocked(drv->rfkill)) {
 +				wpa_printf(MSG_DEBUG, "nl80211: Could not yet enable "
 +					   "interface '%s' due to rfkill",
@@ -46,35 +66,11 @@
 +					   "interface '%s' UP", bss->ifname);
 +				return -1;
 +			}
- 		}
--	}
- 
--	netlink_send_oper_ifla(drv->netlink, drv->ifindex,
--			       1, IF_OPER_DORMANT);
--#endif /* HOSTAPD */
-+		netlink_send_oper_ifla(drv->netlink, drv->ifindex,
-+				       1, IF_OPER_DORMANT);
++		}
++
++		netlink_send_oper_ifla(drv->global->netlink, drv->ifindex,
++					   1, IF_OPER_DORMANT);
 +	}
  
  	if (wpa_driver_nl80211_capa(drv))
  		return -1;
-@@ -3849,7 +3850,8 @@ static void nl80211_remove_iface(struct 
- 
- #ifdef HOSTAPD
- 	/* stop listening for EAPOL on this interface */
--	del_ifidx(drv, ifidx);
-+	if (drv->nlmode == NL80211_IFTYPE_AP)
-+		del_ifidx(drv, ifidx);
- #endif /* HOSTAPD */
- 
- 	msg = nlmsg_alloc();
-@@ -3922,7 +3924,8 @@ static int nl80211_create_iface_once(str
- 
- #ifdef HOSTAPD
- 	/* start listening for EAPOL on this interface */
--	add_ifidx(drv, ifidx);
-+	if (drv->nlmode == NL80211_IFTYPE_AP)
-+		add_ifidx(drv, ifidx);
- #endif /* HOSTAPD */
- 
- 	if (addr && iftype != NL80211_IFTYPE_MONITOR &&

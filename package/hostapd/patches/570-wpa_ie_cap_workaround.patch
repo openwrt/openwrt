@@ -1,6 +1,6 @@
 --- a/src/common/wpa_common.c
 +++ b/src/common/wpa_common.c
-@@ -811,6 +811,31 @@ const char * wpa_key_mgmt_txt(int key_mg
+@@ -959,6 +959,31 @@ const char * wpa_key_mgmt_txt(int key_mg
  }
  
  
@@ -32,7 +32,7 @@
  int wpa_compare_rsn_ie(int ft_initial_assoc,
  		       const u8 *ie1, size_t ie1len,
  		       const u8 *ie2, size_t ie2len)
-@@ -818,8 +843,19 @@ int wpa_compare_rsn_ie(int ft_initial_as
+@@ -966,8 +991,19 @@ int wpa_compare_rsn_ie(int ft_initial_as
  	if (ie1 == NULL || ie2 == NULL)
  		return -1;
  

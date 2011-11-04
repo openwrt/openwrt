@@ -1,15 +1,12 @@
 --- a/src/tls/x509v3.c
 +++ b/src/tls/x509v3.c
-@@ -1854,8 +1854,11 @@ int x509_certificate_chain_validate(stru
+@@ -1854,6 +1854,9 @@ int x509_certificate_chain_validate(stru
  		if (chain_trusted)
  			continue;
  
--		if ((unsigned long) now.sec <
-+		if (
-+#ifndef NO_TIMESTAMP_CHECK
-+		    (unsigned long) now.sec <
- 		    (unsigned long) cert->not_before ||
++#ifdef NO_TIMESTAMP_CHECK
++		disable_time_checks = 1;
 +#endif
- 		    (unsigned long) now.sec >
- 		    (unsigned long) cert->not_after) {
- 			wpa_printf(MSG_INFO, "X509: Certificate not valid "
+ 		if (!disable_time_checks &&
+ 		    ((unsigned long) now.sec <
+ 		     (unsigned long) cert->not_before ||

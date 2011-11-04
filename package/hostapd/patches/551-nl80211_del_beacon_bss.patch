@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -2135,23 +2135,43 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -2532,22 +2532,41 @@ wpa_driver_nl80211_finish_drv_init(struc
  }
  
  
@@ -11,13 +11,11 @@
  	struct nl_msg *msg;
  
 +	bss->beacon_set = 0;
-+
  	msg = nlmsg_alloc();
  	if (!msg)
  		return -ENOMEM;
  
- 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
- 		    0, NL80211_CMD_DEL_BEACON, 0);
+ 	nl80211_cmd(drv, msg, 0, NL80211_CMD_DEL_BEACON);
 -	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, drv->ifindex);
 +	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, bss->ifindex);
  
@@ -46,18 +44,18 @@
  
  /**
   * wpa_driver_nl80211_deinit - Deinitialize nl80211 driver interface
-@@ -6658,4 +6678,5 @@ const struct wpa_driver_ops wpa_driver_n
- 	.set_intra_bss = nl80211_set_intra_bss,
- 	.set_param = nl80211_set_param,
- 	.get_radio_name = nl80211_get_radio_name,
+@@ -7654,4 +7673,5 @@ const struct wpa_driver_ops wpa_driver_n
+ 	.send_tdls_mgmt = nl80211_send_tdls_mgmt,
+ 	.tdls_oper = nl80211_tdls_oper,
+ #endif /* CONFIG_TDLS */
 +	.stop_ap = wpa_driver_nl80211_stop_ap,
  };
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -2253,6 +2253,8 @@ struct wpa_driver_ops {
- 	 * implementation, there is no need to implement this function.
+@@ -2452,6 +2452,8 @@ struct wpa_driver_ops {
  	 */
- 	int (*set_authmode)(void *priv, int authmode);
+ 	void (*poll_client)(void *priv, const u8 *own_addr,
+ 			    const u8 *addr, int qos);
 +
 +	int (*stop_ap)(void *priv);
  };

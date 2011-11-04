@@ -18,7 +18,7 @@
  static u32 pool[POOL_WORDS];
  static unsigned int input_rotate = 0;
  static unsigned int pool_pos = 0;
-@@ -122,7 +126,7 @@ static void random_extract(u8 *out)
+@@ -128,7 +132,7 @@ static void random_extract(u8 *out)
  }
  
  
@@ -27,7 +27,7 @@
  {
  	struct os_time t;
  	static unsigned int count = 0;
-@@ -191,16 +195,22 @@ int random_get_bytes(void *buf, size_t l
+@@ -197,16 +201,22 @@ int random_get_bytes(void *buf, size_t l
  int random_pool_ready(void)
  {
  #ifdef __linux__
@@ -51,19 +51,15 @@
  
  	/*
  	 * Try to fetch some more data from the kernel high quality
-@@ -232,8 +242,10 @@ int random_pool_ready(void)
- 	dummy_key_avail += res;
- 	close(fd);
- 
--	if (dummy_key_avail == sizeof(dummy_key))
-+	if (dummy_key_avail == sizeof(dummy_key)) {
+@@ -241,6 +251,7 @@ int random_pool_ready(void)
+ 	if (dummy_key_avail == sizeof(dummy_key)) {
+ 		if (own_pool_ready < MIN_READY_MARK)
+ 			own_pool_ready = MIN_READY_MARK;
 +		random_mark_pool_ready();
+ 		random_write_entropy();
  		return 1;
-+	}
- 
- 	wpa_printf(MSG_INFO, "random: Only %u/%u bytes of strong "
- 		   "random data available from /dev/random",
-@@ -243,6 +255,7 @@ int random_pool_ready(void)
+ 	}
+@@ -253,6 +264,7 @@ int random_pool_ready(void)
  	    total_collected + 10 * own_pool_ready > MIN_COLLECT_ENTROPY) {
  		wpa_printf(MSG_INFO, "random: Allow operation to proceed "
  			   "based on internal entropy");
@@ -71,7 +67,7 @@
  		return 1;
  	}
  
-@@ -258,9 +271,15 @@ int random_pool_ready(void)
+@@ -268,10 +280,16 @@ int random_pool_ready(void)
  
  void random_mark_pool_ready(void)
  {
@@ -80,6 +76,7 @@
  	own_pool_ready++;
  	wpa_printf(MSG_DEBUG, "random: Mark internal entropy pool to be "
  		   "ready (count=%u/%u)", own_pool_ready, MIN_READY_MARK);
+ 	random_write_entropy();
 +
 +	fd = open(RANDOM_STAMPFILE, O_CREAT | O_WRONLY | O_EXCL | O_NOFOLLOW, 0600);
 +	if (fd >= 0)
@@ -87,9 +84,9 @@
  }
  
  
-@@ -335,3 +354,22 @@ void random_deinit(void)
- 	random_close_fd();
- #endif /* __linux__ */
+@@ -428,3 +446,22 @@ void random_deinit(void)
+ 	os_free(random_entropy_file);
+ 	random_entropy_file = NULL;
  }
 +
 +#endif /* CONFIG_NO_RANDOM_POOL */
@@ -110,25 +107,9 @@
 +	random_pool_add_randomness(buf, len);
 +#endif
 +}
---- a/hostapd/Makefile
-+++ b/hostapd/Makefile
-@@ -698,11 +698,11 @@ endif
- ifdef CONFIG_NO_RANDOM_POOL
- CFLAGS += -DCONFIG_NO_RANDOM_POOL
- else
--OBJS += ../src/crypto/random.o
--HOBJS += ../src/crypto/random.o
- HOBJS += $(SHA1OBJS)
- HOBJS += ../src/crypto/md5.o
- endif
-+OBJS += ../src/crypto/random.o
-+HOBJS += ../src/crypto/random.o
- 
- ifdef CONFIG_RADIUS_SERVER
- CFLAGS += -DRADIUS_SERVER
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -1101,9 +1101,8 @@ endif
+@@ -1137,9 +1137,8 @@ endif
  
  ifdef CONFIG_NO_RANDOM_POOL
  CFLAGS += -DCONFIG_NO_RANDOM_POOL
@@ -141,7 +122,7 @@
  ifeq ($(CONFIG_CTRL_IFACE), y)
 --- a/wpa_supplicant/Android.mk
 +++ b/wpa_supplicant/Android.mk
-@@ -1109,9 +1109,8 @@ endif
+@@ -1132,9 +1132,8 @@ endif
  
  ifdef CONFIG_NO_RANDOM_POOL
  L_CFLAGS += -DCONFIG_NO_RANDOM_POOL
@@ -154,7 +135,7 @@
  ifeq ($(CONFIG_CTRL_IFACE), y)
 --- a/hostapd/Android.mk
 +++ b/hostapd/Android.mk
-@@ -717,11 +717,11 @@ endif
+@@ -720,11 +720,11 @@ endif
  ifdef CONFIG_NO_RANDOM_POOL
  L_CFLAGS += -DCONFIG_NO_RANDOM_POOL
  else
@@ -168,24 +149,20 @@
  
  ifdef CONFIG_RADIUS_SERVER
  L_CFLAGS += -DRADIUS_SERVER
---- a/src/crypto/random.h
-+++ b/src/crypto/random.h
-@@ -18,17 +18,16 @@
- #ifdef CONFIG_NO_RANDOM_POOL
- #define random_init() do { } while (0)
- #define random_deinit() do { } while (0)
--#define random_add_randomness(b, l) do { } while (0)
- #define random_get_bytes(b, l) os_get_random((b), (l))
- #define random_pool_ready() 1
- #define random_mark_pool_ready() do { } while (0)
- #else /* CONFIG_NO_RANDOM_POOL */
- void random_init(void);
- void random_deinit(void);
--void random_add_randomness(const void *buf, size_t len);
- int random_get_bytes(void *buf, size_t len);
- int random_pool_ready(void);
- void random_mark_pool_ready(void);
- #endif /* CONFIG_NO_RANDOM_POOL */
-+void random_add_randomness(const void *buf, size_t len);
+--- a/hostapd/Makefile
++++ b/hostapd/Makefile
+@@ -707,12 +707,12 @@ endif
+ ifdef CONFIG_NO_RANDOM_POOL
+ CFLAGS += -DCONFIG_NO_RANDOM_POOL
+ else
+-OBJS += ../src/crypto/random.o
+-HOBJS += ../src/crypto/random.o
+ HOBJS += ../src/utils/eloop.o
+ HOBJS += $(SHA1OBJS)
+ HOBJS += ../src/crypto/md5.o
+ endif
++OBJS += ../src/crypto/random.o
++HOBJS += ../src/crypto/random.o
  
- #endif /* RANDOM_H */
+ ifdef CONFIG_RADIUS_SERVER
+ CFLAGS += -DRADIUS_SERVER

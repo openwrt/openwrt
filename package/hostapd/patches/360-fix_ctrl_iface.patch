@@ -1,0 +1,18 @@
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -685,6 +685,7 @@ static int wpa_supplicant_ctrl_iface_ibs
+ #endif /* CONFIG_IBSS_RSN */
+ 
+ 
++#ifdef IEEE8021X_EAPOL
+ int wpa_supplicant_ctrl_iface_ctrl_rsp_handle(struct wpa_supplicant *wpa_s,
+ 					      struct wpa_ssid *ssid,
+ 					      const char *field,
+@@ -750,6 +751,7 @@ int wpa_supplicant_ctrl_iface_ctrl_rsp_h
+ 
+ 	return 0;
+ }
++#endif
+ 
+ 
+ static int wpa_supplicant_ctrl_iface_ctrl_rsp(struct wpa_supplicant *wpa_s,
