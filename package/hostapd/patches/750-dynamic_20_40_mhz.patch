@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1901,6 +1901,10 @@ struct hostapd_config * hostapd_config_r
+@@ -1935,6 +1935,10 @@ struct hostapd_config * hostapd_config_r
  					   "ht_capab", line);
  				errors++;
  			}
@@ -13,7 +13,7 @@
  #endif /* CONFIG_IEEE80211N */
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -394,6 +394,7 @@ struct hostapd_config {
+@@ -416,6 +416,7 @@ struct hostapd_config {
  	int ieee80211n;
  	int secondary_channel;
  	int require_ht;
@@ -31,7 +31,7 @@
  #include "ieee802_11_auth.h"
  #include "vlan_init.h"
  #include "wpa_auth.h"
-@@ -285,6 +286,7 @@ static void hostapd_cleanup_iface_pre(st
+@@ -291,6 +292,7 @@ static void hostapd_cleanup_iface_pre(st
   */
  static void hostapd_cleanup_iface(struct hostapd_iface *iface)
  {
@@ -41,7 +41,7 @@
  	os_free(iface->current_rates);
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -220,6 +220,9 @@ struct hostapd_iface {
+@@ -226,6 +226,9 @@ struct hostapd_iface {
  	/* Overlapping BSS information */
  	int olbc_ht;
  
@@ -53,7 +53,7 @@
  
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -1242,6 +1242,9 @@ static void handle_beacon(struct hostapd
+@@ -1193,6 +1193,9 @@ static void handle_beacon(struct hostapd
  					     sizeof(mgmt->u.beacon)), &elems,
  				      0);
  
@@ -65,9 +65,9 @@
  
 --- a/src/ap/ieee802_11.h
 +++ b/src/ap/ieee802_11.h
-@@ -65,4 +65,17 @@ void hostapd_tx_status(struct hostapd_da
- void ieee802_11_rx_from_unknown(struct hostapd_data *hapd, const u8 *src,
- 				int wds);
+@@ -77,4 +77,17 @@ u8 * hostapd_eid_time_zone(struct hostap
+ int hostapd_update_time_adv(struct hostapd_data *hapd);
+ void hostapd_client_poll_ok(struct hostapd_data *hapd, const u8 *addr);
  
 +#ifdef CONFIG_IEEE80211N
 +void hostapd_trigger_20mhz(struct hostapd_iface *iface);
@@ -119,7 +119,7 @@
  
  	pos += sizeof(*oper);
  
-@@ -265,3 +270,80 @@ void hostapd_get_ht_capab(struct hostapd
+@@ -271,3 +276,80 @@ void hostapd_get_ht_capab(struct hostapd
  
  	neg_ht_cap->ht_capabilities_info = host_to_le16(cap);
  }

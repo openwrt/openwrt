@@ -1,6 +1,6 @@
 --- a/wpa_supplicant/wpa_supplicant_i.h
 +++ b/wpa_supplicant/wpa_supplicant_i.h
-@@ -99,6 +99,8 @@ struct wpa_interface {
+@@ -100,6 +100,8 @@ struct wpa_interface {
  	 * receiving of EAPOL frames from an additional interface.
  	 */
  	const char *bridge_ifname;
@@ -9,7 +9,7 @@
  };
  
  /**
-@@ -337,6 +339,8 @@ struct wpa_supplicant {
+@@ -260,6 +262,8 @@ struct wpa_supplicant {
  #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
  	char bridge_ifname[16];
  
@@ -20,21 +20,31 @@
  	int countermeasures;
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -52,6 +52,11 @@ OBJS_p += ../src/utils/wpabuf.o
- OBJS_c = wpa_cli.o ../src/common/wpa_ctrl.o
- OBJS_c += ../src/utils/wpa_debug.o
+@@ -13,6 +13,10 @@ PKG_CONFIG ?= pkg-config
+ CFLAGS += -I../src
+ CFLAGS += -I../src/utils
  
 +ifdef MULTICALL
-+OBJS += ../src/common/wpa_ctrl.o
 +CFLAGS += -DMULTICALL
 +endif
 +
  -include .config
  -include $(if $(MULTICALL),../hostapd/.config)
  
+@@ -69,6 +73,10 @@ OBJS_c = wpa_cli.o ../src/common/wpa_ctr
+ OBJS_c += ../src/utils/wpa_debug.o
+ OBJS_c += ../src/utils/common.o
+ 
++ifdef MULTICALL
++OBJS += ../src/common/wpa_ctrl.o
++endif
++
+ ifndef CONFIG_OS
+ ifdef CONFIG_NATIVE_WINDOWS
+ CONFIG_OS=win32
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -123,6 +123,55 @@ extern int wpa_debug_show_keys;
+@@ -125,6 +125,55 @@ extern int wpa_debug_show_keys;
  extern int wpa_debug_timestamp;
  extern struct wpa_driver_ops *wpa_drivers[];
  
@@ -90,7 +100,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -598,8 +647,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -632,8 +681,16 @@ void wpa_supplicant_set_state(struct wpa
  #ifdef CONFIG_P2P
  		wpas_p2p_completed(wpa_s);
  #endif /* CONFIG_P2P */
@@ -107,7 +117,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2157,6 +2214,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2245,6 +2302,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
@@ -139,7 +149,7 @@
  #include "drivers/driver.h"
  #include "wpa_supplicant_i.h"
  #include "config.h"
-@@ -70,6 +71,8 @@ struct wpa_bss * wpa_bss_get(struct wpa_
+@@ -79,6 +80,8 @@ struct wpa_bss * wpa_bss_get(struct wpa_
  
  static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src)
  {
@@ -148,7 +158,7 @@
  	os_time_t usec;
  
  	dst->flags = src->flags;
-@@ -82,6 +85,12 @@ static void wpa_bss_copy_res(struct wpa_
+@@ -91,6 +94,12 @@ static void wpa_bss_copy_res(struct wpa_
  	dst->level = src->level;
  	dst->tsf = src->tsf;
  
@@ -163,7 +173,7 @@
  	usec = (src->age % 1000) * 1000;
 --- a/wpa_supplicant/bss.h
 +++ b/wpa_supplicant/bss.h
-@@ -56,6 +56,7 @@ struct wpa_bss {
+@@ -57,6 +57,7 @@ struct wpa_bss {
  	unsigned int flags;
  	u8 bssid[ETH_ALEN];
  	u8 ssid[32];
@@ -180,9 +190,9 @@
 -	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] "
 +	       "        -i<ifname> -c<config file> [-C<ctrl>] [-D<driver>] [-H<hostapd path>]"
  	       "[-p<driver_param>] \\\n"
- 	       "        [-b<br_ifname>] [-f<debug file>] \\\n"
- 	       "        [-o<override driver>] [-O<override ctrl>] \\\n"
-@@ -67,6 +67,7 @@ static void usage(void)
+ 	       "        [-b<br_ifname>] [-f<debug file>] [-e<entropy file>] "
+ 	       "\\\n"
+@@ -69,6 +69,7 @@ static void usage(void)
  #endif /* CONFIG_DEBUG_SYSLOG */
  	printf("  -t = include timestamp in debug messages\n"
  	       "  -h = show this help text\n"
@@ -190,16 +200,16 @@
  	       "  -L = show license (GPL and BSD)\n"
  	       "  -o = override driver parameter for new interfaces\n"
  	       "  -O = override ctrl_interface parameter for new interfaces\n"
-@@ -143,7 +144,7 @@ int main(int argc, char *argv[])
+@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
  	wpa_supplicant_fd_workaround();
  
  	for (;;) {
--		c = getopt(argc, argv, "b:Bc:C:D:df:g:hi:KLNo:O:p:P:qstuvW");
-+		c = getopt(argc, argv, "b:Bc:C:D:df:g:hH:i:KLNo:O:p:P:qstuvW");
+-		c = getopt(argc, argv, "b:Bc:C:D:de:f:g:hi:KLNo:O:p:P:qstuvW");
++		c = getopt(argc, argv, "b:Bc:C:D:de:f:g:hH:i:KLNo:O:p:P:qstuvW");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -184,6 +185,9 @@ int main(int argc, char *argv[])
+@@ -189,6 +190,9 @@ int main(int argc, char *argv[])
  			usage();
  			exitcode = 0;
  			goto out;

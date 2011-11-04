@@ -10,7 +10,7 @@
  #include <net/if_arp.h>
  #include <netpacket/packet.h>
  
-@@ -42,10 +39,16 @@
+@@ -43,10 +40,16 @@
  static const u8 rfc1042_header[6] = { 0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00 };
  
  struct hostap_driver_data {
@@ -28,7 +28,7 @@
  	int ioctl_sock; /* socket for ioctl() use */
  	struct netlink_data *netlink;
  
-@@ -55,9 +58,11 @@ struct hostap_driver_data {
+@@ -56,9 +59,11 @@ struct hostap_driver_data {
  	size_t generic_ie_len;
  	u8 *wps_ie;
  	size_t wps_ie_len;
@@ -40,7 +40,7 @@
  static int hostapd_ioctl(void *priv, struct prism2_hostapd_param *param,
  			 int len);
  static int hostap_set_iface_flags(void *priv, int dev_up);
-@@ -400,65 +405,6 @@ static int hostapd_ioctl(void *priv, str
+@@ -399,65 +404,6 @@ static int hostapd_ioctl(void *priv, str
  }
  
  
@@ -106,8 +106,8 @@
  static int hostap_get_seqnum(const char *ifname, void *priv, const u8 *addr,
  			     int idx, u8 *seq)
  {
-@@ -1126,21 +1072,9 @@ static struct hostapd_hw_modes * hostap_
- 	return mode;
+@@ -1171,21 +1117,9 @@ static void wpa_driver_hostap_poll_clien
+ 	hostap_send_mlme(priv, (u8 *)&hdr, sizeof(hdr));
  }
  
 -#else /* HOSTAPD */
@@ -130,7 +130,7 @@
  			 struct prism2_hostapd_param *param,
  			 int len, int show_err)
  {
-@@ -1162,7 +1096,12 @@ static int hostapd_ioctl(struct wpa_driv
+@@ -1207,7 +1141,12 @@ static int hostapd_ioctl(struct wpa_driv
  }
  
  
@@ -144,7 +144,7 @@
  					const u8 *wpa_ie, size_t wpa_ie_len)
  {
  	struct prism2_hostapd_param *param;
-@@ -1178,7 +1117,7 @@ static int wpa_driver_hostap_set_wpa_ie(
+@@ -1223,7 +1162,7 @@ static int wpa_driver_hostap_set_wpa_ie(
  	param->cmd = PRISM2_HOSTAPD_SET_GENERIC_ELEMENT;
  	param->u.generic_elem.len = wpa_ie_len;
  	os_memcpy(param->u.generic_elem.data, wpa_ie, wpa_ie_len);
@@ -153,7 +153,7 @@
  
  	os_free(param);
  
-@@ -1186,7 +1125,7 @@ static int wpa_driver_hostap_set_wpa_ie(
+@@ -1231,7 +1170,7 @@ static int wpa_driver_hostap_set_wpa_ie(
  }
  
  
@@ -162,7 +162,7 @@
  		       int value)
  {
  	struct iwreq iwr;
-@@ -1208,7 +1147,7 @@ static int prism2param(struct wpa_driver
+@@ -1253,7 +1192,7 @@ static int prism2param(struct wpa_driver
  
  static int wpa_driver_hostap_set_wpa(void *priv, int enabled)
  {
@@ -171,7 +171,7 @@
  	int ret = 0;
  
  	wpa_printf(MSG_DEBUG, "%s: enabled=%d", __FUNCTION__, enabled);
-@@ -1224,125 +1163,15 @@ static int wpa_driver_hostap_set_wpa(voi
+@@ -1269,125 +1208,15 @@ static int wpa_driver_hostap_set_wpa(voi
  }
  
  
@@ -299,7 +299,7 @@
  				   int type)
  {
  	struct iwreq iwr;
-@@ -1363,7 +1192,7 @@ static int wpa_driver_hostap_reset(struc
+@@ -1408,7 +1237,7 @@ static int wpa_driver_hostap_reset(struc
  }
  
  
@@ -308,7 +308,7 @@
  				  const u8 *addr, int cmd, int reason_code)
  {
  	struct prism2_hostapd_param param;
-@@ -1378,7 +1207,7 @@ static int wpa_driver_hostap_mlme(struct
+@@ -1423,7 +1252,7 @@ static int wpa_driver_hostap_mlme(struct
  	os_memcpy(param.sta_addr, addr, ETH_ALEN);
  	param.u.mlme.cmd = cmd;
  	param.u.mlme.reason_code = reason_code;
@@ -317,7 +317,7 @@
  	if (ret == 0) {
  		os_sleep(0, 100000);
  		ret = wpa_driver_hostap_reset(drv, 2);
-@@ -1390,7 +1219,7 @@ static int wpa_driver_hostap_mlme(struct
+@@ -1435,7 +1264,7 @@ static int wpa_driver_hostap_mlme(struct
  static int wpa_driver_hostap_deauthenticate(void *priv, const u8 *addr,
  					    int reason_code)
  {
@@ -326,7 +326,7 @@
  	wpa_printf(MSG_DEBUG, "%s", __FUNCTION__);
  	return wpa_driver_hostap_mlme(drv, addr, MLME_STA_DEAUTH,
  				      reason_code);
-@@ -1400,7 +1229,7 @@ static int wpa_driver_hostap_deauthentic
+@@ -1445,7 +1274,7 @@ static int wpa_driver_hostap_deauthentic
  static int wpa_driver_hostap_disassociate(void *priv, const u8 *addr,
  					  int reason_code)
  {
@@ -335,7 +335,7 @@
  	wpa_printf(MSG_DEBUG, "%s", __FUNCTION__);
  	return wpa_driver_hostap_mlme(drv, addr, MLME_STA_DISASSOC,
  				      reason_code);
-@@ -1411,7 +1240,7 @@ static int
+@@ -1456,7 +1285,7 @@ static int
  wpa_driver_hostap_associate(void *priv,
  			    struct wpa_driver_associate_params *params)
  {
@@ -344,7 +344,7 @@
  	int ret = 0;
  	int allow_unencrypted_eapol;
  
-@@ -1475,7 +1304,7 @@ wpa_driver_hostap_associate(void *priv,
+@@ -1520,7 +1349,7 @@ wpa_driver_hostap_associate(void *priv,
  static int wpa_driver_hostap_scan(void *priv,
  				  struct wpa_driver_scan_params *params)
  {
@@ -353,7 +353,7 @@
  	struct prism2_hostapd_param param;
  	int ret;
  	const u8 *ssid = params->ssids[0].ssid;
-@@ -1496,7 +1325,7 @@ static int wpa_driver_hostap_scan(void *
+@@ -1541,7 +1370,7 @@ static int wpa_driver_hostap_scan(void *
  	param.cmd = PRISM2_HOSTAPD_SCAN_REQ;
  	param.u.scan_req.ssid_len = ssid_len;
  	os_memcpy(param.u.scan_req.ssid, ssid, ssid_len);
@@ -362,7 +362,7 @@
  
  	/* Not all drivers generate "scan completed" wireless event, so try to
  	 * read results after a timeout. */
-@@ -1511,7 +1340,7 @@ static int wpa_driver_hostap_scan(void *
+@@ -1556,7 +1385,7 @@ static int wpa_driver_hostap_scan(void *
  
  static int wpa_driver_hostap_set_auth_alg(void *priv, int auth_alg)
  {
@@ -371,7 +371,7 @@
  	int algs = 0;
  
  	if (auth_alg & WPA_AUTH_ALG_OPEN)
-@@ -1529,35 +1358,35 @@ static int wpa_driver_hostap_set_auth_al
+@@ -1574,35 +1403,35 @@ static int wpa_driver_hostap_set_auth_al
  
  static int wpa_driver_hostap_get_bssid(void *priv, u8 *bssid)
  {
@@ -412,7 +412,7 @@
  
  	drv = os_zalloc(sizeof(*drv));
  	if (drv == NULL)
-@@ -1597,14 +1426,120 @@ static void * wpa_driver_hostap_init(voi
+@@ -1642,14 +1471,120 @@ static void * wpa_driver_hostap_init(voi
  
  static void wpa_driver_hostap_deinit(void *priv)
  {
@@ -535,17 +535,17 @@
  
  
  const struct wpa_driver_ops wpa_driver_hostap_ops = {
-@@ -1632,7 +1567,8 @@ const struct wpa_driver_ops wpa_driver_h
- 	.sta_clear_stats = hostap_sta_clear_stats,
- 	.get_hw_feature_data = hostap_get_hw_feature_data,
+@@ -1679,7 +1614,8 @@ const struct wpa_driver_ops wpa_driver_h
  	.set_ap_wps_ie = hostap_set_ap_wps_ie,
+ 	.set_freq = hostap_set_freq,
+ 	.poll_client = wpa_driver_hostap_poll_client,
 -#else /* HOSTAPD */
 +#endif /* HOSTAPD */
 +#if !defined(NO_SUPPLICANT)
  	.get_bssid = wpa_driver_hostap_get_bssid,
  	.get_ssid = wpa_driver_hostap_get_ssid,
  	.set_countermeasures = wpa_driver_hostap_set_countermeasures,
-@@ -1644,5 +1580,5 @@ const struct wpa_driver_ops wpa_driver_h
+@@ -1691,5 +1627,5 @@ const struct wpa_driver_ops wpa_driver_h
  	.init = wpa_driver_hostap_init,
  	.deinit = wpa_driver_hostap_deinit,
  	.set_operstate = wpa_driver_hostap_set_operstate,

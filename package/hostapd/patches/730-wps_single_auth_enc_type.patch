@@ -1,6 +1,6 @@
 --- a/src/ap/wps_hostapd.c
 +++ b/src/ap/wps_hostapd.c
-@@ -773,11 +773,9 @@ int hostapd_init_wps(struct hostapd_data
+@@ -799,11 +799,9 @@ int hostapd_init_wps(struct hostapd_data
  
  		if (conf->rsn_pairwise & WPA_CIPHER_CCMP)
  			wps->encr_types |= WPS_ENCR_AES;
@@ -14,7 +14,7 @@
  		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_PSK)
  			wps->auth_types |= WPS_AUTH_WPAPSK;
  		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_IEEE8021X)
-@@ -785,7 +783,7 @@ int hostapd_init_wps(struct hostapd_data
+@@ -811,7 +809,7 @@ int hostapd_init_wps(struct hostapd_data
  
  		if (conf->wpa_pairwise & WPA_CIPHER_CCMP)
  			wps->encr_types |= WPS_ENCR_AES;

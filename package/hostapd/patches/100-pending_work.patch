@@ -1,0 +1,162 @@
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -1471,13 +1471,6 @@ static void handle_assoc_cb(struct hosta
+ 	int new_assoc = 1;
+ 	struct ieee80211_ht_capabilities ht_cap;
+ 
+-	if (!ok) {
+-		hostapd_logger(hapd, mgmt->da, HOSTAPD_MODULE_IEEE80211,
+-			       HOSTAPD_LEVEL_DEBUG,
+-			       "did not acknowledge association response");
+-		return;
+-	}
+-
+ 	if (len < IEEE80211_HDRLEN + (reassoc ? sizeof(mgmt->u.reassoc_resp) :
+ 				      sizeof(mgmt->u.assoc_resp))) {
+ 		printf("handle_assoc_cb(reassoc=%d) - too short payload "
+@@ -1485,11 +1478,6 @@ static void handle_assoc_cb(struct hosta
+ 		return;
+ 	}
+ 
+-	if (reassoc)
+-		status = le_to_host16(mgmt->u.reassoc_resp.status_code);
+-	else
+-		status = le_to_host16(mgmt->u.assoc_resp.status_code);
+-
+ 	sta = ap_get_sta(hapd, mgmt->da);
+ 	if (!sta) {
+ 		printf("handle_assoc_cb: STA " MACSTR " not found\n",
+@@ -1497,6 +1485,19 @@ static void handle_assoc_cb(struct hosta
+ 		return;
+ 	}
+ 
++	if (!ok) {
++		hostapd_logger(hapd, mgmt->da, HOSTAPD_MODULE_IEEE80211,
++			       HOSTAPD_LEVEL_DEBUG,
++			       "did not acknowledge association response");
++		sta->flags &= ~WLAN_STA_ASSOC_REQ_OK;
++		return;
++	}
++
++	if (reassoc)
++		status = le_to_host16(mgmt->u.reassoc_resp.status_code);
++	else
++		status = le_to_host16(mgmt->u.assoc_resp.status_code);
++
+ 	if (status != WLAN_STATUS_SUCCESS)
+ 		goto fail;
+ 
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -181,6 +181,7 @@ struct i802_bss {
+ 	struct wpa_driver_nl80211_data *drv;
+ 	struct i802_bss *next;
+ 	int ifindex;
++	u8 addr[ETH_ALEN];
+ 	char ifname[IFNAMSIZ + 1];
+ 	char brname[IFNAMSIZ];
+ 	unsigned int beacon_set:1;
+@@ -191,7 +192,6 @@ struct i802_bss {
+ struct wpa_driver_nl80211_data {
+ 	struct nl80211_global *global;
+ 	struct dl_list list;
+-	u8 addr[ETH_ALEN];
+ 	char phyname[32];
+ 	void *ctx;
+ 	int ifindex;
+@@ -2482,7 +2482,7 @@ wpa_driver_nl80211_finish_drv_init(struc
+ 		return -1;
+ 
+ 	if (linux_get_ifhwaddr(drv->global->ioctl_sock, bss->ifname,
+-			       drv->addr))
++			       bss->addr))
+ 		return -1;
+ 
+ 	if (nl80211_register_action_frames(drv) < 0) {
+@@ -5176,8 +5176,8 @@ static int wpa_driver_nl80211_hapd_send_
+ 	pos = (u8 *) (hdr + 1);
+ 
+ 	if (qos) {
+-		/* add an empty QoS header if needed */
+-		pos[0] = 0;
++		/* Set highest priority in QoS header */
++		pos[0] = 7;
+ 		pos[1] = 0;
+ 		pos += 2;
+ 	}
+@@ -6407,7 +6407,7 @@ static int i802_set_wds_sta(void *priv, 
+ 		if (!if_nametoindex(name)) {
+ 			if (nl80211_create_iface(drv, name,
+ 						 NL80211_IFTYPE_AP_VLAN,
+-						 NULL, 1) < 0)
++						 bss->addr, 1) < 0)
+ 				return -1;
+ 			if (bridge_ifname &&
+ 			    linux_br_add_if(drv->global->ioctl_sock,
+@@ -6417,6 +6417,10 @@ static int i802_set_wds_sta(void *priv, 
+ 		linux_set_iface_flags(drv->global->ioctl_sock, name, 1);
+ 		return i802_set_sta_vlan(priv, addr, name, 0);
+ 	} else {
++		if (bridge_ifname)
++			linux_br_del_if(drv->global->ioctl_sock, bridge_ifname,
++					name);
++
+ 		i802_set_sta_vlan(priv, addr, bss->ifname, 0);
+ 		return wpa_driver_nl80211_if_remove(priv, WPA_IF_AP_VLAN,
+ 						    name);
+@@ -6625,7 +6629,7 @@ static int nl80211_addr_in_use(struct nl
+ 	struct wpa_driver_nl80211_data *drv;
+ 	dl_list_for_each(drv, &global->interfaces,
+ 			 struct wpa_driver_nl80211_data, list) {
+-		if (os_memcmp(addr, drv->addr, ETH_ALEN) == 0)
++		if (os_memcmp(addr, drv->first_bss.addr, ETH_ALEN) == 0)
+ 			return 1;
+ 	}
+ 	return 0;
+@@ -6640,9 +6644,9 @@ static int nl80211_p2p_interface_addr(st
+ 	if (!drv->global)
+ 		return -1;
+ 
+-	os_memcpy(new_addr, drv->addr, ETH_ALEN);
++	os_memcpy(new_addr, drv->first_bss.addr, ETH_ALEN);
+ 	for (idx = 0; idx < 64; idx++) {
+-		new_addr[0] = drv->addr[0] | 0x02;
++		new_addr[0] = drv->first_bss.addr[0] | 0x02;
+ 		new_addr[0] ^= idx << 2;
+ 		if (!nl80211_addr_in_use(drv->global, new_addr))
+ 			break;
+@@ -6745,6 +6749,7 @@ static int wpa_driver_nl80211_if_add(voi
+ 			os_free(new_bss);
+ 			return -1;
+ 		}
++		memcpy(new_bss->addr, addr ? addr : if_addr, ETH_ALEN);
+ 		os_strlcpy(new_bss->ifname, ifname, IFNAMSIZ);
+ 		new_bss->ifindex = ifidx;
+ 		new_bss->drv = drv;
+@@ -6775,7 +6780,12 @@ static int wpa_driver_nl80211_if_remove(
+ 	if (ifindex <= 0)
+ 		return -1;
+ 
++	nl80211_remove_iface(drv, ifindex);
++
+ #ifdef HOSTAPD
++	if (type != WPA_IF_AP_BSS)
++		return 0;
++
+ 	if (bss->added_if_into_bridge) {
+ 		if (linux_br_del_if(drv->global->ioctl_sock, bss->brname,
+ 				    bss->ifname) < 0)
+@@ -6789,13 +6799,6 @@ static int wpa_driver_nl80211_if_remove(
+ 				   "bridge %s: %s",
+ 				   bss->brname, strerror(errno));
+ 	}
+-#endif /* HOSTAPD */
+-
+-	nl80211_remove_iface(drv, ifindex);
+-
+-#ifdef HOSTAPD
+-	if (type != WPA_IF_AP_BSS)
+-		return 0;
+ 
+ 	if (bss != &drv->first_bss) {
+ 		struct i802_bss *tbss;
