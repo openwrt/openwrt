@@ -231,6 +231,10 @@ menu "Global build settings"
 		bool "Compile the kernel with SysRq support"
 		default n
 
+	config KERNEL_ELF_CORE
+		bool "Enable process core dump support"
+		default y
+
 	comment "Package build options"
 
 	config DEBUG
