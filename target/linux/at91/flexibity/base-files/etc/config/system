@@ -2,5 +2,8 @@ config 'system'
 	option 'timezone' 'UTC'
 	option 'hostname' 'flexibity'
 
-config 'rdate'
-	option 'server' 'ac-ntp0.net.cmu.edu ptbtime1.ptb.de ac-ntp1.net.cmu.edu ntp.xs4all.nl ptbtime2.ptb.de cudns.cit.cornell.edu ptbtime3.ptb.de'
+config timeserver
+	list server	0.openwrt.pool.ntp.org
+	list server	1.openwrt.pool.ntp.org
+	list server	2.openwrt.pool.ntp.org
+	list server	3.openwrt.pool.ntp.org
