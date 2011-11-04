@@ -145,6 +145,10 @@ sort_list() {
 	) | sort -u
 }
 
+prepare_interface_bridge() {
+	return 0
+}
+
 # Create the interface, if necessary.
 # Return status 0 indicates that the setup_interface() call should continue
 # Return status 1 means that everything is set up already.

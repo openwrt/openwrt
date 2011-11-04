@@ -40,6 +40,13 @@ scan_interfaces() {
 	config_foreach fixup_interface interface
 }
 
+prepare_interface_bridge() {
+	local config="$1"
+
+	[ -n "$config" ] || return 0
+	ubus call network.interface."$config" prepare
+}
+
 setup_interface() {
 	local iface="$1"
 	local config="$2"
