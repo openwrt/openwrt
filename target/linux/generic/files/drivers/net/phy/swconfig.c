@@ -894,8 +894,10 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 	}
 	i = find_first_zero_bit(&in_use, max_switches);
 
-	if (i == max_switches)
+	if (i == max_switches) {
+		swconfig_unlock();
 		return -ENFILE;
+	}
 
 	/* fill device name */
 	snprintf(dev->devname, IFNAMSIZ, SWCONFIG_DEVNAME, i);
