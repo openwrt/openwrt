@@ -1,7 +1,7 @@
 Index: linux-3.1/drivers/cbus/Kconfig
 ===================================================================
---- linux-3.1.orig/drivers/cbus/Kconfig	2011-10-30 19:14:57.000000000 +0100
-+++ linux-3.1/drivers/cbus/Kconfig	2011-10-30 19:32:58.263510754 +0100
+--- linux-3.1.orig/drivers/cbus/Kconfig	2011-11-05 15:02:39.041041166 +0100
++++ linux-3.1/drivers/cbus/Kconfig	2011-11-05 15:02:39.177041045 +0100
 @@ -83,4 +83,12 @@ config CBUS_RETU_HEADSET
  
  endif # CBUS_RETU
@@ -17,8 +17,8 @@ Index: linux-3.1/drivers/cbus/Kconfig
  endmenu
 Index: linux-3.1/drivers/cbus/Makefile
 ===================================================================
---- linux-3.1.orig/drivers/cbus/Makefile	2011-10-30 19:14:57.000000000 +0100
-+++ linux-3.1/drivers/cbus/Makefile	2011-10-30 19:32:58.263510754 +0100
+--- linux-3.1.orig/drivers/cbus/Makefile	2011-11-05 15:02:39.041041166 +0100
++++ linux-3.1/drivers/cbus/Makefile	2011-11-05 15:02:39.177041045 +0100
 @@ -11,3 +11,6 @@ obj-$(CONFIG_CBUS_RETU_POWERBUTTON) += r
  obj-$(CONFIG_CBUS_RETU_RTC)	+= retu-rtc.o
  obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.o
@@ -29,8 +29,8 @@ Index: linux-3.1/drivers/cbus/Makefile
 Index: linux-3.1/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/cbus/n810bm_main.c	2011-10-30 19:32:58.263510754 +0100
-@@ -0,0 +1,1586 @@
++++ linux-3.1/drivers/cbus/n810bm_main.c	2011-11-05 16:42:53.033998545 +0100
+@@ -0,0 +1,1572 @@
 +/*
 + *   Nokia n810 battery management
 + *
@@ -63,6 +63,7 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +#include <linux/bitops.h>
 +#include <linux/workqueue.h>
 +#include <linux/delay.h>
++#include <linux/interrupt.h>
 +
 +#include "cbus.h"
 +#include "retu.h"
@@ -165,6 +166,9 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +};
 +
 +struct n810bm {
++	int tahvo_irq;
++	bool tahvo_irq_enabled;
++
 +	bool battery_present;			/* A battery is inserted */
 +	bool charger_present;			/* The charger is connected */
 +	enum n810bm_capacity capacity;		/* The capacity of the inserted battery (if any) */
@@ -181,7 +185,6 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +
 +	unsigned long notify_flags;
 +	struct work_struct notify_work;
-+	struct work_struct currmeas_irq_work;
 +	struct delayed_work periodic_check_work;
 +
 +	bool initialized;			/* The hardware was initialized */
@@ -221,31 +224,27 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +
 +static u16 tahvo_read(struct n810bm *bm, unsigned int reg)
 +{
-+	return tahvo_read_reg(reg);
++	return tahvo_read_reg(&n810bm_tahvo_device->dev, reg);
 +}
 +
 +static void tahvo_maskset(struct n810bm *bm, unsigned int reg, u16 mask, u16 set)
 +{
-+	tahvo_set_clear_reg_bits(reg, set, mask);
++	tahvo_set_clear_reg_bits(&n810bm_tahvo_device->dev, reg, set, mask);
 +}
 +
 +static inline void tahvo_write(struct n810bm *bm, unsigned int reg, u16 value)
 +{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&tahvo_lock, flags);
-+	tahvo_write_reg(reg, value);
-+	spin_unlock_irqrestore(&tahvo_lock, flags);
++	tahvo_write_reg(&n810bm_tahvo_device->dev, reg, value);
 +}
 +
 +static inline void tahvo_set(struct n810bm *bm, unsigned int reg, u16 mask)
 +{
-+	tahvo_set_clear_reg_bits(reg, mask, mask);
++	tahvo_set_clear_reg_bits(&n810bm_tahvo_device->dev, reg, mask, mask);
 +}
 +
 +static inline void tahvo_clear(struct n810bm *bm, unsigned int reg, u16 mask)
 +{
-+	tahvo_set_clear_reg_bits(reg, 0, mask);
++	tahvo_set_clear_reg_bits(&n810bm_tahvo_device->dev, reg, 0, mask);
 +}
 +
 +static u16 retu_read(struct n810bm *bm, unsigned int reg)
@@ -677,10 +676,17 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +	tahvo_clear(bm, TAHVO_REG_CHGCTL,
 +		    TAHVO_REG_CHGCTL_CURTIMRST);
 +
-+	if (millisec_interval)
-+		tahvo_enable_irq(TAHVO_INT_BATCURR);
-+	else
-+		tahvo_disable_irq(TAHVO_INT_BATCURR);
++	if (millisec_interval) {
++		if (!bm->tahvo_irq_enabled) {
++			bm->tahvo_irq_enabled = 1;
++			enable_irq(bm->tahvo_irq);
++		}
++	} else {
++		if (bm->tahvo_irq_enabled) {
++			bm->tahvo_irq_enabled = 0;
++			disable_irq_nosync(bm->tahvo_irq);
++		}
++	}
 +
 +	//TODO also do a software timer for safety.
 +}
@@ -1036,9 +1042,9 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +}
 +*/
 +
-+static void n810bm_tahvo_current_measure_work(struct work_struct *work)
++static irqreturn_t n810bm_tahvo_current_measure_irq_handler(int irq, void *data)
 +{
-+	struct n810bm *bm = container_of(work, struct n810bm, currmeas_irq_work);
++	struct n810bm *bm = data;
 +	int res, ma, mv, temp;
 +
 +	mutex_lock(&bm->mutex);
@@ -1081,14 +1087,8 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +	}
 +out_unlock:
 +	mutex_unlock(&bm->mutex);
-+}
 +
-+static void n810bm_tahvo_current_measure_irq_handler(unsigned long data)
-+{
-+	struct n810bm *bm = (struct n810bm *)data;
-+
-+	tahvo_ack_irq(TAHVO_INT_BATCURR);
-+	schedule_work(&bm->currmeas_irq_work);
++	return IRQ_HANDLED;
 +}
 +
 +#define DEFINE_ATTR_NOTIFY(attr_name)						\
@@ -1366,7 +1366,6 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +{
 +	cancel_delayed_work_sync(&bm->periodic_check_work);
 +	cancel_work_sync(&bm->notify_work);
-+	cancel_work_sync(&bm->currmeas_irq_work);
 +	flush_scheduled_work();
 +}
 +
@@ -1397,12 +1396,14 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +	if (err)
 +		goto err_unwind_attrs;
 +*/
-+	err = tahvo_request_irq(TAHVO_INT_BATCURR,
-+				n810bm_tahvo_current_measure_irq_handler,
-+				(unsigned long)bm, "n810bm");
++	bm->tahvo_irq = platform_get_irq(n810bm_tahvo_device, 0);
++	err = request_threaded_irq(bm->tahvo_irq, NULL,
++				   n810bm_tahvo_current_measure_irq_handler,
++				   IRQF_ONESHOT, "tahvo-n810bm", bm);
 +	if (err)
 +		goto err_free_retu_irq;
-+	tahvo_disable_irq(TAHVO_INT_BATCURR);
++	disable_irq_nosync(bm->tahvo_irq);
++	bm->tahvo_irq_enabled = 0;
 +
 +	schedule_delayed_work(&bm->periodic_check_work,
 +			      round_jiffies_relative(N810BM_CHECK_INTERVAL));
@@ -1433,7 +1434,7 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +		return;
 +
 +	lipocharge_exit(&bm->charger);
-+	tahvo_free_irq(TAHVO_INT_BATCURR);
++	free_irq(bm->tahvo_irq, bm);
 +//XXX	retu_free_irq(RETU_INT_ADCS);
 +	for (i = 0; i < ARRAY_SIZE(n810bm_attrs); i++)
 +		device_remove_file(&bm->pdev->dev, n810bm_attrs[i]);
@@ -1498,7 +1499,6 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +	mutex_init(&bm->mutex);
 +	INIT_DELAYED_WORK(&bm->periodic_check_work, n810bm_periodic_check_work);
 +	INIT_WORK(&bm->notify_work, n810bm_notify_work);
-+	INIT_WORK(&bm->currmeas_irq_work, n810bm_tahvo_current_measure_work);
 +
 +	dev_info(&bm->pdev->dev, "Requesting CAL BME PMM block firmware file "
 +		 N810BM_PMM_BLOCK_FILENAME);
@@ -1575,20 +1575,9 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +	}
 +};
 +
-+/* FIXME: for now alloc the device here... */
-+static struct platform_device n810bm_tahvo_dev = {
-+	.name	= "tahvo-n810bm",
-+	.id	= -1,
-+};
-+
 +static int __init n810bm_modinit(void)
 +{
 +	int err;
-+
-+	//FIXME
-+	err = platform_device_register(&n810bm_tahvo_dev);
-+	if (err)
-+		return err;
 +
 +	err = platform_driver_probe(&n810bm_retu_driver, n810bm_retu_probe);
 +	if (err)
@@ -1605,9 +1594,6 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 +
 +static void __exit n810bm_modexit(void)
 +{
-+	//FIXME
-+	platform_device_unregister(&n810bm_tahvo_dev);
-+
 +	platform_driver_unregister(&n810bm_tahvo_driver);
 +	platform_driver_unregister(&n810bm_retu_driver);
 +}
@@ -1620,7 +1606,7 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 Index: linux-3.1/drivers/cbus/lipocharge.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/cbus/lipocharge.c	2011-10-30 19:32:58.263510754 +0100
++++ linux-3.1/drivers/cbus/lipocharge.c	2011-11-05 15:02:39.177041045 +0100
 @@ -0,0 +1,183 @@
 +/*
 + *   Generic LIPO battery charger
@@ -1808,7 +1794,7 @@ Index: linux-3.1/drivers/cbus/lipocharge.c
 Index: linux-3.1/drivers/cbus/lipocharge.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/cbus/lipocharge.h	2011-10-30 19:32:58.263510754 +0100
++++ linux-3.1/drivers/cbus/lipocharge.h	2011-11-05 15:02:39.177041045 +0100
 @@ -0,0 +1,60 @@
 +#ifndef LIPOCHARGE_H_
 +#define LIPOCHARGE_H_
@@ -1872,8 +1858,8 @@ Index: linux-3.1/drivers/cbus/lipocharge.h
 +#endif /* LIPOCHARGE_H_ */
 Index: linux-3.1/drivers/cbus/cbus.c
 ===================================================================
---- linux-3.1.orig/drivers/cbus/cbus.c	2011-10-30 19:31:35.000000000 +0100
-+++ linux-3.1/drivers/cbus/cbus.c	2011-10-30 19:33:12.107254808 +0100
+--- linux-3.1.orig/drivers/cbus/cbus.c	2011-11-05 15:02:39.041041166 +0100
++++ linux-3.1/drivers/cbus/cbus.c	2011-11-05 15:02:39.177041045 +0100
 @@ -34,6 +34,7 @@
  #include <linux/gpio.h>
  #include <linux/platform_device.h>
@@ -1898,8 +1884,8 @@ Index: linux-3.1/drivers/cbus/cbus.c
  MODULE_AUTHOR("Juha Yrjölä");
 Index: linux-3.1/drivers/cbus/cbus.h
 ===================================================================
---- linux-3.1.orig/drivers/cbus/cbus.h	2011-10-30 19:14:57.000000000 +0100
-+++ linux-3.1/drivers/cbus/cbus.h	2011-10-30 19:32:58.263510754 +0100
+--- linux-3.1.orig/drivers/cbus/cbus.h	2011-11-05 15:02:39.041041166 +0100
++++ linux-3.1/drivers/cbus/cbus.h	2011-11-05 15:02:39.177041045 +0100
 @@ -27,4 +27,6 @@ extern int cbus_read_reg(struct device *
  extern int cbus_write_reg(struct device *, unsigned dev, unsigned reg,
  		unsigned val);
@@ -1909,8 +1895,8 @@ Index: linux-3.1/drivers/cbus/cbus.h
  #endif /* __DRIVERS_CBUS_CBUS_H */
 Index: linux-3.1/drivers/cbus/retu.c
 ===================================================================
---- linux-3.1.orig/drivers/cbus/retu.c	2011-10-30 19:31:35.000000000 +0100
-+++ linux-3.1/drivers/cbus/retu.c	2011-10-30 19:32:58.263510754 +0100
+--- linux-3.1.orig/drivers/cbus/retu.c	2011-11-05 15:02:39.041041166 +0100
++++ linux-3.1/drivers/cbus/retu.c	2011-11-05 15:02:39.177041045 +0100
 @@ -417,6 +417,11 @@ static int retu_allocate_children(struct
  	if (!child)
  		return -ENOMEM;
@@ -1925,8 +1911,8 @@ Index: linux-3.1/drivers/cbus/retu.c
  
 Index: linux-3.1/drivers/cbus/tahvo.c
 ===================================================================
---- linux-3.1.orig/drivers/cbus/tahvo.c	2011-10-30 19:31:35.000000000 +0100
-+++ linux-3.1/drivers/cbus/tahvo.c	2011-10-30 19:32:58.263510754 +0100
+--- linux-3.1.orig/drivers/cbus/tahvo.c	2011-11-05 15:02:39.041041166 +0100
++++ linux-3.1/drivers/cbus/tahvo.c	2011-11-05 16:23:10.694222186 +0100
 @@ -129,6 +129,7 @@ void tahvo_set_clear_reg_bits(struct dev
  	__tahvo_write_reg(tahvo, reg, w);
  	mutex_unlock(&tahvo->mutex);
@@ -1935,3 +1921,15 @@ Index: linux-3.1/drivers/cbus/tahvo.c
  
  static irqreturn_t tahvo_irq_handler(int irq, void *_tahvo)
  {
+@@ -305,6 +306,11 @@ static int tahvo_allocate_children(struc
+ 	if (!child)
+ 		return -ENOMEM;
+ 
++	child = tahvo_allocate_child("tahvo-n810bm", parent,
++				     irq_base + TAHVO_INT_BATCURR);
++	if (!child)
++		return -ENOMEM;
++
+ 	return 0;
+ }
+ 
