@@ -55,3 +55,7 @@ FIRMWARE is set, ACTION == add {
 	load-firmware /lib/firmware
 	next-event
 }
+
+SUBSYSTEM == platform {
+	exec /sbin/hotplug-call %SUBSYSTEM%
+}
