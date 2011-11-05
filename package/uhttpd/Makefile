@@ -65,14 +65,16 @@ endef
 
 UHTTPD_TLS:=
 TLS_CFLAGS:=
+TLS_LDFLAGS:=
 
 ifneq ($(CONFIG_PACKAGE_uhttpd-mod-tls_cyassl),)
   UHTTPD_TLS:=cyassl
-  TLS_CFLAGS:=-I$(STAGING_DIR)/usr/include/cyassl
+  TLS_CFLAGS:=-I$(STAGING_DIR)/usr/include/cyassl -DTLS_IS_CYASSL
 endif
 
 ifneq ($(CONFIG_PACKAGE_uhttpd-mod-tls_openssl),)
   UHTTPD_TLS:=openssl
+  TLS_CFLAGS:=-DTLS_IS_OPENSSL
 endif
 
 

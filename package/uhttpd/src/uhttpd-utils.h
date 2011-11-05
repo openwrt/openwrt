@@ -67,8 +67,10 @@ char *strfind(char *haystack, int hslen, const char *needle, int ndlen);
 int select_intr(int n, fd_set *r, fd_set *w, fd_set *e, struct timeval *t);
 
 int uh_tcp_send(struct client *cl, const char *buf, int len);
+int uh_tcp_send_lowlevel(struct client *cl, const char *buf, int len);
 int uh_tcp_peek(struct client *cl, char *buf, int len);
 int uh_tcp_recv(struct client *cl, char *buf, int len);
+int uh_tcp_recv_lowlevel(struct client *cl, char *buf, int len);
 
 int uh_http_sendhf(
 	struct client *cl, int code, const char *summary,

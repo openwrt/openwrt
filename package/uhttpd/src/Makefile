@@ -3,19 +3,17 @@ LUA_SUPPORT ?= 1
 TLS_SUPPORT ?= 1
 UHTTPD_TLS ?= cyassl
 
-CFLAGS ?= -I./lua-5.1.4/src -I$(TLS_INCLUDE_DIR) -O0 -ggdb3
-LDFLAGS ?= -L./lua-5.1.4/src -L$(TLS_LIB_DIR)
+CFLAGS ?= -I./lua-5.1.4/src $(TLS_CFLAGS) -O0 -ggdb3
+LDFLAGS ?= -L./lua-5.1.4/src $(TLS_LDFLAGS)
 
 CFLAGS += -Wall --std=gnu99
 
 ifeq ($(UHTTPD_TLS),openssl)
-  TLS_LDFLAGS := -lssl
-  TLS_INCLUDE_DIR := ./openssl-0.9.8m/include
-  TLS_LIB_DIR := ./openssl-0.9.8m
+  TLS_LDFLAGS := -L./openssl-0.9.8m -lssl
+  TLS_CFLAGS := -I./openssl-0.9.8m/include -DTLS_IS_OPENSSL
 else
-  TLS_LDFLAGS := -lcyassl
-  TLS_INCLUDE_DIR := ./cyassl-1.4.0/include
-  TLS_LIB_DIR := ./cyassl-1.4.0/src/.libs
+  TLS_LDFLAGS := -L./cyassl-1.4.0/src/.libs -lcyassl
+  TLS_CFLAGS := -I./cyassl-1.4.0/include -DTLS_IS_CYASSL
 endif
 
 OBJ := uhttpd.o uhttpd-file.o uhttpd-utils.o
@@ -31,15 +29,26 @@ ifeq ($(HAVE_SHADOW),yes)
   CFLAGS += -DHAVE_SHADOW
 endif
 
-world: compile
+ifeq ($(TLS_SUPPORT),1)
+  CFLAGS += -DHAVE_TLS
+endif
 
 ifeq ($(CGI_SUPPORT),1)
-  OBJ += uhttpd-cgi.o
   CFLAGS += -DHAVE_CGI
 endif
 
 ifeq ($(LUA_SUPPORT),1)
   CFLAGS += -DHAVE_LUA
+endif
+
+
+world: compile
+
+ifeq ($(CGI_SUPPORT),1)
+  OBJ += uhttpd-cgi.o
+endif
+
+ifeq ($(LUA_SUPPORT),1)
   LUALIB := uhttpd_lua.so
 
   $(LUALIB): uhttpd-lua.c
@@ -49,12 +58,11 @@ ifeq ($(LUA_SUPPORT),1)
 endif
 
 ifeq ($(TLS_SUPPORT),1)
-  CFLAGS += -DHAVE_TLS
   TLSLIB := uhttpd_tls.so
 
   $(TLSLIB): uhttpd-tls.c
 		$(CC) $(CFLAGS) $(LDFLAGS) $(FPIC) \
-			-shared $(TLS_LDFLAGS) \
+			-shared \
 			-o $(TLSLIB) uhttpd-tls.c
 endif
 

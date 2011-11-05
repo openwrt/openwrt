@@ -124,7 +124,7 @@ int select_intr(int n, fd_set *r, fd_set *w, fd_set *e, struct timeval *t)
 }
 
 
-int uh_tcp_send(struct client *cl, const char *buf, int len)
+int uh_tcp_send_lowlevel(struct client *cl, const char *buf, int len)
 {
 	fd_set writer;
 	struct timeval timeout;
@@ -135,21 +135,28 @@ int uh_tcp_send(struct client *cl, const char *buf, int len)
 	timeout.tv_sec = cl->server->conf->network_timeout;
 	timeout.tv_usec = 0;
 
-	if( select(cl->socket + 1, NULL, &writer, NULL, &timeout) > 0 )
-	{
-#ifdef HAVE_TLS
-		if( cl->tls )
-			return cl->server->conf->tls_send(cl, (void *)buf, len);
-		else
-#endif
-			return send(cl->socket, buf, len, 0);
-	}
+	if (select(cl->socket + 1, NULL, &writer, NULL, &timeout) > 0)
+		return send(cl->socket, buf, len, 0);
 
 	return -1;
 }
 
+int uh_tcp_send(struct client *cl, const char *buf, int len)
+{
+#ifdef HAVE_TLS
+	if (cl->tls)
+		return cl->server->conf->tls_send(cl, (void *)buf, len);
+	else
+#endif
+		return uh_tcp_send_lowlevel(cl, buf, len);
+}
+
 int uh_tcp_peek(struct client *cl, char *buf, int len)
 {
+	/* sanity check, prevent overflowing peek buffer */
+	if (len > sizeof(cl->peekbuf))
+		return -1;
+
 	int sz = uh_tcp_recv(cl, buf, len);
 
 	/* store received data in peek buffer */
@@ -162,49 +169,51 @@ int uh_tcp_peek(struct client *cl, char *buf, int len)
 	return sz;
 }
 
+int uh_tcp_recv_lowlevel(struct client *cl, char *buf, int len)
+{
+	fd_set reader;
+	struct timeval timeout;
+
+	FD_ZERO(&reader);
+	FD_SET(cl->socket, &reader);
+
+	timeout.tv_sec  = cl->server->conf->network_timeout;
+	timeout.tv_usec = 0;
+
+	if (select(cl->socket + 1, &reader, NULL, NULL, &timeout) > 0)
+		return recv(cl->socket, buf, len, 0);
+
+	return -1;
+}
+
 int uh_tcp_recv(struct client *cl, char *buf, int len)
 {
 	int sz = 0;
 	int rsz = 0;
 
-	fd_set reader;
-	struct timeval timeout;
-
 	/* first serve data from peek buffer */
-	if( cl->peeklen > 0 )
+	if (cl->peeklen > 0)
 	{
 		sz = min(cl->peeklen, len);
 		len -= sz; cl->peeklen -= sz;
-
 		memcpy(buf, cl->peekbuf, sz);
 		memmove(cl->peekbuf, &cl->peekbuf[sz], cl->peeklen);
 	}
 
 	/* caller wants more */
-	if( len > 0 )
+	if (len > 0)
 	{
-		FD_ZERO(&reader);
-		FD_SET(cl->socket, &reader);
-
-		timeout.tv_sec  = cl->server->conf->network_timeout;
-		timeout.tv_usec = 0;
-
-		if( select(cl->socket + 1, &reader, NULL, NULL, &timeout) > 0 )
-		{
 #ifdef HAVE_TLS
-			if( cl->tls )
-				rsz = cl->server->conf->tls_recv(cl, (void *)&buf[sz], len);
-			else
+		if (cl->tls)
+			rsz = cl->server->conf->tls_recv(cl, (void *)&buf[sz], len);
+		else
 #endif
-				rsz = recv(cl->socket, (void *)&buf[sz], len, 0);
+			rsz = uh_tcp_recv_lowlevel(cl, (void *)&buf[sz], len);
 
-			if( (sz == 0) || (rsz > 0) )
-				sz += rsz;
-		}
-		else if( sz == 0 )
-		{
-			sz = -1;
-		}
+		if (rsz < 0)
+			return rsz;
+
+		sz += rsz;
 	}
 
 	return sz;
