@@ -1,7 +1,7 @@
 Index: linux-3.1/drivers/cbus/Kconfig
 ===================================================================
---- linux-3.1.orig/drivers/cbus/Kconfig	2011-11-05 15:02:39.041041166 +0100
-+++ linux-3.1/drivers/cbus/Kconfig	2011-11-05 15:02:39.177041045 +0100
+--- linux-3.1.orig/drivers/cbus/Kconfig	2011-11-05 17:03:39.578846146 +0100
++++ linux-3.1/drivers/cbus/Kconfig	2011-11-05 17:06:51.589348749 +0100
 @@ -83,4 +83,12 @@ config CBUS_RETU_HEADSET
  
  endif # CBUS_RETU
@@ -17,8 +17,8 @@ Index: linux-3.1/drivers/cbus/Kconfig
  endmenu
 Index: linux-3.1/drivers/cbus/Makefile
 ===================================================================
---- linux-3.1.orig/drivers/cbus/Makefile	2011-11-05 15:02:39.041041166 +0100
-+++ linux-3.1/drivers/cbus/Makefile	2011-11-05 15:02:39.177041045 +0100
+--- linux-3.1.orig/drivers/cbus/Makefile	2011-11-05 17:03:39.618846091 +0100
++++ linux-3.1/drivers/cbus/Makefile	2011-11-05 17:06:51.589348749 +0100
 @@ -11,3 +11,6 @@ obj-$(CONFIG_CBUS_RETU_POWERBUTTON) += r
  obj-$(CONFIG_CBUS_RETU_RTC)	+= retu-rtc.o
  obj-$(CONFIG_CBUS_RETU_WDT)	+= retu-wdt.o
@@ -29,7 +29,7 @@ Index: linux-3.1/drivers/cbus/Makefile
 Index: linux-3.1/drivers/cbus/n810bm_main.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/cbus/n810bm_main.c	2011-11-05 16:42:53.033998545 +0100
++++ linux-3.1/drivers/cbus/n810bm_main.c	2011-11-05 17:06:51.589348749 +0100
 @@ -0,0 +1,1572 @@
 +/*
 + *   Nokia n810 battery management
@@ -1606,7 +1606,7 @@ Index: linux-3.1/drivers/cbus/n810bm_main.c
 Index: linux-3.1/drivers/cbus/lipocharge.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/cbus/lipocharge.c	2011-11-05 15:02:39.177041045 +0100
++++ linux-3.1/drivers/cbus/lipocharge.c	2011-11-05 17:06:51.589348749 +0100
 @@ -0,0 +1,183 @@
 +/*
 + *   Generic LIPO battery charger
@@ -1794,7 +1794,7 @@ Index: linux-3.1/drivers/cbus/lipocharge.c
 Index: linux-3.1/drivers/cbus/lipocharge.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/cbus/lipocharge.h	2011-11-05 15:02:39.177041045 +0100
++++ linux-3.1/drivers/cbus/lipocharge.h	2011-11-05 17:06:51.589348749 +0100
 @@ -0,0 +1,60 @@
 +#ifndef LIPOCHARGE_H_
 +#define LIPOCHARGE_H_
@@ -1858,8 +1858,8 @@ Index: linux-3.1/drivers/cbus/lipocharge.h
 +#endif /* LIPOCHARGE_H_ */
 Index: linux-3.1/drivers/cbus/cbus.c
 ===================================================================
---- linux-3.1.orig/drivers/cbus/cbus.c	2011-11-05 15:02:39.041041166 +0100
-+++ linux-3.1/drivers/cbus/cbus.c	2011-11-05 15:02:39.177041045 +0100
+--- linux-3.1.orig/drivers/cbus/cbus.c	2011-11-05 17:03:39.610846102 +0100
++++ linux-3.1/drivers/cbus/cbus.c	2011-11-05 17:06:51.589348749 +0100
 @@ -34,6 +34,7 @@
  #include <linux/gpio.h>
  #include <linux/platform_device.h>
@@ -1884,8 +1884,8 @@ Index: linux-3.1/drivers/cbus/cbus.c
  MODULE_AUTHOR("Juha Yrjölä");
 Index: linux-3.1/drivers/cbus/cbus.h
 ===================================================================
---- linux-3.1.orig/drivers/cbus/cbus.h	2011-11-05 15:02:39.041041166 +0100
-+++ linux-3.1/drivers/cbus/cbus.h	2011-11-05 15:02:39.177041045 +0100
+--- linux-3.1.orig/drivers/cbus/cbus.h	2011-11-05 17:03:39.590846131 +0100
++++ linux-3.1/drivers/cbus/cbus.h	2011-11-05 17:06:51.589348749 +0100
 @@ -27,4 +27,6 @@ extern int cbus_read_reg(struct device *
  extern int cbus_write_reg(struct device *, unsigned dev, unsigned reg,
  		unsigned val);
@@ -1895,8 +1895,8 @@ Index: linux-3.1/drivers/cbus/cbus.h
  #endif /* __DRIVERS_CBUS_CBUS_H */
 Index: linux-3.1/drivers/cbus/retu.c
 ===================================================================
---- linux-3.1.orig/drivers/cbus/retu.c	2011-11-05 15:02:39.041041166 +0100
-+++ linux-3.1/drivers/cbus/retu.c	2011-11-05 15:02:39.177041045 +0100
+--- linux-3.1.orig/drivers/cbus/retu.c	2011-11-05 17:03:39.606846106 +0100
++++ linux-3.1/drivers/cbus/retu.c	2011-11-05 17:06:51.589348749 +0100
 @@ -417,6 +417,11 @@ static int retu_allocate_children(struct
  	if (!child)
  		return -ENOMEM;
@@ -1911,9 +1911,9 @@ Index: linux-3.1/drivers/cbus/retu.c
  
 Index: linux-3.1/drivers/cbus/tahvo.c
 ===================================================================
---- linux-3.1.orig/drivers/cbus/tahvo.c	2011-11-05 15:02:39.041041166 +0100
-+++ linux-3.1/drivers/cbus/tahvo.c	2011-11-05 16:23:10.694222186 +0100
-@@ -129,6 +129,7 @@ void tahvo_set_clear_reg_bits(struct dev
+--- linux-3.1.orig/drivers/cbus/tahvo.c	2011-11-05 17:04:36.274768324 +0100
++++ linux-3.1/drivers/cbus/tahvo.c	2011-11-05 17:06:51.589348749 +0100
+@@ -131,6 +131,7 @@ void tahvo_set_clear_reg_bits(struct dev
  	__tahvo_write_reg(tahvo, reg, w);
  	mutex_unlock(&tahvo->mutex);
  }
@@ -1921,7 +1921,7 @@ Index: linux-3.1/drivers/cbus/tahvo.c
  
  static irqreturn_t tahvo_irq_handler(int irq, void *_tahvo)
  {
-@@ -305,6 +306,11 @@ static int tahvo_allocate_children(struc
+@@ -307,6 +308,11 @@ static int tahvo_allocate_children(struc
  	if (!child)
  		return -ENOMEM;
  
