@@ -4,16 +4,16 @@ TLS_SUPPORT ?= 1
 UHTTPD_TLS ?= cyassl
 
 CFLAGS ?= -I./lua-5.1.4/src $(TLS_CFLAGS) -O0 -ggdb3
-LDFLAGS ?= -L./lua-5.1.4/src $(TLS_LDFLAGS)
+LDFLAGS ?= -L./lua-5.1.4/src
 
 CFLAGS += -Wall --std=gnu99
 
 ifeq ($(UHTTPD_TLS),openssl)
-  TLS_LDFLAGS := -L./openssl-0.9.8m -lssl
-  TLS_CFLAGS := -I./openssl-0.9.8m/include -DTLS_IS_OPENSSL
+  TLS_LDFLAGS ?= -L./openssl-0.9.8m -lssl
+  TLS_CFLAGS ?= -I./openssl-0.9.8m/include -DTLS_IS_OPENSSL
 else
-  TLS_LDFLAGS := -L./cyassl-1.4.0/src/.libs -lcyassl
-  TLS_CFLAGS := -I./cyassl-1.4.0/include -DTLS_IS_CYASSL
+  TLS_LDFLAGS ?= -L./cyassl-1.4.0/src/.libs -lcyassl
+  TLS_CFLAGS ?= -I./cyassl-1.4.0/include -DTLS_IS_CYASSL
 endif
 
 OBJ := uhttpd.o uhttpd-file.o uhttpd-utils.o
@@ -62,7 +62,7 @@ ifeq ($(TLS_SUPPORT),1)
 
   $(TLSLIB): uhttpd-tls.c
 		$(CC) $(CFLAGS) $(LDFLAGS) $(FPIC) \
-			-shared \
+			-shared $(TLS_LDFLAGS) \
 			-o $(TLSLIB) uhttpd-tls.c
 endif
 
