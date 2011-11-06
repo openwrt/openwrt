@@ -44,7 +44,7 @@ generate_keys() {
 	[ -x "$PX5G_BIN" ] && {
 		$PX5G_BIN selfsigned -der \
 			-days ${days:-730} -newkey rsa:${bits:-1024} -keyout "$UHTTPD_KEY" -out "$UHTTPD_CERT" \
-			-subj /C=${country:-DE}/ST=${state:-Saxony}/L=${location:-Leipzig}/CN=${commonname:-OpenWrt}
+			-subj /C="${country:-DE}"/ST="${state:-Saxony}"/L="${location:-Leipzig}"/CN="${commonname:-OpenWrt}"
 	}
 }
 
