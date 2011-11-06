@@ -329,13 +329,9 @@ enable_mac80211() {
 
 	wifi_fixup_hwmode "$device" "g"
 	for vif in $vifs; do
-		while [ -d "/sys/class/net/wlan$i" ]; do
-			i=$(($i + 1))
-		done
-
 		config_get ifname "$vif" ifname
 		[ -n "$ifname" ] || {
-			ifname="wlan$i"
+			[ $i -gt 0 ] && ifname="wlan${phy#phy}-$i" || ifname="wlan${phy#phy}"
 		}
 		config_set "$vif" ifname "$ifname"
 
@@ -351,7 +347,6 @@ enable_mac80211() {
 				# Hostapd will handle recreating the interface and
 				# it's accompanying monitor
 				apidx="$(($apidx + 1))"
-				i=$(($i + 1))
 				[ "$apidx" -gt 1 ] || iw phy "$phy" interface add "$ifname" type managed
 			;;
 			mesh)
@@ -404,6 +399,8 @@ enable_mac80211() {
 		# wifi-device) if the latter doesn't exist
 		txpower="${txpower:-$vif_txpower}"
 		[ -z "$txpower" ] || iw dev "$ifname" set txpower fixed "${txpower%%.*}00"
+
+		i=$(($i + 1))
 	done
 
 	local start_hostapd=
