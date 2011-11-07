@@ -1,11 +1,14 @@
 #!/bin/sh /etc/rc.common
+
 START=11
-PIDFILE=/var/run/ubusd.pid
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
 
 start() {
-	start-stop-daemon -S -b -m -p $PIDFILE -x /sbin/ubusd
+	service_start /sbin/ubusd
 }
 
 stop() {
-	start-stop-daemon -K -x /sbin/ubusd -p $PIDFILE
+	service_stop /sbin/ubusd
 }
