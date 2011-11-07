@@ -104,6 +104,7 @@ get_status_led() {
 		;;
 	whr-g301n | \
 	whr-hp-g300n | \
+	whr-hp-gn | \
 	wzr-hp-g300nh)
 		status_led="buffalo:green:router"
 		;;
