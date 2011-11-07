@@ -1,12 +1,13 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2008-2010 OpenWrt.org
+# Copyright (C) 2008-2011 OpenWrt.org
 
 START=97
-start() {
-        [ -c /dev/watchdog ] && [ -x /sbin/watchdog ] && \
-        	watchdog -t 5 /dev/watchdog
-}
 
+start() {
+	[ -c /dev/watchdog ] || return 1
+	[ -x /sbin/watchdog ] || return 1
+	service_start /sbin/watchdog -t 5 /dev/watchdog
+}
 stop() {
-	killall -q watchdog
+	service_stop /sbin/watchdog
 }
