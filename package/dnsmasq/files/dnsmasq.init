@@ -2,6 +2,9 @@
 # Copyright (C) 2007 OpenWrt.org
 
 START=60
+
+SERVICE_USE_PID=1
+
 DNS_SERVERS=""
 DOMAIN=""
 
@@ -397,7 +400,7 @@ start() {
 	config_foreach dhcp_add dhcp
 	config_foreach dhcp_cname_add cname
 
-	/usr/sbin/dnsmasq $args && {
+	service_start /usr/sbin/dnsmasq $args && {
 		rm -f /tmp/resolv.conf
 		[ -n "$DOMAIN" ] && echo "search $DOMAIN" >> /tmp/resolv.conf
 		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
@@ -408,10 +411,10 @@ start() {
 }
 
 stop() {
-	[ -f /tmp/resolv.conf ] && {
-		rm -f /tmp/resolv.conf
-		ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
+	service_stop /usr/sbin/dnsmasq && {
+		[ -f /tmp/resolv.conf ] && {
+			rm -f /tmp/resolv.conf
+			ln -s /tmp/resolv.conf.auto /tmp/resolv.conf
+		}
 	}
-	service_kill dnsmasq /var/run/dnsmasq.pid
-	return 0
 }
