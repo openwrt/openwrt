@@ -145,17 +145,17 @@ define Image/Build/WZRHPG30XNH
 endef
 
 define Image/Build/WHRHPG300N
-	$(call MkuImageLzma,$(2),$(3))
+	$(call MkuImageLzma,$(2),$(3) $($(4)))
 	$(call Sysupgrade/KR,$(1),$(2),917504,2883584)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
 			dd if=$(call sysupname,$(1),$(2)); \
 		) > $(call imgname,$(1),$(2))-tftp.bin; \
-		buffalo-enc -p $(4) -v 1.76 \
+		buffalo-enc -p $(5) -v 1.76 \
 			-i $(call sysupname,$(1),$(2)) \
 			-o $(KDIR)/$(2).enc; \
-		buffalo-tag -b $(4) -p $(4) -a ath -v 1.76 -m 1.01 -l mlang8 \
+		buffalo-tag -b $(5) -p $(5) -a ath -v 1.76 -m 1.01 -l mlang8 \
 			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
 			-i $(KDIR)/$(2).enc \
 			-o $(call factoryname,$(1),$(2)); \
@@ -708,6 +708,7 @@ define Image/Build/Profile/WRT160NL
 endef
 
 whrhpg300n_cmdline=board=WHR-HP-G300N console=ttyS0,115200
+whrhpg300n_mtdlayout=mtdparts=spi0.0:248k(u-boot)ro,8k(u-boot-env)ro,896k(kernel),2816k(rootfs),64k(user_property),64k(art)ro,3712k@0x30000(firmware)
 define Image/Build/Profile/WHRHPG300N
 	$(call Image/Build/Template/$(fs_64k)/$(1),WHRHPG300N,whr-hp-g300n,$(whrhpg300n_cmdline),whrhpg300n_mtdlayout,WHR-HP-G300N)
 endef
