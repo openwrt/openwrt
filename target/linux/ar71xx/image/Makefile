@@ -707,6 +707,11 @@ define Image/Build/Profile/WRT160NL
 	$(call Image/Build/Template/$(fs_64k)/$(1),CyberTAN,wrt160nl,$(wrt160nl_cmdline),1.00.01)
 endef
 
+whrg301n_cmdline=board=WHR-G301N console=ttyS0,115200
+define Image/Build/Profile/WHRG301N
+	$(call Image/Build/Template/$(fs_64k)/$(1),WHRHPG300N,whr-g301n,$(whrg301n_cmdline),whrhpg300n_mtdlayout,WHR-G301N)
+endef
+
 whrhpg300n_cmdline=board=WHR-HP-G300N console=ttyS0,115200
 whrhpg300n_mtdlayout=mtdparts=spi0.0:248k(u-boot)ro,8k(u-boot-env)ro,896k(kernel),2816k(rootfs),64k(user_property),64k(art)ro,3712k@0x30000(firmware)
 define Image/Build/Profile/WHRHPG300N
@@ -785,6 +790,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AP96,$(1))
 	$(call Image/Build/Profile/WRT400N,$(1))
 	$(call Image/Build/Profile/WRT160NL,$(1))
+	$(call Image/Build/Profile/WHRG301N,$(1))
 	$(call Image/Build/Profile/WHRHPG300N,$(1))
 	$(call Image/Build/Profile/WZRHPG300NH,$(1))
 	$(call Image/Build/Profile/WZRHPAG300H,$(1))
