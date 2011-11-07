@@ -2,10 +2,13 @@
 # Copyright (C) 2006-2010 OpenWrt.org
 # Copyright (C) 2006 Carlos Sobrinho
 
-NAME=dropbear
-PROG=/usr/sbin/dropbear
 START=50
 STOP=50
+
+SERVICE_USE_PID=1
+
+NAME=dropbear
+PROG=/usr/sbin/dropbear
 PIDCOUNT=0
 EXTRA_COMMANDS="killclients"
 EXTRA_HELP="	killclients Kill ${NAME} processes except servers and yourself"
@@ -48,7 +51,8 @@ dropbear_start()
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 
 	# prepare parameters (initialise with pid file)
-	local args="-P /var/run/${NAME}.${PIDCOUNT}.pid"
+	local pid_file="/var/run/${NAME}.${PIDCOUNT}.pid"
+	local args="-P $pid_file"
 	local val
 	# A) password authentication
 	config_get_bool val "${section}" PasswordAuth 1
@@ -80,8 +84,7 @@ dropbear_start()
 
 	# execute program and return its exit code
 	[ "${verbosed}" -ne 0 ] && echo "${initscript}: section ${section} starting ${PROG} ${args}"
-	${PROG} ${args}
-	return $?
+	SERVICE_PID_FILE="$pid_file" service_start ${PROG} ${args}
 }
 
 keygen()
@@ -120,14 +123,17 @@ start()
 
 stop()
 {
-	# killing all server processes
-	local pidfile
-	for pidfile in `ls /var/run/${NAME}.*.pid`
-	 do
-		start-stop-daemon -q -K -s KILL -p "${pidfile}" -n "${NAME}"
-		rm -f "${pidfile}"
+	local pid_file pid_files
+	
+	pid_files=`ls /var/run/${NAME}.*.pid 2>/dev/null`
+	
+	[ -z "$pid_files" ] && return 1
+	
+	for pid_file in $pid_files; do
+		SERVICE_PID_FILE="$pid_file" service_stop ${PROG} && {
+			rm -f ${pid_file}
+		}
 	done
-	[ -z "${pidfile}" ] && echo "${initscript}: no pid files, if you get problems with start then try killclients"
 }
 
 killclients()
