@@ -102,6 +102,7 @@ get_status_led() {
 	unifi)
 		status_led="ubnt:green:dome"
 		;;
+	whr-g301n | \
 	whr-hp-g300n | \
 	wzr-hp-g300nh)
 		status_led="buffalo:green:router"

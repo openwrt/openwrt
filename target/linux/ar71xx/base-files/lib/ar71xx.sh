@@ -151,6 +151,9 @@ ar71xx_board_name() {
 	*UniFi)
 		name="unifi"
 		;;
+	*WHR-G301N)
+		name="whr-g301n"
+		;;
 	*WP543)
 		name="wp543"
 		;;
