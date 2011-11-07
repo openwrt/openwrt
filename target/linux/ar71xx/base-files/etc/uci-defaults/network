@@ -44,6 +44,30 @@ set_interfaces_lan_wan() {
 	set_interface_wan "$wan_ifname"
 }
 
+add_switch() {
+	local name=$1
+	local reset=$2
+	local enable=$3
+	uci batch <<EOF
+add network switch
+set network.@switch[-1].name='$name'
+set network.@switch[-1].reset='$reset'
+set network.@switch[-1].enable_vlan='$enable'
+EOF
+}
+
+add_switch_vlan() {
+	local device=$1
+	local vlan=$2
+	local ports=$3
+	uci batch <<EOF
+add network switch_vlan
+set network.@switch_vlan[-1].device='$device'
+set network.@switch_vlan[-1].vlan='$vlan'
+set network.@switch_vlan[-1].ports='$ports'
+EOF
+}
+
 [ -e /etc/config/network ] && exit 0
 
 touch /etc/config/network
@@ -71,6 +95,27 @@ pb42 |\
 pb44 |\
 routerstation)
 	set_interfaces_lan_wan "eth1" "eth0"
+	;;
+
+ap121 |\
+ap121-mini |\
+ap96 |\
+dir-600-a1 |\
+dir-615-c1 |\
+ja76pf |\
+rb750 |\
+tew-632brp |\
+tl-mr3220 |\
+tl-mr3420 |\
+tl-wr741nd |\
+tl-wr741nd-v4 |\
+whr-g301n |\
+whr-hp-g300n |\
+whr-hp-gn |\
+wzr-hp-ag300h)
+	set_interfaces_lan_wan "eth0" "eth1"
+	add_switch "eth0" "1" "1"
+	add_switch_vlan "eth0" "1" "0 1 2 3 4"
 	;;
 
 *)
