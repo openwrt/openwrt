@@ -1,5 +1,6 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2006-2011 OpenWrt.org
+
 START=50
 
 has_root_pwd() {
@@ -27,11 +28,10 @@ start() {
 	     ! has_root_pwd /etc/passwd && ! has_root_pwd /etc/shadow ) || \
 	   ( ! /etc/init.d/dropbear enabled 2> /dev/null && ! /etc/init.d/sshd enabled 2> /dev/null );
 	then
-		telnetd -l /bin/login.sh
+		service_start /usr/sbin/telnetd -l /bin/login.sh
 	fi
 }
 
 stop() {
-	killall telnetd 2>/dev/null
+	service_stop /usr/sbin/telnetd
 }
-
