@@ -90,6 +90,10 @@ set_interface_loopback
 board=$(ar71xx_board_name)
 
 case "$board" in
+all0258n)
+	set_interface_lan "eth0 eth1"
+	;;
+
 dir-825-b1)
 	set_interfaces_lan_wan "eth0.1" "eth1"
 	add_switch "rtl8366s" "1" "1"
