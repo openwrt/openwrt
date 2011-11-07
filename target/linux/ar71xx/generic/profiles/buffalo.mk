@@ -49,3 +49,15 @@ define Profile/WHRHPG300N/Description
 endef
 
 $(eval $(call Profile,WHRHPG300N))
+
+
+define Profile/WHRHPGN
+	NAME:=Buffalo WHR-HP-GN
+	PACKAGES:=
+endef
+
+define Profile/WHRHPGN/Description
+	Package set optimized for the Buffalo WHR-HP-GN.
+endef
+
+$(eval $(call Profile,WHRHPGN))
