@@ -116,6 +116,15 @@ routerstation-pro)
 	add_switch_vlan "switch0" "1" "0 1 2 3 4"
 	;;
 
+rb-493g)
+	set_interfaces_lan_wan "eth0 eth1.1" "eth1.2"
+	add_switch "switch0" "1" "1"
+	add_switch_vlan "switch0" "1" "0 1 2 3 4"
+	add_switch "switch1" "1" "1"
+	add_switch_vlan "switch1" "1" "0t 1 2 3 4"
+	add_switch_vlan "switch1" "2" "0t 5"
+	;;
+
 pb92)
 	set_interfaces_lan_wan "eth0.1" "eth0.2"
 	add_switch "eth0" "1" "1"
