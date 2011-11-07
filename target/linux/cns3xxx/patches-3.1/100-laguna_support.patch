@@ -980,13 +980,13 @@
  	pm_power_off = cns3xxx_power_off;
  }
  
---- a/arch/arm/mach-cns3xxx/include/mach/platform.h
-+++ b/arch/arm/mach-cns3xxx/include/mach/platform.h
-@@ -22,5 +22,7 @@ struct cns3xxx_plat_info {
- 	u32 phy[3];
- };
+--- a/arch/arm/mach-cns3xxx/core.h
++++ b/arch/arm/mach-cns3xxx/core.h
+@@ -12,6 +12,7 @@
+ #define __CNS3XXX_CORE_H
  
+ extern struct sys_timer cns3xxx_timer;
 +extern int cns3xxx_pcie_init(u8 bitmap);
-+
- #endif /* __ASM_ARCH_PLATFORM_H */
- #endif
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ void __init cns3xxx_l2x0_init(void);
