@@ -65,6 +65,14 @@ wp543)
 	set_interface_lan "eth0"
 	;;
 
+ap83 |\
+jwap003 |\
+pb42 |\
+pb44 |\
+routerstation)
+	set_interfaces_lan_wan "eth1" "eth0"
+	;;
+
 *)
 	set_interfaces_lan_wan "eth0" "eth1"
 	;;
