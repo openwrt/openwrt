@@ -99,7 +99,9 @@ platform_check_image() {
 	rocket-m | \
 	wzr-hp-g300nh | \
 	wzr-hp-ag300h | \
+	whr-g301n | \
 	whr-hp-g300n | \
+	whr-hp-gn | \
 	nbg460n_550n_550nh | \
 	unifi )
 		[ "$magic" != "2705" ] && {
