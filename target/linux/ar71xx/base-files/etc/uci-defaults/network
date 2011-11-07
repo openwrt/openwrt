@@ -55,6 +55,16 @@ set_interface_loopback
 board=$(ar71xx_board_name)
 
 case "$board" in
+aw-nr580 |\
+bullet-m |\
+eap7660d |\
+rb-411 |\
+tl-wa901nd-v2 |\
+tl-wr703n |\
+wp543)
+	set_interface_lan "eth0"
+	;;
+
 *)
 	set_interfaces_lan_wan "eth0" "eth1"
 	;;
