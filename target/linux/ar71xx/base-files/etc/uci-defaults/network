@@ -129,6 +129,12 @@ tl-wr941nd)
 	set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 	;;
 
+wrt160nl)
+	set_interfaces_lan_wan "eth0" "eth1"
+	add_switch "eth0" "1" "1"
+	add_switch_vlan "eth0" "1" "0 1 2 3 4 5"
+	;;
+
 aw-nr580 |\
 bullet-m |\
 eap7660d |\
