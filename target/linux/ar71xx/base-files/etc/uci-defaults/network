@@ -13,6 +13,17 @@ set network.loopback.netmask='255.0.0.0'
 EOF
 }
 
+set_interface_raw() {
+	local cfg=$1
+	local ifname=$2
+
+	uci batch <<EOF
+set network.$cfg='interface'
+set network.$cfg.ifname='$ifname'
+set network.$cfg.proto='none'
+EOF
+}
+
 set_interface_lan() {
 	local ifname=$1
 
@@ -97,6 +108,12 @@ routerstation-pro)
 	set_interfaces_lan_wan "eth1" "eth0"
 	add_switch "switch0" "1" "1"
 	add_switch_vlan "switch0" "1" "0 1 2 3 4"
+	;;
+
+tl-wr841n-v1|\
+tl-wr941nd)
+	set_interface_raw "eth" "eth0"
+	set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 	;;
 
 aw-nr580 |\
