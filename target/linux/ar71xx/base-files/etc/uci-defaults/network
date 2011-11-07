@@ -79,6 +79,13 @@ set_interface_loopback
 board=$(ar71xx_board_name)
 
 case "$board" in
+rb-433 |\
+rb-433u)
+	set_interfaces_lan_wan "eth1" "eth0"
+	add_switch "switch0" "1" "1"
+	add_switch_vlan "switch0" "1" "1 2 5"
+	;;
+
 aw-nr580 |\
 bullet-m |\
 eap7660d |\
