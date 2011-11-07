@@ -151,6 +151,12 @@ wrt160nl)
 	add_switch_vlan "eth0" "1" "0 1 2 3 4 5"
 	;;
 
+wzr-hp-g300nh)
+	set_interfaces_lan_wan "eth0.1" "eth1"
+	add_switch "switch0" "1" "1"
+	add_switch_vlan "switch0" "1" "0 1 2 3 5t"
+	;;
+
 aw-nr580 |\
 bullet-m |\
 eap7660d |\
