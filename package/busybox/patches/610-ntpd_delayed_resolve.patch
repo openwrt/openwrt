@@ -1,0 +1,48 @@
+--- a/networking/ntpd.c
++++ b/networking/ntpd.c
+@@ -216,6 +216,7 @@ typedef struct {
+ typedef struct {
+ 	len_and_sockaddr *p_lsa;
+ 	char             *p_dotted;
++	char             *p_hostname;
+ 	/* when to send new query (if p_fd == -1)
+ 	 * or when receive times out (if p_fd >= 0): */
+ 	int              p_fd;
+@@ -646,8 +647,9 @@ add_peers(char *s)
+ 	peer_t *p;
+ 
+ 	p = xzalloc(sizeof(*p));
+-	p->p_lsa = xhost2sockaddr(s, 123);
+-	p->p_dotted = xmalloc_sockaddr2dotted_noport(&p->p_lsa->u.sa);
++	p->p_hostname = s;
++	p->p_lsa = NULL;
++	p->p_dotted = NULL;
+ 	p->p_fd = -1;
+ 	p->p_xmt_msg.m_status = MODE_CLIENT | (NTP_VERSION << 3);
+ 	p->next_action_time = G.cur_time; /* = set_next(p, 0); */
+@@ -696,6 +698,25 @@ send_query_to_peer(peer_t *p)
+ 	 *
+ 	 * Uncomment this and use strace to see it in action:
+ 	 */
++
++	/* See if the peer hostname already resolved yet, if not, retry to resolv and return on failure */
++	if (!p->p_lsa)
++	{
++		p->p_lsa = host2sockaddr(p->p_hostname, 123);
++
++		if (p->p_lsa)
++		{
++			p->p_dotted = xmalloc_sockaddr2dotted_noport(&p->p_lsa->u.sa);
++			VERB1 bb_error_msg("resolved peer %s to %s", p->p_hostname, p->p_dotted);
++		}
++		else
++		{
++			set_next(p, RETRY_INTERVAL);
++			VERB1 bb_error_msg("could not resolve peer %s, skipping", p->p_hostname);
++			return;
++		}
++	}
++
+ #define PROBE_LOCAL_ADDR /* { len_and_sockaddr lsa; lsa.len = LSA_SIZEOF_SA; getsockname(p->query.fd, &lsa.u.sa, &lsa.len); } */
+ 
+ 	if (p->p_fd == -1) {
