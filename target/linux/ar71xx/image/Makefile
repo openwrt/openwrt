@@ -134,10 +134,10 @@ define Image/Build/WZRHPG30XNH
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
 			dd if=$(call sysupname,$(1),$(2)); \
 		) > $(call imgname,$(1),$(2))-tftp.bin; \
-		buffalo-enc -p $(4) -v 1.76 \
+		buffalo-enc -p $(4) -v 1.99 \
 			-i $(call sysupname,$(1),$(2)) \
 			-o $(KDIR)/$(2).enc; \
-		buffalo-tag -b $(4) -p $(4) -a ath -v 1.76 -m 1.01 -l mlang8 \
+		buffalo-tag -b $(4) -p $(4) -a ath -v 1.99 -m 1.01 -l mlang8 \
 			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
 			-i $(KDIR)/$(2).enc \
 			-o $(call factoryname,$(1),$(2)); \
@@ -152,10 +152,10 @@ define Image/Build/WHRHPG300N
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
 			dd if=$(call sysupname,$(1),$(2)); \
 		) > $(call imgname,$(1),$(2))-tftp.bin; \
-		buffalo-enc -p $(5) -v 1.76 \
+		buffalo-enc -p $(5) -v 1.99 \
 			-i $(call sysupname,$(1),$(2)) \
 			-o $(KDIR)/$(2).enc; \
-		buffalo-tag -b $(5) -p $(5) -a ath -v 1.76 -m 1.01 -l mlang8 \
+		buffalo-tag -b $(5) -p $(5) -a ath -v 1.99 -m 1.01 -l mlang8 \
 			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
 			-i $(KDIR)/$(2).enc \
 			-o $(call factoryname,$(1),$(2)); \
