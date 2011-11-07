@@ -86,6 +86,13 @@ rb-433u)
 	add_switch_vlan "switch0" "1" "1 2 5"
 	;;
 
+rb-450g |\
+routerstation-pro)
+	set_interfaces_lan_wan "eth1" "eth0"
+	add_switch "switch0" "1" "1"
+	add_switch_vlan "switch0" "1" "0 1 2 3 4"
+	;;
+
 aw-nr580 |\
 bullet-m |\
 eap7660d |\
