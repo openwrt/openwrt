@@ -96,6 +96,12 @@ dir-825-b1)
 	add_switch_vlan "rtl8366s" "1" "0 1 2 3 5t"
 	;;
 
+nbg460n_550n_550nh)
+	set_interfaces_lan_wan "eth0" "eth1"
+	add_switch "rtl8366s" "1" "1"
+	add_switch_vlan "rtl8366s" "0" "0 1 2 3 5"
+	;;
+
 rb-433 |\
 rb-433u)
 	set_interfaces_lan_wan "eth1" "eth0"
