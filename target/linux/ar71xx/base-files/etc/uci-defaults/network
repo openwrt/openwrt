@@ -142,6 +142,11 @@ pb92)
 	add_switch_vlan "eth0" "2" "0t 2"
 	;;
 
+tl-wa901nd)
+	set_interface_raw "eth" "eth0"
+	set_interface_lan "lan"
+	;;
+
 tl-wr1043nd)
 	set_interfaces_lan_wan "eth0.1" "eth0.2"
 	add_switch "rtl8366rb" "1" "1"
