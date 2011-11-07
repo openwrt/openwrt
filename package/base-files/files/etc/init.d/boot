@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 
 START=10
 STOP=98
@@ -23,24 +23,25 @@ system_config() {
 	[ -n "$zonename" ] && [ -f "/usr/share/zoneinfo/$zonename" ] && ln -s "/usr/share/zoneinfo/$zonename" /tmp/localtime
 
 	if [ -x /sbin/syslogd ]; then
-		local log_ip log_size log_port log_type log_file
+		local args log_ip log_size log_port log_type log_file
 		config_get log_ip "$cfg" log_ip 
 		config_get log_size "$cfg" log_size 16
 		config_get log_port "$cfg" log_port 514
 		config_get log_type "$cfg" log_type circular
 		config_get log_file "$cfg" log_file "/var/log/messages"
+		args="${log_ip:+-L -R ${log_ip}:${log_port}} ${conloglevel:+-l $conloglevel}"
 		if [ "$log_type" = "file" ]; then
-			syslogd -s $log_size -O $log_file \
-				${log_ip:+-L -R ${log_ip}:${log_port}} \
-				${conloglevel:+-l $conloglevel} -S
+			args="$args -s $log_size -O $log_file -S"
 		else
-			syslogd -C${log_size} \
-				${log_ip:+-L -R ${log_ip}:${log_port}} \
-				${conloglevel:+-l $conloglevel}
+			args="$args -C${log_size}"
 		fi
+		service_start /sbin/syslogd $args
 	fi
-	config_get klogconloglevel "$cfg" klogconloglevel
-	[ -x /sbin/klogd ] && klogd ${klogconloglevel:+-c $klogconloglevel}
+	if [ -x /sbin/klogd ]; then
+		config_get klogconloglevel "$cfg" klogconloglevel
+		args="${klogconloglevel:+-c $klogconloglevel}"
+		service_start /sbin/klogd $args
+	fi
 }
 
 apply_uci_config() {
@@ -101,6 +102,6 @@ start() {
 }
 
 stop() {
-        killall -9 syslogd 2> /dev/null
+	service_stop /sbin/klogd
+	service_stop /sbin/syslogd
 }
-
