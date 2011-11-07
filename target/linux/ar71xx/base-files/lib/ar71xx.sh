@@ -154,6 +154,9 @@ ar71xx_board_name() {
 	*WHR-G301N)
 		name="whr-g301n"
 		;;
+	*WHR-HP-GN)
+		name="whr-hp-gn"
+		;;
 	*WP543)
 		name="wp543"
 		;;
