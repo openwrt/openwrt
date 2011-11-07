@@ -116,6 +116,13 @@ routerstation-pro)
 	add_switch_vlan "switch0" "1" "0 1 2 3 4"
 	;;
 
+pb92)
+	set_interfaces_lan_wan "eth0.1" "eth0.2"
+	add_switch "eth0" "1" "1"
+	add_switch_vlan "eth0" "1" "0t 1 3 4 5"
+	add_switch_vlan "eth0" "2" "0t 2"
+	;;
+
 tl-wr841n-v1|\
 tl-wr941nd)
 	set_interface_raw "eth" "eth0"
