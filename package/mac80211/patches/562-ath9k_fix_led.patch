@@ -1,0 +1,30 @@
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1056,9 +1056,11 @@ static int ath9k_start(struct ieee80211_
+ 		goto mutex_unlock;
+ 	}
+ 
+-	ath9k_hw_cfg_output(ah, ah->led_pin,
+-			    AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
+-	ath9k_hw_set_gpio(ah, ah->led_pin, 0);
++	if (ah->led_pin >= 0) {
++		ath9k_hw_cfg_output(ah, ah->led_pin,
++				    AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
++		ath9k_hw_set_gpio(ah, ah->led_pin, 0);
++	}
+ 
+ 	/*
+ 	 * Reset key cache to sane defaults (all entries cleared) instead of
+@@ -1209,8 +1211,10 @@ static void ath9k_stop(struct ieee80211_
+ 
+ 	spin_lock_bh(&sc->sc_pcu_lock);
+ 
+-	ath9k_hw_set_gpio(ah, ah->led_pin, 1);
+-	ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
++	if (ah->led_pin >= 0) {
++		ath9k_hw_set_gpio(ah, ah->led_pin, 1);
++		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
++	}
+ 
+ 	ath_prepare_reset(sc, false, true);
+ 
