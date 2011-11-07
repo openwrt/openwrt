@@ -1,6 +1,9 @@
 #!/bin/sh /etc/rc.common
+
 START=20
-PIDFILE=/var/run/netifd.pid
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
 
 start() {
 	stop
@@ -8,16 +11,14 @@ start() {
 		ulimit -c unlimited
 		echo '/tmp/%e.%p.%s.%t.core' > /proc/sys/kernel/core_pattern
 	}
-	start-stop-daemon -S -b -m -p $PIDFILE -x /sbin/netifd
+	service_start /sbin/netifd
 	sleep 1
+}
+
+stop() {
+	service_stop /sbin/netifd
 }
 
 reload() {
 	ubus call network reload
-}
-
-stop() {
-	[ -e "$PIDFILE" ] || return
-	start-stop-daemon -K -p $PIDFILE -x /sbin/netifd
-	rm -f "$PIDFILE"
 }
