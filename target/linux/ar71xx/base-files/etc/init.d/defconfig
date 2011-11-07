@@ -10,7 +10,7 @@ start() {
 
 	local board=$(ar71xx_board_name)
 
-	[ ! -d /etc/defconfig/$board ] && board="generic"
+	[ ! -d /etc/defconfig/$board ] && return 0
 
 	for f in $( ls /etc/defconfig/$board ); do
 		if [ ! -e /etc/config/$f ]; then
