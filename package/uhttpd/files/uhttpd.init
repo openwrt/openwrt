@@ -2,9 +2,12 @@
 # Copyright (C) 2010 Jo-Philipp Wich
 
 START=50
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
 UHTTPD_BIN="/usr/sbin/uhttpd"
 PX5G_BIN="/usr/sbin/px5g"
-
 
 append_arg() {
 	local cfg="$1"
@@ -103,21 +106,16 @@ start_instance()
 		}
 	}
 
-	start-stop-daemon -S -x $UHTTPD_BIN \
-		-p /var/run/uhttpd_${cfg}.pid \
-		-m -b -- -f $UHTTPD_ARGS
+	SERVICE_PID_FILE=/var/run/uhttpd_${cfg}.pid
+	service_start $UHTTPD_BIN -f $UHTTPD_ARGS
 }
 
 stop_instance()
 {
 	local cfg="$1"
 
-	[ -f /var/run/uhttpd_${cfg}.pid ] && {
-		start-stop-daemon -K -q -n ${UHTTPD_BIN##*/} \
-			-p /var/run/uhttpd_${cfg}.pid -s TERM
-
-		rm -f /var/run/uhttpd_${cfg}.pid
-	}
+	SERVICE_PID_FILE=/var/run/uhttpd_${cfg}.pid
+	service_stop $UHTTPD_BIN
 }
 
 start() {
