@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=base-files-network
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_BUILD_DEPENDS:=opkg/host
 
