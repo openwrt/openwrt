@@ -157,8 +157,11 @@ $(call KernelPackage/$(1)/config)
 			if [ -e $$$$$$$$mod ]; then \
 				mkdir -p $$(1)/$(MODULES_SUBDIR) ; \
 				$(CP) -L $$$$$$$$mod $$(1)/$(MODULES_SUBDIR)/ ; \
+			elif  grep -q "$$$$$$$${mod##$(LINUX_DIR)/}" "$(LINUX_DIR)/modules.builtin"; then \
+				echo "NOTICE: module '$$$$$$$$mod' is built-in."; \
 			else \
-				echo "WARNING: module '$$$$$$$$mod' does not exist, is it built-in?" ; \
+				echo "ERROR: module '$$$$$$$$mod' is missing."; \
+				exit 1; \
 			fi; \
 		  done;
 		  $(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
