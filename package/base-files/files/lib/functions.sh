@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2011 OpenWrt.org
 # Copyright (C) 2006 Fokus Fraunhofer <carsten.tittel@fokus.fraunhofer.de>
 
 
@@ -281,17 +281,19 @@ uci_apply_defaults() {
 # Usage: service ACTION EXEC ARGS...
 #
 # Action:
-#   -S,--start           start EXEC, passing it ARGS as its arguments
-#   -K,--stop            stop EXEC (send it a $SERVICE_SIG_STOP signal)
-#   -R,--reload          reload EXEC (send it a $SERVICE_SIG_RELOAD signal)
+#   -C   check if EXEC is alive
+#   -S   start EXEC, passing it ARGS as its arguments
+#   -K   kill EXEC, sending it a TERM signal if not specified otherwise
 #
-# Environment variables used:
+# Environment variables exposed:
 #   SERVICE_DAEMONIZE    run EXEC in background
 #   SERVICE_WRITE_PID    create a pid file and use it
 #   SERVICE_USE_PID      assume EXEC creates its own pid file and use it
 #   SERVICE_PID_FILE     pid file to use (default to /var/run/EXEC.pid)
-#   SERVICE_SIG_RELOAD   signal used for reloading
-#   SERVICE_SIG_STOP     signal used for stopping
+#   SERVICE_SIG          signal to send when using -K
+#   SERVICE_SIG_RELOAD   default signal used for reloading
+#   SERVICE_SIG_STOP     default signal used for stopping
+#   SERVICE_STOP_TIME    time to wait for a process to stop gracefully before killing it
 #   SERVICE_UID          user EXEC should be run as
 #   SERVICE_GID          group EXEC should be run as
 #
@@ -302,25 +304,20 @@ uci_apply_defaults() {
 SERVICE_QUIET=1
 SERVICE_SIG_RELOAD="HUP"
 SERVICE_SIG_STOP="TERM"
+SERVICE_STOP_TIME=5
 
 service() {
 	local ssd
-	local ssd_pid_file
-	local ssd_sig
-	local ssd_start
 	ssd="${SERVICE_DEBUG:+echo }start-stop-daemon${SERVICE_QUIET:+ -q}"
 	case "$1" in
-	  -S|--start|start)
-		ssd="$ssd -S"
-		ssd_start=1
+	  -C)
+		ssd="$ssd -K -t"
 		;;
-	  -K|--stop|stop)
-		ssd="$ssd -K"
-		ssd_sig="$SERVICE_SIG_STOP"
+	  -S)
+		ssd="$ssd -S${SERVICE_DAEMONIZE:+ -b}${SERVICE_WRITE_PID:+ -m}"
 		;;
-	  -R|--reload|reload)
-		ssd="$ssd -K"
-		ssd_sig="$SERVICE_SIG_RELOAD"
+	  -K)
+		ssd="$ssd -K${SERVICE_SIG:+ -s $SERVICE_SIG}"
 		;;
 	  *)
 		echo "ssd: unknow action '$1'" 1>&2
@@ -336,13 +333,16 @@ service() {
 		ssd="$ssd -p ${SERVICE_PID_FILE:-/var/run/${1##*/}.pid}"
 	fi
 	ssd="$ssd${SERVICE_UID:+ -c $SERVICE_UID${SERVICE_GID:+:$SERVICE_GID}}"
-	if [ -n "$ssd_start" ]; then
-		ssd="$ssd${SERVICE_DAEMONIZE:+ -b}${SERVICE_WRITE_PID:+ -m}"
-	else
-		ssd="$ssd${ssd_sig:+ -s $ssd_sig}"
-	fi
 	shift
 	$ssd${1:+ -- "$@"}
+}
+
+service_check() {
+	service -C "$@"
+}
+
+service_signal() {
+	SERVICE_SIG="${SERVICE_SIG:-USR1}" service -K "$@"
 }
 
 service_start() {
@@ -350,14 +350,28 @@ service_start() {
 }
 
 service_stop() {
-	service -K "$@"
+	local try
+	SERVICE_SIG="${SERVICE_SIG:-$SERVICE_SIG_STOP}" service -K "$@"
+	while [ $((try++)) -lt $SERVICE_STOP_TIME ]; do
+		service -C "$@" || return 0
+		sleep 1
+	done
+	SERVICE_SIG="KILL" service -K "$@"
+	sleep 1
+	! service -C "$@"
 }
 
 service_reload() {
-	service -R "$@"
+	SERVICE_SIG="${SERVICE_SIG:-$SERVICE_SIG_RELOAD}" service -K "$@"
 }
 
 service_kill() {
+	cat 1>&2 << __END_OF_WARNING__
+#
+# WARNING: the 'service_kill' function is now deprecated and might be 
+# removed soon. Consider using the other new service_* wrappers instead.
+#
+__END_OF_WARNING__
 	local name="${1}"
 	local pid="${2:-$(pidof "$name")}"
 	local grace="${3:-5}"
