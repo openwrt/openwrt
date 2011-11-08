@@ -275,6 +275,88 @@ uci_apply_defaults() {
 	uci commit
 }
 
+#
+# service: simple wrapper around start-stop-daemon
+#
+# Usage: service ACTION EXEC ARGS...
+#
+# Action:
+#   -S,--start           start EXEC, passing it ARGS as its arguments
+#   -K,--stop            stop EXEC (send it a $SERVICE_SIG_STOP signal)
+#   -R,--reload          reload EXEC (send it a $SERVICE_SIG_RELOAD signal)
+#
+# Environment variables used:
+#   SERVICE_DAEMONIZE    run EXEC in background
+#   SERVICE_WRITE_PID    create a pid file and use it
+#   SERVICE_USE_PID      assume EXEC creates its own pid file and use it
+#   SERVICE_PID_FILE     pid file to use (default to /var/run/EXEC.pid)
+#   SERVICE_SIG_RELOAD   signal used for reloading
+#   SERVICE_SIG_STOP     signal used for stopping
+#   SERVICE_UID          user EXEC should be run as
+#   SERVICE_GID          group EXEC should be run as
+#
+#   SERVICE_DEBUG        don't do anything, but show what would be done
+#   SERVICE_QUIET        don't print anything
+#
+
+SERVICE_QUIET=1
+SERVICE_SIG_RELOAD="HUP"
+SERVICE_SIG_STOP="TERM"
+
+service() {
+	local ssd
+	local ssd_pid_file
+	local ssd_sig
+	local ssd_start
+	ssd="${SERVICE_DEBUG:+echo }start-stop-daemon${SERVICE_QUIET:+ -q}"
+	case "$1" in
+	  -S|--start|start)
+		ssd="$ssd -S"
+		ssd_start=1
+		;;
+	  -K|--stop|stop)
+		ssd="$ssd -K"
+		ssd_sig="$SERVICE_SIG_STOP"
+		;;
+	  -R|--reload|reload)
+		ssd="$ssd -K"
+		ssd_sig="$SERVICE_SIG_RELOAD"
+		;;
+	  *)
+		echo "ssd: unknow action '$1'" 1>&2
+		return 1
+	esac
+	shift
+	if [ -z "$1" ]; then
+		echo "ssd: missing arguments" 1>&2
+		return 1
+	fi
+	ssd="$ssd -x $1"
+	if [ -n "$SERVICE_PID_FILE$SERVICE_USE_PID$SERVICE_WRITE_PID" ]; then
+		ssd="$ssd -p ${SERVICE_PID_FILE:-/var/run/${1##*/}.pid}"
+	fi
+	ssd="$ssd${SERVICE_UID:+ -c $SERVICE_UID${SERVICE_GID:+:$SERVICE_GID}}"
+	if [ -n "$ssd_start" ]; then
+		ssd="$ssd${SERVICE_DAEMONIZE:+ -b}${SERVICE_WRITE_PID:+ -m}"
+	else
+		ssd="$ssd${ssd_sig:+ -s $ssd_sig}"
+	fi
+	shift
+	$ssd${1:+ -- "$@"}
+}
+
+service_start() {
+	service -S "$@"
+}
+
+service_stop() {
+	service -K "$@"
+}
+
+service_reload() {
+	service -R "$@"
+}
+
 service_kill() {
 	local name="${1}"
 	local pid="${2:-$(pidof "$name")}"
