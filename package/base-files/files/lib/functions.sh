@@ -351,7 +351,7 @@ service_start() {
 
 service_stop() {
 	local try
-	SERVICE_SIG="${SERVICE_SIG:-$SERVICE_SIG_STOP}" service -K "$@"
+	SERVICE_SIG="${SERVICE_SIG:-$SERVICE_SIG_STOP}" service -K "$@" || return 1
 	while [ $((try++)) -lt $SERVICE_STOP_TIME ]; do
 		service -C "$@" || return 0
 		sleep 1
