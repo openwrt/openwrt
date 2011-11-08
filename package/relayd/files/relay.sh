@@ -76,8 +76,10 @@ setup_interface_relay() {
 	config_get_bool fwd_dhcp "$cfg" forward_dhcp 1
 	[ $fwd_dhcp -eq 1 ] && append args "-D"
 
-	start-stop-daemon -b -S -m -p /var/run/$link.pid \
-		-x /usr/sbin/relayd -- $args
+	SERVICE_DAEMONIZE=1 \
+	SERVICE_WRITE_PID=1 \
+	SERVICE_PID_FILE="/var/run/$link.pid" \
+	service_start /usr/sbin/relayd $args
 
 	uci_set_state network "$cfg" device "$ifaces"
 
@@ -92,6 +94,7 @@ stop_interface_relay() {
 	env -i ACTION="ifdown" DEVICE="$link" INTERFACE="$cfg" PROTO="relay" \
 		/sbin/hotplug-call iface
 
-	service_kill relayd "/var/run/$link.pid"
+	SERVICE_PID_FILE="/var/run/$link.pid" \
+	service_stop /usr/sbin/relayd
 }
 
