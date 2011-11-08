@@ -129,9 +129,11 @@ start_net() {(
 	local vifmac="$3"
 
 	[ -f "/var/run/$iface.pid" ] && kill "$(cat /var/run/${iface}.pid)" 2>/dev/null
-	include /lib/network
-	scan_interfaces
-	setup_interface "$iface" "$config" "" "$vifmac"
+	[ -z "$config" ] || {
+		include /lib/network
+		scan_interfaces
+		setup_interface "$iface" "$config" "" "$vifmac"
+	}
 )}
 
 set_wifi_up() {
