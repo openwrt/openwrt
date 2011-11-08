@@ -1,5 +1,9 @@
 #!/bin/sh /etc/rc.common
+
 START=50
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
 
 start_daemon() {
 	local cfg="$1"
@@ -39,25 +43,40 @@ start_daemon() {
 	config_get sendsize "$cfg" sendsize
 
 	local circuit="$atmdev.$vpi.$vci"
-	local pid="/var/run/br2684ctl-$circuit.pid"
-
-	start-stop-daemon -S -b -x /usr/sbin/br2684ctl -m -p "$pid" -- \
+	
+	SERVICE_PID_FILE="/var/run/br2684ctl-$circuit.pid" \
+	service_start /usr/sbin/br2684ctl \
 		-c "$unit" -e "$encaps" -p "$payload" \
 		-a "$circuit" ${qos:+-q "$qos"} ${sendsize:+-s "$sendsize"}
 }
 
+stop_daemon() {
+	local cfg="$1"
+
+	local atmdev
+	config_get atmdev "$cfg" atmdev 0
+
+	local unit
+	config_get unit "$cfg" unit 0
+
+	local vpi
+	config_get vpi "$cfg" vpi 8
+
+	local vci
+	config_get vci "$cfg" vci 35
+
+	local circuit="$atmdev.$vpi.$vci"
+	
+	SERVICE_PID_FILE="/var/run/br2684ctl-$circuit.pid" \
+	service_stop /usr/sbin/br2684ctl
+}
+
 start() {
-	insmod br2684 >/dev/null 2>/dev/null
 	config_load network
 	config_foreach start_daemon atm-bridge
 }
 
 stop() {
-	local pid
-	for pid in /var/run/br2684ctl-*.pid; do
-		if [ -f "$pid" ]; then
-			service_kill br2684ctl "$pid"
-			rm -f "$pid"
-		fi
-	done
+	config_load network
+	config_foreach stop_daemon atm-bridge
 }
