@@ -235,6 +235,11 @@ menu "Global build settings"
 		bool "Enable process core dump support"
 		default y
 
+	config KERNEL_PROVE_LOCKING
+		bool "Enable kernel lock checking"
+		select KERNEL_DEBUG_KERNEL
+		default n
+
 	comment "Package build options"
 
 	config DEBUG
