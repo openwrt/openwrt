@@ -23,8 +23,8 @@ define Package/netifd
 endef
 
 TARGET_CFLAGS += \
-	-I$(STAGING_DIR)/usr/include \
-	-I$(STAGING_DIR)/usr/include/libnl-tiny
+	-I$(STAGING_DIR)/usr/include/libnl-tiny \
+	-I$(STAGING_DIR)/usr/include
 
 CMAKE_OPTIONS += \
 	-DLIBNL_LIBS=-lnl-tiny \
