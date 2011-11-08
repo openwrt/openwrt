@@ -477,7 +477,6 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 {
 	struct mii_bus *mii = as->mii_bus;
 	u32 ctrl;
-	u32 dest_ports;
 	u32 vlan;
 
 	ctrl = AR7240_PORT_CTRL_STATE_FORWARD | AR7240_PORT_CTRL_LEARN |
@@ -525,7 +524,7 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 	/* allow the port to talk to all other ports, but exclude its
 	 * own ID to prevent frames from being reflected back to the
 	 * port that they came from */
-	dest_ports = AR7240_PORT_MASK_BUT(port);
+	portmask &= AR7240_PORT_MASK_BUT(port);
 
 	/* set default VID and and destination ports for this VLAN */
 	vlan |= (portmask << AR7240_PORT_VLAN_DEST_PORTS_S);
