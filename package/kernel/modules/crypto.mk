@@ -64,7 +64,7 @@ $(eval $(call KernelPackage,crypto-manager))
 
 define KernelPackage/crypto-user
   TITLE:=CryptoAPI userspace interface
-  DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager @LINUX_2_6_38||LINUX_2_6_39||LINUX_3_0
+  DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager @!LINUX_2_6_30&&!LINUX_2_6_31&&!LINUX_2_6_31&&!LINUX_2_6_36&&!LINUX_2_6_37
   KCONFIG:= \
 	CONFIG_CRYPTO_USER_API \
 	CONFIG_CRYPTO_USER_API_HASH \
@@ -364,7 +364,6 @@ define KernelPackage/crypto-misc
 	CONFIG_CRYPTO_WP512
   FILES:= \
 	$(LINUX_DIR)/crypto/anubis.ko \
-	$(LINUX_DIR)/crypto/blowfish.ko \
 	$(LINUX_DIR)/crypto/camellia.ko \
 	$(LINUX_DIR)/crypto/cast5.ko \
 	$(LINUX_DIR)/crypto/cast6.ko \
@@ -382,6 +381,12 @@ define KernelPackage/crypto-misc
   else
     FILES += $(LINUX_DIR)/crypto/twofish_generic.ko
   endif
+  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,3.1)),1)
+    FILES += $(LINUX_DIR)/crypto/blowfish.ko
+  else
+    FILES += $(LINUX_DIR)/crypto/blowfish_common.ko \
+    FILES += $(LINUX_DIR)/crypto/blowfish_generic.ko
+  endif
   $(call AddDepends/crypto)
 endef
 
@@ -395,7 +400,7 @@ $(eval $(call KernelPackage,crypto-misc))
 
 define KernelPackage/crypto-ocf
   TITLE:=OCF modules
-  DEPENDS:=+@OPENSSL_ENGINE @!TARGET_uml +kmod-crypto-manager
+  DEPENDS:=+@OPENSSL_ENGINE @!TARGET_uml +kmod-crypto-manager @!LINUX_3_2||BROKEN
   KCONFIG:= \
 	CONFIG_OCF_OCF \
 	CONFIG_OCF_CRYPTODEV \
