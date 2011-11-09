@@ -64,7 +64,7 @@ $(eval $(call KernelPackage,crypto-manager))
 
 define KernelPackage/crypto-user
   TITLE:=CryptoAPI userspace interface
-  DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager @!LINUX_2_6_30&&!LINUX_2_6_31&&!LINUX_2_6_31&&!LINUX_2_6_36&&!LINUX_2_6_37
+  DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager @!LINUX_2_6_30&&!LINUX_2_6_31&&!LINUX_2_6_32&&!LINUX_2_6_36&&!LINUX_2_6_37
   KCONFIG:= \
 	CONFIG_CRYPTO_USER_API \
 	CONFIG_CRYPTO_USER_API_HASH \
