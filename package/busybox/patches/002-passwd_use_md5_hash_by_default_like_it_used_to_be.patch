@@ -1,0 +1,20 @@
+From eb80c2a5315ed08bd329448217695375d89732c9 Mon Sep 17 00:00:00 2001
+From: Nicolas Thill <nico@openwrt.org>
+Date: Wed, 9 Nov 2011 18:17:20 +0100
+Subject: [PATCH] passwd: use MD5 hash by default (like it used to be)
+
+---
+ loginutils/passwd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/loginutils/passwd.c
++++ b/loginutils/passwd.c
+@@ -94,7 +94,7 @@ int passwd_main(int argc UNUSED_PARAM, c
+ 	};
+ 	unsigned opt;
+ 	int rc;
+-	const char *opt_a = "d"; /* des */
++	const char *opt_a = "m"; /* md5 */
+ 	const char *filename;
+ 	char *myname;
+ 	char *name;
