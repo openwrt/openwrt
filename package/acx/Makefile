@@ -25,7 +25,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/acx
   TITLE:=Driver for TI ACX1xx chipset
-  DEPENDS:=@PCI_SUPPORT||TARGET_ar7 +wireless-tools @!LINUX_3_1||BROKEN
+  DEPENDS:=@PCI_SUPPORT||TARGET_ar7 +wireless-tools @(!(LINUX_3_1||LINUX_3_2)||BROKEN)
   URL:=http://acx100.sourceforge.net/
   SUBMENU:=Wireless Drivers
   FILES:= $(PKG_BUILD_DIR)/acx.ko
