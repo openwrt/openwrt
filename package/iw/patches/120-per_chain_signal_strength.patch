@@ -1,6 +1,6 @@
 --- a/station.c
 +++ b/station.c
-@@ -61,6 +61,31 @@ static void print_sta_bitrate(struct nla
+@@ -61,6 +61,33 @@ static void print_sta_bitrate(struct nla
  	}
  }
  
@@ -24,7 +24,9 @@
 +		cur += snprintf(cur, sizeof(buf) - (cur - buf), "%s%d", prefix,
 +				(int8_t) nla_get_u8(attr));
 +	}
-+	snprintf(cur, sizeof(buf) - (cur - buf), "] ");
++
++	if (i)
++		snprintf(cur, sizeof(buf) - (cur - buf), "] ");
 +
 +	return buf;
 +}
@@ -32,7 +34,7 @@
  static int print_sta_handler(struct nl_msg *msg, void *arg)
  {
  	struct nlattr *tb[NL80211_ATTR_MAX + 1];
-@@ -81,7 +106,10 @@ static int print_sta_handler(struct nl_m
+@@ -81,7 +108,10 @@ static int print_sta_handler(struct nl_m
  		[NL80211_STA_INFO_PLINK_STATE] = { .type = NLA_U8 },
  		[NL80211_STA_INFO_TX_RETRIES] = { .type = NLA_U32 },
  		[NL80211_STA_INFO_TX_FAILED] = { .type = NLA_U32 },
@@ -43,7 +45,7 @@
  
  	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
  		  genlmsg_attrlen(gnlh, 0), NULL);
-@@ -128,12 +156,18 @@ static int print_sta_handler(struct nl_m
+@@ -128,12 +158,18 @@ static int print_sta_handler(struct nl_m
  	if (sinfo[NL80211_STA_INFO_TX_FAILED])
  		printf("\n\ttx failed:\t%u",
  			nla_get_u32(sinfo[NL80211_STA_INFO_TX_FAILED]));
