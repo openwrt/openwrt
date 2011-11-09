@@ -31,7 +31,7 @@
 #include <errno.h>
 
 #include <sys/ioctl.h>
-#include "mtd-api.h"
+#include <mtd/mtd-user.h>
 #include "mtd.h"
 #include "crc32.h"
 #include "bcm_tag.h"

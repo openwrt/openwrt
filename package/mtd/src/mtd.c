@@ -41,7 +41,7 @@
 #include <sys/stat.h>
 #include <sys/reboot.h>
 #include <linux/reboot.h>
-#include "mtd-api.h"
+#include <mtd/mtd-user.h>
 #include "fis.h"
 #include "mtd.h"
 
