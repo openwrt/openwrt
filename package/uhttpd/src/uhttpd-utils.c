@@ -782,12 +782,9 @@ int uh_auth_check(
 			/* found a realm matching the username */
 			if( realm )
 			{
-				/* is a crypt passwd */
-				if( realm->pass[0] == '$' )
-					pass = crypt(pass, realm->pass);
-
 				/* check user pass */
-				if( !strcmp(pass, realm->pass) )
+				if (!strcmp(pass, realm->pass) ||
+				    !strcmp(crypt(pass, realm->pass), realm->pass))
 					return 1;
 			}
 		}
