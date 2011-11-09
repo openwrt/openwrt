@@ -389,6 +389,43 @@ __END_OF_WARNING__
 }
 
 
+group_add() {
+	local name="$1"
+	local gid="$2"
+	local rc
+	[ -f "${IPKG_INSTROOT}/etc/group" ] || return 1
+	[ -n "$IPKG_INSTROOT" ] || lock /var/lock/group
+	echo "${name}:x:${gid}:" >> ${IPKG_INSTROOT}/etc/group
+	rc=$?
+	[ -n "$IPKG_INSTROOT" ] || lock -u /var/lock/group
+	return $rc
+}
+
+group_exists() {
+	grep -qs "^${1}:" ${IPKG_INSTROOT}/etc/group
+}
+
+user_add() {
+	local name="${1}"
+	local uid="${2}"
+	local gid="${3:-$2}"
+	local desc="${4:-$1}"
+	local home="${5:-/var/run/$1}"
+	local shell="${6:-/bin/false}"
+	local rc
+	[ -f "${IPKG_INSTROOT}/etc/passwd" ] || return 1
+	[ -n "$IPKG_INSTROOT" ] || lock /var/lock/passwd
+	echo "${name}:x:${uid}:${gid}:${desc}:${home}:${shell}" >> ${IPKG_INSTROOT}/etc/passwd
+	rc=$?
+	[ -n "$IPKG_INSTROOT" ] || lock -u /var/lock/passwd
+	return $rc
+}
+
+user_exists() {
+	grep -qs "^${1}:" ${IPKG_INSTROOT}/etc/passwd
+}
+
+
 pi_include() {
 	if [ -f "/tmp/overlay/$1" ]; then
 		. "/tmp/overlay/$1"
