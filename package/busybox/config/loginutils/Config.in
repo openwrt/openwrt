@@ -20,7 +20,7 @@ config BUSYBOX_CONFIG_REMOVE_SHELL
 
 config BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS
 	bool "Support for shadow passwords"
-	default n
+	default y
 	help
 	  Build support for shadow password in /etc/shadow. This file is only
 	  readable by root and thus the encrypted passwords are no longer
