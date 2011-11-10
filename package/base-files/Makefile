@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=91
+PKG_RELEASE:=92
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
 PKG_BUILD_DEPENDS:=opkg/host
@@ -455,10 +455,9 @@ define Package/base-files/install
 	)
 # Form valid /etc/shadow entries, by copying the user:pw pairs
 # from /etc/passwd, and adding on pw change data
-	$(if $(CONFIG_BUSYBOX_CONFIG_FEATURE_SHADOWPASSWDS), \
-		cut -d ':' -f 1-2 $(1)/etc/passwd > $(1)/etc/shadow; \
-		$(SED) 's/$$$$/:13848:0:99999:7:::/' $(1)/etc/shadow \
-	)
+	cut -d ':' -f 1-2 $(1)/etc/passwd > $(1)/etc/shadow; \
+	$(SED) 's/$$$$/:0:0:99999:7:::/' $(1)/etc/shadow
+
 	$(SED) 's,$$$$R,$(REVISION),g' $(1)/etc/banner
 	mkdir -p $(1)/CONTROL
 	mkdir -p $(1)/dev
