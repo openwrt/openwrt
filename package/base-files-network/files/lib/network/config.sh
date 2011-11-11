@@ -370,7 +370,7 @@ setup_interface() {
 			local pidfile="/var/run/dhcp-${iface}.pid"
 
 			SERVICE_PID_FILE="$pidfile" \
-			service_stop udhcpc
+			service_stop /sbin/udhcpc
 
 			local ipaddr netmask hostname proto1 clientid vendorid broadcast reqopts
 			config_get ipaddr "$config" ipaddr
@@ -386,15 +386,21 @@ setup_interface() {
 				$DEBUG ifconfig "$iface" "$ipaddr" ${netmask:+netmask "$netmask"}
 
 			# additional request options
-			local opt dhcpopts
+			local opt dhcpopts daemonize
 			for opt in $reqopts; do
 				append dhcpopts "-O $opt"
 			done
 
 			# don't stay running in background if dhcp is not the main proto on the interface (e.g. when using pptp)
-			[ "$proto1" != "$proto" ] && append dhcpopts "-n -q" || append dhcpopts "-O rootpath -R &"
+			[ "$proto1" != "$proto" ] && {
+				append dhcpopts "-n -q"
+			} || {
+				append dhcpopts "-O rootpath -R"
+				daemonize=1
+			}
 			[ "$broadcast" = 1 ] && broadcast="-O broadcast" || broadcast=
 
+			SERVICE_DAEMONIZE=$daemonize \
 			SERVICE_PID_FILE="$pidfile" \
 			service_start /sbin/udhcpc -t 0 -i "$iface" \
 				${ipaddr:+-r $ipaddr} \
