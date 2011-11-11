@@ -1,0 +1,61 @@
+--- a/arch/mips/lantiq/falcon/sysctrl.c
++++ b/arch/mips/lantiq/falcon/sysctrl.c
+@@ -63,11 +63,11 @@ void __iomem *ltq_ebu_membase;
+ #define ltq_status_r32(x)	ltq_r32(ltq_status_membase + (x))
+ 
+ static inline void
+-ltq_sysctl_wait(int module, unsigned int mask, unsigned int test)
++ltq_sysctl_wait(int module, unsigned int mask, unsigned int test, unsigned int reg)
+ {
+ 	int err = 1000000;
+ 
+-	do {} while (--err && ((ltq_reg_r32(module, LTQ_SYSCTL_ACTS)
++	do {} while (--err && ((ltq_reg_r32(module, reg)
+ 					& mask) != test));
+ 	if (!err)
+ 		pr_err("module de/activation failed %d %08X %08X\n",
+@@ -82,7 +82,7 @@ ltq_sysctl_activate(int module, unsigned
+ 
+ 	ltq_reg_w32(module, mask, LTQ_SYSCTL_CLKEN);
+ 	ltq_reg_w32(module, mask, LTQ_SYSCTL_ACT);
+-	ltq_sysctl_wait(module, mask, mask);
++	ltq_sysctl_wait(module, mask, mask, LTQ_SYSCTL_ACTS);
+ }
+ EXPORT_SYMBOL(ltq_sysctl_activate);
+ 
+@@ -94,7 +94,7 @@ ltq_sysctl_deactivate(int module, unsign
+ 
+ 	ltq_reg_w32(module, mask, LTQ_SYSCTL_CLKCLR);
+ 	ltq_reg_w32(module, mask, LTQ_SYSCTL_DEACT);
+-	ltq_sysctl_wait(module, mask, 0);
++	ltq_sysctl_wait(module, mask, 0, LTQ_SYSCTL_ACTS);
+ }
+ EXPORT_SYMBOL(ltq_sysctl_deactivate);
+ 
+@@ -105,7 +105,7 @@ ltq_sysctl_clken(int module, unsigned in
+ 		return;
+ 
+ 	ltq_reg_w32(module, mask, LTQ_SYSCTL_CLKEN);
+-	ltq_sysctl_wait(module, mask, mask);
++	ltq_sysctl_wait(module, mask, mask, LTQ_SYSCTL_CLKS);
+ }
+ EXPORT_SYMBOL(ltq_sysctl_clken);
+ 
+@@ -116,7 +116,7 @@ ltq_sysctl_clkdis(int module, unsigned i
+ 		return;
+ 
+ 	ltq_reg_w32(module, mask, LTQ_SYSCTL_CLKCLR);
+-	ltq_sysctl_wait(module, mask, 0);
++	ltq_sysctl_wait(module, mask, 0, LTQ_SYSCTL_CLKS);
+ }
+ EXPORT_SYMBOL(ltq_sysctl_clkdis);
+ 
+@@ -132,7 +132,7 @@ ltq_sysctl_reboot(int module, unsigned i
+ 	if ((~act & mask) != 0)
+ 		ltq_sysctl_activate(module, ~act & mask);
+ 	ltq_reg_w32(module, act & mask, LTQ_SYSCTL_RBT);
+-	ltq_sysctl_wait(module, mask, mask);
++	ltq_sysctl_wait(module, mask, mask, LTQ_SYSCTL_ACTS);
+ }
+ EXPORT_SYMBOL(ltq_sysctl_reboot);
+ 

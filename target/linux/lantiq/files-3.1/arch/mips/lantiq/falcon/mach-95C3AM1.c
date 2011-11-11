@@ -12,8 +12,6 @@
 #define BOARD_95C3AM1_GPIO_LED_2 12
 #define BOARD_95C3AM1_GPIO_LED_3 13
 
-extern unsigned char ltq_ethaddr[6];
-
 static struct mtd_partition board_95C3AM1_partitions[] =
 {
 	{

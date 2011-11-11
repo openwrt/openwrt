@@ -1,0 +1,68 @@
+--- a/arch/mips/lantiq/falcon/mach-easy98000.c
++++ b/arch/mips/lantiq/falcon/mach-easy98000.c
+@@ -17,10 +17,11 @@
+ #include <linux/spi/eeprom.h>
+ #include <falcon/lantiq_soc.h>
+ 
++#include <dev-gpio-leds.h>
++
+ #include "../machtypes.h"
+ 
+ #include "devices.h"
+-#include "dev-leds-gpio.h"
+ 
+ #define EASY98000_GPIO_LED_0 9
+ #define EASY98000_GPIO_LED_1 10
+@@ -29,7 +30,16 @@
+ #define EASY98000_GPIO_LED_4 13
+ #define EASY98000_GPIO_LED_5 14
+ 
+-extern unsigned char ltq_ethaddr[6];
++static unsigned char ltq_ethaddr[6] = {0};
++
++static int __init falcon_set_ethaddr(char *str)
++{
++	sscanf(str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
++		&ltq_ethaddr[0], &ltq_ethaddr[1], &ltq_ethaddr[2],
++		&ltq_ethaddr[3], &ltq_ethaddr[4], &ltq_ethaddr[5]);
++	return 0;
++}
++__setup("ethaddr=", falcon_set_ethaddr);
+ 
+ static struct mtd_partition easy98000_nor_partitions[] =
+ {
+@@ -70,7 +80,7 @@ static struct spi_board_info easy98000_s
+ 	.platform_data		= &easy98000_spi_flash_platform_data
+ };
+ 
+-static struct gpio_led easy98000_leds_gpio[] __initdata = {
++static struct gpio_led easy98000_gpio_leds[] __initdata = {
+ 	{
+ 		.name		= "easy98000:green:0",
+ 		.gpio		= EASY98000_GPIO_LED_0,
+@@ -104,12 +114,11 @@ static struct gpio_led easy98000_leds_gp
+ 
+ static struct dm9000_plat_data dm9000_plat_data = {
+ 	.flags = DM9000_PLATF_8BITONLY,
+-	//.dev_addr = { }, /* possibility to provide an ethernet address for the chip */
+ };
+ 
+ static struct resource dm9000_resources[] = {
+-	MEM_RES("dm9000_io", DM9000_IO, DM9000_IO),
+-	MEM_RES("dm9000_data", DM9000_DATA, DM9000_DATA),
++	MEM_RES("dm9000_io", DM9000_IO, 1),
++	MEM_RES("dm9000_data", DM9000_DATA, 1),
+ 	[2] = {
+ 		/* with irq (210 -> gpio 110) the driver is very unreliable */
+ 		.start	= -1,		/* use polling */
+@@ -212,8 +221,8 @@ static void __init easy98000_init_common
+ 	falcon_register_i2c();
+ 	platform_device_register(&easy98000_i2c_gpio_device);
+ 	register_davicom();
+-	ltq_add_device_leds_gpio(-1, ARRAY_SIZE(easy98000_leds_gpio),
+-					easy98000_leds_gpio);
++	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(easy98000_gpio_leds),
++					easy98000_gpio_leds);
+ 	register_easy98000_cpld();
+ 	easy98000_spi_gpio_init();
+ }

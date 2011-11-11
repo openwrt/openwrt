@@ -1,0 +1,60 @@
+--- a/arch/mips/include/asm/mach-lantiq/falcon/sysctrl.h
++++ b/arch/mips/include/asm/mach-lantiq/falcon/sysctrl.h
+@@ -20,23 +20,41 @@
+ #ifndef __FALCON_SYSCTRL_H
+ #define __FALCON_SYSCTRL_H
+ 
+-extern void sys1_hw_activate(u32 mask);
+-extern void sys1_hw_deactivate(u32 mask);
+-extern void sys1_hw_clk_enable(u32 mask);
+-extern void sys1_hw_clk_disable(u32 mask);
+-extern void sys1_hw_activate_or_reboot(u32 mask);
++#include <falcon/lantiq_soc.h>
+ 
+-extern void sys_eth_hw_activate(u32 mask);
+-extern void sys_eth_hw_deactivate(u32 mask);
+-extern void sys_eth_hw_clk_enable(u32 mask);
+-extern void sys_eth_hw_clk_disable(u32 mask);
+-extern void sys_eth_hw_activate_or_reboot(u32 mask);
++static inline void sys1_hw_activate(u32 mask)
++{ ltq_sysctl_activate(SYSCTL_SYS1, mask); }
++static inline void sys1_hw_deactivate(u32 mask)
++{ ltq_sysctl_deactivate(SYSCTL_SYS1, mask); }
++static inline void sys1_hw_clk_enable(u32 mask)
++{ ltq_sysctl_clken(SYSCTL_SYS1, mask); }
++static inline void sys1_hw_clk_disable(u32 mask)
++{ ltq_sysctl_clkdis(SYSCTL_SYS1, mask); }
++static inline void sys1_hw_activate_or_reboot(u32 mask)
++{ ltq_sysctl_reboot(SYSCTL_SYS1, mask); }
+ 
+-extern void sys_gpe_hw_activate(u32 mask);
+-extern void sys_gpe_hw_deactivate(u32 mask);
+-extern void sys_gpe_hw_clk_enable(u32 mask);
+-extern void sys_gpe_hw_clk_disable(u32 mask);
+-extern void sys_gpe_hw_activate_or_reboot(u32 mask);
+-extern int sys_gpe_hw_is_activated(u32 mask);
++static inline void sys_eth_hw_activate(u32 mask)
++{ ltq_sysctl_activate(SYSCTL_SYSETH, mask); }
++static inline void sys_eth_hw_deactivate(u32 mask)
++{ ltq_sysctl_deactivate(SYSCTL_SYSETH, mask); }
++static inline void sys_eth_hw_clk_enable(u32 mask)
++{ ltq_sysctl_clken(SYSCTL_SYSETH, mask); }
++static inline void sys_eth_hw_clk_disable(u32 mask)
++{ ltq_sysctl_clkdis(SYSCTL_SYSETH, mask); }
++static inline void sys_eth_hw_activate_or_reboot(u32 mask)
++{ ltq_sysctl_reboot(SYSCTL_SYSETH, mask); }
++
++static inline void sys_gpe_hw_activate(u32 mask)
++{ ltq_sysctl_activate(SYSCTL_SYSGPE, mask); }
++static inline void sys_gpe_hw_deactivate(u32 mask)
++{ ltq_sysctl_deactivate(SYSCTL_SYSGPE, mask); }
++static inline void sys_gpe_hw_clk_enable(u32 mask)
++{ ltq_sysctl_clken(SYSCTL_SYSGPE, mask); }
++static inline void sys_gpe_hw_clk_disable(u32 mask)
++{ ltq_sysctl_clkdis(SYSCTL_SYSGPE, mask); }
++static inline void sys_gpe_hw_activate_or_reboot(u32 mask)
++{ ltq_sysctl_reboot(SYSCTL_SYSGPE, mask); }
++static inline int sys_gpe_hw_is_activated(u32 mask)
++{ return 1; }
+ 
+ #endif /* __FALCON_SYSCTRL_H */

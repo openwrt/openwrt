@@ -1,0 +1,17 @@
+--- a/arch/mips/lantiq/falcon/devices.c
++++ b/arch/mips/lantiq/falcon/devices.c
+@@ -130,10 +130,10 @@ falcon_register_gpio_extra(void)
+ /* i2c */
+ static struct resource falcon_i2c_resources[] = {
+ 	MEM_RES("i2c", LTQ_I2C_BASE_ADDR, LTQ_I2C_SIZE),
+-	IRQ_RES("i2c_lb", FALCON_IRQ_I2C_LBREQ),
+-	IRQ_RES("i2c_b", FALCON_IRQ_I2C_BREQ),
+-	IRQ_RES("i2c_err", FALCON_IRQ_I2C_I2C_ERR),
+-	IRQ_RES("i2c_p", FALCON_IRQ_I2C_I2C_P),
++	IRQ_RES(i2c_lb, FALCON_IRQ_I2C_LBREQ),
++	IRQ_RES(i2c_b, FALCON_IRQ_I2C_BREQ),
++	IRQ_RES(i2c_err, FALCON_IRQ_I2C_I2C_ERR),
++	IRQ_RES(i2c_p, FALCON_IRQ_I2C_I2C_P),
+ };
+ 
+ void __init falcon_register_i2c(void)

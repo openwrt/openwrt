@@ -24,8 +24,6 @@
 #define EASY98020_GPIO_LED_GE1_ACT 106
 #define EASY98020_GPIO_LED_GE1_LINK 105
 
-extern unsigned char ltq_ethaddr[6];
-
 static struct mtd_partition easy98020_spi_partitions[] =
 {
 	{
