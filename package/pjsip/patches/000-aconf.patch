@@ -1,15 +1,18 @@
 --- a/aconfigure.ac
 +++ b/aconfigure.ac
-@@ -48,7 +48,7 @@
+@@ -48,9 +48,9 @@ if test -z "$CROSS_COMPILE"; then
      CROSS_COMPILE=`echo ${CC} | sed 's/gcc//'`
  fi
  
 -if test "$AR" = ""; then AR="${CROSS_COMPILE}ar rv"; fi
 +AR="${CROSS_COMPILE}ar rv"
  AC_SUBST(AR)
- if test "$LD" = ""; then LD="$CC"; fi
+-if test "$LD" = ""; then LD="$CC"; fi
++LD="${CROSS_COMPILE}gcc"
  AC_SUBST(LD)
-@@ -590,6 +590,15 @@
+ if test "$LDOUT" = ""; then LDOUT="-o"; fi
+ AC_SUBST(LDOUT)
+@@ -597,6 +597,15 @@ AC_ARG_ENABLE(ext_sound,
  		AC_MSG_RESULT([Checking if external sound is set... yes])
  	       fi]
  	      )
@@ -27,7 +30,7 @@
  AC_SUBST(ac_no_small_filter)
 --- a/pjmedia/build/os-auto.mak.in
 +++ b/pjmedia/build/os-auto.mak.in
-@@ -118,4 +118,11 @@
+@@ -118,4 +118,11 @@ ifeq ($(AC_PJMEDIA_SND),external)
  export CFLAGS += -DPJMEDIA_AUDIO_DEV_HAS_PORTAUDIO=0 -DPJMEDIA_AUDIO_DEV_HAS_WMME=0
  endif
  

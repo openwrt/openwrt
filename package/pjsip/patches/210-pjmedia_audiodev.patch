@@ -1,6 +1,6 @@
 --- a/pjmedia/src/pjmedia-audiodev/audiodev.c
 +++ b/pjmedia/src/pjmedia-audiodev/audiodev.c
-@@ -98,6 +98,10 @@
+@@ -98,6 +98,10 @@ pjmedia_aud_dev_factory* pjmedia_symb_md
  pjmedia_aud_dev_factory* pjmedia_null_audio_factory(pj_pool_factory *pf);
  #endif
  
@@ -11,7 +11,7 @@
  #define MAX_DRIVERS	16
  #define MAX_DEVS	64
  
-@@ -404,6 +408,9 @@
+@@ -409,6 +413,9 @@ PJ_DEF(pj_status_t) pjmedia_aud_subsys_i
  #if PJMEDIA_AUDIO_DEV_HAS_NULL_AUDIO
      aud_subsys.drv[aud_subsys.drv_cnt++].create = &pjmedia_null_audio_factory;
  #endif

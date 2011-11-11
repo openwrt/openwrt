@@ -8,13 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pjsip
-PKG_VERSION:=1.8.5
-PKG_RELEASE:=2
+PKG_VERSION:=1.10
+PKG_RELEASE:=3
 
 PKG_SOURCE:=pjproject-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.pjsip.org/release/$(PKG_VERSION)/
-PKG_MD5SUM:=f9aa9e58b4d697245eb4bfa7d81a54a3
+PKG_MD5SUM:=e215d0637d3422d49a63c2cde6673951
+
 PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/pjproject-$(PKG_VERSION)
 
@@ -36,6 +38,7 @@ CONFIGURE_PREFIX=/usr/pjsip-$(BUILD_VARIANT)
 
 ifeq ($(BUILD_VARIANT),oss)
 CONFIGURE_ARGS += \
+	--disable-floating-point \
 	--enable-g711-codec \
 	--disable-l16-codec \
 	--disable-g722-codec \
@@ -51,6 +54,7 @@ endif
 
 ifeq ($(BUILD_VARIANT),ltq-tapi)
 CONFIGURE_ARGS += \
+	--disable-floating-point \
 	--enable-g711-codec \
 	--disable-l16-codec \
 	--disable-g722-codec \
@@ -80,15 +84,15 @@ define Build/Configure
 endef
 
 define Build/Compile
-	CFLAGS="$(EXTRA_CFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)" \
-	LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS) $(LIBGCC_S)" \
-		$(MAKE) -C $(PKG_BUILD_DIR)/$(MAKE_PATH)
+	CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)" \
+	CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)" \
+	LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS) $(LIBGCC_S) -lm" \
+		$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/$(MAKE_PATH)
 endef
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/
-	$(CP) $(PKG_INSTALL_DIR)/usr/pjsip-$(BUILD_VARIANT) \
-		$(1)/usr/
+	$(INSTALL_DIR) $(1)/usr
+	$(CP) $(PKG_INSTALL_DIR)/usr/pjsip-$(BUILD_VARIANT) $(1)/usr
 endef
 
 define Package/pjsip-$(BUILD_VARIANT)/install
