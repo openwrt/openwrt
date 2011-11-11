@@ -14,8 +14,6 @@ $(eval $(call Profile,EASY98000))
 
 define Profile/EASY98020
   NAME:=EASY98020
-  PACKAGES:= \
-	kmod-leds-gpio uboot-easy98020
 endef
 
 define Profile/EASY98020/Description
