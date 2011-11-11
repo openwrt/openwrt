@@ -1,0 +1,53 @@
+--- a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
+@@ -129,8 +129,8 @@ extern __iomem void *ltq_sys1_membase;
+ 	ltq_sys1_w32((ltq_sys1_r32(reg) & ~(clear)) | (set), reg)
+ 
+ /* gpio_request wrapper to help configure the pin */
+-extern int ltq_gpio_request(unsigned int pin, unsigned int val,
+-				unsigned int dir, const char *name);
++extern int  ltq_gpio_request(unsigned int pin, unsigned int alt0,
++	unsigned int alt1, unsigned int dir, const char *name);
+ extern int ltq_gpio_mux_set(unsigned int pin, unsigned int mux);
+ 
+ /* to keep the irq code generic we need to define these to 0 as falcon
+--- a/arch/mips/lantiq/falcon/gpio.c
++++ b/arch/mips/lantiq/falcon/gpio.c
+@@ -96,11 +96,12 @@ int ltq_gpio_mux_set(unsigned int pin, u
+ }
+ EXPORT_SYMBOL(ltq_gpio_mux_set);
+ 
+-int ltq_gpio_request(unsigned int pin, unsigned int val,
+-		unsigned int dir, const char *name)
++int ltq_gpio_request(unsigned int pin, unsigned int alt0,
++	unsigned int alt1, unsigned int dir, const char *name)
+ {
+ 	int port = pin / 100;
+ 	int offset = pin % 100;
++	unsigned int mux = (!!alt0) & ((!!alt1) << 1);
+ 
+ 	if (offset >= PINS_PER_PORT || port >= MAX_PORTS)
+ 		return -EINVAL;
+@@ -115,7 +116,7 @@ int ltq_gpio_request(unsigned int pin, u
+ 	else
+ 		gpio_direction_input(pin);
+ 
+-	return ltq_gpio_mux_set(pin, val);
++	return ltq_gpio_mux_set(pin, mux);
+ }
+ EXPORT_SYMBOL(ltq_gpio_request);
+ 
+--- a/arch/mips/lantiq/falcon/prom.c
++++ b/arch/mips/lantiq/falcon/prom.c
+@@ -43,9 +43,9 @@ ltq_soc_setup(void)
+ 	falcon_register_gpio();
+ 	if (register_asc1) {
+ 		ltq_register_asc(1);
+-		if (ltq_gpio_request(MUXC_SIF_RX_PIN, 3, 0, "asc1-rx"))
++		if (ltq_gpio_request(MUXC_SIF_RX_PIN, 1, 1, 0, "asc1-rx"))
+ 			pr_err("failed to request asc1-rx");
+-		if (ltq_gpio_request(MUXC_SIF_TX_PIN, 3, 1, "asc1-tx"))
++		if (ltq_gpio_request(MUXC_SIF_TX_PIN, 1, 1, 1, "asc1-tx"))
+ 			pr_err("failed to request asc1-tx");
+ 		ltq_sysctl_activate(SYSCTL_SYS1, ACTS_ASC1_ACT);
+ 	}

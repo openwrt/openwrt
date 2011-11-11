@@ -31,7 +31,7 @@ void __init ltq_add_device_gpio_leds(int id, unsigned num_leds,
 
 	memcpy(p, leds, num_leds * sizeof(*p));
 
-	pdev = platform_device_alloc("gpio-leds", id);
+	pdev = platform_device_alloc("leds-gpio", id);
 	if (!pdev)
 		goto err_free_leds;
 

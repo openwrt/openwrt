@@ -487,6 +487,7 @@ arv7525pw_init(void)
 	ltq_register_pci(&ltq_pci_data);
 	ltq_eth_data.mii_mode = PHY_INTERFACE_MODE_MII;
 	arv45xx_register_ethernet();
+	ltq_register_tapi();
 }
 
 MIPS_MACHINE(LANTIQ_MACH_ARV7525PW,
