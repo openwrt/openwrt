@@ -63,7 +63,7 @@ static struct mtd_partition gigasx76x_partitions[] =
 static struct gpio_led
 gigasx76x_gpio_leds[] __initdata = {
 	{ .name = "soc:green:usb", .gpio = 202, },
-	{ .name = "soc:green:wlan", .gpio = 203, },
+	{ .name = "soc:green:wifi", .gpio = 203, },
 	{ .name = "soc:green:phone2", .gpio = 204, },
 	{ .name = "soc:green:phone1", .gpio = 205, },
 	{ .name = "soc:green:line", .gpio = 206, },
