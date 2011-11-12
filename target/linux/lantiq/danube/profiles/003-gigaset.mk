@@ -1,7 +1,7 @@
 define Profile/GIGASX76X
   NAME:=GIGASX76X - Gigaset SX761,SX762,SX763
-  PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-leds-gpio \
-	 kmod-ltq-dsl-firmware-b-danube kmod-ledtrig-usbdev 
+  PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-ledtrig-usbdev \
+	 kmod-ltq-dsl-firmware-b-danube
 endef
 
 define Profile/GIGASX76X/Description
