@@ -45,6 +45,9 @@ get_status_led() {
 	bullet-m | rocket-m | nano-m | nanostation-m)
 		status_led="ubnt:green:link4"
 		;;
+	db120)
+		status_led="db120:green:status"
+		;;
 	dir-600-a1)
 		status_led="dir-600-a1:green:power"
 		;;

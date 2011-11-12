@@ -31,6 +31,9 @@ ar71xx_board_name() {
 	*AW-NR580)
 		name="aw-nr580"
 		;;
+	*DB120)
+		name="db120"
+		;;
 	*"DIR-600 rev. A1")
 		name="dir-600-a1"
 		;;
