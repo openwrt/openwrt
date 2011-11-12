@@ -22,6 +22,7 @@
 #include <lantiq_soc.h>
 #include <lantiq_platform.h>
 #include <dev-gpio-leds.h>
+#include <dev-gpio-buttons.h>
 
 #include "../machtypes.h"
 #include "../dev-wifi-rt2x00.h"
@@ -460,11 +461,11 @@ MIPS_MACHINE(LANTIQ_MACH_ARV452CPW,
 			"ARV452CPW - Arcor A801",
 			arv452Cpw_init);
 
-#define ARV4525PW_MADWIFI_ADDR		0xb07f0400
 
 static void __init
 arv4525pw_init(void)
 {
+#define ARV4525PW_MADWIFI_ADDR		0xb07f0400
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(arv4525pw_gpio_leds), arv4525pw_gpio_leds);
 	ltq_register_nor(&arv45xx_flash_data);
 	ltq_pci_data.clock = PCI_CLOCK_INT;
@@ -479,13 +480,27 @@ MIPS_MACHINE(LANTIQ_MACH_ARV4525PW,
 			"ARV4525PW - Speedport W502V",
 			arv4525pw_init);
 
+static struct gpio_keys_button
+arv7525pw_gpio_keys[] __initdata = {
+	{
+		.desc		= "restart",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= 29,
+		.active_low	= 1,
+	},
+};
+
 static void __init
 arv7525pw_init(void)
 {
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(arv4525pw_gpio_leds), arv4525pw_gpio_leds);
 	ltq_register_nor(&arv7525_flash_data);
+	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL,
+				ARRAY_SIZE(arv7525pw_gpio_keys), arv7525pw_gpio_keys);
 	ltq_pci_data.clock = PCI_CLOCK_INT;
-	ltq_pci_data.gpio |= PCI_EXIN1;
+	ltq_pci_data.gpio = PCI_GNT1 | PCI_EXIN1;
 	ltq_pci_data.irq[14] = (INT_NUM_IM3_IRL0 + 31);
 	ltq_register_pci(&ltq_pci_data);
 	ltq_eth_data.mii_mode = PHY_INTERFACE_MODE_MII;
