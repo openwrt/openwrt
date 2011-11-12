@@ -119,7 +119,7 @@ void __init ar71xx_add_device_uart(void)
 	platform_device_register(pdev);
 }
 
-static struct resource ar71xx_mdio_resources[] = {
+static struct resource ar71xx_mdio0_resources[] = {
 	{
 		.name	= "mdio_base",
 		.flags	= IORESOURCE_MEM,
@@ -128,15 +128,15 @@ static struct resource ar71xx_mdio_resources[] = {
 	}
 };
 
-static struct ag71xx_mdio_platform_data ar71xx_mdio_data;
+static struct ag71xx_mdio_platform_data ar71xx_mdio0_data;
 
-struct platform_device ar71xx_mdio_device = {
+struct platform_device ar71xx_mdio0_device = {
 	.name		= "ag71xx-mdio",
 	.id		= -1,
-	.resource	= ar71xx_mdio_resources,
-	.num_resources	= ARRAY_SIZE(ar71xx_mdio_resources),
+	.resource	= ar71xx_mdio0_resources,
+	.num_resources	= ARRAY_SIZE(ar71xx_mdio0_resources),
 	.dev = {
-		.platform_data = &ar71xx_mdio_data,
+		.platform_data = &ar71xx_mdio0_data,
 	},
 };
 
@@ -178,12 +178,12 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7240:
-		ar71xx_mdio_data.is_ar7240 = 1;
+		ar71xx_mdio0_data.is_ar7240 = 1;
 		break;
 	case AR71XX_SOC_AR7241:
-		ar71xx_mdio_data.is_ar7240 = 1;
-		ar71xx_mdio_resources[0].start = AR71XX_GE1_BASE;
-		ar71xx_mdio_resources[0].end = AR71XX_GE1_BASE + 0x200 - 1;
+		ar71xx_mdio0_data.is_ar7240 = 1;
+		ar71xx_mdio0_resources[0].start = AR71XX_GE1_BASE;
+		ar71xx_mdio0_resources[0].end = AR71XX_GE1_BASE + 0x200 - 1;
 		break;
 	case AR71XX_SOC_AR7242:
 		ar71xx_set_pll(AR71XX_PLL_REG_SEC_CONFIG,
@@ -192,17 +192,17 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 		break;
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
-		ar71xx_mdio_data.is_ar7240 = 1;
-		ar71xx_mdio_resources[0].start = AR71XX_GE1_BASE;
-		ar71xx_mdio_resources[0].end = AR71XX_GE1_BASE + 0x200 - 1;
+		ar71xx_mdio0_data.is_ar7240 = 1;
+		ar71xx_mdio0_resources[0].start = AR71XX_GE1_BASE;
+		ar71xx_mdio0_resources[0].end = AR71XX_GE1_BASE + 0x200 - 1;
 		break;
 	default:
 		break;
 	}
 
-	ar71xx_mdio_data.phy_mask = phy_mask;
+	ar71xx_mdio0_data.phy_mask = phy_mask;
 
-	platform_device_register(&ar71xx_mdio_device);
+	platform_device_register(&ar71xx_mdio0_device);
 }
 
 struct ar71xx_eth_pll_data ar71xx_eth0_pll_data;
@@ -724,7 +724,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	}
 
 	if (pdata->mii_bus_dev == NULL)
-		pdata->mii_bus_dev = &ar71xx_mdio_device.dev;
+		pdata->mii_bus_dev = &ar71xx_mdio0_device.dev;
 
 	/* Reset the device */
 	ar71xx_device_stop(pdata->reset_bit);
