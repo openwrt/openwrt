@@ -174,7 +174,7 @@ static struct platform_device pb44_spi_device = {
 
 static void __init pb44_init(void)
 {
-	ar71xx_add_device_mdio(~PB44_MDIO_PHYMASK);
+	ar71xx_add_device_mdio(0, ~PB44_MDIO_PHYMASK);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;

@@ -169,8 +169,13 @@ static void ar71xx_set_pll(u32 cfg_reg, u32 pll_reg, u32 pll_val, u32 shift)
 	iounmap(base);
 }
 
-void __init ar71xx_add_device_mdio(u32 phy_mask)
+void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 {
+	if (id > 0) {
+		printk(KERN_ERR "ar71xx: invalid MDIO id %u\n", id);
+		return;
+	}
+
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7240:
 		ar71xx_mdio_data.is_ar7240 = 1;

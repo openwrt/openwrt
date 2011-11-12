@@ -142,7 +142,7 @@ static void __init ap96_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 
-	ar71xx_add_device_mdio(~(AP96_WAN_PHYMASK | AP96_LAN_PHYMASK));
+	ar71xx_add_device_mdio(0, ~(AP96_WAN_PHYMASK | AP96_LAN_PHYMASK));
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;

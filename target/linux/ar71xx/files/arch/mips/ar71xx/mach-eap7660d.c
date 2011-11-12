@@ -157,7 +157,7 @@ static void __init eap7660d_setup(void)
 {
 	u8 *boardconfig = (u8 *) KSEG1ADDR(EAP7660D_BOARDCONFIG);
 
-	ar71xx_add_device_mdio(~EAP7660D_PHYMASK);
+	ar71xx_add_device_mdio(0, ~EAP7660D_PHYMASK);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr,
 			boardconfig + EAP7660D_GBIC_MAC_OFFSET, 0);

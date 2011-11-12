@@ -169,7 +169,7 @@ static void __init dir825b1_setup(void)
 	dir825b1_read_ascii_mac(mac1, DIR825B1_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac2, DIR825B1_MAC_LOCATION_1);
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac1, 2);
 	ar71xx_eth0_data.mii_bus_dev = &dir825b1_rtl8366s_device.dev;

@@ -127,7 +127,7 @@ static void __init wrt160nl_setup(void)
 		ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
 	}
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth0_data.phy_mask = 0x01;

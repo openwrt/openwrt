@@ -124,7 +124,7 @@ static void __init tew_632brp_setup(void)
 		wlan_mac = mac;
 	}
 
-	ar71xx_add_device_mdio(TEW_632BRP_MDIO_MASK);
+	ar71xx_add_device_mdio(0, TEW_632BRP_MDIO_MASK);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth0_data.phy_mask = TEW_632BRP_LAN_PHYMASK;
