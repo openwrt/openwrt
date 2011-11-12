@@ -22,27 +22,15 @@ static struct platform_device ar71xx_dsa_switch_device = {
 	.id		= 0,
 };
 
-void __init ar71xx_add_device_dsa(unsigned int id,
+void __init ar71xx_add_device_dsa(struct device *netdev,
+				  struct device *miidev,
 				  struct dsa_platform_data *d)
 {
 	int i;
 
-	switch (id) {
-	case 0:
-		d->netdev = &ar71xx_eth0_device.dev;
-		break;
-	case 1:
-		d->netdev = &ar71xx_eth1_device.dev;
-		break;
-	default:
-		printk(KERN_ERR
-			"ar71xx: invalid ethernet id %d for DSA switch\n",
-			id);
-		return;
-	}
-
+	d->netdev = netdev;
 	for (i = 0; i < d->nr_chips; i++)
-		d->chip[i].mii_bus = &ar71xx_mdio_device.dev;
+		d->chip[i].mii_bus = miidev;
 
 	ar71xx_dsa_switch_device.dev.platform_data = d;
 
