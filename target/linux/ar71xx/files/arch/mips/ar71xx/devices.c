@@ -194,8 +194,16 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 {
 	struct platform_device *mdio_dev;
 	struct ag71xx_mdio_platform_data *mdio_data;
+	unsigned int max_id;
 
-	if (id > 0) {
+	if (ar71xx_soc == AR71XX_SOC_AR9341 ||
+	    ar71xx_soc == AR71XX_SOC_AR9342 ||
+	    ar71xx_soc == AR71XX_SOC_AR9344)
+		max_id = 1;
+	else
+		max_id = 0;
+
+	if (id > max_id) {
 		printk(KERN_ERR "ar71xx: invalid MDIO id %u\n", id);
 		return;
 	}
@@ -206,6 +214,18 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 	case AR71XX_SOC_AR9331:
 		mdio_dev = &ar71xx_mdio1_device;
 		mdio_data = &ar71xx_mdio1_data;
+		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		if (id == 0) {
+			mdio_dev = &ar71xx_mdio0_device;
+			mdio_data = &ar71xx_mdio0_data;
+		} else {
+			mdio_dev = &ar71xx_mdio1_device;
+			mdio_data = &ar71xx_mdio1_data;
+		}
 		break;
 
 	case AR71XX_SOC_AR7242:
@@ -228,6 +248,14 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 	case AR71XX_SOC_AR9331:
 		mdio_data->is_ar7240 = 1;
 		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		if (id == 1)
+			mdio_data->is_ar7240 = 1;
+		break;
+
 	default:
 		break;
 	}
@@ -755,6 +783,15 @@ void __init ar71xx_add_device_eth(unsigned int id)
 
 	if (pdata->mii_bus_dev == NULL) {
 		switch (ar71xx_soc) {
+		case AR71XX_SOC_AR9341:
+		case AR71XX_SOC_AR9342:
+		case AR71XX_SOC_AR9344:
+			if (id == 0)
+				pdata->mii_bus_dev = &ar71xx_mdio0_device.dev;
+			else
+				pdata->mii_bus_dev = &ar71xx_mdio1_device.dev;
+			break;
+
 		case AR71XX_SOC_AR7241:
 		case AR71XX_SOC_AR9330:
 		case AR71XX_SOC_AR9331:
