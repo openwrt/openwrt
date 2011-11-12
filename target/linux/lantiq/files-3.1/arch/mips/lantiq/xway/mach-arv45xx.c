@@ -24,6 +24,7 @@
 #include <dev-gpio-leds.h>
 
 #include "../machtypes.h"
+#include "../dev-wifi-rt2x00.h"
 #include "devices.h"
 #include "dev-dwc_otg.h"
 
@@ -484,9 +485,12 @@ arv7525pw_init(void)
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(arv4525pw_gpio_leds), arv4525pw_gpio_leds);
 	ltq_register_nor(&arv7525_flash_data);
 	ltq_pci_data.clock = PCI_CLOCK_INT;
+	ltq_pci_data.gpio |= PCI_EXIN1;
+	ltq_pci_data.irq[14] = (INT_NUM_IM3_IRL0 + 31);
 	ltq_register_pci(&ltq_pci_data);
 	ltq_eth_data.mii_mode = PHY_INTERFACE_MODE_MII;
 	arv45xx_register_ethernet();
+	ltq_register_rt2x00("RT2860.eeprom");
 	ltq_register_tapi();
 }
 
