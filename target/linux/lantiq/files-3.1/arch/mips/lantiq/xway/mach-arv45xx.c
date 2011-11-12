@@ -167,7 +167,7 @@ arv4518pw_gpio_leds[] __initdata = {
 	{ .name = "soc:green:power", .gpio = 3, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:adsl", .gpio = 4, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:internet", .gpio = 5, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:green:wlan", .gpio = 6, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:wifi", .gpio = 6, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:yellow:wps", .gpio = 7, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:red:fail", .gpio = 8, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:usb", .gpio = 19, .active_low = 1, .default_trigger = "default-on" },
@@ -179,7 +179,7 @@ arv4518pw_gpio_leds[] __initdata = {
 
 static struct gpio_button
 arv4518pw_gpio_buttons[] __initdata = {
-	{ .desc = "wlan", .type = EV_KEY, .code = BTN_0, .threshold = 3, .gpio = 28, .active_low = 1, },
+	{ .desc = "wifi", .type = EV_KEY, .code = BTN_0, .threshold = 3, .gpio = 28, .active_low = 1, },
 	{ .desc = "wps", .type = EV_KEY, .code = BTN_1, .threshold = 3, .gpio = 29, .active_low = 1, },
 	{ .desc = "reset", .type = EV_KEY, .code = BTN_2, .threshold = 3, .gpio = 30, .active_low = 1, },
 };
@@ -198,7 +198,7 @@ arv4520pw_gpio_leds[] __initdata = {
 	{ .name = "soc:blue:fxo", .gpio = 103, .active_low = 1, },
 	{ .name = "soc:blue:voice", .gpio = 104, .active_low = 1, },
 	{ .name = "soc:blue:usb", .gpio = 105, .active_low = 1, },
-	{ .name = "soc:blue:wlan", .gpio = 106, .active_low = 1, },
+	{ .name = "soc:blue:wifi", .gpio = 106, .active_low = 1, },
 };
 
 static struct gpio_led
@@ -215,17 +215,17 @@ arv452cpw_gpio_leds[] __initdata = {
 	{ .name = "soc:blue:fxo", .gpio = 103, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:blue:voice", .gpio = 104, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:blue:usb", .gpio = 105, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:blue:wlan", .gpio = 106, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:blue:wifi", .gpio = 106, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:blue:internet", .gpio = 108, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:red:internet", .gpio = 109, .active_low = 1, .default_trigger = "default-on" },
 };
 
 static struct gpio_led
 arv4525pw_gpio_leds[] __initdata = {
-	{ .name = "soc:green:festnetz", .gpio = 4, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:green:internet", .gpio = 5, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:green:dsl", .gpio = 6, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:green:wlan", .gpio = 8, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:fxs1", .gpio = 4, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:fxs2", .gpio = 5, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:red:dsl", .gpio = 6, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:wifi", .gpio = 8, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:online", .gpio = 9, .active_low = 1, .default_trigger = "default-on" },
 };
 
@@ -238,10 +238,10 @@ arv752dpw22_gpio_leds[] __initdata = {
 	{ .name = "soc:red:fxo", .gpio = 103, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:red:voice", .gpio = 104, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:usb", .gpio = 105, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:green:wlan", .gpio = 106, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:green:wlan1", .gpio = 107, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:blue:wlan", .gpio = 108, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:blue:wlan1", .gpio = 109, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:wifi", .gpio = 106, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:wifi1", .gpio = 107, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:blue:wifi", .gpio = 108, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:blue:wifi1", .gpio = 109, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:eth1", .gpio = 111, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:eth2", .gpio = 112, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:eth3", .gpio = 113, .active_low = 1, .default_trigger = "default-on" },
@@ -260,7 +260,7 @@ arv7518pw_gpio_leds[] __initdata = {
 	{ .name = "soc:green:power", .gpio = 2, .active_low = 1, },
 	{ .name = "soc:green:adsl", .gpio = 4, .active_low = 1, },
 	{ .name = "soc:green:internet", .gpio = 5, .active_low = 1, },
-	{ .name = "soc:green:wlan", .gpio = 6, .active_low = 1, },
+	{ .name = "soc:green:wifi", .gpio = 6, .active_low = 1, },
 	{ .name = "soc:red:internet", .gpio = 8, .active_low = 1, },
 	{ .name = "soc:green:usb", .gpio = 19, .active_low = 1, },
 };
@@ -268,7 +268,7 @@ arv7518pw_gpio_leds[] __initdata = {
 static struct gpio_button
 arv7518pw_gpio_buttons[] __initdata = {
 	{ .desc = "reset", .type = EV_KEY, .code = BTN_0, .threshold = 3, .gpio = 23, .active_low = 1, },
-	{ .desc = "wlan", .type = EV_KEY, .code = BTN_1, .threshold = 3, .gpio = 25, .active_low = 1, },
+	{ .desc = "wifi", .type = EV_KEY, .code = BTN_1, .threshold = 3, .gpio = 25, .active_low = 1, },
 };
 
 static void
