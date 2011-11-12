@@ -590,33 +590,101 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id,
 {
 	switch (id) {
 	case 0:
-		switch (pdata->phy_if_mode) {
-		case PHY_INTERFACE_MODE_MII:
-			pdata->mii_if = MII0_CTRL_IF_MII;
+		switch (ar71xx_soc) {
+		case AR71XX_SOC_AR7130:
+		case AR71XX_SOC_AR7141:
+		case AR71XX_SOC_AR7161:
+		case AR71XX_SOC_AR9130:
+		case AR71XX_SOC_AR9132:
+			switch (pdata->phy_if_mode) {
+			case PHY_INTERFACE_MODE_MII:
+				pdata->mii_if = MII0_CTRL_IF_MII;
+				break;
+			case PHY_INTERFACE_MODE_GMII:
+				pdata->mii_if = MII0_CTRL_IF_GMII;
+				break;
+			case PHY_INTERFACE_MODE_RGMII:
+				pdata->mii_if = MII0_CTRL_IF_RGMII;
+				break;
+			case PHY_INTERFACE_MODE_RMII:
+				pdata->mii_if = MII0_CTRL_IF_RMII;
+				break;
+			default:
+				return -EINVAL;
+			}
 			break;
-		case PHY_INTERFACE_MODE_GMII:
-			pdata->mii_if = MII0_CTRL_IF_GMII;
+
+		case AR71XX_SOC_AR7240:
+		case AR71XX_SOC_AR7241:
+		case AR71XX_SOC_AR9330:
+		case AR71XX_SOC_AR9331:
+			pdata->phy_if_mode = PHY_INTERFACE_MODE_MII;
 			break;
-		case PHY_INTERFACE_MODE_RGMII:
-			pdata->mii_if = MII0_CTRL_IF_RGMII;
+
+		case AR71XX_SOC_AR7242:
+			/* FIXME */
+
+		case AR71XX_SOC_AR9341:
+		case AR71XX_SOC_AR9342:
+		case AR71XX_SOC_AR9344:
+			switch (pdata->phy_if_mode) {
+			case PHY_INTERFACE_MODE_MII:
+			case PHY_INTERFACE_MODE_GMII:
+			case PHY_INTERFACE_MODE_RGMII:
+			case PHY_INTERFACE_MODE_RMII:
+				break;
+			default:
+				return -EINVAL;
+			}
 			break;
-		case PHY_INTERFACE_MODE_RMII:
-			pdata->mii_if = MII0_CTRL_IF_RMII;
-			break;
+
 		default:
-			return -EINVAL;
+			BUG();
 		}
 		break;
 	case 1:
-		switch (pdata->phy_if_mode) {
-		case PHY_INTERFACE_MODE_RMII:
-			pdata->mii_if = MII1_CTRL_IF_RMII;
+		switch (ar71xx_soc) {
+		case AR71XX_SOC_AR7130:
+		case AR71XX_SOC_AR7141:
+		case AR71XX_SOC_AR7161:
+		case AR71XX_SOC_AR9130:
+		case AR71XX_SOC_AR9132:
+			switch (pdata->phy_if_mode) {
+			case PHY_INTERFACE_MODE_RMII:
+				pdata->mii_if = MII1_CTRL_IF_RMII;
+				break;
+			case PHY_INTERFACE_MODE_RGMII:
+				pdata->mii_if = MII1_CTRL_IF_RGMII;
+				break;
+			default:
+				return -EINVAL;
+			}
 			break;
-		case PHY_INTERFACE_MODE_RGMII:
-			pdata->mii_if = MII1_CTRL_IF_RGMII;
+
+		case AR71XX_SOC_AR7240:
+		case AR71XX_SOC_AR7241:
+		case AR71XX_SOC_AR9330:
+		case AR71XX_SOC_AR9331:
+			pdata->phy_if_mode = PHY_INTERFACE_MODE_GMII;
 			break;
+
+		case AR71XX_SOC_AR7242:
+			/* FIXME */
+
+		case AR71XX_SOC_AR9341:
+		case AR71XX_SOC_AR9342:
+		case AR71XX_SOC_AR9344:
+			switch (pdata->phy_if_mode) {
+			case PHY_INTERFACE_MODE_MII:
+			case PHY_INTERFACE_MODE_GMII:
+				break;
+			default:
+				return -EINVAL;
+			}
+			break;
+
 		default:
-			return -EINVAL;
+			BUG();
 		}
 		break;
 	}
