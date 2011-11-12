@@ -183,39 +183,67 @@ static void __init ar71xx_detect_sys_type(void)
 static void __init ar934x_detect_sys_frequency(void)
 {
 	u32 pll, out_div, ref_div, nint, frac, clk_ctrl, postdiv;
+	u32 cpu_pll, ddr_pll;
 
 	if (ar71xx_reset_rr(AR934X_RESET_REG_BOOTSTRAP) & AR934X_REF_CLK_40)
 		ar71xx_ref_freq = 40 * 1000 * 1000;
 	else
 		ar71xx_ref_freq = 25 * 1000 * 1000;
 
-	clk_ctrl = ar71xx_pll_rr(AR934X_PLL_REG_DDR_CTRL_CLOCK);
-
 	pll = ar71xx_pll_rr(AR934X_PLL_REG_CPU_CONFIG);
 	out_div	= AR934X_CPU_PLL_CFG_OUTDIV_GET(pll);
 	ref_div	= AR934X_CPU_PLL_CFG_REFDIV_GET(pll);
 	nint	= AR934X_CPU_PLL_CFG_NINT_GET(pll);
 	frac	= AR934X_CPU_PLL_CFG_NFRAC_GET(pll);
-	postdiv = AR934X_CPU_DDR_CLK_CTRL_CPU_POST_DIV_GET(clk_ctrl);
-	ar71xx_cpu_freq = ((nint * ar71xx_ref_freq / ref_div) >> out_div) /
-			  (postdiv + 1);
 
+	cpu_pll = nint * ar71xx_ref_freq / ref_div;
+	cpu_pll += frac * ar71xx_ref_freq / (ref_div * (2 << 6));
+	cpu_pll /= (1 << out_div);
+
+	pll = ar71xx_pll_rr(AR934X_PLL_REG_DDR_CONFIG);
 	out_div	= AR934X_DDR_PLL_CFG_OUTDIV_GET(pll);
 	ref_div	= AR934X_DDR_PLL_CFG_REFDIV_GET(pll);
 	nint	= AR934X_DDR_PLL_CFG_NINT_GET(pll);
 	frac	= AR934X_DDR_PLL_CFG_NFRAC_GET(pll);
-	postdiv = AR934X_CPU_DDR_CLK_CTRL_DDR_POST_DIV_GET(clk_ctrl);
-	ar71xx_ddr_freq = ((nint * ar71xx_ref_freq / ref_div) >> out_div) /
-			  (postdiv + 1);
 
-	postdiv = AR934X_CPU_DDR_CLK_CTRL_AHB_POST_DIV_GET(clk_ctrl);
+	ddr_pll = nint * ar71xx_ref_freq / ref_div;
+	ddr_pll += frac * ar71xx_ref_freq / (ref_div * (2 << 10));
+	ddr_pll /= (1 << out_div);
 
-	if (AR934X_CPU_DDR_CLK_CTRL_AHBCLK_FROM_DDRPLL_GET(clk_ctrl)) {
-		ar71xx_ahb_freq = ar71xx_ddr_freq / (postdiv + 1);
+	clk_ctrl = ar71xx_pll_rr(AR934X_PLL_REG_DDR_CTRL_CLOCK);
+
+	if (clk_ctrl & AR934X_CPU_DDR_CLK_CTRL_CPU_PLL_BYPASS) {
+		ar71xx_cpu_freq = ar71xx_ref_freq;
 	} else {
-		ar71xx_ahb_freq = ar71xx_cpu_freq / (postdiv + 1);
+		postdiv = AR934X_CPU_DDR_CLK_CTRL_CPU_POST_DIV_GET(clk_ctrl);
+
+		if (clk_ctrl & AR934X_CPU_DDR_CLK_CTRL_CPUCLK_FROM_CPUPLL)
+			ar71xx_cpu_freq = cpu_pll / (postdiv + 1);
+		else
+			ar71xx_cpu_freq = ddr_pll / (postdiv + 1);
 	}
 
+	if (clk_ctrl & AR934X_CPU_DDR_CLK_CTRL_DDR_PLL_BYPASS) {
+		ar71xx_ddr_freq = ar71xx_ref_freq;
+	} else {
+		postdiv = AR934X_CPU_DDR_CLK_CTRL_DDR_POST_DIV_GET(clk_ctrl);
+
+		if (clk_ctrl & AR934X_CPU_DDR_CLK_CTRL_DDRCLK_FROM_DDRPLL)
+			ar71xx_ddr_freq = ddr_pll / (postdiv + 1);
+		else
+			ar71xx_ddr_freq = cpu_pll / (postdiv + 1);
+	}
+
+	if (clk_ctrl & AR934X_CPU_DDR_CLK_CTRL_AHB_PLL_BYPASS) {
+		ar71xx_ahb_freq = ar71xx_ref_freq;
+	} else {
+		postdiv = AR934X_CPU_DDR_CLK_CTRL_AHB_POST_DIV_GET(clk_ctrl);
+
+		if (clk_ctrl & AR934X_CPU_DDR_CLK_CTRL_AHBCLK_FROM_DDRPLL)
+			ar71xx_ahb_freq = ddr_pll / (postdiv + 1);
+		else
+			ar71xx_ahb_freq = cpu_pll / (postdiv + 1);
+	}
 }
 
 static void __init ar91xx_detect_sys_frequency(void)
