@@ -132,11 +132,32 @@ static struct ag71xx_mdio_platform_data ar71xx_mdio0_data;
 
 struct platform_device ar71xx_mdio0_device = {
 	.name		= "ag71xx-mdio",
-	.id		= -1,
+	.id		= 0,
 	.resource	= ar71xx_mdio0_resources,
 	.num_resources	= ARRAY_SIZE(ar71xx_mdio0_resources),
 	.dev = {
 		.platform_data = &ar71xx_mdio0_data,
+	},
+};
+
+static struct resource ar71xx_mdio1_resources[] = {
+	{
+		.name	= "mdio_base",
+		.flags	= IORESOURCE_MEM,
+		.start	= AR71XX_GE1_BASE,
+		.end	= AR71XX_GE1_BASE + 0x200 - 1,
+	}
+};
+
+static struct ag71xx_mdio_platform_data ar71xx_mdio1_data;
+
+struct platform_device ar71xx_mdio1_device = {
+	.name		= "ag71xx-mdio",
+	.id		= 1,
+	.resource	= ar71xx_mdio1_resources,
+	.num_resources	= ARRAY_SIZE(ar71xx_mdio1_resources),
+	.dev = {
+		.platform_data = &ar71xx_mdio1_data,
 	},
 };
 
@@ -171,38 +192,47 @@ static void ar71xx_set_pll(u32 cfg_reg, u32 pll_reg, u32 pll_val, u32 shift)
 
 void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 {
+	struct platform_device *mdio_dev;
+	struct ag71xx_mdio_platform_data *mdio_data;
+
 	if (id > 0) {
 		printk(KERN_ERR "ar71xx: invalid MDIO id %u\n", id);
 		return;
 	}
 
 	switch (ar71xx_soc) {
-	case AR71XX_SOC_AR7240:
-		ar71xx_mdio0_data.is_ar7240 = 1;
-		break;
 	case AR71XX_SOC_AR7241:
-		ar71xx_mdio0_data.is_ar7240 = 1;
-		ar71xx_mdio0_resources[0].start = AR71XX_GE1_BASE;
-		ar71xx_mdio0_resources[0].end = AR71XX_GE1_BASE + 0x200 - 1;
+	case AR71XX_SOC_AR9330:
+	case AR71XX_SOC_AR9331:
+		mdio_dev = &ar71xx_mdio1_device;
+		mdio_data = &ar71xx_mdio1_data;
 		break;
+
 	case AR71XX_SOC_AR7242:
 		ar71xx_set_pll(AR71XX_PLL_REG_SEC_CONFIG,
 			       AR7242_PLL_REG_ETH0_INT_CLOCK, 0x62000000,
 			       AR71XX_ETH0_PLL_SHIFT);
+		/* fall through */
+	default:
+		mdio_dev = &ar71xx_mdio0_device;
+		mdio_data = &ar71xx_mdio0_data;
 		break;
+	}
+
+	mdio_data->phy_mask = phy_mask;
+
+	switch (ar71xx_soc) {
+	case AR71XX_SOC_AR7240:
+	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
-		ar71xx_mdio0_data.is_ar7240 = 1;
-		ar71xx_mdio0_resources[0].start = AR71XX_GE1_BASE;
-		ar71xx_mdio0_resources[0].end = AR71XX_GE1_BASE + 0x200 - 1;
+		mdio_data->is_ar7240 = 1;
 		break;
 	default:
 		break;
 	}
 
-	ar71xx_mdio0_data.phy_mask = phy_mask;
-
-	platform_device_register(&ar71xx_mdio0_device);
+	platform_device_register(mdio_dev);
 }
 
 struct ar71xx_eth_pll_data ar71xx_eth0_pll_data;
@@ -723,8 +753,19 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			ar71xx_eth_instance);
 	}
 
-	if (pdata->mii_bus_dev == NULL)
-		pdata->mii_bus_dev = &ar71xx_mdio0_device.dev;
+	if (pdata->mii_bus_dev == NULL) {
+		switch (ar71xx_soc) {
+		case AR71XX_SOC_AR7241:
+		case AR71XX_SOC_AR9330:
+		case AR71XX_SOC_AR9331:
+			pdata->mii_bus_dev = &ar71xx_mdio1_device.dev;
+			break;
+
+		default:
+			pdata->mii_bus_dev = &ar71xx_mdio0_device.dev;
+			break;
+		}
+	}
 
 	/* Reset the device */
 	ar71xx_device_stop(pdata->reset_bit);
