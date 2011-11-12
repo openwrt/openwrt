@@ -10,6 +10,7 @@
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/platform_device.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
@@ -125,8 +126,8 @@ static void __init tl_wr841n_v1_setup(void)
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(0);
-
-	ar71xx_add_device_dsa(0, &tl_wr841n_v1_dsa_data);
+	ar71xx_add_device_dsa(&ar71xx_eth0_device.dev, &ar71xx_mdio_device.dev,
+			      &tl_wr841n_v1_dsa_data);
 
 	ar71xx_add_device_m25p80(&tl_wr841n_v1_flash_data);
 
