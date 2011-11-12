@@ -30,6 +30,8 @@
 
 #define DB120_GPIO_BTN_SW1	16
 
+#define DB120_MAC0_OFFSET	0
+#define DB120_MAC1_OFFSET	6
 #define DB120_CALDATA_OFFSET	0x1000
 #define DB120_WMAC_MAC_OFFSET	0x1002
 
@@ -124,6 +126,14 @@ static void __init db120_setup(void)
 	ar71xx_register_gpio_keys_polled(-1, DB120_KEYS_POLL_INTERVAL,
 					 ARRAY_SIZE(db120_gpio_keys),
 					 db120_gpio_keys);
+
+	/* GMAC0 is connected to an AR8327 switch */
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.speed = SPEED_1000;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+
+	ar71xx_add_device_eth(0);
 
 	ar9xxx_add_device_wmac(art + DB120_CALDATA_OFFSET,
 				art + DB120_WMAC_MAC_OFFSET);
