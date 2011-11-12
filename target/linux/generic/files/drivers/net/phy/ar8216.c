@@ -486,6 +486,33 @@ ar8216_vtu_op(struct ar8216_priv *priv, u32 op, u32 val)
 	priv->write(priv, AR8216_REG_VTU, op);
 }
 
+static void
+ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
+		  u32 members, u32 pvid)
+{
+	u32 header;
+
+	if (priv->vlan && port == AR8216_PORT_CPU && priv->chip == AR8216)
+		header = AR8216_PORT_CTRL_HEADER;
+	else
+		header = 0;
+
+	ar8216_rmw(priv, AR8216_REG_PORT_CTRL(port),
+		   AR8216_PORT_CTRL_LEARN | AR8216_PORT_CTRL_VLAN_MODE |
+		   AR8216_PORT_CTRL_SINGLE_VLAN | AR8216_PORT_CTRL_STATE |
+		   AR8216_PORT_CTRL_HEADER | AR8216_PORT_CTRL_LEARN_LOCK,
+		   AR8216_PORT_CTRL_LEARN | header |
+		   (egress << AR8216_PORT_CTRL_VLAN_MODE_S) |
+		   (AR8216_PORT_STATE_FORWARD << AR8216_PORT_CTRL_STATE_S));
+
+	ar8216_rmw(priv, AR8216_REG_PORT_VLAN(port),
+		   AR8216_PORT_VLAN_DEST_PORTS | AR8216_PORT_VLAN_MODE |
+		   AR8216_PORT_VLAN_DEFAULT_ID,
+		   (members << AR8216_PORT_VLAN_DEST_PORTS_S) |
+		   (ingress << AR8216_PORT_VLAN_MODE_S) |
+		   (pvid << AR8216_PORT_VLAN_DEFAULT_ID_S));
+}
+
 static int
 ar8216_hw_apply(struct switch_dev *dev)
 {
@@ -552,22 +579,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 			ingress = AR8216_IN_PORT_ONLY;
 		}
 
-		ar8216_rmw(priv, AR8216_REG_PORT_CTRL(i),
-			AR8216_PORT_CTRL_LEARN | AR8216_PORT_CTRL_VLAN_MODE |
-			AR8216_PORT_CTRL_SINGLE_VLAN | AR8216_PORT_CTRL_STATE |
-			AR8216_PORT_CTRL_HEADER | AR8216_PORT_CTRL_LEARN_LOCK,
-			AR8216_PORT_CTRL_LEARN |
-			  (priv->vlan && i == AR8216_PORT_CPU && (priv->chip == AR8216) ?
-			   AR8216_PORT_CTRL_HEADER : 0) |
-			  (egress << AR8216_PORT_CTRL_VLAN_MODE_S) |
-			  (AR8216_PORT_STATE_FORWARD << AR8216_PORT_CTRL_STATE_S));
-
-		ar8216_rmw(priv, AR8216_REG_PORT_VLAN(i),
-			AR8216_PORT_VLAN_DEST_PORTS | AR8216_PORT_VLAN_MODE |
-			  AR8216_PORT_VLAN_DEFAULT_ID,
-			(portmask[i] << AR8216_PORT_VLAN_DEST_PORTS_S) |
-			  (ingress << AR8216_PORT_VLAN_MODE_S) |
-			  (pvid << AR8216_PORT_VLAN_DEFAULT_ID_S));
+		ar8216_setup_port(priv, i, egress, ingress, portmask[i], pvid);
 	}
 	mutex_unlock(&priv->reg_mutex);
 	return 0;
