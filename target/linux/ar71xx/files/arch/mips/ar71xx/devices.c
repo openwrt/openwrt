@@ -585,57 +585,72 @@ static void __init ar71xx_init_eth_pll_data(unsigned int id)
 		pll_data->pll_1000 = pll_1000;
 }
 
+static int __init ar71xx_setup_phy_if_mode(unsigned int id,
+					   struct ag71xx_platform_data *pdata)
+{
+	switch (id) {
+	case 0:
+		switch (pdata->phy_if_mode) {
+		case PHY_INTERFACE_MODE_MII:
+			pdata->mii_if = MII0_CTRL_IF_MII;
+			break;
+		case PHY_INTERFACE_MODE_GMII:
+			pdata->mii_if = MII0_CTRL_IF_GMII;
+			break;
+		case PHY_INTERFACE_MODE_RGMII:
+			pdata->mii_if = MII0_CTRL_IF_RGMII;
+			break;
+		case PHY_INTERFACE_MODE_RMII:
+			pdata->mii_if = MII0_CTRL_IF_RMII;
+			break;
+		default:
+			return -EINVAL;
+		}
+		break;
+	case 1:
+		switch (pdata->phy_if_mode) {
+		case PHY_INTERFACE_MODE_RMII:
+			pdata->mii_if = MII1_CTRL_IF_RMII;
+			break;
+		case PHY_INTERFACE_MODE_RGMII:
+			pdata->mii_if = MII1_CTRL_IF_RGMII;
+			break;
+		default:
+			return -EINVAL;
+		}
+		break;
+	}
+
+	return 0;
+}
+
 static int ar71xx_eth_instance __initdata;
 void __init ar71xx_add_device_eth(unsigned int id)
 {
 	struct platform_device *pdev;
 	struct ag71xx_platform_data *pdata;
+	int err;
 
-	ar71xx_init_eth_pll_data(id);
-
-	switch (id) {
-	case 0:
-		switch (ar71xx_eth0_data.phy_if_mode) {
-		case PHY_INTERFACE_MODE_MII:
-			ar71xx_eth0_data.mii_if = MII0_CTRL_IF_MII;
-			break;
-		case PHY_INTERFACE_MODE_GMII:
-			ar71xx_eth0_data.mii_if = MII0_CTRL_IF_GMII;
-			break;
-		case PHY_INTERFACE_MODE_RGMII:
-			ar71xx_eth0_data.mii_if = MII0_CTRL_IF_RGMII;
-			break;
-		case PHY_INTERFACE_MODE_RMII:
-			ar71xx_eth0_data.mii_if = MII0_CTRL_IF_RMII;
-			break;
-		default:
-			printk(KERN_ERR "ar71xx: invalid PHY interface mode "
-					"for eth0\n");
-			return;
-		}
-		pdev = &ar71xx_eth0_device;
-		break;
-	case 1:
-		switch (ar71xx_eth1_data.phy_if_mode) {
-		case PHY_INTERFACE_MODE_RMII:
-			ar71xx_eth1_data.mii_if = MII1_CTRL_IF_RMII;
-			break;
-		case PHY_INTERFACE_MODE_RGMII:
-			ar71xx_eth1_data.mii_if = MII1_CTRL_IF_RGMII;
-			break;
-		default:
-			printk(KERN_ERR "ar71xx: invalid PHY interface mode "
-					"for eth1\n");
-			return;
-		}
-		pdev = &ar71xx_eth1_device;
-		break;
-	default:
+	if (id > 1) {
 		printk(KERN_ERR "ar71xx: invalid ethernet id %d\n", id);
 		return;
 	}
 
+	ar71xx_init_eth_pll_data(id);
+
+	if (id == 0)
+		pdev = &ar71xx_eth0_device;
+	else
+		pdev = &ar71xx_eth1_device;
+
 	pdata = pdev->dev.platform_data;
+
+	err = ar71xx_setup_phy_if_mode(id, pdata);
+	if (err) {
+		printk(KERN_ERR
+		       "ar71xx: invalid PHY interface mode for GE%u\n", id);
+		return;
+	}
 
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7130:
