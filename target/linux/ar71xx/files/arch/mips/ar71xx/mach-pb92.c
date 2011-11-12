@@ -86,7 +86,7 @@ static void __init pb92_init(void)
 
 	ar71xx_add_device_m25p80(&pb92_flash_data);
 
-	ar71xx_add_device_mdio(~BIT(0));
+	ar71xx_add_device_mdio(0, ~BIT(0));
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;

@@ -132,7 +132,7 @@ static void __init rb750_setup(void)
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	ar71xx_eth1_data.has_ar7240_switch = 1;
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_add_device_eth(1);
 	ar71xx_add_device_eth(0);
 

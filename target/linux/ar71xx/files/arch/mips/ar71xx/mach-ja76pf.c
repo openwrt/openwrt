@@ -73,7 +73,7 @@ static void __init ja76pf_init(void)
 {
 	ar71xx_add_device_m25p80(NULL);
 
-	ar71xx_add_device_mdio(~JA76PF_MDIO_PHYMASK);
+	ar71xx_add_device_mdio(0, ~JA76PF_MDIO_PHYMASK);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = JA76PF_LAN_PHYMASK;

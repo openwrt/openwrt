@@ -53,7 +53,7 @@ static void __init jwap003_init(void)
 {
 	ar71xx_add_device_m25p80(NULL);
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth0_data.phy_mask = JWAP003_WAN_PHYMASK;

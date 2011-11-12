@@ -159,7 +159,7 @@ static void __init whrhpg300n_setup(void)
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_add_device_eth(1);
 	ar71xx_add_device_eth(0);
 

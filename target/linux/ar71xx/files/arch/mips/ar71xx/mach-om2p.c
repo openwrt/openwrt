@@ -93,7 +93,7 @@ static void __init om2p_setup(void)
 
 	ar71xx_add_device_m25p80(&om2p_flash_data);
 
-	ar71xx_add_device_mdio(~OM2P_WAN_PHYMASK);
+	ar71xx_add_device_mdio(0, ~OM2P_WAN_PHYMASK);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac1, 0);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac2, 0);

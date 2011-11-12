@@ -194,7 +194,7 @@ static void __init wzrhpag300h_setup(void)
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac1, 0);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac2, 1);
 
-	ar71xx_add_device_mdio(~(BIT(0) | BIT(4)));
+	ar71xx_add_device_mdio(0, ~(BIT(0) | BIT(4)));
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;

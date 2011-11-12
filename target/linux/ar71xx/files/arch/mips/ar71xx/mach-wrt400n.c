@@ -134,7 +134,7 @@ static void __init wrt400n_setup(void)
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 	u8 *mac = art + WRT400N_MAC_ADDR_OFFSET;
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;

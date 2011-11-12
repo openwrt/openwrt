@@ -148,7 +148,7 @@ static void __init dir_615c1_setup(void)
 		wlan_mac = mac;
 	}
 
-	ar71xx_add_device_mdio(DIR_615C1_MDIO_MASK);
+	ar71xx_add_device_mdio(0, DIR_615C1_MDIO_MASK);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth0_data.phy_mask = DIR_615C1_LAN_PHYMASK;

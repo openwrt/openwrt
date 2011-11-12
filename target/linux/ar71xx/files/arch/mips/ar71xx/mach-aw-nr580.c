@@ -78,7 +78,7 @@ static struct gpio_keys_button aw_nr580_gpio_keys[] __initdata = {
 
 static void __init aw_nr580_setup(void)
 {
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.speed = SPEED_100;

@@ -134,7 +134,7 @@ static void __init all0258n_setup(void)
 	ar71xx_eth1_data.phy_mask = ALL0258N_SEC_PHYMASK;
 	ar71xx_eth1_data.has_ar7240_switch = 1;
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);

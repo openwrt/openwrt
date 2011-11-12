@@ -111,7 +111,7 @@ static void __init tl_wr703n_setup(void)
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.phy_mask = BIT(4);
 
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_add_device_eth(0);
 
 	ar9xxx_add_device_wmac(ee, mac);

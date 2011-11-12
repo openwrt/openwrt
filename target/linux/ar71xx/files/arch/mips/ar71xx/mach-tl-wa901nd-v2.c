@@ -110,7 +110,7 @@ static void __init tl_wa901nd_v2_setup(void)
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = 0x00001000;
-	ar71xx_add_device_mdio(0x0);
+	ar71xx_add_device_mdio(0, 0x0);
 
 	ar71xx_eth0_data.reset_bit = RESET_MODULE_GE0_MAC |
 				     RESET_MODULE_GE0_PHY;
