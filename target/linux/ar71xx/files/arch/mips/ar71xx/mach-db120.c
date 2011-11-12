@@ -127,6 +127,9 @@ static void __init db120_setup(void)
 					 ARRAY_SIZE(db120_gpio_keys),
 					 db120_gpio_keys);
 
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_add_device_mdio(1, 0x0);
+
 	/* GMAC0 is connected to an AR8327 switch */
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
