@@ -144,6 +144,8 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	switch (id) {
 	case 0x0101:
 		return AR8216;
+	case 0x0301:
+		return AR8236;
 	case 0x1000:
 	case 0x1001:
 		return AR8316;
@@ -513,6 +515,29 @@ ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 		   (pvid << AR8216_PORT_VLAN_DEFAULT_ID_S));
 }
 
+static void
+ar8236_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
+		  u32 members, u32 pvid)
+{
+	ar8216_rmw(priv, AR8216_REG_PORT_CTRL(port),
+		   AR8216_PORT_CTRL_LEARN | AR8216_PORT_CTRL_VLAN_MODE |
+		   AR8216_PORT_CTRL_SINGLE_VLAN | AR8216_PORT_CTRL_STATE |
+		   AR8216_PORT_CTRL_HEADER | AR8216_PORT_CTRL_LEARN_LOCK,
+		   AR8216_PORT_CTRL_LEARN |
+		   (egress << AR8216_PORT_CTRL_VLAN_MODE_S) |
+		   (AR8216_PORT_STATE_FORWARD << AR8216_PORT_CTRL_STATE_S));
+
+	ar8216_rmw(priv, AR8236_REG_PORT_VLAN(port),
+		   AR8236_PORT_VLAN_DEFAULT_ID,
+		   (pvid << AR8236_PORT_VLAN_DEFAULT_ID_S));
+
+	ar8216_rmw(priv, AR8236_REG_PORT_VLAN2(port),
+		   AR8236_PORT_VLAN2_VLAN_MODE |
+		   AR8236_PORT_VLAN2_MEMBER,
+		   (ingress << AR8236_PORT_VLAN2_VLAN_MODE_S) |
+		   (members << AR8236_PORT_VLAN2_MEMBER_S));
+}
+
 static int
 ar8216_hw_apply(struct switch_dev *dev)
 {
@@ -579,9 +604,37 @@ ar8216_hw_apply(struct switch_dev *dev)
 			ingress = AR8216_IN_PORT_ONLY;
 		}
 
-		ar8216_setup_port(priv, i, egress, ingress, portmask[i], pvid);
+		if (priv->chip == AR8236)
+			ar8236_setup_port(priv, i, egress, ingress, portmask[i],
+					  pvid);
+		else
+			ar8216_setup_port(priv, i, egress, ingress, portmask[i],
+					  pvid);
 	}
 	mutex_unlock(&priv->reg_mutex);
+	return 0;
+}
+
+static int
+ar8236_hw_init(struct ar8216_priv *priv) {
+	static int initialized;
+	int i;
+	struct mii_bus *bus;
+
+	if (initialized)
+		return 0;
+
+	/* Initialize the PHYs */
+	bus = priv->phy->bus;
+	for (i = 0; i < 5; i++) {
+		bus->write(bus, i, MII_ADVERTISE,
+			   ADVERTISE_ALL | ADVERTISE_PAUSE_CAP |
+			   ADVERTISE_PAUSE_ASYM);
+		bus->write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
+	}
+	msleep(1000);
+
+	initialized = true;
 	return 0;
 }
 
@@ -692,7 +745,8 @@ ar8216_reset_switch(struct switch_dev *dev)
 	if (priv->chip == AR8216) {
 		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
 			AR8216_GCTRL_MTU, 1518 + 8 + 2);
-	} else if (priv->chip == AR8316) {
+	} else if (priv->chip == AR8316 ||
+		   priv->chip == AR8236) {
 		/* enable jumbo frames */
 		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
 			AR8316_GCTRL_MTU, 9018 + 8 + 2);
@@ -806,6 +860,10 @@ ar8216_config_init(struct phy_device *pdev)
 			/* port 5 connected to the other mac, therefore unusable */
 			swdev->ports = (AR8216_NUM_PORTS - 1);
 		}
+	} else if (priv->chip == AR8236) {
+		swdev->name = "Atheros AR8236";
+		swdev->vlans = AR8216_NUM_VLANS;
+		swdev->ports = AR8216_NUM_PORTS;
 	} else {
 		swdev->name = "Atheros AR8216";
 		swdev->vlans = AR8216_NUM_VLANS;
@@ -818,6 +876,14 @@ ar8216_config_init(struct phy_device *pdev)
 
 	if (priv->chip == AR8316) {
 		ret = ar8316_hw_init(priv);
+		if (ret) {
+			kfree(priv);
+			goto done;
+		}
+	}
+
+	if (priv->chip == AR8236) {
+		ret = ar8236_hw_init(priv);
 		if (ret) {
 			kfree(priv);
 			goto done;
@@ -918,7 +984,7 @@ ar8216_remove(struct phy_device *pdev)
 
 static struct phy_driver ar8216_driver = {
 	.phy_id		= 0x004d0000,
-	.name		= "Atheros AR8216/AR8316",
+	.name		= "Atheros AR8216/AR8316/AR8326",
 	.phy_id_mask	= 0xffff0000,
 	.features	= PHY_BASIC_FEATURES,
 	.probe		= ar8216_probe,
