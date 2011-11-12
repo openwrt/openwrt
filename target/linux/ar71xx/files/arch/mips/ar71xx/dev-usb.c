@@ -182,6 +182,30 @@ static void __init ar933x_usb_setup(void)
 	platform_device_register(&ar71xx_ehci_device);
 }
 
+static void __init ar934x_usb_setup(void)
+{
+	u32 bootstrap;
+
+	bootstrap = ar71xx_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
+	if (bootstrap & AR934X_BOOTSTRAP_USB_MODE_DEVICE)
+		return;
+
+	ar71xx_device_stop(AR934X_RESET_USBSUS_OVERRIDE);
+	udelay(1000);
+
+	ar71xx_device_start(AR934X_RESET_USB_PHY);
+	udelay(1000);
+
+	ar71xx_device_start(AR934X_RESET_USB_PHY_ANALOG);
+	udelay(1000);
+
+	ar71xx_device_start(AR934X_RESET_USB_HOST);
+	udelay(1000);
+
+	ar71xx_ehci_data.is_ar91xx = 1;
+	platform_device_register(&ar71xx_ehci_device);
+}
+
 void __init ar71xx_add_device_usb(void)
 {
 	switch (ar71xx_soc) {
@@ -202,15 +226,18 @@ void __init ar71xx_add_device_usb(void)
 
 	case AR71XX_SOC_AR9130:
 	case AR71XX_SOC_AR9132:
-	case AR71XX_SOC_AR9341:
-	case AR71XX_SOC_AR9342:
-	case AR71XX_SOC_AR9344:
 		ar91xx_usb_setup();
 		break;
 
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
 		ar933x_usb_setup();
+		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		ar934x_usb_setup();
 		break;
 
 	default:
