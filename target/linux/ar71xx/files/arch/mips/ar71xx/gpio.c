@@ -90,6 +90,43 @@ static int ar71xx_gpio_direction_output(struct gpio_chip *chip,
 	return 0;
 }
 
+static int ar934x_gpio_direction_input(struct gpio_chip *chip,
+				       unsigned offset)
+{
+	void __iomem *base = ar71xx_gpio_base;
+	unsigned long flags;
+
+	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
+
+	__raw_writel(__raw_readl(base + GPIO_REG_OE) | (1 << offset),
+		     base + GPIO_REG_OE);
+
+	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
+
+	return 0;
+}
+
+static int ar934x_gpio_direction_output(struct gpio_chip *chip,
+					unsigned offset, int value)
+{
+	void __iomem *base = ar71xx_gpio_base;
+	unsigned long flags;
+
+	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
+
+	if (value)
+		__raw_writel(1 << offset, base + GPIO_REG_SET);
+	else
+		__raw_writel(1 << offset, base + GPIO_REG_CLEAR);
+
+	__raw_writel(__raw_readl(base + GPIO_REG_OE) & ~(1 << offset),
+		     base + GPIO_REG_OE);
+
+	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
+
+	return 0;
+}
+
 static struct gpio_chip ar71xx_gpio_chip = {
 	.label			= "ar71xx",
 	.get			= ar71xx_gpio_get_value,
@@ -181,6 +218,8 @@ void __init ar71xx_gpio_init(void)
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
 		ar71xx_gpio_chip.ngpio = AR934X_GPIO_COUNT;
+		ar71xx_gpio_chip.direction_input = ar934x_gpio_direction_input;
+		ar71xx_gpio_chip.direction_output = ar934x_gpio_direction_output;
 		break;
 
 	default:
