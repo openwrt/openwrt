@@ -28,7 +28,7 @@
 #define DB120_GPIO_LED_STATUS	14
 #define DB120_GPIO_LED_WPS	15
 
-#define DB120_GPIO_BTN_SW1	16
+#define DB120_GPIO_BTN_WPS	16
 
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
@@ -103,11 +103,11 @@ static struct gpio_led db120_leds_gpio[] __initdata = {
 
 static struct gpio_keys_button db120_gpio_keys[] __initdata = {
 	{
-		.desc		= "sw1",
+		.desc		= "WPS button",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = DB120_KEYS_DEBOUNCE_INTERVAL,
-		.gpio		= DB120_GPIO_BTN_SW1,
+		.gpio		= DB120_GPIO_BTN_WPS,
 		.active_low	= 1,
 	}
 };
