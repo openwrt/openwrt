@@ -298,6 +298,16 @@ static void ar933x_set_pll_ge1(int speed)
 	/* TODO */
 }
 
+static void ar934x_set_pll_ge0(int speed)
+{
+	/* TODO */
+}
+
+static void ar934x_set_pll_ge1(int speed)
+{
+	/* TODO */
+}
+
 static void ar71xx_ddr_flush_ge0(void)
 {
 	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_GE0);
@@ -336,6 +346,16 @@ static void ar933x_ddr_flush_ge0(void)
 static void ar933x_ddr_flush_ge1(void)
 {
 	ar71xx_ddr_flush(AR933X_DDR_REG_FLUSH_GE1);
+}
+
+static void ar934x_ddr_flush_ge0(void)
+{
+	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_GE0);
+}
+
+static void ar934x_ddr_flush_ge1(void)
+{
+	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_GE1);
 }
 
 static struct resource ar71xx_eth0_resources[] = {
@@ -424,6 +444,10 @@ struct platform_device ar71xx_eth1_device = {
 #define AR933X_PLL_VAL_100	0x00001099
 #define AR933X_PLL_VAL_10	0x00991099
 
+#define AR934X_PLL_VAL_1000	0x00110000
+#define AR934X_PLL_VAL_100	0x00001099
+#define AR934X_PLL_VAL_10	0x00991099
+
 static void __init ar71xx_init_eth_pll_data(unsigned int id)
 {
 	struct ar71xx_eth_pll_data *pll_data;
@@ -474,6 +498,14 @@ static void __init ar71xx_init_eth_pll_data(unsigned int id)
 		pll_10 = AR933X_PLL_VAL_10;
 		pll_100 = AR933X_PLL_VAL_100;
 		pll_1000 = AR933X_PLL_VAL_1000;
+		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		pll_10 = AR934X_PLL_VAL_10;
+		pll_100 = AR934X_PLL_VAL_100;
+		pll_1000 = AR934X_PLL_VAL_1000;
 		break;
 
 	default:
@@ -629,6 +661,28 @@ void __init ar71xx_add_device_eth(unsigned int id)
 				      : ar933x_ddr_flush_ge0;
 		pdata->set_pll =  id ? ar933x_set_pll_ge1
 				     : ar933x_set_pll_ge0;
+		pdata->has_gbit = 1;
+		pdata->is_ar724x = 1;
+
+		if (!pdata->fifo_cfg1)
+			pdata->fifo_cfg1 = 0x0010ffff;
+		if (!pdata->fifo_cfg2)
+			pdata->fifo_cfg2 = 0x015500aa;
+		if (!pdata->fifo_cfg3)
+			pdata->fifo_cfg3 = 0x01f00140;
+		break;
+
+	case AR71XX_SOC_AR9341:
+	case AR71XX_SOC_AR9342:
+	case AR71XX_SOC_AR9344:
+		ar71xx_eth0_data.reset_bit = AR934X_RESET_GE0_MAC |
+					     AR934X_RESET_GE0_MDIO;
+		ar71xx_eth1_data.reset_bit = AR934X_RESET_GE1_MAC |
+					     AR934X_RESET_GE1_MDIO;
+		pdata->ddr_flush = id ? ar934x_ddr_flush_ge1
+				      : ar934x_ddr_flush_ge0;
+		pdata->set_pll =  id ? ar934x_set_pll_ge1
+				     : ar934x_set_pll_ge0;
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
 
