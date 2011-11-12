@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+# Copyright (C) 2011 OpenWrt.org
+# based on ar71xx
+#
+
+COMMIT_SYSTEM=0
+
+set_led_netdev() {
+	local cfg="led_$1"
+	local name=$2
+	local sysfs=$3
+	local dev=$4
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.name='$name'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.trigger='netdev'
+set system.$cfg.dev='$dev'
+set system.$cfg.mode='link tx rx'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+set_led_usbdev() {
+	local cfg="led_$1"
+	local name=$2
+	local sysfs=$3
+	local dev=$4
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.name='$name'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.trigger='usbdev'
+set system.$cfg.dev='$dev'
+set system.$cfg.interval='50'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+set_led_wlan() {
+	local cfg="led_$1"
+	local name=$2
+	local sysfs=$3
+	local trigger=$4
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.name='$name'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.trigger='$trigger'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+set_led_default() {
+	local cfg="led_$1"
+	local name=$2
+	local sysfs=$3
+	local default=$4
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.name='$name'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.default='$default'
+EOF
+	COMMIT_SYSTEM=1
+}
+
+. /lib/lantiq.sh
+
+board=$(lantiq_board_name)
+
+case "$board" in
+ARV7525PW)
+	set_led_netdev "wifi" "wifi" "soc:green:wifi" "wlan0"
+	set_led_default "fxs1" "fxs1" "soc:green:fxs1" "1"
+	set_led_default "fxs2" "fxs2" "soc:green:fxs2" "1"
+	set_led_default "dsl" "dsl" "soc:red:dsl" "1"
+	set_led_default "online" "online" "soc:green:online" "1"
+	;;
+
+GIGASX76X)
+	set_led_netdev "wifi" "wifi" "soc:green:wifi" "ath0"
+	set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
+	;;
+esac
+
+[ "$COMMIT_SYSTEM" == "1" ] && uci commit system
+
+exit 0
