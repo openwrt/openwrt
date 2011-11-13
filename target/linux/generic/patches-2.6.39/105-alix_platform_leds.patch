@@ -33,13 +33,11 @@ Cc: Richard Purdie <rpurdie@rpsys.net>
 Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 ---
 
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index f1833e3..d18e7a2 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -2073,6 +2073,20 @@ config OLPC_XO15_SCI
- 	   - AC adapter status updates
- 	   - Battery status updates
+@@ -2087,6 +2087,20 @@ config OLPC_XO1
+ 	---help---
+ 	  Add support for non-essential features of the OLPC XO-1 laptop.
  
 +config ALIX
 +	bool "PCEngines ALIX System Support (LED setup)"
@@ -58,8 +56,6 @@ index f1833e3..d18e7a2 100644
  endif # X86_32
  
  config AMD_NB
-diff --git a/arch/x86/platform/Makefile b/arch/x86/platform/Makefile
-index 021eee9..8d87439 100644
 --- a/arch/x86/platform/Makefile
 +++ b/arch/x86/platform/Makefile
 @@ -1,6 +1,7 @@
@@ -70,16 +66,10 @@ index 021eee9..8d87439 100644
  obj-y	+= iris/
  obj-y	+= mrst/
  obj-y	+= olpc/
-diff --git a/arch/x86/platform/geode/Makefile b/arch/x86/platform/geode/Makefile
-new file mode 100644
-index 0000000..07c9cd0
 --- /dev/null
 +++ b/arch/x86/platform/geode/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_ALIX)		+= alix.o
-diff --git a/arch/x86/platform/geode/alix.c b/arch/x86/platform/geode/alix.c
-new file mode 100644
-index 0000000..f3f01e2
 --- /dev/null
 +++ b/arch/x86/platform/geode/alix.c
 @@ -0,0 +1,141 @@
@@ -224,11 +214,9 @@ index 0000000..f3f01e2
 +MODULE_AUTHOR("Ed Wildgoose <kernel@wildgooses.com>");
 +MODULE_DESCRIPTION("PCEngines ALIX System Setup");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/leds/Kconfig b/drivers/leds/Kconfig
-index b591e72..8974d27 100644
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -107,14 +107,6 @@
+@@ -107,14 +107,6 @@ config LEDS_WRAP
  	help
  	  This option enables support for the PCEngines WRAP programmable LEDs.
  
@@ -243,11 +231,9 @@ index b591e72..8974d27 100644
  config LEDS_H1940
  	tristate "LED Support for iPAQ H1940 device"
  	depends on LEDS_CLASS
-diff --git a/drivers/leds/Makefile b/drivers/leds/Makefile
-index bbfd2e3..a0a1b89 100644
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -16,7 +16,6 @@ obj-$(CONFIG_LEDS_AMS_DELTA)		+= leds-ams-delta.o
+@@ -16,7 +16,6 @@ obj-$(CONFIG_LEDS_AMS_DELTA)		+= leds-am
  obj-$(CONFIG_LEDS_NET48XX)		+= leds-net48xx.o
  obj-$(CONFIG_LEDS_NET5501)		+= leds-net5501.o
  obj-$(CONFIG_LEDS_WRAP)			+= leds-wrap.o
@@ -255,9 +241,6 @@ index bbfd2e3..a0a1b89 100644
  obj-$(CONFIG_LEDS_H1940)		+= leds-h1940.o
  obj-$(CONFIG_LEDS_COBALT_QUBE)		+= leds-cobalt-qube.o
  obj-$(CONFIG_LEDS_COBALT_RAQ)		+= leds-cobalt-raq.o
-diff --git a/drivers/leds/leds-alix2.c b/drivers/leds/leds-alix2.c
-deleted file mode 100644
-index f59ffad..0000000
 --- a/drivers/leds/leds-alix2.c
 +++ /dev/null
 @@ -1,239 +0,0 @@

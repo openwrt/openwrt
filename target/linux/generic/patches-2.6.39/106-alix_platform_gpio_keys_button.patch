@@ -1,5 +1,5 @@
---- a/arch/x86/platform/geode/alix.c	2011-08-13 15:51:30.892956346 -0600
-+++ b/arch/x86/platform/geode/alix.c	2011-08-13 16:14:58.082329961 -0600
+--- a/arch/x86/platform/geode/alix.c
++++ b/arch/x86/platform/geode/alix.c
 @@ -6,6 +6,7 @@
   *
   * Copyright (C) 2008 Constantin Baranov <const@mimas.ru>
@@ -8,7 +8,7 @@
   *
   * TODO: There are large similarities with leds-net5501.c
   * by Alessandro Zummo <a.zummo@towertech.it>
-@@ -24,14 +25,48 @@
+@@ -23,14 +24,48 @@
  #include <linux/leds.h>
  #include <linux/platform_device.h>
  #include <linux/gpio.h>
@@ -57,7 +57,7 @@
  static struct gpio_led alix_leds[] = {
  	{
  		.name = "alix:1",
-@@ -64,17 +98,22 @@
+@@ -63,17 +98,22 @@ static struct platform_device alix_leds_
  	.dev.platform_data = &alix_leds_data,
  };
  
@@ -82,7 +82,7 @@
  	const char *bios_virt;
  	const char *scan_end;
  	const char *p;
-@@ -109,7 +148,9 @@
+@@ -108,7 +148,9 @@ static int __init alix_present(unsigned
  			*a = '\0';
  
  		tail = p + alix_sig_len;
@@ -93,7 +93,7 @@
  			printk(KERN_INFO
  			       "%s: system is recognized as \"%s\"\n",
  			       KBUILD_MODNAME, name);
-@@ -128,8 +169,8 @@
+@@ -127,8 +169,8 @@ static int __init alix_init(void)
  	if (!is_geode())
  		return 0;
  
