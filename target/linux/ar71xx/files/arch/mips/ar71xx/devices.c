@@ -206,6 +206,36 @@ static void __init ar71xx_mii_ctrl_set_if(unsigned int reg,
 	iounmap(base);
 }
 
+static void ar71xx_mii_ctrl_set_speed(unsigned int reg, unsigned int speed)
+{
+	void __iomem *base;
+	unsigned int mii_speed;
+	u32 t;
+
+	switch (speed) {
+	case SPEED_10:
+		mii_speed =  MII_CTRL_SPEED_10;
+		break;
+	case SPEED_100:
+		mii_speed =  MII_CTRL_SPEED_100;
+		break;
+	case SPEED_1000:
+		mii_speed =  MII_CTRL_SPEED_1000;
+		break;
+	default:
+		BUG();
+	}
+
+	base = ioremap(AR71XX_MII_BASE, AR71XX_MII_SIZE);
+
+	t = __raw_readl(base + reg);
+	t &= ~(MII_CTRL_SPEED_MASK << MII_CTRL_SPEED_SHIFT);
+	t |= mii_speed  << MII_CTRL_SPEED_SHIFT;
+	__raw_writel(t, base + reg);
+
+	iounmap(base);
+}
+
 void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 {
 	struct platform_device *mdio_dev;
@@ -321,6 +351,7 @@ static void ar71xx_set_speed_ge0(int speed)
 
 	ar71xx_set_pll(AR71XX_PLL_REG_SEC_CONFIG, AR71XX_PLL_REG_ETH0_INT_CLOCK,
 			val, AR71XX_ETH0_PLL_SHIFT);
+	ar71xx_mii_ctrl_set_speed(MII_REG_MII0_CTRL, speed);
 }
 
 static void ar71xx_set_speed_ge1(int speed)
@@ -329,6 +360,7 @@ static void ar71xx_set_speed_ge1(int speed)
 
 	ar71xx_set_pll(AR71XX_PLL_REG_SEC_CONFIG, AR71XX_PLL_REG_ETH1_INT_CLOCK,
 			 val, AR71XX_ETH1_PLL_SHIFT);
+	ar71xx_mii_ctrl_set_speed(MII_REG_MII1_CTRL, speed);
 }
 
 static void ar724x_set_speed_ge0(int speed)
@@ -357,6 +389,7 @@ static void ar91xx_set_speed_ge0(int speed)
 
 	ar71xx_set_pll(AR91XX_PLL_REG_ETH_CONFIG, AR91XX_PLL_REG_ETH0_INT_CLOCK,
 			 val, AR91XX_ETH0_PLL_SHIFT);
+	ar71xx_mii_ctrl_set_speed(MII_REG_MII0_CTRL, speed);
 }
 
 static void ar91xx_set_speed_ge1(int speed)
@@ -365,6 +398,7 @@ static void ar91xx_set_speed_ge1(int speed)
 
 	ar71xx_set_pll(AR91XX_PLL_REG_ETH_CONFIG, AR91XX_PLL_REG_ETH1_INT_CLOCK,
 			 val, AR91XX_ETH1_PLL_SHIFT);
+	ar71xx_mii_ctrl_set_speed(MII_REG_MII1_CTRL, speed);
 }
 
 static void ar933x_set_speed_ge0(int speed)

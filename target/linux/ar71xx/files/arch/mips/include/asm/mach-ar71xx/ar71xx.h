@@ -817,6 +817,11 @@ void ar71xx_flash_release(void);
 #define MII_REG_MII1_CTRL	0x04
 
 #define MII_CTRL_IF_MASK	3
+#define MII_CTRL_SPEED_SHIFT	4
+#define MII_CTRL_SPEED_MASK	3
+#define MII_CTRL_SPEED_10	0
+#define MII_CTRL_SPEED_100	1
+#define MII_CTRL_SPEED_1000	2
 
 #define MII0_CTRL_IF_GMII	0
 #define MII0_CTRL_IF_MII	1
