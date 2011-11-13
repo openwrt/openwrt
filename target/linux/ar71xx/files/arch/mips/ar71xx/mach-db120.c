@@ -33,7 +33,6 @@
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
 #define DB120_CALDATA_OFFSET	0x1000
-#define DB120_WMAC_MAC_OFFSET	0x1002
 
 #define DB120_KEYS_POLL_INTERVAL	20	/* msecs */
 #define DB120_KEYS_DEBOUNCE_INTERVAL	(3 * DB120_KEYS_POLL_INTERVAL)
@@ -146,8 +145,7 @@ static void __init db120_setup(void)
 
 	ar71xx_add_device_eth(1);
 
-	ar9xxx_add_device_wmac(art + DB120_CALDATA_OFFSET,
-				art + DB120_WMAC_MAC_OFFSET);
+	ar9xxx_add_device_wmac(art + DB120_CALDATA_OFFSET, NULL);
 
 	db120_pci_init();
 }
