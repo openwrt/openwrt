@@ -23,7 +23,6 @@ struct ag71xx_platform_data {
 	int		speed;
 	int		duplex;
 	u32		reset_bit;
-	u32		mii_if;
 	u8		mac_addr[ETH_ALEN];
 	struct device	*mii_bus_dev;
 

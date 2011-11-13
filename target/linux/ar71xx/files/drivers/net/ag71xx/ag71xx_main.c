@@ -444,9 +444,6 @@ static void ag71xx_hw_setup(struct ag71xx *ag)
 	/* setup max frame length */
 	ag71xx_wr(ag, AG71XX_REG_MAC_MFL, AG71XX_TX_MTU_LEN);
 
-	/* setup MII interface type */
-	ag71xx_mii_ctrl_set_if(ag, pdata->mii_if);
-
 	/* setup FIFO configuration registers */
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG0, FIFO_CFG0_INIT);
 	if (pdata->is_ar724x) {
