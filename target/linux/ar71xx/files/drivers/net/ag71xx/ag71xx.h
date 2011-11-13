@@ -140,7 +140,6 @@ struct ag71xx_debug {
 
 struct ag71xx {
 	void __iomem		*mac_base;
-	void __iomem		*mii_ctrl;
 
 	spinlock_t		lock;
 	struct platform_device	*pdev;

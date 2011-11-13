@@ -1114,27 +1114,13 @@ static int __devinit ag71xx_probe(struct platform_device *pdev)
 		goto err_free_dev;
 	}
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "mii_ctrl");
-	if (!res) {
-		dev_err(&pdev->dev, "no mii_ctrl resource found\n");
-		err = -ENXIO;
-		goto err_unmap_base;
-	}
-
-	ag->mii_ctrl = ioremap_nocache(res->start, res->end - res->start + 1);
-	if (!ag->mii_ctrl) {
-		dev_err(&pdev->dev, "unable to ioremap mii_ctrl\n");
-		err = -ENOMEM;
-		goto err_unmap_base;
-	}
-
 	dev->irq = platform_get_irq(pdev, 0);
 	err = request_irq(dev->irq, ag71xx_interrupt,
 			  IRQF_DISABLED,
 			  dev->name, dev);
 	if (err) {
 		dev_err(&pdev->dev, "unable to request IRQ %d\n", dev->irq);
-		goto err_unmap_mii_ctrl;
+		goto err_unmap_base;
 	}
 
 	dev->base_addr = (unsigned long)ag->mac_base;
@@ -1200,8 +1186,6 @@ err_free_desc:
 			  ag->stop_desc_dma);
 err_free_irq:
 	free_irq(dev->irq, dev);
-err_unmap_mii_ctrl:
-	iounmap(ag->mii_ctrl);
 err_unmap_base:
 	iounmap(ag->mac_base);
 err_free_dev:
@@ -1222,7 +1206,6 @@ static int __devexit ag71xx_remove(struct platform_device *pdev)
 		ag71xx_phy_disconnect(ag);
 		unregister_netdev(dev);
 		free_irq(dev->irq, dev);
-		iounmap(ag->mii_ctrl);
 		iounmap(ag->mac_base);
 		kfree(dev);
 		platform_set_drvdata(pdev, NULL);
