@@ -315,7 +315,7 @@ static u32 ar71xx_get_eth_pll(unsigned int mac, int speed)
 	return pll_val;
 }
 
-static void ar71xx_set_pll_ge0(int speed)
+static void ar71xx_set_speed_ge0(int speed)
 {
 	u32 val = ar71xx_get_eth_pll(0, speed);
 
@@ -323,7 +323,7 @@ static void ar71xx_set_pll_ge0(int speed)
 			val, AR71XX_ETH0_PLL_SHIFT);
 }
 
-static void ar71xx_set_pll_ge1(int speed)
+static void ar71xx_set_speed_ge1(int speed)
 {
 	u32 val = ar71xx_get_eth_pll(1, speed);
 
@@ -331,17 +331,17 @@ static void ar71xx_set_pll_ge1(int speed)
 			 val, AR71XX_ETH1_PLL_SHIFT);
 }
 
-static void ar724x_set_pll_ge0(int speed)
+static void ar724x_set_speed_ge0(int speed)
 {
 	/* TODO */
 }
 
-static void ar724x_set_pll_ge1(int speed)
+static void ar724x_set_speed_ge1(int speed)
 {
 	/* TODO */
 }
 
-static void ar7242_set_pll_ge0(int speed)
+static void ar7242_set_speed_ge0(int speed)
 {
 	u32 val = ar71xx_get_eth_pll(0, speed);
 	void __iomem *base;
@@ -351,7 +351,7 @@ static void ar7242_set_pll_ge0(int speed)
 	iounmap(base);
 }
 
-static void ar91xx_set_pll_ge0(int speed)
+static void ar91xx_set_speed_ge0(int speed)
 {
 	u32 val = ar71xx_get_eth_pll(0, speed);
 
@@ -359,7 +359,7 @@ static void ar91xx_set_pll_ge0(int speed)
 			 val, AR91XX_ETH0_PLL_SHIFT);
 }
 
-static void ar91xx_set_pll_ge1(int speed)
+static void ar91xx_set_speed_ge1(int speed)
 {
 	u32 val = ar71xx_get_eth_pll(1, speed);
 
@@ -367,22 +367,22 @@ static void ar91xx_set_pll_ge1(int speed)
 			 val, AR91XX_ETH1_PLL_SHIFT);
 }
 
-static void ar933x_set_pll_ge0(int speed)
+static void ar933x_set_speed_ge0(int speed)
 {
 	/* TODO */
 }
 
-static void ar933x_set_pll_ge1(int speed)
+static void ar933x_set_speed_ge1(int speed)
 {
 	/* TODO */
 }
 
-static void ar934x_set_pll_ge0(int speed)
+static void ar934x_set_speed_ge0(int speed)
 {
 	/* TODO */
 }
 
-static void ar934x_set_pll_ge1(int speed)
+static void ar934x_set_speed_ge1(int speed)
 {
 	/* TODO */
 }
@@ -744,16 +744,16 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	case AR71XX_SOC_AR7130:
 		pdata->ddr_flush = id ? ar71xx_ddr_flush_ge1
 				      : ar71xx_ddr_flush_ge0;
-		pdata->set_pll =  id ? ar71xx_set_pll_ge1
-				     : ar71xx_set_pll_ge0;
+		pdata->set_speed = id ? ar71xx_set_speed_ge1
+				      : ar71xx_set_speed_ge0;
 		break;
 
 	case AR71XX_SOC_AR7141:
 	case AR71XX_SOC_AR7161:
 		pdata->ddr_flush = id ? ar71xx_ddr_flush_ge1
 				      : ar71xx_ddr_flush_ge0;
-		pdata->set_pll =  id ? ar71xx_set_pll_ge1
-				     : ar71xx_set_pll_ge0;
+		pdata->set_speed = id ? ar71xx_set_speed_ge1
+				      : ar71xx_set_speed_ge0;
 		pdata->has_gbit = 1;
 		break;
 
@@ -764,8 +764,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 					      RESET_MODULE_GE1_PHY;
 		pdata->ddr_flush = id ? ar724x_ddr_flush_ge1
 				      : ar724x_ddr_flush_ge0;
-		pdata->set_pll =  id ? ar724x_set_pll_ge1
-				     : ar7242_set_pll_ge0;
+		pdata->set_speed = id ? ar724x_set_speed_ge1
+				      : ar7242_set_speed_ge0;
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
 
@@ -786,8 +786,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		ar71xx_eth1_data.reset_bit |= RESET_MODULE_GE1_PHY;
 		pdata->ddr_flush = id ? ar724x_ddr_flush_ge1
 				      : ar724x_ddr_flush_ge0;
-		pdata->set_pll =  id ? ar724x_set_pll_ge1
-				     : ar724x_set_pll_ge0;
+		pdata->set_speed = id ? ar724x_set_speed_ge1
+				      : ar724x_set_speed_ge0;
 		pdata->is_ar724x = 1;
 		if (ar71xx_soc == AR71XX_SOC_AR7240)
 			pdata->is_ar7240 = 1;
@@ -803,16 +803,16 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	case AR71XX_SOC_AR9130:
 		pdata->ddr_flush = id ? ar91xx_ddr_flush_ge1
 				      : ar91xx_ddr_flush_ge0;
-		pdata->set_pll =  id ? ar91xx_set_pll_ge1
-				     : ar91xx_set_pll_ge0;
+		pdata->set_speed = id ? ar91xx_set_speed_ge1
+				      : ar91xx_set_speed_ge0;
 		pdata->is_ar91xx = 1;
 		break;
 
 	case AR71XX_SOC_AR9132:
 		pdata->ddr_flush = id ? ar91xx_ddr_flush_ge1
 				      : ar91xx_ddr_flush_ge0;
-		pdata->set_pll =  id ? ar91xx_set_pll_ge1
-				      : ar91xx_set_pll_ge0;
+		pdata->set_speed = id ? ar91xx_set_speed_ge1
+				      : ar91xx_set_speed_ge0;
 		pdata->is_ar91xx = 1;
 		pdata->has_gbit = 1;
 		break;
@@ -825,8 +825,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 					     AR933X_RESET_GE1_MDIO;
 		pdata->ddr_flush = id ? ar933x_ddr_flush_ge1
 				      : ar933x_ddr_flush_ge0;
-		pdata->set_pll =  id ? ar933x_set_pll_ge1
-				     : ar933x_set_pll_ge0;
+		pdata->set_speed = id ? ar933x_set_speed_ge1
+				      : ar933x_set_speed_ge0;
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
 
@@ -847,8 +847,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 					     AR934X_RESET_GE1_MDIO;
 		pdata->ddr_flush = id ? ar934x_ddr_flush_ge1
 				      : ar934x_ddr_flush_ge0;
-		pdata->set_pll =  id ? ar934x_set_pll_ge1
-				     : ar934x_set_pll_ge0;
+		pdata->set_speed = id ? ar934x_set_speed_ge1
+				      : ar934x_set_speed_ge0;
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
 
