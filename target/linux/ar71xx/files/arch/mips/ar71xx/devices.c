@@ -812,6 +812,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 				      : ar724x_ddr_flush_ge0;
 		pdata->set_speed = id ? ar724x_set_speed_ge1
 				      : ar724x_set_speed_ge0;
+		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
 		if (ar71xx_soc == AR71XX_SOC_AR7240)
 			pdata->is_ar7240 = 1;
