@@ -1,7 +1,5 @@
-Index: linux-3.1/drivers/cbus/tahvo.c
-===================================================================
---- linux-3.1.orig/drivers/cbus/tahvo.c	2011-11-05 17:03:39.598846119 +0100
-+++ linux-3.1/drivers/cbus/tahvo.c	2011-11-05 17:04:36.274768324 +0100
+--- a/drivers/cbus/tahvo.c
++++ b/drivers/cbus/tahvo.c
 @@ -104,7 +104,9 @@ void tahvo_write_reg(struct device *chil
  {
  	struct tahvo		*tahvo = dev_get_drvdata(child->parent);

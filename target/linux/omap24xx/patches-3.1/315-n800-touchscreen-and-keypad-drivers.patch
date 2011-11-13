@@ -24,10 +24,8 @@ Touchscreen and keypad are fully functional, audio part only provides power mana
  create mode 100644 drivers/spi/tsc2301-mixer.c
  create mode 100644 include/linux/spi/tsc2301.h
 
-Index: linux-3.1/drivers/input/keyboard/Kconfig
-===================================================================
---- linux-3.1.orig/drivers/input/keyboard/Kconfig	2011-10-30 00:48:29.357056963 +0200
-+++ linux-3.1/drivers/input/keyboard/Kconfig	2011-10-30 00:48:48.989043470 +0200
+--- a/drivers/input/keyboard/Kconfig
++++ b/drivers/input/keyboard/Kconfig
 @@ -530,6 +530,12 @@ config KEYBOARD_TNETV107X
  	  To compile this driver as a module, choose M here: the
  	  module will be called tnetv107x-keypad.
@@ -41,10 +39,8 @@ Index: linux-3.1/drivers/input/keyboard/Kconfig
  config KEYBOARD_TWL4030
  	tristate "TI TWL4030/TWL5030/TPS659x0 keypad support"
  	depends on TWL4030_CORE
-Index: linux-3.1/drivers/input/keyboard/Makefile
-===================================================================
---- linux-3.1.orig/drivers/input/keyboard/Makefile	2011-10-30 00:48:29.365056957 +0200
-+++ linux-3.1/drivers/input/keyboard/Makefile	2011-10-30 00:48:48.989043470 +0200
+--- a/drivers/input/keyboard/Makefile
++++ b/drivers/input/keyboard/Makefile
 @@ -48,6 +48,7 @@ obj-$(CONFIG_KEYBOARD_SUNKBD)		+= sunkbd
  obj-$(CONFIG_KEYBOARD_TC3589X)		+= tc3589x-keypad.o
  obj-$(CONFIG_KEYBOARD_TEGRA)		+= tegra-kbc.o
@@ -53,10 +49,8 @@ Index: linux-3.1/drivers/input/keyboard/Makefile
  obj-$(CONFIG_KEYBOARD_TWL4030)		+= twl4030_keypad.o
  obj-$(CONFIG_KEYBOARD_XTKBD)		+= xtkbd.o
  obj-$(CONFIG_KEYBOARD_W90P910)		+= w90p910_keypad.o
-Index: linux-3.1/drivers/input/keyboard/tsc2301_kp.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/input/keyboard/tsc2301_kp.c	2011-10-30 00:48:48.989043470 +0200
+--- /dev/null
++++ b/drivers/input/keyboard/tsc2301_kp.c
 @@ -0,0 +1,475 @@
 +/*
 + * TSC2301 keypad driver
@@ -533,10 +527,8 @@ Index: linux-3.1/drivers/input/keyboard/tsc2301_kp.c
 +
 +	kfree(kp);
 +}
-Index: linux-3.1/drivers/input/touchscreen/Kconfig
-===================================================================
---- linux-3.1.orig/drivers/input/touchscreen/Kconfig	2011-10-30 00:48:29.341056972 +0200
-+++ linux-3.1/drivers/input/touchscreen/Kconfig	2011-10-30 00:48:48.989043470 +0200
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
 @@ -673,6 +673,12 @@ config TOUCHSCREEN_TSC2007
  	  To compile this driver as a module, choose M here: the
  	  module will be called tsc2007.
@@ -550,10 +542,8 @@ Index: linux-3.1/drivers/input/touchscreen/Kconfig
  config TOUCHSCREEN_W90X900
  	tristate "W90P910 touchscreen driver"
  	depends on HAVE_CLK
-Index: linux-3.1/drivers/input/touchscreen/Makefile
-===================================================================
---- linux-3.1.orig/drivers/input/touchscreen/Makefile	2011-10-30 00:48:29.349056969 +0200
-+++ linux-3.1/drivers/input/touchscreen/Makefile	2011-10-30 00:48:48.989043470 +0200
+--- a/drivers/input/touchscreen/Makefile
++++ b/drivers/input/touchscreen/Makefile
 @@ -48,6 +48,7 @@ obj-$(CONFIG_TOUCHSCREEN_TOUCHRIGHT)	+=
  obj-$(CONFIG_TOUCHSCREEN_TOUCHWIN)	+= touchwin.o
  obj-$(CONFIG_TOUCHSCREEN_TSC2005)	+= tsc2005.o
@@ -562,10 +552,8 @@ Index: linux-3.1/drivers/input/touchscreen/Makefile
  obj-$(CONFIG_TOUCHSCREEN_UCB1400)	+= ucb1400_ts.o
  obj-$(CONFIG_TOUCHSCREEN_WACOM_W8001)	+= wacom_w8001.o
  obj-$(CONFIG_TOUCHSCREEN_WM831X)	+= wm831x-ts.o
-Index: linux-3.1/drivers/input/touchscreen/tsc2301_ts.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/input/touchscreen/tsc2301_ts.c	2011-10-30 00:48:48.989043470 +0200
+--- /dev/null
++++ b/drivers/input/touchscreen/tsc2301_ts.c
 @@ -0,0 +1,676 @@
 +/*
 + * TSC2301 touchscreen driver
@@ -1243,10 +1231,8 @@ Index: linux-3.1/drivers/input/touchscreen/tsc2301_ts.c
 +}
 +MODULE_AUTHOR("Jarkko Oikarinen <jarkko.oikarinen@nokia.com>");
 +MODULE_LICENSE("GPL");
-Index: linux-3.1/drivers/spi/Kconfig
-===================================================================
---- linux-3.1.orig/drivers/spi/Kconfig	2011-10-30 00:48:29.373056952 +0200
-+++ linux-3.1/drivers/spi/Kconfig	2011-10-30 00:48:48.989043470 +0200
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
 @@ -435,6 +435,28 @@ config SPI_TLE62X0
  	  sysfs interface, with each line presented as a kind of GPIO
  	  exposing both switch control and diagnostic feedback.
@@ -1276,10 +1262,8 @@ Index: linux-3.1/drivers/spi/Kconfig
  #
  # Add new SPI protocol masters in alphabetical order above this line
  #
-Index: linux-3.1/drivers/spi/Makefile
-===================================================================
---- linux-3.1.orig/drivers/spi/Makefile	2011-10-30 00:48:29.385056944 +0200
-+++ linux-3.1/drivers/spi/Makefile	2011-10-30 00:48:48.989043470 +0200
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
 @@ -59,4 +59,6 @@ obj-$(CONFIG_SPI_TLE62X0)		+= spi-tle62x
  obj-$(CONFIG_SPI_TOPCLIFF_PCH)		+= spi-topcliff-pch.o
  obj-$(CONFIG_SPI_TXX9)			+= spi-txx9.o
@@ -1288,10 +1272,8 @@ Index: linux-3.1/drivers/spi/Makefile
 +obj-$(CONFIG_SPI_TSC2301)		+= tsc2301.o
 +tsc2301-objs				:= tsc2301-core.o
 +tsc2301-$(CONFIG_SPI_TSC2301_AUDIO)	+= tsc2301-mixer.o
-Index: linux-3.1/drivers/spi/tsc2301-core.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/spi/tsc2301-core.c	2011-10-30 00:48:48.989043470 +0200
+--- /dev/null
++++ b/drivers/spi/tsc2301-core.c
 @@ -0,0 +1,297 @@
 +/*
 + * TSC2301 driver
@@ -1590,10 +1572,8 @@ Index: linux-3.1/drivers/spi/tsc2301-core.c
 +
 +MODULE_AUTHOR("Juha Yrjölä <juha.yrjola@nokia.com>");
 +MODULE_LICENSE("GPL");
-Index: linux-3.1/drivers/spi/tsc2301-mixer.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/spi/tsc2301-mixer.c	2011-10-30 00:48:48.989043470 +0200
+--- /dev/null
++++ b/drivers/spi/tsc2301-mixer.c
 @@ -0,0 +1,1003 @@
 +/*
 + * ALSA Mixer implementation for TSC2301
@@ -2598,10 +2578,8 @@ Index: linux-3.1/drivers/spi/tsc2301-mixer.c
 +
 +MODULE_AUTHOR("Jarkko Nikula <jarkko.nikula@nokia.com>");
 +MODULE_LICENSE("GPL");
-Index: linux-3.1/include/linux/spi/tsc2301.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/include/linux/spi/tsc2301.h	2011-10-30 00:48:48.989043470 +0200
+--- /dev/null
++++ b/include/linux/spi/tsc2301.h
 @@ -0,0 +1,208 @@
 +#ifndef _LINUX_SPI_TSC2301_H
 +#define _LINUX_SPI_TSC2301_H

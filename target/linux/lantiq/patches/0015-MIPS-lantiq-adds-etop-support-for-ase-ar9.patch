@@ -69,7 +69,7 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  /* DMA */
  #define LTQ_DMA_BASE_ADDR	0x1E104100
  #define LTQ_DMA_SIZE		0x800
-@@ -148,6 +153,11 @@ extern void ltq_pmu_enable(unsigned int
+@@ -146,6 +151,11 @@ extern void ltq_pmu_enable(unsigned int
  extern void ltq_pmu_disable(unsigned int module);
  extern void ltq_cgu_enable(unsigned int clk);
  
@@ -83,7 +83,7 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  	return (ltq_get_soc_type() == SOC_TYPE_AR9);
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -77,18 +77,23 @@ void __init ltq_register_ase_asc(void)
+@@ -74,18 +74,23 @@ void __init ltq_register_ase_asc(void)
  }
  
  /* ethernet */
