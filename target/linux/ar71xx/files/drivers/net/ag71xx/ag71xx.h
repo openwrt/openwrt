@@ -343,12 +343,6 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define RX_STATUS_OF		BIT(2)	/* Rx Overflow */
 #define RX_STATUS_BE		BIT(3)	/* Bus Error */
 
-#define MII_CTRL_SPEED_SHIFT	4
-#define MII_CTRL_SPEED_MASK	3
-#define MII_CTRL_SPEED_10	0
-#define MII_CTRL_SPEED_100	1
-#define MII_CTRL_SPEED_1000	2
-
 static inline void ag71xx_check_reg_offset(struct ag71xx *ag, unsigned reg)
 {
 	switch (reg) {
@@ -410,40 +404,6 @@ static inline void ag71xx_int_enable(struct ag71xx *ag, u32 ints)
 static inline void ag71xx_int_disable(struct ag71xx *ag, u32 ints)
 {
 	ag71xx_cb(ag, AG71XX_REG_INT_ENABLE, ints);
-}
-
-static inline void ag71xx_mii_ctrl_wr(struct ag71xx *ag, u32 value)
-{
-	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-
-	if (pdata->is_ar724x)
-		return;
-
-	__raw_writel(value, ag->mii_ctrl);
-
-	/* flush write */
-	__raw_readl(ag->mii_ctrl);
-}
-
-static inline u32 ag71xx_mii_ctrl_rr(struct ag71xx *ag)
-{
-	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-
-	if (pdata->is_ar724x)
-		return 0xffffffff;
-
-	return __raw_readl(ag->mii_ctrl);
-}
-
-static inline void ag71xx_mii_ctrl_set_speed(struct ag71xx *ag,
-					     unsigned int speed)
-{
-	u32 t;
-
-	t = ag71xx_mii_ctrl_rr(ag);
-	t &= ~(MII_CTRL_SPEED_MASK << MII_CTRL_SPEED_SHIFT);
-	t |= (speed & MII_CTRL_SPEED_MASK) << MII_CTRL_SPEED_SHIFT;
-	ag71xx_mii_ctrl_wr(ag, t);
 }
 
 #ifdef CONFIG_AG71XX_AR8216_SUPPORT
