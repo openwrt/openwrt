@@ -583,8 +583,8 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 	else
 		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, 0x008001ff);
 
-	if (pdata->set_pll)
-		pdata->set_pll(ag->speed);
+	if (pdata->set_speed)
+		pdata->set_speed(ag->speed);
 
 	ag71xx_mii_ctrl_set_speed(ag, mii_speed);
 
