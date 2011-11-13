@@ -37,16 +37,19 @@ define Package/uboot-lantiq-template
 endef
 
 #Lantiq
-Package/uboot-lantiq-easy50712_DDR166M=$(call Package/uboot-lantiq-template,easy50712_DDR166M,NOR)
+Package/uboot-lantiq-easy50712_DDR166M_flash=$(call Package/uboot-lantiq-template,easy50712_DDR166M_flash,NOR)
 Package/uboot-lantiq-easy50712_DDR166M_ramboot=$(call Package/uboot-lantiq-template,easy50712_DDR166M_ramboot,RAM)
-Package/uboot-lantiq-easy50812_DDR166M=$(call Package/uboot-lantiq-template,easy50812_DDR166M,NOR)
+Package/uboot-lantiq-easy50812_DDR166M_flash=$(call Package/uboot-lantiq-template,easy50812_DDR166M_flash,NOR)
 Package/uboot-lantiq-easy50812_DDR166M_ramboot=$(call Package/uboot-lantiq-template,easy50812_DDR166M_ramboot,RAM)
 
 DDR_CONFIG_easy50712_DDR166M_ramboot:=easy50712_DDR166M
 DDR_CONFIG_easy50812_DDR166M_ramboot:=easy50812
 
 #Siemens
-Package/uboot-lantiq-gigaSX76X_DDRsamsung166=$(call Package/uboot-lantiq-template,gigaSX76X_DDRsamsung166,NOR)
+Package/uboot-lantiq-gigaSX76X_DDRsamsung166_flash=$(call Package/uboot-lantiq-template,gigaSX76X_DDRsamsung166_flash,NOR)
+Package/uboot-lantiq-gigaSX76X_DDRsamsung166_ramboot=$(call Package/uboot-lantiq-template,gigaSX76X_DDRsamsung166_ramboot,RAM)
+
+DDR_CONFIG_gigaSX76X_DDRsamsung166_ramboot:=easy50712_DDR166M
 
 #Arcadyan
 Package/uboot-lantiq-arv3527P_flash=$(call Package/uboot-lantiq-template,arv3527P_flash,NOR)
@@ -140,11 +143,12 @@ ifneq ($(findstring ramboot,$(BUILD_VARIANT)),)
 endif
 endef
 
-$(eval $(call BuildPackage,uboot-lantiq-easy50712_DDR166M))
+$(eval $(call BuildPackage,uboot-lantiq-easy50712_DDR166M_flash))
 $(eval $(call BuildPackage,uboot-lantiq-easy50712_DDR166M_ramboot))
-$(eval $(call BuildPackage,uboot-lantiq-easy50812_DDR166M))
+$(eval $(call BuildPackage,uboot-lantiq-easy50812_DDR166M_flash))
 $(eval $(call BuildPackage,uboot-lantiq-easy50812_DDR166M_ramboot))
-$(eval $(call BuildPackage,uboot-lantiq-gigaSX76X_DDRsamsung166))
+$(eval $(call BuildPackage,uboot-lantiq-gigaSX76X_DDRsamsung166_flash))
+$(eval $(call BuildPackage,uboot-lantiq-gigaSX76X_DDRsamsung166_ramboot))
 #$(eval $(call BuildPackage,uboot-lantiq-arv3527P_flash))
 #$(eval $(call BuildPackage,uboot-lantiq-arv3527P_brnboot))
 #$(eval $(call BuildPackage,uboot-lantiq-arv3527P_ramboot))
