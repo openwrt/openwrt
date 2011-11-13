@@ -190,6 +190,22 @@ static void ar71xx_set_pll(u32 cfg_reg, u32 pll_reg, u32 pll_val, u32 shift)
 	iounmap(base);
 }
 
+static void __init ar71xx_mii_ctrl_set_if(unsigned int reg,
+					  unsigned int mii_if)
+{
+	void __iomem *base;
+	u32 t;
+
+	base = ioremap(AR71XX_MII_BASE, AR71XX_MII_SIZE);
+
+	t = __raw_readl(base + reg);
+	t &= ~(MII_CTRL_IF_MASK);
+	t |= (mii_if & MII_CTRL_IF_MASK);
+	__raw_writel(t, base + reg);
+
+	iounmap(base);
+}
+
 void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 {
 	struct platform_device *mdio_dev;
@@ -588,6 +604,8 @@ static void __init ar71xx_init_eth_pll_data(unsigned int id)
 static int __init ar71xx_setup_phy_if_mode(unsigned int id,
 					   struct ag71xx_platform_data *pdata)
 {
+	unsigned int mii_if;
+
 	switch (id) {
 	case 0:
 		switch (ar71xx_soc) {
@@ -598,20 +616,21 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id,
 		case AR71XX_SOC_AR9132:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
-				pdata->mii_if = MII0_CTRL_IF_MII;
+				mii_if = MII0_CTRL_IF_MII;
 				break;
 			case PHY_INTERFACE_MODE_GMII:
-				pdata->mii_if = MII0_CTRL_IF_GMII;
+				mii_if = MII0_CTRL_IF_GMII;
 				break;
 			case PHY_INTERFACE_MODE_RGMII:
-				pdata->mii_if = MII0_CTRL_IF_RGMII;
+				mii_if = MII0_CTRL_IF_RGMII;
 				break;
 			case PHY_INTERFACE_MODE_RMII:
-				pdata->mii_if = MII0_CTRL_IF_RMII;
+				mii_if = MII0_CTRL_IF_RMII;
 				break;
 			default:
 				return -EINVAL;
 			}
+			ar71xx_mii_ctrl_set_if(MII_REG_MII0_CTRL, mii_if);
 			break;
 
 		case AR71XX_SOC_AR7240:
@@ -651,14 +670,15 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id,
 		case AR71XX_SOC_AR9132:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_RMII:
-				pdata->mii_if = MII1_CTRL_IF_RMII;
+				mii_if = MII1_CTRL_IF_RMII;
 				break;
 			case PHY_INTERFACE_MODE_RGMII:
-				pdata->mii_if = MII1_CTRL_IF_RGMII;
+				mii_if = MII1_CTRL_IF_RGMII;
 				break;
 			default:
 				return -EINVAL;
 			}
+			ar71xx_mii_ctrl_set_if(MII_REG_MII1_CTRL, mii_if);
 			break;
 
 		case AR71XX_SOC_AR7240:
