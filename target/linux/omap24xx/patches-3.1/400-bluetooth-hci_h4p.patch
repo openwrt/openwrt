@@ -11,10 +11,8 @@
  drivers/bluetooth/hci_h4p/uart.c    |  169 +++++
  10 files changed, 1891 insertions(+)
 
-Index: linux-3.1/drivers/bluetooth/hci_h4p/core.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/bluetooth/hci_h4p/core.c	2011-10-30 00:48:52.285041210 +0200
+--- /dev/null
++++ b/drivers/bluetooth/hci_h4p/core.c
 @@ -0,0 +1,1043 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1059,10 +1057,8 @@ Index: linux-3.1/drivers/bluetooth/hci_h4p/core.c
 +MODULE_DESCRIPTION("h4 driver with nokia extensions");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Ville Tervo");
-Index: linux-3.1/drivers/bluetooth/hci_h4p/fw.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/bluetooth/hci_h4p/fw.c	2011-10-30 00:48:52.285041210 +0200
+--- /dev/null
++++ b/drivers/bluetooth/hci_h4p/fw.c
 @@ -0,0 +1,155 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1219,10 +1215,8 @@ Index: linux-3.1/drivers/bluetooth/hci_h4p/fw.c
 +
 +	return;
 +}
-Index: linux-3.1/drivers/bluetooth/hci_h4p/fw-csr.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/bluetooth/hci_h4p/fw-csr.c	2011-10-30 00:48:52.285041210 +0200
+--- /dev/null
++++ b/drivers/bluetooth/hci_h4p/fw-csr.c
 @@ -0,0 +1,149 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1373,10 +1367,8 @@ Index: linux-3.1/drivers/bluetooth/hci_h4p/fw-csr.c
 +
 +	return 0;
 +}
-Index: linux-3.1/drivers/bluetooth/hci_h4p/fw-ti.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/bluetooth/hci_h4p/fw-ti.c	2011-10-30 00:48:52.285041210 +0200
+--- /dev/null
++++ b/drivers/bluetooth/hci_h4p/fw-ti.c
 @@ -0,0 +1,90 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1468,10 +1460,8 @@ Index: linux-3.1/drivers/bluetooth/hci_h4p/fw-ti.c
 +
 +	return 0;
 +}
-Index: linux-3.1/drivers/bluetooth/hci_h4p/hci_h4p.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/bluetooth/hci_h4p/hci_h4p.h	2011-10-30 00:48:52.285041210 +0200
+--- /dev/null
++++ b/drivers/bluetooth/hci_h4p/hci_h4p.h
 @@ -0,0 +1,183 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1656,10 +1646,8 @@ Index: linux-3.1/drivers/bluetooth/hci_h4p/hci_h4p.h
 +int hci_h4p_init_uart(struct hci_h4p_info *info);
 +
 +#endif /* __DRIVERS_BLUETOOTH_HCI_H4P_H */
-Index: linux-3.1/drivers/bluetooth/hci_h4p/Makefile
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/bluetooth/hci_h4p/Makefile	2011-10-30 00:48:52.285041210 +0200
+--- /dev/null
++++ b/drivers/bluetooth/hci_h4p/Makefile
 @@ -0,0 +1,7 @@
 +#
 +# Makefile for the Linux Bluetooth HCI device drivers.
@@ -1668,10 +1656,8 @@ Index: linux-3.1/drivers/bluetooth/hci_h4p/Makefile
 +obj-$(CONFIG_BT_HCIH4P)		+= hci_h4p.o
 +
 +hci_h4p-objs := core.o fw.o uart.o sysfs.o fw-ti.o fw-csr.o
-Index: linux-3.1/drivers/bluetooth/hci_h4p/sysfs.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/bluetooth/hci_h4p/sysfs.c	2011-10-30 00:48:52.285041210 +0200
+--- /dev/null
++++ b/drivers/bluetooth/hci_h4p/sysfs.c
 @@ -0,0 +1,84 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1757,10 +1743,8 @@ Index: linux-3.1/drivers/bluetooth/hci_h4p/sysfs.c
 +}
 +
 +#endif
-Index: linux-3.1/drivers/bluetooth/hci_h4p/uart.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/drivers/bluetooth/hci_h4p/uart.c	2011-10-30 00:48:52.285041210 +0200
+--- /dev/null
++++ b/drivers/bluetooth/hci_h4p/uart.c
 @@ -0,0 +1,169 @@
 +/*
 + * This file is part of hci_h4p bluetooth driver
@@ -1931,10 +1915,8 @@ Index: linux-3.1/drivers/bluetooth/hci_h4p/uart.c
 +
 +	return 0;
 +}
-Index: linux-3.1/drivers/bluetooth/Kconfig
-===================================================================
---- linux-3.1.orig/drivers/bluetooth/Kconfig	2011-10-30 00:48:29.105057133 +0200
-+++ linux-3.1/drivers/bluetooth/Kconfig	2011-10-30 00:48:52.285041210 +0200
+--- a/drivers/bluetooth/Kconfig
++++ b/drivers/bluetooth/Kconfig
 @@ -173,6 +173,16 @@ config BT_HCIBTUART
  	  Say Y here to compile support for HCI UART devices into the
  	  kernel or say M to compile it as module (btuart_cs).
@@ -1952,10 +1934,8 @@ Index: linux-3.1/drivers/bluetooth/Kconfig
  config BT_HCIVHCI
  	tristate "HCI VHCI (Virtual HCI device) driver"
  	help
-Index: linux-3.1/drivers/bluetooth/Makefile
-===================================================================
---- linux-3.1.orig/drivers/bluetooth/Makefile	2011-10-30 00:48:29.141057108 +0200
-+++ linux-3.1/drivers/bluetooth/Makefile	2011-10-30 00:48:52.285041210 +0200
+--- a/drivers/bluetooth/Makefile
++++ b/drivers/bluetooth/Makefile
 @@ -11,6 +11,7 @@ obj-$(CONFIG_BT_HCIDTL1)	+= dtl1_cs.o
  obj-$(CONFIG_BT_HCIBT3C)	+= bt3c_cs.o
  obj-$(CONFIG_BT_HCIBLUECARD)	+= bluecard_cs.o

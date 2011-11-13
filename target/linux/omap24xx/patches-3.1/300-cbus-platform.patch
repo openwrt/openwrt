@@ -1,7 +1,5 @@
-Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
-===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 21:04:56.008818251 +0100
-+++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 21:14:31.600257909 +0100
+--- a/arch/arm/mach-omap2/board-n8x0.c
++++ b/arch/arm/mach-omap2/board-n8x0.c
 @@ -15,8 +15,11 @@
  #include <linux/delay.h>
  #include <linux/gpio.h>
@@ -134,10 +132,8 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
  	/* FIXME: add n810 spi devices */
  	spi_register_board_info(n800_spi_board_info,
  				ARRAY_SIZE(n800_spi_board_info));
-Index: linux-3.1/include/linux/platform_data/cbus.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/include/linux/platform_data/cbus.h	2011-10-30 21:05:07.540709042 +0100
+--- /dev/null
++++ b/include/linux/platform_data/cbus.h
 @@ -0,0 +1,38 @@
 +/*
 + * cbus.h - CBUS platform_data definition

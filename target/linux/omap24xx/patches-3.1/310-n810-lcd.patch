@@ -1,7 +1,5 @@
-Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
-===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 21:14:31.600257909 +0100
-+++ linux-3.1/arch/arm/mach-omap2/board-n8x0.c	2011-10-30 21:14:46.712140689 +0100
+--- a/arch/arm/mach-omap2/board-n8x0.c
++++ b/arch/arm/mach-omap2/board-n8x0.c
 @@ -24,6 +24,7 @@
  #include <linux/spi/spi.h>
  #include <linux/usb/musb.h>
@@ -124,10 +122,8 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0.c
  	gpmc_onenand_init(board_onenand_data);
  	n8x0_mmc_init();
  	n8x0_usb_init();
-Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c	2011-10-30 21:14:46.712140689 +0100
+--- /dev/null
++++ b/arch/arm/mach-omap2/board-n8x0-lcd.c
 @@ -0,0 +1,231 @@
 +/*
 + * linux/arch/arm/mach-omap2/board-n8x0.c
@@ -360,10 +356,8 @@ Index: linux-3.1/arch/arm/mach-omap2/board-n8x0-lcd.c
 +
 +	printk(KERN_INFO "N8x0 Blizzard initialized");
 +}
-Index: linux-3.1/arch/arm/mach-omap2/Makefile
-===================================================================
---- linux-3.1.orig/arch/arm/mach-omap2/Makefile	2011-10-30 21:14:31.608257847 +0100
-+++ linux-3.1/arch/arm/mach-omap2/Makefile	2011-10-30 21:14:46.712140689 +0100
+--- a/arch/arm/mach-omap2/Makefile
++++ b/arch/arm/mach-omap2/Makefile
 @@ -209,6 +209,7 @@ obj-$(CONFIG_MACH_OMAP_3430SDP)		+= boar
  					   hsmmc.o \
  					   board-flash.o

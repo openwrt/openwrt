@@ -1,8 +1,6 @@
-Index: linux-3.1/arch/mips/lantiq/machtypes.h
-===================================================================
---- linux-3.1.orig/arch/mips/lantiq/machtypes.h	2011-11-03 10:32:53.117317313 +0100
-+++ linux-3.1/arch/mips/lantiq/machtypes.h	2011-11-03 15:57:57.106151011 +0100
-@@ -20,9 +20,34 @@
+--- a/arch/mips/lantiq/machtypes.h
++++ b/arch/mips/lantiq/machtypes.h
+@@ -20,9 +20,34 @@ enum lantiq_mach_type {
  	LANTIQ_MACH_EASY98000,		/* Falcon Eval Board, NOR Flash */
  	LANTIQ_MACH_EASY98000SF,	/* Falcon Eval Board, Serial Flash */
  	LANTIQ_MACH_EASY98000NAND,	/* Falcon Eval Board, NAND Flash */
@@ -37,11 +35,9 @@ Index: linux-3.1/arch/mips/lantiq/machtypes.h
  };
  
  #endif
-Index: linux-3.1/arch/mips/lantiq/xway/Kconfig
-===================================================================
---- linux-3.1.orig/arch/mips/lantiq/xway/Kconfig	2011-11-03 10:32:53.117317313 +0100
-+++ linux-3.1/arch/mips/lantiq/xway/Kconfig	2011-11-03 10:32:53.409317325 +0100
-@@ -6,6 +6,22 @@
+--- a/arch/mips/lantiq/xway/Kconfig
++++ b/arch/mips/lantiq/xway/Kconfig
+@@ -6,6 +6,22 @@ config LANTIQ_MACH_EASY50712
  	bool "Easy50712 - Danube"
  	default y
  
@@ -64,11 +60,9 @@ Index: linux-3.1/arch/mips/lantiq/xway/Kconfig
  endmenu
  
  endif
-Index: linux-3.1/arch/mips/lantiq/xway/Makefile
-===================================================================
---- linux-3.1.orig/arch/mips/lantiq/xway/Makefile	2011-11-03 10:32:53.117317313 +0100
-+++ linux-3.1/arch/mips/lantiq/xway/Makefile	2011-11-03 15:57:59.222151170 +0100
-@@ -7,3 +7,7 @@
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
+@@ -7,3 +7,7 @@ obj-$(CONFIG_SOC_VR9) += clk-vr9.o prom-
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
  obj-$(CONFIG_LANTIQ_MACH_FRITZ3370) += mach-fritz.o
@@ -76,11 +70,9 @@ Index: linux-3.1/arch/mips/lantiq/xway/Makefile
 +obj-$(CONFIG_LANTIQ_MACH_NETGEAR) += mach-netgear.o
 +obj-$(CONFIG_LANTIQ_MACH_GIGASX76X) += mach-gigasx76x.o
 +obj-$(CONFIG_LANTIQ_MACH_WBMR) += mach-wbmr.o
-Index: linux-3.1/arch/mips/lantiq/falcon/Kconfig
-===================================================================
---- linux-3.1.orig/arch/mips/lantiq/falcon/Kconfig	2011-11-03 10:32:52.697317294 +0100
-+++ linux-3.1/arch/mips/lantiq/falcon/Kconfig	2011-11-03 10:32:53.409317325 +0100
-@@ -6,6 +6,14 @@
+--- a/arch/mips/lantiq/falcon/Kconfig
++++ b/arch/mips/lantiq/falcon/Kconfig
+@@ -6,6 +6,14 @@ config LANTIQ_MACH_EASY98000
  	bool "Easy98000"
  	default y
  
@@ -95,10 +87,8 @@ Index: linux-3.1/arch/mips/lantiq/falcon/Kconfig
  endmenu
  
  endif
-Index: linux-3.1/arch/mips/lantiq/falcon/Makefile
-===================================================================
---- linux-3.1.orig/arch/mips/lantiq/falcon/Makefile	2011-11-03 10:32:53.033317309 +0100
-+++ linux-3.1/arch/mips/lantiq/falcon/Makefile	2011-11-03 10:32:53.409317325 +0100
+--- a/arch/mips/lantiq/falcon/Makefile
++++ b/arch/mips/lantiq/falcon/Makefile
 @@ -1,2 +1,6 @@
  obj-y := clk.o prom.o reset.o sysctrl.o devices.o gpio.o softdog_vpe.o
 +obj-$(CONFIG_LANTIQ_MACH_EASY98000) += addon-easy98000.o
@@ -106,10 +96,8 @@ Index: linux-3.1/arch/mips/lantiq/falcon/Makefile
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
 +obj-$(CONFIG_LANTIQ_MACH_EASY98020) += mach-easy98020.o
 +obj-$(CONFIG_LANTIQ_MACH_95C3AM1)   += mach-95C3AM1.o
-Index: linux-3.1/arch/mips/lantiq/falcon/mach-easy98000.c
-===================================================================
---- linux-3.1.orig/arch/mips/lantiq/falcon/mach-easy98000.c	2011-11-03 10:32:52.805317298 +0100
-+++ linux-3.1/arch/mips/lantiq/falcon/mach-easy98000.c	2011-11-03 10:32:53.413317324 +0100
+--- a/arch/mips/lantiq/falcon/mach-easy98000.c
++++ b/arch/mips/lantiq/falcon/mach-easy98000.c
 @@ -1,23 +1,38 @@
 -/*
 - *  This program is free software; you can redistribute it and/or modify it
@@ -159,7 +147,7 @@ Index: linux-3.1/arch/mips/lantiq/falcon/mach-easy98000.c
  	{
  		.name	= "uboot",
  		.offset	= 0x0,
-@@ -35,7 +50,7 @@
+@@ -35,7 +50,7 @@ static struct mtd_partition easy98000_no
  	},
  };
  
@@ -168,7 +156,7 @@ Index: linux-3.1/arch/mips/lantiq/falcon/mach-easy98000.c
  	.nr_parts	= ARRAY_SIZE(easy98000_nor_partitions),
  	.parts		= easy98000_nor_partitions,
  };
-@@ -55,12 +70,105 @@
+@@ -55,12 +70,105 @@ static struct spi_board_info easy98000_s
  	.platform_data		= &easy98000_spi_flash_platform_data
  };
  
@@ -279,7 +267,7 @@ Index: linux-3.1/arch/mips/lantiq/falcon/mach-easy98000.c
  #define SPI_GPIO_BUS_NUM	1
  
  static struct spi_gpio_platform_data easy98000_spi_gpio_data = {
-@@ -93,29 +201,36 @@
+@@ -93,29 +201,36 @@ static struct spi_board_info easy98000_s
  	.platform_data		= &at25160n,
  };
  
