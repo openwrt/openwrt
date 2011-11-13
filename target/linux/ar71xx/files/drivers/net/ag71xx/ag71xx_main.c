@@ -533,7 +533,6 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 	u32 cfg2;
 	u32 ifctl;
 	u32 fifo5;
-	u32 mii_speed;
 
 	if (!ag->link) {
 		ag71xx_hw_stop(ag);
@@ -558,17 +557,14 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 
 	switch (ag->speed) {
 	case SPEED_1000:
-		mii_speed =  MII_CTRL_SPEED_1000;
 		cfg2 |= MAC_CFG2_IF_1000;
 		fifo5 |= FIFO_CFG5_BM;
 		break;
 	case SPEED_100:
-		mii_speed = MII_CTRL_SPEED_100;
 		cfg2 |= MAC_CFG2_IF_10_100;
 		ifctl |= MAC_IFCTL_SPEED;
 		break;
 	case SPEED_10:
-		mii_speed = MII_CTRL_SPEED_10;
 		cfg2 |= MAC_CFG2_IF_10_100;
 		break;
 	default:
@@ -585,8 +581,6 @@ void ag71xx_link_adjust(struct ag71xx *ag)
 
 	if (pdata->set_speed)
 		pdata->set_speed(ag->speed);
-
-	ag71xx_mii_ctrl_set_speed(ag, mii_speed);
 
 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
