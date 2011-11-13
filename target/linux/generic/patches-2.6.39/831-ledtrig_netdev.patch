@@ -1,6 +1,6 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -453,4 +453,11 @@ config LEDS_TRIGGER_MORSE
+@@ -445,4 +445,11 @@ config LEDS_TRIGGER_MORSE
  	tristate "LED Morse Trigger"
  	depends on LEDS_TRIGGERS
  
@@ -14,7 +14,7 @@
  endif # NEW_LEDS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -54,3 +54,4 @@ obj-$(CONFIG_LEDS_TRIGGER_BACKLIGHT)	+=
+@@ -53,3 +53,4 @@ obj-$(CONFIG_LEDS_TRIGGER_BACKLIGHT)	+=
  obj-$(CONFIG_LEDS_TRIGGER_GPIO)		+= ledtrig-gpio.o
  obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o
  obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
