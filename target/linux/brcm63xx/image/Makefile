@@ -215,6 +215,10 @@ define Image/Build
 	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,A226G-cfe)
 	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,A226G)
 
+	# Pirelli A226M
+	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x20000,A226M-cfe)
+	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x20000,A226M)
+
 	# RG100A,DB120 etc.
 	$(call Image/Build/RG100A,$(1),96358VW2,6358,0x20000,RG100A_DB120)
 
