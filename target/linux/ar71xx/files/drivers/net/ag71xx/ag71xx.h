@@ -343,7 +343,6 @@ static inline int ag71xx_desc_pktlen(struct ag71xx_desc *desc)
 #define RX_STATUS_OF		BIT(2)	/* Rx Overflow */
 #define RX_STATUS_BE		BIT(3)	/* Bus Error */
 
-#define MII_CTRL_IF_MASK	3
 #define MII_CTRL_SPEED_SHIFT	4
 #define MII_CTRL_SPEED_MASK	3
 #define MII_CTRL_SPEED_10	0
@@ -434,17 +433,6 @@ static inline u32 ag71xx_mii_ctrl_rr(struct ag71xx *ag)
 		return 0xffffffff;
 
 	return __raw_readl(ag->mii_ctrl);
-}
-
-static inline void ag71xx_mii_ctrl_set_if(struct ag71xx *ag,
-					  unsigned int mii_if)
-{
-	u32 t;
-
-	t = ag71xx_mii_ctrl_rr(ag);
-	t &= ~(MII_CTRL_IF_MASK);
-	t |= (mii_if & MII_CTRL_IF_MASK);
-	ag71xx_mii_ctrl_wr(ag, t);
 }
 
 static inline void ag71xx_mii_ctrl_set_speed(struct ag71xx *ag,
