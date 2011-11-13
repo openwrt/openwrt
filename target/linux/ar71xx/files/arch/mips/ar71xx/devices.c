@@ -478,11 +478,6 @@ static struct resource ar71xx_eth0_resources[] = {
 		.start	= AR71XX_GE0_BASE,
 		.end	= AR71XX_GE0_BASE + 0x200 - 1,
 	}, {
-		.name	= "mii_ctrl",
-		.flags	= IORESOURCE_MEM,
-		.start	= AR71XX_MII_BASE + MII_REG_MII0_CTRL,
-		.end	= AR71XX_MII_BASE + MII_REG_MII0_CTRL + 3,
-	}, {
 		.name	= "mac_irq",
 		.flags	= IORESOURCE_IRQ,
 		.start	= AR71XX_CPU_IRQ_GE0,
@@ -510,11 +505,6 @@ static struct resource ar71xx_eth1_resources[] = {
 		.flags	= IORESOURCE_MEM,
 		.start	= AR71XX_GE1_BASE,
 		.end	= AR71XX_GE1_BASE + 0x200 - 1,
-	}, {
-		.name	= "mii_ctrl",
-		.flags	= IORESOURCE_MEM,
-		.start	= AR71XX_MII_BASE + MII_REG_MII1_CTRL,
-		.end	= AR71XX_MII_BASE + MII_REG_MII1_CTRL + 3,
 	}, {
 		.name	= "mac_irq",
 		.flags	= IORESOURCE_IRQ,
