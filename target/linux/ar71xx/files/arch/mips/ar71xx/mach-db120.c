@@ -32,7 +32,8 @@
 
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
-#define DB120_CALDATA_OFFSET	0x1000
+#define DB120_WMAC_CALDATA_OFFSET 0x1000
+#define DB120_PCIE_CALDATA_OFFSET 0x5000
 
 #define DB120_KEYS_POLL_INTERVAL	20	/* msecs */
 #define DB120_KEYS_DEBOUNCE_INTERVAL	(3 * DB120_KEYS_POLL_INTERVAL)
@@ -145,9 +146,9 @@ static void __init db120_setup(void)
 
 	ar71xx_add_device_eth(1);
 
-	ar9xxx_add_device_wmac(art + DB120_CALDATA_OFFSET, NULL);
+	ar9xxx_add_device_wmac(art + DB120_WMAC_CALDATA_OFFSET, NULL);
 
-	db120_pci_init();
+	db120_pci_init(art + DB120_PCIE_CALDATA_OFFSET, NULL);
 }
 
 MIPS_MACHINE(AR71XX_MACH_DB120, "DB120", "Atheros DB120", db120_setup);
