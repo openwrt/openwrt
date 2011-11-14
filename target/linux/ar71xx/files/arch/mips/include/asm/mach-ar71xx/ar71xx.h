@@ -430,6 +430,12 @@ static inline u32 ar71xx_usb_ctrl_rr(unsigned reg)
 #define AR71XX_GPIO_REG_INT_ENABLE	0x24
 #define AR71XX_GPIO_REG_FUNC		0x28
 
+#define AR934X_GPIO_REG_OUT_FUNC0	0x2c
+#define AR934X_GPIO_REG_OUT_FUNC1	0x30
+#define AR934X_GPIO_REG_OUT_FUNC2	0x34
+#define AR934X_GPIO_REG_OUT_FUNC3	0x38
+#define AR934X_GPIO_REG_OUT_FUNC4	0x3c
+#define AR934X_GPIO_REG_OUT_FUNC5	0x40
 #define AR934X_GPIO_REG_FUNC		0x6c
 
 #define AR71XX_GPIO_FUNC_STEREO_EN	BIT(17)
@@ -499,6 +505,7 @@ void ar71xx_gpio_init(void) __init;
 void ar71xx_gpio_function_enable(u32 mask);
 void ar71xx_gpio_function_disable(u32 mask);
 void ar71xx_gpio_function_setup(u32 set, u32 clear);
+void ar71xx_gpio_output_select(unsigned gpio, u8 val);
 
 /*
  * DDR_CTRL block
