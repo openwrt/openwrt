@@ -30,15 +30,15 @@ void __ar71xx_gpio_set_value(unsigned gpio, int value)
 	void __iomem *base = ar71xx_gpio_base;
 
 	if (value)
-		__raw_writel(1 << gpio, base + GPIO_REG_SET);
+		__raw_writel(1 << gpio, base + AR71XX_GPIO_REG_SET);
 	else
-		__raw_writel(1 << gpio, base + GPIO_REG_CLEAR);
+		__raw_writel(1 << gpio, base + AR71XX_GPIO_REG_CLEAR);
 }
 EXPORT_SYMBOL(__ar71xx_gpio_set_value);
 
 int __ar71xx_gpio_get_value(unsigned gpio)
 {
-	return (__raw_readl(ar71xx_gpio_base + GPIO_REG_IN) >> gpio) & 1;
+	return (__raw_readl(ar71xx_gpio_base + AR71XX_GPIO_REG_IN) >> gpio) & 1;
 }
 EXPORT_SYMBOL(__ar71xx_gpio_get_value);
 
@@ -61,8 +61,8 @@ static int ar71xx_gpio_direction_input(struct gpio_chip *chip,
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel(__raw_readl(base + GPIO_REG_OE) & ~(1 << offset),
-		     base + GPIO_REG_OE);
+	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_OE) & ~(1 << offset),
+		     base + AR71XX_GPIO_REG_OE);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 
@@ -78,12 +78,12 @@ static int ar71xx_gpio_direction_output(struct gpio_chip *chip,
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
 	if (value)
-		__raw_writel(1 << offset, base + GPIO_REG_SET);
+		__raw_writel(1 << offset, base + AR71XX_GPIO_REG_SET);
 	else
-		__raw_writel(1 << offset, base + GPIO_REG_CLEAR);
+		__raw_writel(1 << offset, base + AR71XX_GPIO_REG_CLEAR);
 
-	__raw_writel(__raw_readl(base + GPIO_REG_OE) | (1 << offset),
-		     base + GPIO_REG_OE);
+	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_OE) | (1 << offset),
+		     base + AR71XX_GPIO_REG_OE);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 
@@ -98,8 +98,8 @@ static int ar934x_gpio_direction_input(struct gpio_chip *chip,
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel(__raw_readl(base + GPIO_REG_OE) | (1 << offset),
-		     base + GPIO_REG_OE);
+	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_OE) | (1 << offset),
+		     base + AR71XX_GPIO_REG_OE);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 
@@ -115,12 +115,12 @@ static int ar934x_gpio_direction_output(struct gpio_chip *chip,
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
 	if (value)
-		__raw_writel(1 << offset, base + GPIO_REG_SET);
+		__raw_writel(1 << offset, base + AR71XX_GPIO_REG_SET);
 	else
-		__raw_writel(1 << offset, base + GPIO_REG_CLEAR);
+		__raw_writel(1 << offset, base + AR71XX_GPIO_REG_CLEAR);
 
-	__raw_writel(__raw_readl(base + GPIO_REG_OE) & ~(1 << offset),
-		     base + GPIO_REG_OE);
+	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_OE) & ~(1 << offset),
+		     base + AR71XX_GPIO_REG_OE);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 
@@ -144,10 +144,10 @@ void ar71xx_gpio_function_enable(u32 mask)
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel(__raw_readl(base + GPIO_REG_FUNC) | mask,
-		     base + GPIO_REG_FUNC);
+	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_FUNC) | mask,
+		     base + AR71XX_GPIO_REG_FUNC);
 	/* flush write */
-	(void) __raw_readl(base + GPIO_REG_FUNC);
+	(void) __raw_readl(base + AR71XX_GPIO_REG_FUNC);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
@@ -159,10 +159,10 @@ void ar71xx_gpio_function_disable(u32 mask)
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel(__raw_readl(base + GPIO_REG_FUNC) & ~mask,
-		     base + GPIO_REG_FUNC);
+	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_FUNC) & ~mask,
+		     base + AR71XX_GPIO_REG_FUNC);
 	/* flush write */
-	(void) __raw_readl(base + GPIO_REG_FUNC);
+	(void) __raw_readl(base + AR71XX_GPIO_REG_FUNC);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
@@ -174,10 +174,10 @@ void ar71xx_gpio_function_setup(u32 set, u32 clear)
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel((__raw_readl(base + GPIO_REG_FUNC) & ~clear) | set,
-		     base + GPIO_REG_FUNC);
+	__raw_writel((__raw_readl(base + AR71XX_GPIO_REG_FUNC) & ~clear) | set,
+		     base + AR71XX_GPIO_REG_FUNC);
 	/* flush write */
-	(void) __raw_readl(base + GPIO_REG_FUNC);
+	(void) __raw_readl(base + AR71XX_GPIO_REG_FUNC);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
