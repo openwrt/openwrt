@@ -1,7 +1,10 @@
 #!/bin/sh
 # Copyright (C) 2006-2011 OpenWrt.org
 
-if grep -qs '^root:[^!:]' /etc/passwd /etc/shadow && [ -z "$FAILSAFE" ]; then
+if ( ! grep -qs '^root::' /etc/shadow || \
+     ! grep -qs '^root:[!x]\?:' /etc/passwd ) && \
+   [ -z "$FAILSAFE" ]
+then
 	echo "Login failed."
 	exit 0
 else
