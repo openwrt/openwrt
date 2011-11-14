@@ -231,6 +231,39 @@ static void __init ar71xx_misc_irq_init(void)
 	setup_irq(AR71XX_CPU_IRQ_MISC, &ar71xx_misc_irqaction);
 }
 
+static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+{
+	u32 status;
+
+	disable_irq_nosync(irq);
+
+	status = ar71xx_reset_rr(AR934X_RESET_REG_PCIE_WMAC_INT_STATUS);
+
+	if (status & AR934X_PCIE_WMAC_INT_PCIE_ALL)
+		generic_handle_irq(AR934X_IP2_IRQ_PCIE);
+
+	else if (status & AR934X_PCIE_WMAC_INT_WMAC_ALL)
+		generic_handle_irq(AR934X_IP2_IRQ_WMAC);
+
+	else
+		spurious_interrupt();
+
+	enable_irq(irq);
+}
+
+static void ar934x_ip2_irq_init(void)
+{
+	int i;
+
+	for (i = AR934X_IP2_IRQ_BASE;
+	     i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &dummy_irq_chip,
+					 handle_level_irq);
+
+	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, ar934x_ip2_irq_dispatch);
+}
+
+
 /*
  * The IP2/IP3 lines are tied to a PCI/WMAC/USB device. Drivers for
  * these devices typically allocate coherent DMA memory, however the
@@ -371,6 +404,11 @@ void __init arch_init_irq(void)
 	mips_cpu_irq_init();
 
 	ar71xx_misc_irq_init();
+
+	if (ar71xx_soc == AR71XX_SOC_AR9341 ||
+	    ar71xx_soc == AR71XX_SOC_AR9342 ||
+	    ar71xx_soc == AR71XX_SOC_AR9344)
+		ar934x_ip2_irq_init();
 
 	cp0_perfcount_irq = AR71XX_MISC_IRQ_PERFC;
 
