@@ -81,24 +81,24 @@ int rb750_latch_change(u32 mask_clr, u32 mask_set)
 	latch_clr = (latch_clr | mask_clr) & ~mask_set;
 
 	if (latch_oe == 0)
-		latch_oe = __raw_readl(ar71xx_gpio_base + GPIO_REG_OE);
+		latch_oe = __raw_readl(ar71xx_gpio_base + AR71XX_GPIO_REG_OE);
 
 	if (likely(latch_set & RB750_LVC573_LE)) {
 		void __iomem *base = ar71xx_gpio_base;
 
-		t = __raw_readl(base + GPIO_REG_OE);
+		t = __raw_readl(base + AR71XX_GPIO_REG_OE);
 		t |= mask_clr | latch_oe | mask_set;
 
-		__raw_writel(t, base + GPIO_REG_OE);
-		__raw_writel(latch_clr, base + GPIO_REG_CLEAR);
-		__raw_writel(latch_set, base + GPIO_REG_SET);
+		__raw_writel(t, base + AR71XX_GPIO_REG_OE);
+		__raw_writel(latch_clr, base + AR71XX_GPIO_REG_CLEAR);
+		__raw_writel(latch_set, base + AR71XX_GPIO_REG_SET);
 	} else if (mask_clr & RB750_LVC573_LE) {
 		void __iomem *base = ar71xx_gpio_base;
 
-		latch_oe = __raw_readl(base + GPIO_REG_OE);
-		__raw_writel(RB750_LVC573_LE, base + GPIO_REG_CLEAR);
+		latch_oe = __raw_readl(base + AR71XX_GPIO_REG_OE);
+		__raw_writel(RB750_LVC573_LE, base + AR71XX_GPIO_REG_CLEAR);
 		/* flush write */
-		__raw_readl(base + GPIO_REG_CLEAR);
+		__raw_readl(base + AR71XX_GPIO_REG_CLEAR);
 	}
 
 	ret = 1;

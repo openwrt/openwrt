@@ -28,8 +28,8 @@ static void ar71xx_gpio_irq_dispatch(void)
 	void __iomem *base = ar71xx_gpio_base;
 	u32 pending;
 
-	pending = __raw_readl(base + GPIO_REG_INT_PENDING) &
-		  __raw_readl(base + GPIO_REG_INT_ENABLE);
+	pending = __raw_readl(base + AR71XX_GPIO_REG_INT_PENDING) &
+		  __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
 
 	if (pending)
 		do_IRQ(AR71XX_GPIO_IRQ_BASE + fls(pending) - 1);
@@ -43,11 +43,11 @@ static void ar71xx_gpio_irq_unmask(struct irq_data *d)
 	void __iomem *base = ar71xx_gpio_base;
 	u32 t;
 
-	t = __raw_readl(base + GPIO_REG_INT_ENABLE);
-	__raw_writel(t | (1 << irq), base + GPIO_REG_INT_ENABLE);
+	t = __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+	__raw_writel(t | (1 << irq), base + AR71XX_GPIO_REG_INT_ENABLE);
 
 	/* flush write */
-	(void) __raw_readl(base + GPIO_REG_INT_ENABLE);
+	(void) __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
 }
 
 static void ar71xx_gpio_irq_mask(struct irq_data *d)
@@ -56,11 +56,11 @@ static void ar71xx_gpio_irq_mask(struct irq_data *d)
 	void __iomem *base = ar71xx_gpio_base;
 	u32 t;
 
-	t = __raw_readl(base + GPIO_REG_INT_ENABLE);
-	__raw_writel(t & ~(1 << irq), base + GPIO_REG_INT_ENABLE);
+	t = __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+	__raw_writel(t & ~(1 << irq), base + AR71XX_GPIO_REG_INT_ENABLE);
 
 	/* flush write */
-	(void) __raw_readl(base + GPIO_REG_INT_ENABLE);
+	(void) __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
 }
 
 static struct irq_chip ar71xx_gpio_irq_chip = {
@@ -82,14 +82,14 @@ static void __init ar71xx_gpio_irq_init(void)
 	void __iomem *base = ar71xx_gpio_base;
 	int i;
 
-	__raw_writel(0, base + GPIO_REG_INT_ENABLE);
-	__raw_writel(0, base + GPIO_REG_INT_PENDING);
+	__raw_writel(0, base + AR71XX_GPIO_REG_INT_ENABLE);
+	__raw_writel(0, base + AR71XX_GPIO_REG_INT_PENDING);
 
 	/* setup type of all GPIO interrupts to level sensitive */
-	__raw_writel(GPIO_INT_ALL, base + GPIO_REG_INT_TYPE);
+	__raw_writel(GPIO_INT_ALL, base + AR71XX_GPIO_REG_INT_TYPE);
 
 	/* setup polarity of all GPIO interrupts to active high */
-	__raw_writel(GPIO_INT_ALL, base + GPIO_REG_INT_POLARITY);
+	__raw_writel(GPIO_INT_ALL, base + AR71XX_GPIO_REG_INT_POLARITY);
 
 	for (i = AR71XX_GPIO_IRQ_BASE;
 	     i < AR71XX_GPIO_IRQ_BASE + AR71XX_GPIO_IRQ_COUNT; i++)
