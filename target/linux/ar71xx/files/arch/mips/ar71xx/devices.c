@@ -821,10 +821,16 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->reset_bit |= RESET_MODULE_GE0_PHY;
 			pdata->ddr_flush = ar724x_ddr_flush_ge0;
 			pdata->set_speed = ar724x_set_speed_ge0;
+
+			pdata->phy_mask = BIT(4);
 		} else {
 			pdata->reset_bit |= RESET_MODULE_GE1_PHY;
 			pdata->ddr_flush = ar724x_ddr_flush_ge1;
 			pdata->set_speed = ar724x_set_speed_ge1;
+
+			pdata->speed = SPEED_1000;
+			pdata->duplex = DUPLEX_FULL;
+			pdata->has_ar7240_switch = 1;
 		}
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
@@ -874,6 +880,10 @@ void __init ar71xx_add_device_eth(unsigned int id)
 					   AR933X_RESET_GE1_MDIO;
 			pdata->ddr_flush = ar933x_ddr_flush_ge1;
 			pdata->set_speed = ar933x_set_speed_ge1;
+
+			pdata->speed = SPEED_1000;
+			pdata->duplex = DUPLEX_FULL;
+			pdata->has_ar7240_switch = 1;
 		}
 
 		pdata->has_gbit = 1;
@@ -899,7 +909,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->reset_bit = AR934X_RESET_GE1_MAC |
 					   AR934X_RESET_GE1_MDIO;
 			pdata->ddr_flush = ar934x_ddr_flush_ge1;
-			pdata->set_speed = ar934x_set_speed_ge1
+			pdata->set_speed = ar934x_set_speed_ge1;
 		}
 
 		pdata->has_gbit = 1;
