@@ -489,6 +489,8 @@ static inline u32 ar71xx_usb_ctrl_rr(unsigned reg)
 #define AR934X_GPIO_COUNT		23
 #define AR934X_GPIO_FUNC_DDR_DQOE_EN	BIT(17)
 
+#define AR934X_GPIO_OUT_GPIO		0x00
+
 extern void __iomem *ar71xx_gpio_base;
 
 static inline void ar71xx_gpio_wr(unsigned reg, u32 value)

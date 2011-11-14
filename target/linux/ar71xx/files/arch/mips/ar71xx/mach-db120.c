@@ -116,6 +116,8 @@ static void __init db120_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 
+	ar71xx_gpio_output_select(DB120_GPIO_LED_USB, AR934X_GPIO_OUT_GPIO);
+
 	ar71xx_add_device_usb();
 
 	ar71xx_add_device_m25p80(&db120_flash_data);
