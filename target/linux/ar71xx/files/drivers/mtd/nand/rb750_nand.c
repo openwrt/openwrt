@@ -287,7 +287,7 @@ static int __init rb750_nand_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, info);
 
-	ret = nand_scan_ident(&info->mtd, 1);
+	ret = nand_scan_ident(&info->mtd, 1, NULL);
 	if (ret) {
 		ret = -ENXIO;
 		goto err_free_info;
