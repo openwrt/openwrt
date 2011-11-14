@@ -533,6 +533,7 @@ void ar71xx_gpio_function_setup(u32 set, u32 clear);
 #define AR934X_DDR_REG_FLUSH_GE1	0xa0
 #define AR934X_DDR_REG_FLUSH_USB	0xa4
 #define AR934X_DDR_REG_FLUSH_PCIE	0xa8
+#define AR934X_DDR_REG_FLUSH_WMAC	0xac
 
 
 #define PCI_WIN0_OFFS	0x10000000
