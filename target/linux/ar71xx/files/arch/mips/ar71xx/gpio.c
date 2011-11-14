@@ -141,13 +141,21 @@ void ar71xx_gpio_function_enable(u32 mask)
 {
 	void __iomem *base = ar71xx_gpio_base;
 	unsigned long flags;
+	unsigned int reg;
+
+	if (ar71xx_soc == AR71XX_SOC_AR9341 ||
+	    ar71xx_soc == AR71XX_SOC_AR9342 ||
+	    ar71xx_soc == AR71XX_SOC_AR9344) {
+		reg = AR934X_GPIO_REG_FUNC;
+	} else {
+		reg = AR71XX_GPIO_REG_FUNC;
+	}
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_FUNC) | mask,
-		     base + AR71XX_GPIO_REG_FUNC);
+	__raw_writel(__raw_readl(base + reg) | mask, base + reg);
 	/* flush write */
-	(void) __raw_readl(base + AR71XX_GPIO_REG_FUNC);
+	(void) __raw_readl(base + reg);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
@@ -156,13 +164,21 @@ void ar71xx_gpio_function_disable(u32 mask)
 {
 	void __iomem *base = ar71xx_gpio_base;
 	unsigned long flags;
+	unsigned int reg;
+
+	if (ar71xx_soc == AR71XX_SOC_AR9341 ||
+	    ar71xx_soc == AR71XX_SOC_AR9342 ||
+	    ar71xx_soc == AR71XX_SOC_AR9344) {
+		reg = AR934X_GPIO_REG_FUNC;
+	} else {
+		reg = AR71XX_GPIO_REG_FUNC;
+	}
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_FUNC) & ~mask,
-		     base + AR71XX_GPIO_REG_FUNC);
+	__raw_writel(__raw_readl(base + reg) & ~mask, base + reg);
 	/* flush write */
-	(void) __raw_readl(base + AR71XX_GPIO_REG_FUNC);
+	(void) __raw_readl(base + reg);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
@@ -171,13 +187,21 @@ void ar71xx_gpio_function_setup(u32 set, u32 clear)
 {
 	void __iomem *base = ar71xx_gpio_base;
 	unsigned long flags;
+	unsigned int reg;
+
+	if (ar71xx_soc == AR71XX_SOC_AR9341 ||
+	    ar71xx_soc == AR71XX_SOC_AR9342 ||
+	    ar71xx_soc == AR71XX_SOC_AR9344) {
+		reg = AR934X_GPIO_REG_FUNC;
+	} else {
+		reg = AR71XX_GPIO_REG_FUNC;
+	}
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel((__raw_readl(base + AR71XX_GPIO_REG_FUNC) & ~clear) | set,
-		     base + AR71XX_GPIO_REG_FUNC);
+	__raw_writel((__raw_readl(base + reg) & ~clear) | set, base + reg);
 	/* flush write */
-	(void) __raw_readl(base + AR71XX_GPIO_REG_FUNC);
+	(void) __raw_readl(base + reg);
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }

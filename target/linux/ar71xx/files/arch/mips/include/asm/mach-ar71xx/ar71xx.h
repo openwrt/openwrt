@@ -430,6 +430,8 @@ static inline u32 ar71xx_usb_ctrl_rr(unsigned reg)
 #define AR71XX_GPIO_REG_INT_ENABLE	0x24
 #define AR71XX_GPIO_REG_FUNC		0x28
 
+#define AR934X_GPIO_REG_FUNC		0x6c
+
 #define AR71XX_GPIO_FUNC_STEREO_EN	BIT(17)
 #define AR71XX_GPIO_FUNC_SLIC_EN	BIT(16)
 #define AR71XX_GPIO_FUNC_SPI_CS2_EN	BIT(13)
