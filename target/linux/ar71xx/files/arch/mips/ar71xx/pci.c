@@ -83,7 +83,7 @@ int __init ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map)
 	case AR71XX_SOC_AR7242:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-		ret = ar724x_pcibios_init();
+		ret = ar724x_pcibios_init(AR71XX_CPU_IRQ_IP2);
 		break;
 
 	default:
