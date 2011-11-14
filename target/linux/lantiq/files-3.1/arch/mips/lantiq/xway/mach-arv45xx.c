@@ -25,7 +25,7 @@
 #include <dev-gpio-buttons.h>
 
 #include "../machtypes.h"
-#include "../dev-wifi-rt2x00.h"
+#include "dev-wifi-rt2x00.h"
 #include "devices.h"
 #include "dev-dwc_otg.h"
 
