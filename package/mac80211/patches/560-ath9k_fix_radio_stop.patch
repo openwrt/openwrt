@@ -1,26 +1,5 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -124,14 +124,14 @@ void ath9k_ps_restore(struct ath_softc *
- 		 !(sc->ps_flags & (PS_WAIT_FOR_BEACON |
- 			      PS_WAIT_FOR_CAB |
- 			      PS_WAIT_FOR_PSPOLL_DATA |
--			      PS_WAIT_FOR_TX_ACK)))
-+			      PS_WAIT_FOR_TX_ACK))) {
- 		mode = ATH9K_PM_NETWORK_SLEEP;
--	else
--		goto unlock;
- 
--	spin_lock(&common->cc_lock);
--	ath_hw_cycle_counters_update(common);
--	spin_unlock(&common->cc_lock);
-+		spin_lock(&common->cc_lock);
-+		ath_hw_cycle_counters_update(common);
-+		spin_unlock(&common->cc_lock);
-+	} else
-+		goto unlock;
- 
- 	ath9k_hw_setpower(sc->sc_ah, mode);
- 
 @@ -880,82 +880,6 @@ chip_reset:
  #undef SCHED_INTR
  }
@@ -131,24 +110,25 @@
  	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	if ((ah->btcoex_hw.scheme != ATH_BTCOEX_CFG_NONE) &&
-@@ -1260,9 +1197,6 @@ static void ath9k_stop(struct ieee80211_
- 		sc->rx.frag = NULL;
- 	}
+@@ -1248,33 +1185,39 @@ static void ath9k_stop(struct ieee80211_
+ 	 * before setting the invalid flag. */
+ 	ath9k_hw_disable_interrupts(ah);
  
--	/* disable HAL and put h/w to sleep */
--	ath9k_hw_disable(ah);
--
- 	spin_unlock_bh(&sc->sc_pcu_lock);
- 
- 	/* we can now sync irq and kill any running tasklets, since we already
-@@ -1271,10 +1205,27 @@ static void ath9k_stop(struct ieee80211_
- 	tasklet_kill(&sc->intr_tq);
- 	tasklet_kill(&sc->bcon_tasklet);
- 
--	ath9k_ps_restore(sc);
--
- 	sc->ps_idle = true;
--	ath_radio_disable(sc, hw);
+-	if (!(sc->sc_flags & SC_OP_INVALID)) {
+-		ath_drain_all_txq(sc, false);
+-		ath_stoprecv(sc);
+-		ath9k_hw_phy_disable(ah);
+-	} else
+-		sc->rx.rxlink = NULL;
++	spin_unlock_bh(&sc->sc_pcu_lock);
++
++	/* we can now sync irq and kill any running tasklets, since we already
++	 * disabled interrupts and not holding a spin lock */
++	synchronize_irq(sc->irq);
++	tasklet_kill(&sc->intr_tq);
++	tasklet_kill(&sc->bcon_tasklet);
++
++	sc->ps_idle = true;
 +
 +	spin_lock_bh(&sc->sc_pcu_lock);
 +
@@ -156,23 +136,38 @@
 +	ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
 +
 +	ath_prepare_reset(sc, false, true);
-+
+ 
+ 	if (sc->rx.frag) {
+ 		dev_kfree_skb_any(sc->rx.frag);
+ 		sc->rx.frag = NULL;
+ 	}
+ 
+-	/* disable HAL and put h/w to sleep */
+-	ath9k_hw_disable(ah);
 +	if (!ah->curchan)
 +		ah->curchan = ath9k_cmn_get_curchannel(hw, ah);
-+
+ 
+-	spin_unlock_bh(&sc->sc_pcu_lock);
 +	ath9k_hw_reset(ah, ah->curchan, ah->caldata, false);
 +	ath9k_hw_phy_disable(ah);
-+	ath9k_hw_disable(ah);
-+
+ 
+-	/* we can now sync irq and kill any running tasklets, since we already
+-	 * disabled interrupts and not holding a spin lock */
+-	synchronize_irq(sc->irq);
+-	tasklet_kill(&sc->intr_tq);
+-	tasklet_kill(&sc->bcon_tasklet);
 +	ath9k_hw_configpcipowersave(ah, true);
-+
+ 
+-	ath9k_ps_restore(sc);
 +	spin_unlock_bh(&sc->sc_pcu_lock);
-+
+ 
+-	sc->ps_idle = true;
+-	ath_radio_disable(sc, hw);
 +	ath9k_ps_restore(sc);
  
  	sc->sc_flags |= SC_OP_INVALID;
  
-@@ -1598,8 +1549,8 @@ static int ath9k_config(struct ieee80211
+@@ -1598,8 +1541,8 @@ static int ath9k_config(struct ieee80211
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ieee80211_conf *conf = &hw->conf;
@@ -182,7 +177,7 @@
  	mutex_lock(&sc->mutex);
  
  	/*
-@@ -1608,16 +1559,8 @@ static int ath9k_config(struct ieee80211
+@@ -1608,16 +1551,8 @@ static int ath9k_config(struct ieee80211
  	 * of the changes. Likewise we must only disable the radio towards
  	 * the end.
  	 */
@@ -200,7 +195,7 @@
  
  	/*
  	 * We just prepare to enable PS. We have to wait until our AP has
-@@ -1742,19 +1685,13 @@ static int ath9k_config(struct ieee80211
+@@ -1742,19 +1677,13 @@ static int ath9k_config(struct ieee80211
  		ath_dbg(common, ATH_DBG_CONFIG,
  			"Set power: %d\n", conf->power_level);
  		sc->config.txpowlimit = 2 * conf->power_level;
@@ -223,34 +218,21 @@
  }
 --- a/drivers/net/wireless/ath/ath9k/pci.c
 +++ b/drivers/net/wireless/ath/ath9k/pci.c
-@@ -302,26 +302,12 @@ static void ath_pci_remove(struct pci_de
+@@ -306,12 +306,11 @@ static int ath_pci_suspend(struct device
+ 	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
+ 	struct ath_softc *sc = hw->priv;
  
- static int ath_pci_suspend(struct device *device)
- {
--	struct pci_dev *pdev = to_pci_dev(device);
--	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
--	struct ath_softc *sc = hw->priv;
--
 -	ath9k_hw_set_gpio(sc->sc_ah, sc->sc_ah->led_pin, 1);
 -
--	/* The device has to be moved to FULLSLEEP forcibly.
--	 * Otherwise the chip never moved to full sleep,
--	 * when no interface is up.
--	 */
--	ath9k_hw_setpower(sc->sc_ah, ATH9K_PM_FULL_SLEEP);
--
+ 	/* The device has to be moved to FULLSLEEP forcibly.
+ 	 * Otherwise the chip never moved to full sleep,
+ 	 * when no interface is up.
+ 	 */
++	ath9k_hw_disable(sc->sc_ah);
+ 	ath9k_hw_setpower(sc->sc_ah, ATH9K_PM_FULL_SLEEP);
+ 
  	return 0;
- }
- 
- static int ath_pci_resume(struct device *device)
- {
- 	struct pci_dev *pdev = to_pci_dev(device);
--	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
--	struct ath_softc *sc = hw->priv;
- 	u32 val;
- 
- 	/*
-@@ -333,22 +319,6 @@ static int ath_pci_resume(struct device 
+@@ -333,22 +332,6 @@ static int ath_pci_resume(struct device 
  	if ((val & 0x0000ff00) != 0)
  		pci_write_config_dword(pdev, 0x40, val & 0xffff00ff);
  
