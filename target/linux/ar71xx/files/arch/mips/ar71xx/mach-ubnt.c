@@ -249,11 +249,6 @@ static void __init ubnt_m_setup(void)
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac1, 0);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac2, 0);
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth0_data.speed = SPEED_100;
-	ar71xx_eth0_data.duplex = DUPLEX_FULL;
-	ar71xx_eth0_data.phy_mask = UBNT_M_WAN_PHYMASK;
-
 	ar71xx_add_device_eth(0);
 
 	ap91_pci_init(ee, NULL);
@@ -282,12 +277,6 @@ MIPS_MACHINE(AR71XX_MACH_UBNT_ROCKET_M, "UBNT-RM", "Ubiquiti Rocket M",
 static void __init ubnt_nano_m_setup(void)
 {
 	ubnt_m_setup();
-
-	ar71xx_eth1_data.has_ar7240_switch = 1;
-	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.speed = SPEED_1000;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
-
 	ar71xx_add_device_eth(1);
 }
 
@@ -316,11 +305,6 @@ static void __init ubnt_unifi_setup(void)
 	ar71xx_add_device_mdio(0, ~UBNT_M_WAN_PHYMASK);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth0_data.speed = SPEED_100;
-	ar71xx_eth0_data.duplex = DUPLEX_FULL;
-	ar71xx_eth0_data.phy_mask = UBNT_M_WAN_PHYMASK;
-
 	ar71xx_add_device_eth(0);
 
 	ap91_pci_init(ee, NULL);
