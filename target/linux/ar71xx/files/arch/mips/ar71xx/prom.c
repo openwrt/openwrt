@@ -33,13 +33,13 @@ static inline int is_valid_ram_addr(void *addr)
 	return 0;
 }
 
+static char ar71xx_cmdline_buf[COMMAND_LINE_SIZE] __initdata;
 static void __init ar71xx_prom_append_cmdline(const char *name,
 					      const char *value)
 {
-	char buf[COMMAND_LINE_SIZE];
-
-	snprintf(buf, sizeof(buf), " %s=%s", name, value);
-	strlcat(arcs_cmdline, buf, sizeof(arcs_cmdline));
+	snprintf(ar71xx_cmdline_buf, sizeof(ar71xx_cmdline_buf),
+		 " %s=%s", name, value);
+	strlcat(arcs_cmdline, ar71xx_cmdline_buf, sizeof(arcs_cmdline));
 }
 
 static const char * __init ar71xx_prom_find_env(char **envp, const char *name)
