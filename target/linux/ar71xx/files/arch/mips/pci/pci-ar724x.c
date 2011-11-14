@@ -325,7 +325,7 @@ static struct irq_chip ar724x_pci_irq_chip = {
 	.irq_mask_ack	= ar724x_pci_irq_mask,
 };
 
-static void __init ar724x_pci_irq_init(void)
+static void __init ar724x_pci_irq_init(int irq)
 {
 	void __iomem *base = ar724x_pci_ctrl_base;
 	u32 t;
@@ -345,10 +345,10 @@ static void __init ar724x_pci_irq_init(void)
 		irq_set_chip_and_handler(i, &ar724x_pci_irq_chip,
 					 handle_level_irq);
 
-	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, ar724x_pci_irq_handler);
+	irq_set_chained_handler(irq, ar724x_pci_irq_handler);
 }
 
-int __init ar724x_pcibios_init(void)
+int __init ar724x_pcibios_init(int irq)
 {
 	int ret = -ENOMEM;
 
@@ -373,7 +373,7 @@ int __init ar724x_pcibios_init(void)
 		goto err_unmap_ctrl;
 
 	ar724x_pci_fixup_enable = 1;
-	ar724x_pci_irq_init();
+	ar724x_pci_irq_init(irq);
 	register_pci_controller(&ar724x_pci_controller);
 
 	return 0;
