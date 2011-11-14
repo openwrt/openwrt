@@ -106,11 +106,6 @@ static void __init tl_wa901nd_setup(void)
 	 * however we have a single LAN port only.
 	 */
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
-	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth1_data.speed       = SPEED_1000;
-	ar71xx_eth1_data.duplex      = DUPLEX_FULL;
-	ar71xx_eth1_data.has_ar7240_switch = 1;
-
 	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_add_device_eth(1);
 

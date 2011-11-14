@@ -31,7 +31,6 @@
 #define ALL0258N_KEYS_DEBOUNCE_INTERVAL (3 * ALL0258N_KEYS_POLL_INTERVAL)
 
 /* showed up in the original firmware's bootlog */
-#define ALL0258N_LAN_PHYMASK BIT(4)
 #define ALL0258N_SEC_PHYMASK BIT(3)
 
 /*
@@ -127,12 +126,7 @@ static void __init all0258n_setup(void)
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
 
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
-	ar71xx_eth0_data.phy_mask = ALL0258N_LAN_PHYMASK;
-
-	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.phy_mask = ALL0258N_SEC_PHYMASK;
-	ar71xx_eth1_data.has_ar7240_switch = 1;
 
 	ar71xx_add_device_mdio(0, 0x0);
 
