@@ -1,0 +1,22 @@
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -118,7 +118,7 @@ void ath9k_ps_restore(struct ath_softc *
+ 	if (--sc->ps_usecount != 0)
+ 		goto unlock;
+ 
+-	if (sc->ps_idle)
++	if (sc->ps_idle && !(sc->ps_flags & PS_WAIT_FOR_TX_ACK))
+ 		mode = ATH9K_PM_FULL_SLEEP;
+ 	else if (sc->ps_enabled &&
+ 		 !(sc->ps_flags & (PS_WAIT_FOR_BEACON |
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -1983,7 +1983,7 @@ static void ath_tx_complete(struct ath_s
+ 		skb_pull(skb, padsize);
+ 	}
+ 
+-	if (sc->ps_flags & PS_WAIT_FOR_TX_ACK) {
++	if ((sc->ps_flags & PS_WAIT_FOR_TX_ACK) && !txq->axq_depth) {
+ 		sc->ps_flags &= ~PS_WAIT_FOR_TX_ACK;
+ 		ath_dbg(common, ATH_DBG_PS,
+ 			"Going back to sleep after having received TX status (0x%lx)\n",
