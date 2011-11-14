@@ -239,14 +239,15 @@ static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
 
 	status = ar71xx_reset_rr(AR934X_RESET_REG_PCIE_WMAC_INT_STATUS);
 
-	if (status & AR934X_PCIE_WMAC_INT_PCIE_ALL)
+	if (status & AR934X_PCIE_WMAC_INT_PCIE_ALL) {
+		ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_PCIE);
 		generic_handle_irq(AR934X_IP2_IRQ_PCIE);
-
-	else if (status & AR934X_PCIE_WMAC_INT_WMAC_ALL)
+	} else if (status & AR934X_PCIE_WMAC_INT_WMAC_ALL) {
+		ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_WMAC);
 		generic_handle_irq(AR934X_IP2_IRQ_WMAC);
-
-	else
+	} else {
 		spurious_interrupt();
+	}
 
 	enable_irq(irq);
 }
@@ -297,7 +298,6 @@ static void ar933x_ip2_handler(void)
 
 static void ar934x_ip2_handler(void)
 {
-	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_PCIE);
 	do_IRQ(AR71XX_CPU_IRQ_IP2);
 }
 
