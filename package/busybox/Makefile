@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.19.3
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 PKG_FLAGS:=essential
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -71,6 +71,8 @@ ifdef CONFIG_BUSYBOX_USE_LIBRPC
   export LDFLAGS=$(TARGET_LDFLAGS)
   LDLIBS += rpc
 endif
+
+TARGET_CFLAGS += -ggdb3
 
 define Build/Compile
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
