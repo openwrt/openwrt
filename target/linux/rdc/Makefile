@@ -17,7 +17,8 @@ LINUX_VERSION:=2.6.32.33
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-mini kmod-libphy kmod-r6040 kmod-input-core \
+DEFAULT_PACKAGES += kmod-llc kmod-stp kmod-bridge kmod-8021q \
+		    wpad-mini kmod-libphy kmod-r6040 kmod-input-core \
 		    kmod-input-polldev kmod-input-gpio-buttons kmod-button-hotplug \
 		    kmod-rdc321x-wdt
 
