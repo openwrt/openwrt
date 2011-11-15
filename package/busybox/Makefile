@@ -72,8 +72,6 @@ ifdef CONFIG_BUSYBOX_USE_LIBRPC
   LDLIBS += rpc
 endif
 
-TARGET_CFLAGS += -ggdb3
-
 define Build/Compile
 	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
