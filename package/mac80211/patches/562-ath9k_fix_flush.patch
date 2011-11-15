@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -2251,9 +2251,6 @@ static void ath9k_flush(struct ieee80211
+@@ -2268,9 +2268,6 @@ static void ath9k_flush(struct ieee80211
  		return;
  	}
  
@@ -10,7 +10,7 @@
  	for (j = 0; j < timeout; j++) {
  		bool npend = false;
  
-@@ -2271,21 +2268,22 @@ static void ath9k_flush(struct ieee80211
+@@ -2288,21 +2285,22 @@ static void ath9k_flush(struct ieee80211
  		}
  
  		if (!npend)

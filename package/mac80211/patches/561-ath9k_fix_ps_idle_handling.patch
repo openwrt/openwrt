@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -880,82 +880,6 @@ chip_reset:
+@@ -883,82 +883,6 @@ chip_reset:
  #undef SCHED_INTR
  }
  
@@ -83,7 +83,7 @@
  static int ath_reset(struct ath_softc *sc, bool retry_tx)
  {
  	int r;
-@@ -1091,6 +1015,9 @@ static int ath9k_start(struct ieee80211_
+@@ -1094,6 +1018,9 @@ static int ath9k_start(struct ieee80211_
  	 * and then setup of the interrupt mask.
  	 */
  	spin_lock_bh(&sc->sc_pcu_lock);
@@ -93,13 +93,15 @@
  	r = ath9k_hw_reset(ah, init_channel, ah->caldata, false);
  	if (r) {
  		ath_err(common,
-@@ -1129,6 +1056,16 @@ static int ath9k_start(struct ieee80211_
+@@ -1132,6 +1059,18 @@ static int ath9k_start(struct ieee80211_
  		goto mutex_unlock;
  	}
  
-+	ath9k_hw_cfg_output(ah, ah->led_pin,
-+			    AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
-+	ath9k_hw_set_gpio(ah, ah->led_pin, 0);
++	if (ah->led_pin >= 0) {
++		ath9k_hw_cfg_output(ah, ah->led_pin,
++				    AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
++		ath9k_hw_set_gpio(ah, ah->led_pin, 0);
++	}
 +
 +	/*
 +	 * Reset key cache to sane defaults (all entries cleared) instead of
@@ -110,7 +112,15 @@
  	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	if ((ah->btcoex_hw.scheme != ATH_BTCOEX_CFG_NONE) &&
-@@ -1248,33 +1185,39 @@ static void ath9k_stop(struct ieee80211_
+@@ -1229,6 +1168,7 @@ static void ath9k_stop(struct ieee80211_
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	bool prev_idle;
+ 
+ 	mutex_lock(&sc->mutex);
+ 
+@@ -1258,35 +1198,45 @@ static void ath9k_stop(struct ieee80211_
  	 * before setting the invalid flag. */
  	ath9k_hw_disable_interrupts(ah);
  
@@ -128,12 +138,15 @@
 +	tasklet_kill(&sc->intr_tq);
 +	tasklet_kill(&sc->bcon_tasklet);
 +
++	prev_idle = sc->ps_idle;
 +	sc->ps_idle = true;
 +
 +	spin_lock_bh(&sc->sc_pcu_lock);
 +
-+	ath9k_hw_set_gpio(ah, ah->led_pin, 1);
-+	ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
++	if (ah->led_pin >= 0) {
++		ath9k_hw_set_gpio(ah, ah->led_pin, 1);
++		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
++	}
 +
 +	ath_prepare_reset(sc, false, true);
  
@@ -166,8 +179,11 @@
 +	ath9k_ps_restore(sc);
  
  	sc->sc_flags |= SC_OP_INVALID;
++	sc->ps_idle = prev_idle;
  
-@@ -1598,8 +1541,8 @@ static int ath9k_config(struct ieee80211
+ 	mutex_unlock(&sc->mutex);
+ 
+@@ -1608,8 +1558,8 @@ static int ath9k_config(struct ieee80211
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ieee80211_conf *conf = &hw->conf;
@@ -177,7 +193,7 @@
  	mutex_lock(&sc->mutex);
  
  	/*
-@@ -1608,16 +1551,8 @@ static int ath9k_config(struct ieee80211
+@@ -1618,16 +1568,8 @@ static int ath9k_config(struct ieee80211
  	 * of the changes. Likewise we must only disable the radio towards
  	 * the end.
  	 */
@@ -195,7 +211,7 @@
  
  	/*
  	 * We just prepare to enable PS. We have to wait until our AP has
-@@ -1742,19 +1677,13 @@ static int ath9k_config(struct ieee80211
+@@ -1752,19 +1694,13 @@ static int ath9k_config(struct ieee80211
  		ath_dbg(common, ATH_DBG_CONFIG,
  			"Set power: %d\n", conf->power_level);
  		sc->config.txpowlimit = 2 * conf->power_level;
