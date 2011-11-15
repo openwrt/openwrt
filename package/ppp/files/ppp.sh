@@ -33,7 +33,7 @@ start_pppd() {
 	# make sure only one pppd process is started
 	lock "/var/lock/ppp-${link}"
 	SERVICE_PID_FILE="/var/run/ppp-${link}.pid" \
-	service_check /usr/sbin/ppd && {
+	service_check /usr/sbin/pppd && {
 		lock -u "/var/lock/ppp-${link}"
 		return 0
 	}
