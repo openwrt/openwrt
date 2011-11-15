@@ -1,0 +1,68 @@
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -619,6 +619,7 @@ struct ath_softc {
+ 	u16 curtxpow;
+ 	bool ps_enabled;
+ 	bool ps_idle;
++	bool ps_fullsleep;
+ 	short nbcnvifs;
+ 	short nvifs;
+ 	unsigned long ps_usecount;
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -118,9 +118,10 @@ void ath9k_ps_restore(struct ath_softc *
+ 	if (--sc->ps_usecount != 0)
+ 		goto unlock;
+ 
+-	if (sc->ps_idle)
++	if (sc->ps_idle && (sc->ps_flags & PS_WAIT_FOR_TX_ACK)) {
+ 		mode = ATH9K_PM_FULL_SLEEP;
+-	else if (sc->ps_enabled &&
++		sc->ps_fullsleep = true;
++	} else if (sc->ps_enabled &&
+ 		 !(sc->ps_flags & (PS_WAIT_FOR_BEACON |
+ 			      PS_WAIT_FOR_CAB |
+ 			      PS_WAIT_FOR_PSPOLL_DATA |
+@@ -275,6 +276,7 @@ static bool ath_complete_reset(struct at
+ 			       sc->config.txpowlimit, &sc->curtxpow);
+ 	ath9k_hw_set_interrupts(ah);
+ 	ath9k_hw_enable_interrupts(ah);
++	sc->ps_fullsleep = false;
+ 
+ 	if (!(sc->sc_flags & (SC_OP_OFFCHANNEL)) && start) {
+ 		if (sc->sc_flags & SC_OP_BEACONS)
+@@ -332,7 +334,8 @@ static int ath_reset_internal(struct ath
+ 		hchan = ah->curchan;
+ 	}
+ 
+-	if (fastcc && !ath9k_hw_check_alive(ah))
++	if (fastcc && (sc->ps_fullsleep ||
++	    !ath9k_hw_check_alive(ah)))
+ 		fastcc = false;
+ 
+ 	if (!ath_prepare_reset(sc, retry_tx, flush))
+@@ -1173,6 +1176,13 @@ static void ath9k_tx(struct ieee80211_hw
+ 		}
+ 	}
+ 
++	/*
++	 * Cannot tx while the hardware is in full sleep, it first needs a full
++	 * chip reset to recover from that
++	 */
++	if (unlikely(sc->sc_ah->power_mode == ATH9K_PM_FULL_SLEEP))
++		goto exit;
++
+ 	if (unlikely(sc->sc_ah->power_mode != ATH9K_PM_AWAKE)) {
+ 		/*
+ 		 * We are using PS-Poll and mac80211 can request TX while in
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -1983,7 +1983,7 @@ static void ath_tx_complete(struct ath_s
+ 		skb_pull(skb, padsize);
+ 	}
+ 
+-	if (sc->ps_flags & PS_WAIT_FOR_TX_ACK) {
++	if ((sc->ps_flags & PS_WAIT_FOR_TX_ACK) && !txq->axq_depth) {
+ 		sc->ps_flags &= ~PS_WAIT_FOR_TX_ACK;
+ 		ath_dbg(common, ATH_DBG_PS,
+ 			"Going back to sleep after having received TX status (0x%lx)\n",
