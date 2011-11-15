@@ -181,7 +181,7 @@ $(eval $(call KernelPackage,natsemi))
 define KernelPackage/r6040
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=RDC Fast-Ethernet support
-  DEPENDS:=@TARGET_rdc
+  DEPENDS:=@TARGET_rdc +kmod-libphy
   KCONFIG:=CONFIG_R6040 \
 		CONFIG_R6040_NAPI=y
   ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1)
