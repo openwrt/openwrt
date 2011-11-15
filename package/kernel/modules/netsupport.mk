@@ -79,6 +79,68 @@ endef
 $(eval $(call KernelPackage,bonding))
 
 
+define KernelPackage/bridge
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Ethernet bridging support
+  DEPENDS:=+kmod-stp
+  KCONFIG:= \
+	CONFIG_BRIDGE \
+	CONFIG_BRIDGE_IGMP_SNOOPING=y
+  FILES:=$(LINUX_DIR)/net/bridge/bridge.ko
+  AUTOLOAD:=$(call AutoLoad,11,bridge)
+endef
+
+define KernelPackage/bridge/description
+ Kernel module for Ethernet bridging.
+endef
+
+$(eval $(call KernelPackage,bridge))
+
+define KernelPackage/llc
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=ANSI/IEEE 802.2 LLC support
+  KCONFIG:=CONFIG_LLC
+  FILES:=$(LINUX_DIR)/net/llc/llc.ko
+  AUTOLOAD:=$(call AutoLoad,09,llc)
+endef
+
+define KernelPackage/llc/description
+ Kernel module for ANSI/IEEE 802.2 LLC support.
+endef
+
+$(eval $(call KernelPackage,llc))
+
+define KernelPackage/stp
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Ethernet Spanning Tree Protocol support
+  DEPENDS:=+kmod-llc
+  KCONFIG:=CONFIG_STP
+  FILES:=$(LINUX_DIR)/net/802/stp.ko
+  AUTOLOAD:=$(call AutoLoad,10,stp)
+endef
+
+define KernelPackage/stp/description
+ Kernel module for Ethernet Spanning Tree Protocol support.
+endef
+
+$(eval $(call KernelPackage,stp))
+
+define KernelPackage/8021q
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=802.1Q VLAN support
+  KCONFIG:=CONFIG_VLAN_8021Q \
+		CONFIG_VLAN_8021Q_GVRP=n
+  FILES:=$(LINUX_DIR)/net/8021q/8021q.ko
+  AUTOLOAD:=$(call AutoLoad,12,8021q)
+endef
+
+define KernelPackage/8021q/description
+ Kernel module for 802.1Q VLAN support
+endef
+
+$(eval $(call KernelPackage,8021q))
+
+
 define KernelPackage/capi
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=CAPI (ISDN) Support
