@@ -92,7 +92,7 @@ endef
 
 
 TARGET_CFLAGS += $(TLS_CFLAGS)
-TARGET_LDFLAGS += $(TLS_LDFLAGS) -Wl,-rpath-link=$(STAGING_DIR)/usr/lib
+TARGET_LDFLAGS += -Wl,-rpath-link=$(STAGING_DIR)/usr/lib
 MAKE_VARS += \
 	FPIC="$(FPIC)" \
 	LUA_SUPPORT="$(if $(CONFIG_PACKAGE_uhttpd-mod-lua),1)" \
