@@ -80,19 +80,27 @@ run_ramfs() { # <command> [...]
 kill_remaining() { # [ <signal> ]
 	local sig="${1:-TERM}"
 	echo -n "Sending $sig to remaining processes ... "
-	/bin/busybox top -bn1 2>/dev/null | while read pid ppid user stat vsz pvsz pcpu cmd args; do
-		case "$pid" in
-			[0-9]*) : ;;
-			*) continue ;;
-		esac
-		case "$cmd" in
-			# Skip kernel threads and essential services
-			\[*\]|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*|*ubusd*|*netifd*|*hostapd*|*wpa_supplicant*|*udhcpc*) : ;;
+
+	local stat
+	for stat in /proc/[0-9]*/stat; do
+		local pid name state ppid rest
+		read pid name state ppid rest < $stat
+		name="${name#(}"; name="${name%)}"
+
+		local cmdline
+		read cmdline < /proc/$pid/cmdline
+
+		# Skip kernel threads 
+		[ -n "$cmdline" ] || continue
+
+		case "$name" in
+			# Skip essential services
+			*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*|*ubusd*|*netifd*|*hostapd*|*wpa_supplicant*|*udhcpc*) : ;;
 
 			# Killable process
 			*)
 				if [ $pid -ne $$ ] && [ $ppid -ne $$ ]; then
-					echo -n "${cmd##*/} "
+					echo -n "$name "
 					kill -$sig $pid 2>/dev/null
 				fi
 			;;
