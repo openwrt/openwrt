@@ -1,0 +1,45 @@
+Index: linux-3.1.1/drivers/video/omap/omapfb_main.c
+===================================================================
+--- linux-3.1.1.orig/drivers/video/omap/omapfb_main.c	2011-11-11 21:19:27.000000000 +0100
++++ linux-3.1.1/drivers/video/omap/omapfb_main.c	2011-11-16 23:10:16.554325659 +0100
+@@ -419,10 +419,10 @@ static void set_fb_fix(struct fb_info *f
+ 	fbi->screen_base	= rg->vaddr;
+ 
+ 	if (!from_init) {
+-		mutex_lock(&fbi->mm_lock);
++		preempt_disable();
+ 		fix->smem_start		= rg->paddr;
+ 		fix->smem_len		= rg->size;
+-		mutex_unlock(&fbi->mm_lock);
++		preempt_enable();
+ 	} else {
+ 		fix->smem_start		= rg->paddr;
+ 		fix->smem_len		= rg->size;
+@@ -932,10 +932,10 @@ static int omapfb_setup_mem(struct fb_in
+ 				 * plane memory is dealloce'd, the other
+ 				 * screen parameters in var / fix are invalid.
+ 				 */
+-				mutex_lock(&fbi->mm_lock);
++				preempt_disable();
+ 				fbi->fix.smem_start = 0;
+ 				fbi->fix.smem_len = 0;
+-				mutex_unlock(&fbi->mm_lock);
++				preempt_enable();
+ 			}
+ 		}
+ 	}
+Index: linux-3.1.1/drivers/video/fbmem.c
+===================================================================
+--- linux-3.1.1.orig/drivers/video/fbmem.c	2011-11-11 21:19:27.000000000 +0100
++++ linux-3.1.1/drivers/video/fbmem.c	2011-11-16 23:20:56.055698968 +0100
+@@ -1369,8 +1369,10 @@ fb_mmap(struct file *file, struct vm_are
+ 	}
+ 
+ 	/* frame buffer memory */
++	preempt_disable();
+ 	start = info->fix.smem_start;
+ 	len = PAGE_ALIGN((start & ~PAGE_MASK) + info->fix.smem_len);
++	preempt_enable();
+ 	if (off >= len) {
+ 		/* memory mapped io */
+ 		off -= len;
