@@ -1,0 +1,17 @@
+Index: compat-wireless-2011-11-04/drivers/net/wireless/p54/p54spi.c
+===================================================================
+--- compat-wireless-2011-11-04.orig/drivers/net/wireless/p54/p54spi.c	2011-11-16 22:12:03.648829886 +0100
++++ compat-wireless-2011-11-04/drivers/net/wireless/p54/p54spi.c	2011-11-16 22:15:28.931976935 +0100
+@@ -581,11 +581,7 @@ static void p54spi_op_stop(struct ieee80
+ 	struct p54s_priv *priv = dev->priv;
+ 	unsigned long flags;
+ 
+-	if (mutex_lock_interruptible(&priv->mutex)) {
+-		/* FIXME: how to handle this error? */
+-		return;
+-	}
+-
++	mutex_lock(&priv->mutex);
+ 	WARN_ON(priv->fw_state != FW_STATE_READY);
+ 
+ 	cancel_work_sync(&priv->work);
