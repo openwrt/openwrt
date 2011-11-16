@@ -9,7 +9,7 @@ define Profile/n810-gui
   $(call Profile/n810-base)
   NAME:=Nokia n810 (GUI)
   PACKAGES+= \
-	xserver-xorg xinit xauth xkeyboard-config xkbdata xmodmap xterm \
+	xserver-xorg xinit xauth xkeyboard-config xkbdata xterm \
 	xf86-video-omapfb xf86-input-tslib xf86-input-evdev \
 	openbox tint2 matchbox-keyboard \
 	pwrtray
