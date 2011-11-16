@@ -1,0 +1,22 @@
+Index: compat-wireless-2011-11-04/drivers/net/wireless/p54/p54spi.c
+===================================================================
+--- compat-wireless-2011-11-04.orig/drivers/net/wireless/p54/p54spi.c	2011-11-16 23:36:01.399952345 +0100
++++ compat-wireless-2011-11-04/drivers/net/wireless/p54/p54spi.c	2011-11-16 23:37:38.799547564 +0100
+@@ -584,8 +584,6 @@ static void p54spi_op_stop(struct ieee80
+ 	mutex_lock(&priv->mutex);
+ 	WARN_ON(priv->fw_state != FW_STATE_READY);
+ 
+-	cancel_work_sync(&priv->work);
+-
+ 	p54spi_power_off(priv);
+ 	spin_lock_irqsave(&priv->tx_lock, flags);
+ 	INIT_LIST_HEAD(&priv->tx_pending);
+@@ -593,6 +591,8 @@ static void p54spi_op_stop(struct ieee80
+ 
+ 	priv->fw_state = FW_STATE_OFF;
+ 	mutex_unlock(&priv->mutex);
++
++	cancel_work_sync(&priv->work);
+ }
+ 
+ static int __devinit p54spi_probe(struct spi_device *spi)
