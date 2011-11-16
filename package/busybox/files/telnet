@@ -8,7 +8,7 @@ has_root_pwd() {
 	      pwd="${pwd#*root:}"
 	      pwd="${pwd%%:*}"
 
-	test -n "${pwd#!}"
+	test -n "${pwd#[\!x]}"
 }
 
 get_root_home() {
