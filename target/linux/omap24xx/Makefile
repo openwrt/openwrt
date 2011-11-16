@@ -18,6 +18,8 @@ define Target/Description
 	TI OMAP-24xx
 endef
 
+CFLAGS:=-Os -pipe -march=armv6 -mtune=arm1136j-s -fno-caller-saves
+
 include $(INCLUDE_DIR)/target.mk
 
 $(eval $(call BuildTarget))
