@@ -1,0 +1,12 @@
+Index: compat-wireless-2011-11-04/drivers/net/wireless/p54/p54spi.c
+===================================================================
+--- compat-wireless-2011-11-04.orig/drivers/net/wireless/p54/p54spi.c	2011-11-05 20:30:04.000000000 +0100
++++ compat-wireless-2011-11-04/drivers/net/wireless/p54/p54spi.c	2011-11-16 22:12:03.648829886 +0100
+@@ -656,6 +656,7 @@ static int __devinit p54spi_probe(struct
+ 	init_completion(&priv->fw_comp);
+ 	INIT_LIST_HEAD(&priv->tx_pending);
+ 	mutex_init(&priv->mutex);
++	spin_lock_init(&priv->tx_lock);
+ 	SET_IEEE80211_DEV(hw, &spi->dev);
+ 	priv->common.open = p54spi_op_start;
+ 	priv->common.stop = p54spi_op_stop;
