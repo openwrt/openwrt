@@ -1,0 +1,2415 @@
+Index: linux-3.1.1/arch/arm/Kconfig
+===================================================================
+--- linux-3.1.1.orig/arch/arm/Kconfig	2011-11-17 15:36:08.005974898 +0100
++++ linux-3.1.1/arch/arm/Kconfig	2011-11-17 15:36:47.117577734 +0100
+@@ -1876,7 +1876,7 @@ config XIP_PHYS_ADDR
+ 
+ config KEXEC
+ 	bool "Kexec system call (EXPERIMENTAL)"
+-	depends on EXPERIMENTAL
++	depends on EXPERIMENTAL && (!SMP || HOTPLUG_CPU)
+ 	help
+ 	  kexec is a system call that implements the ability to shutdown your
+ 	  current kernel, and to start another kernel.  It is like a reboot
+Index: linux-3.1.1/arch/arm/include/asm/idmap.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1.1/arch/arm/include/asm/idmap.h	2011-11-17 15:36:47.121577693 +0100
+@@ -0,0 +1,11 @@
++#ifndef __ASM_IDMAP_H
++#define __ASM_IDMAP_H
++
++#include <linux/compiler.h>
++
++/* Tag a function as requiring to be executed via an identity mapping. */
++#define __idmap __section(.idmap.text) noinline notrace
++
++void setup_mm_for_reboot(void);
++
++#endif	/* __ASM_IDMAP_H */
+Index: linux-3.1.1/arch/arm/include/asm/mach/arch.h
+===================================================================
+--- linux-3.1.1.orig/arch/arm/include/asm/mach/arch.h	2011-11-17 15:36:08.601968818 +0100
++++ linux-3.1.1/arch/arm/include/asm/mach/arch.h	2011-11-17 15:36:47.121577693 +0100
+@@ -30,10 +30,10 @@ struct machine_desc {
+ 	unsigned int		video_start;	/* start of video RAM	*/
+ 	unsigned int		video_end;	/* end of video RAM	*/
+ 
+-	unsigned int		reserve_lp0 :1;	/* never has lp0	*/
+-	unsigned int		reserve_lp1 :1;	/* never has lp1	*/
+-	unsigned int		reserve_lp2 :1;	/* never has lp2	*/
+-	unsigned int		soft_reboot :1;	/* soft reboot		*/
++	unsigned char		reserve_lp0 :1;	/* never has lp0	*/
++	unsigned char		reserve_lp1 :1;	/* never has lp1	*/
++	unsigned char		reserve_lp2 :1;	/* never has lp2	*/
++	char			restart_mode;	/* default restart mode	*/
+ 	void			(*fixup)(struct machine_desc *,
+ 					 struct tag *, char **,
+ 					 struct meminfo *);
+@@ -46,6 +46,7 @@ struct machine_desc {
+ #ifdef CONFIG_MULTI_IRQ_HANDLER
+ 	void			(*handle_irq)(struct pt_regs *);
+ #endif
++	void			(*restart)(char, const char *);
+ };
+ 
+ /*
+Index: linux-3.1.1/arch/arm/include/asm/system.h
+===================================================================
+--- linux-3.1.1.orig/arch/arm/include/asm/system.h	2011-11-17 15:36:08.613968696 +0100
++++ linux-3.1.1/arch/arm/include/asm/system.h	2011-11-17 15:36:47.121577693 +0100
+@@ -107,7 +107,7 @@ extern void __show_regs(struct pt_regs *
+ extern int cpu_architecture(void);
+ extern void cpu_init(void);
+ 
+-void arm_machine_restart(char mode, const char *cmd);
++void soft_restart(unsigned long);
+ extern void (*arm_pm_restart)(char str, const char *cmd);
+ 
+ #define UDBG_UNDEFINED	(1 << 0)
+Index: linux-3.1.1/arch/arm/kernel/machine_kexec.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/kernel/machine_kexec.c	2011-11-17 15:36:08.409970777 +0100
++++ linux-3.1.1/arch/arm/kernel/machine_kexec.c	2011-11-17 15:36:47.121577693 +0100
+@@ -12,12 +12,11 @@
+ #include <asm/mmu_context.h>
+ #include <asm/cacheflush.h>
+ #include <asm/mach-types.h>
++#include <asm/system.h>
+ 
+ extern const unsigned char relocate_new_kernel[];
+ extern const unsigned int relocate_new_kernel_size;
+ 
+-extern void setup_mm_for_reboot(char mode);
+-
+ extern unsigned long kexec_start_address;
+ extern unsigned long kexec_indirection_page;
+ extern unsigned long kexec_mach_type;
+@@ -111,14 +110,6 @@ void machine_kexec(struct kimage *image)
+ 
+ 	if (kexec_reinit)
+ 		kexec_reinit();
+-	local_irq_disable();
+-	local_fiq_disable();
+-	setup_mm_for_reboot(0); /* mode is not used, so just pass 0*/
+-	flush_cache_all();
+-	outer_flush_all();
+-	outer_disable();
+-	cpu_proc_fin();
+-	outer_inv_all();
+-	flush_cache_all();
+-	cpu_reset(reboot_code_buffer_phys);
++
++	soft_restart(reboot_code_buffer_phys);
+ }
+Index: linux-3.1.1/arch/arm/kernel/process.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/kernel/process.c	2011-11-17 15:36:08.433970532 +0100
++++ linux-3.1.1/arch/arm/kernel/process.c	2011-11-17 15:36:47.121577693 +0100
+@@ -57,7 +57,7 @@ static const char *isa_modes[] = {
+   "ARM" , "Thumb" , "Jazelle", "ThumbEE"
+ };
+ 
+-extern void setup_mm_for_reboot(char mode);
++extern void setup_mm_for_reboot(void);
+ 
+ static volatile int hlt_counter;
+ 
+@@ -92,40 +92,64 @@ static int __init hlt_setup(char *__unus
+ __setup("nohlt", nohlt_setup);
+ __setup("hlt", hlt_setup);
+ 
+-void arm_machine_restart(char mode, const char *cmd)
++extern void call_with_stack(void (*fn)(void *), void *arg, void *sp);
++typedef void (*phys_reset_t)(unsigned long);
++
++/*
++ * A temporary stack to use for CPU reset. This is static so that we
++ * don't clobber it with the identity mapping. When running with this
++ * stack, any references to the current task *will not work* so you
++ * should really do as little as possible before jumping to your reset
++ * code.
++ */
++#define SOFT_RESTART_STACK_WORDS	32
++static u32 soft_restart_stack[SOFT_RESTART_STACK_WORDS];
++
++static void __soft_restart(void *addr)
+ {
+-	/* Disable interrupts first */
+-	local_irq_disable();
+-	local_fiq_disable();
++	phys_reset_t phys_reset;
+ 
+-	/*
+-	 * Tell the mm system that we are going to reboot -
+-	 * we may need it to insert some 1:1 mappings so that
+-	 * soft boot works.
+-	 */
+-	setup_mm_for_reboot(mode);
++	/* Take out a flat memory mapping. */
++	setup_mm_for_reboot();
+ 
+-	/* Clean and invalidate caches */
++	/* Clean and invalidate caches. */
+ 	flush_cache_all();
+ 
+-	/* Turn off caching */
++	/* Turn off caching. */
+ 	cpu_proc_fin();
+ 
+ 	/* Push out any further dirty data, and ensure cache is empty */
+ 	flush_cache_all();
+ 
+-	/*
+-	 * Now call the architecture specific reboot code.
+-	 */
+-	arch_reset(mode, cmd);
+-
+-	/*
+-	 * Whoops - the architecture was unable to reboot.
+-	 * Tell the user!
+-	 */
+-	mdelay(1000);
+-	printk("Reboot failed -- System halted\n");
+-	while (1);
++	/* Switch to the identity mapping. */
++	phys_reset = (phys_reset_t)(unsigned long)virt_to_phys(cpu_reset);
++	phys_reset((unsigned long)addr);
++
++	/* Should never get here. */
++	BUG();
++}
++
++void soft_restart(unsigned long addr)
++{
++	u32 *stack = soft_restart_stack + SOFT_RESTART_STACK_WORDS;
++
++	/* Disable interrupts first */
++	local_irq_disable();
++	local_fiq_disable();
++
++	/* Disable the L2 if we're the last man standing. */
++	if (num_online_cpus() == 1)
++		outer_disable();
++
++	/* Change to the new stack and continue with the reset. */
++	call_with_stack(__soft_restart, (void *)addr, (void *)stack);
++
++	/* Should never get here. */
++	BUG();
++}
++
++static void null_restart(char mode, const char *cmd)
++{
+ }
+ 
+ /*
+@@ -134,7 +158,7 @@ void arm_machine_restart(char mode, cons
+ void (*pm_power_off)(void);
+ EXPORT_SYMBOL(pm_power_off);
+ 
+-void (*arm_pm_restart)(char str, const char *cmd) = arm_machine_restart;
++void (*arm_pm_restart)(char str, const char *cmd) = null_restart;
+ EXPORT_SYMBOL_GPL(arm_pm_restart);
+ 
+ static void do_nothing(void *unused)
+@@ -250,7 +274,15 @@ void machine_power_off(void)
+ void machine_restart(char *cmd)
+ {
+ 	machine_shutdown();
++
+ 	arm_pm_restart(reboot_mode, cmd);
++
++	/* Give a grace period for failure to restart of 1s */
++	mdelay(1000);
++
++	/* Whoops - the platform was unable to reboot. Tell the user! */
++	printk("Reboot failed -- System halted\n");
++	while (1);
+ }
+ 
+ void __show_regs(struct pt_regs *regs)
+Index: linux-3.1.1/arch/arm/kernel/setup.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/kernel/setup.c	2011-11-17 15:36:08.429970573 +0100
++++ linux-3.1.1/arch/arm/kernel/setup.c	2011-11-17 15:36:47.121577693 +0100
+@@ -890,8 +890,8 @@ void __init setup_arch(char **cmdline_p)
+ 	machine_desc = mdesc;
+ 	machine_name = mdesc->name;
+ 
+-	if (mdesc->soft_reboot)
+-		reboot_setup("s");
++	if (mdesc->restart_mode)
++		reboot_setup(&mdesc->restart_mode);
+ 
+ 	init_mm.start_code = (unsigned long) _text;
+ 	init_mm.end_code   = (unsigned long) _etext;
+@@ -910,6 +910,9 @@ void __init setup_arch(char **cmdline_p)
+ 	paging_init(mdesc);
+ 	request_standard_resources(mdesc);
+ 
++	if (mdesc->restart)
++		arm_pm_restart = mdesc->restart;
++
+ 	unflatten_device_tree();
+ 
+ #ifdef CONFIG_SMP
+Index: linux-3.1.1/arch/arm/kernel/smp.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/kernel/smp.c	2011-11-17 15:36:08.417970695 +0100
++++ linux-3.1.1/arch/arm/kernel/smp.c	2011-11-17 15:36:47.121577693 +0100
+@@ -558,6 +558,10 @@ static void ipi_cpu_stop(unsigned int cp
+ 	local_fiq_disable();
+ 	local_irq_disable();
+ 
++#ifdef CONFIG_HOTPLUG_CPU
++	platform_cpu_kill(cpu);
++#endif
++
+ 	while (1)
+ 		cpu_relax();
+ }
+Index: linux-3.1.1/arch/arm/kernel/vmlinux.lds.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/kernel/vmlinux.lds.S	2011-11-17 15:36:08.421970654 +0100
++++ linux-3.1.1/arch/arm/kernel/vmlinux.lds.S	2011-11-17 15:36:47.121577693 +0100
+@@ -91,6 +91,7 @@ SECTIONS
+ 			SCHED_TEXT
+ 			LOCK_TEXT
+ 			KPROBES_TEXT
++			IDMAP_TEXT
+ #ifdef CONFIG_MMU
+ 			*(.fixup)
+ #endif
+Index: linux-3.1.1/arch/arm/lib/Makefile
+===================================================================
+--- linux-3.1.1.orig/arch/arm/lib/Makefile	2011-11-17 15:36:08.593968900 +0100
++++ linux-3.1.1/arch/arm/lib/Makefile	2011-11-17 15:36:47.121577693 +0100
+@@ -13,7 +13,8 @@ lib-y		:= backtrace.o changebit.o csumip
+ 		   testchangebit.o testclearbit.o testsetbit.o        \
+ 		   ashldi3.o ashrdi3.o lshrdi3.o muldi3.o             \
+ 		   ucmpdi2.o lib1funcs.o div64.o                      \
+-		   io-readsb.o io-writesb.o io-readsl.o io-writesl.o
++		   io-readsb.o io-writesb.o io-readsl.o io-writesl.o  \
++		   call_with_stack.o
+ 
+ mmu-y	:= clear_user.o copy_page.o getuser.o putuser.o
+ 
+Index: linux-3.1.1/arch/arm/lib/call_with_stack.S
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1.1/arch/arm/lib/call_with_stack.S	2011-11-17 15:36:47.121577693 +0100
+@@ -0,0 +1,44 @@
++/*
++ * arch/arm/lib/call_with_stack.S
++ *
++ * Copyright (C) 2011 ARM Ltd.
++ * Written by Will Deacon <will.deacon@arm.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ */
++
++#include <linux/linkage.h>
++#include <asm/assembler.h>
++
++/*
++ * void call_with_stack(void (*fn)(void *), void *arg, void *sp)
++ *
++ * Change the stack to that pointed at by sp, then invoke fn(arg) with
++ * the new stack.
++ */
++ENTRY(call_with_stack)
++	str	sp, [r2, #-4]!
++	str	lr, [r2, #-4]!
++
++	mov	sp, r2
++	mov	r2, r0
++	mov	r0, r1
++
++	adr	lr, BSYM(1f)
++	mov	pc, r2
++
++1:	ldr	lr, [sp]
++	ldr	sp, [sp, #4]
++	mov	pc, lr
++ENDPROC(call_with_stack)
+Index: linux-3.1.1/arch/arm/mach-omap2/board-2430sdp.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-2430sdp.c	2011-11-17 15:36:08.137973551 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-2430sdp.c	2011-11-17 15:36:47.121577693 +0100
+@@ -34,7 +34,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/gpmc.h>
+ #include <plat/usb.h>
+ #include <plat/gpmc-smc91x.h>
+@@ -264,4 +264,5 @@ MACHINE_START(OMAP_2430SDP, "OMAP2430 sd
+ 	.init_irq	= omap2_init_irq,
+ 	.init_machine	= omap_2430sdp_init,
+ 	.timer		= &omap2_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-3430sdp.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-3430sdp.c	2011-11-17 15:36:08.125973674 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-3430sdp.c	2011-11-17 15:36:47.121577693 +0100
+@@ -33,7 +33,7 @@
+ #include <plat/mcspi.h>
+ #include <plat/board.h>
+ #include <plat/usb.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/dma.h>
+ #include <plat/gpmc.h>
+ #include <video/omapdss.h>
+@@ -736,4 +736,5 @@ MACHINE_START(OMAP_3430SDP, "OMAP3430 34
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= omap_3430sdp_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-3630sdp.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-3630sdp.c	2011-11-17 15:36:08.065974286 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-3630sdp.c	2011-11-17 15:36:47.121577693 +0100
+@@ -16,7 +16,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/board.h>
+ #include <plat/gpmc-smc91x.h>
+ #include <plat/usb.h>
+@@ -222,4 +222,5 @@ MACHINE_START(OMAP_3630SDP, "OMAP 3630SD
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= omap_sdp_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-4430sdp.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-4430sdp.c	2011-11-17 15:36:08.369971185 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-4430sdp.c	2011-11-17 15:36:47.121577693 +0100
+@@ -27,13 +27,12 @@
+ #include <linux/leds_pwm.h>
+ 
+ #include <mach/hardware.h>
+-#include <mach/omap4-common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/usb.h>
+ #include <plat/mmc.h>
+ #include <plat/omap4-keypad.h>
+@@ -845,4 +844,5 @@ MACHINE_START(OMAP_4430SDP, "OMAP4430 44
+ 	.init_irq	= gic_init_irq,
+ 	.init_machine	= omap_4430sdp_init,
+ 	.timer		= &omap4_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-am3517crane.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-am3517crane.c	2011-11-17 15:36:08.265972246 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-am3517crane.c	2011-11-17 15:36:47.121577693 +0100
+@@ -27,7 +27,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/usb.h>
+ 
+ #include "mux.h"
+@@ -105,4 +105,5 @@ MACHINE_START(CRANEBOARD, "AM3517/05 CRA
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= am3517_crane_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-am3517evm.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-am3517evm.c	2011-11-17 15:36:08.237972531 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-am3517evm.c	2011-11-17 15:36:47.121577693 +0100
+@@ -32,7 +32,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/usb.h>
+ #include <video/omapdss.h>
+ #include <video/omap-panel-generic-dpi.h>
+@@ -497,4 +497,5 @@ MACHINE_START(OMAP3517EVM, "OMAP3517/AM3
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= am3517_evm_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-apollon.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-apollon.c	2011-11-17 15:36:08.033974612 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-apollon.c	2011-11-17 15:36:47.121577693 +0100
+@@ -37,7 +37,7 @@
+ #include <plat/led.h>
+ #include <plat/usb.h>
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/gpmc.h>
+ 
+ #include "mux.h"
+@@ -357,4 +357,5 @@ MACHINE_START(OMAP_APOLLON, "OMAP24xx Ap
+ 	.init_irq	= omap2_init_irq,
+ 	.init_machine	= omap_apollon_init,
+ 	.timer		= &omap2_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-cm-t35.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-cm-t35.c	2011-11-17 15:36:08.285972042 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-cm-t35.c	2011-11-17 15:36:47.121577693 +0100
+@@ -37,7 +37,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/nand.h>
+ #include <plat/gpmc.h>
+ #include <plat/usb.h>
+@@ -641,6 +641,7 @@ MACHINE_START(CM_T35, "Compulab CM-T35")
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= cm_t35_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+ 
+ MACHINE_START(CM_T3730, "Compulab CM-T3730")
+@@ -651,4 +652,5 @@ MACHINE_START(CM_T3730, "Compulab CM-T37
+ 	.init_irq       = omap3_init_irq,
+ 	.init_machine   = cm_t3730_init,
+ 	.timer          = &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-cm-t3517.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-cm-t3517.c	2011-11-17 15:36:08.049974449 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-cm-t3517.c	2011-11-17 15:36:47.121577693 +0100
+@@ -39,7 +39,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/usb.h>
+ #include <plat/nand.h>
+ #include <plat/gpmc.h>
+@@ -306,4 +306,5 @@ MACHINE_START(CM_T3517, "Compulab CM-T35
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= cm_t3517_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-devkit8000.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-devkit8000.c	2011-11-17 15:36:08.037974571 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-devkit8000.c	2011-11-17 15:36:47.121577693 +0100
+@@ -41,7 +41,7 @@
+ #include <asm/mach/flash.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/gpmc.h>
+ #include <plat/nand.h>
+ #include <plat/usb.h>
+@@ -674,4 +674,5 @@ MACHINE_START(DEVKIT8000, "OMAP3 Devkit8
+ 	.init_irq	= devkit8000_init_irq,
+ 	.init_machine	= devkit8000_init,
+ 	.timer		= &omap3_secure_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-h4.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-h4.c	2011-11-17 15:36:08.017974775 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-h4.c	2011-11-17 15:36:47.121577693 +0100
+@@ -34,7 +34,7 @@
+ #include <mach/gpio.h>
+ #include <plat/usb.h>
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/keypad.h>
+ #include <plat/menelaus.h>
+ #include <plat/dma.h>
+@@ -389,4 +389,5 @@ MACHINE_START(OMAP_H4, "OMAP2420 H4 boar
+ 	.init_irq	= omap_h4_init_irq,
+ 	.init_machine	= omap_h4_init,
+ 	.timer		= &omap2_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-igep0020.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-igep0020.c	2011-11-17 15:36:08.149973429 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-igep0020.c	2011-11-17 15:36:47.121577693 +0100
+@@ -28,7 +28,7 @@
+ #include <asm/mach/arch.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/gpmc.h>
+ #include <plat/usb.h>
+ #include <video/omapdss.h>
+@@ -679,6 +679,7 @@ MACHINE_START(IGEP0020, "IGEP v2 board")
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= igep_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+ 
+ MACHINE_START(IGEP0030, "IGEP OMAP3 module")
+@@ -689,4 +690,5 @@ MACHINE_START(IGEP0030, "IGEP OMAP3 modu
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= igep_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-ldp.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-ldp.c	2011-11-17 15:36:08.165973266 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-ldp.c	2011-11-17 15:36:47.121577693 +0100
+@@ -36,7 +36,7 @@
+ #include <plat/mcspi.h>
+ #include <mach/gpio.h>
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/gpmc.h>
+ #include <mach/board-zoom.h>
+ 
+@@ -340,4 +340,5 @@ MACHINE_START(OMAP_LDP, "OMAP LDP board"
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= omap_ldp_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-n8x0.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-n8x0.c	2011-11-17 15:36:09.437960291 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-n8x0.c	2011-11-17 15:36:47.121577693 +0100
+@@ -26,7 +26,7 @@
+ #include <asm/mach-types.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/menelaus.h>
+ #include <mach/irqs.h>
+ #include <plat/mcspi.h>
+@@ -702,6 +702,7 @@ MACHINE_START(NOKIA_N800, "Nokia N800")
+ 	.init_irq	= omap2_init_irq,
+ 	.init_machine	= n8x0_init_machine,
+ 	.timer		= &omap2_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+ 
+ MACHINE_START(NOKIA_N810, "Nokia N810")
+@@ -712,6 +713,7 @@ MACHINE_START(NOKIA_N810, "Nokia N810")
+ 	.init_irq	= omap2_init_irq,
+ 	.init_machine	= n8x0_init_machine,
+ 	.timer		= &omap2_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+ 
+ MACHINE_START(NOKIA_N810_WIMAX, "Nokia N810 WiMAX")
+@@ -722,4 +724,5 @@ MACHINE_START(NOKIA_N810_WIMAX, "Nokia N
+ 	.init_irq	= omap2_init_irq,
+ 	.init_machine	= n8x0_init_machine,
+ 	.timer		= &omap2_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-omap3beagle.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-omap3beagle.c	2011-11-17 15:36:08.277972123 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-omap3beagle.c	2011-11-17 15:36:47.121577693 +0100
+@@ -40,7 +40,7 @@
+ #include <asm/mach/flash.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <video/omapdss.h>
+ #include <video/omap-panel-generic-dpi.h>
+ #include <plat/gpmc.h>
+@@ -564,4 +564,5 @@ MACHINE_START(OMAP3_BEAGLE, "OMAP3 Beagl
+ 	.init_irq	= omap3_beagle_init_irq,
+ 	.init_machine	= omap3_beagle_init,
+ 	.timer		= &omap3_secure_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-omap3evm.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-omap3evm.c	2011-11-17 15:36:08.373971144 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-omap3evm.c	2011-11-17 15:36:47.121577693 +0100
+@@ -42,7 +42,7 @@
+ 
+ #include <plat/board.h>
+ #include <plat/usb.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/mcspi.h>
+ #include <video/omapdss.h>
+ #include <video/omap-panel-generic-dpi.h>
+@@ -688,4 +688,5 @@ MACHINE_START(OMAP3EVM, "OMAP3 EVM")
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= omap3_evm_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-omap3logic.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-omap3logic.c	2011-11-17 15:36:08.189973021 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-omap3logic.c	2011-11-17 15:36:47.121577693 +0100
+@@ -40,7 +40,7 @@
+ 
+ #include <plat/mux.h>
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/gpmc-smsc911x.h>
+ #include <plat/gpmc.h>
+ #include <plat/sdrc.h>
+@@ -215,6 +215,7 @@ MACHINE_START(OMAP3_TORPEDO, "Logic OMAP
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= omap3logic_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+ 
+ MACHINE_START(OMAP3530_LV_SOM, "OMAP Logic 3530 LV SOM board")
+@@ -224,4 +225,5 @@ MACHINE_START(OMAP3530_LV_SOM, "OMAP Log
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= omap3logic_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-omap3pandora.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-omap3pandora.c	2011-11-17 15:36:08.121973715 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-omap3pandora.c	2011-11-17 15:36:47.121577693 +0100
+@@ -41,7 +41,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <mach/hardware.h>
+ #include <plat/mcspi.h>
+ #include <plat/usb.h>
+@@ -613,4 +613,5 @@ MACHINE_START(OMAP3_PANDORA, "Pandora Ha
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= omap3pandora_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-omap3stalker.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-omap3stalker.c	2011-11-17 15:36:08.361971266 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-omap3stalker.c	2011-11-17 15:36:47.121577693 +0100
+@@ -35,7 +35,7 @@
+ #include <asm/mach/flash.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/gpmc.h>
+ #include <plat/nand.h>
+ #include <plat/usb.h>
+@@ -500,4 +500,5 @@ MACHINE_START(SBC3530, "OMAP3 STALKER")
+ 	.init_irq		= omap3_stalker_init_irq,
+ 	.init_machine		= omap3_stalker_init,
+ 	.timer			= &omap3_secure_timer,
++	.restart		= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-omap3touchbook.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-omap3touchbook.c	2011-11-17 15:36:08.337971511 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-omap3touchbook.c	2011-11-17 15:36:47.121577693 +0100
+@@ -44,7 +44,7 @@
+ #include <asm/mach/flash.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/gpmc.h>
+ #include <plat/nand.h>
+ #include <plat/usb.h>
+@@ -411,4 +411,5 @@ MACHINE_START(TOUCHBOOK, "OMAP3 touchboo
+ 	.init_irq	= omap3_touchbook_init_irq,
+ 	.init_machine	= omap3_touchbook_init,
+ 	.timer		= &omap3_secure_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-omap4panda.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-omap4panda.c	2011-11-17 15:36:08.245972450 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-omap4panda.c	2011-11-17 15:36:47.121577693 +0100
+@@ -30,14 +30,13 @@
+ #include <linux/wl12xx.h>
+ 
+ #include <mach/hardware.h>
+-#include <mach/omap4-common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ #include <video/omapdss.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/usb.h>
+ #include <plat/mmc.h>
+ #include <video/omap-panel-generic-dpi.h>
+@@ -590,4 +589,5 @@ MACHINE_START(OMAP4_PANDA, "OMAP4 Panda
+ 	.init_irq	= gic_init_irq,
+ 	.init_machine	= omap4_panda_init,
+ 	.timer		= &omap4_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-overo.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-overo.c	2011-11-17 15:36:08.197972939 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-overo.c	2011-11-17 15:36:47.121577693 +0100
+@@ -43,7 +43,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <video/omapdss.h>
+ #include <video/omap-panel-generic-dpi.h>
+ #include <plat/gpmc.h>
+@@ -568,4 +568,5 @@ MACHINE_START(OVERO, "Gumstix Overo")
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= overo_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-rm680.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-rm680.c	2011-11-17 15:36:08.257972327 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-rm680.c	2011-11-17 15:36:47.121577693 +0100
+@@ -25,7 +25,7 @@
+ #include <plat/mmc.h>
+ #include <plat/usb.h>
+ #include <plat/gpmc.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/onenand.h>
+ 
+ #include "mux.h"
+@@ -160,4 +160,5 @@ MACHINE_START(NOKIA_RM680, "Nokia RM-680
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= rm680_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-rx51-peripherals.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-rx51-peripherals.c	2011-11-17 15:36:08.061974327 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-rx51-peripherals.c	2011-11-17 15:36:47.125577653 +0100
+@@ -27,7 +27,7 @@
+ 
+ #include <plat/mcspi.h>
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/dma.h>
+ #include <plat/gpmc.h>
+ #include <plat/onenand.h>
+Index: linux-3.1.1/arch/arm/mach-omap2/board-rx51.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-rx51.c	2011-11-17 15:36:08.213972776 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-rx51.c	2011-11-17 15:36:47.125577653 +0100
+@@ -25,7 +25,7 @@
+ 
+ #include <plat/mcspi.h>
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/dma.h>
+ #include <plat/gpmc.h>
+ #include <plat/usb.h>
+@@ -163,4 +163,5 @@ MACHINE_START(NOKIA_RX51, "Nokia RX-51 b
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= rx51_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-ti8168evm.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-ti8168evm.c	2011-11-17 15:36:08.357971307 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-ti8168evm.c	2011-11-17 15:36:47.125577653 +0100
+@@ -22,7 +22,7 @@
+ 
+ #include <plat/irqs.h>
+ #include <plat/board.h>
+-#include <plat/common.h>
++#include "common.h"
+ 
+ static struct omap_board_config_kernel ti8168_evm_config[] __initdata = {
+ };
+@@ -54,4 +54,5 @@ MACHINE_START(TI8168EVM, "ti8168evm")
+ 	.init_irq	= ti816x_init_irq,
+ 	.timer		= &omap3_timer,
+ 	.init_machine	= ti8168_evm_init,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/board-zoom-peripherals.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-zoom-peripherals.c	2011-11-17 15:36:08.321971674 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-zoom-peripherals.c	2011-11-17 15:36:47.125577653 +0100
+@@ -24,7 +24,7 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/usb.h>
+ 
+ #include <mach/board-zoom.h>
+Index: linux-3.1.1/arch/arm/mach-omap2/board-zoom.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/board-zoom.c	2011-11-17 15:36:08.045974490 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/board-zoom.c	2011-11-17 15:36:47.125577653 +0100
+@@ -21,7 +21,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/board.h>
+ #include <plat/usb.h>
+ 
+@@ -140,6 +140,7 @@ MACHINE_START(OMAP_ZOOM2, "OMAP Zoom2 bo
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= omap_zoom_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+ 
+ MACHINE_START(OMAP_ZOOM3, "OMAP Zoom3 board")
+@@ -150,4 +151,5 @@ MACHINE_START(OMAP_ZOOM3, "OMAP Zoom3 bo
+ 	.init_irq	= omap3_init_irq,
+ 	.init_machine	= omap_zoom_init,
+ 	.timer		= &omap3_timer,
++	.restart	= omap_prcm_restart,
+ MACHINE_END
+Index: linux-3.1.1/arch/arm/mach-omap2/cm2xxx_3xxx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/cm2xxx_3xxx.c	2011-11-17 15:36:08.089974041 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/cm2xxx_3xxx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -18,7 +18,7 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "cm.h"
+ #include "cm2xxx_3xxx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/cm44xx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/cm44xx.c	2011-11-17 15:36:08.117973755 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/cm44xx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -18,7 +18,7 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "cm.h"
+ #include "cm1_44xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/cminst44xx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/cminst44xx.c	2011-11-17 15:36:08.253972368 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/cminst44xx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -20,7 +20,7 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "cm.h"
+ #include "cm1_44xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/common.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/common.c	2011-11-17 15:36:08.025974694 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/common.c	2011-11-17 15:36:47.125577653 +0100
+@@ -17,7 +17,7 @@
+ #include <linux/clk.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/board.h>
+ #include <plat/mux.h>
+ 
+Index: linux-3.1.1/arch/arm/mach-omap2/common.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.1.1/arch/arm/mach-omap2/common.h	2011-11-17 15:36:47.125577653 +0100
+@@ -0,0 +1,186 @@
++/*
++ * Header for code common to all OMAP2+ machines.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the
++ * Free Software Foundation; either version 2 of the License, or (at your
++ * option) any later version.
++ *
++ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED
++ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
++ * NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
++ * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
++ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
++ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ * You should have received a copy of the  GNU General Public License along
++ * with this program; if not, write  to the Free Software Foundation, Inc.,
++ * 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#ifndef __ARCH_ARM_MACH_OMAP2PLUS_COMMON_H
++#define __ARCH_ARM_MACH_OMAP2PLUS_COMMON_H
++
++#include <linux/delay.h>
++#include <plat/common.h>
++
++#ifdef CONFIG_SOC_OMAP2420
++extern void omap242x_map_common_io(void);
++#else
++static inline void omap242x_map_common_io(void)
++{
++}
++#endif
++
++#ifdef CONFIG_SOC_OMAP2430
++extern void omap243x_map_common_io(void);
++#else
++static inline void omap243x_map_common_io(void)
++{
++}
++#endif
++
++#ifdef CONFIG_ARCH_OMAP3
++extern void omap34xx_map_common_io(void);
++#else
++static inline void omap34xx_map_common_io(void)
++{
++}
++#endif
++
++#ifdef CONFIG_SOC_OMAPTI816X
++extern void omapti816x_map_common_io(void);
++#else
++static inline void omapti816x_map_common_io(void)
++{
++}
++#endif
++
++#ifdef CONFIG_ARCH_OMAP4
++extern void omap44xx_map_common_io(void);
++#else
++static inline void omap44xx_map_common_io(void)
++{
++}
++#endif
++
++extern void omap2_init_common_infrastructure(void);
++
++extern struct sys_timer omap2_timer;
++extern struct sys_timer omap3_timer;
++extern struct sys_timer omap3_secure_timer;
++extern struct sys_timer omap4_timer;
++
++void omap2420_init_early(void);
++void omap2430_init_early(void);
++void omap3430_init_early(void);
++void omap35xx_init_early(void);
++void omap3630_init_early(void);
++void omap3_init_early(void);	/* Do not use this one */
++void am35xx_init_early(void);
++void ti816x_init_early(void);
++void omap4430_init_early(void);
++void omap_prcm_restart(char, const char *);
++
++/*
++ * IO bases for various OMAP processors
++ * Except the tap base, rest all the io bases
++ * listed are physical addresses.
++ */
++struct omap_globals {
++	u32		class;		/* OMAP class to detect */
++	void __iomem	*tap;		/* Control module ID code */
++	void __iomem	*sdrc;           /* SDRAM Controller */
++	void __iomem	*sms;            /* SDRAM Memory Scheduler */
++	void __iomem	*ctrl;           /* System Control Module */
++	void __iomem	*ctrl_pad;	/* PAD Control Module */
++	void __iomem	*prm;            /* Power and Reset Management */
++	void __iomem	*cm;             /* Clock Management */
++	void __iomem	*cm2;
++};
++
++void omap2_set_globals_242x(void);
++void omap2_set_globals_243x(void);
++void omap2_set_globals_3xxx(void);
++void omap2_set_globals_443x(void);
++void omap2_set_globals_ti816x(void);
++
++/* These get called from omap2_set_globals_xxxx(), do not call these */
++void omap2_set_globals_tap(struct omap_globals *);
++void omap2_set_globals_sdrc(struct omap_globals *);
++void omap2_set_globals_control(struct omap_globals *);
++void omap2_set_globals_prcm(struct omap_globals *);
++
++void omap242x_map_io(void);
++void omap243x_map_io(void);
++void omap3_map_io(void);
++void omap4_map_io(void);
++
++/**
++ * omap_test_timeout - busy-loop, testing a condition
++ * @cond: condition to test until it evaluates to true
++ * @timeout: maximum number of microseconds in the timeout
++ * @index: loop index (integer)
++ *
++ * Loop waiting for @cond to become true or until at least @timeout
++ * microseconds have passed.  To use, define some integer @index in the
++ * calling code.  After running, if @index == @timeout, then the loop has
++ * timed out.
++ */
++#define omap_test_timeout(cond, timeout, index)			\
++({								\
++	for (index = 0; index < timeout; index++) {		\
++		if (cond)					\
++			break;					\
++		udelay(1);					\
++	}							\
++})
++
++extern struct device *omap2_get_mpuss_device(void);
++extern struct device *omap2_get_iva_device(void);
++extern struct device *omap2_get_l3_device(void);
++extern struct device *omap4_get_dsp_device(void);
++
++void omap2_init_irq(void);
++void omap3_init_irq(void);
++void ti816x_init_irq(void);
++extern int omap_irq_pending(void);
++void omap_intc_save_context(void);
++void omap_intc_restore_context(void);
++void omap3_intc_suspend(void);
++void omap3_intc_prepare_idle(void);
++void omap3_intc_resume_idle(void);
++
++/*
++ * wfi used in low power code. Directly opcode is used instead
++ * of instruction to avoid mulit-omap build break
++ */
++#ifdef CONFIG_THUMB2_KERNEL
++#define do_wfi() __asm__ __volatile__ ("wfi" : : : "memory")
++#else
++#define do_wfi()			\
++		__asm__ __volatile__ (".word	0xe320f003" : : : "memory")
++#endif
++
++#ifdef CONFIG_CACHE_L2X0
++extern void __iomem *l2cache_base;
++#endif
++
++extern void __iomem *gic_dist_base_addr;
++
++extern void __init gic_init_irq(void);
++extern void omap_smc1(u32 fn, u32 arg);
++
++#ifdef CONFIG_SMP
++/* Needed for secondary core boot */
++extern void omap_secondary_startup(void);
++extern u32 omap_modify_auxcoreboot0(u32 set_mask, u32 clear_mask);
++extern void omap_auxcoreboot_addr(u32 cpu_addr);
++extern u32 omap_read_auxcoreboot0(void);
++#endif
++
++#endif /* __ARCH_ARM_MACH_OMAP2PLUS_COMMON_H */
+Index: linux-3.1.1/arch/arm/mach-omap2/control.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/control.c	2011-11-17 15:36:08.225972654 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/control.c	2011-11-17 15:36:47.125577653 +0100
+@@ -15,7 +15,7 @@
+ #include <linux/kernel.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/sdrc.h>
+ 
+ #include "cm-regbits-34xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/i2c.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/i2c.c	2011-11-17 15:36:08.205972858 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/i2c.c	2011-11-17 15:36:47.125577653 +0100
+@@ -21,7 +21,7 @@
+ 
+ #include <plat/cpu.h>
+ #include <plat/i2c.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/omap_hwmod.h>
+ 
+ #include "mux.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/id.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/id.c	2011-11-17 15:36:08.157973347 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/id.c	2011-11-17 15:36:47.125577653 +0100
+@@ -21,7 +21,7 @@
+ 
+ #include <asm/cputype.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/cpu.h>
+ 
+ #include <mach/id.h>
+Index: linux-3.1.1/arch/arm/mach-omap2/include/mach/omap4-common.h
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/include/mach/omap4-common.h	2011-11-17 15:36:08.309971797 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
+@@ -1,43 +0,0 @@
+-/*
+- * omap4-common.h: OMAP4 specific common header file
+- *
+- * Copyright (C) 2010 Texas Instruments, Inc.
+- *
+- * Author:
+- *	Santosh Shilimkar <santosh.shilimkar@ti.com>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-#ifndef OMAP_ARCH_OMAP4_COMMON_H
+-#define OMAP_ARCH_OMAP4_COMMON_H
+-
+-/*
+- * wfi used in low power code. Directly opcode is used instead
+- * of instruction to avoid mulit-omap build break
+- */
+-#ifdef CONFIG_THUMB2_KERNEL
+-#define do_wfi() __asm__ __volatile__ ("wfi" : : : "memory")
+-#else
+-#define do_wfi()			\
+-		__asm__ __volatile__ (".word	0xe320f003" : : : "memory")
+-#endif
+-
+-#ifdef CONFIG_CACHE_L2X0
+-extern void __iomem *l2cache_base;
+-#endif
+-
+-extern void __iomem *gic_dist_base_addr;
+-
+-extern void __init gic_init_irq(void);
+-extern void omap_smc1(u32 fn, u32 arg);
+-
+-#ifdef CONFIG_SMP
+-/* Needed for secondary core boot */
+-extern void omap_secondary_startup(void);
+-extern u32 omap_modify_auxcoreboot0(u32 set_mask, u32 clear_mask);
+-extern void omap_auxcoreboot_addr(u32 cpu_addr);
+-extern u32 omap_read_auxcoreboot0(void);
+-#endif
+-#endif
+Index: linux-3.1.1/arch/arm/mach-omap2/omap-hotplug.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/omap-hotplug.c	2011-11-17 15:36:08.177973143 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/omap-hotplug.c	2011-11-17 15:36:47.125577653 +0100
+@@ -19,7 +19,8 @@
+ #include <linux/smp.h>
+ 
+ #include <asm/cacheflush.h>
+-#include <mach/omap4-common.h>
++
++#include "common.h"
+ 
+ int platform_cpu_kill(unsigned int cpu)
+ {
+Index: linux-3.1.1/arch/arm/mach-omap2/omap-smp.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/omap-smp.c	2011-11-17 15:36:08.305971837 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/omap-smp.c	2011-11-17 15:36:47.125577653 +0100
+@@ -24,7 +24,8 @@
+ #include <asm/hardware/gic.h>
+ #include <asm/smp_scu.h>
+ #include <mach/hardware.h>
+-#include <mach/omap4-common.h>
++
++#include "common.h"
+ 
+ /* SCU base address */
+ static void __iomem *scu_base;
+Index: linux-3.1.1/arch/arm/mach-omap2/omap4-common.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/omap4-common.c	2011-11-17 15:36:08.201972898 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/omap4-common.c	2011-11-17 15:36:47.125577653 +0100
+@@ -22,7 +22,8 @@
+ #include <plat/irqs.h>
+ 
+ #include <mach/hardware.h>
+-#include <mach/omap4-common.h>
++
++#include "common.h"
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ void __iomem *l2cache_base;
+Index: linux-3.1.1/arch/arm/mach-omap2/omap_hwmod.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/omap_hwmod.c	2011-11-17 15:36:09.281961882 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/omap_hwmod.c	2011-11-17 15:36:47.125577653 +0100
+@@ -137,7 +137,7 @@
+ #include <linux/mutex.h>
+ #include <linux/spinlock.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/cpu.h>
+ #include "clockdomain.h"
+ #include "powerdomain.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/pm.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/pm.c	2011-11-17 15:36:08.145973470 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/pm.c	2011-11-17 15:36:47.125577653 +0100
+@@ -17,7 +17,7 @@
+ 
+ #include <plat/omap-pm.h>
+ #include <plat/omap_device.h>
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "voltage.h"
+ #include "powerdomain.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/pm24xx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/pm24xx.c	2011-11-17 15:36:08.333971552 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/pm24xx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -42,6 +42,7 @@
+ #include <plat/dma.h>
+ #include <plat/board.h>
+ 
++#include "common.h"
+ #include "prm2xxx_3xxx.h"
+ #include "prm-regbits-24xx.h"
+ #include "cm2xxx_3xxx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/pm34xx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/pm34xx.c	2011-11-17 15:36:08.241972490 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/pm34xx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -42,6 +42,7 @@
+ #include <plat/gpmc.h>
+ #include <plat/dma.h>
+ 
++#include "common.h"
+ #include "cm2xxx_3xxx.h"
+ #include "cm-regbits-34xx.h"
+ #include "prm-regbits-34xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/pm44xx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/pm44xx.c	2011-11-17 15:36:08.217972735 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/pm44xx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -16,8 +16,8 @@
+ #include <linux/err.h>
+ #include <linux/slab.h>
+ 
++#include "common.h"
+ #include "powerdomain.h"
+-#include <mach/omap4-common.h>
+ 
+ struct power_state {
+ 	struct powerdomain *pwrdm;
+Index: linux-3.1.1/arch/arm/mach-omap2/prcm.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/prcm.c	2011-11-17 15:36:08.133973592 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/prcm.c	2011-11-17 15:36:47.125577653 +0100
+@@ -24,8 +24,7 @@
+ #include <linux/io.h>
+ #include <linux/delay.h>
+ 
+-#include <mach/system.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/prcm.h>
+ #include <plat/irqs.h>
+ 
+@@ -58,7 +57,7 @@ u32 omap_prcm_get_reset_sources(void)
+ EXPORT_SYMBOL(omap_prcm_get_reset_sources);
+ 
+ /* Resets clock rates and reboots the system. Only called from system.h */
+-static void omap_prcm_arch_reset(char mode, const char *cmd)
++void omap_prcm_restart(char mode, const char *cmd)
+ {
+ 	s16 prcm_offs = 0;
+ 
+@@ -109,8 +108,6 @@ static void omap_prcm_arch_reset(char mo
+ 	omap2_prm_read_mod_reg(prcm_offs, OMAP2_RM_RSTCTRL); /* OCP barrier */
+ }
+ 
+-void (*arch_reset)(char, const char *) = omap_prcm_arch_reset;
+-
+ /**
+  * omap2_cm_wait_idlest - wait for IDLEST bit to indicate module readiness
+  * @reg: physical address of module IDLEST register
+Index: linux-3.1.1/arch/arm/mach-omap2/prcm_mpu44xx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/prcm_mpu44xx.c	2011-11-17 15:36:08.161973306 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/prcm_mpu44xx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -15,7 +15,7 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "prcm_mpu44xx.h"
+ #include "cm-regbits-44xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/prm2xxx_3xxx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/prm2xxx_3xxx.c	2011-11-17 15:36:08.073974204 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/prm2xxx_3xxx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -16,7 +16,7 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/cpu.h>
+ #include <plat/prcm.h>
+ 
+Index: linux-3.1.1/arch/arm/mach-omap2/prm44xx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/prm44xx.c	2011-11-17 15:36:08.109973837 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/prm44xx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -17,7 +17,7 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/cpu.h>
+ #include <plat/prcm.h>
+ 
+Index: linux-3.1.1/arch/arm/mach-omap2/prminst44xx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/prminst44xx.c	2011-11-17 15:36:08.097973959 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/prminst44xx.c	2011-11-17 15:36:47.125577653 +0100
+@@ -16,7 +16,7 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "prm44xx.h"
+ #include "prminst44xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/sdram-nokia.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/sdram-nokia.c	2011-11-17 15:36:08.185973062 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/sdram-nokia.c	2011-11-17 15:36:47.125577653 +0100
+@@ -18,7 +18,7 @@
+ #include <linux/io.h>
+ 
+ #include <plat/io.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/clock.h>
+ #include <plat/sdrc.h>
+ 
+Index: linux-3.1.1/arch/arm/mach-omap2/sdrc.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/sdrc.c	2011-11-17 15:36:08.297971919 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/sdrc.c	2011-11-17 15:36:47.125577653 +0100
+@@ -23,7 +23,7 @@
+ #include <linux/clk.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/clock.h>
+ #include <plat/sram.h>
+ 
+Index: linux-3.1.1/arch/arm/mach-omap2/sdrc2xxx.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/sdrc2xxx.c	2011-11-17 15:36:08.009974857 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/sdrc2xxx.c	2011-11-17 15:36:47.129577613 +0100
+@@ -24,7 +24,7 @@
+ #include <linux/clk.h>
+ #include <linux/io.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/clock.h>
+ #include <plat/sram.h>
+ 
+Index: linux-3.1.1/arch/arm/mach-omap2/serial.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/serial.c	2011-11-17 15:36:08.905965717 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/serial.c	2011-11-17 15:36:47.129577613 +0100
+@@ -33,7 +33,7 @@
+ #include <plat/omap-serial.h>
+ #endif
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/board.h>
+ #include <plat/clock.h>
+ #include <plat/dma.h>
+Index: linux-3.1.1/arch/arm/mach-omap2/smartreflex.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/smartreflex.c	2011-11-17 15:36:08.281972082 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/smartreflex.c	2011-11-17 15:36:47.129577613 +0100
+@@ -25,7 +25,7 @@
+ #include <linux/slab.h>
+ #include <linux/pm_runtime.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "pm.h"
+ #include "smartreflex.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/timer.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/timer.c	2011-11-17 15:36:08.329971593 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/timer.c	2011-11-17 15:36:47.129577613 +0100
+@@ -40,7 +40,7 @@
+ #include <plat/dmtimer.h>
+ #include <asm/localtimer.h>
+ #include <asm/sched_clock.h>
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/omap_hwmod.h>
+ 
+ /* Parent clocks, eventually these will come from the clock framework */
+Index: linux-3.1.1/arch/arm/mach-omap2/vc3xxx_data.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/vc3xxx_data.c	2011-11-17 15:36:08.085974082 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/vc3xxx_data.c	2011-11-17 15:36:47.129577613 +0100
+@@ -18,7 +18,7 @@
+ #include <linux/err.h>
+ #include <linux/init.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "prm-regbits-34xx.h"
+ #include "voltage.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/vc44xx_data.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/vc44xx_data.c	2011-11-17 15:36:08.173973184 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/vc44xx_data.c	2011-11-17 15:36:47.129577613 +0100
+@@ -18,7 +18,7 @@
+ #include <linux/err.h>
+ #include <linux/init.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "prm44xx.h"
+ #include "prm-regbits-44xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/voltage.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/voltage.c	2011-11-17 15:36:08.345971429 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/voltage.c	2011-11-17 15:36:47.129577613 +0100
+@@ -26,7 +26,7 @@
+ #include <linux/debugfs.h>
+ #include <linux/slab.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "prm-regbits-34xx.h"
+ #include "prm-regbits-44xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/voltagedomains3xxx_data.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/voltagedomains3xxx_data.c	2011-11-17 15:36:08.269972205 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/voltagedomains3xxx_data.c	2011-11-17 15:36:47.129577613 +0100
+@@ -18,7 +18,7 @@
+ #include <linux/err.h>
+ #include <linux/init.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ #include <plat/cpu.h>
+ 
+ #include "prm-regbits-34xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/voltagedomains44xx_data.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/voltagedomains44xx_data.c	2011-11-17 15:36:08.229972613 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/voltagedomains44xx_data.c	2011-11-17 15:36:47.129577613 +0100
+@@ -21,7 +21,7 @@
+ #include <linux/err.h>
+ #include <linux/init.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "prm-regbits-44xx.h"
+ #include "prm44xx.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/vp3xxx_data.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/vp3xxx_data.c	2011-11-17 15:36:08.105973878 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/vp3xxx_data.c	2011-11-17 15:36:47.129577613 +0100
+@@ -19,7 +19,7 @@
+ #include <linux/err.h>
+ #include <linux/init.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "prm-regbits-34xx.h"
+ #include "voltage.h"
+Index: linux-3.1.1/arch/arm/mach-omap2/vp44xx_data.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/vp44xx_data.c	2011-11-17 15:36:08.021974735 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/vp44xx_data.c	2011-11-17 15:36:47.129577613 +0100
+@@ -19,7 +19,7 @@
+ #include <linux/err.h>
+ #include <linux/init.h>
+ 
+-#include <plat/common.h>
++#include "common.h"
+ 
+ #include "prm44xx.h"
+ #include "prm-regbits-44xx.h"
+Index: linux-3.1.1/arch/arm/mm/idmap.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/idmap.c	2011-11-17 15:36:08.533969512 +0100
++++ linux-3.1.1/arch/arm/mm/idmap.c	2011-11-17 15:36:47.129577613 +0100
+@@ -1,8 +1,12 @@
+ #include <linux/kernel.h>
+ 
+ #include <asm/cputype.h>
++#include <asm/idmap.h>
+ #include <asm/pgalloc.h>
+ #include <asm/pgtable.h>
++#include <asm/sections.h>
++
++pgd_t *idmap_pgd;
+ 
+ static void idmap_add_pmd(pud_t *pud, unsigned long addr, unsigned long end,
+ 	unsigned long prot)
+@@ -73,18 +77,45 @@ void identity_mapping_del(pgd_t *pgd, un
+ }
+ #endif
+ 
++extern char  __idmap_text_start[], __idmap_text_end[];
++
++static int __init init_static_idmap(void)
++{
++	phys_addr_t idmap_start, idmap_end;
++
++	idmap_pgd = pgd_alloc(&init_mm);
++	if (!idmap_pgd)
++		return -ENOMEM;
++
++	/* Align the idmap.text section pointers to PMD_SIZE. */
++	idmap_start = (phys_addr_t)__idmap_text_start & PMD_MASK;
++	idmap_end = PTR_ALIGN((phys_addr_t)__idmap_text_end, PMD_SIZE);
++
++	/* Add an identity mapping for the physical address of the section. */
++	idmap_start = virt_to_phys((void *)idmap_start);
++	idmap_end = virt_to_phys((void *)idmap_end);
++
++	pr_info("Setting up static identity map for 0x%llx - 0x%llx\n",
++		(long long)idmap_start, (long long)idmap_end);
++	identity_mapping_add(idmap_pgd, idmap_start, idmap_end);
++
++	return 0;
++}
++arch_initcall(init_static_idmap);
++
+ /*
+- * In order to soft-boot, we need to insert a 1:1 mapping in place of
+- * the user-mode pages.  This will then ensure that we have predictable
+- * results when turning the mmu off
++ * In order to soft-boot, we need to switch to a 1:1 mapping for the
++ * cpu_reset functions. This will then ensure that we have predictable
++ * results when turning off the mmu.
+  */
+-void setup_mm_for_reboot(char mode)
++void setup_mm_for_reboot(void)
+ {
+-	/*
+-	 * We need to access to user-mode page tables here. For kernel threads
+-	 * we don't have any user-mode mappings so we use the context that we
+-	 * "borrowed".
+-	 */
+-	identity_mapping_add(current->active_mm->pgd, 0, TASK_SIZE);
++	/* Clean and invalidate L1. */
++	flush_cache_all();
++
++	/* Switch exclusively to kernel mappings. */
++	cpu_switch_mm(idmap_pgd, &init_mm);
++
++	/* Flush the TLB. */
+ 	local_flush_tlb_all();
+ }
+Index: linux-3.1.1/arch/arm/mm/nommu.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/nommu.c	2011-11-17 15:36:08.453970328 +0100
++++ linux-3.1.1/arch/arm/mm/nommu.c	2011-11-17 15:36:47.129577613 +0100
+@@ -43,7 +43,7 @@ void __init paging_init(struct machine_d
+ /*
+  * We don't need to do anything here for nommu machines.
+  */
+-void setup_mm_for_reboot(char mode)
++void setup_mm_for_reboot(void)
+ {
+ }
+ 
+Index: linux-3.1.1/arch/arm/mm/proc-arm1020.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm1020.S	2011-11-17 15:36:08.573969104 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm1020.S	2011-11-17 15:36:47.129577613 +0100
+@@ -95,6 +95,7 @@ ENTRY(cpu_arm1020_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm1020_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -107,6 +108,8 @@ ENTRY(cpu_arm1020_reset)
+ 	bic	ip, ip, #0x1100 		@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm1020_reset)
++	.popsection
+ 
+ /*
+  * cpu_arm1020_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-arm1020e.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm1020e.S	2011-11-17 15:36:08.541969430 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm1020e.S	2011-11-17 15:36:47.129577613 +0100
+@@ -95,6 +95,7 @@ ENTRY(cpu_arm1020e_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm1020e_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -107,6 +108,8 @@ ENTRY(cpu_arm1020e_reset)
+ 	bic	ip, ip, #0x1100 		@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm1020e_reset)
++	.popsection
+ 
+ /*
+  * cpu_arm1020e_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-arm1022.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm1022.S	2011-11-17 15:36:08.537969471 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm1022.S	2011-11-17 15:36:47.129577613 +0100
+@@ -84,6 +84,7 @@ ENTRY(cpu_arm1022_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm1022_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -96,6 +97,8 @@ ENTRY(cpu_arm1022_reset)
+ 	bic	ip, ip, #0x1100 		@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm1022_reset)
++	.popsection
+ 
+ /*
+  * cpu_arm1022_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-arm1026.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm1026.S	2011-11-17 15:36:08.577969063 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm1026.S	2011-11-17 15:36:47.129577613 +0100
+@@ -84,6 +84,7 @@ ENTRY(cpu_arm1026_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm1026_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -96,6 +97,8 @@ ENTRY(cpu_arm1026_reset)
+ 	bic	ip, ip, #0x1100 		@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm1026_reset)
++	.popsection
+ 
+ /*
+  * cpu_arm1026_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-arm6_7.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm6_7.S	2011-11-17 15:36:08.521969634 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm6_7.S	2011-11-17 15:36:47.129577613 +0100
+@@ -225,6 +225,7 @@ ENTRY(cpu_arm7_set_pte_ext)
+  * Params  : r0 = address to jump to
+  * Notes   : This sets up everything for a reset
+  */
++		.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm6_reset)
+ ENTRY(cpu_arm7_reset)
+ 		mov	r1, #0
+@@ -235,6 +236,9 @@ ENTRY(cpu_arm7_reset)
+ 		mov	r1, #0x30
+ 		mcr	p15, 0, r1, c1, c0, 0		@ turn off MMU etc
+ 		mov	pc, r0
++ENDPROC(cpu_arm6_reset)
++ENDPROC(cpu_arm7_reset)
++		.popsection
+ 
+ 		__CPUINIT
+ 
+Index: linux-3.1.1/arch/arm/mm/proc-arm720.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm720.S	2011-11-17 15:36:08.501969838 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm720.S	2011-11-17 15:36:47.129577613 +0100
+@@ -101,6 +101,7 @@ ENTRY(cpu_arm720_set_pte_ext)
+  * Params  : r0 = address to jump to
+  * Notes   : This sets up everything for a reset
+  */
++		.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm720_reset)
+ 		mov	ip, #0
+ 		mcr	p15, 0, ip, c7, c7, 0		@ invalidate cache
+@@ -112,6 +113,8 @@ ENTRY(cpu_arm720_reset)
+ 		bic	ip, ip, #0x2100			@ ..v....s........
+ 		mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 		mov	pc, r0
++ENDPROC(cpu_arm720_reset)
++		.popsection
+ 
+ 	__CPUINIT
+ 
+Index: linux-3.1.1/arch/arm/mm/proc-arm740.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm740.S	2011-11-17 15:36:08.445970409 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm740.S	2011-11-17 15:36:47.129577613 +0100
+@@ -49,6 +49,7 @@ ENTRY(cpu_arm740_proc_fin)
+  * Params  : r0 = address to jump to
+  * Notes   : This sets up everything for a reset
+  */
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm740_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c0, 0		@ invalidate cache
+@@ -56,6 +57,8 @@ ENTRY(cpu_arm740_reset)
+ 	bic	ip, ip, #0x0000000c		@ ............wc..
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm740_reset)
++	.popsection
+ 
+ 	__CPUINIT
+ 
+Index: linux-3.1.1/arch/arm/mm/proc-arm7tdmi.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm7tdmi.S	2011-11-17 15:36:08.485970001 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm7tdmi.S	2011-11-17 15:36:47.129577613 +0100
+@@ -45,8 +45,11 @@ ENTRY(cpu_arm7tdmi_proc_fin)
+  * Params  : loc(r0)	address to jump to
+  * Purpose : Sets up everything for a reset and jump to the location for soft reset.
+  */
++		.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm7tdmi_reset)
+ 		mov	pc, r0
++ENDPROC(cpu_arm7tdmi_reset)
++		.popsection
+ 
+ 		__CPUINIT
+ 
+Index: linux-3.1.1/arch/arm/mm/proc-arm920.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm920.S	2011-11-17 15:36:08.493969920 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm920.S	2011-11-17 15:36:47.129577613 +0100
+@@ -85,6 +85,7 @@ ENTRY(cpu_arm920_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm920_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -97,6 +98,8 @@ ENTRY(cpu_arm920_reset)
+ 	bic	ip, ip, #0x1100			@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm920_reset)
++	.popsection
+ 
+ /*
+  * cpu_arm920_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-arm922.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm922.S	2011-11-17 15:36:08.549969348 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm922.S	2011-11-17 15:36:47.129577613 +0100
+@@ -87,6 +87,7 @@ ENTRY(cpu_arm922_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm922_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -99,6 +100,8 @@ ENTRY(cpu_arm922_reset)
+ 	bic	ip, ip, #0x1100			@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm922_reset)
++	.popsection
+ 
+ /*
+  * cpu_arm922_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-arm925.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm925.S	2011-11-17 15:36:08.509969756 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm925.S	2011-11-17 15:36:47.129577613 +0100
+@@ -108,6 +108,7 @@ ENTRY(cpu_arm925_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm925_reset)
+ 	/* Send software reset to MPU and DSP */
+ 	mov	ip, #0xff000000
+@@ -115,6 +116,8 @@ ENTRY(cpu_arm925_reset)
+ 	orr	ip, ip, #0x0000ce00
+ 	mov	r4, #1
+ 	strh	r4, [ip, #0x10]
++ENDPROC(cpu_arm925_reset)
++	.popsection
+ 
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+Index: linux-3.1.1/arch/arm/mm/proc-arm926.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm926.S	2011-11-17 15:36:08.497969879 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm926.S	2011-11-17 15:36:47.129577613 +0100
+@@ -77,6 +77,7 @@ ENTRY(cpu_arm926_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm926_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -89,6 +90,8 @@ ENTRY(cpu_arm926_reset)
+ 	bic	ip, ip, #0x1100			@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm926_reset)
++	.popsection
+ 
+ /*
+  * cpu_arm926_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-arm940.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm940.S	2011-11-17 15:36:08.457970287 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm940.S	2011-11-17 15:36:47.129577613 +0100
+@@ -48,6 +48,7 @@ ENTRY(cpu_arm940_proc_fin)
+  * Params  : r0 = address to jump to
+  * Notes   : This sets up everything for a reset
+  */
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm940_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c5, 0		@ flush I cache
+@@ -58,6 +59,8 @@ ENTRY(cpu_arm940_reset)
+ 	bic	ip, ip, #0x00001000		@ i-cache
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm940_reset)
++	.popsection
+ 
+ /*
+  * cpu_arm940_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-arm946.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm946.S	2011-11-17 15:36:08.585968981 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm946.S	2011-11-17 15:36:47.129577613 +0100
+@@ -55,6 +55,7 @@ ENTRY(cpu_arm946_proc_fin)
+  * Params  : r0 = address to jump to
+  * Notes   : This sets up everything for a reset
+  */
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm946_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c5, 0		@ flush I cache
+@@ -65,6 +66,8 @@ ENTRY(cpu_arm946_reset)
+ 	bic	ip, ip, #0x00001000		@ i-cache
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_arm946_reset)
++	.popsection
+ 
+ /*
+  * cpu_arm946_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-arm9tdmi.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-arm9tdmi.S	2011-11-17 15:36:08.441970450 +0100
++++ linux-3.1.1/arch/arm/mm/proc-arm9tdmi.S	2011-11-17 15:36:47.129577613 +0100
+@@ -45,8 +45,11 @@ ENTRY(cpu_arm9tdmi_proc_fin)
+  * Params  : loc(r0)	address to jump to
+  * Purpose : Sets up everything for a reset and jump to the location for soft reset.
+  */
++		.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_arm9tdmi_reset)
+ 		mov	pc, r0
++ENDPROC(cpu_arm9tdmi_reset)
++		.popsection
+ 
+ 		__CPUINIT
+ 
+Index: linux-3.1.1/arch/arm/mm/proc-fa526.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-fa526.S	2011-11-17 15:36:08.553969308 +0100
++++ linux-3.1.1/arch/arm/mm/proc-fa526.S	2011-11-17 15:36:47.129577613 +0100
+@@ -57,6 +57,7 @@ ENTRY(cpu_fa526_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	4
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_fa526_reset)
+ /* TODO: Use CP8 if possible... */
+ 	mov	ip, #0
+@@ -73,6 +74,8 @@ ENTRY(cpu_fa526_reset)
+ 	nop
+ 	nop
+ 	mov	pc, r0
++ENDPROC(cpu_fa526_reset)
++	.popsection
+ 
+ /*
+  * cpu_fa526_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-feroceon.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-feroceon.S	2011-11-17 15:36:08.481970042 +0100
++++ linux-3.1.1/arch/arm/mm/proc-feroceon.S	2011-11-17 15:36:47.129577613 +0100
+@@ -98,6 +98,7 @@ ENTRY(cpu_feroceon_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_feroceon_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -110,6 +111,8 @@ ENTRY(cpu_feroceon_reset)
+ 	bic	ip, ip, #0x1100			@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_feroceon_reset)
++	.popsection
+ 
+ /*
+  * cpu_feroceon_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-mohawk.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-mohawk.S	2011-11-17 15:36:08.473970124 +0100
++++ linux-3.1.1/arch/arm/mm/proc-mohawk.S	2011-11-17 15:36:47.129577613 +0100
+@@ -69,6 +69,7 @@ ENTRY(cpu_mohawk_proc_fin)
+  * (same as arm926)
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_mohawk_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -79,6 +80,8 @@ ENTRY(cpu_mohawk_reset)
+ 	bic	ip, ip, #0x1100			@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_mohawk_reset)
++	.popsection
+ 
+ /*
+  * cpu_mohawk_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-sa110.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-sa110.S	2011-11-17 15:36:08.525969593 +0100
++++ linux-3.1.1/arch/arm/mm/proc-sa110.S	2011-11-17 15:36:47.129577613 +0100
+@@ -62,6 +62,7 @@ ENTRY(cpu_sa110_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_sa110_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -74,6 +75,8 @@ ENTRY(cpu_sa110_reset)
+ 	bic	ip, ip, #0x1100			@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_sa110_reset)
++	.popsection
+ 
+ /*
+  * cpu_sa110_do_idle(type)
+Index: linux-3.1.1/arch/arm/mm/proc-sa1100.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-sa1100.S	2011-11-17 15:36:08.513969716 +0100
++++ linux-3.1.1/arch/arm/mm/proc-sa1100.S	2011-11-17 15:36:47.129577613 +0100
+@@ -70,6 +70,7 @@ ENTRY(cpu_sa1100_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_sa1100_reset)
+ 	mov	ip, #0
+ 	mcr	p15, 0, ip, c7, c7, 0		@ invalidate I,D caches
+@@ -82,6 +83,8 @@ ENTRY(cpu_sa1100_reset)
+ 	bic	ip, ip, #0x1100			@ ...i...s........
+ 	mcr	p15, 0, ip, c1, c0, 0		@ ctrl register
+ 	mov	pc, r0
++ENDPROC(cpu_sa1100_reset)
++	.popsection
+ 
+ /*
+  * cpu_sa1100_do_idle(type)
+Index: linux-3.1.1/arch/arm/mm/proc-v6.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-v6.S	2011-11-17 15:36:08.469970164 +0100
++++ linux-3.1.1/arch/arm/mm/proc-v6.S	2011-11-17 15:36:47.129577613 +0100
+@@ -55,6 +55,7 @@ ENTRY(cpu_v6_proc_fin)
+  *	- loc   - location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_v6_reset)
+ 	mrc	p15, 0, r1, c1, c0, 0		@ ctrl register
+ 	bic	r1, r1, #0x1			@ ...............m
+@@ -62,6 +63,8 @@ ENTRY(cpu_v6_reset)
+ 	mov	r1, #0
+ 	mcr	p15, 0, r1, c7, c5, 4		@ ISB
+ 	mov	pc, r0
++ENDPROC(cpu_v6_reset)
++	.popsection
+ 
+ /*
+  *	cpu_v6_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-v7.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-v7.S	2011-11-17 15:36:08.461970246 +0100
++++ linux-3.1.1/arch/arm/mm/proc-v7.S	2011-11-17 15:36:47.129577613 +0100
+@@ -63,6 +63,7 @@ ENDPROC(cpu_v7_proc_fin)
+  *      caches disabled.
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_v7_reset)
+ 	mrc	p15, 0, r1, c1, c0, 0		@ ctrl register
+ 	bic	r1, r1, #0x1			@ ...............m
+@@ -71,6 +72,7 @@ ENTRY(cpu_v7_reset)
+ 	isb
+ 	mov	pc, r0
+ ENDPROC(cpu_v7_reset)
++	.popsection
+ 
+ /*
+  *	cpu_v7_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-xsc3.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-xsc3.S	2011-11-17 15:36:08.561969226 +0100
++++ linux-3.1.1/arch/arm/mm/proc-xsc3.S	2011-11-17 15:36:47.129577613 +0100
+@@ -105,6 +105,7 @@ ENTRY(cpu_xsc3_proc_fin)
+  * loc: location to jump to for soft reset
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_xsc3_reset)
+ 	mov	r1, #PSR_F_BIT|PSR_I_BIT|SVC_MODE
+ 	msr	cpsr_c, r1			@ reset CPSR
+@@ -119,6 +120,8 @@ ENTRY(cpu_xsc3_reset)
+ 	@ already containing those two last instructions to survive.
+ 	mcr	p15, 0, ip, c8, c7, 0		@ invalidate I and D TLBs
+ 	mov	pc, r0
++ENDPROC(cpu_xsc3_reset)
++	.popsection
+ 
+ /*
+  * cpu_xsc3_do_idle()
+Index: linux-3.1.1/arch/arm/mm/proc-xscale.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mm/proc-xscale.S	2011-11-17 15:36:08.565969185 +0100
++++ linux-3.1.1/arch/arm/mm/proc-xscale.S	2011-11-17 15:36:47.129577613 +0100
+@@ -142,6 +142,7 @@ ENTRY(cpu_xscale_proc_fin)
+  * Beware PXA270 erratum E7.
+  */
+ 	.align	5
++	.pushsection	.idmap.text, "ax"
+ ENTRY(cpu_xscale_reset)
+ 	mov	r1, #PSR_F_BIT|PSR_I_BIT|SVC_MODE
+ 	msr	cpsr_c, r1			@ reset CPSR
+@@ -160,6 +161,8 @@ ENTRY(cpu_xscale_reset)
+ 	@ already containing those two last instructions to survive.
+ 	mcr	p15, 0, ip, c8, c7, 0		@ invalidate I & D TLBs
+ 	mov	pc, r0
++ENDPROC(cpu_xscale_reset)
++	.popsection
+ 
+ /*
+  * cpu_xscale_do_idle()
+Index: linux-3.1.1/arch/arm/plat-omap/include/plat/irqs.h
+===================================================================
+--- linux-3.1.1.orig/arch/arm/plat-omap/include/plat/irqs.h	2011-11-17 15:36:08.381971062 +0100
++++ linux-3.1.1/arch/arm/plat-omap/include/plat/irqs.h	2011-11-17 15:36:47.133577572 +0100
+@@ -438,16 +438,6 @@
+ 
+ #ifndef __ASSEMBLY__
+ extern void __iomem *omap_irq_base;
+-void omap1_init_irq(void);
+-void omap2_init_irq(void);
+-void omap3_init_irq(void);
+-void ti816x_init_irq(void);
+-extern int omap_irq_pending(void);
+-void omap_intc_save_context(void);
+-void omap_intc_restore_context(void);
+-void omap3_intc_suspend(void);
+-void omap3_intc_prepare_idle(void);
+-void omap3_intc_resume_idle(void);
+ #endif
+ 
+ #include <mach/hardware.h>
+Index: linux-3.1.1/arch/arm/plat-omap/include/plat/system.h
+===================================================================
+--- linux-3.1.1.orig/arch/arm/plat-omap/include/plat/system.h	2011-11-17 15:36:08.393970940 +0100
++++ linux-3.1.1/arch/arm/plat-omap/include/plat/system.h	2011-11-17 15:36:47.133577572 +0100
+@@ -12,6 +12,4 @@ static inline void arch_idle(void)
+ 	cpu_do_idle();
+ }
+ 
+-extern void (*arch_reset)(char, const char *);
+-
+ #endif
+Index: linux-3.1.1/include/asm-generic/vmlinux.lds.h
+===================================================================
+--- linux-3.1.1.orig/include/asm-generic/vmlinux.lds.h	2011-11-17 15:36:08.621968614 +0100
++++ linux-3.1.1/include/asm-generic/vmlinux.lds.h	2011-11-17 15:36:47.133577572 +0100
+@@ -447,6 +447,12 @@
+ 		*(.kprobes.text)					\
+ 		VMLINUX_SYMBOL(__kprobes_text_end) = .;
+ 
++#define IDMAP_TEXT							\
++		ALIGN_FUNCTION();					\
++		VMLINUX_SYMBOL(__idmap_text_start) = .;			\
++		*(.idmap.text)						\
++		VMLINUX_SYMBOL(__idmap_text_end) = .;
++
+ #define ENTRY_TEXT							\
+ 		ALIGN_FUNCTION();					\
+ 		VMLINUX_SYMBOL(__entry_text_start) = .;			\
+Index: linux-3.1.1/arch/arm/kernel/sleep.S
+===================================================================
+--- linux-3.1.1.orig/arch/arm/kernel/sleep.S	2011-11-17 15:36:08.405970817 +0100
++++ linux-3.1.1/arch/arm/kernel/sleep.S	2011-11-17 15:36:47.133577572 +0100
+@@ -85,12 +85,14 @@ ENDPROC(cpu_resume_mmu)
+ 	.ltorg
+ 	.align	5
+ cpu_resume_turn_mmu_on:
++	.pushsection	.idmap.text,"ax"
+ 	mcr	p15, 0, r1, c1, c0, 0	@ turn on MMU, I-cache, etc
+ 	mrc	p15, 0, r1, c0, c0, 0	@ read id reg
+ 	mov	r1, r1
+ 	mov	r1, r1
+ 	mov	pc, r3			@ jump to virtual address
+ ENDPROC(cpu_resume_turn_mmu_on)
++	.popsection
+ cpu_resume_after_mmu:
+ 	str	r5, [r2, r4, lsl #2]	@ restore old mapping
+ 	mcr	p15, 0, r0, c1, c0, 0	@ turn on D-cache
+Index: linux-3.1.1/arch/arm/mach-omap2/io.c
+===================================================================
+--- linux-3.1.1.orig/arch/arm/mach-omap2/io.c	2011-11-17 15:36:08.053974408 +0100
++++ linux-3.1.1/arch/arm/mach-omap2/io.c	2011-11-17 15:36:47.133577572 +0100
+@@ -36,7 +36,7 @@
+ #include "clock3xxx.h"
+ #include "clock44xx.h"
+ #include "io.h"
+-
++#include "common.h"
+ #include <plat/omap-pm.h>
+ #include "powerdomain.h"
+ 
+Index: linux-3.1.1/arch/arm/plat-omap/include/plat/common.h
+===================================================================
+--- linux-3.1.1.orig/arch/arm/plat-omap/include/plat/common.h	2011-11-17 15:36:08.385971021 +0100
++++ linux-3.1.1/arch/arm/plat-omap/include/plat/common.h	2011-11-17 15:36:47.133577572 +0100
+@@ -27,78 +27,11 @@
+ #ifndef __ARCH_ARM_MACH_OMAP_COMMON_H
+ #define __ARCH_ARM_MACH_OMAP_COMMON_H
+ 
+-#include <linux/delay.h>
+-
+ #include <plat/i2c.h>
+ 
+-struct sys_timer;
+-
+-extern void omap_map_common_io(void);
+-extern struct sys_timer omap1_timer;
+-extern struct sys_timer omap2_timer;
+-extern struct sys_timer omap3_timer;
+-extern struct sys_timer omap3_secure_timer;
+-extern struct sys_timer omap4_timer;
+-extern bool omap_32k_timer_init(void);
+ extern int __init omap_init_clocksource_32k(void);
+ extern unsigned long long notrace omap_32k_sched_clock(void);
+ 
+ extern void omap_reserve(void);
+ 
+-/*
+- * IO bases for various OMAP processors
+- * Except the tap base, rest all the io bases
+- * listed are physical addresses.
+- */
+-struct omap_globals {
+-	u32		class;		/* OMAP class to detect */
+-	void __iomem	*tap;		/* Control module ID code */
+-	unsigned long   sdrc;           /* SDRAM Controller */
+-	unsigned long   sms;            /* SDRAM Memory Scheduler */
+-	unsigned long   ctrl;           /* System Control Module */
+-	unsigned long   ctrl_pad;	/* PAD Control Module */
+-	unsigned long   prm;            /* Power and Reset Management */
+-	unsigned long   cm;             /* Clock Management */
+-	unsigned long   cm2;
+-};
+-
+-void omap2_set_globals_242x(void);
+-void omap2_set_globals_243x(void);
+-void omap2_set_globals_3xxx(void);
+-void omap2_set_globals_443x(void);
+-void omap2_set_globals_ti816x(void);
+-
+-/* These get called from omap2_set_globals_xxxx(), do not call these */
+-void omap2_set_globals_tap(struct omap_globals *);
+-void omap2_set_globals_sdrc(struct omap_globals *);
+-void omap2_set_globals_control(struct omap_globals *);
+-void omap2_set_globals_prcm(struct omap_globals *);
+-
+-void omap3_map_io(void);
+-
+-/**
+- * omap_test_timeout - busy-loop, testing a condition
+- * @cond: condition to test until it evaluates to true
+- * @timeout: maximum number of microseconds in the timeout
+- * @index: loop index (integer)
+- *
+- * Loop waiting for @cond to become true or until at least @timeout
+- * microseconds have passed.  To use, define some integer @index in the
+- * calling code.  After running, if @index == @timeout, then the loop has
+- * timed out.
+- */
+-#define omap_test_timeout(cond, timeout, index)			\
+-({								\
+-	for (index = 0; index < timeout; index++) {		\
+-		if (cond)					\
+-			break;					\
+-		udelay(1);					\
+-	}							\
+-})
+-
+-extern struct device *omap2_get_mpuss_device(void);
+-extern struct device *omap2_get_iva_device(void);
+-extern struct device *omap2_get_l3_device(void);
+-extern struct device *omap4_get_dsp_device(void);
+-
+ #endif /* __ARCH_ARM_MACH_OMAP_COMMON_H */
+Index: linux-3.1.1/arch/arm/plat-omap/include/plat/io.h
+===================================================================
+--- linux-3.1.1.orig/arch/arm/plat-omap/include/plat/io.h	2011-11-17 15:36:08.401970858 +0100
++++ linux-3.1.1/arch/arm/plat-omap/include/plat/io.h	2011-11-17 15:36:47.133577572 +0100
+@@ -258,48 +258,9 @@ struct omap_sdrc_params;
+ 
+ extern void omap1_map_common_io(void);
+ extern void omap1_init_common_hw(void);
++extern void omap_writel(u32 v, u32 pa);
+ 
+-#ifdef CONFIG_SOC_OMAP2420
+-extern void omap242x_map_common_io(void);
+-#else
+-static inline void omap242x_map_common_io(void)
+-{
+-}
+-#endif
+-
+-#ifdef CONFIG_SOC_OMAP2430
+-extern void omap243x_map_common_io(void);
+-#else
+-static inline void omap243x_map_common_io(void)
+-{
+-}
+-#endif
+-
+-#ifdef CONFIG_ARCH_OMAP3
+-extern void omap34xx_map_common_io(void);
+-#else
+-static inline void omap34xx_map_common_io(void)
+-{
+-}
+-#endif
+-
+-#ifdef CONFIG_SOC_OMAPTI816X
+-extern void omapti816x_map_common_io(void);
+-#else
+-static inline void omapti816x_map_common_io(void)
+-{
+-}
+-#endif
+-
+-#ifdef CONFIG_ARCH_OMAP4
+-extern void omap44xx_map_common_io(void);
+-#else
+-static inline void omap44xx_map_common_io(void)
+-{
+-}
+-#endif
+-
+-extern void omap2_init_common_infrastructure(void);
++struct omap_sdrc_params;
+ extern void omap2_init_common_devices(struct omap_sdrc_params *sdrc_cs0,
+ 				      struct omap_sdrc_params *sdrc_cs1);
+ 
