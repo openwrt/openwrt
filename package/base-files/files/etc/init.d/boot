@@ -15,12 +15,15 @@ system_config() {
 	config_get conloglevel "$cfg" conloglevel
 	config_get buffersize "$cfg" buffersize
 	[ -z "$conloglevel" -a -z "$buffersize" ] || dmesg ${conloglevel:+-n $conloglevel} ${buffersize:+-s $buffersize}
-	
+
 	config_get timezone "$cfg" timezone 'UTC'
 	echo "$timezone" > /tmp/TZ
 
 	config_get zonename "$cfg" zonename
 	[ -n "$zonename" ] && [ -f "/usr/share/zoneinfo/$zonename" ] && ln -s "/usr/share/zoneinfo/$zonename" /tmp/localtime
+
+	# apply timezone to kernel
+	date -k
 
 	if [ -x /sbin/syslogd ]; then
 		local args log_ip log_size log_port log_type log_file
