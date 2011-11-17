@@ -1,0 +1,65 @@
+Index: linux-3.1.1/drivers/cbus/retu.c
+===================================================================
+--- linux-3.1.1.orig/drivers/cbus/retu.c	2011-11-17 18:47:59.453004678 +0100
++++ linux-3.1.1/drivers/cbus/retu.c	2011-11-17 18:49:03.180787673 +0100
+@@ -54,8 +54,6 @@ struct retu {
+ 	int			irq;
+ 
+ 	int			ack;
+-	bool			ack_pending;
+-
+ 	int			mask;
+ 	bool			mask_pending;
+ 
+@@ -238,7 +236,6 @@ static void retu_irq_ack(struct irq_data
+ 	int			irq = data->irq;
+ 
+ 	retu->ack |= (1 << (irq - retu->irq_base));
+-	retu->ack_pending = true;
+ }
+ 
+ static void retu_bus_lock(struct irq_data *data)
+@@ -257,9 +254,9 @@ static void retu_bus_sync_unlock(struct
+ 		retu->mask_pending = false;
+ 	}
+ 
+-	if (retu->ack_pending) {
++	if (retu->ack) {
+ 		__retu_write_reg(retu, RETU_REG_IDR, retu->ack);
+-		retu->ack_pending = false;
++		retu->ack = 0;
+ 	}
+ 
+ 	mutex_unlock(&retu->mutex);
+Index: linux-3.1.1/drivers/cbus/tahvo.c
+===================================================================
+--- linux-3.1.1.orig/drivers/cbus/tahvo.c	2011-11-17 18:47:59.437004733 +0100
++++ linux-3.1.1/drivers/cbus/tahvo.c	2011-11-17 18:51:03.708374259 +0100
+@@ -52,7 +52,6 @@ struct tahvo {
+ 	int		mask;
+ 
+ 	unsigned int	mask_pending:1;
+-	unsigned int	ack_pending:1;
+ 	unsigned int	is_betty:1;
+ };
+ 
+@@ -177,9 +176,9 @@ static void tahvo_irq_bus_sync_unlock(st
+ 		tahvo->mask_pending = false;
+ 	}
+ 
+-	if (tahvo->ack_pending) {
++	if (tahvo->ack) {
+ 		__tahvo_write_reg(tahvo, TAHVO_REG_IDR, tahvo->ack);
+-		tahvo->ack_pending = false;
++		tahvo->ack = 0;
+ 	}
+ 
+ 	mutex_unlock(&tahvo->mutex);
+@@ -209,7 +208,6 @@ static void tahvo_irq_ack(struct irq_dat
+ 	int			irq = data->irq;
+ 
+ 	tahvo->ack |= (1 << (irq - tahvo->irq_base));
+-	tahvo->ack_pending = true;
+ }
+ 
+ static struct irq_chip tahvo_irq_chip = {
