@@ -1,41 +1,84 @@
 Index: linux-3.1.1/drivers/cbus/retu.c
 ===================================================================
---- linux-3.1.1.orig/drivers/cbus/retu.c	2011-11-17 18:47:59.453004678 +0100
-+++ linux-3.1.1/drivers/cbus/retu.c	2011-11-17 18:49:03.180787673 +0100
-@@ -54,8 +54,6 @@ struct retu {
+--- linux-3.1.1.orig/drivers/cbus/retu.c	2011-11-17 23:23:53.542699149 +0100
++++ linux-3.1.1/drivers/cbus/retu.c	2011-11-17 23:23:55.830689859 +0100
+@@ -53,9 +53,6 @@ struct retu {
+ 
  	int			irq;
  
- 	int			ack;
+-	int			ack;
 -	bool			ack_pending;
 -
  	int			mask;
  	bool			mask_pending;
  
-@@ -238,7 +236,6 @@ static void retu_irq_ack(struct irq_data
- 	int			irq = data->irq;
+@@ -191,9 +188,10 @@ static irqreturn_t retu_irq_handler(int
+ 	mutex_lock(&retu->mutex);
+ 	idr = __retu_read_reg(retu, RETU_REG_IDR);
+ 	imr = __retu_read_reg(retu, RETU_REG_IMR);
++	idr &= ~imr;
++	__retu_write_reg(retu, RETU_REG_IDR, idr);
+ 	mutex_unlock(&retu->mutex);
  
- 	retu->ack |= (1 << (irq - retu->irq_base));
--	retu->ack_pending = true;
+-	idr &= ~imr;
+ 	if (!idr) {
+ 		dev_vdbg(retu->dev, "No IRQ, spurious?\n");
+ 		return IRQ_NONE;
+@@ -232,15 +230,6 @@ static void retu_irq_unmask(struct irq_d
+ 
  }
  
+-static void retu_irq_ack(struct irq_data *data)
+-{
+-	struct retu		*retu = irq_data_get_irq_chip_data(data);
+-	int			irq = data->irq;
+-
+-	retu->ack |= (1 << (irq - retu->irq_base));
+-	retu->ack_pending = true;
+-}
+-
  static void retu_bus_lock(struct irq_data *data)
-@@ -257,9 +254,9 @@ static void retu_bus_sync_unlock(struct
+ {
+ 	struct retu		*retu = irq_data_get_irq_chip_data(data);
+@@ -257,11 +246,6 @@ static void retu_bus_sync_unlock(struct
  		retu->mask_pending = false;
  	}
  
 -	if (retu->ack_pending) {
-+	if (retu->ack) {
- 		__retu_write_reg(retu, RETU_REG_IDR, retu->ack);
+-		__retu_write_reg(retu, RETU_REG_IDR, retu->ack);
 -		retu->ack_pending = false;
-+		retu->ack = 0;
- 	}
- 
+-	}
+-
  	mutex_unlock(&retu->mutex);
+ }
+ 
+@@ -271,7 +255,6 @@ static struct irq_chip retu_irq_chip = {
+ 	.irq_bus_sync_unlock	= retu_bus_sync_unlock,
+ 	.irq_mask		= retu_irq_mask,
+ 	.irq_unmask		= retu_irq_unmask,
+-	.irq_ack		= retu_irq_ack,
+ };
+ 
+ static inline void retu_irq_setup(int irq)
+@@ -291,8 +274,7 @@ static void retu_irq_init(struct retu *r
+ 
+ 	for (irq = base; irq < end; irq++) {
+ 		irq_set_chip_data(irq, retu);
+-		irq_set_chip_and_handler(irq, &retu_irq_chip,
+-				handle_simple_irq);
++		irq_set_chip(irq, &retu_irq_chip);
+ 		irq_set_nested_thread(irq, 1);
+ 		retu_irq_setup(irq);
+ 	}
 Index: linux-3.1.1/drivers/cbus/tahvo.c
 ===================================================================
---- linux-3.1.1.orig/drivers/cbus/tahvo.c	2011-11-17 18:47:59.437004733 +0100
-+++ linux-3.1.1/drivers/cbus/tahvo.c	2011-11-17 18:51:03.708374259 +0100
-@@ -52,7 +52,6 @@ struct tahvo {
+--- linux-3.1.1.orig/drivers/cbus/tahvo.c	2011-11-17 23:23:54.358695836 +0100
++++ linux-3.1.1/drivers/cbus/tahvo.c	2011-11-17 23:23:55.830689859 +0100
+@@ -48,11 +48,9 @@ struct tahvo {
+ 	int		irq_end;
+ 	int		irq;
+ 
+-	int		ack;
  	int		mask;
  
  	unsigned int	mask_pending:1;
@@ -43,23 +86,61 @@ Index: linux-3.1.1/drivers/cbus/tahvo.c
  	unsigned int	is_betty:1;
  };
  
-@@ -177,9 +176,9 @@ static void tahvo_irq_bus_sync_unlock(st
+@@ -138,9 +136,12 @@ static irqreturn_t tahvo_irq_handler(int
+ 	u16			id;
+ 	u16			im;
+ 
++	mutex_lock(&tahvo->mutex);
+ 	id = __tahvo_read_reg(tahvo, TAHVO_REG_IDR);
+ 	im = __tahvo_read_reg(tahvo, TAHVO_REG_IMR);
+ 	id &= ~im;
++	__tahvo_write_reg(tahvo, TAHVO_REG_IDR, id);
++	mutex_unlock(&tahvo->mutex);
+ 
+ 	if (!id) {
+ 		dev_vdbg(tahvo->dev, "No IRQ, spurious ?\n");
+@@ -177,11 +178,6 @@ static void tahvo_irq_bus_sync_unlock(st
  		tahvo->mask_pending = false;
  	}
  
 -	if (tahvo->ack_pending) {
-+	if (tahvo->ack) {
- 		__tahvo_write_reg(tahvo, TAHVO_REG_IDR, tahvo->ack);
+-		__tahvo_write_reg(tahvo, TAHVO_REG_IDR, tahvo->ack);
 -		tahvo->ack_pending = false;
-+		tahvo->ack = 0;
- 	}
- 
+-	}
+-
  	mutex_unlock(&tahvo->mutex);
-@@ -209,7 +208,6 @@ static void tahvo_irq_ack(struct irq_dat
- 	int			irq = data->irq;
- 
- 	tahvo->ack |= (1 << (irq - tahvo->irq_base));
--	tahvo->ack_pending = true;
  }
  
+@@ -203,22 +199,12 @@ static void tahvo_irq_unmask(struct irq_
+ 	tahvo->mask_pending = true;
+ }
+ 
+-static void tahvo_irq_ack(struct irq_data *data)
+-{
+-	struct tahvo		*tahvo = irq_data_get_irq_chip_data(data);
+-	int			irq = data->irq;
+-
+-	tahvo->ack |= (1 << (irq - tahvo->irq_base));
+-	tahvo->ack_pending = true;
+-}
+-
  static struct irq_chip tahvo_irq_chip = {
+ 	.name			= "tahvo",
+ 	.irq_bus_lock		= tahvo_irq_bus_lock,
+ 	.irq_bus_sync_unlock	= tahvo_irq_bus_sync_unlock,
+ 	.irq_mask		= tahvo_irq_mask,
+ 	.irq_unmask		= tahvo_irq_unmask,
+-	.irq_ack		= tahvo_irq_ack,
+ };
+ 
+ static inline void tahvo_irq_setup(int irq)
+@@ -238,8 +224,7 @@ static void tahvo_irq_init(struct tahvo
+ 
+ 	for (irq = base; irq < end; irq++) {
+ 		irq_set_chip_data(irq, tahvo);
+-		irq_set_chip_and_handler(irq, &tahvo_irq_chip,
+-				handle_simple_irq);
++		irq_set_chip(irq, &tahvo_irq_chip);
+ 		irq_set_nested_thread(irq, 1);
+ 		tahvo_irq_setup(irq);
+ 	}
