@@ -59,7 +59,7 @@
  static int __init compat_init(void)
  {
  	/* pm-qos for kernels <= 2.6.24, this is a no-op on newer kernels */
-@@ -45,15 +56,15 @@ static int __init compat_init(void)
+@@ -46,7 +57,8 @@ static int __init compat_init(void)
  	       COMPAT_BASE_TREE " " COMPAT_BASE_TREE_VERSION
  	       "\n");
  
@@ -69,12 +69,13 @@
  }
  module_init(compat_init);
  
- static void __exit compat_exit(void)
- {
+@@ -55,7 +67,8 @@ static void __exit compat_exit(void)
  	compat_pm_qos_power_deinit();
--
+ 	compat_system_workqueue_destroy();
+ 
 -        return;
 +	firmware_class_exit();
++	return;
  }
  module_exit(compat_exit);
  

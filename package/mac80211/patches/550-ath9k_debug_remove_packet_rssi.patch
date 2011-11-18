@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -963,34 +963,6 @@ static ssize_t read_file_recv(struct fil
+@@ -969,34 +969,6 @@ static ssize_t read_file_recv(struct fil
  			"%18s : %10u\n", "DECRYPT BUSY ERR",
  			sc->debug.stats.rxstats.decrypt_busy_err);
  
@@ -35,7 +35,7 @@
  	PHY_ERR("UNDERRUN", ATH9K_PHYERR_UNDERRUN);
  	PHY_ERR("TIMING", ATH9K_PHYERR_TIMING);
  	PHY_ERR("PARITY", ATH9K_PHYERR_PARITY);
-@@ -1067,16 +1039,6 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -1073,16 +1045,6 @@ void ath_debug_stat_rx(struct ath_softc 
  		RX_PHY_ERR_INC(phyerr);
  	}
  

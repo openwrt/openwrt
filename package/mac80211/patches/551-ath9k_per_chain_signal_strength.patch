@@ -1,6 +1,6 @@
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -683,6 +683,9 @@ enum mac80211_rx_flags {
+@@ -684,6 +684,9 @@ enum mac80211_rx_flags {
   * @mactime: value in microseconds of the 64-bit Time Synchronization Function
   * 	(TSF) timer when the first data symbol (MPDU) arrived at the hardware.
   * @band: the active band when this frame was received
@@ -10,7 +10,7 @@
   * @freq: frequency the radio was tuned to when receiving this frame, in MHz
   * @signal: signal strength when receiving this frame, either in dBm, in dB or
   *	unspecified depending on the hardware capabilities flags
-@@ -696,6 +699,10 @@ enum mac80211_rx_flags {
+@@ -697,6 +700,10 @@ enum mac80211_rx_flags {
  struct ieee80211_rx_status {
  	u64 mactime;
  	enum ieee80211_band band;
@@ -23,7 +23,7 @@
  	int antenna;
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -300,6 +300,11 @@ struct sta_info {
+@@ -302,6 +302,11 @@ struct sta_info {
  	unsigned long rx_dropped;
  	int last_signal;
  	struct ewma avg_signal;
@@ -37,7 +37,7 @@
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1244,6 +1244,7 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1267,6 +1267,7 @@ ieee80211_rx_h_sta_process(struct ieee80
  	struct sk_buff *skb = rx->skb;
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
@@ -45,7 +45,7 @@
  
  	if (!sta)
  		return RX_CONTINUE;
-@@ -1286,6 +1287,19 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1309,6 +1310,19 @@ ieee80211_rx_h_sta_process(struct ieee80
  	sta->last_signal = status->signal;
  	ewma_add(&sta->avg_signal, -status->signal);
  
@@ -78,7 +78,7 @@
  		kfree(sta);
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -498,6 +498,8 @@ struct station_parameters {
+@@ -505,6 +505,8 @@ struct station_parameters {
   * @STATION_INFO_CONNECTED_TIME: @connected_time filled
   * @STATION_INFO_ASSOC_REQ_IES: @assoc_req_ies filled
   * @STATION_INFO_STA_FLAGS: @sta_flags filled
@@ -87,7 +87,7 @@
   */
  enum station_info_flags {
  	STATION_INFO_INACTIVE_TIME	= 1<<0,
-@@ -518,7 +520,9 @@ enum station_info_flags {
+@@ -525,7 +527,9 @@ enum station_info_flags {
  	STATION_INFO_BSS_PARAM          = 1<<15,
  	STATION_INFO_CONNECTED_TIME	= 1<<16,
  	STATION_INFO_ASSOC_REQ_IES	= 1<<17,
@@ -98,7 +98,7 @@
  };
  
  /**
-@@ -598,6 +602,9 @@ struct sta_bss_parameters {
+@@ -605,6 +609,9 @@ struct sta_bss_parameters {
   * @plink_state: mesh peer link state
   * @signal: signal strength of last received packet in dBm
   * @signal_avg: signal strength average in dBm
@@ -108,7 +108,7 @@
   * @txrate: current unicast bitrate from this station
   * @rxrate: current unicast bitrate to this station
   * @rx_packets: packets received from this station
-@@ -627,6 +634,11 @@ struct station_info {
+@@ -635,6 +642,11 @@ struct station_info {
  	u8 plink_state;
  	s8 signal;
  	s8 signal_avg;
@@ -189,7 +189,7 @@
  	/* Record packet only when both main_rssi and  alt_rssi is positive */
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -451,12 +451,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -452,12 +452,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
  
  	/* XXX: Keycache */
  	rxs->rs_rssi = MS(rxsp->status5, AR_RxRSSICombined);
@@ -210,7 +210,7 @@
  		rxs->rs_keyix = MS(rxsp->status11, AR_KeyIdx);
 --- a/drivers/net/wireless/ath/ath9k/mac.c
 +++ b/drivers/net/wireless/ath/ath9k/mac.c
-@@ -558,25 +558,25 @@ int ath9k_hw_rxprocdesc(struct ath_hw *a
+@@ -559,25 +559,25 @@ int ath9k_hw_rxprocdesc(struct ath_hw *a
  
  	if (ads.ds_rxstatus8 & AR_PostDelimCRCErr) {
  		rs->rs_rssi = ATH9K_RSSI_BAD;
@@ -250,7 +250,7 @@
  	if (ads.ds_rxstatus8 & AR_RxKeyIdxValid)
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1041,12 +1041,12 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -1047,12 +1047,12 @@ void ath_debug_stat_rx(struct ath_softc 
  
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;
@@ -271,7 +271,7 @@
  	RX_SAMP_DBG(rate) = rs->rs_rate;
 --- a/include/linux/nl80211.h
 +++ b/include/linux/nl80211.h
-@@ -1549,6 +1549,8 @@ enum nl80211_sta_bss_param {
+@@ -1621,6 +1621,8 @@ enum nl80211_sta_bss_param {
   *     containing info as possible, see &enum nl80211_sta_bss_param
   * @NL80211_STA_INFO_CONNECTED_TIME: time since the station is last connected
   * @NL80211_STA_INFO_STA_FLAGS: Contains a struct nl80211_sta_flag_update.
@@ -280,7 +280,7 @@
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -1571,6 +1573,8 @@ enum nl80211_sta_info {
+@@ -1643,6 +1645,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_BSS_PARAM,
  	NL80211_STA_INFO_CONNECTED_TIME,
  	NL80211_STA_INFO_STA_FLAGS,
@@ -291,7 +291,7 @@
  	__NL80211_STA_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -2257,6 +2257,33 @@ nla_put_failure:
+@@ -2287,6 +2287,33 @@ nla_put_failure:
  	return false;
  }
  
@@ -325,7 +325,7 @@
  static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
  				int flags, struct net_device *dev,
  				const u8 *mac_addr, struct station_info *sinfo)
-@@ -2303,6 +2330,18 @@ static int nl80211_send_station(struct s
+@@ -2333,6 +2360,18 @@ static int nl80211_send_station(struct s
  	if (sinfo->filled & STATION_INFO_SIGNAL_AVG)
  		NLA_PUT_U8(msg, NL80211_STA_INFO_SIGNAL_AVG,
  			   sinfo->signal_avg);

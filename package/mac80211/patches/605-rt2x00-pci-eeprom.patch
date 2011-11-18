@@ -1,8 +1,6 @@
-Index: compat-wireless-2011-11-04/drivers/net/wireless/rt2x00/rt2800pci.c
-===================================================================
---- compat-wireless-2011-11-04.orig/drivers/net/wireless/rt2x00/rt2800pci.c	2011-11-12 19:34:24.760314206 +0100
-+++ compat-wireless-2011-11-04/drivers/net/wireless/rt2x00/rt2800pci.c	2011-11-12 19:34:24.956314211 +0100
-@@ -84,7 +84,7 @@
+--- a/drivers/net/wireless/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+@@ -84,7 +84,7 @@ static void rt2800pci_mcu_status(struct 
  	rt2x00pci_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
  }
  
@@ -11,7 +9,7 @@ Index: compat-wireless-2011-11-04/drivers/net/wireless/rt2x00/rt2800pci.c
  {
  	memcpy(rt2x00dev->eeprom, rt2x00dev->eeprom_file->data, EEPROM_SIZE);
  }
-@@ -938,8 +938,9 @@
+@@ -938,8 +938,9 @@ static int rt2800pci_validate_eeprom(str
  	/*
  	 * Read EEPROM into buffer
  	 */
@@ -23,11 +21,9 @@ Index: compat-wireless-2011-11-04/drivers/net/wireless/rt2x00/rt2800pci.c
  	else if (rt2800pci_efuse_detect(rt2x00dev))
  		rt2800pci_read_eeprom_efuse(rt2x00dev);
  	else
-Index: compat-wireless-2011-11-04/drivers/net/wireless/rt2x00/rt2x00pci.c
-===================================================================
---- compat-wireless-2011-11-04.orig/drivers/net/wireless/rt2x00/rt2x00pci.c	2011-11-12 19:34:24.704314204 +0100
-+++ compat-wireless-2011-11-04/drivers/net/wireless/rt2x00/rt2x00pci.c	2011-11-12 19:34:24.956314211 +0100
-@@ -255,6 +255,7 @@
+--- a/drivers/net/wireless/rt2x00/rt2x00pci.c
++++ b/drivers/net/wireless/rt2x00/rt2x00pci.c
+@@ -255,6 +255,7 @@ exit:
  int rt2x00pci_probe(struct pci_dev *pci_dev, const struct rt2x00_ops *ops)
  {
  	struct ieee80211_hw *hw;
@@ -35,7 +31,7 @@ Index: compat-wireless-2011-11-04/drivers/net/wireless/rt2x00/rt2x00pci.c
  	struct rt2x00_dev *rt2x00dev;
  	int retval;
  
-@@ -299,6 +300,12 @@
+@@ -299,6 +300,12 @@ int rt2x00pci_probe(struct pci_dev *pci_
  	rt2x00dev->irq = pci_dev->irq;
  	rt2x00dev->name = pci_name(pci_dev);
  
