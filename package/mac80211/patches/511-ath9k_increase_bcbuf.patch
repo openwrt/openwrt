@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -364,7 +364,7 @@ struct ath_vif {
+@@ -366,7 +366,7 @@ struct ath_vif {
   * number of beacon intervals, the game's up.
   */
  #define BSTUCK_THRESH           	9
@@ -11,7 +11,7 @@
  #define IEEE80211_MS_TO_TU(x)           (((x) * 1000) / 1024)
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -387,8 +387,8 @@ static void ath9k_hw_init_config(struct 
+@@ -388,8 +388,8 @@ static void ath9k_hw_init_config(struct 
  {
  	int i;
  

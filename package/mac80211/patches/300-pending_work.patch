@@ -1,6 +1,363 @@
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -118,7 +118,7 @@ void ath9k_ps_restore(struct ath_softc *
+ 	if (--sc->ps_usecount != 0)
+ 		goto unlock;
+ 
+-	if (sc->ps_idle)
++	if (sc->ps_idle && (sc->ps_flags & PS_WAIT_FOR_TX_ACK))
+ 		mode = ATH9K_PM_FULL_SLEEP;
+ 	else if (sc->ps_enabled &&
+ 		 !(sc->ps_flags & (PS_WAIT_FOR_BEACON |
+@@ -332,7 +332,8 @@ static int ath_reset_internal(struct ath
+ 		hchan = ah->curchan;
+ 	}
+ 
+-	if (fastcc && !ath9k_hw_check_alive(ah))
++	if (fastcc && (ah->chip_fullsleep ||
++	    !ath9k_hw_check_alive(ah)))
+ 		fastcc = false;
+ 
+ 	if (!ath_prepare_reset(sc, retry_tx, flush))
+@@ -882,82 +883,6 @@ chip_reset:
+ #undef SCHED_INTR
+ }
+ 
+-static void ath_radio_enable(struct ath_softc *sc, struct ieee80211_hw *hw)
+-{
+-	struct ath_hw *ah = sc->sc_ah;
+-	struct ath_common *common = ath9k_hw_common(ah);
+-	struct ieee80211_channel *channel = hw->conf.channel;
+-	int r;
+-
+-	ath9k_ps_wakeup(sc);
+-	spin_lock_bh(&sc->sc_pcu_lock);
+-	atomic_set(&ah->intr_ref_cnt, -1);
+-
+-	ath9k_hw_configpcipowersave(ah, false);
+-
+-	if (!ah->curchan)
+-		ah->curchan = ath9k_cmn_get_curchannel(sc->hw, ah);
+-
+-	r = ath9k_hw_reset(ah, ah->curchan, ah->caldata, false);
+-	if (r) {
+-		ath_err(common,
+-			"Unable to reset channel (%u MHz), reset status %d\n",
+-			channel->center_freq, r);
+-	}
+-
+-	ath_complete_reset(sc, true);
+-
+-	/* Enable LED */
+-	ath9k_hw_cfg_output(ah, ah->led_pin,
+-			    AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
+-	ath9k_hw_set_gpio(ah, ah->led_pin, 0);
+-
+-	spin_unlock_bh(&sc->sc_pcu_lock);
+-
+-	ath9k_ps_restore(sc);
+-}
+-
+-void ath_radio_disable(struct ath_softc *sc, struct ieee80211_hw *hw)
+-{
+-	struct ath_hw *ah = sc->sc_ah;
+-	struct ieee80211_channel *channel = hw->conf.channel;
+-	int r;
+-
+-	ath9k_ps_wakeup(sc);
+-
+-	ath_cancel_work(sc);
+-
+-	spin_lock_bh(&sc->sc_pcu_lock);
+-
+-	/*
+-	 * Keep the LED on when the radio is disabled
+-	 * during idle unassociated state.
+-	 */
+-	if (!sc->ps_idle) {
+-		ath9k_hw_set_gpio(ah, ah->led_pin, 1);
+-		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
+-	}
+-
+-	ath_prepare_reset(sc, false, true);
+-
+-	if (!ah->curchan)
+-		ah->curchan = ath9k_cmn_get_curchannel(hw, ah);
+-
+-	r = ath9k_hw_reset(ah, ah->curchan, ah->caldata, false);
+-	if (r) {
+-		ath_err(ath9k_hw_common(sc->sc_ah),
+-			"Unable to reset channel (%u MHz), reset status %d\n",
+-			channel->center_freq, r);
+-	}
+-
+-	ath9k_hw_phy_disable(ah);
+-
+-	ath9k_hw_configpcipowersave(ah, true);
+-
+-	spin_unlock_bh(&sc->sc_pcu_lock);
+-	ath9k_ps_restore(sc);
+-}
+-
+ static int ath_reset(struct ath_softc *sc, bool retry_tx)
+ {
+ 	int r;
+@@ -1093,6 +1018,9 @@ static int ath9k_start(struct ieee80211_
+ 	 * and then setup of the interrupt mask.
+ 	 */
+ 	spin_lock_bh(&sc->sc_pcu_lock);
++
++	atomic_set(&ah->intr_ref_cnt, -1);
++
+ 	r = ath9k_hw_reset(ah, init_channel, ah->caldata, false);
+ 	if (r) {
+ 		ath_err(common,
+@@ -1131,6 +1059,18 @@ static int ath9k_start(struct ieee80211_
+ 		goto mutex_unlock;
+ 	}
+ 
++	if (ah->led_pin >= 0) {
++		ath9k_hw_cfg_output(ah, ah->led_pin,
++				    AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
++		ath9k_hw_set_gpio(ah, ah->led_pin, 0);
++	}
++
++	/*
++	 * Reset key cache to sane defaults (all entries cleared) instead of
++	 * semi-random values after suspend/resume.
++	 */
++	ath9k_cmn_init_crypto(sc->sc_ah);
++
+ 	spin_unlock_bh(&sc->sc_pcu_lock);
+ 
+ 	if ((ah->btcoex_hw.scheme != ATH_BTCOEX_CFG_NONE) &&
+@@ -1176,6 +1116,13 @@ static void ath9k_tx(struct ieee80211_hw
+ 		}
+ 	}
+ 
++	/*
++	 * Cannot tx while the hardware is in full sleep, it first needs a full
++	 * chip reset to recover from that
++	 */
++	if (unlikely(sc->sc_ah->power_mode == ATH9K_PM_FULL_SLEEP))
++		goto exit;
++
+ 	if (unlikely(sc->sc_ah->power_mode != ATH9K_PM_AWAKE)) {
+ 		/*
+ 		 * We are using PS-Poll and mac80211 can request TX while in
+@@ -1222,6 +1169,7 @@ static void ath9k_stop(struct ieee80211_
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
++	bool prev_idle;
+ 
+ 	mutex_lock(&sc->mutex);
+ 
+@@ -1252,35 +1200,45 @@ static void ath9k_stop(struct ieee80211_
+ 	 * before setting the invalid flag. */
+ 	ath9k_hw_disable_interrupts(ah);
+ 
+-	if (!(sc->sc_flags & SC_OP_INVALID)) {
+-		ath_drain_all_txq(sc, false);
+-		ath_stoprecv(sc);
+-		ath9k_hw_phy_disable(ah);
+-	} else
+-		sc->rx.rxlink = NULL;
++	spin_unlock_bh(&sc->sc_pcu_lock);
++
++	/* we can now sync irq and kill any running tasklets, since we already
++	 * disabled interrupts and not holding a spin lock */
++	synchronize_irq(sc->irq);
++	tasklet_kill(&sc->intr_tq);
++	tasklet_kill(&sc->bcon_tasklet);
++
++	prev_idle = sc->ps_idle;
++	sc->ps_idle = true;
++
++	spin_lock_bh(&sc->sc_pcu_lock);
++
++	if (ah->led_pin >= 0) {
++		ath9k_hw_set_gpio(ah, ah->led_pin, 1);
++		ath9k_hw_cfg_gpio_input(ah, ah->led_pin);
++	}
++
++	ath_prepare_reset(sc, false, true);
+ 
+ 	if (sc->rx.frag) {
+ 		dev_kfree_skb_any(sc->rx.frag);
+ 		sc->rx.frag = NULL;
+ 	}
+ 
+-	/* disable HAL and put h/w to sleep */
+-	ath9k_hw_disable(ah);
++	if (!ah->curchan)
++		ah->curchan = ath9k_cmn_get_curchannel(hw, ah);
+ 
+-	spin_unlock_bh(&sc->sc_pcu_lock);
++	ath9k_hw_reset(ah, ah->curchan, ah->caldata, false);
++	ath9k_hw_phy_disable(ah);
+ 
+-	/* we can now sync irq and kill any running tasklets, since we already
+-	 * disabled interrupts and not holding a spin lock */
+-	synchronize_irq(sc->irq);
+-	tasklet_kill(&sc->intr_tq);
+-	tasklet_kill(&sc->bcon_tasklet);
++	ath9k_hw_configpcipowersave(ah, true);
+ 
+-	ath9k_ps_restore(sc);
++	spin_unlock_bh(&sc->sc_pcu_lock);
+ 
+-	sc->ps_idle = true;
+-	ath_radio_disable(sc, hw);
++	ath9k_ps_restore(sc);
+ 
+ 	sc->sc_flags |= SC_OP_INVALID;
++	sc->ps_idle = prev_idle;
+ 
+ 	mutex_unlock(&sc->mutex);
+ 
+@@ -1620,8 +1578,8 @@ static int ath9k_config(struct ieee80211
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ieee80211_conf *conf = &hw->conf;
+-	bool disable_radio = false;
+ 
++	ath9k_ps_wakeup(sc);
+ 	mutex_lock(&sc->mutex);
+ 
+ 	/*
+@@ -1632,13 +1590,8 @@ static int ath9k_config(struct ieee80211
+ 	 */
+ 	if (changed & IEEE80211_CONF_CHANGE_IDLE) {
+ 		sc->ps_idle = !!(conf->flags & IEEE80211_CONF_IDLE);
+-		if (!sc->ps_idle) {
+-			ath_radio_enable(sc, hw);
+-			ath_dbg(common, ATH_DBG_CONFIG,
+-				"not-idle: enabling radio\n");
+-		} else {
+-			disable_radio = true;
+-		}
++		if (sc->ps_idle)
++			ath_cancel_work(sc);
+ 	}
+ 
+ 	/*
+@@ -1745,18 +1698,12 @@ static int ath9k_config(struct ieee80211
+ 		ath_dbg(common, ATH_DBG_CONFIG,
+ 			"Set power: %d\n", conf->power_level);
+ 		sc->config.txpowlimit = 2 * conf->power_level;
+-		ath9k_ps_wakeup(sc);
+ 		ath9k_cmn_update_txpow(ah, sc->curtxpow,
+ 				       sc->config.txpowlimit, &sc->curtxpow);
+-		ath9k_ps_restore(sc);
+-	}
+-
+-	if (disable_radio) {
+-		ath_dbg(common, ATH_DBG_CONFIG, "idle: disabling radio\n");
+-		ath_radio_disable(sc, hw);
+ 	}
+ 
+ 	mutex_unlock(&sc->mutex);
++	ath9k_ps_restore(sc);
+ 
+ 	return 0;
+ }
+@@ -2324,9 +2271,6 @@ static void ath9k_flush(struct ieee80211
+ 		return;
+ 	}
+ 
+-	if (drop)
+-		timeout = 1;
+-
+ 	for (j = 0; j < timeout; j++) {
+ 		bool npend = false;
+ 
+@@ -2344,21 +2288,22 @@ static void ath9k_flush(struct ieee80211
+ 		}
+ 
+ 		if (!npend)
+-		    goto out;
++		    break;
+ 	}
+ 
+-	ath9k_ps_wakeup(sc);
+-	spin_lock_bh(&sc->sc_pcu_lock);
+-	drain_txq = ath_drain_all_txq(sc, false);
+-	spin_unlock_bh(&sc->sc_pcu_lock);
++	if (drop) {
++		ath9k_ps_wakeup(sc);
++		spin_lock_bh(&sc->sc_pcu_lock);
++		drain_txq = ath_drain_all_txq(sc, false);
++		spin_unlock_bh(&sc->sc_pcu_lock);
+ 
+-	if (!drain_txq)
+-		ath_reset(sc, false);
++		if (!drain_txq)
++			ath_reset(sc, false);
+ 
+-	ath9k_ps_restore(sc);
+-	ieee80211_wake_queues(hw);
++		ath9k_ps_restore(sc);
++		ieee80211_wake_queues(hw);
++	}
+ 
+-out:
+ 	ieee80211_queue_delayed_work(hw, &sc->tx_complete_work, 0);
+ 	mutex_unlock(&sc->mutex);
+ }
+--- a/drivers/net/wireless/ath/ath9k/pci.c
++++ b/drivers/net/wireless/ath/ath9k/pci.c
+@@ -307,12 +307,11 @@ static int ath_pci_suspend(struct device
+ 	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
+ 	struct ath_softc *sc = hw->priv;
+ 
+-	ath9k_hw_set_gpio(sc->sc_ah, sc->sc_ah->led_pin, 1);
+-
+ 	/* The device has to be moved to FULLSLEEP forcibly.
+ 	 * Otherwise the chip never moved to full sleep,
+ 	 * when no interface is up.
+ 	 */
++	ath9k_hw_disable(sc->sc_ah);
+ 	ath9k_hw_setpower(sc->sc_ah, ATH9K_PM_FULL_SLEEP);
+ 
+ 	return 0;
+@@ -334,22 +333,6 @@ static int ath_pci_resume(struct device 
+ 	if ((val & 0x0000ff00) != 0)
+ 		pci_write_config_dword(pdev, 0x40, val & 0xffff00ff);
+ 
+-	ath9k_ps_wakeup(sc);
+-	/* Enable LED */
+-	ath9k_hw_cfg_output(sc->sc_ah, sc->sc_ah->led_pin,
+-			    AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
+-	ath9k_hw_set_gpio(sc->sc_ah, sc->sc_ah->led_pin, 0);
+-
+-	  /*
+-	   * Reset key cache to sane defaults (all entries cleared) instead of
+-	   * semi-random values after suspend/resume.
+-	   */
+-	ath9k_cmn_init_crypto(sc->sc_ah);
+-	ath9k_ps_restore(sc);
+-
+-	sc->ps_idle = true;
+-	ath_radio_disable(sc, hw);
+-
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -1955,7 +1955,7 @@ static void ath_tx_complete(struct ath_s
+ 		skb_pull(skb, padsize);
+ 	}
+ 
+-	if (sc->ps_flags & PS_WAIT_FOR_TX_ACK) {
++	if ((sc->ps_flags & PS_WAIT_FOR_TX_ACK) && !txq->axq_depth) {
+ 		sc->ps_flags &= ~PS_WAIT_FOR_TX_ACK;
+ 		ath_dbg(common, ATH_DBG_PS,
+ 			"Going back to sleep after having received TX status (0x%lx)\n",
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1122,6 +1122,7 @@ struct cfg80211_ibss_params {
+@@ -1130,6 +1130,7 @@ struct cfg80211_ibss_params {
  	u8 *ssid;
  	u8 *bssid;
  	struct ieee80211_channel *channel;
@@ -8,9 +365,9 @@
  	u8 *ie;
  	u8 ssid_len, ie_len;
  	u16 beacon_interval;
-@@ -3188,6 +3189,16 @@ void cfg80211_gtk_rekey_notify(struct ne
- void cfg80211_pmksa_candidate_notify(struct net_device *dev, int index,
- 				     const u8 *bssid, bool preauth, gfp_t gfp);
+@@ -3292,6 +3293,16 @@ void cfg80211_report_obss_beacon(struct 
+ 				 const u8 *frame, size_t len,
+ 				 int freq, gfp_t gfp);
  
 +/**
 + * cfg80211_can_use_ext_chan - test if ht40 on extension channel can be used
@@ -27,7 +384,7 @@
  /* wiphy_printk helpers, similar to dev_printk */
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
-@@ -180,6 +180,10 @@ static void ieee80211_send_addba_resp(st
+@@ -182,6 +182,10 @@ static void ieee80211_send_addba_resp(st
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
@@ -40,12 +397,12 @@
  					  IEEE80211_STYPE_ACTION);
 --- a/net/mac80211/agg-tx.c
 +++ b/net/mac80211/agg-tx.c
-@@ -77,10 +77,13 @@ static void ieee80211_send_addba_request
- 	memcpy(mgmt->da, da, ETH_ALEN);
+@@ -79,10 +79,13 @@ static void ieee80211_send_addba_request
  	memcpy(mgmt->sa, sdata->vif.addr, ETH_ALEN);
  	if (sdata->vif.type == NL80211_IFTYPE_AP ||
--	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
-+	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN ||
+ 	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN ||
+-	    sdata->vif.type == NL80211_IFTYPE_MESH_POINT)
++	    sdata->vif.type == NL80211_IFTYPE_MESH_POINT ||
 +	    sdata->vif.type == NL80211_IFTYPE_WDS)
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
@@ -55,9 +412,9 @@
  
  	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
  					  IEEE80211_STYPE_ACTION);
-@@ -397,7 +400,9 @@ int ieee80211_start_tx_ba_session(struct
- 	 */
+@@ -394,7 +397,9 @@ int ieee80211_start_tx_ba_session(struct
  	if (sdata->vif.type != NL80211_IFTYPE_STATION &&
+ 	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
 -	    sdata->vif.type != NL80211_IFTYPE_AP)
 +	    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -84,7 +441,7 @@
  			    TEST(TDLS_PEER_AUTH));
 --- a/net/mac80211/ht.c
 +++ b/net/mac80211/ht.c
-@@ -199,6 +199,8 @@ void ieee80211_send_delba(struct ieee802
+@@ -201,6 +201,8 @@ void ieee80211_send_delba(struct ieee802
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
@@ -103,7 +460,7 @@
  
  	lockdep_assert_held(&ifibss->mtx);
  
-@@ -104,8 +105,16 @@ static void __ieee80211_sta_join_ibss(st
+@@ -105,8 +106,16 @@ static void __ieee80211_sta_join_ibss(st
  
  	sdata->drop_unencrypted = capability & WLAN_CAPABILITY_PRIVACY ? 1 : 0;
  
@@ -122,7 +479,7 @@
  	ieee80211_hw_config(local, IEEE80211_CONF_CHANGE_CHANNEL);
  
  	sband = local->hw.wiphy->bands[chan->band];
-@@ -171,6 +180,18 @@ static void __ieee80211_sta_join_ibss(st
+@@ -172,6 +181,18 @@ static void __ieee80211_sta_join_ibss(st
  		memcpy(skb_put(skb, ifibss->ie_len),
  		       ifibss->ie, ifibss->ie_len);
  
@@ -141,7 +498,7 @@
  	if (local->hw.queues >= 4) {
  		pos = skb_put(skb, 9);
  		*pos++ = WLAN_EID_VENDOR_SPECIFIC;
-@@ -194,6 +215,7 @@ static void __ieee80211_sta_join_ibss(st
+@@ -195,6 +216,7 @@ static void __ieee80211_sta_join_ibss(st
  	bss_change |= BSS_CHANGED_BEACON;
  	bss_change |= BSS_CHANGED_BEACON_ENABLED;
  	bss_change |= BSS_CHANGED_BASIC_RATES;
@@ -149,7 +506,7 @@
  	bss_change |= BSS_CHANGED_IBSS;
  	sdata->vif.bss_conf.ibss_joined = true;
  	ieee80211_bss_info_change_notify(sdata, bss_change);
-@@ -266,6 +288,7 @@ static void ieee80211_rx_bss_info(struct
+@@ -268,6 +290,7 @@ static void ieee80211_rx_bss_info(struct
  	u64 beacon_timestamp, rx_timestamp;
  	u32 supp_rates = 0;
  	enum ieee80211_band band = rx_status->band;
@@ -157,7 +514,7 @@
  
  	if (elems->ds_params && elems->ds_params_len == 1)
  		freq = ieee80211_channel_to_frequency(elems->ds_params[0],
-@@ -275,7 +298,10 @@ static void ieee80211_rx_bss_info(struct
+@@ -277,7 +300,10 @@ static void ieee80211_rx_bss_info(struct
  
  	channel = ieee80211_get_channel(local->hw.wiphy, freq);
  
@@ -169,7 +526,7 @@
  		return;
  
  	if (sdata->vif.type == NL80211_IFTYPE_ADHOC &&
-@@ -313,8 +339,41 @@ static void ieee80211_rx_bss_info(struct
+@@ -315,8 +341,41 @@ static void ieee80211_rx_bss_info(struct
  						GFP_ATOMIC);
  		}
  
@@ -213,7 +570,7 @@
  
  		rcu_read_unlock();
  	}
-@@ -896,10 +955,15 @@ int ieee80211_ibss_join(struct ieee80211
+@@ -898,10 +957,15 @@ int ieee80211_ibss_join(struct ieee80211
  	struct sk_buff *skb;
  
  	skb = dev_alloc_skb(sdata->local->hw.extra_tx_headroom +
@@ -233,7 +590,7 @@
  			    params->ie_len);
  	if (!skb)
  		return -ENOMEM;
-@@ -920,13 +984,15 @@ int ieee80211_ibss_join(struct ieee80211
+@@ -922,13 +986,15 @@ int ieee80211_ibss_join(struct ieee80211
  	sdata->vif.bss_conf.beacon_int = params->beacon_interval;
  
  	sdata->u.ibss.channel = params->channel;
@@ -253,7 +610,7 @@
  	if (params->ie) {
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -465,6 +465,7 @@ struct ieee80211_if_ibss {
+@@ -470,6 +470,7 @@ struct ieee80211_if_ibss {
  	u8 ssid_len, ie_len;
  	u8 *ie;
  	struct ieee80211_channel *channel;
@@ -261,28 +618,6 @@
  
  	unsigned long ibss_join_req;
  	/* probe response/beacon for IBSS */
-@@ -1339,6 +1340,12 @@ void ieee80211_recalc_smps(struct ieee80
- size_t ieee80211_ie_split(const u8 *ies, size_t ielen,
- 			  const u8 *ids, int n_ids, size_t offset);
- size_t ieee80211_ie_split_vendor(const u8 *ies, size_t ielen, size_t offset);
-+u8 *ieee80211_ie_build_ht_cap(u8 *pos, struct ieee80211_supported_band *sband,
-+			      u16 cap);
-+u8 *ieee80211_ie_build_ht_info(u8 *pos,
-+				struct ieee80211_sta_ht_cap *ht_cap,
-+				struct ieee80211_channel *channel,
-+				enum nl80211_channel_type channel_type);
- 
- /* internal work items */
- void ieee80211_work_init(struct ieee80211_local *local);
-@@ -1367,6 +1374,8 @@ ieee80211_get_channel_mode(struct ieee80
- bool ieee80211_set_channel_type(struct ieee80211_local *local,
- 				struct ieee80211_sub_if_data *sdata,
- 				enum nl80211_channel_type chantype);
-+enum nl80211_channel_type
-+ieee80211_ht_info_to_channel_type(struct ieee80211_ht_info *ht_info);
- 
- #ifdef CONFIG_MAC80211_NOINLINE
- #define debug_noinline noinline
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
 @@ -178,7 +178,6 @@ static int ieee80211_do_open(struct net_
@@ -293,7 +628,7 @@
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -290,27 +289,6 @@ static int ieee80211_do_open(struct net_
+@@ -309,27 +308,6 @@ static int ieee80211_do_open(struct net_
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -321,17 +656,17 @@
  	/*
  	 * set_multicast_list will be invoked by the networking core
  	 * which will check whether any increments here were done in
-@@ -344,8 +322,7 @@ static int ieee80211_do_open(struct net_
+@@ -356,8 +334,7 @@ static int ieee80211_do_open(struct net_
  	netif_tx_start_all_queues(dev);
  
  	return 0;
 - err_del_interface:
--	drv_remove_interface(local, &sdata->vif);
+-	drv_remove_interface(local, sdata);
 +
   err_stop:
  	if (!local->open_count)
  		drv_stop(local);
-@@ -716,6 +693,70 @@ static void ieee80211_if_setup(struct ne
+@@ -732,6 +709,70 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -402,7 +737,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -820,6 +861,9 @@ static void ieee80211_iface_work(struct 
+@@ -836,6 +877,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -412,11 +747,76 @@
  		default:
  			WARN(1, "frame for unexpected interface type");
  			break;
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -1359,9 +1359,6 @@ static void __ieee80211_connection_loss(
+ 	ieee80211_set_disassoc(sdata, true, true);
+ 	mutex_unlock(&ifmgd->mtx);
+ 
+-	mutex_lock(&local->mtx);
+-	ieee80211_recalc_idle(local);
+-	mutex_unlock(&local->mtx);
+ 	/*
+ 	 * must be outside lock due to cfg80211,
+ 	 * but that's not a problem.
+@@ -1370,6 +1367,10 @@ static void __ieee80211_connection_loss(
+ 				       IEEE80211_STYPE_DEAUTH,
+ 				       WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY,
+ 				       NULL, true);
++
++	mutex_lock(&local->mtx);
++	ieee80211_recalc_idle(local);
++	mutex_unlock(&local->mtx);
+ }
+ 
+ void ieee80211_beacon_connection_loss_work(struct work_struct *work)
+@@ -2136,9 +2137,6 @@ static void ieee80211_sta_connection_los
+ 
+ 	ieee80211_set_disassoc(sdata, true, true);
+ 	mutex_unlock(&ifmgd->mtx);
+-	mutex_lock(&local->mtx);
+-	ieee80211_recalc_idle(local);
+-	mutex_unlock(&local->mtx);
+ 	/*
+ 	 * must be outside lock due to cfg80211,
+ 	 * but that's not a problem.
+@@ -2146,6 +2144,11 @@ static void ieee80211_sta_connection_los
+ 	ieee80211_send_deauth_disassoc(sdata, bssid,
+ 			IEEE80211_STYPE_DEAUTH, reason,
+ 			NULL, true);
++
++	mutex_lock(&local->mtx);
++	ieee80211_recalc_idle(local);
++	mutex_unlock(&local->mtx);
++
+ 	mutex_lock(&ifmgd->mtx);
+ }
+ 
+--- a/net/mac80211/offchannel.c
++++ b/net/mac80211/offchannel.c
+@@ -212,8 +212,6 @@ static void ieee80211_hw_roc_start(struc
+ 		return;
+ 	}
+ 
+-	ieee80211_recalc_idle(local);
+-
+ 	if (local->hw_roc_skb) {
+ 		sdata = IEEE80211_DEV_TO_SUB_IF(local->hw_roc_dev);
+ 		ieee80211_tx_skb(sdata, local->hw_roc_skb);
+@@ -227,6 +225,8 @@ static void ieee80211_hw_roc_start(struc
+ 					  GFP_KERNEL);
+ 	}
+ 
++	ieee80211_recalc_idle(local);
++
+ 	mutex_unlock(&local->mtx);
+ }
+ 
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2211,7 +2211,9 @@ ieee80211_rx_h_action(struct ieee80211_r
- 		 */
+@@ -2250,7 +2250,9 @@ ieee80211_rx_h_action(struct ieee80211_r
  		if (sdata->vif.type != NL80211_IFTYPE_STATION &&
+ 		    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
 -		    sdata->vif.type != NL80211_IFTYPE_AP)
 +		    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -425,7 +825,7 @@
  			break;
  
  		/* verify action_code is present */
-@@ -2426,13 +2428,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2465,13 +2467,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -442,7 +842,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_DEAUTH):
  	case cpu_to_le16(IEEE80211_STYPE_DISASSOC):
-@@ -2775,10 +2778,16 @@ static int prepare_for_handlers(struct i
+@@ -2818,10 +2821,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
@@ -471,7 +871,7 @@
   * @WLAN_STA_CLEAR_PS_FILT: Clear PS filter in hardware (using the
   *	IEEE80211_TX_CTL_CLEAR_PS_FILT control flag) when the next
   *	frame to this station is transmitted.
-@@ -61,7 +60,6 @@ enum ieee80211_sta_info_flags {
+@@ -62,7 +61,6 @@ enum ieee80211_sta_info_flags {
  	WLAN_STA_SHORT_PREAMBLE,
  	WLAN_STA_ASSOC_AP,
  	WLAN_STA_WME,
@@ -479,181 +879,6 @@
  	WLAN_STA_CLEAR_PS_FILT,
  	WLAN_STA_MFP,
  	WLAN_STA_BLOCK_BA,
---- a/net/mac80211/util.c
-+++ b/net/mac80211/util.c
-@@ -836,23 +836,8 @@ int ieee80211_build_preq_ies(struct ieee
- 		offset = noffset;
- 	}
- 
--	if (sband->ht_cap.ht_supported) {
--		u16 cap = sband->ht_cap.cap;
--		__le16 tmp;
--
--		*pos++ = WLAN_EID_HT_CAPABILITY;
--		*pos++ = sizeof(struct ieee80211_ht_cap);
--		memset(pos, 0, sizeof(struct ieee80211_ht_cap));
--		tmp = cpu_to_le16(cap);
--		memcpy(pos, &tmp, sizeof(u16));
--		pos += sizeof(u16);
--		*pos++ = sband->ht_cap.ampdu_factor |
--			 (sband->ht_cap.ampdu_density <<
--				IEEE80211_HT_AMPDU_PARM_DENSITY_SHIFT);
--		memcpy(pos, &sband->ht_cap.mcs, sizeof(sband->ht_cap.mcs));
--		pos += sizeof(sband->ht_cap.mcs);
--		pos += 2 + 4 + 1; /* ext info, BF cap, antsel */
--	}
-+	if (sband->ht_cap.ht_supported)
-+		pos = ieee80211_ie_build_ht_cap(pos, sband, sband->ht_cap.cap);
- 
- 	/*
- 	 * If adding more here, adjust code in main.c
-@@ -1443,3 +1428,100 @@ int ieee80211_add_ext_srates_ie(struct i
- 	}
- 	return 0;
- }
-+
-+u8 *ieee80211_ie_build_ht_cap(u8 *pos, struct ieee80211_supported_band *sband,
-+			      u16 cap)
-+{
-+	__le16 tmp;
-+
-+	*pos++ = WLAN_EID_HT_CAPABILITY;
-+	*pos++ = sizeof(struct ieee80211_ht_cap);
-+	memset(pos, 0, sizeof(struct ieee80211_ht_cap));
-+
-+	/* capability flags */
-+	tmp = cpu_to_le16(cap);
-+	memcpy(pos, &tmp, sizeof(u16));
-+	pos += sizeof(u16);
-+
-+	/* AMPDU parameters */
-+	*pos++ = sband->ht_cap.ampdu_factor |
-+		 (sband->ht_cap.ampdu_density <<
-+			IEEE80211_HT_AMPDU_PARM_DENSITY_SHIFT);
-+
-+	/* MCS set */
-+	memcpy(pos, &sband->ht_cap.mcs, sizeof(sband->ht_cap.mcs));
-+	pos += sizeof(sband->ht_cap.mcs);
-+
-+	/* extended capabilities */
-+	pos += sizeof(__le16);
-+
-+	/* BF capabilities */
-+	pos += sizeof(__le32);
-+
-+	/* antenna selection */
-+	pos += sizeof(u8);
-+
-+	return pos;
-+}
-+
-+u8 *ieee80211_ie_build_ht_info(u8 *pos,
-+			       struct ieee80211_sta_ht_cap *ht_cap,
-+			       struct ieee80211_channel *channel,
-+			       enum nl80211_channel_type channel_type)
-+{
-+	struct ieee80211_ht_info *ht_info;
-+	/* Build HT Information */
-+	*pos++ = WLAN_EID_HT_INFORMATION;
-+	*pos++ = sizeof(struct ieee80211_ht_info);
-+	ht_info = (struct ieee80211_ht_info *)pos;
-+	ht_info->control_chan =
-+			ieee80211_frequency_to_channel(channel->center_freq);
-+	switch (channel_type) {
-+	case NL80211_CHAN_HT40MINUS:
-+		ht_info->ht_param = IEEE80211_HT_PARAM_CHA_SEC_BELOW;
-+		break;
-+	case NL80211_CHAN_HT40PLUS:
-+		ht_info->ht_param = IEEE80211_HT_PARAM_CHA_SEC_ABOVE;
-+		break;
-+	case NL80211_CHAN_HT20:
-+	default:
-+		ht_info->ht_param = IEEE80211_HT_PARAM_CHA_SEC_NONE;
-+		break;
-+	}
-+	if (ht_cap->cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40)
-+		ht_info->ht_param |= IEEE80211_HT_PARAM_CHAN_WIDTH_ANY;
-+	ht_info->operation_mode = 0x0000;
-+	ht_info->stbc_param = 0x0000;
-+
-+	/* It seems that Basic MCS set and Supported MCS set
-+	   are identical for the first 10 bytes */
-+	memset(&ht_info->basic_set, 0, 16);
-+	memcpy(&ht_info->basic_set, &ht_cap->mcs, 10);
-+
-+	return pos + sizeof(struct ieee80211_ht_info);
-+}
-+
-+enum nl80211_channel_type
-+ieee80211_ht_info_to_channel_type(struct ieee80211_ht_info *ht_info)
-+{
-+	enum nl80211_channel_type channel_type;
-+
-+	if (!ht_info)
-+		return NL80211_CHAN_NO_HT;
-+
-+	switch (ht_info->ht_param & IEEE80211_HT_PARAM_CHA_SEC_OFFSET) {
-+	case IEEE80211_HT_PARAM_CHA_SEC_NONE:
-+		channel_type = NL80211_CHAN_HT20;
-+		break;
-+	case IEEE80211_HT_PARAM_CHA_SEC_ABOVE:
-+		channel_type = NL80211_CHAN_HT40PLUS;
-+		break;
-+	case IEEE80211_HT_PARAM_CHA_SEC_BELOW:
-+		channel_type = NL80211_CHAN_HT40MINUS;
-+		break;
-+	default:
-+		channel_type = NL80211_CHAN_NO_HT;
-+	}
-+
-+	return channel_type;
-+}
---- a/net/mac80211/work.c
-+++ b/net/mac80211/work.c
-@@ -118,7 +118,6 @@ static void ieee80211_add_ht_ie(struct s
- 	u8 *pos;
- 	u32 flags = channel->flags;
- 	u16 cap = sband->ht_cap.cap;
--	__le16 tmp;
- 
- 	if (!sband->ht_cap.ht_supported)
- 		return;
-@@ -169,34 +168,8 @@ static void ieee80211_add_ht_ie(struct s
- 	}
- 
- 	/* reserve and fill IE */
--
- 	pos = skb_put(skb, sizeof(struct ieee80211_ht_cap) + 2);
--	*pos++ = WLAN_EID_HT_CAPABILITY;
--	*pos++ = sizeof(struct ieee80211_ht_cap);
--	memset(pos, 0, sizeof(struct ieee80211_ht_cap));
--
--	/* capability flags */
--	tmp = cpu_to_le16(cap);
--	memcpy(pos, &tmp, sizeof(u16));
--	pos += sizeof(u16);
--
--	/* AMPDU parameters */
--	*pos++ = sband->ht_cap.ampdu_factor |
--		 (sband->ht_cap.ampdu_density <<
--			IEEE80211_HT_AMPDU_PARM_DENSITY_SHIFT);
--
--	/* MCS set */
--	memcpy(pos, &sband->ht_cap.mcs, sizeof(sband->ht_cap.mcs));
--	pos += sizeof(sband->ht_cap.mcs);
--
--	/* extended capabilities */
--	pos += sizeof(__le16);
--
--	/* BF capabilities */
--	pos += sizeof(__le32);
--
--	/* antenna selection */
--	pos += sizeof(u8);
-+	ieee80211_ie_build_ht_cap(pos, sband, cap);
- }
- 
- static void ieee80211_send_assoc(struct ieee80211_sub_if_data *sdata,
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
 @@ -44,9 +44,9 @@ rdev_freq_to_chan(struct cfg80211_regist
@@ -690,7 +915,7 @@
  				       "allowed to initiate communication\n");
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -4574,13 +4574,34 @@ static int nl80211_join_ibss(struct sk_b
+@@ -4604,13 +4604,34 @@ static int nl80211_join_ibss(struct sk_b
  		ibss.ie_len = nla_len(info->attrs[NL80211_ATTR_IE]);
  	}
  

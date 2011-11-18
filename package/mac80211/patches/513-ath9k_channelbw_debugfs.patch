@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -587,6 +587,7 @@ struct ath_softc {
+@@ -591,6 +591,7 @@ struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
  
@@ -10,7 +10,7 @@
  	struct survey_info *cur_survey;
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1718,6 +1718,9 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1724,6 +1724,9 @@ int ath9k_init_debug(struct ath_hw *ah)
  	debugfs_create_file("eeprom", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_eeprom);
  
@@ -22,7 +22,7 @@
  	sc->debug.sampidx = 0;
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1649,9 +1649,10 @@ static int ath9k_config(struct ieee80211
+@@ -1606,9 +1606,10 @@ static int ath9k_config(struct ieee80211
  
  	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
  		struct ieee80211_channel *curchan = hw->conf.channel;
@@ -34,7 +34,7 @@
  		unsigned long flags;
  
  		if (ah->curchan)
-@@ -1704,7 +1705,23 @@ static int ath9k_config(struct ieee80211
+@@ -1661,7 +1662,23 @@ static int ath9k_config(struct ieee80211
  			memset(&sc->survey[pos], 0, sizeof(struct survey_info));
  		}
  
@@ -61,7 +61,7 @@
  			return -EINVAL;
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1548,6 +1548,10 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -1549,6 +1549,10 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  	    caldata->rtt_hist.num_readings)
  		allow_fbs = true;
  
