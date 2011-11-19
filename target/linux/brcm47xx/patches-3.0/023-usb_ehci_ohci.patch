@@ -152,7 +152,7 @@
 +#endif
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -1352,17 +1352,21 @@ static int __init ehci_hcd_init(void)
+@@ -1380,17 +1380,21 @@ static int __init ehci_hcd_init(void)
  		goto clean4;
  #endif
  
@@ -174,7 +174,7 @@
  #ifdef XILINX_OF_PLATFORM_DRIVER
  	platform_driver_unregister(&XILINX_OF_PLATFORM_DRIVER);
  clean4:
-@@ -1395,9 +1399,11 @@ module_init(ehci_hcd_init);
+@@ -1423,9 +1427,11 @@ module_init(ehci_hcd_init);
  
  static void __exit ehci_hcd_cleanup(void)
  {

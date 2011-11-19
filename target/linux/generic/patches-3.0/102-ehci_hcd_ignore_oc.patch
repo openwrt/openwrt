@@ -11,7 +11,7 @@
  		    &ehci->regs->intr_enable); /* Turn On Interrupts */
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -656,7 +656,7 @@ ehci_hub_status_data (struct usb_hcd *hc
+@@ -655,7 +655,7 @@ ehci_hub_status_data (struct usb_hcd *hc
  	 * always set, seem to clear PORT_OCC and PORT_CSC when writing to
  	 * PORT_POWER; that's surprising, but maybe within-spec.
  	 */
@@ -20,7 +20,7 @@
  		mask = PORT_CSC | PORT_PEC | PORT_OCC;
  	else
  		mask = PORT_CSC | PORT_PEC;
-@@ -881,7 +881,7 @@ static int ehci_hub_control (
+@@ -880,7 +880,7 @@ static int ehci_hub_control (
  		if (temp & PORT_PEC)
  			status |= USB_PORT_STAT_C_ENABLE << 16;
  
@@ -31,10 +31,10 @@
  			/*
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
-@@ -137,6 +137,7 @@ struct ehci_hcd {			/* one per controlle
- 	unsigned		fs_i_thresh:1;	/* Intel iso scheduling */
+@@ -138,6 +138,7 @@ struct ehci_hcd {			/* one per controlle
  	unsigned		use_dummy_qh:1;	/* AMD Frame List table quirk*/
  	unsigned		has_synopsys_hc_bug:1; /* Synopsys HC */
+ 	unsigned		frame_index_bug:1; /* MosChip (AKA NetMos) */
 +	unsigned		ignore_oc:1;
  
  	/* required for usb32 quirk */
