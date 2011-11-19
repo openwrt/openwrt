@@ -145,7 +145,7 @@
  	tw32(GRC_MODE, tp->grc_mode);
  
  	if (tp->pci_chip_rev_id == CHIPREV_ID_5705_A0) {
-@@ -7408,9 +7446,12 @@ static int tg3_halt_cpu(struct tg3 *tp,
+@@ -7403,9 +7441,12 @@ static int tg3_halt_cpu(struct tg3 *tp,
  		return -ENODEV;
  	}
  
@@ -161,7 +161,7 @@
  	return 0;
  }
  
-@@ -7472,6 +7513,11 @@ static int tg3_load_5701_a0_firmware_fix
+@@ -7467,6 +7508,11 @@ static int tg3_load_5701_a0_firmware_fix
  	const __be32 *fw_data;
  	int err, i;
  
@@ -173,7 +173,7 @@
  	fw_data = (void *)tp->fw->data;
  
  	/* Firmware blob starts with version numbers, followed by
-@@ -7528,6 +7574,11 @@ static int tg3_load_tso_firmware(struct
+@@ -7523,6 +7569,11 @@ static int tg3_load_tso_firmware(struct
  	unsigned long cpu_base, cpu_scratch_base, cpu_scratch_size;
  	int err, i;
  
@@ -185,7 +185,7 @@
  	if (tg3_flag(tp, HW_TSO_1) ||
  	    tg3_flag(tp, HW_TSO_2) ||
  	    tg3_flag(tp, HW_TSO_3))
-@@ -8825,6 +8876,11 @@ static void tg3_timer(unsigned long __op
+@@ -8819,6 +8870,11 @@ static void tg3_timer(unsigned long __op
  
  	spin_lock(&tp->lock);
  
@@ -197,7 +197,7 @@
  	if (!tg3_flag(tp, TAGGED_STATUS)) {
  		/* All of this garbage is because when using non-tagged
  		 * IRQ status the mailbox/status_block protocol the chip
-@@ -10448,6 +10504,11 @@ static int tg3_test_nvram(struct tg3 *tp
+@@ -10446,6 +10502,11 @@ static int tg3_test_nvram(struct tg3 *tp
  	if (tg3_flag(tp, NO_NVRAM))
  		return 0;
  
@@ -209,7 +209,7 @@
  	if (tg3_nvram_read(tp, 0, &magic) != 0)
  		return -EIO;
  
-@@ -11442,7 +11503,7 @@ static int tg3_ioctl(struct net_device *
+@@ -11440,7 +11501,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -218,7 +218,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		data->val_out = mii_regval;
-@@ -11458,7 +11519,7 @@ static int tg3_ioctl(struct net_device *
+@@ -11456,7 +11517,7 @@ static int tg3_ioctl(struct net_device *
  			return -EAGAIN;
  
  		spin_lock_bh(&tp->lock);
@@ -227,7 +227,7 @@
  		spin_unlock_bh(&tp->lock);
  
  		return err;
-@@ -12188,6 +12249,13 @@ static void __devinit tg3_get_5720_nvram
+@@ -12186,6 +12247,13 @@ static void __devinit tg3_get_5720_nvram
  /* Chips other than 5700/5701 use the NVRAM for fetching info. */
  static void __devinit tg3_nvram_init(struct tg3 *tp)
  {
@@ -241,7 +241,7 @@
  	tw32_f(GRC_EEPROM_ADDR,
  	     (EEPROM_ADDR_FSM_RESET |
  	      (EEPROM_DEFAULT_CLOCK_PERIOD <<
-@@ -12454,6 +12522,9 @@ static int tg3_nvram_write_block(struct
+@@ -12452,6 +12520,9 @@ static int tg3_nvram_write_block(struct
  {
  	int ret;
  

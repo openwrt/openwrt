@@ -22,7 +22,7 @@
  	depends on USB
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -1284,9 +1284,14 @@ MODULE_LICENSE ("GPL");
+@@ -1312,9 +1312,14 @@ MODULE_LICENSE ("GPL");
  #define PLATFORM_DRIVER		ehci_grlib_driver
  #endif
  
@@ -38,7 +38,7 @@
  #error "missing bus glue for ehci-hcd"
  #endif
  
-@@ -1346,10 +1351,20 @@ static int __init ehci_hcd_init(void)
+@@ -1374,10 +1379,20 @@ static int __init ehci_hcd_init(void)
  	if (retval < 0)
  		goto clean4;
  #endif
@@ -60,7 +60,7 @@
  clean4:
  #endif
  #ifdef OF_PLATFORM_DRIVER
-@@ -1380,6 +1395,9 @@ module_init(ehci_hcd_init);
+@@ -1408,6 +1423,9 @@ module_init(ehci_hcd_init);
  
  static void __exit ehci_hcd_cleanup(void)
  {

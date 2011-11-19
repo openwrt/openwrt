@@ -24,11 +24,9 @@ Patchwork: https://patchwork.linux-mips.org/patch/2413/
  arch/mips/pmc-sierra/msp71xx/msp_setup.c |    8 ++---
  4 files changed, 56 insertions(+), 24 deletions(-)
 
-diff --git a/arch/mips/include/asm/smp-ops.h b/arch/mips/include/asm/smp-ops.h
-index 9e09af3..48b03ff 100644
 --- a/arch/mips/include/asm/smp-ops.h
 +++ b/arch/mips/include/asm/smp-ops.h
-@@ -56,8 +56,43 @@ static inline void register_smp_ops(struct plat_smp_ops *ops)
+@@ -56,8 +56,43 @@ static inline void register_smp_ops(stru
  
  #endif /* !CONFIG_SMP */
  
@@ -75,8 +73,6 @@ index 9e09af3..48b03ff 100644
 +}
  
  #endif /* __ASM_SMP_OPS_H */
-diff --git a/arch/mips/mipssim/sim_setup.c b/arch/mips/mipssim/sim_setup.c
-index 55f22a3..1970069 100644
 --- a/arch/mips/mipssim/sim_setup.c
 +++ b/arch/mips/mipssim/sim_setup.c
 @@ -59,18 +59,17 @@ void __init prom_init(void)
@@ -106,8 +102,6 @@ index 55f22a3..1970069 100644
  }
  
  static void __init serial_init(void)
-diff --git a/arch/mips/mti-malta/malta-init.c b/arch/mips/mti-malta/malta-init.c
-index 31180c3..4b988b9 100644
 --- a/arch/mips/mti-malta/malta-init.c
 +++ b/arch/mips/mti-malta/malta-init.c
 @@ -28,6 +28,7 @@
@@ -140,8 +134,6 @@ index 31180c3..4b988b9 100644
  #ifdef CONFIG_MIPS_MT_SMTC
  	register_smp_ops(&msmtc_smp_ops);
  #endif
-diff --git a/arch/mips/pmc-sierra/msp71xx/msp_setup.c b/arch/mips/pmc-sierra/msp71xx/msp_setup.c
-index 2413ea6..0abfbe0 100644
 --- a/arch/mips/pmc-sierra/msp71xx/msp_setup.c
 +++ b/arch/mips/pmc-sierra/msp71xx/msp_setup.c
 @@ -228,13 +228,11 @@ void __init prom_init(void)
@@ -161,6 +153,3 @@ index 2413ea6..0abfbe0 100644
  
  #ifdef CONFIG_PMCTWILED
  	/*
--- 
-1.7.3.4
-
