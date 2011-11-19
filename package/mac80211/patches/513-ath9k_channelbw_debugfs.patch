@@ -8,20 +8,88 @@
  	int chan_idx;
  	int chan_is_ht;
  	struct survey_info *cur_survey;
+@@ -654,6 +655,7 @@ struct ath_softc {
+ 	u8 ant_tx, ant_rx;
+ };
+ 
++int ath9k_config(struct ieee80211_hw *hw, u32 changed);
+ void ath9k_tasklet(unsigned long data);
+ int ath_cabq_update(struct ath_softc *);
+ 
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1724,6 +1724,9 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1663,6 +1663,50 @@ static const struct file_operations fops
+ 	.owner = THIS_MODULE
+ };
+ 
++
++static ssize_t read_file_chan_bw(struct file *file, char __user *user_buf,
++			     size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	char buf[32];
++	unsigned int len;
++
++	len = sprintf(buf, "0x%08x\n", sc->chan_bw);
++	return simple_read_from_buffer(user_buf, count, ppos, buf, len);
++}
++
++static ssize_t write_file_chan_bw(struct file *file, const char __user *user_buf,
++			     size_t count, loff_t *ppos)
++{
++	struct ath_softc *sc = file->private_data;
++	unsigned long chan_bw;
++	char buf[32];
++	ssize_t len;
++
++	len = min(count, sizeof(buf) - 1);
++	if (copy_from_user(buf, user_buf, len))
++		return -EFAULT;
++
++	buf[len] = '\0';
++	if (strict_strtoul(buf, 0, &chan_bw))
++		return -EINVAL;
++
++	sc->chan_bw = chan_bw;
++	if (!sc->ps_idle)
++		ath9k_config(sc->hw, IEEE80211_CONF_CHANGE_CHANNEL);
++
++	return count;
++}
++
++static const struct file_operations fops_chanbw = {
++	.read = read_file_chan_bw,
++	.write = write_file_chan_bw,
++	.open = ath9k_debugfs_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++
+ int ath9k_init_debug(struct ath_hw *ah)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
+@@ -1724,6 +1768,9 @@ int ath9k_init_debug(struct ath_hw *ah)
  	debugfs_create_file("eeprom", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_eeprom);
  
-+	debugfs_create_u32("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
-+			   &sc->chan_bw);
++	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
++			    sc, &fops_chanbw);
 +
  	sc->debug.regidx = 0;
  	memset(&sc->debug.bb_mac_samp, 0, sizeof(sc->debug.bb_mac_samp));
  	sc->debug.sampidx = 0;
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1554,7 +1554,7 @@ static void ath9k_disable_ps(struct ath_
+ 
+ }
+ 
+-static int ath9k_config(struct ieee80211_hw *hw, u32 changed)
++int ath9k_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct ath_softc *sc = hw->priv;
+ 	struct ath_hw *ah = sc->sc_ah;
 @@ -1606,9 +1606,10 @@ static int ath9k_config(struct ieee80211
  
  	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
