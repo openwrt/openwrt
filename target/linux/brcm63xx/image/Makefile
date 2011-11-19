@@ -192,7 +192,7 @@ define Image/Build
 	# D-Link DSL-2640B, rev B2
 	$(call Image/Build/CFE,$(1),D-4P-W,6348,DSL2640B-B2)
 	# D-Link DSL-2650U
-	$(call Image/Build/CFE,$(1),96358VW2,6358,bc310,,dsl2650u)
+	$(call Image/Build/CFE,$(1),96358VW2,6358,DSL2650U)
 	# D-Link DSL-2740B/DSL-2741B, rev C2
 	$(call Image/Build/CFEFIXUP,$(1),96358GW,AW4139,6358,DSL274XB-C2)
 	# D-Link DSL-2740B/DSL-2741B, rev C3
