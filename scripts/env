@@ -192,7 +192,7 @@ env_new() {
 	fi
 	git checkout -b "$1" "$from"
 	if [ -f "$BASEDIR/.config" -o -d "$BASEDIR/files" ]; then
-		if ask_bool 1 "Do you want to keep your current config and files?"; then
+		if ask_bool 1 "Do you want to start your configuration repository with the current configuration?"; then
 			[ -d "$BASEDIR/files" -a \! -L "$BASEDIR/files" ] && {
 				mkdir -p "$ENVDIR/files"
 				shopt -s dotglob
