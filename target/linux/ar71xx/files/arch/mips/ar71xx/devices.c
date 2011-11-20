@@ -875,6 +875,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 					   AR933X_RESET_GE0_MDIO;
 			pdata->ddr_flush = ar933x_ddr_flush_ge0;
 			pdata->set_speed = ar933x_set_speed_ge0;
+
+			pdata->phy_mask = BIT(4);
 		} else {
 			pdata->reset_bit = AR933X_RESET_GE1_MAC |
 					   AR933X_RESET_GE1_MDIO;
