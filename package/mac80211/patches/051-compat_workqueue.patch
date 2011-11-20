@@ -1,0 +1,18 @@
+--- a/compat/compat-2.6.36.c
++++ b/compat/compat-2.6.36.c
+@@ -93,6 +93,8 @@ void compat_usb_scuttle_anchored_urbs(st
+ }
+ EXPORT_SYMBOL_GPL(compat_usb_scuttle_anchored_urbs);
+ 
++#endif /* CONFIG_COMPAT_USB_URB_THREAD_FIX */
++
+ struct workqueue_struct *system_nrt_wq __read_mostly;
+ EXPORT_SYMBOL_GPL(system_nrt_wq);
+ 
+@@ -106,6 +108,3 @@ void compat_system_workqueue_destroy()
+ {
+ 	destroy_workqueue(system_nrt_wq);
+ }
+-
+-#endif /* CONFIG_COMPAT_USB_URB_THREAD_FIX */
+-
