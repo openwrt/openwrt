@@ -346,7 +346,36 @@
  
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -1955,7 +1955,7 @@ static void ath_tx_complete(struct ath_s
+@@ -179,6 +179,11 @@ static void ath_tx_flush_tid(struct ath_
+ 		spin_lock_bh(&txq->axq_lock);
+ 	}
+ 
++	if (tid->baw_head == tid->baw_tail) {
++		tid->state &= ~AGGR_ADDBA_COMPLETE;
++		tid->state &= ~AGGR_CLEANUP;
++	}
++
+ 	spin_unlock_bh(&txq->axq_lock);
+ }
+ 
+@@ -556,15 +561,9 @@ static void ath_tx_complete_aggr(struct 
+ 		spin_unlock_bh(&txq->axq_lock);
+ 	}
+ 
+-	if (tid->state & AGGR_CLEANUP) {
++	if (tid->state & AGGR_CLEANUP)
+ 		ath_tx_flush_tid(sc, tid);
+ 
+-		if (tid->baw_head == tid->baw_tail) {
+-			tid->state &= ~AGGR_ADDBA_COMPLETE;
+-			tid->state &= ~AGGR_CLEANUP;
+-		}
+-	}
+-
+ 	rcu_read_unlock();
+ 
+ 	if (needreset) {
+@@ -1955,7 +1954,7 @@ static void ath_tx_complete(struct ath_s
  		skb_pull(skb, padsize);
  	}
  
