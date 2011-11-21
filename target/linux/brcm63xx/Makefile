@@ -15,7 +15,7 @@ MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += kmod-switch gpioctl kmod-input-gpio-buttons \
+DEFAULT_PACKAGES += kmod-switch kmod-input-gpio-buttons \
 	kmod-button-hotplug
 
 define Target/Description
