@@ -40,8 +40,6 @@ PKG_CONFIG_DEPENDS:= \
 
 CARL9170_FW_VERSION:=1.9.4
 
-#QUILT_PATCH_DIR:=patches-openwrt
-
 include $(INCLUDE_DIR)/package.mk
 
 WMENU:=Wireless Drivers
