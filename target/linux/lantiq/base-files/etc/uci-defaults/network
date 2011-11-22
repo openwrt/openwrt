@@ -115,6 +115,13 @@ dsl=$(lantiq_soc_has_adsl)
 board=$(lantiq_board_name)
 
 case "$board" in
+GIGASX76X)
+	set_interface_lan "eth0.1"
+	add_switch "eth0" "1" "1"
+	add_switch_vlan "eth0" "1" "1 2 3 4 5t"
+	set_atm_wan "1" "32" "llc" "bridged"
+	;;
+
 *)
 	# custom foo goes here
 	true
