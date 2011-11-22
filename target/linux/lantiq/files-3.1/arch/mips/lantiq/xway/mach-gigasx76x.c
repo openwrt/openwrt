@@ -30,8 +30,11 @@
 #include <dev-gpio-buttons.h>
 
 #include "../machtypes.h"
+#include "dev-wifi-ath5k.h"
 #include "devices.h"
 #include "dev-dwc_otg.h"
+
+#include "mach-gigasx76x.h"
 
 #define UBOOT_ENV_OFFSET	0x010000
 #define UBOOT_ENV_SIZE		0x010000
@@ -62,6 +65,7 @@ static struct mtd_partition gigasx76x_partitions[] =
 
 static struct gpio_led
 gigasx76x_gpio_leds[] __initdata = {
+
 	{ .name = "soc:green:usb", .gpio = 202, },
 	{ .name = "soc:green:wifi", .gpio = 203, },
 	{ .name = "soc:green:phone2", .gpio = 204, },
@@ -73,22 +77,22 @@ gigasx76x_gpio_leds[] __initdata = {
 
 static struct gpio_keys_button
 gigasx76x_gpio_keys[] __initdata = {
-{
-	.desc	= "restart",
-	.type	= EV_KEY,
-	.code	= KEY_RESTART,
-	.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
-	.gpio	= 14,
-	.active_low	= 1,
-},
-{
-	.desc	= "wps",
-	.type	= EV_KEY,
-	.code	= KEY_WPS_BUTTON,
-	.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
-	.gpio	= 22,
-	.active_low	= 1,
-},
+	{
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= BTN_0,
+		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= 22,
+		.active_low	= 1,
+	},
+	/*{
+		.desc		= "factory",
+		.type		= EV_KEY,
+		.code		= BTN_1,
+		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= 14,
+		.active_low	= 1,
+	},*/
 };
 
 static struct physmap_flash_data gigasx76x_flash_data = {
@@ -147,19 +151,28 @@ static int __init gigasx76x_parse_hex_byte(const char *b) {
 	return (hi << 4) | lo;
 }
 
+static u16 gigasx76x_ath5k_eeprom_data[ATH5K_PLAT_EEP_MAX_WORDS];
+static u8 gigasx76x_ath5k_eeprom_mac[6];
+
 static int __init gigasx76x_register_ethernet(void) {
 	u_int8_t addr[6];
 	int i;
 	char *uboot_env_page;
 	char *mac;
+	char *boardid;
 
 	uboot_env_page = ioremap(LTQ_FLASH_START + UBOOT_ENV_OFFSET, UBOOT_ENV_SIZE);
 	if (!uboot_env_page)
 		return -ENOMEM;
 
 	mac = get_uboot_env_var(uboot_env_page, UBOOT_ENV_SIZE, "\0ethaddr=", 9);
+	boardid = get_uboot_env_var(uboot_env_page, UBOOT_ENV_SIZE, "\0boardid=", 9);
 
 	if (!mac) {
+	goto error_fail;
+	}
+
+	if (!boardid) {
 	goto error_fail;
 	}
 
@@ -187,6 +200,19 @@ static int __init gigasx76x_register_ethernet(void) {
 	memcpy(&ltq_eth_data.mac.sa_data, addr, 6);
 	ltq_register_etop(&ltq_eth_data);
 
+	memcpy(&gigasx76x_ath5k_eeprom_mac, addr, 6);
+	gigasx76x_ath5k_eeprom_mac[5]++;
+
+	if (strncmp(boardid, "sx763", 5) == 0) {
+		printk("GIGASX76X: Board id is sx763.");
+		memcpy(&gigasx76x_ath5k_eeprom_data, sx763_eeprom_data, ATH5K_PLAT_EEP_MAX_WORDS);
+	} else if (strncmp(boardid, "sx762", 5) == 0) {
+			printk("GIGASX76X: Board id is sx762.");
+			memcpy(&gigasx76x_ath5k_eeprom_data, sx762_eeprom_data, ATH5K_PLAT_EEP_MAX_WORDS);
+	} else {
+		printk("GIGASX76X: Board id is unknown, fix uboot_env data.");
+	}
+
 	return 0;
 
 	error_fail:
@@ -201,12 +227,13 @@ static void __init gigasx76x_init(void) {
 	ltq_register_gpio_stp();
 	ltq_register_nor(&gigasx76x_flash_data);
 	ltq_register_pci(&ltq_pci_data);
-	gigasx76x_register_ethernet();
-	xway_register_dwc(GIGASX76X_USB);
 	ltq_register_tapi();
 	ltq_register_madwifi_eep(GIGASX76X_MADWIFI_ADDR);
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(gigasx76x_gpio_leds), gigasx76x_gpio_leds);
 	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(gigasx76x_gpio_keys), gigasx76x_gpio_keys);
+	ltq_register_ath5k(gigasx76x_ath5k_eeprom_data, gigasx76x_ath5k_eeprom_mac);
+	xway_register_dwc(GIGASX76X_USB);
+	gigasx76x_register_ethernet();
 }
 
 MIPS_MACHINE(LANTIQ_MACH_GIGASX76X, "GIGASX76X", "GIGASX76X - Gigaset SX761,SX762,SX763", gigasx76x_init);
