@@ -35,7 +35,7 @@
  #define last_mod          (G.last_mod         )
  #define ip_a_d            (G.ip_a_d           )
  #define g_realm           (G.g_realm          )
-@@ -1028,8 +1035,11 @@ static void send_headers(int responseNum
+@@ -956,8 +963,11 @@ static void send_headers(int responseNum
  	}
  #endif
  	if (responseNum == HTTP_MOVED_TEMPORARILY) {
@@ -48,7 +48,7 @@
  				(g_query ? "?" : ""),
  				(g_query ? g_query : ""));
  	}
-@@ -1997,8 +2007,12 @@ static void handle_incoming_and_exit(con
+@@ -1925,8 +1935,12 @@ static void handle_incoming_and_exit(con
  	} while (*++tptr);
  	*++urlp = '\0';       /* terminate after last character */
  
@@ -62,7 +62,7 @@
  		if (is_directory(urlcopy + 1, 1, NULL)) {
  			found_moved_temporarily = urlcopy;
  		}
-@@ -2355,7 +2369,9 @@ static void sighup_handler(int sig UNUSE
+@@ -2283,7 +2297,9 @@ static void sighup_handler(int sig UNUSE
  }
  
  enum {
@@ -73,7 +73,7 @@
  	d_opt_decode_url,
  	h_opt_home_httpd,
  	IF_FEATURE_HTTPD_ENCODE_URL_STR(e_opt_encode_url,)
-@@ -2404,12 +2420,13 @@ int httpd_main(int argc UNUSED_PARAM, ch
+@@ -2332,12 +2348,13 @@ int httpd_main(int argc UNUSED_PARAM, ch
  	/* We do not "absolutize" path given by -h (home) opt.
  	 * If user gives relative path in -h,
  	 * $SCRIPT_FILENAME will not be set. */

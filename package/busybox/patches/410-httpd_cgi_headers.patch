@@ -1,6 +1,6 @@
 --- a/networking/httpd.c
 +++ b/networking/httpd.c
-@@ -1294,10 +1294,10 @@ static NOINLINE void cgi_io_loop_and_exi
+@@ -1222,10 +1222,10 @@ static NOINLINE void cgi_io_loop_and_exi
  						if (full_write(STDOUT_FILENO, HTTP_200, sizeof(HTTP_200)-1) != sizeof(HTTP_200)-1)
  							break;
  					}
