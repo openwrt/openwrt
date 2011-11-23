@@ -14,7 +14,7 @@ PKG_SOURCE_URL:=http://xorg.freedesktop.org/releases/individual/util/
 PKG_SOURCE:=util-macros-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=22d5cdff672450cb6902e0d68c200dcb
 
-HOST_BUILD_DIR:=$(BUILD_DIR)/util-macros-$(PKG_VERSION)
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/util-macros-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
