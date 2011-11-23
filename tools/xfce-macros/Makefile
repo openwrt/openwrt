@@ -14,7 +14,7 @@ PKG_SOURCE_URL:=http://archive.xfce.org/xfce/4.8/src
 PKG_SOURCE:=xfce4-dev-tools-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=9591299c49d92d00ba47974c42a735fa
 
-HOST_BUILD_DIR:=$(BUILD_DIR)/xfce4-dev-tools-$(PKG_VERSION)
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/xfce4-dev-tools-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 

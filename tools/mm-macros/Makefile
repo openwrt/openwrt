@@ -14,7 +14,7 @@ PKG_SOURCE_URL:=http://ftp.gnome.org/pub/GNOME/sources/mm-common/0.9
 PKG_SOURCE:=mm-common-$(PKG_VERSION).tar.bz2
 PKG_MD5SUM:=8cdc5620bd864d1a17e353398e8ec1ab
 
-HOST_BUILD_DIR:=$(BUILD_DIR)/mm-common-$(PKG_VERSION)
+HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/mm-common-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
