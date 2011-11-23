@@ -1,0 +1,237 @@
+http://git.busybox.net/busybox/commit/?id=dd1061b6a79b0161597799e825bfefc27993ace5
+
+From dd1061b6a79b0161597799e825bfefc27993ace5 Mon Sep 17 00:00:00 2001
+From: Denys Vlasenko <vda.linux@googlemail.com>
+Date: Sun, 11 Sep 2011 21:04:02 +0200
+Subject: [PATCH] wget: URL-decode user:password before base64-encoding it into auth hdr. Closes 3625.
+
+function                                             old     new   delta
+percent_decode_in_place                                -     152    +152
+parse_url                                            304     317     +13
+handle_incoming_and_exit                            2795    2798      +3
+httpd_main                                           763     760      -3
+decodeString                                         152       -    -152
+------------------------------------------------------------------------------
+(add/remove: 2/1 grow/shrink: 2/1 up/down: 168/-155)           Total: 13 bytes
+
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+
+--- a/include/libbb.h
++++ b/include/libbb.h
+@@ -1570,6 +1570,15 @@ int starts_with_cpu(const char *str) FAS
+ unsigned get_cpu_count(void) FAST_FUNC;
+ 
+ 
++/* Use strict=1 if you process input from untrusted source:
++ * it will return NULL on invalid %xx (bad hex chars)
++ * and str + 1 if decoded char is / or NUL.
++ * In non-strict mode, it always succeeds (returns str),
++ * and also it additionally decoded '+' to space.
++ */
++char *percent_decode_in_place(char *str, int strict) FAST_FUNC;
++
++
+ extern const char bb_uuenc_tbl_base64[];
+ extern const char bb_uuenc_tbl_std[];
+ void bb_uuencode(char *store, const void *s, int length, const char *tbl) FAST_FUNC;
+--- /dev/null
++++ b/libbb/percent_decode.c
+@@ -0,0 +1,69 @@
++/* vi: set sw=4 ts=4: */
++/*
++ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
++ */
++
++//kbuild:lib-y += percent_decode.o
++
++#include "libbb.h"
++
++static unsigned hex_to_bin(unsigned char c)
++{
++	unsigned v;
++
++	v = c - '0';
++	if (v <= 9)
++		return v;
++	/* c | 0x20: letters to lower case, non-letters
++	 * to (potentially different) non-letters */
++	v = (unsigned)(c | 0x20) - 'a';
++	if (v <= 5)
++		return v + 10;
++	return ~0;
++/* For testing:
++void t(char c) { printf("'%c'(%u) %u\n", c, c, hex_to_bin(c)); }
++int main() { t(0x10); t(0x20); t('0'); t('9'); t('A'); t('F'); t('a'); t('f');
++t('0'-1); t('9'+1); t('A'-1); t('F'+1); t('a'-1); t('f'+1); return 0; }
++*/
++}
++
++char* FAST_FUNC percent_decode_in_place(char *str, int strict)
++{
++	/* note that decoded string is always shorter than original */
++	char *src = str;
++	char *dst = str;
++	char c;
++
++	while ((c = *src++) != '\0') {
++		unsigned v;
++
++		if (!strict && c == '+') {
++			*dst++ = ' ';
++			continue;
++		}
++		if (c != '%') {
++			*dst++ = c;
++			continue;
++		}
++		v = hex_to_bin(src[0]);
++		if (v > 15) {
++ bad_hex:
++			if (strict)
++				return NULL;
++			*dst++ = '%';
++			continue;
++		}
++		v = (v * 16) | hex_to_bin(src[1]);
++		if (v > 255)
++			goto bad_hex;
++		if (strict && (v == '/' || v == '\0')) {
++			/* caller takes it as indication of invalid
++			 * (dangerous wrt exploits) chars */
++			return str + 1;
++		}
++		*dst++ = v;
++		src += 2;
++	}
++	*dst = '\0';
++	return str;
++}
+--- a/networking/httpd.c
++++ b/networking/httpd.c
+@@ -820,78 +820,6 @@ static char *encodeString(const char *st
+ }
+ #endif
+ 
+-/*
+- * Given a URL encoded string, convert it to plain ascii.
+- * Since decoding always makes strings smaller, the decode is done in-place.
+- * Thus, callers should xstrdup() the argument if they do not want the
+- * argument modified.  The return is the original pointer, allowing this
+- * function to be easily used as arguments to other functions.
+- *
+- * string    The first string to decode.
+- * option_d  1 if called for httpd -d
+- *
+- * Returns a pointer to the decoded string (same as input).
+- */
+-static unsigned hex_to_bin(unsigned char c)
+-{
+-	unsigned v;
+-
+-	v = c - '0';
+-	if (v <= 9)
+-		return v;
+-	/* c | 0x20: letters to lower case, non-letters
+-	 * to (potentially different) non-letters */
+-	v = (unsigned)(c | 0x20) - 'a';
+-	if (v <= 5)
+-		return v + 10;
+-	return ~0;
+-/* For testing:
+-void t(char c) { printf("'%c'(%u) %u\n", c, c, hex_to_bin(c)); }
+-int main() { t(0x10); t(0x20); t('0'); t('9'); t('A'); t('F'); t('a'); t('f');
+-t('0'-1); t('9'+1); t('A'-1); t('F'+1); t('a'-1); t('f'+1); return 0; }
+-*/
+-}
+-static char *decodeString(char *orig, int option_d)
+-{
+-	/* note that decoded string is always shorter than original */
+-	char *string = orig;
+-	char *ptr = string;
+-	char c;
+-
+-	while ((c = *ptr++) != '\0') {
+-		unsigned v;
+-
+-		if (option_d && c == '+') {
+-			*string++ = ' ';
+-			continue;
+-		}
+-		if (c != '%') {
+-			*string++ = c;
+-			continue;
+-		}
+-		v = hex_to_bin(ptr[0]);
+-		if (v > 15) {
+- bad_hex:
+-			if (!option_d)
+-				return NULL;
+-			*string++ = '%';
+-			continue;
+-		}
+-		v = (v * 16) | hex_to_bin(ptr[1]);
+-		if (v > 255)
+-			goto bad_hex;
+-		if (!option_d && (v == '/' || v == '\0')) {
+-			/* caller takes it as indication of invalid
+-			 * (dangerous wrt exploits) chars */
+-			return orig + 1;
+-		}
+-		*string++ = v;
+-		ptr += 2;
+-	}
+-	*string = '\0';
+-	return orig;
+-}
+-
+ #if ENABLE_FEATURE_HTTPD_BASIC_AUTH
+ /*
+  * Decode a base64 data stream as per rfc1521.
+@@ -1949,7 +1877,7 @@ static void handle_incoming_and_exit(con
+ 	}
+ 
+ 	/* Decode URL escape sequences */
+-	tptr = decodeString(urlcopy, 0);
++	tptr = percent_decode_in_place(urlcopy, /*strict:*/ 1);
+ 	if (tptr == NULL)
+ 		send_headers_and_exit(HTTP_BAD_REQUEST);
+ 	if (tptr == urlcopy + 1) {
+@@ -2408,7 +2336,7 @@ int httpd_main(int argc UNUSED_PARAM, ch
+ 			, &verbose
+ 		);
+ 	if (opt & OPT_DECODE_URL) {
+-		fputs(decodeString(url_for_decode, 1), stdout);
++		fputs(percent_decode_in_place(url_for_decode, /*strict:*/ 0), stdout);
+ 		return 0;
+ 	}
+ #if ENABLE_FEATURE_HTTPD_ENCODE_URL_STR
+--- a/networking/wget.c
++++ b/networking/wget.c
+@@ -298,8 +298,13 @@ static void parse_url(const char *src_ur
+ 
+ 	sp = strrchr(h->host, '@');
+ 	if (sp != NULL) {
+-		h->user = h->host;
++		// URL-decode "user:password" string before base64-encoding:
++		// wget http://test:my%20pass@example.com should send
++		// Authorization: Basic dGVzdDpteSBwYXNz
++		// which decodes to "test:my pass".
++		// Standard wget and curl do this too.
+ 		*sp = '\0';
++		h->user = percent_decode_in_place(h->host, /*strict:*/ 0);
+ 		h->host = sp + 1;
+ 	}
+ 
+@@ -660,12 +665,6 @@ static void download_one_url(const char 
+ 
+ #if ENABLE_FEATURE_WGET_AUTHENTICATION
+ 		if (target.user) {
+-//TODO: URL-decode "user:password" string before base64-encoding:
+-//wget http://test:my%20pass@example.com should send
+-// Authorization: Basic dGVzdDpteSBwYXNz
+-//which decodes to "test:my pass", instead of what we send now:
+-// Authorization: Basic dGVzdDpteSUyMHBhc3M=
+-//Can reuse decodeString() from httpd.c
+ 			fprintf(sfp, "Proxy-Authorization: Basic %s\r\n"+6,
+ 				base64enc(target.user));
+ 		}
