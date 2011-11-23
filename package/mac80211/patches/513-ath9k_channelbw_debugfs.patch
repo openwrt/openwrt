@@ -51,7 +51,7 @@
 +		return -EINVAL;
 +
 +	sc->chan_bw = chan_bw;
-+	if (!sc->ps_idle)
++	if (!(sc->sc_flags & SC_OP_INVALID))
 +		ath9k_config(sc->hw, IEEE80211_CONF_CHANGE_CHANNEL);
 +
 +	return count;
