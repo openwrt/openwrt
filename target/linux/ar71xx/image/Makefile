@@ -201,6 +201,7 @@ endef
 
 define Image/Build/AthGzip/initramfs
 	$(call MkuImageLzma,$(2),$(3) $($(4)))
+	$(CP) $(KDIR)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
 endef
 
 define Image/Build/AthLzma
@@ -210,6 +211,7 @@ endef
 
 define Image/Build/AthLzma/initramfs
 	$(call MkuImageLzma,$(2),$(3) $($(4)))
+	$(CP) $(KDIR)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
 endef
 
 define Image/Build/PB4X
