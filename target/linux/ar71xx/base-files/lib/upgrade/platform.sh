@@ -133,7 +133,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	wndr3700v2)
+	wndr3700v2|wndr3800)
 		[ "$magic_long" != "33373031" ] && {
 			echo "Invalid image type."
 			return 1
