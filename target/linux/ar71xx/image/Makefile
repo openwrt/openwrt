@@ -461,8 +461,9 @@ define Image/Build/Profile/AP96
 endef
 
 db120_cmdline=board=DB120 console=ttyS0,115200
+db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 define Image/Build/Profile/DB120
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,db120,$(db120_cmdline),,1441792,6488064,RK)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,db120,$(db120_cmdline),db120_mtdlayout,1441792,6488064,RK)
 endef
 
 pb42_cmdline=board=PB42 console=ttyS0,115200
