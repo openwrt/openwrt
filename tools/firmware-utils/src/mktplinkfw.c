@@ -22,15 +22,10 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include "md5.h"
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
-#if (__BYTE_ORDER == __BIG_ENDIAN)
-#  define HOST_TO_BE32(x)	(x)
-#  define BE32_TO_HOST(x)	(x)
-#else
-#  define HOST_TO_BE32(x)	bswap_32(x)
-#  define BE32_TO_HOST(x)	bswap_32(x)
-#endif
+#include "md5.h"
 
 #define HEADER_VERSION_V1	0x01000000
 #define HWID_TL_MR3220_V1	0x32200001
@@ -478,25 +473,25 @@ static void fill_header(char *buf, int len)
 
 	memset(hdr, 0, sizeof(struct fw_header));
 
-	hdr->version = HOST_TO_BE32(HEADER_VERSION_V1);
+	hdr->version = htonl(HEADER_VERSION_V1);
 	strncpy(hdr->vendor_name, vendor, sizeof(hdr->vendor_name));
 	strncpy(hdr->fw_version, version, sizeof(hdr->fw_version));
-	hdr->hw_id = HOST_TO_BE32(board->hw_id);
-	hdr->hw_rev = HOST_TO_BE32(board->hw_rev);
+	hdr->hw_id = htonl(board->hw_id);
+	hdr->hw_rev = htonl(board->hw_rev);
 
 	if (boot_info.file_size == 0)
 		memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
 	else
 		memcpy(hdr->md5sum1, md5salt_boot, sizeof(hdr->md5sum1));
 
-	hdr->kernel_la = HOST_TO_BE32(kernel_la);
-	hdr->kernel_ep = HOST_TO_BE32(kernel_ep);
-	hdr->fw_length = HOST_TO_BE32(board->fw_max_len);
-	hdr->kernel_ofs = HOST_TO_BE32(sizeof(struct fw_header));
-	hdr->kernel_len = HOST_TO_BE32(kernel_info.file_size);
+	hdr->kernel_la = htonl(kernel_la);
+	hdr->kernel_ep = htonl(kernel_ep);
+	hdr->fw_length = htonl(board->fw_max_len);
+	hdr->kernel_ofs = htonl(sizeof(struct fw_header));
+	hdr->kernel_len = htonl(kernel_info.file_size);
 	if (!combined) {
-		hdr->rootfs_ofs = HOST_TO_BE32(rootfs_ofs);
-		hdr->rootfs_len = HOST_TO_BE32(rootfs_info.file_size);
+		hdr->rootfs_ofs = htonl(rootfs_ofs);
+		hdr->rootfs_len = htonl(rootfs_info.file_size);
 	}
 
 	get_md5(buf, len, hdr->md5sum1);
@@ -670,18 +665,18 @@ static int inspect_fw(void)
 	inspect_fw_pstr("File name", inspect_info.file_name);
 	inspect_fw_phexdec("File size", inspect_info.file_size);
 
-	if (BE32_TO_HOST(hdr->version) != HEADER_VERSION_V1) {
+	if (ntohl(hdr->version) != HEADER_VERSION_V1) {
 		ERR("file does not seem to have V1 header!\n");
 		goto out_free_buf;
 	}
 
 	inspect_fw_phexdec("Version 1 Header size", sizeof(struct fw_header));
 
-	if (BE32_TO_HOST(hdr->unk1) != 0)
+	if (ntohl(hdr->unk1) != 0)
 		inspect_fw_phexdec("Unknown value 1", hdr->unk1);
 
 	memcpy(md5sum, hdr->md5sum1, sizeof(md5sum));
-	if (BE32_TO_HOST(hdr->boot_len) == 0)
+	if (ntohl(hdr->boot_len) == 0)
 		memcpy(hdr->md5sum1, md5salt_normal, sizeof(md5sum));
 	else
 		memcpy(hdr->md5sum1, md5salt_boot, sizeof(md5sum));
@@ -693,62 +688,62 @@ static int inspect_fw(void)
 	} else {
 		inspect_fw_pmd5sum("Header MD5Sum1", md5sum, "(ok)");
 	}
-	if (BE32_TO_HOST(hdr->unk2) != 0)
+	if (ntohl(hdr->unk2) != 0)
 		inspect_fw_phexdec("Unknown value 2", hdr->unk2);
 	inspect_fw_pmd5sum("Header MD5Sum2", hdr->md5sum2,
 	                   "(purpose yet unknown, unchecked here)");
-	if (BE32_TO_HOST(hdr->unk3) != 0)
+	if (ntohl(hdr->unk3) != 0)
 		inspect_fw_phexdec("Unknown value 3", hdr->unk3);
 
 	printf("\n");
 
 	inspect_fw_pstr("Vendor name", hdr->vendor_name);
 	inspect_fw_pstr("Firmware version", hdr->fw_version);
-	board = find_board_by_hwid(BE32_TO_HOST(hdr->hw_id));
+	board = find_board_by_hwid(ntohl(hdr->hw_id));
 	if (board) {
 		inspect_fw_phexpost("Hardware ID",
-		                    BE32_TO_HOST(hdr->hw_id), board->id);
+		                    ntohl(hdr->hw_id), board->id);
 		inspect_fw_phexexp("Hardware Revision",
-		                   BE32_TO_HOST(hdr->hw_rev), board->hw_rev);
+		                   ntohl(hdr->hw_rev), board->hw_rev);
 	} else {
 		inspect_fw_phexpost("Hardware ID",
-		                    BE32_TO_HOST(hdr->hw_id), "unknown");
+		                    ntohl(hdr->hw_id), "unknown");
 		inspect_fw_phex("Hardware Revision",
-		                BE32_TO_HOST(hdr->hw_rev));
+		                ntohl(hdr->hw_rev));
 	}
 
 	printf("\n");
 
 	inspect_fw_phexdec("Kernel data offset",
-	                   BE32_TO_HOST(hdr->kernel_ofs));
+	                   ntohl(hdr->kernel_ofs));
 	inspect_fw_phexdec("Kernel data length",
-	                   BE32_TO_HOST(hdr->kernel_len));
+	                   ntohl(hdr->kernel_len));
 	if (board) {
 		inspect_fw_phexdef("Kernel load address",
-		                   BE32_TO_HOST(hdr->kernel_la),
+		                   ntohl(hdr->kernel_la),
 		                   board->kernel_la);
 		inspect_fw_phexdef("Kernel entry point",
-		                   BE32_TO_HOST(hdr->kernel_ep),
+		                   ntohl(hdr->kernel_ep),
 		                   board->kernel_ep);
 		inspect_fw_phexdecdef("Rootfs data offset",
-		                      BE32_TO_HOST(hdr->rootfs_ofs),
+		                      ntohl(hdr->rootfs_ofs),
 		                      board->rootfs_ofs);
 	} else {
 		inspect_fw_phex("Kernel load address",
-		                BE32_TO_HOST(hdr->kernel_la));
+		                ntohl(hdr->kernel_la));
 		inspect_fw_phex("Kernel entry point",
-		                BE32_TO_HOST(hdr->kernel_ep));
+		                ntohl(hdr->kernel_ep));
 		inspect_fw_phexdec("Rootfs data offset",
-		                   BE32_TO_HOST(hdr->rootfs_ofs));
+		                   ntohl(hdr->rootfs_ofs));
 	}
 	inspect_fw_phexdec("Rootfs data length",
-	                   BE32_TO_HOST(hdr->rootfs_len));
+	                   ntohl(hdr->rootfs_len));
 	inspect_fw_phexdec("Boot loader data offset",
-	                   BE32_TO_HOST(hdr->boot_ofs));
+	                   ntohl(hdr->boot_ofs));
 	inspect_fw_phexdec("Boot loader data length",
-	                   BE32_TO_HOST(hdr->boot_len));
+	                   ntohl(hdr->boot_len));
 	inspect_fw_phexdec("Total firmware length",
-	                   BE32_TO_HOST(hdr->fw_length));
+	                   ntohl(hdr->fw_length));
 
 	if (extract) {
 		FILE *fp;
@@ -761,8 +756,8 @@ static int inspect_fw(void)
 		printf("Extracting kernel to \"%s\"...\n", filename);
 		fp = fopen(filename, "w");
 		if (fp)	{
-			if (!fwrite(buf + BE32_TO_HOST(hdr->kernel_ofs),
-			            BE32_TO_HOST(hdr->kernel_len), 1, fp)) {
+			if (!fwrite(buf + ntohl(hdr->kernel_ofs),
+			            ntohl(hdr->kernel_len), 1, fp)) {
 				ERR("error in fwrite(): %s", strerror(errno));
 			}
 			fclose(fp);
@@ -776,8 +771,8 @@ static int inspect_fw(void)
 		printf("Extracting rootfs to \"%s\"...\n", filename);
 		fp = fopen(filename, "w");
 		if (fp)	{
-			if (!fwrite(buf + BE32_TO_HOST(hdr->rootfs_ofs),
-			            BE32_TO_HOST(hdr->rootfs_len), 1, fp)) {
+			if (!fwrite(buf + ntohl(hdr->rootfs_ofs),
+			            ntohl(hdr->rootfs_len), 1, fp)) {
 				ERR("error in fwrite(): %s", strerror(errno));
 			}
 			fclose(fp);
