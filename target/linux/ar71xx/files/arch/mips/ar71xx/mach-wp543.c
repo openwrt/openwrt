@@ -77,11 +77,11 @@ static void __init wp543_setup(void)
 {
 	ar71xx_add_device_m25p80(NULL);
 
-	ar71xx_add_device_mdio(0, 0xfffffff7);
+	ar71xx_add_device_mdio(0, 0xfffffff0);
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ar71xx_eth0_data.phy_mask = 0x08;
+	ar71xx_eth0_data.phy_mask = 0x0f;
 	ar71xx_eth0_data.reset_bit = RESET_MODULE_GE0_MAC |
 				     RESET_MODULE_GE0_PHY;
 	ar71xx_add_device_eth(0);
