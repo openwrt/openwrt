@@ -8,12 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
-PKG_VERSION:=2.58
-PKG_RELEASE:=2
+PKG_VERSION:=2.59
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
-PKG_MD5SUM:=14c5c81debb324adc261db971730f4c6
+PKG_MD5SUM:=b5757ef2d7b651748eeebb88af29d7d6
+
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -35,20 +37,15 @@ endef
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 
-define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
-		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS)" \
-		BINDIR="/usr/sbin" \
-		MANDIR="/usr/man" \
-		AWK="awk" \
-		LDFLAGS="-Wl,--gc-sections" \
-		all
-endef
+MAKE_FLAGS := \
+	$(TARGET_CONFIGURE_OPTS) \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	LDFLAGS="-Wl,--gc-sections" \
+	PREFIX="/usr"
 
 define Package/dnsmasq/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dnsmasq $(1)/usr/sbin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/sbin/dnsmasq $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/dhcp.conf $(1)/etc/config/dhcp
 	$(INSTALL_DATA) ./files/dnsmasq.conf $(1)/etc/dnsmasq.conf
