@@ -18,3 +18,12 @@
  LDFLAGS=@LDFLAGS@
  
  EXEEXT=@EXEEXT@
+@@ -169,7 +169,7 @@ scp: $(SCPOBJS)  $(HEADERS) Makefile
+ # multi-binary compilation.
+ MULTIOBJS=
+ ifeq ($(MULTI),1)
+-	MULTIOBJS=dbmulti.o $(sort $(foreach prog, $(PROGRAMS), $($(prog)objs))) @CRYPTLIB@ 
++	MULTIOBJS=dbmulti.o $(sort $(foreach prog, $(PROGRAMS), $($(prog)objs)))
+ 	CFLAGS+=$(addprefix -DDBMULTI_, $(PROGRAMS)) -DDROPBEAR_MULTI
+ endif
+ 
