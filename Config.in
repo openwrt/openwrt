@@ -240,6 +240,10 @@ menu "Global build settings"
 		select KERNEL_DEBUG_KERNEL
 		default n
 
+	config KERNEL_PRINTK_TIME
+		bool "Enable printk timestamps"
+		default y
+
 	comment "Package build options"
 
 	config DEBUG
