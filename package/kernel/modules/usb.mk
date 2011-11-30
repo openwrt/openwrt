@@ -354,6 +354,21 @@ endef
 $(eval $(call KernelPackage,usb-serial-ftdi))
 
 
+define KernelPackage/usb-serial-ti-usb
+  TITLE:=Support for TI USB 3410/5052
+  KCONFIG:=CONFIG_USB_SERIAL_TI
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/ti_usb_3410_5052.ko
+  AUTOLOAD:=$(call AutoLoad,65,ti_usb_3410_5052)
+  $(call AddDepends/usb-serial)
+endef
+
+define KernelPackage/usb-serial-ti-usb/description
+ Kernel support for TI USB 3410/5052 devices
+endef
+
+$(eval $(call KernelPackage,usb-serial-ti-usb))
+
+
 define KernelPackage/usb-serial-ipw
   TITLE:=Support for IPWireless 3G devices
   KCONFIG:=CONFIG_USB_SERIAL_IPW
