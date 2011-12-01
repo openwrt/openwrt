@@ -17,7 +17,7 @@ LINUX_VERSION:=2.6.39.4
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=\
-	kmod-leds-gpio kmod-input-core kmod-input-polldev kmod-gpio-buttons \
+	kmod-leds-gpio kmod-input-core kmod-input-polldev kmod-input-gpio-buttons \
 	kmod-button-hotplug kmod-rt2800-pci wpad-mini maccalc
 
 define Target/Description
