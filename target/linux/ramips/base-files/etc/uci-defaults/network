@@ -107,21 +107,43 @@ set_macs_only_lan_from_nvram()
 	set_macs_only_lan "$lan_mac"
 }
 
-board=$(ramips_board_name)
+ramips_setup_interfaces()
+{
+	local board="$1"
 
-case $board in
-	f5d8235-v2)
-		create_lan_wan
-		set_macs_only_lan_from_mtd "u-boot" 262148
-		;;
+	case $board in
 	argus-atp52b | \
 	b2c | \
+	f5d8235-v2 | \
 	nw718)
 		create_lan_wan
-		set_macs_only_lan_from_mtd "factory" 4
 		;;
+
 	*)
 		RT3X5X=`cat /proc/cpuinfo | grep RT3.5`
 		[ -z "${RT3X5X}" ] || create_lan_wan
 		;;
-esac
+	esac
+}
+
+ramips_setup_macs()
+{
+	local board="$1"
+
+	case $board in
+	f5d8235-v2)
+		set_macs_only_lan_from_mtd "u-boot" 262148
+		;;
+
+	argus-atp52b | \
+	b2c | \
+	nw718)
+		set_macs_only_lan_from_mtd "factory" 4
+		;;
+	esac
+}
+
+board=$(ramips_board_name)
+
+ramips_setup_interfaces $board
+ramips_setup_macs $board
