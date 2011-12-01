@@ -18,7 +18,7 @@ LINUX_VERSION:=2.6.39.4
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES+=\
 	kmod-leds-gpio kmod-input-core kmod-input-polldev kmod-gpio-buttons \
-	kmod-button-hotplug wpad-mini maccalc
+	kmod-button-hotplug kmod-rt2800-pci wpad-mini maccalc
 
 define Target/Description
 	Build firmware images for Ralink RT288x/RT305x based boards.
