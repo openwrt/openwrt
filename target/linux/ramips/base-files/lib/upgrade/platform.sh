@@ -24,6 +24,7 @@ platform_check_image() {
 	nbg-419n | \
 	nw718 | \
 	rt-g32-b1 | \
+	rt-n15 | \
 	v22rw-2x2 | \
 	whr-g300n)
 		[ "$magic" != "2705" ] && {
