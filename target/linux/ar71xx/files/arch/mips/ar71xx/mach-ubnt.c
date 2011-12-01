@@ -283,6 +283,37 @@ static void __init ubnt_nano_m_setup(void)
 MIPS_MACHINE(AR71XX_MACH_UBNT_NANO_M, "UBNT-NM", "Ubiquiti Nanostation M",
 	     ubnt_nano_m_setup);
 
+static struct gpio_led ubnt_airrouter_leds_gpio[] __initdata = {
+	{
+		.name		= "ubnt:green:globe",
+		.gpio		= 0,
+		.active_low	= 1,
+	}
+};
+
+static void __init ubnt_airrouter_setup(void)
+{
+	u8 *mac1 = (u8 *) KSEG1ADDR(0x1fff0000);
+	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
+
+	ar71xx_add_device_m25p80(NULL);
+	ar71xx_add_device_mdio(0, ~UBNT_M_WAN_PHYMASK);
+
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac1, 0);
+	ubnt_init_secondary_mac(mac1);
+
+	ar71xx_add_device_eth(1);
+	ar71xx_add_device_eth(0);
+	ar71xx_add_device_usb();
+
+	ap91_pci_init(ee, NULL);
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(ubnt_airrouter_leds_gpio),
+					ubnt_airrouter_leds_gpio);
+}
+
+MIPS_MACHINE(AR71XX_MACH_UBNT_AIRROUTER, "UBNT-AR", "Ubiquiti AirRouter",
+	     ubnt_airrouter_setup);
+
 static struct gpio_led ubnt_unifi_leds_gpio[] __initdata = {
 	{
 		.name		= "ubnt:orange:dome",
