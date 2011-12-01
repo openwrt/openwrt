@@ -22,6 +22,44 @@
 
 #include "devices.h"
 
+#define WCR150GN_GPIO_LED_USER                 12
+#define WCR150GN_GPIO_LED_POWER                        8
+#define WCR150GN_GPIO_BUTTON_WPS               10
+#define WCR150GN_GPIO_BUTTON_RESET             0
+#define WCR150GN_BUTTONS_POLL_INTERVAL         20
+
+static struct gpio_led wcr150gn_leds_gpio[] __initdata = {
+	{
+		.name       = "wcr150gn:amber:user",
+		.gpio       = WCR150GN_GPIO_LED_USER,
+		.active_low = 1,
+	},
+	{
+		.name       = "wcr150gn:amber:power",
+		.gpio       = WCR150GN_GPIO_LED_POWER,
+		.active_low = 1,
+	}
+};
+
+static struct gpio_button wcr150gn_gpio_buttons[] __initdata = {
+	{
+		.desc       = "wps",
+		.type       = EV_KEY,
+		.code       = KEY_WPS_BUTTON,
+		.threshold  = 3,
+		.gpio       = WCR150GN_GPIO_BUTTON_WPS,
+		.active_low = 1,
+	},
+	{
+		.desc       = "reset",
+		.type       = EV_KEY,
+		.code       = KEY_RESTART,
+		.threshold  = 10,
+		.gpio       = WCR150GN_GPIO_BUTTON_RESET,
+		.active_low = 1,
+	}
+};
+
 #ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wcr150gn_partitions[] = {
 	{
@@ -33,18 +71,24 @@ static struct mtd_partition wcr150gn_partitions[] = {
 		.name	= "config",
 		.offset	= 0x030000,
 		.size	= 0x040000,
+		.mask_flags = MTD_WRITEABLE,
 	}, {
 		.name	= "factory",
 		.offset	= 0x040000,
 		.size	= 0x050000,
+		.mask_flags = MTD_WRITEABLE,
 	}, {
 		.name	= "kernel",
 		.offset	= 0x050000,
-		.size	= 0x120000,
+		.size   = 0x0d0000,
 	}, {
 		.name	= "rootfs",
 		.offset	= 0x120000,
-		.size	= 0x400000,
+		.size   = 0x2e0000,
+	}, {
+		.name   = "firmware",
+		.offset = 0x050000,
+		.size   = 0x3b0000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
@@ -60,10 +104,16 @@ static void __init wcr150gn_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 	rt305x_register_flash(0, &wcr150gn_flash_data);
+	ramips_register_gpio_leds(-1, ARRAY_SIZE(wcr150gn_leds_gpio),
+				  wcr150gn_leds_gpio);
+	ramips_register_gpio_buttons(-1, WCR150GN_BUTTONS_POLL_INTERVAL,
+				     ARRAY_SIZE(wcr150gn_gpio_buttons),
+				     wcr150gn_gpio_buttons);
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
 	rt305x_register_wdt();
+	rt305x_register_usb();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_WCR150GN, "WCR150GN", "Sparklan WCR-150GN",
