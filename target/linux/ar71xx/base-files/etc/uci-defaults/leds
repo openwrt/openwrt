@@ -99,6 +99,11 @@ nbg460n_550n_550nh)
 	set_led_wlan "wlan" "WLAN" "nbg460n:green:wlan" "phy0tpt"
 	;;
 
+om2p)
+	set_led_netdev "port1" "port1" "om2p:blue:wan" "eth0"
+	set_led_netdev "port2" "port2" "om2p:blue:lan" "eth1"
+	;;
+
 tl-mr3220 | \
 tl-mr3420 )
 	set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
