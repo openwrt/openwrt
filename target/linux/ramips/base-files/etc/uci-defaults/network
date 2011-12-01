@@ -2,22 +2,12 @@
 
 . /etc/functions.sh
 . /lib/ramips.sh
+. /lib/functions/uci-defaults.sh
 
 if [ ! -x /usr/sbin/maccalc ]; then
 	echo "$0: maccalc not found!"
 	return
 fi
-
-create_lan_wan()
-{
-	uci batch <<EOF
-set network.lan.ifname=eth0.1
-set network.wan=interface
-set network.wan.ifname=eth0.2
-set network.wan.proto=dhcp
-commit network
-EOF
-}
 
 get_mac_binary()
 {
@@ -52,32 +42,24 @@ get_mac_nvram()
 	maccalc add "$mac_dirty" 0
 }
 
-set_interface_mac()
-{
-	local iface="$1"
-	local mac="$2"
-
-	uci batch <<EOF
-set network.$iface.macaddr=""$mac"
-commit network
-EOF
-}
-
 ramips_setup_interfaces()
 {
 	local board="$1"
+
+	ucidef_set_interface_loopback
 
 	case $board in
 	argus-atp52b | \
 	b2c | \
 	f5d8235-v2 | \
 	nw718)
-		create_lan_wan
+		ucidef_set_interfaces_lan_wan "eth0.1 eth0.2"
 		;;
 
 	*)
 		RT3X5X=`cat /proc/cpuinfo | grep RT3.5`
-		[ -z "${RT3X5X}" ] || create_lan_wan
+		[ -z "${RT3X5X}" ] || \
+			ucidef_set_interfaces_lan_wan "eth0.1 eth0.2"
 		;;
 	esac
 }
@@ -102,11 +84,15 @@ ramips_setup_macs()
 		;;
 	esac
 
-	[ -n $lan_mac ] && set_interface_mac lan $lan_mac
-	[ -n $wan_mac ] && set_interface_mac wan $wan_mac
+	[ -n $lan_mac ] && ucidef_set_interface_macaddr lan $lan_mac
+	[ -n $wan_mac ] && ucidef_set_interface_macaddr wan $wan_mac
 }
 
 board=$(ramips_board_name)
 
 ramips_setup_interfaces $board
 ramips_setup_macs $board
+
+uci commit network
+
+exit 0
