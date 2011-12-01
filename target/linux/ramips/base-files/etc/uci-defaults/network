@@ -58,8 +58,11 @@ ramips_setup_interfaces()
 
 	*)
 		RT3X5X=`cat /proc/cpuinfo | grep RT3.5`
-		[ -z "${RT3X5X}" ] || \
+		if [ -n "${RT3X5X}" ]; then
 			ucidef_set_interfaces_lan_wan "eth0.1 eth0.2"
+		else
+			ucidef_set_interfaces_lan_wan "eth0 eth1"
+		fi
 		;;
 	esac
 }
@@ -87,6 +90,10 @@ ramips_setup_macs()
 	[ -n $lan_mac ] && ucidef_set_interface_macaddr lan $lan_mac
 	[ -n $wan_mac ] && ucidef_set_interface_macaddr wan $wan_mac
 }
+
+[ -e /etc/config/network ] && exit 0
+
+touch /etc/config/network
 
 board=$(ramips_board_name)
 
