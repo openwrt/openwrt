@@ -56,6 +56,13 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.1 eth0.2"
 		;;
 
+	rt-n15)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "rtl8366s" "1" "1"
+		ucidef_add_switch_vlan "rtl8366s" "1" "1 2 3 4 5t"
+		ucidef_add_switch_vlan "rtl8366s" "2" "0 5t"
+		;;
+
 	*)
 		RT3X5X=`cat /proc/cpuinfo | grep RT3.5`
 		if [ -n "${RT3X5X}" ]; then
@@ -81,7 +88,8 @@ ramips_setup_macs()
 
 	argus-atp52b | \
 	b2c | \
-	nw718)
+	nw718 | \
+	rt-n15)
 		lan_mac=$(get_mac_binary factory 4)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
