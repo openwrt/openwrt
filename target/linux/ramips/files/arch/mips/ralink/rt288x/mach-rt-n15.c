@@ -54,11 +54,11 @@ static struct mtd_partition rt_n15_partitions[] = {
 	}, {
 		.name	= "kernel",
 		.offset	= 0x050000,
-		.size	= 0x0b0000,
+		.size   = 0x0d0000,
 	}, {
 		.name	= "rootfs",
-		.offset	= 0x100000,
-		.size	= 0x300000,
+		.offset = 0x120000,
+		.size   = 0x2e0000,
 	}, {
 		.name	= "firmware",
 		.offset	= 0x050000,
