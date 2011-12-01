@@ -1,6 +1,15 @@
 #!/bin/sh
-RT3X5X=`cat /proc/cpuinfo | grep RT3.5`
-[ -z "${RT3X5X}" ] || {
+
+. /etc/functions.sh
+. /lib/ramips.sh
+
+if [ ! -x /usr/sbin/maccalc ]; then
+	echo "$0: maccalc not found!"
+	return
+fi
+
+create_lan_wan()
+{
 	uci batch <<EOF
 set network.lan.ifname=eth0.1
 set network.wan=interface
@@ -10,4 +19,108 @@ commit network
 EOF
 }
 
-uci commit network
+get_mac_binary()
+{
+	local mtdname="$1"
+	local seek="$2"
+	local part
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "get_mac_binary: partition $mtdname not found!" >&2
+		return
+	fi
+
+	dd bs=1 skip=$seek count=6 if=$part 2>/dev/null | /usr/sbin/maccalc bin2mac
+}
+
+get_mac_nvram()
+{
+	local mtdname="$1"
+	local key="$2"
+	local part
+	local mac_dirty
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "get_mac_nvram: partition $mtdname not found!" >&2
+		return
+	fi
+
+	mac_dirty=$(strings "$part" | sed -n 's/'"$key"'=//p')
+	# "canonicalize" mac
+	maccalc add "$mac_dirty" 0
+}
+
+set_macs()
+{
+	local lan_mac="$1"
+	local wan_mac="$2"
+
+	echo "Setting LAN mac address to: $lan_mac" >&2
+	echo "Setting WAN mac address to: $wan_mac" >&2
+
+	uci batch <<EOF
+set network.lan.macaddr='$lan_mac'
+set network.wan.macaddr='$wan_mac'
+commit network
+EOF
+}
+
+set_macs_only_lan()
+{
+	local lan_mac="$1"
+	local wan_mac
+
+	wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+
+	set_macs "$lan_mac" "$wan_mac"
+}
+
+set_macs_only_lan_from_mtd()
+{
+	local mtdname="$1"
+	local seek="$2"
+	local lan_mac
+
+	lan_mac=$(get_mac_binary "$mtdname" "$seek")
+	if [ -z $lan_mac ]; then
+		echo "set_macs_only_lan_from_mtd: can't extract mac address from $part" >&2
+		return
+	fi
+
+	set_macs_only_lan "$lan_mac"
+}
+
+set_macs_only_lan_from_nvram()
+{
+	local mtdname="$1"
+	local key="$2"
+	local lan_mac
+
+	lan_mac=$(get_mac_nvram "$mtdname" "$key")
+	if [ -z $lan_mac ]; then
+		echo "set_macs_only_lan_from_nvram: can't extract mac address from $part" >&2
+		return
+	fi
+
+	set_macs_only_lan "$lan_mac"
+}
+
+board=$(ramips_board_name)
+
+case $board in
+	f5d8235-v2)
+		create_lan_wan
+		set_macs_only_lan_from_mtd "u-boot" 262148
+		;;
+	argus-atp52b | \
+	nw718)
+		create_lan_wan
+		set_macs_only_lan_from_mtd "factory" 4
+		;;
+	*)
+		RT3X5X=`cat /proc/cpuinfo | grep RT3.5`
+		[ -z "${RT3X5X}" ] || create_lan_wan
+		;;
+esac
