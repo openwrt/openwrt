@@ -380,6 +380,19 @@ ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
   endef
 endif
 
+define Image/Build/OpenMesh
+	$(call MkuImageLzma,$(2))
+	-sh $(TOPDIR)/scripts/om2p-fwupgradecfg-gen.sh \
+		"$(BUILD_DIR)/om2p-fwupgrade.cfg" \
+		"$(KDIR)/vmlinux-$(2).uImage" \
+		"$(KDIR)/root.$(1)"
+	-sh $(TOPDIR)/scripts/combined-ext-image.sh \
+		"$(3)" "$(call factoryname,$(1),$(2))" \
+		"$(BUILD_DIR)/om2p-fwupgrade.cfg" "fwupgrade.cfg" \
+		"$(KDIR)/vmlinux-$(2).uImage" "kernel" \
+		"$(KDIR)/root.$(1)" "rootfs"
+endef
+
 define Image/Build/Zcomax
 	$(call MkuImageLzma,$(2),$(3))
 	$(call Sysupgrade/RK,$(1),$(2),1507328,6356992)
@@ -602,6 +615,10 @@ define Image/Build/Profile/NBG_460N_550N_550NH
 	$(call Image/Build/Template/$(fs_64k)/$(1),ZyXEL,nbg460n_550n_550nh,$(nbg460n_cmdline),NBG-460N)
 endef
 
+define Image/Build/Profile/OM2P
+        $(call Image/Build/Template/$(fs_squash)/$(1),OpenMesh,om2p,OM2P)
+endef
+
 tlmr3220_cmdline=board=TL-MR3220 console=ttyS0,115200
 define Image/Build/Profile/TLMR3220V1
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-mr3220-v1,$(tlmr3220_cmdline),TL-MR3220v1)
@@ -776,6 +793,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/MZKW04NU,$(1))
 	$(call Image/Build/Profile/MZKW300NH,$(1))
 	$(call Image/Build/Profile/NBG_460N_550N_550NH,$(1))
+	$(call Image/Build/Profile/OM2P,$(1))
 	$(call Image/Build/Profile/PB42,$(1))
 	$(call Image/Build/Profile/PB44,$(1))
 	$(call Image/Build/Profile/PB92,$(1))
