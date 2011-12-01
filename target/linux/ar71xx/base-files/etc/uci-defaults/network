@@ -3,173 +3,98 @@
 # Copyright (C) 2011 OpenWrt.org
 #
 
-set_interface_loopback() {
-	uci batch <<EOF
-set network.loopback='interface'
-set network.loopback.ifname='lo'
-set network.loopback.proto='static'
-set network.loopback.ipaddr='127.0.0.1'
-set network.loopback.netmask='255.0.0.0'
-EOF
-}
-
-set_interface_raw() {
-	local cfg=$1
-	local ifname=$2
-
-	uci batch <<EOF
-set network.$cfg='interface'
-set network.$cfg.ifname='$ifname'
-set network.$cfg.proto='none'
-EOF
-}
-
-set_interface_lan() {
-	local ifname=$1
-
-	uci batch <<EOF
-set network.lan='interface'
-set network.lan.ifname='$ifname'
-set network.lan.type='bridge'
-set network.lan.proto='static'
-set network.lan.ipaddr='192.168.1.1'
-set network.lan.netmask='255.255.255.0'
-EOF
-}
-
-set_interface_wan() {
-	local ifname=$1
-
-	uci batch <<EOF
-set network.wan='interface'
-set network.wan.ifname='$ifname'
-set network.wan.proto='dhcp'
-EOF
-}
-
-set_interfaces_lan_wan() {
-	local lan_ifname=$1
-	local wan_ifname=$2
-
-	set_interface_lan "$lan_ifname"
-	set_interface_wan "$wan_ifname"
-}
-
-add_switch() {
-	local name=$1
-	local reset=$2
-	local enable=$3
-	uci batch <<EOF
-add network switch
-set network.@switch[-1].name='$name'
-set network.@switch[-1].reset='$reset'
-set network.@switch[-1].enable_vlan='$enable'
-EOF
-}
-
-add_switch_vlan() {
-	local device=$1
-	local vlan=$2
-	local ports=$3
-	uci batch <<EOF
-add network switch_vlan
-set network.@switch_vlan[-1].device='$device'
-set network.@switch_vlan[-1].vlan='$vlan'
-set network.@switch_vlan[-1].ports='$ports'
-EOF
-}
-
 [ -e /etc/config/network ] && exit 0
 
 touch /etc/config/network
 
-set_interface_loopback
-
+. /lib/functions/uci-defaults.sh
 . /lib/ar71xx.sh
+
+ucidef_set_interface_loopback
 
 board=$(ar71xx_board_name)
 
 case "$board" in
 all0258n)
-	set_interface_lan "eth0 eth1"
+	ucidef_set_interface_lan "eth0 eth1"
 	;;
 
 dir-825-b1)
-	set_interfaces_lan_wan "eth0.1" "eth1"
-	add_switch "rtl8366s" "1" "1"
-	add_switch_vlan "rtl8366s" "1" "0 1 2 3 5t"
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
+	ucidef_add_switch "rtl8366s" "1" "1"
+	ucidef_add_switch_vlan "rtl8366s" "1" "0 1 2 3 5t"
 	;;
 
 nbg460n_550n_550nh)
-	set_interfaces_lan_wan "eth0" "eth1"
-	add_switch "rtl8366s" "1" "1"
-	add_switch_vlan "rtl8366s" "0" "0 1 2 3 5"
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_add_switch "rtl8366s" "1" "1"
+	ucidef_add_switch_vlan "rtl8366s" "0" "0 1 2 3 5"
 	;;
 
 rb-433 |\
 rb-433u)
-	set_interfaces_lan_wan "eth1" "eth0"
-	add_switch "switch0" "1" "1"
-	add_switch_vlan "switch0" "1" "1 2 5"
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "1 2 5"
 	;;
 
 rb-450)
-	set_interfaces_lan_wan "eth1" "eth0"
-	add_switch "eth1" "1" "1"
-	add_switch_vlan "eth1" "1" "0 1 2 3 5"
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "eth1" "1" "1"
+	ucidef_add_switch_vlan "eth1" "1" "0 1 2 3 5"
 	;;
 
 rb-450g |\
 routerstation-pro)
-	set_interfaces_lan_wan "eth1" "eth0"
-	add_switch "switch0" "1" "1"
-	add_switch_vlan "switch0" "1" "0 1 2 3 4"
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4"
 	;;
 
 rb-493g)
-	set_interfaces_lan_wan "eth0 eth1.1" "eth1.2"
-	add_switch "switch0" "1" "1"
-	add_switch_vlan "switch0" "1" "0 1 2 3 4"
-	add_switch "switch1" "1" "1"
-	add_switch_vlan "switch1" "1" "0t 1 2 3 4"
-	add_switch_vlan "switch1" "2" "0t 5"
+	ucidef_set_interfaces_lan_wan "eth0 eth1.1" "eth1.2"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4"
+	ucidef_add_switch "switch1" "1" "1"
+	ucidef_add_switch_vlan "switch1" "1" "0t 1 2 3 4"
+	ucidef_add_switch_vlan "switch1" "2" "0t 5"
 	;;
 
 pb92)
-	set_interfaces_lan_wan "eth0.1" "eth0.2"
-	add_switch "eth0" "1" "1"
-	add_switch_vlan "eth0" "1" "0t 1 3 4 5"
-	add_switch_vlan "eth0" "2" "0t 2"
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0t 1 3 4 5"
+	ucidef_add_switch_vlan "eth0" "2" "0t 2"
 	;;
 
 tl-wa901nd)
-	set_interface_raw "eth" "eth0"
-	set_interface_lan "lan"
+	ucidef_set_interface_raw "eth" "eth0"
+	ucidef_set_interface_lan "lan"
 	;;
 
 tl-wr1043nd)
-	set_interfaces_lan_wan "eth0.1" "eth0.2"
-	add_switch "rtl8366rb" "1" "1"
-	add_switch_vlan "rtl8366rb" "1" "1 2 3 4 5t"
-	add_switch_vlan "rtl8366rb" "2" "0 5t"
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "rtl8366rb" "1" "1"
+	ucidef_add_switch_vlan "rtl8366rb" "1" "1 2 3 4 5t"
+	ucidef_add_switch_vlan "rtl8366rb" "2" "0 5t"
 	;;
 
 tl-wr841n-v1|\
 tl-wr941nd)
-	set_interface_raw "eth" "eth0"
-	set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+	ucidef_set_interface_raw "eth" "eth0"
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 	;;
 
 wrt160nl)
-	set_interfaces_lan_wan "eth0" "eth1"
-	add_switch "eth0" "1" "1"
-	add_switch_vlan "eth0" "1" "0 1 2 3 4 5"
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4 5"
 	;;
 
 wzr-hp-g300nh)
-	set_interfaces_lan_wan "eth0.1" "eth1"
-	add_switch "switch0" "1" "1"
-	add_switch_vlan "switch0" "1" "0 1 2 3 5t"
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 	;;
 
 aw-nr580 |\
@@ -179,7 +104,7 @@ rb-411 |\
 tl-wa901nd-v2 |\
 tl-wr703n |\
 wp543)
-	set_interface_lan "eth0"
+	ucidef_set_interface_lan "eth0"
 	;;
 
 ap83 |\
@@ -187,7 +112,7 @@ jwap003 |\
 pb42 |\
 pb44 |\
 routerstation)
-	set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
 
 ap121 |\
@@ -206,13 +131,13 @@ whr-g301n |\
 whr-hp-g300n |\
 whr-hp-gn |\
 wzr-hp-ag300h)
-	set_interfaces_lan_wan "eth0" "eth1"
-	add_switch "eth0" "1" "1"
-	add_switch_vlan "eth0" "1" "0 1 2 3 4"
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4"
 	;;
 
 *)
-	set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;
 esac
 
