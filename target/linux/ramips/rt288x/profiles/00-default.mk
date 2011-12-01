@@ -7,7 +7,7 @@
 
 define Profile/Default
 	NAME:=Default Profile
-	PACKAGES:=kmod-rt2800-pci
+	PACKAGES:=
 endef
 
 define Profile/Default/Description

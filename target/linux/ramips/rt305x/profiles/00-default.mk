@@ -8,7 +8,7 @@
 define Profile/Default
 	NAME:=Default Profile
 	PACKAGES:=\
-		kmod-rt2800-pci kmod-usb-core kmod-usb-rt305x-dwc_otg \
+		kmod-usb-core kmod-usb-rt305x-dwc_otg \
 		kmod-ledtrig-usbdev
 endef
 
