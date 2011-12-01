@@ -52,59 +52,15 @@ get_mac_nvram()
 	maccalc add "$mac_dirty" 0
 }
 
-set_macs()
+set_interface_mac()
 {
-	local lan_mac="$1"
-	local wan_mac="$2"
-
-	echo "Setting LAN mac address to: $lan_mac" >&2
-	echo "Setting WAN mac address to: $wan_mac" >&2
+	local iface="$1"
+	local mac="$2"
 
 	uci batch <<EOF
-set network.lan.macaddr='$lan_mac'
-set network.wan.macaddr='$wan_mac'
+set network.$iface.macaddr=""$mac"
 commit network
 EOF
-}
-
-set_macs_only_lan()
-{
-	local lan_mac="$1"
-	local wan_mac
-
-	wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
-
-	set_macs "$lan_mac" "$wan_mac"
-}
-
-set_macs_only_lan_from_mtd()
-{
-	local mtdname="$1"
-	local seek="$2"
-	local lan_mac
-
-	lan_mac=$(get_mac_binary "$mtdname" "$seek")
-	if [ -z $lan_mac ]; then
-		echo "set_macs_only_lan_from_mtd: can't extract mac address from $part" >&2
-		return
-	fi
-
-	set_macs_only_lan "$lan_mac"
-}
-
-set_macs_only_lan_from_nvram()
-{
-	local mtdname="$1"
-	local key="$2"
-	local lan_mac
-
-	lan_mac=$(get_mac_nvram "$mtdname" "$key")
-	if [ -z $lan_mac ]; then
-		echo "set_macs_only_lan_from_nvram: can't extract mac address from $part" >&2
-		return
-	fi
-
-	set_macs_only_lan "$lan_mac"
 }
 
 ramips_setup_interfaces()
@@ -129,18 +85,25 @@ ramips_setup_interfaces()
 ramips_setup_macs()
 {
 	local board="$1"
+	local lan_mac=""
+	local wan_mac=""
 
 	case $board in
 	f5d8235-v2)
-		set_macs_only_lan_from_mtd "u-boot" 262148
+		lan_mac=$(get_mac_nvram "u-boot" 262148)
+		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
 	argus-atp52b | \
 	b2c | \
 	nw718)
-		set_macs_only_lan_from_mtd "factory" 4
+		lan_mac=$(get_mac_binary factory 4)
+		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 	esac
+
+	[ -n $lan_mac ] && set_interface_mac lan $lan_mac
+	[ -n $wan_mac ] && set_interface_mac wan $wan_mac
 }
 
 board=$(ramips_board_name)
