@@ -258,6 +258,17 @@ define Image/Build/Profile/Default
 endef
 endif
 
+
+define Image/Build/Profile/RTN15
+	$(call Image/Build/Template/GENERIC_4M,$(1),rt-n15,RT-N15)
+endef
+
+ifeq ($(CONFIG_RALINK_RT288X),y)
+define Image/Build/Profile/Default
+	$(call Image/Build/Profile/RTN15,$(1))
+endef
+endif
+
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
