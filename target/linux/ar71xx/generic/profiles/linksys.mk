@@ -7,7 +7,7 @@
 
 define Profile/WRT160NL
 	NAME:=Linksys WRT160NL
-	PACKAGES:=kmod-usb-core kmod-usb2 swconfig
+	PACKAGES:=kmod-usb-core kmod-usb2
 endef
 
 define Profile/WRT160NL/Description
