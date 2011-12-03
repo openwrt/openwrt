@@ -123,9 +123,18 @@ static struct gpio_keys_button ubnt_m_gpio_keys[] __initdata = {
 	}
 };
 
+static const char *ubnt_part_probes[] = {
+	"RedBoot",
+	NULL,
+};
+
+static struct flash_platform_data ubnt_flash_data = {
+	.part_probes	= ubnt_part_probes,
+};
+
 static void __init ubnt_generic_setup(void)
 {
-	ar71xx_add_device_m25p80(NULL);
+	ar71xx_add_device_m25p80(&ubnt_flash_data);
 
 	ar71xx_register_gpio_keys_polled(-1, UBNT_KEYS_POLL_INTERVAL,
 					 ARRAY_SIZE(ubnt_gpio_keys),

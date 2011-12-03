@@ -65,13 +65,22 @@ static struct platform_device ja76pf_i2c_gpio_device = {
 	}
 };
 
+static const char *ja76pf_part_probes[] = {
+	"RedBoot",
+	NULL,
+};
+
+static struct flash_platform_data ja76pf_flash_data = {
+	.part_probes	= ja76pf_part_probes,
+};
+
 #define JA76PF_WAN_PHYMASK	(1 << 4)
 #define JA76PF_LAN_PHYMASK	((1 << 0) | (1 << 1) | (1 << 2) | (1 < 3))
 #define JA76PF_MDIO_PHYMASK	(JA76PF_LAN_PHYMASK | JA76PF_WAN_PHYMASK)
 
 static void __init ja76pf_init(void)
 {
-	ar71xx_add_device_m25p80(NULL);
+	ar71xx_add_device_m25p80(&ja76pf_flash_data);
 
 	ar71xx_add_device_mdio(0, ~JA76PF_MDIO_PHYMASK);
 

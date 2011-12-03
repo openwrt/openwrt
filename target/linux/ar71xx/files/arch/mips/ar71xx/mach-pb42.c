@@ -42,13 +42,22 @@ static struct gpio_keys_button pb42_gpio_keys[] __initdata = {
 	}
 };
 
+static const char *pb42_part_probes[] = {
+	"RedBoot",
+	NULL,
+};
+
+static struct flash_platform_data pb42_flash_data = {
+	.part_probes	= pb42_part_probes,
+};
+
 #define PB42_WAN_PHYMASK	BIT(20)
 #define PB42_LAN_PHYMASK	(BIT(16) | BIT(17) | BIT(18) | BIT(19))
 #define PB42_MDIO_PHYMASK	(PB42_LAN_PHYMASK | PB42_WAN_PHYMASK)
 
 static void __init pb42_init(void)
 {
-	ar71xx_add_device_m25p80(NULL);
+	ar71xx_add_device_m25p80(&pb42_flash_data);
 
 	ar71xx_add_device_mdio(0, ~PB42_MDIO_PHYMASK);
 

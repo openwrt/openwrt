@@ -9,9 +9,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
 
@@ -76,6 +73,15 @@ static struct gpio_keys_button aw_nr580_gpio_keys[] __initdata = {
 	}
 };
 
+static const char *aw_nr580_part_probes[] = {
+	"RedBoot",
+	NULL,
+};
+
+static struct flash_platform_data aw_nr580_flash_data = {
+	.part_probes	= aw_nr580_part_probes,
+};
+
 static void __init aw_nr580_setup(void)
 {
 	ar71xx_add_device_mdio(0, 0x0);
@@ -88,7 +94,7 @@ static void __init aw_nr580_setup(void)
 
 	pb42_pci_init();
 
-	ar71xx_add_device_m25p80(NULL);
+	ar71xx_add_device_m25p80(&aw_nr580_flash_data);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(aw_nr580_leds_gpio),
 					aw_nr580_leds_gpio);

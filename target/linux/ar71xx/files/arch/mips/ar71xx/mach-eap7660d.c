@@ -153,6 +153,15 @@ static struct gpio_keys_button eap7660d_gpio_keys[] __initdata = {
 	}
 };
 
+static const char *eap7660d_part_probes[] = {
+	"RedBoot",
+	NULL,
+};
+
+static struct flash_platform_data eap7660d_flash_data = {
+	.part_probes	= eap7660d_part_probes,
+};
+
 static void __init eap7660d_setup(void)
 {
 	u8 *boardconfig = (u8 *) KSEG1ADDR(EAP7660D_BOARDCONFIG);
@@ -164,7 +173,7 @@ static void __init eap7660d_setup(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = EAP7660D_PHYMASK;
 	ar71xx_add_device_eth(0);
-	ar71xx_add_device_m25p80(NULL);
+	ar71xx_add_device_m25p80(&eap7660d_flash_data);
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(eap7660d_leds_gpio),
 					eap7660d_leds_gpio);
 	ar71xx_register_gpio_keys_polled(-1, EAP7660D_KEYS_POLL_INTERVAL,

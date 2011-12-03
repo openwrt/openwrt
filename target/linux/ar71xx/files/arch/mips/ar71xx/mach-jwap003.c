@@ -46,12 +46,21 @@ static struct platform_device jwap003_i2c_gpio_device = {
 	}
 };
 
+static const char *jwap003_part_probes[] = {
+	"RedBoot",
+	NULL,
+};
+
+static struct flash_platform_data jwap003_flash_data = {
+	.part_probes	= jwap003_part_probes,
+};
+
 #define JWAP003_WAN_PHYMASK	BIT(0)
 #define JWAP003_LAN_PHYMASK	BIT(4)
 
 static void __init jwap003_init(void)
 {
-	ar71xx_add_device_m25p80(NULL);
+	ar71xx_add_device_m25p80(&jwap003_flash_data);
 
 	ar71xx_add_device_mdio(0, 0x0);
 
