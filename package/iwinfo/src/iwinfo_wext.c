@@ -428,6 +428,8 @@ int wext_get_hwmodelist(const char *ifname, int *buf)
 	struct iwinfo_freqlist_entry *e = NULL;
 	int len = 0;
 
+	*buf = 0;
+
 	if( !wext_get_freqlist(ifname, chans, &len) )
 	{
 		for( e = (struct iwinfo_freqlist_entry *)chans; e->channel; e++ )
