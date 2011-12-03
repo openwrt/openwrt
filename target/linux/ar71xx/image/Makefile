@@ -42,13 +42,13 @@ endef
 
 define PatchKernelLzma
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) '$(strip $(2))'
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) "$(strip $(2))"
 	$(call CompressLzma,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).bin.lzma)
 endef
 
 define PatchKernelGzip
 	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) '$(strip $(2))'
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) "$(strip $(2))"
 	gzip -9 -c $(KDIR)/vmlinux-$(1) > $(KDIR)/vmlinux-$(1).bin.gz
 endef
 
@@ -321,29 +321,72 @@ define Image/Build/CyberTAN
 	rm $(KDIR)/image.tmp
 endef
 
-define Image/Build/Netgear
-	$(call MkuImageLzma,$(2),$(3) $($(4)))
-	mkdir -p $(KDIR)/wndr3700/image
+define Image/Build/Netgear/Build_uImage
+	$(call MkuImageLzma,$(1),$(2) $(3))
+	-rm -rf $(KDIR)/$(1)
+	mkdir -p $(KDIR)/$(1)/image
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
-		$(KDIR)/vmlinux-$(2).uImage \
-		$(KDIR)/wndr3700/image/uImage \
-		$(5)
+		$(KDIR)/vmlinux-$(1).uImage \
+		$(KDIR)/$(1)/image/uImage \
+		$(4)
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
-		$(KDIR)/wndr3700 $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp \
+		$(KDIR)/$(1) $(KDIR)/vmlinux-$(1).uImage.squashfs.tmp \
 		-nopad -noappend -root-owned -be
-	-rm -rf $(KDIR)/wndr3700
+	-rm -rf $(KDIR)/$(1)
 	mkimage -A mips -O linux -T filesystem -C none \
 		-a 0xbf070000 -e 0xbf070000 \
 		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp \
-		$(KDIR)/vmlinux-$(2).uImage.squashfs.tmp2
+		-d $(KDIR)/vmlinux-$(1).uImage.squashfs.tmp \
+		$(KDIR)/vmlinux-$(1).uImage.squashfs.tmp2
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
-		$(KDIR)/vmlinux-$(2).uImage.squashfs.tmp2 \
-		$(KDIR)/vmlinux-$(2).uImage.squashfs \
-		$(5)
-	-rm -f $(KDIR)/vmlinux-$(2).uImage.squashfs.tmp*
+		$(KDIR)/vmlinux-$(1).uImage.squashfs.tmp2 \
+		$(KDIR)/vmlinux-$(1).uImage.squashfs \
+		$(4)
+	-rm -f $(KDIR)/vmlinux-$(1).uImage.squashfs.tmp*
+endef
+
+define Image/Build/Netgear/Estimate_uImage
+	$(call Image/Build/Netgear/Build_uImage,$(1)_est,$(2),$(3),$(4))
 	( \
-		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs bs=1024k conv=sync; \
+		set -e; \
+		kk=`echo '$(3)' | sed -e 's/.*[:,]\([0-9]*\)k(kernel).*/\1/'`; \
+		rk=`echo '$(3)' | sed -e 's/.*[:,]\([0-9]*\)k(rootfs).*/\1/'`; \
+		let 'tk = kk + rk'; \
+		s=`stat -c'%s' '$(KDIR)/vmlinux-$(1)_est.uImage.squashfs'`; \
+		c=`echo '$(3)' | wc -c`; \
+		let 'kk = (((s + c) / (64 * 1024) + 1) * 64)'; \
+		let 'rk = tk - kk'; \
+		echo '$(3)' | sed -e "s/[0-9]*k(kernel)/$$$${kk}k(kernel)/" \
+				  -e "s/[0-9]*k(rootfs)/$$$${rk}k(rootfs)/" > \
+			'$(KDIR)/$(1)_mtdparts'; \
+		let 'k = kk * 1024'; \
+		echo "$$$${k}" > '$(KDIR)/$(1)_kernel_maxsize'; \
+		let 'r = rk * 1024'; \
+		echo "$$$${r}" > '$(KDIR)/$(1)_rootfs_maxsize'; \
+	)
+	-rm -f $(KDIR)/vmlinux-$(1)_est \
+	       $(KDIR)/vmlinux-$(1)_est.bin.lzma \
+	       $(KDIR)/vmlinux-$(1)_est.uImage \
+	       $(KDIR)/vmlinux-$(1)_est.uImage.squashfs
+endef
+
+define Image/Build/Netgear
+	$(call Image/Build/Netgear/Estimate_uImage,$(2),$(3),$(4),$(5))
+	$(call Image/Build/Netgear/Build_uImage,$(2),$(3),`cat $(KDIR)/$(2)_mtdparts`,$(5))
+	if [ `stat -c%s '$(KDIR)/vmlinux-$(2).uImage.squashfs'` -gt \
+	     `cat '$(KDIR)/$(2)_kernel_maxsize'` ]; then \
+                echo "$(KDIR)/vmlinux-$(2).uImage.squashfs is too big" >& 2; \
+		false; \
+	fi
+	if [ `stat -c%s '$(KDIR)/root.$(1)'` -gt \
+	     `cat '$(KDIR)/$(2)_rootfs_maxsize'` ]; then \
+                echo "$(KDIR)/root.$(1) is too big" >& 2; \
+		false; \
+	fi
+	( \
+		set -e; \
+		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs \
+		   bs=`cat '$(KDIR)/$(2)_kernel_maxsize'` conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k; \
 	) > $(call sysupname,$(1),$(2))
 	for r in $(7) ; do \
@@ -714,9 +757,9 @@ wndr3700v2_cmdline=board=WNDR3700v2 console=ttyS0,115200
 wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),14848k(rootfs),64k(art)ro,15872k@0x70000(firmware)
 wndr3800_cmdline=board=WNDR3800 console=ttyS0,115200
 define Image/Build/Profile/WNDR3700
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,$(wndr3700_cmdline),wndr3700_mtdlayout,3700,WNDR3700,"" NA,)
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,$(wndr3700v2_cmdline),wndr3700v2_mtdlayout,3701,WNDR3700v2,"",-H 29763654+16+64)
-	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3800,$(wndr3800_cmdline),wndr3700v2_mtdlayout,3701,WNDR3800,"",-H 29763654+16+128)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700,$(wndr3700_cmdline),$(wndr3700_mtdlayout),3700,WNDR3700,"" NA,)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3700v2,$(wndr3700v2_cmdline),$(wndr3700v2_mtdlayout),3701,WNDR3700v2,"",-H 29763654+16+64)
+	$(call Image/Build/Template/$(fs_64k)/$(1),Netgear,wndr3800,$(wndr3800_cmdline),$(wndr3700v2_mtdlayout),3701,WNDR3800,"",-H 29763654+16+128)
 endef
 
 wr400n_cmdline=board=WRT400N console=ttyS0,115200
