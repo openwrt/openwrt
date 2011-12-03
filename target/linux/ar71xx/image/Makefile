@@ -308,6 +308,14 @@ define Image/Build/TPLINK-LZMA
 		-o $(call sysupname,$(1),$(2))
 endef
 
+define Image/Build/TPLINK-LZMA/initramfs
+	$(call PatchKernelLzma,$(2),$(3))
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
+		-B $(4) -N OpenWrt -V $(REVISION) -s \
+		-k $(KDIR)/vmlinux-$(2).bin.lzma \
+		-o $(call imgname,$(1),$(2))-uImage.bin
+endef
+
 define Image/Build/CyberTAN
 	$(call MkuImageGzip,$(2),$(3))
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR)/vmlinux-$(2).uImage \
