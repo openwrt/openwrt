@@ -8,9 +8,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "machtype.h"
@@ -36,44 +33,13 @@
 #define WRT160NL_NVRAM_ADDR	0x1f7e0000
 #define WRT160NL_NVRAM_SIZE	0x10000
 
-#ifdef CONFIG_MTD_PARTITIONS
-static struct mtd_partition wrt160nl_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x040000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x040000,
-		.size		= 0x0e0000,
-	}, {
-		.name		= "filesytem",
-		.offset		= 0x120000,
-		.size		= 0x6c0000,
-	}, {
-		.name		= "nvram",
-		.offset		= 0x7e0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "ART",
-		.offset		= 0x7f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x040000,
-		.size		= 0x7a0000,
-	}
+static const char *wrt160nl_part_probes[] = {
+	"wrt160nl",
+	NULL,
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct flash_platform_data wrt160nl_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
-	.parts		= wrt160nl_partitions,
-	.nr_parts	= ARRAY_SIZE(wrt160nl_partitions),
-#endif
+	.part_probes	= wrt160nl_part_probes,
 };
 
 static struct gpio_led wrt160nl_leds_gpio[] __initdata = {

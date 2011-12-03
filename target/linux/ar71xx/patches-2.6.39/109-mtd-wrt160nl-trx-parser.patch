@@ -1,22 +1,3 @@
---- a/drivers/mtd/devices/m25p80.c
-+++ b/drivers/mtd/devices/m25p80.c
-@@ -991,6 +991,16 @@ static int __devinit m25p_probe(struct s
- 					part_probes, &parts, 0);
- 		}
- #endif
-+
-+#ifdef CONFIG_MTD_WRT160NL_PARTS
-+		if (nr_parts <= 0) {
-+			static const char *part_probes[]
-+					= { "wrt160nl", NULL, };
-+
-+			nr_parts = parse_mtd_partitions(&flash->mtd,
-+					part_probes, &parts, 0);
-+		}
-+#endif
- 		if (nr_parts <= 0 && data && data->parts) {
- 			parts = data->parts;
- 			nr_parts = data->nr_parts;
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -176,6 +176,12 @@ config MTD_AR7_PARTS
