@@ -551,7 +551,7 @@ static int build_fw(void)
 	if (ret)
 		goto out_free_buf;
 
-	writelen = kernel_info.file_size;
+	writelen = sizeof(struct fw_header) + kernel_info.file_size;
 
 	if (!combined) {
 		p = buf + rootfs_ofs;
