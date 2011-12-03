@@ -9,9 +9,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "machtype.h"
@@ -30,39 +27,13 @@
 #define TL_WA901ND_KEYS_POLL_INTERVAL	20	/* msecs */
 #define TL_WA901ND_KEYS_DEBOUNCE_INTERVAL (3 * TL_WA901ND_KEYS_POLL_INTERVAL)
 
-#ifdef CONFIG_MTD_PARTITIONS
-static struct mtd_partition tl_wa901nd_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x020000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x020000,
-		.size		= 0x140000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x160000,
-		.size		= 0x290000,
-	}, {
-		.name		= "art",
-		.offset		= 0x3f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x020000,
-		.size		= 0x3d0000,
-	}
+static const char *tl_wa901nd_part_probes[] = {
+	"tp-link",
+	NULL,
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct flash_platform_data tl_wa901nd_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
-	.parts		= tl_wa901nd_partitions,
-	.nr_parts	= ARRAY_SIZE(tl_wa901nd_partitions),
-#endif
+	.part_probes	= tl_wa901nd_part_probes,
 };
 
 static struct gpio_led tl_wa901nd_leds_gpio[] __initdata = {

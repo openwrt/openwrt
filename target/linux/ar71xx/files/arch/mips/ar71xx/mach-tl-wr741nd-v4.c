@@ -8,9 +8,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/spi/flash.h>
 #include <linux/gpio.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -32,41 +29,13 @@
 #define TL_WR741NDV4_KEYS_POLL_INTERVAL	20	/* msecs */
 #define TL_WR741NDV4_KEYS_DEBOUNCE_INTERVAL (3 * TL_WR741NDV4_KEYS_POLL_INTERVAL)
 
-#ifdef CONFIG_MTD_PARTITIONS
-static struct mtd_partition tl_wr741ndv4_parts[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x020000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x020000,
-		.size		= 0x100000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x120000,
-		.size		= 0x2d0000,
-	}, {
-		.name		= "art",
-		.offset		= 0x3f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x020000,
-		.size		= 0x3d0000,
-	}
+static const char *tl_wr741ndv4_part_probes[] = {
+	"tp-link",
+	NULL,
 };
-#define tl_wr741ndv4_nr_parts	ARRAY_SIZE(tl_wr741ndv4_parts)
-#else
-#define tl_wr741ndv4_parts	NULL
-#define tl_wr741ndv4_nr_parts	0
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct flash_platform_data tl_wr741ndv4_flash_data = {
-	.parts		= tl_wr741ndv4_parts,
-	.nr_parts	= tl_wr741ndv4_nr_parts,
+	.part_probes	= tl_wr741ndv4_part_probes,
 };
 
 static struct gpio_led tl_wr741ndv4_leds_gpio[] __initdata = {
