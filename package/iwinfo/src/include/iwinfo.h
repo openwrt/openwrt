@@ -120,7 +120,9 @@ extern const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[];
 struct iwinfo_ops {
 	int (*channel)(const char *, int *);
 	int (*frequency)(const char *, int *);
+	int (*frequency_offset)(const char *, int *);
 	int (*txpower)(const char *, int *);
+	int (*txpower_offset)(const char *, int *);
 	int (*bitrate)(const char *, int *);
 	int (*signal)(const char *, int *);
 	int (*noise)(const char *, int *);

@@ -585,3 +585,28 @@ int wl_get_hardware_name(const char *ifname, char *buf)
 
 	return 0;
 }
+
+int wl_get_txpower_offset(const char *ifname, int *buf)
+{
+	FILE *p;
+	char off[8];
+
+	*buf = 0;
+
+	if ((p = popen("/usr/sbin/nvram get opo", "r")) != NULL)
+	{
+		if (fread(off, 1, sizeof(off), p))
+			*buf = strtoul(off, NULL, 16);
+
+		pclose(p);
+	}
+
+	return 0;
+}
+
+int wl_get_frequency_offset(const char *ifname, int *buf)
+{
+	/* Stub */
+	*buf = 0;
+	return -1;
+}

@@ -515,3 +515,17 @@ int wext_get_hardware_name(const char *ifname, char *buf)
 	sprintf(buf, "Generic WEXT");
 	return 0;
 }
+
+int wext_get_txpower_offset(const char *ifname, int *buf)
+{
+	/* Stub */
+	*buf = 0;
+	return -1;
+}
+
+int wext_get_frequency_offset(const char *ifname, int *buf)
+{
+	/* Stub */
+	*buf = 0;
+	return -1;
+}

@@ -558,7 +558,9 @@ static int iwinfo_L_countrylist(lua_State *L, int (*func)(const char *, char *, 
 /* Broadcom */
 LUA_WRAP_INT(wl,channel)
 LUA_WRAP_INT(wl,frequency)
+LUA_WRAP_INT(wl,frequency_offset)
 LUA_WRAP_INT(wl,txpower)
+LUA_WRAP_INT(wl,txpower_offset)
 LUA_WRAP_INT(wl,bitrate)
 LUA_WRAP_INT(wl,signal)
 LUA_WRAP_INT(wl,noise)
@@ -584,7 +586,9 @@ LUA_WRAP_STRUCT(wl,hardware_id)
 /* Madwifi */
 LUA_WRAP_INT(madwifi,channel)
 LUA_WRAP_INT(madwifi,frequency)
+LUA_WRAP_INT(madwifi,frequency_offset)
 LUA_WRAP_INT(madwifi,txpower)
+LUA_WRAP_INT(madwifi,txpower_offset)
 LUA_WRAP_INT(madwifi,bitrate)
 LUA_WRAP_INT(madwifi,signal)
 LUA_WRAP_INT(madwifi,noise)
@@ -610,7 +614,9 @@ LUA_WRAP_STRUCT(madwifi,hardware_id)
 /* NL80211 */
 LUA_WRAP_INT(nl80211,channel)
 LUA_WRAP_INT(nl80211,frequency)
+LUA_WRAP_INT(nl80211,frequency_offset)
 LUA_WRAP_INT(nl80211,txpower)
+LUA_WRAP_INT(nl80211,txpower_offset)
 LUA_WRAP_INT(nl80211,bitrate)
 LUA_WRAP_INT(nl80211,signal)
 LUA_WRAP_INT(nl80211,noise)
@@ -635,7 +641,9 @@ LUA_WRAP_STRUCT(nl80211,hardware_id)
 /* Wext */
 LUA_WRAP_INT(wext,channel)
 LUA_WRAP_INT(wext,frequency)
+LUA_WRAP_INT(wext,frequency_offset)
 LUA_WRAP_INT(wext,txpower)
+LUA_WRAP_INT(wext,txpower_offset)
 LUA_WRAP_INT(wext,bitrate)
 LUA_WRAP_INT(wext,signal)
 LUA_WRAP_INT(wext,noise)
@@ -661,7 +669,9 @@ LUA_WRAP_STRUCT(wext,hardware_id)
 static const luaL_reg R_wl[] = {
 	LUA_REG(wl,channel),
 	LUA_REG(wl,frequency),
+	LUA_REG(wl,frequency_offset),
 	LUA_REG(wl,txpower),
+	LUA_REG(wl,txpower_offset),
 	LUA_REG(wl,bitrate),
 	LUA_REG(wl,signal),
 	LUA_REG(wl,noise),
@@ -690,7 +700,9 @@ static const luaL_reg R_wl[] = {
 static const luaL_reg R_madwifi[] = {
 	LUA_REG(madwifi,channel),
 	LUA_REG(madwifi,frequency),
+	LUA_REG(madwifi,frequency_offset),
 	LUA_REG(madwifi,txpower),
+	LUA_REG(madwifi,txpower_offset),
 	LUA_REG(madwifi,bitrate),
 	LUA_REG(madwifi,signal),
 	LUA_REG(madwifi,noise),
@@ -719,7 +731,9 @@ static const luaL_reg R_madwifi[] = {
 static const luaL_reg R_nl80211[] = {
 	LUA_REG(nl80211,channel),
 	LUA_REG(nl80211,frequency),
+	LUA_REG(nl80211,frequency_offset),
 	LUA_REG(nl80211,txpower),
+	LUA_REG(nl80211,txpower_offset),
 	LUA_REG(nl80211,bitrate),
 	LUA_REG(nl80211,signal),
 	LUA_REG(nl80211,noise),
@@ -747,7 +761,9 @@ static const luaL_reg R_nl80211[] = {
 static const luaL_reg R_wext[] = {
 	LUA_REG(wext,channel),
 	LUA_REG(wext,frequency),
+	LUA_REG(wext,frequency_offset),
 	LUA_REG(wext,txpower),
+	LUA_REG(wext,txpower_offset),
 	LUA_REG(wext,bitrate),
 	LUA_REG(wext,signal),
 	LUA_REG(wext,noise),

@@ -1634,20 +1634,47 @@ int nl80211_get_hardware_id(const char *ifname, char *buf)
 	return wext_get_hardware_id(ifname, buf);
 }
 
-int nl80211_get_hardware_name(const char *ifname, char *buf)
+static const struct iwinfo_hardware_entry *
+nl80211_get_hardware_entry(const char *ifname)
 {
 	struct iwinfo_hardware_id id;
-	struct iwinfo_hardware_entry *hw;
 
 	if (nl80211_get_hardware_id(ifname, (char *)&id))
+		return NULL;
+
+	return iwinfo_hardware(&id);
+}
+
+int nl80211_get_hardware_name(const char *ifname, char *buf)
+{
+	const struct iwinfo_hardware_entry *hw;
+
+	if (!(hw = nl80211_get_hardware_entry(ifname)))
+		sprintf(buf, "Generic MAC80211");
+	else
+		sprintf(buf, "%s %s", hw->vendor_name, hw->device_name);
+
+	return 0;
+}
+
+int nl80211_get_txpower_offset(const char *ifname, int *buf)
+{
+	const struct iwinfo_hardware_entry *hw;
+
+	if (!(hw = nl80211_get_hardware_entry(ifname)))
 		return -1;
 
-	hw = iwinfo_hardware(&id);
+	*buf = hw->txpower_offset;
+	return 0;
+}
 
-	if (hw)
-		sprintf(buf, "%s %s", hw->vendor_name, hw->device_name);
-	else
-		sprintf(buf, "Generic MAC80211");
+int nl80211_get_frequency_offset(const char *ifname, int *buf)
+{
+	const struct iwinfo_hardware_entry *hw;
 
+	if (!(hw = nl80211_get_hardware_entry(ifname)))
+		return -1;
+
+	*buf = hw->frequency_offset;
 	return 0;
 }
