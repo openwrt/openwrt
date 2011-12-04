@@ -987,3 +987,26 @@ int madwifi_get_mbssid_support(const char *ifname, int *buf)
 
 	return -1;
 }
+
+int madwifi_get_hardware_id(const char *ifname, char *buf)
+{
+	return wext_get_hardware_id(ifname, buf);
+}
+
+int madwifi_get_hardware_name(const char *ifname, char *buf)
+{
+	struct iwinfo_hardware_id id;
+	struct iwinfo_hardware_entry *hw;
+
+	if (madwifi_get_hardware_id(ifname, (char *)&id))
+		return -1;
+
+	hw = iwinfo_hardware(&id);
+
+	if (hw)
+		sprintf(buf, "%s %s", hw->vendor_name, hw->device_name);
+	else
+		sprintf(buf, "Generic Atheros");
+
+	return 0;
+}

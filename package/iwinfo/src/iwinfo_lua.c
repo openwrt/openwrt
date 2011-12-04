@@ -451,7 +451,7 @@ static int iwinfo_L_hwmodelist(lua_State *L, int (*func)(const char *, int *))
 	return 1;
 }
 
-/* Wrapper for mbbsid_support */
+/* Wrapper for mbssid_support */
 static int iwinfo_L_mbssid_support(lua_State *L, int (*func)(const char *, int *))
 {
 	const char *ifname = luaL_checkstring(L, 1);
@@ -464,6 +464,36 @@ static int iwinfo_L_mbssid_support(lua_State *L, int (*func)(const char *, int *
 	}
 
 	lua_pushnil(L);
+	return 1;
+}
+
+/* Wrapper for hardware_id */
+static int iwinfo_L_hardware_id(lua_State *L, int (*func)(const char *, char *))
+{
+	const char *ifname = luaL_checkstring(L, 1);
+	struct iwinfo_hardware_id ids;
+
+	if (!(*func)(ifname, (char *)&ids))
+	{
+		lua_newtable(L);
+
+		lua_pushnumber(L, ids.vendor_id);
+		lua_setfield(L, -2, "vendor_id");
+
+		lua_pushnumber(L, ids.device_id);
+		lua_setfield(L, -2, "device_id");
+
+		lua_pushnumber(L, ids.subsystem_vendor_id);
+		lua_setfield(L, -2, "subsystem_vendor_id");
+
+		lua_pushnumber(L, ids.subsystem_device_id);
+		lua_setfield(L, -2, "subsystem_device_id");
+	}
+	else
+	{
+		lua_pushnil(L);
+	}
+
 	return 1;
 }
 
@@ -538,14 +568,16 @@ LUA_WRAP_STRING(wl,mode)
 LUA_WRAP_STRING(wl,ssid)
 LUA_WRAP_STRING(wl,bssid)
 LUA_WRAP_STRING(wl,country)
-LUA_WRAP_LIST(wl,assoclist)
-LUA_WRAP_LIST(wl,txpwrlist)
-LUA_WRAP_LIST(wl,scanlist)
-LUA_WRAP_LIST(wl,freqlist)
-LUA_WRAP_LIST(wl,countrylist)
-LUA_WRAP_LIST(wl,hwmodelist)
-LUA_WRAP_LIST(wl,encryption)
-LUA_WRAP_LIST(wl,mbssid_support)
+LUA_WRAP_STRING(wl,hardware_name)
+LUA_WRAP_STRUCT(wl,assoclist)
+LUA_WRAP_STRUCT(wl,txpwrlist)
+LUA_WRAP_STRUCT(wl,scanlist)
+LUA_WRAP_STRUCT(wl,freqlist)
+LUA_WRAP_STRUCT(wl,countrylist)
+LUA_WRAP_STRUCT(wl,hwmodelist)
+LUA_WRAP_STRUCT(wl,encryption)
+LUA_WRAP_STRUCT(wl,mbssid_support)
+LUA_WRAP_STRUCT(wl,hardware_id)
 #endif
 
 #ifdef USE_MADWIFI
@@ -562,14 +594,16 @@ LUA_WRAP_STRING(madwifi,mode)
 LUA_WRAP_STRING(madwifi,ssid)
 LUA_WRAP_STRING(madwifi,bssid)
 LUA_WRAP_STRING(madwifi,country)
-LUA_WRAP_LIST(madwifi,assoclist)
-LUA_WRAP_LIST(madwifi,txpwrlist)
-LUA_WRAP_LIST(madwifi,scanlist)
-LUA_WRAP_LIST(madwifi,freqlist)
-LUA_WRAP_LIST(madwifi,countrylist)
-LUA_WRAP_LIST(madwifi,hwmodelist)
-LUA_WRAP_LIST(madwifi,encryption)
-LUA_WRAP_LIST(madwifi,mbssid_support)
+LUA_WRAP_STRING(madwifi,hardware_name)
+LUA_WRAP_STRUCT(madwifi,assoclist)
+LUA_WRAP_STRUCT(madwifi,txpwrlist)
+LUA_WRAP_STRUCT(madwifi,scanlist)
+LUA_WRAP_STRUCT(madwifi,freqlist)
+LUA_WRAP_STRUCT(madwifi,countrylist)
+LUA_WRAP_STRUCT(madwifi,hwmodelist)
+LUA_WRAP_STRUCT(madwifi,encryption)
+LUA_WRAP_STRUCT(madwifi,mbssid_support)
+LUA_WRAP_STRUCT(madwifi,hardware_id)
 #endif
 
 #ifdef USE_NL80211
@@ -586,14 +620,16 @@ LUA_WRAP_STRING(nl80211,mode)
 LUA_WRAP_STRING(nl80211,ssid)
 LUA_WRAP_STRING(nl80211,bssid)
 LUA_WRAP_STRING(nl80211,country)
-LUA_WRAP_LIST(nl80211,assoclist)
-LUA_WRAP_LIST(nl80211,txpwrlist)
-LUA_WRAP_LIST(nl80211,scanlist)
-LUA_WRAP_LIST(nl80211,freqlist)
-LUA_WRAP_LIST(nl80211,countrylist)
-LUA_WRAP_LIST(nl80211,hwmodelist)
-LUA_WRAP_LIST(nl80211,encryption)
-LUA_WRAP_LIST(nl80211,mbssid_support)
+LUA_WRAP_STRING(nl80211,hardware_name)
+LUA_WRAP_STRUCT(nl80211,assoclist)
+LUA_WRAP_STRUCT(nl80211,txpwrlist)
+LUA_WRAP_STRUCT(nl80211,scanlist)
+LUA_WRAP_STRUCT(nl80211,freqlist)
+LUA_WRAP_STRUCT(nl80211,countrylist)
+LUA_WRAP_STRUCT(nl80211,hwmodelist)
+LUA_WRAP_STRUCT(nl80211,encryption)
+LUA_WRAP_STRUCT(nl80211,mbssid_support)
+LUA_WRAP_STRUCT(nl80211,hardware_id)
 #endif
 
 /* Wext */
@@ -609,14 +645,16 @@ LUA_WRAP_STRING(wext,mode)
 LUA_WRAP_STRING(wext,ssid)
 LUA_WRAP_STRING(wext,bssid)
 LUA_WRAP_STRING(wext,country)
-LUA_WRAP_LIST(wext,assoclist)
-LUA_WRAP_LIST(wext,txpwrlist)
-LUA_WRAP_LIST(wext,scanlist)
-LUA_WRAP_LIST(wext,freqlist)
-LUA_WRAP_LIST(wext,countrylist)
-LUA_WRAP_LIST(wext,hwmodelist)
-LUA_WRAP_LIST(wext,encryption)
-LUA_WRAP_LIST(wext,mbssid_support)
+LUA_WRAP_STRING(wext,hardware_name)
+LUA_WRAP_STRUCT(wext,assoclist)
+LUA_WRAP_STRUCT(wext,txpwrlist)
+LUA_WRAP_STRUCT(wext,scanlist)
+LUA_WRAP_STRUCT(wext,freqlist)
+LUA_WRAP_STRUCT(wext,countrylist)
+LUA_WRAP_STRUCT(wext,hwmodelist)
+LUA_WRAP_STRUCT(wext,encryption)
+LUA_WRAP_STRUCT(wext,mbssid_support)
+LUA_WRAP_STRUCT(wext,hardware_id)
 
 #ifdef USE_WL
 /* Broadcom table */
@@ -641,6 +679,8 @@ static const luaL_reg R_wl[] = {
 	LUA_REG(wl,hwmodelist),
 	LUA_REG(wl,encryption),
 	LUA_REG(wl,mbssid_support),
+	LUA_REG(wl,hardware_id),
+	LUA_REG(wl,hardware_name),
 	{ NULL, NULL }
 };
 #endif
@@ -668,6 +708,8 @@ static const luaL_reg R_madwifi[] = {
 	LUA_REG(madwifi,hwmodelist),
 	LUA_REG(madwifi,encryption),
 	LUA_REG(madwifi,mbssid_support),
+	LUA_REG(madwifi,hardware_id),
+	LUA_REG(madwifi,hardware_name),
 	{ NULL, NULL }
 };
 #endif
@@ -695,6 +737,8 @@ static const luaL_reg R_nl80211[] = {
 	LUA_REG(nl80211,hwmodelist),
 	LUA_REG(nl80211,encryption),
 	LUA_REG(nl80211,mbssid_support),
+	LUA_REG(nl80211,hardware_id),
+	LUA_REG(nl80211,hardware_name),
 	{ NULL, NULL }
 };
 #endif
@@ -721,6 +765,8 @@ static const luaL_reg R_wext[] = {
 	LUA_REG(wext,hwmodelist),
 	LUA_REG(wext,encryption),
 	LUA_REG(wext,mbssid_support),
+	LUA_REG(wext,hardware_id),
+	LUA_REG(wext,hardware_name),
 	{ NULL, NULL }
 };
 

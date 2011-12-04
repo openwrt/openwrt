@@ -46,6 +46,8 @@ int madwifi_get_freqlist(const char *ifname, char *buf, int *len);
 int madwifi_get_countrylist(const char *ifname, char *buf, int *len);
 int madwifi_get_hwmodelist(const char *ifname, int *buf);
 int madwifi_get_mbssid_support(const char *ifname, int *buf);
+int madwifi_get_hardware_id(const char *ifname, char *buf);
+int madwifi_get_hardware_name(const char *ifname, char *buf);
 void madwifi_close(void);
 
 static const struct iwinfo_ops madwifi_ops = {
@@ -63,6 +65,8 @@ static const struct iwinfo_ops madwifi_ops = {
 	.ssid           = madwifi_get_ssid,
 	.bssid          = madwifi_get_bssid,
 	.country        = madwifi_get_country,
+	.hardware_id    = madwifi_get_hardware_id,
+	.hardware_name  = madwifi_get_hardware_name,
 	.encryption     = madwifi_get_encryption,
 	.assoclist      = madwifi_get_assoclist,
 	.txpwrlist      = madwifi_get_txpwrlist,

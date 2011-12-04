@@ -1628,3 +1628,26 @@ int nl80211_get_mbssid_support(const char *ifname, int *buf)
 
 	return -1;
 }
+
+int nl80211_get_hardware_id(const char *ifname, char *buf)
+{
+	return wext_get_hardware_id(ifname, buf);
+}
+
+int nl80211_get_hardware_name(const char *ifname, char *buf)
+{
+	struct iwinfo_hardware_id id;
+	struct iwinfo_hardware_entry *hw;
+
+	if (nl80211_get_hardware_id(ifname, (char *)&id))
+		return -1;
+
+	hw = iwinfo_hardware(&id);
+
+	if (hw)
+		sprintf(buf, "%s %s", hw->vendor_name, hw->device_name);
+	else
+		sprintf(buf, "Generic MAC80211");
+
+	return 0;
+}

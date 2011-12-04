@@ -47,6 +47,8 @@ int wext_get_freqlist(const char *ifname, char *buf, int *len);
 int wext_get_countrylist(const char *ifname, char *buf, int *len);
 int wext_get_hwmodelist(const char *ifname, int *buf);
 int wext_get_mbssid_support(const char *ifname, int *buf);
+int wext_get_hardware_id(const char *ifname, char *buf);
+int wext_get_hardware_name(const char *ifname, char *buf);
 void wext_close(void);
 
 static const struct iwinfo_ops wext_ops = {
@@ -64,6 +66,8 @@ static const struct iwinfo_ops wext_ops = {
 	.ssid           = wext_get_ssid,
 	.bssid          = wext_get_bssid,
 	.country        = wext_get_country,
+	.hardware_id    = wext_get_hardware_id,
+	.hardware_name  = wext_get_hardware_name,
 	.encryption     = wext_get_encryption,
 	.assoclist      = wext_get_assoclist,
 	.txpwrlist      = wext_get_txpwrlist,
