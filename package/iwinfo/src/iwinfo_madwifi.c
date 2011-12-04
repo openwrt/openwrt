@@ -988,9 +988,76 @@ int madwifi_get_mbssid_support(const char *ifname, int *buf)
 	return -1;
 }
 
+static void madwifi_proc_file(const char *ifname, const char *file,
+							  char *buf, int blen)
+{
+	int fd;
+	const char *wifi = madwifi_isvap(ifname, NULL);
+
+	if (!wifi && madwifi_iswifi(ifname))
+		wifi = ifname;
+
+	snprintf(buf, blen, "/proc/sys/dev/%s/%s", wifi, file);
+
+	if ((fd = open(buf, O_RDONLY)) > 0)
+	{
+		if (read(fd, buf, blen) > 1)
+			buf[strlen(buf)-1] = 0;
+		else
+			buf[0] = 0;
+
+		close(fd);
+	}
+	else
+	{
+		buf[0] = 0;
+	}
+}
+
+static int madwifi_startswith(const char *a, const char *b)
+{
+	int l1 = strlen(a);
+	int l2 = strlen(b);
+	int ln = (l1 < l2) ? l1 : l2;
+	return !strncmp(a, b, ln);
+}
+
 int madwifi_get_hardware_id(const char *ifname, char *buf)
 {
-	return wext_get_hardware_id(ifname, buf);
+	char vendor[64];
+	char device[64];
+	struct iwinfo_hardware_id *ids;
+	struct iwinfo_hardware_entry *e;
+
+	if (wext_get_hardware_id(ifname, buf))
+	{
+		ids = (struct iwinfo_hardware_id *)buf;
+		madwifi_proc_file(ifname, "dev_vendor", vendor, sizeof(vendor));
+		madwifi_proc_file(ifname, "dev_name",   device, sizeof(device));
+
+		if (vendor[0] && device[0])
+		{
+			for (e = IWINFO_HARDWARE_ENTRIES; e->vendor_name; e++)
+			{
+				if (!madwifi_startswith(vendor, e->vendor_name))
+					continue;
+
+				if (!madwifi_startswith(device, e->device_name))
+					continue;
+
+				ids->vendor_id = e->vendor_id;
+				ids->device_id = e->device_id;
+				ids->subsystem_vendor_id = e->subsystem_vendor_id;
+				ids->subsystem_device_id = e->subsystem_device_id;
+
+				return 0;
+			}
+		}
+
+		return -1;
+	}
+
+	return 0;
 }
 
 int madwifi_get_hardware_name(const char *ifname, char *buf)
