@@ -85,7 +85,7 @@ static struct mtd_partition argus_atp52b_partitions[] = {
 	}, {
 		.name	= "rootfs",
 		.offset	= 0x170000,
-		.size	= 0x680000,
+		.size   = 0x690000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
