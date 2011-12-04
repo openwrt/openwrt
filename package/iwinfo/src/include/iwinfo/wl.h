@@ -47,6 +47,8 @@ int wl_get_freqlist(const char *ifname, char *buf, int *len);
 int wl_get_countrylist(const char *ifname, char *buf, int *len);
 int wl_get_hwmodelist(const char *ifname, int *buf);
 int wl_get_mbssid_support(const char *ifname, int *buf);
+int wl_get_hardware_id(const char *ifname, char *buf);
+int wl_get_hardware_name(const char *ifname, char *buf);
 void wl_close(void);
 
 static const struct iwinfo_ops wl_ops = {
@@ -64,6 +66,8 @@ static const struct iwinfo_ops wl_ops = {
 	.ssid           = wl_get_ssid,
 	.bssid          = wl_get_bssid,
 	.country        = wl_get_country,
+	.hardware_id    = wl_get_hardware_id,
+	.hardware_name  = wl_get_hardware_name,
 	.encryption     = wl_get_encryption,
 	.assoclist      = wl_get_assoclist,
 	.txpwrlist      = wl_get_txpwrlist,

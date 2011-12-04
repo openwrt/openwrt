@@ -462,3 +462,56 @@ int wext_get_mbssid_support(const char *ifname, int *buf)
 	/* No multi bssid support atm */
 	return -1;
 }
+
+static char * wext_sysfs_ifname_file(const char *ifname, const char *path)
+{
+	FILE *f;
+	static char buf[128];
+	char *rv = NULL;
+
+	snprintf(buf, sizeof(buf), "/sys/class/net/%s/%s", ifname, path);
+
+	if ((f = fopen(buf, "r")) != NULL)
+	{
+		memset(buf, 0, sizeof(buf));
+
+		if (fread(buf, 1, sizeof(buf), f))
+			rv = buf;
+
+		fclose(f);
+	}
+
+	return rv;
+}
+
+int wext_get_hardware_id(const char *ifname, char *buf)
+{
+	char *data;
+	struct iwinfo_hardware_id *id = (struct iwinfo_hardware_id *)buf;
+
+	memset(id, 0, sizeof(struct iwinfo_hardware_id));
+
+	data = wext_sysfs_ifname_file(ifname, "device/vendor");
+	if (data)
+		id->vendor_id = strtoul(data, NULL, 16);
+
+	data = wext_sysfs_ifname_file(ifname, "device/device");
+	if (data)
+		id->device_id = strtoul(data, NULL, 16);
+
+	data = wext_sysfs_ifname_file(ifname, "device/subsystem_device");
+	if (data)
+		id->subsystem_device_id = strtoul(data, NULL, 16);
+
+	data = wext_sysfs_ifname_file(ifname, "device/subsystem_vendor");
+	if (data)
+		id->subsystem_vendor_id = strtoul(data, NULL, 16);
+
+	return (id->vendor_id > 0 && id->device_id > 0) ? 0 : -1;
+}
+
+int wext_get_hardware_name(const char *ifname, char *buf)
+{
+	sprintf(buf, "Generic WEXT");
+	return 0;
+}

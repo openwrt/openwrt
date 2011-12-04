@@ -124,3 +124,29 @@ void iwinfo_close(void)
 	if( ioctl_socket > -1 )
 		close(ioctl_socket);
 }
+
+struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
+{
+	const struct iwinfo_hardware_entry *e;
+
+	for (e = IWINFO_HARDWARE_ENTRIES; e->vendor_name; e++)
+	{
+		if ((e->vendor_id != 0xffff) && (e->vendor_id != id->vendor_id))
+			continue;
+
+		if ((e->device_id != 0xffff) && (e->device_id != id->device_id))
+			continue;
+
+		if ((e->subsystem_vendor_id != 0xffff) &&
+			(e->subsystem_vendor_id != id->subsystem_vendor_id))
+			continue;
+
+		if ((e->subsystem_device_id != 0xffff) &&
+			(e->subsystem_device_id != id->subsystem_device_id))
+			continue;
+
+		return e;
+	}
+
+	return NULL;
+}

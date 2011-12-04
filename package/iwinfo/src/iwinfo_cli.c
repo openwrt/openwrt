@@ -282,6 +282,35 @@ static const char * print_type(const struct iwinfo_ops *iw, const char *ifname)
 	return type ? type : "unknown";
 }
 
+static char * print_hardware_id(const struct iwinfo_ops *iw, const char *ifname)
+{
+	static char buf[20];
+	struct iwinfo_hardware_id ids;
+
+	if (!iw->hardware_id(ifname, (char *)&ids))
+	{
+		snprintf(buf, sizeof(buf), "%04X:%04X %04X:%04X",
+			ids.vendor_id, ids.device_id,
+			ids.subsystem_vendor_id, ids.subsystem_device_id);
+	}
+	else
+	{
+		snprintf(buf, sizeof(buf), "unknown");
+	}
+
+	return buf;
+}
+
+static char * print_hardware_name(const struct iwinfo_ops *iw, const char *ifname)
+{
+	static char buf[128];
+
+	if (iw->hardware_name(ifname, buf))
+		snprintf(buf, sizeof(buf), "unknown");
+
+	return buf;
+}
+
 static char * print_ssid(const struct iwinfo_ops *iw, const char *ifname)
 {
 	char buf[IWINFO_ESSID_MAX_SIZE+1] = { 0 };
@@ -423,9 +452,6 @@ static void print_info(const struct iwinfo_ops *iw, const char *ifname)
 		print_ssid(iw, ifname));
 	printf("          Access Point: %s\n",
 		print_bssid(iw, ifname));
-	printf("          Type: %s  HW Mode(s): %s\n",
-		print_type(iw, ifname),
-		print_hwmodes(iw, ifname));
 	printf("          Mode: %s  Channel: %s (%s)\n",
 		print_mode(iw, ifname),
 		print_channel(iw, ifname),
@@ -441,6 +467,12 @@ static void print_info(const struct iwinfo_ops *iw, const char *ifname)
 		print_rate(iw, ifname));
 	printf("          Encryption: %s\n",
 		print_encryption(iw, ifname));
+	printf("          Type: %s  HW Mode(s): %s\n",
+		print_type(iw, ifname),
+		print_hwmodes(iw, ifname));
+	printf("          Hardware: %s [%s]\n",
+		print_hardware_id(iw, ifname),
+		print_hardware_name(iw, ifname));
 	printf("          Supports VAPs: %s\n",
 		print_mbssid_supp(iw, ifname));
 }

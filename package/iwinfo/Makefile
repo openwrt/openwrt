@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libiwinfo
-PKG_RELEASE:=18
+PKG_RELEASE:=19
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 

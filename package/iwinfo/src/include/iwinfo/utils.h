@@ -37,4 +37,6 @@ int iwinfo_ifmac(const char *ifname);
 
 void iwinfo_close(void);
 
+struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id);
+
 #endif

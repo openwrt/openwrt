@@ -300,6 +300,58 @@ const struct iwinfo_iso3166_label IWINFO_ISO3166_NAMES[] = {
 	{ 0,               "" }
 };
 
+/*
+ * hardware database
+ */
+
+const char VENDOR_UBNT[] = "Ubiquiti";
+const char VENDOR_ATH[]  = "Atheros";
+
+const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[] = {
+/*	{ vendor, model, vendorid, deviceid, subsys vendorid, subsys deviceid, poweroff, freqoff } */
+#if defined(USE_MADWIFI) || defined(USE_NL80211)
+	{ VENDOR_UBNT, "PowerStation2 (18V)", 	0xffff, 0xffff, 0xffff, 0xb102,  0,     0 },
+	{ VENDOR_UBNT, "PowerStation2 (16D)", 	0xffff, 0xffff, 0xffff, 0xb202,  0,     0 },
+	{ VENDOR_UBNT, "PowerStation2 (EXT)", 	0xffff, 0xffff, 0xffff, 0xb302,  0,     0 },
+	{ VENDOR_UBNT, "PowerStation5 (22V)", 	0xffff, 0xffff, 0xffff, 0xb105,  0,     0 },
+	{ VENDOR_UBNT, "PowerStation5 (EXT)", 	0xffff, 0xffff, 0xffff, 0xb305,  0,     0 },
+	{ VENDOR_UBNT, "WispStation5",        	0xffff, 0xffff, 0xffff, 0xa105,  0,     0 },
+	{ VENDOR_UBNT, "LiteStation2",        	0xffff, 0xffff, 0xffff, 0xa002,  0,     0 },
+	{ VENDOR_UBNT, "LiteStation5",        	0xffff, 0xffff, 0xffff, 0xa005,  0,     0 },
+	{ VENDOR_UBNT, "NanoStation2",        	0xffff, 0xffff, 0xffff, 0xc002,  0,     0 },
+	{ VENDOR_UBNT, "NanoStation5",        	0xffff, 0xffff, 0xffff, 0xc005,  0,     0 },
+	{ VENDOR_UBNT, "NanoStation Loco2",   	0xffff, 0xffff, 0xffff, 0xc102,  0,     0 },
+	{ VENDOR_UBNT, "NanoStation Loco5",   	0xffff, 0xffff, 0xffff, 0xc105,  0,     0 },
+	{ VENDOR_UBNT, "Bullet2",             	0xffff, 0xffff, 0xffff, 0xc202,  0,     0 },
+	{ VENDOR_UBNT, "Bullet5",             	0xffff, 0xffff, 0xffff, 0xc205,  0,     0 },
+	{ VENDOR_UBNT, "XR2",                   0x168c, 0x001b, 0x0777, 0x3002, 10,     0 },
+	{ VENDOR_UBNT, "XR2",                   0x168c, 0x001b, 0x7777, 0x3002, 10,     0 },
+	{ VENDOR_UBNT, "XR2.3",                 0x168c, 0x001b, 0x0777, 0x3b02, 10,     0 },
+	{ VENDOR_UBNT, "XR2.6",                 0x168c, 0x001b, 0x0777, 0x3c02, 10,     0 },
+	{ VENDOR_UBNT, "XR3-2.8",               0x168c, 0x001b, 0x0777, 0x3b03, 10,     0 },
+	{ VENDOR_UBNT, "XR3-3.6",               0x168c, 0x001b, 0x0777, 0x3c03, 10,     0 },
+	{ VENDOR_UBNT, "XR3",                   0x168c, 0x001b, 0x0777, 0x3003, 10,     0 },
+	{ VENDOR_UBNT, "XR4",                   0x168c, 0x001b, 0x0777, 0x3004, 10,     0 },
+	{ VENDOR_UBNT, "XR5",                   0x168c, 0x001b, 0x0777, 0x3005, 10,     0 },
+	{ VENDOR_UBNT, "XR5",                   0x168c, 0x001b, 0x7777, 0x3005, 10,     0 },
+	{ VENDOR_UBNT, "XR7",                   0x168c, 0x001b, 0x0777, 0x3007, 10,     0 },
+	{ VENDOR_UBNT, "XR9",                   0x168c, 0x001b, 0x0777, 0x3009, 10, -1520 },
+	{ VENDOR_UBNT, "SRC",                   0x168c, 0x0013, 0x168c, 0x1042,  1,     0 },
+	{ VENDOR_UBNT, "SR2",                   0x168c, 0x0013, 0x0777, 0x2041, 10,     0 },
+	{ VENDOR_UBNT, "SR4",                   0x168c, 0x0013, 0x0777, 0x2004,  6,     0 },
+	{ VENDOR_UBNT, "SR4",                   0x168c, 0x0013, 0x7777, 0x2004,  6,     0 },
+	{ VENDOR_UBNT, "SR4C",                  0x168c, 0x0013, 0x0777, 0x1004,  6,     0 },
+	{ VENDOR_UBNT, "SR4C",                  0x168c, 0x0013, 0x7777, 0x1004,  6,     0 },
+	{ VENDOR_UBNT, "SR5",                   0x168c, 0x0013, 0x168c, 0x2042,  7,     0 },
+	{ VENDOR_UBNT, "SR9",                   0x168c, 0x0013, 0x7777, 0x2009, 12, -1500 },
+	{ VENDOR_UBNT, "SR71A",                 0x168c, 0x0027, 0x168c, 0x2082, 10,     0 },
+	{ VENDOR_UBNT, "SR71",                  0x168c, 0x0027, 0x0777, 0x4082, 10,     0 },
+	{ VENDOR_ATH,  "AR9220",                0x168c, 0x0029, 0x168c, 0xa094,  0,     0 },
+	{ VENDOR_ATH,  "AR9223",                0x168c, 0x0029, 0x168c, 0xa095,  0,     0 },
+#endif
+	{ NULL }
+};
+
 
 const char * iwinfo_type(const char *ifname)
 {

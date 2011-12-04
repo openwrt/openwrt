@@ -77,6 +77,8 @@ int nl80211_get_freqlist(const char *ifname, char *buf, int *len);
 int nl80211_get_countrylist(const char *ifname, char *buf, int *len);
 int nl80211_get_hwmodelist(const char *ifname, int *buf);
 int nl80211_get_mbssid_support(const char *ifname, int *buf);
+int nl80211_get_hardware_id(const char *ifname, char *buf);
+int nl80211_get_hardware_name(const char *ifname, char *buf);
 void nl80211_close(void);
 
 static const struct iwinfo_ops nl80211_ops = {
@@ -94,6 +96,8 @@ static const struct iwinfo_ops nl80211_ops = {
 	.ssid           = nl80211_get_ssid,
 	.bssid          = nl80211_get_bssid,
 	.country        = nl80211_get_country,
+	.hardware_id    = nl80211_get_hardware_id,
+	.hardware_name  = nl80211_get_hardware_name,
 	.encryption     = nl80211_get_encryption,
 	.assoclist      = nl80211_get_assoclist,
 	.txpwrlist      = nl80211_get_txpwrlist,

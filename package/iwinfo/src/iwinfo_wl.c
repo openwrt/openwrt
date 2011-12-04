@@ -135,6 +135,7 @@ int wl_get_frequency(const char *ifname, int *buf)
 
 int wl_get_txpower(const char *ifname, int *buf)
 {
+	/* WLC_GET_VAR "qtxpower" */
 	return wext_get_txpower(ifname, buf);
 }
 
@@ -555,4 +556,32 @@ int wl_get_mbssid_support(const char *ifname, int *buf)
 	}
 
 	return -1;
+}
+
+int wl_get_hardware_id(const char *ifname, char *buf)
+{
+	wlc_rev_info_t revinfo;
+	struct iwinfo_hardware_id *ids = (struct iwinfo_hardware_id *)buf;
+
+	if (wl_ioctl(ifname, WLC_GET_REVINFO, &revinfo, sizeof(revinfo)))
+		return -1;
+
+	ids->vendor_id = revinfo.vendorid;
+	ids->device_id = revinfo.deviceid;
+	ids->subsystem_vendor_id = revinfo.boardvendor;
+	ids->subsystem_device_id = revinfo.boardid;
+
+	return 0;
+}
+
+int wl_get_hardware_name(const char *ifname, char *buf)
+{
+	struct iwinfo_hardware_id ids;
+
+	if (wl_get_hardware_id(ifname, (char *)&ids))
+		return -1;
+
+	sprintf(buf, "Broadcom BCM%04X", ids.device_id);
+
+	return 0;
 }
