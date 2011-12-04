@@ -316,14 +316,14 @@ const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[] = {
 	{ VENDOR_UBNT, "PowerStation5 (22V)", 	0xffff, 0xffff, 0xffff, 0xb105,  0,     0 },
 	{ VENDOR_UBNT, "PowerStation5 (EXT)", 	0xffff, 0xffff, 0xffff, 0xb305,  0,     0 },
 	{ VENDOR_UBNT, "WispStation5",        	0xffff, 0xffff, 0xffff, 0xa105,  0,     0 },
-	{ VENDOR_UBNT, "LiteStation2",        	0xffff, 0xffff, 0xffff, 0xa002,  0,     0 },
-	{ VENDOR_UBNT, "LiteStation5",        	0xffff, 0xffff, 0xffff, 0xa005,  0,     0 },
-	{ VENDOR_UBNT, "NanoStation2",        	0xffff, 0xffff, 0xffff, 0xc002,  0,     0 },
-	{ VENDOR_UBNT, "NanoStation5",        	0xffff, 0xffff, 0xffff, 0xc005,  0,     0 },
-	{ VENDOR_UBNT, "NanoStation Loco2",   	0xffff, 0xffff, 0xffff, 0xc102,  0,     0 },
-	{ VENDOR_UBNT, "NanoStation Loco5",   	0xffff, 0xffff, 0xffff, 0xc105,  0,     0 },
-	{ VENDOR_UBNT, "Bullet2",             	0xffff, 0xffff, 0xffff, 0xc202,  0,     0 },
-	{ VENDOR_UBNT, "Bullet5",             	0xffff, 0xffff, 0xffff, 0xc205,  0,     0 },
+	{ VENDOR_UBNT, "LiteStation2",        	0xffff, 0xffff, 0xffff, 0xa002, 10,     0 },
+	{ VENDOR_UBNT, "LiteStation5",        	0xffff, 0xffff, 0xffff, 0xa005,  5,     0 },
+	{ VENDOR_UBNT, "NanoStation2",        	0xffff, 0xffff, 0xffff, 0xc002, 10,     0 },
+	{ VENDOR_UBNT, "NanoStation5",        	0xffff, 0xffff, 0xffff, 0xc005,  5,     0 },
+	{ VENDOR_UBNT, "NanoStation Loco2",   	0xffff, 0xffff, 0xffff, 0xc102, 10,     0 },
+	{ VENDOR_UBNT, "NanoStation Loco5",   	0xffff, 0xffff, 0xffff, 0xc105,  5,     0 },
+	{ VENDOR_UBNT, "Bullet2",             	0xffff, 0xffff, 0xffff, 0xc202, 10,     0 },
+	{ VENDOR_UBNT, "Bullet5",             	0xffff, 0xffff, 0xffff, 0xc205,  5,     0 },
 	{ VENDOR_UBNT, "XR2",                   0x168c, 0x001b, 0x0777, 0x3002, 10,     0 },
 	{ VENDOR_UBNT, "XR2",                   0x168c, 0x001b, 0x7777, 0x3002, 10,     0 },
 	{ VENDOR_UBNT, "XR2.3",                 0x168c, 0x001b, 0x0777, 0x3b02, 10,     0 },
@@ -346,6 +346,13 @@ const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[] = {
 	{ VENDOR_UBNT, "SR9",                   0x168c, 0x0013, 0x7777, 0x2009, 12, -1500 },
 	{ VENDOR_UBNT, "SR71A",                 0x168c, 0x0027, 0x168c, 0x2082, 10,     0 },
 	{ VENDOR_UBNT, "SR71",                  0x168c, 0x0027, 0x0777, 0x4082, 10,     0 },
+#endif
+#ifdef NL80211
+	{ VENDOR_UBNT, "NanoStation M2",        0x168c, 0x002a, 0x0777, 0xe012, 10,     0 }, /* ToDo: confirm offset */
+	{ VENDOR_UBNT, "NanoStation M5",        0x168c, 0x002a, 0x0777, 0xe005,  5,     0 }, /* ToDo: confirm offset */
+	{ VENDOR_UBNT, "Bullet M2",             0x168c, 0x002a, 0x0777, 0xe202, 12,     0 },
+	{ VENDOR_UBNT, "Bullet M5",             0x168c, 0x002a, 0x0777, 0xe205,  5,     0 },
+
 	{ VENDOR_ATH,  "AR9220",                0x168c, 0x0029, 0x168c, 0xa094,  0,     0 },
 	{ VENDOR_ATH,  "AR9223",                0x168c, 0x0029, 0x168c, 0xa095,  0,     0 },
 #endif
