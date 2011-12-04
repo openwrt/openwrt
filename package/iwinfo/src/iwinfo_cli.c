@@ -311,6 +311,36 @@ static char * print_hardware_name(const struct iwinfo_ops *iw, const char *ifnam
 	return buf;
 }
 
+static char * print_txpower_offset(const struct iwinfo_ops *iw, const char *ifname)
+{
+	int off;
+	static char buf[12];
+
+	if (iw->txpower_offset(ifname, &off))
+		snprintf(buf, sizeof(buf), "unknown");
+	else if (off != 0)
+		snprintf(buf, sizeof(buf), "%d dB", off);
+	else
+		snprintf(buf, sizeof(buf), "none");
+
+	return buf;
+}
+
+static char * print_frequency_offset(const struct iwinfo_ops *iw, const char *ifname)
+{
+	int off;
+	static char buf[12];
+
+	if (iw->frequency_offset(ifname, &off))
+		snprintf(buf, sizeof(buf), "unknown");
+	else if (off != 0)
+		snprintf(buf, sizeof(buf), "%.3f GHz", ((float)off / 1000.0));
+	else
+		snprintf(buf, sizeof(buf), "none");
+
+	return buf;
+}
+
 static char * print_ssid(const struct iwinfo_ops *iw, const char *ifname)
 {
 	char buf[IWINFO_ESSID_MAX_SIZE+1] = { 0 };
@@ -473,6 +503,10 @@ static void print_info(const struct iwinfo_ops *iw, const char *ifname)
 	printf("          Hardware: %s [%s]\n",
 		print_hardware_id(iw, ifname),
 		print_hardware_name(iw, ifname));
+	printf("          TX power offset: %s\n",
+		print_txpower_offset(iw, ifname));
+	printf("          Frequency offset: %s\n",
+		print_frequency_offset(iw, ifname));
 	printf("          Supports VAPs: %s\n",
 		print_mbssid_supp(iw, ifname));
 }

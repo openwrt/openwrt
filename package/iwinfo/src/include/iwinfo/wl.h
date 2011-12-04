@@ -32,7 +32,9 @@ int wl_get_bssid(const char *ifname, char *buf);
 int wl_get_country(const char *ifname, char *buf);
 int wl_get_channel(const char *ifname, int *buf);
 int wl_get_frequency(const char *ifname, int *buf);
+int wl_get_frequency_offset(const char *ifname, int *buf);
 int wl_get_txpower(const char *ifname, int *buf);
+int wl_get_txpower_offset(const char *ifname, int *buf);
 int wl_get_bitrate(const char *ifname, int *buf);
 int wl_get_signal(const char *ifname, int *buf);
 int wl_get_noise(const char *ifname, int *buf);
@@ -52,29 +54,31 @@ int wl_get_hardware_name(const char *ifname, char *buf);
 void wl_close(void);
 
 static const struct iwinfo_ops wl_ops = {
-	.channel        = wl_get_channel,
-	.frequency      = wl_get_frequency,
-	.txpower        = wl_get_txpower,
-	.bitrate        = wl_get_bitrate,
-	.signal         = wl_get_signal,
-	.noise          = wl_get_noise,
-	.quality        = wl_get_quality,
-	.quality_max    = wl_get_quality_max,
-	.mbssid_support = wl_get_mbssid_support,
-	.hwmodelist     = wl_get_hwmodelist,
-	.mode           = wl_get_mode,
-	.ssid           = wl_get_ssid,
-	.bssid          = wl_get_bssid,
-	.country        = wl_get_country,
-	.hardware_id    = wl_get_hardware_id,
-	.hardware_name  = wl_get_hardware_name,
-	.encryption     = wl_get_encryption,
-	.assoclist      = wl_get_assoclist,
-	.txpwrlist      = wl_get_txpwrlist,
-	.scanlist       = wl_get_scanlist,
-	.freqlist       = wl_get_freqlist,
-	.countrylist    = wl_get_countrylist,
-	.close          = wl_close
+	.channel          = wl_get_channel,
+	.frequency        = wl_get_frequency,
+	.frequency_offset = wl_get_frequency_offset,
+	.txpower          = wl_get_txpower,
+	.txpower_offset   = wl_get_txpower_offset,
+	.bitrate          = wl_get_bitrate,
+	.signal           = wl_get_signal,
+	.noise            = wl_get_noise,
+	.quality          = wl_get_quality,
+	.quality_max      = wl_get_quality_max,
+	.mbssid_support   = wl_get_mbssid_support,
+	.hwmodelist       = wl_get_hwmodelist,
+	.mode             = wl_get_mode,
+	.ssid             = wl_get_ssid,
+	.bssid            = wl_get_bssid,
+	.country          = wl_get_country,
+	.hardware_id      = wl_get_hardware_id,
+	.hardware_name    = wl_get_hardware_name,
+	.encryption       = wl_get_encryption,
+	.assoclist        = wl_get_assoclist,
+	.txpwrlist        = wl_get_txpwrlist,
+	.scanlist         = wl_get_scanlist,
+	.freqlist         = wl_get_freqlist,
+	.countrylist      = wl_get_countrylist,
+	.close            = wl_close
 };
 
 #endif
