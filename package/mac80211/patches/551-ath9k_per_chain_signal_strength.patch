@@ -139,7 +139,7 @@
  	u8 rs_num_delims;
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -981,6 +981,7 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -980,6 +980,7 @@ static int ath9k_rx_skb_preprocess(struc
  				   bool *decrypt_error)
  {
  	struct ath_hw *ah = common->ah;
@@ -147,7 +147,7 @@
  
  	memset(rx_status, 0, sizeof(struct ieee80211_rx_status));
  
-@@ -1006,6 +1007,20 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -1005,6 +1006,20 @@ static int ath9k_rx_skb_preprocess(struc
  	rx_status->antenna = rx_stats->rs_antenna;
  	rx_status->flag |= RX_FLAG_MACTIME_MPDU;
  
@@ -168,7 +168,7 @@
  	return 0;
  }
  
-@@ -1536,14 +1551,14 @@ static void ath_ant_comb_scan(struct ath
+@@ -1535,14 +1550,14 @@ static void ath_ant_comb_scan(struct ath
  	struct ath_ant_comb *antcomb = &sc->ant_comb;
  	int alt_ratio = 0, alt_rssi_avg = 0, main_rssi_avg = 0, curr_alt_set;
  	int curr_main_set;
@@ -189,7 +189,7 @@
  	/* Record packet only when both main_rssi and  alt_rssi is positive */
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -452,12 +452,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -484,12 +484,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
  
  	/* XXX: Keycache */
  	rxs->rs_rssi = MS(rxsp->status5, AR_RxRSSICombined);
@@ -271,7 +271,7 @@
  	RX_SAMP_DBG(rate) = rs->rs_rate;
 --- a/include/linux/nl80211.h
 +++ b/include/linux/nl80211.h
-@@ -1621,6 +1621,8 @@ enum nl80211_sta_bss_param {
+@@ -1651,6 +1651,8 @@ enum nl80211_sta_bss_param {
   *     containing info as possible, see &enum nl80211_sta_bss_param
   * @NL80211_STA_INFO_CONNECTED_TIME: time since the station is last connected
   * @NL80211_STA_INFO_STA_FLAGS: Contains a struct nl80211_sta_flag_update.
@@ -280,7 +280,7 @@
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -1643,6 +1645,8 @@ enum nl80211_sta_info {
+@@ -1673,6 +1675,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_BSS_PARAM,
  	NL80211_STA_INFO_CONNECTED_TIME,
  	NL80211_STA_INFO_STA_FLAGS,
@@ -291,7 +291,7 @@
  	__NL80211_STA_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -2287,6 +2287,33 @@ nla_put_failure:
+@@ -2322,6 +2322,33 @@ nla_put_failure:
  	return false;
  }
  
@@ -325,7 +325,7 @@
  static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
  				int flags, struct net_device *dev,
  				const u8 *mac_addr, struct station_info *sinfo)
-@@ -2333,6 +2360,18 @@ static int nl80211_send_station(struct s
+@@ -2368,6 +2395,18 @@ static int nl80211_send_station(struct s
  	if (sinfo->filled & STATION_INFO_SIGNAL_AVG)
  		NLA_PUT_U8(msg, NL80211_STA_INFO_SIGNAL_AVG,
  			   sinfo->signal_avg);
@@ -346,7 +346,7 @@
  					  NL80211_STA_INFO_TX_BITRATE))
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -330,6 +330,7 @@ static void sta_set_sinfo(struct sta_inf
+@@ -340,6 +340,7 @@ static void sta_set_sinfo(struct sta_inf
  {
  	struct ieee80211_sub_if_data *sdata = sta->sdata;
  	struct timespec uptime;
@@ -354,7 +354,7 @@
  
  	sinfo->generation = sdata->local->sta_generation;
  
-@@ -365,6 +366,17 @@ static void sta_set_sinfo(struct sta_inf
+@@ -375,6 +376,17 @@ static void sta_set_sinfo(struct sta_inf
  		sinfo->signal = (s8)sta->last_signal;
  		sinfo->signal_avg = (s8) -ewma_read(&sta->avg_signal);
  	}

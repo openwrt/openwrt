@@ -1,6 +1,6 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -20,16 +20,16 @@ COMPAT_LATEST_VERSION = 1
+@@ -20,16 +20,16 @@ COMPAT_LATEST_VERSION = 3
  KERNEL_VERSION := $(shell $(MAKE) -C $(KLIB_BUILD) kernelversion | sed -n 's/^\([0-9]\)\..*/\1/p')
  
  ifneq ($(KERNEL_VERSION),2)
@@ -19,4 +19,4 @@
 +COMPAT_VERSIONS := $(shell I=$(COMPAT_LATEST_VERSION); while [ "$$I" -gt $(COMPAT_KERNEL_SUBLEVEL) ]; do echo $$I; I=$$(($$I - 1)); done)
  $(foreach ver,$(COMPAT_VERSIONS),$(eval CONFIG_COMPAT_KERNEL_3_$(ver)=y))
  
- ifdef CONFIG_COMPAT_KERNEL_2_6_24
+ RHEL_MAJOR := $(shell grep ^RHEL_MAJOR $(KLIB_BUILD)/Makefile | sed -n 's/.*= *\(.*\)/\1/p')

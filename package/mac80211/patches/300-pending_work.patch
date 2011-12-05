@@ -1,3 +1,59 @@
+--- a/drivers/net/wireless/ath/ath9k/ar9002_calib.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_calib.c
+@@ -203,7 +203,7 @@ static void ar9002_hw_iqcalibrate(struct
+ 			i);
+ 
+ 		ath_dbg(common, ATH_DBG_CALIBRATE,
+-			"Orignal: Chn %diq_corr_meas = 0x%08x\n",
++			"Original: Chn %d iq_corr_meas = 0x%08x\n",
+ 			i, ah->totalIqCorrMeas[i]);
+ 
+ 		iqCorrNeg = 0;
+--- a/drivers/net/wireless/ath/ath9k/ar9003_calib.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_calib.c
+@@ -226,7 +226,7 @@ static void ar9003_hw_iqcalibrate(struct
+ 			i);
+ 
+ 		ath_dbg(common, ATH_DBG_CALIBRATE,
+-			"Orignal: Chn %diq_corr_meas = 0x%08x\n",
++			"Original: Chn %d iq_corr_meas = 0x%08x\n",
+ 			i, ah->totalIqCorrMeas[i]);
+ 
+ 		iqCorrNeg = 0;
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_main.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_main.c
+@@ -808,7 +808,8 @@ void ath9k_htc_ani_work(struct work_stru
+ 	}
+ 
+ 	/* Verify whether we must check ANI */
+-	if ((timestamp - common->ani.checkani_timer) >= ATH_ANI_POLLINTERVAL) {
++	if (ah->config.enable_ani &&
++	    (timestamp - common->ani.checkani_timer) >= ATH_ANI_POLLINTERVAL) {
+ 		aniflag = true;
+ 		common->ani.checkani_timer = timestamp;
+ 	}
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -504,7 +504,7 @@ static int ath9k_hw_post_init(struct ath
+ 		return ecode;
+ 	}
+ 
+-	if (!AR_SREV_9100(ah) && !AR_SREV_9340(ah)) {
++	if (ah->config.enable_ani) {
+ 		ath9k_hw_ani_setup(ah);
+ 		ath9k_hw_ani_init(ah);
+ 	}
+@@ -610,6 +610,10 @@ static int __ath9k_hw_init(struct ath_hw
+ 	if (!AR_SREV_9300_20_OR_LATER(ah))
+ 		ah->ani_function &= ~ATH9K_ANI_MRC_CCK;
+ 
++	/* disable ANI for 9340 */
++	if (AR_SREV_9340(ah))
++		ah->config.enable_ani = false;
++
+ 	ath9k_hw_init_mode_regs(ah);
+ 
+ 	if (!ah->is_pciexpress)
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
 @@ -118,7 +118,7 @@ void ath9k_ps_restore(struct ath_softc *
@@ -19,7 +75,48 @@
  		fastcc = false;
  
  	if (!ath_prepare_reset(sc, retry_tx, flush))
-@@ -882,82 +883,6 @@ chip_reset:
+@@ -561,7 +562,6 @@ void ath_ani_calibrate(unsigned long dat
+ 	/* Long calibration runs independently of short calibration. */
+ 	if ((timestamp - common->ani.longcal_timer) >= long_cal_interval) {
+ 		longcal = true;
+-		ath_dbg(common, ATH_DBG_ANI, "longcal @%lu\n", jiffies);
+ 		common->ani.longcal_timer = timestamp;
+ 	}
+ 
+@@ -569,8 +569,6 @@ void ath_ani_calibrate(unsigned long dat
+ 	if (!common->ani.caldone) {
+ 		if ((timestamp - common->ani.shortcal_timer) >= short_cal_interval) {
+ 			shortcal = true;
+-			ath_dbg(common, ATH_DBG_ANI,
+-				"shortcal @%lu\n", jiffies);
+ 			common->ani.shortcal_timer = timestamp;
+ 			common->ani.resetcal_timer = timestamp;
+ 		}
+@@ -584,8 +582,9 @@ void ath_ani_calibrate(unsigned long dat
+ 	}
+ 
+ 	/* Verify whether we must check ANI */
+-	if ((timestamp - common->ani.checkani_timer) >=
+-	     ah->config.ani_poll_interval) {
++	if (sc->sc_ah->config.enable_ani
++	    && (timestamp - common->ani.checkani_timer) >=
++	    ah->config.ani_poll_interval) {
+ 		aniflag = true;
+ 		common->ani.checkani_timer = timestamp;
+ 	}
+@@ -605,6 +604,11 @@ void ath_ani_calibrate(unsigned long dat
+ 						ah->rxchainmask, longcal);
+ 	}
+ 
++	ath_dbg(common, ATH_DBG_ANI,
++		"Calibration @%lu finished: %s %s %s, caldone: %s\n", jiffies,
++		longcal ? "long" : "", shortcal ? "short" : "",
++		aniflag ? "ani" : "", common->ani.caldone ? "true" : "false");
++
+ 	ath9k_ps_restore(sc);
+ 
+ set_timer:
+@@ -886,82 +890,6 @@ chip_reset:
  #undef SCHED_INTR
  }
  
@@ -102,7 +199,7 @@
  static int ath_reset(struct ath_softc *sc, bool retry_tx)
  {
  	int r;
-@@ -1093,6 +1018,9 @@ static int ath9k_start(struct ieee80211_
+@@ -1097,6 +1025,9 @@ static int ath9k_start(struct ieee80211_
  	 * and then setup of the interrupt mask.
  	 */
  	spin_lock_bh(&sc->sc_pcu_lock);
@@ -112,7 +209,7 @@
  	r = ath9k_hw_reset(ah, init_channel, ah->caldata, false);
  	if (r) {
  		ath_err(common,
-@@ -1131,6 +1059,18 @@ static int ath9k_start(struct ieee80211_
+@@ -1138,6 +1069,18 @@ static int ath9k_start(struct ieee80211_
  		goto mutex_unlock;
  	}
  
@@ -131,7 +228,7 @@
  	spin_unlock_bh(&sc->sc_pcu_lock);
  
  	if ((ah->btcoex_hw.scheme != ATH_BTCOEX_CFG_NONE) &&
-@@ -1176,6 +1116,13 @@ static void ath9k_tx(struct ieee80211_hw
+@@ -1183,6 +1126,13 @@ static void ath9k_tx(struct ieee80211_hw
  		}
  	}
  
@@ -145,7 +242,7 @@
  	if (unlikely(sc->sc_ah->power_mode != ATH9K_PM_AWAKE)) {
  		/*
  		 * We are using PS-Poll and mac80211 can request TX while in
-@@ -1222,6 +1169,7 @@ static void ath9k_stop(struct ieee80211_
+@@ -1229,6 +1179,7 @@ static void ath9k_stop(struct ieee80211_
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
@@ -153,7 +250,7 @@
  
  	mutex_lock(&sc->mutex);
  
-@@ -1252,35 +1200,45 @@ static void ath9k_stop(struct ieee80211_
+@@ -1259,35 +1210,45 @@ static void ath9k_stop(struct ieee80211_
  	 * before setting the invalid flag. */
  	ath9k_hw_disable_interrupts(ah);
  
@@ -216,7 +313,7 @@
  
  	mutex_unlock(&sc->mutex);
  
-@@ -1620,8 +1578,8 @@ static int ath9k_config(struct ieee80211
+@@ -1627,8 +1588,8 @@ static int ath9k_config(struct ieee80211
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ieee80211_conf *conf = &hw->conf;
@@ -226,7 +323,7 @@
  	mutex_lock(&sc->mutex);
  
  	/*
-@@ -1632,13 +1590,8 @@ static int ath9k_config(struct ieee80211
+@@ -1639,13 +1600,8 @@ static int ath9k_config(struct ieee80211
  	 */
  	if (changed & IEEE80211_CONF_CHANGE_IDLE) {
  		sc->ps_idle = !!(conf->flags & IEEE80211_CONF_IDLE);
@@ -242,7 +339,7 @@
  	}
  
  	/*
-@@ -1745,18 +1698,12 @@ static int ath9k_config(struct ieee80211
+@@ -1752,18 +1708,12 @@ static int ath9k_config(struct ieee80211
  		ath_dbg(common, ATH_DBG_CONFIG,
  			"Set power: %d\n", conf->power_level);
  		sc->config.txpowlimit = 2 * conf->power_level;
@@ -262,7 +359,7 @@
  
  	return 0;
  }
-@@ -2324,9 +2271,6 @@ static void ath9k_flush(struct ieee80211
+@@ -2331,9 +2281,6 @@ static void ath9k_flush(struct ieee80211
  		return;
  	}
  
@@ -272,7 +369,7 @@
  	for (j = 0; j < timeout; j++) {
  		bool npend = false;
  
-@@ -2344,21 +2288,22 @@ static void ath9k_flush(struct ieee80211
+@@ -2351,21 +2298,22 @@ static void ath9k_flush(struct ieee80211
  		}
  
  		if (!npend)
@@ -346,36 +443,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -179,6 +179,11 @@ static void ath_tx_flush_tid(struct ath_
- 		spin_lock_bh(&txq->axq_lock);
- 	}
- 
-+	if (tid->baw_head == tid->baw_tail) {
-+		tid->state &= ~AGGR_ADDBA_COMPLETE;
-+		tid->state &= ~AGGR_CLEANUP;
-+	}
-+
- 	spin_unlock_bh(&txq->axq_lock);
- }
- 
-@@ -556,15 +561,9 @@ static void ath_tx_complete_aggr(struct 
- 		spin_unlock_bh(&txq->axq_lock);
- 	}
- 
--	if (tid->state & AGGR_CLEANUP) {
-+	if (tid->state & AGGR_CLEANUP)
- 		ath_tx_flush_tid(sc, tid);
- 
--		if (tid->baw_head == tid->baw_tail) {
--			tid->state &= ~AGGR_ADDBA_COMPLETE;
--			tid->state &= ~AGGR_CLEANUP;
--		}
--	}
--
- 	rcu_read_unlock();
- 
- 	if (needreset) {
-@@ -1955,7 +1954,7 @@ static void ath_tx_complete(struct ath_s
+@@ -1954,7 +1954,7 @@ static void ath_tx_complete(struct ath_s
  		skb_pull(skb, padsize);
  	}
  
@@ -384,9 +452,23 @@
  		sc->ps_flags &= ~PS_WAIT_FOR_TX_ACK;
  		ath_dbg(common, ATH_DBG_PS,
  			"Going back to sleep after having received TX status (0x%lx)\n",
+--- a/include/linux/nl80211.h
++++ b/include/linux/nl80211.h
+@@ -2785,9 +2785,11 @@ enum nl80211_ap_sme_features {
+  * @NL80211_FEATURE_SK_TX_STATUS: This driver supports reflecting back
+  *	TX status to the socket error queue when requested with the
+  *	socket option.
++ * @NL80211_FEATURE_HT_IBSS: This driver supports IBSS with HT datarates.
+  */
+ enum nl80211_feature_flags {
+ 	NL80211_FEATURE_SK_TX_STATUS	= 1 << 0,
++	NL80211_FEATURE_HT_IBSS		= 1 << 1,
+ };
+ 
+ /**
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1130,6 +1130,7 @@ struct cfg80211_ibss_params {
+@@ -1149,6 +1149,7 @@ struct cfg80211_ibss_params {
  	u8 *ssid;
  	u8 *bssid;
  	struct ieee80211_channel *channel;
@@ -394,33 +476,33 @@
  	u8 *ie;
  	u8 ssid_len, ie_len;
  	u16 beacon_interval;
-@@ -3292,6 +3293,16 @@ void cfg80211_report_obss_beacon(struct 
+@@ -3270,6 +3271,16 @@ void cfg80211_report_obss_beacon(struct 
  				 const u8 *frame, size_t len,
  				 int freq, gfp_t gfp);
  
-+/**
-+ * cfg80211_can_use_ext_chan - test if ht40 on extension channel can be used
++/*
++ * cfg80211_can_beacon_sec_chan - test if ht40 on extension channel can be used
 + * @wiphy: the wiphy
 + * @chan: main channel
 + * @channel_type: HT mode
 + */
-+bool cfg80211_can_beacon_sec_chan(struct wiphy *wiphy,
-+				  struct ieee80211_channel *chan,
-+				  enum nl80211_channel_type channel_type);
++int cfg80211_can_beacon_sec_chan(struct wiphy *wiphy,
++				 struct ieee80211_channel *chan,
++				 enum nl80211_channel_type channel_type);
 +
  /* Logging, debugging and troubleshooting/diagnostic helpers. */
  
  /* wiphy_printk helpers, similar to dev_printk */
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
-@@ -182,6 +182,10 @@ static void ieee80211_send_addba_resp(st
+@@ -185,6 +185,10 @@ static void ieee80211_send_addba_resp(st
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
-+	else if (sdata->vif.type == NL80211_IFTYPE_WDS)
-+		memcpy(mgmt->bssid, da, ETH_ALEN);
 +	else if (sdata->vif.type == NL80211_IFTYPE_ADHOC)
 +		memcpy(mgmt->bssid, sdata->u.ibss.bssid, ETH_ALEN);
++	else if (sdata->vif.type == NL80211_IFTYPE_WDS)
++		memcpy(mgmt->bssid, da, ETH_ALEN);
  
  	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
  					  IEEE80211_STYPE_ACTION);
@@ -441,28 +523,56 @@
  
  	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
  					  IEEE80211_STYPE_ACTION);
-@@ -394,7 +397,9 @@ int ieee80211_start_tx_ba_session(struct
+@@ -437,7 +440,9 @@ int ieee80211_start_tx_ba_session(struct
  	if (sdata->vif.type != NL80211_IFTYPE_STATION &&
  	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
 -	    sdata->vif.type != NL80211_IFTYPE_AP)
 +	    sdata->vif.type != NL80211_IFTYPE_AP &&
-+	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
-+	    sdata->vif.type != NL80211_IFTYPE_WDS)
++	    sdata->vif.type != NL80211_IFTYPE_WDS &&
++	    sdata->vif.type != NL80211_IFTYPE_ADHOC)
  		return -EINVAL;
  
  	if (test_sta_flag(sta, WLAN_STA_BLOCK_BA)) {
+@@ -448,6 +453,27 @@ int ieee80211_start_tx_ba_session(struct
+ 		return -EINVAL;
+ 	}
+ 
++	/*
++	 * 802.11n-2009 11.5.1.1: If the initiating STA is an HT STA, is a
++	 * member of an IBSS, and has no other existing Block Ack agreement
++	 * with the recipient STA, then the initiating STA shall transmit a
++	 * Probe Request frame to the recipient STA and shall not transmit an
++	 * ADDBA Request frame unless it receives a Probe Response frame
++	 * from the recipient within dot11ADDBAFailureTimeout.
++	 *
++	 * The probe request mechanism for ADDBA is currently not implemented,
++	 * but we only build up Block Ack session with HT STAs. This information
++	 * is set when we receive a bss info from a probe response or a beacon.
++	 */
++	if (sta->sdata->vif.type == NL80211_IFTYPE_ADHOC &&
++	    !sta->sta.ht_cap.ht_supported) {
++#ifdef CONFIG_MAC80211_HT_DEBUG
++		printk(KERN_DEBUG "BA request denied - IBSS STA %pM"
++		       "does not advertise HT support\n", pubsta->addr);
++#endif /* CONFIG_MAC80211_HT_DEBUG */
++		return -EINVAL;
++	}
++
+ 	spin_lock_bh(&sta->lock);
+ 
+ 	/* we have tried too many times, receiver does not want A-MPDU */
 --- a/net/mac80211/debugfs_sta.c
 +++ b/net/mac80211/debugfs_sta.c
 @@ -63,11 +63,11 @@ static ssize_t sta_flags_read(struct fil
  	test_sta_flag(sta, WLAN_STA_##flg) ? #flg "\n" : ""
  
  	int res = scnprintf(buf, sizeof(buf),
--			    "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-+			    "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+-			    "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
++			    "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
  			    TEST(AUTH), TEST(ASSOC), TEST(PS_STA),
  			    TEST(PS_DRIVER), TEST(AUTHORIZED),
- 			    TEST(SHORT_PREAMBLE), TEST(ASSOC_AP),
+ 			    TEST(SHORT_PREAMBLE),
 -			    TEST(WME), TEST(WDS), TEST(CLEAR_PS_FILT),
 +			    TEST(WME), TEST(CLEAR_PS_FILT),
  			    TEST(MFP), TEST(BLOCK_BA), TEST(PSPOLL),
@@ -470,7 +580,7 @@
  			    TEST(TDLS_PEER_AUTH));
 --- a/net/mac80211/ht.c
 +++ b/net/mac80211/ht.c
-@@ -201,6 +201,8 @@ void ieee80211_send_delba(struct ieee802
+@@ -282,6 +282,8 @@ void ieee80211_send_delba(struct ieee802
  		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
  	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
  		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
@@ -508,7 +618,7 @@
  	ieee80211_hw_config(local, IEEE80211_CONF_CHANGE_CHANNEL);
  
  	sband = local->hw.wiphy->bands[chan->band];
-@@ -172,6 +181,18 @@ static void __ieee80211_sta_join_ibss(st
+@@ -172,6 +181,19 @@ static void __ieee80211_sta_join_ibss(st
  		memcpy(skb_put(skb, ifibss->ie_len),
  		       ifibss->ie, ifibss->ie_len);
  
@@ -517,7 +627,8 @@
 +		pos = skb_put(skb, 4 +
 +				   sizeof(struct ieee80211_ht_cap) +
 +				   sizeof(struct ieee80211_ht_info));
-+		pos = ieee80211_ie_build_ht_cap(pos, sband, sband->ht_cap.cap);
++		pos = ieee80211_ie_build_ht_cap(pos, &sband->ht_cap,
++						sband->ht_cap.cap);
 +		pos = ieee80211_ie_build_ht_info(pos,
 +						 &sband->ht_cap,
 +						 chan,
@@ -527,7 +638,7 @@
  	if (local->hw.queues >= 4) {
  		pos = skb_put(skb, 9);
  		*pos++ = WLAN_EID_VENDOR_SPECIFIC;
-@@ -195,6 +216,7 @@ static void __ieee80211_sta_join_ibss(st
+@@ -195,6 +217,7 @@ static void __ieee80211_sta_join_ibss(st
  	bss_change |= BSS_CHANGED_BEACON;
  	bss_change |= BSS_CHANGED_BEACON_ENABLED;
  	bss_change |= BSS_CHANGED_BASIC_RATES;
@@ -535,72 +646,69 @@
  	bss_change |= BSS_CHANGED_IBSS;
  	sdata->vif.bss_conf.ibss_joined = true;
  	ieee80211_bss_info_change_notify(sdata, bss_change);
-@@ -268,6 +290,7 @@ static void ieee80211_rx_bss_info(struct
+@@ -268,6 +291,8 @@ static void ieee80211_rx_bss_info(struct
  	u64 beacon_timestamp, rx_timestamp;
  	u32 supp_rates = 0;
  	enum ieee80211_band band = rx_status->band;
 +	struct ieee80211_supported_band *sband = local->hw.wiphy->bands[band];
++	bool rates_updated = false;
  
  	if (elems->ds_params && elems->ds_params_len == 1)
  		freq = ieee80211_channel_to_frequency(elems->ds_params[0],
-@@ -277,7 +300,10 @@ static void ieee80211_rx_bss_info(struct
+@@ -307,7 +332,7 @@ static void ieee80211_rx_bss_info(struct
+ 						prev_rates,
+ 						sta->sta.supp_rates[band]);
+ #endif
+-					rate_control_rate_init(sta);
++					rates_updated = true;
+ 				}
+ 			} else
+ 				sta = ieee80211_ibss_add_sta(sdata, mgmt->bssid,
+@@ -318,6 +343,39 @@ static void ieee80211_rx_bss_info(struct
+ 		if (sta && elems->wmm_info)
+ 			set_sta_flag(sta, WLAN_STA_WME);
  
- 	channel = ieee80211_get_channel(local->hw.wiphy, freq);
- 
--	if (!channel || channel->flags & IEEE80211_CHAN_DISABLED)
-+	if (!channel ||
-+	    channel->flags & (IEEE80211_CHAN_DISABLED ||
-+			      IEEE80211_CHAN_NO_IBSS ||
-+			      IEEE80211_CHAN_RADAR))
- 		return;
- 
- 	if (sdata->vif.type == NL80211_IFTYPE_ADHOC &&
-@@ -315,8 +341,41 @@ static void ieee80211_rx_bss_info(struct
- 						GFP_ATOMIC);
- 		}
- 
--		if (sta && elems->wmm_info)
--			set_sta_flag(sta, WLAN_STA_WME);
-+		if (sta) {
-+			if (elems->wmm_info)
-+				set_sta_flag(sta, WLAN_STA_WME);
-+
++		if (sta && elems->ht_info_elem && elems->ht_cap_elem &&
++		    sdata->u.ibss.channel_type != NL80211_CHAN_NO_HT) {
 +			/* we both use HT */
-+			if (elems->ht_info_elem && elems->ht_cap_elem &&
-+			    sdata->u.ibss.channel_type) {
-+				enum nl80211_channel_type channel_type =
-+					ieee80211_ht_info_to_channel_type(
-+							   elems->ht_info_elem);
-+				struct ieee80211_sta_ht_cap sta_ht_cap_new;
++			struct ieee80211_sta_ht_cap sta_ht_cap_new;
++			enum nl80211_channel_type channel_type =
++				ieee80211_ht_info_to_channel_type(
++							elems->ht_info_elem);
 +
-+				/*
-+				 * fall back to HT20 if we don't use or use
-+				 * the other extension channel
-+				 */
-+				if (channel_type > NL80211_CHAN_HT20 &&
-+				    channel_type != sdata->u.ibss.channel_type)
-+					channel_type = NL80211_CHAN_HT20;
++			ieee80211_ht_cap_ie_to_sta_ht_cap(sdata, sband,
++							  elems->ht_cap_elem,
++							  &sta_ht_cap_new);
 +
-+				ieee80211_ht_cap_ie_to_sta_ht_cap(sband,
-+						elems->ht_cap_elem,
-+						&sta_ht_cap_new);
-+				if (memcmp(&sta->sta.ht_cap, &sta_ht_cap_new,
-+					   sizeof(sta_ht_cap_new))) {
-+					memcpy(&sta->sta.ht_cap,
-+					       &sta_ht_cap_new,
-+					       sizeof(sta_ht_cap_new));
-+					rate_control_rate_update(local, sband,
-+							sta,
-+							IEEE80211_RC_HT_CHANGED,
-+							channel_type);
-+				}
++			/*
++			 * fall back to HT20 if we don't use or use
++			 * the other extension channel
++			 */
++			if ((channel_type == NL80211_CHAN_HT40MINUS ||
++			     channel_type == NL80211_CHAN_HT40PLUS) &&
++			    channel_type != sdata->u.ibss.channel_type)
++				sta_ht_cap_new.cap &=
++					~IEEE80211_HT_CAP_SUP_WIDTH_20_40;
++
++			if (memcmp(&sta->sta.ht_cap, &sta_ht_cap_new,
++				   sizeof(sta_ht_cap_new))) {
++				memcpy(&sta->sta.ht_cap, &sta_ht_cap_new,
++				       sizeof(sta_ht_cap_new));
++				rates_updated = true;
 +			}
 +		}
- 
++
++		if (sta && rates_updated)
++			rate_control_rate_init(sta);
++
  		rcu_read_unlock();
  	}
-@@ -898,10 +957,15 @@ int ieee80211_ibss_join(struct ieee80211
+ 
+@@ -896,12 +954,18 @@ int ieee80211_ibss_join(struct ieee80211
+ 			struct cfg80211_ibss_params *params)
+ {
  	struct sk_buff *skb;
++	u32 changed = 0;
  
  	skb = dev_alloc_skb(sdata->local->hw.extra_tx_headroom +
 -			    36 /* bitrates */ +
@@ -637,9 +745,33 @@
  	}
  
  	if (params->ie) {
+@@ -951,6 +1017,23 @@ int ieee80211_ibss_join(struct ieee80211
+ 	ieee80211_recalc_idle(sdata->local);
+ 	mutex_unlock(&sdata->local->mtx);
+ 
++	/*
++	 * 802.11n-2009 9.13.3.1: In an IBSS, the HT Protection field is
++	 * reserved, but an HT STA shall protect HT transmissions as though
++	 * the HT Protection field were set to non-HT mixed mode.
++	 *
++	 * In an IBSS, the RIFS Mode field of the HT Operation element is
++	 * also reserved, but an HT STA shall operate as though this field
++	 * were set to 1.
++	 */
++
++	sdata->vif.bss_conf.ht_operation_mode |=
++		  IEEE80211_HT_OP_MODE_PROTECTION_NONHT_MIXED
++		| IEEE80211_HT_PARAM_RIFS_MODE;
++
++	changed |= BSS_CHANGED_HT;
++	ieee80211_bss_info_change_notify(sdata, changed);
++
+ 	ieee80211_queue_work(&sdata->local->hw, &sdata->work);
+ 
+ 	return 0;
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -470,6 +470,7 @@ struct ieee80211_if_ibss {
+@@ -474,6 +474,7 @@ struct ieee80211_if_ibss {
  	u8 ssid_len, ie_len;
  	u8 *ie;
  	struct ieee80211_channel *channel;
@@ -695,7 +827,7 @@
   err_stop:
  	if (!local->open_count)
  		drv_stop(local);
-@@ -732,6 +709,70 @@ static void ieee80211_if_setup(struct ne
+@@ -719,6 +696,70 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -748,7 +880,7 @@
 +	sta->sta.supp_rates[local->hw.conf.channel->band] = rates;
 +
 +	if (elems.ht_cap_elem)
-+		ieee80211_ht_cap_ie_to_sta_ht_cap(sband,
++		ieee80211_ht_cap_ie_to_sta_ht_cap(sdata, sband,
 +				elems.ht_cap_elem, &sta->sta.ht_cap);
 +
 +	if (elems.wmm_param)
@@ -766,7 +898,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -836,6 +877,9 @@ static void ieee80211_iface_work(struct 
+@@ -823,6 +864,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -776,85 +908,32 @@
  		default:
  			WARN(1, "frame for unexpected interface type");
  			break;
---- a/net/mac80211/mlme.c
-+++ b/net/mac80211/mlme.c
-@@ -1359,9 +1359,6 @@ static void __ieee80211_connection_loss(
- 	ieee80211_set_disassoc(sdata, true, true);
- 	mutex_unlock(&ifmgd->mtx);
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -574,7 +574,8 @@ struct ieee80211_hw *ieee80211_alloc_hw(
+ 			WIPHY_FLAG_OFFCHAN_TX |
+ 			WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
  
--	mutex_lock(&local->mtx);
--	ieee80211_recalc_idle(local);
--	mutex_unlock(&local->mtx);
- 	/*
- 	 * must be outside lock due to cfg80211,
- 	 * but that's not a problem.
-@@ -1370,6 +1367,10 @@ static void __ieee80211_connection_loss(
- 				       IEEE80211_STYPE_DEAUTH,
- 				       WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY,
- 				       NULL, true);
-+
-+	mutex_lock(&local->mtx);
-+	ieee80211_recalc_idle(local);
-+	mutex_unlock(&local->mtx);
- }
+-	wiphy->features = NL80211_FEATURE_SK_TX_STATUS;
++	wiphy->features = NL80211_FEATURE_SK_TX_STATUS |
++			  NL80211_FEATURE_HT_IBSS;
  
- void ieee80211_beacon_connection_loss_work(struct work_struct *work)
-@@ -2136,9 +2137,6 @@ static void ieee80211_sta_connection_los
- 
- 	ieee80211_set_disassoc(sdata, true, true);
- 	mutex_unlock(&ifmgd->mtx);
--	mutex_lock(&local->mtx);
--	ieee80211_recalc_idle(local);
--	mutex_unlock(&local->mtx);
- 	/*
- 	 * must be outside lock due to cfg80211,
- 	 * but that's not a problem.
-@@ -2146,6 +2144,11 @@ static void ieee80211_sta_connection_los
- 	ieee80211_send_deauth_disassoc(sdata, bssid,
- 			IEEE80211_STYPE_DEAUTH, reason,
- 			NULL, true);
-+
-+	mutex_lock(&local->mtx);
-+	ieee80211_recalc_idle(local);
-+	mutex_unlock(&local->mtx);
-+
- 	mutex_lock(&ifmgd->mtx);
- }
- 
---- a/net/mac80211/offchannel.c
-+++ b/net/mac80211/offchannel.c
-@@ -212,8 +212,6 @@ static void ieee80211_hw_roc_start(struc
- 		return;
- 	}
- 
--	ieee80211_recalc_idle(local);
--
- 	if (local->hw_roc_skb) {
- 		sdata = IEEE80211_DEV_TO_SUB_IF(local->hw_roc_dev);
- 		ieee80211_tx_skb(sdata, local->hw_roc_skb);
-@@ -227,6 +225,8 @@ static void ieee80211_hw_roc_start(struc
- 					  GFP_KERNEL);
- 	}
- 
-+	ieee80211_recalc_idle(local);
-+
- 	mutex_unlock(&local->mtx);
- }
- 
+ 	if (!ops->set_key)
+ 		wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2250,7 +2250,9 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2237,7 +2237,9 @@ ieee80211_rx_h_action(struct ieee80211_r
  		if (sdata->vif.type != NL80211_IFTYPE_STATION &&
  		    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
 -		    sdata->vif.type != NL80211_IFTYPE_AP)
 +		    sdata->vif.type != NL80211_IFTYPE_AP &&
-+		    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
-+		    sdata->vif.type != NL80211_IFTYPE_WDS)
++		    sdata->vif.type != NL80211_IFTYPE_WDS &&
++		    sdata->vif.type != NL80211_IFTYPE_ADHOC)
  			break;
  
  		/* verify action_code is present */
-@@ -2465,13 +2467,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2452,13 +2454,14 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -871,7 +950,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_DEAUTH):
  	case cpu_to_le16(IEEE80211_STYPE_DISASSOC):
-@@ -2818,10 +2821,16 @@ static int prepare_for_handlers(struct i
+@@ -2805,10 +2808,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
@@ -892,38 +971,60 @@
  		/* should never get here */
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -32,7 +32,6 @@
+@@ -31,7 +31,6 @@
+  * @WLAN_STA_SHORT_PREAMBLE: Station is capable of receiving short-preamble
   *	frames.
-  * @WLAN_STA_ASSOC_AP: We're associated to that station, it is an AP.
   * @WLAN_STA_WME: Station is a QoS-STA.
 - * @WLAN_STA_WDS: Station is one of our WDS peers.
   * @WLAN_STA_CLEAR_PS_FILT: Clear PS filter in hardware (using the
   *	IEEE80211_TX_CTL_CLEAR_PS_FILT control flag) when the next
   *	frame to this station is transmitted.
-@@ -62,7 +61,6 @@ enum ieee80211_sta_info_flags {
+@@ -60,7 +59,6 @@ enum ieee80211_sta_info_flags {
+ 	WLAN_STA_AUTHORIZED,
  	WLAN_STA_SHORT_PREAMBLE,
- 	WLAN_STA_ASSOC_AP,
  	WLAN_STA_WME,
 -	WLAN_STA_WDS,
  	WLAN_STA_CLEAR_PS_FILT,
  	WLAN_STA_MFP,
  	WLAN_STA_BLOCK_BA,
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -1612,6 +1612,11 @@ u8 *ieee80211_ie_build_ht_info(u8 *pos,
+ 	}
+ 	if (ht_cap->cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40)
+ 		ht_info->ht_param |= IEEE80211_HT_PARAM_CHAN_WIDTH_ANY;
++
++	/*
++	 * Note: According to 802.11n-2009 9.13.3.1, HT Protection field and
++	 * RIFS Mode are reserved in IBSS mode, therefore keep them at 0
++	 */
+ 	ht_info->operation_mode = 0x0000;
+ 	ht_info->stbc_param = 0x0000;
+ 
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
-@@ -44,9 +44,9 @@ rdev_freq_to_chan(struct cfg80211_regist
+@@ -6,6 +6,7 @@
+  * Copyright 2009	Johannes Berg <johannes@sipsolutions.net>
+  */
+ 
++#include <linux/export.h>
+ #include <net/cfg80211.h>
+ #include "core.h"
+ 
+@@ -44,9 +45,9 @@ rdev_freq_to_chan(struct cfg80211_regist
  	return chan;
  }
  
 -static bool can_beacon_sec_chan(struct wiphy *wiphy,
 -				struct ieee80211_channel *chan,
 -				enum nl80211_channel_type channel_type)
-+bool cfg80211_can_beacon_sec_chan(struct wiphy *wiphy,
++int cfg80211_can_beacon_sec_chan(struct wiphy *wiphy,
 +				  struct ieee80211_channel *chan,
 +				  enum nl80211_channel_type channel_type)
  {
  	struct ieee80211_channel *sec_chan;
  	int diff;
-@@ -75,6 +75,7 @@ static bool can_beacon_sec_chan(struct w
+@@ -75,6 +76,7 @@ static bool can_beacon_sec_chan(struct w
  
  	return true;
  }
@@ -931,7 +1032,7 @@
  
  int cfg80211_set_freq(struct cfg80211_registered_device *rdev,
  		      struct wireless_dev *wdev, int freq,
-@@ -109,8 +110,8 @@ int cfg80211_set_freq(struct cfg80211_re
+@@ -109,8 +111,8 @@ int cfg80211_set_freq(struct cfg80211_re
  		switch (channel_type) {
  		case NL80211_CHAN_HT40PLUS:
  		case NL80211_CHAN_HT40MINUS:
@@ -944,7 +1045,7 @@
  				       "allowed to initiate communication\n");
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -4604,13 +4604,34 @@ static int nl80211_join_ibss(struct sk_b
+@@ -4684,13 +4684,41 @@ static int nl80211_join_ibss(struct sk_b
  		ibss.ie_len = nla_len(info->attrs[NL80211_ATTR_IE]);
  	}
  
@@ -955,8 +1056,16 @@
 +
 +		channel_type = nla_get_u32(
 +				info->attrs[NL80211_ATTR_WIPHY_CHANNEL_TYPE]);
-+		if (channel_type > NL80211_CHAN_HT40PLUS)
++		if (channel_type != NL80211_CHAN_NO_HT &&
++		    channel_type != NL80211_CHAN_HT20 &&
++		    channel_type != NL80211_CHAN_HT40MINUS &&
++		    channel_type != NL80211_CHAN_HT40PLUS)
 +			return -EINVAL;
++
++		if (channel_type != NL80211_CHAN_NO_HT &&
++		    !(wiphy->features & NL80211_FEATURE_HT_IBSS))
++			return -EINVAL;
++
 +		ibss.channel_type = channel_type;
 +	} else {
 +		ibss.channel_type = NL80211_CHAN_NO_HT;
@@ -966,7 +1075,6 @@
 +		nla_get_u32(info->attrs[NL80211_ATTR_WIPHY_FREQ]),
 +		ibss.channel_type);
  	if (!ibss.channel ||
-+	    ibss.channel->flags & IEEE80211_CHAN_RADAR ||
  	    ibss.channel->flags & IEEE80211_CHAN_NO_IBSS ||
  	    ibss.channel->flags & IEEE80211_CHAN_DISABLED)
  		return -EINVAL;
