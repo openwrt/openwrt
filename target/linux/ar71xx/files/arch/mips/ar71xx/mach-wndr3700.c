@@ -49,113 +49,6 @@
 #define WNDR3700_CALDATA0_OFFSET	0x1000
 #define WNDR3700_CALDATA1_OFFSET	0x5000
 
-#ifdef CONFIG_MTD_PARTITIONS
-static struct mtd_partition wndr3700_partitions[] = {
-	{
-		.name		= "uboot",
-		.offset		= 0,
-		.size		= 0x050000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "env",
-		.offset		= 0x050000,
-		.size		= 0x020000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x070000,
-		.size		= 0x720000,
-	}, {
-		.name		= "config",
-		.offset		= 0x790000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "config_bak",
-		.offset		= 0x7a0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "pot",
-		.offset		= 0x7b0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "traffic_meter",
-		.offset		= 0x7c0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "language",
-		.offset		= 0x7d0000,
-		.size		= 0x020000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "caldata",
-		.offset		= 0x7f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}
-};
-
-static struct mtd_partition wndr3700v2_partitions[] = {
-	{
-		.name		= "uboot",
-		.offset		= 0,
-		.size		= 0x050000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "env",
-		.offset		= 0x050000,
-		.size		= 0x020000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x070000,
-		.size		= 0xe40000,
-	}, {
-		.name		= "config",
-		.offset		= 0xeb0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "config_bak",
-		.offset		= 0xec0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "pot",
-		.offset		= 0xed0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "traffic_meter",
-		.offset		= 0xee0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "language",
-		.offset		= 0xef0000,
-		.size		= 0x100000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "caldata",
-		.offset		= 0xff0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}
-};
-#define wndr3700_num_partitions		ARRAY_SIZE(wndr3700_partitions)
-#define wndr3700v2_num_partitions	ARRAY_SIZE(wndr3700v2_partitions)
-#else
-#define wndr3700_partitions		NULL
-#define wndr3700_num_partitions		0
-#define wndr3700v2_partitions		NULL
-#define wndr3700v2_num_partitions	0
-#endif /* CONFIG_MTD_PARTITIONS */
-
-static struct flash_platform_data wndr3700_flash_data;
-
 static struct gpio_led wndr3700_leds_gpio[] __initdata = {
 	{
 		.name		= "wndr3700:green:power",
@@ -218,7 +111,7 @@ static struct platform_device wndr3700_rtl8366s_device = {
 	}
 };
 
-static void __init wndr3700_common_setup(void)
+static void __init wndr3700_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 
@@ -242,7 +135,7 @@ static void __init wndr3700_common_setup(void)
 
 	ar71xx_add_device_usb();
 
-	ar71xx_add_device_m25p80(&wndr3700_flash_data);
+	ar71xx_add_device_m25p80(NULL);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(wndr3700_leds_gpio),
 					wndr3700_leds_gpio);
@@ -269,24 +162,5 @@ static void __init wndr3700_common_setup(void)
 		      art + WNDR3700_WMAC1_MAC_OFFSET);
 }
 
-static void __init wndr3700_setup(void)
-{
-	wndr3700_flash_data.parts = wndr3700_partitions,
-	wndr3700_flash_data.nr_parts = wndr3700_num_partitions,
-	wndr3700_common_setup();
-}
-
-MIPS_MACHINE(AR71XX_MACH_WNDR3700, "WNDR3700", "NETGEAR WNDR3700",
+MIPS_MACHINE(AR71XX_MACH_WNDR3700, "WNDR3700", "NETGEAR WNDR3700/WNDR3800",
 	     wndr3700_setup);
-
-static void __init wndr3700v2_setup(void)
-{
-	wndr3700_flash_data.parts = wndr3700v2_partitions,
-	wndr3700_flash_data.nr_parts = wndr3700v2_num_partitions,
-	wndr3700_common_setup();
-}
-
-MIPS_MACHINE(AR71XX_MACH_WNDR3700V2, "WNDR3700v2", "NETGEAR WNDR3700v2",
-	     wndr3700v2_setup);
-MIPS_MACHINE(AR71XX_MACH_WNDR3800, "WNDR3800", "NETGEAR WNDR3800",
-	     wndr3700v2_setup);
