@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006,2007 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -71,7 +71,7 @@ ifeq ($(DUMP),)
     endif
 
     IDEPEND_$(1):=$$(call filter_deps,$$(DEPENDS))
-  
+
     $(eval $(call BuildIPKGVariable,$(1),conffiles))
     $(eval $(call BuildIPKGVariable,$(1),preinst))
     $(eval $(call BuildIPKGVariable,$(1),postinst))
@@ -91,7 +91,7 @@ ifeq ($(DUMP),)
 	@rm -rf $(PACKAGE_DIR)/$(1)_* $$(IDIR_$(1))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
-	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' | $(XARGS) rm -rf
+	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' -o name '*~'| $(XARGS) rm -rf
 	$(RSTRIP) $$(IDIR_$(1))
 	( \
 		echo "Package: $(1)"; \
