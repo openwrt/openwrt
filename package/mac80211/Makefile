@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2011-11-15
+PKG_VERSION:=2011-12-01
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=0bb667c7fecbc244840d806df0604661
+PKG_MD5SUM:=8d1fe2fd6bbabc4fbbf31dfbf015c62c
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -704,7 +704,7 @@ define KernelPackage/iwl-legacy
   $(call KernelPackage/mac80211/Default)
   DEPENDS:= +kmod-mac80211 @PCI_SUPPORT
   TITLE:=Intel legacy Wireless support
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl-legacy.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwlegacy.ko
   AUTOLOAD:=$(call AutoLoad,60,iwl-legacy)
 endef
 
@@ -1169,7 +1169,7 @@ MAKE_OPTS:= \
 	CONFIG_LIB80211_CRYPT_CCMP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
 	CONFIG_LIB80211_CRYPT_TKIP=$(if $(CONFIG_PACKAGE_kmod-lib80211),m) \
 	CONFIG_IWLWIFI=$(if $(CONFIG_PACKAGE_kmod-iwlagn),m) \
-	CONFIG_IWLWIFI_LEGACY=$(if $(CONFIG_PACKAGE_kmod-iwl-legacy),m) \
+	CONFIG_IWLEGACY=$(if $(CONFIG_PACKAGE_kmod-iwl-legacy),m) \
 	CONFIG_COMPAT_IWL4965=$(if $(CONFIG_PACKAGE_kmod-iwl4965),m) \
 	CONFIG_IWL3945=$(if $(CONFIG_PACKAGE_kmod-iwl3945),m) \
 	CONFIG_MWL8K=$(if $(CONFIG_PACKAGE_kmod-mwl8k),m) \

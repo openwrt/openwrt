@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath5k/initvals.c
 +++ b/drivers/net/wireless/ath/ath5k/initvals.c
-@@ -57,8 +57,14 @@ static const struct ath5k_ini ar5210_ini
+@@ -60,8 +60,14 @@ static const struct ath5k_ini ar5210_ini
  	{ AR5K_IMR,		0 },
  	{ AR5K_IER,		AR5K_IER_DISABLE },
  	{ AR5K_BSR,		0, AR5K_INI_READ },
@@ -17,7 +17,7 @@
  	{ AR5K_RXNOFRM,		8 },
 --- a/drivers/net/wireless/ath/ath5k/dma.c
 +++ b/drivers/net/wireless/ath/ath5k/dma.c
-@@ -786,10 +786,18 @@ void ath5k_hw_dma_init(struct ath5k_hw *
+@@ -858,10 +858,18 @@ ath5k_hw_dma_init(struct ath5k_hw *ah)
  	 * guess we can tweak it and see how it goes ;-)
  	 */
  	if (ah->ah_version != AR5K_AR5210) {
