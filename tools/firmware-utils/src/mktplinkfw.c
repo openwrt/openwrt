@@ -27,6 +27,8 @@
 
 #include "md5.h"
 
+#define ALIGN(x,a) ({ typeof(a) __a = (a); (((x) + __a - 1) & ~(__a - 1)); })
+
 #define HEADER_VERSION_V1	0x01000000
 #define HWID_TL_MR3220_V1	0x32200001
 #define HWID_TL_MR3420_V1	0x34200001
@@ -99,8 +101,10 @@ static struct board_info *board;
 static struct file_info kernel_info;
 static uint32_t kernel_la = 0;
 static uint32_t kernel_ep = 0;
+static uint32_t kernel_len = 0;
 static struct file_info rootfs_info;
 static uint32_t rootfs_ofs = 0;
+static uint32_t rootfs_align;
 static struct file_info boot_info;
 static int combined;
 static int strip_padding;
@@ -324,6 +328,7 @@ static void usage(int status)
 "  -L <la>         overwrite kernel load address with <la> (hexval prefixed with 0x)\n"
 "  -k <file>       read kernel image from the file <file>\n"
 "  -r <file>       read rootfs image from the file <file>\n"
+"  -a <align>      align the rootfs start on an <align> bytes boundary\n"
 "  -R <offset>     overwrite rootfs offset with <offset> (hexval prefixed with 0x)\n"
 "  -o <file>       write output to the file <file>\n"
 "  -s              strip padding from the end of the image\n"
@@ -431,6 +436,8 @@ static int check_options(void)
 	if (ret)
 		return ret;
 
+	kernel_len = kernel_info.file_size;
+
 	if (combined) {
 		if (kernel_info.file_size >
 		    board->fw_max_len - sizeof(struct fw_header)) {
@@ -438,11 +445,6 @@ static int check_options(void)
 			return -1;
 		}
 	} else {
-		if (kernel_info.file_size >
-		    rootfs_ofs - sizeof(struct fw_header)) {
-			ERR("kernel image is too big");
-			return -1;
-		}
 		if (rootfs_info.file_name == NULL) {
 			ERR("no rootfs image specified");
 			return -1;
@@ -452,10 +454,30 @@ static int check_options(void)
 		if (ret)
 			return ret;
 
-		if (rootfs_info.file_size >
-                    (board->fw_max_len - rootfs_ofs)) {
-			ERR("rootfs image is too big");
-			return -1;
+		if (rootfs_align) {
+			kernel_len += sizeof(struct fw_header);
+			kernel_len = ALIGN(kernel_len, rootfs_align);
+			kernel_len -= sizeof(struct fw_header);
+
+			DBG("kernel length aligned to %u", kernel_len);
+
+			if (kernel_len + rootfs_info.file_size >
+			    board->fw_max_len - sizeof(struct fw_header)) {
+				ERR("images are too big");
+				return -1;
+			}
+		} else {
+			if (kernel_info.file_size >
+			    rootfs_ofs - sizeof(struct fw_header)) {
+				ERR("kernel image is too big");
+				return -1;
+			}
+
+			if (rootfs_info.file_size >
+			    (board->fw_max_len - rootfs_ofs)) {
+				ERR("rootfs image is too big");
+				return -1;
+			}
 		}
 	}
 
@@ -488,7 +510,7 @@ static void fill_header(char *buf, int len)
 	hdr->kernel_ep = htonl(kernel_ep);
 	hdr->fw_length = htonl(board->fw_max_len);
 	hdr->kernel_ofs = htonl(sizeof(struct fw_header));
-	hdr->kernel_len = htonl(kernel_info.file_size);
+	hdr->kernel_len = htonl(kernel_len);
 	if (!combined) {
 		hdr->rootfs_ofs = htonl(rootfs_ofs);
 		hdr->rootfs_len = htonl(rootfs_info.file_size);
@@ -551,15 +573,21 @@ static int build_fw(void)
 	if (ret)
 		goto out_free_buf;
 
-	writelen = sizeof(struct fw_header) + kernel_info.file_size;
+	writelen = sizeof(struct fw_header) + kernel_len;
 
 	if (!combined) {
-		p = buf + rootfs_ofs;
+		if (rootfs_align)
+			p = buf + writelen;
+		else
+			p = buf + rootfs_ofs;
 		ret = read_to_buf(&rootfs_info, p);
 		if (ret)
 			goto out_free_buf;
 
-		writelen = rootfs_ofs + rootfs_info.file_size;
+		if (rootfs_align)
+			writelen += rootfs_info.file_size;
+		else
+			writelen = rootfs_ofs + rootfs_info.file_size;
 	}
 
 	if (!strip_padding)
@@ -800,11 +828,14 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:E:L:V:N:ci:k:r:R:o:xhs");
+		c = getopt(argc, argv, "a:B:E:L:V:N:ci:k:r:R:o:xhs");
 		if (c == -1)
 			break;
 
 		switch (c) {
+		case 'a':
+			sscanf(optarg, "0x%x", &rootfs_align);
+			break;
 		case 'B':
 			board_id = optarg;
 			break;
