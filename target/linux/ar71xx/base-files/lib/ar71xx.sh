@@ -229,6 +229,9 @@ ar71xx_board_detect() {
 	*WZR-HP-G300NH)
 		name="wzr-hp-g300nh"
 		;;
+	*WZR-HP-G450H)
+		name="wzr-hp-g450h"
+		;;
 	*WHR-HP-G300N)
 		name="whr-hp-g300n"
 		;;

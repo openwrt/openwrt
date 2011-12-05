@@ -98,6 +98,7 @@ platform_check_image() {
 	nanostation-m | \
 	rocket-m | \
 	wzr-hp-g300nh | \
+	wzr-hp-g450h | \
 	wzr-hp-ag300h | \
 	whr-g301n | \
 	whr-hp-g300n | \

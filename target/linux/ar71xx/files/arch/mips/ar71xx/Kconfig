@@ -136,6 +136,15 @@ config AR71XX_MACH_WZR_HP_AG300H
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_DEV_USB
 
+config AR71XX_MACH_WZR_HP_G450H
+	bool "Buffalo WZR-HP-G450H board support"
+	select SOC_AR724X
+	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_AP91_PCI if PCI
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_DEV_USB
+
 config AR71XX_MACH_WZR_HP_G300NH
 	bool "Buffalo WZR-HP-G300NH board support"
 	select SOC_AR913X
