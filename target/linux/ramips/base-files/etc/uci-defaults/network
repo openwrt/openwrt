@@ -9,7 +9,7 @@ if [ ! -x /usr/sbin/maccalc ]; then
 	return
 fi
 
-get_mac_binary()
+ramips_get_mac_binary()
 {
 	local mtdname="$1"
 	local seek="$2"
@@ -17,14 +17,14 @@ get_mac_binary()
 
 	part=$(find_mtd_part "$mtdname")
 	if [ -z "$part" ]; then
-		echo "get_mac_binary: partition $mtdname not found!" >&2
+		echo "ramips_get_mac_binary: partition $mtdname not found!" >&2
 		return
 	fi
 
 	dd bs=1 skip=$seek count=6 if=$part 2>/dev/null | /usr/sbin/maccalc bin2mac
 }
 
-get_mac_nvram()
+ramips_get_mac_nvram()
 {
 	local mtdname="$1"
 	local key="$2"
@@ -33,7 +33,7 @@ get_mac_nvram()
 
 	part=$(find_mtd_part "$mtdname")
 	if [ -z "$part" ]; then
-		echo "get_mac_nvram: partition $mtdname not found!" >&2
+		echo "ramips_get_mac_nvram: partition $mtdname not found!" >&2
 		return
 	fi
 
@@ -82,7 +82,7 @@ ramips_setup_macs()
 
 	case $board in
 	f5d8235-v2)
-		lan_mac=$(get_mac_nvram "u-boot" 262148)
+		lan_mac=$(ramips_get_mac_nvram "u-boot" 262148)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
@@ -90,7 +90,7 @@ ramips_setup_macs()
 	b2c | \
 	nw718 | \
 	rt-n15)
-		lan_mac=$(get_mac_binary factory 4)
+		lan_mac=$(ramips_get_mac_binary factory 4)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 	esac
