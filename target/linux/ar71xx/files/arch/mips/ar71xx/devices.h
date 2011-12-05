@@ -23,7 +23,7 @@ void ar71xx_add_device_spi(struct ar71xx_spi_platform_data *pdata,
 extern unsigned char ar71xx_mac_base[] __initdata;
 void ar71xx_parse_mac_addr(char *mac_str) __init;
 void ar71xx_init_mac(unsigned char *dst, const unsigned char *src,
-		     unsigned offset) __init;
+		     int offset) __init;
 
 struct ar71xx_eth_pll_data {
 	u32	pll_10;

@@ -1051,9 +1051,9 @@ static int __init ar71xx_kmac_setup(char *str)
 __setup("kmac=", ar71xx_kmac_setup);
 
 void __init ar71xx_init_mac(unsigned char *dst, const unsigned char *src,
-			    unsigned offset)
+			    int offset)
 {
-	u32 t;
+	int t;
 
 	if (!is_valid_ether_addr(src)) {
 		memset(dst, '\0', ETH_ALEN);
