@@ -2,30 +2,16 @@
 # Copyright (C) 2011 OpenWrt.org
 #
 
-nw718_set_mac() {
-	local part
+preinit_set_mac_address() {
 	local mac
 
-	[ -z $(which maccalc) ] && return
-
-	. /etc/functions.sh
-
-	part=$(find_mtd_part "factory")
-	[ -z $part ] && return
-
-	mac=$(dd bs=1 skip=4 count=6 if=$part 2>/dev/null | maccalc bin2mac)
-	[ -z $mac ] && return
-
-	mac=$(maccalc or "$mac" "02:00:00:00:00:00")
-	ifconfig eth0 hw ether $mac 2>/dev/null
-}
-
-preinit_set_mac_address() {
 	. /lib/ramips.sh
 
 	case $(ramips_board_name) in
 	bc2 | nw718)
-		nw718_set_mac
+		mac=$(ramips_get_mac_binary factory 4)
+		mac=$(maccalc or "$mac" "02:00:00:00:00:00")
+		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
 	esac
 }
