@@ -50,12 +50,59 @@ wndr3700_board_detect() {
 
 tplink_get_hwid() {
 	local part
-	local hwid
 
 	part=$(find_mtd_part firmware)
 	[ -z "$part" ] && return 1
 
 	dd if=$part bs=4 count=1 skip=16 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
+tplink_board_detect() {
+	local model="$1"
+	local hwid
+	local hwver
+
+	hwid=$(tplink_get_hwid)
+	hwver=${hwid:6:2}
+	hwver="v${hwver#0}"
+
+	case "$hwid" in
+	"070300"*)
+		model="TP-Link TL-WR703N"
+		;;
+	"074000"*)
+		model="TP-Link TL-WR740N/ND"
+		;;
+	"074100"*)
+		model="TP-Link TL-WR741N/ND"
+		;;
+	"074300"*)
+		model="TP-Link TL-WR743N/ND"
+		;;
+	"084100"*)
+		model="TP-Link TL-WR841N/ND"
+		;;
+	"090100"*)
+		model="TP-Link TL-WA901N/ND"
+		;;
+	"094100"*)
+		model="TP-Link TL-WR941N/ND"
+		;;
+	"104300"*)
+		model="TP-Link TL-WR1043N/ND"
+		;;
+	"322000"*)
+		model="TP-Link TL-MR3220"
+		;;
+	"342000"*)
+		model="TP-Link TL-MR3420"
+		;;
+	*)
+		hwver=""
+		;;
+	esac
+
+	AR71XX_MODEL="$model $hwver"
 }
 
 ar71xx_board_detect() {
@@ -250,6 +297,12 @@ ar71xx_board_detect() {
 		;;
 	*ZCN-1523H-5)
 		name="zcn-1523h-5"
+		;;
+	esac
+
+	case "$machine" in
+	*TL-WR* | *TL-WA* | *TL-MR*)
+		tplink_board_detect "$machine"
 		;;
 	esac
 
