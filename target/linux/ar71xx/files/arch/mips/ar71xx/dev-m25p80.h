@@ -12,5 +12,6 @@
 #include <linux/spi/flash.h>
 
 void ar71xx_add_device_m25p80(struct flash_platform_data *pdata) __init;
+void ar71xx_add_device_m25p80_multi(struct flash_platform_data *pdata) __init;
 
 #endif /* _AR71XX_DEV_M25P80_H */
