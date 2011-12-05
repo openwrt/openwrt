@@ -384,26 +384,24 @@ define Image/Build/Netgear
 	if [ `stat -c%s '$(KDIR)/vmlinux-$(2).uImage.squashfs'` -gt \
 	     `cat '$(KDIR)/$(2)_kernel_maxsize'` ]; then \
                 echo "$(KDIR)/vmlinux-$(2).uImage.squashfs is too big" >& 2; \
-		false; \
-	fi
-	if [ `stat -c%s '$(KDIR)/root.$(1)'` -gt \
+	else if [ `stat -c%s '$(KDIR)/root.$(1)'` -gt \
 	     `cat '$(KDIR)/$(2)_rootfs_maxsize'` ]; then \
                 echo "$(KDIR)/root.$(1) is too big" >& 2; \
-		false; \
-	fi
-	( \
-		set -e; \
-		dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs \
-		   bs=`cat '$(KDIR)/$(2)_kernel_maxsize'` conv=sync; \
-		dd if=$(KDIR)/root.$(1) bs=64k; \
-	) > $(call sysupname,$(1),$(2))
-	for r in $(7) ; do \
-		[ -n "$$$$r" ] && dashr="-$$$$r" || dashr= ; \
-		$(STAGING_DIR_HOST)/bin/mkdniimg \
-			-B $(6) -v OpenWrt.$(REVISION) -r "$$$$r" $(8) \
-			-i $(call sysupname,$(1),$(2)) \
-			-o $(call imgname,$(1),$(2))-factory$$$$dashr.img; \
-	done
+	else \
+		( \
+			set -e; \
+			dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs \
+			bs=`cat '$(KDIR)/$(2)_kernel_maxsize'` conv=sync; \
+			dd if=$(KDIR)/root.$(1) bs=64k; \
+		) > $(call sysupname,$(1),$(2)); \
+		for r in $(7) ; do \
+			[ -n "$$$$r" ] && dashr="-$$$$r" || dashr= ; \
+			$(STAGING_DIR_HOST)/bin/mkdniimg \
+				-B $(6) -v OpenWrt.$(REVISION) -r "$$$$r" $(8) \
+				-i $(call sysupname,$(1),$(2)) \
+				-o $(call imgname,$(1),$(2))-factory$$$$dashr.img; \
+		done; \
+	fi; fi
 endef
 
 define Image/Build/Netgear/initramfs
