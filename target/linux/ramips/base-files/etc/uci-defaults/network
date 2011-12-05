@@ -53,7 +53,7 @@ ramips_setup_interfaces()
 	b2c | \
 	f5d8235-v2 | \
 	nw718)
-		ucidef_set_interfaces_lan_wan "eth0.1 eth0.2"
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
 
 	rt-n15)
@@ -66,9 +66,9 @@ ramips_setup_interfaces()
 	*)
 		RT3X5X=`cat /proc/cpuinfo | grep RT3.5`
 		if [ -n "${RT3X5X}" ]; then
-			ucidef_set_interfaces_lan_wan "eth0.1 eth0.2"
+			ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		else
-			ucidef_set_interfaces_lan_wan "eth0 eth1"
+			ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		fi
 		;;
 	esac
