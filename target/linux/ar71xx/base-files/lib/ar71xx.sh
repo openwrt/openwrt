@@ -1,9 +1,12 @@
 #!/bin/sh
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2011 OpenWrt.org
 #
 
-ar71xx_board_name() {
+AR71XX_BOARD_NAME=
+AR71XX_MODEL=
+
+ar71xx_board_detect() {
 	local machine
 	local name
 
@@ -199,10 +202,24 @@ ar71xx_board_name() {
 	*ZCN-1523H-5)
 		name="zcn-1523h-5"
 		;;
-	*)
-		name="generic"
-		;;
 	esac
 
-	echo $name
+	[ -z "$name" ] && name="unknown"
+
+	[ -z "$AR71XX_BOARD_NAME" ] && AR71XX_BOARD_NAME="$name"
+	[ -z "$AR71XX_MODEL" ] && AR71XX_MODEL="$machine"
+
+	[ -e "/tmp/sysinfo/" ] || mkdir -p "/tmp/sysinfo/"
+
+	echo "$AR71XX_BOARD_NAME" > /tmp/sysinfo/board_name
+	echo "$AR71XX_MODEL" > /tmp/sysinfo/model
+}
+
+ar71xx_board_name() {
+	local name
+
+	[ -f /tmp/sysinfo/board_name ] && name=$(cat /tmp/sysinfo/board_name)
+	[ -z "$name" ] && name="unknown"
+
+	echo "$name"
 }
