@@ -65,6 +65,15 @@
  		mode = ATH9K_PM_FULL_SLEEP;
  	else if (sc->ps_enabled &&
  		 !(sc->ps_flags & (PS_WAIT_FOR_BEACON |
+@@ -286,7 +286,7 @@ static bool ath_complete_reset(struct at
+ 			ath_start_ani(common);
+ 	}
+ 
+-	if (ath9k_hw_ops(ah)->antdiv_comb_conf_get && sc->ant_rx != 3) {
++	if ((ah->caps.hw_caps & ATH9K_HW_CAP_ANT_DIV_COMB) && sc->ant_rx != 3) {
+ 		struct ath_hw_antcomb_conf div_ant_conf;
+ 		u8 lna_conf;
+ 
 @@ -332,7 +332,8 @@ static int ath_reset_internal(struct ath
  		hchan = ah->curchan;
  	}
