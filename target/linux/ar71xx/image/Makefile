@@ -298,7 +298,7 @@ define Image/Build/Planex
 	fi
 endef
 
-define Image/Build/TPLINK
+define Image/Build/TPLINKOLD
 	$(call Image/BuildLoaderAlone,$(2),gz,$(3),0x22000,0)
 	$(call MkuImageOKLI,$(2))
 	( \
@@ -317,6 +317,33 @@ define Image/Build/TPLINK
 		-o $(call sysupname,$(1),$(2))
 endef
 
+define Image/Build/TPLINKOLD/initramfs
+	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000)
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
+		-B $(4) -N OpenWrt -V $(REVISION) -s \
+		-k $(KDIR)/loader-$(2).gz \
+		-o $(call imgname,$(1),$(2))-uImage.bin
+endef
+
+define Image/Build/TPLINK
+	$(call Image/BuildLoaderAlone,$(2),gz,$(3),0x22000,0)
+	$(call MkuImageOKLI,$(2))
+	( \
+		dd if=$(KDIR)/loader-$(2).gz bs=7680 count=1 conv=sync; \
+		dd if=$(KDIR)/vmlinux-$(2).okli conv=sync; \
+	) > $(KDIR)/kernel-$(2).bin
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-B $(4) -N OpenWrt -V $(REVISION)\
+		-k $(KDIR)/kernel-$(2).bin \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -a 0x10000 \
+		-o $(call factoryname,$(1),$(2))
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-B $(4) -N OpenWrt -V $(REVISION) -s \
+		-k $(KDIR)/kernel-$(2).bin \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -a 0x10000 \
+		-o $(call sysupname,$(1),$(2))
+endef
+
 define Image/Build/TPLINK/initramfs
 	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000)
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
@@ -330,12 +357,12 @@ define Image/Build/TPLINK-LZMA
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-B $(4) -N OpenWrt -V $(REVISION)\
 		-k $(KDIR)/vmlinux-$(2).bin.lzma \
-		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -a 0x10000 \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-B $(4) -N OpenWrt -V $(REVISION) -s \
 		-k $(KDIR)/vmlinux-$(2).bin.lzma \
-		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -a 0x10000 \
 		-o $(call sysupname,$(1),$(2))
 endef
 
@@ -745,7 +772,7 @@ endef
 
 tlwr841nv15_cmdline=board=TL-WR841N-v1.5 console=ttyS0,115200
 define Image/Build/Profile/TLWR841NV15
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841n-v1.5,$(tlwr841nv15_cmdline),TL-WR841Nv1.5)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINKOLD,tl-wr841n-v1.5,$(tlwr841nv15_cmdline),TL-WR841Nv1.5)
 endef
 
 tlwr841ndv3_cmdline=board=TL-WR941ND console=ttyS0,115200
