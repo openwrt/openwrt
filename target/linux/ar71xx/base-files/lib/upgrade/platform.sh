@@ -127,15 +127,11 @@ platform_check_image() {
 		return 0
 		;;
 	wndr3700)
-		[ "$magic_long" != "33373030" ] && {
-			echo "Invalid image type."
-			return 1
-		}
-		return 0
-		;;
-	wndr3700v2|wndr3800)
-		[ "$magic_long" != "33373031" ] && {
-			echo "Invalid image type."
+		local hw_magic
+
+		hw_magic="$(ar71xx_get_mtd_part_magic firmware)"
+		[ "$magic_long" != "$hw_magic" ] && {
+			echo "Invalid image, hardware ID mismatch, hw:$hw_magic image:$magic_long."
 			return 1
 		}
 		return 0

@@ -6,6 +6,48 @@
 AR71XX_BOARD_NAME=
 AR71XX_MODEL=
 
+ar71xx_get_mem_total() {
+	$(awk '/MemTotal:/ {print($2)}' /proc/meminfo)
+}
+
+ar71xx_get_mtd_part_magic() {
+	local part="$1"
+	local mtd
+
+	mtd=$(find_mtd_part $part)
+	[ -z "$mtd" ] && return
+
+	dd if=$mtd bs=4 count=1 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
+wndr3700_board_detect() {
+	local machine="$1"
+	local magic
+	local name
+
+	name="wndr3700"
+
+	magic="$(ar71xx_get_mtd_part_magic firmware)"
+	case $magic in
+	"33373030")
+		machine="NETGEAR WNDR3700"
+		;;
+	"33373031")
+		local mt
+
+		mt=$(ar71xx_get_mem_total)
+		if [ "$mt" -lt "65536" ]; then
+			machine="NETGEAR WNDR3700v2"
+		else
+			machine="NETGEAR WNDR3800"
+		fi
+		;;
+	esac
+
+	AR71XX_BOARD_NAME="$name"
+	AR71XX_MODEL="$machine"
+}
+
 ar71xx_board_detect() {
 	local machine
 	local name
@@ -169,14 +211,8 @@ ar71xx_board_detect() {
 	*WP543)
 		name="wp543"
 		;;
-	*WNDR3700)
-		name="wndr3700"
-		;;
-	*WNDR3700v2)
-		name="wndr3700v2"
-		;;
-	*WNDR3800)
-		name="wndr3800"
+	*"WNDR3700/WNDR3800")
+		wndr3700_board_detect "$machine"
 		;;
 	*WNR2000)
 		name="wnr2000"
