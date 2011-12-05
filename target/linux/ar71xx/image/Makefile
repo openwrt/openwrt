@@ -19,6 +19,8 @@ define factoryname
 $(call imgname,$(1),$(2))-factory.bin
 endef
 
+LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
+
 VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 fs_squash:=squashfs-only
@@ -53,19 +55,23 @@ define PatchKernelGzip
 endef
 
 define MkuImage
-	mkimage -A mips -O linux -T kernel -a 0x80060000 -C $(1) \
+	mkimage -A mips -O linux -T kernel -a 0x80060000 -C $(1) $(2) \
 		-e 0x80060000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(2) $(3)
+		-d $(3) $(4)
 endef
 
 define MkuImageLzma
 	$(call PatchKernelLzma,$(1),$(2))
-	$(call MkuImage,lzma,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage)
+	$(call MkuImage,lzma,,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage)
 endef
 
 define MkuImageGzip
 	$(call PatchKernelGzip,$(1),$(2))
-	$(call MkuImage,gzip,$(KDIR)/vmlinux-$(1).bin.gz,$(KDIR)/vmlinux-$(1).uImage)
+	$(call MkuImage,gzip,,$(KDIR)/vmlinux-$(1).bin.gz,$(KDIR)/vmlinux-$(1).uImage)
+endef
+
+define MkuImageOKLI
+	$(call MkuImage,lzma,-M 0x4f4b4c49,$(KDIR)/vmlinux.bin.lzma,$(KDIR)/vmlinux-$(1).okli)
 endef
 
 define CatFiles
@@ -86,6 +92,26 @@ define Sysupgrade/RK
 	$(call CatFiles,$(KDIR)/root.$(1),$(4),$(KDIR)/vmlinux-$(2).uImage,$(3),$(call sysupname,$(1),$(2)))
 endef
 
+define Image/BuildLoader
+	-rm -rf $(KDIR)/lzma-loader
+	$(LOADER_MAKE) LOADER=loader-$(1).$(2) KERNEL_CMDLINE="$(3)"\
+		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
+		LOADER_DATA="$(KDIR)/vmlinux.bin.lzma" \
+		compile loader.$(2)
+endef
+
+define Image/BuildLoaderAlone
+	-rm -rf $(KDIR)/lzma-loader
+	$(LOADER_MAKE) LOADER=loader-$(1).$(2) KERNEL_CMDLINE="$(3)" \
+		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
+		FLASH_OFFS=$(4) FLASH_MAX=$(5) \
+		compile loader.$(2)
+endef
+
+define Build/Clean
+	$(LOADER_MAKE) clean
+endef
+
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
 	cp $(KDIR)/vmlinux $(VMLINUX).bin
@@ -93,8 +119,8 @@ define Image/BuildKernel
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 	dd if=$(KDIR)/vmlinux.bin.lzma of=$(VMLINUX).lzma bs=65536 conv=sync
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(VMLINUX).gz bs=65536 conv=sync
-	$(call MkuImage,gzip,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
-	$(call MkuImage,lzma,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
+	$(call MkuImage,gzip,,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
+	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
 	$(call Image/Build/Initramfs)
 endef
 
@@ -273,24 +299,29 @@ define Image/Build/Planex
 endef
 
 define Image/Build/TPLINK
-	$(call PatchKernelGzip,$(2),$(3))
+	$(call Image/BuildLoaderAlone,$(2),gz,$(3),0x22000,0)
+	$(call MkuImageOKLI,$(2))
+	( \
+		dd if=$(KDIR)/loader-$(2).gz bs=7680 count=1 conv=sync; \
+		dd if=$(KDIR)/vmlinux-$(2).okli conv=sync; \
+	) > $(KDIR)/kernel-$(2).bin
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-B $(4) -N OpenWrt -V $(REVISION)\
-		-k $(KDIR)/vmlinux-$(2).bin.gz \
+		-k $(KDIR)/kernel-$(2).bin \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-B $(4) -N OpenWrt -V $(REVISION) -s \
-		-k $(KDIR)/vmlinux-$(2).bin.gz \
+		-k $(KDIR)/kernel-$(2).bin \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call sysupname,$(1),$(2))
 endef
 
 define Image/Build/TPLINK/initramfs
-	$(call PatchKernelGzip,$(2),$(3))
+	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000)
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
 		-B $(4) -N OpenWrt -V $(REVISION) -s \
-		-k $(KDIR)/vmlinux-$(2).bin.gz \
+		-k $(KDIR)/loader-$(2).gz \
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
