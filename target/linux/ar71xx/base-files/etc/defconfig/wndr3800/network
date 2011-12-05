@@ -1,0 +1,69 @@
+config interface loopback
+	option ifname	lo
+	option proto	static
+	option ipaddr	127.0.0.1
+	option netmask	255.0.0.0
+
+config interface lan
+	option ifname	eth0.1
+	option type	bridge
+	option proto	static
+	option ipaddr	192.168.1.1
+	option netmask	255.255.255.0
+
+config interface wan
+	option ifname	eth1
+	option proto	dhcp
+
+config switch
+	option name	rtl8366s
+	option reset	1
+	option enable_vlan 1
+	# Blinkrate: 0=43ms; 1=84ms; 2=120ms; 3=170ms; 4=340ms; 5=670ms
+	option blinkrate	2
+
+config switch_vlan
+	option device	rtl8366s
+	option vlan 	1
+	option ports	"0 1 2 3 5t"
+
+config switch_port
+	# Port 1 controls the GREEN configuration of LEDs for
+	# the switch and the section does not correspond to a real
+	# switch port.
+	#
+	# 0=LED off; 1=Collision/FDX; 2=Link/activity; 3=1000 Mb/s;
+	# 4=100 Mb/s; 5=10 Mb/s; 6=1000 Mb/s+activity; 7=100 Mb/s+activity;
+	# 8=10 Mb/s+activity; 9=10/100 Mb/s+activity; 10: Fiber;
+	# 11: Fault; 12: Link/activity(tx); 13: Link/activity(rx);
+	# 14: Link (master); 15: separate register
+
+	option device		rtl8366s
+	option port		1
+	option led		6
+
+config switch_port
+	# Port 2 controls the ORANGE configuration of LEDs for
+	# the switch and the section does not correspond to a real
+	# switch port.
+	#
+	# See the key above for switch port 1 for the meaning of the
+	# 'led' setting below.
+	
+	option device		rtl8366s
+	option port		2
+	option led		9
+
+config switch_port
+	# Port 5 controls the configuration of the WAN LED and the
+	# section does not correspond to a real switch port.
+	#
+	# To toggle the use of green or orange LEDs for the WAN port,
+	# see the LED setting for wndr3700:green:wan in /etc/config/system.
+	#
+	# See the key above for switch port 1 for the meaning of the
+	# 'led' setting below.
+
+	option device		rtl8366s
+	option port		5
+	option led		2

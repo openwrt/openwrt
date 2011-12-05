@@ -111,7 +111,7 @@ get_status_led() {
 	wzr-hp-g300nh)
 		status_led="buffalo:green:router"
 		;;
-	wndr3700 | wndr3700v2)
+	wndr3700 | wndr3700v2 | wndr3800)
 		status_led="wndr3700:green:power"
 		;;
 	wnr2000)
