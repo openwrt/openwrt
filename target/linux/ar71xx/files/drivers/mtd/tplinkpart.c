@@ -10,6 +10,7 @@
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
+#include <linux/magic.h>
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
@@ -83,6 +84,26 @@ err:
 	return NULL;
 }
 
+static int tplink_check_squashfs_magic(struct mtd_info *mtd, size_t offset)
+{
+	u32 magic;
+	size_t retlen;
+	int ret;
+
+	ret = mtd->read(mtd, offset, sizeof(magic), &retlen,
+			(unsigned char *) &magic);
+	if (ret)
+		return ret;
+
+	if (retlen != sizeof(magic))
+		return -EIO;
+
+	if (le32_to_cpu(magic) != SQUASHFS_MAGIC)
+		return -EINVAL;
+
+	return 0;
+}
+
 static int tplink_parse_partitions(struct mtd_info *master,
 				   struct mtd_partition **pparts,
 				   unsigned long origin)
@@ -93,6 +114,7 @@ static int tplink_parse_partitions(struct mtd_info *master,
 	size_t offset;
 	size_t art_offset;
 	size_t rootfs_offset;
+	size_t squashfs_offset;
 	int ret;
 
 	nr_parts = TPLINK_NUM_PARTS;
@@ -111,7 +133,15 @@ static int tplink_parse_partitions(struct mtd_info *master,
 		goto err_free_parts;
 	}
 
-	rootfs_offset = offset + be32_to_cpu(header->rootfs_ofs);
+	squashfs_offset = offset + sizeof(struct tplink_fw_header) +
+			  be32_to_cpu(header->kernel_len);
+
+	ret = tplink_check_squashfs_magic(master, squashfs_offset);
+	if (ret == 0)
+		rootfs_offset = squashfs_offset;
+	else
+		rootfs_offset = offset + be32_to_cpu(header->rootfs_ofs);
+
 	art_offset = master->size - TPLINK_ART_LEN;
 
 	parts[0].name = "u-boot";
