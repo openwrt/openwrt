@@ -11,7 +11,6 @@
 #include <linux/platform_device.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-#include <linux/mtd/concat.h>
 
 #include <asm/mips_machine.h>
 #include <asm/mach-ar71xx/ar71xx.h>
@@ -68,58 +67,12 @@ static struct mtd_partition wzrhpag300h_flash_partitions[] = {
 
 #endif /* CONFIG_MTD_PARTITIONS */
 
-static struct mtd_info *concat_devs[2] = { NULL, NULL };
-static struct work_struct mtd_concat_work;
-
-static void mtd_concat_add_work(struct work_struct *work)
-{
-	struct mtd_info *mtd;
-
-	mtd = mtd_concat_create(concat_devs, ARRAY_SIZE(concat_devs), "flash");
-
+static struct flash_platform_data wzrhpag300h_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS
-	add_mtd_partitions(mtd, wzrhpag300h_flash_partitions,
-			   ARRAY_SIZE(wzrhpag300h_flash_partitions));
-#else
-	add_mtd_device(mtd);
+	.parts      = wzrhpag300h_flash_partitions,
+	.nr_parts   = ARRAY_SIZE(wzrhpag300h_flash_partitions),
 #endif
-}
-
-static void mtd_concat_add(struct mtd_info *mtd)
-{
-	static bool registered = false;
-
-	if (registered)
-		return;
-
-	if (!strcmp(mtd->name, "spi0.0"))
-		concat_devs[0] = mtd;
-	else if (!strcmp(mtd->name, "spi0.1"))
-		concat_devs[1] = mtd;
-	else
-		return;
-
-	if (!concat_devs[0] || !concat_devs[1])
-		return;
-
-	registered = true;
-	INIT_WORK(&mtd_concat_work, mtd_concat_add_work);
-	schedule_work(&mtd_concat_work);
-}
-
-static void mtd_concat_remove(struct mtd_info *mtd)
-{
-}
-
-static void add_mtd_concat_notifier(void)
-{
-	static struct mtd_notifier not = {
-		.add = mtd_concat_add,
-		.remove = mtd_concat_remove,
-	};
-
-	register_mtd_user(&not);
-}
+};
 
 static struct gpio_led wzrhpag300h_leds_gpio[] __initdata = {
 	{
@@ -169,21 +122,6 @@ static struct gpio_keys_button wzrhpag300h_gpio_keys[] __initdata = {
 	}
 };
 
-static struct spi_board_info ar71xx_spi_info[] = {
-	{
-		.bus_num	= 0,
-		.chip_select	= 0,
-		.max_speed_hz   = 25000000,
-		.modalias   = "m25p80",
-	},
-	{
-		.bus_num	= 0,
-		.chip_select	= 1,
-		.max_speed_hz   = 25000000,
-		.modalias   = "m25p80",
-	}
-};
-
 static void __init wzrhpag300h_setup(void)
 {
 	u8 *eeprom1 = (u8 *) KSEG1ADDR(0x1f051000);
@@ -218,10 +156,7 @@ static void __init wzrhpag300h_setup(void)
 					 ARRAY_SIZE(wzrhpag300h_gpio_keys),
 					 wzrhpag300h_gpio_keys);
 
-	ar71xx_add_device_spi(NULL, ar71xx_spi_info,
-			      ARRAY_SIZE(ar71xx_spi_info));
-
-	add_mtd_concat_notifier();
+	ar71xx_add_device_m25p80_multi(&wzrhpag300h_flash_data);
 
 	ap94_pci_init(eeprom1, mac1, eeprom2, mac2);
 }
