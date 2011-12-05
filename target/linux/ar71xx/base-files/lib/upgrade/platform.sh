@@ -61,6 +61,10 @@ platform_do_upgrade_combined() {
 	fi
 }
 
+tplink_get_image_hwid() {
+	get_image "$@" | dd bs=4 count=1 skip=16 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
 platform_check_image() {
 	local board=$(ar71xx_board_name)
 	local magic="$(get_magic_word "$1")"
@@ -125,6 +129,18 @@ platform_check_image() {
 			echo "Invalid image type."
 			return 1
 		}
+
+		local hwid
+		local imageid
+
+		hwid=$(tplink_get_hwid)
+		imageid=$(tplink_get_image_hwid "$1")
+
+		[ "$hwid" != "$imageid" ] && {
+			echo "Invalid image, hardware ID mismatch, hw:$hwid image:$imageid."
+			return 1
+		}
+
 		return 0
 		;;
 	wndr3700)

@@ -48,6 +48,16 @@ wndr3700_board_detect() {
 	AR71XX_MODEL="$machine"
 }
 
+tplink_get_hwid() {
+	local part
+	local hwid
+
+	part=$(find_mtd_part firmware)
+	[ -z "$part" ] && return 1
+
+	dd if=$part bs=4 count=1 skip=16 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
 ar71xx_board_detect() {
 	local machine
 	local name
