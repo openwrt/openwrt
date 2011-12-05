@@ -101,8 +101,8 @@ static void __init tl_wr741ndv4_setup(void)
 					 tl_wr741ndv4_gpio_keys);
 
 	ar71xx_add_device_m25p80(&tl_wr741ndv4_flash_data);
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
-	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, -1);
 
 	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_add_device_eth(1);

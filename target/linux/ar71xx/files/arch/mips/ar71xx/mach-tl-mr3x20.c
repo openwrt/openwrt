@@ -93,8 +93,8 @@ static void __init tl_mr3x20_setup(void)
 					 ARRAY_SIZE(tl_mr3x20_gpio_keys),
 					 tl_mr3x20_gpio_keys);
 
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
-	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 1);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, -1);
 
 	ar71xx_add_device_mdio(0, 0x0);
 
