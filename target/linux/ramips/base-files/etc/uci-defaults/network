@@ -60,6 +60,11 @@ ramips_setup_macs()
 		lan_mac=$(ramips_get_mac_binary factory 4)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
+
+	nbg-419n)
+                lan_mac=$(ramips_get_mac_binary factory 4)
+                wan_mac=$(ramips_get_mac_binary factory 40)
+		;;
 	esac
 
 	[ -n $lan_mac ] && ucidef_set_interface_macaddr lan $lan_mac
