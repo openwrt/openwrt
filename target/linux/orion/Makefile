@@ -13,7 +13,7 @@ SUBTARGETS:=generic harddisk
 CFLAGS=-Os -pipe -march=armv5te -mtune=xscale -fno-caller-saves
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.0.9
+LINUX_VERSION:=3.0.12
 
 include $(INCLUDE_DIR)/target.mk
 
