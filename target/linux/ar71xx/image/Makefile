@@ -749,9 +749,11 @@ define Image/Build/Profile/TLWR703
 endef
 
 tlwr740_cmdline=board=TL-WR741ND console=ttyS0,115200
+tlwr740v4_cmdline=board=TL-WR741ND-v4 console=ttyATH0,115200
 define Image/Build/Profile/TLWR740
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v1,$(tlwr740_cmdline),0x07400001,1,4M)
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v3,$(tlwr740_cmdline),0x07400003,1,4M)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK-LZMA,tl-wr740n-v4,$(tlwr740v4_cmdline),0x07400004,1,4Mlzma)
 endef
 
 tlwr741_cmdline=board=TL-WR741ND console=ttyS0,115200
