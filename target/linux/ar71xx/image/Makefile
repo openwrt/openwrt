@@ -727,92 +727,65 @@ define Image/Build/Profile/OM2P
 endef
 
 tlmr3220_cmdline=board=TL-MR3220 console=ttyS0,115200
-define Image/Build/Profile/TLMR3220V1
+define Image/Build/Profile/TLMR3220
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-mr3220-v1,$(tlmr3220_cmdline),TL-MR3220v1)
 endef
 
 tlmr3420_cmdline=board=TL-MR3420 console=ttyS0,115200
-define Image/Build/Profile/TLMR3420V1
+define Image/Build/Profile/TLMR3420
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-mr3420-v1,$(tlmr3420_cmdline),TL-MR3420v1)
 endef
 
-tlwa901nd_cmdline=board=TL-WA901ND console=ttyS0,115200
-define Image/Build/Profile/TLWA901NDV1
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wa901nd-v1,$(tlwa901nd_cmdline),TL-WA901NDv1)
+tlwa901_cmdline=board=TL-WA901ND console=ttyS0,115200
+tlwa901v2_cmdline=board=TL-WA901ND-v2 console=ttyS0,115200
+define Image/Build/Profile/TLWA901
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wa901nd-v1,$(tlwa901_cmdline),TL-WA901NDv1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wa901nd-v2,$(tlwa901v2_cmdline),TL-WA901NDv2)
 endef
 
-tlwa901ndv2_cmdline=board=TL-WA901ND-v2 console=ttyS0,115200
-define Image/Build/Profile/TLWA901NDV2
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wa901nd-v2,$(tlwa901ndv2_cmdline),TL-WA901NDv2)
+tlwr703_cmdline=board=TL-WR703N console=ttyATH0,115200
+define Image/Build/Profile/TLWR703
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK-LZMA,tl-wr703n-v1,$(tlwr703_cmdline),TL-WR703Nv1)
 endef
 
-tlwr741ndv1_cmdline=board=TL-WR741ND console=ttyS0,115200
-define Image/Build/Profile/TLWR741NDV1
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr741nd-v1,$(tlwr741ndv1_cmdline),TL-WR741NDv1)
+tlwr740_cmdline=board=TL-WR741ND console=ttyS0,115200
+define Image/Build/Profile/TLWR740
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v1,$(tlwr740_cmdline),TL-WR740Nv1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v3,$(tlwr740_cmdline),TL-WR740Nv3)
 endef
 
-tlwr741ndv4_cmdline=board=TL-WR741ND-v4 console=ttyATH0,115200
-define Image/Build/Profile/TLWR741NDV4
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK-LZMA,tl-wr741nd-v4,$(tlwr741ndv4_cmdline),TL-WR741NDv4)
+tlwr741_cmdline=board=TL-WR741ND console=ttyS0,115200
+tlwr741v4_cmdline=board=TL-WR741ND-v4 console=ttyATH0,115200
+define Image/Build/Profile/TLWR741
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr741nd-v1,$(tlwr741_cmdline),TL-WR741NDv1)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK-LZMA,tl-wr741nd-v4,$(tlwr741v4_cmdline),TL-WR741NDv4)
 endef
 
-tlwr740nv1_cmdline=board=TL-WR741ND console=ttyS0,115200
-define Image/Build/Profile/TLWR740NV1
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v1,$(tlwr740nv1_cmdline),TL-WR740Nv1)
+define Image/Build/Profile/TLWR743
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr743nd-v1,$(tlwr741_cmdline),TL-WR743NDv1)
 endef
 
-tlwr740nv3_cmdline=board=TL-WR741ND console=ttyS0,115200
-define Image/Build/Profile/TLWR740NV3
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr740n-v3,$(tlwr740nv3_cmdline),TL-WR740Nv3)
+tlwr841v15_cmdline=board=TL-WR841N-v1.5 console=ttyS0,115200
+tlwr841v3_cmdline=board=TL-WR941ND console=ttyS0,115200
+tlwr841v5_cmdline=board=TL-WR741ND console=ttyS0,115200
+define Image/Build/Profile/TLWR841
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINKOLD,tl-wr841n-v1.5,$(tlwr841v15_cmdline),TL-WR841Nv1.5)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841nd-v3,$(tlwr841v3_cmdline),TL-WR841NDv3)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr841nd-v5,$(tlwr841v5_cmdline),TL-WR841NDv5)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr841nd-v7,$(tlwr841v5_cmdline),TL-WR841NDv7)
 endef
 
-define Image/Build/Profile/TLWR743NDV1
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr743nd-v1,$(tlwr741ndv1_cmdline),TL-WR743NDv1)
+tlwr941v2_cmdline=board=TL-WR941ND console=ttyS0,115200
+tlwr941v4_cmdline=board=TL-WR741ND console=ttyS0,115200
+define Image/Build/Profile/TLWR941
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v2,$(tlwr941v2_cmdline),TL-WR941NDv2)
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v3,$(tlwr941v2_cmdline),TL-WR941NDv2)
+	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr941nd-v4,$(tlwr941v4_cmdline),TL-WR941NDv4)
 endef
 
-tlwr841nv15_cmdline=board=TL-WR841N-v1.5 console=ttyS0,115200
-define Image/Build/Profile/TLWR841NV15
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINKOLD,tl-wr841n-v1.5,$(tlwr841nv15_cmdline),TL-WR841Nv1.5)
-endef
-
-tlwr841ndv3_cmdline=board=TL-WR941ND console=ttyS0,115200
-define Image/Build/Profile/TLWR841NDV3
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841nd-v3,$(tlwr841ndv3_cmdline),TL-WR841NDv3)
-endef
-
-tlwr841ndv5_cmdline=board=TL-WR741ND console=ttyS0,115200
-define Image/Build/Profile/TLWR841NDV5
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr841nd-v5,$(tlwr841ndv5_cmdline),TL-WR841NDv5)
-endef
-
-tlwr841ndv7_cmdline=board=TL-WR741ND console=ttyS0,115200
-define Image/Build/Profile/TLWR841NDV7
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr841nd-v7,$(tlwr841ndv7_cmdline),TL-WR841NDv7)
-endef
-
-tlwr941ndv2_cmdline=board=TL-WR941ND console=ttyS0,115200
-define Image/Build/Profile/TLWR941NDV2
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v2,$(tlwr941ndv2_cmdline),TL-WR941NDv2)
-endef
-
-tlwr941ndv3_cmdline=board=TL-WR941ND console=ttyS0,115200
-define Image/Build/Profile/TLWR941NDV3
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v3,$(tlwr941ndv3_cmdline),TL-WR941NDv2)
-endef
-
-tlwr941ndv4_cmdline=board=TL-WR741ND console=ttyS0,115200
-define Image/Build/Profile/TLWR941NDV4
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK,tl-wr941nd-v4,$(tlwr941ndv4_cmdline),TL-WR941NDv4)
-endef
-
-tlwr1043nd_cmdline=board=TL-WR1043ND console=ttyS0,115200
-define Image/Build/Profile/TLWR1043NDV1
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr1043nd-v1,$(tlwr1043nd_cmdline),TL-WR1043NDv1)
-endef
-
-tlwr703n_cmdline=board=TL-WR703N console=ttyATH0,115200
-define Image/Build/Profile/TLWR703NV1
-	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK-LZMA,tl-wr703n-v1,$(tlwr703n_cmdline),TL-WR703Nv1)
+tlwr1043_cmdline=board=TL-WR1043ND console=ttyS0,115200
+define Image/Build/Profile/TLWR1043
+	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr1043nd-v1,$(tlwr1043_cmdline),TL-WR1043NDv1)
 endef
 
 wndr3700_cmdline=board=WNDR3700 console=ttyS0,115200
@@ -911,22 +884,14 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TEW652BRP,$(1))
 	$(call Image/Build/Profile/TLMR3220V1,$(1))
 	$(call Image/Build/Profile/TLMR3420V1,$(1))
-	$(call Image/Build/Profile/TLWA901NDV1,$(1))
-	$(call Image/Build/Profile/TLWA901NDV2,$(1))
-	$(call Image/Build/Profile/TLWR741NDV1,$(1))
-	$(call Image/Build/Profile/TLWR741NDV4,$(1))
-	$(call Image/Build/Profile/TLWR740NV1,$(1))
-	$(call Image/Build/Profile/TLWR740NV3,$(1))
-	$(call Image/Build/Profile/TLWR743NDV1,$(1))
-	$(call Image/Build/Profile/TLWR841NV15,$(1))
-	$(call Image/Build/Profile/TLWR841NDV3,$(1))
-	$(call Image/Build/Profile/TLWR841NDV5,$(1))
-	$(call Image/Build/Profile/TLWR841NDV7,$(1))
-	$(call Image/Build/Profile/TLWR941NDV2,$(1))
-	$(call Image/Build/Profile/TLWR941NDV3,$(1))
-	$(call Image/Build/Profile/TLWR941NDV4,$(1))
-	$(call Image/Build/Profile/TLWR1043NDV1,$(1))
-	$(call Image/Build/Profile/TLWR703NV1,$(1))
+	$(call Image/Build/Profile/TLWA901,$(1))
+	$(call Image/Build/Profile/TLWR703,$(1))
+	$(call Image/Build/Profile/TLWR740,$(1))
+	$(call Image/Build/Profile/TLWR741,$(1))
+	$(call Image/Build/Profile/TLWR743,$(1))
+	$(call Image/Build/Profile/TLWR841,$(1))
+	$(call Image/Build/Profile/TLWR941,$(1))
+	$(call Image/Build/Profile/TLWR1043,$(1))
 	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 	$(call Image/Build/Profile/WNDR3700,$(1))

@@ -5,191 +5,111 @@
 # See /LICENSE for more information.
 #
 
-define Profile/TLMR3220V1
-	NAME:=TP-LINK TL-MR3220 v1
+define Profile/TLMR3220
+	NAME:=TP-LINK TL-MR3220
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
-define Profile/TLMR3220V1/Description
-	Package set optimized for the TP-LINK TL-MR3220 v1.
+define Profile/TLMR3220/Description
+	Package set optimized for the TP-LINK TL-MR3220.
 endef
+$(eval $(call Profile,TLMR3220))
 
-$(eval $(call Profile,TLMR3220V1))
 
-define Profile/TLMR3420V1
-	NAME:=TP-LINK TL-MR3420 v1
+define Profile/TLMR3420
+	NAME:=TP-LINK TL-MR3420
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
-define Profile/TLMR3420V1/Description
-	Package set optimized for the TP-LINK TL-MR3420 v1.
+define Profile/TLMR3420/Description
+	Package set optimized for the TP-LINK TL-MR3420.
 endef
+$(eval $(call Profile,TLMR3420))
 
-$(eval $(call Profile,TLMR3420V1))
 
-define Profile/TLWR703NV1
-	NAME:=TP-LINK TL-WR703N v1
+define Profile/TLWR703
+	NAME:=TP-LINK TL-WR703N
 	PACKAGES:=kmod-usb-core kmod-usb2
 endef
 
-define Profile/TLWR703NV1/Description
-	Package set optimized for the TP-LINK TL-WR703N v1.
+define Profile/TLWR703/Description
+	Package set optimized for the TP-LINK TL-WR703N.
 endef
+$(eval $(call Profile,TLWR703))
 
-$(eval $(call Profile,TLWR703NV1))
 
-define Profile/TLWA901NDV1
-	NAME:=TP-LINK TL-WA901ND v1
+define Profile/TLWA901
+	NAME:=TP-LINK TL-WA901N/ND
 	PACKAGES:=
 endef
 
-define Profile/TLWA901NDV1/Description
-	Package set optimized for the TP-LINK TL-WA901ND v1.
+define Profile/TLWA901/Description
+	Package set optimized for the TP-LINK TL-WA901N/ND.
 endef
+$(eval $(call Profile,TLWA901))
 
-$(eval $(call Profile,TLWA901NDV1))
 
-define Profile/TLWA901NDV2
-	NAME:=TP-LINK TL-WA901ND v2
+define Profile/TLWR740
+	NAME:=TP-LINK TL-WR740N/ND
 	PACKAGES:=
 endef
 
-define Profile/TLWA901NDV2/Description
-	Package set optimized for the TP-LINK TL-WA901ND v2.
+define Profile/TLWR740/Description
+	Package set optimized for the TP-LINK TL-WR740N/ND.
 endef
+$(eval $(call Profile,TLWR740))
 
-$(eval $(call Profile,TLWA901NDV2))
 
-define Profile/TLWR741NDV1
-	NAME:=TP-LINK TL-WR741ND v1
+define Profile/TLWR741
+	NAME:=TP-LINK TL-WR741N/ND
 	PACKAGES:=
 endef
 
-define Profile/TLWR741NDV1/Description
-	Package set optimized for the TP-LINK TL-WR741ND v1.
+define Profile/TLWR741/Description
+	Package set optimized for the TP-LINK TL-WR741N/ND.
 endef
+$(eval $(call Profile,TLWR741))
 
-$(eval $(call Profile,TLWR741NDV1))
 
-define Profile/TLWR740NV1
-	NAME:=TP-LINK TL-WR740N v1
+define Profile/TLWR743
+	NAME:=TP-LINK TL-WR743N/ND
 	PACKAGES:=
 endef
 
-define Profile/TLWR740NV1/Description
-	Package set optimized for the TP-LINK TL-WR740N v1.
+define Profile/TLWR743/Description
+	Package set optimized for the TP-LINK TL-WR743N/ND.
 endef
+$(eval $(call Profile,TLWR743))
 
-$(eval $(call Profile,TLWR740NV1))
 
-
-define Profile/TLWR740NV3
-	NAME:=TP-LINK TL-WR740N v3
+define Profile/TLWR841
+	NAME:=TP-LINK TL-WR841N/ND
 	PACKAGES:=
 endef
 
-define Profile/TLWR740NV3/Description
-	Package set optimized for the TP-LINK TL-WR740N v3.
+define Profile/TLWR841/Description
+	Package set optimized for the TP-LINK TL-WR841N/ND.
 endef
+$(eval $(call Profile,TLWR841))
 
-$(eval $(call Profile,TLWR740NV3))
 
-
-define Profile/TLWR743NDV1
-	NAME:=TP-LINK TL-WR743ND v1
+define Profile/TLWR941
+	NAME:=TP-LINK TL-WR941N/ND
 	PACKAGES:=
 endef
 
-define Profile/TLWR743NDV1/Description
-	Package set optimized for the TP-LINK TL-WR743ND v1.
+define Profile/TLWR941/Description
+	Package set optimized for the TP-LINK TL-WR941N/ND.
 endef
+$(eval $(call Profile,TLWR941))
 
-$(eval $(call Profile,TLWR743NDV1))
 
-define Profile/TLWR841NV15
-	NAME:=TP-LINK TL-WR841N v1.5
-	PACKAGES:=
-endef
-
-define Profile/TLWR841NV15/Description
-	Package set optimized for the TP-LINK TL-WR841N v1.5.
-endef
-
-$(eval $(call Profile,TLWR841NV15))
-
-define Profile/TLWR841NDV3
-	NAME:=TP-LINK TL-WR841ND v3
-	PACKAGES:=
-endef
-
-define Profile/TLWR841NDV3/Description
-	Package set optimized for the TP-LINK TL-WR841ND v3.
-endef
-
-$(eval $(call Profile,TLWR841NDV3))
-
-define Profile/TLWR841NDV5
-	NAME:=TP-LINK TL-WR841ND v5
-	PACKAGES:=
-endef
-
-define Profile/TLWR841NDV5/Description
-	Package set optimized for the TP-LINK TL-WR841ND v5.
-endef
-
-$(eval $(call Profile,TLWR841NDV5))
-
-define Profile/TLWR841NDV7
-	NAME:=TP-LINK TL-WR841ND v7
-	PACKAGES:=
-endef
-
-define Profile/TLWR841NDV7/Description
-	Package set optimized for the TP-LINK TL-WR841ND v7.
-endef
-
-$(eval $(call Profile,TLWR841NDV7))
-
-define Profile/TLWR941NDV2
-	NAME:=TP-LINK TL-WR941ND v2
-	PACKAGES:=
-endef
-
-define Profile/TLWR941NDV2/Description
-	Package set optimized for the TP-LINK TL-WR941ND v2.
-endef
-
-$(eval $(call Profile,TLWR941NDV2))
-
-define Profile/TLWR941NDV3
-	NAME:=TP-LINK TL-WR941ND v3
-	PACKAGES:=
-endef
-
-define Profile/TLWR941NDV3/Description
-	Package set optimized for the TP-LINK TL-WR941ND v3.
-endef
-
-$(eval $(call Profile,TLWR941NDV3))
-
-define Profile/TLWR941NDV4
-	NAME:=TP-LINK TL-WR941ND v4
-	PACKAGES:=
-endef
-
-define Profile/TLWR941NDV4/Description
-	Package set optimized for the TP-LINK TL-WR941ND v4.
-endef
-
-$(eval $(call Profile,TLWR941NDV4))
-
-define Profile/TLWR1043NDV1
-	NAME:=TP-LINK TL-WR1043ND v1
+define Profile/TLWR1043
+	NAME:=TP-LINK TL-WR1043N/ND
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
-define Profile/TLWR1043NDV1/Description
-	Package set optimized for the TP-LINK TL-WR1043ND v1.
+define Profile/TLWR1043/Description
+	Package set optimized for the TP-LINK TL-WR1043N/ND.
 endef
-
-$(eval $(call Profile,TLWR1043NDV1))
+$(eval $(call Profile,TLWR1043))
