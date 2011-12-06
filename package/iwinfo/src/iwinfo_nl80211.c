@@ -1631,6 +1631,27 @@ int nl80211_get_mbssid_support(const char *ifname, int *buf)
 
 int nl80211_get_hardware_id(const char *ifname, char *buf)
 {
+	int rv;
+	char *res;
+
+	/* Got a radioX pseudo interface, find some interface on it or create one */
+	if (!strncmp(ifname, "radio", 5))
+	{
+		/* Reuse existing interface */
+		if ((res = nl80211_phy2ifname(ifname)) != NULL)
+		{
+			return wext_get_hardware_id(res, buf);
+		}
+
+		/* Need to spawn a temporary iface for finding IDs */
+		else if ((res = nl80211_ifadd(ifname)) != NULL)
+		{
+			rv = wext_get_hardware_id(res, buf);
+			nl80211_ifdel(res);
+			return rv;
+		}
+	}
+
 	return wext_get_hardware_id(ifname, buf);
 }
 
