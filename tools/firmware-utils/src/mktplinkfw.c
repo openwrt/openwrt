@@ -78,14 +78,19 @@ struct fw_header {
 	uint8_t		pad[360];
 } __attribute__ ((packed));
 
-struct board_info {
+struct flash_layout {
 	char		*id;
-	uint32_t	hw_id;
-	uint32_t	hw_rev;
 	uint32_t	fw_max_len;
 	uint32_t	kernel_la;
 	uint32_t	kernel_ep;
 	uint32_t	rootfs_ofs;
+};
+
+struct board_info {
+	char		*id;
+	uint32_t	hw_id;
+	uint32_t	hw_rev;
+	char		*layout_id;
 };
 
 /*
@@ -98,6 +103,12 @@ static char *version = "ver. 1.0";
 
 static char *board_id;
 static struct board_info *board;
+static char *layout_id;
+static struct flash_layout *layout;
+static char *opt_hw_id;
+static uint32_t hw_id;
+static char *opt_hw_rev;
+static uint32_t hw_rev;
 static struct file_info kernel_info;
 static uint32_t kernel_la = 0;
 static uint32_t kernel_ep = 0;
@@ -122,143 +133,116 @@ char md5salt_boot[MD5SUM_LEN] = {
 	0xa7, 0x9c, 0x28, 0xda, 0xb2, 0xe9, 0x0f, 0x42,
 };
 
-static struct board_info boards[] = {
+static struct flash_layout layouts[] = {
 	{
-		.id		= "TL-MR3220v1",
-		.hw_id		= HWID_TL_MR3220_V1,
-		.hw_rev		= 1,
+		.id		= "4M",
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0x140000,
 	}, {
-		.id		= "TL-MR3420v1",
-		.hw_id		= HWID_TL_MR3420_V1,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WA901NDv1",
-		.hw_id		= HWID_TL_WA901ND_V1,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id             = "TL-WA901NDv2",
-		.hw_id          = HWID_TL_WA901ND_V2,
-		.hw_rev         = 1,
-		.fw_max_len     = 0x3c0000,
-		.kernel_la      = 0x80060000,
-		.kernel_ep      = 0x80060000,
-		.rootfs_ofs     = 0x140000,
-	}, {
-		.id		= "TL-WR741NDv1",
-		.hw_id		= HWID_TL_WR741ND_V1,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR741NDv4",
-		.hw_id		= HWID_TL_WR741ND_V4,
-		.hw_rev		= 1,
+		.id		= "4Mlzma",
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0x100000,
 	}, {
-		.id		= "TL-WR740Nv1",
-		.hw_id		= HWID_TL_WR740N_V1,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR740Nv3",
-		.hw_id		= HWID_TL_WR740N_V3,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR743NDv1",
-		.hw_id		= HWID_TL_WR743ND_V1,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR841Nv1.5",
-		.hw_id		= HWID_TL_WR841N_V1_5,
-		.hw_rev		= 2,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR841NDv3",
-		.hw_id		= HWID_TL_WR841ND_V3,
-		.hw_rev		= 3,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR841NDv5",
-		.hw_id		= HWID_TL_WR841ND_V5,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR841NDv7",
-		.hw_id		= HWID_TL_WR841ND_V7,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR941NDv2",
-		.hw_id		= HWID_TL_WR941ND_V2,
-		.hw_rev		= 2,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR941NDv4",
-		.hw_id		= HWID_TL_WR941ND_V4,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x140000,
-	}, {
-		.id		= "TL-WR1043NDv1",
-		.hw_id		= HWID_TL_WR1043ND_V1,
-		.hw_rev		= 1,
+		.id		= "8M",
 		.fw_max_len	= 0x7c0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0x140000,
 	}, {
+		/* terminating entry */
+	}
+};
+
+static struct board_info boards[] = {
+	{
+		.id		= "TL-MR3220v1",
+		.hw_id		= HWID_TL_MR3220_V1,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-MR3420v1",
+		.hw_id		= HWID_TL_MR3420_V1,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WA901NDv1",
+		.hw_id		= HWID_TL_WA901ND_V1,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id             = "TL-WA901NDv2",
+		.hw_id          = HWID_TL_WA901ND_V2,
+		.hw_rev         = 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR741NDv1",
+		.hw_id		= HWID_TL_WR741ND_V1,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR741NDv4",
+		.hw_id		= HWID_TL_WR741ND_V4,
+		.hw_rev		= 1,
+		.layout_id	= "4Mlzma",
+	}, {
+		.id		= "TL-WR740Nv1",
+		.hw_id		= HWID_TL_WR740N_V1,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR740Nv3",
+		.hw_id		= HWID_TL_WR740N_V3,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR743NDv1",
+		.hw_id		= HWID_TL_WR743ND_V1,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR841Nv1.5",
+		.hw_id		= HWID_TL_WR841N_V1_5,
+		.hw_rev		= 2,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR841NDv3",
+		.hw_id		= HWID_TL_WR841ND_V3,
+		.hw_rev		= 3,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR841NDv5",
+		.hw_id		= HWID_TL_WR841ND_V5,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR841NDv7",
+		.hw_id		= HWID_TL_WR841ND_V7,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR941NDv2",
+		.hw_id		= HWID_TL_WR941ND_V2,
+		.hw_rev		= 2,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR941NDv4",
+		.hw_id		= HWID_TL_WR941ND_V4,
+		.hw_rev		= 1,
+		.layout_id	= "4M",
+	}, {
+		.id		= "TL-WR1043NDv1",
+		.hw_id		= HWID_TL_WR1043ND_V1,
+		.hw_rev		= 1,
+		.layout_id	= "8M",
+	}, {
 		.id		= "TL-WR703Nv1",
 		.hw_id		= HWID_TL_WR703N_V1,
 		.hw_rev		= 1,
-		.fw_max_len	= 0x3c0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x100000,
+		.layout_id	= "4Mlzma",
 	}, {
 		/* terminating entry */
 	}
@@ -312,6 +296,21 @@ static struct board_info *find_board_by_hwid(uint32_t hw_id)
 	return NULL;
 }
 
+static struct flash_layout *find_layout(char *id)
+{
+	struct flash_layout *ret;
+	struct flash_layout *l;
+
+	ret = NULL;
+	for (l = layouts; l->id != NULL; l++){
+		if (strcasecmp(id, l->id) == 0) {
+			ret = l;
+			break;
+		}
+	};
+
+	return ret;
+}
 
 static void usage(int status)
 {
@@ -326,6 +325,8 @@ static void usage(int status)
 "  -c              use combined kernel image\n"
 "  -E <ep>         overwrite kernel entry point with <ep> (hexval prefixed with 0x)\n"
 "  -L <la>         overwrite kernel load address with <la> (hexval prefixed with 0x)\n"
+"  -H <hwid>       use hardware id specified with <hwid>\n"
+"  -F <id>         use flash layout specified with <id>\n"
 "  -k <file>       read kernel image from the file <file>\n"
 "  -r <file>       read rootfs image from the file <file>\n"
 "  -a <align>      align the rootfs start on an <align> bytes boundary\n"
@@ -410,22 +411,47 @@ static int check_options(void)
 		return -1;
 	}
 
-	if (board_id == NULL) {
-		ERR("no board specified");
+	if (board_id == NULL && opt_hw_id == NULL) {
+		ERR("either board or hardware id must be specified");
 		return -1;
 	}
 
-	board = find_board(board_id);
-	if (board == NULL) {
-		ERR("unknown/unsupported board id \"%s\"", board_id);
+	if (board_id) {
+		board = find_board(board_id);
+		if (board == NULL) {
+			ERR("unknown/unsupported board id \"%s\"", board_id);
+			return -1;
+		}
+		if (layout_id == NULL)
+			layout_id = board->layout_id;
+
+		hw_id = board->hw_id;
+		hw_rev = board->hw_rev;
+	} else {
+		if (layout_id == NULL) {
+			ERR("flash layout is not specified");
+			return -1;
+		}
+		hw_id = strtoul(opt_hw_id, NULL, 0);
+
+		if (opt_hw_rev)
+			hw_rev = strtoul(opt_hw_rev, NULL, 0);
+		else
+			hw_rev = 1;
+	}
+
+	layout = find_layout(layout_id);
+	if (layout == NULL) {
+		ERR("unknown flash layout \"%s\"", layout_id);
 		return -1;
 	}
+
 	if (!kernel_la)
-		kernel_la = board->kernel_la;
+		kernel_la = layout->kernel_la;
 	if (!kernel_ep)
-		kernel_ep = board->kernel_ep;
+		kernel_ep = layout->kernel_ep;
 	if (!rootfs_ofs)
-		rootfs_ofs = board->rootfs_ofs;
+		rootfs_ofs = layout->rootfs_ofs;
 
 	if (kernel_info.file_name == NULL) {
 		ERR("no kernel image specified");
@@ -440,7 +466,7 @@ static int check_options(void)
 
 	if (combined) {
 		if (kernel_info.file_size >
-		    board->fw_max_len - sizeof(struct fw_header)) {
+		    layout->fw_max_len - sizeof(struct fw_header)) {
 			ERR("kernel image is too big");
 			return -1;
 		}
@@ -462,7 +488,7 @@ static int check_options(void)
 			DBG("kernel length aligned to %u", kernel_len);
 
 			if (kernel_len + rootfs_info.file_size >
-			    board->fw_max_len - sizeof(struct fw_header)) {
+			    layout->fw_max_len - sizeof(struct fw_header)) {
 				ERR("images are too big");
 				return -1;
 			}
@@ -474,7 +500,7 @@ static int check_options(void)
 			}
 
 			if (rootfs_info.file_size >
-			    (board->fw_max_len - rootfs_ofs)) {
+			    (layout->fw_max_len - rootfs_ofs)) {
 				ERR("rootfs image is too big");
 				return -1;
 			}
@@ -498,8 +524,8 @@ static void fill_header(char *buf, int len)
 	hdr->version = htonl(HEADER_VERSION_V1);
 	strncpy(hdr->vendor_name, vendor, sizeof(hdr->vendor_name));
 	strncpy(hdr->fw_version, version, sizeof(hdr->fw_version));
-	hdr->hw_id = htonl(board->hw_id);
-	hdr->hw_rev = htonl(board->hw_rev);
+	hdr->hw_id = htonl(hw_id);
+	hdr->hw_rev = htonl(hw_rev);
 
 	if (boot_info.file_size == 0)
 		memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
@@ -508,7 +534,7 @@ static void fill_header(char *buf, int len)
 
 	hdr->kernel_la = htonl(kernel_la);
 	hdr->kernel_ep = htonl(kernel_ep);
-	hdr->fw_length = htonl(board->fw_max_len);
+	hdr->fw_length = htonl(layout->fw_max_len);
 	hdr->kernel_ofs = htonl(sizeof(struct fw_header));
 	hdr->kernel_len = htonl(kernel_len);
 	if (!combined) {
@@ -559,7 +585,7 @@ static int build_fw(void)
 	int ret = EXIT_FAILURE;
 	int writelen = 0;
 
-	buflen = board->fw_max_len;
+	buflen = layout->fw_max_len;
 
 	buf = malloc(buflen);
 	if (!buf) {
@@ -729,6 +755,7 @@ static int inspect_fw(void)
 	inspect_fw_pstr("Firmware version", hdr->fw_version);
 	board = find_board_by_hwid(ntohl(hdr->hw_id));
 	if (board) {
+		layout = find_layout(board->layout_id);
 		inspect_fw_phexpost("Hardware ID",
 		                    ntohl(hdr->hw_id), board->id);
 		inspect_fw_phexexp("Hardware Revision",
@@ -749,13 +776,13 @@ static int inspect_fw(void)
 	if (board) {
 		inspect_fw_phexdef("Kernel load address",
 		                   ntohl(hdr->kernel_la),
-		                   board->kernel_la);
+		                   layout ? layout->kernel_la : 0xffffffff);
 		inspect_fw_phexdef("Kernel entry point",
 		                   ntohl(hdr->kernel_ep),
-		                   board->kernel_ep);
+		                   layout ? layout->kernel_ep : 0xffffffff);
 		inspect_fw_phexdecdef("Rootfs data offset",
 		                      ntohl(hdr->rootfs_ofs),
-		                      board->rootfs_ofs);
+		                      layout ? layout->rootfs_ofs : 0xffffffff);
 	} else {
 		inspect_fw_phex("Kernel load address",
 		                ntohl(hdr->kernel_la));
@@ -828,7 +855,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:B:E:L:V:N:ci:k:r:R:o:xhs");
+		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xhs");
 		if (c == -1)
 			break;
 
@@ -839,8 +866,17 @@ int main(int argc, char *argv[])
 		case 'B':
 			board_id = optarg;
 			break;
+		case 'H':
+			opt_hw_id = optarg;
+			break;
 		case 'E':
 			sscanf(optarg, "0x%x", &kernel_ep);
+			break;
+		case 'F':
+			layout_id = optarg;
+			break;
+		case 'W':
+			opt_hw_rev = optarg;
 			break;
 		case 'L':
 			sscanf(optarg, "0x%x", &kernel_la);
