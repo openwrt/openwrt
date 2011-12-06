@@ -1,7 +1,5 @@
-Index: linux-3.1.1/drivers/video/omap/omapfb_main.c
-===================================================================
---- linux-3.1.1.orig/drivers/video/omap/omapfb_main.c	2011-11-11 21:19:27.000000000 +0100
-+++ linux-3.1.1/drivers/video/omap/omapfb_main.c	2011-11-16 23:10:16.554325659 +0100
+--- a/drivers/video/omap/omapfb_main.c
++++ b/drivers/video/omap/omapfb_main.c
 @@ -419,10 +419,10 @@ static void set_fb_fix(struct fb_info *f
  	fbi->screen_base	= rg->vaddr;
  
@@ -28,10 +26,8 @@ Index: linux-3.1.1/drivers/video/omap/omapfb_main.c
  			}
  		}
  	}
-Index: linux-3.1.1/drivers/video/fbmem.c
-===================================================================
---- linux-3.1.1.orig/drivers/video/fbmem.c	2011-11-11 21:19:27.000000000 +0100
-+++ linux-3.1.1/drivers/video/fbmem.c	2011-11-16 23:20:56.055698968 +0100
+--- a/drivers/video/fbmem.c
++++ b/drivers/video/fbmem.c
 @@ -1369,8 +1369,10 @@ fb_mmap(struct file *file, struct vm_are
  	}
  

@@ -1,7 +1,5 @@
-Index: linux-3.1.1/drivers/cbus/retu.c
-===================================================================
---- linux-3.1.1.orig/drivers/cbus/retu.c	2011-11-17 23:23:53.542699149 +0100
-+++ linux-3.1.1/drivers/cbus/retu.c	2011-11-17 23:23:55.830689859 +0100
+--- a/drivers/cbus/retu.c
++++ b/drivers/cbus/retu.c
 @@ -53,9 +53,6 @@ struct retu {
  
  	int			irq;
@@ -70,10 +68,8 @@ Index: linux-3.1.1/drivers/cbus/retu.c
  		irq_set_nested_thread(irq, 1);
  		retu_irq_setup(irq);
  	}
-Index: linux-3.1.1/drivers/cbus/tahvo.c
-===================================================================
---- linux-3.1.1.orig/drivers/cbus/tahvo.c	2011-11-17 23:23:54.358695836 +0100
-+++ linux-3.1.1/drivers/cbus/tahvo.c	2011-11-17 23:23:55.830689859 +0100
+--- a/drivers/cbus/tahvo.c
++++ b/drivers/cbus/tahvo.c
 @@ -48,11 +48,9 @@ struct tahvo {
  	int		irq_end;
  	int		irq;

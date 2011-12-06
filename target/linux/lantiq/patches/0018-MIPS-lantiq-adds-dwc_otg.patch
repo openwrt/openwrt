@@ -69,7 +69,7 @@ Subject: [PATCH 18/24] MIPS: lantiq: adds dwc_otg
  obj-$(CONFIG_USB_WDM)		+= class/
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -2885,11 +2885,11 @@ hub_port_init (struct usb_hub *hub, stru
+@@ -2891,11 +2891,11 @@ hub_port_init (struct usb_hub *hub, stru
  		udev->ttport = hdev->ttport;
  	} else if (udev->speed != USB_SPEED_HIGH
  			&& hdev->speed == USB_SPEED_HIGH) {
