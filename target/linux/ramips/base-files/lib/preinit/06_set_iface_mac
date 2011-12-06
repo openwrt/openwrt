@@ -13,6 +13,12 @@ preinit_set_mac_address() {
 		mac=$(maccalc or "$mac" "02:00:00:00:00:00")
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
+	dir-300-b1 |\
+	dir-300-b2 |\
+	dir-600-b1)
+                mac=$(ramips_get_mac_binary devdata 16388)
+                ifconfig eth0 hw ether $mac 2>/dev/null
+                ;;
 	hw550-3g |\
 	nbg-419n)
 		mac=$(ramips_get_mac_binary factory 40)
