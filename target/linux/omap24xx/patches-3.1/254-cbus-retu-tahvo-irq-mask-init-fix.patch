@@ -1,7 +1,5 @@
-Index: linux-3.1.1/drivers/cbus/retu.c
-===================================================================
---- linux-3.1.1.orig/drivers/cbus/retu.c	2011-11-17 23:09:26.498214061 +0100
-+++ linux-3.1.1/drivers/cbus/retu.c	2011-11-17 23:15:50.280659655 +0100
+--- a/drivers/cbus/retu.c
++++ b/drivers/cbus/retu.c
 @@ -451,7 +451,8 @@ static int __devinit retu_probe(struct p
  			(rev >> 4) & 0x07, rev & 0x0f);
  
@@ -12,10 +10,8 @@ Index: linux-3.1.1/drivers/cbus/retu.c
  
  	ret = request_threaded_irq(retu->irq, NULL, retu_irq_handler,
  			IRQF_ONESHOT, "retu", retu);
-Index: linux-3.1.1/drivers/cbus/tahvo.c
-===================================================================
---- linux-3.1.1.orig/drivers/cbus/tahvo.c	2011-11-17 23:15:46.684674232 +0100
-+++ linux-3.1.1/drivers/cbus/tahvo.c	2011-11-17 23:15:50.280659655 +0100
+--- a/drivers/cbus/tahvo.c
++++ b/drivers/cbus/tahvo.c
 @@ -346,7 +346,8 @@ static int __devinit tahvo_probe(struct
  			(rev >> 4) & 0x0f, rev & 0x0f);
  

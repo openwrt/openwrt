@@ -1,7 +1,5 @@
-Index: linux-3.1.1/arch/mips/lantiq/devices.c
-===================================================================
---- linux-3.1.1.orig/arch/mips/lantiq/devices.c	2011-11-14 20:22:33.588135463 +0100
-+++ linux-3.1.1/arch/mips/lantiq/devices.c	2011-11-14 20:22:34.328135495 +0100
+--- a/arch/mips/lantiq/devices.c
++++ b/arch/mips/lantiq/devices.c
 @@ -18,6 +18,7 @@
  #include <linux/time.h>
  #include <linux/io.h>
@@ -10,7 +8,7 @@ Index: linux-3.1.1/arch/mips/lantiq/devices.c
  
  #include <asm/bootinfo.h>
  #include <asm/irq.h>
-@@ -100,3 +101,20 @@
+@@ -100,3 +101,20 @@ void __init ltq_register_pci(struct ltq_
  	pr_err("kernel is compiled without PCI support\n");
  }
  #endif
@@ -31,21 +29,17 @@ Index: linux-3.1.1/arch/mips/lantiq/devices.c
 +	cp1_base =
 +		(void*)CPHYSADDR(dma_alloc_coherent(NULL, CP1_SIZE, &dma, GFP_ATOMIC));
 +}
-Index: linux-3.1.1/arch/mips/lantiq/devices.h
-===================================================================
---- linux-3.1.1.orig/arch/mips/lantiq/devices.h	2011-11-14 20:22:33.588135463 +0100
-+++ linux-3.1.1/arch/mips/lantiq/devices.h	2011-11-14 20:22:34.328135495 +0100
-@@ -23,5 +23,6 @@
+--- a/arch/mips/lantiq/devices.h
++++ b/arch/mips/lantiq/devices.h
+@@ -23,5 +23,6 @@ extern void ltq_register_nor(struct phys
  extern void ltq_register_wdt(void);
  extern void ltq_register_asc(int port);
  extern void ltq_register_pci(struct ltq_pci_data *data);
 +extern void ltq_register_tapi(void);
  
  #endif
-Index: linux-3.1.1/arch/mips/lantiq/xway/Makefile
-===================================================================
---- linux-3.1.1.orig/arch/mips/lantiq/xway/Makefile	2011-11-14 20:22:34.304135491 +0100
-+++ linux-3.1.1/arch/mips/lantiq/xway/Makefile	2011-11-14 20:39:51.404179655 +0100
+--- a/arch/mips/lantiq/xway/Makefile
++++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,5 +1,7 @@
  obj-y := sysctrl.o reset.o gpio.o gpio_stp.o gpio_ebu.o devices.o dma.o nand.o timer.o
  
@@ -54,10 +48,8 @@ Index: linux-3.1.1/arch/mips/lantiq/xway/Makefile
  obj-$(CONFIG_SOC_XWAY) += clk-xway.o prom-xway.o
  obj-$(CONFIG_SOC_AMAZON_SE) += clk-ase.o prom-ase.o
  obj-$(CONFIG_SOC_VR9) += clk-vr9.o prom-vr9.o
-Index: linux-3.1.1/arch/mips/lantiq/xway/devices.c
-===================================================================
---- linux-3.1.1.orig/arch/mips/lantiq/xway/devices.c	2011-11-14 20:22:34.092135483 +0100
-+++ linux-3.1.1/arch/mips/lantiq/xway/devices.c	2011-11-14 20:22:34.328135495 +0100
+--- a/arch/mips/lantiq/xway/devices.c
++++ b/arch/mips/lantiq/xway/devices.c
 @@ -19,6 +19,7 @@
  #include <linux/time.h>
  #include <linux/io.h>
@@ -66,7 +58,7 @@ Index: linux-3.1.1/arch/mips/lantiq/xway/devices.c
  
  #include <asm/bootinfo.h>
  #include <asm/irq.h>
-@@ -99,3 +100,98 @@
+@@ -99,3 +100,98 @@ ltq_register_etop(struct ltq_eth_data *e
  		platform_device_register(&ltq_etop);
  	}
  }
@@ -165,10 +157,8 @@ Index: linux-3.1.1/arch/mips/lantiq/xway/devices.c
 +	ltq_spi.dev.platform_data = pdata;
 +	platform_device_register(&ltq_spi);
 +}
-Index: linux-3.1.1/arch/mips/lantiq/xway/devices.h
-===================================================================
---- linux-3.1.1.orig/arch/mips/lantiq/xway/devices.h	2011-11-11 21:19:27.000000000 +0100
-+++ linux-3.1.1/arch/mips/lantiq/xway/devices.h	2011-11-14 20:22:34.328135495 +0100
+--- a/arch/mips/lantiq/xway/devices.h
++++ b/arch/mips/lantiq/xway/devices.h
 @@ -11,10 +11,17 @@
  
  #include "../devices.h"
@@ -187,10 +177,8 @@ Index: linux-3.1.1/arch/mips/lantiq/xway/devices.h
 +extern void ltq_register_gpio_buttons(struct gpio_button *buttons, int cnt);
  
  #endif
-Index: linux-3.1.1/arch/mips/lantiq/Makefile
-===================================================================
---- linux-3.1.1.orig/arch/mips/lantiq/Makefile	2011-11-14 20:22:33.640135462 +0100
-+++ linux-3.1.1/arch/mips/lantiq/Makefile	2011-11-14 20:39:09.852178049 +0100
+--- a/arch/mips/lantiq/Makefile
++++ b/arch/mips/lantiq/Makefile
 @@ -4,7 +4,7 @@
  # under the terms of the GNU General Public License version 2 as published
  # by the Free Software Foundation.

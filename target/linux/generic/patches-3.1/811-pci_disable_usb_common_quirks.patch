@@ -10,7 +10,7 @@
  static inline int io_type_enabled(struct pci_dev *pdev, unsigned int mask)
  {
  	u16 cmd;
-@@ -883,3 +885,5 @@ static void __devinit quirk_usb_early_ha
+@@ -882,3 +884,5 @@ static void __devinit quirk_usb_early_ha
  		quirk_usb_handoff_xhci(pdev);
  }
  DECLARE_PCI_FIXUP_FINAL(PCI_ANY_ID, PCI_ANY_ID, quirk_usb_early_handoff);

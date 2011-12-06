@@ -1881,7 +1881,7 @@
  #endif /* __DRIVERS_CBUS_CBUS_H */
 --- a/drivers/cbus/retu.c
 +++ b/drivers/cbus/retu.c
-@@ -417,6 +417,11 @@ static int retu_allocate_children(struct
+@@ -399,6 +399,11 @@ static int retu_allocate_children(struct
  	if (!child)
  		return -ENOMEM;
  
@@ -1895,7 +1895,7 @@
  
 --- a/drivers/cbus/tahvo.c
 +++ b/drivers/cbus/tahvo.c
-@@ -131,6 +131,7 @@ void tahvo_set_clear_reg_bits(struct dev
+@@ -129,6 +129,7 @@ void tahvo_set_clear_reg_bits(struct dev
  	__tahvo_write_reg(tahvo, reg, w);
  	mutex_unlock(&tahvo->mutex);
  }
@@ -1903,7 +1903,7 @@
  
  static irqreturn_t tahvo_irq_handler(int irq, void *_tahvo)
  {
-@@ -307,6 +308,11 @@ static int tahvo_allocate_children(struc
+@@ -292,6 +293,11 @@ static int tahvo_allocate_children(struc
  	if (!child)
  		return -ENOMEM;
  
