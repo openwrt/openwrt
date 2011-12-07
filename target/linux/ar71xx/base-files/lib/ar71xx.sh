@@ -6,18 +6,22 @@
 AR71XX_BOARD_NAME=
 AR71XX_MODEL=
 
-ar71xx_get_mem_total() {
-	$(awk '/MemTotal:/ {print($2)}' /proc/meminfo)
+ar71xx_get_mtd_offset_size_format() {
+	local mtd="$1"
+	local offset="$2"
+	local size="$3"
+	local format="$4"
+	local dev
+
+	dev=$(find_mtd_part $mtd)
+	[ -z "$dev" ] && return
+
+	dd if=$dev bs=1 skip=$offset count=$size 2>/dev/null | hexdump -v -e "1/1 \"$format\""
 }
 
 ar71xx_get_mtd_part_magic() {
-	local part="$1"
-	local mtd
-
-	mtd=$(find_mtd_part $part)
-	[ -z "$mtd" ] && return
-
-	dd if=$mtd bs=4 count=1 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+	local mtd="$1"
+	ar71xx_get_mtd_offset_size_format "$mtd" 0 4 %02x
 }
 
 wndr3700_board_detect() {
@@ -33,13 +37,12 @@ wndr3700_board_detect() {
 		machine="NETGEAR WNDR3700"
 		;;
 	"33373031")
-		local mt
-
-		mt=$(ar71xx_get_mem_total)
-		if [ "$mt" -lt "65536" ]; then
+		local model
+		model=$(ar71xx_get_mtd_offset_size_format art 56 10 %c)
+		if [ -z "$model" ] || [ "$model" = $'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff' ]; then
 			machine="NETGEAR WNDR3700v2"
 		else
-			machine="NETGEAR WNDR3800"
+			machine="NETGEAR $model"
 		fi
 		;;
 	esac
