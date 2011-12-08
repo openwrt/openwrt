@@ -70,6 +70,8 @@ revmapping = {
 	"ucode14.fw"		: (14,),
 	"ucode15.fw"		: (15,),
 	"ucode16_mimo.fw"	: (16,),
+	"ucode24_mimo.fw"	: (24,),
+	"ucode29_mimo.fw"	: (29,),
 	"pcm4.fw"		: (1,2,3,4,),
 	"pcm5.fw"		: (5,6,7,8,9,10,),
 }
@@ -93,6 +95,8 @@ initvalmapping = {
 	"lp0bsinitvals13.fw"	: ( (13,),		("LP",), ),
 	"lp0bsinitvals14.fw"	: ( (14,),		("LP",), ),
 	"lp0bsinitvals15.fw"	: ( (15,),		("LP",), ),
+	"lcn0initvals24.fw"	: ( (24,),		("LNC",), ),
+	"ht0initvals29.fw"	: ( (29,),		("HT",), ),
 }
 
 for f in fwfiles:
