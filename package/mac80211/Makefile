@@ -767,12 +767,21 @@ ifneq ($(CONFIG_B43_FW_4_178),)
   PKG_B43_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
   PKG_B43_FWV4_MD5SUM:=14477e8cbbb91b11896affac9b219fdb
 else
+ifneq ($(CONFIG_B43_FW_5_100_138),)
+  PKG_B43_FWV4_NAME:=broadcom-wl
+  PKG_B43_FWV4_VERSION:=5.100.138
+  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/linux/wl_apsta.o
+  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
+  PKG_B43_FWV4_SOURCE_URL:=http://www.lwfinger.com/b43-firmware/
+  PKG_B43_FWV4_MD5SUM:=f4e357b09eaf5d8b1f1920cf3493a555
+else
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=4.150.10.5
   PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION)/driver/wl_apsta_mimo.o
   PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
   PKG_B43_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
   PKG_B43_FWV4_MD5SUM:=0c6ba9687114c6b598e8019e262d9a60
+endif
 endif
 endif
 ifneq ($(CONFIG_B43_OPENFIRMWARE),)
@@ -801,11 +810,11 @@ ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
   PKG_B43_FWCUTTER_OBJECT:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/fwcutter/
 else
   PKG_B43_FWCUTTER_NAME:=b43-fwcutter
-  PKG_B43_FWCUTTER_VERSION:=014
+  PKG_B43_FWCUTTER_VERSION:=015
   PKG_B43_FWCUTTER_SOURCE:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION).tar.bz2
   PKG_B43_FWCUTTER_PROTO:=default
   PKG_B43_FWCUTTER_SOURCE_URL:=http://bu3sch.de/b43/fwcutter/
-  PKG_B43_FWCUTTER_MD5SUM:=dd63f9149510bd6e01b89314e955083b
+  PKG_B43_FWCUTTER_MD5SUM:=628e030565222a107bc40300313cbe76
   PKG_B43_FWCUTTER_SUBDIR:=b43-fwcutter-$(PKG_B43_FWCUTTER_VERSION)
   PKG_B43_FWCUTTER_OBJECT:=$(PKG_B43_FWCUTTER_NAME)-$(PKG_B43_FWCUTTER_VERSION)/
 endif
@@ -880,6 +889,15 @@ define KernelPackage/b43/config
 
 	config B43_FW_5_10
 		bool "Firmware 508.1084 from driver 5.10.56.27"
+		help
+		  Newer experimental firmware for BCM43xx devices.
+
+		  This firmware is mostly untested. It is needed for some N-PHY devices.
+
+		  If unsure, select the "stable" firmware.
+   
+	config B43_FW_5_100_138
+		bool "Firmware 666.2 from driver 5.100.138"
 		help
 		  Newer experimental firmware for BCM43xx devices.
 
@@ -964,7 +982,7 @@ define KernelPackage/b43/config
 
 	config PACKAGE_B43_PHY_N
 		bool "Enable support for N-PHYs"
-		select B43_FW_5_10
+		select B43_FW_5_100_138
 		default y
 		help
 		  Enable support for BCM4321 and BCM4322.
@@ -975,8 +993,7 @@ define KernelPackage/b43/config
 
 	config PACKAGE_B43_PHY_HT
 		bool "Enable support for HT-PHYs"
-		depends on BROKEN
-		select B43_FW_5_10
+		select B43_FW_5_100_138
 		default n
 		help
 		  Currently broken.
@@ -986,7 +1003,7 @@ define KernelPackage/b43/config
 	config PACKAGE_B43_PHY_LCN
 		bool "Enable support for LCN-PHYs"
 		depends on BROKEN
-		select B43_FW_5_10
+		select B43_FW_5_100_138
 		default n
 		help
 		  Currently broken.
