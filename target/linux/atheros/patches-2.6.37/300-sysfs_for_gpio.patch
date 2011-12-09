@@ -1,0 +1,534 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -111,7 +111,7 @@ config ATHEROS_AR231X
+ 	select SYS_HAS_CPU_MIPS32_R1
+ 	select SYS_SUPPORTS_BIG_ENDIAN
+ 	select SYS_SUPPORTS_32BIT_KERNEL
+-	select GENERIC_GPIO
++	select ARCH_REQUIRE_GPIOLIB
+ 	select SYS_HAS_EARLY_PRINTK
+ 	help
+ 	  Support for AR231x and AR531x based boards
+--- a/arch/mips/ar231x/Kconfig
++++ b/arch/mips/ar231x/Kconfig
+@@ -13,7 +13,6 @@ config ATHEROS_AR2315
+ 	select SYS_HAS_CPU_MIPS32_R1
+ 	select SYS_SUPPORTS_32BIT_KERNEL
+ 	select SYS_SUPPORTS_BIG_ENDIAN
+-	select GENERIC_GPIO
+ 	default y
+ 
+ config ATHEROS_AR2315_PCI
+--- a/arch/mips/ar231x/ar2315.c
++++ b/arch/mips/ar231x/ar2315.c
+@@ -23,12 +23,12 @@
+ #include <linux/reboot.h>
+ #include <linux/delay.h>
+ #include <linux/leds.h>
++#include <linux/gpio.h>
+ #include <asm/bootinfo.h>
+ #include <asm/reboot.h>
+ #include <asm/time.h>
+ #include <asm/irq.h>
+ #include <asm/io.h>
+-#include <asm/gpio.h>
+ 
+ #include <ar231x_platform.h>
+ #include <ar2315_regs.h>
+@@ -312,17 +312,6 @@ ar2315_irq_init(void)
+ 	setup_irq(AR2315_IRQ_MISC_INTRS, &cascade);
+ }
+ 
+-const struct ar231x_gpiodev ar2315_gpiodev;
+-
+-static u32
+-ar2315_gpio_get_output(void)
+-{
+-	u32 reg;
+-	reg = ar231x_read_reg(AR2315_GPIO_CR);
+-	reg &= ar2315_gpiodev.valid_mask;
+-	return reg;
+-}
+-
+ static u32
+ ar2315_gpio_set_output(u32 mask, u32 val)
+ {
+@@ -336,11 +325,11 @@ ar2315_gpio_set_output(u32 mask, u32 val
+ }
+ 
+ static u32
+-ar2315_gpio_get(void)
++ar2315_gpio_get(u32 valid_mask)
+ {
+ 	u32 reg;
+ 	reg = ar231x_read_reg(AR2315_GPIO_DI);
+-	reg &= ar2315_gpiodev.valid_mask;
++	reg &= valid_mask;
+ 	return reg;
+ }
+ 
+@@ -355,14 +344,75 @@ ar2315_gpio_set(u32 mask, u32 value)
+ 	return reg;
+ }
+ 
+-const struct ar231x_gpiodev ar2315_gpiodev = {
++/*
++ * gpiolib implementation.  Original legacy mask based methods
++ * preserved for now.
++ */
++static int
++ar2315_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
++{
++	struct ar231x_gpio_chip *gpch =
++		container_of(chip, struct ar231x_gpio_chip, chip);
++	u32 mask = 1 << gpio;
++	u32 rett;
++	if (!(gpch->valid_mask & mask))
++		return 0;
++	rett = ar2315_gpio_get(gpch->valid_mask);  // legacy code
++	return !!(rett & mask);
++}
++
++static void
++ar2315_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
++{
++	struct ar231x_gpio_chip *gpch =
++		container_of(chip, struct ar231x_gpio_chip, chip);
++	u32 mask = 1 << gpio;
++	if (!(gpch->valid_mask & mask))
++		return;
++	ar2315_gpio_set(mask, (!!value) * mask);  // legacy
++}
++
++static int
++ar2315_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
++{
++	struct ar231x_gpio_chip *gpch =
++		container_of(chip, struct ar231x_gpio_chip, chip);
++	u32 mask = 1 << gpio;
++	if (!(gpch->valid_mask & mask))
++		return -ENXIO;
++	ar2315_gpio_set_output(mask, 0);  // legacy
++	return 0;
++}
++
++static int
++ar2315_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int value)
++{
++	struct ar231x_gpio_chip *gpch =
++		container_of(chip, struct ar231x_gpio_chip, chip);
++	u32 mask = 1 << gpio;
++	if (!(gpch->valid_mask & mask))
++		return -ENXIO;
++	ar2315_gpio_set_output(mask, mask);  // both legacy
++	ar2315_gpio_set(mask, (!!value) * mask);
++	return 0;
++}
++
++static struct ar231x_gpio_chip ar2315_gpio_chip = {
+ 	.valid_mask = (1 << 22) - 1,
+-	.get_output = ar2315_gpio_get_output,
+-	.set_output = ar2315_gpio_set_output,
+-	.get = ar2315_gpio_get,
+-	.set = ar2315_gpio_set,
++	.chip = {
++		.label                  = "ar2315-gpio",
++		.direction_input        = ar2315_gpio_direction_input,
++		.direction_output       = ar2315_gpio_direction_output,
++		.set                    = ar2315_gpio_set_value,
++		.get                    = ar2315_gpio_get_value,
++		.base                   = 0,
++		.ngpio                  = AR531X_GPIO_IRQ_COUNT, // 22
++	}
+ };
+ 
++// end of gpiolib
++
++
+ static struct ar231x_eth ar2315_eth_data = {
+ 	.reset_base = AR2315_RESET,
+ 	.reset_mac = AR2315_RESET_ENET0,
+@@ -496,7 +546,7 @@ static struct platform_device ar2315_gpi
+ };
+ 
+ static void __init
+-ar2315_init_gpio(void)
++ar2315_init_gpio_leds(void)
+ {
+ 	static char led_names[6][6];
+ 	int i, led = 0;
+@@ -522,7 +572,7 @@ ar2315_init_gpio(void)
+ 	platform_device_register(&ar2315_gpio_leds);
+ }
+ #else
+-static inline void ar2315_init_gpio(void)
++static inline void ar2315_init_gpio_leds(void)
+ {
+ }
+ #endif
+@@ -537,7 +587,7 @@ ar2315_init_devices(void)
+ 	ar231x_find_config(ar2315_flash_limit());
+ 	ar2315_eth_data.macaddr = ar231x_board.config->enet0_mac;
+ 
+-	ar2315_init_gpio();
++	ar2315_init_gpio_leds();
+ 	platform_device_register(&ar2315_wdt);
+ 	platform_device_register(&ar2315_spiflash);
+ 	ar231x_add_ethernet(0, KSEG1ADDR(AR2315_ENET0), AR2315_IRQ_ENET0_INTRS,
+@@ -633,6 +683,25 @@ ar2315_time_init(void)
+ 	mips_hpt_frequency = ar2315_cpu_frequency() / 2;
+ }
+ 
++int __init
++ar2315_gpio_init(void)
++{
++	int ret;
++	struct ar231x_gpio_chip *gpch;
++	gpch = &ar2315_gpio_chip;
++	ret = gpiochip_add(&gpch->chip);
++	if (ret) {
++		printk(KERN_ERR "%s: failed to add gpiochip\n",
++			gpch->chip.label);
++		return ret;
++	}
++	printk(KERN_INFO "%s: registered %d GPIOs\n",
++		gpch->chip.label, gpch->chip.ngpio);
++	return ret;
++}
++
++
++
+ void __init
+ ar2315_prom_init(void)
+ {
+@@ -659,7 +728,7 @@ ar2315_prom_init(void)
+ 			ar231x_devtype = DEV_TYPE_AR2315;
+ 			break;
+ 	}
+-	ar231x_gpiodev = &ar2315_gpiodev;
++	ar2315_gpio_init();
+ 	ar231x_board.devid = devid;
+ }
+ 
+--- a/arch/mips/ar231x/ar5312.c
++++ b/arch/mips/ar231x/ar5312.c
+@@ -23,12 +23,12 @@
+ #include <linux/kernel.h>
+ #include <linux/reboot.h>
+ #include <linux/leds.h>
++#include <linux/gpio.h>
+ #include <asm/bootinfo.h>
+ #include <asm/reboot.h>
+ #include <asm/time.h>
+ #include <asm/irq.h>
+ #include <asm/io.h>
+-#include <gpio.h>
+ 
+ #include <ar231x_platform.h>
+ #include <ar5312_regs.h>
+@@ -160,17 +160,6 @@ void __init ar5312_irq_init(void)
+ 	setup_irq(AR5312_IRQ_MISC_INTRS, &cascade);
+ }
+ 
+-const struct ar231x_gpiodev ar5312_gpiodev;
+-
+-static u32
+-ar5312_gpio_get_output(void)
+-{
+-	u32 reg;
+-	reg = ~(ar231x_read_reg(AR531X_GPIO_CR));
+-	reg &= ar5312_gpiodev.valid_mask;
+-	return reg;
+-}
+-
+ static u32
+ ar5312_gpio_set_output(u32 mask, u32 val)
+ {
+@@ -184,11 +173,11 @@ ar5312_gpio_set_output(u32 mask, u32 val
+ }
+ 
+ static u32
+-ar5312_gpio_get(void)
++ar5312_gpio_get(u32 valid_mask)
+ {
+ 	u32 reg;
+ 	reg = ar231x_read_reg(AR531X_GPIO_DI);
+-	reg &= ar5312_gpiodev.valid_mask;
++	reg &= valid_mask;
+ 	return reg;
+ }
+ 
+@@ -203,14 +192,72 @@ ar5312_gpio_set(u32 mask, u32 value)
+ 	return reg;
+ }
+ 
+-const struct ar231x_gpiodev ar5312_gpiodev = {
+-	.valid_mask = (1 << 8) - 1,
+-	.get_output = ar5312_gpio_get_output,
+-	.set_output = ar5312_gpio_set_output,
+-	.get = ar5312_gpio_get,
+-	.set = ar5312_gpio_set,
++/*
++ * gpiolib implementations. Original mask based methods preserved
++ */
++static int
++ar5312_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
++{
++	struct ar231x_gpio_chip *gpch =
++		container_of(chip, struct ar231x_gpio_chip, chip);
++	u32 mask = 1 << gpio;
++	u32 rett;
++	if (!(gpch->valid_mask & mask))
++		return 0;
++	rett = ar5312_gpio_get(gpch->valid_mask);
++	return !!(rett & mask);
++}
++
++static void
++ar5312_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
++{
++	struct ar231x_gpio_chip *gpch =
++		container_of(chip, struct ar231x_gpio_chip, chip);
++	u32 mask = 1 << gpio;
++	if (!(gpch->valid_mask & mask))
++		return;
++	ar5312_gpio_set(mask, (!!value) * mask);
++}
++
++static int
++ar5312_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
++{
++	struct ar231x_gpio_chip *gpch =
++		container_of(chip, struct ar231x_gpio_chip, chip);
++	u32 mask = 1 << gpio;
++	if (!(gpch->valid_mask & mask))
++		return -ENXIO;
++	ar5312_gpio_set_output(mask, 0);
++	return 0;
++}
++static int
++ar5312_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int value)
++{
++	struct ar231x_gpio_chip *gpch =
++		container_of(chip, struct ar231x_gpio_chip, chip);
++	u32 mask = 1 << gpio;
++	if (!(gpch->valid_mask & mask))
++		return -ENXIO;
++	ar5312_gpio_set_output(mask, mask);
++	ar5312_gpio_set(mask, (!!value) * mask);
++	return 0;
++}
++
++static struct ar231x_gpio_chip ar5312_gpio_chip = {
++	.valid_mask = (1 << 22) - 1,
++	.chip = {
++		.label                  = "ar5312-gpio",
++		.direction_input        = ar5312_gpio_direction_input,
++		.direction_output       = ar5312_gpio_direction_output,
++		.set                    = ar5312_gpio_set_value,
++		.get                    = ar5312_gpio_get_value,
++		.base                   = 0,
++		.ngpio                  = AR531X_GPIO_IRQ_COUNT, // 22
++	}
+ };
+ 
++// end of gpiolib
++
+ static struct physmap_flash_data ar5312_flash_data = {
+ 	.width = 2,
+ };
+@@ -486,6 +533,22 @@ ar5312_time_init(void)
+ 	mips_hpt_frequency = ar5312_cpu_frequency() / 2;
+ }
+ 
++int __init
++ar5312_gpio_init(void)
++{
++	int ret;
++	struct ar231x_gpio_chip *gpch;
++	gpch = &ar5312_gpio_chip;
++	ret = gpiochip_add(&gpch->chip);
++	if (ret) {
++		printk(KERN_ERR "%s: failed to add gpiochip\n",
++			gpch->chip.label);
++		return ret;
++	}
++	printk(KERN_INFO "%s: registered %d GPIOs\n",
++		gpch->chip.label, gpch->chip.ngpio);
++	return ret;
++}
+ 
+ void __init
+ ar5312_prom_init(void)
+@@ -509,7 +572,7 @@ ar5312_prom_init(void)
+ 	devid >>= AR531X_REV_WMAC_MIN_S;
+ 	devid &= AR531X_REV_CHIP;
+ 	ar231x_board.devid = (u16) devid;
+-	ar231x_gpiodev = &ar5312_gpiodev;
++	ar5312_gpio_init();
+ }
+ 
+ void __init
+--- a/arch/mips/ar231x/devices.c
++++ b/arch/mips/ar231x/devices.c
+@@ -12,8 +12,6 @@
+ 
+ struct ar231x_board_config ar231x_board;
+ int ar231x_devtype = DEV_TYPE_UNKNOWN;
+-const struct ar231x_gpiodev *ar231x_gpiodev;
+-EXPORT_SYMBOL(ar231x_gpiodev);
+ 
+ static struct resource ar231x_eth0_res[] = {
+ 	{
+--- a/arch/mips/ar231x/devices.h
++++ b/arch/mips/ar231x/devices.h
+@@ -1,5 +1,6 @@
+ #ifndef __AR231X_DEVICES_H
+ #define __AR231X_DEVICES_H
++#include <linux/gpio.h>
+ 
+ enum {
+ 	/* handled by ar5312.c */
+@@ -34,4 +35,8 @@ static inline bool is_5312(void)
+ 	return !is_2315();
+ }
+ 
++struct ar231x_gpio_chip {
++	u32 valid_mask;
++	struct gpio_chip chip;
++};
+ #endif
+--- a/arch/mips/ar231x/reset.c
++++ b/arch/mips/ar231x/reset.c
+@@ -6,11 +6,11 @@
+ #include <linux/workqueue.h>
+ #include <linux/skbuff.h>
+ #include <linux/netlink.h>
++#include <linux/gpio.h>
+ #include <net/sock.h>
+ #include <asm/uaccess.h>
+ #include <ar231x_platform.h>
+ #include <ar231x.h>
+-#include <gpio.h>
+ #include "devices.h"
+ 
+ #define AR531X_RESET_GPIO_IRQ	(AR531X_GPIO_IRQ(ar231x_board.config->resetConfigGpio))
+@@ -85,13 +85,12 @@ static void
+ reset_button_poll(unsigned long unused)
+ {
+ 	struct event_t *event;
+-	int gpio = ~0;
++	int gpio = 0;
+ 
+ 	if(!no_release_workaround)
+ 		return;
+ 
+-	gpio = ar231x_gpiodev->get();
+-	gpio &= (1 << (AR531X_RESET_GPIO_IRQ - AR531X_GPIO_IRQ_BASE));
++	gpio = gpio_get_value(AR531X_RESET_GPIO_IRQ - AR531X_GPIO_IRQ_BASE);
+ 	if(gpio) {
+ 		rst_button_timer.expires = jiffies + (HZ / 4);
+ 		add_timer(&rst_button_timer);
+@@ -113,7 +112,7 @@ button_handler(int irq, void *dev_id)
+ {
+ 	static int pressed = 0;
+ 	struct event_t *event;
+-	u32 gpio = ~0;
++	u32 gpio = 0;
+ 
+ 	event = (struct event_t *) kzalloc(sizeof(struct event_t), GFP_ATOMIC);
+ 	if (!event)
+@@ -121,7 +120,7 @@ button_handler(int irq, void *dev_id)
+ 
+ 	pressed = !pressed;
+ 
+-	gpio = ar231x_gpiodev->get() & (1 << (irq - AR531X_GPIO_IRQ_BASE));
++	gpio = gpio_get_value(irq - AR531X_GPIO_IRQ_BASE);
+ 
+ 	event->set = gpio;
+ 	if(!event->set)
+--- a/arch/mips/include/asm/mach-ar231x/gpio.h
++++ b/arch/mips/include/asm/mach-ar231x/gpio.h
+@@ -3,66 +3,15 @@
+ 
+ #include <ar231x.h>
+ 
+-struct ar231x_gpiodev {
+-	u32 valid_mask;
+-	u32 (*get_output)(void);
+-	u32 (*set_output)(u32 mask, u32 val);
+-	u32 (*get)(void);
+-	u32 (*set)(u32 mask, u32 val);
+-};
+-
+-extern const struct ar231x_gpiodev *ar231x_gpiodev;
++#define gpio_get_value __gpio_get_value
++#define gpio_set_value __gpio_set_value
++#define gpio_cansleep __gpio_cansleep
+ 
+ /*
+  * Wrappers for the generic GPIO layer
+  */
+ 
+-static inline int gpio_direction_input(unsigned gpio) {
+-	u32 mask = 1 << gpio;
+-
+-	if (!(ar231x_gpiodev->valid_mask & mask))
+-		return -ENXIO;
+-
+-	ar231x_gpiodev->set_output(mask, 0);
+-	return 0;
+-}
+-
+-static inline void gpio_set_value(unsigned gpio, int value) {
+-	u32 mask = 1 << gpio;
+-
+-	if (!(ar231x_gpiodev->valid_mask & mask))
+-		return;
+-
+-	ar231x_gpiodev->set(mask, (!!value) * mask);
+-}
+-
+-static inline int gpio_direction_output(unsigned gpio, int value) {
+-	u32 mask = 1 << gpio;
+-
+-	if (!(ar231x_gpiodev->valid_mask & mask))
+-		return -ENXIO;
+-
+-	ar231x_gpiodev->set_output(mask, mask);
+-	ar231x_gpiodev->set(mask, (!!value) * mask);
+-	return 0;
+-}
+-
+-/* Reads the gpio pin.  Unchecked function */
+-static inline int gpio_get_value(unsigned gpio) {
+-	u32 mask = 1 << gpio;
+-
+-	if (!(ar231x_gpiodev->valid_mask & mask))
+-		return 0;
+-
+-	return !!(ar231x_gpiodev->get() & mask);
+-}
+-
+-static inline int gpio_request(unsigned gpio, const char *label) {
+-	return 0;
+-}
+-
+-static inline void gpio_free(unsigned gpio) {
+-}
++/* not sure if these are used? */
+ 
+ /* Returns IRQ to attach for gpio.  Unchecked function */
+ static inline int gpio_to_irq(unsigned gpio) {
+@@ -74,11 +23,6 @@ static inline int irq_to_gpio(unsigned i
+ 	return (irq - (AR531X_GPIO_IRQ(0)));
+ }
+ 
+-static inline int gpio_set_debounce(unsigned gpio, unsigned debounce)
+-{
+-	return -ENOSYS;
+-}
+-
+ #include <asm-generic/gpio.h> /* cansleep wrappers */
+ 
+ #endif
