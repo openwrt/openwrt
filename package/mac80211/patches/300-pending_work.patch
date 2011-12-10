@@ -517,7 +517,16 @@
  					  IEEE80211_STYPE_ACTION);
 --- a/net/mac80211/agg-tx.c
 +++ b/net/mac80211/agg-tx.c
-@@ -79,10 +79,13 @@ static void ieee80211_send_addba_request
+@@ -55,6 +55,8 @@
+  * @ampdu_action function will be called with the action
+  * %IEEE80211_AMPDU_TX_STOP. In this case, the call must not fail,
+  * and the driver must later call ieee80211_stop_tx_ba_cb_irqsafe().
++ * Note that the sta can get destroyed before the BA tear down is
++ * complete.
+  */
+ 
+ static void ieee80211_send_addba_request(struct ieee80211_sub_if_data *sdata,
+@@ -79,10 +81,13 @@ static void ieee80211_send_addba_request
  	memcpy(mgmt->sa, sdata->vif.addr, ETH_ALEN);
  	if (sdata->vif.type == NL80211_IFTYPE_AP ||
  	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN ||
@@ -532,7 +541,7 @@
  
  	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
  					  IEEE80211_STYPE_ACTION);
-@@ -319,6 +322,38 @@ ieee80211_wake_queue_agg(struct ieee8021
+@@ -319,6 +324,38 @@ ieee80211_wake_queue_agg(struct ieee8021
  	__release(agg_queue);
  }
  
@@ -571,7 +580,7 @@
  void ieee80211_tx_ba_session_handle_start(struct sta_info *sta, int tid)
  {
  	struct tid_ampdu_tx *tid_tx;
-@@ -330,19 +365,17 @@ void ieee80211_tx_ba_session_handle_star
+@@ -330,19 +367,17 @@ void ieee80211_tx_ba_session_handle_star
  	tid_tx = rcu_dereference_protected_tid_tx(sta, tid);
  
  	/*
@@ -598,7 +607,7 @@
  	 */
  	synchronize_net();
  
-@@ -356,10 +389,11 @@ void ieee80211_tx_ba_session_handle_star
+@@ -356,10 +391,11 @@ void ieee80211_tx_ba_session_handle_star
  					" tid %d\n", tid);
  #endif
  		spin_lock_bh(&sta->lock);
@@ -611,7 +620,7 @@
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,40))
  		kfree_rcu(tid_tx, rcu_head);
  #else
-@@ -368,9 +402,6 @@ void ieee80211_tx_ba_session_handle_star
+@@ -368,9 +404,6 @@ void ieee80211_tx_ba_session_handle_star
  		return;
  	}
  
@@ -621,7 +630,7 @@
  	/* activate the timer for the recipient's addBA response */
  	mod_timer(&tid_tx->addba_resp_timer, jiffies + ADDBA_RESP_INTERVAL);
  #ifdef CONFIG_MAC80211_HT_DEBUG
-@@ -437,7 +468,9 @@ int ieee80211_start_tx_ba_session(struct
+@@ -437,7 +470,9 @@ int ieee80211_start_tx_ba_session(struct
  	if (sdata->vif.type != NL80211_IFTYPE_STATION &&
  	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
@@ -632,7 +641,7 @@
  		return -EINVAL;
  
  	if (test_sta_flag(sta, WLAN_STA_BLOCK_BA)) {
-@@ -448,6 +481,27 @@ int ieee80211_start_tx_ba_session(struct
+@@ -448,6 +483,27 @@ int ieee80211_start_tx_ba_session(struct
  		return -EINVAL;
  	}
  
@@ -660,7 +669,7 @@
  	spin_lock_bh(&sta->lock);
  
  	/* we have tried too many times, receiver does not want A-MPDU */
-@@ -508,38 +562,6 @@ int ieee80211_start_tx_ba_session(struct
+@@ -508,38 +564,6 @@ int ieee80211_start_tx_ba_session(struct
  }
  EXPORT_SYMBOL(ieee80211_start_tx_ba_session);
  
@@ -1297,3 +1306,44 @@
  
  	CALL_TXH(ieee80211_tx_h_michael_mic_add);
  	CALL_TXH(ieee80211_tx_h_sequence);
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -851,6 +851,7 @@ static int __must_check __sta_info_destr
+ 	struct ieee80211_sub_if_data *sdata;
+ 	unsigned long flags;
+ 	int ret, i, ac;
++	struct tid_ampdu_tx *tid_tx;
+ 
+ 	might_sleep();
+ 
+@@ -949,6 +950,30 @@ static int __must_check __sta_info_destr
+ 	}
+ #endif
+ 
++	/* There could be some memory leaks because of ampdu tx pending queue
++	 * not being freed before destroying the station info.
++	 *
++	 * Make sure that such queues are purged before freeing the station
++	 * info.
++	 * TODO: We have to somehow postpone the full destruction
++	 * until the aggregation stop completes. Refer
++	 * http://thread.gmane.org/gmane.linux.kernel.wireless.general/81936
++	 */
++	for (i = 0; i < STA_TID_NUM; i++) {
++		if (!sta->ampdu_mlme.tid_tx[i])
++			continue;
++		tid_tx = sta->ampdu_mlme.tid_tx[i];
++		if (skb_queue_len(&tid_tx->pending)) {
++#ifdef CONFIG_MAC80211_HT_DEBUG
++			wiphy_debug(local->hw.wiphy, "TX A-MPDU  purging %d "
++				"packets for tid=%d\n",
++				skb_queue_len(&tid_tx->pending), i);
++#endif /* CONFIG_MAC80211_HT_DEBUG */
++			__skb_queue_purge(&tid_tx->pending);
++		}
++		kfree_rcu(tid_tx, rcu_head);
++	}
++
+ 	__sta_info_free(local, sta);
+ 
+ 	return 0;
