@@ -532,7 +532,96 @@
  
  	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
  					  IEEE80211_STYPE_ACTION);
-@@ -437,7 +440,9 @@ int ieee80211_start_tx_ba_session(struct
+@@ -319,6 +322,38 @@ ieee80211_wake_queue_agg(struct ieee8021
+ 	__release(agg_queue);
+ }
+ 
++/*
++ * splice packets from the STA's pending to the local pending,
++ * requires a call to ieee80211_agg_splice_finish later
++ */
++static void __acquires(agg_queue)
++ieee80211_agg_splice_packets(struct ieee80211_local *local,
++			     struct tid_ampdu_tx *tid_tx, u16 tid)
++{
++	int queue = ieee80211_ac_from_tid(tid);
++	unsigned long flags;
++
++	ieee80211_stop_queue_agg(local, tid);
++
++	if (WARN(!tid_tx, "TID %d gone but expected when splicing aggregates"
++			  " from the pending queue\n", tid))
++		return;
++
++	if (!skb_queue_empty(&tid_tx->pending)) {
++		spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
++		/* copy over remaining packets */
++		skb_queue_splice_tail_init(&tid_tx->pending,
++					   &local->pending[queue]);
++		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
++	}
++}
++
++static void __releases(agg_queue)
++ieee80211_agg_splice_finish(struct ieee80211_local *local, u16 tid)
++{
++	ieee80211_wake_queue_agg(local, tid);
++}
++
+ void ieee80211_tx_ba_session_handle_start(struct sta_info *sta, int tid)
+ {
+ 	struct tid_ampdu_tx *tid_tx;
+@@ -330,19 +365,17 @@ void ieee80211_tx_ba_session_handle_star
+ 	tid_tx = rcu_dereference_protected_tid_tx(sta, tid);
+ 
+ 	/*
+-	 * While we're asking the driver about the aggregation,
+-	 * stop the AC queue so that we don't have to worry
+-	 * about frames that came in while we were doing that,
+-	 * which would require us to put them to the AC pending
+-	 * afterwards which just makes the code more complex.
++	 * Start queuing up packets for this aggregation session.
++	 * We're going to release them once the driver is OK with
++	 * that.
+ 	 */
+-	ieee80211_stop_queue_agg(local, tid);
+-
+ 	clear_bit(HT_AGG_STATE_WANT_START, &tid_tx->state);
+ 
+ 	/*
+-	 * make sure no packets are being processed to get
+-	 * valid starting sequence number
++	 * Make sure no packets are being processed. This ensures that
++	 * we have a valid starting sequence number and that in-flight
++	 * packets have been flushed out and no packets for this TID
++	 * will go into the driver during the ampdu_action call.
+ 	 */
+ 	synchronize_net();
+ 
+@@ -356,10 +389,11 @@ void ieee80211_tx_ba_session_handle_star
+ 					" tid %d\n", tid);
+ #endif
+ 		spin_lock_bh(&sta->lock);
++		ieee80211_agg_splice_packets(local, tid_tx, tid);
+ 		ieee80211_assign_tid_tx(sta, tid, NULL);
++		ieee80211_agg_splice_finish(local, tid);
+ 		spin_unlock_bh(&sta->lock);
+ 
+-		ieee80211_wake_queue_agg(local, tid);
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,40))
+ 		kfree_rcu(tid_tx, rcu_head);
+ #else
+@@ -368,9 +402,6 @@ void ieee80211_tx_ba_session_handle_star
+ 		return;
+ 	}
+ 
+-	/* we can take packets again now */
+-	ieee80211_wake_queue_agg(local, tid);
+-
+ 	/* activate the timer for the recipient's addBA response */
+ 	mod_timer(&tid_tx->addba_resp_timer, jiffies + ADDBA_RESP_INTERVAL);
+ #ifdef CONFIG_MAC80211_HT_DEBUG
+@@ -437,7 +468,9 @@ int ieee80211_start_tx_ba_session(struct
  	if (sdata->vif.type != NL80211_IFTYPE_STATION &&
  	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
@@ -543,7 +632,7 @@
  		return -EINVAL;
  
  	if (test_sta_flag(sta, WLAN_STA_BLOCK_BA)) {
-@@ -448,6 +453,27 @@ int ieee80211_start_tx_ba_session(struct
+@@ -448,6 +481,27 @@ int ieee80211_start_tx_ba_session(struct
  		return -EINVAL;
  	}
  
@@ -571,6 +660,45 @@
  	spin_lock_bh(&sta->lock);
  
  	/* we have tried too many times, receiver does not want A-MPDU */
+@@ -508,38 +562,6 @@ int ieee80211_start_tx_ba_session(struct
+ }
+ EXPORT_SYMBOL(ieee80211_start_tx_ba_session);
+ 
+-/*
+- * splice packets from the STA's pending to the local pending,
+- * requires a call to ieee80211_agg_splice_finish later
+- */
+-static void __acquires(agg_queue)
+-ieee80211_agg_splice_packets(struct ieee80211_local *local,
+-			     struct tid_ampdu_tx *tid_tx, u16 tid)
+-{
+-	int queue = ieee80211_ac_from_tid(tid);
+-	unsigned long flags;
+-
+-	ieee80211_stop_queue_agg(local, tid);
+-
+-	if (WARN(!tid_tx, "TID %d gone but expected when splicing aggregates"
+-			  " from the pending queue\n", tid))
+-		return;
+-
+-	if (!skb_queue_empty(&tid_tx->pending)) {
+-		spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+-		/* copy over remaining packets */
+-		skb_queue_splice_tail_init(&tid_tx->pending,
+-					   &local->pending[queue]);
+-		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+-	}
+-}
+-
+-static void __releases(agg_queue)
+-ieee80211_agg_splice_finish(struct ieee80211_local *local, u16 tid)
+-{
+-	ieee80211_wake_queue_agg(local, tid);
+-}
+-
+ static void ieee80211_agg_tx_operational(struct ieee80211_local *local,
+ 					 struct sta_info *sta, u16 tid)
+ {
 --- a/net/mac80211/debugfs_sta.c
 +++ b/net/mac80211/debugfs_sta.c
 @@ -63,11 +63,11 @@ static ssize_t sta_flags_read(struct fil
