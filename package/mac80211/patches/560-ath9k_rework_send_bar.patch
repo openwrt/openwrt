@@ -1,0 +1,240 @@
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -159,6 +159,9 @@ void ath_descdma_cleanup(struct ath_soft
+ /* return block-ack bitmap index given sequence and starting sequence */
+ #define ATH_BA_INDEX(_st, _seq) (((_seq) - (_st)) & (IEEE80211_SEQ_MAX - 1))
+ 
++/* return the seqno for _start + _offset */
++#define ATH_BA_INDEX2SEQ(_seq, _offset) (((_seq) + (_offset)) & (IEEE80211_SEQ_MAX - 1))
++
+ /* returns delimiter padding required given the packet length */
+ #define ATH_AGGR_GET_NDELIM(_len)					\
+        (((_len) >= ATH_AGGR_MINPLEN) ? 0 :                             \
+@@ -253,9 +256,9 @@ struct ath_atx_tid {
+ struct ath_node {
+ #ifdef CONFIG_ATH9K_DEBUGFS
+ 	struct list_head list; /* for sc->nodes */
++#endif
+ 	struct ieee80211_sta *sta; /* station struct we're part of */
+ 	struct ieee80211_vif *vif; /* interface with which we're associated */
+-#endif
+ 	struct ath_atx_tid tid[WME_NUM_TID];
+ 	struct ath_atx_ac ac[WME_NUM_AC];
+ 	int ps_key;
+@@ -277,7 +280,6 @@ struct ath_tx_control {
+ };
+ 
+ #define ATH_TX_ERROR        0x01
+-#define ATH_TX_BAR          0x02
+ 
+ /**
+  * @txq_map:  Index is mac80211 queue number.  This is
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -644,9 +644,9 @@ static void ath_node_attach(struct ath_s
+ 	spin_lock(&sc->nodes_lock);
+ 	list_add(&an->list, &sc->nodes);
+ 	spin_unlock(&sc->nodes_lock);
++#endif
+ 	an->sta = sta;
+ 	an->vif = vif;
+-#endif
+ 	if (sc->sc_flags & SC_OP_TXAGGR) {
+ 		ath_tx_node_init(sc, an);
+ 		an->maxampdu = 1 << (IEEE80211_HT_MAX_AMPDU_FACTOR +
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -53,7 +53,7 @@ static void ath_tx_complete(struct ath_s
+ 			    int tx_flags, struct ath_txq *txq);
+ static void ath_tx_complete_buf(struct ath_softc *sc, struct ath_buf *bf,
+ 				struct ath_txq *txq, struct list_head *bf_q,
+-				struct ath_tx_status *ts, int txok, int sendbar);
++				struct ath_tx_status *ts, int txok);
+ static void ath_tx_txqaddbuf(struct ath_softc *sc, struct ath_txq *txq,
+ 			     struct list_head *head, bool internal);
+ static void ath_tx_rc_status(struct ath_softc *sc, struct ath_buf *bf,
+@@ -150,6 +150,12 @@ static struct ath_frame_info *get_frame_
+ 	return (struct ath_frame_info *) &tx_info->rate_driver_data[0];
+ }
+ 
++static void ath_send_bar(struct ath_atx_tid *tid, u16 seqno)
++{
++	ieee80211_send_bar(tid->an->vif, tid->an->sta->addr, tid->tidno,
++			   seqno << IEEE80211_SEQ_SEQ_SHIFT);
++}
++
+ static void ath_tx_flush_tid(struct ath_softc *sc, struct ath_atx_tid *tid)
+ {
+ 	struct ath_txq *txq = tid->ac->txq;
+@@ -158,6 +164,7 @@ static void ath_tx_flush_tid(struct ath_
+ 	struct list_head bf_head;
+ 	struct ath_tx_status ts;
+ 	struct ath_frame_info *fi;
++	bool sendbar = false;
+ 
+ 	INIT_LIST_HEAD(&bf_head);
+ 
+@@ -172,7 +179,8 @@ static void ath_tx_flush_tid(struct ath_
+ 		if (bf && fi->retries) {
+ 			list_add_tail(&bf->list, &bf_head);
+ 			ath_tx_update_baw(sc, tid, bf->bf_state.seqno);
+-			ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0, 1);
++			ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0);
++			sendbar = true;
+ 		} else {
+ 			ath_tx_send_normal(sc, txq, NULL, skb);
+ 		}
+@@ -185,6 +193,9 @@ static void ath_tx_flush_tid(struct ath_
+ 	}
+ 
+ 	spin_unlock_bh(&txq->axq_lock);
++
++	if (sendbar)
++		ath_send_bar(tid, tid->seq_start);
+ }
+ 
+ static void ath_tx_update_baw(struct ath_softc *sc, struct ath_atx_tid *tid,
+@@ -255,7 +266,7 @@ static void ath_tid_drain(struct ath_sof
+ 			ath_tx_update_baw(sc, tid, bf->bf_state.seqno);
+ 
+ 		spin_unlock(&txq->axq_lock);
+-		ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0, 0);
++		ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0);
+ 		spin_lock(&txq->axq_lock);
+ 	}
+ 
+@@ -381,7 +392,7 @@ static void ath_tx_complete_aggr(struct 
+ 	struct ath_buf *bf_next, *bf_last = bf->bf_lastbf;
+ 	struct list_head bf_head;
+ 	struct sk_buff_head bf_pending;
+-	u16 seq_st = 0, acked_cnt = 0, txfail_cnt = 0;
++	u16 seq_st = 0, acked_cnt = 0, txfail_cnt = 0, seq_first;
+ 	u32 ba[WME_BA_BMP_SIZE >> 5];
+ 	int isaggr, txfail, txpending, sendbar = 0, needreset = 0, nbad = 0;
+ 	bool rc_update = true;
+@@ -391,6 +402,7 @@ static void ath_tx_complete_aggr(struct 
+ 	u8 tidno;
+ 	bool flush = !!(ts->ts_status & ATH9K_TX_FLUSH);
+ 	int i, retries;
++	int bar_index = -1;
+ 
+ 	skb = bf->bf_mpdu;
+ 	hdr = (struct ieee80211_hdr *)skb->data;
+@@ -416,8 +428,7 @@ static void ath_tx_complete_aggr(struct 
+ 			if (!bf->bf_stale || bf_next != NULL)
+ 				list_move_tail(&bf->list, &bf_head);
+ 
+-			ath_tx_complete_buf(sc, bf, txq, &bf_head, ts,
+-				0, 0);
++			ath_tx_complete_buf(sc, bf, txq, &bf_head, ts, 0);
+ 
+ 			bf = bf_next;
+ 		}
+@@ -427,6 +438,7 @@ static void ath_tx_complete_aggr(struct 
+ 	an = (struct ath_node *)sta->drv_priv;
+ 	tidno = ieee80211_get_qos_ctl(hdr)[0] & IEEE80211_QOS_CTL_TID_MASK;
+ 	tid = ATH_AN_2_TID(an, tidno);
++	seq_first = tid->seq_start;
+ 
+ 	/*
+ 	 * The hardware occasionally sends a tx status for the wrong TID.
+@@ -495,8 +507,9 @@ static void ath_tx_complete_aggr(struct 
+ 				txpending = 1;
+ 			} else {
+ 				txfail = 1;
+-				sendbar = 1;
+ 				txfail_cnt++;
++				bar_index = max_t(int, bar_index,
++					ATH_BA_INDEX(seq_first, seqno));
+ 			}
+ 		}
+ 
+@@ -525,7 +538,7 @@ static void ath_tx_complete_aggr(struct 
+ 			}
+ 
+ 			ath_tx_complete_buf(sc, bf, txq, &bf_head, ts,
+-				!txfail, sendbar);
++				!txfail);
+ 		} else {
+ 			/* retry the un-acked ones */
+ 			if (!(sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)) {
+@@ -545,8 +558,10 @@ static void ath_tx_complete_aggr(struct 
+ 
+ 						ath_tx_complete_buf(sc, bf, txq,
+ 								    &bf_head,
+-								    ts, 0,
+-								    !flush);
++								    ts, 0);
++						bar_index = max_t(int, bar_index,
++							ATH_BA_INDEX(seq_first,
++								seqno));
+ 						break;
+ 					}
+ 
+@@ -564,6 +579,9 @@ static void ath_tx_complete_aggr(struct 
+ 		bf = bf_next;
+ 	}
+ 
++	if (bar_index >= 0)
++		ath_send_bar(tid, ATH_BA_INDEX2SEQ(seq_first, bar_index + 1));
++
+ 	/* prepend un-acked frames to the beginning of the pending frame queue */
+ 	if (!skb_queue_empty(&bf_pending)) {
+ 		if (an->sleeping)
+@@ -1452,7 +1470,7 @@ static void ath_drain_txq_list(struct at
+ 			ath_tx_complete_aggr(sc, txq, bf, &bf_head, &ts, 0,
+ 					     retry_tx);
+ 		else
+-			ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0, 0);
++			ath_tx_complete_buf(sc, bf, txq, &bf_head, &ts, 0);
+ 		spin_lock_bh(&txq->axq_lock);
+ 	}
+ }
+@@ -1967,9 +1985,6 @@ static void ath_tx_complete(struct ath_s
+ 
+ 	ath_dbg(common, ATH_DBG_XMIT, "TX complete: skb: %p\n", skb);
+ 
+-	if (tx_flags & ATH_TX_BAR)
+-		tx_info->flags |= IEEE80211_TX_STAT_AMPDU_NO_BACK;
+-
+ 	if (!(tx_flags & ATH_TX_ERROR))
+ 		/* Frame was ACKed */
+ 		tx_info->flags |= IEEE80211_TX_STAT_ACK;
+@@ -2013,16 +2028,13 @@ static void ath_tx_complete(struct ath_s
+ 
+ static void ath_tx_complete_buf(struct ath_softc *sc, struct ath_buf *bf,
+ 				struct ath_txq *txq, struct list_head *bf_q,
+-				struct ath_tx_status *ts, int txok, int sendbar)
++				struct ath_tx_status *ts, int txok)
+ {
+ 	struct sk_buff *skb = bf->bf_mpdu;
+ 	struct ieee80211_tx_info *tx_info = IEEE80211_SKB_CB(skb);
+ 	unsigned long flags;
+ 	int tx_flags = 0;
+ 
+-	if (sendbar)
+-		tx_flags = ATH_TX_BAR;
+-
+ 	if (!txok)
+ 		tx_flags |= ATH_TX_ERROR;
+ 
+@@ -2129,7 +2141,7 @@ static void ath_tx_process_buffer(struct
+ 
+ 	if (!bf_isampdu(bf)) {
+ 		ath_tx_rc_status(sc, bf, ts, 1, txok ? 0 : 1, txok);
+-		ath_tx_complete_buf(sc, bf, txq, bf_head, ts, txok, 0);
++		ath_tx_complete_buf(sc, bf, txq, bf_head, ts, txok);
+ 	} else
+ 		ath_tx_complete_aggr(sc, txq, bf, bf_head, ts, txok, true);
+ 
+--- a/drivers/net/wireless/ath/ath9k/debug.c
++++ b/drivers/net/wireless/ath/ath9k/debug.c
+@@ -856,7 +856,7 @@ void ath_debug_stat_tx(struct ath_softc 
+ 	sc->debug.stats.txstats[qnum].tx_bytes_all += bf->bf_mpdu->len;
+ 
+ 	if (bf_isampdu(bf)) {
+-		if (flags & ATH_TX_BAR)
++		if (flags & ATH_TX_ERROR)
+ 			TX_STAT_INC(qnum, a_xretries);
+ 		else
+ 			TX_STAT_INC(qnum, a_completed);
