@@ -129,12 +129,22 @@ static struct vsc7385_platform_data pb44_vsc7395_data = {
 	},
 };
 
+static const char *pb44_part_probes[] = {
+	"RedBoot",
+	NULL,
+};
+
+static struct flash_platform_data pb44_flash_data = {
+	.part_probes	= pb44_part_probes,
+};
+
 static struct spi_board_info pb44_spi_info[] = {
 	{
 		.bus_num	= 0,
 		.chip_select	= 0,
 		.max_speed_hz	= 25000000,
 		.modalias	= "m25p80",
+		.platform_data	= &pb44_flash_data,
 	}, {
 		.bus_num	= 0,
 		.chip_select	= 1,
