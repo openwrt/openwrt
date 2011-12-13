@@ -6,12 +6,12 @@
 #
 
 define Profile/WNDR3700
-	NAME:=NETGEAR WNDR3700/3800
+	NAME:=NETGEAR WNDR3700/WNDR3800/WNDRMAC
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/WNDR3700/Description
-	Package set optimized for the NETGEAR WNDR3700/3800
+	Package set optimized for the NETGEAR WNDR3700/WNDR3800/WNDRMAC
 endef
 
 $(eval $(call Profile,WNDR3700))
