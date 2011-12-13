@@ -157,7 +157,7 @@ endef
 
 $(eval $(call KernelPackage,switch-ip17xx))
 
-define KernelPackage/switch-rtl8366_smi
+define KernelPackage/switch-rtl8366-smi
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Realtek RTL8366 SMI switch interface support
   DEPENDS:=@GPIO_SUPPORT +kmod-swconfig
@@ -170,12 +170,12 @@ define KernelPackage/switch-rtl8366_smi/description
   Realtek RTL8366 series SMI switch interface support
 endef
 
-$(eval $(call KernelPackage,switch-rtl8366_smi))
+$(eval $(call KernelPackage,switch-rtl8366-smi))
 
 define KernelPackage/switch-rtl8366rb
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Realtek RTL8366RB switch support
-  DEPENDS:=+kmod-switch-rtl8366_smi
+  DEPENDS:=+kmod-switch-rtl8366-smi
   KCONFIG:=CONFIG_RTL8366RB_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8366rb.ko
   AUTOLOAD:=$(call AutoLoad,43,rtl8366rb)
@@ -190,7 +190,7 @@ $(eval $(call KernelPackage,switch-rtl8366rb))
 define KernelPackage/switch-rtl8366s
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Realtek RTL8366S switch support
-  DEPENDS:=+kmod-switch-rtl8366_smi
+  DEPENDS:=+kmod-switch-rtl8366-smi
   KCONFIG:=CONFIG_RTL8366S_PHY
   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8366s.ko
   AUTOLOAD:=$(call AutoLoad,43,rtl8366s)
