@@ -25,13 +25,11 @@ VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 fs_squash:=squashfs-only
 fs_all:=all
-fs_4k:=4k
 fs_64k:=64k
 fs_128k:=128k
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	fs_squash:=initramfs
 	fs_all:=initramfs
-	fs_4k:=initramfs
 	fs_64k:=initramfs
 	fs_128k:=initramfs
 	VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs
@@ -532,10 +530,6 @@ define Image/Build/Template/squashfs-only/squashfs
 	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
-define Image/Build/Template/4k/squashfs
-	$(call Image/Build/$(1),squashfs-4k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
-endef
-
 define Image/Build/Template/64k/squashfs
 	$(call Image/Build/$(1),squashfs-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
@@ -558,7 +552,7 @@ ap121_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs
 
 ap121_cmdline=board=AP121 console=ttyATH0,115200
 define Image/Build/Profile/AP121
-	$(call Image/Build/Template/$(fs_4k)/$(1),AthLzma,ap121-2M,$(ap121_cmdline),ap121_mtdlayout_2M,720896,1245184,RK)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap121-2M,$(ap121_cmdline),ap121_mtdlayout_2M,720896,1245184,RK)
 	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap121-4M,$(ap121_cmdline),ap121_mtdlayout_4M,917504,2818048,RK)
 endef
 
@@ -925,11 +919,8 @@ define Image/Build/Profile/Madwifi
 endef
 
 define Image/Build/squashfs
-	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-4k
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs-4k 4
-	cp $(KDIR)/root.squashfs-4k $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-4k
 	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-64k
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs-64k 4 8 64
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs-64k 64
 	cp $(KDIR)/root.squashfs-64k $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
