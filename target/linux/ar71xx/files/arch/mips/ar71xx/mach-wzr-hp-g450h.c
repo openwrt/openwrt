@@ -150,6 +150,7 @@ static void __init wzrhpg450h_init(void)
 	gpio_direction_output(16, 1);
 
 	ap91_pci_init(ee, NULL);
+	ap91_pci_setup_wmac_led_pin(15);
 }
 
 MIPS_MACHINE(AR71XX_MACH_WZR_HP_G450H, "WZR-HP-G450H", "Buffalo WZR-HP-G450H",
