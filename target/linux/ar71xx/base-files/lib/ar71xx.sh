@@ -271,7 +271,7 @@ ar71xx_board_detect() {
 	*WP543)
 		name="wp543"
 		;;
-	*"WNDR3700/WNDR3800")
+	*"WNDR3700/WNDR3800/WNDRMAC")
 		wndr3700_board_detect "$machine"
 		;;
 	*WNR2000)
