@@ -41,6 +41,7 @@ obj-$(CONFIG_AR71XX_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
 obj-$(CONFIG_AR71XX_MACH_EAP7660D)	+= mach-eap7660d.o
 obj-$(CONFIG_AR71XX_MACH_JA76PF)	+= mach-ja76pf.o
 obj-$(CONFIG_AR71XX_MACH_JWAP003)	+= mach-jwap003.o
+obj-$(CONFIG_AR71XX_MACH_HORNET_UB)	+= mach-hornet-ub.o
 obj-$(CONFIG_AR71XX_MACH_MZK_W04NU)	+= mach-mzk-w04nu.o
 obj-$(CONFIG_AR71XX_MACH_MZK_W300NH)	+= mach-mzk-w300nh.o
 obj-$(CONFIG_AR71XX_MACH_NBG460N)	+= mach-nbg460n.o

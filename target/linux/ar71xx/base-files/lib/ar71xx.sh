@@ -163,6 +163,9 @@ ar71xx_board_detect() {
 	*JWAP003)
 		name="jwap003"
 		;;
+	*"Hornet-UB")
+		name="hornet-ub"
+		;;
 	*LS-SR71)
 		name="ls-sr71"
 		;;
