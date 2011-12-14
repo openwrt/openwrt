@@ -1,0 +1,68 @@
+--- a/include/linux/ath9k_platform.h
++++ b/include/linux/ath9k_platform.h
+@@ -32,6 +32,9 @@ struct ath9k_platform_data {
+ 	bool is_clk_25mhz;
+ 	int (*get_mac_revision)(void);
+ 	int (*external_reset)(void);
++
++	int num_leds;
++	const struct gpio_led *leds;
+ };
+ 
+ #endif /* _LINUX_ATH9K_PLATFORM_H */
+--- a/drivers/net/wireless/ath/ath9k/gpio.c
++++ b/drivers/net/wireless/ath/ath9k/gpio.c
+@@ -14,6 +14,7 @@
+  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  */
+ 
++#include <linux/ath9k_platform.h>
+ #include "ath9k.h"
+ 
+ /********************************/
+@@ -88,6 +89,24 @@ int ath_create_gpio_led(struct ath_softc
+ 	return ret;
+ }
+ 
++static int ath_create_platform_led(struct ath_softc *sc,
++				   const struct gpio_led *gpio)
++{
++	struct ath_led *led;
++	int ret;
++
++	led = kzalloc(sizeof(*led), GFP_KERNEL);
++	if (!led)
++		return -ENOMEM;
++
++	led->gpio = gpio;
++	ret = ath_add_led(sc, led);
++	if (ret < 0)
++		kfree(led);
++
++	return ret;
++}
++
+ void ath_deinit_leds(struct ath_softc *sc)
+ {
+ 	struct ath_led *led;
+@@ -103,8 +122,10 @@ void ath_deinit_leds(struct ath_softc *s
+ 
+ void ath_init_leds(struct ath_softc *sc)
+ {
++	struct ath9k_platform_data *pdata = sc->dev->platform_data;
+ 	char led_name[32];
+ 	const char *trigger;
++	int i;
+ 
+ 	INIT_LIST_HEAD(&sc->leds);
+ 
+@@ -133,6 +154,9 @@ void ath_init_leds(struct ath_softc *sc)
+ 		trigger = ieee80211_get_radio_led_name(sc->hw);
+ 
+ 	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger, 1);
++
++	for (i = 0; i < pdata->num_leds; i++)
++		ath_create_platform_led(sc, &pdata->leds[i]);
+ }
+ #endif
+ 
