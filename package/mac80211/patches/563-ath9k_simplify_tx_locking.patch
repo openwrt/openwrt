@@ -212,36 +212,3 @@
  	if (sc->sc_flags & SC_OP_TXAGGR)
  		ath_txq_schedule(sc, txq);
  }
-@@ -2281,6 +2253,7 @@ void ath_tx_edma_tasklet(struct ath_soft
- 	struct list_head bf_head;
- 	int status;
- 
-+	spin_lock_bh(&txq->axq_lock);
- 	for (;;) {
- 		if (work_pending(&sc->hw_reset_work))
- 			break;
-@@ -2300,12 +2273,8 @@ void ath_tx_edma_tasklet(struct ath_soft
- 
- 		txq = &sc->tx.txq[ts.qid];
- 
--		spin_lock_bh(&txq->axq_lock);
--
--		if (list_empty(&txq->txq_fifo[txq->txq_tailidx])) {
--			spin_unlock_bh(&txq->axq_lock);
--			return;
--		}
-+		if (list_empty(&txq->txq_fifo[txq->txq_tailidx]))
-+			break;
- 
- 		bf = list_first_entry(&txq->txq_fifo[txq->txq_tailidx],
- 				      struct ath_buf, list);
-@@ -2329,8 +2298,8 @@ void ath_tx_edma_tasklet(struct ath_soft
- 		}
- 
- 		ath_tx_process_buffer(sc, txq, &ts, bf, &bf_head);
--		spin_unlock_bh(&txq->axq_lock);
- 	}
-+	spin_unlock_bh(&txq->axq_lock);
- }
- 
- /*****************/
