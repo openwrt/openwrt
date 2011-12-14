@@ -48,6 +48,9 @@ get_status_led() {
 	nw718)
 		status_led="nw718:amber:cpu"
 		;;
+	omni-emb)
+		status_led="emb:green:status"
+		;;
 	pwh2004)
 		status_led="pwh2004:green:power"
 		;;

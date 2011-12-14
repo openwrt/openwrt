@@ -32,6 +32,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_HW550_3G,		/* Aztech HW550-3G */
 	RAMIPS_MACH_MOFI3500_3GN,	/* MoFi Network MOFI3500-3GN */
 	RAMIPS_MACH_NBG_419N,		/* ZyXEL NBG-419N */
+	RAMIPS_MACH_OMNI_EMB,         	/* Omnima MiniEMBWiFi */
 	RAMIPS_MACH_PWH2004,		/* Prolink 2004H / Abocom 5205 */
 	RAMIPS_MACH_V22RW_2X2,		/* Ralink AP-RT3052-V22RW-2X2 */
 	RAMIPS_MACH_WCR150GN,		/* Sparklan WCR-150GN */

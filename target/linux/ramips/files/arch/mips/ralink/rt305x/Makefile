@@ -20,6 +20,7 @@ obj-$(CONFIG_RT305X_MACH_HW550_3G)	+= mach-hw550-3g.o
 obj-$(CONFIG_RT305X_MACH_MOFI3500_3GN)	+= mach-mofi3500-3gn.o
 obj-$(CONFIG_RT305X_MACH_NBG_419N)	+= mach-nbg-419n.o
 obj-$(CONFIG_RT305X_MACH_NW718)		+= mach-nw718.o
+obj-$(CONFIG_RT305X_MACH_OMNI_EMB)	+= mach-omni-emb.o
 obj-$(CONFIG_RT305X_MACH_PWH2004)	+= mach-pwh2004.o
 obj-$(CONFIG_RT305X_MACH_RT_G32_REVB)	+= mach-rt-g32-revb.o
 obj-$(CONFIG_RT305X_MACH_V22RW_2X2)	+= mach-v22rw-2x2.o

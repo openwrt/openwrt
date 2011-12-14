@@ -20,7 +20,8 @@ preinit_set_mac_address() {
                 ifconfig eth0 hw ether $mac 2>/dev/null
                 ;;
 	hw550-3g |\
-	nbg-419n)
+	nbg-419n |\
+	omni-emb)
 		mac=$(ramips_get_mac_binary factory 40)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;

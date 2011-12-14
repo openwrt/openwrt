@@ -139,6 +139,12 @@ define Image/Build/Template/NW718
 	$(call BuildFirmware/NW718,$(1),$(2),board=$(3),mtdlayout_nw718,851968,2949120)
 endef
 
+console_OMNIEMB=ttyS1,57600
+mtdlayout_ONMIEMB=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,1024k(kernel),6848k(rootfs),7872k@0x50000(firmware)
+define Image/Build/Template/OMNIEMB
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) console=$(console_OMNIEMB),mtdlayout_OMNIEMB,1048576,7012352)
+endef
+
 define Image/Build/Profile/DIR300B1
 	$(call Image/Build/Template/DIR300B1,$(1),dir-300-b1,DIR-300-B1,wrgn23_dlwbr_dir300b)
 	$(call Image/Build/Template/DIR300B1,$(1),dir-600-b1,DIR-600-B1,wrgn23_dlwbr_dir600b)
@@ -171,6 +177,10 @@ endef
 
 define Image/Build/Profile/NW718
 	$(call Image/Build/Template/NW718,$(1),nw718,NW718)
+endef
+
+define Image/Build/Profile/OMNIEMB
+	$(call Image/Build/Template/OMNIEMB,$(1),omni-emb,OMNI-EMB)
 endef
 
 define Image/Build/Profile/PWH2004
@@ -248,6 +258,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/V22RW2X2,$(1))
 	$(call Image/Build/Profile/NBG419N,$(1))
 	$(call Image/Build/Profile/NW718,$(1))
+	$(call Image/Build/Profile/OMNIEMB,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
 	$(call Image/Build/Profile/WHRG300N,$(1))
 	$(call Image/Build/Profile/WCR150GN,$(1))

@@ -80,6 +80,9 @@ ramips_board_name() {
 	*"NW718")
 		name="nw718"
 		;;
+	*"Omnima MiniEMBWiFi")
+		name="omni-emb"
+		;;
 	*"PWH2004")
 		name="pwh2004"
 		;;
