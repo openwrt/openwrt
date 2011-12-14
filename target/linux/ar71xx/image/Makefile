@@ -614,6 +614,12 @@ define Image/Build/Profile/EAP7660D
 	$(call Image/Build/Template/$(fs_128k)/$(1),PB4X,eap7660d,$(eap7660d_cmdline))
 endef
 
+hornetub_cmdline=board=HORNET-UB console=ttyATH0,115200
+hornetub_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),1600k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
+define Image/Build/Profile/HORNETUB
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,hornet-ub,$(hornetub_cmdline),hornetub_mtdlayout,1638400,6291456,RK)
+endef
+
 ja76pf_cmdline=board=JA76PF console=ttyS0,115200
 define Image/Build/Profile/JA76PF
 	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,ja76pf,$(ja76pf_cmdline))
@@ -869,6 +875,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR825B1,$(1))
 	$(call Image/Build/Profile/EAP7660D,$(1))
 	$(call Image/Build/Profile/FR54RTR,$(1))
+	$(call Image/Build/Profile/HORNETUB,$(1))
 	$(call Image/Build/Profile/JA76PF,$(1))
 	$(call Image/Build/Profile/JWAP003,$(1))
 	$(call Image/Build/Profile/MZKW04NU,$(1))
