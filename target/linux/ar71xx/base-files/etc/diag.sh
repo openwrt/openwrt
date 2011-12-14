@@ -60,6 +60,9 @@ get_status_led() {
 	eap7660d)
 		status_led="eap7660d:green:ds4"
 		;;
+	hornet-ub)
+		status_led="alfa:blue:wps"
+		;;
 	ja76pf)
 		status_led="ja76pf:green:led1"
 		;;

@@ -81,6 +81,7 @@ platform_check_image() {
 	ap121-mini | \
 	ap96 | \
 	db120 | \
+	hornet-ub | \
 	zcn-1523h-2 | \
 	zcn-1523h-5)
 		[ "$magic_long" != "68737173" -a "$magic_long" != "19852003" ] && {
