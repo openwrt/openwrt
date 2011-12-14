@@ -82,6 +82,20 @@ static struct gpio_led wzrhpg450h_leds_gpio[] __initdata = {
 	},
 };
 
+
+static struct gpio_led wzrhpg450h_wmac_leds_gpio[] = {
+	{
+		.name		= "buffalo:blue:movie_engine",
+		.gpio		= 13,
+		.active_low	= 1,
+	},
+	{
+		.name		= "buffalo:green:router",
+		.gpio		= 14,
+		.active_low	= 1,
+	},
+};
+
 static struct gpio_keys_button wzrhpg450h_gpio_keys[] __initdata = {
 	{
 		.desc		= "reset",
@@ -151,6 +165,8 @@ static void __init wzrhpg450h_init(void)
 
 	ap91_pci_init(ee, NULL);
 	ap91_pci_setup_wmac_led_pin(15);
+	ap91_pci_setup_wmac_leds(wzrhpg450h_wmac_leds_gpio,
+				 ARRAY_SIZE(wzrhpg450h_wmac_leds_gpio));
 }
 
 MIPS_MACHINE(AR71XX_MACH_WZR_HP_G450H, "WZR-HP-G450H", "Buffalo WZR-HP-G450H",
