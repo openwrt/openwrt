@@ -23,6 +23,7 @@ platform_check_image() {
 	mofi3500-3gn | \
 	nbg-419n | \
 	nw718 | \
+	omni-emb | \
 	rt-g32-b1 | \
 	rt-n15 | \
 	v22rw-2x2 | \
