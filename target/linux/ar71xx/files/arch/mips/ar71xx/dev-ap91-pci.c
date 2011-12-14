@@ -42,6 +42,12 @@ static int ap91_pci_plat_dev_init(struct pci_dev *dev)
 	return 0;
 }
 
+__init void ap91_pci_setup_wmac_leds(struct gpio_led *leds, int num_leds)
+{
+	ap91_wmac_data.leds = leds;
+	ap91_wmac_data.num_leds = num_leds;
+}
+
 __init void ap91_pci_setup_wmac_led_pin(int pin)
 {
 	ap91_wmac_data.led_pin = pin;
