@@ -192,10 +192,6 @@
 #define AR7240_PHY_ID1		0x004d
 #define AR7240_PHY_ID2		0xd041
 
-#define AR7240_PORT_MASK(_port)		BIT((_port))
-#define AR7240_PORT_MASK_ALL		BITM(AR7240_NUM_PORTS)
-#define AR7240_PORT_MASK_BUT(_port)	(AR7240_PORT_MASK_ALL & ~BIT((_port)))
-
 #define AR7240_MAX_VLANS	16
 
 #define sw_to_ar7240(_dev) container_of(_dev, struct ar7240sw, swdev)
@@ -203,6 +199,7 @@
 struct ar7240sw {
 	struct mii_bus	*mii_bus;
 	struct switch_dev swdev;
+	int num_ports;
 	bool vlan;
 	u16 vlan_id[AR7240_MAX_VLANS];
 	u8 vlan_table[AR7240_MAX_VLANS];
@@ -218,6 +215,21 @@ struct ar7240sw_hw_stat {
 };
 
 static DEFINE_MUTEX(reg_mutex);
+
+static inline u32 ar7240sw_port_mask(struct ar7240sw *as, int port)
+{
+	return BIT(port);
+}
+
+static inline u32 ar7240sw_port_mask_all(struct ar7240sw *as)
+{
+	return BIT(as->swdev.ports) - 1;
+}
+
+static inline u32 ar7240sw_port_mask_but(struct ar7240sw *as, int port)
+{
+	return ar7240sw_port_mask_all(as) & ~BIT(port);
+}
 
 static inline u16 mk_phy_addr(u32 reg)
 {
@@ -498,15 +510,15 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 
 	if (!portmask) {
 		if (port == AR7240_PORT_CPU)
-			portmask = AR7240_PORT_MASK_BUT(AR7240_PORT_CPU);
+			portmask = ar7240sw_port_mask_but(as, AR7240_PORT_CPU);
 		else
-			portmask = AR7240_PORT_MASK(AR7240_PORT_CPU);
+			portmask = ar7240sw_port_mask(as, AR7240_PORT_CPU);
 	}
 
 	/* allow the port to talk to all other ports, but exclude its
 	 * own ID to prevent frames from being reflected back to the
 	 * port that they came from */
-	portmask &= AR7240_PORT_MASK_BUT(port);
+	portmask &= ar7240sw_port_mask_but(as, port);
 
 	/* set default VID and and destination ports for this VLAN */
 	vlan |= (portmask << AR7240_PORT_VLAN_DEST_PORTS_S);
@@ -577,7 +589,7 @@ ar7240_get_ports(struct switch_dev *dev, struct switch_val *val)
 	int i;
 
 	val->len = 0;
-	for (i = 0; i < AR7240_NUM_PORTS; i++) {
+	for (i = 0; i < as->swdev.ports; i++) {
 		struct switch_port *p;
 
 		if (!(ports & (1 << i)))
@@ -737,7 +749,7 @@ ar7240_hw_apply(struct switch_dev *dev)
 			if (!vp)
 				continue;
 
-			for (i = 0; i < AR7240_NUM_PORTS; i++) {
+			for (i = 0; i < as->swdev.ports; i++) {
 				u8 mask = (1 << i);
 				if (vp & mask)
 					portmask[i] |= vp & ~mask;
@@ -751,7 +763,7 @@ ar7240_hw_apply(struct switch_dev *dev)
 	} else {
 		/* vlan disabled:
 		 * isolate all ports, but connect them to the cpu port */
-		for (i = 0; i < AR7240_NUM_PORTS; i++) {
+		for (i = 0; i < as->swdev.ports; i++) {
 			if (i == AR7240_PORT_CPU)
 				continue;
 
@@ -761,7 +773,7 @@ ar7240_hw_apply(struct switch_dev *dev)
 	}
 
 	/* update the port destination mask registers and tag settings */
-	for (i = 0; i < AR7240_NUM_PORTS; i++)
+	for (i = 0; i < as->swdev.ports; i++)
 		ar7240sw_setup_port(as, i, portmask[i]);
 
 	return 0;
@@ -865,7 +877,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 
 	swdev = &as->swdev;
 	swdev->name = "AR7240 built-in switch";
-	swdev->ports = AR7240_NUM_PORTS;
+	swdev->ports = AR7240_NUM_PORTS - 1;
 	swdev->cpu_port = AR7240_PORT_CPU;
 	swdev->vlans = AR7240_MAX_VLANS;
 	swdev->ops = &ar7240_ops;
@@ -881,7 +893,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	for (i = 0; i < AR7240_MAX_VLANS; i++)
 		as->vlan_id[i] = i;
 
-	as->vlan_table[0] = AR7240_PORT_MASK_ALL;
+	as->vlan_table[0] = ar7240sw_port_mask_all(as);
 
 	return as;
 }
