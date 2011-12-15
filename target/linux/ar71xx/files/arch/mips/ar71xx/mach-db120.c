@@ -143,7 +143,7 @@ static void __init db120_setup(void)
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, art + DB120_MAC1_OFFSET, 0);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ar71xx_eth1_data.speed = SPEED_100;
+	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(1);
