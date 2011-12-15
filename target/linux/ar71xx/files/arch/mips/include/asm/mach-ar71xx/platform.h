@@ -18,7 +18,7 @@
 #include <linux/spi/spi.h>
 
 struct ag71xx_switch_platform_data {
-	int		dummy;
+	u8		phy4_mii_en:1;
 };
 
 struct ag71xx_platform_data {
