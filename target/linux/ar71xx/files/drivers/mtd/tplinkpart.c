@@ -84,7 +84,7 @@ err:
 	return NULL;
 }
 
-static int tplink_check_squashfs_magic(struct mtd_info *mtd, size_t offset)
+static int tplink_check_rootfs_magic(struct mtd_info *mtd, size_t offset)
 {
 	u32 magic;
 	size_t retlen;
@@ -98,7 +98,8 @@ static int tplink_check_squashfs_magic(struct mtd_info *mtd, size_t offset)
 	if (retlen != sizeof(magic))
 		return -EIO;
 
-	if (le32_to_cpu(magic) != SQUASHFS_MAGIC)
+	if (le32_to_cpu(magic) != SQUASHFS_MAGIC &&
+	    magic != 0x19852003)
 		return -EINVAL;
 
 	return 0;
@@ -136,7 +137,7 @@ static int tplink_parse_partitions(struct mtd_info *master,
 	squashfs_offset = offset + sizeof(struct tplink_fw_header) +
 			  be32_to_cpu(header->kernel_len);
 
-	ret = tplink_check_squashfs_magic(master, squashfs_offset);
+	ret = tplink_check_rootfs_magic(master, squashfs_offset);
 	if (ret == 0)
 		rootfs_offset = squashfs_offset;
 	else
