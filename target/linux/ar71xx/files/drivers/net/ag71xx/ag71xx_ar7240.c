@@ -25,6 +25,8 @@
 #define AR7240_MASK_CTRL_REVISION_M	BITM(8)
 #define AR7240_MASK_CTRL_VERSION_M	BITM(8)
 #define AR7240_MASK_CTRL_VERSION_S	8
+#define   AR7240_MASK_CTRL_VERSION_AR7240 0x01
+#define   AR7240_MASK_CTRL_VERSION_AR934X 0x02
 #define AR7240_MASK_CTRL_SOFT_RESET	BIT(31)
 
 #define AR7240_REG_MAC_ADDR0		0x20
@@ -192,6 +194,9 @@
 #define AR7240_PHY_ID1		0x004d
 #define AR7240_PHY_ID2		0xd041
 
+#define AR934X_PHY_ID1		0x004d
+#define AR934X_PHY_ID2		0xd042
+
 #define AR7240_MAX_VLANS	16
 
 #define sw_to_ar7240(_dev) container_of(_dev, struct ar7240sw, swdev)
@@ -201,6 +206,7 @@ struct ar7240sw {
 	struct ag71xx_switch_platform_data *swdata;
 	struct switch_dev swdev;
 	int num_ports;
+	u8 ver;
 	bool vlan;
 	u16 vlan_id[AR7240_MAX_VLANS];
 	u8 vlan_table[AR7240_MAX_VLANS];
@@ -216,6 +222,16 @@ struct ar7240sw_hw_stat {
 };
 
 static DEFINE_MUTEX(reg_mutex);
+
+static inline int sw_is_ar7240(struct ar7240sw *as)
+{
+	return as->ver == AR7240_MASK_CTRL_VERSION_AR7240;
+}
+
+static inline int sw_is_ar934x(struct ar7240sw *as)
+{
+	return as->ver == AR7240_MASK_CTRL_VERSION_AR934X;
+}
 
 static inline u32 ar7240sw_port_mask(struct ar7240sw *as, int port)
 {
@@ -851,12 +867,12 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	u32 ctrl;
 	u16 phy_id1;
 	u16 phy_id2;
-	u8 ver;
 	int i;
 
 	phy_id1 = ar7240sw_phy_read(mii, 0, MII_PHYSID1);
 	phy_id2 = ar7240sw_phy_read(mii, 0, MII_PHYSID2);
-	if (phy_id1 != AR7240_PHY_ID1 || phy_id2 != AR7240_PHY_ID2) {
+	if ((phy_id1 != AR7240_PHY_ID1 || phy_id2 != AR7240_PHY_ID2) &&
+	    (phy_id1 != AR934X_PHY_ID1 || phy_id2 != AR934X_PHY_ID2)) {
 		pr_err("%s: unknown phy id '%04x:%04x'\n",
 		       ag->dev->name, phy_id1, phy_id2);
 		return NULL;
@@ -869,27 +885,31 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	as->mii_bus = mii;
 	as->swdata = pdata->switch_data;
 
+	swdev = &as->swdev;
+
 	ctrl = ar7240sw_reg_read(mii, AR7240_REG_MASK_CTRL);
-	ver = (ctrl >> AR7240_MASK_CTRL_VERSION_S) & AR7240_MASK_CTRL_VERSION_M;
-	if (ver != 1) {
+	as->ver = (ctrl >> AR7240_MASK_CTRL_VERSION_S) &
+		  AR7240_MASK_CTRL_VERSION_M;
+
+	if (sw_is_ar7240(as)) {
+		swdev->name = "AR7240/AR9330 built-in switch";
+	} else if (sw_is_ar934x(as)) {
+		swdev->name = "AR934X built-in switch";
+	} else {
 		pr_err("%s: unsupported chip, ctrl=%08x\n",
 			ag->dev->name, ctrl);
-		return NULL;
+		goto err_free;
 	}
 
-	swdev = &as->swdev;
-	swdev->name = "AR7240 built-in switch";
 	swdev->ports = AR7240_NUM_PORTS - 1;
 	swdev->cpu_port = AR7240_PORT_CPU;
 	swdev->vlans = AR7240_MAX_VLANS;
 	swdev->ops = &ar7240_ops;
 
-	if (register_switch(&as->swdev, ag->dev) < 0) {
-		kfree(as);
-		return NULL;
-	}
+	if (register_switch(&as->swdev, ag->dev) < 0)
+		goto err_free;
 
-	pr_info("%s: Found an AR7240 built-in switch\n", ag->dev->name);
+	pr_info("%s: Found an %s\n", ag->dev->name, swdev->name);
 
 	/* initialize defaults */
 	for (i = 0; i < AR7240_MAX_VLANS; i++)
@@ -898,6 +918,10 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	as->vlan_table[0] = ar7240sw_port_mask_all(as);
 
 	return as;
+
+err_free:
+	kfree(as);
+	return NULL;
 }
 
 static void link_function(struct work_struct *work) {
