@@ -119,6 +119,8 @@ static uint32_t rootfs_align;
 static struct file_info boot_info;
 static int combined;
 static int strip_padding;
+static int add_jffs2_eof;
+static unsigned char jffs2_eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
 
 static struct file_info inspect_info;
 static int extract = 0;
@@ -333,6 +335,7 @@ static void usage(int status)
 "  -R <offset>     overwrite rootfs offset with <offset> (hexval prefixed with 0x)\n"
 "  -o <file>       write output to the file <file>\n"
 "  -s              strip padding from the end of the image\n"
+"  -j              add jffs2 end-of-filesystem markers\n"
 "  -N <vendor>     set image vendor to <vendor>\n"
 "  -V <version>    set image version to <version>\n"
 "  -i <file>       inspect given firmware file <file>\n"
@@ -545,6 +548,40 @@ static void fill_header(char *buf, int len)
 	get_md5(buf, len, hdr->md5sum1);
 }
 
+static int pad_jffs2(char *buf, int currlen)
+{
+	int len;
+	uint32_t pad_mask;
+
+	len = currlen;
+	pad_mask = (64 * 1024);
+	while ((len < layout->fw_max_len) && (pad_mask != 0)) {
+		uint32_t mask;
+		int i;
+
+		for (i = 10; i < 32; i++) {
+			mask = 1 << i;
+			if (pad_mask & mask)
+				break;
+		}
+
+		len = ALIGN(len, mask);
+
+		for (i = 10; i < 32; i++) {
+			mask = 1 << i;
+			if ((len & (mask - 1)) == 0)
+				pad_mask &= ~mask;
+		}
+
+		for (i = 0; i < sizeof(jffs2_eof_mark); i++)
+			buf[len + i] = jffs2_eof_mark[i];
+
+		len += sizeof(jffs2_eof_mark);
+	}
+
+	return len;
+}
+
 static int write_fw(char *data, int len)
 {
 	FILE *f;
@@ -606,6 +643,7 @@ static int build_fw(void)
 			p = buf + writelen;
 		else
 			p = buf + rootfs_ofs;
+
 		ret = read_to_buf(&rootfs_info, p);
 		if (ret)
 			goto out_free_buf;
@@ -614,6 +652,9 @@ static int build_fw(void)
 			writelen += rootfs_info.file_size;
 		else
 			writelen = rootfs_ofs + rootfs_info.file_size;
+
+		if (add_jffs2_eof)
+			writelen = pad_jffs2(buf, writelen);
 	}
 
 	if (!strip_padding)
@@ -855,7 +896,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xhs");
+		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xhsj");
 		if (c == -1)
 			break;
 
@@ -907,6 +948,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'i':
 			inspect_info.file_name = optarg;
+			break;
+		case 'j':
+			add_jffs2_eof = 1;
 			break;
 		case 'x':
 			extract = 1;
