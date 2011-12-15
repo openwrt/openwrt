@@ -64,12 +64,14 @@ static void __init jwap003_init(void)
 
 	ar71xx_add_device_mdio(0, 0x0);
 
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, ar71xx_mac_base, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth0_data.phy_mask = JWAP003_WAN_PHYMASK;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.has_ar8216 = 1;
 
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, ar71xx_mac_base, 1);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RMII;
 	ar71xx_eth1_data.phy_mask = JWAP003_LAN_PHYMASK;
 	ar71xx_eth1_data.speed = SPEED_100;
