@@ -219,11 +219,6 @@ struct ar7240sw_hw_stat {
 
 static DEFINE_MUTEX(reg_mutex);
 
-static inline void ar7240sw_init(struct ar7240sw *as, struct mii_bus *mii)
-{
-	as->mii_bus = mii;
-}
-
 static inline u16 mk_phy_addr(u32 reg)
 {
 	return 0x17 & ((reg >> 4) | 0x10);
@@ -849,7 +844,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	if (!as)
 		return NULL;
 
-	ar7240sw_init(as, mii);
+	as->mii_bus = mii;
 
 	ctrl = ar7240sw_reg_read(mii, AR7240_REG_MASK_CTRL);
 
