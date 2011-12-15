@@ -914,6 +914,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 					   AR934X_RESET_GE1_MDIO;
 			pdata->ddr_flush = ar934x_ddr_flush_ge1;
 			pdata->set_speed = ar934x_set_speed_ge1;
+
+			pdata->switch_data = &ar71xx_switch_data;
 		}
 
 		pdata->has_gbit = 1;
