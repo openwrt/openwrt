@@ -11,6 +11,10 @@ define imgname
 $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 endef
 
+define rootfs_align
+$(patsubst %-128k,0x20000,$(patsubst %-64k,0x10000,$(patsubst squashfs-%,4,$(1))))
+endef
+
 define sysupname
 $(call imgname,$(1),$(2))-sysupgrade.bin
 endef
@@ -333,12 +337,14 @@ define Image/Build/TPLINK
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION)\
 		-k $(KDIR)/kernel-$(2).bin \
-		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -a 0x10000 \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		-a $(call rootfs_align,$(1)) -j \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
 		-k $(KDIR)/kernel-$(2).bin \
-		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -a 0x10000 \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		-a $(call rootfs_align,$(1)) -j \
 		-o $(call sysupname,$(1),$(2))
 endef
 
@@ -355,12 +361,14 @@ define Image/Build/TPLINK-LZMA
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION)\
 		-k $(KDIR)/vmlinux-$(2).bin.lzma \
-		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -a 0x10000 \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		-a $(call rootfs_align,$(1)) -j \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s \
 		-k $(KDIR)/vmlinux-$(2).bin.lzma \
-		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) -a 0x10000 \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
+		-a $(call rootfs_align,$(1)) -j \
 		-o $(call sysupname,$(1),$(2))
 endef
 
