@@ -2,6 +2,7 @@
  *  Atheros DB120 board (WASP SoC) support
  *
  *  Copyright (C) 2010-2011 Jaiganesh Narayanan <jnarayanan@atheros.com>
+ *  Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -10,6 +11,7 @@
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/platform_device.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 
@@ -112,6 +114,21 @@ static struct gpio_keys_button db120_gpio_keys[] __initdata = {
 	}
 };
 
+static void __init db120_gmac_setup(void)
+{
+	void __iomem *base;
+	u32 t;
+
+	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+
+	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
+	       AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
+	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+}
+
 static void __init db120_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
@@ -129,14 +146,25 @@ static void __init db120_setup(void)
 					 ARRAY_SIZE(db120_gpio_keys),
 					 db120_gpio_keys);
 
+	db120_gmac_setup();
+
 	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_add_device_mdio(1, 0x0);
 
-	/* GMAC0 is connected to an AR8327 switch */
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
+#if 0
+	/* GMAC0 is connected to an AR8327 switch */
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+#else
+	/* GMAC0 is connected to PHY4 of the internal switch */
+	ar71xx_switch_data.phy4_mii_en = 1;
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = BIT(4);
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
+#endif
 
 	ar71xx_add_device_eth(0);
 
