@@ -527,6 +527,8 @@ struct platform_device ar71xx_eth1_device = {
 	},
 };
 
+struct ag71xx_switch_platform_data ar71xx_switch_data;
+
 #define AR71XX_PLL_VAL_1000	0x00110000
 #define AR71XX_PLL_VAL_100	0x00001099
 #define AR71XX_PLL_VAL_10	0x00991099
@@ -830,7 +832,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
-			pdata->has_ar7240_switch = 1;
+			pdata->switch_data = &ar71xx_switch_data;
 		}
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
@@ -885,7 +887,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
-			pdata->has_ar7240_switch = 1;
+			pdata->switch_data = &ar71xx_switch_data;
 		}
 
 		pdata->has_gbit = 1;

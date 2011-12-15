@@ -198,6 +198,7 @@
 
 struct ar7240sw {
 	struct mii_bus	*mii_bus;
+	struct ag71xx_switch_platform_data *swdata;
 	struct switch_dev swdev;
 	int num_ports;
 	bool vlan;
@@ -843,6 +844,7 @@ static const struct switch_dev_ops ar7240_ops = {
 
 static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 {
+	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	struct mii_bus *mii = ag->mii_bus;
 	struct ar7240sw *as;
 	struct switch_dev *swdev;
@@ -865,6 +867,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 		return NULL;
 
 	as->mii_bus = mii;
+	as->swdata = pdata->switch_data;
 
 	ctrl = ar7240sw_reg_read(mii, AR7240_REG_MASK_CTRL);
 	ver = (ctrl >> AR7240_MASK_CTRL_VERSION_S) & AR7240_MASK_CTRL_VERSION_M;
