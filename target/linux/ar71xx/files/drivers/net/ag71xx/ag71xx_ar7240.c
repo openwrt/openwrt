@@ -852,6 +852,14 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	u8 ver;
 	int i;
 
+	phy_id1 = ar7240sw_phy_read(mii, 0, MII_PHYSID1);
+	phy_id2 = ar7240sw_phy_read(mii, 0, MII_PHYSID2);
+	if (phy_id1 != AR7240_PHY_ID1 || phy_id2 != AR7240_PHY_ID2) {
+		pr_err("%s: unknown phy id '%04x:%04x'\n",
+		       ag->dev->name, phy_id1, phy_id2);
+		return NULL;
+	}
+
 	as = kzalloc(sizeof(*as), GFP_KERNEL);
 	if (!as)
 		return NULL;
@@ -859,19 +867,10 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	as->mii_bus = mii;
 
 	ctrl = ar7240sw_reg_read(mii, AR7240_REG_MASK_CTRL);
-
 	ver = (ctrl >> AR7240_MASK_CTRL_VERSION_S) & AR7240_MASK_CTRL_VERSION_M;
 	if (ver != 1) {
 		pr_err("%s: unsupported chip, ctrl=%08x\n",
 			ag->dev->name, ctrl);
-		return NULL;
-	}
-
-	phy_id1 = ar7240sw_phy_read(mii, 0, MII_PHYSID1);
-	phy_id2 = ar7240sw_phy_read(mii, 0, MII_PHYSID2);
-	if (phy_id1 != AR7240_PHY_ID1 || phy_id2 != AR7240_PHY_ID2) {
-		pr_err("%s: unknown phy id '%04x:%04x'\n",
-		       ag->dev->name, phy_id1, phy_id2);
 		return NULL;
 	}
 
