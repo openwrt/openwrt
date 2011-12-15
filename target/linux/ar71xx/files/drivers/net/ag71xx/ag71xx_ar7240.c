@@ -206,6 +206,26 @@
 #define AR934X_REG_OPER_MODE1		0x08
 #define   AR934X_REG_OPER_MODE1_PHY4_MII_EN	BIT(28)
 
+#define AR934X_REG_PORT_BASE(_port)	(0x100 + (_port) * 0x100)
+
+#define AR934X_REG_PORT_VLAN1(_port)	(AR934X_REG_PORT_BASE((_port)) + 0x08)
+#define   AR934X_PORT_VLAN1_DEFAULT_SVID_S		0
+#define   AR934X_PORT_VLAN1_FORCE_DEFAULT_VID_EN 	BIT(12)
+#define   AR934X_PORT_VLAN1_PORT_TLS_MODE		BIT(13)
+#define   AR934X_PORT_VLAN1_PORT_VLAN_PROP_EN		BIT(14)
+#define   AR934X_PORT_VLAN1_PORT_CLONE_EN		BIT(15)
+#define   AR934X_PORT_VLAN1_DEFAULT_CVID_S		16
+#define   AR934X_PORT_VLAN1_FORCE_PORT_VLAN_EN		BIT(28)
+#define   AR934X_PORT_VLAN1_ING_PORT_PRI_S		29
+
+#define AR934X_REG_PORT_VLAN2(_port)	(AR934X_REG_PORT_BASE((_port)) + 0x0c)
+#define   AR934X_PORT_VLAN2_PORT_VID_MEM_S		16
+#define   AR934X_PORT_VLAN2_8021Q_MODE_S		30
+#define   AR934X_PORT_VLAN2_8021Q_MODE_PORT_ONLY	0
+#define   AR934X_PORT_VLAN2_8021Q_MODE_PORT_FALLBACK	1
+#define   AR934X_PORT_VLAN2_8021Q_MODE_VLAN_ONLY	2
+#define   AR934X_PORT_VLAN2_8021Q_MODE_SECURE		3
+
 #define sw_to_ar7240(_dev) container_of(_dev, struct ar7240sw, swdev)
 
 struct ar7240sw {
@@ -495,7 +515,7 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 {
 	struct mii_bus *mii = as->mii_bus;
 	u32 ctrl;
-	u32 vlan;
+	u32 vid, mode;
 
 	ctrl = AR7240_PORT_CTRL_STATE_FORWARD | AR7240_PORT_CTRL_LEARN |
 		AR7240_PORT_CTRL_SINGLE_VLAN;
@@ -515,13 +535,11 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 
 	/* Set the default VID for this port */
 	if (as->vlan) {
-		vlan = as->vlan_id[as->pvid[port]];
-		vlan |= AR7240_PORT_VLAN_MODE_SECURE <<
-			AR7240_PORT_VLAN_MODE_S;
+		vid = as->vlan_id[as->pvid[port]];
+		mode = AR7240_PORT_VLAN_MODE_SECURE;
 	} else {
-		vlan = port;
-		vlan |= AR7240_PORT_VLAN_MODE_PORT_ONLY <<
-			AR7240_PORT_VLAN_MODE_S;
+		vid = port;
+		mode = AR7240_PORT_VLAN_MODE_PORT_ONLY;
 	}
 
 	if (as->vlan && (as->vlan_tagged & BIT(port))) {
@@ -544,11 +562,23 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 	 * port that they came from */
 	portmask &= ar7240sw_port_mask_but(as, port);
 
-	/* set default VID and and destination ports for this VLAN */
-	vlan |= (portmask << AR7240_PORT_VLAN_DEST_PORTS_S);
-
 	ar7240sw_reg_write(mii, AR7240_REG_PORT_CTRL(port), ctrl);
-	ar7240sw_reg_write(mii, AR7240_REG_PORT_VLAN(port), vlan);
+	if (sw_is_ar934x(as)) {
+		u32 vlan1, vlan2;
+
+		vlan1 = (vid << AR934X_PORT_VLAN1_DEFAULT_CVID_S);
+		vlan2 = (portmask << AR934X_PORT_VLAN2_PORT_VID_MEM_S) |
+			(mode << AR934X_PORT_VLAN2_8021Q_MODE_S);
+		ar7240sw_reg_write(mii, AR934X_REG_PORT_VLAN1(port), vlan1);
+		ar7240sw_reg_write(mii, AR934X_REG_PORT_VLAN2(port), vlan2);
+	} else {
+		u32 vlan;
+
+		vlan = vid | (mode << AR7240_PORT_VLAN_MODE_S) |
+		       (portmask << AR7240_PORT_VLAN_DEST_PORTS_S);
+
+		ar7240sw_reg_write(mii, AR7240_REG_PORT_VLAN(port), vlan);
+	}
 }
 
 static int ar7240_set_addr(struct ar7240sw *as, u8 *addr)
