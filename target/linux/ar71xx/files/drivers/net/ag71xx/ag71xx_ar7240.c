@@ -203,6 +203,9 @@
 #define   AR934X_OPER_MODE0_MAC_GMII_EN	BIT(6)
 #define   AR934X_OPER_MODE0_PHY_MII_EN	BIT(10)
 
+#define AR934X_REG_OPER_MODE1		0x08
+#define   AR934X_REG_OPER_MODE1_PHY4_MII_EN	BIT(28)
+
 #define sw_to_ar7240(_dev) container_of(_dev, struct ar7240sw, swdev)
 
 struct ar7240sw {
@@ -898,11 +901,8 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	if (sw_is_ar7240(as)) {
 		swdev->name = "AR7240/AR9330 built-in switch";
 	} else if (sw_is_ar934x(as)) {
-		struct ag71xx_platform_data *pdata;
-
 		swdev->name = "AR934X built-in switch";
 
-		pdata = ag71xx_get_pdata(ag);
 		if (pdata->phy_if_mode == PHY_INTERFACE_MODE_GMII) {
 			ar7240sw_reg_set(mii, AR934X_REG_OPER_MODE0,
 					 AR934X_OPER_MODE0_MAC_GMII_EN);
@@ -914,6 +914,10 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 			       ag->dev->name);
 			goto err_free;
 		}
+
+		if (as->swdata->phy4_mii_en)
+			ar7240sw_reg_set(mii, AR934X_REG_OPER_MODE1,
+					 AR934X_REG_OPER_MODE1_PHY4_MII_EN);
 	} else {
 		pr_err("%s: unsupported chip, ctrl=%08x\n",
 			ag->dev->name, ctrl);
