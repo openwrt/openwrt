@@ -12,7 +12,7 @@ $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squ
 endef
 
 define rootfs_align
-$(patsubst %-128k,0x20000,$(patsubst %-64k,0x10000,$(patsubst squashfs-%,4,$(1))))
+$(patsubst %-128k,0x20000,$(patsubst %-64k,0x10000,$(patsubst squashfs-%,0x4,$(1))))
 endef
 
 define sysupname
@@ -30,11 +30,13 @@ UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 fs_squash:=squashfs-only
 fs_all:=all
 fs_64k:=64k
+fs_64kraw:=64kraw
 fs_128k:=128k
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	fs_squash:=initramfs
 	fs_all:=initramfs
 	fs_64k:=initramfs
+	fs_64kraw:=initramfs
 	fs_128k:=initramfs
 	VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs
 	UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs
@@ -546,6 +548,14 @@ define Image/Build/Template/64k/jffs2-64k
 	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
+define Image/Build/Template/64kraw/squashfs
+	$(call Image/Build/$(1),squashfs-raw,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+endef
+
+define Image/Build/Template/64kraw/jffs2-64k
+	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+endef
+
 define Image/Build/Template/128k/squashfs
 	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
@@ -934,6 +944,7 @@ define Image/Build/Profile/Madwifi
 endef
 
 define Image/Build/squashfs
+	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-raw
 	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-64k
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs-64k 64
 	cp $(KDIR)/root.squashfs-64k $(BIN_DIR)/$(IMG_PREFIX)-root.squashfs-64k
