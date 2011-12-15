@@ -17,6 +17,10 @@
 #include <linux/phy.h>
 #include <linux/spi/spi.h>
 
+struct ag71xx_switch_platform_data {
+	int		dummy;
+};
+
 struct ag71xx_platform_data {
 	phy_interface_t	phy_if_mode;
 	u32		phy_mask;
@@ -31,7 +35,8 @@ struct ag71xx_platform_data {
 	u8		is_ar7240:1;
 	u8		is_ar724x:1;
 	u8		has_ar8216:1;
-	u8		has_ar7240_switch:1;
+
+	struct ag71xx_switch_platform_data *switch_data;
 
 	void		(*ddr_flush)(void);
 	void		(*set_speed)(int speed);
