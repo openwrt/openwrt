@@ -1,0 +1,12 @@
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -1774,6 +1774,9 @@ void ieee802_11_rx_from_unknown(struct h
+ 
+ 	sta = ap_get_sta(hapd, src);
+ 	if (sta && (sta->flags & WLAN_STA_ASSOC)) {
++		if (!hapd->conf->wds_sta)
++			return;
++
+ 		if (wds && !(sta->flags & WLAN_STA_WDS)) {
+ 			wpa_printf(MSG_DEBUG, "Enable 4-address WDS mode for "
+ 				   "STA " MACSTR " (aid %u)",
