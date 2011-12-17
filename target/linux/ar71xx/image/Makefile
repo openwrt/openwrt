@@ -791,7 +791,7 @@ tlwr841v3_cmdline=board=TL-WR941ND console=ttyS0,115200
 tlwr841v5_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR841
 	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINKOLD,tl-wr841n-v1.5,$(tlwr841v15_cmdline),0x08410002,2,4M)
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr841nd-v3,$(tlwr841v3_cmdline),0x08410003,3,4M)
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr841nd-v3,$(tlwr841v3_cmdline),0x08410003,3,4M)
 	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr841nd-v5,$(tlwr841v5_cmdline),0x08410005,1,4M)
 	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr841nd-v7,$(tlwr841v5_cmdline),0x08410007,1,4M)
 endef
@@ -799,14 +799,14 @@ endef
 tlwr941v2_cmdline=board=TL-WR941ND console=ttyS0,115200
 tlwr941v4_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR941
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v2,$(tlwr941v2_cmdline),0x09410002,2,4M)
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr941nd-v3,$(tlwr941v2_cmdline),0x09410002,2,4M)
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr941nd-v2,$(tlwr941v2_cmdline),0x09410002,2,4M)
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr941nd-v3,$(tlwr941v2_cmdline),0x09410002,2,4M)
 	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr941nd-v4,$(tlwr941v4_cmdline),0x09410004,1,4M)
 endef
 
 tlwr1043_cmdline=board=TL-WR1043ND console=ttyS0,115200
 define Image/Build/Profile/TLWR1043
-	$(call Image/Build/Template/$(fs_squash)/$(1),TPLINK,tl-wr1043nd-v1,$(tlwr1043_cmdline),0x10430001,1,8M)
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr1043nd-v1,$(tlwr1043_cmdline),0x10430001,1,8M)
 endef
 
 wndr3700_cmdline=board=WNDR3700 console=ttyS0,115200
