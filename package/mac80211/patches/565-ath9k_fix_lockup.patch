@@ -1,0 +1,25 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -189,8 +189,11 @@ static void ath_tx_flush_tid(struct ath_
+ 		tid->state &= ~AGGR_CLEANUP;
+ 	}
+ 
+-	if (sendbar)
++	if (sendbar) {
++		spin_unlock_bh(&txq->axq_lock);
+ 		ath_send_bar(tid, tid->seq_start);
++		spin_lock_bh(&txq->axq_lock);
++	}
+ }
+ 
+ static void ath_tx_update_baw(struct ath_softc *sc, struct ath_atx_tid *tid,
+@@ -566,7 +569,9 @@ static void ath_tx_complete_aggr(struct 
+ 
+ 	if (bar_index >= 0) {
+ 		u16 bar_seq = ATH_BA_INDEX2SEQ(seq_first, bar_index);
++		spin_unlock_bh(&txq->axq_lock);
+ 		ath_send_bar(tid, ATH_BA_INDEX2SEQ(seq_first, bar_index + 1));
++		spin_lock_bh(&txq->axq_lock);
+ 		if (BAW_WITHIN(tid->seq_start, tid->baw_size, bar_seq))
+ 			tid->bar_index = ATH_BA_INDEX(tid->seq_start, bar_seq);
+ 	}
