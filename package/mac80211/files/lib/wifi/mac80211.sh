@@ -363,7 +363,7 @@ enable_mac80211() {
 				iw phy "$phy" interface add "$ifname" type managed $wdsflag
 				config_get_bool powersave "$vif" powersave 0
 				[ "$powersave" -gt 0 ] && powersave="on" || powersave="off"
-				iwconfig "$ifname" power "$powersave"
+				iw "$ifname" set power_save off
 			;;
 		esac
 
