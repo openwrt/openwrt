@@ -394,12 +394,6 @@ enable_mac80211() {
 			[ -n "$fixed" -a -n "$channel" ] && iw dev "$ifname" set channel "$channel"
 		fi
 
-		config_get vif_txpower "$vif" txpower
-		# use vif_txpower (from wifi-iface) to override txpower (from
-		# wifi-device) if the latter doesn't exist
-		txpower="${txpower:-$vif_txpower}"
-		[ -z "$txpower" ] || iw dev "$ifname" set txpower fixed "${txpower%%.*}00"
-
 		i=$(($i + 1))
 	done
 
@@ -433,6 +427,12 @@ enable_mac80211() {
 		config_get ifname "$vif" ifname
 		[ ! "$mode" = "ap" ] || continue
 		ifconfig "$ifname" up
+
+		config_get vif_txpower "$vif" txpower
+		# use vif_txpower (from wifi-iface) to override txpower (from
+		# wifi-device) if the latter doesn't exist
+		txpower="${txpower:-$vif_txpower}"
+		[ -z "$txpower" ] || iw dev "$ifname" set txpower fixed "${txpower%%.*}00"
 
 		if [ ! "$mode" = "ap" ]; then
 			ifconfig "$ifname" up
