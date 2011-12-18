@@ -856,6 +856,11 @@ define Image/Build/Profile/WZRHPG300NH
 	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh,$(wzrhpg300nh_cmdline),WZR-HP-G300NH)
 endef
 
+wzrhpg300nh2_cmdline=board=WZR-HP-G300NH2 console=ttyS0,115200
+define Image/Build/Profile/WZRHPG300NH2
+	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-g300nh2,$(wzrhpg300nh2_cmdline),WZR-HP-G300NH2)
+endef
+
 wzrhpag300h_cmdline=board=WZR-HP-AG300H console=ttyS0,115200
 define Image/Build/Profile/WZRHPAG300H
 	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-ag300h,$(wzrhpag300h_cmdline),WZR-HP-AG300H)
@@ -926,6 +931,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WHRHPG300N,$(1))
 	$(call Image/Build/Profile/WHRHPGN,$(1))
 	$(call Image/Build/Profile/WZRHPG300NH,$(1))
+	$(call Image/Build/Profile/WZRHPG300NH2,$(1))
 	$(call Image/Build/Profile/WZRHPAG300H,$(1))
 	$(call Image/Build/Profile/WZRHPG450H,$(1))
 	$(call Image/Build/Profile/ZCN1523H28,$(1))

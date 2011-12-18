@@ -69,6 +69,7 @@ obj-$(CONFIG_AR71XX_MACH_WP543)		+= mach-wp543.o
 obj-$(CONFIG_AR71XX_MACH_WRT160NL)	+= mach-wrt160nl.o
 obj-$(CONFIG_AR71XX_MACH_WRT400N)	+= mach-wrt400n.o
 obj-$(CONFIG_AR71XX_MACH_WZR_HP_G300NH)	+= mach-wzr-hp-g300nh.o
+obj-$(CONFIG_AR71XX_MACH_WZR_HP_G300NH2)	+= mach-wzr-hp-g300nh2.o
 obj-$(CONFIG_AR71XX_MACH_WZR_HP_AG300H)	+= mach-wzr-hp-ag300h.o
 obj-$(CONFIG_AR71XX_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
 obj-$(CONFIG_AR71XX_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
