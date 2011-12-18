@@ -16,6 +16,17 @@ endef
 
 $(eval $(call Profile,WZRHPG300NH))
 
+define Profile/WZRHPG300NH2
+	NAME:=Buffalo WZR-HP-G300NH2
+	PACKAGES:=kmod-ath9k wpad-mini kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+endef
+
+define Profile/WZRHPG300NH/Description
+	Package set optimized for the Buffalo WZR-HP-G300NH2
+endef
+
+$(eval $(call Profile,WZRHPG300NH2))
+
 define Profile/WZRHPAG300H
 	NAME:=Buffalo WZR-HP-AG300H
 	PACKAGES:=kmod-usb-ohci kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
