@@ -40,7 +40,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  bcma-$(CONFIG_BCMA_DRIVER_MIPS)		+= driver_mips.o
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -38,6 +38,11 @@ void bcma_chipco_serial_init(struct bcma
+@@ -41,6 +41,11 @@ void bcma_chipco_serial_init(struct bcma
  u32 bcma_pmu_alp_clock(struct bcma_drv_cc *cc);
  u32 bcma_pmu_get_clockcpu(struct bcma_drv_cc *cc);
  
@@ -629,7 +629,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		pr_info("found parallel flash.\n");
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -358,6 +358,7 @@ struct bcma_chipcommon_pmu {
+@@ -375,6 +375,7 @@ struct bcma_chipcommon_pmu {
  #ifdef CONFIG_BCMA_DRIVER_MIPS
  enum bcma_flash_type {
  	BCMA_PFLASH,
@@ -637,7 +637,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  };
  
  struct bcma_pflash {
-@@ -366,6 +367,14 @@ struct bcma_pflash {
+@@ -383,6 +384,14 @@ struct bcma_pflash {
  	u32 window_size;
  };
  
@@ -652,7 +652,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  struct bcma_serial_port {
  	void *regs;
  	unsigned long clockspeed;
-@@ -388,6 +397,9 @@ struct bcma_drv_cc {
+@@ -405,6 +414,9 @@ struct bcma_drv_cc {
  	enum bcma_flash_type flash_type;
  	union {
  		struct bcma_pflash pflash;
@@ -662,9 +662,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	};
  
  	int nr_serial_ports;
-@@ -431,4 +443,16 @@ u32 bcma_chipco_gpio_polarity(struct bcm
- /* PMU support */
- extern void bcma_pmu_init(struct bcma_drv_cc *cc);
+@@ -459,4 +471,16 @@ extern void bcma_chipco_chipctl_maskset(
+ extern void bcma_chipco_regctl_maskset(struct bcma_drv_cc *cc,
+ 				       u32 offset, u32 mask, u32 set);
  
 +#ifdef CONFIG_BCMA_SFLASH
 +/* Chipcommon sflash support. */

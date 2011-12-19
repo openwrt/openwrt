@@ -1,6 +1,136 @@
 --- a/drivers/ssb/main.c
 +++ b/drivers/ssb/main.c
-@@ -1192,10 +1192,10 @@ void ssb_device_enable(struct ssb_device
+@@ -3,7 +3,7 @@
+  * Subsystem core
+  *
+  * Copyright 2005, Broadcom Corporation
+- * Copyright 2006, 2007, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2006, 2007, Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+@@ -12,6 +12,7 @@
+ 
+ #include <linux/delay.h>
+ #include <linux/io.h>
++#include <linux/module.h>
+ #include <linux/ssb/ssb.h>
+ #include <linux/ssb/ssb_regs.h>
+ #include <linux/ssb/ssb_driver_gige.h>
+@@ -557,7 +558,7 @@ error:
+ }
+ 
+ /* Needs ssb_buses_lock() */
+-static int ssb_attach_queued_buses(void)
++static int __devinit ssb_attach_queued_buses(void)
+ {
+ 	struct ssb_bus *bus, *n;
+ 	int err = 0;
+@@ -768,9 +769,9 @@ out:
+ 	return err;
+ }
+ 
+-static int ssb_bus_register(struct ssb_bus *bus,
+-			    ssb_invariants_func_t get_invariants,
+-			    unsigned long baseaddr)
++static int __devinit ssb_bus_register(struct ssb_bus *bus,
++				      ssb_invariants_func_t get_invariants,
++				      unsigned long baseaddr)
+ {
+ 	int err;
+ 
+@@ -851,8 +852,8 @@ err_disable_xtal:
+ }
+ 
+ #ifdef CONFIG_SSB_PCIHOST
+-int ssb_bus_pcibus_register(struct ssb_bus *bus,
+-			    struct pci_dev *host_pci)
++int __devinit ssb_bus_pcibus_register(struct ssb_bus *bus,
++				      struct pci_dev *host_pci)
+ {
+ 	int err;
+ 
+@@ -875,9 +876,9 @@ EXPORT_SYMBOL(ssb_bus_pcibus_register);
+ #endif /* CONFIG_SSB_PCIHOST */
+ 
+ #ifdef CONFIG_SSB_PCMCIAHOST
+-int ssb_bus_pcmciabus_register(struct ssb_bus *bus,
+-			       struct pcmcia_device *pcmcia_dev,
+-			       unsigned long baseaddr)
++int __devinit ssb_bus_pcmciabus_register(struct ssb_bus *bus,
++					 struct pcmcia_device *pcmcia_dev,
++					 unsigned long baseaddr)
+ {
+ 	int err;
+ 
+@@ -897,8 +898,9 @@ EXPORT_SYMBOL(ssb_bus_pcmciabus_register
+ #endif /* CONFIG_SSB_PCMCIAHOST */
+ 
+ #ifdef CONFIG_SSB_SDIOHOST
+-int ssb_bus_sdiobus_register(struct ssb_bus *bus, struct sdio_func *func,
+-			     unsigned int quirks)
++int __devinit ssb_bus_sdiobus_register(struct ssb_bus *bus,
++				       struct sdio_func *func,
++				       unsigned int quirks)
+ {
+ 	int err;
+ 
+@@ -918,9 +920,9 @@ int ssb_bus_sdiobus_register(struct ssb_
+ EXPORT_SYMBOL(ssb_bus_sdiobus_register);
+ #endif /* CONFIG_SSB_PCMCIAHOST */
+ 
+-int ssb_bus_ssbbus_register(struct ssb_bus *bus,
+-			    unsigned long baseaddr,
+-			    ssb_invariants_func_t get_invariants)
++int __devinit ssb_bus_ssbbus_register(struct ssb_bus *bus,
++				      unsigned long baseaddr,
++				      ssb_invariants_func_t get_invariants)
+ {
+ 	int err;
+ 
+@@ -1001,8 +1003,8 @@ u32 ssb_calc_clock_rate(u32 plltype, u32
+ 	switch (plltype) {
+ 	case SSB_PLLTYPE_6: /* 100/200 or 120/240 only */
+ 		if (m & SSB_CHIPCO_CLK_T6_MMASK)
+-			return SSB_CHIPCO_CLK_T6_M0;
+-		return SSB_CHIPCO_CLK_T6_M1;
++			return SSB_CHIPCO_CLK_T6_M1;
++		return SSB_CHIPCO_CLK_T6_M0;
+ 	case SSB_PLLTYPE_1: /* 48Mhz base, 3 dividers */
+ 	case SSB_PLLTYPE_3: /* 25Mhz, 2 dividers */
+ 	case SSB_PLLTYPE_4: /* 48Mhz, 4 dividers */
+@@ -1117,23 +1119,22 @@ static u32 ssb_tmslow_reject_bitmask(str
+ {
+ 	u32 rev = ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_SSBREV;
+ 
+-	/* The REJECT bit changed position in TMSLOW between
+-	 * Backplane revisions. */
++	/* The REJECT bit seems to be different for Backplane rev 2.3 */
+ 	switch (rev) {
+ 	case SSB_IDLOW_SSBREV_22:
+-		return SSB_TMSLOW_REJECT_22;
++	case SSB_IDLOW_SSBREV_24:
++	case SSB_IDLOW_SSBREV_26:
++		return SSB_TMSLOW_REJECT;
+ 	case SSB_IDLOW_SSBREV_23:
+ 		return SSB_TMSLOW_REJECT_23;
+-	case SSB_IDLOW_SSBREV_24:     /* TODO - find the proper REJECT bits */
+-	case SSB_IDLOW_SSBREV_25:     /* same here */
+-	case SSB_IDLOW_SSBREV_26:     /* same here */
++	case SSB_IDLOW_SSBREV_25:     /* TODO - find the proper REJECT bit */
+ 	case SSB_IDLOW_SSBREV_27:     /* same here */
+-		return SSB_TMSLOW_REJECT_23;	/* this is a guess */
++		return SSB_TMSLOW_REJECT;	/* this is a guess */
+ 	default:
+ 		printk(KERN_INFO "ssb: Backplane Revision 0x%.8X\n", rev);
+ 		WARN_ON(1);
+ 	}
+-	return (SSB_TMSLOW_REJECT_22 | SSB_TMSLOW_REJECT_23);
++	return (SSB_TMSLOW_REJECT | SSB_TMSLOW_REJECT_23);
+ }
+ 
+ int ssb_device_is_enabled(struct ssb_device *dev)
+@@ -1192,10 +1193,10 @@ void ssb_device_enable(struct ssb_device
  }
  EXPORT_SYMBOL(ssb_device_enable);
  
@@ -14,7 +144,7 @@
  {
  	int i;
  	u32 val;
-@@ -1203,7 +1203,7 @@ static int ssb_wait_bit(struct ssb_devic
+@@ -1203,7 +1204,7 @@ static int ssb_wait_bit(struct ssb_devic
  	for (i = 0; i < timeout; i++) {
  		val = ssb_read32(dev, reg);
  		if (set) {
@@ -23,7 +153,7 @@
  				return 0;
  		} else {
  			if (!(val & bitmask))
-@@ -1220,20 +1220,38 @@ static int ssb_wait_bit(struct ssb_devic
+@@ -1220,20 +1221,38 @@ static int ssb_wait_bit(struct ssb_devic
  
  void ssb_device_disable(struct ssb_device *dev, u32 core_specific_flags)
  {
@@ -71,8 +201,116 @@
  
  	ssb_write32(dev, SSB_TMSLOW,
  		    reject | SSB_TMSLOW_RESET |
+@@ -1242,13 +1261,34 @@ void ssb_device_disable(struct ssb_devic
+ }
+ EXPORT_SYMBOL(ssb_device_disable);
+ 
++/* Some chipsets need routing known for PCIe and 64-bit DMA */
++static bool ssb_dma_translation_special_bit(struct ssb_device *dev)
++{
++	u16 chip_id = dev->bus->chip_id;
++
++	if (dev->id.coreid == SSB_DEV_80211) {
++		return (chip_id == 0x4322 || chip_id == 43221 ||
++			chip_id == 43231 || chip_id == 43222);
++	}
++
++	return 0;
++}
++
+ u32 ssb_dma_translation(struct ssb_device *dev)
+ {
+ 	switch (dev->bus->bustype) {
+ 	case SSB_BUSTYPE_SSB:
+ 		return 0;
+ 	case SSB_BUSTYPE_PCI:
+-		return SSB_PCI_DMA;
++		if (pci_is_pcie(dev->bus->host_pci) &&
++		    ssb_read32(dev, SSB_TMSHIGH) & SSB_TMSHIGH_DMA64) {
++			return SSB_PCIE_DMA_H32;
++		} else {
++			if (ssb_dma_translation_special_bit(dev))
++				return SSB_PCIE_DMA_H32;
++			else
++				return SSB_PCI_DMA;
++		}
+ 	default:
+ 		__ssb_dma_not_implemented(dev);
+ 	}
+@@ -1291,20 +1331,20 @@ EXPORT_SYMBOL(ssb_bus_may_powerdown);
+ 
+ int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl)
+ {
+-	struct ssb_chipcommon *cc;
+ 	int err;
+ 	enum ssb_clkmode mode;
+ 
+ 	err = ssb_pci_xtal(bus, SSB_GPIO_XTAL | SSB_GPIO_PLL, 1);
+ 	if (err)
+ 		goto error;
+-	cc = &bus->chipco;
+-	mode = dynamic_pctl ? SSB_CLKMODE_DYNAMIC : SSB_CLKMODE_FAST;
+-	ssb_chipco_set_clockmode(cc, mode);
+ 
+ #ifdef CONFIG_SSB_DEBUG
+ 	bus->powered_up = 1;
+ #endif
++
++	mode = dynamic_pctl ? SSB_CLKMODE_DYNAMIC : SSB_CLKMODE_FAST;
++	ssb_chipco_set_clockmode(&bus->chipco, mode);
++
+ 	return 0;
+ error:
+ 	ssb_printk(KERN_ERR PFX "Bus powerup failed\n");
+@@ -1312,6 +1352,37 @@ error:
+ }
+ EXPORT_SYMBOL(ssb_bus_powerup);
+ 
++static void ssb_broadcast_value(struct ssb_device *dev,
++				u32 address, u32 data)
++{
++#ifdef CONFIG_SSB_DRIVER_PCICORE
++	/* This is used for both, PCI and ChipCommon core, so be careful. */
++	BUILD_BUG_ON(SSB_PCICORE_BCAST_ADDR != SSB_CHIPCO_BCAST_ADDR);
++	BUILD_BUG_ON(SSB_PCICORE_BCAST_DATA != SSB_CHIPCO_BCAST_DATA);
++#endif
++
++	ssb_write32(dev, SSB_CHIPCO_BCAST_ADDR, address);
++	ssb_read32(dev, SSB_CHIPCO_BCAST_ADDR); /* flush */
++	ssb_write32(dev, SSB_CHIPCO_BCAST_DATA, data);
++	ssb_read32(dev, SSB_CHIPCO_BCAST_DATA); /* flush */
++}
++
++void ssb_commit_settings(struct ssb_bus *bus)
++{
++	struct ssb_device *dev;
++
++#ifdef CONFIG_SSB_DRIVER_PCICORE
++	dev = bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev;
++#else
++	dev = bus->chipco.dev;
++#endif
++	if (WARN_ON(!dev))
++		return;
++	/* This forces an update of the cached registers. */
++	ssb_broadcast_value(dev, 0xFD8, 0);
++}
++EXPORT_SYMBOL(ssb_commit_settings);
++
+ u32 ssb_admatch_base(u32 adm)
+ {
+ 	u32 base = 0;
 --- a/drivers/ssb/pci.c
 +++ b/drivers/ssb/pci.c
+@@ -1,7 +1,7 @@
+ /*
+  * Sonics Silicon Backplane PCI-Hostbus related functions.
+  *
+- * Copyright (C) 2005-2006 Michael Buesch <mb@bu3sch.de>
++ * Copyright (C) 2005-2006 Michael Buesch <m@bues.ch>
+  * Copyright (C) 2005 Martin Langer <martin-langer@gmx.de>
+  * Copyright (C) 2005 Stefano Brivio <st3@riseup.net>
+  * Copyright (C) 2005 Danny van Dyk <kugelfang@gentoo.org>
 @@ -468,10 +468,14 @@ static void sprom_extract_r45(struct ssb
  		SPEX(country_code, SSB_SPROM4_CCODE, 0xFFFF, 0);
  		SPEX(boardflags_lo, SSB_SPROM4_BFLLO, 0xFFFF, 0);
@@ -88,7 +326,37 @@
  	}
  	SPEX(ant_available_a, SSB_SPROM4_ANTAVAIL, SSB_SPROM4_ANTAVAIL_A,
  	     SSB_SPROM4_ANTAVAIL_A_SHIFT);
-@@ -641,7 +645,7 @@ static int sprom_extract(struct ssb_bus
+@@ -603,6 +607,29 @@ static void sprom_extract_r8(struct ssb_
+ 	memcpy(&out->antenna_gain.ghz5, &out->antenna_gain.ghz24,
+ 	       sizeof(out->antenna_gain.ghz5));
+ 
++	/* Extract FEM info */
++	SPEX(fem.ghz2.tssipos, SSB_SPROM8_FEM2G,
++		SSB_SROM8_FEM_TSSIPOS, SSB_SROM8_FEM_TSSIPOS_SHIFT);
++	SPEX(fem.ghz2.extpa_gain, SSB_SPROM8_FEM2G,
++		SSB_SROM8_FEM_EXTPA_GAIN, SSB_SROM8_FEM_EXTPA_GAIN_SHIFT);
++	SPEX(fem.ghz2.pdet_range, SSB_SPROM8_FEM2G,
++		SSB_SROM8_FEM_PDET_RANGE, SSB_SROM8_FEM_PDET_RANGE_SHIFT);
++	SPEX(fem.ghz2.tr_iso, SSB_SPROM8_FEM2G,
++		SSB_SROM8_FEM_TR_ISO, SSB_SROM8_FEM_TR_ISO_SHIFT);
++	SPEX(fem.ghz2.antswlut, SSB_SPROM8_FEM2G,
++		SSB_SROM8_FEM_ANTSWLUT, SSB_SROM8_FEM_ANTSWLUT_SHIFT);
++
++	SPEX(fem.ghz5.tssipos, SSB_SPROM8_FEM5G,
++		SSB_SROM8_FEM_TSSIPOS, SSB_SROM8_FEM_TSSIPOS_SHIFT);
++	SPEX(fem.ghz5.extpa_gain, SSB_SPROM8_FEM5G,
++		SSB_SROM8_FEM_EXTPA_GAIN, SSB_SROM8_FEM_EXTPA_GAIN_SHIFT);
++	SPEX(fem.ghz5.pdet_range, SSB_SPROM8_FEM5G,
++		SSB_SROM8_FEM_PDET_RANGE, SSB_SROM8_FEM_PDET_RANGE_SHIFT);
++	SPEX(fem.ghz5.tr_iso, SSB_SPROM8_FEM5G,
++		SSB_SROM8_FEM_TR_ISO, SSB_SROM8_FEM_TR_ISO_SHIFT);
++	SPEX(fem.ghz5.antswlut, SSB_SPROM8_FEM5G,
++		SSB_SROM8_FEM_ANTSWLUT, SSB_SROM8_FEM_ANTSWLUT_SHIFT);
++
+ 	sprom_extract_r458(out, in);
+ 
+ 	/* TODO - get remaining rev 8 stuff needed */
+@@ -641,7 +668,7 @@ static int sprom_extract(struct ssb_bus
  		break;
  	default:
  		ssb_printk(KERN_WARNING PFX "Unsupported SPROM"
@@ -97,6 +365,61 @@
  			   " v1\n", out->revision);
  		out->revision = 1;
  		sprom_extract_r123(out, in);
+@@ -658,7 +685,6 @@ static int sprom_extract(struct ssb_bus
+ static int ssb_pci_sprom_get(struct ssb_bus *bus,
+ 			     struct ssb_sprom *sprom)
+ {
+-	const struct ssb_sprom *fallback;
+ 	int err;
+ 	u16 *buf;
+ 
+@@ -666,7 +692,7 @@ static int ssb_pci_sprom_get(struct ssb_
+ 		ssb_printk(KERN_ERR PFX "No SPROM available!\n");
+ 		return -ENODEV;
+ 	}
+-	if (bus->chipco.dev) {	/* can be unavailible! */
++	if (bus->chipco.dev) {	/* can be unavailable! */
+ 		/*
+ 		 * get SPROM offset: SSB_SPROM_BASE1 except for
+ 		 * chipcommon rev >= 31 or chip ID is 0x4312 and
+@@ -703,10 +729,17 @@ static int ssb_pci_sprom_get(struct ssb_
+ 		if (err) {
+ 			/* All CRC attempts failed.
+ 			 * Maybe there is no SPROM on the device?
+-			 * If we have a fallback, use that. */
+-			fallback = ssb_get_fallback_sprom();
+-			if (fallback) {
+-				memcpy(sprom, fallback, sizeof(*sprom));
++			 * Now we ask the arch code if there is some sprom
++			 * available for this device in some other storage */
++			err = ssb_fill_sprom_with_fallback(bus, sprom);
++			if (err) {
++				ssb_printk(KERN_WARNING PFX "WARNING: Using"
++					   " fallback SPROM failed (err %d)\n",
++					   err);
++			} else {
++				ssb_dprintk(KERN_DEBUG PFX "Using SPROM"
++					    " revision %d provided by"
++					    " platform.\n", sprom->revision);
+ 				err = 0;
+ 				goto out_free;
+ 			}
+@@ -724,12 +757,9 @@ out_free:
+ static void ssb_pci_get_boardinfo(struct ssb_bus *bus,
+ 				  struct ssb_boardinfo *bi)
+ {
+-	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_VENDOR_ID,
+-			     &bi->vendor);
+-	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_ID,
+-			     &bi->type);
+-	pci_read_config_word(bus->host_pci, PCI_REVISION_ID,
+-			     &bi->rev);
++	bi->vendor = bus->host_pci->subsystem_vendor;
++	bi->type = bus->host_pci->subsystem_device;
++	bi->rev = bus->host_pci->revision;
+ }
+ 
+ int ssb_pci_get_invariants(struct ssb_bus *bus,
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
 @@ -85,6 +85,8 @@
@@ -108,9 +431,12 @@
  #define SSB_INTVEC		0x0F94     /* SB Interrupt Mask */
  #define  SSB_INTVEC_PCI		0x00000001 /* Enable interrupts for PCI */
  #define  SSB_INTVEC_ENET0	0x00000002 /* Enable interrupts for enet 0 */
-@@ -97,7 +99,6 @@
+@@ -95,9 +97,8 @@
+ #define  SSB_INTVEC_ENET1	0x00000040 /* Enable interrupts for enet 1 */
+ #define SSB_TMSLOW		0x0F98     /* SB Target State Low */
  #define  SSB_TMSLOW_RESET	0x00000001 /* Reset */
- #define  SSB_TMSLOW_REJECT_22	0x00000002 /* Reject (Backplane rev 2.2) */
+-#define  SSB_TMSLOW_REJECT_22	0x00000002 /* Reject (Backplane rev 2.2) */
++#define  SSB_TMSLOW_REJECT	0x00000002 /* Reject (Standard Backplane) */
  #define  SSB_TMSLOW_REJECT_23	0x00000004 /* Reject (Backplane rev 2.3) */
 -#define  SSB_TMSLOW_PHYCLK	0x00000010 /* MAC PHY Clock Control Enable */
  #define  SSB_TMSLOW_CLOCK	0x00010000 /* Clock Enable */
@@ -134,11 +460,89 @@
  #define SSB_SPROM5_IL0MAC		0x0052	/* 6 byte MAC address for a/b/g/n */
  #define SSB_SPROM5_GPIOA		0x0076	/* Gen. Purpose IO # 0 and 1 */
  #define  SSB_SPROM5_GPIOA_P0		0x00FF	/* Pin 0 */
-diff --git a/drivers/ssb/driver_chipcommon.c b/drivers/ssb/driver_chipcommon.c
-index 7c031fd..06d15b6 100644
+@@ -427,6 +432,23 @@
+ #define  SSB_SPROM8_RXPO2G		0x00FF	/* 2GHz RX power offset */
+ #define  SSB_SPROM8_RXPO5G		0xFF00	/* 5GHz RX power offset */
+ #define  SSB_SPROM8_RXPO5G_SHIFT	8
++#define SSB_SPROM8_FEM2G		0x00AE
++#define SSB_SPROM8_FEM5G		0x00B0
++#define  SSB_SROM8_FEM_TSSIPOS		0x0001
++#define  SSB_SROM8_FEM_TSSIPOS_SHIFT	0
++#define  SSB_SROM8_FEM_EXTPA_GAIN	0x0006
++#define  SSB_SROM8_FEM_EXTPA_GAIN_SHIFT	1
++#define  SSB_SROM8_FEM_PDET_RANGE	0x00F8
++#define  SSB_SROM8_FEM_PDET_RANGE_SHIFT	3
++#define  SSB_SROM8_FEM_TR_ISO		0x0700
++#define  SSB_SROM8_FEM_TR_ISO_SHIFT	8
++#define  SSB_SROM8_FEM_ANTSWLUT		0xF800
++#define  SSB_SROM8_FEM_ANTSWLUT_SHIFT	11
++#define SSB_SPROM8_THERMAL		0x00B2
++#define SSB_SPROM8_MPWR_RAWTS		0x00B4
++#define SSB_SPROM8_TS_SLP_OPT_CORRX	0x00B6
++#define SSB_SPROM8_FOC_HWIQ_IQSWP	0x00B8
++#define SSB_SPROM8_PHYCAL_TEMPDELTA	0x00BA
+ #define SSB_SPROM8_MAXP_BG		0x00C0  /* Max Power 2GHz in path 1 */
+ #define  SSB_SPROM8_MAXP_BG_MASK	0x00FF  /* Mask for Max Power 2GHz */
+ #define  SSB_SPROM8_ITSSI_BG		0xFF00	/* Mask for path 1 itssi_bg */
+@@ -457,6 +479,46 @@
+ #define SSB_SPROM8_OFDM5GLPO		0x014A	/* 5.2GHz OFDM power offset */
+ #define SSB_SPROM8_OFDM5GHPO		0x014E	/* 5.8GHz OFDM power offset */
+ 
++/* Values for boardflags_lo read from SPROM */
++#define SSB_BFL_BTCOEXIST		0x0001	/* implements Bluetooth coexistance */
++#define SSB_BFL_PACTRL			0x0002	/* GPIO 9 controlling the PA */
++#define SSB_BFL_AIRLINEMODE		0x0004	/* implements GPIO 13 radio disable indication */
++#define SSB_BFL_RSSI			0x0008	/* software calculates nrssi slope. */
++#define SSB_BFL_ENETSPI			0x0010	/* has ephy roboswitch spi */
++#define SSB_BFL_XTAL_NOSLOW		0x0020	/* no slow clock available */
++#define SSB_BFL_CCKHIPWR		0x0040	/* can do high power CCK transmission */
++#define SSB_BFL_ENETADM			0x0080	/* has ADMtek switch */
++#define SSB_BFL_ENETVLAN		0x0100	/* can do vlan */
++#define SSB_BFL_AFTERBURNER		0x0200	/* supports Afterburner mode */
++#define SSB_BFL_NOPCI			0x0400	/* board leaves PCI floating */
++#define SSB_BFL_FEM			0x0800	/* supports the Front End Module */
++#define SSB_BFL_EXTLNA			0x1000	/* has an external LNA */
++#define SSB_BFL_HGPA			0x2000	/* had high gain PA */
++#define SSB_BFL_BTCMOD			0x4000	/* BFL_BTCOEXIST is given in alternate GPIOs */
++#define SSB_BFL_ALTIQ			0x8000	/* alternate I/Q settings */
++
++/* Values for boardflags_hi read from SPROM */
++#define SSB_BFH_NOPA			0x0001	/* has no PA */
++#define SSB_BFH_RSSIINV			0x0002	/* RSSI uses positive slope (not TSSI) */
++#define SSB_BFH_PAREF			0x0004	/* uses the PARef LDO */
++#define SSB_BFH_3TSWITCH		0x0008	/* uses a triple throw switch shared with bluetooth */
++#define SSB_BFH_PHASESHIFT		0x0010	/* can support phase shifter */
++#define SSB_BFH_BUCKBOOST		0x0020	/* has buck/booster */
++#define SSB_BFH_FEM_BT			0x0040	/* has FEM and switch to share antenna with bluetooth */
++
++/* Values for boardflags2_lo read from SPROM */
++#define SSB_BFL2_RXBB_INT_REG_DIS	0x0001	/* external RX BB regulator present */
++#define SSB_BFL2_APLL_WAR		0x0002	/* alternative A-band PLL settings implemented */
++#define SSB_BFL2_TXPWRCTRL_EN 		0x0004	/* permits enabling TX Power Control */
++#define SSB_BFL2_2X4_DIV		0x0008	/* 2x4 diversity switch */
++#define SSB_BFL2_5G_PWRGAIN		0x0010	/* supports 5G band power gain */
++#define SSB_BFL2_PCIEWAR_OVR		0x0020	/* overrides ASPM and Clkreq settings */
++#define SSB_BFL2_CAESERS_BRD		0x0040	/* is Caesers board (unused) */
++#define SSB_BFL2_BTC3WIRE		0x0080	/* used 3-wire bluetooth coexist */
++#define SSB_BFL2_SKWRKFEM_BRD		0x0100	/* 4321mcm93 uses Skyworks FEM */
++#define SSB_BFL2_SPUR_WAR		0x0200	/* has a workaround for clock-harmonic spurs */
++#define SSB_BFL2_GPLL_WAR		0x0400	/* altenative G-band PLL settings implemented */
++
+ /* Values for SSB_SPROM1_BINF_CCODE */
+ enum {
+ 	SSB_SPROM1CCODE_WORLD = 0,
 --- a/drivers/ssb/driver_chipcommon.c
 +++ b/drivers/ssb/driver_chipcommon.c
-@@ -46,40 +46,66 @@ void ssb_chipco_set_clockmode(struct ssb_chipcommon *cc,
+@@ -3,7 +3,7 @@
+  * Broadcom ChipCommon core driver
+  *
+  * Copyright 2005, Broadcom Corporation
+- * Copyright 2006, 2007, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2006, 2007, Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+@@ -46,40 +46,66 @@ void ssb_chipco_set_clockmode(struct ssb
  	if (!ccdev)
  		return;
  	bus = ccdev->bus;
@@ -223,7 +627,7 @@ index 7c031fd..06d15b6 100644
  		break;
  	default:
  		SSB_WARN_ON(1);
-@@ -260,6 +286,12 @@ void ssb_chipcommon_init(struct ssb_chipcommon *cc)
+@@ -260,6 +286,12 @@ void ssb_chipcommon_init(struct ssb_chip
  	if (cc->dev->id.revision >= 11)
  		cc->status = chipco_read32(cc, SSB_CHIPCO_CHIPSTAT);
  	ssb_dprintk(KERN_INFO PFX "chipcommon status is 0x%x\n", cc->status);
@@ -236,11 +640,18 @@ index 7c031fd..06d15b6 100644
  	ssb_pmu_init(cc);
  	chipco_powercontrol_init(cc);
  	ssb_chipco_set_clockmode(cc, SSB_CLKMODE_FAST);
-diff --git a/drivers/ssb/driver_chipcommon_pmu.c b/drivers/ssb/driver_chipcommon_pmu.c
-index 5732bb2..a7aef47 100644
 --- a/drivers/ssb/driver_chipcommon_pmu.c
 +++ b/drivers/ssb/driver_chipcommon_pmu.c
-@@ -417,12 +417,14 @@ static void ssb_pmu_resources_init(struct ssb_chipcommon *cc)
+@@ -2,7 +2,7 @@
+  * Sonics Silicon Backplane
+  * Broadcom ChipCommon Power Management Unit driver
+  *
+- * Copyright 2009, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2009, Michael Buesch <m@bues.ch>
+  * Copyright 2007, Broadcom Corporation
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+@@ -417,12 +417,14 @@ static void ssb_pmu_resources_init(struc
  	u32 min_msk = 0, max_msk = 0;
  	unsigned int i;
  	const struct pmu_res_updown_tab_entry *updown_tab = NULL;
@@ -257,11 +668,18 @@ index 5732bb2..a7aef47 100644
  	case 0x4322:
  		/* We keep the default settings:
  		 * min_msk = 0xCBB
-diff --git a/drivers/ssb/driver_gige.c b/drivers/ssb/driver_gige.c
-index 5ba92a2..d758909 100644
 --- a/drivers/ssb/driver_gige.c
 +++ b/drivers/ssb/driver_gige.c
-@@ -106,8 +106,9 @@ void gige_pcicfg_write32(struct ssb_gige *dev,
+@@ -3,7 +3,7 @@
+  * Broadcom Gigabit Ethernet core driver
+  *
+  * Copyright 2008, Broadcom Corporation
+- * Copyright 2008, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2008, Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+@@ -106,8 +106,9 @@ void gige_pcicfg_write32(struct ssb_gige
  	gige_write32(dev, SSB_GIGE_PCICFG + offset, value);
  }
  
@@ -273,7 +691,7 @@ index 5ba92a2..d758909 100644
  {
  	struct ssb_gige *dev = container_of(bus->ops, struct ssb_gige, pci_ops);
  	unsigned long flags;
-@@ -136,8 +137,9 @@ static int ssb_gige_pci_read_config(struct pci_bus *bus, unsigned int devfn,
+@@ -136,8 +137,9 @@ static int ssb_gige_pci_read_config(stru
  	return PCIBIOS_SUCCESSFUL;
  }
  
@@ -285,7 +703,7 @@ index 5ba92a2..d758909 100644
  {
  	struct ssb_gige *dev = container_of(bus->ops, struct ssb_gige, pci_ops);
  	unsigned long flags;
-@@ -166,7 +168,8 @@ static int ssb_gige_pci_write_config(struct pci_bus *bus, unsigned int devfn,
+@@ -166,7 +168,8 @@ static int ssb_gige_pci_write_config(str
  	return PCIBIOS_SUCCESSFUL;
  }
  
@@ -295,10 +713,17 @@ index 5ba92a2..d758909 100644
  {
  	struct ssb_gige *dev;
  	u32 base, tmslow, tmshigh;
-diff --git a/drivers/ssb/driver_pcicore.c b/drivers/ssb/driver_pcicore.c
-index 0e8d352..11d85bf 100644
 --- a/drivers/ssb/driver_pcicore.c
 +++ b/drivers/ssb/driver_pcicore.c
+@@ -3,7 +3,7 @@
+  * Broadcom PCI-core driver
+  *
+  * Copyright 2005, Broadcom Corporation
+- * Copyright 2006, 2007, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2006, 2007, Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
 @@ -15,6 +15,11 @@
  
  #include "ssb_private.h"
@@ -311,7 +736,7 @@ index 0e8d352..11d85bf 100644
  
  static inline
  u32 pcicore_read32(struct ssb_pcicore *pc, u16 offset)
-@@ -309,7 +314,7 @@ int ssb_pcicore_pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+@@ -309,7 +314,7 @@ int ssb_pcicore_pcibios_map_irq(const st
  	return ssb_mips_irq(extpci_core->dev) + 2;
  }
  
@@ -320,7 +745,7 @@ index 0e8d352..11d85bf 100644
  {
  	u32 val;
  
-@@ -374,7 +379,7 @@ static void ssb_pcicore_init_hostmode(struct ssb_pcicore *pc)
+@@ -374,7 +379,7 @@ static void ssb_pcicore_init_hostmode(st
  	register_pci_controller(&ssb_pcicore_controller);
  }
  
@@ -329,7 +754,7 @@ index 0e8d352..11d85bf 100644
  {
  	struct ssb_bus *bus = pc->dev->bus;
  	u16 chipid_top;
-@@ -403,25 +408,133 @@ static int pcicore_is_in_hostmode(struct ssb_pcicore *pc)
+@@ -403,25 +408,137 @@ static int pcicore_is_in_hostmode(struct
  }
  #endif /* CONFIG_SSB_PCICORE_HOSTMODE */
  
@@ -442,10 +867,15 @@ index 0e8d352..11d85bf 100644
 -static void ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
 +static void __devinit ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
  {
-+	ssb_pcicore_fix_sprom_core_index(pc);
++	struct ssb_device *pdev = pc->dev;
++	struct ssb_bus *bus = pdev->bus;
++
++	if (bus->bustype == SSB_BUSTYPE_PCI)
++		ssb_pcicore_fix_sprom_core_index(pc);
 +
  	/* Disable PCI interrupts. */
- 	ssb_write32(pc->dev, SSB_INTVEC, 0);
+-	ssb_write32(pc->dev, SSB_INTVEC, 0);
++	ssb_write32(pdev, SSB_INTVEC, 0);
 +
 +	/* Additional PCIe always once-executed workarounds */
 +	if (pc->dev->id.coreid == SSB_DEV_PCIE) {
@@ -467,7 +897,7 @@ index 0e8d352..11d85bf 100644
  	if (!ssb_device_is_enabled(dev))
  		ssb_device_enable(dev, 0);
  
-@@ -446,11 +559,35 @@ static void ssb_pcie_write(struct ssb_pcicore *pc, u32 address, u32 data)
+@@ -446,11 +563,35 @@ static void ssb_pcie_write(struct ssb_pc
  	pcicore_write32(pc, 0x134, data);
  }
  
@@ -505,7 +935,7 @@ index 0e8d352..11d85bf 100644
  	u32 v;
  	int i;
  
-@@ -458,46 +595,68 @@ static void ssb_pcie_mdio_write(struct ssb_pcicore *pc, u8 device,
+@@ -458,46 +599,68 @@ static void ssb_pcie_mdio_write(struct s
  	v |= 0x2; /* MDIO Clock Divisor */
  	pcicore_write32(pc, mdio_control, v);
  
@@ -549,35 +979,34 @@ index 0e8d352..11d85bf 100644
 -	/* This is used for both, PCI and ChipCommon core, so be careful. */
 -	BUILD_BUG_ON(SSB_PCICORE_BCAST_ADDR != SSB_CHIPCO_BCAST_ADDR);
 -	BUILD_BUG_ON(SSB_PCICORE_BCAST_DATA != SSB_CHIPCO_BCAST_DATA);
--
--	ssb_write32(dev, SSB_PCICORE_BCAST_ADDR, address);
--	ssb_read32(dev, SSB_PCICORE_BCAST_ADDR); /* flush */
--	ssb_write32(dev, SSB_PCICORE_BCAST_DATA, data);
--	ssb_read32(dev, SSB_PCICORE_BCAST_DATA); /* flush */
--}
 +	const u16 mdio_control = 0x128;
 +	const u16 mdio_data = 0x12C;
 +	int max_retries = 10;
 +	u32 v;
 +	int i;
  
--static void ssb_commit_settings(struct ssb_bus *bus)
--{
--	struct ssb_device *dev;
+-	ssb_write32(dev, SSB_PCICORE_BCAST_ADDR, address);
+-	ssb_read32(dev, SSB_PCICORE_BCAST_ADDR); /* flush */
+-	ssb_write32(dev, SSB_PCICORE_BCAST_DATA, data);
+-	ssb_read32(dev, SSB_PCICORE_BCAST_DATA); /* flush */
+-}
 +	v = 0x80; /* Enable Preamble Sequence */
 +	v |= 0x2; /* MDIO Clock Divisor */
 +	pcicore_write32(pc, mdio_control, v);
+ 
+-static void ssb_commit_settings(struct ssb_bus *bus)
+-{
+-	struct ssb_device *dev;
++	if (pc->dev->id.revision >= 10) {
++		max_retries = 200;
++		ssb_pcie_mdio_set_phy(pc, device);
++	}
  
 -	dev = bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev;
 -	if (WARN_ON(!dev))
 -		return;
 -	/* This forces an update of the cached registers. */
 -	ssb_broadcast_value(dev, 0xFD8, 0);
-+	if (pc->dev->id.revision >= 10) {
-+		max_retries = 200;
-+		ssb_pcie_mdio_set_phy(pc, device);
-+	}
-+
 +	v = (1 << 30); /* Start of Transaction */
 +	v |= (1 << 28); /* Write Transaction */
 +	v |= (1 << 17); /* Turnaround */
@@ -598,7 +1027,7 @@ index 0e8d352..11d85bf 100644
  }
  
  int ssb_pcicore_dev_irqvecs_enable(struct ssb_pcicore *pc,
-@@ -550,48 +709,10 @@ int ssb_pcicore_dev_irqvecs_enable(struct ssb_pcicore *pc,
+@@ -550,48 +713,10 @@ int ssb_pcicore_dev_irqvecs_enable(struc
  	if (pc->setup_done)
  		goto out;
  	if (pdev->id.coreid == SSB_DEV_PCI) {
@@ -649,262 +1078,18 @@ index 0e8d352..11d85bf 100644
  	}
  	pc->setup_done = 1;
  out:
-diff --git a/drivers/ssb/main.c b/drivers/ssb/main.c
-index e05ba6e..6ec6e09 100644
---- a/drivers/ssb/main.c
-+++ b/drivers/ssb/main.c
-@@ -557,7 +557,7 @@ error:
- }
- 
- /* Needs ssb_buses_lock() */
--static int ssb_attach_queued_buses(void)
-+static int __devinit ssb_attach_queued_buses(void)
- {
- 	struct ssb_bus *bus, *n;
- 	int err = 0;
-@@ -768,9 +768,9 @@ out:
- 	return err;
- }
- 
--static int ssb_bus_register(struct ssb_bus *bus,
--			    ssb_invariants_func_t get_invariants,
--			    unsigned long baseaddr)
-+static int __devinit ssb_bus_register(struct ssb_bus *bus,
-+				      ssb_invariants_func_t get_invariants,
-+				      unsigned long baseaddr)
- {
- 	int err;
- 
-@@ -851,8 +851,8 @@ err_disable_xtal:
- }
- 
- #ifdef CONFIG_SSB_PCIHOST
--int ssb_bus_pcibus_register(struct ssb_bus *bus,
--			    struct pci_dev *host_pci)
-+int __devinit ssb_bus_pcibus_register(struct ssb_bus *bus,
-+				      struct pci_dev *host_pci)
- {
- 	int err;
- 
-@@ -875,9 +875,9 @@ EXPORT_SYMBOL(ssb_bus_pcibus_register);
- #endif /* CONFIG_SSB_PCIHOST */
- 
- #ifdef CONFIG_SSB_PCMCIAHOST
--int ssb_bus_pcmciabus_register(struct ssb_bus *bus,
--			       struct pcmcia_device *pcmcia_dev,
--			       unsigned long baseaddr)
-+int __devinit ssb_bus_pcmciabus_register(struct ssb_bus *bus,
-+					 struct pcmcia_device *pcmcia_dev,
-+					 unsigned long baseaddr)
- {
- 	int err;
- 
-@@ -897,8 +897,9 @@ EXPORT_SYMBOL(ssb_bus_pcmciabus_register);
- #endif /* CONFIG_SSB_PCMCIAHOST */
- 
- #ifdef CONFIG_SSB_SDIOHOST
--int ssb_bus_sdiobus_register(struct ssb_bus *bus, struct sdio_func *func,
--			     unsigned int quirks)
-+int __devinit ssb_bus_sdiobus_register(struct ssb_bus *bus,
-+				       struct sdio_func *func,
-+				       unsigned int quirks)
- {
- 	int err;
- 
-@@ -918,9 +919,9 @@ int ssb_bus_sdiobus_register(struct ssb_bus *bus, struct sdio_func *func,
- EXPORT_SYMBOL(ssb_bus_sdiobus_register);
- #endif /* CONFIG_SSB_PCMCIAHOST */
- 
--int ssb_bus_ssbbus_register(struct ssb_bus *bus,
--			    unsigned long baseaddr,
--			    ssb_invariants_func_t get_invariants)
-+int __devinit ssb_bus_ssbbus_register(struct ssb_bus *bus,
-+				      unsigned long baseaddr,
-+				      ssb_invariants_func_t get_invariants)
- {
- 	int err;
- 
-@@ -1001,8 +1002,8 @@ u32 ssb_calc_clock_rate(u32 plltype, u32 n, u32 m)
- 	switch (plltype) {
- 	case SSB_PLLTYPE_6: /* 100/200 or 120/240 only */
- 		if (m & SSB_CHIPCO_CLK_T6_MMASK)
--			return SSB_CHIPCO_CLK_T6_M0;
--		return SSB_CHIPCO_CLK_T6_M1;
-+			return SSB_CHIPCO_CLK_T6_M1;
-+		return SSB_CHIPCO_CLK_T6_M0;
- 	case SSB_PLLTYPE_1: /* 48Mhz base, 3 dividers */
- 	case SSB_PLLTYPE_3: /* 25Mhz, 2 dividers */
- 	case SSB_PLLTYPE_4: /* 48Mhz, 4 dividers */
-@@ -1117,23 +1118,22 @@ static u32 ssb_tmslow_reject_bitmask(struct ssb_device *dev)
- {
- 	u32 rev = ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_SSBREV;
- 
--	/* The REJECT bit changed position in TMSLOW between
--	 * Backplane revisions. */
-+	/* The REJECT bit seems to be different for Backplane rev 2.3 */
- 	switch (rev) {
- 	case SSB_IDLOW_SSBREV_22:
--		return SSB_TMSLOW_REJECT_22;
-+	case SSB_IDLOW_SSBREV_24:
-+	case SSB_IDLOW_SSBREV_26:
-+		return SSB_TMSLOW_REJECT;
- 	case SSB_IDLOW_SSBREV_23:
- 		return SSB_TMSLOW_REJECT_23;
--	case SSB_IDLOW_SSBREV_24:     /* TODO - find the proper REJECT bits */
--	case SSB_IDLOW_SSBREV_25:     /* same here */
--	case SSB_IDLOW_SSBREV_26:     /* same here */
-+	case SSB_IDLOW_SSBREV_25:     /* TODO - find the proper REJECT bit */
- 	case SSB_IDLOW_SSBREV_27:     /* same here */
--		return SSB_TMSLOW_REJECT_23;	/* this is a guess */
-+		return SSB_TMSLOW_REJECT;	/* this is a guess */
- 	default:
- 		printk(KERN_INFO "ssb: Backplane Revision 0x%.8X\n", rev);
- 		WARN_ON(1);
- 	}
--	return (SSB_TMSLOW_REJECT_22 | SSB_TMSLOW_REJECT_23);
-+	return (SSB_TMSLOW_REJECT | SSB_TMSLOW_REJECT_23);
- }
- 
- int ssb_device_is_enabled(struct ssb_device *dev)
-@@ -1266,7 +1266,10 @@ u32 ssb_dma_translation(struct ssb_device *dev)
- 	case SSB_BUSTYPE_SSB:
- 		return 0;
- 	case SSB_BUSTYPE_PCI:
--		return SSB_PCI_DMA;
-+		if (ssb_read32(dev, SSB_TMSHIGH) & SSB_TMSHIGH_DMA64)
-+			return SSB_PCIE_DMA_H32;
-+		else
-+			return SSB_PCI_DMA;
- 	default:
- 		__ssb_dma_not_implemented(dev);
- 	}
-@@ -1309,20 +1312,20 @@ EXPORT_SYMBOL(ssb_bus_may_powerdown);
- 
- int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl)
- {
--	struct ssb_chipcommon *cc;
- 	int err;
- 	enum ssb_clkmode mode;
- 
- 	err = ssb_pci_xtal(bus, SSB_GPIO_XTAL | SSB_GPIO_PLL, 1);
- 	if (err)
- 		goto error;
--	cc = &bus->chipco;
--	mode = dynamic_pctl ? SSB_CLKMODE_DYNAMIC : SSB_CLKMODE_FAST;
--	ssb_chipco_set_clockmode(cc, mode);
- 
- #ifdef CONFIG_SSB_DEBUG
- 	bus->powered_up = 1;
- #endif
-+
-+	mode = dynamic_pctl ? SSB_CLKMODE_DYNAMIC : SSB_CLKMODE_FAST;
-+	ssb_chipco_set_clockmode(&bus->chipco, mode);
-+
- 	return 0;
- error:
- 	ssb_printk(KERN_ERR PFX "Bus powerup failed\n");
-@@ -1330,6 +1333,37 @@ error:
- }
- EXPORT_SYMBOL(ssb_bus_powerup);
- 
-+static void ssb_broadcast_value(struct ssb_device *dev,
-+				u32 address, u32 data)
-+{
-+#ifdef CONFIG_SSB_DRIVER_PCICORE
-+	/* This is used for both, PCI and ChipCommon core, so be careful. */
-+	BUILD_BUG_ON(SSB_PCICORE_BCAST_ADDR != SSB_CHIPCO_BCAST_ADDR);
-+	BUILD_BUG_ON(SSB_PCICORE_BCAST_DATA != SSB_CHIPCO_BCAST_DATA);
-+#endif
-+
-+	ssb_write32(dev, SSB_CHIPCO_BCAST_ADDR, address);
-+	ssb_read32(dev, SSB_CHIPCO_BCAST_ADDR); /* flush */
-+	ssb_write32(dev, SSB_CHIPCO_BCAST_DATA, data);
-+	ssb_read32(dev, SSB_CHIPCO_BCAST_DATA); /* flush */
-+}
-+
-+void ssb_commit_settings(struct ssb_bus *bus)
-+{
-+	struct ssb_device *dev;
-+
-+#ifdef CONFIG_SSB_DRIVER_PCICORE
-+	dev = bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev;
-+#else
-+	dev = bus->chipco.dev;
-+#endif
-+	if (WARN_ON(!dev))
-+		return;
-+	/* This forces an update of the cached registers. */
-+	ssb_broadcast_value(dev, 0xFD8, 0);
-+}
-+EXPORT_SYMBOL(ssb_commit_settings);
-+
- u32 ssb_admatch_base(u32 adm)
- {
- 	u32 base = 0;
-diff --git a/drivers/ssb/pci.c b/drivers/ssb/pci.c
-index a467b20..a00b35f 100644
---- a/drivers/ssb/pci.c
-+++ b/drivers/ssb/pci.c
-@@ -662,7 +662,6 @@ static int sprom_extract(struct ssb_bus *bus, struct ssb_sprom *out,
- static int ssb_pci_sprom_get(struct ssb_bus *bus,
- 			     struct ssb_sprom *sprom)
- {
--	const struct ssb_sprom *fallback;
- 	int err;
- 	u16 *buf;
- 
-@@ -670,7 +669,7 @@ static int ssb_pci_sprom_get(struct ssb_bus *bus,
- 		ssb_printk(KERN_ERR PFX "No SPROM available!\n");
- 		return -ENODEV;
- 	}
--	if (bus->chipco.dev) {	/* can be unavailible! */
-+	if (bus->chipco.dev) {	/* can be unavailable! */
- 		/*
- 		 * get SPROM offset: SSB_SPROM_BASE1 except for
- 		 * chipcommon rev >= 31 or chip ID is 0x4312 and
-@@ -707,10 +706,17 @@ static int ssb_pci_sprom_get(struct ssb_bus *bus,
- 		if (err) {
- 			/* All CRC attempts failed.
- 			 * Maybe there is no SPROM on the device?
--			 * If we have a fallback, use that. */
--			fallback = ssb_get_fallback_sprom();
--			if (fallback) {
--				memcpy(sprom, fallback, sizeof(*sprom));
-+			 * Now we ask the arch code if there is some sprom
-+			 * available for this device in some other storage */
-+			err = ssb_fill_sprom_with_fallback(bus, sprom);
-+			if (err) {
-+				ssb_printk(KERN_WARNING PFX "WARNING: Using"
-+					   " fallback SPROM failed (err %d)\n",
-+					   err);
-+			} else {
-+				ssb_dprintk(KERN_DEBUG PFX "Using SPROM"
-+					    " revision %d provided by"
-+					    " platform.\n", sprom->revision);
- 				err = 0;
- 				goto out_free;
- 			}
-@@ -728,12 +734,9 @@ out_free:
- static void ssb_pci_get_boardinfo(struct ssb_bus *bus,
- 				  struct ssb_boardinfo *bi)
- {
--	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_VENDOR_ID,
--			     &bi->vendor);
--	pci_read_config_word(bus->host_pci, PCI_SUBSYSTEM_ID,
--			     &bi->type);
--	pci_read_config_word(bus->host_pci, PCI_REVISION_ID,
--			     &bi->rev);
-+	bi->vendor = bus->host_pci->subsystem_vendor;
-+	bi->type = bus->host_pci->subsystem_device;
-+	bi->rev = bus->host_pci->revision;
- }
- 
- int ssb_pci_get_invariants(struct ssb_bus *bus,
-diff --git a/drivers/ssb/pcihost_wrapper.c b/drivers/ssb/pcihost_wrapper.c
-index f6c8c81..d7a9813 100644
 --- a/drivers/ssb/pcihost_wrapper.c
 +++ b/drivers/ssb/pcihost_wrapper.c
-@@ -53,8 +53,8 @@ static int ssb_pcihost_resume(struct pci_dev *dev)
+@@ -6,7 +6,7 @@
+  * Copyright (c) 2005 Stefano Brivio <st3@riseup.net>
+  * Copyright (c) 2005 Danny van Dyk <kugelfang@gentoo.org>
+  * Copyright (c) 2005 Andreas Jaggi <andreas.jaggi@waterwave.ch>
+- * Copyright (c) 2005-2007 Michael Buesch <mbuesch@freenet.de>
++ * Copyright (c) 2005-2007 Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+@@ -53,8 +53,8 @@ static int ssb_pcihost_resume(struct pci
  # define ssb_pcihost_resume	NULL
  #endif /* CONFIG_PM */
  
@@ -915,7 +1100,7 @@ index f6c8c81..d7a9813 100644
  {
  	struct ssb_bus *ssb;
  	int err = -ENOMEM;
-@@ -110,7 +110,7 @@ static void ssb_pcihost_remove(struct pci_dev *dev)
+@@ -110,7 +110,7 @@ static void ssb_pcihost_remove(struct pc
  	pci_set_drvdata(dev, NULL);
  }
  
@@ -924,11 +1109,18 @@ index f6c8c81..d7a9813 100644
  {
  	driver->probe = ssb_pcihost_probe;
  	driver->remove = ssb_pcihost_remove;
-diff --git a/drivers/ssb/scan.c b/drivers/ssb/scan.c
-index 29884c0..8047f9a 100644
 --- a/drivers/ssb/scan.c
 +++ b/drivers/ssb/scan.c
-@@ -258,7 +258,10 @@ static int we_support_multiple_80211_cores(struct ssb_bus *bus)
+@@ -2,7 +2,7 @@
+  * Sonics Silicon Backplane
+  * Bus scanning
+  *
+- * Copyright (C) 2005-2007 Michael Buesch <mb@bu3sch.de>
++ * Copyright (C) 2005-2007 Michael Buesch <m@bues.ch>
+  * Copyright (C) 2005 Martin Langer <martin-langer@gmx.de>
+  * Copyright (C) 2005 Stefano Brivio <st3@riseup.net>
+  * Copyright (C) 2005 Danny van Dyk <kugelfang@gentoo.org>
+@@ -258,7 +258,10 @@ static int we_support_multiple_80211_cor
  #ifdef CONFIG_SSB_PCIHOST
  	if (bus->bustype == SSB_BUSTYPE_PCI) {
  		if (bus->host_pci->vendor == PCI_VENDOR_ID_BROADCOM &&
@@ -950,10 +1142,17 @@ index 29884c0..8047f9a 100644
  			bus->chip_package = 0;
  		} else {
  			bus->chip_id = 0x4710;
-diff --git a/drivers/ssb/sprom.c b/drivers/ssb/sprom.c
-index 4f7cc8d..45ff0e3 100644
 --- a/drivers/ssb/sprom.c
 +++ b/drivers/ssb/sprom.c
+@@ -2,7 +2,7 @@
+  * Sonics Silicon Backplane
+  * Common SPROM support routines
+  *
+- * Copyright (C) 2005-2008 Michael Buesch <mb@bu3sch.de>
++ * Copyright (C) 2005-2008 Michael Buesch <m@bues.ch>
+  * Copyright (C) 2005 Martin Langer <martin-langer@gmx.de>
+  * Copyright (C) 2005 Stefano Brivio <st3@riseup.net>
+  * Copyright (C) 2005 Danny van Dyk <kugelfang@gentoo.org>
 @@ -17,7 +17,7 @@
  #include <linux/slab.h>
  
@@ -981,21 +1180,23 @@ index 4f7cc8d..45ff0e3 100644
 + * callback handler which fills the SPROM data structure. The fallback is
 + * only used for PCI based SSB devices, where no valid SPROM can be found
 + * in the shadow registers.
-  *
-- * This function is useful for weird architectures that have a half-assed SSB device
-- * hardwired to their PCI bus.
++ *
 + * This function is useful for weird architectures that have a half-assed
 + * SSB device hardwired to their PCI bus.
-  *
-- * Note that it does only work with PCI attached SSB devices. PCMCIA devices currently
-- * don't use this fallback.
-- * Architectures must provide the SPROM for native SSB devices anyway,
-- * so the fallback also isn't used for native devices.
++ *
 + * Note that it does only work with PCI attached SSB devices. PCMCIA
 + * devices currently don't use this fallback.
 + * Architectures must provide the SPROM for native SSB devices anyway, so
 + * the fallback also isn't used for native devices.
   *
+- * This function is useful for weird architectures that have a half-assed SSB device
+- * hardwired to their PCI bus.
+- *
+- * Note that it does only work with PCI attached SSB devices. PCMCIA devices currently
+- * don't use this fallback.
+- * Architectures must provide the SPROM for native SSB devices anyway,
+- * so the fallback also isn't used for native devices.
+- *
 - * This function is available for architecture code, only. So it is not exported.
 + * This function is available for architecture code, only. So it is not
 + * exported.
@@ -1024,7 +1225,7 @@ index 4f7cc8d..45ff0e3 100644
  }
  
  /* http://bcm-v4.sipsolutions.net/802.11/IsSpromAvailable */
-@@ -185,7 +192,7 @@ bool ssb_is_sprom_available(struct ssb_bus *bus)
+@@ -185,7 +192,7 @@ bool ssb_is_sprom_available(struct ssb_b
  	/* this routine differs from specs as we do not access SPROM directly
  	   on PCMCIA */
  	if (bus->bustype == SSB_BUSTYPE_PCI &&
@@ -1033,11 +1234,9 @@ index 4f7cc8d..45ff0e3 100644
  	    bus->chipco.dev->id.revision >= 31)
  		return bus->chipco.capabilities & SSB_CHIPCO_CAP_SPROM;
  
-diff --git a/drivers/ssb/ssb_private.h b/drivers/ssb/ssb_private.h
-index 0331139..7765301 100644
 --- a/drivers/ssb/ssb_private.h
 +++ b/drivers/ssb/ssb_private.h
-@@ -171,7 +171,8 @@ ssize_t ssb_attr_sprom_store(struct ssb_bus *bus,
+@@ -171,7 +171,8 @@ ssize_t ssb_attr_sprom_store(struct ssb_
  			     const char *buf, size_t count,
  			     int (*sprom_check_crc)(const u16 *sprom, size_t size),
  			     int (*sprom_write)(struct ssb_bus *bus, const u16 *sprom));
@@ -1047,20 +1246,37 @@ index 0331139..7765301 100644
  
  
  /* core.c */
-diff --git a/include/linux/ssb/ssb.h b/include/linux/ssb/ssb.h
-index 9659eff..8623217 100644
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
-@@ -27,6 +27,8 @@ struct ssb_sprom {
+@@ -25,8 +25,10 @@ struct ssb_sprom {
+ 	u8 et1phyaddr;		/* MII address for enet1 */
+ 	u8 et0mdcport;		/* MDIO for enet0 */
  	u8 et1mdcport;		/* MDIO for enet1 */
- 	u8 board_rev;		/* Board revision number from SPROM. */
+-	u8 board_rev;		/* Board revision number from SPROM. */
++	u16 board_rev;		/* Board revision number from SPROM. */
  	u8 country_code;	/* Country Code */
 +	u16 leddc_on_time;	/* LED Powersave Duty Cycle On Count */
 +	u16 leddc_off_time;	/* LED Powersave Duty Cycle Off Count */
  	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
  	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
  	u16 pa0b0;
-@@ -99,7 +101,7 @@ struct ssb_sprom {
+@@ -92,6 +94,15 @@ struct ssb_sprom {
+ 		} ghz5;		/* 5GHz band */
+ 	} antenna_gain;
+ 
++	struct {
++		struct {
++			u8 tssipos, extpa_gain, pdet_range, tr_iso, antswlut;
++		} ghz2;
++		struct {
++			u8 tssipos, extpa_gain, pdet_range, tr_iso, antswlut;
++		} ghz5;
++	} fem;
++
+ 	/* TODO - add any parameters needed from rev 2, 3, 4, 5 or 8 SPROMs */
+ };
+ 
+@@ -99,7 +110,7 @@ struct ssb_sprom {
  struct ssb_boardinfo {
  	u16 vendor;
  	u16 type;
@@ -1069,7 +1285,21 @@ index 9659eff..8623217 100644
  };
  
  
-@@ -308,7 +310,7 @@ struct ssb_bus {
+@@ -229,10 +240,9 @@ struct ssb_driver {
+ #define drv_to_ssb_drv(_drv) container_of(_drv, struct ssb_driver, drv)
+ 
+ extern int __ssb_driver_register(struct ssb_driver *drv, struct module *owner);
+-static inline int ssb_driver_register(struct ssb_driver *drv)
+-{
+-	return __ssb_driver_register(drv, THIS_MODULE);
+-}
++#define ssb_driver_register(drv) \
++	__ssb_driver_register(drv, THIS_MODULE)
++
+ extern void ssb_driver_unregister(struct ssb_driver *drv);
+ 
+ 
+@@ -308,7 +318,7 @@ struct ssb_bus {
  
  	/* ID information about the Chip. */
  	u16 chip_id;
@@ -1078,7 +1308,7 @@ index 9659eff..8623217 100644
  	u16 sprom_offset;
  	u16 sprom_size;		/* number of words in sprom */
  	u8 chip_package;
-@@ -404,7 +406,9 @@ extern bool ssb_is_sprom_available(struct ssb_bus *bus);
+@@ -404,7 +414,9 @@ extern bool ssb_is_sprom_available(struc
  
  /* Set a fallback SPROM.
   * See kdoc at the function definition for complete documentation. */
@@ -1089,7 +1319,7 @@ index 9659eff..8623217 100644
  
  /* Suspend a SSB bus.
   * Call this from the parent bus suspend routine. */
-@@ -518,6 +522,7 @@ extern int ssb_bus_may_powerdown(struct ssb_bus *bus);
+@@ -518,6 +530,7 @@ extern int ssb_bus_may_powerdown(struct
   * Otherwise static always-on powercontrol will be used. */
  extern int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl);
  
@@ -1097,10 +1327,17 @@ index 9659eff..8623217 100644
  
  /* Various helper functions */
  extern u32 ssb_admatch_base(u32 adm);
-diff --git a/include/linux/ssb/ssb_driver_chipcommon.h b/include/linux/ssb/ssb_driver_chipcommon.h
-index 2cdf249..a08d693 100644
 --- a/include/linux/ssb/ssb_driver_chipcommon.h
 +++ b/include/linux/ssb/ssb_driver_chipcommon.h
+@@ -8,7 +8,7 @@
+  * gpio interface, extbus, and support for serial and parallel flashes.
+  *
+  * Copyright 2005, Broadcom Corporation
+- * Copyright 2006, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2006, Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GPL version 2. See COPYING for details.
+  */
 @@ -123,6 +123,8 @@
  #define SSB_CHIPCO_FLASHDATA		0x0048
  #define SSB_CHIPCO_BCAST_ADDR		0x0050
@@ -1133,16 +1370,75 @@ index 2cdf249..a08d693 100644
  #define SSB_CHIPCO_HW_WORKAROUND	0x01E4 /* Hardware workaround (rev >= 20) */
  #define SSB_CHIPCO_UART0_DATA		0x0300
  #define SSB_CHIPCO_UART0_IMR		0x0304
-diff --git a/include/linux/ssb/ssb_regs.h b/include/linux/ssb/ssb_regs.h
-index 402955a..efbf459 100644
---- a/include/linux/ssb/ssb_regs.h
-+++ b/include/linux/ssb/ssb_regs.h
-@@ -97,7 +97,7 @@
- #define  SSB_INTVEC_ENET1	0x00000040 /* Enable interrupts for enet 1 */
- #define SSB_TMSLOW		0x0F98     /* SB Target State Low */
- #define  SSB_TMSLOW_RESET	0x00000001 /* Reset */
--#define  SSB_TMSLOW_REJECT_22	0x00000002 /* Reject (Backplane rev 2.2) */
-+#define  SSB_TMSLOW_REJECT	0x00000002 /* Reject (Standard Backplane) */
- #define  SSB_TMSLOW_REJECT_23	0x00000004 /* Reject (Backplane rev 2.3) */
- #define  SSB_TMSLOW_CLOCK	0x00010000 /* Clock Enable */
- #define  SSB_TMSLOW_FGC		0x00020000 /* Force Gated Clocks On */
+--- a/drivers/ssb/b43_pci_bridge.c
++++ b/drivers/ssb/b43_pci_bridge.c
+@@ -5,12 +5,13 @@
+  * because of its small size we include it in the SSB core
+  * instead of creating a standalone module.
+  *
+- * Copyright 2007  Michael Buesch <mb@bu3sch.de>
++ * Copyright 2007  Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+ 
+ #include <linux/pci.h>
++#include <linux/module.h>
+ #include <linux/ssb/ssb.h>
+ 
+ #include "ssb_private.h"
+--- a/drivers/ssb/driver_extif.c
++++ b/drivers/ssb/driver_extif.c
+@@ -3,7 +3,7 @@
+  * Broadcom EXTIF core driver
+  *
+  * Copyright 2005, Broadcom Corporation
+- * Copyright 2006, 2007, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2006, 2007, Michael Buesch <m@bues.ch>
+  * Copyright 2006, 2007, Felix Fietkau <nbd@openwrt.org>
+  * Copyright 2007, Aurelien Jarno <aurelien@aurel32.net>
+  *
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -3,7 +3,7 @@
+  * Broadcom MIPS core driver
+  *
+  * Copyright 2005, Broadcom Corporation
+- * Copyright 2006, 2007, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2006, 2007, Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+--- a/drivers/ssb/embedded.c
++++ b/drivers/ssb/embedded.c
+@@ -3,7 +3,7 @@
+  * Embedded systems support code
+  *
+  * Copyright 2005-2008, Broadcom Corporation
+- * Copyright 2006-2008, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2006-2008, Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+--- a/drivers/ssb/pcmcia.c
++++ b/drivers/ssb/pcmcia.c
+@@ -3,7 +3,7 @@
+  * PCMCIA-Hostbus related functions
+  *
+  * Copyright 2006 Johannes Berg <johannes@sipsolutions.net>
+- * Copyright 2007-2008 Michael Buesch <mb@bu3sch.de>
++ * Copyright 2007-2008 Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+--- a/drivers/ssb/sdio.c
++++ b/drivers/ssb/sdio.c
+@@ -6,7 +6,7 @@
+  *
+  * Based on drivers/ssb/pcmcia.c
+  * Copyright 2006 Johannes Berg <johannes@sipsolutions.net>
+- * Copyright 2007-2008 Michael Buesch <mb@bu3sch.de>
++ * Copyright 2007-2008 Michael Buesch <m@bues.ch>
+  *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  *

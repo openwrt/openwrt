@@ -19,7 +19,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  #define SPOFF(offset)	((offset) / sizeof(u16))
  
-@@ -144,8 +145,10 @@ int bcma_sprom_get(struct bcma_bus *bus)
+@@ -214,8 +215,10 @@ int bcma_sprom_get(struct bcma_bus *bus)
  	if (!bus->drv_cc.core)
  		return -EOPNOTSUPP;
  
