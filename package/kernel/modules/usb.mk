@@ -88,6 +88,7 @@ $(eval $(call KernelPackage,usb-uhci,1))
 
 define KernelPackage/usb-ohci
   TITLE:=Support for OHCI controllers
+  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx
   KCONFIG:= \
 	CONFIG_USB_OHCI \
 	CONFIG_USB_OHCI_HCD \
@@ -199,6 +200,7 @@ $(eval $(call KernelPackage,usb-isp116x-hcd))
 
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
+  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx
   KCONFIG:=CONFIG_USB_EHCI_HCD \
     CONFIG_USB_EHCI_AR71XX=y \
     CONFIG_USB_OCTEON_EHCI=y \
@@ -983,3 +985,20 @@ define KernelPackage/usb-rt305x-dwc_otg/description
 endef
 
 $(eval $(call KernelPackage,usb-rt305x-dwc_otg))
+
+define KernelPackage/usb-brcm47xx
+  SUBMENU:=$(USB_MENU)
+  TITLE:=Support for USB on bcm47xx
+  DEPENDS:=@USB_SUPPORT @TARGET_brcm47xx
+  KCONFIG:= \
+  	CONFIG_USB_HCD_BCMA \
+  	CONFIG_USB_HCD_SSB
+  FILES:= \
+  	$(LINUX_DIR)/drivers/usb/host/bcma-hcd.ko \
+  	$(LINUX_DIR)/drivers/usb/host/ssb-hcd.ko
+  AUTOLOAD:=$(call AutoLoad,19,bcma-hcd ssb-hcd,1)
+  $(call AddDepends/usb)
+endef
+
+$(eval $(call KernelPackage,usb-brcm47xx))
+

@@ -1,0 +1,115 @@
+From 6e8ae6e2cee0e7e5939dc7042584c808366e61e0 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 27 Nov 2011 14:01:01 +0100
+Subject: [PATCH 16/21] =?UTF-8?q?bcma:=20add=20function=20to=20check=20every?=
+ =?UTF-8?q?=2010=20=C2=B5s=20if=20a=20reg=20is=20set?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This function checks if a reg get set or cleared every 10 microseconds.
+It is used in bcma_core_set_clockmode() and bcma_core_pll_ctl() to
+reduce code duplication. In addition it is needed in the USB host
+driver.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/core.c       |   48 ++++++++++++++++++++++++++++----------------
+ include/linux/bcma/bcma.h |    2 +
+ 2 files changed, 32 insertions(+), 18 deletions(-)
+
+--- a/drivers/bcma/core.c
++++ b/drivers/bcma/core.c
+@@ -51,11 +51,36 @@ int bcma_core_enable(struct bcma_device
+ }
+ EXPORT_SYMBOL_GPL(bcma_core_enable);
+ 
++/* Wait for bitmask in a register to get set or cleared.
++ * timeout is in units of ten-microseconds.
++ */
++int bcma_wait_bits(struct bcma_device *dev, u16 reg, u32 bitmask, int timeout,
++		   int set)
++{
++	int i;
++	u32 val;
++
++	for (i = 0; i < timeout; i++) {
++		val = bcma_read32(dev, reg);
++		if (set) {
++			if ((val & bitmask) == bitmask)
++				return 0;
++		} else {
++			if (!(val & bitmask))
++				return 0;
++		}
++		udelay(10);
++	}
++	pr_err("Timeout waiting for bitmask %08X on register %04X to %s.\n",
++	       bitmask, reg, (set ? "set" : "clear"));
++
++	return -ETIMEDOUT;
++}
++EXPORT_SYMBOL_GPL(bcma_wait_bits);
++
+ void bcma_core_set_clockmode(struct bcma_device *core,
+ 			     enum bcma_clkmode clkmode)
+ {
+-	u16 i;
+-
+ 	WARN_ON(core->id.id != BCMA_CORE_CHIPCOMMON &&
+ 		core->id.id != BCMA_CORE_PCIE &&
+ 		core->id.id != BCMA_CORE_80211);
+@@ -64,15 +89,8 @@ void bcma_core_set_clockmode(struct bcma
+ 	case BCMA_CLKMODE_FAST:
+ 		bcma_set32(core, BCMA_CLKCTLST, BCMA_CLKCTLST_FORCEHT);
+ 		udelay(64);
+-		for (i = 0; i < 1500; i++) {
+-			if (bcma_read32(core, BCMA_CLKCTLST) &
+-			    BCMA_CLKCTLST_HAVEHT) {
+-				i = 0;
+-				break;
+-			}
+-			udelay(10);
+-		}
+-		if (i)
++		if (bcma_wait_bits(core, BCMA_CLKCTLST, BCMA_CLKCTLST_HAVEHT,
++				   1500, 1))
+ 			pr_err("HT force timeout\n");
+ 		break;
+ 	case BCMA_CLKMODE_DYNAMIC:
+@@ -84,22 +102,12 @@ EXPORT_SYMBOL_GPL(bcma_core_set_clockmod
+ 
+ void bcma_core_pll_ctl(struct bcma_device *core, u32 req, u32 status, bool on)
+ {
+-	u16 i;
+-
+ 	WARN_ON(req & ~BCMA_CLKCTLST_EXTRESREQ);
+ 	WARN_ON(status & ~BCMA_CLKCTLST_EXTRESST);
+ 
+ 	if (on) {
+ 		bcma_set32(core, BCMA_CLKCTLST, req);
+-		for (i = 0; i < 10000; i++) {
+-			if ((bcma_read32(core, BCMA_CLKCTLST) & status) ==
+-			    status) {
+-				i = 0;
+-				break;
+-			}
+-			udelay(10);
+-		}
+-		if (i)
++		if (bcma_wait_bits(core, BCMA_CLKCTLST, status, 10000, 1))
+ 			pr_err("PLL enable timeout\n");
+ 	} else {
+ 		pr_warn("Disabling PLL not supported yet!\n");
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -283,6 +283,9 @@ static inline void bcma_maskset16(struct
+ 	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
+ }
+ 
++extern int bcma_wait_bits(struct bcma_device *dev, u16 reg, u32 bitmask,
++			  int timeout, int set);
++
+ extern bool bcma_core_is_enabled(struct bcma_device *core);
+ extern void bcma_core_disable(struct bcma_device *core, u32 flags);
+ extern int bcma_core_enable(struct bcma_device *core, u32 flags);
