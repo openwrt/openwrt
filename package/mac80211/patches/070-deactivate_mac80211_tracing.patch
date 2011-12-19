@@ -1,0 +1,44 @@
+Do not activate the mac80211 tracing by default as it does not work with 
+kernel <= 2.6.32. Compat also includes include/trace/define_trace.h over
+include/trace/events/module.h which makes this not compiling any more.
+
+--- a/net/mac80211/Makefile
++++ b/net/mac80211/Makefile
+@@ -24,8 +24,7 @@ mac80211-y := \
+ 	util.o \
+ 	wme.o \
+ 	event.o \
+-	chan.o \
+-	driver-trace.o
++	chan.o
+ 
+ mac80211-$(CONFIG_MAC80211_LEDS) += led.o
+ mac80211-$(CONFIG_MAC80211_DEBUGFS) += \
+@@ -42,6 +41,7 @@ mac80211-$(CONFIG_MAC80211_MESH) += \
+ 
+ mac80211-$(CONFIG_PM) += pm.o
+ 
++mac80211-$(CONFIG_MAC80211_DRIVER_API_TRACER) += driver-trace.o
+ CFLAGS_driver-trace.o := -I$(src)
+ 
+ # objects for PID algorithm
+--- a/net/mac80211/driver-trace.h
++++ b/net/mac80211/driver-trace.h
+@@ -5,6 +5,17 @@
+ #include <net/mac80211.h>
+ #include "ieee80211_i.h"
+ 
++#if !defined(CONFIG_MAC80211_DRIVER_API_TRACER) || defined(__CHECKER__)
++#undef TRACE_EVENT
++#define TRACE_EVENT(name, proto, ...) \
++static inline void trace_ ## name(proto) {}
++#undef DECLARE_EVENT_CLASS
++#define DECLARE_EVENT_CLASS(...)
++#undef DEFINE_EVENT
++#define DEFINE_EVENT(evt_class, name, proto, ...) \
++static inline void trace_ ## name(proto) {}
++#endif
++
+ #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM mac80211
+ 
