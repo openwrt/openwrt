@@ -3,14 +3,23 @@ This prevents the options from being delete with make kernel_oldconfig.
  drivers/ssb/Kconfig |    2 ++
  1 file changed, 2 insertions(+)
 
+--- a/drivers/bcma/Kconfig
++++ b/drivers/bcma/Kconfig
+@@ -37,6 +37,7 @@ config BCMA_DRIVER_PCI_HOSTMODE
+ config BCMA_HOST_SOC
+ 	bool
+ 	depends on BCMA_DRIVER_MIPS
++	select USB_HCD_BCMA if USB_EHCI_HCD || USB_OHCI_HCD
+ 
+ config BCMA_SFLASH
+ 	bool
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
-@@ -147,6 +147,8 @@ config SSB_SFLASH
+@@ -147,6 +147,7 @@ config SSB_SFLASH
  config SSB_EMBEDDED
  	bool
  	depends on SSB_DRIVER_MIPS
-+	select USB_EHCI_HCD_SSB if USB_EHCI_HCD
-+	select USB_OHCI_HCD_SSB if USB_OHCI_HCD
++	select USB_HCD_SSB if USB_EHCI_HCD || USB_OHCI_HCD
  	default y
  
  config SSB_DRIVER_EXTIF
