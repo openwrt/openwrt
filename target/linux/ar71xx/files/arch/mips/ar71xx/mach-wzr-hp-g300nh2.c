@@ -94,11 +94,6 @@ static struct gpio_led wzrhpg300nh2_wmac_leds_gpio[] = {
 		.active_low     = 1,
 	},
 	{
-		.name           = "buffalo:green:wireless",
-		.gpio           = 5,
-		.active_low     = 1,
-	},
-	{
 		.name           = "buffalo:orange:security",
 		.gpio           = 6,
 		.active_low     = 1,
@@ -183,7 +178,7 @@ static void __init wzrhpg300nh2_setup(void)
 	ar71xx_register_gpio_keys_polled(-1, WZRHPG300NH2_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(wzrhpg300nh2_gpio_keys),
 					wzrhpg300nh2_gpio_keys);
-	ap91_pci_setup_wmac_led_pin(22);
+	ap91_pci_setup_wmac_led_pin(5);
 	ap91_pci_setup_wmac_leds(wzrhpg300nh2_wmac_leds_gpio,
 				ARRAY_SIZE(wzrhpg300nh2_wmac_leds_gpio));
 
