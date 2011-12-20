@@ -34,7 +34,11 @@ fw_config_get_section() { # <config> <prefix> <type> <name> <default> ...
 		export ${NO_EXPORT:+-n} -- "${prefix}NAME"="${config}"
 		config_get "${prefix}TYPE" "$config" TYPE
 	}
-	
+
+	local enabled
+	config_get_bool enabled "$config" enabled 1
+	[ $enabled -eq 1 ] || return 1
+
 	[ "$1" == '{' ] && shift
 	while [ $# -ge 3 ]; do
 		local type=$1
