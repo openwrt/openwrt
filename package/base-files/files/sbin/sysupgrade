@@ -10,6 +10,7 @@ export SAVE_CONFIG=1
 export SAVE_OVERLAY=0
 export DELAY=
 export CONF_IMAGE=
+export CONF_BACKUP=
 export HELP=0
 
 # parse options
@@ -21,6 +22,7 @@ while [ -n "$1" ]; do
 		-q) export VERBOSE="$(($VERBOSE - 1))";;
 		-n) export SAVE_CONFIG=0;;
 		-c) export SAVE_OVERLAY=1;;
+		-b|--create-backup) export CONF_BACKUP="$2"; shift;;
 		-f) export CONF_IMAGE="$2"; shift;;
 		-h|--help) export HELP=1; break;;
 		-*)
@@ -38,7 +40,7 @@ export CONF_TAR=/tmp/sysupgrade.tgz
 export ARGV="$*"
 export ARGC="$#"
 
-[ -z "$ARGV" -o $HELP -gt 0 ] && {
+[ -z "$ARGV" -a -z "$CONF_BACKUP" -o $HELP -gt 0 ] && {
 	cat <<EOF
 Usage: $0 [options] <image file or URL>
 
@@ -47,6 +49,10 @@ Options:
 	-f <config>  restore configuration from .tar.gz (file or url)
 	-i           interactive mode
 	-c           attempt to preserve all changed files in /etc/
+	-b / --create-backup <file>
+	             create .tar.gz of files specified in sysupgrade.conf
+	             then exit. Does not flash an image. If file is '-',
+	             i.e. stdout, verbosity is set to 0 (i.e. quiet).
 	-n           do not save configuration over reflash
 	-q           less verbose
 	-v           more verbose
@@ -55,6 +61,17 @@ Options:
 EOF
 	exit 1
 }
+
+[ -n "$ARGV" -a -n "$CONF_BACKUP" ] && {
+	cat <<-EOF
+		-b/--create-backup does not perform a firmware upgrade. Do not
+		specify both -b and a firmware image.
+	EOF
+	exit 1
+}
+
+# prevent messages from clobbering the tarball when using stdout
+[ "$CONF_BACKUP" = "-" ] && export VERBOSE=0
 
 add_uci_conffiles() {
 	local file="$1"
@@ -85,6 +102,8 @@ sysupgrade_image_check="platform_check_image"
 include /lib/upgrade
 
 do_save_conffiles() {
+	local conf_tar="${1:-$CONF_TAR}"
+
 	[ -z "$(rootfs_type)" ] && {
 		echo "Cannot save config while running from ramdisk."
 		ask_bool 0 "Abort" && exit
@@ -95,8 +114,13 @@ do_save_conffiles() {
 
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
-	tar c${TAR_V}zf "$CONF_TAR" -T "$CONFFILES" 2>/dev/null
+	tar c${TAR_V}zf "$conf_tar" -T "$CONFFILES" 2>/dev/null
 }
+
+if [ -n "$CONF_BACKUP" ]; then
+	do_save_conffiles "$CONF_BACKUP"
+	exit $?
+fi
 
 type platform_check_image >/dev/null 2>/dev/null || {
 	echo "Firmware upgrade is not implemented for this platform."
