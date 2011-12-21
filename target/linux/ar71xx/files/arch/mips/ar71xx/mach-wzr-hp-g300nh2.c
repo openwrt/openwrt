@@ -185,6 +185,6 @@ static void __init wzrhpg300nh2_setup(void)
 	ap91_pci_init(eeprom, mac0);
 }
 
-MIPS_MACHINE(AR71XX_MACH_WZR_HP_AG300H, "WZR-HP-G300NH2",
+MIPS_MACHINE(AR71XX_MACH_WZR_HP_G300NH2, "WZR-HP-G300NH2",
 	     "Buffalo WZR-HP-G300NH2", wzrhpg300nh2_setup);
 
