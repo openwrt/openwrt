@@ -66,6 +66,7 @@ rb-493g)
 	ucidef_add_switch_vlan "switch1" "2" "0t 5"
 	;;
 
+wzr-hp-g300nh2 |\
 pb92)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "eth0" "1" "1"
@@ -141,6 +142,13 @@ wzr-hp-ag300h)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4"
+	;;
+
+wzr-hp-g450h)
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0t 2 3 4 5"
+	ucidef_add_switch_vlan "eth0" "2" "0t 1"
 	;;
 
 *)
