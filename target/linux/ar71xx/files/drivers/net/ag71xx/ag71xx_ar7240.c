@@ -66,6 +66,7 @@
 #define AR7240_AT_CTRL_AGE_TIME		BITS(0, 15)
 #define AR7240_AT_CTRL_AGE_EN		BIT(17)
 #define AR7240_AT_CTRL_LEARN_CHANGE	BIT(18)
+#define AR7240_AT_CTRL_RESERVED		BIT(19)
 #define AR7240_AT_CTRL_ARP_EN		BIT(20)
 
 #define AR7240_REG_TAG_PRIORITY		0x70
@@ -470,6 +471,7 @@ static void ar7240sw_setup(struct ar7240sw *as)
 
 	/* Enable ARP frame acknowledge, aging, MAC replacing */
 	ar7240sw_reg_write(mii, AR7240_REG_AT_CTRL,
+		AR7240_AT_CTRL_RESERVED |
 		0x2b /* 5 min age time */ |
 		AR7240_AT_CTRL_AGE_EN |
 		AR7240_AT_CTRL_ARP_EN |
