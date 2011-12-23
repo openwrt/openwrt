@@ -23,6 +23,13 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
 
+	wl-351)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "rtl8366rb" "1" "1"
+		ucidef_add_switch_vlan "rtl8366rb" "1" "0 1 2 3 5t"
+		ucidef_add_switch_vlan "rtl8366rb" "2" "4 5t"
+		;;
+
 	rt-n15)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "rtl8366s" "1" "1"
@@ -56,7 +63,8 @@ ramips_setup_macs()
 	argus-atp52b | \
 	b2c | \
 	nw718 | \
-	rt-n15)
+	rt-n15 | \
+	wl-351)
 		lan_mac=$(ramips_get_mac_binary factory 4)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;

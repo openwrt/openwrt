@@ -179,6 +179,10 @@ define Image/Build/Profile/NBG419N
 	$(call Image/Build/Template/GENERIC_4M,$(1),nbg-419n,NBG-419N)
 endef
 
+define Image/Build/Profile/WL351
+	$(call Image/Build/Template/GENERIC_4M,$(1),wl-351,WL-351)
+endef
+
 define Image/Build/Profile/NW718
 	$(call Image/Build/Template/NW718,$(1),nw718,NW718)
 endef
@@ -271,6 +275,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/HW5503G,$(1))
 	$(call Image/Build/Profile/MOFI35003GN,$(1))
 	$(call Image/Build/Profile/WR5123GN,$(1))
+	$(call Image/Build/Profile/WL351,$(1))
 endef
 endif
 
