@@ -76,6 +76,11 @@ config RT305X_MACH_V22RW_2X2
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_WL351
+	bool "Sitecom WL-351 support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_WCR150GN
 	bool "Sparklan WCR-150GN support"
 	select RALINK_DEV_GPIO_BUTTONS

@@ -13,6 +13,7 @@
 
 enum {
 	RT305X_ESW_VLAN_CONFIG_NONE = 0,
+	RT305X_ESW_VLAN_CONFIG_BYPASS,
 	RT305X_ESW_VLAN_CONFIG_LLLLW,
 	RT305X_ESW_VLAN_CONFIG_WLLLL,
 };
@@ -20,6 +21,8 @@ enum {
 struct rt305x_esw_platform_data
 {
 	u8 vlan_config;
+	u32 reg_initval_fct2;
+	u32 reg_initval_fpa2;
 };
 
 #endif /* _RT305X_ESW_PLATFORM_H */

@@ -104,6 +104,9 @@ ramips_board_name() {
 	*"WHR-G300N")
 		name="whr-g300n"
 		;;
+	*"Sitecom WL-351 v1 002")
+		name="wl-351"
+		;;
 	*"WZR-AGL300NH")
 		name="wzr-agl300nh"
 		;;

@@ -24,6 +24,7 @@
 #include "devices.h"
 
 #include <ramips_eth_platform.h>
+#include <rt305x_esw_platform.h>
 
 static struct resource rt305x_flash0_resources[] = {
 	{
@@ -142,7 +143,12 @@ static struct resource rt305x_esw_resources[] = {
 	},
 };
 
-struct rt305x_esw_platform_data rt305x_esw_data;
+struct rt305x_esw_platform_data rt305x_esw_data = {
+	.vlan_config		= RT305X_ESW_VLAN_CONFIG_NONE,
+	.reg_initval_fct2	= 0x00d6500c,
+	.reg_initval_fpa2	= 0x3f502b28,
+};
+
 static struct platform_device rt305x_esw_device = {
 	.name		= "rt305x-esw",
 	.resource	= rt305x_esw_resources,

@@ -66,6 +66,9 @@ get_status_led() {
 	whr-g300n)
 		status_led="whr-g300n:green:router"
 		;;
+	wl-351)
+		status_led="wl-351:amber:power"
+		;;
 	esac
 }
 
