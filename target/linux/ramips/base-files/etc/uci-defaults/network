@@ -68,6 +68,7 @@ ramips_setup_macs()
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
 		;;
 
+	esr-9753 | \
 	nbg-419n)
                 lan_mac=$(ramips_get_mac_binary factory 4)
                 wan_mac=$(ramips_get_mac_binary factory 40)

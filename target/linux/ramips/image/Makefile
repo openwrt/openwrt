@@ -162,6 +162,10 @@ define Image/Build/Profile/RTG32B1
 	$(call Image/Build/Template/RTG32B1,$(1),rt-g32-b1,RT-G32-B1)
 endef
 
+define Image/Build/Profile/ESR9753
+	$(call Image/Build/Template/GENERIC_4M,$(1),esr-9753,ESR-9753)
+endef
+
 define Image/Build/Profile/FONERA20N
 	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N)
 	$(call BuildFirmware/Edimax,$(1),fonera20n,RSDK,NL1T,0x50000,0xc0000)
@@ -253,6 +257,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
 	$(call Image/Build/Profile/BC2,$(1))
 	$(call Image/Build/Profile/DIR300B1,$(1))
+	$(call Image/Build/Profile/ESR9753,$(1))
 	$(call Image/Build/Profile/RTG32B1,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))
 	$(call Image/Build/Profile/V22RW2X2,$(1))

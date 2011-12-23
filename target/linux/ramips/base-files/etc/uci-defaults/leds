@@ -16,11 +16,28 @@ commit system
 EOF
 }
 
+set_wifi_led() {
+	local sysfs="$1"
+
+	uci batch <<EOF
+set system.wifi_led=led
+set system.wifi_led.name='wifi'
+set system.wifi_led.sysfs='$sysfs'
+set system.wifi_led.trigger='netdev'
+set system.wifi_led.dev='wlan0'
+set system.wifi_led.mode='link rx tx'
+commit system
+EOF
+}
+
 board=$(ramips_board_name)
 
 case $board in
 	bc2)
 		set_usb_led "bc2:blue:usb"
+		;;
+	esr-9753)
+		set_wifi_led "rt2800pci-phy0::radio"
 		;;
 	fonera20n)
 		set_usb_led "fonera20n:amber:usb"

@@ -33,6 +33,9 @@ get_status_led() {
 	dir-300-b1 | dir-600-b1 | dir-600-b2)
 		status_led="d-link:green:status"
 		;;
+	esr-9753)
+		status_led="esr-9753:orange:power"
+		;;
 	fonera20n)
 		status_led="fonera20n:green:power"
 		;;
