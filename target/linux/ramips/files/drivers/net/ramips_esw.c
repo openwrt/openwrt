@@ -19,6 +19,11 @@
 #define RT305X_ESW_REG_FPA2		0xc8
 #define RT305X_ESW_REG_FCT2		0xcc
 #define RT305X_ESW_REG_SGC2		0xe4
+#define RT305X_ESW_REG_P0LED	0xa4
+#define RT305X_ESW_REG_P1LED	0xa8
+#define RT305X_ESW_REG_P2LED	0xac
+#define RT305X_ESW_REG_P3LED	0xb0
+#define RT305X_ESW_REG_P4LED	0xb4
 
 #define RT305X_ESW_PCR0_WT_NWAY_DATA_S	16
 #define RT305X_ESW_PCR0_WT_PHY_CMD	BIT(13)
@@ -226,6 +231,13 @@ rt305x_esw_hw_init(struct rt305x_esw *esw)
 
 	rt305x_esw_wr(esw, 0x3f502b28, RT305X_ESW_REG_FPA2);
 	rt305x_esw_wr(esw, 0x00000000, RT305X_ESW_REG_FPA);
+
+	/* Force Link/Activity on ports */
+	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P0LED);
+	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P1LED);
+	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P2LED);
+	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P3LED);
+	rt305x_esw_wr(esw, 0x00000005, RT305X_ESW_REG_P4LED);
 
 	rt305x_mii_write(esw, 0, 31, 0x8000);
 	for (i = 0; i < 5; i++) {

@@ -27,6 +27,7 @@ enum ramips_mach_type {
 	/* RT3052 based machines */
 	RAMIPS_MACH_ARGUS_ATP52B,	/* Argus ATP-52B */
 	RAMIPS_MACH_BC2,		/* NexAira BC2 */
+	RAMIPS_MACH_ESR_9753,		/* Senao / EnGenius ESR-9753*/
 	RAMIPS_MACH_F5D8235_V2,         /* Belkin F5D8235 v2 */
 	RAMIPS_MACH_FONERA20N,		/* La Fonera 2.0N */
 	RAMIPS_MACH_HW550_3G,		/* Aztech HW550-3G */

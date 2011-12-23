@@ -62,6 +62,9 @@ ramips_board_name() {
 	*"DIR-600 B2")
 		name="dir-600-b2"
 		;;
+	*"ESR-9753")
+		name="esr-9753"
+		;;
 	*"F5D8235 v2")
 		name="f5d8235-v2"
 		;;
