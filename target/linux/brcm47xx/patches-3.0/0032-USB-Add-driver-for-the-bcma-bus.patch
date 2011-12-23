@@ -46,7 +46,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_USB_HCD_BCMA)	+= bcma-hcd.o
 --- /dev/null
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -0,0 +1,298 @@
+@@ -0,0 +1,299 @@
 +/*
 + * Broadcom specific Advanced Microcontroller Bus
 + * Broadcom USB-core driver (BCMA bus glue)
@@ -106,7 +106,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			tmp = bcma_read32(dev, 0x1e0);
 +			tmp |= 0x100;
 +			bcma_write32(dev, 0x1e0, tmp);
-+			if (bcma_wait_bits(dev, 0x1e0, 1 << 24, 100, 0))
++			if (bcma_wait_bits(dev, 0x1e0, 1 << 24, 100, 1))
 +				printk(KERN_EMERG "Failed to enable misc PPL!\n");
 +
 +			/* Take out of resets */
@@ -132,10 +132,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			udelay(50);
 +			tmp = bcma_read32(dev, 0x524);
 +
-+			if (bcma_wait_bits(dev, 0x528, 0xc000, 10000, 1))
++			if (bcma_wait_bits(dev, 0x528, 0xc000, 10000, 1)) {
++				tmp = bcma_read32(dev, 0x528);
 +				printk(KERN_EMERG
 +				       "USB20H mdio_rddata 0x%08x\n", tmp);
-+
++			}
 +			bcma_write32(dev, 0x528, 0x80000000);
 +			tmp = bcma_read32(dev, 0x314);
 +			udelay(265);
