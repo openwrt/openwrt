@@ -54,6 +54,10 @@ static struct mtd_partition emb_partitions[] = {
 		.name	= "rootfs",
 		.offset	= 0x150000,
 		.size	= 0x6B0000,
+	}, {
+		.name	= "firmware",
+		.offset	= 0x050000,
+		.size	= 0x7B0000,
 	}
 };
 #endif /* CONFIG_MTD_PARTITIONS */
