@@ -62,6 +62,7 @@ $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_TARGET_NOTRACK, $(P_V4)ipt_NOTRA
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_TARGET_NOTRACK, $(P_XT)xt_NOTRACK))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_MATCH_CONNTRACK, $(P_V4)ipt_conntrack))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_CONNTRACK, $(P_XT)xt_conntrack))
+$(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_TARGET_CT, $(P_XT)xt_CT))
 
 
 # conntrack-extra
