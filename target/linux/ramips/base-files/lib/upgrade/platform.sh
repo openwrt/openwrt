@@ -27,6 +27,7 @@ platform_check_image() {
 	rt-g32-b1 | \
 	rt-n15 | \
 	v22rw-2x2 | \
+	wli-tx4-ag300n | \
 	whr-g300n)
 		[ "$magic" != "2705" ] && {
 			echo "Invalid image type."
