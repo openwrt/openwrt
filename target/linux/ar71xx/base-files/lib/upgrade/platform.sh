@@ -99,6 +99,7 @@ platform_check_image() {
 	mzk-w300nh | \
 	tew-632brp | \
 	wrt400n | \
+	airrouter | \
 	bullet-m | \
 	nanostation-m | \
 	rocket-m | \
