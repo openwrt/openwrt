@@ -89,6 +89,10 @@ define BuildFirmware/Buffalo
 	fi; fi
 endef
 
+define BuildFirmware/Buffalo2
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),$($(4)),$(5),$(6))
+endef
+
 define BuildFirmware/NW718
 	$(call PatchKernelLzma,$(2),$(3) $($(4)))
 	mkimage -A mips -O linux -T kernel -C lzma $(call kernel_entry) \
@@ -284,9 +288,15 @@ define Image/Build/Profile/RTN15
 	$(call Image/Build/Template/GENERIC_4M,$(1),rt-n15,RT-N15)
 endef
 
+mtdlayout_wlitx4ag300n=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2880k(rootfs),64k(user)ro,3712k@0x50000(firmware)
+define Image/Build/Profile/WLITX4AG300N
+	$(call BuildFirmware/Buffalo2,$(1),wli-tx4-ag300n,WLI-TX4-AG300N,mtdlayout_wlitx4ag300n,851968,2949120)
+endef
+
 ifeq ($(CONFIG_RALINK_RT288X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/RTN15,$(1))
+	$(call Image/Build/Profile/WLITX4AG300N,$(1))
 endef
 endif
 
