@@ -15,7 +15,7 @@ platform_find_partitions() {
 	while read dev size erasesize name; do
 		name=${name#'"'}; name=${name%'"'}
 		case "$name" in
-			vmlinux.bin.l7|kernel|linux|rootfs)
+			vmlinux.bin.l7|vmlinux|kernel|linux|rootfs)
 				if [ -z "$first" ]; then
 					first="$name"
 				else
@@ -31,7 +31,7 @@ platform_find_kernelpart() {
 	local part
 	for part in "${1%:*}" "${1#*:}"; do
 		case "$part" in
-			vmlinux.bin.l7|kernel|linux)
+			vmlinux.bin.l7|vmlinux|kernel|linux)
 				echo "$part"
 				break
 			;;
@@ -199,6 +199,8 @@ platform_do_upgrade() {
 	routerstation-pro | \
 	ls-sr71 | \
 	eap7660d | \
+	pb42 | \
+	pb44 | \
 	ja76pf)
 		platform_do_upgrade_combined "$ARGV"
 		;;
