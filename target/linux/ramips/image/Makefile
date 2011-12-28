@@ -123,8 +123,10 @@ define Image/Build/Template/GENERIC_4M
 endef
 
 mtdlayout_8M=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),7040k(rootfs),7872k@0x50000(firmware)
+kernel_size_8M=851968
+rootfs_size_8M=7208960
 define Image/Build/Template/GENERIC_8M
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_8M,851968,7208960)
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_8M,$(kernel_size_8M),$(rootfs_size_8M))
 endef
 
 mtdlayout_dir300b1=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
@@ -228,6 +230,10 @@ define Image/Build/Profile/WCR150GN
 	$(call Image/Build/Template/GENERIC_4M,$(1),wcr150gn,WCR150GN)
 endef
 
+w502u_cmdline=board=W502U console=ttyS1,115200
+define Image/Build/Profile/W502U
+	$(call BuildFirmware/Generic,$(1),w502u,$(w502u_cmdline),mtdlayout_8M,$(kernel_size_8M),$(rootfs_size_8M))
+endef
 
 mtdlayout_argus_atp52b=mtdparts=physmap-flash.0:192k(bootloader)ro,64k(config),64k(factory),1152k(kernel),6656k(rootfs),7808k@0x50000(firmware)
 mtd_argus_atp52b_kernel_part_size=1179648
@@ -278,6 +284,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/F5D8235V2,$(1))
 	$(call Image/Build/Profile/HW5503G,$(1))
 	$(call Image/Build/Profile/MOFI35003GN,$(1))
+	$(call Image/Build/Profile/W502U,$(1))
 	$(call Image/Build/Profile/WR5123GN,$(1))
 	$(call Image/Build/Profile/WL351,$(1))
 endef

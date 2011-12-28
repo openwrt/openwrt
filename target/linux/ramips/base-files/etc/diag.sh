@@ -63,6 +63,9 @@ get_status_led() {
 	v22rw-2x2)
 		status_led="v22rw-2x2:green:security"
 		;;
+	w502u)
+		status_led="alfa:blue:wps"
+		;;
 	whr-g300n)
 		status_led="whr-g300n:green:router"
 		;;

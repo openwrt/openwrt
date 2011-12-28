@@ -26,6 +26,7 @@ platform_check_image() {
 	omni-emb | \
 	rt-g32-b1 | \
 	rt-n15 | \
+	w502u |\
 	v22rw-2x2 | \
 	wli-tx4-ag300n | \
 	whr-g300n)

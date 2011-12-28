@@ -101,6 +101,9 @@ ramips_board_name() {
 	*"V22RW-2X2")
 		name="v22rw-2x2"
 		;;
+	*"W502U")
+		name="w502u"
+		;;
 	*"WHR-G300N")
 		name="whr-g300n"
 		;;
