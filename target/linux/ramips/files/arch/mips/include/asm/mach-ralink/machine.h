@@ -14,6 +14,7 @@
 enum ramips_mach_type {
 	RAMIPS_MACH_GENERIC,
 	/* RT2880 based machines */
+	RAMIPS_MACH_F5D8235_V1,		/* Belkin F5D8235 v1 */
 	RAMIPS_MACH_RT_N15,		/* Asus RT-N15 */
 	RAMIPS_MACH_WLI_TX4_AG300N,	/* Buffalo WLI-TX4-AG300N */
 	RAMIPS_MACH_WZR_AGL300NH,	/* Buffalo WZR-AGL300NH */
