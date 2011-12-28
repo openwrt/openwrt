@@ -65,6 +65,9 @@ ramips_board_name() {
 	*"ESR-9753")
 		name="esr-9753"
 		;;
+	*"F5D8235 v1")
+		name="f5d8235-v1"
+		;;
 	*"F5D8235 v2")
 		name="f5d8235-v2"
 		;;

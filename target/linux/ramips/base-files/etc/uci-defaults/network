@@ -35,6 +35,7 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "eth0"
 		;;
 
+	f5d8235-v1 | \
 	rt-n15)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "rtl8366s" "1" "1"
@@ -67,6 +68,7 @@ ramips_setup_macs()
 
 	argus-atp52b | \
 	b2c | \
+	f5d8235-v1 | \
 	nw718 | \
 	rt-n15 | \
 	wl-351)
