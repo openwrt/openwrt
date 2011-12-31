@@ -24,6 +24,12 @@
 
 #define TL_WR741NDV4_GPIO_LED_WLAN	0
 #define TL_WR741NDV4_GPIO_LED_QSS	1
+#define TL_WR741NDV4_GPIO_LED_WAN	13
+#define TL_WR741NDV4_GPIO_LED_LAN1	14
+#define TL_WR741NDV4_GPIO_LED_LAN2	15
+#define TL_WR741NDV4_GPIO_LED_LAN3	16
+#define TL_WR741NDV4_GPIO_LED_LAN4	17
+
 #define TL_WR741NDV4_GPIO_LED_SYSTEM	27
 
 #define TL_WR741NDV4_KEYS_POLL_INTERVAL	20	/* msecs */
@@ -40,12 +46,32 @@ static struct flash_platform_data tl_wr741ndv4_flash_data = {
 
 static struct gpio_led tl_wr741ndv4_leds_gpio[] __initdata = {
 	{
-		.name		= "tp-link:green:system",
-		.gpio		= TL_WR741NDV4_GPIO_LED_SYSTEM,
+		.name		= "tp-link:green:lan1",
+		.gpio		= TL_WR741NDV4_GPIO_LED_LAN1,
+		.active_low	= 0,
+	}, {
+		.name		= "tp-link:green:lan2",
+		.gpio		= TL_WR741NDV4_GPIO_LED_LAN2,
+		.active_low	= 0,
+	}, {
+		.name		= "tp-link:green:lan3",
+		.gpio		= TL_WR741NDV4_GPIO_LED_LAN3,
+		.active_low	= 0,
+	}, {
+		.name		= "tp-link:green:lan4",
+		.gpio		= TL_WR741NDV4_GPIO_LED_LAN4,
 		.active_low	= 1,
 	}, {
 		.name		= "tp-link:green:qss",
 		.gpio		= TL_WR741NDV4_GPIO_LED_QSS,
+		.active_low	= 0,
+	}, {
+		.name		= "tp-link:green:system",
+		.gpio		= TL_WR741NDV4_GPIO_LED_SYSTEM,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:wan",
+		.gpio		= TL_WR741NDV4_GPIO_LED_WAN,
 		.active_low	= 0,
 	}, {
 		.name		= "tp-link:green:wlan",
@@ -92,6 +118,12 @@ static void __init tl_wr741ndv4_setup(void)
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	tl_wr741ndv4_gmac_setup();
+
+	ar71xx_gpio_function_disable(AR933X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				     AR933X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				     AR933X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				     AR933X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				     AR933X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_wr741ndv4_leds_gpio),
 					tl_wr741ndv4_leds_gpio);
