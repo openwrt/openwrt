@@ -33,6 +33,8 @@
 
 #define SWCONFIG_DEVNAME	"switch%d"
 
+#include "swconfig_leds.c"
+
 MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
 MODULE_LICENSE("GPL");
 
@@ -863,6 +865,7 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 	struct switch_dev *sdev;
 	const int max_switches = 8 * sizeof(unsigned long);
 	unsigned long in_use = 0;
+	int err;
 	int i;
 
 	INIT_LIST_HEAD(&dev->dev_list);
@@ -905,6 +908,10 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 	list_add(&dev->dev_list, &swdevs);
 	swconfig_unlock();
 
+	err = swconfig_create_led_trigger(dev);
+	if (err)
+		return err;
+
 	return 0;
 }
 EXPORT_SYMBOL_GPL(register_switch);
@@ -912,6 +919,7 @@ EXPORT_SYMBOL_GPL(register_switch);
 void
 unregister_switch(struct switch_dev *dev)
 {
+	swconfig_destroy_led_trigger(dev);
 	kfree(dev->portbuf);
 	spin_lock(&dev->lock);
 	swconfig_lock();
