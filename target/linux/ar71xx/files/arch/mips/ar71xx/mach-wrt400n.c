@@ -21,10 +21,10 @@
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
 
-#define WRT400N_GPIO_LED_ORANGE	5
-#define WRT400N_GPIO_LED_GREEN	4
-#define WRT400N_GPIO_LED_POWER	1
-#define WRT400N_GPIO_LED_WLAN	0
+#define WRT400N_GPIO_LED_POWER		1
+#define WRT400N_GPIO_LED_WPS_BLUE	4
+#define WRT400N_GPIO_LED_WPS_AMBER	5
+#define WRT400N_GPIO_LED_WLAN		6
 
 #define WRT400N_GPIO_BTN_RESET	8
 #define WRT400N_GPIO_BTN_WLSEC	3
@@ -93,21 +93,22 @@ static struct flash_platform_data wrt400n_flash_data = {
 
 static struct gpio_led wrt400n_leds_gpio[] __initdata = {
 	{
-		.name		= "wrt400n:green:status",
-		.gpio		= WRT400N_GPIO_LED_GREEN,
+		.name		= "wrt400n:blue:wps",
+		.gpio		= WRT400N_GPIO_LED_WPS_BLUE,
 		.active_low	= 1,
 	}, {
-		.name		= "wrt400n:amber:aoss",
-		.gpio		= WRT400N_GPIO_LED_ORANGE,
+		.name		= "wrt400n:amber:wps",
+		.gpio		= WRT400N_GPIO_LED_WPS_AMBER,
 		.active_low	= 1,
 	}, {
-		.name		= "wrt400n:green:wlan",
+		.name		= "wrt400n:blue:wlan",
 		.gpio		= WRT400N_GPIO_LED_WLAN,
 		.active_low	= 1,
 	}, {
-		.name		= "wrt400n:green:power",
+		.name		= "wrt400n:blue:power",
 		.gpio		= WRT400N_GPIO_LED_POWER,
-		.active_low	= 1,
+		.active_low	= 0,
+		.default_trigger = "default-on",
 	}
 };
 
