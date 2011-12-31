@@ -99,6 +99,7 @@ struct switch_op;
 struct switch_val;
 struct switch_attr;
 struct switch_attrlist;
+struct switch_led_trigger;
 
 int register_switch(struct switch_dev *dev, struct net_device *netdev);
 void unregister_switch(struct switch_dev *dev);
@@ -192,6 +193,10 @@ struct switch_dev {
 
 	spinlock_t lock;
 	struct switch_port *portbuf;
+
+#ifdef CONFIG_SWCONFIG_LEDS
+	struct switch_led_trigger *led_trigger;
+#endif
 };
 
 struct switch_port {

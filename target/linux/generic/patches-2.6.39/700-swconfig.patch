@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -13,6 +13,12 @@ menuconfig PHYLIB
+@@ -13,6 +13,16 @@ menuconfig PHYLIB
  
  if PHYLIB
  
@@ -9,6 +9,10 @@
 +	---help---
 +	  Switch configuration API using netlink. This allows
 +	  you to configure the VLAN features of certain switches.
++
++config SWCONFIG_LEDS
++	bool "Switch LED trigger support"
++	depends on (SWCONFIG && LEDS_TRIGGERS)
 +
  comment "MII PHY device drivers"
  
