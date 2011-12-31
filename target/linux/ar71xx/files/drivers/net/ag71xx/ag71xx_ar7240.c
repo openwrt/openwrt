@@ -229,6 +229,49 @@
 
 #define sw_to_ar7240(_dev) container_of(_dev, struct ar7240sw, swdev)
 
+struct ar7240sw_port_stat {
+	unsigned long rx_broadcast;
+	unsigned long rx_pause;
+	unsigned long rx_multicast;
+	unsigned long rx_fcs_error;
+	unsigned long rx_align_error;
+	unsigned long rx_runt;
+	unsigned long rx_fragments;
+	unsigned long rx_64byte;
+	unsigned long rx_128byte;
+	unsigned long rx_256byte;
+	unsigned long rx_512byte;
+	unsigned long rx_1024byte;
+	unsigned long rx_1518byte;
+	unsigned long rx_maxbyte;
+	unsigned long rx_toolong;
+	unsigned long rx_good_byte;
+	unsigned long rx_bad_byte;
+	unsigned long rx_overflow;
+	unsigned long filtered;
+
+	unsigned long tx_broadcast;
+	unsigned long tx_pause;
+	unsigned long tx_multicast;
+	unsigned long tx_underrun;
+	unsigned long tx_64byte;
+	unsigned long tx_128byte;
+	unsigned long tx_256byte;
+	unsigned long tx_512byte;
+	unsigned long tx_1024byte;
+	unsigned long tx_1518byte;
+	unsigned long tx_maxbyte;
+	unsigned long tx_oversize;
+	unsigned long tx_byte;
+	unsigned long tx_collision;
+	unsigned long tx_abortcol;
+	unsigned long tx_multicol;
+	unsigned long tx_singlecol;
+	unsigned long tx_excdefer;
+	unsigned long tx_defer;
+	unsigned long tx_xlatecol;
+};
+
 struct ar7240sw {
 	struct mii_bus	*mii_bus;
 	struct ag71xx_switch_platform_data *swdata;
@@ -241,6 +284,9 @@ struct ar7240sw {
 	u8 vlan_tagged;
 	u16 pvid[AR7240_NUM_PORTS];
 	char buf[80];
+
+	rwlock_t stats_lock;
+	struct ar7240sw_port_stat port_stats[AR7240_NUM_PORTS];
 };
 
 struct ar7240sw_hw_stat {
@@ -448,6 +494,47 @@ int ar7240sw_phy_write(struct mii_bus *mii, unsigned phy_addr,
 				  AR7240_MDIO_CTRL_BUSY, 0, 5);
 	mutex_unlock(&reg_mutex);
 
+	return ret;
+}
+
+static int ar7240sw_capture_stats(struct ar7240sw *as)
+{
+	struct mii_bus *mii = as->mii_bus;
+	int port;
+	int ret;
+
+	write_lock(&as->stats_lock);
+
+	/* Capture the hardware statistics for all ports */
+	ar7240sw_reg_write(mii, AR7240_REG_MIB_FUNCTION0,
+			   (AR7240_MIB_FUNC_CAPTURE << AR7240_MIB_FUNC_S));
+
+	/* Wait for the capturing to complete. */
+	ret = ar7240sw_reg_wait(mii, AR7240_REG_MIB_FUNCTION0,
+				AR7240_MIB_BUSY, 0, 10);
+
+	if (ret)
+		goto unlock;
+
+	for (port = 0; port < AR7240_NUM_PORTS; port++) {
+		unsigned int base;
+		struct ar7240sw_port_stat *stats;
+
+		base = AR7240_REG_STATS_BASE(port);
+		stats = &as->port_stats[port];
+
+#define READ_STAT(_r) ar7240sw_reg_read(mii, base + AR7240_STATS_ ## _r)
+
+		stats->rx_good_byte += READ_STAT(RXGOODBYTE);
+		stats->tx_byte += READ_STAT(TXBYTE);
+
+#undef READ_STAT
+	}
+
+	ret = 0;
+
+unlock:
+	write_unlock(&as->stats_lock);
 	return ret;
 }
 
@@ -843,6 +930,58 @@ ar7240_reset_switch(struct switch_dev *dev)
 	return 0;
 }
 
+static int
+ar7240_get_port_link(struct switch_dev *dev, int port,
+		     struct switch_port_link *link)
+{
+	struct ar7240sw *as = sw_to_ar7240(dev);
+	struct mii_bus *mii = as->mii_bus;
+	u32 status;
+
+	if (port > AR7240_NUM_PORTS)
+		return -EINVAL;
+
+	status = ar7240sw_reg_read(mii, AR7240_REG_PORT_STATUS(port));
+
+	link->link = !!(status & AR7240_PORT_STATUS_LINK_UP);
+	link->aneg = !!(status & AR7240_PORT_STATUS_LINK_AUTO);
+	link->duplex = !!(status & AR7240_PORT_STATUS_DUPLEX);
+	link->tx_flow = !!(status & AR7240_PORT_STATUS_TXFLOW);
+	link->rx_flow = !!(status & AR7240_PORT_STATUS_RXFLOW);
+	switch (status & AR7240_PORT_STATUS_SPEED_M) {
+	case AR7240_PORT_STATUS_SPEED_10:
+		link->speed = SWITCH_PORT_SPEED_10;
+		break;
+	case AR7240_PORT_STATUS_SPEED_100:
+		link->speed = SWITCH_PORT_SPEED_100;
+		break;
+	case AR7240_PORT_STATUS_SPEED_1000:
+		link->speed = SWITCH_PORT_SPEED_1000;
+		break;
+	}
+
+	return 0;
+}
+
+static int
+ar7240_get_port_stats(struct switch_dev *dev, int port,
+		      struct switch_port_stats *stats)
+{
+	struct ar7240sw *as = sw_to_ar7240(dev);
+
+	if (port > AR7240_NUM_PORTS)
+		return -EINVAL;
+
+	ar7240sw_capture_stats(as);
+
+	read_lock(&as->stats_lock);
+	stats->rx_bytes = as->port_stats[port].rx_good_byte;
+	stats->tx_bytes = as->port_stats[port].tx_byte;
+	read_unlock(&as->stats_lock);
+
+	return 0;
+}
+
 static struct switch_attr ar7240_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -895,6 +1034,8 @@ static const struct switch_dev_ops ar7240_ops = {
 	.set_vlan_ports = ar7240_set_ports,
 	.apply_config = ar7240_hw_apply,
 	.reset_switch = ar7240_reset_switch,
+	.get_port_link = ar7240_get_port_link,
+	.get_port_stats = ar7240_get_port_stats,
 };
 
 static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
@@ -1034,6 +1175,7 @@ int __devinit ag71xx_ar7240_init(struct ag71xx *ag)
 	ag->phy_priv = as;
 	ar7240sw_reset(as);
 
+	rwlock_init(&as->stats_lock);
 	INIT_DELAYED_WORK(&ag->link_work, link_function);
 
 	return 0;
