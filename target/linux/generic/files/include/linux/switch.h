@@ -114,6 +114,27 @@ struct switch_attrlist {
 	const struct switch_attr *attr;
 };
 
+enum switch_port_speed {
+	SWITCH_PORT_SPEED_UNKNOWN = 0,
+	SWITCH_PORT_SPEED_10 = 10,
+	SWITCH_PORT_SPEED_100 = 100,
+	SWITCH_PORT_SPEED_1000 = 1000,
+};
+
+struct switch_port_link {
+	bool link;
+	bool duplex;
+	bool aneg;
+	bool tx_flow;
+	bool rx_flow;
+	enum switch_port_speed speed;
+};
+
+struct switch_port_stats {
+	unsigned long tx_bytes;
+	unsigned long rx_bytes;
+};
+
 /**
  * struct switch_dev_ops - switch driver operations
  *
@@ -143,6 +164,11 @@ struct switch_dev_ops {
 
 	int (*apply_config)(struct switch_dev *dev);
 	int (*reset_switch)(struct switch_dev *dev);
+
+	int (*get_port_link)(struct switch_dev *dev, int port,
+			     struct switch_port_link *link);
+	int (*get_port_stats)(struct switch_dev *dev, int port,
+			      struct switch_port_stats *stats);
 };
 
 struct switch_dev {
