@@ -60,6 +60,14 @@ load_led() {
 			[ -n "$port_state" ] && \
 				echo $port_state > /sys/class/leds/${sysfs}/port_state
 			;;
+
+		switch[0-9]*)
+			local port_mask
+
+			config_get port_mask $1 port_mask
+			[ -n "$port_mask" ] && \
+				echo $port_mask > /sys/class/leds/${sysfs}/port_mask
+			;;
 		esac
 	}
 }
