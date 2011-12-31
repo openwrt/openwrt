@@ -19,6 +19,11 @@
 
 #define TL_WR741ND_GPIO_LED_QSS		0
 #define TL_WR741ND_GPIO_LED_SYSTEM	1
+#define TL_WR741ND_GPIO_LED_LAN1	13
+#define TL_WR741ND_GPIO_LED_LAN2	14
+#define TL_WR741ND_GPIO_LED_LAN3	15
+#define TL_WR741ND_GPIO_LED_LAN4	16
+#define TL_WR741ND_GPIO_LED_WAN		17
 
 #define TL_WR741ND_GPIO_BTN_RESET	11
 #define TL_WR741ND_GPIO_BTN_QSS		12
@@ -37,14 +42,34 @@ static struct flash_platform_data tl_wr741nd_flash_data = {
 
 static struct gpio_led tl_wr741nd_leds_gpio[] __initdata = {
 	{
-		.name		= "tp-link:green:system",
-		.gpio		= TL_WR741ND_GPIO_LED_SYSTEM,
+		.name		= "tp-link:green:lan1",
+		.gpio		= TL_WR741ND_GPIO_LED_LAN1,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:lan2",
+		.gpio		= TL_WR741ND_GPIO_LED_LAN2,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:lan3",
+		.gpio		= TL_WR741ND_GPIO_LED_LAN3,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:lan4",
+		.gpio		= TL_WR741ND_GPIO_LED_LAN4,
 		.active_low	= 1,
 	}, {
 		.name		= "tp-link:green:qss",
 		.gpio		= TL_WR741ND_GPIO_LED_QSS,
 		.active_low	= 1,
-	}
+	}, {
+		.name		= "tp-link:green:system",
+		.gpio		= TL_WR741ND_GPIO_LED_SYSTEM,
+		.active_low	= 1,
+	}, {
+		.name		= "tp-link:green:wan",
+		.gpio		= TL_WR741ND_GPIO_LED_WAN,
+		.active_low	= 1,
+	},
 };
 
 static struct gpio_keys_button tl_wr741nd_gpio_keys[] __initdata = {
@@ -71,6 +96,12 @@ static void __init tl_wr741nd_setup(void)
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	ar71xx_add_device_m25p80(&tl_wr741nd_flash_data);
+
+	ar71xx_gpio_function_disable(AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_wr741nd_leds_gpio),
 					tl_wr741nd_leds_gpio);
