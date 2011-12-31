@@ -34,21 +34,33 @@ load_led() {
 				echo 0 >/sys/class/leds/${sysfs}/brightness
 		}
 		echo $trigger > /sys/class/leds/${sysfs}/trigger
-		[ "$trigger" == "netdev" -a -n "$dev" ] && {
-			echo $dev > /sys/class/leds/${sysfs}/device_name
-			echo $mode > /sys/class/leds/${sysfs}/mode
-		}
-		[ "$trigger" == "timer" ] && {
-			[ -n "$delayon" ] && echo $delayon > /sys/class/leds/${sysfs}/delay_on
-			[ -n "$delayoff" ] && echo $delayoff > /sys/class/leds/${sysfs}/delay_off
-		}
-		[ "$trigger" == "usbdev" -a -n "$dev" ] && {
-			echo $dev > /sys/class/leds/${sysfs}/device_name
-			echo $interval > /sys/class/leds/${sysfs}/activity_interval
-		}
-		[ "$trigger" == "port_state" -a -n "$port_state" ] && {
-			echo $port_state > /sys/class/leds/${sysfs}/port_state
-		}
+		case "$trigger" in
+		"netdev")
+			[ -n "$dev" ] && {
+				echo $dev > /sys/class/leds/${sysfs}/device_name
+				echo $mode > /sys/class/leds/${sysfs}/mode
+			}
+			;;
+
+		"timer")
+			[ -n "$delayon" ] && \
+				echo $delayon > /sys/class/leds/${sysfs}/delay_on
+			[ -n "$delayoff" ] && \
+				echo $delayoff > /sys/class/leds/${sysfs}/delay_off
+			;;
+
+		"usbdev")
+			[ -n "$dev" ] && {
+				echo $dev > /sys/class/leds/${sysfs}/device_name
+				echo $interval > /sys/class/leds/${sysfs}/activity_interval
+			}
+			;;
+
+		"port_state")
+			[ -n "$port_state" ] && \
+				echo $port_state > /sys/class/leds/${sysfs}/port_state
+			;;
+		esac
 	}
 }
 
