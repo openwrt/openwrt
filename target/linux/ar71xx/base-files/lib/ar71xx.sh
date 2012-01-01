@@ -118,6 +118,9 @@ ar71xx_board_detect() {
 	*"AirRouter")
 		name="airrouter"
 		;;
+	*"ALFA Network N2/N5")
+		name="alfa-nx"
+		;;
 	*ALL0258N)
 		name="all0258n"
 		;;
