@@ -302,6 +302,24 @@ define Image/Build/Planex
 	fi
 endef
 
+define Image/Build/ALFA
+	$(call MkuImageLzma,$(2),$(3) $($(4)))
+	$(call Sysupgrade/RK,$(1),$(2),$(5),$(6))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		rm -rf $(KDIR)/$(1); \
+		mkdir -p $(KDIR)/$(1); \
+		cd $(KDIR)/$(1); \
+		cp $(KDIR)/vmlinux-$(2).uImage $(KDIR)/$(1)/vmlinux.gz.uImage; \
+		cp $(KDIR)/root.$(1) $(KDIR)/$(1)/pb9x-2.6.31-jffs2; \
+		$(TAR) zcf $(call factoryname,$(1),$(2)) -C $(KDIR)/$(1) \
+			vmlinux.gz.uImage pb9x-2.6.31-jffs2; \
+		( \
+			echo $(7) | dd bs=32 count=1 conv=sync; \
+			echo -ne '\xfe'; \
+		) >> $(call factoryname,$(1),$(2)); \
+	fi
+endef
+
 define Image/Build/TPLINKOLD
 	$(call Image/BuildLoaderAlone,$(2),gz,$(3),0x22000,0)
 	$(call MkuImageOKLI,$(2))
@@ -564,6 +582,11 @@ define Image/Build/Template/128k/jffs2-128k
 	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
+alfa_nx_cmdline=board=ALFA-NX console=ttyS0,115200
+alfa_nx_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),1600k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
+define Image/Build/Profile/ALFANX
+	$(call Image/Build/Template/$(fs_64k)/$(1),ALFA,alfa-nx,$(alfa_nx_cmdline),alfa_nx_mtdlayout,1638400,6291456,WRM7222C)
+endef
 
 ap121_mtdlayout_2M=mtdparts=spi0.0:64k(u-boot)ro,1216k(rootfs),704k(kernel),64k(art)ro,1920k@0x10000(firmware)
 ap121_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
@@ -887,6 +910,7 @@ define Image/Build/Profile/ALL0258N
 endef
 
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/ALFANX,$(1))
 	$(call Image/Build/Profile/ALL0258N,$(1))
 	$(call Image/Build/Profile/AP121,$(1))
 	$(call Image/Build/Profile/AP121MINI,$(1))
