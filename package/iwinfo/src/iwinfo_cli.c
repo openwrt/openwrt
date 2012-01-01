@@ -391,9 +391,14 @@ static char * print_frequency(const struct iwinfo_ops *iw, const char *ifname)
 
 static char * print_txpower(const struct iwinfo_ops *iw, const char *ifname)
 {
-	int pwr;
+	int pwr, off;
+	if (iw->txpower_offset(ifname, &off))
+		off = 0;
+
 	if (iw->txpower(ifname, &pwr))
 		pwr = -1;
+	else
+		pwr += off;
 
 	return format_txpower(pwr);
 }

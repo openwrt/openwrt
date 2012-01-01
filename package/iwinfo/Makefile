@@ -7,9 +7,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libiwinfo
-PKG_RELEASE:=21
+PKG_RELEASE:=22
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+PKG_CONFIG_DEPENDS := \
+	CONFIG_PACKAGE_kmod-brcm-wl \
+	CONFIG_PACKAGE_kmod-brcm-wl-mini \
+	CONFIG_PACKAGE_kmod-brcm-wl-mimo \
+	CONFIG_PACKAGE_kmod-madwifi \
+	CONFIG_PACKAGE_kmod-mac80211
 
 include $(INCLUDE_DIR)/package.mk
 
