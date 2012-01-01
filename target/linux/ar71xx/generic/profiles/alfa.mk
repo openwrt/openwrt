@@ -5,6 +5,18 @@
 # See /LICENSE for more information.
 #
 
+define Profile/HORNETUB
+	NAME:=ALFA Network Hornet-UB board
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+endef
+
+define Profile/HORNETUB/Description
+	Package set optimized for the ALFA Network Hornet-UB board.
+endef
+
+$(eval $(call Profile,HORNETUB))
+
+
 define Profile/ALFANX
 	NAME:=ALFA Network N2/N5 board
 	PACKAGES:=
@@ -15,3 +27,4 @@ define Profile/ALFANX/Description
 endef
 
 $(eval $(call Profile,ALFANX))
+
