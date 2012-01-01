@@ -302,19 +302,19 @@ define Image/Build/Planex
 	fi
 endef
 
+alfa_mtdlayout_8M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),1600k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 define Image/Build/ALFA
-	$(call MkuImageLzma,$(2),$(3) $($(4)))
-	$(call Sysupgrade/RK,$(1),$(2),$(5),$(6))
+	$(call MkuImageLzma,$(2),$(3))
+	$(call Sysupgrade/RK,$(1),$(2),$(4),$(5))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		rm -rf $(KDIR)/$(1); \
 		mkdir -p $(KDIR)/$(1); \
 		cd $(KDIR)/$(1); \
-		cp $(KDIR)/vmlinux-$(2).uImage $(KDIR)/$(1)/vmlinux.gz.uImage; \
-		cp $(KDIR)/root.$(1) $(KDIR)/$(1)/pb9x-2.6.31-jffs2; \
-		$(TAR) zcf $(call factoryname,$(1),$(2)) -C $(KDIR)/$(1) \
-			vmlinux.gz.uImage pb9x-2.6.31-jffs2; \
+		cp $(KDIR)/vmlinux-$(2).uImage $(KDIR)/$(1)/$(6); \
+		cp $(KDIR)/root.$(1) $(KDIR)/$(1)/$(7); \
+		$(TAR) zcf $(call factoryname,$(1),$(2)) -C $(KDIR)/$(1) $(6) $(7); \
 		( \
-			echo $(7) | dd bs=32 count=1 conv=sync; \
+			echo WRM7222C | dd bs=32 count=1 conv=sync; \
 			echo -ne '\xfe'; \
 		) >> $(call factoryname,$(1),$(2)); \
 	fi
@@ -582,10 +582,9 @@ define Image/Build/Template/128k/jffs2-128k
 	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
-alfa_nx_cmdline=board=ALFA-NX console=ttyS0,115200
-alfa_nx_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),1600k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
+alfa_nx_cmdline=board=ALFA-NX console=ttyS0,115200 $(alfa_mtdlayout_8M)
 define Image/Build/Profile/ALFANX
-	$(call Image/Build/Template/$(fs_64k)/$(1),ALFA,alfa-nx,$(alfa_nx_cmdline),alfa_nx_mtdlayout,1638400,6291456,WRM7222C)
+	$(call Image/Build/Template/$(fs_64k)/$(1),ALFA,alfa-nx,$(alfa_nx_cmdline),1638400,6291456,vmlinux.gz.uImage,pb9x-2.6.31-jffs2)
 endef
 
 ap121_mtdlayout_2M=mtdparts=spi0.0:64k(u-boot)ro,1216k(rootfs),704k(kernel),64k(art)ro,1920k@0x10000(firmware)
@@ -655,10 +654,9 @@ define Image/Build/Profile/EAP7660D
 	$(call Image/Build/Template/$(fs_128k)/$(1),PB4X,eap7660d,$(eap7660d_cmdline))
 endef
 
-hornetub_cmdline=board=HORNET-UB console=ttyATH0,115200
-hornetub_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),1600k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
+hornetub_cmdline=board=HORNET-UB console=ttyATH0,115200 $(alfa_mtdlayout_8M)
 define Image/Build/Profile/HORNETUB
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,hornet-ub,$(hornetub_cmdline),hornetub_mtdlayout,1638400,6291456,RK)
+	$(call Image/Build/Template/$(fs_64k)/$(1),ALFA,hornet-ub,$(hornetub_cmdline),1638400,6291456,kernel_image,rootfs_image)
 endef
 
 ja76pf_cmdline=board=JA76PF console=ttyS0,115200
