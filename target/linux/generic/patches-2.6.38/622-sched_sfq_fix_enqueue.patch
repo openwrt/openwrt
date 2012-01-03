@@ -1,0 +1,41 @@
+From: Eric Dumazet <eric.dumazet@gmail.com>
+Date: Fri, 29 Jul 2011 19:22:42 +0000 (+0000)
+Subject: sch_sfq: fix sfq_enqueue()
+X-Git-Tag: v3.1-rc1~24^2~29
+X-Git-Url: http://git.kernel.org/?p=linux%2Fkernel%2Fgit%2Ftorvalds%2Flinux-2.6.git;a=commitdiff_plain;h=e1738bd9cecc5c867b0e2996470c1ff20f66ba79
+
+sch_sfq: fix sfq_enqueue()
+
+commit 8efa88540635 (sch_sfq: avoid giving spurious NET_XMIT_CN signals)
+forgot to call qdisc_tree_decrease_qlen() to signal upper levels that a
+packet (from another flow) was dropped, leading to various problems.
+
+With help from Michal Soltys and Michal Pokrywka, who did a bisection.
+
+Bugzilla ref: https://bugzilla.kernel.org/show_bug.cgi?id=39372
+Debian ref: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=631945
+
+Reported-by: Lucas Bocchi <lucas.bocchi@gmail.com>
+Reported-and-bisected-by: Michal Pokrywka <wolfmoon@o2.pl>
+Signed-off-by: Eric Dumazet <eric.dumazet@gmail.com>
+CC: Michal Soltys <soltys@ziu.info>
+Acked-by: Patrick McHardy <kaber@trash.net>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
+--- a/net/sched/sch_sfq.c
++++ b/net/sched/sch_sfq.c
+@@ -410,7 +410,12 @@ sfq_enqueue(struct sk_buff *skb, struct 
+ 	/* Return Congestion Notification only if we dropped a packet
+ 	 * from this flow.
+ 	 */
+-	return (qlen != slot->qlen) ? NET_XMIT_CN : NET_XMIT_SUCCESS;
++	if (qlen != slot->qlen)
++		return NET_XMIT_CN;
++
++	/* As we dropped a packet, better let upper stack know this */
++	qdisc_tree_decrease_qlen(sch, 1);
++	return NET_XMIT_SUCCESS;
+ }
+ 
+ static struct sk_buff *
