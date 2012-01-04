@@ -74,11 +74,6 @@ pb92)
 	ucidef_add_switch_vlan "eth0" "2" "0t 2"
 	;;
 
-tl-wa901nd)
-	ucidef_set_interface_raw "eth" "eth0"
-	ucidef_set_interface_lan "lan"
-	;;
-
 tl-wr1043nd)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "rtl8366rb" "1" "1"
@@ -109,6 +104,7 @@ bullet-m |\
 eap7660d |\
 rb-411 |\
 tl-mr3020 |\
+tl-wa901nd |\
 tl-wa901nd-v2 |\
 tl-wr703n |\
 wp543)
