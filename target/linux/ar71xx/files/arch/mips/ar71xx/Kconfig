@@ -1,6 +1,13 @@
 if ATHEROS_AR71XX
 
 menu "Atheros AR71xx machine selection"
+config AR71XX_MACH_ALFA_AP96
+	bool "ALFA Network AP96 board support"
+	select SOC_AR71XX
+	select AR71XX_DEV_PB42_PCI if PCI
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_USB
+
 config AR71XX_MACH_HORNET_UB
 	bool "Alfa Networks Hornet-UB board support"
 	select SOC_AR933X

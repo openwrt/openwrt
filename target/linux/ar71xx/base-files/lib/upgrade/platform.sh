@@ -77,6 +77,7 @@ platform_check_image() {
 		platform_check_image_all0258n "$1" && return 0
 		return 1
 		;;
+	alfa-ap96 | \
 	alfa-nx | \
 	ap121 | \
 	ap121-mini | \
