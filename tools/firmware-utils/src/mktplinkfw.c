@@ -30,6 +30,7 @@
 #define ALIGN(x,a) ({ typeof(a) __a = (a); (((x) + __a - 1) & ~(__a - 1)); })
 
 #define HEADER_VERSION_V1	0x01000000
+#define HWID_TL_MR3020_V1	0x30200001
 #define HWID_TL_MR3220_V1	0x32200001
 #define HWID_TL_MR3420_V1	0x34200001
 #define HWID_TL_WA901ND_V1	0x09010001
@@ -161,6 +162,11 @@ static struct flash_layout layouts[] = {
 
 static struct board_info boards[] = {
 	{
+		.id		= "TL-MR3020v1",
+		.hw_id		= HWID_TL_MR3020_V1,
+		.hw_rev		= 1,
+		.layout_id	= "4Mlzma",
+	}, {
 		.id		= "TL-MR3220v1",
 		.hw_id		= HWID_TL_MR3220_V1,
 		.hw_rev		= 1,
