@@ -7,7 +7,7 @@
 
 define Profile/OM2P
 	NAME:=OpenMesh OM2P
-	PACKAGES:=kmod-ath9k om2p-watchdog
+	PACKAGES:=kmod-ath9k om-watchdog
 endef
 
 define Profile/OM2P/Description
