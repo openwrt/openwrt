@@ -119,6 +119,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	tl-mr3020 | \
 	tl-mr3220 | \
 	tl-mr3420 | \
 	tl-wa901nd | \

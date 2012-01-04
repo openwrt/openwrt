@@ -5,6 +5,17 @@
 # See /LICENSE for more information.
 #
 
+define Profile/TLMR3020
+	NAME:=TP-LINK TL-MR3020
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+
+define Profile/TLMR3020/Description
+	Package set optimized for the TP-LINK TL-MR3020.
+endef
+$(eval $(call Profile,TLMR3020))
+
+
 define Profile/TLMR3220
 	NAME:=TP-LINK TL-MR3220
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
@@ -31,6 +42,7 @@ define Profile/TLWR703
 	NAME:=TP-LINK TL-WR703N
 	PACKAGES:=kmod-usb-core kmod-usb2
 endef
+
 
 define Profile/TLWR703/Description
 	Package set optimized for the TP-LINK TL-WR703N.
