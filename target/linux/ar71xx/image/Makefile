@@ -258,10 +258,11 @@ endef
 
 
 define Image/Build/MyLoader
-	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(3) \
-		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR)/vmlinux.bin.lzma \
+	$(call PatchKernelLzma,$(2),$(3))
+	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(4) \
+		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR)/vmlinux-$(2).bin.lzma \
 		-p0x110000:0:::rootfs:$(KDIR)/root.$(1) \
-		$(call imgname,$(1),$(2))-$(4)-factory.img
+		$(call imgname,$(1),$(2))-$(5)-factory.img
 endef
 
 ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6528k(rootfs),256k(cfg)ro,64k(EEPROM)ro,7552k@0x50000(firmware)
@@ -637,11 +638,12 @@ define Image/Build/Profile/PB92
 	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,pb92,$(pb92_cmdline),,917504,2818048,KR)
 endef
 
+wp543_cmdline=console=ttyS0,115200
 define Image/Build/Profile/WP543
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x200000,2M)
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x400000,4M)
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x800000,8M)
-	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,0x1000000,16M)
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,$(wp543_cmdline),0x200000,2M)
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,$(wp543_cmdline),0x400000,4M)
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,$(wp543_cmdline),0x800000,8M)
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,$(wp543_cmdline),0x1000000,16M)
 endef
 
 dir600a1_cmdline=board=DIR-600-A1 console=ttyS0,115200
