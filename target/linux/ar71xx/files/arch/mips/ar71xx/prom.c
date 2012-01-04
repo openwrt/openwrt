@@ -69,35 +69,6 @@ static const char * __init ar71xx_prom_find_env(char **envp, const char *name)
 	return ret;
 }
 
-static int __init ar71xx_prom_init_myloader(void)
-{
-	struct myloader_info *mylo;
-	char mac_buf[32];
-	char *mac;
-
-	mylo = myloader_get_info();
-	if (!mylo)
-		return 0;
-
-	switch (mylo->did) {
-	case DEVID_COMPEX_WP543:
-		ar71xx_prom_append_cmdline("board", "WP543");
-		break;
-	default:
-		printk(KERN_WARNING "prom: unknown device id: %x\n",
-				mylo->did);
-		return 0;
-	}
-
-	mac = mylo->macs[0];
-	snprintf(mac_buf, sizeof(mac_buf), "%02x:%02x:%02x:%02x:%02x:%02x",
-		 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-
-	ar71xx_prom_append_cmdline("ethaddr", mac_buf);
-
-	return 1;
-}
-
 #ifdef CONFIG_IMAGE_CMDLINE_HACK
 extern char __image_cmdline[];
 
@@ -126,6 +97,37 @@ static int __init ar71xx_use__image_cmdline(void)
 #else
 static inline int ar71xx_use__image_cmdline(void) { return 0; }
 #endif
+
+static int __init ar71xx_prom_init_myloader(void)
+{
+	struct myloader_info *mylo;
+	char mac_buf[32];
+	unsigned char *mac;
+
+	mylo = myloader_get_info();
+	if (!mylo)
+		return 0;
+
+	switch (mylo->did) {
+	case DEVID_COMPEX_WP543:
+		ar71xx_prom_append_cmdline("board", "WP543");
+		break;
+	default:
+		printk(KERN_WARNING "prom: unknown device id: %x\n",
+				mylo->did);
+		return 0;
+	}
+
+	mac = mylo->macs[0];
+	snprintf(mac_buf, sizeof(mac_buf), "%02x:%02x:%02x:%02x:%02x:%02x",
+		 mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+	ar71xx_prom_append_cmdline("ethaddr", mac_buf);
+
+	ar71xx_use__image_cmdline();
+
+	return 1;
+}
 
 static __init void ar71xx_prom_init_cmdline(int argc, char **argv)
 {
