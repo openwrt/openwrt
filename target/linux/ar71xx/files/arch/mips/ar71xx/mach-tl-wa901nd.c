@@ -20,6 +20,7 @@
 
 #define TL_WA901ND_GPIO_LED_QSS		0
 #define TL_WA901ND_GPIO_LED_SYSTEM	1
+#define TL_WA901ND_GPIO_LED_LAN		13
 
 #define TL_WA901ND_GPIO_BTN_RESET	11
 #define TL_WA901ND_GPIO_BTN_QSS		12
@@ -38,6 +39,10 @@ static struct flash_platform_data tl_wa901nd_flash_data = {
 
 static struct gpio_led tl_wa901nd_leds_gpio[] __initdata = {
 	{
+		.name		= "tp-link:green:lan",
+		.gpio		= TL_WA901ND_GPIO_LED_LAN,
+		.active_low	= 1,
+	}, {
 		.name		= "tp-link:green:system",
 		.gpio		= TL_WA901ND_GPIO_LED_SYSTEM,
 		.active_low	= 1,
@@ -70,6 +75,12 @@ static void __init tl_wa901nd_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee  = (u8 *) KSEG1ADDR(0x1fff1000);
+
+	ar71xx_gpio_function_disable(AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
 	/*
 	 * ar71xx_eth0 would be the WAN port, but is not connected on
