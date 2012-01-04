@@ -75,19 +75,12 @@ static struct gpio_keys_button tl_mr3x20_gpio_keys[] __initdata = {
 	}
 };
 
-static void __init tl_mr3x20_setup(void)
+static void __init tl_ap99_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
-	/* enable power for the USB port */
-	gpio_request(TL_MR3X20_GPIO_USB_POWER, "USB power");
-	gpio_direction_output(TL_MR3X20_GPIO_USB_POWER, 1);
-
 	ar71xx_add_device_m25p80(&tl_mr3x20_flash_data);
-
-	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_mr3x20_leds_gpio),
-					tl_mr3x20_leds_gpio);
 
 	ar71xx_register_gpio_keys_polled(-1, TL_MR3X20_KEYS_POLL_INTERVAL,
 					 ARRAY_SIZE(tl_mr3x20_gpio_keys),
@@ -103,15 +96,26 @@ static void __init tl_mr3x20_setup(void)
 	/* WAN port */
 	ar71xx_add_device_eth(0);
 
-	ar71xx_add_device_usb();
-
 	ap91_pci_init(ee, mac);
+}
+
+static void __init tl_mr3x20_usb_setup(void)
+{
+	/* enable power for the USB port */
+	gpio_request(TL_MR3X20_GPIO_USB_POWER, "USB power");
+	gpio_direction_output(TL_MR3X20_GPIO_USB_POWER, 1);
+
+	ar71xx_add_device_usb();
 }
 
 static void __init tl_mr3220_setup(void)
 {
-	tl_mr3x20_setup();
+	tl_ap99_setup();
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_mr3x20_leds_gpio),
+					tl_mr3x20_leds_gpio);
 	ap91_pci_setup_wmac_led_pin(1);
+	tl_mr3x20_usb_setup();
 }
 
 MIPS_MACHINE(AR71XX_MACH_TL_MR3220, "TL-MR3220", "TP-LINK TL-MR3220",
@@ -119,9 +123,25 @@ MIPS_MACHINE(AR71XX_MACH_TL_MR3220, "TL-MR3220", "TP-LINK TL-MR3220",
 
 static void __init tl_mr3420_setup(void)
 {
-	tl_mr3x20_setup();
+	tl_ap99_setup();
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_mr3x20_leds_gpio),
+					tl_mr3x20_leds_gpio);
 	ap91_pci_setup_wmac_led_pin(0);
+	tl_mr3x20_usb_setup();
 }
 
 MIPS_MACHINE(AR71XX_MACH_TL_MR3420, "TL-MR3420", "TP-LINK TL-MR3420",
 	     tl_mr3420_setup);
+
+static void __init tl_wr841n_v7_setup(void)
+{
+	tl_ap99_setup();
+
+	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(tl_mr3x20_leds_gpio) - 1,
+					tl_mr3x20_leds_gpio);
+	ap91_pci_setup_wmac_led_pin(0);
+}
+
+MIPS_MACHINE(AR71XX_MACH_TL_WR841N_V7, "TL-WR841N-v7",
+	     "TP-LINK TL-WR841N/ND v7", tl_wr841n_v7_setup);
