@@ -50,6 +50,17 @@ endef
 $(eval $(call Profile,TLWR703))
 
 
+define Profile/TLWA701
+	NAME:=TP-LINK TL-WA701N/ND
+	PACKAGES:=
+endef
+
+define Profile/TLWA701/Description
+	Package set optimized for the TP-LINK TL-WA701N/ND.
+endef
+$(eval $(call Profile,TLWA701))
+
+
 define Profile/TLWA901
 	NAME:=TP-LINK TL-WA901N/ND
 	PACKAGES:=
