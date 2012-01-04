@@ -217,7 +217,6 @@ define KernelPackage/ipt-nathelper-extra/description
  - mms
  - pptp
  - proto_gre
- - rtsp
  - sip
  - snmp_basic
 endef
