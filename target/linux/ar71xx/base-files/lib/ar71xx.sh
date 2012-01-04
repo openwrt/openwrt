@@ -124,6 +124,9 @@ ar71xx_board_detect() {
 	*"AirRouter")
 		name="airrouter"
 		;;
+	*"ALFA Network AP96")
+		name="alfa-ap96"
+		;;
 	*"ALFA Network N2/N5")
 		name="alfa-nx"
 		;;
@@ -142,7 +145,7 @@ ar71xx_board_detect() {
 	*AP83)
 		name="ap83"
 		;;
-	*AP96)
+	*"Atheros AP96")
 		name="ap96"
 		;;
 	*AW-NR580)
