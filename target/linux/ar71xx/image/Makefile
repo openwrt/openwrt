@@ -780,6 +780,11 @@ define Image/Build/Profile/TLMR3420
 	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-mr3420-v1,$(tlmr3420_cmdline),0x34200001,1,4M)
 endef
 
+tlwa701_cmdline=board=TL-WA901ND console=ttyS0,115200
+define Image/Build/Profile/TLWA701
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wa701n-v1,$(tlwa701_cmdline),0x07010001,1,4M)
+endef
+
 tlwa901_cmdline=board=TL-WA901ND console=ttyS0,115200
 tlwa901v2_cmdline=board=TL-WA901ND-v2 console=ttyS0,115200
 define Image/Build/Profile/TLWA901
@@ -941,6 +946,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLMR3020,$(1))
 	$(call Image/Build/Profile/TLMR3220,$(1))
 	$(call Image/Build/Profile/TLMR3420,$(1))
+	$(call Image/Build/Profile/TLWA701,$(1))
 	$(call Image/Build/Profile/TLWA901,$(1))
 	$(call Image/Build/Profile/TLWR703,$(1))
 	$(call Image/Build/Profile/TLWR740,$(1))
