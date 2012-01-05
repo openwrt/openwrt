@@ -106,9 +106,13 @@ alfa-nx)
 	set_led_netdev "lan" "LAN" "alfa:green:led_3" "eth1"
 	;;
 
-rb750)
+rb-750)
 	set_led_default "act" "act" "rb750:green:act" "1"
 	set_led_netdev "port1" "port1" "rb750:green:port1" "eth1"
+	set_led_switch "port2" "port2" "rb750:green:port2" "switch0" "0x10"
+	set_led_switch "port3" "port3" "rb750:green:port3" "switch0" "0x08"
+	set_led_switch "port4" "port4" "rb750:green:port4" "switch0" "0x04"
+	set_led_switch "port5" "port5" "rb750:green:port5" "switch0" "0x02"
 	;;
 
 dir-825-b1)
