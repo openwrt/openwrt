@@ -134,7 +134,7 @@ static void rb4xx_nand_read_buf(struct mtd_info *mtd, unsigned char *buf,
 		pr_err("rb4xx_nand: read buf failed, err=%d\n", err);
 }
 
-static int __init rb4xx_nand_probe(struct platform_device *pdev)
+static int __devinit rb4xx_nand_probe(struct platform_device *pdev)
 {
 	struct rb4xx_nand_info	*info;
 	int ret;

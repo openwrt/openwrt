@@ -260,7 +260,7 @@ static void __init rb750_nand_gpio_init(void)
 	rb750_latch_change(~out & RB750_NAND_IO0, out & RB750_NAND_IO0);
 }
 
-static int __init rb750_nand_probe(struct platform_device *pdev)
+static int __devinit rb750_nand_probe(struct platform_device *pdev)
 {
 	struct rb750_nand_info	*info;
 	int ret;
