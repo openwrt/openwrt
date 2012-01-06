@@ -130,6 +130,7 @@ platform_check_image() {
 	tl-wr741nd | \
 	tl-wr741nd-v4 | \
 	tl-wr841n-v1 | \
+	tl-wr841n-v7 | \
 	tl-wr941nd | \
 	tl-wr1043nd)
 		[ "$magic" != "0100" ] && {
