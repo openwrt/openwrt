@@ -238,6 +238,9 @@ ar71xx_board_detect() {
 	*"RouterStation Pro")
 		name="routerstation-pro"
 		;;
+	*RW2458N)
+		name="rw2458n"
+		;;
 	*TEW-632BRP)
 		name="tew-632brp"
 		;;
