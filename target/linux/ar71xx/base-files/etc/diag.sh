@@ -91,6 +91,9 @@ get_status_led() {
 	routerstation | routerstation-pro)
 		status_led="ubnt:green:rf"
 		;;
+	rw2458n)
+		status_led="rw2458n:green:d3"
+		;;
 	tew-632brp)
 		status_led="tew-632brp:green:status"
 		;;

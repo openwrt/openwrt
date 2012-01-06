@@ -687,6 +687,11 @@ define Image/Build/Profile/DIR615C1
 	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,dir-615-c1,$(dir615c1_cmdline),"AP81-AR9130-RT-070614-02")
 endef
 
+rw2458n_cmdline=board=RW2458N console=ttyS0,115200
+define Image/Build/Profile/RW2458N
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,rw2458n,$(rw2458n_cmdline),XM,UBNTXM,ar7240)
+endef
+
 tew632brp_cmdline=board=TEW-632BRP console=ttyS0,115200
 define Image/Build/Profile/TEW632BRP
 	$(call Image/Build/Template/$(fs_squash)/$(1),Cameo913x,tew-632brp,$(tew632brp_cmdline),"AP81-AR9130-RT-070614-00")
@@ -950,6 +955,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/PB42,$(1))
 	$(call Image/Build/Profile/PB44,$(1))
 	$(call Image/Build/Profile/PB92,$(1))
+	$(call Image/Build/Profile/RW2458N,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
 	$(call Image/Build/Profile/TLMR3020,$(1))
