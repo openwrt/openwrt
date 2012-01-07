@@ -111,12 +111,23 @@ static struct platform_device wndr3700_rtl8366s_device = {
 	}
 };
 
+/*
+ * The eth0 and wmac0 interfaces share the same MAC address which
+ * can lead to problems if operated unbridged. Set the locally
+ * administered bit on the eth0 MAC to make it unique.
+ */
+
+static void __init wndr3700_init_local_mac(unsigned char *mac_base)
+{
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac_base, 0);
+	ar71xx_eth0_data.mac_addr[0] |= 0x02;
+}
+
 static void __init wndr3700_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr,
-			art + WNDR3700_ETH0_MAC_OFFSET, 0);
+	wndr3700_init_local_mac(art + WNDR3700_ETH0_MAC_OFFSET);
 	ar71xx_eth0_pll_data.pll_1000 = 0x11110000;
 	ar71xx_eth0_data.mii_bus_dev = &wndr3700_rtl8366s_device.dev;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
