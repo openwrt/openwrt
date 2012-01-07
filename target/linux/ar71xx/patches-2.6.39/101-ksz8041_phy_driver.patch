@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -119,6 +119,11 @@ config RTL8306_PHY
+@@ -123,6 +123,11 @@ config RTL8306_PHY
  	tristate "Driver for Realtek RTL8306S switches"
  	select SWCONFIG
  
@@ -14,9 +14,9 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -24,6 +24,7 @@ obj-$(CONFIG_RTL8366_SMI)	+= rtl8366_smi
- obj-$(CONFIG_RTL8366S_PHY)	+= rtl8366s.o
+@@ -25,6 +25,7 @@ obj-$(CONFIG_RTL8366S_PHY)	+= rtl8366s.o
  obj-$(CONFIG_RTL8366RB_PHY)	+= rtl8366rb.o
+ obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
  obj-$(CONFIG_LSI_ET1011C_PHY)	+= et1011c.o
 +obj-$(CONFIG_MICREL_PHY)	+= micrel.o
  obj-$(CONFIG_FIXED_PHY)		+= fixed.o
