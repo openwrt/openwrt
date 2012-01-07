@@ -1247,6 +1247,9 @@ static int __devinit rtl8366rb_probe(struct platform_device *pdev)
 
 	smi->gpio_sda = pdata->gpio_sda;
 	smi->gpio_sck = pdata->gpio_sck;
+	smi->clk_delay = 10;
+	smi->cmd_read = 0xa9;
+	smi->cmd_write = 0xa8;
 	smi->ops = &rtl8366rb_smi_ops;
 	smi->cpu_port = RTL8366RB_PORT_NUM_CPU;
 	smi->num_ports = RTL8366RB_NUM_PORTS;

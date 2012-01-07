@@ -24,11 +24,10 @@
 #include "rtl8366_smi.h"
 
 #define RTL8366_SMI_ACK_RETRY_COUNT         5
-#define RTL8366_SMI_CLK_DELAY               10 /* nsec */
 
 static inline void rtl8366_smi_clk_delay(struct rtl8366_smi *smi)
 {
-	ndelay(RTL8366_SMI_CLK_DELAY);
+	ndelay(smi->clk_delay);
 }
 
 static void rtl8366_smi_start(struct rtl8366_smi *smi)
@@ -198,7 +197,7 @@ int rtl8366_smi_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
 	rtl8366_smi_start(smi);
 
 	/* send READ command */
-	ret = rtl8366_smi_write_byte(smi, 0x0a << 4 | 0x04 << 1 | 0x01);
+	ret = rtl8366_smi_write_byte(smi, smi->cmd_read);
 	if (ret)
 		goto out;
 
@@ -239,7 +238,7 @@ int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 	rtl8366_smi_start(smi);
 
 	/* send WRITE command */
-	ret = rtl8366_smi_write_byte(smi, 0x0a << 4 | 0x04 << 1 | 0x00);
+	ret = rtl8366_smi_write_byte(smi, smi->cmd_write);
 	if (ret)
 		goto out;
 
