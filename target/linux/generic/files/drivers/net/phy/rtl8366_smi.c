@@ -143,8 +143,10 @@ static int rtl8366_smi_wait_for_ack(struct rtl8366_smi *smi)
 		if (ack == 0)
 			break;
 
-		if (++retry_cnt > RTL8366_SMI_ACK_RETRY_COUNT)
-			return -EIO;
+		if (++retry_cnt > RTL8366_SMI_ACK_RETRY_COUNT) {
+			dev_err(smi->parent, "ACK timeout\n");
+			return -ETIMEDOUT;
+		}
 	} while (1);
 
 	return 0;
