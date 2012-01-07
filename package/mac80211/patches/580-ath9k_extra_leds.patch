@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -474,6 +474,9 @@ void ath9k_btcoex_timer_pause(struct ath
+@@ -475,6 +475,9 @@ void ath9k_btcoex_timer_pause(struct ath
  #ifdef CONFIG_MAC80211_LEDS
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -594,6 +597,13 @@ struct ath9k_vif_iter_data {
+@@ -595,6 +598,13 @@ struct ath9k_vif_iter_data {
  	int nothers;   /* number of vifs not specified above. */
  };
  
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -637,9 +647,8 @@ struct ath_softc {
+@@ -638,9 +648,8 @@ struct ath_softc {
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
  #ifdef CONFIG_MAC80211_LEDS
