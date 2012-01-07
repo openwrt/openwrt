@@ -97,6 +97,9 @@ tplink_board_detect() {
 	"104300"*)
 		model="TP-Link TL-WR1043N/ND"
 		;;
+	"254300"*)
+		model="TP-Link TL-WR2543N/ND"
+		;;
 	"302000"*)
 		model="TP-Link TL-MR3020"
 		;;
@@ -246,6 +249,9 @@ ar71xx_board_detect() {
 		;;
 	*TL-WR1043ND)
 		name="tl-wr1043nd"
+		;;
+	*TL-WR2543N*)
+		name="tl-wr2543n"
 		;;
 	*"DIR-615 rev. C1")
 		name="dir-615-c1"

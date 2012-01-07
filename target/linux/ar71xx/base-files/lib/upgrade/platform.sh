@@ -132,7 +132,8 @@ platform_check_image() {
 	tl-wr841n-v1 | \
 	tl-wr841n-v7 | \
 	tl-wr941nd | \
-	tl-wr1043nd)
+	tl-wr1043nd | \
+	tl-wr2543n)
 		[ "$magic" != "0100" ] && {
 			echo "Invalid image type."
 			return 1

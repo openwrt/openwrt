@@ -81,6 +81,13 @@ tl-wr1043nd)
 	ucidef_add_switch_vlan "rtl8366rb" "2" "0 5t"
 	;;
 
+tl-wr2543n)
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 9t"
+	ucidef_add_switch_vlan "switch0" "2" "0 9t"
+	;;
+
 tl-wr841n-v1|\
 tl-wr941nd)
 	ucidef_set_interface_raw "eth" "eth0"

@@ -113,6 +113,9 @@ get_status_led() {
 	tl-wr703n)
 		status_led="tp-link:blue:system"
 		;;
+	tl-wr2543n)
+		status_led="tp-link:green:wps"
+		;;
 	unifi)
 		status_led="ubnt:green:dome"
 		;;
