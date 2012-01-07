@@ -854,6 +854,11 @@ define Image/Build/Profile/TLWR1043
 	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr1043nd-v1,$(tlwr1043_cmdline),0x10430001,1,8M)
 endef
 
+tlwr2543_cmdline=board=TL-WR2543N console=ttyS0,115200
+define Image/Build/Profile/TLWR2543
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-wr2543n-v1,$(tlwr2543_cmdline),0x25430001,1,8Mlzma)
+endef
+
 wndr3700_cmdline=board=WNDR3700 console=ttyS0,115200
 wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),6656k(rootfs),64k(art)ro,7680k@0x70000(firmware)
 wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,1024k(kernel),14848k(rootfs),64k(art)ro,15872k@0x70000(firmware)
@@ -970,6 +975,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLWR841,$(1))
 	$(call Image/Build/Profile/TLWR941,$(1))
 	$(call Image/Build/Profile/TLWR1043,$(1))
+	$(call Image/Build/Profile/TLWR2543,$(1))
 	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
 	$(call Image/Build/Profile/WNDR3700,$(1))
