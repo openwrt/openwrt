@@ -49,6 +49,7 @@
 #define HWID_TL_WR941ND_V2	0x09410002
 #define HWID_TL_WR941ND_V4	0x09410004
 #define HWID_TL_WR1043ND_V1	0x10430001
+#define HWID_TL_WR2543N_V1	0x25430001
 
 #define MD5SUM_LEN	16
 
@@ -157,6 +158,12 @@ static struct flash_layout layouts[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0x140000,
 	}, {
+		.id		= "8Mlzma",
+		.fw_max_len	= 0x7c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0x100000,
+	}, {
 		/* terminating entry */
 	}
 };
@@ -252,6 +259,11 @@ static struct board_info boards[] = {
 		.hw_id		= HWID_TL_WR1043ND_V1,
 		.hw_rev		= 1,
 		.layout_id	= "8M",
+	}, {
+		.id		= "TL-WR2543Nv1",
+		.hw_id		= HWID_TL_WR2543N_V1,
+		.hw_rev		= 1,
+		.layout_id	= "8Mlzma",
 	}, {
 		.id		= "TL-WR703Nv1",
 		.hw_id		= HWID_TL_WR703N_V1,
