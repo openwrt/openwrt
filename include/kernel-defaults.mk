@@ -89,6 +89,7 @@ define Kernel/Configure/Default
 	$(call Kernel/SetInitramfs)
 	-$(_SINGLE)$(MAKE) $(KERNEL_MAKEOPTS) oldconfig prepare scripts
 	rm -rf $(KERNEL_BUILD_DIR)/modules
+	$(SH_FUNC) grep '=[ym]' $(LINUX_DIR)/.config | LC_ALL=C sort | md5s > $(LINUX_DIR)/.vermagic
 endef
 
 define Kernel/CompileModules/Default

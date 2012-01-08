@@ -13,6 +13,7 @@ ifeq ($(DUMP),1)
   KERNEL?=<KERNEL>
   BOARD?=<BOARD>
   LINUX_VERSION?=<LINUX_VERSION>
+  LINUX_VERMAGIC?=<LINUX_VERMAGIC>
 else
   ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
     export GCC_HONOUR_COPTS=s
@@ -34,6 +35,9 @@ else
   endif
   KERNEL_BUILD_DIR ?= $(BUILD_DIR_BASE)/linux-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))$(if $(BUILD_SUFFIX),_$(BUILD_SUFFIX))
   LINUX_DIR ?= $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)
+
+  LINUX_VERMAGIC:=$(strip $(shell cat $(LINUX_DIR)/.vermagic 2>/dev/null))
+  LINUX_VERMAGIC:=$(if $(LINUX_VERMAGIC),$(LINUX_VERMAGIC),unknown)
 
   LINUX_UNAME_VERSION:=$(if $(word 3,$(subst ., ,$(KERNEL_BASE))),$(KERNEL_BASE),$(KERNEL_BASE).0)
   ifneq ($(findstring -rc,$(LINUX_VERSION)),)
@@ -130,7 +134,7 @@ define KernelPackage
     SECTION:=kernel
     CATEGORY:=Kernel modules
     DESCRIPTION:=$(DESCRIPTION)
-    EXTRA_DEPENDS:=kernel (=$(LINUX_VERSION)-$(LINUX_RELEASE))
+    EXTRA_DEPENDS:=kernel (=$(LINUX_VERSION)-$(LINUX_RELEASE)-$(LINUX_VERMAGIC))
     VERSION:=$(LINUX_VERSION)$(if $(PKG_VERSION),+$(PKG_VERSION))-$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(BOARD))
