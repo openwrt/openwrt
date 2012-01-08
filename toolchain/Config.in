@@ -175,7 +175,11 @@ config INSIGHT
 
 config USE_UCLIBC
 	bool
-	default y if !TOOLCHAINOPTS
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+
+config USE_EXTERNAL_LIBC
+	bool
+	default y if EXTERNAL_TOOLCHAIN || NATIVE_TOOLCHAIN
 
 source "toolchain/gcc/Config.version"
 
