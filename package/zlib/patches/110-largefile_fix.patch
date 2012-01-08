@@ -1,0 +1,48 @@
+--- a/zlib.h
++++ b/zlib.h
+@@ -1563,12 +1563,7 @@ ZEXTERN int ZEXPORT inflateBackInit_ OF(
+  * without large file support, _LFS64_LARGEFILE must also be true
+  */
+ #if defined(_LARGEFILE64_SOURCE) && _LFS64_LARGEFILE-0
+-   ZEXTERN gzFile ZEXPORT gzopen64 OF((const char *, const char *));
+-   ZEXTERN z_off64_t ZEXPORT gzseek64 OF((gzFile, z_off64_t, int));
+-   ZEXTERN z_off64_t ZEXPORT gztell64 OF((gzFile));
+-   ZEXTERN z_off64_t ZEXPORT gzoffset64 OF((gzFile));
+-   ZEXTERN uLong ZEXPORT adler32_combine64 OF((uLong, uLong, z_off64_t));
+-   ZEXTERN uLong ZEXPORT crc32_combine64 OF((uLong, uLong, z_off64_t));
++  #define __zlib_largefile64
+ #endif
+ 
+ #if !defined(ZLIB_INTERNAL) && _FILE_OFFSET_BITS-0 == 64 && _LFS64_LARGEFILE-0
+@@ -1578,13 +1573,8 @@ ZEXTERN int ZEXPORT inflateBackInit_ OF(
+ #  define gzoffset gzoffset64
+ #  define adler32_combine adler32_combine64
+ #  define crc32_combine crc32_combine64
+-#  ifdef _LARGEFILE64_SOURCE
+-     ZEXTERN gzFile ZEXPORT gzopen64 OF((const char *, const char *));
+-     ZEXTERN z_off_t ZEXPORT gzseek64 OF((gzFile, z_off_t, int));
+-     ZEXTERN z_off_t ZEXPORT gztell64 OF((gzFile));
+-     ZEXTERN z_off_t ZEXPORT gzoffset64 OF((gzFile));
+-     ZEXTERN uLong ZEXPORT adler32_combine64 OF((uLong, uLong, z_off_t));
+-     ZEXTERN uLong ZEXPORT crc32_combine64 OF((uLong, uLong, z_off_t));
++#  ifndef __zlib_largefile64
++#    define __zlib_largefile64
+ #  endif
+ #else
+    ZEXTERN gzFile ZEXPORT gzopen OF((const char *, const char *));
+@@ -1595,6 +1585,15 @@ ZEXTERN int ZEXPORT inflateBackInit_ OF(
+    ZEXTERN uLong ZEXPORT crc32_combine OF((uLong, uLong, z_off_t));
+ #endif
+ 
++#ifdef __zlib_largefile64
++   ZEXTERN gzFile ZEXPORT gzopen64 OF((const char *, const char *));
++   ZEXTERN z_off64_t ZEXPORT gzseek64 OF((gzFile, z_off64_t, int));
++   ZEXTERN z_off64_t ZEXPORT gztell64 OF((gzFile));
++   ZEXTERN z_off64_t ZEXPORT gzoffset64 OF((gzFile));
++   ZEXTERN uLong ZEXPORT adler32_combine64 OF((uLong, uLong, z_off64_t));
++   ZEXTERN uLong ZEXPORT crc32_combine64 OF((uLong, uLong, z_off64_t));
++#endif
++
+ /* hack for buggy compilers */
+ #if !defined(ZUTIL_H) && !defined(NO_DUMMY_DECL)
+     struct internal_state {int dummy;};
