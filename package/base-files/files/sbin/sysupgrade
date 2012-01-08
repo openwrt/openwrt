@@ -12,6 +12,7 @@ export DELAY=
 export CONF_IMAGE=
 export CONF_BACKUP=
 export HELP=0
+export FORCE=0
 
 # parse options
 while [ -n "$1" ]; do 
@@ -24,6 +25,7 @@ while [ -n "$1" ]; do
 		-c) export SAVE_OVERLAY=1;;
 		-b|--create-backup) export CONF_BACKUP="$2"; shift;;
 		-f) export CONF_IMAGE="$2"; shift;;
+		-F|--force) export FORCE=1; shift;;
 		-h|--help) export HELP=1; break;;
 		-*)
 			echo "Invalid option: $1"
@@ -54,6 +56,8 @@ Options:
 	             then exit. Does not flash an image. If file is '-',
 	             i.e. stdout, verbosity is set to 0 (i.e. quiet).
 	-n           do not save configuration over reflash
+	-F / --force
+	             Flash image even if image checks fail, this is dangerous!
 	-q           less verbose
 	-v           more verbose
 	-h / --help  display this help
@@ -129,8 +133,13 @@ type platform_check_image >/dev/null 2>/dev/null || {
 
 for check in $sysupgrade_image_check; do
 	( eval "$check \"\$ARGV\"" ) || {
-		echo "Image check '$check' failed."
-		exit 1
+		if [ $FORCE -eq 1 ]; then
+			echo "Image check '$check' failed but --force given - will update anyway!"
+			break
+		else
+			echo "Image check '$check' failed."
+			exit 1
+		fi
 	}
 done
 
