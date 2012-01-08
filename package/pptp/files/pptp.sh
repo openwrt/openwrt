@@ -24,9 +24,6 @@ setup_interface_pptp() {
 	local device
 	config_get device "$config" device
 
-	local ipproto
-	config_get ipproto "$config" ipproto
-
 	local server
 	config_get server "$config" server
 
@@ -39,7 +36,6 @@ setup_interface_pptp() {
 	done
 	sleep 1
 
-	setup_interface "$device" "$config" "${ipproto:-dhcp}"
 	local gw="$(find_gw)"
 	[ -n "$gw" ] && {
 		local serv_addrs=""
