@@ -94,10 +94,8 @@ static void ar71xx_spi_chipselect(struct spi_device *spi, int value)
 	}
 }
 
-static void ar71xx_spi_setup_regs(struct spi_device *spi)
+static void ar71xx_spi_setup_regs(struct ar71xx_spi *sp)
 {
-	struct ar71xx_spi *sp = spidev_to_sp(spi);
-
 	/* enable GPIO mode */
 	ar71xx_spi_wr(sp, SPI_REG_FS, SPI_FS_GPIO);
 
@@ -108,10 +106,8 @@ static void ar71xx_spi_setup_regs(struct spi_device *spi)
 	ar71xx_spi_wr(sp, SPI_REG_CTRL, 0x43);
 }
 
-static void ar71xx_spi_restore_regs(struct spi_device *spi)
+static void ar71xx_spi_restore_regs(struct ar71xx_spi *sp)
 {
-	struct ar71xx_spi *sp = spidev_to_sp(spi);
-
 	/* restore CTRL register */
 	ar71xx_spi_wr(sp, SPI_REG_CTRL, sp->reg_ctrl);
 	/* disable GPIO mode */
@@ -120,24 +116,14 @@ static void ar71xx_spi_restore_regs(struct spi_device *spi)
 
 static int ar71xx_spi_setup(struct spi_device *spi)
 {
-	int status;
-
 	if (spi->bits_per_word > 32)
 		return -EINVAL;
 
-	if (!spi->controller_state)
-		ar71xx_spi_setup_regs(spi);
-
-	status = spi_bitbang_setup(spi);
-	if (status && !spi->controller_state)
-		ar71xx_spi_restore_regs(spi);
-
-	return status;
+	return spi_bitbang_setup(spi);
 }
 
 static void ar71xx_spi_cleanup(struct spi_device *spi)
 {
-	ar71xx_spi_restore_regs(spi);
 	spi_bitbang_cleanup(spi);
 }
 
@@ -229,10 +215,13 @@ static int ar71xx_spi_probe(struct platform_device *pdev)
 		goto err1;
 	}
 
+	ar71xx_spi_setup_regs(sp);
+
 	ret = spi_bitbang_start(&sp->bitbang);
 	if (!ret)
 		return 0;
 
+	ar71xx_spi_restore_regs(sp);
 	iounmap(sp->base);
 err1:
 	platform_set_drvdata(pdev, NULL);
@@ -246,6 +235,7 @@ static int ar71xx_spi_remove(struct platform_device *pdev)
 	struct ar71xx_spi *sp = platform_get_drvdata(pdev);
 
 	spi_bitbang_stop(&sp->bitbang);
+	ar71xx_spi_restore_regs(sp);
 	iounmap(sp->base);
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(sp->bitbang.master);
