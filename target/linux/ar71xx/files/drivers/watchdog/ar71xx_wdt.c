@@ -269,9 +269,15 @@ static int __devexit ar71xx_wdt_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static void ar71xx_wdt_shutdown(struct platform_device *pdev)
+{
+	ar71xx_wdt_disable();
+}
+
 static struct platform_driver ar71xx_wdt_driver = {
 	.probe		= ar71xx_wdt_probe,
 	.remove		= __devexit_p(ar71xx_wdt_remove),
+	.shutdown	= ar71xx_wdt_shutdown,
 	.driver		= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,
