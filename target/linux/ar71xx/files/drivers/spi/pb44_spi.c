@@ -110,8 +110,6 @@ static int pb44_spi_setup_cs(struct spi_device *spi)
 {
 	struct ar71xx_spi *sp = spidev_to_sp(spi);
 
-	pb44_spi_enable(sp);
-
 	if (spi->chip_select) {
 		unsigned long gpio = (unsigned long) spi->controller_data;
 		int status = 0;
@@ -138,14 +136,10 @@ static int pb44_spi_setup_cs(struct spi_device *spi)
 
 static void pb44_spi_cleanup_cs(struct spi_device *spi)
 {
-	struct ar71xx_spi *sp = spidev_to_sp(spi);
-
 	if (spi->chip_select) {
 		unsigned long gpio = (unsigned long) spi->controller_data;
 		gpio_free(gpio);
 	}
-
-	pb44_spi_disable(sp);
 }
 
 static int pb44_spi_setup(struct spi_device *spi)
@@ -256,10 +250,13 @@ static int pb44_spi_probe(struct platform_device *pdev)
 		goto err1;
 	}
 
+	pb44_spi_enable(sp);
+
 	ret = spi_bitbang_start(&sp->bitbang);
 	if (!ret)
 		return 0;
 
+	pb44_spi_disable(sp);
 	iounmap(sp->base);
 err1:
 	platform_set_drvdata(pdev, NULL);
@@ -273,6 +270,7 @@ static int pb44_spi_remove(struct platform_device *pdev)
 	struct ar71xx_spi *sp = platform_get_drvdata(pdev);
 
 	spi_bitbang_stop(&sp->bitbang);
+	pb44_spi_disable(sp);
 	iounmap(sp->base);
 	platform_set_drvdata(pdev, NULL);
 	spi_master_put(sp->bitbang.master);
