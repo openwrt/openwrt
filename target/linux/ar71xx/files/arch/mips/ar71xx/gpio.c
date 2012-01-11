@@ -288,3 +288,15 @@ void __init ar71xx_gpio_init(void)
 	if (err)
 		panic("cannot add AR71xx GPIO chip, error=%d", err);
 }
+
+int gpio_to_irq(unsigned gpio)
+{
+	return AR71XX_GPIO_IRQ(gpio);
+}
+EXPORT_SYMBOL(gpio_to_irq);
+
+int irq_to_gpio(unsigned irq)
+{
+	return irq - AR71XX_GPIO_IRQ_BASE;
+}
+EXPORT_SYMBOL(irq_to_gpio);
