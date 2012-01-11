@@ -86,10 +86,8 @@ static void pb44_spi_chipselect(struct spi_device *spi, int is_active)
 
 }
 
-static int pb44_spi_setup_cs(struct spi_device *spi)
+static void pb44_spi_enable(struct ar71xx_spi *sp)
 {
-	struct ar71xx_spi *sp = spidev_to_sp(spi);
-
 	/* enable GPIO mode */
 	pb44_spi_wr(sp, SPI_REG_FS, SPI_FS_GPIO);
 
@@ -97,8 +95,22 @@ static int pb44_spi_setup_cs(struct spi_device *spi)
 	sp->reg_ctrl = pb44_spi_rr(sp, SPI_REG_CTRL);
 	sp->ioc_base = pb44_spi_rr(sp, SPI_REG_IOC);
 
-	/* TODO: setup speed? */
 	pb44_spi_wr(sp, SPI_REG_CTRL, 0x43);
+}
+
+static void pb44_spi_disable(struct ar71xx_spi *sp)
+{
+	/* restore CTRL register */
+	pb44_spi_wr(sp, SPI_REG_CTRL, sp->reg_ctrl);
+	/* disable GPIO mode */
+	pb44_spi_wr(sp, SPI_REG_FS, 0);
+}
+
+static int pb44_spi_setup_cs(struct spi_device *spi)
+{
+	struct ar71xx_spi *sp = spidev_to_sp(spi);
+
+	pb44_spi_enable(sp);
 
 	if (spi->chip_select) {
 		unsigned long gpio = (unsigned long) spi->controller_data;
@@ -133,10 +145,7 @@ static void pb44_spi_cleanup_cs(struct spi_device *spi)
 		gpio_free(gpio);
 	}
 
-	/* restore CTRL register */
-	pb44_spi_wr(sp, SPI_REG_CTRL, sp->reg_ctrl);
-	/* disable GPIO mode */
-	pb44_spi_wr(sp, SPI_REG_FS, 0);
+	pb44_spi_disable(sp);
 }
 
 static int pb44_spi_setup(struct spi_device *spi)
