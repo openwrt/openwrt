@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -432,6 +432,117 @@ static struct board_info __initdata boar
+@@ -432,6 +432,112 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -53,11 +53,6 @@
 +			.gpio		= 7,
 +			.active_low	= 1,
 +		},
-+		{
-+		    .name		= "ethernet",
-+		    .gpio		= 35,
-+		    .active_low	= 1,
-+		}, 
 +	},
 +	.buttons = {
 +		{
@@ -118,7 +113,7 @@
  static struct board_info __initdata board_FAST2404 = {
  	.name				= "F@ST2404",
  	.expected_cpu_id		= 0x6348,
-@@ -1540,6 +1651,8 @@ static const struct board_info __initdat
+@@ -1540,6 +1646,8 @@ static const struct board_info __initdat
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
  	&board_96348gw,
