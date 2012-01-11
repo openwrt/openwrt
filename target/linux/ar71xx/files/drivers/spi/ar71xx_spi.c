@@ -243,9 +243,19 @@ static int ar71xx_spi_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static void ar71xx_spi_shutdown(struct platform_device *pdev)
+{
+	int ret;
+
+	ret = ar71xx_spi_remove(pdev);
+	if (ret)
+		dev_err(&pdev->dev, "shutdown failed with %d\n", ret);
+}
+
 static struct platform_driver ar71xx_spi_drv = {
 	.probe		= ar71xx_spi_probe,
 	.remove		= ar71xx_spi_remove,
+	.shutdown	= ar71xx_spi_shutdown,
 	.driver		= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,
