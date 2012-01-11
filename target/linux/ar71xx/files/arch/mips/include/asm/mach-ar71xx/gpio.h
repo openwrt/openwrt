@@ -16,21 +16,11 @@
 #define ARCH_NR_GPIOS	64
 #include <asm-generic/gpio.h>
 
-#include <asm/mach-ar71xx/ar71xx.h>
-
 extern unsigned long ar71xx_gpio_count;
 extern void __ar71xx_gpio_set_value(unsigned gpio, int value);
 extern int __ar71xx_gpio_get_value(unsigned gpio);
-
-static inline int gpio_to_irq(unsigned gpio)
-{
-	return AR71XX_GPIO_IRQ(gpio);
-}
-
-static inline int irq_to_gpio(unsigned irq)
-{
-	return irq - AR71XX_GPIO_IRQ_BASE;
-}
+int gpio_to_irq(unsigned gpio);
+int irq_to_gpio(unsigned gpio);
 
 static inline int gpio_get_value(unsigned gpio)
 {
