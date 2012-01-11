@@ -278,9 +278,19 @@ static int pb44_spi_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static void pb44_spi_shutdown(struct platform_device *pdev)
+{
+	int ret;
+
+	ret = pb44_spi_remove(pdev);
+	if (ret)
+		dev_err(&pdev->dev, "shutdown failed with %d\n", ret);
+}
+
 static struct platform_driver pb44_spi_drv = {
 	.probe		= pb44_spi_probe,
 	.remove		= pb44_spi_remove,
+	.shutdown	= pb44_spi_shutdown,
 	.driver		= {
 		.name	= DRV_NAME,
 		.owner	= THIS_MODULE,
