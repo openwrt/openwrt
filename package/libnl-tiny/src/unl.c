@@ -191,11 +191,11 @@ static int unl_genl_multicast_id(struct unl *unl, const char *name)
 	NLA_PUT_STRING(msg, CTRL_ATTR_FAMILY_NAME, unl->family_name);
 	unl_genl_request_single(unl, msg, &msg);
 	if (!msg)
-		goto nla_put_failure;
+		return -1;
 
 	groups = unl_find_attr(unl, msg, CTRL_ATTR_MCAST_GROUPS);
 	if (!groups)
-		goto fail;
+		goto nla_put_failure;
 
 	nla_for_each_nested(group, groups, rem) {
 		const char *gn;
@@ -215,9 +215,8 @@ static int unl_genl_multicast_id(struct unl *unl, const char *name)
 		break;
 	}
 
-fail:
-	nlmsg_free(msg);
 nla_put_failure:
+	nlmsg_free(msg);
 	return ret;
 }
 
