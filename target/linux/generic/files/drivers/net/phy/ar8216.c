@@ -48,6 +48,8 @@ struct ar8216_priv {
 	bool port4_phy;
 	char buf[80];
 
+	bool init;
+
 	/* all fields below are cleared on reset */
 	bool vlan;
 	u16 vlan_id[AR8X16_MAX_VLANS];
@@ -550,7 +552,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 	ar8216_vtu_op(priv, AR8216_VTU_OP_FLUSH, 0);
 
 	memset(portmask, 0, sizeof(portmask));
-	if (priv->vlan) {
+	if (!priv->init) {
 		/* calculate the port destination masks and load vlans
 		 * into the vlan translation unit */
 		for (j = 0; j < AR8X16_MAX_VLANS; j++) {
@@ -877,6 +879,8 @@ ar8216_config_init(struct phy_device *pdev)
 		goto done;
 	}
 
+	priv->init = true;
+
 	if (priv->chip == AR8316) {
 		ret = ar8316_hw_init(priv);
 		if (ret) {
@@ -911,6 +915,8 @@ ar8216_config_init(struct phy_device *pdev)
 		priv->ndo.ndo_start_xmit = ar8216_mangle_tx;
 		dev->netdev_ops = &priv->ndo;
 	}
+
+	priv->init = false;
 
 done:
 	return ret;
