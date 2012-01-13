@@ -559,6 +559,9 @@ void nl80211_close(void)
 {
 	if (nls)
 	{
+		if (nls->nl80211)
+			genl_family_put(nls->nl80211);
+
 		if (nls->nl_sock)
 			nl_socket_free(nls->nl_sock);
 
