@@ -1,0 +1,64 @@
+Although the commit "98af057092f8f0dabe63c5df08adc2bbfbddb1d2
+ ARM: 6126/1: ARM mpcore_wdt: fix build failure and other fixes"
+resolved long standing mpcore_wdt driver build problems, it
+introduced an error in the relationship between the MPcore watchdog
+timer clock rate and mpcore_margin, "MPcore timer margin in seconds",
+such that watchdog timeouts are now arbitrary rather than the number
+of seconds specified by mpcore_margin.
+
+This change restores mpcore_wdt_keepalive() to its equivalent
+implementation prior to commit 98af057 such that watchdog timeouts now
+occur as specified by mpcore_margin.
+
+The variable 'mpcore_timer_rate' which caused that build failure was
+replaced by 'twd_timer_rate'. Adding exported function to obtain
+'twd_timer_rate' value in mpcore_wdt driver.
+
+MPCORE_WATCHDOG needed to build 'mpcore_wdt' already depends on
+HAVE_ARM_TWD needed to build 'smp_twd', so from the point of view of
+'mpcore_wdt' driver the exported function will always exist.
+
+Signed-off-by: Valentine Barshak <vbarshak@mvista.com>
+Signed-off-by: Vitaly Kuzmichev <vkuzmichev@mvista.com>
+---
+
+ arch/arm/include/asm/smp_twd.h |    1 +
+ arch/arm/kernel/smp_twd.c      |    7 +++++++
+ drivers/watchdog/mpcore_wdt.c  |    4 +---
+ 3 files changed, 9 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/include/asm/smp_twd.h
++++ b/arch/arm/include/asm/smp_twd.h
+@@ -24,5 +24,6 @@ extern void __iomem *twd_base;
+ 
+ void twd_timer_setup(struct clock_event_device *);
+ void twd_timer_stop(struct clock_event_device *);
++unsigned long twd_timer_get_rate(void);
+ 
+ #endif
+--- a/arch/arm/kernel/smp_twd.c
++++ b/arch/arm/kernel/smp_twd.c
+@@ -185,3 +185,10 @@ void __cpuinit twd_timer_setup(struct cl
+ 
+ 	enable_percpu_irq(clk->irq, 0);
+ }
++
++/* Needed by mpcore_wdt */
++unsigned long twd_timer_get_rate(void)
++{
++	return twd_timer_rate;
++}
++EXPORT_SYMBOL_GPL(twd_timer_get_rate);
+--- a/drivers/watchdog/mpcore_wdt.c
++++ b/drivers/watchdog/mpcore_wdt.c
+@@ -99,9 +99,7 @@ static void mpcore_wdt_keepalive(struct
+ 
+ 	spin_lock(&wdt_lock);
+ 	/* Assume prescale is set to 256 */
+-	count =  __raw_readl(wdt->base + TWD_WDOG_COUNTER);
+-	count = (0xFFFFFFFFU - count) * (HZ / 5);
+-	count = (count / 256) * mpcore_margin;
++	count = (twd_timer_get_rate() / 256) * mpcore_margin;
+ 
+ 	/* Reload the counter */
+ 	writel(count + wdt->perturb, wdt->base + TWD_WDOG_LOAD);
