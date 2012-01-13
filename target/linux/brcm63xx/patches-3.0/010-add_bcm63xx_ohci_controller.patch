@@ -177,7 +177,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
 +MODULE_ALIAS("platform:bcm63xx_ohci");
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
-@@ -1058,6 +1058,11 @@ MODULE_LICENSE ("GPL");
+@@ -1055,6 +1055,11 @@ MODULE_LICENSE ("GPL");
  #define PLATFORM_DRIVER		ohci_hcd_da8xx_driver
  #endif
  
@@ -191,7 +191,7 @@ Signed-off-by: Maxime Bizon <mbizon@freebox.fr>
  #define PLATFORM_DRIVER		ohci_hcd_sh_driver
 --- a/drivers/usb/host/ohci.h
 +++ b/drivers/usb/host/ohci.h
-@@ -646,7 +646,7 @@ static inline u32 hc32_to_cpup (const st
+@@ -645,7 +645,7 @@ static inline u32 hc32_to_cpup (const st
   * some big-endian SOC implementations.  Same thing happens with PSW access.
   */
  

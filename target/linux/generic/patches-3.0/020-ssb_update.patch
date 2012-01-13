@@ -154,35 +154,15 @@
  {
  	u16 tmp = pcicore_read16(pc, SSB_PCICORE_SPROM(0));
  	if (((tmp & 0xF000) >> 12) != pc->dev->core_index) {
-@@ -514,12 +514,16 @@ static void ssb_pcicore_pcie_setup_worka
+@@ -514,7 +514,7 @@ static void ssb_pcicore_pcie_setup_worka
   * Generic and Clientmode operation code.
   **************************************************/
  
 -static void ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
 +static void __devinit ssb_pcicore_init_clientmode(struct ssb_pcicore *pc)
  {
--	ssb_pcicore_fix_sprom_core_index(pc);
-+	struct ssb_device *pdev = pc->dev;
-+	struct ssb_bus *bus = pdev->bus;
-+
-+	if (bus->bustype == SSB_BUSTYPE_PCI)
-+		ssb_pcicore_fix_sprom_core_index(pc);
- 
- 	/* Disable PCI interrupts. */
--	ssb_write32(pc->dev, SSB_INTVEC, 0);
-+	ssb_write32(pdev, SSB_INTVEC, 0);
- 
- 	/* Additional PCIe always once-executed workarounds */
- 	if (pc->dev->id.coreid == SSB_DEV_PCIE) {
-@@ -529,7 +533,7 @@ static void ssb_pcicore_init_clientmode(
- 	}
- }
- 
--void ssb_pcicore_init(struct ssb_pcicore *pc)
-+void __devinit ssb_pcicore_init(struct ssb_pcicore *pc)
- {
- 	struct ssb_device *dev = pc->dev;
- 
+ 	struct ssb_device *pdev = pc->dev;
+ 	struct ssb_bus *bus = pdev->bus;
 --- a/drivers/ssb/embedded.c
 +++ b/drivers/ssb/embedded.c
 @@ -3,7 +3,7 @@
