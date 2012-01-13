@@ -1204,6 +1204,9 @@ enum rtl8366_type rtl8366_smi_detect(struct rtl8366_platform_data *pdata)
 	memset(&smi, 0, sizeof(smi));
 	smi.gpio_sda = pdata->gpio_sda;
 	smi.gpio_sck = pdata->gpio_sck;
+	smi.clk_delay = 10;
+	smi.cmd_read  = 0xa9;
+	smi.cmd_write = 0xa8;
 
 	if (__rtl8366_smi_init(&smi, "rtl8366"))
 		goto out;
