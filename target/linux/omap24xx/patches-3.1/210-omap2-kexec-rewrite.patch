@@ -1,6 +1,6 @@
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1876,7 +1876,7 @@ config XIP_PHYS_ADDR
+@@ -1888,7 +1888,7 @@ config XIP_PHYS_ADDR
  
  config KEXEC
  	bool "Kexec system call (EXPERIMENTAL)"
@@ -201,7 +201,7 @@
  EXPORT_SYMBOL_GPL(arm_pm_restart);
  
  static void do_nothing(void *unused)
-@@ -250,7 +274,15 @@ void machine_power_off(void)
+@@ -253,7 +277,15 @@ void machine_power_off(void)
  void machine_restart(char *cmd)
  {
  	machine_shutdown();
@@ -219,10 +219,10 @@
  void __show_regs(struct pt_regs *regs)
 --- a/arch/arm/kernel/setup.c
 +++ b/arch/arm/kernel/setup.c
-@@ -890,8 +890,8 @@ void __init setup_arch(char **cmdline_p)
- 	machine_desc = mdesc;
- 	machine_name = mdesc->name;
- 
+@@ -896,8 +896,8 @@ void __init setup_arch(char **cmdline_p)
+ 		arm_dma_zone_size = mdesc->dma_zone_size;
+ 	}
+ #endif
 -	if (mdesc->soft_reboot)
 -		reboot_setup("s");
 +	if (mdesc->restart_mode)
@@ -230,7 +230,7 @@
  
  	init_mm.start_code = (unsigned long) _text;
  	init_mm.end_code   = (unsigned long) _etext;
-@@ -910,6 +910,9 @@ void __init setup_arch(char **cmdline_p)
+@@ -916,6 +916,9 @@ void __init setup_arch(char **cmdline_p)
  	paging_init(mdesc);
  	request_standard_resources(mdesc);
  
