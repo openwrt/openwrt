@@ -38,7 +38,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	depends on USB_OHCI_HCD && SUPERH
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
-@@ -1079,11 +1079,6 @@ MODULE_LICENSE ("GPL");
+@@ -1076,11 +1076,6 @@ MODULE_LICENSE ("GPL");
  #define PS3_SYSTEM_BUS_DRIVER	ps3_ohci_driver
  #endif
  
@@ -50,7 +50,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #ifdef CONFIG_MFD_SM501
  #include "ohci-sm501.c"
  #define SM501_OHCI_DRIVER	ohci_hcd_sm501_driver
-@@ -1128,7 +1123,6 @@ MODULE_LICENSE ("GPL");
+@@ -1125,7 +1120,6 @@ MODULE_LICENSE ("GPL");
  	!defined(PS3_SYSTEM_BUS_DRIVER) && \
  	!defined(SM501_OHCI_DRIVER) && \
  	!defined(TMIO_OHCI_DRIVER) && \
@@ -58,7 +58,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	!defined(PLATFORM_OHCI_DRIVER)
  #error "missing bus glue for ohci-hcd"
  #endif
-@@ -1195,12 +1189,6 @@ static int __init ohci_hcd_mod_init(void
+@@ -1192,12 +1186,6 @@ static int __init ohci_hcd_mod_init(void
  		goto error_pci;
  #endif
  
@@ -71,7 +71,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #ifdef SM501_OHCI_DRIVER
  	retval = platform_driver_register(&SM501_OHCI_DRIVER);
  	if (retval < 0)
-@@ -1234,10 +1222,6 @@ static int __init ohci_hcd_mod_init(void
+@@ -1231,10 +1219,6 @@ static int __init ohci_hcd_mod_init(void
  	platform_driver_unregister(&SM501_OHCI_DRIVER);
   error_sm501:
  #endif
@@ -82,7 +82,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #ifdef PCI_DRIVER
  	pci_unregister_driver(&PCI_DRIVER);
   error_pci:
-@@ -1288,9 +1272,6 @@ static void __exit ohci_hcd_mod_exit(voi
+@@ -1285,9 +1269,6 @@ static void __exit ohci_hcd_mod_exit(voi
  #ifdef SM501_OHCI_DRIVER
  	platform_driver_unregister(&SM501_OHCI_DRIVER);
  #endif

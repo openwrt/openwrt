@@ -164,7 +164,7 @@
  } ____cacheline_aligned;
  
  struct seq_file;
-@@ -1997,6 +1998,7 @@ extern long do_sys_open(int dfd, const c
+@@ -1998,6 +1999,7 @@ extern long do_sys_open(int dfd, const c
  extern struct file *filp_open(const char *, int, int);
  extern struct file *file_open_root(struct dentry *, struct vfsmount *,
  				   const char *, int);
@@ -184,7 +184,7 @@
  			       struct pipe_inode_info *opipe,
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1495,6 +1495,23 @@ void drop_collected_mounts(struct vfsmou
+@@ -1492,6 +1492,23 @@ void drop_collected_mounts(struct vfsmou
  	release_mounts(&umount_list);
  }
  

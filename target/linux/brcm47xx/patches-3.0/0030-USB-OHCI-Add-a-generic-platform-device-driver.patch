@@ -37,7 +37,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	depends on USB_OHCI_HCD
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
-@@ -1114,6 +1114,11 @@ MODULE_LICENSE ("GPL");
+@@ -1111,6 +1111,11 @@ MODULE_LICENSE ("GPL");
  #define PLATFORM_DRIVER		ohci_hcd_ath79_driver
  #endif
  
@@ -49,7 +49,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #if	!defined(PCI_DRIVER) &&		\
  	!defined(PLATFORM_DRIVER) &&	\
  	!defined(OMAP1_PLATFORM_DRIVER) &&	\
-@@ -1123,7 +1128,8 @@ MODULE_LICENSE ("GPL");
+@@ -1120,7 +1125,8 @@ MODULE_LICENSE ("GPL");
  	!defined(PS3_SYSTEM_BUS_DRIVER) && \
  	!defined(SM501_OHCI_DRIVER) && \
  	!defined(TMIO_OHCI_DRIVER) && \
@@ -59,7 +59,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #error "missing bus glue for ohci-hcd"
  #endif
  
-@@ -1207,9 +1213,19 @@ static int __init ohci_hcd_mod_init(void
+@@ -1204,9 +1210,19 @@ static int __init ohci_hcd_mod_init(void
  		goto error_tmio;
  #endif
  
@@ -79,7 +79,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #ifdef TMIO_OHCI_DRIVER
  	platform_driver_unregister(&TMIO_OHCI_DRIVER);
   error_tmio:
-@@ -1263,6 +1279,9 @@ module_init(ohci_hcd_mod_init);
+@@ -1260,6 +1276,9 @@ module_init(ohci_hcd_mod_init);
  
  static void __exit ohci_hcd_mod_exit(void)
  {

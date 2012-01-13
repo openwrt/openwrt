@@ -13,7 +13,7 @@ FEATURES:=squashfs
 CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=440
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.0.9
+LINUX_VERSION:=3.0.17
 
 include $(INCLUDE_DIR)/target.mk
 
