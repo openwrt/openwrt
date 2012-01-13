@@ -1,7 +1,7 @@
-From b61e70ad9080a6dbd3731917ec21dbcbb9d382a2 Mon Sep 17 00:00:00 2001
+From 0f91c21de577d2d9f1fd164ca686d9a4ff0e2c8b Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sat, 26 Nov 2011 21:35:17 +0100
-Subject: [PATCH 20/21] USB: Add driver for the ssb bus
+Subject: [PATCH 20/26] USB: Add driver for the ssb bus
 
 This adds a USB driver using the generic platform device driver for the
 USB controller found on the Broadcom ssb bus. The ssb bus just
@@ -19,8 +19,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/usb/host/Kconfig   |   12 ++
  drivers/usb/host/Makefile  |    1 +
- drivers/usb/host/ssb-hcd.c |  320 ++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 333 insertions(+), 0 deletions(-)
+ drivers/usb/host/ssb-hcd.c |  272 ++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 285 insertions(+), 0 deletions(-)
  create mode 100644 drivers/usb/host/ssb-hcd.c
 
 --- a/drivers/usb/host/Kconfig
@@ -50,7 +50,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_USB_HCD_SSB)	+= ssb-hcd.o
 --- /dev/null
 +++ b/drivers/usb/host/ssb-hcd.c
-@@ -0,0 +1,268 @@
+@@ -0,0 +1,272 @@
 +/*
 + * Sonics Silicon Backplane
 + * Broadcom USB-core driver  (SSB bus glue)
@@ -89,16 +89,23 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	u32 enable_flags;
 +};
 +
-+/* based on arch/mips/brcm-boards/bcm947xx/pcibios.c */
-+static u32 ssb_hcd_init_chip(struct ssb_device *dev)
++static void __devinit ssb_hcd_5354wa(struct ssb_device *dev)
 +{
-+	u32 tmp, flags = 0;
++#ifdef CONFIG_SSB_DRIVER_MIPS
++	/* Work around for 5354 failures */
++	if (dev->id.revision == 2 && dev->bus->chip_id == 0x5354) {
++		/* Change syn01 reg */
++		ssb_write32(dev, 0x894, 0x00fe00fe);
 +
-+	if (dev->id.coreid == SSB_DEV_USB11_HOSTDEV) {
-+		/* Put the device into host-mode. */
-+		flags |= SSB_HCD_TMSLOW_HOSTMODE;
-+		ssb_device_enable(dev, flags);
-+	} else if (dev->id.coreid == SSB_DEV_USB20_HOST) {
++		/* Change syn03 reg */
++		ssb_write32(dev, 0x89c, ssb_read32(dev, 0x89c) | 0x1);
++	}
++#endif
++}
++
++static void __devinit ssb_hcd_usb20wa(struct ssb_device *dev)
++{
++	if (dev->id.coreid == SSB_DEV_USB20_HOST) {
 +		/*
 +		 * USB 2.0 special considerations:
 +		 *
@@ -106,51 +113,46 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		 * Control Register must be programmed to bring the USB core
 +		 * and various phy components out of reset.
 +		 */
-+		ssb_device_enable(dev, 0);
 +		ssb_write32(dev, 0x200, 0x7ff);
 +
 +		/* Change Flush control reg */
-+		tmp = ssb_read32(dev, 0x400);
-+		tmp &= ~8;
-+		ssb_write32(dev, 0x400, tmp);
-+		tmp = ssb_read32(dev, 0x400);
++		ssb_write32(dev, 0x400, ssb_read32(dev, 0x400) & ~8);
++		ssb_read32(dev, 0x400);
 +
 +		/* Change Shim control reg */
-+		tmp = ssb_read32(dev, 0x304);
-+		tmp &= ~0x100;
-+		ssb_write32(dev, 0x304, tmp);
-+		tmp = ssb_read32(dev, 0x304);
++		ssb_write32(dev, 0x304, ssb_read32(dev, 0x304) & ~0x100);
++		ssb_read32(dev, 0x304);
 +
 +		udelay(1);
 +
-+		/* Work around for 5354 failures */
-+		if (dev->id.revision == 2 && dev->bus->chip_id == 0x5354) {
-+			/* Change syn01 reg */
-+			tmp = 0x00fe00fe;
-+			ssb_write32(dev, 0x894, tmp);
++		ssb_hcd_5354wa(dev);
++	}
++}
 +
-+			/* Change syn03 reg */
-+			tmp = ssb_read32(dev, 0x89c);
-+			tmp |= 0x1;
-+			ssb_write32(dev, 0x89c, tmp);
-+		}
-+	} else
-+		ssb_device_enable(dev, 0);
++/* based on arch/mips/brcm-boards/bcm947xx/pcibios.c */
++static u32 __devinit ssb_hcd_init_chip(struct ssb_device *dev)
++{
++	u32 flags = 0;
++
++	if (dev->id.coreid == SSB_DEV_USB11_HOSTDEV)
++		/* Put the device into host-mode. */
++		flags |= SSB_HCD_TMSLOW_HOSTMODE;
++
++	ssb_device_enable(dev, flags);
++
++	ssb_hcd_usb20wa(dev);
 +
 +	return flags;
 +}
 +
-+static struct platform_device *ssb_hcd_create_pdev(struct ssb_device *dev,
-+						   char *name, u32 addr,
-+						   u32 len)
++static struct platform_device * __devinit
++ssb_hcd_create_pdev(struct ssb_device *dev, char *name, u32 addr, u32 len)
 +{
 +	struct platform_device *hci_dev;
-+	struct resource *hci_res;
++	struct resource hci_res[2];
 +	int ret = -ENOMEM;
 +
-+	hci_res = kzalloc(sizeof(struct resource) * 2, GFP_KERNEL);
-+	if (!hci_res)
-+		return ERR_PTR(-ENOMEM);
++	memset(hci_res, 0, sizeof(hci_res));
 +
 +	hci_res[0].start = addr;
 +	hci_res[0].end = hci_res[0].start + len - 1;
@@ -173,7 +175,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	ret = platform_device_add(hci_dev);
 +	if (ret) {
 +err_alloc:
-+		kfree(hci_res);
 +		platform_device_put(hci_dev);
 +		return ERR_PTR(ret);
 +	}
@@ -181,7 +182,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	return hci_dev;
 +}
 +
-+static int ssb_hcd_probe(struct ssb_device *dev, const struct ssb_device_id *id)
++static int __devinit ssb_hcd_probe(struct ssb_device *dev,
++				   const struct ssb_device_id *id)
 +{
 +	int err, tmp;
 +	int start, len;
@@ -241,7 +243,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	return err;
 +}
 +
-+static void ssb_hcd_remove(struct ssb_device *dev)
++static void __devexit ssb_hcd_remove(struct ssb_device *dev)
 +{
 +	struct ssb_hcd_device *usb_dev;
 +	struct platform_device *ohci_dev;
@@ -264,7 +266,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	ssb_device_disable(dev, 0);
 +}
 +
-+static void ssb_hcd_shutdown(struct ssb_device *dev)
++static void __devexit ssb_hcd_shutdown(struct ssb_device *dev)
 +{
 +	ssb_device_disable(dev, 0);
 +}
@@ -280,6 +282,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +static int ssb_hcd_resume(struct ssb_device *dev)
 +{
++	struct ssb_hcd_device *usb_dev = ssb_get_drvdata(dev);
++
 +	ssb_device_enable(dev, usb_dev->enable_flags);
 +
 +	return 0;
@@ -290,7 +294,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#define ssb_hcd_resume	NULL
 +#endif /* CONFIG_PM */
 +
-+static const struct ssb_device_id ssb_hcd_table[] = {
++static const struct ssb_device_id ssb_hcd_table[] __devinitconst = {
 +	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_USB11_HOSTDEV, SSB_ANY_REV),
 +	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_USB11_HOST, SSB_ANY_REV),
 +	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_USB20_HOST, SSB_ANY_REV),
@@ -302,7 +306,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	.name		= KBUILD_MODNAME,
 +	.id_table	= ssb_hcd_table,
 +	.probe		= ssb_hcd_probe,
-+	.remove		= ssb_hcd_remove,
++	.remove		= __devexit_p(ssb_hcd_remove),
 +	.shutdown	= ssb_hcd_shutdown,
 +	.suspend	= ssb_hcd_suspend,
 +	.resume		= ssb_hcd_resume,
