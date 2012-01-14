@@ -173,7 +173,7 @@ void unl_genl_loop(struct unl *unl, unl_cb handler, void *arg)
 	nl_cb_put(cb);
 }
 
-static int unl_genl_multicast_id(struct unl *unl, const char *name)
+int unl_genl_multicast_id(struct unl *unl, const char *name)
 {
 	struct nlattr *tb[CTRL_ATTR_MCAST_GRP_MAX + 1];
 	struct nlattr *groups, *group;
