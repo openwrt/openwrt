@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2011 OpenWrt.org
+# Copyright (C) 2007-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=2011-12-01
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=8d1fe2fd6bbabc4fbbf31dfbf015c62c
 
@@ -26,7 +26,7 @@ PKG_DRIVERS = \
 	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
 	ath9k-common ath9k ath9k-htc ath net-libipw net-ipw2100 net-ipw2200 \
 	mwl8k net-hermes net-hermes-pci net-hermes-plx net-hermes-pcmcia \
-	iwl-legacy iwl3945 iwl4965 iwlagn lib80211
+	iwl-legacy iwl3945 iwl4965 iwlagn wl12xx lib80211
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-mac80211 \
@@ -755,6 +755,22 @@ define KernelPackage/mwl8k/description
  Kernel modules for Marvell TOPDOG 802.11 Wireless cards
 endef
 
+
+define KernelPackage/wl12xx
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Driver for TI WL12xx
+  URL:=http://wireless.kernel.org/en/users/Drivers/wl12xx
+  DEPENDS+= @TARGET_omap4 +kmod-mac80211
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/wl12xx/wl12xx.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/wl12xx/wl12xx_sdio.ko
+  AUTOLOAD:=$(call AutoLoad,61,wl12xx wl12xx_sdio)
+endef
+
+define KernelPackage/wl12xx/description
+ Kernel modules for TI WL12xx
+endef
+
 #Broadcom firmware
 ifneq ($(CONFIG_B43_FW_5_10),)
   PKG_B43_FWV4_NAME:=broadcom-wl
@@ -1098,7 +1114,8 @@ BUILDFLAGS:= \
 	$(if $(CONFIG_PACKAGE_kmod-rt2x00-soc),-DCONFIG_RT2X00_LIB_SOC) \
 	$(if $(CONFIG_TARGET_atheros),-DCONFIG_ATH5K_AHB,-DCONFIG_ATH5K_PCI) \
 	$(if $(CONFIG_PACKAGE_kmod-iwl3945),-DCONFIG_IWL3945) \
-	$(if $(CONFIG_PACKAGE_kmod-iwl4965),-DCONFIG_COMPAT_IWL4965)
+	$(if $(CONFIG_PACKAGE_kmod-iwl4965),-DCONFIG_COMPAT_IWL4965) \
+	$(if $(CONFIG_PACKAGE_kmod-wl12xx),-DCONFIG_WL12XX -DCONFIG_COMPAT_WL12XX_SDIO)
 
 MAKE_OPTS:= \
 	CROSS_COMPILE="$(KERNEL_CROSS)" \
@@ -1205,7 +1222,8 @@ MAKE_OPTS:= \
 	CONFIG_USB_NET_CDCETHER= \
 	CONFIG_USB_USBNET= \
 	CONFIG_AT76C50X_USB= \
-	CONFIG_WL12XX= \
+	CONFIG_WL12XX=$(if $(CONFIG_PACKAGE_kmod-wl12xx),m) \
+	CONFIG_COMPAT_WL12XX_SDIO=$(if $(CONFIG_PACKAGE_kmod-wl12xx),m) \
 	CONFIG_EEPROM_93CX6= \
 	CONFIG_HERMES=$(if $(CONFIG_PACKAGE_kmod-net-hermes),m) \
 	CONFIG_HERMES_CACHE_FW_ON_INIT= \
@@ -1341,6 +1359,16 @@ define KernelPackage/rt2800-usb/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2870.bin $(1)/lib/firmware/
 endef
+
+define KernelPackage/wl12xx/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-3.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-plt-3.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-nvs.bin \
+		$(1)/lib/firmware/ti-connectivity
+endef
+
 
 define KernelPackage/zd1211rw/install
 	$(INSTALL_DIR) $(1)/lib/firmware/zd1211
@@ -1508,3 +1536,4 @@ $(eval $(call KernelPackage,net-hermes))
 $(eval $(call KernelPackage,net-hermes-pci))
 $(eval $(call KernelPackage,net-hermes-plx))
 $(eval $(call KernelPackage,net-hermes-pcmcia))
+$(eval $(call KernelPackage,wl12xx))
