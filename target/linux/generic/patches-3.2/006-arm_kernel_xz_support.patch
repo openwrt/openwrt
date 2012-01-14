@@ -62,11 +62,13 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	@$(check_for_bad_syms)
 --- a/arch/arm/boot/compressed/decompress.c
 +++ b/arch/arm/boot/compressed/decompress.c
-@@ -44,6 +44,10 @@ extern void error(char *);
+@@ -44,6 +44,12 @@ extern void error(char *);
  #include "../../../../lib/decompress_unlzma.c"
  #endif
  
 +#ifdef CONFIG_KERNEL_XZ
++#define memmove memmove
++#define memcpy memcpy
 +#include "../../../../lib/decompress_unxz.c"
 +#endif
 +
