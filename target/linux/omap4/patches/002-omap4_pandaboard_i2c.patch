@@ -1,0 +1,51 @@
+diff --git a/arch/arm/mach-omap2/id.c b/arch/arm/mach-omap2/id.c
+index 7f47092..2a05d3d 100644
+--- a/arch/arm/mach-omap2/id.c
++++ b/arch/arm/mach-omap2/id.c
+@@ -389,8 +389,10 @@ static void __init omap4_check_revision(void)
+ 			omap_revision = OMAP4430_REV_ES2_1;
+ 			break;
+ 		case 4:
+-		default:
+ 			omap_revision = OMAP4430_REV_ES2_2;
++		case 6:
++		default:
++			omap_revision = OMAP4430_REV_ES2_3;
+ 		}
+ 		break;
+ 	case 0xb94e:
+@@ -403,7 +405,7 @@ static void __init omap4_check_revision(void)
+ 		break;
+ 	default:
+ 		/* Unknown default to latest silicon rev as default */
+-		omap_revision = OMAP4430_REV_ES2_2;
++		omap_revision = OMAP4430_REV_ES2_3;
+ 	}
+ 
+ 	pr_info("OMAP%04x ES%d.%d\n", omap_rev() >> 16,
+diff --git a/arch/arm/mach-omap2/omap_hwmod_44xx_data.c b/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
+index 7695e5d..71d3e36 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
+@@ -2257,7 +2257,8 @@ static struct omap_hwmod_class omap44xx_i2c_hwmod_class = {
+ };
+ 
+ static struct omap_i2c_dev_attr i2c_dev_attr = {
+-	.flags	= OMAP_I2C_FLAG_BUS_SHIFT_NONE,
++	.flags	= OMAP_I2C_FLAG_BUS_SHIFT_NONE |
++			OMAP_I2C_FLAG_RESET_REGS_POSTIDLE,
+ };
+ 
+ /* i2c1 */
+diff --git a/arch/arm/plat-omap/include/plat/cpu.h b/arch/arm/plat-omap/include/plat/cpu.h
+index 408a12f..e279395 100644
+--- a/arch/arm/plat-omap/include/plat/cpu.h
++++ b/arch/arm/plat-omap/include/plat/cpu.h
+@@ -391,6 +391,7 @@ IS_OMAP_TYPE(3517, 0x3517)
+ #define OMAP4430_REV_ES2_0	(OMAP443X_CLASS | (0x20 << 8))
+ #define OMAP4430_REV_ES2_1	(OMAP443X_CLASS | (0x21 << 8))
+ #define OMAP4430_REV_ES2_2	(OMAP443X_CLASS | (0x22 << 8))
++#define OMAP4430_REV_ES2_3	(OMAP443X_CLASS | (0x23 << 8))
+ 
+ #define OMAP446X_CLASS		0x44600044
+ #define OMAP4460_REV_ES1_0	(OMAP446X_CLASS | (0x10 << 8))

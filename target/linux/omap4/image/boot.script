@@ -1,0 +1,3 @@
+fatload mmc 0:1 0x80000000 openwrt-omap4-uImage
+setenv bootargs vram=32M fixrtc mem=1G@0x80000000 root=/dev/mmcblk0p2 rootfstype=ext4 console=ttyO2,115200n8 rootwait
+bootm 0x80000000
