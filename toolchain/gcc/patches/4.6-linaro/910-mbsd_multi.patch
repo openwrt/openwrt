@@ -166,7 +166,7 @@
      { OPT_LEVELS_3_PLUS, OPT_ftree_loop_distribute_patterns, NULL, 1 },
      { OPT_LEVELS_3_PLUS, OPT_fpredictive_commoning, NULL, 1 },
      /* Inlining of functions reducing size is a good idea with -Os
-@@ -1399,6 +1399,17 @@ common_handle_option (struct gcc_options
+@@ -1405,6 +1405,17 @@ common_handle_option (struct gcc_options
  			       opts, opts_set, loc, dc);
        break;
  
@@ -209,7 +209,7 @@
  -Wfatal-errors  -Wfloat-equal  -Wformat  -Wformat=2 @gol
  -Wno-format-contains-nul -Wno-format-extra-args -Wformat-nonliteral @gol
  -Wformat-security  -Wformat-y2k @gol
-@@ -4495,6 +4495,22 @@ This option is only supported for C and
+@@ -4497,6 +4497,22 @@ This option is only supported for C and
  @option{-Wall} and by @option{-pedantic}, which can be disabled with
  @option{-Wno-pointer-sign}.
  
@@ -232,7 +232,7 @@
  @item -Wstack-protector
  @opindex Wstack-protector
  @opindex Wno-stack-protector
-@@ -6317,7 +6333,7 @@ so, the first branch is redirected to ei
+@@ -6319,7 +6335,7 @@ so, the first branch is redirected to ei
  second branch or a point immediately following it, depending on whether
  the condition is known to be true or false.
  

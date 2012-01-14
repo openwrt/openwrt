@@ -1,6 +1,6 @@
 --- a/gcc/config/arm/linux-eabi.h
 +++ b/gcc/config/arm/linux-eabi.h
-@@ -63,12 +63,16 @@
+@@ -63,10 +63,14 @@
  #undef  GLIBC_DYNAMIC_LINKER
  #define GLIBC_DYNAMIC_LINKER "/lib/ld-linux.so.3"
  
@@ -14,7 +14,5 @@
 -#define LINK_SPEC BE8_LINK_SPEC						\
 +#define LINK_SPEC BE8_LINK_SPEC TARGET_FIX_V4BX_SPEC				\
    LINUX_OR_ANDROID_LD (LINUX_TARGET_LINK_SPEC,				\
-		       LINUX_TARGET_LINK_SPEC " " ANDROID_LINK_SPEC)
+ 		       LINUX_TARGET_LINK_SPEC " " ANDROID_LINK_SPEC)
  
- #undef  CC1_SPEC
- #define CC1_SPEC						\

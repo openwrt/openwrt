@@ -1,8 +1,8 @@
 --- a/configure
 +++ b/configure
-@@ -3730,6 +3730,9 @@ case "${target}" in
+@@ -3728,6 +3728,9 @@ case "${target}" in
    ip2k-*-*)
-     noconfigdirs="$noconfigdirs target-libiberty target-libstdc++-v3 ${libgcj}"
+     noconfigdirs="$noconfigdirs target-libstdc++-v3 ${libgcj}"
      ;;
 +  ubicom32-*-*)
 +    noconfigdirs="$noconfigdirs target-libffi"
