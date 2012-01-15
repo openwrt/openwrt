@@ -16,14 +16,6 @@ PKG_CAT:=bzcat
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)
-endef
-
-define Host/Install
-	$(MAKE) -C $(HOST_BUILD_DIR) install
-endef
-
 define Host/Clean
 	-$(MAKE) -C $(HOST_BUILD_DIR) uninstall
 	$(call Host/Clean/Default)

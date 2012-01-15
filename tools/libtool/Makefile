@@ -18,10 +18,6 @@ include $(INCLUDE_DIR)/host-build.mk
 HOST_CONFIGURE_VARS += \
 	lt_cv_sys_dlsearch_path=""
 
-define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)
-endef
-
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) install
 	$(SED) 's,\(hardcode_into_libs\)=yes,\1=no,g' $(STAGING_DIR_HOST)/bin/libtool

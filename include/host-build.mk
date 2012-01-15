@@ -45,6 +45,7 @@ define Host/Prepare
 endef
 
 HOST_CONFIGURE_VARS = \
+	CC="$(HOSTCC)" \
 	CFLAGS="$(HOST_CFLAGS)" \
 	CPPFLAGS="$(HOST_CFLAGS)" \
 	LDFLAGS="$(HOST_LDFLAGS)" \
