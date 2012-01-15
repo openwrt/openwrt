@@ -19,11 +19,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 ifneq ($(strip $(shell which ccache >/dev/null && echo found)),found)
   define Host/Compile
-	$(MAKE) CC="$(HOSTCC)" -C $(HOST_BUILD_DIR)
-  endef
-
-  define Host/Install
-	$(MAKE) -C $(HOST_BUILD_DIR) install
+	$(MAKE) CC="$(HOSTCC_NOCACHE)" -C $(HOST_BUILD_DIR)
   endef
 
   define Host/Clean
@@ -40,6 +36,8 @@ else
   define Host/Install
   endef
   define Host/Clean
+  endef
+  define Download
   endef
 endif
 

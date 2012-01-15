@@ -21,10 +21,6 @@ endef
 define Host/Configure
 endef
 
-define Host/Compile
-	$(MAKE) CC="$(HOSTCC)" -C $(HOST_BUILD_DIR)
-endef
-
 define Host/Install
 	$(CP) $(HOST_BUILD_DIR)/padjffs2 $(STAGING_DIR_HOST)/bin/
 endef

@@ -23,13 +23,4 @@ HOST_CONFIGURE_ARGS += \
 	--enable-cxx \
 	--enable-mpbsd
 
-define Host/Configure
-	(cd $(HOST_BUILD_DIR)/$(3); \
-		$(HOST_CONFIGURE_CMD) \
-		$(HOST_CONFIGURE_VARS) \
-		$(HOST_CONFIGURE_ARGS); \
-	)
-endef
-
-
 $(eval $(call HostBuild))

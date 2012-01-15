@@ -15,10 +15,6 @@ PKG_MD5SUM:=a3270bab3f4b69b7dc6dbdacbcae9745
 
 include $(INCLUDE_DIR)/host-build.mk
 
-define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)
-endef
-
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) \
 		install
