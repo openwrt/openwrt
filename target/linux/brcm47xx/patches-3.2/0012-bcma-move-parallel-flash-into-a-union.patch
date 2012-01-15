@@ -1,0 +1,142 @@
+From b7d9f9cd6a8e463c1061ea29ed3e614403625024 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 17 Jul 2011 14:51:47 +0200
+Subject: [PATCH 12/26] bcma: move parallel flash into a union
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/bcm47xx/nvram.c                   |    3 +
+ drivers/bcma/driver_mips.c                  |    1 +
+ include/linux/bcma/bcma_driver_chipcommon.h |   73 ++++++++++++++++++++++++++-
+ 3 files changed, 76 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -50,6 +50,9 @@ static void early_nvram_init(void)
+ #ifdef CONFIG_BCM47XX_BCMA
+ 	case BCM47XX_BUS_TYPE_BCMA:
+ 		bcma_cc = &bcm47xx_bus.bcma.bus.drv_cc;
++		if (bcma_cc->flash_type != BCMA_PFLASH)
++			return;
++
+ 		base = bcma_cc->pflash.window;
+ 		lim = bcma_cc->pflash.window_size;
+ 		break;
+--- a/drivers/bcma/driver_mips.c
++++ b/drivers/bcma/driver_mips.c
+@@ -189,6 +189,7 @@ static void bcma_core_mips_flash_detect(
+ 		break;
+ 	case BCMA_CC_FLASHT_PARA:
+ 		pr_info("found parallel flash.\n");
++		bus->drv_cc.flash_type = BCMA_PFLASH;
+ 		bus->drv_cc.pflash.window = 0x1c000000;
+ 		bus->drv_cc.pflash.window_size = 0x02000000;
+ 
+--- a/include/linux/bcma/bcma_driver_chipcommon.h
++++ b/include/linux/bcma/bcma_driver_chipcommon.h
+@@ -108,10 +108,68 @@
+ #define  BCMA_CC_JCTL_EXT_EN		2		/* Enable external targets */
+ #define  BCMA_CC_JCTL_EN		1		/* Enable Jtag master */
+ #define BCMA_CC_FLASHCTL		0x0040
++
++/* Start/busy bit in flashcontrol */
++#define  BCMA_CC_FLASHCTL_OPCODE	0x000000ff
++#define  BCMA_CC_FLASHCTL_ACTION	0x00000700
++#define  BCMA_CC_FLASHCTL_CS_ACTIVE	0x00001000	/* Chip Select Active, rev >= 20 */
+ #define  BCMA_CC_FLASHCTL_START		0x80000000
+ #define  BCMA_CC_FLASHCTL_BUSY		BCMA_CC_FLASHCTL_START
++
++/* flashcontrol action+opcodes for ST flashes */
++#define  BCMA_CC_FLASHCTL_ST_WREN	0x0006		/* Write Enable */
++#define  BCMA_CC_FLASHCTL_ST_WRDIS	0x0004		/* Write Disable */
++#define  BCMA_CC_FLASHCTL_ST_RDSR	0x0105		/* Read Status Register */
++#define  BCMA_CC_FLASHCTL_ST_WRSR	0x0101		/* Write Status Register */
++#define  BCMA_CC_FLASHCTL_ST_READ	0x0303		/* Read Data Bytes */
++#define  BCMA_CC_FLASHCTL_ST_PP		0x0302		/* Page Program */
++#define  BCMA_CC_FLASHCTL_ST_SE		0x02d8		/* Sector Erase */
++#define  BCMA_CC_FLASHCTL_ST_BE		0x00c7		/* Bulk Erase */
++#define  BCMA_CC_FLASHCTL_ST_DP		0x00b9		/* Deep Power-down */
++#define  BCMA_CC_FLASHCTL_ST_RES	0x03ab		/* Read Electronic Signature */
++#define  BCMA_CC_FLASHCTL_ST_CSA	0x1000		/* Keep chip select asserted */
++#define  BCMA_CC_FLASHCTL_ST_SSE	0x0220		/* Sub-sector Erase */
++
++
++/* flashcontrol action+opcodes for Atmel flashes */
++#define  BCMA_CC_FLASHCTL_AT_READ			0x07e8
++#define  BCMA_CC_FLASHCTL_AT_PAGE_READ			0x07d2
++#define  BCMA_CC_FLASHCTL_AT_BUF1_READ
++#define  BCMA_CC_FLASHCTL_AT_BUF2_READ
++#define  BCMA_CC_FLASHCTL_AT_STATUS			0x01d7
++#define  BCMA_CC_FLASHCTL_AT_BUF1_WRITE			0x0384
++#define  BCMA_CC_FLASHCTL_AT_BUF2_WRITE			0x0387
++#define  BCMA_CC_FLASHCTL_AT_BUF1_ERASE_PROGRAM		0x0283
++#define  BCMA_CC_FLASHCTL_AT_BUF2_ERASE_PROGRAM		0x0286
++#define  BCMA_CC_FLASHCTL_AT_BUF1_PROGRAM		0x0288
++#define  BCMA_CC_FLASHCTL_AT_BUF2_PROGRAM		0x0289
++#define  BCMA_CC_FLASHCTL_AT_PAGE_ERASE			0x0281
++#define  BCMA_CC_FLASHCTL_AT_BLOCK_ERASE		0x0250
++#define  BCMA_CC_FLASHCTL_AT_BUF1_WRITE_ERASE_PROGRAM	0x0382
++#define  BCMA_CC_FLASHCTL_AT_BUF2_WRITE_ERASE_PROGRAM	0x0385
++#define  BCMA_CC_FLASHCTL_AT_BUF1_LOAD			0x0253
++#define  BCMA_CC_FLASHCTL_AT_BUF2_LOAD			0x0255
++#define  BCMA_CC_FLASHCTL_AT_BUF1_COMPARE		0x0260
++#define  BCMA_CC_FLASHCTL_AT_BUF2_COMPARE		0x0261
++#define  BCMA_CC_FLASHCTL_AT_BUF1_REPROGRAM		0x0258
++#define  BCMA_CC_FLASHCTL_AT_BUF2_REPROGRAM		0x0259
++
+ #define BCMA_CC_FLASHADDR		0x0044
+ #define BCMA_CC_FLASHDATA		0x0048
++
++/* Status register bits for ST flashes */
++#define  BCMA_CC_FLASHDATA_ST_WIP	0x01		/* Write In Progress */
++#define  BCMA_CC_FLASHDATA_ST_WEL	0x02		/* Write Enable Latch */
++#define  BCMA_CC_FLASHDATA_ST_BP_MASK	0x1c		/* Block Protect */
++#define  BCMA_CC_FLASHDATA_ST_BP_SHIFT	2
++#define  BCMA_CC_FLASHDATA_ST_SRWD	0x80		/* Status Register Write Disable */
++
++/* Status register bits for Atmel flashes */
++#define  BCMA_CC_FLASHDATA_AT_READY	0x80
++#define  BCMA_CC_FLASHDATA_AT_MISMATCH	0x40
++#define  BCMA_CC_FLASHDATA_AT_ID_MASK	0x38
++#define  BCMA_CC_FLASHDATA_AT_ID_SHIFT	3
++
+ #define BCMA_CC_BCAST_ADDR		0x0050
+ #define BCMA_CC_BCAST_DATA		0x0054
+ #define BCMA_CC_GPIOPULLUP		0x0058		/* Rev >= 20 only */
+@@ -300,6 +358,12 @@
+ #define BCMA_CHIPCTL_4331_BT_SHD0_ON_GPIO4	BIT(16)	/* enable bt_shd0 at gpio4 */
+ #define BCMA_CHIPCTL_4331_BT_SHD1_ON_GPIO5	BIT(17)	/* enable bt_shd1 at gpio5 */
+ 
++#define	BCMA_FLASH2			0x1c000000	/* Flash Region 2 (region 1 shadowed here) */
++#define	BCMA_FLASH2_SZ			0x02000000	/* Size of Flash Region 2 */
++#define	BCMA_FLASH1			0x1fc00000	/* MIPS Flash Region 1 */
++#define	BCMA_FLASH1_SZ			0x00400000	/* MIPS Size of Flash Region 1 */
++
++
+ /* Data for the PMU, if available.
+  * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
+  */
+@@ -309,6 +373,10 @@ struct bcma_chipcommon_pmu {
+ };
+ 
+ #ifdef CONFIG_BCMA_DRIVER_MIPS
++enum bcma_flash_type {
++	BCMA_PFLASH,
++};
++
+ struct bcma_pflash {
+ 	u8 buswidth;
+ 	u32 window;
+@@ -334,7 +402,10 @@ struct bcma_drv_cc {
+ 	u16 fast_pwrup_delay;
+ 	struct bcma_chipcommon_pmu pmu;
+ #ifdef CONFIG_BCMA_DRIVER_MIPS
+-	struct bcma_pflash pflash;
++	enum bcma_flash_type flash_type;
++	union {
++		struct bcma_pflash pflash;
++	};
+ 
+ 	int nr_serial_ports;
+ 	struct bcma_serial_port serial_ports[4];
