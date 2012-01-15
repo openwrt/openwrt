@@ -1,0 +1,193 @@
+From 4f314ac9edbc80897f158fdb4e1b1de8a2d0d432 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 24 Jul 2011 21:10:49 +0200
+Subject: [PATCH 16/26] brcm47xx: add common interface for sflash
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/bcm47xx/Makefile               |    2 +-
+ arch/mips/bcm47xx/bus.c                  |   94 ++++++++++++++++++++++++++++++
+ arch/mips/bcm47xx/setup.c                |    8 +++
+ arch/mips/include/asm/mach-bcm47xx/bus.h |   37 ++++++++++++
+ 4 files changed, 140 insertions(+), 1 deletions(-)
+ create mode 100644 arch/mips/bcm47xx/bus.c
+ create mode 100644 arch/mips/include/asm/mach-bcm47xx/bus.h
+
+--- a/arch/mips/bcm47xx/Makefile
++++ b/arch/mips/bcm47xx/Makefile
+@@ -3,5 +3,5 @@
+ # under Linux.
+ #
+ 
+-obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o
++obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o
+ obj-$(CONFIG_BCM47XX_SSB)	+= wgt634u.o
+--- /dev/null
++++ b/arch/mips/bcm47xx/bus.c
+@@ -0,0 +1,94 @@
++/*
++ * BCM947xx nvram variable access
++ *
++ * Copyright (C) 2011 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++
++#include <bus.h>
++
++static int bcm47xx_sflash_bcma_read(struct bcm47xx_sflash *dev, u32 offset, u32 len, u8 *buf)
++{
++	return bcma_sflash_read(dev->bcc, offset, len, buf);
++}
++
++static int bcm47xx_sflash_bcma_poll(struct bcm47xx_sflash *dev, u32 offset)
++{
++	return bcma_sflash_poll(dev->bcc, offset);
++}
++
++static int bcm47xx_sflash_bcma_write(struct bcm47xx_sflash *dev, u32 offset, u32 len, const u8 *buf)
++{
++	return bcma_sflash_write(dev->bcc, offset, len, buf);
++}
++
++static int bcm47xx_sflash_bcma_erase(struct bcm47xx_sflash *dev, u32 offset)
++{
++	return bcma_sflash_erase(dev->bcc, offset);
++}
++
++static int bcm47xx_sflash_bcma_commit(struct bcm47xx_sflash *dev, u32 offset, u32 len, const u8 *buf)
++{
++	return bcma_sflash_commit(dev->bcc, offset, len, buf);
++}
++
++void bcm47xx_sflash_struct_bcma_init(struct bcm47xx_sflash *sflash, struct bcma_drv_cc *bcc)
++{
++	sflash->sflash_type = BCM47XX_BUS_TYPE_BCMA;
++	sflash->bcc = bcc;
++
++	sflash->read = bcm47xx_sflash_bcma_read;
++	sflash->poll = bcm47xx_sflash_bcma_poll;
++	sflash->write = bcm47xx_sflash_bcma_write;
++	sflash->erase = bcm47xx_sflash_bcma_erase;
++	sflash->commit = bcm47xx_sflash_bcma_commit;
++
++	sflash->blocksize = bcc->sflash.blocksize;
++	sflash->numblocks = bcc->sflash.numblocks;
++	sflash->size = bcc->sflash.size;
++}
++
++static int bcm47xx_sflash_ssb_read(struct bcm47xx_sflash *dev, u32 offset, u32 len, u8 *buf)
++{
++	return ssb_sflash_read(dev->scc, offset, len, buf);
++}
++
++static int bcm47xx_sflash_ssb_poll(struct bcm47xx_sflash *dev, u32 offset)
++{
++	return ssb_sflash_poll(dev->scc, offset);
++}
++
++static int bcm47xx_sflash_ssb_write(struct bcm47xx_sflash *dev, u32 offset, u32 len, const u8 *buf)
++{
++	return ssb_sflash_write(dev->scc, offset, len, buf);
++}
++
++static int bcm47xx_sflash_ssb_erase(struct bcm47xx_sflash *dev, u32 offset)
++{
++	return ssb_sflash_erase(dev->scc, offset);
++}
++
++static int bcm47xx_sflash_ssb_commit(struct bcm47xx_sflash *dev, u32 offset, u32 len, const u8 *buf)
++{
++	return ssb_sflash_commit(dev->scc, offset, len, buf);
++}
++
++void bcm47xx_sflash_struct_ssb_init(struct bcm47xx_sflash *sflash, struct ssb_chipcommon *scc)
++{
++	sflash->sflash_type = BCM47XX_BUS_TYPE_SSB;
++	sflash->scc = scc;
++
++	sflash->read = bcm47xx_sflash_ssb_read;
++	sflash->poll = bcm47xx_sflash_ssb_poll;
++	sflash->write = bcm47xx_sflash_ssb_write;
++	sflash->erase = bcm47xx_sflash_ssb_erase;
++	sflash->commit = bcm47xx_sflash_ssb_commit;
++
++	sflash->blocksize = scc->sflash.blocksize;
++	sflash->numblocks = scc->sflash.numblocks;
++	sflash->size = scc->sflash.size;
++}
+--- a/arch/mips/bcm47xx/setup.c
++++ b/arch/mips/bcm47xx/setup.c
+@@ -43,6 +43,8 @@ EXPORT_SYMBOL(bcm47xx_bus);
+ enum bcm47xx_bus_type bcm47xx_bus_type;
+ EXPORT_SYMBOL(bcm47xx_bus_type);
+ 
++struct bcm47xx_sflash bcm47xx_sflash;
++
+ static void bcm47xx_machine_restart(char *command)
+ {
+ 	printk(KERN_ALERT "Please stand by while rebooting the system...\n");
+@@ -291,6 +293,9 @@ static void __init bcm47xx_register_ssb(
+ 	if (err)
+ 		panic("Failed to initialize SSB bus (err %d)\n", err);
+ 
++	if (bcm47xx_bus.ssb.chipco.flash_type == SSB_SFLASH)
++		bcm47xx_sflash_struct_ssb_init(&bcm47xx_sflash, &bcm47xx_bus.ssb.chipco);
++
+ 	mcore = &bcm47xx_bus.ssb.mipscore;
+ 	if (nvram_getenv("kernel_args", buf, sizeof(buf)) >= 0) {
+ 		if (strstr(buf, "console=ttyS1")) {
+@@ -315,6 +320,9 @@ static void __init bcm47xx_register_bcma
+ 	err = bcma_host_soc_register(&bcm47xx_bus.bcma);
+ 	if (err)
+ 		panic("Failed to initialize BCMA bus (err %d)\n", err);
++
++	if (bcm47xx_bus.bcma.bus.drv_cc.flash_type == BCMA_SFLASH)
++		bcm47xx_sflash_struct_bcma_init(&bcm47xx_sflash, &bcm47xx_bus.bcma.bus.drv_cc);
+ }
+ #endif
+ 
+--- /dev/null
++++ b/arch/mips/include/asm/mach-bcm47xx/bus.h
+@@ -0,0 +1,37 @@
++/*
++ * BCM947xx nvram variable access
++ *
++ * Copyright (C) 2011 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++
++#include <linux/ssb/ssb.h>
++#include <linux/bcma/bcma.h>
++#include <bcm47xx.h>
++
++struct bcm47xx_sflash {
++	enum bcm47xx_bus_type sflash_type;
++	union {
++		struct ssb_chipcommon *scc;
++		struct bcma_drv_cc *bcc;
++	};
++
++	int (*read)(struct bcm47xx_sflash *dev, u32 offset, u32 len, u8 *buf);
++	int (*poll)(struct bcm47xx_sflash *dev, u32 offset);
++	int (*write)(struct bcm47xx_sflash *dev, u32 offset, u32 len, const u8 *buf);
++	int (*erase)(struct bcm47xx_sflash *dev, u32 offset);
++	int (*commit)(struct bcm47xx_sflash *dev, u32 offset, u32 len, const u8 *buf);
++
++	u32 blocksize;		/* Block size */
++	u32 numblocks;		/* Number of blocks */
++	u32 size;		/* Total size in bytes */
++};
++
++void bcm47xx_sflash_struct_bcma_init(struct bcm47xx_sflash *sflash, struct bcma_drv_cc *bcc);
++void bcm47xx_sflash_struct_ssb_init(struct bcm47xx_sflash *sflash, struct ssb_chipcommon *scc);
++
++extern struct bcm47xx_sflash bcm47xx_sflash;

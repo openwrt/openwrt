@@ -1,0 +1,12 @@
+--- a/arch/mips/include/asm/mach-bcm47xx/gpio.h
++++ b/arch/mips/include/asm/mach-bcm47xx/gpio.h
+@@ -151,5 +151,9 @@ static inline int gpio_polarity(unsigned
+ 	return -EINVAL;
+ }
+ 
++static inline int gpio_set_debounce(unsigned gpio, unsigned debounce)
++{
++	return -ENOSYS;
++}
+ 
+ #endif /* __BCM47XX_GPIO_H */

@@ -1,0 +1,42 @@
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -121,14 +121,6 @@
+ #endif
+ 	.endm
+ 
+-#ifndef CONFIG_NO_EXCEPT_FILL
+-	/*
+-	 * Reserved space for exception handlers.
+-	 * Necessary for machines which link their kernels at KSEG0.
+-	 */
+-	.fill	0x400
+-#endif
+-
+ EXPORT(_stext)
+ 
+ #ifdef CONFIG_BOOT_RAW
+@@ -141,6 +133,14 @@ FEXPORT(__kernel_entry)
+ 	j	kernel_entry
+ #endif
+ 
++#ifndef CONFIG_NO_EXCEPT_FILL
++	/*
++	 * Reserved space for exception handlers.
++	 * Necessary for machines which link their kernels at KSEG0.
++	 */
++	.fill	0x400
++#endif
++
+ #ifdef CONFIG_IMAGE_CMDLINE_HACK
+ 	.ascii	"CMDLINE:"
+ EXPORT(__image_cmdline)
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -89,6 +89,7 @@ config ATH79
+ 
+ config BCM47XX
+ 	bool "Broadcom BCM47XX based boards"
++	select BOOT_RAW
+ 	select CEVT_R4K
+ 	select CSRC_R4K
+ 	select DMA_NONCOHERENT
