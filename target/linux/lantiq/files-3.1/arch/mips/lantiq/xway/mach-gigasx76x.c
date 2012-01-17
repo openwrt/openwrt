@@ -54,25 +54,20 @@ static struct mtd_partition gigasx76x_partitions[] =
 	{
 		.name	= "linux",
 		.offset	= 0x020000,
-		.size	= 0x7d0000,
-	},
-	{
-		.name	= "board_config",
-		.offset	= 0x7f0000,
-		.size	= 0x010000,
+		.size	= 0x7e0000,
 	},
 };
 
 static struct gpio_led
 gigasx76x_gpio_leds[] __initdata = {
-
-	{ .name = "soc:green:usb", .gpio = 202, },
-	{ .name = "soc:green:wifi", .gpio = 203, },
-	{ .name = "soc:green:phone2", .gpio = 204, },
-	{ .name = "soc:green:phone1", .gpio = 205, },
-	{ .name = "soc:green:line", .gpio = 206, },
-	{ .name = "soc:green:online", .gpio = 207, },
-	{ .name = "soc:green:voip", .gpio = 208, },
+	{ .name = "soc:green:voip", .gpio = 216, },
+	{ .name = "soc:green:adsl", .gpio = 217, },
+	{ .name = "soc:green:usb", .gpio = 218, },
+	{ .name = "soc:green:wifi", .gpio = 219, },
+	{ .name = "soc:green:phone2", .gpio = 220, },
+	{ .name = "soc:green:phone1", .gpio = 221, },
+	{ .name = "soc:green:line", .gpio = 222, },
+	{ .name = "soc:green:online", .gpio = 223, },
 };
 
 static struct gpio_keys_button
@@ -80,19 +75,19 @@ gigasx76x_gpio_keys[] __initdata = {
 	{
 		.desc		= "wps",
 		.type		= EV_KEY,
-		.code		= BTN_0,
+		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= 22,
 		.active_low	= 1,
 	},
-	/*{
-		.desc		= "factory",
+	{
+		.desc		= "reset",
 		.type		= EV_KEY,
-		.code		= BTN_1,
+		.code		= BTN_0,
 		.debounce_interval = LTQ_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= 14,
-		.active_low	= 1,
-	},*/
+		.active_low	= 0,
+	},
 };
 
 static struct physmap_flash_data gigasx76x_flash_data = {
@@ -228,7 +223,6 @@ static void __init gigasx76x_init(void) {
 	ltq_register_nor(&gigasx76x_flash_data);
 	ltq_register_pci(&ltq_pci_data);
 	ltq_register_tapi();
-	ltq_register_madwifi_eep(GIGASX76X_MADWIFI_ADDR);
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(gigasx76x_gpio_leds), gigasx76x_gpio_leds);
 	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(gigasx76x_gpio_keys), gigasx76x_gpio_keys);
 	ltq_register_ath5k(gigasx76x_ath5k_eeprom_data, gigasx76x_ath5k_eeprom_mac);
