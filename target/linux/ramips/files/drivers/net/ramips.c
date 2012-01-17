@@ -215,7 +215,6 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	unsigned long tx;
 	unsigned int tx_next;
 	unsigned int mapped_addr;
-	unsigned long flags;
 
 	if (priv->plat->min_pkt_len) {
 		if (skb->len < priv->plat->min_pkt_len) {
@@ -233,7 +232,7 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	mapped_addr = (unsigned int) dma_map_single(NULL, skb->data, skb->len,
 						    DMA_TO_DEVICE);
 	dma_sync_single_for_device(NULL, mapped_addr, skb->len, DMA_TO_DEVICE);
-	spin_lock_irqsave(&priv->page_lock, flags);
+	spin_lock(&priv->page_lock);
 	tx = ramips_fe_rr(RAMIPS_TX_CTX_IDX0);
 	tx_next = (tx + 1) % NUM_TX_DESC;
 
@@ -250,11 +249,11 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	priv->tx_skb[tx] = skb;
 	wmb();
 	ramips_fe_wr(tx_next, RAMIPS_TX_CTX_IDX0);
-	spin_unlock_irqrestore(&priv->page_lock, flags);
+	spin_unlock(&priv->page_lock);
 	return NETDEV_TX_OK;
 
  out:
-	spin_unlock_irqrestore(&priv->page_lock, flags);
+	spin_unlock(&priv->page_lock);
 	dev->stats.tx_dropped++;
 	kfree_skb(skb);
 	return NETDEV_TX_OK;
@@ -313,6 +312,7 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 	struct net_device *dev = (struct net_device*)ptr;
 	struct raeth_priv *priv = netdev_priv(dev);
 
+	spin_lock(&priv->page_lock);
 	while ((priv->tx[priv->skb_free_idx].txd2 & TX_DMA_DONE) &&
 	       (priv->tx_skb[priv->skb_free_idx])) {
 		dev_kfree_skb_irq(priv->tx_skb[priv->skb_free_idx]);
@@ -321,6 +321,7 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 		if (priv->skb_free_idx >= NUM_TX_DESC)
 			priv->skb_free_idx = 0;
 	}
+	spin_unlock(&priv->page_lock);
 
 	ramips_fe_int_enable(RAMIPS_TX_DLY_INT);
 }
@@ -346,8 +347,10 @@ ramips_eth_irq(int irq, void *dev)
 		tasklet_schedule(&priv->rx_tasklet);
 	}
 
-	if (fe_int & RAMIPS_TX_DLY_INT)
-		ramips_eth_tx_housekeeping((unsigned long)dev);
+	if (fe_int & RAMIPS_TX_DLY_INT) {
+		ramips_fe_int_disable(RAMIPS_TX_DLY_INT);
+		tasklet_schedule(&priv->tx_housekeeping_tasklet);
+	}
 
 	return IRQ_HANDLED;
 }
