@@ -388,7 +388,7 @@ TARGET_CFLAGS += \
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-devel \
-	--enable-ipv6 \
+	$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 	--enable-libipq \
 	--with-kernel="$(LINUX_DIR)" \
 	--with-xtlibdir=/usr/lib/iptables
