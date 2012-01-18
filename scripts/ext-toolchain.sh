@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
-# Script to copy a toolchain from given source to given
-# destination directory.
+#
+#   Script for various external toolchain tasks, refer to
+#   the --help output for more information.
+#
+#   Copyright (C) 2012 Jo-Philipp Wich <jow@openwrt.org>
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 CC=""
 CXX=""
@@ -289,21 +306,6 @@ probe_libc() {
 while [ -n "$1" ]; do
 	arg="$1"; shift
 	case "$arg" in
-		-l|--libs)
-			[ -n "$1" ] || {
-				echo "No library given, specify one of:"$(echo "$LIB_SPECS" | sed -ne 's#:.*$##p') >&1
-				exit 1
-			}
-			FINDLIB="$1"; shift
-		;;
-		-b|--bins)
-			[ -n "$1" ] || {
-				echo "No binary given, specify one of:"$(echo "$BIN_SPECS" | sed -ne 's#:.*$##p') >&1
-				exit 1
-			}
-			FINDBIN="$1"; shift
-		;;
-
 		--toolchain)
 			[ -d "$1" ] || {
 				echo "Toolchain directory '$1' does not exist." >&2
@@ -328,9 +330,7 @@ while [ -n "$1" ]; do
 
 		--print-target)
 			if probe_cc; then
-				CC="${CC##*/}"
-				echo "${CC%-*}"
-				exit 0
+				exec "$CC" $CFLAGS -dumpmachine
 			fi
 			echo "No C compiler found in '$TOOLCHAIN'." >&2
 			exit 1
@@ -407,4 +407,4 @@ while [ -n "$1" ]; do
 	esac
 done
 
-exit 0
+exec $0 --help
