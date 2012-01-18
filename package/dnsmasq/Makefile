@@ -35,7 +35,9 @@ define Package/dnsmasq/conffiles
 /etc/dnsmasq.conf
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_CFLAGS += \
+	-ffunction-sections -fdata-sections \
+	$(if $(CONFIG_IPV6),,-DNO_IPV6)
 
 MAKE_FLAGS := \
 	$(TARGET_CONFIGURE_OPTS) \
