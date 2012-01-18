@@ -34,7 +34,7 @@ LIB_SPECS="
 	c:        ld-* lib{anl,c,cidn,crypt,dl,m,nsl,nss_dns,nss_files,resolv,util}
 	rt:       librt-* librt
 	pthread:  libpthread-* libpthread
-	cpp:      libstdc++
+	stdcpp:   libstdc++
 	gcc:      libgcc_s
 	ssp:      libssp
 	gfortran: libgfortran
@@ -142,7 +142,7 @@ test_feature() {
 
 
 find_libs() {
-	local spec="$(echo "$LIB_SPECS" | sed -ne "s#^[[:space:]]*$1:##p")"
+	local spec="$(echo "$LIB_SPECS" | sed -ne "s#^[[:space:]]*$1:##ip")"
 
 	if [ -n "$spec" ] && probe_cpp; then
 		local libdir libdirs
@@ -167,7 +167,7 @@ find_libs() {
 }
 
 find_bins() {
-	local spec="$(echo "$BIN_SPECS" | sed -ne "s#^[[:space:]]*$1:##p")"
+	local spec="$(echo "$BIN_SPECS" | sed -ne "s#^[[:space:]]*$1:##ip")"
 
 	if [ -n "$spec" ] && probe_cpp; then
 		local sysroot="$("$CPP" -print-sysroot)"
@@ -234,6 +234,126 @@ wrap_bins() {
 	fi
 
 	return 1
+}
+
+
+print_config() {
+	local mktarget="$1"
+	local mksubtarget
+
+	local target="$("$CC" $CFLAGS -dumpmachine)"
+	local cpuarch="${target%%-*}"
+	local prefix="${CC##*/}"; prefix="${prefix%-*}-"
+	local config="${0%/scripts/*}/.config"
+
+	# if no target specified, print choice list and exit
+	if [ -z "$mktarget" ]; then
+		# prepare metadata
+		if [ ! -f "${0%/scripts/*}/tmp/.targetinfo" ]; then
+			"${0%/*}/scripts/config/mconf" prepare-tmpinfo
+		fi
+
+		local mktargets=$(
+			sed -ne "
+				/^Target: / { h };
+				/^Target-Arch: $cpuarch\$/ { x; s#^Target: ##p }
+			" "${0%/scripts/*}/tmp/.targetinfo" | sort -u
+		)
+
+		for mktarget in $mktargets; do
+			case "$mktarget" in */*)
+				mktargets=$(echo "$mktargets" | sed -e "/^${mktarget%/*}\$/d")
+			esac
+		done
+
+		if [ -n "$mktargets" ]; then
+			echo "Available targets:"                               >&2
+			echo $mktargets                                         >&2
+		else
+			echo -e "Could not find a suitable OpenWrt target for " >&2
+			echo -e "CPU architecture '$cpuarch' - you need to "    >&2
+			echo -e "define one first!"                             >&2
+		fi
+		return 1
+	fi
+
+	# bail out if there is a .config already
+	if [ -f "${0%/scripts/*}/.config" ]; then
+		echo "There already is a .config file, refusing to overwrite!" >&2
+		return 1
+	fi
+
+	case "$mktarget" in */*)
+		mksubtarget="${mktarget#*/}"
+		mktarget="${mktarget%/*}"
+	;; esac
+
+
+	echo "CONFIG_TARGET_${mktarget}=y" > "$config"
+
+	if [ -n "$mksubtarget" ]; then
+		echo "CONFIG_TARGET_${mktarget}_${mksubtarget}=y" >> "$config"
+	fi
+
+	if test_feature "softfloat"; then
+		echo "CONFIG_SOFT_FLOAT=y" >> "$config"
+	else
+		echo "# CONFIG_SOFT_FLOAT is not set" >> "$config"
+	fi
+
+	if test_feature "ipv6"; then
+		echo "CONFIG_IPV6=y" >> "$config"
+	else
+		echo "# CONFIG_IPV6 is not set" >> "$config"
+	fi
+
+	if test_feature "locale"; then
+		echo "CONFIG_NLS=y" >> "$config"
+	else
+		echo "# CONFIG_NLS is not set" >> "$config"
+	fi
+
+	echo "CONFIG_DEVEL=y" >> "$config"
+	echo "CONFIG_EXTERNAL_TOOLCHAIN=y" >> "$config"
+	echo "CONFIG_TOOLCHAIN_ROOT=\"$TOOLCHAIN\"" >> "$config"
+	echo "CONFIG_TOOLCHAIN_PREFIX=\"$prefix\"" >> "$config"
+	echo "CONFIG_TARGET_NAME=\"$target\"" >> "$config"
+
+	local lib
+	for lib in C RT PTHREAD GCC STDCPP SSP GFORTRAN; do
+		local file
+		local spec=""
+		local llib="$(echo "$lib" | sed -e 's#.*#\L&#')"
+		for file in $(find_libs "$lib"); do
+			spec="${spec:+$spec }$(echo "$file" | sed -e "s#^$TOOLCHAIN#.#")"
+		done
+		if [ -n "$spec" ]; then
+			echo "CONFIG_PACKAGE_lib${llib}=y" >> "$config"
+			echo "CONFIG_LIB${lib}_FILE_SPEC=\"$spec\"" >> "$config"
+		else
+			echo "# CONFIG_PACKAGE_lib${llib} is not set" >> "$config"
+		fi
+	done
+
+	local bin
+	for bin in LDD LDCONFIG; do
+		local file
+		local spec=""
+		local lbin="$(echo "$bin" | sed -e 's#.*#\L&#')"
+		for file in $(find_bins "$bin"); do
+			spec="${spec:+$spec }$(echo "$file" | sed -e "s#^$TOOLCHAIN#.#")"
+		done
+		if [ -n "$spec" ]; then
+			echo "CONFIG_PACKAGE_${lbin}=y" >> "$config"
+			echo "CONFIG_${bin}_FILE_SPEC=\"$spec\"" >> "$config"
+		else
+			echo "# CONFIG_PACKAGE_${lbin} is not set" >> "$config"
+		fi
+	done
+
+	# inflate
+	make -C "${0%/scripts/*}" defconfig
+	return 0
 }
 
 
@@ -366,6 +486,15 @@ while [ -n "$1" ]; do
 			exit $?
 		;;
 
+		--config)
+			if probe_cc; then
+				print_config "$1"
+				exit $?
+			fi
+			echo "No C compiler found in '$TOOLCHAIN'." >&2
+			exit 1
+		;;
+
 		-h|--help)
 			me="$(basename "$0")"
 			echo -e "\nUsage:\n"                                            >&2
@@ -388,6 +517,11 @@ while [ -n "$1" ]; do
 			echo -e "    Create wrapper scripts for C and C++ compiler, "   >&2
 			echo -e "    linker, assembler and other key executables in "   >&2
 			echo -e "    the directory given with --wrap.\n"                >&2
+			echo -e "  $me --toolchain {directory} --config {target}"       >&2
+			echo -e "    Analyze the given toolchain and print a suitable"  >&2
+			echo -e "    .config for the given target. Omit target "        >&2
+			echo -e "    argument to get a list of names."                  >&2
+			echo -e "    suitable to prime .config with.\n"                 >&2
 			echo -e "  $me --help"                                          >&2
 			echo -e "    Display this help text and exit.\n\n"              >&2
 			echo -e "  Most commands also take a --cflags parameter which " >&2
