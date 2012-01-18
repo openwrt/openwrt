@@ -89,9 +89,9 @@ test_softfloat() {
 
 test_uclibc() {
 	local sysroot="$("$CC" $CFLAGS -print-sysroot 2>/dev/null)"
-	if [ -d "$sysroot" ]; then
+	if [ -d "${sysroot:-$TOOLCHAIN}" ]; then
 		local lib
-		for lib in "$sysroot"/{lib,usr/lib,usr/local/lib}/ld-uClibc*.so*; do
+		for lib in "${sysroot:-$TOOLCHAIN}"/{lib,usr/lib,usr/local/lib}/ld-uClibc*.so*; do
 			if [ -f "$lib" ] && [ ! -h "$lib" ]; then
 				return 0
 			fi
@@ -124,7 +124,7 @@ test_feature() {
 	local inc
 	local sysroot="$("$CC" "$@" -muclibc -print-sysroot 2>/dev/null)"
 	for inc in "include" "usr/include" "usr/local/include"; do
-		local conf="$sysroot/$inc/bits/uClibc_config.h"
+		local conf="${sysroot:-$TOOLCHAIN}/$inc/bits/uClibc_config.h"
 		if [ -f "$conf" ]; then
 			case "$feature" in
 				lfs)     grep -q '__UCLIBC_HAS_LFS__ 1'     "$conf"; return $?;;
@@ -174,12 +174,9 @@ find_bins() {
 
 		local bindir bindirs
 		for bindir in $(
-			echo "$sysroot/bin";
-			echo "$sysroot/usr/bin";
-			echo "$sysroot/usr/local/bin";
-			echo "$TOOLCHAIN/bin";
-			echo "$TOOLCHAIN/usr/bin";
-			echo "$TOOLCHAIN/usr/local/bin";
+			echo "${sysroot:-$TOOLCHAIN}/bin";
+			echo "${sysroot:-$TOOLCHAIN}/usr/bin";
+			echo "${sysroot:-$TOOLCHAIN}/usr/local/bin";
  			"$CPP" $CFLAGS -v -x c /dev/null 2>&1 | \
 				sed -ne 's#:# #g; s#^COMPILER_PATH=##p'
 		); do
