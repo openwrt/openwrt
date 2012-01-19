@@ -384,8 +384,9 @@ define KernelPackage/crypto-misc
   ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,3.1)),1)
     FILES += $(LINUX_DIR)/crypto/blowfish.ko
   else
-    FILES += $(LINUX_DIR)/crypto/blowfish_common.ko \
-    FILES += $(LINUX_DIR)/crypto/blowfish_generic.ko
+    FILES += \
+	$(LINUX_DIR)/crypto/blowfish_common.ko \
+	$(LINUX_DIR)/crypto/blowfish_generic.ko
   endif
   $(call AddDepends/crypto)
 endef

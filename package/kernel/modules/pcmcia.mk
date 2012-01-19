@@ -38,7 +38,7 @@ ifneq ($(wildcard $(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.ko),)
   FILES:=$(LINUX_DIR)/drivers/pcmcia/pcmcia_rsrc.ko
   AUTOLOAD:=$(call AutoLoad,26,pcmcia_rsrc)
 else
-  FILES:=$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.ko \
+  FILES:=$(LINUX_DIR)/drivers/pcmcia/rsrc_nonstatic.ko
   AUTOLOAD:=$(call AutoLoad,26,rsrc_nonstatic)
 endif
 endef
