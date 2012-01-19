@@ -83,7 +83,6 @@ start() {
 
 	killall -q hotplug2
 	[ -x /sbin/hotplug2 ] && /sbin/hotplug2 --override --persistent \
-			--set-worker /lib/hotplug2/worker_fork.so \
 			--set-rules-file /etc/hotplug2.rules \
 			--max-children 1 >/dev/null 2>&1 &
 
