@@ -401,7 +401,7 @@ $(eval $(call KernelPackage,crypto-misc))
 
 define KernelPackage/crypto-ocf
   TITLE:=OCF modules
-  DEPENDS:=+@OPENSSL_ENGINE @!TARGET_uml +kmod-crypto-manager @!LINUX_3_2||BROKEN
+  DEPENDS:=+@OPENSSL_ENGINE @!TARGET_uml +kmod-crypto-manager
   KCONFIG:= \
 	CONFIG_OCF_OCF \
 	CONFIG_OCF_CRYPTODEV \
