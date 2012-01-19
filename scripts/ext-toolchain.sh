@@ -520,8 +520,7 @@ while [ -n "$1" ]; do
 			echo -e "  $me --toolchain {directory} --config {target}"       >&2
 			echo -e "    Analyze the given toolchain and print a suitable"  >&2
 			echo -e "    .config for the given target. Omit target "        >&2
-			echo -e "    argument to get a list of names."                  >&2
-			echo -e "    suitable to prime .config with.\n"                 >&2
+			echo -e "    argument to get a list of names.\n"                >&2
 			echo -e "  $me --help"                                          >&2
 			echo -e "    Display this help text and exit.\n\n"              >&2
 			echo -e "  Most commands also take a --cflags parameter which " >&2
