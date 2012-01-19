@@ -592,13 +592,13 @@ c7108_process(void *arg, struct cryptop *crp, int hint)
 			 i < skb_shinfo(skb)->nr_frags &&
 			 sg_num < SCATTERLIST_MAX; i++) {
 		    if (skip < skb_shinfo(skb)->frags[i].size) {
-			//sg[sg_num].page   = skb_shinfo(skb)->frags[i].page;
+			//sg[sg_num].page   = skb_frag_page(&kb_shinfo(skb)->frags[i]);
 			//sg[sg_num].offset = skb_shinfo(skb)->frags[i].page_offset + skip;
 			len = skb_shinfo(skb)->frags[i].size - skip;
 			if (len + sg_len > crd->crd_len)
 			    len = crd->crd_len - sg_len;
 			//sg[sg_num].length = len;
-			sg_set_page(&sg[sg_num], skb_shinfo(skb)->frags[i].page, len, skb_shinfo(skb)->frags[i].page_offset + skip);
+			sg_set_page(&sg[sg_num], skb_frag_page(&skb_shinfo(skb)->frags[i]), len, skb_shinfo(skb)->frags[i].page_offset + skip);
 			sg_len += sg[sg_num].length;
 			sg_num++;
 			skip = 0;

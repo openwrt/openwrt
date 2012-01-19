@@ -208,7 +208,7 @@ pci_map_skb(struct safe_softc *sc,struct safe_operand *buf,struct sk_buff *skb)
 
 	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
 		pci_map_linear(sc, buf,
-				page_address(skb_shinfo(skb)->frags[i].page) +
+				page_address(skb_frag_page(&skb_shinfo(skb)->frags[i])) +
 				                        skb_shinfo(skb)->frags[i].page_offset,
 				skb_shinfo(skb)->frags[i].size);
 	}

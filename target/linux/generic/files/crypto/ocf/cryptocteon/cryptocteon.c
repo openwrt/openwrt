@@ -473,7 +473,7 @@ octo_process(device_t dev, struct cryptop *crp, int hint)
 		for (i = 0; i < skb_shinfo(skb)->nr_frags && sg_num < SCATTERLIST_MAX;
 				i++) {
 			len = skb_shinfo(skb)->frags[i].size;
-			sg_set_page(&sg[sg_num], skb_shinfo(skb)->frags[i].page,
+			sg_set_page(&sg[sg_num], skb_frag_page(&skb_shinfo(skb)->frags[i]),
 					len, skb_shinfo(skb)->frags[i].page_offset);
 			sg_len += len;
 			sg_num++;

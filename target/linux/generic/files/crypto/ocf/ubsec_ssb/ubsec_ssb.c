@@ -297,18 +297,18 @@ dma_map_skb(struct ubsec_softc *sc, struct ubsec_dma_alloc* q_map, struct sk_buf
 
 #ifdef UBSEC_VERBOSE_DEBUG
         DPRINTF("%s - map %d 0x%x %d\n", __FUNCTION__, i + 1, 
-            (unsigned int)page_address(skb_shinfo(skb)->frags[i].page) +
+            (unsigned int)page_address(skb_frag_page(&skb_shinfo(skb)->frags[i])) +
             skb_shinfo(skb)->frags[i].page_offset, skb_shinfo(skb)->frags[i].size);
 #endif
 
         tmp = dma_map_single(sc->sc_dv,
-                             page_address(skb_shinfo(skb)->frags[i].page) +
+                             page_address(skb_frag_page(&skb_shinfo(skb)->frags[i])) +
                                  skb_shinfo(skb)->frags[i].page_offset, 
                              skb_shinfo(skb)->frags[i].size,
                              DMA_BIDIRECTIONAL);
 
         q_map[i + 1].dma_paddr = tmp;
-        q_map[i + 1].dma_vaddr = (void*)(page_address(skb_shinfo(skb)->frags[i].page) +
+        q_map[i + 1].dma_vaddr = (void*)(page_address(skb_frag_page(&skb_shinfo(skb)->frags[i])) +
                                   skb_shinfo(skb)->frags[i].page_offset);
         q_map[i + 1].dma_size = skb_shinfo(skb)->frags[i].size;
 

@@ -359,6 +359,15 @@ static inline int ocf_run_thread(void *arg)
 #include <linux/kthread.h>
 #endif
 
+#include <linux/skbuff.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,2,0)
+static inline struct page *skb_frag_page(const skb_frag_t *frag)
+{
+	return frag->page;
+}
+#endif
+
 #endif /* __KERNEL__ */
 
 /****************************************************************************/

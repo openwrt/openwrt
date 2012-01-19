@@ -241,7 +241,7 @@ pci_map_skb(struct hifn_softc *sc,struct hifn_operand *buf,struct sk_buff *skb)
 	for (i = 0; i < skb_shinfo(skb)->nr_frags; ) {
 		buf->segs[buf->nsegs].ds_len = skb_shinfo(skb)->frags[i].size;
 		buf->segs[buf->nsegs].ds_addr = pci_map_single(sc->sc_pcidev,
-				page_address(skb_shinfo(skb)->frags[i].page) +
+				page_address(skb_frag_page(&skb_shinfo(skb)->frags[i])) +
 					skb_shinfo(skb)->frags[i].page_offset,
 				buf->segs[buf->nsegs].ds_len, PCI_DMA_BIDIRECTIONAL);
 		buf->mapsize += buf->segs[buf->nsegs].ds_len;
