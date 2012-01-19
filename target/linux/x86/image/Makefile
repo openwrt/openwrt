@@ -31,6 +31,8 @@ endif
 
 ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
 
+GRUB_TIMEOUT:=$(call qstrip,$(CONFIG_X86_GRUB_TIMEOUT))
+
 ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 
   BOOTOPTS:=$(call qstrip,$(CONFIG_X86_GRUB_BOOTOPTS))
@@ -64,6 +66,7 @@ ifneq ($(CONFIG_X86_GRUB_IMAGES),)
 		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
 		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
 		-e 's#@CMDLINE@#$(strip $(call Image/cmdline/$(1)) $(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE))#g' \
+		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
 		./menu.lst > $(KDIR)/root.grub/boot/grub/menu.lst
 	PADDING="$(CONFIG_TARGET_IMAGES_PAD)" PATH="$(TARGET_PATH)" ./gen_image_x86.sh \
 		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \

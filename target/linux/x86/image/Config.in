@@ -47,6 +47,13 @@ config X86_GRUB_BOOTOPTS
 	help
 	  If you don't know, just leave it blank.
 
+config X86_GRUB_TIMEOUT
+	string "Seconds to wait before booting the default entry"
+	depends X86_GRUB_IMAGES
+	default "5"
+	help
+	  If you don't know, 5 seconds is a reasonable default.
+
 config X86_VDI_IMAGES
 	bool "Build VirtualBox image files (VDI)"
 	depends X86_GRUB_IMAGES
