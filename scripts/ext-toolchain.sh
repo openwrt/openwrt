@@ -308,9 +308,9 @@ print_config() {
 	fi
 
 	if test_feature "locale"; then
-		echo "CONFIG_NLS=y" >> "$config"
+		echo "CONFIG_BUILD_NLS=y" >> "$config"
 	else
-		echo "# CONFIG_NLS is not set" >> "$config"
+		echo "# CONFIG_BUILD_NLS is not set" >> "$config"
 	fi
 
 	echo "CONFIG_DEVEL=y" >> "$config"
