@@ -18,6 +18,7 @@ platform_check_image() {
 	dir-300-b1 | \
 	dir-600-b1 | \
 	dir-600-b2 | \
+	esr-9753 | \
 	fonera20n | \
 	hw550-3g | \
 	mofi3500-3gn | \
