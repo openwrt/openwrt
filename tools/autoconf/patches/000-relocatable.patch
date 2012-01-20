@@ -137,3 +137,18 @@
    unshift @INC, $pkgdatadir;
  
    # Override SHELL.  On DJGPP SHELL may not be set to a shell
+--- a/bin/autoconf.as
++++ b/bin/autoconf.as
+@@ -85,7 +85,11 @@ exit_missing_arg='
+ # restore font-lock: '
+ 
+ # Variables.
+-: ${AUTOM4TE='@bindir@/@autom4te-name@'}
++if test -n "$STAGING_DIR"; then
++	: ${AUTOM4TE="$STAGING_DIR/../host/bin/@autom4te-name@"}
++else
++	: ${AUTOM4TE='@bindir@/@autom4te-name@'}
++fi
+ autom4te_options=
+ outfile=
+ verbose=false
