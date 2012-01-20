@@ -18,3 +18,66 @@
  export QUILT_DIR QUILT_LIB
  
  if [ -z "$QUILTRC" ]
+--- a/quilt/scripts/edmail.in
++++ b/quilt/scripts/edmail.in
+@@ -29,7 +29,7 @@ BEGIN {
+ }
+ 
+ setlocale(LC_MESSAGES, "");
+-bindtextdomain("quilt", "@LOCALEDIR@");
++bindtextdomain("quilt", $ENV{'STAGING_DIR'} ? $ENV{'STAGING_DIR'} . '/../host/share/locale' : "@LOCALEDIR@");
+ textdomain("quilt");
+ 
+ sub _($) {
+--- a/quilt/scripts/inspect.in
++++ b/quilt/scripts/inspect.in
+@@ -6,7 +6,11 @@
+ #
+ #  See the COPYING and AUTHORS files for more details.
+ 
+-: ${QUILT_DIR=@QUILT_DIR@}
++if test -n "$STAGING_DIR"; then
++	: ${QUILT_DIR="$STAGING_DIR/../host/share/quilt"}
++else
++	: ${QUILT_DIR=@QUILT_DIR@}
++fi
+ 
+ if ! [ -r $QUILT_DIR/scripts/patchfns ]
+ then
+--- a/quilt/scripts/parse-patch.in
++++ b/quilt/scripts/parse-patch.in
+@@ -34,7 +34,7 @@ BEGIN {
+ }
+ 
+ setlocale(LC_MESSAGES, "");
+-bindtextdomain("quilt", "@LOCALEDIR@");
++bindtextdomain("quilt", $ENV{'STAGING_DIR'} ? $ENV{'STAGING_DIR'} . '/../host/share/locale' : "@LOCALEDIR@");
+ textdomain("quilt");
+ 
+ sub _($) {
+--- a/quilt/scripts/patchfns.in
++++ b/quilt/scripts/patchfns.in
+@@ -10,7 +10,11 @@
+ #  See the COPYING and AUTHORS files for more details.
+ 
+ export TEXTDOMAIN=quilt
+-export TEXTDOMAINDIR=@LOCALEDIR@
++if [ -n "$STAGING_DIR" ]; then
++	export TEXTDOMAINDIR="$STAGING_DIR/../host/share/locale"
++else
++	export TEXTDOMAINDIR=@LOCALEDIR@
++fi
+ 
+ : ${LC_CTYPE:=$LANG}
+ : ${LC_MESSAGES:=$LANG}
+--- a/quilt/scripts/remove-trailing-ws.in
++++ b/quilt/scripts/remove-trailing-ws.in
+@@ -31,7 +31,7 @@ BEGIN {
+ }
+ 
+ setlocale(LC_MESSAGES, "");
+-bindtextdomain("quilt", "@LOCALEDIR@");
++bindtextdomain("quilt", $ENV{'STAGING_DIR'} ? $ENV{'STAGING_DIR'} . '/../host/share/locale' : "@LOCALEDIR@");
+ textdomain("quilt");
+ 
+ sub _($) {
