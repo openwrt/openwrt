@@ -43,7 +43,7 @@ define autoreconf
 					$(if $(word 2,$(3)),--no-recursive) \
 					-B $(STAGING_DIR_HOST)/share/aclocal \
 					$(patsubst %,-I %,$(5)) \
-					$(patsubst %,-I %,$(4)) $(4) || true; \
+					$(patsubst %,-I %,$(4)) $(p) || true; \
 			fi; \
 		) \
 	);
