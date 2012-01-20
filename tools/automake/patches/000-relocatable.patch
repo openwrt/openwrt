@@ -1,0 +1,35 @@
+--- a/aclocal.in
++++ b/aclocal.in
+@@ -28,7 +28,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
+ 
+ BEGIN
+ {
+-  my $perllibdir = $ENV{'perllibdir'} || '@datadir@/@PACKAGE@-@APIVERSION@';
++  my $perllibdir = $ENV{'perllibdir'} ||
++	($ENV{'STAGING_DIR'} ? $ENV{'STAGING_DIR'} . '/../host/share/@PACKAGE@-@APIVERSION@' : '@datadir@/@PACKAGE@-@APIVERSION@');
+   unshift @INC, (split '@PATH_SEPARATOR@', $perllibdir);
+ }
+ 
+--- a/automake.in
++++ b/automake.in
+@@ -31,7 +31,8 @@ package Language;
+ 
+ BEGIN
+ {
+-  my $perllibdir = $ENV{'perllibdir'} || '@datadir@/@PACKAGE@-@APIVERSION@';
++  my $perllibdir = $ENV{'perllibdir'} || 
++		($ENV{'STAGING_DIR'} ? $ENV{'STAGING_DIR'} . '/../host/share/@PACKAGE@-@APIVERSION@' : '@datadir@/@PACKAGE@-@APIVERSION@');
+   unshift @INC, (split '@PATH_SEPARATOR@', $perllibdir);
+ 
+   # Override SHELL.  This is required on DJGPP so that system() uses
+--- a/lib/Automake/Config.in
++++ b/lib/Automake/Config.in
+@@ -28,7 +28,7 @@ our @EXPORT = qw ($APIVERSION $PACKAGE $
+ our $APIVERSION = '@APIVERSION@';
+ our $PACKAGE = '@PACKAGE@';
+ our $VERSION = '@VERSION@';
+-our $libdir = '@datadir@/@PACKAGE@-@APIVERSION@';
++our $libdir = $ENV{'STAGING_DIR'} ? $ENV{'STAGING_DIR'} . '/../host/share/@PACKAGE@-@APIVERSION@' : '@datadir@/@PACKAGE@-@APIVERSION@';
+ our $perl_threads = @PERL_THREADS@;
+ 
+ 1;;
