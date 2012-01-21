@@ -1,0 +1,24 @@
+From 699c57a18b40ffbe1763915acdc1a3e4fb539d01 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 13 Jan 2012 17:42:15 +0100
+Subject: [PATCH 29/32] bcma: add new PCI ID
+
+This ID was found on the PCIe wireless card on the board of a Netgear
+WNDR3400 using a bcm4716. The device with this ID is identified by b43
+as "Broadcom 43224 WLAN".
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/host_pci.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+--- a/drivers/bcma/host_pci.c
++++ b/drivers/bcma/host_pci.c
+@@ -275,6 +275,7 @@ static DEFINE_PCI_DEVICE_TABLE(bcma_pci_
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4353) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4357) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0xa8d8) },
+ 	{ 0, },
+ };
+ MODULE_DEVICE_TABLE(pci, bcma_pci_bridge_tbl);

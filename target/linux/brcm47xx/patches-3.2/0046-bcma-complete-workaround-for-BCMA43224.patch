@@ -1,0 +1,52 @@
+From efe89df0326b777563d197b8cf1c25209a31ceb0 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 21 Jan 2012 18:47:42 +0100
+Subject: [PATCH 32/34] bcma: complete workaround for BCMA43224
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/driver_chipcommon_pmu.c        |   15 +++++++++++----
+ include/linux/bcma/bcma_driver_chipcommon.h |    5 +++++
+ 2 files changed, 16 insertions(+), 4 deletions(-)
+
+--- a/drivers/bcma/driver_chipcommon_pmu.c
++++ b/drivers/bcma/driver_chipcommon_pmu.c
+@@ -141,12 +141,19 @@ void bcma_pmu_workarounds(struct bcma_dr
+ 		/* BCM4331 workaround is SPROM-related, we put it in sprom.c */
+ 		break;
+ 	case 43224:
++	case 43421:
++		/* enable 12 mA drive strenth for 43224 and set chipControl register bit 15 */
+ 		if (bus->chipinfo.rev == 0) {
+-			pr_err("Workarounds for 43224 rev 0 not fully "
+-				"implemented\n");
+-			bcma_chipco_chipctl_maskset(cc, 0, ~0, 0x00F000F0);
++			bcma_cc_maskset32(cc, BCMA_CC_CHIPCTL,
++					  BCMA_CCTRL_43224_GPIO_TOGGLE,
++					  BCMA_CCTRL_43224_GPIO_TOGGLE);
++			bcma_chipco_chipctl_maskset(cc, 0,
++					 BCMA_CCTRL_43224A0_12MA_LED_DRIVE,
++					 BCMA_CCTRL_43224A0_12MA_LED_DRIVE);
+ 		} else {
+-			bcma_chipco_chipctl_maskset(cc, 0, ~0, 0xF0);
++			bcma_chipco_chipctl_maskset(cc, 0,
++					BCMA_CCTRL_43224B0_12MA_LED_DRIVE,
++					BCMA_CCTRL_43224B0_12MA_LED_DRIVE);
+ 		}
+ 		break;
+ 	case 43225:
+--- a/include/linux/bcma/bcma_driver_chipcommon.h
++++ b/include/linux/bcma/bcma_driver_chipcommon.h
+@@ -374,6 +374,11 @@
+ #define BCMA_CHIPCTL_4331_BT_SHD0_ON_GPIO4	BIT(16)	/* enable bt_shd0 at gpio4 */
+ #define BCMA_CHIPCTL_4331_BT_SHD1_ON_GPIO5	BIT(17)	/* enable bt_shd1 at gpio5 */
+ 
++/* 43224 chip-specific ChipControl register bits */
++#define BCMA_CCTRL_43224_GPIO_TOGGLE		0x8000 /* gpio[3:0] pins as btcoex or s/w gpio */
++#define BCMA_CCTRL_43224A0_12MA_LED_DRIVE	0x00F000F0 /* 12 mA drive strength */
++#define BCMA_CCTRL_43224B0_12MA_LED_DRIVE	0xF0    /* 12 mA drive strength for later 43224s */
++
+ #define	BCMA_FLASH2			0x1c000000	/* Flash Region 2 (region 1 shadowed here) */
+ #define	BCMA_FLASH2_SZ			0x02000000	/* Size of Flash Region 2 */
+ #define	BCMA_FLASH1			0x1fc00000	/* MIPS Flash Region 1 */

@@ -1,0 +1,111 @@
+From 3cd3138f2ef77e18abc99737c6740f35d61dbbb3 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 15 Jan 2012 23:05:05 +0100
+Subject: [PATCH 26/32] bcma: make some functions __devinit
+
+bcma_core_pci_hostmode_init() has to be in __devinit as it will call a
+function in that section and so all functions calling it also have to
+be in __devinit.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/bcma_private.h          |    4 ++--
+ drivers/bcma/driver_pci.c            |    6 +++---
+ drivers/bcma/driver_pci_host.c       |    2 +-
+ drivers/bcma/host_pci.c              |    4 ++--
+ drivers/bcma/main.c                  |    2 +-
+ include/linux/bcma/bcma_driver_pci.h |    2 +-
+ 6 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/drivers/bcma/bcma_private.h
++++ b/drivers/bcma/bcma_private.h
+@@ -13,7 +13,7 @@
+ struct bcma_bus;
+ 
+ /* main.c */
+-int bcma_bus_register(struct bcma_bus *bus);
++int __devinit bcma_bus_register(struct bcma_bus *bus);
+ void bcma_bus_unregister(struct bcma_bus *bus);
+ int __init bcma_bus_early_register(struct bcma_bus *bus,
+ 				   struct bcma_device *core_cc,
+@@ -55,7 +55,7 @@ extern void __exit bcma_host_pci_exit(vo
+ #endif /* CONFIG_BCMA_HOST_PCI */
+ 
+ #ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
+-void bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc);
++void __devinit bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc);
+ #endif /* CONFIG_BCMA_DRIVER_PCI_HOSTMODE */
+ 
+ #endif
+--- a/drivers/bcma/driver_pci.c
++++ b/drivers/bcma/driver_pci.c
+@@ -174,12 +174,12 @@ static void bcma_pcicore_serdes_workarou
+  * Init.
+  **************************************************/
+ 
+-static void bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
++static void __devinit bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
+ {
+ 	bcma_pcicore_serdes_workaround(pc);
+ }
+ 
+-static bool bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc)
++static bool __devinit bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc)
+ {
+ 	struct bcma_bus *bus = pc->core->bus;
+ 	u16 chipid_top;
+@@ -204,7 +204,7 @@ static bool bcma_core_pci_is_in_hostmode
+ 	return true;
+ }
+ 
+-void bcma_core_pci_init(struct bcma_drv_pci *pc)
++void __devinit bcma_core_pci_init(struct bcma_drv_pci *pc)
+ {
+ 	if (pc->setup_done)
+ 		return;
+--- a/drivers/bcma/driver_pci_host.c
++++ b/drivers/bcma/driver_pci_host.c
+@@ -8,7 +8,7 @@
+ #include "bcma_private.h"
+ #include <linux/bcma/bcma.h>
+ 
+-void bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc)
++void __devinit bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc)
+ {
+ 	pr_err("No support for PCI core in hostmode yet\n");
+ }
+--- a/drivers/bcma/host_pci.c
++++ b/drivers/bcma/host_pci.c
+@@ -154,8 +154,8 @@ const struct bcma_host_ops bcma_host_pci
+ 	.awrite32	= bcma_host_pci_awrite32,
+ };
+ 
+-static int bcma_host_pci_probe(struct pci_dev *dev,
+-			     const struct pci_device_id *id)
++static int __devinit bcma_host_pci_probe(struct pci_dev *dev,
++					 const struct pci_device_id *id)
+ {
+ 	struct bcma_bus *bus;
+ 	int err = -ENOMEM;
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -132,7 +132,7 @@ static void bcma_unregister_cores(struct
+ 	}
+ }
+ 
+-int bcma_bus_register(struct bcma_bus *bus)
++int __devinit bcma_bus_register(struct bcma_bus *bus)
+ {
+ 	int err;
+ 	struct bcma_device *core;
+--- a/include/linux/bcma/bcma_driver_pci.h
++++ b/include/linux/bcma/bcma_driver_pci.h
+@@ -169,7 +169,7 @@ struct bcma_drv_pci {
+ #define pcicore_read32(pc, offset)		bcma_read32((pc)->core, offset)
+ #define pcicore_write32(pc, offset, val)	bcma_write32((pc)->core, offset, val)
+ 
+-extern void bcma_core_pci_init(struct bcma_drv_pci *pc);
++extern void __devinit bcma_core_pci_init(struct bcma_drv_pci *pc);
+ extern int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc,
+ 				 struct bcma_device *core, bool enable);
+ 
