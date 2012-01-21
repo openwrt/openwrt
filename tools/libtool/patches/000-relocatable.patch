@@ -11,16 +11,20 @@
  
 --- a/libtoolize.in
 +++ b/libtoolize.in
-@@ -334,7 +334,7 @@ test "${ECHO+set}" = set || ECHO=${as_ec
+@@ -334,7 +334,11 @@ test "${ECHO+set}" = set || ECHO=${as_ec
  : ${MKDIR="mkdir"}
  : ${MV="mv -f"}
  : ${RM="rm -f"}
 -: ${SED="@SED@"}
-+test "${STAGING_DIR+set}" = set && ${SED="$STAGING_DIR/../host/bin/sed"} || ${SED="@SED@"}
++if test -n "$STAGING_DIR"; then
++	: ${SED="$STAGING_DIR/../host/bin/sed"}
++else
++	: ${SED="@SED@"}
++fi
  : ${SHELL="${CONFIG_SHELL-/bin/sh}"}
  : ${Xsed="$SED -e 1s/^X//"}
  
-@@ -2476,10 +2476,17 @@ func_check_macros ()
+@@ -2476,10 +2480,17 @@ func_check_macros ()
  
    # Locations for important files:
    prefix=@prefix@
