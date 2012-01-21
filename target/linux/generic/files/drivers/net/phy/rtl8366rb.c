@@ -246,8 +246,8 @@ static int rtl8366rb_reset_chip(struct rtl8366_smi *smi)
 	int timeout = 10;
 	u32 data;
 
-	rtl8366_smi_write_reg(smi, RTL8366RB_RESET_CTRL_REG,
-			      RTL8366RB_CHIP_CTRL_RESET_HW);
+	rtl8366_smi_write_reg_noack(smi, RTL8366RB_RESET_CTRL_REG,
+			 	    RTL8366RB_CHIP_CTRL_RESET_HW);
 	do {
 		msleep(1);
 		if (rtl8366_smi_read_reg(smi, RTL8366RB_RESET_CTRL_REG, &data))
