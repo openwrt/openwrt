@@ -1,0 +1,63 @@
+From 1cd3d0de72e42161fe0df355c5429459265aeef0 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 14 Jan 2012 16:11:17 +0100
+Subject: [PATCH 30/32] bcma: add extra sprom check
+
+This check is needed on the BCM43224 device as it says in the
+capabilities it has an sprom but is extra check says it has not.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/sprom.c                        |    8 ++++++++
+ include/linux/bcma/bcma_driver_chipcommon.h |   16 ++++++++++++++++
+ 2 files changed, 24 insertions(+), 0 deletions(-)
+
+--- a/drivers/bcma/sprom.c
++++ b/drivers/bcma/sprom.c
+@@ -210,6 +210,7 @@ int bcma_sprom_get(struct bcma_bus *bus)
+ {
+ 	u16 offset;
+ 	u16 *sprom;
++	u32 sromctrl;
+ 	int err = 0;
+ 
+ 	if (!bus->drv_cc.core)
+@@ -220,6 +221,13 @@ int bcma_sprom_get(struct bcma_bus *bus)
+ 		return -ENOENT;
+ 	}
+ 
++	if (bus->drv_cc.core->id.rev >= 32) {
++		sromctrl = bcma_read32(bus->drv_cc.core, BCMA_CC_SROM_CONTROL);
++		if (!(sromctrl & BCMA_CC_SROM_CONTROL_PRESENT))
++			random_ether_addr(bus->sprom.il0mac);
++			return -ENOENT;
++	}
++
+ 	sprom = kcalloc(SSB_SPROMSIZE_WORDS_R4, sizeof(u16),
+ 			GFP_KERNEL);
+ 	if (!sprom)
+--- a/include/linux/bcma/bcma_driver_chipcommon.h
++++ b/include/linux/bcma/bcma_driver_chipcommon.h
+@@ -239,6 +239,22 @@
+ #define BCMA_CC_FLASH_CFG		0x0128
+ #define  BCMA_CC_FLASH_CFG_DS		0x0010	/* Data size, 0=8bit, 1=16bit */
+ #define BCMA_CC_FLASH_WAITCNT		0x012C
++#define BCMA_CC_SROM_CONTROL		0x0190
++#define  BCMA_CC_SROM_CONTROL_START	0x80000000
++#define  BCMA_CC_SROM_CONTROL_BUSY	0x80000000
++#define  BCMA_CC_SROM_CONTROL_OPCODE	0x60000000
++#define  BCMA_CC_SROM_CONTROL_OP_READ	0x00000000
++#define  BCMA_CC_SROM_CONTROL_OP_WRITE	0x20000000
++#define  BCMA_CC_SROM_CONTROL_OP_WRDIS	0x40000000
++#define  BCMA_CC_SROM_CONTROL_OP_WREN	0x60000000
++#define  BCMA_CC_SROM_CONTROL_OTPSEL	0x00000010
++#define  BCMA_CC_SROM_CONTROL_LOCK	0x00000008
++#define  BCMA_CC_SROM_CONTROL_SIZE_MASK	0x00000006
++#define  BCMA_CC_SROM_CONTROL_SIZE_1K	0x00000000
++#define  BCMA_CC_SROM_CONTROL_SIZE_4K	0x00000002
++#define  BCMA_CC_SROM_CONTROL_SIZE_16K	0x00000004
++#define  BCMA_CC_SROM_CONTROL_SIZE_SHIFT	1
++#define  BCMA_CC_SROM_CONTROL_PRESENT	0x00000001
+ /* 0x1E0 is defined as shared BCMA_CLKCTLST */
+ #define BCMA_CC_HW_WORKAROUND		0x01E4 /* Hardware workaround (rev >= 20) */
+ #define BCMA_CC_UART0_DATA		0x0300

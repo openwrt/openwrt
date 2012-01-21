@@ -1,0 +1,35 @@
+From 01d8709c311858c37e02c96464ea4dc954334210 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 14 Jan 2012 20:03:09 +0100
+Subject: [PATCH 25/31] bcma: export bcma_pcie_read()
+
+This will be needed by the host controller.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/bcma_private.h |    2 ++
+ drivers/bcma/driver_pci.c   |    2 +-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
+
+--- a/drivers/bcma/bcma_private.h
++++ b/drivers/bcma/bcma_private.h
+@@ -46,6 +46,8 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
+ int bcma_sflash_init(struct bcma_drv_cc *cc);
+ #endif /* CONFIG_BCMA_SFLASH */
+ 
++u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address);
++
+ #ifdef CONFIG_BCMA_HOST_PCI
+ /* host_pci.c */
+ extern int __init bcma_host_pci_init(void);
+--- a/drivers/bcma/driver_pci.c
++++ b/drivers/bcma/driver_pci.c
+@@ -17,7 +17,7 @@
+  * R/W ops.
+  **************************************************/
+ 
+-static u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address)
++u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address)
+ {
+ 	pcicore_write32(pc, BCMA_CORE_PCI_PCIEIND_ADDR, address);
+ 	pcicore_read32(pc, BCMA_CORE_PCI_PCIEIND_ADDR);

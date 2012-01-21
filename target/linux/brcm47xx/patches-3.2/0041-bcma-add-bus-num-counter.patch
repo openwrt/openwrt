@@ -1,0 +1,59 @@
+From eecd733c14952b074d7488934a4f3dc83c9c426b Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 14 Jan 2012 16:29:51 +0100
+Subject: [PATCH 28/32] bcma: add bus num counter
+
+If we have two bcma buses on one computer the second will not work
+without this patch. Now each bus gets an own number.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/main.c       |   12 +++++++++++-
+ include/linux/bcma/bcma.h |    1 +
+ 2 files changed, 12 insertions(+), 1 deletions(-)
+
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -13,6 +13,12 @@
+ MODULE_DESCRIPTION("Broadcom's specific AMBA driver");
+ MODULE_LICENSE("GPL");
+ 
++/* contains the number the next bus should get. */
++static unsigned int bcma_bus_next_num = 0;
++
++/* bcma_buses_mutex locks the bcma_bus_next_num */
++static DEFINE_MUTEX(bcma_buses_mutex);
++
+ static int bcma_bus_match(struct device *dev, struct device_driver *drv);
+ static int bcma_device_probe(struct device *dev);
+ static int bcma_device_remove(struct device *dev);
+@@ -93,7 +99,7 @@ static int bcma_register_cores(struct bc
+ 
+ 		core->dev.release = bcma_release_core_dev;
+ 		core->dev.bus = &bcma_bus_type;
+-		dev_set_name(&core->dev, "bcma%d:%d", 0/*bus->num*/, dev_id);
++		dev_set_name(&core->dev, "bcma%d:%d", bus->num, dev_id);
+ 
+ 		switch (bus->hosttype) {
+ 		case BCMA_HOSTTYPE_PCI:
+@@ -137,6 +143,10 @@ int __devinit bcma_bus_register(struct b
+ 	int err;
+ 	struct bcma_device *core;
+ 
++	mutex_lock(&bcma_buses_mutex);
++	bus->num = bcma_bus_next_num++;
++	mutex_unlock(&bcma_buses_mutex);
++
+ 	/* Scan for devices (cores) */
+ 	err = bcma_bus_scan(bus);
+ 	if (err) {
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -197,6 +197,7 @@ struct bcma_bus {
+ 	struct list_head cores;
+ 	u8 nr_cores;
+ 	u8 init_done:1;
++	u8 num;
+ 
+ 	struct bcma_drv_cc drv_cc;
+ 	struct bcma_drv_pci drv_pci;

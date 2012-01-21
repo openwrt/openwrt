@@ -1,0 +1,2210 @@
+--- a/Documentation/feature-removal-schedule.txt
++++ b/Documentation/feature-removal-schedule.txt
+@@ -551,3 +551,15 @@ When:	3.5
+ Why:	The iwlagn module has been renamed iwlwifi.  The alias will be around
+ 	for backward compatibility for several cycles and then dropped.
+ Who:	Don Fry <donald.h.fry@intel.com>
++
++----------------------------
++
++What:	pci_scan_bus_parented()
++When:	3.5
++Why:	The pci_scan_bus_parented() interface creates a new root bus.  The
++	bus is created with default resources (ioport_resource and
++	iomem_resource) that are always wrong, so we rely on arch code to
++	correct them later.  Callers of pci_scan_bus_parented() should
++	convert to using pci_scan_root_bus() so they can supply a list of
++	bus resources when the bus is created.
++Who:	Bjorn Helgaas <bhelgaas@google.com>
+--- a/arch/alpha/kernel/pci.c
++++ b/arch/alpha/kernel/pci.c
+@@ -281,27 +281,9 @@ pcibios_fixup_device_resources(struct pc
+ void __devinit
+ pcibios_fixup_bus(struct pci_bus *bus)
+ {
+-	/* Propagate hose info into the subordinate devices.  */
+-
+-	struct pci_controller *hose = bus->sysdata;
+ 	struct pci_dev *dev = bus->self;
+ 
+-	if (!dev) {
+-		/* Root bus. */
+-		u32 pci_mem_end;
+-		u32 sg_base = hose->sg_pci ? hose->sg_pci->dma_base : ~0;
+-		unsigned long end;
+-
+-		bus->resource[0] = hose->io_space;
+-		bus->resource[1] = hose->mem_space;
+-
+-		/* Adjust hose mem_space limit to prevent PCI allocations
+-		   in the iommu windows. */
+-		pci_mem_end = min((u32)__direct_map_base, sg_base) - 1;
+-		end = hose->mem_space->start + pci_mem_end;
+-		if (hose->mem_space->end > end)
+-			hose->mem_space->end = end;
+- 	} else if (pci_probe_only &&
++	if (pci_probe_only && dev &&
+  		   (dev->class >> 8) == PCI_CLASS_BRIDGE_PCI) {
+  		pci_read_bridge_bases(bus);
+  		pcibios_fixup_device_resources(dev, bus);
+@@ -414,13 +396,31 @@ void __init
+ common_init_pci(void)
+ {
+ 	struct pci_controller *hose;
++	struct list_head resources;
+ 	struct pci_bus *bus;
+ 	int next_busno;
+ 	int need_domain_info = 0;
++	u32 pci_mem_end;
++	u32 sg_base;
++	unsigned long end;
+ 
+ 	/* Scan all of the recorded PCI controllers.  */
+ 	for (next_busno = 0, hose = hose_head; hose; hose = hose->next) {
+-		bus = pci_scan_bus(next_busno, alpha_mv.pci_ops, hose);
++		sg_base = hose->sg_pci ? hose->sg_pci->dma_base : ~0;
++
++		/* Adjust hose mem_space limit to prevent PCI allocations
++		   in the iommu windows. */
++		pci_mem_end = min((u32)__direct_map_base, sg_base) - 1;
++		end = hose->mem_space->start + pci_mem_end;
++		if (hose->mem_space->end > end)
++			hose->mem_space->end = end;
++
++		INIT_LIST_HEAD(&resources);
++		pci_add_resource(&resources, hose->io_space);
++		pci_add_resource(&resources, hose->mem_space);
++
++		bus = pci_scan_root_bus(NULL, next_busno, alpha_mv.pci_ops,
++					hose, &resources);
+ 		hose->bus = bus;
+ 		hose->need_domain_info = need_domain_info;
+ 		next_busno = bus->subordinate + 1;
+--- a/arch/arm/common/it8152.c
++++ b/arch/arm/common/it8152.c
+@@ -299,8 +299,8 @@ int __init it8152_pci_setup(int nr, stru
+ 		goto err1;
+ 	}
+ 
+-	sys->resource[0] = &it8152_io;
+-	sys->resource[1] = &it8152_mem;
++	pci_add_resource(&sys->resources, &it8152_io);
++	pci_add_resource(&sys->resources, &it8152_mem);
+ 
+ 	if (platform_notify || platform_notify_remove) {
+ 		printk(KERN_ERR "PCI: Can't use platform_notify\n");
+@@ -352,7 +352,7 @@ void pcibios_set_master(struct pci_dev *
+ 
+ struct pci_bus * __init it8152_pci_scan_bus(int nr, struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(nr, &it8152_ops, sys);
++	return pci_scan_root_bus(NULL, nr, &it8152_ops, sys, &sys->resources);
+ }
+ 
+ EXPORT_SYMBOL(dma_set_coherent_mask);
+--- a/arch/arm/common/via82c505.c
++++ b/arch/arm/common/via82c505.c
+@@ -86,7 +86,8 @@ int __init via82c505_setup(int nr, struc
+ struct pci_bus * __init via82c505_scan_bus(int nr, struct pci_sys_data *sysdata)
+ {
+ 	if (nr == 0)
+-		return pci_scan_bus(0, &via82c505_ops, sysdata);
++		return pci_scan_root_bus(NULL, 0, &via82c505_ops, sysdata,
++					 &sysdata->resources);
+ 
+ 	return NULL;
+ }
+--- a/arch/arm/include/asm/mach/pci.h
++++ b/arch/arm/include/asm/mach/pci.h
+@@ -40,7 +40,7 @@ struct pci_sys_data {
+ 	u64		mem_offset;	/* bus->cpu memory mapping offset	*/
+ 	unsigned long	io_offset;	/* bus->cpu IO mapping offset		*/
+ 	struct pci_bus	*bus;		/* PCI bus				*/
+-	struct resource *resource[3];	/* Primary PCI bus resources		*/
++	struct list_head resources;	/* root bus resources (apertures)       */
+ 					/* Bridge swizzling			*/
+ 	u8		(*swizzle)(struct pci_dev *, u8 *);
+ 					/* IRQ mapping				*/
+--- a/arch/arm/kernel/bios32.c
++++ b/arch/arm/kernel/bios32.c
+@@ -316,21 +316,6 @@ pdev_fixup_device_resources(struct pci_s
+ 	}
+ }
+ 
+-static void __devinit
+-pbus_assign_bus_resources(struct pci_bus *bus, struct pci_sys_data *root)
+-{
+-	struct pci_dev *dev = bus->self;
+-	int i;
+-
+-	if (!dev) {
+-		/*
+-		 * Assign root bus resources.
+-		 */
+-		for (i = 0; i < 3; i++)
+-			bus->resource[i] = root->resource[i];
+-	}
+-}
+-
+ /*
+  * pcibios_fixup_bus - Called after each bus is probed,
+  * but before its children are examined.
+@@ -341,8 +326,6 @@ void pcibios_fixup_bus(struct pci_bus *b
+ 	struct pci_dev *dev;
+ 	u16 features = PCI_COMMAND_SERR | PCI_COMMAND_PARITY | PCI_COMMAND_FAST_BACK;
+ 
+-	pbus_assign_bus_resources(bus, root);
+-
+ 	/*
+ 	 * Walk the devices on this bus, working out what we can
+ 	 * and can't support.
+@@ -508,12 +491,18 @@ static void __init pcibios_init_hw(struc
+ 		sys->busnr   = busnr;
+ 		sys->swizzle = hw->swizzle;
+ 		sys->map_irq = hw->map_irq;
+-		sys->resource[0] = &ioport_resource;
+-		sys->resource[1] = &iomem_resource;
++		INIT_LIST_HEAD(&sys->resources);
+ 
+ 		ret = hw->setup(nr, sys);
+ 
+ 		if (ret > 0) {
++			if (list_empty(&sys->resources)) {
++				pci_add_resource(&sys->resources,
++						 &ioport_resource);
++				pci_add_resource(&sys->resources,
++						 &iomem_resource);
++			}
++
+ 			sys->bus = hw->scan(nr, sys);
+ 
+ 			if (!sys->bus)
+--- a/arch/arm/mach-cns3xxx/pcie.c
++++ b/arch/arm/mach-cns3xxx/pcie.c
+@@ -151,13 +151,12 @@ static int cns3xxx_pci_setup(int nr, str
+ 	struct cns3xxx_pcie *cnspci = sysdata_to_cnspci(sys);
+ 	struct resource *res_io = &cnspci->res_io;
+ 	struct resource *res_mem = &cnspci->res_mem;
+-	struct resource **sysres = sys->resource;
+ 
+ 	BUG_ON(request_resource(&iomem_resource, res_io) ||
+ 	       request_resource(&iomem_resource, res_mem));
+ 
+-	sysres[0] = res_io;
+-	sysres[1] = res_mem;
++	pci_add_resource(&sys->resources, res_io);
++	pci_add_resource(&sys->resources, res_mem);
+ 
+ 	return 1;
+ }
+@@ -169,7 +168,8 @@ static struct pci_ops cns3xxx_pcie_ops =
+ 
+ static struct pci_bus *cns3xxx_pci_scan_bus(int nr, struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(sys->busnr, &cns3xxx_pcie_ops, sys);
++	return pci_scan_root_bus(NULL, sys->busnr, &cns3xxx_pcie_ops, sys,
++				 &sys->resources);
+ }
+ 
+ static int cns3xxx_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+--- a/arch/arm/mach-dove/pcie.c
++++ b/arch/arm/mach-dove/pcie.c
+@@ -69,7 +69,7 @@ static int __init dove_pcie_setup(int nr
+ 	pp->res[0].flags = IORESOURCE_IO;
+ 	if (request_resource(&ioport_resource, &pp->res[0]))
+ 		panic("Request PCIe IO resource failed\n");
+-	sys->resource[0] = &pp->res[0];
++	pci_add_resource(&sys->resources, &pp->res[0]);
+ 
+ 	/*
+ 	 * IORESOURCE_MEM
+@@ -88,9 +88,7 @@ static int __init dove_pcie_setup(int nr
+ 	pp->res[1].flags = IORESOURCE_MEM;
+ 	if (request_resource(&iomem_resource, &pp->res[1]))
+ 		panic("Request PCIe Memory resource failed\n");
+-	sys->resource[1] = &pp->res[1];
+-
+-	sys->resource[2] = NULL;
++	pci_add_resource(&sys->resources, &pp->res[1]);
+ 
+ 	return 1;
+ }
+@@ -184,7 +182,8 @@ dove_pcie_scan_bus(int nr, struct pci_sy
+ 	struct pci_bus *bus;
+ 
+ 	if (nr < num_pcie_ports) {
+-		bus = pci_scan_bus(sys->busnr, &pcie_ops, sys);
++		bus = pci_scan_root_bus(NULL, sys->busnr, &pcie_ops, sys,
++					&sys->resources);
+ 	} else {
+ 		bus = NULL;
+ 		BUG();
+--- a/arch/arm/mach-footbridge/dc21285.c
++++ b/arch/arm/mach-footbridge/dc21285.c
+@@ -275,9 +275,9 @@ int __init dc21285_setup(int nr, struct
+ 	allocate_resource(&iomem_resource, &res[0], 0x40000000,
+ 			  0x80000000, 0xffffffff, 0x40000000, NULL, NULL);
+ 
+-	sys->resource[0] = &ioport_resource;
+-	sys->resource[1] = &res[0];
+-	sys->resource[2] = &res[1];
++	pci_add_resource(&sys->resources, &ioport_resource);
++	pci_add_resource(&sys->resources, &res[0]);
++	pci_add_resource(&sys->resources, &res[1]);
+ 	sys->mem_offset  = DC21285_PCI_MEM;
+ 
+ 	return 1;
+@@ -285,7 +285,7 @@ int __init dc21285_setup(int nr, struct
+ 
+ struct pci_bus * __init dc21285_scan_bus(int nr, struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(0, &dc21285_ops, sys);
++	return pci_scan_root_bus(NULL, 0, &dc21285_ops, sys, &sys->resources);
+ }
+ 
+ #define dc21285_request_irq(_a, _b, _c, _d, _e) \
+--- a/arch/arm/mach-integrator/pci_v3.c
++++ b/arch/arm/mach-integrator/pci_v3.c
+@@ -359,7 +359,7 @@ static struct resource pre_mem = {
+ 	.flags	= IORESOURCE_MEM | IORESOURCE_PREFETCH,
+ };
+ 
+-static int __init pci_v3_setup_resources(struct resource **resource)
++static int __init pci_v3_setup_resources(struct pci_sys_data *sys)
+ {
+ 	if (request_resource(&iomem_resource, &non_mem)) {
+ 		printk(KERN_ERR "PCI: unable to allocate non-prefetchable "
+@@ -374,13 +374,13 @@ static int __init pci_v3_setup_resources
+ 	}
+ 
+ 	/*
+-	 * bus->resource[0] is the IO resource for this bus
+-	 * bus->resource[1] is the mem resource for this bus
+-	 * bus->resource[2] is the prefetch mem resource for this bus
++	 * the IO resource for this bus
++	 * the mem resource for this bus
++	 * the prefetch mem resource for this bus
+ 	 */
+-	resource[0] = &ioport_resource;
+-	resource[1] = &non_mem;
+-	resource[2] = &pre_mem;
++	pci_add_resource(&sys->resources, &ioport_resource);
++	pci_add_resource(&sys->resources, &non_mem);
++	pci_add_resource(&sys->resources, &pre_mem);
+ 
+ 	return 1;
+ }
+@@ -481,7 +481,7 @@ int __init pci_v3_setup(int nr, struct p
+ 
+ 	if (nr == 0) {
+ 		sys->mem_offset = PHYS_PCI_MEM_BASE;
+-		ret = pci_v3_setup_resources(sys->resource);
++		ret = pci_v3_setup_resources(sys);
+ 	}
+ 
+ 	return ret;
+@@ -489,7 +489,8 @@ int __init pci_v3_setup(int nr, struct p
+ 
+ struct pci_bus * __init pci_v3_scan_bus(int nr, struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(sys->busnr, &pci_v3_ops, sys);
++	return pci_scan_root_bus(NULL, sys->busnr, &pci_v3_ops, sys,
++				 &sys->resources);
+ }
+ 
+ /*
+--- a/arch/arm/mach-iop13xx/pci.c
++++ b/arch/arm/mach-iop13xx/pci.c
+@@ -537,14 +537,14 @@ struct pci_bus *iop13xx_scan_bus(int nr,
+ 			while(time_before(jiffies, atux_trhfa_timeout))
+ 				udelay(100);
+ 
+-		bus = pci_bus_atux = pci_scan_bus(sys->busnr,
+-						  &iop13xx_atux_ops,
+-						  sys);
++		bus = pci_bus_atux = pci_scan_root_bus(NULL, sys->busnr,
++						       &iop13xx_atux_ops,
++						       sys, &sys->resources);
+ 		break;
+ 	case IOP13XX_INIT_ATU_ATUE:
+-		bus = pci_bus_atue = pci_scan_bus(sys->busnr,
+-						  &iop13xx_atue_ops,
+-						  sys);
++		bus = pci_bus_atue = pci_scan_root_bus(NULL, sys->busnr,
++						       &iop13xx_atue_ops,
++						       sys, &sys->resources);
+ 		break;
+ 	}
+ 
+@@ -1084,9 +1084,8 @@ int iop13xx_pci_setup(int nr, struct pci
+ 	request_resource(&ioport_resource, &res[0]);
+ 	request_resource(&iomem_resource, &res[1]);
+ 
+-	sys->resource[0] = &res[0];
+-	sys->resource[1] = &res[1];
+-	sys->resource[2] = NULL;
++	pci_add_resource(&sys->resources, &res[0]);
++	pci_add_resource(&sys->resources, &res[1]);
+ 
+ 	return 1;
+ }
+--- a/arch/arm/mach-ixp2000/enp2611.c
++++ b/arch/arm/mach-ixp2000/enp2611.c
+@@ -145,7 +145,8 @@ static struct pci_ops enp2611_pci_ops =
+ static struct pci_bus * __init enp2611_pci_scan_bus(int nr,
+ 						struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(sys->busnr, &enp2611_pci_ops, sys);
++	return pci_scan_root_bus(NULL, sys->busnr, &enp2611_pci_ops, sys,
++				 &sys->resources);
+ }
+ 
+ static int __init enp2611_pci_map_irq(const struct pci_dev *dev, u8 slot,
+--- a/arch/arm/mach-ixp2000/pci.c
++++ b/arch/arm/mach-ixp2000/pci.c
+@@ -132,7 +132,8 @@ static struct pci_ops ixp2000_pci_ops =
+ 
+ struct pci_bus *ixp2000_pci_scan_bus(int nr, struct pci_sys_data *sysdata)
+ {
+-	return pci_scan_bus(sysdata->busnr, &ixp2000_pci_ops, sysdata);
++	return pci_scan_root_bus(NULL, sysdata->busnr, &ixp2000_pci_ops,
++				 sysdata, &sysdata->resources);
+ }
+ 
+ 
+@@ -242,9 +243,8 @@ int ixp2000_pci_setup(int nr, struct pci
+ 	if (nr >= 1)
+ 		return 0;
+ 
+-	sys->resource[0] = &ixp2000_pci_io_space;
+-	sys->resource[1] = &ixp2000_pci_mem_space;
+-	sys->resource[2] = NULL;
++	pci_add_resource(&sys->resources, &ixp2000_pci_io_space);
++	pci_add_resource(&sys->resources, &ixp2000_pci_mem_space);
+ 
+ 	return 1;
+ }
+--- a/arch/arm/mach-ixp23xx/pci.c
++++ b/arch/arm/mach-ixp23xx/pci.c
+@@ -143,7 +143,8 @@ struct pci_ops ixp23xx_pci_ops = {
+ 
+ struct pci_bus *ixp23xx_pci_scan_bus(int nr, struct pci_sys_data *sysdata)
+ {
+-	return pci_scan_bus(sysdata->busnr, &ixp23xx_pci_ops, sysdata);
++	return pci_scan_root_bus(NULL, sysdata->busnr, &ixp23xx_pci_ops,
++				 sysdata, &sysdata->resources);
+ }
+ 
+ int ixp23xx_pci_abort_handler(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
+@@ -280,9 +281,8 @@ int ixp23xx_pci_setup(int nr, struct pci
+ 	if (nr >= 1)
+ 		return 0;
+ 
+-	sys->resource[0] = &ixp23xx_pci_io_space;
+-	sys->resource[1] = &ixp23xx_pci_mem_space;
+-	sys->resource[2] = NULL;
++	pci_add_resource(&sys->resources, &ixp23xx_pci_io_space);
++	pci_add_resource(&sys->resources, &ixp23xx_pci_mem_space);
+ 
+ 	return 1;
+ }
+--- a/arch/arm/mach-ixp4xx/common-pci.c
++++ b/arch/arm/mach-ixp4xx/common-pci.c
+@@ -472,9 +472,8 @@ int ixp4xx_setup(int nr, struct pci_sys_
+ 	request_resource(&ioport_resource, &res[0]);
+ 	request_resource(&iomem_resource, &res[1]);
+ 
+-	sys->resource[0] = &res[0];
+-	sys->resource[1] = &res[1];
+-	sys->resource[2] = NULL;
++	pci_add_resource(&sys->resources, &res[0]);
++	pci_add_resource(&sys->resources, &res[1]);
+ 
+ 	platform_notify = ixp4xx_pci_platform_notify;
+ 	platform_notify_remove = ixp4xx_pci_platform_notify_remove;
+@@ -484,7 +483,8 @@ int ixp4xx_setup(int nr, struct pci_sys_
+ 
+ struct pci_bus * __devinit ixp4xx_scan_bus(int nr, struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(sys->busnr, &ixp4xx_ops, sys);
++	return pci_scan_root_bus(NULL, sys->busnr, &ixp4xx_ops, sys,
++				 &sys->resources);
+ }
+ 
+ int dma_set_coherent_mask(struct device *dev, u64 mask)
+--- a/arch/arm/mach-kirkwood/pcie.c
++++ b/arch/arm/mach-kirkwood/pcie.c
+@@ -198,9 +198,8 @@ static int __init kirkwood_pcie_setup(in
+ 	if (request_resource(&iomem_resource, &pp->res[1]))
+ 		panic("Request PCIe%d Memory resource failed\n", index);
+ 
+-	sys->resource[0] = &pp->res[0];
+-	sys->resource[1] = &pp->res[1];
+-	sys->resource[2] = NULL;
++	pci_add_resource(&sys->resources, &pp->res[0]);
++	pci_add_resource(&sys->resources, &pp->res[1]);
+ 	sys->io_offset = 0;
+ 
+ 	/*
+@@ -236,7 +235,8 @@ kirkwood_pcie_scan_bus(int nr, struct pc
+ 	struct pci_bus *bus;
+ 
+ 	if (nr < num_pcie_ports) {
+-		bus = pci_scan_bus(sys->busnr, &pcie_ops, sys);
++		bus = pci_scan_root_bus(NULL, sys->busnr, &pcie_ops, sys,
++					&sys->resources);
+ 	} else {
+ 		bus = NULL;
+ 		BUG();
+--- a/arch/arm/mach-ks8695/pci.c
++++ b/arch/arm/mach-ks8695/pci.c
+@@ -143,7 +143,8 @@ static struct pci_ops ks8695_pci_ops = {
+ 
+ static struct pci_bus* __init ks8695_pci_scan_bus(int nr, struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(sys->busnr, &ks8695_pci_ops, sys);
++	return pci_scan_root_bus(NULL, sys->busnr, &ks8695_pci_ops, sys,
++				 &sys->resources);
+ }
+ 
+ static struct resource pci_mem = {
+@@ -168,9 +169,8 @@ static int __init ks8695_pci_setup(int n
+ 	request_resource(&iomem_resource, &pci_mem);
+ 	request_resource(&ioport_resource, &pci_io);
+ 
+-	sys->resource[0] = &pci_io;
+-	sys->resource[1] = &pci_mem;
+-	sys->resource[2] = NULL;
++	pci_add_resource(&sys->resources, &pci_io);
++	pci_add_resource(&sys->resources, &pci_mem);
+ 
+ 	/* Assign and enable processor bridge */
+ 	ks8695_local_writeconfig(PCI_BASE_ADDRESS_0, KS8695_PCIMEM_PA);
+--- a/arch/arm/mach-mv78xx0/pcie.c
++++ b/arch/arm/mach-mv78xx0/pcie.c
+@@ -155,9 +155,8 @@ static int __init mv78xx0_pcie_setup(int
+ 	orion_pcie_set_local_bus_nr(pp->base, sys->busnr);
+ 	orion_pcie_setup(pp->base, &mv78xx0_mbus_dram_info);
+ 
+-	sys->resource[0] = &pp->res[0];
+-	sys->resource[1] = &pp->res[1];
+-	sys->resource[2] = NULL;
++	pci_add_resource(&sys->resources, &pp->res[0]);
++	pci_add_resource(&sys->resources, &pp->res[1]);
+ 
+ 	return 1;
+ }
+@@ -251,7 +250,8 @@ mv78xx0_pcie_scan_bus(int nr, struct pci
+ 	struct pci_bus *bus;
+ 
+ 	if (nr < num_pcie_ports) {
+-		bus = pci_scan_bus(sys->busnr, &pcie_ops, sys);
++		bus = pci_scan_root_bus(NULL, sys->busnr, &pcie_ops, sys,
++					&sys->resources);
+ 	} else {
+ 		bus = NULL;
+ 		BUG();
+--- a/arch/arm/mach-orion5x/pci.c
++++ b/arch/arm/mach-orion5x/pci.c
+@@ -176,7 +176,7 @@ static int __init pcie_setup(struct pci_
+ 	res[0].end = res[0].start + ORION5X_PCIE_IO_SIZE - 1;
+ 	if (request_resource(&ioport_resource, &res[0]))
+ 		panic("Request PCIe IO resource failed\n");
+-	sys->resource[0] = &res[0];
++	pci_add_resource(&sys->resources, &res[0]);
+ 
+ 	/*
+ 	 * IORESOURCE_MEM
+@@ -187,9 +187,8 @@ static int __init pcie_setup(struct pci_
+ 	res[1].end = res[1].start + ORION5X_PCIE_MEM_SIZE - 1;
+ 	if (request_resource(&iomem_resource, &res[1]))
+ 		panic("Request PCIe Memory resource failed\n");
+-	sys->resource[1] = &res[1];
++	pci_add_resource(&sys->resources, &res[1]);
+ 
+-	sys->resource[2] = NULL;
+ 	sys->io_offset = 0;
+ 
+ 	return 1;
+@@ -505,7 +504,7 @@ static int __init pci_setup(struct pci_s
+ 	res[0].end = res[0].start + ORION5X_PCI_IO_SIZE - 1;
+ 	if (request_resource(&ioport_resource, &res[0]))
+ 		panic("Request PCI IO resource failed\n");
+-	sys->resource[0] = &res[0];
++	pci_add_resource(&sys->resources, &res[0]);
+ 
+ 	/*
+ 	 * IORESOURCE_MEM
+@@ -516,9 +515,8 @@ static int __init pci_setup(struct pci_s
+ 	res[1].end = res[1].start + ORION5X_PCI_MEM_SIZE - 1;
+ 	if (request_resource(&iomem_resource, &res[1]))
+ 		panic("Request PCI Memory resource failed\n");
+-	sys->resource[1] = &res[1];
++	pci_add_resource(&sys->resources, &res[1]);
+ 
+-	sys->resource[2] = NULL;
+ 	sys->io_offset = 0;
+ 
+ 	return 1;
+@@ -579,9 +577,11 @@ struct pci_bus __init *orion5x_pci_sys_s
+ 	struct pci_bus *bus;
+ 
+ 	if (nr == 0) {
+-		bus = pci_scan_bus(sys->busnr, &pcie_ops, sys);
++		bus = pci_scan_root_bus(NULL, sys->busnr, &pcie_ops, sys,
++					&sys->resources);
+ 	} else if (nr == 1 && !orion5x_pci_disabled) {
+-		bus = pci_scan_bus(sys->busnr, &pci_ops, sys);
++		bus = pci_scan_root_bus(NULL, sys->busnr, &pci_ops, sys,
++					&sys->resources);
+ 	} else {
+ 		bus = NULL;
+ 		BUG();
+--- a/arch/arm/mach-sa1100/pci-nanoengine.c
++++ b/arch/arm/mach-sa1100/pci-nanoengine.c
+@@ -131,7 +131,8 @@ static int __init pci_nanoengine_map_irq
+ 
+ struct pci_bus * __init pci_nanoengine_scan_bus(int nr, struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(sys->busnr, &pci_nano_ops, sys);
++	return pci_scan_root_bus(NULL, sys->busnr, &pci_nano_ops, sys,
++				 &sys->resources);
+ }
+ 
+ static struct resource pci_io_ports = {
+@@ -226,7 +227,7 @@ static struct resource pci_prefetchable_
+ 	.flags	= IORESOURCE_MEM  | IORESOURCE_PREFETCH,
+ };
+ 
+-static int __init pci_nanoengine_setup_resources(struct resource **resource)
++static int __init pci_nanoengine_setup_resources(struct pci_sys_data *sys)
+ {
+ 	if (request_resource(&ioport_resource, &pci_io_ports)) {
+ 		printk(KERN_ERR "PCI: unable to allocate io port region\n");
+@@ -243,9 +244,9 @@ static int __init pci_nanoengine_setup_r
+ 		printk(KERN_ERR "PCI: unable to allocate prefetchable\n");
+ 		return -EBUSY;
+ 	}
+-	resource[0] = &pci_io_ports;
+-	resource[1] = &pci_non_prefetchable_memory;
+-	resource[2] = &pci_prefetchable_memory;
++	pci_add_resource(&sys->resources, &pci_io_ports);
++	pci_add_resource(&sys->resources, &pci_non_prefetchable_memory);
++	pci_add_resource(&sys->resources, &pci_prefetchable_memory);
+ 
+ 	return 1;
+ }
+@@ -260,7 +261,7 @@ int __init pci_nanoengine_setup(int nr,
+ 	if (nr == 0) {
+ 		sys->mem_offset = NANO_PCI_MEM_RW_PHYS;
+ 		sys->io_offset = 0x400;
+-		ret = pci_nanoengine_setup_resources(sys->resource);
++		ret = pci_nanoengine_setup_resources(sys);
+ 		/* Enable alternate memory bus master mode, see
+ 		 * "Intel StrongARM SA1110 Developer's Manual",
+ 		 * section 10.8, "Alternate Memory Bus Master Mode". */
+--- a/arch/arm/mach-tegra/pcie.c
++++ b/arch/arm/mach-tegra/pcie.c
+@@ -409,7 +409,7 @@ static int tegra_pcie_setup(int nr, stru
+ 	pp->res[0].flags = IORESOURCE_IO;
+ 	if (request_resource(&ioport_resource, &pp->res[0]))
+ 		panic("Request PCIe IO resource failed\n");
+-	sys->resource[0] = &pp->res[0];
++	pci_add_resource(&sys->resources, &pp->res[0]);
+ 
+ 	/*
+ 	 * IORESOURCE_MEM
+@@ -428,7 +428,7 @@ static int tegra_pcie_setup(int nr, stru
+ 	pp->res[1].flags = IORESOURCE_MEM;
+ 	if (request_resource(&iomem_resource, &pp->res[1]))
+ 		panic("Request PCIe Memory resource failed\n");
+-	sys->resource[1] = &pp->res[1];
++	pci_add_resource(&sys->resources, &pp->res[1]);
+ 
+ 	/*
+ 	 * IORESOURCE_MEM | IORESOURCE_PREFETCH
+@@ -447,7 +447,7 @@ static int tegra_pcie_setup(int nr, stru
+ 	pp->res[2].flags = IORESOURCE_MEM | IORESOURCE_PREFETCH;
+ 	if (request_resource(&iomem_resource, &pp->res[2]))
+ 		panic("Request PCIe Prefetch Memory resource failed\n");
+-	sys->resource[2] = &pp->res[2];
++	pci_add_resource(&sys->resources, &pp->res[2]);
+ 
+ 	return 1;
+ }
+@@ -468,7 +468,8 @@ static struct pci_bus __init *tegra_pcie
+ 	pp = tegra_pcie.port + nr;
+ 	pp->root_bus_nr = sys->busnr;
+ 
+-	return pci_scan_bus(sys->busnr, &tegra_pcie_ops, sys);
++	return pci_scan_root_bus(NULL, sys->busnr, &tegra_pcie_ops, sys,
++				 &sys->resources);
+ }
+ 
+ static struct hw_pci tegra_pcie_hw __initdata = {
+--- a/arch/arm/mach-versatile/pci.c
++++ b/arch/arm/mach-versatile/pci.c
+@@ -191,7 +191,7 @@ static struct resource pre_mem = {
+ 	.flags	= IORESOURCE_MEM | IORESOURCE_PREFETCH,
+ };
+ 
+-static int __init pci_versatile_setup_resources(struct resource **resource)
++static int __init pci_versatile_setup_resources(struct list_head *resources)
+ {
+ 	int ret = 0;
+ 
+@@ -215,13 +215,13 @@ static int __init pci_versatile_setup_re
+ 	}
+ 
+ 	/*
+-	 * bus->resource[0] is the IO resource for this bus
+-	 * bus->resource[1] is the mem resource for this bus
+-	 * bus->resource[2] is the prefetch mem resource for this bus
++	 * the IO resource for this bus
++	 * the mem resource for this bus
++	 * the prefetch mem resource for this bus
+ 	 */
+-	resource[0] = &io_mem;
+-	resource[1] = &non_mem;
+-	resource[2] = &pre_mem;
++	pci_add_resource(resources, &io_mem);
++	pci_add_resource(resources, &non_mem);
++	pci_add_resource(resources, &pre_mem);
+ 
+ 	goto out;
+ 
+@@ -250,7 +250,7 @@ int __init pci_versatile_setup(int nr, s
+ 
+ 	if (nr == 0) {
+ 		sys->mem_offset = 0;
+-		ret = pci_versatile_setup_resources(sys->resource);
++		ret = pci_versatile_setup_resources(&sys->resources);
+ 		if (ret < 0) {
+ 			printk("pci_versatile_setup: resources... oops?\n");
+ 			goto out;
+@@ -306,7 +306,8 @@ int __init pci_versatile_setup(int nr, s
+ 
+ struct pci_bus * __init pci_versatile_scan_bus(int nr, struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(sys->busnr, &pci_versatile_ops, sys);
++	return pci_scan_root_bus(NULL, sys->busnr, &pci_versatile_ops, sys,
++				 &sys->resources);
+ }
+ 
+ void __init pci_versatile_preinit(void)
+--- a/arch/arm/plat-iop/pci.c
++++ b/arch/arm/plat-iop/pci.c
+@@ -215,16 +215,16 @@ int iop3xx_pci_setup(int nr, struct pci_
+ 	sys->mem_offset = IOP3XX_PCI_LOWER_MEM_PA - *IOP3XX_OMWTVR0;
+ 	sys->io_offset  = IOP3XX_PCI_LOWER_IO_PA - *IOP3XX_OIOWTVR;
+ 
+-	sys->resource[0] = &res[0];
+-	sys->resource[1] = &res[1];
+-	sys->resource[2] = NULL;
++	pci_add_resource(&sys->resources, &res[0]);
++	pci_add_resource(&sys->resources, &res[1]);
+ 
+ 	return 1;
+ }
+ 
+ struct pci_bus *iop3xx_pci_scan_bus(int nr, struct pci_sys_data *sys)
+ {
+-	return pci_scan_bus(sys->busnr, &iop3xx_ops, sys);
++	return pci_scan_root_bus(NULL, sys->busnr, &iop3xx_ops, sys,
++				 &sys->resources);
+ }
+ 
+ void __init iop3xx_atu_setup(void)
+--- a/arch/frv/mb93090-mb00/pci-vdk.c
++++ b/arch/frv/mb93090-mb00/pci-vdk.c
+@@ -327,11 +327,6 @@ void __init pcibios_fixup_bus(struct pci
+ 	printk("### PCIBIOS_FIXUP_BUS(%d)\n",bus->number);
+ #endif
+ 
+-	if (bus->number == 0) {
+-		bus->resource[0] = &pci_ioport_resource;
+-		bus->resource[1] = &pci_iomem_resource;
+-	}
+-
+ 	pci_read_bridge_bases(bus);
+ 
+ 	if (bus->number == 0) {
+@@ -357,6 +352,7 @@ void __init pcibios_fixup_bus(struct pci
+ int __init pcibios_init(void)
+ {
+ 	struct pci_ops *dir = NULL;
++	LIST_HEAD(resources);
+ 
+ 	if (!mb93090_mb00_detected)
+ 		return -ENXIO;
+@@ -420,7 +416,10 @@ int __init pcibios_init(void)
+ 	}
+ 
+ 	printk("PCI: Probing PCI hardware\n");
+-	pci_root_bus = pci_scan_bus(0, pci_root_ops, NULL);
++	pci_add_resource(&resources, &pci_ioport_resource);
++	pci_add_resource(&resources, &pci_iomem_resource);
++	pci_root_bus = pci_scan_root_bus(NULL, 0, pci_root_ops, NULL,
++					 &resources);
+ 
+ 	pcibios_irq_init();
+ 	pcibios_fixup_peer_bridges();
+--- a/arch/ia64/pci/pci.c
++++ b/arch/ia64/pci/pci.c
+@@ -134,6 +134,7 @@ alloc_pci_controller (int seg)
+ struct pci_root_info {
+ 	struct acpi_device *bridge;
+ 	struct pci_controller *controller;
++	struct list_head resources;
+ 	char *name;
+ };
+ 
+@@ -315,24 +316,13 @@ static __devinit acpi_status add_window(
+ 				 &window->resource);
+ 	}
+ 
+-	return AE_OK;
+-}
++	/* HP's firmware has a hack to work around a Windows bug.
++	 * Ignore these tiny memory ranges */
++	if (!((window->resource.flags & IORESOURCE_MEM) &&
++	      (window->resource.end - window->resource.start < 16)))
++		pci_add_resource(&info->resources, &window->resource);
+ 
+-static void __devinit
+-pcibios_setup_root_windows(struct pci_bus *bus, struct pci_controller *ctrl)
+-{
+-	int i;
+-
+-	pci_bus_remove_resources(bus);
+-	for (i = 0; i < ctrl->windows; i++) {
+-		struct resource *res = &ctrl->window[i].resource;
+-		/* HP's firmware has a hack to work around a Windows bug.
+-		 * Ignore these tiny memory ranges */
+-		if ((res->flags & IORESOURCE_MEM) &&
+-		    (res->end - res->start < 16))
+-			continue;
+-		pci_bus_add_resource(bus, res, 0);
+-	}
++	return AE_OK;
+ }
+ 
+ struct pci_bus * __devinit
+@@ -343,6 +333,7 @@ pci_acpi_scan_root(struct acpi_pci_root
+ 	int bus = root->secondary.start;
+ 	struct pci_controller *controller;
+ 	unsigned int windows = 0;
++	struct pci_root_info info;
+ 	struct pci_bus *pbus;
+ 	char *name;
+ 	int pxm;
+@@ -359,11 +350,10 @@ pci_acpi_scan_root(struct acpi_pci_root
+ 		controller->node = pxm_to_node(pxm);
+ #endif
+ 
++	INIT_LIST_HEAD(&info.resources);
+ 	acpi_walk_resources(device->handle, METHOD_NAME__CRS, count_window,
+ 			&windows);
+ 	if (windows) {
+-		struct pci_root_info info;
+-
+ 		controller->window =
+ 			kmalloc_node(sizeof(*controller->window) * windows,
+ 				     GFP_KERNEL, controller->node);
+@@ -387,8 +377,14 @@ pci_acpi_scan_root(struct acpi_pci_root
+ 	 * should handle the case here, but it appears that IA64 hasn't
+ 	 * such quirk. So we just ignore the case now.
+ 	 */
+-	pbus = pci_scan_bus_parented(NULL, bus, &pci_root_ops, controller);
++	pbus = pci_create_root_bus(NULL, bus, &pci_root_ops, controller,
++				   &info.resources);
++	if (!pbus) {
++		pci_free_resource_list(&info.resources);
++		return NULL;
++	}
+ 
++	pbus->subordinate = pci_scan_child_bus(pbus);
+ 	return pbus;
+ 
+ out3:
+@@ -504,14 +500,10 @@ pcibios_fixup_bus (struct pci_bus *b)
+ 	if (b->self) {
+ 		pci_read_bridge_bases(b);
+ 		pcibios_fixup_bridge_resources(b->self);
+-	} else {
+-		pcibios_setup_root_windows(b, b->sysdata);
+ 	}
+ 	list_for_each_entry(dev, &b->devices, bus_list)
+ 		pcibios_fixup_device_resources(dev);
+ 	platform_pci_fixup_bus(b);
+-
+-	return;
+ }
+ 
+ void __devinit
+--- a/arch/microblaze/include/asm/pci-bridge.h
++++ b/arch/microblaze/include/asm/pci-bridge.h
+@@ -140,7 +140,6 @@ extern void pci_process_bridge_OF_ranges
+ /* Allocate & free a PCI host bridge structure */
+ extern struct pci_controller *pcibios_alloc_controller(struct device_node *dev);
+ extern void pcibios_free_controller(struct pci_controller *phb);
+-extern void pcibios_setup_phb_resources(struct pci_controller *hose);
+ 
+ #endif	/* __KERNEL__ */
+ #endif	/* _ASM_MICROBLAZE_PCI_BRIDGE_H */
+--- a/arch/microblaze/pci/pci-common.c
++++ b/arch/microblaze/pci/pci-common.c
+@@ -1019,7 +1019,6 @@ static void __devinit pcibios_fixup_brid
+ 	struct pci_dev *dev = bus->self;
+ 
+ 	pci_bus_for_each_resource(bus, res, i) {
+-		res = bus->resource[i];
+ 		if (!res)
+ 			continue;
+ 		if (!res->flags)
+@@ -1219,7 +1218,6 @@ void pcibios_allocate_bus_resources(stru
+ 		 pci_domain_nr(bus), bus->number);
+ 
+ 	pci_bus_for_each_resource(bus, res, i) {
+-		res = bus->resource[i];
+ 		if (!res || !res->flags
+ 		    || res->start > res->end || res->parent)
+ 			continue;
+@@ -1510,14 +1508,18 @@ int pcibios_enable_device(struct pci_dev
+ 	return pci_enable_resources(dev, mask);
+ }
+ 
+-void __devinit pcibios_setup_phb_resources(struct pci_controller *hose)
++static void __devinit pcibios_setup_phb_resources(struct pci_controller *hose, struct list_head *resources)
+ {
+-	struct pci_bus *bus = hose->bus;
+ 	struct resource *res;
+ 	int i;
+ 
+ 	/* Hookup PHB IO resource */
+-	bus->resource[0] = res = &hose->io_resource;
++	res = &hose->io_resource;
++
++	/* Fixup IO space offset */
++	io_offset = (unsigned long)hose->io_base_virt - isa_io_base;
++	res->start = (res->start + io_offset) & 0xffffffffu;
++	res->end = (res->end + io_offset) & 0xffffffffu;
+ 
+ 	if (!res->flags) {
+ 		printk(KERN_WARNING "PCI: I/O resource not set for host"
+@@ -1528,6 +1530,7 @@ void __devinit pcibios_setup_phb_resourc
+ 		res->end = res->start + IO_SPACE_LIMIT;
+ 		res->flags = IORESOURCE_IO;
+ 	}
++	pci_add_resource(resources, res);
+ 
+ 	pr_debug("PCI: PHB IO resource    = %016llx-%016llx [%lx]\n",
+ 		 (unsigned long long)res->start,
+@@ -1550,7 +1553,7 @@ void __devinit pcibios_setup_phb_resourc
+ 			res->flags = IORESOURCE_MEM;
+ 
+ 		}
+-		bus->resource[i+1] = res;
++		pci_add_resource(resources, res);
+ 
+ 		pr_debug("PCI: PHB MEM resource %d = %016llx-%016llx [%lx]\n",
+ 			i, (unsigned long long)res->start,
+@@ -1573,34 +1576,27 @@ struct device_node *pcibios_get_phb_of_n
+ 
+ static void __devinit pcibios_scan_phb(struct pci_controller *hose)
+ {
++	LIST_HEAD(resources);
+ 	struct pci_bus *bus;
+ 	struct device_node *node = hose->dn;
+-	unsigned long io_offset;
+-	struct resource *res = &hose->io_resource;
+ 
+ 	pr_debug("PCI: Scanning PHB %s\n",
+ 		 node ? node->full_name : "<NO NAME>");
+ 
+-	/* Create an empty bus for the toplevel */
+-	bus = pci_create_bus(hose->parent, hose->first_busno, hose->ops, hose);
++	pcibios_setup_phb_resources(hose, &resources);
++
++	bus = pci_scan_root_bus(hose->parent, hose->first_busno,
++				hose->ops, hose, &resources);
+ 	if (bus == NULL) {
+ 		printk(KERN_ERR "Failed to create bus for PCI domain %04x\n",
+ 		       hose->global_number);
++		pci_free_resource_list(&resources);
+ 		return;
+ 	}
+ 	bus->secondary = hose->first_busno;
+ 	hose->bus = bus;
+ 
+-	/* Fixup IO space offset */
+-	io_offset = (unsigned long)hose->io_base_virt - isa_io_base;
+-	res->start = (res->start + io_offset) & 0xffffffffu;
+-	res->end = (res->end + io_offset) & 0xffffffffu;
+-
+-	/* Wire up PHB bus resources */
+-	pcibios_setup_phb_resources(hose);
+-
+-	/* Scan children */
+-	hose->last_busno = bus->subordinate = pci_scan_child_bus(bus);
++	hose->last_busno = bus->subordinate;
+ }
+ 
+ static int __init pcibios_init(void)
+@@ -1614,8 +1610,6 @@ static int __init pcibios_init(void)
+ 	list_for_each_entry_safe(hose, tmp, &hose_list, list_node) {
+ 		hose->last_busno = 0xff;
+ 		pcibios_scan_phb(hose);
+-		printk(KERN_INFO "calling pci_bus_add_devices()\n");
+-		pci_bus_add_devices(hose->bus);
+ 		if (next_busno <= hose->last_busno)
+ 			next_busno = hose->last_busno + 1;
+ 	}
+--- a/arch/mips/pci/pci.c
++++ b/arch/mips/pci/pci.c
+@@ -81,6 +81,7 @@ static void __devinit pcibios_scanbus(st
+ {
+ 	static int next_busno;
+ 	static int need_domain_info;
++	LIST_HEAD(resources);
+ 	struct pci_bus *bus;
+ 
+ 	if (!hose->iommu)
+@@ -89,7 +90,13 @@ static void __devinit pcibios_scanbus(st
+ 	if (hose->get_busno && pci_probe_only)
+ 		next_busno = (*hose->get_busno)();
+ 
+-	bus = pci_scan_bus(next_busno, hose->pci_ops, hose);
++	pci_add_resource(&resources, hose->mem_resource);
++	pci_add_resource(&resources, hose->io_resource);
++	bus = pci_scan_root_bus(NULL, next_busno, hose->pci_ops, hose,
++				&resources);
++	if (!bus)
++		pci_free_resource_list(&resources);
++
+ 	hose->bus = bus;
+ 
+ 	need_domain_info = need_domain_info || hose->index;
+@@ -266,15 +273,11 @@ void __devinit pcibios_fixup_bus(struct
+ {
+ 	/* Propagate hose info into the subordinate devices.  */
+ 
+-	struct pci_controller *hose = bus->sysdata;
+ 	struct list_head *ln;
+ 	struct pci_dev *dev = bus->self;
+ 
+-	if (!dev) {
+-		bus->resource[0] = hose->io_resource;
+-		bus->resource[1] = hose->mem_resource;
+-	} else if (pci_probe_only &&
+-		   (dev->class >> 8) == PCI_CLASS_BRIDGE_PCI) {
++	if (pci_probe_only && dev &&
++	    (dev->class >> 8) == PCI_CLASS_BRIDGE_PCI) {
+ 		pci_read_bridge_bases(bus);
+ 		pcibios_fixup_device_resources(dev, bus);
+ 	}
+--- a/arch/mn10300/unit-asb2305/pci.c
++++ b/arch/mn10300/unit-asb2305/pci.c
+@@ -380,11 +380,6 @@ void __devinit pcibios_fixup_bus(struct
+ {
+ 	struct pci_dev *dev;
+ 
+-	if (bus->number == 0) {
+-		bus->resource[0] = &pci_ioport_resource;
+-		bus->resource[1] = &pci_iomem_resource;
+-	}
+-
+ 	if (bus->self) {
+ 		pci_read_bridge_bases(bus);
+ 		pcibios_fixup_device_resources(bus->self);
+@@ -402,6 +397,8 @@ void __devinit pcibios_fixup_bus(struct
+  */
+ static int __init pcibios_init(void)
+ {
++	LIST_HEAD(resources);
++
+ 	ioport_resource.start	= 0xA0000000;
+ 	ioport_resource.end	= 0xDFFFFFFF;
+ 	iomem_resource.start	= 0xA0000000;
+@@ -423,7 +420,10 @@ static int __init pcibios_init(void)
+ 	printk(KERN_INFO "PCI: Probing PCI hardware [mempage %08x]\n",
+ 	       MEM_PAGING_REG);
+ 
+-	pci_root_bus = pci_scan_bus(0, &pci_direct_ampci, NULL);
++	pci_add_resource(&resources, &pci_ioport_resource);
++	pci_add_resource(&resources, &pci_iomem_resource);
++	pci_root_bus = pci_scan_root_bus(NULL, 0, &pci_direct_ampci, NULL,
++					 &resources);
+ 
+ 	pcibios_irq_init();
+ 	pcibios_fixup_irqs();
+--- a/arch/powerpc/include/asm/pci-bridge.h
++++ b/arch/powerpc/include/asm/pci-bridge.h
+@@ -222,7 +222,6 @@ extern void pci_process_bridge_OF_ranges
+ /* Allocate & free a PCI host bridge structure */
+ extern struct pci_controller *pcibios_alloc_controller(struct device_node *dev);
+ extern void pcibios_free_controller(struct pci_controller *phb);
+-extern void pcibios_setup_phb_resources(struct pci_controller *hose);
+ 
+ #ifdef CONFIG_PCI
+ extern int pcibios_vaddr_is_ioport(void __iomem *address);
+--- a/arch/powerpc/kernel/pci-common.c
++++ b/arch/powerpc/kernel/pci-common.c
+@@ -1555,14 +1555,13 @@ int pcibios_enable_device(struct pci_dev
+ 	return pci_enable_resources(dev, mask);
+ }
+ 
+-void __devinit pcibios_setup_phb_resources(struct pci_controller *hose)
++static void __devinit pcibios_setup_phb_resources(struct pci_controller *hose, struct list_head *resources)
+ {
+-	struct pci_bus *bus = hose->bus;
+ 	struct resource *res;
+ 	int i;
+ 
+ 	/* Hookup PHB IO resource */
+-	bus->resource[0] = res = &hose->io_resource;
++	res = &hose->io_resource;
+ 
+ 	if (!res->flags) {
+ 		printk(KERN_WARNING "PCI: I/O resource not set for host"
+@@ -1580,6 +1579,7 @@ void __devinit pcibios_setup_phb_resourc
+ 		 (unsigned long long)res->start,
+ 		 (unsigned long long)res->end,
+ 		 (unsigned long)res->flags);
++	pci_add_resource(resources, res);
+ 
+ 	/* Hookup PHB Memory resources */
+ 	for (i = 0; i < 3; ++i) {
+@@ -1597,12 +1597,12 @@ void __devinit pcibios_setup_phb_resourc
+ 			res->flags = IORESOURCE_MEM;
+ #endif /* CONFIG_PPC32 */
+ 		}
+-		bus->resource[i+1] = res;
+ 
+ 		pr_debug("PCI: PHB MEM resource %d = %016llx-%016llx [%lx]\n", i,
+ 			 (unsigned long long)res->start,
+ 			 (unsigned long long)res->end,
+ 			 (unsigned long)res->flags);
++		pci_add_resource(resources, res);
+ 	}
+ 
+ 	pr_debug("PCI: PHB MEM offset     = %016llx\n",
+@@ -1696,6 +1696,7 @@ struct device_node *pcibios_get_phb_of_n
+  */
+ void __devinit pcibios_scan_phb(struct pci_controller *hose)
+ {
++	LIST_HEAD(resources);
+ 	struct pci_bus *bus;
+ 	struct device_node *node = hose->dn;
+ 	int mode;
+@@ -1703,22 +1704,24 @@ void __devinit pcibios_scan_phb(struct p
+ 	pr_debug("PCI: Scanning PHB %s\n",
+ 		 node ? node->full_name : "<NO NAME>");
+ 
++	/* Get some IO space for the new PHB */
++	pcibios_setup_phb_io_space(hose);
++
++	/* Wire up PHB bus resources */
++	pcibios_setup_phb_resources(hose, &resources);
++
+ 	/* Create an empty bus for the toplevel */
+-	bus = pci_create_bus(hose->parent, hose->first_busno, hose->ops, hose);
++	bus = pci_create_root_bus(hose->parent, hose->first_busno,
++				  hose->ops, hose, &resources);
+ 	if (bus == NULL) {
+ 		pr_err("Failed to create bus for PCI domain %04x\n",
+ 			hose->global_number);
++		pci_free_resource_list(&resources);
+ 		return;
+ 	}
+ 	bus->secondary = hose->first_busno;
+ 	hose->bus = bus;
+ 
+-	/* Get some IO space for the new PHB */
+-	pcibios_setup_phb_io_space(hose);
+-
+-	/* Wire up PHB bus resources */
+-	pcibios_setup_phb_resources(hose);
+-
+ 	/* Get probe mode and perform scan */
+ 	mode = PCI_PROBE_NORMAL;
+ 	if (node && ppc_md.pci_probe_mode)
+--- a/arch/powerpc/kernel/pci_64.c
++++ b/arch/powerpc/kernel/pci_64.c
+@@ -131,30 +131,13 @@ EXPORT_SYMBOL_GPL(pcibios_unmap_io_space
+ 
+ #endif /* CONFIG_HOTPLUG */
+ 
+-int __devinit pcibios_map_io_space(struct pci_bus *bus)
++static int __devinit pcibios_map_phb_io_space(struct pci_controller *hose)
+ {
+ 	struct vm_struct *area;
+ 	unsigned long phys_page;
+ 	unsigned long size_page;
+ 	unsigned long io_virt_offset;
+-	struct pci_controller *hose;
+-
+-	WARN_ON(bus == NULL);
+ 
+-	/* If this not a PHB, nothing to do, page tables still exist and
+-	 * thus HPTEs will be faulted in when needed
+-	 */
+-	if (bus->self) {
+-		pr_debug("IO mapping for PCI-PCI bridge %s\n",
+-			 pci_name(bus->self));
+-		pr_debug("  virt=0x%016llx...0x%016llx\n",
+-			 bus->resource[0]->start + _IO_BASE,
+-			 bus->resource[0]->end + _IO_BASE);
+-		return 0;
+-	}
+-
+-	/* Get the host bridge */
+-	hose = pci_bus_to_host(bus);
+ 	phys_page = _ALIGN_DOWN(hose->io_base_phys, PAGE_SIZE);
+ 	size_page = _ALIGN_UP(hose->pci_io_size, PAGE_SIZE);
+ 
+@@ -198,11 +181,30 @@ int __devinit pcibios_map_io_space(struc
+ 
+ 	return 0;
+ }
++
++int __devinit pcibios_map_io_space(struct pci_bus *bus)
++{
++	WARN_ON(bus == NULL);
++
++	/* If this not a PHB, nothing to do, page tables still exist and
++	 * thus HPTEs will be faulted in when needed
++	 */
++	if (bus->self) {
++		pr_debug("IO mapping for PCI-PCI bridge %s\n",
++			 pci_name(bus->self));
++		pr_debug("  virt=0x%016llx...0x%016llx\n",
++			 bus->resource[0]->start + _IO_BASE,
++			 bus->resource[0]->end + _IO_BASE);
++		return 0;
++	}
++
++	return pcibios_map_phb_io_space(pci_bus_to_host(bus));
++}
+ EXPORT_SYMBOL_GPL(pcibios_map_io_space);
+ 
+ void __devinit pcibios_setup_phb_io_space(struct pci_controller *hose)
+ {
+-	pcibios_map_io_space(hose->bus);
++	pcibios_map_phb_io_space(hose);
+ }
+ 
+ #define IOBASE_BRIDGE_NUMBER	0
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -36,9 +36,15 @@ static void __devinit pcibios_scanbus(st
+ {
+ 	static int next_busno;
+ 	static int need_domain_info;
++	LIST_HEAD(resources);
++	int i;
+ 	struct pci_bus *bus;
+ 
+-	bus = pci_scan_bus(next_busno, hose->pci_ops, hose);
++	for (i = 0; i < hose->nr_resources; i++)
++		pci_add_resource(&resources, hose->resources + i);
++
++	bus = pci_scan_root_bus(NULL, next_busno, hose->pci_ops, hose,
++				&resources);
+ 	hose->bus = bus;
+ 
+ 	need_domain_info = need_domain_info || hose->index;
+@@ -55,6 +61,8 @@ static void __devinit pcibios_scanbus(st
+ 		pci_bus_size_bridges(bus);
+ 		pci_bus_assign_resources(bus);
+ 		pci_enable_bridges(bus);
++	} else {
++		pci_free_resource_list(&resources);
+ 	}
+ }
+ 
+@@ -162,16 +170,8 @@ static void pcibios_fixup_device_resourc
+  */
+ void __devinit pcibios_fixup_bus(struct pci_bus *bus)
+ {
+-	struct pci_dev *dev = bus->self;
++	struct pci_dev *dev;
+ 	struct list_head *ln;
+-	struct pci_channel *hose = bus->sysdata;
+-
+-	if (!dev) {
+-		int i;
+-
+-		for (i = 0; i < hose->nr_resources; i++)
+-			bus->resource[i] = hose->resources + i;
+-	}
+ 
+ 	for (ln = bus->devices.next; ln != &bus->devices; ln = ln->next) {
+ 		dev = pci_dev_b(ln);
+--- a/arch/sparc/kernel/leon_pci.c
++++ b/arch/sparc/kernel/leon_pci.c
+@@ -19,22 +19,22 @@
+  */
+ void leon_pci_init(struct platform_device *ofdev, struct leon_pci_info *info)
+ {
++	LIST_HEAD(resources);
+ 	struct pci_bus *root_bus;
+ 
+-	root_bus = pci_scan_bus_parented(&ofdev->dev, 0, info->ops, info);
+-	if (root_bus) {
+-		root_bus->resource[0] = &info->io_space;
+-		root_bus->resource[1] = &info->mem_space;
+-		root_bus->resource[2] = NULL;
+-
+-		/* Init all PCI devices into PCI tree */
+-		pci_bus_add_devices(root_bus);
++	pci_add_resource(&resources, &info->io_space);
++	pci_add_resource(&resources, &info->mem_space);
+ 
++	root_bus = pci_scan_root_bus(&ofdev->dev, 0, info->ops, info,
++				     &resources);
++	if (root_bus) {
+ 		/* Setup IRQs of all devices using custom routines */
+ 		pci_fixup_irqs(pci_common_swizzle, info->map_irq);
+ 
+ 		/* Assign devices with resources */
+ 		pci_assign_unassigned_resources();
++	} else {
++		pci_free_resource_list(&resources);
+ 	}
+ }
+ 
+@@ -83,15 +83,6 @@ void __devinit pcibios_fixup_bus(struct
+ 	int i, has_io, has_mem;
+ 	u16 cmd;
+ 
+-	/* Generic PCI bus probing sets these to point at
+-	 * &io{port,mem}_resouce which is wrong for us.
+-	 */
+-	if (pbus->self == NULL) {
+-		pbus->resource[0] = &info->io_space;
+-		pbus->resource[1] = &info->mem_space;
+-		pbus->resource[2] = NULL;
+-	}
+-
+ 	list_for_each_entry(dev, &pbus->devices, bus_list) {
+ 		/*
+ 		 * We can not rely on that the bootloader has enabled I/O
+--- a/arch/sparc/kernel/pci.c
++++ b/arch/sparc/kernel/pci.c
+@@ -685,23 +685,25 @@ static void __devinit pci_bus_register_o
+ struct pci_bus * __devinit pci_scan_one_pbm(struct pci_pbm_info *pbm,
+ 					    struct device *parent)
+ {
++	LIST_HEAD(resources);
+ 	struct device_node *node = pbm->op->dev.of_node;
+ 	struct pci_bus *bus;
+ 
+ 	printk("PCI: Scanning PBM %s\n", node->full_name);
+ 
+-	bus = pci_create_bus(parent, pbm->pci_first_busno, pbm->pci_ops, pbm);
++	pci_add_resource(&resources, &pbm->io_space);
++	pci_add_resource(&resources, &pbm->mem_space);
++	bus = pci_create_root_bus(parent, pbm->pci_first_busno, pbm->pci_ops,
++				  pbm, &resources);
+ 	if (!bus) {
+ 		printk(KERN_ERR "Failed to create bus for %s\n",
+ 		       node->full_name);
++		pci_free_resource_list(&resources);
+ 		return NULL;
+ 	}
+ 	bus->secondary = pbm->pci_first_busno;
+ 	bus->subordinate = pbm->pci_last_busno;
+ 
+-	bus->resource[0] = &pbm->io_space;
+-	bus->resource[1] = &pbm->mem_space;
+-
+ 	pci_of_scan_bus(pbm, node, bus);
+ 	pci_bus_add_devices(bus);
+ 	pci_bus_register_of_sysfs(bus);
+@@ -711,13 +713,6 @@ struct pci_bus * __devinit pci_scan_one_
+ 
+ void __devinit pcibios_fixup_bus(struct pci_bus *pbus)
+ {
+-	struct pci_pbm_info *pbm = pbus->sysdata;
+-
+-	/* Generic PCI bus probing sets these to point at
+-	 * &io{port,mem}_resouce which is wrong for us.
+-	 */
+-	pbus->resource[0] = &pbm->io_space;
+-	pbus->resource[1] = &pbm->mem_space;
+ }
+ 
+ void pcibios_update_irq(struct pci_dev *pdev, int irq)
+--- a/arch/x86/include/asm/topology.h
++++ b/arch/x86/include/asm/topology.h
+@@ -174,7 +174,7 @@ static inline void arch_fix_phys_package
+ }
+ 
+ struct pci_bus;
+-void x86_pci_root_bus_res_quirks(struct pci_bus *b);
++void x86_pci_root_bus_resources(int bus, struct list_head *resources);
+ 
+ #ifdef CONFIG_SMP
+ #define mc_capable()	((boot_cpu_data.x86_max_cores > 1) && \
+--- a/arch/x86/pci/acpi.c
++++ b/arch/x86/pci/acpi.c
+@@ -12,7 +12,7 @@ struct pci_root_info {
+ 	char *name;
+ 	unsigned int res_num;
+ 	struct resource *res;
+-	struct pci_bus *bus;
++	struct list_head *resources;
+ 	int busnum;
+ };
+ 
+@@ -261,23 +261,20 @@ static void add_resources(struct pci_roo
+ 				 "ignoring host bridge window %pR (conflicts with %s %pR)\n",
+ 				 res, conflict->name, conflict);
+ 		else
+-			pci_bus_add_resource(info->bus, res, 0);
++			pci_add_resource(info->resources, res);
+ 	}
+ }
+ 
+ static void
+ get_current_resources(struct acpi_device *device, int busnum,
+-			int domain, struct pci_bus *bus)
++		      int domain, struct list_head *resources)
+ {
+ 	struct pci_root_info info;
+ 	size_t size;
+ 
+-	if (pci_use_crs)
+-		pci_bus_remove_resources(bus);
+-
+ 	info.bridge = device;
+-	info.bus = bus;
+ 	info.res_num = 0;
++	info.resources = resources;
+ 	acpi_walk_resources(device->handle, METHOD_NAME__CRS, count_resource,
+ 				&info);
+ 	if (!info.res_num)
+@@ -286,7 +283,7 @@ get_current_resources(struct acpi_device
+ 	size = sizeof(*info.res) * info.res_num;
+ 	info.res = kmalloc(size, GFP_KERNEL);
+ 	if (!info.res)
+-		goto res_alloc_fail;
++		return;
+ 
+ 	info.name = kasprintf(GFP_KERNEL, "PCI Bus %04x:%02x", domain, busnum);
+ 	if (!info.name)
+@@ -301,8 +298,6 @@ get_current_resources(struct acpi_device
+ 
+ name_alloc_fail:
+ 	kfree(info.res);
+-res_alloc_fail:
+-	return;
+ }
+ 
+ struct pci_bus * __devinit pci_acpi_scan_root(struct acpi_pci_root *root)
+@@ -310,6 +305,7 @@ struct pci_bus * __devinit pci_acpi_scan
+ 	struct acpi_device *device = root->device;
+ 	int domain = root->segment;
+ 	int busnum = root->secondary.start;
++	LIST_HEAD(resources);
+ 	struct pci_bus *bus;
+ 	struct pci_sysdata *sd;
+ 	int node;
+@@ -364,11 +360,15 @@ struct pci_bus * __devinit pci_acpi_scan
+ 		memcpy(bus->sysdata, sd, sizeof(*sd));
+ 		kfree(sd);
+ 	} else {
+-		bus = pci_create_bus(NULL, busnum, &pci_root_ops, sd);
+-		if (bus) {
+-			get_current_resources(device, busnum, domain, bus);
++		get_current_resources(device, busnum, domain, &resources);
++		if (list_empty(&resources))
++			x86_pci_root_bus_resources(busnum, &resources);
++		bus = pci_create_root_bus(NULL, busnum, &pci_root_ops, sd,
++					  &resources);
++		if (bus)
+ 			bus->subordinate = pci_scan_child_bus(bus);
+-		}
++		else
++			pci_free_resource_list(&resources);
+ 	}
+ 
+ 	/* After the PCI-E bus has been walked and all devices discovered,
+--- a/arch/x86/pci/broadcom_bus.c
++++ b/arch/x86/pci/broadcom_bus.c
+@@ -15,10 +15,11 @@
+ #include <linux/pci.h>
+ #include <linux/init.h>
+ #include <asm/pci_x86.h>
++#include <asm/pci-direct.h>
+ 
+ #include "bus_numa.h"
+ 
+-static void __devinit cnb20le_res(struct pci_dev *dev)
++static void __init cnb20le_res(u8 bus, u8 slot, u8 func)
+ {
+ 	struct pci_root_info *info;
+ 	struct resource res;
+@@ -26,21 +27,12 @@ static void __devinit cnb20le_res(struct
+ 	u8 fbus, lbus;
+ 	int i;
+ 
+-#ifdef CONFIG_ACPI
+-	/*
+-	 * We should get host bridge information from ACPI unless the BIOS
+-	 * doesn't support it.
+-	 */
+-	if (acpi_os_get_root_pointer())
+-		return;
+-#endif
+-
+ 	info = &pci_root_info[pci_root_num];
+ 	pci_root_num++;
+ 
+ 	/* read the PCI bus numbers */
+-	pci_read_config_byte(dev, 0x44, &fbus);
+-	pci_read_config_byte(dev, 0x45, &lbus);
++	fbus = read_pci_config_byte(bus, slot, func, 0x44);
++	lbus = read_pci_config_byte(bus, slot, func, 0x45);
+ 	info->bus_min = fbus;
+ 	info->bus_max = lbus;
+ 
+@@ -59,8 +51,8 @@ static void __devinit cnb20le_res(struct
+ 	}
+ 
+ 	/* read the non-prefetchable memory window */
+-	pci_read_config_word(dev, 0xc0, &word1);
+-	pci_read_config_word(dev, 0xc2, &word2);
++	word1 = read_pci_config_16(bus, slot, func, 0xc0);
++	word2 = read_pci_config_16(bus, slot, func, 0xc2);
+ 	if (word1 != word2) {
+ 		res.start = (word1 << 16) | 0x0000;
+ 		res.end   = (word2 << 16) | 0xffff;
+@@ -69,8 +61,8 @@ static void __devinit cnb20le_res(struct
+ 	}
+ 
+ 	/* read the prefetchable memory window */
+-	pci_read_config_word(dev, 0xc4, &word1);
+-	pci_read_config_word(dev, 0xc6, &word2);
++	word1 = read_pci_config_16(bus, slot, func, 0xc4);
++	word2 = read_pci_config_16(bus, slot, func, 0xc6);
+ 	if (word1 != word2) {
+ 		res.start = (word1 << 16) | 0x0000;
+ 		res.end   = (word2 << 16) | 0xffff;
+@@ -79,8 +71,8 @@ static void __devinit cnb20le_res(struct
+ 	}
+ 
+ 	/* read the IO port window */
+-	pci_read_config_word(dev, 0xd0, &word1);
+-	pci_read_config_word(dev, 0xd2, &word2);
++	word1 = read_pci_config_16(bus, slot, func, 0xd0);
++	word2 = read_pci_config_16(bus, slot, func, 0xd2);
+ 	if (word1 != word2) {
+ 		res.start = word1;
+ 		res.end   = word2;
+@@ -92,13 +84,37 @@ static void __devinit cnb20le_res(struct
+ 	res.start = fbus;
+ 	res.end   = lbus;
+ 	res.flags = IORESOURCE_BUS;
+-	dev_info(&dev->dev, "CNB20LE PCI Host Bridge (domain %04x %pR)\n",
+-			    pci_domain_nr(dev->bus), &res);
++	printk(KERN_INFO "CNB20LE PCI Host Bridge (domain 0000 %pR)\n", &res);
+ 
+ 	for (i = 0; i < info->res_num; i++)
+-		dev_info(&dev->dev, "host bridge window %pR\n", &info->res[i]);
++		printk(KERN_INFO "host bridge window %pR\n", &info->res[i]);
+ }
+ 
+-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_SERVERWORKS, PCI_DEVICE_ID_SERVERWORKS_LE,
+-			cnb20le_res);
++static int __init broadcom_postcore_init(void)
++{
++	u8 bus = 0, slot = 0;
++	u32 id;
++	u16 vendor, device;
++
++#ifdef CONFIG_ACPI
++	/*
++	 * We should get host bridge information from ACPI unless the BIOS
++	 * doesn't support it.
++	 */
++	if (acpi_os_get_root_pointer())
++		return 0;
++#endif
++
++	id = read_pci_config(bus, slot, 0, PCI_VENDOR_ID);
++	vendor = id & 0xffff;
++	device = (id >> 16) & 0xffff;
++
++	if (vendor == PCI_VENDOR_ID_SERVERWORKS &&
++	    device == PCI_DEVICE_ID_SERVERWORKS_LE) {
++		cnb20le_res(bus, slot, 0);
++		cnb20le_res(bus, slot, 1);
++	}
++	return 0;
++}
+ 
++postcore_initcall(broadcom_postcore_init);
+--- a/arch/x86/pci/bus_numa.c
++++ b/arch/x86/pci/bus_numa.c
+@@ -7,45 +7,50 @@
+ int pci_root_num;
+ struct pci_root_info pci_root_info[PCI_ROOT_NR];
+ 
+-void x86_pci_root_bus_res_quirks(struct pci_bus *b)
++void x86_pci_root_bus_resources(int bus, struct list_head *resources)
+ {
+ 	int i;
+ 	int j;
+ 	struct pci_root_info *info;
+ 
+-	/* don't go for it if _CRS is used already */
+-	if (b->resource[0] != &ioport_resource ||
+-	    b->resource[1] != &iomem_resource)
+-		return;
+-
+ 	if (!pci_root_num)
+-		return;
++		goto default_resources;
+ 
+ 	for (i = 0; i < pci_root_num; i++) {
+-		if (pci_root_info[i].bus_min == b->number)
++		if (pci_root_info[i].bus_min == bus)
+ 			break;
+ 	}
+ 
+ 	if (i == pci_root_num)
+-		return;
++		goto default_resources;
+ 
+-	printk(KERN_DEBUG "PCI: peer root bus %02x res updated from pci conf\n",
+-			b->number);
++	printk(KERN_DEBUG "PCI: root bus %02x: hardware-probed resources\n",
++	       bus);
+ 
+-	pci_bus_remove_resources(b);
+ 	info = &pci_root_info[i];
+ 	for (j = 0; j < info->res_num; j++) {
+ 		struct resource *res;
+ 		struct resource *root;
+ 
+ 		res = &info->res[j];
+-		pci_bus_add_resource(b, res, 0);
++		pci_add_resource(resources, res);
+ 		if (res->flags & IORESOURCE_IO)
+ 			root = &ioport_resource;
+ 		else
+ 			root = &iomem_resource;
+ 		insert_resource(root, res);
+ 	}
++	return;
++
++default_resources:
++	/*
++	 * We don't have any host bridge aperture information from the
++	 * "native host bridge drivers," e.g., amd_bus or broadcom_bus,
++	 * so fall back to the defaults historically used by pci_create_bus().
++	 */
++	printk(KERN_DEBUG "PCI: root bus %02x: using default resources\n", bus);
++	pci_add_resource(resources, &ioport_resource);
++	pci_add_resource(resources, &iomem_resource);
+ }
+ 
+ void __devinit update_res(struct pci_root_info *info, resource_size_t start,
+--- a/arch/x86/pci/common.c
++++ b/arch/x86/pci/common.c
+@@ -164,9 +164,6 @@ void __devinit pcibios_fixup_bus(struct
+ {
+ 	struct pci_dev *dev;
+ 
+-	/* root bus? */
+-	if (!b->parent)
+-		x86_pci_root_bus_res_quirks(b);
+ 	pci_read_bridge_bases(b);
+ 	list_for_each_entry(dev, &b->devices, bus_list)
+ 		pcibios_fixup_device_resources(dev);
+@@ -433,6 +430,7 @@ void __init dmi_check_pciprobe(void)
+ 
+ struct pci_bus * __devinit pcibios_scan_root(int busnum)
+ {
++	LIST_HEAD(resources);
+ 	struct pci_bus *bus = NULL;
+ 	struct pci_sysdata *sd;
+ 
+@@ -456,9 +454,12 @@ struct pci_bus * __devinit pcibios_scan_
+ 	sd->node = get_mp_bus_to_node(busnum);
+ 
+ 	printk(KERN_DEBUG "PCI: Probing PCI hardware (bus %02x)\n", busnum);
+-	bus = pci_scan_bus_parented(NULL, busnum, &pci_root_ops, sd);
+-	if (!bus)
++	x86_pci_root_bus_resources(busnum, &resources);
++	bus = pci_scan_root_bus(NULL, busnum, &pci_root_ops, sd, &resources);
++	if (!bus) {
++		pci_free_resource_list(&resources);
+ 		kfree(sd);
++	}
+ 
+ 	return bus;
+ }
+@@ -639,6 +640,7 @@ int pci_ext_cfg_avail(struct pci_dev *de
+ 
+ struct pci_bus * __devinit pci_scan_bus_on_node(int busno, struct pci_ops *ops, int node)
+ {
++	LIST_HEAD(resources);
+ 	struct pci_bus *bus = NULL;
+ 	struct pci_sysdata *sd;
+ 
+@@ -653,9 +655,12 @@ struct pci_bus * __devinit pci_scan_bus_
+ 		return NULL;
+ 	}
+ 	sd->node = node;
+-	bus = pci_scan_bus(busno, ops, sd);
+-	if (!bus)
++	x86_pci_root_bus_resources(busno, &resources);
++	bus = pci_scan_root_bus(NULL, busno, ops, sd, &resources);
++	if (!bus) {
++		pci_free_resource_list(&resources);
+ 		kfree(sd);
++	}
+ 
+ 	return bus;
+ }
+--- a/arch/x86/pci/legacy.c
++++ b/arch/x86/pci/legacy.c
+@@ -31,9 +31,6 @@ int __init pci_legacy_init(void)
+ 
+ 	printk("PCI: Probing PCI hardware\n");
+ 	pci_root_bus = pcibios_scan_root(0);
+-	if (pci_root_bus)
+-		pci_bus_add_devices(pci_root_bus);
+-
+ 	return 0;
+ }
+ 
+--- a/arch/x86/pci/numaq_32.c
++++ b/arch/x86/pci/numaq_32.c
+@@ -153,8 +153,6 @@ int __init pci_numaq_init(void)
+ 	raw_pci_ops = &pci_direct_conf1_mq;
+ 
+ 	pci_root_bus = pcibios_scan_root(0);
+-	if (pci_root_bus)
+-		pci_bus_add_devices(pci_root_bus);
+ 	if (num_online_nodes() > 1)
+ 		for_each_online_node(quad) {
+ 			if (quad == 0)
+--- a/arch/xtensa/kernel/pci.c
++++ b/arch/xtensa/kernel/pci.c
+@@ -134,9 +134,46 @@ struct pci_controller * __init pcibios_a
+ 	return pci_ctrl;
+ }
+ 
++static void __init pci_controller_apertures(struct pci_controller *pci_ctrl,
++					    struct list_head *resources)
++{
++	struct resource *res;
++	unsigned long io_offset;
++	int i;
++
++	io_offset = (unsigned long)pci_ctrl->io_space.base;
++	res = &pci_ctrl->io_resource;
++	if (!res->flags) {
++		if (io_offset)
++			printk (KERN_ERR "I/O resource not set for host"
++				" bridge %d\n", pci_ctrl->index);
++		res->start = 0;
++		res->end = IO_SPACE_LIMIT;
++		res->flags = IORESOURCE_IO;
++	}
++	res->start += io_offset;
++	res->end += io_offset;
++	pci_add_resource(resources, res);
++
++	for (i = 0; i < 3; i++) {
++		res = &pci_ctrl->mem_resources[i];
++		if (!res->flags) {
++			if (i > 0)
++				continue;
++			printk(KERN_ERR "Memory resource not set for "
++			       "host bridge %d\n", pci_ctrl->index);
++			res->start = 0;
++			res->end = ~0U;
++			res->flags = IORESOURCE_MEM;
++		}
++		pci_add_resource(resources, res);
++	}
++}
++
+ static int __init pcibios_init(void)
+ {
+ 	struct pci_controller *pci_ctrl;
++	struct list_head resources;
+ 	struct pci_bus *bus;
+ 	int next_busno = 0, i;
+ 
+@@ -145,19 +182,10 @@ static int __init pcibios_init(void)
+ 	/* Scan all of the recorded PCI controllers.  */
+ 	for (pci_ctrl = pci_ctrl_head; pci_ctrl; pci_ctrl = pci_ctrl->next) {
+ 		pci_ctrl->last_busno = 0xff;
+-		bus = pci_scan_bus(pci_ctrl->first_busno, pci_ctrl->ops,
+-				   pci_ctrl);
+-		if (pci_ctrl->io_resource.flags) {
+-			unsigned long offs;
+-
+-			offs = (unsigned long)pci_ctrl->io_space.base;
+-			pci_ctrl->io_resource.start += offs;
+-			pci_ctrl->io_resource.end += offs;
+-			bus->resource[0] = &pci_ctrl->io_resource;
+-		}
+-		for (i = 0; i < 3; ++i)
+-			if (pci_ctrl->mem_resources[i].flags)
+-				bus->resource[i+1] =&pci_ctrl->mem_resources[i];
++		INIT_LIST_HEAD(&resources);
++		pci_controller_apertures(pci_ctrl, &resources);
++		bus = pci_scan_root_bus(NULL, pci_ctrl->first_busno,
++					pci_ctrl->ops, pci_ctrl, &resources);
+ 		pci_ctrl->bus = bus;
+ 		pci_ctrl->last_busno = bus->subordinate;
+ 		if (next_busno <= pci_ctrl->last_busno)
+@@ -178,36 +206,7 @@ void __init pcibios_fixup_bus(struct pci
+ 	int i;
+ 
+ 	io_offset = (unsigned long)pci_ctrl->io_space.base;
+-	if (bus->parent == NULL) {
+-		/* this is a host bridge - fill in its resources */
+-		pci_ctrl->bus = bus;
+-
+-		bus->resource[0] = res = &pci_ctrl->io_resource;
+-		if (!res->flags) {
+-			if (io_offset)
+-				printk (KERN_ERR "I/O resource not set for host"
+-					" bridge %d\n", pci_ctrl->index);
+-			res->start = 0;
+-			res->end = IO_SPACE_LIMIT;
+-			res->flags = IORESOURCE_IO;
+-		}
+-		res->start += io_offset;
+-		res->end += io_offset;
+-
+-		for (i = 0; i < 3; i++) {
+-			res = &pci_ctrl->mem_resources[i];
+-			if (!res->flags) {
+-				if (i > 0)
+-					continue;
+-				printk(KERN_ERR "Memory resource not set for "
+-				       "host bridge %d\n", pci_ctrl->index);
+-				res->start = 0;
+-				res->end = ~0U;
+-				res->flags = IORESOURCE_MEM;
+-			}
+-			bus->resource[i+1] = res;
+-		}
+-	} else {
++	if (bus->parent) {
+ 		/* This is a subordinate bridge */
+ 		pci_read_bridge_bases(bus);
+ 
+--- a/drivers/parisc/dino.c
++++ b/drivers/parisc/dino.c
+@@ -562,19 +562,6 @@ dino_fixup_bus(struct pci_bus *bus)
+ 	/* Firmware doesn't set up card-mode dino, so we have to */
+ 	if (is_card_dino(&dino_dev->hba.dev->id)) {
+ 		dino_card_setup(bus, dino_dev->hba.base_addr);
+-	} else if(bus->parent == NULL) {
+-		/* must have a dino above it, reparent the resources
+-		 * into the dino window */
+-		int i;
+-		struct resource *res = &dino_dev->hba.lmmio_space;
+-
+-		bus->resource[0] = &(dino_dev->hba.io_space);
+-		for(i = 0; i < DINO_MAX_LMMIO_RESOURCES; i++) {
+-			if(res[i].flags == 0)
+-				break;
+-			bus->resource[i+1] = &res[i];
+-		}
+-
+ 	} else if (bus->parent) {
+ 		int i;
+ 
+@@ -927,6 +914,7 @@ static int __init dino_probe(struct pari
+ 	const char *version = "unknown";
+ 	char *name;
+ 	int is_cujo = 0;
++	LIST_HEAD(resources);
+ 	struct pci_bus *bus;
+ 	unsigned long hpa = dev->hpa.start;
+ 
+@@ -1003,26 +991,37 @@ static int __init dino_probe(struct pari
+ 
+ 	dev->dev.platform_data = dino_dev;
+ 
++	pci_add_resource(&resources, &dino_dev->hba.io_space);
++	if (dino_dev->hba.lmmio_space.flags)
++		pci_add_resource(&resources, &dino_dev->hba.lmmio_space);
++	if (dino_dev->hba.elmmio_space.flags)
++		pci_add_resource(&resources, &dino_dev->hba.elmmio_space);
++	if (dino_dev->hba.gmmio_space.flags)
++		pci_add_resource(&resources, &dino_dev->hba.gmmio_space);
++
+ 	/*
+ 	** It's not used to avoid chicken/egg problems
+ 	** with configuration accessor functions.
+ 	*/
+-	dino_dev->hba.hba_bus = bus = pci_scan_bus_parented(&dev->dev,
+-			 dino_current_bus, &dino_cfg_ops, NULL);
+-
+-	if(bus) {
+-		/* This code *depends* on scanning being single threaded
+-		 * if it isn't, this global bus number count will fail
+-		 */
+-		dino_current_bus = bus->subordinate + 1;
+-		pci_bus_assign_resources(bus);
+-		pci_bus_add_devices(bus);
+-	} else {
++	dino_dev->hba.hba_bus = bus = pci_create_root_bus(&dev->dev,
++			 dino_current_bus, &dino_cfg_ops, NULL, &resources);
++	if (!bus) {
+ 		printk(KERN_ERR "ERROR: failed to scan PCI bus on %s (duplicate bus number %d?)\n",
+ 		       dev_name(&dev->dev), dino_current_bus);
++		pci_free_resource_list(&resources);
+ 		/* increment the bus number in case of duplicates */
+ 		dino_current_bus++;
++		return 0;
+ 	}
++
++	bus->subordinate = pci_scan_child_bus(bus);
++
++	/* This code *depends* on scanning being single threaded
++	 * if it isn't, this global bus number count will fail
++	 */
++	dino_current_bus = bus->subordinate + 1;
++	pci_bus_assign_resources(bus);
++	pci_bus_add_devices(bus);
+ 	return 0;
+ }
+ 
+--- a/drivers/parisc/lba_pci.c
++++ b/drivers/parisc/lba_pci.c
+@@ -653,7 +653,7 @@ lba_fixup_bus(struct pci_bus *bus)
+ 		}
+ 	} else {
+ 		/* Host-PCI Bridge */
+-		int err, i;
++		int err;
+ 
+ 		DBG("lba_fixup_bus() %s [%lx/%lx]/%lx\n",
+ 			ldev->hba.io_space.name,
+@@ -669,9 +669,6 @@ lba_fixup_bus(struct pci_bus *bus)
+ 			lba_dump_res(&ioport_resource, 2);
+ 			BUG();
+ 		}
+-		/* advertize Host bridge resources to PCI bus */
+-		bus->resource[0] = &(ldev->hba.io_space);
+-		i = 1;
+ 
+ 		if (ldev->hba.elmmio_space.start) {
+ 			err = request_resource(&iomem_resource,
+@@ -685,35 +682,17 @@ lba_fixup_bus(struct pci_bus *bus)
+ 
+ 				/* lba_dump_res(&iomem_resource, 2); */
+ 				/* BUG(); */
+-			} else
+-				bus->resource[i++] = &(ldev->hba.elmmio_space);
++			}
+ 		}
+ 
+-
+-		/*   Overlaps with elmmio can (and should) fail here.
+-		 *   We will prune (or ignore) the distributed range.
+-		 *
+-		 *   FIXME: SBA code should register all elmmio ranges first.
+-		 *      that would take care of elmmio ranges routed
+-		 *	to a different rope (already discovered) from
+-		 *	getting registered *after* LBA code has already
+-		 *	registered it's distributed lmmio range.
+-		 */
+-		if (truncate_pat_collision(&iomem_resource,
+-				       	&(ldev->hba.lmmio_space))) {
+-
+-			printk(KERN_WARNING "LBA: lmmio_space [%lx/%lx] duplicate!\n",
+-					(long)ldev->hba.lmmio_space.start,
+-					(long)ldev->hba.lmmio_space.end);
+-		} else {
++		if (ldev->hba.lmmio_space.flags) {
+ 			err = request_resource(&iomem_resource, &(ldev->hba.lmmio_space));
+ 			if (err < 0) {
+ 				printk(KERN_ERR "FAILED: lba_fixup_bus() request for "
+ 					"lmmio_space [%lx/%lx]\n",
+ 					(long)ldev->hba.lmmio_space.start,
+ 					(long)ldev->hba.lmmio_space.end);
+-			} else
+-				bus->resource[i++] = &(ldev->hba.lmmio_space);
++			}
+ 		}
+ 
+ #ifdef CONFIG_64BIT
+@@ -728,7 +707,6 @@ lba_fixup_bus(struct pci_bus *bus)
+ 				lba_dump_res(&iomem_resource, 2);
+ 				BUG();
+ 			}
+-			bus->resource[i++] = &(ldev->hba.gmmio_space);
+ 		}
+ #endif
+ 
+@@ -1404,6 +1382,7 @@ static int __init
+ lba_driver_probe(struct parisc_device *dev)
+ {
+ 	struct lba_device *lba_dev;
++	LIST_HEAD(resources);
+ 	struct pci_bus *lba_bus;
+ 	struct pci_ops *cfg_ops;
+ 	u32 func_class;
+@@ -1518,10 +1497,41 @@ lba_driver_probe(struct parisc_device *d
+ 	if (lba_dev->hba.bus_num.start < lba_next_bus)
+ 		lba_dev->hba.bus_num.start = lba_next_bus;
+ 
++	/*   Overlaps with elmmio can (and should) fail here.
++	 *   We will prune (or ignore) the distributed range.
++	 *
++	 *   FIXME: SBA code should register all elmmio ranges first.
++	 *      that would take care of elmmio ranges routed
++	 *	to a different rope (already discovered) from
++	 *	getting registered *after* LBA code has already
++	 *	registered it's distributed lmmio range.
++	 */
++	if (truncate_pat_collision(&iomem_resource,
++				   &(lba_dev->hba.lmmio_space))) {
++		printk(KERN_WARNING "LBA: lmmio_space [%lx/%lx] duplicate!\n",
++				(long)lba_dev->hba.lmmio_space.start,
++				(long)lba_dev->hba.lmmio_space.end);
++		lba_dev->hba.lmmio_space.flags = 0;
++	}
++
++	pci_add_resource(&resources, &lba_dev->hba.io_space);
++	if (lba_dev->hba.elmmio_space.start)
++		pci_add_resource(&resources, &lba_dev->hba.elmmio_space);
++	if (lba_dev->hba.lmmio_space.flags)
++		pci_add_resource(&resources, &lba_dev->hba.lmmio_space);
++	if (lba_dev->hba.gmmio_space.flags)
++		pci_add_resource(&resources, &lba_dev->hba.gmmio_space);
++
+ 	dev->dev.platform_data = lba_dev;
+ 	lba_bus = lba_dev->hba.hba_bus =
+-		pci_scan_bus_parented(&dev->dev, lba_dev->hba.bus_num.start,
+-				cfg_ops, NULL);
++		pci_create_root_bus(&dev->dev, lba_dev->hba.bus_num.start,
++				    cfg_ops, NULL, &resources);
++	if (!lba_bus) {
++		pci_free_resource_list(&resources);
++		return 0;
++	}
++
++	lba_bus->subordinate = pci_scan_child_bus(lba_bus);
+ 
+ 	/* This is in lieu of calling pci_assign_unassigned_resources() */
+ 	if (is_pdc_pat()) {
+@@ -1551,10 +1561,8 @@ lba_driver_probe(struct parisc_device *d
+ 		lba_dev->flags |= LBA_FLAG_SKIP_PROBE;
+ 	}
+ 
+-	if (lba_bus) {
+-		lba_next_bus = lba_bus->subordinate + 1;
+-		pci_bus_add_devices(lba_bus);
+-	}
++	lba_next_bus = lba_bus->subordinate + 1;
++	pci_bus_add_devices(lba_bus);
+ 
+ 	/* Whew! Finally done! Tell services we got this one covered. */
+ 	return 0;
+--- a/drivers/pci/bus.c
++++ b/drivers/pci/bus.c
+@@ -18,6 +18,32 @@
+ 
+ #include "pci.h"
+ 
++void pci_add_resource(struct list_head *resources, struct resource *res)
++{
++	struct pci_bus_resource *bus_res;
++
++	bus_res = kzalloc(sizeof(struct pci_bus_resource), GFP_KERNEL);
++	if (!bus_res) {
++		printk(KERN_ERR "PCI: can't add bus resource %pR\n", res);
++		return;
++	}
++
++	bus_res->res = res;
++	list_add_tail(&bus_res->list, resources);
++}
++EXPORT_SYMBOL(pci_add_resource);
++
++void pci_free_resource_list(struct list_head *resources)
++{
++	struct pci_bus_resource *bus_res, *tmp;
++
++	list_for_each_entry_safe(bus_res, tmp, resources, list) {
++		list_del(&bus_res->list);
++		kfree(bus_res);
++	}
++}
++EXPORT_SYMBOL(pci_free_resource_list);
++
+ void pci_bus_add_resource(struct pci_bus *bus, struct resource *res,
+ 			  unsigned int flags)
+ {
+@@ -52,16 +78,12 @@ EXPORT_SYMBOL_GPL(pci_bus_resource_n);
+ 
+ void pci_bus_remove_resources(struct pci_bus *bus)
+ {
+-	struct pci_bus_resource *bus_res, *tmp;
+ 	int i;
+ 
+ 	for (i = 0; i < PCI_BRIDGE_RESOURCE_NUM; i++)
+ 		bus->resource[i] = NULL;
+ 
+-	list_for_each_entry_safe(bus_res, tmp, &bus->resources, list) {
+-		list_del(&bus_res->list);
+-		kfree(bus_res);
+-	}
++	pci_free_resource_list(&bus->resources);
+ }
+ 
+ /**
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -1522,12 +1522,14 @@ unsigned int __devinit pci_scan_child_bu
+ 	return max;
+ }
+ 
+-struct pci_bus * pci_create_bus(struct device *parent,
+-		int bus, struct pci_ops *ops, void *sysdata)
++struct pci_bus *pci_create_root_bus(struct device *parent, int bus,
++		struct pci_ops *ops, void *sysdata, struct list_head *resources)
+ {
+-	int error;
++	int error, i;
+ 	struct pci_bus *b, *b2;
+ 	struct device *dev;
++	struct pci_bus_resource *bus_res, *n;
++	struct resource *res;
+ 
+ 	b = pci_alloc_bus();
+ 	if (!b)
+@@ -1577,8 +1579,20 @@ struct pci_bus * pci_create_bus(struct d
+ 	pci_create_legacy_files(b);
+ 
+ 	b->number = b->secondary = bus;
+-	b->resource[0] = &ioport_resource;
+-	b->resource[1] = &iomem_resource;
++
++	/* Add initial resources to the bus */
++	list_for_each_entry_safe(bus_res, n, resources, list)
++		list_move_tail(&bus_res->list, &b->resources);
++
++	if (parent)
++		dev_info(parent, "PCI host bridge to bus %s\n", dev_name(&b->dev));
++	else
++		printk(KERN_INFO "PCI host bridge to bus %s\n", dev_name(&b->dev));
++
++	pci_bus_for_each_resource(b, res, i) {
++		if (res)
++			dev_info(&b->dev, "root bus resource %pR\n", res);
++	}
+ 
+ 	return b;
+ 
+@@ -1594,18 +1608,58 @@ err_out:
+ 	return NULL;
+ }
+ 
++struct pci_bus * __devinit pci_scan_root_bus(struct device *parent, int bus,
++		struct pci_ops *ops, void *sysdata, struct list_head *resources)
++{
++	struct pci_bus *b;
++
++	b = pci_create_root_bus(parent, bus, ops, sysdata, resources);
++	if (!b)
++		return NULL;
++
++	b->subordinate = pci_scan_child_bus(b);
++	pci_bus_add_devices(b);
++	return b;
++}
++EXPORT_SYMBOL(pci_scan_root_bus);
++
++/* Deprecated; use pci_scan_root_bus() instead */
+ struct pci_bus * __devinit pci_scan_bus_parented(struct device *parent,
+ 		int bus, struct pci_ops *ops, void *sysdata)
+ {
++	LIST_HEAD(resources);
+ 	struct pci_bus *b;
+ 
+-	b = pci_create_bus(parent, bus, ops, sysdata);
++	pci_add_resource(&resources, &ioport_resource);
++	pci_add_resource(&resources, &iomem_resource);
++	b = pci_create_root_bus(parent, bus, ops, sysdata, &resources);
+ 	if (b)
+ 		b->subordinate = pci_scan_child_bus(b);
++	else
++		pci_free_resource_list(&resources);
+ 	return b;
+ }
+ EXPORT_SYMBOL(pci_scan_bus_parented);
+ 
++struct pci_bus * __devinit pci_scan_bus(int bus, struct pci_ops *ops,
++					void *sysdata)
++{
++	LIST_HEAD(resources);
++	struct pci_bus *b;
++
++	pci_add_resource(&resources, &ioport_resource);
++	pci_add_resource(&resources, &iomem_resource);
++	b = pci_create_root_bus(NULL, bus, ops, sysdata, &resources);
++	if (b) {
++		b->subordinate = pci_scan_child_bus(b);
++		pci_bus_add_devices(b);
++	} else {
++		pci_free_resource_list(&resources);
++	}
++	return b;
++}
++EXPORT_SYMBOL(pci_scan_bus);
++
+ #ifdef CONFIG_HOTPLUG
+ /**
+  * pci_rescan_bus - scan a PCI bus for devices.
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -660,17 +660,13 @@ extern struct pci_bus *pci_find_bus(int
+ void pci_bus_add_devices(const struct pci_bus *bus);
+ struct pci_bus *pci_scan_bus_parented(struct device *parent, int bus,
+ 				      struct pci_ops *ops, void *sysdata);
+-static inline struct pci_bus * __devinit pci_scan_bus(int bus, struct pci_ops *ops,
+-					   void *sysdata)
+-{
+-	struct pci_bus *root_bus;
+-	root_bus = pci_scan_bus_parented(NULL, bus, ops, sysdata);
+-	if (root_bus)
+-		pci_bus_add_devices(root_bus);
+-	return root_bus;
+-}
+-struct pci_bus *pci_create_bus(struct device *parent, int bus,
+-			       struct pci_ops *ops, void *sysdata);
++struct pci_bus *pci_scan_bus(int bus, struct pci_ops *ops, void *sysdata);
++struct pci_bus *pci_create_root_bus(struct device *parent, int bus,
++				    struct pci_ops *ops, void *sysdata,
++				    struct list_head *resources);
++struct pci_bus * __devinit pci_scan_root_bus(struct device *parent, int bus,
++					     struct pci_ops *ops, void *sysdata,
++					     struct list_head *resources);
+ struct pci_bus *pci_add_new_bus(struct pci_bus *parent, struct pci_dev *dev,
+ 				int busnr);
+ void pcie_update_link_speed(struct pci_bus *bus, u16 link_status);
+@@ -910,6 +906,8 @@ int pci_request_selected_regions_exclusi
+ void pci_release_selected_regions(struct pci_dev *, int);
+ 
+ /* drivers/pci/bus.c */
++void pci_add_resource(struct list_head *resources, struct resource *res);
++void pci_free_resource_list(struct list_head *resources);
+ void pci_bus_add_resource(struct pci_bus *bus, struct resource *res, unsigned int flags);
+ struct resource *pci_bus_resource_n(const struct pci_bus *bus, int n);
+ void pci_bus_remove_resources(struct pci_bus *bus);
