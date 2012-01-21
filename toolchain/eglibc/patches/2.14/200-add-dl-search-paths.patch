@@ -1,0 +1,16 @@
+add /usr/lib to default search path for the dynamic linker
+
+diff --git a/libc/Makeconfig b/libc/Makeconfig
+index 1a9ad87..2d4d3f7 100644
+--- a/libc/Makeconfig
++++ b/libc/Makeconfig
+@@ -479,6 +479,9 @@ else
+ default-rpath = $(libdir)
+ endif
+ 
++# Add /usr/lib to default search path for the dynamic linker
++user-defined-trusted-dirs := /usr/lib
++
+ ifndef link-extra-libs
+ link-extra-libs = $(LDLIBS-$(@F))
+ link-extra-libs-static = $(link-extra-libs)
