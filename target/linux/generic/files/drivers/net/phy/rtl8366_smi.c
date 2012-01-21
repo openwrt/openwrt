@@ -157,6 +157,12 @@ static int rtl8366_smi_write_byte(struct rtl8366_smi *smi, u8 data)
 	return rtl8366_smi_wait_for_ack(smi);
 }
 
+static int rtl8366_smi_write_byte_noack(struct rtl8366_smi *smi, u8 data)
+{
+	rtl8366_smi_write_bits(smi, data, 8);
+	return 0;
+}
+
 static int rtl8366_smi_read_byte0(struct rtl8366_smi *smi, u8 *data)
 {
 	u32 t;
@@ -228,7 +234,8 @@ int rtl8366_smi_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
 }
 EXPORT_SYMBOL_GPL(rtl8366_smi_read_reg);
 
-int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
+static int __rtl8366_smi_write_reg(struct rtl8366_smi *smi,
+				   u32 addr, u32 data, bool ack)
 {
 	unsigned long flags;
 	int ret;
@@ -258,7 +265,10 @@ int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 		goto out;
 
 	/* write DATA[15:8] */
-	ret = rtl8366_smi_write_byte(smi, data >> 8);
+	if (ack)
+		ret = rtl8366_smi_write_byte(smi, data >> 8);
+	else
+		ret = rtl8366_smi_write_byte_noack(smi, data >> 8);
 	if (ret)
 		goto out;
 
@@ -270,7 +280,18 @@ int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 
 	return ret;
 }
+
+int rtl8366_smi_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
+{
+	return __rtl8366_smi_write_reg(smi, addr, data, true);
+}
 EXPORT_SYMBOL_GPL(rtl8366_smi_write_reg);
+
+int rtl8366_smi_write_reg_noack(struct rtl8366_smi *smi, u32 addr, u32 data)
+{
+	return __rtl8366_smi_write_reg(smi, addr, data, false);
+}
+EXPORT_SYMBOL_GPL(rtl8366_smi_write_reg_noack);
 
 int rtl8366_smi_rmwr(struct rtl8366_smi *smi, u32 addr, u32 mask, u32 data)
 {
