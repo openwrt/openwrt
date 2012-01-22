@@ -743,7 +743,7 @@ define Image/Build/Profile/UBNTNANOM
 	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-nano-m,$(ubntnanom_cmdline),XM,UBNTXM,ar7240)
 endef
 
-ubntunifi_cmdline=board=UBNT-XM console=ttyS0,115200
+ubntunifi_cmdline=board=UBNT-UF console=ttyS0,115200
 define Image/Build/Profile/UBNTUNIFI
 	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-unifi,$(ubntunifi_cmdline),XM,UBNTXM,ar7240)
 endef

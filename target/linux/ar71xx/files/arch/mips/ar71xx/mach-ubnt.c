@@ -353,5 +353,5 @@ static void __init ubnt_unifi_setup(void)
 					ubnt_unifi_leds_gpio);
 }
 
-MIPS_MACHINE(AR71XX_MACH_UBNT_UNIFI, "UBNT-XM", "Ubiquiti UniFi",
+MIPS_MACHINE(AR71XX_MACH_UBNT_UNIFI, "UBNT-UF", "Ubiquiti UniFi",
 	     ubnt_unifi_setup);
