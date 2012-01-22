@@ -14,6 +14,8 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/vmalloc.h>
@@ -30,9 +32,15 @@ struct part_data {
 	char names[MYLO_MAX_PARTITIONS][PART_NAME_LEN];
 };
 
-int myloader_parse_partitions(struct mtd_info *master,
-			struct mtd_partition **pparts,
-			unsigned long origin)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+static int myloader_parse_partitions(struct mtd_info *master,
+				     struct mtd_partition **pparts,
+				     struct mtd_part_parser_data *data)
+#else
+static int myloader_parse_partitions(struct mtd_info *master,
+				     struct mtd_partition **pparts,
+				     unsigned long origin)
+#endif
 {
 	struct part_data *buf;
 	struct mylo_partition_table *tab;
