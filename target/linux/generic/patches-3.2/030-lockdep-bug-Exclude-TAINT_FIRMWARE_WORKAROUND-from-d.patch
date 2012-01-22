@@ -1,0 +1,47 @@
+From df754e6af2f237a6c020c0daff55a1a609338e31 Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Date: Mon, 14 Nov 2011 13:13:49 +0100
+Subject: [PATCH 1/2] lockdep, bug: Exclude TAINT_FIRMWARE_WORKAROUND from disabling lockdep
+
+It's unlikely that TAINT_FIRMWARE_WORKAROUND causes false
+lockdep messages, so do not disable lockdep in that case.
+We still want to keep lockdep disabled in the
+TAINT_OOT_MODULE case:
+
+  - bin-only modules can cause various instabilities in
+    their and in unrelated kernel code
+
+  - they are impossible to debug for kernel developers
+
+  - they also typically do not have the copyright license
+    permission to link to the GPL-ed lockdep code.
+
+Suggested-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Link: http://lkml.kernel.org/n/tip-xopopjjens57r0i13qnyh2yo@git.kernel.org
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+---
+ kernel/panic.c |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
+
+--- a/kernel/panic.c
++++ b/kernel/panic.c
+@@ -240,8 +240,16 @@ void add_taint(unsigned flag)
+ 	 * Also we want to keep up lockdep for staging development and
+ 	 * post-warning case.
+ 	 */
+-	if (flag != TAINT_CRAP && flag != TAINT_WARN && __debug_locks_off())
+-		printk(KERN_WARNING "Disabling lock debugging due to kernel taint\n");
++	switch (flag) {
++	case TAINT_CRAP:
++	case TAINT_WARN:
++	case TAINT_FIRMWARE_WORKAROUND:
++		break;
++
++	default:
++		if (__debug_locks_off())
++			printk(KERN_WARNING "Disabling lock debugging due to kernel taint\n");
++	}
+ 
+ 	set_bit(flag, &tainted_mask);
+ }
