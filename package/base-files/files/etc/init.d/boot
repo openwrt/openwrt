@@ -84,6 +84,7 @@ start() {
 	killall -q hotplug2
 	[ -x /sbin/hotplug2 ] && /sbin/hotplug2 --override --persistent \
 			--set-rules-file /etc/hotplug2.rules \
+			--set-coldplug-cmd /sbin/udevtrigger \
 			--max-children 1 >/dev/null 2>&1 &
 
 	# the coldplugging of network interfaces needs to happen later, so we do it manually here
