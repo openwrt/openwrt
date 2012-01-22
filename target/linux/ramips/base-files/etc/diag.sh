@@ -78,6 +78,9 @@ get_status_led() {
 	wl-351)
 		status_led="wl-351:amber:power"
 		;;
+	wr512-3gn)
+		status_led="wr512:green:wps"
+		;;
 	esac
 }
 
