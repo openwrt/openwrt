@@ -22,6 +22,7 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 
@@ -91,10 +92,14 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 	struct uimage_header *uheader;
 	size_t retlen;
 	unsigned int kernel_len;
-	unsigned int uboot_len = max(master->erasesize, WRT160NL_UBOOT_LEN);
-	unsigned int nvram_len = max(master->erasesize, WRT160NL_NVRAM_LEN);
-	unsigned int art_len = max(master->erasesize, WRT160NL_ART_LEN);
+	unsigned int uboot_len;
+	unsigned int nvram_len;
+	unsigned int art_len;
 	int ret;
+
+	uboot_len = max_t(unsigned int, master->erasesize, WRT160NL_UBOOT_LEN);
+	nvram_len = max_t(unsigned int, master->erasesize, WRT160NL_NVRAM_LEN);
+	art_len = max_t(unsigned int, master->erasesize, WRT160NL_ART_LEN);
 
 	header = vmalloc(sizeof(*header));
 	if (!header) {
