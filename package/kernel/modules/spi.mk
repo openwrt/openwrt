@@ -104,8 +104,8 @@ define KernelPackage/spi-vsc7385
   TITLE:=Vitesse VSC7385 ethernet switch driver
   DEPENDS:=@TARGET_ar71xx
   KCONFIG:=CONFIG_SPI_VSC7385
-  FILES:=$(LINUX_DIR)/drivers/spi/spi_vsc7385.ko
-  AUTOLOAD:=$(call AutoLoad,93,spi_vsc7385)
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-vsc7385.ko
+  AUTOLOAD:=$(call AutoLoad,93,spi-vsc7385)
 endef
 
 define KernelPackage/spi-vsc7385/description
