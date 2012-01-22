@@ -37,7 +37,7 @@ get_status_led() {
 		status_led="esr-9753:orange:power"
 		;;
 	f5d8235-v1)
-		set_usb_led "f5d8235-v1:green:usb"
+		status_led="f5d8234-v1:blue:storage"
 		;;
 	fonera20n)
 		status_led="fonera20n:green:power"
