@@ -30,7 +30,8 @@ platform_check_image() {
 	w502u |\
 	v22rw-2x2 | \
 	wli-tx4-ag300n | \
-	whr-g300n)
+	whr-g300n |\
+	wr512-3gn)
 		[ "$magic" != "2705" ] && {
 			echo "Invalid image type."
 			return 1
