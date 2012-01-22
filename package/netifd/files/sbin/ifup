@@ -13,8 +13,8 @@ if_call() {
 	done
 }
 
+[ "$modes" = "down up" ] && ubus call network reload
 [[ "$1" == "-a" ]] && {
-	[ "$modes" = "down up" ] && ubus call network reload
 	for interface in `ubus -S list 'network.interface.*'`; do
 		if_call "$interface"
 	done
