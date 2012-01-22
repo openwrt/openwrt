@@ -1,0 +1,65 @@
+From 6e3f244874b8ae660136531b696ad05abe549607 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 18 Nov 2011 00:17:53 +0000
+Subject: [PATCH 21/27] MIPS: ath79: Separate AR913x SoC specific WMAC setup code
+
+The device registration code can be shared between the different SoCs, but
+the required setup code varies Move AR913x specific setup code into a
+separate function in order to make adding support for another SoCs easier.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: Imre Kaloz <kaloz@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3029/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/dev-ar913x-wmac.c |   24 +++++++++++++++++-------
+ 1 files changed, 17 insertions(+), 7 deletions(-)
+
+--- a/arch/mips/ath79/dev-ar913x-wmac.c
++++ b/arch/mips/ath79/dev-ar913x-wmac.c
+@@ -23,8 +23,7 @@ static struct ath9k_platform_data ath79_
+ 
+ static struct resource ath79_wmac_resources[] = {
+ 	{
+-		.start	= AR913X_WMAC_BASE,
+-		.end	= AR913X_WMAC_BASE + AR913X_WMAC_SIZE - 1,
++		/* .start and .end fields are filled dynamically */
+ 		.flags	= IORESOURCE_MEM,
+ 	}, {
+ 		.start	= ATH79_CPU_IRQ_IP2,
+@@ -43,12 +42,8 @@ static struct platform_device ath79_wmac
+ 	},
+ };
+ 
+-void __init ath79_register_wmac(u8 *cal_data)
++static void __init ar913x_wmac_setup(void)
+ {
+-	if (cal_data)
+-		memcpy(ath79_wmac_data.eeprom_data, cal_data,
+-		       sizeof(ath79_wmac_data.eeprom_data));
+-
+ 	/* reset the WMAC */
+ 	ath79_device_reset_set(AR913X_RESET_AMBA2WMAC);
+ 	mdelay(10);
+@@ -56,5 +51,20 @@ void __init ath79_register_wmac(u8 *cal_
+ 	ath79_device_reset_clear(AR913X_RESET_AMBA2WMAC);
+ 	mdelay(10);
+ 
++	ath79_wmac_resources[0].start = AR913X_WMAC_BASE;
++	ath79_wmac_resources[0].end = AR913X_WMAC_BASE + AR913X_WMAC_SIZE - 1;
++}
++
++void __init ath79_register_wmac(u8 *cal_data)
++{
++	if (soc_is_ar913x())
++		ar913x_wmac_setup();
++	else
++		BUG();
++
++	if (cal_data)
++		memcpy(ath79_wmac_data.eeprom_data, cal_data,
++		       sizeof(ath79_wmac_data.eeprom_data));
++
+ 	platform_device_register(&ath79_wmac_device);
+ }

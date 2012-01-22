@@ -1,0 +1,34 @@
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -150,7 +150,7 @@ config MTD_AR7_PARTS
+ 
+ config MTD_WRT160NL_PARTS
+ 	tristate "Linksys WRT160NL partitioning support"
+-	depends on MTD_PARTITIONS && ATH79_MACH_WRT160NL
++	depends on ATH79_MACH_WRT160NL
+ 	---help---
+ 	   Linksys WRT160NL partitioning support
+ 
+@@ -170,6 +170,12 @@ config MTD_MYLOADER_PARTS
+ 	  You will still need the parsing functions to be called by the driver
+ 	  for your particular device. It won't happen automatically.
+ 
++config MTD_TPLINK_PARTS
++	tristate "TP-Link AR7XXX/AR9XXX partitioning support"
++	depends on ATH79
++	---help---
++	  TBD.
++
+ comment "User Modules And Translation Layers"
+ 
+ config MTD_CHAR
+--- a/drivers/mtd/Makefile
++++ b/drivers/mtd/Makefile
+@@ -13,6 +13,7 @@ obj-$(CONFIG_MTD_AFS_PARTS)	+= afs.o
+ obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
+ obj-$(CONFIG_MTD_WRT160NL_PARTS) += wrt160nl_part.o
+ obj-$(CONFIG_MTD_MYLOADER_PARTS) += myloader.o
++obj-$(CONFIG_MTD_TPLINK_PARTS)	+= tplinkpart.o
+ 
+ # 'Users' - code which presents functionality to userspace.
+ obj-$(CONFIG_MTD_CHAR)		+= mtdchar.o

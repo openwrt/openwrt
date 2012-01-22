@@ -1,0 +1,72 @@
+From 9951cfc88b5d818391bebc7a56b678942b89721e Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 5 Jun 2011 23:38:45 +0200
+Subject: [PATCH 02/27] MIPS: ath79: Handle more MISC IRQs
+
+The AR724X SoCs have more IRQ sources hooked into the MISC IRQ controller.
+The patch adds support for them.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/2440/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/irq.c                          |   12 ++++++++++++
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    4 ++++
+ arch/mips/include/asm/mach-ath79/irq.h         |    4 ++++
+ 3 files changed, 20 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/irq.c
++++ b/arch/mips/ath79/irq.c
+@@ -46,6 +46,15 @@ static void ath79_misc_irq_handler(unsig
+ 	else if (pending & MISC_INT_TIMER)
+ 		generic_handle_irq(ATH79_MISC_IRQ_TIMER);
+ 
++	else if (pending & MISC_INT_TIMER2)
++		generic_handle_irq(ATH79_MISC_IRQ_TIMER2);
++
++	else if (pending & MISC_INT_TIMER3)
++		generic_handle_irq(ATH79_MISC_IRQ_TIMER3);
++
++	else if (pending & MISC_INT_TIMER4)
++		generic_handle_irq(ATH79_MISC_IRQ_TIMER4);
++
+ 	else if (pending & MISC_INT_OHCI)
+ 		generic_handle_irq(ATH79_MISC_IRQ_OHCI);
+ 
+@@ -58,6 +67,9 @@ static void ath79_misc_irq_handler(unsig
+ 	else if (pending & MISC_INT_WDOG)
+ 		generic_handle_irq(ATH79_MISC_IRQ_WDOG);
+ 
++	else if (pending & MISC_INT_ETHSW)
++		generic_handle_irq(ATH79_MISC_IRQ_ETHSW);
++
+ 	else
+ 		spurious_interrupt();
+ }
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -130,6 +130,10 @@
+ 
+ #define AR724X_RESET_REG_RESET_MODULE		0x1c
+ 
++#define MISC_INT_ETHSW			BIT(12)
++#define MISC_INT_TIMER4			BIT(10)
++#define MISC_INT_TIMER3			BIT(9)
++#define MISC_INT_TIMER2			BIT(8)
+ #define MISC_INT_DMA			BIT(7)
+ #define MISC_INT_OHCI			BIT(6)
+ #define MISC_INT_PERFC			BIT(5)
+--- a/arch/mips/include/asm/mach-ath79/irq.h
++++ b/arch/mips/include/asm/mach-ath79/irq.h
+@@ -30,6 +30,10 @@
+ #define ATH79_MISC_IRQ_PERFC	(ATH79_MISC_IRQ_BASE + 5)
+ #define ATH79_MISC_IRQ_OHCI	(ATH79_MISC_IRQ_BASE + 6)
+ #define ATH79_MISC_IRQ_DMA	(ATH79_MISC_IRQ_BASE + 7)
++#define ATH79_MISC_IRQ_TIMER2	(ATH79_MISC_IRQ_BASE + 8)
++#define ATH79_MISC_IRQ_TIMER3	(ATH79_MISC_IRQ_BASE + 9)
++#define ATH79_MISC_IRQ_TIMER4	(ATH79_MISC_IRQ_BASE + 10)
++#define ATH79_MISC_IRQ_ETHSW	(ATH79_MISC_IRQ_BASE + 12)
+ 
+ #include_next <irq.h>
+ 

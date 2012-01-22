@@ -1,0 +1,88 @@
+From 1355a27c85ae89225e738b9016656a406542ed1b Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 20 Jun 2011 21:26:10 +0200
+Subject: [PATCH 13/27] MIPS: ath79: add AR933X specific USB platform device registration
+
+Also select the USB_ARCH_HAS_EHCI symbol in order to make the
+EHCI driver available.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: Kathy Giori <kgiori@qca.qualcomm.com>
+Cc: "Luis R.  Rodriguez" <rodrigue@qca.qualcomm.com>
+Patchwork: https://patchwork.linux-mips.org/patch/2527/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/Kconfig                        |    1 +
+ arch/mips/ath79/dev-usb.c                      |   19 +++++++++++++++++++
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    7 +++++++
+ 3 files changed, 27 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -42,6 +42,7 @@ config SOC_AR913X
+ 	def_bool n
+ 
+ config SOC_AR933X
++	select USB_ARCH_HAS_EHCI
+ 	def_bool n
+ 
+ config ATH79_DEV_AR913X_WMAC
+--- a/arch/mips/ath79/dev-usb.c
++++ b/arch/mips/ath79/dev-usb.c
+@@ -163,6 +163,23 @@ static void __init ar913x_usb_setup(void
+ 	platform_device_register(&ath79_ehci_device);
+ }
+ 
++static void __init ar933x_usb_setup(void)
++{
++	ath79_device_reset_set(AR933X_RESET_USBSUS_OVERRIDE);
++	mdelay(10);
++
++	ath79_device_reset_clear(AR933X_RESET_USB_HOST);
++	mdelay(10);
++
++	ath79_device_reset_clear(AR933X_RESET_USB_PHY);
++	mdelay(10);
++
++	ath79_ehci_resources[0].start = AR933X_EHCI_BASE;
++	ath79_ehci_resources[0].end = AR933X_EHCI_BASE + AR933X_EHCI_SIZE - 1;
++	ath79_ehci_device.name = "ar933x-ehci";
++	platform_device_register(&ath79_ehci_device);
++}
++
+ void __init ath79_register_usb(void)
+ {
+ 	if (soc_is_ar71xx())
+@@ -173,6 +190,8 @@ void __init ath79_register_usb(void)
+ 		ar724x_usb_setup();
+ 	else if (soc_is_ar913x())
+ 		ar913x_usb_setup();
++	else if (soc_is_ar933x())
++		ar933x_usb_setup();
+ 	else
+ 		BUG();
+ }
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -56,6 +56,9 @@
+ #define AR933X_UART_BASE	(AR71XX_APB_BASE + 0x00020000)
+ #define AR933X_UART_SIZE	0x14
+ 
++#define AR933X_EHCI_BASE	0x1b000000
++#define AR933X_EHCI_SIZE	0x1000
++
+ /*
+  * DDR_CTRL block
+  */
+@@ -230,6 +233,10 @@
+ #define AR913X_RESET_USB_HOST		BIT(5)
+ #define AR913X_RESET_USB_PHY		BIT(4)
+ 
++#define AR933X_RESET_USB_HOST		BIT(5)
++#define AR933X_RESET_USB_PHY		BIT(4)
++#define AR933X_RESET_USBSUS_OVERRIDE	BIT(3)
++
+ #define AR933X_BOOTSTRAP_REF_CLK_40	BIT(0)
+ 
+ #define REV_ID_MAJOR_MASK		0xfff0

@@ -1,0 +1,43 @@
+From 156560a512a39284148d556ab96e2e833e816666 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 23 Dec 2011 19:25:42 +0100
+Subject: [PATCH 27/27] watchdog: ath79_wdt: flush register writes
+
+The watchdog register writes required to have a flush
+in order to commit the values to the register. Without
+the flush, the driver not function correctly on AR934X
+SoCs.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+Signed-off-by: Wim Van Sebroeck <wim@iguana.be>
+---
+ drivers/watchdog/ath79_wdt.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+--- a/drivers/watchdog/ath79_wdt.c
++++ b/drivers/watchdog/ath79_wdt.c
+@@ -68,17 +68,23 @@ static int max_timeout;
+ static inline void ath79_wdt_keepalive(void)
+ {
+ 	ath79_reset_wr(AR71XX_RESET_REG_WDOG, wdt_freq * timeout);
++	/* flush write */
++	ath79_reset_rr(AR71XX_RESET_REG_WDOG);
+ }
+ 
+ static inline void ath79_wdt_enable(void)
+ {
+ 	ath79_wdt_keepalive();
+ 	ath79_reset_wr(AR71XX_RESET_REG_WDOG_CTRL, WDOG_CTRL_ACTION_FCR);
++	/* flush write */
++	ath79_reset_rr(AR71XX_RESET_REG_WDOG_CTRL);
+ }
+ 
+ static inline void ath79_wdt_disable(void)
+ {
+ 	ath79_reset_wr(AR71XX_RESET_REG_WDOG_CTRL, WDOG_CTRL_ACTION_NONE);
++	/* flush write */
++	ath79_reset_rr(AR71XX_RESET_REG_WDOG_CTRL);
+ }
+ 
+ static int ath79_wdt_set_timeout(int val)

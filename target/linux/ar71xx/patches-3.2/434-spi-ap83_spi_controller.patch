@@ -1,0 +1,27 @@
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -12,6 +12,7 @@ obj-$(CONFIG_SPI_SPIDEV)		+= spidev.o
+ # SPI master controller drivers (bus)
+ obj-$(CONFIG_SPI_ALTERA)		+= spi-altera.o
+ obj-$(CONFIG_SPI_ATMEL)			+= spi-atmel.o
++obj-$(CONFIG_SPI_AP83)			+= spi-ap83.o
+ obj-$(CONFIG_SPI_ATH79)			+= spi-ath79.o
+ obj-$(CONFIG_SPI_AU1550)		+= spi-au1550.o
+ obj-$(CONFIG_SPI_BFIN)			+= spi-bfin5xx.o
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -59,6 +59,14 @@ config SPI_ALTERA
+ 	help
+ 	  This is the driver for the Altera SPI Controller.
+ 
++config SPI_AP83
++	tristate "Atheros AP83 specific SPI Controller"
++	depends on SPI_MASTER && ATH79_MACH_AP83
++	select SPI_BITBANG
++	help
++	  This is a specific SPI controller driver for the Atheros AP83
++	  reference board.
++
+ config SPI_ATH79
+ 	tristate "Atheros AR71XX/AR724X/AR913X SPI controller driver"
+ 	depends on ATH79 && GENERIC_GPIO

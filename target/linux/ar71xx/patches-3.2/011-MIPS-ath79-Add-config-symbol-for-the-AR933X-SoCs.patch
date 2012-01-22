@@ -1,0 +1,27 @@
+From 7ab361d321763ef6296f35eb18ae05be8e28e64a Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 20 Jun 2011 21:26:08 +0200
+Subject: [PATCH 11/27] MIPS: ath79: Add config symbol for the AR933X SoCs
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: Kathy Giori <kgiori@qca.qualcomm.com>
+Cc: "Luis R.  Rodriguez" <rodrigue@qca.qualcomm.com>
+Patchwork: https://patchwork.linux-mips.org/patch/2525/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/Kconfig |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -41,6 +41,9 @@ config SOC_AR913X
+ 	select USB_ARCH_HAS_EHCI
+ 	def_bool n
+ 
++config SOC_AR933X
++	def_bool n
++
+ config ATH79_DEV_AR913X_WMAC
+ 	depends on SOC_AR913X
+ 	def_bool n

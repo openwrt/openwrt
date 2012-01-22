@@ -1,0 +1,103 @@
+From 204fd70abd99099f6c2e2213a2baa1d51c03a039 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 18 Nov 2011 09:50:50 +0100
+Subject: [PATCH 03/35] MIPS: ath79: rename pci-ath724x.h
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The declared function in this header file is used by the
+ath79 platform code only. Move the header to the platform
+directory.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: René Bolldorf <xsecute@googlemail.com>
+
+v4: - add an Acked-by tag from René
+v3: - move include "pci.h" out of the #ifdef CONFIG_PCI section
+v2: - no changes
+---
+ arch/mips/ath79/mach-ubnt-xm.c                 |    2 +-
+ arch/mips/ath79/pci.c                          |    2 +-
+ arch/mips/ath79/pci.h                          |   21 +++++++++++++++++++++
+ arch/mips/include/asm/mach-ath79/pci-ath724x.h |   21 ---------------------
+ 4 files changed, 23 insertions(+), 23 deletions(-)
+ create mode 100644 arch/mips/ath79/pci.h
+ delete mode 100644 arch/mips/include/asm/mach-ath79/pci-ath724x.h
+
+--- a/arch/mips/ath79/mach-ubnt-xm.c
++++ b/arch/mips/ath79/mach-ubnt-xm.c
+@@ -15,13 +15,13 @@
+ 
+ #ifdef CONFIG_PCI
+ #include <linux/ath9k_platform.h>
+-#include <asm/mach-ath79/pci-ath724x.h>
+ #endif /* CONFIG_PCI */
+ 
+ #include "machtypes.h"
+ #include "dev-gpio-buttons.h"
+ #include "dev-leds-gpio.h"
+ #include "dev-spi.h"
++#include "pci.h"
+ 
+ #define UBNT_XM_GPIO_LED_L1		0
+ #define UBNT_XM_GPIO_LED_L2		1
+--- a/arch/mips/ath79/pci.c
++++ b/arch/mips/ath79/pci.c
+@@ -9,7 +9,7 @@
+  */
+ 
+ #include <linux/pci.h>
+-#include <asm/mach-ath79/pci-ath724x.h>
++#include "pci.h"
+ 
+ static struct ath724x_pci_data *pci_data;
+ static int pci_data_size;
+--- /dev/null
++++ b/arch/mips/ath79/pci.h
+@@ -0,0 +1,21 @@
++/*
++ *  Atheros 724x PCI support
++ *
++ *  Copyright (C) 2011 René Bolldorf <xsecute@googlemail.com>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#ifndef __ASM_MACH_ATH79_PCI_ATH724X_H
++#define __ASM_MACH_ATH79_PCI_ATH724X_H
++
++struct ath724x_pci_data {
++	int irq;
++	void *pdata;
++};
++
++void ath724x_pci_add_data(struct ath724x_pci_data *data, int size);
++
++#endif /* __ASM_MACH_ATH79_PCI_ATH724X_H */
+--- a/arch/mips/include/asm/mach-ath79/pci-ath724x.h
++++ /dev/null
+@@ -1,21 +0,0 @@
+-/*
+- *  Atheros 724x PCI support
+- *
+- *  Copyright (C) 2011 René Bolldorf <xsecute@googlemail.com>
+- *
+- *  This program is free software; you can redistribute it and/or modify it
+- *  under the terms of the GNU General Public License version 2 as published
+- *  by the Free Software Foundation.
+- */
+-
+-#ifndef __ASM_MACH_ATH79_PCI_ATH724X_H
+-#define __ASM_MACH_ATH79_PCI_ATH724X_H
+-
+-struct ath724x_pci_data {
+-	int irq;
+-	void *pdata;
+-};
+-
+-void ath724x_pci_add_data(struct ath724x_pci_data *data, int size);
+-
+-#endif /* __ASM_MACH_ATH79_PCI_ATH724X_H */

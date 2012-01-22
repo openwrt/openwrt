@@ -1,0 +1,41 @@
+From 7091af5ca0aad47826a4e3f699a7985e2d8aa886 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 18 Nov 2011 00:17:54 +0000
+Subject: [PATCH 24/27] MIPS: ath79: Register the wireless MAC device on the AP121 board
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: Imre Kaloz <kaloz@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3032/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/mach-ap121.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/mach-ap121.c
++++ b/arch/mips/ath79/mach-ap121.c
+@@ -13,6 +13,7 @@
+ #include "dev-leds-gpio.h"
+ #include "dev-spi.h"
+ #include "dev-usb.h"
++#include "dev-ar913x-wmac.h"
+ 
+ #define AP121_GPIO_LED_WLAN		0
+ #define AP121_GPIO_LED_USB		1
+@@ -73,6 +74,8 @@ static struct ath79_spi_platform_data ap
+ 
+ static void __init ap121_setup(void)
+ {
++	u8 *cal_data = (u8 *) KSEG1ADDR(AP121_CAL_DATA_ADDR);
++
+ 	ath79_register_leds_gpio(-1, ARRAY_SIZE(ap121_leds_gpio),
+ 				 ap121_leds_gpio);
+ 	ath79_register_gpio_keys_polled(-1, AP121_KEYS_POLL_INTERVAL,
+@@ -82,6 +85,7 @@ static void __init ap121_setup(void)
+ 	ath79_register_spi(&ap121_spi_data, ap121_spi_info,
+ 			   ARRAY_SIZE(ap121_spi_info));
+ 	ath79_register_usb();
++	ath79_register_wmac(cal_data);
+ }
+ 
+ MIPS_MACHINE(ATH79_MACH_AP121, "AP121", "Atheros AP121 reference board",

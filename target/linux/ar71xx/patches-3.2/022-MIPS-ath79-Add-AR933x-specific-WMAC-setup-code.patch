@@ -1,0 +1,113 @@
+From e2201a02b529acc65a5a1b19a52b93f9c2d98088 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 18 Nov 2011 00:17:53 +0000
+Subject: [PATCH 22/27] MIPS: ath79: Add AR933x specific WMAC setup code
+
+The wireless MAC of the AR933x SoCs uses different base address, and
+requires different setup code.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: Imre Kaloz <kaloz@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3030/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/dev-ar913x-wmac.c              |   43 ++++++++++++++++++++++-
+ arch/mips/ath79/dev-ar913x-wmac.h              |    4 +-
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    4 ++-
+ 3 files changed, 46 insertions(+), 5 deletions(-)
+
+--- a/arch/mips/ath79/dev-ar913x-wmac.c
++++ b/arch/mips/ath79/dev-ar913x-wmac.c
+@@ -1,7 +1,7 @@
+ /*
+- *  Atheros AR913X SoC built-in WMAC device support
++ *  Atheros AR913X/AR933X SoC built-in WMAC device support
+  *
+- *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
+  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+  *
+  *  This program is free software; you can redistribute it and/or modify it
+@@ -55,10 +55,49 @@ static void __init ar913x_wmac_setup(voi
+ 	ath79_wmac_resources[0].end = AR913X_WMAC_BASE + AR913X_WMAC_SIZE - 1;
+ }
+ 
++
++static int ar933x_wmac_reset(void)
++{
++	ath79_device_reset_clear(AR933X_RESET_WMAC);
++	ath79_device_reset_set(AR933X_RESET_WMAC);
++
++	return 0;
++}
++
++static int ar933x_r1_get_wmac_revision(void)
++{
++	return ath79_soc_rev;
++}
++
++static void __init ar933x_wmac_setup(void)
++{
++	u32 t;
++
++	ar933x_wmac_reset();
++
++	ath79_wmac_device.name = "ar933x_wmac";
++
++	ath79_wmac_resources[0].start = AR933X_WMAC_BASE;
++	ath79_wmac_resources[0].end = AR933X_WMAC_BASE + AR933X_WMAC_SIZE - 1;
++
++	t = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
++	if (t & AR933X_BOOTSTRAP_REF_CLK_40)
++		ath79_wmac_data.is_clk_25mhz = false;
++	else
++		ath79_wmac_data.is_clk_25mhz = true;
++
++	if (ath79_soc_rev == 1)
++		ath79_wmac_data.get_mac_revision = ar933x_r1_get_wmac_revision;
++
++	ath79_wmac_data.external_reset = ar933x_wmac_reset;
++}
++
+ void __init ath79_register_wmac(u8 *cal_data)
+ {
+ 	if (soc_is_ar913x())
+ 		ar913x_wmac_setup();
++	if (soc_is_ar933x())
++		ar933x_wmac_setup();
+ 	else
+ 		BUG();
+ 
+--- a/arch/mips/ath79/dev-ar913x-wmac.h
++++ b/arch/mips/ath79/dev-ar913x-wmac.h
+@@ -1,7 +1,7 @@
+ /*
+- *  Atheros AR913X SoC built-in WMAC device support
++ *  Atheros AR913X/AR933X SoC built-in WMAC device support
+  *
+- *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
+  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+  *
+  *  This program is free software; you can redistribute it and/or modify it
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -55,7 +55,8 @@
+ 
+ #define AR933X_UART_BASE	(AR71XX_APB_BASE + 0x00020000)
+ #define AR933X_UART_SIZE	0x14
+-
++#define AR933X_WMAC_BASE	(AR71XX_APB_BASE + 0x00100000)
++#define AR933X_WMAC_SIZE	0x20000
+ #define AR933X_EHCI_BASE	0x1b000000
+ #define AR933X_EHCI_SIZE	0x1000
+ 
+@@ -233,6 +234,7 @@
+ #define AR913X_RESET_USB_HOST		BIT(5)
+ #define AR913X_RESET_USB_PHY		BIT(4)
+ 
++#define AR933X_RESET_WMAC		BIT(11)
+ #define AR933X_RESET_USB_HOST		BIT(5)
+ #define AR933X_RESET_USB_PHY		BIT(4)
+ #define AR933X_RESET_USBSUS_OVERRIDE	BIT(3)

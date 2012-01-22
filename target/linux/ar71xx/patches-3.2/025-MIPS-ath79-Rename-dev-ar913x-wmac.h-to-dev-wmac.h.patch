@@ -1,0 +1,96 @@
+From ece52fe72b70e35f72edf940233d125257a5f4bc Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 18 Nov 2011 00:17:54 +0000
+Subject: [PATCH 25/27] MIPS: ath79: Rename dev-ar913x-wmac.h to dev-wmac.h
+
+The 'ar913x' part was removed from the common variable and function names,
+so remove that from the relevant header file name as well.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: Imre Kaloz <kaloz@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3033/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/dev-ar913x-wmac.c |    2 +-
+ arch/mips/ath79/dev-ar913x-wmac.h |   17 -----------------
+ arch/mips/ath79/dev-wmac.h        |   17 +++++++++++++++++
+ arch/mips/ath79/mach-ap121.c      |    2 +-
+ arch/mips/ath79/mach-ap81.c       |    2 +-
+ 5 files changed, 20 insertions(+), 20 deletions(-)
+ delete mode 100644 arch/mips/ath79/dev-ar913x-wmac.h
+ create mode 100644 arch/mips/ath79/dev-wmac.h
+
+--- a/arch/mips/ath79/dev-ar913x-wmac.c
++++ b/arch/mips/ath79/dev-ar913x-wmac.c
+@@ -17,7 +17,7 @@
+ 
+ #include <asm/mach-ath79/ath79.h>
+ #include <asm/mach-ath79/ar71xx_regs.h>
+-#include "dev-ar913x-wmac.h"
++#include "dev-wmac.h"
+ 
+ static struct ath9k_platform_data ath79_wmac_data;
+ 
+--- a/arch/mips/ath79/dev-ar913x-wmac.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-/*
+- *  Atheros AR913X/AR933X SoC built-in WMAC device support
+- *
+- *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
+- *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+- *
+- *  This program is free software; you can redistribute it and/or modify it
+- *  under the terms of the GNU General Public License version 2 as published
+- *  by the Free Software Foundation.
+- */
+-
+-#ifndef _ATH79_DEV_WMAC_H
+-#define _ATH79_DEV_WMAC_H
+-
+-void ath79_register_wmac(u8 *cal_data);
+-
+-#endif /* _ATH79_DEV_WMAC_H */
+--- /dev/null
++++ b/arch/mips/ath79/dev-wmac.h
+@@ -0,0 +1,17 @@
++/*
++ *  Atheros AR913X/AR933X SoC built-in WMAC device support
++ *
++ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#ifndef _ATH79_DEV_WMAC_H
++#define _ATH79_DEV_WMAC_H
++
++void ath79_register_wmac(u8 *cal_data);
++
++#endif /* _ATH79_DEV_WMAC_H */
+--- a/arch/mips/ath79/mach-ap121.c
++++ b/arch/mips/ath79/mach-ap121.c
+@@ -13,7 +13,7 @@
+ #include "dev-leds-gpio.h"
+ #include "dev-spi.h"
+ #include "dev-usb.h"
+-#include "dev-ar913x-wmac.h"
++#include "dev-wmac.h"
+ 
+ #define AP121_GPIO_LED_WLAN		0
+ #define AP121_GPIO_LED_USB		1
+--- a/arch/mips/ath79/mach-ap81.c
++++ b/arch/mips/ath79/mach-ap81.c
+@@ -10,7 +10,7 @@
+  */
+ 
+ #include "machtypes.h"
+-#include "dev-ar913x-wmac.h"
++#include "dev-wmac.h"
+ #include "dev-gpio-buttons.h"
+ #include "dev-leds-gpio.h"
+ #include "dev-spi.h"

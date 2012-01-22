@@ -1,0 +1,148 @@
+From 29c8b2eef2011bf9392479487a51f6927892bfd6 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 20 Jun 2011 21:26:04 +0200
+Subject: [PATCH 07/27] MIPS: ath79: add AR933X specific clock init
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: Kathy Giori <kgiori@qca.qualcomm.com>
+Cc: "Luis R.  Rodriguez" <rodrigue@qca.qualcomm.com>
+Patchwork: https://patchwork.linux-mips.org/patch/2522/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/clock.c                        |   55 ++++++++++++++++++++++++
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |   22 +++++++++
+ arch/mips/include/asm/mach-ath79/ath79.h       |    6 +++
+ 3 files changed, 83 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/clock.c
++++ b/arch/mips/ath79/clock.c
+@@ -110,6 +110,59 @@ static void __init ar913x_clocks_init(vo
+ 	ath79_uart_clk.rate = ath79_ahb_clk.rate;
+ }
+ 
++static void __init ar933x_clocks_init(void)
++{
++	u32 clock_ctrl;
++	u32 cpu_config;
++	u32 freq;
++	u32 t;
++
++	t = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
++	if (t & AR933X_BOOTSTRAP_REF_CLK_40)
++		ath79_ref_clk.rate = (40 * 1000 * 1000);
++	else
++		ath79_ref_clk.rate = (25 * 1000 * 1000);
++
++	clock_ctrl = ath79_pll_rr(AR933X_PLL_CLOCK_CTRL_REG);
++	if (clock_ctrl & AR933X_PLL_CLOCK_CTRL_BYPASS) {
++		ath79_cpu_clk.rate = ath79_ref_clk.rate;
++		ath79_ahb_clk.rate = ath79_ref_clk.rate;
++		ath79_ddr_clk.rate = ath79_ref_clk.rate;
++	} else {
++		cpu_config = ath79_pll_rr(AR933X_PLL_CPU_CONFIG_REG);
++
++		t = (cpu_config >> AR933X_PLL_CPU_CONFIG_REFDIV_SHIFT) &
++		    AR933X_PLL_CPU_CONFIG_REFDIV_MASK;
++		freq = ath79_ref_clk.rate / t;
++
++		t = (cpu_config >> AR933X_PLL_CPU_CONFIG_NINT_SHIFT) &
++		    AR933X_PLL_CPU_CONFIG_NINT_MASK;
++		freq *= t;
++
++		t = (cpu_config >> AR933X_PLL_CPU_CONFIG_OUTDIV_SHIFT) &
++		    AR933X_PLL_CPU_CONFIG_OUTDIV_MASK;
++		if (t == 0)
++			t = 1;
++
++		freq >>= t;
++
++		t = ((clock_ctrl >> AR933X_PLL_CLOCK_CTRL_CPU_DIV_SHIFT) &
++		     AR933X_PLL_CLOCK_CTRL_CPU_DIV_MASK) + 1;
++		ath79_cpu_clk.rate = freq / t;
++
++		t = ((clock_ctrl >> AR933X_PLL_CLOCK_CTRL_DDR_DIV_SHIFT) &
++		      AR933X_PLL_CLOCK_CTRL_DDR_DIV_MASK) + 1;
++		ath79_ddr_clk.rate = freq / t;
++
++		t = ((clock_ctrl >> AR933X_PLL_CLOCK_CTRL_AHB_DIV_SHIFT) &
++		     AR933X_PLL_CLOCK_CTRL_AHB_DIV_MASK) + 1;
++		ath79_ahb_clk.rate = freq / t;
++	}
++
++	ath79_wdt_clk.rate = ath79_ref_clk.rate;
++	ath79_uart_clk.rate = ath79_ref_clk.rate;
++}
++
+ void __init ath79_clocks_init(void)
+ {
+ 	if (soc_is_ar71xx())
+@@ -118,6 +171,8 @@ void __init ath79_clocks_init(void)
+ 		ar724x_clocks_init();
+ 	else if (soc_is_ar913x())
+ 		ar913x_clocks_init();
++	else if (soc_is_ar933x())
++		ar933x_clocks_init();
+ 	else
+ 		BUG();
+ 
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -123,6 +123,24 @@
+ #define AR913X_AHB_DIV_SHIFT		19
+ #define AR913X_AHB_DIV_MASK		0x1
+ 
++#define AR933X_PLL_CPU_CONFIG_REG	0x00
++#define AR933X_PLL_CLOCK_CTRL_REG	0x08
++
++#define AR933X_PLL_CPU_CONFIG_NINT_SHIFT	10
++#define AR933X_PLL_CPU_CONFIG_NINT_MASK		0x3f
++#define AR933X_PLL_CPU_CONFIG_REFDIV_SHIFT	16
++#define AR933X_PLL_CPU_CONFIG_REFDIV_MASK	0x1f
++#define AR933X_PLL_CPU_CONFIG_OUTDIV_SHIFT	23
++#define AR933X_PLL_CPU_CONFIG_OUTDIV_MASK	0x7
++
++#define AR933X_PLL_CLOCK_CTRL_BYPASS		BIT(2)
++#define AR933X_PLL_CLOCK_CTRL_CPU_DIV_SHIFT	5
++#define AR933X_PLL_CLOCK_CTRL_CPU_DIV_MASK	0x3
++#define AR933X_PLL_CLOCK_CTRL_DDR_DIV_SHIFT	10
++#define AR933X_PLL_CLOCK_CTRL_DDR_DIV_MASK	0x3
++#define AR933X_PLL_CLOCK_CTRL_AHB_DIV_SHIFT	15
++#define AR933X_PLL_CLOCK_CTRL_AHB_DIV_MASK	0x7
++
+ /*
+  * USB_CONFIG block
+  */
+@@ -155,6 +173,8 @@
+ 
+ #define AR724X_RESET_REG_RESET_MODULE		0x1c
+ 
++#define AR933X_RESET_REG_BOOTSTRAP		0xac
++
+ #define MISC_INT_ETHSW			BIT(12)
+ #define MISC_INT_TIMER4			BIT(10)
+ #define MISC_INT_TIMER3			BIT(9)
+@@ -204,6 +224,8 @@
+ #define AR913X_RESET_USB_HOST		BIT(5)
+ #define AR913X_RESET_USB_PHY		BIT(4)
+ 
++#define AR933X_BOOTSTRAP_REF_CLK_40	BIT(0)
++
+ #define REV_ID_MAJOR_MASK		0xfff0
+ #define REV_ID_MAJOR_AR71XX		0x00a0
+ #define REV_ID_MAJOR_AR913X		0x00b0
+--- a/arch/mips/include/asm/mach-ath79/ath79.h
++++ b/arch/mips/include/asm/mach-ath79/ath79.h
+@@ -68,6 +68,12 @@ static inline int soc_is_ar913x(void)
+ 		ath79_soc == ATH79_SOC_AR9132);
+ }
+ 
++static inline int soc_is_ar933x(void)
++{
++	return (ath79_soc == ATH79_SOC_AR9330 ||
++		ath79_soc == ATH79_SOC_AR9331);
++}
++
+ extern void __iomem *ath79_ddr_base;
+ extern void __iomem *ath79_pll_base;
+ extern void __iomem *ath79_reset_base;
