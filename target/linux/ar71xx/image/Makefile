@@ -937,6 +937,7 @@ define Image/Build/Profile/ALL0258N
 endef
 
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/ALFAAP96,$(1))
 	$(call Image/Build/Profile/ALFANX,$(1))
 	$(call Image/Build/Profile/ALL0258N,$(1))
 	$(call Image/Build/Profile/AP121,$(1))
