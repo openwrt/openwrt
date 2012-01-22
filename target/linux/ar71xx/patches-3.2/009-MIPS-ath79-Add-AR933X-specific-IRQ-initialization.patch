@@ -1,0 +1,51 @@
+From f2963f6a811da75e2531fd1312aa124cd73f15d5 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 20 Jun 2011 21:26:06 +0200
+Subject: [PATCH 09/27] MIPS: ath79: Add AR933X specific IRQ initialization
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: Kathy Giori <kgiori@qca.qualcomm.com>
+Cc: "Luis R.  Rodriguez" <rodrigue@qca.qualcomm.com>
+Patchwork: https://patchwork.linux-mips.org/patch/2530/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/irq.c                          |    5 ++++-
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    5 +++++
+ 2 files changed, 9 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/ath79/irq.c
++++ b/arch/mips/ath79/irq.c
+@@ -129,7 +129,7 @@ static void __init ath79_misc_irq_init(v
+ 
+ 	if (soc_is_ar71xx() || soc_is_ar913x())
+ 		ath79_misc_irq_chip.irq_mask_ack = ar71xx_misc_irq_mask;
+-	else if (soc_is_ar724x())
++	else if (soc_is_ar724x() || soc_is_ar933x())
+ 		ath79_misc_irq_chip.irq_ack = ar724x_misc_irq_ack;
+ 	else
+ 		BUG();
+@@ -186,6 +186,9 @@ void __init arch_init_irq(void)
+ 	} else if (soc_is_ar913x()) {
+ 		ath79_ip2_flush_reg = AR913X_DDR_REG_FLUSH_WMAC;
+ 		ath79_ip3_flush_reg = AR913X_DDR_REG_FLUSH_USB;
++	} else if (soc_is_ar933x()) {
++		ath79_ip2_flush_reg = AR933X_DDR_REG_FLUSH_WMAC;
++		ath79_ip3_flush_reg = AR933X_DDR_REG_FLUSH_USB;
+ 	} else
+ 		BUG();
+ 
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -82,6 +82,11 @@
+ #define AR913X_DDR_REG_FLUSH_USB	0x84
+ #define AR913X_DDR_REG_FLUSH_WMAC	0x88
+ 
++#define AR933X_DDR_REG_FLUSH_GE0	0x7c
++#define AR933X_DDR_REG_FLUSH_GE1	0x80
++#define AR933X_DDR_REG_FLUSH_USB	0x84
++#define AR933X_DDR_REG_FLUSH_WMAC	0x88
++
+ /*
+  * PLL block
+  */

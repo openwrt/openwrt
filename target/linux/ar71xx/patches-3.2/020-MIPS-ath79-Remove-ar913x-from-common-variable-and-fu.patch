@@ -1,0 +1,97 @@
+From cc2140939233382c1e58abc1d0a1b88fdd6215e6 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 18 Nov 2011 00:17:53 +0000
+Subject: [PATCH 20/27] MIPS: ath79: Remove 'ar913x' from common variable and function names
+
+The wireless MAC specific variables and the registration code can be shared
+between multiple SoCs. Remove the 'ar913x' part from the function and
+variable names to avoid confusions.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: Imre Kaloz <kaloz@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3028/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/dev-ar913x-wmac.c |   20 ++++++++++----------
+ arch/mips/ath79/dev-ar913x-wmac.h |    8 ++++----
+ arch/mips/ath79/mach-ap81.c       |    2 +-
+ 3 files changed, 15 insertions(+), 15 deletions(-)
+
+--- a/arch/mips/ath79/dev-ar913x-wmac.c
++++ b/arch/mips/ath79/dev-ar913x-wmac.c
+@@ -19,9 +19,9 @@
+ #include <asm/mach-ath79/ar71xx_regs.h>
+ #include "dev-ar913x-wmac.h"
+ 
+-static struct ath9k_platform_data ar913x_wmac_data;
++static struct ath9k_platform_data ath79_wmac_data;
+ 
+-static struct resource ar913x_wmac_resources[] = {
++static struct resource ath79_wmac_resources[] = {
+ 	{
+ 		.start	= AR913X_WMAC_BASE,
+ 		.end	= AR913X_WMAC_BASE + AR913X_WMAC_SIZE - 1,
+@@ -33,21 +33,21 @@ static struct resource ar913x_wmac_resou
+ 	},
+ };
+ 
+-static struct platform_device ar913x_wmac_device = {
++static struct platform_device ath79_wmac_device = {
+ 	.name		= "ath9k",
+ 	.id		= -1,
+-	.resource	= ar913x_wmac_resources,
+-	.num_resources	= ARRAY_SIZE(ar913x_wmac_resources),
++	.resource	= ath79_wmac_resources,
++	.num_resources	= ARRAY_SIZE(ath79_wmac_resources),
+ 	.dev = {
+-		.platform_data = &ar913x_wmac_data,
++		.platform_data = &ath79_wmac_data,
+ 	},
+ };
+ 
+-void __init ath79_register_ar913x_wmac(u8 *cal_data)
++void __init ath79_register_wmac(u8 *cal_data)
+ {
+ 	if (cal_data)
+-		memcpy(ar913x_wmac_data.eeprom_data, cal_data,
+-		       sizeof(ar913x_wmac_data.eeprom_data));
++		memcpy(ath79_wmac_data.eeprom_data, cal_data,
++		       sizeof(ath79_wmac_data.eeprom_data));
+ 
+ 	/* reset the WMAC */
+ 	ath79_device_reset_set(AR913X_RESET_AMBA2WMAC);
+@@ -56,5 +56,5 @@ void __init ath79_register_ar913x_wmac(u
+ 	ath79_device_reset_clear(AR913X_RESET_AMBA2WMAC);
+ 	mdelay(10);
+ 
+-	platform_device_register(&ar913x_wmac_device);
++	platform_device_register(&ath79_wmac_device);
+ }
+--- a/arch/mips/ath79/dev-ar913x-wmac.h
++++ b/arch/mips/ath79/dev-ar913x-wmac.h
+@@ -9,9 +9,9 @@
+  *  by the Free Software Foundation.
+  */
+ 
+-#ifndef _ATH79_DEV_AR913X_WMAC_H
+-#define _ATH79_DEV_AR913X_WMAC_H
++#ifndef _ATH79_DEV_WMAC_H
++#define _ATH79_DEV_WMAC_H
+ 
+-void ath79_register_ar913x_wmac(u8 *cal_data);
++void ath79_register_wmac(u8 *cal_data);
+ 
+-#endif /* _ATH79_DEV_AR913X_WMAC_H */
++#endif /* _ATH79_DEV_WMAC_H */
+--- a/arch/mips/ath79/mach-ap81.c
++++ b/arch/mips/ath79/mach-ap81.c
+@@ -92,7 +92,7 @@ static void __init ap81_setup(void)
+ 					ap81_gpio_keys);
+ 	ath79_register_spi(&ap81_spi_data, ap81_spi_info,
+ 			   ARRAY_SIZE(ap81_spi_info));
+-	ath79_register_ar913x_wmac(cal_data);
++	ath79_register_wmac(cal_data);
+ 	ath79_register_usb();
+ }
+ 

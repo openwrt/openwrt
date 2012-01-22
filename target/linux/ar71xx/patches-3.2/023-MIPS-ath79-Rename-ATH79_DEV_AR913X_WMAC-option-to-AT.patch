@@ -1,0 +1,79 @@
+From b784c5ab6423d0327d34d08e3532a16a4563e845 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 18 Nov 2011 00:17:54 +0000
+Subject: [PATCH 23/27] MIPS: ath79: Rename ATH79_DEV_AR913X_WMAC option to ATH79_DEV_WMAC
+
+The ATH79_DEV_AR913X_WMAC option was used to select the AR913x specific
+wireless MAC registration code.  The registration code now supports the
+AR933X SoCs as well. Rename the option to reflect the changes.
+
+Also make the new option depends on SOC_AR933X.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: Imre Kaloz <kaloz@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3031/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/Kconfig  |   11 ++++++-----
+ arch/mips/ath79/Makefile |    2 +-
+ 2 files changed, 7 insertions(+), 6 deletions(-)
+
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -9,6 +9,7 @@ config ATH79_MACH_AP121
+ 	select ATH79_DEV_LEDS_GPIO
+ 	select ATH79_DEV_SPI
+ 	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
+ 	help
+ 	  Say 'Y' here if you want your kernel to support the
+ 	  Atheros AP121 reference board.
+@@ -16,11 +17,11 @@ config ATH79_MACH_AP121
+ config ATH79_MACH_AP81
+ 	bool "Atheros AP81 reference board"
+ 	select SOC_AR913X
+-	select ATH79_DEV_AR913X_WMAC
+ 	select ATH79_DEV_GPIO_BUTTONS
+ 	select ATH79_DEV_LEDS_GPIO
+ 	select ATH79_DEV_SPI
+ 	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
+ 	help
+ 	  Say 'Y' here if you want your kernel to support the
+ 	  Atheros AP81 reference board.
+@@ -67,10 +68,6 @@ config SOC_AR933X
+ 	select USB_ARCH_HAS_EHCI
+ 	def_bool n
+ 
+-config ATH79_DEV_AR913X_WMAC
+-	depends on SOC_AR913X
+-	def_bool n
+-
+ config ATH79_DEV_GPIO_BUTTONS
+ 	def_bool n
+ 
+@@ -83,4 +80,8 @@ config ATH79_DEV_SPI
+ config ATH79_DEV_USB
+ 	def_bool n
+ 
++config ATH79_DEV_WMAC
++	depends on (SOC_AR913X || SOC_AR933X)
++	def_bool n
++
+ endif
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -16,11 +16,11 @@ obj-$(CONFIG_EARLY_PRINTK)		+= early_pri
+ # Devices
+ #
+ obj-y					+= dev-common.o
+-obj-$(CONFIG_ATH79_DEV_AR913X_WMAC)	+= dev-ar913x-wmac.o
+ obj-$(CONFIG_ATH79_DEV_GPIO_BUTTONS)	+= dev-gpio-buttons.o
+ obj-$(CONFIG_ATH79_DEV_LEDS_GPIO)	+= dev-leds-gpio.o
+ obj-$(CONFIG_ATH79_DEV_SPI)		+= dev-spi.o
+ obj-$(CONFIG_ATH79_DEV_USB)		+= dev-usb.o
++obj-$(CONFIG_ATH79_DEV_WMAC)		+= dev-ar913x-wmac.o
+ 
+ #
+ # Machines

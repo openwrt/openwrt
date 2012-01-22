@@ -1,0 +1,261 @@
+--- a/drivers/spi/spi-rb4xx.c
++++ b/drivers/spi/spi-rb4xx.c
+@@ -12,7 +12,10 @@
+  *
+  */
+ 
++#include <linux/clk.h>
++#include <linux/err.h>
+ #include <linux/kernel.h>
++#include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/delay.h>
+ #include <linux/spinlock.h>
+@@ -20,7 +23,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/spi/spi.h>
+ 
+-#include <asm/mach-ar71xx/ar71xx.h>
++#include <asm/mach-ath79/ar71xx_regs.h>
++#include <asm/mach-ath79/ath79.h>
+ 
+ #define DRV_NAME	"rb4xx-spi"
+ #define DRV_DESC	"Mikrotik RB4xx SPI controller driver"
+@@ -41,13 +45,16 @@ struct rb4xx_spi {
+ 	unsigned		spi_ctrl_flash;
+ 	unsigned		spi_ctrl_fread;
+ 
++	struct clk		*ahb_clk;
++	unsigned long		ahb_freq;
++
+ 	spinlock_t		lock;
+ 	struct list_head	queue;
+ 	int			busy:1;
+ 	int			cs_wait;
+ };
+ 
+-static unsigned spi_clk_low = SPI_IOC_CS1;
++static unsigned spi_clk_low = AR71XX_SPI_IOC_CS1;
+ 
+ #ifdef RB4XX_SPI_DEBUG
+ static inline void do_spi_delay(void)
+@@ -60,10 +67,11 @@ static inline void do_spi_delay(void) { 
+ 
+ static inline void do_spi_init(struct spi_device *spi)
+ {
+-	unsigned cs = SPI_IOC_CS0 | SPI_IOC_CS1;
++	unsigned cs = AR71XX_SPI_IOC_CS0 | AR71XX_SPI_IOC_CS1;
+ 
+ 	if (!(spi->mode & SPI_CS_HIGH))
+-		cs ^= (spi->chip_select == 2) ? SPI_IOC_CS1 : SPI_IOC_CS0;
++		cs ^= (spi->chip_select == 2) ? AR71XX_SPI_IOC_CS1 :
++						AR71XX_SPI_IOC_CS0;
+ 
+ 	spi_clk_low = cs;
+ }
+@@ -71,17 +79,18 @@ static inline void do_spi_init(struct sp
+ static inline void do_spi_finish(void __iomem *base)
+ {
+ 	do_spi_delay();
+-	__raw_writel(SPI_IOC_CS0 | SPI_IOC_CS1, base + SPI_REG_IOC);
++	__raw_writel(AR71XX_SPI_IOC_CS0 | AR71XX_SPI_IOC_CS1,
++		     base + AR71XX_SPI_REG_IOC);
+ }
+ 
+ static inline void do_spi_clk(void __iomem *base, int bit)
+ {
+-	unsigned bval = spi_clk_low | ((bit & 1) ? SPI_IOC_DO : 0);
++	unsigned bval = spi_clk_low | ((bit & 1) ? AR71XX_SPI_IOC_DO : 0);
+ 
+ 	do_spi_delay();
+-	__raw_writel(bval, base + SPI_REG_IOC);
++	__raw_writel(bval, base + AR71XX_SPI_REG_IOC);
+ 	do_spi_delay();
+-	__raw_writel(bval | SPI_IOC_CLK, base + SPI_REG_IOC);
++	__raw_writel(bval | AR71XX_SPI_IOC_CLK, base + AR71XX_SPI_REG_IOC);
+ }
+ 
+ static void do_spi_byte(void __iomem *base, unsigned char byte)
+@@ -97,19 +106,19 @@ static void do_spi_byte(void __iomem *ba
+ 
+ 	pr_debug("spi_byte sent 0x%02x got 0x%02x\n",
+ 	       (unsigned)byte,
+-	       (unsigned char)__raw_readl(base + SPI_REG_RDS));
++	       (unsigned char)__raw_readl(base + AR71XX_SPI_REG_RDS));
+ }
+ 
+ static inline void do_spi_clk_fast(void __iomem *base, unsigned bit1,
+ 				   unsigned bit2)
+ {
+ 	unsigned bval = (spi_clk_low |
+-			 ((bit1 & 1) ? SPI_IOC_DO : 0) |
+-			 ((bit2 & 1) ? SPI_IOC_CS2 : 0));
++			 ((bit1 & 1) ? AR71XX_SPI_IOC_DO : 0) |
++			 ((bit2 & 1) ? AR71XX_SPI_IOC_CS2 : 0));
+ 	do_spi_delay();
+-	__raw_writel(bval, base + SPI_REG_IOC);
++	__raw_writel(bval, base + AR71XX_SPI_REG_IOC);
+ 	do_spi_delay();
+-	__raw_writel(bval | SPI_IOC_CLK, base + SPI_REG_IOC);
++	__raw_writel(bval | AR71XX_SPI_IOC_CLK, base + AR71XX_SPI_REG_IOC);
+ }
+ 
+ static void do_spi_byte_fast(void __iomem *base, unsigned char byte)
+@@ -121,7 +130,7 @@ static void do_spi_byte_fast(void __iome
+ 
+ 	pr_debug("spi_byte_fast sent 0x%02x got 0x%02x\n",
+ 	       (unsigned)byte,
+-	       (unsigned char) __raw_readl(base + SPI_REG_RDS));
++	       (unsigned char) __raw_readl(base + AR71XX_SPI_REG_RDS));
+ }
+ 
+ static int rb4xx_spi_txrx(void __iomem *base, struct spi_transfer *t)
+@@ -150,9 +159,9 @@ static int rb4xx_spi_txrx(void __iomem *
+ 			do_spi_byte(base, sdata);
+ 
+ 		if (rx_ptr) {
+-			rx_ptr[i] = __raw_readl(base + SPI_REG_RDS) & 0xff;
++			rx_ptr[i] = __raw_readl(base + AR71XX_SPI_REG_RDS) & 0xff;
+ 		} else if (rxv_ptr) {
+-			unsigned char c = __raw_readl(base + SPI_REG_RDS);
++			unsigned char c = __raw_readl(base + AR71XX_SPI_REG_RDS);
+ 			if (rxv_ptr[i] != c)
+ 				return i;
+ 		}
+@@ -201,9 +210,9 @@ static int rb4xx_spi_read_fast(struct rb
+ 	if (t->tx_buf && !t->verify)
+ 		return -1;
+ 
+-	__raw_writel(SPI_FS_GPIO, base + SPI_REG_FS);
+-	__raw_writel(rbspi->spi_ctrl_fread, base + SPI_REG_CTRL);
+-	__raw_writel(0, base + SPI_REG_FS);
++	__raw_writel(AR71XX_SPI_FS_GPIO, base + AR71XX_SPI_REG_FS);
++	__raw_writel(rbspi->spi_ctrl_fread, base + AR71XX_SPI_REG_CTRL);
++	__raw_writel(0, base + AR71XX_SPI_REG_FS);
+ 
+ 	if (t->rx_buf) {
+ 		memcpy(t->rx_buf, (const void *)addr, t->len);
+@@ -216,9 +225,9 @@ static int rb4xx_spi_read_fast(struct rb
+ 	m->actual_length += t->len;
+ 
+ 	if (rbspi->spi_ctrl_flash != rbspi->spi_ctrl_fread) {
+-		__raw_writel(SPI_FS_GPIO, base + SPI_REG_FS);
+-		__raw_writel(rbspi->spi_ctrl_flash, base + SPI_REG_CTRL);
+-		__raw_writel(0, base + SPI_REG_FS);
++		__raw_writel(AR71XX_SPI_FS_GPIO, base + AR71XX_SPI_REG_FS);
++		__raw_writel(rbspi->spi_ctrl_flash, base + AR71XX_SPI_REG_CTRL);
++		__raw_writel(0, base + AR71XX_SPI_REG_FS);
+ 	}
+ 
+ 	return 0;
+@@ -237,8 +246,8 @@ static int rb4xx_spi_msg(struct rb4xx_sp
+ 		if (rb4xx_spi_read_fast(rbspi, m) == 0)
+ 			return -1;
+ 
+-	__raw_writel(SPI_FS_GPIO, base + SPI_REG_FS);
+-	__raw_writel(SPI_CTRL_FASTEST, base + SPI_REG_CTRL);
++	__raw_writel(AR71XX_SPI_FS_GPIO, base + AR71XX_SPI_REG_FS);
++	__raw_writel(SPI_CTRL_FASTEST, base + AR71XX_SPI_REG_CTRL);
+ 	do_spi_init(m->spi);
+ 
+ 	list_for_each_entry(t, &m->transfers, transfer_list) {
+@@ -262,8 +271,8 @@ static int rb4xx_spi_msg(struct rb4xx_sp
+ 	}
+ 
+ 	do_spi_finish(base);
+-	__raw_writel(rbspi->spi_ctrl_flash, base + SPI_REG_CTRL);
+-	__raw_writel(0, base + SPI_REG_FS);
++	__raw_writel(rbspi->spi_ctrl_flash, base + AR71XX_SPI_REG_CTRL);
++	__raw_writel(0, base + AR71XX_SPI_REG_FS);
+ 	return -1;
+ }
+ 
+@@ -352,11 +361,12 @@ static int rb4xx_spi_setup(struct spi_de
+ 	return 0;
+ }
+ 
+-static unsigned get_spi_ctrl(unsigned hz_max, const char *name)
++static unsigned get_spi_ctrl(struct rb4xx_spi *rbspi, unsigned hz_max,
++			     const char *name)
+ {
+ 	unsigned div;
+ 
+-	div = (ar71xx_ahb_freq - 1) / (2 * hz_max);
++	div = (rbspi->ahb_freq - 1) / (2 * hz_max);
+ 
+ 	/*
+ 	 * CPU has a bug at (div == 0) - first bit read is random
+@@ -365,7 +375,7 @@ static unsigned get_spi_ctrl(unsigned hz
+ 		++div;
+ 
+ 	if (name) {
+-		unsigned ahb_khz = (ar71xx_ahb_freq + 500) / 1000;
++		unsigned ahb_khz = (rbspi->ahb_freq + 500) / 1000;
+ 		unsigned div_real = 2 * (div + 1);
+ 		pr_debug("rb4xx: %s SPI clock %u kHz (AHB %u kHz / %u)\n",
+ 		       name,
+@@ -396,23 +406,40 @@ static int rb4xx_spi_probe(struct platfo
+ 	master->transfer = rb4xx_spi_transfer;
+ 
+ 	rbspi = spi_master_get_devdata(master);
++
++	rbspi->ahb_clk = clk_get(&pdev->dev, "AHB");
++	if (IS_ERR(rbspi->ahb_clk)) {
++		err = PTR_ERR(rbspi->ahb_clk);
++		goto err_put_master;
++	}
++
++	err = clk_enable(rbspi->ahb_clk);
++	if (err)
++		goto err_clk_put;
++
++	rbspi->ahb_freq = clk_get_rate(rbspi->ahb_clk);
++	if (!rbspi->ahb_freq) {
++		err = -EINVAL;
++		goto err_clk_disable;
++	}
++
+ 	platform_set_drvdata(pdev, rbspi);
+ 
+ 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (r == NULL) {
+ 		err = -ENOENT;
+-		goto err_put_master;
++		goto err_clk_disable;
+ 	}
+ 
+ 	rbspi->base = ioremap(r->start, r->end - r->start + 1);
+ 	if (!rbspi->base) {
+ 		err = -ENXIO;
+-		goto err_put_master;
++		goto err_clk_disable;
+ 	}
+ 
+ 	rbspi->master = master;
+-	rbspi->spi_ctrl_flash = get_spi_ctrl(SPI_FLASH_HZ, "FLASH");
+-	rbspi->spi_ctrl_fread = get_spi_ctrl(SPI_CPLD_HZ, "CPLD");
++	rbspi->spi_ctrl_flash = get_spi_ctrl(rbspi, SPI_FLASH_HZ, "FLASH");
++	rbspi->spi_ctrl_fread = get_spi_ctrl(rbspi, SPI_CPLD_HZ, "CPLD");
+ 	rbspi->cs_wait = -1;
+ 
+ 	spin_lock_init(&rbspi->lock);
+@@ -428,6 +455,10 @@ static int rb4xx_spi_probe(struct platfo
+ 
+ err_iounmap:
+ 	iounmap(rbspi->base);
++err_clk_disable:
++	clk_disable(rbspi->ahb_clk);
++err_clk_put:
++	clk_put(rbspi->ahb_clk);
+ err_put_master:
+ 	platform_set_drvdata(pdev, NULL);
+ 	spi_master_put(master);
+@@ -440,6 +471,8 @@ static int rb4xx_spi_remove(struct platf
+ 	struct rb4xx_spi *rbspi = platform_get_drvdata(pdev);
+ 
+ 	iounmap(rbspi->base);
++	clk_disable(rbspi->ahb_clk);
++	clk_put(rbspi->ahb_clk);
+ 	platform_set_drvdata(pdev, NULL);
+ 	spi_master_put(rbspi->master);
+ 

@@ -1,0 +1,107 @@
+From 2d832612094b5592641364773c5ab2a3658f7120 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 11 Dec 2011 18:34:13 +0100
+Subject: [PATCH 31/35] MIPS: ath79: add USB platform setup code for AR934X
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+---
+ arch/mips/ath79/dev-usb.c                      |   28 +++++++++++++++++++
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |   35 ++++++++++++++++++++++++
+ 2 files changed, 63 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/dev-usb.c
++++ b/arch/mips/ath79/dev-usb.c
+@@ -180,6 +180,32 @@ static void __init ar933x_usb_setup(void
+ 	platform_device_register(&ath79_ehci_device);
+ }
+ 
++static void __init ar934x_usb_setup(void)
++{
++	u32 bootstrap;
++
++	bootstrap = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
++	if (bootstrap & AR934X_BOOTSTRAP_USB_MODE_DEVICE)
++		return;
++
++	ath79_device_reset_clear(AR934X_RESET_USBSUS_OVERRIDE);
++	udelay(1000);
++
++	ath79_device_reset_set(AR934X_RESET_USB_PHY);
++	udelay(1000);
++
++	ath79_device_reset_set(AR934X_RESET_USB_PHY_ANALOG);
++	udelay(1000);
++
++	ath79_device_reset_set(AR934X_RESET_USB_HOST);
++	udelay(1000);
++
++	ath79_ehci_resources[0].start = AR934X_EHCI_BASE;
++	ath79_ehci_resources[0].end = AR934X_EHCI_BASE + AR934X_EHCI_SIZE - 1;
++	ath79_ehci_device.name = "ar934x-ehci";
++	platform_device_register(&ath79_ehci_device);
++}
++
+ void __init ath79_register_usb(void)
+ {
+ 	if (soc_is_ar71xx())
+@@ -192,6 +218,8 @@ void __init ath79_register_usb(void)
+ 		ar913x_usb_setup();
+ 	else if (soc_is_ar933x())
+ 		ar933x_usb_setup();
++	else if (soc_is_ar934x())
++		ar934x_usb_setup();
+ 	else
+ 		BUG();
+ }
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -63,6 +63,8 @@
+ 
+ #define AR934X_WMAC_BASE	(AR71XX_APB_BASE + 0x00100000)
+ #define AR934X_WMAC_SIZE	0x20000
++#define AR934X_EHCI_BASE	0x1b000000
++#define AR934X_EHCI_SIZE	0x1000
+ 
+ /*
+  * DDR_CTRL block
+@@ -288,6 +290,39 @@
+ #define AR933X_RESET_USB_PHY		BIT(4)
+ #define AR933X_RESET_USBSUS_OVERRIDE	BIT(3)
+ 
++#define AR934X_RESET_HOST		BIT(31)
++#define AR934X_RESET_SLIC		BIT(30)
++#define AR934X_RESET_HDMA		BIT(29)
++#define AR934X_RESET_EXTERNAL		BIT(28)
++#define AR934X_RESET_RTC		BIT(27)
++#define AR934X_RESET_PCIE_EP_INT	BIT(26)
++#define AR934X_RESET_CHKSUM_ACC		BIT(25)
++#define AR934X_RESET_FULL_CHIP		BIT(24)
++#define AR934X_RESET_GE1_MDIO		BIT(23)
++#define AR934X_RESET_GE0_MDIO		BIT(22)
++#define AR934X_RESET_CPU_NMI		BIT(21)
++#define AR934X_RESET_CPU_COLD		BIT(20)
++#define AR934X_RESET_HOST_RESET_INT	BIT(19)
++#define AR934X_RESET_PCIE_EP		BIT(18)
++#define AR934X_RESET_UART1		BIT(17)
++#define AR934X_RESET_DDR		BIT(16)
++#define AR934X_RESET_USB_PHY_PLL_PWD_EXT BIT(15)
++#define AR934X_RESET_NANDF		BIT(14)
++#define AR934X_RESET_GE1_MAC		BIT(13)
++#define AR934X_RESET_ETH_SWITCH_ANALOG	BIT(12)
++#define AR934X_RESET_USB_PHY_ANALOG	BIT(11)
++#define AR934X_RESET_HOST_DMA_INT	BIT(10)
++#define AR934X_RESET_GE0_MAC		BIT(9)
++#define AR934X_RESET_ETH_SIWTCH		BIT(8)
++#define AR934X_RESET_PCIE_PHY		BIT(7)
++#define AR934X_RESET_PCIE		BIT(6)
++#define AR934X_RESET_USB_HOST		BIT(5)
++#define AR934X_RESET_USB_PHY		BIT(4)
++#define AR934X_RESET_USBSUS_OVERRIDE	BIT(3)
++#define AR934X_RESET_LUT		BIT(2)
++#define AR934X_RESET_MBOX		BIT(1)
++#define AR934X_RESET_I2S		BIT(0)
++
+ #define AR933X_BOOTSTRAP_REF_CLK_40	BIT(0)
+ 
+ #define AR934X_BOOTSTRAP_SW_OPTION8	BIT(23)

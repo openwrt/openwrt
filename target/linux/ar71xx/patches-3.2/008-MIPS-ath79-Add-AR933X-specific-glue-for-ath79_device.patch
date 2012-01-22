@@ -1,0 +1,46 @@
+From 00624e5d91c0e76f38730633eff51fc7630dd27b Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 20 Jun 2011 21:26:05 +0200
+Subject: [PATCH 08/27] MIPS: ath79: Add AR933X specific glue for ath79_device_reset_{set,clear}
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: Kathy Giori <kgiori@qca.qualcomm.com>
+Cc: "Luis R.  Rodriguez" <rodrigue@qca.qualcomm.com>
+Patchwork: https://patchwork.linux-mips.org/patch/2523/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/common.c                       |    4 ++++
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    1 +
+ 2 files changed, 5 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/common.c
++++ b/arch/mips/ath79/common.c
+@@ -64,6 +64,8 @@ void ath79_device_reset_set(u32 mask)
+ 		reg = AR724X_RESET_REG_RESET_MODULE;
+ 	else if (soc_is_ar913x())
+ 		reg = AR913X_RESET_REG_RESET_MODULE;
++	else if (soc_is_ar933x())
++		reg = AR933X_RESET_REG_RESET_MODULE;
+ 	else
+ 		BUG();
+ 
+@@ -86,6 +88,8 @@ void ath79_device_reset_clear(u32 mask)
+ 		reg = AR724X_RESET_REG_RESET_MODULE;
+ 	else if (soc_is_ar913x())
+ 		reg = AR913X_RESET_REG_RESET_MODULE;
++	else if (soc_is_ar933x())
++		reg = AR933X_RESET_REG_RESET_MODULE;
+ 	else
+ 		BUG();
+ 
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -173,6 +173,7 @@
+ 
+ #define AR724X_RESET_REG_RESET_MODULE		0x1c
+ 
++#define AR933X_RESET_REG_RESET_MODULE		0x1c
+ #define AR933X_RESET_REG_BOOTSTRAP		0xac
+ 
+ #define MISC_INT_ETHSW			BIT(12)

@@ -1,0 +1,40 @@
+From 44f70a7cd3c0a8481877174a0f12b013c5667933 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 20 Jun 2011 21:26:01 +0200
+Subject: [PATCH 04/27] MIPS: ath79: Remove superfluous parentheses
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: Kathy Giori <kgiori@qca.qualcomm.com>
+Cc: "Luis R.  Rodriguez" <rodrigue@qca.qualcomm.com>
+Patchwork: https://patchwork.linux-mips.org/patch/2519/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/setup.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/mips/ath79/setup.c
++++ b/arch/mips/ath79/setup.c
+@@ -101,19 +101,19 @@ static void __init ath79_detect_sys_type
+ 	case REV_ID_MAJOR_AR7240:
+ 		ath79_soc = ATH79_SOC_AR7240;
+ 		chip = "7240";
+-		rev = (id & AR724X_REV_ID_REVISION_MASK);
++		rev = id & AR724X_REV_ID_REVISION_MASK;
+ 		break;
+ 
+ 	case REV_ID_MAJOR_AR7241:
+ 		ath79_soc = ATH79_SOC_AR7241;
+ 		chip = "7241";
+-		rev = (id & AR724X_REV_ID_REVISION_MASK);
++		rev = id & AR724X_REV_ID_REVISION_MASK;
+ 		break;
+ 
+ 	case REV_ID_MAJOR_AR7242:
+ 		ath79_soc = ATH79_SOC_AR7242;
+ 		chip = "7242";
+-		rev = (id & AR724X_REV_ID_REVISION_MASK);
++		rev = id & AR724X_REV_ID_REVISION_MASK;
+ 		break;
+ 
+ 	case REV_ID_MAJOR_AR913X:
