@@ -31,12 +31,12 @@
 
 static struct gpio_led argus_atp52b_leds_gpio[] __initdata = {
 	{
-		.name       = "argus_atp52b:green:run",
+		.name       = "argus-atp52b:green:run",
 		.gpio       = ARGUS_ATP52B_GPIO_LED_RUN,
 		.active_low = 1,
 	},
 	{
-		.name       = "argus_atp52b:amber:net",
+		.name       = "argus-atp52b:amber:net",
 		.gpio       = ARGUS_ATP52B_GPIO_LED_NET,
 		.active_low = 1,
 	}
