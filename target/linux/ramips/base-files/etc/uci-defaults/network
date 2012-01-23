@@ -18,21 +18,9 @@ ramips_setup_interfaces()
 	case $board in
 	argus-atp52b | \
 	b2c | \
-	f5d8235-v2 | \
 	nw718 | \
 	w502u)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		;;
-
-	wl-351)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "rtl8366rb" "1" "1"
-		ucidef_add_switch_vlan "rtl8366rb" "1" "0 1 2 3 5t"
-		ucidef_add_switch_vlan "rtl8366rb" "2" "4 5t"
-		;;
-
-	wli-tx4-ag300n)
-		ucidef_set_interface_lan "eth0"
 		;;
 
 	f5d8235-v1 | \
@@ -41,6 +29,22 @@ ramips_setup_interfaces()
 		ucidef_add_switch "rtl8366s" "1" "1"
 		ucidef_add_switch_vlan "rtl8366s" "1" "1 2 3 4 5t"
 		ucidef_add_switch_vlan "rtl8366s" "2" "0 5t"
+		;;
+
+	f5d8235-v2 | \
+	wl-351)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "rtl8366rb" "1" "1"
+		ucidef_add_switch_vlan "rtl8366rb" "1" "0 1 2 3 5t"
+		ucidef_add_switch_vlan "rtl8366rb" "2" "4 5t"
+		;;
+
+	wcr-150gn)
+		ucidef_set_interface_lan_wan "eth0.2" "eth0.1"
+		;;
+
+	wli-tx4-ag300n)
+		ucidef_set_interface_lan "eth0"
 		;;
 
 	*)
@@ -61,11 +65,6 @@ ramips_setup_macs()
 	local wan_mac=""
 
 	case $board in
-	f5d8235-v2)
-		lan_mac=$(ramips_get_mac_nvram "u-boot" 262148)
-		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
-		;;
-
 	argus-atp52b | \
 	b2c | \
 	f5d8235-v1 | \
@@ -89,9 +88,19 @@ ramips_setup_macs()
                 wan_mac=$(ramips_get_mac_binary factory 40)
 		;;
 
+	f5d8235-v2)
+		lan_mac=$(ramips_get_mac_binary "u-boot" 262148)
+		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		;;
+
 	w502u)
                 lan_mac=$(ramips_get_mac_binary factory 40)
                 wan_mac=$(ramips_get_mac_binary factory 46)
+		;;
+
+	wcr-150gn)
+                lan_mac=$(ramips_get_mac_binary factory 4)
+                wan_mac=$(ramips_get_mac_binary factory 40)
 		;;
 
 	wli-tx4-ag300n)
@@ -100,8 +109,8 @@ ramips_setup_macs()
 
 	esac
 
-	[ -n $lan_mac ] && ucidef_set_interface_macaddr lan $lan_mac
-	[ -n $wan_mac ] && ucidef_set_interface_macaddr wan $wan_mac
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr wan $wan_mac
 }
 
 [ -e /etc/config/network ] && exit 0

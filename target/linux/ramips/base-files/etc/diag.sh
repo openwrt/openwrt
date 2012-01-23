@@ -30,14 +30,17 @@ status_led_off() {
 
 get_status_led() {
 	case $(ramips_board_name) in
+	argus-atp52b)
+		status_led="argus-atp52b:green:run"
+		;;
 	dir-300-b1 | dir-600-b1 | dir-600-b2)
 		status_led="d-link:green:status"
 		;;
 	esr-9753)
 		status_led="esr-9753:orange:power"
 		;;
-	f5d8235-v1)
-		status_led="f5d8234-v1:blue:storage"
+	f5d8235-v2)
+		status_led="f5d8235v2:blue:router"
 		;;
 	fonera20n)
 		status_led="fonera20n:green:power"
@@ -68,6 +71,9 @@ get_status_led() {
 		;;
 	w502u)
 		status_led="alfa:blue:wps"
+		;;
+	wcr-150gn)
+		status_led="wcr150gn:amber:power"
 		;;
 	whr-g300n)
 		status_led="whr-g300n:green:router"

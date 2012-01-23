@@ -39,6 +39,12 @@ case $board in
 	esr-9753)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
+	f5d8235-v1)
+		set_usb_led "f5d8235-v1:blue:storage"
+		;;
+	f5d8235-v2)
+		set_usb_led "f5d8235v2:blue:storage"
+		;;
 	fonera20n)
 		set_usb_led "fonera20n:amber:usb"
 		;;
@@ -54,5 +60,8 @@ case $board in
 	w502u)
 		set_usb_led "alfa:blue:usb"
 		set_wifi_led "rt2800pci-phy0::radio"
+		;;
+	wcr-150gn)
+		set_usb_led "wcr150gn:amber:user"
 		;;
 esac

@@ -86,11 +86,11 @@ static struct platform_device f5d8235_rtl8366s_device = {
 
 static struct gpio_led f5d8235_leds_gpio[] __initdata = {
 	{
-		.name		= "f5d8234-v1:blue:storage",
+		.name		= "f5d8235-v1:blue:storage",
 		.gpio		= F5D8235_GPIO_LED_USB_BLUE,
 		.active_low	= 1,
 	},{
-		.name		= "f5d8234-v1:orange:storage",
+		.name		= "f5d8235-v1:orange:storage",
 		.gpio		= F5D8235_GPIO_LED_USB_ORANGE,
 		.active_low	= 1,
 	}
