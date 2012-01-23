@@ -41,6 +41,7 @@
 #define EAP7660D_WMAC0_CALDATA_OFFSET	0x2000
 #define EAP7660D_WMAC1_CALDATA_OFFSET	0x3000
 
+#ifdef CONFIG_PCI
 static struct ath5k_platform_data eap7660d_wmac0_data;
 static struct ath5k_platform_data eap7660d_wmac1_data;
 static char eap7660d_wmac0_mac[6];
@@ -48,7 +49,6 @@ static char eap7660d_wmac1_mac[6];
 static u16 eap7660d_wmac0_eeprom[ATH5K_PLAT_EEP_MAX_WORDS];
 static u16 eap7660d_wmac1_eeprom[ATH5K_PLAT_EEP_MAX_WORDS];
 
-#ifdef CONFIG_PCI
 static int eap7660d_pci_plat_dev_init(struct pci_dev *dev)
 {
 	switch (PCI_SLOT(dev->devfn)) {
