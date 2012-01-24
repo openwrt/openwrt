@@ -321,8 +321,11 @@ define Image/Build/ALFA
 	fi
 endef
 
+define Image/Build/TPLINKOLD/loader
+	$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
+endef
+
 define Image/Build/TPLINKOLD
-	$(call Image/BuildLoaderAlone,$(2),gz,$(3),0x22000,0)
 	$(call MkuImageOKLI,$(2))
 	( \
 		dd if=$(KDIR)/loader-$(2).gz bs=7680 count=1 conv=sync; \
@@ -348,8 +351,11 @@ define Image/Build/TPLINKOLD/initramfs
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
+define Image/Build/TPLINK/loader
+	$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
+endef
+
 define Image/Build/TPLINK
-	$(call Image/BuildLoaderAlone,$(2),gz,$(3),0x22000,0)
 	$(call MkuImageOKLI,$(2))
 	( \
 		dd if=$(KDIR)/loader-$(2).gz bs=7680 count=1 conv=sync; \
@@ -555,6 +561,10 @@ define Image/Build/Template/all/jffs2-128k
 	$(call Image/Build/$(1),jffs2-128k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
+define Image/Build/Template/squashfs-only/loader
+	$(call Image/Build/$(1)/loader,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+endef
+
 define Image/Build/Template/squashfs-only/squashfs
 	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
@@ -565,6 +575,10 @@ endef
 
 define Image/Build/Template/64k/jffs2-64k
 	$(call Image/Build/$(1),jffs2-64k,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+endef
+
+define Image/Build/Template/64kraw/loader
+	$(call Image/Build/$(1)/loader,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/64kraw/squashfs
@@ -1016,6 +1030,10 @@ endef
 
 define Image/Build/Initramfs
 	$(call Image/Build/Profile/$(PROFILE),initramfs)
+endef
+
+define Image/Prepare
+	$(call Image/Build/Profile/Default,loader)
 endef
 
 define Image/Build
