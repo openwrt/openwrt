@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=ee315306626b68794d3d3636dabfe161
 
 PKG_CONFIG_DEPENDS:=\
-	CONFIG_LTQ_DSL_ENABLE_CLI \
+	CONFIG_LTQ_DSL_ENABLE_SOAP \
 	CONFIG_LTQ_DSL_ENABLE_DSL_EVENT_POLLING
 
 include $(INCLUDE_DIR)/package.mk
@@ -55,6 +55,7 @@ CONFIGURE_ARGS += \
 	--enable-driver-include="-I$(STAGING_DIR)/usr/include" \
 	--enable-debug-prints \
 	--enable-add-appl-cflags="-DMAX_CLI_PIPES=2" \
+	--enable-cli-support \
 	--enable-cmv-scripts \
 	--enable-debug-tool-interface \
 	--enable-adsl-led \
@@ -72,9 +73,8 @@ CONFIGURE_ARGS += \
 	--enable-dsl-pm-line-thresholds \
 	--enable-dsl-pm-optional-parameters
 
-ifeq ($(CONFIG_LTQ_DSL_ENABLE_CLI),y)
+ifeq ($(CONFIG_LTQ_DSL_ENABLE_SOAP),y)
 CONFIGURE_ARGS += \
-	--enable-cli-support \
 	--enable-soap-support
 endif
 
@@ -87,10 +87,11 @@ TARGET_CFLAGS += -I$(LINUX_DIR)/include
 
 define Package/ltq-dsl-app/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/ifx_cpe_control_init.sh $(1)/etc/init.d/
+	$(INSTALL_BIN) ./files/dsl_control $(1)/etc/init.d/
 
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dsl_cpe_control $(1)/sbin
+	$(INSTALL_BIN) ./files/dsl_notify.sh $(1)/sbin
 endef
 
 $(eval $(call BuildPackage,ltq-dsl-app))
