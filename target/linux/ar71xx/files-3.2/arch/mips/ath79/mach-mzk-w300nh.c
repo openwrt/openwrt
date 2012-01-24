@@ -21,8 +21,8 @@
 #define MZK_W300NH_GPIO_LED_STATUS	1
 #define MZK_W300NH_GPIO_LED_WPS		3
 #define MZK_W300NH_GPIO_LED_WLAN	6
-#define MZK_W300NH_GPIO_LED_AP		15
-#define MZK_W300NH_GPIO_LED_ROUTER	16
+#define MZK_W300NH_GPIO_LED_AP_GREEN	15
+#define MZK_W300NH_GPIO_LED_AP_AMBER	16
 
 #define MZK_W300NH_GPIO_BTN_APROUTER	5
 #define MZK_W300NH_GPIO_BTN_WPS		12
@@ -45,13 +45,11 @@ static struct gpio_led mzk_w300nh_leds_gpio[] __initdata = {
 		.gpio		= MZK_W300NH_GPIO_LED_WLAN,
 		.active_low	= 1,
 	}, {
-		.name		= "planex:green:ap",
-		.gpio		= MZK_W300NH_GPIO_LED_AP,
-		.active_low	= 1,
+		.name		= "planex:green:aprouter",
+		.gpio		= MZK_W300NH_GPIO_LED_AP_GREEN,
 	}, {
-		.name		= "planex:green:router",
-		.gpio		= MZK_W300NH_GPIO_LED_ROUTER,
-		.active_low	= 1,
+		.name		= "planex:amber:aprouter",
+		.gpio		= MZK_W300NH_GPIO_LED_AP_AMBER,
 	}
 };
 
