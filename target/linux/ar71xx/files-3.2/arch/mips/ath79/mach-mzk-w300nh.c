@@ -9,9 +9,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ath79/ath79.h>
 
 #include "dev-eth.h"
@@ -33,41 +30,6 @@
 
 #define MZK_W300NH_KEYS_POLL_INTERVAL	20	/* msecs */
 #define MZK_W300NH_KEYS_DEBOUNCE_INTERVAL (3 * MZK_W300NH_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition mzk_w300nh_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x040000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "u-boot-env",
-		.offset		= 0x040000,
-		.size		= 0x010000,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x050000,
-		.size		= 0x160000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x1b0000,
-		.size		= 0x630000,
-	}, {
-		.name		= "art",
-		.offset		= 0x7e0000,
-		.size		= 0x020000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x050000,
-		.size		= 0x790000,
-	}
-};
-
-static struct flash_platform_data mzk_w300nh_flash_data = {
-	.parts		= mzk_w300nh_partitions,
-	.nr_parts	= ARRAY_SIZE(mzk_w300nh_partitions),
-};
 
 static struct gpio_led mzk_w300nh_leds_gpio[] __initdata = {
 	{
@@ -140,7 +102,7 @@ static void __init mzk_w300nh_setup(void)
 	ath79_register_eth(0);
 	ath79_register_eth(1);
 
-	ath79_register_m25p80(&mzk_w300nh_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(mzk_w300nh_leds_gpio),
 				 mzk_w300nh_leds_gpio);
