@@ -25,6 +25,7 @@ endef
 
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 
+KDIR_TMP:=$(KDIR)/tmp
 VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 fs_squash:=squashfs-only
@@ -47,15 +48,15 @@ define CompressLzma
 endef
 
 define PatchKernelLzma
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) "$(strip $(2))"
-	$(call CompressLzma,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).bin.lzma)
+	cp $(KDIR)/vmlinux $(KDIR_TMP)/vmlinux-$(1)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR_TMP)/vmlinux-$(1) "$(strip $(2))"
+	$(call CompressLzma,$(KDIR_TMP)/vmlinux-$(1),$(KDIR_TMP)/vmlinux-$(1).bin.lzma)
 endef
 
 define PatchKernelGzip
-	cp $(KDIR)/vmlinux $(KDIR)/vmlinux-$(1)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux-$(1) "$(strip $(2))"
-	gzip -9 -c $(KDIR)/vmlinux-$(1) > $(KDIR)/vmlinux-$(1).bin.gz
+	cp $(KDIR)/vmlinux $(KDIR_TMP)/vmlinux-$(1)
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR_TMP)/vmlinux-$(1) "$(strip $(2))"
+	gzip -9 -c $(KDIR_TMP)/vmlinux-$(1) > $(KDIR_TMP)/vmlinux-$(1).bin.gz
 endef
 
 define MkuImage
@@ -66,16 +67,16 @@ endef
 
 define MkuImageLzma
 	$(call PatchKernelLzma,$(1),$(2))
-	$(call MkuImage,lzma,,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage)
+	$(call MkuImage,lzma,,$(KDIR_TMP)/vmlinux-$(1).bin.lzma,$(KDIR_TMP)/vmlinux-$(1).uImage)
 endef
 
 define MkuImageGzip
 	$(call PatchKernelGzip,$(1),$(2))
-	$(call MkuImage,gzip,,$(KDIR)/vmlinux-$(1).bin.gz,$(KDIR)/vmlinux-$(1).uImage)
+	$(call MkuImage,gzip,,$(KDIR_TMP)/vmlinux-$(1).bin.gz,$(KDIR_TMP)/vmlinux-$(1).uImage)
 endef
 
 define MkuImageOKLI
-	$(call MkuImage,lzma,-M 0x4f4b4c49,$(KDIR)/vmlinux.bin.lzma,$(KDIR)/vmlinux-$(1).okli)
+	$(call MkuImage,lzma,-M 0x4f4b4c49,$(KDIR)/vmlinux.bin.lzma,$(KDIR_TMP)/vmlinux-$(1).okli)
 endef
 
 define CatFiles
@@ -89,11 +90,11 @@ define CatFiles
 endef
 
 define Sysupgrade/KR
-	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)))
+	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)))
 endef
 
 define Sysupgrade/RK
-	$(call CatFiles,$(KDIR)/root.$(1),$(4),$(KDIR)/vmlinux-$(2).uImage,$(3),$(call sysupname,$(1),$(2)))
+	$(call CatFiles,$(KDIR)/root.$(1),$(4),$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(call sysupname,$(1),$(2)))
 endef
 
 define Image/BuildLoader
@@ -126,13 +127,14 @@ define Image/BuildKernel
 	$(call MkuImage,gzip,,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
 	$(call Image/Build/Initramfs)
+	-mkdir -p $(KDIR_TMP)
 endef
 
 define Image/Build/WRT400N
 	$(call MkuImageLzma,$(2),$(3))
 	$(call Sysupgrade/KR,$(1),$(2),1310720,6488064)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		wrt400n $(KDIR)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call factoryname,$(1),$(2)); \
+		wrt400n $(KDIR_TMP)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call factoryname,$(1),$(2)); \
 	fi
 endef
 
@@ -166,10 +168,10 @@ define Image/Build/WZRHPG30XNH
 		) > $(call imgname,$(1),$(2))-tftp.bin; \
 		buffalo-enc -p $(4) -v 1.99 \
 			-i $(call sysupname,$(1),$(2)) \
-			-o $(KDIR)/$(2).enc; \
+			-o $(KDIR_TMP)/$(2).enc; \
 		buffalo-tag -b $(4) -p $(4) -a ath -v 1.99 -m 1.01 -l mlang8 \
 			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
-			-i $(KDIR)/$(2).enc \
+			-i $(KDIR_TMP)/$(2).enc \
 			-o $(call factoryname,$(1),$(2)); \
 	fi
 endef
@@ -184,10 +186,10 @@ define Image/Build/WHRHPG300N
 		) > $(call imgname,$(1),$(2))-tftp.bin; \
 		buffalo-enc -p $(5) -v 1.99 \
 			-i $(call sysupname,$(1),$(2)) \
-			-o $(KDIR)/$(2).enc; \
+			-o $(KDIR_TMP)/$(2).enc; \
 		buffalo-tag -b $(5) -p $(5) -a ath -v 1.99 -m 1.01 -l mlang8 \
 			-w 3 -c 0x80041000 -d 0x801e8000 -f 1 -r M_ \
-			-i $(KDIR)/$(2).enc \
+			-i $(KDIR_TMP)/$(2).enc \
 			-o $(call factoryname,$(1),$(2)); \
 	fi
 endef
@@ -197,7 +199,7 @@ define Image/Build/Cameo
 	$(call Sysupgrade/KR,$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=$(5) conv=sync; \
+			dd if=$(KDIR_TMP)/vmlinux-$(2).uImage bs=$(5) conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=$(6) conv=sync; \
 			echo -n $(7); \
 		) > $(call factoryname,$(1),$(2)); \
@@ -217,7 +219,7 @@ endef
 define Image/Build/Ath
 	$(call Sysupgrade/$(7),$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
-		dd if=$(KDIR)/vmlinux-$(2).uImage \
+		dd if=$(KDIR_TMP)/vmlinux-$(2).uImage \
 			of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync; \
 		dd if=$(KDIR)/root.$(1) \
 			of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync; \
@@ -231,7 +233,7 @@ endef
 
 define Image/Build/AthGzip/initramfs
 	$(call MkuImageLzma,$(2),$(3) $($(4)))
-	$(CP) $(KDIR)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
+	$(CP) $(KDIR_TMP)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
 endef
 
 define Image/Build/AthLzma
@@ -241,12 +243,12 @@ endef
 
 define Image/Build/AthLzma/initramfs
 	$(call MkuImageLzma,$(2),$(3) $($(4)))
-	$(CP) $(KDIR)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
+	$(CP) $(KDIR_TMP)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
 endef
 
 define Image/Build/PB4X
 	$(call PatchKernelLzma,$(2),$(3))
-	dd if=$(KDIR)/vmlinux-$(2).bin.lzma \
+	dd if=$(KDIR_TMP)/vmlinux-$(2).bin.lzma \
 	   of=$(call imgname,kernel,$(2)).bin bs=64k conv=sync
 	dd if=$(KDIR)/root.$(1) \
 	   of=$(call imgname,$(1),$(2)-rootfs).bin bs=128k conv=sync
@@ -260,7 +262,7 @@ endef
 define Image/Build/MyLoader
 	$(call PatchKernelLzma,$(2),$(3))
 	-$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(4) \
-		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR)/vmlinux-$(2).bin.lzma \
+		-p0x030000:0xe0000:al:0x80060000:kernel:$(KDIR_TMP)/vmlinux-$(2).bin.lzma \
 		-p0x110000:0:::rootfs:$(KDIR)/root.$(1) \
 		$(call imgname,$(1),$(2))-$(5)-factory.img
 endef
@@ -269,24 +271,24 @@ ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),
 define Image/Build/UBNTXM
 	$(call MkuImageLzma,$(2),$(3) $(ubntxm_mtdlayout))
 	$(call Sysupgrade/KR,$(1),$(2),1048576,6684672)
-	dd if=$(KDIR)/vmlinux-$(2).uImage of=$(KDIR)/vmlinux-$(2).uImage.bin bs=1024k conv=sync
+	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(KDIR_TMP)/vmlinux-$(2).uImage.bin bs=1024k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
-		-k $(KDIR)/vmlinux-$(2).uImage.bin \
+		-k $(KDIR_TMP)/vmlinux-$(2).uImage.bin \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call factoryname,$(1),$(2))
 endef
 
 define Image/Build/UBNT
 	$(call PatchKernelLzma,$(2),$(3))
-	dd if=$(KDIR)/vmlinux-$(2).bin.lzma of=$(KDIR)/vmlinux-$(2).lzma bs=64k conv=sync
+	dd if=$(KDIR_TMP)/vmlinux-$(2).bin.lzma of=$(KDIR_TMP)/vmlinux-$(2).lzma bs=64k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
-		-k $(KDIR)/vmlinux-$(2).lzma \
+		-k $(KDIR_TMP)/vmlinux-$(2).lzma \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call factoryname,$(1),$(2))
 	-sh $(TOPDIR)/scripts/combined-image.sh \
-		"$(KDIR)/vmlinux-$(2).lzma" \
+		"$(KDIR_TMP)/vmlinux-$(2).lzma" \
 		"$(BIN_DIR)/$(IMG_PREFIX)-root.$(1)" \
   $(call sysupname,$(1),$(2))
 endef
@@ -311,7 +313,7 @@ define Image/Build/ALFA
 		rm -rf $(KDIR)/$(1); \
 		mkdir -p $(KDIR)/$(1); \
 		cd $(KDIR)/$(1); \
-		cp $(KDIR)/vmlinux-$(2).uImage $(KDIR)/$(1)/$(6); \
+		cp $(KDIR_TMP)/vmlinux-$(2).uImage $(KDIR)/$(1)/$(6); \
 		cp $(KDIR)/root.$(1) $(KDIR)/$(1)/$(7); \
 		$(TAR) zcf $(call factoryname,$(1),$(2)) -C $(KDIR)/$(1) $(6) $(7); \
 		( \
@@ -329,16 +331,16 @@ define Image/Build/TPLINKOLD
 	$(call MkuImageOKLI,$(2))
 	( \
 		dd if=$(KDIR)/loader-$(2).gz bs=7680 count=1 conv=sync; \
-		dd if=$(KDIR)/vmlinux-$(2).okli conv=sync; \
-	) > $(KDIR)/kernel-$(2).bin
+		dd if=$(KDIR_TMP)/vmlinux-$(2).okli conv=sync; \
+	) > $(KDIR_TMP)/kernel-$(2).bin
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION)\
-		-k $(KDIR)/kernel-$(2).bin \
+		-k $(KDIR_TMP)/kernel-$(2).bin \
 		-r $(KDIR)/root.$(1) \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
-		-k $(KDIR)/kernel-$(2).bin \
+		-k $(KDIR_TMP)/kernel-$(2).bin \
 		-r $(KDIR)/root.$(1) \
 		-o $(call sysupname,$(1),$(2))
 endef
@@ -359,17 +361,17 @@ define Image/Build/TPLINK
 	$(call MkuImageOKLI,$(2))
 	( \
 		dd if=$(KDIR)/loader-$(2).gz bs=7680 count=1 conv=sync; \
-		dd if=$(KDIR)/vmlinux-$(2).okli conv=sync; \
-	) > $(KDIR)/kernel-$(2).bin
+		dd if=$(KDIR_TMP)/vmlinux-$(2).okli conv=sync; \
+	) > $(KDIR_TMP)/kernel-$(2).bin
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION)\
-		-k $(KDIR)/kernel-$(2).bin \
+		-k $(KDIR_TMP)/kernel-$(2).bin \
 		-r $(KDIR)/root.$(1) \
 		-a $(call rootfs_align,$(1)) -j \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
-		-k $(KDIR)/kernel-$(2).bin \
+		-k $(KDIR_TMP)/kernel-$(2).bin \
 		-r $(KDIR)/root.$(1) \
 		-a $(call rootfs_align,$(1)) -j \
 		-o $(call sysupname,$(1),$(2))
@@ -387,13 +389,13 @@ define Image/Build/TPLINK-LZMA
 	$(call PatchKernelLzma,$(2),$(3))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION)\
-		-k $(KDIR)/vmlinux-$(2).bin.lzma \
+		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma \
 		-r $(KDIR)/root.$(1) \
 		-a $(call rootfs_align,$(1)) -j \
 		-o $(call factoryname,$(1),$(2))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s \
-		-k $(KDIR)/vmlinux-$(2).bin.lzma \
+		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma \
 		-r $(KDIR)/root.$(1) \
 		-a $(call rootfs_align,$(1)) -j \
 		-o $(call sysupname,$(1),$(2))
@@ -403,13 +405,13 @@ define Image/Build/TPLINK-LZMA/initramfs
 	$(call PatchKernelLzma,$(2),$(3))
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
 		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s \
-		-k $(KDIR)/vmlinux-$(2).bin.lzma \
+		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma \
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
 define Image/Build/CyberTAN
 	$(call MkuImageGzip,$(2),$(3))
-	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR)/vmlinux-$(2).uImage \
+	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp -f $(KDIR_TMP)/vmlinux-$(2).uImage \
 		-x 32 -a 0x10000 -x -32 -f $(KDIR)/root.$(1)
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(2) -v v$(4) \
 		-i $(KDIR)/image.tmp \
@@ -425,23 +427,23 @@ define Image/Build/Netgear/Build_uImage
 	-rm -rf $(KDIR)/$(1)
 	mkdir -p $(KDIR)/$(1)/image
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
-		$(KDIR)/vmlinux-$(1).uImage \
+		$(KDIR_TMP)/vmlinux-$(1).uImage \
 		$(KDIR)/$(1)/image/uImage \
 		$(4)
 	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
-		$(KDIR)/$(1) $(KDIR)/vmlinux-$(1).uImage.squashfs.tmp \
+		$(KDIR)/$(1) $(KDIR_TMP)/vmlinux-$(1).uImage.squashfs.tmp \
 		-nopad -noappend -root-owned -be
 	-rm -rf $(KDIR)/$(1)
 	mkimage -A mips -O linux -T filesystem -C none \
 		-a 0xbf070000 -e 0xbf070000 \
 		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux-$(1).uImage.squashfs.tmp \
-		$(KDIR)/vmlinux-$(1).uImage.squashfs.tmp2
+		-d $(KDIR_TMP)/vmlinux-$(1).uImage.squashfs.tmp \
+		$(KDIR_TMP)/vmlinux-$(1).uImage.squashfs.tmp2
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
-		$(KDIR)/vmlinux-$(1).uImage.squashfs.tmp2 \
-		$(KDIR)/vmlinux-$(1).uImage.squashfs \
+		$(KDIR_TMP)/vmlinux-$(1).uImage.squashfs.tmp2 \
+		$(KDIR_TMP)/vmlinux-$(1).uImage.squashfs \
 		$(4)
-	-rm -f $(KDIR)/vmlinux-$(1).uImage.squashfs.tmp*
+	-rm -f $(KDIR_TMP)/vmlinux-$(1).uImage.squashfs.tmp*
 endef
 
 define Image/Build/Netgear/Estimate_uImage
@@ -451,38 +453,38 @@ define Image/Build/Netgear/Estimate_uImage
 		kk=`echo '$(3)' | sed -e 's/.*[:,]\([0-9]*\)k(kernel).*/\1/'`; \
 		rk=`echo '$(3)' | sed -e 's/.*[:,]\([0-9]*\)k(rootfs).*/\1/'`; \
 		let 'tk = kk + rk'; \
-		s=`stat -c'%s' '$(KDIR)/vmlinux-$(1)_est.uImage.squashfs'`; \
+		s=`stat -c'%s' '$(KDIR_TMP)/vmlinux-$(1)_est.uImage.squashfs'`; \
 		c=`echo '$(3)' | wc -c`; \
 		let 'kk = (((s + c) / (64 * 1024) + 1) * 64)'; \
 		let 'rk = tk - kk'; \
 		echo '$(3)' | sed -e "s/[0-9]*k(kernel)/$$$${kk}k(kernel)/" \
 				  -e "s/[0-9]*k(rootfs)/$$$${rk}k(rootfs)/" > \
-			'$(KDIR)/$(1)_mtdparts'; \
+			'$(KDIR_TMP)/$(1)_mtdparts'; \
 		let 'k = kk * 1024'; \
-		echo "$$$${k}" > '$(KDIR)/$(1)_kernel_maxsize'; \
+		echo "$$$${k}" > '$(KDIR_TMP)/$(1)_kernel_maxsize'; \
 		let 'r = rk * 1024'; \
-		echo "$$$${r}" > '$(KDIR)/$(1)_rootfs_maxsize'; \
+		echo "$$$${r}" > '$(KDIR_TMP)/$(1)_rootfs_maxsize'; \
 	)
-	-rm -f $(KDIR)/vmlinux-$(1)_est \
-	       $(KDIR)/vmlinux-$(1)_est.bin.lzma \
-	       $(KDIR)/vmlinux-$(1)_est.uImage \
-	       $(KDIR)/vmlinux-$(1)_est.uImage.squashfs
+	-rm -f $(KDIR_TMP)/vmlinux-$(1)_est \
+	       $(KDIR_TMP)/vmlinux-$(1)_est.bin.lzma \
+	       $(KDIR_TMP)/vmlinux-$(1)_est.uImage \
+	       $(KDIR_TMP)/vmlinux-$(1)_est.uImage.squashfs
 endef
 
 define Image/Build/Netgear
 	$(call Image/Build/Netgear/Estimate_uImage,$(2),$(3),$(4),$(5))
-	$(call Image/Build/Netgear/Build_uImage,$(2),$(3),`cat $(KDIR)/$(2)_mtdparts`,$(5))
-	if [ `stat -c%s '$(KDIR)/vmlinux-$(2).uImage.squashfs'` -gt \
-	     `cat '$(KDIR)/$(2)_kernel_maxsize'` ]; then \
-                echo "$(KDIR)/vmlinux-$(2).uImage.squashfs is too big" >& 2; \
+	$(call Image/Build/Netgear/Build_uImage,$(2),$(3),`cat $(KDIR_TMP)/$(2)_mtdparts`,$(5))
+	if [ `stat -c%s '$(KDIR_TMP)/vmlinux-$(2).uImage.squashfs'` -gt \
+	     `cat '$(KDIR_TMP)/$(2)_kernel_maxsize'` ]; then \
+                echo "$(KDIR_TMP)/vmlinux-$(2).uImage.squashfs is too big" >& 2; \
 	else if [ `stat -c%s '$(KDIR)/root.$(1)'` -gt \
-	     `cat '$(KDIR)/$(2)_rootfs_maxsize'` ]; then \
+	     `cat '$(KDIR_TMP)/$(2)_rootfs_maxsize'` ]; then \
                 echo "$(KDIR)/root.$(1) is too big" >& 2; \
 	else \
 		( \
 			set -e; \
-			dd if=$(KDIR)/vmlinux-$(2).uImage.squashfs \
-			bs=`cat '$(KDIR)/$(2)_kernel_maxsize'` conv=sync; \
+			dd if=$(KDIR_TMP)/vmlinux-$(2).uImage.squashfs \
+			bs=`cat '$(KDIR_TMP)/$(2)_kernel_maxsize'` conv=sync; \
 			dd if=$(KDIR)/root.$(1) bs=64k; \
 		) > $(call sysupname,$(1),$(2)); \
 		for r in $(7) ; do \
@@ -498,7 +500,7 @@ endef
 define Image/Build/Netgear/initramfs
 	$(call MkuImageLzma,$(2),$(3) $($(4)))
 	$(STAGING_DIR_HOST)/bin/wndr3700 \
-		$(KDIR)/vmlinux-$(2).uImage \
+		$(KDIR_TMP)/vmlinux-$(2).uImage \
 		$(call imgname,$(1),$(2))-uImage.bin \
 		$(5)
 endef
@@ -524,12 +526,12 @@ define Image/Build/OpenMesh
 	$(call MkuImageLzma,$(2))
 	-sh $(TOPDIR)/scripts/om2p-fwupgradecfg-gen.sh \
 		"$(BUILD_DIR)/om2p-fwupgrade.cfg" \
-		"$(KDIR)/vmlinux-$(2).uImage" \
+		"$(KDIR_TMP)/vmlinux-$(2).uImage" \
 		"$(KDIR)/root.$(1)"
 	-sh $(TOPDIR)/scripts/combined-ext-image.sh \
 		"$(3)" "$(call factoryname,$(1),$(2))" \
 		"$(BUILD_DIR)/om2p-fwupgrade.cfg" "fwupgrade.cfg" \
-		"$(KDIR)/vmlinux-$(2).uImage" "kernel" \
+		"$(KDIR_TMP)/vmlinux-$(2).uImage" "kernel" \
 		"$(KDIR)/root.$(1)" "rootfs"
 endef
 
@@ -539,7 +541,7 @@ define Image/Build/Zcomax
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkzcfw \
 			-B $(2) \
-			-k $(KDIR)/vmlinux-$(2).uImage \
+			-k $(KDIR_TMP)/vmlinux-$(2).uImage \
 			-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 			-o $(call imgname,$(1),$(2))-factory.img; \
 	fi
