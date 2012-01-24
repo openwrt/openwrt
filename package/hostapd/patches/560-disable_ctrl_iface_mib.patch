@@ -123,7 +123,7 @@
  				struct sta_info *sta, int success)
 --- a/src/ap/wpa_auth.c
 +++ b/src/ap/wpa_auth.c
-@@ -2534,6 +2534,7 @@ static int wpa_cipher_bits(int cipher)
+@@ -2541,6 +2541,7 @@ static int wpa_cipher_bits(int cipher)
  	}
  }
  
@@ -131,7 +131,7 @@
  
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
-@@ -2697,7 +2698,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
+@@ -2704,7 +2705,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
  
  	return len;
  }
