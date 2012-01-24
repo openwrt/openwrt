@@ -8,9 +8,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ar71xx/ar71xx.h>
 
 #include "machtype.h"
@@ -34,45 +31,6 @@
 
 #define MZK_W04NU_KEYS_POLL_INTERVAL	20	/* msecs */
 #define MZK_W04NU_KEYS_DEBOUNCE_INTERVAL (3 * MZK_W04NU_KEYS_POLL_INTERVAL)
-
-#ifdef CONFIG_MTD_PARTITIONS
-static struct mtd_partition mzk_w04nu_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x040000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "u-boot-env",
-		.offset		= 0x040000,
-		.size		= 0x010000,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x050000,
-		.size		= 0x160000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x1b0000,
-		.size		= 0x630000,
-	}, {
-		.name		= "art",
-		.offset		= 0x7e0000,
-		.size		= 0x020000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x050000,
-		.size		= 0x790000,
-	}
-};
-#endif /* CONFIG_MTD_PARTITIONS */
-
-static struct flash_platform_data mzk_w04nu_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
-	.parts          = mzk_w04nu_partitions,
-	.nr_parts       = ARRAY_SIZE(mzk_w04nu_partitions),
-#endif
-};
 
 static struct gpio_led mzk_w04nu_leds_gpio[] __initdata = {
 	{
@@ -149,7 +107,7 @@ static void __init mzk_w04nu_setup(void)
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
 
-	ar71xx_add_device_m25p80(&mzk_w04nu_flash_data);
+	ar71xx_add_device_m25p80(NULL);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(mzk_w04nu_leds_gpio),
 					mzk_w04nu_leds_gpio);
