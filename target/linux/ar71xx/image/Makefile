@@ -87,11 +87,11 @@ define CatFiles
 	fi; fi
 endef
 
-define Sysupgrade/KR
+define Sysupgrade/KRuImage
 	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)))
 endef
 
-define Sysupgrade/RK
+define Sysupgrade/RKuImage
 	$(call CatFiles,$(KDIR)/root.$(1),$(4),$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(call sysupname,$(1),$(2)))
 endef
 
@@ -130,7 +130,7 @@ endef
 
 define Image/Build/WRT400N
 	$(call MkuImageLzma,$(2),$(3))
-	$(call Sysupgrade/KR,$(1),$(2),1310720,6488064)
+	$(call Sysupgrade/KRuImage,$(1),$(2),1310720,6488064)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		wrt400n $(KDIR_TMP)/vmlinux-$(2).uImage $(KDIR)/root.$(1) $(call factoryname,$(1),$(2)); \
 	fi
@@ -139,7 +139,7 @@ endef
 dir825b1_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,1024k(kernel),5184k(rootfs),64k(caldata)ro,1600k(unknown)ro,6208k@0x50000(firmware)
 define Image/Build/DIR825B1
 	$(call MkuImageLzma,$(2),$(3) $(dir825b1_mtdlayout))
-	$(call Sysupgrade/KR,$(1),$(2),1048576,5308416)
+	$(call Sysupgrade/KRuImage,$(1),$(2),1048576,5308416)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			dd if=$(call sysupname,$(1),$(2)); \
@@ -158,7 +158,7 @@ endef
 
 define Image/Build/WZRHPG30XNH
 	$(call MkuImageLzma,$(2),$(3))
-	$(call Sysupgrade/KR,$(1),$(2),1048576,31850496)
+	$(call Sysupgrade/KRuImage,$(1),$(2),1048576,31850496)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
@@ -176,7 +176,7 @@ endef
 
 define Image/Build/WHRHPG300N
 	$(call MkuImageLzma,$(2),$(3) $($(4)))
-	$(call Sysupgrade/KR,$(1),$(2),917504,2883584)
+	$(call Sysupgrade/KRuImage,$(1),$(2),917504,2883584)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
@@ -194,7 +194,7 @@ endef
 
 define Image/Build/Cameo
 	$(call MkuImageLzma,$(2),$(3) $($(4)))
-	$(call Sysupgrade/KR,$(1),$(2),$(5),$(6))
+	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			dd if=$(KDIR_TMP)/vmlinux-$(2).uImage bs=$(5) conv=sync; \
@@ -268,7 +268,7 @@ endef
 ubntxm_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1024k(kernel),6528k(rootfs),256k(cfg)ro,64k(EEPROM)ro,7552k@0x50000(firmware)
 define Image/Build/UBNTXM
 	$(call MkuImageLzma,$(2),$(3) $(ubntxm_mtdlayout))
-	$(call Sysupgrade/KR,$(1),$(2),1048576,6684672)
+	$(call Sysupgrade/KRuImage,$(1),$(2),1048576,6684672)
 	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(KDIR_TMP)/vmlinux-$(2).uImage.bin bs=1024k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
 		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
@@ -294,7 +294,7 @@ endef
 planex_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1408k(kernel),6336k(rootfs),128k(art)ro,7744k@0x50000(firmware)
 define Image/Build/Planex
 	$(call MkuImageGzip,$(2),$(3) $(planex_mtdlayout))
-	$(call Sysupgrade/KR,$(1),$(2),1441792,6356992)
+	$(call Sysupgrade/KRuImage,$(1),$(2),1441792,6356992)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkplanexfw \
 			-B $(2) \
@@ -307,7 +307,7 @@ endef
 alfa_mtdlayout_8M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),1600k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 define Image/Build/ALFA
 	$(call MkuImageLzma,$(2),$(3))
-	$(call Sysupgrade/RK,$(1),$(2),$(4),$(5))
+	$(call Sysupgrade/RKuImage,$(1),$(2),$(4),$(5))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		rm -rf $(KDIR)/$(1); \
 		mkdir -p $(KDIR)/$(1); \
@@ -507,7 +507,7 @@ endef
 ifdef CONFIG_PACKAGE_uboot-ar71xx-nbg460n_550n_550nh
   define Image/Build/ZyXEL
 	$(call MkuImageLzma,$(2),$(3))
-	$(call Sysupgrade/KR,$(1),$(2),917504,2752512)
+	$(call Sysupgrade/KRuImage,$(1),$(2),917504,2752512)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		if [ ! -f $(BIN_DIR)/$(IMG_PREFIX)-$(2)-u-boot.bin ]; then \
 			echo "Warning: $(IMG_PREFIX)-$(2)-u-boot.bin not found"; \
@@ -536,7 +536,7 @@ endef
 
 define Image/Build/Zcomax
 	$(call MkuImageLzma,$(2),$(3))
-	$(call Sysupgrade/RK,$(1),$(2),1507328,6356992)
+	$(call Sysupgrade/RKuImage,$(1),$(2),1507328,6356992)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkzcfw \
 			-B $(2) \
