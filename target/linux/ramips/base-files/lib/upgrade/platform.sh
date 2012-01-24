@@ -14,6 +14,7 @@ platform_check_image() {
 	[ "$ARGC" -gt 1 ] && return 1
 
 	case "$board" in
+	all0256n | \
 	bc2 | \
 	dir-300-b1 | \
 	dir-600-b1 | \

@@ -8,7 +8,9 @@ preinit_set_mac_address() {
 	. /lib/ramips.sh
 
 	case $(ramips_board_name) in
-	bc2 | nw718 | esr-9753)
+	bc2 |\
+	nw718 |\
+	esr-9753)
 		mac=$(ramips_get_mac_binary factory 4)
 		mac=$(maccalc or "$mac" "02:00:00:00:00:00")
 		ifconfig eth0 hw ether $mac 2>/dev/null
@@ -19,6 +21,7 @@ preinit_set_mac_address() {
                 mac=$(ramips_get_mac_binary devdata 16388)
                 ifconfig eth0 hw ether $mac 2>/dev/null
                 ;;
+	all0256n |\
 	hw550-3g |\
 	nbg-419n |\
 	omni-emb |\

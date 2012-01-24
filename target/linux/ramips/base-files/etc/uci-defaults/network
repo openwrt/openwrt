@@ -16,6 +16,10 @@ ramips_setup_interfaces()
 	ucidef_set_interface_loopback
 
 	case $board in
+	all0256n)
+		ucidef_set_interface_lan "eth0.1"
+		;;
+
 	argus-atp52b | \
 	b2c | \
 	nw718 | \
@@ -65,6 +69,10 @@ ramips_setup_macs()
 	local wan_mac=""
 
 	case $board in
+	all0256n)
+		lan_mac=$(ramips_get_mac_binary factory 40)
+		;;
+
 	argus-atp52b | \
 	b2c | \
 	f5d8235-v1 | \
