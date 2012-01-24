@@ -38,7 +38,7 @@ Building images:
 	By default 'make image' will create an image with the default
 	target profile and package set. You can use the following parameters
 	to change that:
-	
+
 	make image PROFILE="<profilename>" # override the default target profile
 	make image PACKAGES="<pkg1> [<pkg2> [<pkg3> ...]]" # include extra packages
 	make image FILES="<path>" # include extra files from <path>
@@ -113,7 +113,7 @@ ifneq ($(USER_FILES),)
 endif
 	$(MAKE) package_postinst
 	$(MAKE) build_image
-	
+
 package_index: FORCE
 	@echo
 	@echo Building package index...
@@ -152,8 +152,9 @@ package_postinst: FORCE
 build_image: FORCE
 	@echo
 	@echo Building images...
-	$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1
-	
+	$(NO_TRACE_MAKE) -C target/linux/$(BOARD)/image install TARGET_BUILD=1 IB=1 \
+		$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)")
+
 clean:
 	rm -rf $(TOPDIR)/tmp $(TOPDIR)/dl $(TARGET_DIR) $(BIN_DIR)
 
