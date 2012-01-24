@@ -87,6 +87,10 @@ define CatFiles
 	fi; fi
 endef
 
+define Sysupgrade/KR
+	$(call CatFiles,$(2),$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(5)))
+endef
+
 define Sysupgrade/KRuImage
 	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)))
 endef
@@ -291,10 +295,19 @@ define Image/Build/UBNT
   $(call sysupname,$(1),$(2))
 endef
 
-planex_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1408k(kernel),6336k(rootfs),128k(art)ro,7744k@0x50000(firmware)
+planex_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,960k(kernel),6784k(rootfs),128k(art)ro,7744k@0x50000(firmware)
+define Image/Build/Planex/loader
+	$(call Image/BuildLoaderAlone,$(1),gz,$(2) $(planex_mtdlayout),0x52000,0)
+endef
+
 define Image/Build/Planex
-	$(call MkuImageGzip,$(2),$(3) $(planex_mtdlayout))
-	$(call Sysupgrade/KRuImage,$(1),$(2),1441792,6356992)
+	$(call MkuImage,gzip,,$(KDIR)/loader-$(2).gz,$(KDIR_TMP)/vmlinux-$(2).uImage)
+	$(call MkuImageOKLI,$(2))
+	( \
+		dd if=$(KDIR_TMP)/vmlinux-$(2).uImage bs=8k count=1 conv=sync; \
+		dd if=$(KDIR_TMP)/vmlinux-$(2).okli; \
+	) > $(KDIR_TMP)/kernel-$(2).bin
+	$(call Sysupgrade/KR,$(1),$(KDIR_TMP)/kernel-$(2).bin,983040,6815744,$(2))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkplanexfw \
 			-B $(2) \
@@ -568,6 +581,10 @@ endef
 
 define Image/Build/Template/squashfs-only/squashfs
 	$(call Image/Build/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+endef
+
+define Image/Build/Template/64k/loader
+	$(call Image/Build/$(1)/loader,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
 define Image/Build/Template/64k/squashfs
