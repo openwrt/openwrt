@@ -291,8 +291,9 @@ define Image/Build/UBNT
   $(call sysupname,$(1),$(2))
 endef
 
+planex_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1408k(kernel),6336k(rootfs),128k(art)ro,7744k@0x50000(firmware)
 define Image/Build/Planex
-	$(call MkuImageGzip,$(2),$(3))
+	$(call MkuImageGzip,$(2),$(3) $(planex_mtdlayout))
 	$(call Sysupgrade/KR,$(1),$(2),1441792,6356992)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkplanexfw \
