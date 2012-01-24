@@ -33,6 +33,9 @@ EOF
 board=$(ramips_board_name)
 
 case $board in
+	all0256n)
+		set_wifi_led "rt2800pci-phy0::radio"
+		;;
 	bc2)
 		set_usb_led "bc2:blue:usb"
 		;;
