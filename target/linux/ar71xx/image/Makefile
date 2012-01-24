@@ -29,13 +29,11 @@ KDIR_TMP:=$(KDIR)/tmp
 VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 fs_squash:=squashfs-only
-fs_all:=all
 fs_64k:=64k
 fs_64kraw:=64kraw
 fs_128k:=128k
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	fs_squash:=initramfs
-	fs_all:=initramfs
 	fs_64k:=initramfs
 	fs_64kraw:=initramfs
 	fs_128k:=initramfs
