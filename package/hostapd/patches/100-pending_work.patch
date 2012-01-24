@@ -160,3 +160,21 @@
  
  	if (bss != &drv->first_bss) {
  		struct i802_bss *tbss;
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
+@@ -776,7 +776,14 @@ void wpa_receive(struct wpa_authenticato
+ 	}
+ 
+ 	if (sm->wpa == WPA_VERSION_WPA2) {
+-		if (key->type != EAPOL_KEY_TYPE_RSN) {
++		if (key->type == EAPOL_KEY_TYPE_WPA) {
++			/*
++			 * Some deployed station implementations seem to send
++			 * msg 4/4 with incorrect type value in WPA2 mode.
++			 */
++			wpa_printf(MSG_DEBUG, "Workaround: Allow EAPOL-Key "
++				   "with unexpected WPA type in RSN mode");
++		} else if (key->type != EAPOL_KEY_TYPE_RSN) {
+ 			wpa_printf(MSG_DEBUG, "Ignore EAPOL-Key with "
+ 				   "unexpected type %d in RSN mode",
+ 				   key->type);
