@@ -7,7 +7,7 @@
 
 define Profile/TLMR3020
 	NAME:=TP-LINK TL-MR3020
-	PACKAGES:=kmod-usb-core kmod-usb2
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
 endef
 
 define Profile/TLMR3020/Description

@@ -117,5 +117,5 @@ static void __init tl_mr3020_setup(void)
 	ath79_register_wmac(ee, mac);
 }
 
-MIPS_MACHINE(ATH79_MACH_TL_MR3020, "TL-MR3020", "TP-LINK TL-MR3020 v1",
+MIPS_MACHINE(ATH79_MACH_TL_MR3020, "TL-MR3020", "TP-LINK TL-MR3020",
 	     tl_mr3020_setup);
