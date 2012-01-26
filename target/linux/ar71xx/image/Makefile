@@ -684,6 +684,11 @@ define Image/Build/Profile/WP543
 	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wp543,$(wp543_cmdline),0x1000000,16M)
 endef
 
+wpe72_cmdline=console=ttyS0,115200
+define Image/Build/Profile/WPE72
+	$(call Image/Build/Template/$(fs_64k)/$(1),MyLoader,wpe72,$(wpe72_cmdline),0x800000,8M)
+endef
+
 dir600a1_cmdline=board=DIR-600-A1 console=ttyS0,115200
 define Image/Build/Profile/DIR600A1
 	$(call Image/Build/Template/$(fs_64k)/$(1),Cameo7240,dir-600-a1,$(dir600a1_cmdline),"AP91-AR7240-RT-090223-00")
@@ -1011,6 +1016,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLWR2543,$(1))
 	$(call Image/Build/Profile/UBNT,$(1))
 	$(call Image/Build/Profile/WP543,$(1))
+	$(call Image/Build/Profile/WPE72,$(1))
 	$(call Image/Build/Profile/WNDR3700,$(1))
 	$(call Image/Build/Profile/AP96,$(1))
 	$(call Image/Build/Profile/WRT400N,$(1))
