@@ -112,6 +112,9 @@ static int __init ar71xx_prom_init_myloader(void)
 	case DEVID_COMPEX_WP543:
 		ar71xx_prom_append_cmdline("board", "WP543");
 		break;
+	case DEVID_COMPEX_WPE72:
+		ar71xx_prom_append_cmdline("board", "WPE72");
+		break;
 	default:
 		printk(KERN_WARNING "prom: unknown device id: %x\n",
 				mylo->did);
