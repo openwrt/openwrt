@@ -128,8 +128,8 @@ define Image/BuildKernel
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(VMLINUX).gz bs=65536 conv=sync
 	$(call MkuImage,gzip,,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
-	$(call Image/Build/Initramfs)
 	-mkdir -p $(KDIR_TMP)
+	$(call Image/Build/Initramfs)
 endef
 
 define Image/Build/WRT400N
