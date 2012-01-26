@@ -67,6 +67,28 @@ define BuildFirmware/Generic
 	fi; fi
 endef
 
+define BuildFirmware/WL341V3
+	$(call PatchKernelLzma,$(2),$(3) $($(4)))
+	$(call MkImage,lzma,"$(KDIR)/vmlinux-$(2).bin.lzma","$(KDIR)/vmlinux-$(2).uImage")
+	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).uImage"` -gt $(5) ]; then \
+		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
+	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(6) ]; then \
+		echo "Warning: $(KDIR)/root.$(1) is too big"; \
+	else \
+		( \
+			dd if=/dev/zero bs=195936 count=1; \
+			echo "1.01"; \
+			dd if=/dev/zero bs=581 count=1; \
+			echo -n -e "\x73\x45\x72\x43\x6F\x4D\x6D\x00\x01\x00\x00\x59\x4E\x37\x95\x58\x10\x00\x20\x00\x28\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11\x03\x00\x00\x80\x00\x00\x00\x00\x03\x00\x00\x10\x12\x00\x00\x00\x10\x73\x45\x72\x43\x6F\x4D\x6D"; \
+			dd if=/dev/zero bs=65552 count=1; \
+			dd if=$(KDIR)/vmlinux-$(2).uImage bs=$(5) conv=sync; \
+			dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
+			dd if=/dev/zero bs=`expr 4194304 - 262144 - 16 - $(5) - \( \( \( \`stat -c%s $(KDIR)/root.$(1)\` / 65536 \) + 1 \) \* 65536 \)` count=1; \
+			echo -n -e "\x11\x03\x80\x00\x10\x12\x90\xF7\x65\x52\x63\x4F\x6D\x4D\x00\x00"; \
+		) > $(call imgname,$(1),$(2))-factory.bin; \
+	fi; fi
+endef
+
 define BuildFirmware/Buffalo
 	$(call PatchKernelLzma,$(2),board=$(3) $($(4)))
 	$(call MkImage,lzma,"$(KDIR)/vmlinux-$(2).bin.lzma","$(KDIR)/vmlinux-$(2).uImage")
@@ -149,6 +171,16 @@ console_OMNIEMB=ttyS1,57600
 mtdlayout_ONMIEMB=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,1024k(kernel),6848k(rootfs),7872k@0x50000(firmware)
 define Image/Build/Template/OMNIEMB
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) console=$(console_OMNIEMB),mtdlayout_OMNIEMB,1048576,7012352)
+endef
+
+mtdlayout_sercomm_4M=mtdparts=physmap-flash.0:128k(u-boot)ro,64k(board-nvram)ro,64k(u-boot-env)ro,832k(kernel),2944k(rootfs),64k(signature-eRcOmM),3776k@0x40000(firmware),4096k@0x0(fullflash)
+define Image/Build/Template/WL341V3
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_sercomm_4M,851968,3014656)
+	$(call BuildFirmware/WL341V3,$(1),$(2),board=$(3),mtdlayout_sercomm_4M,851968,3014656)
+endef
+
+define Image/Build/Profile/WL341V3
+	$(call Image/Build/Template/WL341V3,$(1),wl341v3,WL341V3)
 endef
 
 define Image/Build/Profile/DIR300B1
@@ -294,6 +326,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/MOFI35003GN,$(1))
 	$(call Image/Build/Profile/W502U,$(1))
 	$(call Image/Build/Profile/WR5123GN,$(1))
+	$(call Image/Build/Profile/WL341V3,$(1))
 	$(call Image/Build/Profile/WL351,$(1))
 endef
 endif

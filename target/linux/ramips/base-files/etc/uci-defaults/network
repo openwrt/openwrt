@@ -111,6 +111,11 @@ ramips_setup_macs()
                 wan_mac=$(ramips_get_mac_binary factory 40)
 		;;
 
+	wl341v3)
+		lan_mac=$(ramips_get_mac_binary board-nvram 65440)
+		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		;;
+
 	wli-tx4-ag300n)
 		lan_mac=$(ramips_get_mac_binary factory 4)
 		;;
