@@ -30,6 +30,7 @@ platform_check_image() {
 	rt-n15 | \
 	w502u |\
 	v22rw-2x2 | \
+	wl341v3 | \
 	wli-tx4-ag300n | \
 	whr-g300n |\
 	wr512-3gn)

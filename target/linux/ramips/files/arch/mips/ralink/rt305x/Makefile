@@ -30,4 +30,5 @@ obj-$(CONFIG_RT305X_MACH_W502U)		+= mach-w502u.o
 obj-$(CONFIG_RT305X_MACH_WCR150GN)	+= mach-wcr150gn.o
 obj-$(CONFIG_RT305X_MACH_WHR_G300N)	+= mach-whr-g300n.o
 obj-$(CONFIG_RT305X_MACH_WR512_3GN)	+= mach-wr512-3gn.o
+obj-$(CONFIG_RT305X_MACH_WL341V3)	+= mach-wl341v3.o
 obj-$(CONFIG_RT305X_MACH_WL351)		+= mach-wl351.o

@@ -42,6 +42,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_W502U,		/* ALFA Networks W502U */
 	RAMIPS_MACH_WCR150GN,		/* Sparklan WCR-150GN */
 	RAMIPS_MACH_WHR_G300N,		/* Buffalo WHR-G300N */
+	RAMIPS_MACH_WL341V3,		/* Sitecom WL-341 v3 */
 	RAMIPS_MACH_WL351,		/* Sitecom WL-351 v1 002 */
 	RAMIPS_MACH_WR512_3GN,		/* SH-WR512NU/WS-WR512N1-like 3GN*/
 };
