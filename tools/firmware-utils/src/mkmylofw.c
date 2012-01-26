@@ -154,6 +154,9 @@ struct cpx_board boards[] = {
 	CPX_BOARD_AR71XX(DEVID_COMPEX_WP543, 2,
 		"WP543", "Compex WP543",
 		"BareBoard"),
+	CPX_BOARD_AR71XX(DEVID_COMPEX_WPE72, 8,
+		"WPE72", "Compex WPE72",
+		"BareBoard"),
 
 	CPX_BOARD_AR23XX(DEVID_COMPEX_NP25G, 4,
 		"NP25G", "Compex NetPassage 25G",
