@@ -1,0 +1,22 @@
+From 7b90e7040b9783b91a4e2baf72ac32d3a00f9f2d Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 21 Jan 2012 11:18:25 +0100
+Subject: [PATCH 31/34] ssb: fix cardbus in hostmode
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/ssb/driver_pcicore.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/drivers/ssb/driver_pcicore.c
++++ b/drivers/ssb/driver_pcicore.c
+@@ -75,7 +75,7 @@ static u32 get_cfgspace_addr(struct ssb_
+ 	u32 tmp;
+ 
+ 	/* We do only have one cardbus device behind the bridge. */
+-	if (pc->cardbusmode && (dev >= 1))
++	if (pc->cardbusmode && (dev > 1))
+ 		goto out;
+ 
+ 	/* Type 0 transaction */
