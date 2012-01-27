@@ -950,7 +950,7 @@ endef
 
 wzrhpag300h_cmdline=board=WZR-HP-AG300H console=ttyS0,115200
 define Image/Build/Profile/WZRHPAG300H
-	$(call Image/Build/Template/$(fs_128k)/$(1),WZRHPG30XNH,wzr-hp-ag300h,$(wzrhpag300h_cmdline),WZR-HP-AG300H)
+	$(call Image/Build/Template/$(fs_64k)/$(1),WZRHPG30XNH,wzr-hp-ag300h,$(wzrhpag300h_cmdline),WZR-HP-AG300H)
 endef
 
 wzrhpg450h_cmdline=board=WZR-HP-G450H console=ttyS0,115200
