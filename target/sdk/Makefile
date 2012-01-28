@@ -40,7 +40,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	rm -rf \
 		$(SDK_BUILD_DIR)/target/linux/*/files \
 		$(SDK_BUILD_DIR)/target/linux/*/patches
-	$(CP) \
+	$(CP) -L \
 		$(TOPDIR)/LICENSE \
 		$(TOPDIR)/rules.mk \
 		$(TOPDIR)/.config \
