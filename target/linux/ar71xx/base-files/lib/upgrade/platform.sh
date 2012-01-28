@@ -79,6 +79,7 @@ platform_check_image() {
 		;;
 	alfa-ap96 | \
 	alfa-nx | \
+	ap113 | \
 	ap121 | \
 	ap121-mini | \
 	ap96 | \

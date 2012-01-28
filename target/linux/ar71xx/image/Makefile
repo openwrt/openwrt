@@ -626,6 +626,12 @@ define Image/Build/Profile/ALFAAP96
 	$(call Image/Build/Template/$(fs_128k)/$(1),AthLzma,alfa-ap96,$(alfa_ap96_cmdline),alfa_ap96_mtdlayout,2097152,13631488,RKuImage)
 endef
 
+ap113_mtd_layout=64k(u-boot),3008k(rootfs),896k(uImage),64k(NVRAM),64k(ART),3904k@0x10000(firmware)
+ap113_cmdline=board=AP113 console=ttyS0,115200
+define Image/Build/Profile/AP113
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,ap113,$(ap113_cmdline),ap113_mtd_layout,917504,3080192,RK)
+endef
+
 ap121_mtdlayout_2M=mtdparts=spi0.0:64k(u-boot)ro,1216k(rootfs),704k(kernel),64k(art)ro,1920k@0x10000(firmware)
 ap121_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
 
@@ -977,6 +983,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ALFAAP96,$(1))
 	$(call Image/Build/Profile/ALFANX,$(1))
 	$(call Image/Build/Profile/ALL0258N,$(1))
+	$(call Image/Build/Profile/AP113,$(1))
 	$(call Image/Build/Profile/AP121,$(1))
 	$(call Image/Build/Profile/AP121MINI,$(1))
 	$(call Image/Build/Profile/AP81,$(1))

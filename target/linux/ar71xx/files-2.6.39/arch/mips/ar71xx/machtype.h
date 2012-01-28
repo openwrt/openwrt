@@ -19,6 +19,7 @@ enum ar71xx_mach_type {
 	AR71XX_MACH_ALFA_AP96,	/* ALFA Network AP96 board */
 	AR71XX_MACH_ALFA_NX,	/* ALFA Network N2/N5 board */
 	AR71XX_MACH_ALL0258N,	/* Allnet ALL0258N */
+	AR71XX_MACH_AP113,	/* Atheros AP113 */
 	AR71XX_MACH_AP121,	/* Atheros AP121 */
 	AR71XX_MACH_AP121_MINI,	/* Atheros AP121-MINI */
 	AR71XX_MACH_AP81,	/* Atheros AP81 */
