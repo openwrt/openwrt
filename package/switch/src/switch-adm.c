@@ -341,6 +341,7 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 	}
 	adm_wreg(0x13 + nr, (__u16) ports);
 
+	kfree(c);
 	return 0;
 }
 

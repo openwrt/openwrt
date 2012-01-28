@@ -341,10 +341,9 @@ switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 	switch_vlan_config *c;
 	int j, u, p, s;
 
-	c = kmalloc(sizeof(switch_vlan_config), GFP_KERNEL);
+	c = kzalloc(sizeof(switch_vlan_config), GFP_KERNEL);
 	if (!c)
 		return NULL;
-	memset(c, 0, sizeof(switch_vlan_config));
 
 	while (isspace(*buf)) buf++;
 	j = 0;
@@ -382,7 +381,10 @@ switch_vlan_config *switch_parse_vlan(switch_driver *driver, char *buf)
 
 		while (isspace(*buf)) buf++;
 	}
-	if (*buf != 0) return NULL;
+	if (*buf != 0) {
+		kfree(c);
+		return NULL;
+	}
 
 	c->port &= (1 << driver->ports) - 1;
 	c->untag &= (1 << driver->ports) - 1;

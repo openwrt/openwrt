@@ -459,6 +459,7 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 		robo_write32(ROBO_ARLIO_PAGE, 0x63 + regoff, (c->untag << 9) | c->port);
 		robo_write16(ROBO_ARLIO_PAGE, 0x61 + regoff, nr);
 		robo_write16(ROBO_ARLIO_PAGE, 0x60 + regoff, 1 << 7);
+		kfree(c);
 		return 0;
 	}
 
@@ -473,6 +474,7 @@ static int handle_vlan_port_write(void *driver, char *buf, int nr)
 		robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_TABLE_ACCESS, val16);
 	}
 
+	kfree(c);
 	return 0;
 }
 
@@ -520,12 +522,8 @@ static int handle_enable_vlan_write(void *driver, char *buf, int nr)
 static int handle_reset(void *driver, char *buf, int nr)
 {
 	switch_driver *d = (switch_driver *) driver;
-	switch_vlan_config *c = switch_parse_vlan(d, buf);
 	int j;
 	__u16 val16;
-
-	if (c == NULL)
-		return -EINVAL;
 
 	/* disable switching */
 	set_switch(0);
