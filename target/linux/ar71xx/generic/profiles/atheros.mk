@@ -5,6 +5,17 @@
 # See /LICENSE for more information.
 #
 
+define Profile/AP113
+	NAME:=Atheros AP113 reference board
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+
+define Profile/AP113/description
+	Package set optimized for the Atheros AP113 reference board.
+endef
+
+$(eval $(call Profile,AP113))
+
 define Profile/AP121
 	NAME:=Atheros AP121 reference board
 	PACKAGES:=kmod-usb-core kmod-usb2
