@@ -50,6 +50,19 @@
  # Some non-GNU m4's don't reject the --help option, so give them /dev/null.
  fatal "need GNU m4 1.4 or later: $m4"
    if system "$m4 --help </dev/null 2>&1 | grep reload-state >/dev/null";
+@@ -270,6 +272,12 @@ sub load_configuration ($)
+ 
+       my @words = shellwords ($_);
+       my $type = shift @words;
++
++      if ($ENV{'STAGING_DIR'})
++      {
++        @words = map { s!^@pkgdatadir@!$ENV{'STAGING_DIR'}/../host/share/autoconf!; $_ } @words;
++      }
++
+       if ($type eq 'begin-language:')
+ 	{
+ 	  fatal "$file:$.: end-language missing for: $lang"
 --- a/bin/autoreconf.in
 +++ b/bin/autoreconf.in
 @@ -27,7 +27,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
