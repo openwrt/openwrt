@@ -38,7 +38,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  struct ath79_spi {
  	struct spi_bitbang	bitbang;
  	u32			ioc_base;
-@@ -62,6 +64,7 @@ static void ath79_spi_chipselect(struct 
+@@ -62,6 +64,7 @@ static void ath79_spi_chipselect(struct
  {
  	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
  	int cs_high = (spi->mode & SPI_CS_HIGH) ? is_active : !is_active;
@@ -46,7 +46,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
  	if (is_active) {
  		/* set initial clock polarity */
-@@ -73,20 +76,21 @@ static void ath79_spi_chipselect(struct 
+@@ -73,20 +76,21 @@ static void ath79_spi_chipselect(struct
  		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, sp->ioc_base);
  	}
  

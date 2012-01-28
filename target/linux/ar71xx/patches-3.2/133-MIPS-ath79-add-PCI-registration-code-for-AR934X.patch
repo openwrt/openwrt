@@ -31,7 +31,7 @@ Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
  #include <asm/mach-ath79/ath79.h>
  #include <asm/mach-ath79/irq.h>
  #include <asm/mach-ath79/pci.h>
-@@ -57,7 +58,9 @@ int __init pcibios_map_irq(const struct 
+@@ -57,7 +58,9 @@ int __init pcibios_map_irq(const struct
  		if (soc_is_ar71xx()) {
  			ath79_pci_irq_map = ar71xx_pci_irq_map;
  			ath79_pci_nr_irqs = ARRAY_SIZE(ar71xx_pci_irq_map);
