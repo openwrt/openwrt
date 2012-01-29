@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 DIR="$1"
-FOUND=0
 
 if [ -d "$DIR" ]; then
 	DIR="$(cd "$DIR"; pwd)"
@@ -26,39 +25,66 @@ if [ ! -x "$CPP" ]; then
 	exit 1
 fi
 
-for lib in $(STAGING_DIR="$dir" "$CPP" -x c -v /dev/null 2>&1 | sed -ne 's#:# #g; s#^LIBRARY_PATH=##p'); do
-	if [ -d "$lib" ]; then
-		grep -qs "STAGING_DIR" "$lib/specs" && rm -f "$lib/specs"
-		if [ $FOUND -lt 1 ]; then
-			echo -n "Patching specs ... "
-			STAGING_DIR="$dir" "$CPP" -dumpspecs | awk '
-				mode ~ "link" {
-					sub("%{L.}", "%{L*} -L %:getenv(STAGING_DIR /usr/lib) -rpath-link %:getenv(STAGING_DIR /usr/lib)")
-				}
-				mode ~ "cpp" {
-					$0 = $0 " -idirafter %:getenv(STAGING_DIR /usr/include)"
-				}
-				{
-					print $0
-					mode = ""
-				}
-				/^\*cpp:/ {
-					mode = "cpp"
-				}
-				/^\*link.*:/ {
-					mode = "link"
-				}
-			' > "$lib/specs"
-			echo "ok"
-			FOUND=1
-		fi
-	fi
-done
+patch_specs() {
+	local found=0
 
-if [ $FOUND -lt 1 ]; then
-	echo "Failed to locate library directory!"
-	exit 1
-else
-	echo "Toolchain successfully patched."
-	exit 0
-fi
+	for lib in $(STAGING_DIR="$DIR" "$CPP" -x c -v /dev/null 2>&1 | sed -ne 's#:# #g; s#^LIBRARY_PATH=##p'); do
+		if [ -d "$lib" ]; then
+			grep -qs "STAGING_DIR" "$lib/specs" && rm -f "$lib/specs"
+			if [ $found -lt 1 ]; then
+				echo -n "Patching specs ... "
+				STAGING_DIR="$DIR" "$CPP" -dumpspecs | awk '
+					mode ~ "link" {
+						sub("%{L.}", "%{L*} -L %:getenv(STAGING_DIR /usr/lib) -rpath-link %:getenv(STAGING_DIR /usr/lib)")
+					}
+					mode ~ "cpp" {
+						$0 = $0 " -idirafter %:getenv(STAGING_DIR /usr/include)"
+					}
+					{
+						print $0
+						mode = ""
+					}
+					/^\*cpp:/ {
+						mode = "cpp"
+					}
+					/^\*link.*:/ {
+						mode = "link"
+					}
+				' > "$lib/specs"
+				echo "ok"
+				found=1
+			fi
+		fi
+	done
+
+	[ $found -gt 0 ]
+	return $?
+}
+
+
+VERSION="$(STAGING_DIR="$DIR" "$CPP" --version | head -n1)"
+VERSION="${VERSION:-unknown}"
+
+case "${VERSION##* }" in
+	2.*|3.*|4.0.*|4.1.*|4.2.*)
+		echo "The compiler version does not support getenv() in spec files."
+		echo -n "Wrapping binaries instead ... "
+
+		if "${0%/*}/ext-toolchain.sh" --toolchain "$DIR" --wrap "${CPP%/*}"; then
+			echo "ok"
+			exit 0
+		else
+			echo "failed"
+			exit $?
+		fi
+	;;
+	*)
+		if patch_specs; then
+			echo "Toolchain successfully patched."
+			exit 0
+		else
+			echo "Failed to locate library directory!"
+			exit 1
+		fi
+	;;
+esac
