@@ -106,7 +106,7 @@ TARGET_DIR:=$(TARGET_ROOTFS_DIR)/root-$(BOARD)
 STAGING_DIR_ROOT:=$(STAGING_DIR)/root-$(BOARD)
 BUILD_LOG_DIR:=$(TOPDIR)/logs
 
-TARGET_PATH:=$(STAGING_DIR_HOST)/bin:$(PATH)
+TARGET_PATH:=$(STAGING_DIR_HOST)/bin:$(subst $(space),:,$(filter-out .,$(filter-out ./,$(subst :,$(space),$(PATH)))))
 TARGET_CFLAGS:=$(TARGET_OPTIMIZATION)$(if $(CONFIG_DEBUG), -g3)
 TARGET_CPPFLAGS:=-I$(STAGING_DIR)/usr/include -I$(STAGING_DIR)/include
 TARGET_LDFLAGS:=-L$(STAGING_DIR)/usr/lib -L$(STAGING_DIR)/lib
