@@ -205,11 +205,17 @@ wrap_bins() {
 		for cmd in "${CC%-*}-"*; do
 			if [ -x "$cmd" ]; then
 				local out="$1/${cmd##*/}"
+				local bin="$cmd"
+
+				if [ -x "$out" ] && ! grep -q STAGING_DIR "$out"; then
+					mv "$out" "$out.bin"
+					bin='$(dirname "$0")/'"${out##*/}"'.bin'
+				fi
 
 				echo '#!/bin/sh' > "$out"
 				case "${cmd##*/}" in
 					*-*cc|*-*cc-*|*-*++|*-*++-*|*-cpp)
-						echo -n 'exec "'"$cmd"'" '"$CFLAGS"' '         >> "$out"
+						echo -n 'exec "'"$bin"'" '"$CFLAGS"' '         >> "$out"
 						echo -n '${STAGING_DIR:+-idirafter '           >> "$out"
 						echo -n '"$STAGING_DIR/usr/include" '          >> "$out"
 						echo -n '-L "$STAGING_DIR/usr/lib" '           >> "$out"
@@ -217,13 +223,13 @@ wrap_bins() {
 						echo    '"$STAGING_DIR/usr/lib"} "$@"'         >> "$out"
 					;;
 					*-ld)
-						echo -n 'exec "'"$cmd"'" ${STAGING_DIR:+'      >> "$out"
+						echo -n 'exec "'"$bin"'" ${STAGING_DIR:+'      >> "$out"
 						echo -n '-L "$STAGING_DIR/usr/lib" '           >> "$out"
 						echo -n '-rpath-link '                         >> "$out"
 						echo    '"$STAGING_DIR/usr/lib"} "$@"'         >> "$out"
 					;;
 					*)
-						echo "exec '$cmd' \"\$@\"" >> "$out"
+						echo    'exec "'"$bin"'" "$@"'                 >> "$out"
 					;;
 				esac
 				chmod +x "$out"
