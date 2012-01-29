@@ -197,6 +197,47 @@ find_bins() {
 }
 
 
+wrap_bin_cc() {
+	local out="$1"
+	local bin="$2"
+
+	echo    '#!/bin/sh'                                                > "$out"
+	echo    'for arg in "$@"; do'                                     >> "$out"
+	echo    ' case "$arg" in -l*|-L*|-shared|-static)'                >> "$out"
+	echo -n '  exec "'"$bin"'" '"$CFLAGS"' ${STAGING_DIR:+'           >> "$out"
+	echo -n '-idirafter "$STAGING_DIR/usr/include" '                  >> "$out"
+	echo -n '-L "$STAGING_DIR/usr/lib" '                              >> "$out"
+	echo    '-Wl,-rpath-link,"$STAGING_DIR/usr/lib"} "$@" ;;'         >> "$out"
+	echo    ' esac'                                                   >> "$out"
+	echo    'done'                                                    >> "$out"
+	echo -n 'exec "'"$bin"'" '"$CFLAGS"' ${STAGING_DIR:+'             >> "$out"
+	echo    '-idirafter "$STAGING_DIR/usr/include"} "$@"'             >> "$out"
+
+	chmod +x "$out"
+}
+
+wrap_bin_ld() {
+	local out="$1"
+	local bin="$2"
+
+	echo    '#!/bin/sh'                                                > "$out"
+	echo -n 'exec "'"$bin"'" '"$CFLAGS"' ${STAGING_DIR:+'             >> "$out"
+	echo -n '-L "$STAGING_DIR/usr/lib" '                              >> "$out"
+	echo    '-rpath-link "$STAGING_DIR/usr/lib"} "$@"'                >> "$out"
+
+	chmod +x "$out"
+}
+
+wrap_bin_other() {
+	local out="$1"
+	local bin="$2"
+
+	echo    '#!/bin/sh'                                                > "$out"
+	echo    'exec "'"$bin"'" "$@"'                                    >> "$out"
+
+	chmod +x "$out"
+}
+
 wrap_bins() {
 	if probe_cc; then
 		mkdir -p "$1" || return 1
@@ -212,27 +253,17 @@ wrap_bins() {
 					bin='$(dirname "$0")/'"${out##*/}"'.bin'
 				fi
 
-				echo '#!/bin/sh' > "$out"
 				case "${cmd##*/}" in
 					*-*cc|*-*cc-*|*-*++|*-*++-*|*-cpp)
-						echo -n 'exec "'"$bin"'" '"$CFLAGS"' '         >> "$out"
-						echo -n '${STAGING_DIR:+-idirafter '           >> "$out"
-						echo -n '"$STAGING_DIR/usr/include" '          >> "$out"
-						echo -n '-L "$STAGING_DIR/usr/lib" '           >> "$out"
-						echo -n '-Wl,-rpath-link,'                     >> "$out"
-						echo    '"$STAGING_DIR/usr/lib"} "$@"'         >> "$out"
+						wrap_bin_cc "$out" "$bin"
 					;;
 					*-ld)
-						echo -n 'exec "'"$bin"'" ${STAGING_DIR:+'      >> "$out"
-						echo -n '-L "$STAGING_DIR/usr/lib" '           >> "$out"
-						echo -n '-rpath-link '                         >> "$out"
-						echo    '"$STAGING_DIR/usr/lib"} "$@"'         >> "$out"
+						wrap_bin_ld "$out" "$bin"
 					;;
 					*)
-						echo    'exec "'"$bin"'" "$@"'                 >> "$out"
+						wrap_bin_other "$out" "$bin"
 					;;
 				esac
-				chmod +x "$out"
 			fi
 		done
 
