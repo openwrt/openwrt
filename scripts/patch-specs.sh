@@ -62,7 +62,7 @@ patch_specs() {
 }
 
 
-VERSION="$(STAGING_DIR="$DIR" "$CPP" --version | head -n1)"
+VERSION="$(STAGING_DIR="$DIR" "$CPP" --version | sed -ne 's/^.* (.*) //; s/ .*$//; 1p')"
 VERSION="${VERSION:-unknown}"
 
 case "${VERSION##* }" in
