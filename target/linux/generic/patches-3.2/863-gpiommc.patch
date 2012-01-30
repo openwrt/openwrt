@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/mmc/host/gpiommc.c
-@@ -0,0 +1,608 @@
+@@ -0,0 +1,609 @@
 +/*
 + * Driver an MMC/SD card on a bitbanging GPIO SPI bus.
 + * This module hooks up the mmc_spi and spi_gpio modules and also
@@ -11,6 +11,7 @@
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
 +
++#include <linux/module.h>
 +#include <linux/mmc/gpiommc.h>
 +#include <linux/platform_device.h>
 +#include <linux/list.h>
