@@ -24,6 +24,9 @@
 #else
 #include <linux/list.h>
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
+#include <linux/prefetch.h>
+#endif
 #include <linux/skbuff.h>
 #include <linux/wprobe.h>
 #include <linux/math64.h>
