@@ -149,6 +149,7 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96345GW2,6345,96348GW2-bc221,,--layoutver 5)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,92345GW2-rev,OpenWRT-$(REVISION))
 	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-generic,,)
+	$(call Image/Build/CFE,$(1),96348R,6348,96348R-generic,,)
 	$(call Image/Build/CFE,$(1),96348GW,6348,96348GW-bc221,,--layoutver 5)
 	$(call Image/Build/CFE,$(1),6338GW,6338,6338GW-generic,,)
 	$(call Image/Build/CFE,$(1),6338W,6338,6338W-generic,,)
