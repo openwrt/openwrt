@@ -1,6 +1,6 @@
 --- a/drivers/mtd/wrt160nl_part.c
 +++ b/drivers/mtd/wrt160nl_part.c
-@@ -85,7 +85,7 @@ static struct mtd_partition trx_parts[TR
+@@ -83,7 +83,7 @@ struct wrt160nl_header {
  
  static int wrt160nl_parse_partitions(struct mtd_info *master,
  				     struct mtd_partition **pparts,
