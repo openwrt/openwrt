@@ -12,7 +12,7 @@ BOARDNAME:=Lantiq GPON/XWAY
 FEATURES:=squashfs jffs2
 DEFAULT_SUBTARGET:=danube
 
-LINUX_VERSION:=3.1.9
+LINUX_VERSION:=3.1.10
 
 CFLAGS=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 
