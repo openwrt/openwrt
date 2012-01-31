@@ -97,6 +97,7 @@ platform_check_image() {
 	ap83 | \
 	dir-600-a1 | \
 	dir-615-c1 | \
+	dir-615-e4 | \
 	dir-825-b1 | \
 	mzk-w04nu | \
 	mzk-w300nh | \
