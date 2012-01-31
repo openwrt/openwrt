@@ -16,7 +16,9 @@
 #include <linux/mtd/partitions.h>
 
 #include <asm/mach-ath79/ath79.h>
+#include <asm/mach-ath79/ar71xx_regs.h>
 
+#include "common.h"
 #include "dev-ap9x-pci.h"
 #include "dev-eth.h"
 #include "dev-gpio-buttons.h"
@@ -24,14 +26,19 @@
 #include "dev-m25p80.h"
 #include "machtypes.h"
 
-#define	WHRHPG300N_GPIO_LED_SECURITY		0
-#define	WHRHPG300N_GPIO_LED_DIAG		1
-#define	WHRHPG300N_GPIO_LED_ROUTER		6
+#define WHRHPG300N_GPIO_LED_SECURITY		0
+#define WHRHPG300N_GPIO_LED_DIAG		1
+#define WHRHPG300N_GPIO_LED_ROUTER		6
 
-#define	WHRHPG300N_GPIO_BTN_ROUTER_ON		7
-#define	WHRHPG300N_GPIO_BTN_ROUTER_AUTO		8
-#define	WHRHPG300N_GPIO_BTN_RESET		11
-#define	WHRHPG300N_GPIO_BTN_AOSS		12
+#define WHRHPG300N_GPIO_BTN_ROUTER_ON		7
+#define WHRHPG300N_GPIO_BTN_ROUTER_AUTO		8
+#define WHRHPG300N_GPIO_BTN_RESET		11
+#define WHRHPG300N_GPIO_BTN_AOSS		12
+#define WHRHPG300N_GPIO_LED_LAN1		13
+#define WHRHPG300N_GPIO_LED_LAN2		14
+#define WHRHPG300N_GPIO_LED_LAN3		15
+#define WHRHPG300N_GPIO_LED_LAN4		16
+#define WHRHPG300N_GPIO_LED_WAN			17
 
 #define	WHRHPG300N_KEYS_POLL_INTERVAL	20	/* msecs */
 #define WHRHPG300N_KEYS_DEBOUNCE_INTERVAL (3 * WHRHPG300N_KEYS_POLL_INTERVAL)
@@ -91,6 +98,26 @@ static struct gpio_led whrhpg300n_leds_gpio[] __initdata = {
 		.name		= "buffalo:green:router",
 		.gpio		= WHRHPG300N_GPIO_LED_ROUTER,
 		.active_low	= 1,
+	}, {
+		.name		= "buffalo:green:wan",
+		.gpio		= WHRHPG300N_GPIO_LED_WAN,
+		.active_low	= 1,
+	}, {
+		.name		= "buffalo:green:lan1",
+		.gpio		= WHRHPG300N_GPIO_LED_LAN1,
+		.active_low	= 1,
+	}, {
+		.name		= "buffalo:green:lan2",
+		.gpio		= WHRHPG300N_GPIO_LED_LAN2,
+		.active_low	= 1,
+	}, {
+		.name		= "buffalo:green:lan3",
+		.gpio		= WHRHPG300N_GPIO_LED_LAN3,
+		.active_low	= 1,
+	}, {
+		.name		= "buffalo:green:lan4",
+		.gpio		= WHRHPG300N_GPIO_LED_LAN4,
+		.active_low	= 1,
 	}
 };
 
@@ -132,6 +159,12 @@ static void __init whrhpg300n_setup(void)
 	u8 *mac = (u8 *) KSEG1ADDR(ee + WHRHPG300N_MAC_OFFSET);
 
 	ath79_register_m25p80(&whrhpg300n_flash_data);
+
+	ath79_gpio_function_disable(AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				    AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				    AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				    AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				    AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(whrhpg300n_leds_gpio),
 				 whrhpg300n_leds_gpio);
