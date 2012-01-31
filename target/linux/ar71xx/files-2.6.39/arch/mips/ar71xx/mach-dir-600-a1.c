@@ -1,7 +1,8 @@
 /*
  *  D-Link DIR-600 rev. A1 board support
  *
- *  Copyright (C) 2010 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2012 Vadim Girlin <vadimgirlin@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -184,3 +185,12 @@ static void __init dir_600_a1_setup(void)
 
 MIPS_MACHINE(AR71XX_MACH_DIR_600_A1, "DIR-600-A1", "D-Link DIR-600 rev. A1",
 	     dir_600_a1_setup);
+
+static void __init dir_615_e4_setup(void)
+{
+	dir_600_a1_setup();
+	ap91_pci_setup_wmac_led_pin(1);
+}
+
+MIPS_MACHINE(AR71XX_MACH_DIR_615_E4, "DIR-615-E4", "D-Link DIR-615 rev. E4",
+	     dir_615_e4_setup);
