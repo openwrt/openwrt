@@ -122,6 +122,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	tl-mr11u | \
 	tl-mr3020 | \
 	tl-mr3220 | \
 	tl-mr3420 | \

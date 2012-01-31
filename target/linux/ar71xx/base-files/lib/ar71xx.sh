@@ -100,6 +100,9 @@ tplink_board_detect() {
 	"254300"*)
 		model="TP-Link TL-WR2543N/ND"
 		;;
+	"110101"*)
+		model="TP-Link TL-MR11U"
+		;;
 	"302000"*)
 		model="TP-Link TL-MR3020"
 		;;
@@ -291,6 +294,9 @@ ar71xx_board_detect() {
 		;;
 	*"TL-WR703N v1")
 		name="tl-wr703n"
+		;;
+	*"TL-MR11U")
+		name="tl-mr11u"
 		;;
 	*UniFi)
 		name="unifi"
