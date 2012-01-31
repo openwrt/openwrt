@@ -122,8 +122,6 @@ endef
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
 	cp $(KDIR)/vmlinux $(VMLINUX).bin
-	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
-	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 	dd if=$(KDIR)/vmlinux.bin.lzma of=$(VMLINUX).lzma bs=65536 conv=sync
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(VMLINUX).gz bs=65536 conv=sync
 	$(call MkuImage,gzip,,$(KDIR)/vmlinux.bin.gz,$(UIMAGE)-gzip.bin)
@@ -1064,6 +1062,8 @@ define Image/Build/Initramfs
 endef
 
 define Image/Prepare
+	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
+	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 	$(call Image/Build/Profile/Default,loader)
 endef
 
