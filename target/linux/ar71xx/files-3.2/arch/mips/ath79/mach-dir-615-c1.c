@@ -78,31 +78,31 @@ static struct flash_platform_data dir_615c1_flash_data = {
 
 static struct gpio_led dir_615c1_leds_gpio[] __initdata = {
 	{
-		.name		= "dir-615c1:orange:status",
+		.name		= "d-link:orange:status",
 		.gpio		= DIR_615C1_GPIO_LED_ORANGE_STATUS,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615c1:blue:wps",
+		.name		= "d-link:blue:wps",
 		.gpio		= DIR_615C1_GPIO_LED_BLUE_WPS,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615c1:green:wan",
+		.name		= "d-link:green:wan",
 		.gpio		= DIR_615C1_GPIO_LED_GREEN_WAN,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615c1:green:wancpu",
+		.name		= "d-link:green:wancpu",
 		.gpio		= DIR_615C1_GPIO_LED_GREEN_WANCPU,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615c1:green:wlan",
+		.name		= "d-link:green:wlan",
 		.gpio		= DIR_615C1_GPIO_LED_GREEN_WLAN,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615c1:green:status",
+		.name		= "d-link:green:status",
 		.gpio		= DIR_615C1_GPIO_LED_GREEN_STATUS,
 		.active_low     = 1,
 	}, {
-		.name		= "dir-615c1:orange:wan",
+		.name		= "d-link:orange:wan",
 		.gpio		= DIR_615C1_GPIO_LED_ORANGE_WAN,
 		.active_low	= 1,
 	}

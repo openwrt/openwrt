@@ -84,36 +84,36 @@ static struct flash_platform_data dir_615_e4_flash_data = {
 
 static struct gpio_led dir_615_e4_leds_gpio[] __initdata = {
 	{
-		.name		= "dir-615-e4:green:power",
+		.name		= "d-link:green:power",
 		.gpio		= DIR_615_E4_GPIO_LED_POWER_GREEN,
 	}, {
-		.name		= "dir-615-e4:amber:power",
+		.name		= "d-link:amber:power",
 		.gpio		= DIR_615_E4_GPIO_LED_POWER_AMBER,
 	}, {
-		.name		= "dir-615-e4:green:wan",
+		.name		= "d-link:green:wan",
 		.gpio		= DIR_615_E4_GPIO_LED_WAN_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615-e4:amber:wan",
+		.name		= "d-link:amber:wan",
 		.gpio		= DIR_615_E4_GPIO_LED_WAN_AMBER,
 	}, {
-		.name		= "dir-615-e4:green:lan1",
+		.name		= "d-link:green:lan1",
 		.gpio		= DIR_615_E4_GPIO_LED_LAN1_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615-e4:green:lan2",
+		.name		= "d-link:green:lan2",
 		.gpio		= DIR_615_E4_GPIO_LED_LAN2_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615-e4:green:lan3",
+		.name		= "d-link:green:lan3",
 		.gpio		= DIR_615_E4_GPIO_LED_LAN3_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615-e4:green:lan4",
+		.name		= "d-link:green:lan4",
 		.gpio		= DIR_615_E4_GPIO_LED_LAN4_GREEN,
 		.active_low	= 1,
 	}, {
-		.name		= "dir-615-e4:blue:wps",
+		.name		= "d-link:blue:wps",
 		.gpio		= DIR_615_E4_GPIO_LED_WPS,
 		.active_low	= 1,
 	}
