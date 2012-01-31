@@ -13,7 +13,7 @@ FEATURES:=jffs2 usb pci
 SUBTARGETS=au1500 au1550
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.2.1
+LINUX_VERSION:=3.2.2
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += wpad-mini yamonenv

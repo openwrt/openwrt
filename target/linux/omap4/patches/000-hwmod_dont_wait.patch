@@ -43,11 +43,9 @@ Signed-off-by: Paul Walmsley <paul@pwsan.com>
 Signed-off-by: Tony Lindgren <tony@atomide.com>
 ---
 
-diff --git a/arch/arm/mach-omap2/omap_hwmod.c b/arch/arm/mach-omap2/omap_hwmod.c
-index 207a2ff..ebace0f 100644
 --- a/arch/arm/mach-omap2/omap_hwmod.c
 +++ b/arch/arm/mach-omap2/omap_hwmod.c
-@@ -706,27 +706,65 @@ static void _enable_module(struct omap_hwmod *oh)
+@@ -706,27 +706,65 @@ static void _enable_module(struct omap_h
  }
  
  /**
@@ -120,7 +118,7 @@ index 207a2ff..ebace0f 100644
  }
  
  /**
-@@ -1153,36 +1191,6 @@ static int _wait_target_ready(struct omap_hwmod *oh)
+@@ -1153,36 +1191,6 @@ static int _wait_target_ready(struct oma
  }
  
  /**
@@ -157,7 +155,7 @@ index 207a2ff..ebace0f 100644
   * _lookup_hardreset - fill register bit info for this hwmod/reset line
   * @oh: struct omap_hwmod *
   * @name: name of the reset line in the context of this hwmod
-@@ -1524,8 +1532,6 @@ static int _enable(struct omap_hwmod *oh)
+@@ -1524,8 +1532,6 @@ static int _enable(struct omap_hwmod *oh
   */
  static int _idle(struct omap_hwmod *oh)
  {
@@ -181,7 +179,7 @@ index 207a2ff..ebace0f 100644
  	/*
  	 * The module must be in idle mode before disabling any parents
  	 * clocks. Otherwise, the parent clock might be disabled before
-@@ -1642,11 +1646,7 @@ static int _shutdown(struct omap_hwmod *oh)
+@@ -1642,11 +1646,7 @@ static int _shutdown(struct omap_hwmod *
  	if (oh->_state == _HWMOD_STATE_ENABLED) {
  		_del_initiator_dep(oh, mpu_oh);
  		/* XXX what about the other system initiators here? dma, dsp */

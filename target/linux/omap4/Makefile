@@ -11,7 +11,7 @@ BOARD:=omap4
 BOARDNAME:=TI OMAP4
 FEATURES:=usb targz
 
-LINUX_VERSION:=3.2.1
+LINUX_VERSION:=3.2.2
 CFLAGS:=-Os -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
