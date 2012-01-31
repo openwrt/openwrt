@@ -113,7 +113,7 @@ static void __init w502u_init(void)
 			  RT305X_GPIO_MODE_UART0_SHIFT));
 
 	rt305x_register_flash(0, &w502u_flash_data);
-	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_WLLLL;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(w502u_leds_gpio),
 				  w502u_leds_gpio);
