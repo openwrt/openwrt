@@ -11,7 +11,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/ssb/driver_pcicore.c
 +++ b/drivers/ssb/driver_pcicore.c
-@@ -75,7 +75,7 @@ static u32 get_cfgspace_addr(struct ssb_
+@@ -74,7 +74,7 @@ static u32 get_cfgspace_addr(struct ssb_
  	u32 tmp;
  
  	/* We do only have one cardbus device behind the bridge. */
@@ -19,4 +19,4 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (pc->cardbusmode && (dev > 1))
  		goto out;
  
- 	/* Type 0 transaction */
+ 	if (bus == 0) {
