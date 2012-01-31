@@ -209,6 +209,16 @@ wndr3700)
 	set_led_usbdev "usb" "USB" "wndr3700:green:usb" "1-1"
 	;;
 
+whr-g301n |\
+whr-hp-g300n |\
+whr-hp-gn)
+	set_led_netdev "wan" "WAN" "buffalo:green:wan" "eth1"
+	set_led_switch "lan1" "LAN1" "buffalo:green:lan1" "switch0" "0x02"
+	set_led_switch "lan2" "LAN2" "buffalo:green:lan2" "switch0" "0x04"
+	set_led_switch "lan3" "LAN3" "buffalo:green:lan3" "switch0" "0x08"
+	set_led_switch "lan4" "LAN4" "buffalo:green:lan4" "switch0" "0x10"
+	;;
+
 wzr-hp-g300nh)
 	set_led_wlan "wlan" "Wireless" "buffalo:green:wireless" "phy0tpt"
 	set_led_netdev "router" "Router" "buffalo:green:router" "eth1"
