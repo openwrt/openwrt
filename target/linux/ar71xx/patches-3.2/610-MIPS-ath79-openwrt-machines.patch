@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,17 +16,80 @@
+@@ -16,17 +16,81 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -18,6 +18,7 @@
  	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
 +	ATH79_MACH_DIR_600_A1,		/* D-Link DIR-600 rev. A1 */
 +	ATH79_MACH_DIR_615_C1,		/* D-Link DIR-615 rev. C1 */
++	ATH79_MACH_DIR_615_E4,		/* D-Link DIR-615 rev. E4 */
 +	ATH79_MACH_DIR_825_B1,		/* D-Link DIR-825 rev. B1 */
 +	ATH79_MACH_EAP7660D,		/* Senao EAP7660D */
 +	ATH79_MACH_JA76PF,		/* jjPlus JA76PF */
@@ -187,7 +188,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -54,6 +137,369 @@ config ATH79_MACH_PB44
+@@ -54,6 +137,379 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -294,6 +295,16 @@
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_WMAC
++	select ATH79_NVRAM
++
++config ATH79_MACH_DIR_615_E4
++	bool "D-Link DIR-615 rev. E4 support"
++	select SOC_AR724X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
 +	select ATH79_NVRAM
 +
 +config ATH79_MACH_DIR_825_B1
@@ -557,7 +568,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -67,6 +513,24 @@ config ATH79_MACH_UBNT_XM
+@@ -67,6 +523,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -582,7 +593,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -96,10 +560,6 @@ config SOC_AR934X
+@@ -96,10 +570,6 @@ config SOC_AR934X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -593,7 +604,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -110,7 +570,14 @@ config ATH79_DEV_DSA
+@@ -110,7 +580,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -609,7 +620,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -135,4 +602,7 @@ config ATH79_NVRAM
+@@ -135,4 +612,7 @@ config ATH79_NVRAM
  config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
@@ -619,7 +630,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -36,8 +36,56 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
+@@ -36,8 +36,57 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
  #
  # Machines
  #
@@ -635,6 +646,7 @@
  obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
 +obj-$(CONFIG_ATH79_MACH_DIR_600_A1)	+= mach-dir-600-a1.o
 +obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
++obj-$(CONFIG_ATH79_MACH_DIR_615_E4)     += mach-dir-615-e4.o
 +obj-$(CONFIG_ATH79_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
 +obj-$(CONFIG_ATH79_MACH_EAP7660D)	+= mach-eap7660d.o
 +obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o

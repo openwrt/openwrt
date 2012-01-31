@@ -29,6 +29,18 @@ endef
 $(eval $(call Profile,DIR615C1))
 
 
+define Profile/DIR615E4
+	NAME:=D-Link DIR-615 rev. E4
+	PACKAGES:=
+endef
+
+define Profile/DIR615E4/Description
+	Package set optimized for the D-Link DIR-615 rev. E4.
+endef
+
+$(eval $(call Profile,DIR615E4))
+
+
 define Profile/DIR825B1
 	NAME:=D-Link DIR-825 rev. B1
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev

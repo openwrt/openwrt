@@ -57,6 +57,9 @@ get_status_led() {
 	dir-615-c1)
 		status_led="dir-615c1:green:status"
 		;;
+	dir-615-e4)
+		status_led="dir-615-e4:green:power"
+		;;
 	dir-825-b1)
 		status_led="dir825b1:orange:power"
 		;;

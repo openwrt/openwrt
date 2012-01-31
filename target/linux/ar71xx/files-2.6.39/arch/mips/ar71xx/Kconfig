@@ -104,6 +104,15 @@ config AR71XX_MACH_DIR_615_C1
 	select AR71XX_DEV_LEDS_GPIO
 	select AR71XX_NVRAM
 
+config AR71XX_MACH_DIR_615_E4
+	bool "D-Link DIR-615 rev. E4 support"
+	select SOC_AR724X
+	select AR71XX_DEV_AP91_PCI if PCI
+	select AR71XX_DEV_M25P80
+	select AR71XX_DEV_GPIO_BUTTONS
+	select AR71XX_DEV_LEDS_GPIO
+	select AR71XX_NVRAM
+
 config AR71XX_MACH_DIR_825_B1
 	bool "D-Link DIR-825 rev. B1 board support"
 	select SOC_AR71XX
