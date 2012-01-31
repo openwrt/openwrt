@@ -77,8 +77,6 @@ struct wrt160nl_header {
 	struct uimage_header	uimage;
 } __attribute__ ((packed));
 
-static struct mtd_partition trx_parts[TRX_PARTS];
-
 #define WRT160NL_UBOOT_LEN	0x40000
 #define WRT160NL_ART_LEN	0x10000
 #define WRT160NL_NVRAM_LEN	0x10000
@@ -90,6 +88,7 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 	struct wrt160nl_header *header;
 	struct trx_header *theader;
 	struct uimage_header *uheader;
+	struct mtd_partition *trx_parts;
 	size_t retlen;
 	unsigned int kernel_len;
 	unsigned int uboot_len;
@@ -101,10 +100,17 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 	nvram_len = max_t(unsigned int, master->erasesize, WRT160NL_NVRAM_LEN);
 	art_len = max_t(unsigned int, master->erasesize, WRT160NL_ART_LEN);
 
+	trx_parts = kzalloc(TRX_PARTS * sizeof(struct mtd_partition),
+			    GFP_KERNEL);
+	if (!trx_parts) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
 	header = vmalloc(sizeof(*header));
 	if (!header) {
 		return -ENOMEM;
-		goto out;
+		goto free_parts;
 	}
 
 	ret = master->read(master, uboot_len, sizeof(*header),
@@ -169,11 +175,15 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 	trx_parts[5].size = master->size - uboot_len - nvram_len - art_len;
 	trx_parts[5].mask_flags = 0;
 
+	vfree(header);
+
 	*pparts = trx_parts;
-	ret = TRX_PARTS;
+	return TRX_PARTS;
 
 free_hdr:
 	vfree(header);
+free_parts:
+	kfree(trx_parts);
 out:
 	return ret;
 }
