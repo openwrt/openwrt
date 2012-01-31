@@ -819,6 +819,11 @@ define Image/Build/Profile/OM2P
         $(call Image/Build/Template/$(fs_squash)/$(1),OpenMesh,om2p,OM2P)
 endef
 
+tlmr11u_cmdline=board=TL-MR11U console=ttyATH0,115200
+define Image/Build/Profile/TLMR11U
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK-LZMA,tl-mr11u-v1,$(tlmr11u_cmdline),0x00110101,1,4Mlzma)
+endef
+
 tlmr3020_cmdline=board=TL-MR3020 console=ttyATH0,115200
 define Image/Build/Profile/TLMR3020
 	$(call Image/Build/Template/$(fs_64k)/$(1),TPLINK-LZMA,tl-mr3020-v1,$(tlmr3020_cmdline),0x30200001,1,4Mlzma)
@@ -1006,6 +1011,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/RW2458N,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
+	$(call Image/Build/Profile/TLMR11U,$(1))
 	$(call Image/Build/Profile/TLMR3020,$(1))
 	$(call Image/Build/Profile/TLMR3220,$(1))
 	$(call Image/Build/Profile/TLMR3420,$(1))

@@ -312,6 +312,15 @@ config AR71XX_MACH_NBG460N
 	select AR71XX_DEV_GPIO_BUTTONS
 	select AR71XX_DEV_LEDS_GPIO
 
+config AR71XX_MACH_TL_MR11U
+        bool "TP-LINK TL-MR11U support"
+        select SOC_AR933X
+        select AR71XX_DEV_M25P80
+        select AR71XX_DEV_GPIO_BUTTONS
+        select AR71XX_DEV_LEDS_GPIO
+        select AR71XX_DEV_USB
+        select AR71XX_DEV_AR9XXX_WMAC
+
 config AR71XX_MACH_TL_MR3020
 	bool "TP-LINK TL-MR3020 support"
 	select SOC_AR933X
