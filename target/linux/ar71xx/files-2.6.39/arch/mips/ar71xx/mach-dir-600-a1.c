@@ -24,6 +24,12 @@
 #define DIR_600_A1_GPIO_LED_WPS			0
 #define DIR_600_A1_GPIO_LED_POWER_AMBER		1
 #define DIR_600_A1_GPIO_LED_POWER_GREEN		6
+#define DIR_600_A1_GPIO_LED_LAN1		13
+#define DIR_600_A1_GPIO_LED_LAN2		14
+#define DIR_600_A1_GPIO_LED_LAN3		15
+#define DIR_600_A1_GPIO_LED_LAN4		16
+#define DIR_600_A1_GPIO_LED_WAN_AMBER		7
+#define DIR_600_A1_GPIO_LED_WAN_GREEN		17
 
 #define DIR_600_A1_GPIO_BTN_RESET		8
 #define DIR_600_A1_GPIO_BTN_WPS			12
@@ -86,6 +92,29 @@ static struct gpio_led dir_600_a1_leds_gpio[] __initdata = {
 		.name		= "d-link:amber:power",
 		.gpio		= DIR_600_A1_GPIO_LED_POWER_AMBER,
 	}, {
+		.name		= "d-link:amber:wan",
+		.gpio		= DIR_600_A1_GPIO_LED_WAN_AMBER,
+	}, {
+		.name		= "d-link:green:wan",
+		.gpio		= DIR_600_A1_GPIO_LED_WAN_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "d-link:green:lan1",
+		.gpio		= DIR_600_A1_GPIO_LED_LAN1,
+		.active_low	= 1,
+	}, {
+		.name		= "d-link:green:lan2",
+		.gpio		= DIR_600_A1_GPIO_LED_LAN2,
+		.active_low	= 1,
+	}, {
+		.name		= "d-link:green:lan3",
+		.gpio		= DIR_600_A1_GPIO_LED_LAN3,
+		.active_low	= 1,
+	}, {
+		.name		= "d-link:green:lan4",
+		.gpio		= DIR_600_A1_GPIO_LED_LAN4,
+		.active_low	= 1,
+	}, {
 		.name		= "d-link:blue:wps",
 		.gpio		= DIR_600_A1_GPIO_LED_WPS,
 		.active_low	= 1,
@@ -125,6 +154,12 @@ static void __init dir_600_a1_setup(void)
 	}
 
 	ar71xx_add_device_m25p80(&dir_600_a1_flash_data);
+
+	ar71xx_gpio_function_disable(AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				     AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
 	ar71xx_add_device_leds_gpio(-1, ARRAY_SIZE(dir_600_a1_leds_gpio),
 					dir_600_a1_leds_gpio);
