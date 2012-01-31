@@ -76,13 +76,13 @@ static struct flash_platform_data dir_600_a1_flash_data = {
 
 static struct gpio_led dir_600_a1_leds_gpio[] __initdata = {
 	{
-		.name		= "dir-600-a1:green:power",
+		.name		= "d-link:green:power",
 		.gpio		= DIR_600_A1_GPIO_LED_POWER_GREEN,
 	}, {
-		.name		= "dir-600-a1:amber:power",
+		.name		= "d-link:amber:power",
 		.gpio		= DIR_600_A1_GPIO_LED_POWER_AMBER,
 	}, {
-		.name		= "dir-600-a1:blue:wps",
+		.name		= "d-link:blue:wps",
 		.gpio		= DIR_600_A1_GPIO_LED_WPS,
 		.active_low	= 1,
 	}

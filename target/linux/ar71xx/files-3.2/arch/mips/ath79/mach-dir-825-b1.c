@@ -83,27 +83,27 @@ static struct flash_platform_data dir825b1_flash_data = {
 
 static struct gpio_led dir825b1_leds_gpio[] __initdata = {
 	{
-		.name		= "dir825b1:blue:usb",
+		.name		= "d-link:blue:usb",
 		.gpio		= DIR825B1_GPIO_LED_BLUE_USB,
 		.active_low	= 1,
 	}, {
-		.name		= "dir825b1:orange:power",
+		.name		= "d-link:orange:power",
 		.gpio		= DIR825B1_GPIO_LED_ORANGE_POWER,
 		.active_low	= 1,
 	}, {
-		.name		= "dir825b1:blue:power",
+		.name		= "d-link:blue:power",
 		.gpio		= DIR825B1_GPIO_LED_BLUE_POWER,
 		.active_low	= 1,
 	}, {
-		.name		= "dir825b1:blue:wps",
+		.name		= "d-link:blue:wps",
 		.gpio		= DIR825B1_GPIO_LED_BLUE_WPS,
 		.active_low	= 1,
 	}, {
-		.name		= "dir825b1:orange:planet",
+		.name		= "d-link:orange:planet",
 		.gpio		= DIR825B1_GPIO_LED_ORANGE_PLANET,
 		.active_low	= 1,
 	}, {
-		.name		= "dir825b1:blue:planet",
+		.name		= "d-link:blue:planet",
 		.gpio		= DIR825B1_GPIO_LED_BLUE_PLANET,
 		.active_low	= 1,
 	}
