@@ -1,9 +1,9 @@
+LINUX_VERSION:=3.2.1
 BOARDNAME:=PCEngines alix2
 FEATURES:=squashfs jffs2 ext4 pci usb gpio
-ALIX2_GPIO = $(if $(findstring 2.6.32,$(LINUX_VERSION)),gpio-cs5535,gpio-cs5535-new)
 DEFAULT_PACKAGES += \
 			kmod-crypto-hw-geode kmod-crypto-ocf \
-			kmod-$(ALIX2_GPIO) kmod-gpio-nsc \
+			kmod-gpio-cs5535-new kmod-gpio-nsc \
 			kmod-wdt-geode kmod-cs5535-clockevt kmod-cs5535-mfgpt \
 			kmod-cs5536 \
 			kmod-hwmon-core kmod-hwmon-lm90 \
@@ -32,6 +32,6 @@ define Target/Description
 	Build firmware images for PCEngines alix2 board
 endef
 
-define KernelPackage/$(ALIX2_GPIO)/install
-     sed -i -r -e 's/$$$$$$$$/ mask=$(CS5535_MASK)/' $(1)/etc/modules.d/??-$(ALIX2_GPIO)
+define KernelPackage/gpio-cs5535-new/install
+     sed -i -r -e 's/$$$$$$$$/ mask=$(CS5535_MASK)/' $(1)/etc/modules.d/??-gpio-cs5535-new
 endef
