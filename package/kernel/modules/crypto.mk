@@ -369,7 +369,6 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/cast6.ko \
 	$(LINUX_DIR)/crypto/fcrypt.ko \
 	$(LINUX_DIR)/crypto/khazad.ko \
-	$(LINUX_DIR)/crypto/serpent.ko \
 	$(LINUX_DIR)/crypto/sha256_generic.ko \
 	$(LINUX_DIR)/crypto/sha512_generic.ko \
 	$(LINUX_DIR)/crypto/tea.ko \
@@ -387,6 +386,11 @@ define KernelPackage/crypto-misc
     FILES += \
 	$(LINUX_DIR)/crypto/blowfish_common.ko \
 	$(LINUX_DIR)/crypto/blowfish_generic.ko
+  endif
+  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,3.2)),1)
+    FILES += $(LINUX_DIR)/crypto/serpent.ko
+  else
+    FILES += $(LINUX_DIR)/crypto/serpent_generic.ko
   endif
   $(call AddDepends/crypto)
 endef
