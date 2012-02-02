@@ -1,0 +1,30 @@
+
+config system
+	option hostname	OpenWrt
+	option timezone	UTC
+
+config timeserver ntp
+	list server	0.openwrt.pool.ntp.org
+	list server	1.openwrt.pool.ntp.org
+	list server	2.openwrt.pool.ntp.org
+	list server	3.openwrt.pool.ntp.org
+
+config led
+	option default	0
+	option name	LAN
+	option sysfs	'geos:1'
+	option trigger	netdev
+	option mode	'tx rx'
+	option dev	'br-lan'
+
+config led
+	option default	0
+	option name	WiFi
+	option sysfs	'geos:2'
+	option trigger	'phy0tpt'
+
+config led
+	option default	0
+	option name	Health
+	option sysfs	'geos:3'
+	option trigger	'heartbeat'
