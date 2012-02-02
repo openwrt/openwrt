@@ -17,7 +17,7 @@ DEFAULT_PACKAGES += kmod-crypto-hw-geode kmod-crypto-ocf \
 			kmod-leds-gpio kmod-input-gpio-keys-polled \
 			kmod-button-hotplug \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
-			kmod-ledtrig-netdev kmod-ledtrig-netfilter \
+			kmod-ledtrig-netdev \
 			kmod-cpu-msr \
 			hwclock wpad
 

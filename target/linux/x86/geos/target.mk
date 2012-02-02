@@ -18,7 +18,7 @@ DEFAULT_PACKAGES += \
             kmod-leds-gpio kmod-input-gpio-keys-polled \
             kmod-button-hotplug \
             kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
-            kmod-ledtrig-netdev kmod-ledtrig-netfilter \
+            kmod-ledtrig-netdev \
             kmod-cpu-msr \
             soloscli linux-atm br2684ctl ppp-mod-pppoa pppdump pppstats \
             hwclock wpad flashrom
