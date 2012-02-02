@@ -1,0 +1,16 @@
+config system
+	option hostname	OpenWrt
+	option timezone	UTC
+
+config timeserver ntp
+	list server	0.openwrt.pool.ntp.org
+	list server	1.openwrt.pool.ntp.org
+	list server	2.openwrt.pool.ntp.org
+	list server	3.openwrt.pool.ntp.org
+
+config led
+	option default	1
+	option name	Heartbeat
+	option sysfs	'net5501:1'
+	option trigger	heartbeat
+
