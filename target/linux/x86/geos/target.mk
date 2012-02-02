@@ -15,6 +15,10 @@ DEFAULT_PACKAGES += \
             kmod-cfg80211 kmod-mac80211 \
             kmod-mppe kmod-pppoe kmod-pppoa kmod-pppol2tp \
             kmod-ath kmod-ath5k kmod-ath9k \
+            kmod-leds-gpio kmod-input-gpio-keys-polled \
+            kmod-button-hotplug \
+            kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
+            kmod-ledtrig-netdev kmod-ledtrig-netfilter \
             kmod-cpu-msr \
             soloscli linux-atm br2684ctl bridge ppp ppp-mod-pppoa \
             pppdump pppstats \
