@@ -28,7 +28,8 @@ define KernelPackage/fs-btrfs
   DEPENDS:=+kmod-lib-crc32c +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37):kmod-lib-lzo +kmod-lib-zlib
   KCONFIG:=\
 	CONFIG_BTRFS_FS \
-	CONFIG_BTRFS_FS_POSIX_ACL=n
+	CONFIG_BTRFS_FS_POSIX_ACL=n \
+	CONFIG_BTRFS_FS_CHECK_INTEGRITY=n
   FILES:=\
 	$(LINUX_DIR)/fs/btrfs/btrfs.ko
   AUTOLOAD:=$(call AutoLoad,30,btrfs,1)

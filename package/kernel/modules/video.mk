@@ -18,7 +18,9 @@ define KernelPackage/video-core
 	CONFIG_VIDEO_V4L1=y \
 	CONFIG_VIDEO_ALLOW_V4L1=y \
 	CONFIG_VIDEO_CAPTURE_DRIVERS=y \
-	CONFIG_V4L_USB_DRIVERS=y
+	CONFIG_V4L_USB_DRIVERS=y \
+	CONFIG_V4L_PCI_DRIVERS=y \
+	CONFIG_V4L_PLATFORM_DRIVERS=y
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.38)),1)
   FILES:= \
 	$(LINUX_DIR)/drivers/media/video/v4l2-common.ko \
