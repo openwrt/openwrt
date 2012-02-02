@@ -13,17 +13,15 @@ DEFAULT_PACKAGES += \
             kmod-i2c-scx200-acb \
             kmod-usb-core kmod-usb2 kmod-usb-ohci \
             kmod-cfg80211 kmod-mac80211 \
-            kmod-mppe kmod-pppoe kmod-pppoa kmod-pppol2tp \
-            kmod-ath kmod-ath5k kmod-ath9k \
+            kmod-mppe kmod-pppoa kmod-pppol2tp \
+            kmod-ath5k kmod-ath9k \
             kmod-leds-gpio kmod-input-gpio-keys-polled \
             kmod-button-hotplug \
             kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
             kmod-ledtrig-netdev kmod-ledtrig-netfilter \
             kmod-cpu-msr \
-            soloscli linux-atm br2684ctl bridge ppp ppp-mod-pppoa \
-            pppdump pppstats \
-            libopenssl ocf-crypto-headers zlib hwclock hostapd \
-            flashrom
+            soloscli linux-atm br2684ctl ppp-mod-pppoa pppdump pppstats \
+            hwclock wpad flashrom
 
 CS5535_MASK:=0x0E000048
 
