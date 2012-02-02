@@ -387,10 +387,13 @@ static char * nl80211_wpactl_info(const char *ifname, const char *cmd,
 		goto out;
 
 
-	send(sock, "ATTACH", 6, 0);
+	if (event)
+	{
+		send(sock, "ATTACH", 6, 0);
 
-	if (nl80211_wpactl_recv(sock, buffer, sizeof(buffer)) <= 0)
-		goto out;
+		if (nl80211_wpactl_recv(sock, buffer, sizeof(buffer)) <= 0)
+			goto out;
+	}
 
 
 	send(sock, cmd, strlen(cmd), 0);
@@ -405,7 +408,7 @@ static char * nl80211_wpactl_info(const char *ifname, const char *cmd,
 			break;
 		}
 
-		if ((!event && buffer[0] != '<') || strstr(buffer, event))
+		if ((!event && buffer[0] != '<') || (event && strstr(buffer, event)))
 			break;
 	}
 
