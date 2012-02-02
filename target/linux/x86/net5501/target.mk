@@ -1,4 +1,4 @@
-LINUX_VERSION:=3.2.1
+LINUX_VERSION:=3.2.2
 BOARDNAME:=Soekris net5501
 FEATURES:=squashfs jffs2 ext4 pci usb gpio
 DEFAULT_PACKAGES += kmod-crypto-hw-geode kmod-crypto-ocf \
