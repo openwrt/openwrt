@@ -14,14 +14,12 @@ DEFAULT_PACKAGES += \
 			kmod-usb-core kmod-usb2 kmod-usb-ohci \
 			kmod-cfg80211 kmod-mac80211 \
 			kmod-mppe kmod-pppoe kmod-pppo2ltp \
-			kmod-ath kmod-ath5k kmod-ath9k \
+			kmod-ath5k kmod-ath9k \
 			kmod-leds-gpio kmod-input-gpio-keys-polled \
 			kmod-button-hotplug \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
 			kmod-ledtrig-netdev kmod-ledtrig-netfilter \
-			kmod-cpu-msr \
-			bridge ppp \
-			libopenssl ocf-crypto-headers zlib hwclock hostapd
+			kmod-cpu-msr hwclock wpad
 
 CS5535_MASK:=0x0b000042
 

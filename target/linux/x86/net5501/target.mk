@@ -19,9 +19,7 @@ DEFAULT_PACKAGES += kmod-crypto-hw-geode kmod-crypto-ocf \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
 			kmod-ledtrig-netdev kmod-ledtrig-netfilter \
 			kmod-cpu-msr \
-			soloscli linux-atm br2684ctl bridge ppp ppp-mod-pppoa \
-			pppdump pppstats \
-			libopenssl ocf-crypto-headers zlib hwclock hostapd
+			hwclock wpad
 
 CS5535_MASK:=0x01000040
 
