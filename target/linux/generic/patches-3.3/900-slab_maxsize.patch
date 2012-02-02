@@ -1,0 +1,13 @@
+--- a/include/linux/slab.h
++++ b/include/linux/slab.h
+@@ -127,8 +127,8 @@ unsigned int kmem_cache_size(struct kmem
+  * to do various tricks to work around compiler limitations in order to
+  * ensure proper constant folding.
+  */
+-#define KMALLOC_SHIFT_HIGH	((MAX_ORDER + PAGE_SHIFT - 1) <= 25 ? \
+-				(MAX_ORDER + PAGE_SHIFT - 1) : 25)
++#define KMALLOC_SHIFT_HIGH	((MAX_ORDER + PAGE_SHIFT - 1) <= 17 ? \
++				(MAX_ORDER + PAGE_SHIFT - 1) : 17)
+ 
+ #define KMALLOC_MAX_SIZE	(1UL << KMALLOC_SHIFT_HIGH)
+ #define KMALLOC_MAX_ORDER	(KMALLOC_SHIFT_HIGH - PAGE_SHIFT)

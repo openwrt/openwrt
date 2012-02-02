@@ -1,0 +1,20 @@
+--- a/fs/yaffs2/yaffs_vfs_glue.c
++++ b/fs/yaffs2/yaffs_vfs_glue.c
+@@ -3036,7 +3036,7 @@ static struct super_block *yaffs_interna
+         YINIT_LIST_HEAD(&(yaffs_dev_to_lc(dev)->searchContexts));
+         param->remove_obj_fn = yaffs_remove_obj_callback;
+ 
+-	init_MUTEX(&(yaffs_dev_to_lc(dev)->grossLock));
++	sema_init(&(yaffs_dev_to_lc(dev)->grossLock), 1);
+ 
+ 	yaffs_gross_lock(dev);
+ 
+@@ -3494,7 +3494,7 @@ static int __init init_yaffs_fs(void)
+ 
+ 
+ 
+-	init_MUTEX(&yaffs_context_lock);
++	sema_init((&yaffs_context_lock), 1);
+ 
+ 	/* Install the proc_fs entries */
+ 	my_proc_entry = create_proc_entry("yaffs",
