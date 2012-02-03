@@ -15,7 +15,7 @@ DEFAULT_PACKAGES += kmod-crypto-hw-geode kmod-crypto-ocf \
 			kmod-mppe kmod-pppoe kmod-pppoa kmod-pppo2ltp \
 			kmod-ath kmod-ath5k kmod-ath9k \
 			kmod-leds-gpio kmod-input-gpio-keys-polled \
-			kmod-button-hotplug \
+			kmod-button-hotplug kmod-leds-net5501 \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
 			kmod-ledtrig-netdev \
 			kmod-cpu-msr \
@@ -23,8 +23,8 @@ DEFAULT_PACKAGES += kmod-crypto-hw-geode kmod-crypto-ocf \
 
 CS5535_MASK:=0x01000040
 
-CFLAGS += -Os -pipe -march=k6-2 -fno-align-functions -fno-align-loops -fno-align-jumps \
-	  -fno-align-labels
+CFLAGS += -march=geode -Os -mmmx -m3dnow -fno-align-jumps -fno-align-functions \
+	  -fno-align-labels -fno-align-loops -pipe -fomit-frame-pointer
 
 define Target/Description
 	Build firmware images for Soekris net5501 board
