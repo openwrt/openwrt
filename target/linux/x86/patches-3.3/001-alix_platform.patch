@@ -19,12 +19,11 @@ index dc5f1d3..a24bf8c 100644
  
  #include <asm/geode.h>
  
--static int force = 0;
 +#define BIOS_SIGNATURE_TINYBIOS		0xf0000
 +#define BIOS_SIGNATURE_COREBOOT		0x500
 +#define BIOS_REGION_SIZE		0x10000
 +
-+static bool force = 0;
+ static bool force = 0;
  module_param(force, bool, 0444);
  /* FIXME: Award bios is not automatically detected as Alix platform */
  MODULE_PARM_DESC(force, "Force detection as ALIX.2/ALIX.3 platform");
@@ -58,7 +57,7 @@ index dc5f1d3..a24bf8c 100644
  static struct gpio_led alix_leds[] = {
  	{
  		.name = "alix:1",
-@@ -64,17 +106,22 @@ static struct platform_device alix_leds_
+@@ -64,17 +98,22 @@ static struct platform_device alix_leds_
  	.dev.platform_data = &alix_leds_data,
  };
  
@@ -83,7 +82,7 @@ index dc5f1d3..a24bf8c 100644
  	const char *bios_virt;
  	const char *scan_end;
  	const char *p;
-@@ -109,7 +156,8 @@ static int __init alix_present(unsigned
+@@ -109,7 +148,8 @@ static int __init alix_present(unsigned
  			*a = '\0';
  
  		tail = p + alix_sig_len;
@@ -93,7 +92,7 @@ index dc5f1d3..a24bf8c 100644
  			printk(KERN_INFO
  			       "%s: system is recognized as \"%s\"\n",
  			       KBUILD_MODNAME, name);
-@@ -120,6 +169,24 @@ static int __init alix_present(unsigned
+@@ -120,6 +160,24 @@ static int __init alix_present(unsigned
  	return 0;
  }
  
@@ -118,7 +117,7 @@ index dc5f1d3..a24bf8c 100644
  static int __init alix_init(void)
  {
  	const char tinybios_sig[] = "PC Engines ALIX.";
-@@ -128,8 +197,9 @@ static int __init alix_init(void)
+@@ -128,8 +186,9 @@ static int __init alix_init(void)
  	if (!is_geode())
  		return 0;
  
