@@ -99,6 +99,8 @@ static void __init pb92_init(void)
 					 ARRAY_SIZE(pb92_gpio_keys),
 					 pb92_gpio_keys);
 
+	ar71xx_add_device_usb();
+
 	pb9x_pci_init();
 }
 

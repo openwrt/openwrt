@@ -96,6 +96,8 @@ static void __init pb92_init(void)
 					 ARRAY_SIZE(pb92_gpio_keys),
 					 pb92_gpio_keys);
 
+	ath79_register_usb();
+
 	ath79_register_pci();
 }
 
