@@ -15,7 +15,7 @@ DEFAULT_PACKAGES += kmod-crypto-hw-geode kmod-crypto-ocf \
 			kmod-mppe kmod-pppoe kmod-pppoa kmod-pppo2ltp \
 			kmod-ath kmod-ath5k kmod-ath9k \
 			kmod-leds-gpio kmod-input-gpio-keys-polled \
-			kmod-button-hotplug kmod-leds-net5501 \
+			kmod-button-hotplug \
 			kmod-ledtrig-heartbeat kmod-ledtrig-gpio \
 			kmod-ledtrig-netdev \
 			kmod-cpu-msr \
