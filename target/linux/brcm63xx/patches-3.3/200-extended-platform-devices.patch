@@ -1,0 +1,25 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -938,6 +938,9 @@ int __init board_register_devices(void)
+ 	if (board.has_udc0)
+ 		bcm63xx_udc_register();
+ 
++	if (board.num_devs)
++		platform_add_devices(board.devs, board.num_devs);
++
+ 	/* read base address of boot chip select (0) */
+ 	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
+ 	val &= MPI_CSBASE_BASE_MASK;
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -62,6 +62,10 @@ struct board_info {
+ 
+ 	/* Buttons */
+ 	struct gpio_button buttons[2];
++
++	/* Additional platform devices */
++	struct platform_device **devs;
++	unsigned int	num_devs;
+ };
+ 
+ #endif /* ! BOARD_BCM963XX_H_ */

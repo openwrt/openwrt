@@ -101,6 +101,7 @@ define KernelPackage/usb-ohci
 	CONFIG_USB_OHCI_HCD \
 	CONFIG_USB_OHCI_AR71XX=y \
 	CONFIG_USB_OHCI_ATH79=y \
+	CONFIG_USB_OHCI_BCM63XX=y \
 	CONFIG_USB_OCTEON_OHCI=y
   FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,50,ohci-hcd,1)
@@ -212,6 +213,7 @@ define KernelPackage/usb2
   KCONFIG:=CONFIG_USB_EHCI_HCD \
     CONFIG_USB_EHCI_AR71XX=y \
     CONFIG_USB_EHCI_ATH79=y \
+    CONFIG_USB_EHCI_BCM63XX=y \
     CONFIG_USB_OCTEON_EHCI=y \
     CONFIG_USB_EHCI_FSL=n
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.ko

@@ -1,0 +1,44 @@
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm963xx_tag.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm963xx_tag.h
+@@ -85,8 +85,10 @@ struct bcm_tag {
+ 	__u32 rootfs_crc;
+ 	/* 224-227: CRC32 of kernel partition */
+ 	__u32 kernel_crc;
+-	/* 228-235: Unused at present */
+-	char reserved1[8];
++	/* 228-231: Image sequence number */
++	char image_sequence[4];
++	/* 222-235: Openwrt: real rootfs length */
++	__u32 real_rootfs_length;
+ 	/* 236-239: CRC32 of header excluding last 20 bytes */
+ 	__u32 header_crc;
+ 	/* 240-255: Unused at present */
+--- a/drivers/mtd/bcm63xxpart.c
++++ b/drivers/mtd/bcm63xxpart.c
+@@ -77,7 +77,7 @@ static int bcm63xx_parse_cfe_partitions(
+ 	int ret;
+ 	size_t retlen;
+ 	unsigned int rootfsaddr, kerneladdr, spareaddr;
+-	unsigned int rootfslen, kernellen, sparelen, totallen;
++	unsigned int rootfslen, kernellen, sparelen;
+ 	unsigned int cfelen, nvramlen;
+ 	int namelen = 0;
+ 	int i;
+@@ -111,14 +111,15 @@ static int bcm63xx_parse_cfe_partitions(
+ 
+ 		sscanf(buf->kernel_address, "%u", &kerneladdr);
+ 		sscanf(buf->kernel_length, "%u", &kernellen);
+-		sscanf(buf->total_length, "%u", &totallen);
++		rootfslen = buf->real_rootfs_length;
+ 
+ 		pr_info("CFE boot tag found with version %s and board type %s\n",
+ 			tagversion, boardid);
+ 
+ 		kerneladdr = kerneladdr - BCM63XX_EXTENDED_SIZE;
+ 		rootfsaddr = kerneladdr + kernellen;
+-		spareaddr = roundup(totallen, master->erasesize) + cfelen;
++		rootfslen = roundup(rootfslen, master->erasesize);
++		spareaddr = rootfsaddr + rootfslen;
+ 		sparelen = master->size - spareaddr - nvramlen;
+ 		rootfslen = spareaddr - rootfsaddr;
+ 	} else {
