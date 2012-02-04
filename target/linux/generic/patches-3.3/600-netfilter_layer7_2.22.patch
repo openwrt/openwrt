@@ -118,7 +118,7 @@
 +	acct = nf_conn_acct_find(ct);
 +	if (!acct)
 +		return 0;
-+	return (atomic64_read(acct[IP_CT_DIR_ORIGINAL].packets) + atomic64_read(acct[IP_CT_DIR_REPLY].packets));
++	return (atomic64_read(&acct[IP_CT_DIR_ORIGINAL].packets) + atomic64_read(&acct[IP_CT_DIR_REPLY].packets));
 +#endif
 +}
 +
