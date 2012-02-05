@@ -132,7 +132,7 @@ USE_SUBTARGET_CONFIG = $(if $(wildcard $(LINUX_TARGET_CONFIG)),,$(if $(LINUX_SUB
 LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(if $(USE_SUBTARGET_CONFIG),$(LINUX_SUBTARGET_CONFIG)))
 LINUX_RECONFIG_TARGET = $(if $(USE_SUBTARGET_CONFIG),$(LINUX_SUBTARGET_CONFIG),$(LINUX_TARGET_CONFIG))
 
-# select the config file to be cahnged by kernel_menuconfig/kernel_oldconfig
+# select the config file to be changed by kernel_menuconfig/kernel_oldconfig
 ifeq ($(CONFIG_TARGET),platform)
   LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG))
   LINUX_RECONFIG_TARGET = $(LINUX_TARGET_CONFIG)
