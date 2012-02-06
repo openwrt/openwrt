@@ -23,6 +23,10 @@ PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 
+ifneq ($(CONFIG_EXTERNAL_KERNEL_TREE),"")
+PATCH_DIR:=
+endif
+
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
   -include $(LINUX_DIR)/.config
