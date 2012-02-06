@@ -45,6 +45,10 @@
 #include "fis.h"
 #include "mtd.h"
 
+#ifndef MTDREFRESH
+#define MTDREFRESH	_IO('M', 50)
+#endif
+
 #define MAX_ARGS 8
 #define JFFS2_DEFAULT_DIR	"" /* directory name without /, empty means root dir */
 
