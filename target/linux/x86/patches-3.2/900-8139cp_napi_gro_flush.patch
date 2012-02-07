@@ -1,0 +1,25 @@
+From b189e810619a676e6b931a942a3e8387f3d39c21 Mon Sep 17 00:00:00 2001
+From: =?utf8?q?fran=C3=A7ois=20romieu?= <romieu@fr.zoreil.com>
+Date: Sun, 8 Jan 2012 13:41:33 +0000
+Subject: [PATCH] 8139cp: fix missing napi_gro_flush.
+
+The driver uses __napi_complete and napi_gro_receive. Without it, the
+driver hits the BUG_ON(n->gro_list) assertion hard in __napi_complete.
+
+Signed-off-by: Francois Romieu <romieu@fr.zoreil.com>
+Tested-by: Marin Glibic <zhilla2@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/realtek/8139cp.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+--- a/drivers/net/ethernet/realtek/8139cp.c
++++ b/drivers/net/ethernet/realtek/8139cp.c
+@@ -563,6 +563,7 @@ rx_next:
+ 		if (cpr16(IntrStatus) & cp_rx_intr_mask)
+ 			goto rx_status_loop;
+ 
++		napi_gro_flush(napi);
+ 		spin_lock_irqsave(&cp->lock, flags);
+ 		__napi_complete(napi);
+ 		cpw16_f(IntrMask, cp_intr_mask);

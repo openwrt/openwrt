@@ -1,8 +1,6 @@
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 2f18a15..7a4f34b 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -2174,6 +2174,12 @@ config GEOS
+@@ -2097,6 +2097,12 @@ config GEOS
  	---help---
  	  This option enables system support for the Traverse Technologies GEOS.
  
@@ -15,17 +13,12 @@ index 2f18a15..7a4f34b 100644
  endif # X86_32
  
  config AMD_NB
-diff --git a/arch/x86/platform/geode/Makefile b/arch/x86/platform/geode/Makefile
-index d8ba564..5b51194 100644
 --- a/arch/x86/platform/geode/Makefile
 +++ b/arch/x86/platform/geode/Makefile
 @@ -1,2 +1,3 @@
  obj-$(CONFIG_ALIX)		+= alix.o
 +obj-$(CONFIG_NET5501)		+= net5501.o
  obj-$(CONFIG_GEOS)		+= geos.o
-diff --git a/arch/x86/platform/geode/net5501.c b/arch/x86/platform/geode/net5501.c
-new file mode 100644
-index 0000000..66d377e
 --- /dev/null
 +++ b/arch/x86/platform/geode/net5501.c
 @@ -0,0 +1,154 @@
@@ -183,9 +176,6 @@ index 0000000..66d377e
 +MODULE_AUTHOR("Philip Prindeville <philipp@redfish-solutions.com>");
 +MODULE_DESCRIPTION("Soekris net5501 System Setup");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/leds/leds-net5501.c b/drivers/leds/leds-net5501.c
-deleted file mode 100644
-index 0555d47..0000000
 --- a/drivers/leds/leds-net5501.c
 +++ /dev/null
 @@ -1,97 +0,0 @@
@@ -286,8 +276,8 @@ index 0555d47..0000000
 -arch_initcall(soekris_init);
 -
 -MODULE_LICENSE("GPL");
---- a/drivers/leds/Kconfig	2012-01-29 23:22:59.487891522 -0700
-+++ b/drivers/leds/Kconfig	2012-02-03 10:33:39.650202054 -0700
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
 @@ -89,16 +89,6 @@ config LEDS_NET48XX
  	  This option enables support for the Soekris net4801 and net4826 error
  	  LED.
@@ -305,8 +295,8 @@ index 0555d47..0000000
  config LEDS_FSG
  	tristate "LED Support for the Freecom FSG-3"
  	depends on LEDS_CLASS
---- a/drivers/leds/Makefile	2012-01-29 23:22:59.487891522 -0700
-+++ b/drivers/leds/Makefile	2012-02-03 10:33:24.468430696 -0700
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
 @@ -14,7 +14,6 @@ obj-$(CONFIG_LEDS_MIKROTIK_RB532)	+= led
  obj-$(CONFIG_LEDS_S3C24XX)		+= leds-s3c24xx.o
  obj-$(CONFIG_LEDS_AMS_DELTA)		+= leds-ams-delta.o

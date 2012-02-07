@@ -24,11 +24,9 @@ Cc: Andrew Morton <akpm@linux-foundation.org>
  3 files changed, 136 insertions(+), 0 deletions(-)
  create mode 100644 arch/x86/platform/geode/geos.c
 
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 07c3f15..4ee921b 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -2168,6 +2168,13 @@ config ALIX
+@@ -2090,6 +2090,13 @@ config ALIX
  
  	  Note: You have to set alix.force=1 for boards with Award BIOS.
  
@@ -42,16 +40,11 @@ index 07c3f15..4ee921b 100644
  endif # X86_32
  
  config AMD_NB
-diff --git a/arch/x86/platform/geode/Makefile b/arch/x86/platform/geode/Makefile
-index 07c9cd0..d8ba564 100644
 --- a/arch/x86/platform/geode/Makefile
 +++ b/arch/x86/platform/geode/Makefile
 @@ -1 +1,2 @@
  obj-$(CONFIG_ALIX)		+= alix.o
 +obj-$(CONFIG_GEOS)		+= geos.o
-diff --git a/arch/x86/platform/geode/geos.c b/arch/x86/platform/geode/geos.c
-new file mode 100644
-index 0000000..c2e6d53
 --- /dev/null
 +++ b/arch/x86/platform/geode/geos.c
 @@ -0,0 +1,128 @@
@@ -183,6 +176,3 @@ index 0000000..c2e6d53
 +MODULE_AUTHOR("Philip Prindeville <philipp@redfish-solutions.com>");
 +MODULE_DESCRIPTION("Traverse Technologies Geos System Setup");
 +MODULE_LICENSE("GPL");
--- 
-1.7.7.4
-
