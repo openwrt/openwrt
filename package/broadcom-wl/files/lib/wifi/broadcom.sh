@@ -133,7 +133,7 @@ enable_broadcom() {
 	config_get hwmode "$device" hwmode
 	local vif_pre_up vif_post_up vif_do_up vif_txpower
 	local doth=0
-	local wmm=0
+	local wmm=1
 
 	_c=0
 	nas="$(which nas)"
@@ -330,7 +330,7 @@ infra $infra
 ${wet:+wet 1}
 802.11d 0
 802.11h ${doth:-0}
-wme ${wmm:-0}
+wme ${wmm:-1}
 rxant ${rxantenna:-3}
 txant ${txantenna:-3}
 fragthresh ${frag:-2346}
