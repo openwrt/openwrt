@@ -275,10 +275,7 @@ fw_check_icmptype4() {
 		export FW_ICMP4_TYPES=$(
 			iptables -p icmp -h 2>/dev/null | \
 			sed -n -e '/^Valid ICMP Types:/ {
-				n; :r;
-				/router-advertisement/d;
-				/router-solicitation/d;
-				s/[()]/ /g; s/[[:space:]]\+/\n/g; p; n; b r
+				n; :r; s/[()]/ /g; s/[[:space:]]\+/\n/g; p; n; b r
 			}' | sort -u
 		)
 
