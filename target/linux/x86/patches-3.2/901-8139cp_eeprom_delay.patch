@@ -1,0 +1,37 @@
+From 7d03f5a48e4d90854275b06433626243b3b3db17 Mon Sep 17 00:00:00 2001
+From: Jason Wang <jasowang@redhat.com>
+Date: Fri, 30 Dec 2011 23:44:33 +0000
+Subject: [PATCH] 8139cp/8139too: do not read into reserved registers
+
+delay_eeprom() use long read for Cfg9346 register(offset 0x50) which may read
+into the area of reserved register(offset 0x53). Use byte read instead.
+
+Signed-off-by: Jason Wang <jasowang@redhat.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/realtek/8139cp.c  |    2 +-
+ drivers/net/ethernet/realtek/8139too.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/realtek/8139cp.c
++++ b/drivers/net/ethernet/realtek/8139cp.c
+@@ -1590,7 +1590,7 @@ static int cp_set_mac_address(struct net
+    No extra delay is needed with 33Mhz PCI, but 66Mhz may change this.
+  */
+ 
+-#define eeprom_delay()	readl(ee_addr)
++#define eeprom_delay()	readb(ee_addr)
+ 
+ /* The EEPROM commands include the alway-set leading bit. */
+ #define EE_EXTEND_CMD	(4)
+--- a/drivers/net/ethernet/realtek/8139too.c
++++ b/drivers/net/ethernet/realtek/8139too.c
+@@ -1122,7 +1122,7 @@ static void __devexit rtl8139_remove_one
+    No extra delay is needed with 33Mhz PCI, but 66Mhz may change this.
+  */
+ 
+-#define eeprom_delay()	(void)RTL_R32(Cfg9346)
++#define eeprom_delay()	(void)RTL_R8(Cfg9346)
+ 
+ /* The EEPROM commands include the alway-set leading bit. */
+ #define EE_WRITE_CMD	(5)
