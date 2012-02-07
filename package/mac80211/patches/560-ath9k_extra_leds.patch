@@ -171,7 +171,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -803,7 +803,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -817,7 +817,7 @@ int ath9k_init_device(u16 devid, struct 
  
  #ifdef CONFIG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -244,7 +244,7 @@
  void ath9k_debug_samp_bb_mac(struct ath_softc *sc)
  {
  #define ATH_SAMP_DBG(c) (sc->debug.bb_mac_samp[sc->debug.sampidx].c)
-@@ -1725,6 +1780,11 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1728,6 +1783,11 @@ int ath9k_init_debug(struct ath_hw *ah)
  	debugfs_create_file("samples", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_samps);
  

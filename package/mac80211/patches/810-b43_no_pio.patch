@@ -11,18 +11,19 @@
  b43-$(CONFIG_B43_PCMCIA)	+= pcmcia.o
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -1893,9 +1893,11 @@ static void b43_do_interrupt_thread(stru
+@@ -1885,10 +1885,12 @@ static void b43_do_interrupt_thread(stru
+ 			       dma_reason[0], dma_reason[1],
+ 			       dma_reason[2], dma_reason[3],
  			       dma_reason[4], dma_reason[5]);
++#ifdef CONFIG_B43_PIO
  			b43err(dev->wl, "This device does not support DMA "
  			       "on your system. It will now be switched to PIO.\n");
-+#ifdef CONFIG_B43_PIO
  			/* Fall back to PIO transfers if we get fatal DMA errors! */
- 			dev->use_pio = 1;
- 			b43_controller_restart(dev, "DMA error");
+ 			dev->use_pio = true;
 +#endif
+ 			b43_controller_restart(dev, "DMA error");
  			return;
  		}
- 		if (merged_dma_reason & B43_DMAIRQ_NONFATALMASK) {
 --- a/drivers/net/wireless/b43/pio.h
 +++ b/drivers/net/wireless/b43/pio.h
 @@ -150,7 +150,7 @@ static inline void b43_piorx_write32(str

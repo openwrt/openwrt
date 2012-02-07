@@ -54,7 +54,7 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1674,6 +1721,9 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1677,6 +1724,9 @@ int ath9k_init_debug(struct ath_hw *ah)
  	debugfs_create_u32("gpio_val", S_IRUSR | S_IWUSR,
  			   sc->debug.debugfs_phy, &sc->sc_ah->gpio_val);
  
