@@ -25,8 +25,8 @@ DEFAULT_PACKAGES += \
 
 CS5535_MASK:=0x0E000048
 
-CFLAGS += -Os -pipe -march=k6-2 -fno-align-functions -fno-align-loops -fno-align-jumps \
-      -fno-align-labels
+CFLAGS += -march=geode -Os -mmmx -m3dnow -fno-align-jumps -fno-align-functions \
+        -fno-align-labels -fno-align-loops -pipe -fomit-frame-pointer
 
 define Target/Description
     Build firmware images for Traverse Geos board
