@@ -11,7 +11,7 @@
  	u16 listen_interval;
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1696,7 +1696,7 @@ static int ieee80211_get_tx_power(struct
+@@ -1739,7 +1739,7 @@ static int ieee80211_get_tx_power(struct
  {
  	struct ieee80211_local *local = wiphy_priv(wiphy);
  
@@ -22,7 +22,7 @@
  }
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -167,6 +167,7 @@ int ieee80211_hw_config(struct ieee80211
+@@ -168,6 +168,7 @@ int ieee80211_hw_config(struct ieee80211
  
  	if (local->hw.conf.power_level != power) {
  		changed |= IEEE80211_CONF_CHANGE_POWER;

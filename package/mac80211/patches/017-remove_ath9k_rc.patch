@@ -1,11 +1,11 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -259,7 +259,7 @@ CONFIG_ATH9K_COMMON=m
+@@ -261,7 +261,7 @@ CONFIG_ATH9K_COMMON=m
  # as default once we get minstrel properly tested and blessed by
  # our systems engineering team. CCK rates also need to be used
  # for long range considerations.
 -CONFIG_ATH9K_RATE_CONTROL=y
 +# CONFIG_ATH9K_RATE_CONTROL=y
  
- # PCI Drivers
- ifdef CONFIG_PCI
+ CONFIG_ATH9K_BTCOEX_SUPPORT=y
+ 

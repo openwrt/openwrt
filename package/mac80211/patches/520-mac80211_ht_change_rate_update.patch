@@ -1,6 +1,6 @@
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -196,7 +196,9 @@ void ieee80211_bss_info_change_notify(st
+@@ -197,7 +197,9 @@ void ieee80211_bss_info_change_notify(st
  				      u32 changed)
  {
  	struct ieee80211_local *local = sdata->local;
@@ -10,7 +10,7 @@
  
  	if (!changed)
  		return;
-@@ -226,6 +228,22 @@ void ieee80211_bss_info_change_notify(st
+@@ -219,6 +221,22 @@ void ieee80211_bss_info_change_notify(st
  
  	switch (sdata->vif.type) {
  	case NL80211_IFTYPE_AP:

@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/regd.c
 +++ b/drivers/net/wireless/ath/regd.c
-@@ -38,7 +38,8 @@
+@@ -40,7 +40,8 @@ static int __ath_regd_init(struct ath_re
  				NL80211_RRF_PASSIVE_SCAN | NL80211_RRF_NO_OFDM)
  
  /* We allow IBSS on these on a case by case basis by regulatory domain */
@@ -10,7 +10,7 @@
  				NL80211_RRF_PASSIVE_SCAN | NL80211_RRF_NO_IBSS)
  #define ATH9K_5GHZ_5470_5850	REG_RULE(5470-10, 5850+10, 40, 0, 30,\
  				NL80211_RRF_PASSIVE_SCAN | NL80211_RRF_NO_IBSS)
-@@ -56,57 +57,56 @@
+@@ -58,57 +59,56 @@ static int __ath_regd_init(struct ath_re
  #define ATH9K_5GHZ_NO_MIDBAND	ATH9K_5GHZ_5150_5350, \
  				ATH9K_5GHZ_5725_5850
  
