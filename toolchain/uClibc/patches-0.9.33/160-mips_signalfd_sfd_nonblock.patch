@@ -1,0 +1,27 @@
+From f87898ca4a7d4b7171779c06ff1f4848efeee431 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Thu, 30 Jun 2011 07:32:11 +0000
+Subject: mips/signalfd.h: SFD_NONBLOCK for mips is 0200 unlike 04000 commonly
+
+Exposed by udev 171 which uses signalfd
+
+Signed-off-by: Khem Raj <raj.khem@gmail.com>
+---
+--- a/include/sys/signalfd.h
++++ b/include/sys/signalfd.h
+@@ -73,6 +73,15 @@ enum
+ # define SFD_NONBLOCK SFD_NONBLOCK
+   };
+ 
++#elif defined __mips__
++enum
++  {
++    SFD_CLOEXEC = 02000000,
++# define SFD_CLOEXEC SFD_CLOEXEC
++    SFD_NONBLOCK = 0200
++# define SFD_NONBLOCK SFD_NONBLOCK
++  };
++
+ #else
+ enum
+   {

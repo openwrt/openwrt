@@ -2,6 +2,7 @@ config UCLIBC_VERSION
 	string
 	depends on USE_UCLIBC
 	default "0.9.32"       if UCLIBC_VERSION_0_9_32
+	default "0.9.33"       if UCLIBC_VERSION_0_9_33
 	default "0.9.32"
 
 if !TOOLCHAINOPTS
