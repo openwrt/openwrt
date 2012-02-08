@@ -25,7 +25,8 @@ db120)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4"
 	;;
 
-dir-825-b1)
+dir-825-b1|\
+tew-673gru)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth1"
 	ucidef_add_switch "rtl8366s" "1" "1"
 	ucidef_add_switch_vlan "rtl8366s" "1" "0 1 2 3 5t"
