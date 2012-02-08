@@ -199,7 +199,7 @@
  
  	rbspi = spi_master_get_devdata(master);
 +
-+	rbspi->ahb_clk = clk_get(&pdev->dev, "AHB");
++	rbspi->ahb_clk = clk_get(&pdev->dev, "ahb");
 +	if (IS_ERR(rbspi->ahb_clk)) {
 +		err = PTR_ERR(rbspi->ahb_clk);
 +		goto err_put_master;
