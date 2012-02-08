@@ -1,0 +1,45 @@
+--- a/libpthread/nptl/cleanup_defer_compat.c
++++ b/libpthread/nptl/cleanup_defer_compat.c
+@@ -22,7 +22,7 @@
+ 
+ void
+ attribute_protected
+-_pthread_cleanup_push_defer (
++__pthread_cleanup_push_defer (
+      struct _pthread_cleanup_buffer *buffer,
+      void (*routine) (void *),
+      void *arg)
+@@ -57,12 +57,12 @@ _pthread_cleanup_push_defer (
+ 
+   THREAD_SETMEM (self, cleanup, buffer);
+ }
+-strong_alias (_pthread_cleanup_push_defer, __pthread_cleanup_push_defer)
++strong_alias (__pthread_cleanup_push_defer, _pthread_cleanup_push_defer)
+ 
+ 
+ void
+ attribute_protected
+-_pthread_cleanup_pop_restore (
++__pthread_cleanup_pop_restore (
+      struct _pthread_cleanup_buffer *buffer,
+      int execute)
+ {
+@@ -97,4 +97,4 @@ _pthread_cleanup_pop_restore (
+   if (execute)
+     buffer->__routine (buffer->__arg);
+ }
+-strong_alias (_pthread_cleanup_pop_restore, __pthread_cleanup_pop_restore)
++strong_alias (__pthread_cleanup_pop_restore, _pthread_cleanup_pop_restore)
+--- a/libpthread/nptl/init.c
++++ b/libpthread/nptl/init.c
+@@ -112,8 +112,8 @@ static const struct pthread_functions pt
+     .ptr___pthread_key_create = __pthread_key_create_internal,
+     .ptr___pthread_getspecific = __pthread_getspecific_internal,
+     .ptr___pthread_setspecific = __pthread_setspecific_internal,
+-    .ptr__pthread_cleanup_push_defer = _pthread_cleanup_push_defer,
+-    .ptr__pthread_cleanup_pop_restore = _pthread_cleanup_pop_restore,
++    .ptr__pthread_cleanup_push_defer = __pthread_cleanup_push_defer,
++    .ptr__pthread_cleanup_pop_restore = __pthread_cleanup_pop_restore,
+     .ptr_nthreads = &__nptl_nthreads,
+     .ptr___pthread_unwind = &__pthread_unwind,
+     .ptr__nptl_deallocate_tsd = __nptl_deallocate_tsd,

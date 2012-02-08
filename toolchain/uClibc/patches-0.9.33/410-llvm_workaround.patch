@@ -1,0 +1,11 @@
+--- a/libc/stdio/_stdio.c
++++ b/libc/stdio/_stdio.c
+@@ -124,7 +124,7 @@ static FILE _stdio_streams[] = {
+ 							 __FLAG_NBF|__FLAG_WRITEONLY, \
+ 							 2, \
+ 							 NULL, \
+-							 NULL, \
++							 0, \
+ 							 0 )
+ };
+ 
