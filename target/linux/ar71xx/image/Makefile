@@ -145,14 +145,14 @@ define Image/Build/DIR825B1
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			dd if=$(call sysupname,$(1),$(2)); \
-			echo -n "01AP94-AR7161-RT-080619-00"; \
+			echo -n "$(4)"; \
 		) > $(call imgname,$(1),$(2))-backup-loader.bin; \
 		if [ `stat -c%s $(call sysupname,$(1),$(2))` -gt 4194304 ]; then \
 			echo "Warning: $(call sysupname,$(1),$(2)) is too big"; \
 		else \
 			( \
 				dd if=$(call sysupname,$(1),$(2)) bs=4096k conv=sync; \
-				echo -n "00AP94-AR7161-RT-080619-00"; \
+				echo -n "$(5)"; \
 			) > $(call factoryname,$(1),$(2)); \
 		fi; \
 	fi
@@ -928,7 +928,12 @@ endef
 
 dir825b1_cmdline=board=DIR-825-B1 console=ttyS0,115200
 define Image/Build/Profile/DIR825B1
-	$(call Image/Build/Template/$(fs_64k)/$(1),DIR825B1,dir-825-b1,$(dir825b1_cmdline))
+	$(call Image/Build/Template/$(fs_64k)/$(1),DIR825B1,dir-825-b1,$(dir825b1_cmdline),01AP94-AR7161-RT-080619-00,00AP94-AR7161-RT-080619-00)
+endef
+
+tew673gru_cmdline=board=TEW-673GRU console=ttyS0,115200
+define Image/Build/Profile/TEW673GRU
+	$(call Image/Build/Template/$(fs_64k)/$(1),DIR825B1,tew-673gru,$(tew673gru_cmdline),01AP94-AR7161-RT-080619-01,00AP94-AR7161-RT-080619-01)
 endef
 
 wrt160nl_cmdline=board=WRT160NL console=ttyS0,115200
@@ -1017,6 +1022,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/RW2458N,$(1))
 	$(call Image/Build/Profile/TEW632BRP,$(1))
 	$(call Image/Build/Profile/TEW652BRP,$(1))
+	$(call Image/Build/Profile/TEW673GRU,$(1))
 	$(call Image/Build/Profile/TLMR11U,$(1))
 	$(call Image/Build/Profile/TLMR3020,$(1))
 	$(call Image/Build/Profile/TLMR3220,$(1))

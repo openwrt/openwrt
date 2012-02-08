@@ -26,3 +26,14 @@ define Profile/TEW652BRP/Description
 endef
 
 $(eval $(call Profile,TEW652BRP))
+
+define Profile/TEW673GRU
+	NAME:=TRENDNet TEW-673GRU
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
+endef
+
+define Profile/TEW673GRU/Description
+	Package set optimized for the TRENDNet TEW-673GRU.
+endef
+
+$(eval $(call Profile,TEW673GRU))
