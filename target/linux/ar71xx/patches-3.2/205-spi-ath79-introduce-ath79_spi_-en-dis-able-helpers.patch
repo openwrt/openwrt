@@ -27,7 +27,7 @@ Subject: [PATCH 5/7] spi/ath79: introduce ath79_spi_{en,dis}able helpers
  	/* enable GPIO mode */
  	ath79_spi_wr(sp, AR71XX_SPI_REG_FS, AR71XX_SPI_FS_GPIO);
  
-@@ -108,6 +100,25 @@ static int ath79_spi_setup_cs(struct spi
+@@ -108,6 +100,24 @@ static int ath79_spi_setup_cs(struct spi
  
  	/* TODO: setup speed? */
  	ath79_spi_wr(sp, AR71XX_SPI_REG_CTRL, 0x43);
@@ -43,7 +43,6 @@ Subject: [PATCH 5/7] spi/ath79: introduce ath79_spi_{en,dis}able helpers
 +
 +static int ath79_spi_setup_cs(struct spi_device *spi)
 +{
-+	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
 +	struct ath79_spi_controller_data *cdata;
 +	int status;
 +
@@ -53,7 +52,13 @@ Subject: [PATCH 5/7] spi/ath79: introduce ath79_spi_{en,dis}able helpers
  
  	status = 0;
  	if (spi->chip_select) {
-@@ -134,11 +145,6 @@ static void ath79_spi_cleanup_cs(struct
+@@ -128,17 +138,10 @@ static int ath79_spi_setup_cs(struct spi
+ 
+ static void ath79_spi_cleanup_cs(struct spi_device *spi)
+ {
+-	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
+-
+ 	if (spi->chip_select) {
  		struct ath79_spi_controller_data *cdata = spi->controller_data;
  		gpio_free(cdata->gpio);
  	}
@@ -65,7 +70,7 @@ Subject: [PATCH 5/7] spi/ath79: introduce ath79_spi_{en,dis}able helpers
  }
  
  static int ath79_spi_setup(struct spi_device *spi)
-@@ -242,13 +248,15 @@ static __devinit int ath79_spi_probe(str
+@@ -242,13 +245,15 @@ static __devinit int ath79_spi_probe(str
  		goto err_put_master;
  	}
  
@@ -83,7 +88,7 @@ Subject: [PATCH 5/7] spi/ath79: introduce ath79_spi_{en,dis}able helpers
  	iounmap(sp->base);
  err_put_master:
  	platform_set_drvdata(pdev, NULL);
-@@ -262,6 +270,7 @@ static __devexit int ath79_spi_remove(st
+@@ -262,6 +267,7 @@ static __devexit int ath79_spi_remove(st
  	struct ath79_spi *sp = platform_get_drvdata(pdev);
  
  	spi_bitbang_stop(&sp->bitbang);

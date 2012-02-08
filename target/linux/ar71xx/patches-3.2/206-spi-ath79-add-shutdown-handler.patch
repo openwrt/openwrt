@@ -10,7 +10,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/spi/spi-ath79.c
 +++ b/drivers/spi/spi-ath79.c
-@@ -265,7 +265,7 @@ err_put_master:
+@@ -262,7 +262,7 @@ err_put_master:
  	return ret;
  }
  
@@ -19,7 +19,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  {
  	struct ath79_spi *sp = platform_get_drvdata(pdev);
  
-@@ -274,13 +274,23 @@ static __devexit int ath79_spi_remove(st
+@@ -271,13 +271,23 @@ static __devexit int ath79_spi_remove(st
  	iounmap(sp->base);
  	platform_set_drvdata(pdev, NULL);
  	spi_master_put(sp->bitbang.master);

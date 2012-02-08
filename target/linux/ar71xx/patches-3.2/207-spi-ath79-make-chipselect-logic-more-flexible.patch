@@ -77,9 +77,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  }
  
  static void ath79_spi_enable(struct ath79_spi *sp)
-@@ -114,24 +118,30 @@ static int ath79_spi_setup_cs(struct spi
+@@ -113,24 +117,30 @@ static void ath79_spi_disable(struct ath
+ static int ath79_spi_setup_cs(struct spi_device *spi)
  {
- 	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
  	struct ath79_spi_controller_data *cdata;
 +	unsigned long flags;
  	int status;
@@ -112,16 +112,15 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	}
  
  	return status;
-@@ -139,11 +149,15 @@ static int ath79_spi_setup_cs(struct spi
+@@ -138,9 +148,15 @@ static int ath79_spi_setup_cs(struct spi
  
  static void ath79_spi_cleanup_cs(struct spi_device *spi)
  {
--	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
-+	struct ath79_spi_controller_data *cdata = spi->controller_data;
- 
 -	if (spi->chip_select) {
 -		struct ath79_spi_controller_data *cdata = spi->controller_data;
 -		gpio_free(cdata->gpio);
++	struct ath79_spi_controller_data *cdata = spi->controller_data;
++
 +	switch (cdata->cs_type) {
 +	case ATH79_SPI_CS_TYPE_INTERNAL:
 +		/* nothing to do */
@@ -132,7 +131,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	}
  }
  
-@@ -209,6 +223,10 @@ static __devinit int ath79_spi_probe(str
+@@ -206,6 +222,10 @@ static __devinit int ath79_spi_probe(str
  	struct resource	*r;
  	int ret;
  
@@ -143,7 +142,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	master = spi_alloc_master(&pdev->dev, sizeof(*sp));
  	if (master == NULL) {
  		dev_err(&pdev->dev, "failed to allocate spi master\n");
-@@ -218,17 +236,10 @@ static __devinit int ath79_spi_probe(str
+@@ -215,17 +235,10 @@ static __devinit int ath79_spi_probe(str
  	sp = spi_master_get_devdata(master);
  	platform_set_drvdata(pdev, sp);
  
