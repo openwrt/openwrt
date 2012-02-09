@@ -1,0 +1,23 @@
+--- a/arch/mips/ath79/dev-usb.c
++++ b/arch/mips/ath79/dev-usb.c
+@@ -188,16 +188,16 @@ static void __init ar934x_usb_setup(void
+ 	if (bootstrap & AR934X_BOOTSTRAP_USB_MODE_DEVICE)
+ 		return;
+ 
+-	ath79_device_reset_clear(AR934X_RESET_USBSUS_OVERRIDE);
++	ath79_device_reset_set(AR934X_RESET_USBSUS_OVERRIDE);
+ 	udelay(1000);
+ 
+-	ath79_device_reset_set(AR934X_RESET_USB_PHY);
++	ath79_device_reset_clear(AR934X_RESET_USB_PHY);
+ 	udelay(1000);
+ 
+-	ath79_device_reset_set(AR934X_RESET_USB_PHY_ANALOG);
++	ath79_device_reset_clear(AR934X_RESET_USB_PHY_ANALOG);
+ 	udelay(1000);
+ 
+-	ath79_device_reset_set(AR934X_RESET_USB_HOST);
++	ath79_device_reset_clear(AR934X_RESET_USB_HOST);
+ 	udelay(1000);
+ 
+ 	ath79_ehci_resources[0].start = AR934X_EHCI_BASE;
