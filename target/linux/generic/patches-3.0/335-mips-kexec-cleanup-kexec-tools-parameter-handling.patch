@@ -39,7 +39,7 @@
 -	int i, argc = 0;
 -	char *bootloader = "kexec";
 -	int *kexec_argv = (int *)kexec_args[1];
-+	void __user *buf;
++	void __user *buf = NULL;
 +	size_t bufsz;
 +	size_t size;
 +	int i;
@@ -92,7 +92,7 @@
 +		break;
 +	}
 +
-+	if (i >= image->nr_segments)
++	if (!buf)
 +		return;
 +
 +	size = KEXEC_MIPS_ARGV_BUF_SIZE - 1;
