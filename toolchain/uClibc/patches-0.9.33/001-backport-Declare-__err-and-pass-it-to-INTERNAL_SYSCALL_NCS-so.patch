@@ -1,0 +1,28 @@
+From 812ae602fe96bb40d1743d410eb1eadb6aa722f5 Mon Sep 17 00:00:00 2001
+From: Khem Raj <raj.khem@gmail.com>
+Date: Fri, 3 Feb 2012 10:57:44 -0800
+Subject: [PATCH] Declare __err and pass it to INTERNAL_SYSCALL_NCS so subsequent macros can use it
+
+Signed-off-by: Khem Raj <raj.khem@gmail.com>
+---
+ libc/sysdeps/linux/common/bits/syscalls-common.h |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libc/sysdeps/linux/common/bits/syscalls-common.h b/libc/sysdeps/linux/common/bits/syscalls-common.h
+index faebd1b..0f5a929 100644
+--- a/libc/sysdeps/linux/common/bits/syscalls-common.h
++++ b/libc/sysdeps/linux/common/bits/syscalls-common.h
+@@ -59,8 +59,8 @@
+ #ifndef INLINE_SYSCALL_NOERR_NCS
+ # define INLINE_SYSCALL_NOERR_NCS(name, nr, args...)			\
+ ({									\
+-	/*INTERNAL_SYSCALL_DECL(__err);*/					\
+-	long __res = INTERNAL_SYSCALL_NCS(name, /*__err*/, nr, args);	\
++	INTERNAL_SYSCALL_DECL(__err);					\
++	long __res = INTERNAL_SYSCALL_NCS(name, __err, nr, args);	\
+ 	__res;								\
+ })
+ #endif
+-- 
+1.7.2.1
+
