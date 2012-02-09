@@ -264,3 +264,23 @@
  		return;
  
  	ref->ops->tx_status(ref->priv, sband, ista, priv_sta, skb);
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -915,6 +915,8 @@ int ieee80211_register_hw(struct ieee802
+ 		wiphy_debug(local->hw.wiphy, "Failed to initialize wep: %d\n",
+ 			    result);
+ 
++	ieee80211_led_init(local);
++
+ 	rtnl_lock();
+ 
+ 	result = ieee80211_init_rate_ctrl_alg(local,
+@@ -936,8 +938,6 @@ int ieee80211_register_hw(struct ieee802
+ 
+ 	rtnl_unlock();
+ 
+-	ieee80211_led_init(local);
+-
+ 	local->network_latency_notifier.notifier_call =
+ 		ieee80211_max_network_latency;
+ 	result = pm_qos_add_notifier(PM_QOS_NETWORK_LATENCY,
