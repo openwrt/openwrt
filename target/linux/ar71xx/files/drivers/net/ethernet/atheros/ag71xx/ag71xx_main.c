@@ -134,6 +134,7 @@ static void ag71xx_ring_tx_clean(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	struct net_device *dev = ag->dev;
+	u32 bytes_compl = 0, pkts_compl = 0;
 
 	while (ring->curr != ring->dirty) {
 		u32 i = ring->dirty % ring->size;
@@ -143,17 +144,19 @@ static void ag71xx_ring_tx_clean(struct ag71xx *ag)
 			dev->stats.tx_errors++;
 		}
 
-		if (ring->buf[i].skb)
+		if (ring->buf[i].skb) {
+			bytes_compl += ring->buf[i].skb->len;
+			pkts_compl++;
 			dev_kfree_skb_any(ring->buf[i].skb);
-
+		}
 		ring->buf[i].skb = NULL;
-
 		ring->dirty++;
 	}
 
 	/* flush descriptors */
 	wmb();
 
+	netdev_completed_queue(dev, pkts_compl, bytes_compl);
 }
 
 static void ag71xx_ring_tx_init(struct ag71xx *ag)
@@ -174,6 +177,7 @@ static void ag71xx_ring_tx_init(struct ag71xx *ag)
 
 	ring->curr = 0;
 	ring->dirty = 0;
+	netdev_reset_queue(ag->dev);
 }
 
 static void ag71xx_ring_rx_clean(struct ag71xx *ag)
@@ -326,6 +330,7 @@ static void ag71xx_rings_cleanup(struct ag71xx *ag)
 	ag71xx_ring_free(&ag->rx_ring);
 
 	ag71xx_ring_tx_clean(ag);
+	netdev_reset_queue(ag->dev);
 	ag71xx_ring_free(&ag->tx_ring);
 }
 
@@ -691,6 +696,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 	dma_addr = dma_map_single(&dev->dev, skb->data, skb->len,
 				  DMA_TO_DEVICE);
 
+	netdev_sent_queue(dev, skb->len);
 	ring->buf[i].skb = skb;
 	ring->buf[i].timestamp = jiffies;
 
@@ -822,11 +828,11 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
-	int sent;
+	int sent = 0;
+	int bytes_compl = 0;
 
 	DBG("%s: processing TX ring\n", ag->dev->name);
 
-	sent = 0;
 	while (ring->dirty != ring->curr) {
 		unsigned int i = ring->dirty % ring->size;
 		struct ag71xx_desc *desc = ring->buf[i].desc;
@@ -841,6 +847,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 
 		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
 
+		bytes_compl += skb->len;
 		ag->dev->stats.tx_bytes += skb->len;
 		ag->dev->stats.tx_packets++;
 
@@ -853,6 +860,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 
 	DBG("%s: %d packets sent out\n", ag->dev->name, sent);
 
+	netdev_completed_queue(ag->dev, sent, bytes_compl);
 	if ((ring->curr - ring->dirty) < (ring->size * 3) / 4)
 		netif_wake_queue(ag->dev);
 
