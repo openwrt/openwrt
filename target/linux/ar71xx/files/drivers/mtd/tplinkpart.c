@@ -108,7 +108,7 @@ static int tplink_check_rootfs_magic(struct mtd_info *mtd, size_t offset)
 
 static int tplink_parse_partitions(struct mtd_info *master,
 				   struct mtd_partition **pparts,
-				   unsigned long origin)
+				   struct mtd_part_parser_data *data)
 {
 	struct mtd_partition *parts;
 	struct tplink_fw_header *header;

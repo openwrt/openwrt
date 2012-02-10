@@ -1,14 +1,15 @@
 /*
  *  NAND flash driver for the MikroTik RouterBOARD 750
  *
- *  Copyright (C) 2010 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
  *  by the Free Software Foundation.
  */
 
-#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/mtd/nand.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
@@ -16,8 +17,9 @@
 #include <linux/io.h>
 #include <linux/slab.h>
 
-#include <asm/mach-ar71xx/ar71xx.h>
-#include <asm/mach-ar71xx/mach-rb750.h>
+#include <asm/mach-ath79/ar71xx_regs.h>
+#include <asm/mach-ath79/ath79.h>
+#include <asm/mach-ath79/mach-rb750.h>
 
 #define DRV_NAME	"rb750-nand"
 #define DRV_VERSION	"0.1.0"
@@ -73,7 +75,7 @@ static struct mtd_partition rb750_nand_partitions[] = {
 
 static void rb750_nand_write(const u8 *buf, unsigned len)
 {
-	void __iomem *base = ar71xx_gpio_base;
+	void __iomem *base = ath79_gpio_base;
 	u32 out;
 	u32 t;
 	unsigned i;
@@ -107,7 +109,7 @@ static void rb750_nand_write(const u8 *buf, unsigned len)
 static int rb750_nand_read_verify(u8 *read_buf, unsigned len,
 				  const u8 *verify_buf)
 {
-	void __iomem *base = ar71xx_gpio_base;
+	void __iomem *base = ath79_gpio_base;
 	unsigned i;
 
 	for (i = 0; i < len; i++) {
@@ -136,7 +138,7 @@ static int rb750_nand_read_verify(u8 *read_buf, unsigned len,
 
 static void rb750_nand_select_chip(struct mtd_info *mtd, int chip)
 {
-	void __iomem *base = ar71xx_gpio_base;
+	void __iomem *base = ath79_gpio_base;
 	u32 func;
 	u32 t;
 
@@ -145,9 +147,7 @@ static void rb750_nand_select_chip(struct mtd_info *mtd, int chip)
 		/* disable latch */
 		rb750_latch_change(RB750_LVC573_LE, 0);
 
-		/* disable alternate functions */
-		ar71xx_gpio_function_setup(AR724X_GPIO_FUNC_JTAG_DISABLE,
-					   AR724X_GPIO_FUNC_SPI_EN);
+		rb750_nand_pins_enable();
 
 		/* set input mode for data lines */
 		t = __raw_readl(base + AR71XX_GPIO_REG_OE);
@@ -172,9 +172,7 @@ static void rb750_nand_select_chip(struct mtd_info *mtd, int chip)
 		__raw_writel(t | RB750_NAND_IO0 | RB750_NAND_RDY,
 			     base + AR71XX_GPIO_REG_OE);
 
-		/* restore alternate functions */
-		ar71xx_gpio_function_setup(AR724X_GPIO_FUNC_SPI_EN,
-					   AR724X_GPIO_FUNC_JTAG_DISABLE);
+		rb750_nand_pins_disable();
 
 		/* enable latch */
 		rb750_latch_change(0, RB750_LVC573_LE);
@@ -183,7 +181,7 @@ static void rb750_nand_select_chip(struct mtd_info *mtd, int chip)
 
 static int rb750_nand_dev_ready(struct mtd_info *mtd)
 {
-	void __iomem *base = ar71xx_gpio_base;
+	void __iomem *base = ath79_gpio_base;
 
 	return !!(__raw_readl(base + AR71XX_GPIO_REG_IN) & RB750_NAND_RDY);
 }
@@ -192,7 +190,7 @@ static void rb750_nand_cmd_ctrl(struct mtd_info *mtd, int cmd,
 				unsigned int ctrl)
 {
 	if (ctrl & NAND_CTRL_CHANGE) {
-		void __iomem *base = ar71xx_gpio_base;
+		void __iomem *base = ath79_gpio_base;
 		u32 t;
 
 		t = __raw_readl(base + AR71XX_GPIO_REG_OUT);
@@ -236,7 +234,7 @@ static int rb750_nand_verify_buf(struct mtd_info *mtd, const u8 *buf, int len)
 
 static void __init rb750_nand_gpio_init(void)
 {
-	void __iomem *base = ar71xx_gpio_base;
+	void __iomem *base = ath79_gpio_base;
 	u32 out;
 	u32 t;
 
@@ -306,12 +304,8 @@ static int __devinit rb750_nand_probe(struct platform_device *pdev)
 		goto err_set_drvdata;
 	}
 
-#ifdef CONFIG_MTD_PARTITIONS
-	ret = add_mtd_partitions(&info->mtd, rb750_nand_partitions,
+	ret = mtd_device_register(&info->mtd, rb750_nand_partitions,
 				 ARRAY_SIZE(rb750_nand_partitions));
-#else
-	ret = add_mtd_device(&info->mtd);
-#endif
 	if (ret)
 		goto err_release_nand;
 

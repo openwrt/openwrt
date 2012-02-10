@@ -13,6 +13,7 @@
 
 #include <linux/types.h>
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/device.h>
@@ -21,7 +22,7 @@
 #include <linux/gpio.h>
 #include <linux/slab.h>
 
-#include <asm/mach-ar71xx/rb4xx_cpld.h>
+#include <asm/mach-ath79/rb4xx_cpld.h>
 
 #define DRV_NAME	"spi-rb4xx-cpld"
 #define DRV_DESC	"RB4xx CPLD driver"
