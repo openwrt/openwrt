@@ -4,7 +4,7 @@
  	{ AR5K_IMR,		0 },
  	{ AR5K_IER,		AR5K_IER_DISABLE },
  	{ AR5K_BSR,		0, AR5K_INI_READ },
-+#ifndef CONFIG_ATHEROS_AR71XX
++#if !defined(CONFIG_ATHEROS_AR71XX) && !defined(CONFIG_ATH79)
  	{ AR5K_TXCFG,		AR5K_DMASIZE_128B },
  	{ AR5K_RXCFG,		AR5K_DMASIZE_128B },
 +#else
@@ -21,7 +21,7 @@
  	 * guess we can tweak it and see how it goes ;-)
  	 */
  	if (ah->ah_version != AR5K_AR5210) {
-+#ifndef CONFIG_ATHEROS_AR71XX
++#if !defined(CONFIG_ATHEROS_AR71XX) && !defined(CONFIG_ATH79)
  		AR5K_REG_WRITE_BITS(ah, AR5K_TXCFG,
  			AR5K_TXCFG_SDMAMR, AR5K_DMASIZE_128B);
  		AR5K_REG_WRITE_BITS(ah, AR5K_RXCFG,
