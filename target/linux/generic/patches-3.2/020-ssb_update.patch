@@ -184,12 +184,10 @@
  #define SSB_SPROM8_CCK2GPO		0x0140	/* CCK power offset */
  #define SSB_SPROM8_OFDM2GPO		0x0142	/* 2.4GHz OFDM power offset */
  #define SSB_SPROM8_OFDM5GPO		0x0146	/* 5.3GHz OFDM power offset */
-@@ -502,6 +553,46 @@
- #define SSB_BFL2_SPUR_WAR		0x0200	/* has a workaround for clock-harmonic spurs */
- #define SSB_BFL2_GPLL_WAR		0x0400	/* altenative G-band PLL settings implemented */
+@@ -464,6 +515,46 @@
  
-+/* Values for boardflags_lo read from SPROM */
-+#define SSB_BFL_BTCOEXIST		0x0001	/* implements Bluetooth coexistance */
+ /* Values for boardflags_lo read from SPROM */
+ #define SSB_BFL_BTCOEXIST		0x0001	/* implements Bluetooth coexistance */
 +#define SSB_BFL_PACTRL			0x0002	/* GPIO 9 controlling the PA */
 +#define SSB_BFL_AIRLINEMODE		0x0004	/* implements GPIO 13 radio disable indication */
 +#define SSB_BFL_RSSI			0x0008	/* software calculates nrssi slope. */
@@ -228,6 +226,8 @@
 +#define SSB_BFL2_SPUR_WAR		0x0200	/* has a workaround for clock-harmonic spurs */
 +#define SSB_BFL2_GPLL_WAR		0x0400	/* altenative G-band PLL settings implemented */
 +
- /* Values for SSB_SPROM1_BINF_CCODE */
- enum {
- 	SSB_SPROM1CCODE_WORLD = 0,
++/* Values for boardflags_lo read from SPROM */
++#define SSB_BFL_BTCOEXIST		0x0001	/* implements Bluetooth coexistance */
+ #define SSB_BFL_PACTRL			0x0002	/* GPIO 9 controlling the PA */
+ #define SSB_BFL_AIRLINEMODE		0x0004	/* implements GPIO 13 radio disable indication */
+ #define SSB_BFL_RSSI			0x0008	/* software calculates nrssi slope. */
