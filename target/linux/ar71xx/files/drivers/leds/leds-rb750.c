@@ -9,12 +9,13 @@
  *
  */
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/leds.h>
 #include <linux/slab.h>
 
-#include <asm/mach-ar71xx/mach-rb750.h>
+#include <asm/mach-ath79/mach-rb750.h>
 
 #define DRV_NAME	"leds-rb750"
 

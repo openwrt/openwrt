@@ -83,7 +83,7 @@ struct wrt160nl_header {
 
 static int wrt160nl_parse_partitions(struct mtd_info *master,
 				     struct mtd_partition **pparts,
-				     unsigned long origin)
+				     struct mtd_part_parser_data *data)
 {
 	struct wrt160nl_header *header;
 	struct trx_header *theader;
