@@ -160,7 +160,7 @@ ar71xx_board_detect() {
 	*AW-NR580)
 		name="aw-nr580"
 		;;
-	*DB120)
+	*"DB120 reference board")
 		name="db120"
 		;;
 	*"DIR-600 rev. A1")
