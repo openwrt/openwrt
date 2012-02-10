@@ -1,5 +1,14 @@
 --- a/drivers/net/ethernet/atheros/Kconfig
 +++ b/drivers/net/ethernet/atheros/Kconfig
+@@ -5,7 +5,7 @@
+ config NET_VENDOR_ATHEROS
+ 	bool "Atheros devices"
+ 	default y
+-	depends on PCI
++	depends on (PCI || ATH79)
+ 	---help---
+ 	  If you have a network (Ethernet) card belonging to this class, say Y
+ 	  and read the Ethernet-HOWTO, available from
 @@ -67,4 +67,6 @@ config ATL1C
  	  To compile this driver as a module, choose M here.  The module
  	  will be called atl1c.
