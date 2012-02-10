@@ -558,7 +558,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -67,6 +523,24 @@ config ATH79_MACH_UBNT_XM
+@@ -67,6 +513,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -583,7 +583,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -96,10 +570,6 @@ config SOC_AR934X
+@@ -96,10 +560,6 @@ config SOC_AR934X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -594,7 +594,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -110,7 +580,14 @@ config ATH79_DEV_DSA
+@@ -110,7 +570,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -610,7 +610,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -135,4 +612,7 @@ config ATH79_NVRAM
+@@ -135,4 +602,7 @@ config ATH79_NVRAM
  config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  

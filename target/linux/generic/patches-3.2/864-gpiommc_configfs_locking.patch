@@ -3,7 +3,7 @@ does not lock access between files.
 
 --- a/drivers/mmc/host/gpiommc.c
 +++ b/drivers/mmc/host/gpiommc.c
-@@ -143,6 +143,8 @@ struct gpiommc_configfs_device {
+@@ -144,6 +144,8 @@ struct gpiommc_configfs_device {
  	struct platform_device *pdev;
  	/* The configuration */
  	struct gpiommc_platform_data pdata;
@@ -12,7 +12,7 @@ does not lock access between files.
  };
  
  #define GPIO_INVALID	-1
-@@ -233,6 +235,8 @@ static ssize_t gpiommc_config_attr_show(
+@@ -234,6 +236,8 @@ static ssize_t gpiommc_config_attr_show(
  	unsigned int gpio;
  	int err = 0;
  
@@ -21,7 +21,7 @@ does not lock access between files.
  	if (attr == &gpiommc_attr_DI) {
  		gpio = dev->pdata.pins.gpio_di;
  		if (gpio == GPIO_INVALID)
-@@ -293,6 +297,8 @@ static ssize_t gpiommc_config_attr_show(
+@@ -294,6 +298,8 @@ static ssize_t gpiommc_config_attr_show(
  	WARN_ON(1);
  	err = -ENOSYS;
  out:
@@ -30,7 +30,7 @@ does not lock access between files.
  	return err ? err : count;
  }
  
-@@ -352,6 +358,8 @@ static ssize_t gpiommc_config_attr_store
+@@ -353,6 +359,8 @@ static ssize_t gpiommc_config_attr_store
  	int err = -EINVAL;
  	unsigned long data;
  
@@ -39,7 +39,7 @@ does not lock access between files.
  	if (attr == &gpiommc_attr_register) {
  		err = strict_strtoul(page, 10, &data);
  		if (err)
-@@ -477,6 +485,8 @@ static ssize_t gpiommc_config_attr_store
+@@ -478,6 +486,8 @@ static ssize_t gpiommc_config_attr_store
  	WARN_ON(1);
  	err = -ENOSYS;
  out:
@@ -48,7 +48,7 @@ does not lock access between files.
  	return err ? err : count;
  }
  
-@@ -513,6 +523,7 @@ static struct config_item *gpiommc_make_
+@@ -514,6 +524,7 @@ static struct config_item *gpiommc_make_
  	if (!dev)
  		return NULL;
  
