@@ -15,8 +15,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.zlib.net @SF/libpng
 PKG_MD5SUM:=be1e89810e66150f5b0327984d8625a0
 
-PKG_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/zlib
