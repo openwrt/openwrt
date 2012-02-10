@@ -1,0 +1,164 @@
+From b875f877d06acb852342636db4c3d1e6c9fe01ba Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 11 Jan 2012 22:25:11 +0100
+Subject: [PATCH 7/7] spi/ath79: make chipselect logic more flexible
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ .../include/asm/mach-ath79/ath79_spi_platform.h    |    8 ++-
+ drivers/spi/spi-ath79.c                            |   65 +++++++++++--------
+ 2 files changed, 45 insertions(+), 28 deletions(-)
+
+--- a/arch/mips/include/asm/mach-ath79/ath79_spi_platform.h
++++ b/arch/mips/include/asm/mach-ath79/ath79_spi_platform.h
+@@ -16,8 +16,14 @@ struct ath79_spi_platform_data {
+ 	unsigned	num_chipselect;
+ };
+ 
++enum ath79_spi_cs_type {
++	ATH79_SPI_CS_TYPE_INTERNAL,
++	ATH79_SPI_CS_TYPE_GPIO,
++};
++
+ struct ath79_spi_controller_data {
+-	unsigned	gpio;
++	enum ath79_spi_cs_type cs_type;
++	unsigned cs_line;
+ };
+ 
+ #endif /* _ATH79_SPI_PLATFORM_H */
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -30,6 +30,8 @@
+ 
+ #define DRV_NAME	"ath79-spi"
+ 
++#define ATH79_SPI_CS_LINE_MAX	2
++
+ struct ath79_spi {
+ 	struct spi_bitbang	bitbang;
+ 	u32			ioc_base;
+@@ -62,6 +64,7 @@ static void ath79_spi_chipselect(struct
+ {
+ 	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
+ 	int cs_high = (spi->mode & SPI_CS_HIGH) ? is_active : !is_active;
++	struct ath79_spi_controller_data *cdata = spi->controller_data;
+ 
+ 	if (is_active) {
+ 		/* set initial clock polarity */
+@@ -73,20 +76,21 @@ static void ath79_spi_chipselect(struct
+ 		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, sp->ioc_base);
+ 	}
+ 
+-	if (spi->chip_select) {
+-		struct ath79_spi_controller_data *cdata = spi->controller_data;
+-
+-		/* SPI is normally active-low */
+-		gpio_set_value(cdata->gpio, cs_high);
+-	} else {
++	switch (cdata->cs_type) {
++	case ATH79_SPI_CS_TYPE_INTERNAL:
+ 		if (cs_high)
+-			sp->ioc_base |= AR71XX_SPI_IOC_CS0;
++			sp->ioc_base |= AR71XX_SPI_IOC_CS(cdata->cs_line);
+ 		else
+-			sp->ioc_base &= ~AR71XX_SPI_IOC_CS0;
++			sp->ioc_base &= ~AR71XX_SPI_IOC_CS(cdata->cs_line);
+ 
+ 		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, sp->ioc_base);
+-	}
++		break;
+ 
++	case ATH79_SPI_CS_TYPE_GPIO:
++		/* SPI is normally active-low */
++		gpio_set_value(cdata->cs_line, cs_high);
++		break;
++	}
+ }
+ 
+ static void ath79_spi_enable(struct ath79_spi *sp)
+@@ -113,24 +117,30 @@ static void ath79_spi_disable(struct ath
+ static int ath79_spi_setup_cs(struct spi_device *spi)
+ {
+ 	struct ath79_spi_controller_data *cdata;
++	unsigned long flags;
+ 	int status;
+ 
+ 	cdata = spi->controller_data;
+-	if (spi->chip_select && !cdata)
++	if (!cdata)
+ 		return -EINVAL;
+ 
+ 	status = 0;
+-	if (spi->chip_select) {
+-		unsigned long flags;
++	switch (cdata->cs_type) {
++	case ATH79_SPI_CS_TYPE_INTERNAL:
++		if (cdata->cs_line > ATH79_SPI_CS_LINE_MAX)
++			status = -EINVAL;
++		break;
+ 
++	case ATH79_SPI_CS_TYPE_GPIO:
+ 		flags = GPIOF_DIR_OUT;
+ 		if (spi->mode & SPI_CS_HIGH)
+ 			flags |= GPIOF_INIT_HIGH;
+ 		else
+ 			flags |= GPIOF_INIT_LOW;
+ 
+-		status = gpio_request_one(cdata->gpio, flags,
++		status = gpio_request_one(cdata->cs_line, flags,
+ 					  dev_name(&spi->dev));
++		break;
+ 	}
+ 
+ 	return status;
+@@ -138,9 +148,15 @@ static int ath79_spi_setup_cs(struct spi
+ 
+ static void ath79_spi_cleanup_cs(struct spi_device *spi)
+ {
+-	if (spi->chip_select) {
+-		struct ath79_spi_controller_data *cdata = spi->controller_data;
+-		gpio_free(cdata->gpio);
++	struct ath79_spi_controller_data *cdata = spi->controller_data;
++
++	switch (cdata->cs_type) {
++	case ATH79_SPI_CS_TYPE_INTERNAL:
++		/* nothing to do */
++		break;
++	case ATH79_SPI_CS_TYPE_GPIO:
++		gpio_free(cdata->cs_line);
++		break;
+ 	}
+ }
+ 
+@@ -206,6 +222,10 @@ static __devinit int ath79_spi_probe(str
+ 	struct resource	*r;
+ 	int ret;
+ 
++	pdata = pdev->dev.platform_data;
++	if (!pdata)
++		return -EINVAL;
++
+ 	master = spi_alloc_master(&pdev->dev, sizeof(*sp));
+ 	if (master == NULL) {
+ 		dev_err(&pdev->dev, "failed to allocate spi master\n");
+@@ -215,17 +235,10 @@ static __devinit int ath79_spi_probe(str
+ 	sp = spi_master_get_devdata(master);
+ 	platform_set_drvdata(pdev, sp);
+ 
+-	pdata = pdev->dev.platform_data;
+-
+ 	master->setup = ath79_spi_setup;
+ 	master->cleanup = ath79_spi_cleanup;
+-	if (pdata) {
+-		master->bus_num = pdata->bus_num;
+-		master->num_chipselect = pdata->num_chipselect;
+-	} else {
+-		master->bus_num = -1;
+-		master->num_chipselect = 1;
+-	}
++	master->bus_num = pdata->bus_num;
++	master->num_chipselect = pdata->num_chipselect;
+ 
+ 	sp->bitbang.master = spi_master_get(master);
+ 	sp->bitbang.chipselect = ath79_spi_chipselect;

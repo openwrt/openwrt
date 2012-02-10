@@ -1,0 +1,30 @@
+From 7385ff2cb72d6a0107890760466b9564aa5204c1 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 9 Jan 2012 15:03:28 +0100
+Subject: [PATCH 3/7] spi/ath79: remove superfluous chip select code
+
+The spi_bitbang driver calls the chipselect function
+of the driver from spi_bitbang_setup in order to
+deselect the given SPI chip, so we don't have to
+initialize the CS line here.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/spi/spi-ath79.c |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -121,12 +121,6 @@ static int ath79_spi_setup_cs(struct spi
+ 			gpio_free(cdata->gpio);
+ 			return status;
+ 		}
+-	} else {
+-		if (spi->mode & SPI_CS_HIGH)
+-			sp->ioc_base |= AR71XX_SPI_IOC_CS0;
+-		else
+-			sp->ioc_base &= ~AR71XX_SPI_IOC_CS0;
+-		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, sp->ioc_base);
+ 	}
+ 
+ 	return 0;

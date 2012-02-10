@@ -1,0 +1,42 @@
+From 48b7e765e6e097d20d809fadd17a4355d26ad6d5 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 11 Jan 2012 20:06:35 +0100
+Subject: [PATCH 1/7] spi/ath79: add delay between SCK changes
+
+The driver uses the "as fast as it can" approach
+to drive the SCK signal. However this does not
+work with certain low speed SPI chips (e.g. the
+PCF2123 RTC chip). Add per-bit slowdowns in order
+to be able to use  the driver with such chips as
+well.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/spi/spi-ath79.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -52,6 +52,12 @@ static inline struct ath79_spi *ath79_sp
+ 	return spi_master_get_devdata(spi->master);
+ }
+ 
++static inline void ath79_spi_delay(unsigned nsecs)
++{
++	if (nsecs)
++		ndelay(nsecs);
++}
++
+ static void ath79_spi_chipselect(struct spi_device *spi, int is_active)
+ {
+ 	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
+@@ -184,7 +190,9 @@ static u32 ath79_spi_txrx_mode0(struct s
+ 
+ 		/* setup MSB (to slave) on trailing edge */
+ 		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, out);
++		ath79_spi_delay(nsecs);
+ 		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, out | AR71XX_SPI_IOC_CLK);
++		ath79_spi_delay(nsecs);
+ 
+ 		word <<= 1;
+ 	}

@@ -1,0 +1,23 @@
+From 6b6803a249a27aa708bc5f24aa15270e30f3de61 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sat, 10 Dec 2011 19:55:05 +0100
+Subject: [PATCH 29/35] MIPS: ath79: register UART device for AR934X SoCs
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+---
+ arch/mips/ath79/dev-common.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/ath79/dev-common.c
++++ b/arch/mips/ath79/dev-common.c
+@@ -89,7 +89,8 @@ void __init ath79_register_uart(void)
+ 
+ 	if (soc_is_ar71xx() ||
+ 	    soc_is_ar724x() ||
+-	    soc_is_ar913x()) {
++	    soc_is_ar913x() ||
++	    soc_is_ar934x()) {
+ 		ath79_uart_data[0].uartclk = clk_get_rate(clk);
+ 		platform_device_register(&ath79_uart_device);
+ 	} else if (soc_is_ar933x()) {

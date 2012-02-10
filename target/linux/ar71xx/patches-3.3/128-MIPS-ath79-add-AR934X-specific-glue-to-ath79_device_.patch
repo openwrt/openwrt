@@ -1,0 +1,56 @@
+From da0f20f8a99de9193fc484a25d1f9edc913c98fd Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sat, 10 Dec 2011 20:09:39 +0100
+Subject: [PATCH 28/35] MIPS: ath79: add AR934X specific glue to ath79_device_reset_{clear,set}
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+---
+ arch/mips/ath79/common.c                       |    9 ++++++++-
+ arch/mips/include/asm/mach-ath79/ar71xx_regs.h |    1 +
+ 2 files changed, 9 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/ath79/common.c
++++ b/arch/mips/ath79/common.c
+@@ -1,9 +1,12 @@
+ /*
+  *  Atheros AR71XX/AR724X/AR913X common routines
+  *
+- *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2010-2011 Jaiganesh Narayanan <jnarayanan@atheros.com>
++ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
+  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+  *
++ *  Parts of this file are based on Atheros' 2.6.15/2.6.31 BSP
++ *
+  *  This program is free software; you can redistribute it and/or modify it
+  *  under the terms of the GNU General Public License version 2 as published
+  *  by the Free Software Foundation.
+@@ -67,6 +70,8 @@ void ath79_device_reset_set(u32 mask)
+ 		reg = AR913X_RESET_REG_RESET_MODULE;
+ 	else if (soc_is_ar933x())
+ 		reg = AR933X_RESET_REG_RESET_MODULE;
++	else if (soc_is_ar934x())
++		reg = AR934X_RESET_REG_RESET_MODULE;
+ 	else
+ 		BUG();
+ 
+@@ -91,6 +96,8 @@ void ath79_device_reset_clear(u32 mask)
+ 		reg = AR913X_RESET_REG_RESET_MODULE;
+ 	else if (soc_is_ar933x())
+ 		reg = AR933X_RESET_REG_RESET_MODULE;
++	else if (soc_is_ar934x())
++		reg = AR934X_RESET_REG_RESET_MODULE;
+ 	else
+ 		BUG();
+ 
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+@@ -227,6 +227,7 @@
+ #define AR933X_RESET_REG_RESET_MODULE		0x1c
+ #define AR933X_RESET_REG_BOOTSTRAP		0xac
+ 
++#define AR934X_RESET_REG_RESET_MODULE		0x1c
+ #define AR934X_RESET_REG_BOOTSTRAP		0xb0
+ #define AR934X_RESET_REG_PCIE_WMAC_INT_STATUS	0xac
+ 

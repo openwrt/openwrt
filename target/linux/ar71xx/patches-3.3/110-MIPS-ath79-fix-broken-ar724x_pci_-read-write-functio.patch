@@ -1,0 +1,219 @@
+From 2e535c334018d58b0bf6df583486abda5bfb2003 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Fri, 18 Nov 2011 22:25:30 +0100
+Subject: [PATCH 10/35] MIPS: ath79: fix broken ar724x_pci_{read,write} functions
+
+The current ar724x_pci_{read,write} functions are
+broken. Due to that, pci_read_config_byte returns
+with bogus values, and pci_write_config_{byte,word}
+unconditionally clears the accessed PCI configuration
+registers instead of changing the value of them.
+
+The patch fixes the broken functions, thus the PCI
+configuration space can be accessed correctly.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+
+v2: - no changes
+
+Output of 'lspci -vv' without the patch:
+
+00:00.0 Network controller: Atheros Communications Inc. AR9285 Wireless
+Network Adapter (PCI-Express) (rev 01)
+        Subsystem: Atheros Communications Inc. Device a091
+        Control: I/O- Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx-
+        Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+        Latency: 0
+        Interrupt: pin A routed to IRQ 0
+        Region 0: Memory at 10000000 (64-bit, non-prefetchable) [size=64K]
+        Capabilities: [40] Power Management version 3
+                Flags: PMEClk- DSI- D1+ D2- AuxCurrent=375mA PME(D0+,D1+,D2-,D3hot+,D3cold-)
+                Status: D0 NoSoftRst- PME-Enable- DSel=0 DScale=0 PME-
+        Capabilities: [50] MSI: Enable- Count=1/1 Maskable- 64bit-
+                Address: 00000000  Data: 0000
+        Capabilities: [60] Express (v2) Legacy Endpoint, MSI 00
+                DevCap: MaxPayload 128 bytes, PhantFunc 0, Latency L0s <512ns, L1 <64us
+                        ExtTag- AttnBtn- AttnInd- PwrInd- RBE+ FLReset-
+                DevCtl: Report errors: Correctable- Non-Fatal- Fatal- Unsupported-
+                        RlxdOrd+ ExtTag- PhantFunc- AuxPwr- NoSnoop-
+                        MaxPayload 128 bytes, MaxReadReq 512 bytes
+                DevSta: CorrErr- UncorrErr- FatalErr- UnsuppReq- AuxPwr- TransPend-
+                LnkCap: Port #0, Speed 2.5GT/s, Width x1, ASPM unknown, Latency L0 <512ns, L1 <64us
+                        ClockPM- Surprise- LLActRep- BwNot-
+                LnkCtl: ASPM Disabled; RCB 64 bytes Disabled- Retrain- CommClk-
+                        ExtSynch- ClockPM- AutWidDis- BWInt- AutBWInt-
+                LnkSta: Speed 2.5GT/s, Width x1, TrErr- Train- SlotClk+ DLActive- BWMgmt- ABWMgmt-
+                DevCap2: Completion Timeout: Not Supported, TimeoutDis+
+                DevCtl2: Completion Timeout: 50us to 50ms, TimeoutDis-
+                LnkCtl2: Target Link Speed: 2.5GT/s, EnterCompliance- SpeedDis-, Selectable De-emphasis: -6dB
+                         Transmit Margin: Normal Operating Range, EnterModifiedCompliance- ComplianceSOS-
+                         Compliance De-emphasis: -6dB
+                LnkSta2: Current De-emphasis Level: -6dB
+
+Output of 'lspci -vv' with the patch:
+
+00:00.0 Network controller: Atheros Communications Inc. AR9285 Wireless
+Network Adapter (PCI-Express) (rev 01)
+        Subsystem: Atheros Communications Inc. Device a091
+        Control: I/O- Mem+ BusMaster+ SpecCycle- MemWINV- VGASnoop- ParErr- Stepping- SERR- FastB2B- DisINTx-
+        Status: Cap+ 66MHz- UDF- FastB2B- ParErr- DEVSEL=fast >TAbort- <TAbort- <MAbort- >SERR- <PERR- INTx-
+        Latency: 0
+        Interrupt: pin A routed to IRQ 48
+        Region 0: Memory at 10000000 (64-bit, non-prefetchable) [size=64K]
+        Capabilities: [40] Power Management version 3
+                Flags: PMEClk- DSI- D1+ D2- AuxCurrent=375mA PME(D0+,D1+,D2-,D3hot+,D3cold-)
+                Status: D0 NoSoftRst- PME-Enable- DSel=0 DScale=0 PME-
+        Capabilities: [50] MSI: Enable- Count=1/1 Maskable- 64bit-
+                Address: 00000000  Data: 0000
+        Capabilities: [60] Express (v2) Legacy Endpoint, MSI 00
+                DevCap: MaxPayload 128 bytes, PhantFunc 0, Latency L0s <512ns, L1 <64us
+                        ExtTag- AttnBtn- AttnInd- PwrInd- RBE+ FLReset-
+                DevCtl: Report errors: Correctable- Non-Fatal- Fatal- Unsupported-
+                        RlxdOrd+ ExtTag- PhantFunc- AuxPwr- NoSnoop-
+                        MaxPayload 128 bytes, MaxReadReq 512 bytes
+                DevSta: CorrErr- UncorrErr- FatalErr- UnsuppReq- AuxPwr- TransPend-
+                LnkCap: Port #0, Speed 2.5GT/s, Width x1, ASPM unknown, Latency L0 <512ns, L1 <64us
+                        ClockPM- Surprise- LLActRep- BwNot-
+                LnkCtl: ASPM Disabled; RCB 64 bytes Disabled- Retrain- CommClk-
+                        ExtSynch- ClockPM- AutWidDis- BWInt- AutBWInt-
+                LnkSta: Speed 2.5GT/s, Width x1, TrErr- Train- SlotClk+ DLActive- BWMgmt- ABWMgmt-
+                DevCap2: Completion Timeout: Not Supported, TimeoutDis+
+                DevCtl2: Completion Timeout: 50us to 50ms, TimeoutDis-
+                LnkCtl2: Target Link Speed: 2.5GT/s, EnterCompliance- SpeedDis-, Selectable De-emphasis: -6dB
+                         Transmit Margin: Normal Operating Range, EnterModifiedCompliance- ComplianceSOS-
+                         Compliance De-emphasis: -6dB
+                LnkSta2: Current De-emphasis Level: -6dB
+        Capabilities: [100 v1] Advanced Error Reporting
+                UESta:  DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+                UEMsk:  DLP- SDES- TLP- FCP- CmpltTO- CmpltAbrt- UnxCmplt- RxOF- MalfTLP- ECRC- UnsupReq- ACSViol-
+                UESvrt: DLP+ SDES+ TLP- FCP+ CmpltTO- CmpltAbrt- UnxCmplt- RxOF+ MalfTLP+ ECRC- UnsupReq- ACSViol-
+                CESta:  RxErr- BadTLP- BadDLLP- Rollover- Timeout- NonFatalErr-
+                CEMsk:  RxErr- BadTLP- BadDLLP- Rollover- Timeout- NonFatalErr+
+                AERCap: First Error Pointer: 00, GenCap+ CGenEn- ChkCap+ ChkEn-
+        Capabilities: [140 v1] Virtual Channel
+                Caps:   LPEVC=0 RefClk=100ns PATEntryBits=1
+                Arb:    Fixed- WRR32- WRR64- WRR128-
+                Ctrl:   ArbSelect=Fixed
+                Status: InProgress-
+                VC0:    Caps:   PATOffset=00 MaxTimeSlots=1 RejSnoopTrans-
+                        Arb:    Fixed- WRR32- WRR64- WRR128- TWRR128- WRR256-
+                        Ctrl:   Enable+ ID=0 ArbSelect=Fixed TC/VC=ff
+                        Status: NegoPending- InProgress-
+        Capabilities: [160 v1] Device Serial Number 00-15-17-ff-ff-24-14-12
+        Capabilities: [170 v1] Power Budgeting <?>
+---
+ arch/mips/pci/pci-ar724x.c |   52 ++++++++++++++++++++++----------------------
+ 1 files changed, 26 insertions(+), 26 deletions(-)
+
+--- a/arch/mips/pci/pci-ar724x.c
++++ b/arch/mips/pci/pci-ar724x.c
+@@ -22,8 +22,9 @@ static void __iomem *ar724x_pci_devcfg_b
+ static int ar724x_pci_read(struct pci_bus *bus, unsigned int devfn, int where,
+ 			    int size, uint32_t *value)
+ {
+-	unsigned long flags, addr, tval, mask;
++	unsigned long flags;
+ 	void __iomem *base;
++	u32 data;
+ 
+ 	if (devfn)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+@@ -31,24 +32,22 @@ static int ar724x_pci_read(struct pci_bu
+ 	base = ar724x_pci_devcfg_base;
+ 
+ 	spin_lock_irqsave(&ar724x_pci_lock, flags);
++	data = __raw_readl(base + (where & ~3));
+ 
+ 	switch (size) {
+ 	case 1:
+-		addr = where & ~3;
+-		mask = 0xff000000 >> ((where % 4) * 8);
+-		tval = __raw_readl(base + addr);
+-		tval = tval & ~mask;
+-		*value = (tval >> ((4 - (where % 4))*8));
++		if (where & 1)
++			data >>= 8;
++		if (where & 2)
++			data >>= 16;
++		data &= 0xff;
+ 		break;
+ 	case 2:
+-		addr = where & ~3;
+-		mask = 0xffff0000 >> ((where % 4)*8);
+-		tval = __raw_readl(base + addr);
+-		tval = tval & ~mask;
+-		*value = (tval >> ((4 - (where % 4))*8));
++		if (where & 2)
++			data >>= 16;
++		data &= 0xffff;
+ 		break;
+ 	case 4:
+-		*value = __raw_readl(base + where);
+ 		break;
+ 	default:
+ 		spin_unlock_irqrestore(&ar724x_pci_lock, flags);
+@@ -57,6 +56,7 @@ static int ar724x_pci_read(struct pci_bu
+ 	}
+ 
+ 	spin_unlock_irqrestore(&ar724x_pci_lock, flags);
++	*value = data;
+ 
+ 	return PCIBIOS_SUCCESSFUL;
+ }
+@@ -64,8 +64,10 @@ static int ar724x_pci_read(struct pci_bu
+ static int ar724x_pci_write(struct pci_bus *bus, unsigned int devfn, int where,
+ 			     int size, uint32_t value)
+ {
+-	unsigned long flags, tval, addr, mask;
++	unsigned long flags;
+ 	void __iomem *base;
++	u32 data;
++	int s;
+ 
+ 	if (devfn)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+@@ -73,26 +75,21 @@ static int ar724x_pci_write(struct pci_b
+ 	base = ar724x_pci_devcfg_base;
+ 
+ 	spin_lock_irqsave(&ar724x_pci_lock, flags);
++	data = __raw_readl(base + (where & ~3));
+ 
+ 	switch (size) {
+ 	case 1:
+-		addr = where & ~3;
+-		mask = 0xff000000 >> ((where % 4)*8);
+-		tval = __raw_readl(base + addr);
+-		tval = tval & ~mask;
+-		tval |= (value << ((4 - (where % 4))*8)) & mask;
+-		__raw_writel(tval, base + addr);
++		s = ((where & 3) * 8);
++		data &= ~(0xff << s);
++		data |= ((value & 0xff) << s);
+ 		break;
+ 	case 2:
+-		addr = where & ~3;
+-		mask = 0xffff0000 >> ((where % 4)*8);
+-		tval = __raw_readl(base + addr);
+-		tval = tval & ~mask;
+-		tval |= (value << ((4 - (where % 4))*8)) & mask;
+-		__raw_writel(tval, base + addr);
++		s = ((where & 2) * 8);
++		data &= ~(0xffff << s);
++		data |= ((value & 0xffff) << s);
+ 		break;
+ 	case 4:
+-		__raw_writel(value, (base + where));
++		data = value;
+ 		break;
+ 	default:
+ 		spin_unlock_irqrestore(&ar724x_pci_lock, flags);
+@@ -100,6 +97,9 @@ static int ar724x_pci_write(struct pci_b
+ 		return PCIBIOS_BAD_REGISTER_NUMBER;
+ 	}
+ 
++	__raw_writel(data, base + (where & ~3));
++	/* flush write */
++	__raw_readl(base + (where & ~3));
+ 	spin_unlock_irqrestore(&ar724x_pci_lock, flags);
+ 
+ 	return PCIBIOS_SUCCESSFUL;

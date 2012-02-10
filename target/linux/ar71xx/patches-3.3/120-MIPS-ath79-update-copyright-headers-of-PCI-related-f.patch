@@ -1,0 +1,77 @@
+From e83c294ff219ff709b8179cbff64f293199a6dad Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 22 Nov 2011 21:13:58 +0100
+Subject: [PATCH 20/35] MIPS: ath79: update copyright headers of PCI related files
+
+Add copyright records according to the recent changes in
+the PCI code. Also fix up the descriptions.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
+
+Just in case if someone is curious about why 2008 and 2009 years are
+present in this change:
+
+The recent PCI specific changes were based on an existing
+code which can be found in the OpenWrt repository, and we
+are working on that since 2008.
+
+v2: - no changes
+---
+ arch/mips/ath79/pci.c                  |    4 ++++
+ arch/mips/ath79/pci.h                  |    4 +++-
+ arch/mips/include/asm/mach-ath79/pci.h |    4 +++-
+ arch/mips/pci/pci-ar724x.c             |    3 ++-
+ 4 files changed, 12 insertions(+), 3 deletions(-)
+
+--- a/arch/mips/ath79/pci.c
++++ b/arch/mips/ath79/pci.c
+@@ -2,6 +2,10 @@
+  *  Atheros AR71XX/AR724X specific PCI setup code
+  *
+  *  Copyright (C) 2011 René Bolldorf <xsecute@googlemail.com>
++ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
++ *
++ *  Parts of this file are based on Atheros' 2.6.15 BSP
+  *
+  *  This program is free software; you can redistribute it and/or modify it
+  *  under the terms of the GNU General Public License version 2 as published
+--- a/arch/mips/ath79/pci.h
++++ b/arch/mips/ath79/pci.h
+@@ -1,7 +1,9 @@
+ /*
+- *  Atheros 724x PCI support
++ *  Atheros AR71XX/AR724X PCI support
+  *
+  *  Copyright (C) 2011 René Bolldorf <xsecute@googlemail.com>
++ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+  *
+  *  This program is free software; you can redistribute it and/or modify it
+  *  under the terms of the GNU General Public License version 2 as published
+--- a/arch/mips/include/asm/mach-ath79/pci.h
++++ b/arch/mips/include/asm/mach-ath79/pci.h
+@@ -1,7 +1,9 @@
+ /*
+- *  Atheros 724x PCI support
++ *  Atheros AR71XX/AR724X PCI support
+  *
+  *  Copyright (C) 2011 René Bolldorf <xsecute@googlemail.com>
++ *  Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+  *
+  *  This program is free software; you can redistribute it and/or modify it
+  *  under the terms of the GNU General Public License version 2 as published
+--- a/arch/mips/pci/pci-ar724x.c
++++ b/arch/mips/pci/pci-ar724x.c
+@@ -1,7 +1,8 @@
+ /*
+- *  Atheros 724x PCI support
++ *  Atheros AR724X PCI host controller driver
+  *
+  *  Copyright (C) 2011 René Bolldorf <xsecute@googlemail.com>
++ *  Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
+  *
+  *  This program is free software; you can redistribute it and/or modify it
+  *  under the terms of the GNU General Public License version 2 as published
