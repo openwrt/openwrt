@@ -43,13 +43,13 @@ static inline void *to_ram_addr(void *addr)
 	return NULL;
 }
 
+static char ramips_cmdline_buf[COMMAND_LINE_SIZE] __initdata;
 static void __init prom_append_cmdline(const char *name,
 				       const char *value)
 {
-	char buf[COMMAND_LINE_SIZE];
-
-	snprintf(buf, sizeof(buf), " %s=%s", name, value);
-	strlcat(arcs_cmdline, buf, sizeof(arcs_cmdline));
+	snprintf(ramips_cmdline_buf, sizeof(ramips_cmdline_buf),
+		 " %s=%s", name, value);
+	strlcat(arcs_cmdline, ramips_cmdline_buf, sizeof(arcs_cmdline));
 }
 
 #ifdef CONFIG_IMAGE_CMDLINE_HACK
