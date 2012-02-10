@@ -99,7 +99,6 @@ define KernelPackage/usb-ohci
   KCONFIG:= \
 	CONFIG_USB_OHCI \
 	CONFIG_USB_OHCI_HCD \
-	CONFIG_USB_OHCI_AR71XX=y \
 	CONFIG_USB_OHCI_ATH79=y \
 	CONFIG_USB_OHCI_BCM63XX=y \
 	CONFIG_USB_OCTEON_OHCI=y
@@ -211,7 +210,6 @@ define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx
   KCONFIG:=CONFIG_USB_EHCI_HCD \
-    CONFIG_USB_EHCI_AR71XX=y \
     CONFIG_USB_EHCI_ATH79=y \
     CONFIG_USB_EHCI_BCM63XX=y \
     CONFIG_USB_OCTEON_EHCI=y \
