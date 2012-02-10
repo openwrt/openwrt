@@ -5,7 +5,7 @@
  	sc->sc_ah = ah;
  
 +	/* WAR for AR7100 PCI bug */
-+#ifdef CONFIG_ATHEROS_AR71XX
++#if defined(CONFIG_ATHEROS_AR71XX) || defined(CONFIG_ATH79)
 +	if ((ar_device(sc->devid) >= 5210) && (ar_device(sc->devid) < 5416)) {
 +		ath_hal_setcapability(ah, HAL_CAP_DMABURST_RX, 0, HAL_DMABURST_4B, NULL);
 +		ath_hal_setcapability(ah, HAL_CAP_DMABURST_TX, 0, HAL_DMABURST_4B, NULL);

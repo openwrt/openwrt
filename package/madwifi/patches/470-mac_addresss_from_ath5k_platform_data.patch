@@ -32,5 +32,5 @@
 +		ath_hal_setmac(ah, pdata->macaddr);
 +#endif
  	/* WAR for AR7100 PCI bug */
- #ifdef CONFIG_ATHEROS_AR71XX
+ #if defined(CONFIG_ATHEROS_AR71XX) || defined(CONFIG_ATH79)
  	if ((ar_device(sc->devid) >= 5210) && (ar_device(sc->devid) < 5416)) {
