@@ -1,0 +1,98 @@
+From 4518ae06e5fc953abfd9c2b66c6155fc2b2696ce Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Mon, 9 Jan 2012 15:00:46 +0100
+Subject: [PATCH 5/7] spi/ath79: introduce ath79_spi_{en,dis}able helpers
+
+---
+ drivers/spi/spi-ath79.c |   41 +++++++++++++++++++++++++----------------
+ 1 files changed, 25 insertions(+), 16 deletions(-)
+
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -89,16 +89,8 @@ static void ath79_spi_chipselect(struct
+ 
+ }
+ 
+-static int ath79_spi_setup_cs(struct spi_device *spi)
++static void ath79_spi_enable(struct ath79_spi *sp)
+ {
+-	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
+-	struct ath79_spi_controller_data *cdata;
+-	int status;
+-
+-	cdata = spi->controller_data;
+-	if (spi->chip_select && !cdata)
+-		return -EINVAL;
+-
+ 	/* enable GPIO mode */
+ 	ath79_spi_wr(sp, AR71XX_SPI_REG_FS, AR71XX_SPI_FS_GPIO);
+ 
+@@ -108,6 +100,24 @@ static int ath79_spi_setup_cs(struct spi
+ 
+ 	/* TODO: setup speed? */
+ 	ath79_spi_wr(sp, AR71XX_SPI_REG_CTRL, 0x43);
++}
++
++static void ath79_spi_disable(struct ath79_spi *sp)
++{
++	/* restore CTRL register */
++	ath79_spi_wr(sp, AR71XX_SPI_REG_CTRL, sp->reg_ctrl);
++	/* disable GPIO mode */
++	ath79_spi_wr(sp, AR71XX_SPI_REG_FS, 0);
++}
++
++static int ath79_spi_setup_cs(struct spi_device *spi)
++{
++	struct ath79_spi_controller_data *cdata;
++	int status;
++
++	cdata = spi->controller_data;
++	if (spi->chip_select && !cdata)
++		return -EINVAL;
+ 
+ 	status = 0;
+ 	if (spi->chip_select) {
+@@ -128,17 +138,10 @@ static int ath79_spi_setup_cs(struct spi
+ 
+ static void ath79_spi_cleanup_cs(struct spi_device *spi)
+ {
+-	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
+-
+ 	if (spi->chip_select) {
+ 		struct ath79_spi_controller_data *cdata = spi->controller_data;
+ 		gpio_free(cdata->gpio);
+ 	}
+-
+-	/* restore CTRL register */
+-	ath79_spi_wr(sp, AR71XX_SPI_REG_CTRL, sp->reg_ctrl);
+-	/* disable GPIO mode */
+-	ath79_spi_wr(sp, AR71XX_SPI_REG_FS, 0);
+ }
+ 
+ static int ath79_spi_setup(struct spi_device *spi)
+@@ -242,13 +245,15 @@ static __devinit int ath79_spi_probe(str
+ 		goto err_put_master;
+ 	}
+ 
++	ath79_spi_enable(sp);
+ 	ret = spi_bitbang_start(&sp->bitbang);
+ 	if (ret)
+-		goto err_unmap;
++		goto err_disable;
+ 
+ 	return 0;
+ 
+-err_unmap:
++err_disable:
++	ath79_spi_disable(sp);
+ 	iounmap(sp->base);
+ err_put_master:
+ 	platform_set_drvdata(pdev, NULL);
+@@ -262,6 +267,7 @@ static __devexit int ath79_spi_remove(st
+ 	struct ath79_spi *sp = platform_get_drvdata(pdev);
+ 
+ 	spi_bitbang_stop(&sp->bitbang);
++	ath79_spi_disable(sp);
+ 	iounmap(sp->base);
+ 	platform_set_drvdata(pdev, NULL);
+ 	spi_master_put(sp->bitbang.master);

@@ -1,0 +1,49 @@
+--- a/arch/mips/ath79/dev-eth.c
++++ b/arch/mips/ath79/dev-eth.c
+@@ -331,6 +331,10 @@ static void ar934x_set_speed_ge1(int spe
+ 	/* TODO */
+ }
+ 
++static void ath79_ddr_no_flush(void)
++{
++}
++
+ static void ath79_ddr_flush_ge0(void)
+ {
+ 	ath79_ddr_wb_flush(AR71XX_DDR_REG_FLUSH_GE0);
+@@ -371,16 +375,6 @@ static void ar933x_ddr_flush_ge1(void)
+ 	ath79_ddr_wb_flush(AR933X_DDR_REG_FLUSH_GE1);
+ }
+ 
+-static void ar934x_ddr_flush_ge0(void)
+-{
+-	ath79_ddr_wb_flush(AR934X_DDR_REG_FLUSH_GE0);
+-}
+-
+-static void ar934x_ddr_flush_ge1(void)
+-{
+-	ath79_ddr_wb_flush(AR934X_DDR_REG_FLUSH_GE1);
+-}
+-
+ static struct resource ath79_eth0_resources[] = {
+ 	{
+ 		.name	= "mac_base",
+@@ -817,17 +811,16 @@ void __init ath79_register_eth(unsigned 
+ 		if (id == 0) {
+ 			pdata->reset_bit = AR934X_RESET_GE0_MAC |
+ 					   AR934X_RESET_GE0_MDIO;
+-			pdata->ddr_flush =ar934x_ddr_flush_ge0;
+ 			pdata->set_speed = ar934x_set_speed_ge0;
+ 		} else {
+ 			pdata->reset_bit = AR934X_RESET_GE1_MAC |
+ 					   AR934X_RESET_GE1_MDIO;
+-			pdata->ddr_flush = ar934x_ddr_flush_ge1;
+ 			pdata->set_speed = ar934x_set_speed_ge1;
+ 
+ 			pdata->switch_data = &ath79_switch_data;
+ 		}
+ 
++		pdata->ddr_flush = ath79_ddr_no_flush;
+ 		pdata->has_gbit = 1;
+ 		pdata->is_ar724x = 1;
+ 

@@ -1,0 +1,62 @@
+From f299f36542f81f05cff7cdebb50abde202faf6df Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sat, 17 Dec 2011 10:04:18 +0100
+Subject: [PATCH 32/35] MIPS: ath79: add PCI_AR724X Kconfig symbol
+
+The AR724X specific PCI code can be used for the
+AR934X SoCs, however it can be selected only if
+SOC_AR724X is set.
+
+Introduce a new Kconfig symbol in order to be able
+to use the code for AR934X as well.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+---
+ arch/mips/ath79/Kconfig                |    4 ++++
+ arch/mips/include/asm/mach-ath79/pci.h |    2 +-
+ arch/mips/pci/Makefile                 |    2 +-
+ 3 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -59,6 +59,7 @@ config SOC_AR724X
+ 	select USB_ARCH_HAS_EHCI
+ 	select USB_ARCH_HAS_OHCI
+ 	select HW_HAS_PCI
++	select PCI_AR724X if PCI
+ 	def_bool n
+ 
+ config SOC_AR913X
+@@ -73,6 +74,9 @@ config SOC_AR934X
+ 	select USB_ARCH_HAS_EHCI
+ 	def_bool n
+ 
++config PCI_AR724X
++	def_bool n
++
+ config ATH79_DEV_GPIO_BUTTONS
+ 	def_bool n
+ 
+--- a/arch/mips/include/asm/mach-ath79/pci.h
++++ b/arch/mips/include/asm/mach-ath79/pci.h
+@@ -19,7 +19,7 @@ int ar71xx_pcibios_init(void);
+ static inline int ar71xx_pcibios_init(void) { return 0 };
+ #endif
+ 
+-#if defined(CONFIG_PCI) && defined(CONFIG_SOC_AR724X)
++#if defined(CONFIG_PCI_AR724X)
+ int ar724x_pcibios_init(int irq);
+ #else
+ static inline int ar724x_pcibios_init(int irq) { return 0 };
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
+@@ -20,7 +20,7 @@ obj-$(CONFIG_BCM63XX)		+= pci-bcm63xx.o
+ 					ops-bcm63xx.o
+ obj-$(CONFIG_MIPS_ALCHEMY)	+= pci-alchemy.o
+ obj-$(CONFIG_SOC_AR71XX)	+= pci-ar71xx.o
+-obj-$(CONFIG_SOC_AR724X)	+= pci-ar724x.o
++obj-$(CONFIG_PCI_AR724X)	+= pci-ar724x.o
+ 
+ #
+ # These are still pretty much in the old state, watch, go blind.

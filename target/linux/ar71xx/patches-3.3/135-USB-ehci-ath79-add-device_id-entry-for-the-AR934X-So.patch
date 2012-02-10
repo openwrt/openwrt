@@ -1,0 +1,41 @@
+From cbf8930fe259777fb746f0387bf821729061c122 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Sun, 11 Dec 2011 22:09:20 +0100
+Subject: [PATCH 35/35] USB: ehci-ath79: add device_id entry for the AR934X SoCs
+
+Also make the USB_EHCI_ATH79 selectable for the AR934X SoCs.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+Cc: Alan Stern <stern@rowland.harvard.edu>
+Cc: Greg Kroah-Hartman <gregkh@suse.de>
+Cc: linux-usb@vger.kernel.org
+---
+ drivers/usb/host/Kconfig      |    2 +-
+ drivers/usb/host/ehci-ath79.c |    4 ++++
+ 2 files changed, 5 insertions(+), 1 deletions(-)
+
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -219,7 +219,7 @@ config USB_CNS3XXX_EHCI
+ 
+ config USB_EHCI_ATH79
+ 	bool "EHCI support for AR7XXX/AR9XXX SoCs"
+-	depends on USB_EHCI_HCD && (SOC_AR71XX || SOC_AR724X || SOC_AR913X || SOC_AR933X)
++	depends on USB_EHCI_HCD && (SOC_AR71XX || SOC_AR724X || SOC_AR913X || SOC_AR933X || SOC_AR934X)
+ 	select USB_EHCI_ROOT_HUB_TT
+ 	default y
+ 	---help---
+--- a/drivers/usb/host/ehci-ath79.c
++++ b/drivers/usb/host/ehci-ath79.c
+@@ -37,6 +37,10 @@ static const struct platform_device_id e
+ 		.driver_data	= EHCI_ATH79_IP_V2,
+ 	},
+ 	{
++		.name		= "ar934x-ehci",
++		.driver_data	= EHCI_ATH79_IP_V2,
++	},
++	{
+ 		/* terminating entry */
+ 	},
+ };
