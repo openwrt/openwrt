@@ -282,6 +282,10 @@ ramips_eth_rx_hw(unsigned long ptr)
 		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN);
 		/* Reuse the buffer on allocation failures */
 		if (new_skb) {
+			/* TODO: convert to use dma_address_t */
+			dma_unmap_single(NULL, priv->rx[rx].rxd1, MAX_RX_LENGTH,
+					 DMA_FROM_DEVICE);
+
 			skb_put(rx_skb, pktlen);
 			rx_skb->dev = dev;
 			rx_skb->protocol = eth_type_trans(rx_skb, dev);
