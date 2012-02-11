@@ -91,7 +91,8 @@ ramips_setup_macs()
 		;;
 
 	esr-9753 | \
-	nbg-419n)
+	nbg-419n | \
+	wcr-150gn)
                 lan_mac=$(ramips_get_mac_binary factory 4)
                 wan_mac=$(ramips_get_mac_binary factory 40)
 		;;
@@ -104,11 +105,6 @@ ramips_setup_macs()
 	w502u)
                 lan_mac=$(ramips_get_mac_binary factory 40)
                 wan_mac=$(ramips_get_mac_binary factory 46)
-		;;
-
-	wcr-150gn)
-                lan_mac=$(ramips_get_mac_binary factory 4)
-                wan_mac=$(ramips_get_mac_binary factory 40)
 		;;
 
 	wl341v3)
