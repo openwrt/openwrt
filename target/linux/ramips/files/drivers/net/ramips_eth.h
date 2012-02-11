@@ -222,7 +222,7 @@ struct raeth_priv
 	unsigned int		phy_tx;
 	struct tasklet_struct	tx_housekeeping_tasklet;
 	struct ramips_tx_dma	*tx;
-	struct sk_buff		*tx_skb[NUM_RX_DESC];
+	struct sk_buff		*tx_skb[NUM_TX_DESC];
 
 	unsigned int		skb_free_idx;
 
