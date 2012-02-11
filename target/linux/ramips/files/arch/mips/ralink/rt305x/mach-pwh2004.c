@@ -27,7 +27,6 @@
 #define PWH2004_GPIO_LED_WIFI		14
 #define PWH2004_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition pwh2004_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -54,13 +53,10 @@ static struct mtd_partition pwh2004_partitions[] = {
 		.size	= 0x7b0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data pwh2004_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(pwh2004_partitions),
 	.parts		= pwh2004_partitions,
-#endif
 };
 
 static struct gpio_led pwh2004_leds_gpio[] __initdata = {

@@ -31,7 +31,6 @@
 
 #define FONERA20N_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition fonera20n_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -62,13 +61,10 @@ static struct mtd_partition fonera20n_partitions[] = {
 		.size	= 0x7b0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data fonera20n_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(fonera20n_partitions),
 	.parts		= fonera20n_partitions,
-#endif
 };
 
 static struct gpio_led fonera20n_leds_gpio[] __initdata = {

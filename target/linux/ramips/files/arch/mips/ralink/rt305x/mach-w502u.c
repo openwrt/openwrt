@@ -30,7 +30,6 @@
 
 #define W502U_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition w502u_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -66,13 +65,10 @@ static struct mtd_partition w502u_partitions[] = {
 		.size	= 0x7a0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data w502u_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(w502u_partitions),
 	.parts		= w502u_partitions,
-#endif
 };
 
 static struct gpio_led w502u_leds_gpio[] __initdata = {

@@ -33,7 +33,6 @@
 
 #define HW550_3G_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition hw550_3g_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -64,13 +63,10 @@ static struct mtd_partition hw550_3g_partitions[] = {
 		.size	= 0x7b0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data hw550_3g_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(hw550_3g_partitions),
 	.parts		= hw550_3g_partitions,
-#endif
 };
 
 static struct gpio_led hw550_3g_leds_gpio[] __initdata = {
