@@ -128,6 +128,9 @@ ramips_board_name() {
 	*"WR512-3GN-like router")
 		name="wr512-3gn"
 		;;
+	*"AWB WR6202")
+		name="wr6202"
+		;;
 	*)
 		name="generic"
 		;;
