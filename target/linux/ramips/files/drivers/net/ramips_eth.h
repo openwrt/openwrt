@@ -185,7 +185,7 @@
 #define RAMIPS_US_CYC_CNT_SHIFT		0x8
 #define RAMIPS_US_CYC_CNT_DIVISOR	1000000
 
-#define RX_DMA_PLEN0(x)			((x >> 16) & 0x3fff)
+#define RX_DMA_PLEN0(_x)		(((_x) >> 16) & 0x3fff)
 #define RX_DMA_LSO			BIT(30)
 #define RX_DMA_DONE			BIT(31)
 
@@ -197,11 +197,11 @@ struct ramips_rx_dma {
 };
 
 #define TX_DMA_PLEN0_MASK		((0x3fff) << 16)
-#define TX_DMA_PLEN0(x)			((x & 0x3fff) << 16)
+#define TX_DMA_PLEN0(_x)		(((_x) & 0x3fff) << 16)
 #define TX_DMA_LSO			BIT(30)
 #define TX_DMA_DONE			BIT(31)
-#define TX_DMA_QN(x)			(x << 16)
-#define TX_DMA_PN(x)			(x << 24)
+#define TX_DMA_QN(_x)			((_x) << 16)
+#define TX_DMA_PN(_x)			((_x) << 24)
 #define TX_DMA_QN_MASK			TX_DMA_QN(0x7)
 #define TX_DMA_PN_MASK			TX_DMA_PN(0x7)
 
