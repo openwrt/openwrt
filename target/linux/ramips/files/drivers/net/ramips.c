@@ -128,8 +128,11 @@ ramips_cleanup_dma(struct raeth_priv *re)
 	int i;
 
 	for (i = 0; i < NUM_RX_DESC; i++)
-		if (re->rx_skb[i])
+		if (re->rx_skb[i]) {
+			dma_unmap_single(NULL, re->rx_dma[i], MAX_RX_LENGTH,
+					 DMA_FROM_DEVICE);
 			dev_kfree_skb_any(re->rx_skb[i]);
+		}
 
 	if (re->rx)
 		dma_free_coherent(NULL,
