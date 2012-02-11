@@ -219,7 +219,7 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct raeth_priv *priv = netdev_priv(dev);
 	unsigned long tx;
 	unsigned int tx_next;
-	unsigned int mapped_addr;
+	dma_addr_t mapped_addr;
 
 	if (priv->plat->min_pkt_len) {
 		if (skb->len < priv->plat->min_pkt_len) {
@@ -234,9 +234,8 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	dev->trans_start = jiffies;
-	mapped_addr = (unsigned int) dma_map_single(NULL, skb->data, skb->len,
-						    DMA_TO_DEVICE);
-	dma_sync_single_for_device(NULL, mapped_addr, skb->len, DMA_TO_DEVICE);
+	mapped_addr = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
+
 	spin_lock(&priv->page_lock);
 	tx = ramips_fe_rr(RAMIPS_TX_CTX_IDX0);
 	tx_next = (tx + 1) % NUM_TX_DESC;
@@ -246,7 +245,7 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	    !(priv->tx[tx_next].txd2 & TX_DMA_DONE))
 		goto out;
 
-	priv->tx[tx].txd1 = mapped_addr;
+	priv->tx[tx].txd1 = (unsigned int) mapped_addr;
 	priv->tx[tx].txd2 &= ~(TX_DMA_PLEN0_MASK | TX_DMA_DONE);
 	priv->tx[tx].txd2 |= TX_DMA_PLEN0(skb->len);
 	dev->stats.tx_packets++;
