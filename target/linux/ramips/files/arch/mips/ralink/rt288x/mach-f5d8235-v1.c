@@ -37,7 +37,6 @@
 
 #define F5D8235_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition f5d8235_partitions[] = {
 	{
 		.name	= "uboot",
@@ -62,13 +61,10 @@ static struct mtd_partition f5d8235_partitions[] = {
 		.size	= 0x010000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data f5d8235_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(f5d8235_partitions),
 	.parts		= f5d8235_partitions,
-#endif
 };
 
 static struct rtl8366_platform_data f5d8235_rtl8366s_data = {
