@@ -518,6 +518,7 @@ ramips_eth_plat_probe(struct platform_device *plat)
 
 	priv = netdev_priv(ramips_dev);
 
+	priv->netdev = ramips_dev;
 	priv->speed = data->speed;
 	priv->duplex = data->duplex;
 	priv->rx_fc = data->rx_fc;
