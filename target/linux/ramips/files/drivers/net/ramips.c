@@ -293,6 +293,8 @@ ramips_eth_rx_hw(unsigned long ptr)
 							   new_skb->data,
 							   MAX_RX_LENGTH,
 							   DMA_FROM_DEVICE);
+		} else {
+			dev->stats.rx_dropped++;
 		}
 
 		priv->rx[rx].rxd2 &= ~RX_DMA_DONE;
