@@ -1,6 +1,6 @@
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -494,6 +494,12 @@ config MIPS_AU1X00_ENET
+@@ -494,6 +494,16 @@ config MIPS_AU1X00_ENET
  	  If you have an Alchemy Semi AU1X00 based system
  	  say Y.  Otherwise, say N.
  
@@ -9,6 +9,10 @@
 +	depends on MIPS_RALINK
 +	help
 +	  This driver supports the etehrnet mac inside the ralink wisocs
++
++config RAMIPS_ETH_DEBUG
++	bool "Enable debug messages in the Ralink ethernet driver"
++	depends on MIPS_RAMIPS_NET
 +
  config SGI_IOC3_ETH
  	bool "SGI IOC3 Ethernet"

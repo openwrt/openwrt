@@ -40,6 +40,12 @@ static inline void rt305x_esw_exit(void) { }
 
 #define phys_to_bus(a)  (a & 0x1FFFFFFF)
 
+#ifdef CONFIG_RAMIPS_ETH_DEBUG
+#define RADEBUG(fmt, args...)	printk(KERN_DEBUG fmt, ## args)
+#else
+#define RADEBUG(fmt, args...)	do {} while (0)
+#endif
+
 static struct net_device * ramips_dev;
 static void __iomem *ramips_fe_base = 0;
 
@@ -443,7 +449,7 @@ ramips_eth_stop(struct net_device *dev)
 	tasklet_kill(&priv->tx_housekeeping_tasklet);
 	tasklet_kill(&priv->rx_tasklet);
 	ramips_cleanup_dma(priv);
-	printk(KERN_DEBUG "ramips_eth: stopped\n");
+	RADEBUG("ramips_eth: stopped\n");
 	return 0;
 }
 
@@ -532,7 +538,7 @@ ramips_eth_plat_probe(struct platform_device *plat)
 		goto err_free_dev;
 	}
 
-	printk(KERN_DEBUG "ramips_eth: loaded\n");
+	RADEBUG("ramips_eth: loaded\n");
 	return 0;
 
  err_free_dev:
@@ -547,7 +553,7 @@ ramips_eth_plat_remove(struct platform_device *plat)
 {
 	unregister_netdev(ramips_dev);
 	free_netdev(ramips_dev);
-	printk(KERN_DEBUG "ramips_eth: unloaded\n");
+	RADEBUG("ramips_eth: unloaded\n");
 	return 0;
 }
 
