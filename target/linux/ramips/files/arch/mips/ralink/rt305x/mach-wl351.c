@@ -31,8 +31,8 @@
 #define WL351_GPIO_BUTTON_RESET	10
 #define WL351_GPIO_BUTTON_WPS	0
 
-#define WL351_BUTTONS_POLL_INTERVAL	20
-
+#define WL351_KEYS_POLL_INTERVAL	20
+#define WL351_KEYS_DEBOUNCE_INTERVAL	(3 * WL351_KEYS_POLL_INTERVAL)
 
 static struct gpio_led wl351_leds_gpio[] __initdata = {
 	{
@@ -51,19 +51,19 @@ static struct gpio_led wl351_leds_gpio[] __initdata = {
 };
 
 
-static struct gpio_button wl351_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wl351_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = WL351_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WL351_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = WL351_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WL351_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}
@@ -133,7 +133,7 @@ static void __init wl351_init(void)
 	rt305x_register_flash(0, &wl351_flash_data);
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wl351_leds_gpio),
 						wl351_leds_gpio);
-	ramips_register_gpio_buttons(-1, WL351_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, WL351_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(wl351_gpio_buttons),
 				     wl351_gpio_buttons);
 	// external rtl8366rb

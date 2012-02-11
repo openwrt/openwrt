@@ -29,7 +29,8 @@
 #define DIR_300B_GPIO_BUTTON_WPS	0	/* active low */
 #define DIR_300B_GPIO_BUTTON_RESET	10	/* active low */
 
-#define DIR_300B_BUTTONS_POLL_INTERVAL	20
+#define DIR_300B_KEYS_POLL_INTERVAL	20
+#define DIR_300B_KEYS_DEBOUNCE_INTERVAL	(3 * DIR_300B_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition dir_300b_partitions[] = {
 	{
@@ -83,19 +84,19 @@ static struct gpio_led dir_300b_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button dir_300b_gpio_buttons[] __initdata = {
+static struct gpio_keys_button dir_300b_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = DIR_300B_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= DIR_300B_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = DIR_300B_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= DIR_300B_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}
@@ -110,7 +111,7 @@ static void __init dir_300b_init(void)
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(dir_300b_leds_gpio),
 				  dir_300b_leds_gpio);
-	ramips_register_gpio_buttons(-1, DIR_300B_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, DIR_300B_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(dir_300b_gpio_buttons),
 				     dir_300b_gpio_buttons);
 	rt305x_register_wifi();

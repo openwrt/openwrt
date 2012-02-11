@@ -25,7 +25,8 @@
 
 #define OMNI_EMB_GPIO_BUTTON_RESET	12 /* active low */
 
-#define OMNI_EMB_BUTTONS_POLL_INTERVAL	20
+#define OMNI_EMB_KEYS_POLL_INTERVAL	20
+#define OMNI_EMB_KEYS_DEBOUNCE_INTERVAL	(3 * OMNI_EMB_KEYS_POLL_INTERVAL)
 
 #define OMNI_EMB_GPIO_LED_STATUS	9
 #define OMNI_EMB_GPIO_LED_WLAN		14
@@ -77,12 +78,12 @@ static struct gpio_led omni_emb_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button omni_emb_gpio_buttons[] __initdata = {
+static struct gpio_keys_button omni_emb_gpio_buttons[] __initdata = {
 	{
 		.desc           = "reset",
 		.type           = EV_KEY,
 		.code           = KEY_RESTART,
-		.threshold      = 3,
+		.debounce_interval = OMNI_EMB_KEYS_DEBOUNCE_INTERVAL,
 		.gpio           = OMNI_EMB_GPIO_BUTTON_RESET,
 		.active_low     = 1,
 	}
@@ -96,7 +97,7 @@ static void __init omni_emb_init(void)
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(omni_emb_leds_gpio),
 				omni_emb_leds_gpio);
-	ramips_register_gpio_buttons(-1, OMNI_EMB_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, OMNI_EMB_KEYS_POLL_INTERVAL,
 				ARRAY_SIZE(omni_emb_gpio_buttons),
 				omni_emb_gpio_buttons);
 

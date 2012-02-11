@@ -31,7 +31,8 @@
 #define HW550_3G_GPIO_BUTTON_CONNECT	7
 #define HW550_3G_GPIO_BUTTON_WPS	0
 
-#define HW550_3G_BUTTONS_POLL_INTERVAL	20
+#define HW550_3G_KEYS_POLL_INTERVAL	20
+#define HW550_3G_KEYS_DEBOUNCE_INTERVAL	(3 * HW550_3G_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition hw550_3g_partitions[] = {
 	{
@@ -89,26 +90,26 @@ static struct gpio_led hw550_3g_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button hw550_3g_gpio_buttons[] __initdata = {
+static struct gpio_keys_button hw550_3g_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = HW550_3G_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= HW550_3G_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "connect",
 		.type		= EV_KEY,
 		.code		= KEY_CONNECT,
-		.threshold	= 3,
+		.debounce_interval = HW550_3G_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= HW550_3G_GPIO_BUTTON_CONNECT,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = HW550_3G_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= HW550_3G_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}
@@ -127,7 +128,7 @@ static void __init hw550_3g_init(void)
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(hw550_3g_leds_gpio),
 				  hw550_3g_leds_gpio);
-	ramips_register_gpio_buttons(-1, HW550_3G_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, HW550_3G_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(hw550_3g_gpio_buttons),
 				     hw550_3g_gpio_buttons);
 	rt305x_register_wifi();

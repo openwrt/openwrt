@@ -42,7 +42,8 @@
 #define WR512_3GN_GPIO_BUTTON_WPS	0
 #define WR512_3GN_GPIO_BUTTON_WPS2	8
 
-#define WR512_3GN_BUTTONS_POLL_INTERVAL	20
+#define WR512_3GN_KEYS_POLL_INTERVAL	20
+#define WR512_3GN_KEYS_DEBOUNCE_INTERVAL (3 * WR512_3GN_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition wr512_3gn_partitions[] = {
 	{
@@ -104,19 +105,19 @@ static struct gpio_led wr512_3gn_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button wr512_3gn_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wr512_3gn_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset_wps",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = WR512_3GN_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WR512_3GN_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "mode",
 		.type		= EV_KEY,
 		.code		= KEY_M,
-		.threshold	= 3,
+		.debounce_interval = WR512_3GN_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WR512_3GN_GPIO_BUTTON_CONNECT,
 		.active_low	= 1,
 	}
@@ -135,7 +136,7 @@ static void __init wr512_3gn_init(void)
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wr512_3gn_leds_gpio),
 				  wr512_3gn_leds_gpio);
-	ramips_register_gpio_buttons(-1, WR512_3GN_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, WR512_3GN_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(wr512_3gn_gpio_buttons),
 				     wr512_3gn_gpio_buttons);
 	rt305x_register_wifi();

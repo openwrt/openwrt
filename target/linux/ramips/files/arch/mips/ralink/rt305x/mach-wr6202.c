@@ -26,7 +26,8 @@
 #define WR6202_GPIO_BUTTON_RESET     10        /* active low */
 #define WR6202_GPIO_BUTTON_WPS        0        /* active low */
 
-#define WR6202_BUTTONS_POLL_INTERVAL 20
+#define WR6202_KEYS_POLL_INTERVAL 20
+#define WR6202_KEYS_DEBOUNCE_INTERVAL	(3 * WR6202_KEYS_POLL_INTERVAL)
 
 #define WR6202_GPIO_USB_POWER	     11
 
@@ -76,19 +77,19 @@ static struct gpio_led wr6202_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button wr6202_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wr6202_gpio_buttons[] __initdata = {
 	{
 		.desc           = "reset",
 		.type           = EV_KEY,
 		.code           = KEY_RESTART,
-		.threshold      = 3,
+		.debounce_interval = WR6202_KEYS_DEBOUNCE_INTERVAL,
 		.gpio           = WR6202_GPIO_BUTTON_RESET,
 		.active_low     = 1,
 	}, {
 		.desc           = "wps",
 		.type           = EV_KEY,
 		.code           = KEY_WPS_BUTTON,
-		.threshold      = 3,
+		.debounce_interval = WR6202_KEYS_DEBOUNCE_INTERVAL,
 		.gpio           = WR6202_GPIO_BUTTON_WPS,
 		.active_low     = 1,
 	}
@@ -102,7 +103,7 @@ static void __init wr6202_init(void)
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wr6202_leds_gpio),
 				wr6202_leds_gpio);
-	ramips_register_gpio_buttons(-1, WR6202_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, WR6202_KEYS_POLL_INTERVAL,
 				ARRAY_SIZE(wr6202_gpio_buttons),
 				wr6202_gpio_buttons);
 
