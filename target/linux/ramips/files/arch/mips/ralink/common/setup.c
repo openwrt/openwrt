@@ -31,11 +31,12 @@ const char *get_system_type(void)
 static void __init detect_mem_size(void)
 {
 	unsigned long size;
+	void *base;
 
+	base = (void *) KSEG1ADDR(detect_mem_size);
 	for (size = RALINK_SOC_MEM_SIZE_MIN; size < RALINK_SOC_MEM_SIZE_MAX;
 	     size <<= 1 ) {
-		if (!memcmp(detect_mem_size,
-			    detect_mem_size + size, 1024))
+		if (!memcmp(base, base + size, 1024))
 			break;
 	}
 
