@@ -22,6 +22,7 @@
 #include <linux/mii.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
+#include <linux/dma-mapping.h>
 
 #define NUM_RX_DESC     256
 #define NUM_TX_DESC     256
@@ -214,12 +215,12 @@ struct ramips_tx_dma {
 
 struct raeth_priv
 {
-	unsigned int		phy_rx;
+	dma_addr_t		rx_desc_dma;
 	struct tasklet_struct	rx_tasklet;
 	struct ramips_rx_dma	*rx;
 	struct sk_buff		*rx_skb[NUM_RX_DESC];
 
-	unsigned int		phy_tx;
+	dma_addr_t		tx_desc_dma;
 	struct tasklet_struct	tx_housekeeping_tasklet;
 	struct ramips_tx_dma	*tx;
 	struct sk_buff		*tx_skb[NUM_TX_DESC];

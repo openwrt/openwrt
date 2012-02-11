@@ -134,12 +134,12 @@ ramips_cleanup_dma(struct raeth_priv *re)
 	if (re->rx)
 		dma_free_coherent(NULL,
 				  NUM_RX_DESC * sizeof(struct ramips_rx_dma),
-				  re->rx, re->phy_rx);
+				  re->rx, re->rx_desc_dma);
 
 	if (re->tx)
 		dma_free_coherent(NULL,
 				  NUM_TX_DESC * sizeof(struct ramips_tx_dma),
-				  re->tx, re->phy_tx);
+				  re->tx, re->tx_desc_dma);
 }
 
 static int
@@ -153,7 +153,7 @@ ramips_alloc_dma(struct raeth_priv *re)
 	/* setup tx ring */
 	re->tx = dma_alloc_coherent(NULL,
 				    NUM_TX_DESC * sizeof(struct ramips_tx_dma),
-				    &re->phy_tx, GFP_ATOMIC);
+				    &re->tx_desc_dma, GFP_ATOMIC);
 	if (!re->tx)
 		goto err_cleanup;
 
@@ -166,7 +166,7 @@ ramips_alloc_dma(struct raeth_priv *re)
 	/* setup rx ring */
 	re->rx = dma_alloc_coherent(NULL,
 				    NUM_RX_DESC * sizeof(struct ramips_rx_dma),
-				    &re->phy_rx, GFP_ATOMIC);
+				    &re->rx_desc_dma, GFP_ATOMIC);
 	if (!re->rx)
 		goto err_cleanup;
 
@@ -197,12 +197,12 @@ ramips_alloc_dma(struct raeth_priv *re)
 static void
 ramips_setup_dma(struct raeth_priv *re)
 {
-	ramips_fe_wr(phys_to_bus(re->phy_tx), RAMIPS_TX_BASE_PTR0);
+	ramips_fe_wr(re->tx_desc_dma, RAMIPS_TX_BASE_PTR0);
 	ramips_fe_wr(NUM_TX_DESC, RAMIPS_TX_MAX_CNT0);
 	ramips_fe_wr(0, RAMIPS_TX_CTX_IDX0);
 	ramips_fe_wr(RAMIPS_PST_DTX_IDX0, RAMIPS_PDMA_RST_CFG);
 
-	ramips_fe_wr(phys_to_bus(re->phy_rx), RAMIPS_RX_BASE_PTR0);
+	ramips_fe_wr(re->rx_desc_dma, RAMIPS_RX_BASE_PTR0);
 	ramips_fe_wr(NUM_RX_DESC, RAMIPS_RX_MAX_CNT0);
 	ramips_fe_wr((NUM_RX_DESC - 1), RAMIPS_RX_CALC_IDX0);
 	ramips_fe_wr(RAMIPS_PST_DRX_IDX0, RAMIPS_PDMA_RST_CFG);
@@ -282,7 +282,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN);
 		/* Reuse the buffer on allocation failures */
 		if (new_skb) {
-			/* TODO: convert to use dma_address_t */
+			/* TODO: convert to use dma_addr_t */
 			dma_unmap_single(NULL, priv->rx[rx].rxd1, MAX_RX_LENGTH,
 					 DMA_FROM_DEVICE);
 
