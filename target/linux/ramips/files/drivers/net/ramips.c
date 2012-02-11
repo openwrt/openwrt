@@ -129,18 +129,18 @@ ramips_cleanup_dma(struct raeth_priv *re)
 
 	for (i = 0; i < NUM_RX_DESC; i++)
 		if (re->rx_skb[i]) {
-			dma_unmap_single(NULL, re->rx_dma[i], MAX_RX_LENGTH,
-					 DMA_FROM_DEVICE);
+			dma_unmap_single(&re->netdev->dev, re->rx_dma[i],
+					 MAX_RX_LENGTH, DMA_FROM_DEVICE);
 			dev_kfree_skb_any(re->rx_skb[i]);
 		}
 
 	if (re->rx)
-		dma_free_coherent(NULL,
+		dma_free_coherent(&re->netdev->dev,
 				  NUM_RX_DESC * sizeof(struct ramips_rx_dma),
 				  re->rx, re->rx_desc_dma);
 
 	if (re->tx)
-		dma_free_coherent(NULL,
+		dma_free_coherent(&re->netdev->dev,
 				  NUM_TX_DESC * sizeof(struct ramips_tx_dma),
 				  re->tx, re->tx_desc_dma);
 }
@@ -154,7 +154,7 @@ ramips_alloc_dma(struct raeth_priv *re)
 	re->skb_free_idx = 0;
 
 	/* setup tx ring */
-	re->tx = dma_alloc_coherent(NULL,
+	re->tx = dma_alloc_coherent(&re->netdev->dev,
 				    NUM_TX_DESC * sizeof(struct ramips_tx_dma),
 				    &re->tx_desc_dma, GFP_ATOMIC);
 	if (!re->tx)
@@ -167,7 +167,7 @@ ramips_alloc_dma(struct raeth_priv *re)
 	}
 
 	/* setup rx ring */
-	re->rx = dma_alloc_coherent(NULL,
+	re->rx = dma_alloc_coherent(&re->netdev->dev,
 				    NUM_RX_DESC * sizeof(struct ramips_rx_dma),
 				    &re->rx_desc_dma, GFP_ATOMIC);
 	if (!re->rx)
@@ -184,7 +184,7 @@ ramips_alloc_dma(struct raeth_priv *re)
 
 		skb_reserve(new_skb, NET_IP_ALIGN);
 
-		dma_addr = dma_map_single(NULL, new_skb->data,
+		dma_addr = dma_map_single(&re->netdev->dev, new_skb->data,
 					  MAX_RX_LENGTH, DMA_FROM_DEVICE);
 		re->rx_dma[i] = dma_addr;
 		re->rx[i].rxd1 = (unsigned int) re->rx_dma[i];
@@ -234,7 +234,8 @@ ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	dev->trans_start = jiffies;
-	mapped_addr = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
+	mapped_addr = dma_map_single(&priv->netdev->dev, skb->data, skb->len,
+				     DMA_TO_DEVICE);
 
 	spin_lock(&priv->page_lock);
 	tx = ramips_fe_rr(RAMIPS_TX_CTX_IDX0);
@@ -288,8 +289,8 @@ ramips_eth_rx_hw(unsigned long ptr)
 		if (new_skb) {
 			dma_addr_t dma_addr;
 
-			dma_unmap_single(NULL, priv->rx_dma[rx], MAX_RX_LENGTH,
-					 DMA_FROM_DEVICE);
+			dma_unmap_single(&priv->netdev->dev, priv->rx_dma[rx],
+					 MAX_RX_LENGTH, DMA_FROM_DEVICE);
 
 			skb_put(rx_skb, pktlen);
 			rx_skb->dev = dev;
@@ -302,7 +303,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 			priv->rx_skb[rx] = new_skb;
 			skb_reserve(new_skb, NET_IP_ALIGN);
 
-			dma_addr = dma_map_single(NULL,
+			dma_addr = dma_map_single(&priv->netdev->dev,
 						  new_skb->data,
 						  MAX_RX_LENGTH,
 						  DMA_FROM_DEVICE);
