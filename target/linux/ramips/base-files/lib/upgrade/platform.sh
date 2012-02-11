@@ -29,6 +29,7 @@ platform_check_image() {
 	rt-g32-b1 | \
 	rt-n15 | \
 	w502u |\
+	wr6202 |\
 	v22rw-2x2 | \
 	wl341v3 | \
 	wli-tx4-ag300n | \

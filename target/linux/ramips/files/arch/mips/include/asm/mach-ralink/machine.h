@@ -45,4 +45,5 @@ enum ramips_mach_type {
 	RAMIPS_MACH_WL341V3,		/* Sitecom WL-341 v3 */
 	RAMIPS_MACH_WL351,		/* Sitecom WL-351 v1 002 */
 	RAMIPS_MACH_WR512_3GN,		/* SH-WR512NU/WS-WR512N1-like 3GN*/
+	RAMIPS_MACH_WR6202,		/* Accton WR6202 */
 };

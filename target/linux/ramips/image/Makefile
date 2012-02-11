@@ -167,6 +167,16 @@ define Image/Build/Template/NW718
 	$(call BuildFirmware/NW718,$(1),$(2),board=$(3),mtdlayout_nw718,851968,2949120)
 endef
 
+console_WR6202=ttyS1,115200
+mtdlayout_WR6202=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,1024k(kernel),6848k(rootfs),7872k@0x50000(firmware)
+define Image/Build/Template/WR6202
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) console=$(console_WR6202),mtdlayout_WR6202,1048576,7012352)
+endef
+
+define Image/Build/Profile/WR6202
+	$(call Image/Build/Template/WR6202,$(1),wr6202,WR6202)
+endef
+
 console_OMNIEMB=ttyS1,57600
 mtdlayout_ONMIEMB=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,1024k(kernel),6848k(rootfs),7872k@0x50000(firmware)
 define Image/Build/Template/OMNIEMB
@@ -328,6 +338,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WR5123GN,$(1))
 	$(call Image/Build/Profile/WL341V3,$(1))
 	$(call Image/Build/Profile/WL351,$(1))
+	$(call Image/Build/Profile/WR6202,$(1))
 endef
 endif
 
