@@ -269,22 +269,25 @@ ramips_eth_rx_hw(unsigned long ptr)
 
 	while (max_rx) {
 		struct sk_buff *rx_skb, *new_skb;
+		int pktlen;
 
 		rx = (ramips_fe_rr(RAMIPS_RX_CALC_IDX0) + 1) % NUM_RX_DESC;
 		if (!(priv->rx[rx].rxd2 & RX_DMA_DONE))
 			break;
 		max_rx--;
 
+		rx_skb = priv->rx_skb[rx];
+		pktlen = RX_DMA_PLEN0(priv->rx[rx].rxd2);
+
 		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN);
 		/* Reuse the buffer on allocation failures */
 		if (new_skb) {
-			rx_skb = priv->rx_skb[rx];
-			skb_put(rx_skb, RX_DMA_PLEN0(priv->rx[rx].rxd2));
+			skb_put(rx_skb, pktlen);
 			rx_skb->dev = dev;
 			rx_skb->protocol = eth_type_trans(rx_skb, dev);
 			rx_skb->ip_summed = CHECKSUM_NONE;
 			dev->stats.rx_packets++;
-			dev->stats.rx_bytes += rx_skb->len;
+			dev->stats.rx_bytes += pktlen;
 			netif_rx(rx_skb);
 
 			priv->rx_skb[rx] = new_skb;
