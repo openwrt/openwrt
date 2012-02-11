@@ -219,6 +219,7 @@ struct raeth_priv
 	struct tasklet_struct	rx_tasklet;
 	struct ramips_rx_dma	*rx;
 	struct sk_buff		*rx_skb[NUM_RX_DESC];
+	dma_addr_t		rx_dma[NUM_RX_DESC];
 
 	dma_addr_t		tx_desc_dma;
 	struct tasklet_struct	tx_housekeeping_tasklet;

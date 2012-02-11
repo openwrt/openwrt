@@ -172,6 +172,7 @@ ramips_alloc_dma(struct raeth_priv *re)
 
 	memset(re->rx, 0, sizeof(struct ramips_rx_dma) * NUM_RX_DESC);
 	for (i = 0; i < NUM_RX_DESC; i++) {
+		dma_addr_t dma_addr;
 		struct sk_buff *new_skb = dev_alloc_skb(MAX_RX_LENGTH +
 							NET_IP_ALIGN);
 
@@ -179,10 +180,11 @@ ramips_alloc_dma(struct raeth_priv *re)
 			goto err_cleanup;
 
 		skb_reserve(new_skb, NET_IP_ALIGN);
-		re->rx[i].rxd1 = dma_map_single(NULL,
-						new_skb->data,
-						MAX_RX_LENGTH,
-						DMA_FROM_DEVICE);
+
+		dma_addr = dma_map_single(NULL, new_skb->data,
+					  MAX_RX_LENGTH, DMA_FROM_DEVICE);
+		re->rx_dma[i] = dma_addr;
+		re->rx[i].rxd1 = (unsigned int) re->rx_dma[i];
 		re->rx[i].rxd2 |= RX_DMA_LSO;
 		re->rx_skb[i] = new_skb;
 	}
@@ -282,8 +284,9 @@ ramips_eth_rx_hw(unsigned long ptr)
 		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN);
 		/* Reuse the buffer on allocation failures */
 		if (new_skb) {
-			/* TODO: convert to use dma_addr_t */
-			dma_unmap_single(NULL, priv->rx[rx].rxd1, MAX_RX_LENGTH,
+			dma_addr_t dma_addr;
+
+			dma_unmap_single(NULL, priv->rx_dma[rx], MAX_RX_LENGTH,
 					 DMA_FROM_DEVICE);
 
 			skb_put(rx_skb, pktlen);
@@ -296,10 +299,13 @@ ramips_eth_rx_hw(unsigned long ptr)
 
 			priv->rx_skb[rx] = new_skb;
 			skb_reserve(new_skb, NET_IP_ALIGN);
-			priv->rx[rx].rxd1 = dma_map_single(NULL,
-							   new_skb->data,
-							   MAX_RX_LENGTH,
-							   DMA_FROM_DEVICE);
+
+			dma_addr = dma_map_single(NULL,
+						  new_skb->data,
+						  MAX_RX_LENGTH,
+						  DMA_FROM_DEVICE);
+			priv->rx_dma[rx] = dma_addr;
+			priv->rx[rx].rxd1 = (unsigned int) dma_addr;
 		} else {
 			dev->stats.rx_dropped++;
 		}
