@@ -24,6 +24,7 @@
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
 #include <linux/platform_device.h>
+#include <linux/phy.h>
 
 #include <ramips_eth_platform.h>
 #include "ramips_eth.h"
@@ -88,6 +89,9 @@ ramips_hw_set_macaddr(unsigned char *mac)
 }
 
 #ifdef CONFIG_RALINK_RT288X
+
+#define RAMIPS_MDIO_RETRY	1000
+
 static void
 ramips_setup_mdio_cfg(struct raeth_priv *re)
 {
@@ -122,8 +126,140 @@ ramips_setup_mdio_cfg(struct raeth_priv *re)
 
 	ramips_fe_wr(mdio_cfg, RAMIPS_MDIO_CFG);
 }
+static int
+ramips_mdio_wait_ready(struct raeth_priv *re)
+{
+	int retries;
+
+	retries = RAMIPS_MDIO_RETRY;
+	while (1) {
+		u32 t;
+
+		t = ramips_fe_rr(RAMIPS_MDIO_ACCESS);
+		if ((t & (0x1 << 31)) == 0)
+			return 0;
+
+		if (retries-- == 0)
+			break;
+
+		udelay(1);
+	}
+
+	dev_err(re->parent, "MDIO operation timed out\n");
+	return -ETIMEDOUT;
+}
+
+static int
+ramips_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
+{
+	struct raeth_priv *re = bus->priv;
+	int err;
+	u32 t;
+
+	err = ramips_mdio_wait_ready(re);
+	if (err)
+		return 0xffff;
+
+	t = (phy_addr << 24) | (phy_reg << 16);
+	ramips_fe_wr(t, RAMIPS_MDIO_ACCESS);
+	t |= (1 << 31);
+	ramips_fe_wr(t, RAMIPS_MDIO_ACCESS);
+
+	err = ramips_mdio_wait_ready(re);
+	if (err)
+		return 0xffff;
+
+	RADEBUG("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
+		phy_addr, phy_reg, ramips_fe_rr(RAMIPS_MDIO_ACCESS) & 0xffff);
+
+	return ramips_fe_rr(RAMIPS_MDIO_ACCESS) & 0xffff;
+}
+
+static int
+ramips_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
+{
+	struct raeth_priv *re = bus->priv;
+	int err;
+	u32 t;
+
+	RADEBUG("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
+		phy_addr, phy_reg, ramips_fe_rr(RAMIPS_MDIO_ACCESS) & 0xffff);
+
+	err = ramips_mdio_wait_ready(re);
+	if (err)
+		return err;
+
+	t = (1 << 30) | (phy_addr << 24) | (phy_reg << 16) | val;
+	ramips_fe_wr(t, RAMIPS_MDIO_ACCESS);
+	t |= (1 << 31);
+	ramips_fe_wr(t, RAMIPS_MDIO_ACCESS);
+
+	return ramips_mdio_wait_ready(re);
+}
+
+static int
+ramips_mdio_reset(struct mii_bus *bus)
+{
+	/* TODO */
+	return 0;
+}
+
+static int
+ramips_mdio_init(struct raeth_priv *re)
+{
+	int err;
+	int i;
+
+	re->mii_bus = mdiobus_alloc();
+	if (re->mii_bus == NULL)
+		return -ENOMEM;
+
+	re->mii_bus->name = "ramips_mdio";
+	re->mii_bus->read = ramips_mdio_read;
+	re->mii_bus->write = ramips_mdio_write;
+	re->mii_bus->reset = ramips_mdio_reset;
+	re->mii_bus->irq = re->mii_irq;
+	re->mii_bus->priv = re;
+	re->mii_bus->parent = re->parent;
+
+	snprintf(re->mii_bus->id, MII_BUS_ID_SIZE, "%s", "ramips_mdio");
+	re->mii_bus->phy_mask = 0;
+
+	for (i = 0; i < PHY_MAX_ADDR; i++)
+		re->mii_irq[i] = PHY_POLL;
+
+	err = mdiobus_register(re->mii_bus);
+	if (err)
+		goto err_free_bus;
+
+	return 0;
+
+err_free_bus:
+	kfree(re->mii_bus);
+	return err;
+}
+
+static void
+ramips_mdio_cleanup(struct raeth_priv *re)
+{
+	mdiobus_unregister(re->mii_bus);
+	kfree(re->mii_bus);
+}
+
 #else
-static inline void ramips_setup_mdio_cfg(struct raeth_priv *re)
+static inline void
+ramips_setup_mdio_cfg(struct raeth_priv *re)
+{
+}
+
+static inline int
+ramips_mdio_init(struct raeth_priv *re)
+{
+	return 0;
+}
+
+static inline void
+ramips_mdio_cleanup(struct raeth_priv *re)
 {
 }
 #endif /* CONFIG_RALINK_RT288X */
@@ -457,6 +593,7 @@ static int __init
 ramips_eth_probe(struct net_device *dev)
 {
 	struct raeth_priv *priv = netdev_priv(dev);
+	int err;
 
 	BUG_ON(!priv->plat->reset_fe);
 	priv->plat->reset_fe();
@@ -468,11 +605,21 @@ ramips_eth_probe(struct net_device *dev)
 	dev->watchdog_timeo = TX_TIMEOUT;
 	spin_lock_init(&priv->page_lock);
 
-	return 0;
+	err = ramips_mdio_init(priv);
+	return err;
+}
+
+static void
+ramips_eth_uninit(struct net_device *dev)
+{
+	struct raeth_priv *re = netdev_priv(dev);
+
+	ramips_mdio_cleanup(re);
 }
 
 static const struct net_device_ops ramips_eth_netdev_ops = {
 	.ndo_init		= ramips_eth_probe,
+	.ndo_uninit		= ramips_eth_uninit,
 	.ndo_open		= ramips_eth_open,
 	.ndo_stop		= ramips_eth_stop,
 	.ndo_start_xmit		= ramips_eth_hard_start_xmit,
@@ -526,6 +673,7 @@ ramips_eth_plat_probe(struct platform_device *plat)
 	priv = netdev_priv(ramips_dev);
 
 	priv->netdev = ramips_dev;
+	priv->parent = &plat->dev;
 	priv->speed = data->speed;
 	priv->duplex = data->duplex;
 	priv->rx_fc = data->rx_fc;
