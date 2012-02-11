@@ -1,32 +1,3 @@
---- a/arch/mips/Makefile
-+++ b/arch/mips/Makefile
-@@ -158,6 +158,26 @@ cflags-$(CONFIG_CPU_CAVIUM_OCTEON) += -W
- endif
- cflags-$(CONFIG_CAVIUM_CN63XXP1) += -Wa,-mfix-cn63xxp1
- 
-+#
-+# Ralink SoC common stuff
-+#
-+core-$(CONFIG_MIPS_RALINK)	+= arch/mips/ralink/common/
-+cflags-$(CONFIG_MIPS_RALINK)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink
-+
-+#
-+# Ralink RT288x
-+#
-+core-$(CONFIG_RALINK_RT288X)	+= arch/mips/ralink/rt288x/
-+cflags-$(CONFIG_RALINK_RT288X)	+= -I$(srctree)//arch/mips/include/asm/mach-ralink/rt288x
-+load-$(CONFIG_RALINK_RT288X)	+= 0xffffffff88000000
-+
-+#
-+# Ralink RT305x
-+#
-+core-$(CONFIG_RALINK_RT305X)	+= arch/mips/ralink/rt305x/
-+cflags-$(CONFIG_RALINK_RT305X)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/rt305x
-+load-$(CONFIG_RALINK_RT305X)	+= 0xffffffff80000000
-+
- cflags-$(CONFIG_CPU_R4000_WORKAROUNDS)	+= $(call cc-option,-mfix-r4000,)
- cflags-$(CONFIG_CPU_R4400_WORKAROUNDS)	+= $(call cc-option,-mfix-r4400,)
- cflags-$(CONFIG_CPU_DADDI_WORKAROUNDS)	+= $(call cc-option,-mno-daddi,)
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -84,6 +84,9 @@ config ATH79
@@ -56,3 +27,13 @@
  	default "6" if MIPS_CPU_SCACHE
  	default "7" if SGI_IP22 || SGI_IP27 || SGI_IP28 || SNI_RM || CPU_CAVIUM_OCTEON
  	default "5"
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
+@@ -19,6 +19,7 @@ platforms += pmc-sierra
+ platforms += pnx833x
+ platforms += pnx8550
+ platforms += powertv
++platforms += ralink
+ platforms += rb532
+ platforms += sgi-ip22
+ platforms += sgi-ip27
