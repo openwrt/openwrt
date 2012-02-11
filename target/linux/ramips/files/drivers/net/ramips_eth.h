@@ -229,6 +229,7 @@ struct raeth_priv
 	unsigned int		skb_free_idx;
 
 	spinlock_t		page_lock;
+	struct net_device       *netdev;
 	struct ramips_eth_platform_data *plat;
 
 	int			speed;
