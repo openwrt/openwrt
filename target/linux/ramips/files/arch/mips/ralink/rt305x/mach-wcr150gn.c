@@ -26,7 +26,8 @@
 #define WCR150GN_GPIO_LED_POWER                        8
 #define WCR150GN_GPIO_BUTTON_WPS               10
 #define WCR150GN_GPIO_BUTTON_RESET             0
-#define WCR150GN_BUTTONS_POLL_INTERVAL         20
+#define WCR150GN_KEYS_POLL_INTERVAL	20
+#define WCR150GN_KEYS_DEBOUNCE_INTERVAL	(3 * WCR150GN_KEYS_POLL_INTERVAL)
 
 static struct gpio_led wcr150gn_leds_gpio[] __initdata = {
 	{
@@ -41,12 +42,12 @@ static struct gpio_led wcr150gn_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button wcr150gn_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wcr150gn_gpio_buttons[] __initdata = {
 	{
 		.desc       = "wps",
 		.type       = EV_KEY,
 		.code       = KEY_WPS_BUTTON,
-		.threshold  = 3,
+		.debounce_interval = WCR150GN_KEYS_DEBOUNCE_INTERVAL,
 		.gpio       = WCR150GN_GPIO_BUTTON_WPS,
 		.active_low = 1,
 	},
@@ -54,7 +55,7 @@ static struct gpio_button wcr150gn_gpio_buttons[] __initdata = {
 		.desc       = "reset",
 		.type       = EV_KEY,
 		.code       = KEY_RESTART,
-		.threshold  = 10,
+		.debounce_interval = WCR150GN_KEYS_DEBOUNCE_INTERVAL,
 		.gpio       = WCR150GN_GPIO_BUTTON_RESET,
 		.active_low = 1,
 	}
@@ -104,7 +105,7 @@ static void __init wcr150gn_init(void)
 	rt305x_register_flash(0, &wcr150gn_flash_data);
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wcr150gn_leds_gpio),
 				  wcr150gn_leds_gpio);
-	ramips_register_gpio_buttons(-1, WCR150GN_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, WCR150GN_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(wcr150gn_gpio_buttons),
 				     wcr150gn_gpio_buttons);
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;

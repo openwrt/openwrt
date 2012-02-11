@@ -32,7 +32,8 @@
 #define WLI_TX4_AG300N_GPIO_BUTTON_BW_SWITCH	8
 #define WLI_TX4_AG300N_GPIO_BUTTON_RESET	9
 
-#define WLI_TX4_AG300N_BUTTONS_POLL_INTERVAL	20
+#define WLI_TX4_AG300N_KEYS_POLL_INTERVAL	20
+#define WLI_TX4_AG300N_KEYS_DEBOUNCE_INTERVAL	(3 * WLI_TX4_AG300N_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition wli_tx4_ag300n_partitions[] = {
 	{
@@ -98,12 +99,12 @@ static struct gpio_led wli_tx4_ag300n_leds_gpio[] __initdata = {
 	},
 };
 
-static struct gpio_button wli_tx4_ag300n_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wli_tx4_ag300n_gpio_buttons[] __initdata = {
 	{
 		.desc		= "Reset button",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = WLI_TX4_AG300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WLI_TX4_AG300N_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	},
@@ -111,7 +112,7 @@ static struct gpio_button wli_tx4_ag300n_gpio_buttons[] __initdata = {
 		.desc		= "AOSS button",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = WLI_TX4_AG300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WLI_TX4_AG300N_GPIO_BUTTON_AOSS,
 		.active_low	= 1,
 	},
@@ -119,7 +120,7 @@ static struct gpio_button wli_tx4_ag300n_gpio_buttons[] __initdata = {
 		.desc		= "Bandwidth switch",
 		.type		= EV_KEY,
 		.code		= BTN_0,
-		.threshold	= 3,
+		.debounce_interval = WLI_TX4_AG300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WLI_TX4_AG300N_GPIO_BUTTON_BW_SWITCH,
 		.active_low	= 0,
 	},
@@ -131,7 +132,7 @@ static void __init wli_tx4_ag300n_init(void)
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wli_tx4_ag300n_leds_gpio),
 				  wli_tx4_ag300n_leds_gpio);
-	ramips_register_gpio_buttons(-1, WLI_TX4_AG300N_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, WLI_TX4_AG300N_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(wli_tx4_ag300n_gpio_buttons),
 				     wli_tx4_ag300n_gpio_buttons);
 

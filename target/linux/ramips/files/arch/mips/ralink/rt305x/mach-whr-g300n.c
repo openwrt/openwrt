@@ -31,7 +31,8 @@
 #define WHR_G300N_GPIO_BUTTON_ROUTER_ON		8	/* active low */
 #define WHR_G300N_GPIO_BUTTON_ROUTER_OFF	11	/* active low */
 
-#define WHR_G300N_BUTTONS_POLL_INTERVAL		20
+#define WHR_G300N_KEYS_POLL_INTERVAL		20
+#define WHR_G300N_KEYS_DEBOUNCE_INTERVAL	(3 * WHR_G300N_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition whr_g300n_partitions[] = {
 	{
@@ -89,33 +90,33 @@ static struct gpio_led whr_g300n_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button whr_g300n_gpio_buttons[] __initdata = {
+static struct gpio_keys_button whr_g300n_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WHR_G300N_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "aoss",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WHR_G300N_GPIO_BUTTON_AOSS,
 		.active_low	= 1,
 	}, {
 		.desc		= "router-off",
 		.type		= EV_KEY,
 		.code		= BTN_2,
-		.threshold	= 3,
+		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WHR_G300N_GPIO_BUTTON_ROUTER_OFF,
 		.active_low	= 1,
 	}, {
 		.desc		= "router-on",
 		.type		= EV_KEY,
 		.code		= BTN_3,
-		.threshold	= 3,
+		.debounce_interval = WHR_G300N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WHR_G300N_GPIO_BUTTON_ROUTER_ON,
 		.active_low	= 1,
 	}
@@ -130,7 +131,7 @@ static void __init whr_g300n_init(void)
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(whr_g300n_leds_gpio),
 				  whr_g300n_leds_gpio);
-	ramips_register_gpio_buttons(-1, WHR_G300N_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, WHR_G300N_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(whr_g300n_gpio_buttons),
 				     whr_g300n_gpio_buttons);
 	rt305x_register_wifi();

@@ -25,7 +25,8 @@
 #define RT_G32B_GPIO_BUTTON_WPS		0	/* active low */
 #define RT_G32B_GPIO_BUTTON_RESET	10	/* active low */
 
-#define RT_G32B_BUTTONS_POLL_INTERVAL	20
+#define RT_G32B_KEYS_POLL_INTERVAL	20
+#define RT_G32B_KEYS_DEBOUNCE_INTERVAL	(3 * RT_G32B_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition rt_g32b_partitions[] = {
 	{
@@ -75,19 +76,19 @@ struct spi_board_info __initdata rt_g32b_spi_slave_info[] = {
 	},
 };
 
-static struct gpio_button rt_g32b_gpio_buttons[] __initdata = {
+static struct gpio_keys_button rt_g32b_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = RT_G32B_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= RT_G32B_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = RT_G32B_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= RT_G32B_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}
@@ -101,7 +102,7 @@ static void __init rt_g32b_init(void)
 
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
-	ramips_register_gpio_buttons(-1, RT_G32B_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, RT_G32B_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(rt_g32b_gpio_buttons),
 				     rt_g32b_gpio_buttons);
 	rt305x_register_wifi();

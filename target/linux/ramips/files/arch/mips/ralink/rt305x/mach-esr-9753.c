@@ -28,7 +28,8 @@
 #define ESR_9753_GPIO_BUTTON_WPS	0	/* active low */
 #define ESR_9753_GPIO_BUTTON_RESET	10	/* active low */
 
-#define ESR_9753_BUTTONS_POLL_INTERVAL	20
+#define ESR_9753_KEYS_POLL_INTERVAL	20
+#define ESR_9753_KEYS_DEBOUNCE_INTERVAL	(3 * ESR_9753_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition esr_9753_partitions[] = {
 	{
@@ -78,19 +79,19 @@ static struct gpio_led esr_9753_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button esr_9753_gpio_buttons[] __initdata = {
+static struct gpio_keys_button esr_9753_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = ESR_9753_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= ESR_9753_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = ESR_9753_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= ESR_9753_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}
@@ -105,7 +106,7 @@ static void __init esr_9753_init(void)
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(esr_9753_leds_gpio),
 				  esr_9753_leds_gpio);
 
-	ramips_register_gpio_buttons(-1, ESR_9753_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, ESR_9753_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(esr_9753_gpio_buttons),
 				     esr_9753_gpio_buttons);
 

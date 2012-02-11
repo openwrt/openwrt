@@ -17,11 +17,11 @@
 void __init ramips_register_gpio_buttons(int id,
 					 unsigned poll_interval,
 					 unsigned nbuttons,
-					 struct gpio_button *buttons)
+					 struct gpio_keys_button *buttons)
 {
 	struct platform_device *pdev;
-	struct gpio_buttons_platform_data pdata;
-	struct gpio_button *p;
+	struct gpio_keys_platform_data pdata;
+	struct gpio_keys_button *p;
 	int err;
 
 	p = kmalloc(nbuttons * sizeof(*p), GFP_KERNEL);
@@ -30,7 +30,7 @@ void __init ramips_register_gpio_buttons(int id,
 
 	memcpy(p, buttons, nbuttons * sizeof(*p));
 
-	pdev = platform_device_alloc("gpio-buttons", id);
+	pdev = platform_device_alloc("gpio-keys-polled", id);
 	if (!pdev)
 		goto err_free_buttons;
 
@@ -42,7 +42,6 @@ void __init ramips_register_gpio_buttons(int id,
 	err = platform_device_add_data(pdev, &pdata, sizeof(pdata));
 	if (err)
 		goto err_put_pdev;
-
 
 	err = platform_device_add(pdev);
 	if (err)

@@ -33,7 +33,8 @@
 #define WL341V3_GPIO_BUTTON_WPS		5	/* active low */
 #define WL341V3_GPIO_BUTTON_RESET	7	/* active low */
 
-#define WL341V3_BUTTONS_POLL_INTERVAL	20
+#define WL341V3_KEYS_POLL_INTERVAL	20
+#define WL341V3_KEYS_DEBOUNCE_INTERVAL	(3 * WL341V3_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition wl341v3_partitions[] = {
 	{
@@ -111,19 +112,19 @@ static struct gpio_led wl341v3_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button wl341v3_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wl341v3_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = WL341V3_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WL341V3_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	}, {
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = WL341V3_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WL341V3_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}
@@ -138,7 +139,7 @@ static void __init wl341v3_init(void)
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wl341v3_leds_gpio),
 				  wl341v3_leds_gpio);
-	ramips_register_gpio_buttons(-1, WL341V3_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, WL341V3_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(wl341v3_gpio_buttons),
 				     wl341v3_gpio_buttons);
 	rt305x_register_wifi();

@@ -12,18 +12,16 @@
 #define __ASM_MACH_RALINK_DEV_GPIO_BUTTONS_H
 
 #include <linux/input.h>
-#include <linux/gpio_buttons.h>
+#include <linux/gpio_keys.h>
 
 #ifdef CONFIG_RALINK_DEV_GPIO_BUTTONS
-void ramips_register_gpio_buttons(int id,
-				  unsigned poll_interval,
-				  unsigned nbuttons,
-				  struct gpio_button *buttons);
+void
+ramips_register_gpio_buttons(int id, unsigned poll_interval, unsigned nbuttons,
+			     struct gpio_keys_button *buttons);
 #else
-static inline void ramips_register_gpio_buttons(int id,
-						unsigned poll_interval,
-						unsigned nbuttons,
-						struct gpio_button *buttons)
+static inline void
+ramips_register_gpio_buttons(int id, unsigned poll_interval, unsigned nbuttons,
+			     struct gpio_keys_button *buttons)
 {
 }
 #endif

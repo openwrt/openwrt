@@ -28,7 +28,8 @@
 #define W502U_GPIO_BUTTON_WPS		0
 #define W502U_GPIO_BUTTON_RESET		10
 
-#define W502U_BUTTONS_POLL_INTERVAL	20
+#define W502U_KEYS_POLL_INTERVAL	20
+#define W502U_KEYS_DEBOUNCE_INTERVAL	(3 * W502U_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition w502u_partitions[] = {
 	{
@@ -84,12 +85,12 @@ static struct gpio_led w502u_leds_gpio[] __initdata = {
 	},
 };
 
-static struct gpio_button w502u_gpio_buttons[] __initdata = {
+static struct gpio_keys_button w502u_gpio_buttons[] __initdata = {
 	{
 		.desc		= "Reset button",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = W502U_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= W502U_GPIO_BUTTON_RESET,
 		.active_low	= 1,
 	},
@@ -97,7 +98,7 @@ static struct gpio_button w502u_gpio_buttons[] __initdata = {
 		.desc		= "WPS button",
 		.type		= EV_KEY,
 		.code		= KEY_WPS_BUTTON,
-		.threshold	= 3,
+		.debounce_interval = W502U_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= W502U_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	},
@@ -113,7 +114,7 @@ static void __init w502u_init(void)
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(w502u_leds_gpio),
 				  w502u_leds_gpio);
-	ramips_register_gpio_buttons(-1, W502U_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, W502U_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(w502u_gpio_buttons),
 				     w502u_gpio_buttons);
 	rt305x_register_wifi();

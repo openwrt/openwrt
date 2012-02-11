@@ -25,7 +25,8 @@
 #define PWH2004_GPIO_BUTTON_WPS		12
 #define PWH2004_GPIO_LED_POWER		9
 #define PWH2004_GPIO_LED_WIFI		14
-#define PWH2004_BUTTONS_POLL_INTERVAL	20
+#define PWH2004_KEYS_POLL_INTERVAL	20
+#define PWH2004_KEYS_DEBOUNCE_INTERVAL	(3 * PWH2004_KEYS_POLL_INTERVAL)
 
 static struct mtd_partition pwh2004_partitions[] = {
 	{
@@ -71,12 +72,12 @@ static struct gpio_led pwh2004_leds_gpio[] __initdata = {
 	}
 };
 
-static struct gpio_button pwh2004_gpio_buttons[] __initdata = {
+static struct gpio_keys_button pwh2004_gpio_buttons[] __initdata = {
 	{
 		.desc		= "wps",
 		.type		= EV_KEY,
 		.code		= KEY_RESTART,
-		.threshold	= 3,
+		.debounce_interval = PWH2004_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= PWH2004_GPIO_BUTTON_WPS,
 		.active_low	= 1,
 	}
@@ -88,7 +89,7 @@ static void __init pwh2004_init(void)
 	rt305x_register_flash(0, &pwh2004_flash_data);
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(pwh2004_leds_gpio),
 				  pwh2004_leds_gpio);
-	ramips_register_gpio_buttons(-1, PWH2004_BUTTONS_POLL_INTERVAL,
+	ramips_register_gpio_buttons(-1, PWH2004_KEYS_POLL_INTERVAL,
 				     ARRAY_SIZE(pwh2004_gpio_buttons),
 				     pwh2004_gpio_buttons);
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
