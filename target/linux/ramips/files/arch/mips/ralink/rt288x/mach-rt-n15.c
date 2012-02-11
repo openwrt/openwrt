@@ -34,7 +34,6 @@
 
 #define RT_N15_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition rt_n15_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -65,13 +64,10 @@ static struct mtd_partition rt_n15_partitions[] = {
 		.size	= 0x3b0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data rt_n15_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(rt_n15_partitions),
 	.parts		= rt_n15_partitions,
-#endif
 };
 
 static struct gpio_led rt_n15_leds_gpio[] __initdata = {
