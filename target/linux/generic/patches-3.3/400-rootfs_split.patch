@@ -290,7 +290,7 @@
  	/*
  	 * If the driver is something smart, like UBI, it may need to maintain
  	 * its own reference counting. The below functions are only for driver.
-@@ -504,6 +508,7 @@ extern int mtd_device_parse_register(str
+@@ -502,6 +506,7 @@ extern int mtd_device_parse_register(str
  			      int defnr_parts);
  #define mtd_device_register(master, parts, nr_parts)	\
  	mtd_device_parse_register(master, NULL, NULL, parts, nr_parts)
