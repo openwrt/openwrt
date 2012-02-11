@@ -93,10 +93,8 @@ static struct mtd_partition wcr150gn_partitions[] = {
 };
 
 static struct physmap_flash_data wcr150gn_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(wcr150gn_partitions),
 	.parts		= wcr150gn_partitions,
-#endif
 };
 
 static void __init wcr150gn_init(void)
