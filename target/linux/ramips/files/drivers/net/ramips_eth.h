@@ -230,12 +230,16 @@ struct raeth_priv
 
 	spinlock_t		page_lock;
 	struct net_device       *netdev;
+	struct device		*parent;
 	struct ramips_eth_platform_data *plat;
 
 	int			speed;
 	int			duplex;
 	int			tx_fc;
 	int			rx_fc;
+
+	struct mii_bus		*mii_bus;
+	int			mii_irq[PHY_MAX_ADDR];
 };
 
 #endif /* RAMIPS_ETH_H */
