@@ -33,7 +33,6 @@
 #define WR6202_GPIO_LED_3G	     13
 #define WR6202_GPIO_LED_WPS	     14
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wr6202_partitions[] = {
 	{
 		.name	= "uboot",
@@ -59,13 +58,10 @@ static struct mtd_partition wr6202_partitions[] = {
 		.size	= 0x6B0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data wr6202_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(wr6202_partitions),
 	.parts		= wr6202_partitions,
-#endif
 };
 
 static struct gpio_led wr6202_leds_gpio[] __initdata = {

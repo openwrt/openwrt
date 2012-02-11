@@ -33,7 +33,6 @@
 
 #define WHR_G300N_BUTTONS_POLL_INTERVAL		20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition whr_g300n_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -68,13 +67,10 @@ static struct mtd_partition whr_g300n_partitions[] = {
 		.size	= 0x3a0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data whr_g300n_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(whr_g300n_partitions),
 	.parts		= whr_g300n_partitions,
-#endif
 };
 
 static struct gpio_led whr_g300n_leds_gpio[] __initdata = {

@@ -30,7 +30,6 @@
 
 #define ESR_9753_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition esr_9753_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -61,13 +60,10 @@ static struct mtd_partition esr_9753_partitions[] = {
 		.size	= 0x3b0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data esr_9753_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(esr_9753_partitions),
 	.parts		= esr_9753_partitions,
-#endif
 };
 
 static struct gpio_led esr_9753_leds_gpio[] __initdata = {

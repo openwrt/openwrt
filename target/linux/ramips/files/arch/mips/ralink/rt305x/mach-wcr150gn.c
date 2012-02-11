@@ -60,7 +60,6 @@ static struct gpio_button wcr150gn_gpio_buttons[] __initdata = {
 	}
 };
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wcr150gn_partitions[] = {
 	{
 		.name	= "bootloader",
@@ -91,7 +90,6 @@ static struct mtd_partition wcr150gn_partitions[] = {
 		.size   = 0x3b0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data wcr150gn_flash_data = {
 #ifdef CONFIG_MTD_PARTITIONS

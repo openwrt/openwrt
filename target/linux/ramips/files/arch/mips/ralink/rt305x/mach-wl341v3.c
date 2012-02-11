@@ -35,7 +35,6 @@
 
 #define WL341V3_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wl341v3_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -74,13 +73,10 @@ static struct mtd_partition wl341v3_partitions[] = {
 		.size	= 0x400000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data wl341v3_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(wl341v3_partitions),
 	.parts		= wl341v3_partitions,
-#endif
 };
 
 static struct gpio_led wl341v3_leds_gpio[] __initdata = {

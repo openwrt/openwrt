@@ -30,7 +30,6 @@
 #define OMNI_EMB_GPIO_LED_STATUS	9
 #define OMNI_EMB_GPIO_LED_WLAN		14
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition emb_partitions[] = {
 	{
 		.name	= "uboot",
@@ -60,13 +59,10 @@ static struct mtd_partition emb_partitions[] = {
 		.size	= 0x7B0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data omni_emb_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(emb_partitions),
 	.parts		= emb_partitions,
-#endif
 };
 
 static struct gpio_led omni_emb_leds_gpio[] __initdata = {

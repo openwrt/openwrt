@@ -30,7 +30,6 @@
 #define ALL0256N_GPIO_LED_RSSI_HIGH 13
 #define ALL0256N_BUTTONS_POLL_INTERVAL 20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition all0256n_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -59,15 +58,11 @@ static struct mtd_partition all0256n_partitions[] = {
 		.size	= 0x3B0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
-
 
 const struct flash_platform_data all0256n_flash = {
 	.type		= "mx25l3205d",
-#ifdef CONFIG_MTD_PARTITIONS
 	.parts		= all0256n_partitions,
 	.nr_parts	= ARRAY_SIZE(all0256n_partitions),
-#endif
 };
 
 struct spi_board_info all0256n_spi_slave_info[] __initdata = {

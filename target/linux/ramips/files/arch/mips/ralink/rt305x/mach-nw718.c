@@ -34,7 +34,6 @@
 
 #define NW718_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition nw718_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -65,14 +64,9 @@ static struct mtd_partition nw718_partitions[] = {
 		.size	= 0x3a0000,
 	}
 };
-#define nw718_nr_parts		ARRAY_SIZE(nw718_partitions)
-#else
-#define nw718_nr_parts		0
-#define nw718_partitions	NULL
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct flash_platform_data nw718_flash_data = {
-	.nr_parts	= nw718_nr_parts,
+	.nr_parts	= ARRAY_SIZE(nw718_partitions),
 	.parts		= nw718_partitions,
 };
 

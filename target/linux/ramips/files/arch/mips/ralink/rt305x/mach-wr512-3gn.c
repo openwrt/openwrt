@@ -44,8 +44,6 @@
 
 #define WR512_3GN_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
-
 static struct mtd_partition wr512_3gn_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -77,13 +75,9 @@ static struct mtd_partition wr512_3gn_partitions[] = {
 	}
 };
 
-#endif /* CONFIG_MTD_PARTITIONS */
-
 static struct physmap_flash_data wr512_3gn_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(wr512_3gn_partitions),
 	.parts		= wr512_3gn_partitions,
-#endif
 };
 
 static struct gpio_led wr512_3gn_leds_gpio[] __initdata = {

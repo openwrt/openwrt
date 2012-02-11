@@ -69,8 +69,6 @@ static struct gpio_button wl351_gpio_buttons[] __initdata = {
 	}
 };
 
-
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition wl351_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -105,13 +103,10 @@ static struct mtd_partition wl351_partitions[] = {
 		.size	= 0x3a0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data wl351_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(wl351_partitions),
 	.parts		= wl351_partitions,
-#endif
 };
 
 

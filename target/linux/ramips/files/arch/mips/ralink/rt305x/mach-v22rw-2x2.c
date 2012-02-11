@@ -29,7 +29,6 @@
 
 #define V22RW_2X2_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition v22rw_2x2_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -60,13 +59,10 @@ static struct mtd_partition v22rw_2x2_partitions[] = {
 		.size	= 0x3b0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data v22rw_2x2_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(v22rw_2x2_partitions),
 	.parts		= v22rw_2x2_partitions,
-#endif
 };
 
 static struct gpio_led v22rw_2x2_leds_gpio[] __initdata = {

@@ -27,7 +27,6 @@
 
 #define RT_G32B_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition rt_g32b_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -58,14 +57,11 @@ static struct mtd_partition rt_g32b_partitions[] = {
 		.size	= 0x3b0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 const struct flash_platform_data rt_g32b_flash = {
 	.type		= "mx25l3205d",
-#ifdef CONFIG_MTD_PARTITIONS
 	.parts		= rt_g32b_partitions,
 	.nr_parts	= ARRAY_SIZE(rt_g32b_partitions),
-#endif
 };
 
 struct spi_board_info __initdata rt_g32b_spi_slave_info[] = {

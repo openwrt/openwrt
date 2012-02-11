@@ -61,7 +61,6 @@ static struct gpio_button argus_atp52b_gpio_buttons[] __initdata = {
 	}
 };
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition argus_atp52b_partitions[] = {
 	{
 		.name	= "bootloader",
@@ -88,13 +87,10 @@ static struct mtd_partition argus_atp52b_partitions[] = {
 		.size   = 0x690000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data argus_atp52b_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(argus_atp52b_partitions),
 	.parts		= argus_atp52b_partitions,
-#endif
 };
 
 static void __init argus_atp52b_init(void)

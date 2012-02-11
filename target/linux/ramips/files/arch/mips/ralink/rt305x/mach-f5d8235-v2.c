@@ -74,7 +74,6 @@ static struct gpio_led f5d8235v2_leds_gpio[] __initdata = {
 	}
 };
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition f5d8235v2_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -99,13 +98,10 @@ static struct mtd_partition f5d8235v2_partitions[] = {
 		.size	= 0x010000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data f5d8235v2_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(f5d8235v2_partitions),
 	.parts		= f5d8235v2_partitions,
-#endif
 };
 
 

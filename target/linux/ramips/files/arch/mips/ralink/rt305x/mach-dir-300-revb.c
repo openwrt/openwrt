@@ -31,7 +31,6 @@
 
 #define DIR_300B_BUTTONS_POLL_INTERVAL	20
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition dir_300b_partitions[] = {
 	{
 		.name	= "u-boot",
@@ -62,13 +61,10 @@ static struct mtd_partition dir_300b_partitions[] = {
 		.size	= 0x3b0000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct physmap_flash_data dir_300b_flash_data = {
-#ifdef CONFIG_MTD_PARTITIONS
 	.nr_parts	= ARRAY_SIZE(dir_300b_partitions),
 	.parts		= dir_300b_partitions,
-#endif
 };
 
 static struct gpio_led dir_300b_leds_gpio[] __initdata = {
