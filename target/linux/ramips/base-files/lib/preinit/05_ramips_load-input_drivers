@@ -5,7 +5,7 @@
 preinit_ramips_load_input_drivers() {
 	insmod input-core
 	insmod input-polldev
-	insmod gpio_buttons
+	insmod gpio_keys_polled
 	insmod button-hotplug
 }
 
