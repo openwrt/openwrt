@@ -1,0 +1,77 @@
+From 8858927ddc6797489cad322fc2d2134aeae543cd Mon Sep 17 00:00:00 2001
+From: Arnaud Lacombe <lacombar@gmail.com>
+Date: Sun, 11 Dec 2011 16:44:02 -0500
+Subject: [PATCH] add-stage2-ldscripts 
+
+---
+ stage2/Makefile.am      |    2 +-
+ stage2/Makefile.in      |    2 +-
+ stage2/stage2.ldscripts |   30 ++++++++++++++++++++++++++++++
+ 3 files changed, 32 insertions(+), 2 deletions(-)
+ create mode 100644 stage2/stage2.ldscripts
+
+diff --git a/stage2/Makefile.am b/stage2/Makefile.am
+index f8e6d42..ea28a4d 100644
+--- a/stage2/Makefile.am
++++ b/stage2/Makefile.am
+@@ -55,7 +55,7 @@ noinst_PROGRAMS = pre_stage2.exec start.exec start_eltorito.exec \
+ endif
+ MOSTLYCLEANFILES = $(noinst_PROGRAMS)
+ 
+-PRE_STAGE2_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,8200
++PRE_STAGE2_LINK = -nostdlib -Wl,-N -Wl,-Tstage2.ldscripts
+ START_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,8000
+ NBLOADER_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,0
+ PXELOADER_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,7C00
+diff --git a/stage2/Makefile.in b/stage2/Makefile.in
+index d0062bd..7bee2d5 100644
+--- a/stage2/Makefile.in
++++ b/stage2/Makefile.in
+@@ -468,7 +468,7 @@ libgrub_a_CFLAGS = $(GRUB_CFLAGS) -I$(top_srcdir)/lib \
+ @DISKLESS_SUPPORT_FALSE@noinst_DATA = pre_stage2 start start_eltorito
+ @DISKLESS_SUPPORT_TRUE@noinst_DATA = pre_stage2 start start_eltorito nbloader pxeloader diskless
+ MOSTLYCLEANFILES = $(noinst_PROGRAMS)
+-PRE_STAGE2_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,8200
++PRE_STAGE2_LINK = -nostdlib -Wl,-N -Wl,-Tstage2.ldscripts
+ START_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,8000
+ NBLOADER_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,0
+ PXELOADER_LINK = -nostdlib -Wl,-N -Wl,-Ttext -Wl,7C00
+diff --git a/stage2/stage2.ldscripts b/stage2/stage2.ldscripts
+new file mode 100644
+index 0000000..2c8b8e1
+--- /dev/null
++++ b/stage2/stage2.ldscripts
+@@ -0,0 +1,30 @@
++/* Script for -N: mix text and data on same page; don't align data */
++OUTPUT_FORMAT("elf32-i386", "elf32-i386",
++	      "elf32-i386")
++OUTPUT_ARCH(i386)
++ENTRY(_start)
++SECTIONS
++{
++  . = 0x8200;
++  .text           :
++  {
++    _start = .;
++    *(.text .text.* )
++  }
++  .rodata         : { *(.rodata .rodata.* ) }
++  /* Adjust the address for the data segment.  We want to adjust up to
++     the same address within the page on the next page up.  */
++  . = .;
++  .data           : { *(.data .data.* ) }
++  __bss_start = .;
++  .bss            :
++  {
++   *(.bss .bss.* )
++   *(COMMON)
++   . = ALIGN(. != 0 ? 32 / 8 : 1);
++  }
++  . = ALIGN(32 / 8);
++  . = ALIGN(32 / 8);
++  _end = .; PROVIDE (end = .);
++  .comment       0 : { *(.comment) }
++}
+-- 
+1.7.6.153.g78432
+
