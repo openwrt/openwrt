@@ -35,7 +35,7 @@ HOST_CONFIGURE_ARGS = \
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) \
-		CFLAGS="$(HOST_CFLAGS) -include getline.h" \
+		CFLAGS="$(HOST_CFLAGS)" \
 		all
 endef
 
