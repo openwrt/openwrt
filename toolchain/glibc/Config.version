@@ -1,17 +1,11 @@
 config GLIBC_VERSION
 	string
 	depends on USE_GLIBC
-	default "2.3.6"  if GLIBC_VERSION_2_3_6
-	default "2.4"     if GLIBC_VERSION_2_4
-	default "2.6.1"  if GLIBC_VERSION_2_6_1
-	default "2.7"    if GLIBC_VERSION_2_7
-	default "2.7"
+	default "2.14"    if GLIBC_VERSION_2_14
+	default "2.14"
 
 config GLIBC_PORTS
 	bool
 	depends on USE_GLIBC
-	default y  if GLIBC_VERSION_2_3_6 && (arm || armeb || mips || mipsel || mips64 || mips64el)
-	default y  if GLIBC_VERSION_2_4 && (arm || armeb || mips || mipsel || mips64 || mips64el)
-	default y  if GLIBC_VERSION_2_6_1 && (arm || armeb || mips || mipsel || mips64 || mips64el || powerpc)
-	default y  if GLIBC_VERSION_2_7 && (arm || armeb || mips || mipsel || mips64 || mips64el || powerpc)
+	default y  if GLIBC_VERSION_2_14 && (arm || armeb || mips || mipsel || mips64 || mips64el || powerpc)
 	default n

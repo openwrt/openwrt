@@ -9,20 +9,11 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=glibc
 PKG_VERSION:=$(call qstrip,$(CONFIG_GLIBC_VERSION))
 
-ifeq ($(PKG_VERSION),2.3.6)
-  PKG_MD5SUM:=bfdce99f82d6dbcb64b7f11c05d6bc96
-endif
-ifeq ($(PKG_VERSION),2.4)
-  PKG_MD5SUM:=7e9a88dcd41fbc53801dbe5bdacaf245
-endif
-ifeq ($(PKG_VERSION),2.6.1)
-  PKG_MD5SUM:=11cf6d3fc86dbe0890b8d00372eb6286
-endif
-ifeq ($(PKG_VERSION),2.7)
-  PKG_MD5SUM:=065c5952b439deba40083ccd67bcc8f7
+ifeq ($(PKG_VERSION),2.14)
+  PKG_MD5SUM:=1588cc22e796c296223744895ebc4cef
 endif
 
-PKG_SOURCE_URL:=@GNU/glibc/
+PKG_SOURCE_URL:=@GNU/glibc
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
 PATCH_DIR:=./patches/$(PKG_VERSION)
@@ -86,7 +77,6 @@ GLIBC_CONFIGURE_STAGE2:= \
 
 GLIBC_MAKE:= \
 	$(MAKE) \
-
 
 define Host/SetToolchainInfo
 	$(SED) 's,^\(LIBC_TYPE\)=.*,\1=$(PKG_NAME),' $(TOOLCHAIN_DIR)/info.mk
