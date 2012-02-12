@@ -63,11 +63,6 @@ static struct mtd_partition dir_300b_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data dir_300b_flash_data = {
-	.nr_parts	= ARRAY_SIZE(dir_300b_partitions),
-	.parts		= dir_300b_partitions,
-};
-
 static struct gpio_led dir_300b_leds_gpio[] __initdata = {
 	{
 		.name		= "d-link:amber:status",
@@ -106,7 +101,10 @@ static void __init dir_300b_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_register_flash(0, &dir_300b_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(dir_300b_partitions);
+	rt305x_flash0_data.parts = dir_300b_partitions;
+	rt305x_register_flash(0);
+
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(dir_300b_leds_gpio),

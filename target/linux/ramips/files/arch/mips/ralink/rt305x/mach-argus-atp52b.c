@@ -89,15 +89,14 @@ static struct mtd_partition argus_atp52b_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data argus_atp52b_flash_data = {
-	.nr_parts	= ARRAY_SIZE(argus_atp52b_partitions),
-	.parts		= argus_atp52b_partitions,
-};
-
 static void __init argus_atp52b_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
-	rt305x_register_flash(0, &argus_atp52b_flash_data);
+
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(argus_atp52b_partitions);
+	rt305x_flash0_data.parts = argus_atp52b_partitions;
+	rt305x_register_flash(0);
+
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(argus_atp52b_leds_gpio),
 					argus_atp52b_leds_gpio);
 	ramips_register_gpio_buttons(-1, ARGUS_ATP52B_KEYS_POLL_INTERVAL,

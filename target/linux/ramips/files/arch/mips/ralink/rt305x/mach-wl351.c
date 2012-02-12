@@ -104,12 +104,6 @@ static struct mtd_partition wl351_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data wl351_flash_data = {
-	.nr_parts	= ARRAY_SIZE(wl351_partitions),
-	.parts		= wl351_partitions,
-};
-
-
 static struct rtl8366_platform_data wl351_switch_data = {
 	.gpio_sda	= RT305X_GPIO_I2C_SD,
 	.gpio_sck	= RT305X_GPIO_I2C_SCLK,
@@ -130,7 +124,11 @@ static void __init wl351_init(void)
 				RT305X_GPIO_MODE_I2C |
 				RT305X_GPIO_MODE_SPI |
 				RT305X_GPIO_MODE_MDIO);
-	rt305x_register_flash(0, &wl351_flash_data);
+
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(wl351_partitions);
+	rt305x_flash0_data.parts = wl351_partitions;
+	rt305x_register_flash(0);
+
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wl351_leds_gpio),
 						wl351_leds_gpio);
 	ramips_register_gpio_buttons(-1, WL351_KEYS_POLL_INTERVAL,

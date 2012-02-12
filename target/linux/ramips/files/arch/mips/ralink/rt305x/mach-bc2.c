@@ -59,11 +59,6 @@ static struct mtd_partition bc2_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data bc2_flash_data = {
-	.nr_parts	= ARRAY_SIZE(bc2_partitions),
-	.parts		= bc2_partitions,
-};
-
 static struct gpio_led bc2_leds_gpio[] __initdata = {
 	{
 		.name		= "bc2:blue:usb",
@@ -89,7 +84,9 @@ static void __init bc2_init(void)
 			  RT305X_GPIO_MODE_UART0_SHIFT) |
 			  RT305X_GPIO_MODE_JTAG);
 
-	rt305x_register_flash(0, &bc2_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(bc2_partitions);
+	rt305x_flash0_data.parts = bc2_partitions;
+	rt305x_register_flash(0);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(bc2_leds_gpio),
 				  bc2_leds_gpio);

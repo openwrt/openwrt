@@ -61,11 +61,6 @@ static struct mtd_partition v22rw_2x2_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data v22rw_2x2_flash_data = {
-	.nr_parts	= ARRAY_SIZE(v22rw_2x2_partitions),
-	.parts		= v22rw_2x2_partitions,
-};
-
 static struct gpio_led v22rw_2x2_leds_gpio[] __initdata = {
 	{
 		.name		= "v22rw-2x2:green:security",
@@ -100,7 +95,10 @@ static void __init v22rw_2x2_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_register_flash(0, &v22rw_2x2_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(v22rw_2x2_partitions);
+	rt305x_flash0_data.parts = v22rw_2x2_partitions;
+	rt305x_register_flash(0);
+
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(v22rw_2x2_leds_gpio),

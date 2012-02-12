@@ -61,11 +61,6 @@ static struct mtd_partition emb_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data omni_emb_flash_data = {
-	.nr_parts	= ARRAY_SIZE(emb_partitions),
-	.parts		= emb_partitions,
-};
-
 static struct gpio_led omni_emb_leds_gpio[] __initdata = {
 	{
 		.name           = "emb:green:status",
@@ -101,7 +96,10 @@ static void __init omni_emb_init(void)
 				ARRAY_SIZE(omni_emb_gpio_buttons),
 				omni_emb_gpio_buttons);
 
-	rt305x_register_flash(0, &omni_emb_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(emb_partitions);
+	rt305x_flash0_data.parts = emb_partitions;
+	rt305x_register_flash(0);
+
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
 	rt305x_register_wdt();

@@ -62,11 +62,6 @@ static struct mtd_partition esr_9753_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data esr_9753_flash_data = {
-	.nr_parts	= ARRAY_SIZE(esr_9753_partitions),
-	.parts		= esr_9753_partitions,
-};
-
 static struct gpio_led esr_9753_leds_gpio[] __initdata = {
 	{
 		.name		= "esr-9753:orange:power",
@@ -101,7 +96,9 @@ static void __init esr_9753_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_register_flash(0, &esr_9753_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(esr_9753_partitions);
+	rt305x_flash0_data.parts = esr_9753_partitions;
+	rt305x_register_flash(0);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(esr_9753_leds_gpio),
 				  esr_9753_leds_gpio);

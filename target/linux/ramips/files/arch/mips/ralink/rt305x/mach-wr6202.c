@@ -60,11 +60,6 @@ static struct mtd_partition wr6202_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data wr6202_flash_data = {
-	.nr_parts	= ARRAY_SIZE(wr6202_partitions),
-	.parts		= wr6202_partitions,
-};
-
 static struct gpio_led wr6202_leds_gpio[] __initdata = {
 	{
 		.name           = "wr6202:blue:wps",
@@ -112,7 +107,10 @@ static void __init wr6202_init(void)
 	gpio_direction_output(WR6202_GPIO_USB_POWER, 0);
 	gpio_free(WR6202_GPIO_USB_POWER);
 
-	rt305x_register_flash(0, &wr6202_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(wr6202_partitions);
+	rt305x_flash0_data.parts = wr6202_partitions;
+	rt305x_register_flash(0);
+
 	rt305x_register_ethernet();
 	rt305x_register_wifi();
 	rt305x_register_wdt();

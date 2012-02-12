@@ -54,11 +54,6 @@ static struct mtd_partition nbg_419n_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data nbg_419n_flash_data = {
-	.nr_parts	= ARRAY_SIZE(nbg_419n_partitions),
-	.parts		= nbg_419n_partitions,
-};
-
 static struct gpio_led nbg_419n_leds_gpio[] __initdata = {
 	{
 		.name		= "nbg-419n:green:power",
@@ -93,7 +88,10 @@ static void __init nbg_419n_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_register_flash(0, &nbg_419n_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(nbg_419n_partitions);
+	rt305x_flash0_data.parts = nbg_419n_partitions;
+	rt305x_register_flash(0);
+
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(nbg_419n_leds_gpio),

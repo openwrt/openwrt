@@ -76,11 +76,6 @@ static struct mtd_partition wr512_3gn_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data wr512_3gn_flash_data = {
-	.nr_parts	= ARRAY_SIZE(wr512_3gn_partitions),
-	.parts		= wr512_3gn_partitions,
-};
-
 static struct gpio_led wr512_3gn_leds_gpio[] __initdata = {
 	{
 		.name		= "wr512:green:3g",
@@ -131,7 +126,10 @@ static void __init wr512_3gn_init(void)
 {
 	rt305x_gpio_init(WR512_3GN_GPIO_MODE);
 
-	rt305x_register_flash(0, &wr512_3gn_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(wr512_3gn_partitions);
+	rt305x_flash0_data.parts = wr512_3gn_partitions;
+	rt305x_register_flash(0);
+
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wr512_3gn_leds_gpio),
