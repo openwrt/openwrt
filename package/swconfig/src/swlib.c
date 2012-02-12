@@ -38,7 +38,7 @@
 static struct nl_sock *handle;
 static struct nl_cache *cache;
 static struct genl_family *family;
-static struct nlattr *tb[SWITCH_ATTR_MAX];
+static struct nlattr *tb[SWITCH_ATTR_MAX + 1];
 static int refcount = 0;
 
 static struct nla_policy port_policy[] = {
