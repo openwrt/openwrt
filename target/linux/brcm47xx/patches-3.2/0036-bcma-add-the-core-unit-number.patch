@@ -32,7 +32,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static int bcma_get_next_core(struct bcma_bus *bus, u32 __iomem **eromptr,
  			      struct bcma_device_id *match, int core_num,
  			      struct bcma_device *core)
-@@ -407,6 +418,7 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -392,6 +403,7 @@ int bcma_bus_scan(struct bcma_bus *bus)
  	bcma_scan_switch_core(bus, erombase);
  
  	while (eromptr < eromend) {
@@ -40,7 +40,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		struct bcma_device *core = kzalloc(sizeof(*core), GFP_KERNEL);
  		if (!core)
  			return -ENOMEM;
-@@ -426,6 +438,8 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -411,6 +423,8 @@ int bcma_bus_scan(struct bcma_bus *bus)
  
  		core->core_index = core_num++;
  		bus->nr_cores++;
@@ -58,4 +58,4 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	u8 core_unit;
  
  	u32 addr;
- 	u32 addr1;
+ 	u32 wrap;

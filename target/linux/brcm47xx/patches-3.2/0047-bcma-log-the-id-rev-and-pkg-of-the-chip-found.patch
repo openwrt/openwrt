@@ -13,7 +13,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
-@@ -380,6 +380,7 @@ static int bcma_get_next_core(struct bcm
+@@ -364,6 +364,7 @@ static int bcma_get_next_core(struct bcm
  void bcma_init_bus(struct bcma_bus *bus)
  {
  	s32 tmp;
@@ -21,7 +21,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	if (bus->init_done)
  		return;
-@@ -390,9 +391,12 @@ void bcma_init_bus(struct bcma_bus *bus)
+@@ -374,9 +375,12 @@ void bcma_init_bus(struct bcma_bus *bus)
  	bcma_scan_switch_core(bus, BCMA_ADDR_BASE);
  
  	tmp = bcma_scan_read32(bus, 0, BCMA_CC_ID);

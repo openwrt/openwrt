@@ -19,4 +19,4 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (pc->cardbusmode && (dev > 1))
  		goto out;
  
- 	/* Type 0 transaction */
+ 	if (bus == 0) {
