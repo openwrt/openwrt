@@ -1,0 +1,48 @@
+From d85bba4eb399a8273aabaef5c21c89820d7a0514 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 9 Feb 2012 23:14:57 +0100
+Subject: [PATCH 180/186] USB: HCI: add struct for ehci and ohci platform
+ driver
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ include/linux/usb/hci_driver.h |   32 ++++++++++++++++++++++++++++++++
+ 1 files changed, 32 insertions(+), 0 deletions(-)
+ create mode 100644 include/linux/usb/hci_driver.h
+
+--- /dev/null
++++ b/include/linux/usb/hci_driver.h
+@@ -0,0 +1,32 @@
++/*
++ * Copyright (C) 2012 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the
++ * Free Software Foundation; either version 2 of the License, or (at your
++ * option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
++ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software Foundation,
++ * Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#ifndef __USB_CORE_HCI_PDRIVER_H
++#define __USB_CORE_HCI_PDRIVER_H
++
++#define USB_HCI_PDATA_PORT_POWER_SET (1 << 0)
++#define USB_HCI_PDATA_HAS_TT_SET (1 << 1)
++
++struct usb_hci_pdata {
++	int		flags;
++	int		caps_offset;
++	unsigned	has_tt:1;
++	unsigned	power_set_is_on:1;
++};
++
++#endif /* __USB_CORE_HCI_PDRIVER_H */
