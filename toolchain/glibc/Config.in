@@ -1,20 +1,11 @@
 choice
 	prompt "glibc version" 
 	depends on TOOLCHAINOPTS && USE_GLIBC
-	default GLIBC_VERSION_2_6_1
+	default GLIBC_VERSION_2_14
 	help
 	  Select the version of glibc you wish to use.
 
-	config GLIBC_VERSION_2_3_6
-		bool "glibc 2.3.6"
-
-	config GLIBC_VERSION_2_4
-		bool "glibc 2.4"
-
-	config GLIBC_VERSION_2_6_1
-		bool "glibc 2.6.1"
-
-	config GLIBC_VERSION_2_7
-		bool "glibc 2.7"
+	config GLIBC_VERSION_2_14
+		bool "glibc 2.14"
 
 endchoice
