@@ -27,8 +27,8 @@ choice
 		bool "binutils 2.21.1"
 
 	config BINUTILS_VERSION_2_22
-		depends !ubicom32
-		depends !avr32
+		depends !ubicom32 || (ubicom32 && BROKEN)
+		depends !avr32 || (avr32 && BROKEN)
 		bool "binutils 2.22"
 
 endchoice
