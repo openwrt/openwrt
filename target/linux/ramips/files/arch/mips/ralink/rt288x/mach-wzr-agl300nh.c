@@ -61,16 +61,14 @@ static struct mtd_partition wzr_agl300nh_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data wzr_agl300nh_flash_data = {
-	.nr_parts	= ARRAY_SIZE(wzr_agl300nh_partitions),
-	.parts		= wzr_agl300nh_partitions,
-};
-
 static void __init wzr_agl300nh_init(void)
 {
 	rt288x_gpio_init(RT2880_GPIO_MODE_UART0);
 
-	rt288x_register_flash(0, &wzr_agl300nh_flash_data);
+	rt288x_flash0_data.nr_parts = ARRAY_SIZE(wzr_agl300nh_partitions);
+	rt288x_flash0_data.parts = wzr_agl300nh_partitions;
+	rt288x_register_flash(0);
+
 	rt288x_register_wifi();
 	rt288x_register_wdt();
 }

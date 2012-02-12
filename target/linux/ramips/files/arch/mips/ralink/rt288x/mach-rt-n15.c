@@ -66,11 +66,6 @@ static struct mtd_partition rt_n15_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data rt_n15_flash_data = {
-	.nr_parts	= ARRAY_SIZE(rt_n15_partitions),
-	.parts		= rt_n15_partitions,
-};
-
 static struct gpio_led rt_n15_leds_gpio[] __initdata = {
 	{
 		.name		= "rt-n15:blue:power",
@@ -114,7 +109,9 @@ static void __init rt_n15_init(void)
 {
 	rt288x_gpio_init(RT2880_GPIO_MODE_UART0 | RT2880_GPIO_MODE_I2C);
 
-	rt288x_register_flash(0, &rt_n15_flash_data);
+	rt288x_flash0_data.nr_parts = ARRAY_SIZE(rt_n15_partitions);
+	rt288x_flash0_data.parts = rt_n15_partitions;
+	rt288x_register_flash(0);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(rt_n15_leds_gpio),
 				  rt_n15_leds_gpio);
