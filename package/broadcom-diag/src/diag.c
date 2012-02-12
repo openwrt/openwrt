@@ -53,7 +53,10 @@ enum {
 	WRTSL54GS,
 	WRT54G3G,
 	WRT54G3GV2_VF,
-	WRT160N,
+	WRT150NV1,
+	WRT150NV11,
+	WRT160NV1,
+	WRT160NV3,
 	WRT300NV11,
 	WRT350N,
 	WRT600N,
@@ -283,8 +286,32 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "3g_blue",	.gpio = 1 << 3, .polarity = NORMAL },
 		},
 	},
-	[WRT160N] = {
-		.name		= "Linksys WRT160N",
+	[WRT150NV1] = {
+		.name		= "Linksys WRT150N V1",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "ses",	.gpio = 1 << 4 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "ses_green",	.gpio = 1 << 5, .polarity = REVERSE },
+			{ .name = "ses_amber", .gpio = 1 << 3, .polarity = REVERSE },
+		},
+	},
+	[WRT150NV11] = {
+		.name		= "Linksys WRT150N V1.1",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "ses",	.gpio = 1 << 4 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "ses_green",	.gpio = 1 << 5, .polarity = REVERSE },
+			{ .name = "ses_amber", .gpio = 1 << 3, .polarity = REVERSE },
+		},
+	},
+	[WRT160NV1] = {
+		.name		= "Linksys WRT160N v1.x",
 		.buttons	= {
 			{ .name = "reset",	.gpio = 1 << 6 },
 			{ .name = "ses",	.gpio = 1 << 4 },
@@ -293,6 +320,18 @@ static struct platform_t __initdata platforms[] = {
 			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
 			{ .name = "ses_blue",	.gpio = 1 << 5, .polarity = REVERSE },
 			{ .name = "ses_orange", .gpio = 1 << 3, .polarity = REVERSE },
+		},
+	},
+	[WRT160NV3] = {
+		.name		= "Linksys WRT160N V3",
+		.buttons	= {
+			{ .name = "reset",	.gpio = 1 << 6 },
+			{ .name = "ses",	.gpio = 1 << 5 },
+		},
+		.leds		= {
+			{ .name = "power",	.gpio = 1 << 1, .polarity = NORMAL },
+			{ .name = "ses_blue",	.gpio = 1 << 4, .polarity = REVERSE },
+			{ .name = "ses_orange", .gpio = 1 << 2, .polarity = REVERSE },
 		},
 	},
 	[WRT300NV11] = {
@@ -1102,8 +1141,18 @@ static struct platform_t __init *platform_detect(void)
 			if (!strcmp(getvar("et1phyaddr"),"5") && !strcmp(getvar("et1mdcport"), "1"))
 				return &platforms[WRTSL54GS];
 
-			if (!strcmp(boardtype, "0x0472"))
-				return &platforms[WRT160N];
+			if (!strcmp(boardtype, "0x0472")) {
+				if(!strcmp(getvar("boot_hw_model"), "WRT150N"))
+					if(!strcmp(getvar("boot_hw_ver"), "1"))
+						return &platforms[WRT150NV1];
+					else if(!strcmp(getvar("boot_hw_ver"), "1.1"))
+						return &platforms[WRT150NV11];
+				else if(!strcmp(getvar("boot_hw_model"), "WRT160N"))
+					if(!strcmp(getvar("boot_hw_ver"), "1.0"))
+						return &platforms[WRT160NV1];
+					else if(!strcmp(getvar("boot_hw_ver"), "3.0"))
+						return &platforms[WRT160NV3];
+			}
 
 			/* default to WRT54G */
 			return &platforms[WRT54G];
