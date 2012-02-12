@@ -55,11 +55,6 @@ static struct mtd_partition pwh2004_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data pwh2004_flash_data = {
-	.nr_parts	= ARRAY_SIZE(pwh2004_partitions),
-	.parts		= pwh2004_partitions,
-};
-
 static struct gpio_led pwh2004_leds_gpio[] __initdata = {
 	{
 		.name		= "pwh2004:red:wifi",
@@ -86,7 +81,11 @@ static struct gpio_keys_button pwh2004_gpio_buttons[] __initdata = {
 static void __init pwh2004_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
-	rt305x_register_flash(0, &pwh2004_flash_data);
+
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(pwh2004_partitions);
+	rt305x_flash0_data.parts = pwh2004_partitions;
+	rt305x_register_flash(0);
+
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(pwh2004_leds_gpio),
 				  pwh2004_leds_gpio);
 	ramips_register_gpio_buttons(-1, PWH2004_KEYS_POLL_INTERVAL,

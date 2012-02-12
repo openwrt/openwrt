@@ -16,9 +16,12 @@
 struct physmap_flash_data;
 struct spi_board_info;
 
+extern struct physmap_flash_data rt305x_flash0_data;
+extern struct physmap_flash_data rt305x_flash1_data;
+
 extern struct rt305x_esw_platform_data rt305x_esw_data;
 
-void rt305x_register_flash(unsigned int id, struct physmap_flash_data *pdata);
+void rt305x_register_flash(unsigned int id);
 void rt305x_register_ethernet(void);
 void rt305x_register_wifi(void);
 void rt305x_register_wdt(void);

@@ -63,11 +63,6 @@ static struct mtd_partition fonera20n_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data fonera20n_flash_data = {
-	.nr_parts	= ARRAY_SIZE(fonera20n_partitions),
-	.parts		= fonera20n_partitions,
-};
-
 static struct gpio_led fonera20n_leds_gpio[] __initdata = {
 	{
 		.name		= "fonera20n:orange:wifi",
@@ -106,7 +101,9 @@ static void __init fonera20n_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_register_flash(0, &fonera20n_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(fonera20n_partitions);
+	rt305x_flash0_data.parts = fonera20n_partitions;
+	rt305x_register_flash(0);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(fonera20n_leds_gpio),
 				  fonera20n_leds_gpio);

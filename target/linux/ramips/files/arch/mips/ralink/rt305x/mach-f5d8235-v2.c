@@ -99,12 +99,6 @@ static struct mtd_partition f5d8235v2_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data f5d8235v2_flash_data = {
-	.nr_parts	= ARRAY_SIZE(f5d8235v2_partitions),
-	.parts		= f5d8235v2_partitions,
-};
-
-
 static struct rtl8366_platform_data f5d8235v2_switch_data = {
 	.gpio_sda	= RT305X_GPIO_I2C_SD,
 	.gpio_sck	= RT305X_GPIO_I2C_SCLK,
@@ -125,7 +119,11 @@ static void __init f5d8235v2_init(void)
 					RT305X_GPIO_MODE_I2C |
 					RT305X_GPIO_MODE_SPI |
 					RT305X_GPIO_MODE_MDIO);
-	rt305x_register_flash(0, &f5d8235v2_flash_data);
+
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(f5d8235v2_partitions);
+	rt305x_flash0_data.parts = f5d8235v2_partitions;
+	rt305x_register_flash(0);
+
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(f5d8235v2_leds_gpio),
 						f5d8235v2_leds_gpio);
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_NONE;

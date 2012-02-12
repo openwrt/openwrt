@@ -92,15 +92,14 @@ static struct mtd_partition wcr150gn_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data wcr150gn_flash_data = {
-	.nr_parts	= ARRAY_SIZE(wcr150gn_partitions),
-	.parts		= wcr150gn_partitions,
-};
-
 static void __init wcr150gn_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
-	rt305x_register_flash(0, &wcr150gn_flash_data);
+
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(wcr150gn_partitions);
+	rt305x_flash0_data.parts = wcr150gn_partitions;
+	rt305x_register_flash(0);
+
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wcr150gn_leds_gpio),
 				  wcr150gn_leds_gpio);
 	ramips_register_gpio_buttons(-1, WCR150GN_KEYS_POLL_INTERVAL,

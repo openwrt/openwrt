@@ -75,11 +75,6 @@ static struct mtd_partition wl341v3_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data wl341v3_flash_data = {
-	.nr_parts	= ARRAY_SIZE(wl341v3_partitions),
-	.parts		= wl341v3_partitions,
-};
-
 static struct gpio_led wl341v3_leds_gpio[] __initdata = {
 	{
 		.name		= "wl341v3:amber:first",
@@ -134,7 +129,10 @@ static void __init wl341v3_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_register_flash(0, &wl341v3_flash_data);
+	rt305x_flash0_data.nr_parts = ARRAY_SIZE(wl341v3_partitions);
+	rt305x_flash0_data.parts = wl341v3_partitions;
+	rt305x_register_flash(0);
+
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_WLLLL;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wl341v3_leds_gpio),
