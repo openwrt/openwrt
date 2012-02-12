@@ -1,7 +1,7 @@
-From 1735daf1db79d338dccfc55444b52ed52af79e86 Mon Sep 17 00:00:00 2001
+From adebff2358c2b631fc04e31ba87eee48e546c655 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 20 Nov 2011 18:22:35 +0100
-Subject: [PATCH 15/21] bcma: scan for extra address space
+Subject: [PATCH 183/186] bcma: scan for extra address space
 
 Some cores like the USB core have two address spaces. In the USB host
 controller one address space is used for the OHCI and the other for the
@@ -11,13 +11,13 @@ ai_scan() in shared/aiutils.c i the Broadcom SDK.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- drivers/bcma/scan.c       |   17 ++++++++++++++++-
+ drivers/bcma/scan.c       |   18 +++++++++++++++++-
  include/linux/bcma/bcma.h |    1 +
- 2 files changed, 17 insertions(+), 1 deletions(-)
+ 2 files changed, 18 insertions(+), 1 deletions(-)
 
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
-@@ -286,6 +286,21 @@ static int bcma_get_next_core(struct bcm
+@@ -297,6 +297,22 @@ static int bcma_get_next_core(struct bcm
  			return -EILSEQ;
  	}
  
@@ -26,20 +26,21 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	 * the main register space for the core
 +	 */
 +	tmp = bcma_erom_get_addr_desc(bus, eromptr, SCAN_ADDR_TYPE_SLAVE, 0);
-+	if (tmp < 0) {
++	if (tmp <= 0) {
 +		/* Try again to see if it is a bridge */
-+		tmp = bcma_erom_get_addr_desc(bus, eromptr, SCAN_ADDR_TYPE_BRIDGE, 0);
-+		if (tmp) {
-+			printk("found bridge\n");
++		tmp = bcma_erom_get_addr_desc(bus, eromptr,
++					      SCAN_ADDR_TYPE_BRIDGE, 0);
++		if (tmp > 0) {
++			pr_info("found bridge");
++			return -ENXIO;
 +		}
-+
 +	}
 +	core->addr = tmp;
 +
  	/* get & parse slave ports */
  	for (i = 0; i < ports[1]; i++) {
  		for (j = 0; ; j++) {
-@@ -298,7 +313,7 @@ static int bcma_get_next_core(struct bcm
+@@ -309,7 +325,7 @@ static int bcma_get_next_core(struct bcm
  				break;
  			} else {
  				if (i == 0 && j == 0)
@@ -50,8 +51,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	}
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -138,6 +138,7 @@ struct bcma_device {
- 	u8 core_index;
+@@ -139,6 +139,7 @@ struct bcma_device {
+ 	u8 core_unit;
  
  	u32 addr;
 +	u32 addr1;

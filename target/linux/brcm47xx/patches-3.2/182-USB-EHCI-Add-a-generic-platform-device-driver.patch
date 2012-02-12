@@ -1,7 +1,7 @@
-From 2ade1c32109d2f17fdfc0b414411d4ee7f828706 Mon Sep 17 00:00:00 2001
+From 1be00523336ac484c52681f838dfb8a76e8531cd Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sat, 26 Nov 2011 21:28:56 +0100
-Subject: [PATCH 18/30] USB: EHCI: Add a generic platform device driver
+Subject: [PATCH 182/186] USB: EHCI: Add a generic platform device driver
 
 This adds a generic driver for platform devices. It works like the PCI
 driver and is based on it. This is for devices which do not have an own
@@ -12,8 +12,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/usb/host/Kconfig         |   10 ++
  drivers/usb/host/ehci-hcd.c      |    5 +
- drivers/usb/host/ehci-platform.c |  211 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 226 insertions(+), 0 deletions(-)
+ drivers/usb/host/ehci-platform.c |  199 ++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 214 insertions(+), 0 deletions(-)
  create mode 100644 drivers/usb/host/ehci-platform.c
 
 --- a/drivers/usb/host/Kconfig
@@ -51,15 +51,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
      !defined(XILINX_OF_PLATFORM_DRIVER)
 --- /dev/null
 +++ b/drivers/usb/host/ehci-platform.c
-@@ -0,0 +1,211 @@
+@@ -0,0 +1,199 @@
 +/*
 + * Generic platform ehci driver
 + *
 + * Copyright 2007 Steven Brown <sbrown@cortland.com>
-+ * Copyright 2010-2011 Hauke Mehrtens <hauke@hauke-m.de>
++ * Copyright 2010-2012 Hauke Mehrtens <hauke@hauke-m.de>
 + *
 + * Derived from the ohci-ssb driver
-+ * Copyright 2007 Michael Buesch <mb@bu3sch.de>
++ * Copyright 2007 Michael Buesch <m@bues.ch>
 + *
 + * Derived from the EHCI-PCI driver
 + * Copyright (c) 2000-2004 by David Brownell
@@ -73,40 +73,38 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
 +#include <linux/platform_device.h>
++#include <linux/usb/hci_driver.h>
 +
 +static int ehci_platform_reset(struct usb_hcd *hcd)
 +{
++	struct platform_device *pdev = to_platform_device(hcd->self.controller);
++	struct usb_hci_pdata *pdata = pdev->dev.platform_data;
 +	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
++	int caps_offset = 0;
++	int flags = 0;
 +	int retval;
 +
-+	ehci->caps = hcd->regs;
-+	ehci->regs = hcd->regs +
-+		HC_LENGTH(ehci, ehci_readl(ehci, &ehci->caps->hc_capbase));
++	if (pdata) {
++		caps_offset = pdata->caps_offset;
++		flags = pdata->flags;
++	}
 +
-+	dbg_hcs_params(ehci, "reset");
-+	dbg_hcc_params(ehci, "reset");
++	if (flags & USB_HCI_PDATA_HAS_TT_SET)
++		hcd->has_tt = pdata->has_tt;
 +
-+	/* cache this readonly data; minimize chip reads */
-+	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
-+
-+	retval = ehci_halt(ehci);
++	ehci->caps = hcd->regs + caps_offset;
++	retval = ehci_setup(hcd);
 +	if (retval)
 +		return retval;
 +
-+	/* data structure init */
-+	retval = ehci_init(hcd);
-+	if (retval)
-+		return retval;
++	if (flags & USB_HCI_PDATA_PORT_POWER_SET)
++		ehci_port_power(ehci, pdata->power_set_is_on);
 +
-+	ehci_reset(ehci);
-+
-+	ehci_port_power(ehci, 1);
-+
-+	return retval;
++	return 0;
 +}
 +
 +static const struct hc_driver ehci_platform_hc_driver = {
-+	.description		= "platform-usb-ehci",
++	.description		= hcd_name,
 +	.product_desc		= "Generic Platform EHCI Controller",
 +	.hcd_priv_size		= sizeof(struct ehci_hcd),
 +
@@ -139,37 +137,45 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	.clear_tt_buffer_complete = ehci_clear_tt_buffer_complete,
 +};
 +
-+static int ehci_platform_attach(struct platform_device *dev)
++static int __devinit ehci_platform_probe(struct platform_device *dev)
 +{
 +	struct usb_hcd *hcd;
-+	struct resource *res_irq, *res_mem;
++	struct resource *res_mem;
++	int irq;
 +	int err = -ENOMEM;
++
++	if (usb_disabled())
++		return -ENODEV;
++
++	irq = platform_get_irq(dev, 0);
++	if (irq < 0) {
++		pr_err("no irq provieded");
++		return irq;
++	}
++	res_mem = platform_get_resource(dev, IORESOURCE_MEM, 0);
++	if (!res_mem) {
++		pr_err("no memory recourse provieded");
++		return -ENXIO;
++	}
 +
 +	hcd = usb_create_hcd(&ehci_platform_hc_driver, &dev->dev,
 +			     dev_name(&dev->dev));
 +	if (!hcd)
-+		goto err_return;
++		return -ENOMEM;
 +
-+	res_irq = platform_get_resource(dev, IORESOURCE_IRQ, 0);
-+	if (!res_irq) {
-+		err = -ENXIO;
-+		goto err_return;
-+	}
-+	res_mem = platform_get_resource(dev, IORESOURCE_MEM, 0);
-+	if (!res_mem) {
-+		err = -ENXIO;
-+		goto err_return;
-+	}
 +	hcd->rsrc_start = res_mem->start;
-+	hcd->rsrc_len = res_mem->end - res_mem->start + 1;
++	hcd->rsrc_len = resource_size(res_mem);
 +
-+	/*
-+	 * start & size modified per sbutils.c
-+	 */
++	if (!request_mem_region(hcd->rsrc_start, hcd->rsrc_len, hcd_name)) {
++		pr_err("controller already in use");
++		err = -EBUSY;
++		goto err_put_hcd;
++	}
++
 +	hcd->regs = ioremap_nocache(hcd->rsrc_start, hcd->rsrc_len);
 +	if (!hcd->regs)
-+		goto err_put_hcd;
-+	err = usb_add_hcd(hcd, res_irq->start, IRQF_SHARED);
++		goto err_release_region;
++	err = usb_add_hcd(hcd, irq, IRQF_SHARED);
 +	if (err)
 +		goto err_iounmap;
 +
@@ -179,65 +185,42 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +err_iounmap:
 +	iounmap(hcd->regs);
++err_release_region:
++	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
 +err_put_hcd:
 +	usb_put_hcd(hcd);
-+err_return:
 +	return err;
 +}
 +
-+static int ehci_platform_probe(struct platform_device *dev)
++static int __devexit ehci_platform_remove(struct platform_device *dev)
 +{
-+	int err;
-+
-+	if (usb_disabled())
-+		return -ENODEV;
-+
-+	err = ehci_platform_attach(dev);
-+
-+	return err;
-+}
-+
-+static int ehci_platform_remove(struct platform_device *dev)
-+{
-+	struct usb_hcd *hcd;
-+
-+	hcd = platform_get_drvdata(dev);
-+	if (!hcd)
-+		return -ENODEV;
++	struct usb_hcd *hcd = platform_get_drvdata(dev);
 +
 +	usb_remove_hcd(hcd);
 +	iounmap(hcd->regs);
 +	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
 +	usb_put_hcd(hcd);
++	platform_set_drvdata(dev, NULL);
 +
 +	return 0;
-+}
-+
-+static void ehci_platform_shutdown(struct platform_device *dev)
-+{
-+	struct usb_hcd *hcd;
-+
-+	hcd = platform_get_drvdata(dev);
-+	if (!hcd)
-+		return;
-+
-+	if (hcd->driver->shutdown)
-+		hcd->driver->shutdown(hcd);
 +}
 +
 +#ifdef CONFIG_PM
 +
-+static int ehci_platform_suspend(struct platform_device *dev,
-+				 pm_message_t state)
++static int ehci_platform_suspend(struct device *dev)
 +{
++	struct usb_hcd *hcd = dev_get_drvdata(dev);
++	bool wakeup = device_may_wakeup(dev);
++
++	ehci_prepare_ports_for_controller_suspend(hcd_to_ehci(hcd), wakeup);
 +	return 0;
 +}
 +
-+static int ehci_platform_resume(struct platform_device *dev)
++static int ehci_platform_resume(struct device *dev)
 +{
-+	struct usb_hcd *hcd = platform_get_drvdata(dev);
++	struct usb_hcd *hcd = dev_get_drvdata(dev);
 +
-+	ehci_finish_controller_resume(hcd);
++	ehci_prepare_ports_for_controller_resume(hcd_to_ehci(hcd));
 +	return 0;
 +}
 +
@@ -252,14 +235,19 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +};
 +MODULE_DEVICE_TABLE(platform, ehci_platform_table);
 +
++static const struct dev_pm_ops ehci_platform_pm_ops = {
++	.suspend	= ehci_platform_suspend,
++	.resume		= ehci_platform_resume,
++};
++
 +static struct platform_driver ehci_platform_driver = {
 +	.id_table	= ehci_platform_table,
 +	.probe		= ehci_platform_probe,
-+	.remove		= ehci_platform_remove,
-+	.shutdown	= ehci_platform_shutdown,
-+	.suspend	= ehci_platform_suspend,
-+	.resume		= ehci_platform_resume,
++	.remove		= __devexit_p(ehci_platform_remove),
++	.shutdown	= usb_hcd_platform_shutdown,
 +	.driver		= {
++		.owner	= THIS_MODULE,
 +		.name	= "ehci-platform",
++		.pm	= &ehci_platform_pm_ops,
 +	}
 +};

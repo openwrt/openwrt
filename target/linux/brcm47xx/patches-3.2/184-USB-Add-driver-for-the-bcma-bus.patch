@@ -1,7 +1,7 @@
-From 0da055d81f77272ebc41d4c2cd5f533aa9025cc7 Mon Sep 17 00:00:00 2001
+From 70fc4b2a6200ef7a1b99a6aa28234b919f23b43c Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sat, 26 Nov 2011 21:33:41 +0100
-Subject: [PATCH 19/30] USB: Add driver for the bcma bus
+Subject: [PATCH 184/186] USB: Add driver for the bcma bus
 
 This adds a USB driver using the generic platform device driver for the
 USB controller found on the Broadcom bcma bus. The bcma bus just
@@ -15,8 +15,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/usb/host/Kconfig    |   12 ++
  drivers/usb/host/Makefile   |    1 +
- drivers/usb/host/bcma-hcd.c |  309 +++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 322 insertions(+), 0 deletions(-)
+ drivers/usb/host/bcma-hcd.c |  328 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 341 insertions(+), 0 deletions(-)
  create mode 100644 drivers/usb/host/bcma-hcd.c
 
 --- a/drivers/usb/host/Kconfig
@@ -46,7 +46,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_USB_HCD_BCMA)	+= bcma-hcd.o
 --- /dev/null
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -0,0 +1,309 @@
+@@ -0,0 +1,328 @@
 +/*
 + * Broadcom specific Advanced Microcontroller Bus
 + * Broadcom USB-core driver (BCMA bus glue)
@@ -71,6 +71,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <linux/delay.h>
 +#include <linux/platform_device.h>
 +#include <linux/module.h>
++#include <linux/usb/hci_driver.h>
 +
 +MODULE_AUTHOR("Hauke Mehrtens");
 +MODULE_DESCRIPTION("Common USB driver for BCMA Bus");
@@ -80,6 +81,25 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct platform_device *ehci_dev;
 +	struct platform_device *ohci_dev;
 +};
++
++/* Wait for bitmask in a register to get set or cleared.
++ * timeout is in units of ten-microseconds.
++ */
++static int bcma_wait_bits(struct bcma_device *dev, u16 reg, u32 bitmask,
++			  int timeout)
++{
++	int i;
++	u32 val;
++
++	for (i = 0; i < timeout; i++) {
++		val = bcma_read32(dev, reg);
++		if ((val & bitmask) == bitmask)
++			return 0;
++		udelay(10);
++	}
++
++	return -ETIMEDOUT;
++}
 +
 +static void __devinit bcma_hcd_4716wa(struct bcma_device *dev)
 +{
@@ -137,7 +157,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			tmp = bcma_read32(dev, 0x1e0);
 +			tmp |= 0x100;
 +			bcma_write32(dev, 0x1e0, tmp);
-+			if (bcma_wait_bits(dev, 0x1e0, 1 << 24, 100, 1))
++			if (bcma_wait_bits(dev, 0x1e0, 1 << 24, 100))
 +				printk(KERN_EMERG "Failed to enable misc PPL!\n");
 +
 +			/* Take out of resets */
@@ -163,7 +183,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			udelay(50);
 +			tmp = bcma_read32(dev, 0x524);
 +
-+			if (bcma_wait_bits(dev, 0x528, 0xc000, 10000, 1)) {
++			if (bcma_wait_bits(dev, 0x528, 0xc000, 10000)) {
 +				tmp = bcma_read32(dev, 0x528);
 +				printk(KERN_EMERG
 +				       "USB20H mdio_rddata 0x%08x\n", tmp);
@@ -186,6 +206,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	}
 +}
 +
++static const struct usb_hci_pdata p_data = {
++	.flags = USB_HCI_PDATA_PORT_POWER_SET,
++	.power_set_is_on = 1,
++};
++
 +static struct platform_device * __devinit
 +bcma_hcd_create_pdev(struct bcma_device *dev, char *name, u32 addr)
 +{
@@ -204,7 +229,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	hci_dev = platform_device_alloc(name, 0);
 +	if (!hci_dev)
-+		goto err_alloc;
++		return NULL;
 +
 +	hci_dev->dev.parent = &dev->dev;
 +	hci_dev->dev.dma_mask = &hci_dev->dev.coherent_dma_mask;
@@ -213,15 +238,18 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +					    ARRAY_SIZE(hci_res));
 +	if (ret)
 +		goto err_alloc;
-+
++	ret = platform_device_add_data(hci_dev, &p_data, sizeof(p_data));
++	if (ret)
++		goto err_alloc;
 +	ret = platform_device_add(hci_dev);
-+	if (ret) {
-+err_alloc:
-+		platform_device_put(hci_dev);
-+		return ERR_PTR(ret);
-+	}
++	if (ret)
++		goto err_alloc;
 +
 +	return hci_dev;
++
++err_alloc:
++	platform_device_put(hci_dev);
++	return ERR_PTR(ret);
 +}
 +
 +static int __devinit bcma_hcd_probe(struct bcma_device *dev)
@@ -282,23 +310,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +static void __devexit bcma_hcd_remove(struct bcma_device *dev)
 +{
-+	struct bcma_hcd_device *usb_dev;
-+	struct platform_device *ohci_dev;
-+	struct platform_device *ehci_dev;
++	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
++	struct platform_device *ohci_dev = usb_dev->ohci_dev;
++	struct platform_device *ehci_dev = usb_dev->ehci_dev;
 +
-+	usb_dev = bcma_get_drvdata(dev);
-+	if (!usb_dev)
-+		return;
-+
-+	ohci_dev = usb_dev->ohci_dev;
-+	ehci_dev = usb_dev->ehci_dev;
-+
-+	if (ohci_dev) {
++	if (ohci_dev)
 +		platform_device_unregister(ohci_dev);
-+	}
-+	if (ehci_dev) {
++	if (ehci_dev)
 +		platform_device_unregister(ehci_dev);
-+	}
 +
 +	bcma_core_disable(dev, 0);
 +}

@@ -1,7 +1,7 @@
-From 77190e21ed262397eb924e6d48e12ecf3e9f6316 Mon Sep 17 00:00:00 2001
+From 57857d7df6c22eaf11e3c67042d55a9546415059 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sat, 26 Nov 2011 21:36:50 +0100
-Subject: [PATCH 21/30] USB: OHCI: remove old SSB OHCI driver
+Subject: [PATCH 186/186] USB: OHCI: remove old SSB OHCI driver
 
 This is now replaced by the new ssb USB driver, which also supports
 devices with an EHCI controller.
@@ -9,9 +9,9 @@ devices with an EHCI controller.
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/usb/host/Kconfig    |   13 --
- drivers/usb/host/ohci-hcd.c |   19 ---
+ drivers/usb/host/ohci-hcd.c |   21 +----
  drivers/usb/host/ohci-ssb.c |  260 -------------------------------------------
- 3 files changed, 0 insertions(+), 292 deletions(-)
+ 3 files changed, 1 insertions(+), 293 deletions(-)
  delete mode 100644 drivers/usb/host/ohci-ssb.c
 
 --- a/drivers/usb/host/Kconfig
@@ -50,15 +50,17 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #ifdef CONFIG_MFD_SM501
  #include "ohci-sm501.c"
  #define SM501_OHCI_DRIVER	ohci_hcd_sm501_driver
-@@ -1130,7 +1125,6 @@ MODULE_LICENSE ("GPL");
+@@ -1129,8 +1124,7 @@ MODULE_LICENSE ("GPL");
+ 	!defined(SA1111_DRIVER) &&	\
  	!defined(PS3_SYSTEM_BUS_DRIVER) && \
  	!defined(SM501_OHCI_DRIVER) && \
- 	!defined(TMIO_OHCI_DRIVER) && \
--	!defined(SSB_OHCI_DRIVER) && \
- 	!defined(PLATFORM_OHCI_DRIVER)
+-	!defined(TMIO_OHCI_DRIVER) && \
+-	!defined(SSB_OHCI_DRIVER)
++	!defined(TMIO_OHCI_DRIVER)
  #error "missing bus glue for ohci-hcd"
  #endif
-@@ -1197,12 +1191,6 @@ static int __init ohci_hcd_mod_init(void
+ 
+@@ -1196,12 +1190,6 @@ static int __init ohci_hcd_mod_init(void
  		goto error_pci;
  #endif
  
@@ -71,7 +73,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #ifdef SM501_OHCI_DRIVER
  	retval = platform_driver_register(&SM501_OHCI_DRIVER);
  	if (retval < 0)
-@@ -1236,10 +1224,6 @@ static int __init ohci_hcd_mod_init(void
+@@ -1225,10 +1213,6 @@ static int __init ohci_hcd_mod_init(void
  	platform_driver_unregister(&SM501_OHCI_DRIVER);
   error_sm501:
  #endif
@@ -82,7 +84,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #ifdef PCI_DRIVER
  	pci_unregister_driver(&PCI_DRIVER);
   error_pci:
-@@ -1290,9 +1274,6 @@ static void __exit ohci_hcd_mod_exit(voi
+@@ -1276,9 +1260,6 @@ static void __exit ohci_hcd_mod_exit(voi
  #ifdef SM501_OHCI_DRIVER
  	platform_driver_unregister(&SM501_OHCI_DRIVER);
  #endif
