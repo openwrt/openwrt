@@ -1,0 +1,25 @@
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -289,6 +289,12 @@ config SPI_PXA2XX
+ config SPI_PXA2XX_PCI
+ 	def_bool SPI_PXA2XX && X86_32 && PCI
+ 
++config SPI_RAMIPS
++	tristate "Ralink RT288x/RT305x SPI Controller"
++	depends on (SOC_RT288X || SOC_RT305X) && SPI_MASTER
++	help
++	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
++
+ config SPI_S3C24XX
+ 	tristate "Samsung S3C24XX series SPI"
+ 	depends on ARCH_S3C2410 && EXPERIMENTAL
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -45,6 +45,7 @@ obj-$(CONFIG_SPI_PL022)			+= spi-pl022.o
+ obj-$(CONFIG_SPI_PPC4xx)		+= spi-ppc4xx.o
+ obj-$(CONFIG_SPI_PXA2XX)		+= spi-pxa2xx.o
+ obj-$(CONFIG_SPI_PXA2XX_PCI)		+= spi-pxa2xx-pci.o
++obj-$(CONFIG_SPI_RAMIPS)		+= ramips_spi.o
+ obj-$(CONFIG_SPI_S3C24XX)		+= spi-s3c24xx-hw.o
+ spi-s3c24xx-hw-y			:= spi-s3c24xx.o
+ spi-s3c24xx-hw-$(CONFIG_SPI_S3C24XX_FIQ) += spi-s3c24xx-fiq.o
