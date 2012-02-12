@@ -1358,7 +1358,7 @@
  	int busnum;
  };
  
-@@ -261,23 +261,20 @@ static void add_resources(struct pci_roo
+@@ -275,23 +275,20 @@ static void add_resources(struct pci_roo
  				 "ignoring host bridge window %pR (conflicts with %s %pR)\n",
  				 res, conflict->name, conflict);
  		else
@@ -1385,7 +1385,7 @@
  	acpi_walk_resources(device->handle, METHOD_NAME__CRS, count_resource,
  				&info);
  	if (!info.res_num)
-@@ -286,7 +283,7 @@ get_current_resources(struct acpi_device
+@@ -300,7 +297,7 @@ get_current_resources(struct acpi_device
  	size = sizeof(*info.res) * info.res_num;
  	info.res = kmalloc(size, GFP_KERNEL);
  	if (!info.res)
@@ -1394,7 +1394,7 @@
  
  	info.name = kasprintf(GFP_KERNEL, "PCI Bus %04x:%02x", domain, busnum);
  	if (!info.name)
-@@ -301,8 +298,6 @@ get_current_resources(struct acpi_device
+@@ -315,8 +312,6 @@ get_current_resources(struct acpi_device
  
  name_alloc_fail:
  	kfree(info.res);
@@ -1403,7 +1403,7 @@
  }
  
  struct pci_bus * __devinit pci_acpi_scan_root(struct acpi_pci_root *root)
-@@ -310,6 +305,7 @@ struct pci_bus * __devinit pci_acpi_scan
+@@ -324,6 +319,7 @@ struct pci_bus * __devinit pci_acpi_scan
  	struct acpi_device *device = root->device;
  	int domain = root->segment;
  	int busnum = root->secondary.start;
@@ -1411,7 +1411,7 @@
  	struct pci_bus *bus;
  	struct pci_sysdata *sd;
  	int node;
-@@ -364,11 +360,15 @@ struct pci_bus * __devinit pci_acpi_scan
+@@ -378,11 +374,15 @@ struct pci_bus * __devinit pci_acpi_scan
  		memcpy(bus->sysdata, sd, sizeof(*sd));
  		kfree(sd);
  	} else {
