@@ -1,0 +1,91 @@
+--- a/drivers/tty/serial/8250.c
++++ b/drivers/tty/serial/8250.c
+@@ -318,9 +318,9 @@ static const struct serial8250_config ua
+ 	},
+ };
+ 
+-#if defined(CONFIG_MIPS_ALCHEMY)
++#if defined(CONFIG_MIPS_ALCHEMY) || defined (CONFIG_SERIAL_8250_RT288X)
+ 
+-/* Au1x00 UART hardware has a weird register layout */
++/* Au1x00 and RT288x UART hardware has a weird register layout */
+ static const u8 au_io_in_map[] = {
+ 	[UART_RX]  = 0,
+ 	[UART_IER] = 2,
+@@ -542,8 +542,8 @@ static inline void _serial_dl_write(stru
+ 	serial_outp(up, UART_DLM, value >> 8 & 0xff);
+ }
+ 
+-#if defined(CONFIG_MIPS_ALCHEMY)
+-/* Au1x00 haven't got a standard divisor latch */
++#if defined(CONFIG_MIPS_ALCHEMY) || defined (CONFIG_SERIAL_8250_RT288X)
++/* Au1x00 and RT288x haven't got a standard divisor latch */
+ static int serial_dl_read(struct uart_8250_port *up)
+ {
+ 	if (up->port.iotype == UPIO_AU)
+@@ -750,22 +750,19 @@ static int size_fifo(struct uart_8250_po
+  */
+ static unsigned int autoconfig_read_divisor_id(struct uart_8250_port *p)
+ {
+-	unsigned char old_dll, old_dlm, old_lcr;
++	unsigned char old_lcr;
++	unsigned int old_dl;
+ 	unsigned int id;
+ 
+ 	old_lcr = serial_inp(p, UART_LCR);
+ 	serial_outp(p, UART_LCR, UART_LCR_CONF_MODE_A);
+ 
+-	old_dll = serial_inp(p, UART_DLL);
+-	old_dlm = serial_inp(p, UART_DLM);
++	old_dl = serial_dl_read(p);
+ 
+-	serial_outp(p, UART_DLL, 0);
+-	serial_outp(p, UART_DLM, 0);
++	serial_dl_write(p, 0);
++	id = serial_dl_read(p);
+ 
+-	id = serial_inp(p, UART_DLL) | serial_inp(p, UART_DLM) << 8;
+-
+-	serial_outp(p, UART_DLL, old_dll);
+-	serial_outp(p, UART_DLM, old_dlm);
++	serial_dl_write(p, old_dl);
+ 	serial_outp(p, UART_LCR, old_lcr);
+ 
+ 	return id;
+@@ -891,7 +888,7 @@ static int broken_efr(struct uart_8250_p
+ 	/*
+ 	 * Exar ST16C2550 "A2" devices incorrectly detect as
+ 	 * having an EFR, and report an ID of 0x0201.  See
+-	 * http://linux.derkeiler.com/Mailing-Lists/Kernel/2004-11/4812.html 
++	 * http://linux.derkeiler.com/Mailing-Lists/Kernel/2004-11/4812.html
+ 	 */
+ 	if (autoconfig_read_divisor_id(up) == 0x0201 && size_fifo(up) == 16)
+ 		return 1;
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -258,6 +258,14 @@ config SERIAL_8250_ACORN
+ 	  system, say Y to this option.  The driver can handle 1, 2, or 3 port
+ 	  cards.  If unsure, say N.
+ 
++config SERIAL_8250_RT288X
++	bool "Ralink RT288x/RT305x serial port support"
++	depends on SERIAL_8250 != n && (SOC_RT288X || SOC_RT305X)
++	help
++	  If you have a Ralink RT288x/RT305x SoC based board and want to use the
++	  serial port, say Y to this option. The driver can handle up to 2 serial
++	  ports. If unsure, say N.
++
+ config SERIAL_8250_RM9K
+ 	bool "Support for MIPS RM9xxx integrated serial port"
+ 	depends on SERIAL_8250 != n && SERIAL_RM9000
+--- a/include/linux/serial_core.h
++++ b/include/linux/serial_core.h
+@@ -317,7 +317,7 @@ struct uart_port {
+ #define UPIO_HUB6		(1)
+ #define UPIO_MEM		(2)
+ #define UPIO_MEM32		(3)
+-#define UPIO_AU			(4)			/* Au1x00 type IO */
++#define UPIO_AU			(4)			/* Au1x00 and RT288x type IO */
+ #define UPIO_TSI		(5)			/* Tsi108/109 type IO */
+ #define UPIO_RM9000		(6)			/* RM9000 type IO */
+ 

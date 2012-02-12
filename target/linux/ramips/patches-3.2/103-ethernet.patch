@@ -1,0 +1,29 @@
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -277,6 +277,16 @@ source "drivers/net/plip/Kconfig"
+ 
+ source "drivers/net/ppp/Kconfig"
+ 
++config MIPS_RAMIPS_NET
++	tristate "Ethernet driver for rt288x/rt305x"
++	depends on MIPS_RALINK
++	help
++	  This driver supports the etehrnet mac inside the ralink wisocs
++
++config RAMIPS_ETH_DEBUG
++	bool "Enable debug messages in the Ralink ethernet driver"
++	depends on MIPS_RAMIPS_NET
++
+ source "drivers/net/slip/Kconfig"
+ 
+ source "drivers/s390/net/Kconfig"
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -44,6 +44,7 @@ obj-$(CONFIG_PPP_SYNC_TTY) += ppp/
+ obj-$(CONFIG_PPPOE) += ppp/
+ obj-$(CONFIG_PPPOL2TP) += ppp/
+ obj-$(CONFIG_PPTP) += ppp/
++obj-$(CONFIG_MIPS_RAMIPS_NET) += ramips.o
+ obj-$(CONFIG_SLIP) += slip/
+ obj-$(CONFIG_SLHC) += slip/
+ obj-$(CONFIG_NET_SB1000) += sb1000.o
