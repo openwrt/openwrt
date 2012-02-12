@@ -14,7 +14,10 @@
 
 struct physmap_flash_data;
 
-void rt288x_register_flash(unsigned int id, struct physmap_flash_data *pdata);
+extern struct physmap_flash_data rt288x_flash0_data;
+extern struct physmap_flash_data rt288x_flash1_data;
+void rt288x_register_flash(unsigned int id);
+
 void rt288x_register_wifi(void);
 
 extern struct ramips_eth_platform_data rt288x_eth_data;

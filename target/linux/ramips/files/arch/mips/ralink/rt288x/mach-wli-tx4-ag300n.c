@@ -76,11 +76,6 @@ static struct mtd_partition wli_tx4_ag300n_partitions[] = {
 	},
 };
 
-static struct physmap_flash_data wli_tx4_ag300n_flash_data = {
-	.nr_parts	= ARRAY_SIZE(wli_tx4_ag300n_partitions),
-	.parts		= wli_tx4_ag300n_partitions,
-};
-
 static struct gpio_led wli_tx4_ag300n_leds_gpio[] __initdata = {
 	{
 		.name		= "buffalo:blue:power",
@@ -136,7 +131,10 @@ static void __init wli_tx4_ag300n_init(void)
 				     ARRAY_SIZE(wli_tx4_ag300n_gpio_buttons),
 				     wli_tx4_ag300n_gpio_buttons);
 
-	rt288x_register_flash(0, &wli_tx4_ag300n_flash_data);
+	rt288x_flash0_data.nr_parts = ARRAY_SIZE(wli_tx4_ag300n_partitions);
+	rt288x_flash0_data.parts = wli_tx4_ag300n_partitions;
+	rt288x_register_flash(0);
+
 	rt288x_register_wifi();
 	rt288x_register_wdt();
 

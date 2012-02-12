@@ -63,11 +63,6 @@ static struct mtd_partition f5d8235_partitions[] = {
 	}
 };
 
-static struct physmap_flash_data f5d8235_flash_data = {
-	.nr_parts	= ARRAY_SIZE(f5d8235_partitions),
-	.parts		= f5d8235_partitions,
-};
-
 static struct rtl8366_platform_data f5d8235_rtl8366s_data = {
 	.gpio_sda	= F5D8235_GPIO_RTL8366_SDA,
 	.gpio_sck	= F5D8235_GPIO_RTL8366_SCK,
@@ -115,7 +110,10 @@ static void __init f5d8235_init(void)
 {
 	rt288x_gpio_init(RT2880_GPIO_MODE_UART0 | RT2880_GPIO_MODE_I2C);
 
-	rt288x_register_flash(0, &f5d8235_flash_data);
+	rt288x_flash0_data.nr_parts = ARRAY_SIZE(f5d8235_partitions);
+	rt288x_flash0_data.parts = f5d8235_partitions;
+	rt288x_register_flash(0);
+
 	rt288x_register_wifi();
 	rt288x_register_wdt();
 
