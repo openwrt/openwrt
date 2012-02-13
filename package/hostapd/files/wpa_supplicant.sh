@@ -59,7 +59,7 @@ wpa_supplicant_setup_vif() {
 		;;
 		*psk*)
 			key_mgmt='WPA-PSK'
-			config_get_bool usepassphrase "$vif" passphrase 1
+			config_get_bool usepassphrase "$vif" usepassphrase 1
 			if [ "$usepassphrase" = "1" ]; then
 				passphrase="psk=\"${key}\""
 			else
