@@ -69,8 +69,13 @@ if [ `basename $blkdev` != "block" ]; then
 		}
 		
 		grep -q "/dev/$device" /proc/swaps || grep -q "/dev/$device" /proc/mounts || {
-			[ "$anon_mount" -eq 1 ] && [ -z "$use_device" ] && {
-				( mkdir -p /mnt/$device && mount /dev/$device /mnt/$device ) 2>&1 | tee /proc/self/fd/2 | logger -t 'fstab'
+			[ "$anon_mount" -eq 1 -a -z "$use_device" ] && {
+				case "$device" in
+					mtdblock*) ;;
+					*)
+						( mkdir -p /mnt/$device && mount /dev/$device /mnt/$device ) 2>&1 | tee /proc/self/fd/2 | logger -t 'fstab'
+					;;
+				esac
 			}
 		}
 		reset_dev_section_cb
