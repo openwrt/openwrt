@@ -8,8 +8,8 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=mipsel
 BOARD:=ramips
-BOARDNAME:=Ralink RT288x/RT305x
-SUBTARGETS:=rt288x rt305x
+BOARDNAME:=Ralink RT288x/RT3xxx
+SUBTARGETS:=rt288x rt305x rt3883
 CFLAGS:=-Os -pipe -mips32r2 -mtune=mips32r2 -fno-caller-saves
 FEATURES:=squashfs
 
@@ -22,7 +22,7 @@ DEFAULT_PACKAGES+=\
 	kmod-rt2800-pci wpad-mini maccalc
 
 define Target/Description
-	Build firmware images for Ralink RT288x/RT305x based boards.
+	Build firmware images for Ralink RT288x/RT3xxx based boards.
 endef
 
 $(eval $(call BuildTarget))

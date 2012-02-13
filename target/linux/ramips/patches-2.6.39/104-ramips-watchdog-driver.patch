@@ -6,7 +6,7 @@
  
 +config RAMIPS_WDT
 +	tristate "Ralink RT288X/RT305X Watchdog Timer"
-+	depends on SOC_RT288X || SOC_RT305X
++	depends on SOC_RT288X || SOC_RT305X || SOC_RT3883
 +	help
 +	  Hardware driver for the built-in watchdog timer on the
 +	  Ralink RT288X/RT305X SoCs.

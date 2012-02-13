@@ -17,3 +17,10 @@ load-$(CONFIG_RALINK_RT288X)   += 0xffffffff88000000
 core-$(CONFIG_RALINK_RT305X)   += arch/mips/ralink/rt305x/
 cflags-$(CONFIG_RALINK_RT305X) += -I$(srctree)/arch/mips/include/asm/mach-ralink/rt305x
 load-$(CONFIG_RALINK_RT305X)   += 0xffffffff80000000
+
+#
+# Ralink RT3883
+#
+core-$(CONFIG_RALINK_RT3883)   += arch/mips/ralink/rt3883/
+cflags-$(CONFIG_RALINK_RT3883) += -I$(srctree)/arch/mips/include/asm/mach-ralink/rt3883
+load-$(CONFIG_RALINK_RT3883)   += 0xffffffff80000000
