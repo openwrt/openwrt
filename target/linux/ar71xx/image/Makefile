@@ -892,6 +892,11 @@ define Image/Build/Profile/TLWR841
 	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr841nd-v7,$(tlwr841v7_cmdline),0x08410007,1,4M)
 endef
 
+tlwr842_cmdline=board=TL-MR3420 console=ttyS0,115200
+define Image/Build/Profile/TLWR842
+	$(call Image/Build/Template/$(fs_64kraw)/$(1),TPLINK,tl-wr842n-v1,$(tlwr842_cmdline),0x08420001,1,8M)
+endef
+
 tlwr941v2_cmdline=board=TL-WR941ND console=ttyS0,115200
 tlwr941v4_cmdline=board=TL-WR741ND console=ttyS0,115200
 define Image/Build/Profile/TLWR941
@@ -1034,6 +1039,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/TLWR741,$(1))
 	$(call Image/Build/Profile/TLWR743,$(1))
 	$(call Image/Build/Profile/TLWR841,$(1))
+	$(call Image/Build/Profile/TLWR842,$(1))
 	$(call Image/Build/Profile/TLWR941,$(1))
 	$(call Image/Build/Profile/TLWR1043,$(1))
 	$(call Image/Build/Profile/TLWR2543,$(1))
