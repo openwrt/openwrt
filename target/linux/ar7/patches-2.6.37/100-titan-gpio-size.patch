@@ -1,0 +1,33 @@
+commit 3e9957b4866f3767f19bf0e543b322ad7906c564
+Author: Florian Fainelli <florian@openwrt.org>
+Date:   Fri May 13 17:41:21 2011 +0200
+
+    MIPS: AR7: Fix GPIO register size for Titan variant.
+    
+    The 'size' variable contains the correct register size for both AR7
+    and Titan, but we never used it to ioremap the correct register size.
+    This problem only shows up on Titan.
+    
+    [ralf@linux-mips.org: Fixed the fix.  The original patch as in patchwork
+    recognizes the problem correctly then fails to fix it ...]
+    
+    Reported-by: Alexander Clouter <alex@digriz.org.uk>
+    Signed-off-by: Florian Fainelli <florian@openwrt.org>
+    Patchwork: https://patchwork.linux-mips.org/patch/2380/
+    Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+
+diff --git a/arch/mips/ar7/gpio.c b/arch/mips/ar7/gpio.c
+index 425dfa5..bb571bc 100644
+--- a/arch/mips/ar7/gpio.c
++++ b/arch/mips/ar7/gpio.c
+@@ -325,9 +325,7 @@ int __init ar7_gpio_init(void)
+ 		size = 0x1f;
+ 	}
+ 
+-	gpch->regs = ioremap_nocache(AR7_REGS_GPIO,
+-					AR7_REGS_GPIO + 0x10);
+-
++	gpch->regs = ioremap_nocache(AR7_REGS_GPIO, size);
+ 	if (!gpch->regs) {
+ 		printk(KERN_ERR "%s: failed to ioremap regs\n",
+ 					gpch->chip.label);
