@@ -125,7 +125,8 @@ define Quilt/Refresh/Kernel
 endef
 
 define Quilt/Template
-  $($(2)STAMP_CONFIGURED): $($(2)STAMP_CHECKED) FORCE
+  $($(2)STAMP_CONFIGURED): $($(2)STAMP_CHECKED)
+  $(if $(NO_RECONFIGURE),$($(2)STAMP_BUILT),$($(2)STAMP_CONFIGURED)): FORCE
   $($(2)STAMP_CHECKED): $($(2)STAMP_PREPARED)
 	if [ -s "$(1)/patches/series" ]; then \
 		(cd "$(1)"; \
