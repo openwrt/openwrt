@@ -46,4 +46,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_WL351,		/* Sitecom WL-351 v1 002 */
 	RAMIPS_MACH_WR512_3GN,		/* SH-WR512NU/WS-WR512N1-like 3GN*/
 	RAMIPS_MACH_WR6202,		/* Accton WR6202 */
+
+	/* RT3662 based machines */
+	RAMIPS_MACH_RT_N56U,		/* Asus RT-N56U */
 };

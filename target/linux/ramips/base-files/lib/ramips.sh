@@ -101,6 +101,9 @@ ramips_board_name() {
 	*"RT-N15")
 		name="rt-n15"
 		;;
+	*"RT-N56U")
+		name="rt-n56u"
+		;;
 	*"Sparklan WCR-150GN")
 		name="wcr-150gn"
 		;;

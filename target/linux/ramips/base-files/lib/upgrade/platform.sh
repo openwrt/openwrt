@@ -28,6 +28,7 @@ platform_check_image() {
 	omni-emb | \
 	rt-g32-b1 | \
 	rt-n15 | \
+	rt-n56u | \
 	w502u |\
 	wr6202 |\
 	v22rw-2x2 | \

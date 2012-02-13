@@ -2,6 +2,11 @@ if RALINK_RT3883
 
 menu "Ralink RT3662/RT3883 machine selection"
 
+config RT3883_MACH_RT_N56U
+	bool "Asus RT-N56U support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 endmenu
 
 endif
