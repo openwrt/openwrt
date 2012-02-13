@@ -88,7 +88,7 @@ ramips_hw_set_macaddr(unsigned char *mac)
 		     RAMIPS_GDMA1_MAC_ADRL);
 }
 
-#ifdef CONFIG_RALINK_RT288X
+#if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT3883)
 
 #define RAMIPS_MDIO_RETRY	1000
 
@@ -262,7 +262,7 @@ static inline void
 ramips_mdio_cleanup(struct raeth_priv *re)
 {
 }
-#endif /* CONFIG_RALINK_RT288X */
+#endif /* CONFIG_RALINK_RT288X || CONFIG_RALINK_RT3883 */
 
 static void
 ramips_cleanup_dma(struct raeth_priv *re)
