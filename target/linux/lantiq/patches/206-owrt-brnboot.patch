@@ -1,7 +1,7 @@
-Index: linux-3.1.9/drivers/mtd/mtdpart.c
+Index: linux-3.1.10/drivers/mtd/mtdpart.c
 ===================================================================
---- linux-3.1.9.orig/drivers/mtd/mtdpart.c	2012-01-29 22:55:30.295904157 +0100
-+++ linux-3.1.9/drivers/mtd/mtdpart.c	2012-01-29 22:55:30.395904294 +0100
+--- linux-3.1.10.orig/drivers/mtd/mtdpart.c	2012-02-14 19:38:40.102266817 +0100
++++ linux-3.1.10/drivers/mtd/mtdpart.c	2012-02-14 19:38:40.146266819 +0100
 @@ -899,6 +899,38 @@
  	return le32_to_cpu(temp) == SQUASHFS_MAGIC;
  }
@@ -55,22 +55,22 @@ Index: linux-3.1.9/drivers/mtd/mtdpart.c
  	}
  
  	if (!detect_squashfs_partition(mtd,
-Index: linux-3.1.9/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+Index: linux-3.1.10/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 ===================================================================
---- linux-3.1.9.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2012-01-29 22:55:30.195904014 +0100
-+++ linux-3.1.9/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2012-01-29 22:55:30.395904294 +0100
+--- linux-3.1.10.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2012-02-14 19:38:40.058266816 +0100
++++ linux-3.1.10/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2012-02-14 19:57:07.790314179 +0100
 @@ -149,6 +149,7 @@
  
  extern __iomem void *ltq_ebu_membase;
  extern __iomem void *ltq_cgu_membase;
-+extern long ltq_brn_boot;
++extern unsigned long ltq_brn_boot;
  
  /* request a non-gpio and set the PIO config */
  extern int  ltq_gpio_request(unsigned int pin, unsigned int alt0,
-Index: linux-3.1.9/arch/mips/lantiq/setup.c
+Index: linux-3.1.10/arch/mips/lantiq/setup.c
 ===================================================================
---- linux-3.1.9.orig/arch/mips/lantiq/setup.c	2012-01-29 22:55:30.095903875 +0100
-+++ linux-3.1.9/arch/mips/lantiq/setup.c	2012-01-29 22:59:28.686237119 +0100
+--- linux-3.1.10.orig/arch/mips/lantiq/setup.c	2012-02-14 19:38:40.010266814 +0100
++++ linux-3.1.10/arch/mips/lantiq/setup.c	2012-02-14 19:38:40.150266820 +0100
 @@ -20,6 +20,8 @@
  
  /* assume 16M as default incase uboot fails to pass proper ramsize */
