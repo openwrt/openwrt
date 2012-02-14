@@ -1,0 +1,50 @@
+#!/bin/sh /etc/rc.common
+START=80
+
+SERVICE_WRITE_PID=1
+SERVICE_DAEMONIZE=1
+SERVICE_PID_FILE=/var/run/owsip.pid
+
+. /lib/functions.sh
+
+load_module() {
+	MODULE=`lsmod | grep vmmc`
+	[ ! -z "$MODULE" ] || ( insmod vmmc ; sleep 3 )
+	[ ! -c /dev/vmmc10 ] && {
+		mknod /dev/vmmc10 c 122 10
+		mknod /dev/vmmc11 c 122 11
+		mknod /dev/vmmc12 c 122 12
+		mknod /dev/vmmc13 c 122 13
+		mknod /dev/vmmc14 c 122 14
+		mknod /dev/vmmc15 c 122 15
+		mknod /dev/vmmc16 c 122 16
+		mknod /dev/vmmc17 c 122 17
+		mknod /dev/vmmc18 c 122 18
+	}
+}
+
+relay_set () {
+	local cfg="$1"
+	local gpio value
+
+	config_get gpio "$cfg" gpio
+	config_get value "$cfg" value
+	[ -n "gpio" ] || return 0
+        [ ! -f "/sys/class/gpio/gpio$gpio/direction" ] &&
+		echo "$gpio" > /sys/class/gpio/export
+	[ -f "/sys/class/gpio/gpio$gpio/direction" ] && {
+		echo "out" > /sys/class/gpio/gpio$gpio/direction
+		echo "$value" > /sys/class/gpio/gpio$gpio/value
+	}
+}
+
+start() {
+	config_load telephony	
+	config_foreach relay_set relay
+	load_module
+	service_start /usr/bin/owsip_ua
+}
+
+stop() {
+	service_stop /usr/bin/owsip_ua
+}
