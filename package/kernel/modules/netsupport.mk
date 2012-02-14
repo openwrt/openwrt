@@ -829,3 +829,28 @@ endef
 
 $(eval $(call KernelPackage,netem))
 
+define KernelPackage/slip
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=SLIP modules
+  KCONFIG:= \
+       CONFIG_SLIP \
+       CONFIG_SLIP_COMPRESSED=y \
+       CONFIG_SLIP_SMART=y \
+       CONFIG_SLIP_MODE_SLIP6=y
+
+  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1)
+    FILES:= \
+       $(LINUX_DIR)/drivers/net/slip/slip.ko
+  else
+    FILES:= \
+       $(LINUX_DIR)/drivers/net/slip.ko
+  endif
+  AUTOLOAD:=$(call AutoLoad,30,slip)
+endef
+
+define KernelPackage/slip/description
+ Kernel modules for SLIP support
+endef
+
+$(eval $(call KernelPackage,slip))
+
