@@ -23,6 +23,12 @@ define PatchKernelLzma
 	$(call CompressLzma,$(KDIR)/vmlinux-$(1),$(KDIR)/vmlinux-$(1).lzma)
 endef
 
+define MkBrnImage
+	mkbrncmdline -i $(KDIR)/vmlinux-$(4) -o $(KDIR)/vmlinux-$(4)-brn BRN-BOOT $(6)
+	$(call CompressLzma,$(KDIR)/vmlinux-$(4)-brn,$(KDIR)/vmlinux-$(4)-brn.lzma)
+	mkbrnimg -s $(1) -m $(2) -o $(3) $(KDIR)/vmlinux-$(4)-brn.lzma $(KDIR)/root.$(5)
+endef
+
 define MkImageLzma
 	mkimage -A mips -O linux -T kernel -a 0x80002000 -C lzma \
 		-e 0x80002000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
@@ -32,6 +38,7 @@ endef
 define Image/Build/squashfs
 	cat $(KDIR)/uImage-$(2) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
+	$(if $(3),$(call MkBrnImage,$(3),$(4),$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-brnImage,$(2),$(1),$(5)))
 endef
 
 define Image/Build/jffs2-64k
@@ -109,7 +116,7 @@ define Image/BuildKernel/Profile/ARV4525PW
 endef
 
 define Image/Build/Profile/ARV4525PW
-	$(call Image/Build/$(1),$(1),ARV4525PW)
+	$(call Image/Build/$(1),$(1),ARV4525PW,BRNDTW502,0x12345678,memsize=32)
 endef
 
 define Image/BuildKernel/Profile/ARV7525PW
