@@ -12,6 +12,8 @@
 #include <linux/platform_device.h>
 #include <linux/rtl8367.h>
 #include <linux/ethtool.h>
+#include <linux/pci.h>
+#include <linux/rt2x00_platform.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -105,6 +107,18 @@ static struct platform_device rt_n56u_rtl8367_device = {
 	}
 };
 
+static struct rt2x00_platform_data rt_n56u_pci_wlan_data = {
+	.eeprom_file_name	= "rt2x00pci_1_0.eeprom",
+};
+
+static int rt_n56u_pci_plat_dev_init(struct pci_dev *dev)
+{
+	if (dev->bus->number == 1 && PCI_SLOT(dev->devfn) == 0)
+		dev->dev.platform_data = &rt_n56u_pci_wlan_data;
+
+	return 0;
+}
+
 static void __init rt_n56u_init(void)
 {
 	rt3883_gpio_init(RT3883_GPIO_MODE_I2C |
@@ -133,6 +147,8 @@ static void __init rt_n56u_init(void)
 
 	rt3883_register_wdt(false);
 	rt3883_register_usbhost();
+	rt3883_pci_set_plat_dev_init(rt_n56u_pci_plat_dev_init);
+	rt3883_pci_init(RT3883_PCI_MODE_PCIE);
 }
 
 MIPS_MACHINE(RAMIPS_MACH_RT_N56U, "RT-N56U", "Asus RT-N56U", rt_n56u_init);
