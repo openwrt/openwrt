@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# Copyright (C) 2011 OpenWrt.org
+# based on ar71xx
+#
+
+COMMIT_TELEPHONY=0
+
+set_relay() {
+	local cfg="relay_$1"
+	local gpio=$1
+	local val=$2
+	
+	uci -q get telephony.$cfg && return 0
+
+	uci batch <<EOF
+set telephony.$cfg='relay'
+set telephony.$cfg.gpio='$gpio'
+set telephony.$cfg.value='$val'
+EOF
+	COMMIT_TELEPHONY=1
+}
+
+set_port() {
+	local cfg="port$1"
+	local id=$1
+	local led=$2
+	
+	uci -q get telephony.$cfg && return 0
+
+	uci batch <<EOF
+set telephony.$cfg='port'
+set telephony.$cfg.id='$id'
+set telephony.$cfg.led='$led'
+set telephony.$cfg.noring='0'
+set telephony.$cfg.nodial='0'
+EOF
+	COMMIT_TELEPHONY=1
+}
+
+. /lib/lantiq.sh
+
+board=$(lantiq_board_name)
+
+case "$board" in
+ARV7525PW)
+	set_relay 31 1
+	set_port 0 "soc:green:fxs1"
+	#set_port 1 "soc:green:fxs2"
+	;;
+esac
+
+[ "$COMMIT_TELEPHONY" == "1" ] && uci commit telephony
+
+exit 0
