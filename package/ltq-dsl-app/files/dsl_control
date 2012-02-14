@@ -2,6 +2,8 @@
 # Copyright (C) 2008 OpenWrt.org
 START=99
 
+. /lib/functions.sh
+
 EXTRA_COMMANDS="status lucistat"
 EXTRA_HELP="	status  Get DSL status information
 	lucistat  Get status information if lua friendly format"
@@ -255,12 +257,40 @@ lucistat() {
 	echo "return dsl"
 }
 
+
+annex_b=10_00_10_00_00_04_00_00
+annex_bdmt=10_00_00_00_00_00_00_00
+annex_b2=00_00_10_00_00_00_00_00
+annex_b2p=00_00_00_00_00_04_00_00
+annex_a=04_01_04_00_00_01_00_00
+annex_at1=01_00_00_00_00_00_00_00
+annex_alite=00_01_00_00_00_00_00_00
+annex_admt=04_00_00_00_00_00_00_00
+annex_a2=00_00_04_00_00_00_00_00
+annex_a2p=00_00_00_00_00_01_00_00
+annex_l=00_00_00_00_04_00_00_00
+annex_m=00_00_00_00_40_00_04_00
+annex_m2=00_00_00_00_40_00_00_00
+annex_m2p=00_00_00_00_00_00_04_00
+
 #
 # Simple start routine
 #
 start() {
+	local annex
+	local xtu
+	config_load network
+	config_get annex atm annex
+
+	# get xtu
+	eval "xtu=\"\${annex_$annex}\""
+
+	# check for invalid annex mode
+	[ -n "${annex}" -a -z "${xtu}" ] &&
+		echo "unknown annex mode $annex"
+
 	# start CPE dsl daemon in the background
-	service_start /sbin/dsl_cpe_control -i \
+	service_start /sbin/dsl_cpe_control -i${xtu} \
 			-n /sbin/dsl_notify.sh \
 			-f /lib/firmware/ModemHWE.bin
 }

@@ -160,7 +160,8 @@ endef
 
 define Package/kmod-ltq-dsl-firmware-$(BUILD_VARIANT)/install
 	$(INSTALL_DIR) $(1)/lib/firmware/
-	$(CP) $(PKG_BUILD_DIR)/$(FW_NAME)/ltq-dsl-fw-$(BUILD_VARIANT).bin $(1)/lib/firmware/ModemHWE.bin
+	$(CP) $(PKG_BUILD_DIR)/$(FW_NAME)/ltq-dsl-fw-$(BUILD_VARIANT).bin $(1)/lib/firmware/dsl-fw-$(word 1, $(subst -, ,$(BUILD_VARIANT))).bin
+	ln -s /lib/firmware/dsl-fw-$(word 1, $(subst -, ,$(BUILD_VARIANT))).bin $(1)/lib/firmware/ModemHWE.bin
 endef
 
 $(eval $(call BuildPackage,kmod-ltq-dsl-firmware-a-danube))
