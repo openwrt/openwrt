@@ -1,0 +1,15 @@
+Without this patch compiling e2fsprogs 1.42 fails in the case the linux
+kernel headers provide linux/falloc.h but the libc is not implementing
+fallocate() as it is still the case with latest versions of uClibc.
+
+--- a/lib/ext2fs/unix_io.c
++++ b/lib/ext2fs/unix_io.c
+@@ -895,7 +895,7 @@ static errcode_t unix_discard(io_channel
+ 		goto unimplemented;
+ #endif
+ 	} else {
+-#ifdef FALLOC_FL_PUNCH_HOLE
++#if defined HAVE_FALLOCATE && defined FALLOC_FL_PUNCH_HOLE
+ 		/*
+ 		 * If we are not on block device, try to use punch hole
+ 		 * to reclaim free space.

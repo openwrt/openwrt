@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 # Copyright 2010 Vertical Communications
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,9 +8,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.41.12
-PKG_MD5SUM:=1b24a21fc0c2381ef420961cbfec733f
-PKG_RELEASE:=2
+PKG_VERSION:=1.42
+PKG_MD5SUM:=a3c4ffd7352310ab5e9412965d575610
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/e2fsprogs
@@ -123,12 +123,10 @@ endef
 TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
-	--enable-shared \
-	--enable-static \
-	--disable-rpath \
 	--enable-elf-shlibs \
-	--enable-dynamic-e2fsck \
-	--disable-tls
+	--disable-tls \
+	--disable-nls \
+	--disable-rpath
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
