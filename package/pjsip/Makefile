@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pjsip
-PKG_VERSION:=1.10
-PKG_RELEASE:=3
+PKG_VERSION:=1.12
+PKG_RELEASE:=1
 
 PKG_SOURCE:=pjproject-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://www.pjsip.org/release/$(PKG_VERSION)/
-PKG_MD5SUM:=e215d0637d3422d49a63c2cde6673951
+PKG_MD5SUM:=1db8e5a5dd73b216409b15afa34651a4
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
@@ -69,14 +69,15 @@ CONFIGURE_ARGS += \
 EXTRA_CFLAGS:=-I$(STAGING_DIR)/usr/include/drv_tapi -I$(STAGING_DIR)/usr/include/drv_vmmc
 endif
 
-Package/pjsip-oss=$(call Package/pjsip-template,oss,)
+Package/pjsip-oss=$(call Package/pjsip-template,oss,BROKEN)
 Package/pjsip-ltq-tapi=$(call Package/pjsip-template,ltq-tapi,@TARGET_lantiq +TARGET_lantiq:kmod-ltq-tapi +TARGET_lantiq:kmod-ltq-vmmc)
 
+USE_LOCAL=$(shell ls ./src/ 2>/dev/null >/dev/null && echo 1)
+ifneq ($(USE_LOCAL),)
 define Build/Prepare
-	$(PKG_UNPACK)
-	$(Build/Patch)
-	$(CP) ./src/* $(PKG_BUILD_DIR)
+	$(CP) ./src/*  $(PKG_BUILD_DIR)
 endef
+endif
 
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); autoconf aconfigure.ac > aconfigure)
