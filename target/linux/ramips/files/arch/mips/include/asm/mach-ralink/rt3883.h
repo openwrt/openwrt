@@ -26,6 +26,9 @@ void rt3883_detect_sys_type(void);
 #define RT3883_INTC_IRQ_BASE	(RT3883_CPU_IRQ_BASE + RT3883_CPU_IRQ_COUNT)
 #define RT3883_INTC_IRQ_COUNT	32
 #define RT3883_GPIO_IRQ_BASE	(RT3883_INTC_IRQ_BASE + RT3883_INTC_IRQ_COUNT)
+#define RT3883_GPIO_IRQ_COUNT	96
+#define RT3883_PCI_IRQ_BASE	(RT3883_GPIO_IRQ_BASE + RT3883_GPIO_IRQ_COUNT)
+#define RT3883_PCI_IRQ_COUNT	3
 
 #define RT3883_CPU_IRQ_INTC	(RT3883_CPU_IRQ_BASE + 2)
 #define RT3883_CPU_IRQ_PCI	(RT3883_CPU_IRQ_BASE + 4)
@@ -47,6 +50,10 @@ void rt3883_detect_sys_type(void);
 #define RT3883_INTC_IRQ_UART1	(RT3883_INTC_IRQ_BASE + 12)
 #define RT3883_INTC_IRQ_UHST	(RT3883_INTC_IRQ_BASE + 18)
 #define RT3883_INTC_IRQ_UDEV	(RT3883_INTC_IRQ_BASE + 19)
+
+#define RT3883_PCI_IRQ_PCI0	(RT3883_PCI_IRQ_BASE + 0)
+#define RT3883_PCI_IRQ_PCI1	(RT3883_PCI_IRQ_BASE + 1)
+#define RT3883_PCI_IRQ_PCIE	(RT3883_PCI_IRQ_BASE + 2)
 
 extern void __iomem *rt3883_sysc_base;
 extern void __iomem *rt3883_memc_base;
@@ -129,5 +136,20 @@ static inline u32 rt3883_memc_rr(unsigned reg)
 #define RT3883_GPIO_GE1_RXCLK	95
 
 void rt3883_gpio_init(u32 mode);
+
+#define RT3883_PCI_MODE_PCI	0x01
+#define RT3883_PCI_MODE_PCIE	0x02
+#define RT3883_PCI_MODE_BOTH	(RT3883_PCI_MODE_PCI | RT3883_PCI_MODE_PCIE)
+
+struct pci_dev;
+
+#ifdef CONFIG_PCI
+void rt3883_pci_init(unsigned mode);
+void rt3883_pci_set_plat_dev_init(int (*f)(struct pci_dev *));
+#else
+static inline void rt3883_pci_init(unsigned mode) {}
+static inline void rt3883_pci_set_plat_dev_init(int (*f)(struct pci_dev *)) {}
+}
+#endif /* CONFIG_PCI */
 
 #endif /* _RT3883_H_ */
