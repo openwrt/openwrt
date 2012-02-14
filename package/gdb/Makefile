@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=6.8
+PKG_VERSION:=6.8a
 PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/gdb
-PKG_MD5SUM:=c9da266b884fb8fa54df786dfaadbc7a
+PKG_MD5SUM:=da20d043e6729f74b909bd507bcae5c9
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-6.8
 
 PKG_BUILD_PARALLEL:=0
 
