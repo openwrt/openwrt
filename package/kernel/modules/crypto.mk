@@ -29,7 +29,7 @@ define KernelPackage/crypto-core
 	CONFIG_CRYPTO_ALGAPI \
 	$(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
   FILES:=$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod)))
-  AUTOLOAD:=$(call AutoLoad,01,$(foreach mod,$(CRYPTO_MODULES),$(call crypto_name,$(mod))))
+  AUTOLOAD:=$(call AutoLoad,01,$(foreach mod,$(CRYPTO_MODULES),$(call crypto_name,$(mod))),1)
 endef
 $(eval $(call KernelPackage,crypto-core))
 
@@ -43,7 +43,7 @@ define KernelPackage/crypto-hash
   TITLE:=CryptoAPI hash support
   KCONFIG:=CONFIG_CRYPTO_HASH2
   FILES:=$(LINUX_DIR)/crypto/crypto_hash.ko
-  AUTOLOAD:=$(call AutoLoad,02,crypto_hash)
+  AUTOLOAD:=$(call AutoLoad,02,crypto_hash,1)
   $(call AddDepends/crypto)
 endef
 $(eval $(call KernelPackage,crypto-hash))
