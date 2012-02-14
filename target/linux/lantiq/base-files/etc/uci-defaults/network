@@ -52,7 +52,6 @@ set_atm_wan() {
 	local vci=$2
 	local encaps=$3
 	local payload=$4
-
 	uci batch <<EOF
 set network.atm='atm-bridge'
 set network.atm.unit='0'
@@ -60,11 +59,23 @@ set network.atm.vpi='$vpi'
 set network.atm.vci='$vci'
 set network.atm.encaps='$encaps'
 set network.atm.payload='$payload'
+set network.atm.fwannex='$annex'
+set network.atm.annex='$annex'
 set network.wan='interface'
 set network.wan.ifname='nas0'
 set network.wan.proto='pppoe'
 set network.wan.username='foo'
 set network.wan.password='bar'
+EOF
+}
+
+set_adsl() {
+	local fwannex=$1
+	local annex=$2
+	uci batch <<EOF
+set network.adsl='adsl-device'
+set network.adsl.fwannex='$fwannex'
+set network.adsl.annex='$annex'
 EOF
 }
 
@@ -109,17 +120,20 @@ touch /etc/config/network
 set_interface_loopback
 set_interface_lan 'eth0'
 
-dsl=$(lantiq_soc_has_adsl)
-[ -z "$dsl" ] || set_atm_wan '1' '32' 'llc' 'bridged'
+
+vpi=1
+vci=32
+encaps="llc"
+payload="bridged"
+fwannex=$(lantiq_dsl_fwannex)
+annex="$fwannex"
 
 board=$(lantiq_board_name)
-
 case "$board" in
 GIGASX76X)
 	set_interface_lan "eth0.1"
 	add_switch "eth0" "1" "1"
 	add_switch_vlan "eth0" "1" "1 2 3 4 5t"
-	set_atm_wan "1" "32" "llc" "bridged"
 	;;
 
 *)
@@ -127,6 +141,10 @@ GIGASX76X)
 	true
 	;;
 esac
+
+dsl=$(lantiq_soc_has_adsl)
+[ -z "$dsl" ] || set_atm_wan "$vpi" "vci" "$encaps" "$payload" "$annex"
+[ -z "$fwannex" ] || set_adsl "$fwannex" "$annex"
 
 uci commit network
 

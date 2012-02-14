@@ -11,3 +11,7 @@ lantiq_soc_name() {
 lantiq_board_name() {
 	grep ^machine /proc/cpuinfo | sed "s/machine.*: \(.*\)/\1/g" | sed "s/\(.*\) - .*/\1/g"
 }
+
+lantiq_dsl_fwannex() {
+	ls /lib/firmware/dsl-fw-*.bin 2> /dev/null | sed "s/.*\([ab]\)\.bin/\1/g"
+}
