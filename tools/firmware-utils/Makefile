@@ -55,6 +55,8 @@ define Host/Compile
 	$(call cc,buffalo-tftp buffalo-lib, -Wall)
 	$(call cc,mkwrgimg md5, -Wall)
 	$(call cc,mkedimaximg)
+	$(call cc,mkbrncmdline)
+	$(call cc,mkbrnimg)
 endef
 
 define Host/Install

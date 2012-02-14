@@ -78,6 +78,35 @@ static struct mtd_partition arv45xx_partitions[] =
 	},
 };
 
+static struct mtd_partition arv45xx_brnboot_partitions[] =
+{
+	{
+		.name	= "brn-boot",
+		.offset	= 0x0,
+		.size	= 0x20000,
+	},
+	{
+		.name	= "config",
+		.offset	= 0x20000,
+		.size	= 0x30000,
+	},
+	{
+		.name	= "linux",
+		.offset	= 0x50000,
+		.size	= 0x390000,
+	},
+	{
+		.name	= "reserved", /* 12-byte signature at 0x3efff4 :/ */
+		.offset	= 0x3e0000,
+		.size	= 0x010000,
+	},
+	{
+		.name	= "eeprom",
+		.offset	= 0x3f0000,
+		.size	= 0x10000,
+	},
+};
+
 static struct mtd_partition arv7525_partitions[] =
 {
 	{
@@ -134,6 +163,11 @@ static struct physmap_flash_data arv4510_flash_data = {
 static struct physmap_flash_data arv45xx_flash_data = {
 	.nr_parts	= ARRAY_SIZE(arv45xx_partitions),
 	.parts		= arv45xx_partitions,
+};
+
+static struct physmap_flash_data arv45xx_brnboot_flash_data = {
+	.nr_parts	= ARRAY_SIZE(arv45xx_brnboot_partitions),
+	.parts		= arv45xx_brnboot_partitions,
 };
 
 static struct physmap_flash_data arv7525_flash_data = {
@@ -244,12 +278,21 @@ arv452cpw_gpio_leds[] __initdata = {
 
 static struct gpio_led
 arv4525pw_gpio_leds[] __initdata = {
-	{ .name = "soc:green:fxs1", .gpio = 4, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:green:fxs2", .gpio = 5, .active_low = 1, .default_trigger = "default-on" },
-	{ .name = "soc:red:dsl", .gpio = 6, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:dsl", .gpio = 6, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:wifi", .gpio = 8, .active_low = 1, .default_trigger = "default-on" },
 	{ .name = "soc:green:online", .gpio = 9, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:fxs-internet", .gpio = 5, .active_low = 1, .default_trigger = "default-on" },
+	{ .name = "soc:green:fxs-festnetz", .gpio = 4, .active_low = 1, .default_trigger = "default-on" },
 };
+
+#define ARV4525PW_PHYRESET 13
+#define ARV4525PW_RELAY    31
+
+static struct gpio arv4525pw_gpios[] __initdata = {
+	{ ARV4525PW_PHYRESET, GPIOF_OUT_INIT_HIGH, "phyreset" },
+	{ ARV4525PW_RELAY,    GPIOF_OUT_INIT_HIGH, "relay"    },
+};
+
 
 static struct gpio_led
 arv752dpw22_gpio_leds[] __initdata = {
@@ -521,16 +564,24 @@ MIPS_MACHINE(LANTIQ_MACH_ARV452CPW,
 			"ARV452CPW - Arcor A801",
 			arv452Cpw_init);
 
-
 static void __init
 arv4525pw_init(void)
 {
-#define ARV4525PW_MADWIFI_ADDR		0xb07f0400
+#define ARV4525PW_MADWIFI_ADDR		0xb03f0400
+	if (ltq_brn_boot)
+		ltq_register_nor(&arv45xx_brnboot_flash_data);
+	else
+		ltq_register_nor(&arv45xx_flash_data);
+
 	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(arv4525pw_gpio_leds), arv4525pw_gpio_leds);
-	ltq_register_nor(&arv45xx_flash_data);
+	gpio_request_array(arv4525pw_gpios, ARRAY_SIZE(arv4525pw_gpios));
+	gpio_export(ARV4525PW_RELAY, false);
+	gpio_export(ARV4525PW_PHYRESET, false);
 	ltq_pci_data.clock = PCI_CLOCK_INT;
 	ltq_register_pci(&ltq_pci_data);
 	ltq_register_madwifi_eep(ARV4525PW_MADWIFI_ADDR);
+	arv45xx_register_ath5k();
+	ltq_register_ath5k(arv45xx_ath5k_eeprom_data, arv45xx_ath5k_eeprom_mac);
 	ltq_eth_data.mii_mode = PHY_INTERFACE_MODE_MII;
 	arv45xx_register_ethernet();
 }
