@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# Copyright (C) 2012 OpenWrt.org
+#
+
+uboot_environment_configuration() {
+	local dev=$1
+	local offset=$2
+	local envsize=$3
+	local secsize=$4
+	local numsec=$5
+	echo "$dev $offset $envsize $secsize $numsec" > /etc/fw_env.config
+}
+
+[ -e /etc/config/fw_env.config ] && exit 0
+
+. /lib/lantiq.sh
+
+board=$(lantiq_board_name)
+
+case "$board" in
+GIGASX76X)
+	uboot_environment_configuration "/dev/mtd1" "0x0" "0x10000" "0x10000" "1"
+	;;
+
+*)
+	# custom foo goes here
+	true
+	;;
+esac
+
+exit 0
