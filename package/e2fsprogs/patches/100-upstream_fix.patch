@@ -1,0 +1,22 @@
+--- a/e2fsck/pass1.c
++++ b/e2fsck/pass1.c
+@@ -545,7 +545,7 @@ void e2fsck_pass1(e2fsck_t ctx)
+ 	int	i;
+ 	__u64	max_sizes;
+ 	ext2_filsys fs = ctx->fs;
+-	ext2_ino_t	ino;
++	ext2_ino_t	ino = 0;
+ 	struct ext2_inode *inode;
+ 	ext2_inode_scan	scan;
+ 	char		*block_buf;
+--- a/e2fsck/pass1b.c
++++ b/e2fsck/pass1b.c
+@@ -267,7 +267,7 @@ struct process_block_struct {
+ static void pass1b(e2fsck_t ctx, char *block_buf)
+ {
+ 	ext2_filsys fs = ctx->fs;
+-	ext2_ino_t ino;
++	ext2_ino_t ino = 0;
+ 	struct ext2_inode inode;
+ 	ext2_inode_scan	scan;
+ 	struct process_block_struct pb;
