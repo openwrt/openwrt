@@ -1,0 +1,71 @@
+Index: linux-3.1.10/drivers/net/lantiq_etop.c
+===================================================================
+--- linux-3.1.10.orig/drivers/net/lantiq_etop.c	2012-02-09 10:07:01.180680919 +0100
++++ linux-3.1.10/drivers/net/lantiq_etop.c	2012-02-09 10:11:00.996691173 +0100
+@@ -203,8 +203,10 @@
+ {
+ 	struct ltq_etop_chan *ch = container_of(napi,
+ 				struct ltq_etop_chan, napi);
++	struct ltq_etop_priv *priv = netdev_priv(ch->netdev);
+ 	int rx = 0;
+ 	int complete = 0;
++	unsigned long flags;
+ 
+ 	while ((rx < budget) && !complete) {
+ 		struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
+@@ -218,7 +220,9 @@
+ 	}
+ 	if (complete || !rx) {
+ 		napi_complete(&ch->napi);
++		spin_lock_irqsave(&priv->lock, flags);
+ 		ltq_dma_ack_irq(&ch->dma);
++		spin_unlock_irqrestore(&priv->lock, flags);
+ 	}
+ 	return rx;
+ }
+@@ -248,7 +252,9 @@
+ 	if (netif_tx_queue_stopped(txq))
+ 		netif_tx_start_queue(txq);
+ 	napi_complete(&ch->napi);
++	spin_lock_irqsave(&priv->lock, flags);
+ 	ltq_dma_ack_irq(&ch->dma);
++	spin_unlock_irqrestore(&priv->lock, flags);
+ 	return 1;
+ }
+ 
+@@ -615,13 +621,17 @@
+ {
+ 	struct ltq_etop_priv *priv = netdev_priv(dev);
+ 	int i;
++	unsigned long flags;
+ 
+ 	for (i = 0; i < MAX_DMA_CHAN; i++) {
+ 		struct ltq_etop_chan *ch = &priv->ch[i];
+ 
+ 		if (!IS_TX(i) && (!IS_RX(i)))
+ 			continue;
++		spin_lock_irqsave(&priv->lock, flags);
+ 		ltq_dma_open(&ch->dma);
++		ltq_dma_ack_irq(&ch->dma);
++		spin_unlock_irqrestore(&priv->lock, flags);
+ 		napi_enable(&ch->napi);
+ 	}
+ 	if (priv->phydev)
+@@ -635,6 +645,7 @@
+ {
+ 	struct ltq_etop_priv *priv = netdev_priv(dev);
+ 	int i;
++	unsigned long flags;
+ 
+ 	netif_tx_stop_all_queues(dev);
+ 	if (priv->phydev)
+@@ -645,7 +656,9 @@
+ 		if (!IS_RX(i) && !IS_TX(i))
+ 			continue;
+ 		napi_disable(&ch->napi);
++		spin_lock_irqsave(&priv->lock, flags);
+ 		ltq_dma_close(&ch->dma);
++		spin_unlock_irqrestore(&priv->lock, flags);
+ 	}
+ 	return 0;
+ }
