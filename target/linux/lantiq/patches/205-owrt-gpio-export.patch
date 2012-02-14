@@ -1,6 +1,8 @@
---- a/drivers/gpio/gpiolib.c
-+++ b/drivers/gpio/gpiolib.c
-@@ -64,9 +64,9 @@ struct gpio_desc {
+Index: linux-3.1.10/drivers/gpio/gpiolib.c
+===================================================================
+--- linux-3.1.10.orig/drivers/gpio/gpiolib.c	2012-01-18 16:33:18.000000000 +0100
++++ linux-3.1.10/drivers/gpio/gpiolib.c	2012-02-03 20:22:42.554529747 +0100
+@@ -64,9 +64,9 @@
  #define GPIO_FLAGS_MASK		((1 << ID_SHIFT) - 1)
  #define GPIO_TRIGGER_MASK	(BIT(FLAG_TRIG_FALL) | BIT(FLAG_TRIG_RISE))
  
@@ -12,7 +14,7 @@
  };
  static struct gpio_desc gpio_desc[ARCH_NR_GPIOS];
  
-@@ -76,9 +76,9 @@ static DEFINE_IDR(dirent_idr);
+@@ -76,9 +76,9 @@
  
  static inline void desc_set_label(struct gpio_desc *d, const char *label)
  {
@@ -24,17 +26,15 @@
  }
  
  /* Warn when drivers omit gpio_request() calls -- legal but ill-advised
-@@ -727,7 +727,8 @@ int gpio_export(unsigned gpio, bool dire
+@@ -727,7 +727,6 @@
  
  	if (desc->chip->names && desc->chip->names[gpio - desc->chip->base])
  		ioname = desc->chip->names[gpio - desc->chip->base];
 -
-+	else
-+		ioname = gpio_desc[gpio].label;
  	if (status == 0) {
  		struct device	*dev;
  
-@@ -1347,11 +1348,11 @@ const char *gpiochip_is_requested(struct
+@@ -1347,11 +1346,11 @@
  		return NULL;
  	if (test_bit(FLAG_REQUESTED, &gpio_desc[gpio].flags) == 0)
  		return NULL;
