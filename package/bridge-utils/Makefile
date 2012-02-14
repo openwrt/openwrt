@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -11,8 +11,8 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=bridge-utils
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=@SF/bridge
-PKG_VERSION:=1.4
-PKG_MD5SUM:=0182fcac3a2b307113bbec34e5f1c673
+PKG_VERSION:=1.5
+PKG_MD5SUM:=ec7b381160b340648dede58c31bb2238
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 
@@ -45,7 +45,7 @@ endef
 
 define Package/bridge/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/brctl/brctl $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/brctl/brctl $(1)/usr/sbin
 endef
 
 $(eval $(call BuildPackage,bridge))
