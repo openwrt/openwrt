@@ -88,6 +88,20 @@ ramips_hw_set_macaddr(unsigned char *mac)
 		     RAMIPS_GDMA1_MAC_ADRL);
 }
 
+static struct sk_buff *
+ramips_alloc_skb(struct raeth_priv *re)
+{
+	struct sk_buff *skb;
+
+	skb = netdev_alloc_skb(re->netdev, MAX_RX_LENGTH + NET_IP_ALIGN);
+	if (!skb)
+		return NULL;
+
+	skb_reserve(skb, NET_IP_ALIGN);
+
+	return skb;
+}
+
 #if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT3883)
 
 #define RAMIPS_MDIO_RETRY	1000
@@ -522,12 +536,9 @@ ramips_alloc_dma(struct raeth_priv *re)
 		dma_addr_t dma_addr;
 		struct sk_buff *new_skb;
 
-		new_skb = netdev_alloc_skb(re->netdev,
-					   MAX_RX_LENGTH + NET_IP_ALIGN);
+		new_skb = ramips_alloc_skb(re);
 		if (!new_skb)
 			goto err_cleanup;
-
-		skb_reserve(new_skb, NET_IP_ALIGN);
 
 		dma_addr = dma_map_single(&re->netdev->dev, new_skb->data,
 					  MAX_RX_LENGTH, DMA_FROM_DEVICE);
@@ -629,7 +640,7 @@ ramips_eth_rx_hw(unsigned long ptr)
 		rx_skb = re->rx_skb[rx];
 		pktlen = RX_DMA_PLEN0(re->rx[rx].rxd2);
 
-		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN);
+		new_skb = ramips_alloc_skb(re);
 		/* Reuse the buffer on allocation failures */
 		if (new_skb) {
 			dma_addr_t dma_addr;
@@ -646,7 +657,6 @@ ramips_eth_rx_hw(unsigned long ptr)
 			netif_rx(rx_skb);
 
 			re->rx_skb[rx] = new_skb;
-			skb_reserve(new_skb, NET_IP_ALIGN);
 
 			dma_addr = dma_map_single(&re->netdev->dev,
 						  new_skb->data,
