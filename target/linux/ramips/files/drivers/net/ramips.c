@@ -407,22 +407,30 @@ ramips_phy_disconnect(struct raeth_priv *re)
 static void
 ramips_phy_start(struct raeth_priv *re)
 {
+	unsigned long flags;
+
 	if (re->phy_dev) {
 		phy_start(re->phy_dev);
 	} else {
+		spin_lock_irqsave(&re->phy_lock, flags);
 		re->link = 1;
 		ramips_link_adjust(re);
+		spin_unlock_irqrestore(&re->phy_lock, flags);
 	}
 }
 
 static void
 ramips_phy_stop(struct raeth_priv *re)
 {
+	unsigned long flags;
+
 	if (re->phy_dev) {
 		phy_stop(re->phy_dev);
 	} else {
+		spin_lock_irqsave(&re->phy_lock, flags);
 		re->link = 0;
 		ramips_link_adjust(re);
+		spin_unlock_irqrestore(&re->phy_lock, flags);
 	}
 }
 #else
