@@ -212,9 +212,17 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 
 static int __init rt2880_pci_init(void)
 {
+	void __iomem *io_map_base;
 	int i;
 
 	rt2880_pci_base = ioremap_nocache(RT2880_PCI_BASE, PAGE_SIZE);
+
+	io_map_base = ioremap(RT2880_PCI_IO_BASE, RT2880_PCI_IO_SIZE);
+	rt2880_pci_controller.io_map_base = (unsigned long) io_map_base;
+	set_io_port_base((unsigned long) io_map_base);
+
+	ioport_resource.start = RT2880_PCI_IO_BASE;
+	ioport_resource.end = RT2880_PCI_IO_BASE + RT2880_PCI_IO_SIZE - 1;
 
 	rt2880_pci_reg_write(0, RT2880_PCI_REG_PCICFG_ADDR);
 	for(i = 0; i < 0xfffff; i++) {}
