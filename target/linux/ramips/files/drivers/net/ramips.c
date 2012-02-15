@@ -92,10 +92,31 @@ ramips_hw_set_macaddr(unsigned char *mac)
 
 #define RAMIPS_MDIO_RETRY	1000
 
-static void
-ramips_setup_mdio_cfg(struct raeth_priv *re)
+static unsigned char *ramips_speed_str(struct raeth_priv *re)
 {
-	unsigned int mdio_cfg;
+	switch (re->speed) {
+	case SPEED_1000:
+		return "1000";
+	case SPEED_100:
+		return "100";
+	case SPEED_10:
+		return "10";
+	}
+
+	return "?";
+}
+
+static void ramips_link_adjust(struct raeth_priv *re)
+{
+	struct ramips_eth_platform_data *pdata;
+	u32 mdio_cfg;
+
+	pdata = re->parent->platform_data;
+	if (!re->link) {
+		netif_carrier_off(re->netdev);
+		netdev_info(re->netdev, "link down\n");
+		return;
+	}
 
 	mdio_cfg = RAMIPS_MDIO_CFG_TX_CLK_SKEW_200 |
 		   RAMIPS_MDIO_CFG_TX_CLK_SKEW_200 |
@@ -125,7 +146,13 @@ ramips_setup_mdio_cfg(struct raeth_priv *re)
 	}
 
 	ramips_fe_wr(mdio_cfg, RAMIPS_MDIO_CFG);
+
+	netif_carrier_on(re->netdev);
+	netdev_info(re->netdev, "link up (%sMbps/%s duplex)\n",
+		    ramips_speed_str(re),
+		    (DUPLEX_FULL == re->duplex) ? "Full" : "Half");
 }
+
 static int
 ramips_mdio_wait_ready(struct raeth_priv *re)
 {
@@ -246,12 +273,159 @@ ramips_mdio_cleanup(struct raeth_priv *re)
 	kfree(re->mii_bus);
 }
 
-#else
-static inline void
-ramips_setup_mdio_cfg(struct raeth_priv *re)
+static void
+ramips_phy_link_adjust(struct net_device *dev)
 {
+	struct raeth_priv *re = netdev_priv(dev);
+	struct phy_device *phydev = re->phy_dev;
+	unsigned long flags;
+	int status_change = 0;
+
+	spin_lock_irqsave(&re->phy_lock, flags);
+
+	if (phydev->link)
+		if (re->duplex != phydev->duplex ||
+		    re->speed != phydev->speed)
+			status_change = 1;
+
+	if (phydev->link != re->link)
+		status_change = 1;
+
+	re->link = phydev->link;
+	re->duplex = phydev->duplex;
+	re->speed = phydev->speed;
+
+	if (status_change)
+		ramips_link_adjust(re);
+
+	spin_unlock_irqrestore(&re->phy_lock, flags);
 }
 
+static int
+ramips_phy_connect_multi(struct raeth_priv *re)
+{
+	struct net_device *netdev = re->netdev;
+	struct ramips_eth_platform_data *pdata;
+	struct phy_device *phydev = NULL;
+	int phy_addr;
+	int ret = 0;
+
+	pdata = re->parent->platform_data;
+	for (phy_addr = 0; phy_addr < PHY_MAX_ADDR; phy_addr++) {
+		if (!(pdata->phy_mask & (1 << phy_addr)))
+			continue;
+
+		if (re->mii_bus->phy_map[phy_addr] == NULL)
+			continue;
+
+		RADEBUG("%s: PHY found at %s, uid=%08x\n",
+			netdev->name,
+			dev_name(&re->mii_bus->phy_map[phy_addr]->dev),
+			re->mii_bus->phy_map[phy_addr]->phy_id);
+
+		if (phydev == NULL)
+			phydev = re->mii_bus->phy_map[phy_addr];
+	}
+
+	if (!phydev) {
+		netdev_err(netdev, "no PHY found with phy_mask=%08x\n",
+			   pdata->phy_mask);
+		return -ENODEV;
+	}
+
+	re->phy_dev = phy_connect(netdev, dev_name(&phydev->dev),
+				  ramips_phy_link_adjust, 0,
+				  pdata->phy_if_mode);
+
+	if (IS_ERR(re->phy_dev)) {
+		netdev_err(netdev, "could not connect to PHY at %s\n",
+			   dev_name(&phydev->dev));
+		return PTR_ERR(re->phy_dev);
+	}
+
+	phydev->supported &= PHY_GBIT_FEATURES;
+	phydev->advertising = phydev->supported;
+
+	RADEBUG("%s: connected to PHY at %s [uid=%08x, driver=%s]\n",
+		netdev->name, dev_name(&phydev->dev),
+		phydev->phy_id, phydev->drv->name);
+
+	re->link = 0;
+	re->speed = 0;
+	re->duplex = -1;
+	re->rx_fc = 0;
+	re->tx_fc = 0;
+
+	return ret;
+}
+
+static int
+ramips_phy_connect_fixed(struct raeth_priv *re)
+{
+	struct ramips_eth_platform_data *pdata;
+
+	pdata = re->parent->platform_data;
+	switch (pdata->speed) {
+	case SPEED_10:
+	case SPEED_100:
+	case SPEED_1000:
+		break;
+	default:
+		netdev_err(re->netdev, "invalid speed specified\n");
+		return -EINVAL;
+	}
+
+	RADEBUG("%s: using fixed link parameters\n", re->netdev->name);
+
+	re->speed = pdata->speed;
+	re->duplex = pdata->duplex;
+	re->tx_fc = pdata->tx_fc;
+	re->rx_fc = pdata->tx_fc;
+
+	return 0;
+}
+
+static int
+ramips_phy_connect(struct raeth_priv *re)
+{
+	struct ramips_eth_platform_data *pdata;
+
+	pdata = re->parent->platform_data;
+	if (pdata->phy_mask)
+		return ramips_phy_connect_multi(re);
+
+	return ramips_phy_connect_fixed(re);
+}
+
+static void
+ramips_phy_disconnect(struct raeth_priv *re)
+{
+	if (re->phy_dev)
+		phy_disconnect(re->phy_dev);
+}
+
+static void
+ramips_phy_start(struct raeth_priv *re)
+{
+	if (re->phy_dev) {
+		phy_start(re->phy_dev);
+	} else {
+		re->link = 1;
+		ramips_link_adjust(re);
+	}
+}
+
+static void
+ramips_phy_stop(struct raeth_priv *re)
+{
+	if (re->phy_dev) {
+		phy_stop(re->phy_dev);
+	} else {
+		re->link = 0;
+		ramips_link_adjust(re);
+	}
+}
+#else
 static inline int
 ramips_mdio_init(struct raeth_priv *re)
 {
@@ -260,6 +434,27 @@ ramips_mdio_init(struct raeth_priv *re)
 
 static inline void
 ramips_mdio_cleanup(struct raeth_priv *re)
+{
+}
+
+static inline int
+ramips_phy_connect(struct raeth_priv *re)
+{
+	return 0;
+}
+
+static inline void
+ramips_phy_disconnect(struct raeth_priv *re)
+{
+}
+
+static inline void
+ramips_phy_start(struct raeth_priv *re)
+{
+}
+
+static inline void
+ramips_phy_stop(struct raeth_priv *re)
 {
 }
 #endif /* CONFIG_RALINK_RT288X || CONFIG_RALINK_RT3883 */
@@ -546,7 +741,7 @@ ramips_eth_open(struct net_device *dev)
 		     (unsigned long)dev);
 	tasklet_init(&priv->rx_tasklet, ramips_eth_rx_hw, (unsigned long)dev);
 
-	ramips_setup_mdio_cfg(priv);
+	ramips_phy_start(priv);
 
 	ramips_fe_wr(RAMIPS_DELAY_INIT, RAMIPS_DLY_INT_CFG);
 	ramips_fe_wr(RAMIPS_TX_DLY_INT | RAMIPS_RX_DLY_INT, RAMIPS_FE_INT_ENABLE);
@@ -580,6 +775,7 @@ ramips_eth_stop(struct net_device *dev)
 	/* disable all interrupts in the hw */
 	ramips_fe_wr(0, RAMIPS_FE_INT_ENABLE);
 
+	ramips_phy_stop(priv);
 	free_irq(dev->irq, dev);
 	netif_stop_queue(dev);
 	tasklet_kill(&priv->tx_housekeeping_tasklet);
@@ -604,8 +800,20 @@ ramips_eth_probe(struct net_device *dev)
 	dev->mtu = 1500;
 	dev->watchdog_timeo = TX_TIMEOUT;
 	spin_lock_init(&priv->page_lock);
+	spin_lock_init(&priv->phy_lock);
 
 	err = ramips_mdio_init(priv);
+	if (err)
+		return err;
+
+	err = ramips_phy_connect(priv);
+	if (err)
+		goto err_mdio_cleanup;
+
+	return 0;
+
+err_mdio_cleanup:
+	ramips_mdio_cleanup(priv);
 	return err;
 }
 
@@ -614,6 +822,7 @@ ramips_eth_uninit(struct net_device *dev)
 {
 	struct raeth_priv *re = netdev_priv(dev);
 
+	ramips_phy_disconnect(re);
 	ramips_mdio_cleanup(re);
 }
 

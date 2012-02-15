@@ -19,6 +19,8 @@
 #ifndef _RAMIPS_ETH_PLATFORM_H
 #define _RAMIPS_ETH_PLATFORM_H
 
+#include <linux/phy.h>
+
 struct ramips_eth_platform_data
 {
 	unsigned char mac[6];
@@ -30,6 +32,9 @@ struct ramips_eth_platform_data
 	int duplex;
 	int tx_fc;
 	int rx_fc;
+
+	u32 phy_mask;
+	phy_interface_t phy_if_mode;
 };
 
 #endif /* _RAMIPS_ETH_PLATFORM_H */

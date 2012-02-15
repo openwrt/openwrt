@@ -1,12 +1,13 @@
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -494,6 +494,16 @@ config MIPS_AU1X00_ENET
+@@ -494,6 +494,17 @@ config MIPS_AU1X00_ENET
  	  If you have an Alchemy Semi AU1X00 based system
  	  say Y.  Otherwise, say N.
  
 +config MIPS_RAMIPS_NET
 +	tristate "Ethernet driver for rt288x/rt305x"
 +	depends on MIPS_RALINK
++	select PHYLIB if (SOC_RT288X || SOC_RT3883)
 +	help
 +	  This driver supports the etehrnet mac inside the ralink wisocs
 +
