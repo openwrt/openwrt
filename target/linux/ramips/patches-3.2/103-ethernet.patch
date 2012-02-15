@@ -1,12 +1,13 @@
 --- a/drivers/net/Kconfig
 +++ b/drivers/net/Kconfig
-@@ -277,6 +277,16 @@ source "drivers/net/plip/Kconfig"
+@@ -277,6 +277,17 @@ source "drivers/net/plip/Kconfig"
  
  source "drivers/net/ppp/Kconfig"
  
 +config MIPS_RAMIPS_NET
 +	tristate "Ethernet driver for rt288x/rt305x"
 +	depends on MIPS_RALINK
++	select PHYLIB if (SOC_RT288X || SOC_RT3883)
 +	help
 +	  This driver supports the etehrnet mac inside the ralink wisocs
 +

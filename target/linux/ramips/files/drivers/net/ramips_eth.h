@@ -229,10 +229,11 @@ struct raeth_priv
 	unsigned int		skb_free_idx;
 
 	spinlock_t		page_lock;
-	struct net_device       *netdev;
+	struct net_device	*netdev;
 	struct device		*parent;
 	struct ramips_eth_platform_data *plat;
 
+	int			link;
 	int			speed;
 	int			duplex;
 	int			tx_fc;
@@ -240,6 +241,8 @@ struct raeth_priv
 
 	struct mii_bus		*mii_bus;
 	int			mii_irq[PHY_MAX_ADDR];
+	struct phy_device	*phy_dev;
+	spinlock_t		phy_lock;
 };
 
 #endif /* RAMIPS_ETH_H */
