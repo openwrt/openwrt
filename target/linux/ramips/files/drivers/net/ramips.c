@@ -560,49 +560,49 @@ ramips_setup_dma(struct raeth_priv *re)
 static int
 ramips_eth_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct raeth_priv *priv = netdev_priv(dev);
+	struct raeth_priv *re = netdev_priv(dev);
 	unsigned long tx;
 	unsigned int tx_next;
 	dma_addr_t mapped_addr;
 
-	if (priv->plat->min_pkt_len) {
-		if (skb->len < priv->plat->min_pkt_len) {
-			if (skb_padto(skb, priv->plat->min_pkt_len)) {
+	if (re->plat->min_pkt_len) {
+		if (skb->len < re->plat->min_pkt_len) {
+			if (skb_padto(skb, re->plat->min_pkt_len)) {
 				printk(KERN_ERR
 				       "ramips_eth: skb_padto failed\n");
 				kfree_skb(skb);
 				return 0;
 			}
-			skb_put(skb, priv->plat->min_pkt_len - skb->len);
+			skb_put(skb, re->plat->min_pkt_len - skb->len);
 		}
 	}
 
 	dev->trans_start = jiffies;
-	mapped_addr = dma_map_single(&priv->netdev->dev, skb->data, skb->len,
+	mapped_addr = dma_map_single(&re->netdev->dev, skb->data, skb->len,
 				     DMA_TO_DEVICE);
 
-	spin_lock(&priv->page_lock);
+	spin_lock(&re->page_lock);
 	tx = ramips_fe_rr(RAMIPS_TX_CTX_IDX0);
 	tx_next = (tx + 1) % NUM_TX_DESC;
 
-	if ((priv->tx_skb[tx]) || (priv->tx_skb[tx_next]) ||
-	    !(priv->tx[tx].txd2 & TX_DMA_DONE) ||
-	    !(priv->tx[tx_next].txd2 & TX_DMA_DONE))
+	if ((re->tx_skb[tx]) || (re->tx_skb[tx_next]) ||
+	    !(re->tx[tx].txd2 & TX_DMA_DONE) ||
+	    !(re->tx[tx_next].txd2 & TX_DMA_DONE))
 		goto out;
 
-	priv->tx[tx].txd1 = (unsigned int) mapped_addr;
-	priv->tx[tx].txd2 &= ~(TX_DMA_PLEN0_MASK | TX_DMA_DONE);
-	priv->tx[tx].txd2 |= TX_DMA_PLEN0(skb->len);
+	re->tx[tx].txd1 = (unsigned int) mapped_addr;
+	re->tx[tx].txd2 &= ~(TX_DMA_PLEN0_MASK | TX_DMA_DONE);
+	re->tx[tx].txd2 |= TX_DMA_PLEN0(skb->len);
 	dev->stats.tx_packets++;
 	dev->stats.tx_bytes += skb->len;
-	priv->tx_skb[tx] = skb;
+	re->tx_skb[tx] = skb;
 	wmb();
 	ramips_fe_wr(tx_next, RAMIPS_TX_CTX_IDX0);
-	spin_unlock(&priv->page_lock);
+	spin_unlock(&re->page_lock);
 	return NETDEV_TX_OK;
 
  out:
-	spin_unlock(&priv->page_lock);
+	spin_unlock(&re->page_lock);
 	dev->stats.tx_dropped++;
 	kfree_skb(skb);
 	return NETDEV_TX_OK;
@@ -612,7 +612,7 @@ static void
 ramips_eth_rx_hw(unsigned long ptr)
 {
 	struct net_device *dev = (struct net_device *) ptr;
-	struct raeth_priv *priv = netdev_priv(dev);
+	struct raeth_priv *re = netdev_priv(dev);
 	int rx;
 	int max_rx = 16;
 
@@ -621,19 +621,19 @@ ramips_eth_rx_hw(unsigned long ptr)
 		int pktlen;
 
 		rx = (ramips_fe_rr(RAMIPS_RX_CALC_IDX0) + 1) % NUM_RX_DESC;
-		if (!(priv->rx[rx].rxd2 & RX_DMA_DONE))
+		if (!(re->rx[rx].rxd2 & RX_DMA_DONE))
 			break;
 		max_rx--;
 
-		rx_skb = priv->rx_skb[rx];
-		pktlen = RX_DMA_PLEN0(priv->rx[rx].rxd2);
+		rx_skb = re->rx_skb[rx];
+		pktlen = RX_DMA_PLEN0(re->rx[rx].rxd2);
 
 		new_skb = netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN);
 		/* Reuse the buffer on allocation failures */
 		if (new_skb) {
 			dma_addr_t dma_addr;
 
-			dma_unmap_single(&priv->netdev->dev, priv->rx_dma[rx],
+			dma_unmap_single(&re->netdev->dev, re->rx_dma[rx],
 					 MAX_RX_LENGTH, DMA_FROM_DEVICE);
 
 			skb_put(rx_skb, pktlen);
@@ -644,26 +644,26 @@ ramips_eth_rx_hw(unsigned long ptr)
 			dev->stats.rx_bytes += pktlen;
 			netif_rx(rx_skb);
 
-			priv->rx_skb[rx] = new_skb;
+			re->rx_skb[rx] = new_skb;
 			skb_reserve(new_skb, NET_IP_ALIGN);
 
-			dma_addr = dma_map_single(&priv->netdev->dev,
+			dma_addr = dma_map_single(&re->netdev->dev,
 						  new_skb->data,
 						  MAX_RX_LENGTH,
 						  DMA_FROM_DEVICE);
-			priv->rx_dma[rx] = dma_addr;
-			priv->rx[rx].rxd1 = (unsigned int) dma_addr;
+			re->rx_dma[rx] = dma_addr;
+			re->rx[rx].rxd1 = (unsigned int) dma_addr;
 		} else {
 			dev->stats.rx_dropped++;
 		}
 
-		priv->rx[rx].rxd2 &= ~RX_DMA_DONE;
+		re->rx[rx].rxd2 &= ~RX_DMA_DONE;
 		wmb();
 		ramips_fe_wr(rx, RAMIPS_RX_CALC_IDX0);
 	}
 
 	if (max_rx == 0)
-		tasklet_schedule(&priv->rx_tasklet);
+		tasklet_schedule(&re->rx_tasklet);
 	else
 		ramips_fe_int_enable(RAMIPS_RX_DLY_INT);
 }
@@ -672,18 +672,18 @@ static void
 ramips_eth_tx_housekeeping(unsigned long ptr)
 {
 	struct net_device *dev = (struct net_device*)ptr;
-	struct raeth_priv *priv = netdev_priv(dev);
+	struct raeth_priv *re = netdev_priv(dev);
 
-	spin_lock(&priv->page_lock);
-	while ((priv->tx[priv->skb_free_idx].txd2 & TX_DMA_DONE) &&
-	       (priv->tx_skb[priv->skb_free_idx])) {
-		dev_kfree_skb_irq(priv->tx_skb[priv->skb_free_idx]);
-		priv->tx_skb[priv->skb_free_idx] = 0;
-		priv->skb_free_idx++;
-		if (priv->skb_free_idx >= NUM_TX_DESC)
-			priv->skb_free_idx = 0;
+	spin_lock(&re->page_lock);
+	while ((re->tx[re->skb_free_idx].txd2 & TX_DMA_DONE) &&
+	       (re->tx_skb[re->skb_free_idx])) {
+		dev_kfree_skb_irq(re->tx_skb[re->skb_free_idx]);
+		re->tx_skb[re->skb_free_idx] = 0;
+		re->skb_free_idx++;
+		if (re->skb_free_idx >= NUM_TX_DESC)
+			re->skb_free_idx = 0;
 	}
-	spin_unlock(&priv->page_lock);
+	spin_unlock(&re->page_lock);
 
 	ramips_fe_int_enable(RAMIPS_TX_DLY_INT);
 }
@@ -691,27 +691,27 @@ ramips_eth_tx_housekeeping(unsigned long ptr)
 static void
 ramips_eth_timeout(struct net_device *dev)
 {
-	struct raeth_priv *priv = netdev_priv(dev);
+	struct raeth_priv *re = netdev_priv(dev);
 
-	tasklet_schedule(&priv->tx_housekeeping_tasklet);
+	tasklet_schedule(&re->tx_housekeeping_tasklet);
 }
 
 static irqreturn_t
 ramips_eth_irq(int irq, void *dev)
 {
-	struct raeth_priv *priv = netdev_priv(dev);
+	struct raeth_priv *re = netdev_priv(dev);
 	unsigned long fe_int = ramips_fe_rr(RAMIPS_FE_INT_STATUS);
 
 	ramips_fe_wr(0xFFFFFFFF, RAMIPS_FE_INT_STATUS);
 
 	if (fe_int & RAMIPS_RX_DLY_INT) {
 		ramips_fe_int_disable(RAMIPS_RX_DLY_INT);
-		tasklet_schedule(&priv->rx_tasklet);
+		tasklet_schedule(&re->rx_tasklet);
 	}
 
 	if (fe_int & RAMIPS_TX_DLY_INT) {
 		ramips_fe_int_disable(RAMIPS_TX_DLY_INT);
-		tasklet_schedule(&priv->tx_housekeeping_tasklet);
+		tasklet_schedule(&re->tx_housekeeping_tasklet);
 	}
 
 	return IRQ_HANDLED;
@@ -720,7 +720,7 @@ ramips_eth_irq(int irq, void *dev)
 static int
 ramips_eth_open(struct net_device *dev)
 {
-	struct raeth_priv *priv = netdev_priv(dev);
+	struct raeth_priv *re = netdev_priv(dev);
 	int err;
 
 	err = request_irq(dev->irq, ramips_eth_irq, IRQF_DISABLED,
@@ -728,27 +728,27 @@ ramips_eth_open(struct net_device *dev)
 	if (err)
 		return err;
 
-	err = ramips_alloc_dma(priv);
+	err = ramips_alloc_dma(re);
 	if (err)
 		goto err_free_irq;
 
 	ramips_hw_set_macaddr(dev->dev_addr);
 
-	ramips_setup_dma(priv);
+	ramips_setup_dma(re);
 	ramips_fe_wr((ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) & 0xff) |
 		(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN |
 		RAMIPS_TX_DMA_EN | RAMIPS_PDMA_SIZE_4DWORDS),
 		RAMIPS_PDMA_GLO_CFG);
 	ramips_fe_wr((ramips_fe_rr(RAMIPS_FE_GLO_CFG) &
 		~(RAMIPS_US_CYC_CNT_MASK << RAMIPS_US_CYC_CNT_SHIFT)) |
-		((priv->plat->sys_freq / RAMIPS_US_CYC_CNT_DIVISOR) << RAMIPS_US_CYC_CNT_SHIFT),
+		((re->plat->sys_freq / RAMIPS_US_CYC_CNT_DIVISOR) << RAMIPS_US_CYC_CNT_SHIFT),
 		RAMIPS_FE_GLO_CFG);
 
-	tasklet_init(&priv->tx_housekeeping_tasklet, ramips_eth_tx_housekeeping,
+	tasklet_init(&re->tx_housekeeping_tasklet, ramips_eth_tx_housekeeping,
 		     (unsigned long)dev);
-	tasklet_init(&priv->rx_tasklet, ramips_eth_rx_hw, (unsigned long)dev);
+	tasklet_init(&re->rx_tasklet, ramips_eth_rx_hw, (unsigned long)dev);
 
-	ramips_phy_start(priv);
+	ramips_phy_start(re);
 
 	ramips_fe_wr(RAMIPS_DELAY_INIT, RAMIPS_DLY_INT_CFG);
 	ramips_fe_wr(RAMIPS_TX_DLY_INT | RAMIPS_RX_DLY_INT, RAMIPS_FE_INT_ENABLE);
@@ -773,7 +773,7 @@ ramips_eth_open(struct net_device *dev)
 static int
 ramips_eth_stop(struct net_device *dev)
 {
-	struct raeth_priv *priv = netdev_priv(dev);
+	struct raeth_priv *re = netdev_priv(dev);
 
 	ramips_fe_wr(ramips_fe_rr(RAMIPS_PDMA_GLO_CFG) &
 		     ~(RAMIPS_TX_WB_DDONE | RAMIPS_RX_DMA_EN | RAMIPS_TX_DMA_EN),
@@ -782,12 +782,12 @@ ramips_eth_stop(struct net_device *dev)
 	/* disable all interrupts in the hw */
 	ramips_fe_wr(0, RAMIPS_FE_INT_ENABLE);
 
-	ramips_phy_stop(priv);
+	ramips_phy_stop(re);
 	free_irq(dev->irq, dev);
 	netif_stop_queue(dev);
-	tasklet_kill(&priv->tx_housekeeping_tasklet);
-	tasklet_kill(&priv->rx_tasklet);
-	ramips_cleanup_dma(priv);
+	tasklet_kill(&re->tx_housekeeping_tasklet);
+	tasklet_kill(&re->rx_tasklet);
+	ramips_cleanup_dma(re);
 	RADEBUG("ramips_eth: stopped\n");
 	return 0;
 }
@@ -795,32 +795,32 @@ ramips_eth_stop(struct net_device *dev)
 static int __init
 ramips_eth_probe(struct net_device *dev)
 {
-	struct raeth_priv *priv = netdev_priv(dev);
+	struct raeth_priv *re = netdev_priv(dev);
 	int err;
 
-	BUG_ON(!priv->plat->reset_fe);
-	priv->plat->reset_fe();
+	BUG_ON(!re->plat->reset_fe);
+	re->plat->reset_fe();
 	net_srandom(jiffies);
-	memcpy(dev->dev_addr, priv->plat->mac, ETH_ALEN);
+	memcpy(dev->dev_addr, re->plat->mac, ETH_ALEN);
 
 	ether_setup(dev);
 	dev->mtu = 1500;
 	dev->watchdog_timeo = TX_TIMEOUT;
-	spin_lock_init(&priv->page_lock);
-	spin_lock_init(&priv->phy_lock);
+	spin_lock_init(&re->page_lock);
+	spin_lock_init(&re->phy_lock);
 
-	err = ramips_mdio_init(priv);
+	err = ramips_mdio_init(re);
 	if (err)
 		return err;
 
-	err = ramips_phy_connect(priv);
+	err = ramips_phy_connect(re);
 	if (err)
 		goto err_mdio_cleanup;
 
 	return 0;
 
 err_mdio_cleanup:
-	ramips_mdio_cleanup(priv);
+	ramips_mdio_cleanup(re);
 	return err;
 }
 
@@ -848,7 +848,7 @@ static const struct net_device_ops ramips_eth_netdev_ops = {
 static int
 ramips_eth_plat_probe(struct platform_device *plat)
 {
-	struct raeth_priv *priv;
+	struct raeth_priv *re;
 	struct ramips_eth_platform_data *data = plat->dev.platform_data;
 	struct resource *res;
 	int err;
@@ -886,15 +886,15 @@ ramips_eth_plat_probe(struct platform_device *plat)
 	ramips_dev->base_addr = (unsigned long)ramips_fe_base;
 	ramips_dev->netdev_ops = &ramips_eth_netdev_ops;
 
-	priv = netdev_priv(ramips_dev);
+	re = netdev_priv(ramips_dev);
 
-	priv->netdev = ramips_dev;
-	priv->parent = &plat->dev;
-	priv->speed = data->speed;
-	priv->duplex = data->duplex;
-	priv->rx_fc = data->rx_fc;
-	priv->tx_fc = data->tx_fc;
-	priv->plat = data;
+	re->netdev = ramips_dev;
+	re->parent = &plat->dev;
+	re->speed = data->speed;
+	re->duplex = data->duplex;
+	re->rx_fc = data->rx_fc;
+	re->tx_fc = data->tx_fc;
+	re->plat = data;
 
 	err = register_netdev(ramips_dev);
 	if (err) {
