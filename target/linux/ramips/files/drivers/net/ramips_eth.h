@@ -195,7 +195,7 @@ struct ramips_rx_dma {
 	unsigned int rxd2;
 	unsigned int rxd3;
 	unsigned int rxd4;
-};
+} __packed __aligned(4);
 
 #define TX_DMA_PLEN0_MASK		((0x3fff) << 16)
 #define TX_DMA_PLEN0(_x)		(((_x) & 0x3fff) << 16)
@@ -211,7 +211,7 @@ struct ramips_tx_dma {
 	unsigned int txd2;
 	unsigned int txd3;
 	unsigned int txd4;
-};
+} __packed __aligned(4);
 
 struct raeth_priv
 {
