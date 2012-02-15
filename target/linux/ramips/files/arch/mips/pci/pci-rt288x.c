@@ -126,14 +126,14 @@ static struct pci_ops rt2880_pci_ops = {
 	.write	= rt2880_pci_config_write,
 };
 
-static struct resource rt2880_pci_io_resource = {
+static struct resource rt2880_pci_mem_resource = {
 	.name	= "PCI MEM space",
 	.start	= RT2880_PCI_MEM_BASE,
 	.end	= RT2880_PCI_MEM_BASE + RT2880_PCI_MEM_SIZE - 1,
 	.flags	= IORESOURCE_MEM,
 };
 
-static struct resource rt2880_pci_mem_resource = {
+static struct resource rt2880_pci_io_resource = {
 	.name	= "PCI IO space",
 	.start	= RT2880_PCI_IO_BASE,
 	.end	= RT2880_PCI_IO_BASE + RT2880_PCI_IO_SIZE - 1,
@@ -142,8 +142,8 @@ static struct resource rt2880_pci_mem_resource = {
 
 static struct pci_controller rt2880_pci_controller = {
 	.pci_ops	= &rt2880_pci_ops,
-	.mem_resource	= &rt2880_pci_io_resource,
-	.io_resource	= &rt2880_pci_mem_resource,
+	.mem_resource	= &rt2880_pci_mem_resource,
+	.io_resource	= &rt2880_pci_io_resource,
 };
 
 static inline u32 rt2880_pci_read_u32(unsigned long reg)
