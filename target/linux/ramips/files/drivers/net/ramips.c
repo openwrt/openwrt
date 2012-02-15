@@ -520,9 +520,10 @@ ramips_alloc_dma(struct raeth_priv *re)
 	memset(re->rx, 0, sizeof(struct ramips_rx_dma) * NUM_RX_DESC);
 	for (i = 0; i < NUM_RX_DESC; i++) {
 		dma_addr_t dma_addr;
-		struct sk_buff *new_skb = dev_alloc_skb(MAX_RX_LENGTH +
-							NET_IP_ALIGN);
+		struct sk_buff *new_skb;
 
+		new_skb = netdev_alloc_skb(re->netdev,
+					   MAX_RX_LENGTH + NET_IP_ALIGN);
 		if (!new_skb)
 			goto err_cleanup;
 
