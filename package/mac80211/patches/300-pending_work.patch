@@ -284,3 +284,89 @@
  	local->network_latency_notifier.notifier_call =
  		ieee80211_max_network_latency;
  	result = pm_qos_add_notifier(PM_QOS_NETWORK_LATENCY,
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -489,8 +489,6 @@ static int ar5008_hw_rf_alloc_ext_banks(
+ 	ATH_ALLOC_BANK(ah->analogBank6Data, ah->iniBank6.ia_rows);
+ 	ATH_ALLOC_BANK(ah->analogBank6TPCData, ah->iniBank6TPC.ia_rows);
+ 	ATH_ALLOC_BANK(ah->analogBank7Data, ah->iniBank7.ia_rows);
+-	ATH_ALLOC_BANK(ah->addac5416_21,
+-		       ah->iniAddac.ia_rows * ah->iniAddac.ia_columns);
+ 	ATH_ALLOC_BANK(ah->bank6Temp, ah->iniBank6.ia_rows);
+ 
+ 	return 0;
+@@ -519,7 +517,6 @@ static void ar5008_hw_rf_free_ext_banks(
+ 	ATH_FREE_BANK(ah->analogBank6Data);
+ 	ATH_FREE_BANK(ah->analogBank6TPCData);
+ 	ATH_FREE_BANK(ah->analogBank7Data);
+-	ATH_FREE_BANK(ah->addac5416_21);
+ 	ATH_FREE_BANK(ah->bank6Temp);
+ 
+ #undef ATH_FREE_BANK
+@@ -805,27 +802,7 @@ static int ar5008_hw_process_ini(struct 
+ 	if (ah->eep_ops->set_addac)
+ 		ah->eep_ops->set_addac(ah, chan);
+ 
+-	if (AR_SREV_5416_22_OR_LATER(ah)) {
+-		REG_WRITE_ARRAY(&ah->iniAddac, 1, regWrites);
+-	} else {
+-		struct ar5416IniArray temp;
+-		u32 addacSize =
+-			sizeof(u32) * ah->iniAddac.ia_rows *
+-			ah->iniAddac.ia_columns;
+-
+-		/* For AR5416 2.0/2.1 */
+-		memcpy(ah->addac5416_21,
+-		       ah->iniAddac.ia_array, addacSize);
+-
+-		/* override CLKDRV value at [row, column] = [31, 1] */
+-		(ah->addac5416_21)[31 * ah->iniAddac.ia_columns + 1] = 0;
+-
+-		temp.ia_array = ah->addac5416_21;
+-		temp.ia_columns = ah->iniAddac.ia_columns;
+-		temp.ia_rows = ah->iniAddac.ia_rows;
+-		REG_WRITE_ARRAY(&temp, 1, regWrites);
+-	}
+-
++	REG_WRITE_ARRAY(&ah->iniAddac, 1, regWrites);
+ 	REG_WRITE(ah, AR_PHY_ADC_SERIAL_CTL, AR_PHY_SEL_INTERNAL_ADDAC);
+ 
+ 	ENABLE_REGWRITE_BUFFER(ah);
+--- a/drivers/net/wireless/ath/ath9k/ar9002_hw.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_hw.c
+@@ -180,6 +180,25 @@ static void ar9002_hw_init_mode_regs(str
+ 		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac,
+ 			       ARRAY_SIZE(ar5416Addac), 2);
+ 	}
++
++	/* iniAddac needs to be modified for these chips */
++	if (AR_SREV_9160(ah) || !AR_SREV_5416_22_OR_LATER(ah)) {
++		struct ar5416IniArray *addac = &ah->iniAddac;
++		u32 size = sizeof(u32) * addac->ia_rows * addac->ia_columns;
++		u32 *data;
++
++		data = kmalloc(size, GFP_KERNEL);
++		if (!data)
++			return;
++
++		memcpy(data, addac->ia_array, size);
++		addac->ia_array = data;
++
++		if (!AR_SREV_5416_22_OR_LATER(ah)) {
++			/* override CLKDRV value */
++			INI_RA(addac, 31,1) = 0;
++		}
++	}
+ }
+ 
+ /* Support for Japan ch.14 (2484) spread */
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -940,7 +940,6 @@ struct ath_hw {
+ 	u32 *analogBank6Data;
+ 	u32 *analogBank6TPCData;
+ 	u32 *analogBank7Data;
+-	u32 *addac5416_21;
+ 	u32 *bank6Temp;
+ 
+ 	u8 txpower_limit;
