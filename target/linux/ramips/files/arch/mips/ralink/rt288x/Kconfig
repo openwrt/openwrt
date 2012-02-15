@@ -11,6 +11,11 @@ config RT288X_MACH_RT_N15
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT288X_MACH_V11ST_FE
+	bool "Ralink V11ST-FE board support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT288X_MACH_WLI_TX4_AG300N
 	bool "Buffalo WLI-TX4-AG300N board support"
 	select RALINK_DEV_GPIO_BUTTONS
