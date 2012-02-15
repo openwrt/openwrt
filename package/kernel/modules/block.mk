@@ -250,7 +250,7 @@ endef
 define KernelPackage/md-linear
 $(call KernelPackage/md/Depends,)
   TITLE:=RAID Linear Module
-  KCONFIG:=CONFIG_MD_LINEAR=m
+  KCONFIG:=CONFIG_MD_LINEAR
   FILES:=$(LINUX_DIR)/drivers/md/linear.ko
   AUTOLOAD:=$(call AutoLoad,28,linear)
 endef
@@ -265,7 +265,7 @@ $(eval $(call KernelPackage,md-linear))
 define KernelPackage/md-raid0
 $(call KernelPackage/md/Depends,)
   TITLE:=RAID0 Module
-  KCONFIG:=CONFIG_MD_RAID0=m
+  KCONFIG:=CONFIG_MD_RAID0
   FILES:=$(LINUX_DIR)/drivers/md/raid0.ko
   AUTOLOAD:=$(call AutoLoad,28,raid0)
 endef
@@ -280,7 +280,7 @@ $(eval $(call KernelPackage,md-raid0))
 define KernelPackage/md-raid1
 $(call KernelPackage/md/Depends,)
   TITLE:=RAID1 Module
-  KCONFIG:=CONFIG_MD_RAID1=m
+  KCONFIG:=CONFIG_MD_RAID1
   FILES:=$(LINUX_DIR)/drivers/md/raid1.ko
   AUTOLOAD:=$(call AutoLoad,28,raid1)
 endef
@@ -295,7 +295,7 @@ $(eval $(call KernelPackage,md-raid1))
 define KernelPackage/md-raid10
 $(call KernelPackage/md/Depends,)
   TITLE:=RAID10 Module
-  KCONFIG:=CONFIG_MD_RAID10=m
+  KCONFIG:=CONFIG_MD_RAID10
   FILES:=$(LINUX_DIR)/drivers/md/raid10.ko
   AUTOLOAD:=$(call AutoLoad,28,raid10)
 endef
@@ -311,15 +311,15 @@ define KernelPackage/md-raid456
 $(call KernelPackage/md/Depends,)
   TITLE:=RAID Level 456 Driver
   KCONFIG:= \
-       CONFIG_XOR_BLOCKS=m \
-       CONFIG_ASYNC_CORE=m \
-       CONFIG_ASYNC_MEMCPY=m \
-       CONFIG_ASYNC_XOR=m \
-       CONFIG_ASYNC_PQ=m \
-       CONFIG_ASYNC_RAID6_RECOV=m \
+       CONFIG_XOR_BLOCKS \
+       CONFIG_ASYNC_CORE \
+       CONFIG_ASYNC_MEMCPY \
+       CONFIG_ASYNC_XOR \
+       CONFIG_ASYNC_PQ \
+       CONFIG_ASYNC_RAID6_RECOV \
        CONFIG_ASYNC_RAID6_TEST=n \
-       CONFIG_MD_RAID6_PQ=m \
-       CONFIG_MD_RAID456=m \
+       CONFIG_MD_RAID6_PQ \
+       CONFIG_MD_RAID456 \
        CONFIG_MULTICORE_RAID456=n
   FILES:= \
 	$(LINUX_DIR)/crypto/xor.ko \
@@ -362,7 +362,7 @@ $(eval $(call KernelPackage,md-raid456))
 define KernelPackage/md-multipath
 $(call KernelPackage/md/Depends,)
   TITLE:=MD Multipath Module
-  KCONFIG:=CONFIG_MD_MULTIPATH=m
+  KCONFIG:=CONFIG_MD_MULTIPATH
   FILES:=$(LINUX_DIR)/drivers/md/multipath.ko
   AUTOLOAD:=$(call AutoLoad,29,multipath)
 endef
