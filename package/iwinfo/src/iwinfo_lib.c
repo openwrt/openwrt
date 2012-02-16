@@ -351,7 +351,7 @@ const struct iwinfo_hardware_entry IWINFO_HARDWARE_ENTRIES[] = {
 	{ VENDOR_UBNT, "NanoStation M2",        0x168c, 0x002a, 0x0777, 0xe012, 10,     0 }, /* ToDo: confirm offset */
 	{ VENDOR_UBNT, "NanoStation M5",        0x168c, 0x002a, 0x0777, 0xe005,  5,     0 }, /* ToDo: confirm offset */
 	{ VENDOR_UBNT, "Bullet M2",             0x168c, 0x002a, 0x0777, 0xe202, 12,     0 },
-	{ VENDOR_UBNT, "Bullet M5",             0x168c, 0x002a, 0x0777, 0xe205,  5,     0 },
+	{ VENDOR_UBNT, "Bullet M5",             0x168c, 0x002a, 0x0777, 0xe805,  5,     0 },
 
 	{ VENDOR_ATH,  "AR9220",                0x168c, 0x0029, 0x168c, 0xa094,  0,     0 },
 	{ VENDOR_ATH,  "AR9223",                0x168c, 0x0029, 0x168c, 0xa095,  0,     0 },
