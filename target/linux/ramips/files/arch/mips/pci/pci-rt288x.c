@@ -210,7 +210,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	return irq;
 }
 
-static int __init rt2880_pci_init(void)
+int __init rt288x_register_pci(void)
 {
 	void __iomem *io_map_base;
 	int i;
@@ -248,5 +248,3 @@ int pcibios_plat_dev_init(struct pci_dev *dev)
 {
 	return 0;
 }
-
-arch_initcall(rt2880_pci_init);

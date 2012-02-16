@@ -101,6 +101,7 @@ static void __init rt_v11st_fe_init(void)
 	rt288x_register_ethernet();
 
 	rt288x_register_wdt();
+	rt288x_register_pci();
 }
 
 MIPS_MACHINE(RAMIPS_MACH_V11ST_FE, "V11ST-FE", "Ralink V11ST-FE", rt_v11st_fe_init);
