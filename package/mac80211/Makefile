@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=2012-02-06
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=fae71c35ee3f3de6329f2db7aed6d265
 

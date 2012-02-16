@@ -1,0 +1,12 @@
+--- a/drivers/net/wireless/rt2x00/rt2x00dev.c
++++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
+@@ -1224,7 +1224,8 @@ void rt2x00lib_remove_dev(struct rt2x00_
+ 		cancel_work_sync(&rt2x00dev->rxdone_work);
+ 		cancel_work_sync(&rt2x00dev->txdone_work);
+ 	}
+-	destroy_workqueue(rt2x00dev->workqueue);
++	if (rt2x00dev->workqueue)
++		destroy_workqueue(rt2x00dev->workqueue);
+ 
+ 	/*
+ 	 * Free the tx status fifo.
