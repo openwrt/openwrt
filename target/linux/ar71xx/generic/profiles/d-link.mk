@@ -27,9 +27,6 @@ endef
 
 $(eval $(call Profile,DIR601A1))
 
-
-define Profile/DIR615C1
-
 define Profile/DIR615C1
 	NAME:=D-Link DIR-615 rev. C1
 	PACKAGES:=
