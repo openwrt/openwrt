@@ -66,4 +66,10 @@ static inline u32 rt288x_memc_rr(unsigned reg)
 
 void rt288x_gpio_init(u32 mode);
 
+#ifdef CONFIG_PCI
+int rt288x_register_pci(void);
+#else
+static inline int rt288x_register_pci(void) { return 0; }
+#endif /* CONFIG_PCI */
+
 #endif /* _RT228X_H_ */
