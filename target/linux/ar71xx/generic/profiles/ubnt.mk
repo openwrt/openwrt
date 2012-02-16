@@ -27,6 +27,17 @@ endef
 
 $(eval $(call Profile,UBNTRSPRO))
 
+define Profile/UBNTUNIFI
+	NAME:=Ubiquiti UniFi AP
+	PACKAGES:=
+endef
+
+define Profile/UBNTUNIFI/Description
+	Package set optimized for the Ubiquiti UniFi AP.
+endef
+
+$(eval $(call Profile,UBNTUNIFI))
+
 define Profile/UBNT
 	NAME:=Ubiquiti Products
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2
