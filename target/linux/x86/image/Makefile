@@ -177,6 +177,9 @@ ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
 	$(call Image/Build/gzip,ext4)
   endef
   ifneq ($(CONFIG_TARGET_IMAGES_PAD),)
+    define Image/Build/gzip/squashfs
+	$(call Image/Build/gzip,squashfs)
+    endef
     define Image/Build/gzip/jffs2-64k
 	$(call Image/Build/gzip,jffs2-64k)
     endef
