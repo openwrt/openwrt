@@ -82,6 +82,7 @@ config TARGET_IMAGES_PAD
 
 config TARGET_IMAGES_GZIP
 	bool "GZip images"
+	depends TARGET_IMAGES_PAD || TARGET_ROOTFS_EXT4FS
 	default y
 
 config TARGET_KERNEL_PARTSIZE

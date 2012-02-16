@@ -176,12 +176,14 @@ ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
   define Image/Build/gzip/ext4
 	$(call Image/Build/gzip,ext4)
   endef
-  define Image/Build/gzip/jffs2-64k
+  ifneq ($(CONFIG_TARGET_IMAGES_PAD),)
+    define Image/Build/gzip/jffs2-64k
 	$(call Image/Build/gzip,jffs2-64k)
-  endef
-  define Image/Build/gzip/jffs2-128k
+    endef
+    define Image/Build/gzip/jffs2-128k
 	$(call Image/Build/gzip,jffs2-128k)
-  endef
+    endef
+  endif
 endif
 
 define Image/BuildKernel
