@@ -698,6 +698,11 @@ define Image/Build/Profile/DIR600A1
 	$(call Image/Build/Template/$(fs_64k)/$(1),Cameo7240,dir-600-a1,$(dir600a1_cmdline),"AP91-AR7240-RT-090223-00")
 endef
 
+dir601a1_cmdline=board=DIR-600-A1 console=ttyS0,115200
+define Image/Build/Profile/DIR601A1
+	$(call Image/Build/Template/$(fs_64k)/$(1),Cameo7240,dir-601-a1,$(dir600a1_cmdline),"AP91-AR7240-RT-090223-02")
+endef
+
 dir615e4_cmdline=board=DIR-615-E4 console=ttyS0,115200
 define Image/Build/Profile/DIR615E4
 	$(call Image/Build/Template/$(fs_64k)/$(1),Cameo7240,dir-615-e4,$(dir615e4_cmdline),"AP99-AR7240-RT-091105-05")
@@ -1009,6 +1014,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/A02RBW300N,$(1))
 	$(call Image/Build/Profile/DB120,$(1))
 	$(call Image/Build/Profile/DIR600A1,$(1))
+	$(call Image/Build/Profile/DIR601A1,$(1))
 	$(call Image/Build/Profile/DIR615C1,$(1))
 	$(call Image/Build/Profile/DIR615E4,$(1))
 	$(call Image/Build/Profile/DIR825B1,$(1))
