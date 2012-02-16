@@ -29,7 +29,8 @@ board=$(ramips_board_name)
 
 case "$FIRMWARE" in
 "RT288X.eeprom" | \
-"RT305X.eeprom")
+"RT305X.eeprom" | \
+"RT3883.eeprom")
 	case $board in
 	dir-300-b1 | \
 	dir-600-b1 | \
@@ -58,6 +59,7 @@ case "$FIRMWARE" in
 	nw718 | \
 	omni-emb | \
 	rt-n15 | \
+	rt-n56u | \
 	v11st-fe | \
 	v22rw-2x2 | \
 	w502u | \
