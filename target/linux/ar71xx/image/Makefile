@@ -195,7 +195,7 @@ define Image/Build/WHRHPG300N
 endef
 
 define Image/Build/Cameo
-	$(call MkuImageLzma,$(2),$(3) $($(4)))
+	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
