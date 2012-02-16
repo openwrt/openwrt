@@ -13,6 +13,7 @@ config RT288X_MACH_RT_N15
 
 config RT288X_MACH_V11ST_FE
 	bool "Ralink V11ST-FE board support"
+	select HW_HAS_PCI
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
