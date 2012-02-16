@@ -149,7 +149,6 @@ void rt3883_pci_set_plat_dev_init(int (*f)(struct pci_dev *));
 #else
 static inline void rt3883_pci_init(unsigned mode) {}
 static inline void rt3883_pci_set_plat_dev_init(int (*f)(struct pci_dev *)) {}
-}
 #endif /* CONFIG_PCI */
 
 #endif /* _RT3883_H_ */
