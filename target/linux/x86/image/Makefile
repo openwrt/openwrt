@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -167,6 +167,23 @@ ifneq ($(CONFIG_X86_VMDK_IMAGES),)
   endef
 endif
 
+define Image/Build/gzip
+	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img
+	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
+endef
+
+ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
+  define Image/Build/gzip/ext4
+	$(call Image/Build/gzip,ext4)
+  endef
+  define Image/Build/gzip/jffs2-64k
+	$(call Image/Build/gzip,jffs2-64k)
+  endef
+  define Image/Build/gzip/jffs2-128k
+	$(call Image/Build/gzip,jffs2-128k)
+  endef
+endif
+
 define Image/BuildKernel
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/$(IMG_PREFIX)-vmlinuz
   ifneq ($(CONFIG_X86_ETHERBOOT_IMAGES),)
@@ -194,10 +211,7 @@ define Image/Build
   endif
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
 	$(CP) $(KDIR)/bzImage $(BIN_DIR)/$(IMG_PREFIX)-vmlinuz
-  ifneq (,$findstring($(1),ext4 jffs2))
-	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img
-	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
-  endif
+	$(call Image/Build/gzip/$(1))
 endef
 
 $(eval $(call BuildImage))

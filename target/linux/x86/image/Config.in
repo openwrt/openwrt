@@ -80,6 +80,10 @@ config TARGET_IMAGES_PAD
 	depends OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
 	default y
 
+config TARGET_IMAGES_GZIP
+	bool "GZip images"
+	default y
+
 config TARGET_KERNEL_PARTSIZE
 	int "Kernel partition size (in MB)"
 	depends OLPC_BOOTSCRIPT_IMAGES || X86_GRUB_IMAGES
