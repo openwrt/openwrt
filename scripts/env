@@ -96,13 +96,13 @@ env_do_reset() {
 
 env_list() {
 	env_init
-	git branch | grep -vE '^. master$'
+	git branch --color | grep -vE '^. master$'
 }
 
 env_diff() {
 	env_init
 	env_sync_data
-	git diff --cached
+	git diff --cached --color
 	env_link_config
 }
 
