@@ -102,6 +102,64 @@ ramips_alloc_skb(struct raeth_priv *re)
 	return skb;
 }
 
+static void
+ramips_ring_setup(struct raeth_priv *re)
+{
+	int len;
+	int i;
+
+	len = NUM_TX_DESC * sizeof(struct ramips_tx_dma);
+	memset(re->tx, 0, len);
+
+	for (i = 0; i < NUM_TX_DESC; i++) {
+		struct ramips_tx_dma *txd;
+
+		txd = &re->tx[i];
+		txd->txd4 = TX_DMA_QN(3) | TX_DMA_PN(1);
+		txd->txd2 = TX_DMA_LSO | TX_DMA_DONE;
+
+		if (re->tx_skb[i] != NULL) {
+			netdev_warn(re->netdev,
+				    "dirty skb for TX desc %d\n", i);
+			re->tx_skb[i] = NULL;
+		}
+	}
+
+	len = NUM_RX_DESC * sizeof(struct ramips_rx_dma);
+	memset(re->rx, 0, len);
+
+	for (i = 0; i < NUM_RX_DESC; i++) {
+		dma_addr_t dma_addr;
+
+		BUG_ON(re->rx_skb[i] == NULL);
+		dma_addr = dma_map_single(&re->netdev->dev, re->rx_skb[i]->data,
+					  MAX_RX_LENGTH, DMA_FROM_DEVICE);
+		re->rx_dma[i] = dma_addr;
+		re->rx[i].rxd1 = (unsigned int) dma_addr;
+		re->rx[i].rxd2 = RX_DMA_LSO;
+	}
+
+	/* flush descriptors */
+	wmb();
+}
+
+static void
+ramips_ring_cleanup(struct raeth_priv *re)
+{
+	int i;
+
+	for (i = 0; i < NUM_RX_DESC; i++)
+		if (re->rx_skb[i])
+			dma_unmap_single(&re->netdev->dev, re->rx_dma[i],
+					 MAX_RX_LENGTH, DMA_FROM_DEVICE);
+
+	for (i = 0; i < NUM_TX_DESC; i++)
+		if (re->tx_skb[i]) {
+			dev_kfree_skb_any(re->tx_skb[i]);
+			re->tx_skb[i] = NULL;
+		}
+}
+
 #if defined(CONFIG_RALINK_RT288X) || defined(CONFIG_RALINK_RT3883)
 
 #define RAMIPS_MDIO_RETRY	1000
@@ -481,77 +539,63 @@ ramips_phy_stop(struct raeth_priv *re)
 #endif /* CONFIG_RALINK_RT288X || CONFIG_RALINK_RT3883 */
 
 static void
-ramips_cleanup_dma(struct raeth_priv *re)
+ramips_ring_free(struct raeth_priv *re)
 {
+	int len;
 	int i;
 
 	for (i = 0; i < NUM_RX_DESC; i++)
-		if (re->rx_skb[i]) {
-			dma_unmap_single(&re->netdev->dev, re->rx_dma[i],
-					 MAX_RX_LENGTH, DMA_FROM_DEVICE);
+		if (re->rx_skb[i])
 			dev_kfree_skb_any(re->rx_skb[i]);
-		}
 
-	if (re->rx)
-		dma_free_coherent(&re->netdev->dev,
-				  NUM_RX_DESC * sizeof(struct ramips_rx_dma),
-				  re->rx, re->rx_desc_dma);
+	if (re->rx) {
+		len = NUM_RX_DESC * sizeof(struct ramips_rx_dma);
+		dma_free_coherent(&re->netdev->dev, len, re->rx,
+				  re->rx_desc_dma);
+	}
 
-	if (re->tx)
-		dma_free_coherent(&re->netdev->dev,
-				  NUM_TX_DESC * sizeof(struct ramips_tx_dma),
-				  re->tx, re->tx_desc_dma);
+	if (re->tx) {
+		len = NUM_TX_DESC * sizeof(struct ramips_tx_dma);
+		dma_free_coherent(&re->netdev->dev, len, re->tx,
+				  re->tx_desc_dma);
+	}
 }
 
 static int
-ramips_alloc_dma(struct raeth_priv *re)
+ramips_ring_alloc(struct raeth_priv *re)
 {
+	int len;
 	int err = -ENOMEM;
 	int i;
 
-	re->skb_free_idx = 0;
-
-	/* setup tx ring */
-	re->tx = dma_alloc_coherent(&re->netdev->dev,
-				    NUM_TX_DESC * sizeof(struct ramips_tx_dma),
-				    &re->tx_desc_dma, GFP_ATOMIC);
+	/* allocate tx ring */
+	len = NUM_TX_DESC * sizeof(struct ramips_tx_dma);
+	re->tx = dma_alloc_coherent(&re->netdev->dev, len,
+					  &re->tx_desc_dma, GFP_ATOMIC);
 	if (!re->tx)
 		goto err_cleanup;
 
-	memset(re->tx, 0, NUM_TX_DESC * sizeof(struct ramips_tx_dma));
-	for (i = 0; i < NUM_TX_DESC; i++) {
-		re->tx[i].txd2 = TX_DMA_LSO | TX_DMA_DONE;
-		re->tx[i].txd4 = TX_DMA_QN(3) | TX_DMA_PN(1);
-	}
-
-	/* setup rx ring */
-	re->rx = dma_alloc_coherent(&re->netdev->dev,
-				    NUM_RX_DESC * sizeof(struct ramips_rx_dma),
+	/* allocate rx ring */
+	len = NUM_RX_DESC * sizeof(struct ramips_rx_dma);
+	re->rx = dma_alloc_coherent(&re->netdev->dev, len,
 				    &re->rx_desc_dma, GFP_ATOMIC);
 	if (!re->rx)
 		goto err_cleanup;
 
-	memset(re->rx, 0, sizeof(struct ramips_rx_dma) * NUM_RX_DESC);
 	for (i = 0; i < NUM_RX_DESC; i++) {
-		dma_addr_t dma_addr;
-		struct sk_buff *new_skb;
+		struct sk_buff *skb;
 
-		new_skb = ramips_alloc_skb(re);
-		if (!new_skb)
+		skb = ramips_alloc_skb(re);
+		if (!skb)
 			goto err_cleanup;
 
-		dma_addr = dma_map_single(&re->netdev->dev, new_skb->data,
-					  MAX_RX_LENGTH, DMA_FROM_DEVICE);
-		re->rx_dma[i] = dma_addr;
-		re->rx[i].rxd1 = (unsigned int) re->rx_dma[i];
-		re->rx[i].rxd2 |= RX_DMA_LSO;
-		re->rx_skb[i] = new_skb;
+		re->rx_skb[i] = skb;
 	}
 
 	return 0;
 
- err_cleanup:
-	ramips_cleanup_dma(re);
+err_cleanup:
+	ramips_ring_free(re);
 	return err;
 }
 
@@ -739,10 +783,11 @@ ramips_eth_open(struct net_device *dev)
 	if (err)
 		return err;
 
-	err = ramips_alloc_dma(re);
+	err = ramips_ring_alloc(re);
 	if (err)
 		goto err_free_irq;
 
+	ramips_ring_setup(re);
 	ramips_hw_set_macaddr(dev->dev_addr);
 
 	ramips_setup_dma(re);
@@ -798,7 +843,8 @@ ramips_eth_stop(struct net_device *dev)
 	netif_stop_queue(dev);
 	tasklet_kill(&re->tx_housekeeping_tasklet);
 	tasklet_kill(&re->rx_tasklet);
-	ramips_cleanup_dma(re);
+	ramips_ring_cleanup(re);
+	ramips_ring_free(re);
 	RADEBUG("ramips_eth: stopped\n");
 	return 0;
 }
