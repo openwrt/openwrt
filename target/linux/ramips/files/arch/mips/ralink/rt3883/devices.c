@@ -311,7 +311,7 @@ static struct resource rt3883_wlan_resources[] = {
 };
 
 static struct rt2x00_platform_data rt3883_wlan_data = {
-	.eeprom_file_name	= "rt3883.eeprom",
+	.eeprom_file_name	= "RT3883.eeprom",
 };
 
 static struct platform_device rt3883_wlan_device = {
