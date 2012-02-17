@@ -3,6 +3,7 @@ GCC_VARIANT:=final
 include ../common.mk
 
 GCC_CONFIGURE += \
+	--with-headers=$(TOOLCHAIN_DIR)/include \
 	--enable-languages=$(TARGET_LANGUAGES) \
 	--enable-shared \
 	--enable-threads \
