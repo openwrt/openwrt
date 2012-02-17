@@ -1142,16 +1142,18 @@ static struct platform_t __init *platform_detect(void)
 				return &platforms[WRTSL54GS];
 
 			if (!strcmp(boardtype, "0x0472")) {
-				if(!strcmp(getvar("boot_hw_model"), "WRT150N"))
+				if(!strcmp(getvar("boot_hw_model"), "WRT150N")) {
 					if(!strcmp(getvar("boot_hw_ver"), "1"))
 						return &platforms[WRT150NV1];
 					else if(!strcmp(getvar("boot_hw_ver"), "1.1"))
 						return &platforms[WRT150NV11];
-				else if(!strcmp(getvar("boot_hw_model"), "WRT160N"))
+				}
+				else if(!strcmp(getvar("boot_hw_model"), "WRT160N")) {
 					if(!strcmp(getvar("boot_hw_ver"), "1.0"))
 						return &platforms[WRT160NV1];
 					else if(!strcmp(getvar("boot_hw_ver"), "3.0"))
 						return &platforms[WRT160NV3];
+				}
 			}
 
 			/* default to WRT54G */
