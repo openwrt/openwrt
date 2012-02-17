@@ -39,4 +39,6 @@ void iwinfo_close(void);
 
 struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id);
 
+int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id);
+
 #endif

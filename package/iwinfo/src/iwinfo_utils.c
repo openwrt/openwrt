@@ -150,3 +150,63 @@ struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
 
 	return NULL;
 }
+
+int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
+{
+	FILE *mtd;
+	uint16_t *bc;
+
+	int fd, len, off;
+	char buf[128];
+
+	if (!(mtd = fopen("/proc/mtd", "r")))
+		return -1;
+
+	while (fgets(buf, sizeof(buf), mtd) > 0)
+	{
+		if (fscanf(mtd, "mtd%d: %*x %x %127s", &off, &len, buf) < 3 ||
+		    strcmp(buf, "\"boardconfig\""))
+		{
+			off = -1;
+			continue;
+		}
+
+		break;
+	}
+
+	fclose(mtd);
+
+	if (off < 0)
+		return -1;
+
+	snprintf(buf, sizeof(buf), "/dev/mtdblock%d", off);
+
+	if ((fd = open(buf, O_RDONLY)) < 0)
+		return -1;
+
+	bc = mmap(NULL, len, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_LOCKED, fd, 0);
+
+	if ((void *)bc != MAP_FAILED)
+	{
+		id->vendor_id = 0;
+		id->device_id = 0;
+
+		for (off = len / 2 - 0x800; off >= 0; off -= 0x800)
+		{
+			if ((bc[off] == 0x3533) && (bc[off + 1] == 0x3131))
+			{
+				id->vendor_id = bc[off + 0x7d];
+				id->device_id = bc[off + 0x7c];
+				id->subsystem_vendor_id = bc[off + 0x84];
+				id->subsystem_device_id = bc[off + 0x83];
+				break;
+			}
+		}
+
+		munmap(bc, len);
+	}
+
+	close(fd);
+
+	return (id->vendor_id && id->device_id) ? 0 : -1;
+}

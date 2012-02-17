@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <net/if.h>
 #include <errno.h>
 

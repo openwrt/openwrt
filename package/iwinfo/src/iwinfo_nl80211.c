@@ -1646,7 +1646,7 @@ int nl80211_get_hardware_id(const char *ifname, char *buf)
 		/* Reuse existing interface */
 		if ((res = nl80211_phy2ifname(ifname)) != NULL)
 		{
-			return wext_get_hardware_id(res, buf);
+			rv = wext_get_hardware_id(res, buf);
 		}
 
 		/* Need to spawn a temporary iface for finding IDs */
@@ -1654,11 +1654,20 @@ int nl80211_get_hardware_id(const char *ifname, char *buf)
 		{
 			rv = wext_get_hardware_id(res, buf);
 			nl80211_ifdel(res);
-			return rv;
 		}
 	}
+	else
+	{
+		rv = wext_get_hardware_id(ifname, buf);
+	}
 
-	return wext_get_hardware_id(ifname, buf);
+	/* Failed to obtain hardware IDs, search board config */
+	if (rv)
+	{
+		rv = iwinfo_hardware_id_from_mtd(buf);
+	}
+
+	return rv;
 }
 
 static const struct iwinfo_hardware_entry *
