@@ -1,0 +1,29 @@
+--- a/gcc/crtstuff.c
++++ b/gcc/crtstuff.c
+@@ -100,15 +100,20 @@
+ #if defined(OBJECT_FORMAT_ELF) \
+     && !defined(OBJECT_FORMAT_FLAT) \
+     && defined(HAVE_LD_EH_FRAME_HDR) \
+-    && !defined(inhibit_libc) && !defined(CRTSTUFFT_O) \
+-    && defined(__GLIBC__) && __GLIBC__ >= 2
++    && !defined(inhibit_libc) && !defined(CRTSTUFFT_O)
+ #include <link.h>
+ /* uClibc pretends to be glibc 2.2 and DT_CONFIG is defined in its link.h.
+    But it doesn't use PT_GNU_EH_FRAME ELF segment currently.  */
+-# if !defined(__UCLIBC__) \
+-     && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
+-     || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)))
+-#  define USE_PT_GNU_EH_FRAME
++# if defined(__UCLIBC__)
++#  if (__UCLIBC_MAJOR__ > 0 || __UCLIBC_MINOR__ > 9 || \
++       (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ >= 33))
++#   define USE_PT_GNU_EH_FRAME
++#  endif
++# elif defined(__GLIBC__)
++#  if (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 2) \
++       || (__GLIBC__ == 2 && __GLIBC_MINOR__ == 2 && defined(DT_CONFIG)))
++#   define USE_PT_GNU_EH_FRAME
++#  endif
+ # endif
+ #endif
+ #if defined(EH_FRAME_SECTION_NAME) && !defined(USE_PT_GNU_EH_FRAME)
