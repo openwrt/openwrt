@@ -1,0 +1,22 @@
+From b0a2a5c4a88f5d83046b408714ec9b86772fa75d Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 18 Feb 2012 17:16:28 +0100
+Subject: [PATCH 192/202] ssb: add ccode
+
+This member contains the country code encoded with two chars
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ include/linux/ssb/ssb.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -35,6 +35,7 @@ struct ssb_sprom {
+ 	u8 country_code;	/* Country Code */
+ 	u8 leddc_on_time;	/* LED Powersave Duty Cycle On Count */
+ 	u8 leddc_off_time;	/* LED Powersave Duty Cycle Off Count */
++	char ccode[2];
+ 	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
+ 	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
+ 	u16 pa0b0;

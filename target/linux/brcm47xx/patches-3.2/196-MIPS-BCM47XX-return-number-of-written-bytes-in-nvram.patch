@@ -1,0 +1,24 @@
+From 3ac18c5072e097ffa719994ef3b5c64e744a5405 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 18 Feb 2012 14:46:45 +0100
+Subject: [PATCH 196/202] MIPS: BCM47XX: return number of written bytes in
+ nvram_getenv
+
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/bcm47xx/nvram.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -192,8 +192,7 @@ int nvram_getenv(char *name, char *val,
+ 		value = eq + 1;
+ 		if ((eq - var) == strlen(name) &&
+ 			strncmp(var, name, (eq - var)) == 0) {
+-			snprintf(val, val_len, "%s", value);
+-			return 0;
++			return snprintf(val, val_len, "%s", value);
+ 		}
+ 	}
+ 	return NVRAM_ERR_ENVNOTFOUND;
