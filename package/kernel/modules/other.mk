@@ -796,3 +796,25 @@ define KernelPackage/n810bm/description
 endef
 
 $(eval $(call KernelPackage,n810bm))
+
+
+define KernelPackage/mtdtests
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=MTD subsystem tests
+  KCONFIG:=CONFIG_MTD_TESTS
+  FILES:=\
+	$(LINUX_DIR)/drivers/mtd/tests/mtd_nandecctest.ko \
+	$(LINUX_DIR)/drivers/mtd/tests/mtd_oobtest.ko \
+	$(LINUX_DIR)/drivers/mtd/tests/mtd_pagetest.ko \
+	$(LINUX_DIR)/drivers/mtd/tests/mtd_readtest.ko \
+	$(LINUX_DIR)/drivers/mtd/tests/mtd_speedtest.ko \
+	$(LINUX_DIR)/drivers/mtd/tests/mtd_stresstest.ko \
+	$(LINUX_DIR)/drivers/mtd/tests/mtd_subpagetest.ko \
+	$(LINUX_DIR)/drivers/mtd/tests/mtd_torturetest.ko
+endef
+
+define KernelPackage/mtdtests/description
+ Kernel modules for MTD subsystem/driver testing.
+endef
+
+$(eval $(call KernelPackage,mtdtests))
