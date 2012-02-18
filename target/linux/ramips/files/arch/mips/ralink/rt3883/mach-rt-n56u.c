@@ -137,6 +137,7 @@ static void __init rt_n56u_init(void)
 
 	platform_device_register(&rt_n56u_rtl8367_device);
 
+	rt3883_wlan_data.disable_2ghz = 1;
 	rt3883_register_wlan();
 
 	rt3883_eth_data.speed = SPEED_1000;
