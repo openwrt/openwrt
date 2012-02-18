@@ -14,7 +14,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/bcma/sprom.c
 +++ b/drivers/bcma/sprom.c
-@@ -210,6 +210,7 @@ int bcma_sprom_get(struct bcma_bus *bus)
+@@ -209,6 +209,7 @@ int bcma_sprom_get(struct bcma_bus *bus)
  {
  	u16 offset;
  	u16 *sprom;
@@ -22,14 +22,13 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	int err = 0;
  
  	if (!bus->drv_cc.core)
-@@ -220,6 +221,13 @@ int bcma_sprom_get(struct bcma_bus *bus)
+@@ -217,6 +218,12 @@ int bcma_sprom_get(struct bcma_bus *bus)
+ 	if (!(bus->drv_cc.capabilities & BCMA_CC_CAP_SPROM))
  		return -ENOENT;
- 	}
  
 +	if (bus->drv_cc.core->id.rev >= 32) {
 +		sromctrl = bcma_read32(bus->drv_cc.core, BCMA_CC_SROM_CONTROL);
 +		if (!(sromctrl & BCMA_CC_SROM_CONTROL_PRESENT))
-+			random_ether_addr(bus->sprom.il0mac);
 +			return -ENOENT;
 +	}
 +

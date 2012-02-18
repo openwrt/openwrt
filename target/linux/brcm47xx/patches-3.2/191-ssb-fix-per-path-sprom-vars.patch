@@ -1,0 +1,25 @@
+From f453c08359a875df66cbbda48087e3592c29da58 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 18 Feb 2012 16:23:58 +0100
+Subject: [PATCH 191/202] ssb: fix per path sprom vars
+
+On sprom version 4 and 5 there are 4 values for pa_2g, pa_5gl, pa_5g
+and pa_5gh, for sprom version 8 and 9 there are only 3. Make the per
+path sprom store also work for older sprom versions.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ include/linux/ssb/ssb.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/include/linux/ssb/ssb.h
++++ b/include/linux/ssb/ssb.h
+@@ -19,7 +19,7 @@ struct ssb_driver;
+ struct ssb_sprom_core_pwr_info {
+ 	u8 itssi_2g, itssi_5g;
+ 	u8 maxpwr_2g, maxpwr_5gl, maxpwr_5g, maxpwr_5gh;
+-	u16 pa_2g[3], pa_5gl[3], pa_5g[3], pa_5gh[3];
++	u16 pa_2g[4], pa_5gl[4], pa_5g[4], pa_5gh[4];
+ };
+ 
+ struct ssb_sprom {

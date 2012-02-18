@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -278,6 +278,10 @@ static int bcm47xx_get_invariants(struct
+@@ -129,6 +129,10 @@ static int bcm47xx_get_invariants(struct
  	if (nvram_getenv("cardbus", buf, sizeof(buf)) >= 0)
  		iv->has_cardbus_slot = !!simple_strtoul(buf, NULL, 10);
  

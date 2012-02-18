@@ -1,0 +1,43 @@
+From a07c69ed06031373726e9e5e513d0d942997c265 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 18 Feb 2012 14:22:32 +0100
+Subject: [PATCH 194/202] bcma: export bcma_find_core
+
+This function is needed by the bcm47xx arch code to get the number of
+the ieee80211 core.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/bcma/main.c       |    3 ++-
+ include/linux/bcma/bcma.h |    1 +
+ 2 files changed, 3 insertions(+), 1 deletions(-)
+
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -61,7 +61,7 @@ static struct bus_type bcma_bus_type = {
+ 	.dev_attrs	= bcma_device_attrs,
+ };
+ 
+-static struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid)
++struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid)
+ {
+ 	struct bcma_device *core;
+ 
+@@ -71,6 +71,7 @@ static struct bcma_device *bcma_find_cor
+ 	}
+ 	return NULL;
+ }
++EXPORT_SYMBOL_GPL(bcma_find_core);
+ 
+ static void bcma_release_core_dev(struct device *dev)
+ {
+--- a/include/linux/bcma/bcma.h
++++ b/include/linux/bcma/bcma.h
+@@ -285,6 +285,7 @@ static inline void bcma_maskset16(struct
+ 	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
+ }
+ 
++extern struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid);
+ extern bool bcma_core_is_enabled(struct bcma_device *core);
+ extern void bcma_core_disable(struct bcma_device *core, u32 flags);
+ extern int bcma_core_enable(struct bcma_device *core, u32 flags);

@@ -9,8 +9,8 @@ out the configuration than the in kernel cfe config reader.
  # under Linux.
  #
  
--obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o
-+obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o cfe_env.o
+-obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o sprom.o
++obj-y 				+= gpio.o irq.o nvram.o prom.o serial.o setup.o time.o bus.o sprom.o cfe_env.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/cfe_env.c
 @@ -0,0 +1,229 @@
@@ -293,7 +293,7 @@ out the configuration than the in kernel cfe config reader.
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
  	end = nvram_buf + sizeof(nvram_buf) - 2;
-@@ -210,6 +237,9 @@ char *nvram_get(const char *name)
+@@ -209,6 +236,9 @@ char *nvram_get(const char *name)
  	if (!nvram_buf[0])
  		early_nvram_init();
  

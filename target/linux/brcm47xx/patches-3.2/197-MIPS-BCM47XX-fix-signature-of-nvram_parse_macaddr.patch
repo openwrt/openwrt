@@ -1,0 +1,23 @@
+From c330338212785092aab7a266f24b52c132775463 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 18 Feb 2012 15:00:36 +0100
+Subject: [PATCH 197/202] MIPS: BCM47XX: fix signature of nvram_parse_macaddr
+
+Explicitly enforce an char array of 6 bytes for the mac address.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/include/asm/mach-bcm47xx/nvram.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/include/asm/mach-bcm47xx/nvram.h
++++ b/arch/mips/include/asm/mach-bcm47xx/nvram.h
+@@ -37,7 +37,7 @@ struct nvram_header {
+ 
+ extern int nvram_getenv(char *name, char *val, size_t val_len);
+ 
+-static inline void nvram_parse_macaddr(char *buf, u8 *macaddr)
++static inline void nvram_parse_macaddr(char *buf, u8 macaddr[6])
+ {
+ 	if (strchr(buf, ':'))
+ 		sscanf(buf, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &macaddr[0],
