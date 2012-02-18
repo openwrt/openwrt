@@ -23,6 +23,8 @@ void rt3883_register_nand(struct mtd_partition *parts, int nr_parts);
 extern struct ramips_eth_platform_data rt3883_eth_data;
 void rt3883_register_ethernet(void);
 void rt3883_register_usbhost(void);
+
+extern struct rt2x00_platform_data rt3883_wlan_data;
 void rt3883_register_wlan(void);
 void rt3883_register_wdt(bool enable_reset);
 

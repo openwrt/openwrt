@@ -310,10 +310,7 @@ static struct resource rt3883_wlan_resources[] = {
 	},
 };
 
-static struct rt2x00_platform_data rt3883_wlan_data = {
-	.eeprom_file_name	= "RT3883.eeprom",
-};
-
+struct rt2x00_platform_data rt3883_wlan_data;
 static struct platform_device rt3883_wlan_device = {
 	.name		= "rt2800_wmac",
 	.resource	= rt3883_wlan_resources,
@@ -325,6 +322,7 @@ static struct platform_device rt3883_wlan_device = {
 
 void __init rt3883_register_wlan(void)
 {
+	rt3883_wlan_data.eeprom_file_name = "RT3883.eeprom",
 	platform_device_register(&rt3883_wlan_device);
 }
 
