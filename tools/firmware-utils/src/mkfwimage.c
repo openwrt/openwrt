@@ -102,23 +102,24 @@ typedef struct part_data {
 #define DEFAULT_OUTPUT_FILE 	"firmware-image.bin"
 #define DEFAULT_VERSION		"UNKNOWN"
 
-#define OPTIONS "B:hv:o:r:k:"
+#define OPTIONS "B:hv:m:o:r:k:"
 
 static int debug = 0;
 
 typedef struct image_info {
+	char magic[16];
 	char version[256];
 	char outputfile[PATH_MAX];
 	u_int32_t	part_count;
 	part_data_t parts[MAX_SECTIONS];
 } image_info_t;
 
-static void write_header(void* mem, const char* version)
+static void write_header(void* mem, const char *magic, const char* version)
 {
 	header_t* header = mem;
 	memset(header, 0, sizeof(header_t));
 
-	memcpy(header->magic, MAGIC_HEADER, MAGIC_LENGTH);
+	memcpy(header->magic, magic, MAGIC_LENGTH);
 	strncpy(header->version, version, sizeof(header->version));
 	header->crc = htonl(crc32(0L, (unsigned char *)header,
 				sizeof(header_t) - 2 * sizeof(u_int32_t)));
@@ -183,11 +184,12 @@ static void usage(const char* progname)
              "Usage: %s [options]\n"
 	     "\t-v <version string>\t - firmware version information, default: %s\n"
 	     "\t-o <output file>\t - firmware output file, default: %s\n"
+	     "\t-m <magic>\t - firmware magic, default: %s\n"
 	     "\t-k <kernel file>\t\t - kernel file\n"
 	     "\t-r <rootfs file>\t\t - rootfs file\n"
 	     "\t-B <board name>\t\t - choose firmware layout for specified board (XS2, XS5, RS, XM)\n"
 	     "\t-h\t\t\t - this help\n", VERSION,
-	     progname, DEFAULT_VERSION, DEFAULT_OUTPUT_FILE);
+	     progname, DEFAULT_VERSION, DEFAULT_OUTPUT_FILE, MAGIC_HEADER);
 }
 
 static void print_image_info(const image_info_t* im)
@@ -339,7 +341,7 @@ static int build_image(image_info_t* im)
 	}
 
 	// write header
-	write_header(mem, im->version);
+	write_header(mem, im->magic, im->version);
 	ptr = mem + sizeof(header_t);
 	// write all parts
 	for (i = 0; i < im->part_count; ++i)
@@ -390,6 +392,7 @@ int main(int argc, char* argv[])
 
 	strcpy(im.outputfile, DEFAULT_OUTPUT_FILE);
 	strcpy(im.version, DEFAULT_VERSION);
+	strncpy(im.magic, MAGIC_HEADER, sizeof(im.magic));
 
 	while ((o = getopt(argc, argv, OPTIONS)) != -1)
 	{
@@ -401,6 +404,10 @@ int main(int argc, char* argv[])
 		case 'o':
 			if (optarg)
 				strncpy(im.outputfile, optarg, sizeof(im.outputfile));
+			break;
+		case 'm':
+			if (optarg)
+				strncpy(im.magic, optarg, sizeof(im.magic));
 			break;
 		case 'h':
 			usage(argv[0]);
