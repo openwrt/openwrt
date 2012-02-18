@@ -14,6 +14,9 @@
 
 struct rt2x00_platform_data {
 	char *eeprom_file_name;
+
+	int disable_2ghz;
+	int disable_5ghz;
 };
 
 #endif /* _RT2X00_PLATFORM_H */
