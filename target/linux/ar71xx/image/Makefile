@@ -273,7 +273,7 @@ define Image/Build/UBNTXM
 	$(call Sysupgrade/KRuImage,$(1),$(2),1048576,6684672)
 	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(KDIR_TMP)/vmlinux-$(2).uImage.bin bs=1024k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(4) -v $(5).$(6).OpenWrt.$(REVISION) \
+		-B $(4) -v $(5).$(6).v5.x.x-OpenWrt-$(REVISION) \
 		-k $(KDIR_TMP)/vmlinux-$(2).uImage.bin \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call factoryname,$(1),$(2))
@@ -781,22 +781,22 @@ endef
 
 ubntbulletm_cmdline=board=UBNT-BM console=ttyS0,115200
 define Image/Build/Profile/UBNTBULLETM
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-bullet-m,$(ubntbulletm_cmdline),XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-bullet-m,$(ubntbulletm_cmdline),XM,XM,ar7240)
 endef
 
 ubntrocketm_cmdline=board=UBNT-RM console=ttyS0,115200
 define Image/Build/Profile/UBNTROCKETM
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-rocket-m,$(ubntrocketm_cmdline),XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-rocket-m,$(ubntrocketm_cmdline),XM,XM,ar7240)
 endef
 
 ubntnanom_cmdline=board=UBNT-NM console=ttyS0,115200
 define Image/Build/Profile/UBNTNANOM
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-nano-m,$(ubntnanom_cmdline),XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-nano-m,$(ubntnanom_cmdline),XM,XM,ar7240)
 endef
 
 ubntunifi_cmdline=board=UBNT-UF console=ttyS0,115200
 define Image/Build/Profile/UBNTUNIFI
-	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-unifi,$(ubntunifi_cmdline),XM,UBNTXM,ar7240)
+	$(call Image/Build/Template/$(fs_64k)/$(1),UBNTXM,ubnt-unifi,$(ubntunifi_cmdline),XM,XM,ar7240)
 endef
 
 define Image/Build/Profile/UBNT
