@@ -10,9 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 #include <linux/ethtool.h>
 
 #include <asm/mach-ralink/machine.h>
@@ -48,39 +45,10 @@ static struct gpio_keys_button v11st_fe_gpio_buttons[] __initdata = {
 	}
 };
 
-static struct mtd_partition v11st_fe_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "u-boot-env",
-		.offset	= 0x030000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "factory",
-		.offset	= 0x040000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x050000,
-		.size   = 0x140000,
-	}, {
-		.name	= "rootfs",
-		.offset = 0x190000,
-		.size   = 0x210000,
-	}
-};
-
 static void __init rt_v11st_fe_init(void)
 {
 	rt288x_gpio_init(RT2880_GPIO_MODE_UART0);
 
-	rt288x_flash0_data.nr_parts = ARRAY_SIZE(v11st_fe_partitions);
-	rt288x_flash0_data.parts = v11st_fe_partitions;
 	rt288x_register_flash(0);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(v11st_fe_leds_gpio),

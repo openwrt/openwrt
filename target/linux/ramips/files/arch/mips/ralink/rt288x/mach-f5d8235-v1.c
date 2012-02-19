@@ -10,9 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -37,31 +34,6 @@
 
 #define F5D8235_KEYS_POLL_INTERVAL	20
 #define F5D8235_KEYS_DEBOUNCE_INTERVAL	(3 * F5D8235_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition f5d8235_partitions[] = {
-	{
-		.name	= "uboot",
-		.offset	= 0,
-		.size	= 0x050000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel and rootfs",
-		.offset	= 0x050000,
-		.size	= 0x790000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x1D0000,
-		.size	= 0x610000,
-	}, {
-		.name	= "nvram",
-		.offset	= 0x7E0000,
-		.size	= 0x010000,
-	}, {
-		.name	= "factory",
-		.offset	= 0x7F0000,
-		.size	= 0x010000,
-	}
-};
 
 static struct rtl8366_platform_data f5d8235_rtl8366s_data = {
 	.gpio_sda	= F5D8235_GPIO_RTL8366_SDA,
@@ -110,10 +82,7 @@ static void __init f5d8235_init(void)
 {
 	rt288x_gpio_init(RT2880_GPIO_MODE_UART0 | RT2880_GPIO_MODE_I2C);
 
-	rt288x_flash0_data.nr_parts = ARRAY_SIZE(f5d8235_partitions);
-	rt288x_flash0_data.parts = f5d8235_partitions;
 	rt288x_register_flash(0);
-
 	rt288x_register_wifi();
 	rt288x_register_wdt();
 

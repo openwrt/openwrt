@@ -144,16 +144,16 @@ define Image/Build/Template/GENERIC_4M
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_4M,851968,3014656)
 endef
 
-mtdlayout_8M=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),7040k(rootfs),7872k@0x50000(firmware)
-kernel_size_8M=851968
-rootfs_size_8M=7208960
+mtdlayout_8M=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),6976k(rootfs),7872k@0x50000(firmware)
+kernel_size_8M=917504
+rootfs_size_8M=7143424
 define Image/Build/Template/GENERIC_8M
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_8M,$(kernel_size_8M),$(rootfs_size_8M))
 endef
 
-mtdlayout_dir300b1=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
-mtd_dir300b1_kernel_part_size=851968
-mtd_dir300b1_rootfs_part_size=3014656
+mtdlayout_dir300b1=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
+mtd_dir300b1_kernel_part_size=917504
+mtd_dir300b1_rootfs_part_size=2949120
 define Image/Build/Template/DIR300B1
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_dir300b1,$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
 	mkwrgimg -s $(4) -d /dev/mtdblock/2 \
