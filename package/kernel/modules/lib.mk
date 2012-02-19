@@ -52,6 +52,22 @@ endef
 $(eval $(call KernelPackage,lib-crc7))
 
 
+define KernelPackage/lib-crc8
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=CRC8 support
+  DEPENDS:= @!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39||LINUX_3_0)
+  KCONFIG:=CONFIG_CRC8
+  FILES:=$(LINUX_DIR)/lib/crc8.ko
+  AUTOLOAD:=$(call AutoLoad,20,crc8)
+endef
+
+define KernelPackage/lib-crc8/description
+ Kernel module for CRC8 support
+endef
+
+$(eval $(call KernelPackage,lib-crc8))
+
+
 define KernelPackage/lib-crc16
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC16 support
@@ -129,3 +145,19 @@ define KernelPackage/lib-zlib
 endef
 
 $(eval $(call KernelPackage,lib-zlib))
+
+
+define KernelPackage/lib-cordic
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=Cordic function support
+  DEPENDS:= @!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39||LINUX_3_0)
+  KCONFIG:=CONFIG_CORDIC
+  FILES:=$(LINUX_DIR)/lib/cordic.ko
+  AUTOLOAD:=$(call AutoLoad,20,cordic)
+endef
+
+define KernelPackage/lib-cordic/description
+ Kernel module for Cordic function support
+endef
+
+$(eval $(call KernelPackage,lib-cordic))
