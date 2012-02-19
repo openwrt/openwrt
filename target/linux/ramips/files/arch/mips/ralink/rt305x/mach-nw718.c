@@ -9,11 +9,7 @@
  */
 
 #include <linux/init.h>
-#include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
 #include <linux/spi/spi.h>
-#include <linux/spi/flash.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -34,42 +30,6 @@
 
 #define NW718_KEYS_POLL_INTERVAL	20
 #define NW718_KEYS_DEBOUNCE_INTERVAL	(3 * NW718_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition nw718_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "config",
-		.offset	= 0x030000,
-		.size	= 0x020000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "factory",
-		.offset	= 0x050000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x060000,
-		.size	= 0x090000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x150000,
-		.size	= 0x2b0000,
-	}, {
-		.name	= "firmware",
-		.offset	= 0x060000,
-		.size	= 0x3a0000,
-	}
-};
-
-static struct flash_platform_data nw718_flash_data = {
-	.nr_parts	= ARRAY_SIZE(nw718_partitions),
-	.parts		= nw718_partitions,
-};
 
 static struct gpio_led nw718_leds_gpio[] __initdata = {
 	{
@@ -111,7 +71,6 @@ static struct spi_board_info nw718_spi_info[] = {
 		.chip_select	= 0,
 		.max_speed_hz	= 25000000,
 		.modalias	= "m25p80",
-		.platform_data	= &nw718_flash_data,
 		.controller_data = (void *) NW718_GPIO_SPI_CS0,
 	}
 };

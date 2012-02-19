@@ -10,9 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -35,45 +32,6 @@
 
 #define WL341V3_KEYS_POLL_INTERVAL	20
 #define WL341V3_KEYS_DEBOUNCE_INTERVAL	(3 * WL341V3_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition wl341v3_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x020000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "board-nvram",
-		.offset	= 0x020000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "u-boot-env",
-		.offset	= 0x030000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x040000,
-		.size	= 0x0d0000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x110000,
-		.size	= 0x2e0000,
-	}, {
-		.name	= "signature-eRcOmM",
-		.offset	= 0x3f0000,
-		.size	= 0x010000,
-	}, {
-		.name	= "firmware",
-		.offset	= 0x040000,
-		.size	= 0x3b0000,
-	}, {
-		.name	= "fullflash",
-		.offset	= 0x000000,
-		.size	= 0x400000,
-	}
-};
 
 static struct gpio_led wl341v3_leds_gpio[] __initdata = {
 	{
@@ -129,8 +87,6 @@ static void __init wl341v3_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_flash0_data.nr_parts = ARRAY_SIZE(wl341v3_partitions);
-	rt305x_flash0_data.parts = wl341v3_partitions;
 	rt305x_register_flash(0);
 
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_WLLLL;

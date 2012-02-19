@@ -10,9 +10,6 @@
 
 #include<linux/init.h>
 #include<linux/platform_device.h>
-#include<linux/mtd/mtd.h>
-#include<linux/mtd/partitions.h>
-#include<linux/mtd/physmap.h>
 #include<linux/gpio.h>
 
 #include<asm/mach-ralink/machine.h>
@@ -33,32 +30,6 @@
 
 #define WR6202_GPIO_LED_3G	     13
 #define WR6202_GPIO_LED_WPS	     14
-
-static struct mtd_partition wr6202_partitions[] = {
-	{
-		.name	= "uboot",
-		.offset	= 0,
-		.size	= 0x030000,
-	}, {
-		.name	= "uboot-config",
-		.offset	= 0x030000,
-		.size	= 0x040000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "factory",
-		.offset	= 0x040000,
-		.size	= 0x050000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "linux",
-		.offset	= 0x050000,
-		.size	= 0x100000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x150000,
-		.size	= 0x6B0000,
-	}
-};
 
 static struct gpio_led wr6202_leds_gpio[] __initdata = {
 	{
@@ -107,8 +78,6 @@ static void __init wr6202_init(void)
 	gpio_direction_output(WR6202_GPIO_USB_POWER, 0);
 	gpio_free(WR6202_GPIO_USB_POWER);
 
-	rt305x_flash0_data.nr_parts = ARRAY_SIZE(wr6202_partitions);
-	rt305x_flash0_data.parts = wr6202_partitions;
 	rt305x_register_flash(0);
 
 	rt305x_register_ethernet();

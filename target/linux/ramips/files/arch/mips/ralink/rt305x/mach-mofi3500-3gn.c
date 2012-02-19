@@ -10,9 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -33,37 +30,6 @@
 
 #define MOFI3500_3GN_KEYS_POLL_INTERVAL		20
 #define MOFI3500_3GN_KEYS_DEBOUNCE_INTERVAL	(3 * MOFI3500_3GN_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition mofi3500_3gn_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "config",
-		.offset	= 0x030000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "factory",
-		.offset	= 0x040000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x050000,
-		.size	= 0x0d0000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x120000,
-		.size	= 0x6e0000,
-	}, {
-		.name	= "firmware",
-		.offset	= 0x050000,
-		.size	= 0x7b0000,
-	}
-};
 
 static struct gpio_led mofi3500_3gn_leds_gpio[] __initdata = {
 	{
@@ -118,8 +84,6 @@ static void __init mofi3500_3gn_init(void)
 {
 	rt305x_gpio_init(MOFI3500_3GN_GPIO_MODE);
 
-	rt305x_flash0_data.nr_parts = ARRAY_SIZE(mofi3500_3gn_partitions);
-	rt305x_flash0_data.parts = mofi3500_3gn_partitions;
 	rt305x_register_flash(0);
 
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;

@@ -10,9 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -27,33 +24,6 @@
 #define PWH2004_GPIO_LED_WIFI		14
 #define PWH2004_KEYS_POLL_INTERVAL	20
 #define PWH2004_KEYS_DEBOUNCE_INTERVAL	(3 * PWH2004_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition pwh2004_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "config",
-		.offset	= 0x030000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "factory",
-		.offset	= 0x040000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x050000,
-		.size	= 0x7b0000,
-	}, {
-		.name	= "firmware",
-		.offset	= 0x050000,
-		.size	= 0x7b0000,
-	}
-};
 
 static struct gpio_led pwh2004_leds_gpio[] __initdata = {
 	{
@@ -82,8 +52,6 @@ static void __init pwh2004_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_flash0_data.nr_parts = ARRAY_SIZE(pwh2004_partitions);
-	rt305x_flash0_data.parts = pwh2004_partitions;
 	rt305x_register_flash(0);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(pwh2004_leds_gpio),

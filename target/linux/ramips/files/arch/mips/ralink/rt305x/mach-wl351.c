@@ -69,41 +69,6 @@ static struct gpio_keys_button wl351_gpio_buttons[] __initdata = {
 	}
 };
 
-static struct mtd_partition wl351_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "u-boot-env",
-		.offset	= 0x030000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "factory",
-		.offset	= 0x040000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x050000,
-		.size	= 0x110000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x160000,
-		.size	= 0x230000,
-	}, {
-		.name	= "user (jffs2)",
-		.offset	= 0x3F0000,
-		.size	= 0x010000,
-	}, {
-		.name	= "firmware",
-		.offset	= 0x050000,
-		.size	= 0x3a0000,
-	}
-};
-
 static struct rtl8366_platform_data wl351_switch_data = {
 	.gpio_sda	= RT305X_GPIO_I2C_SD,
 	.gpio_sck	= RT305X_GPIO_I2C_SCLK,
@@ -125,8 +90,6 @@ static void __init wl351_init(void)
 				RT305X_GPIO_MODE_SPI |
 				RT305X_GPIO_MODE_MDIO);
 
-	rt305x_flash0_data.nr_parts = ARRAY_SIZE(wl351_partitions);
-	rt305x_flash0_data.parts = wl351_partitions;
 	rt305x_register_flash(0);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wl351_leds_gpio),
