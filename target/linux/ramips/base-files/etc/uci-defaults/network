@@ -23,6 +23,7 @@ ramips_setup_interfaces()
 	argus-atp52b | \
 	b2c | \
 	nw718 | \
+	sl-r7205 | \
 	w502u | \
 	wr6202)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
@@ -99,6 +100,7 @@ ramips_setup_macs()
 	f5d8235-v1 | \
 	nw718 | \
 	rt-n15 | \
+	sl-r7205 | \
 	wl-351)
 		lan_mac=$(ramips_get_mac_binary factory 4)
 		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)

@@ -39,6 +39,7 @@ enum ramips_mach_type {
 	RAMIPS_MACH_NBG_419N,		/* ZyXEL NBG-419N */
 	RAMIPS_MACH_OMNI_EMB,         	/* Omnima MiniEMBWiFi */
 	RAMIPS_MACH_PWH2004,		/* Prolink 2004H / Abocom 5205 */
+	RAMIPS_MACH_SL_R7205,		/* Skylink SL-R7205 Wireless 3G Router*/
 	RAMIPS_MACH_V22RW_2X2,		/* Ralink AP-RT3052-V22RW-2X2 */
 	RAMIPS_MACH_W502U,		/* ALFA Networks W502U */
 	RAMIPS_MACH_WCR150GN,		/* Sparklan WCR-150GN */
