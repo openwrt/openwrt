@@ -17,8 +17,8 @@ extern struct physmap_flash_data rt3883_flash0_data;
 extern struct physmap_flash_data rt3883_flash1_data;
 void rt3883_register_pflash(unsigned int id);
 
-struct mtd_partition;
-void rt3883_register_nand(struct mtd_partition *parts, int nr_parts);
+extern struct ramips_nand_platform_data rt3883_nand_data;
+void rt3883_register_nand(void);
 
 extern struct ramips_eth_platform_data rt3883_eth_data;
 void rt3883_register_ethernet(void);

@@ -363,8 +363,7 @@ static struct resource rt3883_nand_resources[] = {
 	},
 };
 
-static struct ramips_nand_platform_data rt3883_nand_data;
-
+struct ramips_nand_platform_data rt3883_nand_data;
 static struct platform_device rt3883_nand_device = {
 	.name		= RAMIPS_NAND_DRIVER_NAME,
 	.id		= -1,
@@ -375,9 +374,7 @@ static struct platform_device rt3883_nand_device = {
 	},
 };
 
-void __init rt3883_register_nand(struct mtd_partition *parts, int nr_parts)
+void __init rt3883_register_nand(void)
 {
-	rt3883_nand_data.parts = parts;
-	rt3883_nand_data.nr_parts = nr_parts;
 	platform_device_register(&rt3883_nand_device);
 }
