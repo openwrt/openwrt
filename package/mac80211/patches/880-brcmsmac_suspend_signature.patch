@@ -1,0 +1,13 @@
+Remove this patch when we get a new version of bcma into our kernel.
+
+--- a/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
+@@ -1129,7 +1129,7 @@ static int __devinit brcms_bcma_probe(st
+ 	return 0;
+ }
+ 
+-static int brcms_suspend(struct bcma_device *pdev)
++static int brcms_suspend(struct bcma_device *pdev, pm_message_t state)
+ {
+ 	struct brcms_info *wl;
+ 	struct ieee80211_hw *hw;
