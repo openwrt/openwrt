@@ -313,6 +313,10 @@ define Image/Build/Profile/WR5123GN
 	$(call Image/Build/Template/GENERIC_8M,$(1),wr512-3gn-8M,WR512-3GN)
 endef
 
+define Image/Build/Profile/SLR7205
+	$(call Image/Build/Template/GENERIC_4M,$(1),sl-r7205,SL-R7205)
+endef
+
 ifeq ($(CONFIG_RALINK_RT305X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
@@ -327,6 +331,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/NW718,$(1))
 	$(call Image/Build/Profile/OMNIEMB,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
+	$(call Image/Build/Profile/SLR7205,$(1))
 	$(call Image/Build/Profile/WHRG300N,$(1))
 	$(call Image/Build/Profile/WCR150GN,$(1))
 	$(call Image/Build/Profile/F5D8235V2,$(1))

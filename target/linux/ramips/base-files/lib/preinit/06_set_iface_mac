@@ -9,9 +9,10 @@ preinit_set_mac_address() {
 
 	case $(ramips_board_name) in
 	bc2 |\
+	esr-9753 |\
 	nw718 |\
 	rt-n56u |\
-	esr-9753)
+	sl-r7205)
 		mac=$(ramips_get_mac_binary factory 4)
 		mac=$(maccalc or "$mac" "02:00:00:00:00:00")
 		ifconfig eth0 hw ether $mac 2>/dev/null
