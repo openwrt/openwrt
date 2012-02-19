@@ -12,9 +12,6 @@
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -31,39 +28,8 @@
 #define ALL0256N_KEYS_POLL_INTERVAL 20
 #define ALL0256N_KEYS_DEBOUNCE_INTERVAL	(3 * ALL0256N_KEYS_POLL_INTERVAL)
 
-static struct mtd_partition all0256n_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "u-boot-env",
-		.offset	= 0x030000,
-		.size	= 0x010000,
-	}, {
-		.name	= "factory",
-		.offset	= 0x040000,
-		.size	= 0x010000,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x050000,
-		.size	= 0x0D0000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x120000,
-		.size	= 0x2E0000,
-	}, {
-		.name	= "firmware",
-		.offset	= 0x050000,
-		.size	= 0x3B0000,
-	}
-};
-
 const struct flash_platform_data all0256n_flash = {
 	.type		= "mx25l3205d",
-	.parts		= all0256n_partitions,
-	.nr_parts	= ARRAY_SIZE(all0256n_partitions),
 };
 
 struct spi_board_info all0256n_spi_slave_info[] __initdata = {

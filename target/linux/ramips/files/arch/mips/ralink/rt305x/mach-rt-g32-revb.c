@@ -12,8 +12,6 @@
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -28,41 +26,8 @@
 #define RT_G32B_KEYS_POLL_INTERVAL	20
 #define RT_G32B_KEYS_DEBOUNCE_INTERVAL	(3 * RT_G32B_KEYS_POLL_INTERVAL)
 
-static struct mtd_partition rt_g32b_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "devdata",
-		.offset	= 0x030000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "devconf",
-		.offset	= 0x040000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x050000,
-		.size	= 0x0d0000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x120000,
-		.size	= 0x2e0000,
-	}, {
-		.name	= "firmware",
-		.offset	= 0x050000,
-		.size	= 0x3b0000,
-	}
-};
-
 const struct flash_platform_data rt_g32b_flash = {
 	.type		= "mx25l3205d",
-	.parts		= rt_g32b_partitions,
-	.nr_parts	= ARRAY_SIZE(rt_g32b_partitions),
 };
 
 struct spi_board_info __initdata rt_g32b_spi_slave_info[] = {

@@ -10,9 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -29,37 +26,6 @@
 
 #define V22RW_2X2_KEYS_POLL_INTERVAL	20
 #define V22RW_2X2_KEYS_DEBOUNCE_INTERVAL (3 * V22RW_2X2_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition v22rw_2x2_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "u-boot-env",
-		.offset	= 0x030000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "factory",
-		.offset	= 0x040000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x050000,
-		.size	= 0x0a0000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x150000,
-		.size	= 0x2b0000,
-	}, {
-		.name	= "firmware",
-		.offset	= 0x050000,
-		.size	= 0x3b0000,
-	}
-};
 
 static struct gpio_led v22rw_2x2_leds_gpio[] __initdata = {
 	{
@@ -95,8 +61,6 @@ static void __init v22rw_2x2_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_flash0_data.nr_parts = ARRAY_SIZE(v22rw_2x2_partitions);
-	rt305x_flash0_data.parts = v22rw_2x2_partitions;
 	rt305x_register_flash(0);
 
 	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;

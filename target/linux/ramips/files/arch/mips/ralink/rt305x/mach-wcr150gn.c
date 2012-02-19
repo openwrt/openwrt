@@ -10,9 +10,6 @@
 
 #include <linux/init.h>
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -61,43 +58,10 @@ static struct gpio_keys_button wcr150gn_gpio_buttons[] __initdata = {
 	}
 };
 
-static struct mtd_partition wcr150gn_partitions[] = {
-	{
-		.name	= "bootloader",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "config",
-		.offset	= 0x030000,
-		.size	= 0x040000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "factory",
-		.offset	= 0x040000,
-		.size	= 0x050000,
-		.mask_flags = MTD_WRITEABLE,
-	}, {
-		.name	= "kernel",
-		.offset	= 0x050000,
-		.size   = 0x0d0000,
-	}, {
-		.name	= "rootfs",
-		.offset	= 0x120000,
-		.size   = 0x2e0000,
-	}, {
-		.name   = "firmware",
-		.offset = 0x050000,
-		.size   = 0x3b0000,
-	}
-};
-
 static void __init wcr150gn_init(void)
 {
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_flash0_data.nr_parts = ARRAY_SIZE(wcr150gn_partitions);
-	rt305x_flash0_data.parts = wcr150gn_partitions;
 	rt305x_register_flash(0);
 
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(wcr150gn_leds_gpio),
