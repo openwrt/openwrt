@@ -353,6 +353,11 @@ define Image/Build/Profile/RTN15
 	$(call Image/Build/Template/GENERIC_4M,$(1),rt-n15,RT-N15)
 endef
 
+mtdlayout_v11stfe=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,1280k(kernel),2112k(rootfs),3392k@0x50000(firmware)
+define Image/Build/Profile/V11STFE
+	$(call BuildFirmware/Generic,$(1),v11st-fe,board=V11ST-FE,mtdlayout_v11stfe,1310720,2162688)
+endef
+
 mtdlayout_wlitx4ag300n=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2880k(rootfs),64k(user)ro,3712k@0x50000(firmware)
 define Image/Build/Profile/WLITX4AG300N
 	$(call BuildFirmware/Buffalo2,$(1),wli-tx4-ag300n,WLI-TX4-AG300N,mtdlayout_wlitx4ag300n,851968,2949120)
@@ -362,6 +367,7 @@ ifeq ($(CONFIG_RALINK_RT288X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/F5D8235V1,$(1))
 	$(call Image/Build/Profile/RTN15,$(1))
+	$(call Image/Build/Profile/V11STFE,$(1))
 	$(call Image/Build/Profile/WLITX4AG300N,$(1))
 endef
 endif
