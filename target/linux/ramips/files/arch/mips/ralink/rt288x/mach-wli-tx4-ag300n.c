@@ -11,9 +11,6 @@
 #include <linux/init.h>
 #include <linux/ethtool.h>
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/mtd/physmap.h>
 
 #include <asm/mach-ralink/machine.h>
 #include <asm/mach-ralink/dev-gpio-buttons.h>
@@ -34,47 +31,6 @@
 
 #define WLI_TX4_AG300N_KEYS_POLL_INTERVAL	20
 #define WLI_TX4_AG300N_KEYS_DEBOUNCE_INTERVAL	(3 * WLI_TX4_AG300N_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition wli_tx4_ag300n_partitions[] = {
-	{
-		.name	= "u-boot",
-		.offset	= 0,
-		.size	= 0x030000,
-		.mask_flags = MTD_WRITEABLE,
-	},
-	{
-		.name	= "u-boot-env",
-		.offset	= 0x030000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	},
-	{
-		.name	= "factory",
-		.offset	= 0x040000,
-		.size	= 0x010000,
-		.mask_flags = MTD_WRITEABLE,
-	},
-	{
-		.name	= "kernel",
-		.offset	= 0x050000,
-		.size	= 0x0d0000,
-	},
-	{
-		.name	= "rootfs",
-		.offset	= 0x120000,
-		.size	= 0x2d0000,
-	},
-	{
-		.name	= "user",
-		.offset	= 0x3f0000,
-		.size	= 0x010000,
-	},
-	{
-		.name	= "firmware",
-		.offset	= 0x050000,
-		.size	= 0x3a0000,
-	},
-};
 
 static struct gpio_led wli_tx4_ag300n_leds_gpio[] __initdata = {
 	{
@@ -131,10 +87,7 @@ static void __init wli_tx4_ag300n_init(void)
 				     ARRAY_SIZE(wli_tx4_ag300n_gpio_buttons),
 				     wli_tx4_ag300n_gpio_buttons);
 
-	rt288x_flash0_data.nr_parts = ARRAY_SIZE(wli_tx4_ag300n_partitions);
-	rt288x_flash0_data.parts = wli_tx4_ag300n_partitions;
 	rt288x_register_flash(0);
-
 	rt288x_register_wifi();
 	rt288x_register_wdt();
 
