@@ -18,8 +18,7 @@ LINUX_VERSION:=3.2.5
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
-	kmod-leds-gpio kmod-input-core kmod-input-polldev \
-	kmod-input-gpio-keys-polled kmod-button-hotplug swconfig \
+	kmod-leds-gpio kmod-gpio-button-hotplug swconfig \
 	kmod-ath9k wpad-mini uboot-envtools
 
 define Target/Description

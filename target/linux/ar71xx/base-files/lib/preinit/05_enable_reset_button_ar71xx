@@ -6,10 +6,7 @@
 
 
 preinit_enable_reset_button() {
-	insmod input-core
-	insmod input-polldev
-	insmod gpio_keys_polled
-	insmod button-hotplug
+	insmod gpio-button-hotplug
 }
 
 boot_hook_add preinit_main preinit_enable_reset_button
