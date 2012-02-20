@@ -184,7 +184,7 @@ int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
 	if ((fd = open(buf, O_RDONLY)) < 0)
 		return -1;
 
-	bc = mmap(NULL, len, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_LOCKED, fd, 0);
+	bc = mmap(NULL, len, PROT_READ, MAP_PRIVATE|MAP_LOCKED, fd, 0);
 
 	if ((void *)bc != MAP_FAILED)
 	{
