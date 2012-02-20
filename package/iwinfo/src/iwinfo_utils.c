@@ -165,7 +165,7 @@ int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
 	while (fgets(buf, sizeof(buf), mtd) > 0)
 	{
 		if (fscanf(mtd, "mtd%d: %*x %x %127s", &off, &len, buf) < 3 ||
-		    strcmp(buf, "\"boardconfig\""))
+		    strcmp(buf, "\"boardconfig\"") || strcmp(buf, "\"EEPROM\""))
 		{
 			off = -1;
 			continue;
@@ -193,12 +193,23 @@ int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
 
 		for (off = len / 2 - 0x800; off >= 0; off -= 0x800)
 		{
+			/* AR531X board data magic */
 			if ((bc[off] == 0x3533) && (bc[off + 1] == 0x3131))
 			{
 				id->vendor_id = bc[off + 0x7d];
 				id->device_id = bc[off + 0x7c];
 				id->subsystem_vendor_id = bc[off + 0x84];
 				id->subsystem_device_id = bc[off + 0x83];
+				break;
+			}
+
+			/* AR5416 EEPROM magic */
+			else if ((bc[off] == 0xA55A) || (bc[off] == 0x5AA5))
+			{
+				id->vendor_id = bc[off + 0x0D];
+				id->device_id = bc[off + 0x0E];
+				id->subsystem_vendor_id = bc[off + 0x13];
+				id->subsystem_device_id = bc[off + 0x14];
 				break;
 			}
 		}
