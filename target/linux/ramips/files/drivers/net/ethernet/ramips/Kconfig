@@ -1,0 +1,13 @@
+config NET_RAMIPS
+       tristate "Ralink RT288X/RT3X5X/RT3662/RT3883 ethernet driver"
+       depends on MIPS_RALINK
+       select PHYLIB if (SOC_RT288X || SOC_RT3883)
+       help
+         This driver supports the etehrnet mac inside the ralink wisocs
+
+if NET_RAMIPS
+
+config NET_RAMIPS_DEBUG
+       bool "Enable debug messages in the Ralink ethernet driver"
+
+endif
