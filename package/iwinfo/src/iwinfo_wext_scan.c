@@ -246,7 +246,7 @@ static inline void wext_fill_wpa(unsigned char *iebuf, int buflen, struct iwinfo
 			/* Not all IEs that start with 0xdd are WPA.
 			*        * So check that the OUI is valid. */
 			if((ielen < 8) || ((memcmp(&iebuf[offset], wpa_oui, 3) != 0)
-				&& (iebuf[offset+3] == 0x01)))
+				|| (iebuf[offset+3] != 0x01)))
 					return;
 
 			offset += 4;
