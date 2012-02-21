@@ -888,12 +888,12 @@ define KernelPackage/b43/config
 
 	choice
 		prompt "b43 firmware version"
-		default B43_FW_5_10
+		default B43_FW_5_100_138
 		help
 		  This option allows you to select the version of the b43 firmware.
 
 	config B43_FW_4_150
-		bool "Firmware 410.2160 from driver 4.150.10.5 (stable)"
+		bool "Firmware 410.2160 from driver 4.150.10.5 (old stable)"
 		help
 		  Stable firmware for BCM43xx devices.
 
@@ -918,7 +918,7 @@ define KernelPackage/b43/config
 		  If unsure, select the "stable" firmware.
    
 	config B43_FW_5_100_138
-		bool "Firmware 666.2 from driver 5.100.138"
+		bool "Firmware 666.2 from driver 5.100.138 (stable)"
 		help
 		  Newer experimental firmware for BCM43xx devices.
 
@@ -1003,7 +1003,6 @@ define KernelPackage/b43/config
 
 	config PACKAGE_B43_PHY_N
 		bool "Enable support for N-PHYs"
-		select B43_FW_5_100_138
 		default y
 		help
 		  Enable support for BCM4321 and BCM4322.
@@ -1014,7 +1013,6 @@ define KernelPackage/b43/config
 
 	config PACKAGE_B43_PHY_HT
 		bool "Enable support for HT-PHYs"
-		select B43_FW_5_100_138
 		default n
 		help
 		  Currently broken.
@@ -1024,7 +1022,6 @@ define KernelPackage/b43/config
 	config PACKAGE_B43_PHY_LCN
 		bool "Enable support for LCN-PHYs"
 		depends on BROKEN
-		select B43_FW_5_100_138
 		default n
 		help
 		  Currently broken.
