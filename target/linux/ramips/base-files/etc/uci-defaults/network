@@ -29,21 +29,17 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
 
-	f5d8235-v1)
+	f5d8235-v1 | \
+	f5d8235-v2 | \
+	v11st-fe)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
 		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
 		ucidef_add_switch_vlan "switch0" "2" "0 5t"
 		;;
 
-	f5d8235-v2)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
-		ucidef_add_switch_vlan "switch0" "2" "0 5t"
-		;;
-
-	rt-n15)
+	rt-n15 | \
+	wl-351)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
 		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
@@ -57,22 +53,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "2" "4 8t"
 		;;
 
-	v11st-fe)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
-		ucidef_add_switch_vlan "switch0" "2" "0 5t"
-		;;
-
 	wcr-150gn)
 		ucidef_set_interface_lan_wan "eth0.2" "eth0.1"
-		;;
-
-	wl-351)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
-		ucidef_add_switch_vlan "switch0" "2" "4 5t"
 		;;
 
 	wli-tx4-ag300n)
