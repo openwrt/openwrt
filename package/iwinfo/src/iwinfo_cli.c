@@ -275,6 +275,34 @@ static char * format_hwmodes(int modes)
 	return buf;
 }
 
+static char * format_assocrate(struct iwinfo_rate_entry *r)
+{
+	static char buf[40];
+	char *p = buf;
+	int l = sizeof(buf);
+
+	if (r->rate <= 0)
+	{
+		snprintf(buf, sizeof(buf), "unknown");
+	}
+	else
+	{
+		p += snprintf(p, l, "%s", format_rate(r->rate));
+		l = sizeof(buf) - (p - buf);
+
+		if (r->mcs >= 0)
+		{
+			p += snprintf(p, l, ", MCS %d, %dMHz", r->mcs, 20 + r->is_40mhz*20);
+			l = sizeof(buf) - (p - buf);
+
+			if (r->is_short_gi)
+				p += snprintf(p, l, ", short GI");
+		}
+	}
+
+	return buf;
+}
+
 
 static const char * print_type(const struct iwinfo_ops *iw, const char *ifname)
 {
@@ -635,11 +663,22 @@ static void print_assoclist(const struct iwinfo_ops *iw, const char *ifname)
 	{
 		e = (struct iwinfo_assoclist_entry *) &buf[i];
 
-		printf("%s  %s / %s (SNR %d)\n",
+		printf("%s  %s / %s (SNR %d)  %d ms ago\n",
 			format_bssid(e->mac),
 			format_signal(e->signal),
 			format_noise(e->noise),
-			(e->signal - e->noise));
+			(e->signal - e->noise),
+			e->inactive);
+
+		printf("	RX: %-38s  %8d Pkts.\n",
+			format_assocrate(&e->rx_rate),
+			e->rx_packets
+		);
+
+		printf("	TX: %-38s  %8d Pkts.\n\n",
+			format_assocrate(&e->tx_rate),
+			e->tx_packets
+		);
 	}
 }
 
