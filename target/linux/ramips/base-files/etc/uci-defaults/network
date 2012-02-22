@@ -31,23 +31,23 @@ ramips_setup_interfaces()
 
 	f5d8235-v1)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "rtl8366s" "1" "1"
-		ucidef_add_switch_vlan "rtl8366s" "1" "1 2 3 4 5t"
-		ucidef_add_switch_vlan "rtl8366s" "2" "0 5t"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
+		ucidef_add_switch_vlan "switch0" "2" "0 5t"
 		;;
 
 	f5d8235-v2)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "rtl8366rb" "1" "1"
-		ucidef_add_switch_vlan "rtl8366rb" "1" "1 2 3 4 5t"
-		ucidef_add_switch_vlan "rtl8366rb" "2" "0 5t"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
+		ucidef_add_switch_vlan "switch0" "2" "0 5t"
 		;;
 
 	rt-n15)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "rtl8366s" "1" "1"
-		ucidef_add_switch_vlan "rtl8366s" "1" "0 1 2 3 5t"
-		ucidef_add_switch_vlan "rtl8366s" "2" "4 5t"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
+		ucidef_add_switch_vlan "switch0" "2" "4 5t"
 		;;
 
 	rt-n56u)
@@ -70,9 +70,9 @@ ramips_setup_interfaces()
 
 	wl-351)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "rtl8366rb" "1" "1"
-		ucidef_add_switch_vlan "rtl8366rb" "1" "0 1 2 3 5t"
-		ucidef_add_switch_vlan "rtl8366rb" "2" "4 5t"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
+		ucidef_add_switch_vlan "switch0" "2" "4 5t"
 		;;
 
 	wli-tx4-ag300n)
