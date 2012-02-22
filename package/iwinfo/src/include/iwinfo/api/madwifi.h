@@ -22,8 +22,10 @@
 #define _MADWIFI_H
 
 /* ieee80211.h */
-#define	IEEE80211_ADDR_LEN		6
-#define	IEEE80211_RATE_VAL		0x7f
+#define	IEEE80211_ADDR_LEN			6
+#define	IEEE80211_RATE_VAL			0x7f
+#define	IEEE80211_SEQ_SEQ_MASK		0xfff0
+#define	IEEE80211_SEQ_SEQ_SHIFT		4
 
 
 /* ieee80211_crypto.h */

@@ -265,6 +265,45 @@ static int iwinfo_L_assoclist(lua_State *L, int (*func)(const char *, char *, in
 			lua_pushnumber(L, e->noise);
 			lua_setfield(L, -2, "noise");
 
+			lua_pushnumber(L, e->inactive);
+			lua_setfield(L, -2, "inactive");
+
+			lua_pushnumber(L, e->rx_packets);
+			lua_setfield(L, -2, "rx_packets");
+
+			lua_pushnumber(L, e->tx_packets);
+			lua_setfield(L, -2, "tx_packets");
+
+			lua_pushnumber(L, e->rx_rate.rate);
+			lua_setfield(L, -2, "rx_rate");
+
+			lua_pushnumber(L, e->tx_rate.rate);
+			lua_setfield(L, -2, "tx_rate");
+
+			if (e->rx_rate.mcs >= 0)
+			{
+				lua_pushnumber(L, e->rx_rate.mcs);
+				lua_setfield(L, -2, "rx_mcs");
+
+				lua_pushboolean(L, e->rx_rate.is_40mhz);
+				lua_setfield(L, -2, "rx_40mhz");
+
+				lua_pushboolean(L, e->rx_rate.is_short_gi);
+				lua_setfield(L, -2, "rx_short_gi");
+			}
+
+			if (e->tx_rate.mcs >= 0)
+			{
+				lua_pushnumber(L, e->tx_rate.mcs);
+				lua_setfield(L, -2, "tx_mcs");
+
+				lua_pushboolean(L, e->tx_rate.is_40mhz);
+				lua_setfield(L, -2, "tx_40mhz");
+
+				lua_pushboolean(L, e->tx_rate.is_short_gi);
+				lua_setfield(L, -2, "tx_short_gi");
+			}
+
 			lua_setfield(L, -2, macstr);
 		}
 	}

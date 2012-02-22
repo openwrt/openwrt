@@ -1052,33 +1052,81 @@ static int nl80211_get_assoclist_cb(struct nl_msg *msg, void *arg)
 	struct iwinfo_assoclist_entry *e = arr->buf;
 	struct nlattr **attr = nl80211_parse(msg);
 	struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
+	struct nlattr *rinfo[NL80211_RATE_INFO_MAX + 1];
 
 	static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
 		[NL80211_STA_INFO_INACTIVE_TIME] = { .type = NLA_U32    },
-		[NL80211_STA_INFO_RX_BYTES]      = { .type = NLA_U32    },
-		[NL80211_STA_INFO_TX_BYTES]      = { .type = NLA_U32    },
 		[NL80211_STA_INFO_RX_PACKETS]    = { .type = NLA_U32    },
 		[NL80211_STA_INFO_TX_PACKETS]    = { .type = NLA_U32    },
-		[NL80211_STA_INFO_SIGNAL]        = { .type = NLA_U8     },
+		[NL80211_STA_INFO_RX_BITRATE]    = { .type = NLA_NESTED },
 		[NL80211_STA_INFO_TX_BITRATE]    = { .type = NLA_NESTED },
-		[NL80211_STA_INFO_LLID]          = { .type = NLA_U16    },
-		[NL80211_STA_INFO_PLID]          = { .type = NLA_U16    },
-		[NL80211_STA_INFO_PLINK_STATE]   = { .type = NLA_U8     },
+		[NL80211_STA_INFO_SIGNAL]        = { .type = NLA_U8     },
+	};
+
+	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
+		[NL80211_RATE_INFO_BITRATE]      = { .type = NLA_U16    },
+		[NL80211_RATE_INFO_MCS]          = { .type = NLA_U8     },
+		[NL80211_RATE_INFO_40_MHZ_WIDTH] = { .type = NLA_FLAG   },
+		[NL80211_RATE_INFO_SHORT_GI]     = { .type = NLA_FLAG   },
 	};
 
 	/* advance to end of array */
 	e += arr->count;
+	memset(e, 0, sizeof(*e));
 
 	if (attr[NL80211_ATTR_MAC])
 		memcpy(e->mac, nla_data(attr[NL80211_ATTR_MAC]), 6);
 
-	if (attr[NL80211_ATTR_STA_INFO])
+	if (attr[NL80211_ATTR_STA_INFO] &&
+		!nla_parse_nested(sinfo, NL80211_STA_INFO_MAX,
+			attr[NL80211_ATTR_STA_INFO], stats_policy))
 	{
-		if (!nla_parse_nested(sinfo, NL80211_STA_INFO_MAX,
-				attr[NL80211_ATTR_STA_INFO], stats_policy))
+		if (sinfo[NL80211_STA_INFO_SIGNAL])
+			e->signal = nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
+
+		if (sinfo[NL80211_STA_INFO_INACTIVE_TIME])
+			e->inactive = nla_get_u32(sinfo[NL80211_STA_INFO_INACTIVE_TIME]);
+
+		if (sinfo[NL80211_STA_INFO_RX_PACKETS])
+			e->rx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]);
+
+		if (sinfo[NL80211_STA_INFO_TX_PACKETS])
+			e->tx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]);
+
+		if (sinfo[NL80211_STA_INFO_RX_BITRATE] &&
+			!nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX,
+				sinfo[NL80211_STA_INFO_RX_BITRATE], rate_policy))
 		{
-			if (sinfo[NL80211_STA_INFO_SIGNAL])
-				e->signal = nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
+			if (rinfo[NL80211_RATE_INFO_BITRATE])
+				e->rx_rate.rate =
+					nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]) * 100;
+
+			if (rinfo[NL80211_RATE_INFO_MCS])
+				e->rx_rate.mcs = nla_get_u8(rinfo[NL80211_RATE_INFO_MCS]);
+
+			if (rinfo[NL80211_RATE_INFO_40_MHZ_WIDTH])
+				e->rx_rate.is_40mhz = 1;
+
+			if (rinfo[NL80211_RATE_INFO_SHORT_GI])
+				e->rx_rate.is_short_gi = 1;
+		}
+
+		if (sinfo[NL80211_STA_INFO_TX_BITRATE] &&
+			!nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX,
+				sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy))
+		{
+			if (rinfo[NL80211_RATE_INFO_BITRATE])
+				e->tx_rate.rate =
+					nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]) * 100;
+
+			if (rinfo[NL80211_RATE_INFO_MCS])
+				e->tx_rate.mcs = nla_get_u8(rinfo[NL80211_RATE_INFO_MCS]);
+
+			if (rinfo[NL80211_RATE_INFO_40_MHZ_WIDTH])
+				e->tx_rate.is_40mhz = 1;
+
+			if (rinfo[NL80211_RATE_INFO_SHORT_GI])
+				e->tx_rate.is_short_gi = 1;
 		}
 	}
 
@@ -1113,8 +1161,6 @@ int nl80211_get_assoclist(const char *ifname, char *buf, int *len)
 					nl80211_send(req, nl80211_get_assoclist_cb, &arr);
 					nl80211_free(req);
 				}
-
-				break;
 			}
 		}
 

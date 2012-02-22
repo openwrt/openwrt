@@ -49,10 +49,22 @@ extern const char *IWINFO_KMGMT_NAMES[];
 extern const char *IWINFO_AUTH_NAMES[];
 
 
+struct iwinfo_rate_entry {
+	uint16_t rate;
+	uint8_t mcs;
+	uint8_t is_40mhz:1;
+	uint8_t is_short_gi:1;
+};
+
 struct iwinfo_assoclist_entry {
 	uint8_t	mac[6];
 	int8_t signal;
 	int8_t noise;
+	uint32_t inactive;
+	uint32_t rx_packets;
+	uint32_t tx_packets;
+	struct iwinfo_rate_entry rx_rate;
+	struct iwinfo_rate_entry tx_rate;
 };
 
 struct iwinfo_txpwrlist_entry {

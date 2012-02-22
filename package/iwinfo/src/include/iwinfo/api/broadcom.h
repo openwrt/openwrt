@@ -64,6 +64,30 @@ typedef struct wl_sta_rssi {
 	uint16_t				foo;
 } wl_sta_rssi_t;
 
+#define WL_NUMRATES     255 /* max # of rates in a rateset */
+typedef struct wl_rateset {
+    uint32_t  				count;          /* # rates in this set */
+    uint8_t   				rates[WL_NUMRATES]; /* rates in 500kbps units w/hi bit set if basic */
+} wl_rateset_t;
+
+typedef struct wl_sta_info {
+    uint16_t				ver;        /* version of this struct */
+    uint16_t				len;        /* length in bytes of this structure */
+    uint16_t				cap;        /* sta's advertised capabilities */
+    uint32_t				flags;      /* flags defined below */
+    uint32_t				idle;       /* time since data pkt rx'd from sta */
+    unsigned char			ea[6];      /* Station address */
+    wl_rateset_t			rateset;    /* rateset in use */
+    uint32_t				in;   		/* seconds elapsed since associated */
+    uint32_t				listen_interval_inms; /* Min Listen interval in ms for this STA */
+    uint32_t				tx_pkts;    /* # of packets transmitted */
+    uint32_t				tx_failures;    /* # of packets failed */
+    uint32_t				rx_ucast_pkts;  /* # of unicast packets received */
+    uint32_t				rx_mcast_pkts;  /* # of multicast packets received */
+    uint32_t				tx_rate;    /* Rate of last successful tx frame */
+    uint32_t				rx_rate;    /* Rate of last successful rx frame */
+} wl_sta_info_t;
+
 typedef struct wlc_ssid {
 	uint32_t				ssid_len;
 	unsigned char			ssid[32];
