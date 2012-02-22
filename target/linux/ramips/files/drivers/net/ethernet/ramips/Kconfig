@@ -10,4 +10,8 @@ if NET_RAMIPS
 config NET_RAMIPS_DEBUG
        bool "Enable debug messages in the Ralink ethernet driver"
 
+config NET_RAMIPS_DEBUG_FS
+	bool "Enable debugfs support for the Ralink ethernet driver"
+	depends on DEBUG_FS
+
 endif

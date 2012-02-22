@@ -874,8 +874,14 @@ ramips_eth_probe(struct net_device *dev)
 	if (err)
 		goto err_mdio_cleanup;
 
+	err = raeth_debugfs_init(re);
+	if (err)
+		goto err_phy_disconnect;
+
 	return 0;
 
+err_phy_disconnect:
+	ramips_phy_disconnect(re);
 err_mdio_cleanup:
 	ramips_mdio_cleanup(re);
 	return err;
@@ -886,6 +892,7 @@ ramips_eth_uninit(struct net_device *dev)
 {
 	struct raeth_priv *re = netdev_priv(dev);
 
+	raeth_debugfs_exit(re);
 	ramips_phy_disconnect(re);
 	ramips_mdio_cleanup(re);
 }
@@ -992,9 +999,13 @@ ramips_eth_init(void)
 {
 	int ret;
 
+	ret = raeth_debugfs_root_init();
+	if (ret)
+		goto err_out;
+
 	ret = rt305x_esw_init();
 	if (ret)
-		return ret;
+		goto err_debugfs_exit;
 
 	ret = platform_driver_register(&ramips_eth_driver);
 	if (ret) {
@@ -1007,6 +1018,9 @@ ramips_eth_init(void)
 
 esw_cleanup:
 	rt305x_esw_exit();
+err_debugfs_exit:
+	raeth_debugfs_root_exit();
+err_out:
 	return ret;
 }
 
@@ -1015,6 +1029,7 @@ ramips_eth_cleanup(void)
 {
 	platform_driver_unregister(&ramips_eth_driver);
 	rt305x_esw_exit();
+	raeth_debugfs_root_exit();
 }
 
 module_init(ramips_eth_init);
