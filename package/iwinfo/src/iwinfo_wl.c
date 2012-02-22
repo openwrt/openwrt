@@ -489,18 +489,18 @@ int wl_get_assoclist(const char *ifname, char *buf, int *len)
 int wl_get_txpwrlist(const char *ifname, char *buf, int *len)
 {
 	struct iwinfo_txpwrlist_entry entry;
-	uint8_t dbm[8] = { 0, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 };
-	uint8_t mw[8]  = { 1, 3, 6, 10, 15, 25, 39, 63, 100, 158, 251 };
+	uint8_t dbm[11] = { 0, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24 };
+	uint8_t mw[11]  = { 1, 3, 6, 10, 15, 25, 39, 63, 100, 158, 251 };
 	int i;
 
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 11; i++)
 	{
 		entry.dbm = dbm[i];
 		entry.mw  = mw[i];
 		memcpy(&buf[i*sizeof(entry)], &entry, sizeof(entry));
 	}
 
-	*len = 8 * sizeof(entry);
+	*len = 11 * sizeof(entry);
 	return 0;
 }
 
