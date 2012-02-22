@@ -769,6 +769,8 @@ ramips_eth_irq(int irq, void *dev)
 		tasklet_schedule(&re->tx_housekeeping_tasklet);
 	}
 
+	raeth_debugfs_update_int_stats(re, fe_int);
+
 	return IRQ_HANDLED;
 }
 
