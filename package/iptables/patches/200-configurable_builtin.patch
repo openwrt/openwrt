@@ -1,0 +1,56 @@
+--- a/extensions/GNUmakefile.in
++++ b/extensions/GNUmakefile.in
+@@ -40,9 +40,24 @@
+ pfx_build_mod := $(filter-out @blacklist_modules@,${pfx_build_mod})
+ pf4_build_mod := $(filter-out @blacklist_modules@,${pf4_build_mod})
+ pf6_build_mod := $(filter-out @blacklist_modules@,${pf6_build_mod})
+-pfx_objs      := $(patsubst %,libxt_%.o,${pfx_build_mod})
+-pf4_objs      := $(patsubst %,libipt_%.o,${pf4_build_mod})
+-pf6_objs      := $(patsubst %,libip6t_%.o,${pf6_build_mod})
++
++ifdef BUILTIN_MODULES
++pfx_build_static := $(filter $(BUILTIN_MODULES),${pfx_build_mod})
++pf4_build_static := $(filter $(BUILTIN_MODULES),${pf4_build_mod})
++pf6_build_static := $(filter $(BUILTIN_MODULES),${pf6_build_mod})
++else
++@ENABLE_STATIC_TRUE@ pfx_build_static := $(pfx_build_mod)
++@ENABLE_STATIC_TRUE@ pf4_build_static := $(pf4_build_mod)
++@ENABLE_STATIC_TRUE@ pf6_build_static := $(pf6_build_mod)
++endif
++
++pfx_build_mod := $(filter-out $(pfx_build_static),$(pfx_build_mod))
++pf4_build_mod := $(filter-out $(pf4_build_static),$(pf4_build_mod))
++pf6_build_mod := $(filter-out $(pf6_build_static),$(pf6_build_mod))
++
++pfx_objs      := $(patsubst %,libxt_%.o,${pfx_build_static})
++pf4_objs      := $(patsubst %,libipt_%.o,${pf4_build_static})
++pf6_objs      := $(patsubst %,libip6t_%.o,${pf6_build_static})
+ pfx_solibs    := $(patsubst %,libxt_%.so,${pfx_build_mod})
+ pf4_solibs    := $(patsubst %,libipt_%.so,${pf4_build_mod})
+ pf6_solibs    := $(patsubst %,libip6t_%.so,${pf6_build_mod})
+@@ -54,10 +69,10 @@
+ targets := libext4.a libext6.a matches4.man matches6.man \
+            targets4.man targets6.man
+ targets_install :=
+-@ENABLE_STATIC_TRUE@ libext4_objs := ${pfx_objs} ${pf4_objs}
+-@ENABLE_STATIC_TRUE@ libext6_objs := ${pfx_objs} ${pf6_objs}
+-@ENABLE_STATIC_FALSE@ targets += ${pfx_solibs} ${pf4_solibs} ${pf6_solibs}
+-@ENABLE_STATIC_FALSE@ targets_install += ${pfx_solibs} ${pf4_solibs} ${pf6_solibs}
++libext4_objs := ${pfx_objs} ${pf4_objs}
++libext6_objs := ${pfx_objs} ${pf6_objs}
++targets += ${pfx_solibs} ${pf4_solibs} ${pf6_solibs}
++targets_install += ${pfx_solibs} ${pf4_solibs} ${pf6_solibs}
+ 
+ .SECONDARY:
+ 
+@@ -107,8 +122,8 @@
+ libext6.a: initext6.o ${libext6_objs}
+ 	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+ 
+-initext_func  := $(addprefix xt_,${pfx_build_mod}) $(addprefix ipt_,${pf4_build_mod})
+-initext6_func := $(addprefix xt_,${pfx_build_mod}) $(addprefix ip6t_,${pf6_build_mod})
++initext_func  := $(addprefix xt_,${pfx_build_static}) $(addprefix ipt_,${pf4_build_static})
++initext6_func := $(addprefix xt_,${pfx_build_static}) $(addprefix ip6t_,${pf6_build_static})
+ 
+ .initext4.dd: FORCE
+ 	@echo "${initext_func}" >$@.tmp; \

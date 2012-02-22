@@ -79,26 +79,6 @@ IPv4 firewall administration tool.
 
 endef
 
-define Package/iptables-mod-conntrack
-$(call Package/iptables/Module, +kmod-ipt-conntrack)
-  TITLE:=Basic connection tracking extensions
-endef
-
-define Package/iptables-mod-conntrack/description
-Basic iptables extensions for connection tracking.
-
- Matches:
-  - state
-  - conntrack
-
- Targets:
-  - NOTRACK
-
- Tables:
-  - raw
-
-endef
-
 define Package/iptables-mod-conntrack-extra
 $(call Package/iptables/Module, +kmod-ipt-conntrack-extra)
   TITLE:=Extra connection tracking extensions
@@ -189,24 +169,6 @@ IPset iptables extensions.
 
  Targets:
   - SET
-
-endef
-
-define Package/iptables-mod-nat
-$(call Package/iptables/Module, +kmod-ipt-nat)
-  TITLE:=Basic NAT extensions
-endef
-
-define Package/iptables-mod-nat/description
-iptables extensions for basic NAT targets.
-
- Targets:
-  - SNAT
-  - DNAT
-  - MASQUERADE
-
- Tables:
-  - nat
 
 endef
 
@@ -394,13 +356,15 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 	--enable-libipq \
 	--with-kernel="$(LINUX_DIR)" \
-	--with-xtlibdir=/usr/lib/iptables
+	--with-xtlibdir=/usr/lib/iptables \
+	--enable-static
 
 MAKE_FLAGS := \
 	$(TARGET_CONFIGURE_OPTS) \
 	COPT_FLAGS="$(TARGET_CFLAGS)" \
 	KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
 	KBUILD_OUTPUT="$(LINUX_DIR)" \
+	BUILTIN_MODULES="$(patsubst ipt_%,%,$(patsubst xt_%,%,$(IPT_BUILTIN) $(IPT_CONNTRACK-m) $(IPT_NAT-m)))"
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
@@ -431,13 +395,6 @@ define Package/iptables/install
 	$(LN) iptables $(1)/usr/sbin/iptables-save
 	$(LN) iptables $(1)/usr/sbin/iptables-restore
 	$(INSTALL_DIR) $(1)/usr/lib/iptables
-	(cd $(PKG_INSTALL_DIR)/usr/lib/iptables ; \
-		for m in $(patsubst xt_%,ipt_%,$(IPT_BUILTIN)) $(patsubst ipt_%,xt_%,$(IPT_BUILTIN)); do \
-			if [ -f $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$${m}.so ]; then \
-				$(CP) $(PKG_INSTALL_DIR)/usr/lib/iptables/lib$$$${m}.so $(1)/usr/lib/iptables/ ;\
-			fi; \
-		done \
-	)
 endef
 
 define Package/ip6tables/install
@@ -496,14 +453,12 @@ L7_INSTALL:=\
 
 
 $(eval $(call BuildPackage,iptables))
-$(eval $(call BuildPlugin,iptables-mod-conntrack,$(IPT_CONNTRACK-m)))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-extra,$(IPT_CONNTRACK_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-extra,$(IPT_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-filter,$(IPT_FILTER-m),$(L7_INSTALL)))
 $(eval $(call BuildPlugin,iptables-mod-ipopt,$(IPT_IPOPT-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipsec,$(IPT_IPSEC-m)))
 $(eval $(call BuildPlugin,iptables-mod-ipset,ipt_set ipt_SET))
-$(eval $(call BuildPlugin,iptables-mod-nat,$(IPT_NAT-m)))
 $(eval $(call BuildPlugin,iptables-mod-nat-extra,$(IPT_NAT_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-iprange,$(IPT_IPRANGE-m)))
 $(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
