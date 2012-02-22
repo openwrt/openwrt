@@ -165,7 +165,7 @@ int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
 	while (fgets(buf, sizeof(buf), mtd) > 0)
 	{
 		if (fscanf(mtd, "mtd%d: %*x %x %127s", &off, &len, buf) < 3 ||
-		    strcmp(buf, "\"boardconfig\"") || strcmp(buf, "\"EEPROM\""))
+		    (strcmp(buf, "\"boardconfig\"") && strcmp(buf, "\"EEPROM\"")))
 		{
 			off = -1;
 			continue;
