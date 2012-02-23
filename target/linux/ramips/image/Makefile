@@ -398,13 +398,8 @@ define Image/Build/Profile/RTN15
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,rt-n15,RT-N15)
 endef
 
-mtdlayout_v11stfe=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,1280k(kernel),2112k(rootfs),3392k@0x50000(firmware)
-define Image/Build/Template/V11STFE
-	$(call BuildFirmware/Generic,$(1),v11st-fe,board=V11ST-FE,mtdlayout_v11stfe,1310720,2162688)
-endef
-
 define Image/Build/Profile/V11STFE
-	$(call Image/Build/Template/$(fs_squash)/$(1),V11STFE)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,v11st-fe,V11ST-FE)
 endef
 
 mtdlayout_wlitx4ag300n=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2880k(rootfs),64k(user)ro,3712k@0x50000(firmware)
