@@ -288,7 +288,13 @@ fw_load_include() {
 	local path
 	config_get path ${name} path
 
-	[ -e $path ] && ( . $path )
+	[ -e $path ] && (
+		config() {
+			fw_log error "You cannot use UCI in firewall includes!" >&2
+			exit 1
+		}
+		. $path 
+	)
 }
 
 
