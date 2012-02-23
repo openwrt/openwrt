@@ -13,7 +13,9 @@ endef
 
 VMLINUX:=$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(IMG_PREFIX)-uImage
+fs_squash:=squashfs-only
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	fs_squash:=initramfs
 	VMLINUX:=$(IMG_PREFIX)-vmlinux-initramfs
 	UIMAGE:=$(IMG_PREFIX)-uImage-initramfs
 endif
@@ -50,6 +52,7 @@ define Image/BuildKernel
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
 	$(call MkImage,lzma,$(KDIR)/vmlinux.bin.lzma,$(KDIR)/uImage.lzma)
 	cp $(KDIR)/uImage.lzma $(BIN_DIR)/$(UIMAGE).bin
+	$(call Image/Build/Initramfs)
 endef
 
 define BuildFirmware/Generic
@@ -65,6 +68,12 @@ define BuildFirmware/Generic
 			dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
 	fi; fi
+endef
+
+define BuildFirmware/Generic/initramfs
+	$(call PatchKernelLzma,$(2),$(3) $($(4)))
+	$(call MkImage,lzma,"$(KDIR)/vmlinux-$(2).bin.lzma","$(KDIR)/vmlinux-$(2).uImage")
+	$(CP) $(KDIR)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
 endef
 
 define BuildFirmware/WL341V3
@@ -139,9 +148,21 @@ define BuildFirmware/Edimax
 		-s $(3) -m $(4) -f $(5) -S $(6)
 endef
 
+define Image/Build/Template/initramfs/initramfs
+	$(call Image/Build/Template/$(1)/initramfs,initramfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+endef
+
+define Image/Build/Template/squashfs-only/squashfs
+	$(call Image/Build/Template/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
+endef
+
 mtdlayout_4M=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
 define Image/Build/Template/GENERIC_4M
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_4M,851968,3014656)
+endef
+
+define Image/Build/Template/GENERIC_4M/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),board=$(3),mtdlayout_4M)
 endef
 
 mtdlayout_8M=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),6976k(rootfs),7872k@0x50000(firmware)
@@ -149,6 +170,10 @@ kernel_size_8M=917504
 rootfs_size_8M=7143424
 define Image/Build/Template/GENERIC_8M
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_8M,$(kernel_size_8M),$(rootfs_size_8M))
+endef
+
+define Image/Build/Template/GENERIC_8M/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),board=$(3),mtdlayout_8M)
 endef
 
 mtdlayout_dir300b1=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
@@ -174,7 +199,7 @@ define Image/Build/Template/WR6202
 endef
 
 define Image/Build/Profile/WR6202
-	$(call Image/Build/Template/WR6202,$(1),wr6202,WR6202)
+	$(call Image/Build/Template/$(fs_squash)/$(1),WR6202,wr6202,WR6202)
 endef
 
 console_OMNIEMB=ttyS1,57600
@@ -190,13 +215,13 @@ define Image/Build/Template/WL341V3
 endef
 
 define Image/Build/Profile/WL341V3
-	$(call Image/Build/Template/WL341V3,$(1),wl341v3,WL341V3)
+	$(call Image/Build/Template/$(fs_squash)/$(1),WL341V3,wl341v3,WL341V3)
 endef
 
 define Image/Build/Profile/DIR300B1
-	$(call Image/Build/Template/DIR300B1,$(1),dir-300-b1,DIR-300-B1,wrgn23_dlwbr_dir300b)
-	$(call Image/Build/Template/DIR300B1,$(1),dir-600-b1,DIR-600-B1,wrgn23_dlwbr_dir600b)
-	$(call Image/Build/Template/DIR300B1,$(1),dir-600-b2,DIR-600-B2,wrgn23_dlwbr_dir600b)
+	$(call Image/Build/Template/$(fs_squash)/$(1),DIR300B1,dir-300-b1,DIR-300-B1,wrgn23_dlwbr_dir300b)
+	$(call Image/Build/Template/$(fs_squash)/$(1),DIR300B1,dir-600-b1,DIR-600-B1,wrgn23_dlwbr_dir600b)
+	$(call Image/Build/Template/$(fs_squash)/$(1),DIR300B1,dir-600-b2,DIR-600-B2,wrgn23_dlwbr_dir600b)
 endef
 
 mtdlayout_rtg32b1=mtdparts=spi0.0:192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
@@ -207,53 +232,61 @@ define Image/Build/Template/RTG32B1
 endef
 
 define Image/Build/Profile/RTG32B1
-	$(call Image/Build/Template/RTG32B1,$(1),rt-g32-b1,RT-G32-B1)
+	$(call Image/Build/Template/$(fs_squash)/$(1),RTG32B1,rt-g32-b1,RT-G32-B1)
 endef
 
 define Image/Build/Profile/ESR9753
-	$(call Image/Build/Template/GENERIC_4M,$(1),esr-9753,ESR-9753)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,esr-9753,ESR-9753)
 endef
 
-define Image/Build/Profile/FONERA20N
+define Image/Build/Template/FONERA20N
 	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N)
 	$(call BuildFirmware/Edimax,$(1),fonera20n,RSDK,NL1T,0x50000,0xc0000)
 endef
 
+define Image/Build/Profile/FONERA20N
+	$(call Image/Build/Template/$(fs_squash)/$(1),FONERA20N)
+endef
+
 define Image/Build/Profile/BC2
-	$(call Image/Build/Template/GENERIC_8M,$(1),bc2,BC2)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,bc2,BC2)
 endef
 
 mtdlayout_all0256n=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
-define Image/Build/Profile/ALL0256N
+define Image/Build/Template/ALL0256N
 	$(call BuildFirmware/Generic,$(1),all0256n,board=ALL0256N,mtdlayout_all0256n,851968,3014656)
 endef
 
+define Image/Build/Profile/ALL0256N
+	$(call Image/Build/Template/$(fs_squash)/$(1),ALL0256)
+endef
+
 define Image/Build/Profile/NBG419N
-	$(call Image/Build/Template/GENERIC_4M,$(1),nbg-419n,NBG-419N)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,nbg-419n,NBG-419N)
 endef
 
 define Image/Build/Profile/WL351
-	$(call Image/Build/Template/GENERIC_4M,$(1),wl-351,WL-351)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wl-351,WL-351)
 endef
 
 define Image/Build/Profile/NW718
-	$(call Image/Build/Template/NW718,$(1),nw718,NW718)
+	$(call Image/Build/Template/$(fs_squash)/$(1),NW718,nw718,NW718)
 endef
 
 define Image/Build/Profile/OMNIEMB
-	$(call Image/Build/Template/OMNIEMB,$(1),omni-emb,OMNI-EMB)
+	$(call Image/Build/Template/$(fs_squash)/$(1),OMNIEMB,omni-emb,OMNI-EMB)
 endef
 
 define Image/Build/Profile/PWH2004
-	$(call Image/Build/Template/GENERIC_8M,$(1),pwh2004,PWH2004)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,pwh2004,PWH2004)
 endef
 
 define Image/Build/Profile/V22RW2X2
-	$(call Image/Build/Template/GENERIC_4M,$(1),v22rw-2x2,V22RW-2X2)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,v22rw-2x2,V22RW-2X2)
 endef
 
 mtdlayout_whrg300n=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,960k(kernel),2752k(rootfs),64k(user)ro,3712k@0x50000(firmware)
-define Image/Build/Profile/WHRG300N
+define Image/Build/Template/WHRG300N
 	$(call Image/Build/Template/GENERIC_4M,$(1),whr-g300n,WHR-G300N)
 	$(call BuildFirmware/Buffalo,$(1),whr-g300n,WHR-G300N,mtdlayout_whrg300n,983040,3801088)
 	( \
@@ -265,21 +298,29 @@ define Image/Build/Profile/WHRG300N
 		-o $(call imgname,$(1),whr-g300n)-tftp.bin
 endef
 
+define Image/Build/Profile/WHRG300N
+	$(call Image/Build/Template/$(fs_squashfs)/$(1),WHRG300N)
+endef
+
 define Image/Build/Profile/HW5503G
-	$(call Image/Build/Template/GENERIC_8M,$(1),hw550-3g,HW550-3G)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,hw550-3g,HW550-3G)
 endef
 
 define Image/Build/Profile/MOFI35003GN
-	$(call Image/Build/Template/GENERIC_8M,$(1),mofi3500-3gn,MOFI3500-3GN)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,mofi3500-3gn,MOFI3500-3GN)
 endef
 
 define Image/Build/Profile/WCR150GN
-	$(call Image/Build/Template/GENERIC_4M,$(1),wcr150gn,WCR150GN)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wcr150gn,WCR150GN)
 endef
 
 w502u_cmdline=board=W502U console=ttyS1,115200
-define Image/Build/Profile/W502U
+define Image/Build/Template/W502U
 	$(call BuildFirmware/Generic,$(1),w502u,$(w502u_cmdline),mtdlayout_8M,$(kernel_size_8M),$(rootfs_size_8M))
+endef
+
+define Image/Build/Profile/W502U
+	$(call Image/Build/Template/$(fs_squash)/$(1),W502U)
 endef
 
 mtdlayout_argus_atp52b=mtdparts=physmap-flash.0:192k(bootloader)ro,64k(config),64k(factory),1152k(kernel),6656k(rootfs),7808k@0x50000(firmware)
@@ -290,7 +331,7 @@ define Image/Build/Template/ARGUS_ATP52B
 endef
 
 define Image/Build/Profile/ARGUS_ATP52B
-	$(call Image/Build/Template/ARGUS_ATP52B,$(1),argus_atp52b,ARGUS_ATP52B)
+	$(call Image/Build/Template/$(fs_squash)/$(1),ARGUS_ATP52B,argus_atp52b,ARGUS_ATP52B)
 endef
 
 mtdlayout_f5d8235=mtdparts=physmap-flash.0:320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(factory),7744k@0x50000(firmware)
@@ -301,7 +342,7 @@ define Image/Build/Template/F5D8235V2
 endef
 
 define Image/Build/Profile/F5D8235V2
-	$(call Image/Build/Template/F5D8235V2,$(1),f5d8235v2,F5D8235_V2)
+	$(call Image/Build/Template/$(fs_squash)/$(1),F5D8235V2,f5d8235v2,F5D8235_V2)
 endef
 
 define Image/Build/Template/F5D8235V1
@@ -309,12 +350,12 @@ define Image/Build/Template/F5D8235V1
 endef
 
 define Image/Build/Profile/WR5123GN
-	$(call Image/Build/Template/GENERIC_4M,$(1),wr512-3gn-4M,WR512-3GN)
-	$(call Image/Build/Template/GENERIC_8M,$(1),wr512-3gn-8M,WR512-3GN)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wr512-3gn-4M,WR512-3GN)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr512-3gn-8M,WR512-3GN)
 endef
 
 define Image/Build/Profile/SLR7205
-	$(call Image/Build/Template/GENERIC_4M,$(1),sl-r7205,SL-R7205)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,sl-r7205,SL-R7205)
 endef
 
 ifeq ($(CONFIG_RALINK_RT305X),y)
@@ -346,21 +387,29 @@ endef
 endif
 
 define Image/Build/Profile/F5D8235V1
-	$(call Image/Build/Template/F5D8235V1,$(1),f5d8235v1,F5D8235_V1)
+	$(call Image/Build/Template/$(fs_squash)/$(1),F5D8235V1,f5d8235v1,F5D8235_V1)
 endef
 
 define Image/Build/Profile/RTN15
-	$(call Image/Build/Template/GENERIC_4M,$(1),rt-n15,RT-N15)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,rt-n15,RT-N15)
 endef
 
 mtdlayout_v11stfe=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,1280k(kernel),2112k(rootfs),3392k@0x50000(firmware)
-define Image/Build/Profile/V11STFE
+define Image/Build/Template/V11STFE
 	$(call BuildFirmware/Generic,$(1),v11st-fe,board=V11ST-FE,mtdlayout_v11stfe,1310720,2162688)
 endef
 
+define Image/Build/Profile/V11STFE
+	$(call Image/Build/Template/$(fs_squash)/$(1),V11STFE)
+endef
+
 mtdlayout_wlitx4ag300n=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2880k(rootfs),64k(user)ro,3712k@0x50000(firmware)
-define Image/Build/Profile/WLITX4AG300N
+define Image/Build/Template/WLITX4AG300N
 	$(call BuildFirmware/Buffalo2,$(1),wli-tx4-ag300n,WLI-TX4-AG300N,mtdlayout_wlitx4ag300n,851968,2949120)
+endef
+
+define Image/Build/Profile/WLITX4AG300N
+	$(call Image/Build/Template/$(fs_squash)/$(1),WLITX4AG300N)
 endef
 
 ifeq ($(CONFIG_RALINK_RT288X),y)
@@ -371,6 +420,10 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WLITX4AG300N,$(1))
 endef
 endif
+
+define Image/Build/Initramfs
+	$(call Image/Build/Profile/$(PROFILE),initramfs)
+endef
 
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
