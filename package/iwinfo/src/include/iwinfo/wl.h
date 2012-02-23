@@ -26,7 +26,7 @@
 #include "iwinfo/api/broadcom.h"
 
 int wl_probe(const char *ifname);
-int wl_get_mode(const char *ifname, char *buf);
+int wl_get_mode(const char *ifname, int *buf);
 int wl_get_ssid(const char *ifname, char *buf);
 int wl_get_bssid(const char *ifname, char *buf);
 int wl_get_country(const char *ifname, char *buf);

@@ -82,7 +82,7 @@ void wl_close(void)
 	/* Nop */
 }
 
-int wl_get_mode(const char *ifname, char *buf)
+int wl_get_mode(const char *ifname, int *buf)
 {
 	int ret = -1;
 	int ap, infra, passive;
@@ -97,13 +97,13 @@ int wl_get_mode(const char *ifname, char *buf)
 		return ret;
 
 	if (passive)
-		sprintf(buf, "Monitor");
+		*buf = IWINFO_OPMODE_MONITOR;
 	else if (!infra)
-		sprintf(buf, "Ad-Hoc");
+		*buf = IWINFO_OPMODE_ADHOC;
 	else if (ap)
-		sprintf(buf, "Master");
+		*buf = IWINFO_OPMODE_MASTER;
 	else
-		sprintf(buf, "Client");
+		*buf = IWINFO_OPMODE_CLIENT;
 
 	return 0;
 }

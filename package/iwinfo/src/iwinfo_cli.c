@@ -391,10 +391,13 @@ static char * print_bssid(const struct iwinfo_ops *iw, const char *ifname)
 
 static char * print_mode(const struct iwinfo_ops *iw, const char *ifname)
 {
+	int mode;
 	static char buf[128];
 
-	if (iw->mode(ifname, buf))
-		snprintf(buf, sizeof(buf), "unknown");
+	if (iw->mode(ifname, &mode))
+		mode = IWINFO_OPMODE_UNKNOWN;
+
+	snprintf(buf, sizeof(buf), "%s", IWINFO_OPMODE_NAMES[mode]);
 
 	return buf;
 }
@@ -572,7 +575,7 @@ static void print_scanlist(const struct iwinfo_ops *iw, const char *ifname)
 		printf("          ESSID: %s\n",
 			format_ssid(e->ssid));
 		printf("          Mode: %s  Channel: %s\n",
-			e->mode ? (char *)e->mode : "unknown",
+			IWINFO_OPMODE_NAMES[e->mode],
 			format_channel(e->channel));
 		printf("          Signal: %s  Quality: %s/%s\n",
 			format_signal(e->signal - 0x100),

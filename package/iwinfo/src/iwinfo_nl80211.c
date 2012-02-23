@@ -700,7 +700,7 @@ void nl80211_close(void)
 	}
 }
 
-int nl80211_get_mode(const char *ifname, char *buf)
+int nl80211_get_mode(const char *ifname, int *buf)
 {
 	return wext_get_mode(ifname, buf);
 }
@@ -1525,9 +1525,9 @@ static int nl80211_get_scanlist_cb(struct nl_msg *msg, void *arg)
 	memcpy(sl->e->mac, nla_data(bss[NL80211_BSS_BSSID]), 6);
 
 	if (caps & (1<<1))
-		memcpy(sl->e->mode, "Ad-Hoc", 6);
+		sl->e->mode = IWINFO_OPMODE_ADHOC;
 	else
-		memcpy(sl->e->mode, "Master", 6);
+		sl->e->mode = IWINFO_OPMODE_MASTER;
 
 	if (caps & (1<<4))
 		sl->e->crypto.enabled = 1;
@@ -1568,7 +1568,6 @@ static int nl80211_get_scanlist_cb(struct nl_msg *msg, void *arg)
 
 static int nl80211_get_scanlist_nl(const char *ifname, char *buf, int *len)
 {
-	struct nl_msg *ssids = NULL;
 	struct nl80211_msg_conveyor *req;
 	struct nl80211_scanlist sl = { .e = (struct iwinfo_scanlist_entry *)buf };
 
@@ -1590,11 +1589,6 @@ static int nl80211_get_scanlist_nl(const char *ifname, char *buf, int *len)
 
 	*len = sl.len * sizeof(struct iwinfo_scanlist_entry);
 	return *len ? 0 : -1;
-
-nla_put_failure:
-	if (ssids)
-		nlmsg_free(ssids);
-	return -1;
 }
 
 int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
@@ -1652,7 +1646,7 @@ int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 				memcpy(e->ssid, ssid, min(strlen(ssid), sizeof(e->ssid) - 1));
 
 				/* Mode (assume master) */
-				sprintf((char *)e->mode, "Master");
+				e->mode = IWINFO_OPMODE_MASTER;
 
 				/* Channel */
 				e->channel = nl80211_freq2channel(freq);
@@ -1685,7 +1679,7 @@ int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 				nl80211_get_scancrypto(cipher, &e->crypto);
 
 				/* advance to next line */
-				while( *res && *res++ != '\n' );
+				while (*res && *res++ != '\n');
 
 				count++;
 				e++;

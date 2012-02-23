@@ -277,16 +277,17 @@ static inline void wext_fill_entry(struct stream_descr *stream, struct iw_event 
 			switch(event->u.mode)
 			{
 				case 1:
-					sprintf((char *) e->mode, "Ad-Hoc");
+					e->mode = IWINFO_OPMODE_ADHOC;
 					break;
 
 				case 2:
 				case 3:
-					sprintf((char *) e->mode, "Master");
+					e->mode = IWINFO_OPMODE_MASTER;
 					break;
 
 				default:
-					sprintf((char *) e->mode, "Unknown");
+					e->mode = IWINFO_OPMODE_UNKNOWN;
+					break;
 			}
 
 			break;
