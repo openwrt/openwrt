@@ -39,11 +39,22 @@ struct nl80211_state {
 	struct nl_sock *nl_sock;
 	struct nl_cache *nl_cache;
 	struct genl_family *nl80211;
+	struct genl_family *nlctrl;
 };
 
 struct nl80211_msg_conveyor {
 	struct nl_msg *msg;
 	struct nl_cb *cb;
+};
+
+struct nl80211_event_conveyor {
+	int wait;
+	int recv;
+};
+
+struct nl80211_group_conveyor {
+	const char *name;
+	int id;
 };
 
 struct nl80211_rssi_rate {
