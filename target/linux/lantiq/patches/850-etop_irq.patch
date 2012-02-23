@@ -1,7 +1,7 @@
 Index: linux-3.1.10/drivers/net/lantiq_etop.c
 ===================================================================
---- linux-3.1.10.orig/drivers/net/lantiq_etop.c	2012-02-09 10:07:01.180680919 +0100
-+++ linux-3.1.10/drivers/net/lantiq_etop.c	2012-02-09 10:11:00.996691173 +0100
+--- linux-3.1.10.orig/drivers/net/lantiq_etop.c	2012-02-23 09:06:47.274557678 +0100
++++ linux-3.1.10/drivers/net/lantiq_etop.c	2012-02-23 09:07:03.006558044 +0100
 @@ -203,8 +203,10 @@
  {
  	struct ltq_etop_chan *ch = container_of(napi,
@@ -33,7 +33,7 @@ Index: linux-3.1.10/drivers/net/lantiq_etop.c
  	return 1;
  }
  
-@@ -615,13 +621,17 @@
+@@ -615,13 +621,16 @@
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  	int i;
@@ -46,12 +46,11 @@ Index: linux-3.1.10/drivers/net/lantiq_etop.c
  			continue;
 +		spin_lock_irqsave(&priv->lock, flags);
  		ltq_dma_open(&ch->dma);
-+		ltq_dma_ack_irq(&ch->dma);
 +		spin_unlock_irqrestore(&priv->lock, flags);
  		napi_enable(&ch->napi);
  	}
  	if (priv->phydev)
-@@ -635,6 +645,7 @@
+@@ -635,6 +644,7 @@
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  	int i;
@@ -59,7 +58,7 @@ Index: linux-3.1.10/drivers/net/lantiq_etop.c
  
  	netif_tx_stop_all_queues(dev);
  	if (priv->phydev)
-@@ -645,7 +656,9 @@
+@@ -645,7 +655,9 @@
  		if (!IS_RX(i) && !IS_TX(i))
  			continue;
  		napi_disable(&ch->napi);
