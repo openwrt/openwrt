@@ -73,6 +73,18 @@ define Sysupgrade/KRuImage
 	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)))
 endef
 
+define mkmtd
+mtdparts=$(1):$(2)
+endef
+
+define mkmtd/phys
+$(call mkmtd,physmap-flash.0,$(1))
+endef
+
+define mkmtd/spi
+$(call mkmtd,spi0.0,$(1))
+endef
+
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(VMLINUX).elf
 	cp $(KDIR)/vmlinux $(BIN_DIR)/$(VMLINUX).bin
@@ -164,50 +176,52 @@ define Image/Build/Template/squashfs-only/squashfs
 	$(call Image/Build/Template/$(1),squashfs,$(2),$(3),$(4),$(5),$(6),$(7),$(8))
 endef
 
-mtdlayout_4M=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
+mtdlayout_4M=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
 define Image/Build/Template/GENERIC_4M
-	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(mtdlayout_4M),851968,3014656)
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)),851968,3014656)
 endef
 
 define Image/Build/Template/GENERIC_4M/initramfs
-	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(mtdlayout_4M))
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)))
 endef
 
-mtdlayout_8M=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),6976k(rootfs),7872k@0x50000(firmware)
+mtdlayout_8M=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),6976k(rootfs),7872k@0x50000(firmware)
 kernel_size_8M=917504
 rootfs_size_8M=7143424
 define Image/Build/Template/GENERIC_8M
-	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(mtdlayout_8M),$(kernel_size_8M),$(rootfs_size_8M))
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M)),$(kernel_size_8M),$(rootfs_size_8M))
 endef
 
 define Image/Build/Template/GENERIC_8M/initramfs
-	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(mtdlayout_8M))
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_8M)))
 endef
 
-mtdlayout_dir300b1=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
+mtdlayout_dir300b1=192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
 mtd_dir300b1_kernel_part_size=917504
 mtd_dir300b1_rootfs_part_size=2949120
 define Image/Build/Template/DIR300B1
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(mtdlayout_dir300b1),$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/phys,$(mtdlayout_dir300b1)),$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
 	mkwrgimg -s $(4) -d /dev/mtdblock/2 \
 		-i $(call sysupname,$(1),$(2)) \
 		-o $(call imgname,$(1),$(2))-factory.bin
 endef
 
-mtdlayout_nw718=mtdparts=spi0.0:192k(u-boot)ro,128k(config)ro,64k(factory)ro,832k(kernel),2880k(rootfs),3712k@0x60000(firmware)
+mtdlayout_nw718=192k(u-boot)ro,128k(config)ro,64k(factory)ro,832k(kernel),2880k(rootfs),3712k@0x60000(firmware)
+mtdparts_nw718=$(mkmtd/spi,$(mtdlayout_nw718))
 define Image/Build/Template/NW718
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(mtdlayout_nw718),851968,2949120)
-	$(call BuildFirmware/NW718,$(1),$(2),board=$(3) $(mtdlayout_nw718),851968,2949120)
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(mtdparts_nw718),851968,2949120)
+	$(call BuildFirmware/NW718,$(1),$(2),board=$(3) $(mtdparts_nw718),851968,2949120)
 endef
 
 define Image/Build/Profile/WR6202
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr6202,WR6202,ttyS1,115200)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr6202,WR6202,ttyS1,115200,phys)
 endef
 
-mtdlayout_sercomm_4M=mtdparts=physmap-flash.0:128k(u-boot)ro,64k(board-nvram)ro,64k(u-boot-env)ro,832k(kernel),2944k(rootfs),64k(signature-eRcOmM),3776k@0x40000(firmware),4096k@0x0(fullflash)
+mtdlayout_sercomm_4M=128k(u-boot)ro,64k(board-nvram)ro,64k(u-boot-env)ro,832k(kernel),2944k(rootfs),64k(signature-eRcOmM),3776k@0x40000(firmware),4096k@0x0(fullflash)
+mtdparts_sercomm_4M=$(call mkmtd/phys,$(mtdlayout_sercomm_4M))
 define Image/Build/Template/WL341V3
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(mtdlayout_sercomm_4M),851968,3014656)
-	$(call BuildFirmware/WL341V3,$(1),$(2),board=$(3) $(mtdlayout_sercomm_4M),851968,3014656)
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(mtdparts_sercomm_4M),851968,3014656)
+	$(call BuildFirmware/WL341V3,$(1),$(2),board=$(3) $(mtdparts_sercomm_4M),851968,3014656)
 endef
 
 define Image/Build/Profile/WL341V3
@@ -220,11 +234,11 @@ define Image/Build/Profile/DIR300B1
 	$(call Image/Build/Template/$(fs_squash)/$(1),DIR300B1,dir-600-b2,DIR-600-B2,wrgn23_dlwbr_dir600b)
 endef
 
-mtdlayout_rtg32b1=mtdparts=spi0.0:192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
+mtdlayout_rtg32b1=192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
 mtd_rtg32b1_kernel_part_size=851968
 mtd_rtg32b1_rootfs_part_size=3014656
 define Image/Build/Template/RTG32B1
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(mtdlayout_rtg32b1),$(mtd_rtg32b1_kernel_part_size),$(mtd_rtg32b1_rootfs_part_size))
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/spi,$(mtdlayout_rtg32b1)),$(mtd_rtg32b1_kernel_part_size),$(mtd_rtg32b1_rootfs_part_size))
 endef
 
 define Image/Build/Profile/RTG32B1
@@ -232,11 +246,11 @@ define Image/Build/Profile/RTG32B1
 endef
 
 define Image/Build/Profile/ESR9753
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,esr-9753,ESR-9753,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,esr-9753,ESR-9753,ttyS1,57600,phys)
 endef
 
 define Image/Build/Template/FONERA20N
-	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N,ttyS1,57600)
+	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N,ttyS1,57600,phys)
 	$(call BuildFirmware/Edimax,$(1),fonera20n,RSDK,NL1T,0x50000,0xc0000)
 endef
 
@@ -245,12 +259,11 @@ define Image/Build/Profile/FONERA20N
 endef
 
 define Image/Build/Profile/BC2
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,bc2,BC2,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,bc2,BC2,ttyS1,57600,phys)
 endef
 
-mtdlayout_all0256n=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
 define Image/Build/Template/ALL0256N
-	$(call BuildFirmware/Generic,$(1),all0256n,board=ALL0256N $(mtdlayout_all0256n),851968,3014656)
+	$(call BuildFirmware/Generic,$(1),all0256n,board=ALL0256N $(call mkmtd/spi,$(mtdlayout_4M)),851968,3014656)
 endef
 
 define Image/Build/Profile/ALL0256N
@@ -258,11 +271,11 @@ define Image/Build/Profile/ALL0256N
 endef
 
 define Image/Build/Profile/NBG419N
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,nbg-419n,NBG419N,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,nbg-419n,NBG419N,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/WL351
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wl-351,WL-351,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wl-351,WL-351,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/NW718
@@ -270,21 +283,21 @@ define Image/Build/Profile/NW718
 endef
 
 define Image/Build/Profile/OMNIEMB
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,omni-emb,OMNI-EMB,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,omni-emb,OMNI-EMB,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/PWH2004
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,pwh2004,PWH2004,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,pwh2004,PWH2004,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/V22RW2X2
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,v22rw-2x2,V22RW-2X2,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,v22rw-2x2,V22RW-2X2,ttyS1,57600,phys)
 endef
 
-mtdlayout_whrg300n=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,960k(kernel),2752k(rootfs),64k(user)ro,3712k@0x50000(firmware)
+mtdlayout_whrg300n=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,960k(kernel),2752k(rootfs),64k(user)ro,3712k@0x50000(firmware)
 define Image/Build/Template/WHRG300N
-	$(call Image/Build/Template/GENERIC_4M,$(1),whr-g300n,WHR-G300N,ttyS1,57600)
-	$(call BuildFirmware/Buffalo,$(1),whr-g300n,$(call mkcmdline,WHR-G300N,ttyS1,57600) $(mtdlayout_whrg300n),983040,3801088)
+	$(call Image/Build/Template/GENERIC_4M,$(1),whr-g300n,WHR-G300N,ttyS1,57600,phys)
+	$(call BuildFirmware/Buffalo,$(1),whr-g300n,$(call mkcmdline,WHR-G300N,ttyS1,57600) $(call mkmtd/phys,$(mtdlayout_whrg300n)),983040,3801088)
 	( \
 		echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
 			dd bs=512 count=1 conv=sync; \
@@ -299,37 +312,37 @@ define Image/Build/Profile/WHRG300N
 endef
 
 define Image/Build/Profile/HW5503G
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,hw550-3g,HW550-3G,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,hw550-3g,HW550-3G,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/MOFI35003GN
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,mofi3500-3gn,MOFI3500-3GN,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,mofi3500-3gn,MOFI3500-3GN,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/WCR150GN
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wcr150gn,WCR150GN,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wcr150gn,WCR150GN,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/W502U
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,w502u,W502U,ttyS1,115200)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,w502u,W502U,ttyS1,115200,phys)
 endef
 
-mtdlayout_argus_atp52b=mtdparts=physmap-flash.0:192k(bootloader)ro,64k(config),64k(factory),1152k(kernel),6656k(rootfs),7808k@0x50000(firmware)
+mtdlayout_argus_atp52b=192k(bootloader)ro,64k(config),64k(factory),1152k(kernel),6656k(rootfs),7808k@0x50000(firmware)
 mtd_argus_atp52b_kernel_part_size=1179648
 mtd_argus_atp52b_rootfs_part_size=6815744
 define Image/Build/Template/ARGUS_ATP52B
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(mtdlayout_argus_atp52b),$(mtd_argus_atp52b_kernel_part_size),$(mtd_argus_atp52b_rootfs_part_size))
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/phys,$(mtdlayout_argus_atp52b)),$(mtd_argus_atp52b_kernel_part_size),$(mtd_argus_atp52b_rootfs_part_size))
 endef
 
 define Image/Build/Profile/ARGUS_ATP52B
 	$(call Image/Build/Template/$(fs_squash)/$(1),ARGUS_ATP52B,argus_atp52b,ARGUS_ATP52B)
 endef
 
-mtdlayout_f5d8235=mtdparts=physmap-flash.0:320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(factory),7744k@0x50000(firmware)
+mtdlayout_f5d8235=320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(factory),7744k@0x50000(firmware)
 mtd_f5d8235_kernel_part_size=1572864
 mtd_f5d8235_rootfs_part_size=6356992
 define Image/Build/Template/F5D8235
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(mtdlayout_f5d8235),$(mtd_f5d8235_kernel_part_size),$(mtd_f5d8235_rootfs_part_size))
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/phys,$(mtdlayout_f5d8235)),$(mtd_f5d8235_kernel_part_size),$(mtd_f5d8235_rootfs_part_size))
 endef
 
 define Image/Build/Profile/F5D8235V2
@@ -337,12 +350,12 @@ define Image/Build/Profile/F5D8235V2
 endef
 
 define Image/Build/Profile/WR5123GN
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wr512-3gn-4M,WR512-3GN,ttyS1,57600)
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr512-3gn-8M,WR512-3GN,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wr512-3gn-4M,WR512-3GN,ttyS1,57600,phys)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr512-3gn-8M,WR512-3GN,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/SLR7205
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,sl-r7205,SL-R7205,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,sl-r7205,SL-R7205,ttyS1,57600,phys)
 endef
 
 ifeq ($(CONFIG_RALINK_RT305X),y)
@@ -378,16 +391,16 @@ define Image/Build/Profile/F5D8235V1
 endef
 
 define Image/Build/Profile/RTN15
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,rt-n15,RT-N15,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,rt-n15,RT-N15,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/V11STFE
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,v11st-fe,V11ST-FE,ttyS1,57600)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,v11st-fe,V11ST-FE,ttyS1,57600,phys)
 endef
 
-mtdlayout_wlitx4ag300n=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2880k(rootfs),64k(user)ro,3712k@0x50000(firmware)
+mtdlayout_wlitx4ag300n=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2880k(rootfs),64k(user)ro,3712k@0x50000(firmware)
 define Image/Build/Template/WLITX4AG300N
-	$(call BuildFirmware/Buffalo2,$(1),wli-tx4-ag300n,WLI-TX4-AG300N,$(mtdlayout_wlitx4ag300n),851968,2949120)
+	$(call BuildFirmware/Buffalo2,$(1),wli-tx4-ag300n,WLI-TX4-AG300N,$(call mkmtd/phys,$(mtdlayout_wlitx4ag300n)),851968,2949120)
 endef
 
 define Image/Build/Profile/WLITX4AG300N
