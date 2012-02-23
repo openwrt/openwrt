@@ -46,6 +46,11 @@ define MkImage
 		-d $(2) $(3)
 endef
 
+define MkImageLzma
+	$(call PatchKernelLzma,$(1),$(2))
+	$(call MkImage,lzma,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage)
+endef
+
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(VMLINUX).elf
 	cp $(KDIR)/vmlinux $(BIN_DIR)/$(VMLINUX).bin
@@ -56,8 +61,7 @@ define Image/BuildKernel
 endef
 
 define BuildFirmware/Generic
-	$(call PatchKernelLzma,$(2),$(3) $($(4)))
-	$(call MkImage,lzma,"$(KDIR)/vmlinux-$(2).bin.lzma","$(KDIR)/vmlinux-$(2).uImage")
+	$(call MkImageLzma,$(2),$(3) $($(4)))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).uImage"` -gt $(5) ]; then \
 		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(6) ]; then \
@@ -71,14 +75,12 @@ define BuildFirmware/Generic
 endef
 
 define BuildFirmware/Generic/initramfs
-	$(call PatchKernelLzma,$(2),$(3) $($(4)))
-	$(call MkImage,lzma,"$(KDIR)/vmlinux-$(2).bin.lzma","$(KDIR)/vmlinux-$(2).uImage")
+	$(call MkImageLzma,$(2),$(3) $($(4)))
 	$(CP) $(KDIR)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
 endef
 
 define BuildFirmware/WL341V3
-	$(call PatchKernelLzma,$(2),$(3) $($(4)))
-	$(call MkImage,lzma,"$(KDIR)/vmlinux-$(2).bin.lzma","$(KDIR)/vmlinux-$(2).uImage")
+	$(call MkImageLzma,$(2),$(3) $($(4)))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).uImage"` -gt $(5) ]; then \
 		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(6) ]; then \
@@ -99,8 +101,7 @@ define BuildFirmware/WL341V3
 endef
 
 define BuildFirmware/Buffalo
-	$(call PatchKernelLzma,$(2),board=$(3) $($(4)))
-	$(call MkImage,lzma,"$(KDIR)/vmlinux-$(2).bin.lzma","$(KDIR)/vmlinux-$(2).uImage")
+	$(call MkImageLzma,$(2),board=$(3) $($(4)))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).uImage"` -gt $(5) ]; then \
 		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
 	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(6) ]; then \
