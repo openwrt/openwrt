@@ -11,6 +11,10 @@ define imgname
 $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1)
 endef
 
+define sysupname
+$(call imgname,$(1),$(2))-sysupgrade.bin
+endef
+
 VMLINUX:=$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(IMG_PREFIX)-uImage
 fs_squash:=squashfs-only
@@ -51,6 +55,20 @@ define MkImageLzma
 	$(call MkImage,lzma,$(KDIR)/vmlinux-$(1).bin.lzma,$(KDIR)/vmlinux-$(1).uImage)
 endef
 
+define CatFiles
+	if [ `stat -c%s "$(1)"` -gt $(2) ]; then \
+		echo "Warning: $(1) is too big"; \
+	else if [ `stat -c%s $(3)` -gt $(4) ]; then \
+		echo "Warning: $(3) is too big"; \
+	else \
+		( dd if=$(1) bs=$(2) conv=sync; dd if=$(3) ) > $(5); \
+	fi; fi
+endef
+
+define Sysupgrade/KRuImage
+	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,$(3),$(KDIR)/root.$(1),$(4),$(call sysupname,$(1),$(2)))
+endef
+
 define Image/BuildKernel
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(VMLINUX).elf
 	cp $(KDIR)/vmlinux $(BIN_DIR)/$(VMLINUX).bin
@@ -62,16 +80,7 @@ endef
 
 define BuildFirmware/Generic
 	$(call MkImageLzma,$(2),$(3) $($(4)))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).uImage"` -gt $(5) ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(6) ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
-		( \
-			dd if=$(KDIR)/vmlinux-$(2).uImage bs=$(5) conv=sync; \
-			dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
-		) > $(call imgname,$(1),$(2))-sysupgrade.bin; \
-	fi; fi
+	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
 endef
 
 define BuildFirmware/Generic/initramfs
@@ -81,11 +90,8 @@ endef
 
 define BuildFirmware/WL341V3
 	$(call MkImageLzma,$(2),$(3) $($(4)))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).uImage"` -gt $(5) ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(6) ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
+	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			dd if=/dev/zero bs=195936 count=1; \
 			echo "1.01"; \
@@ -97,16 +103,13 @@ define BuildFirmware/WL341V3
 			dd if=/dev/zero bs=`expr 4194304 - 262144 - 16 - $(5) - \( \( \( \`stat -c%s $(KDIR)/root.$(1)\` / 65536 \) + 1 \) \* 65536 \)` count=1; \
 			echo -n -e "\x11\x03\x80\x00\x10\x12\x90\xF7\x65\x52\x63\x4F\x6D\x4D\x00\x00"; \
 		) > $(call imgname,$(1),$(2))-factory.bin; \
-	fi; fi
+	fi
 endef
 
 define BuildFirmware/Buffalo
 	$(call MkImageLzma,$(2),board=$(3) $($(4)))
-	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).uImage"` -gt $(5) ]; then \
-		echo "Warning: $(KDIR)/vmlinux-$(2).uImage is too big"; \
-	else if [ `stat -c%s $(KDIR)/root.$(1)` -gt $(6) ]; then \
-		echo "Warning: $(KDIR)/root.$(1) is too big"; \
-	else \
+	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		buffalo-enc -p $(3) -v 1.76 \
 			-i $(KDIR)/vmlinux-$(2).uImage \
 			-o $(KDIR)/vmlinux-$(2).uImage.enc; \
@@ -118,7 +121,7 @@ define BuildFirmware/Buffalo
 			-i $(KDIR)/vmlinux-$(2).uImage.enc \
 			-i $(KDIR)/root.$(2).enc \
 			-o $(call imgname,$(1),$(2))-factory-EU.bin; \
-	fi; fi
+	fi
 endef
 
 define BuildFirmware/Buffalo2
@@ -144,7 +147,7 @@ define BuildFirmware/NW718
 endef
 
 define BuildFirmware/Edimax
-	mkedimaximg -i $(call imgname,$(1),$(2))-sysupgrade.bin \
+	mkedimaximg -i $(call sysupname,$(1),$(2)) \
 		-o $(call imgname,$(1),$(2))-factory.bin \
 		-s $(3) -m $(4) -f $(5) -S $(6)
 endef
@@ -183,7 +186,7 @@ mtd_dir300b1_rootfs_part_size=2949120
 define Image/Build/Template/DIR300B1
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_dir300b1,$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
 	mkwrgimg -s $(4) -d /dev/mtdblock/2 \
-		-i $(call imgname,$(1),$(2))-sysupgrade.bin \
+		-i $(call sysupname,$(1),$(2)) \
 		-o $(call imgname,$(1),$(2))-factory.bin
 endef
 
@@ -293,7 +296,7 @@ define Image/Build/Template/WHRG300N
 	( \
 		echo -n -e "# Airstation FirmWare\nrun u_fw\nreset\n\n" | \
 			dd bs=512 count=1 conv=sync; \
-		dd if=$(call imgname,$(1),whr-g300n)-sysupgrade.bin; \
+		dd if=$(call sysupname,$(1),whr-g300n); \
 	) > $(KDIR)/whr-g300n-tftp.tmp
 	buffalo-tftp -i $(KDIR)/whr-g300n-tftp.tmp \
 		-o $(call imgname,$(1),whr-g300n)-tftp.bin
