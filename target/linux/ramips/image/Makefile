@@ -262,12 +262,8 @@ define Image/Build/Profile/BC2
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,bc2,BC2,ttyS1,57600,phys)
 endef
 
-define Image/Build/Template/ALL0256N
-	$(call BuildFirmware/Generic,$(1),all0256n,board=ALL0256N $(call mkmtd/spi,$(mtdlayout_4M)),851968,3014656)
-endef
-
 define Image/Build/Profile/ALL0256N
-	$(call Image/Build/Template/$(fs_squash)/$(1),ALL0256)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,all0256n,ALL0256N,ttyS1,57600,spi)
 endef
 
 define Image/Build/Profile/NBG419N
