@@ -401,8 +401,8 @@ static void wl_get_assoclist_cb(const char *ifname,
 		e->tx_rate.rate = sta.tx_rate;
 
 		/* ToDo: 11n */
-		e.rx_rate.mcs = -1;
-		e.tx_rate.mcs = -1;
+		e->rx_rate.mcs = -1;
+		e->tx_rate.mcs = -1;
 	}
 }
 
