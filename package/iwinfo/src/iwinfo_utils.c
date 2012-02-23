@@ -145,7 +145,7 @@ struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
 			(e->subsystem_device_id != id->subsystem_device_id))
 			continue;
 
-		return e;
+		return (struct iwinfo_hardware_entry *)e;
 	}
 
 	return NULL;
@@ -220,4 +220,107 @@ int iwinfo_hardware_id_from_mtd(struct iwinfo_hardware_id *id)
 	close(fd);
 
 	return (id->vendor_id && id->device_id) ? 0 : -1;
+}
+
+void iwinfo_parse_rsn(struct iwinfo_crypto_entry *c, uint8_t *data, uint8_t len,
+					  uint8_t defcipher, uint8_t defauth)
+{
+	uint16_t i, count;
+
+	static unsigned char ms_oui[3]        = { 0x00, 0x50, 0xf2 };
+	static unsigned char ieee80211_oui[3] = { 0x00, 0x0f, 0xac };
+
+	data += 2;
+	len -= 2;
+
+	if (!memcmp(data, ms_oui, 3))
+		c->wpa_version += 1;
+	else if (!memcmp(data, ieee80211_oui, 3))
+		c->wpa_version += 2;
+
+	if (len < 4)
+	{
+		c->group_ciphers |= defcipher;
+		c->pair_ciphers  |= defcipher;
+		c->auth_suites   |= defauth;
+		return;
+	}
+
+	if (!memcmp(data, ms_oui, 3) || !memcmp(data, ieee80211_oui, 3))
+	{
+		switch (data[3])
+		{
+			case 1: c->group_ciphers |= IWINFO_CIPHER_WEP40;  break;
+			case 2: c->group_ciphers |= IWINFO_CIPHER_TKIP;   break;
+			case 4: c->group_ciphers |= IWINFO_CIPHER_CCMP;   break;
+			case 5: c->group_ciphers |= IWINFO_CIPHER_WEP104; break;
+			case 6:  /* AES-128-CMAC */ break;
+			default: /* proprietary */  break;
+		}
+	}
+
+	data += 4;
+	len -= 4;
+
+	if (len < 2)
+	{
+		c->pair_ciphers |= defcipher;
+		c->auth_suites  |= defauth;
+		return;
+	}
+
+	count = data[0] | (data[1] << 8);
+	if (2 + (count * 4) > len)
+		return;
+
+	for (i = 0; i < count; i++)
+	{
+		if (!memcmp(data + 2 + (i * 4), ms_oui, 3) ||
+			!memcmp(data + 2 + (i * 4), ieee80211_oui, 3))
+		{
+			switch (data[2 + (i * 4) + 3])
+			{
+				case 1: c->pair_ciphers |= IWINFO_CIPHER_WEP40;  break;
+				case 2: c->pair_ciphers |= IWINFO_CIPHER_TKIP;   break;
+				case 4: c->pair_ciphers |= IWINFO_CIPHER_CCMP;   break;
+				case 5: c->pair_ciphers |= IWINFO_CIPHER_WEP104; break;
+				case 6:  /* AES-128-CMAC */ break;
+				default: /* proprietary */  break;
+			}
+		}
+	}
+
+	data += 2 + (count * 4);
+	len -= 2 + (count * 4);
+
+	if (len < 2)
+	{
+		c->auth_suites |= defauth;
+		return;
+	}
+
+	count = data[0] | (data[1] << 8);
+	if (2 + (count * 4) > len)
+		return;
+
+	for (i = 0; i < count; i++)
+	{
+		if (!memcmp(data + 2 + (i * 4), ms_oui, 3) ||
+			!memcmp(data + 2 + (i * 4), ieee80211_oui, 3))
+		{
+			switch (data[2 + (i * 4) + 3])
+			{
+				case 1: c->auth_suites |= IWINFO_KMGMT_8021x; break;
+				case 2: c->auth_suites |= IWINFO_KMGMT_PSK;   break;
+				case 3:  /* FT/IEEE 802.1X */                 break;
+				case 4:  /* FT/PSK */                         break;
+				case 5:  /* IEEE 802.1X/SHA-256 */            break;
+				case 6:  /* PSK/SHA-256 */                    break;
+				default: /* proprietary */                    break;
+			}
+		}
+	}
+
+	data += 2 + (count * 4);
+	len -= 2 + (count * 4);
 }

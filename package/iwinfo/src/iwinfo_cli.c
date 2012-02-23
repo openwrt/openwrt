@@ -230,19 +230,19 @@ static char * format_encryption(struct iwinfo_crypto_entry *c)
 				case 3:
 					snprintf(buf, sizeof(buf), "mixed WPA/WPA2 %s (%s)",
 						format_enc_suites(c->auth_suites),
-						format_enc_ciphers(c->pair_ciphers & c->group_ciphers));
+						format_enc_ciphers(c->pair_ciphers | c->group_ciphers));
 					break;
 
 				case 2:
 					snprintf(buf, sizeof(buf), "WPA2 %s (%s)",
 						format_enc_suites(c->auth_suites),
-						format_enc_ciphers(c->pair_ciphers & c->group_ciphers));
+						format_enc_ciphers(c->pair_ciphers | c->group_ciphers));
 					break;
 
 				case 1:
 					snprintf(buf, sizeof(buf), "WPA %s (%s)",
 						format_enc_suites(c->auth_suites),
-						format_enc_ciphers(c->pair_ciphers & c->group_ciphers));
+						format_enc_ciphers(c->pair_ciphers | c->group_ciphers));
 					break;
 			}
 		}

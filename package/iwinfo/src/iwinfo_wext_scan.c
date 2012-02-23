@@ -213,132 +213,28 @@ static inline int wext_extract_event(struct stream_descr *stream, struct iw_even
 	return 1;
 }
 
-static inline void wext_fill_wpa(unsigned char *iebuf, int buflen, struct iwinfo_scanlist_entry *e)
+static inline void wext_fill_wpa(unsigned char *iebuf, int ielen, struct iwinfo_scanlist_entry *e)
 {
-	int ielen = iebuf[1] + 2;
-	int offset = 2; /* Skip the IE id, and the length. */
-	unsigned char wpa1_oui[3] = {0x00, 0x50, 0xf2};
-	unsigned char wpa2_oui[3] = {0x00, 0x0f, 0xac};
-	unsigned char *wpa_oui;
-	int i;
-	uint16_t ver = 0;
-	uint16_t cnt = 0;
-	int wpa1 = 0, wpa2 = 0;
-	char buf[256];
+	static unsigned char ms_oui[3] = { 0x00, 0x50, 0xf2 };
 
-	struct iwinfo_crypto_entry *ce = &e->crypto;
-
-	if(ielen > buflen)
-		ielen = buflen;
-
-	switch(iebuf[0])
+	while (ielen >= 2 && ielen >= iebuf[1])
 	{
-		case 0x30:      /* WPA2 */
-			/* Check if we have enough data */
-			if(ielen < 4)
-				return;
-
-			wpa_oui = wpa2_oui;
+		switch (iebuf[0])
+		{
+		case 48: /* RSN */
+			iwinfo_parse_rsn(&e->crypto, iebuf + 2, iebuf[1],
+			                 IWINFO_CIPHER_CCMP, IWINFO_KMGMT_8021x);
 			break;
 
-		case 0xdd:      /* WPA or else */
-			wpa_oui = wpa1_oui;
-			/* Not all IEs that start with 0xdd are WPA.
-			*        * So check that the OUI is valid. */
-			if((ielen < 8) || ((memcmp(&iebuf[offset], wpa_oui, 3) != 0)
-				|| (iebuf[offset+3] != 0x01)))
-					return;
-
-			offset += 4;
+		case 221: /* Vendor */
+			if (iebuf[1] >= 4 && !memcmp(iebuf + 2, ms_oui, 3) && iebuf[5] == 1)
+				iwinfo_parse_rsn(&e->crypto, iebuf + 6, iebuf[1] - 4,
+				                 IWINFO_CIPHER_TKIP, IWINFO_KMGMT_PSK);
 			break;
+		}
 
-		default:
-			return;
-	}
-
-	/* Pick version number (little endian) */
-	ver = iebuf[offset] | (iebuf[offset + 1] << 8);
-	offset += 2;
-
-	if(iebuf[0] == 0xdd)
-		wpa1 = 1;
-
-	if(iebuf[0] == 0x30)
-		wpa2 = 1;
-
-	if( wpa1 && (ce->wpa_version == 2) )
-		ce->wpa_version = 3;
-	else if( wpa2 && (ce->wpa_version == 1) )
-		ce->wpa_version = 3;
-	else if( wpa1 && !ce->wpa_version )
-		ce->wpa_version = 1;
-	else if( wpa2 && !ce->wpa_version )
-		ce->wpa_version = 2;
-
-	if(ielen < (offset + 4))
-	{
-		ce->group_ciphers |= (1<<2); /* TKIP */
-		ce->pair_ciphers  |= (1<<2); /* TKIP */
-		ce->auth_suites   |= (1<<2); /* PSK */
-		return;
-	}
-
-	if(memcmp(&iebuf[offset], wpa_oui, 3) != 0)
-		ce->group_ciphers |= (1<<7); /* Proprietary */
-	else
-		ce->group_ciphers |= (1<<iebuf[offset+3]);
-
-	offset += 4;
-
-	if(ielen < (offset + 2))
-	{
-		ce->pair_ciphers |= (1<<2); /* TKIP */
-		ce->auth_suites  |= (1<<2); /* PSK */
-		return;
-	}
-
-	/* Otherwise, we have some number of pairwise ciphers. */
-	cnt = iebuf[offset] | (iebuf[offset + 1] << 8);
-	offset += 2;
-
-	if(ielen < (offset + 4*cnt))
-		return;
-
-	*buf = '\0';
-	for(i = 0; i < cnt; i++)
-	{
-		if(memcmp(&iebuf[offset], wpa_oui, 3) != 0)
-			ce->pair_ciphers |= (1<<7); /* Proprietary */
-		else if(iebuf[offset+3] <= IW_IE_CYPHER_NUM)
-			ce->pair_ciphers |= (1<<iebuf[offset+3]);
-		//else
-		//	ce->pair_ciphers[ce->pair_cipher_num++] = 255; /* Unknown */
-
-		offset += 4;
-	}
-
-	/* Check if we are done */
-	if(ielen < (offset + 2))
-		return;
-
-	/* Now, we have authentication suites. */
-	cnt = iebuf[offset] | (iebuf[offset + 1] << 8);
-	offset += 2;
-	*buf = '\0';
-
-	if(ielen < (offset + 4*cnt))
-		return;
-
-	for(i = 0; i < cnt; i++)
-	{
-		if(memcmp(&iebuf[offset], wpa_oui, 3) != 0)
-			ce->auth_suites |= (1<<7); /* Proprietary */
-		else if(iebuf[offset+3] <= IW_IE_KEY_MGMT_NUM)
-			ce->auth_suites |= (1<<iebuf[offset+3]);
-		//else
-		//	ce->auth_suites[ce->auth_suite_num++] = 255; /* Unknown */
-
-		offset += 4;
+		ielen -= iebuf[1] + 2;
+		iebuf += iebuf[1] + 2;
 	}
 }
 
@@ -433,23 +329,7 @@ static inline void wext_fill_entry(struct stream_descr *stream, struct iw_event 
 			break;
 #endif
 		 case IWEVGENIE:
-			i = 0;
-
-			while(i <= (event->u.data.length - 2))
-			{
-				switch(((unsigned char *)event->u.data.pointer)[i])
-				{
-					case 0xdd:  /* WPA1 (and other) */
-					case 0x30:  /* WPA2 */
-						wext_fill_wpa((unsigned char *)event->u.data.pointer + i,
-							event->u.data.length, e);
-
-						break;
-				}
-
-				i += ((unsigned char *)event->u.data.pointer)[i+1] + 2;
-			}
-
+			wext_fill_wpa(event->u.data.pointer, event->u.data.length, e);
 			break;
 	}
 }
