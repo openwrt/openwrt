@@ -104,9 +104,9 @@ define BuildFirmware/Generic/initramfs
 	$(CP) $(KDIR)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
 endef
 
-mtdlayout_4M=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
+mtdlayout_4M=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
 define BuildFirmware/GENERIC_4M
-	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)),851968,3014656)
+	$(call BuildFirmware/Generic,$(1),$(2),$(call mkcmdline,$(3),$(4),$(5)) $(call mkmtd/$(6),$(mtdlayout_4M)),917504,2949120)
 endef
 
 define BuildFirmware/GENERIC_4M/initramfs
@@ -182,9 +182,9 @@ define BuildFirmware/FONERA20N
 	$(call BuildFirmware/Edimax,$(1),fonera20n,RSDK,NL1T,0x50000,0xc0000)
 endef
 
-mtdlayout_nw718=192k(u-boot)ro,128k(config)ro,64k(factory)ro,832k(kernel),2880k(rootfs),3712k@0x60000(firmware)
-kernel_size_nw718=851968
-rootfs_size_nw718=2949120
+mtdlayout_nw718=192k(u-boot)ro,128k(config)ro,64k(factory)ro,896k(kernel),2816k(rootfs),3712k@0x60000(firmware)
+kernel_size_nw718=917504
+rootfs_size_nw718=2883584
 cmdline_nw718=$(call mkcmdline,NW718,ttyS1,57600) $(call mkmtd/spi,$(mtdlayout_nw718))
 define BuildFirmware/NW718
 	$(call BuildFirmware/Generic,$(1),$(2),$(cmdline_nw718),$(kernel_size_nw718),$(rootfs_size_nw718))
@@ -196,9 +196,9 @@ define BuildFirmware/NW718
 	$(call CatFiles,$(KDIR)/vmlinux-$(2).uImage,$(kernel_size_nw718),$(KDIR)/root.$(1),$(rootfs_size_nw718),$(call imgname,$(1),$(2))-factory.bin)
 endef
 
-mtdlayout_rtg32b1=192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,832k(kernel),2944k(rootfs),3776k@0x50000(firmware)
-mtd_rtg32b1_kernel_part_size=851968
-mtd_rtg32b1_rootfs_part_size=3014656
+mtdlayout_rtg32b1=192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
+mtd_rtg32b1_kernel_part_size=917504
+mtd_rtg32b1_rootfs_part_size=2949120
 define BuildFirmware/RTG32B1
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/spi,$(mtdlayout_rtg32b1)),$(mtd_rtg32b1_kernel_part_size),$(mtd_rtg32b1_rootfs_part_size))
 endef
@@ -216,9 +216,9 @@ define BuildFirmware/WHRG300N
 		-o $(call imgname,$(1),whr-g300n)-tftp.bin
 endef
 
-mtdlayout_wl341v3=128k(u-boot)ro,64k(board-nvram)ro,64k(u-boot-env)ro,832k(kernel),2944k(rootfs),64k(signature-eRcOmM),3776k@0x40000(firmware),4096k@0x0(fullflash)
-kernel_size_wl341v3=851968
-rootfs_size_wl341v3=3014656
+mtdlayout_wl341v3=128k(u-boot)ro,64k(board-nvram)ro,64k(u-boot-env)ro,896k(kernel),2880k(rootfs),64k(signature-eRcOmM),3776k@0x40000(firmware),4096k@0x0(fullflash)
+kernel_size_wl341v3=917504
+rootfs_size_wl341v3=2949120
 define BuildFirmware/WL341V3
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/phys,$(mtdlayout_wl341v3)),$(kernel_size_wl341v3),$(rootfs_size_wl341v3))
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
@@ -236,9 +236,9 @@ define BuildFirmware/WL341V3
 	fi
 endef
 
-mtdlayout_wlitx4ag300n=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,832k(kernel),2880k(rootfs),64k(user)ro,3712k@0x50000(firmware)
+mtdlayout_wlitx4ag300n=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,896k(kernel),2816k(rootfs),64k(user)ro,3712k@0x50000(firmware)
 define BuildFirmware/WLITX4AG300N
-	$(call BuildFirmware/Buffalo2,$(1),wli-tx4-ag300n,WLI-TX4-AG300N,$(call mkmtd/phys,$(mtdlayout_wlitx4ag300n)),851968,2949120)
+	$(call BuildFirmware/Buffalo2,$(1),wli-tx4-ag300n,WLI-TX4-AG300N,$(call mkmtd/phys,$(mtdlayout_wlitx4ag300n)),917504,2883584)
 endef
 
 #
