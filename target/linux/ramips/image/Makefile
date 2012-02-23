@@ -200,20 +200,8 @@ define Image/Build/Template/NW718
 	$(call BuildFirmware/NW718,$(1),$(2),board=$(3),mtdlayout_nw718,851968,2949120)
 endef
 
-console_WR6202=ttyS1,115200
-mtdlayout_WR6202=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,1024k(kernel),6848k(rootfs),7872k@0x50000(firmware)
-define Image/Build/Template/WR6202
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) console=$(console_WR6202),mtdlayout_WR6202,1048576,7012352)
-endef
-
 define Image/Build/Profile/WR6202
-	$(call Image/Build/Template/$(fs_squash)/$(1),WR6202,wr6202,WR6202)
-endef
-
-console_OMNIEMB=ttyS1,57600
-mtdlayout_ONMIEMB=mtdparts=physmap-flash.0:192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,1024k(kernel),6848k(rootfs),7872k@0x50000(firmware)
-define Image/Build/Template/OMNIEMB
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) console=$(console_OMNIEMB),mtdlayout_OMNIEMB,1048576,7012352)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr6202,WR6202,ttyS1,115200)
 endef
 
 mtdlayout_sercomm_4M=mtdparts=physmap-flash.0:128k(u-boot)ro,64k(board-nvram)ro,64k(u-boot-env)ro,832k(kernel),2944k(rootfs),64k(signature-eRcOmM),3776k@0x40000(firmware),4096k@0x0(fullflash)
@@ -282,7 +270,7 @@ define Image/Build/Profile/NW718
 endef
 
 define Image/Build/Profile/OMNIEMB
-	$(call Image/Build/Template/$(fs_squash)/$(1),OMNIEMB,omni-emb,OMNI-EMB)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,omni-emb,OMNI-EMB,ttyS1,57600)
 endef
 
 define Image/Build/Profile/PWH2004
@@ -322,13 +310,8 @@ define Image/Build/Profile/WCR150GN
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,wcr150gn,WCR150GN,ttyS1,57600)
 endef
 
-w502u_cmdline=board=W502U console=ttyS1,115200
-define Image/Build/Template/W502U
-	$(call BuildFirmware/Generic,$(1),w502u,$(w502u_cmdline),mtdlayout_8M,$(kernel_size_8M),$(rootfs_size_8M))
-endef
-
 define Image/Build/Profile/W502U
-	$(call Image/Build/Template/$(fs_squash)/$(1),W502U)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,w502u,W502U,ttyS1,115200)
 endef
 
 mtdlayout_argus_atp52b=mtdparts=physmap-flash.0:192k(bootloader)ro,64k(config),64k(factory),1152k(kernel),6656k(rootfs),7808k@0x50000(firmware)
