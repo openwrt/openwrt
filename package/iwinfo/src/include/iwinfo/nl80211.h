@@ -68,7 +68,7 @@ struct nl80211_array_buf {
 };
 
 int nl80211_probe(const char *ifname);
-int nl80211_get_mode(const char *ifname, char *buf);
+int nl80211_get_mode(const char *ifname, int *buf);
 int nl80211_get_ssid(const char *ifname, char *buf);
 int nl80211_get_bssid(const char *ifname, char *buf);
 int nl80211_get_country(const char *ifname, char *buf);

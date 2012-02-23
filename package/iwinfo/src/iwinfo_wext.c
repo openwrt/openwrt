@@ -70,7 +70,7 @@ void wext_close(void)
 	/* Nop */
 }
 
-int wext_get_mode(const char *ifname, char *buf)
+int wext_get_mode(const char *ifname, int *buf)
 {
 	struct iwreq wrq;
 
@@ -78,36 +78,25 @@ int wext_get_mode(const char *ifname, char *buf)
 	{
 		switch(wrq.u.mode)
 		{
-			case 0:
-				sprintf(buf, "Auto");
-				break;
-
 			case 1:
-				sprintf(buf, "Ad-Hoc");
+				*buf = IWINFO_OPMODE_ADHOC;
 				break;
 
 			case 2:
-				sprintf(buf, "Client");
+				*buf = IWINFO_OPMODE_CLIENT;
 				break;
 
 			case 3:
-				sprintf(buf, "Master");
-				break;
-
-			case 4:
-				sprintf(buf, "Repeater");
-				break;
-
-			case 5:
-				sprintf(buf, "Secondary");
+				*buf = IWINFO_OPMODE_MASTER;
 				break;
 
 			case 6:
-				sprintf(buf, "Monitor");
+				*buf = IWINFO_OPMODE_MONITOR;
 				break;
 
 			default:
-				sprintf(buf, "Unknown");
+				*buf = IWINFO_OPMODE_UNKNOWN;
+				break;
 		}
 
 		return 0;

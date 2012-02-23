@@ -333,7 +333,7 @@ void madwifi_close(void)
 	/* Nop */
 }
 
-int madwifi_get_mode(const char *ifname, char *buf)
+int madwifi_get_mode(const char *ifname, int *buf)
 {
 	return wext_get_mode(ifname, buf);
 }

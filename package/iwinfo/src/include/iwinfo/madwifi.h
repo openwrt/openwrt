@@ -26,7 +26,7 @@
 #include "iwinfo/api/madwifi.h"
 
 int madwifi_probe(const char *ifname);
-int madwifi_get_mode(const char *ifname, char *buf);
+int madwifi_get_mode(const char *ifname, int *buf);
 int madwifi_get_ssid(const char *ifname, char *buf);
 int madwifi_get_bssid(const char *ifname, char *buf);
 int madwifi_get_country(const char *ifname, char *buf);

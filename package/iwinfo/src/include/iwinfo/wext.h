@@ -27,7 +27,7 @@
 
 
 int wext_probe(const char *ifname);
-int wext_get_mode(const char *ifname, char *buf);
+int wext_get_mode(const char *ifname, int *buf);
 int wext_get_ssid(const char *ifname, char *buf);
 int wext_get_bssid(const char *ifname, char *buf);
 int wext_get_country(const char *ifname, char *buf);

@@ -44,6 +44,14 @@ const char *IWINFO_AUTH_NAMES[] = {
 	"SHARED",
 };
 
+const char *IWINFO_OPMODE_NAMES[] = {
+	"Unknown",
+	"Master",
+	"Ad-Hoc",
+	"Client",
+	"Monitor",
+};
+
 
 /*
  * ISO3166 country labels
