@@ -328,16 +328,12 @@ endef
 mtdlayout_f5d8235=mtdparts=physmap-flash.0:320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(factory),7744k@0x50000(firmware)
 mtd_f5d8235_kernel_part_size=1572864
 mtd_f5d8235_rootfs_part_size=6356992
-define Image/Build/Template/F5D8235V2
+define Image/Build/Template/F5D8235
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_f5d8235,$(mtd_f5d8235_kernel_part_size),$(mtd_f5d8235_rootfs_part_size))
 endef
 
 define Image/Build/Profile/F5D8235V2
-	$(call Image/Build/Template/$(fs_squash)/$(1),F5D8235V2,f5d8235v2,F5D8235_V2)
-endef
-
-define Image/Build/Template/F5D8235V1
-	$(call BuildFirmware/Generic,$(1),$(2),board=$(3),mtdlayout_f5d8235,$(mtd_f5d8235_kernel_part_size),$(mtd_f5d8235_rootfs_part_size))
+	$(call Image/Build/Template/$(fs_squash)/$(1),F5D8235,f5d8235v2,F5D8235_V2)
 endef
 
 define Image/Build/Profile/WR5123GN
@@ -378,7 +374,7 @@ endef
 endif
 
 define Image/Build/Profile/F5D8235V1
-	$(call Image/Build/Template/$(fs_squash)/$(1),F5D8235V1,f5d8235v1,F5D8235_V1)
+	$(call Image/Build/Template/$(fs_squash)/$(1),F5D8235,f5d8235v1,F5D8235_V1)
 endef
 
 define Image/Build/Profile/RTN15
