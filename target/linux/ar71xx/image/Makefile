@@ -273,7 +273,7 @@ define Image/Build/UBNTXM
 	$(call Sysupgrade/KRuImage,$(1),$(2),1048576,6684672)
 	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage of=$(KDIR_TMP)/vmlinux-$(2).uImage.bin bs=1024k conv=sync
 	-$(STAGING_DIR_HOST)/bin/mkfwimage \
-		-B $(4) -v $(5).$(6).v5.x.x-OpenWrt-$(REVISION) \
+		-B $(4) -v $(5).$(6).v6.0.0-OpenWrt-$(REVISION) \
 		-k $(KDIR_TMP)/vmlinux-$(2).uImage.bin \
 		-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		-o $(call factoryname,$(1),$(2))
