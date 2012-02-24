@@ -235,12 +235,6 @@ struct device * wl_glue_get_dmadev(void *dev)
 {
 	struct device *dma_dev;
 
-	if (!wl_glue_attached)
-	{
-		BUG();
-		return NULL;
-	}
-
 	switch (active_bus_type)
 	{
 #ifdef CONFIG_SSB
