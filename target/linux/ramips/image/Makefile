@@ -165,9 +165,11 @@ define BuildFirmware/DIR300B1
 endef
 
 define BuildFirmware/Edimax
-	mkedimaximg -i $(call sysupname,$(1),$(2)) \
-		-o $(call imgname,$(1),$(2))-factory.bin \
-		-s $(3) -m $(4) -f $(5) -S $(6)
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		mkedimaximg -i $(call sysupname,$(1),$(2)) \
+			-o $(call imgname,$(1),$(2))-factory.bin \
+			-s $(3) -m $(4) -f $(5) -S $(6); \
+	fi
 endef
 
 mtdlayout_f5d8235=320k(u-boot)ro,1536k(kernel),6208k(rootfs),64k(nvram),64k(factory),7744k@0x50000(firmware)
@@ -178,7 +180,7 @@ define BuildFirmware/F5D8235
 endef
 
 define BuildFirmware/FONERA20N
-	$(call Image/Build/Template/GENERIC_8M,$(1),fonera20n,FONERA20N,ttyS1,57600,phys)
+	$(call BuildFirmware/GENERIC_8M,$(1),fonera20n,FONERA20N,ttyS1,57600,phys)
 	$(call BuildFirmware/Edimax,$(1),fonera20n,RSDK,NL1T,0x50000,0xc0000)
 endef
 
