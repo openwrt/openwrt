@@ -755,21 +755,27 @@ static irqreturn_t
 ramips_eth_irq(int irq, void *dev)
 {
 	struct raeth_priv *re = netdev_priv(dev);
-	unsigned long fe_int = ramips_fe_rr(RAMIPS_FE_INT_STATUS);
+	unsigned int status;
 
-	ramips_fe_wr(0xFFFFFFFF, RAMIPS_FE_INT_STATUS);
+	status = ramips_fe_rr(RAMIPS_FE_INT_STATUS);
+	status &= ramips_fe_rr(RAMIPS_FE_INT_ENABLE);
 
-	if (fe_int & RAMIPS_RX_DLY_INT) {
+	if (!status)
+		return IRQ_NONE;
+
+	ramips_fe_wr(status, RAMIPS_FE_INT_STATUS);
+
+	if (status & RAMIPS_RX_DLY_INT) {
 		ramips_fe_int_disable(RAMIPS_RX_DLY_INT);
 		tasklet_schedule(&re->rx_tasklet);
 	}
 
-	if (fe_int & RAMIPS_TX_DLY_INT) {
+	if (status & RAMIPS_TX_DLY_INT) {
 		ramips_fe_int_disable(RAMIPS_TX_DLY_INT);
 		tasklet_schedule(&re->tx_housekeeping_tasklet);
 	}
 
-	raeth_debugfs_update_int_stats(re, fe_int);
+	raeth_debugfs_update_int_stats(re, status);
 
 	return IRQ_HANDLED;
 }
