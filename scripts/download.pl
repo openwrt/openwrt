@@ -123,7 +123,7 @@ foreach my $mirror (@ARGV) {
 	if ($mirror =~ /^\@SF\/(.+)$/) {
 		# give sourceforge a few more tries, because it redirects to different mirrors
 		for (1 .. 5) {
-			push @mirrors, "http://downloads.sourceforge.net/$1";
+			push @mirrors, "http://downloads.sourceforge.net/project/$1";
 		}
 	} elsif ($mirror =~ /^\@GNU\/(.+)$/) {
 		push @mirrors, "ftp://ftp.gnu.org/gnu/$1";
