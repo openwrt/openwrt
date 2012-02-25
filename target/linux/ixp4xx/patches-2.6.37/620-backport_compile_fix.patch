@@ -1,0 +1,11 @@
+--- a/arch/arm/mm/proc-xscale.S
++++ b/arch/arm/mm/proc-xscale.S
+@@ -395,7 +395,7 @@
+ 	teq	r2, #DMA_TO_DEVICE
+ 	beq	xscale_dma_clean_range
+ 	b	xscale_dma_flush_range
+-ENDPROC(xscsale_dma_a0_map_area)
++ENDPROC(xscale_dma_a0_map_area)
+ 
+ /*
+  *	dma_unmap_area(start, size, dir)
