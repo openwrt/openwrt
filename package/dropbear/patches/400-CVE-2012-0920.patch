@@ -1,0 +1,91 @@
+
+# HG changeset patch
+# User Matt Johnston <matt@ucc.asn.au>
+# Date 1322947885 -28800
+# Node ID 818108bf7749bfecd4715a30e2583aac9dbe25e8
+# Parent  5e8d84f3ee7256d054ecf7e9f248765ccaa7f24f
+- Fix use-after-free if multiple command requests were sent. Move
+the original_command into chansess struct since that makes more sense
+
+--- a/auth.h
++++ b/auth.h
+@@ -133,7 +133,6 @@ struct PubKeyOptions {
+ 	int no_pty_flag;
+ 	/* "command=" option. */
+ 	unsigned char * forced_command;
+-	unsigned char * original_command;
+ };
+ #endif
+ 
+--- a/chansession.h
++++ b/chansession.h
+@@ -69,6 +69,10 @@ struct ChanSess {
+ 	char * agentfile;
+ 	char * agentdir;
+ #endif
++
++#ifdef ENABLE_SVR_PUBKEY_OPTIONS
++	char *original_command;
++#endif
+ };
+ 
+ struct ChildPid {
+--- a/svr-authpubkeyoptions.c
++++ b/svr-authpubkeyoptions.c
+@@ -92,14 +92,15 @@ int svr_pubkey_allows_pty() {
+  * by any 'command' public key option. */
+ void svr_pubkey_set_forced_command(struct ChanSess *chansess) {
+ 	if (ses.authstate.pubkey_options) {
+-		ses.authstate.pubkey_options->original_command = chansess->cmd;
+-		if (!chansess->cmd)
+-		{
+-			ses.authstate.pubkey_options->original_command = m_strdup("");
++		if (chansess->cmd) {
++			/* original_command takes ownership */
++			chansess->original_command = chansess->cmd;
++		} else {
++			chansess->original_command = m_strdup("");
+ 		}
+-		chansess->cmd = ses.authstate.pubkey_options->forced_command;
++		chansess->cmd = m_strdup(ses.authstate.pubkey_options->forced_command);
+ #ifdef LOG_COMMANDS
+-		dropbear_log(LOG_INFO, "Command forced to '%s'", ses.authstate.pubkey_options->original_command);
++		dropbear_log(LOG_INFO, "Command forced to '%s'", chansess->original_command);
+ #endif
+ 	}
+ }
+--- a/svr-chansession.c
++++ b/svr-chansession.c
+@@ -217,6 +217,8 @@ static int newchansess(struct Channel *c
+ 
+ 	struct ChanSess *chansess;
+ 
++	TRACE(("new chansess %p", channel))
++
+ 	dropbear_assert(channel->typedata == NULL);
+ 
+ 	chansess = (struct ChanSess*)m_malloc(sizeof(struct ChanSess));
+@@ -279,6 +281,10 @@ static void closechansess(struct Channel
+ 	m_free(chansess->cmd);
+ 	m_free(chansess->term);
+ 
++#ifdef ENABLE_SVR_PUBKEY_OPTIONS
++	m_free(chansess->original_command);
++#endif
++
+ 	if (chansess->tty) {
+ 		/* write the utmp/wtmp login record */
+ 		li = chansess_login_alloc(chansess);
+@@ -924,10 +930,8 @@ static void execchild(void *user_data) {
+ 	}
+ 	
+ #ifdef ENABLE_SVR_PUBKEY_OPTIONS
+-	if (ses.authstate.pubkey_options &&
+-			ses.authstate.pubkey_options->original_command) {
+-		addnewvar("SSH_ORIGINAL_COMMAND", 
+-			ses.authstate.pubkey_options->original_command);
++	if (chansess->original_command) {
++		addnewvar("SSH_ORIGINAL_COMMAND", chansess->original_command);
+ 	}
+ #endif
+ 
