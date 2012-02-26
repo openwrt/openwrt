@@ -717,13 +717,15 @@ ramips_eth_rx_hw(unsigned long ptr)
 	int rx;
 	int max_rx = 16;
 
+	rx = ramips_fe_rr(RAMIPS_RX_CALC_IDX0);
+
 	while (max_rx) {
 		struct raeth_rx_info *rxi;
 		struct ramips_rx_dma *rxd;
 		struct sk_buff *rx_skb, *new_skb;
 		int pktlen;
 
-		rx = (ramips_fe_rr(RAMIPS_RX_CALC_IDX0) + 1) % NUM_RX_DESC;
+		rx = (rx + 1) % NUM_RX_DESC;
 
 		rxi = &re->rx_info[rx];
 		rxd = rxi->rx_desc;
