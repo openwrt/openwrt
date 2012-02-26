@@ -218,6 +218,13 @@ struct raeth_tx_info {
 	struct sk_buff		*tx_skb;
 };
 
+struct raeth_rx_info {
+	struct ramips_rx_dma	*rx_desc;
+	struct sk_buff		*rx_skb;
+	dma_addr_t		rx_dma;
+	unsigned int		pad;
+};
+
 struct raeth_int_stats {
 	unsigned long		rx_delayed;
 	unsigned long		tx_delayed;
@@ -246,11 +253,10 @@ struct raeth_debug {
 
 struct raeth_priv
 {
+	struct raeth_rx_info	*rx_info;
 	dma_addr_t		rx_desc_dma;
 	struct tasklet_struct	rx_tasklet;
 	struct ramips_rx_dma	*rx;
-	struct sk_buff		*rx_skb[NUM_RX_DESC];
-	dma_addr_t		rx_dma[NUM_RX_DESC];
 
 	struct raeth_tx_info	*tx_info;
 	dma_addr_t		tx_desc_dma;
