@@ -213,6 +213,11 @@ struct ramips_tx_dma {
 	unsigned int txd4;
 } __packed __aligned(4);
 
+struct raeth_tx_info {
+	struct ramips_tx_dma	*tx_desc;
+	struct sk_buff		*tx_skb;
+};
+
 struct raeth_int_stats {
 	unsigned long		rx_delayed;
 	unsigned long		tx_delayed;
@@ -247,10 +252,10 @@ struct raeth_priv
 	struct sk_buff		*rx_skb[NUM_RX_DESC];
 	dma_addr_t		rx_dma[NUM_RX_DESC];
 
+	struct raeth_tx_info	*tx_info;
 	dma_addr_t		tx_desc_dma;
 	struct tasklet_struct	tx_housekeeping_tasklet;
 	struct ramips_tx_dma	*tx;
-	struct sk_buff		*tx_skb[NUM_TX_DESC];
 
 	unsigned int		skb_free_idx;
 
