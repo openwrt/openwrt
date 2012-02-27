@@ -1,26 +1,11 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -58,23 +58,6 @@ $(error "ERROR: Your 2.6.27 kernel has C
- endif
- endif
- 
--# This is because with CONFIG_MAC80211 include/linux/skbuff.h will
--# enable on 2.6.27 a new attribute:
--#
--# skb->do_not_encrypt
--#
--# and on 2.6.28 another new attribute:
--#
--# skb->requeue
--#
--# In kernel 2.6.32 both attributes were removed.
--#
--ifeq ($(shell test $(KERNEL_VERSION) -eq 2 -a $(KERNEL_SUBLEVEL) -ge 27 -a $(KERNEL_SUBLEVEL) -le 31 && echo yes),yes)
--ifeq ($(CONFIG_MAC80211),)
+@@ -58,7 +58,7 @@ endif
+ ifeq ($(KERNEL_VERSION),2)
+ ifeq ($(shell test $(KERNEL_VERSION) -eq 2 -a $(KERNEL_26SUBLEVEL) -ge 27 -a $(KERNEL_26SUBLEVEL) -le 31 && echo yes),yes)
+ ifeq ($(CONFIG_MAC80211),)
 -$(error "ERROR: Your >=2.6.27 and <= 2.6.31 kernel has CONFIG_MAC80211 disabled, you should have it CONFIG_MAC80211=m if you want to use this thing.")
--endif
--endif
--
- ifneq ($(KERNELRELEASE),) # This prevents a warning
- 
- # We will warn when you don't have MQ support or NET_SCHED enabled.
++# $(error "ERROR: Your >=2.6.27 and <= 2.6.31 kernel has CONFIG_MAC80211 disabled, you should have it CONFIG_MAC80211=m if you want to use this thing.")
+ endif
+ endif
+ endif

@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -32,7 +32,6 @@ obj-$(CONFIG_COMPAT_WIRELESS_MODULES) +=
+@@ -26,7 +26,6 @@ obj-$(CONFIG_COMPAT_WIRELESS_MODULES) +=
  
  obj-$(CONFIG_COMPAT_NET_USB_MODULES) += drivers/net/usb/
  
@@ -10,7 +10,7 @@
  ifeq ($(CONFIG_STAGING_EXCLUDE_BUILD),)
 --- a/config.mk
 +++ b/config.mk
-@@ -371,12 +371,12 @@ CONFIG_SSB_DRIVER_PCICORE=y
+@@ -359,12 +359,12 @@ CONFIG_SSB_DRIVER_PCICORE=y
  CONFIG_B43_SSB=y
  endif #__CONFIG_SSB
  

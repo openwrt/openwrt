@@ -22,7 +22,7 @@
   * @anchor: anchor the requests are bound to
 --- a/include/linux/compat-2.6.28.h
 +++ b/include/linux/compat-2.6.28.h
-@@ -52,7 +52,7 @@ int pcmcia_loop_config(struct pcmcia_dev
+@@ -69,7 +69,7 @@ int pcmcia_loop_config(struct pcmcia_dev
  /* USB anchors were added as of 2.6.23 */
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,23))
  
@@ -33,7 +33,7 @@
  #endif
 --- a/config.mk
 +++ b/config.mk
-@@ -496,7 +496,7 @@ endif #CONFIG_COMPAT_KERNEL_2_6_29
+@@ -503,7 +503,7 @@ endif #CONFIG_COMPAT_KERNEL_2_6_29
  # This activates a threading fix for usb urb.
  # this is mainline commit: b3e670443b7fb8a2d29831b62b44a039c283e351
  # This fix will be included in some stable releases.
