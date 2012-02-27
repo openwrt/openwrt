@@ -57,3 +57,8 @@ setup_interface() {
 	ubus call network.interface."$config" add_device "{ \"name\": \"$iface\" }"
 }
 
+do_sysctl() {
+	[ -n "$2" ] && \
+		sysctl -n -e -w "$1=$2" >/dev/null || \
+		sysctl -n -e "$1"
+}
