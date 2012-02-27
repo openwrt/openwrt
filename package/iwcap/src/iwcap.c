@@ -1,5 +1,5 @@
 /*
- * iwcap.c - A simply radiotap capture utility outputting pcap sig_dumps
+ * iwcap.c - A simply radiotap capture utility outputting pcap dumps
  *
  *    Copyright 2012 Jo-Philipp Wich <jow@openwrt.org>
  *
@@ -443,7 +443,7 @@ int main(int argc, char **argv)
 					return 8;
 
 				case 0:
-					umask(0700);
+					umask(0077);
 					chdir("/");
 					freopen("/dev/null", "r", stdin);
 					freopen("/dev/null", "w", stdout);
