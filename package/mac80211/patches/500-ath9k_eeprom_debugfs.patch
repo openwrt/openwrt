@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1616,6 +1616,53 @@ static const struct file_operations fops
+@@ -1552,6 +1552,53 @@ static const struct file_operations fops
  };
  
  
@@ -54,13 +54,12 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1677,6 +1724,9 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1613,5 +1660,8 @@ int ath9k_init_debug(struct ath_hw *ah)
  	debugfs_create_u32("gpio_val", S_IRUSR | S_IWUSR,
  			   sc->debug.debugfs_phy, &sc->sc_ah->gpio_val);
  
 +	debugfs_create_file("eeprom", S_IRUSR, sc->debug.debugfs_phy, sc,
 +			    &fops_eeprom);
 +
- 	sc->debug.regidx = 0;
- 	memset(&sc->debug.bb_mac_samp, 0, sizeof(sc->debug.bb_mac_samp));
- 	sc->debug.sampidx = 0;
+ 	return 0;
+ }

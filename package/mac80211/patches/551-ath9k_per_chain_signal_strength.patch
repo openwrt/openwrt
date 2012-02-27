@@ -37,7 +37,7 @@
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1269,6 +1269,7 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1270,6 +1270,7 @@ ieee80211_rx_h_sta_process(struct ieee80
  	struct sk_buff *skb = rx->skb;
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
@@ -45,7 +45,7 @@
  
  	if (!sta)
  		return RX_CONTINUE;
-@@ -1311,6 +1312,19 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1312,6 +1313,19 @@ ieee80211_rx_h_sta_process(struct ieee80
  	sta->last_signal = status->signal;
  	ewma_add(&sta->avg_signal, -status->signal);
  
@@ -189,7 +189,7 @@
  	/* Record packet only when both main_rssi and  alt_rssi is positive */
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -483,12 +483,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -463,12 +463,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
  
  	/* XXX: Keycache */
  	rxs->rs_rssi = MS(rxsp->status5, AR_RxRSSICombined);
@@ -250,7 +250,7 @@
  	if (ads.ds_rxstatus8 & AR_RxKeyIdxValid)
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1047,12 +1047,12 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -990,12 +990,12 @@ void ath_debug_stat_rx(struct ath_softc 
  
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;

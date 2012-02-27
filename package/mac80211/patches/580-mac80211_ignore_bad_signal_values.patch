@@ -19,7 +19,7 @@
  /**
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -176,7 +176,8 @@ ieee80211_add_rx_radiotap_header(struct 
+@@ -177,7 +177,8 @@ ieee80211_add_rx_radiotap_header(struct 
  	pos += 2;
  
  	/* IEEE80211_RADIOTAP_DBM_ANTSIGNAL */
@@ -29,7 +29,7 @@
  		*pos = status->signal;
  		rthdr->it_present |=
  			cpu_to_le32(1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL);
-@@ -1309,8 +1310,10 @@ ieee80211_rx_h_sta_process(struct ieee80
+@@ -1310,8 +1311,10 @@ ieee80211_rx_h_sta_process(struct ieee80
  
  	sta->rx_fragments++;
  	sta->rx_bytes += rx->skb->len;
