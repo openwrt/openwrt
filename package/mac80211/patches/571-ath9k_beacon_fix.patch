@@ -1,0 +1,113 @@
+--- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
+@@ -346,7 +346,6 @@ static bool ar9003_hw_get_isr(struct ath
+ static int ar9003_hw_proc_txdesc(struct ath_hw *ah, void *ds,
+ 				 struct ath_tx_status *ts)
+ {
+-	struct ar9003_txc *txc = (struct ar9003_txc *) ds;
+ 	struct ar9003_txs *ads;
+ 	u32 status;
+ 
+@@ -356,11 +355,7 @@ static int ar9003_hw_proc_txdesc(struct 
+ 	if ((status & AR_TxDone) == 0)
+ 		return -EINPROGRESS;
+ 
+-	ts->qid = MS(ads->ds_info, AR_TxQcuNum);
+-	if (!txc || (MS(txc->info, AR_TxQcuNum) == ts->qid))
+-		ah->ts_tail = (ah->ts_tail + 1) % ah->ts_size;
+-	else
+-		return -ENOENT;
++	ah->ts_tail = (ah->ts_tail + 1) % ah->ts_size;
+ 
+ 	if ((MS(ads->ds_info, AR_DescId) != ATHEROS_VENDOR_ID) ||
+ 	    (MS(ads->ds_info, AR_TxRxDesc) != 1)) {
+@@ -374,6 +369,7 @@ static int ar9003_hw_proc_txdesc(struct 
+ 	ts->ts_seqnum = MS(status, AR_SeqNum);
+ 	ts->tid = MS(status, AR_TxTid);
+ 
++	ts->qid = MS(ads->ds_info, AR_TxQcuNum);
+ 	ts->desc_id = MS(ads->status1, AR_TxDescId);
+ 	ts->ts_tstamp = ads->status4;
+ 	ts->ts_status = 0;
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -91,7 +91,7 @@ static void ath_beacon_setup(struct ath_
+ 	info.txpower = MAX_RATE_POWER;
+ 	info.keyix = ATH9K_TXKEYIX_INVALID;
+ 	info.keytype = ATH9K_KEY_TYPE_CLEAR;
+-	info.flags = ATH9K_TXDESC_NOACK;
++	info.flags = ATH9K_TXDESC_NOACK | ATH9K_TXDESC_INTREQ;
+ 
+ 	info.buf_addr[0] = bf->bf_buf_addr;
+ 	info.buf_len[0] = roundup(skb->len, 4);
+@@ -355,7 +355,6 @@ void ath_beacon_tasklet(unsigned long da
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	struct ath_buf *bf = NULL;
+ 	struct ieee80211_vif *vif;
+-	struct ath_tx_status ts;
+ 	bool edma = !!(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA);
+ 	int slot;
+ 	u32 bfaddr, bc = 0;
+@@ -462,11 +461,6 @@ void ath_beacon_tasklet(unsigned long da
+ 			ath9k_hw_txstart(ah, sc->beacon.beaconq);
+ 
+ 		sc->beacon.ast_be_xmit += bc;     /* XXX per-vif? */
+-		if (edma) {
+-			spin_lock_bh(&sc->sc_pcu_lock);
+-			ath9k_hw_txprocdesc(ah, bf->bf_desc, (void *)&ts);
+-			spin_unlock_bh(&sc->sc_pcu_lock);
+-		}
+ 	}
+ }
+ 
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -745,7 +745,11 @@ int ath9k_hw_beaconq_setup(struct ath_hw
+ 	qi.tqi_aifs = 1;
+ 	qi.tqi_cwmin = 0;
+ 	qi.tqi_cwmax = 0;
+-	/* NB: don't enable any interrupts */
++
++	if (ah->caps.hw_caps & ATH9K_HW_CAP_EDMA)
++		qi.tqi_qflags = TXQ_FLAG_TXOKINT_ENABLE |
++				TXQ_FLAG_TXERRINT_ENABLE;
++
+ 	return ath9k_hw_setuptxqueue(ah, ATH9K_TX_QUEUE_BEACON, &qi);
+ }
+ EXPORT_SYMBOL(ath9k_hw_beaconq_setup);
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -2323,6 +2323,7 @@ static int ath9k_tx_last_beacon(struct i
+ 	struct ath_vif *avp;
+ 	struct ath_buf *bf;
+ 	struct ath_tx_status ts;
++	bool edma = !!(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA);
+ 	int status;
+ 
+ 	vif = sc->beacon.bslot[0];
+@@ -2333,7 +2334,7 @@ static int ath9k_tx_last_beacon(struct i
+ 	if (!avp->is_bslot_active)
+ 		return 0;
+ 
+-	if (!sc->beacon.tx_processed) {
++	if (!sc->beacon.tx_processed && !edma) {
+ 		tasklet_disable(&sc->bcon_tasklet);
+ 
+ 		bf = avp->av_bcbuf;
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -2318,9 +2318,12 @@ void ath_tx_edma_tasklet(struct ath_soft
+ 			break;
+ 		}
+ 
+-		/* Skip beacon completions */
+-		if (ts.qid == sc->beacon.beaconq)
++		/* Process beacon completions separately */
++		if (ts.qid == sc->beacon.beaconq) {
++			sc->beacon.tx_processed = true;
++			sc->beacon.tx_last = !(ts.ts_status & ATH9K_TXERR_MASK);
+ 			continue;
++		}
+ 
+ 		txq = &sc->tx.txq[ts.qid];
+ 
