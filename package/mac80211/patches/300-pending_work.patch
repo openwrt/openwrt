@@ -1,851 +1,6 @@
---- a/drivers/net/wireless/ath/ath9k/ar9001_initvals.h
-+++ b/drivers/net/wireless/ath/ath9k/ar9001_initvals.h
-@@ -459,97 +459,6 @@ static const u32 ar5416Common_9100[][2] 
- 	{0x0000a3e0, 0x000001ce},
- };
- 
--static const u32 ar5416Bank0_9100[][2] = {
--	/* Addr      allmodes  */
--	{0x000098b0, 0x1e5795e5},
--	{0x000098e0, 0x02008020},
--};
--
--static const u32 ar5416BB_RfGain_9100[][3] = {
--	/* Addr      5G_HT20     5G_HT40   */
--	{0x00009a00, 0x00000000, 0x00000000},
--	{0x00009a04, 0x00000040, 0x00000040},
--	{0x00009a08, 0x00000080, 0x00000080},
--	{0x00009a0c, 0x000001a1, 0x00000141},
--	{0x00009a10, 0x000001e1, 0x00000181},
--	{0x00009a14, 0x00000021, 0x000001c1},
--	{0x00009a18, 0x00000061, 0x00000001},
--	{0x00009a1c, 0x00000168, 0x00000041},
--	{0x00009a20, 0x000001a8, 0x000001a8},
--	{0x00009a24, 0x000001e8, 0x000001e8},
--	{0x00009a28, 0x00000028, 0x00000028},
--	{0x00009a2c, 0x00000068, 0x00000068},
--	{0x00009a30, 0x00000189, 0x000000a8},
--	{0x00009a34, 0x000001c9, 0x00000169},
--	{0x00009a38, 0x00000009, 0x000001a9},
--	{0x00009a3c, 0x00000049, 0x000001e9},
--	{0x00009a40, 0x00000089, 0x00000029},
--	{0x00009a44, 0x00000170, 0x00000069},
--	{0x00009a48, 0x000001b0, 0x00000190},
--	{0x00009a4c, 0x000001f0, 0x000001d0},
--	{0x00009a50, 0x00000030, 0x00000010},
--	{0x00009a54, 0x00000070, 0x00000050},
--	{0x00009a58, 0x00000191, 0x00000090},
--	{0x00009a5c, 0x000001d1, 0x00000151},
--	{0x00009a60, 0x00000011, 0x00000191},
--	{0x00009a64, 0x00000051, 0x000001d1},
--	{0x00009a68, 0x00000091, 0x00000011},
--	{0x00009a6c, 0x000001b8, 0x00000051},
--	{0x00009a70, 0x000001f8, 0x00000198},
--	{0x00009a74, 0x00000038, 0x000001d8},
--	{0x00009a78, 0x00000078, 0x00000018},
--	{0x00009a7c, 0x00000199, 0x00000058},
--	{0x00009a80, 0x000001d9, 0x00000098},
--	{0x00009a84, 0x00000019, 0x00000159},
--	{0x00009a88, 0x00000059, 0x00000199},
--	{0x00009a8c, 0x00000099, 0x000001d9},
--	{0x00009a90, 0x000000d9, 0x00000019},
--	{0x00009a94, 0x000000f9, 0x00000059},
--	{0x00009a98, 0x000000f9, 0x00000099},
--	{0x00009a9c, 0x000000f9, 0x000000d9},
--	{0x00009aa0, 0x000000f9, 0x000000f9},
--	{0x00009aa4, 0x000000f9, 0x000000f9},
--	{0x00009aa8, 0x000000f9, 0x000000f9},
--	{0x00009aac, 0x000000f9, 0x000000f9},
--	{0x00009ab0, 0x000000f9, 0x000000f9},
--	{0x00009ab4, 0x000000f9, 0x000000f9},
--	{0x00009ab8, 0x000000f9, 0x000000f9},
--	{0x00009abc, 0x000000f9, 0x000000f9},
--	{0x00009ac0, 0x000000f9, 0x000000f9},
--	{0x00009ac4, 0x000000f9, 0x000000f9},
--	{0x00009ac8, 0x000000f9, 0x000000f9},
--	{0x00009acc, 0x000000f9, 0x000000f9},
--	{0x00009ad0, 0x000000f9, 0x000000f9},
--	{0x00009ad4, 0x000000f9, 0x000000f9},
--	{0x00009ad8, 0x000000f9, 0x000000f9},
--	{0x00009adc, 0x000000f9, 0x000000f9},
--	{0x00009ae0, 0x000000f9, 0x000000f9},
--	{0x00009ae4, 0x000000f9, 0x000000f9},
--	{0x00009ae8, 0x000000f9, 0x000000f9},
--	{0x00009aec, 0x000000f9, 0x000000f9},
--	{0x00009af0, 0x000000f9, 0x000000f9},
--	{0x00009af4, 0x000000f9, 0x000000f9},
--	{0x00009af8, 0x000000f9, 0x000000f9},
--	{0x00009afc, 0x000000f9, 0x000000f9},
--};
--
--static const u32 ar5416Bank1_9100[][2] = {
--	/* Addr      allmodes  */
--	{0x000098b0, 0x02108421},
--	{0x000098ec, 0x00000008},
--};
--
--static const u32 ar5416Bank2_9100[][2] = {
--	/* Addr      allmodes  */
--	{0x000098b0, 0x0e73ff17},
--	{0x000098e0, 0x00000420},
--};
--
--static const u32 ar5416Bank3_9100[][3] = {
--	/* Addr      5G_HT20     5G_HT40   */
--	{0x000098f0, 0x01400018, 0x01c00018},
--};
--
- static const u32 ar5416Bank6_9100[][3] = {
- 	/* Addr      5G_HT20     5G_HT40   */
- 	{0x0000989c, 0x00000000, 0x00000000},
-@@ -624,13 +533,6 @@ static const u32 ar5416Bank6TPC_9100[][3
- 	{0x000098d0, 0x0000000f, 0x0010000f},
- };
- 
--static const u32 ar5416Bank7_9100[][2] = {
--	/* Addr      allmodes  */
--	{0x0000989c, 0x00000500},
--	{0x0000989c, 0x00000800},
--	{0x000098cc, 0x0000000e},
--};
--
- static const u32 ar5416Addac_9100[][2] = {
- 	/* Addr      allmodes  */
- 	{0x0000989c, 0x00000000},
-@@ -1113,178 +1015,6 @@ static const u32 ar5416Common_9160[][2] 
- 	{0x0000a3e0, 0x000001ce},
- };
- 
--static const u32 ar5416Bank0_9160[][2] = {
--	/* Addr      allmodes  */
--	{0x000098b0, 0x1e5795e5},
--	{0x000098e0, 0x02008020},
--};
--
--static const u32 ar5416BB_RfGain_9160[][3] = {
--	/* Addr      5G_HT20     5G_HT40   */
--	{0x00009a00, 0x00000000, 0x00000000},
--	{0x00009a04, 0x00000040, 0x00000040},
--	{0x00009a08, 0x00000080, 0x00000080},
--	{0x00009a0c, 0x000001a1, 0x00000141},
--	{0x00009a10, 0x000001e1, 0x00000181},
--	{0x00009a14, 0x00000021, 0x000001c1},
--	{0x00009a18, 0x00000061, 0x00000001},
--	{0x00009a1c, 0x00000168, 0x00000041},
--	{0x00009a20, 0x000001a8, 0x000001a8},
--	{0x00009a24, 0x000001e8, 0x000001e8},
--	{0x00009a28, 0x00000028, 0x00000028},
--	{0x00009a2c, 0x00000068, 0x00000068},
--	{0x00009a30, 0x00000189, 0x000000a8},
--	{0x00009a34, 0x000001c9, 0x00000169},
--	{0x00009a38, 0x00000009, 0x000001a9},
--	{0x00009a3c, 0x00000049, 0x000001e9},
--	{0x00009a40, 0x00000089, 0x00000029},
--	{0x00009a44, 0x00000170, 0x00000069},
--	{0x00009a48, 0x000001b0, 0x00000190},
--	{0x00009a4c, 0x000001f0, 0x000001d0},
--	{0x00009a50, 0x00000030, 0x00000010},
--	{0x00009a54, 0x00000070, 0x00000050},
--	{0x00009a58, 0x00000191, 0x00000090},
--	{0x00009a5c, 0x000001d1, 0x00000151},
--	{0x00009a60, 0x00000011, 0x00000191},
--	{0x00009a64, 0x00000051, 0x000001d1},
--	{0x00009a68, 0x00000091, 0x00000011},
--	{0x00009a6c, 0x000001b8, 0x00000051},
--	{0x00009a70, 0x000001f8, 0x00000198},
--	{0x00009a74, 0x00000038, 0x000001d8},
--	{0x00009a78, 0x00000078, 0x00000018},
--	{0x00009a7c, 0x00000199, 0x00000058},
--	{0x00009a80, 0x000001d9, 0x00000098},
--	{0x00009a84, 0x00000019, 0x00000159},
--	{0x00009a88, 0x00000059, 0x00000199},
--	{0x00009a8c, 0x00000099, 0x000001d9},
--	{0x00009a90, 0x000000d9, 0x00000019},
--	{0x00009a94, 0x000000f9, 0x00000059},
--	{0x00009a98, 0x000000f9, 0x00000099},
--	{0x00009a9c, 0x000000f9, 0x000000d9},
--	{0x00009aa0, 0x000000f9, 0x000000f9},
--	{0x00009aa4, 0x000000f9, 0x000000f9},
--	{0x00009aa8, 0x000000f9, 0x000000f9},
--	{0x00009aac, 0x000000f9, 0x000000f9},
--	{0x00009ab0, 0x000000f9, 0x000000f9},
--	{0x00009ab4, 0x000000f9, 0x000000f9},
--	{0x00009ab8, 0x000000f9, 0x000000f9},
--	{0x00009abc, 0x000000f9, 0x000000f9},
--	{0x00009ac0, 0x000000f9, 0x000000f9},
--	{0x00009ac4, 0x000000f9, 0x000000f9},
--	{0x00009ac8, 0x000000f9, 0x000000f9},
--	{0x00009acc, 0x000000f9, 0x000000f9},
--	{0x00009ad0, 0x000000f9, 0x000000f9},
--	{0x00009ad4, 0x000000f9, 0x000000f9},
--	{0x00009ad8, 0x000000f9, 0x000000f9},
--	{0x00009adc, 0x000000f9, 0x000000f9},
--	{0x00009ae0, 0x000000f9, 0x000000f9},
--	{0x00009ae4, 0x000000f9, 0x000000f9},
--	{0x00009ae8, 0x000000f9, 0x000000f9},
--	{0x00009aec, 0x000000f9, 0x000000f9},
--	{0x00009af0, 0x000000f9, 0x000000f9},
--	{0x00009af4, 0x000000f9, 0x000000f9},
--	{0x00009af8, 0x000000f9, 0x000000f9},
--	{0x00009afc, 0x000000f9, 0x000000f9},
--};
--
--static const u32 ar5416Bank1_9160[][2] = {
--	/* Addr      allmodes  */
--	{0x000098b0, 0x02108421},
--	{0x000098ec, 0x00000008},
--};
--
--static const u32 ar5416Bank2_9160[][2] = {
--	/* Addr      allmodes  */
--	{0x000098b0, 0x0e73ff17},
--	{0x000098e0, 0x00000420},
--};
--
--static const u32 ar5416Bank3_9160[][3] = {
--	/* Addr      5G_HT20     5G_HT40   */
--	{0x000098f0, 0x01400018, 0x01c00018},
--};
--
--static const u32 ar5416Bank6_9160[][3] = {
--	/* Addr      5G_HT20     5G_HT40   */
--	{0x0000989c, 0x00000000, 0x00000000},
--	{0x0000989c, 0x00000000, 0x00000000},
--	{0x0000989c, 0x00000000, 0x00000000},
--	{0x0000989c, 0x00e00000, 0x00e00000},
--	{0x0000989c, 0x005e0000, 0x005e0000},
--	{0x0000989c, 0x00120000, 0x00120000},
--	{0x0000989c, 0x00620000, 0x00620000},
--	{0x0000989c, 0x00020000, 0x00020000},
--	{0x0000989c, 0x00ff0000, 0x00ff0000},
--	{0x0000989c, 0x00ff0000, 0x00ff0000},
--	{0x0000989c, 0x00ff0000, 0x00ff0000},
--	{0x0000989c, 0x40ff0000, 0x40ff0000},
--	{0x0000989c, 0x005f0000, 0x005f0000},
--	{0x0000989c, 0x00870000, 0x00870000},
--	{0x0000989c, 0x00f90000, 0x00f90000},
--	{0x0000989c, 0x007b0000, 0x007b0000},
--	{0x0000989c, 0x00ff0000, 0x00ff0000},
--	{0x0000989c, 0x00f50000, 0x00f50000},
--	{0x0000989c, 0x00dc0000, 0x00dc0000},
--	{0x0000989c, 0x00110000, 0x00110000},
--	{0x0000989c, 0x006100a8, 0x006100a8},
--	{0x0000989c, 0x004210a2, 0x004210a2},
--	{0x0000989c, 0x0014008f, 0x0014008f},
--	{0x0000989c, 0x00c40003, 0x00c40003},
--	{0x0000989c, 0x003000f2, 0x003000f2},
--	{0x0000989c, 0x00440016, 0x00440016},
--	{0x0000989c, 0x00410040, 0x00410040},
--	{0x0000989c, 0x0001805e, 0x0001805e},
--	{0x0000989c, 0x0000c0ab, 0x0000c0ab},
--	{0x0000989c, 0x000000f1, 0x000000f1},
--	{0x0000989c, 0x00002081, 0x00002081},
--	{0x0000989c, 0x000000d4, 0x000000d4},
--	{0x000098d0, 0x0000000f, 0x0010000f},
--};
--
--static const u32 ar5416Bank6TPC_9160[][3] = {
--	/* Addr      5G_HT20     5G_HT40   */
--	{0x0000989c, 0x00000000, 0x00000000},
--	{0x0000989c, 0x00000000, 0x00000000},
--	{0x0000989c, 0x00000000, 0x00000000},
--	{0x0000989c, 0x00e00000, 0x00e00000},
--	{0x0000989c, 0x005e0000, 0x005e0000},
--	{0x0000989c, 0x00120000, 0x00120000},
--	{0x0000989c, 0x00620000, 0x00620000},
--	{0x0000989c, 0x00020000, 0x00020000},
--	{0x0000989c, 0x00ff0000, 0x00ff0000},
--	{0x0000989c, 0x00ff0000, 0x00ff0000},
--	{0x0000989c, 0x00ff0000, 0x00ff0000},
--	{0x0000989c, 0x40ff0000, 0x40ff0000},
--	{0x0000989c, 0x005f0000, 0x005f0000},
--	{0x0000989c, 0x00870000, 0x00870000},
--	{0x0000989c, 0x00f90000, 0x00f90000},
--	{0x0000989c, 0x007b0000, 0x007b0000},
--	{0x0000989c, 0x00ff0000, 0x00ff0000},
--	{0x0000989c, 0x00f50000, 0x00f50000},
--	{0x0000989c, 0x00dc0000, 0x00dc0000},
--	{0x0000989c, 0x00110000, 0x00110000},
--	{0x0000989c, 0x006100a8, 0x006100a8},
--	{0x0000989c, 0x00423022, 0x00423022},
--	{0x0000989c, 0x2014008f, 0x2014008f},
--	{0x0000989c, 0x00c40002, 0x00c40002},
--	{0x0000989c, 0x003000f2, 0x003000f2},
--	{0x0000989c, 0x00440016, 0x00440016},
--	{0x0000989c, 0x00410040, 0x00410040},
--	{0x0000989c, 0x0001805e, 0x0001805e},
--	{0x0000989c, 0x0000c0ab, 0x0000c0ab},
--	{0x0000989c, 0x000000e1, 0x000000e1},
--	{0x0000989c, 0x00007080, 0x00007080},
--	{0x0000989c, 0x000000d4, 0x000000d4},
--	{0x000098d0, 0x0000000f, 0x0010000f},
--};
--
--static const u32 ar5416Bank7_9160[][2] = {
--	/* Addr      allmodes  */
--	{0x0000989c, 0x00000500},
--	{0x0000989c, 0x00000800},
--	{0x000098cc, 0x0000000e},
--};
--
- static const u32 ar5416Addac_9160[][2] = {
- 	/* Addr      allmodes  */
- 	{0x0000989c, 0x00000000},
---- a/drivers/net/wireless/ath/ath9k/ar9002_hw.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9002_hw.c
-@@ -35,11 +35,11 @@ static void ar9002_hw_init_mode_regs(str
- 		INIT_INI_ARRAY(&ah->iniCommon, ar9271Common_9271,
- 			       ARRAY_SIZE(ar9271Common_9271), 2);
- 		INIT_INI_ARRAY(&ah->iniCommon_normal_cck_fir_coeff_9271,
--			       ar9271Common_normal_cck_fir_coeff_9271,
--			       ARRAY_SIZE(ar9271Common_normal_cck_fir_coeff_9271), 2);
-+			       ar9287Common_normal_cck_fir_coeff_9287_1_1,
-+			       ARRAY_SIZE(ar9287Common_normal_cck_fir_coeff_9287_1_1), 2);
- 		INIT_INI_ARRAY(&ah->iniCommon_japan_2484_cck_fir_coeff_9271,
--			       ar9271Common_japan_2484_cck_fir_coeff_9271,
--			       ARRAY_SIZE(ar9271Common_japan_2484_cck_fir_coeff_9271), 2);
-+			       ar9287Common_japan_2484_cck_fir_coeff_9287_1_1,
-+			       ARRAY_SIZE(ar9287Common_japan_2484_cck_fir_coeff_9287_1_1), 2);
- 		INIT_INI_ARRAY(&ah->iniModes_9271_1_0_only,
- 			       ar9271Modes_9271_1_0_only,
- 			       ARRAY_SIZE(ar9271Modes_9271_1_0_only), 5);
-@@ -54,53 +54,31 @@ static void ar9002_hw_init_mode_regs(str
- 		return;
- 	}
- 
-+	if (ah->config.pcie_clock_req)
-+		INIT_INI_ARRAY(&ah->iniPcieSerdes,
-+			   ar9280PciePhy_clkreq_off_L1_9280,
-+			   ARRAY_SIZE(ar9280PciePhy_clkreq_off_L1_9280), 2);
-+	else
-+		INIT_INI_ARRAY(&ah->iniPcieSerdes,
-+			   ar9280PciePhy_clkreq_always_on_L1_9280,
-+			   ARRAY_SIZE(ar9280PciePhy_clkreq_always_on_L1_9280), 2);
-+
- 	if (AR_SREV_9287_11_OR_LATER(ah)) {
- 		INIT_INI_ARRAY(&ah->iniModes, ar9287Modes_9287_1_1,
- 				ARRAY_SIZE(ar9287Modes_9287_1_1), 5);
- 		INIT_INI_ARRAY(&ah->iniCommon, ar9287Common_9287_1_1,
- 				ARRAY_SIZE(ar9287Common_9287_1_1), 2);
--		if (ah->config.pcie_clock_req)
--			INIT_INI_ARRAY(&ah->iniPcieSerdes,
--			ar9287PciePhy_clkreq_off_L1_9287_1_1,
--			ARRAY_SIZE(ar9287PciePhy_clkreq_off_L1_9287_1_1), 2);
--		else
--			INIT_INI_ARRAY(&ah->iniPcieSerdes,
--			ar9287PciePhy_clkreq_always_on_L1_9287_1_1,
--			ARRAY_SIZE(ar9287PciePhy_clkreq_always_on_L1_9287_1_1),
--					2);
- 	} else if (AR_SREV_9285_12_OR_LATER(ah)) {
--
--
- 		INIT_INI_ARRAY(&ah->iniModes, ar9285Modes_9285_1_2,
- 			       ARRAY_SIZE(ar9285Modes_9285_1_2), 5);
- 		INIT_INI_ARRAY(&ah->iniCommon, ar9285Common_9285_1_2,
- 			       ARRAY_SIZE(ar9285Common_9285_1_2), 2);
--
--		if (ah->config.pcie_clock_req) {
--			INIT_INI_ARRAY(&ah->iniPcieSerdes,
--			ar9285PciePhy_clkreq_off_L1_9285_1_2,
--			ARRAY_SIZE(ar9285PciePhy_clkreq_off_L1_9285_1_2), 2);
--		} else {
--			INIT_INI_ARRAY(&ah->iniPcieSerdes,
--			ar9285PciePhy_clkreq_always_on_L1_9285_1_2,
--			ARRAY_SIZE(ar9285PciePhy_clkreq_always_on_L1_9285_1_2),
--				  2);
--		}
- 	} else if (AR_SREV_9280_20_OR_LATER(ah)) {
- 		INIT_INI_ARRAY(&ah->iniModes, ar9280Modes_9280_2,
- 			       ARRAY_SIZE(ar9280Modes_9280_2), 5);
- 		INIT_INI_ARRAY(&ah->iniCommon, ar9280Common_9280_2,
- 			       ARRAY_SIZE(ar9280Common_9280_2), 2);
- 
--		if (ah->config.pcie_clock_req) {
--			INIT_INI_ARRAY(&ah->iniPcieSerdes,
--			       ar9280PciePhy_clkreq_off_L1_9280,
--			       ARRAY_SIZE(ar9280PciePhy_clkreq_off_L1_9280), 2);
--		} else {
--			INIT_INI_ARRAY(&ah->iniPcieSerdes,
--			       ar9280PciePhy_clkreq_always_on_L1_9280,
--			       ARRAY_SIZE(ar9280PciePhy_clkreq_always_on_L1_9280), 2);
--		}
- 		INIT_INI_ARRAY(&ah->iniModesAdditional,
- 			       ar9280Modes_fast_clock_9280_2,
- 			       ARRAY_SIZE(ar9280Modes_fast_clock_9280_2), 3);
-@@ -109,22 +87,6 @@ static void ar9002_hw_init_mode_regs(str
- 			       ARRAY_SIZE(ar5416Modes_9160), 5);
- 		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common_9160,
- 			       ARRAY_SIZE(ar5416Common_9160), 2);
--		INIT_INI_ARRAY(&ah->iniBank0, ar5416Bank0_9160,
--			       ARRAY_SIZE(ar5416Bank0_9160), 2);
--		INIT_INI_ARRAY(&ah->iniBB_RfGain, ar5416BB_RfGain_9160,
--			       ARRAY_SIZE(ar5416BB_RfGain_9160), 3);
--		INIT_INI_ARRAY(&ah->iniBank1, ar5416Bank1_9160,
--			       ARRAY_SIZE(ar5416Bank1_9160), 2);
--		INIT_INI_ARRAY(&ah->iniBank2, ar5416Bank2_9160,
--			       ARRAY_SIZE(ar5416Bank2_9160), 2);
--		INIT_INI_ARRAY(&ah->iniBank3, ar5416Bank3_9160,
--			       ARRAY_SIZE(ar5416Bank3_9160), 3);
--		INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6_9160,
--			       ARRAY_SIZE(ar5416Bank6_9160), 3);
--		INIT_INI_ARRAY(&ah->iniBank6TPC, ar5416Bank6TPC_9160,
--			       ARRAY_SIZE(ar5416Bank6TPC_9160), 3);
--		INIT_INI_ARRAY(&ah->iniBank7, ar5416Bank7_9160,
--			       ARRAY_SIZE(ar5416Bank7_9160), 2);
- 		if (AR_SREV_9160_11(ah)) {
- 			INIT_INI_ARRAY(&ah->iniAddac,
- 				       ar5416Addac_9160_1_1,
-@@ -138,22 +100,8 @@ static void ar9002_hw_init_mode_regs(str
- 			       ARRAY_SIZE(ar5416Modes_9100), 5);
- 		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common_9100,
- 			       ARRAY_SIZE(ar5416Common_9100), 2);
--		INIT_INI_ARRAY(&ah->iniBank0, ar5416Bank0_9100,
--			       ARRAY_SIZE(ar5416Bank0_9100), 2);
--		INIT_INI_ARRAY(&ah->iniBB_RfGain, ar5416BB_RfGain_9100,
--			       ARRAY_SIZE(ar5416BB_RfGain_9100), 3);
--		INIT_INI_ARRAY(&ah->iniBank1, ar5416Bank1_9100,
--			       ARRAY_SIZE(ar5416Bank1_9100), 2);
--		INIT_INI_ARRAY(&ah->iniBank2, ar5416Bank2_9100,
--			       ARRAY_SIZE(ar5416Bank2_9100), 2);
--		INIT_INI_ARRAY(&ah->iniBank3, ar5416Bank3_9100,
--			       ARRAY_SIZE(ar5416Bank3_9100), 3);
- 		INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6_9100,
- 			       ARRAY_SIZE(ar5416Bank6_9100), 3);
--		INIT_INI_ARRAY(&ah->iniBank6TPC, ar5416Bank6TPC_9100,
--			       ARRAY_SIZE(ar5416Bank6TPC_9100), 3);
--		INIT_INI_ARRAY(&ah->iniBank7, ar5416Bank7_9100,
--			       ARRAY_SIZE(ar5416Bank7_9100), 2);
- 		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac_9100,
- 			       ARRAY_SIZE(ar5416Addac_9100), 2);
- 	} else {
-@@ -161,24 +109,37 @@ static void ar9002_hw_init_mode_regs(str
- 			       ARRAY_SIZE(ar5416Modes), 5);
- 		INIT_INI_ARRAY(&ah->iniCommon, ar5416Common,
- 			       ARRAY_SIZE(ar5416Common), 2);
--		INIT_INI_ARRAY(&ah->iniBank0, ar5416Bank0,
--			       ARRAY_SIZE(ar5416Bank0), 2);
-+		INIT_INI_ARRAY(&ah->iniBank6TPC, ar5416Bank6TPC,
-+			       ARRAY_SIZE(ar5416Bank6TPC), 3);
-+		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac,
-+			       ARRAY_SIZE(ar5416Addac), 2);
-+	}
-+
-+	if (!AR_SREV_9280_20_OR_LATER(ah)) {
-+		/* Common for AR5416, AR913x, AR9160 */
- 		INIT_INI_ARRAY(&ah->iniBB_RfGain, ar5416BB_RfGain,
- 			       ARRAY_SIZE(ar5416BB_RfGain), 3);
-+
-+		INIT_INI_ARRAY(&ah->iniBank0, ar5416Bank0,
-+			       ARRAY_SIZE(ar5416Bank0), 2);
- 		INIT_INI_ARRAY(&ah->iniBank1, ar5416Bank1,
- 			       ARRAY_SIZE(ar5416Bank1), 2);
- 		INIT_INI_ARRAY(&ah->iniBank2, ar5416Bank2,
- 			       ARRAY_SIZE(ar5416Bank2), 2);
- 		INIT_INI_ARRAY(&ah->iniBank3, ar5416Bank3,
- 			       ARRAY_SIZE(ar5416Bank3), 3);
--		INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6,
--			       ARRAY_SIZE(ar5416Bank6), 3);
--		INIT_INI_ARRAY(&ah->iniBank6TPC, ar5416Bank6TPC,
--			       ARRAY_SIZE(ar5416Bank6TPC), 3);
- 		INIT_INI_ARRAY(&ah->iniBank7, ar5416Bank7,
- 			       ARRAY_SIZE(ar5416Bank7), 2);
--		INIT_INI_ARRAY(&ah->iniAddac, ar5416Addac,
--			       ARRAY_SIZE(ar5416Addac), 2);
-+
-+		/* Common for AR5416, AR9160 */
-+		if (!AR_SREV_9100(ah))
-+			INIT_INI_ARRAY(&ah->iniBank6, ar5416Bank6,
-+				       ARRAY_SIZE(ar5416Bank6), 3);
-+
-+		/* Common for AR913x, AR9160 */
-+		if (!AR_SREV_5416(ah))
-+			INIT_INI_ARRAY(&ah->iniBank6TPC, ar5416Bank6TPC_9100,
-+				       ARRAY_SIZE(ar5416Bank6TPC_9100), 3);
- 	}
- 
- 	/* iniAddac needs to be modified for these chips */
---- a/drivers/net/wireless/ath/ath9k/ar9002_initvals.h
-+++ b/drivers/net/wireless/ath/ath9k/ar9002_initvals.h
-@@ -925,34 +925,6 @@ static const u32 ar9280PciePhy_clkreq_al
- 	{0x00004044, 0x00000000},
- };
- 
--static const u32 ar9285PciePhy_clkreq_always_on_L1_9285[][2] = {
--	/* Addr      allmodes  */
--	{0x00004040, 0x9248fd00},
--	{0x00004040, 0x24924924},
--	{0x00004040, 0xa8000019},
--	{0x00004040, 0x13160820},
--	{0x00004040, 0xe5980560},
--	{0x00004040, 0xc01dcffd},
--	{0x00004040, 0x1aaabe41},
--	{0x00004040, 0xbe105554},
--	{0x00004040, 0x00043007},
--	{0x00004044, 0x00000000},
--};
--
--static const u32 ar9285PciePhy_clkreq_off_L1_9285[][2] = {
--	/* Addr      allmodes  */
--	{0x00004040, 0x9248fd00},
--	{0x00004040, 0x24924924},
--	{0x00004040, 0xa8000019},
--	{0x00004040, 0x13160820},
--	{0x00004040, 0xe5980560},
--	{0x00004040, 0xc01dcffc},
--	{0x00004040, 0x1aaabe41},
--	{0x00004040, 0xbe105554},
--	{0x00004040, 0x00043007},
--	{0x00004044, 0x00000000},
--};
--
- static const u32 ar9285Modes_9285_1_2[][5] = {
- 	/* Addr      5G_HT20     5G_HT40     2G_HT40     2G_HT20   */
- 	{0x00001030, 0x00000230, 0x00000460, 0x000002c0, 0x00000160},
-@@ -1743,34 +1715,6 @@ static const u32 ar9285Modes_XE2_0_high_
- 	{0x0000a3e0, 0x000000e7, 0x000000e7, 0x000000e7, 0x000000e7},
- };
- 
--static const u32 ar9285PciePhy_clkreq_always_on_L1_9285_1_2[][2] = {
--	/* Addr      allmodes  */
--	{0x00004040, 0x9248fd00},
--	{0x00004040, 0x24924924},
--	{0x00004040, 0xa8000019},
--	{0x00004040, 0x13160820},
--	{0x00004040, 0xe5980560},
--	{0x00004040, 0xc01dcffd},
--	{0x00004040, 0x1aaabe41},
--	{0x00004040, 0xbe105554},
--	{0x00004040, 0x00043007},
--	{0x00004044, 0x00000000},
--};
--
--static const u32 ar9285PciePhy_clkreq_off_L1_9285_1_2[][2] = {
--	/* Addr      allmodes  */
--	{0x00004040, 0x9248fd00},
--	{0x00004040, 0x24924924},
--	{0x00004040, 0xa8000019},
--	{0x00004040, 0x13160820},
--	{0x00004040, 0xe5980560},
--	{0x00004040, 0xc01dcffc},
--	{0x00004040, 0x1aaabe41},
--	{0x00004040, 0xbe105554},
--	{0x00004040, 0x00043007},
--	{0x00004044, 0x00000000},
--};
--
- static const u32 ar9287Modes_9287_1_1[][5] = {
- 	/* Addr      5G_HT20     5G_HT40     2G_HT40     2G_HT20   */
- 	{0x00001030, 0x00000000, 0x00000000, 0x000002c0, 0x00000160},
-@@ -2512,34 +2456,6 @@ static const u32 ar9287Modes_rx_gain_928
- 	{0x0000a848, 0x00000000, 0x00000000, 0x00001067, 0x00001067},
- };
- 
--static const u32 ar9287PciePhy_clkreq_always_on_L1_9287_1_1[][2] = {
--	/* Addr      allmodes  */
--	{0x00004040, 0x9248fd00},
--	{0x00004040, 0x24924924},
--	{0x00004040, 0xa8000019},
--	{0x00004040, 0x13160820},
--	{0x00004040, 0xe5980560},
--	{0x00004040, 0xc01dcffd},
--	{0x00004040, 0x1aaabe41},
--	{0x00004040, 0xbe105554},
--	{0x00004040, 0x00043007},
--	{0x00004044, 0x00000000},
--};
--
--static const u32 ar9287PciePhy_clkreq_off_L1_9287_1_1[][2] = {
--	/* Addr      allmodes  */
--	{0x00004040, 0x9248fd00},
--	{0x00004040, 0x24924924},
--	{0x00004040, 0xa8000019},
--	{0x00004040, 0x13160820},
--	{0x00004040, 0xe5980560},
--	{0x00004040, 0xc01dcffc},
--	{0x00004040, 0x1aaabe41},
--	{0x00004040, 0xbe105554},
--	{0x00004040, 0x00043007},
--	{0x00004044, 0x00000000},
--};
--
- static const u32 ar9271Modes_9271[][5] = {
- 	/* Addr      5G_HT20     5G_HT40     2G_HT40     2G_HT20   */
- 	{0x00001030, 0x00000230, 0x00000460, 0x000002c0, 0x00000160},
-@@ -3176,20 +3092,6 @@ static const u32 ar9271Common_9271[][2] 
- 	{0x0000d384, 0xf3307ff0},
- };
- 
--static const u32 ar9271Common_normal_cck_fir_coeff_9271[][2] = {
--	/* Addr      allmodes  */
--	{0x0000a1f4, 0x00fffeff},
--	{0x0000a1f8, 0x00f5f9ff},
--	{0x0000a1fc, 0xb79f6427},
--};
--
--static const u32 ar9271Common_japan_2484_cck_fir_coeff_9271[][2] = {
--	/* Addr      allmodes  */
--	{0x0000a1f4, 0x00000000},
--	{0x0000a1f8, 0xefff0301},
--	{0x0000a1fc, 0xca9228ee},
--};
--
- static const u32 ar9271Modes_9271_1_0_only[][5] = {
- 	/* Addr      5G_HT20     5G_HT40     2G_HT40     2G_HT20   */
- 	{0x00009910, 0x30002311, 0x30002311, 0x30002311, 0x30002311},
---- a/net/mac80211/agg-rx.c
-+++ b/net/mac80211/agg-rx.c
-@@ -187,6 +187,8 @@ static void ieee80211_send_addba_resp(st
- 		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
- 	else if (sdata->vif.type == NL80211_IFTYPE_ADHOC)
- 		memcpy(mgmt->bssid, sdata->u.ibss.bssid, ETH_ALEN);
-+	else if (sdata->vif.type == NL80211_IFTYPE_WDS)
-+		memcpy(mgmt->bssid, da, ETH_ALEN);
- 
- 	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
- 					  IEEE80211_STYPE_ACTION);
---- a/net/mac80211/agg-tx.c
-+++ b/net/mac80211/agg-tx.c
-@@ -81,7 +81,8 @@ static void ieee80211_send_addba_request
- 	memcpy(mgmt->sa, sdata->vif.addr, ETH_ALEN);
- 	if (sdata->vif.type == NL80211_IFTYPE_AP ||
- 	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN ||
--	    sdata->vif.type == NL80211_IFTYPE_MESH_POINT)
-+	    sdata->vif.type == NL80211_IFTYPE_MESH_POINT ||
-+	    sdata->vif.type == NL80211_IFTYPE_WDS)
- 		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
- 	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
- 		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
-@@ -471,6 +472,7 @@ int ieee80211_start_tx_ba_session(struct
- 	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
- 	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
- 	    sdata->vif.type != NL80211_IFTYPE_AP &&
-+	    sdata->vif.type != NL80211_IFTYPE_WDS &&
- 	    sdata->vif.type != NL80211_IFTYPE_ADHOC)
- 		return -EINVAL;
- 
---- a/net/mac80211/debugfs_sta.c
-+++ b/net/mac80211/debugfs_sta.c
-@@ -63,11 +63,11 @@ static ssize_t sta_flags_read(struct fil
- 	test_sta_flag(sta, WLAN_STA_##flg) ? #flg "\n" : ""
- 
- 	int res = scnprintf(buf, sizeof(buf),
--			    "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
-+			    "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
- 			    TEST(AUTH), TEST(ASSOC), TEST(PS_STA),
- 			    TEST(PS_DRIVER), TEST(AUTHORIZED),
- 			    TEST(SHORT_PREAMBLE),
--			    TEST(WME), TEST(WDS), TEST(CLEAR_PS_FILT),
-+			    TEST(WME), TEST(CLEAR_PS_FILT),
- 			    TEST(MFP), TEST(BLOCK_BA), TEST(PSPOLL),
- 			    TEST(UAPSD), TEST(SP), TEST(TDLS_PEER),
- 			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
---- a/net/mac80211/iface.c
-+++ b/net/mac80211/iface.c
-@@ -178,7 +178,6 @@ static int ieee80211_do_open(struct net_
- {
- 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
- 	struct ieee80211_local *local = sdata->local;
--	struct sta_info *sta;
- 	u32 changed = 0;
- 	int res;
- 	u32 hw_reconf_flags = 0;
-@@ -309,28 +308,6 @@ static int ieee80211_do_open(struct net_
- 
- 	set_bit(SDATA_STATE_RUNNING, &sdata->state);
- 
--	if (sdata->vif.type == NL80211_IFTYPE_WDS) {
--		/* Create STA entry for the WDS peer */
--		sta = sta_info_alloc(sdata, sdata->u.wds.remote_addr,
--				     GFP_KERNEL);
--		if (!sta) {
--			res = -ENOMEM;
--			goto err_del_interface;
--		}
--
--		sta_info_pre_move_state(sta, IEEE80211_STA_AUTH);
--		sta_info_pre_move_state(sta, IEEE80211_STA_ASSOC);
--		sta_info_pre_move_state(sta, IEEE80211_STA_AUTHORIZED);
--
--		res = sta_info_insert(sta);
--		if (res) {
--			/* STA has been freed */
--			goto err_del_interface;
--		}
--
--		rate_control_rate_init(sta);
--	}
--
- 	/*
- 	 * set_multicast_list will be invoked by the networking core
- 	 * which will check whether any increments here were done in
-@@ -357,8 +334,7 @@ static int ieee80211_do_open(struct net_
- 	netif_tx_start_all_queues(dev);
- 
- 	return 0;
-- err_del_interface:
--	drv_remove_interface(local, sdata);
-+
-  err_stop:
- 	if (!local->open_count)
- 		drv_stop(local);
-@@ -654,6 +630,8 @@ static void ieee80211_teardown_sdata(str
- 
- 	if (ieee80211_vif_is_mesh(&sdata->vif))
- 		mesh_rmc_free(sdata);
-+	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
-+		ieee80211_mgd_teardown(sdata);
- 
- 	flushed = sta_info_flush(local, sdata);
- 	WARN_ON(flushed);
-@@ -720,6 +698,70 @@ static void ieee80211_if_setup(struct ne
- 	dev->destructor = free_netdev;
- }
- 
-+static void ieee80211_wds_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
-+					 struct sk_buff *skb)
-+{
-+	struct ieee80211_local *local = sdata->local;
-+	struct ieee80211_rx_status *rx_status;
-+	struct ieee802_11_elems elems;
-+	struct ieee80211_mgmt *mgmt;
-+	struct sta_info *sta;
-+	size_t baselen;
-+	u32 rates = 0;
-+	u16 stype;
-+	bool new = false;
-+	enum ieee80211_band band = local->hw.conf.channel->band;
-+	struct ieee80211_supported_band *sband = local->hw.wiphy->bands[band];
-+
-+	rx_status = IEEE80211_SKB_RXCB(skb);
-+	mgmt = (struct ieee80211_mgmt *) skb->data;
-+	stype = le16_to_cpu(mgmt->frame_control) & IEEE80211_FCTL_STYPE;
-+
-+	if (stype != IEEE80211_STYPE_BEACON)
-+		return;
-+
-+	baselen = (u8 *) mgmt->u.probe_resp.variable - (u8 *) mgmt;
-+	if (baselen > skb->len)
-+		return;
-+
-+	ieee802_11_parse_elems(mgmt->u.probe_resp.variable,
-+			       skb->len - baselen, &elems);
-+
-+	rates = ieee80211_sta_get_rates(local, &elems, band);
-+
-+	rcu_read_lock();
-+
-+	sta = sta_info_get(sdata, sdata->u.wds.remote_addr);
-+
-+	if (!sta) {
-+		rcu_read_unlock();
-+		sta = sta_info_alloc(sdata, sdata->u.wds.remote_addr,
-+				     GFP_KERNEL);
-+		if (!sta)
-+			return;
-+
-+		new = true;
-+	}
-+
-+	sta->last_rx = jiffies;
-+	sta->sta.supp_rates[local->hw.conf.channel->band] = rates;
-+
-+	if (elems.ht_cap_elem)
-+		ieee80211_ht_cap_ie_to_sta_ht_cap(sdata, sband,
-+				elems.ht_cap_elem, &sta->sta.ht_cap);
-+
-+	if (elems.wmm_param)
-+		set_sta_flag(sta, WLAN_STA_WME);
-+
-+	if (new) {
-+		set_sta_flag(sta, WLAN_STA_AUTHORIZED);
-+		rate_control_rate_init(sta);
-+		sta_info_insert_rcu(sta);
-+	}
-+
-+	rcu_read_unlock();
-+}
-+
- static void ieee80211_iface_work(struct work_struct *work)
- {
- 	struct ieee80211_sub_if_data *sdata =
-@@ -824,6 +866,9 @@ static void ieee80211_iface_work(struct 
- 				break;
- 			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
- 			break;
-+		case NL80211_IFTYPE_WDS:
-+			ieee80211_wds_rx_queued_mgmt(sdata, skb);
-+			break;
- 		default:
- 			WARN(1, "frame for unexpected interface type");
- 			break;
---- a/net/mac80211/rx.c
-+++ b/net/mac80211/rx.c
-@@ -2281,6 +2281,7 @@ ieee80211_rx_h_action(struct ieee80211_r
- 		    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
- 		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
- 		    sdata->vif.type != NL80211_IFTYPE_AP &&
-+		    sdata->vif.type != NL80211_IFTYPE_WDS &&
- 		    sdata->vif.type != NL80211_IFTYPE_ADHOC)
- 			break;
- 
-@@ -2491,14 +2492,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
- 
- 	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
- 	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
--	    sdata->vif.type != NL80211_IFTYPE_STATION)
-+	    sdata->vif.type != NL80211_IFTYPE_STATION &&
-+	    sdata->vif.type != NL80211_IFTYPE_WDS)
- 		return RX_DROP_MONITOR;
- 
- 	switch (stype) {
- 	case cpu_to_le16(IEEE80211_STYPE_AUTH):
- 	case cpu_to_le16(IEEE80211_STYPE_BEACON):
- 	case cpu_to_le16(IEEE80211_STYPE_PROBE_RESP):
--		/* process for all: mesh, mlme, ibss */
-+		/* process for all: mesh, mlme, ibss, wds */
- 		break;
- 	case cpu_to_le16(IEEE80211_STYPE_ASSOC_RESP):
- 	case cpu_to_le16(IEEE80211_STYPE_REASSOC_RESP):
-@@ -2852,10 +2854,16 @@ static int prepare_for_handlers(struct i
- 		}
- 		break;
- 	case NL80211_IFTYPE_WDS:
--		if (bssid || !ieee80211_is_data(hdr->frame_control))
--			return 0;
- 		if (compare_ether_addr(sdata->u.wds.remote_addr, hdr->addr2))
- 			return 0;
-+
-+		if (ieee80211_is_data(hdr->frame_control) ||
-+		    ieee80211_is_action(hdr->frame_control)) {
-+			if (compare_ether_addr(sdata->vif.addr, hdr->addr1))
-+				return 0;
-+		} else if (!ieee80211_is_beacon(hdr->frame_control))
-+			return 0;
-+
- 		break;
- 	default:
- 		/* should never get here */
---- a/net/mac80211/sta_info.h
-+++ b/net/mac80211/sta_info.h
-@@ -31,7 +31,6 @@
-  * @WLAN_STA_SHORT_PREAMBLE: Station is capable of receiving short-preamble
-  *	frames.
-  * @WLAN_STA_WME: Station is a QoS-STA.
-- * @WLAN_STA_WDS: Station is one of our WDS peers.
-  * @WLAN_STA_CLEAR_PS_FILT: Clear PS filter in hardware (using the
-  *	IEEE80211_TX_CTL_CLEAR_PS_FILT control flag) when the next
-  *	frame to this station is transmitted.
-@@ -62,7 +61,6 @@ enum ieee80211_sta_info_flags {
- 	WLAN_STA_AUTHORIZED,
- 	WLAN_STA_SHORT_PREAMBLE,
- 	WLAN_STA_WME,
--	WLAN_STA_WDS,
- 	WLAN_STA_CLEAR_PS_FILT,
- 	WLAN_STA_MFP,
- 	WLAN_STA_BLOCK_BA,
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -530,7 +530,11 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -510,7 +510,11 @@ int ath9k_hw_process_rxdesc_edma(struct 
  		 */
  		if (rxsp->status11 & AR_CRCErr)
  			rxs->rs_status |= ATH9K_RXERR_CRC;
@@ -858,7 +13,7 @@
  			phyerr = MS(rxsp->status11, AR_PHYErrCode);
  			/*
  			 * If we reach a point here where AR_PostDelimCRCErr is
-@@ -552,11 +556,7 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -532,11 +536,7 @@ int ath9k_hw_process_rxdesc_edma(struct 
  				rxs->rs_status |= ATH9K_RXERR_PHY;
  				rxs->rs_phyerr = phyerr;
  			}
@@ -1003,53 +158,233 @@
   *	and the last one will also have %IEEE80211_TX_STATUS_EOSP set. In case
   *	frames from multiple TIDs are released and the driver might reorder
   *	them between the TIDs, it must set the %IEEE80211_TX_STATUS_EOSP flag
---- a/net/mac80211/ieee80211_i.h
-+++ b/net/mac80211/ieee80211_i.h
-@@ -1183,6 +1183,7 @@ void ieee80211_sta_rx_queued_mgmt(struct
- 				  struct sk_buff *skb);
- void ieee80211_sta_reset_beacon_monitor(struct ieee80211_sub_if_data *sdata);
- void ieee80211_sta_reset_conn_monitor(struct ieee80211_sub_if_data *sdata);
-+void ieee80211_mgd_teardown(struct ieee80211_sub_if_data *sdata);
+--- a/net/mac80211/agg-rx.c
++++ b/net/mac80211/agg-rx.c
+@@ -187,6 +187,8 @@ static void ieee80211_send_addba_resp(st
+ 		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
+ 	else if (sdata->vif.type == NL80211_IFTYPE_ADHOC)
+ 		memcpy(mgmt->bssid, sdata->u.ibss.bssid, ETH_ALEN);
++	else if (sdata->vif.type == NL80211_IFTYPE_WDS)
++		memcpy(mgmt->bssid, da, ETH_ALEN);
  
- /* IBSS code */
- void ieee80211_ibss_notify_scan_completed(struct ieee80211_local *local);
---- a/net/mac80211/mlme.c
-+++ b/net/mac80211/mlme.c
-@@ -3496,6 +3496,19 @@ int ieee80211_mgd_disassoc(struct ieee80
+ 	mgmt->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
+ 					  IEEE80211_STYPE_ACTION);
+--- a/net/mac80211/agg-tx.c
++++ b/net/mac80211/agg-tx.c
+@@ -81,7 +81,8 @@ static void ieee80211_send_addba_request
+ 	memcpy(mgmt->sa, sdata->vif.addr, ETH_ALEN);
+ 	if (sdata->vif.type == NL80211_IFTYPE_AP ||
+ 	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN ||
+-	    sdata->vif.type == NL80211_IFTYPE_MESH_POINT)
++	    sdata->vif.type == NL80211_IFTYPE_MESH_POINT ||
++	    sdata->vif.type == NL80211_IFTYPE_WDS)
+ 		memcpy(mgmt->bssid, sdata->vif.addr, ETH_ALEN);
+ 	else if (sdata->vif.type == NL80211_IFTYPE_STATION)
+ 		memcpy(mgmt->bssid, sdata->u.mgd.bssid, ETH_ALEN);
+@@ -471,6 +472,7 @@ int ieee80211_start_tx_ba_session(struct
+ 	    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
+ 	    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
+ 	    sdata->vif.type != NL80211_IFTYPE_AP &&
++	    sdata->vif.type != NL80211_IFTYPE_WDS &&
+ 	    sdata->vif.type != NL80211_IFTYPE_ADHOC)
+ 		return -EINVAL;
+ 
+--- a/net/mac80211/debugfs_sta.c
++++ b/net/mac80211/debugfs_sta.c
+@@ -63,11 +63,11 @@ static ssize_t sta_flags_read(struct fil
+ 	test_sta_flag(sta, WLAN_STA_##flg) ? #flg "\n" : ""
+ 
+ 	int res = scnprintf(buf, sizeof(buf),
+-			    "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
++			    "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+ 			    TEST(AUTH), TEST(ASSOC), TEST(PS_STA),
+ 			    TEST(PS_DRIVER), TEST(AUTHORIZED),
+ 			    TEST(SHORT_PREAMBLE),
+-			    TEST(WME), TEST(WDS), TEST(CLEAR_PS_FILT),
++			    TEST(WME), TEST(CLEAR_PS_FILT),
+ 			    TEST(MFP), TEST(BLOCK_BA), TEST(PSPOLL),
+ 			    TEST(UAPSD), TEST(SP), TEST(TDLS_PEER),
+ 			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -178,7 +178,6 @@ static int ieee80211_do_open(struct net_
+ {
+ 	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
+ 	struct ieee80211_local *local = sdata->local;
+-	struct sta_info *sta;
+ 	u32 changed = 0;
+ 	int res;
+ 	u32 hw_reconf_flags = 0;
+@@ -309,28 +308,6 @@ static int ieee80211_do_open(struct net_
+ 
+ 	set_bit(SDATA_STATE_RUNNING, &sdata->state);
+ 
+-	if (sdata->vif.type == NL80211_IFTYPE_WDS) {
+-		/* Create STA entry for the WDS peer */
+-		sta = sta_info_alloc(sdata, sdata->u.wds.remote_addr,
+-				     GFP_KERNEL);
+-		if (!sta) {
+-			res = -ENOMEM;
+-			goto err_del_interface;
+-		}
+-
+-		sta_info_pre_move_state(sta, IEEE80211_STA_AUTH);
+-		sta_info_pre_move_state(sta, IEEE80211_STA_ASSOC);
+-		sta_info_pre_move_state(sta, IEEE80211_STA_AUTHORIZED);
+-
+-		res = sta_info_insert(sta);
+-		if (res) {
+-			/* STA has been freed */
+-			goto err_del_interface;
+-		}
+-
+-		rate_control_rate_init(sta);
+-	}
+-
+ 	/*
+ 	 * set_multicast_list will be invoked by the networking core
+ 	 * which will check whether any increments here were done in
+@@ -357,8 +334,7 @@ static int ieee80211_do_open(struct net_
+ 	netif_tx_start_all_queues(dev);
+ 
  	return 0;
+- err_del_interface:
+-	drv_remove_interface(local, sdata);
++
+  err_stop:
+ 	if (!local->open_count)
+ 		drv_stop(local);
+@@ -722,6 +698,70 @@ static void ieee80211_if_setup(struct ne
+ 	dev->destructor = free_netdev;
  }
  
-+void ieee80211_mgd_teardown(struct ieee80211_sub_if_data *sdata)
++static void ieee80211_wds_rx_queued_mgmt(struct ieee80211_sub_if_data *sdata,
++					 struct sk_buff *skb)
 +{
-+	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
++	struct ieee80211_local *local = sdata->local;
++	struct ieee80211_rx_status *rx_status;
++	struct ieee802_11_elems elems;
++	struct ieee80211_mgmt *mgmt;
++	struct sta_info *sta;
++	size_t baselen;
++	u32 rates = 0;
++	u16 stype;
++	bool new = false;
++	enum ieee80211_band band = local->hw.conf.channel->band;
++	struct ieee80211_supported_band *sband = local->hw.wiphy->bands[band];
 +
-+	mutex_lock(&ifmgd->mtx);
-+	if (ifmgd->assoc_data)
-+		ieee80211_destroy_assoc_data(sdata, false);
-+	if (ifmgd->auth_data)
-+		ieee80211_destroy_auth_data(sdata, false);
-+	del_timer_sync(&ifmgd->timer);
-+	mutex_unlock(&ifmgd->mtx);
++	rx_status = IEEE80211_SKB_RXCB(skb);
++	mgmt = (struct ieee80211_mgmt *) skb->data;
++	stype = le16_to_cpu(mgmt->frame_control) & IEEE80211_FCTL_STYPE;
++
++	if (stype != IEEE80211_STYPE_BEACON)
++		return;
++
++	baselen = (u8 *) mgmt->u.probe_resp.variable - (u8 *) mgmt;
++	if (baselen > skb->len)
++		return;
++
++	ieee802_11_parse_elems(mgmt->u.probe_resp.variable,
++			       skb->len - baselen, &elems);
++
++	rates = ieee80211_sta_get_rates(local, &elems, band);
++
++	rcu_read_lock();
++
++	sta = sta_info_get(sdata, sdata->u.wds.remote_addr);
++
++	if (!sta) {
++		rcu_read_unlock();
++		sta = sta_info_alloc(sdata, sdata->u.wds.remote_addr,
++				     GFP_KERNEL);
++		if (!sta)
++			return;
++
++		new = true;
++	}
++
++	sta->last_rx = jiffies;
++	sta->sta.supp_rates[local->hw.conf.channel->band] = rates;
++
++	if (elems.ht_cap_elem)
++		ieee80211_ht_cap_ie_to_sta_ht_cap(sdata, sband,
++				elems.ht_cap_elem, &sta->sta.ht_cap);
++
++	if (elems.wmm_param)
++		set_sta_flag(sta, WLAN_STA_WME);
++
++	if (new) {
++		set_sta_flag(sta, WLAN_STA_AUTHORIZED);
++		rate_control_rate_init(sta);
++		sta_info_insert_rcu(sta);
++	}
++
++	rcu_read_unlock();
 +}
 +
- void ieee80211_cqm_rssi_notify(struct ieee80211_vif *vif,
- 			       enum nl80211_cqm_rssi_threshold_event rssi_event,
- 			       gfp_t gfp)
+ static void ieee80211_iface_work(struct work_struct *work)
+ {
+ 	struct ieee80211_sub_if_data *sdata =
+@@ -826,6 +866,9 @@ static void ieee80211_iface_work(struct 
+ 				break;
+ 			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
+ 			break;
++		case NL80211_IFTYPE_WDS:
++			ieee80211_wds_rx_queued_mgmt(sdata, skb);
++			break;
+ 		default:
+ 			WARN(1, "frame for unexpected interface type");
+ 			break;
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2282,6 +2282,7 @@ ieee80211_rx_h_action(struct ieee80211_r
+ 		    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
+ 		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
+ 		    sdata->vif.type != NL80211_IFTYPE_AP &&
++		    sdata->vif.type != NL80211_IFTYPE_WDS &&
+ 		    sdata->vif.type != NL80211_IFTYPE_ADHOC)
+ 			break;
+ 
+@@ -2492,14 +2493,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+ 
+ 	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
+ 	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
+-	    sdata->vif.type != NL80211_IFTYPE_STATION)
++	    sdata->vif.type != NL80211_IFTYPE_STATION &&
++	    sdata->vif.type != NL80211_IFTYPE_WDS)
+ 		return RX_DROP_MONITOR;
+ 
+ 	switch (stype) {
+ 	case cpu_to_le16(IEEE80211_STYPE_AUTH):
+ 	case cpu_to_le16(IEEE80211_STYPE_BEACON):
+ 	case cpu_to_le16(IEEE80211_STYPE_PROBE_RESP):
+-		/* process for all: mesh, mlme, ibss */
++		/* process for all: mesh, mlme, ibss, wds */
+ 		break;
+ 	case cpu_to_le16(IEEE80211_STYPE_ASSOC_RESP):
+ 	case cpu_to_le16(IEEE80211_STYPE_REASSOC_RESP):
+@@ -2853,10 +2855,16 @@ static int prepare_for_handlers(struct i
+ 		}
+ 		break;
+ 	case NL80211_IFTYPE_WDS:
+-		if (bssid || !ieee80211_is_data(hdr->frame_control))
+-			return 0;
+ 		if (compare_ether_addr(sdata->u.wds.remote_addr, hdr->addr2))
+ 			return 0;
++
++		if (ieee80211_is_data(hdr->frame_control) ||
++		    ieee80211_is_action(hdr->frame_control)) {
++			if (compare_ether_addr(sdata->vif.addr, hdr->addr1))
++				return 0;
++		} else if (!ieee80211_is_beacon(hdr->frame_control))
++			return 0;
++
+ 		break;
+ 	default:
+ 		/* should never get here */
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -865,8 +865,10 @@ int sta_info_flush(struct ieee80211_loca
- 
- 	mutex_lock(&local->sta_mtx);
- 	list_for_each_entry_safe(sta, tmp, &local->sta_list, list) {
--		if (!sdata || sdata == sta->sdata)
-+		if (!sdata || sdata == sta->sdata) {
- 			WARN_ON(__sta_info_destroy(sta));
-+			ret++;
-+		}
- 	}
- 	mutex_unlock(&local->sta_mtx);
- 
-@@ -1048,7 +1050,7 @@ static void ieee80211_send_null_response
+@@ -1050,7 +1050,7 @@ static void ieee80211_send_null_response
  	 * exchange. Also set EOSP to indicate this packet
  	 * ends the poll/service period.
  	 */
@@ -1058,7 +393,7 @@
  		       IEEE80211_TX_STATUS_EOSP |
  		       IEEE80211_TX_CTL_REQ_TX_STATUS;
  
-@@ -1175,7 +1177,7 @@ ieee80211_sta_ps_deliver_response(struct
+@@ -1177,7 +1177,7 @@ ieee80211_sta_ps_deliver_response(struct
  			 * STA may still remain is PS mode after this frame
  			 * exchange.
  			 */
@@ -1067,6 +402,24 @@
  
  			/*
  			 * Use MoreData flag to indicate whether there are
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -31,7 +31,6 @@
+  * @WLAN_STA_SHORT_PREAMBLE: Station is capable of receiving short-preamble
+  *	frames.
+  * @WLAN_STA_WME: Station is a QoS-STA.
+- * @WLAN_STA_WDS: Station is one of our WDS peers.
+  * @WLAN_STA_CLEAR_PS_FILT: Clear PS filter in hardware (using the
+  *	IEEE80211_TX_CTL_CLEAR_PS_FILT control flag) when the next
+  *	frame to this station is transmitted.
+@@ -62,7 +61,6 @@ enum ieee80211_sta_info_flags {
+ 	WLAN_STA_AUTHORIZED,
+ 	WLAN_STA_SHORT_PREAMBLE,
+ 	WLAN_STA_WME,
+-	WLAN_STA_WDS,
+ 	WLAN_STA_CLEAR_PS_FILT,
+ 	WLAN_STA_MFP,
+ 	WLAN_STA_BLOCK_BA,
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
 @@ -448,18 +448,23 @@ ieee80211_tx_h_unicast_ps_buf(struct iee

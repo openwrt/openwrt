@@ -1,42 +1,35 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -969,34 +969,6 @@ static ssize_t read_file_recv(struct fil
- 			"%18s : %10u\n", "DECRYPT BUSY ERR",
- 			sc->debug.stats.rxstats.decrypt_busy_err);
+@@ -942,27 +942,6 @@ static ssize_t read_file_recv(struct fil
+ 	PHY_ERR("HT-RATE ERR", ATH9K_PHYERR_HT_RATE_ILLEGAL);
  
--	len += snprintf(buf + len, size - len,
--			"%18s : %10d\n", "RSSI-CTL0",
+ 	len += snprintf(buf + len, size - len,
+-			"%22s : %10d\n", "RSSI-CTL0",
 -			sc->debug.stats.rxstats.rs_rssi_ctl0);
--
 -	len += snprintf(buf + len, size - len,
--			"%18s : %10d\n", "RSSI-CTL1",
+-			"%22s : %10d\n", "RSSI-CTL1",
 -			sc->debug.stats.rxstats.rs_rssi_ctl1);
--
 -	len += snprintf(buf + len, size - len,
--			"%18s : %10d\n", "RSSI-CTL2",
+-			"%22s : %10d\n", "RSSI-CTL2",
 -			sc->debug.stats.rxstats.rs_rssi_ctl2);
--
 -	len += snprintf(buf + len, size - len,
--			"%18s : %10d\n", "RSSI-EXT0",
+-			"%22s : %10d\n", "RSSI-EXT0",
 -			sc->debug.stats.rxstats.rs_rssi_ext0);
--
 -	len += snprintf(buf + len, size - len,
--			"%18s : %10d\n", "RSSI-EXT1",
+-			"%22s : %10d\n", "RSSI-EXT1",
 -			sc->debug.stats.rxstats.rs_rssi_ext1);
--
 -	len += snprintf(buf + len, size - len,
--			"%18s : %10d\n", "RSSI-EXT2",
+-			"%22s : %10d\n", "RSSI-EXT2",
 -			sc->debug.stats.rxstats.rs_rssi_ext2);
--
 -	len += snprintf(buf + len, size - len,
--			"%18s : %10d\n", "Rx Antenna",
+-			"%22s : %10d\n", "Rx Antenna",
 -			sc->debug.stats.rxstats.rs_antenna);
--
- 	PHY_ERR("UNDERRUN", ATH9K_PHYERR_UNDERRUN);
- 	PHY_ERR("TIMING", ATH9K_PHYERR_TIMING);
- 	PHY_ERR("PARITY", ATH9K_PHYERR_PARITY);
-@@ -1073,16 +1045,6 @@ void ath_debug_stat_rx(struct ath_softc 
- 		RX_PHY_ERR_INC(phyerr);
+-	len += snprintf(buf + len, size - len,
+ 			"%22s : %10u\n", "RX-Pkts-All",
+ 			sc->debug.stats.rxstats.rx_pkts_all);
+ 	len += snprintf(buf + len, size - len,
+@@ -1009,16 +988,6 @@ void ath_debug_stat_rx(struct ath_softc 
+ 			RX_PHY_ERR_INC(rs->rs_phyerr);
  	}
  
 -	sc->debug.stats.rxstats.rs_rssi_ctl0 = rs->rs_rssi_ctl0;

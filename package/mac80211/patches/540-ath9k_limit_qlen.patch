@@ -20,8 +20,8 @@
  	spinlock_t txbuflock;
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1732,6 +1732,10 @@ int ath9k_init_debug(struct ath_hw *ah)
- 			    sc, &fops_wiphy);
+@@ -1666,6 +1666,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+ 			    &fops_interrupt);
  	debugfs_create_file("xmit", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_xmit);
 +	debugfs_create_u32("qlen_single", S_IRUSR | S_IWUSR,
@@ -57,7 +57,7 @@
  	while (bf) {
  		u16 seqno = bf->bf_state.seqno;
  
-@@ -885,6 +895,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_
+@@ -884,6 +894,7 @@ static enum ATH_AGGR_STATUS ath_tx_form_
  			ath_tx_addto_baw(sc, tid, seqno);
  		bf->bf_state.ndelim = ndelim;
  
@@ -65,7 +65,7 @@
  		__skb_unlink(skb, &tid->buf_q);
  		list_add_tail(&bf->list, bf_q);
  		if (bf_prev)
-@@ -1740,6 +1751,8 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1739,6 +1750,8 @@ static void ath_tx_send_ampdu(struct ath
  	/* Add sub-frame to BAW */
  	ath_tx_addto_baw(sc, tid, bf->bf_state.seqno);
  
@@ -74,7 +74,7 @@
  	/* Queue to h/w without aggregation */
  	TX_STAT_INC(txctl->txq->axq_qnum, a_queued_hw);
  	bf->bf_lastbf = bf;
-@@ -1864,22 +1877,11 @@ error:
+@@ -1863,22 +1876,11 @@ error:
  
  /* FIXME: tx power */
  static void ath_tx_start_dma(struct ath_softc *sc, struct sk_buff *skb,
@@ -99,7 +99,7 @@
  
  	if ((tx_info->flags & IEEE80211_TX_CTL_AMPDU) && tid) {
  		/*
-@@ -1911,6 +1913,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1910,6 +1912,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ieee80211_vif *vif = info->control.vif;
  	struct ath_softc *sc = hw->priv;
  	struct ath_txq *txq = txctl->txq;
@@ -107,7 +107,7 @@
  	int padpos, padsize;
  	int frmlen = skb->len + FCS_LEN;
  	int q;
-@@ -1953,6 +1956,24 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1952,6 +1955,24 @@ int ath_tx_start(struct ieee80211_hw *hw
  
  	setup_frame_info(hw, skb, frmlen);
  
@@ -132,7 +132,7 @@
  	/*
  	 * At this point, the vif, hw_key and sta pointers in the tx control
  	 * info are no longer valid (overwritten by the ath_frame_info data.
-@@ -1967,7 +1988,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1966,7 +1987,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  		txq->stopped = true;
  	}
  
