@@ -78,7 +78,7 @@
  		kfree(sta);
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -508,6 +508,8 @@ struct station_parameters {
+@@ -518,6 +518,8 @@ struct station_parameters {
   * @STATION_INFO_ASSOC_REQ_IES: @assoc_req_ies filled
   * @STATION_INFO_STA_FLAGS: @sta_flags filled
   * @STATION_INFO_BEACON_LOSS_COUNT: @beacon_loss_count filled
@@ -87,7 +87,7 @@
   */
  enum station_info_flags {
  	STATION_INFO_INACTIVE_TIME	= 1<<0,
-@@ -529,7 +531,9 @@ enum station_info_flags {
+@@ -539,7 +541,9 @@ enum station_info_flags {
  	STATION_INFO_CONNECTED_TIME	= 1<<16,
  	STATION_INFO_ASSOC_REQ_IES	= 1<<17,
  	STATION_INFO_STA_FLAGS		= 1<<18,
@@ -98,7 +98,7 @@
  };
  
  /**
-@@ -609,6 +613,9 @@ struct sta_bss_parameters {
+@@ -619,6 +623,9 @@ struct sta_bss_parameters {
   * @plink_state: mesh peer link state
   * @signal: signal strength of last received packet in dBm
   * @signal_avg: signal strength average in dBm
@@ -108,7 +108,7 @@
   * @txrate: current unicast bitrate from this station
   * @rxrate: current unicast bitrate to this station
   * @rx_packets: packets received from this station
-@@ -640,6 +647,11 @@ struct station_info {
+@@ -650,6 +657,11 @@ struct station_info {
  	u8 plink_state;
  	s8 signal;
  	s8 signal_avg;
@@ -271,7 +271,7 @@
  	RX_SAMP_DBG(rate) = rs->rs_rate;
 --- a/include/linux/nl80211.h
 +++ b/include/linux/nl80211.h
-@@ -1657,6 +1657,8 @@ enum nl80211_sta_bss_param {
+@@ -1661,6 +1661,8 @@ enum nl80211_sta_bss_param {
   * @NL80211_STA_INFO_CONNECTED_TIME: time since the station is last connected
   * @NL80211_STA_INFO_STA_FLAGS: Contains a struct nl80211_sta_flag_update.
   * @NL80211_STA_INFO_BEACON_LOSS: count of times beacon loss was detected (u32)
@@ -280,7 +280,7 @@
   * @__NL80211_STA_INFO_AFTER_LAST: internal
   * @NL80211_STA_INFO_MAX: highest possible station info attribute
   */
-@@ -1680,6 +1682,8 @@ enum nl80211_sta_info {
+@@ -1684,6 +1686,8 @@ enum nl80211_sta_info {
  	NL80211_STA_INFO_CONNECTED_TIME,
  	NL80211_STA_INFO_STA_FLAGS,
  	NL80211_STA_INFO_BEACON_LOSS,
@@ -291,7 +291,7 @@
  	__NL80211_STA_INFO_AFTER_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -2347,6 +2347,33 @@ nla_put_failure:
+@@ -2376,6 +2376,33 @@ nla_put_failure:
  	return false;
  }
  
@@ -325,7 +325,7 @@
  static int nl80211_send_station(struct sk_buff *msg, u32 pid, u32 seq,
  				int flags, struct net_device *dev,
  				const u8 *mac_addr, struct station_info *sinfo)
-@@ -2393,6 +2420,18 @@ static int nl80211_send_station(struct s
+@@ -2422,6 +2449,18 @@ static int nl80211_send_station(struct s
  	if (sinfo->filled & STATION_INFO_SIGNAL_AVG)
  		NLA_PUT_U8(msg, NL80211_STA_INFO_SIGNAL_AVG,
  			   sinfo->signal_avg);

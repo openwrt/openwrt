@@ -81,7 +81,7 @@
  	sc->debug.sampidx = 0;
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1559,7 +1559,7 @@ static void ath9k_disable_ps(struct ath_
+@@ -1555,7 +1555,7 @@ static void ath9k_disable_ps(struct ath_
  
  }
  
@@ -90,7 +90,7 @@
  {
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
-@@ -1609,9 +1609,11 @@ static int ath9k_config(struct ieee80211
+@@ -1599,9 +1599,11 @@ static int ath9k_config(struct ieee80211
  
  	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
  		struct ieee80211_channel *curchan = hw->conf.channel;
@@ -102,7 +102,7 @@
  
  		if (ah->curchan)
  			old_pos = ah->curchan - &ah->channels[0];
-@@ -1659,7 +1661,23 @@ static int ath9k_config(struct ieee80211
+@@ -1649,7 +1651,23 @@ static int ath9k_config(struct ieee80211
  			memset(&sc->survey[pos], 0, sizeof(struct survey_info));
  		}
  

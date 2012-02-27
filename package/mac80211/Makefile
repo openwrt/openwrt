@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2012-02-06
-PKG_RELEASE:=4
+PKG_VERSION:=2012-02-23
+PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=fae71c35ee3f3de6329f2db7aed6d265
+PKG_MD5SUM:=dc01b316954e7c9f2ea50c09bb68138e
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -1303,7 +1303,7 @@ endef
 ifneq ($(CONFIG_PACKAGE_kmod-cfg80211)$(CONFIG_PACKAGE_kmod-lib80211),)
  define Build/Compile/kmod
 	rm -rf $(PKG_BUILD_DIR)/modules
-	$(MAKE) $(PKG_JOBS) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) all
+	$(MAKE) $(PKG_JOBS) -C "$(PKG_BUILD_DIR)" $(MAKE_OPTS) modules
  endef
 endif
 

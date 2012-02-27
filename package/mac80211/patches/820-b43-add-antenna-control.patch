@@ -9,7 +9,7 @@
  	antenna = b43_antenna_to_phyctl(antenna);
  	ctl = b43_shm_read16(dev, B43_SHM_SHARED, B43_SHM_SH_BEACPHYCTL);
  	/* We can't send beacons with short preamble. Would get PHY errors. */
-@@ -3031,8 +3031,8 @@ static int b43_chip_init(struct b43_wlde
+@@ -3033,8 +3033,8 @@ static int b43_chip_init(struct b43_wlde
  
  	/* Select the antennae */
  	if (phy->ops->set_rx_antenna)
@@ -20,7 +20,7 @@
  
  	if (phy->type == B43_PHYTYPE_B) {
  		value16 = b43_read16(dev, 0x005E);
-@@ -3775,7 +3775,6 @@ static int b43_op_config(struct ieee8021
+@@ -3777,7 +3777,6 @@ static int b43_op_config(struct ieee8021
  	struct b43_wldev *dev;
  	struct b43_phy *phy;
  	struct ieee80211_conf *conf = &hw->conf;
@@ -28,7 +28,7 @@
  	int err = 0;
  	bool reload_bss = false;
  
-@@ -3829,11 +3828,9 @@ static int b43_op_config(struct ieee8021
+@@ -3831,11 +3830,9 @@ static int b43_op_config(struct ieee8021
  	}
  
  	/* Antennas for RX and management frame TX. */
@@ -42,7 +42,7 @@
  
  	if (wl->radio_enabled != phy->radio_on) {
  		if (wl->radio_enabled) {
-@@ -4905,6 +4902,47 @@ static int b43_op_get_survey(struct ieee
+@@ -4907,6 +4904,47 @@ static int b43_op_get_survey(struct ieee
  	return 0;
  }
  
@@ -90,7 +90,7 @@
  static const struct ieee80211_ops b43_hw_ops = {
  	.tx			= b43_op_tx,
  	.conf_tx		= b43_op_conf_tx,
-@@ -4926,6 +4964,8 @@ static const struct ieee80211_ops b43_hw
+@@ -4928,6 +4966,8 @@ static const struct ieee80211_ops b43_hw
  	.sw_scan_complete	= b43_op_sw_scan_complete_notifier,
  	.get_survey		= b43_op_get_survey,
  	.rfkill_poll		= b43_rfkill_poll,
@@ -99,7 +99,7 @@
  };
  
  /* Hard-reset the chip. Do not call this directly.
-@@ -5172,6 +5212,8 @@ static int b43_one_core_attach(struct b4
+@@ -5174,6 +5214,8 @@ static int b43_one_core_attach(struct b4
  	if (!wldev)
  		goto out;
  
@@ -108,7 +108,7 @@
  	wldev->use_pio = b43_modparam_pio;
  	wldev->dev = dev;
  	wldev->wl = wl;
-@@ -5260,6 +5302,9 @@ static struct b43_wl *b43_wireless_init(
+@@ -5262,6 +5304,9 @@ static struct b43_wl *b43_wireless_init(
  		BIT(NL80211_IFTYPE_WDS) |
  		BIT(NL80211_IFTYPE_ADHOC);
  
