@@ -1,0 +1,36 @@
+# Skip fake devices (e.g. relayd)
+grep -qs "^ *$DEVICE:" /proc/net/dev || exit 0
+
+case "$ACTION" in
+	ifup)
+		include /lib/network
+		scan_interfaces
+
+		# Setup sysctls
+		local proto accept_ra send_rs
+		
+		config_get proto "$INTERFACE" proto
+		if [ "$proto" = dhcp ]; then
+			accept_ra=1
+			send_rs=0
+		else
+			accept_ra=0
+			send_rs=1
+		fi
+
+		config_get_bool accept_ra "$INTERFACE" accept_ra $accept_ra
+		[ $accept_ra -eq 0 ] || {
+			logger -t ifup "Allowing Router Advertisements on $INTERFACE ($DEVICE)"
+			accept_ra=2
+		}
+		do_sysctl "net.ipv6.conf.$DEVICE.accept_ra" $accept_ra
+
+		config_get_bool send_rs "$INTERFACE" send_rs $send_rs
+		[ $send_rs -eq 0 ] || {
+			logger -t ifup "Enabling Router Solicitations on $INTERFACE ($DEVICE)"
+			send_rs=2
+		}
+		do_sysctl "net.ipv6.conf.$DEVICE.forwarding" $send_rs
+	;;
+esac
+
