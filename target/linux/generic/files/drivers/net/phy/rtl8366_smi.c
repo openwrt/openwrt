@@ -144,7 +144,6 @@ static int rtl8366_smi_wait_for_ack(struct rtl8366_smi *smi)
 
 		if (++retry_cnt > RTL8366_SMI_ACK_RETRY_COUNT) {
 			dev_err(smi->parent, "ACK timeout\n");
-			dump_stack();
 			return -ETIMEDOUT;
 		}
 	} while (1);
