@@ -1297,6 +1297,7 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(PKG_LINUX_FIRMWARE_SOURCE)
 	rm -rf $(PKG_BUILD_DIR)/include/linux/ssb
 	rm -rf $(PKG_BUILD_DIR)/include/linux/bcma
+	rm -f $(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h
 	rm -f $(PKG_BUILD_DIR)/include/net/ieee80211.h
 endef
 
