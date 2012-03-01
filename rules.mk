@@ -219,7 +219,7 @@ else
     endif
   endif
   RSTRIP:= \
-    export CROSS="$(TARGET_CROSS)"; \
+    export CROSS="$(TARGET_CROSS)" $(if $(CONFIG_KERNEL_KALLSYMS),NO_RENAME=1); \
     NM="$(TARGET_CROSS)nm" \
     STRIP="$(STRIP)" \
     STRIP_KMOD="$(SCRIPT_DIR)/strip-kmod.sh" \

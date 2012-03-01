@@ -22,6 +22,11 @@ ${CROSS}objcopy \
 	-G __this_module \
 	-x "$MODULE" "$MODULE.tmp"
 
+[ -n "$NO_RENAME" ] && {
+	mv "${MODULE}.tmp" "$MODULE"
+	exit 0
+}
+
 ${CROSS}nm "$MODULE.tmp" | awk '
 BEGIN {
 	n = 0
