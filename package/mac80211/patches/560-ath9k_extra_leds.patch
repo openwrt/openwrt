@@ -171,7 +171,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -757,7 +757,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -759,7 +759,7 @@ int ath9k_init_device(u16 devid, struct 
  
  #ifdef CONFIG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -182,9 +182,9 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1247,6 +1247,61 @@ static const struct file_operations fops
- 	.llseek = default_llseek,
- };
+@@ -1254,6 +1254,61 @@ static const struct file_operations fops
+ 
+ #ifdef CONFIG_ATH9K_MAC_DEBUG
  
 +#ifdef CONFIG_MAC80211_LEDS
 +
@@ -244,9 +244,9 @@
  void ath9k_debug_samp_bb_mac(struct ath_softc *sc)
  {
  #define ATH_SAMP_DBG(c) (sc->debug.bb_mac_samp[sc->debug.sampidx].c)
-@@ -1671,6 +1726,11 @@ int ath9k_init_debug(struct ath_hw *ah)
- 	debugfs_create_file("samples", S_IRUSR, sc->debug.debugfs_phy, sc,
+@@ -1681,6 +1736,11 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_samps);
+ #endif
  
 +#ifdef CONFIG_MAC80211_LEDS
 +	debugfs_create_file("gpio_led", S_IWUSR,
