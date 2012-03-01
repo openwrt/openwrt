@@ -1,7 +1,7 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -7,6 +7,11 @@ ifeq ($(WITHOUT_XATTR), 1)
-   CPPFLAGS += -DWITHOUT_XATTR
+@@ -12,6 +12,11 @@ else
+   LZOLDLIBS = -llzo2
  endif
  
 +ifeq ($(shell uname -o),Cygwin)
@@ -10,9 +10,9 @@
 +
 +ifneq ($(shell uname -o),Cygwin)
  SUBDIRS = lib ubi-utils mkfs.ubifs
+ TESTS = tests
  
- TARGETS = ftl_format flash_erase nanddump doc_loadbios \
-@@ -17,6 +22,10 @@ TARGETS = ftl_format flash_erase nanddum
+@@ -23,6 +28,10 @@ TARGETS = ftl_format flash_erase nanddum
  	rfddump rfdformat \
  	serve_image recv_image \
  	sumtool #jffs2reader
@@ -373,8 +373,8 @@
 +
 --- a/mkfs.jffs2.c
 +++ b/mkfs.jffs2.c
-@@ -76,6 +76,14 @@
- 
+@@ -77,6 +77,14 @@
+ #include "rbtree.h"
  #include "common.h"
  
 +#ifdef __CYGWIN__
@@ -388,7 +388,7 @@
  /* Do not use the weird XPG version of basename */
  #undef basename
  
-@@ -375,7 +383,7 @@ static struct filesystem_entry *recursiv
+@@ -376,7 +384,7 @@ static struct filesystem_entry *recursiv
     the following macros use it if available or use a hacky workaround...
   */
  
@@ -397,10 +397,10 @@
  #define SCANF_PREFIX "a"
  #define SCANF_STRING(s) (&s)
  #define GETCWD_SIZE 0
-@@ -458,6 +466,14 @@ static int interpret_table_entry(struct 
+@@ -459,6 +467,14 @@ static int interpret_table_entry(struct
  	}
  	entry = find_filesystem_entry(root, name, mode);
- 	if (entry) {
+ 	if (entry && !(count > 0 && (type == 'c' || type == 'b'))) {
 +		/* Check the type */
 +		if ((mode & S_IFMT) != (entry->sb.st_mode & S_IFMT)) {
 +			error_msg ("skipping device_table entry '%s': type mismatch!", name);
@@ -412,7 +412,7 @@
  		/* Ok, we just need to fixup the existing entry
  		 * and we will be all done... */
  		entry->sb.st_uid = uid;
-@@ -467,11 +483,21 @@ static int interpret_table_entry(struct 
+@@ -468,11 +484,21 @@ static int interpret_table_entry(struct
  			entry->sb.st_rdev = makedev(major, minor);
  		}
  	} else {
@@ -435,7 +435,7 @@
  		free(tmp);
  		if (parent == NULL) {
  			errmsg ("skipping device_table entry '%s': no parent directory!", name);
-@@ -485,6 +511,7 @@ static int interpret_table_entry(struct 
+@@ -486,6 +512,7 @@ static int interpret_table_entry(struct
  				add_host_filesystem_entry(name, hostpath, uid, gid, mode, 0, parent);
  				break;
  			case 'f':

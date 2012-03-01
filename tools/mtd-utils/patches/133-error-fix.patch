@@ -1,7 +1,7 @@
 --- a/mkfs.jffs2.c
 +++ b/mkfs.jffs2.c
-@@ -468,7 +468,7 @@ static int interpret_table_entry(struct 
- 	if (entry) {
+@@ -469,7 +469,7 @@ static int interpret_table_entry(struct
+ 	if (entry && !(count > 0 && (type == 'c' || type == 'b'))) {
  		/* Check the type */
  		if ((mode & S_IFMT) != (entry->sb.st_mode & S_IFMT)) {
 -			error_msg ("skipping device_table entry '%s': type mismatch!", name);
@@ -9,7 +9,7 @@
  			free(name);
  			free(hostpath);
  			return 1;
-@@ -484,7 +484,7 @@ static int interpret_table_entry(struct 
+@@ -485,7 +485,7 @@ static int interpret_table_entry(struct
  		}
  	} else {
  		if (type == 'f' || type == 'l') {

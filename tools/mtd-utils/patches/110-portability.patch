@@ -1,9 +1,9 @@
 --- a/compr_lzo.c
 +++ b/compr_lzo.c
-@@ -24,7 +24,6 @@
- #include <stdint.h>
- #include <stdio.h>
+@@ -26,7 +26,6 @@
  #include <string.h>
+ 
+ #ifndef WITHOUT_LZO
 -#include <asm/types.h>
  #include <linux/jffs2.h>
  #include <lzo/lzo1x.h>
@@ -67,7 +67,7 @@
  #include <sys/types.h>
 --- a/mkfs.ubifs/mkfs.ubifs.c
 +++ b/mkfs.ubifs/mkfs.ubifs.c
-@@ -805,8 +805,8 @@ int write_leb(int lnum, int len, void *b
+@@ -821,8 +821,8 @@ int write_leb(int lnum, int len, void *b
  		if (ubi_leb_change_start(ubi, out_fd, lnum, c->leb_size, dtype))
  			return sys_err_msg("ubi_leb_change_start failed");
  
@@ -78,7 +78,7 @@
  				   (long long)pos);
  
  	if (write(out_fd, buf, c->leb_size) != c->leb_size)
-@@ -1063,6 +1063,7 @@ static int add_inode_with_data(struct st
+@@ -1079,6 +1079,7 @@ static int add_inode_with_data(struct st
  
  	if (c->default_compr != UBIFS_COMPR_NONE)
  		use_flags |= UBIFS_COMPR_FL;
@@ -86,7 +86,7 @@
  	if (flags & FS_COMPR_FL)
  		use_flags |= UBIFS_COMPR_FL;
  	if (flags & FS_SYNC_FL)
-@@ -1073,6 +1074,7 @@ static int add_inode_with_data(struct st
+@@ -1089,6 +1090,7 @@ static int add_inode_with_data(struct st
  		use_flags |= UBIFS_APPEND_FL;
  	if (flags & FS_DIRSYNC_FL && S_ISDIR(st->st_mode))
  		use_flags |= UBIFS_DIRSYNC_FL;
@@ -94,7 +94,7 @@
  
  	memset(ino, 0, UBIFS_INO_NODE_SZ);
  
-@@ -1142,7 +1144,9 @@ static int add_dir_inode(DIR *dir, ino_t
+@@ -1158,7 +1160,9 @@ static int add_dir_inode(DIR *dir, ino_t
  		fd = dirfd(dir);
  		if (fd == -1)
  			return sys_err_msg("dirfd failed");
@@ -104,7 +104,7 @@
  			flags = 0;
  	}
  
-@@ -1327,10 +1331,12 @@ static int add_file(const char *path_nam
+@@ -1343,10 +1347,12 @@ static int add_file(const char *path_nam
  		key_write(&key, &dn->key);
  		dn->size = cpu_to_le32(bytes_read);
  		out_len = NODE_BUFFER_SIZE - UBIFS_DATA_NODE_SZ;
@@ -117,7 +117,7 @@
  			use_compr = c->default_compr;
  		compr_type = compress_data(buf, bytes_read, &dn->data,
  					   &out_len, use_compr);
-@@ -1372,7 +1378,9 @@ static int add_non_dir(const char *path_
+@@ -1388,7 +1394,9 @@ static int add_non_dir(const char *path_
  		if (fd == -1)
  			return sys_err_msg("failed to open file '%s'",
  					   path_name);
