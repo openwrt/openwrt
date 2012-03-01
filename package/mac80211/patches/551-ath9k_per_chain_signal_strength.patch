@@ -23,7 +23,7 @@
  	int antenna;
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -312,6 +312,11 @@ struct sta_info {
+@@ -313,6 +313,11 @@ struct sta_info {
  	unsigned long rx_dropped;
  	int last_signal;
  	struct ewma avg_signal;
@@ -67,7 +67,7 @@
  	 * exchange sequence.
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -255,6 +255,8 @@ struct sta_info *sta_info_alloc(struct i
+@@ -256,6 +256,8 @@ struct sta_info *sta_info_alloc(struct i
  	do_posix_clock_monotonic_gettime(&uptime);
  	sta->last_connected = uptime.tv_sec;
  	ewma_init(&sta->avg_signal, 1024, 8);
