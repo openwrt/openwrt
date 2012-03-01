@@ -11,16 +11,18 @@ MODULE="$1"
 	exit 1
 }
 
+ARGS=
+[ -n "$KEEP_SYMBOLS" ] || ARGS="-x -G __this_module --strip-unneeded"
+
 ${CROSS}objcopy \
-	--strip-unneeded \
 	-R .comment \
 	-R .pdr \
 	-R .mdebug.abi32 \
 	-R .note.gnu.build-id \
 	-R .gnu.attributes \
 	-R .reginfo \
-	-G __this_module \
-	-x "$MODULE" "$MODULE.tmp"
+	$ARGS \
+	"$MODULE" "$MODULE.tmp"
 
 [ -n "$NO_RENAME" ] && {
 	mv "${MODULE}.tmp" "$MODULE"
