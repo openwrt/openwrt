@@ -452,3 +452,14 @@
  #ifdef CONFIG_MAC80211_VERBOSE_PS_DEBUG
  		printk(KERN_DEBUG "STA %pM aid %d: PS buffer for AC %d\n",
  		       sta->sta.addr, sta->sta.aid, ac);
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -480,7 +480,7 @@ struct ieee80211_if_ibss {
+ 
+ 	bool control_port;
+ 
+-	u8 bssid[ETH_ALEN];
++	u8 bssid[ETH_ALEN] __aligned(2);
+ 	u8 ssid[IEEE80211_MAX_SSID_LEN];
+ 	u8 ssid_len, ie_len;
+ 	u8 *ie;
