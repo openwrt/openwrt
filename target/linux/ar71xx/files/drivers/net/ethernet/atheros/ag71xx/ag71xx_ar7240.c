@@ -631,11 +631,15 @@ static void ar7240sw_setup_port(struct ar7240sw *as, unsigned port, u8 portmask)
 		mode = AR7240_PORT_VLAN_MODE_PORT_ONLY;
 	}
 
-	if (as->vlan && (as->vlan_tagged & BIT(port))) {
-		ctrl |= AR7240_PORT_CTRL_VLAN_MODE_ADD <<
-			AR7240_PORT_CTRL_VLAN_MODE_S;
+	if (as->vlan) {
+		if (as->vlan_tagged & BIT(port))
+			ctrl |= AR7240_PORT_CTRL_VLAN_MODE_ADD <<
+				AR7240_PORT_CTRL_VLAN_MODE_S;
+		else
+			ctrl |= AR7240_PORT_CTRL_VLAN_MODE_STRIP <<
+				AR7240_PORT_CTRL_VLAN_MODE_S;
 	} else {
-		ctrl |= AR7240_PORT_CTRL_VLAN_MODE_STRIP <<
+		ctrl |= AR7240_PORT_CTRL_VLAN_MODE_KEEP <<
 			AR7240_PORT_CTRL_VLAN_MODE_S;
 	}
 
