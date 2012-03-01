@@ -250,8 +250,8 @@
  	if (ads.ds_rxstatus8 & AR_RxKeyIdxValid)
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -990,12 +990,12 @@ void ath_debug_stat_rx(struct ath_softc 
- 
+@@ -993,12 +993,12 @@ void ath_debug_stat_rx(struct ath_softc 
+ #ifdef CONFIG_ATH9K_MAC_DEBUG
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;
 -	RX_SAMP_DBG(rssi_ctl0) = rs->rs_rssi_ctl0;

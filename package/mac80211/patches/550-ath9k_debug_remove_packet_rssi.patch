@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -942,27 +942,6 @@ static ssize_t read_file_recv(struct fil
+@@ -944,27 +944,6 @@ static ssize_t read_file_recv(struct fil
  	PHY_ERR("HT-RATE ERR", ATH9K_PHYERR_HT_RATE_ILLEGAL);
  
  	len += snprintf(buf + len, size - len,
@@ -28,7 +28,7 @@
  			"%22s : %10u\n", "RX-Pkts-All",
  			sc->debug.stats.rxstats.rx_pkts_all);
  	len += snprintf(buf + len, size - len,
-@@ -1009,16 +988,6 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -1011,16 +990,6 @@ void ath_debug_stat_rx(struct ath_softc 
  			RX_PHY_ERR_INC(rs->rs_phyerr);
  	}
  
@@ -42,9 +42,9 @@
 -
 -	sc->debug.stats.rxstats.rs_antenna = rs->rs_antenna;
 -
+ #ifdef CONFIG_ATH9K_MAC_DEBUG
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;
- 	RX_SAMP_DBG(rssi_ctl0) = rs->rs_rssi_ctl0;
 --- a/drivers/net/wireless/ath/ath9k/debug.h
 +++ b/drivers/net/wireless/ath/ath9k/debug.h
 @@ -165,13 +165,6 @@ struct ath_rx_stats {

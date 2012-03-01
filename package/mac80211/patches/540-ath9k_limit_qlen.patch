@@ -20,7 +20,7 @@
  	spinlock_t txbuflock;
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1666,6 +1666,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1674,6 +1674,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_interrupt);
  	debugfs_create_file("xmit", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_xmit);
