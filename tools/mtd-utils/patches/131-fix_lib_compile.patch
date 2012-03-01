@@ -3,9 +3,9 @@
 @@ -7,7 +7,7 @@ SUBDIRS =
  # CFLAGS += -Werror
  CPPFLAGS += -I../include
- LIBS = libmtd libcrc32
--TARGETS = libmtd.a libcrc32.a
-+override TARGETS = libmtd.a libcrc32.a
+ LIBS = libmtd
+-TARGETS = libmtd.a
++override TARGETS = libmtd.a
  
  include ../common.mk
  
