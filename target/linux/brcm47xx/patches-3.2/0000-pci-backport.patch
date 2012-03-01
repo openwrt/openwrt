@@ -2071,7 +2071,7 @@
  /**
 --- a/drivers/pci/probe.c
 +++ b/drivers/pci/probe.c
-@@ -1522,12 +1522,14 @@ unsigned int __devinit pci_scan_child_bu
+@@ -1527,12 +1527,14 @@ unsigned int __devinit pci_scan_child_bu
  	return max;
  }
  
@@ -2089,7 +2089,7 @@
  
  	b = pci_alloc_bus();
  	if (!b)
-@@ -1577,8 +1579,20 @@ struct pci_bus * pci_create_bus(struct d
+@@ -1582,8 +1584,20 @@ struct pci_bus * pci_create_bus(struct d
  	pci_create_legacy_files(b);
  
  	b->number = b->secondary = bus;
@@ -2112,7 +2112,7 @@
  
  	return b;
  
-@@ -1594,18 +1608,58 @@ err_out:
+@@ -1599,18 +1613,58 @@ err_out:
  	return NULL;
  }
  

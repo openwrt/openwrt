@@ -3134,7 +3134,7 @@
  /** 
   * enum positive_aop_returns - aop return codes with specific semantics
   *
-@@ -1481,6 +1487,11 @@ struct super_block {
+@@ -1482,6 +1488,11 @@ struct super_block {
  	int cleancache_poolid;
  
  	struct shrinker s_shrink;	/* per-sb shrinker handle */
@@ -3146,7 +3146,7 @@
  };
  
  /* superblock cache pruning functions */
-@@ -1638,6 +1649,7 @@ struct inode_operations {
+@@ -1639,6 +1650,7 @@ struct inode_operations {
  	void (*truncate_range)(struct inode *, loff_t, loff_t);
  	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
  		      u64 len);
@@ -3154,7 +3154,7 @@
  } ____cacheline_aligned;
  
  struct seq_file;
-@@ -2058,6 +2070,7 @@ extern long do_sys_open(int dfd, const c
+@@ -2059,6 +2071,7 @@ extern long do_sys_open(int dfd, const c
  extern struct file *filp_open(const char *, int, int);
  extern struct file *file_open_root(struct dentry *, struct vfsmount *,
  				   const char *, int);
