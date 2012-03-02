@@ -1,6 +1,6 @@
 --- a/drivers/mtd/devices/block2mtd.c
 +++ b/drivers/mtd/devices/block2mtd.c
-@@ -264,10 +264,12 @@ static int _open_bdev(struct block2mtd_d
+@@ -265,11 +265,13 @@ static int _open_bdev(struct block2mtd_d
  	bdev = open_bdev_exclusive(dev->devname, FMODE_READ|FMODE_WRITE, NULL);
  #ifndef MODULE
  	if (IS_ERR(bdev)) {
@@ -9,8 +9,9 @@
  		/* We might not have rootfs mounted at this point. Try
  		   to resolve the device name by other means. */
  
-+		wait_for_device_probe();
 -		dev_t devt = name_to_dev_t(dev->devname);
++		wait_for_device_probe();
 +		devt = name_to_dev_t(dev->devname);
  		if (devt) {
  			bdev = open_by_devnum(devt, FMODE_WRITE | FMODE_READ);
+ 		}

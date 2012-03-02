@@ -190,7 +190,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -539,7 +685,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -539,7 +687,7 @@ int add_mtd_partitions(struct mtd_info *
  {
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
@@ -199,7 +199,7 @@
  
  	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
  
-@@ -547,6 +693,21 @@ int add_mtd_partitions(struct mtd_info *
+@@ -547,6 +695,21 @@ int add_mtd_partitions(struct mtd_info *
  		slave = add_one_partition(master, parts + i, i, cur_offset);
  		if (!slave)
  			return -ENOMEM;
@@ -221,7 +221,7 @@
  		cur_offset = slave->offset + slave->mtd.size;
  	}
  
-@@ -554,6 +715,32 @@ int add_mtd_partitions(struct mtd_info *
+@@ -554,6 +717,32 @@ int add_mtd_partitions(struct mtd_info *
  }
  EXPORT_SYMBOL(add_mtd_partitions);
  
@@ -556,7 +556,7 @@
  
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/map.h>
-@@ -854,6 +855,13 @@ static int mtd_ioctl(struct file *file, 
+@@ -854,6 +855,13 @@ static int mtd_ioctl(struct file *file,
  		file->f_pos = 0;
  		break;
  	}
