@@ -1,0 +1,55 @@
+--- a/arch/mips/kernel/signal.c
++++ b/arch/mips/kernel/signal.c
+@@ -101,7 +101,7 @@ static int protected_save_fp_context(str
+ 
+ static int protected_restore_fp_context(struct sigcontext __user *sc)
+ {
+-	int err, tmp;
++	int err, tmp __maybe_unused;
+ 	while (1) {
+ 		lock_fpu_owner();
+ 		own_fpu_inatomic(0);
+--- a/arch/mips/kernel/syscall.c
++++ b/arch/mips/kernel/syscall.c
+@@ -372,7 +372,7 @@ save_static_function(sys_sysmips);
+ static int __used noinline
+ _sys_sysmips(nabi_no_regargs struct pt_regs regs)
+ {
+-	long cmd, arg1, arg2, arg3;
++	long cmd, arg1, arg2, arg3 __maybe_unused;
+ 
+ 	cmd = regs.regs[4];
+ 	arg1 = regs.regs[5];
+--- a/arch/mips/mm/init.c
++++ b/arch/mips/mm/init.c
+@@ -323,7 +323,7 @@ static int __init page_is_ram(unsigned l
+ void __init paging_init(void)
+ {
+ 	unsigned long max_zone_pfns[MAX_NR_ZONES];
+-	unsigned long lastpfn;
++	unsigned long lastpfn __maybe_unused;
+ 
+ 	pagetable_init();
+ 
+--- a/include/linux/pagemap.h
++++ b/include/linux/pagemap.h
+@@ -412,7 +412,7 @@ static inline int fault_in_pages_writeab
+ 
+ static inline int fault_in_pages_readable(const char __user *uaddr, int size)
+ {
+-	volatile char c;
++	volatile char c __maybe_unused;
+ 	int ret;
+ 
+ 	if (unlikely(size == 0))
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
+@@ -1076,7 +1076,7 @@ static int __cpuinit probe_scache(void)
+ 	unsigned long flags, addr, begin, end, pow2;
+ 	unsigned int config = read_c0_config();
+ 	struct cpuinfo_mips *c = &current_cpu_data;
+-	int tmp;
++	int tmp __maybe_unused;
+ 
+ 	if (config & CONF_SC)
+ 		return 0;
