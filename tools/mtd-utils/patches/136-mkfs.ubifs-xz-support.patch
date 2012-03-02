@@ -1,0 +1,286 @@
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ 
+ # -*- sh -*-
+ 
+-CPPFLAGS += -I./include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) -I./include/linux/lzma
++CPPFLAGS += -I./include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) $(XZCPPFLAGS) -I./include/linux/lzma
+ 
+ ifeq ($(WITHOUT_XATTR), 1)
+   CPPFLAGS += -DWITHOUT_XATTR
+--- a/mkfs.ubifs/compr.c
++++ b/mkfs.ubifs/compr.c
+@@ -127,6 +127,114 @@ static inline int lzo_init(void) { retur
+ static inline void lzo_fini(void) { }
+ #endif
+ 
++#ifndef WITHOUT_XZ
++
++#include <lzma.h>
++
++struct xz_ctx {
++	lzma_filter	filters[3];
++	lzma_options_lzma opts;
++};
++
++static struct xz_ctx *xz_ctx;
++
++#define LZMA_COMPRESSION_LEVEL	9
++
++static struct xz_ctx *xz_ctx_init(void)
++{
++	struct xz_ctx *ctx;
++	lzma_options_lzma *opts_lzma;
++	uint32_t preset;
++	int ret;
++
++	ctx = malloc(sizeof(struct xz_ctx));
++	if (ctx == NULL)
++		goto err;
++
++	memset(ctx, 0, sizeof(struct xz_ctx));
++
++	opts_lzma = &ctx->opts;
++
++	preset = LZMA_COMPRESSION_LEVEL | LZMA_PRESET_EXTREME;
++	ret = lzma_lzma_preset(opts_lzma, preset);
++	if (ret)
++		goto err_free_ctx;
++
++	/* TODO: allow to specify LZMA options via command line */
++#if 0
++	opts_lzma->lc = 3;
++	opts_lzma->lp = 0;
++	opts_lzma->pb = 2;
++	opts_lzma->nice_len = 64;
++#else
++	opts_lzma->lc = 0;
++	opts_lzma->lp = 2;
++	opts_lzma->pb = 2;
++	opts_lzma->nice_len = 64;
++#endif
++
++	ctx->filters[0].id = LZMA_FILTER_LZMA2;
++	ctx->filters[0].options = opts_lzma;
++	ctx->filters[1].id = LZMA_VLI_UNKNOWN;
++
++	return ctx;
++
++err_free_ctx:
++	free(ctx);
++err:
++	return NULL;
++}
++
++static void xz_ctx_free(struct xz_ctx *ctx)
++{
++	free(ctx);
++}
++
++static int xz_init(void)
++{
++	xz_ctx = xz_ctx_init();
++	if (xz_ctx == NULL)
++		return -1;
++
++	return 0;
++}
++
++static void xz_fini(void)
++{
++	xz_ctx_free(xz_ctx);
++}
++
++static int xz_compress(void *in_buf, size_t in_len, void *out_buf,
++		       size_t *out_len)
++{
++	size_t ret_len;
++	lzma_ret ret_xz;
++	int ret;
++
++	ret = -1;
++
++	ret_len = 0;
++	ret_xz = lzma_stream_buffer_encode(xz_ctx->filters, LZMA_CHECK_CRC32,
++					   NULL, in_buf, in_len, out_buf,
++					   &ret_len, *out_len);
++	if (ret_xz != LZMA_OK) {
++		fprintf(stderr, "XZ error: %d\n", (int) ret_xz);
++		goto out;
++	}
++
++	*out_len = ret_len;
++
++	ret = 0;
++out:
++	return ret;
++}
++#else
++static inline int xz_init(void) { return 0; }
++static inline void xz_fini(void) { }
++static inline int xz_compress(void *in_buf, size_t in_len, void *out_buf,
++			      size_t *out_len) { return -1; }
++#endif
++
+ static int no_compress(void *in_buf, size_t in_len, void *out_buf,
+ 		       size_t *out_len)
+ {
+@@ -199,6 +307,9 @@ int compress_data(void *in_buf, size_t i
+ 		case MKFS_UBIFS_COMPR_LZO:
+ 			ret = lzo_compress(in_buf, in_len, out_buf, out_len);
+ 			break;
++		case MKFS_UBIFS_COMPR_XZ:
++			ret = xz_compress(in_buf, in_len, out_buf, out_len);
++			break;
+ 		case MKFS_UBIFS_COMPR_ZLIB:
+ 			ret = zlib_deflate(in_buf, in_len, out_buf, out_len);
+ 			break;
+@@ -226,12 +337,18 @@ int init_compression(void)
+ 	if (ret)
+ 		goto err;
+ 
++	ret = xz_init();
++	if (ret)
++		goto err_lzo;
++
+ 	zlib_buf = malloc(UBIFS_BLOCK_SIZE * WORST_COMPR_FACTOR);
+ 	if (!zlib_buf)
+-		goto err_lzo;
++		goto err_xz;
+ 
+ 	return 0;
+ 
++err_xz:
++	xz_fini();
+ err_lzo:
+ 	lzo_fini();
+ err:
+@@ -241,6 +358,7 @@ err:
+ void destroy_compression(void)
+ {
+ 	free(zlib_buf);
++	xz_fini();
+ 	lzo_fini();
+ 	if (errcnt)
+ 		fprintf(stderr, "%llu compression errors occurred\n", errcnt);
+--- a/mkfs.ubifs/compr.h
++++ b/mkfs.ubifs/compr.h
+@@ -36,6 +36,7 @@ enum compression_type
+ 	MKFS_UBIFS_COMPR_NONE,
+ 	MKFS_UBIFS_COMPR_LZO,
+ 	MKFS_UBIFS_COMPR_ZLIB,
++	MKFS_UBIFS_COMPR_XZ,
+ };
+ 
+ int compress_data(void *in_buf, size_t in_len, void *out_buf, size_t *out_len,
+--- a/mkfs.ubifs/Makefile
++++ b/mkfs.ubifs/Makefile
+@@ -6,21 +6,33 @@ ALL_SOURCES=*.[ch] hashtable/*.[ch]
+ 
+ TARGETS = mkfs.ubifs
+ 
++MKFS_UBIFS_OBJS = $(addprefix $(BUILDDIR)/,\
++	crc16.o lpt.o compr.o devtable.o \
++	hashtable/hashtable.o hashtable/hashtable_itr.o)
++
+ ifeq ($(WITHOUT_LZO), 1)
+   CPPFLAGS += -DWITHOUT_LZO
+ else
+   LZOLDLIBS = -llzo2
+ endif
+ 
+-LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) -lm -luuid -L$(BUILDDIR)/../ubi-utils/ -lubi
++ifeq ($(WITHOUT_XZ), 1)
++  CPPFLAGS += -DWITHOUT_XZ
++else
++ifneq ($(LZMA_STATIC_LIB),)
++  MKFS_UBIFS_OBJS += $(LZMA_STATIC_LIB)
++else
++  XZLDLIBS = -llzma
++endif
++endif
++
++LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) $(XZLDLIBS) -lm -luuid -L$(BUILDDIR)/../ubi-utils/ -lubi
+ LDLIBS_mkfs.ubifs += -L$(BUILDDIR)/../lib -lmtd
+-LDLIBS_mkfs.ubifs += $(ZLIBLDFLAGS) $(LZOLDFLAGS)
++LDLIBS_mkfs.ubifs += $(ZLIBLDFLAGS) $(LZOLDFLAGS) $(XZLDFLAGS)
+ 
+ include ../common.mk
+ 
+-$(BUILDDIR)/mkfs.ubifs: $(addprefix $(BUILDDIR)/,\
+-	crc16.o lpt.o compr.o devtable.o \
+-	hashtable/hashtable.o hashtable/hashtable_itr.o)
++$(BUILDDIR)/mkfs.ubifs: $(MKFS_UBIFS_OBJS)
+ 
+ clean::
+ 	rm -f $(BUILDDIR)/hashtable/*.o cscope.*
+--- a/mkfs.ubifs/mkfs.ubifs.c
++++ b/mkfs.ubifs/mkfs.ubifs.c
+@@ -178,8 +178,8 @@ static const char *helptext =
+ "-o, --output=FILE        output to FILE\n"
+ "-j, --jrn-size=SIZE      journal size\n"
+ "-R, --reserved=SIZE      how much space should be reserved for the super-user\n"
+-"-x, --compr=TYPE         compression type - \"lzo\", \"favor_lzo\", \"zlib\" or\n"
+-"                         \"none\" (default: \"lzo\")\n"
++"-x, --compr=TYPE         compression type - \"lzo\", \"favor_lzo\", \"zlib\",\n"
++"                         \"xz\" or \"none\" (default: \"lzo\")\n"
+ "-X, --favor-percent      may only be used with favor LZO compression and defines\n"
+ "                         how many percent better zlib should compress to make\n"
+ "                         mkfs.ubifs use zlib instead of LZO (default 20%)\n"
+@@ -208,7 +208,7 @@ static const char *helptext =
+ "-h, --help               display this help text\n\n"
+ "Note, SIZE is specified in bytes, but it may also be specified in Kilobytes,\n"
+ "Megabytes, and Gigabytes if a KiB, MiB, or GiB suffix is used.\n\n"
+-"If you specify \"lzo\" or \"zlib\" compressors, mkfs.ubifs will use this compressor\n"
++"If you specify \"lzo\", \"xz\" or \"zlib\" compressors, mkfs.ubifs will use this compressor\n"
+ "for all data. The \"none\" disables any data compression. The \"favor_lzo\" is not\n"
+ "really a separate compressor. It is just a method of combining \"lzo\" and \"zlib\"\n"
+ "compressors. Namely, mkfs.ubifs tries to compress data with both \"lzo\" and \"zlib\"\n"
+@@ -653,10 +653,13 @@ static int get_options(int argc, char**a
+ 				c->favor_lzo = 1;
+ 			else if (strcmp(optarg, "zlib") == 0)
+ 				c->default_compr = UBIFS_COMPR_ZLIB;
++			else if (strcmp(optarg, "xz") == 0)
++				c->default_compr = UBIFS_COMPR_XZ;
+ 			else if (strcmp(optarg, "none") == 0)
+ 				c->default_compr = UBIFS_COMPR_NONE;
+ 			else if (strcmp(optarg, "lzo") != 0)
+-				return err_msg("bad compressor name");
++				return err_msg("bad compressor name '%s'",
++					       optarg);
+ 			break;
+ 		case 'X':
+ 			c->favor_percent = strtol(optarg, &endp, 0);
+@@ -765,6 +768,9 @@ static int get_options(int argc, char**a
+ 		case UBIFS_COMPR_ZLIB:
+ 			printf("\tcompr:        zlib\n");
+ 			break;
++		case UBIFS_COMPR_XZ:
++			printf("\tcompr:        xz\n");
++			break;
+ 		case UBIFS_COMPR_NONE:
+ 			printf("\tcompr:        none\n");
+ 			break;
+--- a/mkfs.ubifs/mkfs.ubifs.h
++++ b/mkfs.ubifs/mkfs.ubifs.h
+@@ -77,6 +77,9 @@
+ #if MKFS_UBIFS_COMPR_ZLIB != UBIFS_COMPR_ZLIB
+ #error MKFS_UBIFS_COMPR_ZLIB != UBIFS_COMPR_ZLIB
+ #endif
++#if MKFS_UBIFS_COMPR_XZ != UBIFS_COMPR_XZ
++#error MKFS_UBIFS_COMPR_XZ != UBIFS_COMPR_XZ
++#endif
+ 
+ extern int verbose;
+ extern int debug_level;
+--- a/mkfs.ubifs/ubifs-media.h
++++ b/mkfs.ubifs/ubifs-media.h
+@@ -303,6 +303,7 @@ enum {
+ 	UBIFS_COMPR_NONE,
+ 	UBIFS_COMPR_LZO,
+ 	UBIFS_COMPR_ZLIB,
++	UBIFS_COMPR_XZ,
+ 	UBIFS_COMPR_TYPES_CNT,
+ };
+ 
