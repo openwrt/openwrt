@@ -27,7 +27,7 @@ append() {
 	local var="$1"
 	local value="$2"
 	local sep="${3:- }"
-	
+
 	eval "export ${NO_EXPORT:+-n} -- \"$var=\${$var:+\${$var}\${value:+\$sep}}\$value\""
 }
 
@@ -74,7 +74,7 @@ package() {
 config () {
 	local cfgtype="$1"
 	local name="$2"
-	
+
 	export ${NO_EXPORT:+-n} CONFIG_NUM_SECTIONS=$(($CONFIG_NUM_SECTIONS + 1))
 	name="${name:-cfg$CONFIG_NUM_SECTIONS}"
 	append CONFIG_SECTIONS "$name"
@@ -110,7 +110,7 @@ config_rename() {
 	local NEW="$2"
 	local oldvar
 	local newvar
-	
+
 	[ -n "$OLD" -a -n "$NEW" ] || return
 	for oldvar in `set | grep ^CONFIG_${OLD}_ | \
 		sed -e 's/\(.*\)=.*$/\1/'` ; do
@@ -119,7 +119,7 @@ config_rename() {
 		unset "$oldvar"
 	done
 	export ${NO_EXPORT:+-n} CONFIG_SECTIONS="$(echo " $CONFIG_SECTIONS " | sed -e "s, $OLD , $NEW ,")"
-	
+
 	[ "$CONFIG_SECTION" = "$OLD" ] && export ${NO_EXPORT:+-n} CONFIG_SECTION="$NEW"
 }
 
@@ -135,8 +135,8 @@ config_clear() {
 	export ${NO_EXPORT:+-n} CONFIG_SECTIONS="${SECTION:+$CONFIG_SECTIONS}"
 
 	for oldvar in `set | grep ^CONFIG_${SECTION:+${SECTION}_} | \
-		sed -e 's/\(.*\)=.*$/\1/'` ; do 
-		unset $oldvar 
+		sed -e 's/\(.*\)=.*$/\1/'` ; do
+		unset $oldvar
 	done
 }
 
@@ -178,7 +178,7 @@ config_foreach() {
 	local type="$1"
 	[ "$#" -ge 1 ] && shift
 	local section cfgtype
-	
+
 	[ -z "$CONFIG_SECTIONS" ] && return 0
 	for section in ${CONFIG_SECTIONS}; do
 		config_get cfgtype "$section" TYPE
@@ -214,7 +214,7 @@ load_modules() {
 
 include() {
 	local file
-	
+
 	for file in $(ls $1/*.sh 2>/dev/null); do
 		. $file
 	done
@@ -223,7 +223,7 @@ include() {
 find_mtd_part() {
 	local PART="$(grep "\"$1\"" /proc/mtd | awk -F: '{print $1}')"
 	local PREFIX=/dev/mtdblock
-	
+
 	PART="${PART##mtd}"
 	[ -d /dev/mtdblock ] && PREFIX=/dev/mtdblock/
 	echo "${PART:+$PREFIX$PART}"
@@ -382,7 +382,7 @@ service_reload() {
 service_kill() {
 	cat 1>&2 << __END_OF_WARNING__
 #
-# WARNING: the 'service_kill' function is now deprecated and might be 
+# WARNING: the 'service_kill' function is now deprecated and might be
 # removed soon. Consider using the other new service_* wrappers instead.
 #
 __END_OF_WARNING__
