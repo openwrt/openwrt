@@ -14,8 +14,6 @@ Signed-off-by: Nathan Williams <nathan@traverse.com.au>
  drivers/atm/solos-attrlist.c |    2 ++
  1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/atm/solos-attrlist.c b/drivers/atm/solos-attrlist.c
-index 9a676ee..8092533 100644
 --- a/drivers/atm/solos-attrlist.c
 +++ b/drivers/atm/solos-attrlist.c
 @@ -71,6 +71,8 @@ SOLOS_ATTR_RW(BisAForceSNRMarginDn)
@@ -27,27 +25,53 @@ index 9a676ee..8092533 100644
  SOLOS_ATTR_RW(AnnexAForceSNRMarginDn)
  SOLOS_ATTR_RW(AnnexAMaxMargin)
  SOLOS_ATTR_RW(AnnexMMaxMargin)
-
-From: Nathan Williams <nathan@traverse.com.au>
-To: netdev@vger.kernel.org
-Date: Wed, 05 Oct 2011 15:44:17 +1100
-Cc: linux-atm-general@lists.sourceforge.net,
-        David Woodhouse <dwmw2@infradead.org>, linux-kernel@vger.kernel.org
-Subject: [Linux-ATM-General] [PATCH 2/4] atm: solos-pci: Remove annoying
-	line of debugging
-
-"len: %d" isn't particularly useful for anyone and confuses users.
-
-Signed-off-by: Nathan Williams <nathan@traverse.com.au>
----
- drivers/atm/solos-pci.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-diff --git a/drivers/atm/solos-pci.c b/drivers/atm/solos-pci.c
-index 5d1d076..bd01aa3 100644
 --- a/drivers/atm/solos-pci.c
 +++ b/drivers/atm/solos-pci.c
-@@ -452,7 +452,6 @@ static ssize_t console_show(struct device *dev, struct device_attribute *attr,
+@@ -42,7 +42,8 @@
+ #include <linux/swab.h>
+ #include <linux/slab.h>
+ 
+-#define VERSION "0.07"
++#define VERSION "1.0"
++#define DRIVER_VERSION 0x01
+ #define PTAG "solos-pci"
+ 
+ #define CONFIG_RAM_SIZE	128
+@@ -56,16 +57,21 @@
+ #define FLASH_BUSY	0x60
+ #define FPGA_MODE	0x5C
+ #define FLASH_MODE	0x58
++#define GPIO_STATUS	0x54
++#define DRIVER_VER	0x50
+ #define TX_DMA_ADDR(port)	(0x40 + (4 * (port)))
+ #define RX_DMA_ADDR(port)	(0x30 + (4 * (port)))
+ 
+ #define DATA_RAM_SIZE	32768
+ #define BUF_SIZE	2048
+ #define OLD_BUF_SIZE	4096 /* For FPGA versions <= 2*/
+-#define FPGA_PAGE	528 /* FPGA flash page size*/
+-#define SOLOS_PAGE	512 /* Solos flash page size*/
+-#define FPGA_BLOCK	(FPGA_PAGE * 8) /* FPGA flash block size*/
+-#define SOLOS_BLOCK	(SOLOS_PAGE * 8) /* Solos flash block size*/
++/* Old boards use ATMEL AD45DB161D flash */
++#define ATMEL_FPGA_PAGE	528 /* FPGA flash page size*/
++#define ATMEL_SOLOS_PAGE	512 /* Solos flash page size*/
++#define ATMEL_FPGA_BLOCK	(ATMEL_FPGA_PAGE * 8) /* FPGA block size*/
++#define ATMEL_SOLOS_BLOCK	(ATMEL_SOLOS_PAGE * 8) /* Solos block size*/
++/* Current boards use M25P/M25PE SPI flash */
++#define SPI_FLASH_BLOCK	(256 * 64)
+ 
+ #define RX_BUF(card, nr) ((card->buffers) + (nr)*(card->buffer_size)*2)
+ #define TX_BUF(card, nr) ((card->buffers) + (nr)*(card->buffer_size)*2 + (card->buffer_size))
+@@ -127,6 +133,7 @@ struct solos_card {
+ 	int using_dma;
+ 	int fpga_version;
+ 	int buffer_size;
++	int atmel_flash;
+ };
+ 
+ 
+@@ -452,7 +459,6 @@ static ssize_t console_show(struct devic
  
  	len = skb->len;
  	memcpy(buf, skb->data, len);
@@ -55,38 +79,7 @@ index 5d1d076..bd01aa3 100644
  
  	kfree_skb(skb);
  	return len;
-From: Nathan Williams <nathan@traverse.com.au>
-To: netdev@vger.kernel.org
-Date: Wed, 05 Oct 2011 15:45:15 +1100
-Cc: linux-atm-general@lists.sourceforge.net,
-        David Woodhouse <dwmw2@infradead.org>, linux-kernel@vger.kernel.org
-Subject: [Linux-ATM-General] [PATCH 3/4] atm: solos-pci: Add support for
-	Geos GPIO pins
-
-Geos ADSL2+ routers have on-board Solos chipsets with some
-extra I/O pins and a push button connected to the FPGA.
-
-PCB version and variant numbers are also made available
-through the HardwareVersion and HardwareVariant attributes.
-
-Signed-off-by: Nathan Williams <nathan@traverse.com.au>
----
- drivers/atm/solos-pci.c |   98 +++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 98 insertions(+), 0 deletions(-)
-
-diff --git a/drivers/atm/solos-pci.c b/drivers/atm/solos-pci.c
-index bd01aa3..33c0c2b 100644
---- a/drivers/atm/solos-pci.c
-+++ b/drivers/atm/solos-pci.c
-@@ -56,6 +56,7 @@
- #define FLASH_BUSY	0x60
- #define FPGA_MODE	0x5C
- #define FLASH_MODE	0x58
-+#define GPIO_STATUS	0x54
- #define TX_DMA_ADDR(port)	(0x40 + (4 * (port)))
- #define RX_DMA_ADDR(port)	(0x30 + (4 * (port)))
- 
-@@ -498,6 +499,87 @@ static ssize_t console_store(struct device *dev, struct device_attribute *attr,
+@@ -499,6 +505,87 @@ static ssize_t console_store(struct devi
  	return err?:count;
  }
  
@@ -174,7 +167,7 @@ index bd01aa3..33c0c2b 100644
  static DEVICE_ATTR(console, 0644, console_show, console_store);
  
  
-@@ -506,6 +588,14 @@ static DEVICE_ATTR(console, 0644, console_show, console_store);
+@@ -507,6 +594,14 @@ static DEVICE_ATTR(console, 0644, consol
  
  #include "solos-attrlist.c"
  
@@ -189,7 +182,7 @@ index bd01aa3..33c0c2b 100644
  #undef SOLOS_ATTR_RO
  #undef SOLOS_ATTR_RW
  
-@@ -514,6 +604,14 @@ static DEVICE_ATTR(console, 0644, console_show, console_store);
+@@ -515,6 +610,14 @@ static DEVICE_ATTR(console, 0644, consol
  
  static struct attribute *solos_attrs[] = {
  #include "solos-attrlist.c"
@@ -204,71 +197,7 @@ index bd01aa3..33c0c2b 100644
  	NULL
  };
  
-From: Nathan Williams <nathan@traverse.com.au>
-To: netdev@vger.kernel.org
-Date: Wed, 05 Oct 2011 15:46:08 +1100
-Cc: linux-atm-general@lists.sourceforge.net,
-        David Woodhouse <dwmw2@infradead.org>, linux-kernel@vger.kernel.org
-Subject: [Linux-ATM-General] [PATCH 4/4] atm: solos-pci: M25P/M25PE SPI
-	flash support
-
-Newer Geos ADSL2+ routers have different SPI flash.
-The FPGA on these boards require driver version = 1 to enable
-flash upgrades so old drivers can't corrupt new boards.
-
-Signed-off-by: Nathan Williams <nathan@traverse.com.au>
----
- drivers/atm/solos-pci.c |   51 ++++++++++++++++++++++++++++++++++++----------
- 1 files changed, 40 insertions(+), 11 deletions(-)
-
-diff --git a/drivers/atm/solos-pci.c b/drivers/atm/solos-pci.c
-index 33c0c2b..2a75bf7 100644
---- a/drivers/atm/solos-pci.c
-+++ b/drivers/atm/solos-pci.c
-@@ -42,7 +42,8 @@
- #include <linux/swab.h>
- #include <linux/slab.h>
- 
--#define VERSION "0.07"
-+#define VERSION "1.0"
-+#define DRIVER_VERSION 0x01
- #define PTAG "solos-pci"
- 
- #define CONFIG_RAM_SIZE	128
-@@ -57,16 +58,20 @@
- #define FPGA_MODE	0x5C
- #define FLASH_MODE	0x58
- #define GPIO_STATUS	0x54
-+#define DRIVER_VER	0x50
- #define TX_DMA_ADDR(port)	(0x40 + (4 * (port)))
- #define RX_DMA_ADDR(port)	(0x30 + (4 * (port)))
- 
- #define DATA_RAM_SIZE	32768
- #define BUF_SIZE	2048
- #define OLD_BUF_SIZE	4096 /* For FPGA versions <= 2*/
--#define FPGA_PAGE	528 /* FPGA flash page size*/
--#define SOLOS_PAGE	512 /* Solos flash page size*/
--#define FPGA_BLOCK	(FPGA_PAGE * 8) /* FPGA flash block size*/
--#define SOLOS_BLOCK	(SOLOS_PAGE * 8) /* Solos flash block size*/
-+/* Old boards use ATMEL AD45DB161D flash */
-+#define ATMEL_FPGA_PAGE	528 /* FPGA flash page size*/
-+#define ATMEL_SOLOS_PAGE	512 /* Solos flash page size*/
-+#define ATMEL_FPGA_BLOCK	(ATMEL_FPGA_PAGE * 8) /* FPGA block size*/
-+#define ATMEL_SOLOS_BLOCK	(ATMEL_SOLOS_PAGE * 8) /* Solos block size*/
-+/* Current boards use M25P/M25PE SPI flash */
-+#define SPI_FLASH_BLOCK	(256 * 64)
- 
- #define RX_BUF(card, nr) ((card->buffers) + (nr)*(card->buffer_size)*2)
- #define TX_BUF(card, nr) ((card->buffers) + (nr)*(card->buffer_size)*2 + (card->buffer_size))
-@@ -128,6 +133,7 @@ struct solos_card {
- 	int using_dma;
- 	int fpga_version;
- 	int buffer_size;
-+	int atmel_flash;
- };
- 
- 
-@@ -631,16 +637,25 @@ static int flash_upgrade(struct solos_card *card, int chip)
+@@ -535,16 +638,25 @@ static int flash_upgrade(struct solos_ca
  	switch (chip) {
  	case 0:
  		fw_name = "solos-FPGA.bin";
@@ -297,7 +226,7 @@ index 33c0c2b..2a75bf7 100644
  		} else {
  			dev_info(&card->dev->dev, "FPGA version doesn't support"
  					" daughter board upgrades\n");
-@@ -650,7 +665,10 @@ static int flash_upgrade(struct solos_card *card, int chip)
+@@ -554,7 +666,10 @@ static int flash_upgrade(struct solos_ca
  	case 3:
  		if (card->fpga_version > LEGACY_BUFFERS){
  			fw_name = "solos-Firmware.bin";
@@ -309,7 +238,7 @@ index 33c0c2b..2a75bf7 100644
  		} else {
  			dev_info(&card->dev->dev, "FPGA version doesn't support"
  					" daughter board upgrades\n");
-@@ -695,9 +713,13 @@ static int flash_upgrade(struct solos_card *card, int chip)
+@@ -599,9 +714,13 @@ static int flash_upgrade(struct solos_ca
  		/* dev_info(&card->dev->dev, "Set FPGA Flash mode to Block Write\n"); */
  		iowrite32(((chip * 2) + 1), card->config_regs + FLASH_MODE);
  
@@ -325,7 +254,7 @@ index 33c0c2b..2a75bf7 100644
  			if(card->fpga_version > LEGACY_BUFFERS)
  				iowrite32(word, FLASH_BUF + i);
  			else
-@@ -1249,6 +1271,11 @@ static int fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
+@@ -1153,6 +1272,11 @@ static int fpga_probe(struct pci_dev *de
  		db_fpga_upgrade = db_firmware_upgrade = 0;
  	}
  
@@ -337,7 +266,7 @@ index 33c0c2b..2a75bf7 100644
  	if (card->fpga_version >= DMA_SUPPORTED){
  		card->using_dma = 1;
  	} else {
-@@ -1256,6 +1283,8 @@ static int fpga_probe(struct pci_dev *dev, const struct pci_device_id *id)
+@@ -1160,6 +1284,8 @@ static int fpga_probe(struct pci_dev *de
  		/* Set RX empty flag for all ports */
  		iowrite32(0xF0, card->config_regs + FLAGS_ADDR);
  	}
