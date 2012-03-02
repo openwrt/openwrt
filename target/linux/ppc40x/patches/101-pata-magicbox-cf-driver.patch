@@ -29,11 +29,11 @@
  obj-$(CONFIG_PATA_OPTI)		+= pata_opti.o
 --- /dev/null
 +++ b/drivers/ata/pata_magicbox_cf.c
-@@ -0,0 +1,404 @@
+@@ -0,0 +1,401 @@
 +/*
 + *  PATA/CompactFlash driver for the MagicBox v2/OpenRB boards.
 + *
-+ *  Copyright (C) 2009 Gabor Juhos <juhosg@openwrt.org>
++ *  Copyright (C) 2009,2012 Gabor Juhos <juhosg@openwrt.org>
 + *
 + *  Based on the IDE driver by Wojtek Kaniewski <wojtekka@toxygen.net>
 + *
@@ -44,12 +44,13 @@
 +
 +#include <linux/kernel.h>
 +#include <linux/module.h>
++#include <linux/slab.h>
 +#include <linux/types.h>
 +#include <linux/ioport.h>
 +#include <linux/libata.h>
 +#include <linux/irq.h>
-+#include <linux/of.h>
-+#include <linux/of_device.h>
++//#include <linux/of.h>
++//#include <linux/of_device.h>
 +#include <linux/of_platform.h>
 +#include <scsi/scsi_host.h>
 +
@@ -261,10 +262,9 @@
 +	return words << 1;
 +}
 +
-+static u8 magicbox_cf_irq_on(struct ata_port *ap)
++static void magicbox_cf_irq_on(struct ata_port *ap)
 +{
 +	/* Nothing to do. */
-+	return 0;
 +}
 +
 +static void magicbox_cf_irq_clear(struct ata_port *ap)
@@ -305,7 +305,7 @@
 +
 +	ap->ops	= &magicbox_cf_port_ops;
 +	ap->pio_mask = ATA_PIO4;
-+	ap->flags |= ATA_FLAG_MMIO | ATA_FLAG_NO_LEGACY | ATA_FLAG_NO_ATAPI;
++	ap->flags |= ATA_FLAG_NO_ATAPI;
 +
 +	ap->ioaddr.cmd_addr = info->base + MAGICBOX_CF_REG_CMD;
 +	ap->ioaddr.data_addr = info->base + MAGICBOX_CF_REG_DATA;
@@ -326,8 +326,7 @@
 +		      ap->ioaddr.ctl_addr);
 +}
 +
-+static int __devinit magicbox_cf_of_probe(struct of_device *op,
-+					   const struct of_device_id *match)
++static int __devinit magicbox_cf_of_probe(struct platform_device *op)
 +{
 +	struct magicbox_cf_info *info;
 +	struct ata_host *host;
@@ -340,20 +339,20 @@
 +		goto err_exit;
 +	}
 +
-+	irq = irq_of_parse_and_map(op->node, 0);
++	irq = irq_of_parse_and_map(op->dev.of_node, 0);
 +	if (irq < 0) {
 +		dev_err(&op->dev, "invalid irq\n");
 +		ret = -EINVAL;
 +		goto err_free_info;
 +	}
 +
-+	info->base = of_iomap(op->node, 0);
++	info->base = of_iomap(op->dev.of_node, 0);
 +	if (info->base == NULL) {
 +		ret = -ENOMEM;
 +		goto err_free_info;
 +	}
 +
-+	info->ctrl = of_iomap(op->node, 1);
++	info->ctrl = of_iomap(op->dev.of_node, 1);
 +	if (info->ctrl == NULL) {
 +		ret = -ENOMEM;
 +		goto err_unmap_base;
@@ -386,7 +385,7 @@
 +	return ret;
 +}
 +
-+static __devexit int magicbox_cf_of_remove(struct of_device *op)
++static __devexit int magicbox_cf_of_remove(struct platform_device *op)
 +{
 +	struct ata_host *host = dev_get_drvdata(&op->dev);
 +	struct magicbox_cf_info *info = host->private_data;
@@ -404,26 +403,24 @@
 +	{},
 +};
 +
-+static struct of_platform_driver magicbox_cf_of_platform_driver = {
-+	.owner		= THIS_MODULE,
-+	.name		= DRV_NAME,
-+	.match_table	= magicbox_cf_of_match,
++static struct platform_driver magicbox_cf_of_platform_driver = {
 +	.probe		= magicbox_cf_of_probe,
 +	.remove		= __devexit_p(magicbox_cf_of_remove),
 +	.driver		= {
-+		.name	= DRV_NAME,
-+		.owner	= THIS_MODULE,
++		.name = DRV_NAME,
++		.owner = THIS_MODULE,
++		.of_match_table = magicbox_cf_of_match,
 +	},
 +};
 +
 +static int __init magicbox_cf_init(void)
 +{
-+	return of_register_platform_driver(&magicbox_cf_of_platform_driver);
++	return platform_driver_register(&magicbox_cf_of_platform_driver);
 +}
 +
 +static void __exit magicbox_cf_exit(void)
 +{
-+	of_unregister_platform_driver(&magicbox_cf_of_platform_driver);
++	platform_driver_unregister(&magicbox_cf_of_platform_driver);
 +}
 +
 +module_init(magicbox_cf_init);
