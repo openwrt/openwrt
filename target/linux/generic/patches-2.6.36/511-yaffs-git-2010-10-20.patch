@@ -316,7 +316,7 @@
  chunk/page state.  This byte is zeroed when the page is discarded.
  Choose this option if you have existing on-NAND data in this format
  that you need to continue to support.  New data written also uses the
-@@ -57,7 +78,7 @@ adjusted to use the older-style format. 
+@@ -57,7 +78,7 @@ adjusted to use the older-style format.
  MTD versions in yaffs_mtdif1.c.
  */
  /* Default: Not selected */
@@ -1614,7 +1614,7 @@
  			yaffs_ECCOther *read_ecc,
  			const yaffs_ECCOther *test_ecc)
  {
-@@ -304,7 +301,7 @@ int yaffs_ECCCorrectOther(unsigned char 
+@@ -304,7 +301,7 @@ int yaffs_ECCCorrectOther(unsigned char
  		if (cDelta & 0x02)
  			bit |= 0x01;
  
@@ -1623,7 +1623,7 @@
  			return -1;
  
  		data[lDelta] ^= (1 << bit);
-@@ -312,8 +309,8 @@ int yaffs_ECCCorrectOther(unsigned char 
+@@ -312,8 +309,8 @@ int yaffs_ECCCorrectOther(unsigned char
  		return 1; /* corrected */
  	}
  
