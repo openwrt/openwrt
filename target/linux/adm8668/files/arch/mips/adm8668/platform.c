@@ -20,9 +20,6 @@
 #include <asm/io.h>
 #include <adm8668.h>
 
-extern char _end;
-#define PFN_ALIGN(x)    (((unsigned long)(x) + (PAGE_SIZE - 1)) & PAGE_MASK)
-
 static struct resource uart_resources[] = {
 	{
 		.start		= ADM8668_UART0_BASE,
