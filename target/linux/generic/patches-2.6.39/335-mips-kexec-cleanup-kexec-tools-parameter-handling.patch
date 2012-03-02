@@ -9,7 +9,7 @@
 +#define KEXEC_MIPS_ARGV_MAX_ARGS	(COMMAND_LINE_SIZE / 15)
 +
 +char kexec_argv_buf[KEXEC_MIPS_ARGV_BUF_SIZE] __kexec;
-+int kexec_argv[KEXEC_MIPS_ARGV_MAX_ARGS] __kexec;
++char *kexec_argv[KEXEC_MIPS_ARGV_MAX_ARGS] __kexec;
 +
 +static void
 +machine_kexec_print_args(void)
@@ -28,7 +28,7 @@
  
 -#define ARGV_MAX_ARGS (COMMAND_LINE_SIZE / 15)
 +	for (i = 0; i < kexec_args[0]; i++)
-+		pr_info("kexec_argv[%zd] = %p, %s\n", i,
++		pr_info("kexec_argv[%d] = %p, %s\n", i,
 +			(char *)kexec_argv[i], (char *)kexec_argv[i]);
 +}
  
@@ -98,7 +98,7 @@
 +	size = KEXEC_MIPS_ARGV_BUF_SIZE - 1;
 +	size = min(size, bufsz);
 +	if (size < bufsz)
-+		pr_warn("kexec command line truncated to %d bytes\n", size);
++		pr_warn("kexec command line truncated to %zd bytes\n", size);
 +
 +	/* Copy to kernel space */
 +	copy_from_user(kexec_argv_buf, buf, size);
@@ -126,7 +126,7 @@
 +			continue;
  		}
 +
-+		kexec_argv[argc++] = (int) ptr;
++		kexec_argv[argc++] = ptr;
 +		ptr = strchr(ptr, ' ');
  	}
  
@@ -138,7 +138,7 @@
  
 -	return 0;
 +	kexec_args[0] = argc;
-+	kexec_args[1] = (int) kexec_argv;
++	kexec_args[1] = (unsigned long)kexec_argv;
 +	kexec_args[2] = 0;
 +	kexec_args[3] = 0;
 +
