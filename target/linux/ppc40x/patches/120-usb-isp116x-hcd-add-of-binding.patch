@@ -8,7 +8,7 @@
  static int isp116x_remove(struct platform_device *pdev)
  {
  	struct usb_hcd *hcd = platform_get_drvdata(pdev);
-@@ -1708,22 +1709,253 @@ static struct platform_driver isp116x_dr
+@@ -1708,22 +1709,249 @@ static struct platform_driver isp116x_dr
  	},
  };
  
@@ -30,8 +30,6 @@
 +
 +#ifdef CONFIG_USB_ISP116X_HCD_OF
 +
-+#include <linux/of.h>
-+#include <linux/of_device.h>
 +#include <linux/of_platform.h>
 +
 +#ifdef USE_PLATFORM_DELAY
@@ -43,13 +41,12 @@
 +#define isp116x_of_delay	NULL
 +#endif
 +
-+static int __devinit isp116x_of_probe(struct of_device *op,
-+				      const struct of_device_id *match)
++static int __devinit isp116x_of_probe(struct platform_device *op)
 +{
-+	struct device_node *dn = op->node;
++	struct device_node *dn = op->dev.of_node;
 +	struct usb_hcd *hcd;
 +	struct isp116x *isp116x;
-+	struct resource addr, data, ires;
++	struct resource addr, data;
 +	struct isp116x_platform_data *board;
 +	void __iomem *addr_reg;
 +	void __iomem *data_reg;
@@ -64,12 +61,6 @@
 +	ret = of_address_to_resource(dn, 1, &addr);
 +	if (ret)
 +		return ret;
-+
-+	ret = of_irq_to_resource(dn, 1, &ires);
-+	if (ret)
-+		return ret;
-+
-+	irqflags = ires.flags & IRQF_TRIGGER_MASK;
 +
 +	board = kzalloc(sizeof(struct isp116x_platform_data), GFP_KERNEL);
 +	if (board == NULL)
@@ -97,7 +88,7 @@
 +		goto err_release_data;
 +	}
 +
-+	irq = irq_of_parse_and_map(op->node, 0);
++	irq = irq_of_parse_and_map(dn, 0);
 +	if (irq == NO_IRQ) {
 +		ret = -EINVAL;
 +		goto err_unmap_data;
@@ -132,6 +123,13 @@
 +	if (of_get_property(dn, "int_edge_triggered", NULL))
 +		board->int_edge_triggered = 1;
 +
++	if (board->int_edge_triggered)
++		irqflags = board->int_act_high ? IRQF_TRIGGER_RISING :
++						 IRQF_TRIGGER_FALLING;
++	else
++		irqflags = board->int_act_high ? IRQF_TRIGGER_HIGH :
++						 IRQF_TRIGGER_LOW;
++
 +	ret = usb_add_hcd(hcd, irq, irqflags | IRQF_DISABLED);
 +	if (ret)
 +		goto err_put_hcd;
@@ -163,7 +161,7 @@
 +	return ret;
 +}
 +
-+static __devexit int isp116x_of_remove(struct of_device *op)
++static __devexit int isp116x_of_remove(struct platform_device *op)
 +{
 +	struct usb_hcd *hcd = dev_get_drvdata(&op->dev);
 +	struct isp116x *isp116x;
@@ -181,11 +179,11 @@
 +	irq_dispose_mapping(hcd->irq);
 +
 +	iounmap(isp116x->data_reg);
-+	(void) of_address_to_resource(op->node, 0, &res);
++	(void) of_address_to_resource(op->dev.of_node, 0, &res);
 +	release_mem_region(res.start, resource_size(&res));
 +
 +	iounmap(isp116x->addr_reg);
-+	(void) of_address_to_resource(op->node, 1, &res);
++	(void) of_address_to_resource(op->dev.of_node, 1, &res);
 +	release_mem_region(res.start, resource_size(&res));
 +
 +	kfree(isp116x->board);
@@ -199,26 +197,24 @@
 +	{},
 +};
 +
-+static struct of_platform_driver isp116x_of_platform_driver = {
-+	.owner		= THIS_MODULE,
-+	.name		= "isp116x-hcd-of",
-+	.match_table	= isp116x_of_match,
++static struct platform_driver isp116x_of_platform_driver = {
 +	.probe		= isp116x_of_probe,
 +	.remove		= __devexit_p(isp116x_of_remove),
 +	.driver		= {
 +		.name	= "isp116x-hcd-of",
 +		.owner	= THIS_MODULE,
++		.of_match_table = isp116x_of_match,
 +	},
 +};
 +
 +static int __init isp116x_of_register(void)
 +{
-+	return of_register_platform_driver(&isp116x_of_platform_driver);
++	return platform_driver_register(&isp116x_of_platform_driver);
 +}
 +
 +static void __exit isp116x_of_unregister(void)
 +{
-+	of_unregister_platform_driver(&isp116x_of_platform_driver);
++	platform_driver_unregister(&isp116x_of_platform_driver);
 +}
 +
 +MODULE_DEVICE_TABLE(of, isp116x_of_match);
