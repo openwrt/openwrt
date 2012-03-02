@@ -504,7 +504,7 @@
  	/* TODO - get remaining rev 8 stuff needed */
  }
  
-@@ -573,37 +682,34 @@ static int sprom_extract(struct ssb_bus 
+@@ -573,37 +682,34 @@ static int sprom_extract(struct ssb_bus
  	ssb_dprintk(KERN_DEBUG PFX "SPROM revision %d detected.\n", out->revision);
  	memset(out->et0mac, 0xFF, 6);		/* preset et0 and et1 mac */
  	memset(out->et1mac, 0xFF, 6);
@@ -563,7 +563,7 @@
  	}
  
  	if (out->boardflags_lo == 0xFFFF)
-@@ -617,15 +723,14 @@ static int sprom_extract(struct ssb_bus 
+@@ -617,15 +723,14 @@ static int sprom_extract(struct ssb_bus
  static int ssb_pci_sprom_get(struct ssb_bus *bus,
  			     struct ssb_sprom *sprom)
  {
@@ -861,7 +861,7 @@
  
  /* Suspend a SSB bus.
   * Call this from the parent bus suspend routine. */
-@@ -514,6 +538,7 @@ extern int ssb_bus_may_powerdown(struct 
+@@ -514,6 +538,7 @@ extern int ssb_bus_may_powerdown(struct
   * Otherwise static always-on powercontrol will be used. */
  extern int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl);
  
