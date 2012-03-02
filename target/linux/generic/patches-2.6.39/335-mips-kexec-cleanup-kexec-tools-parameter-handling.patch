@@ -28,7 +28,7 @@
  
 -#define ARGV_MAX_ARGS (COMMAND_LINE_SIZE / 15)
 +	for (i = 0; i < kexec_args[0]; i++)
-+		pr_info("kexec_argv[%d] = %p, %s\n", i,
++		pr_info("kexec_argv[%zd] = %p, %s\n", i,
 +			(char *)kexec_argv[i], (char *)kexec_argv[i]);
 +}
  
