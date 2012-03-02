@@ -1,0 +1,94 @@
+--- a/fs/ubifs/Kconfig
++++ b/fs/ubifs/Kconfig
+@@ -5,8 +5,10 @@ config UBIFS_FS
+ 	select CRYPTO if UBIFS_FS_ADVANCED_COMPR
+ 	select CRYPTO if UBIFS_FS_LZO
+ 	select CRYPTO if UBIFS_FS_ZLIB
++	select CRYPTO if UBIFS_FS_XZ
+ 	select CRYPTO_LZO if UBIFS_FS_LZO
+ 	select CRYPTO_DEFLATE if UBIFS_FS_ZLIB
++	select CRYPTO_XZ if UBIFS_FS_XZ
+ 	depends on MTD_UBI
+ 	help
+ 	  UBIFS is a file system for flash devices which works on top of UBI.
+@@ -42,6 +44,14 @@ config UBIFS_FS_ZLIB
+ 	help
+ 	  Zlib compresses better than LZO but it is slower. Say 'Y' if unsure.
+ 
++config UBIFS_FS_XZ
++	bool "XZ decompression support" if UBIFS_FS_ADVANCED_COMPR
++	depends on UBIFS_FS
++	default y
++	help
++	  XZ compresses better the ZLIB but it is slower. 
++	  Say 'Y' if unsure.
++
+ # Debugging-related stuff
+ config UBIFS_FS_DEBUG
+ 	bool "Enable debugging support"
+--- a/fs/ubifs/compress.c
++++ b/fs/ubifs/compress.c
+@@ -71,6 +71,24 @@ static struct ubifs_compressor zlib_comp
+ };
+ #endif
+ 
++#ifdef CONFIG_UBIFS_FS_XZ
++static DEFINE_MUTEX(xz_enc_mutex);
++static DEFINE_MUTEX(xz_dec_mutex);
++
++static struct ubifs_compressor xz_compr = {
++	.compr_type = UBIFS_COMPR_XZ,
++	.comp_mutex = &xz_enc_mutex,
++	.decomp_mutex = &xz_dec_mutex,
++	.name = "xz",
++	.capi_name = "xz",
++};
++#else
++static struct ubifs_compressor zlib_compr = {
++	.compr_type = UBIFS_COMPR_XZ,
++	.name = "xz",
++};
++#endif
++
+ /* All UBIFS compressors */
+ struct ubifs_compressor *ubifs_compressors[UBIFS_COMPR_TYPES_CNT];
+ 
+@@ -233,9 +251,15 @@ int __init ubifs_compressors_init(void)
+ 	if (err)
+ 		goto out_lzo;
+ 
++	err = compr_init(&xz_compr);
++	if (err)
++		goto out_zlib;
++
+ 	ubifs_compressors[UBIFS_COMPR_NONE] = &none_compr;
+ 	return 0;
+ 
++out_zlib:
++	compr_exit(&zlib_compr);
+ out_lzo:
+ 	compr_exit(&lzo_compr);
+ 	return err;
+@@ -248,4 +272,5 @@ void ubifs_compressors_exit(void)
+ {
+ 	compr_exit(&lzo_compr);
+ 	compr_exit(&zlib_compr);
++	compr_exit(&xz_compr);
+ }
+--- a/fs/ubifs/ubifs-media.h
++++ b/fs/ubifs/ubifs-media.h
+@@ -332,12 +332,14 @@ enum {
+  * UBIFS_COMPR_NONE: no compression
+  * UBIFS_COMPR_LZO: LZO compression
+  * UBIFS_COMPR_ZLIB: ZLIB compression
++ * UBIFS_COMPR_XZ: XZ compression
+  * UBIFS_COMPR_TYPES_CNT: count of supported compression types
+  */
+ enum {
+ 	UBIFS_COMPR_NONE,
+ 	UBIFS_COMPR_LZO,
+ 	UBIFS_COMPR_ZLIB,
++	UBIFS_COMPR_XZ,
+ 	UBIFS_COMPR_TYPES_CNT,
+ };
+ 
