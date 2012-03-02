@@ -408,7 +408,7 @@
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -201,6 +202,7 @@ image-$(CONFIG_HOTFOOT)			+= cuImage.hot
+@@ -202,6 +203,7 @@ image-$(CONFIG_HOTFOOT)			+= cuImage.hot
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
  image-$(CONFIG_MAGICBOX)		+= cuImage.magicbox
@@ -418,7 +418,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -72,6 +72,16 @@ config MAGICBOX
+@@ -64,6 +64,16 @@ config MAGICBOX
  	help
  	  This option enables support for the Magicbox boards.
  

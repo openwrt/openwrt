@@ -407,7 +407,7 @@
  src-boot := $(src-wlib) $(src-plat) empty.c
  
  src-boot := $(addprefix $(obj)/, $(src-boot))
-@@ -198,6 +200,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
+@@ -199,6 +201,7 @@ image-$(CONFIG_EP405)			+= dtbImage.ep40
  image-$(CONFIG_HOTFOOT)			+= cuImage.hotfoot
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
@@ -417,7 +417,7 @@
  image-$(CONFIG_EBONY)			+= treeImage.ebony cuImage.ebony
 --- a/arch/powerpc/platforms/40x/Kconfig
 +++ b/arch/powerpc/platforms/40x/Kconfig
-@@ -62,6 +62,16 @@ config KILAUEA
+@@ -54,6 +54,16 @@ config KILAUEA
  	help
  	  This option enables support for the AMCC PPC405EX evaluation board.
  
