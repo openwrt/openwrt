@@ -82,7 +82,7 @@ int __init adm8668_init_proc(void)
 {
 	struct proc_dir_entry *adm8668_proc_dir = NULL;
 	struct proc_dir_entry *sesled = NULL;
-	int bogus;
+	int __maybe_unused bogus;
 
 	/* these are known to be lights. rest are input...? */
 	ADM8668_CONFIG_REG(CRGPIO_REG)	= GPIO2_OUTPUT_ENABLE;
