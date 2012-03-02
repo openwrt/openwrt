@@ -838,3 +838,19 @@ define KernelPackage/nand/description
 endef
 
 $(eval $(call KernelPackage,nand))
+
+
+define KernelPackage/nandsim
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=NAND simulator
+  DEPENDS:=+kmod-nand
+  KCONFIG:=CONFIG_MTD_NAND_NANDSIM
+  FILES:=$(LINUX_DIR)/drivers/mtd/nand/nandsim.ko
+endef
+
+define KernelPackage/nandsim/description
+ Kernel module for NAND flash simulation.
+endef
+
+$(eval $(call KernelPackage,nandsim))
+
