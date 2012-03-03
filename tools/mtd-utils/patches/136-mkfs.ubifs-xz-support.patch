@@ -365,7 +365,7 @@
 -			break;
 -		}
 +		printf("\tcompr:        %s\n", get_compr_str(c->default_compr));
-+		if (forced_compr_set)
++		if (force_compr_set)
 +			printf("\tforced compr: %s\n",
 +			       get_compr_str(force_compr));
  		printf("\tkeyhash:      %s\n", (c->key_hash == key_r5_hash) ?
