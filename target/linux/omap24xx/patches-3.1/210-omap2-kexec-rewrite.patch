@@ -2039,7 +2039,7 @@
  		VMLINUX_SYMBOL(__entry_text_start) = .;			\
 --- a/arch/arm/kernel/sleep.S
 +++ b/arch/arm/kernel/sleep.S
-@@ -85,12 +85,14 @@ ENDPROC(cpu_resume_mmu)
+@@ -85,11 +85,13 @@ ENDPROC(cpu_resume_mmu)
  	.ltorg
  	.align	5
  cpu_resume_turn_mmu_on:
@@ -2049,11 +2049,10 @@
  	mov	r1, r1
  	mov	r1, r1
  	mov	pc, r3			@ jump to virtual address
- ENDPROC(cpu_resume_turn_mmu_on)
 +	.popsection
+ ENDPROC(cpu_resume_turn_mmu_on)
  cpu_resume_after_mmu:
  	str	r5, [r2, r4, lsl #2]	@ restore old mapping
- 	mcr	p15, 0, r0, c1, c0, 0	@ turn on D-cache
 --- a/arch/arm/mach-omap2/io.c
 +++ b/arch/arm/mach-omap2/io.c
 @@ -36,7 +36,7 @@
