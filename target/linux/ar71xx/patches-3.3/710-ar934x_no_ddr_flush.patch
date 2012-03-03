@@ -28,7 +28,7 @@
  static struct resource ath79_eth0_resources[] = {
  	{
  		.name	= "mac_base",
-@@ -817,17 +811,16 @@ void __init ath79_register_eth(unsigned 
+@@ -817,17 +811,16 @@ void __init ath79_register_eth(unsigned
  		if (id == 0) {
  			pdata->reset_bit = AR934X_RESET_GE0_MAC |
  					   AR934X_RESET_GE0_MDIO;
