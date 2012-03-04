@@ -66,6 +66,9 @@ get_status_led() {
 	rt-n15)
 		status_led="rt-n15:blue:power"
 		;;
+	rt-n10-plus)
+		status_led="asus:green:wps"
+		;;
 	rt-n56u)
 		status_led="asus:blue:power"
 		;;

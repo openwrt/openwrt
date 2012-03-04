@@ -36,6 +36,10 @@ preinit_set_mac_address() {
 		mac=$(ramips_get_mac_binary board-nvram 65440)
 		ifconfig eth0 hw ether $mac 2>/dev/null
 		;;
+	rt-n10-plus)
+		mac=$(ramips_get_mac_binary devconf 4)
+		ifconfig eth0 hw ether $mac 2>/dev/null
+		;;
 	esac
 }
 

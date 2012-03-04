@@ -98,6 +98,9 @@ ramips_board_name() {
 	*"RT-G32 B1")
 		name="rt-g32-b1"
 		;;
+	*"RT-N10+")
+		name="rt-n10-plus"
+		;;
 	*"RT-N15")
 		name="rt-n15"
 		;;
