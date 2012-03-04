@@ -337,11 +337,14 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 			}
 
 			/* have name but no value and found a colon, start of value */
-			else if( hdrname && !hdrdata && ((i+2) < buflen) &&
-				(buffer[i] == ':') && (buffer[i+1] == ' ')
+			else if( hdrname && !hdrdata &&
+			    ((i+1) < buflen) && (buffer[i] == ':')
 			) {
 				buffer[i] = 0;
-				hdrdata = &buffer[i+2];
+				hdrdata = &buffer[i+1];
+
+				while ((hdrdata + 1) < (buffer + buflen) && *hdrdata == ' ')
+					hdrdata++;
 			}
 
 			/* have no name and found [A-Za-z], start of name */
