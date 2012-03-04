@@ -391,6 +391,10 @@ define Image/Build/Profile/WR6202
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr6202,WR6202,ttyS1,115200,phys)
 endef
 
+define Image/Build/Profile/XDXRN502J
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,xdxrn502j,XDXRN502J,ttyS1,57600,phys)
+endef
+
 ifeq ($(CONFIG_RALINK_RT305X),y)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ALL0256N,$(1))
@@ -417,6 +421,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WL351,$(1))
 	$(call Image/Build/Profile/WR5123GN,$(1))
 	$(call Image/Build/Profile/WR6202,$(1))
+	$(call Image/Build/Profile/XDXRN502J,$(1))
 endef
 endif
 
