@@ -205,6 +205,13 @@ define BuildFirmware/RTG32B1
 	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/spi,$(mtdlayout_rtg32b1)),$(mtd_rtg32b1_kernel_part_size),$(mtd_rtg32b1_rootfs_part_size))
 endef
 
+mtdlayout_rtn10plus=192k(u-boot)ro,64k(devdata)ro,64k(devconf)ro,896k(kernel),2880k(rootfs),3776k@0x50000(firmware)
+mtd_rtn10plus_kernel_part_size=917504
+mtd_rtn10plus_rootfs_part_size=2949120
+define BuildFirmware/RTN10PLUS
+	$(call BuildFirmware/Generic,$(1),$(2),board=$(3) $(call mkmtd/phys,$(mtdlayout_rtn10plus)),$(mtd_rtn10plus_kernel_part_size),$(mtd_rtn10plus_rootfs_part_size))
+endef
+
 mtdlayout_whrg300n=192k(u-boot)ro,64k(u-boot-env)ro,64k(factory)ro,960k(kernel),2752k(rootfs),64k(user)ro,3712k@0x50000(firmware)
 define BuildFirmware/WHRG300N
 	$(call Image/Build/Template/GENERIC_4M,$(1),whr-g300n,WHR-G300N,ttyS1,57600,phys)
@@ -343,6 +350,10 @@ define Image/Build/Profile/RTG32B1
 	$(call Image/Build/Template/$(fs_squash)/$(1),RTG32B1,rt-g32-b1,RT-G32-B1)
 endef
 
+define Image/Build/Profile/RTN10PLUS
+	$(call Image/Build/Template/$(fs_squash)/$(1),RTN10PLUS,rt-n10-plus,RT-N10-PLUS)
+endef
+
 define Image/Build/Profile/SLR7205
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,sl-r7205,SL-R7205,ttyS1,57600,phys)
 endef
@@ -388,6 +399,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/DIR300B1,$(1))
 	$(call Image/Build/Profile/ESR9753,$(1))
 	$(call Image/Build/Profile/F5D8235V2,$(1))
+	$(call Image/Build/Profile/RTN10PLUS,$(1))
 	$(call Image/Build/Profile/FONERA20N,$(1))
 	$(call Image/Build/Profile/HW5503G,$(1))
 	$(call Image/Build/Profile/MOFI35003GN,$(1))

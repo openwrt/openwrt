@@ -26,6 +26,11 @@ config RT305X_MACH_RT_G32_REVB
 	bool "Asus RT-G32 revB board support"
 	select RALINK_DEV_GPIO_BUTTONS
 
+config RT305X_MACH_RT_N10_PLUS
+	bool "Asus RT-N10+ board support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_HW550_3G
 	bool "Aztech HW550-3G support"
 	select RALINK_DEV_GPIO_BUTTONS
