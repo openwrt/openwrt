@@ -99,6 +99,9 @@ get_status_led() {
 	wr512-3gn)
 		status_led="wr512:green:wps"
 		;;
+	xdxrn502j)
+		status_led="xdxrn502j:green:power"
+		;;
 	esac
 }
 

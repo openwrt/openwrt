@@ -143,6 +143,9 @@ ramips_board_name() {
 	*"AWB WR6202")
 		name="wr6202"
 		;;
+	*"XDX RN502J")
+		name="xdxrn502j"
+		;;
 	*)
 		name="generic"
 		;;
