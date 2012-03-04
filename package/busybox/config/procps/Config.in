@@ -145,7 +145,7 @@ config BUSYBOX_CONFIG_PS
 
 config BUSYBOX_CONFIG_FEATURE_PS_WIDE
 	bool "Enable wide output option (-w)"
-	default n
+	default y
 	depends on BUSYBOX_CONFIG_PS
 	help
 	  Support argument 'w' for wide output.
