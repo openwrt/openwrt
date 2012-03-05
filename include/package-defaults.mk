@@ -50,7 +50,7 @@ endef
 Build/Patch:=$(Build/Patch/Default)
 ifneq ($(strip $(PKG_UNPACK)),)
   define Build/Prepare/Default
-	$(SH_FUNC) $(PKG_UNPACK)
+	$(PKG_UNPACK)
 	$(Build/Patch)
   endef
 endif
