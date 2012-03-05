@@ -1,0 +1,61 @@
+--- a/arch/powerpc/kernel/align.c
++++ b/arch/powerpc/kernel/align.c
+@@ -701,7 +701,7 @@
+ 
+ int fix_alignment(struct pt_regs *regs)
+ {
+-	unsigned int instr, nb, flags, instruction = 0;
++	unsigned int instr, nb, flags, instruction __maybe_unused = 0;
+ 	unsigned int reg, areg;
+ 	unsigned int dsisr;
+ 	unsigned char __user *addr;
+--- a/arch/powerpc/kernel/signal_32.c
++++ b/arch/powerpc/kernel/signal_32.c
+@@ -935,7 +935,7 @@
+ 		     struct ucontext __user *new_ctx,
+ 		     int ctx_size, int r6, int r7, int r8, struct pt_regs *regs)
+ {
+-	unsigned char tmp;
++	unsigned char tmp __maybe_unused;
+ 	int ctx_has_vsx_region = 0;
+ 
+ #ifdef CONFIG_PPC64
+@@ -1076,7 +1076,7 @@
+ {
+ 	struct sig_dbg_op op;
+ 	int i;
+-	unsigned char tmp;
++	unsigned char tmp __maybe_unused;
+ 	unsigned long new_msr = regs->msr;
+ #ifdef CONFIG_PPC_ADV_DEBUG_REGS
+ 	unsigned long new_dbcr0 = current->thread.dbcr0;
+--- a/arch/powerpc/mm/mem.c
++++ b/arch/powerpc/mm/mem.c
+@@ -171,7 +171,7 @@
+ 	unsigned long start, bootmap_pages;
+ 	unsigned long total_pages;
+ 	struct memblock_region *reg;
+-	int boot_mapsize;
++	int boot_mapsize __maybe_unused;
+ 
+ 	max_low_pfn = max_pfn = memblock_end_of_DRAM() >> PAGE_SHIFT;
+ 	total_pages = (memblock_end_of_DRAM() - memstart_addr) >> PAGE_SHIFT;
+--- a/arch/powerpc/sysdev/qe_lib/qe_ic.c
++++ b/arch/powerpc/sysdev/qe_lib/qe_ic.c
+@@ -327,7 +327,7 @@
+ {
+ 	struct qe_ic *qe_ic;
+ 	struct resource res;
+-	u32 temp = 0, ret, high_active = 0;
++	u32 temp = 0, ret;
+ 
+ 	ret = of_address_to_resource(node, 0, &res);
+ 	if (ret)
+@@ -376,7 +376,6 @@
+ 	/* choose destination signal for highest priority interrupt */
+ 	if (flags & QE_IC_HIGH_SIGNAL) {
+ 		temp |= (SIGNAL_HIGH << CICR_HPIT_SHIFT);
+-		high_active = 1;
+ 	}
+ 
+ 	qe_ic_write(qe_ic->regs, QEIC_CICR, temp);
