@@ -134,7 +134,8 @@ static char * format_rate(int rate)
 	if (rate <= 0)
 		snprintf(buf, sizeof(buf), "unknown");
 	else
-		snprintf(buf, sizeof(buf), "%.1f MBit/s", ((float)rate / 1000.0));
+		snprintf(buf, sizeof(buf), "%d.%d MBit/s",
+			rate / 1000, (rate % 1000) / 100);
 
 	return buf;
 }

@@ -61,7 +61,7 @@ extern const char *IWINFO_OPMODE_NAMES[];
 
 
 struct iwinfo_rate_entry {
-	uint16_t rate;
+	uint32_t rate;
 	int8_t mcs;
 	uint8_t is_40mhz:1;
 	uint8_t is_short_gi:1;
