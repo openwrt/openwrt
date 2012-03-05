@@ -155,10 +155,6 @@ else
 		--enable-__cxa_atexit
 endif
 
-ifdef CONFIG_powerpc
-  TARGET_CFLAGS := $(patsubst -Os,-O2,$(TARGET_CFLAGS))
-endif
-
 ifneq ($(GCC_ARCH),)
   GCC_CONFIGURE+= --with-arch=$(GCC_ARCH)
 endif
