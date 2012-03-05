@@ -31,6 +31,8 @@ unexport P4PORT P4USER P4CONFIG P4CLIENT
 # prevent user defaults for quilt from interfering
 unexport QUILT_PATCHES QUILT_PATCH_OPTS
 
+unexport C_INCLUDE_PATH
+
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 
