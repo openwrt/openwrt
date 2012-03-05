@@ -34,7 +34,7 @@ Subject: [PATCH 22/57] ehci: add driver for bcm63xx integrated controller.
 +	  BCM6358 and later chips.
 +
  config USB_EHCI_FSL
- 	bool "Support for Freescale on-chip EHCI USB controller"
+ 	bool "Support for Freescale PPC on-chip EHCI USB controller"
  	depends on USB_EHCI_HCD && FSL_SOC
 --- /dev/null
 +++ b/drivers/usb/host/ehci-bcm63xx.c

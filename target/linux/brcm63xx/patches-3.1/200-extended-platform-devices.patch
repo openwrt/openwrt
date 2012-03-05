@@ -15,7 +15,7 @@
 @@ -61,6 +61,10 @@ struct board_info {
  
  	/* Buttons */
- 	struct gpio_button buttons[2];
+ 	struct gpio_button buttons[4];
 +
 +	/* Additional platform devices */
 +	struct platform_device **devs;
