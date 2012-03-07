@@ -77,14 +77,20 @@ static u32
 ar8216_mii_read(struct ar8216_priv *priv, int reg)
 {
 	struct phy_device *phy = priv->phy;
+	struct mii_bus *bus = phy->bus;
 	u16 r1, r2, page;
 	u16 lo, hi;
 
 	split_addr((u32) reg, &r1, &r2, &page);
-	mdiobus_write(phy->bus, 0x18, 0, page);
+
+	mutex_lock(&bus->mdio_lock);
+
+	bus->write(bus, 0x18, 0, page);
 	msleep(1); /* wait for the page switch to propagate */
-	lo = mdiobus_read(phy->bus, 0x10 | r2, r1);
-	hi = mdiobus_read(phy->bus, 0x10 | r2, r1 + 1);
+	lo = bus->read(bus, 0x10 | r2, r1);
+	hi = bus->read(bus, 0x10 | r2, r1 + 1);
+
+	mutex_unlock(&bus->mdio_lock);
 
 	return (hi << 16) | lo;
 }
@@ -93,17 +99,22 @@ static void
 ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
 {
 	struct phy_device *phy = priv->phy;
+	struct mii_bus *bus = phy->bus;
 	u16 r1, r2, r3;
 	u16 lo, hi;
 
 	split_addr((u32) reg, &r1, &r2, &r3);
-	mdiobus_write(phy->bus, 0x18, 0, r3);
-	msleep(1); /* wait for the page switch to propagate */
-
 	lo = val & 0xffff;
 	hi = (u16) (val >> 16);
-	mdiobus_write(phy->bus, 0x10 | r2, r1 + 1, hi);
-	mdiobus_write(phy->bus, 0x10 | r2, r1, lo);
+
+	mutex_lock(&bus->mdio_lock);
+
+	bus->write(bus, 0x18, 0, r3);
+	msleep(1); /* wait for the page switch to propagate */
+	bus->write(bus, 0x10 | r2, r1 + 1, hi);
+	bus->write(bus, 0x10 | r2, r1, lo);
+
+	mutex_unlock(&bus->mdio_lock);
 }
 
 static u32
