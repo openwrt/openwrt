@@ -801,64 +801,6 @@ ar7240_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 	return 0;
 }
 
-static const char *
-ar7240_speed_str(u32 status)
-{
-	u32 speed;
-
-	speed = (status >> AR7240_PORT_STATUS_SPEED_S) &
-					AR7240_PORT_STATUS_SPEED_M;
-	switch (speed) {
-	case AR7240_PORT_STATUS_SPEED_10:
-		return "10baseT";
-	case AR7240_PORT_STATUS_SPEED_100:
-		return "100baseT";
-	case AR7240_PORT_STATUS_SPEED_1000:
-		return "1000baseT";
-	}
-
-	return "unknown";
-}
-
-static int
-ar7240_port_get_link(struct switch_dev *dev, const struct switch_attr *attr,
-		     struct switch_val *val)
-{
-	struct ar7240sw *as = sw_to_ar7240(dev);
-	struct mii_bus *mii = as->mii_bus;
-	u32 len;
-	u32 status;
-	int port;
-
-	port = val->port_vlan;
-
-	memset(as->buf, '\0', sizeof(as->buf));
-	status = ar7240sw_reg_read(mii, AR7240_REG_PORT_STATUS(port));
-
-	if (status & AR7240_PORT_STATUS_LINK_UP) {
-		len = snprintf(as->buf, sizeof(as->buf),
-				"port:%d link:up speed:%s %s-duplex %s%s%s",
-				port,
-				ar7240_speed_str(status),
-				(status & AR7240_PORT_STATUS_DUPLEX) ?
-					"full" : "half",
-				(status & AR7240_PORT_STATUS_TXFLOW) ?
-					"txflow ": "",
-				(status & AR7240_PORT_STATUS_RXFLOW) ?
-					"rxflow " : "",
-				(status & AR7240_PORT_STATUS_LINK_AUTO) ?
-					"auto ": "");
-	} else {
-		len = snprintf(as->buf, sizeof(as->buf),
-			       "port:%d link:down", port);
-	}
-
-	val->value.s = as->buf;
-	val->len = len;
-
-	return 0;
-}
-
 static void
 ar7240_vtu_op(struct ar7240sw *as, u32 op, u32 val)
 {
@@ -998,14 +940,6 @@ static struct switch_attr ar7240_globals[] = {
 };
 
 static struct switch_attr ar7240_port[] = {
-	{
-		.type = SWITCH_TYPE_STRING,
-		.name = "link",
-		.description = "Get port link information",
-		.max = 1,
-		.set = NULL,
-		.get = ar7240_port_get_link,
-	},
 };
 
 static struct switch_attr ar7240_vlan[] = {
