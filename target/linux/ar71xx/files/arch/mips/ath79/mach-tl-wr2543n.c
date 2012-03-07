@@ -69,6 +69,7 @@ static struct gpio_keys_button tl_wr2543n_gpio_keys[] __initdata = {
 		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = TL_WR2543N_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= TL_WR2543N_GPIO_BTN_WPS,
+		.active_low	= 1,
 	}
 };
 
