@@ -194,6 +194,8 @@ struct switch_dev {
 	spinlock_t lock;
 	struct switch_port *portbuf;
 
+	char buf[128];
+
 #ifdef CONFIG_SWCONFIG_LEDS
 	struct switch_led_trigger *led_trigger;
 #endif
