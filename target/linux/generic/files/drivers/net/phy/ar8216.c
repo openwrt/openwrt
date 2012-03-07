@@ -643,10 +643,10 @@ ar8236_hw_init(struct ar8216_priv *priv) {
 	/* Initialize the PHYs */
 	bus = priv->phy->bus;
 	for (i = 0; i < 5; i++) {
-		bus->write(bus, i, MII_ADVERTISE,
-			   ADVERTISE_ALL | ADVERTISE_PAUSE_CAP |
-			   ADVERTISE_PAUSE_ASYM);
-		bus->write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
+		mdiobus_write(bus, i, MII_ADVERTISE,
+			      ADVERTISE_ALL | ADVERTISE_PAUSE_CAP |
+			      ADVERTISE_PAUSE_ASYM);
+		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
 	}
 	msleep(1000);
 
