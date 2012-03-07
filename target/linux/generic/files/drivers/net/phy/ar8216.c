@@ -929,14 +929,31 @@ static int
 ar8216_read_status(struct phy_device *phydev)
 {
 	struct ar8216_priv *priv = phydev->priv;
+	struct switch_port_link link;
 	int ret;
 	if (phydev->addr != 0) {
 		return genphy_read_status(phydev);
 	}
 
-	phydev->speed = priv->chip == AR8316 ? SPEED_1000 : SPEED_100;
-	phydev->duplex = DUPLEX_FULL;
-	phydev->link = 1;
+	ar8216_read_port_link(priv, phydev->addr, &link);
+	phydev->link = !!link.link;
+	if (!phydev->link)
+		return 0;
+
+	switch (link.speed) {
+	case SWITCH_PORT_SPEED_10:
+	    	phydev->speed = SPEED_10;
+		break;
+	case SWITCH_PORT_SPEED_100:
+	    	phydev->speed = SPEED_100;
+		break;
+	case SWITCH_PORT_SPEED_1000:
+	    	phydev->speed = SPEED_1000;
+		break;
+	default:
+		phydev->speed = 0;
+	}
+	phydev->duplex = link.duplex ? DUPLEX_FULL : DUPLEX_HALF;
 
 	/* flush the address translation unit */
 	mutex_lock(&priv->reg_mutex);
