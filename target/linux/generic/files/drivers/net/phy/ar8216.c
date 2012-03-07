@@ -468,14 +468,22 @@ static int
 ar8216_wait_bit(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
 {
 	int timeout = 20;
+	u32 t = 0;
 
-	while ((priv->read(priv, reg) & mask) != val) {
-		if (timeout-- <= 0) {
-			printk(KERN_ERR "ar8216: timeout waiting for operation to complete\n");
-			return 1;
-		}
+	while (1) {
+		t = priv->read(priv, reg);
+		if ((t & mask) == val)
+			return 0;
+
+		if (timeout-- <= 0)
+			break;
+
+		udelay(10);
 	}
-	return 0;
+
+	pr_err("ar8216: timeout on reg %08x: %08x & %08x != %08x\n",
+	       (unsigned int) reg, t, mask, val);
+	return -ETIMEDOUT;
 }
 
 static void
@@ -958,11 +966,8 @@ ar8216_read_status(struct phy_device *phydev)
 	/* flush the address translation unit */
 	mutex_lock(&priv->reg_mutex);
 	ret = ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0);
-
 	if (!ret)
 		priv->write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH);
-	else
-		ret = -ETIMEDOUT;
 	mutex_unlock(&priv->reg_mutex);
 
 	phydev->state = PHY_RUNNING;
