@@ -718,6 +718,32 @@ out:
 	return 0;
 }
 
+static void
+ar8216_init_port(struct ar8216_priv *priv, int port)
+{
+	/* Enable port learning and tx */
+	priv->write(priv, AR8216_REG_PORT_CTRL(port),
+		AR8216_PORT_CTRL_LEARN |
+		(4 << AR8216_PORT_CTRL_STATE_S));
+
+	priv->write(priv, AR8216_REG_PORT_VLAN(port), 0);
+
+	if (port == AR8216_PORT_CPU) {
+		priv->write(priv, AR8216_REG_PORT_STATUS(port),
+			AR8216_PORT_STATUS_LINK_UP |
+			((priv->chip == AR8316) ?
+				AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
+			AR8216_PORT_STATUS_TXMAC |
+			AR8216_PORT_STATUS_RXMAC |
+			((priv->chip == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
+			((priv->chip == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
+			AR8216_PORT_STATUS_DUPLEX);
+	} else {
+		priv->write(priv, AR8216_REG_PORT_STATUS(port),
+			AR8216_PORT_STATUS_LINK_AUTO);
+	}
+}
+
 static int
 ar8216_reset_switch(struct switch_dev *dev)
 {
@@ -730,30 +756,11 @@ ar8216_reset_switch(struct switch_dev *dev)
 	for (i = 0; i < AR8X16_MAX_VLANS; i++) {
 		priv->vlan_id[i] = i;
 	}
-	for (i = 0; i < AR8216_NUM_PORTS; i++) {
-		/* Enable port learning and tx */
-		priv->write(priv, AR8216_REG_PORT_CTRL(i),
-			AR8216_PORT_CTRL_LEARN |
-			(4 << AR8216_PORT_CTRL_STATE_S));
 
-		priv->write(priv, AR8216_REG_PORT_VLAN(i), 0);
+	/* Configure all ports */
+	for (i = 0; i < AR8216_NUM_PORTS; i++)
+		ar8216_init_port(priv, i);
 
-		/* Configure all PHYs */
-		if (i == AR8216_PORT_CPU) {
-			priv->write(priv, AR8216_REG_PORT_STATUS(i),
-				AR8216_PORT_STATUS_LINK_UP |
-				((priv->chip == AR8316) ?
-					AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
-				AR8216_PORT_STATUS_TXMAC |
-				AR8216_PORT_STATUS_RXMAC |
-				((priv->chip == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
-				((priv->chip == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
-				AR8216_PORT_STATUS_DUPLEX);
-		} else {
-			priv->write(priv, AR8216_REG_PORT_STATUS(i),
-				AR8216_PORT_STATUS_LINK_AUTO);
-		}
-	}
 	/* XXX: undocumented magic from atheros, required! */
 	priv->write(priv, 0x38, 0xc000050e);
 
