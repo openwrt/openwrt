@@ -129,6 +129,62 @@ swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr, struct
 	return dev->ops->get_port_pvid(dev, val->port_vlan, &val->value.i);
 }
 
+static const char *
+swconfig_speed_str(enum switch_port_speed speed)
+{
+	switch (speed) {
+	case SWITCH_PORT_SPEED_10:
+		return "10baseT";
+	case SWITCH_PORT_SPEED_100:
+		return "100baseT";
+	case SWITCH_PORT_SPEED_1000:
+		return "1000baseT";
+	default:
+		break;
+	}
+
+	return "unknown";
+}
+
+static int
+swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+{
+	struct switch_port_link link;
+	int len;
+	int ret;
+
+	if (val->port_vlan >= dev->ports)
+		return -EINVAL;
+
+	if (!dev->ops->get_port_link)
+		return -EOPNOTSUPP;
+
+	memset(&link, 0, sizeof(link));
+	ret = dev->ops->get_port_link(dev, val->port_vlan, &link);
+	if (ret)
+		return ret;
+
+	memset(dev->buf, 0, sizeof(dev->buf));
+
+	if (link.link)
+		len = snprintf(dev->buf, sizeof(dev->buf),
+			       "port:%d link:up speed:%s %s-duplex %s%s%s",
+			       val->port_vlan,
+			       swconfig_speed_str(link.speed),
+			       link.duplex ? "full" : "half",
+			       link.tx_flow ? "txflow ": "",
+			       link.rx_flow ?	"rxflow " : "",
+			       link.aneg ? "auto" : "");
+	else
+		len = snprintf(dev->buf, sizeof(dev->buf), "port:%d link:down",
+			       val->port_vlan);
+
+	val->value.s = dev->buf;
+	val->len = len;
+
+	return 0;
+}
+
 static int
 swconfig_apply_config(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
@@ -160,6 +216,7 @@ enum vlan_defaults {
 
 enum port_defaults {
 	PORT_PVID,
+	PORT_LINK,
 };
 
 static struct switch_attr default_global[] = {
@@ -184,6 +241,13 @@ static struct switch_attr default_port[] = {
 		.description = "Primary VLAN ID",
 		.set = swconfig_set_pvid,
 		.get = swconfig_get_pvid,
+	},
+	[PORT_LINK] = {
+		.type = SWITCH_TYPE_STRING,
+		.name = "link",
+		.description = "Get port link information",
+		.set = NULL,
+		.get = swconfig_get_link,
 	}
 };
 
@@ -197,6 +261,17 @@ static struct switch_attr default_vlan[] = {
 	},
 };
 
+static const struct switch_attr *
+swconfig_find_attr_by_name(const struct switch_attrlist *alist, const char *name)
+{
+	int i;
+
+	for (i = 0; i < alist->n_attr; i++)
+		if (strcmp(name, alist->attr[i].name) == 0)
+			return &alist->attr[i];
+
+	return NULL;
+}
 
 static void swconfig_defaults_init(struct switch_dev *dev)
 {
@@ -211,6 +286,10 @@ static void swconfig_defaults_init(struct switch_dev *dev)
 
 	if (ops->get_port_pvid || ops->set_port_pvid)
 		set_bit(PORT_PVID, &dev->def_port);
+
+	if (ops->get_port_link &&
+	    !swconfig_find_attr_by_name(&ops->attr_port, "link"))
+		set_bit(PORT_LINK, &dev->def_port);
 
 	/* always present, can be no-op */
 	set_bit(GLOBAL_APPLY, &dev->def_global);
