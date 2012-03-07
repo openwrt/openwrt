@@ -993,7 +993,7 @@ ar8216_remove(struct phy_device *pdev)
 
 static struct phy_driver ar8216_driver = {
 	.phy_id		= 0x004d0000,
-	.name		= "Atheros AR8216/AR8316/AR8326",
+	.name		= "Atheros AR8216/AR8236/AR8316",
 	.phy_id_mask	= 0xffff0000,
 	.features	= PHY_BASIC_FEATURES,
 	.probe		= ar8216_probe,
