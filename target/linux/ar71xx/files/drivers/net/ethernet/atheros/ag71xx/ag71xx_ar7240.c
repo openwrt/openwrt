@@ -888,9 +888,15 @@ ar7240_get_port_link(struct switch_dev *dev, int port,
 		return -EINVAL;
 
 	status = ar7240sw_reg_read(mii, AR7240_REG_PORT_STATUS(port));
-
-	link->link = !!(status & AR7240_PORT_STATUS_LINK_UP);
 	link->aneg = !!(status & AR7240_PORT_STATUS_LINK_AUTO);
+	if (link->aneg) {
+		link->link = !!(status & AR7240_PORT_STATUS_LINK_UP);
+		if (!link->link)
+			return 0;
+	} else {
+		link->link = true;
+	}
+
 	link->duplex = !!(status & AR7240_PORT_STATUS_DUPLEX);
 	link->tx_flow = !!(status & AR7240_PORT_STATUS_TXFLOW);
 	link->rx_flow = !!(status & AR7240_PORT_STATUS_RXFLOW);
