@@ -650,11 +650,10 @@ ar8216_hw_init(struct ar8216_priv *priv)
 
 static int
 ar8236_hw_init(struct ar8216_priv *priv) {
-	static int initialized;
 	int i;
 	struct mii_bus *bus;
 
-	if (initialized)
+	if (priv->initialized)
 		return 0;
 
 	/* Initialize the PHYs */
@@ -671,7 +670,7 @@ ar8236_hw_init(struct ar8216_priv *priv) {
 	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
 		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
 
-	initialized = true;
+	priv->initialized = true;
 	return 0;
 }
 
