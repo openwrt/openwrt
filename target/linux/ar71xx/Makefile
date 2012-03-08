@@ -18,7 +18,7 @@ LINUX_VERSION:=3.2.9
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
-	kmod-leds-gpio kmod-gpio-button-hotplug swconfig \
+	kmod-leds-gpio kmod-gpio-button-hotplug kmod-wdt-ath79 swconfig \
 	kmod-ath9k wpad-mini uboot-envtools
 
 define Target/Description
