@@ -226,7 +226,7 @@ ar8216_read_port_link(struct ar8216_priv *priv, int port,
 
 static int
 ar8216_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
-                struct switch_val *val)
+		struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	priv->vlan = !!val->value.i;
@@ -235,7 +235,7 @@ ar8216_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 
 static int
 ar8216_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
-                struct switch_val *val)
+		struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	val->value.i = priv->vlan;
@@ -267,7 +267,7 @@ ar8216_get_pvid(struct switch_dev *dev, int port, int *vlan)
 
 static int
 ar8216_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
-                struct switch_val *val)
+	       struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	priv->vlan_id[val->port_vlan] = val->value.i;
@@ -276,7 +276,7 @@ ar8216_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 
 static int
 ar8216_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
-                struct switch_val *val)
+	       struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	val->value.i = priv->vlan_id[val->port_vlan];
@@ -299,8 +299,8 @@ ar8216_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	struct ar8216_priv *priv = dev->phy_ptr;
 	unsigned char *buf;
 
-    if (unlikely(!priv))
-        goto error;
+	if (unlikely(!priv))
+		goto error;
 
 	if (!priv->vlan)
 		goto send;
@@ -451,9 +451,9 @@ ar8216_set_ports(struct switch_dev *dev, struct switch_val *val)
 	for (i = 0; i < val->len; i++) {
 		struct switch_port *p = &val->value.ports[i];
 
-		if (p->flags & (1 << SWITCH_PORT_FLAG_TAGGED))
+		if (p->flags & (1 << SWITCH_PORT_FLAG_TAGGED)) {
 			priv->vlan_tagged |= (1 << p->id);
-		else {
+		} else {
 			priv->vlan_tagged &= ~(1 << p->id);
 			priv->pvid[p->id] = val->port_vlan;
 
@@ -606,11 +606,10 @@ ar8216_hw_apply(struct switch_dev *dev)
 		int egress, ingress;
 		int pvid;
 
-		if (priv->vlan) {
+		if (priv->vlan)
 			pvid = priv->vlan_id[priv->pvid[i]];
-		} else {
+		else
 			pvid = i;
-		}
 
 		if (priv->vlan) {
 			if (priv->vlan_tagged & (1 << i))
@@ -620,11 +619,11 @@ ar8216_hw_apply(struct switch_dev *dev)
 		} else {
 			egress = AR8216_OUT_KEEP;
 		}
-		if (priv->vlan) {
+
+		if (priv->vlan)
 			ingress = AR8216_IN_SECURE;
-		} else {
+		else
 			ingress = AR8216_IN_PORT_ONLY;
-		}
 
 		if (priv->chip == AR8236)
 			ar8236_setup_port(priv, i, egress, ingress, portmask[i],
@@ -649,7 +648,8 @@ ar8216_hw_init(struct ar8216_priv *priv)
 }
 
 static int
-ar8236_hw_init(struct ar8216_priv *priv) {
+ar8236_hw_init(struct ar8216_priv *priv)
+{
 	int i;
 	struct mii_bus *bus;
 
@@ -675,7 +675,8 @@ ar8236_hw_init(struct ar8216_priv *priv) {
 }
 
 static int
-ar8316_hw_init(struct ar8216_priv *priv) {
+ar8316_hw_init(struct ar8216_priv *priv)
+{
 	int i;
 	u32 val, newval;
 	struct mii_bus *bus;
@@ -781,9 +782,9 @@ ar8216_reset_switch(struct switch_dev *dev)
 	mutex_lock(&priv->reg_mutex);
 	memset(&priv->vlan, 0, sizeof(struct ar8216_priv) -
 		offsetof(struct ar8216_priv, vlan));
-	for (i = 0; i < AR8X16_MAX_VLANS; i++) {
+
+	for (i = 0; i < AR8X16_MAX_VLANS; i++)
 		priv->vlan_id[i] = i;
-	}
 
 	/* Configure all ports */
 	for (i = 0; i < AR8216_NUM_PORTS; i++)
@@ -954,9 +955,9 @@ ar8216_read_status(struct phy_device *phydev)
 	struct ar8216_priv *priv = phydev->priv;
 	struct switch_port_link link;
 	int ret;
-	if (phydev->addr != 0) {
+
+	if (phydev->addr != 0)
 		return genphy_read_status(phydev);
-	}
 
 	ar8216_read_port_link(priv, phydev->addr, &link);
 	phydev->link = !!link.link;
@@ -965,13 +966,13 @@ ar8216_read_status(struct phy_device *phydev)
 
 	switch (link.speed) {
 	case SWITCH_PORT_SPEED_10:
-	    	phydev->speed = SPEED_10;
+		phydev->speed = SPEED_10;
 		break;
 	case SWITCH_PORT_SPEED_100:
-	    	phydev->speed = SPEED_100;
+		phydev->speed = SPEED_100;
 		break;
 	case SWITCH_PORT_SPEED_1000:
-	    	phydev->speed = SPEED_1000;
+		phydev->speed = SPEED_1000;
 		break;
 	default:
 		phydev->speed = 0;
