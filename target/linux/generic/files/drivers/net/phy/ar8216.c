@@ -638,6 +638,17 @@ ar8216_hw_apply(struct switch_dev *dev)
 }
 
 static int
+ar8216_hw_init(struct ar8216_priv *priv)
+{
+	/* XXX: undocumented magic from atheros, required! */
+	priv->write(priv, 0x38, 0xc000050e);
+
+	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8216_GCTRL_MTU, 1518 + 8 + 2);
+	return 0;
+}
+
+static int
 ar8236_hw_init(struct ar8216_priv *priv) {
 	static int initialized;
 	int i;
@@ -655,6 +666,10 @@ ar8236_hw_init(struct ar8216_priv *priv) {
 		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
 	}
 	msleep(1000);
+
+	/* enable jumbo frames */
+	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
 
 	initialized = true;
 	return 0;
@@ -720,6 +735,13 @@ ar8316_hw_init(struct ar8216_priv *priv) {
 		msleep(1000);
 	}
 
+	/* enable jumbo frames */
+	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
+
+	/* enable cpu port to receive multicast and broadcast frames */
+	priv->write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
+
 out:
 	priv->initialized = true;
 	return 0;
@@ -768,23 +790,6 @@ ar8216_reset_switch(struct switch_dev *dev)
 	for (i = 0; i < AR8216_NUM_PORTS; i++)
 		ar8216_init_port(priv, i);
 
-	/* XXX: undocumented magic from atheros, required! */
-	priv->write(priv, 0x38, 0xc000050e);
-
-	if (priv->chip == AR8216) {
-		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-			AR8216_GCTRL_MTU, 1518 + 8 + 2);
-	} else if (priv->chip == AR8316 ||
-		   priv->chip == AR8236) {
-		/* enable jumbo frames */
-		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-			AR8316_GCTRL_MTU, 9018 + 8 + 2);
-	}
-
-	if (priv->chip == AR8316) {
-		/* enable cpu port to receive multicast and broadcast frames */
-		priv->write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
-	}
 	mutex_unlock(&priv->reg_mutex);
 	return ar8216_hw_apply(dev);
 }
@@ -908,7 +913,9 @@ ar8216_config_init(struct phy_device *pdev)
 	priv->init = true;
 
 	ret = 0;
-	if (priv->chip == AR8236)
+	if (priv->chip == AR8216)
+		ret = ar8216_hw_init(priv);
+	else if (priv->chip == AR8236)
 		ret = ar8236_hw_init(priv);
 	else if (priv->chip == AR8316)
 		ret = ar8316_hw_init(priv);
