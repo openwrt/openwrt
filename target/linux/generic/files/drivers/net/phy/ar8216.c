@@ -892,34 +892,24 @@ ar8216_config_init(struct phy_device *pdev)
 		swdev->vlans = AR8216_NUM_VLANS;
 	}
 
-	if ((ret = register_switch(&priv->dev, pdev->attached_dev)) < 0) {
-		kfree(priv);
-		goto done;
-	}
+	ret = register_switch(&priv->dev, pdev->attached_dev);
+	if (ret)
+		goto err_free_priv;
 
 	priv->init = true;
 
-	if (priv->chip == AR8316) {
-		ret = ar8316_hw_init(priv);
-		if (ret) {
-			kfree(priv);
-			goto done;
-		}
-	}
-
-	if (priv->chip == AR8236) {
+	ret = 0;
+	if (priv->chip == AR8236)
 		ret = ar8236_hw_init(priv);
-		if (ret) {
-			kfree(priv);
-			goto done;
-		}
-	}
+	else if (priv->chip == AR8316)
+		ret = ar8316_hw_init(priv);
+
+	if (ret)
+		goto err_free_priv;
 
 	ret = ar8216_reset_switch(&priv->dev);
-	if (ret) {
-		kfree(priv);
-		goto done;
-	}
+	if (ret)
+		goto err_free_priv;
 
 	dev->phy_ptr = priv;
 
@@ -936,7 +926,10 @@ ar8216_config_init(struct phy_device *pdev)
 
 	priv->init = false;
 
-done:
+	return 0;
+
+err_free_priv:
+	kfree(priv);
 	return ret;
 }
 
