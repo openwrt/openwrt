@@ -145,9 +145,9 @@
  	struct ath_hw *ah = common->ah;
 +	int i, j;
  
- 	memset(rx_status, 0, sizeof(struct ieee80211_rx_status));
- 
-@@ -1013,6 +1014,20 @@ static int ath9k_rx_skb_preprocess(struc
+ 	/*
+ 	 * everything but the rate is checked here, the rate check is done
+@@ -1011,6 +1012,20 @@ static int ath9k_rx_skb_preprocess(struc
  	if (rx_stats->rs_moreaggr)
  		rx_status->flag |= RX_FLAG_NO_SIGNAL_VAL;
  
@@ -168,7 +168,7 @@
  	return 0;
  }
  
-@@ -1543,14 +1558,14 @@ static void ath_ant_comb_scan(struct ath
+@@ -1541,14 +1556,14 @@ static void ath_ant_comb_scan(struct ath
  	struct ath_ant_comb *antcomb = &sc->ant_comb;
  	int alt_ratio = 0, alt_rssi_avg = 0, main_rssi_avg = 0, curr_alt_set;
  	int curr_main_set;
