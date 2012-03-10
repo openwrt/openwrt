@@ -1390,7 +1390,26 @@
  EXPORT_SYMBOL(ath9k_hw_beaconq_setup);
 --- a/drivers/net/wireless/ath/ath9k/main.c
 +++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -2300,6 +2300,7 @@ static int ath9k_tx_last_beacon(struct i
+@@ -118,13 +118,15 @@ void ath9k_ps_restore(struct ath_softc *
+ 	if (--sc->ps_usecount != 0)
+ 		goto unlock;
+ 
+-	if (sc->ps_idle && (sc->ps_flags & PS_WAIT_FOR_TX_ACK))
++	if (sc->ps_flags & PS_WAIT_FOR_TX_ACK)
++		goto unlock;
++
++	if (sc->ps_idle)
+ 		mode = ATH9K_PM_FULL_SLEEP;
+ 	else if (sc->ps_enabled &&
+ 		 !(sc->ps_flags & (PS_WAIT_FOR_BEACON |
+ 			      PS_WAIT_FOR_CAB |
+-			      PS_WAIT_FOR_PSPOLL_DATA |
+-			      PS_WAIT_FOR_TX_ACK)))
++			      PS_WAIT_FOR_PSPOLL_DATA)))
+ 		mode = ATH9K_PM_NETWORK_SLEEP;
+ 	else
+ 		goto unlock;
+@@ -2300,6 +2302,7 @@ static int ath9k_tx_last_beacon(struct i
  	struct ath_vif *avp;
  	struct ath_buf *bf;
  	struct ath_tx_status ts;
@@ -1398,7 +1417,7 @@
  	int status;
  
  	vif = sc->beacon.bslot[0];
-@@ -2310,7 +2311,7 @@ static int ath9k_tx_last_beacon(struct i
+@@ -2310,7 +2313,7 @@ static int ath9k_tx_last_beacon(struct i
  	if (!avp->is_bslot_active)
  		return 0;
  
