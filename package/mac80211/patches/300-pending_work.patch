@@ -1891,3 +1891,58 @@
  
  		if (on)
  			REG_SET_BIT(ah, AR_PHY_SFCORR_LOW,
+--- a/drivers/net/wireless/rt2x00/rt2x00dev.c
++++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
+@@ -430,10 +430,14 @@ void rt2x00lib_txdone(struct queue_entry
+ 	/*
+ 	 * If the data queue was below the threshold before the txdone
+ 	 * handler we must make sure the packet queue in the mac80211 stack
+-	 * is reenabled when the txdone handler has finished.
++	 * is reenabled when the txdone handler has finished. This has to be
++	 * serialized with rt2x00mac_tx(), otherwise we can wake up queue
++	 * before it was stopped.
+ 	 */
++	spin_lock_bh(&entry->queue->tx_lock);
+ 	if (!rt2x00queue_threshold(entry->queue))
+ 		rt2x00queue_unpause_queue(entry->queue);
++	spin_unlock_bh(&entry->queue->tx_lock);
+ }
+ EXPORT_SYMBOL_GPL(rt2x00lib_txdone);
+ 
+--- a/drivers/net/wireless/rt2x00/rt2x00mac.c
++++ b/drivers/net/wireless/rt2x00/rt2x00mac.c
+@@ -152,13 +152,22 @@ void rt2x00mac_tx(struct ieee80211_hw *h
+ 	if (unlikely(rt2x00queue_write_tx_frame(queue, skb, false)))
+ 		goto exit_fail;
+ 
++	/*
++	 * Pausing queue has to be serialized with rt2x00lib_txdone(). Note
++	 * we should not use spin_lock_bh variant as bottom halve was already
++	 * disabled before ieee80211_xmit() call.
++	 */
++	spin_lock(&queue->tx_lock);
+ 	if (rt2x00queue_threshold(queue))
+ 		rt2x00queue_pause_queue(queue);
++	spin_unlock(&queue->tx_lock);
+ 
+ 	return;
+ 
+  exit_fail:
++	spin_lock(&queue->tx_lock);
+ 	rt2x00queue_pause_queue(queue);
++	spin_unlock(&queue->tx_lock);
+  exit_free_skb:
+ 	ieee80211_free_txskb(hw, skb);
+ }
+--- a/drivers/net/wireless/rt2x00/rt2x00queue.c
++++ b/drivers/net/wireless/rt2x00/rt2x00queue.c
+@@ -619,6 +619,9 @@ int rt2x00queue_write_tx_frame(struct da
+ 	else if (test_bit(REQUIRE_DMA, &queue->rt2x00dev->cap_flags))
+ 		rt2x00queue_align_frame(skb);
+ 
++	/*
++	 * That function must be called with bh disabled.
++	 */
+ 	spin_lock(&queue->tx_lock);
+ 
+ 	if (unlikely(rt2x00queue_full(queue))) {
