@@ -29,7 +29,34 @@
  	ts->desc_id = MS(ads->status1, AR_TxDescId);
  	ts->ts_tstamp = ads->status4;
  	ts->ts_status = 0;
-@@ -510,7 +506,11 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -440,20 +436,14 @@ int ath9k_hw_process_rxdesc_edma(struct 
+ 	struct ar9003_rxs *rxsp = (struct ar9003_rxs *) buf_addr;
+ 	unsigned int phyerr;
+ 
+-	/* TODO: byte swap on big endian for ar9300_10 */
+-
+-	if (!rxs) {
+-		if ((rxsp->status11 & AR_RxDone) == 0)
+-			return -EINPROGRESS;
+-
+-		if (MS(rxsp->ds_info, AR_DescId) != 0x168c)
+-			return -EINVAL;
++	if ((rxsp->status11 & AR_RxDone) == 0)
++		return -EINPROGRESS;
+ 
+-		if ((rxsp->ds_info & (AR_TxRxDesc | AR_CtrlStat)) != 0)
+-			return -EINPROGRESS;
++	if (MS(rxsp->ds_info, AR_DescId) != 0x168c)
++		return -EINVAL;
+ 
+-		return 0;
+-	}
++	if ((rxsp->ds_info & (AR_TxRxDesc | AR_CtrlStat)) != 0)
++		return -EINPROGRESS;
+ 
+ 	rxs->rs_status = 0;
+ 	rxs->rs_flags =  0;
+@@ -510,7 +500,11 @@ int ath9k_hw_process_rxdesc_edma(struct 
  		 */
  		if (rxsp->status11 & AR_CRCErr)
  			rxs->rs_status |= ATH9K_RXERR_CRC;
@@ -42,7 +69,7 @@
  			phyerr = MS(rxsp->status11, AR_PHYErrCode);
  			/*
  			 * If we reach a point here where AR_PostDelimCRCErr is
-@@ -532,11 +532,7 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -532,11 +526,7 @@ int ath9k_hw_process_rxdesc_edma(struct 
  				rxs->rs_status |= ATH9K_RXERR_PHY;
  				rxs->rs_phyerr = phyerr;
  			}
@@ -1099,15 +1126,53 @@
  
  #undef TX_SAMP_DBG
  }
-@@ -1019,6 +1021,7 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -942,27 +944,6 @@ static ssize_t read_file_recv(struct fil
+ 	PHY_ERR("HT-RATE ERR", ATH9K_PHYERR_HT_RATE_ILLEGAL);
  
- 	sc->debug.stats.rxstats.rs_antenna = rs->rs_antenna;
+ 	len += snprintf(buf + len, size - len,
+-			"%22s : %10d\n", "RSSI-CTL0",
+-			sc->debug.stats.rxstats.rs_rssi_ctl0);
+-	len += snprintf(buf + len, size - len,
+-			"%22s : %10d\n", "RSSI-CTL1",
+-			sc->debug.stats.rxstats.rs_rssi_ctl1);
+-	len += snprintf(buf + len, size - len,
+-			"%22s : %10d\n", "RSSI-CTL2",
+-			sc->debug.stats.rxstats.rs_rssi_ctl2);
+-	len += snprintf(buf + len, size - len,
+-			"%22s : %10d\n", "RSSI-EXT0",
+-			sc->debug.stats.rxstats.rs_rssi_ext0);
+-	len += snprintf(buf + len, size - len,
+-			"%22s : %10d\n", "RSSI-EXT1",
+-			sc->debug.stats.rxstats.rs_rssi_ext1);
+-	len += snprintf(buf + len, size - len,
+-			"%22s : %10d\n", "RSSI-EXT2",
+-			sc->debug.stats.rxstats.rs_rssi_ext2);
+-	len += snprintf(buf + len, size - len,
+-			"%22s : %10d\n", "Rx Antenna",
+-			sc->debug.stats.rxstats.rs_antenna);
+-	len += snprintf(buf + len, size - len,
+ 			"%22s : %10u\n", "RX-Pkts-All",
+ 			sc->debug.stats.rxstats.rx_pkts_all);
+ 	len += snprintf(buf + len, size - len,
+@@ -1009,16 +990,7 @@ void ath_debug_stat_rx(struct ath_softc 
+ 			RX_PHY_ERR_INC(rs->rs_phyerr);
+ 	}
  
+-	sc->debug.stats.rxstats.rs_rssi_ctl0 = rs->rs_rssi_ctl0;
+-	sc->debug.stats.rxstats.rs_rssi_ctl1 = rs->rs_rssi_ctl1;
+-	sc->debug.stats.rxstats.rs_rssi_ctl2 = rs->rs_rssi_ctl2;
+-
+-	sc->debug.stats.rxstats.rs_rssi_ext0 = rs->rs_rssi_ext0;
+-	sc->debug.stats.rxstats.rs_rssi_ext1 = rs->rs_rssi_ext1;
+-	sc->debug.stats.rxstats.rs_rssi_ext2 = rs->rs_rssi_ext2;
+-
+-	sc->debug.stats.rxstats.rs_antenna = rs->rs_antenna;
+-
 +#ifdef CONFIG_ATH9K_MAC_DEBUG
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;
  	RX_SAMP_DBG(rssi_ctl0) = rs->rs_rssi_ctl0;
-@@ -1035,6 +1038,8 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -1035,6 +1007,8 @@ void ath_debug_stat_rx(struct ath_softc 
  	sc->debug.rsidx = (sc->debug.rsidx + 1) % ATH_DBG_MAX_SAMPLES;
  	spin_unlock(&sc->debug.samp_lock);
  
@@ -1116,7 +1181,7 @@
  #undef RX_STAT_INC
  #undef RX_PHY_ERR_INC
  #undef RX_SAMP_DBG
-@@ -1278,6 +1283,8 @@ static const struct file_operations fops
+@@ -1278,6 +1252,8 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -1125,7 +1190,7 @@
  void ath9k_debug_samp_bb_mac(struct ath_softc *sc)
  {
  #define ATH_SAMP_DBG(c) (sc->debug.bb_mac_samp[sc->debug.sampidx].c)
-@@ -1551,6 +1558,7 @@ static const struct file_operations fops
+@@ -1551,6 +1527,7 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -1133,7 +1198,7 @@
  
  int ath9k_init_debug(struct ath_hw *ah)
  {
-@@ -1604,8 +1612,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1604,8 +1581,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_base_eeprom);
  	debugfs_create_file("modal_eeprom", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_modal_eeprom);
@@ -1146,7 +1211,21 @@
  			   sc->debug.debugfs_phy, &sc->sc_ah->gpio_mask);
 --- a/drivers/net/wireless/ath/ath9k/debug.h
 +++ b/drivers/net/wireless/ath/ath9k/debug.h
-@@ -235,16 +235,17 @@ struct ath9k_debug {
+@@ -165,13 +165,6 @@ struct ath_rx_stats {
+ 	u32 post_delim_crc_err;
+ 	u32 decrypt_busy_err;
+ 	u32 phy_err_stats[ATH9K_PHYERR_MAX];
+-	int8_t rs_rssi_ctl0;
+-	int8_t rs_rssi_ctl1;
+-	int8_t rs_rssi_ctl2;
+-	int8_t rs_rssi_ext0;
+-	int8_t rs_rssi_ext1;
+-	int8_t rs_rssi_ext2;
+-	u8 rs_antenna;
+ };
+ 
+ enum ath_reset_type {
+@@ -235,16 +228,17 @@ struct ath9k_debug {
  	struct dentry *debugfs_phy;
  	u32 regidx;
  	struct ath_stats stats;
@@ -1165,7 +1244,7 @@
  void ath_debug_stat_interrupt(struct ath_softc *sc, enum ath9k_int status);
  void ath_debug_stat_tx(struct ath_softc *sc, struct ath_buf *bf,
  		       struct ath_tx_status *ts, struct ath_txq *txq,
-@@ -258,10 +259,6 @@ static inline int ath9k_init_debug(struc
+@@ -258,10 +252,6 @@ static inline int ath9k_init_debug(struc
  	return 0;
  }
  
@@ -1176,7 +1255,7 @@
  static inline void ath_debug_stat_interrupt(struct ath_softc *sc,
  					    enum ath9k_int status)
  {
-@@ -282,4 +279,17 @@ static inline void ath_debug_stat_rx(str
+@@ -282,4 +272,17 @@ static inline void ath_debug_stat_rx(str
  
  #endif /* CONFIG_ATH9K_DEBUGFS */
  
@@ -1307,7 +1386,93 @@
  
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -954,6 +954,7 @@ static void ath9k_process_rssi(struct at
+@@ -232,7 +232,6 @@ static void ath_rx_edma_cleanup(struct a
+ static void ath_rx_edma_init_queue(struct ath_rx_edma *rx_edma, int size)
+ {
+ 	skb_queue_head_init(&rx_edma->rx_fifo);
+-	skb_queue_head_init(&rx_edma->rx_buffers);
+ 	rx_edma->rx_fifo_hwsize = size;
+ }
+ 
+@@ -658,7 +657,9 @@ static void ath_rx_ps(struct ath_softc *
+ }
+ 
+ static bool ath_edma_get_buffers(struct ath_softc *sc,
+-				 enum ath9k_rx_qtype qtype)
++				 enum ath9k_rx_qtype qtype,
++				 struct ath_rx_status *rs,
++				 struct ath_buf **dest)
+ {
+ 	struct ath_rx_edma *rx_edma = &sc->rx.rx_edma[qtype];
+ 	struct ath_hw *ah = sc->sc_ah;
+@@ -677,7 +678,7 @@ static bool ath_edma_get_buffers(struct 
+ 	dma_sync_single_for_cpu(sc->dev, bf->bf_buf_addr,
+ 				common->rx_bufsize, DMA_FROM_DEVICE);
+ 
+-	ret = ath9k_hw_process_rxdesc_edma(ah, NULL, skb->data);
++	ret = ath9k_hw_process_rxdesc_edma(ah, rs, skb->data);
+ 	if (ret == -EINPROGRESS) {
+ 		/*let device gain the buffer again*/
+ 		dma_sync_single_for_device(sc->dev, bf->bf_buf_addr,
+@@ -690,20 +691,21 @@ static bool ath_edma_get_buffers(struct 
+ 		/* corrupt descriptor, skip this one and the following one */
+ 		list_add_tail(&bf->list, &sc->rx.rxbuf);
+ 		ath_rx_edma_buf_link(sc, qtype);
+-		skb = skb_peek(&rx_edma->rx_fifo);
+-		if (!skb)
+-			return true;
+ 
+-		bf = SKB_CB_ATHBUF(skb);
+-		BUG_ON(!bf);
++		skb = skb_peek(&rx_edma->rx_fifo);
++		if (skb) {
++			bf = SKB_CB_ATHBUF(skb);
++			BUG_ON(!bf);
+ 
+-		__skb_unlink(skb, &rx_edma->rx_fifo);
+-		list_add_tail(&bf->list, &sc->rx.rxbuf);
+-		ath_rx_edma_buf_link(sc, qtype);
+-		return true;
++			__skb_unlink(skb, &rx_edma->rx_fifo);
++			list_add_tail(&bf->list, &sc->rx.rxbuf);
++			ath_rx_edma_buf_link(sc, qtype);
++		} else {
++			bf = NULL;
++		}
+ 	}
+-	skb_queue_tail(&rx_edma->rx_buffers, skb);
+ 
++	*dest = bf;
+ 	return true;
+ }
+ 
+@@ -711,18 +713,15 @@ static struct ath_buf *ath_edma_get_next
+ 						struct ath_rx_status *rs,
+ 						enum ath9k_rx_qtype qtype)
+ {
+-	struct ath_rx_edma *rx_edma = &sc->rx.rx_edma[qtype];
+-	struct sk_buff *skb;
+-	struct ath_buf *bf;
++	struct ath_buf *bf = NULL;
+ 
+-	while (ath_edma_get_buffers(sc, qtype));
+-	skb = __skb_dequeue(&rx_edma->rx_buffers);
+-	if (!skb)
+-		return NULL;
++	while (ath_edma_get_buffers(sc, qtype, rs, &bf)) {
++		if (!bf)
++			continue;
+ 
+-	bf = SKB_CB_ATHBUF(skb);
+-	ath9k_hw_process_rxdesc_edma(sc->sc_ah, rs, skb->data);
+-	return bf;
++		return bf;
++	}
++	return NULL;
+ }
+ 
+ static struct ath_buf *ath_get_next_rx_buf(struct ath_softc *sc,
+@@ -954,6 +953,7 @@ static void ath9k_process_rssi(struct at
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = common->ah;
  	int last_rssi;
@@ -1315,7 +1480,7 @@
  
  	if (!rx_stats->is_mybeacon ||
  	    ((ah->opmode != NL80211_IFTYPE_STATION) &&
-@@ -965,13 +966,12 @@ static void ath9k_process_rssi(struct at
+@@ -965,13 +965,12 @@ static void ath9k_process_rssi(struct at
  
  	last_rssi = sc->last_rssi;
  	if (likely(last_rssi != ATH_RSSI_DUMMY_MARKER))
@@ -1333,7 +1498,7 @@
  }
  
  /*
-@@ -1011,6 +1011,8 @@ static int ath9k_rx_skb_preprocess(struc
+@@ -1011,6 +1010,8 @@ static int ath9k_rx_skb_preprocess(struc
  	rx_status->signal = ah->noise + rx_stats->rs_rssi;
  	rx_status->antenna = rx_stats->rs_antenna;
  	rx_status->flag |= RX_FLAG_MACTIME_MPDU;
@@ -1442,4 +1607,14 @@
 +		}
  
  		txq = &sc->tx.txq[ts.qid];
+ 
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -299,7 +299,6 @@ struct ath_tx {
+ 
+ struct ath_rx_edma {
+ 	struct sk_buff_head rx_fifo;
+-	struct sk_buff_head rx_buffers;
+ 	u32 rx_fifo_hwsize;
+ };
  
