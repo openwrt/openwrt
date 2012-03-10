@@ -1,0 +1,97 @@
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -656,6 +656,8 @@ struct ieee80211_sub_if_data {
+ 
+ 	/* bitmap of allowed (non-MCS) rate indexes for rate control */
+ 	u32 rc_rateidx_mask[IEEE80211_NUM_BANDS];
++
++	bool rc_has_mcs_mask[IEEE80211_NUM_BANDS];
+ 	u8  rc_rateidx_mcs_mask[IEEE80211_NUM_BANDS][IEEE80211_HT_MCS_MASK_LEN];
+ 
+ 	union {
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1887,9 +1887,20 @@ static int ieee80211_set_bitrate_mask(st
+ 	}
+ 
+ 	for (i = 0; i < IEEE80211_NUM_BANDS; i++) {
++		struct ieee80211_supported_band *sband = wiphy->bands[i];
++
+ 		sdata->rc_rateidx_mask[i] = mask->control[i].legacy;
+ 		memcpy(sdata->rc_rateidx_mcs_mask[i], mask->control[i].mcs,
+ 		       sizeof(mask->control[i].mcs));
++
++		sdata->rc_has_mcs_mask[i] = false;
++		if (!sband)
++			continue;
++
++		if (memcmp(sdata->rc_rateidx_mcs_mask[i],
++			   sband->ht_cap.mcs.rx_mask,
++			   sizeof(sband->ht_cap.mcs.rx_mask)) != 0)
++			sdata->rc_has_mcs_mask[i] = true;
+ 	}
+ 
+ 	return 0;
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -3590,6 +3590,7 @@ enum rate_control_changed {
+  *	(deprecated; this will be removed once drivers get updated to use
+  *	rate_idx_mask)
+  * @rate_idx_mask: user-requested rate mask (not MCS for now)
++ * @rate_idx_mcs_mask: user-requested MCS rate mask (NULL if not in use)
+  * @skb: the skb that will be transmitted, the control information in it needs
+  *	to be filled in
+  * @bss: whether this frame is sent out in AP or IBSS mode
+@@ -3603,7 +3604,7 @@ struct ieee80211_tx_rate_control {
+ 	bool rts, short_preamble;
+ 	u8 max_rate_idx;
+ 	u32 rate_idx_mask;
+-	u8 rate_idx_mcs_mask[IEEE80211_HT_MCS_MASK_LEN];
++	u8 *rate_idx_mcs_mask;
+ 	bool bss;
+ };
+ 
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -640,9 +640,11 @@ ieee80211_tx_h_rate_ctrl(struct ieee8021
+ 		txrc.max_rate_idx = -1;
+ 	else
+ 		txrc.max_rate_idx = fls(txrc.rate_idx_mask) - 1;
+-	memcpy(txrc.rate_idx_mcs_mask,
+-	       tx->sdata->rc_rateidx_mcs_mask[tx->channel->band],
+-	       sizeof(txrc.rate_idx_mcs_mask));
++
++	if (tx->sdata->rc_has_mcs_mask[tx->channel->band])
++		txrc.rate_idx_mcs_mask =
++			tx->sdata->rc_rateidx_mcs_mask[tx->channel->band];
++
+ 	txrc.bss = (tx->sdata->vif.type == NL80211_IFTYPE_AP ||
+ 		    tx->sdata->vif.type == NL80211_IFTYPE_MESH_POINT ||
+ 		    tx->sdata->vif.type == NL80211_IFTYPE_ADHOC);
+@@ -2455,8 +2457,6 @@ struct sk_buff *ieee80211_beacon_get_tim
+ 		txrc.max_rate_idx = -1;
+ 	else
+ 		txrc.max_rate_idx = fls(txrc.rate_idx_mask) - 1;
+-	memcpy(txrc.rate_idx_mcs_mask, sdata->rc_rateidx_mcs_mask[band],
+-	       sizeof(txrc.rate_idx_mcs_mask));
+ 	txrc.bss = true;
+ 	rate_control_get_rate(sdata, NULL, &txrc);
+ 
+--- a/net/mac80211/rate.c
++++ b/net/mac80211/rate.c
+@@ -461,9 +461,12 @@ void rate_control_get_rate(struct ieee80
+ 	 * the common case.
+ 	 */
+ 	mask = sdata->rc_rateidx_mask[info->band];
+-	memcpy(mcs_mask, sdata->rc_rateidx_mcs_mask[info->band],
+-	       sizeof(mcs_mask));
+-	if (mask != (1 << txrc->sband->n_bitrates) - 1) {
++	if (mask != (1 << txrc->sband->n_bitrates) - 1 || txrc->rate_idx_mcs_mask) {
++		if (txrc->rate_idx_mcs_mask)
++			memcpy(mcs_mask, txrc->rate_idx_mcs_mask, sizeof(mcs_mask));
++		else
++			memset(mcs_mask, 0xff, sizeof(mcs_mask));
++
+ 		if (sta) {
+ 			/* Filter out rates that the STA does not support */
+ 			mask &= sta->sta.supp_rates[info->band];

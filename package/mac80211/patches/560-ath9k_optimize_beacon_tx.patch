@@ -1,0 +1,129 @@
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -357,41 +357,12 @@ void ath_beacon_tasklet(unsigned long da
+ 	struct ieee80211_vif *vif;
+ 	bool edma = !!(ah->caps.hw_caps & ATH9K_HW_CAP_EDMA);
+ 	int slot;
+-	u32 bfaddr, bc = 0;
+-
+-	/*
+-	 * Check if the previous beacon has gone out.  If
+-	 * not don't try to post another, skip this period
+-	 * and wait for the next.  Missed beacons indicate
+-	 * a problem and should not occur.  If we miss too
+-	 * many consecutive beacons reset the device.
+-	 */
+-	if (ath9k_hw_numtxpending(ah, sc->beacon.beaconq) != 0) {
+-		sc->beacon.bmisscnt++;
+-
+-		if (sc->beacon.bmisscnt < BSTUCK_THRESH * sc->nbcnvifs) {
+-			ath_dbg(common, BSTUCK,
+-				"missed %u consecutive beacons\n",
+-				sc->beacon.bmisscnt);
+-			ath9k_hw_stop_dma_queue(ah, sc->beacon.beaconq);
+-			if (sc->beacon.bmisscnt > 3)
+-				ath9k_hw_bstuck_nfcal(ah);
+-		} else if (sc->beacon.bmisscnt >= BSTUCK_THRESH) {
+-			ath_dbg(common, BSTUCK, "beacon is officially stuck\n");
+-			sc->sc_flags |= SC_OP_TSF_RESET;
+-			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
+-		}
+-
+-		return;
+-	}
+ 
+ 	/*
+ 	 * Generate beacon frames. we are sending frames
+ 	 * staggered so calculate the slot for this frame based
+ 	 * on the tsf to safeguard against missing an swba.
+ 	 */
+-
+-
+ 	if (ah->opmode == NL80211_IFTYPE_AP) {
+ 		u16 intval;
+ 		u32 tsftu;
+@@ -412,23 +383,6 @@ void ath_beacon_tasklet(unsigned long da
+ 		vif = sc->beacon.bslot[slot];
+ 	}
+ 
+-
+-	bfaddr = 0;
+-	if (vif) {
+-		bf = ath_beacon_generate(sc->hw, vif);
+-		if (bf != NULL) {
+-			bfaddr = bf->bf_daddr;
+-			bc = 1;
+-		}
+-
+-		if (sc->beacon.bmisscnt != 0) {
+-			ath_dbg(common, BSTUCK,
+-				"resume beacon xmit after %u misses\n",
+-				sc->beacon.bmisscnt);
+-			sc->beacon.bmisscnt = 0;
+-		}
+-	}
+-
+ 	/*
+ 	 * Handle slot time change when a non-ERP station joins/leaves
+ 	 * an 11g network.  The 802.11 layer notifies us via callback,
+@@ -453,15 +407,54 @@ void ath_beacon_tasklet(unsigned long da
+ 		ath9k_hw_init_global_settings(ah);
+ 		sc->beacon.updateslot = OK;
+ 	}
+-	if (bfaddr != 0) {
+-		/* NB: cabq traffic should already be queued and primed */
+-		ath9k_hw_puttxbuf(ah, sc->beacon.beaconq, bfaddr);
+ 
+-		if (!edma)
+-			ath9k_hw_txstart(ah, sc->beacon.beaconq);
++	if (!vif)
++		return;
++
++	/*
++	 * Check if the previous beacon has gone out.  If
++	 * not don't try to post another, skip this period
++	 * and wait for the next.  Missed beacons indicate
++	 * a problem and should not occur.  If we miss too
++	 * many consecutive beacons reset the device.
++	 */
++	if (ath9k_hw_numtxpending(ah, sc->beacon.beaconq) != 0) {
++		sc->beacon.bmisscnt++;
++
++		if (sc->beacon.bmisscnt < BSTUCK_THRESH * sc->nbcnvifs) {
++			ath_dbg(common, BSTUCK,
++				"missed %u consecutive beacons\n",
++				sc->beacon.bmisscnt);
++			ath9k_hw_stop_dma_queue(ah, sc->beacon.beaconq);
++			if (sc->beacon.bmisscnt > 3)
++				ath9k_hw_bstuck_nfcal(ah);
++		} else if (sc->beacon.bmisscnt >= BSTUCK_THRESH) {
++			ath_dbg(common, BSTUCK, "beacon is officially stuck\n");
++			sc->sc_flags |= SC_OP_TSF_RESET;
++			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
++		}
++
++		return;
++	}
++
++	bf = ath_beacon_generate(sc->hw, vif);
++	if (!bf)
++		return;
+ 
+-		sc->beacon.ast_be_xmit += bc;     /* XXX per-vif? */
++	if (sc->beacon.bmisscnt != 0) {
++		ath_dbg(common, BSTUCK,
++			"resume beacon xmit after %u misses\n",
++			sc->beacon.bmisscnt);
++		sc->beacon.bmisscnt = 0;
+ 	}
++
++	/* NB: cabq traffic should already be queued and primed */
++	ath9k_hw_puttxbuf(ah, sc->beacon.beaconq, bf->bf_daddr);
++
++	if (!edma)
++		ath9k_hw_txstart(ah, sc->beacon.beaconq);
++
++	sc->beacon.ast_be_xmit++;
+ }
+ 
+ static void ath9k_beacon_init(struct ath_softc *sc,
