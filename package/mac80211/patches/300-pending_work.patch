@@ -1574,7 +1574,15 @@
  		mode = ATH9K_PM_NETWORK_SLEEP;
  	else
  		goto unlock;
-@@ -2300,6 +2302,7 @@ static int ath9k_tx_last_beacon(struct i
+@@ -1955,6 +1957,7 @@ static void ath9k_config_bss(struct ath_
+ 		sc->sc_flags &= ~SC_OP_ANI_RUN;
+ 		del_timer_sync(&common->ani.timer);
+ 		memset(&sc->caldata, 0, sizeof(sc->caldata));
++		ath9k_hw_ani_init(sc->sc_ah);
+ 	}
+ }
+ 
+@@ -2300,6 +2303,7 @@ static int ath9k_tx_last_beacon(struct i
  	struct ath_vif *avp;
  	struct ath_buf *bf;
  	struct ath_tx_status ts;
@@ -1582,7 +1590,7 @@
  	int status;
  
  	vif = sc->beacon.bslot[0];
-@@ -2310,7 +2313,7 @@ static int ath9k_tx_last_beacon(struct i
+@@ -2310,7 +2314,7 @@ static int ath9k_tx_last_beacon(struct i
  	if (!avp->is_bslot_active)
  		return 0;
  
@@ -1618,3 +1626,228 @@
  	u32 rx_fifo_hwsize;
  };
  
+--- a/drivers/net/wireless/ath/ath9k/ani.c
++++ b/drivers/net/wireless/ath/ath9k/ani.c
+@@ -46,8 +46,8 @@ static const struct ani_ofdm_level_entry
+ 	{  5,  4,  1  }, /* lvl 5 */
+ 	{  6,  5,  1  }, /* lvl 6 */
+ 	{  7,  6,  1  }, /* lvl 7 */
+-	{  7,  7,  1  }, /* lvl 8 */
+-	{  7,  8,  0  }  /* lvl 9 */
++	{  7,  6,  0  }, /* lvl 8 */
++	{  7,  7,  0  }  /* lvl 9 */
+ };
+ #define ATH9K_ANI_OFDM_NUM_LEVEL \
+ 	ARRAY_SIZE(ofdm_level_table)
+@@ -91,8 +91,8 @@ static const struct ani_cck_level_entry 
+ 	{  4,  0  }, /* lvl 4 */
+ 	{  5,  0  }, /* lvl 5 */
+ 	{  6,  0  }, /* lvl 6 */
+-	{  7,  0  }, /* lvl 7 (only for high rssi) */
+-	{  8,  0  }  /* lvl 8 (only for high rssi) */
++	{  6,  0  }, /* lvl 7 (only for high rssi) */
++	{  7,  0  }  /* lvl 8 (only for high rssi) */
+ };
+ 
+ #define ATH9K_ANI_CCK_NUM_LEVEL \
+@@ -290,16 +290,9 @@ static void ath9k_hw_set_ofdm_nil(struct
+ 				     ATH9K_ANI_FIRSTEP_LEVEL,
+ 				     entry_ofdm->fir_step_level);
+ 
+-	if ((ah->opmode != NL80211_IFTYPE_STATION &&
+-	     ah->opmode != NL80211_IFTYPE_ADHOC) ||
+-	    aniState->noiseFloor <= aniState->rssiThrHigh) {
+-		if (aniState->ofdmWeakSigDetectOff)
+-			/* force on ofdm weak sig detect */
+-			ath9k_hw_ani_control(ah,
+-				ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
+-					     true);
+-		else if (aniState->ofdmWeakSigDetectOff ==
+-			 entry_ofdm->ofdm_weak_signal_on)
++	if ((aniState->noiseFloor >= aniState->rssiThrHigh) &&
++	    (aniState->ofdmWeakSigDetectOff !=
++	     entry_ofdm->ofdm_weak_signal_on)) {
+ 			ath9k_hw_ani_control(ah,
+ 				ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION,
+ 				entry_ofdm->ofdm_weak_signal_on);
+@@ -717,26 +710,30 @@ void ath9k_hw_ani_monitor(struct ath_hw 
+ 		ofdmPhyErrRate, aniState->cckNoiseImmunityLevel,
+ 		cckPhyErrRate, aniState->ofdmsTurn);
+ 
+-	if (aniState->listenTime > 5 * ah->aniperiod) {
+-		if (ofdmPhyErrRate <= ah->config.ofdm_trig_low &&
+-		    cckPhyErrRate <= ah->config.cck_trig_low) {
++	if (aniState->listenTime > ah->aniperiod) {
++		if (cckPhyErrRate < ah->config.cck_trig_low &&
++		    ((ofdmPhyErrRate < ah->config.ofdm_trig_low &&
++		      aniState->ofdmNoiseImmunityLevel <
++		      ATH9K_ANI_OFDM_DEF_LEVEL) ||
++		     (ofdmPhyErrRate < ATH9K_ANI_OFDM_TRIG_LOW_ABOVE_INI &&
++		      aniState->ofdmNoiseImmunityLevel >=
++		      ATH9K_ANI_OFDM_DEF_LEVEL))) {
+ 			ath9k_hw_ani_lower_immunity(ah);
+ 			aniState->ofdmsTurn = !aniState->ofdmsTurn;
+-		}
+-		ath9k_ani_restart(ah);
+-	} else if (aniState->listenTime > ah->aniperiod) {
+-		/* check to see if need to raise immunity */
+-		if (ofdmPhyErrRate > ah->config.ofdm_trig_high &&
+-		    (cckPhyErrRate <= ah->config.cck_trig_high ||
+-		     aniState->ofdmsTurn)) {
++		} else if ((ofdmPhyErrRate > ah->config.ofdm_trig_high &&
++			    aniState->ofdmNoiseImmunityLevel >=
++			    ATH9K_ANI_OFDM_DEF_LEVEL) ||
++			   (ofdmPhyErrRate >
++			    ATH9K_ANI_OFDM_TRIG_HIGH_BELOW_INI &&
++			    aniState->ofdmNoiseImmunityLevel <
++			    ATH9K_ANI_OFDM_DEF_LEVEL)) {
+ 			ath9k_hw_ani_ofdm_err_trigger(ah);
+-			ath9k_ani_restart(ah);
+ 			aniState->ofdmsTurn = false;
+ 		} else if (cckPhyErrRate > ah->config.cck_trig_high) {
+ 			ath9k_hw_ani_cck_err_trigger(ah);
+-			ath9k_ani_restart(ah);
+ 			aniState->ofdmsTurn = true;
+ 		}
++		ath9k_ani_restart(ah);
+ 	}
+ }
+ EXPORT_SYMBOL(ath9k_hw_ani_monitor);
+@@ -911,3 +908,4 @@ void ath9k_hw_ani_init(struct ath_hw *ah
+ 	ath9k_ani_restart(ah);
+ 	ath9k_enable_mib_counters(ah);
+ }
++EXPORT_SYMBOL(ath9k_hw_ani_init);
+--- a/drivers/net/wireless/ath/ath9k/ani.h
++++ b/drivers/net/wireless/ath/ath9k/ani.h
+@@ -25,11 +25,13 @@
+ 
+ /* units are errors per second */
+ #define ATH9K_ANI_OFDM_TRIG_HIGH_OLD      500
+-#define ATH9K_ANI_OFDM_TRIG_HIGH_NEW      1000
++#define ATH9K_ANI_OFDM_TRIG_HIGH_NEW      3500
++#define ATH9K_ANI_OFDM_TRIG_HIGH_BELOW_INI 1000
+ 
+ /* units are errors per second */
+ #define ATH9K_ANI_OFDM_TRIG_LOW_OLD       200
+ #define ATH9K_ANI_OFDM_TRIG_LOW_NEW       400
++#define ATH9K_ANI_OFDM_TRIG_LOW_ABOVE_INI 900
+ 
+ /* units are errors per second */
+ #define ATH9K_ANI_CCK_TRIG_HIGH_OLD       200
+@@ -53,7 +55,7 @@
+ #define ATH9K_ANI_RSSI_THR_LOW            7
+ 
+ #define ATH9K_ANI_PERIOD_OLD              100
+-#define ATH9K_ANI_PERIOD_NEW              1000
++#define ATH9K_ANI_PERIOD_NEW              300
+ 
+ /* in ms */
+ #define ATH9K_ANI_POLLINTERVAL_OLD        100
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -1056,46 +1056,8 @@ static bool ar5008_hw_ani_control_old(st
+ 		break;
+ 	}
+ 	case ATH9K_ANI_OFDM_WEAK_SIGNAL_DETECTION:{
+-		static const int m1ThreshLow[] = { 127, 50 };
+-		static const int m2ThreshLow[] = { 127, 40 };
+-		static const int m1Thresh[] = { 127, 0x4d };
+-		static const int m2Thresh[] = { 127, 0x40 };
+-		static const int m2CountThr[] = { 31, 16 };
+-		static const int m2CountThrLow[] = { 63, 48 };
+ 		u32 on = param ? 1 : 0;
+ 
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_LOW,
+-			      AR_PHY_SFCORR_LOW_M1_THRESH_LOW,
+-			      m1ThreshLow[on]);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_LOW,
+-			      AR_PHY_SFCORR_LOW_M2_THRESH_LOW,
+-			      m2ThreshLow[on]);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR,
+-			      AR_PHY_SFCORR_M1_THRESH,
+-			      m1Thresh[on]);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR,
+-			      AR_PHY_SFCORR_M2_THRESH,
+-			      m2Thresh[on]);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR,
+-			      AR_PHY_SFCORR_M2COUNT_THR,
+-			      m2CountThr[on]);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_LOW,
+-			      AR_PHY_SFCORR_LOW_M2COUNT_THR_LOW,
+-			      m2CountThrLow[on]);
+-
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_EXT,
+-			      AR_PHY_SFCORR_EXT_M1_THRESH_LOW,
+-			      m1ThreshLow[on]);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_EXT,
+-			      AR_PHY_SFCORR_EXT_M2_THRESH_LOW,
+-			      m2ThreshLow[on]);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_EXT,
+-			      AR_PHY_SFCORR_EXT_M1_THRESH,
+-			      m1Thresh[on]);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_EXT,
+-			      AR_PHY_SFCORR_EXT_M2_THRESH,
+-			      m2Thresh[on]);
+-
+ 		if (on)
+ 			REG_SET_BIT(ah, AR_PHY_SFCORR_LOW,
+ 				    AR_PHY_SFCORR_LOW_USE_SELF_CORR_LOW);
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -824,55 +824,6 @@ static bool ar9003_hw_ani_control(struct
+ 		 * on == 0 means more noise imm
+ 		 */
+ 		u32 on = param ? 1 : 0;
+-		/*
+-		 * make register setting for default
+-		 * (weak sig detect ON) come from INI file
+-		 */
+-		int m1ThreshLow = on ?
+-			aniState->iniDef.m1ThreshLow : m1ThreshLow_off;
+-		int m2ThreshLow = on ?
+-			aniState->iniDef.m2ThreshLow : m2ThreshLow_off;
+-		int m1Thresh = on ?
+-			aniState->iniDef.m1Thresh : m1Thresh_off;
+-		int m2Thresh = on ?
+-			aniState->iniDef.m2Thresh : m2Thresh_off;
+-		int m2CountThr = on ?
+-			aniState->iniDef.m2CountThr : m2CountThr_off;
+-		int m2CountThrLow = on ?
+-			aniState->iniDef.m2CountThrLow : m2CountThrLow_off;
+-		int m1ThreshLowExt = on ?
+-			aniState->iniDef.m1ThreshLowExt : m1ThreshLowExt_off;
+-		int m2ThreshLowExt = on ?
+-			aniState->iniDef.m2ThreshLowExt : m2ThreshLowExt_off;
+-		int m1ThreshExt = on ?
+-			aniState->iniDef.m1ThreshExt : m1ThreshExt_off;
+-		int m2ThreshExt = on ?
+-			aniState->iniDef.m2ThreshExt : m2ThreshExt_off;
+-
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_LOW,
+-			      AR_PHY_SFCORR_LOW_M1_THRESH_LOW,
+-			      m1ThreshLow);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_LOW,
+-			      AR_PHY_SFCORR_LOW_M2_THRESH_LOW,
+-			      m2ThreshLow);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR,
+-			      AR_PHY_SFCORR_M1_THRESH, m1Thresh);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR,
+-			      AR_PHY_SFCORR_M2_THRESH, m2Thresh);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR,
+-			      AR_PHY_SFCORR_M2COUNT_THR, m2CountThr);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_LOW,
+-			      AR_PHY_SFCORR_LOW_M2COUNT_THR_LOW,
+-			      m2CountThrLow);
+-
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_EXT,
+-			      AR_PHY_SFCORR_EXT_M1_THRESH_LOW, m1ThreshLowExt);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_EXT,
+-			      AR_PHY_SFCORR_EXT_M2_THRESH_LOW, m2ThreshLowExt);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_EXT,
+-			      AR_PHY_SFCORR_EXT_M1_THRESH, m1ThreshExt);
+-		REG_RMW_FIELD(ah, AR_PHY_SFCORR_EXT,
+-			      AR_PHY_SFCORR_EXT_M2_THRESH, m2ThreshExt);
+ 
+ 		if (on)
+ 			REG_SET_BIT(ah, AR_PHY_SFCORR_LOW,
