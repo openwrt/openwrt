@@ -52,7 +52,6 @@ void __init ramips_soc_setup(void)
 	rt305x_sysc_base = ioremap_nocache(RT305X_SYSC_BASE, PAGE_SIZE);
 	rt305x_memc_base = ioremap_nocache(RT305X_MEMC_BASE, PAGE_SIZE);
 
-	rt305x_detect_sys_type();
 	rt305x_clocks_init();
 
 	clk = clk_get(NULL, "cpu");

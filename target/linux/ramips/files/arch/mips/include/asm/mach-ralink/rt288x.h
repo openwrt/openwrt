@@ -17,8 +17,6 @@
 #include <linux/init.h>
 #include <linux/io.h>
 
-void rt288x_detect_sys_type(void);
-
 #define RT288X_CPU_IRQ_BASE	0
 #define RT288X_INTC_IRQ_BASE	8
 #define RT288X_INTC_IRQ_COUNT	32

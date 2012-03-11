@@ -23,15 +23,16 @@
 void __iomem * rt288x_sysc_base;
 void __iomem * rt288x_memc_base;
 
-void __init rt288x_detect_sys_type(void)
+void __init ramips_soc_prom_init(void)
 {
+	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT2880_SYSC_BASE);
 	u32 n0;
 	u32 n1;
 	u32 id;
 
-	n0 = rt288x_sysc_rr(SYSC_REG_CHIP_NAME0);
-	n1 = rt288x_sysc_rr(SYSC_REG_CHIP_NAME1);
-	id = rt288x_sysc_rr(SYSC_REG_CHIP_ID);
+	n0 = __raw_readl(sysc + SYSC_REG_CHIP_NAME0);
+	n1 = __raw_readl(sysc + SYSC_REG_CHIP_NAME1);
+	id = __raw_readl(sysc + SYSC_REG_CHIP_ID);
 
 	snprintf(ramips_sys_type, RAMIPS_SYS_TYPE_LEN,
 		"Ralink %c%c%c%c%c%c%c%c id:%u rev:%u",
