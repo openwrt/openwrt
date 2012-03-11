@@ -33,13 +33,13 @@ void __init rt305x_clocks_init(void)
 	u32	t;
 
 	t = rt305x_sysc_rr(SYSC_REG_SYSTEM_CONFIG);
-	t = ((t >> SYSTEM_CONFIG_CPUCLK_SHIFT) & SYSTEM_CONFIG_CPUCLK_MASK);
+	t = ((t >> RT305X_SYSCFG_CPUCLK_SHIFT) & RT305X_SYSCFG_CPUCLK_MASK);
 
 	switch (t) {
-	case SYSTEM_CONFIG_CPUCLK_320:
+	case RT305X_SYSCFG_CPUCLK_LOW:
 		rt305x_cpu_clk.rate = 320000000;
 		break;
-	case SYSTEM_CONFIG_CPUCLK_384:
+	case RT305X_SYSCFG_CPUCLK_HIGH:
 		rt305x_cpu_clk.rate = 384000000;
 		break;
 	}

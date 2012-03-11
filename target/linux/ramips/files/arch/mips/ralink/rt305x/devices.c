@@ -229,8 +229,8 @@ void __init rt305x_register_wdt(void)
 
 	/* enable WDT reset output on pin SRAM_CS_N */
 	t = rt305x_sysc_rr(SYSC_REG_SYSTEM_CONFIG);
-	t |= SYSTEM_CONFIG_SRAM_CS0_MODE_WDT <<
-	     SYSTEM_CONFIG_SRAM_CS0_MODE_SHIFT;
+	t |= RT305X_SYSCFG_SRAM_CS0_MODE_WDT <<
+	     RT305X_SYSCFG_SRAM_CS0_MODE_SHIFT;
 	rt305x_sysc_wr(t, SYSC_REG_SYSTEM_CONFIG);
 
 	platform_device_register(&rt305x_wdt_device);
