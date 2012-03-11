@@ -299,6 +299,7 @@ define Image/Build/Planex/loader
 endef
 
 define Image/Build/Planex
+	[ -e "$(KDIR)/loader-$(2).gz" ]
 	$(call MkuImage,gzip,,$(KDIR)/loader-$(2).gz,$(KDIR_TMP)/vmlinux-$(2).uImage)
 	$(call MkuImageOKLI,$(2))
 	( \
@@ -338,6 +339,7 @@ define Image/Build/TPLINKOLD/loader
 endef
 
 define Image/Build/TPLINKOLD
+	[ -e "$(KDIR)/loader-$(2).gz" ]
 	$(call MkuImageOKLI,$(2))
 	( \
 		dd if=$(KDIR)/loader-$(2).gz bs=7680 count=1 conv=sync; \
@@ -368,6 +370,7 @@ define Image/Build/TPLINK/loader
 endef
 
 define Image/Build/TPLINK
+	[ -e "$(KDIR)/loader-$(2).gz" ]
 	$(call MkuImageOKLI,$(2))
 	( \
 		dd if=$(KDIR)/loader-$(2).gz bs=7680 count=1 conv=sync; \
