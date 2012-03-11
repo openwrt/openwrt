@@ -16,17 +16,17 @@
  	bcm47xx_fill_sprom(&iv->sprom, NULL);
  
  	if (nvram_getenv("cardbus", buf, sizeof(buf)) >= 0)
-@@ -204,12 +206,14 @@ static int bcm47xx_get_sprom_bcma(struct
+@@ -203,12 +205,14 @@ static int bcm47xx_get_sprom_bcma(struct
+ 	struct bcma_device *core;
  
- 	switch (bus->hosttype) {
- 	case BCMA_HOSTTYPE_PCI:
+ 	if (bus->hosttype == BCMA_HOSTTYPE_PCI) {
 +		memset(out, 0, sizeof(struct ssb_sprom));
  		snprintf(prefix, sizeof(prefix), "pci/%u/%u/",
  			 bus->host_pci->bus->number + 1,
  			 PCI_SLOT(bus->host_pci->devfn));
  		bcm47xx_fill_sprom(out, prefix);
  		return 0;
- 	case BCMA_HOSTTYPE_SOC:
+ 	} else if (bus->hosttype == BCMA_HOSTTYPE_SOC) {
 +		memset(out, 0, sizeof(struct ssb_sprom));
  		bcm47xx_fill_sprom_ethernet(out, NULL);
  		core = bcma_find_core(bus, BCMA_CORE_80211);
