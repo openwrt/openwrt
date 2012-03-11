@@ -19,7 +19,6 @@
 
 #include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/machine.h>
-#include <ralink_soc.h>
 
 unsigned char ramips_sys_type[RAMIPS_SYS_TYPE_LEN];
 
@@ -34,13 +33,13 @@ static void __init detect_mem_size(void)
 	void *base;
 
 	base = (void *) KSEG1ADDR(detect_mem_size);
-	for (size = RALINK_SOC_MEM_SIZE_MIN; size < RALINK_SOC_MEM_SIZE_MAX;
+	for (size = ramips_mem_size_min; size < ramips_mem_size_max;
 	     size <<= 1 ) {
 		if (!memcmp(base, base + size, 1024))
 			break;
 	}
 
-	add_memory_region(RALINK_SOC_SDRAM_BASE, size, BOOT_MEM_RAM);
+	add_memory_region(ramips_mem_base, size, BOOT_MEM_RAM);
 }
 
 void __init ramips_early_serial_setup(int line, unsigned base, unsigned freq,

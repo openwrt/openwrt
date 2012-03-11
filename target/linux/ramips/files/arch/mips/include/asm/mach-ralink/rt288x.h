@@ -17,6 +17,9 @@
 #include <linux/init.h>
 #include <linux/io.h>
 
+#define RT288X_MEM_SIZE_MIN    (2 * 1024 * 1024)
+#define RT288X_MEM_SIZE_MAX    (128 * 1024 * 1024)
+
 #define RT288X_CPU_IRQ_BASE	0
 #define RT288X_INTC_IRQ_BASE	8
 #define RT288X_INTC_IRQ_COUNT	32

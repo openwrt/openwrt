@@ -41,6 +41,10 @@ void __init ramips_soc_prom_init(void)
 		(char) ((n1 >> 16) & 0xff), (char) ((n1 >> 24) & 0xff),
 		(id >> RT3883_REVID_VER_ID_SHIFT) & RT3883_REVID_VER_ID_MASK,
 		(id & RT3883_REVID_ECO_ID_MASK));
+
+	ramips_mem_base = RT3883_SDRAM_BASE;
+	ramips_mem_size_min = RT3883_MEM_SIZE_MIN;
+	ramips_mem_size_max = RT3883_MEM_SIZE_MAX;
 }
 
 static struct ramips_gpio_chip rt3883_gpio_chips[] = {

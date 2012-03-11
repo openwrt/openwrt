@@ -18,26 +18,29 @@
 
 #include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/machine.h>
-#include <ralink_soc.h>
+
+unsigned long ramips_mem_base;
+unsigned long ramips_mem_size_min;
+unsigned long ramips_mem_size_max;
 
 static inline void *to_ram_addr(void *addr)
 {
 	u32 base;
 
-	base = KSEG0ADDR(RALINK_SOC_SDRAM_BASE);
+	base = KSEG0ADDR(ramips_mem_base);
 	if (((u32) addr > base) &&
-	    ((u32) addr < (base + RALINK_SOC_MEM_SIZE_MAX)))
+	    ((u32) addr < (base + ramips_mem_size_max)))
 		return addr;
 
-	base = KSEG1ADDR(RALINK_SOC_SDRAM_BASE);
+	base = KSEG1ADDR(ramips_mem_base);
 	if (((u32) addr > base) &&
-	    ((u32) addr < (base + RALINK_SOC_MEM_SIZE_MAX)))
+	    ((u32) addr < (base + ramips_mem_size_max)))
 		return addr;
 
 	/* some U-Boot variants uses physical addresses */
-	base = RALINK_SOC_SDRAM_BASE;
+	base = ramips_mem_base;
 	if (((u32) addr > base) &&
-	    ((u32) addr < (base + RALINK_SOC_MEM_SIZE_MAX)))
+	    ((u32) addr < (base + ramips_mem_size_max)))
 		return (void *)KSEG0ADDR(addr);
 
 	return NULL;
