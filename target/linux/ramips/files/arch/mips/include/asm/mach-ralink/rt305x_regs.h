@@ -57,6 +57,12 @@
 #define SYSC_REG_IA_ADDRESS	0x310	/* Illegal Access Address */
 #define SYSC_REG_IA_TYPE	0x314	/* Illegal Access Type */
 
+#define RT3052_CHIP_NAME0	0x30335452
+#define RT3052_CHIP_NAME1	0x20203235
+
+#define RT3352_CHIP_NAME0	0x33335452
+#define RT3352_CHIP_NAME1	0x20203235
+
 #define CHIP_ID_ID_MASK		0xff
 #define CHIP_ID_ID_SHIFT	8
 #define CHIP_ID_REV_MASK	0xff

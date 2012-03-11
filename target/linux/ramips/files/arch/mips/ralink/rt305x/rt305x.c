@@ -15,6 +15,8 @@
 #include <linux/init.h>
 #include <linux/module.h>
 
+#include <asm/mipsregs.h>
+
 #include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/ramips_gpio.h>
 #include <asm/mach-ralink/rt305x.h>
@@ -22,24 +24,42 @@
 
 void __iomem * rt305x_sysc_base;
 void __iomem * rt305x_memc_base;
+enum rt305x_soc_type rt305x_soc;
 
 void __init ramips_soc_prom_init(void)
 {
 	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT305X_SYSC_BASE);
+	const char *name = "unknown";
 	u32 n0;
 	u32 n1;
 	u32 id;
 
 	n0 = __raw_readl(sysc + SYSC_REG_CHIP_NAME0);
 	n1 = __raw_readl(sysc + SYSC_REG_CHIP_NAME1);
+
+	if (n0 == RT3052_CHIP_NAME0 && n1 == RT3052_CHIP_NAME1) {
+		unsigned long icache_sets;
+
+		icache_sets = (read_c0_config1() >> 22) & 7;
+		if (icache_sets == 1) {
+			rt305x_soc = RT305X_SOC_RT3050;
+			name = "RT3050";
+		} else {
+			rt305x_soc = RT305X_SOC_RT3052;
+			name = "RT3052";
+		}
+	} else if (n0 == RT3352_CHIP_NAME0 && n1 == RT3352_CHIP_NAME1) {
+		rt305x_soc = RT305X_SOC_RT3352;
+		name = "RT3352";
+	} else {
+		panic("rt305x: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
+	}
+
 	id = __raw_readl(sysc + SYSC_REG_CHIP_ID);
 
 	snprintf(ramips_sys_type, RAMIPS_SYS_TYPE_LEN,
-		"Ralink %c%c%c%c%c%c%c%c id:%u rev:%u",
-		(char) (n0 & 0xff), (char) ((n0 >> 8) & 0xff),
-		(char) ((n0 >> 16) & 0xff), (char) ((n0 >> 24) & 0xff),
-		(char) (n1 & 0xff), (char) ((n1 >> 8) & 0xff),
-		(char) ((n1 >> 16) & 0xff), (char) ((n1 >> 24) & 0xff),
+		"Ralink %s id:%u rev:%u",
+		name,
 		(id >> CHIP_ID_ID_SHIFT) & CHIP_ID_ID_MASK,
 		(id & CHIP_ID_REV_MASK));
 
