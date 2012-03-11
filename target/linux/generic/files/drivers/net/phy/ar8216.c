@@ -29,6 +29,7 @@
 #include <linux/phy.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
+#include <linux/lockdep.h>
 #include "ar8216.h"
 
 /* size of the vlan table */
@@ -121,6 +122,8 @@ static u32
 ar8216_rmw(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
 {
 	u32 v;
+
+	lockdep_assert_held(&priv->reg_mutex);
 
 	v = priv->read(priv, reg);
 	v &= ~mask;
