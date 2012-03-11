@@ -16,6 +16,35 @@
 #include <linux/init.h>
 #include <linux/io.h>
 
+enum rt305x_soc_type {
+	RT305X_SOC_UNKNOWN = 0,
+	RT305X_SOC_RT3050,
+	RT305X_SOC_RT3052,
+	RT305X_SOC_RT3352,
+};
+
+extern enum rt305x_soc_type rt305x_soc;
+
+static inline int soc_is_rt3050(void)
+{
+	return rt305x_soc == RT305X_SOC_RT3050;
+}
+
+static inline int soc_is_rt3052(void)
+{
+	return rt305x_soc == RT305X_SOC_RT3052;
+}
+
+static inline int soc_is_rt305x(void)
+{
+	return soc_is_rt3050() || soc_is_rt3052();
+}
+
+static inline int soc_is_rt3352(void)
+{
+	return rt305x_soc == RT305X_SOC_RT3352;
+}
+
 #define RT305X_MEM_SIZE_MIN (2 * 1024 * 1024)
 #define RT305X_MEM_SIZE_MAX (64 * 1024 * 1024)
 
