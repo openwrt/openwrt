@@ -118,6 +118,18 @@ ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
 	mutex_unlock(&bus->mdio_lock);
 }
 
+static void
+ar8216_phy_dbg_write(struct ar8216_priv *priv, int phy_addr,
+		     u16 dbg_addr, u16 dbg_data)
+{
+	struct mii_bus *bus = priv->phy->bus;
+
+	mutex_lock(&bus->mdio_lock);
+	bus->write(bus, phy_addr, MII_ATH_DBG_ADDR, dbg_addr);
+	bus->write(bus, phy_addr, MII_ATH_DBG_DATA, dbg_data);
+	mutex_unlock(&bus->mdio_lock);
+}
+
 static u32
 ar8216_rmw(struct ar8216_priv *priv, int reg, u32 mask, u32 val)
 {
@@ -719,14 +731,11 @@ ar8316_hw_init(struct ar8216_priv *priv)
 		if ((i == 4) && priv->port4_phy &&
 		    priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
 			/* work around for phy4 rgmii mode */
-			mdiobus_write(bus, i, MII_ATH_DBG_ADDR, 0x12);
-			mdiobus_write(bus, i, MII_ATH_DBG_DATA, 0x480c);
+			ar8216_phy_dbg_write(priv, i, 0x12, 0x480c);
 			/* rx delay */
-			mdiobus_write(bus, i, MII_ATH_DBG_ADDR, 0x0);
-			mdiobus_write(bus, i, MII_ATH_DBG_DATA, 0x824e);
+			ar8216_phy_dbg_write(priv, i, 0x0, 0x824e);
 			/* tx delay */
-			mdiobus_write(bus, i, MII_ATH_DBG_ADDR, 0x5);
-			mdiobus_write(bus, i, MII_ATH_DBG_DATA, 0x3d47);
+			ar8216_phy_dbg_write(priv, i, 0x5, 0x3d47);
 			msleep(1000);
 		}
 
