@@ -22,15 +22,16 @@
 void __iomem * rt3883_sysc_base;
 void __iomem * rt3883_memc_base;
 
-void __init rt3883_detect_sys_type(void)
+void __init ramips_soc_prom_init(void)
 {
+	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT3883_SYSC_BASE);
 	u32 n0;
 	u32 n1;
 	u32 id;
 
-	n0 = rt3883_sysc_rr(RT3883_SYSC_REG_CHIPID0_3);
-	n1 = rt3883_sysc_rr(RT3883_SYSC_REG_CHIPID4_7);
-	id = rt3883_sysc_rr(RT3883_SYSC_REG_REVID);
+	n0 = __raw_readl(sysc + RT3883_SYSC_REG_CHIPID0_3);
+	n1 = __raw_readl(sysc + RT3883_SYSC_REG_CHIPID4_7);
+	id = __raw_readl(sysc + RT3883_SYSC_REG_REVID);
 
 	snprintf(ramips_sys_type, RAMIPS_SYS_TYPE_LEN,
 		"Ralink %c%c%c%c%c%c%c%c ver:%u eco:%u",

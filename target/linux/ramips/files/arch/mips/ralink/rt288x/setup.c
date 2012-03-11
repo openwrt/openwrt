@@ -52,7 +52,6 @@ void __init ramips_soc_setup(void)
 	rt288x_sysc_base = ioremap_nocache(RT2880_SYSC_BASE, RT2880_SYSC_SIZE);
 	rt288x_memc_base = ioremap_nocache(RT2880_MEMC_BASE, RT2880_MEMC_SIZE);
 
-	rt288x_detect_sys_type();
 	rt288x_clocks_init();
 
 	clk = clk_get(NULL, "cpu");

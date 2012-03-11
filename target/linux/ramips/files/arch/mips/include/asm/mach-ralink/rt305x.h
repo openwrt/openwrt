@@ -16,8 +16,6 @@
 #include <linux/init.h>
 #include <linux/io.h>
 
-void rt305x_detect_sys_type(void);
-
 #define RT305X_MEM_SIZE_MIN (2 * 1024 * 1024)
 #define RT305X_MEM_SIZE_MAX (64 * 1024 * 1024)
 

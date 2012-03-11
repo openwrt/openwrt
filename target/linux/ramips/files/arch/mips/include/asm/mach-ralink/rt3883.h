@@ -16,8 +16,6 @@
 #include <linux/init.h>
 #include <linux/io.h>
 
-void rt3883_detect_sys_type(void);
-
 #define RT3883_MEM_SIZE_MIN (2 * 1024 * 1024)
 #define RT3883_MEM_SIZE_MAX (256 * 1024 * 1024)
 

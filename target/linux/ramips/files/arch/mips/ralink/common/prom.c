@@ -143,6 +143,8 @@ void __init prom_init(void)
 	char **envp;
 	char **argv;
 
+	ramips_soc_prom_init();
+
 	printk(KERN_DEBUG
 	       "prom: fw_arg0=%08x, fw_arg1=%08x, fw_arg2=%08x, fw_arg3=%08x\n",
 	       (unsigned int)fw_arg0, (unsigned int)fw_arg1,
