@@ -87,7 +87,7 @@ ar8216_mii_read(struct ar8216_priv *priv, int reg)
 	mutex_lock(&bus->mdio_lock);
 
 	bus->write(bus, 0x18, 0, page);
-	msleep(1); /* wait for the page switch to propagate */
+	usleep_range(1000, 2000); /* wait for the page switch to propagate */
 	lo = bus->read(bus, 0x10 | r2, r1);
 	hi = bus->read(bus, 0x10 | r2, r1 + 1);
 
@@ -111,7 +111,7 @@ ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
 	mutex_lock(&bus->mdio_lock);
 
 	bus->write(bus, 0x18, 0, r3);
-	msleep(1); /* wait for the page switch to propagate */
+	usleep_range(1000, 2000); /* wait for the page switch to propagate */
 	bus->write(bus, 0x10 | r2, r1 + 1, hi);
 	bus->write(bus, 0x10 | r2, r1, lo);
 
