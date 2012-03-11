@@ -42,6 +42,10 @@ void __init ramips_soc_prom_init(void)
 		(char) ((n1 >> 16) & 0xff), (char) ((n1 >> 24) & 0xff),
 		(id >> CHIP_ID_ID_SHIFT) & CHIP_ID_ID_MASK,
 		(id & CHIP_ID_REV_MASK));
+
+	ramips_mem_base = RT305X_SDRAM_BASE;
+	ramips_mem_size_min = RT305X_MEM_SIZE_MIN;
+	ramips_mem_size_max = RT305X_MEM_SIZE_MAX;
 }
 
 static struct ramips_gpio_chip rt305x_gpio_chips[] = {
