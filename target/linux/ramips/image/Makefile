@@ -164,6 +164,10 @@ define BuildFirmware/DIR300B1
 		-o $(call imgname,$(1),$(2))-factory.bin
 endef
 
+define BuildFirmware/DIR300B1/initramfs
+	$(call BuildFirmware/Generic/initramfs,$(1),$(2),board=$(3) $(call mkmtd/phys,$(mtdlayout_dir300b1)),$(mtd_dir300b1_kernel_part_size),$(mtd_dir300b1_rootfs_part_size))
+endef
+
 define BuildFirmware/Edimax
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		mkedimaximg -i $(call sysupname,$(1),$(2)) \
