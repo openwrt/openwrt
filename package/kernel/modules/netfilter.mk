@@ -122,6 +122,7 @@ define KernelPackage/ipt-ipopt/description
  - statistic
  - tcpmss
  - time
+ - ttl/TTL
  - unclean
 endef
 
