@@ -1,0 +1,115 @@
+--- a/drivers/net/phy/mdio_bus.c
++++ b/drivers/net/phy/mdio_bus.c
+@@ -36,6 +36,44 @@
+ #include <asm/irq.h>
+ #include <asm/uaccess.h>
+ 
++struct mdio_board_entry {
++	struct list_head	list;
++	struct mdio_board_info	board_info;
++};
++
++static LIST_HEAD(mdio_board_list);
++static DEFINE_MUTEX(mdio_board_lock);
++
++/**
++ * mdio_register_board_info - register PHY devices for a given board
++ * @info: array of chip descriptors
++ * @n: how many descriptors are provided
++ * Context: can sleep
++ *
++ * The board info passed can safely be __initdata ... but be careful of
++ * any embedded pointers (platform_data, etc), they're copied as-is.
++ */
++int __init
++mdiobus_register_board_info(struct mdio_board_info const *info, unsigned n)
++{
++	struct mdio_board_entry *be;
++	int i;
++
++	be = kzalloc(n * sizeof(*be), GFP_KERNEL);
++	if (!be)
++		return -ENOMEM;
++
++	for (i = 0; i < n; i++, be++, info++) {
++		memcpy(&be->board_info, info, sizeof(*info));
++		mutex_lock(&mdio_board_lock);
++		list_add_tail(&be->list, &mdio_board_list);
++		mutex_unlock(&mdio_board_lock);
++	}
++
++	return 0;
++}
++
++
+ /**
+  * mdiobus_alloc_size - allocate a mii_bus structure
+  * @size: extra amount of memory to allocate for private storage.
+@@ -192,15 +230,31 @@ void mdiobus_free(struct mii_bus *bus)
+ }
+ EXPORT_SYMBOL(mdiobus_free);
+ 
++static void mdiobus_setup_phydev_from_boardinfo(struct mii_bus *bus,
++						struct phy_device *phydev,
++						struct mdio_board_info *bi)
++{
++	if (strcmp(bus->id, bi->bus_id) ||
++	    bi->phy_addr != phydev->addr)
++		return;
++
++	phydev->dev.platform_data = (void *) bi->platform_data;
++}
++
+ struct phy_device *mdiobus_scan(struct mii_bus *bus, int addr)
+ {
+ 	struct phy_device *phydev;
++	struct mdio_board_entry *be;
+ 	int err;
+ 
+ 	phydev = get_phy_device(bus, addr);
+ 	if (IS_ERR(phydev) || phydev == NULL)
+ 		return phydev;
+ 
++	list_for_each_entry(be, &mdio_board_list, list)
++		mdiobus_setup_phydev_from_boardinfo(bus, phydev,
++						    &be->board_info);
++
+ 	err = phy_device_register(phydev);
+ 	if (err) {
+ 		phy_device_free(phydev);
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -399,8 +399,8 @@ struct phy_driver {
+ 	/* Determines the negotiated speed and duplex */
+ 	int (*read_status)(struct phy_device *phydev);
+ 
+-	/* 
+-	 * Update the value in phydev->link to reflect the 
++	/*
++	 * Update the value in phydev->link to reflect the
+ 	 * current link value
+ 	 */
+ 	int (*update_link)(struct phy_device *phydev);
+@@ -543,4 +543,22 @@ int __init mdio_bus_init(void);
+ void mdio_bus_exit(void);
+ 
+ extern struct bus_type mdio_bus_type;
++
++struct mdio_board_info {
++	const char	*bus_id;
++	int		phy_addr;
++
++	const void	*platform_data;
++};
++
++#ifdef CONFIG_PHYLIB
++int mdiobus_register_board_info(struct mdio_board_info const *info, unsigned n);
++#else
++static inline int
++mdiobus_register_board_info(struct mdio_board_info const *info, unsigned n)
++{
++	return 0;
++}
++#endif
++
+ #endif /* __PHY_H */
