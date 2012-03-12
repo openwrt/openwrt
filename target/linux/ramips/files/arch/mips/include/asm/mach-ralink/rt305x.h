@@ -20,6 +20,7 @@ enum rt305x_soc_type {
 	RT305X_SOC_UNKNOWN = 0,
 	RT305X_SOC_RT3050,
 	RT305X_SOC_RT3052,
+	RT305X_SOC_RT3350,
 	RT305X_SOC_RT3352,
 };
 
@@ -38,6 +39,11 @@ static inline int soc_is_rt3052(void)
 static inline int soc_is_rt305x(void)
 {
 	return soc_is_rt3050() || soc_is_rt3052();
+}
+
+static inline int soc_is_rt3350(void)
+{
+	return rt305x_soc == RT305X_SOC_RT3350;
 }
 
 static inline int soc_is_rt3352(void)

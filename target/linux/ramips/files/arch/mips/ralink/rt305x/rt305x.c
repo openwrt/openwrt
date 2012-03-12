@@ -48,6 +48,9 @@ void __init ramips_soc_prom_init(void)
 			rt305x_soc = RT305X_SOC_RT3052;
 			name = "RT3052";
 		}
+	} else if (n0 == RT3350_CHIP_NAME0 && n1 == RT3350_CHIP_NAME1) {
+		rt305x_soc = RT305X_SOC_RT3350;
+		name = "RT3350";
 	} else if (n0 == RT3352_CHIP_NAME0 && n1 == RT3352_CHIP_NAME1) {
 		rt305x_soc = RT305X_SOC_RT3352;
 		name = "RT3352";
