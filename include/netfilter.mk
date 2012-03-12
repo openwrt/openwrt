@@ -150,11 +150,11 @@ else
 endif
 
 # userland only
-$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_DSCP, $(P_XT)xt_tos)))
-$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_TARGET_DSCP, $(P_XT)xt_TOS)))
+$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_DSCP, xt_tos)))
+$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_TARGET_DSCP, xt_TOS)))
+$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_TARGET_HL, ipt_ttl)))
+$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_TARGET_HL, ipt_TTL)))
 
-$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_IP_NF_MATCH_TTL, ipt_ttl)))
-$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_IP_NF_TARGET_TTL, ipt_TTL)))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_HL, $(P_XT)xt_hl))
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_TARGET_HL, $(P_XT)xt_HL))
 
