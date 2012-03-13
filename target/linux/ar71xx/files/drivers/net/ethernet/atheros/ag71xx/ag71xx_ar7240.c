@@ -207,6 +207,17 @@
 #define AR934X_REG_OPER_MODE1		0x08
 #define   AR934X_REG_OPER_MODE1_PHY4_MII_EN	BIT(28)
 
+#define AR934X_REG_FLOOD_MASK		0x2c
+#define   AR934X_FLOOD_MASK_BC_DP(_p)	BIT(25 + (_p))
+
+#define AR934X_REG_QM_CTRL		0x3c
+#define   AR934X_QM_CTRL_ARP_EN		BIT(15)
+
+#define AR934X_REG_AT_CTRL		0x5c
+#define   AR934X_AT_CTRL_AGE_TIME	BITS(0, 15)
+#define   AR934X_AT_CTRL_AGE_EN		BIT(17)
+#define   AR934X_AT_CTRL_LEARN_CHANGE	BIT(18)
+
 #define AR934X_REG_PORT_BASE(_port)	(0x100 + (_port) * 0x100)
 
 #define AR934X_REG_PORT_VLAN1(_port)	(AR934X_REG_PORT_BASE((_port)) + 0x08)
@@ -556,17 +567,30 @@ static void ar7240sw_setup(struct ar7240sw *as)
 	/* Setup TAG priority mapping */
 	ar7240sw_reg_write(mii, AR7240_REG_TAG_PRIORITY, 0xfa50);
 
-	/* Enable ARP frame acknowledge, aging, MAC replacing */
-	ar7240sw_reg_write(mii, AR7240_REG_AT_CTRL,
-		AR7240_AT_CTRL_RESERVED |
-		0x2b /* 5 min age time */ |
-		AR7240_AT_CTRL_AGE_EN |
-		AR7240_AT_CTRL_ARP_EN |
-		AR7240_AT_CTRL_LEARN_CHANGE);
-
-	/* Enable Broadcast frames transmitted to the CPU */
-	ar7240sw_reg_set(mii, AR7240_REG_FLOOD_MASK,
-			 AR7240_FLOOD_MASK_BROAD_TO_CPU);
+	if (sw_is_ar934x(as)) {
+		/* Enable aging, MAC replacing */
+		ar7240sw_reg_write(mii, AR934X_REG_AT_CTRL,
+			0x2b /* 5 min age time */ |
+			AR934X_AT_CTRL_AGE_EN |
+			AR934X_AT_CTRL_LEARN_CHANGE);
+		/* Enable ARP frame acknowledge */
+		ar7240sw_reg_set(mii, AR934X_REG_QM_CTRL,
+				 AR934X_QM_CTRL_ARP_EN);
+		/* Enable Broadcast frames transmitted to the CPU */
+		ar7240sw_reg_set(mii, AR934X_REG_FLOOD_MASK,
+				 AR934X_FLOOD_MASK_BC_DP(0));
+	} else {
+		/* Enable ARP frame acknowledge, aging, MAC replacing */
+		ar7240sw_reg_write(mii, AR7240_REG_AT_CTRL,
+			AR7240_AT_CTRL_RESERVED |
+			0x2b /* 5 min age time */ |
+			AR7240_AT_CTRL_AGE_EN |
+			AR7240_AT_CTRL_ARP_EN |
+			AR7240_AT_CTRL_LEARN_CHANGE);
+		/* Enable Broadcast frames transmitted to the CPU */
+		ar7240sw_reg_set(mii, AR7240_REG_FLOOD_MASK,
+				 AR7240_FLOOD_MASK_BROAD_TO_CPU);
+	}
 
 	/* setup MTU */
 	ar7240sw_reg_rmw(mii, AR7240_REG_GLOBAL_CTRL, AR7240_GLOBAL_CTRL_MTU_M,
