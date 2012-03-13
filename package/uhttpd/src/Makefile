@@ -70,7 +70,7 @@ endif
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 compile: $(OBJ) $(TLSLIB) $(LUALIB)
-	$(CC) -o uhttpd $(LDFLAGS) $(LIB) $(OBJ)
+	$(CC) -o uhttpd $(LDFLAGS) $(OBJ) $(LIB)
 
 clean:
 	rm -f *.o *.so uhttpd
