@@ -1070,11 +1070,12 @@ err_free:
 
 static void link_function(struct work_struct *work) {
 	struct ag71xx *ag = container_of(work, struct ag71xx, link_work.work);
+	struct ar7240sw *as = ag->phy_priv;
 	unsigned long flags;
 	int i;
 	int status = 0;
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < as->swdev.ports; i++) {
 		int link = ar7240sw_phy_read(ag->mii_bus, i, MII_BMSR);
 		if(link & BMSR_LSTATUS) {
 			status = 1;
