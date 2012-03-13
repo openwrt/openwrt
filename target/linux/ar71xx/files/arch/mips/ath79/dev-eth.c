@@ -797,6 +797,10 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->set_speed = ath79_set_speed_dummy;
 
 			pdata->switch_data = &ath79_switch_data;
+
+			/* reset the built-in switch */
+			ath79_device_reset_set(AR934X_RESET_ETH_SWITCH);
+			ath79_device_reset_clear(AR934X_RESET_ETH_SWITCH);
 		}
 
 		pdata->ddr_flush = ath79_ddr_no_flush;
