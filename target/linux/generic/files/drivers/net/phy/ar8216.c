@@ -621,24 +621,18 @@ ar8216_hw_apply(struct switch_dev *dev)
 		int egress, ingress;
 		int pvid;
 
-		if (priv->vlan)
-			pvid = priv->vlan_id[priv->pvid[i]];
-		else
-			pvid = i;
-
 		if (priv->vlan) {
+			pvid = priv->vlan_id[priv->pvid[i]];
 			if (priv->vlan_tagged & (1 << i))
 				egress = AR8216_OUT_ADD_VLAN;
 			else
 				egress = AR8216_OUT_STRIP_VLAN;
-		} else {
-			egress = AR8216_OUT_KEEP;
-		}
-
-		if (priv->vlan)
 			ingress = AR8216_IN_SECURE;
-		else
+		} else {
+			pvid = i;
+			egress = AR8216_OUT_KEEP;
 			ingress = AR8216_IN_PORT_ONLY;
+		}
 
 		if (priv->chip == AR8236)
 			ar8236_setup_port(priv, i, egress, ingress, portmask[i],
