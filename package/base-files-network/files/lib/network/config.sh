@@ -83,6 +83,7 @@ add_vlan() {
 
 	[ "$1" = "$vif" ] || ifconfig "$1" >/dev/null 2>/dev/null || {
 		ifconfig "$vif" up 2>/dev/null >/dev/null || add_vlan "$vif"
+		$DEBUG vconfig set_name_type DEV_PLUS_VID_NO_PAD
 		$DEBUG vconfig add "$vif" "${1##*\.}"
 		return 0
 	}
@@ -218,7 +219,8 @@ prepare_interface() {
 					$DEBUG brctl addif "br-$config" "$iface"
 					$DEBUG brctl stp "br-$config" $stp
 					[ -z "$macaddr" ] && macaddr="$(cat /sys/class/net/$iface/address)"
-					echo $igmp_snooping > /sys/devices/virtual/net/br-$config/bridge/multicast_snooping 2>/dev/null
+					[ -e /sys/devices/virtual/net/br-$config/bridge/multicast_snooping ] && \
+						echo $igmp_snooping > /sys/devices/virtual/net/br-$config/bridge/multicast_snooping
 					$DEBUG ifconfig "br-$config" hw ether $macaddr up
 					# Creating the bridge here will have triggered a hotplug event, which will
 					# result in another setup_interface() call, so we simply stop processing
