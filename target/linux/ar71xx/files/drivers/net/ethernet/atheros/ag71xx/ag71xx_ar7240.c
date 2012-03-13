@@ -1017,6 +1017,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 
 	if (sw_is_ar7240(as)) {
 		swdev->name = "AR7240/AR9330 built-in switch";
+		swdev->ports = AR7240_NUM_PORTS - 1;
 	} else if (sw_is_ar934x(as)) {
 		swdev->name = "AR934X built-in switch";
 
@@ -1032,16 +1033,19 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 			goto err_free;
 		}
 
-		if (as->swdata->phy4_mii_en)
+		if (as->swdata->phy4_mii_en) {
 			ar7240sw_reg_set(mii, AR934X_REG_OPER_MODE1,
 					 AR934X_REG_OPER_MODE1_PHY4_MII_EN);
+			swdev->ports = AR7240_NUM_PORTS - 1;
+		} else {
+			swdev->ports = AR7240_NUM_PORTS;
+		}
 	} else {
 		pr_err("%s: unsupported chip, ctrl=%08x\n",
 			ag->dev->name, ctrl);
 		goto err_free;
 	}
 
-	swdev->ports = AR7240_NUM_PORTS - 1;
 	swdev->cpu_port = AR7240_PORT_CPU;
 	swdev->vlans = AR7240_MAX_VLANS;
 	swdev->ops = &ar7240_ops;
