@@ -87,21 +87,11 @@ start() {
 			--set-coldplug-cmd /sbin/udevtrigger \
 			--max-children 1 >/dev/null 2>&1 &
 
-	# the coldplugging of network interfaces needs to happen later, so we do it manually here
-	for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
-		/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug-call net
-	done
-
 	# create /dev/root if it doesn't exist
 	[ -e /dev/root -o -h /dev/root ] || {
 		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
 		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
 	}
-
-	# another round of USB coldplugging to kick devices into operation which lacked drivers before
-	for dev in /sys/bus/usb/devices/*/uevent; do
-		[ -e "$dev" ] && echo -n add > "$dev"
-	done
 }
 
 stop() {
