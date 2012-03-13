@@ -117,7 +117,7 @@
 -#define BCM_6358_SPI_BASE		(0xdeadbeef)
 +#define BCM_6358_SPI_BASE		(0xfffe0800)
  #define BCM_6358_SPI2_BASE		(0xfffe0800)
- #define BCM_6358_UDC0_BASE		(0xfffe0400)
+ #define BCM_6358_UDC0_BASE		(0xfffe0800)
  #define BCM_6358_OHCI0_BASE		(0xfffe1400)
 @@ -478,6 +479,7 @@ static inline unsigned long bcm63xx_regs
   */
@@ -127,7 +127,7 @@
  	IRQ_UART0,
  	IRQ_UART1,
  	IRQ_DSL,
-@@ -571,6 +573,7 @@ enum bcm63xx_irq {
+@@ -569,6 +571,7 @@ enum bcm63xx_irq {
   * 6348 irqs
   */
  #define BCM_6348_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
@@ -135,7 +135,7 @@
  #define BCM_6348_UART0_IRQ		(IRQ_INTERNAL_BASE + 2)
  #define BCM_6348_UART1_IRQ		0
  #define BCM_6348_DSL_IRQ		(IRQ_INTERNAL_BASE + 4)
-@@ -608,6 +611,7 @@ enum bcm63xx_irq {
+@@ -599,6 +602,7 @@ enum bcm63xx_irq {
   * 6358 irqs
   */
  #define BCM_6358_TIMER_IRQ		(IRQ_INTERNAL_BASE + 0)
@@ -880,20 +880,20 @@
  obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
 -		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-uart.o \
 +		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-spi.o dev-uart.o \
- 		   dev-usb-ehci.o dev-usb-ohci.o dev-usb-udc.o dev-wdt.o
+ 		   dev-usb-ehci.o dev-usb-ohci.o dev-wdt.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
  
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -31,6 +31,7 @@
+@@ -30,6 +30,7 @@
+ #include <bcm63xx_dev_pcmcia.h>
  #include <bcm63xx_dev_usb_ohci.h>
  #include <bcm63xx_dev_usb_ehci.h>
- #include <bcm63xx_dev_usb_udc.h>
 +#include <bcm63xx_dev_spi.h>
  #include <board_bcm963xx.h>
  
  #define PFX	"board_bcm963xx: "
-@@ -955,6 +956,8 @@ int __init board_register_devices(void)
+@@ -949,6 +950,8 @@ int __init board_register_devices(void)
  	if (board.num_spis)
  		spi_register_board_info(board.spis, board.num_spis);
  

@@ -8,7 +8,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -39,6 +40,13 @@ static unsigned int mac_addr_used;
+@@ -38,6 +39,13 @@ static unsigned int mac_addr_used;
  static struct board_info board;
  
  /*
@@ -22,7 +22,7 @@
   * known 6338 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_6338
-@@ -752,6 +760,7 @@ void __init board_prom_init(void)
+@@ -749,6 +757,7 @@ void __init board_prom_init(void)
  
  	/* extract nvram data */
  	memcpy(&nvram, boot_addr + BCM963XX_NVRAM_OFFSET, sizeof(nvram));

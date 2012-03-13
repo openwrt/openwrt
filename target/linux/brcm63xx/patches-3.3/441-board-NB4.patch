@@ -10,7 +10,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -40,6 +43,12 @@
+@@ -39,6 +42,12 @@
  #define CFE_OFFSET_64K		0x10000
  #define CFE_OFFSET_128K		0x20000
  
@@ -23,7 +23,7 @@
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -781,6 +790,502 @@ static struct board_info __initdata boar
+@@ -778,6 +787,496 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -86,8 +86,6 @@
 +	.has_ohci0 = 1,
 +	.has_pccard = 1,
 +	.has_ehci0 = 1,
-+
-+	.has_udc0			= 1,
 +
 +	.leds = {
 +		{
@@ -181,8 +179,6 @@
 +	.has_ohci0 = 1,
 +	.has_pccard = 1,
 +	.has_ehci0 = 1,
-+
-+	.has_udc0			= 1,
 +
 +	.leds = {
 +		{
@@ -370,8 +366,6 @@
 +	.has_pccard = 1,
 +	.has_ehci0 = 1,
 +
-+	.has_udc0			= 1,
-+
 +	.leds = {
 +		{
 +			.name		= "adsl",
@@ -526,7 +520,7 @@
  #endif
  
  /*
-@@ -811,9 +1316,30 @@ static const struct board_info __initdat
+@@ -808,9 +1307,30 @@ static const struct board_info __initdat
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -557,7 +551,7 @@
  /*
   * Register a sane SPROMv2 to make the on-board
   * bcm4318 WLAN work
-@@ -965,6 +1491,9 @@ void __init board_prom_init(void)
+@@ -962,6 +1482,9 @@ void __init board_prom_init(void)
  		boardid_fixup(boot_addr);
  	}
  
