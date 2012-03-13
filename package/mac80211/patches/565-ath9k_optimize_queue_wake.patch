@@ -1,0 +1,39 @@
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -121,13 +121,24 @@ static void ath_txq_unlock_complete(stru
+ {
+ 	struct sk_buff_head q;
+ 	struct sk_buff *skb;
++	int qnum = txq->mac80211_qnum;
++	bool wake = false;
+ 
+ 	__skb_queue_head_init(&q);
+ 	skb_queue_splice_init(&txq->complete_q, &q);
++
++	if (txq->stopped && txq->pending_frames < ATH_MAX_QDEPTH) {
++		txq->stopped = false;
++		wake = true;
++	}
++
+ 	spin_unlock_bh(&txq->axq_lock);
+ 
+ 	while ((skb = __skb_dequeue(&q)))
+ 		ieee80211_tx_status(sc->hw, skb);
++
++	if (wake)
++		ieee80211_wake_queue(sc->hw, qnum);
+ }
+ 
+ static void ath_tx_queue_tid(struct ath_txq *txq, struct ath_atx_tid *tid)
+@@ -2037,11 +2048,6 @@ static void ath_tx_complete(struct ath_s
+ 	if (txq == sc->tx.txq_map[q]) {
+ 		if (WARN_ON(--txq->pending_frames < 0))
+ 			txq->pending_frames = 0;
+-
+-		if (txq->stopped && txq->pending_frames < ATH_MAX_QDEPTH) {
+-			ieee80211_wake_queue(sc->hw, q);
+-			txq->stopped = false;
+-		}
+ 	}
+ 
+ 	__skb_queue_tail(&txq->complete_q, skb);
