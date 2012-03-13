@@ -11,6 +11,7 @@ setup_switch_hw() {
 
 	local proc="/proc/switch/$dev"
 	[ -d "$proc" ] && {
+		ifconfig "$dev" up
 		echo "$reset"  > "$proc/reset"
 		echo "$evlan"  > "$proc/enable_vlan"
 		[ -f "$proc/enable" ] && echo "$enable" > "$proc/enable"
