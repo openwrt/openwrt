@@ -596,6 +596,16 @@ static int ar7240sw_reset(struct ar7240sw *as)
 	ret = ar7240sw_reg_wait(mii, AR7240_REG_MASK_CTRL,
 				AR7240_MASK_CTRL_SOFT_RESET, 0, 1000);
 
+	/* setup PHYs */
+	for (i = 0; i < AR7240_NUM_PHYS; i++) {
+		ar7240sw_phy_write(mii, i, MII_ADVERTISE,
+				   ADVERTISE_ALL | ADVERTISE_PAUSE_CAP |
+				   ADVERTISE_PAUSE_ASYM);
+		ar7240sw_phy_write(mii, i, MII_BMCR,
+				   BMCR_RESET | BMCR_ANENABLE);
+	}
+	msleep(1000);
+
 	ar7240sw_setup(as);
 	return ret;
 }
