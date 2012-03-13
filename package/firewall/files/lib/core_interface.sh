@@ -1,4 +1,4 @@
-# Copyright (C) 2009-2011 OpenWrt.org
+# Copyright (C) 2009-2012 OpenWrt.org
 
 fw__uci_state_add() {
 	local var="$1"
@@ -28,7 +28,7 @@ fw__uci_state_del() {
 		rest="${rest:+$rest${e1:+ }}$e1"
 	done
 
-	uci_toggle_state firewall core $var "$val"
+	uci_toggle_state firewall core $var "$rest"
 }
 
 fw_configure_interface() {
