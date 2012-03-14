@@ -13,9 +13,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -46,6 +46,8 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
- int bcma_sflash_init(struct bcma_drv_cc *cc);
- #endif /* CONFIG_BCMA_SFLASH */
+@@ -51,6 +51,8 @@ int bcma_sflash_init(struct bcma_drv_cc
+ int bcma_nflash_init(struct bcma_drv_cc *cc);
+ #endif /* CONFIG_BCMA_NFLASH */
  
 +u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address);
 +

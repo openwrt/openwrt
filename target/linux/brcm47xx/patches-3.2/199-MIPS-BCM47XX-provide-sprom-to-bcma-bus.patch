@@ -20,10 +20,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
   *  Copyright (C) 2010 Waldemar Brodkorb <wbx@openadk.org>
 - *  Copyright (C) 2010-2011 Hauke Mehrtens <hauke@hauke-m.de>
 + *  Copyright (C) 2010-2012 Hauke Mehrtens <hauke@hauke-m.de>
+  *  Copyright (C) 2011-2012 Tathagata Das <tathagata@alumnux.com>
   *
   *  This program is free software; you can redistribute  it and/or modify it
-  *  under  the terms of  the GNU General  Public License as published by the
-@@ -91,7 +91,7 @@ static void bcm47xx_machine_halt(void)
+@@ -93,7 +93,7 @@ static void bcm47xx_machine_halt(void)
  }
  
  #ifdef CONFIG_BCM47XX_SSB
@@ -32,7 +32,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  {
  	char prefix[10];
  
-@@ -108,7 +108,7 @@ static int bcm47xx_get_sprom(struct ssb_
+@@ -110,7 +110,7 @@ static int bcm47xx_get_sprom(struct ssb_
  }
  
  static int bcm47xx_get_invariants(struct ssb_bus *bus,
@@ -41,7 +41,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  {
  	char buf[20];
  
-@@ -163,7 +163,7 @@ static void __init bcm47xx_register_ssb(
+@@ -165,7 +165,7 @@ static void __init bcm47xx_register_ssb(
  	char buf[100];
  	struct ssb_mipscore *mcore;
  
@@ -50,7 +50,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	if (err)
  		printk(KERN_WARNING "bcm47xx: someone else already registered"
  			" a ssb SPROM callback handler (err %d)\n", err);
-@@ -197,10 +197,41 @@ static void __init bcm47xx_register_ssb(
+@@ -199,10 +199,41 @@ static void __init bcm47xx_register_ssb(
  #endif
  
  #ifdef CONFIG_BCM47XX_BCMA
