@@ -36,7 +36,7 @@ define KernelPackage/usb-dwc-otg
 	CONFIG_DWC_OTG_HOST_ONLY=y \
 	CONFIG_DWC_OTG_DEVICE_ONLY=n
   FILES:=$(LINUX_DIR)/drivers/usb/dwc_otg/dwc_otg.ko
-  AUTOLOAD:=$(call AutoLoad,50,dwc_otg)
+  AUTOLOAD:=$(call AutoLoad,50,dwc_otg,1)
 endef
 
 define KernelPackage/usb-dwc-otg/description
