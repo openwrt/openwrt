@@ -12,7 +12,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -192,8 +192,7 @@ int nvram_getenv(char *name, char *val,
+@@ -243,8 +243,7 @@ int nvram_getenv(char *name, char *val,
  		value = eq + 1;
  		if ((eq - var) == strlen(name) &&
  			strncmp(var, name, (eq - var)) == 0) {

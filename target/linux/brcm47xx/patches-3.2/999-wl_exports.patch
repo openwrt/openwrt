@@ -1,8 +1,8 @@
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -22,7 +22,8 @@
- #include <asm/mach-bcm47xx/bcm47xx.h>
+@@ -24,7 +24,8 @@
  #include <asm/mach-bcm47xx/bus.h>
+ #include <linux/mtd/bcm47xx_nand.h>
  
 -static char nvram_buf[NVRAM_SPACE];
 +char nvram_buf[NVRAM_SPACE];
