@@ -159,14 +159,13 @@ proto_6to4_setup() {
 
 	proto_init_update "$link" 1
 	proto_add_ipv6_address "$local6" 16
-	proto_add_ipv6_route "::" 0
+	proto_add_ipv6_route "::" 0 "::192.88.99.1"
 
 	proto_add_tunnel
 	json_add_string mode sit
 	json_add_int mtu "${mtu:-1280}"
 	json_add_int ttl "${ttl:-64}"
 	json_add_string local "$local4"
-	json_add_string remote "192.88.99.1"
 	proto_close_tunnel
 
 	proto_send_update "$cfg"
