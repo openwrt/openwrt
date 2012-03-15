@@ -4,7 +4,20 @@
 . /usr/share/libubox/jshn.sh
 
 find_config() {
-	return
+	local device="$1"
+	for ifobj in `ubus list network.interface.\*`; do
+		interface="${ifobj##network.interface.}"
+		(
+			json_load "$(ifstatus $interface)"
+			json_get_var ifdev device
+			if [[ "$device" = "$ifdev" ]]; then
+				echo "$interface"
+				exit 0
+			else
+				exit 1
+			fi
+		) && return
+	done
 }
 
 unbridge() {
