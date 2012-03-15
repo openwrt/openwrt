@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -120,6 +120,10 @@ config AR8216_PHY
+@@ -124,6 +124,10 @@ config AR8216_PHY
  	tristate "Driver for Atheros AR8216 switches"
  	select SWCONFIG
  
@@ -13,7 +13,7 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -19,6 +19,7 @@ obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
+@@ -21,6 +21,7 @@ obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
  obj-$(CONFIG_IP17XX_PHY)	+= ip17xx.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
  obj-$(CONFIG_AR8216_PHY)	+= ar8216.o
