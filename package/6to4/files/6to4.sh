@@ -1,5 +1,12 @@
+#!/bin/sh
 # 6to4.sh - IPv6-in-IPv4 tunnel backend
-# Copyright (c) 2010-2011 OpenWrt.org
+# Copyright (c) 2010-2012 OpenWrt.org
+
+[ -n "$INCLUDE_ONLY" ] || {
+	. /etc/functions.sh
+	. ../netifd-proto.sh
+	init_proto "$@"
+}
 
 find_6to4_wanif() {
 	local if=$(ip -4 r l e 0.0.0.0/0); if="${if#default* dev }"; if="${if%% *}"
@@ -96,178 +103,137 @@ set_6to4_radvd_prefix() {
 	}
 }
 
+tun_error() {
+	local cfg="$1"; shift;
 
-# Hook into scan_interfaces() to synthesize a .device option
-# This is needed for /sbin/ifup to properly dispatch control
-# to setup_interface_6to4() even if no .ifname is set in
-# the configuration.
-scan_6to4() {
-	config_set "$1" device "6to4-$1"
+	[ -n "$1" ] && proto_notify_error "$cfg" "$@"
+	proto_block_restart "$cfg"
 }
 
-coldplug_interface_6to4() {
-	setup_interface_6to4 "6to4-$1" "$1"
-}
-
-setup_interface_6to4() {
-	local iface="$1"
-	local cfg="$2"
+proto_6to4_setup() {
+	local cfg="$1"
+	local iface="$2"
 	local link="6to4-$cfg"
 
-	local local4=$(uci_get network "$cfg" ipaddr)
+	json_get_var mtu mtu
+	json_get_var ttl ttl
+	json_get_var local4 ipaddr
 
-	local mtu
-	config_get mtu "$cfg" mtu
-
-	local ttl
-	config_get ttl "$cfg" ttl
-
-	local metric
-	config_get metric "$cfg" metric
-
-	local defaultroute
-	config_get_bool defaultroute "$cfg" defaultroute 1
+	json_get_var adv_subnet adv_subnet
+	json_get_var adv_interface adv_interface
+	json_get_var adv_valid_lifetime adv_valid_lifetime
+	json_get_var adv_preferred_lifetime adv_preferred_lifetime
 
 	local wanif=$(find_6to4_wanif)
 	[ -z "$wanif" ] && {
-		logger -t "$link" "Cannot find wan interface - aborting"
+		tun_error "NO_WAN_LINK"
 		return
 	}
 
-	local wancfg=$(find_config "$wanif")
+	. /lib/network/config.sh
+	local wancfg="$(find_config "$wanif")"
 	[ -z "$wancfg" ] && {
-		logger -t "$link" "Cannot find wan network - aborting"
+		tun_error "NO_WAN_LINK"
 		return
 	}
 
 	# If local4 is unset, guess local IPv4 address from the
 	# interface used by the default route.
 	[ -z "$local4" ] && {
-		[ -n "$wanif" ] && {
-			local4=$(find_6to4_wanip "$wanif")
-			uci_set_state network "$cfg" wan_device "$wanif"
-		}
+		[ -n "$wanif" ] && local4=$(find_6to4_wanip "$wanif")
 	}
 
-	test_6to4_rfc1918 "$local4" && {
-		logger -t "$link" "Local wan ip $local4 is private - aborting"
+	[ -z "$local4" ] && {
+		tun_error "NO_WAN_LINK"
 		return
 	}
 
-	[ -n "$local4" ] && {
-		logger -t "$link" "Starting ..."
+	test_6to4_rfc1918 "$local4" && {
+		tun_error "INVALID_LOCAL_ADDRESS"
+		return
+	}
 
-		# creating the tunnel below will trigger a net subsystem event
-		# prevent it from touching or iface by disabling .auto here
-		uci_set_state network "$cfg" ifname $link
-		uci_set_state network "$cfg" auto 0
+	# find our local prefix
+	local prefix6=$(find_6to4_prefix "$local4")
+	local local6="$prefix6::1"
 
-		# find our local prefix
-		local prefix6=$(find_6to4_prefix "$local4")
-		local local6="$prefix6::1/16"
+	proto_init_update "$link" 1
+	proto_add_ipv6_address "$local6" 16
+	proto_add_ipv6_route "::" 0
 
-		logger -t "$link" " * IPv4 address is $local4"
-		logger -t "$link" " * IPv6 address is $local6"
-		ip tunnel add $link mode sit remote any local $local4 ttl ${ttl:-64}
-		ip link set $link up
-		ip link set mtu ${mtu:-1280} dev $link
-		ip addr add $local6 dev $link
+	proto_add_tunnel
+	json_add_string mode sit
+	json_add_int mtu "${mtu:-1280}"
+	json_add_int ttl "${ttl:-64}"
+	json_add_string local "$local4"
+	json_add_string remote "192.88.99.1"
+	proto_close_tunnel
 
-		uci_set_state network "$cfg" ipaddr $local4
-		uci_set_state network "$cfg" ip6addr $local6
+	proto_send_update "$cfg"
 
-		[ "$defaultroute" = 1 ] && {
-			logger -t "$link" " * Adding default route"
-			ip -6 route add ::/0 via ::192.88.99.1 metric ${metric:-1} dev $link
-			uci_set_state network "$cfg" defaultroute 1
-		}
+	[ -f /etc/config/radvd ] && /etc/init.d/radvd enabled && {
+		local sid="6to4_$cfg"
 
-		[ -f /etc/config/radvd ] && /etc/init.d/radvd enabled && {
-			local sid="6to4_$cfg"
+		uci_revert_state radvd
+		config_load radvd
 
-			uci_revert_state radvd
-			config_load radvd
+		adv_subnet=$((0x${adv_subnet:-1}))
 
-			# find delegation target
-			local adv_interface
-			config_get adv_interface "$cfg" adv_interface
+		local adv_subnets=""
 
-			local adv_subnet=$(uci_get network "$cfg" adv_subnet)
-			      adv_subnet=$((0x${adv_subnet:-1}))
+		for adv_interface in ${adv_interface:-lan}; do
+			local adv_ifname
+			config_get adv_ifname "${adv_interface:-lan}" ifname
 
-			local adv_subnets=""
+			grep -qs "^ *$adv_ifname:" /proc/net/dev && {
+				local subnet6="$(printf "%s:%x::1/64" "$prefix6" $adv_subnet)"
 
-			for adv_interface in ${adv_interface:-lan}; do
-				local adv_ifname
-				config_get adv_ifname "${adv_interface:-lan}" ifname
+				logger -t "$link" " * Advertising IPv6 subnet $subnet6 on ${adv_interface:-lan} ($adv_ifname)"
+				ip -6 addr add $subnet6 dev $adv_ifname
 
-				grep -qs "^ *$adv_ifname:" /proc/net/dev && {
-					local adv_valid_lifetime adv_preferred_lifetime
-					config_get adv_valid_lifetime     "$cfg" adv_valid_lifetime
-					config_get adv_preferred_lifetime "$cfg" adv_preferred_lifetime
+				set_6to4_radvd_interface "$sid" "$adv_interface" "$mtu"
+				set_6to4_radvd_prefix    "$sid" "$adv_interface" \
+					"$wancfg" "$(printf "0:0:0:%x::/64" $adv_subnet)" \
+					"$adv_valid_lifetime" "$adv_preferred_lifetime"
 
-					local subnet6="$(printf "%s:%x::1/64" "$prefix6" $adv_subnet)"
+				adv_subnets="${adv_subnets:+$adv_subnets }$adv_ifname:$subnet6"
+				adv_subnet=$(($adv_subnet + 1))
+			}
+		done
 
-					logger -t "$link" " * Advertising IPv6 subnet $subnet6 on ${adv_interface:-lan} ($adv_ifname)"
-					ip -6 addr add $subnet6 dev $adv_ifname
+		uci_set_state network "$cfg" adv_subnets "$adv_subnets"
 
-					set_6to4_radvd_interface "$sid" "$adv_interface" "$mtu"
-					set_6to4_radvd_prefix    "$sid" "$adv_interface" \
-						"$wancfg" "$(printf "0:0:0:%x::/64" $adv_subnet)" \
-						"$adv_valid_lifetime" "$adv_preferred_lifetime"
-
-					adv_subnets="${adv_subnets:+$adv_subnets }$adv_ifname:$subnet6"
-					adv_subnet=$(($adv_subnet + 1))
-				}
-			done
-
-			uci_set_state network "$cfg" adv_subnets "$adv_subnets"
-
-			/etc/init.d/radvd restart
-		}
-
-		logger -t "$link" "... started"
-
-		env -i ACTION="ifup" INTERFACE="$cfg" DEVICE="$link" PROTO=6to4 /sbin/hotplug-call "iface" &
-	} || {
-		echo "Cannot determine local IPv4 address for 6to4 tunnel $cfg - skipping"
+		/etc/init.d/radvd restart
 	}
 }
 
-stop_interface_6to4() {
+proto_6to4_teardown() {
 	local cfg="$1"
 	local link="6to4-$cfg"
-
-	local local6=$(uci_get_state network "$cfg" ip6addr)
-	local defaultroute=$(uci_get_state network "$cfg" defaultroute)
 
 	local adv_subnets=$(uci_get_state network "$cfg" adv_subnets)
 
 	grep -qs "^ *$link:" /proc/net/dev && {
-		logger -t "$link" "Shutting down ..."
-		env -i ACTION="ifdown" INTERFACE="$cfg" DEVICE="$link" PROTO=6to4 /sbin/hotplug-call "iface" &
-
 		[ -n "$adv_subnets" ] && {
 			uci_revert_state radvd
 			/etc/init.d/radvd enabled && /etc/init.d/radvd restart
-
-			local adv_subnet
-			for adv_subnet in $adv_subnets; do
-				local ifname="${adv_subnet%%:*}"
-				local subnet="${adv_subnet#*:}"
-
-				logger -t "$link" " * Removing IPv6 subnet $subnet from interface $ifname"
-				ip -6 addr del $subnet dev $ifname
-			done
 		}
-
-		[ "$defaultroute" = "1" ] && \
-			ip -6 route del ::/0 via ::192.88.99.1 dev $link
-
-		ip addr del $local6 dev $link
-		ip link set $link down
-		ip tunnel del $link
-
-		logger -t "$link" "... stopped"
 	}
+}
+
+proto_6to4_init_config() {
+	no_device=1             
+	available=1
+
+	proto_config_add_string "ipaddr"
+	proto_config_add_int "mtu"
+	proto_config_add_int "ttl"
+	proto_config_add_string "adv_interface"
+	proto_config_add_string "adv_subnet"
+	proto_config_add_int "adv_valid_lifetime"
+	proto_config_add_int "adv_preferred_lifetime"
+}
+
+[ -n "$INCLUDE_ONLY" ] || {
+	add_protocol 6to4
 }
