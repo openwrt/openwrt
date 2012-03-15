@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -109,6 +109,9 @@ config ADM6996_PHY
+@@ -113,6 +113,9 @@ config ADM6996_PHY
  	  Currently supports the ADM6996FC and ADM6996M switches.
  	  Support for FC is very limited.
  
@@ -12,7 +12,7 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -15,6 +15,7 @@ obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
+@@ -17,6 +17,7 @@ obj-$(CONFIG_BROADCOM_PHY)	+= broadcom.o
  obj-$(CONFIG_BCM63XX_PHY)	+= bcm63xx.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
  obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
