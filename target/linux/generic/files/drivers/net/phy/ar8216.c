@@ -648,11 +648,6 @@ ar8216_hw_apply(struct switch_dev *dev)
 static int
 ar8216_hw_init(struct ar8216_priv *priv)
 {
-	/* XXX: undocumented magic from atheros, required! */
-	priv->write(priv, 0x38, 0xc000050e);
-
-	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-		   AR8216_GCTRL_MTU, 1518 + 8 + 2);
 	return 0;
 }
 
@@ -674,10 +669,6 @@ ar8236_hw_init(struct ar8216_priv *priv)
 		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
 	}
 	msleep(1000);
-
-	/* enable jumbo frames */
-	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
 
 	priv->initialized = true;
 	return 0;
@@ -716,9 +707,6 @@ ar8316_hw_init(struct ar8216_priv *priv)
 
 	priv->write(priv, 0x8, newval);
 
-	/* standard atheros magic */
-	priv->write(priv, 0x38, 0xc000050e);
-
 	/* Initialize the ports */
 	bus = priv->phy->bus;
 	for (i = 0; i < 5; i++) {
@@ -741,16 +729,36 @@ ar8316_hw_init(struct ar8216_priv *priv)
 		msleep(1000);
 	}
 
-	/* enable jumbo frames */
-	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
-
-	/* enable cpu port to receive multicast and broadcast frames */
-	priv->write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
-
 out:
 	priv->initialized = true;
 	return 0;
+}
+
+static void
+ar8216_init_globals(struct ar8216_priv *priv)
+{
+	switch (priv->chip) {
+	case AR8216:
+		/* standard atheros magic */
+		priv->write(priv, 0x38, 0xc000050e);
+
+		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+			   AR8216_GCTRL_MTU, 1518 + 8 + 2);
+		break;
+	case AR8316:
+		/* standard atheros magic */
+		priv->write(priv, 0x38, 0xc000050e);
+
+		/* enable cpu port to receive multicast and broadcast frames */
+		priv->write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
+
+		/* fall through */
+	case AR8236:
+		/* enable jumbo frames */
+		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+			   AR8316_GCTRL_MTU, 9018 + 8 + 2);
+		break;
+	}
 }
 
 static void
@@ -796,7 +804,9 @@ ar8216_reset_switch(struct switch_dev *dev)
 	for (i = 0; i < AR8216_NUM_PORTS; i++)
 		ar8216_init_port(priv, i);
 
+	ar8216_init_globals(priv);
 	mutex_unlock(&priv->reg_mutex);
+
 	return ar8216_hw_apply(dev);
 }
 
