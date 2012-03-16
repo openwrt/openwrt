@@ -28,15 +28,15 @@
 
 static struct gpio_led ja76pf_leds_gpio[] __initdata = {
 	{
-		.name		= "ja76pf:green:led1",
+		.name		= "jjplus:green:led1",
 		.gpio		= JA76PF_GPIO_LED_1,
 		.active_low	= 1,
 	}, {
-		.name		= "ja76pf:green:led2",
+		.name		= "jjplus:green:led2",
 		.gpio		= JA76PF_GPIO_LED_2,
 		.active_low	= 1,
 	}, {
-		.name		= "ja76pf:green:led3",
+		.name		= "jjplus:green:led3",
 		.gpio		= JA76PF_GPIO_LED_3,
 		.active_low	= 1,
 	}
