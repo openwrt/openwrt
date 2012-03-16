@@ -15,7 +15,7 @@ platform_find_partitions() {
 	while read dev size erasesize name; do
 		name=${name#'"'}; name=${name%'"'}
 		case "$name" in
-			vmlinux.bin.l7|vmlinux|kernel|linux|rootfs)
+			vmlinux.bin.l7|vmlinux|kernel|linux|rootfs|filesystem)
 				if [ -z "$first" ]; then
 					first="$name"
 				else
@@ -179,7 +179,8 @@ platform_check_image() {
 	pb42 | \
 	pb44 | \
 	eap7660d | \
-	ja76pf )
+	ja76pf | \
+	ja76pf2)
 		[ "$magic" != "4349" ] && {
 			echo "Invalid image. Use *-sysupgrade.bin files on this board"
 			return 1
@@ -212,7 +213,8 @@ platform_do_upgrade() {
 	eap7660d | \
 	pb42 | \
 	pb44 | \
-	ja76pf)
+	ja76pf | \
+	ja76pf2)
 		platform_do_upgrade_combined "$ARGV"
 		;;
 	all0258n )

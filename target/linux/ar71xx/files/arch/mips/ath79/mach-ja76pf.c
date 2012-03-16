@@ -112,3 +112,79 @@ static void __init ja76pf_init(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_JA76PF, "JA76PF", "jjPlus JA76PF", ja76pf_init);
+
+#define JA76PF2_GPIO_LED_D2		5
+#define JA76PF2_GPIO_LED_D3		4
+#define JA76PF2_GPIO_LED_D4		3
+#define JA76PF2_GPIO_BTN_RESET		7
+#define JA76PF2_GPIO_BTN_WPS		8
+
+static struct gpio_led ja76pf2_leds_gpio[] __initdata = {
+	{
+		.name		= "jjplus:green:led1",
+		.gpio		= JA76PF2_GPIO_LED_D2,
+		.active_low	= 1,
+	}, {
+		.name		= "jjplus:green:led2",
+		.gpio		= JA76PF2_GPIO_LED_D3,
+		.active_low	= 0,
+	}, {
+		.name		= "jjplus:green:led3",
+		.gpio		= JA76PF2_GPIO_LED_D4,
+		.active_low	= 0,
+	}
+};
+
+static struct gpio_keys_button ja76pf2_gpio_keys[] __initdata = {
+	{
+		.desc		= "reset",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = JA76PF_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= JA76PF2_GPIO_BTN_RESET,
+		.active_low	= 1,
+	},
+	{
+		.desc		= "wps",
+		.type		= EV_KEY,
+		.code		= KEY_WPS_BUTTON,
+		.debounce_interval = JA76PF_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= JA76PF2_GPIO_BTN_WPS,
+		.active_low	= 1,
+	},
+};
+
+#define JA76PF2_LAN_PHYMASK	BIT(0)
+#define JA76PF2_WAN_PHYMASK	BIT(4)
+#define JA76PF2_MDIO_PHYMASK	(JA76PF2_LAN_PHYMASK | JA76PF2_WAN_PHYMASK)
+
+static void __init ja76pf2_init(void)
+{
+	ath79_register_m25p80(&ja76pf_flash_data);
+
+	ath79_register_mdio(0, ~JA76PF2_MDIO_PHYMASK);
+
+	/* MAC0 is connected to the CPU port of the AR8316 switch */
+	ath79_init_mac(ath79_eth0_data.mac_addr, ath79_mac_base, 0);
+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ath79_eth0_data.phy_mask = BIT(0);
+
+	/* MAC1 is connected to the PHY4 of the AR8316 switch */
+	ath79_init_mac(ath79_eth1_data.mac_addr, ath79_mac_base, 1);
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ath79_eth1_data.phy_mask = BIT(4);
+
+	ath79_register_eth(0);
+	ath79_register_eth(1);
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(ja76pf2_leds_gpio),
+				 ja76pf2_leds_gpio);
+
+	ath79_register_gpio_keys_polled(-1, JA76PF_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(ja76pf2_gpio_keys),
+					ja76pf2_gpio_keys);
+
+	ath79_register_pci();
+}
+
+MIPS_MACHINE(ATH79_MACH_JA76PF2, "JA76PF2", "jjPlus JA76PF2", ja76pf2_init);

@@ -181,6 +181,9 @@ ar71xx_board_detect() {
 	*JA76PF)
 		name="ja76pf"
 		;;
+	*JA76PF2)
+		name="ja76pf2"
+		;;
 	*"Bullet M")
 		name="bullet-m"
 		;;
