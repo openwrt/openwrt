@@ -726,6 +726,11 @@ define Image/Build/Profile/JA76PF
 	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,ja76pf,$(ja76pf_cmdline))
 endef
 
+ja76pf2_cmdline=board=JA76PF2 console=ttyS0,115200
+define Image/Build/Profile/JA76PF2
+	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,ja76pf2,$(ja76pf2_cmdline))
+endef
+
 jwap003_cmdline=board=JWAP003 console=ttyS0,115200
 define Image/Build/Profile/JWAP003
 	$(call Image/Build/Template/$(fs_64k)/$(1),PB4X,jwap003,$(jwap003_cmdline))
@@ -1025,6 +1030,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/FR54RTR,$(1))
 	$(call Image/Build/Profile/HORNETUB,$(1))
 	$(call Image/Build/Profile/JA76PF,$(1))
+	$(call Image/Build/Profile/JA76PF2,$(1))
 	$(call Image/Build/Profile/JWAP003,$(1))
 	$(call Image/Build/Profile/MZKW04NU,$(1))
 	$(call Image/Build/Profile/MZKW300NH,$(1))
