@@ -12,7 +12,7 @@ BOARDNAME:=Freescale MPC52xx
 CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=603e
 FEATURES:=targz ext4
 
-LINUX_VERSION:=2.6.30.10
+LINUX_VERSION:=3.2.9
 
 include $(INCLUDE_DIR)/target.mk
 
