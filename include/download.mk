@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -87,7 +87,7 @@ define DownloadMethod/git
 		cd $(TMP_DIR)/dl && \
 		rm -rf $(SUBDIR) && \
 		[ \! -d $(SUBDIR) ] && \
-		git clone $(URL) $(SUBDIR) && \
+		git clone $(URL) $(SUBDIR) --recursive && \
 		(cd $(SUBDIR) && git checkout $(VERSION)) && \
 		echo "Packing checkout..." && \
 		rm -rf $(SUBDIR)/.git && \
