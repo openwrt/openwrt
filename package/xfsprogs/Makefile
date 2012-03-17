@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,11 +9,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xfsprogs
 PKG_RELEASE:=1
-PKG_VERSION:=3.1.4
-PKG_SOURCE_URL:=http://ftp.debian.org/pool/main/x/xfsprogs
-PKG_MD5SUM:=23568a603c913b80076abe3c23521573
+PKG_VERSION:=3.1.7
+PKG_SOURCE_URL:=ftp://oss.sgi.com/projects/xfs/cmd_tars
+PKG_MD5SUM:=049cf9873794ea49d0bb3f12d45748a4
 
-PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_INSTALL:=1
 PKG_FIXUP:=autoreconf
 

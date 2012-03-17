@@ -1,3 +1,38 @@
+commit 2222aa77e11b959e0e5a0ded3482e56799593bc2
+Author: Jens Muecke <jens@nons.de>
+Date:   Thu Jan 26 00:34:15 2012 +0100
+
+    001-automake-compat
+
+diff --git a/configure.in b/configure.in
+index 664c0e9..d91b6ec 100644
+--- a/configure.in
++++ b/configure.in
+@@ -2,7 +2,8 @@ AC_INIT(include/libxfs.h)
+ AC_PREREQ(2.50)
+ AC_CONFIG_AUX_DIR([.])
+ AC_CONFIG_MACRO_DIR([m4])
+-AC_CONFIG_HEADER(include/platform_defs.h)
++# Put a dummy here (http://www.mail-archive.com/automake@gnu.org/msg09241.html)
++AC_CONFIG_HEADERS([doesnotexist.h include/platform_defs.h])
+ AC_PREFIX_DEFAULT(/usr)
+ 
+ AC_PROG_LIBTOOL
+diff --git a/include/builddefs.in b/include/builddefs.in
+index 81ebfcd..5a4a0e8 100644
+--- a/include/builddefs.in
++++ b/include/builddefs.in
+@@ -20,6 +20,8 @@
+ ifndef _BUILDDEFS_INCLUDED_
+ _BUILDDEFS_INCLUDED_ = 1
+ 
++SHELL = @SHELL@
++
+ DEBUG = @debug_build@
+ OPTIMIZER = @opt_build@
+ MALLOCLIB = @malloc_lib@
+diff --git a/m4/package_types.m4 b/m4/package_types.m4
+index 0a0e087..66a136a 100644
 --- a/m4/package_types.m4
 +++ b/m4/package_types.m4
 @@ -9,7 +9,7 @@ AC_DEFUN([AC_TYPE_PSINT],
@@ -47,36 +82,3 @@
 +      AC_DEFINE([HAVE_64BIT_PTR], [1], [Define if char* is 64bit])
      fi
    ])
---- a/include/builddefs.in
-+++ b/include/builddefs.in
-@@ -20,6 +20,8 @@
- ifndef _BUILDDEFS_INCLUDED_
- _BUILDDEFS_INCLUDED_ = 1
- 
-+SHELL = @SHELL@
-+
- DEBUG = @debug_build@
- OPTIMIZER = @opt_build@
- MALLOCLIB = @malloc_lib@
---- a/include/buildmacros
-+++ b/include/buildmacros
-@@ -32,7 +32,6 @@ OBJECTS = $(ASFILES:.s=.o) \
- 
- INSTALL	= $(TOPDIR)/install-sh -o $(PKG_USER) -g $(PKG_GROUP)
- 
--SHELL = /bin/sh
- IMAGES_DIR = $(TOPDIR)/all-images
- DIST_DIR = $(TOPDIR)/dist
- 
---- a/configure.in
-+++ b/configure.in
-@@ -1,7 +1,8 @@
- AC_INIT(include/libxfs.h)
- AC_CONFIG_AUX_DIR([.])
- AC_CONFIG_MACRO_DIR([m4])
--AC_CONFIG_HEADER(include/platform_defs.h)
-+# Put a dummy here (http://www.mail-archive.com/automake@gnu.org/msg09241.html)
-+AC_CONFIG_HEADERS([doesnotexist.h include/platform_defs.h])
- AC_PREFIX_DEFAULT(/usr)
- 
- AC_PROG_LIBTOOL
