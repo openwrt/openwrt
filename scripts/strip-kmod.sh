@@ -12,7 +12,11 @@ MODULE="$1"
 }
 
 ARGS=
-[ -n "$KEEP_SYMBOLS" ] || ARGS="-x -G __this_module --strip-unneeded"
+if [ -n "$KEEP_SYMBOLS" ]; then
+	ARGS="-X --strip-debug"
+else
+	ARGS="-x -G __this_module --strip-unneeded"
+fi
 
 ${CROSS}objcopy \
 	-R .comment \
