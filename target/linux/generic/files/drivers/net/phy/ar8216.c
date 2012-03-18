@@ -36,6 +36,9 @@
 #define AR8X16_MAX_VLANS	128
 #define AR8X16_PROBE_RETRIES	10
 
+struct ar8xxx_chip {
+};
+
 struct ar8216_priv {
 	struct switch_dev dev;
 	struct phy_device *phy;
@@ -45,6 +48,7 @@ struct ar8216_priv {
 	struct net_device_ops ndo;
 	struct mutex reg_mutex;
 	int chip_type;
+	const struct ar8xxx_chip *chip;
 	bool initialized;
 	bool port4_phy;
 	char buf[80];
@@ -736,6 +740,15 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
 	}
 }
 
+static const struct ar8xxx_chip ar8216_chip = {
+};
+
+static const struct ar8xxx_chip ar8236_chip = {
+};
+
+static const struct ar8xxx_chip ar8316_chip = {
+};
+
 static int
 ar8216_reset_switch(struct switch_dev *dev)
 {
@@ -810,13 +823,16 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	switch (id) {
 	case 0x0101:
 		priv->chip_type = AR8216;
+		priv->chip = &ar8216_chip;
 		break;
 	case 0x0301:
 		priv->chip_type = AR8236;
+		priv->chip = &ar8236_chip;
 		break;
 	case 0x1000:
 	case 0x1001:
 		priv->chip_type = AR8316;
+		priv->chip = &ar8316_chip;
 		break;
 	default:
 		printk(KERN_DEBUG
