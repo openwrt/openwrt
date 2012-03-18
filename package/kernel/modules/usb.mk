@@ -913,6 +913,21 @@ endef
 $(eval $(call KernelPackage,usb-net-sierrawireless))
 
 
+define KernelPackage/usb-net-ipheth
+  TITLE:=Apple iPhone USB Ethernet driver
+  KCONFIG:=CONFIG_USB_IPHETH
+  FILES:=$(LINUX_DIR)/drivers/net/usb/ipheth.ko
+  AUTOLOAD:=$(call AutoLoad,64,ipheth)
+  $(call AddDepends/usb-net)
+endef
+
+define KernelPackage/usb-net-ipheth/description
+ Kernel support for Apple iPhone USB Ethernet driver
+endef
+
+$(eval $(call KernelPackage,usb-net-ipheth))
+
+
 define KernelPackage/usb-hid
   TITLE:=Support for USB Human Input Devices
   KCONFIG:=CONFIG_HID_SUPPORT=y CONFIG_USB_HID CONFIG_USB_HIDDEV=y
