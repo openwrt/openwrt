@@ -45,6 +45,7 @@ struct ar8xxx_chip {
 			   u32 ingress, u32 members, u32 pvid);
 	int (*atu_flush)(struct ar8216_priv *priv);
 	void (*vtu_flush)(struct ar8216_priv *priv);
+	void (*vtu_load_vlan)(struct ar8216_priv *priv, u32 vid, u32 port_mask);
 };
 
 struct ar8216_priv {
@@ -489,6 +490,15 @@ ar8216_vtu_flush(struct ar8216_priv *priv)
 	ar8216_vtu_op(priv, AR8216_VTU_OP_FLUSH, 0);
 }
 
+static void
+ar8216_vtu_load_vlan(struct ar8216_priv *priv, u32 vid, u32 port_mask)
+{
+	u32 op;
+
+	op = AR8216_VTU_OP_LOAD | (vid << AR8216_VTU_VID_S);
+	ar8216_vtu_op(priv, op, port_mask);
+}
+
 static int
 ar8216_atu_flush(struct ar8216_priv *priv)
 {
@@ -578,10 +588,8 @@ ar8216_hw_apply(struct switch_dev *dev)
 					portmask[i] |= vp & ~mask;
 			}
 
-			ar8216_vtu_op(priv,
-				AR8216_VTU_OP_LOAD |
-				(priv->vlan_id[j] << AR8216_VTU_VID_S),
-				priv->vlan_table[j]);
+			priv->chip->vtu_load_vlan(priv, priv->vlan_id[j],
+						 priv->vlan_table[j]);
 		}
 	} else {
 		/* vlan disabled:
@@ -768,6 +776,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 	.setup_port = ar8216_setup_port,
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
 };
 
 static const struct ar8xxx_chip ar8236_chip = {
@@ -776,6 +785,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 	.setup_port = ar8236_setup_port,
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
 };
 
 static const struct ar8xxx_chip ar8316_chip = {
@@ -784,6 +794,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 	.setup_port = ar8216_setup_port,
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
 };
 
 static int
