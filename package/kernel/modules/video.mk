@@ -299,6 +299,21 @@ endef
 $(eval $(call KernelPackage,video-gspca-ov534))
 
 
+define KernelPackage/video-gspca-ov534-9
+  TITLE:=ov534 webcam support
+  KCONFIG:=CONFIG_USB_GSPCA_OV534_9
+  FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gspca_ov534_9.ko
+  AUTOLOAD:=$(call AutoLoad,75,gspca_ov534_9)
+  $(call AddDepends/video-gspca)
+endef
+
+define KernelPackage/video-gspca-ov534-9/description
+ The OV534-9 USB Camera Driver (ov534_9) kernel module.
+endef
+
+$(eval $(call KernelPackage,video-gspca-ov534-9))
+
+
 define KernelPackage/video-gspca-pac207
   TITLE:=pac207 webcam support
   KCONFIG:=CONFIG_USB_GSPCA_PAC207
