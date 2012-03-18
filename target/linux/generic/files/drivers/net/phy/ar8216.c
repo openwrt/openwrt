@@ -40,6 +40,8 @@ struct ar8216_priv;
 
 struct ar8xxx_chip {
 	int (*hw_init)(struct ar8216_priv *priv);
+	void (*setup_port)(struct ar8216_priv *priv, int port, u32 egress,
+			   u32 ingress, u32 members, u32 pvid);
 };
 
 struct ar8216_priv {
@@ -590,12 +592,8 @@ ar8216_hw_apply(struct switch_dev *dev)
 			ingress = AR8216_IN_PORT_ONLY;
 		}
 
-		if (priv->chip_type == AR8236)
-			ar8236_setup_port(priv, i, egress, ingress, portmask[i],
-					  pvid);
-		else
-			ar8216_setup_port(priv, i, egress, ingress, portmask[i],
-					  pvid);
+		priv->chip->setup_port(priv, i, egress, ingress, portmask[i],
+				       pvid);
 	}
 	mutex_unlock(&priv->reg_mutex);
 	return 0;
@@ -745,14 +743,17 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
 
 static const struct ar8xxx_chip ar8216_chip = {
 	.hw_init = ar8216_hw_init,
+	.setup_port = ar8216_setup_port,
 };
 
 static const struct ar8xxx_chip ar8236_chip = {
 	.hw_init = ar8236_hw_init,
+	.setup_port = ar8236_setup_port,
 };
 
 static const struct ar8xxx_chip ar8316_chip = {
 	.hw_init = ar8316_hw_init,
+	.setup_port = ar8216_setup_port,
 };
 
 static int
