@@ -38,7 +38,11 @@
 
 struct ar8216_priv;
 
+#define AR8XXX_CAP_GIGE		BIT(0)
+
 struct ar8xxx_chip {
+	unsigned long caps;
+
 	int (*hw_init)(struct ar8216_priv *priv);
 	void (*init_port)(struct ar8216_priv *priv, int port);
 	void (*setup_port)(struct ar8216_priv *priv, int port, u32 egress,
@@ -73,6 +77,11 @@ struct ar8216_priv {
 };
 
 #define to_ar8216(_dev) container_of(_dev, struct ar8216_priv, dev)
+
+static inline bool ar8xxx_has_gige(struct ar8216_priv *priv)
+{
+	return priv->chip->caps & AR8XXX_CAP_GIGE;
+}
 
 static inline void
 split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
@@ -757,8 +766,8 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
 	if (port == AR8216_PORT_CPU) {
 		priv->write(priv, AR8216_REG_PORT_STATUS(port),
 			AR8216_PORT_STATUS_LINK_UP |
-			((priv->chip_type == AR8316) ?
-				AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
+			ar8xxx_has_gige(priv) ? AR8216_PORT_SPEED_1000M :
+						AR8216_PORT_SPEED_100M |
 			AR8216_PORT_STATUS_TXMAC |
 			AR8216_PORT_STATUS_RXMAC |
 			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
@@ -789,6 +798,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 };
 
 static const struct ar8xxx_chip ar8316_chip = {
+	.caps = AR8XXX_CAP_GIGE,
 	.hw_init = ar8316_hw_init,
 	.init_port = ar8216_init_port,
 	.setup_port = ar8216_setup_port,
@@ -917,10 +927,12 @@ ar8216_config_init(struct phy_device *pdev)
 		goto err_free_priv;
 
 	if (pdev->addr != 0) {
-		if (priv->chip_type == AR8316) {
+		if (ar8xxx_has_gige(priv)) {
 			pdev->supported |= SUPPORTED_1000baseT_Full;
 			pdev->advertising |= ADVERTISED_1000baseT_Full;
+		}
 
+		if (priv->chip_type == AR8316) {
 			/* check if we're attaching to the switch twice */
 			pdev = pdev->bus->phy_map[0];
 			if (!pdev) {
@@ -953,8 +965,10 @@ ar8216_config_init(struct phy_device *pdev)
 	printk(KERN_INFO "%s: AR%d switch driver attached.\n",
 		pdev->attached_dev->name, priv->chip_type);
 
-	pdev->supported = priv->chip_type == AR8316 ?
-		SUPPORTED_1000baseT_Full : SUPPORTED_100baseT_Full;
+	if (ar8xxx_has_gige(priv))
+		pdev->supported = SUPPORTED_1000baseT_Full;
+	else
+		pdev->supported = SUPPORTED_100baseT_Full;
 	pdev->advertising = pdev->supported;
 
 	mutex_init(&priv->reg_mutex);
