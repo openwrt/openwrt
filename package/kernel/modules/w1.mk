@@ -127,7 +127,7 @@ endef
 $(eval $(call KernelPackage,w1-slave-ds2431))
 
 define KernelPackage/w1-slave-ds2433
-  TITLE:=Simple 64bit memory family implementation
+  TITLE:=DS2433 4kb EEPROM driver
   KCONFIG:= \
 	CONFIG_W1_SLAVE_DS2433 \
 	CONFIG_W1_SLAVE_DS2433_CRC=n
@@ -137,7 +137,7 @@ define KernelPackage/w1-slave-ds2433
 endef
 
 define KernelPackage/w1-slave-ds2433/description
-  Kernel module for 1-wire simple 64bit memory rom(ds2401/ds2411/ds1990*)
+  Kernel module for 1-wire 4kb EEPROM (DS2433)
 endef
 
 $(eval $(call KernelPackage,w1-slave-ds2433))
