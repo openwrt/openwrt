@@ -44,6 +44,7 @@ struct ar8xxx_chip {
 	void (*setup_port)(struct ar8216_priv *priv, int port, u32 egress,
 			   u32 ingress, u32 members, u32 pvid);
 	int (*atu_flush)(struct ar8216_priv *priv);
+	void (*vtu_flush)(struct ar8216_priv *priv);
 };
 
 struct ar8216_priv {
@@ -482,6 +483,12 @@ ar8216_vtu_op(struct ar8216_priv *priv, u32 op, u32 val)
 	priv->write(priv, AR8216_REG_VTU, op);
 }
 
+static void
+ar8216_vtu_flush(struct ar8216_priv *priv)
+{
+	ar8216_vtu_op(priv, AR8216_VTU_OP_FLUSH, 0);
+}
+
 static int
 ar8216_atu_flush(struct ar8216_priv *priv)
 {
@@ -553,7 +560,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 
 	mutex_lock(&priv->reg_mutex);
 	/* flush all vlan translation unit entries */
-	ar8216_vtu_op(priv, AR8216_VTU_OP_FLUSH, 0);
+	priv->chip->vtu_flush(priv);
 
 	memset(portmask, 0, sizeof(portmask));
 	if (!priv->init) {
@@ -760,6 +767,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 	.init_port = ar8216_init_port,
 	.setup_port = ar8216_setup_port,
 	.atu_flush = ar8216_atu_flush,
+	.vtu_flush = ar8216_vtu_flush,
 };
 
 static const struct ar8xxx_chip ar8236_chip = {
@@ -767,6 +775,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 	.init_port = ar8216_init_port,
 	.setup_port = ar8236_setup_port,
 	.atu_flush = ar8216_atu_flush,
+	.vtu_flush = ar8216_vtu_flush,
 };
 
 static const struct ar8xxx_chip ar8316_chip = {
@@ -774,6 +783,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 	.init_port = ar8216_init_port,
 	.setup_port = ar8216_setup_port,
 	.atu_flush = ar8216_atu_flush,
+	.vtu_flush = ar8216_vtu_flush,
 };
 
 static int
