@@ -1,14 +1,25 @@
 --- a/arch/mips/ath79/mach-db120.c
 +++ b/arch/mips/ath79/mach-db120.c
-@@ -37,17 +37,26 @@
+@@ -2,7 +2,7 @@
+  * Atheros DB120 reference board support
+  *
+  * Copyright (c) 2011 Qualcomm Atheros
+- * Copyright (c) 2011 Gabor Juhos <juhosg@openwrt.org>
++ * Copyright (c) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
+  *
+  * All rights reserved.
+  *
+@@ -37,17 +37,28 @@
   * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   */
  
 +#include <linux/mtd/mtd.h>
 +#include <linux/mtd/partitions.h>
  #include <linux/pci.h>
++#include <linux/phy.h>
 +#include <linux/platform_device.h>
  #include <linux/ath9k_platform.h>
++#include <linux/ar8216_platform.h>
  
 -#include "machtypes.h"
 +#include <asm/mach-ath79/ar71xx_regs.h>
@@ -29,7 +40,7 @@
  #define DB120_GPIO_LED_WLAN_5G		12
  #define DB120_GPIO_LED_WLAN_2G		13
  #define DB120_GPIO_LED_STATUS		14
-@@ -58,8 +67,50 @@
+@@ -58,8 +69,50 @@
  #define DB120_KEYS_POLL_INTERVAL	20	/* msecs */
  #define DB120_KEYS_DEBOUNCE_INTERVAL	(3 * DB120_KEYS_POLL_INTERVAL)
  
@@ -82,7 +93,7 @@
  
  static struct gpio_led db120_leds_gpio[] __initdata = {
  	{
-@@ -82,6 +133,11 @@ static struct gpio_led db120_leds_gpio[]
+@@ -82,6 +135,11 @@ static struct gpio_led db120_leds_gpio[]
  		.gpio		= DB120_GPIO_LED_WLAN_2G,
  		.active_low	= 1,
  	},
@@ -94,15 +105,21 @@
  };
  
  static struct gpio_keys_button db120_gpio_keys[] __initdata = {
-@@ -95,66 +151,65 @@ static struct gpio_keys_button db120_gpi
+@@ -95,66 +153,89 @@ static struct gpio_keys_button db120_gpi
  	},
  };
  
 -static struct ath79_spi_controller_data db120_spi0_data = {
 -	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
 -	.cs_line = 0,
--};
--
++static struct ar8327_pad_cfg db120_ar8327_pad0_cfg = {
++	.mode = AR8327_PAD_MAC_RGMII,
++	.txclk_delay_en = true,
++	.rxclk_delay_en = true,
++	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
++	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+ };
+ 
 -static struct spi_board_info db120_spi_info[] = {
 -	{
 -		.bus_num	= 0,
@@ -110,14 +127,28 @@
 -		.max_speed_hz	= 25000000,
 -		.modalias	= "s25sl064a",
 -		.controller_data = &db120_spi0_data,
--	}
--};
--
++static struct ar8327_platform_data db120_ar8327_data = {
++	.pad0_cfg = &db120_ar8327_pad0_cfg,
++	.cpuport_cfg = {
++		.force_link = 1,
++		.speed = AR8327_PORT_SPEED_1000,
++		.duplex = 1,
++		.txpause = 1,
++		.rxpause = 1,
+ 	}
+ };
+ 
 -static struct ath79_spi_platform_data db120_spi_data = {
 -	.bus_num	= 0,
 -	.num_chipselect	= 1,
--};
--
++static struct mdio_board_info db120_mdio0_info[] = {
++	{
++		.bus_id = "ag71xx-mdio.0",
++		.phy_addr = 0,
++		.platform_data = &db120_ar8327_data,
++	},
+ };
+ 
 -#ifdef CONFIG_PCI
 -static struct ath9k_platform_data db120_ath9k_data;
 -
@@ -143,6 +174,8 @@
 +	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 +	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 |
 +	       AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
++	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
++
 +	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
  
 -	ath79_pci_set_plat_dev_init(db120_pci_plat_dev_init);
@@ -174,23 +207,18 @@
 +
 +	db120_gmac_setup();
 +
-+	ath79_register_mdio(0, 0x0);
 +	ath79_register_mdio(1, 0x0);
++	ath79_register_mdio(0, 0x0);
 +
 +	ath79_init_mac(ath79_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
-+#if 0
++
++	mdiobus_register_board_info(db120_mdio0_info,
++				    ARRAY_SIZE(db120_mdio0_info));
++
 +	/* GMAC0 is connected to an AR8327 switch */
 +	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
-+	ath79_eth0_data.speed = SPEED_1000;
-+	ath79_eth0_data.duplex = DUPLEX_FULL;
-+#else
-+	/* GMAC0 is connected to PHY4 of the internal switch */
-+	ath79_switch_data.phy4_mii_en = 1;
-+
-+	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-+	ath79_eth0_data.phy_mask = BIT(4);
-+	ath79_eth0_data.mii_bus_dev = &ath79_mdio1_device.dev;
-+#endif
++	ath79_eth0_data.phy_mask = BIT(0);
++	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
 +	ath79_register_eth(0);
 +
 +	/* GMAC1 is connected to the internal switch */
