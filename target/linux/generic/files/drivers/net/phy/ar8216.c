@@ -36,7 +36,10 @@
 #define AR8X16_MAX_VLANS	128
 #define AR8X16_PROBE_RETRIES	10
 
+struct ar8216_priv;
+
 struct ar8xxx_chip {
+	int (*hw_init)(struct ar8216_priv *priv);
 };
 
 struct ar8216_priv {
@@ -741,12 +744,15 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
 }
 
 static const struct ar8xxx_chip ar8216_chip = {
+	.hw_init = ar8216_hw_init,
 };
 
 static const struct ar8xxx_chip ar8236_chip = {
+	.hw_init = ar8236_hw_init,
 };
 
 static const struct ar8xxx_chip ar8316_chip = {
+	.hw_init = ar8316_hw_init,
 };
 
 static int
@@ -943,14 +949,7 @@ ar8216_config_init(struct phy_device *pdev)
 
 	priv->init = true;
 
-	ret = 0;
-	if (priv->chip_type == AR8216)
-		ret = ar8216_hw_init(priv);
-	else if (priv->chip_type == AR8236)
-		ret = ar8236_hw_init(priv);
-	else if (priv->chip_type == AR8316)
-		ret = ar8316_hw_init(priv);
-
+	ret = priv->chip->hw_init(priv);
 	if (ret)
 		goto err_free_priv;
 
