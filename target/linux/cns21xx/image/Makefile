@@ -55,12 +55,13 @@ define Image/Prepare
 	# NSB3AST : mach id 2917 (0xb65)
 	$(call prepare_zimage,nsb3ast,0b,65)
 	# NS-K330 : mach id 3108 (0xc24)
-	$(call prepare_zimage,ns-k330,0c,24)
+	$(call prepare_uimage,ns-k330,0c,24)
 endef
 
 define Image/BuildKernel
 	cat $(KDIR)/$(call zimage_name,nsb3ast) > $(BIN_DIR)/$(call zimage_name,nsb3ast)
 	cat $(KDIR)/$(call zimage_name,ns-k330) > $(BIN_DIR)/$(call zimage_name,ns-k330)
+	cat $(KDIR)/$(call uimage_name,ns-k330) > $(BIN_DIR)/$(call uimage_name,ns-k330)
 endef
 
 define Image/Build/Generic
@@ -97,6 +98,7 @@ endef
 
 define Image/Build/NSK330
 	$(call Image/Build/Generic,$(1),ns-k330,2686976)
+	$(call Image/Build/uImage,$(1),ns-k330,2686976)
 endef
 
 define Image/Build/squashfs
