@@ -44,6 +44,7 @@ struct ar8xxx_chip {
 	unsigned long caps;
 
 	int (*hw_init)(struct ar8216_priv *priv);
+	void (*init_globals)(struct ar8216_priv *priv);
 	void (*init_port)(struct ar8216_priv *priv, int port);
 	void (*setup_port)(struct ar8216_priv *priv, int port, u32 egress,
 			   u32 ingress, u32 members, u32 pvid);
@@ -729,28 +730,33 @@ out:
 static void
 ar8216_init_globals(struct ar8216_priv *priv)
 {
-	switch (priv->chip_type) {
-	case AR8216:
-		/* standard atheros magic */
-		priv->write(priv, 0x38, 0xc000050e);
+	/* standard atheros magic */
+	priv->write(priv, 0x38, 0xc000050e);
 
-		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-			   AR8216_GCTRL_MTU, 1518 + 8 + 2);
-		break;
-	case AR8316:
-		/* standard atheros magic */
-		priv->write(priv, 0x38, 0xc000050e);
+	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8216_GCTRL_MTU, 1518 + 8 + 2);
+}
 
-		/* enable cpu port to receive multicast and broadcast frames */
-		priv->write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
+static void
+ar8236_init_globals(struct ar8216_priv *priv)
+{
+	/* enable jumbo frames */
+	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
+}
 
-		/* fall through */
-	case AR8236:
-		/* enable jumbo frames */
-		ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-			   AR8316_GCTRL_MTU, 9018 + 8 + 2);
-		break;
-	}
+static void
+ar8316_init_globals(struct ar8216_priv *priv)
+{
+	/* standard atheros magic */
+	priv->write(priv, 0x38, 0xc000050e);
+
+	/* enable cpu port to receive multicast and broadcast frames */
+	priv->write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
+
+	/* enable jumbo frames */
+	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
 }
 
 static void
@@ -781,6 +787,7 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
 
 static const struct ar8xxx_chip ar8216_chip = {
 	.hw_init = ar8216_hw_init,
+	.init_globals = ar8216_init_globals,
 	.init_port = ar8216_init_port,
 	.setup_port = ar8216_setup_port,
 	.atu_flush = ar8216_atu_flush,
@@ -790,6 +797,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 
 static const struct ar8xxx_chip ar8236_chip = {
 	.hw_init = ar8236_hw_init,
+	.init_globals = ar8236_init_globals,
 	.init_port = ar8216_init_port,
 	.setup_port = ar8236_setup_port,
 	.atu_flush = ar8216_atu_flush,
@@ -800,6 +808,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 static const struct ar8xxx_chip ar8316_chip = {
 	.caps = AR8XXX_CAP_GIGE,
 	.hw_init = ar8316_hw_init,
+	.init_globals = ar8316_init_globals,
 	.init_port = ar8216_init_port,
 	.setup_port = ar8216_setup_port,
 	.atu_flush = ar8216_atu_flush,
