@@ -35,6 +35,7 @@
 /* size of the vlan table */
 #define AR8X16_MAX_VLANS	128
 #define AR8X16_PROBE_RETRIES	10
+#define AR8X16_MAX_PORTS	8
 
 struct ar8216_priv;
 
@@ -75,7 +76,7 @@ struct ar8216_priv {
 	u16 vlan_id[AR8X16_MAX_VLANS];
 	u8 vlan_table[AR8X16_MAX_VLANS];
 	u8 vlan_tagged;
-	u16 pvid[AR8216_NUM_PORTS];
+	u16 pvid[AR8X16_MAX_PORTS];
 };
 
 #define to_ar8216(_dev) container_of(_dev, struct ar8216_priv, dev)
@@ -736,7 +737,7 @@ static int
 ar8216_sw_hw_apply(struct switch_dev *dev)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
-	u8 portmask[AR8216_NUM_PORTS];
+	u8 portmask[AR8X16_MAX_PORTS];
 	int i, j;
 
 	mutex_lock(&priv->reg_mutex);
