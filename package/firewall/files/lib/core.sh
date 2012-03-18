@@ -30,11 +30,11 @@ fw_start() {
 	echo "Loading forwardings"
 	config_foreach fw_load_forwarding forwarding
 
-	echo "Loading redirects"
-	config_foreach fw_load_redirect redirect
-
 	echo "Loading rules"
 	config_foreach fw_load_rule rule
+
+	echo "Loading redirects"
+	config_foreach fw_load_redirect redirect
 
 	echo "Loading includes"
 	config_foreach fw_load_include include
