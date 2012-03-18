@@ -404,6 +404,59 @@ ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 		   (pvid << AR8216_PORT_VLAN_DEFAULT_ID_S));
 }
 
+static int
+ar8216_hw_init(struct ar8216_priv *priv)
+{
+	return 0;
+}
+
+static void
+ar8216_init_globals(struct ar8216_priv *priv)
+{
+	/* standard atheros magic */
+	priv->write(priv, 0x38, 0xc000050e);
+
+	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8216_GCTRL_MTU, 1518 + 8 + 2);
+}
+
+static void
+ar8216_init_port(struct ar8216_priv *priv, int port)
+{
+	/* Enable port learning and tx */
+	priv->write(priv, AR8216_REG_PORT_CTRL(port),
+		AR8216_PORT_CTRL_LEARN |
+		(4 << AR8216_PORT_CTRL_STATE_S));
+
+	priv->write(priv, AR8216_REG_PORT_VLAN(port), 0);
+
+	if (port == AR8216_PORT_CPU) {
+		priv->write(priv, AR8216_REG_PORT_STATUS(port),
+			AR8216_PORT_STATUS_LINK_UP |
+			ar8xxx_has_gige(priv) ? AR8216_PORT_SPEED_1000M :
+						AR8216_PORT_SPEED_100M |
+			AR8216_PORT_STATUS_TXMAC |
+			AR8216_PORT_STATUS_RXMAC |
+			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
+			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
+			AR8216_PORT_STATUS_DUPLEX);
+	} else {
+		priv->write(priv, AR8216_REG_PORT_STATUS(port),
+			AR8216_PORT_STATUS_LINK_AUTO);
+	}
+}
+
+static const struct ar8xxx_chip ar8216_chip = {
+	.hw_init = ar8216_hw_init,
+	.init_globals = ar8216_init_globals,
+	.init_port = ar8216_init_port,
+	.setup_port = ar8216_setup_port,
+	.read_port_status = ar8216_read_port_status,
+	.atu_flush = ar8216_atu_flush,
+	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
+};
+
 static void
 ar8236_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 		  u32 members, u32 pvid)
@@ -428,12 +481,6 @@ ar8236_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 }
 
 static int
-ar8216_hw_init(struct ar8216_priv *priv)
-{
-	return 0;
-}
-
-static int
 ar8236_hw_init(struct ar8216_priv *priv)
 {
 	int i;
@@ -455,6 +502,25 @@ ar8236_hw_init(struct ar8216_priv *priv)
 	priv->initialized = true;
 	return 0;
 }
+
+static void
+ar8236_init_globals(struct ar8216_priv *priv)
+{
+	/* enable jumbo frames */
+	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
+		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
+}
+
+static const struct ar8xxx_chip ar8236_chip = {
+	.hw_init = ar8236_hw_init,
+	.init_globals = ar8236_init_globals,
+	.init_port = ar8216_init_port,
+	.setup_port = ar8236_setup_port,
+	.read_port_status = ar8216_read_port_status,
+	.atu_flush = ar8216_atu_flush,
+	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
+};
 
 static int
 ar8316_hw_init(struct ar8216_priv *priv)
@@ -517,24 +583,6 @@ out:
 }
 
 static void
-ar8216_init_globals(struct ar8216_priv *priv)
-{
-	/* standard atheros magic */
-	priv->write(priv, 0x38, 0xc000050e);
-
-	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-		   AR8216_GCTRL_MTU, 1518 + 8 + 2);
-}
-
-static void
-ar8236_init_globals(struct ar8216_priv *priv)
-{
-	/* enable jumbo frames */
-	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
-		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
-}
-
-static void
 ar8316_init_globals(struct ar8216_priv *priv)
 {
 	/* standard atheros magic */
@@ -547,54 +595,6 @@ ar8316_init_globals(struct ar8216_priv *priv)
 	ar8216_rmw(priv, AR8216_REG_GLOBAL_CTRL,
 		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
 }
-
-static void
-ar8216_init_port(struct ar8216_priv *priv, int port)
-{
-	/* Enable port learning and tx */
-	priv->write(priv, AR8216_REG_PORT_CTRL(port),
-		AR8216_PORT_CTRL_LEARN |
-		(4 << AR8216_PORT_CTRL_STATE_S));
-
-	priv->write(priv, AR8216_REG_PORT_VLAN(port), 0);
-
-	if (port == AR8216_PORT_CPU) {
-		priv->write(priv, AR8216_REG_PORT_STATUS(port),
-			AR8216_PORT_STATUS_LINK_UP |
-			ar8xxx_has_gige(priv) ? AR8216_PORT_SPEED_1000M :
-						AR8216_PORT_SPEED_100M |
-			AR8216_PORT_STATUS_TXMAC |
-			AR8216_PORT_STATUS_RXMAC |
-			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
-			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
-			AR8216_PORT_STATUS_DUPLEX);
-	} else {
-		priv->write(priv, AR8216_REG_PORT_STATUS(port),
-			AR8216_PORT_STATUS_LINK_AUTO);
-	}
-}
-
-static const struct ar8xxx_chip ar8216_chip = {
-	.hw_init = ar8216_hw_init,
-	.init_globals = ar8216_init_globals,
-	.init_port = ar8216_init_port,
-	.setup_port = ar8216_setup_port,
-	.read_port_status = ar8216_read_port_status,
-	.atu_flush = ar8216_atu_flush,
-	.vtu_flush = ar8216_vtu_flush,
-	.vtu_load_vlan = ar8216_vtu_load_vlan,
-};
-
-static const struct ar8xxx_chip ar8236_chip = {
-	.hw_init = ar8236_hw_init,
-	.init_globals = ar8236_init_globals,
-	.init_port = ar8216_init_port,
-	.setup_port = ar8236_setup_port,
-	.read_port_status = ar8216_read_port_status,
-	.atu_flush = ar8216_atu_flush,
-	.vtu_flush = ar8216_vtu_flush,
-	.vtu_load_vlan = ar8216_vtu_load_vlan,
-};
 
 static const struct ar8xxx_chip ar8316_chip = {
 	.caps = AR8XXX_CAP_GIGE,
