@@ -2,6 +2,7 @@
  * ar8216.c: AR8216 switch driver
  *
  * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,6 +31,7 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/lockdep.h>
+#include <linux/ar8216_platform.h>
 #include "ar8216.h"
 
 /* size of the vlan table */
@@ -70,6 +72,7 @@ struct ar8216_priv {
 	char buf[80];
 
 	bool init;
+	bool mii_lo_first;
 
 	/* all fields below are cleared on reset */
 	bool vlan;
@@ -137,8 +140,13 @@ ar8216_mii_write(struct ar8216_priv *priv, int reg, u32 val)
 
 	bus->write(bus, 0x18, 0, r3);
 	usleep_range(1000, 2000); /* wait for the page switch to propagate */
-	bus->write(bus, 0x10 | r2, r1 + 1, hi);
-	bus->write(bus, 0x10 | r2, r1, lo);
+	if (priv->mii_lo_first) {
+		bus->write(bus, 0x10 | r2, r1, lo);
+		bus->write(bus, 0x10 | r2, r1 + 1, hi);
+	} else {
+		bus->write(bus, 0x10 | r2, r1 + 1, hi);
+		bus->write(bus, 0x10 | r2, r1, lo);
+	}
 
 	mutex_unlock(&bus->mdio_lock);
 }
@@ -609,6 +617,309 @@ static const struct ar8xxx_chip ar8316_chip = {
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
 };
 
+static u32
+ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
+{
+	u32 t;
+
+	if (!cfg)
+		return 0;
+
+	t = 0;
+	switch (cfg->mode) {
+	case AR8327_PAD_NC:
+		break;
+
+	case AR8327_PAD_MAC2MAC_MII:
+		t = AR8327_PAD_MAC_MII_EN;
+		if (cfg->rxclk_sel)
+			t |= AR8327_PAD_MAC_MII_RXCLK_SEL;
+		if (cfg->txclk_sel)
+			t |= AR8327_PAD_MAC_MII_TXCLK_SEL;
+		break;
+
+	case AR8327_PAD_MAC2MAC_GMII:
+		t = AR8327_PAD_MAC_GMII_EN;
+		if (cfg->rxclk_sel)
+			t |= AR8327_PAD_MAC_GMII_RXCLK_SEL;
+		if (cfg->txclk_sel)
+			t |= AR8327_PAD_MAC_GMII_TXCLK_SEL;
+		break;
+
+	case AR8327_PAD_MAC_SGMII:
+		t = AR8327_PAD_SGMII_EN;
+		break;
+
+	case AR8327_PAD_MAC2PHY_MII:
+		t = AR8327_PAD_PHY_MII_EN;
+		if (cfg->rxclk_sel)
+			t |= AR8327_PAD_PHY_MII_RXCLK_SEL;
+		if (cfg->txclk_sel)
+			t |= AR8327_PAD_PHY_MII_TXCLK_SEL;
+		break;
+
+	case AR8327_PAD_MAC2PHY_GMII:
+		t = AR8327_PAD_PHY_GMII_EN;
+		if (cfg->pipe_rxclk_sel)
+			t |= AR8327_PAD_PHY_GMII_PIPE_RXCLK_SEL;
+		if (cfg->rxclk_sel)
+			t |= AR8327_PAD_PHY_GMII_RXCLK_SEL;
+		if (cfg->txclk_sel)
+			t |= AR8327_PAD_PHY_GMII_TXCLK_SEL;
+		break;
+
+	case AR8327_PAD_MAC_RGMII:
+		t = AR8327_PAD_RGMII_EN;
+		t |= cfg->txclk_delay_sel << AR8327_PAD_RGMII_TXCLK_DELAY_SEL_S;
+		t |= cfg->rxclk_delay_sel << AR8327_PAD_RGMII_RXCLK_DELAY_SEL_S;
+		if (cfg->rxclk_delay_en)
+			t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
+		if (cfg->txclk_delay_en)
+			t |= AR8327_PAD_RGMII_TXCLK_DELAY_EN;
+		break;
+
+	case AR8327_PAD_PHY_GMII:
+		t = AR8327_PAD_PHYX_GMII_EN;
+		break;
+
+	case AR8327_PAD_PHY_RGMII:
+		t = AR8327_PAD_PHYX_RGMII_EN;
+		break;
+
+	case AR8327_PAD_PHY_MII:
+		t = AR8327_PAD_PHYX_MII_EN;
+		break;
+	}
+
+	return t;
+}
+
+static int
+ar8327_hw_init(struct ar8216_priv *priv)
+{
+	struct ar8327_platform_data *pdata;
+	u32 t;
+	int i;
+
+	pdata = priv->phy->dev.platform_data;
+	if (!pdata)
+		return -EINVAL;
+
+	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
+	priv->write(priv, AR8327_REG_PAD0_MODE, t);
+	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
+	priv->write(priv, AR8327_REG_PAD5_MODE, t);
+	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
+	priv->write(priv, AR8327_REG_PAD6_MODE, t);
+
+	priv->write(priv, AR8327_REG_POWER_ON_STRIP, 0x40000000);
+
+	/* fixup PHYs */
+	for (i = 0; i < AR8327_NUM_PHYS; i++) {
+		/* For 100M waveform */
+		ar8216_phy_dbg_write(priv, i, 0, 0x02ea);
+
+		/* Turn on Gigabit clock */
+		ar8216_phy_dbg_write(priv, i, 0x3d, 0x68a0);
+	}
+
+	return 0;
+}
+
+static void
+ar8327_init_globals(struct ar8216_priv *priv)
+{
+	u32 t;
+
+	/* enable CPU port and disable mirror port */
+	t = AR8327_FWD_CTRL0_CPU_PORT_EN |
+	    AR8327_FWD_CTRL0_MIRROR_PORT;
+	priv->write(priv, AR8327_REG_FWD_CTRL0, t);
+
+	/* forward multicast and broadcast frames to CPU */
+	t = (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_UC_FLOOD_S) |
+	    (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_BC_FLOOD_S);
+	priv->write(priv, AR8327_REG_FWD_CTRL1, t);
+
+	/* setup MTU */
+	ar8216_rmw(priv, AR8327_REG_MAX_FRAME_SIZE,
+		   AR8327_MAX_FRAME_SIZE_MTU, 1518 + 8 + 2);
+}
+
+static void
+ar8327_init_cpuport(struct ar8216_priv *priv)
+{
+	struct ar8327_platform_data *pdata;
+	struct ar8327_port_cfg *cfg;
+	u32 t;
+
+	pdata = priv->phy->dev.platform_data;
+	if (!pdata)
+		return;
+
+	cfg = &pdata->cpuport_cfg;
+	if (!cfg->force_link) {
+		priv->write(priv, AR8327_REG_PORT_STATUS(AR8216_PORT_CPU),
+			    AR8216_PORT_STATUS_LINK_AUTO);
+		return;
+	}
+
+	t = AR8216_PORT_STATUS_TXMAC | AR8216_PORT_STATUS_RXMAC;
+	t |= cfg->duplex ? AR8216_PORT_STATUS_DUPLEX : 0;
+	t |= cfg->rxpause ? AR8216_PORT_STATUS_RXFLOW : 0;
+	t |= cfg->txpause ? AR8216_PORT_STATUS_TXFLOW : 0;
+	switch (cfg->speed) {
+	case AR8327_PORT_SPEED_10:
+		t |= AR8216_PORT_SPEED_10M;
+		break;
+	case AR8327_PORT_SPEED_100:
+		t |= AR8216_PORT_SPEED_100M;
+		break;
+	case AR8327_PORT_SPEED_1000:
+		t |= AR8216_PORT_SPEED_1000M;
+		break;
+	}
+
+	priv->write(priv, AR8327_REG_PORT_STATUS(AR8216_PORT_CPU), t);
+}
+
+static void
+ar8327_init_port(struct ar8216_priv *priv, int port)
+{
+	u32 t;
+
+	if (port == AR8216_PORT_CPU) {
+		ar8327_init_cpuport(priv);
+	} else {
+		t = AR8216_PORT_STATUS_LINK_AUTO;
+		priv->write(priv, AR8327_REG_PORT_STATUS(port), t);
+	}
+
+	priv->write(priv, AR8327_REG_PORT_HEADER(port), 0);
+
+	priv->write(priv, AR8327_REG_PORT_VLAN0(port), 0);
+
+	t = AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH << AR8327_PORT_VLAN1_OUT_MODE_S;
+	priv->write(priv, AR8327_REG_PORT_VLAN1(port), t);
+
+	t = AR8327_PORT_LOOKUP_LEARN;
+	t |= AR8216_PORT_STATE_FORWARD << AR8327_PORT_LOOKUP_STATE_S;
+	priv->write(priv, AR8327_REG_PORT_LOOKUP(port), t);
+}
+
+static u32
+ar8327_read_port_status(struct ar8216_priv *priv, int port)
+{
+	return priv->read(priv, AR8327_REG_PORT_STATUS(port));
+}
+
+static int
+ar8327_atu_flush(struct ar8216_priv *priv)
+{
+	int ret;
+
+	ret = ar8216_wait_bit(priv, AR8327_REG_ATU_FUNC,
+			      AR8327_ATU_FUNC_BUSY, 0);
+	if (!ret)
+		priv->write(priv, AR8327_REG_ATU_FUNC,
+			    AR8327_ATU_FUNC_OP_FLUSH);
+
+	return ret;
+}
+
+static void
+ar8327_vtu_op(struct ar8216_priv *priv, u32 op, u32 val)
+{
+	if (ar8216_wait_bit(priv, AR8327_REG_VTU_FUNC1,
+			    AR8327_VTU_FUNC1_BUSY, 0))
+		return;
+
+	if ((op & AR8327_VTU_FUNC1_OP) == AR8327_VTU_FUNC1_OP_LOAD)
+		priv->write(priv, AR8327_REG_VTU_FUNC0, val);
+
+	op |= AR8327_VTU_FUNC1_BUSY;
+	priv->write(priv, AR8327_REG_VTU_FUNC1, op);
+}
+
+static void
+ar8327_vtu_flush(struct ar8216_priv *priv)
+{
+	ar8327_vtu_op(priv, AR8327_VTU_FUNC1_OP_FLUSH, 0);
+}
+
+static void
+ar8327_vtu_load_vlan(struct ar8216_priv *priv, u32 vid, u32 port_mask)
+{
+	u32 op;
+	u32 val;
+	int i;
+
+	op = AR8327_VTU_FUNC1_OP_LOAD | (vid << AR8327_VTU_FUNC1_VID_S);
+	val = AR8327_VTU_FUNC0_VALID | AR8327_VTU_FUNC0_IVL;
+	for (i = 0; i < AR8327_NUM_PORTS; i++) {
+		u32 mode;
+
+		if ((port_mask & BIT(i)) == 0)
+			mode = AR8327_VTU_FUNC0_EG_MODE_NOT;
+		else if (priv->vlan == 0)
+			mode = AR8327_VTU_FUNC0_EG_MODE_KEEP;
+		else if (priv->vlan_tagged & BIT(i))
+			mode = AR8327_VTU_FUNC0_EG_MODE_TAG;
+		else
+			mode = AR8327_VTU_FUNC0_EG_MODE_UNTAG;
+
+		val |= mode << AR8327_VTU_FUNC0_EG_MODE_S(i);
+	}
+	ar8327_vtu_op(priv, op, val);
+}
+
+static void
+ar8327_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
+		  u32 members, u32 pvid)
+{
+	u32 t;
+	u32 mode;
+
+	t = pvid << AR8327_PORT_VLAN0_DEF_SVID_S;
+	t |= pvid << AR8327_PORT_VLAN0_DEF_CVID_S;
+	priv->write(priv, AR8327_REG_PORT_VLAN0(port), t);
+
+	mode = AR8327_PORT_VLAN1_OUT_MODE_UNMOD;
+	switch (egress) {
+	case AR8216_OUT_KEEP:
+		mode = AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH;
+		break;
+	case AR8216_OUT_STRIP_VLAN:
+		mode = AR8327_PORT_VLAN1_OUT_MODE_UNTAG;
+		break;
+	case AR8216_OUT_ADD_VLAN:
+		mode = AR8327_PORT_VLAN1_OUT_MODE_TAG;
+		break;
+	}
+
+	t = AR8327_PORT_VLAN1_PORT_VLAN_PROP;
+	t |= mode << AR8327_PORT_VLAN1_OUT_MODE_S;
+	priv->write(priv, AR8327_REG_PORT_VLAN1(port), t);
+
+	t = members;
+	t |= AR8327_PORT_LOOKUP_LEARN;
+	t |= ingress << AR8327_PORT_LOOKUP_IN_MODE_S;
+	t |= AR8216_PORT_STATE_FORWARD << AR8327_PORT_LOOKUP_STATE_S;
+	priv->write(priv, AR8327_REG_PORT_LOOKUP(port), t);
+}
+
+static const struct ar8xxx_chip ar8327_chip = {
+	.caps = AR8XXX_CAP_GIGE,
+	.hw_init = ar8327_hw_init,
+	.init_globals = ar8327_init_globals,
+	.init_port = ar8327_init_port,
+	.setup_port = ar8327_setup_port,
+	.read_port_status = ar8327_read_port_status,
+	.atu_flush = ar8327_atu_flush,
+	.vtu_flush = ar8327_vtu_flush,
+	.vtu_load_vlan = ar8327_vtu_load_vlan,
+};
+
 static int
 ar8216_sw_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 		   struct switch_val *val)
@@ -910,6 +1221,11 @@ ar8216_id_chip(struct ar8216_priv *priv)
 		priv->chip_type = AR8316;
 		priv->chip = &ar8316_chip;
 		break;
+	case 0x1202:
+		priv->chip_type = AR8327;
+		priv->mii_lo_first = true;
+		priv->chip = &ar8327_chip;
+		break;
 	default:
 		printk(KERN_DEBUG
 			"ar8216: Unknown Atheros device [ver=%d, rev=%d, phy_id=%04x%04x]\n",
@@ -1012,6 +1328,10 @@ ar8216_config_init(struct phy_device *pdev)
 		swdev->name = "Atheros AR8236";
 		swdev->vlans = AR8216_NUM_VLANS;
 		swdev->ports = AR8216_NUM_PORTS;
+	} else if (priv->chip_type == AR8327) {
+		swdev->name = "Atheros AR8327";
+		swdev->vlans = AR8X16_MAX_VLANS;
+		swdev->ports = AR8327_NUM_PORTS;
 	} else {
 		swdev->name = "Atheros AR8216";
 		swdev->vlans = AR8216_NUM_VLANS;
