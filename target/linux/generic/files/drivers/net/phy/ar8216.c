@@ -811,7 +811,7 @@ ar8216_reset_switch(struct switch_dev *dev)
 }
 
 
-static const struct switch_dev_ops ar8216_ops = {
+static const struct switch_dev_ops ar8216_sw_ops = {
 	.attr_global = {
 		.attr = ar8216_globals,
 		.n_attr = ARRAY_SIZE(ar8216_globals),
@@ -902,7 +902,7 @@ ar8216_config_init(struct phy_device *pdev)
 
 	swdev = &priv->dev;
 	swdev->cpu_port = AR8216_PORT_CPU;
-	swdev->ops = &ar8216_ops;
+	swdev->ops = &ar8216_sw_ops;
 	swdev->ports = AR8216_NUM_PORTS;
 
 	if (priv->chip == AR8316) {
