@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -164,6 +164,20 @@ define KernelPackage/ata-sil24/description
 endef
 
 $(eval $(call KernelPackage,ata-sil24))
+
+
+define KernelPackage/ata-sis
+  TITLE:=SIS SATA support
+  KCONFIG:=CONFIG_SATA_SIS
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_sis.ko
+  AUTOLOAD:=$(call AutoLoad,41,sata_sis,1)
+endef
+
+define KernelPackage/ata-sis/description
+ Support for SIS Serial ATA controllers.
+endef
+
+$(eval $(call KernelPackage,ata-sis))
 
 
 define KernelPackage/ata-via-sata
