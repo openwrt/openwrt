@@ -872,3 +872,21 @@ endef
 
 $(eval $(call KernelPackage,nandsim))
 
+define KernelPackage/serial-8250
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=8250 UARTs
+  KCONFIG:= CONFIG_SERIAL_8250 \
+	CONFIG_SERIAL_8250_NR_UARTS=16 \
+  	CONFIG_SERIAL_8250_RUNTIME_UARTS=16 \
+  	CONFIG_SERIAL_8250_EXTENDED=y \
+  	CONFIG_SERIAL_8250_MANY_PORTS=y \
+  	CONFIG_SERIAL_8250_SHARE_IRQ=y
+  FILES:=$(LINUX_DIR)/drivers/tty/serial/8250.ko
+endef
+
+define KernelPackage/serial-8250/description
+ Kernel module for 8250 UART based serial ports.
+endef
+
+$(eval $(call KernelPackage,serial-8250))
+
