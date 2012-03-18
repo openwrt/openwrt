@@ -44,7 +44,7 @@ struct ar8216_priv {
 	const struct net_device_ops *ndo_old;
 	struct net_device_ops ndo;
 	struct mutex reg_mutex;
-	int chip;
+	int chip_type;
 	bool initialized;
 	bool port4_phy;
 	char buf[80];
@@ -477,7 +477,7 @@ ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 {
 	u32 header;
 
-	if (priv->vlan && port == AR8216_PORT_CPU && priv->chip == AR8216)
+	if (priv->vlan && port == AR8216_PORT_CPU && priv->chip_type == AR8216)
 		header = AR8216_PORT_CTRL_HEADER;
 	else
 		header = 0;
@@ -583,7 +583,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 			ingress = AR8216_IN_PORT_ONLY;
 		}
 
-		if (priv->chip == AR8236)
+		if (priv->chip_type == AR8236)
 			ar8236_setup_port(priv, i, egress, ingress, portmask[i],
 					  pvid);
 		else
@@ -686,7 +686,7 @@ out:
 static void
 ar8216_init_globals(struct ar8216_priv *priv)
 {
-	switch (priv->chip) {
+	switch (priv->chip_type) {
 	case AR8216:
 		/* standard atheros magic */
 		priv->write(priv, 0x38, 0xc000050e);
@@ -723,12 +723,12 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
 	if (port == AR8216_PORT_CPU) {
 		priv->write(priv, AR8216_REG_PORT_STATUS(port),
 			AR8216_PORT_STATUS_LINK_UP |
-			((priv->chip == AR8316) ?
+			((priv->chip_type == AR8316) ?
 				AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
 			AR8216_PORT_STATUS_TXMAC |
 			AR8216_PORT_STATUS_RXMAC |
-			((priv->chip == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
-			((priv->chip == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
+			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
+			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_TXFLOW : 0) |
 			AR8216_PORT_STATUS_DUPLEX);
 	} else {
 		priv->write(priv, AR8216_REG_PORT_STATUS(port),
@@ -788,7 +788,7 @@ ar8216_id_chip(struct ar8216_priv *priv)
 	u16 id;
 	int i;
 
-	priv->chip = UNKNOWN;
+	priv->chip_type = UNKNOWN;
 
 	val = ar8216_mii_read(priv, AR8216_REG_CTRL);
 	if (val == ~0)
@@ -809,14 +809,14 @@ ar8216_id_chip(struct ar8216_priv *priv)
 
 	switch (id) {
 	case 0x0101:
-		priv->chip = AR8216;
+		priv->chip_type = AR8216;
 		break;
 	case 0x0301:
-		priv->chip = AR8236;
+		priv->chip_type = AR8236;
 		break;
 	case 0x1000:
 	case 0x1001:
-		priv->chip = AR8316;
+		priv->chip_type = AR8316;
 		break;
 	default:
 		printk(KERN_DEBUG
@@ -853,7 +853,7 @@ ar8216_config_init(struct phy_device *pdev)
 		goto err_free_priv;
 
 	if (pdev->addr != 0) {
-		if (priv->chip == AR8316) {
+		if (priv->chip_type == AR8316) {
 			pdev->supported |= SUPPORTED_1000baseT_Full;
 			pdev->advertising |= ADVERTISED_1000baseT_Full;
 
@@ -887,9 +887,9 @@ ar8216_config_init(struct phy_device *pdev)
 	}
 
 	printk(KERN_INFO "%s: AR%d switch driver attached.\n",
-		pdev->attached_dev->name, priv->chip);
+		pdev->attached_dev->name, priv->chip_type);
 
-	pdev->supported = priv->chip == AR8316 ?
+	pdev->supported = priv->chip_type == AR8316 ?
 		SUPPORTED_1000baseT_Full : SUPPORTED_100baseT_Full;
 	pdev->advertising = pdev->supported;
 
@@ -904,7 +904,7 @@ ar8216_config_init(struct phy_device *pdev)
 	swdev->ops = &ar8216_sw_ops;
 	swdev->ports = AR8216_NUM_PORTS;
 
-	if (priv->chip == AR8316) {
+	if (priv->chip_type == AR8316) {
 		swdev->name = "Atheros AR8316";
 		swdev->vlans = AR8X16_MAX_VLANS;
 
@@ -912,7 +912,7 @@ ar8216_config_init(struct phy_device *pdev)
 			/* port 5 connected to the other mac, therefore unusable */
 			swdev->ports = (AR8216_NUM_PORTS - 1);
 		}
-	} else if (priv->chip == AR8236) {
+	} else if (priv->chip_type == AR8236) {
 		swdev->name = "Atheros AR8236";
 		swdev->vlans = AR8216_NUM_VLANS;
 		swdev->ports = AR8216_NUM_PORTS;
@@ -928,11 +928,11 @@ ar8216_config_init(struct phy_device *pdev)
 	priv->init = true;
 
 	ret = 0;
-	if (priv->chip == AR8216)
+	if (priv->chip_type == AR8216)
 		ret = ar8216_hw_init(priv);
-	else if (priv->chip == AR8236)
+	else if (priv->chip_type == AR8236)
 		ret = ar8236_hw_init(priv);
-	else if (priv->chip == AR8316)
+	else if (priv->chip_type == AR8316)
 		ret = ar8316_hw_init(priv);
 
 	if (ret)
@@ -945,7 +945,7 @@ ar8216_config_init(struct phy_device *pdev)
 	dev->phy_ptr = priv;
 
 	/* VID fixup only needed on ar8216 */
-	if (pdev->addr == 0 && priv->chip == AR8216) {
+	if (pdev->addr == 0 && priv->chip_type == AR8216) {
 		pdev->pkt_align = 2;
 		pdev->netif_receive_skb = ar8216_netif_receive_skb;
 		pdev->netif_rx = ar8216_netif_rx;
