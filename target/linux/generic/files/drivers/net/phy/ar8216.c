@@ -40,8 +40,10 @@ struct ar8216_priv;
 
 struct ar8xxx_chip {
 	int (*hw_init)(struct ar8216_priv *priv);
+	void (*init_port)(struct ar8216_priv *priv, int port);
 	void (*setup_port)(struct ar8216_priv *priv, int port, u32 egress,
 			   u32 ingress, u32 members, u32 pvid);
+	int (*atu_flush)(struct ar8216_priv *priv);
 };
 
 struct ar8216_priv {
@@ -480,6 +482,18 @@ ar8216_vtu_op(struct ar8216_priv *priv, u32 op, u32 val)
 	priv->write(priv, AR8216_REG_VTU, op);
 }
 
+static int
+ar8216_atu_flush(struct ar8216_priv *priv)
+{
+	int ret;
+
+	ret = ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0);
+	if (!ret)
+		priv->write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH);
+
+	return ret;
+}
+
 static void
 ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 		  u32 members, u32 pvid)
@@ -743,17 +757,23 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
 
 static const struct ar8xxx_chip ar8216_chip = {
 	.hw_init = ar8216_hw_init,
+	.init_port = ar8216_init_port,
 	.setup_port = ar8216_setup_port,
+	.atu_flush = ar8216_atu_flush,
 };
 
 static const struct ar8xxx_chip ar8236_chip = {
 	.hw_init = ar8236_hw_init,
+	.init_port = ar8216_init_port,
 	.setup_port = ar8236_setup_port,
+	.atu_flush = ar8216_atu_flush,
 };
 
 static const struct ar8xxx_chip ar8316_chip = {
 	.hw_init = ar8316_hw_init,
+	.init_port = ar8216_init_port,
 	.setup_port = ar8216_setup_port,
+	.atu_flush = ar8216_atu_flush,
 };
 
 static int
@@ -771,7 +791,7 @@ ar8216_reset_switch(struct switch_dev *dev)
 
 	/* Configure all ports */
 	for (i = 0; i < AR8216_NUM_PORTS; i++)
-		ar8216_init_port(priv, i);
+		priv->chip->init_port(priv, i);
 
 	ar8216_init_globals(priv);
 	mutex_unlock(&priv->reg_mutex);
@@ -1012,9 +1032,7 @@ ar8216_read_status(struct phy_device *phydev)
 
 	/* flush the address translation unit */
 	mutex_lock(&priv->reg_mutex);
-	ret = ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0);
-	if (!ret)
-		priv->write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH);
+	ret = priv->chip->atu_flush(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	phydev->state = PHY_RUNNING;
