@@ -412,7 +412,7 @@ ar8216_get_ports(struct switch_dev *dev, struct switch_val *val)
 	int i;
 
 	val->len = 0;
-	for (i = 0; i < AR8216_NUM_PORTS; i++) {
+	for (i = 0; i < dev->ports; i++) {
 		struct switch_port *p;
 
 		if (!(ports & (1 << i)))
@@ -599,7 +599,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 			if (!vp)
 				continue;
 
-			for (i = 0; i < AR8216_NUM_PORTS; i++) {
+			for (i = 0; i < dev->ports; i++) {
 				u8 mask = (1 << i);
 				if (vp & mask)
 					portmask[i] |= vp & ~mask;
@@ -611,7 +611,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 	} else {
 		/* vlan disabled:
 		 * isolate all ports, but connect them to the cpu port */
-		for (i = 0; i < AR8216_NUM_PORTS; i++) {
+		for (i = 0; i < dev->ports; i++) {
 			if (i == AR8216_PORT_CPU)
 				continue;
 
@@ -621,7 +621,7 @@ ar8216_hw_apply(struct switch_dev *dev)
 	}
 
 	/* update the port destination mask registers and tag settings */
-	for (i = 0; i < AR8216_NUM_PORTS; i++) {
+	for (i = 0; i < dev->ports; i++) {
 		int egress, ingress;
 		int pvid;
 
@@ -840,10 +840,10 @@ ar8216_reset_switch(struct switch_dev *dev)
 		priv->vlan_id[i] = i;
 
 	/* Configure all ports */
-	for (i = 0; i < AR8216_NUM_PORTS; i++)
+	for (i = 0; i < dev->ports; i++)
 		priv->chip->init_port(priv, i);
 
-	ar8216_init_globals(priv);
+	priv->chip->init_globals(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	return ar8216_hw_apply(dev);
