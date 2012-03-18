@@ -48,6 +48,7 @@ struct ar8xxx_chip {
 	void (*init_port)(struct ar8216_priv *priv, int port);
 	void (*setup_port)(struct ar8216_priv *priv, int port, u32 egress,
 			   u32 ingress, u32 members, u32 pvid);
+	u32 (*read_port_status)(struct ar8216_priv *priv, int port);
 	int (*atu_flush)(struct ar8216_priv *priv);
 	void (*vtu_flush)(struct ar8216_priv *priv);
 	void (*vtu_load_vlan)(struct ar8216_priv *priv, u32 vid, u32 port_mask);
@@ -177,7 +178,7 @@ ar8216_read_port_link(struct ar8216_priv *priv, int port,
 
 	memset(link, '\0', sizeof(*link));
 
-	status = priv->read(priv, AR8216_REG_PORT_STATUS(port));
+	status = priv->chip->read_port_status(priv, port);
 
 	link->aneg = !!(status & AR8216_PORT_STATUS_LINK_AUTO);
 	if (link->aneg) {
@@ -521,6 +522,12 @@ ar8216_atu_flush(struct ar8216_priv *priv)
 	return ret;
 }
 
+static u32
+ar8216_read_port_status(struct ar8216_priv *priv, int port)
+{
+	return priv->read(priv, AR8216_REG_PORT_STATUS(port));
+}
+
 static void
 ar8216_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 		  u32 members, u32 pvid)
@@ -790,6 +797,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 	.init_globals = ar8216_init_globals,
 	.init_port = ar8216_init_port,
 	.setup_port = ar8216_setup_port,
+	.read_port_status = ar8216_read_port_status,
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
@@ -800,6 +808,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 	.init_globals = ar8236_init_globals,
 	.init_port = ar8216_init_port,
 	.setup_port = ar8236_setup_port,
+	.read_port_status = ar8216_read_port_status,
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
@@ -811,6 +820,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 	.init_globals = ar8316_init_globals,
 	.init_port = ar8216_init_port,
 	.setup_port = ar8216_setup_port,
+	.read_port_status = ar8216_read_port_status,
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
