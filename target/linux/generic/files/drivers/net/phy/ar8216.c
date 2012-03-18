@@ -213,8 +213,8 @@ ar8216_read_port_link(struct ar8216_priv *priv, int port,
 }
 
 static int
-ar8216_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
+ar8216_sw_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	priv->vlan = !!val->value.i;
@@ -222,8 +222,8 @@ ar8216_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 }
 
 static int
-ar8216_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
+ar8216_sw_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	val->value.i = priv->vlan;
@@ -232,7 +232,7 @@ ar8216_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 
 
 static int
-ar8216_set_pvid(struct switch_dev *dev, int port, int vlan)
+ar8216_sw_set_pvid(struct switch_dev *dev, int port, int vlan)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 
@@ -246,7 +246,7 @@ ar8216_set_pvid(struct switch_dev *dev, int port, int vlan)
 }
 
 static int
-ar8216_get_pvid(struct switch_dev *dev, int port, int *vlan)
+ar8216_sw_get_pvid(struct switch_dev *dev, int port, int *vlan)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	*vlan = priv->pvid[port];
@@ -254,8 +254,8 @@ ar8216_get_pvid(struct switch_dev *dev, int port, int *vlan)
 }
 
 static int
-ar8216_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
-	       struct switch_val *val)
+ar8216_sw_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
+		  struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	priv->vlan_id[val->port_vlan] = val->value.i;
@@ -263,8 +263,8 @@ ar8216_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 }
 
 static int
-ar8216_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
-	       struct switch_val *val)
+ar8216_sw_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
+		  struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	val->value.i = priv->vlan_id[val->port_vlan];
@@ -272,8 +272,8 @@ ar8216_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 }
 
 static int
-ar8216_get_port_link(struct switch_dev *dev, int port,
-		     struct switch_port_link *link)
+ar8216_sw_get_port_link(struct switch_dev *dev, int port,
+			struct switch_port_link *link)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 
@@ -383,8 +383,8 @@ static struct switch_attr ar8216_globals[] = {
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
 		.description = "Enable VLAN mode",
-		.set = ar8216_set_vlan,
-		.get = ar8216_get_vlan,
+		.set = ar8216_sw_set_vlan,
+		.get = ar8216_sw_get_vlan,
 		.max = 1
 	},
 };
@@ -397,15 +397,15 @@ static struct switch_attr ar8216_vlan[] = {
 		.type = SWITCH_TYPE_INT,
 		.name = "vid",
 		.description = "VLAN ID (0-4094)",
-		.set = ar8216_set_vid,
-		.get = ar8216_get_vid,
+		.set = ar8216_sw_set_vid,
+		.get = ar8216_sw_get_vid,
 		.max = 4094,
 	},
 };
 
 
 static int
-ar8216_get_ports(struct switch_dev *dev, struct switch_val *val)
+ar8216_sw_get_ports(struct switch_dev *dev, struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	u8 ports = priv->vlan_table[val->port_vlan];
@@ -429,7 +429,7 @@ ar8216_get_ports(struct switch_dev *dev, struct switch_val *val)
 }
 
 static int
-ar8216_set_ports(struct switch_dev *dev, struct switch_val *val)
+ar8216_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	u8 *vt = &priv->vlan_table[val->port_vlan];
@@ -579,7 +579,7 @@ ar8236_setup_port(struct ar8216_priv *priv, int port, u32 egress, u32 ingress,
 }
 
 static int
-ar8216_hw_apply(struct switch_dev *dev)
+ar8216_sw_hw_apply(struct switch_dev *dev)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	u8 portmask[AR8216_NUM_PORTS];
@@ -827,7 +827,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 };
 
 static int
-ar8216_reset_switch(struct switch_dev *dev)
+ar8216_sw_reset_switch(struct switch_dev *dev)
 {
 	struct ar8216_priv *priv = to_ar8216(dev);
 	int i;
@@ -846,7 +846,7 @@ ar8216_reset_switch(struct switch_dev *dev)
 	priv->chip->init_globals(priv);
 	mutex_unlock(&priv->reg_mutex);
 
-	return ar8216_hw_apply(dev);
+	return ar8216_sw_hw_apply(dev);
 }
 
 static const struct switch_dev_ops ar8216_sw_ops = {
@@ -862,13 +862,13 @@ static const struct switch_dev_ops ar8216_sw_ops = {
 		.attr = ar8216_vlan,
 		.n_attr = ARRAY_SIZE(ar8216_vlan),
 	},
-	.get_port_pvid = ar8216_get_pvid,
-	.set_port_pvid = ar8216_set_pvid,
-	.get_vlan_ports = ar8216_get_ports,
-	.set_vlan_ports = ar8216_set_ports,
-	.apply_config = ar8216_hw_apply,
-	.reset_switch = ar8216_reset_switch,
-	.get_port_link = ar8216_get_port_link,
+	.get_port_pvid = ar8216_sw_get_pvid,
+	.set_port_pvid = ar8216_sw_set_pvid,
+	.get_vlan_ports = ar8216_sw_get_ports,
+	.set_vlan_ports = ar8216_sw_set_ports,
+	.apply_config = ar8216_sw_hw_apply,
+	.reset_switch = ar8216_sw_reset_switch,
+	.get_port_link = ar8216_sw_get_port_link,
 };
 
 static int
@@ -1028,7 +1028,7 @@ ar8216_config_init(struct phy_device *pdev)
 	if (ret)
 		goto err_free_priv;
 
-	ret = ar8216_reset_switch(&priv->dev);
+	ret = ar8216_sw_reset_switch(&priv->dev);
 	if (ret)
 		goto err_free_priv;
 
