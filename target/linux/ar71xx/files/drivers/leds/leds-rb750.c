@@ -23,6 +23,7 @@ struct rb750_led_dev {
 	struct led_classdev	cdev;
 	u32			mask;
 	int			active_low;
+	void			(*latch_change)(u32 clear, u32 set);
 };
 
 struct rb750_led_drvdata {
@@ -46,9 +47,9 @@ static void rb750_led_brightness_set(struct led_classdev *led_cdev,
 	level ^= rbled->active_low;
 
 	if (level)
-		rb750_latch_change(0, rbled->mask);
+		rbled->latch_change(0, rbled->mask);
 	else
-		rb750_latch_change(rbled->mask, 0);
+		rbled->latch_change(rbled->mask, 0);
 }
 
 static int __devinit rb750_led_probe(struct platform_device *pdev)
@@ -82,6 +83,7 @@ static int __devinit rb750_led_probe(struct platform_device *pdev)
 
 		rbled->mask = led_data->mask;
 		rbled->active_low = !!led_data->active_low;
+		rbled->latch_change = pdata->latch_change;
 
 		ret = led_classdev_register(&pdev->dev, &rbled->cdev);
 		if (ret)

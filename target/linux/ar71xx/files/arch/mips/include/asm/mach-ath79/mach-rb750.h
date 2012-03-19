@@ -60,6 +60,7 @@ struct rb750_led_data {
 struct rb750_led_platform_data {
 	int			num_leds;
 	struct rb750_led_data	*leds;
+	void			(*latch_change)(u32 clear, u32 set);
 };
 
 struct rb7xx_nand_platform_data {

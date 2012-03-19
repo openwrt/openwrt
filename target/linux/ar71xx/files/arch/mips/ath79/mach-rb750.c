@@ -47,11 +47,7 @@ static struct rb750_led_data rb750_leds[] = {
 	}
 };
 
-static struct rb750_led_platform_data rb750_leds_data = {
-	.num_leds	= ARRAY_SIZE(rb750_leds),
-	.leds		= rb750_leds,
-};
-
+static struct rb750_led_platform_data rb750_leds_data;
 static struct platform_device rb750_leds_device = {
 	.name	= "leds-rb750",
 	.dev	= {
@@ -155,6 +151,9 @@ static void __init rb750_setup(void)
 	/* WAN port */
 	ath79_register_eth(0);
 
+	rb750_leds_data.num_leds = ARRAY_SIZE(rb750_leds);
+	rb750_leds_data.leds = rb750_leds;
+	rb750_leds_data.latch_change = rb750_nand_latch_change;
 	platform_device_register(&rb750_leds_device);
 
 	rb750_nand_data.nce_line = RB750_NAND_NCE;
