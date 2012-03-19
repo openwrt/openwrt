@@ -126,14 +126,14 @@ proto_6to4_setup() {
 
 	local wanif=$(find_6to4_wanif)
 	[ -z "$wanif" ] && {
-		tun_error "NO_WAN_LINK"
+		tun_error "$cfg" "NO_WAN_LINK"
 		return
 	}
 
 	. /lib/network/config.sh
 	local wancfg="$(find_config "$wanif")"
 	[ -z "$wancfg" ] && {
-		tun_error "NO_WAN_LINK"
+		tun_error "$cfg" "NO_WAN_LINK"
 		return
 	}
 
@@ -144,12 +144,12 @@ proto_6to4_setup() {
 	}
 
 	[ -z "$local4" ] && {
-		tun_error "NO_WAN_LINK"
+		tun_error "$cfg" "NO_WAN_LINK"
 		return
 	}
 
 	test_6to4_rfc1918 "$local4" && {
-		tun_error "INVALID_LOCAL_ADDRESS"
+		tun_error "$cfg" "INVALID_LOCAL_ADDRESS"
 		return
 	}
 
