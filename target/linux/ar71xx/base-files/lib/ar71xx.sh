@@ -247,6 +247,9 @@ ar71xx_board_detect() {
 	*"RouterBOARD 750")
 		name="rb-750"
 		;;
+	*"RouterBOARD 750GL")
+		name="rb-750gl"
+		;;
 	*"Rocket M")
 		name="rocket-m"
 		;;
