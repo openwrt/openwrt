@@ -303,7 +303,12 @@ static void ar91xx_set_speed_ge1(int speed)
 
 static void ar934x_set_speed_ge0(int speed)
 {
-	/* TODO */
+	void __iomem *base;
+	u32 val = ath79_get_eth_pll(0, speed);
+
+	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
+	__raw_writel(val, base + AR934X_PLL_ETH_XMII_CONTROL_REG);
+	iounmap(base);
 }
 
 static void ath79_set_speed_dummy(int speed)
@@ -432,9 +437,9 @@ struct ag71xx_switch_platform_data ath79_switch_data;
 #define AR933X_PLL_VAL_100	0x00001099
 #define AR933X_PLL_VAL_10	0x00991099
 
-#define AR934X_PLL_VAL_1000	0x00110000
-#define AR934X_PLL_VAL_100	0x00001099
-#define AR934X_PLL_VAL_10	0x00991099
+#define AR934X_PLL_VAL_1000	0x16000000
+#define AR934X_PLL_VAL_100	0x00000101
+#define AR934X_PLL_VAL_10	0x00001616
 
 static void __init ath79_init_eth_pll_data(unsigned int id)
 {
