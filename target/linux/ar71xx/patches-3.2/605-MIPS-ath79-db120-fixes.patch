@@ -9,12 +9,9 @@
   *
   * All rights reserved.
   *
-@@ -37,17 +37,28 @@
-  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+@@ -38,16 +38,25 @@
   */
  
-+#include <linux/mtd/mtd.h>
-+#include <linux/mtd/partitions.h>
  #include <linux/pci.h>
 +#include <linux/phy.h>
 +#include <linux/platform_device.h>
@@ -40,7 +37,7 @@
  #define DB120_GPIO_LED_WLAN_5G		12
  #define DB120_GPIO_LED_WLAN_2G		13
  #define DB120_GPIO_LED_STATUS		14
-@@ -58,8 +69,50 @@
+@@ -58,8 +67,10 @@
  #define DB120_KEYS_POLL_INTERVAL	20	/* msecs */
  #define DB120_KEYS_DEBOUNCE_INTERVAL	(3 * DB120_KEYS_POLL_INTERVAL)
  
@@ -50,50 +47,10 @@
 +#define DB120_MAC1_OFFSET		6
 +#define DB120_WMAC_CALDATA_OFFSET	0x1000
 +#define DB120_PCIE_CALDATA_OFFSET	0x5000
-+
-+static struct mtd_partition db120_partitions[] = {
-+	{
-+		.name		= "u-boot",
-+		.offset		= 0,
-+		.size		= 0x040000,
-+		.mask_flags	= MTD_WRITEABLE,
-+	},
-+	{
-+		.name		= "u-boot-env",
-+		.offset		= 0x040000,
-+		.size		= 0x010000,
-+	},
-+	{
-+		.name		= "rootfs",
-+		.offset		= 0x050000,
-+		.size		= 0x630000,
-+	},
-+	{
-+		.name		= "uImage",
-+		.offset		= 0x680000,
-+		.size		= 0x160000,
-+	},
-+	{
-+		.name		= "NVRAM",
-+		.offset		= 0x7E0000,
-+		.size		= 0x010000,
-+	},
-+	{
-+		.name		= "ART",
-+		.offset		= 0x7F0000,
-+		.size		= 0x010000,
-+		.mask_flags	= MTD_WRITEABLE,
-+	}
-+};
-+
-+static struct flash_platform_data db120_flash_data = {
-+	.parts		= db120_partitions,
-+	.nr_parts	= ARRAY_SIZE(db120_partitions),
-+};
  
  static struct gpio_led db120_leds_gpio[] __initdata = {
  	{
-@@ -82,6 +135,11 @@ static struct gpio_led db120_leds_gpio[]
+@@ -82,6 +93,11 @@ static struct gpio_led db120_leds_gpio[]
  		.gpio		= DB120_GPIO_LED_WLAN_2G,
  		.active_low	= 1,
  	},
@@ -105,7 +62,7 @@
  };
  
  static struct gpio_keys_button db120_gpio_keys[] __initdata = {
-@@ -95,66 +153,89 @@ static struct gpio_keys_button db120_gpi
+@@ -95,66 +111,89 @@ static struct gpio_keys_button db120_gpi
  	},
  };
  
@@ -191,7 +148,7 @@
  	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
  
 +	ath79_gpio_output_select(DB120_GPIO_LED_USB, AR934X_GPIO_OUT_GPIO);
-+	ath79_register_m25p80(&db120_flash_data);
++	ath79_register_m25p80(NULL);
 +
  	ath79_register_leds_gpio(-1, ARRAY_SIZE(db120_leds_gpio),
  				 db120_leds_gpio);
