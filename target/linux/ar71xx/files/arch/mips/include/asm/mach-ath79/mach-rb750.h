@@ -43,6 +43,7 @@
 #define RB750_LED_PORT3		BIT(RB750_GPIO_LED_PORT3)
 #define RB750_LED_PORT4		BIT(RB750_GPIO_LED_PORT4)
 #define RB750_LED_PORT5		BIT(RB750_GPIO_LED_PORT5)
+#define RB750_NAND_NCE		BIT(RB750_GPIO_NAND_NCE)
 
 #define RB750_LVC573_LE		BIT(RB750_GPIO_LVC573_LE)
 
@@ -61,8 +62,14 @@ struct rb750_led_platform_data {
 	struct rb750_led_data	*leds;
 };
 
+struct rb7xx_nand_platform_data {
+	u32 nce_line;
+
+	void (*enable_pins)(void);
+	void (*disable_pins)(void);
+	void (*latch_change)(u32, u32);
+};
+
 int rb750_latch_change(u32 mask_clr, u32 mask_set);
-void rb750_nand_pins_enable(void);
-void rb750_nand_pins_disable(void);
 
 #endif /* _MACH_RB750_H */
