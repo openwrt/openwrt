@@ -15,6 +15,13 @@ start() {
 	sleep 1
 }
 
+restart() {
+	ifdown -a
+	sleep 1
+	stop
+	start
+}
+
 stop() {
 	service_stop /sbin/netifd
 }
