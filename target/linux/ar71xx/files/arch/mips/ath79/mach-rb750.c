@@ -1,5 +1,5 @@
 /*
- *  MikroTik RouterBOARD 750 support
+ *  MikroTik RouterBOARD 750/750GL support
  *
  *  Copyright (C) 2010-2012 Gabor Juhos <juhosg@openwrt.org>
  *
@@ -59,9 +59,13 @@ static struct platform_device rb750_leds_device = {
 	}
 };
 
+static struct rb7xx_nand_platform_data rb750_nand_data;
 static struct platform_device rb750_nand_device = {
 	.name	= "rb750-nand",
 	.id	= -1,
+	.dev	= {
+		.platform_data = &rb750_nand_data,
+	}
 };
 
 int rb750_latch_change(u32 mask_clr, u32 mask_set)
@@ -113,19 +117,24 @@ unlock:
 }
 EXPORT_SYMBOL_GPL(rb750_latch_change);
 
-void rb750_nand_pins_enable(void)
+static void rb750_nand_enable_pins(void)
 {
+	rb750_latch_change(RB750_LVC573_LE, 0);
 	ath79_gpio_function_setup(AR724X_GPIO_FUNC_JTAG_DISABLE,
 				  AR724X_GPIO_FUNC_SPI_EN);
 }
-EXPORT_SYMBOL_GPL(rb750_nand_pins_enable);
 
-void rb750_nand_pins_disable(void)
+static void rb750_nand_disable_pins(void)
 {
 	ath79_gpio_function_setup(AR724X_GPIO_FUNC_SPI_EN,
 				  AR724X_GPIO_FUNC_JTAG_DISABLE);
+	rb750_latch_change(0, RB750_LVC573_LE);
 }
-EXPORT_SYMBOL_GPL(rb750_nand_pins_disable);
+
+static void rb750_nand_latch_change(u32 clear, u32 set)
+{
+	rb750_latch_change(clear, set);
+}
 
 static void __init rb750_setup(void)
 {
@@ -147,6 +156,11 @@ static void __init rb750_setup(void)
 	ath79_register_eth(0);
 
 	platform_device_register(&rb750_leds_device);
+
+	rb750_nand_data.nce_line = RB750_NAND_NCE;
+	rb750_nand_data.enable_pins = rb750_nand_enable_pins;
+	rb750_nand_data.disable_pins = rb750_nand_disable_pins;
+	rb750_nand_data.latch_change = rb750_nand_latch_change;
 	platform_device_register(&rb750_nand_device);
 }
 

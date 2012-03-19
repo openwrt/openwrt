@@ -31,19 +31,23 @@
 #define RB750_NAND_NRE		BIT(RB750_GPIO_NAND_NRE)
 #define RB750_NAND_NWE		BIT(RB750_GPIO_NAND_NWE)
 #define RB750_NAND_RDY		BIT(RB750_GPIO_NAND_RDY)
-#define RB750_NAND_NCE		BIT(RB750_GPIO_NAND_NCE)
 
 #define RB750_NAND_DATA_SHIFT	1
 #define RB750_NAND_DATA_BITS	(0xff << RB750_NAND_DATA_SHIFT)
 #define RB750_NAND_INPUT_BITS	(RB750_NAND_DATA_BITS | RB750_NAND_RDY)
 #define RB750_NAND_OUTPUT_BITS	(RB750_NAND_ALE | RB750_NAND_CLE | \
-				 RB750_NAND_NRE | RB750_NAND_NWE | \
-				 RB750_NAND_NCE)
+				 RB750_NAND_NRE | RB750_NAND_NWE)
 
 struct rb750_nand_info {
 	struct nand_chip	chip;
 	struct mtd_info		mtd;
+	struct rb7xx_nand_platform_data *pdata;
 };
+
+static inline struct rb750_nand_info *mtd_to_rbinfo(struct mtd_info *mtd)
+{
+	return container_of(mtd, struct rb750_nand_info, mtd);
+}
 
 /*
  * We need to use the OLD Yaffs-1 OOB layout, otherwise the RB bootloader
@@ -138,16 +142,12 @@ static int rb750_nand_read_verify(u8 *read_buf, unsigned len,
 
 static void rb750_nand_select_chip(struct mtd_info *mtd, int chip)
 {
+	struct rb750_nand_info *rbinfo = mtd_to_rbinfo(mtd);
 	void __iomem *base = ath79_gpio_base;
-	u32 func;
 	u32 t;
 
-	func = __raw_readl(base + AR71XX_GPIO_REG_FUNC);
 	if (chip >= 0) {
-		/* disable latch */
-		rb750_latch_change(RB750_LVC573_LE, 0);
-
-		rb750_nand_pins_enable();
+		rbinfo->pdata->enable_pins();
 
 		/* set input mode for data lines */
 		t = __raw_readl(base + AR71XX_GPIO_REG_OE);
@@ -161,10 +161,12 @@ static void rb750_nand_select_chip(struct mtd_info *mtd, int chip)
 		(void) __raw_readl(base + AR71XX_GPIO_REG_SET);
 
 		/* activate CE line */
-		__raw_writel(RB750_NAND_NCE, base + AR71XX_GPIO_REG_CLEAR);
+		__raw_writel(rbinfo->pdata->nce_line,
+			     base + AR71XX_GPIO_REG_CLEAR);
 	} else {
 		/* deactivate CE line */
-		__raw_writel(RB750_NAND_NCE, base + AR71XX_GPIO_REG_SET);
+		__raw_writel(rbinfo->pdata->nce_line,
+			     base + AR71XX_GPIO_REG_SET);
 		/* flush write */
 		(void) __raw_readl(base + AR71XX_GPIO_REG_SET);
 
@@ -172,10 +174,7 @@ static void rb750_nand_select_chip(struct mtd_info *mtd, int chip)
 		__raw_writel(t | RB750_NAND_IO0 | RB750_NAND_RDY,
 			     base + AR71XX_GPIO_REG_OE);
 
-		rb750_nand_pins_disable();
-
-		/* enable latch */
-		rb750_latch_change(0, RB750_LVC573_LE);
+		rbinfo->pdata->disable_pins();
 	}
 }
 
@@ -232,7 +231,7 @@ static int rb750_nand_verify_buf(struct mtd_info *mtd, const u8 *buf, int len)
 	return rb750_nand_read_verify(NULL, len, buf);
 }
 
-static void __init rb750_nand_gpio_init(void)
+static void __init rb750_nand_gpio_init(struct rb750_nand_info *info)
 {
 	void __iomem *base = ath79_gpio_base;
 	u32 out;
@@ -253,19 +252,24 @@ static void __init rb750_nand_gpio_init(void)
 
 	/* setup output lines */
 	t = __raw_readl(base + AR71XX_GPIO_REG_OE);
-	__raw_writel(t | RB750_NAND_OUTPUT_BITS, base + AR71XX_GPIO_REG_OE);
+	t |= RB750_NAND_OUTPUT_BITS;
+	t |= info->pdata->nce_line;
+	__raw_writel(t, base + AR71XX_GPIO_REG_OE);
 
-	rb750_latch_change(~out & RB750_NAND_IO0, out & RB750_NAND_IO0);
+	info->pdata->latch_change(~out & RB750_NAND_IO0, out & RB750_NAND_IO0);
 }
 
 static int __devinit rb750_nand_probe(struct platform_device *pdev)
 {
 	struct rb750_nand_info	*info;
+	struct rb7xx_nand_platform_data *pdata;
 	int ret;
 
 	printk(KERN_INFO DRV_DESC " version " DRV_VERSION "\n");
 
-	rb750_nand_gpio_init();
+	pdata = pdev->dev.platform_data;
+	if (!pdata)
+		return -EINVAL;
 
 	info = kzalloc(sizeof(*info), GFP_KERNEL);
 	if (!info)
@@ -287,7 +291,11 @@ static int __devinit rb750_nand_probe(struct platform_device *pdev)
 	info->chip.ecc.mode	= NAND_ECC_SOFT;
 	info->chip.options	|= NAND_NO_AUTOINCR;
 
+	info->pdata = pdata;
+
 	platform_set_drvdata(pdev, info);
+
+	rb750_nand_gpio_init(info);
 
 	ret = nand_scan_ident(&info->mtd, 1, NULL);
 	if (ret) {
