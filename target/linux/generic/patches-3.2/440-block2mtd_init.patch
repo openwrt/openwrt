@@ -106,8 +106,8 @@
  {
 --- a/fs/partitions/check.c
 +++ b/fs/partitions/check.c
-@@ -664,6 +664,7 @@ rescan:
- 	kfree(state);
+@@ -696,6 +696,7 @@ int invalidate_partitions(struct gendisk
+ 
  	return 0;
  }
 +EXPORT_SYMBOL(rescan_partitions);
