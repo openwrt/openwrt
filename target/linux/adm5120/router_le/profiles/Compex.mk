@@ -7,7 +7,7 @@
 
 define Profile/NP27G
 	NAME:=Compex NP27G
-	PACKAGES:=kmod-madwifi kmod-usb-core kmod-usb-adm5120
+	PACKAGES:=kmod-ath5k kmod-usb-core kmod-usb-adm5120
 endef
 
 define Profile/NP27G/Description
@@ -16,7 +16,7 @@ endef
 
 define Profile/NP28G
 	NAME:=Compex NP28G
-	PACKAGES:=kmod-madwifi kmod-usb-core kmod-usb-uhci kmod-usb2
+	PACKAGES:=kmod-ath5k kmod-usb-core kmod-usb-uhci kmod-usb2
 endef
 
 define Profile/NP28G/Description
@@ -25,7 +25,7 @@ endef
 
 define Profile/WP54
 	NAME:=Compex WP54 family
-	PACKAGES:=kmod-madwifi
+	PACKAGES:=kmod-ath5k
 endef
 
 define Profile/WP54/Description

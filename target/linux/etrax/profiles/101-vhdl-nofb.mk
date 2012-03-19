@@ -7,7 +7,6 @@
 
 define Profile/vhdl_no_fb
   NAME:=FOXVHDL no fb
-#  PACKAGES:=kmod-madwifi
 endef
 
 define Profile/vhdl_no_fb/Description

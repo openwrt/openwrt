@@ -7,7 +7,7 @@
 
 define Profile/InternetBox
   NAME:=T-Mobile "InternetBox"
-  PACKAGES:=kmod-madwifi \
+  PACKAGES:=kmod-ath5k \
 		ldconfig ldd \
 		ip tc wpa-supplicant wpa-cli
 endef
