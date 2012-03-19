@@ -7,7 +7,7 @@
 
 define Profile/Default
   NAME:=Default Profile
-  PACKAGES:=kmod-madwifi
+  PACKAGES:=kmod-ath5k
 endef
 
 define Profile/Default/Description

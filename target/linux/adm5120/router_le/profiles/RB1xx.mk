@@ -7,7 +7,7 @@
 
 define Profile/RouterBoard
 	NAME:=Mikrotik RouterBoard 1xx family
-	PACKAGES:=kmod-madwifi kmod-pata-rb153-cf
+	PACKAGES:=kmod-ath5k kmod-pata-rb153-cf
 endef
 
 define Profile/RouterBoard/Description

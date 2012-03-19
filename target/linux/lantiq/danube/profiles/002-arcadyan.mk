@@ -25,7 +25,7 @@ $(eval $(call Profile,ARV4510PW))
 define Profile/ARV4518PW
   NAME:=ARV4518PW - SMC7908A
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-ledtrig-usbdev \
-	kmod-madwifi wpad-mini \
+	kmod-ath5k wpad-mini \
 	kmod-ltq-dsl-firmware-a-danube
 endef
 
@@ -51,7 +51,7 @@ $(eval $(call Profile,ARV4520PW))
 define Profile/ARV4525PW
   NAME:=ARV4525PW - Speedport W502V
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-ledtrig-usbdev \
-	kmod-madwifi wpad-mini \
+	kmod-ath5k wpad-mini \
 	kmod-ltq-dsl-firmware-b-danube
 endef
 
@@ -76,7 +76,7 @@ $(eval $(call Profile,ARV7525PW))
 define Profile/ARV452CPW
   NAME:=ARV452CPW - Arcor Easybox 801
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-ledtrig-usbdev \
-	kmod-madwifi wpad-mini \
+	kmod-ath5k wpad-mini \
 	kmod-ltq-dsl-firmware-b-danube
 endef
 
