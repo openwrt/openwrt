@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -890,3 +890,18 @@ endef
 
 $(eval $(call KernelPackage,serial-8250))
 
+
+define KernelPackage/acpi-button
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=ACPI Button Support
+  DEPENDS:=@(TARGET_x86_generic||TARGET_x86_kvm_guest||TARGET_x86_xen_domu) +kmod-input-evdev
+  KCONFIG:=CONFIG_ACPI_BUTTON
+  FILES:=$(LINUX_DIR)/drivers/acpi/button.ko
+  AUTOLOAD:=$(call AutoLoad,06,button)
+endef
+
+define KernelPackage/acpi-button/description
+ Kernel module for ACPI Button support
+endef
+
+$(eval $(call KernelPackage,acpi-button))
