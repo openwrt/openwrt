@@ -71,6 +71,4 @@ struct rb7xx_nand_platform_data {
 	void (*latch_change)(u32, u32);
 };
 
-int rb750_latch_change(u32 mask_clr, u32 mask_set);
-
 #endif /* _MACH_RB750_H */
