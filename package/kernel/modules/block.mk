@@ -171,6 +171,7 @@ define KernelPackage/ata-sis
   KCONFIG:=CONFIG_SATA_SIS
   FILES:=$(LINUX_DIR)/drivers/ata/sata_sis.ko
   AUTOLOAD:=$(call AutoLoad,41,sata_sis,1)
+  $(call AddDepends/ata)
 endef
 
 define KernelPackage/ata-sis/description
