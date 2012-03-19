@@ -64,7 +64,7 @@ static struct platform_device rb750_nand_device = {
 	}
 };
 
-int rb750_latch_change(u32 mask_clr, u32 mask_set)
+static void rb750_latch_change(u32 mask_clr, u32 mask_set)
 {
 	static DEFINE_SPINLOCK(lock);
 	static u32 latch_set = RB750_LED_BITS | RB750_LVC573_LE;
@@ -72,7 +72,6 @@ int rb750_latch_change(u32 mask_clr, u32 mask_set)
 	static u32 latch_clr;
 	unsigned long flags;
 	u32 t;
-	int ret = 0;
 
 	spin_lock_irqsave(&lock, flags);
 
@@ -105,13 +104,9 @@ int rb750_latch_change(u32 mask_clr, u32 mask_set)
 		__raw_readl(base + AR71XX_GPIO_REG_CLEAR);
 	}
 
-	ret = 1;
-
 unlock:
 	spin_unlock_irqrestore(&lock, flags);
-	return ret;
 }
-EXPORT_SYMBOL_GPL(rb750_latch_change);
 
 static void rb750_nand_enable_pins(void)
 {
@@ -125,11 +120,6 @@ static void rb750_nand_disable_pins(void)
 	ath79_gpio_function_setup(AR724X_GPIO_FUNC_SPI_EN,
 				  AR724X_GPIO_FUNC_JTAG_DISABLE);
 	rb750_latch_change(0, RB750_LVC573_LE);
-}
-
-static void rb750_nand_latch_change(u32 clear, u32 set)
-{
-	rb750_latch_change(clear, set);
 }
 
 static void __init rb750_setup(void)
@@ -153,13 +143,13 @@ static void __init rb750_setup(void)
 
 	rb750_leds_data.num_leds = ARRAY_SIZE(rb750_leds);
 	rb750_leds_data.leds = rb750_leds;
-	rb750_leds_data.latch_change = rb750_nand_latch_change;
+	rb750_leds_data.latch_change = rb750_latch_change;
 	platform_device_register(&rb750_leds_device);
 
 	rb750_nand_data.nce_line = RB750_NAND_NCE;
 	rb750_nand_data.enable_pins = rb750_nand_enable_pins;
 	rb750_nand_data.disable_pins = rb750_nand_disable_pins;
-	rb750_nand_data.latch_change = rb750_nand_latch_change;
+	rb750_nand_data.latch_change = rb750_latch_change;
 	platform_device_register(&rb750_nand_device);
 }
 
