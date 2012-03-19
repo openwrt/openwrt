@@ -1,5 +1,12 @@
+#!/bin/sh
 # 6in4.sh - IPv6-in-IPv4 tunnel backend
 # Copyright (c) 2010 OpenWrt.org
+
+[ -n "$INCLUDE_ONLY" ] || {
+	. /etc/functions.sh
+	. ../netifd-proto.sh
+	init_proto "$@"
+}
 
 find_6in4_wanif() {
 	local if=$(ip -4 r l e 0.0.0.0/0); if="${if#default* dev }"; if="${if%% *}"
@@ -23,82 +30,109 @@ coldplug_interface_6in4() {
 	setup_interface_6in4 "6in4-$1" "$1"
 }
 
-setup_interface_6in4() {
-	local iface="$1"
-	local cfg="$2"
+
+tun_error() {
+	local cfg="$1"; shift;
+
+	[ -n "$1" ] && proto_notify_error "$cfg" "$@"
+	proto_block_restart "$cfg"
+}
+
+proto_6in4_setup() {
+	local cfg="$1"
+	local iface="$2"
 	local link="6in4-$cfg"
 
-	local local4=$(uci_get network "$cfg" ipaddr)
+	json_get_var mtu mtu
+	json_get_var ttl ttl
+	json_get_var local4 ipaddr
+	json_get_var remote4 peeraddr
+	json_get_var ip6addr ip6addr
+	json_get_var tunnelid tunnelid
+	json_get_var username username
+	json_get_var password password
 
-	local remote4
-	config_get remote4 "$cfg" peeraddr
+	[ -z "$ip6addr" -o -z "$remote4" ] && {
+		tun_error "$cfg" "MISSING_ADDRESS"
+		return
+	}
 
-	local local6
-	config_get local6 "$cfg" ip6addr
-
-	local mtu
-	config_get mtu "$cfg" mtu
-
-	local ttl
-	config_get ttl "$cfg" ttl
-
-	local metric
-	config_get metric "$cfg" metric
-
-	local defaultroute
-	config_get_bool defaultroute "$cfg" defaultroute 1
-
-	# If local4 is unset, guess local IPv4 address from the
-	# interface used by the default route.
 	[ -z "$local4" ] && {
 		local wanif=$(find_6in4_wanif)
-		[ -n "$wanif" ] && {
-			local4=$(find_6in4_wanip "$wanif")
-			uci_set_state network "$cfg" wan_device "$wanif"
+		[ -z "$wanif" ] && {
+			tun_error "$cfg" "NO_WAN_LINK"
+			return
+		}
+
+		. /lib/network/config.sh
+		local wancfg="$(find_config "$wanif")"
+		[ -z "$wancfg" ] && {
+			tun_error "$cfg" "NO_WAN_LINK"
+			return
+		}
+
+		# If local4 is unset, guess local IPv4 address from the
+		# interface used by the default route.
+		[ -n "$wanif" ] && local4=$(find_6in4_wanip "$wanif")
+
+		[ -z "$local4" ] && {
+			tun_error "$cfg" "NO_WAN_LINK"
+			return
 		}
 	}
 
-	[ -n "$local4" ] && {
-		# creating the tunnel below will trigger a net subsystem event
-		# prevent it from touching or iface by disabling .auto here
-		uci_set_state network "$cfg" ifname $link
-		uci_set_state network "$cfg" auto 0
+	local local6="${ip6addr%%/*}"
+	local mask6="${ip6addr##*/}"
+	[[ "$local6" = "$mask6" ]] && mask6=
 
-		ip tunnel add $link mode sit remote $remote4 local $local4 ttl ${ttl:-64}
-		ip link set $link up
-		ip link set mtu ${mtu:-1280} dev $link
-		ip addr add $local6 dev $link
+	proto_init_update "$link" 1
+	proto_add_ipv6_address "$local6" "$mask6"
+	proto_add_ipv6_route "::" 0
 
-		uci_set_state network "$cfg" ipaddr $local4
-		uci_set_state network "$cfg" ip6addr $local6
+	proto_add_tunnel
+	json_add_string mode sit
+	json_add_int mtu "${mtu:-1280}"
+	json_add_int ttl "${ttl:-64}"
+	json_add_string local "$local4"
+	json_add_string remote "$remote4"
+	proto_close_tunnel
 
-		[ "$defaultroute" = 1 ] && {
-			ip -6 route add ::/0 ${metric:+metric $metric} dev $link
-			uci_set_state network "$cfg" defaultroute 1
+	proto_send_update "$cfg"
+
+	[ -n "$tunnelid" -a -n "$username" -a -n "$password" ] && {
+		[ "${#password}" == 32 -a -z "${password//[a-fA-F0-9]/}" ] || {
+			password="$(echo -n "$password" | md5sum)"; password="${password%% *}"
 		}
 
-		env -i ACTION="ifup" INTERFACE="$cfg" DEVICE="$link" PROTO=6in4 /sbin/hotplug-call "iface" &
-	} || {
-		echo "Cannot determine local IPv4 address for 6in4 tunnel $cfg - skipping"
+		local url="http://ipv4.tunnelbroker.net/ipv4_end.php?ip=AUTO&apikey=$username&pass=$password&tid=$tunnelid"
+		local try=0
+		local max=3
+
+		while [ $((++try)) -le $max ]; do
+			wget -qO/dev/null "$url" 2>/dev/null && break
+			sleep 1
+		done
 	}
 }
 
-stop_interface_6in4() {
+proto_6in4_teardown() {
 	local cfg="$1"
-	local link="6in4-$cfg"
+}
 
-	local local6=$(uci_get_state network "$cfg" ip6addr)
-	local defaultroute=$(uci_get_state network "$cfg" defaultroute)
+proto_6in4_init_config() {
+	no_device=1             
+	available=1
 
-	grep -qs "^ *$link:" /proc/net/dev && {
-		env -i ACTION="ifdown" INTERFACE="$cfg" DEVICE="$link" PROTO=6in4 /sbin/hotplug-call "iface" &
+	proto_config_add_string "ipaddr"
+	proto_config_add_string "ip6addr"
+	proto_config_add_string "peeraddr"
+	proto_config_add_string "tunnelid"
+	proto_config_add_string "username"
+	proto_config_add_string "password"
+	proto_config_add_int "mtu"
+	proto_config_add_int "ttl"
+}
 
-		[ "$defaultroute" = "1" ] && {
-			ip -6 route del ::/0 dev $link
-		}
-
-		ip addr del $local6 dev $link
-		ip link set $link down
-		ip tunnel del $link
-	}
+[ -n "$INCLUDE_ONLY" ] || {
+	add_protocol 6in4
 }
