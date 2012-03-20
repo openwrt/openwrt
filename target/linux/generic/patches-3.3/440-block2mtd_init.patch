@@ -106,8 +106,8 @@
  {
 --- a/block/partition-generic.c
 +++ b/block/partition-generic.c
-@@ -514,6 +514,7 @@ rescan:
- 	kfree(state);
+@@ -546,6 +546,7 @@ int invalidate_partitions(struct gendisk
+ 
  	return 0;
  }
 +EXPORT_SYMBOL(rescan_partitions);
