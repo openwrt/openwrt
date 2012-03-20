@@ -156,23 +156,40 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/include/pppd $(1)/usr/include/
 endef
 
+ifneq ($(CONFIG_PACKAGE_netifd),)
+  define Package/ppp/script_install
+	$(INSTALL_DIR) $(1)/lib/netifd/proto
+	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/netifd/proto/
+  endef
+else
+  define Package/ppp/script_install
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_BIN) ./files.old/ppp.sh $(1)/lib/network/
+	$(INSTALL_BIN) ./files.old/etc/ppp/ip-up $(1)/etc/ppp/
+	$(INSTALL_DIR) $(1)/etc/ppp/ip-up.d
+	$(INSTALL_BIN) ./files.old/etc/ppp/ip-down $(1)/etc/ppp/
+	$(INSTALL_DIR) $(1)/etc/ppp/ip-down.d
+	$(INSTALL_BIN) ./files.old/etc/ppp/ipv6-up $(1)/etc/ppp/
+	$(INSTALL_BIN) ./files.old/etc/ppp/ipv6-down $(1)/etc/ppp/
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_BIN) ./files.old/pppoe.sh $(1)/lib/network/
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_BIN) ./files.old/pppoa.sh $(1)/lib/network/
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/atm
+	$(INSTALL_DATA) ./files.old/etc/hotplug.d/atm/20-atm-modem $(1)/etc/hotplug.d/atm/
+  endef
+endif
+
 define Package/ppp/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppd $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/network/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_CONF) ./files/etc/ppp/chap-secrets $(1)/etc/ppp/
 	$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/
-	$(INSTALL_BIN) ./files/etc/ppp/ip-up $(1)/etc/ppp/
-	$(INSTALL_DIR) $(1)/etc/ppp/ip-up.d
-	$(INSTALL_BIN) ./files/etc/ppp/ip-down $(1)/etc/ppp/
-	$(INSTALL_DIR) $(1)/etc/ppp/ip-down.d
-	$(INSTALL_BIN) ./files/etc/ppp/ipv6-up $(1)/etc/ppp/
-	$(INSTALL_BIN) ./files/etc/ppp/ipv6-down $(1)/etc/ppp/
 	$(INSTALL_DATA) ./files/etc/ppp/options $(1)/etc/ppp/
 	ln -sf /tmp/resolv.conf.ppp $(1)/etc/ppp/resolv.conf
+	$(Package/ppp/script_install)
 endef
 Package/ppp-multilink/install=$(Package/ppp/install)
 
@@ -180,18 +197,12 @@ define Package/ppp-mod-pppoa/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/pppoatm.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_BIN) ./files/pppoa.sh $(1)/lib/network/
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/atm
-	$(INSTALL_DATA) ./files/etc/hotplug.d/atm/20-atm-modem $(1)/etc/hotplug.d/atm/
 endef
 
 define Package/ppp-mod-pppoe/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/rp-pppoe.so \
 		$(1)/usr/lib/pppd/$(PKG_VERSION)/
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_BIN) ./files/pppoe.sh $(1)/lib/network/
 endef
 
 define Package/ppp-mod-radius/install
