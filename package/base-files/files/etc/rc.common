@@ -1,7 +1,8 @@
 #!/bin/sh
 # Copyright (C) 2006-2011 OpenWrt.org
 
-. $IPKG_INSTROOT/etc/functions.sh
+. $IPKG_INSTROOT/lib/functions.sh
+. $IPKG_INSTROOT/lib/functions/service.sh
 
 initscript=$1
 action=${2:-help}
