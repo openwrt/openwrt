@@ -3,6 +3,8 @@
 
 # DEBUG="echo"
 
+. /lib/functions/service.sh
+
 do_sysctl() {
 	[ -n "$2" ] && \
 		sysctl -n -e -w "$1=$2" >/dev/null || \
