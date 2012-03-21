@@ -1541,7 +1541,8 @@ static int nl80211_get_scanlist_cb(struct nl_msg *msg, void *arg)
 
 	if (bss[NL80211_BSS_SIGNAL_MBM])
 	{
-		sl->e->signal = nla_get_u32(bss[NL80211_BSS_SIGNAL_MBM]) / 100;
+		sl->e->signal =
+			(uint8_t)((int32_t)nla_get_u32(bss[NL80211_BSS_SIGNAL_MBM]) / 100);
 
 		rssi = sl->e->signal - 0x100;
 
