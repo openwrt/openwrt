@@ -442,8 +442,8 @@ ar8216_init_port(struct ar8216_priv *priv, int port)
 	if (port == AR8216_PORT_CPU) {
 		priv->write(priv, AR8216_REG_PORT_STATUS(port),
 			AR8216_PORT_STATUS_LINK_UP |
-			ar8xxx_has_gige(priv) ? AR8216_PORT_SPEED_1000M :
-						AR8216_PORT_SPEED_100M |
+			(ar8xxx_has_gige(priv) ?
+                                AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
 			AR8216_PORT_STATUS_TXMAC |
 			AR8216_PORT_STATUS_RXMAC |
 			((priv->chip_type == AR8316) ? AR8216_PORT_STATUS_RXFLOW : 0) |
