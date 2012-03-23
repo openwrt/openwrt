@@ -360,9 +360,12 @@ dhcp_srv_add() {
 	[ -n "$target" ] || return 0
 
 	config_get port "$cfg" port
+	[ -n "$port" ] || return 0
 
-	local service="$srv,$target"
-	[ -n "$port" ] && service="$service,$port"
+	config_get class "$cfg" class
+	config_get weight "$cfg" weight
+
+	local service="$srv,$target,$port${class:+,$class${weight:+,$weight}}"
 
 	append args "-W $service"
 }
