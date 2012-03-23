@@ -101,10 +101,19 @@ $(STAGING_DIR_HOST)/bin/$(1): $(STAGING_DIR)/.prepared
 endef
 endif
 
+$(STAGING_DIR_HOST)/bin/stat: $(STAGING_DIR)/.prepared
+	@if stat --version > /dev/null 2>&1; then \
+		ln -s `which stat` $@; \
+	elif gstat --version > /dev/null 2>&1; then \
+		ln -s `which gstat` $@; \
+	else \
+		echo "GNU stat not found"; \
+		false; \
+	fi
+
 $(eval $(call PrepareCommand,find,gfind find))
 $(eval $(call PrepareCommand,md5sum,md5sum $(SCRIPT_DIR)/md5sum))
 $(eval $(call PrepareCommand,cp,gcp cp))
-$(eval $(call PrepareCommand,stat,gstat stat))
 $(eval $(call PrepareCommand,seq,gseq seq))
 
 $(curdir)/cmddeps = $(patsubst %,$(STAGING_DIR_HOST)/bin/%,find md5sum cp stat seq)
