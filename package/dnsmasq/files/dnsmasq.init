@@ -370,6 +370,21 @@ dhcp_srv_add() {
 	append args "-W $service"
 }
 
+dhcp_mx_add() {
+	local cfg="$1"
+
+	[ -n "$domain" ] || return 0
+
+	config_get relay "$cfg" relay
+	[ -n "$relay" ] || return 0
+
+	config_get pref "$cfg" pref 0
+
+	local service="$domain,$relay,$pref"
+
+	append args "--mx-host=$service"
+}
+
 dhcp_cname_add() {
 	local cfg="$1"
 	local cname target
@@ -404,6 +419,7 @@ start() {
 	config_foreach dhcp_subscrid_add subscrid
 	config_foreach dhcp_domain_add domain
 	config_foreach dhcp_srv_add srvhost
+	config_foreach dhcp_mx_add mxhost
 	config_foreach dhcp_add dhcp
 	config_foreach dhcp_cname_add cname
 
