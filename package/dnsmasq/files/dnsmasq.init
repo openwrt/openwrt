@@ -372,7 +372,9 @@ dhcp_srv_add() {
 
 dhcp_mx_add() {
 	local cfg="$1"
+	local domain relay pref
 
+	config_get domain "$cfg" domain
 	[ -n "$domain" ] || return 0
 
 	config_get relay "$cfg" relay
