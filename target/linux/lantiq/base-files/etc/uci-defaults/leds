@@ -83,6 +83,14 @@ EOF
 board=$(lantiq_board_name)
 
 case "$board" in
+ARV4520PW|ARV452CPW)
+	set_led_netdev "wifi" "wifi" "soc:blue:wifi" "wlan0"
+	set_led_usbdev "usb" "USB" "soc:blue:usb" "1-1"
+	set_led_default "fxs1" "fxs1" "soc:blue:fxs1" "1"
+	set_led_default "fxs2" "fxs2" "soc:blue:fxs2" "1"
+	set_led_default "online" "online" "soc:blue:internet" "1"
+	;;
+
 ARV7525PW)
 	set_led_netdev "wifi" "wifi" "soc:green:wifi" "wlan0"
 	set_led_default "fxs1" "fxs1" "soc:green:fxs1" "1"
@@ -91,15 +99,30 @@ ARV7525PW)
 	set_led_default "online" "online" "soc:green:online" "1"
 	;;
 
+ARV4525PW)
+	set_led_netdev "wifi" "wifi" "soc:green:wifi" "wlan0"
+	set_led_default "fxs1" "fxs1" "soc:green:fxs1" "1"
+	set_led_default "fxs2" "fxs2" "soc:green:fxs2" "1"
+	set_led_default "dsl" "dsl" "soc:green:dsl" "1"
+	set_led_default "online" "online" "soc:green:online" "1"
+	;;
+
 GIGASX76X)
 	set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
-	set_led_netdev "online" "online" "soc:green:online" "nas0"
+	set_led_netdev "online" "online" "soc:green:online" "pppoe-wan"
 	set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
-	set_led_default "adsl" "adsl" "soc:green:adsl" "0"
-	set_led_default "voip" "voip" "soc:green:voip" "0"
-	set_led_default "phone1" "fxs1" "soc:green:phone1" "0"
-	set_led_default "phone2" "fxs2" "soc:green:phone2" "0"
-	set_led_default "line" "line" "soc:green:line" "0"
+	;;
+
+ARV4519PW)
+	set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
+	set_led_netdev "internet" "internet" "soc:green:internet" "pppoe-wan"
+	set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
+	;;
+
+ARV7518PW)
+	set_led_wlan "wifi" "wifi" "soc:green:wifi" "phy0radio"
+	set_led_netdev "internet" "internet" "soc:green:internet" "pppoe-wan"
+	set_led_usbdev "usb" "USB" "soc:green:usb" "1-1"
 	;;
 esac
 
