@@ -7,9 +7,10 @@
  *  by the Free Software Foundation.
  */
 
-#ifndef _DEV_WIFI_ATH5K_H__
-#define _DEV_WIFI_ATH5K_H__
+#ifndef _DEV_WIFI_ATHXK_H__
+#define _DEV_WIFI_ATHXK_H__
 
 extern void ltq_register_ath5k(u16 *eeprom_data, u8 *macaddr);
+extern void ltq_register_ath9k(u16 *eeprom_data, u8 *macaddr);
 
 #endif
