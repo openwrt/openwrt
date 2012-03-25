@@ -35,6 +35,18 @@ endef
 
 $(eval $(call Profile,ARV4518PW))
 
+define Profile/ARV4519PW
+  NAME:=ARV4519PW - Vodafone, Pirelli
+  PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-ledtrig-usbdev \
+	kmod-ath5k wpad-mini kmod-ltq-dsl-firmware-a-danube
+endef
+
+define Profile/ARV4519PW/Description
+	Package set optimized for the ARV4519PW
+endef
+
+$(eval $(call Profile,ARV4519PW))
+
 define Profile/ARV4520PW
   NAME:=ARV4520PW - Arcor Easybox 800
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-ledtrig-usbdev \
@@ -50,8 +62,7 @@ $(eval $(call Profile,ARV4520PW))
 
 define Profile/ARV4525PW
   NAME:=ARV4525PW - Speedport W502V
-  PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-ledtrig-usbdev \
-	kmod-ath5k wpad-mini \
+  PACKAGES:=kmod-ath5k wpad-mini \
 	kmod-ltq-dsl-firmware-b-danube
 endef
 
@@ -112,10 +123,9 @@ endef
 $(eval $(call Profile,ARV752DPW22))
 
 define Profile/ARV7518PW
-  NAME:=ARV7518PW - ASTORIA
+  NAME:=ARV7518PW - ya.com, Astoria
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg kmod-ledtrig-usbdev \
-	kmod-ath9k wpad-mini \
-	ltq-dsl-firmware-a
+	kmod-ath9k wpad-mini kmod-ltq-dsl-firmware-a-danube
 endef
 
 define Profile/ARV7518PW/Description
