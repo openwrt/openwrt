@@ -278,9 +278,11 @@ annex_m2p=00_00_00_00_00_00_04_00
 #
 start() {
 	local annex
+	local fwannex
 	local xtu
 	config_load network
-	config_get annex atm annex
+	config_get annex adsl annex
+	config_get fwannex adsl fwannex
 
 	# get xtu
 	eval "xtu=\"\${annex_$annex}\""
@@ -289,10 +291,14 @@ start() {
 	[ -n "${annex}" -a -z "${xtu}" ] &&
 		echo "unknown annex mode $annex"
 
+	# check for invalid fw annex mode
+	[[ "$fwannex" != "a" && "$fwannex" != "b" ]] &&
+		echo "invalid fwannex: $fwannex"
+
 	# start CPE dsl daemon in the background
 	service_start /sbin/dsl_cpe_control -i${xtu} \
 			-n /sbin/dsl_notify.sh \
-			-f /lib/firmware/ModemHWE.bin
+			-f /lib/firmware/dsl-fw-${fwannex}.bin
 }
 
 #
