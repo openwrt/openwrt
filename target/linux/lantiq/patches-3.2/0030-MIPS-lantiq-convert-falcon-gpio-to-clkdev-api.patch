@@ -1,0 +1,73 @@
+From 3cb13f9992ae1948b6ca05c88d2bd25cf9e7cd41 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 8 Mar 2012 11:22:03 +0100
+Subject: [PATCH 30/70] MIPS: lantiq: convert falcon gpio to clkdev api
+
+The falcon gpio clocks used to be enabled when registering the platform device.
+Move this code into the driver and use clkdev api.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/lantiq/falcon/devices.c |    5 -----
+ arch/mips/lantiq/falcon/gpio.c    |   10 ++++++++++
+ 2 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/arch/mips/lantiq/falcon/devices.c b/arch/mips/lantiq/falcon/devices.c
+index 4f47b44..6cd7a88 100644
+--- a/arch/mips/lantiq/falcon/devices.c
++++ b/arch/mips/lantiq/falcon/devices.c
+@@ -111,9 +111,6 @@ falcon_register_gpio(void)
+ 		falcon_gpio1_res, ARRAY_SIZE(falcon_gpio1_res));
+ 	platform_device_register_simple("falcon_gpio", 2,
+ 		falcon_gpio2_res, ARRAY_SIZE(falcon_gpio2_res));
+-	ltq_sysctl_activate(SYSCTL_SYS1, ACTS_PADCTRL1 | ACTS_P1);
+-	ltq_sysctl_activate(SYSCTL_SYSETH, ACTS_PADCTRL0 |
+-		ACTS_PADCTRL2 | ACTS_P0 | ACTS_P2);
+ }
+ 
+ void __init
+@@ -123,6 +120,4 @@ falcon_register_gpio_extra(void)
+ 		falcon_gpio3_res, ARRAY_SIZE(falcon_gpio3_res));
+ 	platform_device_register_simple("falcon_gpio", 4,
+ 		falcon_gpio4_res, ARRAY_SIZE(falcon_gpio4_res));
+-	ltq_sysctl_activate(SYSCTL_SYS1,
+-		ACTS_PADCTRL3 | ACTS_PADCTRL4 | ACTS_P3 | ACTS_P4);
+ }
+diff --git a/arch/mips/lantiq/falcon/gpio.c b/arch/mips/lantiq/falcon/gpio.c
+index a44f71b..4147d61 100644
+--- a/arch/mips/lantiq/falcon/gpio.c
++++ b/arch/mips/lantiq/falcon/gpio.c
+@@ -11,6 +11,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/slab.h>
+ #include <linux/export.h>
++#include <linux/err.h>
+ #include <linux/platform_device.h>
+ 
+ #include <lantiq_soc.h>
+@@ -71,6 +72,7 @@ struct falcon_gpio_port {
+ 	void __iomem *port;
+ 	unsigned int irq_base;
+ 	unsigned int chained_irq;
++	struct clk *clk;
+ };
+ 
+ static struct falcon_gpio_port ltq_gpio_port[MAX_PORTS];
+@@ -332,6 +334,14 @@ falcon_gpio_probe(struct platform_device *pdev)
+ 		goto err;
+ 	}
+ 
++	gpio_port->clk = clk_get(&pdev->dev, NULL);
++	if (IS_ERR(gpio_port->clk)) {
++		dev_err(&pdev->dev, "Could not get clock\n");
++		ret = PTR_ERR(gpio_port->clk);;
++		goto err;
++	}
++	clk_enable(gpio_port->clk);
++
+ 	if (irq > 0) {
+ 		/* irq_chip support */
+ 		gpio_port->gpio_chip.to_irq = falcon_gpio_to_irq;
+-- 
+1.7.7.1
+

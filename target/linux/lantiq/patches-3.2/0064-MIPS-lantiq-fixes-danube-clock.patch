@@ -1,0 +1,57 @@
+From 1303ac4fbe98c7132717102223089dc10d0ab4a2 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 19 Mar 2012 15:53:37 +0100
+Subject: [PATCH 64/70] MIPS: lantiq: fixes danube clock
+
+---
+ arch/mips/lantiq/xway/clk.c |   20 ++++++++++----------
+ 1 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/arch/mips/lantiq/xway/clk.c b/arch/mips/lantiq/xway/clk.c
+index 2bafc04..5d850dc 100644
+--- a/arch/mips/lantiq/xway/clk.c
++++ b/arch/mips/lantiq/xway/clk.c
+@@ -181,7 +181,7 @@ unsigned long ltq_danube_io_region_clock(void)
+ {
+ 	unsigned int ret = ltq_get_pll0_fosc();
+ 
+-	switch (ltq_cgu_r32(LTQ_CGU_PLL2_CFG) & CGU_SYS_DDR_SEL) {
++	switch (ltq_cgu_r32(LTQ_CGU_SYS) & 0x3) {
+ 	default:
+ 	case 0:
+ 		return (ret + 1) / 2;
+@@ -203,6 +203,15 @@ unsigned long ltq_danube_fpi_bus_clock(int fpi)
+ 	return ret;
+ }
+ 
++unsigned long ltq_danube_fpi_hz(void)
++{
++	unsigned long ddr_clock = DDR_HZ;
++
++	if (ltq_cgu_r32(LTQ_CGU_SYS) & 0x40)
++		return ddr_clock >> 1;
++	return ddr_clock;
++}
++
+ unsigned long ltq_danube_cpu_hz(void)
+ {
+ 	switch (ltq_cgu_r32(LTQ_CGU_SYS) & 0xc) {
+@@ -241,15 +250,6 @@ unsigned long ltq_ar9_cpu_hz(void)
+ 		return ltq_ar9_sys_hz();
+ }
+ 
+-unsigned long ltq_danube_fpi_hz(void)
+-{
+-	unsigned long ddr_clock = DDR_HZ;
+-
+-	if (ltq_cgu_r32(LTQ_CGU_SYS) & 0x40)
+-		return ddr_clock >> 1;
+-	return ddr_clock;
+-}
+-
+ unsigned long ltq_vr9_cpu_hz(void)
+ {
+ 	unsigned int cpu_sel;
+-- 
+1.7.7.1
+
