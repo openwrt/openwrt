@@ -1,0 +1,21 @@
+#ifndef __CONFIG_H_4519
+#define __CONFIG_H_4519
+
+#define CONFIG_ARV4519		1
+#define CONFIG_ARCADYAN		"ARV4519PW"
+
+#define CONFIG_SYS_MAX_RAM	32*1024*1024
+#define CONFIG_USE_DDR_PSC_32	1
+#define	CONFIG_SYS_PROMPT	"ARV4519 => "
+
+#define CONFIG_AR8216_SWITCH	1
+#define CONFIG_EBU_GPIO		0
+#define CONFIG_SWITCH_PORT0
+#define CONFIG_SWITCH_PIN	13
+#define CONFIG_BUTTON_PORT1
+#define CONFIG_BUTTON_PIN	12
+#define CONFIG_BUTTON_LEVEL	0
+
+#include "arcadyan-common.h"
+
+#endif
