@@ -81,138 +81,41 @@ define Image/BuildKernelEVA/Template
 endef
 
 ifeq ($(CONFIG_TARGET_lantiq_danube),y)
-define Image/BuildKernel/Profile/EASY50712
-	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
-endef
 
-define Image/Build/Profile/EASY50712
-	$(call Image/Build/$(1),$(1),EASY50712)
-endef
+Image/BuildKernel/Profile/EASY50712=$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV3527P=$(call Image/BuildKernel/Template,ARV3527P,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV4510PW=$(call Image/BuildKernel/Template,ARV4510PW,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV4518PW=$(call Image/BuildKernel/Template,ARV4518PW,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV4519PW=$(call Image/BuildKernel/Template,ARV4519PW,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV4520PW=$(call Image/BuildKernel/Template,ARV4520PW,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV4525PW=$(call Image/BuildKernel/Template,ARV4525PW,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV7525PW=$(call Image/BuildKernel/Template,ARV7525PW,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV452CPW=$(call Image/BuildKernel/Template,ARV452CPW,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV7518PW=$(call Image/BuildKernel/Template,ARV7518PW,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV752DPW=$(call Image/BuildKernel/Template,ARV752DPW,$(xway_cmdline))
+Image/BuildKernel/Profile/ARV752DPW22=$(call Image/BuildKernel/Template,ARV752DPW22,$(xway_cmdline))
+Image/BuildKernel/Profile/GIGASX76X=$(call Image/BuildKernel/Template,GIGASX76X,$(sx76x_cmdline))
+Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B,$(xway_cmdline))
+Image/BuildKernel/Profile/BTHOMEHUBV2BOPENRG=$(call Image/BuildKernel/Template,BTHOMEHUBV2BOPENRG,$(xway_cmdline))
 
-define Image/BuildKernel/Profile/EASY50812
-	$(call Image/BuildKernel/Template,EASY50812,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/EASY50812
-	$(call Image/Build/$(1),$(1),EASY50812)
-endef
-
-define Image/BuildKernel/Profile/ARV3527P
-	$(call Image/BuildKernel/Template,ARV3527P,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV3527P
-	$(call Image/Build/$(1),$(1),ARV3527P)
-endef
-
-define Image/BuildKernel/Profile/ARV4510PW
-	$(call Image/BuildKernel/Template,ARV4510PW,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV4510PW
-	$(call Image/Build/$(1),$(1),ARV4510PW)
-endef
-
-define Image/BuildKernel/Profile/ARV4518PW
-	$(call Image/BuildKernel/Template,ARV4518PW,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV4518PW
-	$(call Image/Build/$(1),$(1),ARV4518PW)
-endef
-
-define Image/BuildKernel/Profile/ARV4519PW
-	$(call Image/BuildKernel/Template,ARV4519PW,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV4519PW
-	$(call Image/Build/$(1),$(1),ARV4519PW,BRNDA4519,0x12345678,memsize=32)
-endef
-
-define Image/BuildKernel/Profile/ARV4520PW
-	$(call Image/BuildKernel/Template,ARV4520PW,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV4520PW
-	$(call Image/Build/$(1),$(1),ARV4520PW)
-endef
-
-define Image/BuildKernel/Profile/ARV4525PW
-	$(call Image/BuildKernel/Template,ARV4525PW,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV4525PW
-	$(call Image/Build/$(1),$(1),ARV4525PW,BRNDTW502,0x12345678,memsize=32)
-endef
-
-define Image/BuildKernel/Profile/ARV7525PW
-	$(call Image/BuildKernel/Template,ARV7525PW,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV7525PW
-	$(call Image/Build/$(1),$(1),ARV7525PW)
-endef
-
-define Image/BuildKernel/Profile/ARV452CPW
-	$(call Image/BuildKernel/Template,ARV452CPW,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV452CPW
-	$(call Image/Build/$(1),$(1),ARV452CPW)
-endef
-
-define Image/BuildKernel/Profile/ARV7518PW
-	$(call Image/BuildKernel/Template,ARV7518PW,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV7518PW
-	$(call Image/Build/$(1),$(1),ARV7518PW,BRNDA7519,0x12345678,memsize=64)
-endef
-
-define Image/BuildKernel/Profile/ARV752DPW
-	$(call Image/BuildKernel/Template,ARV752DPW,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV752DPW
-	$(call Image/Build/$(1),$(1),ARV752DPW)
-endef
-
-define Image/BuildKernel/Profile/ARV752DPW22
-	$(call Image/BuildKernel/Template,ARV752DPW22,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/ARV752DPW22
-	$(call Image/Build/$(1),$(1),ARV752DPW22)
-endef
-
-define Image/BuildKernel/Profile/GIGASX76X
-	$(call Image/BuildKernel/Template,GIGASX76X,$(sx76x_cmdline))
-endef
-
-define Image/Build/Profile/GIGASX76X
-	$(call Image/Build/$(1),$(1),GIGASX76X)
-endef
-
-define Image/BuildKernel/Profile/BTHOMEHUBV2B
-	$(call Image/BuildKernel/Template,BTHOMEHUBV2B,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/BTHOMEHUBV2B
-	$(call Image/Build/$(1),$(1),BTHOMEHUBV2B)
-endef
-
-define Image/BuildKernel/Profile/BTHOMEHUBV2BOPENRG
-	$(call Image/BuildKernel/Template,BTHOMEHUBV2BOPENRG,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/BTHOMEHUBV2BOPENRG
-	$(call Image/Build/$(1),$(1),BTHOMEHUBV2BOPENRG)
-endef
+Image/Build/Profile/EASY50712=$(call Image/Build/$(1),$(1),EASY50712)
+Image/Build/Profile/ARV3527P=$(call Image/Build/$(1),$(1),ARV3527P)
+Image/Build/Profile/ARV4510PW=$(call Image/Build/$(1),$(1),ARV4510PW)
+Image/Build/Profile/ARV4518PW=$(call Image/Build/$(1),$(1),ARV4518PW)
+Image/Build/Profile/ARV4519PW=$(call Image/Build/$(1),$(1),ARV4519PW,BRNDA4519,0x12345678,memsize=32)
+Image/Build/Profile/ARV4520PW=$(call Image/Build/$(1),$(1),ARV4520PW,BRNDANUBE,0x12345678,memsize=32)
+Image/Build/Profile/ARV4525PW=$(call Image/Build/$(1),$(1),ARV4525PW,BRNDTW502,0x12345678,memsize=32)
+Image/Build/Profile/ARV7525PW=$(call Image/Build/$(1),$(1),ARV7525PW)
+Image/Build/Profile/ARV452CPW=$(call Image/Build/$(1),$(1),ARV452CPW)
+Image/Build/Profile/ARV7518PW=$(call Image/Build/$(1),$(1),ARV7518PW,BRNDA7519,0x12345678,memsize=64)
+Image/Build/Profile/ARV752DPW=$(call Image/Build/$(1),$(1),ARV752DPW)
+Image/Build/Profile/ARV752DPW22=$(call Image/Build/$(1),$(1),ARV752DPW22)
+Image/Build/Profile/GIGASX76X=$(call Image/Build/$(1),$(1),GIGASX76X)
+Image/Build/Profile/BTHOMEHUBV2B=$(call Image/Build/$(1),$(1),BTHOMEHUBV2B)
+Image/Build/Profile/BTHOMEHUBV2BOPENRG=$(call Image/Build/$(1),$(1),BTHOMEHUBV2BOPENRG)
 
 define Image/BuildKernel/Profile/Generic
-	$(call Image/BuildKernel/Template,EASY4010,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,EASY50712,$(xway_cmdline))
-	$(call Image/BuildKernel/Template,EASY50812,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV3527P,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4510PW,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,ARV4518PW,$(xway_cmdline))
@@ -231,9 +134,7 @@ define Image/BuildKernel/Profile/Generic
 endef
 
 define Image/Build/Profile/Generic
-	$(call Image/Build/$(1),$(1),EASY4010)
 	$(call Image/Build/$(1),$(1),EASY50712)
-	$(call Image/Build/$(1),$(1),EASY50812)
 	$(call Image/Build/$(1),$(1),ARV3527P)
 	$(call Image/Build/$(1),$(1),ARV4510PW)
 	$(call Image/Build/$(1),$(1),ARV4518PW)
@@ -254,29 +155,13 @@ endef
 endif
 
 ifeq ($(CONFIG_TARGET_lantiq_ar9),y)
-define Image/BuildKernel/Profile/WBMR
-	$(call Image/BuildKernel/Template,WBMR,$(xway_cmdline))
-endef
+Image/BuildKernel/Profile/WBMR=$(call Image/BuildKernel/Template,WBMR,$(xway_cmdline))
+Image/BuildKernel/Profile/DGN3500B=$(call Image/BuildKernel/Template,DGN3500B,$(xway_cmdline))
+Image/BuildKernel/Profile/FRITZ7320=$(call Image/BuildKernelEVA/Template,FRITZ7320,$(xway_cmdline))
 
-define Image/Build/Profile/WBMR
-	$(call Image/Build/$(1),$(1),WBMR)
-endef
-
-define Image/BuildKernel/Profile/DGN3500B
-	$(call Image/BuildKernel/Template,DGN3500B,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/DGN3500B
-	$(call Image/Build/$(1),$(1),DGN3500B)
-endef
-
-define Image/BuildKernel/Profile/FRITZ7320
-	$(call Image/BuildKernelEVA/Template,FRITZ7320,$(xway_cmdline))
-endef
-
-define Image/Build/Profile/FRITZ7320
-	$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
-endef
+Image/Build/Profile/WBMR=$(call Image/Build/$(1),$(1),WBMR)
+Image/Build/Profile/DGN3500B=$(call Image/Build/$(1),$(1),DGN3500B)
+Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
 
 define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,WBMR,$(xway_cmdline))
@@ -295,21 +180,12 @@ endef
 endif
 
 ifeq ($(CONFIG_TARGET_lantiq_falcon)$(CONFIG_TARGET_lantiq_falcon_stable),y)
-define Image/BuildKernel/Profile/EASY98000
-	$(call Image/BuildKernel/Template,EASY98000,$(falcon_cmdline))
-endef
 
-define Image/Build/Profile/EASY98000
-	$(call Image/Build/$(1),$(1),EASY98000)
-endef
+Image/BuildKernel/Profile/EASY98000=$(call Image/BuildKernel/Template,EASY98000,$(falcon_cmdline))
+Image/BuildKernel/Profile/EASY98020=$(call Image/BuildKernel/Template,EASY98020,$(falcon_cmdline))
 
-define Image/BuildKernel/Profile/EASY98020
-	$(call Image/BuildKernel/Template,EASY98020,$(falcon_cmdline))
-endef
-
-define Image/Build/Profile/EASY98020
-	$(call Image/Build/$(1),$(1),EASY98020)
-endef
+Image/Build/Profile/EASY98000=$(call Image/Build/$(1),$(1),EASY98000)
+Image/Build/Profile/EASY98020=$(call Image/Build/$(1),$(1),EASY98020)
 
 define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,EASY98000,$(falcon_cmdline))
@@ -326,13 +202,9 @@ endef
 endif
 
 ifeq ($(CONFIG_TARGET_lantiq_ase),y)
-define Image/BuildKernel/Profile/EASY50601
-	$(call Image/BuildKernel/Template,EASY50601,$(ase_cmdline))
-endef
 
-define Image/Build/Profile/EASY50601
-	$(call Image/Build/$(1),$(1),EASY50601)
-endef
+Image/BuildKernel/Profile/EASY50601=$(call Image/BuildKernel/Template,EASY50601,$(ase_cmdline))
+Image/Build/Profile/EASY50601=$(call Image/Build/$(1),$(1),EASY50601)
 
 define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,EASY50601,$(ase_cmdline))
@@ -352,9 +224,7 @@ define Image/BuildKernel/Profile/FRITZ3370
 	$(call Image/BuildKernelEVA/Template,FRITZ3370,$(xway_cmdline))
 endef
 
-define Image/Build/Profile/FRITZ3370
-	$(call Image/Build/$(1),$(1),FRITZ3370)
-endef
+Image/Build/Profile/FRITZ3370=$(call Image/Build/$(1),$(1),FRITZ3370)
 
 define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,FRITZ3370,$(xway_cmdline))
