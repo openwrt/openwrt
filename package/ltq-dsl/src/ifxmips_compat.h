@@ -34,6 +34,9 @@
 #define IFX_PMU_MODULE_PPE_EMA    (1 << 22)
 #define IFX_PMU_MODULE_PPE_TOP    (1 << 29)
 
+extern void ltq_pmu_enable(unsigned int module);
+extern void ltq_pmu_disable(unsigned int module);
+
 #define ifx_pmu_set(a,b)	{if(a == IFX_PMU_ENABLE) ltq_pmu_enable(b); else ltq_pmu_disable(b);}
 
 #define PPE_TOP_PMU_SETUP(__x)    ifx_pmu_set(IFX_PMU_MODULE_PPE_TOP, (__x))

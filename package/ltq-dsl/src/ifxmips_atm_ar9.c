@@ -40,6 +40,7 @@
 #include <linux/proc_fs.h>
 #include <linux/init.h>
 #include <linux/ioctl.h>
+#include <linux/clk.h>
 #include <asm/delay.h>
 
 /*
@@ -114,23 +115,27 @@ static inline void init_pmu(void)
 {
     //*(unsigned long *)0xBF10201C &= ~((1 << 15) | (1 << 13) | (1 << 9));
     //PPE_TOP_PMU_SETUP(IFX_PMU_ENABLE);
-    PPE_SLL01_PMU_SETUP(IFX_PMU_ENABLE);
+/*    PPE_SLL01_PMU_SETUP(IFX_PMU_ENABLE);
     PPE_TC_PMU_SETUP(IFX_PMU_ENABLE);
     PPE_EMA_PMU_SETUP(IFX_PMU_ENABLE);
     PPE_QSB_PMU_SETUP(IFX_PMU_ENABLE);
     PPE_TPE_PMU_SETUP(IFX_PMU_ENABLE);
-    DSL_DFE_PMU_SETUP(IFX_PMU_ENABLE);
+    DSL_DFE_PMU_SETUP(IFX_PMU_ENABLE);*/
+	struct clk *clk = clk_get_sys("ltq_dsl", NULL);
+	clk_enable(clk);
 }
 
 static inline void uninit_pmu(void)
 {
-    PPE_SLL01_PMU_SETUP(IFX_PMU_DISABLE);
+  /*  PPE_SLL01_PMU_SETUP(IFX_PMU_DISABLE);
     PPE_TC_PMU_SETUP(IFX_PMU_DISABLE);
     PPE_EMA_PMU_SETUP(IFX_PMU_DISABLE);
     PPE_QSB_PMU_SETUP(IFX_PMU_DISABLE);
     PPE_TPE_PMU_SETUP(IFX_PMU_DISABLE);
-    DSL_DFE_PMU_SETUP(IFX_PMU_DISABLE);
+    DSL_DFE_PMU_SETUP(IFX_PMU_DISABLE);*/
     //PPE_TOP_PMU_SETUP(IFX_PMU_DISABLE);
+	struct clk *clk = clk_get_sys("ltq_dsl", NULL);
+	clk_disable(clk);
 }
 
 static inline void reset_ppe(void)
