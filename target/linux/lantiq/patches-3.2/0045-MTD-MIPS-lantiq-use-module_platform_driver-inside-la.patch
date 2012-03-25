@@ -1,0 +1,64 @@
+From f94454615da63008ac865e6a7b03bbe79041e8c2 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 20 Feb 2012 12:15:25 +0100
+Subject: [PATCH 45/70] MTD: MIPS: lantiq: use module_platform_driver inside
+ lantiq map driver
+
+Reduce boilerplate code by converting driver to module_platform_driver.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Cc: linux-mtd@lists.infradead.org
+---
+ drivers/mtd/maps/lantiq-flash.c |   22 +++-------------------
+ 1 files changed, 3 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/mtd/maps/lantiq-flash.c b/drivers/mtd/maps/lantiq-flash.c
+index 764d468..b55212c 100644
+--- a/drivers/mtd/maps/lantiq-flash.c
++++ b/drivers/mtd/maps/lantiq-flash.c
+@@ -108,7 +108,7 @@ ltq_copy_to(struct map_info *map, unsigned long to,
+ 	spin_unlock_irqrestore(&ebu_lock, flags);
+ }
+ 
+-static int __init
++static int __devinit
+ ltq_mtd_probe(struct platform_device *pdev)
+ {
+ 	struct physmap_flash_data *ltq_mtd_data = dev_get_platdata(&pdev->dev);
+@@ -208,6 +208,7 @@ ltq_mtd_remove(struct platform_device *pdev)
+ }
+ 
+ static struct platform_driver ltq_mtd_driver = {
++	.probe = ltq_mtd_probe,
+ 	.remove = __devexit_p(ltq_mtd_remove),
+ 	.driver = {
+ 		.name = "ltq_nor",
+@@ -215,24 +216,7 @@ static struct platform_driver ltq_mtd_driver = {
+ 	},
+ };
+ 
+-static int __init
+-init_ltq_mtd(void)
+-{
+-	int ret = platform_driver_probe(&ltq_mtd_driver, ltq_mtd_probe);
+-
+-	if (ret)
+-		pr_err("ltq_nor: error registering platform driver");
+-	return ret;
+-}
+-
+-static void __exit
+-exit_ltq_mtd(void)
+-{
+-	platform_driver_unregister(&ltq_mtd_driver);
+-}
+-
+-module_init(init_ltq_mtd);
+-module_exit(exit_ltq_mtd);
++module_platform_driver(ltq_mtd_driver);
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
+-- 
+1.7.7.1
+

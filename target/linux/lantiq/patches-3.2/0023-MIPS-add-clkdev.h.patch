@@ -1,0 +1,49 @@
+From aeb5a729386db036163fa21a8f5e5e1f9a735ebf Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 16 Feb 2012 20:23:36 +0100
+Subject: [PATCH 23/70] MIPS: add clkdev.h
+
+For clkdev to work on MIPS we need this file
+
+include/linux/clkdev.h:#include <asm/clkdev.h>
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/clkdev.h |   25 +++++++++++++++++++++++++
+ 1 files changed, 25 insertions(+), 0 deletions(-)
+ create mode 100644 arch/mips/include/asm/clkdev.h
+
+diff --git a/arch/mips/include/asm/clkdev.h b/arch/mips/include/asm/clkdev.h
+new file mode 100644
+index 0000000..2624754
+--- /dev/null
++++ b/arch/mips/include/asm/clkdev.h
+@@ -0,0 +1,25 @@
++/*
++ *  based on arch/arm/include/asm/clkdev.h
++ *
++ *  Copyright (C) 2008 Russell King.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * Helper for the clk API to assist looking up a struct clk.
++ */
++#ifndef __ASM_CLKDEV_H
++#define __ASM_CLKDEV_H
++
++#include <linux/slab.h>
++
++#define __clk_get(clk)	({ 1; })
++#define __clk_put(clk)	do { } while (0)
++
++static inline struct clk_lookup_alloc *__clkdev_alloc(size_t size)
++{
++	return kzalloc(size, GFP_KERNEL);
++}
++
++#endif
+-- 
+1.7.7.1
+

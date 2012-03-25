@@ -1,0 +1,24 @@
+From 749d1baf548fda72bb1a74b7653415a63b00e8a0 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 23 Mar 2012 11:28:22 +0100
+Subject: [PATCH 69/70] MIPS: lantiq: adds USB_ARCH_HAS_HCD to CONFIG_LANTIQ
+
+---
+ arch/mips/Kconfig |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 12ee3df..81b22c1 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -229,6 +229,7 @@ config LANTIQ
+ 	select CLKDEV_LOOKUP
+ 	select HAVE_OPROFILE
+ 	select MIPS_MACHINE
++	select USB_ARCH_HAS_HCD
+ 
+ config LASAT
+ 	bool "LASAT Networks platforms"
+-- 
+1.7.7.1
+

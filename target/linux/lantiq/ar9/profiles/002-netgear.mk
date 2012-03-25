@@ -1,5 +1,5 @@
 define Profile/DGN3500B
-  NAME:=DGN3500B
+  NAME:=DGN3500B Netgear
   PACKAGES:= kmod-usb-core kmod-usb-dwc-otg
 endef
 
