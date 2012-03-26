@@ -1,0 +1,28 @@
+From: Guillaume Bourcier <guillaumebourcier@...>
+
+The algorithm computing daylight saving time incorrectly adds a day for
+each month after January for leap years. The clock shift from/to DST can
+be delayed if the last Sunday of a transition month is exactly seven
+days before the first of the following month.
+
+This change adds a day for the February month only.
+
+Signed-off-by: Guillaume Bourcier <guillaumebourcier@...>
+Signed-off-by: Richard Braun <rbraun@...>
+---
+ libc/misc/time/time.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/libc/misc/time/time.c b/libc/misc/time/time.c
+index 19d68e1..8e2ebf1 100644
+--- a/libc/misc/time/time.c	2012-03-26 09:55:20.741069297 +0200
++++ b/libc/misc/time/time.c	2012-03-26 09:55:57.369068289 +0200
+@@ -705,7 +705,7 @@
+ 					++day;
+ 				}
+ 				monlen = 31 + day_cor[r->month -1] - day_cor[r->month];
+-				if (isleap && (r->month > 1)) {
++				if (isleap && (r->month == 2)) {
+ 					++monlen;
+ 				}
+ 				/* Wweekday (0 is Sunday) of 1st of the month
