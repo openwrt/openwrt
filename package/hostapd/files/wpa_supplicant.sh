@@ -3,6 +3,8 @@ wpa_supplicant_setup_vif() {
 	local driver="$2"
 	local key="$key"
 	local options="$3"
+	local freq
+	[ -n "$4" ] && freq="frequency=$4"
 
 	# wpa_supplicant should use wext for mac80211 cards
 	[ "$driver" = "mac80211" ] && driver='wext'
@@ -59,6 +61,7 @@ wpa_supplicant_setup_vif() {
 		;;
 		*psk*)
 			key_mgmt='WPA-PSK'
+			[ "$mode" = "adhoc" -a "$driver" != "nl80211" ] && key_mgmt='WPA-NONE'
 			config_get_bool usepassphrase "$vif" usepassphrase 1
 			if [ "$usepassphrase" = "1" ]; then
 				passphrase="psk=\"${key}\""
@@ -123,11 +126,13 @@ wpa_supplicant_setup_vif() {
 	cat > /var/run/wpa_supplicant-$ifname.conf <<EOF
 ctrl_interface=/var/run/wpa_supplicant-$ifname
 network={
+	$mode
 	scan_ssid=1
 	ssid="$ssid"
 	$bssid
 	key_mgmt=$key_mgmt
 	$proto
+	$freq
 	$ieee80211w
 	$passphrase
 	$pairwise
