@@ -9,9 +9,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h>
 
@@ -42,46 +39,6 @@
 
 #define DIR_600_A1_NVRAM_ADDR	0x1f030000
 #define DIR_600_A1_NVRAM_SIZE	0x10000
-
-static struct mtd_partition dir_600_a1_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x030000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "nvram",
-		.offset		= 0x030000,
-		.size		= 0x010000,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x040000,
-		.size		= 0x0e0000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x120000,
-		.size		= 0x2c0000,
-	}, {
-		.name		= "mac",
-		.offset		= 0x3e0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "art",
-		.offset		= 0x3f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x040000,
-		.size		= 0x3a0000,
-	}
-};
-
-static struct flash_platform_data dir_600_a1_flash_data = {
-	.parts		= dir_600_a1_partitions,
-	.nr_parts	= ARRAY_SIZE(dir_600_a1_partitions),
-};
 
 static struct gpio_led dir_600_a1_leds_gpio[] __initdata = {
 	{
@@ -152,7 +109,7 @@ static void __init dir_600_a1_setup(void)
 		mac = mac_buff;
 	}
 
-	ath79_register_m25p80(&dir_600_a1_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_gpio_function_disable(AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
 				    AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |

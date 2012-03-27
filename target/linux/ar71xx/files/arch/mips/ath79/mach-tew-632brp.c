@@ -9,9 +9,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ath79/ath79.h>
 
 #include "dev-eth.h"
@@ -33,41 +30,6 @@
 
 #define TEW_632BRP_CONFIG_ADDR	0x1f020000
 #define TEW_632BRP_CONFIG_SIZE	0x10000
-
-static struct mtd_partition tew_632brp_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x020000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "config",
-		.offset		= 0x020000,
-		.size		= 0x010000,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x030000,
-		.size		= 0x0e0000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x110000,
-		.size		= 0x2e0000,
-	}, {
-		.name		= "art",
-		.offset		= 0x3f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x030000,
-		.size		= 0x3c0000,
-	}
-};
-
-static struct flash_platform_data tew_632brp_flash_data = {
-	.parts		= tew_632brp_partitions,
-	.nr_parts	= ARRAY_SIZE(tew_632brp_partitions),
-};
 
 static struct gpio_led tew_632brp_leds_gpio[] __initdata = {
 	{
@@ -131,7 +93,7 @@ static void __init tew_632brp_setup(void)
 	ath79_register_eth(0);
 	ath79_register_eth(1);
 
-	ath79_register_m25p80(&tew_632brp_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(tew_632brp_leds_gpio),
 				 tew_632brp_leds_gpio);

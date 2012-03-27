@@ -8,10 +8,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-#include <linux/spi/flash.h>
-
 #include "dev-eth.h"
 #include "dev-gpio-buttons.h"
 #include "dev-leds-gpio.h"
@@ -28,42 +24,6 @@
 
 #define AP113_KEYS_POLL_INTERVAL	20	/* msecs */
 #define AP113_KEYS_DEBOUNCE_INTERVAL	(3 * AP113_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition ap113_parts[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	},
-	{
-		.name		= "rootfs",
-		.offset		= 0x010000,
-		.size		= 0x300000,
-	},
-	{
-		.name		= "uImage",
-		.offset		= 0x300000,
-		.size		= 0x3e0000,
-	},
-	{
-		.name		= "NVRAM",
-		.offset		= 0x3e0000,
-		.size		= 0x010000,
-	},
-	{
-		.name		= "ART",
-		.offset		= 0x3f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	},
-};
-#define ap113_nr_parts		ARRAY_SIZE(ap113_parts)
-
-static struct flash_platform_data ap113_flash_data = {
-	.parts		= ap113_parts,
-	.nr_parts	= ap113_nr_parts,
-};
 
 static struct gpio_led ap113_leds_gpio[] __initdata = {
 	{
@@ -98,7 +58,7 @@ static void __init ap113_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1fff0000);
 
-	ath79_register_m25p80(&ap113_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_mdio(0, ~BIT(0));
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
