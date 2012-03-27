@@ -19,6 +19,7 @@ extern int (*ltqpci_plat_dev_init)(struct pci_dev *dev);
 struct ath5k_platform_data ath5k_pdata;
 struct ath9k_platform_data ath9k_pdata = {
 	.led_pin = -1,
+	.endian_check = true,
 };
 
 static int
