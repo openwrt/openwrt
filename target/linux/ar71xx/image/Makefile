@@ -178,7 +178,7 @@ endef
 
 define Image/Build/WHRHPG300N
 	$(call MkuImageLzma,$(2),$(3) $($(4)))
-	$(call Sysupgrade/KRuImage,$(1),$(2),917504,2883584)
+	$(call Sysupgrade/KRuImage,$(1),$(2),983040,2883584)
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
 			echo -n -e "# Airstation Public Fmt1\x00\x00\x00\x00\x00\x00\x00\x00"; \
@@ -965,7 +965,7 @@ define Image/Build/Profile/WHRG301N
 endef
 
 whrhpg300n_cmdline=board=WHR-HP-G300N console=ttyS0,115200
-whrhpg300n_mtdlayout=mtdparts=spi0.0:248k(u-boot)ro,8k(u-boot-env)ro,896k(kernel),2816k(rootfs),64k(user_property),64k(art)ro,3712k@0x40000(firmware)
+whrhpg300n_mtdlayout=mtdparts=spi0.0:248k(u-boot)ro,8k(u-boot-env)ro,960k(kernel),2816k(rootfs),64k(art)ro,3712k@0x40000(firmware)
 define Image/Build/Profile/WHRHPG300N
 	$(call Image/Build/Template/$(fs_64k)/$(1),WHRHPG300N,whr-hp-g300n,$(whrhpg300n_cmdline),whrhpg300n_mtdlayout,WHR-HP-G300N)
 endef
