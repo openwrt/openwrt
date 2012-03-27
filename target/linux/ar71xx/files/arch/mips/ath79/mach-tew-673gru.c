@@ -9,8 +9,6 @@
  */
 
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
 #include <linux/delay.h>
 #include <linux/rtl8366.h>
 #include <linux/spi/spi.h>
@@ -47,39 +45,6 @@
 
 #define TEW673GRU_MAC_LOCATION_0	0x1f66ffa0
 #define TEW673GRU_MAC_LOCATION_1	0x1f66ffb4
-
-static struct mtd_partition tew673gru_partitions[] = {
-	{
-		.name		= "uboot",
-		.offset		= 0,
-		.size		= 0x040000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "config",
-		.offset		= 0x040000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x050000,
-		.size		= 0x610000,
-	}, {
-		.name		= "caldata",
-		.offset		= 0x660000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "unknown",
-		.offset		= 0x670000,
-		.size		= 0x190000,
-		.mask_flags	= MTD_WRITEABLE,
-	}
-};
-
-static struct flash_platform_data tew673gru_flash_data = {
-	.parts          = tew673gru_partitions,
-	.nr_parts       = ARRAY_SIZE(tew673gru_partitions),
-};
 
 static struct gpio_led tew673gru_leds_gpio[] __initdata = {
 	{
@@ -189,7 +154,7 @@ static void __init tew673gru_setup(void)
 	ath79_register_eth(0);
 	ath79_register_eth(1);
 
-	ath79_register_m25p80(&tew673gru_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(tew673gru_leds_gpio),
 				 tew673gru_leds_gpio);

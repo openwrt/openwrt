@@ -12,9 +12,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h>
 
@@ -44,46 +41,6 @@
 #define WHRHPG300N_KEYS_DEBOUNCE_INTERVAL (3 * WHRHPG300N_KEYS_POLL_INTERVAL)
 
 #define WHRHPG300N_MAC_OFFSET		0x20c
-
-static struct mtd_partition whrhpg300n_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x03e000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "u-boot-env",
-		.offset		= 0x03e000,
-		.size		= 0x002000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x040000,
-		.size		= 0x0e0000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x120000,
-		.size		= 0x2c0000,
-	}, {
-		.name		= "user_property",
-		.offset		= 0x3e0000,
-		.size		= 0x010000,
-	}, {
-		.name		= "ART",
-		.offset		= 0x3f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x040000,
-		.size		= 0x3a0000,
-	}
-};
-
-static struct flash_platform_data whrhpg300n_flash_data = {
-	.parts		= whrhpg300n_partitions,
-	.nr_parts	= ARRAY_SIZE(whrhpg300n_partitions),
-};
 
 static struct gpio_led whrhpg300n_leds_gpio[] __initdata = {
 	{
@@ -158,7 +115,7 @@ static void __init whrhpg300n_setup(void)
 	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 	u8 *mac = (u8 *) KSEG1ADDR(ee + WHRHPG300N_MAC_OFFSET);
 
-	ath79_register_m25p80(&whrhpg300n_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_gpio_function_disable(AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
 				    AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |

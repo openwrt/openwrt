@@ -8,9 +8,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ath79/ar71xx_regs.h>
 #include <asm/mach-ath79/ath79.h>
 
@@ -37,47 +34,6 @@
 #define ALFA_NX_MAC0_OFFSET		0
 #define ALFA_NX_MAC1_OFFSET		6
 #define ALFA_NX_CALDATA_OFFSET		0x1000
-
-static struct mtd_partition alfa_nx_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x040000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "u-boot-env",
-		.offset		= 0x040000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x050000,
-		.size		= 0x600000,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x650000,
-		.size		= 0x190000,
-	}, {
-		.name		= "nvram",
-		.offset		= 0x7e0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "art",
-		.offset		= 0x7f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x050000,
-		.size		= 0x780000,
-	}
-};
-
-static struct flash_platform_data alfa_nx_flash_data = {
-	.parts		= alfa_nx_partitions,
-	.nr_parts	= ARRAY_SIZE(alfa_nx_partitions),
-};
 
 static struct gpio_keys_button alfa_nx_gpio_keys[] __initdata = {
 	{
@@ -129,7 +85,7 @@ static void __init alfa_nx_setup(void)
 				  AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
 				  AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
-	ath79_register_m25p80(&alfa_nx_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_leds_gpio(0, ARRAY_SIZE(alfa_nx_leds_gpio),
 				 alfa_nx_leds_gpio);
