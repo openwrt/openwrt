@@ -11,8 +11,6 @@
  */
 
 #include <linux/platform_device.h>
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
 #include <linux/delay.h>
 
 #include <asm/mach-ath79/ath79.h>
@@ -44,38 +42,6 @@
 #define AP96_WMAC1_MAC_OFFSET		0x520c
 #define AP96_CALDATA0_OFFSET		0x1000
 #define AP96_CALDATA1_OFFSET		0x5000
-
-static struct mtd_partition ap96_partitions[] = {
-	{
-		.name		= "uboot",
-		.offset		= 0,
-		.size		= 0x030000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "env",
-		.offset		= 0x030000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x040000,
-		.size		= 0x600000,
-	}, {
-		.name		= "uImage",
-		.offset		= 0x640000,
-		.size		= 0x1b0000,
-	}, {
-		.name		= "caldata",
-		.offset		= 0x7f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}
-};
-
-static struct flash_platform_data ap96_flash_data = {
-	.parts		= ap96_partitions,
-	.nr_parts	= ARRAY_SIZE(ap96_partitions),
-};
 
 /*
  * AP96 has 12 unlabeled leds in the front; these are numbered from 1 to 12
@@ -158,7 +124,7 @@ static void __init ap96_setup(void)
 
 	ath79_register_usb();
 
-	ath79_register_m25p80(&ap96_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(ap96_leds_gpio),
 					ap96_leds_gpio);
