@@ -679,8 +679,9 @@ define Image/Build/Profile/PB44
 endef
 
 pb92_cmdline=board=PB92 console=ttyS0,115200
+pb92_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
 define Image/Build/Profile/PB92
-	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,pb92,$(pb92_cmdline),,917504,2818048,KRuImage)
+	$(call Image/Build/Template/$(fs_64k)/$(1),AthLzma,pb92,$(pb92_cmdline),$(pb92_mtdlayout),917504,2818048,KRuImage)
 endef
 
 wp543_cmdline=console=ttyS0,115200
