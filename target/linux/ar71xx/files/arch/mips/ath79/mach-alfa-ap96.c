@@ -62,6 +62,7 @@ static struct mmc_spi_platform_data alfa_ap96_mmc_data = {
 static struct ath79_spi_controller_data ap96_spi0_cdata = {
 	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
 	.cs_line = 0,
+	.is_flash = true,
 };
 
 static struct ath79_spi_controller_data ap96_spi1_cdata = {
