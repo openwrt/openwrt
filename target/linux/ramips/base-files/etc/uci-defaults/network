@@ -16,7 +16,8 @@ ramips_setup_interfaces()
 	ucidef_set_interface_loopback
 
 	case $board in
-	all0256n)
+	all0256n | \
+	wl-330n)
 		ucidef_set_interface_lan "eth0.1"
 		;;
 

@@ -35,6 +35,7 @@ platform_check_image() {
 	wr6202 |\
 	v22rw-2x2 | \
 	wl341v3 | \
+	wl-330n | \
 	wli-tx4-ag300n | \
 	whr-g300n |\
 	wr512-3gn)
