@@ -1,6 +1,6 @@
 --- a/src/crypto/random.c
 +++ b/src/crypto/random.c
-@@ -38,6 +38,8 @@
+@@ -32,6 +32,8 @@
  #include "sha1.h"
  #include "random.h"
  
@@ -9,7 +9,7 @@
  #define POOL_WORDS 32
  #define POOL_WORDS_MASK (POOL_WORDS - 1)
  #define POOL_TAP1 26
-@@ -48,6 +50,8 @@
+@@ -42,6 +44,8 @@
  #define EXTRACT_LEN 16
  #define MIN_READY_MARK 2
  
@@ -18,7 +18,7 @@
  static u32 pool[POOL_WORDS];
  static unsigned int input_rotate = 0;
  static unsigned int pool_pos = 0;
-@@ -128,7 +132,7 @@ static void random_extract(u8 *out)
+@@ -122,7 +126,7 @@ static void random_extract(u8 *out)
  }
  
  
@@ -27,7 +27,7 @@
  {
  	struct os_time t;
  	static unsigned int count = 0;
-@@ -197,16 +201,22 @@ int random_get_bytes(void *buf, size_t l
+@@ -191,16 +195,22 @@ int random_get_bytes(void *buf, size_t l
  int random_pool_ready(void)
  {
  #ifdef __linux__
@@ -51,7 +51,7 @@
  
  	/*
  	 * Try to fetch some more data from the kernel high quality
-@@ -241,6 +251,7 @@ int random_pool_ready(void)
+@@ -235,6 +245,7 @@ int random_pool_ready(void)
  	if (dummy_key_avail == sizeof(dummy_key)) {
  		if (own_pool_ready < MIN_READY_MARK)
  			own_pool_ready = MIN_READY_MARK;
@@ -59,7 +59,7 @@
  		random_write_entropy();
  		return 1;
  	}
-@@ -253,6 +264,7 @@ int random_pool_ready(void)
+@@ -247,6 +258,7 @@ int random_pool_ready(void)
  	    total_collected + 10 * own_pool_ready > MIN_COLLECT_ENTROPY) {
  		wpa_printf(MSG_INFO, "random: Allow operation to proceed "
  			   "based on internal entropy");
@@ -67,7 +67,7 @@
  		return 1;
  	}
  
-@@ -268,10 +280,16 @@ int random_pool_ready(void)
+@@ -262,10 +274,16 @@ int random_pool_ready(void)
  
  void random_mark_pool_ready(void)
  {
@@ -84,7 +84,7 @@
  }
  
  
-@@ -428,3 +446,22 @@ void random_deinit(void)
+@@ -422,3 +440,22 @@ void random_deinit(void)
  	os_free(random_entropy_file);
  	random_entropy_file = NULL;
  }
@@ -109,7 +109,7 @@
 +}
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -1137,9 +1137,8 @@ endif
+@@ -1161,9 +1161,8 @@ endif
  
  ifdef CONFIG_NO_RANDOM_POOL
  CFLAGS += -DCONFIG_NO_RANDOM_POOL
@@ -122,7 +122,7 @@
  ifeq ($(CONFIG_CTRL_IFACE), y)
 --- a/wpa_supplicant/Android.mk
 +++ b/wpa_supplicant/Android.mk
-@@ -1132,9 +1132,8 @@ endif
+@@ -1139,9 +1139,8 @@ endif
  
  ifdef CONFIG_NO_RANDOM_POOL
  L_CFLAGS += -DCONFIG_NO_RANDOM_POOL
@@ -135,7 +135,7 @@
  ifeq ($(CONFIG_CTRL_IFACE), y)
 --- a/hostapd/Android.mk
 +++ b/hostapd/Android.mk
-@@ -720,11 +720,11 @@ endif
+@@ -724,11 +724,11 @@ endif
  ifdef CONFIG_NO_RANDOM_POOL
  L_CFLAGS += -DCONFIG_NO_RANDOM_POOL
  else
@@ -151,7 +151,7 @@
  L_CFLAGS += -DRADIUS_SERVER
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -707,12 +707,12 @@ endif
+@@ -719,12 +719,12 @@ endif
  ifdef CONFIG_NO_RANDOM_POOL
  CFLAGS += -DCONFIG_NO_RANDOM_POOL
  else

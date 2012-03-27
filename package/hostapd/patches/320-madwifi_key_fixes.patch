@@ -1,0 +1,50 @@
+--- a/src/drivers/driver_madwifi.c
++++ b/src/drivers/driver_madwifi.c
+@@ -439,8 +439,14 @@ wpa_driver_madwifi_set_key(const char *i
+ 	wpa_printf(MSG_DEBUG, "%s: alg=%d addr=%s key_idx=%d",
+ 		   __func__, alg, ether_sprintf(addr), key_idx);
+ 
+-	if (alg == WPA_ALG_WEP)
++	if (alg == WPA_ALG_WEP) {
+ 		cipher = IEEE80211_CIPHER_WEP;
++		if ((!addr || !memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) &&
++		    drv->wext)
++			return wpa_driver_wext_set_key(ifname, drv->wext, alg, addr,
++						       key_idx, set_tx, seq, seq_len,
++						       key, key_len);
++	}
+ 	else if (alg == WPA_ALG_TKIP)
+ 		cipher = IEEE80211_CIPHER_TKIP;
+ 	else if (alg == WPA_ALG_CCMP)
+@@ -459,7 +465,9 @@ wpa_driver_madwifi_set_key(const char *i
+ 
+ 	memset(&wk, 0, sizeof(wk));
+ 	wk.ik_type = cipher;
+-	wk.ik_flags = IEEE80211_KEY_RECV | IEEE80211_KEY_XMIT;
++	wk.ik_flags = IEEE80211_KEY_RECV;
++	if (set_tx)
++		wk.ik_flags |= IEEE80211_KEY_XMIT;
+ 	if (addr == NULL || is_broadcast_ether_addr(addr)) {
+ 		memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
+ 		wk.ik_keyix = key_idx;
+@@ -471,6 +479,20 @@ wpa_driver_madwifi_set_key(const char *i
+ 	wk.ik_keylen = key_len;
+ 	memcpy(wk.ik_keydata, key, key_len);
+ 
++#ifdef WORDS_BIGENDIAN
++#define WPA_KEY_RSC_LEN 8
++	{
++		size_t i;
++		u8 tmp[WPA_KEY_RSC_LEN];
++		os_memset(tmp, 0, sizeof(tmp));
++		for (i = 0; i < seq_len; i++)
++			tmp[WPA_KEY_RSC_LEN - i - 1] = seq[i];
++		os_memcpy(&wk.ik_keyrsc, tmp, WPA_KEY_RSC_LEN);
++	}
++#else /* WORDS_BIGENDIAN */
++	os_memcpy(&wk.ik_keyrsc, seq, seq_len);
++#endif /* WORDS_BIGENDIAN */
++
+ 	ret = set80211priv(drv, IEEE80211_IOCTL_SETKEY, &wk, sizeof(wk));
+ 	if (ret < 0) {
+ 		wpa_printf(MSG_DEBUG, "%s: Failed to set key (addr %s"

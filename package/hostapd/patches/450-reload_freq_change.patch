@@ -1,12 +1,12 @@
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -124,6 +124,10 @@ int hostapd_reload_config(struct hostapd
+@@ -136,6 +136,10 @@ int hostapd_reload_config(struct hostapd
  	oldconf = hapd->iconf;
  	iface->conf = newconf;
  
 +	iface->freq = hostapd_hw_get_freq(hapd, hapd->iconf->channel);
 +	if (iface->current_mode)
-+		hostapd_prepare_rates(hapd, iface->current_mode);
++		hostapd_prepare_rates(iface, iface->current_mode);
 +
  	for (j = 0; j < iface->num_bss; j++) {
  		hapd = iface->bss[j];
