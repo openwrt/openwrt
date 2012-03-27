@@ -221,9 +221,17 @@ define Image/Build/Cameo913x
 	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo913x_mtdlayout),983040,2949120,$(4))
 endef
 
+define Image/Build/Cameo913x/initramfs
+	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo913x_mtdlayout))
+endef
+
 cameo7240_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,960k(kernel),2752k(rootfs),64k(mac)ro,64k(art)ro,3712k@0x40000(firmware)
 define Image/Build/Cameo7240
 	$(call Image/Build/Cameo,$(1),$(2),$(3),$(cameo7240_mtdlayout),983040,2818048,$(4))
+endef
+
+define Image/Build/Cameo7240/initramfs
+	$(call MkuImageLzma/initramfs,$(2),$(3) $(cameo7240_mtdlayout))
 endef
 
 define Image/Build/Ath
@@ -340,6 +348,10 @@ define Image/Build/ALFA
 			echo -ne '\xfe'; \
 		) >> $(call factoryname,$(1),$(2)); \
 	fi
+endef
+
+define Image/Build/ALFA/initramfs
+	$(call MkuImageLzma/initramfs,$(2),$(3))
 endef
 
 define Image/Build/TPLINKOLD/loader
@@ -566,6 +578,10 @@ define Image/Build/Zcomax
 			-r $(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 			-o $(call imgname,$(1),$(2))-factory.img; \
 	fi
+endef
+
+define Image/Build/Zcomax/initramfs
+	$(call MkuImageLzma/initramfs,$(2),$(3))
 endef
 
 define Image/Build/Template/initramfs/initramfs
