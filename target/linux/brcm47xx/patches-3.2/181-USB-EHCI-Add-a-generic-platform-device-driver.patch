@@ -1,21 +1,3 @@
-From 1be00523336ac484c52681f838dfb8a76e8531cd Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sat, 26 Nov 2011 21:28:56 +0100
-Subject: [PATCH 182/186] USB: EHCI: Add a generic platform device driver
-
-This adds a generic driver for platform devices. It works like the PCI
-driver and is based on it. This is for devices which do not have an own
-bus but their EHCI controller works like a PCI controller. It will be
-used for the Broadcom bcma and ssb USB EHCI controller.
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/usb/host/Kconfig         |   10 ++
- drivers/usb/host/ehci-hcd.c      |    5 +
- drivers/usb/host/ehci-platform.c |  199 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 214 insertions(+), 0 deletions(-)
- create mode 100644 drivers/usb/host/ehci-platform.c
-
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -388,6 +388,16 @@ config USB_OHCI_HCD_PLATFORM
@@ -51,7 +33,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
      !defined(XILINX_OF_PLATFORM_DRIVER)
 --- /dev/null
 +++ b/drivers/usb/host/ehci-platform.c
-@@ -0,0 +1,199 @@
+@@ -0,0 +1,198 @@
 +/*
 + * Generic platform ehci driver
 + *
@@ -73,32 +55,29 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
 +#include <linux/platform_device.h>
-+#include <linux/usb/hci_driver.h>
++#include <linux/usb/ehci_pdriver.h>
 +
 +static int ehci_platform_reset(struct usb_hcd *hcd)
 +{
 +	struct platform_device *pdev = to_platform_device(hcd->self.controller);
-+	struct usb_hci_pdata *pdata = pdev->dev.platform_data;
++	struct usb_ehci_pdata *pdata = pdev->dev.platform_data;
 +	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
-+	int caps_offset = 0;
-+	int flags = 0;
 +	int retval;
 +
-+	if (pdata) {
-+		caps_offset = pdata->caps_offset;
-+		flags = pdata->flags;
-+	}
++	hcd->has_tt = pdata->has_tt;
++	ehci->has_synopsys_hc_bug = pdata->has_synopsys_hc_bug;
++	ehci->big_endian_desc = pdata->big_endian_desc;
++	ehci->big_endian_mmio = pdata->big_endian_mmio;
 +
-+	if (flags & USB_HCI_PDATA_HAS_TT_SET)
-+		hcd->has_tt = pdata->has_tt;
-+
-+	ehci->caps = hcd->regs + caps_offset;
++	ehci->caps = hcd->regs + pdata->caps_offset;
 +	retval = ehci_setup(hcd);
 +	if (retval)
 +		return retval;
 +
-+	if (flags & USB_HCI_PDATA_PORT_POWER_SET)
-+		ehci_port_power(ehci, pdata->power_set_is_on);
++	if (pdata->port_power_on)
++		ehci_port_power(ehci, 1);
++	if (pdata->port_power_off)
++		ehci_port_power(ehci, 0);
 +
 +	return 0;
 +}
@@ -143,6 +122,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct resource *res_mem;
 +	int irq;
 +	int err = -ENOMEM;
++
++	BUG_ON(!dev->dev.platform_data);
 +
 +	if (usb_disabled())
 +		return -ENODEV;
@@ -251,3 +232,52 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		.pm	= &ehci_platform_pm_ops,
 +	}
 +};
+--- /dev/null
++++ b/include/linux/usb/ehci_pdriver.h
+@@ -0,0 +1,46 @@
++/*
++ * Copyright (C) 2012 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the
++ * Free Software Foundation; either version 2 of the License, or (at your
++ * option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
++ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software Foundation,
++ * Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#ifndef __USB_CORE_EHCI_PDRIVER_H
++#define __USB_CORE_EHCI_PDRIVER_H
++
++/**
++ * struct usb_ehci_pdata - platform_data for generic ehci driver
++ *
++ * @caps_offset:	offset of the EHCI Capability Registers to the start of
++ *			the io memory region provided to the driver.
++ * @has_tt:		set to 1 if TT is integrated in root hub.
++ * @port_power_on:	set to 1 if the controller needs a power up after
++ *			initialization.
++ * @port_power_off:	set to 1 if the controller needs to be powered down
++ *			after initialization.
++ *
++ * These are general configuration options for the EHCI controller. All of
++ * these options are activating more or less workarounds for some hardware.
++ */
++struct usb_ehci_pdata {
++	int		caps_offset;
++	unsigned	has_tt:1;
++	unsigned	has_synopsys_hc_bug:1;
++	unsigned	big_endian_desc:1;
++	unsigned	big_endian_mmio:1;
++	unsigned	port_power_on:1;
++	unsigned	port_power_off:1;
++};
++
++#endif /* __USB_CORE_EHCI_PDRIVER_H */

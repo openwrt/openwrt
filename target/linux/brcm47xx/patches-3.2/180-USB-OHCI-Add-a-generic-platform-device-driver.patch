@@ -1,21 +1,3 @@
-From 2232a2ab6015496fecdfad68a9d6794312a9b2f2 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sat, 26 Nov 2011 21:20:54 +0100
-Subject: [PATCH 181/186] USB: OHCI: Add a generic platform device driver
-
-This adds a generic driver for platform devices. It works like the PCI
-driver and is based on it. This is for devices which do not have an own
-bus but their OHCI controller works like a PCI controller. It will be
-used for the Broadcom bcma and ssb USB OHCI controller.
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/usb/host/Kconfig         |   10 ++
- drivers/usb/host/ohci-hcd.c      |    5 +
- drivers/usb/host/ohci-platform.c |  183 ++++++++++++++++++++++++++++++++++++++
- 3 files changed, 198 insertions(+), 0 deletions(-)
- create mode 100644 drivers/usb/host/ohci-platform.c
-
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -378,6 +378,16 @@ config USB_CNS3XXX_OHCI
@@ -23,7 +5,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	  It is needed for low-speed USB 1.0 device support.
  
 +config USB_OHCI_HCD_PLATFORM
-+	bool "OHCI driver for a platform device"
++	bool "Generic OHCI driver for a platform device"
 +	depends on USB_OHCI_HCD && EXPERIMENTAL
 +	default n
 +	---help---
@@ -51,7 +33,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	!defined(OMAP1_PLATFORM_DRIVER) &&	\
 --- /dev/null
 +++ b/drivers/usb/host/ohci-platform.c
-@@ -0,0 +1,183 @@
+@@ -0,0 +1,194 @@
 +/*
 + * Generic platform ohci driver
 + *
@@ -68,12 +50,21 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
 +#include <linux/platform_device.h>
-+#include <linux/usb/hci_driver.h>
++#include <linux/usb/ohci_pdriver.h>
 +
 +static int ohci_platform_reset(struct usb_hcd *hcd)
 +{
++	struct platform_device *pdev = to_platform_device(hcd->self.controller);
++	struct usb_ohci_pdata *pdata = pdev->dev.platform_data;
 +	struct ohci_hcd *ohci = hcd_to_ohci(hcd);
 +	int err;
++
++	if (pdata->big_endian_desc)
++		ohci->flags |= OHCI_QUIRK_BE_DESC;
++	if (pdata->big_endian_mmio)
++		ohci->flags |= OHCI_QUIRK_BE_MMIO;
++	if (pdata->no_big_frame_no)
++		ohci->flags |= OHCI_QUIRK_FRAME_NO;
 +
 +	ohci_hcd_init(ohci);
 +	err = ohci_init(ohci);
@@ -130,6 +121,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct resource *res_mem;
 +	int irq;
 +	int err = -ENOMEM;
++
++	BUG_ON(!dev->dev.platform_data);
 +
 +	if (usb_disabled())
 +		return -ENODEV;
@@ -235,3 +228,44 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		.pm	= &ohci_platform_pm_ops,
 +	}
 +};
+--- /dev/null
++++ b/include/linux/usb/ohci_pdriver.h
+@@ -0,0 +1,38 @@
++/*
++ * Copyright (C) 2012 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the
++ * Free Software Foundation; either version 2 of the License, or (at your
++ * option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
++ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++ * for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software Foundation,
++ * Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#ifndef __USB_CORE_OHCI_PDRIVER_H
++#define __USB_CORE_OHCI_PDRIVER_H
++
++/**
++ * struct usb_ohci_pdata - platform_data for generic ohci driver
++ *
++ * @big_endian_desc:	BE descriptors
++ * @big_endian_mmio:	BE registers
++ * @no_big_frame_no:	no big endian frame_no shift
++ *
++ * These are general configuration options for the OHCI controller. All of
++ * these options are activating more or less workarounds for some hardware.
++ */
++struct usb_ohci_pdata {
++	unsigned	big_endian_desc:1;
++	unsigned	big_endian_mmio:1;
++	unsigned	no_big_frame_no:1;
++};
++
++#endif /* __USB_CORE_OHCI_PDRIVER_H */

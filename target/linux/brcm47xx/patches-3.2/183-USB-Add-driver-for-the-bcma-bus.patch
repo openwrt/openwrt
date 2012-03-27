@@ -1,24 +1,3 @@
-From 70fc4b2a6200ef7a1b99a6aa28234b919f23b43c Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sat, 26 Nov 2011 21:33:41 +0100
-Subject: [PATCH 184/186] USB: Add driver for the bcma bus
-
-This adds a USB driver using the generic platform device driver for the
-USB controller found on the Broadcom bcma bus. The bcma bus just
-exposes one device which serves the OHCI and the EHCI controller at the
-same time. This driver probes for this USB controller and creates and
-registers two new platform devices which will be probed by the new
-generic platform device driver. This makes it possible to use the EHCI
-and the OCHI controller on the bcma bus at the same time.
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/usb/host/Kconfig    |   12 ++
- drivers/usb/host/Makefile   |    1 +
- drivers/usb/host/bcma-hcd.c |  328 +++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 341 insertions(+), 0 deletions(-)
- create mode 100644 drivers/usb/host/bcma-hcd.c
-
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -618,3 +618,15 @@ config USB_PXA168_EHCI
@@ -46,12 +25,12 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_USB_HCD_BCMA)	+= bcma-hcd.o
 --- /dev/null
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -0,0 +1,328 @@
+@@ -0,0 +1,334 @@
 +/*
 + * Broadcom specific Advanced Microcontroller Bus
 + * Broadcom USB-core driver (BCMA bus glue)
 + *
-+ * Copyright 2011 Hauke Mehrtens <hauke@hauke-m.de>
++ * Copyright 2011-2012 Hauke Mehrtens <hauke@hauke-m.de>
 + *
 + * Based on ssb-ohci driver
 + * Copyright 2007 Michael Buesch <m@bues.ch>
@@ -71,7 +50,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <linux/delay.h>
 +#include <linux/platform_device.h>
 +#include <linux/module.h>
-+#include <linux/usb/hci_driver.h>
++#include <linux/usb/ehci_pdriver.h>
++#include <linux/usb/ohci_pdriver.h>
 +
 +MODULE_AUTHOR("Hauke Mehrtens");
 +MODULE_DESCRIPTION("Common USB driver for BCMA Bus");
@@ -206,13 +186,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	}
 +}
 +
-+static const struct usb_hci_pdata p_data = {
-+	.flags = USB_HCI_PDATA_PORT_POWER_SET,
-+	.power_set_is_on = 1,
++static const struct usb_ehci_pdata ehci_pdata = {
++};
++
++static const struct usb_ohci_pdata ohci_pdata = {
 +};
 +
 +static struct platform_device * __devinit
-+bcma_hcd_create_pdev(struct bcma_device *dev, char *name, u32 addr)
++bcma_hcd_create_pdev(struct bcma_device *dev, bool ohci, u32 addr)
 +{
 +	struct platform_device *hci_dev;
 +	struct resource hci_res[2];
@@ -227,7 +208,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	hci_res[1].start = dev->irq;
 +	hci_res[1].flags = IORESOURCE_IRQ;
 +
-+	hci_dev = platform_device_alloc(name, 0);
++	hci_dev = platform_device_alloc(ohci ? "ohci-platform" :
++					"ehci-platform" , 0);
 +	if (!hci_dev)
 +		return NULL;
 +
@@ -238,7 +220,12 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +					    ARRAY_SIZE(hci_res));
 +	if (ret)
 +		goto err_alloc;
-+	ret = platform_device_add_data(hci_dev, &p_data, sizeof(p_data));
++	if (ohci)
++		ret = platform_device_add_data(hci_dev, &ohci_pdata,
++					       sizeof(ohci_pdata));
++	else
++		ret = platform_device_add_data(hci_dev, &ehci_pdata,
++					       sizeof(ehci_pdata));
 +	if (ret)
 +		goto err_alloc;
 +	ret = platform_device_add(hci_dev);
@@ -284,15 +271,13 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	    && chipinfo->rev == 0)
 +		ohci_addr = 0x18009000;
 +
-+	usb_dev->ohci_dev = bcma_hcd_create_pdev(dev, "ohci-platform",
-+						 ohci_addr);
++	usb_dev->ohci_dev = bcma_hcd_create_pdev(dev, true, ohci_addr);
 +	if (IS_ERR(usb_dev->ohci_dev)) {
 +		err = PTR_ERR(usb_dev->ohci_dev);
 +		goto err_free_usb_dev;
 +	}
 +
-+	usb_dev->ehci_dev = bcma_hcd_create_pdev(dev, "ehci-platform",
-+						 dev->addr);
++	usb_dev->ehci_dev = bcma_hcd_create_pdev(dev, false, dev->addr);
 +	if (IS_ERR(usb_dev->ehci_dev)) {
 +		err = PTR_ERR(usb_dev->ehci_dev);
 +		goto err_unregister_ohci_dev;

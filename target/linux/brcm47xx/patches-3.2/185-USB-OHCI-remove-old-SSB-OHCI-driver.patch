@@ -1,41 +1,22 @@
-From 57857d7df6c22eaf11e3c67042d55a9546415059 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sat, 26 Nov 2011 21:36:50 +0100
-Subject: [PATCH 186/186] USB: OHCI: remove old SSB OHCI driver
-
-This is now replaced by the new ssb USB driver, which also supports
-devices with an EHCI controller.
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/usb/host/Kconfig    |   13 --
- drivers/usb/host/ohci-hcd.c |   21 +----
- drivers/usb/host/ohci-ssb.c |  260 -------------------------------------------
- 3 files changed, 1 insertions(+), 293 deletions(-)
- delete mode 100644 drivers/usb/host/ohci-ssb.c
-
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -351,19 +351,6 @@ config USB_OHCI_HCD_PCI
- 	  Enables support for PCI-bus plug-in USB controller cards.
+@@ -352,10 +352,15 @@ config USB_OHCI_HCD_PCI
  	  If unsure, say Y.
  
--config USB_OHCI_HCD_SSB
+ config USB_OHCI_HCD_SSB
 -	bool "OHCI support for Broadcom SSB OHCI core"
--	depends on USB_OHCI_HCD && (SSB = y || SSB = USB_OHCI_HCD) && EXPERIMENTAL
--	default n
--	---help---
--	  Support for the Sonics Silicon Backplane (SSB) attached
--	  Broadcom USB OHCI core.
--
--	  This device is present in some embedded devices with
--	  Broadcom based SSB bus.
--
--	  If unsure, say N.
--
- config USB_OHCI_SH
- 	bool "OHCI support for SuperH USB controller"
- 	depends on USB_OHCI_HCD && SUPERH
++	bool "OHCI support for Broadcom SSB OHCI core (DEPRECATED)"
+ 	depends on USB_OHCI_HCD && (SSB = y || SSB = USB_OHCI_HCD) && EXPERIMENTAL
++	select USB_HCD_SSB
++	select USB_OHCI_HCD_PLATFORM
+ 	default n
+ 	---help---
++	  This option is deprecated now and the driver was removed, use
++	  USB_HCD_SSB and USB_OHCI_HCD_PLATFORM instead.
++
+ 	  Support for the Sonics Silicon Backplane (SSB) attached
+ 	  Broadcom USB OHCI core.
+ 
 --- a/drivers/usb/host/ohci-hcd.c
 +++ b/drivers/usb/host/ohci-hcd.c
 @@ -1076,11 +1076,6 @@ MODULE_LICENSE ("GPL");
