@@ -8,9 +8,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ath79/ath79.h>
 #include <asm/mach-ath79/ar71xx_regs.h>
 
@@ -38,52 +35,6 @@
 
 #define ZCN_1523H_KEYS_POLL_INTERVAL	20	/* msecs */
 #define ZCN_1523H_KEYS_DEBOUNCE_INTERVAL (3 * ZCN_1523H_KEYS_POLL_INTERVAL)
-
-static struct mtd_partition zcn_1523h_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x040000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "u-boot-env",
-		.offset		= 0x040000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x050000,
-		.size		= 0x610000,
-	}, {
-		.name		= "kernel",
-		.offset		= 0x660000,
-		.size		= 0x170000,
-	}, {
-		.name		= "configure",
-		.offset		= 0x7d0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "mfg",
-		.offset		= 0x7e0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "eeprom",
-		.offset		= 0x7f0000,
-		.size		= 0x010000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "firmware",
-		.offset		= 0x050000,
-		.size		= 0x780000,
-	}
-};
-
-static struct flash_platform_data zcn_1523h_flash_data = {
-	.parts		= zcn_1523h_partitions,
-	.nr_parts	= ARRAY_SIZE(zcn_1523h_partitions),
-};
 
 static struct gpio_keys_button zcn_1523h_gpio_keys[] __initdata = {
 	{
@@ -158,7 +109,7 @@ static void __init zcn_1523h_generic_setup(void)
 				    AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
 				    AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
-	ath79_register_m25p80(&zcn_1523h_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_leds_gpio(0, ARRAY_SIZE(zcn_1523h_leds_gpio),
 					zcn_1523h_leds_gpio);

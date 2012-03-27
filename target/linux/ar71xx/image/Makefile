@@ -995,12 +995,13 @@ define Image/Build/Profile/WZRHPG450H
 	$(call Image/Build/Template/$(fs_64k)/$(1),WZRHPG30XNH,wzr-hp-g450h,$(wzrhpg450h_cmdline),WZR-HP-AG450H)
 endef
 
-zcn1523h28_cmdline=board=ZCN-1523H-2 console=ttyS0,115200
+zcn1523h_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6208k(rootfs),1472k(kernel),64k(configure)ro,64k(mfg)ro,64k(art)ro,7680k@0x50000(firmware)
+zcn1523h28_cmdline=board=ZCN-1523H-2 console=ttyS0,115200 $(zcn1523h_mtdlayout)
 define Image/Build/Profile/ZCN1523H28
 	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-2-8,$(zcn1523h28_cmdline))
 endef
 
-zcn1523h516_cmdline=board=ZCN-1523H-5 console=ttyS0,115200
+zcn1523h516_cmdline=board=ZCN-1523H-5 console=ttyS0,115200 $(zcn1523h_mtdlayout)
 define Image/Build/Profile/ZCN1523H516
 	$(call Image/Build/Template/$(fs_64k)/$(1),Zcomax,zcn-1523h-5-16,$(zcn1523h516_cmdline))
 endef
