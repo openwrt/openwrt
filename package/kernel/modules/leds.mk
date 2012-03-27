@@ -183,3 +183,34 @@ define KernelPackage/ledtrig-usbdev/description
 endef
 
 $(eval $(call KernelPackage,ledtrig-usbdev))
+
+
+define KernelPackage/ledtrig-default-on
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED Default ON Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_DEFAULT_ON
+  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-default-on.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-default-on)
+endef
+
+define KernelPackage/ledtrig-default-on/description
+ Kernel module that allows LEDs to be initialised in the ON state.
+endef
+
+$(eval $(call KernelPackage,ledtrig-default-on))
+
+
+define KernelPackage/ledtrig-timer
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED Timer Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_TIMER
+  FILES:=$(LINUX_DIR)/drivers/leds/ledtrig-timer.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-timer)
+endef
+
+define KernelPackage/ledtrig-timer/description
+ Kernel module that allows LEDs to be controlled by a programmable timer
+ via sysfs.
+endef
+
+$(eval $(call KernelPackage,ledtrig-timer))
