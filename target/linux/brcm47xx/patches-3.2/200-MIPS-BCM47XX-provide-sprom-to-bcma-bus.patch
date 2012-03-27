@@ -1,17 +1,3 @@
-From 112b2e12edda60f495b57e8a1d85eb95e2662845 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Thu, 16 Feb 2012 23:44:26 +0100
-Subject: [PATCH 199/202] MIPS: BCM47XX: provide sprom to bcma bus
-
-On SoCs the sprom is often stored in nvram in the flashchip. This patch
-registers a sprom fallback callback handler in bcma and provides the
-sprom needed for this device.
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- arch/mips/bcm47xx/setup.c |   39 +++++++++++++++++++++++++++++++++++----
- 1 files changed, 35 insertions(+), 4 deletions(-)
-
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
 @@ -3,7 +3,7 @@
@@ -59,13 +45,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	char prefix[10];
 +	struct bcma_device *core;
 +
-+	if (bus->hosttype == BCMA_HOSTTYPE_PCI) {
++	switch (bus->hosttype) {
++	case BCMA_HOSTTYPE_PCI:
 +		snprintf(prefix, sizeof(prefix), "pci/%u/%u/",
 +			 bus->host_pci->bus->number + 1,
 +			 PCI_SLOT(bus->host_pci->devfn));
 +		bcm47xx_fill_sprom(out, prefix);
 +		return 0;
-+	} else if (bus->hosttype == BCMA_HOSTTYPE_SOC) {
++	case BCMA_HOSTTYPE_SOC:
 +		bcm47xx_fill_sprom_ethernet(out, NULL);
 +		core = bcma_find_core(bus, BCMA_CORE_80211);
 +		if (core) {
@@ -74,8 +61,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			bcm47xx_fill_sprom(out, prefix);
 +		}
 +		return 0;
-+	} else {
-+		printk(KERN_WARNING "bcm47xx: unable to fill SPROM for given bustype.\n");
++	default:
++		pr_warn("bcm47xx: unable to fill SPROM for given bustype.\n");
 +		return -EINVAL;
 +	}
 +}
@@ -86,8 +73,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 +	err = bcma_arch_register_fallback_sprom(&bcm47xx_get_sprom_bcma);
 +	if (err)
-+		printk(KERN_WARNING "bcm47xx: someone else already registered"
-+			" a bcma SPROM callback handler (err %d)\n", err);
++		pr_warn("bcm47xx: someone else already registered a bcma SPROM callback handler (err %d)\n", err);
 +
  	err = bcma_host_soc_register(&bcm47xx_bus.bcma);
  	if (err)

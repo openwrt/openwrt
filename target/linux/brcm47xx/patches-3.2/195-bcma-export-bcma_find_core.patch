@@ -1,16 +1,3 @@
-From a07c69ed06031373726e9e5e513d0d942997c265 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sat, 18 Feb 2012 14:22:32 +0100
-Subject: [PATCH 194/202] bcma: export bcma_find_core
-
-This function is needed by the bcm47xx arch code to get the number of
-the ieee80211 core.
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/bcma/main.c       |    3 ++-
- include/linux/bcma/bcma.h |    1 +
- 2 files changed, 3 insertions(+), 1 deletions(-)
 
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c

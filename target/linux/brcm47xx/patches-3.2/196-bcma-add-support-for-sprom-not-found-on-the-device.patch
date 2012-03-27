@@ -1,46 +1,35 @@
-From 332b8f6ca7da3197c631928b6bd1e7fdca87e109 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sat, 18 Feb 2012 01:16:35 +0100
-Subject: [PATCH 195/202] bcma: add support for sprom not found on the device.
-
-On SoCs the sprom is stored in the nvram in a special partition on the
-flash chip. The nvram contains the sprom for the main bus, but
-sometimes also for a pci devices using bcma. This patch makes it
-possible for the arch code to register a function to fetch the needed
-sprom from the nvram and provide it to the bcma code.
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/bcma/sprom.c      |   80 ++++++++++++++++++++++++++++++++++++++++----
- include/linux/bcma/bcma.h |    6 +++
- 2 files changed, 78 insertions(+), 8 deletions(-)
 
 --- a/drivers/bcma/sprom.c
 +++ b/drivers/bcma/sprom.c
-@@ -16,6 +16,49 @@
+@@ -2,6 +2,8 @@
+  * Broadcom specific AMBA
+  * SPROM reading
+  *
++ * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
++ *
+  * Licensed under the GNU/GPL. See COPYING for details.
+  */
+ 
+@@ -16,6 +18,45 @@
  
  #define SPOFF(offset)	((offset) / sizeof(u16))
  
 +static int(*get_fallback_sprom)(struct bcma_bus *dev, struct ssb_sprom *out);
 +
 +/**
-+ * ssb_arch_register_fallback_sprom - Registers a method providing a
++ * bcma_arch_register_fallback_sprom - Registers a method providing a
 + * fallback SPROM if no SPROM is found.
 + *
 + * @sprom_callback: The callback function.
 + *
 + * With this function the architecture implementation may register a
 + * callback handler which fills the SPROM data structure. The fallback is
-+ * only used for PCI based SSB devices, where no valid SPROM can be found
-+ * in the shadow registers.
++ * used for PCI based BCMA devices, where no valid SPROM can be found
++ * in the shadow registers and to provide the SPROM for SoCs where BCMA is
++ * to controll the system bus.
 + *
 + * This function is useful for weird architectures that have a half-assed
-+ * SSB device hardwired to their PCI bus.
-+ *
-+ * Note that it does only work with PCI attached SSB devices. PCMCIA
-+ * devices currently don't use this fallback.
-+ * Architectures must provide the SPROM for native SSB devices anyway, so
-+ * the fallback also isn't used for native devices.
++ * BCMA device hardwired to their PCI bus.
 + *
 + * This function is available for architecture code, only. So it is not
 + * exported.
@@ -67,7 +56,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * R/W ops.
   **************************************************/
-@@ -205,23 +248,44 @@ static void bcma_sprom_extract_r8(struct
+@@ -205,23 +246,43 @@ static void bcma_sprom_extract_r8(struct
  		SSB_SROM8_FEM_ANTSWLUT) >> SSB_SROM8_FEM_ANTSWLUT_SHIFT;
  }
  
@@ -80,8 +69,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	if (bus->drv_cc.core->id.rev >= 32) {
 +		sromctrl = bcma_read32(bus->drv_cc.core, BCMA_CC_SROM_CONTROL);
-+		if (!(sromctrl & BCMA_CC_SROM_CONTROL_PRESENT))
-+			return false;
++		return sromctrl & BCMA_CC_SROM_CONTROL_PRESENT;
 +	}
 +	return true;
 +}
@@ -107,7 +95,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		/*
 +		 * Maybe there is no SPROM on the device?
 +		 * Now we ask the arch code if there is some sprom
-+		 * available for this device in some other storage
++		 * available for this device in some other storage.
 +		 */
 +		err = bcma_fill_sprom_with_fallback(bus, &bus->sprom);
 +		if (err) {
