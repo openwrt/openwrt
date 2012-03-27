@@ -1,22 +1,3 @@
-From bf975de39d2c6be28421c1de2068fd8bd018b96d Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sat, 18 Feb 2012 14:50:24 +0100
-Subject: [PATCH 198/202] MIPS: BCM47XX: move and extend sprom parsing
-
-Move the sprom parsing from nvram into sprom.c. There are all values
-needed for sprom version 1 to 9 read from nvram and there are more
-sanity checks added. This is based on the sprom parsing in the open
-source part of the Broadcom SDK.
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- arch/mips/bcm47xx/Makefile                   |    2 +-
- arch/mips/bcm47xx/setup.c                    |  151 +-------
- arch/mips/bcm47xx/sprom.c                    |  618 ++++++++++++++++++++++++++
- arch/mips/include/asm/mach-bcm47xx/bcm47xx.h |    3 +
- 4 files changed, 623 insertions(+), 151 deletions(-)
- create mode 100644 arch/mips/bcm47xx/sprom.c
-
 --- a/arch/mips/bcm47xx/Makefile
 +++ b/arch/mips/bcm47xx/Makefile
 @@ -3,5 +3,5 @@
@@ -188,7 +169,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 --- /dev/null
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -0,0 +1,618 @@
+@@ -0,0 +1,620 @@
 +/*
 + *  Copyright (C) 2004 Florian Schirmer <jolt@tuxbox.org>
 + *  Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
@@ -331,7 +312,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_parse_macaddr(buf, *val);
 +}
 +
-+static void nvram_read_ccode(const char *prefix, const char *name,
++static void nvram_read_alpha2(const char *prefix, const char *name,
 +			     char (*val)[2])
 +{
 +	char buf[10];
@@ -346,7 +327,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (buf[0] == '0')
 +		return;
 +	if (strlen(buf) > 2) {
-+		pr_warn("ccode is too long %s", buf);
++		pr_warn("alpha2 is too long %s", buf);
 +		return;
 +	}
 +	memcpy(val, buf, sizeof(val));
@@ -363,9 +344,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_read_u8(prefix, NULL, "ledbh3", &sprom->gpio3, 0xff);
 +	nvram_read_u8(prefix, NULL, "aa2g", &sprom->ant_available_bg, 0);
 +	nvram_read_u8(prefix, NULL, "aa5g", &sprom->ant_available_a, 0);
-+	nvram_read_u8(prefix, NULL, "ag0", &sprom->antenna_gain.ghz24.a0, 0);
-+	nvram_read_u8(prefix, NULL, "ag1", &sprom->antenna_gain.ghz24.a1, 0);
-+	nvram_read_ccode(prefix, "ccode", &sprom->ccode);
++	nvram_read_s8(prefix, NULL, "ag0", &sprom->antenna_gain.ghz24.a0, 0);
++	nvram_read_s8(prefix, NULL, "ag1", &sprom->antenna_gain.ghz24.a1, 0);
++	nvram_read_alpha2(prefix, "ccode", &sprom->alpha2);
 +}
 +
 +static void bcm47xx_fill_sprom_r12389(struct ssb_sprom *sprom,
@@ -447,8 +428,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			 &sprom->boardflags2_hi);
 +	nvram_read_u16(prefix, NULL, "boardtype", &sprom->board_type, 0);
 +	nvram_read_u8(prefix, NULL, "regrev", &sprom->regrev, 0);
-+	nvram_read_u8(prefix, NULL, "ag2", &sprom->antenna_gain.ghz24.a2, 0);
-+	nvram_read_u8(prefix, NULL, "ag3", &sprom->antenna_gain.ghz24.a3, 0);
++	nvram_read_s8(prefix, NULL, "ag2", &sprom->antenna_gain.ghz24.a2, 0);
++	nvram_read_s8(prefix, NULL, "ag3", &sprom->antenna_gain.ghz24.a3, 0);
 +	nvram_read_u8(prefix, NULL, "txchain", &sprom->txchain, 0xf);
 +	nvram_read_u8(prefix, NULL, "rxchain", &sprom->rxchain, 0xf);
 +	nvram_read_u8(prefix, NULL, "antswitch", &sprom->antswitch, 0xff);
@@ -804,6 +785,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		pr_warn("Unsupported SPROM revision %d detected. Will extract"
 +			" v1\n", sprom->revision);
 +		sprom->revision = 1;
++		bcm47xx_fill_sprom_r1234589(sprom, prefix);
++		bcm47xx_fill_sprom_r12389(sprom, prefix);
 +		bcm47xx_fill_sprom_r1(sprom, prefix);
 +	}
 +}

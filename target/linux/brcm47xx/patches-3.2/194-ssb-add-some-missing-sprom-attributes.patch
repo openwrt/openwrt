@@ -1,16 +1,3 @@
-From 91e6ca304fb163e2f9b15188686fc4637f2cd32a Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Fri, 17 Feb 2012 23:26:39 +0100
-Subject: [PATCH 193/202] ssb: add some missing sprom attributes
-
-This patch extends the sprom struct to contain all sprom attributes
-found in sprom version 1 to 9. This was done accordingly to the open
-source part of the Braodcom SDK.
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- include/linux/ssb/ssb.h |   76 ++++++++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 75 insertions(+), 1 deletions(-)
 
 --- a/include/linux/ssb/ssb.h
 +++ b/include/linux/ssb/ssb.h
@@ -18,11 +5,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	u8 et0mdcport;		/* MDIO for enet0 */
  	u8 et1mdcport;		/* MDIO for enet1 */
  	u16 board_rev;		/* Board revision number from SPROM. */
-+	u16 board_num;
-+	u16 board_type;
++	u16 board_num;		/* Board number from SPROM. */
++	u16 board_type;		/* Board type from SPROM. */
  	u8 country_code;	/* Country Code */
+ 	char alpha2[2];		/* Country Code as two chars like EU or US */
  	u8 leddc_on_time;	/* LED Powersave Duty Cycle On Count */
- 	u8 leddc_off_time;	/* LED Powersave Duty Cycle Off Count */
 @@ -112,7 +114,79 @@ struct ssb_sprom {
  		} ghz5;
  	} fem;
