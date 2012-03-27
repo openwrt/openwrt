@@ -232,7 +232,7 @@ define Image/Build/AthGzip
 endef
 
 define Image/Build/AthGzip/initramfs
-	$(call MkuImageLzma,$(2),$(3) $($(4)))
+	$(call MkuImageGzip,$(2),$(3) $($(4)))
 	$(CP) $(KDIR_TMP)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
 endef
 
