@@ -1,0 +1,13 @@
+--- linux-2.6.37.6.orig/arch/mips/jz4740/dma.c	2011-03-27 21:01:41.000000000 +0200
++++ linux-2.6.37.6/arch/mips/jz4740/dma.c	2012-03-27 18:29:41.547939867 +0200
+@@ -242,10 +242,6 @@
+ 
+ static void jz4740_dma_chan_irq(struct jz4740_dma_chan *dma)
+ {
+-	uint32_t status;
+-
+-	status = jz4740_dma_read(JZ_REG_DMA_STATUS_CTRL(dma->id));
+-
+ 	jz4740_dma_write_mask(JZ_REG_DMA_STATUS_CTRL(dma->id), 0,
+ 		JZ_DMA_STATUS_CTRL_ENABLE | JZ_DMA_STATUS_CTRL_TRANSFER_DONE);
+ 
