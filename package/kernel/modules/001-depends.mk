@@ -30,3 +30,10 @@ endef
 define AddDepends/rfkill
   DEPENDS+= +(TARGET_ar71xx||TARGET_brcm47xx||TARGET_s3c24xx||TARGET_x86):kmod-rfkill $(1)
 endef
+
+
+define AddDepends/rtc
+  DEPENDS+= \
+    +(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-rtc-core-2.6 \
+    +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-rtc-core-3.x
+endef
