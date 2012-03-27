@@ -1,4 +1,4 @@
-From 7385ff2cb72d6a0107890760466b9564aa5204c1 Mon Sep 17 00:00:00 2001
+From ecf57a64feb737dec1da72aab21dccd30a88ba19 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <juhosg@openwrt.org>
 Date: Mon, 9 Jan 2012 15:03:28 +0100
 Subject: [PATCH 3/7] spi/ath79: remove superfluous chip select code
@@ -15,7 +15,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/spi/spi-ath79.c
 +++ b/drivers/spi/spi-ath79.c
-@@ -121,12 +121,6 @@ static int ath79_spi_setup_cs(struct spi
+@@ -128,12 +128,6 @@ static int ath79_spi_setup_cs(struct spi
  			gpio_free(cdata->gpio);
  			return status;
  		}
