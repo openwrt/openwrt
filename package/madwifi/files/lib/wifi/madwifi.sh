@@ -415,6 +415,15 @@ enable_atheros() {
 					}
 				fi
 			;;
+			adhoc)
+				if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
+					wpa_supplicant_setup_vif "$vif" madwifi || {
+						echo "enable_atheros($device): Failed to set up wpa"
+						ifconfig "$ifname" down
+						wlanconfig "$ifname" destroy
+						continue
+					}
+				fi
 		esac
 	done
 }
