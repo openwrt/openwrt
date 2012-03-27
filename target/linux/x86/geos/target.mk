@@ -7,7 +7,7 @@ DEFAULT_PACKAGES += \
             kmod-wdt-geode kmod-cs5535-clockevt kmod-cs5535-mfgpt \
             kmod-cs5536 \
             kmod-hwmon-core kmod-hwmon-lm90 \
-            kmod-8139cp kmod-solos-pci \
+            kmod-8139cp kmod-solos-pci kmod-sched \
             kmod-i2c-core kmod-i2c-gpio \
             kmod-i2c-algo-bit kmod-i2c-algo-pca kmod-i2c-algo-pcf \
             kmod-i2c-scx200-acb \
@@ -21,7 +21,7 @@ DEFAULT_PACKAGES += \
             kmod-ledtrig-netdev \
             kmod-cpu-msr \
             soloscli linux-atm br2684ctl ppp-mod-pppoa pppdump pppstats \
-            hwclock wpad flashrom
+            hwclock wpad flashrom tc
 
 CS5535_MASK:=0x0E000048
 
