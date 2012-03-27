@@ -31,6 +31,11 @@ config RT305X_MACH_RT_N10_PLUS
 	select RALINK_DEV_GPIO_BUTTONS
 	select RALINK_DEV_GPIO_LEDS
 
+config RT305X_MACH_WL_330N
+	bool "Asus WL-330N board support"
+	select RALINK_DEV_GPIO_BUTTONS
+	select RALINK_DEV_GPIO_LEDS
+
 config RT305X_MACH_HW550_3G
 	bool "Aztech HW550-3G support"
 	select RALINK_DEV_GPIO_BUTTONS

@@ -69,7 +69,7 @@ get_status_led() {
 	rt-n10-plus)
 		status_led="asus:green:wps"
 		;;
-	rt-n56u)
+	rt-n56u | wl-330n )
 		status_led="asus:blue:power"
 		;;
 	sl-r7205)

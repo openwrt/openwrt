@@ -53,6 +53,9 @@ ramips_board_name() {
 	*"Argus ATP-52B")
 		name="argus-atp52b"
 		;;
+	*"Asus WL-330N")
+		name="wl-330n"
+		;;
 	*"Aztech HW550-3G")
 		name="hw550-3g"
 		;;
