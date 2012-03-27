@@ -40,7 +40,6 @@ static const char *tl_wr2543n_part_probes[] = {
 
 static struct flash_platform_data tl_wr2543n_flash_data = {
 	.part_probes	= tl_wr2543n_part_probes,
-	.max_read_len	= 64,
 };
 
 static struct gpio_led tl_wr2543n_leds_gpio[] __initdata = {
