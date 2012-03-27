@@ -1,6 +1,6 @@
 --- a/wpa_supplicant/wpa_supplicant_i.h
 +++ b/wpa_supplicant/wpa_supplicant_i.h
-@@ -100,6 +100,8 @@ struct wpa_interface {
+@@ -95,6 +95,8 @@ struct wpa_interface {
  	 * receiving of EAPOL frames from an additional interface.
  	 */
  	const char *bridge_ifname;
@@ -9,7 +9,7 @@
  };
  
  /**
-@@ -260,6 +262,8 @@ struct wpa_supplicant {
+@@ -263,6 +265,8 @@ struct wpa_supplicant {
  #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
  	char bridge_ifname[16];
  
@@ -31,7 +31,7 @@
  -include .config
  -include $(if $(MULTICALL),../hostapd/.config)
  
-@@ -69,6 +73,10 @@ OBJS_c = wpa_cli.o ../src/common/wpa_ctr
+@@ -71,6 +75,10 @@ OBJS_c = wpa_cli.o ../src/common/wpa_ctr
  OBJS_c += ../src/utils/wpa_debug.o
  OBJS_c += ../src/utils/common.o
  
@@ -44,7 +44,7 @@
  CONFIG_OS=win32
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -125,6 +125,55 @@ extern int wpa_debug_show_keys;
+@@ -103,6 +103,55 @@ extern int wpa_debug_show_keys;
  extern int wpa_debug_timestamp;
  extern struct wpa_driver_ops *wpa_drivers[];
  
@@ -100,7 +100,7 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -632,8 +681,16 @@ void wpa_supplicant_set_state(struct wpa
+@@ -607,8 +656,16 @@ void wpa_supplicant_set_state(struct wpa
  #ifdef CONFIG_P2P
  		wpas_p2p_completed(wpa_s);
  #endif /* CONFIG_P2P */
@@ -117,7 +117,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2245,6 +2302,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2498,6 +2555,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
@@ -141,7 +141,7 @@
  	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
 --- a/wpa_supplicant/bss.c
 +++ b/wpa_supplicant/bss.c
-@@ -17,6 +17,7 @@
+@@ -11,6 +11,7 @@
  #include "utils/common.h"
  #include "utils/eloop.h"
  #include "common/ieee802_11_defs.h"
@@ -149,7 +149,7 @@
  #include "drivers/driver.h"
  #include "wpa_supplicant_i.h"
  #include "config.h"
-@@ -79,6 +80,8 @@ struct wpa_bss * wpa_bss_get(struct wpa_
+@@ -75,6 +76,8 @@ struct wpa_bss * wpa_bss_get(struct wpa_
  
  static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src)
  {
@@ -158,7 +158,7 @@
  	os_time_t usec;
  
  	dst->flags = src->flags;
-@@ -91,6 +94,12 @@ static void wpa_bss_copy_res(struct wpa_
+@@ -87,6 +90,12 @@ static void wpa_bss_copy_res(struct wpa_
  	dst->level = src->level;
  	dst->tsf = src->tsf;
  
@@ -173,7 +173,7 @@
  	usec = (src->age % 1000) * 1000;
 --- a/wpa_supplicant/bss.h
 +++ b/wpa_supplicant/bss.h
-@@ -57,6 +57,7 @@ struct wpa_bss {
+@@ -51,6 +51,7 @@ struct wpa_bss {
  	unsigned int flags;
  	u8 bssid[ETH_ALEN];
  	u8 ssid[32];
@@ -183,7 +183,7 @@
  	u16 beacon_int;
 --- a/wpa_supplicant/main.c
 +++ b/wpa_supplicant/main.c
-@@ -31,7 +31,7 @@ static void usage(void)
+@@ -25,7 +25,7 @@ static void usage(void)
  	       "usage:\n"
  	       "  wpa_supplicant [-BddhKLqqstuvW] [-P<pid file>] "
  	       "[-g<global ctrl>] \\\n"
@@ -192,15 +192,15 @@
  	       "[-p<driver_param>] \\\n"
  	       "        [-b<br_ifname>] [-f<debug file>] [-e<entropy file>] "
  	       "\\\n"
-@@ -69,6 +69,7 @@ static void usage(void)
+@@ -63,6 +63,7 @@ static void usage(void)
  #endif /* CONFIG_DEBUG_SYSLOG */
  	printf("  -t = include timestamp in debug messages\n"
  	       "  -h = show this help text\n"
 +		   "  -H = connect to a hostapd instance to manage state changes\n"
- 	       "  -L = show license (GPL and BSD)\n"
+ 	       "  -L = show license (BSD)\n"
  	       "  -o = override driver parameter for new interfaces\n"
  	       "  -O = override ctrl_interface parameter for new interfaces\n"
-@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
+@@ -139,7 +140,7 @@ int main(int argc, char *argv[])
  	wpa_supplicant_fd_workaround();
  
  	for (;;) {
@@ -209,7 +209,7 @@
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -189,6 +190,9 @@ int main(int argc, char *argv[])
+@@ -183,6 +184,9 @@ int main(int argc, char *argv[])
  			usage();
  			exitcode = 0;
  			goto out;

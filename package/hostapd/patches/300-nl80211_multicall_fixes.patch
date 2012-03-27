@@ -1,0 +1,60 @@
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -2918,6 +2918,7 @@ static void * wpa_driver_nl80211_init(vo
+ 	drv->monitor_sock = -1;
+ 	drv->eapol_tx_sock = -1;
+ 	drv->ap_scan_as_station = NL80211_IFTYPE_UNSPECIFIED;
++	drv->nlmode = NL80211_IFTYPE_STATION;
+ 
+ 	if (wpa_driver_nl80211_init_nl(drv)) {
+ 		os_free(drv);
+@@ -3232,17 +3233,12 @@ static void wpa_driver_nl80211_send_rfki
+ 	wpa_supplicant_event(timeout_ctx, EVENT_INTERFACE_DISABLED, NULL);
+ }
+ 
+-
+ static int
+-wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv)
++wpa_driver_nl80211_finish_drv_init_sta(struct wpa_driver_nl80211_data *drv,
++				       int *send_rfkill_event)
+ {
+ 	struct i802_bss *bss = &drv->first_bss;
+-	int send_rfkill_event = 0;
+ 
+-	drv->ifindex = if_nametoindex(bss->ifname);
+-	drv->first_bss.ifindex = drv->ifindex;
+-
+-#ifndef HOSTAPD
+ 	/*
+ 	 * Make sure the interface starts up in station mode unless this is a
+ 	 * dynamically added interface (e.g., P2P) that was already configured
+@@ -3261,7 +3257,7 @@ wpa_driver_nl80211_finish_drv_init(struc
+ 				   "interface '%s' due to rfkill",
+ 				   bss->ifname);
+ 			drv->if_disabled = 1;
+-			send_rfkill_event = 1;
++			*send_rfkill_event = 1;
+ 		} else {
+ 			wpa_printf(MSG_ERROR, "nl80211: Could not set "
+ 				   "interface '%s' UP", bss->ifname);
+@@ -3271,7 +3267,19 @@ wpa_driver_nl80211_finish_drv_init(struc
+ 
+ 	netlink_send_oper_ifla(drv->global->netlink, drv->ifindex,
+ 			       1, IF_OPER_DORMANT);
+-#endif /* HOSTAPD */
++}
++
++static int
++wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv)
++{
++	struct i802_bss *bss = &drv->first_bss;
++	int send_rfkill_event = 0;
++
++	drv->ifindex = if_nametoindex(bss->ifname);
++	drv->first_bss.ifindex = drv->ifindex;
++
++	if (drv->nlmode == NL80211_IFTYPE_STATION)
++		wpa_driver_nl80211_finish_drv_init_sta(drv, &send_rfkill_event);
+ 
+ 	if (wpa_driver_nl80211_capa(drv))
+ 		return -1;

@@ -1,6 +1,6 @@
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -19,6 +19,7 @@
+@@ -13,6 +13,7 @@
  
  #include "utils/common.h"
  #include "utils/eloop.h"
@@ -8,7 +8,7 @@
  #include "crypto/random.h"
  #include "crypto/tls.h"
  #include "common/version.h"
-@@ -574,7 +575,7 @@ int main(int argc, char *argv[])
+@@ -551,7 +552,7 @@ int main(int argc, char *argv[])
  
  	wpa_supplicant_event = hostapd_wpa_event;
  	for (;;) {
@@ -17,7 +17,7 @@
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -606,6 +607,8 @@ int main(int argc, char *argv[])
+@@ -583,6 +584,8 @@ int main(int argc, char *argv[])
  			wpa_debug_timestamp++;
  			break;
  		case 'v':
@@ -28,7 +28,7 @@
  			break;
 --- a/wpa_supplicant/main.c
 +++ b/wpa_supplicant/main.c
-@@ -18,6 +18,7 @@
+@@ -12,6 +12,7 @@
  #endif /* __linux__ */
  
  #include "common.h"
@@ -36,7 +36,7 @@
  #include "wpa_supplicant_i.h"
  #include "driver_i.h"
  
-@@ -146,7 +147,7 @@ int main(int argc, char *argv[])
+@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
  	wpa_supplicant_fd_workaround();
  
  	for (;;) {
@@ -45,7 +45,7 @@
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -233,8 +234,12 @@ int main(int argc, char *argv[])
+@@ -227,8 +228,12 @@ int main(int argc, char *argv[])
  			break;
  #endif /* CONFIG_DBUS */
  		case 'v':

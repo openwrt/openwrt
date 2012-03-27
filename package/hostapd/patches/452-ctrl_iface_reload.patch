@@ -1,14 +1,14 @@
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -39,6 +39,7 @@
- #include "wps/wps_defs.h"
+@@ -33,6 +33,7 @@
  #include "wps/wps.h"
+ #include "config_file.h"
  #include "ctrl_iface.h"
 +#include "config_file.h"
  
  
  struct wpa_ctrl_dst {
-@@ -49,6 +50,7 @@ struct wpa_ctrl_dst {
+@@ -43,6 +44,7 @@ struct wpa_ctrl_dst {
  	int errors;
  };
  
@@ -16,7 +16,7 @@
  
  static void hostapd_ctrl_iface_send(struct hostapd_data *hapd, int level,
  				    const char *buf, size_t len);
-@@ -323,6 +325,66 @@ static int hostapd_ctrl_iface_disassocia
+@@ -152,6 +154,66 @@ static int hostapd_ctrl_iface_new_sta(st
  	return 0;
  }
  
@@ -83,7 +83,7 @@
  
  #ifdef CONFIG_IEEE80211W
  #ifdef NEED_AP_MLME
-@@ -873,6 +935,10 @@ static void hostapd_ctrl_iface_receive(i
+@@ -710,6 +772,10 @@ static void hostapd_ctrl_iface_receive(i
  				reply_len += res;
  		}
  #endif /* CONFIG_NO_RADIUS */
