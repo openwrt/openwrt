@@ -658,6 +658,7 @@ define Image/Build/Profile/AP83
 endef
 
 ap96_cmdline=board=AP96 console=ttyS0,115200
+ap96_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),1728k(kernel),64k(art)ro,7872k@0x40000(firmware)
 define Image/Build/Profile/AP96
 	$(call Image/Build/Template/$(fs_64k)/$(1),AthGzip,ap96,$(ap96_cmdline),ap96_mtdlayout,1769472,6291456,RKuImage)
 endef
