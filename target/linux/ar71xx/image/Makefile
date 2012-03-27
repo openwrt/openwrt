@@ -68,9 +68,19 @@ define MkuImageLzma
 	$(call MkuImage,lzma,,$(KDIR_TMP)/vmlinux-$(1).bin.lzma,$(KDIR_TMP)/vmlinux-$(1).uImage)
 endef
 
+define MkuImageLzma/initramfs
+	$(call PatchKernelLzma,$(1),$(2))
+	$(call MkuImage,lzma,,$(KDIR_TMP)/vmlinux-$(1).bin.lzma,$(call imgname,initramfs,$(1))-uImage.bin)
+endef
+
 define MkuImageGzip
 	$(call PatchKernelGzip,$(1),$(2))
 	$(call MkuImage,gzip,,$(KDIR_TMP)/vmlinux-$(1).bin.gz,$(KDIR_TMP)/vmlinux-$(1).uImage)
+endef
+
+define MkuImageGzip/initramfs
+	$(call PatchKernelGzip,$(1),$(2))
+	$(call MkuImage,gzip,,$(KDIR_TMP)/vmlinux-$(1).bin.gz,$(call imgname,initramfs,$(1))-uImage.bin)
 endef
 
 define MkuImageOKLI
@@ -232,8 +242,7 @@ define Image/Build/AthGzip
 endef
 
 define Image/Build/AthGzip/initramfs
-	$(call MkuImageGzip,$(2),$(3) $(4))
-	$(CP) $(KDIR_TMP)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
+	$(call MkuImageGzip/initramfs,$(2),$(3) $(4))
 endef
 
 define Image/Build/AthLzma
@@ -242,8 +251,7 @@ define Image/Build/AthLzma
 endef
 
 define Image/Build/AthLzma/initramfs
-	$(call MkuImageLzma,$(2),$(3) $(4))
-	$(CP) $(KDIR_TMP)/vmlinux-$(2).uImage $(call imgname,$(1),$(2))-uImage.bin
+	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 endef
 
 define Image/Build/PB4X
