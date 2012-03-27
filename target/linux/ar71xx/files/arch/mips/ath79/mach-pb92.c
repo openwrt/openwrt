@@ -10,9 +10,6 @@
  *  by the Free Software Foundation.
  */
 
-#include <linux/mtd/mtd.h>
-#include <linux/mtd/partitions.h>
-
 #include <asm/mach-ath79/ath79.h>
 
 #include "dev-eth.h"
@@ -21,37 +18,6 @@
 #include "dev-usb.h"
 #include "machtypes.h"
 #include "pci.h"
-
-static struct mtd_partition pb92_partitions[] = {
-	{
-		.name		= "u-boot",
-		.offset		= 0,
-		.size		= 0x040000,
-		.mask_flags	= MTD_WRITEABLE,
-	}, {
-		.name		= "u-boot-env",
-		.offset		= 0x040000,
-		.size		= 0x010000,
-	}, {
-		.name		= "rootfs",
-		.offset		= 0x050000,
-		.size		= 0x2b0000,
-	}, {
-		.name		= "uImage",
-		.offset		= 0x300000,
-		.size		= 0x0e0000,
-	}, {
-		.name		= "ART",
-		.offset		= 0x3e0000,
-		.size		= 0x020000,
-		.mask_flags	= MTD_WRITEABLE,
-	}
-};
-
-static struct flash_platform_data pb92_flash_data = {
-	.parts		= pb92_partitions,
-	.nr_parts	= ARRAY_SIZE(pb92_partitions),
-};
 
 #define PB92_KEYS_POLL_INTERVAL		20	/* msecs */
 #define PB92_KEYS_DEBOUNCE_INTERVAL	(3 * PB92_KEYS_POLL_INTERVAL)
@@ -81,7 +47,7 @@ static void __init pb92_init(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1fff0000);
 
-	ath79_register_m25p80(&pb92_flash_data);
+	ath79_register_m25p80(NULL);
 
 	ath79_register_mdio(0, ~BIT(0));
 	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
