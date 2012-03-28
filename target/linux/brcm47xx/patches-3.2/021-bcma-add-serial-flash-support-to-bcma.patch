@@ -1,20 +1,3 @@
-From a62940e988526c881966a8c72cc28c95fca89f3c Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sun, 17 Jul 2011 14:53:07 +0200
-Subject: [PATCH 13/26] bcma: add serial flash support to bcma
-
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/bcma/Kconfig                        |    5 +
- drivers/bcma/Makefile                       |    1 +
- drivers/bcma/bcma_private.h                 |    5 +
- drivers/bcma/driver_chipcommon_sflash.c     |  555 +++++++++++++++++++++++++++
- drivers/bcma/driver_mips.c                  |    8 +-
- include/linux/bcma/bcma_driver_chipcommon.h |   24 ++
- 6 files changed, 597 insertions(+), 1 deletions(-)
- create mode 100644 drivers/bcma/driver_chipcommon_sflash.c
-
 --- a/drivers/bcma/Kconfig
 +++ b/drivers/bcma/Kconfig
 @@ -38,6 +38,11 @@ config BCMA_HOST_SOC
@@ -54,11 +37,12 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  extern int __init bcma_host_pci_init(void);
 --- /dev/null
 +++ b/drivers/bcma/driver_chipcommon_sflash.c
-@@ -0,0 +1,555 @@
+@@ -0,0 +1,398 @@
 +/*
 + * Broadcom SiliconBackplane chipcommon serial flash interface
 + *
 + * Copyright 2011, Jonas Gorski <jonas.gorski@gmail.com>
++ * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
 + * Copyright 2010, Broadcom Corporation
 + *
 + * Licensed under the GNU/GPL. See COPYING for details.
@@ -84,7 +68,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +
 +static inline void bcma_sflash_write_u8(struct bcma_drv_cc *cc,
-+					      u32 offset, u8 byte)
++					u32 offset, u8 byte)
 +{
 +	bcma_cc_write32(cc, BCMA_CC_FLASHADDR, offset);
 +	bcma_cc_write32(cc, BCMA_CC_FLASHDATA, byte);
@@ -244,8 +228,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +}
 +
 +/* Read len bytes starting at offset into buf. Returns number of bytes read. */
-+int bcma_sflash_read(struct bcma_drv_cc *cc, u32 offset, u32 len,
-+			   u8 *buf)
++int bcma_sflash_read(struct bcma_drv_cc *cc, u32 offset, u32 len, u8 *buf)
 +{
 +	u8 *from, *to;
 +	u32 cnt, i;
@@ -263,11 +246,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	else
 +		cnt = len;
 +
-+
-+	if (cc->core->id.rev == 12)
-+		from = (u8 *)KSEG1ADDR(BCMA_FLASH2 + offset);
-+	else
-+		from = (u8 *)KSEG0ADDR(BCMA_FLASH2 + offset);
++	from = (u8 *)KSEG0ADDR(BCMA_FLASH2 + offset);
 +
 +	to = (u8 *)buf;
 +
@@ -316,92 +295,43 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +static int sflash_st_write(struct bcma_drv_cc *cc, u32 offset, u32 len,
 +			   const u8 *buf)
 +{
-+	struct bcma_bus *bus = cc->core->bus;
-+	int ret = 0;
-+	bool is4712b0 = (bus->chipinfo.id == 0x4712) && (bus->chipinfo.rev == 3);
-+	u32 mask;
-+
++	int written = 1;
 +
 +	/* Enable writes */
 +	bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_WREN);
-+	if (is4712b0) {
-+		mask = 1 << 14;
-+		bcma_sflash_write_u8(cc, offset, *buf++);
-+		/* Set chip select */
-+		bcma_cc_set32(cc, BCMA_CC_GPIOOUT, mask);
-+		/* Issue a page program with the first byte */
-+		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_PP);
-+		ret = 1;
++	bcma_sflash_write_u8(cc, offset, *buf++);
++	/* Issue a page program with CSA bit set */
++	bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_CSA | BCMA_CC_FLASHCTL_ST_PP);
++	offset++;
++	len--;
++	while (len > 0) {
++		if ((offset & 255) == 0) {
++			/* Page boundary, poll droping cs and return */
++			bcma_cc_write32(cc, BCMA_CC_FLASHCTL, 0);
++			udelay(1);
++			if (!bcma_sflash_poll(cc, offset)) {
++				/* Flash rejected command */
++				return -EAGAIN;
++			}
++			return written;
++		} else {
++			/* Write single byte */
++			bcma_sflash_cmd(cc,
++					BCMA_CC_FLASHCTL_ST_CSA |
++					*buf++);
++		}
++		written++;
 +		offset++;
 +		len--;
-+		while (len > 0) {
-+			if ((offset & 255) == 0) {
-+				/* Page boundary, drop cs and return */
-+				bcma_cc_mask32(cc, BCMA_CC_GPIOOUT, ~mask);
-+				udelay(1);
-+				if (!bcma_sflash_poll(cc, offset)) {
-+					/* Flash rejected command */
-+					return -EAGAIN;
-+				}
-+				return ret;
-+			} else {
-+				/* Write single byte */
-+				bcma_sflash_cmd(cc, *buf++);
-+			}
-+			ret++;
-+			offset++;
-+			len--;
-+		}
-+		/* All done, drop cs */
-+		bcma_cc_mask32(cc, BCMA_CC_GPIOOUT, ~mask);
-+		udelay(1);
-+		if (!bcma_sflash_poll(cc, offset)) {
-+			/* Flash rejected command */
-+			return -EAGAIN;
-+		}
-+	} else if (cc->core->id.rev >= 20) {
-+		bcma_sflash_write_u8(cc, offset, *buf++);
-+		/* Issue a page program with CSA bit set */
-+		bcma_sflash_cmd(cc,
-+				BCMA_CC_FLASHCTL_ST_CSA |
-+				BCMA_CC_FLASHCTL_ST_PP);
-+		ret = 1;
-+		offset++;
-+		len--;
-+		while (len > 0) {
-+			if ((offset & 255) == 0) {
-+				/* Page boundary, poll droping cs and return */
-+				bcma_cc_write32(cc, BCMA_CC_FLASHCTL, 0);
-+				udelay(1);
-+				if (!bcma_sflash_poll(cc, offset)) {
-+					/* Flash rejected command */
-+					return -EAGAIN;
-+				}
-+				return ret;
-+			} else {
-+				/* Write single byte */
-+				bcma_sflash_cmd(cc,
-+						BCMA_CC_FLASHCTL_ST_CSA |
-+						*buf++);
-+			}
-+			ret++;
-+			offset++;
-+			len--;
-+		}
-+		/* All done, drop cs & poll */
-+		bcma_cc_write32(cc, BCMA_CC_FLASHCTL, 0);
-+		udelay(1);
-+		if (!bcma_sflash_poll(cc, offset)) {
-+			/* Flash rejected command */
-+			return -EAGAIN;
-+		}
-+	} else {
-+		ret = 1;
-+		bcma_sflash_write_u8(cc, offset, *buf);
-+		/* Page program */
-+		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_PP);
 +	}
-+	return ret;
++	/* All done, drop cs & poll */
++	bcma_cc_write32(cc, BCMA_CC_FLASHCTL, 0);
++	udelay(1);
++	if (!bcma_sflash_poll(cc, offset)) {
++		/* Flash rejected command */
++		return -EAGAIN;
++	}
++	return written;
 +}
 +
 +static int sflash_at_write(struct bcma_drv_cc *cc, u32 offset, u32 len,
@@ -410,6 +340,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct bcma_sflash *sfl = &cc->sflash;
 +	u32 page, byte, mask;
 +	int ret = 0;
++
 +	mask = sfl->blocksize - 1;
 +	page = (offset & ~mask) << 1;
 +	byte = offset & mask;
@@ -428,8 +359,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	/* Write into buffer 1 */
 +	for (ret = 0; (ret < (int)len) && (byte < sfl->blocksize); ret++) {
 +		bcma_sflash_write_u8(cc, byte++, *buf++);
-+		bcma_sflash_cmd(cc,
-+				BCMA_CC_FLASHCTL_AT_BUF1_WRITE);
++		bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_AT_BUF1_WRITE);
 +	}
 +	/* Write buffer 1 into main memory page */
 +	bcma_cc_write32(cc, BCMA_CC_FLASHADDR, page);
@@ -442,7 +372,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + * written. Caller should poll for completion.
 + */
 +int bcma_sflash_write(struct bcma_drv_cc *cc, u32 offset, u32 len,
-+			    const u8 *buf)
++		      const u8 *buf)
 +{
 +	struct bcma_sflash *sfl;
 +	int ret = 0, tries = NUM_RETRIES;
@@ -493,7 +423,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		 * with a new command: ST_SSE. The ST_SE command erases 64KB just as
 +		 * before.
 +		 */
-+		bcma_sflash_cmd(cc, (sfl->blocksize < (64 * 1024)) ? BCMA_CC_FLASHCTL_ST_SSE : BCMA_CC_FLASHCTL_ST_SE);
++		if (sfl->blocksize < (64 * 1024))
++			bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_SSE);
++		else
++			bcma_sflash_cmd(cc, BCMA_CC_FLASHCTL_ST_SE);
 +		return sfl->blocksize;
 +	case BCMA_CC_FLASHT_ATSER:
 +		bcma_cc_write32(cc, BCMA_CC_FLASHADDR, offset << 1);
@@ -502,113 +435,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	}
 +
 +	return 0;
-+}
-+
-+/*
-+ * writes the appropriate range of flash, a NULL buf simply erases
-+ * the region of flash
-+ */
-+int bcma_sflash_commit(struct bcma_drv_cc *cc, u32 offset, u32 len,
-+			     const u8 *buf)
-+{
-+	struct bcma_sflash *sfl;
-+	u8 *block = NULL, *cur_ptr, *blk_ptr;
-+	u32 blocksize = 0, mask, cur_offset, cur_length, cur_retlen, remainder;
-+	u32 blk_offset, blk_len, copied;
-+	int bytes, ret = 0;
-+
-+	/* Check address range */
-+	if (len <= 0)
-+		return 0;
-+
-+	sfl = &cc->sflash;
-+	if ((offset + len) > sfl->size)
-+		return -EINVAL;
-+
-+	blocksize = sfl->blocksize;
-+	mask = blocksize - 1;
-+
-+	/* Allocate a block of mem */
-+	block = kmalloc(blocksize, GFP_KERNEL);
-+	if (!block)
-+		return -ENOMEM;
-+
-+	while (len) {
-+		/* Align offset */
-+		cur_offset = offset & ~mask;
-+		cur_length = blocksize;
-+		cur_ptr = block;
-+
-+		remainder = blocksize - (offset & mask);
-+		if (len < remainder)
-+			cur_retlen = len;
-+		else
-+			cur_retlen = remainder;
-+
-+		/* buf == NULL means erase only */
-+		if (buf) {
-+			/* Copy existing data into holding block if necessary */
-+			if ((offset & mask) || (len < blocksize)) {
-+				blk_offset = cur_offset;
-+				blk_len = cur_length;
-+				blk_ptr = cur_ptr;
-+
-+				/* Copy entire block */
-+				while (blk_len) {
-+					copied = bcma_sflash_read(cc,
-+							blk_offset,
-+							blk_len, blk_ptr);
-+					blk_offset += copied;
-+					blk_len -= copied;
-+					blk_ptr += copied;
-+				}
-+			}
-+
-+			/* Copy input data into holding block */
-+			memcpy(cur_ptr + (offset & mask), buf, cur_retlen);
-+		}
-+
-+		/* Erase block */
-+		ret = bcma_sflash_erase(cc, cur_offset);
-+		if (ret < 0)
-+			goto done;
-+
-+		while (bcma_sflash_poll(cc, cur_offset));
-+
-+		/* buf == NULL means erase only */
-+		if (!buf) {
-+			offset += cur_retlen;
-+			len -= cur_retlen;
-+			continue;
-+		}
-+
-+		/* Write holding block */
-+		while (cur_length > 0) {
-+			bytes = bcma_sflash_write(cc, cur_offset,
-+					cur_length, cur_ptr);
-+
-+			if (bytes < 0) {
-+				ret = bytes;
-+				goto done;
-+			}
-+
-+			while (bcma_sflash_poll(cc, cur_offset))
-+				;
-+
-+			cur_offset += bytes;
-+			cur_length -= bytes;
-+			cur_ptr += bytes;
-+		}
-+
-+		offset += cur_retlen;
-+		len -= cur_retlen;
-+		buf += cur_retlen;
-+	}
-+
-+	ret = len;
-+done:
-+	kfree(block);
-+	return ret;
 +}
 --- a/drivers/bcma/driver_mips.c
 +++ b/drivers/bcma/driver_mips.c
@@ -662,7 +488,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	};
  
  	int nr_serial_ports;
-@@ -459,4 +471,16 @@ extern void bcma_chipco_chipctl_maskset(
+@@ -459,4 +471,14 @@ extern void bcma_chipco_chipctl_maskset(
  extern void bcma_chipco_regctl_maskset(struct bcma_drv_cc *cc,
  				       u32 offset, u32 mask, u32 set);
  
@@ -674,8 +500,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +int bcma_sflash_write(struct bcma_drv_cc *cc, u32 offset, u32 len,
 +			    const u8 *buf);
 +int bcma_sflash_erase(struct bcma_drv_cc *cc, u32 offset);
-+int bcma_sflash_commit(struct bcma_drv_cc *cc, u32 offset, u32 len,
-+			     const u8 *buf);
 +#endif /* CONFIG_BCMA_SFLASH */
 +
  #endif /* LINUX_BCMA_DRIVER_CC_H_ */

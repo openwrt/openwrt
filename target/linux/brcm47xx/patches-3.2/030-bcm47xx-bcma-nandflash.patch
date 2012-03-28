@@ -1,3 +1,13 @@
+--- a/arch/mips/bcm47xx/Kconfig
++++ b/arch/mips/bcm47xx/Kconfig
+@@ -24,6 +24,7 @@ config BCM47XX_BCMA
+ 	select BCMA_DRIVER_MIPS
+ 	select BCMA_DRIVER_PCI_HOSTMODE if PCI
+ 	select BCMA_SFLASH
++	select BCMA_NFLASH
+ 	default y
+ 	help
+ 	 Add support for new Broadcom BCM47xx boards with Broadcom specific Advanced Microcontroller Bus.
 --- a/arch/mips/bcm47xx/bus.c
 +++ b/arch/mips/bcm47xx/bus.c
 @@ -2,6 +2,7 @@
@@ -8,7 +18,7 @@
   *
   * This program is free software; you can redistribute  it and/or modify it
   * under  the terms of  the GNU General  Public License as published by the
-@@ -92,3 +93,9 @@ void bcm47xx_sflash_struct_ssb_init(stru
+@@ -80,3 +81,9 @@ void bcm47xx_sflash_struct_ssb_init(stru
  	sflash->numblocks = scc->sflash.numblocks;
  	sflash->size = scc->sflash.size;
  }
@@ -36,7 +46,7 @@
  
  static char nvram_buf[NVRAM_SPACE];
  
-@@ -137,6 +139,51 @@ found:
+@@ -134,6 +136,51 @@ found:
  	return 0;
  }
  
@@ -85,20 +95,20 @@
 +	return ret;
 +}
 +
- static void early_nvram_init(void)
+ #ifdef CONFIG_BCM47XX_SSB
+ static void early_nvram_init_ssb(void)
  {
- 	int err = 0;
-@@ -163,6 +210,10 @@ static void early_nvram_init(void)
- 			err = early_nvram_init_sflash();
- 			if (err < 0)
- 				printk(KERN_WARNING "can not read from flash: %i\n", err);
-+		} else if (bcm47xx_bus.bcma.bus.drv_cc.flash_type == BCMA_NFLASH) {
-+			err = early_nvram_init_nflash();
-+			if (err < 0)
-+				printk(KERN_WARNING "can not read from nflash: %i\n", err);
- 		} else {
- 			printk(KERN_WARNING "unknow flash type\n");
- 		}
+@@ -164,6 +211,10 @@ static void early_nvram_init_bcma(void)
+ 		err = early_nvram_init_sflash();
+ 		if (err < 0)
+ 			printk(KERN_WARNING "can not read from flash: %i\n", err);
++	case BCMA_NFLASH:
++		err = early_nvram_init_nflash();
++		if (err < 0)
++			printk(KERN_WARNING "can not read from nflash: %i\n", err);
+ 	default:
+ 		printk(KERN_WARNING "unknow flash type\n");
+ 	}
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
 @@ -4,6 +4,7 @@
@@ -115,19 +125,9 @@
  struct bcm47xx_sflash bcm47xx_sflash;
 +struct bcm47xx_nflash bcm47xx_nflash;
  
- static void bcm47xx_machine_restart(char *command)
- {
-@@ -325,6 +327,9 @@ static void __init bcm47xx_register_bcma
- 
- 	if (bcm47xx_bus.bcma.bus.drv_cc.flash_type == BCMA_SFLASH)
- 		bcm47xx_sflash_struct_bcma_init(&bcm47xx_sflash, &bcm47xx_bus.bcma.bus.drv_cc);
-+	
-+	if (bcm47xx_bus.bcma.bus.drv_cc.flash_type == BCMA_NFLASH)
-+		bcm47xx_nflash_struct_bcma_init(&bcm47xx_nflash, &bcm47xx_bus.bcma.bus.drv_cc);
- }
- #endif
- 
-@@ -395,6 +400,19 @@ static struct platform_device bcm47xx_sf
+ static struct resource bcm47xx_pflash_resource = {
+ 	.name	= "bcm47xx_pflash",
+@@ -73,6 +75,19 @@ static struct platform_device bcm47xx_sf
  	.num_resources	= 1,
  };
  
@@ -144,19 +144,29 @@
 +	.num_resources	= 1,
 +};
 +
- static int __init bcm47xx_register_flash(void)
+ static void bcm47xx_machine_restart(char *command)
  {
- #ifdef CONFIG_BCM47XX_SSB
-@@ -429,6 +447,9 @@ static int __init bcm47xx_register_flash
- 		} else if (drv_cc->flash_type == BCMA_SFLASH) {
- 			bcm47xx_sflash_dev.dev.platform_data = &bcm47xx_sflash;
- 			return platform_device_register(&bcm47xx_sflash_dev);
-+		} else if (drv_cc->flash_type == BCMA_NFLASH) {
-+			bcm47xx_nflash_dev.dev.platform_data = &bcm47xx_nflash;
-+			return platform_device_register(&bcm47xx_nflash_dev);
- 		} else {
- 			printk(KERN_ERR "No flash device found\n");
- 			return -1;
+ 	printk(KERN_ALERT "Please stand by while rebooting the system...\n");
+@@ -369,6 +384,9 @@ static void __init bcm47xx_register_bcma
+ 
+ 	if (bcm47xx_bus.bcma.bus.drv_cc.flash_type == BCMA_SFLASH)
+ 		bcm47xx_sflash_struct_bcma_init(&bcm47xx_sflash, &bcm47xx_bus.bcma.bus.drv_cc);
++	
++	if (bcm47xx_bus.bcma.bus.drv_cc.flash_type == BCMA_NFLASH)
++		bcm47xx_nflash_struct_bcma_init(&bcm47xx_nflash, &bcm47xx_bus.bcma.bus.drv_cc);
+ }
+ 
+ static int __init bcm47xx_register_flash_bcma(void)
+@@ -383,6 +401,9 @@ static int __init bcm47xx_register_flash
+ 	case BCMA_SFLASH:
+ 		bcm47xx_sflash_dev.dev.platform_data = &bcm47xx_sflash;
+ 		return platform_device_register(&bcm47xx_sflash_dev);
++	case BCMA_NFLASH:
++		bcm47xx_nflash_dev.dev.platform_data = &bcm47xx_nflash;
++		return platform_device_register(&bcm47xx_nflash_dev);
+ 	default:
+ 		printk(KERN_ERR "No flash device found\n");
+ 		return -1;
 --- a/arch/mips/include/asm/mach-bcm47xx/bus.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bus.h
 @@ -2,6 +2,7 @@
@@ -175,7 +185,15 @@
  
  struct bcm47xx_sflash {
  	enum bcm47xx_bus_type sflash_type;
-@@ -38,3 +40,18 @@ void bcm47xx_sflash_struct_bcma_init(str
+@@ -29,11 +31,24 @@ struct bcm47xx_sflash {
+ 	u32 blocksize;		/* Block size */
+ 	u32 numblocks;		/* Number of blocks */
+ 	u32 size;		/* Total size in bytes */
+-
+-	struct mtd_info *mtd;
+ };
+ 
+ void bcm47xx_sflash_struct_bcma_init(struct bcm47xx_sflash *sflash, struct bcma_drv_cc *bcc);
  void bcm47xx_sflash_struct_ssb_init(struct bcm47xx_sflash *sflash, struct ssb_chipcommon *scc);
  
  extern struct bcm47xx_sflash bcm47xx_sflash;
@@ -194,6 +212,30 @@
 +void bcm47xx_nflash_struct_bcma_init(struct bcm47xx_nflash *nflash, struct bcma_drv_cc *bcc);
 +
 +extern struct bcm47xx_nflash bcm47xx_nflash;
+--- a/drivers/bcma/Kconfig
++++ b/drivers/bcma/Kconfig
+@@ -43,6 +43,11 @@ config BCMA_SFLASH
+ 	depends on BCMA_DRIVER_MIPS
+ 	default y
+ 
++config BCMA_NFLASH
++	bool
++	depends on BCMA_DRIVER_MIPS
++	default y
++
+ config BCMA_DRIVER_MIPS
+ 	bool "BCMA Broadcom MIPS core driver"
+ 	depends on BCMA && MIPS
+--- a/drivers/bcma/Makefile
++++ b/drivers/bcma/Makefile
+@@ -1,6 +1,7 @@
+ bcma-y					+= main.o scan.o core.o sprom.o
+ bcma-y					+= driver_chipcommon.o driver_chipcommon_pmu.o
+ bcma-$(CONFIG_BCMA_SFLASH)		+= driver_chipcommon_sflash.o
++bcma-$(CONFIG_BCMA_NFLASH)		+= driver_chipcommon_nflash.o
+ bcma-y					+= driver_pci.o
+ bcma-$(CONFIG_BCMA_DRIVER_PCI_HOSTMODE)	+= driver_pci_host.o
+ bcma-$(CONFIG_BCMA_DRIVER_MIPS)		+= driver_mips.o
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
 @@ -46,6 +46,11 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
@@ -320,7 +362,7 @@
 +	mask = cc->nflash.pagesize - 1;
 +	if (bcma_nflash_offset_is_valid(cc, offset, len, mask))
 +		return 1;
-+	
++
 +	/* disable partial page enable */
 +	reg = bcma_cc_read32(cc, NAND_ACC_CONTROL);
 +	reg &= ~NAC_PARTIAL_PAGE_EN;
@@ -349,7 +391,7 @@
 +		return (len - res);
 +}
 +
-+/* Erase a region. Returns success (0) or failure (-1). 
++/* Erase a region. Returns success (0) or failure (-1).
 + * Poll for completion.
 + */
 +int bcma_nflash_erase(struct bcma_drv_cc *cc, u32 offset)
@@ -393,30 +435,30 @@
  	switch (bus->drv_cc.capabilities & BCMA_CC_CAP_FLASHT) {
  	case BCMA_CC_FLASHT_STSER:
  	case BCMA_CC_FLASHT_ATSER:
---- a/drivers/bcma/Kconfig
-+++ b/drivers/bcma/Kconfig
-@@ -43,6 +43,11 @@ config BCMA_SFLASH
- 	depends on BCMA_DRIVER_MIPS
- 	default y
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -537,4 +537,12 @@ config MTD_NAND_FSMC
+ 	  Enables support for NAND Flash chips on the ST Microelectronics
+ 	  Flexible Static Memory Controller (FSMC)
  
-+config BCMA_NFLASH
-+	bool
-+	depends on BCMA_DRIVER_MIPS
++config MTD_NAND_BCM47XX
++	tristate "bcm47xx nand flash support"
 +	default y
++	depends on BCM47XX
++	select MTD_PARTITIONS
++	help
++	  Support for bcm47xx nand flash
 +
- config BCMA_DRIVER_MIPS
- 	bool "BCMA Broadcom MIPS core driver"
- 	depends on BCMA && MIPS
---- a/drivers/bcma/Makefile
-+++ b/drivers/bcma/Makefile
-@@ -1,6 +1,7 @@
- bcma-y					+= main.o scan.o core.o sprom.o
- bcma-y					+= driver_chipcommon.o driver_chipcommon_pmu.o
- bcma-$(CONFIG_BCMA_SFLASH)		+= driver_chipcommon_sflash.o
-+bcma-$(CONFIG_BCMA_NFLASH)		+= driver_chipcommon_nflash.o
- bcma-y					+= driver_pci.o
- bcma-$(CONFIG_BCMA_DRIVER_PCI_HOSTMODE)	+= driver_pci_host.o
- bcma-$(CONFIG_BCMA_DRIVER_MIPS)		+= driver_mips.o
+ endif # MTD_NAND
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -49,5 +49,6 @@ obj-$(CONFIG_MTD_NAND_MPC5121_NFC)	+= mp
+ obj-$(CONFIG_MTD_NAND_RICOH)		+= r852.o
+ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740_nand.o
+ obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
++obj-$(CONFIG_MTD_NAND_BCM47XX)		+= bcm47xx_nand.o
+ 
+ nand-objs := nand_base.o nand_bbt.o
 --- /dev/null
 +++ b/drivers/mtd/nand/bcm47xx_nand.c
 @@ -0,0 +1,506 @@
@@ -590,7 +632,7 @@
 +				goto done;
 +			}
 +		}
-+	
++
 +		/* Copy input data into holding block */
 +		copy_len = min(len, blocksize - (offset & mask));
 +		memcpy(block + (offset & mask), ptr, copy_len);
@@ -639,7 +681,7 @@
 +		pr_err("ERASE: nflash_mtd_poll error\n");
 +		return 1;
 +	}
-+	
++
 +	return 0;
 +}
 +
@@ -704,14 +746,14 @@
 +		nflash->next_opcode = 0;
 +		bcm47xx_erase(mtd, page_addr*pagesize, pagesize);
 +		break;
-+	
++
 +	case NAND_CMD_ERASE2:
 +		break;
 +
 +	case NAND_CMD_RNDOUT:
 +		if (column > mtd->writesize)
 +			read_offset += (column - mtd->writesize);
-+		else 
++		else
 +			read_offset += column;
 +		break;
 +
@@ -740,7 +782,7 @@
 +		return ret;
 +
 +	if (nflash->next_opcode == NAND_CMD_STATUS)
-+		return NAND_STATUS_WP; 
++		return NAND_STATUS_WP;
 +
 +	id = bcma_cc_read32(nflash->bcc, nflash->next_opcode);
 +
@@ -879,7 +921,7 @@
 +		pr_err("mtd_device_register failed\n");
 +		return ret;
 +	}
-+	
++
 +	return 0;
 +
 +done:
@@ -926,30 +968,6 @@
 +
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("BCM47XX NAND flash driver");
---- a/drivers/mtd/nand/Kconfig
-+++ b/drivers/mtd/nand/Kconfig
-@@ -537,4 +537,12 @@ config MTD_NAND_FSMC
- 	  Enables support for NAND Flash chips on the ST Microelectronics
- 	  Flexible Static Memory Controller (FSMC)
- 
-+config MTD_NAND_BCM47XX
-+	tristate "bcm47xx nand flash support"
-+	default y
-+	depends on BCM47XX
-+	select MTD_PARTITIONS
-+	help
-+	  Support for bcm47xx nand flash
-+
- endif # MTD_NAND
---- a/drivers/mtd/nand/Makefile
-+++ b/drivers/mtd/nand/Makefile
-@@ -49,5 +49,6 @@ obj-$(CONFIG_MTD_NAND_MPC5121_NFC)	+= mp
- obj-$(CONFIG_MTD_NAND_RICOH)		+= r852.o
- obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740_nand.o
- obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
-+obj-$(CONFIG_MTD_NAND_BCM47XX)		+= bcm47xx_nand.o
- 
- nand-objs := nand_base.o nand_bbt.o
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
 @@ -376,6 +376,7 @@ struct bcma_chipcommon_pmu {
@@ -985,8 +1003,8 @@
  	};
  
  	int nr_serial_ports;
-@@ -483,4 +495,13 @@ int bcma_sflash_commit(struct bcma_drv_c
- 			     const u8 *buf);
+@@ -481,4 +493,13 @@ int bcma_sflash_write(struct bcma_drv_cc
+ int bcma_sflash_erase(struct bcma_drv_cc *cc, u32 offset);
  #endif /* CONFIG_BCMA_SFLASH */
  
 +#ifdef CONFIG_BCMA_NFLASH
@@ -1008,7 +1026,7 @@
 + * Copyright (C) 2011-2012 Tathagata Das <tathagata@alumnux.com>
 + * Copyright (C) 2009, Broadcom Corporation
 + * All Rights Reserved.
-+ * 
++ *
 + * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
 + * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
 + * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
