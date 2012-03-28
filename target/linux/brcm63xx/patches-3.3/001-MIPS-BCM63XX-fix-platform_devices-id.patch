@@ -1,0 +1,36 @@
+From cbcfe65e357666106c3c6250baf9c5ce33f3e3e3 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Wed, 25 Jan 2012 17:39:53 +0100
+Subject: [PATCH 03/63] MIPS: BCM63XX: fix platform_devices id
+
+There is only one watchdog and VoIP DSP platform devices per board, use
+-1 as the platform_device id accordingly.
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+---
+ arch/mips/bcm63xx/dev-dsp.c |    2 +-
+ arch/mips/bcm63xx/dev-wdt.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/bcm63xx/dev-dsp.c
++++ b/arch/mips/bcm63xx/dev-dsp.c
+@@ -31,7 +31,7 @@ static struct resource voip_dsp_resource
+ 
+ static struct platform_device bcm63xx_voip_dsp_device = {
+ 	.name		= "bcm63xx-voip-dsp",
+-	.id		= 0,
++	.id		= -1,
+ 	.num_resources	= ARRAY_SIZE(voip_dsp_resources),
+ 	.resource	= voip_dsp_resources,
+ };
+--- a/arch/mips/bcm63xx/dev-wdt.c
++++ b/arch/mips/bcm63xx/dev-wdt.c
+@@ -21,7 +21,7 @@ static struct resource wdt_resources[] =
+ 
+ static struct platform_device bcm63xx_wdt_device = {
+ 	.name		= "bcm63xx-wdt",
+-	.id		= 0,
++	.id		= -1,
+ 	.num_resources	= ARRAY_SIZE(wdt_resources),
+ 	.resource	= wdt_resources,
+ };

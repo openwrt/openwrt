@@ -1,0 +1,29 @@
+From fab0cbda27ab2400d6a461bf144007a0d5337527 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Wed, 25 Jan 2012 17:40:05 +0100
+Subject: [PATCH 12/63] MIPS: BCM63XX: make board setup code register the spi platform device
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+---
+ arch/mips/bcm63xx/boards/board_bcm963xx.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -25,6 +25,7 @@
+ #include <bcm63xx_dev_enet.h>
+ #include <bcm63xx_dev_dsp.h>
+ #include <bcm63xx_dev_pcmcia.h>
++#include <bcm63xx_dev_spi.h>
+ #include <board_bcm963xx.h>
+ 
+ #define PFX	"board_bcm963xx: "
+@@ -890,6 +891,8 @@ int __init board_register_devices(void)
+ 	}
+ #endif
+ 
++	bcm63xx_spi_register();
++
+ 	/* read base address of boot chip select (0) */
+ 	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
+ 	val &= MPI_CSBASE_BASE_MASK;
