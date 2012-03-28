@@ -1,18 +1,3 @@
-From e8afde87ecf56beff67c7d5371cabaa4fc018541 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sat, 23 Jul 2011 23:57:06 +0200
-Subject: [PATCH 14/26] ssb: move flash to chipcommon
-
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- arch/mips/bcm47xx/nvram.c                 |    8 +++---
- arch/mips/bcm47xx/wgt634u.c               |    8 +++---
- drivers/ssb/driver_mipscore.c             |   36 +++++++++++++++++++++-------
- include/linux/ssb/ssb_driver_chipcommon.h |   18 ++++++++++++++
- include/linux/ssb/ssb_driver_mips.h       |    4 ---
- 5 files changed, 53 insertions(+), 21 deletions(-)
-
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -27,7 +27,7 @@ static char nvram_buf[NVRAM_SPACE];

@@ -1,17 +1,3 @@
-From 36f8b899174a445a98fe02ed8d1db177525f0c52 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sun, 17 Jul 2011 14:55:18 +0200
-Subject: [PATCH 07/15] mtd: bcm47xx: add parallel flash driver
-
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/mtd/maps/Kconfig          |    9 ++
- drivers/mtd/maps/Makefile         |    1 +
- drivers/mtd/maps/bcm47xx-pflash.c |  188 +++++++++++++++++++++++++++++++++++++
- 3 files changed, 198 insertions(+), 0 deletions(-)
- create mode 100644 drivers/mtd/maps/bcm47xx-pflash.c
-
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
 @@ -257,6 +257,15 @@ config MTD_LANTIQ

@@ -1,20 +1,3 @@
-From 980da78179592a3f5f99168bc5af415835aa8c13 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sun, 24 Jul 2011 20:20:36 +0200
-Subject: [PATCH 15/26] ssb: add serial flash support
-
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/ssb/Kconfig                       |    6 +
- drivers/ssb/Makefile                      |    1 +
- drivers/ssb/driver_chipcommon_sflash.c    |  556 +++++++++++++++++++++++++++++
- drivers/ssb/driver_mipscore.c             |    6 +
- drivers/ssb/ssb_private.h                 |    4 +
- include/linux/ssb/ssb_driver_chipcommon.h |   30 ++-
- 6 files changed, 601 insertions(+), 2 deletions(-)
- create mode 100644 drivers/ssb/driver_chipcommon_sflash.c
-
 --- a/drivers/ssb/Kconfig
 +++ b/drivers/ssb/Kconfig
 @@ -137,6 +137,12 @@ config SSB_DRIVER_MIPS
@@ -42,11 +25,12 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  ssb-$(CONFIG_SSB_DRIVER_PCICORE)	+= driver_pcicore.o
 --- /dev/null
 +++ b/drivers/ssb/driver_chipcommon_sflash.c
-@@ -0,0 +1,556 @@
+@@ -0,0 +1,451 @@
 +/*
 + * Broadcom SiliconBackplane chipcommon serial flash interface
 + *
 + * Copyright 2011, Jonas Gorski <jonas.gorski@gmail.com>
++ * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
 + * Copyright 2010, Broadcom Corporation
 + *
 + * Licensed under the GNU/GPL. See COPYING for details.
@@ -73,7 +57,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +
 +static inline void ssb_sflash_write_u8(struct ssb_chipcommon *cc,
-+					      u32 offset, u8 byte)
++				       u32 offset, u8 byte)
 +{
 +	chipco_write32(cc, SSB_CHIPCO_FLASHADDR, offset);
 +	chipco_write32(cc, SSB_CHIPCO_FLASHDATA, byte);
@@ -233,8 +217,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +}
 +
 +/* Read len bytes starting at offset into buf. Returns number of bytes read. */
-+int ssb_sflash_read(struct ssb_chipcommon *cc, u32 offset, u32 len,
-+			   u8 *buf)
++int ssb_sflash_read(struct ssb_chipcommon *cc, u32 offset, u32 len, u8 *buf)
 +{
 +	u8 *from, *to;
 +	u32 cnt, i;
@@ -309,7 +292,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	int ret = 0;
 +	bool is4712b0 = (bus->chip_id == 0x4712) && (bus->chip_rev == 3);
 +	u32 mask;
-+
 +
 +	/* Enable writes */
 +	ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_WREN);
@@ -478,11 +460,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	case SSB_CHIPCO_FLASHT_STSER:
 +		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_WREN);
 +		chipco_write32(cc, SSB_CHIPCO_FLASHADDR, offset);
-+		/* Newer flashes have "sub-sectors" which can be erased independently
-+		 * with a new command: ST_SSE. The ST_SE command erases 64KB just as
-+		 * before.
++		/* Newer flashes have "sub-sectors" which can be erased
++		 * independently with a new command: ST_SSE. The ST_SE command
++		 * erases 64KB just as before.
 +		 */
-+		ssb_sflash_cmd(cc, (sfl->blocksize < (64 * 1024)) ? SSB_CHIPCO_FLASHCTL_ST_SSE : SSB_CHIPCO_FLASHCTL_ST_SE);
++		if (sfl->blocksize < (64 * 1024))
++			ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_SSE);
++		else
++			ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_SE);
 +		return sfl->blocksize;
 +	case SSB_CHIPCO_FLASHT_ATSER:
 +		chipco_write32(cc, SSB_CHIPCO_FLASHADDR, offset << 1);
@@ -491,113 +476,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	}
 +
 +	return 0;
-+}
-+
-+/*
-+ * writes the appropriate range of flash, a NULL buf simply erases
-+ * the region of flash
-+ */
-+int ssb_sflash_commit(struct ssb_chipcommon *cc, u32 offset, u32 len,
-+			     const u8 *buf)
-+{
-+	struct ssb_sflash *sfl;
-+	u8 *block = NULL, *cur_ptr, *blk_ptr;
-+	u32 blocksize = 0, mask, cur_offset, cur_length, cur_retlen, remainder;
-+	u32 blk_offset, blk_len, copied;
-+	int bytes, ret = 0;
-+
-+	/* Check address range */
-+	if (len <= 0)
-+		return 0;
-+
-+	sfl = &cc->sflash;
-+	if ((offset + len) > sfl->size)
-+		return -EINVAL;
-+
-+	blocksize = sfl->blocksize;
-+	mask = blocksize - 1;
-+
-+	/* Allocate a block of mem */
-+	block = kmalloc(blocksize, GFP_KERNEL);
-+	if (!block)
-+		return -ENOMEM;
-+
-+	while (len) {
-+		/* Align offset */
-+		cur_offset = offset & ~mask;
-+		cur_length = blocksize;
-+		cur_ptr = block;
-+
-+		remainder = blocksize - (offset & mask);
-+		if (len < remainder)
-+			cur_retlen = len;
-+		else
-+			cur_retlen = remainder;
-+
-+		/* buf == NULL means erase only */
-+		if (buf) {
-+			/* Copy existing data into holding block if necessary */
-+			if ((offset & mask) || (len < blocksize)) {
-+				blk_offset = cur_offset;
-+				blk_len = cur_length;
-+				blk_ptr = cur_ptr;
-+
-+				/* Copy entire block */
-+				while (blk_len) {
-+					copied = ssb_sflash_read(cc,
-+							blk_offset,
-+							blk_len, blk_ptr);
-+					blk_offset += copied;
-+					blk_len -= copied;
-+					blk_ptr += copied;
-+				}
-+			}
-+
-+			/* Copy input data into holding block */
-+			memcpy(cur_ptr + (offset & mask), buf, cur_retlen);
-+		}
-+
-+		/* Erase block */
-+		ret = ssb_sflash_erase(cc, cur_offset);
-+		if (ret < 0)
-+			goto done;
-+
-+		while (ssb_sflash_poll(cc, cur_offset));
-+
-+		/* buf == NULL means erase only */
-+		if (!buf) {
-+			offset += cur_retlen;
-+			len -= cur_retlen;
-+			continue;
-+		}
-+
-+		/* Write holding block */
-+		while (cur_length > 0) {
-+			bytes = ssb_sflash_write(cc, cur_offset,
-+					cur_length, cur_ptr);
-+
-+			if (bytes < 0) {
-+				ret = bytes;
-+				goto done;
-+			}
-+
-+			while (ssb_sflash_poll(cc, cur_offset))
-+				;
-+
-+			cur_offset += bytes;
-+			cur_length -= bytes;
-+			cur_ptr += bytes;
-+		}
-+
-+		offset += cur_retlen;
-+		len -= cur_retlen;
-+		buf += cur_retlen;
-+	}
-+
-+	ret = len;
-+done:
-+	kfree(block);
-+	return ret;
 +}
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
@@ -676,7 +554,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	};
  #endif /* CONFIG_SSB_DRIVER_MIPS */
  };
-@@ -666,6 +680,18 @@ extern int ssb_chipco_serial_init(struct
+@@ -666,6 +680,16 @@ extern int ssb_chipco_serial_init(struct
  				  struct ssb_serial_port *ports);
  #endif /* CONFIG_SSB_SERIAL */
  
@@ -688,8 +566,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +int ssb_sflash_write(struct ssb_chipcommon *cc, u32 offset, u32 len,
 +			    const u8 *buf);
 +int ssb_sflash_erase(struct ssb_chipcommon *cc, u32 offset);
-+int ssb_sflash_commit(struct ssb_chipcommon *cc, u32 offset, u32 len,
-+			     const u8 *buf);
 +#endif /* CONFIG_SSB_SFLASH */
 +
  /* PMU support */

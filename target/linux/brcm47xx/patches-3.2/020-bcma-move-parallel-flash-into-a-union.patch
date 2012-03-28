@@ -1,16 +1,3 @@
-From b7d9f9cd6a8e463c1061ea29ed3e614403625024 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sun, 17 Jul 2011 14:51:47 +0200
-Subject: [PATCH 12/26] bcma: move parallel flash into a union
-
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- arch/mips/bcm47xx/nvram.c                   |    3 +
- drivers/bcma/driver_mips.c                  |    1 +
- include/linux/bcma/bcma_driver_chipcommon.h |   73 ++++++++++++++++++++++++++-
- 3 files changed, 76 insertions(+), 1 deletions(-)
-
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -50,6 +50,9 @@ static void early_nvram_init(void)

@@ -1,17 +1,3 @@
-From d50d2d8e3ab5446f791deff0cb78820989ed93e7 Mon Sep 17 00:00:00 2001
-From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sun, 17 Jul 2011 14:54:11 +0200
-Subject: [PATCH 06/19] mtd: bcm47xx: add bcm47xx part parser
-
-
-Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
----
- drivers/mtd/Kconfig       |    7 +
- drivers/mtd/Makefile      |    1 +
- drivers/mtd/bcm47xxpart.c |  542 +++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 550 insertions(+), 0 deletions(-)
- create mode 100644 drivers/mtd/bcm47xxpart.c
-
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -164,6 +164,13 @@ config MTD_MYLOADER_PARTS
@@ -500,7 +486,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			/* Place CFE board_data into a partition */
 +			bcm47xx_parts[4].name = "board_data";
 +			bcm47xx_parts[4].offset = bcm47xx_parts[3].offset - custom_data_size;
-+			bcm47xx_parts[4].size   =  custom_data_size;
++			bcm47xx_parts[4].size   = custom_data_size;
 +			break;
 +
 +		case ROUTER_SIMPLETECH_SIMPLESHARE:

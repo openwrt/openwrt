@@ -9,7 +9,7 @@
   *  Copyright (C) 2011-2012 Tathagata Das <tathagata@alumnux.com>
   *
   *  This program is free software; you can redistribute  it and/or modify it
-@@ -93,7 +93,7 @@ static void bcm47xx_machine_halt(void)
+@@ -132,7 +132,7 @@ static void bcm47xx_machine_halt(void)
  }
  
  #ifdef CONFIG_BCM47XX_SSB
@@ -18,7 +18,7 @@
  {
  	char prefix[10];
  
-@@ -110,7 +110,7 @@ static int bcm47xx_get_sprom(struct ssb_
+@@ -149,7 +149,7 @@ static int bcm47xx_get_sprom(struct ssb_
  }
  
  static int bcm47xx_get_invariants(struct ssb_bus *bus,
@@ -27,7 +27,7 @@
  {
  	char buf[20];
  
-@@ -165,7 +165,7 @@ static void __init bcm47xx_register_ssb(
+@@ -204,7 +204,7 @@ static void __init bcm47xx_register_ssb(
  	char buf[100];
  	struct ssb_mipscore *mcore;
  
@@ -36,7 +36,7 @@
  	if (err)
  		printk(KERN_WARNING "bcm47xx: someone else already registered"
  			" a ssb SPROM callback handler (err %d)\n", err);
-@@ -199,10 +199,41 @@ static void __init bcm47xx_register_ssb(
+@@ -256,10 +256,41 @@ static int __init bcm47xx_register_flash
  #endif
  
  #ifdef CONFIG_BCM47XX_BCMA
