@@ -1,7 +1,7 @@
-From 00fefa81d4919c72470ad68f05bc9e239108ca1b Mon Sep 17 00:00:00 2001
+From a2d78246e4cb45b5978fc682aad19c0fff0cd20d Mon Sep 17 00:00:00 2001
 From: Maxime Bizon <mbizon@freebox.fr>
 Date: Tue, 24 May 2011 21:50:33 +0200
-Subject: [PATCH 23/57] MIPS: BCM63XX: register ehci device.
+Subject: [PATCH 26/63] MIPS: BCM63XX: register ehci device.
 
 ---
  arch/mips/bcm63xx/Kconfig                          |    2 +
@@ -33,7 +33,7 @@ Subject: [PATCH 23/57] MIPS: BCM63XX: register ehci device.
 +++ b/arch/mips/bcm63xx/Makefile
 @@ -1,6 +1,6 @@
  obj-y		+= clk.o cpu.o cs.o gpio.o irq.o prom.o setup.o timer.o \
- 		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-uart.o \
+ 		   dev-dsp.o dev-enet.o dev-pcmcia.o dev-spi.o dev-uart.o \
 -		   dev-usb-ohci.o dev-wdt.o
 +		   dev-usb-ehci.o dev-usb-ohci.o dev-wdt.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
@@ -41,15 +41,15 @@ Subject: [PATCH 23/57] MIPS: BCM63XX: register ehci device.
  obj-y		+= boards/
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -28,6 +28,7 @@
- #include <bcm63xx_dev_dsp.h>
+@@ -29,6 +29,7 @@
  #include <bcm63xx_dev_pcmcia.h>
+ #include <bcm63xx_dev_spi.h>
  #include <bcm63xx_dev_usb_ohci.h>
 +#include <bcm63xx_dev_usb_ehci.h>
  #include <board_bcm963xx.h>
  #include <bcm_tag.h>
  
-@@ -941,6 +942,9 @@ int __init board_register_devices(void)
+@@ -942,6 +943,9 @@ int __init board_register_devices(void)
  	    !board_get_mac_address(board.enet1.mac_addr))
  		bcm63xx_enet_register(1, &board.enet1);
  
