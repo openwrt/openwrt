@@ -1,0 +1,29 @@
+--- a/drivers/bcma/driver_pci_host.c
++++ b/drivers/bcma/driver_pci_host.c
+@@ -118,7 +118,7 @@ static int bcma_extpci_read_config(struc
+ 		if (unlikely(!addr))
+ 			goto out;
+ 		err = -ENOMEM;
+-		mmio = ioremap_nocache(addr, len);
++		mmio = ioremap_nocache(addr, sizeof(val));
+ 		if (!mmio)
+ 			goto out;
+ 
+@@ -170,7 +170,7 @@ static int bcma_extpci_write_config(stru
+ 			addr = pc->core->addr + BCMA_CORE_PCI_PCICFG0;
+ 			addr |= (func << 8);
+ 			addr |= (off & 0xfc);
+-			mmio = ioremap_nocache(addr, len);
++			mmio = ioremap_nocache(addr, sizeof(val));
+ 			if (!mmio)
+ 				goto out;
+ 		}
+@@ -179,7 +179,7 @@ static int bcma_extpci_write_config(stru
+ 		if (unlikely(!addr))
+ 			goto out;
+ 		err = -ENOMEM;
+-		mmio = ioremap_nocache(addr, len);
++		mmio = ioremap_nocache(addr, sizeof(val));
+ 		if (!mmio)
+ 			goto out;
+ 
