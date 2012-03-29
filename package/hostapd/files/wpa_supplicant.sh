@@ -35,12 +35,10 @@ wpa_supplicant_setup_vif() {
 	}
 	[ "$mode" = "adhoc" ] && modestr="mode=1"
 
+	key_mgmt='NONE'
 	case "$enc" in
-		*none*)
-			key_mgmt='NONE'
-		;;
+		*none*) ;;
 		*wep*)
-			key_mgmt='NONE'
 			config_get key "$vif" key
 			key="${key:-1}"
 			case "$key" in
