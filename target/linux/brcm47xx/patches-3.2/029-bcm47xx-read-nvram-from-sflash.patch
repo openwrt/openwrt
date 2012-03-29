@@ -24,7 +24,7 @@
  		base = bcma_cc->pflash.window;
  		lim = bcma_cc->pflash.window_size;
  		break;
-@@ -86,7 +84,106 @@ found:
+@@ -86,7 +84,110 @@ found:
  	for (i = 0; i < sizeof(struct nvram_header); i += 4)
  		*dst++ = *src++;
  	for (; i < header->len && i < NVRAM_SPACE; i += 4)
@@ -87,10 +87,12 @@
 +	switch (bcm47xx_bus.ssb.chipco.flash_type) {
 +	case SSB_PFLASH:
 +		early_nvram_init_pflash();
++		break;
 +	case SSB_SFLASH:
 +		err = early_nvram_init_sflash();
 +		if (err < 0)
 +			printk(KERN_WARNING "can not read from flash: %i\n", err);
++		break;
 +	default:
 +		printk(KERN_WARNING "unknow flash type\n");
 +	}
@@ -105,10 +107,12 @@
 +	switch (bcm47xx_bus.bcma.bus.drv_cc.flash_type) {
 +	case BCMA_PFLASH:
 +		early_nvram_init_pflash();
++		break;
 +	case BCMA_SFLASH:
 +		err = early_nvram_init_sflash();
 +		if (err < 0)
 +			printk(KERN_WARNING "can not read from flash: %i\n", err);
++		break;
 +	default:
 +		printk(KERN_WARNING "unknow flash type\n");
 +	}
