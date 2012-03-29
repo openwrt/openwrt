@@ -21,6 +21,7 @@ platform_check_image() {
 	dir-600-b2 | \
 	esr-9753 | \
 	fonera20n | \
+	freestation5 | \
 	hw550-3g | \
 	mofi3500-3gn | \
 	nbg-419n | \
