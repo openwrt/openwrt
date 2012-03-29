@@ -1,0 +1,45 @@
+--- a/ath/if_ath.c
++++ b/ath/if_ath.c
+@@ -569,7 +569,11 @@ static const struct net_device_ops ath_n
+ 	.ndo_stop		= ath_stop,
+ 	.ndo_start_xmit		= ath_hardstart,
+ 	.ndo_tx_timeout 	= ath_tx_timeout,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
++	.ndo_set_rx_mode	= ath_mode_init,
++#else
+ 	.ndo_set_multicast_list = ath_mode_init,
++#endif
+ 	.ndo_do_ioctl		= ath_ioctl,
+ 	.ndo_get_stats		= ath_getstats,
+ 	.ndo_set_mac_address	= ath_set_mac_address,
+--- a/net80211/ieee80211.c
++++ b/net80211/ieee80211.c
+@@ -461,7 +461,11 @@ static const struct net_device_ops ieee8
+ 	.ndo_open		= ieee80211_open,
+ 	.ndo_stop		= ieee80211_stop,
+ 	.ndo_start_xmit		= ieee80211_hardstart,
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
++	.ndo_set_rx_mode	= ieee80211_set_multicast_list,
++#else
+ 	.ndo_set_multicast_list = ieee80211_set_multicast_list,
++#endif
+ 	.ndo_change_mtu 	= ieee80211_change_mtu,
+ 	.ndo_do_ioctl		= ieee80211_ioctl,
+ 	.ndo_validate_addr	= eth_validate_addr,
+@@ -1847,10 +1851,14 @@ ieee80211_set_multicast_list(struct net_
+ 	IEEE80211_UNLOCK_IRQ(ic);
+ 
+ 	/* XXX: Merge multicast list into parent device */
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29)
+-	parent->set_multicast_list(ic->ic_dev);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
++	parent->netdev_ops->ndo_set_rx_mode(ic->ic_dev);
+ #else
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29)
+ 	parent->netdev_ops->ndo_set_multicast_list(ic->ic_dev);
++#else
++	parent->set_multicast_list(ic->ic_dev);
++#endif
+ #endif
+ }
+ 

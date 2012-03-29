@@ -1,0 +1,21 @@
+--- a/net80211/ieee80211_input.c
++++ b/net80211/ieee80211_input.c
+@@ -1223,6 +1223,7 @@ ieee80211_deliver_data(struct ieee80211_
+ #endif
+ 		vap->iv_devstats.rx_packets++;
+ 		vap->iv_devstats.rx_bytes += skb->len;
++#if IEEE80211_VLAN_TAG_USED
+ 		if (ni->ni_vlan != 0 && vap->iv_vlgrp != NULL) {
+ 			/* attach vlan tag */
+ 			struct ieee80211_node *ni_tmp = SKB_CB(skb)->ni;
+@@ -1236,7 +1237,9 @@ ieee80211_deliver_data(struct ieee80211_
+ 				vap->iv_devstats.rx_dropped++;
+ 			}
+ 			skb = NULL; /* SKB is no longer ours */
+-		} else {
++		} else
++#endif
++		{
+ 			struct ieee80211_node *ni_tmp = SKB_CB(skb)->ni;
+ 			if (netif_receive_skb(skb) == NET_RX_DROP) {
+ 				/* If netif_receive_skb dropped the packet because
