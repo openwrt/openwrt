@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=xfsprogs
 PKG_RELEASE:=1
 PKG_VERSION:=3.1.7
-PKG_SOURCE_URL:=ftp://oss.sgi.com/projects/xfs/cmd_tars
+PKG_SOURCE_URL:=ftp://oss.sgi.com/projects/xfs/previous/
 PKG_MD5SUM:=049cf9873794ea49d0bb3f12d45748a4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
