@@ -497,7 +497,7 @@ enable_mac80211() {
 
 				config_get htmode "$device" htmode
 				case "$htmode" in
-					HT20|HT40+|HT40-) ;;
+					HT20|HT40+|HT40-|NOHT) ;;
 					*) htmode= ;;
 				esac
 
