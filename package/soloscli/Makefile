@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=soloscli
 PKG_VERSION:=0.11
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=solos-pci-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/openadsl
@@ -37,6 +37,7 @@ endef
 define Package/soloscli/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/soloscli/soloscli $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/solos-log-stats $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/atm
 	$(INSTALL_DATA) ./files/etc/hotplug.d/atm/15-solos-init $(1)/etc/hotplug.d/atm/
 endef
