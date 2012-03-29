@@ -98,14 +98,15 @@
  #ifdef CONFIG_BCM47XX_SSB
  static void early_nvram_init_ssb(void)
  {
-@@ -164,6 +211,10 @@ static void early_nvram_init_bcma(void)
- 		err = early_nvram_init_sflash();
+@@ -168,6 +215,11 @@ static void early_nvram_init_bcma(void)
  		if (err < 0)
  			printk(KERN_WARNING "can not read from flash: %i\n", err);
+ 		break;
 +	case BCMA_NFLASH:
 +		err = early_nvram_init_nflash();
 +		if (err < 0)
 +			printk(KERN_WARNING "can not read from nflash: %i\n", err);
++		break;
  	default:
  		printk(KERN_WARNING "unknow flash type\n");
  	}
