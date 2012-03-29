@@ -1,22 +1,6 @@
 --- a/src/drivers/driver_madwifi.c
 +++ b/src/drivers/driver_madwifi.c
-@@ -439,8 +439,14 @@ wpa_driver_madwifi_set_key(const char *i
- 	wpa_printf(MSG_DEBUG, "%s: alg=%d addr=%s key_idx=%d",
- 		   __func__, alg, ether_sprintf(addr), key_idx);
- 
--	if (alg == WPA_ALG_WEP)
-+	if (alg == WPA_ALG_WEP) {
- 		cipher = IEEE80211_CIPHER_WEP;
-+		if ((!addr || !memcmp(addr, "\xff\xff\xff\xff\xff\xff", ETH_ALEN)) &&
-+		    drv->wext)
-+			return wpa_driver_wext_set_key(ifname, drv->wext, alg, addr,
-+						       key_idx, set_tx, seq, seq_len,
-+						       key, key_len);
-+	}
- 	else if (alg == WPA_ALG_TKIP)
- 		cipher = IEEE80211_CIPHER_TKIP;
- 	else if (alg == WPA_ALG_CCMP)
-@@ -459,7 +465,9 @@ wpa_driver_madwifi_set_key(const char *i
+@@ -459,7 +459,9 @@ wpa_driver_madwifi_set_key(const char *i
  
  	memset(&wk, 0, sizeof(wk));
  	wk.ik_type = cipher;
@@ -27,7 +11,7 @@
  	if (addr == NULL || is_broadcast_ether_addr(addr)) {
  		memset(wk.ik_macaddr, 0xff, IEEE80211_ADDR_LEN);
  		wk.ik_keyix = key_idx;
-@@ -471,6 +479,20 @@ wpa_driver_madwifi_set_key(const char *i
+@@ -471,6 +473,20 @@ wpa_driver_madwifi_set_key(const char *i
  	wk.ik_keylen = key_len;
  	memcpy(wk.ik_keydata, key, key_len);
  
