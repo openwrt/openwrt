@@ -12,11 +12,9 @@ Cc: linux-watchdog@vger.kernel.org
  drivers/watchdog/lantiq_wdt.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/watchdog/lantiq_wdt.c b/drivers/watchdog/lantiq_wdt.c
-index 179bf98..da2b09f 100644
 --- a/drivers/watchdog/lantiq_wdt.c
 +++ b/drivers/watchdog/lantiq_wdt.c
-@@ -206,7 +206,7 @@ ltq_wdt_probe(struct platform_device *pdev)
+@@ -206,7 +206,7 @@ ltq_wdt_probe(struct platform_device *pd
  	}
  
  	/* we do not need to enable the clock as it is always running */
@@ -25,6 +23,3 @@ index 179bf98..da2b09f 100644
  	WARN_ON(!clk);
  	ltq_io_region_clk_rate = clk_get_rate(clk);
  	clk_put(clk);
--- 
-1.7.7.1
-

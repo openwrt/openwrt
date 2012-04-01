@@ -12,9 +12,6 @@ Subject: [PATCH 47/70] MIPS: lantiq: adds GPTU driver
  create mode 100644 arch/mips/include/asm/mach-lantiq/lantiq_timer.h
  create mode 100644 arch/mips/lantiq/xway/timer.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq_timer.h b/arch/mips/include/asm/mach-lantiq/lantiq_timer.h
-new file mode 100644
-index 0000000..ef564ab
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq_timer.h
 @@ -0,0 +1,155 @@
@@ -173,8 +170,6 @@ index 0000000..ef564ab
 +	u32 reload, unsigned long arg1, unsigned long arg2);
 +
 +#endif /* __DANUBE_GPTU_DEV_H__2005_07_26__10_19__ */
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index 277aa34..4c3106f 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,4 +1,4 @@
@@ -183,8 +178,6 @@ index 277aa34..4c3106f 100644
  
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 38f02f9..1a2e2d4 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -147,6 +147,7 @@ void __init ltq_soc_init(void)
@@ -195,9 +188,6 @@ index 38f02f9..1a2e2d4 100644
  	if (!ltq_is_vr9())
  		clkdev_add_pmu("ltq_etop", NULL, 0, PMU_PPE);
  	if (ltq_is_ase()) {
-diff --git a/arch/mips/lantiq/xway/timer.c b/arch/mips/lantiq/xway/timer.c
-new file mode 100644
-index 0000000..9794c87
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/timer.c
 @@ -0,0 +1,846 @@
@@ -1047,6 +1037,3 @@ index 0000000..9794c87
 +
 +module_init(lq_gptu_init);
 +module_exit(lq_gptu_exit);
--- 
-1.7.7.1
-

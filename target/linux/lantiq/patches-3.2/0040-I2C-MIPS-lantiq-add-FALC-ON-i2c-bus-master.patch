@@ -21,8 +21,6 @@ Cc: linux-i2c@vger.kernel.org
  delete mode 100644 arch/mips/lantiq/falcon/clk.c
  create mode 100644 drivers/i2c/busses/i2c-falcon.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
-index 120c56c..fff5ecd 100644
 --- a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
 @@ -72,6 +72,10 @@
@@ -44,9 +42,6 @@ index 120c56c..fff5ecd 100644
  
  /* global register ranges */
  extern __iomem void *ltq_ebu_membase;
-diff --git a/arch/mips/lantiq/falcon/clk.c b/arch/mips/lantiq/falcon/clk.c
-deleted file mode 100644
-index afe1b52..0000000
 --- a/arch/mips/lantiq/falcon/clk.c
 +++ /dev/null
 @@ -1,44 +0,0 @@
@@ -94,11 +89,9 @@ index afe1b52..0000000
 -	return CLOCK_100M;
 -}
 -EXPORT_SYMBOL(ltq_get_fpi_hz);
-diff --git a/arch/mips/lantiq/falcon/devices.c b/arch/mips/lantiq/falcon/devices.c
-index 92ec571..e684ed4 100644
 --- a/arch/mips/lantiq/falcon/devices.c
 +++ b/arch/mips/lantiq/falcon/devices.c
-@@ -134,3 +134,19 @@ falcon_register_spi_flash(struct spi_board_info *data)
+@@ -134,3 +134,19 @@ falcon_register_spi_flash(struct spi_boa
  	spi_register_board_info(data, 1);
  	platform_device_register(&ltq_spi);
  }
@@ -118,8 +111,6 @@ index 92ec571..e684ed4 100644
 +	platform_device_register_simple("i2c-falcon", 0,
 +		falcon_i2c_resources, ARRAY_SIZE(falcon_i2c_resources));
 +}
-diff --git a/arch/mips/lantiq/falcon/devices.h b/arch/mips/lantiq/falcon/devices.h
-index 5e6f720..d81edbe 100644
 --- a/arch/mips/lantiq/falcon/devices.h
 +++ b/arch/mips/lantiq/falcon/devices.h
 @@ -20,5 +20,6 @@ extern void falcon_register_nand(void);
@@ -129,8 +120,6 @@ index 5e6f720..d81edbe 100644
 +extern void falcon_register_i2c(void);
  
  #endif
-diff --git a/arch/mips/lantiq/falcon/mach-easy98000.c b/arch/mips/lantiq/falcon/mach-easy98000.c
-index 1a7caad..fc5720d 100644
 --- a/arch/mips/lantiq/falcon/mach-easy98000.c
 +++ b/arch/mips/lantiq/falcon/mach-easy98000.c
 @@ -98,6 +98,7 @@ easy98000_init_common(void)
@@ -141,8 +130,6 @@ index 1a7caad..fc5720d 100644
  }
  
  static void __init
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index a3afac4..41be6cc 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -369,6 +369,16 @@ config I2C_DESIGNWARE_PCI
@@ -162,11 +149,9 @@ index a3afac4..41be6cc 100644
  config I2C_GPIO
  	tristate "GPIO-based bitbanging I2C"
  	depends on GENERIC_GPIO
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index fba6da6..36239c8 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -37,6 +37,7 @@ obj-$(CONFIG_I2C_DESIGNWARE_PLATFORM)	+= i2c-designware-platform.o
+@@ -37,6 +37,7 @@ obj-$(CONFIG_I2C_DESIGNWARE_PLATFORM)	+=
  i2c-designware-platform-objs := i2c-designware-platdrv.o i2c-designware-core.o
  obj-$(CONFIG_I2C_DESIGNWARE_PCI)	+= i2c-designware-pci.o
  i2c-designware-pci-objs := i2c-designware-pcidrv.o i2c-designware-core.o
@@ -174,9 +159,6 @@ index fba6da6..36239c8 100644
  obj-$(CONFIG_I2C_GPIO)		+= i2c-gpio.o
  obj-$(CONFIG_I2C_HIGHLANDER)	+= i2c-highlander.o
  obj-$(CONFIG_I2C_IBM_IIC)	+= i2c-ibm_iic.o
-diff --git a/drivers/i2c/busses/i2c-falcon.c b/drivers/i2c/busses/i2c-falcon.c
-new file mode 100644
-index 0000000..fc4f0eb
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-falcon.c
 @@ -0,0 +1,1040 @@
@@ -1220,6 +1202,3 @@ index 0000000..fc4f0eb
 +MODULE_ALIAS("platform:" DRV_NAME);
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION(DRV_VERSION);
--- 
-1.7.7.1
-

@@ -1,8 +1,6 @@
-Index: linux-3.2.9/arch/mips/lantiq/setup.c
-===================================================================
---- linux-3.2.9.orig/arch/mips/lantiq/setup.c	2012-03-20 11:23:49.000000000 +0100
-+++ linux-3.2.9/arch/mips/lantiq/setup.c	2012-03-20 11:25:54.119568502 +0100
-@@ -40,6 +40,12 @@
+--- a/arch/mips/lantiq/setup.c
++++ b/arch/mips/lantiq/setup.c
+@@ -40,6 +40,12 @@ void __init plat_mem_setup(void)
  			e += 8;
  			if (strict_strtoul(e, 0, &memsize))
  				pr_warn("bad memsize specified\n");

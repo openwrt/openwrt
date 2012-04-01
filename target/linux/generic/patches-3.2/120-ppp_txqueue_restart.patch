@@ -22,8 +22,8 @@ harmless in the TX path.
 
 Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
 
---- a/drivers/net/ppp/ppp_generic.c~	2012-01-26 00:39:32.000000000 +0000
-+++ b/drivers/net/ppp/ppp_generic.c	2012-03-26 10:32:31.286744147 +0100
+--- a/drivers/net/ppp/ppp_generic.c
++++ b/drivers/net/ppp/ppp_generic.c
 @@ -235,7 +235,7 @@ struct ppp_net {
  /* Prototypes. */
  static int ppp_unattached_ioctl(struct net *net, struct ppp_file *pf,
@@ -73,10 +73,3 @@ Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
  }
  
  static inline struct sk_buff *
-
--- 
-David Woodhouse                            Open Source Technology Centre
-David.Woodhouse@intel.com                              Intel Corporation
-
-
-

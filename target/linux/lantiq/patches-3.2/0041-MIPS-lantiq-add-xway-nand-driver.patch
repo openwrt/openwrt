@@ -25,8 +25,6 @@ TODO : memory ranges
  6 files changed, 222 insertions(+), 1 deletions(-)
  create mode 100644 arch/mips/lantiq/xway/nand.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 3f22acb..ab2d236 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -145,6 +145,8 @@
@@ -38,8 +36,6 @@ index 3f22acb..ab2d236 100644
  #define ltq_cgu_w32(x, y)	ltq_w32((x), ltq_cgu_membase + (y))
  #define ltq_cgu_r32(x)		ltq_r32(ltq_cgu_membase + (x))
  
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index 9d1a0a2..277aa34 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,4 +1,4 @@
@@ -48,8 +44,6 @@ index 9d1a0a2..277aa34 100644
  
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
-diff --git a/arch/mips/lantiq/xway/devices.h b/arch/mips/lantiq/xway/devices.h
-index e904934..d825cbd 100644
 --- a/arch/mips/lantiq/xway/devices.h
 +++ b/arch/mips/lantiq/xway/devices.h
 @@ -16,5 +16,6 @@ extern void ltq_register_gpio(void);
@@ -59,9 +53,6 @@ index e904934..d825cbd 100644
 +extern void xway_register_nand(struct mtd_partition *parts, int count);
  
  #endif
-diff --git a/arch/mips/lantiq/xway/nand.c b/arch/mips/lantiq/xway/nand.c
-new file mode 100644
-index 0000000..9ab91d8
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/nand.c
 @@ -0,0 +1,216 @@
@@ -281,11 +272,9 @@ index 0000000..9ab91d8
 +	falcon_flash_nand_data.chip.nr_partitions = count;
 +	platform_device_register(&ltq_flash_nand);
 +}
-diff --git a/drivers/mtd/nand/plat_nand.c b/drivers/mtd/nand/plat_nand.c
-index ea8e123..9040ba1 100644
 --- a/drivers/mtd/nand/plat_nand.c
 +++ b/drivers/mtd/nand/plat_nand.c
-@@ -75,6 +75,7 @@ static int __devinit plat_nand_probe(struct platform_device *pdev)
+@@ -75,6 +75,7 @@ static int __devinit plat_nand_probe(str
  	data->chip.select_chip = pdata->ctrl.select_chip;
  	data->chip.write_buf = pdata->ctrl.write_buf;
  	data->chip.read_buf = pdata->ctrl.read_buf;
@@ -293,11 +282,9 @@ index ea8e123..9040ba1 100644
  	data->chip.chip_delay = pdata->chip.chip_delay;
  	data->chip.options |= pdata->chip.options;
  	data->chip.bbt_options |= pdata->chip.bbt_options;
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index 904131b..80e11b9 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -650,6 +650,7 @@ struct platform_nand_ctrl {
+@@ -651,6 +651,7 @@ struct platform_nand_ctrl {
  	void (*cmd_ctrl)(struct mtd_info *mtd, int dat, unsigned int ctrl);
  	void (*write_buf)(struct mtd_info *mtd, const uint8_t *buf, int len);
  	void (*read_buf)(struct mtd_info *mtd, uint8_t *buf, int len);
@@ -305,6 +292,3 @@ index 904131b..80e11b9 100644
  	void *priv;
  };
  
--- 
-1.7.7.1
-

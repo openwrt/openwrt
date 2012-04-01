@@ -18,8 +18,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  delete mode 100644 arch/mips/lantiq/xway/clk-xway.c
  create mode 100644 arch/mips/lantiq/xway/clk.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 45e480c..e9d2dd4 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -81,15 +81,6 @@
@@ -49,8 +47,6 @@ index 45e480c..e9d2dd4 100644
  static inline int ltq_is_ase(void)
  {
  	return (ltq_get_soc_type() == SOC_TYPE_AMAZON_SE);
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index 6678402..4dcb96f 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,7 +1,7 @@
@@ -64,9 +60,6 @@ index 6678402..4dcb96f 100644
  
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
-diff --git a/arch/mips/lantiq/xway/clk-ase.c b/arch/mips/lantiq/xway/clk-ase.c
-deleted file mode 100644
-index 6522583..0000000
 --- a/arch/mips/lantiq/xway/clk-ase.c
 +++ /dev/null
 @@ -1,48 +0,0 @@
@@ -118,9 +111,6 @@ index 6522583..0000000
 -	return CLOCK_133M;
 -}
 -EXPORT_SYMBOL(ltq_get_fpi_hz);
-diff --git a/arch/mips/lantiq/xway/clk-xway.c b/arch/mips/lantiq/xway/clk-xway.c
-deleted file mode 100644
-index 696b1a3..0000000
 --- a/arch/mips/lantiq/xway/clk-xway.c
 +++ /dev/null
 @@ -1,223 +0,0 @@
@@ -347,9 +337,6 @@ index 696b1a3..0000000
 -	return ddr_clock;
 -}
 -EXPORT_SYMBOL(ltq_get_fpi_hz);
-diff --git a/arch/mips/lantiq/xway/clk.c b/arch/mips/lantiq/xway/clk.c
-new file mode 100644
-index 0000000..f3b50fc
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/clk.c
 @@ -0,0 +1,227 @@
@@ -580,8 +567,6 @@ index 0000000..f3b50fc
 +		return ddr_clock >> 1;
 +	return ddr_clock;
 +}
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 8fd13a1..c5782b5 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -8,17 +8,48 @@
@@ -639,18 +624,18 @@ index 8fd13a1..c5782b5 100644
  
 -void ltq_cgu_enable(unsigned int clk)
 +static int ltq_cgu_enable(struct clk *clk)
- {
--	ltq_cgu_w32(ltq_cgu_r32(LTQ_CGU_IFCCR) | clk, LTQ_CGU_IFCCR);
++{
 +	ltq_cgu_w32(ltq_cgu_r32(LTQ_CGU_IFCCR) | clk->bits, LTQ_CGU_IFCCR);
 +	return 0;
++}
++
++static void ltq_cgu_disable(struct clk *clk)
+ {
+-	ltq_cgu_w32(ltq_cgu_r32(LTQ_CGU_IFCCR) | clk, LTQ_CGU_IFCCR);
++	ltq_cgu_w32(ltq_cgu_r32(LTQ_CGU_IFCCR) & ~clk->bits, LTQ_CGU_IFCCR);
  }
  
 -void ltq_pmu_enable(unsigned int module)
-+static void ltq_cgu_disable(struct clk *clk)
-+{
-+	ltq_cgu_w32(ltq_cgu_r32(LTQ_CGU_IFCCR) & ~clk->bits, LTQ_CGU_IFCCR);
-+}
-+
 +static int ltq_pmu_enable(struct clk *clk)
  {
  	int err = 1000000;
@@ -665,13 +650,10 @@ index 8fd13a1..c5782b5 100644
  		panic("activating PMU module failed!\n");
 +
 +	return 0;
- }
--EXPORT_SYMBOL(ltq_pmu_enable);
- 
--void ltq_pmu_disable(unsigned int module)
++}
++
 +static void ltq_pmu_disable(struct clk *clk)
- {
--	ltq_pmu_w32(ltq_pmu_r32(LTQ_PMU_PWDCR) | module, LTQ_PMU_PWDCR);
++{
 +	ltq_pmu_w32(ltq_pmu_r32(LTQ_PMU_PWDCR) | clk->bits, LTQ_PMU_PWDCR);
 +}
 +
@@ -688,11 +670,14 @@ index 8fd13a1..c5782b5 100644
 +	clk->module = module;
 +	clk->bits = bits;
 +	clkdev_add(&clk->cl);
-+}
-+
+ }
+-EXPORT_SYMBOL(ltq_pmu_enable);
+ 
+-void ltq_pmu_disable(unsigned int module)
 +static inline void clkdev_add_cgu(const char *dev, const char *con,
 +					unsigned int bits)
-+{
+ {
+-	ltq_pmu_w32(ltq_pmu_r32(LTQ_PMU_PWDCR) | module, LTQ_PMU_PWDCR);
 +	struct clk *clk = kzalloc(sizeof(struct clk), GFP_KERNEL);
 +
 +	clk->cl.dev_id = dev;
@@ -731,6 +716,3 @@ index 8fd13a1..c5782b5 100644
 +			clkdev_add_pmu("ltq_etop", "switch", 0, PMU_SWITCH);
 +	}
  }
--- 
-1.7.7.1
-

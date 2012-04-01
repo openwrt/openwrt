@@ -17,9 +17,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/lantiq/falcon/Kconfig
  create mode 100644 arch/mips/lantiq/falcon/mach-easy98000.c
 
-diff --git a/arch/mips/lantiq/falcon/Kconfig b/arch/mips/lantiq/falcon/Kconfig
-new file mode 100644
-index 0000000..03e999d
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/Kconfig
 @@ -0,0 +1,11 @@
@@ -34,16 +31,11 @@ index 0000000..03e999d
 +endmenu
 +
 +endif
-diff --git a/arch/mips/lantiq/falcon/Makefile b/arch/mips/lantiq/falcon/Makefile
-index de72209..56b22eb 100644
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
 @@ -1 +1,2 @@
  obj-y := clk.o prom.o reset.o sysctrl.o devices.o gpio.o
 +obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
-diff --git a/arch/mips/lantiq/falcon/mach-easy98000.c b/arch/mips/lantiq/falcon/mach-easy98000.c
-new file mode 100644
-index 0000000..361b8f0
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/mach-easy98000.c
 @@ -0,0 +1,110 @@
@@ -157,8 +149,6 @@ index 0000000..361b8f0
 +			"EASY98000NAND",
 +			"EASY98000 Eval Board (NAND Flash)",
 +			easy98000nand_init);
-diff --git a/arch/mips/lantiq/machtypes.h b/arch/mips/lantiq/machtypes.h
-index 7e01b8c..dfc6af7 100644
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
 @@ -15,6 +15,11 @@ enum lantiq_mach_type {
@@ -173,6 +163,3 @@ index 7e01b8c..dfc6af7 100644
  };
  
  #endif
--- 
-1.7.7.1
-

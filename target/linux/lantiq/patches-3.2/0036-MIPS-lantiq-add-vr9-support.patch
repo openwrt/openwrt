@@ -15,8 +15,6 @@ Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>
  arch/mips/lantiq/xway/sysctrl.c                    |   12 +++-
  4 files changed, 103 insertions(+), 1 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index e9d2dd4..5d11eb7 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -21,6 +21,9 @@
@@ -29,8 +27,6 @@ index e9d2dd4..5d11eb7 100644
  
  /* SoC Types */
  #define SOC_TYPE_DANUBE		0x01
-diff --git a/arch/mips/lantiq/xway/clk.c b/arch/mips/lantiq/xway/clk.c
-index f3b50fc..3635c9f 100644
 --- a/arch/mips/lantiq/xway/clk.c
 +++ b/arch/mips/lantiq/xway/clk.c
 @@ -225,3 +225,86 @@ unsigned long ltq_danube_fpi_hz(void)
@@ -120,11 +116,9 @@ index f3b50fc..3635c9f 100644
 +{
 +	return ltq_vr9_fpi_hz();
 +}
-diff --git a/arch/mips/lantiq/xway/prom.c b/arch/mips/lantiq/xway/prom.c
-index 0929acb..b6f56b7 100644
 --- a/arch/mips/lantiq/xway/prom.c
 +++ b/arch/mips/lantiq/xway/prom.c
-@@ -60,6 +60,12 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
+@@ -60,6 +60,12 @@ void __init ltq_soc_detect(struct ltq_so
  #endif
  		break;
  
@@ -137,8 +131,6 @@ index 0929acb..b6f56b7 100644
  	default:
  		unreachable();
  		break;
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index c5782b5..38f02f9 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -147,7 +147,8 @@ void __init ltq_soc_init(void)
@@ -167,6 +159,3 @@ index c5782b5..38f02f9 100644
  	} else {
  		clkdev_add_static(ltq_danube_cpu_hz(), ltq_danube_fpi_hz(),
  					ltq_danube_io_region_clock());
--- 
-1.7.7.1
-

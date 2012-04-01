@@ -12,11 +12,9 @@ Cc: linux-serial@vger.kernel.org
  drivers/tty/serial/lantiq.c |    6 +++++-
  1 files changed, 5 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/tty/serial/lantiq.c b/drivers/tty/serial/lantiq.c
-index 5d25828..1542ad6 100644
 --- a/drivers/tty/serial/lantiq.c
 +++ b/drivers/tty/serial/lantiq.c
-@@ -540,6 +540,10 @@ lqasc_request_port(struct uart_port *port)
+@@ -540,6 +540,10 @@ lqasc_request_port(struct uart_port *por
  		if (ltq_gpio_request(&pdev->dev, MUXC_SIF_TX_PIN,
  				3, 1, "asc1-tx"))
  			return -EBUSY;
@@ -27,7 +25,7 @@ index 5d25828..1542ad6 100644
  	}
  	return 0;
  }
-@@ -698,7 +702,7 @@ lqasc_probe(struct platform_device *pdev)
+@@ -698,7 +702,7 @@ lqasc_probe(struct platform_device *pdev
  	if (lqasc_port[pdev->id] != NULL)
  		return -EBUSY;
  
@@ -36,6 +34,3 @@ index 5d25828..1542ad6 100644
  	if (IS_ERR(clk)) {
  		pr_err("failed to get fpi clk\n");
  		return -ENOENT;
--- 
-1.7.7.1
-

@@ -1,8 +1,6 @@
-Index: linux-3.2.9/drivers/mtd/Kconfig
-===================================================================
---- linux-3.2.9.orig/drivers/mtd/Kconfig	2012-03-17 17:43:47.395607926 +0100
-+++ linux-3.2.9/drivers/mtd/Kconfig	2012-03-17 20:49:30.279873461 +0100
-@@ -31,6 +31,10 @@
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -31,6 +31,10 @@ config MTD_ROOTFS_SPLIT
  	bool "Automatically split 'rootfs' partition for squashfs"
  	default y
  
@@ -13,11 +11,9 @@ Index: linux-3.2.9/drivers/mtd/Kconfig
  config MTD_REDBOOT_PARTS
  	tristate "RedBoot partition table parsing"
  	---help---
-Index: linux-3.2.9/drivers/mtd/mtdpart.c
-===================================================================
---- linux-3.2.9.orig/drivers/mtd/mtdpart.c	2012-03-17 17:43:47.407607922 +0100
-+++ linux-3.2.9/drivers/mtd/mtdpart.c	2012-03-17 20:49:42.987873819 +0100
-@@ -874,6 +874,169 @@
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -874,6 +874,169 @@ static int refresh_rootfs_split(struct m
  }
  #endif /* CONFIG_MTD_ROOTFS_SPLIT */
  
@@ -187,7 +183,7 @@ Index: linux-3.2.9/drivers/mtd/mtdpart.c
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -907,6 +1070,17 @@
+@@ -907,6 +1070,17 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
@@ -205,11 +201,9 @@ Index: linux-3.2.9/drivers/mtd/mtdpart.c
  		if (!strcmp(parts[i].name, "rootfs")) {
  #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
  			if (ROOT_DEV == 0) {
-Index: linux-3.2.9/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-===================================================================
---- linux-3.2.9.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2012-03-17 20:49:32.000000000 +0100
-+++ linux-3.2.9/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2012-03-17 20:50:07.815874369 +0100
-@@ -156,6 +156,7 @@
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+@@ -166,6 +166,7 @@ extern unsigned char ltq_boot_select(voi
  
  extern __iomem void *ltq_ebu_membase;
  extern __iomem void *ltq_cgu_membase;
@@ -217,10 +211,8 @@ Index: linux-3.2.9/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
  
  static inline int ltq_is_ase(void)
  {
-Index: linux-3.2.9/arch/mips/lantiq/setup.c
-===================================================================
---- linux-3.2.9.orig/arch/mips/lantiq/setup.c	2012-03-17 20:49:32.000000000 +0100
-+++ linux-3.2.9/arch/mips/lantiq/setup.c	2012-03-17 20:50:07.815874369 +0100
+--- a/arch/mips/lantiq/setup.c
++++ b/arch/mips/lantiq/setup.c
 @@ -18,6 +18,9 @@
  #include "devices.h"
  #include "prom.h"
@@ -231,7 +223,7 @@ Index: linux-3.2.9/arch/mips/lantiq/setup.c
  void __init plat_mem_setup(void)
  {
  	/* assume 16M as default incase uboot fails to pass proper ramsize */
-@@ -38,6 +41,10 @@
+@@ -38,6 +41,10 @@ void __init plat_mem_setup(void)
  			if (strict_strtoul(e, 0, &memsize))
  				pr_warn("bad memsize specified\n");
  		}

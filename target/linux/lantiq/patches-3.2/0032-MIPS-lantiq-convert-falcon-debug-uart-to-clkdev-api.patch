@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/tty/serial/lantiq.c    |    7 ++++---
  2 files changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/arch/mips/lantiq/falcon/prom.c b/arch/mips/lantiq/falcon/prom.c
-index f98b389..2a4eea1 100644
 --- a/arch/mips/lantiq/falcon/prom.c
 +++ b/arch/mips/lantiq/falcon/prom.c
 @@ -43,10 +43,8 @@ ltq_soc_setup(void)
@@ -29,8 +27,6 @@ index f98b389..2a4eea1 100644
  }
  
  void __init
-diff --git a/drivers/tty/serial/lantiq.c b/drivers/tty/serial/lantiq.c
-index 1542ad6..82956de 100644
 --- a/drivers/tty/serial/lantiq.c
 +++ b/drivers/tty/serial/lantiq.c
 @@ -117,6 +117,7 @@ static DEFINE_SPINLOCK(ltq_asc_lock);
@@ -50,7 +46,7 @@ index 1542ad6..82956de 100644
  
  	ltq_w32_mask(ASCCLC_DISS | ASCCLC_RMCMASK, (1 << ASCCLC_RMCOFFSET),
  		port->membase + LTQ_ASC_CLC);
-@@ -646,7 +647,7 @@ lqasc_console_setup(struct console *co, char *options)
+@@ -646,7 +647,7 @@ lqasc_console_setup(struct console *co,
  
  	port = &ltq_port->port;
  
@@ -59,7 +55,7 @@ index 1542ad6..82956de 100644
  
  	if (options)
  		uart_parse_options(options, &baud, &parity, &bits, &flow);
-@@ -731,7 +732,7 @@ lqasc_probe(struct platform_device *pdev)
+@@ -731,7 +732,7 @@ lqasc_probe(struct platform_device *pdev
  	port->irq	= tx_irq; /* unused, just to be backward-compatibe */
  	port->mapbase	= mmres->start;
  
@@ -68,6 +64,3 @@ index 1542ad6..82956de 100644
  
  	ltq_port->tx_irq = tx_irq;
  	ltq_port->rx_irq = rx_irq;
--- 
-1.7.7.1
-

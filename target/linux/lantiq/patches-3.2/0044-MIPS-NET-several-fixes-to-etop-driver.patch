@@ -7,8 +7,6 @@ Subject: [PATCH 44/70] MIPS: NET: several fixes to etop driver
  drivers/net/ethernet/lantiq_etop.c |  208 +++++++++++++++++++-----------------
  1 files changed, 108 insertions(+), 100 deletions(-)
 
-diff --git a/drivers/net/ethernet/lantiq_etop.c b/drivers/net/ethernet/lantiq_etop.c
-index a084d74..1a807d8 100644
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
 @@ -103,15 +103,6 @@
@@ -48,7 +46,7 @@ index a084d74..1a807d8 100644
  
  	spinlock_t lock;
  
-@@ -206,8 +197,10 @@ ltq_etop_poll_rx(struct napi_struct *napi, int budget)
+@@ -206,8 +197,10 @@ ltq_etop_poll_rx(struct napi_struct *nap
  {
  	struct ltq_etop_chan *ch = container_of(napi,
  				struct ltq_etop_chan, napi);
@@ -59,7 +57,7 @@ index a084d74..1a807d8 100644
  
  	while ((rx < budget) && !complete) {
  		struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
-@@ -221,7 +214,9 @@ ltq_etop_poll_rx(struct napi_struct *napi, int budget)
+@@ -221,7 +214,9 @@ ltq_etop_poll_rx(struct napi_struct *nap
  	}
  	if (complete || !rx) {
  		napi_complete(&ch->napi);
@@ -69,7 +67,7 @@ index a084d74..1a807d8 100644
  	}
  	return rx;
  }
-@@ -233,7 +228,7 @@ ltq_etop_poll_tx(struct napi_struct *napi, int budget)
+@@ -233,7 +228,7 @@ ltq_etop_poll_tx(struct napi_struct *nap
  		container_of(napi, struct ltq_etop_chan, napi);
  	struct ltq_etop_priv *priv = netdev_priv(ch->netdev);
  	struct netdev_queue *txq =
@@ -78,7 +76,7 @@ index a084d74..1a807d8 100644
  	unsigned long flags;
  
  	spin_lock_irqsave(&priv->lock, flags);
-@@ -251,7 +246,9 @@ ltq_etop_poll_tx(struct napi_struct *napi, int budget)
+@@ -251,7 +246,9 @@ ltq_etop_poll_tx(struct napi_struct *nap
  	if (netif_tx_queue_stopped(txq))
  		netif_tx_start_queue(txq);
  	napi_complete(&ch->napi);
@@ -102,7 +100,7 @@ index a084d74..1a807d8 100644
  	return IRQ_HANDLED;
  }
  
-@@ -273,7 +271,7 @@ ltq_etop_free_channel(struct net_device *dev, struct ltq_etop_chan *ch)
+@@ -273,7 +271,7 @@ ltq_etop_free_channel(struct net_device
  	ltq_dma_free(&ch->dma);
  	if (ch->dma.irq)
  		free_irq(ch->dma.irq, priv);
@@ -212,7 +210,7 @@ index a084d74..1a807d8 100644
  	return err;
  }
  
-@@ -410,7 +423,10 @@ ltq_etop_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
+@@ -410,7 +423,10 @@ ltq_etop_get_settings(struct net_device
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  
@@ -224,7 +222,7 @@ index a084d74..1a807d8 100644
  }
  
  static int
-@@ -418,7 +434,10 @@ ltq_etop_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
+@@ -418,7 +434,10 @@ ltq_etop_set_settings(struct net_device
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  
@@ -236,7 +234,7 @@ index a084d74..1a807d8 100644
  }
  
  static int
-@@ -426,7 +445,10 @@ ltq_etop_nway_reset(struct net_device *dev)
+@@ -426,7 +445,10 @@ ltq_etop_nway_reset(struct net_device *d
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  
@@ -304,7 +302,7 @@ index a084d74..1a807d8 100644
  	return 0;
  }
  
-@@ -660,16 +683,16 @@ ltq_etop_tx(struct sk_buff *skb, struct net_device *dev)
+@@ -660,16 +683,16 @@ ltq_etop_tx(struct sk_buff *skb, struct
  	int queue = skb_get_queue_mapping(skb);
  	struct netdev_queue *txq = netdev_get_tx_queue(dev, queue);
  	struct ltq_etop_priv *priv = netdev_priv(dev);
@@ -325,7 +323,7 @@ index a084d74..1a807d8 100644
  		netdev_err(dev, "tx ring full\n");
  		netif_tx_stop_queue(txq);
  		return NETDEV_TX_BUSY;
-@@ -677,7 +700,7 @@ ltq_etop_tx(struct sk_buff *skb, struct net_device *dev)
+@@ -677,7 +700,7 @@ ltq_etop_tx(struct sk_buff *skb, struct
  
  	/* dma needs to start on a 16 byte aligned address */
  	byte_offset = CPHYSADDR(skb->data) % 16;
@@ -334,7 +332,7 @@ index a084d74..1a807d8 100644
  
  	dev->trans_start = jiffies;
  
-@@ -687,11 +710,11 @@ ltq_etop_tx(struct sk_buff *skb, struct net_device *dev)
+@@ -687,11 +710,11 @@ ltq_etop_tx(struct sk_buff *skb, struct
  	wmb();
  	desc->ctl = LTQ_DMA_OWN | LTQ_DMA_SOP | LTQ_DMA_EOP |
  		LTQ_DMA_TX_OFFSET(byte_offset) | (len & LTQ_DMA_SIZE_MASK);
@@ -360,7 +358,7 @@ index a084d74..1a807d8 100644
  	ltq_etop_change_mtu(dev, 1500);
  
  	memcpy(&mac, &priv->pldata->mac, sizeof(struct sockaddr));
-@@ -811,6 +838,9 @@ ltq_etop_tx_timeout(struct net_device *dev)
+@@ -811,6 +838,9 @@ ltq_etop_tx_timeout(struct net_device *d
  	err = ltq_etop_hw_init(dev);
  	if (err)
  		goto err_hw;
@@ -370,7 +368,7 @@ index a084d74..1a807d8 100644
  	dev->trans_start = jiffies;
  	netif_wake_queue(dev);
  	return;
-@@ -834,14 +864,13 @@ static const struct net_device_ops ltq_eth_netdev_ops = {
+@@ -834,14 +864,13 @@ static const struct net_device_ops ltq_e
  	.ndo_tx_timeout = ltq_etop_tx_timeout,
  };
  
@@ -386,7 +384,7 @@ index a084d74..1a807d8 100644
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!res) {
-@@ -917,15 +946,10 @@ ltq_etop_probe(struct platform_device *pdev)
+@@ -917,15 +946,10 @@ ltq_etop_probe(struct platform_device *p
  
  	spin_lock_init(&priv->lock);
  
@@ -406,7 +404,7 @@ index a084d74..1a807d8 100644
  
  	err = register_netdev(dev);
  	if (err)
-@@ -955,6 +979,7 @@ ltq_etop_remove(struct platform_device *pdev)
+@@ -955,6 +979,7 @@ ltq_etop_remove(struct platform_device *
  }
  
  static struct platform_driver ltq_mii_driver = {
@@ -414,7 +412,7 @@ index a084d74..1a807d8 100644
  	.remove = __devexit_p(ltq_etop_remove),
  	.driver = {
  		.name = "ltq_etop",
-@@ -962,24 +987,7 @@ static struct platform_driver ltq_mii_driver = {
+@@ -962,24 +987,7 @@ static struct platform_driver ltq_mii_dr
  	},
  };
  
@@ -440,6 +438,3 @@ index a084d74..1a807d8 100644
  
  MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
  MODULE_DESCRIPTION("Lantiq SoC ETOP");
--- 
-1.7.7.1
-

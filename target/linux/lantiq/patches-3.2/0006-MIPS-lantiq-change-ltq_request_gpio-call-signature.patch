@@ -17,8 +17,6 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  arch/mips/pci/pci-lantiq.c                         |   36 +++++++++----------
  4 files changed, 26 insertions(+), 28 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 9b7ee366..87f6d24 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -135,8 +135,8 @@ extern __iomem void *ltq_ebu_membase;
@@ -32,8 +30,6 @@ index 9b7ee366..87f6d24 100644
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
  extern void ltq_cgu_enable(unsigned int clk);
-diff --git a/arch/mips/lantiq/xway/gpio.c b/arch/mips/lantiq/xway/gpio.c
-index d2fa98f..f204f6c 100644
 --- a/arch/mips/lantiq/xway/gpio.c
 +++ b/arch/mips/lantiq/xway/gpio.c
 @@ -48,8 +48,8 @@ int irq_to_gpio(unsigned int gpio)
@@ -47,7 +43,7 @@ index d2fa98f..f204f6c 100644
  {
  	int id = 0;
  
-@@ -67,13 +67,13 @@ int ltq_gpio_request(unsigned int pin, unsigned int alt0,
+@@ -67,13 +67,13 @@ int ltq_gpio_request(unsigned int pin, u
  		pin -= PINS_PER_PORT;
  		id++;
  	}
@@ -63,8 +59,6 @@ index d2fa98f..f204f6c 100644
  		ltq_gpio_setbit(ltq_gpio_port[id].membase,
  			LTQ_GPIO_ALTSEL1, pin);
  	else
-diff --git a/arch/mips/lantiq/xway/gpio_stp.c b/arch/mips/lantiq/xway/gpio_stp.c
-index ff9991c..2c78660 100644
 --- a/arch/mips/lantiq/xway/gpio_stp.c
 +++ b/arch/mips/lantiq/xway/gpio_stp.c
 @@ -79,9 +79,9 @@ static struct gpio_chip ltq_stp_chip = {
@@ -80,8 +74,6 @@ index ff9991c..2c78660 100644
  
  	/* sane defaults */
  	ltq_stp_w32(0, LTQ_STP_AR);
-diff --git a/arch/mips/pci/pci-lantiq.c b/arch/mips/pci/pci-lantiq.c
-index be1e1af..c001c5a 100644
 --- a/arch/mips/pci/pci-lantiq.c
 +++ b/arch/mips/pci/pci-lantiq.c
 @@ -70,28 +70,27 @@
@@ -144,6 +136,3 @@ index be1e1af..c001c5a 100644
  	ltq_pci_req_mask = (gpio >> PCI_REQ_SHIFT) & PCI_REQ_MASK;
  }
  
--- 
-1.7.7.1
-

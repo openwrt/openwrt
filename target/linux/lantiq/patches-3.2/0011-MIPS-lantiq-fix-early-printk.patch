@@ -14,8 +14,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/early_printk.c                    |   14 ++++++++------
  2 files changed, 14 insertions(+), 6 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 87f6d24..e31f52d 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -34,6 +34,12 @@
@@ -31,8 +29,6 @@ index 87f6d24..e31f52d 100644
  /* RCU - reset control unit */
  #define LTQ_RCU_BASE_ADDR	0x1F203000
  #define LTQ_RCU_SIZE		0x1000
-diff --git a/arch/mips/lantiq/early_printk.c b/arch/mips/lantiq/early_printk.c
-index 972e05f..5089075 100644
 --- a/arch/mips/lantiq/early_printk.c
 +++ b/arch/mips/lantiq/early_printk.c
 @@ -12,11 +12,13 @@
@@ -63,6 +59,3 @@ index 972e05f..5089075 100644
 +	ltq_w8(c, LTQ_ASC_TBUF);
  	local_irq_restore(flags);
  }
--- 
-1.7.7.1
-

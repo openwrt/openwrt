@@ -16,15 +16,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 443 insertions(+), 1 deletions(-)
  create mode 100644 arch/mips/lantiq/falcon/gpio.c
 
-diff --git a/arch/mips/lantiq/falcon/Makefile b/arch/mips/lantiq/falcon/Makefile
-index e9c7455..de72209 100644
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
 @@ -1 +1 @@
 -obj-y := clk.o prom.o reset.o sysctrl.o devices.o
 +obj-y := clk.o prom.o reset.o sysctrl.o devices.o gpio.o
-diff --git a/arch/mips/lantiq/falcon/devices.c b/arch/mips/lantiq/falcon/devices.c
-index c4606f2..4f47b44 100644
 --- a/arch/mips/lantiq/falcon/devices.c
 +++ b/arch/mips/lantiq/falcon/devices.c
 @@ -9,6 +9,7 @@
@@ -79,8 +75,6 @@ index c4606f2..4f47b44 100644
 +	ltq_sysctl_activate(SYSCTL_SYS1,
 +		ACTS_PADCTRL3 | ACTS_PADCTRL4 | ACTS_P3 | ACTS_P4);
 +}
-diff --git a/arch/mips/lantiq/falcon/devices.h b/arch/mips/lantiq/falcon/devices.h
-index e802a7c..18be8b6 100644
 --- a/arch/mips/lantiq/falcon/devices.h
 +++ b/arch/mips/lantiq/falcon/devices.h
 @@ -14,5 +14,7 @@
@@ -91,9 +85,6 @@ index e802a7c..18be8b6 100644
 +extern void falcon_register_gpio_extra(void);
  
  #endif
-diff --git a/arch/mips/lantiq/falcon/gpio.c b/arch/mips/lantiq/falcon/gpio.c
-new file mode 100644
-index 0000000..28f8639
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/gpio.c
 @@ -0,0 +1,399 @@
@@ -496,6 +487,3 @@ index 0000000..28f8639
 +}
 +
 +postcore_initcall(falcon_gpio_init);
--- 
-1.7.7.1
-

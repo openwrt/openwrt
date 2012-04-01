@@ -1,7 +1,5 @@
-Index: linux-3.2.9/arch/mips/lantiq/falcon/mach-easy98000.c
-===================================================================
---- linux-3.2.9.orig/arch/mips/lantiq/falcon/mach-easy98000.c	2012-03-07 19:30:22.000000000 +0100
-+++ linux-3.2.9/arch/mips/lantiq/falcon/mach-easy98000.c	2012-03-07 19:35:47.804810934 +0100
+--- a/arch/mips/lantiq/falcon/mach-easy98000.c
++++ b/arch/mips/lantiq/falcon/mach-easy98000.c
 @@ -17,10 +17,11 @@
  #include <linux/spi/eeprom.h>
  #include <falcon/lantiq_soc.h>
@@ -33,7 +31,7 @@ Index: linux-3.2.9/arch/mips/lantiq/falcon/mach-easy98000.c
  
  static struct mtd_partition easy98000_nor_partitions[] =
  {
-@@ -70,7 +80,7 @@
+@@ -70,7 +80,7 @@ static struct spi_board_info easy98000_s
  	.platform_data		= &easy98000_spi_flash_platform_data
  };
  
@@ -42,7 +40,7 @@ Index: linux-3.2.9/arch/mips/lantiq/falcon/mach-easy98000.c
  	{
  		.name		= "easy98000:green:0",
  		.gpio		= EASY98000_GPIO_LED_0,
-@@ -104,12 +114,11 @@
+@@ -104,12 +114,11 @@ static struct gpio_led easy98000_leds_gp
  
  static struct dm9000_plat_data dm9000_plat_data = {
  	.flags = DM9000_PLATF_8BITONLY,
@@ -57,7 +55,7 @@ Index: linux-3.2.9/arch/mips/lantiq/falcon/mach-easy98000.c
  	[2] = {
  		/* with irq (210 -> gpio 110) the driver is very unreliable */
  		.start	= -1,		/* use polling */
-@@ -214,8 +223,8 @@
+@@ -214,8 +223,8 @@ easy98000_init_common(void)
  	falcon_register_i2c();
  	platform_device_register(&easy98000_i2c_gpio_device);
  	register_davicom();
