@@ -59,7 +59,7 @@ static void release_local_port(uint32_t port)
 		return;
 	
 	nr = port >> 22;
-	used_ports_map[nr / 32] &= ~((nr % 32) + 1);
+	used_ports_map[nr / 32] &= ~(1 << nr % 32);
 }
 
 /**
