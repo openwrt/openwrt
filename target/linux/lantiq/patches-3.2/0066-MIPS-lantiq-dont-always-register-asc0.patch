@@ -7,11 +7,9 @@ Subject: [PATCH 66/70] MIPS: lantiq: dont always register asc0
  arch/mips/lantiq/xway/prom.c |    6 ++----
  1 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/mips/lantiq/xway/prom.c b/arch/mips/lantiq/xway/prom.c
-index e3dcbbd..f776d5a 100644
 --- a/arch/mips/lantiq/xway/prom.c
 +++ b/arch/mips/lantiq/xway/prom.c
-@@ -101,12 +101,10 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
+@@ -101,12 +101,10 @@ void __init ltq_soc_detect(struct ltq_so
  
  void __init ltq_soc_setup(void)
  {
@@ -26,6 +24,3 @@ index e3dcbbd..f776d5a 100644
  	ltq_register_gpio();
  	ltq_register_wdt();
  }
--- 
-1.7.7.1
-

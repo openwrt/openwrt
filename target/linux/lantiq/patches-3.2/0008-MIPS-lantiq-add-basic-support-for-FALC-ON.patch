@@ -34,9 +34,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/lantiq/falcon/reset.c
  create mode 100644 arch/mips/lantiq/falcon/sysctrl.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/falcon/falcon_irq.h b/arch/mips/include/asm/mach-lantiq/falcon/falcon_irq.h
-new file mode 100644
-index 0000000..4dc6466
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/falcon/falcon_irq.h
 @@ -0,0 +1,268 @@
@@ -308,9 +305,6 @@ index 0000000..4dc6466
 +#define FALCON_IRQ_VPE0_PMCIR			(INT_NUM_IM4_IRL0 + 31)
 +
 +#endif /* _FALCON_IRQ__ */
-diff --git a/arch/mips/include/asm/mach-lantiq/falcon/irq.h b/arch/mips/include/asm/mach-lantiq/falcon/irq.h
-new file mode 100644
-index 0000000..2caccd9
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/falcon/irq.h
 @@ -0,0 +1,18 @@
@@ -332,9 +326,6 @@ index 0000000..2caccd9
 +#include_next <irq.h>
 +
 +#endif
-diff --git a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
-new file mode 100644
-index 0000000..b074748
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
 @@ -0,0 +1,143 @@
@@ -481,11 +472,9 @@ index 0000000..b074748
 +
 +#endif /* CONFIG_SOC_FALCON */
 +#endif /* _LTQ_XWAY_H__ */
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq.h b/arch/mips/include/asm/mach-lantiq/lantiq.h
-index 66d7300..188de0f 100644
 --- a/arch/mips/include/asm/mach-lantiq/lantiq.h
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq.h
-@@ -25,6 +25,7 @@ extern unsigned int ltq_get_soc_type(void);
+@@ -25,6 +25,7 @@ extern unsigned int ltq_get_soc_type(voi
  /* clock speeds */
  #define CLOCK_60M	60000000
  #define CLOCK_83M	83333333
@@ -493,8 +482,6 @@ index 66d7300..188de0f 100644
  #define CLOCK_111M	111111111
  #define CLOCK_133M	133333333
  #define CLOCK_167M	166666667
-diff --git a/arch/mips/lantiq/Kconfig b/arch/mips/lantiq/Kconfig
-index 3fccf21..cb6b39f 100644
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
 @@ -16,8 +16,12 @@ config SOC_XWAY
@@ -510,17 +497,13 @@ index 3fccf21..cb6b39f 100644
 +source "arch/mips/lantiq/falcon/Kconfig"
  
  endif
-diff --git a/arch/mips/lantiq/Makefile b/arch/mips/lantiq/Makefile
-index e5dae0e..7e9c69e 100644
 --- a/arch/mips/lantiq/Makefile
 +++ b/arch/mips/lantiq/Makefile
-@@ -9,3 +9,4 @@ obj-y := irq.o setup.o clk.o prom.o devices.o
+@@ -9,3 +9,4 @@ obj-y := irq.o setup.o clk.o prom.o devi
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
  obj-$(CONFIG_SOC_TYPE_XWAY) += xway/
 +obj-$(CONFIG_SOC_FALCON) += falcon/
-diff --git a/arch/mips/lantiq/Platform b/arch/mips/lantiq/Platform
-index f3dff05..b3ec498 100644
 --- a/arch/mips/lantiq/Platform
 +++ b/arch/mips/lantiq/Platform
 @@ -6,3 +6,4 @@ platform-$(CONFIG_LANTIQ)	+= lantiq/
@@ -528,16 +511,10 @@ index f3dff05..b3ec498 100644
  load-$(CONFIG_LANTIQ)		= 0xffffffff80002000
  cflags-$(CONFIG_SOC_TYPE_XWAY)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/xway
 +cflags-$(CONFIG_SOC_FALCON)	+= -I$(srctree)/arch/mips/include/asm/mach-lantiq/falcon
-diff --git a/arch/mips/lantiq/falcon/Makefile b/arch/mips/lantiq/falcon/Makefile
-new file mode 100644
-index 0000000..e9c7455
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/Makefile
 @@ -0,0 +1 @@
 +obj-y := clk.o prom.o reset.o sysctrl.o devices.o
-diff --git a/arch/mips/lantiq/falcon/clk.c b/arch/mips/lantiq/falcon/clk.c
-new file mode 100644
-index 0000000..afe1b52
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/clk.c
 @@ -0,0 +1,44 @@
@@ -585,9 +562,6 @@ index 0000000..afe1b52
 +	return CLOCK_100M;
 +}
 +EXPORT_SYMBOL(ltq_get_fpi_hz);
-diff --git a/arch/mips/lantiq/falcon/devices.c b/arch/mips/lantiq/falcon/devices.c
-new file mode 100644
-index 0000000..c4606f2
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/devices.c
 @@ -0,0 +1,87 @@
@@ -678,9 +652,6 @@ index 0000000..c4606f2
 +{
 +	platform_device_register(&ltq_flash_nand);
 +}
-diff --git a/arch/mips/lantiq/falcon/devices.h b/arch/mips/lantiq/falcon/devices.h
-new file mode 100644
-index 0000000..e802a7c
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/devices.h
 @@ -0,0 +1,18 @@
@@ -702,9 +673,6 @@ index 0000000..e802a7c
 +extern void falcon_register_nand(void);
 +
 +#endif
-diff --git a/arch/mips/lantiq/falcon/prom.c b/arch/mips/lantiq/falcon/prom.c
-new file mode 100644
-index 0000000..b50d6f9
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/prom.c
 @@ -0,0 +1,93 @@
@@ -801,9 +769,6 @@ index 0000000..b50d6f9
 +		break;
 +	}
 +}
-diff --git a/arch/mips/lantiq/falcon/reset.c b/arch/mips/lantiq/falcon/reset.c
-new file mode 100644
-index 0000000..cbcadc5
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/reset.c
 @@ -0,0 +1,87 @@
@@ -894,9 +859,6 @@ index 0000000..cbcadc5
 +}
 +
 +arch_initcall(mips_reboot_setup);
-diff --git a/arch/mips/lantiq/falcon/sysctrl.c b/arch/mips/lantiq/falcon/sysctrl.c
-new file mode 100644
-index 0000000..905a142
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/sysctrl.c
 @@ -0,0 +1,183 @@
@@ -1083,6 +1045,3 @@ index 0000000..905a142
 +
 +	ltq_gpe_enable();
 +}
--- 
-1.7.7.1
-

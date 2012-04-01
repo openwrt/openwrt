@@ -7,8 +7,6 @@ Subject: [PATCH 65/70] MIPS: adds dsl clocks
  arch/mips/lantiq/xway/sysctrl.c |   15 +++++++++++++--
  1 files changed, 13 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 6771a7e..3672fc6 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -41,8 +41,9 @@
@@ -22,7 +20,7 @@ index 6771a7e..3672fc6 100644
  #define PMU_EBU		BIT(10)
  #define PMU_STP		BIT(11)
  #define PMU_GPT		BIT(12)
-@@ -147,7 +148,7 @@ static int ltq_pci_ext_enable(struct clk *clk)
+@@ -147,7 +148,7 @@ static int ltq_pci_ext_enable(struct clk
  
  static void ltq_pci_ext_disable(struct clk *clk)
  {
@@ -61,6 +59,3 @@ index 6771a7e..3672fc6 100644
 +			PMU_PPE_QSB | PMU_AHBS | PMU_DFE);
  	}
  }
--- 
-1.7.7.1
-

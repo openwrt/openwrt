@@ -18,8 +18,6 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  arch/mips/lantiq/xway/gpio_stp.c                   |    3 +-
  5 files changed, 75 insertions(+), 20 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index d1b8cc8..bfdeb16 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -126,7 +126,9 @@
@@ -32,11 +30,9 @@ index d1b8cc8..bfdeb16 100644
  
  /* SSC */
  #define LTQ_SSC_BASE_ADDR	0x1e100800
-diff --git a/arch/mips/lantiq/xway/devices.c b/arch/mips/lantiq/xway/devices.c
-index 5efa4f3..e6d45bc 100644
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -34,6 +34,7 @@ static struct resource ltq_gpio_resource[] = {
+@@ -34,6 +34,7 @@ static struct resource ltq_gpio_resource
  	MEM_RES("gpio0", LTQ_GPIO0_BASE_ADDR, LTQ_GPIO_SIZE),
  	MEM_RES("gpio1", LTQ_GPIO1_BASE_ADDR, LTQ_GPIO_SIZE),
  	MEM_RES("gpio2", LTQ_GPIO2_BASE_ADDR, LTQ_GPIO_SIZE),
@@ -53,8 +49,6 @@ index 5efa4f3..e6d45bc 100644
  	}
  }
  
-diff --git a/arch/mips/lantiq/xway/gpio.c b/arch/mips/lantiq/xway/gpio.c
-index 54ec6c9..375329b 100644
 --- a/arch/mips/lantiq/xway/gpio.c
 +++ b/arch/mips/lantiq/xway/gpio.c
 @@ -23,9 +23,17 @@
@@ -76,7 +70,7 @@ index 54ec6c9..375329b 100644
  
  #define ltq_gpio_getbit(m, r, p)	(!!(ltq_r32(m + r) & (1 << p)))
  #define ltq_gpio_setbit(m, r, p)	ltq_w32_mask(0, (1 << p), m + r)
-@@ -55,7 +63,7 @@ int ltq_gpio_request(struct device *dev, unsigned int pin, unsigned int mux,
+@@ -55,7 +63,7 @@ int ltq_gpio_request(struct device *dev,
  {
  	int id = 0;
  
@@ -85,7 +79,7 @@ index 54ec6c9..375329b 100644
  		return -EINVAL;
  	if (devm_gpio_request(dev, pin, name)) {
  		pr_err("failed to setup lantiq gpio: %s\n", name);
-@@ -75,12 +83,21 @@ int ltq_gpio_request(struct device *dev, unsigned int pin, unsigned int mux,
+@@ -75,12 +83,21 @@ int ltq_gpio_request(struct device *dev,
  	else
  		ltq_gpio_clearbit(ltq_gpio_port[id].membase,
  			LTQ_GPIO_ALTSEL0, pin);
@@ -113,7 +107,7 @@ index 54ec6c9..375329b 100644
  	return 0;
  }
  EXPORT_SYMBOL(ltq_gpio_request);
-@@ -106,10 +123,19 @@ static int ltq_gpio_direction_input(struct gpio_chip *chip, unsigned int offset)
+@@ -106,10 +123,19 @@ static int ltq_gpio_direction_input(stru
  {
  	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
  
@@ -136,7 +130,7 @@ index 54ec6c9..375329b 100644
  
  	return 0;
  }
-@@ -119,10 +145,19 @@ static int ltq_gpio_direction_output(struct gpio_chip *chip,
+@@ -119,10 +145,19 @@ static int ltq_gpio_direction_output(str
  {
  	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
  
@@ -159,7 +153,7 @@ index 54ec6c9..375329b 100644
  	ltq_gpio_set(chip, offset, value);
  
  	return 0;
-@@ -133,7 +168,11 @@ static int ltq_gpio_req(struct gpio_chip *chip, unsigned offset)
+@@ -133,7 +168,11 @@ static int ltq_gpio_req(struct gpio_chip
  	struct ltq_gpio *ltq_gpio = container_of(chip, struct ltq_gpio, chip);
  
  	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_ALTSEL0, offset);
@@ -172,7 +166,7 @@ index 54ec6c9..375329b 100644
  	return 0;
  }
  
-@@ -146,6 +185,16 @@ static int ltq_gpio_probe(struct platform_device *pdev)
+@@ -146,6 +185,16 @@ static int ltq_gpio_probe(struct platfor
  			pdev->id);
  		return -EINVAL;
  	}
@@ -189,7 +183,7 @@ index 54ec6c9..375329b 100644
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!res) {
  		dev_err(&pdev->dev, "failed to get memory for gpio port %d\n",
-@@ -175,7 +224,10 @@ static int ltq_gpio_probe(struct platform_device *pdev)
+@@ -175,7 +224,10 @@ static int ltq_gpio_probe(struct platfor
  	ltq_gpio_port[pdev->id].chip.set = ltq_gpio_set;
  	ltq_gpio_port[pdev->id].chip.request = ltq_gpio_req;
  	ltq_gpio_port[pdev->id].chip.base = PINS_PER_PORT * pdev->id;
@@ -201,8 +195,6 @@ index 54ec6c9..375329b 100644
  	platform_set_drvdata(pdev, &ltq_gpio_port[pdev->id]);
  	return gpiochip_add(&ltq_gpio_port[pdev->id].chip);
  }
-diff --git a/arch/mips/lantiq/xway/gpio_ebu.c b/arch/mips/lantiq/xway/gpio_ebu.c
-index b91c7f1..bc5696b 100644
 --- a/arch/mips/lantiq/xway/gpio_ebu.c
 +++ b/arch/mips/lantiq/xway/gpio_ebu.c
 @@ -61,9 +61,8 @@ static struct gpio_chip ltq_ebu_chip = {
@@ -216,8 +208,6 @@ index b91c7f1..bc5696b 100644
  	.owner = THIS_MODULE,
  };
  
-diff --git a/arch/mips/lantiq/xway/gpio_stp.c b/arch/mips/lantiq/xway/gpio_stp.c
-index da91c5e..9610c10 100644
 --- a/arch/mips/lantiq/xway/gpio_stp.c
 +++ b/arch/mips/lantiq/xway/gpio_stp.c
 @@ -74,9 +74,8 @@ static struct gpio_chip ltq_stp_chip = {
@@ -231,6 +221,3 @@ index da91c5e..9610c10 100644
  	.owner = THIS_MODULE,
  };
  
--- 
-1.7.7.1
-

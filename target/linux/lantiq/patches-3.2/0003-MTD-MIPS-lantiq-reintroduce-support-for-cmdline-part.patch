@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/mtd/maps/lantiq-flash.c |    3 ++-
  1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/mtd/maps/lantiq-flash.c b/drivers/mtd/maps/lantiq-flash.c
-index 4f10e27..764d468 100644
 --- a/drivers/mtd/maps/lantiq-flash.c
 +++ b/drivers/mtd/maps/lantiq-flash.c
 @@ -45,6 +45,7 @@ struct ltq_mtd {
@@ -25,7 +23,7 @@ index 4f10e27..764d468 100644
  
  static map_word
  ltq_read16(struct map_info *map, unsigned long adr)
-@@ -168,7 +169,7 @@ ltq_mtd_probe(struct platform_device *pdev)
+@@ -168,7 +169,7 @@ ltq_mtd_probe(struct platform_device *pd
  	cfi->addr_unlock1 ^= 1;
  	cfi->addr_unlock2 ^= 1;
  
@@ -34,6 +32,3 @@ index 4f10e27..764d468 100644
  			ltq_mtd_data->parts, ltq_mtd_data->nr_parts);
  	if (err) {
  		dev_err(&pdev->dev, "failed to add partitions\n");
--- 
-1.7.7.1
-

@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
-@@ -190,8 +190,12 @@ ltq_etop_hw_receive(struct ltq_etop_chan
+@@ -188,8 +188,12 @@ ltq_etop_hw_receive(struct ltq_etop_chan
  
  	skb_put(skb, len);
  	skb->dev = ch->netdev;
