@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010 OpenWrt.org
+# Copyright (C) 2010-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qemu
-PKG_VERSION:=0.13.0
+PKG_VERSION:=0.14.1
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=http://download.savannah.gnu.org/releases/qemu/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=397a0d665da8ba9d3b9583629f3d6421
+PKG_MD5SUM:=b6c713a8db638e173af53a62d5178640
 
 include $(INCLUDE_DIR)/host-build.mk
 
