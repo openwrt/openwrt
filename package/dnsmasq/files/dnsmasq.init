@@ -8,6 +8,14 @@ SERVICE_USE_PID=1
 DNS_SERVERS=""
 DOMAIN=""
 
+CONFIGFILE="/var/etc/dnsmasq.conf"
+
+xappend() {
+	local value="$1"
+
+	echo "${value#--}" >> $CONFIGFILE
+}
+
 dhcp_calc() {
 	local ip="$1"
 	local res=0
@@ -27,7 +35,7 @@ append_bool() {
 	local value="$3"
 	local _loctmp
 	config_get_bool _loctmp "$section" "$option" 0
-	[ $_loctmp -gt 0 ] && append args "$value"
+	[ $_loctmp -gt 0 ] && xappend "$value"
 }
 
 append_parm() {
@@ -37,66 +45,66 @@ append_parm() {
 	local _loctmp
 	config_get _loctmp "$section" "$option"
 	[ -z "$_loctmp" ] && return 0
-	append args "$switch $_loctmp"
+	xappend "$switch=$_loctmp"
 }
 
 append_server() {
-	append args "-S $1"
+	xappend "--server=$1"
 }
 
 append_interface() {
 	local ifname=$(uci_get_state network "$1" ifname "$1")
-	append args "-i $ifname"
+	xappend "--interface=$ifname"
 }
 
 append_notinterface() {
 	local ifname=$(uci_get_state network "$1" ifname "$1")
-	append args "-I $ifname"
+	xappend "--except-interface=$ifname"
 }
 
 append_addnhosts() {
-	append args "-H $1"
+	xappend "--addn-hosts=$1"
 }
 
 append_bogusnxdomain() {
-       append args "-B $1"
+       xappend "--bogus-nxdomain=$1"
 }
 
 dnsmasq() {
 	local cfg="$1"
-	append_bool "$cfg" authoritative "-K"
-	append_bool "$cfg" nodaemon "-d"
-	append_bool "$cfg" domainneeded "-D"
-	append_bool "$cfg" filterwin2k "-f"
-	append_bool "$cfg" nohosts "-h"
-	append_bool "$cfg" nonegcache "-N"
-	append_bool "$cfg" strictorder "-o"
-	append_bool "$cfg" logqueries "-q"
-	append_bool "$cfg" noresolv "-R"
-	append_bool "$cfg" localise_queries "-y"
-	append_bool "$cfg" readethers "-Z"
-	append_bool "$cfg" dbus "-1"
-	append_bool "$cfg" boguspriv "-b"
-	append_bool "$cfg" expandhosts "-E"
+	append_bool "$cfg" authoritative "--dhcp-authoritative"
+	append_bool "$cfg" nodaemon "--no-daemon"
+	append_bool "$cfg" domainneeded "--domain-needed"
+	append_bool "$cfg" filterwin2k "--filterwin2k"
+	append_bool "$cfg" nohosts "--no-hosts"
+	append_bool "$cfg" nonegcache "--no-negcache"
+	append_bool "$cfg" strictorder "--strict-order"
+	append_bool "$cfg" logqueries "--log-queries"
+	append_bool "$cfg" noresolv "--no-resolv"
+	append_bool "$cfg" localise_queries "--localise-queries"
+	append_bool "$cfg" readethers "--read-ethers"
+	append_bool "$cfg" dbus "--enable-dbus"
+	append_bool "$cfg" boguspriv "--bogus-priv"
+	append_bool "$cfg" expandhosts "--expand-hosts"
 	append_bool "$cfg" enable_tftp "--enable-tftp"
-	append_bool "$cfg" nonwildcard "-z"
+	append_bool "$cfg" nonwildcard "--bind-interfaces"
 
-	append_parm "$cfg" dhcpscript "-6"
-	append_parm "$cfg" cachesize "-c"
-	append_parm "$cfg" dnsforwardmax "-0"
-	append_parm "$cfg" port "-p"
-	append_parm "$cfg" ednspacket_max "-P"
-	append_parm "$cfg" dhcpleasemax "-X"
-	append_parm "$cfg" "queryport" "-Q"
-	append_parm "$cfg" "domain" "-s"
-	append_parm "$cfg" "local" "-S"
+	append_parm "$cfg" dhcpscript "--dhcp-script"
+	append_parm "$cfg" cachesize "--cache-size"
+	append_parm "$cfg" dnsforwardmax "--dns-forward-max"
+	append_parm "$cfg" port "--port"
+	append_parm "$cfg" ednspacket_max "--edns-packet-max"
+	append_parm "$cfg" dhcpleasemax "--dhcp-lease-max"
+	append_parm "$cfg" "queryport" "--query-port"
+	append_parm "$cfg" "domain" "--domain"
+	append_parm "$cfg" "local" "--server"
 	config_list_foreach "$cfg" "server" append_server
 	config_list_foreach "$cfg" "interface" append_interface
 	config_list_foreach "$cfg" "notinterface" append_notinterface
 	config_list_foreach "$cfg" "addnhosts" append_addnhosts
 	config_list_foreach "$cfg" "bogusnxdomain" append_bogusnxdomain
-	append_parm "$cfg" "leasefile" "-l"
-	append_parm "$cfg" "resolvfile" "-r"
+	append_parm "$cfg" "leasefile" "--dhcp-leasefile"
+	append_parm "$cfg" "resolvfile" "--resolv-file"
 	append_parm "$cfg" "tftp_root" "--tftp-root"
 	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
 
@@ -110,7 +118,7 @@ dnsmasq() {
 	config_get_bool cachelocal "$cfg" cachelocal 1
 
 	config_get hostsfile "$cfg" dhcphostsfile
-	[ -e "$hostsfile" ] && append args "--dhcp-hostsfile=$hostsfile"
+	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
 
 	local rebind
 	config_get_bool rebind "$cfg" rebind_protection 1
@@ -118,22 +126,24 @@ dnsmasq() {
 		logger -t dnsmasq \
 			"DNS rebinding protection is active," \
 			"will discard upstream RFC1918 responses!"
-		append args "--stop-dns-rebind"
+		xappend "--stop-dns-rebind"
 
 		local rebind_localhost
 		config_get_bool rebind_localhost "$cfg" rebind_localhost 0
 		[ $rebind_localhost -gt 0 ] && {
 			logger -t dnsmasq "Allowing 127.0.0.0/8 responses"
-			append args "--rebind-localhost-ok"
+			xappend "--rebind-localhost-ok"
 		}
 
 		append_rebind_domain() {
 			logger -t dnsmasq "Allowing RFC1918 responses for domain $1"
-			append args "--rebind-domain-ok=$1"
+			xappend "--rebind-domain-ok=$1"
 		}
 
 		config_list_foreach "$cfg" rebind_domain append_rebind_domain
 	}
+
+	echo >> $CONFIGFILE
 }
 
 dhcp_subscrid_add() {
@@ -145,7 +155,7 @@ dhcp_subscrid_add() {
 	config_get subscriberid "$cfg" subscriberid
 	[ -n "$subscriberid" ] || return 0
 
-	append args "--dhcp-subscrid=$networkid,$subscriberid"
+	xappend "--dhcp-subscrid=$networkid,$subscriberid"
 
 	dhcp_option_add "$cfg" "$networkid"
 }
@@ -159,7 +169,7 @@ dhcp_remoteid_add() {
 	config_get remoteid "$cfg" remoteid
 	[ -n "$remoteid" ] || return 0
 
-	append args "--dhcp-remoteid=$networkid,$remoteid"
+	xappend "--dhcp-remoteid=$networkid,$remoteid"
 
 	dhcp_option_add "$cfg" "$networkid"
 }
@@ -173,7 +183,7 @@ dhcp_circuitid_add() {
 	config_get circuitid "$cfg" circuitid
 	[ -n "$circuitid" ] || return 0
 
-	append args "--dhcp-circuitid=$networkid,$circuitid"
+	xappend "--dhcp-circuitid=$networkid,$circuitid"
 
 	dhcp_option_add "$cfg" "$networkid"
 }
@@ -187,7 +197,7 @@ dhcp_userclass_add() {
 	config_get userclass "$cfg" userclass
 	[ -n "$userclass" ] || return 0
 
-	append args "--dhcp-userclass=$networkid,$userclass"
+	xappend "--dhcp-userclass=$networkid,$userclass"
 
 	dhcp_option_add "$cfg" "$networkid"
 }
@@ -201,7 +211,7 @@ dhcp_vendorclass_add() {
 	config_get vendorclass "$cfg" vendorclass
 	[ -n "$vendorclass" ] || return 0
 
-	append args "--dhcp-vendorclass=$networkid,$vendorclass"
+	xappend "--dhcp-vendorclass=$networkid,$vendorclass"
 
 	dhcp_option_add "$cfg" "$networkid"
 }
@@ -221,7 +231,7 @@ dhcp_host_add() {
 	for m in $mac; do append macs "$m" ","; done
 	[ -n "$macs" ] || return 0
 
-	append args "--dhcp-host=$macs${networkid:+,net:$networkid}${ip:+,$ip}${name:+,$name}"
+	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${ip:+,$ip}${name:+,$name}"
 }
 
 dhcp_mac_add() {
@@ -233,7 +243,7 @@ dhcp_mac_add() {
 	config_get mac "$cfg" mac
 	[ -n "$mac" ] || return 0
 
-	append args "--dhcp-mac=$networkid,$mac"
+	xappend "--dhcp-mac=$networkid,$mac"
 
 	dhcp_option_add "$cfg" "$networkid"
 }
@@ -252,7 +262,7 @@ dhcp_boot_add() {
 	config_get serveraddress "$cfg" serveraddress
 	[ -n "$serveraddress" ] || return 0
 
-	append args "--dhcp-boot=${networkid:+net:$networkid,}$filename,$servername,$serveraddress"
+	xappend "--dhcp-boot=${networkid:+net:$networkid,}$filename,$servername,$serveraddress"
 
 	dhcp_option_add "$cfg" "$networkid"
 }
@@ -274,7 +284,7 @@ dhcp_add() {
 		DNS_SERVERS="$DNS_SERVERS $dnsserver"
 	}
 
-	append_bool "$cfg" ignore "-2 $ifname" && return 0
+	append_bool "$cfg" ignore "--no-dhcp-interface=$ifname" && return 0
 
 	config_get proto "$net" proto
 	[ static = "$proto" ] || return 0
@@ -306,7 +316,7 @@ dhcp_add() {
 	[ "$limit" -gt 0 ] && limit=$((limit-1))
 	eval "$(ipcalc.sh $ipaddr $netmask $start $limit)"
 	if [ "$dynamicdhcp" = "0" ]; then END="static"; fi
-	append args "--dhcp-range=$networkid,$START,$END,$NETMASK,$leasetime${options:+ $options}"
+	xappend "--dhcp-range=$networkid,$START,$END,$NETMASK,$leasetime${options:+ $options}"
 
 	dhcp_option_add "$cfg" "$networkid"
 }
@@ -317,7 +327,7 @@ dhcp_option_add() {
 
 	config_get dhcp_option "$cfg" dhcp_option
 	for o in $dhcp_option; do
-		append args "-O $networkid","$o"
+		xappend "--dhcp-option=$networkid","$o"
 	done
 
 }
@@ -341,10 +351,10 @@ dhcp_domain_add() {
 		[ "${fqdn%.*}" == "$fqdn" ] && \
 			fqdn="$fqdn${DOMAIN:+.$DOMAIN}"
 
-		append args "-A /$fqdn/$ip"
+		xappend "--address=/$fqdn/$ip"
 
 		[ -n "$raddr" ] && {
-			append args "--ptr-record=$raddr,$fqdn"
+			xappend "--ptr-record=$raddr,$fqdn"
 			raddr=""
 		}
 	done
@@ -367,7 +377,7 @@ dhcp_srv_add() {
 
 	local service="$srv,$target,$port${class:+,$class${weight:+,$weight}}"
 
-	append args "-W $service"
+	xappend "--srv-host=$service"
 }
 
 dhcp_mx_add() {
@@ -397,7 +407,7 @@ dhcp_cname_add() {
 	config_get target "$cfg" target
 	[ -n "$target" ] || return 0
 
-	append args "--cname=${cname},${target}"
+	xappend "--cname=${cname},${target}"
 }
 
 start() {
@@ -409,9 +419,20 @@ start() {
 
 	config_load dhcp
 
+	# before we can call xappend
+	mkdir -p $(dirname $CONFIGFILE)
+
+	echo "# auto-generated config file from /etc/config/dhcp" > $CONFIGFILE
+
+	# if we did this last, we could override auto-generated config
+	[ -f /etc/dnsmasq.conf ] && {
+		xappend "--conf-file=/etc/dnsmasq.conf"
+	}
+
 	args=""
 	config_foreach dnsmasq dnsmasq
 	config_foreach dhcp_host_add host
+	echo >> $CONFIGFILE
 	config_foreach dhcp_boot_add boot
 	config_foreach dhcp_mac_add mac
 	config_foreach dhcp_vendorclass_add vendorclass
@@ -420,10 +441,14 @@ start() {
 	config_foreach dhcp_remoteid_add remoteid
 	config_foreach dhcp_subscrid_add subscrid
 	config_foreach dhcp_domain_add domain
+	echo >> $CONFIGFILE
 	config_foreach dhcp_srv_add srvhost
 	config_foreach dhcp_mx_add mxhost
+	echo >> $CONFIGFILE
 	config_foreach dhcp_add dhcp
+	echo >> $CONFIGFILE
 	config_foreach dhcp_cname_add cname
+	echo >> $CONFIGFILE
 
 	# add own hostname
 	[ -z "$lanaddr" ] || {
@@ -431,7 +456,7 @@ start() {
 		dhcp_domain_add "" "${hostname:-OpenWrt}" "$lanaddr"
 	}
 
-	service_start /usr/sbin/dnsmasq $args && {
+	service_start /usr/sbin/dnsmasq -C $CONFIGFILE && {
 		rm -f /tmp/resolv.conf
 		[ -n "$DOMAIN" ] && echo "search $DOMAIN" >> /tmp/resolv.conf
 		DNS_SERVERS="$DNS_SERVERS 127.0.0.1"
