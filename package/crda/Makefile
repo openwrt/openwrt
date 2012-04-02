@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 OpenWrt.org
+# Copyright (C) 2009-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=crda
 PKG_RELEASE:=1
-PKG_VERSION:=1.1.1
+PKG_VERSION:=1.1.2
 PKG_SOURCE_URL:=http://wireless.kernel.org/download/crda
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_MD5SUM:=5fc77af68b3e21736b8ef2f8b061c810
+PKG_MD5SUM:=5226f65aebacf94baaf820f8b4e06df4
 
 PKG_REGULATORY_NAME:=regulatory
 PKG_REGULATORY_VERSION:=2011.04.28
