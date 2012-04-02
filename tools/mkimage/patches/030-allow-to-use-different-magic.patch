@@ -8,7 +8,7 @@
  	.dtc = MKIMAGE_DEFAULT_DTC_OPTIONS,
  	.imagename = "",
  };
-@@ -180,6 +181,16 @@ main (int argc, char **argv)
+@@ -186,6 +187,16 @@ main (int argc, char **argv)
  					genimg_get_comp_id (*++argv)) < 0)
  					usage ();
  				goto NXTARG;
@@ -25,7 +25,7 @@
  			case 'D':
  				if (--argc <= 0)
  					usage ();
-@@ -580,12 +591,13 @@ usage ()
+@@ -595,12 +606,13 @@ usage ()
  	fprintf (stderr, "Usage: %s -l image\n"
  			 "          -l ==> list image header information\n",
  		params.cmdname);
@@ -42,7 +42,7 @@
  			 "          -n ==> set image name to 'name'\n"
 --- a/tools/mkimage.h
 +++ b/tools/mkimage.h
-@@ -64,6 +64,7 @@ struct mkimage_params {
+@@ -65,6 +65,7 @@ struct mkimage_params {
  	int arch;
  	int type;
  	int comp;
@@ -52,12 +52,12 @@
  	unsigned int ep;
 --- a/tools/default_image.c
 +++ b/tools/default_image.c
-@@ -110,7 +110,7 @@ static void image_set_header (void *ptr,
+@@ -111,7 +111,7 @@ static void image_set_header(void *ptr,
  			sbuf->st_size - sizeof(image_header_t));
  
  	/* Build new header */
--	image_set_magic (hdr, IH_MAGIC);
-+	image_set_magic (hdr, params->magic);
- 	image_set_time (hdr, sbuf->st_mtime);
- 	image_set_size (hdr, sbuf->st_size - sizeof(image_header_t));
- 	image_set_load (hdr, params->addr);
+-	image_set_magic(hdr, IH_MAGIC);
++	image_set_magic(hdr, params->magic);
+ 	image_set_time(hdr, sbuf->st_mtime);
+ 	image_set_size(hdr, sbuf->st_size - sizeof(image_header_t));
+ 	image_set_load(hdr, params->addr);
