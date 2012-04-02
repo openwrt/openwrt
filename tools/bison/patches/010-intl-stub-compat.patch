@@ -1,6 +1,6 @@
 --- a/src/main.c
 +++ b/src/main.c
-@@ -57,9 +57,9 @@ main (int argc, char *argv[])
+@@ -58,9 +58,9 @@ main (int argc, char *argv[])
  {
    program_name = argv[0];
    setlocale (LC_ALL, "");
@@ -12,4 +12,4 @@
 +  textdomain (PACKAGE);
  
    uniqstrs_new ();
- 
+   muscle_init ();
