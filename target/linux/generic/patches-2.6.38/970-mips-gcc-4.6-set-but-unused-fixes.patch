@@ -1,0 +1,24 @@
+--- a/arch/mips/mm/tlbex.c
++++ b/arch/mips/mm/tlbex.c
+@@ -1151,8 +1151,8 @@ static void __cpuinit build_r4000_tlb_re
+ 	struct uasm_reloc *r = relocs;
+ 	u32 *f;
+ 	unsigned int final_len;
+-	struct mips_huge_tlb_info htlb_info;
+-	enum vmalloc64_mode vmalloc_mode;
++	struct mips_huge_tlb_info htlb_info __maybe_unused;
++	enum vmalloc64_mode vmalloc_mode __maybe_unused;
+ 
+ 	memset(tlb_handler, 0, sizeof(tlb_handler));
+ 	memset(labels, 0, sizeof(labels));
+--- a/arch/mips/mm/c-r4k.c
++++ b/arch/mips/mm/c-r4k.c
+@@ -1075,7 +1075,7 @@ static int __cpuinit probe_scache(void)
+ 	unsigned long flags, addr, begin, end, pow2;
+ 	unsigned int config = read_c0_config();
+ 	struct cpuinfo_mips *c = &current_cpu_data;
+-	int tmp;
++	int tmp __maybe_unused;
+ 
+ 	if (config & CONF_SC)
+ 		return 0;
