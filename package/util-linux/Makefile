@@ -17,6 +17,7 @@ PKG_MD5SUM:=fcd18041c5390178b1aadc2fd298bee8
 
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS=e2fsprogs libncurses
+PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -157,12 +158,12 @@ endef
 
 define Package/cfdisk/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/cfdisk $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/.libs/cfdisk $(1)/sbin/
 endef
 
 define Package/fdisk/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/fdisk $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fdisk/.libs/fdisk $(1)/sbin/
 endef
 
 define Package/sfdisk/install
@@ -187,13 +188,14 @@ endef
 
 define Package/swap-utils/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/mkswap $(PKG_BUILD_DIR)/mount/swapon $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/disk-utils/.libs/mkswap $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/.libs/swapon $(1)/sbin/
 	ln -sf swapon $(1)/sbin/swapoff
 endef
 
 define Package/mount-utils/install
 	$(INSTALL_DIR) $(1)/bin/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/{u,}mount $(1)/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mount/.libs/{u,}mount $(1)/bin
 endef
 
 define Package/flock/install
