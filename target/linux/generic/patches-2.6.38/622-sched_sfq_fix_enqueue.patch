@@ -25,7 +25,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/net/sched/sch_sfq.c
 +++ b/net/sched/sch_sfq.c
-@@ -410,7 +410,12 @@ sfq_enqueue(struct sk_buff *skb, struct 
+@@ -410,7 +410,12 @@ sfq_enqueue(struct sk_buff *skb, struct
  	/* Return Congestion Notification only if we dropped a packet
  	 * from this flow.
  	 */
