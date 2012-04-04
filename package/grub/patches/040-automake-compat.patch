@@ -1,0 +1,41 @@
+--- a/stage1/Makefile.am
++++ b/stage1/Makefile.am
+@@ -1,7 +1,7 @@
+ pkglibdir = $(libdir)/$(PACKAGE)/$(host_cpu)-$(host_vendor)
+-nodist_pkglib_DATA = stage1
++nodist_pkgdata_DATA = stage1
+ 
+-CLEANFILES = $(nodist_pkglib_DATA)
++CLEANFILES = $(nodist_pkgdata_DATA)
+ 
+ # We can't use builtins or standard includes.
+ AM_CCASFLAGS = $(STAGE1_CFLAGS) -fno-builtin -nostdinc
+--- a/stage2/Makefile.am
++++ b/stage2/Makefile.am
+@@ -32,7 +32,7 @@ pkglibdir = $(libdir)/$(PACKAGE)/$(host_
+ EXTRA_PROGRAMS = nbloader.exec pxeloader.exec diskless.exec
+ 
+ if DISKLESS_SUPPORT
+-pkglib_DATA = stage2 stage2_eltorito e2fs_stage1_5 fat_stage1_5 \
++pkgdata_DATA = stage2 stage2_eltorito e2fs_stage1_5 fat_stage1_5 \
+ 	ffs_stage1_5 iso9660_stage1_5 jfs_stage1_5 minix_stage1_5 \
+ 	reiserfs_stage1_5 ufs2_stage1_5 vstafs_stage1_5 xfs_stage1_5 \
+ 	nbgrub pxegrub
+@@ -43,7 +43,7 @@ noinst_PROGRAMS = pre_stage2.exec start.
+ 	reiserfs_stage1_5.exec ufs2_stage1_5.exec vstafs_stage1_5.exec \
+ 	xfs_stage1_5.exec nbloader.exec pxeloader.exec diskless.exec
+ else
+-pkglib_DATA = stage2 stage2_eltorito e2fs_stage1_5 fat_stage1_5 \
++pkgdata_DATA = stage2 stage2_eltorito e2fs_stage1_5 fat_stage1_5 \
+ 	ffs_stage1_5 iso9660_stage1_5 jfs_stage1_5 minix_stage1_5 \
+ 	reiserfs_stage1_5 ufs2_stage1_5 vstafs_stage1_5 xfs_stage1_5
+ noinst_DATA = pre_stage2 start start_eltorito
+@@ -112,7 +112,7 @@ else
+ BUILT_SOURCES = stage2_size.h
+ endif
+ 
+-CLEANFILES = $(pkglib_DATA) $(noinst_DATA) $(BUILT_SOURCES)
++CLEANFILES = $(pkgdata_DATA) $(noinst_DATA) $(BUILT_SOURCES)
+ 
+ stage2_size.h: pre_stage2
+ 	-rm -f stage2_size.h
