@@ -20,7 +20,8 @@
 #include <prom/admboot.h>
 #include "prom_read.h"
 
-#define ADMBOOT_MAGIC_MAC_BASE	0x636D676D	/* 'mgmc' */
+#define ADMBOOT_MAGIC_MAC_BASE		0x636D676D	/* 'mgmc' */
+#define ADMBOOT_MAGIC_MAC_BASE_BR6104XX 0x31305348	/* 'HS01' */
 
 int __init admboot_get_mac_base(u32 offset, u32 len, u8 *mac)
 {
@@ -37,6 +38,14 @@ int __init admboot_get_mac_base(u32 offset, u32 len, u8 *mac)
 
 			for (j = 0; j < 6; j++)
 				mac[j] = cfg[i + 4 + j];
+
+			return 0;
+		}
+		if (magic == ADMBOOT_MAGIC_MAC_BASE_BR6104XX) {
+			int j;
+
+			for (j = 0; j < 6; j++)
+				mac[j] = cfg[i + 7 + j];
 
 			return 0;
 		}
