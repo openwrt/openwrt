@@ -49,7 +49,7 @@
 /* ------------------------------------------------------------------------ */
 
 #ifdef CONFIG_ADM5120_SWITCH_DEBUG
-#define SW_DBG(f, a...)		printk(KERN_DBG "%s: " f, DRV_NAME , ## a)
+#define SW_DBG(f, a...)		printk(KERN_DEBUG "%s: " f, DRV_NAME , ## a)
 #else
 #define SW_DBG(f, a...)		do {} while (0)
 #endif
@@ -1172,7 +1172,7 @@ err:
 	return err;
 }
 
-static int adm5120_switch_remove(struct platform_device *dev)
+static int adm5120_switch_remove(struct platform_device *pdev)
 {
 	adm5120_switch_cleanup();
 	return 0;
