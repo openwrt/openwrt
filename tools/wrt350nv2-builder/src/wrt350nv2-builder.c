@@ -1,8 +1,8 @@
 /*
 
-	WRT350Nv2-Builder 2.3 (previously called buildimg)
+	WRT350Nv2-Builder 2.4 (previously called buildimg)
 	Copyright (C) 2008-2009 Dirk Teurlings <info@upexia.nl>
-	Copyright (C) 2009-2010 Matthias Buecher (http://www.maddes.net/)
+	Copyright (C) 2009-2011 Matthias Buecher (http://www.maddes.net/)
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -33,6 +33,9 @@
 		:u-boot	0	/path/to/u-boot.bin
 		#version	0x2020
 
+	Additionally since v2.4 an already complete image can be used:
+		:image		0	/path/to/openwrt-wrt350nv2-[squashfs|jffs2-64k].img
+
 	args:
 		1	wrt350nv2.par		parameter file describing the image layout
 		2	wrt350nv2.img		output file for linksys style image
@@ -62,6 +65,8 @@
 	https://forum.openwrt.org/viewtopic.php?pid=92928#p92928
 
 	Changelog:
+	v2.4 - added ":image" definition for parameter file, this allows
+	       to use a complete sysupgrade image without any kernel size check
 	v2.3 - allow jffs by adding its magic number (0x8519)
 	       added parameter option -i to ignore unknown magic numbers
 	v2.2 - fixed checksum byte calculation for other versions than 0x2019
@@ -92,7 +97,7 @@
 
 
 // version info
-#define VERSION "2.3"
+#define VERSION "2.4"
 char program_info[] = "WRT350Nv2-Builder v%s by Dirk Teurlings <info@upexia.nl> and Matthias Buecher (http://www.maddes.net/)\n";
 
 // verbosity
@@ -112,6 +117,7 @@ typedef struct {
 
 mtd_info mtd_kernel = { "kernel", 0, 0, NULL, 0L, { 0, 0 } };
 mtd_info mtd_rootfs = { "rootfs", 0, 0, NULL, 0L, { 0, 0 } };
+mtd_info mtd_image = { "image", 0, 0, NULL, 0L, { 0, 0 } };
 mtd_info mtd_uboot = { "u-boot", 0, 0, NULL, 0L, { 0, 0 } };
 
 #define ROOTFS_END_OFFSET	0x00760000
@@ -281,6 +287,8 @@ int parse_par_file(FILE *f_par) {
 						mtd = &mtd_rootfs;
 					} else if (!strcmp(string1, mtd_uboot.name)) {
 						mtd = &mtd_uboot;
+					} else if (!strcmp(string1, mtd_image.name)) {
+						mtd = &mtd_image;
 					}
 
 					if (!mtd) {
@@ -404,20 +412,24 @@ int create_bin_file(char *bin_filename) {
 
 	// add files
 	if (!exitcode) {
-		for (i = 1; i <= 3; i++) {
+		for (i = 1; i <= 4; i++) {
 			addsize = 0;
 			padsize = 0;
 
 			switch (i) {
 				case 1:
-					mtd = &mtd_kernel;
+					mtd = &mtd_image;
+					padsize = ROOTFS_MIN_OFFSET - mtd->filesize;
 					break;
 				case 2:
+					mtd = &mtd_kernel;
+					break;
+				case 3:
 					mtd = &mtd_rootfs;
 					addsize = mtd->filesize;
 					padsize = ROOTFS_MIN_OFFSET - mtd_kernel.size - mtd->filesize;
 					break;
-				case 3:
+				case 4:
 					mtd = &mtd_uboot;
 					addsize = mtd->filesize;
 					break;
@@ -723,7 +735,6 @@ int main(int argc, char *argv[]) {
 
 	int i;
 	mtd_info *mtd;
-	int mandatory;
 	int noupdate;
 	int sizecheck;
 	int magiccheck;
@@ -934,28 +945,30 @@ int main(int argc, char *argv[]) {
 	if ((!exitcode) && (par_filename)) {
 		lprintf(DEBUG, "checking mtd data...\n");
 
-		for (i = 1; i <= 3; i++) {
-			mandatory = 0;
+		for (i = 1; i <= 4; i++) {
 			noupdate = 0;
 			sizecheck = 0;
 			magiccheck = 0;
 
 			switch (i) {
 				case 1:
-					mtd = &mtd_kernel;
-					mandatory = 1;
-					sizecheck = mtd_kernel.size - 16;
+					mtd = &mtd_image;
+					sizecheck = ROOTFS_END_OFFSET;
 					magiccheck = 1;
 					break;
 				case 2:
-					mtd = &mtd_rootfs;
-					mtd->offset = mtd_kernel.size;
-					mtd->size = ROOTFS_END_OFFSET - mtd_kernel.size;
-					mandatory = 1;
-					sizecheck = PRODUCT_ID_OFFSET - mtd_kernel.size;
+					mtd = &mtd_kernel;
+					sizecheck = mtd_kernel.size - 16;
 					magiccheck = 1;
 					break;
 				case 3:
+					mtd = &mtd_rootfs;
+					mtd->offset = mtd_kernel.size;
+					mtd->size = ROOTFS_END_OFFSET - mtd_kernel.size;
+					sizecheck = PRODUCT_ID_OFFSET - mtd_kernel.size;
+					magiccheck = 1;
+					break;
+				case 4:
 					mtd = &mtd_uboot;
 					mtd->offset = BOOT_ADDR_BASE_OFF;
 					noupdate = 1;
@@ -974,10 +987,6 @@ int main(int argc, char *argv[]) {
 			lprintf(DEBUG_LVL2, " checking mtd %s\n", mtd->name);
 
 			// general checks
-			if ((mandatory) && (!mtd->filename)) {
-				exitcode = 1;
-				printf("mtd %s not specified correctly or at all in parameter file\n", mtd->name);
-			}
 
 			// no further checks if no file data present
 			if (!mtd->filename) {
@@ -993,14 +1002,15 @@ int main(int argc, char *argv[]) {
 			magicerror = 0;
 			if (magiccheck) {
 				switch (i) {
-					case 1:	// kernel
+					case 1:	// image
+					case 2:	// kernel
 						if (!( 
 						       ((mtd->magic[0] == 0x27) && (mtd->magic[1] == 0x05))	// uImage
 						)) {
 							magicerror = 1;
 						}
 						break;
-					case 2:	// rootfs
+					case 3:	// rootfs
 						if (!( 
 						       ((mtd->magic[0] == 0x68) && (mtd->magic[1] == 0x73))	// squashfs
 						    || ((mtd->magic[0] == 0x85) && (mtd->magic[1] == 0x19))	// jffs
@@ -1024,8 +1034,15 @@ int main(int argc, char *argv[]) {
 			}
 
 			// mtd specific size check
+			if (mtd == &mtd_image) {
+				if (mtd->filesize < 0x00200000) {
+					exitcode = 1;
+					printf("mtd %s input file %s too unrealistic small (0x%08lX)\n", mtd->name, mtd->filename, mtd->filesize);
+				}
+			}
+
 			if (mtd == &mtd_kernel) {
-				if (mtd->filesize < 0x00050000) {
+				if (mtd->filesize < 0x00080000) {
 					exitcode = 1;
 					printf("mtd %s input file %s too unrealistic small (0x%08lX)\n", mtd->name, mtd->filename, mtd->filesize);
 				}
@@ -1044,6 +1061,25 @@ int main(int argc, char *argv[]) {
 				}
 			}
 		}
+
+		// Check for mandatory parts
+		if ((!mtd_image.filename) && (!mtd_kernel.filename || !mtd_rootfs.filename)) {
+			exitcode = 1;
+			if (mtd_kernel.filename && !mtd_rootfs.filename) {
+				printf("Kernel without rootfs, either incorrectly specified or not at all in parameter file\n");
+			} else if (!mtd_kernel.filename && mtd_rootfs.filename) {
+				printf("Rootfs without kernel, either incorrectly specified or not at all in parameter file\n");
+			} else {
+				printf("Neither an image nor kernel with rootfs was/were correctly specified or at all in parameter file\n");
+			}
+		}
+
+		// Check for duplicate parts
+		if ((mtd_image.filename) && (mtd_kernel.filename || mtd_rootfs.filename)) {
+			exitcode = 1;
+			printf("Image and kernel/rootfs specified in parameter file\n");
+		}
+
 		lprintf(DEBUG, "...done checking mtd data\n");
 	}
 
