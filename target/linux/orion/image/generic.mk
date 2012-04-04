@@ -1,15 +1,24 @@
 #
-# Copyright (C) 2008-2010 OpenWrt.org
+# Copyright (C) 2008-2011 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
+### DO NOT INDENT LINES CONTAINING $(call xyz) AS THIS MAY CHANGE THE CONTEXT
+### OF THE FIRST LINE IN THE CALLED VARIABLE (NOTE: variable!)
+### see http://www.gnu.org/software/make/manual/html_node/Call-Function.html#Call-Function
+### ACTUALLY IT IS A SIMPLE MACRO EXPANSION
+
+### use round brackets for make variables, and curly brackets for shell variables
+
 define Image/Prepare
+### Dummy comment for indented calls of Image/Prepare
 	cp $(LINUX_DIR)/arch/arm/boot/uImage $(KDIR)/uImage
 endef
 
 define Image/BuildKernel
+### Dummy comment for indented calls of Image/BuildKernel
 	# Orion Kernel uImages
  # WRT350N v2: mach id 1633 (0x661)
 	echo -en "\x06\x1c\xa0\xe3\x61\x10\x81\xe3" > $(KDIR)/wrt350nv2-zImage
@@ -51,25 +60,27 @@ define Image/Build/Linksys
 	rm -rf "${TMP_DIR}/$2_webupgrade"
 	mkdir "${TMP_DIR}/$2_webupgrade"
  # create parameter file
-	echo ":kernel $5 ${BIN_DIR}/openwrt-$2-uImage" >"${TMP_DIR}/$2_webupgrade/$2.par"
-	echo ":rootfs 0 ${KDIR}/root.$1" >>"${TMP_DIR}/$2_webupgrade/$2.par"
+	echo ':image 0 $(BIN_DIR)/openwrt-$(2)-$(1).img' >'$(TMP_DIR)/$(2)_webupgrade/$(2).par'
 	[ ! -f "$(STAGING_DIR_HOST)/share/wrt350nv2-builder/u-boot.bin" ] || ( \
 		echo ":u-boot 0 $(STAGING_DIR_HOST)/share/wrt350nv2-builder/u-boot.bin" >>"${TMP_DIR}/$2_webupgrade/$2.par"; )
 	echo "#version 0x2020" >>"${TMP_DIR}/$2_webupgrade/$2.par"
  # create bin file for recovery and webupgrade image
 	( cd "${TMP_DIR}/$2_webupgrade"; \
-		"${STAGING_DIR_HOST}/bin/$2-builder" \
+		"${STAGING_DIR_HOST}/bin/wrt350nv2-builder" \
 			-v -b "${TMP_DIR}/$2_webupgrade/$2.par"; \
 	)
  # copy bin file as recovery image
 	$(CP) "${TMP_DIR}/$2_webupgrade/wrt350n.bin" "$(BIN_DIR)/openwrt-$2-$1-recovery.bin"
  # create webupgrade image for stock firmware update mechanism
-	zip "${TMP_DIR}/$2_webupgrade/wrt350n.zip" "${TMP_DIR}/$2_webupgrade/wrt350n.bin"
-	"${STAGING_DIR_HOST}/bin/$2-builder" -v -z "${TMP_DIR}/$2_webupgrade/wrt350n.zip" "${BIN_DIR}/openwrt-$2-$1-webupgrade.img"
+	( cd '$(TMP_DIR)/$(2)_webupgrade'; \
+		zip 'wrt350n.zip' 'wrt350n.bin'; \
+	)
+	"${STAGING_DIR_HOST}/bin/wrt350nv2-builder" -v -z "${TMP_DIR}/$2_webupgrade/wrt350n.zip" "${BIN_DIR}/openwrt-$2-$1-webupgrade.img"
 	rm -rf "${TMP_DIR}/$2_webupgrade"
 endef
 
 define Image/Build
+### Dummy comment for indented calls of Image/Build with $(1)
 $(call Image/Build/$(1),$(1))
 $(call Image/Build/Netgear,$(1),wnr854t,NG_WNR854T,$(1))
  # Leave WRT350Nv2 at last position due to webimage dependency for zip
