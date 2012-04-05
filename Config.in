@@ -49,6 +49,13 @@ menu "Target Images"
 				depends LINUX_2_6_38
 		endchoice
 
+		config EXTERNAL_CPIO
+			string
+			prompt "Use external cpio" if TARGET_ROOTFS_INITRAMFS
+			default ""
+			help
+			  Kernel uses specified external cpio as INITRAMFS_SOURCE
+
 	comment "Root filesystem archives"
 
 	config TARGET_ROOTFS_CPIOGZ
