@@ -21,6 +21,7 @@
 
 #include "../machtypes.h"
 #include "devices.h"
+#include "dev-dwc_otg.h"
 
 static struct ltq_pci_data ltq_pci_data = {
 	.clock	= PCI_CLOCK_INT,
@@ -77,6 +78,8 @@ static void __init dgn3500_init(void)
 	ltq_register_pci(&ltq_pci_data);
 	ltq_register_etop(&ltq_eth_data);
 	ltq_register_spi(&ltq_spi_data, &spi_info, 1);
+	/* The usb power is always enabled, protected by a fuse */
+	xway_register_dwc(-1);
 }
 
 MIPS_MACHINE(LANTIQ_MACH_DGN3500B,
