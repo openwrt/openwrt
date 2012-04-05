@@ -33,6 +33,9 @@ unexport QUILT_PATCHES QUILT_PATCH_OPTS
 
 unexport C_INCLUDE_PATH
 
+# prevent distro default LPATH from interfering
+unexport LPATH
+
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 
