@@ -754,3 +754,32 @@ MIPS_MACHINE(LANTIQ_MACH_ARV752DPW22,
 			"ARV752DPW22",
 			"ARV752DPW22 - Arcor A803",
 			arv752dpw22_init);
+
+static void __init
+arv752dpw_init(void)
+{
+#define ARV752DPW22_EBU			0x2
+#define ARV752DPW22_USB			100
+#define ARV752DPW22_RELAY		101
+#define ARV752DPW22_MAC_ADDR		0x7f0016
+
+	arv_load_nor(0x800000);
+	ltq_register_gpio_ebu(ARV752DPW22_EBU);
+	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(arv752dpw22_gpio_leds), arv752dpw22_gpio_leds);
+	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL, ARRAY_SIZE(arv752dpw22_gpio_keys), arv752dpw22_gpio_keys);
+	ltq_pci_data.irq[14] = (INT_NUM_IM3_IRL0 + 31);
+	ltq_pci_data.gpio |= PCI_EXIN1 | PCI_REQ2;
+	ltq_register_pci(&ltq_pci_data);
+	xway_register_dwc(ARV752DPW22_USB);
+	ltq_register_rt2x00("RT2860.eeprom");
+	arv_register_ethernet(ARV752DPW22_MAC_ADDR);
+	gpio_request(ARV752DPW22_RELAY, "relay");
+	gpio_set_value(ARV752DPW22_RELAY, 1);
+	gpio_export(ARV752DPW22_RELAY, 0);
+
+}
+
+MIPS_MACHINE(LANTIQ_MACH_ARV752DPW,
+			"ARV752DPW",
+			"ARV752DPW - Arcor A802",
+			arv752dpw_init);
