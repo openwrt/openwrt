@@ -9,17 +9,24 @@
  */
 
 #include <linux/export.h>
+#include <linux/pci.h>
+#include <linux/ath9k_platform.h>
 #include <linux/platform_device.h>
 #include <linux/phy.h>
 #include <linux/ar8216_platform.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 #include <asm/mach-ath79/ath79.h>
+#include <asm/mach-ath79/pci.h>
+#include <asm/mach-ath79/irq.h>
 #include <asm/mach-ath79/mach-rb750.h>
 
 #include "common.h"
+#include "dev-usb.h"
 #include "dev-eth.h"
 #include "machtypes.h"
+#include "pci-ath9k-fixup.h"
+#include "pci.h"
 
 static struct rb750_led_data rb750_leds[] = {
 	{
@@ -270,3 +277,88 @@ static void __init rb750gr3_setup(void)
 
 MIPS_MACHINE(ATH79_MACH_RB_750G_R3, "750Gr3", "MikroTik RouterBOARD 750GL",
 	     rb750gr3_setup);
+
+static struct ath9k_platform_data rb751_wmac_data = {
+	.led_pin = -1,
+};
+
+static u8 rb751_wmac_mac[6];
+
+static int rb751_pci_plat_dev_init(struct pci_dev *dev)
+{
+	switch (PCI_SLOT(dev->devfn)) {
+	case 0:
+		dev->dev.platform_data = &rb751_wmac_data;
+		break;
+	}
+
+	return 0;
+}
+
+static int decode_rle(char *output, int len, char *in)
+{
+	char *ptr = output;
+	char *end = output + len;
+	while (*in) {
+		if (*in < 0) {
+			int i = -*in++;
+			while (i-- > 0) {
+				if (ptr >= end)
+					return -1;
+				*ptr++ = *in++;
+			}
+		} else if (*in > 0) {
+			int i = *in++;
+			while (i-- > 0) {
+				if (ptr >= end)
+					return -1;
+				*ptr++ = *in;
+			}
+			in++;
+		}
+	}
+	return ptr - output;
+}
+
+#define RB751_HARDCONFIG 0x1f00b000
+#define RB751_MAC_ADDRESS_OFFSET 0xE80
+#define RB751_CALDATA_OFFSET 0x27C
+
+static void __init rb751_wlan_and_usb_setup(void)
+{
+	u8 *hardconfig = (u8 *) KSEG1ADDR(RB751_HARDCONFIG);
+
+	ath79_register_usb();
+
+	ath79_pci_set_plat_dev_init(rb751_pci_plat_dev_init);
+	ath79_register_pci();
+
+	rb751_wmac_data.macaddr = memcpy(rb751_wmac_mac,
+			hardconfig + RB751_MAC_ADDRESS_OFFSET, 6);
+
+	if (decode_rle((char *)rb751_wmac_data.eeprom_data,
+			sizeof(rb751_wmac_data.eeprom_data),
+			hardconfig + RB751_CALDATA_OFFSET) ==
+			sizeof(rb751_wmac_data.eeprom_data)) {
+		pr_info("rb7xx: calibration data found\n");
+		pci_enable_ath9k_fixup(0, rb751_wmac_data.eeprom_data);
+	}
+}
+
+static void __init rb751_setup(void)
+{
+	rb750_setup();
+	rb751_wlan_and_usb_setup();
+}
+
+MIPS_MACHINE(ATH79_MACH_RB_751, "751", "MikroTik RouterBOARD 751",
+	     rb751_setup);
+
+static void __init rb751g_setup(void)
+{
+	rb750gr3_setup();
+	rb751_wlan_and_usb_setup();
+}
+
+MIPS_MACHINE(ATH79_MACH_RB_751G, "751g", "MikroTik RouterBOARD 751G",
+	     rb751g_setup);
