@@ -204,6 +204,10 @@ define Image/Build/WHRHPG300N
 	fi
 endef
 
+define Image/Build/WHRHPG300N/initramfs
+	$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
+endef
+
 define Image/Build/Cameo
 	$(call MkuImageLzma,$(2),$(3) $(4))
 	$(call Sysupgrade/KRuImage,$(1),$(2),$(5),$(6))
