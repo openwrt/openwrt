@@ -1,0 +1,21 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -300,6 +300,7 @@ config ATH79_MACH_RB750
+ 	bool "MikroTik RouterBOARD 750 support"
+ 	select SOC_AR724X
+ 	select ATH79_DEV_ETH
++	select ATH79_DEV_USB
+ 
+ config ATH79_MACH_WNDR3700
+ 	bool "NETGEAR WNDR3700 board support"
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -53,6 +53,8 @@ enum ath79_mach_type {
+ 	ATH79_MACH_RB_493G,		/* Mikrotik RouterBOARD 493G */
+ 	ATH79_MACH_RB_750,		/* MikroTik RouterBOARD 750 */
+ 	ATH79_MACH_RB_750G_R3,		/* MikroTik RouterBOARD 750GL */
++	ATH79_MACH_RB_751,		/* MikroTik RouterBOARD 751 */
++	ATH79_MACH_RB_751G,		/* Mikrotik RouterBOARD 751G */
+ 	ATH79_MACH_RW2458N,		/* Redwave RW2458N */
+ 	ATH79_MACH_TEW_632BRP,		/* TRENDnet TEW-632BRP */
+ 	ATH79_MACH_TEW_673GRU,		/* TRENDnet TEW-673GRU */
