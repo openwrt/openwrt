@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libpcap
 PKG_VERSION:=1.1.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.tcpdump.org/release/
@@ -52,7 +52,8 @@ CONFIGURE_ARGS += \
 	--with-build-cc="$(HOSTCC)" \
 	--with-pcap=linux \
 	--without-septel \
-	--without-dag
+	--without-dag \
+	--without-libnl
 
 MAKE_FLAGS += \
 	CCOPT="$(TARGET_CFLAGS) -I$(BUILD_DIR)/linux/include"
