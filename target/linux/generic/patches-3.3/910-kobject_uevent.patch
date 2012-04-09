@@ -1,6 +1,6 @@
 --- a/lib/kobject_uevent.c
 +++ b/lib/kobject_uevent.c
-@@ -49,6 +49,18 @@ static const char *kobject_actions[] = {
+@@ -50,6 +50,18 @@ static const char *kobject_actions[] = {
  	[KOBJ_OFFLINE] =	"offline",
  };
  
@@ -8,9 +8,9 @@
 +{
 +	u64 seq;
 +
-+	spin_lock(&sequence_lock);
++	mutex_lock(&uevent_sock_mutex);
 +	seq = ++uevent_seqnum;
-+	spin_unlock(&sequence_lock);
++	mutex_unlock(&uevent_sock_mutex);
 +
 +	return seq;
 +}
@@ -19,14 +19,3 @@
  /**
   * kobject_action_type - translate action string to numeric type
   *
-@@ -244,9 +256,7 @@ int kobject_uevent_env(struct kobject *k
- 		kobj->state_remove_uevent_sent = 1;
- 
- 	/* we will send an event, so request a new sequence number */
--	spin_lock(&sequence_lock);
--	seq = ++uevent_seqnum;
--	spin_unlock(&sequence_lock);
-+	seq = uevent_next_seqnum();
- 	retval = add_uevent_var(env, "SEQNUM=%llu", (unsigned long long)seq);
- 	if (retval)
- 		goto exit;

@@ -71,7 +71,7 @@
  
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -1404,6 +1404,7 @@ unsigned long zap_page_range(struct vm_a
+@@ -1412,6 +1412,7 @@ unsigned long zap_page_range(struct vm_a
  	tlb_finish_mmu(&tlb, address, end);
  	return end;
  }
@@ -79,7 +79,7 @@
  
  /**
   * zap_vma_ptes - remove ptes mapping the vma
-@@ -3079,6 +3080,7 @@ static inline int check_stack_guard_page
+@@ -3087,6 +3088,7 @@ static inline int check_stack_guard_page
  	}
  	return 0;
  }
