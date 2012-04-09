@@ -17,8 +17,6 @@ Thanks to Paul Cercueil for the initial autodetection patch.
  drivers/mtd/nand/jz4740_nand.c                  |  228 +++++++++++++++++++----
  3 files changed, 215 insertions(+), 37 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-jz4740/jz4740_nand.h b/arch/mips/include/asm/mach-jz4740/jz4740_nand.h
-index bb5b9a4..986982d 100644
 --- a/arch/mips/include/asm/mach-jz4740/jz4740_nand.h
 +++ b/arch/mips/include/asm/mach-jz4740/jz4740_nand.h
 @@ -19,6 +19,8 @@
@@ -39,11 +37,9 @@ index bb5b9a4..986982d 100644
  	void (*ident_callback)(struct platform_device *, struct nand_chip *,
  				struct mtd_partition **, int *num_partitions);
  };
-diff --git a/arch/mips/jz4740/platform.c b/arch/mips/jz4740/platform.c
-index 10929e2..e342ed4 100644
 --- a/arch/mips/jz4740/platform.c
 +++ b/arch/mips/jz4740/platform.c
-@@ -157,11 +157,29 @@ static struct resource jz4740_nand_resources[] = {
+@@ -157,11 +157,29 @@ static struct resource jz4740_nand_resou
  		.flags	= IORESOURCE_MEM,
  	},
  	{
@@ -74,8 +70,6 @@ index 10929e2..e342ed4 100644
  };
  
  struct platform_device jz4740_nand_device = {
-diff --git a/drivers/mtd/nand/jz4740_nand.c b/drivers/mtd/nand/jz4740_nand.c
-index e266407..b254b99 100644
 --- a/drivers/mtd/nand/jz4740_nand.c
 +++ b/drivers/mtd/nand/jz4740_nand.c
 @@ -52,9 +52,10 @@
@@ -104,7 +98,7 @@ index e266407..b254b99 100644
  
  	struct jz_nand_platform_data *pdata;
  	bool is_reading;
-@@ -74,26 +78,50 @@ static inline struct jz_nand *mtd_to_jz_nand(struct mtd_info *mtd)
+@@ -74,26 +78,50 @@ static inline struct jz_nand *mtd_to_jz_
  	return container_of(mtd, struct jz_nand, mtd);
  }
  
@@ -161,7 +155,7 @@ index e266407..b254b99 100644
  		writel(reg, nand->base + JZ_REG_NAND_CTRL);
  	}
  	if (dat != NAND_CMD_NONE)
-@@ -252,7 +280,7 @@ static int jz_nand_correct_ecc_rs(struct mtd_info *mtd, uint8_t *dat,
+@@ -252,7 +280,7 @@ static int jz_nand_correct_ecc_rs(struct
  }
  
  static int jz_nand_ioremap_resource(struct platform_device *pdev,
@@ -261,7 +255,7 @@ index e266407..b254b99 100644
  static int __devinit jz_nand_probe(struct platform_device *pdev)
  {
  	int ret;
-@@ -295,6 +407,8 @@ static int __devinit jz_nand_probe(struct platform_device *pdev)
+@@ -295,6 +407,8 @@ static int __devinit jz_nand_probe(struc
  	struct nand_chip *chip;
  	struct mtd_info *mtd;
  	struct jz_nand_platform_data *pdata = pdev->dev.platform_data;
@@ -270,7 +264,7 @@ index e266407..b254b99 100644
  
  	nand = kzalloc(sizeof(*nand), GFP_KERNEL);
  	if (!nand) {
-@@ -305,10 +419,6 @@ static int __devinit jz_nand_probe(struct platform_device *pdev)
+@@ -305,10 +419,6 @@ static int __devinit jz_nand_probe(struc
  	ret = jz_nand_ioremap_resource(pdev, "mmio", &nand->mem, &nand->base);
  	if (ret)
  		goto err_free;
@@ -281,7 +275,7 @@ index e266407..b254b99 100644
  
  	if (pdata && gpio_is_valid(pdata->busy_gpio)) {
  		ret = gpio_request(pdata->busy_gpio, "NAND busy pin");
-@@ -316,7 +426,7 @@ static int __devinit jz_nand_probe(struct platform_device *pdev)
+@@ -316,7 +426,7 @@ static int __devinit jz_nand_probe(struc
  			dev_err(&pdev->dev,
  				"Failed to request busy gpio %d: %d\n",
  				pdata->busy_gpio, ret);
@@ -290,7 +284,7 @@ index e266407..b254b99 100644
  		}
  	}
  
-@@ -338,22 +448,51 @@ static int __devinit jz_nand_probe(struct platform_device *pdev)
+@@ -338,22 +448,51 @@ static int __devinit jz_nand_probe(struc
  
  	chip->chip_delay = 50;
  	chip->cmd_ctrl = jz_nand_cmd_ctrl;
@@ -351,7 +345,7 @@ index e266407..b254b99 100644
  	}
  
  	if (pdata && pdata->ident_callback) {
-@@ -363,8 +502,8 @@ static int __devinit jz_nand_probe(struct platform_device *pdev)
+@@ -363,8 +502,8 @@ static int __devinit jz_nand_probe(struc
  
  	ret = nand_scan_tail(mtd);
  	if (ret) {
@@ -362,7 +356,7 @@ index e266407..b254b99 100644
  	}
  
  	ret = mtd_device_parse_register(mtd, NULL, 0,
-@@ -381,14 +520,21 @@ static int __devinit jz_nand_probe(struct platform_device *pdev)
+@@ -381,14 +520,21 @@ static int __devinit jz_nand_probe(struc
  	return 0;
  
  err_nand_release:
@@ -421,6 +415,3 @@ index e266407..b254b99 100644
  
  	platform_set_drvdata(pdev, NULL);
  	kfree(nand);
--- 
-1.7.5.4
-

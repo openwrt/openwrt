@@ -13,8 +13,6 @@ the glitches and to Lars Clausen for helping me write the fix.
  sound/soc/jz4740/jz4740-pcm.c |   21 ++++++++++++++++++---
  1 files changed, 18 insertions(+), 3 deletions(-)
 
-diff --git a/sound/soc/jz4740/jz4740-pcm.c b/sound/soc/jz4740/jz4740-pcm.c
-index d1989cd..1f9a005 100644
 --- a/sound/soc/jz4740/jz4740-pcm.c
 +++ b/sound/soc/jz4740/jz4740-pcm.c
 @@ -31,6 +31,7 @@
@@ -25,7 +23,7 @@ index d1989cd..1f9a005 100644
  	dma_addr_t dma_start;
  	dma_addr_t dma_pos;
  	dma_addr_t dma_end;
-@@ -67,10 +68,13 @@ static void jz4740_pcm_start_transfer(struct jz4740_runtime_data *prtd,
+@@ -67,10 +68,13 @@ static void jz4740_pcm_start_transfer(st
  	if (prtd->dma_pos == prtd->dma_end)
  		prtd->dma_pos = prtd->dma_start;
  
@@ -41,7 +39,7 @@ index d1989cd..1f9a005 100644
  
  	jz4740_dma_disable(prtd->dma);
  
-@@ -85,6 +89,7 @@ static void jz4740_pcm_start_transfer(struct jz4740_runtime_data *prtd,
+@@ -85,6 +89,7 @@ static void jz4740_pcm_start_transfer(st
  	jz4740_dma_set_transfer_count(prtd->dma, count);
  
  	prtd->dma_pos += count;
@@ -49,7 +47,7 @@ index d1989cd..1f9a005 100644
  
  	jz4740_dma_enable(prtd->dma);
  }
-@@ -96,7 +101,8 @@ static void jz4740_pcm_dma_transfer_done(struct jz4740_dma_chan *dma, int err,
+@@ -96,7 +101,8 @@ static void jz4740_pcm_dma_transfer_done
  	struct snd_pcm_runtime *runtime = substream->runtime;
  	struct jz4740_runtime_data *prtd = runtime->private_data;
  
@@ -59,7 +57,7 @@ index d1989cd..1f9a005 100644
  
  	jz4740_pcm_start_transfer(prtd, substream);
  }
-@@ -133,6 +139,7 @@ static int jz4740_pcm_hw_params(struct snd_pcm_substream *substream,
+@@ -133,6 +139,7 @@ static int jz4740_pcm_hw_params(struct s
  	runtime->dma_bytes = params_buffer_bytes(params);
  
  	prtd->dma_period = params_period_bytes(params);
@@ -67,7 +65,7 @@ index d1989cd..1f9a005 100644
  	prtd->dma_start = runtime->dma_addr;
  	prtd->dma_pos = prtd->dma_start;
  	prtd->dma_end = prtd->dma_start + runtime->dma_bytes;
-@@ -160,6 +167,7 @@ static int jz4740_pcm_prepare(struct snd_pcm_substream *substream)
+@@ -160,6 +167,7 @@ static int jz4740_pcm_prepare(struct snd
  	if (!prtd->dma)
  		return -EBUSY;
  
@@ -75,7 +73,7 @@ index d1989cd..1f9a005 100644
  	prtd->dma_pos = prtd->dma_start;
  
  	return 0;
-@@ -219,6 +227,13 @@ static int jz4740_pcm_open(struct snd_pcm_substream *substream)
+@@ -219,6 +227,13 @@ static int jz4740_pcm_open(struct snd_pc
  	if (prtd == NULL)
  		return -ENOMEM;
  
@@ -89,6 +87,3 @@ index d1989cd..1f9a005 100644
  	snd_soc_set_runtime_hwparams(substream, &jz4740_pcm_hardware);
  
  	runtime->private_data = prtd;
--- 
-1.7.5.4
-

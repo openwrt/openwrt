@@ -10,8 +10,6 @@ Also the frequency change is postponed if an I/O operation is in progress.
  drivers/mmc/host/jz4740_mmc.c |   69 +++++++++++++++++++++++++++++++++++++++-
  1 files changed, 67 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mmc/host/jz4740_mmc.c b/drivers/mmc/host/jz4740_mmc.c
-index 74218ad..6e40f1b 100644
 --- a/drivers/mmc/host/jz4740_mmc.c
 +++ b/drivers/mmc/host/jz4740_mmc.c
 @@ -23,6 +23,7 @@
@@ -22,7 +20,7 @@ index 74218ad..6e40f1b 100644
  
  #include <linux/bitops.h>
  #include <linux/gpio.h>
-@@ -685,6 +686,60 @@ static void jz4740_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
+@@ -685,6 +686,60 @@ static void jz4740_mmc_enable_sdio_irq(s
  	jz4740_mmc_set_irq_enabled(host, JZ_MMC_IRQ_SDIO, enable);
  }
  
@@ -83,7 +81,7 @@ index 74218ad..6e40f1b 100644
  static const struct mmc_host_ops jz4740_mmc_ops = {
  	.request	= jz4740_mmc_request,
  	.set_ios	= jz4740_mmc_set_ios,
-@@ -834,11 +889,18 @@ static int __devinit jz4740_mmc_probe(struct platform_device* pdev)
+@@ -834,11 +889,18 @@ static int __devinit jz4740_mmc_probe(st
  		goto err_free_host;
  	}
  
@@ -103,7 +101,7 @@ index 74218ad..6e40f1b 100644
  	}
  
  	host->mem = request_mem_region(host->mem->start,
-@@ -846,7 +908,7 @@ static int __devinit jz4740_mmc_probe(struct platform_device* pdev)
+@@ -846,7 +908,7 @@ static int __devinit jz4740_mmc_probe(st
  	if (!host->mem) {
  		ret = -EBUSY;
  		dev_err(&pdev->dev, "Failed to request base memory region\n");
@@ -121,7 +119,7 @@ index 74218ad..6e40f1b 100644
  err_clk_put:
  	clk_put(host->clk);
  err_free_host:
-@@ -958,6 +1022,7 @@ static int __devexit jz4740_mmc_remove(struct platform_device *pdev)
+@@ -958,6 +1022,7 @@ static int __devexit jz4740_mmc_remove(s
  	iounmap(host->base);
  	release_mem_region(host->mem->start, resource_size(host->mem));
  
@@ -129,6 +127,3 @@ index 74218ad..6e40f1b 100644
  	clk_put(host->clk);
  
  	platform_set_drvdata(pdev, NULL);
--- 
-1.7.5.4
-

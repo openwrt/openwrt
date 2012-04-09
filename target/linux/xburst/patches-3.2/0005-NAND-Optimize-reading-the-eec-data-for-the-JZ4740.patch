@@ -7,11 +7,9 @@ Subject: [PATCH 05/21] NAND-Optimize-reading-the-eec-data-for-the-JZ4740
  drivers/mtd/nand/nand_base.c |   14 ++++----------
  1 files changed, 4 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 0131e84..74b8cce 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1295,8 +1295,8 @@ static int nand_read_page_hwecc_oob_first(struct mtd_info *mtd,
+@@ -1295,8 +1295,8 @@ static int nand_read_page_hwecc_oob_firs
  
  	/* Read the OOB area first */
  	if (mtd->writesize > 512) {
@@ -22,7 +20,7 @@ index 0131e84..74b8cce 100644
  		chip->cmdfunc(mtd, NAND_CMD_RNDOUT, 0, -1);
  	} else {
  		chip->cmdfunc(mtd, NAND_CMD_READOOB, 0, page);
-@@ -1304,9 +1304,6 @@ static int nand_read_page_hwecc_oob_first(struct mtd_info *mtd,
+@@ -1304,9 +1304,6 @@ static int nand_read_page_hwecc_oob_firs
  		chip->cmdfunc(mtd, NAND_CMD_READ0, 0, page);
  	}
  
@@ -32,7 +30,7 @@ index 0131e84..74b8cce 100644
  	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
  		int stat;
  
-@@ -1361,8 +1358,8 @@ static int nand_read_subpage_hwecc_oob_first(struct mtd_info *mtd, struct nand_c
+@@ -1361,8 +1358,8 @@ static int nand_read_subpage_hwecc_oob_f
  
  	/* Read the OOB area first */
  	if (mtd->writesize > 512) {
@@ -43,7 +41,7 @@ index 0131e84..74b8cce 100644
  		chip->cmdfunc(mtd, NAND_CMD_RNDOUT, data_col_addr, -1);
  	} else {
  		chip->cmdfunc(mtd, NAND_CMD_READOOB, 0, page);
-@@ -1370,9 +1367,6 @@ static int nand_read_subpage_hwecc_oob_first(struct mtd_info *mtd, struct nand_c
+@@ -1370,9 +1367,6 @@ static int nand_read_subpage_hwecc_oob_f
  		chip->cmdfunc(mtd, NAND_CMD_READ0, data_col_addr, page);
  	}
  
@@ -53,6 +51,3 @@ index 0131e84..74b8cce 100644
  	p = bufpoi + data_col_addr;
  
  	for (i = eccbytes * start_step; num_steps; num_steps--, i += eccbytes, p += eccsize) {
--- 
-1.7.5.4
-

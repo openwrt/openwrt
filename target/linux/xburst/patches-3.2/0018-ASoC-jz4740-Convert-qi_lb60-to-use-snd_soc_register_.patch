@@ -12,11 +12,9 @@ Signed-off-by: Axel Lin <axel.lin@gmail.com>
  sound/soc/jz4740/qi_lb60.c       |   56 +++++++++++++++++--------------------
  2 files changed, 32 insertions(+), 30 deletions(-)
 
-diff --git a/arch/mips/jz4740/board-qi_lb60.c b/arch/mips/jz4740/board-qi_lb60.c
-index f2d94c1..be14dfb 100644
 --- a/arch/mips/jz4740/board-qi_lb60.c
 +++ b/arch/mips/jz4740/board-qi_lb60.c
-@@ -418,6 +418,11 @@ static struct platform_device qi_lb60_charger_device = {
+@@ -418,6 +418,11 @@ static struct platform_device qi_lb60_ch
  	},
  };
  
@@ -28,7 +26,7 @@ index f2d94c1..be14dfb 100644
  
  static struct platform_device *jz_platform_devices[] __initdata = {
  	&jz4740_udc_device,
-@@ -434,6 +439,7 @@ static struct platform_device *jz_platform_devices[] __initdata = {
+@@ -434,6 +439,7 @@ static struct platform_device *jz_platfo
  	&qi_lb60_gpio_keys,
  	&qi_lb60_pwm_beeper,
  	&qi_lb60_charger_device,
@@ -36,8 +34,6 @@ index f2d94c1..be14dfb 100644
  };
  
  static void __init board_gpio_setup(void)
-diff --git a/sound/soc/jz4740/qi_lb60.c b/sound/soc/jz4740/qi_lb60.c
-index c5fc339..67ddbdd 100644
 --- a/sound/soc/jz4740/qi_lb60.c
 +++ b/sound/soc/jz4740/qi_lb60.c
 @@ -90,56 +90,52 @@ static struct snd_soc_card qi_lb60 = {
@@ -123,6 +119,3 @@ index c5fc339..67ddbdd 100644
  MODULE_DESCRIPTION("ALSA SoC QI LB60 Audio support");
  MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:qi-lb60-audio");
--- 
-1.7.5.4
-

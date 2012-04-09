@@ -9,11 +9,9 @@ Specifying the bank is required since commit e7ca5a665877a030.
  arch/mips/jz4740/board-qi_lb60.c |    1 +
  1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/jz4740/board-qi_lb60.c b/arch/mips/jz4740/board-qi_lb60.c
-index b622941..f2d94c1 100644
 --- a/arch/mips/jz4740/board-qi_lb60.c
 +++ b/arch/mips/jz4740/board-qi_lb60.c
-@@ -140,6 +140,7 @@ static void qi_lb60_nand_ident(struct platform_device *pdev,
+@@ -140,6 +140,7 @@ static void qi_lb60_nand_ident(struct pl
  static struct jz_nand_platform_data qi_lb60_nand_pdata = {
  	.ident_callback = qi_lb60_nand_ident,
  	.busy_gpio = 94,
@@ -21,6 +19,3 @@ index b622941..f2d94c1 100644
  };
  
  /* Keyboard*/
--- 
-1.7.5.4
-

@@ -12,8 +12,6 @@ This is a squashed version of Uli's driver that was further developed in the ope
  4 files changed, 240 insertions(+), 1 deletions(-)
  create mode 100644 arch/mips/jz4740/cpufreq.c
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index d46f1da..8128df7 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -209,6 +209,7 @@ config MACH_JZ4740
@@ -24,20 +22,15 @@ index d46f1da..8128df7 100644
  
  config LANTIQ
  	bool "Lantiq based platforms"
-diff --git a/arch/mips/jz4740/Makefile b/arch/mips/jz4740/Makefile
-index a9dff33..15f828e 100644
 --- a/arch/mips/jz4740/Makefile
 +++ b/arch/mips/jz4740/Makefile
-@@ -16,5 +16,6 @@ obj-$(CONFIG_JZ4740_QI_LB60)	+= board-qi_lb60.o
+@@ -16,5 +16,6 @@ obj-$(CONFIG_JZ4740_QI_LB60)	+= board-qi
  # PM support
  
  obj-$(CONFIG_PM) += pm.o
 +obj-$(CONFIG_CPU_FREQ_JZ) += cpufreq.o
  
  ccflags-y := -Werror -Wall
-diff --git a/arch/mips/jz4740/cpufreq.c b/arch/mips/jz4740/cpufreq.c
-new file mode 100644
-index 0000000..aa41e9f
 --- /dev/null
 +++ b/arch/mips/jz4740/cpufreq.c
 @@ -0,0 +1,226 @@
@@ -267,8 +260,6 @@ index 0000000..aa41e9f
 +	      "Maarten ter Huurne <maarten@treewalker.org>");
 +MODULE_DESCRIPTION("cpufreq driver for Jz4740");
 +MODULE_LICENSE("GPL");
-diff --git a/arch/mips/kernel/cpufreq/Kconfig b/arch/mips/kernel/cpufreq/Kconfig
-index 58c601e..11af8e8 100644
 --- a/arch/mips/kernel/cpufreq/Kconfig
 +++ b/arch/mips/kernel/cpufreq/Kconfig
 @@ -8,7 +8,7 @@ config MIPS_EXTERNAL_TIMER
@@ -305,6 +296,3 @@ index 58c601e..11af8e8 100644
  endif	# CPU_FREQ
  
  endmenu
--- 
-1.7.5.4
-

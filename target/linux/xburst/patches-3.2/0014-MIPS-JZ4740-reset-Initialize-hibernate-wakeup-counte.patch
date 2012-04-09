@@ -17,8 +17,6 @@ the Dingoo A320 kernel.
  arch/mips/jz4740/reset.c |   46 ++++++++++++++++++++++++++++++++++++++++------
  1 files changed, 40 insertions(+), 6 deletions(-)
 
-diff --git a/arch/mips/jz4740/reset.c b/arch/mips/jz4740/reset.c
-index 5f1fb95..e6d1d7b 100644
 --- a/arch/mips/jz4740/reset.c
 +++ b/arch/mips/jz4740/reset.c
 @@ -21,6 +21,9 @@
@@ -31,18 +29,19 @@ index 5f1fb95..e6d1d7b 100644
  static void jz4740_halt(void)
  {
  	while (1) {
-@@ -53,21 +56,52 @@ static void jz4740_restart(char *command)
+@@ -53,21 +56,52 @@ static void jz4740_restart(char *command
  	jz4740_halt();
  }
  
 -#define JZ_REG_RTC_CTRL		0x00
 -#define JZ_REG_RTC_HIBERNATE	0x20
+-
+-#define JZ_RTC_CTRL_WRDY	BIT(7)
 +#define JZ_REG_RTC_CTRL			0x00
 +#define JZ_REG_RTC_HIBERNATE		0x20
 +#define JZ_REG_RTC_WAKEUP_FILTER	0x24
 +#define JZ_REG_RTC_RESET_COUNTER	0x28
- 
--#define JZ_RTC_CTRL_WRDY	BIT(7)
++
 +#define JZ_RTC_CTRL_WRDY		BIT(7)
 +#define JZ_RTC_WAKEUP_FILTER_MASK	0x0000FFE0
 +#define JZ_RTC_RESET_COUNTER_MASK	0x00000FE0
@@ -90,6 +89,3 @@ index 5f1fb95..e6d1d7b 100644
  	jz4740_halt();
  }
  
--- 
-1.7.5.4
-

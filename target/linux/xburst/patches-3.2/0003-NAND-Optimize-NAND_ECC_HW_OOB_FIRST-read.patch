@@ -8,11 +8,9 @@ Avoid sending unnecessary READ commands to the chip.
  drivers/mtd/nand/nand_base.c |   14 ++++++++++----
  1 files changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 3ed9c5e..184aa93 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1294,9 +1294,15 @@ static int nand_read_page_hwecc_oob_first(struct mtd_info *mtd,
+@@ -1294,9 +1294,15 @@ static int nand_read_page_hwecc_oob_firs
  	uint8_t *ecc_calc = chip->buffers->ecccalc;
  
  	/* Read the OOB area first */
@@ -31,7 +29,7 @@ index 3ed9c5e..184aa93 100644
  
  	for (i = 0; i < chip->ecc.total; i++)
  		ecc_code[i] = chip->oob_poi[eccpos[i]];
-@@ -1465,7 +1471,7 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
+@@ -1465,7 +1471,7 @@ static int nand_do_read_ops(struct mtd_i
  		if (realpage != chip->pagebuf || oob) {
  			bufpoi = aligned ? buf : chip->buffers->databuf;
  
@@ -40,6 +38,3 @@ index 3ed9c5e..184aa93 100644
  				chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
  				sndcmd = 0;
  			}
--- 
-1.7.5.4
-
