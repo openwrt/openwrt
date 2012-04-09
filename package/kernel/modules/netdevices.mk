@@ -27,7 +27,8 @@ define KernelPackage/skge
   TITLE:=SysKonnect Yukon support
   DEPENDS:=@TARGET_x86
   KCONFIG:=CONFIG_SKGE \
-    CONFIG_SKGE_DEBUG=n
+	CONFIG_SKGE_DEBUG=n \
+	CONFIG_SKGE_GENESIS=n
   ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.2)),1)
     FILES:=$(LINUX_DIR)/drivers/net/ethernet/marvell/skge.ko
   else
