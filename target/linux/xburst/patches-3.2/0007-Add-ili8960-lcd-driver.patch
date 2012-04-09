@@ -10,8 +10,6 @@ Subject: [PATCH 07/21] Add ili8960 lcd driver
  3 files changed, 271 insertions(+), 0 deletions(-)
  create mode 100644 drivers/video/backlight/ili8960.c
 
-diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
-index 278aeaa..f617883 100644
 --- a/drivers/video/backlight/Kconfig
 +++ b/drivers/video/backlight/Kconfig
 @@ -59,6 +59,13 @@ config LCD_LTV350QV
@@ -28,11 +26,9 @@ index 278aeaa..f617883 100644
  config LCD_ILI9320
  	tristate
  	help
-diff --git a/drivers/video/backlight/Makefile b/drivers/video/backlight/Makefile
-index fdd1fc4..01ec378 100644
 --- a/drivers/video/backlight/Makefile
 +++ b/drivers/video/backlight/Makefile
-@@ -6,6 +6,7 @@ obj-$(CONFIG_LCD_HP700)		   += jornada720_lcd.o
+@@ -6,6 +6,7 @@ obj-$(CONFIG_LCD_HP700)		   += jornada72
  obj-$(CONFIG_LCD_L4F00242T03)	   += l4f00242t03.o
  obj-$(CONFIG_LCD_LMS283GF05)	   += lms283gf05.o
  obj-$(CONFIG_LCD_LTV350QV)	   += ltv350qv.o
@@ -40,9 +36,6 @@ index fdd1fc4..01ec378 100644
  obj-$(CONFIG_LCD_ILI9320)	   += ili9320.o
  obj-$(CONFIG_LCD_PLATFORM)	   += platform_lcd.o
  obj-$(CONFIG_LCD_VGG2432A4)	   += vgg2432a4.o
-diff --git a/drivers/video/backlight/ili8960.c b/drivers/video/backlight/ili8960.c
-new file mode 100644
-index 0000000..1438e92
 --- /dev/null
 +++ b/drivers/video/backlight/ili8960.c
 @@ -0,0 +1,263 @@
@@ -309,6 +302,3 @@ index 0000000..1438e92
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("LCD driver for Ilitek ili8960");
 +MODULE_ALIAS("spi:ili8960");
--- 
-1.7.5.4
-

@@ -8,11 +8,9 @@ Subject: [PATCH 19/21] Framebuffer notifier: Call notifier callbacks prior to
  drivers/video/fbmem.c |    8 ++++++--
  1 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/video/fbmem.c b/drivers/video/fbmem.c
-index ad93629..e13e6bf 100644
 --- a/drivers/video/fbmem.c
 +++ b/drivers/video/fbmem.c
-@@ -1032,12 +1032,12 @@ fb_set_var(struct fb_info *info, struct fb_var_screeninfo *var)
+@@ -1032,12 +1032,12 @@ fb_set_var(struct fb_info *info, struct
  int
  fb_blank(struct fb_info *info, int blank)
  {	
@@ -27,7 +25,7 @@ index ad93629..e13e6bf 100644
   		ret = info->fbops->fb_blank(blank, info);
  
   	if (!ret) {
-@@ -1048,6 +1048,10 @@ fb_blank(struct fb_info *info, int blank)
+@@ -1048,6 +1048,10 @@ fb_blank(struct fb_info *info, int blank
  		fb_notifier_call_chain(FB_EVENT_BLANK, &event);
  	}
  
@@ -38,6 +36,3 @@ index ad93629..e13e6bf 100644
   	return ret;
  }
  
--- 
-1.7.5.4
-

@@ -7,11 +7,9 @@ Subject: [PATCH 20/21] qi_lb60: NAND: add data partition
  arch/mips/jz4740/board-qi_lb60.c |    7 ++++++-
  1 files changed, 6 insertions(+), 1 deletions(-)
 
-diff --git a/arch/mips/jz4740/board-qi_lb60.c b/arch/mips/jz4740/board-qi_lb60.c
-index be14dfb..4e24b95 100644
 --- a/arch/mips/jz4740/board-qi_lb60.c
 +++ b/arch/mips/jz4740/board-qi_lb60.c
-@@ -118,8 +118,13 @@ static struct mtd_partition qi_lb60_partitions_2gb[] = {
+@@ -118,8 +118,13 @@ static struct mtd_partition qi_lb60_part
  	{
  		.name = "NAND ROOTFS partition",
  		.offset = 8 * 0x100000,
@@ -26,6 +24,3 @@ index be14dfb..4e24b95 100644
  };
  
  static void qi_lb60_nand_ident(struct platform_device *pdev,
--- 
-1.7.5.4
-

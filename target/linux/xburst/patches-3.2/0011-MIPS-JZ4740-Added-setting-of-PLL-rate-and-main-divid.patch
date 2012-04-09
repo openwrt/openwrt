@@ -11,8 +11,6 @@ Squashed version of the development done in the jz-2.6.39 branch.
  arch/mips/jz4740/clock.h |    4 +
  2 files changed, 224 insertions(+), 10 deletions(-)
 
-diff --git a/arch/mips/jz4740/clock.c b/arch/mips/jz4740/clock.c
-index 118a8a5..da423d1 100644
 --- a/arch/mips/jz4740/clock.c
 +++ b/arch/mips/jz4740/clock.c
 @@ -1,5 +1,8 @@
@@ -71,7 +69,7 @@ index 118a8a5..da423d1 100644
  struct main_clk {
  	struct clk clk;
  	uint32_t div_offset;
-@@ -204,25 +217,88 @@ static int jz_clk_ko_is_enabled(struct clk *clk)
+@@ -204,25 +217,88 @@ static int jz_clk_ko_is_enabled(struct c
  	return !!(jz_clk_reg_read(JZ_REG_CLOCK_CTRL) & JZ_CLOCK_CTRL_KO_ENABLE);
  }
  
@@ -167,7 +165,7 @@ index 118a8a5..da423d1 100644
  }
  
  static unsigned long jz_clk_pll_half_get_rate(struct clk *clk)
-@@ -235,7 +311,77 @@ static unsigned long jz_clk_pll_half_get_rate(struct clk *clk)
+@@ -235,7 +311,77 @@ static unsigned long jz_clk_pll_half_get
  	return jz_clk_pll_get_rate(clk->parent) >> 1;
  }
  
@@ -246,7 +244,7 @@ index 118a8a5..da423d1 100644
  
  static unsigned long jz_clk_main_round_rate(struct clk *clk, unsigned long rate)
  {
-@@ -290,6 +436,64 @@ static int jz_clk_main_set_rate(struct clk *clk, unsigned long rate)
+@@ -290,6 +436,64 @@ static int jz_clk_main_set_rate(struct c
  	return 0;
  }
  
@@ -331,8 +329,6 @@ index 118a8a5..da423d1 100644
  	spin_lock_init(&jz_clock_lock);
  
  	jz_clk_ext.rate = jz4740_clock_bdata.ext_rate;
-diff --git a/arch/mips/jz4740/clock.h b/arch/mips/jz4740/clock.h
-index 5d07499..cc8d1db 100644
 --- a/arch/mips/jz4740/clock.h
 +++ b/arch/mips/jz4740/clock.h
 @@ -17,6 +17,7 @@
@@ -353,6 +349,3 @@ index 5d07499..cc8d1db 100644
  #ifdef CONFIG_DEBUG_FS
  void jz4740_clock_debugfs_init(void);
  void jz4740_clock_debugfs_add_clk(struct clk *clk);
--- 
-1.7.5.4
-

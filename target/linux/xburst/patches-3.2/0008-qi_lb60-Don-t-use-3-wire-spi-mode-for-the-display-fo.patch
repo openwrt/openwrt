@@ -9,11 +9,9 @@ The spi_gpio driver does not support 3-wire mode.
  arch/mips/jz4740/board-qi_lb60.c |    1 -
  1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/arch/mips/jz4740/board-qi_lb60.c b/arch/mips/jz4740/board-qi_lb60.c
-index c3b04be..b622941 100644
 --- a/arch/mips/jz4740/board-qi_lb60.c
 +++ b/arch/mips/jz4740/board-qi_lb60.c
-@@ -310,7 +310,6 @@ static struct spi_board_info qi_lb60_spi_board_info[] = {
+@@ -310,7 +310,6 @@ static struct spi_board_info qi_lb60_spi
  		.chip_select = 0,
  		.bus_num = 1,
  		.max_speed_hz = 30 * 1000,
@@ -21,6 +19,3 @@ index c3b04be..b622941 100644
  	},
  };
  
--- 
-1.7.5.4
-

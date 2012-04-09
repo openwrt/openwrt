@@ -7,11 +7,9 @@ Subject: [PATCH 21/21] rtc: jz4740 fix hwclock give time out
  drivers/rtc/rtc-jz4740.c |    2 ++
  1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/rtc/rtc-jz4740.c b/drivers/rtc/rtc-jz4740.c
-index b647363..50c5df0 100644
 --- a/drivers/rtc/rtc-jz4740.c
 +++ b/drivers/rtc/rtc-jz4740.c
-@@ -280,6 +280,8 @@ static int __devinit jz4740_rtc_probe(struct platform_device *pdev)
+@@ -280,6 +280,8 @@ static int __devinit jz4740_rtc_probe(st
  		}
  	}
  
@@ -20,6 +18,3 @@ index b647363..50c5df0 100644
  	return 0;
  
  err_free_irq:
--- 
-1.7.5.4
-

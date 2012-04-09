@@ -8,8 +8,6 @@ Subject: [PATCH 10/21] cpufreq_stats: Support runtime changes to frequency
  drivers/cpufreq/cpufreq_stats.c |  161 ++++++++++++++++++++-------------------
  1 files changed, 83 insertions(+), 78 deletions(-)
 
-diff --git a/drivers/cpufreq/cpufreq_stats.c b/drivers/cpufreq/cpufreq_stats.c
-index c5072a9..95f6eb9 100644
 --- a/drivers/cpufreq/cpufreq_stats.c
 +++ b/drivers/cpufreq/cpufreq_stats.c
 @@ -21,6 +21,7 @@
@@ -29,7 +27,7 @@ index c5072a9..95f6eb9 100644
  	cputime64_t *time_in_state;
  	unsigned int *freq_table;
  #ifdef CONFIG_CPU_FREQ_STAT_DETAILS
-@@ -60,7 +61,7 @@ static int cpufreq_stats_update(unsigned int cpu)
+@@ -60,7 +61,7 @@ static int cpufreq_stats_update(unsigned
  	cur_time = get_jiffies_64();
  	spin_lock(&cpufreq_stats_lock);
  	stat = per_cpu(cpufreq_stats_table, cpu);
@@ -38,7 +36,7 @@ index c5072a9..95f6eb9 100644
  		stat->time_in_state[stat->last_index] =
  			cputime64_add(stat->time_in_state[stat->last_index],
  				      cputime_sub(cur_time, stat->last_time));
-@@ -83,7 +84,7 @@ static ssize_t show_time_in_state(struct cpufreq_policy *policy, char *buf)
+@@ -83,7 +84,7 @@ static ssize_t show_time_in_state(struct
  	ssize_t len = 0;
  	int i;
  	struct cpufreq_stats *stat = per_cpu(cpufreq_stats_table, policy->cpu);
@@ -47,7 +45,7 @@ index c5072a9..95f6eb9 100644
  		return 0;
  	cpufreq_stats_update(stat->cpu);
  	for (i = 0; i < stat->state_num; i++) {
-@@ -101,7 +102,7 @@ static ssize_t show_trans_table(struct cpufreq_policy *policy, char *buf)
+@@ -101,7 +102,7 @@ static ssize_t show_trans_table(struct c
  	int i, j;
  
  	struct cpufreq_stats *stat = per_cpu(cpufreq_stats_table, policy->cpu);
@@ -56,7 +54,7 @@ index c5072a9..95f6eb9 100644
  		return 0;
  	cpufreq_stats_update(stat->cpu);
  	len += snprintf(buf + len, PAGE_SIZE - len, "   From  :    To\n");
-@@ -160,63 +161,35 @@ static struct attribute_group stats_attr_group = {
+@@ -160,63 +161,35 @@ static struct attribute_group stats_attr
  static int freq_table_get_index(struct cpufreq_stats *stat, unsigned int freq)
  {
  	int index;
@@ -130,7 +128,7 @@ index c5072a9..95f6eb9 100644
  
  	for (i = 0; table[i].frequency != CPUFREQ_TABLE_END; i++) {
  		unsigned int freq = table[i].frequency;
-@@ -225,40 +198,73 @@ static int cpufreq_stats_create_table(struct cpufreq_policy *policy,
+@@ -225,40 +198,73 @@ static int cpufreq_stats_create_table(st
  		count++;
  	}
  
@@ -222,7 +220,7 @@ index c5072a9..95f6eb9 100644
  	kfree(stat);
  	per_cpu(cpufreq_stats_table, cpu) = NULL;
  	return ret;
-@@ -276,10 +282,12 @@ static int cpufreq_stat_notifier_policy(struct notifier_block *nb,
+@@ -276,10 +282,12 @@ static int cpufreq_stat_notifier_policy(
  	table = cpufreq_frequency_get_table(cpu);
  	if (!table)
  		return 0;
@@ -239,7 +237,7 @@ index c5072a9..95f6eb9 100644
  }
  
  static int cpufreq_stat_notifier_trans(struct notifier_block *nb,
-@@ -299,21 +307,23 @@ static int cpufreq_stat_notifier_trans(struct notifier_block *nb,
+@@ -299,21 +307,23 @@ static int cpufreq_stat_notifier_trans(s
  	old_index = stat->last_index;
  	new_index = freq_table_get_index(stat, freq->new);
  
@@ -270,7 +268,7 @@ index c5072a9..95f6eb9 100644
  	spin_unlock(&cpufreq_stats_lock);
  	return 0;
  }
-@@ -329,9 +339,6 @@ static int __cpuinit cpufreq_stat_cpu_callback(struct notifier_block *nfb,
+@@ -329,9 +339,6 @@ static int __cpuinit cpufreq_stat_cpu_ca
  	case CPU_ONLINE_FROZEN:
  		cpufreq_update_policy(cpu);
  		break;
@@ -280,7 +278,7 @@ index c5072a9..95f6eb9 100644
  	case CPU_DEAD:
  	case CPU_DEAD_FROZEN:
  		cpufreq_stats_free_table(cpu);
-@@ -340,10 +347,9 @@ static int __cpuinit cpufreq_stat_cpu_callback(struct notifier_block *nfb,
+@@ -340,10 +347,9 @@ static int __cpuinit cpufreq_stat_cpu_ca
  	return NOTIFY_OK;
  }
  
@@ -293,7 +291,7 @@ index c5072a9..95f6eb9 100644
  };
  
  static struct notifier_block notifier_policy_block = {
-@@ -390,7 +396,6 @@ static void __exit cpufreq_stats_exit(void)
+@@ -390,7 +396,6 @@ static void __exit cpufreq_stats_exit(vo
  	unregister_hotcpu_notifier(&cpufreq_stat_cpu_notifier);
  	for_each_online_cpu(cpu) {
  		cpufreq_stats_free_table(cpu);
@@ -301,6 +299,3 @@ index c5072a9..95f6eb9 100644
  	}
  }
  
--- 
-1.7.5.4
-

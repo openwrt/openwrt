@@ -12,8 +12,6 @@ It also saves some space on embedded systems.
  drivers/char/mem.c     |   17 +++++++++++++++++
  3 files changed, 28 insertions(+), 0 deletions(-)
 
-diff --git a/arch/x86/Kconfig.debug b/arch/x86/Kconfig.debug
-index bf56e17..0c97d51 100644
 --- a/arch/x86/Kconfig.debug
 +++ b/arch/x86/Kconfig.debug
 @@ -7,6 +7,7 @@ source "lib/Kconfig.debug"
@@ -24,8 +22,6 @@ index bf56e17..0c97d51 100644
  	---help---
  	  If this option is disabled, you allow userspace (root) access to all
  	  of memory, including kernel and userspace memory. Accidental
-diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
-index 4364303..a2e462e 100644
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
 @@ -6,6 +6,16 @@ menu "Character devices"
@@ -45,11 +41,9 @@ index 4364303..a2e462e 100644
  config DEVKMEM
  	bool "/dev/kmem virtual device support"
  	default y
-diff --git a/drivers/char/mem.c b/drivers/char/mem.c
-index 1451790..a6020ca 100644
 --- a/drivers/char/mem.c
 +++ b/drivers/char/mem.c
-@@ -87,6 +87,8 @@ void __weak unxlate_dev_mem_ptr(unsigned long phys, void *addr)
+@@ -87,6 +87,8 @@ void __weak unxlate_dev_mem_ptr(unsigned
  {
  }
  
@@ -58,7 +52,7 @@ index 1451790..a6020ca 100644
  /*
   * This funcion reads the *physical* memory. The f_pos points directly to the
   * memory location.
-@@ -210,6 +212,10 @@ static ssize_t write_mem(struct file *file, const char __user *buf,
+@@ -210,6 +212,10 @@ static ssize_t write_mem(struct file *fi
  	return written;
  }
  
@@ -69,7 +63,7 @@ index 1451790..a6020ca 100644
  int __weak phys_mem_access_prot_allowed(struct file *file,
  	unsigned long pfn, unsigned long size, pgprot_t *vma_prot)
  {
-@@ -331,6 +337,8 @@ static int mmap_mem(struct file *file, struct vm_area_struct *vma)
+@@ -331,6 +337,8 @@ static int mmap_mem(struct file *file, s
  	return 0;
  }
  
@@ -78,7 +72,7 @@ index 1451790..a6020ca 100644
  #ifdef CONFIG_DEVKMEM
  static int mmap_kmem(struct file *file, struct vm_area_struct *vma)
  {
-@@ -694,6 +702,7 @@ static loff_t null_lseek(struct file *file, loff_t offset, int orig)
+@@ -694,6 +702,7 @@ static loff_t null_lseek(struct file *fi
  	return file->f_pos = 0;
  }
  
@@ -86,7 +80,7 @@ index 1451790..a6020ca 100644
  /*
   * The memory devices use the full 32/64 bits of the offset, and so we cannot
   * check against negative addresses: they are ok. The return value is weird,
-@@ -726,11 +735,15 @@ static loff_t memory_lseek(struct file *file, loff_t offset, int orig)
+@@ -726,11 +735,15 @@ static loff_t memory_lseek(struct file *
  	mutex_unlock(&file->f_path.dentry->d_inode->i_mutex);
  	return ret;
  }
@@ -102,7 +96,7 @@ index 1451790..a6020ca 100644
  
  #define zero_lseek	null_lseek
  #define full_lseek      null_lseek
-@@ -740,6 +753,7 @@ static int open_port(struct inode * inode, struct file * filp)
+@@ -740,6 +753,7 @@ static int open_port(struct inode * inod
  #define open_kmem	open_mem
  #define open_oldmem	open_mem
  
@@ -110,7 +104,7 @@ index 1451790..a6020ca 100644
  static const struct file_operations mem_fops = {
  	.llseek		= memory_lseek,
  	.read		= read_mem,
-@@ -748,6 +762,7 @@ static const struct file_operations mem_fops = {
+@@ -748,6 +762,7 @@ static const struct file_operations mem_
  	.open		= open_mem,
  	.get_unmapped_area = get_unmapped_area_mem,
  };
@@ -128,6 +122,3 @@ index 1451790..a6020ca 100644
  #ifdef CONFIG_DEVKMEM
  	 [2] = { "kmem", 0, &kmem_fops, &directly_mappable_cdev_bdi },
  #endif
--- 
-1.7.5.4
-
