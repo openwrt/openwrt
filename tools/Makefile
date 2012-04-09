@@ -25,6 +25,10 @@ tools-y += lzma-old squashfs
 endif
 tools-y += lzma squashfs4
 
+ifneq ($(CONFIG_PACKAGE_firmwarehotplug),)
+tools-y += sdcc
+endif
+
 ifdef CONFIG_GCC_USE_GRAPHITE
   ifeq ($(CONFIG_GCC_USE_SYSTEM_PPL_CLOOG),)
 	tools-y += ppl cloog
