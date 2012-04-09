@@ -608,7 +608,9 @@ define KernelPackage/mvsas
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Marvell 88SE6440 SAS/SATA driver
   DEPENDS:=@TARGET_x86 +kmod-libsas
-  KCONFIG:=CONFIG_SCSI_MVSAS
+  KCONFIG:= \
+	CONFIG_SCSI_MVSAS \
+	CONFIG_SCSI_MVSAS_TASKLET=n
   ifneq ($(CONFIG_LINUX_2_6_30),)
 	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.ko
   else
