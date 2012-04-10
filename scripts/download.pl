@@ -9,6 +9,7 @@
 use strict;
 use warnings;
 use File::Basename;
+use File::Copy;
 
 @ARGV > 2 or die "Syntax: $0 <target dir> <filename> <md5sum> [<mirror> ...]\n";
 
@@ -74,7 +75,29 @@ sub download
 		if(! -d $target) {
 			system("mkdir -p $target/");
 		}
-		system("cp -vf $cache/$filename $target/$filename.dl") == 0 or return;
+		if (open TMPDLS, "find $cache -follow -name $filename 2>/dev/null |"){
+			my $i = 0;
+			my $link = "";
+			while (defined($link = readline TMPDLS)) {
+				chomp $link;
+				$i++;
+				if ($i > 1) {
+					print("$i or more instances of $filename in $cache found . Only one instance allowed.\n");
+					return;
+				}
+			}
+			close TMPDLS;
+			if ($i < 1) {
+				print("No instances of $filename found in $cache.\n");
+				return;
+			} elsif ($i == 1){
+				print("Copying $filename from $link\n");
+				copy($link, "$target/$filename.dl");
+			}
+		} else {
+			print("Failed to search for $filename in $cache\n");
+			return;
+		}
 		system("$md5cmd $target/$filename.dl > \"$target/$filename.md5sum\" ") == 0 or return;
 	} else {
 		open WGET, "wget -t5 --timeout=20 --no-check-certificate $options -O- \"$mirror/$filename\" |" or die "Cannot launch wget.\n";
