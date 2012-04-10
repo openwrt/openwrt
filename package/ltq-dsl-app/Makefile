@@ -8,10 +8,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_BASE_NAME:=dsl_cpe_control_danube
+PKG_NAME:=dsl_cpe_control_danube
 PKG_VERSION:=3.24.4.4
 PKG_RELEASE:=1
-PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/dsl_cpe_control-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_MD5SUM:=ee315306626b68794d3d3636dabfe161
