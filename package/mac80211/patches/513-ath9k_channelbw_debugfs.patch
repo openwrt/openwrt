@@ -89,9 +89,9 @@
  {
  	struct ath_softc *sc = hw->priv;
  	struct ath_hw *ah = sc->sc_ah;
-@@ -1581,9 +1581,11 @@ static int ath9k_config(struct ieee80211
+@@ -1588,9 +1588,11 @@ static int ath9k_config(struct ieee80211
  
- 	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
+ 	if ((changed & IEEE80211_CONF_CHANGE_CHANNEL) || reset_channel) {
  		struct ieee80211_channel *curchan = hw->conf.channel;
 +		struct ath9k_channel *hchan;
  		int pos = curchan->hw_value;
@@ -101,7 +101,7 @@
  
  		if (ah->curchan)
  			old_pos = ah->curchan - &ah->channels[0];
-@@ -1631,7 +1633,23 @@ static int ath9k_config(struct ieee80211
+@@ -1638,7 +1640,23 @@ static int ath9k_config(struct ieee80211
  			memset(&sc->survey[pos], 0, sizeof(struct survey_info));
  		}
  
