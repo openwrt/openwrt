@@ -8,6 +8,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk
+include $(INCLUDE_DIR)/version.mk
 
 override MAKEFLAGS=
 
@@ -34,7 +35,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 		$(TMP_DIR)/.targetinfo \
 		$(TMP_DIR)/.packageinfo \
 		$(PKG_BUILD_DIR)/
-	$(SED) 's/$$A/$(BOARD)/' $(PKG_BUILD_DIR)/repositories.conf
+	$(VERSION_SED) $(PKG_BUILD_DIR)/repositories.conf
 	$(CP) $(PACKAGE_DIR) $(PKG_BUILD_DIR)/packages
 	$(CP) $(STAGING_DIR_HOST)/bin $(PKG_BUILD_DIR)/staging_dir/host/
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
