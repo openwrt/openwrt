@@ -38,11 +38,6 @@ define Package/base-files
   TITLE:=Base filesystem for OpenWrt
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REVISION)
-  $(call Config,network.lan.proto,string,static,LAN Protocol)
-  $(call Config,network.lan.ipaddr,ip,192.168.1.1,LAN IP Address)
-  $(call Config,network.lan.netmask,netmask,255.255.255.0,LAN Network Mask)
-  $(call Config,network.lan.gateway,ip,,LAN Gateway)
-  $(call Config,network.lan.dns,ip,,LAN DNS server)
 endef
 
 define Package/base-files/conffiles
