@@ -1,4 +1,4 @@
-# Copyright (C) 2006 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 # Copyright (C) 2010 Vertical Communications
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -130,3 +130,56 @@ menuconfig INITOPT
 		suppressed during preinit.  This is the default behaviour in 
 		previous versions of OpenWRT.  Removing this does nothing if 
 		stderr is suppressed during preinit (which is the default).
+
+
+menuconfig VERSIONOPT
+    bool "Version configuration options" if IMAGEOPT
+    default n
+    help
+		These options allow to override the version information embedded in
+		the /etc/openwrt_version, /etc/openwrt_release, /etc/banner and 
+		/etc/opkg.conf files. Usually there is no need to set these, but
+		they're useful for release builds or custom OpenWrt redistributions
+		that should carry custom version tags.
+
+	config VERSION_DIST
+		string
+		prompt "Release distribution" if VERSIONOPT
+		default "OpenWrt"
+		help
+			This is the name of the release distribution.
+			If unspecified, it defaults to OpenWrt.
+
+	config VERSION_NICK
+		string
+		prompt "Release version nickname" if VERSIONOPT
+		help
+			This is the release codename embedded in the image.
+			If unspecified, it defaults to the name of source branch.
+
+    config VERSION_NUMBER
+        string
+    	prompt "Release version number" if VERSIONOPT
+		help
+			This is the release version number embedded in the image.
+			If unspecified, it defaults to the svn or git-svn revision
+			of the build tree.
+
+	config VERSION_REPO
+		string
+		prompt "Release repository" if VERSIONOPT
+		default "http://downloads.openwrt.org/snapshots/trunk/%T/packages"
+		help
+			This is the repository address embedded in the image, it defaults
+			to the trunk snapshot repo; the url may contain the following placeholders:
+			 %R .. Revision number
+			 %V .. Release version or revision number, uppercase
+			 %v .. Release version or revision number, lowercase
+			 %C .. Release version or "Bleeding Edge", uppercase
+			 %c .. Release version or "bleeding_edge", lowercase
+			 %N .. Release name, uppercase
+			 %n .. Release name, lowercase
+			 %D .. Distribution name or "OpenWrt", uppercase
+			 %d .. Distribution name or "openwrt", lowercase
+			 %T .. Target name
+			 %S .. Target/Subtarget name

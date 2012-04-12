@@ -8,9 +8,10 @@
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
+include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=base-files
-PKG_RELEASE:=104
+PKG_RELEASE:=105
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
 PKG_BUILD_DEPENDS:=opkg/host
@@ -453,7 +454,11 @@ define Package/base-files/install
 	cut -d ':' -f 1-2 $(1)/etc/passwd > $(1)/etc/shadow; \
 	$(SED) 's/$$$$/:0:0:99999:7:::/' $(1)/etc/shadow
 
-	$(SED) 's,$$$$R,$(REVISION),g' $(1)/etc/banner
+	$(VERSION_SED) \
+		$(1)/etc/banner \
+		$(1)/etc/openwrt_version \
+		$(1)/etc/openwrt_release
+
 	mkdir -p $(1)/CONTROL
 	mkdir -p $(1)/dev
 	mkdir -p $(1)/etc/crontabs
