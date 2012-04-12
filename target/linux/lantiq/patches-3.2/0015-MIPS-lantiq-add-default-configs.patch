@@ -1,7 +1,7 @@
-From 9946990028431fc732d1244c6ccdfface1ee5640 Mon Sep 17 00:00:00 2001
+From 1b9ea6ce42ae06a5f746b6f1aaa039037b2d71a3 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 11 Nov 2011 22:02:27 +0100
-Subject: [PATCH 15/70] MIPS: lantiq: add default configs
+Subject: [PATCH 15/73] MIPS: lantiq: add default configs
 
 This patch adds the default config for 3 Lantiq SoCs
 
@@ -19,6 +19,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/configs/falcon_defconfig
  create mode 100644 arch/mips/configs/xway_defconfig
 
+diff --git a/arch/mips/configs/ase_defconfig b/arch/mips/configs/ase_defconfig
+new file mode 100644
+index 0000000..5bb1d93
 --- /dev/null
 +++ b/arch/mips/configs/ase_defconfig
 @@ -0,0 +1,67 @@
@@ -89,6 +92,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +CONFIG_SQUASHFS_XZ=y
 +CONFIG_STRIP_ASM_SYMS=y
 +CONFIG_DEBUG_FS=y
+diff --git a/arch/mips/configs/falcon_defconfig b/arch/mips/configs/falcon_defconfig
+new file mode 100644
+index 0000000..ce242a8
 --- /dev/null
 +++ b/arch/mips/configs/falcon_defconfig
 @@ -0,0 +1,72 @@
@@ -164,6 +170,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +CONFIG_SQUASHFS_XZ=y
 +CONFIG_STRIP_ASM_SYMS=y
 +CONFIG_DEBUG_FS=y
+diff --git a/arch/mips/configs/xway_defconfig b/arch/mips/configs/xway_defconfig
+new file mode 100644
+index 0000000..510a964
 --- /dev/null
 +++ b/arch/mips/configs/xway_defconfig
 @@ -0,0 +1,66 @@
@@ -233,3 +242,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +CONFIG_SQUASHFS_XZ=y
 +CONFIG_STRIP_ASM_SYMS=y
 +CONFIG_DEBUG_FS=y
+-- 
+1.7.9.1
+

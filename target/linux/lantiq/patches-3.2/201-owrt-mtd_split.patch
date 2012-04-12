@@ -183,6 +183,15 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
+@@ -890,7 +1053,7 @@ int add_mtd_partitions(struct mtd_info *
+ 	struct mtd_part *slave;
+ 	uint64_t cur_offset = 0;
+ 	int i;
+-#ifdef CONFIG_MTD_ROOTFS_SPLIT
++#if defined(CONFIG_MTD_ROOTFS_SPLIT) || defined(CONFIG_MTD_UIMAGE_SPLIT)
+ 	int ret;
+ #endif
+ 
 @@ -907,6 +1070,17 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);

@@ -1,7 +1,7 @@
-From e97f45d255f4a223d38e2f39c1ddf7a3e0766527 Mon Sep 17 00:00:00 2001
+From cf06a3358f752a7d1247498f1e9409b66b23a603 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Thu, 27 Oct 2011 20:06:30 +0200
-Subject: [PATCH 14/70] MIPS: lantiq: fix pull gpio up resistors usage
+Subject: [PATCH 14/73] MIPS: lantiq: fix pull gpio up resistors usage
 
 The register that enables a gpios internal pullups was not used. This patch
 makes sure the pullups are activated correctly.
@@ -12,6 +12,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/xway/gpio.c |    6 ++++++
  1 files changed, 6 insertions(+), 0 deletions(-)
 
+diff --git a/arch/mips/lantiq/xway/gpio.c b/arch/mips/lantiq/xway/gpio.c
+index f204f6c..14ff7c7 100644
 --- a/arch/mips/lantiq/xway/gpio.c
 +++ b/arch/mips/lantiq/xway/gpio.c
 @@ -21,6 +21,8 @@
@@ -23,7 +25,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #define PINS_PER_PORT		16
  #define MAX_PORTS		3
-@@ -106,6 +108,8 @@ static int ltq_gpio_direction_input(stru
+@@ -106,6 +108,8 @@ static int ltq_gpio_direction_input(struct gpio_chip *chip, unsigned int offset)
  
  	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
  	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
@@ -32,7 +34,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return 0;
  }
-@@ -117,6 +121,8 @@ static int ltq_gpio_direction_output(str
+@@ -117,6 +121,8 @@ static int ltq_gpio_direction_output(struct gpio_chip *chip,
  
  	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
  	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
@@ -41,3 +43,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	ltq_gpio_set(chip, offset, value);
  
  	return 0;
+-- 
+1.7.9.1
+

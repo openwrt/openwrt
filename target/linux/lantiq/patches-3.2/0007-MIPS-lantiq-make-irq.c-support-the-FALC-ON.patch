@@ -1,7 +1,7 @@
-From 03f55cae0f5d9a4c30f935abf8d621ced64ae425 Mon Sep 17 00:00:00 2001
+From 318b9c6242418e1568430c7768371d2bd556109a Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Thu, 11 Aug 2011 12:25:55 +0200
-Subject: [PATCH 07/70] MIPS: lantiq: make irq.c support the FALC-ON
+Subject: [PATCH 07/73] MIPS: lantiq: make irq.c support the FALC-ON
 
 There are minor differences in how irqs work on xway and falcon socs.
 Xway needs 2 quirks that we need to disable for falcon to also work with
@@ -16,9 +16,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/irq.c |   24 +++++++++++++-----------
  1 files changed, 13 insertions(+), 11 deletions(-)
 
+diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
+index f9737bb..17c057f 100644
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
-@@ -195,7 +195,7 @@ static void ltq_hw_irqdispatch(int modul
+@@ -195,7 +195,7 @@ static void ltq_hw_irqdispatch(int module)
  	do_IRQ((int)irq + INT_NUM_IM0_IRL0 + (INT_NUM_IM_OFFSET * module));
  
  	/* if this is a EBU irq, we need to ack it or get a deadlock */
@@ -36,15 +38,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (LTQ_EIU_BASE_ADDR) {
 +		if (insert_resource(&iomem_resource, &ltq_eiu_resource) < 0)
 +			panic("Failed to insert eiu memory\n");
-+
-+		if (request_mem_region(ltq_eiu_resource.start,
-+				resource_size(&ltq_eiu_resource), "eiu") < 0)
-+			panic("Failed to request eiu memory\n");
  
 -	if (request_mem_region(ltq_eiu_resource.start,
 -			resource_size(&ltq_eiu_resource), "eiu") < 0)
 -		panic("Failed to request eiu memory\n");
--
++		if (request_mem_region(ltq_eiu_resource.start,
++				resource_size(&ltq_eiu_resource), "eiu") < 0)
++			panic("Failed to request eiu memory\n");
+ 
 -	ltq_eiu_membase = ioremap_nocache(ltq_eiu_resource.start,
 +		ltq_eiu_membase = ioremap_nocache(ltq_eiu_resource.start,
  				resource_size(&ltq_eiu_resource));
@@ -67,3 +68,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			irq_set_chip_and_handler(i, &ltq_eiu_type,
  				handle_level_irq);
  		/* EIU3-5 only exist on ar9 and vr9 */
+-- 
+1.7.9.1
+

@@ -1,7 +1,7 @@
-From 35f0a707698fc8f20e4164a704d7ac6af3342fb8 Mon Sep 17 00:00:00 2001
+From 2daf93364658fd26bf583b7a46b81c08fddaf1e4 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 11 Nov 2011 12:45:24 +0100
-Subject: [PATCH 06/70] MIPS: lantiq: change ltq_request_gpio() call signature
+Subject: [PATCH 06/73] MIPS: lantiq: change ltq_request_gpio() call signature
 
 ltq_request_gpio() was using alt0/1 to multiplex the function of GPIO pins.
 This was XWAY specific. In order to also accomodate SoCs that require more bits
@@ -17,6 +17,8 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  arch/mips/pci/pci-lantiq.c                         |   36 +++++++++----------
  4 files changed, 26 insertions(+), 28 deletions(-)
 
+diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+index 9b7ee366..87f6d24 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -135,8 +135,8 @@ extern __iomem void *ltq_ebu_membase;
@@ -30,6 +32,8 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
  extern void ltq_cgu_enable(unsigned int clk);
+diff --git a/arch/mips/lantiq/xway/gpio.c b/arch/mips/lantiq/xway/gpio.c
+index d2fa98f..f204f6c 100644
 --- a/arch/mips/lantiq/xway/gpio.c
 +++ b/arch/mips/lantiq/xway/gpio.c
 @@ -48,8 +48,8 @@ int irq_to_gpio(unsigned int gpio)
@@ -43,7 +47,7 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  {
  	int id = 0;
  
-@@ -67,13 +67,13 @@ int ltq_gpio_request(unsigned int pin, u
+@@ -67,13 +67,13 @@ int ltq_gpio_request(unsigned int pin, unsigned int alt0,
  		pin -= PINS_PER_PORT;
  		id++;
  	}
@@ -59,6 +63,8 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  		ltq_gpio_setbit(ltq_gpio_port[id].membase,
  			LTQ_GPIO_ALTSEL1, pin);
  	else
+diff --git a/arch/mips/lantiq/xway/gpio_stp.c b/arch/mips/lantiq/xway/gpio_stp.c
+index ff9991c..2c78660 100644
 --- a/arch/mips/lantiq/xway/gpio_stp.c
 +++ b/arch/mips/lantiq/xway/gpio_stp.c
 @@ -79,9 +79,9 @@ static struct gpio_chip ltq_stp_chip = {
@@ -74,6 +80,8 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  
  	/* sane defaults */
  	ltq_stp_w32(0, LTQ_STP_AR);
+diff --git a/arch/mips/pci/pci-lantiq.c b/arch/mips/pci/pci-lantiq.c
+index be1e1af..c001c5a 100644
 --- a/arch/mips/pci/pci-lantiq.c
 +++ b/arch/mips/pci/pci-lantiq.c
 @@ -70,28 +70,27 @@
@@ -136,3 +144,6 @@ Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
  	ltq_pci_req_mask = (gpio >> PCI_REQ_SHIFT) & PCI_REQ_MASK;
  }
  
+-- 
+1.7.9.1
+

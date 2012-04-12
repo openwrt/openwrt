@@ -1,7 +1,7 @@
-From cf7086d4c2f7caeccd019c0a57bf1566c72c13ee Mon Sep 17 00:00:00 2001
+From 222ee25fab35b3c3a4c63903b6af4eb0d0556750 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 10 Aug 2011 14:57:04 +0200
-Subject: [PATCH 05/70] MIPS: lantiq: reorganize xway code
+Subject: [PATCH 05/73] MIPS: lantiq: reorganize xway code
 
 Inside the folder arch/mips/lantiq/xway, there were alot of small files with
 lots of duplicated code. This patch adds a wrapper function for inserting and
@@ -38,6 +38,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  delete mode 100644 arch/mips/lantiq/xway/setup-xway.c
  create mode 100644 arch/mips/lantiq/xway/sysctrl.c
 
+diff --git a/arch/mips/include/asm/mach-lantiq/lantiq.h b/arch/mips/include/asm/mach-lantiq/lantiq.h
+index ce2f029..66d7300 100644
 --- a/arch/mips/include/asm/mach-lantiq/lantiq.h
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq.h
 @@ -9,6 +9,7 @@
@@ -64,7 +66,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  extern unsigned int ltq_get_cpu_ver(void);
  extern unsigned int ltq_get_soc_type(void);
  
-@@ -51,7 +43,9 @@ extern void ltq_enable_irq(struct irq_da
+@@ -51,7 +43,9 @@ extern void ltq_enable_irq(struct irq_data *data);
  
  /* find out what caused the last cpu reset */
  extern int ltq_reset_cause(void);
@@ -75,6 +77,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #define IOPORT_RESOURCE_START	0x10000000
  #define IOPORT_RESOURCE_END	0xffffffff
+diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+index 8a3c6be..9b7ee366 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -61,6 +61,8 @@
@@ -117,6 +121,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  static inline int ltq_is_ar9(void)
  {
+diff --git a/arch/mips/lantiq/clk.c b/arch/mips/lantiq/clk.c
+index 77ed70f..39eef7f 100644
 --- a/arch/mips/lantiq/clk.c
 +++ b/arch/mips/lantiq/clk.c
 @@ -22,6 +22,7 @@
@@ -150,12 +156,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 -	if (insert_resource(&iomem_resource, &ltq_cgu_resource) < 0)
 -		panic("Failed to insert cgu memory\n");
-+	ltq_soc_init();
- 
+-
 -	if (request_mem_region(ltq_cgu_resource.start,
 -			resource_size(&ltq_cgu_resource), "cgu") < 0)
 -		panic("Failed to request cgu memory\n");
--
++	ltq_soc_init();
+ 
 -	ltq_cgu_membase = ioremap_nocache(ltq_cgu_resource.start,
 -				resource_size(&ltq_cgu_resource));
 -	if (!ltq_cgu_membase) {
@@ -168,6 +174,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	pr_info("CPU Clock: %ldMHz\n", clk_get_rate(clk) / 1000000);
  	clk_put(clk);
  }
+diff --git a/arch/mips/lantiq/devices.c b/arch/mips/lantiq/devices.c
+index de1cb2b..7193d78 100644
 --- a/arch/mips/lantiq/devices.c
 +++ b/arch/mips/lantiq/devices.c
 @@ -27,12 +27,8 @@
@@ -185,7 +193,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  static struct platform_device ltq_nor = {
  	.name		= "ltq_nor",
-@@ -47,12 +43,8 @@ void __init ltq_register_nor(struct phys
+@@ -47,12 +43,8 @@ void __init ltq_register_nor(struct physmap_flash_data *data)
  }
  
  /* watchdog */
@@ -227,6 +235,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	IRQ_RES(tx, LTQ_ASC_TIR(1)),
  	IRQ_RES(rx, LTQ_ASC_RIR(1)),
  	IRQ_RES(err, LTQ_ASC_EIR(1)),
+diff --git a/arch/mips/lantiq/devices.h b/arch/mips/lantiq/devices.h
+index 2947bb1..a03c23f 100644
 --- a/arch/mips/lantiq/devices.h
 +++ b/arch/mips/lantiq/devices.h
 @@ -14,6 +14,10 @@
@@ -240,6 +250,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  extern void ltq_register_nor(struct physmap_flash_data *data);
  extern void ltq_register_wdt(void);
+diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
+index e34fcfd..e3b1e25 100644
 --- a/arch/mips/lantiq/prom.c
 +++ b/arch/mips/lantiq/prom.c
 @@ -16,6 +16,10 @@
@@ -253,7 +265,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static struct ltq_soc_info soc_info;
  
  unsigned int ltq_get_cpu_ver(void)
-@@ -55,16 +59,51 @@ static void __init prom_init_cmdline(voi
+@@ -55,16 +59,51 @@ static void __init prom_init_cmdline(void)
  	}
  }
  
@@ -263,7 +275,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -	struct clk *clk;
 +	__iomem void *ret = NULL;
 +	struct resource *lookup = lookup_resource(&iomem_resource, res->start);
- 
++
 +	if (lookup && strcmp(lookup->name, res->name)) {
 +		pr_err("conflicting memory range %s\n", res->name);
 +		return NULL;
@@ -279,7 +291,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		pr_err("Failed to request %s memory\n", res->name);
 +		goto err_res;
 +	}
-+
+ 
 +	ret = ioremap_nocache(res->start, resource_size(res));
 +	if (!ret)
 +		goto err_mem;
@@ -311,6 +323,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	soc_info.sys_type[LTQ_SYS_TYPE_LEN - 1] = '\0';
  	pr_info("SoC: %s\n", soc_info.sys_type);
  	prom_init_cmdline();
+diff --git a/arch/mips/lantiq/prom.h b/arch/mips/lantiq/prom.h
+index b4229d9..51dba1b 100644
 --- a/arch/mips/lantiq/prom.h
 +++ b/arch/mips/lantiq/prom.h
 @@ -9,17 +9,21 @@
@@ -335,6 +349,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  extern void ltq_soc_setup(void);
  
  #endif
+diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
+index c517f2e..6678402 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,7 +1,7 @@
@@ -348,6 +364,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
+diff --git a/arch/mips/lantiq/xway/devices.c b/arch/mips/lantiq/xway/devices.c
+index d614aa7..f97e565 100644
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
 @@ -31,22 +31,9 @@
@@ -420,6 +438,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  static struct platform_device ltq_etop = {
  	.name		= "ltq_etop",
+diff --git a/arch/mips/lantiq/xway/dma.c b/arch/mips/lantiq/xway/dma.c
+index cbb6ae5..60cd11f 100644
 --- a/arch/mips/lantiq/xway/dma.c
 +++ b/arch/mips/lantiq/xway/dma.c
 @@ -24,6 +24,8 @@
@@ -465,6 +485,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (!ltq_dma_membase)
  		panic("Failed to remap dma memory\n");
  
+diff --git a/arch/mips/lantiq/xway/ebu.c b/arch/mips/lantiq/xway/ebu.c
+deleted file mode 100644
+index 033b318..0000000
 --- a/arch/mips/lantiq/xway/ebu.c
 +++ /dev/null
 @@ -1,52 +0,0 @@
@@ -520,6 +543,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -}
 -
 -postcore_initcall(lantiq_ebu_init);
+diff --git a/arch/mips/lantiq/xway/pmu.c b/arch/mips/lantiq/xway/pmu.c
+deleted file mode 100644
+index 39f0d26..0000000
 --- a/arch/mips/lantiq/xway/pmu.c
 +++ /dev/null
 @@ -1,69 +0,0 @@
@@ -592,6 +618,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -}
 -
 -core_initcall(ltq_pmu_init);
+diff --git a/arch/mips/lantiq/xway/prom-ase.c b/arch/mips/lantiq/xway/prom-ase.c
+index ae4959a..3f86a3b 100644
 --- a/arch/mips/lantiq/xway/prom-ase.c
 +++ b/arch/mips/lantiq/xway/prom-ase.c
 @@ -13,6 +13,7 @@
@@ -602,7 +630,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #include "../prom.h"
  
  #define SOC_AMAZON_SE	"Amazon_SE"
-@@ -26,6 +27,7 @@ void __init ltq_soc_detect(struct ltq_so
+@@ -26,6 +27,7 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
  {
  	i->partnum = (ltq_r32(LTQ_MPS_CHIPID) & PART_MASK) >> PART_SHIFT;
  	i->rev = (ltq_r32(LTQ_MPS_CHIPID) & REV_MASK) >> REV_SHIFT;
@@ -610,7 +638,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	switch (i->partnum) {
  	case SOC_ID_AMAZON_SE:
  		i->name = SOC_AMAZON_SE;
-@@ -37,3 +39,10 @@ void __init ltq_soc_detect(struct ltq_so
+@@ -37,3 +39,10 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
  		break;
  	}
  }
@@ -621,6 +649,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	ltq_register_gpio();
 +	ltq_register_wdt();
 +}
+diff --git a/arch/mips/lantiq/xway/prom-xway.c b/arch/mips/lantiq/xway/prom-xway.c
+index 2228133..d823a92 100644
 --- a/arch/mips/lantiq/xway/prom-xway.c
 +++ b/arch/mips/lantiq/xway/prom-xway.c
 @@ -13,6 +13,7 @@
@@ -631,7 +661,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #include "../prom.h"
  
  #define SOC_DANUBE	"Danube"
-@@ -28,6 +29,7 @@ void __init ltq_soc_detect(struct ltq_so
+@@ -28,6 +29,7 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
  {
  	i->partnum = (ltq_r32(LTQ_MPS_CHIPID) & PART_MASK) >> PART_SHIFT;
  	i->rev = (ltq_r32(LTQ_MPS_CHIPID) & REV_MASK) >> REV_SHIFT;
@@ -639,7 +669,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	switch (i->partnum) {
  	case SOC_ID_DANUBE1:
  	case SOC_ID_DANUBE2:
-@@ -52,3 +54,11 @@ void __init ltq_soc_detect(struct ltq_so
+@@ -52,3 +54,11 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
  		break;
  	}
  }
@@ -651,6 +681,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	ltq_register_gpio();
 +	ltq_register_wdt();
 +}
+diff --git a/arch/mips/lantiq/xway/reset.c b/arch/mips/lantiq/xway/reset.c
+index 3d41f0b..ca2212a 100644
 --- a/arch/mips/lantiq/xway/reset.c
 +++ b/arch/mips/lantiq/xway/reset.c
 @@ -15,6 +15,8 @@
@@ -696,6 +728,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (!ltq_rcu_membase)
  		panic("Failed to remap rcu memory\n");
  
+diff --git a/arch/mips/lantiq/xway/setup-ase.c b/arch/mips/lantiq/xway/setup-ase.c
+deleted file mode 100644
+index f6f3267..0000000
 --- a/arch/mips/lantiq/xway/setup-ase.c
 +++ /dev/null
 @@ -1,19 +0,0 @@
@@ -718,6 +753,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -	ltq_register_gpio();
 -	ltq_register_wdt();
 -}
+diff --git a/arch/mips/lantiq/xway/setup-xway.c b/arch/mips/lantiq/xway/setup-xway.c
+deleted file mode 100644
+index c292f64..0000000
 --- a/arch/mips/lantiq/xway/setup-xway.c
 +++ /dev/null
 @@ -1,20 +0,0 @@
@@ -741,6 +779,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -	ltq_register_gpio();
 -	ltq_register_wdt();
 -}
+diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
+new file mode 100644
+index 0000000..8fd13a1
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -0,0 +1,78 @@
@@ -822,6 +863,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* make sure to unprotect the memory region where flash is located */
 +	ltq_ebu_w32(ltq_ebu_r32(LTQ_EBU_BUSCON0) & ~EBU_WRDIS, LTQ_EBU_BUSCON0);
 +}
+diff --git a/drivers/watchdog/lantiq_wdt.c b/drivers/watchdog/lantiq_wdt.c
+index 102aed0..179bf98 100644
 --- a/drivers/watchdog/lantiq_wdt.c
 +++ b/drivers/watchdog/lantiq_wdt.c
 @@ -16,7 +16,7 @@
@@ -833,3 +876,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  /* Section 3.4 of the datasheet
   * The password sequence protects the WDT control register from unintended
+-- 
+1.7.9.1
+

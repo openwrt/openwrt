@@ -1,7 +1,7 @@
-From 282f1ca84b35f3be68abc4fd8b52e229f3cb6bb7 Mon Sep 17 00:00:00 2001
+From 8817c547f92016b9276ffec88b708c2c16d1f0f1 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Thu, 8 Mar 2012 13:23:53 +0100
-Subject: [PATCH 01/70] GPIO: add bindings for managed devices
+Subject: [PATCH 01/73] GPIO: add bindings for managed devices
 
 This patch adds 2 functions that allow managed devices to request GPIOs.
 These GPIOs will then be managed by drivers/base/devres.c.
@@ -15,6 +15,8 @@ Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
  3 files changed, 95 insertions(+), 1 deletions(-)
  create mode 100644 drivers/gpio/devres.c
 
+diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
+index 4e018d6..76dbd3f 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
 @@ -2,7 +2,7 @@
@@ -26,6 +28,9 @@ Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
  
  # Device drivers. Generally keep list sorted alphabetically
  obj-$(CONFIG_GPIO_GENERIC)	+= gpio-generic.o
+diff --git a/drivers/gpio/devres.c b/drivers/gpio/devres.c
+new file mode 100644
+index 0000000..3dd2939
 --- /dev/null
 +++ b/drivers/gpio/devres.c
 @@ -0,0 +1,90 @@
@@ -119,9 +124,11 @@ Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
 +	gpio_free(gpio);
 +}
 +EXPORT_SYMBOL(devm_gpio_free);
+diff --git a/include/asm-generic/gpio.h b/include/asm-generic/gpio.h
+index 8c86210..8601a02 100644
 --- a/include/asm-generic/gpio.h
 +++ b/include/asm-generic/gpio.h
-@@ -175,6 +175,10 @@ extern int gpio_request_one(unsigned gpi
+@@ -175,6 +175,10 @@ extern int gpio_request_one(unsigned gpio, unsigned long flags, const char *labe
  extern int gpio_request_array(const struct gpio *array, size_t num);
  extern void gpio_free_array(const struct gpio *array, size_t num);
  
@@ -132,3 +139,6 @@ Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
  #ifdef CONFIG_GPIO_SYSFS
  
  /*
+-- 
+1.7.9.1
+

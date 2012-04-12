@@ -1,7 +1,7 @@
-From 95e7c9e7b37b06462c8b3b8431dc64d60369eb38 Mon Sep 17 00:00:00 2001
+From 61cbe7fcc29f439740e004ca967da852fda58b62 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Thu, 11 Aug 2011 14:35:02 +0200
-Subject: [PATCH 09/70] MIPS: lantiq: add support for FALC-ON GPIOs
+Subject: [PATCH 09/73] MIPS: lantiq: add support for FALC-ON GPIOs
 
 FALC-ON uses a different GPIO core than the other Lantiq SoCs. This patch adds
 the new driver.
@@ -16,11 +16,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 443 insertions(+), 1 deletions(-)
  create mode 100644 arch/mips/lantiq/falcon/gpio.c
 
+diff --git a/arch/mips/lantiq/falcon/Makefile b/arch/mips/lantiq/falcon/Makefile
+index e9c7455..de72209 100644
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
 @@ -1 +1 @@
 -obj-y := clk.o prom.o reset.o sysctrl.o devices.o
 +obj-y := clk.o prom.o reset.o sysctrl.o devices.o gpio.o
+diff --git a/arch/mips/lantiq/falcon/devices.c b/arch/mips/lantiq/falcon/devices.c
+index c4606f2..4f47b44 100644
 --- a/arch/mips/lantiq/falcon/devices.c
 +++ b/arch/mips/lantiq/falcon/devices.c
 @@ -9,6 +9,7 @@
@@ -75,6 +79,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	ltq_sysctl_activate(SYSCTL_SYS1,
 +		ACTS_PADCTRL3 | ACTS_PADCTRL4 | ACTS_P3 | ACTS_P4);
 +}
+diff --git a/arch/mips/lantiq/falcon/devices.h b/arch/mips/lantiq/falcon/devices.h
+index e802a7c..18be8b6 100644
 --- a/arch/mips/lantiq/falcon/devices.h
 +++ b/arch/mips/lantiq/falcon/devices.h
 @@ -14,5 +14,7 @@
@@ -85,6 +91,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +extern void falcon_register_gpio_extra(void);
  
  #endif
+diff --git a/arch/mips/lantiq/falcon/gpio.c b/arch/mips/lantiq/falcon/gpio.c
+new file mode 100644
+index 0000000..28f8639
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/gpio.c
 @@ -0,0 +1,399 @@
@@ -487,3 +496,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
 +postcore_initcall(falcon_gpio_init);
+-- 
+1.7.9.1
+
