@@ -1,0 +1,197 @@
+From d1cd860adbd87c42c90db1c5658cf10ed1dbdd3e Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 12 Apr 2012 13:25:42 +0200
+Subject: [PATCH 72/73] MIPS: lantiq: fix spi for ase, update for clkdev and
+ platform driver
+
+irqs, gpios, chipselects
+updated to use module_platform_driver()
+clkdev is a bit hacky, using ltq_spi.0, as specifying no device numbering led to
+the mtd driver not hooking up to an spi flash.
+
+Signed-off-by: Conor O'Gorman <i@conorogorman.net>
+---
+ .../mips/include/asm/mach-lantiq/xway/lantiq_irq.h |    4 ++
+ arch/mips/lantiq/xway/sysctrl.c                    |    2 +-
+ drivers/spi/spi-xway.c                             |   58 ++++++++++----------
+ 3 files changed, 35 insertions(+), 29 deletions(-)
+
+diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
+index d9c892b..d86acdd 100644
+--- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
++++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
+@@ -30,6 +30,10 @@
+ #define LTQ_SSC_TIR_AR9		(INT_NUM_IM0_IRL0 + 14)
+ #define LTQ_SSC_RIR_AR9		(INT_NUM_IM0_IRL0 + 15)
+ #define LTQ_SSC_EIR		(INT_NUM_IM0_IRL0 + 16)
++#define LTQ_SSC_RIR_ASE		(INT_NUM_IM0_IRL0 + 16)
++#define LTQ_SSC_TIR_ASE		(INT_NUM_IM0_IRL0 + 17)
++#define LTQ_SSC_EIR_ASE		(INT_NUM_IM0_IRL0 + 18)
++#define LTQ_SSC_FIR_ASE		(INT_NUM_IM0_IRL0 + 19)
+ 
+ #define LTQ_MEI_DYING_GASP_INT	(INT_NUM_IM1_IRL0 + 21)
+ #define LTQ_MEI_INT		(INT_NUM_IM1_IRL0 + 23)
+diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
+index 5807456..de4ce8f 100644
+--- a/arch/mips/lantiq/xway/sysctrl.c
++++ b/arch/mips/lantiq/xway/sysctrl.c
+@@ -233,7 +233,7 @@ void __init ltq_soc_init(void)
+ 	clkdev_add_pmu("ltq_fpi", NULL, 0, PMU_FPI);
+ 	clkdev_add_pmu("ltq_dma", NULL, 0, PMU_DMA);
+ 	clkdev_add_pmu("ltq_stp", NULL, 0, PMU_STP);
+-	clkdev_add_pmu("ltq_spi", NULL, 0, PMU_SPI);
++	clkdev_add_pmu("ltq_spi.0", NULL, 0, PMU_SPI);
+         clkdev_add_pmu("ltq_gptu", NULL, 0, PMU_GPT);
+         clkdev_add_pmu("ltq_ebu", NULL, 0, PMU_EBU);
+ 	if (!ltq_is_vr9())
+diff --git a/drivers/spi/spi-xway.c b/drivers/spi/spi-xway.c
+index 016a6d0..be5c25b 100644
+--- a/drivers/spi/spi-xway.c
++++ b/drivers/spi/spi-xway.c
+@@ -143,9 +143,9 @@
+ #define LTQ_SPI_IRNEN_ALL	0xF
+ 
+ /* Hard-wired GPIOs used by SPI controller */
+-#define LTQ_SPI_GPIO_DI 	16
+-#define LTQ_SPI_GPIO_DO		17
+-#define LTQ_SPI_GPIO_CLK	18
++#define LTQ_SPI_GPIO_DI 	(ltq_is_ase()?  8 : 16)
++#define LTQ_SPI_GPIO_DO 	(ltq_is_ase()?  9 : 17)
++#define LTQ_SPI_GPIO_CLK	(ltq_is_ase()? 10 : 18)
+ 
+ struct ltq_spi {
+ 	struct spi_bitbang	bitbang;
+@@ -229,7 +229,7 @@ static void ltq_spi_hw_enable(struct ltq_spi *hw)
+ 	u32 clc;
+ 
+ 	/* Power-up mdule */
+-        clk_enable(hw->spiclk);
++	clk_enable(hw->spiclk);
+ 
+ 	/*
+ 	 * Set clock divider for run mode to 1 to
+@@ -245,7 +245,7 @@ static void ltq_spi_hw_disable(struct ltq_spi *hw)
+ 	ltq_spi_reg_write(hw, LTQ_SPI_CLC_DISS, LTQ_SPI_CLC);
+ 
+ 	/* Power-down mdule */
+-        clk_disable(hw->spiclk);
++	clk_disable(hw->spiclk);
+ }
+ 
+ static void ltq_spi_reset_fifos(struct ltq_spi *hw)
+@@ -284,7 +284,7 @@ static inline int ltq_spi_wait_ready(struct ltq_spi *hw)
+ 		cond_resched();
+ 	} while (!time_after_eq(jiffies, timeout));
+ 
+-	dev_err(hw->dev, "SPI wait ready timed out\n");
++	dev_err(hw->dev, "SPI wait ready timed out stat: %x\n", stat);
+ 
+ 	return -ETIMEDOUT;
+ }
+@@ -556,6 +556,12 @@ static const struct ltq_spi_cs_gpio_map ltq_spi_cs[] = {
+ 	{ 11, 3 },
+ };
+ 
++static const struct ltq_spi_cs_gpio_map ltq_spi_cs_ase[] = {
++	{  7, 2 },
++	{ 15, 1 },
++	{ 14, 1 },
++};
++
+ static int ltq_spi_setup(struct spi_device *spi)
+ {
+ 	struct ltq_spi *hw = ltq_spi_to_hw(spi);
+@@ -600,8 +606,10 @@ static int ltq_spi_setup(struct spi_device *spi)
+ 		cstate->cs_activate = ltq_spi_gpio_cs_activate;
+ 		cstate->cs_deactivate = ltq_spi_gpio_cs_deactivate;
+ 	} else {
+-		ret = ltq_gpio_request(&spi->dev, ltq_spi_cs[spi->chip_select].gpio,
+-				ltq_spi_cs[spi->chip_select].mux,
++		struct ltq_spi_cs_gpio_map *cs_map =
++				ltq_is_ase() ? ltq_spi_cs_ase : ltq_spi_cs;
++		ret = ltq_gpio_request(&spi->dev, cs_map[spi->chip_select].gpio,
++				cs_map[spi->chip_select].mux,
+ 				1, "spi-cs");
+ 		if (ret)
+ 			return -EBUSY;
+@@ -633,7 +641,8 @@ static void ltq_spi_cleanup(struct spi_device *spi)
+ 	if (cdata && cdata->gpio)
+ 		gpio = cdata->gpio;
+ 	else
+-		gpio = ltq_spi_cs[spi->chip_select].gpio;
++		gpio = ltq_is_ase() ? ltq_spi_cs_ase[spi->chip_select].gpio :
++					 ltq_spi_cs[spi->chip_select].gpio;
+ 
+ 	gpio_free(gpio);
+ 	kfree(cstate);
+@@ -868,7 +877,8 @@ static const struct ltq_spi_irq_map ltq_spi_irqs[] = {
+ 	{ "spi_err", ltq_spi_err_irq },
+ };
+ 
+-static int __init ltq_spi_probe(struct platform_device *pdev)
++static int __devinit
++ltq_spi_probe(struct platform_device *pdev)
+ {
+ 	struct spi_master *master;
+ 	struct resource *r;
+@@ -910,14 +920,14 @@ static int __init ltq_spi_probe(struct platform_device *pdev)
+ 
+ 	hw->fpiclk = clk_get_fpi();
+ 	if (IS_ERR(hw->fpiclk)) {
+-		dev_err(&pdev->dev, "clk_get\n");
++		dev_err(&pdev->dev, "fpi clk\n");
+ 		ret = PTR_ERR(hw->fpiclk);
+ 		goto err_master;
+ 	}
+ 
+ 	hw->spiclk = clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(hw->spiclk)) {
+-		dev_err(&pdev->dev, "clk_get\n");
++		dev_err(&pdev->dev, "spi clk\n");
+ 		ret = PTR_ERR(hw->spiclk);
+ 		goto err_master;
+ 	}
+@@ -1014,7 +1024,8 @@ err:
+ 	return ret;
+ }
+ 
+-static int __exit ltq_spi_remove(struct platform_device *pdev)
++static int __devexit
++ltq_spi_remove(struct platform_device *pdev)
+ {
+ 	struct ltq_spi *hw = platform_get_drvdata(pdev);
+ 	int ret, i;
+@@ -1043,24 +1054,15 @@ static int __exit ltq_spi_remove(struct platform_device *pdev)
+ }
+ 
+ static struct platform_driver ltq_spi_driver = {
++	.probe = ltq_spi_probe,
++	.remove = __devexit_p(ltq_spi_remove),
+ 	.driver = {
+-		   .name = "ltq_spi",
+-		   .owner = THIS_MODULE,
+-		   },
+-	.remove = __exit_p(ltq_spi_remove),
++		.name = "ltq_spi",
++		.owner = THIS_MODULE,
++		},
+ };
+ 
+-static int __init ltq_spi_init(void)
+-{
+-	return platform_driver_probe(&ltq_spi_driver, ltq_spi_probe);
+-}
+-module_init(ltq_spi_init);
+-
+-static void __exit ltq_spi_exit(void)
+-{
+-	platform_driver_unregister(&ltq_spi_driver);
+-}
+-module_exit(ltq_spi_exit);
++module_platform_driver(ltq_spi_driver);
+ 
+ MODULE_DESCRIPTION("Lantiq SoC SPI controller driver");
+ MODULE_AUTHOR("Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>");
+-- 
+1.7.9.1
+

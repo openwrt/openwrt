@@ -1,15 +1,17 @@
-From e4e27fbcaf2caa2a3e3ef45c736b4bb14f91ecfe Mon Sep 17 00:00:00 2001
+From 3778c58845f39b145b80ca357ca22a3095a8dfb1 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Tue, 13 Mar 2012 18:03:33 +0100
-Subject: [PATCH 04/70] MTD: add m25p80 id for mx25l2005a
+Subject: [PATCH 04/73] MTD: add m25p80 id for mx25l2005a
 
 ---
  drivers/mtd/devices/m25p80.c |    1 +
  1 files changed, 1 insertions(+), 0 deletions(-)
 
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index 884904d..3f37f5f 100644
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -684,6 +684,7 @@ static const struct spi_device_id m25p_i
+@@ -676,6 +676,7 @@ static const struct spi_device_id m25p_ids[] = {
  	{ "640s33b",  INFO(0x898913, 0, 64 * 1024, 128, 0) },
  
  	/* Macronix */
@@ -17,3 +19,6 @@ Subject: [PATCH 04/70] MTD: add m25p80 id for mx25l2005a
  	{ "mx25l4005a",  INFO(0xc22013, 0, 64 * 1024,   8, SECT_4K) },
  	{ "mx25l8005",   INFO(0xc22014, 0, 64 * 1024,  16, 0) },
  	{ "mx25l1606e",  INFO(0xc22015, 0, 64 * 1024,  32, SECT_4K) },
+-- 
+1.7.9.1
+

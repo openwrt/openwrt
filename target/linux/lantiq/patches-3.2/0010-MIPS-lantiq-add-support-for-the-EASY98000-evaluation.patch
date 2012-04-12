@@ -1,7 +1,7 @@
-From 9397aa9584bade07ae667ecd5135653f9c04e236 Mon Sep 17 00:00:00 2001
+From ce27aac6ea9503ae4be0f65423424d92a714d9da Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Thu, 11 Aug 2011 14:09:35 +0200
-Subject: [PATCH 10/70] MIPS: lantiq: add support for the EASY98000 evaluation
+Subject: [PATCH 10/73] MIPS: lantiq: add support for the EASY98000 evaluation
  board
 
 This patch adds the machine code for the EASY9800 evaluation board.
@@ -17,6 +17,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/lantiq/falcon/Kconfig
  create mode 100644 arch/mips/lantiq/falcon/mach-easy98000.c
 
+diff --git a/arch/mips/lantiq/falcon/Kconfig b/arch/mips/lantiq/falcon/Kconfig
+new file mode 100644
+index 0000000..03e999d
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/Kconfig
 @@ -0,0 +1,11 @@
@@ -31,11 +34,16 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +endmenu
 +
 +endif
+diff --git a/arch/mips/lantiq/falcon/Makefile b/arch/mips/lantiq/falcon/Makefile
+index de72209..56b22eb 100644
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
 @@ -1 +1,2 @@
  obj-y := clk.o prom.o reset.o sysctrl.o devices.o gpio.o
 +obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
+diff --git a/arch/mips/lantiq/falcon/mach-easy98000.c b/arch/mips/lantiq/falcon/mach-easy98000.c
+new file mode 100644
+index 0000000..361b8f0
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/mach-easy98000.c
 @@ -0,0 +1,110 @@
@@ -149,6 +157,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +			"EASY98000NAND",
 +			"EASY98000 Eval Board (NAND Flash)",
 +			easy98000nand_init);
+diff --git a/arch/mips/lantiq/machtypes.h b/arch/mips/lantiq/machtypes.h
+index 7e01b8c..dfc6af7 100644
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
 @@ -15,6 +15,11 @@ enum lantiq_mach_type {
@@ -163,3 +173,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  };
  
  #endif
+-- 
+1.7.9.1
+

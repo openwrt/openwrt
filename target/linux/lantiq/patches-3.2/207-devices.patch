@@ -59,7 +59,7 @@
  
  #include <asm/bootinfo.h>
  #include <asm/irq.h>
-@@ -119,3 +120,84 @@ ltq_register_vrx200(struct ltq_eth_data
+@@ -119,3 +120,97 @@ ltq_register_vrx200(struct ltq_eth_data
  	ltq_vrx200.dev.platform_data = eth;
  	platform_device_register(&ltq_vrx200);
  }
@@ -129,8 +129,19 @@
 +	IRQ_RES(spi_err, LTQ_SSC_EIR),
 +};
 +
++static struct resource ltq_spi_resources_ase[] = {
++	{
++		.start  = LTQ_SSC_BASE_ADDR,
++		.end    = LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags  = IORESOURCE_MEM,
++	},
++	IRQ_RES(spi_tx, LTQ_SSC_TIR_ASE),
++	IRQ_RES(spi_rx, LTQ_SSC_RIR_ASE),
++	IRQ_RES(spi_err, LTQ_SSC_EIR_ASE),
++};
++
 +static struct platform_device ltq_spi = {
-+	.name		= "ltq-spi",
++	.name		= "ltq_spi",
 +	.resource	= ltq_spi_resources,
 +	.num_resources	= ARRAY_SIZE(ltq_spi_resources),
 +};
@@ -138,8 +149,10 @@
 +void __init ltq_register_spi(struct ltq_spi_platform_data *pdata,
 +		struct spi_board_info const *info, unsigned n)
 +{
-+	if(ltq_is_ar9())
++	if (ltq_is_ar9())
 +		ltq_spi.resource = ltq_spi_resources_ar9;
++	else if (ltq_is_ase())
++		ltq_spi.resource = ltq_spi_resources_ase;
 +	spi_register_board_info(info, n);
 +	ltq_spi.dev.platform_data = pdata;
 +	platform_device_register(&ltq_spi);

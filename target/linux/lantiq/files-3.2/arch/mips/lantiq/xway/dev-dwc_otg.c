@@ -43,7 +43,6 @@ static struct resource resources[] =
 	},
 	[1] = {
 		.name    = "dwc_otg_irq",
-		.start   = LTQ_USB_INT,
 		.flags   = IORESOURCE_IRQ,
 	},
 };
@@ -65,6 +64,7 @@ xway_register_dwc(int pin)
 	struct irq_data d;
 	d.irq = resources[1].start;
 	ltq_enable_irq(&d);
+	resources[1].start = ltq_is_ase() ? LTQ_USB_ASE_INT : LTQ_USB_INT;
 	platform_dev.dev.platform_data = (void*) pin;
 	return platform_device_register(&platform_dev);
 }
