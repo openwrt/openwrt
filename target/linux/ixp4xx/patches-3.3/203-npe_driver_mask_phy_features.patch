@@ -1,0 +1,13 @@
+--- a/drivers/net/ethernet/xscale/ixp4xx_eth.c
++++ b/drivers/net/ethernet/xscale/ixp4xx_eth.c
+@@ -1425,6 +1425,10 @@ static int __devinit eth_init_one(struct
+ 		goto err_free_mem;
+ 	}
+ 
++	/* mask with MAC supported features */
++	port->phydev->supported &= PHY_BASIC_FEATURES;
++	port->phydev->advertising = port->phydev->supported;
++
+ 	port->phydev->irq = PHY_POLL;
+ 
+ 	if ((err = register_netdev(dev)))

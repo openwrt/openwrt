@@ -1,0 +1,24 @@
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -176,6 +176,10 @@ struct sk_buff *__alloc_skb(unsigned int
+ 	struct sk_buff *skb;
+ 	u8 *data;
+ 
++#ifdef CONFIG_ARCH_IXP4XX
++	gfp_mask |= GFP_DMA;
++#endif
++
+ 	cache = fclone ? skbuff_fclone_cache : skbuff_head_cache;
+ 
+ 	/* Get the HEAD */
+@@ -929,6 +933,10 @@ int pskb_expand_head(struct sk_buff *skb
+ 	if (skb_shared(skb))
+ 		BUG();
+ 
++#ifdef CONFIG_ARCH_IXP4XX
++	gfp_mask |= GFP_DMA;
++#endif
++
+ 	size = SKB_DATA_ALIGN(size);
+ 
+ 	/* Check if we can avoid taking references on fragments if we own

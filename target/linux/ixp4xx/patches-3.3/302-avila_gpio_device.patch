@@ -1,0 +1,16 @@
+--- a/arch/arm/mach-ixp4xx/avila-setup.c
++++ b/arch/arm/mach-ixp4xx/avila-setup.c
+@@ -36,6 +36,13 @@
+ #define AVILA_SDA_PIN	7
+ #define AVILA_SCL_PIN	6
+ 
++/* User LEDs */
++#define AVILA_GW23XX_LED_USER_GPIO     3
++#define AVILA_GW23X7_LED_USER_GPIO     4
++
++/* gpio mask used by platform device */
++#define AVILA_GPIO_MASK        (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9)
++
+ struct avila_board_info {
+ 	unsigned char	*model;
+ 	void		(*setup)(void);
