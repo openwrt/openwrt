@@ -5,6 +5,9 @@
 # See /LICENSE for more information.
 #
 
+# Substituted by SDK, do not remove
+# REVISION:=x
+
 PKG_CONFIG_DEPENDS += \
 	CONFIG_VERSION_NUMBER \
 	CONFIG_VERSION_NICK \
