@@ -56,7 +56,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		> $(SDK_BUILD_DIR)/feeds.conf.default
 	cat $(TOPDIR)/feeds.conf.default \
 		>> $(SDK_BUILD_DIR)/feeds.conf.default
-	echo REVISION:="$(REVISION)" > $(SDK_BUILD_DIR)/include/version.mk
+	$(SED) 's,^# REVISION:=.*,REVISION:=$(REVISION),g' $(SDK_BUILD_DIR)/include/version.mk
 	find $(SDK_BUILD_DIR) -name .git | $(XARGS) rm -rf
 	find $(SDK_BUILD_DIR) -name .svn | $(XARGS) rm -rf
 	find $(SDK_BUILD_DIR) -name CVS | $(XARGS) rm -rf
