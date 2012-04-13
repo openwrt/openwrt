@@ -344,8 +344,8 @@
 +	nvram_read_u8(prefix, NULL, "ledbh3", &sprom->gpio3, 0xff);
 +	nvram_read_u8(prefix, NULL, "aa2g", &sprom->ant_available_bg, 0);
 +	nvram_read_u8(prefix, NULL, "aa5g", &sprom->ant_available_a, 0);
-+	nvram_read_s8(prefix, NULL, "ag0", &sprom->antenna_gain.ghz24.a0, 0);
-+	nvram_read_s8(prefix, NULL, "ag1", &sprom->antenna_gain.ghz24.a1, 0);
++	nvram_read_s8(prefix, NULL, "ag0", &sprom->antenna_gain.a0, 0);
++	nvram_read_s8(prefix, NULL, "ag1", &sprom->antenna_gain.a1, 0);
 +	nvram_read_alpha2(prefix, "ccode", &sprom->alpha2);
 +}
 +
@@ -428,8 +428,8 @@
 +			 &sprom->boardflags2_hi);
 +	nvram_read_u16(prefix, NULL, "boardtype", &sprom->board_type, 0);
 +	nvram_read_u8(prefix, NULL, "regrev", &sprom->regrev, 0);
-+	nvram_read_s8(prefix, NULL, "ag2", &sprom->antenna_gain.ghz24.a2, 0);
-+	nvram_read_s8(prefix, NULL, "ag3", &sprom->antenna_gain.ghz24.a3, 0);
++	nvram_read_s8(prefix, NULL, "ag2", &sprom->antenna_gain.a2, 0);
++	nvram_read_s8(prefix, NULL, "ag3", &sprom->antenna_gain.a3, 0);
 +	nvram_read_u8(prefix, NULL, "txchain", &sprom->txchain, 0xf);
 +	nvram_read_u8(prefix, NULL, "rxchain", &sprom->rxchain, 0xf);
 +	nvram_read_u8(prefix, NULL, "antswitch", &sprom->antswitch, 0xff);

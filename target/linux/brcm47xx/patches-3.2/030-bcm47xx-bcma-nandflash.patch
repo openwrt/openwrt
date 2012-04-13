@@ -239,7 +239,7 @@
  bcma-$(CONFIG_BCMA_DRIVER_MIPS)		+= driver_mips.o
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -46,6 +46,11 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
+@@ -47,6 +47,11 @@ u32 bcma_pmu_get_clockcpu(struct bcma_dr
  int bcma_sflash_init(struct bcma_drv_cc *cc);
  #endif /* CONFIG_BCMA_SFLASH */
  
@@ -971,7 +971,7 @@
 +MODULE_DESCRIPTION("BCM47XX NAND flash driver");
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -376,6 +376,7 @@ struct bcma_chipcommon_pmu {
+@@ -400,6 +400,7 @@ struct bcma_chipcommon_pmu {
  enum bcma_flash_type {
  	BCMA_PFLASH,
  	BCMA_SFLASH,
@@ -979,7 +979,7 @@
  };
  
  struct bcma_pflash {
-@@ -392,6 +393,14 @@ struct bcma_sflash {
+@@ -416,6 +417,14 @@ struct bcma_sflash {
  };
  #endif /* CONFIG_BCMA_SFLASH */
  
@@ -994,7 +994,7 @@
  struct bcma_serial_port {
  	void *regs;
  	unsigned long clockspeed;
-@@ -417,6 +426,9 @@ struct bcma_drv_cc {
+@@ -441,6 +450,9 @@ struct bcma_drv_cc {
  #ifdef CONFIG_BCMA_SFLASH
  		struct bcma_sflash sflash;
  #endif /* CONFIG_BCMA_SFLASH */
@@ -1004,7 +1004,7 @@
  	};
  
  	int nr_serial_ports;
-@@ -481,4 +493,13 @@ int bcma_sflash_write(struct bcma_drv_cc
+@@ -505,4 +517,13 @@ int bcma_sflash_write(struct bcma_drv_cc
  int bcma_sflash_erase(struct bcma_drv_cc *cc, u32 offset);
  #endif /* CONFIG_BCMA_SFLASH */
  

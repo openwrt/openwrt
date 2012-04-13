@@ -12,7 +12,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/bcma/driver_chipcommon_pmu.c
 +++ b/drivers/bcma/driver_chipcommon_pmu.c
-@@ -141,12 +141,19 @@ void bcma_pmu_workarounds(struct bcma_dr
+@@ -142,12 +142,19 @@ void bcma_pmu_workarounds(struct bcma_dr
  		/* BCM4331 workaround is SPROM-related, we put it in sprom.c */
  		break;
  	case 43224:
@@ -38,7 +38,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	case 43225:
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
-@@ -374,6 +374,11 @@
+@@ -382,6 +382,11 @@
  #define BCMA_CHIPCTL_4331_BT_SHD0_ON_GPIO4	BIT(16)	/* enable bt_shd0 at gpio4 */
  #define BCMA_CHIPCTL_4331_BT_SHD1_ON_GPIO5	BIT(17)	/* enable bt_shd1 at gpio5 */
  

@@ -18,7 +18,7 @@
  
 +config BCMA_DRIVER_PCI_HOSTMODE
 +	bool "Driver for PCI core working in hostmode"
-+	depends on BCMA && MIPS
++	depends on BCMA && MIPS && BCMA_HOST_PCI
 +	help
 +	  PCI core hostmode operation (external PCI bus).
 +
@@ -54,18 +54,19 @@
  ccflags-$(CONFIG_BCMA_DEBUG)		:= -DDEBUG
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -13,11 +13,33 @@
+@@ -13,11 +13,34 @@
  struct bcma_bus;
  
  /* main.c */
 -extern int bcma_bus_register(struct bcma_bus *bus);
 -extern void bcma_bus_unregister(struct bcma_bus *bus);
-+int bcma_bus_register(struct bcma_bus *bus);
++int __devinit bcma_bus_register(struct bcma_bus *bus);
 +void bcma_bus_unregister(struct bcma_bus *bus);
 +int __init bcma_bus_early_register(struct bcma_bus *bus,
 +				   struct bcma_device *core_cc,
 +				   struct bcma_device *core_mips);
 +#ifdef CONFIG_PM
++int bcma_bus_suspend(struct bcma_bus *bus);
 +int bcma_bus_resume(struct bcma_bus *bus);
 +#endif
  
@@ -90,12 +91,16 @@
  
  #ifdef CONFIG_BCMA_HOST_PCI
  /* host_pci.c */
-@@ -25,4 +47,8 @@ extern int __init bcma_host_pci_init(voi
+@@ -25,4 +48,12 @@ extern int __init bcma_host_pci_init(voi
  extern void __exit bcma_host_pci_exit(void);
  #endif /* CONFIG_BCMA_HOST_PCI */
  
++/* driver_pci.c */
++u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address);
++
 +#ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
-+void bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc);
++bool __devinit bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc);
++void __devinit bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc);
 +#endif /* CONFIG_BCMA_DRIVER_PCI_HOSTMODE */
 +
  #endif
@@ -360,15 +365,17 @@
  
  static void bcma_pmu_pll_init(struct bcma_drv_cc *cc)
  {
-@@ -53,6 +80,7 @@ static void bcma_pmu_resources_init(stru
+@@ -52,7 +79,9 @@ static void bcma_pmu_resources_init(stru
+ 		min_msk = 0x200D;
  		max_msk = 0xFFFF;
  		break;
++	case 0x4331:
  	case 43224:
 +	case 43225:
  		break;
  	default:
  		pr_err("PMU resource config unknown for device 0x%04X\n",
-@@ -74,6 +102,7 @@ void bcma_pmu_swreg_init(struct bcma_drv
+@@ -74,6 +103,7 @@ void bcma_pmu_swreg_init(struct bcma_drv
  	case 0x4313:
  	case 0x4331:
  	case 43224:
@@ -376,7 +383,7 @@
  		break;
  	default:
  		pr_err("PMU switch/regulators init unknown for device "
-@@ -81,6 +110,24 @@ void bcma_pmu_swreg_init(struct bcma_drv
+@@ -81,6 +111,24 @@ void bcma_pmu_swreg_init(struct bcma_drv
  	}
  }
  
@@ -401,7 +408,7 @@
  void bcma_pmu_workarounds(struct bcma_drv_cc *cc)
  {
  	struct bcma_bus *bus = cc->core->bus;
-@@ -90,17 +137,19 @@ void bcma_pmu_workarounds(struct bcma_dr
+@@ -90,17 +138,19 @@ void bcma_pmu_workarounds(struct bcma_dr
  		bcma_chipco_chipctl_maskset(cc, 0, ~0, 0x7);
  		break;
  	case 0x4331:
@@ -423,7 +430,7 @@
  	default:
  		pr_err("Workarounds unknown for device 0x%04X\n",
  			bus->chipinfo.id);
-@@ -132,3 +181,129 @@ void bcma_pmu_init(struct bcma_drv_cc *c
+@@ -132,3 +182,129 @@ void bcma_pmu_init(struct bcma_drv_cc *c
  	bcma_pmu_swreg_init(cc);
  	bcma_pmu_workarounds(cc);
  }
@@ -814,66 +821,252 @@
 +}
 --- a/drivers/bcma/driver_pci.c
 +++ b/drivers/bcma/driver_pci.c
-@@ -3,7 +3,7 @@
+@@ -2,8 +2,9 @@
+  * Broadcom specific AMBA
   * PCI Core
   *
-  * Copyright 2005, Broadcom Corporation
+- * Copyright 2005, Broadcom Corporation
 - * Copyright 2006, 2007, Michael Buesch <mb@bu3sch.de>
++ * Copyright 2005, 2011, Broadcom Corporation
 + * Copyright 2006, 2007, Michael Buesch <m@bues.ch>
++ * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
   *
   * Licensed under the GNU/GPL. See COPYING for details.
   */
-@@ -157,7 +157,81 @@ static void bcma_pcicore_serdes_workarou
+@@ -15,40 +16,41 @@
+  * R/W ops.
+  **************************************************/
+ 
+-static u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address)
++u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address)
+ {
+-	pcicore_write32(pc, 0x130, address);
+-	pcicore_read32(pc, 0x130);
+-	return pcicore_read32(pc, 0x134);
++	pcicore_write32(pc, BCMA_CORE_PCI_PCIEIND_ADDR, address);
++	pcicore_read32(pc, BCMA_CORE_PCI_PCIEIND_ADDR);
++	return pcicore_read32(pc, BCMA_CORE_PCI_PCIEIND_DATA);
+ }
+ 
+ #if 0
+ static void bcma_pcie_write(struct bcma_drv_pci *pc, u32 address, u32 data)
+ {
+-	pcicore_write32(pc, 0x130, address);
+-	pcicore_read32(pc, 0x130);
+-	pcicore_write32(pc, 0x134, data);
++	pcicore_write32(pc, BCMA_CORE_PCI_PCIEIND_ADDR, address);
++	pcicore_read32(pc, BCMA_CORE_PCI_PCIEIND_ADDR);
++	pcicore_write32(pc, BCMA_CORE_PCI_PCIEIND_DATA, data);
+ }
+ #endif
+ 
+ static void bcma_pcie_mdio_set_phy(struct bcma_drv_pci *pc, u8 phy)
+ {
+-	const u16 mdio_control = 0x128;
+-	const u16 mdio_data = 0x12C;
+ 	u32 v;
+ 	int i;
+ 
+-	v = (1 << 30); /* Start of Transaction */
+-	v |= (1 << 28); /* Write Transaction */
+-	v |= (1 << 17); /* Turnaround */
+-	v |= (0x1F << 18);
++	v = BCMA_CORE_PCI_MDIODATA_START;
++	v |= BCMA_CORE_PCI_MDIODATA_WRITE;
++	v |= (BCMA_CORE_PCI_MDIODATA_DEV_ADDR <<
++	      BCMA_CORE_PCI_MDIODATA_DEVADDR_SHF);
++	v |= (BCMA_CORE_PCI_MDIODATA_BLK_ADDR <<
++	      BCMA_CORE_PCI_MDIODATA_REGADDR_SHF);
++	v |= BCMA_CORE_PCI_MDIODATA_TA;
+ 	v |= (phy << 4);
+-	pcicore_write32(pc, mdio_data, v);
++	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_DATA, v);
+ 
+ 	udelay(10);
+ 	for (i = 0; i < 200; i++) {
+-		v = pcicore_read32(pc, mdio_control);
+-		if (v & 0x100 /* Trans complete */)
++		v = pcicore_read32(pc, BCMA_CORE_PCI_MDIO_CONTROL);
++		if (v & BCMA_CORE_PCI_MDIOCTL_ACCESS_DONE)
+ 			break;
+ 		msleep(1);
+ 	}
+@@ -56,79 +58,84 @@ static void bcma_pcie_mdio_set_phy(struc
+ 
+ static u16 bcma_pcie_mdio_read(struct bcma_drv_pci *pc, u8 device, u8 address)
+ {
+-	const u16 mdio_control = 0x128;
+-	const u16 mdio_data = 0x12C;
+ 	int max_retries = 10;
+ 	u16 ret = 0;
+ 	u32 v;
+ 	int i;
+ 
+-	v = 0x80; /* Enable Preamble Sequence */
+-	v |= 0x2; /* MDIO Clock Divisor */
+-	pcicore_write32(pc, mdio_control, v);
++	/* enable mdio access to SERDES */
++	v = BCMA_CORE_PCI_MDIOCTL_PREAM_EN;
++	v |= BCMA_CORE_PCI_MDIOCTL_DIVISOR_VAL;
++	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_CONTROL, v);
+ 
+ 	if (pc->core->id.rev >= 10) {
+ 		max_retries = 200;
+ 		bcma_pcie_mdio_set_phy(pc, device);
++		v = (BCMA_CORE_PCI_MDIODATA_DEV_ADDR <<
++		     BCMA_CORE_PCI_MDIODATA_DEVADDR_SHF);
++		v |= (address << BCMA_CORE_PCI_MDIODATA_REGADDR_SHF);
++	} else {
++		v = (device << BCMA_CORE_PCI_MDIODATA_DEVADDR_SHF_OLD);
++		v |= (address << BCMA_CORE_PCI_MDIODATA_REGADDR_SHF_OLD);
+ 	}
+ 
+-	v = (1 << 30); /* Start of Transaction */
+-	v |= (1 << 29); /* Read Transaction */
+-	v |= (1 << 17); /* Turnaround */
+-	if (pc->core->id.rev < 10)
+-		v |= (u32)device << 22;
+-	v |= (u32)address << 18;
+-	pcicore_write32(pc, mdio_data, v);
++	v = BCMA_CORE_PCI_MDIODATA_START;
++	v |= BCMA_CORE_PCI_MDIODATA_READ;
++	v |= BCMA_CORE_PCI_MDIODATA_TA;
++
++	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_DATA, v);
+ 	/* Wait for the device to complete the transaction */
+ 	udelay(10);
+ 	for (i = 0; i < max_retries; i++) {
+-		v = pcicore_read32(pc, mdio_control);
+-		if (v & 0x100 /* Trans complete */) {
++		v = pcicore_read32(pc, BCMA_CORE_PCI_MDIO_CONTROL);
++		if (v & BCMA_CORE_PCI_MDIOCTL_ACCESS_DONE) {
+ 			udelay(10);
+-			ret = pcicore_read32(pc, mdio_data);
++			ret = pcicore_read32(pc, BCMA_CORE_PCI_MDIO_DATA);
+ 			break;
+ 		}
+ 		msleep(1);
+ 	}
+-	pcicore_write32(pc, mdio_control, 0);
++	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_CONTROL, 0);
+ 	return ret;
+ }
+ 
+ static void bcma_pcie_mdio_write(struct bcma_drv_pci *pc, u8 device,
+ 				u8 address, u16 data)
+ {
+-	const u16 mdio_control = 0x128;
+-	const u16 mdio_data = 0x12C;
+ 	int max_retries = 10;
+ 	u32 v;
+ 	int i;
+ 
+-	v = 0x80; /* Enable Preamble Sequence */
+-	v |= 0x2; /* MDIO Clock Divisor */
+-	pcicore_write32(pc, mdio_control, v);
++	/* enable mdio access to SERDES */
++	v = BCMA_CORE_PCI_MDIOCTL_PREAM_EN;
++	v |= BCMA_CORE_PCI_MDIOCTL_DIVISOR_VAL;
++	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_CONTROL, v);
+ 
+ 	if (pc->core->id.rev >= 10) {
+ 		max_retries = 200;
+ 		bcma_pcie_mdio_set_phy(pc, device);
++		v = (BCMA_CORE_PCI_MDIODATA_DEV_ADDR <<
++		     BCMA_CORE_PCI_MDIODATA_DEVADDR_SHF);
++		v |= (address << BCMA_CORE_PCI_MDIODATA_REGADDR_SHF);
++	} else {
++		v = (device << BCMA_CORE_PCI_MDIODATA_DEVADDR_SHF_OLD);
++		v |= (address << BCMA_CORE_PCI_MDIODATA_REGADDR_SHF_OLD);
+ 	}
+ 
+-	v = (1 << 30); /* Start of Transaction */
+-	v |= (1 << 28); /* Write Transaction */
+-	v |= (1 << 17); /* Turnaround */
+-	if (pc->core->id.rev < 10)
+-		v |= (u32)device << 22;
+-	v |= (u32)address << 18;
++	v = BCMA_CORE_PCI_MDIODATA_START;
++	v |= BCMA_CORE_PCI_MDIODATA_WRITE;
++	v |= BCMA_CORE_PCI_MDIODATA_TA;
+ 	v |= data;
+-	pcicore_write32(pc, mdio_data, v);
++	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_DATA, v);
+ 	/* Wait for the device to complete the transaction */
+ 	udelay(10);
+ 	for (i = 0; i < max_retries; i++) {
+-		v = pcicore_read32(pc, mdio_control);
+-		if (v & 0x100 /* Trans complete */)
++		v = pcicore_read32(pc, BCMA_CORE_PCI_MDIO_CONTROL);
++		if (v & BCMA_CORE_PCI_MDIOCTL_ACCESS_DONE)
+ 			break;
+ 		msleep(1);
+ 	}
+-	pcicore_write32(pc, mdio_control, 0);
++	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_CONTROL, 0);
+ }
+ 
+ /**************************************************
+@@ -137,27 +144,82 @@ static void bcma_pcie_mdio_write(struct
+ 
+ static u8 bcma_pcicore_polarity_workaround(struct bcma_drv_pci *pc)
+ {
+-	return (bcma_pcie_read(pc, 0x204) & 0x10) ? 0xC0 : 0x80;
++	u32 tmp;
++
++	tmp = bcma_pcie_read(pc, BCMA_CORE_PCI_PLP_STATUSREG);
++	if (tmp & BCMA_CORE_PCI_PLP_POLARITYINV_STAT)
++		return BCMA_CORE_PCI_SERDES_RX_CTRL_FORCE |
++		       BCMA_CORE_PCI_SERDES_RX_CTRL_POLARITY;
++	else
++		return BCMA_CORE_PCI_SERDES_RX_CTRL_FORCE;
+ }
+ 
+ static void bcma_pcicore_serdes_workaround(struct bcma_drv_pci *pc)
+ {
+-	const u8 serdes_pll_device = 0x1D;
+-	const u8 serdes_rx_device = 0x1F;
+ 	u16 tmp;
+ 
+-	bcma_pcie_mdio_write(pc, serdes_rx_device, 1 /* Control */,
+-			      bcma_pcicore_polarity_workaround(pc));
+-	tmp = bcma_pcie_mdio_read(pc, serdes_pll_device, 1 /* Control */);
+-	if (tmp & 0x4000)
+-		bcma_pcie_mdio_write(pc, serdes_pll_device, 1, tmp & ~0x4000);
++	bcma_pcie_mdio_write(pc, BCMA_CORE_PCI_MDIODATA_DEV_RX,
++	                     BCMA_CORE_PCI_SERDES_RX_CTRL,
++			     bcma_pcicore_polarity_workaround(pc));
++	tmp = bcma_pcie_mdio_read(pc, BCMA_CORE_PCI_MDIODATA_DEV_PLL,
++	                          BCMA_CORE_PCI_SERDES_PLL_CTRL);
++	if (tmp & BCMA_CORE_PCI_PLL_CTRL_FREQDET_EN)
++		bcma_pcie_mdio_write(pc, BCMA_CORE_PCI_MDIODATA_DEV_PLL,
++		                     BCMA_CORE_PCI_SERDES_PLL_CTRL,
++		                     tmp & ~BCMA_CORE_PCI_PLL_CTRL_FREQDET_EN);
+ }
+ 
+ /**************************************************
   * Init.
   **************************************************/
  
 -void bcma_core_pci_init(struct bcma_drv_pci *pc)
-+static void bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
++static void __devinit bcma_core_pci_clientmode_init(struct bcma_drv_pci *pc)
  {
  	bcma_pcicore_serdes_workaround(pc);
  }
 +
-+static bool bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc)
-+{
-+	struct bcma_bus *bus = pc->core->bus;
-+	u16 chipid_top;
-+
-+	chipid_top = (bus->chipinfo.id & 0xFF00);
-+	if (chipid_top != 0x4700 &&
-+	    chipid_top != 0x5300)
-+		return false;
-+
-+#ifdef CONFIG_SSB_DRIVER_PCICORE
-+	if (bus->sprom.boardflags_lo & SSB_BFL_NOPCI)
-+		return false;
-+#endif /* CONFIG_SSB_DRIVER_PCICORE */
-+
-+#if 0
-+	/* TODO: on BCMA we use address from EROM instead of magic formula */
-+	u32 tmp;
-+	return !mips_busprobe32(tmp, (bus->mmio +
-+		(pc->core->core_index * BCMA_CORE_SIZE)));
-+#endif
-+
-+	return true;
-+}
-+
-+void bcma_core_pci_init(struct bcma_drv_pci *pc)
++void __devinit bcma_core_pci_init(struct bcma_drv_pci *pc)
 +{
 +	if (pc->setup_done)
 +		return;
 +
-+	if (bcma_core_pci_is_in_hostmode(pc)) {
 +#ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
++	pc->hostmode = bcma_core_pci_is_in_hostmode(pc);
++	if (pc->hostmode)
 +		bcma_core_pci_hostmode_init(pc);
-+#else
-+		pr_err("Driver compiled without support for hostmode PCI\n");
 +#endif /* CONFIG_BCMA_DRIVER_PCI_HOSTMODE */
-+	} else {
-+		bcma_core_pci_clientmode_init(pc);
-+	}
 +
-+	pc->setup_done = true;
++	if (!pc->hostmode)
++		bcma_core_pci_clientmode_init(pc);
 +}
 +
 +int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc, struct bcma_device *core,
@@ -908,21 +1101,596 @@
 +EXPORT_SYMBOL_GPL(bcma_core_pci_irq_ctl);
 --- /dev/null
 +++ b/drivers/bcma/driver_pci_host.c
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,589 @@
 +/*
 + * Broadcom specific AMBA
 + * PCI Core in hostmode
++ *
++ * Copyright 2005 - 2011, Broadcom Corporation
++ * Copyright 2006, 2007, Michael Buesch <m@bues.ch>
++ * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
 + *
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
 +
 +#include "bcma_private.h"
++#include <linux/pci.h>
++#include <linux/export.h>
 +#include <linux/bcma/bcma.h>
++#include <asm/paccess.h>
 +
-+void bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc)
++/* Probe a 32bit value on the bus and catch bus exceptions.
++ * Returns nonzero on a bus exception.
++ * This is MIPS specific */
++#define mips_busprobe32(val, addr)	get_dbe((val), ((u32 *)(addr)))
++
++/* Assume one-hot slot wiring */
++#define BCMA_PCI_SLOT_MAX	16
++#define	PCI_CONFIG_SPACE_SIZE	256
++
++bool __devinit bcma_core_pci_is_in_hostmode(struct bcma_drv_pci *pc)
 +{
-+	pr_err("No support for PCI core in hostmode yet\n");
++	struct bcma_bus *bus = pc->core->bus;
++	u16 chipid_top;
++	u32 tmp;
++
++	chipid_top = (bus->chipinfo.id & 0xFF00);
++	if (chipid_top != 0x4700 &&
++	    chipid_top != 0x5300)
++		return false;
++
++	if (bus->sprom.boardflags_lo & BCMA_CORE_PCI_BFL_NOPCI) {
++		pr_info("This PCI core is disabled and not working\n");
++		return false;
++	}
++
++	bcma_core_enable(pc->core, 0);
++
++	return !mips_busprobe32(tmp, pc->core->io_addr);
 +}
++
++static u32 bcma_pcie_read_config(struct bcma_drv_pci *pc, u32 address)
++{
++	pcicore_write32(pc, BCMA_CORE_PCI_CONFIG_ADDR, address);
++	pcicore_read32(pc, BCMA_CORE_PCI_CONFIG_ADDR);
++	return pcicore_read32(pc, BCMA_CORE_PCI_CONFIG_DATA);
++}
++
++static void bcma_pcie_write_config(struct bcma_drv_pci *pc, u32 address,
++				   u32 data)
++{
++	pcicore_write32(pc, BCMA_CORE_PCI_CONFIG_ADDR, address);
++	pcicore_read32(pc, BCMA_CORE_PCI_CONFIG_ADDR);
++	pcicore_write32(pc, BCMA_CORE_PCI_CONFIG_DATA, data);
++}
++
++static u32 bcma_get_cfgspace_addr(struct bcma_drv_pci *pc, unsigned int dev,
++			     unsigned int func, unsigned int off)
++{
++	u32 addr = 0;
++
++	/* Issue config commands only when the data link is up (atleast
++	 * one external pcie device is present).
++	 */
++	if (dev >= 2 || !(bcma_pcie_read(pc, BCMA_CORE_PCI_DLLP_LSREG)
++			  & BCMA_CORE_PCI_DLLP_LSREG_LINKUP))
++		goto out;
++
++	/* Type 0 transaction */
++	/* Slide the PCI window to the appropriate slot */
++	pcicore_write32(pc, BCMA_CORE_PCI_SBTOPCI1, BCMA_CORE_PCI_SBTOPCI_CFG0);
++	/* Calculate the address */
++	addr = pc->host_controller->host_cfg_addr;
++	addr |= (dev << BCMA_CORE_PCI_CFG_SLOT_SHIFT);
++	addr |= (func << BCMA_CORE_PCI_CFG_FUN_SHIFT);
++	addr |= (off & ~3);
++
++out:
++	return addr;
++}
++
++static int bcma_extpci_read_config(struct bcma_drv_pci *pc, unsigned int dev,
++				  unsigned int func, unsigned int off,
++				  void *buf, int len)
++{
++	int err = -EINVAL;
++	u32 addr, val;
++	void __iomem *mmio = 0;
++
++	WARN_ON(!pc->hostmode);
++	if (unlikely(len != 1 && len != 2 && len != 4))
++		goto out;
++	if (dev == 0) {
++		/* we support only two functions on device 0 */
++		if (func > 1)
++			return -EINVAL;
++
++		/* accesses to config registers with offsets >= 256
++		 * requires indirect access.
++		 */
++		if (off >= PCI_CONFIG_SPACE_SIZE) {
++			addr = (func << 12);
++			addr |= (off & 0x0FFF);
++			val = bcma_pcie_read_config(pc, addr);
++		} else {
++			addr = BCMA_CORE_PCI_PCICFG0;
++			addr |= (func << 8);
++			addr |= (off & 0xfc);
++			val = pcicore_read32(pc, addr);
++		}
++	} else {
++		addr = bcma_get_cfgspace_addr(pc, dev, func, off);
++		if (unlikely(!addr))
++			goto out;
++		err = -ENOMEM;
++		mmio = ioremap_nocache(addr, len);
++		if (!mmio)
++			goto out;
++
++		if (mips_busprobe32(val, mmio)) {
++			val = 0xffffffff;
++			goto unmap;
++		}
++
++		val = readl(mmio);
++	}
++	val >>= (8 * (off & 3));
++
++	switch (len) {
++	case 1:
++		*((u8 *)buf) = (u8)val;
++		break;
++	case 2:
++		*((u16 *)buf) = (u16)val;
++		break;
++	case 4:
++		*((u32 *)buf) = (u32)val;
++		break;
++	}
++	err = 0;
++unmap:
++	if (mmio)
++		iounmap(mmio);
++out:
++	return err;
++}
++
++static int bcma_extpci_write_config(struct bcma_drv_pci *pc, unsigned int dev,
++				   unsigned int func, unsigned int off,
++				   const void *buf, int len)
++{
++	int err = -EINVAL;
++	u32 addr = 0, val = 0;
++	void __iomem *mmio = 0;
++	u16 chipid = pc->core->bus->chipinfo.id;
++
++	WARN_ON(!pc->hostmode);
++	if (unlikely(len != 1 && len != 2 && len != 4))
++		goto out;
++	if (dev == 0) {
++		/* accesses to config registers with offsets >= 256
++		 * requires indirect access.
++		 */
++		if (off < PCI_CONFIG_SPACE_SIZE) {
++			addr = pc->core->addr + BCMA_CORE_PCI_PCICFG0;
++			addr |= (func << 8);
++			addr |= (off & 0xfc);
++			mmio = ioremap_nocache(addr, len);
++			if (!mmio)
++				goto out;
++		}
++	} else {
++		addr = bcma_get_cfgspace_addr(pc, dev, func, off);
++		if (unlikely(!addr))
++			goto out;
++		err = -ENOMEM;
++		mmio = ioremap_nocache(addr, len);
++		if (!mmio)
++			goto out;
++
++		if (mips_busprobe32(val, mmio)) {
++			val = 0xffffffff;
++			goto unmap;
++		}
++	}
++
++	switch (len) {
++	case 1:
++		val = readl(mmio);
++		val &= ~(0xFF << (8 * (off & 3)));
++		val |= *((const u8 *)buf) << (8 * (off & 3));
++		break;
++	case 2:
++		val = readl(mmio);
++		val &= ~(0xFFFF << (8 * (off & 3)));
++		val |= *((const u16 *)buf) << (8 * (off & 3));
++		break;
++	case 4:
++		val = *((const u32 *)buf);
++		break;
++	}
++	if (dev == 0 && !addr) {
++		/* accesses to config registers with offsets >= 256
++		 * requires indirect access.
++		 */
++		addr = (func << 12);
++		addr |= (off & 0x0FFF);
++		bcma_pcie_write_config(pc, addr, val);
++	} else {
++		writel(val, mmio);
++
++		if (chipid == 0x4716 || chipid == 0x4748)
++			readl(mmio);
++	}
++
++	err = 0;
++unmap:
++	if (mmio)
++		iounmap(mmio);
++out:
++	return err;
++}
++
++static int bcma_core_pci_hostmode_read_config(struct pci_bus *bus,
++					      unsigned int devfn,
++					      int reg, int size, u32 *val)
++{
++	unsigned long flags;
++	int err;
++	struct bcma_drv_pci *pc;
++	struct bcma_drv_pci_host *pc_host;
++
++	pc_host = container_of(bus->ops, struct bcma_drv_pci_host, pci_ops);
++	pc = pc_host->pdev;
++
++	spin_lock_irqsave(&pc_host->cfgspace_lock, flags);
++	err = bcma_extpci_read_config(pc, PCI_SLOT(devfn),
++				     PCI_FUNC(devfn), reg, val, size);
++	spin_unlock_irqrestore(&pc_host->cfgspace_lock, flags);
++
++	return err ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL;
++}
++
++static int bcma_core_pci_hostmode_write_config(struct pci_bus *bus,
++					       unsigned int devfn,
++					       int reg, int size, u32 val)
++{
++	unsigned long flags;
++	int err;
++	struct bcma_drv_pci *pc;
++	struct bcma_drv_pci_host *pc_host;
++
++	pc_host = container_of(bus->ops, struct bcma_drv_pci_host, pci_ops);
++	pc = pc_host->pdev;
++
++	spin_lock_irqsave(&pc_host->cfgspace_lock, flags);
++	err = bcma_extpci_write_config(pc, PCI_SLOT(devfn),
++				      PCI_FUNC(devfn), reg, &val, size);
++	spin_unlock_irqrestore(&pc_host->cfgspace_lock, flags);
++
++	return err ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL;
++}
++
++/* return cap_offset if requested capability exists in the PCI config space */
++static u8 __devinit bcma_find_pci_capability(struct bcma_drv_pci *pc,
++					     unsigned int dev,
++					     unsigned int func, u8 req_cap_id,
++					     unsigned char *buf, u32 *buflen)
++{
++	u8 cap_id;
++	u8 cap_ptr = 0;
++	u32 bufsize;
++	u8 byte_val;
++
++	/* check for Header type 0 */
++	bcma_extpci_read_config(pc, dev, func, PCI_HEADER_TYPE, &byte_val,
++				sizeof(u8));
++	if ((byte_val & 0x7f) != PCI_HEADER_TYPE_NORMAL)
++		return cap_ptr;
++
++	/* check if the capability pointer field exists */
++	bcma_extpci_read_config(pc, dev, func, PCI_STATUS, &byte_val,
++				sizeof(u8));
++	if (!(byte_val & PCI_STATUS_CAP_LIST))
++		return cap_ptr;
++
++	/* check if the capability pointer is 0x00 */
++	bcma_extpci_read_config(pc, dev, func, PCI_CAPABILITY_LIST, &cap_ptr,
++				sizeof(u8));
++	if (cap_ptr == 0x00)
++		return cap_ptr;
++
++	/* loop thr'u the capability list and see if the requested capabilty
++	 * exists */
++	bcma_extpci_read_config(pc, dev, func, cap_ptr, &cap_id, sizeof(u8));
++	while (cap_id != req_cap_id) {
++		bcma_extpci_read_config(pc, dev, func, cap_ptr + 1, &cap_ptr,
++					sizeof(u8));
++		if (cap_ptr == 0x00)
++			return cap_ptr;
++		bcma_extpci_read_config(pc, dev, func, cap_ptr, &cap_id,
++					sizeof(u8));
++	}
++
++	/* found the caller requested capability */
++	if ((buf != NULL) && (buflen != NULL)) {
++		u8 cap_data;
++
++		bufsize = *buflen;
++		if (!bufsize)
++			return cap_ptr;
++
++		*buflen = 0;
++
++		/* copy the cpability data excluding cap ID and next ptr */
++		cap_data = cap_ptr + 2;
++		if ((bufsize + cap_data)  > PCI_CONFIG_SPACE_SIZE)
++			bufsize = PCI_CONFIG_SPACE_SIZE - cap_data;
++		*buflen = bufsize;
++		while (bufsize--) {
++			bcma_extpci_read_config(pc, dev, func, cap_data, buf,
++						sizeof(u8));
++			cap_data++;
++			buf++;
++		}
++	}
++
++	return cap_ptr;
++}
++
++/* If the root port is capable of returning Config Request
++ * Retry Status (CRS) Completion Status to software then
++ * enable the feature.
++ */
++static void __devinit bcma_core_pci_enable_crs(struct bcma_drv_pci *pc)
++{
++	u8 cap_ptr, root_ctrl, root_cap, dev;
++	u16 val16;
++	int i;
++
++	cap_ptr = bcma_find_pci_capability(pc, 0, 0, PCI_CAP_ID_EXP, NULL,
++					   NULL);
++	root_cap = cap_ptr + PCI_EXP_RTCAP;
++	bcma_extpci_read_config(pc, 0, 0, root_cap, &val16, sizeof(u16));
++	if (val16 & BCMA_CORE_PCI_RC_CRS_VISIBILITY) {
++		/* Enable CRS software visibility */
++		root_ctrl = cap_ptr + PCI_EXP_RTCTL;
++		val16 = PCI_EXP_RTCTL_CRSSVE;
++		bcma_extpci_read_config(pc, 0, 0, root_ctrl, &val16,
++					sizeof(u16));
++
++		/* Initiate a configuration request to read the vendor id
++		 * field of the device function's config space header after
++		 * 100 ms wait time from the end of Reset. If the device is
++		 * not done with its internal initialization, it must at
++		 * least return a completion TLP, with a completion status
++		 * of "Configuration Request Retry Status (CRS)". The root
++		 * complex must complete the request to the host by returning
++		 * a read-data value of 0001h for the Vendor ID field and
++		 * all 1s for any additional bytes included in the request.
++		 * Poll using the config reads for max wait time of 1 sec or
++		 * until we receive the successful completion status. Repeat
++		 * the procedure for all the devices.
++		 */
++		for (dev = 1; dev < BCMA_PCI_SLOT_MAX; dev++) {
++			for (i = 0; i < 100000; i++) {
++				bcma_extpci_read_config(pc, dev, 0,
++							PCI_VENDOR_ID, &val16,
++							sizeof(val16));
++				if (val16 != 0x1)
++					break;
++				udelay(10);
++			}
++			if (val16 == 0x1)
++				pr_err("PCI: Broken device in slot %d\n", dev);
++		}
++	}
++}
++
++void __devinit bcma_core_pci_hostmode_init(struct bcma_drv_pci *pc)
++{
++	struct bcma_bus *bus = pc->core->bus;
++	struct bcma_drv_pci_host *pc_host;
++	u32 tmp;
++	u32 pci_membase_1G;
++	unsigned long io_map_base;
++
++	pr_info("PCIEcore in host mode found\n");
++
++	pc_host = kzalloc(sizeof(*pc_host), GFP_KERNEL);
++	if (!pc_host)  {
++		pr_err("can not allocate memory");
++		return;
++	}
++
++	pc->host_controller = pc_host;
++	pc_host->pci_controller.io_resource = &pc_host->io_resource;
++	pc_host->pci_controller.mem_resource = &pc_host->mem_resource;
++	pc_host->pci_controller.pci_ops = &pc_host->pci_ops;
++	pc_host->pdev = pc;
++
++	pci_membase_1G = BCMA_SOC_PCI_DMA;
++	pc_host->host_cfg_addr = BCMA_SOC_PCI_CFG;
++
++	pc_host->pci_ops.read = bcma_core_pci_hostmode_read_config;
++	pc_host->pci_ops.write = bcma_core_pci_hostmode_write_config;
++
++	pc_host->mem_resource.name = "BCMA PCIcore external memory",
++	pc_host->mem_resource.start = BCMA_SOC_PCI_DMA;
++	pc_host->mem_resource.end = BCMA_SOC_PCI_DMA + BCMA_SOC_PCI_DMA_SZ - 1;
++	pc_host->mem_resource.flags = IORESOURCE_MEM | IORESOURCE_PCI_FIXED;
++
++	pc_host->io_resource.name = "BCMA PCIcore external I/O",
++	pc_host->io_resource.start = 0x100;
++	pc_host->io_resource.end = 0x7FF;
++	pc_host->io_resource.flags = IORESOURCE_IO | IORESOURCE_PCI_FIXED;
++
++	/* Reset RC */
++	udelay(3000);
++	pcicore_write32(pc, BCMA_CORE_PCI_CTL, BCMA_CORE_PCI_CTL_RST_OE);
++	udelay(1000);
++	pcicore_write32(pc, BCMA_CORE_PCI_CTL, BCMA_CORE_PCI_CTL_RST |
++			BCMA_CORE_PCI_CTL_RST_OE);
++
++	/* 64 MB I/O access window. On 4716, use
++	 * sbtopcie0 to access the device registers. We
++	 * can't use address match 2 (1 GB window) region
++	 * as mips can't generate 64-bit address on the
++	 * backplane.
++	 */
++	if (bus->chipinfo.id == 0x4716 || bus->chipinfo.id == 0x4748) {
++		pc_host->mem_resource.start = BCMA_SOC_PCI_MEM;
++		pc_host->mem_resource.end = BCMA_SOC_PCI_MEM +
++					    BCMA_SOC_PCI_MEM_SZ - 1;
++		pcicore_write32(pc, BCMA_CORE_PCI_SBTOPCI0,
++				BCMA_CORE_PCI_SBTOPCI_MEM | BCMA_SOC_PCI_MEM);
++	} else if (bus->chipinfo.id == 0x5300) {
++		tmp = BCMA_CORE_PCI_SBTOPCI_MEM;
++		tmp |= BCMA_CORE_PCI_SBTOPCI_PREF;
++		tmp |= BCMA_CORE_PCI_SBTOPCI_BURST;
++		if (pc->core->core_unit == 0) {
++			pc_host->mem_resource.start = BCMA_SOC_PCI_MEM;
++			pc_host->mem_resource.end = BCMA_SOC_PCI_MEM +
++						    BCMA_SOC_PCI_MEM_SZ - 1;
++			pci_membase_1G = BCMA_SOC_PCIE_DMA_H32;
++			pcicore_write32(pc, BCMA_CORE_PCI_SBTOPCI0,
++					tmp | BCMA_SOC_PCI_MEM);
++		} else if (pc->core->core_unit == 1) {
++			pc_host->mem_resource.start = BCMA_SOC_PCI1_MEM;
++			pc_host->mem_resource.end = BCMA_SOC_PCI1_MEM +
++						    BCMA_SOC_PCI_MEM_SZ - 1;
++			pci_membase_1G = BCMA_SOC_PCIE1_DMA_H32;
++			pc_host->host_cfg_addr = BCMA_SOC_PCI1_CFG;
++			pcicore_write32(pc, BCMA_CORE_PCI_SBTOPCI0,
++					tmp | BCMA_SOC_PCI1_MEM);
++		}
++	} else
++		pcicore_write32(pc, BCMA_CORE_PCI_SBTOPCI0,
++				BCMA_CORE_PCI_SBTOPCI_IO);
++
++	/* 64 MB configuration access window */
++	pcicore_write32(pc, BCMA_CORE_PCI_SBTOPCI1, BCMA_CORE_PCI_SBTOPCI_CFG0);
++
++	/* 1 GB memory access window */
++	pcicore_write32(pc, BCMA_CORE_PCI_SBTOPCI2,
++			BCMA_CORE_PCI_SBTOPCI_MEM | pci_membase_1G);
++
++
++	/* As per PCI Express Base Spec 1.1 we need to wait for
++	 * at least 100 ms from the end of a reset (cold/warm/hot)
++	 * before issuing configuration requests to PCI Express
++	 * devices.
++	 */
++	udelay(100000);
++
++	bcma_core_pci_enable_crs(pc);
++
++	/* Enable PCI bridge BAR0 memory & master access */
++	tmp = PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY;
++	bcma_extpci_write_config(pc, 0, 0, PCI_COMMAND, &tmp, sizeof(tmp));
++
++	/* Enable PCI interrupts */
++	pcicore_write32(pc, BCMA_CORE_PCI_IMASK, BCMA_CORE_PCI_IMASK_INTA);
++
++	/* Ok, ready to run, register it to the system.
++	 * The following needs change, if we want to port hostmode
++	 * to non-MIPS platform. */
++	io_map_base = (unsigned long)ioremap_nocache(BCMA_SOC_PCI_MEM,
++						     0x04000000);
++	pc_host->pci_controller.io_map_base = io_map_base;
++	set_io_port_base(pc_host->pci_controller.io_map_base);
++	/* Give some time to the PCI controller to configure itself with the new
++	 * values. Not waiting at this point causes crashes of the machine. */
++	mdelay(10);
++	register_pci_controller(&pc_host->pci_controller);
++	return;
++}
++
++/* Early PCI fixup for a device on the PCI-core bridge. */
++static void bcma_core_pci_fixup_pcibridge(struct pci_dev *dev)
++{
++	if (dev->bus->ops->read != bcma_core_pci_hostmode_read_config) {
++		/* This is not a device on the PCI-core bridge. */
++		return;
++	}
++	if (PCI_SLOT(dev->devfn) != 0)
++		return;
++
++	pr_info("PCI: Fixing up bridge %s\n", pci_name(dev));
++
++	/* Enable PCI bridge bus mastering and memory space */
++	pci_set_master(dev);
++	if (pcibios_enable_device(dev, ~0) < 0) {
++		pr_err("PCI: BCMA bridge enable failed\n");
++		return;
++	}
++
++	/* Enable PCI bridge BAR1 prefetch and burst */
++	pci_write_config_dword(dev, BCMA_PCI_BAR1_CONTROL, 3);
++}
++DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, bcma_core_pci_fixup_pcibridge);
++
++/* Early PCI fixup for all PCI-cores to set the correct memory address. */
++static void bcma_core_pci_fixup_addresses(struct pci_dev *dev)
++{
++	struct resource *res;
++	int pos;
++
++	if (dev->bus->ops->read != bcma_core_pci_hostmode_read_config) {
++		/* This is not a device on the PCI-core bridge. */
++		return;
++	}
++	if (PCI_SLOT(dev->devfn) == 0)
++		return;
++
++	pr_info("PCI: Fixing up addresses %s\n", pci_name(dev));
++
++	for (pos = 0; pos < 6; pos++) {
++		res = &dev->resource[pos];
++		if (res->flags & (IORESOURCE_IO | IORESOURCE_MEM))
++			pci_assign_resource(dev, pos);
++	}
++}
++DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, bcma_core_pci_fixup_addresses);
++
++/* This function is called when doing a pci_enable_device().
++ * We must first check if the device is a device on the PCI-core bridge. */
++int bcma_core_pci_plat_dev_init(struct pci_dev *dev)
++{
++	struct bcma_drv_pci_host *pc_host;
++
++	if (dev->bus->ops->read != bcma_core_pci_hostmode_read_config) {
++		/* This is not a device on the PCI-core bridge. */
++		return -ENODEV;
++	}
++	pc_host = container_of(dev->bus->ops, struct bcma_drv_pci_host,
++			       pci_ops);
++
++	pr_info("PCI: Fixing up device %s\n", pci_name(dev));
++
++	/* Fix up interrupt lines */
++	dev->irq = bcma_core_mips_irq(pc_host->pdev->core) + 2;
++	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
++
++	return 0;
++}
++EXPORT_SYMBOL(bcma_core_pci_plat_dev_init);
++
++/* PCI device IRQ mapping. */
++int bcma_core_pci_pcibios_map_irq(const struct pci_dev *dev)
++{
++	struct bcma_drv_pci_host *pc_host;
++
++	if (dev->bus->ops->read != bcma_core_pci_hostmode_read_config) {
++		/* This is not a device on the PCI-core bridge. */
++		return -ENODEV;
++	}
++
++	pc_host = container_of(dev->bus->ops, struct bcma_drv_pci_host,
++			       pci_ops);
++	return bcma_core_mips_irq(pc_host->pdev->core) + 2;
++}
++EXPORT_SYMBOL(bcma_core_pci_pcibios_map_irq);
 --- a/drivers/bcma/host_pci.c
 +++ b/drivers/bcma/host_pci.c
 @@ -9,6 +9,7 @@
@@ -1053,7 +1821,7 @@
  
  static u32 bcma_host_pci_aread32(struct bcma_device *core, u16 offset)
  {
-@@ -87,6 +146,10 @@ const struct bcma_host_ops bcma_host_pci
+@@ -87,12 +146,16 @@ const struct bcma_host_ops bcma_host_pci
  	.write8		= bcma_host_pci_write8,
  	.write16	= bcma_host_pci_write16,
  	.write32	= bcma_host_pci_write32,
@@ -1064,43 +1832,45 @@
  	.aread32	= bcma_host_pci_aread32,
  	.awrite32	= bcma_host_pci_awrite32,
  };
-@@ -171,10 +234,46 @@ static void bcma_host_pci_remove(struct
+ 
+-static int bcma_host_pci_probe(struct pci_dev *dev,
+-			     const struct pci_device_id *id)
++static int __devinit bcma_host_pci_probe(struct pci_dev *dev,
++					 const struct pci_device_id *id)
+ {
+ 	struct bcma_bus *bus;
+ 	int err = -ENOMEM;
+@@ -171,10 +234,40 @@ static void bcma_host_pci_remove(struct
  	pci_set_drvdata(dev, NULL);
  }
  
 +#ifdef CONFIG_PM
-+static int bcma_host_pci_suspend(struct pci_dev *dev, pm_message_t state)
++static int bcma_host_pci_suspend(struct device *dev)
 +{
-+	/* Host specific */
-+	pci_save_state(dev);
-+	pci_disable_device(dev);
-+	pci_set_power_state(dev, pci_choose_state(dev, state));
++	struct pci_dev *pdev = to_pci_dev(dev);
++	struct bcma_bus *bus = pci_get_drvdata(pdev);
 +
-+	return 0;
++	bus->mapped_core = NULL;
++
++	return bcma_bus_suspend(bus);
 +}
 +
-+static int bcma_host_pci_resume(struct pci_dev *dev)
++static int bcma_host_pci_resume(struct device *dev)
 +{
-+	struct bcma_bus *bus = pci_get_drvdata(dev);
-+	int err;
++	struct pci_dev *pdev = to_pci_dev(dev);
++	struct bcma_bus *bus = pci_get_drvdata(pdev);
 +
-+	/* Host specific */
-+	pci_set_power_state(dev, 0);
-+	err = pci_enable_device(dev);
-+	if (err)
-+		return err;
-+	pci_restore_state(dev);
-+
-+	/* Bus specific */
-+	err = bcma_bus_resume(bus);
-+	if (err)
-+		return err;
-+
-+	return 0;
++	return bcma_bus_resume(bus);
 +}
++
++static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bcma_host_pci_suspend,
++			 bcma_host_pci_resume);
++#define BCMA_PM_OPS	(&bcma_pm_ops)
++
 +#else /* CONFIG_PM */
-+# define bcma_host_pci_suspend	NULL
-+# define bcma_host_pci_resume	NULL
++
++#define BCMA_PM_OPS     NULL
++
 +#endif /* CONFIG_PM */
 +
  static DEFINE_PCI_DEVICE_TABLE(bcma_pci_bridge_tbl) = {
@@ -1111,12 +1881,11 @@
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
  	{ 0, },
  };
-@@ -185,6 +284,8 @@ static struct pci_driver bcma_pci_bridge
+@@ -185,6 +278,7 @@ static struct pci_driver bcma_pci_bridge
  	.id_table = bcma_pci_bridge_tbl,
  	.probe = bcma_host_pci_probe,
  	.remove = bcma_host_pci_remove,
-+	.suspend = bcma_host_pci_suspend,
-+	.resume = bcma_host_pci_resume,
++	.driver.pm = BCMA_PM_OPS,
  };
  
  int __init bcma_host_pci_init(void)
@@ -1308,7 +2077,7 @@
 +}
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -6,7 +6,9 @@
+@@ -6,14 +6,23 @@
   */
  
  #include "bcma_private.h"
@@ -1318,7 +2087,13 @@
  
  MODULE_DESCRIPTION("Broadcom's specific AMBA driver");
  MODULE_LICENSE("GPL");
-@@ -14,6 +16,7 @@ MODULE_LICENSE("GPL");
+ 
++/* contains the number the next bus should get. */
++static unsigned int bcma_bus_next_num = 0;
++
++/* bcma_buses_mutex locks the bcma_bus_next_num */
++static DEFINE_MUTEX(bcma_buses_mutex);
++
  static int bcma_bus_match(struct device *dev, struct device_driver *drv);
  static int bcma_device_probe(struct device *dev);
  static int bcma_device_remove(struct device *dev);
@@ -1326,7 +2101,7 @@
  
  static ssize_t manuf_show(struct device *dev, struct device_attribute *attr, char *buf)
  {
-@@ -48,6 +51,7 @@ static struct bus_type bcma_bus_type = {
+@@ -48,10 +57,11 @@ static struct bus_type bcma_bus_type = {
  	.match		= bcma_bus_match,
  	.probe		= bcma_device_probe,
  	.remove		= bcma_device_remove,
@@ -1334,7 +2109,17 @@
  	.dev_attrs	= bcma_device_attrs,
  };
  
-@@ -65,6 +69,10 @@ static struct bcma_device *bcma_find_cor
+-static struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid)
++struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid)
+ {
+ 	struct bcma_device *core;
+ 
+@@ -61,10 +71,15 @@ static struct bcma_device *bcma_find_cor
+ 	}
+ 	return NULL;
+ }
++EXPORT_SYMBOL_GPL(bcma_find_core);
+ 
  static void bcma_release_core_dev(struct device *dev)
  {
  	struct bcma_device *core = container_of(dev, struct bcma_device, dev);
@@ -1345,7 +2130,7 @@
  	kfree(core);
  }
  
-@@ -79,6 +87,7 @@ static int bcma_register_cores(struct bc
+@@ -79,18 +94,24 @@ static int bcma_register_cores(struct bc
  		case BCMA_CORE_CHIPCOMMON:
  		case BCMA_CORE_PCI:
  		case BCMA_CORE_PCIE:
@@ -1353,7 +2138,11 @@
  			continue;
  		}
  
-@@ -89,8 +98,13 @@ static int bcma_register_cores(struct bc
+ 		core->dev.release = bcma_release_core_dev;
+ 		core->dev.bus = &bcma_bus_type;
+-		dev_set_name(&core->dev, "bcma%d:%d", 0/*bus->num*/, dev_id);
++		dev_set_name(&core->dev, "bcma%d:%d", bus->num, dev_id);
+ 
  		switch (bus->hosttype) {
  		case BCMA_HOSTTYPE_PCI:
  			core->dev.parent = &bus->host_pci->dev;
@@ -1368,7 +2157,24 @@
  		case BCMA_HOSTTYPE_SDIO:
  			break;
  		}
-@@ -137,6 +151,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -118,11 +139,15 @@ static void bcma_unregister_cores(struct
+ 	}
+ }
+ 
+-int bcma_bus_register(struct bcma_bus *bus)
++int __devinit bcma_bus_register(struct bcma_bus *bus)
+ {
+ 	int err;
+ 	struct bcma_device *core;
+ 
++	mutex_lock(&bcma_buses_mutex);
++	bus->num = bcma_bus_next_num++;
++	mutex_unlock(&bcma_buses_mutex);
++
+ 	/* Scan for devices (cores) */
+ 	err = bcma_bus_scan(bus);
+ 	if (err) {
+@@ -137,6 +162,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_chipcommon_init(&bus->drv_cc);
  	}
  
@@ -1382,7 +2188,7 @@
  	/* Init PCIE core */
  	core = bcma_find_core(bus, BCMA_CORE_PCIE);
  	if (core) {
-@@ -144,6 +165,15 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -144,6 +176,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_pci_init(&bus->drv_pci);
  	}
  
@@ -1390,15 +2196,13 @@
 +	err = bcma_sprom_get(bus);
 +	if (err == -ENOENT) {
 +		pr_err("No SPROM available\n");
-+	} else if (err) {
++	} else if (err)
 +		pr_err("Failed to get SPROM: %d\n", err);
-+		return -ENOENT;
-+	}
 +
  	/* Register found cores */
  	bcma_register_cores(bus);
  
-@@ -151,13 +181,80 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -151,13 +190,104 @@ int bcma_bus_register(struct bcma_bus *b
  
  	return 0;
  }
@@ -1464,6 +2268,21 @@
 +}
 +
 +#ifdef CONFIG_PM
++int bcma_bus_suspend(struct bcma_bus *bus)
++{
++	struct bcma_device *core;
++
++	list_for_each_entry(core, &bus->cores, list) {
++		struct device_driver *drv = core->dev.driver;
++		if (drv) {
++			struct bcma_driver *adrv = container_of(drv, struct bcma_driver, drv);
++			if (adrv->suspend)
++				adrv->suspend(core);
++		}
++	}
++	return 0;
++}
++
 +int bcma_bus_resume(struct bcma_bus *bus)
 +{
 +	struct bcma_device *core;
@@ -1475,13 +2294,22 @@
 +		bcma_core_chipcommon_init(&bus->drv_cc);
 +	}
 +
++	list_for_each_entry(core, &bus->cores, list) {
++		struct device_driver *drv = core->dev.driver;
++		if (drv) {
++			struct bcma_driver *adrv = container_of(drv, struct bcma_driver, drv);
++			if (adrv->resume)
++				adrv->resume(core);
++		}
++	}
++
 +	return 0;
 +}
 +#endif
  
  int __bcma_driver_register(struct bcma_driver *drv, struct module *owner)
  {
-@@ -217,6 +314,16 @@ static int bcma_device_remove(struct dev
+@@ -217,6 +347,16 @@ static int bcma_device_remove(struct dev
  	return 0;
  }
  
@@ -1500,7 +2328,7 @@
  	int err;
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
-@@ -200,18 +200,162 @@ static s32 bcma_erom_get_addr_desc(struc
+@@ -200,18 +200,174 @@ static s32 bcma_erom_get_addr_desc(struc
  	return addrl;
  }
  
@@ -1511,7 +2339,7 @@
 -	u32 erombase;
 -	u32 __iomem *eromptr, *eromend;
 +	struct bcma_device *core;
- 
++
 +	list_for_each_entry(core, &bus->cores, list) {
 +		if (core->core_index == index)
 +			return core;
@@ -1519,6 +2347,17 @@
 +	return NULL;
 +}
 +
++static struct bcma_device *bcma_find_core_reverse(struct bcma_bus *bus, u16 coreid)
++{
++	struct bcma_device *core;
++
++	list_for_each_entry_reverse(core, &bus->cores, list) {
++		if (core->id.id == coreid)
++			return core;
++	}
++	return NULL;
++}
+ 
 +static int bcma_get_next_core(struct bcma_bus *bus, u32 __iomem **eromptr,
 +			      struct bcma_device_id *match, int core_num,
 +			      struct bcma_device *core)
@@ -1661,6 +2500,7 @@
 +{
  	s32 tmp;
 -	u8 i, j;
++	struct bcma_chipinfo *chipinfo = &(bus->chipinfo);
  
 -	int err;
 +	if (bus->init_done)
@@ -1668,10 +2508,19 @@
  
  	INIT_LIST_HEAD(&bus->cores);
  	bus->nr_cores = 0;
-@@ -222,9 +366,27 @@ int bcma_bus_scan(struct bcma_bus *bus)
- 	bus->chipinfo.id = (tmp & BCMA_CC_ID_ID) >> BCMA_CC_ID_ID_SHIFT;
- 	bus->chipinfo.rev = (tmp & BCMA_CC_ID_REV) >> BCMA_CC_ID_REV_SHIFT;
- 	bus->chipinfo.pkg = (tmp & BCMA_CC_ID_PKG) >> BCMA_CC_ID_PKG_SHIFT;
+@@ -219,142 +375,133 @@ int bcma_bus_scan(struct bcma_bus *bus)
+ 	bcma_scan_switch_core(bus, BCMA_ADDR_BASE);
+ 
+ 	tmp = bcma_scan_read32(bus, 0, BCMA_CC_ID);
+-	bus->chipinfo.id = (tmp & BCMA_CC_ID_ID) >> BCMA_CC_ID_ID_SHIFT;
+-	bus->chipinfo.rev = (tmp & BCMA_CC_ID_REV) >> BCMA_CC_ID_REV_SHIFT;
+-	bus->chipinfo.pkg = (tmp & BCMA_CC_ID_PKG) >> BCMA_CC_ID_PKG_SHIFT;
++	chipinfo->id = (tmp & BCMA_CC_ID_ID) >> BCMA_CC_ID_ID_SHIFT;
++	chipinfo->rev = (tmp & BCMA_CC_ID_REV) >> BCMA_CC_ID_REV_SHIFT;
++	chipinfo->pkg = (tmp & BCMA_CC_ID_PKG) >> BCMA_CC_ID_PKG_SHIFT;
++	pr_info("Found chip with id 0x%04X, rev 0x%02X and package 0x%02X\n",
++		chipinfo->id, chipinfo->rev, chipinfo->pkg);
++
 +	bus->init_done = true;
 +}
 +
@@ -1697,7 +2546,12 @@
  	eromend = eromptr + BCMA_CORE_SIZE / sizeof(u32);
  
  	bcma_scan_switch_core(bus, erombase);
-@@ -236,125 +398,89 @@ int bcma_bus_scan(struct bcma_bus *bus)
+ 
+ 	while (eromptr < eromend) {
++		struct bcma_device *other_core;
+ 		struct bcma_device *core = kzalloc(sizeof(*core), GFP_KERNEL);
+ 		if (!core)
+ 			return -ENOMEM;
  		INIT_LIST_HEAD(&core->list);
  		core->bus = bus;
  
@@ -1706,7 +2560,16 @@
 -		if (cia < 0) {
 -			bcma_erom_push_ent(&eromptr);
 -			if (bcma_erom_is_end(bus, &eromptr))
--				break;
++		err = bcma_get_next_core(bus, &eromptr, NULL, core_num, core);
++		if (err < 0) {
++			kfree(core);
++			if (err == -ENODEV) {
++				core_num++;
++				continue;
++			} else if (err == -ENXIO) {
++				continue;
++			} else if (err == -ESPIPE) {
+ 				break;
 -			err= -EILSEQ;
 -			goto out;
 -		}
@@ -1714,8 +2577,10 @@
 -		if (cib < 0) {
 -			err= -EILSEQ;
 -			goto out;
--		}
--
++			}
++			return err;
+ 		}
+ 
 -		/* parse CIs */
 -		core->id.class = (cia & SCAN_CIA_CLASS) >> SCAN_CIA_CLASS_SHIFT;
 -		core->id.id = (cia & SCAN_CIA_ID) >> SCAN_CIA_ID_SHIFT;
@@ -1730,32 +2595,33 @@
 -		     (core->id.id == 0xFFF)) ||
 -		    (ports[1] == 0)) {
 -			bcma_erom_skip_component(bus, &eromptr);
-+		err = bcma_get_next_core(bus, &eromptr, NULL, core_num, core);
-+		if (err == -ENODEV) {
-+			core_num++;
- 			continue;
+-			continue;
 -		}
--
++		core->core_index = core_num++;
++		bus->nr_cores++;
++		other_core = bcma_find_core_reverse(bus, core->id.id);
++		core->core_unit = (other_core == NULL) ? 0 : other_core->core_unit + 1;
+ 
 -		/* check if component is a core at all */
 -		if (wrappers[0] + wrappers[1] == 0) {
 -			/* we could save addrl of the router
 -			if (cid == BCMA_CORE_OOB_ROUTER)
 -			 */
 -			bcma_erom_skip_component(bus, &eromptr);
-+		} else if (err == -ENXIO)
- 			continue;
+-			continue;
 -		}
-+		else if (err == -ESPIPE)
-+			break;
-+		else if (err < 0)
-+			return err;
++		pr_info("Core %d found: %s "
++			"(manuf 0x%03X, id 0x%03X, rev 0x%02X, class 0x%X)\n",
++			core->core_index, bcma_device_name(&core->id),
++			core->id.manuf, core->id.id, core->id.rev,
++			core->id.class);
  
 -		if (bcma_erom_is_bridge(bus, &eromptr)) {
 -			bcma_erom_skip_component(bus, &eromptr);
 -			continue;
 -		}
-+		core->core_index = core_num++;
-+		bus->nr_cores++;
++		list_add(&core->list, &bus->cores);
++	}
  
 -		/* get & parse master ports */
 -		for (i = 0; i < ports[0]; i++) {
@@ -1765,11 +2631,8 @@
 -				goto out;
 -			}
 -		}
-+		pr_info("Core %d found: %s "
-+			"(manuf 0x%03X, id 0x%03X, rev 0x%02X, class 0x%X)\n",
-+			core->core_index, bcma_device_name(&core->id),
-+			core->id.manuf, core->id.id, core->id.rev,
-+			core->id.class);
++	if (bus->hosttype == BCMA_HOSTTYPE_SOC)
++		iounmap(eromptr);
  
 -		/* get & parse slave ports */
 -		for (i = 0; i < ports[1]; i++) {
@@ -1787,8 +2650,8 @@
 -				}
 -			}
 -		}
-+		list_add(&core->list, &bus->cores);
-+	}
++	return 0;
++}
  
 -		/* get & parse master wrappers */
 -		for (i = 0; i < wrappers[0]; i++) {
@@ -1806,8 +2669,12 @@
 -				}
 -			}
 -		}
-+	if (bus->hosttype == BCMA_HOSTTYPE_SOC)
-+		iounmap(eromptr);
++int __init bcma_bus_scan_early(struct bcma_bus *bus,
++			       struct bcma_device_id *match,
++			       struct bcma_device *core)
++{
++	u32 erombase;
++	u32 __iomem *eromptr, *eromend;
  
 -		/* get & parse slave wrappers */
 -		for (i = 0; i < wrappers[1]; i++) {
@@ -1826,16 +2693,6 @@
 -				}
 -			}
 -		}
-+	return 0;
-+}
-+
-+int __init bcma_bus_scan_early(struct bcma_bus *bus,
-+			       struct bcma_device_id *match,
-+			       struct bcma_device *core)
-+{
-+	u32 erombase;
-+	u32 __iomem *eromptr, *eromend;
- 
 +	int err = -ENODEV;
 +	int core_num = 0;
 +
@@ -1847,7 +2704,7 @@
 +	} else {
 +		eromptr = bus->mmio;
 +	}
-+
+ 
 +	eromend = eromptr + BCMA_CORE_SIZE / sizeof(u32);
 +
 +	bcma_scan_switch_core(bus, erombase);
@@ -1894,10 +2751,12 @@
  }
 --- /dev/null
 +++ b/drivers/bcma/sprom.c
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,450 @@
 +/*
 + * Broadcom specific AMBA
 + * SPROM reading
++ *
++ * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
 + *
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
@@ -1911,7 +2770,57 @@
 +#include <linux/dma-mapping.h>
 +#include <linux/slab.h>
 +
-+#define SPOFF(offset)	((offset) / sizeof(u16))
++static int(*get_fallback_sprom)(struct bcma_bus *dev, struct ssb_sprom *out);
++
++/**
++ * bcma_arch_register_fallback_sprom - Registers a method providing a
++ * fallback SPROM if no SPROM is found.
++ *
++ * @sprom_callback: The callback function.
++ *
++ * With this function the architecture implementation may register a
++ * callback handler which fills the SPROM data structure. The fallback is
++ * used for PCI based BCMA devices, where no valid SPROM can be found
++ * in the shadow registers and to provide the SPROM for SoCs where BCMA is
++ * to controll the system bus.
++ *
++ * This function is useful for weird architectures that have a half-assed
++ * BCMA device hardwired to their PCI bus.
++ *
++ * This function is available for architecture code, only. So it is not
++ * exported.
++ */
++int bcma_arch_register_fallback_sprom(int (*sprom_callback)(struct bcma_bus *bus,
++				     struct ssb_sprom *out))
++{
++	if (get_fallback_sprom)
++		return -EEXIST;
++	get_fallback_sprom = sprom_callback;
++
++	return 0;
++}
++
++static int bcma_fill_sprom_with_fallback(struct bcma_bus *bus,
++					 struct ssb_sprom *out)
++{
++	int err;
++
++	if (!get_fallback_sprom) {
++		err = -ENOENT;
++		goto fail;
++	}
++
++	err = get_fallback_sprom(bus, out);
++	if (err)
++		goto fail;
++
++	pr_debug("Using SPROM revision %d provided by"
++		 " platform.\n", bus->sprom.revision);
++	return 0;
++fail:
++	pr_warn("Using fallback SPROM failed (err %d)\n", err);
++	return err;
++}
 +
 +/**************************************************
 + * R/W ops.
@@ -2021,10 +2930,21 @@
 + * SPROM extraction.
 + **************************************************/
 +
++#define SPOFF(offset)	((offset) / sizeof(u16))
++
++#define SPEX(_field, _offset, _mask, _shift)	\
++	bus->sprom._field = ((sprom[SPOFF(_offset)] & (_mask)) >> (_shift))
++
 +static void bcma_sprom_extract_r8(struct bcma_bus *bus, const u16 *sprom)
 +{
-+	u16 v;
++	u16 v, o;
 +	int i;
++	u16 pwr_info_offset[] = {
++		SSB_SROM8_PWR_INFO_CORE0, SSB_SROM8_PWR_INFO_CORE1,
++		SSB_SROM8_PWR_INFO_CORE2, SSB_SROM8_PWR_INFO_CORE3
++	};
++	BUILD_BUG_ON(ARRAY_SIZE(pwr_info_offset) !=
++			ARRAY_SIZE(bus->sprom.core_pwr_info));
 +
 +	bus->sprom.revision = sprom[SSB_SPROMSIZE_WORDS_R4 - 1] &
 +		SSB_SPROM_REVISION_REV;
@@ -2034,85 +2954,229 @@
 +		*(((__be16 *)bus->sprom.il0mac) + i) = cpu_to_be16(v);
 +	}
 +
-+	bus->sprom.board_rev = sprom[SPOFF(SSB_SPROM8_BOARDREV)];
++	SPEX(board_rev, SSB_SPROM8_BOARDREV, ~0, 0);
 +
-+	bus->sprom.txpid2g[0] = (sprom[SPOFF(SSB_SPROM4_TXPID2G01)] &
-+	     SSB_SPROM4_TXPID2G0) >> SSB_SPROM4_TXPID2G0_SHIFT;
-+	bus->sprom.txpid2g[1] = (sprom[SPOFF(SSB_SPROM4_TXPID2G01)] &
-+	     SSB_SPROM4_TXPID2G1) >> SSB_SPROM4_TXPID2G1_SHIFT;
-+	bus->sprom.txpid2g[2] = (sprom[SPOFF(SSB_SPROM4_TXPID2G23)] &
-+	     SSB_SPROM4_TXPID2G2) >> SSB_SPROM4_TXPID2G2_SHIFT;
-+	bus->sprom.txpid2g[3] = (sprom[SPOFF(SSB_SPROM4_TXPID2G23)] &
-+	     SSB_SPROM4_TXPID2G3) >> SSB_SPROM4_TXPID2G3_SHIFT;
++	SPEX(txpid2g[0], SSB_SPROM4_TXPID2G01, SSB_SPROM4_TXPID2G0,
++	     SSB_SPROM4_TXPID2G0_SHIFT);
++	SPEX(txpid2g[1], SSB_SPROM4_TXPID2G01, SSB_SPROM4_TXPID2G1,
++	     SSB_SPROM4_TXPID2G1_SHIFT);
++	SPEX(txpid2g[2], SSB_SPROM4_TXPID2G23, SSB_SPROM4_TXPID2G2,
++	     SSB_SPROM4_TXPID2G2_SHIFT);
++	SPEX(txpid2g[3], SSB_SPROM4_TXPID2G23, SSB_SPROM4_TXPID2G3,
++	     SSB_SPROM4_TXPID2G3_SHIFT);
 +
-+	bus->sprom.txpid5gl[0] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL01)] &
-+	     SSB_SPROM4_TXPID5GL0) >> SSB_SPROM4_TXPID5GL0_SHIFT;
-+	bus->sprom.txpid5gl[1] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL01)] &
-+	     SSB_SPROM4_TXPID5GL1) >> SSB_SPROM4_TXPID5GL1_SHIFT;
-+	bus->sprom.txpid5gl[2] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL23)] &
-+	     SSB_SPROM4_TXPID5GL2) >> SSB_SPROM4_TXPID5GL2_SHIFT;
-+	bus->sprom.txpid5gl[3] = (sprom[SPOFF(SSB_SPROM4_TXPID5GL23)] &
-+	     SSB_SPROM4_TXPID5GL3) >> SSB_SPROM4_TXPID5GL3_SHIFT;
++	SPEX(txpid5gl[0], SSB_SPROM4_TXPID5GL01, SSB_SPROM4_TXPID5GL0,
++	     SSB_SPROM4_TXPID5GL0_SHIFT);
++	SPEX(txpid5gl[1], SSB_SPROM4_TXPID5GL01, SSB_SPROM4_TXPID5GL1,
++	     SSB_SPROM4_TXPID5GL1_SHIFT);
++	SPEX(txpid5gl[2], SSB_SPROM4_TXPID5GL23, SSB_SPROM4_TXPID5GL2,
++	     SSB_SPROM4_TXPID5GL2_SHIFT);
++	SPEX(txpid5gl[3], SSB_SPROM4_TXPID5GL23, SSB_SPROM4_TXPID5GL3,
++	     SSB_SPROM4_TXPID5GL3_SHIFT);
 +
-+	bus->sprom.txpid5g[0] = (sprom[SPOFF(SSB_SPROM4_TXPID5G01)] &
-+	     SSB_SPROM4_TXPID5G0) >> SSB_SPROM4_TXPID5G0_SHIFT;
-+	bus->sprom.txpid5g[1] = (sprom[SPOFF(SSB_SPROM4_TXPID5G01)] &
-+	     SSB_SPROM4_TXPID5G1) >> SSB_SPROM4_TXPID5G1_SHIFT;
-+	bus->sprom.txpid5g[2] = (sprom[SPOFF(SSB_SPROM4_TXPID5G23)] &
-+	     SSB_SPROM4_TXPID5G2) >> SSB_SPROM4_TXPID5G2_SHIFT;
-+	bus->sprom.txpid5g[3] = (sprom[SPOFF(SSB_SPROM4_TXPID5G23)] &
-+	     SSB_SPROM4_TXPID5G3) >> SSB_SPROM4_TXPID5G3_SHIFT;
++	SPEX(txpid5g[0], SSB_SPROM4_TXPID5G01, SSB_SPROM4_TXPID5G0,
++	     SSB_SPROM4_TXPID5G0_SHIFT);
++	SPEX(txpid5g[1], SSB_SPROM4_TXPID5G01, SSB_SPROM4_TXPID5G1,
++	     SSB_SPROM4_TXPID5G1_SHIFT);
++	SPEX(txpid5g[2], SSB_SPROM4_TXPID5G23, SSB_SPROM4_TXPID5G2,
++	     SSB_SPROM4_TXPID5G2_SHIFT);
++	SPEX(txpid5g[3], SSB_SPROM4_TXPID5G23, SSB_SPROM4_TXPID5G3,
++	     SSB_SPROM4_TXPID5G3_SHIFT);
 +
-+	bus->sprom.txpid5gh[0] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH01)] &
-+	     SSB_SPROM4_TXPID5GH0) >> SSB_SPROM4_TXPID5GH0_SHIFT;
-+	bus->sprom.txpid5gh[1] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH01)] &
-+	     SSB_SPROM4_TXPID5GH1) >> SSB_SPROM4_TXPID5GH1_SHIFT;
-+	bus->sprom.txpid5gh[2] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH23)] &
-+	     SSB_SPROM4_TXPID5GH2) >> SSB_SPROM4_TXPID5GH2_SHIFT;
-+	bus->sprom.txpid5gh[3] = (sprom[SPOFF(SSB_SPROM4_TXPID5GH23)] &
-+	     SSB_SPROM4_TXPID5GH3) >> SSB_SPROM4_TXPID5GH3_SHIFT;
++	SPEX(txpid5gh[0], SSB_SPROM4_TXPID5GH01, SSB_SPROM4_TXPID5GH0,
++	     SSB_SPROM4_TXPID5GH0_SHIFT);
++	SPEX(txpid5gh[1], SSB_SPROM4_TXPID5GH01, SSB_SPROM4_TXPID5GH1,
++	     SSB_SPROM4_TXPID5GH1_SHIFT);
++	SPEX(txpid5gh[2], SSB_SPROM4_TXPID5GH23, SSB_SPROM4_TXPID5GH2,
++	     SSB_SPROM4_TXPID5GH2_SHIFT);
++	SPEX(txpid5gh[3], SSB_SPROM4_TXPID5GH23, SSB_SPROM4_TXPID5GH3,
++	     SSB_SPROM4_TXPID5GH3_SHIFT);
 +
-+	bus->sprom.boardflags_lo = sprom[SPOFF(SSB_SPROM8_BFLLO)];
-+	bus->sprom.boardflags_hi = sprom[SPOFF(SSB_SPROM8_BFLHI)];
-+	bus->sprom.boardflags2_lo = sprom[SPOFF(SSB_SPROM8_BFL2LO)];
-+	bus->sprom.boardflags2_hi = sprom[SPOFF(SSB_SPROM8_BFL2HI)];
++	SPEX(boardflags_lo, SSB_SPROM8_BFLLO, ~0, 0);
++	SPEX(boardflags_hi, SSB_SPROM8_BFLHI, ~0, 0);
++	SPEX(boardflags2_lo, SSB_SPROM8_BFL2LO, ~0, 0);
++	SPEX(boardflags2_hi, SSB_SPROM8_BFL2HI, ~0, 0);
 +
-+	bus->sprom.country_code = sprom[SPOFF(SSB_SPROM8_CCODE)];
++	SPEX(country_code, SSB_SPROM8_CCODE, ~0, 0);
 +
-+	bus->sprom.fem.ghz2.tssipos = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
-+		SSB_SROM8_FEM_TSSIPOS) >> SSB_SROM8_FEM_TSSIPOS_SHIFT;
-+	bus->sprom.fem.ghz2.extpa_gain = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
-+		SSB_SROM8_FEM_EXTPA_GAIN) >> SSB_SROM8_FEM_EXTPA_GAIN_SHIFT;
-+	bus->sprom.fem.ghz2.pdet_range = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
-+		SSB_SROM8_FEM_PDET_RANGE) >> SSB_SROM8_FEM_PDET_RANGE_SHIFT;
-+	bus->sprom.fem.ghz2.tr_iso = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
-+		SSB_SROM8_FEM_TR_ISO) >> SSB_SROM8_FEM_TR_ISO_SHIFT;
-+	bus->sprom.fem.ghz2.antswlut = (sprom[SPOFF(SSB_SPROM8_FEM2G)] &
-+		SSB_SROM8_FEM_ANTSWLUT) >> SSB_SROM8_FEM_ANTSWLUT_SHIFT;
++	/* Extract cores power info info */
++	for (i = 0; i < ARRAY_SIZE(pwr_info_offset); i++) {
++		o = pwr_info_offset[i];
++		SPEX(core_pwr_info[i].itssi_2g, o + SSB_SROM8_2G_MAXP_ITSSI,
++			SSB_SPROM8_2G_ITSSI, SSB_SPROM8_2G_ITSSI_SHIFT);
++		SPEX(core_pwr_info[i].maxpwr_2g, o + SSB_SROM8_2G_MAXP_ITSSI,
++			SSB_SPROM8_2G_MAXP, 0);
 +
-+	bus->sprom.fem.ghz5.tssipos = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
-+		SSB_SROM8_FEM_TSSIPOS) >> SSB_SROM8_FEM_TSSIPOS_SHIFT;
-+	bus->sprom.fem.ghz5.extpa_gain = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
-+		SSB_SROM8_FEM_EXTPA_GAIN) >> SSB_SROM8_FEM_EXTPA_GAIN_SHIFT;
-+	bus->sprom.fem.ghz5.pdet_range = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
-+		SSB_SROM8_FEM_PDET_RANGE) >> SSB_SROM8_FEM_PDET_RANGE_SHIFT;
-+	bus->sprom.fem.ghz5.tr_iso = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
-+		SSB_SROM8_FEM_TR_ISO) >> SSB_SROM8_FEM_TR_ISO_SHIFT;
-+	bus->sprom.fem.ghz5.antswlut = (sprom[SPOFF(SSB_SPROM8_FEM5G)] &
-+		SSB_SROM8_FEM_ANTSWLUT) >> SSB_SROM8_FEM_ANTSWLUT_SHIFT;
++		SPEX(core_pwr_info[i].pa_2g[0], o + SSB_SROM8_2G_PA_0, ~0, 0);
++		SPEX(core_pwr_info[i].pa_2g[1], o + SSB_SROM8_2G_PA_1, ~0, 0);
++		SPEX(core_pwr_info[i].pa_2g[2], o + SSB_SROM8_2G_PA_2, ~0, 0);
++
++		SPEX(core_pwr_info[i].itssi_5g, o + SSB_SROM8_5G_MAXP_ITSSI,
++			SSB_SPROM8_5G_ITSSI, SSB_SPROM8_5G_ITSSI_SHIFT);
++		SPEX(core_pwr_info[i].maxpwr_5g, o + SSB_SROM8_5G_MAXP_ITSSI,
++			SSB_SPROM8_5G_MAXP, 0);
++		SPEX(core_pwr_info[i].maxpwr_5gh, o + SSB_SPROM8_5GHL_MAXP,
++			SSB_SPROM8_5GH_MAXP, 0);
++		SPEX(core_pwr_info[i].maxpwr_5gl, o + SSB_SPROM8_5GHL_MAXP,
++			SSB_SPROM8_5GL_MAXP, SSB_SPROM8_5GL_MAXP_SHIFT);
++
++		SPEX(core_pwr_info[i].pa_5gl[0], o + SSB_SROM8_5GL_PA_0, ~0, 0);
++		SPEX(core_pwr_info[i].pa_5gl[1], o + SSB_SROM8_5GL_PA_1, ~0, 0);
++		SPEX(core_pwr_info[i].pa_5gl[2], o + SSB_SROM8_5GL_PA_2, ~0, 0);
++		SPEX(core_pwr_info[i].pa_5g[0], o + SSB_SROM8_5G_PA_0, ~0, 0);
++		SPEX(core_pwr_info[i].pa_5g[1], o + SSB_SROM8_5G_PA_1, ~0, 0);
++		SPEX(core_pwr_info[i].pa_5g[2], o + SSB_SROM8_5G_PA_2, ~0, 0);
++		SPEX(core_pwr_info[i].pa_5gh[0], o + SSB_SROM8_5GH_PA_0, ~0, 0);
++		SPEX(core_pwr_info[i].pa_5gh[1], o + SSB_SROM8_5GH_PA_1, ~0, 0);
++		SPEX(core_pwr_info[i].pa_5gh[2], o + SSB_SROM8_5GH_PA_2, ~0, 0);
++	}
++
++	SPEX(fem.ghz2.tssipos, SSB_SPROM8_FEM2G, SSB_SROM8_FEM_TSSIPOS,
++	     SSB_SROM8_FEM_TSSIPOS_SHIFT);
++	SPEX(fem.ghz2.extpa_gain, SSB_SPROM8_FEM2G, SSB_SROM8_FEM_EXTPA_GAIN,
++	     SSB_SROM8_FEM_EXTPA_GAIN_SHIFT);
++	SPEX(fem.ghz2.pdet_range, SSB_SPROM8_FEM2G, SSB_SROM8_FEM_PDET_RANGE,
++	     SSB_SROM8_FEM_PDET_RANGE_SHIFT);
++	SPEX(fem.ghz2.tr_iso, SSB_SPROM8_FEM2G, SSB_SROM8_FEM_TR_ISO,
++	     SSB_SROM8_FEM_TR_ISO_SHIFT);
++	SPEX(fem.ghz2.antswlut, SSB_SPROM8_FEM2G, SSB_SROM8_FEM_ANTSWLUT,
++	     SSB_SROM8_FEM_ANTSWLUT_SHIFT);
++
++	SPEX(fem.ghz5.tssipos, SSB_SPROM8_FEM5G, SSB_SROM8_FEM_TSSIPOS,
++	     SSB_SROM8_FEM_TSSIPOS_SHIFT);
++	SPEX(fem.ghz5.extpa_gain, SSB_SPROM8_FEM5G, SSB_SROM8_FEM_EXTPA_GAIN,
++	     SSB_SROM8_FEM_EXTPA_GAIN_SHIFT);
++	SPEX(fem.ghz5.pdet_range, SSB_SPROM8_FEM5G, SSB_SROM8_FEM_PDET_RANGE,
++	     SSB_SROM8_FEM_PDET_RANGE_SHIFT);
++	SPEX(fem.ghz5.tr_iso, SSB_SPROM8_FEM5G, SSB_SROM8_FEM_TR_ISO,
++	     SSB_SROM8_FEM_TR_ISO_SHIFT);
++	SPEX(fem.ghz5.antswlut, SSB_SPROM8_FEM5G, SSB_SROM8_FEM_ANTSWLUT,
++	     SSB_SROM8_FEM_ANTSWLUT_SHIFT);
++}
++
++/*
++ * Indicates the presence of external SPROM.
++ */
++static bool bcma_sprom_ext_available(struct bcma_bus *bus)
++{
++	u32 chip_status;
++	u32 srom_control;
++	u32 present_mask;
++
++	if (bus->drv_cc.core->id.rev >= 31) {
++		if (!(bus->drv_cc.capabilities & BCMA_CC_CAP_SPROM))
++			return false;
++
++		srom_control = bcma_read32(bus->drv_cc.core,
++					   BCMA_CC_SROM_CONTROL);
++		return srom_control & BCMA_CC_SROM_CONTROL_PRESENT;
++	}
++
++	/* older chipcommon revisions use chip status register */
++	chip_status = bcma_read32(bus->drv_cc.core, BCMA_CC_CHIPSTAT);
++	switch (bus->chipinfo.id) {
++	case 0x4313:
++		present_mask = BCMA_CC_CHIPST_4313_SPROM_PRESENT;
++		break;
++
++	case 0x4331:
++		present_mask = BCMA_CC_CHIPST_4331_SPROM_PRESENT;
++		break;
++
++	default:
++		return true;
++	}
++
++	return chip_status & present_mask;
++}
++
++/*
++ * Indicates that on-chip OTP memory is present and enabled.
++ */
++static bool bcma_sprom_onchip_available(struct bcma_bus *bus)
++{
++	u32 chip_status;
++	u32 otpsize = 0;
++	bool present;
++
++	chip_status = bcma_read32(bus->drv_cc.core, BCMA_CC_CHIPSTAT);
++	switch (bus->chipinfo.id) {
++	case 0x4313:
++		present = chip_status & BCMA_CC_CHIPST_4313_OTP_PRESENT;
++		break;
++
++	case 0x4331:
++		present = chip_status & BCMA_CC_CHIPST_4331_OTP_PRESENT;
++		break;
++
++	case 43224:
++	case 43225:
++		/* for these chips OTP is always available */
++		present = true;
++		break;
++
++	default:
++		present = false;
++		break;
++	}
++
++	if (present) {
++		otpsize = bus->drv_cc.capabilities & BCMA_CC_CAP_OTPS;
++		otpsize >>= BCMA_CC_CAP_OTPS_SHIFT;
++	}
++
++	return otpsize != 0;
++}
++
++/*
++ * Verify OTP is filled and determine the byte
++ * offset where SPROM data is located.
++ *
++ * On error, returns 0; byte offset otherwise.
++ */
++static int bcma_sprom_onchip_offset(struct bcma_bus *bus)
++{
++	struct bcma_device *cc = bus->drv_cc.core;
++	u32 offset;
++
++	/* verify OTP status */
++	if ((bcma_read32(cc, BCMA_CC_OTPS) & BCMA_CC_OTPS_GU_PROG_HW) == 0)
++		return 0;
++
++	/* obtain bit offset from otplayout register */
++	offset = (bcma_read32(cc, BCMA_CC_OTPL) & BCMA_CC_OTPL_GURGN_OFFSET);
++	return BCMA_CC_SPROM + (offset >> 3);
 +}
 +
 +int bcma_sprom_get(struct bcma_bus *bus)
 +{
-+	u16 offset;
++	u16 offset = BCMA_CC_SPROM;
 +	u16 *sprom;
 +	int err = 0;
 +
 +	if (!bus->drv_cc.core)
 +		return -EOPNOTSUPP;
 +
-+	if (!(bus->drv_cc.capabilities & BCMA_CC_CAP_SPROM))
-+		return -ENOENT;
++	if (!bcma_sprom_ext_available(bus)) {
++		/*
++		 * External SPROM takes precedence so check
++		 * on-chip OTP only when no external SPROM
++		 * is present.
++		 */
++		if (bcma_sprom_onchip_available(bus)) {
++			/* determine offset */
++			offset = bcma_sprom_onchip_offset(bus);
++		}
++		if (!offset) {
++			/*
++			 * Maybe there is no SPROM on the device?
++			 * Now we ask the arch code if there is some sprom
++			 * available for this device in some other storage.
++			 */
++			err = bcma_fill_sprom_with_fallback(bus, &bus->sprom);
++			return err;
++		}
++	}
 +
 +	sprom = kcalloc(SSB_SPROMSIZE_WORDS_R4, sizeof(u16),
 +			GFP_KERNEL);
@@ -2122,11 +3186,7 @@
 +	if (bus->chipinfo.id == 0x4331)
 +		bcma_chipco_bcm4331_ext_pa_lines_ctl(&bus->drv_cc, false);
 +
-+	/* Most cards have SPROM moved by additional offset 0x30 (48 dwords).
-+	 * According to brcm80211 this applies to cards with PCIe rev >= 6
-+	 * TODO: understand this condition and use it */
-+	offset = (bus->chipinfo.id == 0x4331) ? BCMA_CC_SPROM :
-+		BCMA_CC_SPROM_PCIE6;
++	pr_debug("SPROM offset 0x%x\n", offset);
 +	bcma_sprom_read(bus, offset, sprom);
 +
 +	if (bus->chipinfo.id == 0x4331)
@@ -2189,7 +3249,7 @@
  	/* Agent ops */
  	u32 (*aread32)(struct bcma_device *core, u16 offset);
  	void (*awrite32)(struct bcma_device *core, u16 offset, u32 value);
-@@ -117,6 +130,9 @@ struct bcma_device {
+@@ -117,13 +130,20 @@ struct bcma_device {
  	struct bcma_device_id id;
  
  	struct device dev;
@@ -2199,7 +3259,8 @@
  	bool dev_registered;
  
  	u8 core_index;
-@@ -124,6 +140,9 @@ struct bcma_device {
++	u8 core_unit;
+ 
  	u32 addr;
  	u32 wrap;
  
@@ -2209,7 +3270,16 @@
  	void *drvdata;
  	struct list_head list;
  };
-@@ -151,10 +170,9 @@ struct bcma_driver {
+@@ -143,7 +163,7 @@ struct bcma_driver {
+ 
+ 	int (*probe)(struct bcma_device *dev);
+ 	void (*remove)(struct bcma_device *dev);
+-	int (*suspend)(struct bcma_device *dev, pm_message_t state);
++	int (*suspend)(struct bcma_device *dev);
+ 	int (*resume)(struct bcma_device *dev);
+ 	void (*shutdown)(struct bcma_device *dev);
+ 
+@@ -151,12 +171,17 @@ struct bcma_driver {
  };
  extern
  int __bcma_driver_register(struct bcma_driver *drv, struct module *owner);
@@ -2222,12 +3292,21 @@
 +
  extern void bcma_driver_unregister(struct bcma_driver *drv);
  
++/* Set a fallback SPROM.
++ * See kdoc at the function definition for complete documentation. */
++extern int bcma_arch_register_fallback_sprom(
++		int (*sprom_callback)(struct bcma_bus *bus,
++		struct ssb_sprom *out));
++
  struct bcma_bus {
-@@ -176,49 +194,105 @@ struct bcma_bus {
+ 	/* The MMIO area. */
+ 	void __iomem *mmio;
+@@ -176,49 +201,107 @@ struct bcma_bus {
  	struct bcma_device *mapped_core;
  	struct list_head cores;
  	u8 nr_cores;
 +	u8 init_done:1;
++	u8 num;
  
  	struct bcma_drv_cc drv_cc;
  	struct bcma_drv_pci drv_pci;
@@ -2323,6 +3402,7 @@
 +	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
 +}
 +
++extern struct bcma_device *bcma_find_core(struct bcma_bus *bus, u16 coreid);
  extern bool bcma_core_is_enabled(struct bcma_device *core);
 +extern void bcma_core_disable(struct bcma_device *core, u32 flags);
  extern int bcma_core_enable(struct bcma_device *core, u32 flags);
@@ -2347,7 +3427,37 @@
  #define	  BCMA_CC_FLASHT_PARA		0x00000700	/* Parallel flash */
  #define  BCMA_CC_CAP_PLLT		0x00038000	/* PLL Type */
  #define   BCMA_PLLTYPE_NONE		0x00000000
-@@ -178,16 +179,9 @@
+@@ -55,6 +56,9 @@
+ #define	 BCMA_CC_OTPS_HW_PROTECT	0x00000001
+ #define	 BCMA_CC_OTPS_SW_PROTECT	0x00000002
+ #define	 BCMA_CC_OTPS_CID_PROTECT	0x00000004
++#define  BCMA_CC_OTPS_GU_PROG_IND	0x00000F00	/* General Use programmed indication */
++#define  BCMA_CC_OTPS_GU_PROG_IND_SHIFT	8
++#define  BCMA_CC_OTPS_GU_PROG_HW	0x00000100	/* HW region programmed */
+ #define BCMA_CC_OTPC			0x0014		/* OTP control */
+ #define	 BCMA_CC_OTPC_RECWAIT		0xFF000000
+ #define	 BCMA_CC_OTPC_PROGWAIT		0x00FFFF00
+@@ -71,6 +75,8 @@
+ #define	 BCMA_CC_OTPP_READ		0x40000000
+ #define	 BCMA_CC_OTPP_START		0x80000000
+ #define	 BCMA_CC_OTPP_BUSY		0x80000000
++#define BCMA_CC_OTPL			0x001C		/* OTP layout */
++#define  BCMA_CC_OTPL_GURGN_OFFSET	0x00000FFF	/* offset of general use region */
+ #define BCMA_CC_IRQSTAT			0x0020
+ #define BCMA_CC_IRQMASK			0x0024
+ #define	 BCMA_CC_IRQ_GPIO		0x00000001	/* gpio intr */
+@@ -78,6 +84,10 @@
+ #define	 BCMA_CC_IRQ_WDRESET		0x80000000	/* watchdog reset occurred */
+ #define BCMA_CC_CHIPCTL			0x0028		/* Rev >= 11 only */
+ #define BCMA_CC_CHIPSTAT		0x002C		/* Rev >= 11 only */
++#define  BCMA_CC_CHIPST_4313_SPROM_PRESENT	1
++#define  BCMA_CC_CHIPST_4313_OTP_PRESENT	2
++#define  BCMA_CC_CHIPST_4331_SPROM_PRESENT	2
++#define  BCMA_CC_CHIPST_4331_OTP_PRESENT	4
+ #define BCMA_CC_JCMD			0x0030		/* Rev >= 10 only */
+ #define  BCMA_CC_JCMD_START		0x80000000
+ #define  BCMA_CC_JCMD_BUSY		0x80000000
+@@ -178,16 +188,25 @@
  #define BCMA_CC_PROG_CFG		0x0120
  #define BCMA_CC_PROG_WAITCNT		0x0124
  #define BCMA_CC_FLASH_CFG		0x0128
@@ -2362,11 +3472,27 @@
 -#define  BCMA_CC_CLKCTLST_HWCROFF	0x00000020 /* Force HW clock request off */
 -#define  BCMA_CC_CLKCTLST_HAVEHT	0x00010000 /* HT available */
 -#define  BCMA_CC_CLKCTLST_HAVEALP	0x00020000 /* APL available */
++#define BCMA_CC_SROM_CONTROL		0x0190
++#define  BCMA_CC_SROM_CONTROL_START	0x80000000
++#define  BCMA_CC_SROM_CONTROL_BUSY	0x80000000
++#define  BCMA_CC_SROM_CONTROL_OPCODE	0x60000000
++#define  BCMA_CC_SROM_CONTROL_OP_READ	0x00000000
++#define  BCMA_CC_SROM_CONTROL_OP_WRITE	0x20000000
++#define  BCMA_CC_SROM_CONTROL_OP_WRDIS	0x40000000
++#define  BCMA_CC_SROM_CONTROL_OP_WREN	0x60000000
++#define  BCMA_CC_SROM_CONTROL_OTPSEL	0x00000010
++#define  BCMA_CC_SROM_CONTROL_LOCK	0x00000008
++#define  BCMA_CC_SROM_CONTROL_SIZE_MASK	0x00000006
++#define  BCMA_CC_SROM_CONTROL_SIZE_1K	0x00000000
++#define  BCMA_CC_SROM_CONTROL_SIZE_4K	0x00000002
++#define  BCMA_CC_SROM_CONTROL_SIZE_16K	0x00000004
++#define  BCMA_CC_SROM_CONTROL_SIZE_SHIFT	1
++#define  BCMA_CC_SROM_CONTROL_PRESENT	0x00000001
 +/* 0x1E0 is defined as shared BCMA_CLKCTLST */
  #define BCMA_CC_HW_WORKAROUND		0x01E4 /* Hardware workaround (rev >= 20) */
  #define BCMA_CC_UART0_DATA		0x0300
  #define BCMA_CC_UART0_IMR		0x0304
-@@ -209,6 +203,7 @@
+@@ -209,6 +228,7 @@
  #define BCMA_CC_PMU_CTL			0x0600 /* PMU control */
  #define  BCMA_CC_PMU_CTL_ILP_DIV	0xFFFF0000 /* ILP div mask */
  #define  BCMA_CC_PMU_CTL_ILP_DIV_SHIFT	16
@@ -2374,12 +3500,11 @@
  #define  BCMA_CC_PMU_CTL_NOILPONW	0x00000200 /* No ILP on wait */
  #define  BCMA_CC_PMU_CTL_HTREQEN	0x00000100 /* HT req enable */
  #define  BCMA_CC_PMU_CTL_ALPREQEN	0x00000080 /* ALP req enable */
-@@ -244,6 +239,66 @@
+@@ -244,6 +264,65 @@
  #define BCMA_CC_REGCTL_DATA		0x065C
  #define BCMA_CC_PLLCTL_ADDR		0x0660
  #define BCMA_CC_PLLCTL_DATA		0x0664
 +#define BCMA_CC_SPROM			0x0800 /* SPROM beginning */
-+#define BCMA_CC_SPROM_PCIE6		0x0830 /* SPROM beginning on PCIe rev >= 6 */
 +
 +/* Divider allocation in 4716/47162/5356 */
 +#define BCMA_CC_PMU5_MAINPLL_CPU	1
@@ -2441,7 +3566,7 @@
  
  /* Data for the PMU, if available.
   * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
-@@ -253,14 +308,37 @@ struct bcma_chipcommon_pmu {
+@@ -253,14 +332,37 @@ struct bcma_chipcommon_pmu {
  	u32 crystalfreq;	/* The active crystal frequency (in kHz) */
  };
  
@@ -2479,7 +3604,7 @@
  };
  
  /* Register access */
-@@ -281,6 +359,8 @@ extern void bcma_core_chipcommon_init(st
+@@ -281,6 +383,8 @@ extern void bcma_core_chipcommon_init(st
  extern void bcma_chipco_suspend(struct bcma_drv_cc *cc);
  extern void bcma_chipco_resume(struct bcma_drv_cc *cc);
  
@@ -2488,7 +3613,7 @@
  extern void bcma_chipco_watchdog_timer_set(struct bcma_drv_cc *cc,
  					  u32 ticks);
  
-@@ -299,4 +379,13 @@ u32 bcma_chipco_gpio_polarity(struct bcm
+@@ -299,4 +403,13 @@ u32 bcma_chipco_gpio_polarity(struct bcm
  /* PMU support */
  extern void bcma_pmu_init(struct bcma_drv_cc *cc);
  
@@ -2558,12 +3683,156 @@
 +#endif /* LINUX_BCMA_DRIVER_MIPS_H_ */
 --- a/include/linux/bcma/bcma_driver_pci.h
 +++ b/include/linux/bcma/bcma_driver_pci.h
-@@ -85,5 +85,7 @@ struct bcma_drv_pci {
+@@ -53,6 +53,35 @@ struct pci_dev;
+ #define  BCMA_CORE_PCI_SBTOPCI1_MASK		0xFC000000
+ #define BCMA_CORE_PCI_SBTOPCI2			0x0108	/* Backplane to PCI translation 2 (sbtopci2) */
+ #define  BCMA_CORE_PCI_SBTOPCI2_MASK		0xC0000000
++#define BCMA_CORE_PCI_CONFIG_ADDR		0x0120	/* pcie config space access */
++#define BCMA_CORE_PCI_CONFIG_DATA		0x0124	/* pcie config space access */
++#define BCMA_CORE_PCI_MDIO_CONTROL		0x0128	/* controls the mdio access */
++#define  BCMA_CORE_PCI_MDIOCTL_DIVISOR_MASK	0x7f	/* clock to be used on MDIO */
++#define  BCMA_CORE_PCI_MDIOCTL_DIVISOR_VAL	0x2
++#define  BCMA_CORE_PCI_MDIOCTL_PREAM_EN		0x80	/* Enable preamble sequnce */
++#define  BCMA_CORE_PCI_MDIOCTL_ACCESS_DONE	0x100	/* Tranaction complete */
++#define BCMA_CORE_PCI_MDIO_DATA			0x012c	/* Data to the mdio access */
++#define  BCMA_CORE_PCI_MDIODATA_MASK		0x0000ffff /* data 2 bytes */
++#define  BCMA_CORE_PCI_MDIODATA_TA		0x00020000 /* Turnaround */
++#define  BCMA_CORE_PCI_MDIODATA_REGADDR_SHF_OLD	18	/* Regaddr shift (rev < 10) */
++#define  BCMA_CORE_PCI_MDIODATA_REGADDR_MASK_OLD	0x003c0000 /* Regaddr Mask (rev < 10) */
++#define  BCMA_CORE_PCI_MDIODATA_DEVADDR_SHF_OLD	22	/* Physmedia devaddr shift (rev < 10) */
++#define  BCMA_CORE_PCI_MDIODATA_DEVADDR_MASK_OLD	0x0fc00000 /* Physmedia devaddr Mask (rev < 10) */
++#define  BCMA_CORE_PCI_MDIODATA_REGADDR_SHF	18	/* Regaddr shift */
++#define  BCMA_CORE_PCI_MDIODATA_REGADDR_MASK	0x007c0000 /* Regaddr Mask */
++#define  BCMA_CORE_PCI_MDIODATA_DEVADDR_SHF	23	/* Physmedia devaddr shift */
++#define  BCMA_CORE_PCI_MDIODATA_DEVADDR_MASK	0x0f800000 /* Physmedia devaddr Mask */
++#define  BCMA_CORE_PCI_MDIODATA_WRITE		0x10000000 /* write Transaction */
++#define  BCMA_CORE_PCI_MDIODATA_READ		0x20000000 /* Read Transaction */
++#define  BCMA_CORE_PCI_MDIODATA_START		0x40000000 /* start of Transaction */
++#define  BCMA_CORE_PCI_MDIODATA_DEV_ADDR	0x0	/* dev address for serdes */
++#define  BCMA_CORE_PCI_MDIODATA_BLK_ADDR	0x1F	/* blk address for serdes */
++#define  BCMA_CORE_PCI_MDIODATA_DEV_PLL		0x1d	/* SERDES PLL Dev */
++#define  BCMA_CORE_PCI_MDIODATA_DEV_TX		0x1e	/* SERDES TX Dev */
++#define  BCMA_CORE_PCI_MDIODATA_DEV_RX		0x1f	/* SERDES RX Dev */
++#define BCMA_CORE_PCI_PCIEIND_ADDR		0x0130	/* indirect access to the internal register */
++#define BCMA_CORE_PCI_PCIEIND_DATA		0x0134	/* Data to/from the internal regsiter */
++#define BCMA_CORE_PCI_CLKREQENCTRL		0x0138	/*  >= rev 6, Clkreq rdma control */
+ #define BCMA_CORE_PCI_PCICFG0			0x0400	/* PCI config space 0 (rev >= 8) */
+ #define BCMA_CORE_PCI_PCICFG1			0x0500	/* PCI config space 1 (rev >= 8) */
+ #define BCMA_CORE_PCI_PCICFG2			0x0600	/* PCI config space 2 (rev >= 8) */
+@@ -72,18 +101,114 @@ struct pci_dev;
+ #define  BCMA_CORE_PCI_SBTOPCI_RC_READL		0x00000010 /* Memory read line */
+ #define  BCMA_CORE_PCI_SBTOPCI_RC_READM		0x00000020 /* Memory read multiple */
+ 
++/* PCIE protocol PHY diagnostic registers */
++#define BCMA_CORE_PCI_PLP_MODEREG		0x200	/* Mode */
++#define BCMA_CORE_PCI_PLP_STATUSREG		0x204	/* Status */
++#define  BCMA_CORE_PCI_PLP_POLARITYINV_STAT	0x10	/* Status reg PCIE_PLP_STATUSREG */
++#define BCMA_CORE_PCI_PLP_LTSSMCTRLREG		0x208	/* LTSSM control */
++#define BCMA_CORE_PCI_PLP_LTLINKNUMREG		0x20c	/* Link Training Link number */
++#define BCMA_CORE_PCI_PLP_LTLANENUMREG		0x210	/* Link Training Lane number */
++#define BCMA_CORE_PCI_PLP_LTNFTSREG		0x214	/* Link Training N_FTS */
++#define BCMA_CORE_PCI_PLP_ATTNREG		0x218	/* Attention */
++#define BCMA_CORE_PCI_PLP_ATTNMASKREG		0x21C	/* Attention Mask */
++#define BCMA_CORE_PCI_PLP_RXERRCTR		0x220	/* Rx Error */
++#define BCMA_CORE_PCI_PLP_RXFRMERRCTR		0x224	/* Rx Framing Error */
++#define BCMA_CORE_PCI_PLP_RXERRTHRESHREG	0x228	/* Rx Error threshold */
++#define BCMA_CORE_PCI_PLP_TESTCTRLREG		0x22C	/* Test Control reg */
++#define BCMA_CORE_PCI_PLP_SERDESCTRLOVRDREG	0x230	/* SERDES Control Override */
++#define BCMA_CORE_PCI_PLP_TIMINGOVRDREG		0x234	/* Timing param override */
++#define BCMA_CORE_PCI_PLP_RXTXSMDIAGREG		0x238	/* RXTX State Machine Diag */
++#define BCMA_CORE_PCI_PLP_LTSSMDIAGREG		0x23C	/* LTSSM State Machine Diag */
++
++/* PCIE protocol DLLP diagnostic registers */
++#define BCMA_CORE_PCI_DLLP_LCREG		0x100	/* Link Control */
++#define BCMA_CORE_PCI_DLLP_LSREG		0x104	/* Link Status */
++#define BCMA_CORE_PCI_DLLP_LAREG		0x108	/* Link Attention */
++#define  BCMA_CORE_PCI_DLLP_LSREG_LINKUP	(1 << 16)
++#define BCMA_CORE_PCI_DLLP_LAMASKREG		0x10C	/* Link Attention Mask */
++#define BCMA_CORE_PCI_DLLP_NEXTTXSEQNUMREG	0x110	/* Next Tx Seq Num */
++#define BCMA_CORE_PCI_DLLP_ACKEDTXSEQNUMREG	0x114	/* Acked Tx Seq Num */
++#define BCMA_CORE_PCI_DLLP_PURGEDTXSEQNUMREG	0x118	/* Purged Tx Seq Num */
++#define BCMA_CORE_PCI_DLLP_RXSEQNUMREG		0x11C	/* Rx Sequence Number */
++#define BCMA_CORE_PCI_DLLP_LRREG		0x120	/* Link Replay */
++#define BCMA_CORE_PCI_DLLP_LACKTOREG		0x124	/* Link Ack Timeout */
++#define BCMA_CORE_PCI_DLLP_PMTHRESHREG		0x128	/* Power Management Threshold */
++#define BCMA_CORE_PCI_DLLP_RTRYWPREG		0x12C	/* Retry buffer write ptr */
++#define BCMA_CORE_PCI_DLLP_RTRYRPREG		0x130	/* Retry buffer Read ptr */
++#define BCMA_CORE_PCI_DLLP_RTRYPPREG		0x134	/* Retry buffer Purged ptr */
++#define BCMA_CORE_PCI_DLLP_RTRRWREG		0x138	/* Retry buffer Read/Write */
++#define BCMA_CORE_PCI_DLLP_ECTHRESHREG		0x13C	/* Error Count Threshold */
++#define BCMA_CORE_PCI_DLLP_TLPERRCTRREG		0x140	/* TLP Error Counter */
++#define BCMA_CORE_PCI_DLLP_ERRCTRREG		0x144	/* Error Counter */
++#define BCMA_CORE_PCI_DLLP_NAKRXCTRREG		0x148	/* NAK Received Counter */
++#define BCMA_CORE_PCI_DLLP_TESTREG		0x14C	/* Test */
++#define BCMA_CORE_PCI_DLLP_PKTBIST		0x150	/* Packet BIST */
++#define BCMA_CORE_PCI_DLLP_PCIE11		0x154	/* DLLP PCIE 1.1 reg */
++
++/* SERDES RX registers */
++#define BCMA_CORE_PCI_SERDES_RX_CTRL		1	/* Rx cntrl */
++#define  BCMA_CORE_PCI_SERDES_RX_CTRL_FORCE	0x80	/* rxpolarity_force */
++#define  BCMA_CORE_PCI_SERDES_RX_CTRL_POLARITY	0x40	/* rxpolarity_value */
++#define BCMA_CORE_PCI_SERDES_RX_TIMER1		2	/* Rx Timer1 */
++#define BCMA_CORE_PCI_SERDES_RX_CDR		6	/* CDR */
++#define BCMA_CORE_PCI_SERDES_RX_CDRBW		7	/* CDR BW */
++
++/* SERDES PLL registers */
++#define BCMA_CORE_PCI_SERDES_PLL_CTRL		1	/* PLL control reg */
++#define BCMA_CORE_PCI_PLL_CTRL_FREQDET_EN	0x4000	/* bit 14 is FREQDET on */
++
+ /* PCIcore specific boardflags */
+ #define BCMA_CORE_PCI_BFL_NOPCI			0x00000400 /* Board leaves PCI floating */
+ 
++/* PCIE Config space accessing MACROS */
++#define BCMA_CORE_PCI_CFG_BUS_SHIFT		24	/* Bus shift */
++#define BCMA_CORE_PCI_CFG_SLOT_SHIFT		19	/* Slot/Device shift */
++#define BCMA_CORE_PCI_CFG_FUN_SHIFT		16	/* Function shift */
++#define BCMA_CORE_PCI_CFG_OFF_SHIFT		0	/* Register shift */
++
++#define BCMA_CORE_PCI_CFG_BUS_MASK		0xff	/* Bus mask */
++#define BCMA_CORE_PCI_CFG_SLOT_MASK		0x1f	/* Slot/Device mask */
++#define BCMA_CORE_PCI_CFG_FUN_MASK		7	/* Function mask */
++#define BCMA_CORE_PCI_CFG_OFF_MASK		0xfff	/* Register mask */
++
++/* PCIE Root Capability Register bits (Host mode only) */
++#define BCMA_CORE_PCI_RC_CRS_VISIBILITY		0x0001
++
++struct bcma_drv_pci;
++
++#ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
++struct bcma_drv_pci_host {
++	struct bcma_drv_pci *pdev;
++
++	u32 host_cfg_addr;
++	spinlock_t cfgspace_lock;
++
++	struct pci_controller pci_controller;
++	struct pci_ops pci_ops;
++	struct resource mem_resource;
++	struct resource io_resource;
++};
++#endif
++
+ struct bcma_drv_pci {
+ 	struct bcma_device *core;
+ 	u8 setup_done:1;
++	u8 hostmode:1;
++
++#ifdef CONFIG_BCMA_DRIVER_PCI_HOSTMODE
++	struct bcma_drv_pci_host *host_controller;
++#endif
+ };
+ 
+ /* Register access */
+ #define pcicore_read32(pc, offset)		bcma_read32((pc)->core, offset)
  #define pcicore_write32(pc, offset, val)	bcma_write32((pc)->core, offset, val)
  
- extern void bcma_core_pci_init(struct bcma_drv_pci *pc);
+-extern void bcma_core_pci_init(struct bcma_drv_pci *pc);
++extern void __devinit bcma_core_pci_init(struct bcma_drv_pci *pc);
 +extern int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc,
 +				 struct bcma_device *core, bool enable);
++
++extern int bcma_core_pci_pcibios_map_irq(const struct pci_dev *dev);
++extern int bcma_core_pci_plat_dev_init(struct pci_dev *dev);
  
  #endif /* LINUX_BCMA_DRIVER_PCI_H_ */
 --- a/include/linux/bcma/bcma_regs.h
@@ -2608,6 +3877,38 @@
  #define BCMA_RESET_CTL			0x0800
  #define  BCMA_RESET_CTL_RESET		0x0001
  
+@@ -31,4 +56,31 @@
+ #define  BCMA_PCI_GPIO_XTAL		0x40	/* PCI config space GPIO 14 for Xtal powerup */
+ #define  BCMA_PCI_GPIO_PLL		0x80	/* PCI config space GPIO 15 for PLL powerdown */
+ 
++/* SiliconBackplane Address Map.
++ * All regions may not exist on all chips.
++ */
++#define BCMA_SOC_SDRAM_BASE		0x00000000U	/* Physical SDRAM */
++#define BCMA_SOC_PCI_MEM		0x08000000U	/* Host Mode sb2pcitranslation0 (64 MB) */
++#define BCMA_SOC_PCI_MEM_SZ		(64 * 1024 * 1024)
++#define BCMA_SOC_PCI_CFG		0x0c000000U	/* Host Mode sb2pcitranslation1 (64 MB) */
++#define BCMA_SOC_SDRAM_SWAPPED		0x10000000U	/* Byteswapped Physical SDRAM */
++#define BCMA_SOC_SDRAM_R2		0x80000000U	/* Region 2 for sdram (512 MB) */
++
++
++#define BCMA_SOC_PCI_DMA		0x40000000U	/* Client Mode sb2pcitranslation2 (1 GB) */
++#define BCMA_SOC_PCI_DMA2		0x80000000U	/* Client Mode sb2pcitranslation2 (1 GB) */
++#define BCMA_SOC_PCI_DMA_SZ		0x40000000U	/* Client Mode sb2pcitranslation2 size in bytes */
++#define BCMA_SOC_PCIE_DMA_L32		0x00000000U	/* PCIE Client Mode sb2pcitranslation2
++							 * (2 ZettaBytes), low 32 bits
++							 */
++#define BCMA_SOC_PCIE_DMA_H32		0x80000000U	/* PCIE Client Mode sb2pcitranslation2
++							 * (2 ZettaBytes), high 32 bits
++							 */
++
++#define BCMA_SOC_PCI1_MEM		0x40000000U	/* Host Mode sb2pcitranslation0 (64 MB) */
++#define BCMA_SOC_PCI1_CFG		0x44000000U	/* Host Mode sb2pcitranslation1 (64 MB) */
++#define BCMA_SOC_PCIE1_DMA_H32		0xc0000000U	/* PCIE Client Mode sb2pcitranslation2
++							 * (2 ZettaBytes), high 32 bits
++							 */
++
+ #endif /* LINUX_BCMA_REGS_H_ */
 --- /dev/null
 +++ b/include/linux/bcma/bcma_soc.h
 @@ -0,0 +1,16 @@

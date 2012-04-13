@@ -17,7 +17,49 @@
  #include <linux/ssb/ssb.h>
  #include <linux/ssb/ssb_regs.h>
  #include <linux/ssb/ssb_driver_gige.h>
-@@ -383,6 +384,35 @@ static int ssb_device_uevent(struct devi
+@@ -139,19 +140,6 @@ static void ssb_device_put(struct ssb_de
+ 		put_device(dev->dev);
+ }
+ 
+-static inline struct ssb_driver *ssb_driver_get(struct ssb_driver *drv)
+-{
+-	if (drv)
+-		get_driver(&drv->drv);
+-	return drv;
+-}
+-
+-static inline void ssb_driver_put(struct ssb_driver *drv)
+-{
+-	if (drv)
+-		put_driver(&drv->drv);
+-}
+-
+ static int ssb_device_resume(struct device *dev)
+ {
+ 	struct ssb_device *ssb_dev = dev_to_ssb_dev(dev);
+@@ -249,11 +237,9 @@ int ssb_devices_freeze(struct ssb_bus *b
+ 			ssb_device_put(sdev);
+ 			continue;
+ 		}
+-		sdrv = ssb_driver_get(drv_to_ssb_drv(sdev->dev->driver));
+-		if (!sdrv || SSB_WARN_ON(!sdrv->remove)) {
+-			ssb_device_put(sdev);
++		sdrv = drv_to_ssb_drv(sdev->dev->driver);
++		if (SSB_WARN_ON(!sdrv->remove))
+ 			continue;
+-		}
+ 		sdrv->remove(sdev);
+ 		ctx->device_frozen[i] = 1;
+ 	}
+@@ -292,7 +278,6 @@ int ssb_devices_thaw(struct ssb_freeze_c
+ 				   dev_name(sdev->dev));
+ 			result = err;
+ 		}
+-		ssb_driver_put(sdrv);
+ 		ssb_device_put(sdev);
+ 	}
+ 
+@@ -383,6 +368,35 @@ static int ssb_device_uevent(struct devi
  			     ssb_dev->id.revision);
  }
  
@@ -53,7 +95,7 @@
  static struct bus_type ssb_bustype = {
  	.name		= "ssb",
  	.match		= ssb_bus_match,
-@@ -392,6 +422,7 @@ static struct bus_type ssb_bustype = {
+@@ -392,6 +406,7 @@ static struct bus_type ssb_bustype = {
  	.suspend	= ssb_device_suspend,
  	.resume		= ssb_device_resume,
  	.uevent		= ssb_device_uevent,
@@ -61,7 +103,7 @@
  };
  
  static void ssb_buses_lock(void)
-@@ -527,7 +558,7 @@ error:
+@@ -527,7 +542,7 @@ error:
  }
  
  /* Needs ssb_buses_lock() */
@@ -70,7 +112,7 @@
  {
  	struct ssb_bus *bus, *n;
  	int err = 0;
-@@ -738,9 +769,9 @@ out:
+@@ -738,9 +753,9 @@ out:
  	return err;
  }
  
@@ -83,7 +125,7 @@
  {
  	int err;
  
-@@ -821,8 +852,8 @@ err_disable_xtal:
+@@ -821,8 +836,8 @@ err_disable_xtal:
  }
  
  #ifdef CONFIG_SSB_PCIHOST
@@ -94,7 +136,7 @@
  {
  	int err;
  
-@@ -845,9 +876,9 @@ EXPORT_SYMBOL(ssb_bus_pcibus_register);
+@@ -845,9 +860,9 @@ EXPORT_SYMBOL(ssb_bus_pcibus_register);
  #endif /* CONFIG_SSB_PCIHOST */
  
  #ifdef CONFIG_SSB_PCMCIAHOST
@@ -107,7 +149,7 @@
  {
  	int err;
  
-@@ -867,8 +898,9 @@ EXPORT_SYMBOL(ssb_bus_pcmciabus_register
+@@ -867,8 +882,9 @@ EXPORT_SYMBOL(ssb_bus_pcmciabus_register
  #endif /* CONFIG_SSB_PCMCIAHOST */
  
  #ifdef CONFIG_SSB_SDIOHOST
@@ -119,7 +161,7 @@
  {
  	int err;
  
-@@ -888,9 +920,9 @@ int ssb_bus_sdiobus_register(struct ssb_
+@@ -888,9 +904,9 @@ int ssb_bus_sdiobus_register(struct ssb_
  EXPORT_SYMBOL(ssb_bus_sdiobus_register);
  #endif /* CONFIG_SSB_PCMCIAHOST */
  
@@ -132,7 +174,7 @@
  {
  	int err;
  
-@@ -971,8 +1003,8 @@ u32 ssb_calc_clock_rate(u32 plltype, u32
+@@ -971,8 +987,8 @@ u32 ssb_calc_clock_rate(u32 plltype, u32
  	switch (plltype) {
  	case SSB_PLLTYPE_6: /* 100/200 or 120/240 only */
  		if (m & SSB_CHIPCO_CLK_T6_MMASK)
@@ -143,7 +185,17 @@
  	case SSB_PLLTYPE_1: /* 48Mhz base, 3 dividers */
  	case SSB_PLLTYPE_3: /* 25Mhz, 2 dividers */
  	case SSB_PLLTYPE_4: /* 48Mhz, 4 dividers */
-@@ -1087,23 +1119,22 @@ static u32 ssb_tmslow_reject_bitmask(str
+@@ -1062,6 +1078,9 @@ u32 ssb_clockspeed(struct ssb_bus *bus)
+ 	u32 plltype;
+ 	u32 clkctl_n, clkctl_m;
+ 
++	if (bus->chipco.capabilities & SSB_CHIPCO_CAP_PMU)
++		return ssb_pmu_get_controlclock(&bus->chipco);
++
+ 	if (ssb_extif_available(&bus->extif))
+ 		ssb_extif_get_clockcontrol(&bus->extif, &plltype,
+ 					   &clkctl_n, &clkctl_m);
+@@ -1087,23 +1106,22 @@ static u32 ssb_tmslow_reject_bitmask(str
  {
  	u32 rev = ssb_read32(dev, SSB_IDLOW) & SSB_IDLOW_SSBREV;
  
@@ -174,7 +226,7 @@
  }
  
  int ssb_device_is_enabled(struct ssb_device *dev)
-@@ -1162,10 +1193,10 @@ void ssb_device_enable(struct ssb_device
+@@ -1162,10 +1180,10 @@ void ssb_device_enable(struct ssb_device
  }
  EXPORT_SYMBOL(ssb_device_enable);
  
@@ -188,7 +240,7 @@
  {
  	int i;
  	u32 val;
-@@ -1173,7 +1204,7 @@ static int ssb_wait_bit(struct ssb_devic
+@@ -1173,7 +1191,7 @@ static int ssb_wait_bit(struct ssb_devic
  	for (i = 0; i < timeout; i++) {
  		val = ssb_read32(dev, reg);
  		if (set) {
@@ -197,7 +249,7 @@
  				return 0;
  		} else {
  			if (!(val & bitmask))
-@@ -1190,20 +1221,38 @@ static int ssb_wait_bit(struct ssb_devic
+@@ -1190,20 +1208,38 @@ static int ssb_wait_bit(struct ssb_devic
  
  void ssb_device_disable(struct ssb_device *dev, u32 core_specific_flags)
  {
@@ -245,7 +297,7 @@
  
  	ssb_write32(dev, SSB_TMSLOW,
  		    reject | SSB_TMSLOW_RESET |
-@@ -1212,13 +1261,34 @@ void ssb_device_disable(struct ssb_devic
+@@ -1212,13 +1248,34 @@ void ssb_device_disable(struct ssb_devic
  }
  EXPORT_SYMBOL(ssb_device_disable);
  
@@ -281,7 +333,7 @@
  	default:
  		__ssb_dma_not_implemented(dev);
  	}
-@@ -1261,20 +1331,20 @@ EXPORT_SYMBOL(ssb_bus_may_powerdown);
+@@ -1261,20 +1318,20 @@ EXPORT_SYMBOL(ssb_bus_may_powerdown);
  
  int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl)
  {
@@ -306,7 +358,7 @@
  	return 0;
  error:
  	ssb_printk(KERN_ERR PFX "Bus powerup failed\n");
-@@ -1282,6 +1352,37 @@ error:
+@@ -1282,6 +1339,37 @@ error:
  }
  EXPORT_SYMBOL(ssb_bus_powerup);
  
@@ -355,10 +407,40 @@
   * Copyright (C) 2005 Martin Langer <martin-langer@gmx.de>
   * Copyright (C) 2005 Stefano Brivio <st3@riseup.net>
   * Copyright (C) 2005 Danny van Dyk <kugelfang@gentoo.org>
-@@ -406,6 +406,46 @@ static void sprom_extract_r123(struct ss
- 	out->antenna_gain.ghz5.a3 = gain;
- }
+@@ -331,7 +331,6 @@ static void sprom_extract_r123(struct ss
+ {
+ 	int i;
+ 	u16 v;
+-	s8 gain;
+ 	u16 loc[3];
  
+ 	if (out->revision == 3)			/* rev 3 moved MAC */
+@@ -390,20 +389,52 @@ static void sprom_extract_r123(struct ss
+ 		SPEX(boardflags_hi, SSB_SPROM2_BFLHI, 0xFFFF, 0);
+ 
+ 	/* Extract the antenna gain values. */
+-	gain = r123_extract_antgain(out->revision, in,
+-				    SSB_SPROM1_AGAIN_BG,
+-				    SSB_SPROM1_AGAIN_BG_SHIFT);
+-	out->antenna_gain.ghz24.a0 = gain;
+-	out->antenna_gain.ghz24.a1 = gain;
+-	out->antenna_gain.ghz24.a2 = gain;
+-	out->antenna_gain.ghz24.a3 = gain;
+-	gain = r123_extract_antgain(out->revision, in,
+-				    SSB_SPROM1_AGAIN_A,
+-				    SSB_SPROM1_AGAIN_A_SHIFT);
+-	out->antenna_gain.ghz5.a0 = gain;
+-	out->antenna_gain.ghz5.a1 = gain;
+-	out->antenna_gain.ghz5.a2 = gain;
+-	out->antenna_gain.ghz5.a3 = gain;
++	out->antenna_gain.a0 = r123_extract_antgain(out->revision, in,
++						    SSB_SPROM1_AGAIN_BG,
++						    SSB_SPROM1_AGAIN_BG_SHIFT);
++	out->antenna_gain.a1 = r123_extract_antgain(out->revision, in,
++						    SSB_SPROM1_AGAIN_A,
++						    SSB_SPROM1_AGAIN_A_SHIFT);
++}
++
 +/* Revs 4 5 and 8 have partially shared layout */
 +static void sprom_extract_r458(struct ssb_sprom *out, const u16 *in)
 +{
@@ -397,12 +479,10 @@
 +	     SSB_SPROM4_TXPID5GH2, SSB_SPROM4_TXPID5GH2_SHIFT);
 +	SPEX(txpid5gh[3], SSB_SPROM4_TXPID5GH23,
 +	     SSB_SPROM4_TXPID5GH3, SSB_SPROM4_TXPID5GH3_SHIFT);
-+}
-+
+ }
+ 
  static void sprom_extract_r45(struct ssb_sprom *out, const u16 *in)
- {
- 	int i;
-@@ -428,10 +468,14 @@ static void sprom_extract_r45(struct ssb
+@@ -428,10 +459,14 @@ static void sprom_extract_r45(struct ssb
  		SPEX(country_code, SSB_SPROM4_CCODE, 0xFFFF, 0);
  		SPEX(boardflags_lo, SSB_SPROM4_BFLLO, 0xFFFF, 0);
  		SPEX(boardflags_hi, SSB_SPROM4_BFLHI, 0xFFFF, 0);
@@ -417,15 +497,30 @@
  	}
  	SPEX(ant_available_a, SSB_SPROM4_ANTAVAIL, SSB_SPROM4_ANTAVAIL_A,
  	     SSB_SPROM4_ANTAVAIL_A_SHIFT);
-@@ -471,13 +515,21 @@ static void sprom_extract_r45(struct ssb
- 	memcpy(&out->antenna_gain.ghz5, &out->antenna_gain.ghz24,
- 	       sizeof(out->antenna_gain.ghz5));
+@@ -460,16 +495,16 @@ static void sprom_extract_r45(struct ssb
+ 	}
  
-+	sprom_extract_r458(out, in);
+ 	/* Extract the antenna gain values. */
+-	SPEX(antenna_gain.ghz24.a0, SSB_SPROM4_AGAIN01,
++	SPEX(antenna_gain.a0, SSB_SPROM4_AGAIN01,
+ 	     SSB_SPROM4_AGAIN0, SSB_SPROM4_AGAIN0_SHIFT);
+-	SPEX(antenna_gain.ghz24.a1, SSB_SPROM4_AGAIN01,
++	SPEX(antenna_gain.a1, SSB_SPROM4_AGAIN01,
+ 	     SSB_SPROM4_AGAIN1, SSB_SPROM4_AGAIN1_SHIFT);
+-	SPEX(antenna_gain.ghz24.a2, SSB_SPROM4_AGAIN23,
++	SPEX(antenna_gain.a2, SSB_SPROM4_AGAIN23,
+ 	     SSB_SPROM4_AGAIN2, SSB_SPROM4_AGAIN2_SHIFT);
+-	SPEX(antenna_gain.ghz24.a3, SSB_SPROM4_AGAIN23,
++	SPEX(antenna_gain.a3, SSB_SPROM4_AGAIN23,
+ 	     SSB_SPROM4_AGAIN3, SSB_SPROM4_AGAIN3_SHIFT);
+-	memcpy(&out->antenna_gain.ghz5, &out->antenna_gain.ghz24,
+-	       sizeof(out->antenna_gain.ghz5));
 +
++	sprom_extract_r458(out, in);
+ 
  	/* TODO - get remaining rev 4 stuff needed */
  }
- 
+@@ -477,7 +512,13 @@ static void sprom_extract_r45(struct ssb
  static void sprom_extract_r8(struct ssb_sprom *out, const u16 *in)
  {
  	int i;
@@ -440,10 +535,25 @@
  
  	/* extract the MAC address */
  	for (i = 0; i < 3; i++) {
-@@ -561,6 +613,63 @@ static void sprom_extract_r8(struct ssb_
- 	memcpy(&out->antenna_gain.ghz5, &out->antenna_gain.ghz24,
- 	       sizeof(out->antenna_gain.ghz5));
+@@ -550,16 +591,71 @@ static void sprom_extract_r8(struct ssb_
+ 	SPEX32(ofdm5ghpo, SSB_SPROM8_OFDM5GHPO, 0xFFFFFFFF, 0);
  
+ 	/* Extract the antenna gain values. */
+-	SPEX(antenna_gain.ghz24.a0, SSB_SPROM8_AGAIN01,
++	SPEX(antenna_gain.a0, SSB_SPROM8_AGAIN01,
+ 	     SSB_SPROM8_AGAIN0, SSB_SPROM8_AGAIN0_SHIFT);
+-	SPEX(antenna_gain.ghz24.a1, SSB_SPROM8_AGAIN01,
++	SPEX(antenna_gain.a1, SSB_SPROM8_AGAIN01,
+ 	     SSB_SPROM8_AGAIN1, SSB_SPROM8_AGAIN1_SHIFT);
+-	SPEX(antenna_gain.ghz24.a2, SSB_SPROM8_AGAIN23,
++	SPEX(antenna_gain.a2, SSB_SPROM8_AGAIN23,
+ 	     SSB_SPROM8_AGAIN2, SSB_SPROM8_AGAIN2_SHIFT);
+-	SPEX(antenna_gain.ghz24.a3, SSB_SPROM8_AGAIN23,
++	SPEX(antenna_gain.a3, SSB_SPROM8_AGAIN23,
+ 	     SSB_SPROM8_AGAIN3, SSB_SPROM8_AGAIN3_SHIFT);
+-	memcpy(&out->antenna_gain.ghz5, &out->antenna_gain.ghz24,
+-	       sizeof(out->antenna_gain.ghz5));
++
 +	/* Extract cores power info info */
 +	for (i = 0; i < ARRAY_SIZE(pwr_info_offset); i++) {
 +		o = pwr_info_offset[i];
@@ -500,11 +610,10 @@
 +		SSB_SROM8_FEM_ANTSWLUT, SSB_SROM8_FEM_ANTSWLUT_SHIFT);
 +
 +	sprom_extract_r458(out, in);
-+
+ 
  	/* TODO - get remaining rev 8 stuff needed */
  }
- 
-@@ -573,37 +682,34 @@ static int sprom_extract(struct ssb_bus
+@@ -573,37 +669,34 @@ static int sprom_extract(struct ssb_bus
  	ssb_dprintk(KERN_DEBUG PFX "SPROM revision %d detected.\n", out->revision);
  	memset(out->et0mac, 0xFF, 6);		/* preset et0 and et1 mac */
  	memset(out->et1mac, 0xFF, 6);
@@ -563,7 +672,7 @@
  	}
  
  	if (out->boardflags_lo == 0xFFFF)
-@@ -617,15 +723,14 @@ static int sprom_extract(struct ssb_bus
+@@ -617,15 +710,14 @@ static int sprom_extract(struct ssb_bus
  static int ssb_pci_sprom_get(struct ssb_bus *bus,
  			     struct ssb_sprom *sprom)
  {
@@ -581,7 +690,7 @@
  		/*
  		 * get SPROM offset: SSB_SPROM_BASE1 except for
  		 * chipcommon rev >= 31 or chip ID is 0x4312 and
-@@ -645,7 +750,7 @@ static int ssb_pci_sprom_get(struct ssb_
+@@ -645,7 +737,7 @@ static int ssb_pci_sprom_get(struct ssb_
  
  	buf = kcalloc(SSB_SPROMSIZE_WORDS_R123, sizeof(u16), GFP_KERNEL);
  	if (!buf)
@@ -590,7 +699,7 @@
  	bus->sprom_size = SSB_SPROMSIZE_WORDS_R123;
  	sprom_do_read(bus, buf);
  	err = sprom_check_crc(buf, bus->sprom_size);
-@@ -655,17 +760,24 @@ static int ssb_pci_sprom_get(struct ssb_
+@@ -655,17 +747,24 @@ static int ssb_pci_sprom_get(struct ssb_
  		buf = kcalloc(SSB_SPROMSIZE_WORDS_R4, sizeof(u16),
  			      GFP_KERNEL);
  		if (!buf)
@@ -620,7 +729,7 @@
  				err = 0;
  				goto out_free;
  			}
-@@ -677,19 +789,15 @@ static int ssb_pci_sprom_get(struct ssb_
+@@ -677,19 +776,15 @@ static int ssb_pci_sprom_get(struct ssb_
  
  out_free:
  	kfree(buf);
@@ -725,7 +834,17 @@
  			bus->chip_package = 0;
  		} else {
  			bus->chip_id = 0x4710;
-@@ -405,10 +407,10 @@ int ssb_bus_scan(struct ssb_bus *bus,
+@@ -316,6 +318,9 @@ int ssb_bus_scan(struct ssb_bus *bus,
+ 			bus->chip_package = 0;
+ 		}
+ 	}
++	ssb_printk(KERN_INFO PFX "Found chip with id 0x%04X, rev 0x%02X and "
++		   "package 0x%02X\n", bus->chip_id, bus->chip_rev,
++		   bus->chip_package);
+ 	if (!bus->nr_devices)
+ 		bus->nr_devices = chipid_to_nrcores(bus->chip_id);
+ 	if (bus->nr_devices > ARRAY_SIZE(bus->devices)) {
+@@ -405,10 +410,10 @@ int ssb_bus_scan(struct ssb_bus *bus,
  				/* Ignore PCI cores on PCI-E cards.
  				 * Ignore PCI-E cores on PCI cards. */
  				if (dev->id.coreid == SSB_DEV_PCI) {
@@ -738,7 +857,7 @@
  						continue;
  				}
  			}
-@@ -420,6 +422,16 @@ int ssb_bus_scan(struct ssb_bus *bus,
+@@ -420,6 +425,16 @@ int ssb_bus_scan(struct ssb_bus *bus,
  			bus->pcicore.dev = dev;
  #endif /* CONFIG_SSB_DRIVER_PCICORE */
  			break;
@@ -764,36 +883,57 @@
 +struct ssb_sprom_core_pwr_info {
 +	u8 itssi_2g, itssi_5g;
 +	u8 maxpwr_2g, maxpwr_5gl, maxpwr_5g, maxpwr_5gh;
-+	u16 pa_2g[3], pa_5gl[3], pa_5g[3], pa_5gh[3];
++	u16 pa_2g[4], pa_5gl[4], pa_5g[4], pa_5gh[4];
 +};
 +
  struct ssb_sprom {
  	u8 revision;
  	u8 il0mac[6];		/* MAC address for 802.11b/g */
-@@ -25,8 +31,10 @@ struct ssb_sprom {
+@@ -25,8 +31,13 @@ struct ssb_sprom {
  	u8 et1phyaddr;		/* MII address for enet1 */
  	u8 et0mdcport;		/* MDIO for enet0 */
  	u8 et1mdcport;		/* MDIO for enet1 */
 -	u8 board_rev;		/* Board revision number from SPROM. */
 +	u16 board_rev;		/* Board revision number from SPROM. */
++	u16 board_num;		/* Board number from SPROM. */
++	u16 board_type;		/* Board type from SPROM. */
  	u8 country_code;	/* Country Code */
-+	u16 leddc_on_time;	/* LED Powersave Duty Cycle On Count */
-+	u16 leddc_off_time;	/* LED Powersave Duty Cycle Off Count */
++	char alpha2[2];		/* Country Code as two chars like EU or US */
++	u8 leddc_on_time;	/* LED Powersave Duty Cycle On Count */
++	u8 leddc_off_time;	/* LED Powersave Duty Cycle Off Count */
  	u8 ant_available_a;	/* 2GHz antenna available bits (up to 4) */
  	u8 ant_available_bg;	/* 5GHz antenna available bits (up to 4) */
  	u16 pa0b0;
-@@ -55,6 +63,10 @@ struct ssb_sprom {
+@@ -45,18 +56,22 @@ struct ssb_sprom {
+ 	u8 gpio1;		/* GPIO pin 1 */
+ 	u8 gpio2;		/* GPIO pin 2 */
+ 	u8 gpio3;		/* GPIO pin 3 */
+-	u16 maxpwr_bg;		/* 2.4GHz Amplifier Max Power (in dBm Q5.2) */
+-	u16 maxpwr_al;		/* 5.2GHz Amplifier Max Power (in dBm Q5.2) */
+-	u16 maxpwr_a;		/* 5.3GHz Amplifier Max Power (in dBm Q5.2) */
+-	u16 maxpwr_ah;		/* 5.8GHz Amplifier Max Power (in dBm Q5.2) */
++	u8 maxpwr_bg;		/* 2.4GHz Amplifier Max Power (in dBm Q5.2) */
++	u8 maxpwr_al;		/* 5.2GHz Amplifier Max Power (in dBm Q5.2) */
++	u8 maxpwr_a;		/* 5.3GHz Amplifier Max Power (in dBm Q5.2) */
++	u8 maxpwr_ah;		/* 5.8GHz Amplifier Max Power (in dBm Q5.2) */
+ 	u8 itssi_a;		/* Idle TSSI Target for A-PHY */
+ 	u8 itssi_bg;		/* Idle TSSI Target for B/G-PHY */
+ 	u8 tri2g;		/* 2.4GHz TX isolation */
  	u8 tri5gl;		/* 5.2GHz TX isolation */
  	u8 tri5g;		/* 5.3GHz TX isolation */
  	u8 tri5gh;		/* 5.8GHz TX isolation */
+-	u8 rxpo2g;		/* 2GHz RX power offset */
+-	u8 rxpo5g;		/* 5GHz RX power offset */
 +	u8 txpid2g[4];		/* 2GHz TX power index */
 +	u8 txpid5gl[4];		/* 4.9 - 5.1GHz TX power index */
 +	u8 txpid5g[4];		/* 5.1 - 5.5GHz TX power index */
 +	u8 txpid5gh[4];		/* 5.5 - ...GHz TX power index */
- 	u8 rxpo2g;		/* 2GHz RX power offset */
- 	u8 rxpo5g;		/* 5GHz RX power offset */
++	s8 rxpo2g;		/* 2GHz RX power offset */
++	s8 rxpo5g;		/* 5GHz RX power offset */
  	u8 rssisav2g;		/* 2GHz RSSI params */
-@@ -76,6 +88,8 @@ struct ssb_sprom {
+ 	u8 rssismc2g;
+ 	u8 rssismf2g;
+@@ -76,26 +91,104 @@ struct ssb_sprom {
  	u16 boardflags2_hi;	/* Board flags (bits 48-63) */
  	/* TODO store board flags in a single u64 */
  
@@ -802,10 +942,17 @@
  	/* Antenna gain values for up to 4 antennas
  	 * on each band. Values in dBm/4 (Q5.2). Negative gain means the
  	 * loss in the connectors is bigger than the gain. */
-@@ -88,6 +102,15 @@ struct ssb_sprom {
- 		} ghz5;		/* 5GHz band */
+ 	struct {
+-		struct {
+-			s8 a0, a1, a2, a3;
+-		} ghz24;	/* 2.4GHz band */
+-		struct {
+-			s8 a0, a1, a2, a3;
+-		} ghz5;		/* 5GHz band */
++		s8 a0, a1, a2, a3;
  	} antenna_gain;
  
+-	/* TODO - add any parameters needed from rev 2, 3, 4, 5 or 8 SPROMs */
 +	struct {
 +		struct {
 +			u8 tssipos, extpa_gain, pdet_range, tr_iso, antswlut;
@@ -815,10 +962,82 @@
 +		} ghz5;
 +	} fem;
 +
- 	/* TODO - add any parameters needed from rev 2, 3, 4, 5 or 8 SPROMs */
++	u16 mcs2gpo[8];
++	u16 mcs5gpo[8];
++	u16 mcs5glpo[8];
++	u16 mcs5ghpo[8];
++	u8 opo;
++
++	u8 rxgainerr2ga[3];
++	u8 rxgainerr5gla[3];
++	u8 rxgainerr5gma[3];
++	u8 rxgainerr5gha[3];
++	u8 rxgainerr5gua[3];
++
++	u8 noiselvl2ga[3];
++	u8 noiselvl5gla[3];
++	u8 noiselvl5gma[3];
++	u8 noiselvl5gha[3];
++	u8 noiselvl5gua[3];
++
++	u8 regrev;
++	u8 txchain;
++	u8 rxchain;
++	u8 antswitch;
++	u16 cddpo;
++	u16 stbcpo;
++	u16 bw40po;
++	u16 bwduppo;
++
++	u8 tempthresh;
++	u8 tempoffset;
++	u16 rawtempsense;
++	u8 measpower;
++	u8 tempsense_slope;
++	u8 tempcorrx;
++	u8 tempsense_option;
++	u8 freqoffset_corr;
++	u8 iqcal_swp_dis;
++	u8 hw_iqcal_en;
++	u8 elna2g;
++	u8 elna5g;
++	u8 phycal_tempdelta;
++	u8 temps_period;
++	u8 temps_hysteresis;
++	u8 measpower1;
++	u8 measpower2;
++	u8 pcieingress_war;
++
++	/* power per rate from sromrev 9 */
++	u16 cckbw202gpo;
++	u16 cckbw20ul2gpo;
++	u32 legofdmbw202gpo;
++	u32 legofdmbw20ul2gpo;
++	u32 legofdmbw205glpo;
++	u32 legofdmbw20ul5glpo;
++	u32 legofdmbw205gmpo;
++	u32 legofdmbw20ul5gmpo;
++	u32 legofdmbw205ghpo;
++	u32 legofdmbw20ul5ghpo;
++	u32 mcsbw202gpo;
++	u32 mcsbw20ul2gpo;
++	u32 mcsbw402gpo;
++	u32 mcsbw205glpo;
++	u32 mcsbw20ul5glpo;
++	u32 mcsbw405glpo;
++	u32 mcsbw205gmpo;
++	u32 mcsbw20ul5gmpo;
++	u32 mcsbw405gmpo;
++	u32 mcsbw205ghpo;
++	u32 mcsbw20ul5ghpo;
++	u32 mcsbw405ghpo;
++	u16 mcs32po;
++	u16 legofdm40duppo;
++	u8 sar2g;
++	u8 sar5g;
  };
  
-@@ -95,7 +118,7 @@ struct ssb_sprom {
+ /* Information about the PCB the circuitry is soldered on. */
  struct ssb_boardinfo {
  	u16 vendor;
  	u16 type;
@@ -827,7 +1046,7 @@
  };
  
  
-@@ -225,10 +248,9 @@ struct ssb_driver {
+@@ -225,10 +318,9 @@ struct ssb_driver {
  #define drv_to_ssb_drv(_drv) container_of(_drv, struct ssb_driver, drv)
  
  extern int __ssb_driver_register(struct ssb_driver *drv, struct module *owner);
@@ -841,7 +1060,7 @@
  extern void ssb_driver_unregister(struct ssb_driver *drv);
  
  
-@@ -304,7 +326,7 @@ struct ssb_bus {
+@@ -304,7 +396,7 @@ struct ssb_bus {
  
  	/* ID information about the Chip. */
  	u16 chip_id;
@@ -850,7 +1069,7 @@
  	u16 sprom_offset;
  	u16 sprom_size;		/* number of words in sprom */
  	u8 chip_package;
-@@ -400,7 +422,9 @@ extern bool ssb_is_sprom_available(struc
+@@ -400,7 +492,9 @@ extern bool ssb_is_sprom_available(struc
  
  /* Set a fallback SPROM.
   * See kdoc at the function definition for complete documentation. */
@@ -861,7 +1080,7 @@
  
  /* Suspend a SSB bus.
   * Call this from the parent bus suspend routine. */
-@@ -514,6 +538,7 @@ extern int ssb_bus_may_powerdown(struct
+@@ -514,6 +608,7 @@ extern int ssb_bus_may_powerdown(struct
   * Otherwise static always-on powercontrol will be used. */
  extern int ssb_bus_powerup(struct ssb_bus *bus, bool dynamic_pctl);
  
@@ -1187,7 +1406,53 @@
   * Copyright 2007, Broadcom Corporation
   *
   * Licensed under the GNU/GPL. See COPYING for details.
-@@ -417,12 +417,14 @@ static void ssb_pmu_resources_init(struc
+@@ -12,6 +12,9 @@
+ #include <linux/ssb/ssb_regs.h>
+ #include <linux/ssb/ssb_driver_chipcommon.h>
+ #include <linux/delay.h>
++#ifdef CONFIG_BCM47XX
++#include <asm/mach-bcm47xx/nvram.h>
++#endif
+ 
+ #include "ssb_private.h"
+ 
+@@ -91,10 +94,6 @@ static void ssb_pmu0_pllinit_r0(struct s
+ 	u32 pmuctl, tmp, pllctl;
+ 	unsigned int i;
+ 
+-	if ((bus->chip_id == 0x5354) && !crystalfreq) {
+-		/* The 5354 crystal freq is 25MHz */
+-		crystalfreq = 25000;
+-	}
+ 	if (crystalfreq)
+ 		e = pmu0_plltab_find_entry(crystalfreq);
+ 	if (!e)
+@@ -320,7 +319,11 @@ static void ssb_pmu_pll_init(struct ssb_
+ 	u32 crystalfreq = 0; /* in kHz. 0 = keep default freq. */
+ 
+ 	if (bus->bustype == SSB_BUSTYPE_SSB) {
+-		/* TODO: The user may override the crystal frequency. */
++#ifdef CONFIG_BCM47XX
++		char buf[20];
++		if (nvram_getenv("xtalfreq", buf, sizeof(buf)) >= 0)
++			crystalfreq = simple_strtoul(buf, NULL, 0);
++#endif
+ 	}
+ 
+ 	switch (bus->chip_id) {
+@@ -329,7 +332,11 @@ static void ssb_pmu_pll_init(struct ssb_
+ 		ssb_pmu1_pllinit_r0(cc, crystalfreq);
+ 		break;
+ 	case 0x4328:
++		ssb_pmu0_pllinit_r0(cc, crystalfreq);
++		break;
+ 	case 0x5354:
++		if (crystalfreq == 0)
++			crystalfreq = 25000;
+ 		ssb_pmu0_pllinit_r0(cc, crystalfreq);
+ 		break;
+ 	case 0x4322:
+@@ -417,12 +424,14 @@ static void ssb_pmu_resources_init(struc
  	u32 min_msk = 0, max_msk = 0;
  	unsigned int i;
  	const struct pmu_res_updown_tab_entry *updown_tab = NULL;
@@ -1204,6 +1469,41 @@
  	case 0x4322:
  		/* We keep the default settings:
  		 * min_msk = 0xCBB
+@@ -604,3 +613,34 @@ void ssb_pmu_set_ldo_paref(struct ssb_ch
+ 
+ EXPORT_SYMBOL(ssb_pmu_set_ldo_voltage);
+ EXPORT_SYMBOL(ssb_pmu_set_ldo_paref);
++
++u32 ssb_pmu_get_cpu_clock(struct ssb_chipcommon *cc)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++
++	switch (bus->chip_id) {
++	case 0x5354:
++		/* 5354 chip uses a non programmable PLL of frequency 240MHz */
++		return 240000000;
++	default:
++		ssb_printk(KERN_ERR PFX
++			   "ERROR: PMU cpu clock unknown for device %04X\n",
++			   bus->chip_id);
++		return 0;
++	}
++}
++
++u32 ssb_pmu_get_controlclock(struct ssb_chipcommon *cc)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++
++	switch (bus->chip_id) {
++	case 0x5354:
++		return 120000000;
++	default:
++		ssb_printk(KERN_ERR PFX
++			   "ERROR: PMU controlclock unknown for device %04X\n",
++			   bus->chip_id);
++		return 0;
++	}
++}
 --- a/drivers/ssb/driver_gige.c
 +++ b/drivers/ssb/driver_gige.c
 @@ -3,7 +3,7 @@
@@ -1272,6 +1572,15 @@
  
  static inline
  u32 pcicore_read32(struct ssb_pcicore *pc, u16 offset)
+@@ -69,7 +74,7 @@ static u32 get_cfgspace_addr(struct ssb_
+ 	u32 tmp;
+ 
+ 	/* We do only have one cardbus device behind the bridge. */
+-	if (pc->cardbusmode && (dev >= 1))
++	if (pc->cardbusmode && (dev > 1))
+ 		goto out;
+ 
+ 	if (bus == 0) {
 @@ -309,7 +314,7 @@ int ssb_pcicore_pcibios_map_irq(const st
  	return ssb_mips_irq(extpci_core->dev) + 2;
  }
@@ -1718,6 +2027,15 @@
  
  
  /* core.c */
+@@ -206,4 +207,8 @@ static inline void b43_pci_ssb_bridge_ex
+ }
+ #endif /* CONFIG_SSB_B43_PCI_BRIDGE */
+ 
++/* driver_chipcommon_pmu.c */
++extern u32 ssb_pmu_get_cpu_clock(struct ssb_chipcommon *cc);
++extern u32 ssb_pmu_get_controlclock(struct ssb_chipcommon *cc);
++
+ #endif /* LINUX_SSB_PRIVATE_H_ */
 --- a/include/linux/ssb/ssb_driver_chipcommon.h
 +++ b/include/linux/ssb/ssb_driver_chipcommon.h
 @@ -8,7 +8,7 @@
@@ -1800,6 +2118,16 @@
   *
   * Licensed under the GNU/GPL. See COPYING for details.
   */
+@@ -208,6 +208,9 @@ u32 ssb_cpu_clock(struct ssb_mipscore *m
+ 	struct ssb_bus *bus = mcore->dev->bus;
+ 	u32 pll_type, n, m, rate = 0;
+ 
++	if (bus->chipco.capabilities & SSB_CHIPCO_CAP_PMU)
++		return ssb_pmu_get_cpu_clock(&bus->chipco);
++
+ 	if (bus->extif.dev) {
+ 		ssb_extif_get_clockcontrol(&bus->extif, &pll_type, &n, &m);
+ 	} else if (bus->chipco.dev) {
 --- a/drivers/ssb/embedded.c
 +++ b/drivers/ssb/embedded.c
 @@ -3,7 +3,7 @@
@@ -1822,6 +2150,25 @@
   *
   * Licensed under the GNU/GPL. See COPYING for details.
   */
+@@ -676,14 +676,10 @@ static int ssb_pcmcia_do_get_invariants(
+ 	case SSB_PCMCIA_CIS_ANTGAIN:
+ 		GOTO_ERROR_ON(tuple->TupleDataLen != 2,
+ 			"antg tpl size");
+-		sprom->antenna_gain.ghz24.a0 = tuple->TupleData[1];
+-		sprom->antenna_gain.ghz24.a1 = tuple->TupleData[1];
+-		sprom->antenna_gain.ghz24.a2 = tuple->TupleData[1];
+-		sprom->antenna_gain.ghz24.a3 = tuple->TupleData[1];
+-		sprom->antenna_gain.ghz5.a0 = tuple->TupleData[1];
+-		sprom->antenna_gain.ghz5.a1 = tuple->TupleData[1];
+-		sprom->antenna_gain.ghz5.a2 = tuple->TupleData[1];
+-		sprom->antenna_gain.ghz5.a3 = tuple->TupleData[1];
++		sprom->antenna_gain.a0 = tuple->TupleData[1];
++		sprom->antenna_gain.a1 = tuple->TupleData[1];
++		sprom->antenna_gain.a2 = tuple->TupleData[1];
++		sprom->antenna_gain.a3 = tuple->TupleData[1];
+ 		break;
+ 	case SSB_PCMCIA_CIS_BFLAGS:
+ 		GOTO_ERROR_ON((tuple->TupleDataLen != 3) &&
 --- a/drivers/ssb/sdio.c
 +++ b/drivers/ssb/sdio.c
 @@ -6,7 +6,7 @@
@@ -1833,3 +2180,32 @@
   *
   * Licensed under the GNU/GPL. See COPYING for details.
   *
+@@ -551,14 +551,10 @@ int ssb_sdio_get_invariants(struct ssb_b
+ 			case SSB_SDIO_CIS_ANTGAIN:
+ 				GOTO_ERROR_ON(tuple->size != 2,
+ 					      "antg tpl size");
+-				sprom->antenna_gain.ghz24.a0 = tuple->data[1];
+-				sprom->antenna_gain.ghz24.a1 = tuple->data[1];
+-				sprom->antenna_gain.ghz24.a2 = tuple->data[1];
+-				sprom->antenna_gain.ghz24.a3 = tuple->data[1];
+-				sprom->antenna_gain.ghz5.a0 = tuple->data[1];
+-				sprom->antenna_gain.ghz5.a1 = tuple->data[1];
+-				sprom->antenna_gain.ghz5.a2 = tuple->data[1];
+-				sprom->antenna_gain.ghz5.a3 = tuple->data[1];
++				sprom->antenna_gain.a0 = tuple->data[1];
++				sprom->antenna_gain.a1 = tuple->data[1];
++				sprom->antenna_gain.a2 = tuple->data[1];
++				sprom->antenna_gain.a3 = tuple->data[1];
+ 				break;
+ 			case SSB_SDIO_CIS_BFLAGS:
+ 				GOTO_ERROR_ON((tuple->size != 3) &&
+--- a/include/linux/ssb/ssb_driver_gige.h
++++ b/include/linux/ssb/ssb_driver_gige.h
+@@ -2,6 +2,7 @@
+ #define LINUX_SSB_DRIVER_GIGE_H_
+ 
+ #include <linux/ssb/ssb.h>
++#include <linux/bug.h>
+ #include <linux/pci.h>
+ #include <linux/spinlock.h>
+ 
