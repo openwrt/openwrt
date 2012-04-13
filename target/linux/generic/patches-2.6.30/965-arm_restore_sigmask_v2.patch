@@ -261,7 +261,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  handle_signal(unsigned long sig, struct k_sigaction *ka,
  	      siginfo_t *info, sigset_t *oldset,
  	      struct pt_regs * regs, int syscall)
-@@ -592,7 +557,7 @@ handle_signal(unsigned long sig, struct 
+@@ -592,7 +557,7 @@ handle_signal(unsigned long sig, struct
  
  	if (ret != 0) {
  		force_sigsegv(sig, tsk);
@@ -270,7 +270,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	}
  
  	/*
-@@ -606,6 +571,7 @@ handle_signal(unsigned long sig, struct 
+@@ -606,6 +571,7 @@ handle_signal(unsigned long sig, struct
  	recalc_sigpending();
  	spin_unlock_irq(&tsk->sighand->siglock);
  
@@ -278,7 +278,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  /*
-@@ -617,11 +583,12 @@ handle_signal(unsigned long sig, struct 
+@@ -617,11 +583,12 @@ handle_signal(unsigned long sig, struct
   * the kernel can handle, and then we build all the user-level signal handling
   * stack-frames in one go after that.
   */

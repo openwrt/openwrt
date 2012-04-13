@@ -81,7 +81,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
 --- a/arch/arm/include/asm/thread_info.h
 +++ b/arch/arm/include/asm/thread_info.h
-@@ -141,6 +141,7 @@
+@@ -140,6 +140,7 @@ extern void vfp_sync_state(struct thread
  #define TIF_USING_IWMMXT	17
  #define TIF_MEMDIE		18
  #define TIF_FREEZE		19
@@ -89,7 +89,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
  #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
-@@ -148,6 +149,7 @@
+@@ -147,6 +148,7 @@ extern void vfp_sync_state(struct thread
  #define _TIF_POLLING_NRFLAG	(1 << TIF_POLLING_NRFLAG)
  #define _TIF_USING_IWMMXT	(1 << TIF_USING_IWMMXT)
  #define _TIF_FREEZE		(1 << TIF_FREEZE)
@@ -169,7 +169,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  		CALL(sys_signalfd)
 --- a/arch/arm/kernel/entry-common.S
 +++ b/arch/arm/kernel/entry-common.S
-@@ -373,16 +373,6 @@
+@@ -373,16 +373,6 @@ sys_clone_wrapper:
  		b	sys_clone
  ENDPROC(sys_clone_wrapper)
  
@@ -188,7 +188,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  		b	sys_sigreturn
 --- a/arch/arm/kernel/signal.c
 +++ b/arch/arm/kernel/signal.c
-@@ -47,57 +47,22 @@
+@@ -47,57 +47,22 @@ const unsigned long sigreturn_codes[7] =
  	MOV_R7_NR_RT_SIGRETURN, SWI_SYS_RT_SIGRETURN, SWI_THUMB_RT_SIGRETURN,
  };
  
@@ -252,7 +252,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  asmlinkage int 
-@@ -545,7 +510,7 @@
+@@ -545,7 +510,7 @@ static inline void setup_syscall_restart
  /*
   * OK, we're invoking a handler
   */	
@@ -261,7 +261,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  handle_signal(unsigned long sig, struct k_sigaction *ka,
  	      siginfo_t *info, sigset_t *oldset,
  	      struct pt_regs * regs, int syscall)
-@@ -596,7 +561,7 @@
+@@ -596,7 +561,7 @@ handle_signal(unsigned long sig, struct
  
  	if (ret != 0) {
  		force_sigsegv(sig, tsk);
@@ -270,7 +270,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	}
  
  	/*
-@@ -610,6 +575,7 @@
+@@ -610,6 +575,7 @@ handle_signal(unsigned long sig, struct
  	recalc_sigpending();
  	spin_unlock_irq(&tsk->sighand->siglock);
  
@@ -278,7 +278,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  }
  
  /*
-@@ -621,11 +587,12 @@
+@@ -621,11 +587,12 @@ handle_signal(unsigned long sig, struct
   * the kernel can handle, and then we build all the user-level signal handling
   * stack-frames in one go after that.
   */
@@ -292,7 +292,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  
  	/*
  	 * We want the common case to go fast, which
-@@ -634,18 +601,32 @@
+@@ -634,18 +601,32 @@ static int do_signal(sigset_t *oldset, s
  	 * if so.
  	 */
  	if (!user_mode(regs))
@@ -328,7 +328,7 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	}
  
   no_signal:
-@@ -697,14 +678,21 @@
+@@ -697,14 +678,21 @@ static int do_signal(sigset_t *oldset, s
  		    regs->ARM_r0 == -ERESTARTNOINTR) {
  			setup_syscall_restart(regs);
  		}
