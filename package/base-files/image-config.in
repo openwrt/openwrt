@@ -145,7 +145,7 @@ menuconfig VERSIONOPT
 	config VERSION_DIST
 		string
 		prompt "Release distribution" if VERSIONOPT
-		default "OpenWrt"
+		default "OpenWrt" if VERSIONOPT
 		help
 			This is the name of the release distribution.
 			If unspecified, it defaults to OpenWrt.
@@ -168,7 +168,7 @@ menuconfig VERSIONOPT
 	config VERSION_REPO
 		string
 		prompt "Release repository" if VERSIONOPT
-		default "http://downloads.openwrt.org/snapshots/trunk/%T/packages"
+		default "http://downloads.openwrt.org/snapshots/trunk/%T/packages" if VERSIONOPT
 		help
 			This is the repository address embedded in the image, it defaults
 			to the trunk snapshot repo; the url may contain the following placeholders:
