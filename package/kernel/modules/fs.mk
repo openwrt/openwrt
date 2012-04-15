@@ -361,7 +361,7 @@ define KernelPackage/fs-xfs
   SUBMENU:=$(FS_MENU)
   TITLE:=XFS filesystem support
   KCONFIG:=CONFIG_XFS_FS
-  DEPENDS:= +kmod-fs-exportfs
+  DEPENDS:= +kmod-fs-exportfs @!avr32
   FILES:=$(LINUX_DIR)/fs/xfs/xfs.ko
   AUTOLOAD:=$(call AutoLoad,30,xfs,1)
 endef
