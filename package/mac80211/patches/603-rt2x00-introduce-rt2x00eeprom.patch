@@ -109,7 +109,7 @@
  
  	/*
  	 * Device initialization/deinitialization handlers.
-@@ -713,6 +714,7 @@ enum rt2x00_capability_flags {
+@@ -721,6 +722,7 @@ enum rt2x00_capability_flags {
  	REQUIRE_SW_SEQNO,
  	REQUIRE_HT_TX_DESC,
  	REQUIRE_PS_AUTOWAKE,
@@ -117,7 +117,7 @@
  
  	/*
  	 * Capabilities
-@@ -968,6 +970,11 @@ struct rt2x00_dev {
+@@ -976,6 +978,11 @@ struct rt2x00_dev {
  	const struct firmware *fw;
  
  	/*
@@ -229,7 +229,7 @@
   * Initialization functions.
   */
  static bool rt2800pci_get_entry_state(struct queue_entry *entry)
-@@ -1052,6 +1056,7 @@ static const struct rt2x00lib_ops rt2800
+@@ -1082,6 +1086,7 @@ static const struct rt2x00lib_ops rt2800
  	.get_firmware_name	= rt2800pci_get_firmware_name,
  	.check_firmware		= rt2800_check_firmware,
  	.load_firmware		= rt2800_load_firmware,
@@ -239,7 +239,7 @@
  	.get_entry_state	= rt2800pci_get_entry_state,
 --- a/drivers/net/wireless/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -1165,6 +1165,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
+@@ -1160,6 +1160,10 @@ int rt2x00lib_probe_dev(struct rt2x00_de
  		    BIT(NL80211_IFTYPE_MESH_POINT) |
  		    BIT(NL80211_IFTYPE_WDS);
  
@@ -250,7 +250,7 @@
  	/*
  	 * Initialize work.
  	 */
-@@ -1288,6 +1292,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
+@@ -1284,6 +1288,11 @@ void rt2x00lib_remove_dev(struct rt2x00_
  	 */
  	if (rt2x00dev->drv_data)
  		kfree(rt2x00dev->drv_data);

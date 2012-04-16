@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -504,6 +504,9 @@ static inline u16 ath9k_btcoex_aggr_limi
+@@ -507,6 +507,9 @@ static inline u16 ath9k_btcoex_aggr_limi
  #ifdef CONFIG_MAC80211_LEDS
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
@@ -10,8 +10,8 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -624,6 +627,13 @@ struct ath9k_vif_iter_data {
- 	int nothers;   /* number of vifs not specified above. */
+@@ -620,6 +623,13 @@ struct ath9k_vif_iter_data {
+ 	int nadhocs;   /* number of adhoc vifs */
  };
  
 +struct ath_led {
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -667,9 +677,8 @@ struct ath_softc {
+@@ -661,9 +671,8 @@ struct ath_softc {
  	struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
  
  #ifdef CONFIG_MAC80211_LEDS
@@ -171,7 +171,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -761,7 +761,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -778,7 +778,7 @@ int ath9k_init_device(u16 devid, struct 
  
  #ifdef CONFIG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -182,7 +182,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1252,6 +1252,61 @@ static const struct file_operations fops
+@@ -1267,6 +1267,61 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -234,7 +234,7 @@
 +
 +static const struct file_operations fops_gpio_led = {
 +	.write = write_file_gpio_led,
-+	.open = ath9k_debugfs_open,
++	.open = simple_open,
 +	.owner = THIS_MODULE,
 +	.llseek = default_llseek,
 +};
@@ -244,7 +244,7 @@
  #ifdef CONFIG_ATH9K_MAC_DEBUG
  
  void ath9k_debug_samp_bb_mac(struct ath_softc *sc)
-@@ -1681,6 +1736,11 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1696,6 +1751,11 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_samps);
  #endif
  

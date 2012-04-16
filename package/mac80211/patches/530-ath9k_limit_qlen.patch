@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -242,6 +242,7 @@ struct ath_atx_tid {
+@@ -243,6 +243,7 @@ struct ath_atx_tid {
  	struct ath_node *an;
  	struct ath_atx_ac *ac;
  	unsigned long tx_buf[BITS_TO_LONGS(ATH_TID_MAX_BUFS)];
@@ -8,7 +8,7 @@
  	int bar_index;
  	u16 seq_start;
  	u16 seq_next;
-@@ -288,6 +289,9 @@ struct ath_tx_control {
+@@ -289,6 +290,9 @@ struct ath_tx_control {
   *  (axq_qnum).
   */
  struct ath_tx {
@@ -20,7 +20,7 @@
  	spinlock_t txbuflock;
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1643,6 +1643,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1658,6 +1658,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_interrupt);
  	debugfs_create_file("xmit", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_xmit);
@@ -65,7 +65,7 @@
  		__skb_unlink(skb, &tid->buf_q);
  		list_add_tail(&bf->list, bf_q);
  		if (bf_prev)
-@@ -1739,6 +1750,8 @@ static void ath_tx_send_ampdu(struct ath
+@@ -1737,6 +1748,8 @@ static void ath_tx_send_ampdu(struct ath
  	/* Add sub-frame to BAW */
  	ath_tx_addto_baw(sc, tid, bf->bf_state.seqno);
  
@@ -74,7 +74,7 @@
  	/* Queue to h/w without aggregation */
  	TX_STAT_INC(txctl->txq->axq_qnum, a_queued_hw);
  	bf->bf_lastbf = bf;
-@@ -1863,22 +1876,11 @@ error:
+@@ -1861,22 +1874,11 @@ error:
  
  /* FIXME: tx power */
  static void ath_tx_start_dma(struct ath_softc *sc, struct sk_buff *skb,
@@ -88,7 +88,7 @@
  	struct ath_buf *bf;
 -	u8 tidno;
 -
--	if ((sc->sc_flags & SC_OP_TXAGGR) && txctl->an &&
+-	if ((sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT) && txctl->an &&
 -		ieee80211_is_data_qos(hdr->frame_control)) {
 -		tidno = ieee80211_get_qos_ctl(hdr)[0] &
 -			IEEE80211_QOS_CTL_TID_MASK;
@@ -99,7 +99,7 @@
  
  	if ((tx_info->flags & IEEE80211_TX_CTL_AMPDU) && tid) {
  		/*
-@@ -1910,6 +1912,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1908,6 +1910,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ieee80211_vif *vif = info->control.vif;
  	struct ath_softc *sc = hw->priv;
  	struct ath_txq *txq = txctl->txq;
@@ -107,11 +107,11 @@
  	int padpos, padsize;
  	int frmlen = skb->len + FCS_LEN;
  	int q;
-@@ -1952,6 +1955,24 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1950,6 +1953,24 @@ int ath_tx_start(struct ieee80211_hw *hw
  
  	setup_frame_info(hw, skb, frmlen);
  
-+	if ((sc->sc_flags & SC_OP_TXAGGR) && txctl->an &&
++	if ((sc->sc_ah->caps.hw_caps & ATH9K_HW_CAP_HT) && txctl->an &&
 +	    ieee80211_is_data_qos(hdr->frame_control)) {
 +		tid = ath_get_tid(txctl->an, skb);
 +
@@ -132,7 +132,7 @@
  	/*
  	 * At this point, the vif, hw_key and sta pointers in the tx control
  	 * info are no longer valid (overwritten by the ath_frame_info data.
-@@ -1966,7 +1987,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -1964,7 +1985,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  		txq->stopped = true;
  	}
  

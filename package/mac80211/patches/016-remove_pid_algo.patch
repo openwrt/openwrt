@@ -1,11 +1,11 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -172,7 +172,7 @@ CONFIG_MAC80211_RC_DEFAULT_MINSTREL=y
+@@ -167,7 +167,7 @@ export CONFIG_MAC80211_RC_DEFAULT_MINSTR
  # This is the one used by our compat-wireless net/mac80211/rate.c
  # in case you have and old kernel which is overriding this to pid.
- CONFIG_COMPAT_MAC80211_RC_DEFAULT=minstrel_ht
--CONFIG_MAC80211_RC_PID=y
-+# CONFIG_MAC80211_RC_PID=y
- CONFIG_MAC80211_RC_MINSTREL=y
- CONFIG_MAC80211_RC_MINSTREL_HT=y
+ export CONFIG_COMPAT_MAC80211_RC_DEFAULT=minstrel_ht
+-export CONFIG_MAC80211_RC_PID=y
++# export CONFIG_MAC80211_RC_PID=y
+ export CONFIG_MAC80211_RC_MINSTREL=y
+ export CONFIG_MAC80211_RC_MINSTREL_HT=y
  ifdef CONFIG_LEDS_TRIGGERS
