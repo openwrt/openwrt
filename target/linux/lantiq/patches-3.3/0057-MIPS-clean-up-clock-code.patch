@@ -1,0 +1,319 @@
+From 580d6aef484b22b5da88588d9a2d944b4f06dc98 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 20 Mar 2012 08:26:04 +0100
+Subject: [PATCH 57/70] MIPS: clean up clock code
+
+---
+ arch/mips/lantiq/clk.c          |   11 +++
+ arch/mips/lantiq/clk.h          |    3 +-
+ arch/mips/lantiq/xway/devices.c |    2 +-
+ arch/mips/lantiq/xway/sysctrl.c |  166 ++++++++++++++++++++++++++++++---------
+ 4 files changed, 143 insertions(+), 39 deletions(-)
+
+diff --git a/arch/mips/lantiq/clk.c b/arch/mips/lantiq/clk.c
+index 84a201e..5494b6e 100644
+--- a/arch/mips/lantiq/clk.c
++++ b/arch/mips/lantiq/clk.c
+@@ -44,6 +44,7 @@ struct clk *clk_get_fpi(void)
+ {
+ 	return &cpu_clk_generic[1];
+ }
++EXPORT_SYMBOL_GPL(clk_get_fpi);
+ 
+ struct clk *clk_get_io(void)
+ {
+@@ -70,6 +71,16 @@ unsigned long clk_get_rate(struct clk *clk)
+ }
+ EXPORT_SYMBOL(clk_get_rate);
+ 
++int clk_set_rate(struct clk *clk, unsigned long rate)
++{
++	if (unlikely(!clk_good(clk)))
++		return 0;
++
++	clk->rate = rate;
++	return 0;
++}
++EXPORT_SYMBOL(clk_set_rate);
++
+ int clk_enable(struct clk *clk)
+ {
+ 	if (unlikely(!clk_good(clk)))
+diff --git a/arch/mips/lantiq/clk.h b/arch/mips/lantiq/clk.h
+index d047768..b34e675 100644
+--- a/arch/mips/lantiq/clk.h
++++ b/arch/mips/lantiq/clk.h
+@@ -12,6 +12,7 @@
+ #include <linux/clkdev.h>
+ 
+ /* clock speeds */
++#define CLOCK_33M	33333333
+ #define CLOCK_60M	60000000
+ #define CLOCK_62_5M	62500000
+ #define CLOCK_83M	83333333
+@@ -38,9 +39,9 @@
+ struct clk {
+ 	struct clk_lookup cl;
+ 	unsigned long rate;
+-	unsigned long (*get_rate) (void);
+ 	unsigned int module;
+ 	unsigned int bits;
++	unsigned long (*get_rate) (void);
+ 	int (*enable) (struct clk *clk);
+ 	void (*disable) (struct clk *clk);
+ 	int (*activate) (struct clk *clk);
+diff --git a/arch/mips/lantiq/xway/devices.c b/arch/mips/lantiq/xway/devices.c
+index e6d45bc..5d4650d 100644
+--- a/arch/mips/lantiq/xway/devices.c
++++ b/arch/mips/lantiq/xway/devices.c
+@@ -59,7 +59,7 @@ static struct resource ltq_stp_resource =
+ 
+ void __init ltq_register_gpio_stp(void)
+ {
+-	platform_device_register_simple("ltq_stp", 0, &ltq_stp_resource, 1);
++	platform_device_register_simple("ltq_stp", -1, &ltq_stp_resource, 1);
+ }
+ 
+ /* asc ports - amazon se has its own serial mapping */
+diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
+index ac7383f..9df048c 100644
+--- a/arch/mips/lantiq/xway/sysctrl.c
++++ b/arch/mips/lantiq/xway/sysctrl.c
+@@ -16,40 +16,57 @@
+ #include "../devices.h"
+ 
+ /* clock control register */
+-#define LTQ_CGU_IFCCR	0x0018
++#define CGU_IFCCR	0x0018
+ /* system clock register */
+-#define LTQ_CGU_SYS     0x0010
+-
+-/* the enable / disable registers */
+-#define LTQ_PMU_PWDCR	0x1C
+-#define LTQ_PMU_PWDSR	0x20
+-#define LTQ_PMU_PWDCR1	0x24
+-#define LTQ_PMU_PWDSR1	0x28
+-
+-#define PWDCR(x) ((x) ? (LTQ_PMU_PWDCR1) : (LTQ_PMU_PWDCR))
+-#define PWDSR(x) ((x) ? (LTQ_PMU_PWDSR1) : (LTQ_PMU_PWDSR))
+-
+-/* CGU - clock generation unit */
+-#define CGU_EPHY		0x10
++#define CGU_SYS		0x0010
++/* pci control register */
++#define CGU_PCICR	0x0034
++/* ephy configuration register */
++#define CGU_EPHY	0x10
++/* power control register */
++#define PMU_PWDCR	0x1C
++/* power status register */
++#define PMU_PWDSR	0x20
++/* power control register */
++#define PMU_PWDCR1	0x24
++/* power status register */
++#define PMU_PWDSR1	0x28
++/* power control register */
++#define PWDCR(x) ((x) ? (PMU_PWDCR1) : (PMU_PWDCR))
++/* power status register */
++#define PWDSR(x) ((x) ? (PMU_PWDSR1) : (PMU_PWDSR))
+ 
+ /* PMU - power management unit */
+-#define PMU_DMA			0x0020
+-#define PMU_SPI			0x0100
+-#define PMU_EPHY		0x0080
+-#define PMU_USB			0x8041
+-#define PMU_STP			0x0800
+-#define PMU_GPT			0x1000
+-#define PMU_PPE			0x2000
+-#define PMU_FPI			0x4000
+-#define PMU_SWITCH		0x10000000
+-#define PMU_AHBS		0x2000
+-#define PMU_AHBM		0x8000
+-#define PMU_PCIE_CLK            0x80000000
+-
+-#define PMU1_PCIE_PHY		0x0001
+-#define PMU1_PCIE_CTL		0x0002
+-#define PMU1_PCIE_MSI		0x0020
+-#define PMU1_PCIE_PDI		0x0010
++#define PMU_USB0_P	BIT(0)
++#define PMU_PCI		BIT(4)
++#define PMU_DMA		BIT(5)
++#define PMU_USB0	BIT(5)
++#define PMU_SPI		BIT(8)
++#define PMU_EPHY	BIT(7)
++#define PMU_EBU		BIT(10)
++#define PMU_STP		BIT(11)
++#define PMU_GPT		BIT(12)
++#define PMU_PPE		BIT(13)
++#define PMU_AHBS	BIT(13) /* vr9 */
++#define PMU_FPI		BIT(14)
++#define PMU_AHBM	BIT(15)
++#define PMU_PPE_QSB	BIT(18)
++#define PMU_PPE_SLL01	BIT(19)
++#define PMU_PPE_TC	BIT(21)
++#define PMU_PPE_EMA	BIT(22)
++#define PMU_PPE_DPLUM	BIT(23)
++#define PMU_PPE_DPLUS	BIT(24)
++#define PMU_USB1_P	BIT(26)
++#define PMU_USB1	BIT(27)
++#define PMU_SWITCH	BIT(28)
++#define PMU_PPE_TOP	BIT(29)
++#define PMU_GPHY	BIT(30)
++#define PMU_PCIE_CLK	BIT(31)
++
++#define PMU1_PCIE_PHY	BIT(0)
++#define PMU1_PCIE_CTL	BIT(1)
++#define PMU1_PCIE_PDI	BIT(4)
++#define PMU1_PCIE_MSI	BIT(5)
+ 
+ #define ltq_pmu_w32(x, y)	ltq_w32((x), ltq_pmu_membase + (y))
+ #define ltq_pmu_r32(x)		ltq_r32(ltq_pmu_membase + (x))
+@@ -69,13 +86,13 @@ static void __iomem *ltq_pmu_membase;
+ 
+ static int ltq_cgu_enable(struct clk *clk)
+ {
+-	ltq_cgu_w32(ltq_cgu_r32(LTQ_CGU_IFCCR) | clk->bits, LTQ_CGU_IFCCR);
++	ltq_cgu_w32(ltq_cgu_r32(CGU_IFCCR) | clk->bits, CGU_IFCCR);
+ 	return 0;
+ }
+ 
+ static void ltq_cgu_disable(struct clk *clk)
+ {
+-	ltq_cgu_w32(ltq_cgu_r32(LTQ_CGU_IFCCR) & ~clk->bits, LTQ_CGU_IFCCR);
++	ltq_cgu_w32(ltq_cgu_r32(CGU_IFCCR) & ~clk->bits, CGU_IFCCR);
+ }
+ 
+ static int ltq_pmu_enable(struct clk *clk)
+@@ -94,9 +111,49 @@ static int ltq_pmu_enable(struct clk *clk)
+ 
+ static void ltq_pmu_disable(struct clk *clk)
+ {
+-	ltq_pmu_w32(ltq_pmu_r32(LTQ_PMU_PWDCR) | clk->bits, LTQ_PMU_PWDCR);
++	ltq_pmu_w32(ltq_pmu_r32(PWDCR(clk->module)) | clk->bits,
++		PWDCR(clk->module));
++}
++
++static int ltq_pci_enable(struct clk *clk)
++{
++	unsigned int ifccr = ltq_cgu_r32(CGU_IFCCR);
++	/* set clock bus speed */
++	if (ltq_is_ar9()) {
++		ifccr &= ~0x1f00000;
++		if (clk->rate == CLOCK_33M)
++			ifccr |= 0xe00000;
++		else
++			ifccr |= 0x700000; /* 62.5M */
++	} else {
++		ifccr &= ~0xf00000;
++		if (clk->rate == CLOCK_33M)
++			ifccr |= 0x800000;
++		else
++			ifccr |= 0x400000; /* 62.5M */
++	}
++	ltq_cgu_w32(ifccr, CGU_IFCCR);
++	return 0;
++}
++
++static int ltq_pci_ext_enable(struct clk *clk)
++{
++	/* enable external pci clock */
++	ltq_cgu_w32(ltq_cgu_r32(CGU_IFCCR) & ~(1 << 16),
++		CGU_IFCCR);
++	ltq_cgu_w32((1 << 30), CGU_PCICR);
++	return 0;
++}
++
++static void ltq_pci_ext_disable(struct clk *clk)
++{
++	/* enable external pci clock */
++	ltq_cgu_w32(ltq_cgu_r32(CGU_IFCCR) | (1 << 16),
++		CGU_IFCCR);
++	ltq_cgu_w32((1 << 31) | (1 << 30), CGU_PCICR);
+ }
+ 
++/* manage the clock gates via PMU */
+ static inline void clkdev_add_pmu(const char *dev, const char *con,
+ 					unsigned int module, unsigned int bits)
+ {
+@@ -112,6 +169,7 @@ static inline void clkdev_add_pmu(const char *dev, const char *con,
+ 	clkdev_add(&clk->cl);
+ }
+ 
++/* manage the clock generator */
+ static inline void clkdev_add_cgu(const char *dev, const char *con,
+ 					unsigned int bits)
+ {
+@@ -126,6 +184,33 @@ static inline void clkdev_add_cgu(const char *dev, const char *con,
+ 	clkdev_add(&clk->cl);
+ }
+ 
++/* pci needs its own enable function */
++static inline void clkdev_add_pci(void)
++{
++	struct clk *clk = kzalloc(sizeof(struct clk), GFP_KERNEL);
++	struct clk *clk_ext = kzalloc(sizeof(struct clk), GFP_KERNEL);
++
++	/* main pci clock */
++	clk->cl.dev_id = "ltq_pci";
++	clk->cl.con_id = NULL;
++	clk->cl.clk = clk;
++	clk->rate = CLOCK_33M;
++	clk->enable = ltq_pci_enable;
++	clk->disable = ltq_pmu_disable;
++	clk->module = 0;
++	clk->bits = PMU_PCI;
++	clkdev_add(&clk->cl);
++
++	/* use internal/external bus clock */
++	clk_ext->cl.dev_id = "ltq_pci";
++	clk_ext->cl.con_id = "external";
++	clk_ext->cl.clk = clk_ext;
++	clk_ext->enable = ltq_pci_ext_enable;
++	clk_ext->disable = ltq_pci_ext_disable;
++	clkdev_add(&clk_ext->cl);
++
++}
++
+ void __init ltq_soc_init(void)
+ {
+ 	ltq_pmu_membase = ltq_remap_resource(&ltq_pmu_resource);
+@@ -144,14 +229,16 @@ void __init ltq_soc_init(void)
+ 	ltq_ebu_w32(ltq_ebu_r32(LTQ_EBU_BUSCON0) & ~EBU_WRDIS, LTQ_EBU_BUSCON0);
+ 
+ 	/* add our clocks */
++	clkdev_add_pmu("ltq_fpi", NULL, 0, PMU_FPI);
+ 	clkdev_add_pmu("ltq_dma", NULL, 0, PMU_DMA);
+ 	clkdev_add_pmu("ltq_stp", NULL, 0, PMU_STP);
+ 	clkdev_add_pmu("ltq_spi", NULL, 0, PMU_SPI);
+         clkdev_add_pmu("ltq_gptu", NULL, 0, PMU_GPT);
++        clkdev_add_pmu("ltq_ebu", NULL, 0, PMU_EBU);
+ 	if (!ltq_is_vr9())
+ 		clkdev_add_pmu("ltq_etop", NULL, 0, PMU_PPE);
+ 	if (ltq_is_ase()) {
+-		if (ltq_cgu_r32(LTQ_CGU_SYS) & (1 << 5))
++		if (ltq_cgu_r32(CGU_SYS) & (1 << 5))
+ 			clkdev_add_static(CLOCK_266M, CLOCK_133M, CLOCK_133M);
+ 		else
+ 			clkdev_add_static(CLOCK_133M, CLOCK_133M, CLOCK_133M);
+@@ -166,11 +253,16 @@ void __init ltq_soc_init(void)
+ 		clkdev_add_pmu("ltq_pcie", "pdi", 1, PMU1_PCIE_PDI);
+ 		clkdev_add_pmu("ltq_pcie", "ctl", 1, PMU1_PCIE_CTL);
+ 		clkdev_add_pmu("ltq_pcie", "ahb", 0, PMU_AHBM | PMU_AHBS);
+-		clkdev_add_pmu("usb0", NULL, 0, (1<<6) | 1);
+-		clkdev_add_pmu("usb1", NULL, 0, (1<<26) | (1<<27));
++		clkdev_add_pmu("usb0", NULL, 0, PMU_USB0 | PMU_USB0_P);
++		clkdev_add_pmu("usb1", NULL, 0, PMU_USB1 | PMU_USB1_P);
++		clkdev_add_pmu("ltq_vrx200", NULL, 0,
++			PMU_SWITCH | PMU_PPE_DPLUS | PMU_PPE_DPLUM |
++			PMU_PPE_EMA | PMU_PPE_TC | PMU_PPE_SLL01 |
++			PMU_PPE_QSB);
+ 	} else {
+ 		clkdev_add_static(ltq_danube_cpu_hz(), ltq_danube_fpi_hz(),
+ 					ltq_danube_io_region_clock());
++		clkdev_add_pci();
+ 		if (ltq_is_ar9())
+ 			clkdev_add_pmu("ltq_etop", "switch", 0, PMU_SWITCH);
+ 	}
+-- 
+1.7.9.1
+
