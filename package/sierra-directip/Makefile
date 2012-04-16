@@ -15,7 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/usb-sierrawireless-directip
   SUBMENU:=USB Support
-  DEPENDS:=+kmod-usb-serial +kmod-usb-net
+  DEPENDS:=+kmod-usb-serial +kmod-usb-net @!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32)
   TITLE:=Updated Sierra Wireless drivers for DirectIP
   FILES:= \
   	$(PKG_BUILD_DIR)/sierra.ko \
