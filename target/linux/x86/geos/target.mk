@@ -1,4 +1,4 @@
-LINUX_VERSION:=3.2.2
+LINUX_VERSION:=3.3.1
 BOARDNAME:=Traverse Geos
 FEATURES:=squashfs jffs2 ext4 pci usb gpio
 DEFAULT_PACKAGES += \
