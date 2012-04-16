@@ -1,0 +1,34 @@
+From 875a7139535da541aa2e9de308b3f6f791a131d0 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 20 Mar 2012 09:44:27 +0100
+Subject: [PATCH 63/70] MIPS: lantiq: irqs were not cleared properly on boot
+
+---
+ arch/mips/lantiq/irq.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
+index f17caec..7224231 100644
+--- a/arch/mips/lantiq/irq.c
++++ b/arch/mips/lantiq/irq.c
+@@ -326,12 +326,12 @@ void __init arch_init_irq(void)
+ 			panic("Failed to remap eiu memory\n");
+ 	}
+ 
+-	/* make sure all irqs are turned off by default */
+-	for (i = 0; i < 5; i++)
++	for (i = 0; i < 5; i++) {
++		/* make sure all irqs are turned off by default */
+ 		ltq_icu_w32(0, LTQ_ICU_IM0_IER + (i * LTQ_ICU_OFFSET));
+-
+-	/* clear all possibly pending interrupts */
+-	ltq_icu_w32(~0, LTQ_ICU_IM0_ISR + (i * LTQ_ICU_OFFSET));
++		/* clear all possibly pending interrupts */
++		ltq_icu_w32(~0, LTQ_ICU_IM0_ISR + (i * LTQ_ICU_OFFSET));
++	}
+ 
+ 	mips_cpu_irq_init();
+ 
+-- 
+1.7.9.1
+

@@ -1,0 +1,30 @@
+From 7971cef3f4036da74066aa4ca9b78fd1c9573a6c Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 16 Feb 2012 20:17:50 +0100
+Subject: [PATCH 30/70] WDT: MIPS: lantiq: convert watchdog driver to clkdev
+ api
+
+Refrence the IO region clock via its new access function.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Cc: linux-watchdog@vger.kernel.org
+---
+ drivers/watchdog/lantiq_wdt.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/watchdog/lantiq_wdt.c b/drivers/watchdog/lantiq_wdt.c
+index 9c8b10c..fa4866b 100644
+--- a/drivers/watchdog/lantiq_wdt.c
++++ b/drivers/watchdog/lantiq_wdt.c
+@@ -206,7 +206,7 @@ ltq_wdt_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	/* we do not need to enable the clock as it is always running */
+-	clk = clk_get(&pdev->dev, "io");
++	clk = clk_get_io();
+ 	WARN_ON(!clk);
+ 	ltq_io_region_clk_rate = clk_get_rate(clk);
+ 	clk_put(clk);
+-- 
+1.7.9.1
+

@@ -1,0 +1,103 @@
+From f2e6a9e24af6d3e3ca14e66269c9621cecb9836b Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 16 Mar 2012 15:49:32 +0100
+Subject: [PATCH 58/70] MIPS: cleanup reset code
+
+---
+ arch/mips/lantiq/xway/reset.c |   59 ++++++++++++++++++++++++++++++++++------
+ 1 files changed, 50 insertions(+), 9 deletions(-)
+
+diff --git a/arch/mips/lantiq/xway/reset.c b/arch/mips/lantiq/xway/reset.c
+index c705bbf..abdf9b1 100644
+--- a/arch/mips/lantiq/xway/reset.c
++++ b/arch/mips/lantiq/xway/reset.c
+@@ -11,6 +11,7 @@
+ #include <linux/ioport.h>
+ #include <linux/pm.h>
+ #include <linux/export.h>
++#include <linux/delay.h>
+ #include <asm/reboot.h>
+ 
+ #include <lantiq_soc.h>
+@@ -20,12 +21,45 @@
+ #define ltq_rcu_w32(x, y)	ltq_w32((x), ltq_rcu_membase + (y))
+ #define ltq_rcu_r32(x)		ltq_r32(ltq_rcu_membase + (x))
+ 
+-/* register definitions */
+-#define LTQ_RCU_RST		0x0010
+-#define LTQ_RCU_RST_ALL		0x40000000
+-
+-#define LTQ_RCU_RST_STAT	0x0014
+-#define LTQ_RCU_STAT_SHIFT	26
++/* reset request register */
++#define RCU_RST_REQ	0x0010
++/* reset status register */
++#define RCU_RST_STAT	0x0014
++
++/* reset cause */
++#define RCU_STAT_SHIFT	26
++/* Global SW Reset */
++#define RCU_RD_SRST		BIT(30)
++/* Memory Controller */
++#define RCU_RD_MC		BIT(14)
++/* PCI core */
++#define RCU_RD_PCI		BIT(13)
++/* Voice DFE/AFE */
++#define RCU_RD_DFE_AFE		BIT(12)
++/* DSL AFE */
++#define RCU_RD_DSL_AFE		BIT(11)
++/* SDIO core */
++#define RCU_RD_SDIO		BIT(10)
++/* DMA core */
++#define RCU_RD_DMA		BIT(9)
++/* PPE core */
++#define RCU_RD_PPE		BIT(8)
++/* ARC/DFE core */
++#define RCU_RD_ARC_DFE		BIT(7)
++/* AHB bus */
++#define RCU_RD_AHB		BIT(6)
++/* Ethernet MAC1 */
++#define RCU_RD_ENET_MAC1	BIT(5)
++/* USB and Phy core */
++#define RCU_RD_USB		BIT(4)
++/* CPU1 subsystem */
++#define RCU_RD_CPU1		BIT(3)
++/* FPI bus */
++#define RCU_RD_FPI		BIT(2)
++/* CPU0 subsystem */
++#define RCU_RD_CPU0		BIT(1)
++/* HW reset via HRST pin */
++#define RCU_RD_HRST		BIT(0)
+ 
+ static struct resource ltq_rcu_resource =
+ 	MEM_RES("rcu", LTQ_RCU_BASE_ADDR, LTQ_RCU_SIZE);
+@@ -36,16 +70,23 @@ static void __iomem *ltq_rcu_membase;
+ /* This function is used by the watchdog driver */
+ int ltq_reset_cause(void)
+ {
+-	u32 val = ltq_rcu_r32(LTQ_RCU_RST_STAT);
+-	return val >> LTQ_RCU_STAT_SHIFT;
++	u32 val = ltq_rcu_r32(RCU_RST_STAT);
++	return val >> RCU_STAT_SHIFT;
+ }
+ EXPORT_SYMBOL_GPL(ltq_reset_cause);
+ 
++void ltq_reset_once(unsigned int module, ulong usec)
++{
++	ltq_rcu_w32(ltq_rcu_r32(RCU_RST_REQ) | module, RCU_RST_REQ);
++	udelay(usec);
++	ltq_rcu_w32(ltq_rcu_r32(RCU_RST_REQ) & ~module, RCU_RST_REQ);
++}
++
+ static void ltq_machine_restart(char *command)
+ {
+ 	pr_notice("System restart\n");
+ 	local_irq_disable();
+-	ltq_rcu_w32(ltq_rcu_r32(LTQ_RCU_RST) | LTQ_RCU_RST_ALL, LTQ_RCU_RST);
++	ltq_rcu_w32(ltq_rcu_r32(RCU_RST_REQ) | RCU_RD_SRST, RCU_RST_REQ);
+ 	unreachable();
+ }
+ 
+-- 
+1.7.9.1
+

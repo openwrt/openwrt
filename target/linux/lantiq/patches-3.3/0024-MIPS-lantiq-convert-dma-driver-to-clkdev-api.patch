@@ -1,0 +1,65 @@
+From d5904c1dd985d1e0944dd249927ad19c8522a943 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 8 Mar 2012 11:21:08 +0100
+Subject: [PATCH 24/70] MIPS: lantiq: convert dma driver to clkdev api
+
+Update from old pmu_{dis,en}able() to ckldev api.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/lantiq/xway/Makefile.rej |   11 +++++++++++
+ arch/mips/lantiq/xway/dma.c        |    6 +++++-
+ 2 files changed, 16 insertions(+), 1 deletions(-)
+ create mode 100644 arch/mips/lantiq/xway/Makefile.rej
+
+diff --git a/arch/mips/lantiq/xway/Makefile.rej b/arch/mips/lantiq/xway/Makefile.rej
+new file mode 100644
+index 0000000..c0d5b52
+--- /dev/null
++++ b/arch/mips/lantiq/xway/Makefile.rej
+@@ -0,0 +1,11 @@
++--- arch/mips/lantiq/xway/Makefile
+++++ arch/mips/lantiq/xway/Makefile
++@@ -1,7 +1,4 @@
++-obj-y := sysctrl.o reset.o gpio.o gpio_stp.o gpio_ebu.o devices.o dma.o clk.o
++-
++-obj-$(CONFIG_SOC_XWAY) += prom-xway.o
++-obj-$(CONFIG_SOC_AMAZON_SE) += prom-ase.o
+++obj-y := prom.o sysctrl.o reset.o gpio.o gpio_stp.o gpio_ebu.o devices.o dma.o clk.o
++ 
++ obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
++ obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
+diff --git a/arch/mips/lantiq/xway/dma.c b/arch/mips/lantiq/xway/dma.c
+index 6cf883b..ce86529 100644
+--- a/arch/mips/lantiq/xway/dma.c
++++ b/arch/mips/lantiq/xway/dma.c
+@@ -20,6 +20,7 @@
+ #include <linux/io.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/export.h>
++#include <linux/clk.h>
+ 
+ #include <lantiq_soc.h>
+ #include <xway_dma.h>
+@@ -216,6 +217,7 @@ EXPORT_SYMBOL_GPL(ltq_dma_init_port);
+ int __init
+ ltq_dma_init(void)
+ {
++	struct clk *clk;
+ 	int i;
+ 
+ 	/* remap dma register range */
+@@ -224,7 +226,9 @@ ltq_dma_init(void)
+ 		panic("Failed to remap dma memory");
+ 
+ 	/* power up and reset the dma engine */
+-	ltq_pmu_enable(PMU_DMA);
++	clk = clk_get_sys("ltq_dma", NULL);
++	WARN_ON(!clk);
++	clk_enable(clk);
+ 	ltq_dma_w32_mask(0, DMA_RESET, LTQ_DMA_CTRL);
+ 
+ 	/* disable all interrupts */
+-- 
+1.7.9.1
+
