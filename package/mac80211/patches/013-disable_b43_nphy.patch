@@ -1,13 +1,13 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -300,8 +300,8 @@ ifdef CONFIG_MAC80211_LEDS
- CONFIG_B43_LEDS=y
+@@ -295,8 +295,8 @@ ifdef CONFIG_MAC80211_LEDS
+ export CONFIG_B43_LEDS=y
  endif #CONFIG_MAC80211_LEDS
- CONFIG_B43_PHY_LP=y
--CONFIG_B43_PHY_N=y
--CONFIG_B43_PHY_HT=y
-+# CONFIG_B43_PHY_N=y
-+# CONFIG_B43_PHY_HT=y
+ export CONFIG_B43_PHY_LP=y
+-export CONFIG_B43_PHY_N=y
+-export CONFIG_B43_PHY_HT=y
++# export CONFIG_B43_PHY_N=y
++# export CONFIG_B43_PHY_HT=y
  # CONFIG_B43_PHY_LCN=y
  # CONFIG_B43_DEBUG=y
  

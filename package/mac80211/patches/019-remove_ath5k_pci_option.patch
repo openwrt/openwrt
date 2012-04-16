@@ -1,11 +1,11 @@
 --- a/config.mk
 +++ b/config.mk
-@@ -273,7 +273,7 @@ CONFIG_ATH9K_BTCOEX_SUPPORT=y
+@@ -268,7 +268,7 @@ export CONFIG_ATH9K_BTCOEX_SUPPORT=y
  # PCI Drivers
  ifdef CONFIG_PCI
  
--CONFIG_ATH5K_PCI=y
-+# CONFIG_ATH5K_PCI=y
- CONFIG_ATH9K_PCI=y
+-export CONFIG_ATH5K_PCI=y
++# export CONFIG_ATH5K_PCI=y
+ export CONFIG_ATH9K_PCI=y
  
- CONFIG_IWLWIFI=m
+ export CONFIG_IWLWIFI=m
