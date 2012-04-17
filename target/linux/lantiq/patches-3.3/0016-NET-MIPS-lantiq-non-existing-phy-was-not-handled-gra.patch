@@ -16,8 +16,6 @@ Cc: netdev@vger.kernel.org
  drivers/net/ethernet/lantiq_etop.c |   14 ++++++++------
  1 files changed, 8 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/net/ethernet/lantiq_etop.c b/drivers/net/ethernet/lantiq_etop.c
-index e799b88..5a8ca89 100644
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
 @@ -614,7 +614,8 @@ ltq_etop_open(struct net_device *dev)
@@ -54,7 +52,7 @@ index e799b88..5a8ca89 100644
  	return 0;
  
  err_netdev:
-@@ -870,7 +873,6 @@ ltq_etop_probe(struct platform_device *pdev)
+@@ -870,7 +873,6 @@ ltq_etop_probe(struct platform_device *p
  	dev = alloc_etherdev_mq(sizeof(struct ltq_etop_priv), 4);
  	strcpy(dev->name, "eth%d");
  	dev->netdev_ops = &ltq_eth_netdev_ops;
@@ -62,6 +60,3 @@ index e799b88..5a8ca89 100644
  	priv = netdev_priv(dev);
  	priv->res = res;
  	priv->pdev = pdev;
--- 
-1.7.9.1
-

@@ -3189,7 +3189,7 @@
  /** 
   * enum positive_aop_returns - aop return codes with specific semantics
   *
-@@ -1496,6 +1502,11 @@ struct super_block {
+@@ -1501,6 +1507,11 @@ struct super_block {
  
  	/* Being remounted read-only */
  	int s_readonly_remount;
@@ -3201,7 +3201,7 @@
  };
  
  /* superblock cache pruning functions */
-@@ -1653,6 +1664,8 @@ struct inode_operations {
+@@ -1658,6 +1669,8 @@ struct inode_operations {
  	void (*truncate_range)(struct inode *, loff_t, loff_t);
  	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
  		      u64 len);
@@ -3210,7 +3210,7 @@
  } ____cacheline_aligned;
  
  struct seq_file;
-@@ -2023,6 +2036,7 @@ extern long do_sys_open(int dfd, const c
+@@ -2028,6 +2041,7 @@ extern long do_sys_open(int dfd, const c
  extern struct file *filp_open(const char *, int, umode_t);
  extern struct file *file_open_root(struct dentry *, struct vfsmount *,
  				   const char *, int);

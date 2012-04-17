@@ -16,8 +16,6 @@ Cc: netdev@vger.kernel.org
  drivers/net/ethernet/lantiq_etop.c                 |  171 ++++++++++++++++++--
  4 files changed, 174 insertions(+), 40 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
-index b4465a8..2a8d5ad 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
 @@ -38,26 +38,8 @@
@@ -49,8 +47,6 @@ index b4465a8..2a8d5ad 100644
  
  #define LTQ_PPE_MBOX_INT	(INT_NUM_IM2_IRL0 + 24)
  
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index e31f52d..6983d75 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -82,6 +82,7 @@
@@ -72,7 +68,7 @@ index e31f52d..6983d75 100644
  /* DMA */
  #define LTQ_DMA_BASE_ADDR	0x1E104100
  #define LTQ_DMA_SIZE		0x800
-@@ -147,6 +152,11 @@ extern void ltq_pmu_enable(unsigned int module);
+@@ -147,6 +152,11 @@ extern void ltq_pmu_enable(unsigned int
  extern void ltq_pmu_disable(unsigned int module);
  extern void ltq_cgu_enable(unsigned int clk);
  
@@ -84,8 +80,6 @@ index e31f52d..6983d75 100644
  static inline int ltq_is_ar9(void)
  {
  	return (ltq_get_soc_type() == SOC_TYPE_AR9);
-diff --git a/arch/mips/lantiq/xway/devices.c b/arch/mips/lantiq/xway/devices.c
-index f97e565..eab4644d 100644
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
 @@ -74,18 +74,23 @@ void __init ltq_register_ase_asc(void)
@@ -115,18 +109,15 @@ index f97e565..eab4644d 100644
  	if (eth) {
  		ltq_etop.dev.platform_data = eth;
  		platform_device_register(&ltq_etop);
-diff --git a/drivers/net/ethernet/lantiq_etop.c b/drivers/net/ethernet/lantiq_etop.c
-index 85e2c6c..e799b88 100644
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
 @@ -71,10 +71,43 @@
  #define ETOP_MII_REVERSE	0xe
  #define ETOP_PLEN_UNDER		0x40
  #define ETOP_CGEN		0x800
--
--/* use 2 static channels for TX/RX */
 +#define ETOP_CFG_MII0		0x01
-+
+ 
+-/* use 2 static channels for TX/RX */
 +#define LTQ_GBIT_MDIO_CTL	0xCC
 +#define LTQ_GBIT_MDIO_DATA	0xd0
 +#define LTQ_GBIT_GCTL0		0x68
@@ -274,7 +265,7 @@ index 85e2c6c..e799b88 100644
  		struct ltq_etop_chan *ch = &priv->ch[i];
  
  		ch->idx = ch->dma.nr = i;
-@@ -340,6 +422,39 @@ static const struct ethtool_ops ltq_etop_ethtool_ops = {
+@@ -340,6 +422,39 @@ static const struct ethtool_ops ltq_etop
  };
  
  static int
@@ -314,7 +305,7 @@ index 85e2c6c..e799b88 100644
  ltq_etop_mdio_wr(struct mii_bus *bus, int phy_addr, int phy_reg, u16 phy_data)
  {
  	u32 val = MDIO_REQUEST |
-@@ -380,14 +495,11 @@ ltq_etop_mdio_probe(struct net_device *dev)
+@@ -380,14 +495,11 @@ ltq_etop_mdio_probe(struct net_device *d
  {
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  	struct phy_device *phydev = NULL;
@@ -333,7 +324,7 @@ index 85e2c6c..e799b88 100644
  
  	if (!phydev) {
  		netdev_err(dev, "no PHY found\n");
-@@ -409,6 +521,9 @@ ltq_etop_mdio_probe(struct net_device *dev)
+@@ -409,6 +521,9 @@ ltq_etop_mdio_probe(struct net_device *d
  			      | SUPPORTED_Autoneg
  			      | SUPPORTED_MII
  			      | SUPPORTED_TP);
@@ -343,7 +334,7 @@ index 85e2c6c..e799b88 100644
  
  	phydev->advertising = phydev->supported;
  	priv->phydev = phydev;
-@@ -434,8 +549,13 @@ ltq_etop_mdio_init(struct net_device *dev)
+@@ -434,8 +549,13 @@ ltq_etop_mdio_init(struct net_device *de
  	}
  
  	priv->mii_bus->priv = dev;
@@ -359,7 +350,7 @@ index 85e2c6c..e799b88 100644
  	priv->mii_bus->name = "ltq_mii";
  	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
  		priv->pdev->name, priv->pdev->id);
-@@ -526,9 +646,9 @@ ltq_etop_tx(struct sk_buff *skb, struct net_device *dev)
+@@ -526,9 +646,9 @@ ltq_etop_tx(struct sk_buff *skb, struct
  	struct ltq_etop_priv *priv = netdev_priv(dev);
  	struct ltq_etop_chan *ch = &priv->ch[(queue << 1) | 1];
  	struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
@@ -370,7 +361,7 @@ index 85e2c6c..e799b88 100644
  
  	len = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
  
-@@ -702,7 +822,7 @@ ltq_etop_probe(struct platform_device *pdev)
+@@ -702,7 +822,7 @@ ltq_etop_probe(struct platform_device *p
  {
  	struct net_device *dev;
  	struct ltq_etop_priv *priv;
@@ -379,7 +370,7 @@ index 85e2c6c..e799b88 100644
  	int err;
  	int i;
  
-@@ -730,6 +850,23 @@ ltq_etop_probe(struct platform_device *pdev)
+@@ -730,6 +850,23 @@ ltq_etop_probe(struct platform_device *p
  		goto err_out;
  	}
  
@@ -403,6 +394,3 @@ index 85e2c6c..e799b88 100644
  	dev = alloc_etherdev_mq(sizeof(struct ltq_etop_priv), 4);
  	strcpy(dev->name, "eth%d");
  	dev->netdev_ops = &ltq_eth_netdev_ops;
--- 
-1.7.9.1
-

@@ -11,8 +11,6 @@ Cc: netdev@vger.kernel.org
  drivers/net/ethernet/lantiq_etop.c |   49 ++++++++++++++++++++++++++++++-----
  1 files changed, 42 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/net/ethernet/lantiq_etop.c b/drivers/net/ethernet/lantiq_etop.c
-index ad0fa54..8fbb069 100644
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
 @@ -36,6 +36,7 @@
@@ -93,7 +91,7 @@ index ad0fa54..8fbb069 100644
  			/* we need to write this magic to the internal phy to
  			   make it work */
  			ltq_etop_mdio_wr(NULL, 0x8, 0x12, 0xC020);
-@@ -883,6 +900,24 @@ ltq_etop_probe(struct platform_device *pdev)
+@@ -883,6 +900,24 @@ ltq_etop_probe(struct platform_device *p
  	priv->pdev = pdev;
  	priv->pldata = dev_get_platdata(&pdev->dev);
  	priv->netdev = dev;
@@ -118,6 +116,3 @@ index ad0fa54..8fbb069 100644
  	spin_lock_init(&priv->lock);
  
  	for (i = 0; i < MAX_DMA_CHAN; i++) {
--- 
-1.7.9.1
-

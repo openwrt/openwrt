@@ -10,11 +10,9 @@ Subject: [PATCH 48/70] MIPS: lantiq: pci: rename variable inside
  arch/mips/pci/pci-lantiq.h |    2 +-
  3 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/arch/mips/pci/ops-lantiq.c b/arch/mips/pci/ops-lantiq.c
-index 1f2afb5..5cbb0cf 100644
 --- a/arch/mips/pci/ops-lantiq.c
 +++ b/arch/mips/pci/ops-lantiq.c
-@@ -41,7 +41,7 @@ static int ltq_pci_config_access(unsigned char access_type, struct pci_bus *bus,
+@@ -41,7 +41,7 @@ static int ltq_pci_config_access(unsigne
  
  	spin_lock_irqsave(&ebu_lock, flags);
  
@@ -23,7 +21,7 @@ index 1f2afb5..5cbb0cf 100644
  	cfg_base |= (bus->number << LTQ_PCI_CFG_BUSNUM_SHF) | (devfn <<
  			LTQ_PCI_CFG_FUNNUM_SHF) | (where & ~0x3);
  
-@@ -55,11 +55,11 @@ static int ltq_pci_config_access(unsigned char access_type, struct pci_bus *bus,
+@@ -55,11 +55,11 @@ static int ltq_pci_config_access(unsigne
  	wmb();
  
  	/* clean possible Master abort */
@@ -37,8 +35,6 @@ index 1f2afb5..5cbb0cf 100644
  	cfg_base |= (0x68 << LTQ_PCI_CFG_FUNNUM_SHF) + 4;
  	ltq_w32(temp, ((u32 *)cfg_base));
  
-diff --git a/arch/mips/pci/pci-lantiq.c b/arch/mips/pci/pci-lantiq.c
-index 47b551c..efcdd45 100644
 --- a/arch/mips/pci/pci-lantiq.c
 +++ b/arch/mips/pci/pci-lantiq.c
 @@ -65,8 +65,8 @@
@@ -52,7 +48,7 @@ index 47b551c..efcdd45 100644
  
  struct ltq_pci_gpio_map {
  	int pin;
-@@ -273,7 +273,7 @@ static int __devinit ltq_pci_probe(struct platform_device *pdev)
+@@ -273,7 +273,7 @@ static int __devinit ltq_pci_probe(struc
  	pci_probe_only = 0;
  	ltq_pci_irq_map = ltq_pci_data->irq;
  	ltq_pci_membase = ioremap_nocache(PCI_CR_BASE_ADDR, PCI_CR_SIZE);
@@ -61,8 +57,6 @@ index 47b551c..efcdd45 100644
  		ioremap_nocache(LTQ_PCI_CFG_BASE, LTQ_PCI_CFG_BASE);
  	ltq_pci_controller.io_map_base =
  		(unsigned long)ioremap(LTQ_PCI_IO_BASE, LTQ_PCI_IO_SIZE - 1);
-diff --git a/arch/mips/pci/pci-lantiq.h b/arch/mips/pci/pci-lantiq.h
-index 66bf6cd..c4721b4 100644
 --- a/arch/mips/pci/pci-lantiq.h
 +++ b/arch/mips/pci/pci-lantiq.h
 @@ -9,7 +9,7 @@
@@ -74,6 +68,3 @@ index 66bf6cd..c4721b4 100644
  extern int ltq_pci_read_config_dword(struct pci_bus *bus,
  	unsigned int devfn, int where, int size, u32 *val);
  extern int ltq_pci_write_config_dword(struct pci_bus *bus,
--- 
-1.7.9.1
-

@@ -12,11 +12,9 @@ Cc: linux-mtd@lists.infradead.org
  drivers/mtd/maps/lantiq-flash.c |   22 +++-------------------
  1 files changed, 3 insertions(+), 19 deletions(-)
 
-diff --git a/drivers/mtd/maps/lantiq-flash.c b/drivers/mtd/maps/lantiq-flash.c
-index cf7a3cd..ccc6954 100644
 --- a/drivers/mtd/maps/lantiq-flash.c
 +++ b/drivers/mtd/maps/lantiq-flash.c
-@@ -108,7 +108,7 @@ ltq_copy_to(struct map_info *map, unsigned long to,
+@@ -108,7 +108,7 @@ ltq_copy_to(struct map_info *map, unsign
  	spin_unlock_irqrestore(&ebu_lock, flags);
  }
  
@@ -25,7 +23,7 @@ index cf7a3cd..ccc6954 100644
  ltq_mtd_probe(struct platform_device *pdev)
  {
  	struct physmap_flash_data *ltq_mtd_data = dev_get_platdata(&pdev->dev);
-@@ -204,6 +204,7 @@ ltq_mtd_remove(struct platform_device *pdev)
+@@ -204,6 +204,7 @@ ltq_mtd_remove(struct platform_device *p
  }
  
  static struct platform_driver ltq_mtd_driver = {
@@ -33,7 +31,7 @@ index cf7a3cd..ccc6954 100644
  	.remove = __devexit_p(ltq_mtd_remove),
  	.driver = {
  		.name = "ltq_nor",
-@@ -211,24 +212,7 @@ static struct platform_driver ltq_mtd_driver = {
+@@ -211,24 +212,7 @@ static struct platform_driver ltq_mtd_dr
  	},
  };
  
@@ -59,6 +57,3 @@ index cf7a3cd..ccc6954 100644
  
  MODULE_LICENSE("GPL");
  MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
--- 
-1.7.9.1
-

@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/prom.c |    5 ++++
  2 files changed, 66 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
-index ada3874..f17caec 100644
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
 @@ -9,6 +9,7 @@
@@ -105,8 +103,6 @@ index ada3874..f17caec 100644
  #if !defined(CONFIG_MIPS_MT_SMP) && !defined(CONFIG_MIPS_MT_SMTC)
  	set_c0_status(IE_IRQ0 | IE_IRQ1 | IE_IRQ2 |
  		IE_IRQ3 | IE_IRQ4 | IE_IRQ5);
-diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
-index 971554b..00ad59c 100644
 --- a/arch/mips/lantiq/prom.c
 +++ b/arch/mips/lantiq/prom.c
 @@ -108,4 +108,9 @@ void __init prom_init(void)
@@ -119,6 +115,3 @@ index 971554b..00ad59c 100644
 +		panic("failed to register_vsmp_smp_ops()");
 +#endif
  }
--- 
-1.7.9.1
-

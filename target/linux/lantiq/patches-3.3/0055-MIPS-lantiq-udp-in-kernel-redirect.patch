@@ -13,9 +13,6 @@ Subject: [PATCH 55/70] MIPS: lantiq: udp in-kernel redirect
  create mode 100644 include/linux/udp_redirect.h
  create mode 100644 net/ipv4/udp_redirect_symb.c
 
-diff --git a/include/linux/udp_redirect.h b/include/linux/udp_redirect.h
-new file mode 100644
-index 0000000..de1e64f
 --- /dev/null
 +++ b/include/linux/udp_redirect.h
 @@ -0,0 +1,57 @@
@@ -76,8 +73,6 @@ index 0000000..de1e64f
 +extern int udpredirect_getfrag(void *p, char * to, int offset,
 +                               int fraglen, int odd, struct sk_buff *skb);
 +#endif
-diff --git a/net/Kconfig b/net/Kconfig
-index e07272d..2118693 100644
 --- a/net/Kconfig
 +++ b/net/Kconfig
 @@ -72,6 +72,12 @@ config INET
@@ -93,11 +88,9 @@ index e07272d..2118693 100644
  if INET
  source "net/ipv4/Kconfig"
  source "net/ipv6/Kconfig"
-diff --git a/net/ipv4/Makefile b/net/ipv4/Makefile
-index ff75d3b..127edb9 100644
 --- a/net/ipv4/Makefile
 +++ b/net/ipv4/Makefile
-@@ -14,6 +14,9 @@ obj-y     := route.o inetpeer.o protocol.o \
+@@ -14,6 +14,9 @@ obj-y     := route.o inetpeer.o protocol
  	     inet_fragment.o ping.o
  
  obj-$(CONFIG_SYSCTL) += sysctl_net_ipv4.o
@@ -107,8 +100,6 @@ index ff75d3b..127edb9 100644
  obj-$(CONFIG_PROC_FS) += proc.o
  obj-$(CONFIG_IP_MULTIPLE_TABLES) += fib_rules.o
  obj-$(CONFIG_IP_MROUTE) += ipmr.o
-diff --git a/net/ipv4/udp.c b/net/ipv4/udp.c
-index 5d075b5..a2ee1bf 100644
 --- a/net/ipv4/udp.c
 +++ b/net/ipv4/udp.c
 @@ -108,6 +108,10 @@
@@ -122,7 +113,7 @@ index 5d075b5..a2ee1bf 100644
  struct udp_table udp_table __read_mostly;
  EXPORT_SYMBOL(udp_table);
  
-@@ -804,7 +808,7 @@ int udp_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
+@@ -804,7 +808,7 @@ int udp_sendmsg(struct kiocb *iocb, stru
  	u8  tos;
  	int err, is_udplite = IS_UDPLITE(sk);
  	int corkreq = up->corkflag || msg->msg_flags&MSG_MORE;
@@ -131,7 +122,7 @@ index 5d075b5..a2ee1bf 100644
  	struct sk_buff *skb;
  	struct ip_options_data opt_copy;
  
-@@ -821,7 +825,13 @@ int udp_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
+@@ -821,7 +825,13 @@ int udp_sendmsg(struct kiocb *iocb, stru
  	ipc.opt = NULL;
  	ipc.tx_flags = 0;
  
@@ -146,7 +137,7 @@ index 5d075b5..a2ee1bf 100644
  
  	fl4 = &inet->cork.fl.u.ip4;
  	if (up->pending) {
-@@ -1625,6 +1635,7 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
+@@ -1625,6 +1635,7 @@ int __udp4_lib_rcv(struct sk_buff *skb,
  	struct rtable *rt = skb_rtable(skb);
  	__be32 saddr, daddr;
  	struct net *net = dev_net(skb->dev);
@@ -154,7 +145,7 @@ index 5d075b5..a2ee1bf 100644
  
  	/*
  	 *  Validate the packet.
-@@ -1657,7 +1668,16 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
+@@ -1657,7 +1668,16 @@ int __udp4_lib_rcv(struct sk_buff *skb,
  	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
  
  	if (sk != NULL) {
@@ -181,9 +172,6 @@ index 5d075b5..a2ee1bf 100644
  /* ------------------------------------------------------------------------ */
  #ifdef CONFIG_PROC_FS
  
-diff --git a/net/ipv4/udp_redirect_symb.c b/net/ipv4/udp_redirect_symb.c
-new file mode 100644
-index 0000000..5617e86
 --- /dev/null
 +++ b/net/ipv4/udp_redirect_symb.c
 @@ -0,0 +1,186 @@
@@ -373,6 +361,3 @@ index 0000000..5617e86
 +EXPORT_SYMBOL(udp_do_redirect_fn);
 +EXPORT_SYMBOL(udpredirect_getfrag_fn);
 +#endif /* CONFIG_IFX_UDP_REDIRECT* */
--- 
-1.7.9.1
-
