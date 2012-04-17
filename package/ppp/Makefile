@@ -160,6 +160,8 @@ ifneq ($(CONFIG_PACKAGE_netifd),)
   define Package/ppp/script_install
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/ppp.sh $(1)/lib/netifd/proto/
+	$(INSTALL_BIN) ./files/lib/netifd/ppp-up $(1)/lib/netifd/
+	$(INSTALL_BIN) ./files/lib/netifd/ppp-down $(1)/lib/netifd/
   endef
 else
   define Package/ppp/script_install
