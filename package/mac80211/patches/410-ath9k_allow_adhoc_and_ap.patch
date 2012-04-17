@@ -34,11 +34,11 @@
  		if (sc->nbcnvifs >= ATH_BCBUF) {
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -653,6 +653,7 @@ static const struct ieee80211_iface_limi
- 				 BIT(NL80211_IFTYPE_WDS) },
- 	{ .max = 8,	.types = BIT(NL80211_IFTYPE_AP) |
- 				 BIT(NL80211_IFTYPE_P2P_GO) |
+@@ -655,6 +655,7 @@ static const struct ieee80211_iface_limi
+ #ifdef CONFIG_MAC80211_MESH
+ 				 BIT(NL80211_IFTYPE_MESH_POINT) |
+ #endif
 +				 BIT(NL80211_IFTYPE_ADHOC) |
- 				 BIT(NL80211_IFTYPE_MESH_POINT) },
+ 				 BIT(NL80211_IFTYPE_AP) |
+ 				 BIT(NL80211_IFTYPE_P2P_GO) },
  };
- 
