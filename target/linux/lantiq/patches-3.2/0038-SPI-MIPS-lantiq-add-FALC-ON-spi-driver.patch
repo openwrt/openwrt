@@ -20,8 +20,6 @@ Cc: spi-devel-general@lists.sourceforge.net
  6 files changed, 532 insertions(+), 0 deletions(-)
  create mode 100644 drivers/spi/spi-falcon.c
 
-diff --git a/arch/mips/lantiq/falcon/devices.c b/arch/mips/lantiq/falcon/devices.c
-index 6cd7a88..92ec571 100644
 --- a/arch/mips/lantiq/falcon/devices.c
 +++ b/arch/mips/lantiq/falcon/devices.c
 @@ -121,3 +121,16 @@ falcon_register_gpio_extra(void)
@@ -41,8 +39,6 @@ index 6cd7a88..92ec571 100644
 +	spi_register_board_info(data, 1);
 +	platform_device_register(&ltq_spi);
 +}
-diff --git a/arch/mips/lantiq/falcon/devices.h b/arch/mips/lantiq/falcon/devices.h
-index 18be8b6..5e6f720 100644
 --- a/arch/mips/lantiq/falcon/devices.h
 +++ b/arch/mips/lantiq/falcon/devices.h
 @@ -11,10 +11,14 @@
@@ -60,11 +56,9 @@ index 18be8b6..5e6f720 100644
 +extern void falcon_register_spi_flash(struct spi_board_info *data);
  
  #endif
-diff --git a/arch/mips/lantiq/falcon/mach-easy98000.c b/arch/mips/lantiq/falcon/mach-easy98000.c
-index 361b8f0..1a7caad 100644
 --- a/arch/mips/lantiq/falcon/mach-easy98000.c
 +++ b/arch/mips/lantiq/falcon/mach-easy98000.c
-@@ -40,6 +40,21 @@ struct physmap_flash_data easy98000_nor_flash_data = {
+@@ -40,6 +40,21 @@ struct physmap_flash_data easy98000_nor_
  	.parts		= easy98000_nor_partitions,
  };
  
@@ -112,11 +106,9 @@ index 361b8f0..1a7caad 100644
  MIPS_MACHINE(LANTIQ_MACH_EASY98000NAND,
  			"EASY98000NAND",
  			"EASY98000 Eval Board (NAND Flash)",
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 8ba4510..b8424ba 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -180,6 +180,10 @@ config SPI_MPC52xx
+@@ -189,6 +189,10 @@ config SPI_MPC52xx
  	  This drivers supports the MPC52xx SPI controller in master SPI
  	  mode.
  
@@ -127,11 +119,9 @@ index 8ba4510..b8424ba 100644
  config SPI_MPC52xx_PSC
  	tristate "Freescale MPC52xx PSC SPI controller"
  	depends on PPC_MPC52xx && EXPERIMENTAL
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 61c3261..570894c 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -25,6 +25,7 @@ obj-$(CONFIG_SPI_DW_MMIO)		+= spi-dw-mmio.o
+@@ -25,6 +25,7 @@ obj-$(CONFIG_SPI_DW_MMIO)		+= spi-dw-mmi
  obj-$(CONFIG_SPI_DW_PCI)		+= spi-dw-midpci.o
  spi-dw-midpci-objs			:= spi-dw-pci.o spi-dw-mid.o
  obj-$(CONFIG_SPI_EP93XX)		+= spi-ep93xx.o
@@ -139,9 +129,6 @@ index 61c3261..570894c 100644
  obj-$(CONFIG_SPI_FSL_LIB)		+= spi-fsl-lib.o
  obj-$(CONFIG_SPI_FSL_ESPI)		+= spi-fsl-espi.o
  obj-$(CONFIG_SPI_FSL_SPI)		+= spi-fsl-spi.o
-diff --git a/drivers/spi/spi-falcon.c b/drivers/spi/spi-falcon.c
-new file mode 100644
-index 0000000..447bbaa
 --- /dev/null
 +++ b/drivers/spi/spi-falcon.c
 @@ -0,0 +1,483 @@
@@ -628,6 +615,3 @@ index 0000000..447bbaa
 +
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Lantiq Falcon SPI controller driver");
--- 
-1.7.9.1
-

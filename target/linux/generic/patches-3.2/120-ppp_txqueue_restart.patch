@@ -54,11 +54,9 @@ Date:   Mon Mar 26 00:03:42 2012 +0000
 
 
 
-diff --git a/drivers/net/ppp/ppp_generic.c b/drivers/net/ppp/ppp_generic.c
-index 159da29..21d7151 100644
 --- a/drivers/net/ppp/ppp_generic.c
 +++ b/drivers/net/ppp/ppp_generic.c
-@@ -968,7 +968,6 @@ ppp_start_xmit(struct sk_buff *skb, struct net_device *dev)
+@@ -968,7 +968,6 @@ ppp_start_xmit(struct sk_buff *skb, stru
  	proto = npindex_to_proto[npi];
  	put_unaligned_be16(proto, pp);
  

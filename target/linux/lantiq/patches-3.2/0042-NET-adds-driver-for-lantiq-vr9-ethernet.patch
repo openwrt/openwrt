@@ -13,8 +13,6 @@ Subject: [PATCH 42/73] NET: adds driver for lantiq vr9 ethernet
  6 files changed, 1387 insertions(+), 1 deletions(-)
  create mode 100644 drivers/net/ethernet/lantiq_vrx200.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index ab2d236..d1b8cc8 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -102,7 +102,7 @@
@@ -26,11 +24,9 @@ index ab2d236..d1b8cc8 100644
  
  /* DMA */
  #define LTQ_DMA_BASE_ADDR	0x1E104100
-diff --git a/arch/mips/lantiq/xway/devices.c b/arch/mips/lantiq/xway/devices.c
-index eab4644d..5efa4f3 100644
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -83,6 +83,7 @@ static struct platform_device ltq_etop = {
+@@ -83,6 +83,7 @@ static struct platform_device ltq_etop =
  	.name		= "ltq_etop",
  	.resource	= ltq_etop_resources,
  	.num_resources	= 1,
@@ -38,7 +34,7 @@ index eab4644d..5efa4f3 100644
  };
  
  void __init
-@@ -96,3 +97,22 @@ ltq_register_etop(struct ltq_eth_data *eth)
+@@ -96,3 +97,22 @@ ltq_register_etop(struct ltq_eth_data *e
  		platform_device_register(&ltq_etop);
  	}
  }
@@ -61,8 +57,6 @@ index eab4644d..5efa4f3 100644
 +	ltq_vrx200.dev.platform_data = eth;
 +	platform_device_register(&ltq_vrx200);
 +}
-diff --git a/arch/mips/lantiq/xway/devices.h b/arch/mips/lantiq/xway/devices.h
-index d825cbd..08befd9 100644
 --- a/arch/mips/lantiq/xway/devices.h
 +++ b/arch/mips/lantiq/xway/devices.h
 @@ -17,5 +17,6 @@ extern void ltq_register_gpio_stp(void);
@@ -72,8 +66,6 @@ index d825cbd..08befd9 100644
 +extern void ltq_register_vrx200(struct ltq_eth_data *eth);
  
  #endif
-diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
-index 597f4d4..2035cab 100644
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
 @@ -84,6 +84,12 @@ config LANTIQ_ETOP
@@ -89,8 +81,6 @@ index 597f4d4..2035cab 100644
  source "drivers/net/ethernet/marvell/Kconfig"
  source "drivers/net/ethernet/mellanox/Kconfig"
  source "drivers/net/ethernet/micrel/Kconfig"
-diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
-index be5dde0..4fde2be 100644
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
 @@ -35,6 +35,7 @@ obj-$(CONFIG_IP1000) += icplus/
@@ -101,9 +91,6 @@ index be5dde0..4fde2be 100644
  obj-$(CONFIG_NET_VENDOR_MARVELL) += marvell/
  obj-$(CONFIG_NET_VENDOR_MELLANOX) += mellanox/
  obj-$(CONFIG_NET_VENDOR_MICREL) += micrel/
-diff --git a/drivers/net/ethernet/lantiq_vrx200.c b/drivers/net/ethernet/lantiq_vrx200.c
-new file mode 100644
-index 0000000..d79d380
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_vrx200.c
 @@ -0,0 +1,1358 @@
@@ -1465,6 +1452,3 @@ index 0000000..d79d380
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Lantiq SoC ETOP");
 +MODULE_LICENSE("GPL");
--- 
-1.7.9.1
-

@@ -8,11 +8,9 @@ https://lists.openwrt.org/pipermail/openwrt-devel/2012-March/014524.html
  drivers/usb/dwc_otg/dwc_otg_hcd_intr.c |    2 --
  1 files changed, 0 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/usb/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/dwc_otg/dwc_otg_hcd_intr.c
-index 834b5e0..f6f3f3d 100644
 --- a/drivers/usb/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/dwc_otg/dwc_otg_hcd_intr.c
-@@ -1278,8 +1278,6 @@ static int32_t handle_hc_ack_intr(dwc_otg_hcd_t *_hcd,
+@@ -1278,8 +1278,6 @@ static int32_t handle_hc_ack_intr(dwc_ot
  			 * automatically executes the PING, then the transfer.
  			 */
  		    halt_channel(_hcd, _hc, _qtd, DWC_OTG_HC_XFER_ACK, must_free);
@@ -21,6 +19,3 @@ index 834b5e0..f6f3f3d 100644
  		}
  	}
  
--- 
-1.7.9.1
-

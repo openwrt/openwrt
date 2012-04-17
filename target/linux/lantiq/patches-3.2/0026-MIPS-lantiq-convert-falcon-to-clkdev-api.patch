@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/falcon/sysctrl.c                  |  129 ++++++++++++--------
  3 files changed, 80 insertions(+), 59 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
-index 0aa1f16..120c56c 100644
 --- a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
 @@ -95,6 +95,7 @@
@@ -38,16 +36,12 @@ index 0aa1f16..120c56c 100644
  /* global register ranges */
  extern __iomem void *ltq_ebu_membase;
  extern __iomem void *ltq_sys1_membase;
-diff --git a/arch/mips/lantiq/falcon/Makefile b/arch/mips/lantiq/falcon/Makefile
-index 56b22eb..3634154 100644
 --- a/arch/mips/lantiq/falcon/Makefile
 +++ b/arch/mips/lantiq/falcon/Makefile
 @@ -1,2 +1,2 @@
 -obj-y := clk.o prom.o reset.o sysctrl.o devices.o gpio.o
 +obj-y := prom.o reset.o sysctrl.o devices.o gpio.o
  obj-$(CONFIG_LANTIQ_MACH_EASY98000) += mach-easy98000.o
-diff --git a/arch/mips/lantiq/falcon/sysctrl.c b/arch/mips/lantiq/falcon/sysctrl.c
-index 905a142..900f0e5 100644
 --- a/arch/mips/lantiq/falcon/sysctrl.c
 +++ b/arch/mips/lantiq/falcon/sysctrl.c
 @@ -9,11 +9,13 @@
@@ -99,15 +93,16 @@ index 905a142..900f0e5 100644
  
 -void
 -ltq_sysctl_activate(int module, unsigned int mask)
-+static int
-+ltq_sysctl_activate(struct clk *clk)
- {
+-{
 -	if (module > SYSCTL_SYSGPE)
 -		return;
 -
 -	ltq_reg_w32(module, mask, LTQ_SYSCTL_CLKEN);
 -	ltq_reg_w32(module, mask, LTQ_SYSCTL_ACT);
 -	ltq_sysctl_wait(module, mask, mask, LTQ_SYSCTL_ACTS);
++static int
++ltq_sysctl_activate(struct clk *clk)
++{
 +	ltq_reg_w32(clk->module, clk->bits, LTQ_SYSCTL_CLKEN);
 +	ltq_reg_w32(clk->module, clk->bits, LTQ_SYSCTL_ACT);
 +	ltq_sysctl_wait(clk, clk->bits, LTQ_SYSCTL_ACTS);
@@ -169,7 +164,8 @@ index 905a142..900f0e5 100644
 +ltq_sysctl_reboot(struct clk *clk)
  {
  	unsigned int act;
--
++	unsigned int bits;
+ 
 -	if (module > SYSCTL_SYSGPE)
 -		return;
 -
@@ -178,8 +174,6 @@ index 905a142..900f0e5 100644
 -		ltq_sysctl_activate(module, ~act & mask);
 -	ltq_reg_w32(module, act & mask, LTQ_SYSCTL_RBT);
 -	ltq_sysctl_wait(module, mask, mask, LTQ_SYSCTL_ACTS);
-+	unsigned int bits;
-+
 +	act = ltq_reg_r32(clk->module, LTQ_SYSCTL_ACT);
 +	bits = ~act & clk->bits;
 +	if (bits != 0) {
@@ -239,6 +233,3 @@ index 905a142..900f0e5 100644
 +	clkdev_add_sys("ltq_asc.1", SYSCTL_SYS1, ACTS_ASC1_ACT);
 +	clkdev_add_sys("falcon_i2c", SYSCTL_SYS1, ACTS_I2C_ACT);
  }
--- 
-1.7.9.1
-

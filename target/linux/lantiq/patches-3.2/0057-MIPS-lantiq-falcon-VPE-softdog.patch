@@ -10,9 +10,6 @@ Subject: [PATCH 57/73] MIPS: lantiq: falcon VPE softdog
  create mode 100644 arch/mips/include/asm/mach-lantiq/falcon/vpe.h
  create mode 100644 arch/mips/lantiq/falcon/softdog_vpe.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/falcon/vpe.h b/arch/mips/include/asm/mach-lantiq/falcon/vpe.h
-new file mode 100644
-index 0000000..22a701b
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/falcon/vpe.h
 @@ -0,0 +1,44 @@
@@ -60,9 +57,6 @@ index 0000000..22a701b
 +int32_t vpe1_sw_wdog_register_reset_handler(VPE_SW_WDOG_RESET reset_fn);
 +
 +#endif
-diff --git a/arch/mips/lantiq/falcon/softdog_vpe.c b/arch/mips/lantiq/falcon/softdog_vpe.c
-new file mode 100644
-index 0000000..85d22a2
 --- /dev/null
 +++ b/arch/mips/lantiq/falcon/softdog_vpe.c
 @@ -0,0 +1,109 @@
@@ -175,6 +169,3 @@ index 0000000..85d22a2
 +MODULE_AUTHOR("LXDB");
 +MODULE_DESCRIPTION("Software Watchdog For VPE1");
 +MODULE_LICENSE("GPL");
--- 
-1.7.9.1
-

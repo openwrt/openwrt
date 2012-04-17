@@ -34,8 +34,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/atm/pppoatm.c |   95 +++++++++++++++++++++++++++++++++++++++++++++++-----
  1 files changed, 85 insertions(+), 10 deletions(-)
 
-diff --git a/net/atm/pppoatm.c b/net/atm/pppoatm.c
-index 614d3fc..ce1e59f 100644
 --- a/net/atm/pppoatm.c
 +++ b/net/atm/pppoatm.c
 @@ -62,12 +62,25 @@ struct pppoatm_vcc {
@@ -64,7 +62,7 @@ index 614d3fc..ce1e59f 100644
   * Header used for LLC Encapsulated PPP (4 bytes) followed by the LCP protocol
   * ID (0xC021) used in autodetection
   */
-@@ -102,16 +115,30 @@ static void pppoatm_wakeup_sender(unsigned long arg)
+@@ -102,16 +115,30 @@ static void pppoatm_wakeup_sender(unsign
  static void pppoatm_pop(struct atm_vcc *atmvcc, struct sk_buff *skb)
  {
  	struct pppoatm_vcc *pvcc = atmvcc_to_pvcc(atmvcc);
@@ -154,7 +152,7 @@ index 614d3fc..ce1e59f 100644
  /*
   * Called by the ppp_generic.c to send a packet - returns true if packet
   * was accepted.  If we return false, then it's our job to call
-@@ -207,7 +279,7 @@ static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
+@@ -207,7 +279,7 @@ static int pppoatm_send(struct ppp_chann
  			struct sk_buff *n;
  			n = skb_realloc_headroom(skb, LLC_LEN);
  			if (n != NULL &&
@@ -163,7 +161,7 @@ index 614d3fc..ce1e59f 100644
  				kfree_skb(n);
  				goto nospace;
  			}
-@@ -215,12 +287,12 @@ static int pppoatm_send(struct ppp_channel *chan, struct sk_buff *skb)
+@@ -215,12 +287,12 @@ static int pppoatm_send(struct ppp_chann
  			skb = n;
  			if (skb == NULL)
  				return DROP_PACKET;
@@ -178,7 +176,7 @@ index 614d3fc..ce1e59f 100644
  			goto nospace;
  		break;
  	case e_autodetect:
-@@ -285,6 +357,9 @@ static int pppoatm_assign_vcc(struct atm_vcc *atmvcc, void __user *arg)
+@@ -285,6 +357,9 @@ static int pppoatm_assign_vcc(struct atm
  	if (pvcc == NULL)
  		return -ENOMEM;
  	pvcc->atmvcc = atmvcc;
@@ -188,6 +186,3 @@ index 614d3fc..ce1e59f 100644
  	pvcc->old_push = atmvcc->push;
  	pvcc->old_pop = atmvcc->pop;
  	pvcc->encaps = (enum pppoatm_encaps) be.encaps;
--- 
-1.7.7.6
-

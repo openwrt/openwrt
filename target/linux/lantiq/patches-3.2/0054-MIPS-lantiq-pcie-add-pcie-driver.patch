@@ -21,11 +21,9 @@ Subject: [PATCH 54/73]  MIPS: lantiq: pcie: add pcie driver
  create mode 100644 arch/mips/pci/pcie-lantiq.c
  create mode 100644 arch/mips/pci/pcie-lantiq.h
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 1b78cd7..bbaff9b 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -2329,6 +2329,7 @@ config PCI_DOMAINS
+@@ -2353,6 +2353,7 @@ config PCI_DOMAINS
  	bool
  
  source "drivers/pci/Kconfig"
@@ -33,8 +31,6 @@ index 1b78cd7..bbaff9b 100644
  
  #
  # ISA support is now enabled via select.  Too many systems still have the one
-diff --git a/arch/mips/lantiq/Kconfig b/arch/mips/lantiq/Kconfig
-index dde9fc6..d21d9d4 100644
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
 @@ -22,10 +22,6 @@ config SOC_FALCON
@@ -48,8 +44,6 @@ index dde9fc6..d21d9d4 100644
  source "arch/mips/lantiq/xway/Kconfig"
  source "arch/mips/lantiq/falcon/Kconfig"
  
-diff --git a/arch/mips/lantiq/xway/Kconfig b/arch/mips/lantiq/xway/Kconfig
-index 2b857de..54a51ff 100644
 --- a/arch/mips/lantiq/xway/Kconfig
 +++ b/arch/mips/lantiq/xway/Kconfig
 @@ -8,6 +8,27 @@ config LANTIQ_MACH_EASY50712
@@ -80,11 +74,9 @@ index 2b857de..54a51ff 100644
  endif
  
  if SOC_AMAZON_SE
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index 3ca5f75..3386888 100644
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -42,6 +42,8 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1480.o pci-bcm1480ht.o
+@@ -42,6 +42,8 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1
  obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -93,9 +85,6 @@ index 3ca5f75..3386888 100644
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
  obj-$(CONFIG_TANBAC_TB0287)	+= fixup-tb0287.o
-diff --git a/arch/mips/pci/fixup-lantiq-pcie.c b/arch/mips/pci/fixup-lantiq-pcie.c
-new file mode 100644
-index 0000000..84517df
 --- /dev/null
 +++ b/arch/mips/pci/fixup-lantiq-pcie.c
 @@ -0,0 +1,81 @@
@@ -180,8 +169,6 @@ index 0000000..84517df
 +
 +DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_LANTIQ, PCI_DEVICE_ID_LANTIQ_PCIE,
 +     ifx_pcie_rc_class_early_fixup);
-diff --git a/arch/mips/pci/pci.c b/arch/mips/pci/pci.c
-index 41af7fa..2239cda 100644
 --- a/arch/mips/pci/pci.c
 +++ b/arch/mips/pci/pci.c
 @@ -167,6 +167,31 @@ static int __init pcibios_init(void)
@@ -216,9 +203,6 @@ index 41af7fa..2239cda 100644
  static int pcibios_enable_resources(struct pci_dev *dev, int mask)
  {
  	u16 cmd, old_cmd;
-diff --git a/arch/mips/pci/pcie-lantiq-msi.c b/arch/mips/pci/pcie-lantiq-msi.c
-new file mode 100644
-index 0000000..9cbf639
 --- /dev/null
 +++ b/arch/mips/pci/pcie-lantiq-msi.c
 @@ -0,0 +1,399 @@
@@ -621,9 +605,6 @@ index 0000000..9cbf639
 +MODULE_SUPPORTED_DEVICE("Infineon PCIe IP builtin MSI PIC module");
 +MODULE_DESCRIPTION("Infineon PCIe IP builtin MSI PIC driver");
 +
-diff --git a/arch/mips/pci/pcie-lantiq-phy.c b/arch/mips/pci/pcie-lantiq-phy.c
-new file mode 100644
-index 0000000..9f5027d
 --- /dev/null
 +++ b/arch/mips/pci/pcie-lantiq-phy.c
 @@ -0,0 +1,408 @@
@@ -1035,9 +1016,6 @@ index 0000000..9f5027d
 +#endif
 +}
 +
-diff --git a/arch/mips/pci/pcie-lantiq.c b/arch/mips/pci/pcie-lantiq.c
-new file mode 100644
-index 0000000..1df55b5
 --- /dev/null
 +++ b/arch/mips/pci/pcie-lantiq.c
 @@ -0,0 +1,1146 @@
@@ -2187,9 +2165,6 @@ index 0000000..1df55b5
 +}
 +
 +arch_initcall(pciebios_init);
-diff --git a/arch/mips/pci/pcie-lantiq.h b/arch/mips/pci/pcie-lantiq.h
-new file mode 100644
-index 0000000..d877c23
 --- /dev/null
 +++ b/arch/mips/pci/pcie-lantiq.h
 @@ -0,0 +1,1305 @@
@@ -3498,6 +3473,3 @@ index 0000000..d877c23
 +
 +#endif /* IFXMIPS_PCIE_VR9_H */
 +
--- 
-1.7.9.1
-

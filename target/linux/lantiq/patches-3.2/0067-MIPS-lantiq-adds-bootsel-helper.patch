@@ -8,8 +8,6 @@ Subject: [PATCH 67/73] MIPS: lantiq: adds bootsel helper
  arch/mips/lantiq/xway/reset.c                      |   12 +++++++++++-
  2 files changed, 23 insertions(+), 1 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index bfdeb16..1ec8f2a 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -144,6 +144,18 @@
@@ -31,8 +29,6 @@ index bfdeb16..1ec8f2a 100644
  /* register access macros for EBU and CGU */
  #define ltq_ebu_w32(x, y)	ltq_w32((x), ltq_ebu_membase + (y))
  #define ltq_ebu_r32(x)		ltq_r32(ltq_ebu_membase + (x))
-diff --git a/arch/mips/lantiq/xway/reset.c b/arch/mips/lantiq/xway/reset.c
-index 8a5dff1..b8f7ffb 100644
 --- a/arch/mips/lantiq/xway/reset.c
 +++ b/arch/mips/lantiq/xway/reset.c
 @@ -27,7 +27,11 @@
@@ -61,6 +57,3 @@ index 8a5dff1..b8f7ffb 100644
  void ltq_reset_once(unsigned int module, ulong usec)
  {
  	ltq_rcu_w32(ltq_rcu_r32(RCU_RST_REQ) | module, RCU_RST_REQ);
--- 
-1.7.9.1
-
