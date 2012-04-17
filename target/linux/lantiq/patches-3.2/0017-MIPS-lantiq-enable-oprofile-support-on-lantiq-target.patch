@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/irq.c |    5 +++++
  2 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index d46f1da..c1ceadb 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -226,6 +226,7 @@ config LANTIQ
@@ -25,8 +23,6 @@ index d46f1da..c1ceadb 100644
  	select MIPS_MACHINE
  
  config LASAT
-diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
-index 17c057f..0b2ed87 100644
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
 @@ -40,6 +40,9 @@
@@ -48,6 +44,3 @@ index 17c057f..0b2ed87 100644
  }
  
  unsigned int __cpuinit get_c0_compare_int(void)
--- 
-1.7.9.1
-

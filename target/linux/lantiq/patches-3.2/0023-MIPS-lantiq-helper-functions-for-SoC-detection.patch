@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  .../mips/include/asm/mach-lantiq/xway/lantiq_soc.h |    5 +++++
  2 files changed, 19 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
-index a5dc06a..0aa1f16 100644
 --- a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
-@@ -134,8 +134,20 @@ extern int ltq_gpio_mux_set(unsigned int pin, unsigned int mux);
+@@ -134,8 +134,20 @@ extern int ltq_gpio_mux_set(unsigned int
  #define LTQ_EIU_BASE_ADDR	0
  #define LTQ_EBU_PCC_ISTAT	0
  
@@ -39,8 +37,6 @@ index a5dc06a..0aa1f16 100644
  
  #endif /* CONFIG_SOC_FALCON */
  #endif /* _LTQ_XWAY_H__ */
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 6c5b705..45e480c 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -164,5 +164,10 @@ static inline int ltq_is_vr9(void)
@@ -54,6 +50,3 @@ index 6c5b705..45e480c 100644
 +
  #endif /* CONFIG_SOC_TYPE_XWAY */
  #endif /* _LTQ_XWAY_H__ */
--- 
-1.7.9.1
-

@@ -16,8 +16,6 @@ Signed-off-by: Conor O'Gorman <i@conorogorman.net>
  drivers/spi/spi-xway.c                             |   58 ++++++++++----------
  3 files changed, 35 insertions(+), 29 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
-index d9c892b..d86acdd 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
 @@ -30,6 +30,10 @@
@@ -31,8 +29,6 @@ index d9c892b..d86acdd 100644
  
  #define LTQ_MEI_DYING_GASP_INT	(INT_NUM_IM1_IRL0 + 21)
  #define LTQ_MEI_INT		(INT_NUM_IM1_IRL0 + 23)
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 5807456..de4ce8f 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -233,7 +233,7 @@ void __init ltq_soc_init(void)
@@ -44,8 +40,6 @@ index 5807456..de4ce8f 100644
          clkdev_add_pmu("ltq_gptu", NULL, 0, PMU_GPT);
          clkdev_add_pmu("ltq_ebu", NULL, 0, PMU_EBU);
  	if (!ltq_is_vr9())
-diff --git a/drivers/spi/spi-xway.c b/drivers/spi/spi-xway.c
-index 016a6d0..be5c25b 100644
 --- a/drivers/spi/spi-xway.c
 +++ b/drivers/spi/spi-xway.c
 @@ -143,9 +143,9 @@
@@ -61,7 +55,7 @@ index 016a6d0..be5c25b 100644
  
  struct ltq_spi {
  	struct spi_bitbang	bitbang;
-@@ -229,7 +229,7 @@ static void ltq_spi_hw_enable(struct ltq_spi *hw)
+@@ -229,7 +229,7 @@ static void ltq_spi_hw_enable(struct ltq
  	u32 clc;
  
  	/* Power-up mdule */
@@ -70,7 +64,7 @@ index 016a6d0..be5c25b 100644
  
  	/*
  	 * Set clock divider for run mode to 1 to
-@@ -245,7 +245,7 @@ static void ltq_spi_hw_disable(struct ltq_spi *hw)
+@@ -245,7 +245,7 @@ static void ltq_spi_hw_disable(struct lt
  	ltq_spi_reg_write(hw, LTQ_SPI_CLC_DISS, LTQ_SPI_CLC);
  
  	/* Power-down mdule */
@@ -79,7 +73,7 @@ index 016a6d0..be5c25b 100644
  }
  
  static void ltq_spi_reset_fifos(struct ltq_spi *hw)
-@@ -284,7 +284,7 @@ static inline int ltq_spi_wait_ready(struct ltq_spi *hw)
+@@ -284,7 +284,7 @@ static inline int ltq_spi_wait_ready(str
  		cond_resched();
  	} while (!time_after_eq(jiffies, timeout));
  
@@ -88,7 +82,7 @@ index 016a6d0..be5c25b 100644
  
  	return -ETIMEDOUT;
  }
-@@ -556,6 +556,12 @@ static const struct ltq_spi_cs_gpio_map ltq_spi_cs[] = {
+@@ -556,6 +556,12 @@ static const struct ltq_spi_cs_gpio_map
  	{ 11, 3 },
  };
  
@@ -101,7 +95,7 @@ index 016a6d0..be5c25b 100644
  static int ltq_spi_setup(struct spi_device *spi)
  {
  	struct ltq_spi *hw = ltq_spi_to_hw(spi);
-@@ -600,8 +606,10 @@ static int ltq_spi_setup(struct spi_device *spi)
+@@ -600,8 +606,10 @@ static int ltq_spi_setup(struct spi_devi
  		cstate->cs_activate = ltq_spi_gpio_cs_activate;
  		cstate->cs_deactivate = ltq_spi_gpio_cs_deactivate;
  	} else {
@@ -114,7 +108,7 @@ index 016a6d0..be5c25b 100644
  				1, "spi-cs");
  		if (ret)
  			return -EBUSY;
-@@ -633,7 +641,8 @@ static void ltq_spi_cleanup(struct spi_device *spi)
+@@ -633,7 +641,8 @@ static void ltq_spi_cleanup(struct spi_d
  	if (cdata && cdata->gpio)
  		gpio = cdata->gpio;
  	else
@@ -124,7 +118,7 @@ index 016a6d0..be5c25b 100644
  
  	gpio_free(gpio);
  	kfree(cstate);
-@@ -868,7 +877,8 @@ static const struct ltq_spi_irq_map ltq_spi_irqs[] = {
+@@ -868,7 +877,8 @@ static const struct ltq_spi_irq_map ltq_
  	{ "spi_err", ltq_spi_err_irq },
  };
  
@@ -134,7 +128,7 @@ index 016a6d0..be5c25b 100644
  {
  	struct spi_master *master;
  	struct resource *r;
-@@ -910,14 +920,14 @@ static int __init ltq_spi_probe(struct platform_device *pdev)
+@@ -910,14 +920,14 @@ static int __init ltq_spi_probe(struct p
  
  	hw->fpiclk = clk_get_fpi();
  	if (IS_ERR(hw->fpiclk)) {
@@ -161,7 +155,7 @@ index 016a6d0..be5c25b 100644
  {
  	struct ltq_spi *hw = platform_get_drvdata(pdev);
  	int ret, i;
-@@ -1043,24 +1054,15 @@ static int __exit ltq_spi_remove(struct platform_device *pdev)
+@@ -1043,24 +1054,15 @@ static int __exit ltq_spi_remove(struct
  }
  
  static struct platform_driver ltq_spi_driver = {
@@ -192,6 +186,3 @@ index 016a6d0..be5c25b 100644
  
  MODULE_DESCRIPTION("Lantiq SoC SPI controller driver");
  MODULE_AUTHOR("Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>");
--- 
-1.7.9.1
-

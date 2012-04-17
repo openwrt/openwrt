@@ -15,8 +15,6 @@ Signed-off-by: Grant Likely <grant.likely@secretlab.ca>
  3 files changed, 95 insertions(+), 1 deletions(-)
  create mode 100644 drivers/gpio/devres.c
 
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index 4e018d6..76dbd3f 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
 @@ -2,7 +2,7 @@
@@ -28,9 +26,6 @@ index 4e018d6..76dbd3f 100644
  
  # Device drivers. Generally keep list sorted alphabetically
  obj-$(CONFIG_GPIO_GENERIC)	+= gpio-generic.o
-diff --git a/drivers/gpio/devres.c b/drivers/gpio/devres.c
-new file mode 100644
-index 0000000..3dd2939
 --- /dev/null
 +++ b/drivers/gpio/devres.c
 @@ -0,0 +1,90 @@
@@ -124,11 +119,9 @@ index 0000000..3dd2939
 +	gpio_free(gpio);
 +}
 +EXPORT_SYMBOL(devm_gpio_free);
-diff --git a/include/asm-generic/gpio.h b/include/asm-generic/gpio.h
-index 8c86210..8601a02 100644
 --- a/include/asm-generic/gpio.h
 +++ b/include/asm-generic/gpio.h
-@@ -175,6 +175,10 @@ extern int gpio_request_one(unsigned gpio, unsigned long flags, const char *labe
+@@ -175,6 +175,10 @@ extern int gpio_request_one(unsigned gpi
  extern int gpio_request_array(const struct gpio *array, size_t num);
  extern void gpio_free_array(const struct gpio *array, size_t num);
  
@@ -139,6 +132,3 @@ index 8c86210..8601a02 100644
  #ifdef CONFIG_GPIO_SYSFS
  
  /*
--- 
-1.7.9.1
-

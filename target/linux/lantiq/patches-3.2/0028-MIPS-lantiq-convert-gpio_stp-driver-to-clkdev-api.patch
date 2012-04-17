@@ -10,8 +10,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/xway/gpio_stp.c |   12 +++++++++---
  1 files changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/arch/mips/lantiq/xway/gpio_stp.c b/arch/mips/lantiq/xway/gpio_stp.c
-index e6b4809..da91c5e 100644
 --- a/arch/mips/lantiq/xway/gpio_stp.c
 +++ b/arch/mips/lantiq/xway/gpio_stp.c
 @@ -15,6 +15,8 @@
@@ -46,7 +44,7 @@ index e6b4809..da91c5e 100644
  	return 0;
  }
  
-@@ -138,7 +144,7 @@ static int __devinit ltq_stp_probe(struct platform_device *pdev)
+@@ -138,7 +144,7 @@ static int __devinit ltq_stp_probe(struc
  	}
  	ret = gpiochip_add(&ltq_stp_chip);
  	if (!ret)
@@ -55,6 +53,3 @@ index e6b4809..da91c5e 100644
  
  	return ret;
  }
--- 
-1.7.9.1
-

@@ -12,8 +12,6 @@ Subject: [PATCH 41/73] SPI: MIPS: lantiq: adds spi xway
  5 files changed, 1088 insertions(+), 0 deletions(-)
  create mode 100644 drivers/spi/spi-xway.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq_platform.h b/arch/mips/include/asm/mach-lantiq/lantiq_platform.h
-index a305f1d..38ed938 100644
 --- a/arch/mips/include/asm/mach-lantiq/lantiq_platform.h
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq_platform.h
 @@ -50,4 +50,13 @@ struct ltq_eth_data {
@@ -30,8 +28,6 @@ index a305f1d..38ed938 100644
 +};
 +
  #endif
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
-index 2a8d5ad..b7f10e6 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
 @@ -27,6 +27,8 @@
@@ -43,11 +39,9 @@ index 2a8d5ad..b7f10e6 100644
  #define LTQ_SSC_EIR		(INT_NUM_IM0_IRL0 + 16)
  
  #define LTQ_MEI_DYING_GASP_INT	(INT_NUM_IM1_IRL0 + 21)
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index b8424ba..ca4189c 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -384,6 +384,14 @@ config SPI_NUC900
+@@ -393,6 +393,14 @@ config SPI_NUC900
  	help
  	  SPI driver for Nuvoton NUC900 series ARM SoCs
  
@@ -62,19 +56,14 @@ index b8424ba..ca4189c 100644
  #
  # Add new SPI master controllers in alphabetical order above this line
  #
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 570894c..a465d9a 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -59,4 +59,5 @@ obj-$(CONFIG_SPI_TLE62X0)		+= spi-tle62x0.o
+@@ -60,4 +60,5 @@ obj-$(CONFIG_SPI_TLE62X0)		+= spi-tle62x
  obj-$(CONFIG_SPI_TOPCLIFF_PCH)		+= spi-topcliff-pch.o
  obj-$(CONFIG_SPI_TXX9)			+= spi-txx9.o
  obj-$(CONFIG_SPI_XILINX)		+= spi-xilinx.o
 +obj-$(CONFIG_SPI_XWAY)			+= spi-xway.o
  
-diff --git a/drivers/spi/spi-xway.c b/drivers/spi/spi-xway.c
-new file mode 100644
-index 0000000..016a6d0
 --- /dev/null
 +++ b/drivers/spi/spi-xway.c
 @@ -0,0 +1,1068 @@
@@ -1146,6 +1135,3 @@ index 0000000..016a6d0
 +MODULE_AUTHOR("Daniel Schwierzeck <daniel.schwierzeck@googlemail.com>");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:ltq-spi");
--- 
-1.7.9.1
-

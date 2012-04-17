@@ -7,8 +7,6 @@ Subject: [PATCH 66/73] MIPS: lantiq: irqs were not cleared properly on boot
  arch/mips/lantiq/irq.c |   10 +++++-----
  1 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
-index 770a10c..d4e70b4 100644
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
 @@ -327,12 +327,12 @@ void __init arch_init_irq(void)
@@ -29,6 +27,3 @@ index 770a10c..d4e70b4 100644
  
  	mips_cpu_irq_init();
  
--- 
-1.7.9.1
-
