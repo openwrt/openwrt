@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2006-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -44,7 +44,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 		$(PKG_BUILD_DIR)/target/linux/*/patches{,-*}
 	-cp $(KERNEL_BUILD_DIR)/* $(IB_KDIR)/ # don't copy subdirectories here
 	-cp $(LINUX_DIR)/.config $(IB_LDIR)/
-	echo REVISION:="$(REVISION)" > $(PKG_BUILD_DIR)/include/version.mk
+	$(SED) 's,^# REVISION:=.*,REVISION:=$(REVISION),g' $(PKG_BUILD_DIR)/include/version.mk
 	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn \
 	  | $(XARGS) rm -rf
 	$(TAR) c -C $(BUILD_DIR) $(IB_NAME) | bzip2 -c > $@
