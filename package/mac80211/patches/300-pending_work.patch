@@ -18,27 +18,30 @@
  		return;
  
  	ewma_add(&ah->ah_beacon_rssi_avg, rssi);
-@@ -2416,6 +2416,19 @@ ath5k_tx_complete_poll_work(struct work_
+@@ -2416,6 +2416,22 @@ ath5k_tx_complete_poll_work(struct work_
  * Initialization routines *
  \*************************/
  
 +static const struct ieee80211_iface_limit if_limits[] = {
-+	{ .max = 256,	.types = BIT(NL80211_IFTYPE_STATION) },
-+	{ .max = 4,	.types = BIT(NL80211_IFTYPE_AP) |
-+				 BIT(NL80211_IFTYPE_MESH_POINT) },
++	{ .max = 2048,	.types = BIT(NL80211_IFTYPE_STATION) },
++	{ .max = 4,	.types =
++#ifdef CONFIG_MAC80211_MESH
++				 BIT(NL80211_IFTYPE_MESH_POINT) |
++#endif
++				 BIT(NL80211_IFTYPE_AP) },
 +};
 +
 +static const struct ieee80211_iface_combination if_comb = {
 +	.limits = if_limits,
 +	.n_limits = ARRAY_SIZE(if_limits),
-+	.max_interfaces = 256,
++	.max_interfaces = 2048,
 +	.num_different_channels = 1,
 +};
 +
  int __devinit
  ath5k_init_ah(struct ath5k_hw *ah, const struct ath_bus_ops *bus_ops)
  {
-@@ -2437,6 +2450,9 @@ ath5k_init_ah(struct ath5k_hw *ah, const
+@@ -2437,6 +2453,9 @@ ath5k_init_ah(struct ath5k_hw *ah, const
  		BIT(NL80211_IFTYPE_ADHOC) |
  		BIT(NL80211_IFTYPE_MESH_POINT);
  
@@ -826,29 +829,32 @@
  	WLAN_STA_BLOCK_BA,
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -647,6 +647,21 @@ void ath9k_reload_chainmask_settings(str
+@@ -647,6 +647,24 @@ void ath9k_reload_chainmask_settings(str
  		setup_ht_cap(sc, &sc->sbands[IEEE80211_BAND_5GHZ].ht_cap);
  }
  
 +static const struct ieee80211_iface_limit if_limits[] = {
-+	{ .max = 256,	.types = BIT(NL80211_IFTYPE_STATION) |
++	{ .max = 2048,	.types = BIT(NL80211_IFTYPE_STATION) |
 +				 BIT(NL80211_IFTYPE_P2P_CLIENT) |
 +				 BIT(NL80211_IFTYPE_WDS) },
-+	{ .max = 8,	.types = BIT(NL80211_IFTYPE_AP) |
-+				 BIT(NL80211_IFTYPE_P2P_GO) |
-+				 BIT(NL80211_IFTYPE_MESH_POINT) },
++	{ .max = 8,	.types =
++#ifdef CONFIG_MAC80211_MESH
++				 BIT(NL80211_IFTYPE_MESH_POINT) |
++#endif
++				 BIT(NL80211_IFTYPE_AP) |
++				 BIT(NL80211_IFTYPE_P2P_GO) },
 +};
 +
 +static const struct ieee80211_iface_combination if_comb = {
 +	.limits = if_limits,
 +	.n_limits = ARRAY_SIZE(if_limits),
-+	.max_interfaces = 256,
++	.max_interfaces = 2048,
 +	.num_different_channels = 1,
 +};
  
  void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
  {
-@@ -676,6 +691,9 @@ void ath9k_set_hw_capab(struct ath_softc
+@@ -676,6 +694,9 @@ void ath9k_set_hw_capab(struct ath_softc
  		BIT(NL80211_IFTYPE_ADHOC) |
  		BIT(NL80211_IFTYPE_MESH_POINT);
  

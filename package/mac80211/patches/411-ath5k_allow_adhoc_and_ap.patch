@@ -36,11 +36,11 @@
  		intval /= ATH_BCBUF;	/* staggered multi-bss beacons */
  		if (intval < 15)
  			ATH5K_WARN(ah, "intval %u is too low, min 15\n",
-@@ -2419,6 +2419,7 @@ ath5k_tx_complete_poll_work(struct work_
- static const struct ieee80211_iface_limit if_limits[] = {
- 	{ .max = 256,	.types = BIT(NL80211_IFTYPE_STATION) },
- 	{ .max = 4,	.types = BIT(NL80211_IFTYPE_AP) |
+@@ -2422,6 +2422,7 @@ static const struct ieee80211_iface_limi
+ #ifdef CONFIG_MAC80211_MESH
+ 				 BIT(NL80211_IFTYPE_MESH_POINT) |
+ #endif
 +				 BIT(NL80211_IFTYPE_ADHOC) |
- 				 BIT(NL80211_IFTYPE_MESH_POINT) },
+ 				 BIT(NL80211_IFTYPE_AP) },
  };
  
