@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/xway/gpio_stp.c |    7 +++++--
  1 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/lantiq/xway/gpio_stp.c b/arch/mips/lantiq/xway/gpio_stp.c
-index 2c78660..cb6f170 100644
 --- a/arch/mips/lantiq/xway/gpio_stp.c
 +++ b/arch/mips/lantiq/xway/gpio_stp.c
 @@ -35,6 +35,8 @@
@@ -37,6 +35,3 @@ index 2c78660..cb6f170 100644
  
  	/* stp are update periodically by the FPI bus */
  	ltq_stp_w32_mask(LTQ_STP_UPD_MASK, LTQ_STP_UPD_FPI, LTQ_STP_CON1);
--- 
-1.7.9.1
-

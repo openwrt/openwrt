@@ -11,11 +11,9 @@ Subject: [PATCH 50/70] MIPS: lantiq: pci: move pcibios code into
  3 files changed, 45 insertions(+), 22 deletions(-)
  create mode 100644 arch/mips/pci/fixup-lantiq.c
 
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index 1f07a58..499a019 100644
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_SB1250)	+= fixup-sb1250.o pci-sb1250.o
+@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_SB1250)	+= fixup-sb1
  obj-$(CONFIG_SIBYTE_BCM112X)	+= fixup-sb1250.o pci-sb1250.o
  obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1480.o pci-bcm1480ht.o
  obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
@@ -23,9 +21,6 @@ index 1f07a58..499a019 100644
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
-diff --git a/arch/mips/pci/fixup-lantiq.c b/arch/mips/pci/fixup-lantiq.c
-new file mode 100644
-index 0000000..daf5ae9
 --- /dev/null
 +++ b/arch/mips/pci/fixup-lantiq.c
 @@ -0,0 +1,42 @@
@@ -71,11 +66,9 @@ index 0000000..daf5ae9
 +}
 +
 +
-diff --git a/arch/mips/pci/pci-lantiq.c b/arch/mips/pci/pci-lantiq.c
-index efcdd45..7a29738 100644
 --- a/arch/mips/pci/pci-lantiq.c
 +++ b/arch/mips/pci/pci-lantiq.c
-@@ -93,16 +93,14 @@ static struct ltq_pci_gpio_map ltq_pci_gpio_map[] = {
+@@ -93,16 +93,14 @@ static struct ltq_pci_gpio_map ltq_pci_g
  	{ 37, 2, 0, "pci-req4" },
  };
  
@@ -94,7 +87,7 @@ index efcdd45..7a29738 100644
  
  struct pci_ops ltq_pci_ops = {
  	.read	= ltq_pci_read_config_dword,
-@@ -131,14 +129,6 @@ static struct pci_controller ltq_pci_controller = {
+@@ -131,14 +129,6 @@ static struct pci_controller ltq_pci_con
  	.io_offset	= 0x00000000UL,
  };
  
@@ -109,7 +102,7 @@ index efcdd45..7a29738 100644
  static u32 ltq_calc_bar11mask(void)
  {
  	u32 mem, bar11mask;
-@@ -256,16 +246,6 @@ static int __devinit ltq_pci_startup(struct device *dev)
+@@ -256,16 +246,6 @@ static int __devinit ltq_pci_startup(str
  	return 0;
  }
  
@@ -126,6 +119,3 @@ index efcdd45..7a29738 100644
  static int __devinit ltq_pci_probe(struct platform_device *pdev)
  {
  	struct ltq_pci_data *ltq_pci_data =
--- 
-1.7.9.1
-

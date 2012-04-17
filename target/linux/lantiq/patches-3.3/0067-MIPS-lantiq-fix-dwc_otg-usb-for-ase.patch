@@ -13,8 +13,6 @@ Signed-off-by: Conor O'Gorman <i@conorogorman.net>
  drivers/usb/dwc_otg/dwc_otg_ifx.c                  |    5 ++++-
  3 files changed, 8 insertions(+), 1 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
-index b7f10e6..d9c892b 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_irq.h
 @@ -36,6 +36,7 @@
@@ -25,8 +23,6 @@ index b7f10e6..d9c892b 100644
  #define LTQ_USB_OC_INT		(INT_NUM_IM4_IRL0 + 23)
  
  #define MIPS_CPU_TIMER_IRQ		7
-diff --git a/drivers/usb/dwc_otg/dwc_otg_driver.c b/drivers/usb/dwc_otg/dwc_otg_driver.c
-index 1b0daab..5c64ebb 100644
 --- a/drivers/usb/dwc_otg/dwc_otg_driver.c
 +++ b/drivers/usb/dwc_otg/dwc_otg_driver.c
 @@ -860,6 +860,9 @@ static int __init dwc_otg_init(void)
@@ -39,8 +35,6 @@ index 1b0daab..5c64ebb 100644
  	// ifxmips setup
      retval = ifx_usb_hc_init(dwc_iomem_base, dwc_irq);
      if (retval < 0)
-diff --git a/drivers/usb/dwc_otg/dwc_otg_ifx.c b/drivers/usb/dwc_otg/dwc_otg_ifx.c
-index 0a4c209..e45da85 100644
 --- a/drivers/usb/dwc_otg/dwc_otg_ifx.c
 +++ b/drivers/usb/dwc_otg/dwc_otg_ifx.c
 @@ -61,7 +61,10 @@ void dwc_otg_power_on (void)
@@ -55,6 +49,3 @@ index 0a4c209..e45da85 100644
  	// set power
  	writel(readl(DANUBE_PMU_PWDCR) & ~0x1, DANUBE_PMU_PWDCR);
  	writel(readl(DANUBE_PMU_PWDCR) & ~0x40, DANUBE_PMU_PWDCR);
--- 
-1.7.9.1
-

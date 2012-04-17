@@ -22,8 +22,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/tty/serial/lantiq.c                        |   12 ++++++++++++
  10 files changed, 45 insertions(+), 33 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
-index b074748..a5dc06a 100644
 --- a/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/falcon/lantiq_soc.h
 @@ -126,9 +126,7 @@ extern __iomem void *ltq_sys1_membase;
@@ -37,11 +35,9 @@ index b074748..a5dc06a 100644
  extern int ltq_gpio_mux_set(unsigned int pin, unsigned int mux);
  
  /* to keep the irq code generic we need to define these to 0 as falcon
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq.h b/arch/mips/include/asm/mach-lantiq/lantiq.h
-index 188de0f..924b91a 100644
 --- a/arch/mips/include/asm/mach-lantiq/lantiq.h
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq.h
-@@ -37,6 +37,10 @@ extern unsigned int ltq_get_soc_type(void);
+@@ -37,6 +37,10 @@ extern unsigned int ltq_get_soc_type(voi
  /* spinlock all ebu i/o */
  extern spinlock_t ebu_lock;
  
@@ -52,8 +48,6 @@ index 188de0f..924b91a 100644
  /* some irq helpers */
  extern void ltq_disable_irq(struct irq_data *data);
  extern void ltq_mask_and_ack_irq(struct irq_data *data);
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 6983d75..6c5b705 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -145,9 +145,6 @@
@@ -66,11 +60,9 @@ index 6983d75..6c5b705 100644
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
  extern void ltq_cgu_enable(unsigned int clk);
-diff --git a/arch/mips/lantiq/falcon/gpio.c b/arch/mips/lantiq/falcon/gpio.c
-index 28f8639..a44f71b 100644
 --- a/arch/mips/lantiq/falcon/gpio.c
 +++ b/arch/mips/lantiq/falcon/gpio.c
-@@ -97,7 +97,7 @@ int ltq_gpio_mux_set(unsigned int pin, unsigned int mux)
+@@ -97,7 +97,7 @@ int ltq_gpio_mux_set(unsigned int pin, u
  }
  EXPORT_SYMBOL(ltq_gpio_mux_set);
  
@@ -79,7 +71,7 @@ index 28f8639..a44f71b 100644
  			unsigned int dir, const char *name)
  {
  	int port = pin / 100;
-@@ -106,7 +106,7 @@ int ltq_gpio_request(unsigned int pin, unsigned int mux,
+@@ -106,7 +106,7 @@ int ltq_gpio_request(unsigned int pin, u
  	if (offset >= PINS_PER_PORT || port >= MAX_PORTS)
  		return -EINVAL;
  
@@ -88,8 +80,6 @@ index 28f8639..a44f71b 100644
  		pr_err("failed to setup lantiq gpio: %s\n", name);
  		return -EBUSY;
  	}
-diff --git a/arch/mips/lantiq/falcon/prom.c b/arch/mips/lantiq/falcon/prom.c
-index b50d6f9..f98b389 100644
 --- a/arch/mips/lantiq/falcon/prom.c
 +++ b/arch/mips/lantiq/falcon/prom.c
 @@ -27,9 +27,6 @@
@@ -113,8 +103,6 @@ index b50d6f9..f98b389 100644
  		ltq_sysctl_activate(SYSCTL_SYS1, ACTS_ASC1_ACT);
  	}
  }
-diff --git a/arch/mips/lantiq/xway/gpio.c b/arch/mips/lantiq/xway/gpio.c
-index 14ff7c7..54ec6c9 100644
 --- a/arch/mips/lantiq/xway/gpio.c
 +++ b/arch/mips/lantiq/xway/gpio.c
 @@ -50,14 +50,14 @@ int irq_to_gpio(unsigned int gpio)
@@ -134,8 +122,6 @@ index 14ff7c7..54ec6c9 100644
  		pr_err("failed to setup lantiq gpio: %s\n", name);
  		return -EBUSY;
  	}
-diff --git a/arch/mips/lantiq/xway/gpio_stp.c b/arch/mips/lantiq/xway/gpio_stp.c
-index cb6f170..e6b4809 100644
 --- a/arch/mips/lantiq/xway/gpio_stp.c
 +++ b/arch/mips/lantiq/xway/gpio_stp.c
 @@ -80,11 +80,6 @@ static struct gpio_chip ltq_stp_chip = {
@@ -150,7 +136,7 @@ index cb6f170..e6b4809 100644
  	/* sane defaults */
  	ltq_stp_w32(0, LTQ_STP_AR);
  	ltq_stp_w32(0, LTQ_STP_CPU0);
-@@ -133,6 +128,14 @@ static int __devinit ltq_stp_probe(struct platform_device *pdev)
+@@ -133,6 +128,14 @@ static int __devinit ltq_stp_probe(struc
  		dev_err(&pdev->dev, "failed to remap STP memory\n");
  		return -ENOMEM;
  	}
@@ -165,8 +151,6 @@ index cb6f170..e6b4809 100644
  	ret = gpiochip_add(&ltq_stp_chip);
  	if (!ret)
  		ret = ltq_stp_hw_init();
-diff --git a/arch/mips/pci/pci-lantiq.c b/arch/mips/pci/pci-lantiq.c
-index c001c5a..47b551c 100644
 --- a/arch/mips/pci/pci-lantiq.c
 +++ b/arch/mips/pci/pci-lantiq.c
 @@ -150,24 +150,26 @@ static u32 ltq_calc_bar11mask(void)
@@ -202,7 +186,7 @@ index c001c5a..47b551c 100644
  
  	/* set clock to 33Mhz */
  	if (ltq_is_ar9()) {
-@@ -190,7 +192,7 @@ static int __devinit ltq_pci_startup(struct ltq_pci_data *conf)
+@@ -190,7 +192,7 @@ static int __devinit ltq_pci_startup(str
  	}
  
  	/* setup pci clock and gpis used by pci */
@@ -211,7 +195,7 @@ index c001c5a..47b551c 100644
  
  	/* enable auto-switching between PCI and EBU */
  	ltq_pci_w32(0xa, PCI_CR_CLK_CTRL);
-@@ -275,7 +277,7 @@ static int __devinit ltq_pci_probe(struct platform_device *pdev)
+@@ -275,7 +277,7 @@ static int __devinit ltq_pci_probe(struc
  		ioremap_nocache(LTQ_PCI_CFG_BASE, LTQ_PCI_CFG_BASE);
  	ltq_pci_controller.io_map_base =
  		(unsigned long)ioremap(LTQ_PCI_IO_BASE, LTQ_PCI_IO_SIZE - 1);
@@ -220,8 +204,6 @@ index c001c5a..47b551c 100644
  	register_pci_controller(&ltq_pci_controller);
  
  	return 0;
-diff --git a/drivers/net/ethernet/lantiq_etop.c b/drivers/net/ethernet/lantiq_etop.c
-index daba994..ad0fa54 100644
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
 @@ -292,9 +292,6 @@ ltq_etop_gbit_init(void)
@@ -234,7 +216,7 @@ index daba994..ad0fa54 100644
  	ltq_gbit_w32_mask(0, GCTL0_SE, LTQ_GBIT_GCTL0);
  	/** Disable MDIO auto polling mode */
  	ltq_gbit_w32_mask(0, PX_CTL_DMDIO, LTQ_GBIT_P0_CTL);
-@@ -870,6 +867,12 @@ ltq_etop_probe(struct platform_device *pdev)
+@@ -870,6 +867,12 @@ ltq_etop_probe(struct platform_device *p
  			err = -ENOMEM;
  			goto err_out;
  		}
@@ -247,8 +229,6 @@ index daba994..ad0fa54 100644
  	}
  
  	dev = alloc_etherdev_mq(sizeof(struct ltq_etop_priv), 4);
-diff --git a/drivers/tty/serial/lantiq.c b/drivers/tty/serial/lantiq.c
-index 96c1cac..5d25828 100644
 --- a/drivers/tty/serial/lantiq.c
 +++ b/drivers/tty/serial/lantiq.c
 @@ -107,6 +107,9 @@
@@ -261,7 +241,7 @@ index 96c1cac..5d25828 100644
  static void lqasc_tx_chars(struct uart_port *port);
  static struct ltq_uart_port *lqasc_port[MAXPORTS];
  static struct uart_driver lqasc_reg;
-@@ -529,6 +532,15 @@ lqasc_request_port(struct uart_port *port)
+@@ -529,6 +532,15 @@ lqasc_request_port(struct uart_port *por
  		if (port->membase == NULL)
  			return -ENOMEM;
  	}
@@ -277,6 +257,3 @@ index 96c1cac..5d25828 100644
  	return 0;
  }
  
--- 
-1.7.9.1
-

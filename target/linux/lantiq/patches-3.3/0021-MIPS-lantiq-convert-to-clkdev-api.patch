@@ -17,8 +17,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/prom.c                    |    1 -
  5 files changed, 111 insertions(+), 61 deletions(-)
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 8ad52f4..df4e125 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -228,7 +228,8 @@ config LANTIQ
@@ -31,8 +29,6 @@ index 8ad52f4..df4e125 100644
  	select HAVE_OPROFILE
  	select MIPS_MACHINE
  
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq.h b/arch/mips/include/asm/mach-lantiq/lantiq.h
-index 924b91a..622847f 100644
 --- a/arch/mips/include/asm/mach-lantiq/lantiq.h
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq.h
 @@ -9,6 +9,7 @@
@@ -62,7 +58,7 @@ index 924b91a..622847f 100644
  /* spinlock all ebu i/o */
  extern spinlock_t ebu_lock;
  
-@@ -46,6 +35,13 @@ extern void ltq_disable_irq(struct irq_data *data);
+@@ -46,6 +35,13 @@ extern void ltq_disable_irq(struct irq_d
  extern void ltq_mask_and_ack_irq(struct irq_data *data);
  extern void ltq_enable_irq(struct irq_data *data);
  
@@ -76,8 +72,6 @@ index 924b91a..622847f 100644
  /* find out what caused the last cpu reset */
  extern int ltq_reset_cause(void);
  
-diff --git a/arch/mips/lantiq/clk.c b/arch/mips/lantiq/clk.c
-index 39eef7f..84a201e 100644
 --- a/arch/mips/lantiq/clk.c
 +++ b/arch/mips/lantiq/clk.c
 @@ -12,6 +12,7 @@
@@ -122,27 +116,26 @@ index 39eef7f..84a201e 100644
 -		.get_rate = ltq_get_io_region_clock,
 -	},
 -};
--
--void clk_init(void)
 +struct clk *clk_get_cpu(void)
 +{
 +	return &cpu_clk_generic[0];
 +}
 +
 +struct clk *clk_get_fpi(void)
++{
++	return &cpu_clk_generic[1];
++}
+ 
+-void clk_init(void)
++struct clk *clk_get_io(void)
  {
 -	cpu_clk = cpu_clk_generic;
 -	cpu_clk_cnt = ARRAY_SIZE(cpu_clk_generic);
-+	return &cpu_clk_generic[1];
-+}
-+
-+struct clk *clk_get_io(void)
-+{
 +	return &cpu_clk_generic[2];
  }
  
  static inline int clk_good(struct clk *clk)
-@@ -73,36 +70,49 @@ unsigned long clk_get_rate(struct clk *clk)
+@@ -73,36 +70,49 @@ unsigned long clk_get_rate(struct clk *c
  }
  EXPORT_SYMBOL(clk_get_rate);
  
@@ -152,15 +145,15 @@ index 39eef7f..84a201e 100644
 -	int i;
 +	if (unlikely(!clk_good(clk)))
 +		return -1;
-+
-+	if (clk->enable)
-+		return clk->enable(clk);
  
 -	for (i = 0; i < cpu_clk_cnt; i++)
 -		if (!strcmp(id, cpu_clk[i].name))
 -			return &cpu_clk[i];
 -	BUG();
 -	return ERR_PTR(-ENOENT);
++	if (clk->enable)
++		return clk->enable(clk);
++
 +	return -1;
  }
 -EXPORT_SYMBOL(clk_get);
@@ -219,8 +212,6 @@ index 39eef7f..84a201e 100644
  	mips_hpt_frequency = clk_get_rate(clk) / ltq_get_counter_resolution();
  	write_c0_compare(read_c0_count());
  	pr_info("CPU Clock: %ldMHz\n", clk_get_rate(clk) / 1000000);
-diff --git a/arch/mips/lantiq/clk.h b/arch/mips/lantiq/clk.h
-index 3328925..d047768 100644
 --- a/arch/mips/lantiq/clk.h
 +++ b/arch/mips/lantiq/clk.h
 @@ -9,10 +9,54 @@
@@ -282,8 +273,6 @@ index 3328925..d047768 100644
 +extern unsigned long ltq_vr9_io_region_clock(void);
  
  #endif
-diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
-index acb8921..971554b 100644
 --- a/arch/mips/lantiq/prom.c
 +++ b/arch/mips/lantiq/prom.c
 @@ -103,7 +103,6 @@ EXPORT_SYMBOL(ltq_remap_resource);
@@ -294,6 +283,3 @@ index acb8921..971554b 100644
  	snprintf(soc_info.sys_type, LTQ_SYS_TYPE_LEN - 1, "%s rev %s",
  		soc_info.name, soc_info.rev_type);
  	soc_info.sys_type[LTQ_SYS_TYPE_LEN - 1] = '\0';
--- 
-1.7.9.1
-

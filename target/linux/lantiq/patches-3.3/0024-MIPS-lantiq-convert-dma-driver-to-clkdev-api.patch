@@ -12,9 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 16 insertions(+), 1 deletions(-)
  create mode 100644 arch/mips/lantiq/xway/Makefile.rej
 
-diff --git a/arch/mips/lantiq/xway/Makefile.rej b/arch/mips/lantiq/xway/Makefile.rej
-new file mode 100644
-index 0000000..c0d5b52
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/Makefile.rej
 @@ -0,0 +1,11 @@
@@ -29,8 +26,6 @@ index 0000000..c0d5b52
 + 
 + obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
 + obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
-diff --git a/arch/mips/lantiq/xway/dma.c b/arch/mips/lantiq/xway/dma.c
-index 6cf883b..ce86529 100644
 --- a/arch/mips/lantiq/xway/dma.c
 +++ b/arch/mips/lantiq/xway/dma.c
 @@ -20,6 +20,7 @@
@@ -60,6 +55,3 @@ index 6cf883b..ce86529 100644
  	ltq_dma_w32_mask(0, DMA_RESET, LTQ_DMA_CTRL);
  
  	/* disable all interrupts */
--- 
-1.7.9.1
-

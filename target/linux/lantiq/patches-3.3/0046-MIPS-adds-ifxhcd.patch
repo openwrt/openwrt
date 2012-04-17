@@ -48,8 +48,6 @@ Subject: [PATCH 46/70] MIPS: adds ifxhcd
  create mode 100644 drivers/usb/ifxhcd/ifxusb_regs.h
  create mode 100644 drivers/usb/ifxhcd/ifxusb_version.h
 
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index 4c3106f..c9baf91 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,4 +1,4 @@
@@ -58,9 +56,6 @@ index 4c3106f..c9baf91 100644
  
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
-diff --git a/arch/mips/lantiq/xway/dev-ifxhcd.c b/arch/mips/lantiq/xway/dev-ifxhcd.c
-new file mode 100644
-index 0000000..ea08a35
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/dev-ifxhcd.c
 @@ -0,0 +1,45 @@
@@ -109,9 +104,6 @@ index 0000000..ea08a35
 +	platform_dev.dev.platform_data = pins;
 +	return platform_device_register(&platform_dev);
 +}
-diff --git a/arch/mips/lantiq/xway/dev-ifxhcd.h b/arch/mips/lantiq/xway/dev-ifxhcd.h
-new file mode 100644
-index 0000000..18b3d2d
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/dev-ifxhcd.h
 @@ -0,0 +1,17 @@
@@ -132,8 +124,6 @@ index 0000000..18b3d2d
 +extern void __init xway_register_hcd(int *pin);
 +
 +#endif
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 1a2e2d4..ac7383f 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -166,6 +166,8 @@ void __init ltq_soc_init(void)
@@ -145,8 +135,6 @@ index 1a2e2d4..ac7383f 100644
  	} else {
  		clkdev_add_static(ltq_danube_cpu_hz(), ltq_danube_fpi_hz(),
  					ltq_danube_io_region_clock());
-diff --git a/drivers/usb/Kconfig b/drivers/usb/Kconfig
-index 8469e23..f69cc4a 100644
 --- a/drivers/usb/Kconfig
 +++ b/drivers/usb/Kconfig
 @@ -184,4 +184,6 @@ source "drivers/usb/gadget/Kconfig"
@@ -156,19 +144,14 @@ index 8469e23..f69cc4a 100644
 +source "drivers/usb/ifxhcd/Kconfig"
 +
  endif # USB_SUPPORT
-diff --git a/drivers/usb/Makefile b/drivers/usb/Makefile
-index d46b792..7068e99 100644
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
-@@ -58,3 +58,5 @@ obj-$(CONFIG_USB_RENESAS_USBHS)	+= renesas_usbhs/
+@@ -58,3 +58,5 @@ obj-$(CONFIG_USB_RENESAS_USBHS)	+= renes
  obj-$(CONFIG_USB_GADGET)	+= gadget/
  
  obj-$(CONFIG_USB_COMMON)	+= usb-common.o
 +
 +obj-$(CONFIG_USB_HOST_IFX)	+= ifxhcd/
-diff --git a/drivers/usb/ifxhcd/Kconfig b/drivers/usb/ifxhcd/Kconfig
-new file mode 100644
-index 0000000..7eb8ceb
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/Kconfig
 @@ -0,0 +1,58 @@
@@ -230,9 +213,6 @@ index 0000000..7eb8ceb
 +#config USB_HOST_IFX_UNALIGNED_NONE
 +
 +
-diff --git a/drivers/usb/ifxhcd/Makefile b/drivers/usb/ifxhcd/Makefile
-new file mode 100644
-index 0000000..0a2ac99
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/Makefile
 @@ -0,0 +1,85 @@
@@ -321,9 +301,6 @@ index 0000000..0a2ac99
 +	
 +obj-$(CONFIG_USB_HOST_IFX)	+= ifxusb_host.o
 +
-diff --git a/drivers/usb/ifxhcd/TagHistory b/drivers/usb/ifxhcd/TagHistory
-new file mode 100644
-index 0000000..3820d70
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/TagHistory
 @@ -0,0 +1,171 @@
@@ -498,9 +475,6 @@ index 0000000..3820d70
 +
 +Bekanntes Problem: Stick and Surf funktioniert nur sporadisch, weil CONTROL_IRQ manchmal ausbleibt.
 +
-diff --git a/drivers/usb/ifxhcd/ifxhcd.c b/drivers/usb/ifxhcd/ifxhcd.c
-new file mode 100644
-index 0000000..d2ae125
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxhcd.c
 @@ -0,0 +1,2523 @@
@@ -3027,9 +3001,6 @@ index 0000000..d2ae125
 +	}
 +#endif //__ENABLE_DUMP__
 +
-diff --git a/drivers/usb/ifxhcd/ifxhcd.h b/drivers/usb/ifxhcd/ifxhcd.h
-new file mode 100644
-index 0000000..3a40851
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxhcd.h
 @@ -0,0 +1,628 @@
@@ -3661,9 +3632,6 @@ index 0000000..3a40851
 +/*@}*//*IFXUSB_HCD*/
 +
 +#endif // __IFXHCD_H__
-diff --git a/drivers/usb/ifxhcd/ifxhcd_es.c b/drivers/usb/ifxhcd/ifxhcd_es.c
-new file mode 100644
-index 0000000..ef9e8c0
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxhcd_es.c
 @@ -0,0 +1,549 @@
@@ -4216,9 +4184,6 @@ index 0000000..ef9e8c0
 +	}
 +#endif //__WITH_HS_ELECT_TST__
 +
-diff --git a/drivers/usb/ifxhcd/ifxhcd_intr.c b/drivers/usb/ifxhcd/ifxhcd_intr.c
-new file mode 100644
-index 0000000..76fe602
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxhcd_intr.c
 @@ -0,0 +1,3742 @@
@@ -7964,9 +7929,6 @@ index 0000000..76fe602
 +	}
 +	return retval;
 +}
-diff --git a/drivers/usb/ifxhcd/ifxhcd_queue.c b/drivers/usb/ifxhcd/ifxhcd_queue.c
-new file mode 100644
-index 0000000..8f9dd25
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxhcd_queue.c
 @@ -0,0 +1,418 @@
@@ -8388,9 +8350,6 @@ index 0000000..8f9dd25
 +	return retval;
 +}
 +
-diff --git a/drivers/usb/ifxhcd/ifxusb_cif.c b/drivers/usb/ifxhcd/ifxusb_cif.c
-new file mode 100644
-index 0000000..10b1292
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxusb_cif.c
 @@ -0,0 +1,1458 @@
@@ -9852,9 +9811,6 @@ index 0000000..10b1292
 +	return;
 +}
 +
-diff --git a/drivers/usb/ifxhcd/ifxusb_cif.h b/drivers/usb/ifxhcd/ifxusb_cif.h
-new file mode 100644
-index 0000000..191781f
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxusb_cif.h
 @@ -0,0 +1,665 @@
@@ -10523,9 +10479,6 @@ index 0000000..191781f
 +#endif // !defined(__IFXUSB_CIF_H__)
 +
 +
-diff --git a/drivers/usb/ifxhcd/ifxusb_cif_d.c b/drivers/usb/ifxhcd/ifxusb_cif_d.c
-new file mode 100644
-index 0000000..36ab0e7
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxusb_cif_d.c
 @@ -0,0 +1,458 @@
@@ -10987,9 +10940,6 @@ index 0000000..36ab0e7
 +	}
 +}
 +
-diff --git a/drivers/usb/ifxhcd/ifxusb_cif_h.c b/drivers/usb/ifxhcd/ifxusb_cif_h.c
-new file mode 100644
-index 0000000..0f47ecd
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxusb_cif_h.c
 @@ -0,0 +1,846 @@
@@ -11839,9 +11789,6 @@ index 0000000..0f47ecd
 +#endif //defined(__UEIP__)
 +
 +
-diff --git a/drivers/usb/ifxhcd/ifxusb_ctl.c b/drivers/usb/ifxhcd/ifxusb_ctl.c
-new file mode 100644
-index 0000000..ade8e13
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxusb_ctl.c
 @@ -0,0 +1,1385 @@
@@ -13230,9 +13177,6 @@ index 0000000..ade8e13
 +}
 +
 +
-diff --git a/drivers/usb/ifxhcd/ifxusb_driver.c b/drivers/usb/ifxhcd/ifxusb_driver.c
-new file mode 100644
-index 0000000..2334905
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxusb_driver.c
 @@ -0,0 +1,970 @@
@@ -14206,9 +14150,6 @@ index 0000000..2334905
 +MODULE_PARM_DESC(timeout_cal_fs, "Timeout Cal for FS");
 +
 +
-diff --git a/drivers/usb/ifxhcd/ifxusb_plat.h b/drivers/usb/ifxhcd/ifxusb_plat.h
-new file mode 100644
-index 0000000..a50294f
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxusb_plat.h
 @@ -0,0 +1,1018 @@
@@ -15230,9 +15171,6 @@ index 0000000..a50294f
 +
 +#endif //__IFXUSB_PLAT_H__
 +
-diff --git a/drivers/usb/ifxhcd/ifxusb_regs.h b/drivers/usb/ifxhcd/ifxusb_regs.h
-new file mode 100644
-index 0000000..014c6db
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxusb_regs.h
 @@ -0,0 +1,1420 @@
@@ -16656,9 +16594,6 @@ index 0000000..014c6db
 +/****************************************************************************/
 +
 +#endif //__IFXUSB_REGS_H__
-diff --git a/drivers/usb/ifxhcd/ifxusb_version.h b/drivers/usb/ifxhcd/ifxusb_version.h
-new file mode 100644
-index 0000000..2dff735
 --- /dev/null
 +++ b/drivers/usb/ifxhcd/ifxusb_version.h
 @@ -0,0 +1,5 @@
@@ -16667,6 +16602,3 @@ index 0000000..2dff735
 +#define IFXUSB_VERSION "3.0alpha B100312"
 +#endif
 +
--- 
-1.7.9.1
-

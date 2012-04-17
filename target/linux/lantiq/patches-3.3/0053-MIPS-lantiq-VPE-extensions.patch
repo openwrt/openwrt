@@ -17,11 +17,9 @@ Subject: [PATCH 53/70] MIPS: lantiq: VPE extensions
  create mode 100644 arch/mips/kernel/mtsched_proc.c
  create mode 100644 arch/mips/kernel/perf_proc.c
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 0dd8ae3..4a36923 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1935,6 +1935,28 @@ config MIPS_VPE_LOADER
+@@ -1947,6 +1947,28 @@ config MIPS_VPE_LOADER
  	  Includes a loader for loading an elf relocatable object
  	  onto another VPE and running it.
  
@@ -50,8 +48,6 @@ index 0dd8ae3..4a36923 100644
  config MIPS_MT_SMTC_IM_BACKSTOP
  	bool "Use per-TC register bits as backstop for inhibited IM bits"
  	depends on MIPS_MT_SMTC
-diff --git a/arch/mips/include/asm/mipsmtregs.h b/arch/mips/include/asm/mipsmtregs.h
-index c9420aa..04bfb4b 100644
 --- a/arch/mips/include/asm/mipsmtregs.h
 +++ b/arch/mips/include/asm/mipsmtregs.h
 @@ -28,14 +28,34 @@
@@ -161,11 +157,9 @@ index c9420aa..04bfb4b 100644
  
  /* GPR */
  #define read_tc_gpr_sp()		mftgpr(29)
-diff --git a/arch/mips/kernel/Makefile b/arch/mips/kernel/Makefile
-index 0c6877e..4d75dd7 100644
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
-@@ -90,7 +90,8 @@ obj-$(CONFIG_MIPS32_O32)	+= binfmt_elfo32.o scall64-o32.o
+@@ -90,7 +90,8 @@ obj-$(CONFIG_MIPS32_O32)	+= binfmt_elfo3
  
  obj-$(CONFIG_KGDB)		+= kgdb.o
  obj-$(CONFIG_PROC_FS)		+= proc.o
@@ -175,8 +169,6 @@ index 0c6877e..4d75dd7 100644
  obj-$(CONFIG_64BIT)		+= cpu-bugs64.o
  
  obj-$(CONFIG_I8253)		+= i8253.o
-diff --git a/arch/mips/kernel/mips-mt.c b/arch/mips/kernel/mips-mt.c
-index c23d11f..11d6489 100644
 --- a/arch/mips/kernel/mips-mt.c
 +++ b/arch/mips/kernel/mips-mt.c
 @@ -21,26 +21,96 @@
@@ -281,7 +273,7 @@ index c23d11f..11d6489 100644
  
  /*
   * Dump new MIPS MT state for the core. Does not leave TCs halted.
-@@ -78,18 +148,18 @@ void mips_mt_regdump(unsigned long mvpctl)
+@@ -78,18 +148,18 @@ void mips_mt_regdump(unsigned long mvpct
  			if ((read_tc_c0_tcbind() & TCBIND_CURVPE) == i) {
  				printk("  VPE %d\n", i);
  				printk("   VPEControl : %08lx\n",
@@ -317,9 +309,6 @@ index c23d11f..11d6489 100644
  }
  
  /*
-diff --git a/arch/mips/kernel/mtsched_proc.c b/arch/mips/kernel/mtsched_proc.c
-new file mode 100644
-index 0000000..4dafded
 --- /dev/null
 +++ b/arch/mips/kernel/mtsched_proc.c
 @@ -0,0 +1,279 @@
@@ -602,9 +591,6 @@ index 0000000..4dafded
 +
 +/* Automagically create the entry */
 +module_init(init_mtsched_proc);
-diff --git a/arch/mips/kernel/perf_proc.c b/arch/mips/kernel/perf_proc.c
-new file mode 100644
-index 0000000..7eec015
 --- /dev/null
 +++ b/arch/mips/kernel/perf_proc.c
 @@ -0,0 +1,191 @@
@@ -799,8 +785,6 @@ index 0000000..7eec015
 +
 +/* Automagically create the entry */
 +module_init(init_perf_proc);
-diff --git a/arch/mips/kernel/proc.c b/arch/mips/kernel/proc.c
-index e309665..2de204f 100644
 --- a/arch/mips/kernel/proc.c
 +++ b/arch/mips/kernel/proc.c
 @@ -7,6 +7,7 @@
@@ -811,7 +795,7 @@ index e309665..2de204f 100644
  #include <asm/bootinfo.h>
  #include <asm/cpu.h>
  #include <asm/cpu-features.h>
-@@ -110,3 +111,19 @@ const struct seq_operations cpuinfo_op = {
+@@ -110,3 +111,19 @@ const struct seq_operations cpuinfo_op =
  	.stop	= c_stop,
  	.show	= show_cpuinfo,
  };
@@ -831,11 +815,9 @@ index e309665..2de204f 100644
 +               mips_proc = proc_mkdir("mips", NULL);
 +       return(mips_proc);
 +}
-diff --git a/arch/mips/kernel/smtc.c b/arch/mips/kernel/smtc.c
-index 0a42ff3..41f5258 100644
 --- a/arch/mips/kernel/smtc.c
 +++ b/arch/mips/kernel/smtc.c
-@@ -1334,6 +1334,13 @@ void smtc_get_new_mmu_context(struct mm_struct *mm, unsigned long cpu)
+@@ -1334,6 +1334,13 @@ void smtc_get_new_mmu_context(struct mm_
  	asid = asid_cache(cpu);
  
  	do {
@@ -849,11 +831,9 @@ index 0a42ff3..41f5258 100644
  		if (!((asid += ASID_INC) & ASID_MASK) ) {
  			if (cpu_has_vtag_icache)
  				flush_icache_all();
-diff --git a/arch/mips/kernel/vpe.c b/arch/mips/kernel/vpe.c
-index bfa12a4..e338ba5 100644
 --- a/arch/mips/kernel/vpe.c
 +++ b/arch/mips/kernel/vpe.c
-@@ -75,6 +75,58 @@ static struct kspd_notifications kspd_events;
+@@ -75,6 +75,58 @@ static struct kspd_notifications kspd_ev
  static int kspd_events_reqd;
  #endif
  
@@ -912,7 +892,7 @@ index bfa12a4..e338ba5 100644
  /* grab the likely amount of memory we will need. */
  #ifdef CONFIG_MIPS_VPE_LOADER_TOM
  #define P_SIZE (2 * 1024 * 1024)
-@@ -267,6 +319,13 @@ static void *alloc_progmem(unsigned long len)
+@@ -267,6 +319,13 @@ static void *alloc_progmem(unsigned long
  	void *addr;
  
  #ifdef CONFIG_MIPS_VPE_LOADER_TOM
@@ -960,7 +940,7 @@ index bfa12a4..e338ba5 100644
  	/*
  	 * The sde-kit passes 'memsize' to __start in $a3, so set something
  	 * here...  Or set $a3 to zero and define DFLT_STACK_SIZE and
-@@ -832,6 +911,9 @@ static int find_vpe_symbols(struct vpe * v, Elf_Shdr * sechdrs,
+@@ -832,6 +911,9 @@ static int find_vpe_symbols(struct vpe *
  	if ( (v->__start == 0) || (v->shared_ptr == NULL))
  		return -1;
  
@@ -986,7 +966,7 @@ index bfa12a4..e338ba5 100644
  		if (v->__start == 0) {
  			printk(KERN_WARNING "VPE loader: program does not contain "
  			       "a __start symbol\n");
-@@ -1063,6 +1154,9 @@ static int vpe_open(struct inode *inode, struct file *filp)
+@@ -1063,6 +1154,9 @@ static int vpe_open(struct inode *inode,
  	struct vpe_notifications *not;
  	struct vpe *v;
  	int ret;
@@ -996,7 +976,7 @@ index bfa12a4..e338ba5 100644
  
  	if (minor != iminor(inode)) {
  		/* assume only 1 device at the moment. */
-@@ -1088,7 +1182,12 @@ static int vpe_open(struct inode *inode, struct file *filp)
+@@ -1088,7 +1182,12 @@ static int vpe_open(struct inode *inode,
  		release_progmem(v->load_addr);
  		cleanup_tc(get_tc(tclimit));
  	}
@@ -1010,7 +990,7 @@ index bfa12a4..e338ba5 100644
  	/* this of-course trashes what was there before... */
  	v->pbuffer = vmalloc(P_SIZE);
  	if (!v->pbuffer) {
-@@ -1096,11 +1195,14 @@ static int vpe_open(struct inode *inode, struct file *filp)
+@@ -1096,11 +1195,14 @@ static int vpe_open(struct inode *inode,
  		return -ENOMEM;
  	}
  	v->plen = P_SIZE;
@@ -1216,6 +1196,3 @@ index bfa12a4..e338ba5 100644
  
  	evpe(vpflags);
  	emt(mtflags);
--- 
-1.7.9.1
-

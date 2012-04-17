@@ -40,8 +40,8 @@
 +	dev->mtd.size = dev->blkdev->bd_inode->i_size & PAGE_MASK & ~(erase_size - 1);
  	dev->mtd.erasesize = erase_size;
  	dev->mtd.writesize = 1;
- 	dev->mtd.type = MTD_RAM;
-@@ -293,14 +298,17 @@ static struct block2mtd_dev *add_device(
+ 	dev->mtd.writebufsize = PAGE_SIZE;
+@@ -294,14 +299,17 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;
  
@@ -62,7 +62,7 @@
  	return dev;
  
  devinit_err:
-@@ -373,9 +381,9 @@ static char block2mtd_paramline[80 + 12]
+@@ -374,9 +382,9 @@ static char block2mtd_paramline[80 + 12]
  
  static int block2mtd_setup2(const char *val)
  {
@@ -74,7 +74,7 @@
  	char *name;
  	size_t erase_size = PAGE_SIZE;
  	int i, ret;
-@@ -386,7 +394,7 @@ static int block2mtd_setup2(const char *
+@@ -387,7 +395,7 @@ static int block2mtd_setup2(const char *
  	strcpy(str, val);
  	kill_final_newline(str);
  
@@ -83,7 +83,7 @@
  		token[i] = strsep(&str, ",");
  
  	if (str)
-@@ -405,8 +413,10 @@ static int block2mtd_setup2(const char *
+@@ -406,8 +414,10 @@ static int block2mtd_setup2(const char *
  			parse_err("illegal erase size");
  		}
  	}
@@ -95,7 +95,7 @@
  
  	return 0;
  }
-@@ -440,7 +450,7 @@ static int block2mtd_setup(const char *v
+@@ -441,7 +451,7 @@ static int block2mtd_setup(const char *v
  
  
  module_param_call(block2mtd, block2mtd_setup, NULL, NULL, 0200);

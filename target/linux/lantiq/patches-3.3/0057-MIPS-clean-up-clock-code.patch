@@ -10,8 +10,6 @@ Subject: [PATCH 57/70] MIPS: clean up clock code
  arch/mips/lantiq/xway/sysctrl.c |  166 ++++++++++++++++++++++++++++++---------
  4 files changed, 143 insertions(+), 39 deletions(-)
 
-diff --git a/arch/mips/lantiq/clk.c b/arch/mips/lantiq/clk.c
-index 84a201e..5494b6e 100644
 --- a/arch/mips/lantiq/clk.c
 +++ b/arch/mips/lantiq/clk.c
 @@ -44,6 +44,7 @@ struct clk *clk_get_fpi(void)
@@ -22,7 +20,7 @@ index 84a201e..5494b6e 100644
  
  struct clk *clk_get_io(void)
  {
-@@ -70,6 +71,16 @@ unsigned long clk_get_rate(struct clk *clk)
+@@ -70,6 +71,16 @@ unsigned long clk_get_rate(struct clk *c
  }
  EXPORT_SYMBOL(clk_get_rate);
  
@@ -39,8 +37,6 @@ index 84a201e..5494b6e 100644
  int clk_enable(struct clk *clk)
  {
  	if (unlikely(!clk_good(clk)))
-diff --git a/arch/mips/lantiq/clk.h b/arch/mips/lantiq/clk.h
-index d047768..b34e675 100644
 --- a/arch/mips/lantiq/clk.h
 +++ b/arch/mips/lantiq/clk.h
 @@ -12,6 +12,7 @@
@@ -62,11 +58,9 @@ index d047768..b34e675 100644
  	int (*enable) (struct clk *clk);
  	void (*disable) (struct clk *clk);
  	int (*activate) (struct clk *clk);
-diff --git a/arch/mips/lantiq/xway/devices.c b/arch/mips/lantiq/xway/devices.c
-index e6d45bc..5d4650d 100644
 --- a/arch/mips/lantiq/xway/devices.c
 +++ b/arch/mips/lantiq/xway/devices.c
-@@ -59,7 +59,7 @@ static struct resource ltq_stp_resource =
+@@ -59,7 +59,7 @@ static struct resource ltq_stp_resource
  
  void __init ltq_register_gpio_stp(void)
  {
@@ -75,8 +69,6 @@ index e6d45bc..5d4650d 100644
  }
  
  /* asc ports - amazon se has its own serial mapping */
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index ac7383f..9df048c 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -16,40 +16,57 @@
@@ -184,15 +176,15 @@ index ac7383f..9df048c 100644
  }
  
  static int ltq_pmu_enable(struct clk *clk)
-@@ -94,9 +111,49 @@ static int ltq_pmu_enable(struct clk *clk)
+@@ -94,9 +111,49 @@ static int ltq_pmu_enable(struct clk *cl
  
  static void ltq_pmu_disable(struct clk *clk)
  {
 -	ltq_pmu_w32(ltq_pmu_r32(LTQ_PMU_PWDCR) | clk->bits, LTQ_PMU_PWDCR);
 +	ltq_pmu_w32(ltq_pmu_r32(PWDCR(clk->module)) | clk->bits,
 +		PWDCR(clk->module));
-+}
-+
+ }
+ 
 +static int ltq_pci_enable(struct clk *clk)
 +{
 +	unsigned int ifccr = ltq_cgu_r32(CGU_IFCCR);
@@ -229,13 +221,13 @@ index ac7383f..9df048c 100644
 +	ltq_cgu_w32(ltq_cgu_r32(CGU_IFCCR) | (1 << 16),
 +		CGU_IFCCR);
 +	ltq_cgu_w32((1 << 31) | (1 << 30), CGU_PCICR);
- }
- 
++}
++
 +/* manage the clock gates via PMU */
  static inline void clkdev_add_pmu(const char *dev, const char *con,
  					unsigned int module, unsigned int bits)
  {
-@@ -112,6 +169,7 @@ static inline void clkdev_add_pmu(const char *dev, const char *con,
+@@ -112,6 +169,7 @@ static inline void clkdev_add_pmu(const
  	clkdev_add(&clk->cl);
  }
  
@@ -243,7 +235,7 @@ index ac7383f..9df048c 100644
  static inline void clkdev_add_cgu(const char *dev, const char *con,
  					unsigned int bits)
  {
-@@ -126,6 +184,33 @@ static inline void clkdev_add_cgu(const char *dev, const char *con,
+@@ -126,6 +184,33 @@ static inline void clkdev_add_cgu(const
  	clkdev_add(&clk->cl);
  }
  
@@ -314,6 +306,3 @@ index ac7383f..9df048c 100644
  		if (ltq_is_ar9())
  			clkdev_add_pmu("ltq_etop", "switch", 0, PMU_SWITCH);
  	}
--- 
-1.7.9.1
-

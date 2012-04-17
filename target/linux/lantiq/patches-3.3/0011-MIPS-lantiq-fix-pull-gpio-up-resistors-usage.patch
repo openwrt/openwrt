@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/xway/gpio.c |    6 ++++++
  1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/lantiq/xway/gpio.c b/arch/mips/lantiq/xway/gpio.c
-index f204f6c..14ff7c7 100644
 --- a/arch/mips/lantiq/xway/gpio.c
 +++ b/arch/mips/lantiq/xway/gpio.c
 @@ -21,6 +21,8 @@
@@ -25,7 +23,7 @@ index f204f6c..14ff7c7 100644
  
  #define PINS_PER_PORT		16
  #define MAX_PORTS		3
-@@ -106,6 +108,8 @@ static int ltq_gpio_direction_input(struct gpio_chip *chip, unsigned int offset)
+@@ -106,6 +108,8 @@ static int ltq_gpio_direction_input(stru
  
  	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
  	ltq_gpio_clearbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
@@ -34,7 +32,7 @@ index f204f6c..14ff7c7 100644
  
  	return 0;
  }
-@@ -117,6 +121,8 @@ static int ltq_gpio_direction_output(struct gpio_chip *chip,
+@@ -117,6 +121,8 @@ static int ltq_gpio_direction_output(str
  
  	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_OD, offset);
  	ltq_gpio_setbit(ltq_gpio->membase, LTQ_GPIO_DIR, offset);
@@ -43,6 +41,3 @@ index f204f6c..14ff7c7 100644
  	ltq_gpio_set(chip, offset, value);
  
  	return 0;
--- 
-1.7.9.1
-

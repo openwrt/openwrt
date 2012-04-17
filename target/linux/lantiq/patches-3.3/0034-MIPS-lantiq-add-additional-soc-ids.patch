@@ -8,8 +8,6 @@ Subject: [PATCH 34/70] MIPS: lantiq: add additional soc ids
  arch/mips/lantiq/xway/prom.c                       |   35 ++++++++++++++++--
  2 files changed, 61 insertions(+), 12 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-index 5d11eb7..3f22acb 100644
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 @@ -17,20 +17,32 @@
@@ -73,8 +71,6 @@ index 5d11eb7..3f22acb 100644
  }
  
  static inline int ltq_is_falcon(void)
-diff --git a/arch/mips/lantiq/xway/prom.c b/arch/mips/lantiq/xway/prom.c
-index b6f56b7..e3dcbbd 100644
 --- a/arch/mips/lantiq/xway/prom.c
 +++ b/arch/mips/lantiq/xway/prom.c
 @@ -18,7 +18,9 @@
@@ -95,7 +91,7 @@ index b6f56b7..e3dcbbd 100644
  
  void __init ltq_soc_detect(struct ltq_soc_info *i)
  {
-@@ -46,13 +47,21 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
+@@ -46,13 +47,21 @@ void __init ltq_soc_detect(struct ltq_so
  		break;
  
  	case SOC_ID_ARX188:
@@ -119,7 +115,7 @@ index b6f56b7..e3dcbbd 100644
  		i->name = SOC_AMAZON_SE;
  		i->type = SOC_TYPE_AMAZON_SE;
  #ifdef CONFIG_PCI
-@@ -60,12 +69,30 @@ void __init ltq_soc_detect(struct ltq_soc_info *i)
+@@ -60,12 +69,30 @@ void __init ltq_soc_detect(struct ltq_so
  #endif
  		break;
  
@@ -151,6 +147,3 @@ index b6f56b7..e3dcbbd 100644
  	default:
  		unreachable();
  		break;
--- 
-1.7.9.1
-

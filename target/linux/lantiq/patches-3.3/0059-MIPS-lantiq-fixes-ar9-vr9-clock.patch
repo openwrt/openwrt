@@ -9,11 +9,9 @@ Subject: [PATCH 59/70] MIPS: lantiq: fixes ar9/vr9 clock
  arch/mips/lantiq/xway/sysctrl.c |   13 ++++++++-----
  3 files changed, 35 insertions(+), 11 deletions(-)
 
-diff --git a/arch/mips/lantiq/clk.h b/arch/mips/lantiq/clk.h
-index b34e675..010dfa7 100644
 --- a/arch/mips/lantiq/clk.h
 +++ b/arch/mips/lantiq/clk.h
-@@ -56,8 +56,10 @@ extern unsigned long ltq_danube_cpu_hz(void);
+@@ -56,8 +56,10 @@ extern unsigned long ltq_danube_cpu_hz(v
  extern unsigned long ltq_danube_fpi_hz(void);
  extern unsigned long ltq_danube_io_region_clock(void);
  
@@ -25,8 +23,6 @@ index b34e675..010dfa7 100644
 -extern unsigned long ltq_vr9_io_region_clock(void);
  
  #endif
-diff --git a/arch/mips/lantiq/xway/clk.c b/arch/mips/lantiq/xway/clk.c
-index 3635c9f..2bafc04 100644
 --- a/arch/mips/lantiq/xway/clk.c
 +++ b/arch/mips/lantiq/xway/clk.c
 @@ -217,6 +217,30 @@ unsigned long ltq_danube_cpu_hz(void)
@@ -72,8 +68,6 @@ index 3635c9f..2bafc04 100644
  unsigned long ltq_vr9_fpi_bus_clock(int fpi)
  {
  	return ltq_vr9_fpi_hz();
-diff --git a/arch/mips/lantiq/xway/sysctrl.c b/arch/mips/lantiq/xway/sysctrl.c
-index 9df048c..6771a7e 100644
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -237,6 +237,8 @@ void __init ltq_soc_init(void)
@@ -111,6 +105,3 @@ index 9df048c..6771a7e 100644
 +			ltq_danube_io_region_clock());
  	}
  }
--- 
-1.7.9.1
-

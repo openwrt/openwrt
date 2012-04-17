@@ -16,11 +16,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/irq.c |   24 +++++++++++++-----------
  1 files changed, 13 insertions(+), 11 deletions(-)
 
-diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
-index d673731..f56bcce 100644
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
-@@ -195,7 +195,7 @@ static void ltq_hw_irqdispatch(int module)
+@@ -195,7 +195,7 @@ static void ltq_hw_irqdispatch(int modul
  	do_IRQ((int)irq + INT_NUM_IM0_IRL0 + (INT_NUM_IM_OFFSET * module));
  
  	/* if this is a EBU irq, we need to ack it or get a deadlock */
@@ -38,14 +36,15 @@ index d673731..f56bcce 100644
 +	if (LTQ_EIU_BASE_ADDR) {
 +		if (insert_resource(&iomem_resource, &ltq_eiu_resource) < 0)
 +			panic("Failed to insert eiu memory\n");
- 
--	if (request_mem_region(ltq_eiu_resource.start,
--			resource_size(&ltq_eiu_resource), "eiu") < 0)
--		panic("Failed to request eiu memory");
++
 +		if (request_mem_region(ltq_eiu_resource.start,
 +				resource_size(&ltq_eiu_resource), "eiu") < 0)
 +			panic("Failed to request eiu memory\n");
  
+-	if (request_mem_region(ltq_eiu_resource.start,
+-			resource_size(&ltq_eiu_resource), "eiu") < 0)
+-		panic("Failed to request eiu memory");
+-
 -	ltq_eiu_membase = ioremap_nocache(ltq_eiu_resource.start,
 +		ltq_eiu_membase = ioremap_nocache(ltq_eiu_resource.start,
  				resource_size(&ltq_eiu_resource));
@@ -68,6 +67,3 @@ index d673731..f56bcce 100644
  			irq_set_chip_and_handler(i, &ltq_eiu_type,
  				handle_level_irq);
  		/* EIU3-5 only exist on ar9 and vr9 */
--- 
-1.7.9.1
-

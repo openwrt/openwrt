@@ -15,8 +15,6 @@ Signed-off-by: Conor O'Gorman <i@conorogorman.net>
  arch/mips/lantiq/xway/gpio_stp.c |   22 +++++++++++++---------
  1 files changed, 13 insertions(+), 9 deletions(-)
 
-diff --git a/arch/mips/lantiq/xway/gpio_stp.c b/arch/mips/lantiq/xway/gpio_stp.c
-index 9610c10..791beeb 100644
 --- a/arch/mips/lantiq/xway/gpio_stp.c
 +++ b/arch/mips/lantiq/xway/gpio_stp.c
 @@ -27,6 +27,7 @@
@@ -27,7 +25,7 @@ index 9610c10..791beeb 100644
  #define LTQ_STP_2HZ		0
  #define LTQ_STP_4HZ		(1 << 23)
  #define LTQ_STP_8HZ		(2 << 23)
-@@ -60,6 +61,12 @@ static void ltq_stp_set(struct gpio_chip *chip, unsigned offset, int value)
+@@ -60,6 +61,12 @@ static void ltq_stp_set(struct gpio_chip
  	else
  		ltq_stp_shadow &= ~(1 << offset);
  	ltq_stp_w32(ltq_stp_shadow, LTQ_STP_CPU0);
@@ -48,7 +46,7 @@ index 9610c10..791beeb 100644
  	.base = 200,
  	.ngpio = 24,
  	.owner = THIS_MODULE,
-@@ -97,12 +105,6 @@ static int ltq_stp_hw_init(struct device *dev)
+@@ -97,12 +105,6 @@ static int ltq_stp_hw_init(struct device
  	ltq_stp_w32_mask(0, LTQ_STP_GROUP0 | LTQ_STP_GROUP1 | LTQ_STP_GROUP2,
  		LTQ_STP_CON1);
  
@@ -61,7 +59,7 @@ index 9610c10..791beeb 100644
  	/* tell the hardware that pin (led) 0 and 1 are controlled
  	 *  by the dsl arc
  	 */
-@@ -118,6 +120,7 @@ static int __devinit ltq_stp_probe(struct platform_device *pdev)
+@@ -118,6 +120,7 @@ static int __devinit ltq_stp_probe(struc
  {
  	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	int ret = 0;
@@ -69,7 +67,7 @@ index 9610c10..791beeb 100644
  
  	if (!res)
  		return -ENOENT;
-@@ -135,9 +138,10 @@ static int __devinit ltq_stp_probe(struct platform_device *pdev)
+@@ -135,9 +138,10 @@ static int __devinit ltq_stp_probe(struc
  	}
  
  	/* the 3 pins used to control the external stp */
@@ -83,6 +81,3 @@ index 9610c10..791beeb 100644
  		dev_err(&pdev->dev, "failed to request needed gpios\n");
  		return -EBUSY;
  	}
--- 
-1.7.9.1
-

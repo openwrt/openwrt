@@ -281,7 +281,7 @@
  
  	/* Setup the MTD structure */
  	/* make the name contain the block device in */
-@@ -297,6 +391,7 @@ static struct block2mtd_dev *add_device(
+@@ -298,6 +392,7 @@ static struct block2mtd_dev *add_device(
  	dev->mtd.read = block2mtd_read;
  	dev->mtd.priv = dev;
  	dev->mtd.owner = THIS_MODULE;

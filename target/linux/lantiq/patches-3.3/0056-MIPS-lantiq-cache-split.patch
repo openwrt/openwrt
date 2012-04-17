@@ -9,11 +9,9 @@ Subject: [PATCH 56/70] MIPS: lantiq: cache split
  arch/mips/mm/c-r4k.c   |  172 ++++++++++++++++++++++++++++++++++++++++++++++++
  3 files changed, 260 insertions(+), 0 deletions(-)
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 4a36923..df21d0d 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1942,6 +1942,28 @@ config IFX_VPE_EXT
+@@ -1954,6 +1954,28 @@ config IFX_VPE_EXT
  	help
  	  IFX included extensions in APRP
  
@@ -42,11 +40,9 @@ index 4a36923..df21d0d 100644
  config PERFCTRS
  	bool "34K Performance counters"
  	depends on MIPS_MT && PROC_FS
-diff --git a/arch/mips/kernel/vpe.c b/arch/mips/kernel/vpe.c
-index e338ba5..0511d11 100644
 --- a/arch/mips/kernel/vpe.c
 +++ b/arch/mips/kernel/vpe.c
-@@ -127,6 +127,13 @@ __setup("vpe1_wdog_timeout=", wdog_timeout);
+@@ -127,6 +127,13 @@ __setup("vpe1_wdog_timeout=", wdog_timeo
  EXPORT_SYMBOL(vpe1_wdog_timeout);
  
  #endif
@@ -126,11 +122,9 @@ index e338ba5..0511d11 100644
  	/* clear out any left overs from a previous program */
  	write_vpe_c0_status(0);
  	write_vpe_c0_cause(0);
-diff --git a/arch/mips/mm/c-r4k.c b/arch/mips/mm/c-r4k.c
-index 4f9eb0b..9e9f925 100644
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -1386,6 +1386,106 @@ static int __init setcoherentio(char *str)
+@@ -1386,6 +1386,106 @@ static int __init setcoherentio(char *st
  __setup("coherentio", setcoherentio);
  #endif
  
@@ -316,6 +310,3 @@ index 4f9eb0b..9e9f925 100644
  	probe_pcache();
  	setup_scache();
  
--- 
-1.7.9.1
-
