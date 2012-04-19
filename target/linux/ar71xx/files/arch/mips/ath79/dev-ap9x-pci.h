@@ -12,12 +12,14 @@
 #define _ATH79_DEV_AP9X_PCI_H
 
 struct gpio_led;
+struct ath9k_platform_data;
 
 #if defined(CONFIG_ATH79_DEV_AP9X_PCI)
 void ap9x_pci_setup_wmac_led_pin(unsigned wmac, int pin);
 void ap9x_pci_setup_wmac_gpio(unsigned wmac, u32 mask, u32 val);
 void ap9x_pci_setup_wmac_leds(unsigned wmac, struct gpio_led *leds,
 			      int num_leds);
+struct ath9k_platform_data *ap9x_pci_get_wmac_data(unsigned wmac);
 
 void ap91_pci_init(u8 *cal_data, u8 *mac_addr);
 void ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,
@@ -30,6 +32,10 @@ static inline void ap9x_pci_setup_wmac_gpio(unsigned wmac,
 static inline void ap9x_pci_setup_wmac_leds(unsigned wmac,
 					    struct gpio_led *leds,
 					    int num_leds) {}
+static inline struct ath9k_platform_data *ap9x_pci_get_wmac_data(unsigned wmac)
+{
+	return NULL;
+}
 
 static inline void ap91_pci_init(u8 *cal_data, u8 *mac_addr) {}
 static inline void ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,

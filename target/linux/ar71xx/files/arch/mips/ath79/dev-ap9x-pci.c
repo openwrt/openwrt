@@ -40,6 +40,19 @@ __init void ap9x_pci_setup_wmac_led_pin(unsigned wmac, int pin)
 	}
 }
 
+__init struct ath9k_platform_data *ap9x_pci_get_wmac_data(unsigned wmac)
+{
+	switch (wmac) {
+	case 0:
+		return &ap9x_wmac0_data;
+
+	case 1:
+		return &ap9x_wmac1_data;
+	}
+
+	return NULL;
+}
+
 __init void ap9x_pci_setup_wmac_gpio(unsigned wmac, u32 mask, u32 val)
 {
 	switch (wmac) {
