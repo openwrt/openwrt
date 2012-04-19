@@ -8,3 +8,12 @@
  	select HARDIRQS_SW_RESEND
  	select GENERIC_IRQ_SHOW
  	help
+--- a/arch/avr32/include/asm/atomic.h
++++ b/arch/avr32/include/asm/atomic.h
+@@ -197,5 +197,6 @@ static inline int atomic_sub_if_positive
+ #define smp_mb__after_atomic_inc()	barrier()
+ 
+ #include <asm-generic/atomic-long.h>
++#include <asm-generic/atomic64.h>
+ 
+ #endif /*  __ASM_AVR32_ATOMIC_H */
