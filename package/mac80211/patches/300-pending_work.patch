@@ -1,23 +1,5 @@
 --- a/drivers/net/wireless/ath/ath5k/base.c
 +++ b/drivers/net/wireless/ath/ath5k/base.c
-@@ -1171,7 +1171,7 @@ ath5k_check_ibss_tsf(struct ath5k_hw *ah
- 
- 	if (ieee80211_is_beacon(mgmt->frame_control) &&
- 	    le16_to_cpu(mgmt->u.beacon.capab_info) & WLAN_CAPABILITY_IBSS &&
--	    memcmp(mgmt->bssid, common->curbssid, ETH_ALEN) == 0) {
-+	    compare_ether_addr(mgmt->bssid, common->curbssid) == 0) {
- 		/*
- 		 * Received an IBSS beacon with the same BSSID. Hardware *must*
- 		 * have updated the local TSF. We have to work around various
-@@ -1235,7 +1235,7 @@ ath5k_update_beacon_rssi(struct ath5k_hw
- 
- 	/* only beacons from our BSSID */
- 	if (!ieee80211_is_beacon(mgmt->frame_control) ||
--	    memcmp(mgmt->bssid, common->curbssid, ETH_ALEN) != 0)
-+	    compare_ether_addr(mgmt->bssid, common->curbssid) != 0)
- 		return;
- 
- 	ewma_add(&ah->ah_beacon_rssi_avg, rssi);
 @@ -2416,6 +2416,22 @@ ath5k_tx_complete_poll_work(struct work_
  * Initialization routines *
  \*************************/
@@ -51,30 +33,6 @@
  	/* SW support for IBSS_RSN is provided by mac80211 */
  	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
  
---- a/drivers/net/wireless/ath/ath9k/ani.c
-+++ b/drivers/net/wireless/ath/ath9k/ani.c
-@@ -274,7 +274,9 @@ static void ath9k_hw_set_ofdm_nil(struct
- 		aniState->rssiThrLow, aniState->rssiThrHigh);
- 
- 	if (aniState->update_ani)
--		aniState->ofdmNoiseImmunityLevel = immunityLevel;
-+		aniState->ofdmNoiseImmunityLevel =
-+			(immunityLevel > ATH9K_ANI_OFDM_DEF_LEVEL) ?
-+			immunityLevel : ATH9K_ANI_OFDM_DEF_LEVEL;
- 
- 	entry_ofdm = &ofdm_level_table[aniState->ofdmNoiseImmunityLevel];
- 	entry_cck = &cck_level_table[aniState->cckNoiseImmunityLevel];
-@@ -340,7 +342,9 @@ static void ath9k_hw_set_cck_nil(struct 
- 		immunityLevel = ATH9K_ANI_CCK_MAX_LEVEL_LOW_RSSI;
- 
- 	if (aniState->update_ani)
--		aniState->cckNoiseImmunityLevel = immunityLevel;
-+		aniState->cckNoiseImmunityLevel =
-+			(immunityLevel > ATH9K_ANI_CCK_DEF_LEVEL) ?
-+			immunityLevel : ATH9K_ANI_CCK_DEF_LEVEL;
- 
- 	entry_ofdm = &ofdm_level_table[aniState->ofdmNoiseImmunityLevel];
- 	entry_cck = &cck_level_table[aniState->cckNoiseImmunityLevel];
 --- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
 @@ -618,19 +618,10 @@ static void ar5008_hw_init_bb(struct ath
@@ -140,6 +98,122 @@
  
  skip_tx_iqcal:
  	if (run_agc_cal || !(ah->ah_flags & AH_FASTCC)) {
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -4281,18 +4281,10 @@ static int ar9003_hw_tx_power_regwrite(s
+ #undef POW_SM
+ }
+ 
+-static void ar9003_hw_set_target_power_eeprom(struct ath_hw *ah, u16 freq,
+-					      u8 *targetPowerValT2)
++static void ar9003_hw_get_legacy_target_powers(struct ath_hw *ah, u16 freq,
++					       u8 *targetPowerValT2,
++					       bool is2GHz)
+ {
+-	/* XXX: hard code for now, need to get from eeprom struct */
+-	u8 ht40PowerIncForPdadc = 0;
+-	bool is2GHz = false;
+-	unsigned int i = 0;
+-	struct ath_common *common = ath9k_hw_common(ah);
+-
+-	if (freq < 4000)
+-		is2GHz = true;
+-
+ 	targetPowerValT2[ALL_TARGET_LEGACY_6_24] =
+ 	    ar9003_hw_eeprom_get_tgt_pwr(ah, LEGACY_TARGET_RATE_6_24, freq,
+ 					 is2GHz);
+@@ -4305,6 +4297,11 @@ static void ar9003_hw_set_target_power_e
+ 	targetPowerValT2[ALL_TARGET_LEGACY_54] =
+ 	    ar9003_hw_eeprom_get_tgt_pwr(ah, LEGACY_TARGET_RATE_54, freq,
+ 					 is2GHz);
++}
++
++static void ar9003_hw_get_cck_target_powers(struct ath_hw *ah, u16 freq,
++					    u8 *targetPowerValT2)
++{
+ 	targetPowerValT2[ALL_TARGET_LEGACY_1L_5L] =
+ 	    ar9003_hw_eeprom_get_cck_tgt_pwr(ah, LEGACY_TARGET_RATE_1L_5L,
+ 					     freq);
+@@ -4314,6 +4311,11 @@ static void ar9003_hw_set_target_power_e
+ 	    ar9003_hw_eeprom_get_cck_tgt_pwr(ah, LEGACY_TARGET_RATE_11L, freq);
+ 	targetPowerValT2[ALL_TARGET_LEGACY_11S] =
+ 	    ar9003_hw_eeprom_get_cck_tgt_pwr(ah, LEGACY_TARGET_RATE_11S, freq);
++}
++
++static void ar9003_hw_get_ht20_target_powers(struct ath_hw *ah, u16 freq,
++					     u8 *targetPowerValT2, bool is2GHz)
++{
+ 	targetPowerValT2[ALL_TARGET_HT20_0_8_16] =
+ 	    ar9003_hw_eeprom_get_ht20_tgt_pwr(ah, HT_TARGET_RATE_0_8_16, freq,
+ 					      is2GHz);
+@@ -4356,6 +4358,16 @@ static void ar9003_hw_set_target_power_e
+ 	targetPowerValT2[ALL_TARGET_HT20_23] =
+ 	    ar9003_hw_eeprom_get_ht20_tgt_pwr(ah, HT_TARGET_RATE_23, freq,
+ 					      is2GHz);
++}
++
++static void ar9003_hw_get_ht40_target_powers(struct ath_hw *ah,
++						   u16 freq,
++						   u8 *targetPowerValT2,
++						   bool is2GHz)
++{
++	/* XXX: hard code for now, need to get from eeprom struct */
++	u8 ht40PowerIncForPdadc = 0;
++
+ 	targetPowerValT2[ALL_TARGET_HT40_0_8_16] =
+ 	    ar9003_hw_eeprom_get_ht40_tgt_pwr(ah, HT_TARGET_RATE_0_8_16, freq,
+ 					      is2GHz) + ht40PowerIncForPdadc;
+@@ -4399,6 +4411,26 @@ static void ar9003_hw_set_target_power_e
+ 	targetPowerValT2[ALL_TARGET_HT40_23] =
+ 	    ar9003_hw_eeprom_get_ht40_tgt_pwr(ah, HT_TARGET_RATE_23, freq,
+ 					      is2GHz) + ht40PowerIncForPdadc;
++}
++
++static void ar9003_hw_get_target_power_eeprom(struct ath_hw *ah,
++					      struct ath9k_channel *chan,
++					      u8 *targetPowerValT2)
++{
++	bool is2GHz = IS_CHAN_2GHZ(chan);
++	unsigned int i = 0;
++	struct ath_common *common = ath9k_hw_common(ah);
++	u16 freq = chan->channel;
++
++	if (is2GHz)
++		ar9003_hw_get_cck_target_powers(ah, freq, targetPowerValT2);
++
++	ar9003_hw_get_legacy_target_powers(ah, freq, targetPowerValT2, is2GHz);
++	ar9003_hw_get_ht20_target_powers(ah, freq, targetPowerValT2, is2GHz);
++
++	if (IS_CHAN_HT40(chan))
++		ar9003_hw_get_ht40_target_powers(ah, freq, targetPowerValT2,
++						 is2GHz);
+ 
+ 	for (i = 0; i < ar9300RateSize; i++) {
+ 		ath_dbg(common, EEPROM, "TPC[%02d] 0x%08x\n",
+@@ -4778,9 +4810,6 @@ static void ar9003_hw_set_power_per_rate
+ 	scaledPower = ath9k_hw_get_scaled_power(ah, powerLimit,
+ 						antenna_reduction);
+ 
+-	/*
+-	 * Get target powers from EEPROM - our baseline for TX Power
+-	 */
+ 	if (is2ghz) {
+ 		/* Setup for CTL modes */
+ 		/* CTL_11B, CTL_11G, CTL_2GHT20 */
+@@ -4952,7 +4981,12 @@ static void ath9k_hw_ar9300_set_txpower(
+ 	unsigned int i = 0, paprd_scale_factor = 0;
+ 	u8 pwr_idx, min_pwridx = 0;
+ 
+-	ar9003_hw_set_target_power_eeprom(ah, chan->channel, targetPowerValT2);
++	memset(targetPowerValT2, 0 , sizeof(targetPowerValT2));
++
++	/*
++	 * Get target powers from EEPROM - our baseline for TX Power
++	 */
++	ar9003_hw_get_target_power_eeprom(ah, chan, targetPowerValT2);
+ 
+ 	if (ah->eep_ops->get_eeprom(ah, EEP_PAPRD)) {
+ 		if (IS_CHAN_2GHZ(chan))
 --- a/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_paprd.c
 @@ -54,7 +54,7 @@ void ar9003_paprd_enable(struct ath_hw *
@@ -153,7 +227,7 @@
  	REG_RMW_FIELD(ah, AR_PHY_PAPRD_CTRL0_B0,
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -524,22 +524,10 @@ static void ar9003_hw_init_bb(struct ath
+@@ -526,22 +526,10 @@ static void ar9003_hw_init_bb(struct ath
  	 * Value is in 100ns increments.
  	 */
  	synthDelay = REG_READ(ah, AR_PHY_RX_DELAY) & AR_PHY_RX_DELAY_DELAY;
@@ -177,7 +251,7 @@
  }
  
  static void ar9003_hw_set_chain_masks(struct ath_hw *ah, u8 rx, u8 tx)
-@@ -690,7 +678,7 @@ static int ar9003_hw_process_ini(struct 
+@@ -692,7 +680,7 @@ static int ar9003_hw_process_ini(struct 
  	ar9003_hw_override_ini(ah);
  	ar9003_hw_set_channel_regs(ah, chan);
  	ar9003_hw_set_chain_masks(ah, ah->rxchainmask, ah->txchainmask);
@@ -186,7 +260,7 @@
  
  	if (AR_SREV_9462(ah)) {
  		if (REG_READ_FIELD(ah, AR_PHY_TX_IQCAL_CONTROL_0,
-@@ -721,6 +709,14 @@ static void ar9003_hw_set_rfmode(struct 
+@@ -723,6 +711,14 @@ static void ar9003_hw_set_rfmode(struct 
  
  	if (IS_CHAN_A_FAST_CLOCK(ah, chan))
  		rfMode |= (AR_PHY_MODE_DYNAMIC | AR_PHY_MODE_DYN_CCK_DISABLE);
@@ -201,7 +275,7 @@
  
  	REG_WRITE(ah, AR_PHY_MODE, rfMode);
  }
-@@ -791,12 +787,8 @@ static bool ar9003_hw_rfbus_req(struct a
+@@ -793,12 +789,8 @@ static bool ar9003_hw_rfbus_req(struct a
  static void ar9003_hw_rfbus_done(struct ath_hw *ah)
  {
  	u32 synthDelay = REG_READ(ah, AR_PHY_RX_DELAY) & AR_PHY_RX_DELAY_DELAY;
@@ -227,84 +301,9 @@
  #define AR_PHY_SPUR_MASK_A_CF_PUNC_MASK_IDX_A           0x0001FC00
  #define AR_PHY_SPUR_MASK_A_CF_PUNC_MASK_IDX_A_S         10
  #define AR_PHY_SPUR_MASK_A_CF_PUNC_MASK_A                       0x3FF
---- a/drivers/net/wireless/ath/ath9k/ar9462_2p0_initvals.h
-+++ b/drivers/net/wireless/ath/ath9k/ar9462_2p0_initvals.h
-@@ -1115,9 +1115,9 @@ static const u32 ar9462_2p0_mac_core[][2
- 	{0x000081f8, 0x00000000},
- 	{0x000081fc, 0x00000000},
- 	{0x00008240, 0x00100000},
--	{0x00008244, 0x0010f400},
-+	{0x00008244, 0x0010f424},
- 	{0x00008248, 0x00000800},
--	{0x0000824c, 0x0001e800},
-+	{0x0000824c, 0x0001e848},
- 	{0x00008250, 0x00000000},
- 	{0x00008254, 0x00000000},
- 	{0x00008258, 0x00000000},
---- a/drivers/net/wireless/ath/ath9k/ath9k.h
-+++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -370,7 +370,7 @@ struct ath_vif {
-  * number of beacon intervals, the game's up.
-  */
- #define BSTUCK_THRESH           	9
--#define	ATH_BCBUF               	4
-+#define	ATH_BCBUF               	8
- #define ATH_DEFAULT_BINTVAL     	100 /* TU */
- #define ATH_DEFAULT_BMISS_LIMIT 	10
- #define IEEE80211_MS_TO_TU(x)           (((x) * 1000) / 1024)
---- a/drivers/net/wireless/ath/ath9k/beacon.c
-+++ b/drivers/net/wireless/ath/ath9k/beacon.c
-@@ -91,7 +91,7 @@ static void ath_beacon_setup(struct ath_
- 	info.txpower = MAX_RATE_POWER;
- 	info.keyix = ATH9K_TXKEYIX_INVALID;
- 	info.keytype = ATH9K_KEY_TYPE_CLEAR;
--	info.flags = ATH9K_TXDESC_NOACK | ATH9K_TXDESC_INTREQ;
-+	info.flags = ATH9K_TXDESC_NOACK | ATH9K_TXDESC_CLRDMASK;
- 
- 	info.buf_addr[0] = bf->bf_buf_addr;
- 	info.buf_len[0] = roundup(skb->len, 4);
-@@ -359,6 +359,11 @@ void ath_beacon_tasklet(unsigned long da
- 	int slot;
- 	u32 bfaddr, bc = 0;
- 
-+	if (work_pending(&sc->hw_reset_work)) {
-+		ath_dbg(common, RESET,
-+			"reset work is pending, skip beaconing now\n");
-+		return;
-+	}
- 	/*
- 	 * Check if the previous beacon has gone out.  If
- 	 * not don't try to post another, skip this period
-@@ -369,6 +374,9 @@ void ath_beacon_tasklet(unsigned long da
- 	if (ath9k_hw_numtxpending(ah, sc->beacon.beaconq) != 0) {
- 		sc->beacon.bmisscnt++;
- 
-+		if (!ath9k_hw_check_alive(ah))
-+			ieee80211_queue_work(sc->hw, &sc->hw_check_work);
-+
- 		if (sc->beacon.bmisscnt < BSTUCK_THRESH * sc->nbcnvifs) {
- 			ath_dbg(common, BSTUCK,
- 				"missed %u consecutive beacons\n",
-@@ -378,6 +386,7 @@ void ath_beacon_tasklet(unsigned long da
- 				ath9k_hw_bstuck_nfcal(ah);
- 		} else if (sc->beacon.bmisscnt >= BSTUCK_THRESH) {
- 			ath_dbg(common, BSTUCK, "beacon is officially stuck\n");
-+			sc->beacon.bmisscnt = 0;
- 			sc->sc_flags |= SC_OP_TSF_RESET;
- 			ieee80211_queue_work(sc->hw, &sc->hw_reset_work);
- 		}
-@@ -650,6 +659,8 @@ static void ath_beacon_config_adhoc(stru
- 	u32 tsf, intval, nexttbtt;
- 
- 	ath9k_reset_beacon_status(sc);
-+	if (!(sc->sc_flags & SC_OP_BEACONS))
-+		ath9k_hw_settsf64(ah, sc->beacon.bc_tstamp);
- 
- 	intval = TU_TO_USEC(conf->beacon_interval);
- 	tsf = roundup(ath9k_hw_gettsf32(ah) + TU_TO_USEC(FUDGE), intval);
 --- a/drivers/net/wireless/ath/ath9k/eeprom_9287.c
 +++ b/drivers/net/wireless/ath/ath9k/eeprom_9287.c
-@@ -824,6 +824,8 @@ static void ath9k_hw_ar9287_set_txpower(
+@@ -798,6 +798,8 @@ static void ath9k_hw_ar9287_set_txpower(
  			regulatory->max_power_level = ratesArray[i];
  	}
  
@@ -313,21 +312,9 @@
  	if (test)
  		return;
  
---- a/drivers/net/wireless/ath/ath9k/gpio.c
-+++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -41,6 +41,9 @@ void ath_init_leds(struct ath_softc *sc)
- {
- 	int ret;
- 
-+	if (AR_SREV_9100(sc->sc_ah))
-+		return;
-+
- 	if (sc->sc_ah->led_pin < 0) {
- 		if (AR_SREV_9287(sc->sc_ah))
- 			sc->sc_ah->led_pin = ATH_LED_PIN_9287;
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -142,6 +142,22 @@ bool ath9k_hw_wait(struct ath_hw *ah, u3
+@@ -191,6 +191,22 @@ bool ath9k_hw_wait(struct ath_hw *ah, u3
  }
  EXPORT_SYMBOL(ath9k_hw_wait);
  
@@ -350,18 +337,7 @@
  void ath9k_hw_write_array(struct ath_hw *ah, struct ar5416IniArray *array,
  			  int column, unsigned int *writecnt)
  {
-@@ -388,8 +404,8 @@ static void ath9k_hw_init_config(struct 
- {
- 	int i;
- 
--	ah->config.dma_beacon_response_time = 2;
--	ah->config.sw_beacon_response_time = 10;
-+	ah->config.dma_beacon_response_time = 1;
-+	ah->config.sw_beacon_response_time = 6;
- 	ah->config.additional_swba_backoff = 0;
- 	ah->config.ack_6mb = 0x0;
- 	ah->config.cwm_ignore_extcca = 0;
-@@ -971,7 +987,7 @@ void ath9k_hw_init_global_settings(struc
+@@ -1020,7 +1036,7 @@ void ath9k_hw_init_global_settings(struc
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ieee80211_conf *conf = &common->hw->conf;
  	const struct ath9k_channel *chan = ah->curchan;
@@ -370,7 +346,7 @@
  	int slottime;
  	int sifstime;
  	int rx_lat = 0, tx_lat = 0, eifs = 0;
-@@ -992,6 +1008,11 @@ void ath9k_hw_init_global_settings(struc
+@@ -1041,6 +1057,11 @@ void ath9k_hw_init_global_settings(struc
  		rx_lat = 37;
  	tx_lat = 54;
  
@@ -382,7 +358,7 @@
  	if (IS_CHAN_HALF_RATE(chan)) {
  		eifs = 175;
  		rx_lat *= 2;
-@@ -999,8 +1020,9 @@ void ath9k_hw_init_global_settings(struc
+@@ -1048,8 +1069,9 @@ void ath9k_hw_init_global_settings(struc
  		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
  		    tx_lat += 11;
  
@@ -393,7 +369,7 @@
  	} else if (IS_CHAN_QUARTER_RATE(chan)) {
  		eifs = 340;
  		rx_lat = (rx_lat * 4) - 1;
-@@ -1008,8 +1030,9 @@ void ath9k_hw_init_global_settings(struc
+@@ -1057,8 +1079,9 @@ void ath9k_hw_init_global_settings(struc
  		if (IS_CHAN_A_FAST_CLOCK(ah, chan))
  		    tx_lat += 22;
  
@@ -404,7 +380,7 @@
  	} else {
  		if (AR_SREV_9287(ah) && AR_SREV_9287_13_OR_LATER(ah)) {
  			eifs = AR_D_GBL_IFS_EIFS_ASYNC_FIFO;
-@@ -1023,14 +1046,10 @@ void ath9k_hw_init_global_settings(struc
+@@ -1072,14 +1095,10 @@ void ath9k_hw_init_global_settings(struc
  		tx_lat = MS(reg, AR_USEC_TX_LAT);
  
  		slottime = ah->slottime;
@@ -420,7 +396,7 @@
  	ctstimeout = acktimeout;
  
  	/*
-@@ -1040,7 +1059,8 @@ void ath9k_hw_init_global_settings(struc
+@@ -1089,7 +1108,8 @@ void ath9k_hw_init_global_settings(struc
  	 * BA frames in some implementations, but it has been found to fix ACK
  	 * timeout issues in other cases as well.
  	 */
@@ -430,7 +406,7 @@
  		acktimeout += 64 - sifstime - ah->slottime;
  		ctstimeout += 48 - sifstime - ah->slottime;
  	}
-@@ -1420,6 +1440,10 @@ static bool ath9k_hw_channel_change(stru
+@@ -1469,6 +1489,10 @@ static bool ath9k_hw_channel_change(stru
  						    CHANNEL_5GHZ));
  	mode_diff = (chan->chanmode != ah->curchan->chanmode);
  
@@ -441,7 +417,7 @@
  	for (qnum = 0; qnum < AR_NUM_QCU; qnum++) {
  		if (ath9k_hw_numtxpending(ah, qnum)) {
  			ath_dbg(common, QUEUE,
-@@ -1453,7 +1477,7 @@ static bool ath9k_hw_channel_change(stru
+@@ -1502,7 +1526,7 @@ static bool ath9k_hw_channel_change(stru
  		return false;
  	}
  	ath9k_hw_set_clockrate(ah);
@@ -450,7 +426,7 @@
  	ath9k_hw_rfbus_done(ah);
  
  	if (IS_CHAN_OFDM(chan) || IS_CHAN_HT(chan))
-@@ -2724,7 +2748,8 @@ static int get_antenna_gain(struct ath_h
+@@ -2773,7 +2797,8 @@ static int get_antenna_gain(struct ath_h
  	return ah->eep_ops->get_eeprom(ah, gain_param);
  }
  
@@ -460,7 +436,7 @@
  {
  	struct ath_regulatory *reg = ath9k_hw_regulatory(ah);
  	struct ieee80211_channel *channel;
-@@ -2745,7 +2770,7 @@ void ath9k_hw_apply_txpower(struct ath_h
+@@ -2794,7 +2819,7 @@ void ath9k_hw_apply_txpower(struct ath_h
  
  	ah->eep_ops->set_txpower(ah, chan,
  				 ath9k_regd_get_ctl(reg, chan),
@@ -469,7 +445,7 @@
  }
  
  void ath9k_hw_set_txpowerlimit(struct ath_hw *ah, u32 limit, bool test)
-@@ -2758,7 +2783,7 @@ void ath9k_hw_set_txpowerlimit(struct at
+@@ -2807,7 +2832,7 @@ void ath9k_hw_set_txpowerlimit(struct at
  	if (test)
  		channel->max_power = MAX_RATE_POWER / 2;
  
@@ -489,7 +465,7 @@
  bool ath9k_hw_wait(struct ath_hw *ah, u32 reg, u32 mask, u32 val, u32 timeout);
  void ath9k_hw_write_array(struct ath_hw *ah, struct ar5416IniArray *array,
  			  int column, unsigned int *writecnt);
-@@ -976,7 +978,8 @@ void ath9k_hw_name(struct ath_hw *ah, ch
+@@ -982,7 +984,8 @@ void ath9k_hw_name(struct ath_hw *ah, ch
  /* PHY */
  void ath9k_hw_get_delta_slope_vals(struct ath_hw *ah, u32 coef_scaled,
  				   u32 *coef_mantissa, u32 *coef_exponent);
@@ -499,6 +475,43 @@
  
  /*
   * Code Specific to AR5008, AR9001 or AR9002,
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -647,6 +647,24 @@ void ath9k_reload_chainmask_settings(str
+ 		setup_ht_cap(sc, &sc->sbands[IEEE80211_BAND_5GHZ].ht_cap);
+ }
+ 
++static const struct ieee80211_iface_limit if_limits[] = {
++	{ .max = 2048,	.types = BIT(NL80211_IFTYPE_STATION) |
++				 BIT(NL80211_IFTYPE_P2P_CLIENT) |
++				 BIT(NL80211_IFTYPE_WDS) },
++	{ .max = 8,	.types =
++#ifdef CONFIG_MAC80211_MESH
++				 BIT(NL80211_IFTYPE_MESH_POINT) |
++#endif
++				 BIT(NL80211_IFTYPE_AP) |
++				 BIT(NL80211_IFTYPE_P2P_GO) },
++};
++
++static const struct ieee80211_iface_combination if_comb = {
++	.limits = if_limits,
++	.n_limits = ARRAY_SIZE(if_limits),
++	.max_interfaces = 2048,
++	.num_different_channels = 1,
++};
+ 
+ void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
+ {
+@@ -676,6 +694,9 @@ void ath9k_set_hw_capab(struct ath_softc
+ 		BIT(NL80211_IFTYPE_ADHOC) |
+ 		BIT(NL80211_IFTYPE_MESH_POINT);
+ 
++	hw->wiphy->iface_combinations = &if_comb;
++	hw->wiphy->n_iface_combinations = 1;
++
+ 	if (AR_SREV_5416(sc->sc_ah))
+ 		hw->wiphy->flags &= ~WIPHY_FLAG_PS_ON_BY_DEFAULT;
+ 
 --- a/drivers/net/wireless/ath/ath9k/mac.c
 +++ b/drivers/net/wireless/ath/ath9k/mac.c
 @@ -133,8 +133,16 @@ EXPORT_SYMBOL(ath9k_hw_updatetxtriglevel
@@ -527,26 +540,6 @@
  			if (i)
  				udelay(5);
  
---- a/drivers/net/wireless/ath/ath9k/main.c
-+++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -692,17 +692,6 @@ void ath9k_tasklet(unsigned long data)
- 		goto out;
- 	}
- 
--	/*
--	 * Only run the baseband hang check if beacons stop working in AP or
--	 * IBSS mode, because it has a high false positive rate. For station
--	 * mode it should not be necessary, since the upper layers will detect
--	 * this through a beacon miss automatically and the following channel
--	 * change will trigger a hardware reset anyway
--	 */
--	if (ath9k_hw_numtxpending(ah, sc->beacon.beaconq) != 0 &&
--	    !ath9k_hw_check_alive(ah))
--		ieee80211_queue_work(sc->hw, &sc->hw_check_work);
--
- 	if ((status & ATH9K_INT_TSFOOR) && sc->ps_enabled) {
- 		/*
- 		 * TSF sync does not look correct; remain awake to sync with
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
 @@ -200,6 +200,8 @@ static void ieee80211_send_addba_resp(st
@@ -596,17 +589,7 @@
  			    TEST(TDLS_PEER_AUTH), TEST(4ADDR_EVENT),
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -163,7 +163,8 @@ static int ieee80211_check_queues(struct
- 			return -EINVAL;
- 	}
- 
--	if (sdata->vif.type != NL80211_IFTYPE_AP) {
-+	if ((sdata->vif.type != NL80211_IFTYPE_AP) ||
-+	    !(sdata->local->hw.flags & IEEE80211_HW_QUEUE_CONTROL)) {
- 		sdata->vif.cab_queue = IEEE80211_INVAL_HW_QUEUE;
- 		return 0;
- 	}
-@@ -281,7 +282,6 @@ static int ieee80211_do_open(struct net_
+@@ -282,7 +282,6 @@ static int ieee80211_do_open(struct net_
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ieee80211_local *local = sdata->local;
@@ -614,7 +597,7 @@
  	u32 changed = 0;
  	int res;
  	u32 hw_reconf_flags = 0;
-@@ -427,28 +427,6 @@ static int ieee80211_do_open(struct net_
+@@ -428,28 +427,6 @@ static int ieee80211_do_open(struct net_
  
  	set_bit(SDATA_STATE_RUNNING, &sdata->state);
  
@@ -643,7 +626,7 @@
  	/*
  	 * set_multicast_list will be invoked by the networking core
  	 * which will check whether any increments here were done in
-@@ -845,6 +823,70 @@ static void ieee80211_if_setup(struct ne
+@@ -846,6 +823,72 @@ static void ieee80211_if_setup(struct ne
  	dev->destructor = free_netdev;
  }
  
@@ -703,7 +686,9 @@
 +		set_sta_flag(sta, WLAN_STA_WME);
 +
 +	if (new) {
-+		set_sta_flag(sta, WLAN_STA_AUTHORIZED);
++		sta_info_pre_move_state(sta, IEEE80211_STA_AUTH);
++		sta_info_pre_move_state(sta, IEEE80211_STA_ASSOC);
++		sta_info_pre_move_state(sta, IEEE80211_STA_AUTHORIZED);
 +		rate_control_rate_init(sta);
 +		sta_info_insert_rcu(sta);
 +	}
@@ -714,7 +699,7 @@
  static void ieee80211_iface_work(struct work_struct *work)
  {
  	struct ieee80211_sub_if_data *sdata =
-@@ -949,6 +991,9 @@ static void ieee80211_iface_work(struct 
+@@ -950,6 +993,9 @@ static void ieee80211_iface_work(struct 
  				break;
  			ieee80211_mesh_rx_queued_mgmt(sdata, skb);
  			break;
@@ -726,35 +711,7 @@
  			break;
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -103,7 +103,7 @@ static void
- ieee80211_add_rx_radiotap_header(struct ieee80211_local *local,
- 				 struct sk_buff *skb,
- 				 struct ieee80211_rate *rate,
--				 int rtap_len)
-+				 int rtap_len, bool has_fcs)
- {
- 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
- 	struct ieee80211_radiotap_header *rthdr;
-@@ -134,7 +134,7 @@ ieee80211_add_rx_radiotap_header(struct 
- 	}
- 
- 	/* IEEE80211_RADIOTAP_FLAGS */
--	if (local->hw.flags & IEEE80211_HW_RX_INCLUDES_FCS)
-+	if (has_fcs && (local->hw.flags & IEEE80211_HW_RX_INCLUDES_FCS))
- 		*pos |= IEEE80211_RADIOTAP_F_FCS;
- 	if (status->flag & (RX_FLAG_FAILED_FCS_CRC | RX_FLAG_FAILED_PLCP_CRC))
- 		*pos |= IEEE80211_RADIOTAP_F_BADFCS;
-@@ -294,7 +294,8 @@ ieee80211_rx_monitor(struct ieee80211_lo
- 	}
- 
- 	/* prepend radiotap information */
--	ieee80211_add_rx_radiotap_header(local, skb, rate, needed_headroom);
-+	ieee80211_add_rx_radiotap_header(local, skb, rate, needed_headroom,
-+					 true);
- 
- 	skb_reset_mac_header(skb);
- 	skb->ip_summed = CHECKSUM_UNNECESSARY;
-@@ -2282,6 +2283,7 @@ ieee80211_rx_h_action(struct ieee80211_r
+@@ -2283,6 +2283,7 @@ ieee80211_rx_h_action(struct ieee80211_r
  		    sdata->vif.type != NL80211_IFTYPE_MESH_POINT &&
  		    sdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
  		    sdata->vif.type != NL80211_IFTYPE_AP &&
@@ -762,7 +719,7 @@
  		    sdata->vif.type != NL80211_IFTYPE_ADHOC)
  			break;
  
-@@ -2496,14 +2498,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
+@@ -2497,14 +2498,15 @@ ieee80211_rx_h_mgmt(struct ieee80211_rx_
  
  	if (!ieee80211_vif_is_mesh(&sdata->vif) &&
  	    sdata->vif.type != NL80211_IFTYPE_ADHOC &&
@@ -780,17 +737,7 @@
  		break;
  	case cpu_to_le16(IEEE80211_STYPE_ASSOC_RESP):
  	case cpu_to_le16(IEEE80211_STYPE_REASSOC_RESP):
-@@ -2567,7 +2570,8 @@ static void ieee80211_rx_cooked_monitor(
- 		goto out_free_skb;
- 
- 	/* prepend radiotap information */
--	ieee80211_add_rx_radiotap_header(local, skb, rate, needed_headroom);
-+	ieee80211_add_rx_radiotap_header(local, skb, rate, needed_headroom,
-+					 false);
- 
- 	skb_set_mac_header(skb, 0);
- 	skb->ip_summed = CHECKSUM_UNNECESSARY;
-@@ -2836,10 +2840,16 @@ static int prepare_for_handlers(struct i
+@@ -2838,10 +2840,16 @@ static int prepare_for_handlers(struct i
  		}
  		break;
  	case NL80211_IFTYPE_WDS:
@@ -827,53 +774,31 @@
  	WLAN_STA_CLEAR_PS_FILT,
  	WLAN_STA_MFP,
  	WLAN_STA_BLOCK_BA,
---- a/drivers/net/wireless/ath/ath9k/init.c
-+++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -647,6 +647,24 @@ void ath9k_reload_chainmask_settings(str
- 		setup_ht_cap(sc, &sc->sbands[IEEE80211_BAND_5GHZ].ht_cap);
- }
+--- a/drivers/net/wireless/iwlwifi/iwl-agn.h
++++ b/drivers/net/wireless/iwlwifi/iwl-agn.h
+@@ -425,6 +425,7 @@ void iwl_testmode_cleanup(struct iwl_pri
+ #ifdef CONFIG_IWLWIFI_DEBUG
+ void iwl_print_rx_config_cmd(struct iwl_priv *priv,
+ 			     enum iwl_rxon_context_id ctxid);
++int iwl_alloc_traffic_mem(struct iwl_priv *priv);
+ #else
+ static inline void iwl_print_rx_config_cmd(struct iwl_priv *priv,
+ 					   enum iwl_rxon_context_id ctxid)
+@@ -510,7 +511,6 @@ void iwl_setup_deferred_work(struct iwl_
+ int iwl_send_wimax_coex(struct iwl_priv *priv);
+ int iwl_send_bt_env(struct iwl_priv *priv, u8 action, u8 type);
+ void iwl_debug_config(struct iwl_priv *priv);
+-int iwl_alloc_traffic_mem(struct iwl_priv *priv);
+ void iwl_set_hw_params(struct iwl_priv *priv);
+ void iwl_init_context(struct iwl_priv *priv, u32 ucode_flags);
+ int iwl_init_drv(struct iwl_priv *priv);
+--- a/drivers/net/wireless/libertas/firmware.c
++++ b/drivers/net/wireless/libertas/firmware.c
+@@ -5,6 +5,7 @@
+ #include <linux/firmware.h>
+ #include <linux/firmware.h>
+ #include <linux/module.h>
++#include <linux/sched.h>
  
-+static const struct ieee80211_iface_limit if_limits[] = {
-+	{ .max = 2048,	.types = BIT(NL80211_IFTYPE_STATION) |
-+				 BIT(NL80211_IFTYPE_P2P_CLIENT) |
-+				 BIT(NL80211_IFTYPE_WDS) },
-+	{ .max = 8,	.types =
-+#ifdef CONFIG_MAC80211_MESH
-+				 BIT(NL80211_IFTYPE_MESH_POINT) |
-+#endif
-+				 BIT(NL80211_IFTYPE_AP) |
-+				 BIT(NL80211_IFTYPE_P2P_GO) },
-+};
-+
-+static const struct ieee80211_iface_combination if_comb = {
-+	.limits = if_limits,
-+	.n_limits = ARRAY_SIZE(if_limits),
-+	.max_interfaces = 2048,
-+	.num_different_channels = 1,
-+};
- 
- void ath9k_set_hw_capab(struct ath_softc *sc, struct ieee80211_hw *hw)
- {
-@@ -676,6 +694,9 @@ void ath9k_set_hw_capab(struct ath_softc
- 		BIT(NL80211_IFTYPE_ADHOC) |
- 		BIT(NL80211_IFTYPE_MESH_POINT);
- 
-+	hw->wiphy->iface_combinations = &if_comb;
-+	hw->wiphy->n_iface_combinations = 1;
-+
- 	if (AR_SREV_5416(sc->sc_ah))
- 		hw->wiphy->flags &= ~WIPHY_FLAG_PS_ON_BY_DEFAULT;
- 
---- a/net/mac80211/ibss.c
-+++ b/net/mac80211/ibss.c
-@@ -455,8 +455,8 @@ static void ieee80211_rx_bss_info(struct
- 			 * fall back to HT20 if we don't use or use
- 			 * the other extension channel
- 			 */
--			if ((channel_type == NL80211_CHAN_HT40MINUS ||
--			     channel_type == NL80211_CHAN_HT40PLUS) &&
-+			if (!(channel_type == NL80211_CHAN_HT40MINUS ||
-+			      channel_type == NL80211_CHAN_HT40PLUS) ||
- 			    channel_type != sdata->u.ibss.channel_type)
- 				sta_ht_cap_new.cap &=
- 					~IEEE80211_HT_CAP_SUP_WIDTH_20_40;
+ #include "dev.h"
+ #include "decl.h"

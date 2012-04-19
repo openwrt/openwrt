@@ -8,7 +8,7 @@
  #include "../ath.h"
  #include "ath5k.h"
  #include "debug.h"
-@@ -72,7 +73,7 @@ static void ath5k_pci_read_cachesize(str
+@@ -73,7 +74,7 @@ static void ath5k_pci_read_cachesize(str
  }
  
  /*
@@ -17,7 +17,7 @@
   */
  static bool
  ath5k_pci_eeprom_read(struct ath_common *common, u32 offset, u16 *data)
-@@ -80,6 +81,19 @@ ath5k_pci_eeprom_read(struct ath_common 
+@@ -81,6 +82,19 @@ ath5k_pci_eeprom_read(struct ath_common 
  	struct ath5k_hw *ah = (struct ath5k_hw *) common->ah;
  	u32 status, timeout;
  
@@ -37,7 +37,7 @@
  	/*
  	 * Initialize EEPROM access
  	 */
-@@ -123,6 +137,16 @@ static int ath5k_pci_eeprom_read_mac(str
+@@ -124,6 +138,16 @@ static int ath5k_pci_eeprom_read_mac(str
  	u16 data;
  	int octet;
  
