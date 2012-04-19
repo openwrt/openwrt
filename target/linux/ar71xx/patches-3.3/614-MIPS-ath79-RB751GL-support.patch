@@ -1,9 +1,10 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -300,6 +300,7 @@ config ATH79_MACH_RB750
+@@ -300,6 +300,8 @@ config ATH79_MACH_RB750
  	bool "MikroTik RouterBOARD 750 support"
  	select SOC_AR724X
  	select ATH79_DEV_ETH
++	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_USB
  
  config ATH79_MACH_WNDR3700

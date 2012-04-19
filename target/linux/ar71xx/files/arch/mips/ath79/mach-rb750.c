@@ -22,11 +22,10 @@
 #include <asm/mach-ath79/mach-rb750.h>
 
 #include "common.h"
+#include "dev-ap9x-pci.h"
 #include "dev-usb.h"
 #include "dev-eth.h"
 #include "machtypes.h"
-#include "pci-ath9k-fixup.h"
-#include "pci.h"
 
 static struct rb750_led_data rb750_leds[] = {
 	{
@@ -278,23 +277,6 @@ static void __init rb750gr3_setup(void)
 MIPS_MACHINE(ATH79_MACH_RB_750G_R3, "750Gr3", "MikroTik RouterBOARD 750GL",
 	     rb750gr3_setup);
 
-static struct ath9k_platform_data rb751_wmac_data = {
-	.led_pin = -1,
-};
-
-static u8 rb751_wmac_mac[6];
-
-static int rb751_pci_plat_dev_init(struct pci_dev *dev)
-{
-	switch (PCI_SLOT(dev->devfn)) {
-	case 0:
-		dev->dev.platform_data = &rb751_wmac_data;
-		break;
-	}
-
-	return 0;
-}
-
 static int decode_rle(char *output, int len, char *in)
 {
 	char *ptr = output;
@@ -332,20 +314,24 @@ static int decode_rle(char *output, int len, char *in)
 static void __init rb751_wlan_setup(void)
 {
 	u8 *hardconfig = (u8 *) KSEG1ADDR(RB751_HARDCONFIG);
+	struct ath9k_platform_data *wmac_data;
+	int dec_size;
 
-	ath79_pci_set_plat_dev_init(rb751_pci_plat_dev_init);
-	ath79_register_pci();
-
-	rb751_wmac_data.macaddr = memcpy(rb751_wmac_mac,
-			hardconfig + RB751_MAC_ADDRESS_OFFSET, 6);
-
-	if (decode_rle((char *)rb751_wmac_data.eeprom_data,
-			sizeof(rb751_wmac_data.eeprom_data),
-			hardconfig + RB751_CALDATA_OFFSET) ==
-			sizeof(rb751_wmac_data.eeprom_data)) {
-		pr_info("rb7xx: calibration data found\n");
-		pci_enable_ath9k_fixup(0, rb751_wmac_data.eeprom_data);
+	wmac_data = ap9x_pci_get_wmac_data(0);
+	if (!wmac_data) {
+		pr_err("rb75x: unable to get address of wlan data\n");
+		return;
 	}
+
+	dec_size = decode_rle((char *) wmac_data->eeprom_data,
+			      sizeof(wmac_data->eeprom_data),
+			      hardconfig + RB751_CALDATA_OFFSET);
+	if (dec_size != sizeof(wmac_data->eeprom_data)) {
+		pr_err("rb75x: unable to decode wlan eeprom data\n");
+		return;
+	}
+
+	ap91_pci_init(NULL, hardconfig + RB751_MAC_ADDRESS_OFFSET);
 }
 
 static void __init rb751_setup(void)
