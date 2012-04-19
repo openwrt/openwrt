@@ -1,0 +1,19 @@
+--- a/arch/avr32/boards/atngw100/flash.c
++++ b/arch/avr32/boards/atngw100/flash.c
+@@ -45,9 +45,14 @@ static struct mtd_partition flash_parts[
+ 		.mask_flags     = MTD_WRITEABLE,
+ 	},
+ 	{
+-		.name           = "root",
++		.name           = "kernel",
+ 		.offset         = 0x00020000,
+-		.size           = 0x007d0000,
++		.size           = 0x00100000,
++	},
++	{
++		.name           = "rootfs",
++		.offset         = 0x00120000,
++		.size           = 0x006d0000,
+ 	},
+ 	{
+ 		.name           = "env",
