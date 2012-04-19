@@ -187,7 +187,7 @@
  	/* Record packet only when both main_rssi and  alt_rssi is positive */
 --- a/drivers/net/wireless/ath/ath9k/ar9003_mac.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_mac.c
-@@ -453,12 +453,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
+@@ -455,12 +455,12 @@ int ath9k_hw_process_rxdesc_edma(struct 
  
  	/* XXX: Keycache */
  	rxs->rs_rssi = MS(rxsp->status5, AR_RxRSSICombined);
@@ -248,7 +248,7 @@
  	if (ads.ds_rxstatus8 & AR_RxKeyIdxValid)
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1009,12 +1009,12 @@ void ath_debug_stat_rx(struct ath_softc 
+@@ -997,12 +997,12 @@ void ath_debug_stat_rx(struct ath_softc 
  #ifdef CONFIG_ATH9K_MAC_DEBUG
  	spin_lock(&sc->debug.samp_lock);
  	RX_SAMP_DBG(jiffies) = jiffies;
