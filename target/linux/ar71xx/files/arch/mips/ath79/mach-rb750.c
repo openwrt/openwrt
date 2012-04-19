@@ -299,24 +299,29 @@ static int decode_rle(char *output, int len, char *in)
 {
 	char *ptr = output;
 	char *end = output + len;
+
+	if (!output || !in)
+		return -EINVAL;
+
 	while (*in) {
 		if (*in < 0) {
 			int i = -*in++;
 			while (i-- > 0) {
 				if (ptr >= end)
-					return -1;
+					return -EINVAL;
 				*ptr++ = *in++;
 			}
 		} else if (*in > 0) {
 			int i = *in++;
 			while (i-- > 0) {
 				if (ptr >= end)
-					return -1;
+					return -EINVAL;
 				*ptr++ = *in;
 			}
 			in++;
 		}
 	}
+
 	return ptr - output;
 }
 
