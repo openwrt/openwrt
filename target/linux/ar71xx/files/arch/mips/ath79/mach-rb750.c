@@ -329,11 +329,9 @@ static int decode_rle(char *output, int len, char *in)
 #define RB751_MAC_ADDRESS_OFFSET 0xE80
 #define RB751_CALDATA_OFFSET 0x27C
 
-static void __init rb751_wlan_and_usb_setup(void)
+static void __init rb751_wlan_setup(void)
 {
 	u8 *hardconfig = (u8 *) KSEG1ADDR(RB751_HARDCONFIG);
-
-	ath79_register_usb();
 
 	ath79_pci_set_plat_dev_init(rb751_pci_plat_dev_init);
 	ath79_register_pci();
@@ -353,7 +351,8 @@ static void __init rb751_wlan_and_usb_setup(void)
 static void __init rb751_setup(void)
 {
 	rb750_setup();
-	rb751_wlan_and_usb_setup();
+	ath79_register_usb();
+	rb751_wlan_setup();
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_751, "751", "MikroTik RouterBOARD 751",
@@ -362,7 +361,8 @@ MIPS_MACHINE(ATH79_MACH_RB_751, "751", "MikroTik RouterBOARD 751",
 static void __init rb751g_setup(void)
 {
 	rb750gr3_setup();
-	rb751_wlan_and_usb_setup();
+	ath79_register_usb();
+	rb751_wlan_setup();
 }
 
 MIPS_MACHINE(ATH79_MACH_RB_751G, "751g", "MikroTik RouterBOARD 751G",
