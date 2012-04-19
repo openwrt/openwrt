@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,17 +16,81 @@
+@@ -16,17 +16,86 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -22,6 +22,7 @@
 +	ATH79_MACH_DIR_825_B1,		/* D-Link DIR-825 rev. B1 */
 +	ATH79_MACH_EAP7660D,		/* Senao EAP7660D */
 +	ATH79_MACH_JA76PF,		/* jjPlus JA76PF */
++	ATH79_MACH_JA76PF2,		/* jjPlus JA76PF2 */
 +	ATH79_MACH_JWAP003,		/* jjPlus JWAP003 */
 +	ATH79_MACH_HORNET_UB,		/* ALFA Networks Hornet-UB */
 +	ATH79_MACH_MZK_W04NU,		/* Planex MZK-W04NU */
@@ -39,8 +40,12 @@
 +	ATH79_MACH_RB_493,		/* Mikrotik RouterBOARD 493/493AH */
 +	ATH79_MACH_RB_493G,		/* Mikrotik RouterBOARD 493G */
 +	ATH79_MACH_RB_750,		/* MikroTik RouterBOARD 750 */
++	ATH79_MACH_RB_750G_R3,		/* MikroTik RouterBOARD 750GL */
++	ATH79_MACH_RB_751,		/* MikroTik RouterBOARD 751 */
++	ATH79_MACH_RB_751G,		/* Mikrotik RouterBOARD 751G */
 +	ATH79_MACH_RW2458N,		/* Redwave RW2458N */
 +	ATH79_MACH_TEW_632BRP,		/* TRENDnet TEW-632BRP */
++	ATH79_MACH_TEW_673GRU,		/* TRENDnet TEW-673GRU */
 +	ATH79_MACH_TL_MR11U,		/* TP-LINK TL-MR11U */
 +	ATH79_MACH_TL_MR3020,		/* TP-LINK TL-MR3020 */
 +	ATH79_MACH_TL_MR3220,		/* TP-LINK TL-MR3220 */
@@ -188,7 +193,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -54,6 +137,369 @@ config ATH79_MACH_PB44
+@@ -54,6 +137,382 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -355,6 +360,8 @@
 +	bool "MikroTik RouterBOARD 750 support"
 +	select SOC_AR724X
 +	select ATH79_DEV_ETH
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_USB
 +
 +config ATH79_MACH_WNDR3700
 +	bool "NETGEAR WNDR3700 board support"
@@ -546,6 +553,17 @@
 +	select ATH79_DEV_WMAC
 +	select ATH79_NVRAM
 +
++config ATH79_MACH_TEW_673GRU
++	bool "TRENDnet TEW-673GRU support"
++	select SOC_AR71XX
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_NVRAM
++
 +config ATH79_MACH_UBNT
 +	bool "Ubiquiti AR71xx based boards support"
 +	select SOC_AR71XX
@@ -558,7 +576,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -67,6 +513,24 @@ config ATH79_MACH_UBNT_XM
+@@ -67,6 +526,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -583,7 +601,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -96,10 +560,6 @@ config SOC_AR934X
+@@ -96,10 +573,6 @@ config SOC_AR934X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -594,7 +612,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -110,7 +570,14 @@ config ATH79_DEV_DSA
+@@ -110,7 +583,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -610,7 +628,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -135,4 +602,7 @@ config ATH79_NVRAM
+@@ -135,4 +615,7 @@ config ATH79_NVRAM
  config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
@@ -620,7 +638,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -36,8 +36,56 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
+@@ -36,8 +36,57 @@ obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= p
  #
  # Machines
  #
@@ -652,6 +670,7 @@
 +obj-$(CONFIG_ATH79_MACH_RB750)		+= mach-rb750.o
 +obj-$(CONFIG_ATH79_MACH_RW2458N)	+= mach-rw2458n.o
 +obj-$(CONFIG_ATH79_MACH_TEW_632BRP)	+= mach-tew-632brp.o
++obj-$(CONFIG_ATH79_MACH_TEW_673GRU)	+= mach-tew-673gru.o
 +obj-$(CONFIG_ATH79_MACH_TL_MR11U)	+= mach-tl-mr11u.o
 +obj-$(CONFIG_ATH79_MACH_TL_MR3020)	+= mach-tl-mr3020.o
 +obj-$(CONFIG_ATH79_MACH_TL_MR3X20)	+= mach-tl-mr3x20.o
@@ -677,3 +696,15 @@
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G300NH2)	+= mach-wzr-hp-g300nh2.o
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_AG300H)	+= mach-wzr-hp-ag300h.o
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
+--- a/arch/mips/ath79/prom.c
++++ b/arch/mips/ath79/prom.c
+@@ -180,6 +180,9 @@ void __init prom_init(void)
+ 			ath79_prom_append_cmdline("board", env);
+ 		}
+ 	}
++
++	if (strstr(arcs_cmdline, "board=750Gr3"))
++		ath79_prom_append_cmdline("console", "ttyS0,115200");
+ }
+ 
+ void __init prom_free_prom_memory(void)
