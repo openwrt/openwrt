@@ -1,0 +1,11 @@
+--- a/include/sound/soc-dai.h
++++ b/include/sound/soc-dai.h
+@@ -223,7 +223,7 @@ struct snd_soc_dai {
+ 	union {
+ 		struct snd_soc_codec *codec;
+ 		struct snd_soc_platform *platform;
+-	};
++	} parent;
+ 
+ 	struct list_head list;
+ };

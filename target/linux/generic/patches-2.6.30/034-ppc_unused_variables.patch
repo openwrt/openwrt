@@ -1,0 +1,20 @@
+--- a/arch/powerpc/include/asm/pgtable-ppc64.h
++++ b/arch/powerpc/include/asm/pgtable-ppc64.h
+@@ -226,7 +226,7 @@ static inline int __ptep_test_and_clear_
+ static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addr,
+ 				      pte_t *ptep)
+ {
+-	unsigned long old;
++	unsigned long old __maybe_unused;
+ 
+        	if ((pte_val(*ptep) & _PAGE_RW) == 0)
+        		return;
+@@ -236,7 +236,7 @@ static inline void ptep_set_wrprotect(st
+ static inline void huge_ptep_set_wrprotect(struct mm_struct *mm,
+ 					   unsigned long addr, pte_t *ptep)
+ {
+-	unsigned long old;
++	unsigned long old __maybe_unused;
+ 
+ 	if ((pte_val(*ptep) & _PAGE_RW) == 0)
+ 		return;
