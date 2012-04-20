@@ -142,7 +142,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -28,6 +74,36 @@ config ATH79_MACH_AP81
+@@ -28,6 +74,24 @@ config ATH79_MACH_AP81
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros AP81 reference board.
  
@@ -164,22 +164,10 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +
-+config ATH79_MACH_AP121
-+	bool "Atheros AP121 reference board"
-+	select SOC_AR933X
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_SPI
-+	select ATH79_DEV_USB
-+	select ATH79_DEV_WMAC
-+	help
-+	  Say 'Y' here if you want your kernel to support the
-+	  Atheros AP121 reference board.
-+
  config ATH79_MACH_DB120
  	bool "Atheros DB120 reference board"
  	select SOC_AR934X
-@@ -42,6 +118,13 @@ config ATH79_MACH_DB120
+@@ -42,6 +106,13 @@ config ATH79_MACH_DB120
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros DB120 reference board.
  
@@ -193,7 +181,7 @@
  config ATH79_MACH_PB44
  	bool "Atheros PB44 reference board"
  	select SOC_AR71XX
-@@ -54,6 +137,382 @@ config ATH79_MACH_PB44
+@@ -54,6 +125,382 @@ config ATH79_MACH_PB44
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros PB44 reference board.
  
@@ -576,7 +564,7 @@
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM (rev 1.0) board"
  	select SOC_AR724X
-@@ -67,6 +526,24 @@ config ATH79_MACH_UBNT_XM
+@@ -67,6 +514,24 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -601,7 +589,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -96,10 +573,6 @@ config SOC_AR934X
+@@ -96,10 +561,6 @@ config SOC_AR934X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -612,7 +600,7 @@
  config ATH79_DEV_AP9X_PCI
  	select ATH79_PCI_ATH9K_FIXUP
  	def_bool n
-@@ -110,7 +583,14 @@ config ATH79_DEV_DSA
+@@ -110,7 +571,14 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -628,7 +616,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -135,4 +615,7 @@ config ATH79_NVRAM
+@@ -135,4 +603,7 @@ config ATH79_NVRAM
  config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
