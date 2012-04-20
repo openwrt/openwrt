@@ -8,24 +8,26 @@ SERVICE_WRITE_PID=1
 SERVICE_PID_FILE=/var/run/sysntpd.pid
 
 start() {
-	[ -x $PROG ] || return 1
-
 	local peers
-
-	getpeers() {
-		config_get peers "$1" server
-	}
+	local args="-n"
+	local enable_server
 
 	config_load system
-	config_foreach getpeers timeserver
+	config_get peers ntp server
+	config_get_bool enable_server ntp enable_server 0
+
+	if [ $enable_server -ne 0 ]; then
+		append args "-l"
+	fi
 
 	if [ -n "$peers" ]; then
 		local peer
-		local args="-n"
 		for peer in $peers; do
 			append args "-p $peer"
 		done
+	fi
 
+	if [ "$args" != "-n" ]; then
 		service_start /usr/sbin/ntpd $args
 	fi
 }
