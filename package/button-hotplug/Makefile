@@ -16,6 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/button-hotplug
   SUBMENU:=Other modules
   TITLE:=Button Hotplug driver
+  DEPENDS:=@!LINUX_2_6_30
   FILES:=$(PKG_BUILD_DIR)/button-hotplug.ko
   AUTOLOAD:=$(call AutoLoad,30,button-hotplug)
   KCONFIG:=
