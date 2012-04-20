@@ -21,6 +21,7 @@ define Image/Prepare
 endef
 
 define Image/BuildKernel
+	mkdir -p $(BIN_DIR)
 	mkimage -A arm -T kernel -C none -a 0x20008000 -e 0x20008000 -n linux-2.6 \
 		-d $(LINUX_DIR)/arch/arm/boot/Image $(BIN_DIR)/$(IMG_PREFIX)-uImage
 	if [ $(CONFIG_FLEXIBITY_ROOT) ]; then \
@@ -30,6 +31,7 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1),$(1))
+	mkdir -p $(BIN_DIR)
 	cp $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-root.$(1)
 endef
 
