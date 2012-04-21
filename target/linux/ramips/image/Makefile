@@ -449,6 +449,19 @@ define Image/Build/Profile/Default
 endef
 endif
 
+#
+# RT3662/RT3883 Profiles
+#
+define Image/Build/Profile/RTN56U
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,rt-n56u,RT-N56U,ttyS1,57600,phys)
+endef
+
+ifeq ($(CONFIG_RALINK_RT3883),y)
+define Image/Build/Profile/Default
+	$(call Image/Build/Profile/RTN56U,$(1))
+endef
+endif
+
 define Image/Build/Initramfs
 	$(call Image/Build/Profile/$(PROFILE),initramfs)
 endef
