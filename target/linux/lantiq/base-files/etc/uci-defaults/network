@@ -56,7 +56,7 @@ case "$board" in
 ARV4520PW|GIGASX76X)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "eth0" "1" "1"
-	ucidef_add_switch_vlan "eth0" "1" "1 2 3 4 5t"
+	ucidef_add_switch_vlan "eth0" "1" "3 2 1 0 5t"
 	set_adsl "b" "b2p"
 	;;
 
