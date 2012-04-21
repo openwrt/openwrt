@@ -36,7 +36,7 @@ ubus_call() {
 
 fixup_interface() {
 	local config="$1"
-	local ifname
+	local ifname type
 
 	config_get type "$config" type
 	config_get ifname "$config" ifname
