@@ -81,6 +81,9 @@ get_status_led() {
 	v22rw-2x2)
 		status_led="v22rw-2x2:green:security"
 		;;
+	w306r-v20)
+		status_led="w306r:green:sys"
+		;;
 	w502u)
 		status_led="alfa:blue:wps"
 		;;

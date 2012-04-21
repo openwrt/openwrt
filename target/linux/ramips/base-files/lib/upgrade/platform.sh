@@ -32,6 +32,7 @@ platform_check_image() {
 	rt-n15 | \
 	rt-n56u | \
 	sl-r7205 | \
+	w306r-v20 |\
 	w502u |\
 	wr6202 |\
 	v22rw-2x2 | \
