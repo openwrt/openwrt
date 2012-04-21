@@ -67,8 +67,16 @@ void __init ramips_soc_prom_init(void)
 		(id & CHIP_ID_REV_MASK));
 
 	ramips_mem_base = RT305X_SDRAM_BASE;
-	ramips_mem_size_min = RT305X_MEM_SIZE_MIN;
-	ramips_mem_size_max = RT305X_MEM_SIZE_MAX;
+
+	if (soc_is_rt305x() || soc_is_rt3350()) {
+		ramips_mem_size_min = RT305X_MEM_SIZE_MIN;
+		ramips_mem_size_max = RT305X_MEM_SIZE_MAX;
+	} else if (soc_is_rt3352()) {
+		ramips_mem_size_min = RT3352_MEM_SIZE_MIN;
+		ramips_mem_size_max = RT3352_MEM_SIZE_MAX;
+	} else {
+		BUG();
+	}
 }
 
 static struct ramips_gpio_chip rt305x_gpio_chips[] = {

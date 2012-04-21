@@ -54,6 +54,9 @@ static inline int soc_is_rt3352(void)
 #define RT305X_MEM_SIZE_MIN (2 * 1024 * 1024)
 #define RT305X_MEM_SIZE_MAX (64 * 1024 * 1024)
 
+#define RT3352_MEM_SIZE_MIN (2 * 1024 * 1024)
+#define RT3352_MEM_SIZE_MAX (256 * 1024 * 1024)
+
 #define RT305X_CPU_IRQ_BASE	0
 #define RT305X_INTC_IRQ_BASE	8
 #define RT305X_INTC_IRQ_COUNT	32
