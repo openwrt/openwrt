@@ -29,6 +29,7 @@ obj-$(CONFIG_RT305X_MACH_RT_G32_REVB)	+= mach-rt-g32-revb.o
 obj-$(CONFIG_RT305X_MACH_RT_N10_PLUS)	+= mach-rt-n10-plus.o
 obj-$(CONFIG_RT305X_MACH_SL_R7205)	+= mach-sl-r7205.o
 obj-$(CONFIG_RT305X_MACH_V22RW_2X2)	+= mach-v22rw-2x2.o
+obj-$(CONFIG_RT305X_MACH_W306R_V20) 	+= mach-w306r-v20.o
 obj-$(CONFIG_RT305X_MACH_W502U)		+= mach-w502u.o
 obj-$(CONFIG_RT305X_MACH_WCR150GN)	+= mach-wcr150gn.o
 obj-$(CONFIG_RT305X_MACH_WHR_G300N)	+= mach-whr-g300n.o
