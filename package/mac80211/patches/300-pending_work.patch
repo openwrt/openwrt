@@ -812,3 +812,77 @@
  		!(rx_stats->rs_status &
  		(ATH9K_RXERR_DECRYPT | ATH9K_RXERR_CRC | ATH9K_RXERR_MIC |
  		 ATH9K_RXERR_KEYMISS));
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -1023,6 +1023,10 @@ static int ieee80211_change_station(stru
+ 		}
+ 
+ 		sta->sdata = vlansdata;
++
++		if (sta->sta_state == IEEE80211_STA_AUTHORIZED)
++			atomic_dec(&sta->sdata->u.ap.num_mcast_sta);
++
+ 		ieee80211_send_layer2_update(sta);
+ 	}
+ 
+--- a/net/mac80211/debugfs_netdev.c
++++ b/net/mac80211/debugfs_netdev.c
+@@ -394,7 +394,7 @@ static ssize_t ieee80211_if_parse_uapsd_
+ __IEEE80211_IF_FILE_W(uapsd_max_sp_len);
+ 
+ /* AP attributes */
+-IEEE80211_IF_FILE(num_sta_authorized, u.ap.num_sta_authorized, ATOMIC);
++IEEE80211_IF_FILE(num_mcast_sta, u.ap.num_mcast_sta, ATOMIC);
+ IEEE80211_IF_FILE(num_sta_ps, u.ap.num_sta_ps, ATOMIC);
+ IEEE80211_IF_FILE(dtim_count, u.ap.dtim_count, DEC);
+ 
+@@ -540,7 +540,7 @@ static void add_sta_files(struct ieee802
+ 
+ static void add_ap_files(struct ieee80211_sub_if_data *sdata)
+ {
+-	DEBUGFS_ADD(num_sta_authorized);
++	DEBUGFS_ADD(num_mcast_sta);
+ 	DEBUGFS_ADD(num_sta_ps);
+ 	DEBUGFS_ADD(dtim_count);
+ 	DEBUGFS_ADD(num_buffered_multicast);
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -282,7 +282,7 @@ struct ieee80211_if_ap {
+ 	u8 tim[sizeof(unsigned long) * BITS_TO_LONGS(IEEE80211_MAX_AID + 1)];
+ 	struct sk_buff_head ps_bc_buf;
+ 	atomic_t num_sta_ps; /* number of stations in PS mode */
+-	atomic_t num_sta_authorized; /* number of authorized stations */
++	atomic_t num_mcast_sta; /* number of stations receiving multicast */
+ 	int dtim_count;
+ 	bool dtim_bc_mc;
+ };
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -1418,14 +1418,14 @@ int sta_info_move_state(struct sta_info 
+ 			set_bit(WLAN_STA_ASSOC, &sta->_flags);
+ 		} else if (sta->sta_state == IEEE80211_STA_AUTHORIZED) {
+ 			if (sta->sdata->vif.type == NL80211_IFTYPE_AP)
+-				atomic_dec(&sta->sdata->u.ap.num_sta_authorized);
++				atomic_dec(&sta->sdata->u.ap.num_mcast_sta);
+ 			clear_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
+ 		}
+ 		break;
+ 	case IEEE80211_STA_AUTHORIZED:
+ 		if (sta->sta_state == IEEE80211_STA_ASSOC) {
+ 			if (sta->sdata->vif.type == NL80211_IFTYPE_AP)
+-				atomic_inc(&sta->sdata->u.ap.num_sta_authorized);
++				atomic_inc(&sta->sdata->u.ap.num_mcast_sta);
+ 			set_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
+ 		}
+ 		break;
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -306,7 +306,7 @@ ieee80211_tx_h_check_assoc(struct ieee80
+ 		}
+ 	} else if (unlikely(tx->sdata->vif.type == NL80211_IFTYPE_AP &&
+ 			    ieee80211_is_data(hdr->frame_control) &&
+-			    !atomic_read(&tx->sdata->u.ap.num_sta_authorized))) {
++			    !atomic_read(&tx->sdata->u.ap.num_mcast_sta))) {
+ 		/*
+ 		 * No associated STAs - no need to send multicast
+ 		 * frames.
