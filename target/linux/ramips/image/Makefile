@@ -188,6 +188,10 @@ define BuildFirmware/FONERA20N
 	$(call BuildFirmware/Edimax,$(1),fonera20n,RSDK,NL1T,0x50000,0xc0000)
 endef
 
+define BuildFirmware/FONERA20N/initramfs
+	$(call BuildFirmware/GENERIC_8M/initramfs,$(1),fonera20n,FONERA20N,ttyS1,57600,phys)
+endef
+
 mtdlayout_nw718=192k(u-boot)ro,128k(config)ro,64k(factory)ro,896k(kernel),2816k(rootfs),3712k@0x60000(firmware)
 kernel_size_nw718=917504
 rootfs_size_nw718=2883584
