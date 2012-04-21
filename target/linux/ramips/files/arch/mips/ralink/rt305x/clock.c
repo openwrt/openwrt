@@ -33,20 +33,39 @@ void __init rt305x_clocks_init(void)
 	u32	t;
 
 	t = rt305x_sysc_rr(SYSC_REG_SYSTEM_CONFIG);
-	t = ((t >> RT305X_SYSCFG_CPUCLK_SHIFT) & RT305X_SYSCFG_CPUCLK_MASK);
 
-	switch (t) {
-	case RT305X_SYSCFG_CPUCLK_LOW:
-		rt305x_cpu_clk.rate = 320000000;
-		break;
-	case RT305X_SYSCFG_CPUCLK_HIGH:
-		rt305x_cpu_clk.rate = 384000000;
-		break;
+	if (soc_is_rt305x() || soc_is_rt3350()) {
+		t = (t >> RT305X_SYSCFG_CPUCLK_SHIFT) &
+		     RT305X_SYSCFG_CPUCLK_MASK;
+		switch (t) {
+		case RT305X_SYSCFG_CPUCLK_LOW:
+			rt305x_cpu_clk.rate = 320000000;
+			break;
+		case RT305X_SYSCFG_CPUCLK_HIGH:
+			rt305x_cpu_clk.rate = 384000000;
+			break;
+		}
+		rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 3;
+		rt305x_uart_clk.rate = rt305x_sys_clk.rate;
+		rt305x_wdt_clk.rate = rt305x_sys_clk.rate;
+	} else if (soc_is_rt3352()) {
+		t = (t >> RT3352_SYSCFG0_CPUCLK_SHIFT) &
+		     RT3352_SYSCFG0_CPUCLK_MASK;
+		switch (t) {
+		case RT3352_SYSCFG0_CPUCLK_LOW:
+			rt305x_cpu_clk.rate = 384000000;
+			break;
+		case RT3352_SYSCFG0_CPUCLK_HIGH:
+			rt305x_cpu_clk.rate = 400000000;
+			break;
+		}
+		rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 3;
+		rt305x_uart_clk.rate = rt305x_sys_clk.rate / 10;
+		rt305x_wdt_clk.rate = rt305x_sys_clk.rate;
+	} else {
+		BUG();
 	}
 
-	rt305x_sys_clk.rate = rt305x_cpu_clk.rate / 3;
-	rt305x_uart_clk.rate = rt305x_sys_clk.rate;
-	rt305x_wdt_clk.rate = rt305x_sys_clk.rate;
 }
 
 /*
