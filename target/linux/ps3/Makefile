@@ -11,7 +11,7 @@ BOARD:=ps3
 BOARDNAME:=Sony PS3 Game Console
 MAINTAINER:=Geoff Levand <geoffrey.levand@am.sony.com>
 SUBTARGETS=petitboot
-FEATURES+=powerpc64
+FEATURES:=powerpc64 broken
 
 LINUX_VERSION:=2.6.30.10
 
