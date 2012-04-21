@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=s3c24xx
 BOARDNAME:=Samsung S3C24xx
-FEATURES:=jffs2
+FEATURES:=jffs2 broken
 CFLAGS:=-O2 -pipe -march=armv4t -mtune=arm920t -fno-caller-saves
 SUBTARGETS:=openmoko-gta02
 
