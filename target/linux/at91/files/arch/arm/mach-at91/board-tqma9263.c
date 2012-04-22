@@ -51,7 +51,7 @@ static void __init tqma9263_map_io(void)
 	unsigned pins;
 
 	/* Initialize processor: 18.432 MHz crystal */
-	at91sam9263_initialize(18432000);
+	at91_initialize(18432000);
 
 	/* DGBU on ttyS0. (Rx & Tx only) */
 	at91_register_uart(0, 0, 0);
@@ -75,19 +75,13 @@ static void __init tqma9263_map_io(void)
 }
 
 
-static void __init tqma9263_init_irq(void)
-{
-	at91sam9263_init_interrupts(NULL);
-}
-
-
 /*
  * USB Host port
  */
 static struct at91_usbh_data __initdata tqma9263_usbh_data = {
 	.ports			= 2,
 	.vbus_pin		= { AT91_PIN_PA24, AT91_PIN_PA21 },
-	.vbus_active_high	= 1,
+	.vbus_pin_active_low	= 0,
 };
 
 
@@ -113,7 +107,7 @@ static struct at91_mmc_data __initdata tqma9263_mmc_data = {
 /*
  * MACB Ethernet device
  */
-static struct at91_eth_data __initdata tqma9263_macb_data = {
+static struct macb_platform_data __initdata tqma9263_macb_data = {
 	.phy_irq_pin	= AT91_PIN_PE31,
 	.is_rmii	= 1,
 };
@@ -169,7 +163,6 @@ static struct atmel_nand_data __initdata tqma9263_nand_data = {
 	.cle			= 22,
 	.rdy_pin		= AT91_PIN_PD14,
 	.enable_pin		= AT91_PIN_PD15,
-	.partition_info		= nand_partitions,
 };
 
 static struct sam9_smc_config __initdata tqma9263_nand_smc_config = {
@@ -193,7 +186,7 @@ static struct sam9_smc_config __initdata tqma9263_nand_smc_config = {
 static void __init tqma9263_add_device_nand(void)
 {
 	/* configure chip-select 3 (NAND) */
-	sam9_smc_configure(3, &tqma9263_nand_smc_config);
+	sam9_smc_configure(0, 3, &tqma9263_nand_smc_config);
 
 	at91_add_device_nand(&tqma9263_nand_data);
 }
@@ -219,11 +212,8 @@ static void __init tqma9263_board_init(void)
 
 MACHINE_START(TQMA9263, "TQ Components TQMa9263")
 	/* Maintainer: Michael Heimpold */
-	.phys_io	= AT91_BASE_SYS,
-	.io_pg_offst	= (AT91_VA_BASE_SYS >> 18) & 0xfffc,
-	.boot_params	= AT91_SDRAM_BASE + 0x100,
 	.timer		= &at91sam926x_timer,
 	.map_io		= tqma9263_map_io,
-	.init_irq	= tqma9263_init_irq,
+	.init_irq	= at91_init_irq_default,
 	.init_machine	= tqma9263_board_init,
 MACHINE_END
