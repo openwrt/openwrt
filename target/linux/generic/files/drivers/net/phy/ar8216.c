@@ -738,6 +738,7 @@ ar8327_init_globals(struct ar8216_priv *priv)
 
 	/* forward multicast and broadcast frames to CPU */
 	t = (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_UC_FLOOD_S) |
+	    (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_MC_FLOOD_S) |
 	    (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_BC_FLOOD_S);
 	priv->write(priv, AR8327_REG_FWD_CTRL1, t);
 
