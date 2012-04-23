@@ -814,13 +814,38 @@
  		 ATH9K_RXERR_KEYMISS));
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1023,6 +1023,10 @@ static int ieee80211_change_station(stru
+@@ -1005,6 +1005,9 @@ static int ieee80211_change_station(stru
+ 	}
+ 
+ 	if (params->vlan && params->vlan != sta->sdata->dev) {
++		bool prev_4addr = false;
++		bool new_4addr = false;
++
+ 		vlansdata = IEEE80211_DEV_TO_SUB_IF(params->vlan);
+ 
+ 		if (vlansdata->vif.type != NL80211_IFTYPE_AP_VLAN &&
+@@ -1020,9 +1023,25 @@ static int ieee80211_change_station(stru
+ 			}
+ 
+ 			rcu_assign_pointer(vlansdata->u.vlan.sta, sta);
++			new_4addr = true;
++		}
++
++		if (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
++		    sta->sdata->u.vlan.sta) {
++			rcu_assign_pointer(sta->sdata->u.vlan.sta, NULL);
++			prev_4addr = true;
  		}
  
  		sta->sdata = vlansdata;
 +
-+		if (sta->sta_state == IEEE80211_STA_AUTHORIZED)
-+			atomic_dec(&sta->sdata->u.ap.num_mcast_sta);
++		if (sta->sta_state == IEEE80211_STA_AUTHORIZED &&
++		    prev_4addr != new_4addr) {
++			if (new_4addr)
++				atomic_dec(&sta->sdata->bss->num_mcast_sta);
++			else
++				atomic_inc(&sta->sdata->bss->num_mcast_sta);
++		}
 +
  		ieee80211_send_layer2_update(sta);
  	}
@@ -858,20 +883,27 @@
  };
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -1418,14 +1418,14 @@ int sta_info_move_state(struct sta_info 
+@@ -1417,15 +1417,19 @@ int sta_info_move_state(struct sta_info 
+ 		if (sta->sta_state == IEEE80211_STA_AUTH) {
  			set_bit(WLAN_STA_ASSOC, &sta->_flags);
  		} else if (sta->sta_state == IEEE80211_STA_AUTHORIZED) {
- 			if (sta->sdata->vif.type == NL80211_IFTYPE_AP)
+-			if (sta->sdata->vif.type == NL80211_IFTYPE_AP)
 -				atomic_dec(&sta->sdata->u.ap.num_sta_authorized);
-+				atomic_dec(&sta->sdata->u.ap.num_mcast_sta);
++			if (sta->sdata->vif.type == NL80211_IFTYPE_AP ||
++			    (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
++			     !sta->sdata->u.vlan.sta))
++				atomic_dec(&sta->sdata->bss->num_mcast_sta);
  			clear_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
  		}
  		break;
  	case IEEE80211_STA_AUTHORIZED:
  		if (sta->sta_state == IEEE80211_STA_ASSOC) {
- 			if (sta->sdata->vif.type == NL80211_IFTYPE_AP)
+-			if (sta->sdata->vif.type == NL80211_IFTYPE_AP)
 -				atomic_inc(&sta->sdata->u.ap.num_sta_authorized);
-+				atomic_inc(&sta->sdata->u.ap.num_mcast_sta);
++			if (sta->sdata->vif.type == NL80211_IFTYPE_AP ||
++			    (sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
++			     !sta->sdata->u.vlan.sta))
++				atomic_inc(&sta->sdata->bss->num_mcast_sta);
  			set_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
  		}
  		break;
