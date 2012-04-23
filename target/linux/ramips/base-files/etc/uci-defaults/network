@@ -32,6 +32,10 @@ ramips_setup_interfaces()
 
 	f5d8235-v1 | \
 	f5d8235-v2 | \
+	ur-336un)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		;;
+
 	v11st-fe)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
@@ -110,6 +114,11 @@ ramips_setup_macs()
 		;;
 
 	esr-9753 | \
+	ur-336un)
+		lan_mac=$(ramips_get_mac_binary devdata 16388)
+		wan_mac=$(/usr/sbin/maccalc add "$lan_mac" 1)
+		;;
+
 	nbg-419n | \
 	wcr-150gn)
                 lan_mac=$(ramips_get_mac_binary factory 4)

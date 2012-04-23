@@ -40,6 +40,7 @@ platform_check_image() {
 	wl-330n | \
 	wli-tx4-ag300n | \
 	whr-g300n |\
+	ur-336un |\
 	wr512-3gn)
 		[ "$magic" != "2705" ] && {
 			echo "Invalid image type."
