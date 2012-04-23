@@ -84,12 +84,12 @@ endif
 
 ifneq ($(PLATFORM_DIR),$(PLATFORM_SUBDIR))
   define IncludeProfiles
-    -include $(PLATFORM_DIR)/profiles/*.mk
-    -include $(PLATFORM_SUBDIR)/profiles/*.mk
+    -include $(sort $(wildcard $(PLATFORM_DIR)/profiles/*.mk))
+    -include $(sort $(wildcard $(PLATFORM_SUBDIR)/profiles/*.mk))
   endef
 else
   define IncludeProfiles
-    -include $(PLATFORM_DIR)/profiles/*.mk
+    -include $(sort $(wildcard $(PLATFORM_DIR)/profiles/*.mk))
   endef
 endif
 
