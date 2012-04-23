@@ -12,7 +12,7 @@ PKG_NAME:=kernel
 PKG_FLAGS:=hold
 
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
-SCAN_DEPS=modules/*.mk
+SCAN_DEPS=modules/*.mk $(TOPDIR)/target/linux/*/modules.mk
 
 include $(INCLUDE_DIR)/package.mk
 ifeq ($(DUMP),)
