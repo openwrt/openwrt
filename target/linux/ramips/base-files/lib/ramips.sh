@@ -59,6 +59,9 @@ ramips_board_name() {
 	*"Asus WL-330N")
 		name="wl-330n"
 		;;
+	*"Asus WL-330N3G")
+		name="wl-330n3g"
+		;;
 	*"Aztech HW550-3G")
 		name="hw550-3g"
 		;;
