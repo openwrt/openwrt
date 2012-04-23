@@ -102,6 +102,9 @@ get_status_led() {
 	wr512-3gn)
 		status_led="wr512:green:wps"
 		;;
+	ur-336un)
+		status_led="ur336:green:wps"
+		;;
 	xdxrn502j)
 		status_led="xdxrn502j:green:power"
 		;;

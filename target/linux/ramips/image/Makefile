@@ -412,6 +412,11 @@ define Image/Build/Profile/WR5123GN
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr512-3gn-8M,WR512-3GN,ttyS1,57600,phys)
 endef
 
+
+define Image/Build/Profile/UPVEL
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,ur-336un,UR-336UN,ttyS1,57600,phys)
+endef
+
 define Image/Build/Profile/WR6202
 	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,wr6202,WR6202,ttyS1,115200,phys)
 endef
