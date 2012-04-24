@@ -1,7 +1,5 @@
-Index: linux-2.6.37.6/arch/arm/mach-at91/board-flexibity.c
-===================================================================
---- linux-2.6.37.6.orig/arch/arm/mach-at91/board-flexibity.c	2011-05-07 10:07:03.112684983 +0100
-+++ linux-2.6.37.6/arch/arm/mach-at91/board-flexibity.c	2011-05-07 10:07:33.480684982 +0100
+--- a/arch/arm/mach-at91/board-flexibity.c
++++ b/arch/arm/mach-at91/board-flexibity.c
 @@ -1,7 +1,7 @@
  /*
   * linux/arch/arm/mach-at91/board-flexibity.c
@@ -11,8 +9,8 @@ Index: linux-2.6.37.6/arch/arm/mach-at91/board-flexibity.c
   *  Copyright (C) 2005 SAN People
   *  Copyright (C) 2006 Atmel
   *
-@@ -65,6 +65,13 @@
- 	.pullup_pin	= 0,		/* pull-up driven by UDC */
+@@ -62,6 +62,13 @@ static struct at91_udc_data __initdata f
+ 	.pullup_pin	= -EINVAL,		/* pull-up driven by UDC */
  };
  
 +/* I2C devices */
@@ -25,7 +23,7 @@ Index: linux-2.6.37.6/arch/arm/mach-at91/board-flexibity.c
  /* SPI devices */
  static struct spi_board_info flexibity_spi_devices[] = {
  	{	/* DataFlash chip */
-@@ -143,6 +150,9 @@
+@@ -141,6 +148,9 @@ static void __init flexibity_board_init(
  	at91_add_device_usbh(&flexibity_usbh_data);
  	/* USB Device */
  	at91_add_device_udc(&flexibity_udc_data);
