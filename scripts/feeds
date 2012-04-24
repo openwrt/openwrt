@@ -105,22 +105,27 @@ my %update_method = (
 	'src-svn' => {
 		'init'		=> "svn checkout '%s' '%s'",
 		'update'	=> "svn update",
-		'controldir'	=> ".svn"},
+		'controldir'	=> ".svn",
+		'revision'	=> "svn info | grep 'Revision' | cut -d ' ' -f 2 | tr -d '\n'"},
 	'src-cpy' => {
 		'init'		=> "cp -Rf '%s' '%s'",
-		'update'	=> ""},
+		'update'	=> "",
+		'revision'	=> "echo -n 'local'"},
 	'src-link' => {
 		'init'		=> "ln -s '%s' '%s'",
-		'update'	=> ""},
+		'update'	=> "",
+		'revision'	=> "echo -n 'local'"},
 	'src-git' => {
-		'init'		=> "git clone --depth 1 '%s' '%s'",
-		'init_branch'	=> "git clone --depth 1 --branch '%s' '%s' '%s'",
+		'init'		=> "git clone '%s' '%s'",
+		'init_branch'	=> "git clone --branch '%s' '%s' '%s'",
 		'update'	=> "git pull",
-		'controldir'	=> ".git"},
+		'controldir'	=> ".git",
+		'revision'	=> "git show --abbrev-commit HEAD | head -n 1 | cut -d ' ' -f 2 | tr -d '\n'"},
 	'src-gitsvn' => {
-                'init'          => "git svn clone -r HEAD '%s' '%s'",
-                'update'        => "git svn rebase",
-                'controldir'    => ".git"},
+		'init'	=> "git svn clone -r HEAD '%s' '%s'",
+		'update'	=> "git svn rebase",
+		'controldir'	=> ".git",
+		'revision'	=> "git show --abbrev-commit HEAD | head -n 1 | cut -d ' ' -f 2 | tr -d '\n'"},
 	'src-bzr' => {
 		'init'		=> "bzr checkout --lightweight '%s' '%s'",
 		'update'	=> "bzr update",
@@ -249,14 +254,31 @@ sub list_feed {
 sub list {
 	my %opts;
 
-	getopts('r:sh', \%opts);
+	getopts('r:d:sh', \%opts);
 	if ($opts{h}) {
 		usage();
 		return 0;
 	}
 	if ($opts{s}) {
 		foreach my $feed (@feeds) {
-			printf "\%-32s\tURL: %s\n", $feed->[1], join(", ", @{$feed->[2]});
+			my $localpath = "./feeds/$feed->[1]";
+			my $m = $update_method{$feed->[0]};
+			my $revision;
+			if( !$m->{'revision'} ) {
+				$revision = "X";
+			}
+			elsif( $m->{'controldir'} && -d "$localpath/$m->{'controldir'}" ) {
+				$revision = `cd '$localpath'; $m->{'revision'}`;
+			}
+			else {
+				$revision = "local";
+			}
+			if ($opts{d}) {
+				printf "%s%s%s%s%s%s%s\n", $feed->[1], $opts{d}, $feed->[0], $opts{d}, $revision, $opts{d}, join(", ", @{$feed->[2]});
+			}
+			else {
+				printf "\%-8s \%-8s \%-8s \%s\n", $feed->[1], $feed->[0], $revision, join(", ", @{$feed->[2]});
+			}
 		}
 		return 0;
 	}
@@ -564,10 +586,11 @@ sub usage() {
 Usage: $0 <command> [options]
 
 Commands:
-	list [options]: List feeds and their content
+	list [options]: List feeds, their content and revisions (if installed)
 	Options:
-	    -s :           List of feed names and their URL.
-	    -r <feedname>: List packages of specified feed.
+	    -s :            List of feed names and their URL.
+	    -r <feedname>:  List packages of specified feed.
+	    -d <delimiter>: Use specified delimiter to distinguish rows (default: spaces)
 
 	install [options] <package>: Install a package
 	Options:
