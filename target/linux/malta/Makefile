@@ -13,7 +13,7 @@ SUBTARGETS:=le be
 INITRAMFS_EXTRA_FILES:=
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.3.2
+LINUX_VERSION:=3.3.3
 
 include $(INCLUDE_DIR)/target.mk
 
