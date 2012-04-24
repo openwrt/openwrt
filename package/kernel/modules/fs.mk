@@ -45,7 +45,10 @@ $(eval $(call KernelPackage,fs-btrfs))
 define KernelPackage/fs-cifs
   SUBMENU:=$(FS_MENU)
   TITLE:=CIFS support
-  KCONFIG:=CONFIG_CIFS
+  KCONFIG:= \
+	CONFIG_CIFS \
+	CONFIG_CIFS_DFS_UPCALL=n \
+	CONFIG_CIFS_UPCALL=n
   FILES:=$(LINUX_DIR)/fs/cifs/cifs.ko
   AUTOLOAD:=$(call AutoLoad,30,cifs)
   $(call AddDepends/nls)
@@ -226,7 +229,9 @@ define KernelPackage/fs-nfs
   TITLE:=NFS filesystem support
   DEPENDS:=+kmod-fs-nfs-common
   KCONFIG:= \
-	CONFIG_NFS_FS
+	CONFIG_NFS_FS \
+	CONFIG_NFS_USE_LEGACY_DNS=n \
+	CONFIG_NFS_USE_NEW_IDMAPPER=n
   FILES:= \
 	$(LINUX_DIR)/fs/nfs/nfs.ko
   AUTOLOAD:=$(call AutoLoad,40,nfs)
@@ -277,7 +282,9 @@ define KernelPackage/fs-nfsd
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS kernel server support
   DEPENDS:=+kmod-fs-nfs-common +kmod-fs-exportfs
-  KCONFIG:=CONFIG_NFSD
+  KCONFIG:= \
+	CONFIG_NFSD \
+	CONFIG_NFSD_FAULT_INJECTION=n
   FILES:=$(LINUX_DIR)/fs/nfsd/nfsd.ko
   AUTOLOAD:=$(call AutoLoad,40,nfsd)
 endef
