@@ -7,6 +7,11 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
+ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs
+endif
+
 define Build/Clean
 	$(MAKE) -C lzma-loader clean
 endef
@@ -24,6 +29,11 @@ endef
 define Image/Build
 	./my-mkimage $(KDIR)/loader.bin $(KDIR)/root.squashfs	\
 		$(KDIR)/fs_mark $(BIN_DIR)/$(IMG_PREFIX)-$(1).bin
+endef
+
+define Image/BuildKernel
+	cp $(KDIR)/vmlinux.elf $(VMLINUX).elf
+	cp $(KDIR)/vmlinux $(VMLINUX).bin
 endef
 
 $(eval $(call BuildImage))
