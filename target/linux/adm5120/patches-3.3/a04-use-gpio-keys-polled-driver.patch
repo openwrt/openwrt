@@ -1,0 +1,263 @@
+--- a/arch/mips/adm5120/common/platform.c
++++ b/arch/mips/adm5120/common/platform.c
+@@ -245,31 +245,44 @@ void __init adm5120_add_device_uart(unsi
+ /*
+  * GPIO buttons
+  */
+-#define ADM5120_BUTTON_INTERVAL	20
+-struct gpio_buttons_platform_data adm5120_gpio_buttons_data = {
+-	.poll_interval	= ADM5120_BUTTON_INTERVAL,
+-};
+-
+-struct platform_device adm5120_gpio_buttons_device = {
+-	.name		= "gpio-buttons",
+-	.id		= -1,
+-	.dev.platform_data = &adm5120_gpio_buttons_data,
+-};
+-
+-void __init adm5120_add_device_gpio_buttons(unsigned nbuttons,
+-				    struct gpio_button *buttons)
++void __init adm5120_register_gpio_buttons(int id,
++					  unsigned poll_interval,
++					  unsigned nbuttons,
++					  struct gpio_keys_button *buttons)
+ {
+-	struct gpio_button *p;
++	struct platform_device *pdev;
++	struct gpio_keys_platform_data pdata;
++	struct gpio_keys_button *p;
++	int err;
+ 
+-	p = kmalloc(nbuttons * sizeof(*p), GFP_KERNEL);
++	p = kmemdup(buttons, nbuttons * sizeof(*p), GFP_KERNEL);
+ 	if (!p)
+ 		return;
+ 
+-	memcpy(p, buttons, nbuttons * sizeof(*p));
+-	adm5120_gpio_buttons_data.nbuttons = nbuttons;
+-	adm5120_gpio_buttons_data.buttons = p;
++	pdev = platform_device_alloc("gpio-keys-polled", id);
++	if (!pdev)
++		goto err_free_buttons;
++
++	memset(&pdata, 0, sizeof(pdata));
++	pdata.poll_interval = poll_interval;
++	pdata.nbuttons = nbuttons;
++	pdata.buttons = p;
++
++	err = platform_device_add_data(pdev, &pdata, sizeof(pdata));
++	if (err)
++		goto err_put_pdev;
++
++	err = platform_device_add(pdev);
++	if (err)
++		goto err_put_pdev;
++
++	return;
++
++err_put_pdev:
++	platform_device_put(pdev);
+ 
+-	platform_device_register(&adm5120_gpio_buttons_device);
++err_free_buttons:
++	kfree(p);
+ }
+ 
+ /*
+--- a/arch/mips/include/asm/mach-adm5120/adm5120_platform.h
++++ b/arch/mips/include/asm/mach-adm5120/adm5120_platform.h
+@@ -20,7 +20,8 @@
+ #include <linux/mtd/map.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/nand.h>
+-#include <linux/gpio_buttons.h>
++#include <linux/input.h>
++#include <linux/gpio_keys.h>
+ #include <linux/amba/bus.h>
+ #include <linux/amba/serial.h>
+ 
+@@ -66,8 +67,10 @@ extern void adm5120_add_device_uart(unsi
+ extern void adm5120_add_device_nand(struct platform_nand_data *pdata) __init;
+ extern void adm5120_add_device_switch(unsigned num_ports, u8 *vlan_map) __init;
+ extern void adm5120_add_device_gpio(u32 disable_mask) __init;
+-extern void adm5120_add_device_gpio_buttons(unsigned nbuttons,
+-					struct gpio_button *buttons) __init;
++extern void adm5120_register_gpio_buttons(int id,
++					  unsigned poll_interval,
++					  unsigned nbuttons,
++					  struct gpio_keys_button *buttons);
+ 
+ #define GPIO_LED_DEF(g, n, t, a) {	\
+ 	.name = (n),			\
+--- a/arch/mips/adm5120/compex/wp54.c
++++ b/arch/mips/adm5120/compex/wp54.c
+@@ -11,6 +11,9 @@
+ 
+ #include "compex.h"
+ 
++#define WP54_KEYS_POLL_INTERVAL		20
++#define WP54_KEYS_DEBOUNCE_INTERVAL	(3 * WP54_KEYS_POLL_INTERVAL)
++
+ static struct mtd_partition wp54g_wrt_partitions[] = {
+ 	{
+ 		.name	= "cfe",
+@@ -32,12 +35,12 @@ static struct adm5120_pci_irq wp54_pci_i
+ 	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
+ };
+ 
+-static struct gpio_button wp54_gpio_buttons[] __initdata = {
++static struct gpio_keys_button wp54_gpio_buttons[] __initdata = {
+ 	{
+ 		.desc		= "reset_button",
+ 		.type		= EV_KEY,
+-		.code		= BTN_0,
+-		.threshold	= 5,
++		.code           = KEY_RESTART,
++		.debounce_interval = WP54_KEYS_DEBOUNCE_INTERVAL,
+ 		.gpio		= ADM5120_GPIO_PIN4,
+ 	}
+ };
+@@ -69,8 +72,9 @@ static void __init wp54_setup(void)
+ 	adm5120_board_reset = wp54_reset;
+ 
+ 	adm5120_add_device_switch(2, wp54_vlans);
+-	adm5120_add_device_gpio_buttons(ARRAY_SIZE(wp54_gpio_buttons),
+-					wp54_gpio_buttons);
++	adm5120_register_gpio_buttons(-1, WP54_KEYS_POLL_INTERVAL,
++				      ARRAY_SIZE(wp54_gpio_buttons),
++				      wp54_gpio_buttons);
+ 	adm5120_add_device_gpio_leds(ARRAY_SIZE(wp54_gpio_leds),
+ 					wp54_gpio_leds);
+ 
+--- a/arch/mips/adm5120/mikrotik/rb-1xx.c
++++ b/arch/mips/adm5120/mikrotik/rb-1xx.c
+@@ -19,6 +19,9 @@
+ 
+ #define RB1XX_NAND_CHIP_DELAY	25
+ 
++#define RB1XX_KEYS_POLL_INTERVAL	20
++#define RB1XX_KEYS_DEBOUNCE_INTERVAL	(3 * RB1XX_KEYS_POLL_INTERVAL)
++
+ static struct adm5120_pci_irq rb1xx_pci_irqs[] __initdata = {
+ 	PCIIRQ(1, 0, 1, ADM5120_IRQ_PCI0),
+ 	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI1),
+@@ -85,12 +88,12 @@ struct platform_nand_data rb1xx_nand_dat
+ 	},
+ };
+ 
+-struct gpio_button rb1xx_gpio_buttons[] __initdata = {
++struct gpio_keys_button rb1xx_gpio_buttons[] __initdata = {
+ 	{
+ 		.desc		= "reset_button",
+ 		.type		= EV_KEY,
+-		.code		= BTN_0,
+-		.threshold	= 5,
++		.code           = KEY_RESTART,
++		.debounce_interval = RB1XX_KEYS_DEBOUNCE_INTERVAL,
+ 		.gpio		= ADM5120_GPIO_PIN7,
+ 	}
+ };
+@@ -138,8 +141,9 @@ void __init rb1xx_generic_setup(void)
+ 	adm5120_add_device_uart(0);
+ 	adm5120_add_device_uart(1);
+ 
+-	adm5120_add_device_gpio_buttons(ARRAY_SIZE(rb1xx_gpio_buttons),
+-					rb1xx_gpio_buttons);
++	adm5120_register_gpio_buttons(-1, RB1XX_KEYS_POLL_INTERVAL,
++				      ARRAY_SIZE(rb1xx_gpio_buttons),
++				      rb1xx_gpio_buttons);
+ 
+ 	rb1xx_add_device_flash();
+ 	rb1xx_mac_setup();
+--- a/arch/mips/adm5120/generic/eb-214a.c
++++ b/arch/mips/adm5120/generic/eb-214a.c
+@@ -28,6 +28,9 @@
+ #define EB214A_GPIO_DEV_MASK	0
+ #define EB214A_CONFIG_OFFSET	0x4000
+ 
++#define EB214A_KEYS_POLL_INTERVAL	20
++#define EB214A_KEYS_DEBOUNCE_INTERVAL	(3 * EB214A_KEYS_POLL_INTERVAL)
++
+ static struct mtd_partition eb214a_partitions[] = {
+ 	{
+ 		.name	= "bootloader",
+@@ -60,12 +63,12 @@ static struct gpio_led eb214a_gpio_leds[
+ 	GPIO_LED_INV(ADM5120_GPIO_P3L0, "usb4",		NULL),
+ };
+ 
+-static struct gpio_button eb214a_gpio_buttons[] __initdata = {
++static struct gpio_keys_button eb214a_gpio_buttons[] __initdata = {
+ 	{
+ 		.desc		= "reset",
+ 		.type		= EV_KEY,
+-		.code		= BTN_0,
+-		.threshold	= 5,
++		.code           = KEY_RESTART,
++		.debounce_interval = EB214A_KEYS_DEBOUNCE_INTERVAL,
+ 		.gpio		= ADM5120_GPIO_PIN1,
+ 	}
+ };
+@@ -105,8 +108,9 @@ static void __init eb214a_setup(void)
+ 
+ 	eb214a_mac_setup();
+ 
+-	adm5120_add_device_gpio_buttons(ARRAY_SIZE(eb214a_gpio_buttons),
+-					eb214a_gpio_buttons);
++	adm5120_register_gpio_buttons(-1, EB214A_KEYS_POLL_INTERVAL,
++				      ARRAY_SIZE(eb214a_gpio_buttons),
++				      eb214a_gpio_buttons);
+ 
+ 	adm5120_add_device_gpio_leds(ARRAY_SIZE(eb214a_gpio_leds),
+ 					eb214a_gpio_leds);
+--- a/arch/mips/adm5120/edimax/br-61xx.c
++++ b/arch/mips/adm5120/edimax/br-61xx.c
+@@ -18,6 +18,9 @@
+ #define BR61XX_CONFIG_OFFSET	0x8000
+ #define BR61XX_CONFIG_SIZE		0x1000
+ 
++#define BR61XX_KEYS_POLL_INTERVAL	20
++#define BR61XX_KEYS_DEBOUNCE_INTERVAL	(3 * BR61XX_KEYS_POLL_INTERVAL)
++
+ static struct mtd_partition br61xx_partitions[] = {
+ 	{
+ 		.name	= "admboot",
+@@ -35,12 +38,12 @@ static struct mtd_partition br61xx_parti
+ 	}
+ };
+ 
+-static struct gpio_button br61xx_gpio_buttons[] __initdata = {
++static struct gpio_keys_button br61xx_gpio_buttons[] __initdata = {
+ 	{
+ 		.desc		= "reset_button",
+ 		.type		= EV_KEY,
+-		.code		= BTN_0,
+-		.threshold	= 5,
++		.code           = KEY_RESTART,
++		.debounce_interval = BR61XX_KEYS_DEBOUNCE_INTERVAL,
+ 		.gpio		= ADM5120_GPIO_PIN2,
+ 	}
+ };
+@@ -76,8 +79,10 @@ void __init br61xx_generic_setup(void)
+ 	adm5120_add_device_uart(1);
+ 
+ 	adm5120_add_device_switch(5, br61xx_vlans);
+-	adm5120_add_device_gpio_buttons(ARRAY_SIZE(br61xx_gpio_buttons),
+-					br61xx_gpio_buttons);
++
++	adm5120_register_gpio_buttons(-1, BR61XX_KEYS_POLL_INTERVAL,
++				      ARRAY_SIZE(br61xx_gpio_buttons),
++				      br61xx_gpio_buttons);
+ 
+ 	br61xx_mac_setup();
+ }
+--- a/arch/mips/adm5120/mikrotik/rb-1xx.h
++++ b/arch/mips/adm5120/mikrotik/rb-1xx.h
+@@ -26,7 +26,7 @@
+ #include <prom/routerboot.h>
+ 
+ extern struct platform_nand_data rb1xx_nand_data __initdata;
+-extern struct gpio_button rb1xx_gpio_buttons[] __initdata;
++extern struct gpio_keys_button rb1xx_gpio_buttons[] __initdata;
+ 
+ extern void rb1xx_add_device_flash(void) __init;
+ extern void rb1xx_add_device_nand(void) __init;
