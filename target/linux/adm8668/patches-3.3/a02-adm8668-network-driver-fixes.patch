@@ -1,0 +1,51 @@
+--- a/arch/mips/adm8668/net_core.c
++++ b/arch/mips/adm8668/net_core.c
+@@ -133,7 +133,7 @@ tulip_open(struct net_device *dev)
+ 
+ 	tulip_init_ring (dev);
+ 
+-	retval = request_irq(dev->irq, tulip_interrupt, IRQF_SHARED, dev->name, dev);
++	retval = request_irq(dev->irq, tulip_interrupt, 0, dev->name, dev);
+ 	if (retval)
+ 		goto free_ring;
+ 
+@@ -469,7 +469,7 @@ static const struct net_device_ops tulip
+ 	.ndo_tx_timeout		= tulip_tx_timeout,
+ 	.ndo_stop		= tulip_close,
+ 	.ndo_get_stats		= tulip_get_stats,
+-	.ndo_set_multicast_list = set_rx_mode,
++	.ndo_set_rx_mode	= set_rx_mode,
+ 	.ndo_change_mtu		= eth_change_mtu,
+ 	.ndo_set_mac_address	= eth_mac_addr,
+ 	.ndo_validate_addr	= eth_validate_addr,
+@@ -509,6 +509,7 @@ static int __devinit adm8668net_probe(st
+ 	tp->dev = dev;
+ 	tp->base_addr = ioaddr;
+ 	tp->csr0 = csr0;
++	tp->pdev = pdev;
+ 	tp->rx_ring = dma_alloc_coherent(&pdev->dev,
+ 				sizeof(struct tulip_rx_desc) * RX_RING_SIZE +
+ 				sizeof(struct tulip_tx_desc) * TX_RING_SIZE,
+--- a/arch/mips/adm8668/net.h
++++ b/arch/mips/adm8668/net.h
+@@ -12,6 +12,7 @@
+ #define __NET_TULIP_H__
+ 
+ #include <linux/module.h>
++#include <linux/export.h>
+ #include <linux/slab.h>
+ #include <linux/init.h>
+ #include <linux/mii.h>
+@@ -25,10 +26,10 @@
+ #include <linux/delay.h>
+ #include <linux/etherdevice.h>
+ #include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/interrupt.h>
+ #include <asm/unaligned.h>
+ #include <asm/uaccess.h>
+-#include <asm/io.h>
+-#include <asm/irq.h>
+ 
+ /* undefine, or define to various debugging levels (>4 == obscene levels) */
+ #define TULIP_DEBUG 1
