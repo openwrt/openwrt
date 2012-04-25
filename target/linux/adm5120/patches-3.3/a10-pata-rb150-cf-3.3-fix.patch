@@ -1,0 +1,33 @@
+--- a/drivers/ata/pata_rb153_cf.c
++++ b/drivers/ata/pata_rb153_cf.c
+@@ -56,7 +56,7 @@ static inline void rb153_pata_finish_io(
+ 	ata_sff_dma_pause(ap);
+ 	ndelay(RB153_CF_IO_DELAY);
+ 
+-	set_irq_type(info->irq, IRQ_TYPE_LEVEL_HIGH);
++	irq_set_irq_type(info->irq, IRQ_TYPE_LEVEL_HIGH);
+ }
+ 
+ static void rb153_pata_exec_command(struct ata_port *ap,
+@@ -107,11 +107,11 @@ static irqreturn_t rb153_pata_irq_handle
+ 	struct rb153_cf_info *info = ah->private_data;
+ 
+ 	if (gpio_get_value(info->gpio_line)) {
+-		set_irq_type(info->irq, IRQ_TYPE_LEVEL_LOW);
++		irq_set_irq_type(info->irq, IRQ_TYPE_LEVEL_LOW);
+ 		if (!info->frozen)
+ 			ata_sff_interrupt(irq, dev_instance);
+ 	} else {
+-		set_irq_type(info->irq, IRQ_TYPE_LEVEL_HIGH);
++		irq_set_irq_type(info->irq, IRQ_TYPE_LEVEL_HIGH);
+ 	}
+ 
+ 	return IRQ_HANDLED;
+@@ -138,7 +138,6 @@ static void rb153_pata_setup_port(struct
+ 
+ 	ap->ops		= &rb153_pata_port_ops;
+ 	ap->pio_mask	= 0x1f; /* PIO4 */
+-	ap->flags	= ATA_FLAG_NO_LEGACY | ATA_FLAG_MMIO;
+ 
+ 	ap->ioaddr.cmd_addr	= info->iobase + RB153_CF_REG_CMD;
+ 	ap->ioaddr.ctl_addr	= info->iobase + RB153_CF_REG_CTRL;
