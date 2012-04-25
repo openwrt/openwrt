@@ -83,6 +83,7 @@
 #define AR7240_MIB_AT_HALF_EN		BIT(16)
 #define AR7240_MIB_BUSY			BIT(17)
 #define AR7240_MIB_FUNC_S		24
+#define AR7240_MIB_FUNC_M		BITM(3)
 #define AR7240_MIB_FUNC_NO_OP		0x0
 #define AR7240_MIB_FUNC_FLUSH		0x1
 #define AR7240_MIB_FUNC_CAPTURE		0x3
@@ -217,6 +218,8 @@
 #define   AR934X_AT_CTRL_AGE_TIME	BITS(0, 15)
 #define   AR934X_AT_CTRL_AGE_EN		BIT(17)
 #define   AR934X_AT_CTRL_LEARN_CHANGE	BIT(18)
+
+#define AR934X_MIB_ENABLE		BIT(30)
 
 #define AR934X_REG_PORT_BASE(_port)	(0x100 + (_port) * 0x100)
 
@@ -517,8 +520,9 @@ static int ar7240sw_capture_stats(struct ar7240sw *as)
 	write_lock(&as->stats_lock);
 
 	/* Capture the hardware statistics for all ports */
-	ar7240sw_reg_write(mii, AR7240_REG_MIB_FUNCTION0,
-			   (AR7240_MIB_FUNC_CAPTURE << AR7240_MIB_FUNC_S));
+	ar7240sw_reg_rmw(mii, AR7240_REG_MIB_FUNCTION0,
+			 (AR7240_MIB_FUNC_M << AR7240_MIB_FUNC_S),
+			 (AR7240_MIB_FUNC_CAPTURE << AR7240_MIB_FUNC_S));
 
 	/* Wait for the capturing to complete. */
 	ret = ar7240sw_reg_wait(mii, AR7240_REG_MIB_FUNCTION0,
@@ -579,6 +583,11 @@ static void ar7240sw_setup(struct ar7240sw *as)
 		/* Enable Broadcast frames transmitted to the CPU */
 		ar7240sw_reg_set(mii, AR934X_REG_FLOOD_MASK,
 				 AR934X_FLOOD_MASK_BC_DP(0));
+
+		/* Enable MIB counters */
+		ar7240sw_reg_set(mii, AR7240_REG_MIB_FUNCTION0,
+				 AR934X_MIB_ENABLE);
+
 	} else {
 		/* Enable ARP frame acknowledge, aging, MAC replacing */
 		ar7240sw_reg_write(mii, AR7240_REG_AT_CTRL,
