@@ -896,7 +896,15 @@ define KernelPackage/serial-8250
 	CONFIG_SERIAL_8250_SHARE_IRQ=y \
 	CONFIG_SERIAL_8250_DETECT_IRQ=n \
 	CONFIG_SERIAL_8250_RSA=n
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.3)),1)
+  FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250.ko
+else
+ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.38)),1)
   FILES:=$(LINUX_DIR)/drivers/tty/serial/8250.ko
+ else
+  FILES:=$(LINUX_DIR)/drivers/serial/8250.ko
+ endif
+endif
 endef
 
 define KernelPackage/serial-8250/description
