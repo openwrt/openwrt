@@ -1,6 +1,8 @@
 PKG_INSTALL:=1
 
-MAKE_FLAGS+=VERBOSE=1
+ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
+  MAKE_FLAGS+=VERBOSE=1
+endif
 
 ifeq ($(CONFIG_CCACHE),)
  ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
