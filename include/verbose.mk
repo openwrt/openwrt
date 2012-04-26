@@ -20,7 +20,7 @@ ifeq ($(OPENWRT_VERBOSE),99)
 endif
 
 ifeq ($(NO_TRACE_MAKE),)
-NO_TRACE_MAKE := $(MAKE) V=$(subst w,s,$(OPENWRT_VERBOSE))
+NO_TRACE_MAKE := $(MAKE) V=s$(OPENWRT_VERBOSE)
 export NO_TRACE_MAKE
 endif
 
