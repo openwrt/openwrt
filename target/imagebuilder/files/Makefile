@@ -10,7 +10,7 @@ TOPDIR:=${CURDIR}
 LC_ALL:=C
 LANG:=C
 export TOPDIR LC_ALL LANG
-export KBUILD_VERBOSE=99
+export OPENWRT_VERBOSE=s
 all: help
 
 include $(TOPDIR)/include/host.mk
