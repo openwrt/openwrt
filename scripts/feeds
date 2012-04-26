@@ -540,7 +540,7 @@ sub update {
 	my $perform_update=1;
 
 	$ENV{SCAN_COOKIE} = $$;
-	$ENV{KBUILD_VERBOSE} = 99;
+	$ENV{OPENWRT_VERBOSE} = 's';
 
 	getopts('ahi', \%opts);
 
