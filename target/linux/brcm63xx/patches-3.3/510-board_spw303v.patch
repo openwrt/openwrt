@@ -58,7 +58,7 @@
 +			.gpio		= 11,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.threshold	= 3,
++			.debounce_interval = 60,
 +		},
 +		{
 +			.desc		= "ses",
@@ -66,7 +66,7 @@
 +			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_WPS_BUTTON,
-+			.threshold	= 3,
++			.debounce_interval = 60,
 +		},
 +	}
 +};
