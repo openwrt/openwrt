@@ -139,11 +139,13 @@ static void gpio_set_irqenable(int enabled, irqreturn_t (*handler)(int, void *))
 	case BCM47XX_BUS_TYPE_SSB:
 		if (bcm47xx_bus.ssb.chipco.dev)
 			__ssb_write32_masked(bcm47xx_bus.ssb.chipco.dev, SSB_CHIPCO_IRQMASK, SSB_CHIPCO_IRQ_GPIO, (enabled ? SSB_CHIPCO_IRQ_GPIO : 0));
+		break;
 #endif
 #ifdef CONFIG_BCM47XX_BCMA
 	case BCM47XX_BUS_TYPE_BCMA:
 		if (bcm47xx_bus.bcma.bus.drv_cc.core)
 			__bcma_write32_masked(bcm47xx_bus.bcma.bus.drv_cc.core, BCMA_CC_IRQMASK, BCMA_CC_IRQ_GPIO, (enabled ? BCMA_CC_IRQ_GPIO : 0));
+		break;
 #endif
 	}
 }
