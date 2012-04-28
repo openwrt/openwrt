@@ -142,17 +142,12 @@ choice
 		bool "Use eglibc"
 		depends !avr32
 	
-	config USE_GLIBC
-		bool "Use glibc"
-		depends !avr32
-	
 	config USE_UCLIBC
 		bool "Use uClibc"
 
 endchoice
 
 source "toolchain/eglibc/Config.in"
-source "toolchain/glibc/Config.in"
 source "toolchain/uClibc/Config.in"
 
 comment "Debuggers"
@@ -185,24 +180,21 @@ config USE_EXTERNAL_LIBC
 source "toolchain/gcc/Config.version"
 
 source "toolchain/eglibc/Config.version"
-source "toolchain/glibc/Config.version"
 source "toolchain/uClibc/Config.version"
 
 config LIBC
 	string
 	default "eglibc"  if USE_EGLIBC
-	default "glibc"   if USE_GLIBC
 	default "uClibc"  if USE_UCLIBC
 
 config LIBC_VERSION
 	string
 	default EGLIBC_VERSION  if USE_EGLIBC
-	default GLIBC_VERSION   if USE_GLIBC
 	default UCLIBC_VERSION  if USE_UCLIBC
 
 config TARGET_SUFFIX
 	string
-	default "gnueabi"         if (USE_EGLIBC || USE_GLIBC) && (arm || armeb)
-	default "gnu"             if (USE_EGLIBC || USE_GLIBC) && !(arm || armeb)
+	default "gnueabi"         if (USE_EGLIBC) && (arm || armeb)
+	default "gnu"             if (USE_EGLIBC) && !(arm || armeb)
 	default "uclibcgnueabi"   if USE_UCLIBC && (arm || armeb)
 	default "uclibc"          if USE_UCLIBC && !(arm || armeb)
