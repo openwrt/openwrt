@@ -516,8 +516,8 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   use_libnsl=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NIS),libnsl)
   use_nsswitch=$(if $(CONFIG_USE_GLIBC)$(CONFIG_EGLIBC_OPTION_EGLIBC_NSSWITCH),libnss_dns libnss_files)
 
-  define Package/glibc/install
-	$(CP) ./glibc-files/* $(1)/
+  define Package/eglibc/install
+	$(CP) ./eglibc-files/* $(1)/
 	rm -f $(1)/etc/localtime
 	ln -sf /tmp/localtime $(1)/etc/localtime
 	$(INSTALL_DIR) $(1)/lib
@@ -532,10 +532,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 			fi; \
 		done; \
 	done
-  endef
-
-  define Package/eglibc/install
-    $(call Package/glibc/install,$1)
   endef
 
   define Package/uClibc/install
