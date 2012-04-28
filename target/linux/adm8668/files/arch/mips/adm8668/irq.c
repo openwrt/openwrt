@@ -20,11 +20,20 @@
 #include <asm/irq.h>
 #include <adm8668.h>
 
+static void adm8668_irq_cascade(void)
+{
+	int i;
+	unsigned long intsrc;
 
-void enable_adm8668_irq(unsigned int irq);
-void disable_adm8668_irq(unsigned int irq);
-void adm8668_irq_cascade(void);
+	intsrc = ADM8668_INTC_REG(IRQ_STATUS_REG) & IRQ_MASK;
+	for (i = 0; intsrc; intsrc >>= 1, i++)
+		if (intsrc & 0x1)
+			do_IRQ(i);
+}
 
+/*
+ * System irq dispatch
+ */
 void plat_irq_dispatch(void)
 {
 	unsigned int pending;
@@ -39,63 +48,37 @@ void plat_irq_dispatch(void)
 }
 
 /*
- * System irq dispatch
- */
-void adm8668_irq_cascade()
-{
-	int i;
-	unsigned long intsrc;
-
-	intsrc = ADM8668_INTC_REG(IRQ_STATUS_REG) & IRQ_MASK;
-	for (i = 0; intsrc; intsrc >>= 1, i++)
-		if (intsrc & 0x1)
-			do_IRQ(i);
-}
-
-/*
- * irq enable
- */
-static __inline void _irq_enable(int irql)
-{
-	ADM8668_INTC_REG(IRQ_ENABLE_REG) = (1 << irql);
-}
-
-
-/*
- * irq disable
- */
-static __inline void _irq_disable(int irql)
-{
-	ADM8668_INTC_REG(IRQ_DISABLE_REG) = (1 << irql);
-}
-
-
-/*
  * enable 8668 irq
  */
-void enable_adm8668_irq(unsigned int irq)
+static void enable_adm8668_irq(struct irq_data *d)
 {
+	int irq = d->irq;
+
 	if ((irq < 0) || (irq > NR_IRQS))
 		return;
 
-	_irq_enable(irq);
+	ADM8668_INTC_REG(IRQ_ENABLE_REG) = (1 << irq);
 }
 
 
 /*
  * disable 8668 irq
  */
-void disable_adm8668_irq(unsigned int irq)
+static void disable_adm8668_irq(struct irq_data *d)
 {
+	int irq = d->irq;
+
 	if ((irq < 0) || (irq > NR_IRQS))
 		return;
 
-	_irq_disable(irq);
+	ADM8668_INTC_REG(IRQ_DISABLE_REG) = (1 << irq);
 }
 
-static inline void ack_adm8668_irq(unsigned int irq_nr)
+static void ack_adm8668_irq(struct irq_data *d)
 {
-	ADM8668_INTC_REG(IRQ_DISABLE_REG) = (1 << irq_nr);
+	int irq = d->irq;
+
+	ADM8668_INTC_REG(IRQ_DISABLE_REG) = (1 << irq);
 }
 
 /*
@@ -104,20 +87,20 @@ static inline void ack_adm8668_irq(unsigned int irq_nr)
 
 static struct irq_chip adm8668_irq_type = {
 	.name = "adm8668",
-	.ack = ack_adm8668_irq,
-	.mask = disable_adm8668_irq,
-	.unmask = enable_adm8668_irq
+	.irq_ack = ack_adm8668_irq,
+	.irq_mask = disable_adm8668_irq,
+	.irq_unmask = enable_adm8668_irq
 };
 
 /*
  * irq init
  */
-void __init init_adm8668_irqs(void)
+static void __init init_adm8668_irqs(void)
 {
 	int i;
 
 	for (i = 0; i <= INT_LVL_MAX; i++)
-		set_irq_chip_and_handler(i, &adm8668_irq_type,
+		irq_set_chip_and_handler(i, &adm8668_irq_type,
 			handle_level_irq);
 
 	/* hw0 is where our interrupts are uh.. interrupted at. */

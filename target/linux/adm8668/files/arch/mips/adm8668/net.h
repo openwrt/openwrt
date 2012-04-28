@@ -12,6 +12,7 @@
 #define __NET_TULIP_H__
 
 #include <linux/module.h>
+#include <linux/export.h>
 #include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/mii.h>
@@ -25,10 +26,10 @@
 #include <linux/delay.h>
 #include <linux/etherdevice.h>
 #include <linux/platform_device.h>
+#include <linux/io.h>
+#include <linux/interrupt.h>
 #include <asm/unaligned.h>
 #include <asm/uaccess.h>
-#include <asm/io.h>
-#include <asm/irq.h>
 
 /* undefine, or define to various debugging levels (>4 == obscene levels) */
 #define TULIP_DEBUG 1

@@ -133,7 +133,7 @@ tulip_open(struct net_device *dev)
 
 	tulip_init_ring (dev);
 
-	retval = request_irq(dev->irq, tulip_interrupt, IRQF_SHARED, dev->name, dev);
+	retval = request_irq(dev->irq, tulip_interrupt, 0, dev->name, dev);
 	if (retval)
 		goto free_ring;
 
@@ -469,7 +469,7 @@ static const struct net_device_ops tulip_netdev_ops = {
 	.ndo_tx_timeout		= tulip_tx_timeout,
 	.ndo_stop		= tulip_close,
 	.ndo_get_stats		= tulip_get_stats,
-	.ndo_set_multicast_list = set_rx_mode,
+	.ndo_set_rx_mode	= set_rx_mode,
 	.ndo_change_mtu		= eth_change_mtu,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_validate_addr	= eth_validate_addr,
@@ -509,6 +509,7 @@ static int __devinit adm8668net_probe(struct platform_device *pdev)
 	tp->dev = dev;
 	tp->base_addr = ioaddr;
 	tp->csr0 = csr0;
+	tp->pdev = pdev;
 	tp->rx_ring = dma_alloc_coherent(&pdev->dev,
 				sizeof(struct tulip_rx_desc) * RX_RING_SIZE +
 				sizeof(struct tulip_tx_desc) * TX_RING_SIZE,
