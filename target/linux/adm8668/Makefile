@@ -12,7 +12,7 @@ BOARDNAME:=Infineon WildPass ADM8668
 FEATURES:=squashfs
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=2.6.36.4
+LINUX_VERSION:=3.3.3
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += wpad-mini kmod-rt61-pci
