@@ -47,9 +47,7 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/map.h>
 #include <linux/slab.h>
-#ifdef CONFIG_MTD_PARTITIONS
 #include <linux/mtd/partitions.h>
-#endif
 #include <linux/crc32.h>
 #include <linux/magic.h>
 #include <asm/io.h>
@@ -93,8 +91,6 @@ struct map_info adm8668_map = {
 	phys: WINDOW_ADDR,
 	bankwidth: BANKWIDTH,
 };
-
-#ifdef CONFIG_MTD_PARTITIONS
 
 /*
  * Copied from mtdblock.c
@@ -238,7 +234,12 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		return NR_PARTS;
 
 	if (be32_to_cpu(uhdr.ih_size) != (linux_len - sizeof(uhdr))) {
-		unsigned char *block, *data = (unsigned char *)(WINDOW_ADDR | (adm8668_parts[PART_LINUX].offset + sizeof(struct uboot_header)) | 0xA0000000);
+		unsigned char *block, *data;
+		unsigned int offset;
+
+		offset = adm8668_parts[PART_LINUX].offset +
+			 sizeof(struct uboot_header);
+		data = (unsigned char *)(WINDOW_ADDR | 0xA0000000 | offset);
 
 		printk(KERN_NOTICE "Updating U-boot image:\n");
 		printk(KERN_NOTICE "  old: [size: %8d crc32: 0x%08x]\n",
@@ -279,16 +280,11 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	return NR_PARTS;
 }
 
-#endif
-
-
 int __init init_adm8668_map(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
 	int nr_parts, ret;
-#endif
 
-	adm8668_map.virt = (unsigned long)ioremap(WINDOW_ADDR, WINDOW_SIZE);
+	adm8668_map.virt = ioremap(WINDOW_ADDR, WINDOW_SIZE);
 
 	if (!adm8668_map.virt) {
 		printk(KERN_ERR "Failed to ioremap\n");
@@ -304,14 +300,12 @@ int __init init_adm8668_map(void)
 
 	adm8668_mtd->owner = THIS_MODULE;
 
-#ifdef CONFIG_MTD_PARTITIONS
 	nr_parts = init_mtd_partitions(adm8668_mtd, adm8668_mtd->size);
-	ret = add_mtd_partitions(adm8668_mtd, adm8668_parts, nr_parts);
+	ret = mtd_device_register(adm8668_mtd, adm8668_parts, nr_parts);
 	if (ret) {
-		printk(KERN_ERR "Flash: add_mtd_partitions failed\n");
+		printk(KERN_ERR "Flash: mtd_device_register failed\n");
 		goto fail;
 	}
-#endif
 
 	return 0;
 
@@ -326,9 +320,7 @@ int __init init_adm8668_map(void)
 
 void __exit cleanup_adm8668_map(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
-	del_mtd_partitions(adm8668_mtd);
-#endif
+	mtd_device_unregister(adm8668_mtd);
 	map_destroy(adm8668_mtd);
 	iounmap((void *) adm8668_map.virt);
 	adm8668_map.virt = 0;
