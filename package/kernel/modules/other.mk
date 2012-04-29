@@ -828,6 +828,20 @@ endef
 
 $(eval $(call KernelPackage,rtc-pcf2123))
 
+define KernelPackage/rtc-pt7c4338
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Pericom PT7C4338 RTC support
+  $(call AddDepends/rtc,+kmod-i2c-core)
+  KCONFIG:=CONFIG_RTC_DRV_PT7C4338
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pt7c4338.ko
+  AUTOLOAD:=$(call AutoLoad,60,rtc-pt7c4338)
+endef
+
+define KernelPackage/rtc-pt7c4338/description
+ Kernel module for Pericom PT7C4338 i2c RTC chip.
+endef
+
+$(eval $(call KernelPackage,rtc-pt7c4338))
 
 define KernelPackage/n810bm
   SUBMENU:=$(OTHER_MENU)
