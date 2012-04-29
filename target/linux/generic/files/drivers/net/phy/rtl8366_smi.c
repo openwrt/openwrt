@@ -1277,6 +1277,10 @@ int rtl8366_smi_init(struct rtl8366_smi *smi)
 		goto err_free_sck;
 	}
 
+	err = smi->ops->reset_chip(smi);
+	if (err)
+		goto err_free_sck;
+
 	err = smi->ops->setup(smi);
 	if (err) {
 		dev_err(smi->parent, "chip setup failed, err=%d\n", err);
