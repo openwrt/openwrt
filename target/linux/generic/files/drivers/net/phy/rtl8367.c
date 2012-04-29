@@ -1637,14 +1637,7 @@ static int rtl8367_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 
 static int rtl8367_setup(struct rtl8366_smi *smi)
 {
-	int ret;
-
-	ret = rtl8367_reset_chip(smi);
-	if (ret)
-		return ret;
-
-	ret = rtl8367_hw_init(smi);
-	return ret;
+	return rtl8367_hw_init(smi);
 }
 
 static int rtl8367_detect(struct rtl8366_smi *smi)
@@ -1686,6 +1679,7 @@ static int rtl8367_detect(struct rtl8366_smi *smi)
 
 static struct rtl8366_smi_ops rtl8367_smi_ops = {
 	.detect		= rtl8367_detect,
+	.reset_chip	= rtl8367_reset_chip,
 	.setup		= rtl8367_setup,
 
 	.mii_read	= rtl8367_mii_read,
