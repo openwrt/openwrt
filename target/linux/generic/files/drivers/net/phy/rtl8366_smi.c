@@ -933,6 +933,31 @@ static void rtl8366_smi_mii_cleanup(struct rtl8366_smi *smi)
 	mdiobus_free(smi->mii_bus);
 }
 
+int rtl8366_sw_reset_switch(struct switch_dev *dev)
+{
+	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
+	int err;
+
+	err = smi->ops->reset_chip(smi);
+	if (err)
+		return err;
+
+	err = smi->ops->setup(smi);
+	if (err)
+		return err;
+
+	err = rtl8366_reset_vlan(smi);
+	if (err)
+		return err;
+
+	err = rtl8366_enable_vlan(smi, 1);
+	if (err)
+		return err;
+
+	return rtl8366_enable_all_ports(smi, 1);
+}
+EXPORT_SYMBOL_GPL(rtl8366_sw_reset_switch);
+
 int rtl8366_sw_get_port_pvid(struct switch_dev *dev, int port, int *val)
 {
 	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
