@@ -21,7 +21,7 @@
 +/*
 + * Some Macronix chips has no/bad bootblock information in the CFI table
 + */
-+static void fixup_macronix_bootloc(struct mtd_info *mtd, void* param)
++static void fixup_macronix_bootloc(struct mtd_info *mtd)
 +{
 +	struct map_info *map = mtd->priv;
 +	struct cfi_private *cfi = map->fldrv_priv;
@@ -60,7 +60,7 @@
  	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_erase_chip },
  	{ CFI_MFR_ATMEL, AT49BV6416, fixup_use_atmel_lock },
 +#ifdef CONFIG_MTD_CFI_FIXUP_MACRONIX_BOOTLOC
-+	{ CFI_MFR_MACRONIX, CFI_ID_ANY, fixup_macronix_bootloc, NULL, },
++	{ CFI_MFR_MACRONIX, CFI_ID_ANY, fixup_macronix_bootloc },
 +#endif
  	{ 0, 0, NULL }
  };
