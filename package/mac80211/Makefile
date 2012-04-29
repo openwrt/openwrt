@@ -475,7 +475,7 @@ define KernelPackage/lib80211
 	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_wep.ko \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_ccmp.ko \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_tkip.ko
-  AUTOLOAD:=$(call AutoLoad,10, \
+  AUTOLOAD:=$(call AutoLoad,21, \
 	lib80211 \
 	lib80211_crypt_wep \
 	lib80211_crypt_ccmp \
