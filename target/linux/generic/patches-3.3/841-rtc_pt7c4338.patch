@@ -1,8 +1,6 @@
-Index: linux-3.3/drivers/rtc/Kconfig
-===================================================================
---- linux-3.3.orig/drivers/rtc/Kconfig	2012-03-20 07:52:18.838582040 +0100
-+++ linux-3.3/drivers/rtc/Kconfig	2012-03-20 07:52:19.228579409 +0100
-@@ -379,6 +379,15 @@
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -379,6 +379,15 @@ config RTC_DRV_RV3029C2
  	  This driver can also be built as a module. If so, the module
  	  will be called rtc-rv3029c2.
  
@@ -18,11 +16,9 @@ Index: linux-3.3/drivers/rtc/Kconfig
  endif # I2C
  
  comment "SPI RTC drivers"
-Index: linux-3.3/drivers/rtc/Makefile
-===================================================================
---- linux-3.3.orig/drivers/rtc/Makefile	2012-03-20 07:52:18.838582040 +0100
-+++ linux-3.3/drivers/rtc/Makefile	2012-03-20 07:52:19.228579409 +0100
-@@ -79,6 +79,7 @@
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -79,6 +79,7 @@ obj-$(CONFIG_RTC_DRV_PL030)	+= rtc-pl030
  obj-$(CONFIG_RTC_DRV_PL031)	+= rtc-pl031.o
  obj-$(CONFIG_RTC_DRV_PM8XXX)	+= rtc-pm8xxx.o
  obj-$(CONFIG_RTC_DRV_PS3)	+= rtc-ps3.o
@@ -30,10 +26,8 @@ Index: linux-3.3/drivers/rtc/Makefile
  obj-$(CONFIG_RTC_DRV_PUV3)	+= rtc-puv3.o
  obj-$(CONFIG_RTC_DRV_PXA)	+= rtc-pxa.o
  obj-$(CONFIG_RTC_DRV_R9701)	+= rtc-r9701.o
-Index: linux-3.3/drivers/rtc/rtc-pt7c4338.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.3/drivers/rtc/rtc-pt7c4338.c	2012-03-20 07:52:19.228579409 +0100
+--- /dev/null
++++ b/drivers/rtc/rtc-pt7c4338.c
 @@ -0,0 +1,216 @@
 +/*
 + * Copyright 2010 Freescale Semiconductor, Inc.
