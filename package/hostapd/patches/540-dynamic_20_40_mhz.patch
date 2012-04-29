@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1951,6 +1951,10 @@ static int hostapd_config_fill(struct ho
+@@ -1957,6 +1957,10 @@ static int hostapd_config_fill(struct ho
  					   "ht_capab", line);
  				errors++;
  			}
@@ -31,7 +31,7 @@
  #include "ieee802_11_auth.h"
  #include "vlan_init.h"
  #include "wpa_auth.h"
-@@ -306,6 +307,7 @@ static void hostapd_cleanup_iface_pre(st
+@@ -307,6 +308,7 @@ static void hostapd_cleanup_iface_pre(st
  
  static void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
  {

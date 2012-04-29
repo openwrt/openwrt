@@ -10,7 +10,7 @@
  /* hostapd.c */
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -851,6 +851,9 @@ int hostapd_setup_interface_complete(str
+@@ -852,6 +852,9 @@ int hostapd_setup_interface_complete(str
  	wpa_printf(MSG_DEBUG, "%s: Setup of interface done.",
  		   iface->bss[0]->conf->iface);
  
@@ -117,7 +117,7 @@
  	if (log_file)
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1941,6 +1941,8 @@ static int hostapd_config_fill(struct ho
+@@ -1947,6 +1947,8 @@ static int hostapd_config_fill(struct ho
  			}
  #endif /* CONFIG_IEEE80211W */
  #ifdef CONFIG_IEEE80211N
@@ -138,7 +138,7 @@
  	int require_ht;
 --- a/src/ap/hw_features.c
 +++ b/src/ap/hw_features.c
-@@ -451,7 +451,7 @@ static int ieee80211n_check_40mhz(struct
+@@ -491,7 +491,7 @@ static int ieee80211n_check_40mhz(struct
  {
  	struct wpa_driver_scan_params params;
  

@@ -58,7 +58,7 @@
  				   "STA " MACSTR " (aid %u)",
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -2588,10 +2588,10 @@ static int wpa_driver_nl80211_capa(struc
+@@ -2601,10 +2601,10 @@ static int wpa_driver_nl80211_capa(struc
  	drv->data_tx_status = info.data_tx_status;
  
  	/*
@@ -72,7 +72,7 @@
  
  	if (drv->device_ap_sme && drv->use_monitor) {
  		/*
-@@ -6267,8 +6267,8 @@ static int wpa_driver_nl80211_hapd_send_
+@@ -6286,8 +6286,8 @@ static int wpa_driver_nl80211_hapd_send_
  	pos = (u8 *) (hdr + 1);
  
  	if (qos) {
@@ -83,7 +83,7 @@
  		pos[1] = 0;
  		pos += 2;
  	}
-@@ -7533,6 +7533,10 @@ static int i802_set_wds_sta(void *priv, 
+@@ -7564,6 +7564,10 @@ static int i802_set_wds_sta(void *priv, 
  		linux_set_iface_flags(drv->global->ioctl_sock, name, 1);
  		return i802_set_sta_vlan(priv, addr, name, 0);
  	} else {
@@ -94,7 +94,7 @@
  		i802_set_sta_vlan(priv, addr, bss->ifname, 0);
  		return wpa_driver_nl80211_if_remove(priv, WPA_IF_AP_VLAN,
  						    name);
-@@ -7900,7 +7904,12 @@ static int wpa_driver_nl80211_if_remove(
+@@ -7931,7 +7935,12 @@ static int wpa_driver_nl80211_if_remove(
  	if (ifindex <= 0)
  		return -1;
  
@@ -107,7 +107,7 @@
  	if (bss->added_if_into_bridge) {
  		if (linux_br_del_if(drv->global->ioctl_sock, bss->brname,
  				    bss->ifname) < 0)
-@@ -7914,13 +7923,6 @@ static int wpa_driver_nl80211_if_remove(
+@@ -7945,13 +7954,6 @@ static int wpa_driver_nl80211_if_remove(
  				   "bridge %s: %s",
  				   bss->brname, strerror(errno));
  	}
