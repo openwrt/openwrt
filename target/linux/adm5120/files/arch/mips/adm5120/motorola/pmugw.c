@@ -26,7 +26,6 @@
 #define PMUGW_CONFIG_OFFSET	0x10000
 #define PMUGW_CONFIG_SIZE	0x1000
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition pmugw_partitions[] = {
 	{
 		.name	= "admboot",
@@ -43,7 +42,6 @@ static struct mtd_partition pmugw_partitions[] = {
 		.size	= MTDPART_SIZ_FULL,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static u8 pmugw_vlans[6] __initdata = {
 	0x41, 0x42, 0x44, 0x48, 0x50, 0x00
@@ -82,10 +80,8 @@ void __init pmugw_setup(void)
 	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
 
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(pmugw_partitions);
 	adm5120_flash0_data.parts = pmugw_partitions;
-#endif /* CONFIG_MTD_PARTITIONS */
 
 	adm5120_add_device_uart(1); /* ttyS0 */
 	adm5120_add_device_uart(0); /* ttyS1 */

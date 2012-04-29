@@ -19,7 +19,6 @@
 #define CELLVISION_CONFIG_OFFSET	0x8000
 #define CELLVISION_CONFIG_SIZE		0x1000
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition cas6xx_partitions[] = {
 	{
 		.name	= "admboot",
@@ -65,7 +64,6 @@ static struct mtd_partition cas7xx_partitions[] = {
 		.size	= MTDPART_SIZ_FULL,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static void switch_bank_gpio5(unsigned bank)
 {
@@ -105,20 +103,16 @@ void __init cellvision_mac_setup(void)
 
 void __init cas6xx_flash_setup(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(cas6xx_partitions);
 	adm5120_flash0_data.parts = cas6xx_partitions;
-#endif /* CONFIG_MTD_PARTITIONS */
 
 	cellvision_flash_setup();
 }
 
 void __init cas7xx_flash_setup(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(cas7xx_partitions);
 	adm5120_flash0_data.parts = cas7xx_partitions;
-#endif /* CONFIG_MTD_PARTITIONS */
 
 	cellvision_flash_setup();
 }

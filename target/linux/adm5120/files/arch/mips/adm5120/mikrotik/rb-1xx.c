@@ -19,13 +19,15 @@
 
 #define RB1XX_NAND_CHIP_DELAY	25
 
+#define RB1XX_KEYS_POLL_INTERVAL	20
+#define RB1XX_KEYS_DEBOUNCE_INTERVAL	(3 * RB1XX_KEYS_POLL_INTERVAL)
+
 static struct adm5120_pci_irq rb1xx_pci_irqs[] __initdata = {
 	PCIIRQ(1, 0, 1, ADM5120_IRQ_PCI0),
 	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI1),
 	PCIIRQ(3, 0, 1, ADM5120_IRQ_PCI2)
 };
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition rb1xx_nor_parts[] = {
 	{
 		.name	= "booter",
@@ -50,7 +52,6 @@ static struct mtd_partition rb1xx_nand_parts[] = {
 		.size	= MTDPART_SIZ_FULL
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 /*
  * We need to use the OLD Yaffs-1 OOB layout, otherwise the RB bootloader
@@ -79,22 +80,20 @@ static int rb1xx_nand_fixup(struct mtd_info *mtd)
 struct platform_nand_data rb1xx_nand_data __initdata = {
 	.chip = {
 		.nr_chips	= 1,
-#ifdef CONFIG_MTD_PARTITIONS
 		.nr_partitions	= ARRAY_SIZE(rb1xx_nand_parts),
 		.partitions	= rb1xx_nand_parts,
-#endif /* CONFIG_MTD_PARTITIONS */
 		.chip_delay	= RB1XX_NAND_CHIP_DELAY,
 		.options	= NAND_NO_AUTOINCR,
 		.chip_fixup	= rb1xx_nand_fixup,
 	},
 };
 
-struct gpio_button rb1xx_gpio_buttons[] __initdata = {
+struct gpio_keys_button rb1xx_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset_button",
 		.type		= EV_KEY,
-		.code		= BTN_0,
-		.threshold	= 5,
+		.code           = KEY_RESTART,
+		.debounce_interval = RB1XX_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= ADM5120_GPIO_PIN7,
 	}
 };
@@ -114,10 +113,8 @@ static void __init rb1xx_mac_setup(void)
 void __init rb1xx_add_device_flash(void)
 {
 	/* setup data for flash0 device */
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(rb1xx_nor_parts);
 	adm5120_flash0_data.parts = rb1xx_nor_parts;
-#endif /* CONFIG_MTD_PARTITIONS */
 	adm5120_flash0_data.window_size = 128*1024;
 
 	adm5120_add_device_flash(0);
@@ -144,8 +141,9 @@ void __init rb1xx_generic_setup(void)
 	adm5120_add_device_uart(0);
 	adm5120_add_device_uart(1);
 
-	adm5120_add_device_gpio_buttons(ARRAY_SIZE(rb1xx_gpio_buttons),
-					rb1xx_gpio_buttons);
+	adm5120_register_gpio_buttons(-1, RB1XX_KEYS_POLL_INTERVAL,
+				      ARRAY_SIZE(rb1xx_gpio_buttons),
+				      rb1xx_gpio_buttons);
 
 	rb1xx_add_device_flash();
 	rb1xx_mac_setup();

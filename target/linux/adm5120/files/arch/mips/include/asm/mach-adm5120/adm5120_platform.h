@@ -20,7 +20,8 @@
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/nand.h>
-#include <linux/gpio_buttons.h>
+#include <linux/input.h>
+#include <linux/gpio_keys.h>
 #include <linux/amba/bus.h>
 #include <linux/amba/serial.h>
 
@@ -28,10 +29,8 @@ struct adm5120_flash_platform_data {
 	void			(*set_vpp)(struct map_info *, int);
 	void			(*switch_bank)(unsigned);
 	u32			window_size;
-#ifdef CONFIG_MTD_PARTITIONS
 	unsigned int		nr_parts;
 	struct mtd_partition	*parts;
-#endif
 };
 
 struct adm5120_switch_platform_data {
@@ -68,8 +67,10 @@ extern void adm5120_add_device_uart(unsigned id) __init;
 extern void adm5120_add_device_nand(struct platform_nand_data *pdata) __init;
 extern void adm5120_add_device_switch(unsigned num_ports, u8 *vlan_map) __init;
 extern void adm5120_add_device_gpio(u32 disable_mask) __init;
-extern void adm5120_add_device_gpio_buttons(unsigned nbuttons,
-					struct gpio_button *buttons) __init;
+extern void adm5120_register_gpio_buttons(int id,
+					  unsigned poll_interval,
+					  unsigned nbuttons,
+					  struct gpio_keys_button *buttons);
 
 #define GPIO_LED_DEF(g, n, t, a) {	\
 	.name = (n),			\

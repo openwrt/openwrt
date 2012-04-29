@@ -401,25 +401,28 @@ static const struct file_operations debug_async_fops = {
 	.open		= debug_async_open,
 	.read		= debug_output,
 	.release	= debug_close,
+	.llseek		= default_llseek,
 };
 static const struct file_operations debug_periodic_fops = {
 	.owner		= THIS_MODULE,
 	.open		= debug_periodic_open,
 	.read		= debug_output,
 	.release	= debug_close,
+	.llseek		= default_llseek,
 };
 static const struct file_operations debug_registers_fops = {
 	.owner		= THIS_MODULE,
 	.open		= debug_registers_open,
 	.read		= debug_output,
 	.release	= debug_close,
+	.llseek		= default_llseek,
 };
 
 static struct dentry *admhc_debug_root;
 
 struct debug_buffer {
 	ssize_t (*fill_func)(struct debug_buffer *);    /* fill method */
-	struct device *dev;
+	struct admhcd *ahcd;
 	struct mutex mutex;     /* protect filling of buffer */
 	size_t count;           /* number of characters filled into buffer */
 	char *page;
@@ -494,15 +497,11 @@ show_list(struct admhcd *ahcd, char *buf, size_t count, struct ed *ed)
 
 static ssize_t fill_async_buffer(struct debug_buffer *buf)
 {
-	struct usb_bus		*bus;
-	struct usb_hcd		*hcd;
 	struct admhcd		*ahcd;
 	size_t			temp;
 	unsigned long		flags;
 
-	bus = dev_get_drvdata(buf->dev);
-	hcd = bus_to_hcd(bus);
-	ahcd = hcd_to_admhcd(hcd);
+	ahcd = buf->ahcd;
 
 	spin_lock_irqsave(&ahcd->lock, flags);
 	temp = show_list(ahcd, buf->page, PAGE_SIZE, ahcd->ed_head);
@@ -516,8 +515,6 @@ static ssize_t fill_async_buffer(struct debug_buffer *buf)
 
 static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 {
-	struct usb_bus		*bus;
-	struct usb_hcd		*hcd;
 	struct admhcd		*ahcd;
 	struct ed		**seen, *ed;
 	unsigned long		flags;
@@ -530,9 +527,7 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 		return 0;
 	seen_count = 0;
 
-	bus = dev_get_drvdata(buf->dev);
-	hcd = bus_to_hcd(bus);
-	ahcd = hcd_to_admhcd(hcd);
+	ahcd = buf->ahcd;
 	next = buf->page;
 	size = PAGE_SIZE;
 
@@ -615,7 +610,6 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 
 static ssize_t fill_registers_buffer(struct debug_buffer *buf)
 {
-	struct usb_bus		*bus;
 	struct usb_hcd		*hcd;
 	struct admhcd		*ahcd;
 	struct admhcd_regs __iomem *regs;
@@ -624,9 +618,8 @@ static ssize_t fill_registers_buffer(struct debug_buffer *buf)
 	char			*next;
 	u32			rdata;
 
-	bus = dev_get_drvdata(buf->dev);
-	hcd = bus_to_hcd(bus);
-	ahcd = hcd_to_admhcd(hcd);
+	ahcd = buf->ahcd;
+	hcd = admhc_to_hcd(ahcd);
 	regs = ahcd->regs;
 	next = buf->page;
 	size = PAGE_SIZE;
@@ -638,13 +631,13 @@ static ssize_t fill_registers_buffer(struct debug_buffer *buf)
 	admhc_dbg_sw(ahcd, &next, &size,
 		"bus %s, device %s\n"
 		"%s\n"
-		"%s version " DRIVER_VERSION "\n",
+		"%s\n",
 		hcd->self.controller->bus->name,
 		dev_name(hcd->self.controller),
 		hcd->product_desc,
 		hcd_name);
 
-	if (bus->controller->power.power_state.event) {
+	if (!HCD_HW_ACCESSIBLE(hcd)) {
 		size -= scnprintf(next, size,
 			"SUSPENDED (no register access)\n");
 		goto done;
@@ -691,7 +684,7 @@ done:
 }
 
 
-static struct debug_buffer *alloc_buffer(struct device *dev,
+static struct debug_buffer *alloc_buffer(struct admhcd *ahcd,
 				ssize_t (*fill_func)(struct debug_buffer *))
 {
 	struct debug_buffer *buf;
@@ -699,7 +692,7 @@ static struct debug_buffer *alloc_buffer(struct device *dev,
 	buf = kzalloc(sizeof(struct debug_buffer), GFP_KERNEL);
 
 	if (buf) {
-		buf->dev = dev;
+		buf->ahcd = ahcd;
 		buf->fill_func = fill_func;
 		mutex_init(&buf->mutex);
 	}
@@ -792,26 +785,25 @@ static int debug_registers_open(struct inode *inode, struct file *file)
 static inline void create_debug_files(struct admhcd *ahcd)
 {
 	struct usb_bus *bus = &admhcd_to_hcd(ahcd)->self;
-	struct device *dev = bus->dev;
 
 	ahcd->debug_dir = debugfs_create_dir(bus->bus_name, admhc_debug_root);
 	if (!ahcd->debug_dir)
 		goto dir_error;
 
 	ahcd->debug_async = debugfs_create_file("async", S_IRUGO,
-						ahcd->debug_dir, dev,
+						ahcd->debug_dir, ahcd,
 						&debug_async_fops);
 	if (!ahcd->debug_async)
 		goto async_error;
 
 	ahcd->debug_periodic = debugfs_create_file("periodic", S_IRUGO,
-						ahcd->debug_dir, dev,
+						ahcd->debug_dir, ahcd,
 						&debug_periodic_fops);
 	if (!ahcd->debug_periodic)
 		goto periodic_error;
 
 	ahcd->debug_registers = debugfs_create_file("registers", S_IRUGO,
-						ahcd->debug_dir, dev,
+						ahcd->debug_dir, ahcd,
 						&debug_registers_fops);
 	if (!ahcd->debug_registers)
 		goto registers_error;

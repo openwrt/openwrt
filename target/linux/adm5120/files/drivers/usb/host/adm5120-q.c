@@ -14,6 +14,7 @@
  */
 
 #include <linux/irq.h>
+#include <linux/slab.h>
 
 /*-------------------------------------------------------------------------*/
 
@@ -300,7 +301,7 @@ static struct ed *ed_get(struct admhcd *ahcd,	struct usb_host_endpoint *ep,
 		u32		info;
 
 		/* FIXME: usbcore changes dev->devnum before SET_ADDRESS
-		 * suceeds ... otherwise we wouldn't need "pipe".
+		 * succeeds ... otherwise we wouldn't need "pipe".
 		 */
 		info = usb_pipedevice(pipe);
 		info |= (ep->desc.bEndpointAddress & ~USB_DIR_IN) << ED_EN_SHIFT;
@@ -634,8 +635,7 @@ static int td_done(struct admhcd *ahcd, struct urb *urb, struct td *td)
 
 /*-------------------------------------------------------------------------*/
 
-static inline void
-ed_halted(struct admhcd *ahcd, struct td *td, int cc, struct td *rev)
+static void ed_halted(struct admhcd *ahcd, struct td *td, int cc)
 {
 	struct urb		*urb = td->urb;
 	struct urb_priv		*urb_priv = urb->hcpriv;
@@ -764,6 +764,7 @@ rescan_this:
 			struct urb	*urb;
 			struct urb_priv	*urb_priv;
 			__hc32		savebits;
+			u32		tdINFO;
 			int		status;
 
 			td = list_entry(entry, struct td, td_list);
@@ -781,6 +782,16 @@ rescan_this:
 			/* patch pointer hc uses */
 			savebits = *prev & ~cpu_to_hc32(ahcd, TD_MASK);
 			*prev = td->hwNextTD | savebits;
+			/* If this was unlinked, the TD may not have been
+			 * retired ... so manually save dhe data toggle.
+			 * The controller ignores the value we save for
+			 * control and ISO endpoints.
+			 */
+			tdINFO = hc32_to_cpup(ahcd, &td->hwINFO);
+			if ((tdINFO & TD_T) == TD_T_DATA0)
+				ed->hwHeadP &= ~cpu_to_hc32(ahcd, ED_C);
+			else if ((tdINFO & TD_T) == TD_T_DATA1)
+				ed->hwHeadP |= cpu_to_hc32(ahcd, ED_C);
 
 			/* HC may have partly processed this TD */
 #ifdef ADMHC_VERBOSE_DEBUG
@@ -816,13 +827,12 @@ rescan_this:
 }
 
 /*-------------------------------------------------------------------------*/
-
 /*
  * Process normal completions (error or success) and clean the schedules.
  *
  * This is the main path for handing urbs back to drivers.  The only other
- * path is finish_unlinks(), which unlinks URBs using ed_rm_list, instead of
- * scanning the (re-reversed) donelist as this does.
+ * normal path is finish_unlinks(), which unlinks URBs using ed_rm_list,
+ * instead of scanning the (re-reversed) donelist as this does.
  */
 
 static void ed_unhalt(struct admhcd *ahcd, struct ed *ed, struct urb *urb)

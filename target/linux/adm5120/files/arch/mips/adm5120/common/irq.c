@@ -23,9 +23,9 @@
 
 #include <asm/mach-adm5120/adm5120_defs.h>
 
-static void adm5120_intc_irq_unmask(unsigned int irq);
-static void adm5120_intc_irq_mask(unsigned int irq);
-static int  adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type);
+static void adm5120_intc_irq_unmask(struct irq_data *d);
+static void adm5120_intc_irq_mask(struct irq_data *d);
+static int  adm5120_intc_irq_set_type(struct irq_data *d, unsigned int flow_type);
 
 static inline void intc_write_reg(unsigned int reg, u32 val)
 {
@@ -43,10 +43,10 @@ static inline u32 intc_read_reg(unsigned int reg)
 
 static struct irq_chip adm5120_intc_irq_chip = {
 	.name		= "INTC",
-	.unmask		= adm5120_intc_irq_unmask,
-	.mask		= adm5120_intc_irq_mask,
-	.mask_ack	= adm5120_intc_irq_mask,
-	.set_type	= adm5120_intc_irq_set_type
+	.irq_unmask	= adm5120_intc_irq_unmask,
+	.irq_mask	= adm5120_intc_irq_mask,
+	.irq_mask_ack	= adm5120_intc_irq_mask,
+	.irq_set_type	= adm5120_intc_irq_set_type
 };
 
 static struct irqaction adm5120_intc_irq_action = {
@@ -54,20 +54,19 @@ static struct irqaction adm5120_intc_irq_action = {
 	.name		= "cascade [INTC]"
 };
 
-static void adm5120_intc_irq_unmask(unsigned int irq)
+static void adm5120_intc_irq_unmask(struct irq_data *d)
 {
-	irq -= ADM5120_INTC_IRQ_BASE;
-	intc_write_reg(INTC_REG_IRQ_ENABLE, 1 << irq);
+	intc_write_reg(INTC_REG_IRQ_ENABLE, 1 << (d->irq - ADM5120_INTC_IRQ_BASE));
 }
 
-static void adm5120_intc_irq_mask(unsigned int irq)
+static void adm5120_intc_irq_mask(struct irq_data *d)
 {
-	irq -= ADM5120_INTC_IRQ_BASE;
-	intc_write_reg(INTC_REG_IRQ_DISABLE, 1 << irq);
+	intc_write_reg(INTC_REG_IRQ_DISABLE, 1 << (d->irq - ADM5120_INTC_IRQ_BASE));
 }
 
-static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
+static int adm5120_intc_irq_set_type(struct irq_data *d, unsigned int flow_type)
 {
+	unsigned int irq = d->irq;
 	unsigned int sense;
 	unsigned long mode;
 	int err = 0;
@@ -105,10 +104,6 @@ static int adm5120_intc_irq_set_type(unsigned int irq, unsigned int flow_type)
 			mode &= ~(1 << (irq - ADM5120_INTC_IRQ_BASE));
 
 		intc_write_reg(INTC_REG_INT_MODE, mode);
-		/* fallthrough */
-	default:
-		irq_desc[irq].status &= ~IRQ_TYPE_SENSE_MASK;
-		irq_desc[irq].status |= sense;
 		break;
 	}
 
@@ -162,8 +157,7 @@ static void __init adm5120_intc_irq_init(void)
 	for (i = ADM5120_INTC_IRQ_BASE;
 		i <= ADM5120_INTC_IRQ_BASE + INTC_IRQ_LAST;
 		i++) {
-		irq_desc[i].status = INTC_IRQ_STATUS;
-		set_irq_chip_and_handler(i, &adm5120_intc_irq_chip,
+		irq_set_chip_and_handler(i, &adm5120_intc_irq_chip,
 			handle_level_irq);
 	}
 

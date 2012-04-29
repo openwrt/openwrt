@@ -16,7 +16,6 @@
 #define P33X_GPIO_FLASH_A20	ADM5120_GPIO_PIN5
 #define P33X_GPIO_DEV_MASK	(1 << P33X_GPIO_FLASH_A20)
 
-#ifdef CONFIG_MTD_PARTITIONS
 static struct mtd_partition p33x_partitions[] = {
 	{
 		.name	= "bootbase",
@@ -46,7 +45,6 @@ static struct mtd_partition p33x_partitions[] = {
 		.size	= MTDPART_SIZ_FULL,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct adm5120_pci_irq p33x_pci_irqs[] __initdata = {
 	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
@@ -75,10 +73,8 @@ void __init p33x_generic_setup(void)
 	gpio_request(P33X_GPIO_FLASH_A20, NULL); /* for flash A20 line */
 	gpio_direction_output(P33X_GPIO_FLASH_A20, 0);
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(p33x_partitions);
 	adm5120_flash0_data.parts = p33x_partitions;
-#endif /* CONFIG_MTD_PARTITIONS */
 	adm5120_add_device_flash(0);
 
 	adm5120_add_device_uart(0);

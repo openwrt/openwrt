@@ -9,7 +9,7 @@
  *   (C) Copyright 2002 Hewlett-Packard Company
  *
  *   Written by Christopher Hoover <ch@hpl.hp.com>
- *   Based on fragments of previous driver by Rusell King et al.
+ *   Based on fragments of previous driver by Russell King et al.
  *
  *   Modified for LH7A404 from ahcd-sa1111.c
  *    by Durgesh Pattamatta <pattamattad@sharpsec.com>
@@ -81,7 +81,7 @@ static int admhc_adm5120_probe(const struct hc_driver *driver,
 
 	admhc_hcd_init(hcd_to_admhcd(hcd));
 
-	retval = usb_add_hcd(hcd, irq, IRQF_DISABLED);
+	retval = usb_add_hcd(hcd, irq, 0);
 	if (retval)
 		goto err_io;
 
@@ -109,10 +109,7 @@ static void admhc_adm5120_remove(struct usb_hcd *hcd,
 	usb_put_hcd(hcd);
 }
 
-/*-------------------------------------------------------------------------*/
-
-static int __devinit
-admhc_adm5120_start(struct usb_hcd *hcd)
+static int __devinit admhc_adm5120_start(struct usb_hcd *hcd)
 {
 	struct admhcd	*ahcd = hcd_to_admhcd(hcd);
 	int		ret;
@@ -136,8 +133,6 @@ err_stop:
 err:
 	return ret;
 }
-
-/*-------------------------------------------------------------------------*/
 
 static const struct hc_driver adm5120_hc_driver = {
 	.description =		hcd_name,
@@ -180,8 +175,6 @@ static const struct hc_driver adm5120_hc_driver = {
 #endif
 	.start_port_reset =	admhc_start_port_reset,
 };
-
-/*-------------------------------------------------------------------------*/
 
 static int usb_hcd_adm5120_probe(struct platform_device *pdev)
 {

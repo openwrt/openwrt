@@ -32,9 +32,9 @@
 #include <linux/list.h>
 #include <linux/usb.h>
 #include <linux/usb/otg.h>
+#include <linux/usb/hcd.h>
 #include <linux/dma-mapping.h>
 #include <linux/dmapool.h>
-#include <linux/reboot.h>
 #include <linux/debugfs.h>
 #include <linux/io.h>
 
@@ -42,9 +42,6 @@
 #include <asm/system.h>
 #include <asm/unaligned.h>
 #include <asm/byteorder.h>
-
-#include "../core/hcd.h"
-#include "../core/hub.h"
 
 #define DRIVER_VERSION	"0.27.0"
 #define DRIVER_AUTHOR	"Gabor Juhos <juhosg@openwrt.org>"
@@ -117,7 +114,7 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct urb *urb,
 		td_cnt = 2;
 		/* FALLTHROUGH */
 	case PIPE_BULK:
-		/* one TD for every 4096 Bytes (can be upto 8K) */
+		/* one TD for every 4096 Bytes (can be up to 8K) */
 		td_cnt += urb->transfer_buffer_length / TD_DATALEN_MAX;
 		/* ... and for any remaining bytes ... */
 		if ((urb->transfer_buffer_length % TD_DATALEN_MAX) != 0)
@@ -153,7 +150,7 @@ static int admhc_urb_enqueue(struct usb_hcd *hcd, struct urb *urb,
 
 	spin_lock_irqsave(&ahcd->lock, flags);
 	/* don't submit to a dead HC */
-	if (!test_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags)) {
+	if (!HCD_HW_ACCESSIBLE(hcd)) {
 		ret = -ENODEV;
 		goto fail;
 	}
@@ -321,7 +318,6 @@ sanitize:
 	ep->hcpriv = NULL;
 
 	spin_unlock_irqrestore(&ahcd->lock, flags);
-	return;
 }
 
 static int admhc_get_frame_number(struct usb_hcd *hcd)
@@ -488,7 +484,7 @@ err:
  */
 static int admhc_run(struct admhcd *ahcd)
 {
-	u32			temp;
+	u32			val;
 	int			first = ahcd->fminterval == 0;
 	struct usb_hcd		*hcd = admhcd_to_hcd(ahcd);
 
@@ -496,8 +492,8 @@ static int admhc_run(struct admhcd *ahcd)
 
 	/* boot firmware should have set this up (5.1.1.3.1) */
 	if (first) {
-		temp = admhc_readl(ahcd, &ahcd->regs->fminterval);
-		ahcd->fminterval = temp & ADMHC_SFI_FI_MASK;
+		val = admhc_readl(ahcd, &ahcd->regs->fminterval);
+		ahcd->fminterval = val & ADMHC_SFI_FI_MASK;
 		if (ahcd->fminterval != FI)
 			admhc_dbg(ahcd, "fminterval delta %d\n",
 				ahcd->fminterval - FI);
@@ -507,30 +503,30 @@ static int admhc_run(struct admhcd *ahcd)
 	}
 
 #if 0	/* TODO: not applicable */
-	/* Reset USB nearly "by the book".  RemoteWakeupConnected was
-	 * saved if boot firmware (BIOS/SMM/...) told us it's connected,
-	 * or if bus glue did the same (e.g. for PCI add-in cards with
-	 * PCI PM support).
+	/* Reset USB nearly "by the book".  RemoteWakeupConnected has
+	 * to be checked in case boot firmware (BIOS/SMM/...) has set up
+	 * wakeup in a way the bus isn't aware of (e.g., legacy PCI PM).
+	 * If the bus glue detected wakeup capability then it should
+	 * already be enabled; if so we'll just enable it again.
 	 */
-	if ((ahcd->hc_control & OHCI_CTRL_RWC) != 0
-			&& !device_may_wakeup(hcd->self.controller))
-		device_init_wakeup(hcd->self.controller, 1);
+	if ((ahcd->hc_control & OHCI_CTRL_RWC) != 0)
+		device_set_wakeup_capable(hcd->self.controller, 1);
 #endif
 
 	switch (ahcd->host_control & ADMHC_HC_BUSS) {
 	case ADMHC_BUSS_OPER:
-		temp = 0;
+		val = 0;
 		break;
 	case ADMHC_BUSS_SUSPEND:
 		/* FALLTHROUGH ? */
 	case ADMHC_BUSS_RESUME:
 		ahcd->host_control = ADMHC_BUSS_RESUME;
-		temp = 10 /* msec wait */;
+		val = 10 /* msec wait */;
 		break;
 	/* case ADMHC_BUSS_RESET: */
 	default:
 		ahcd->host_control = ADMHC_BUSS_RESET;
-		temp = 50 /* msec wait */;
+		val = 50 /* msec wait */;
 		break;
 	}
 	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
@@ -538,12 +534,12 @@ static int admhc_run(struct admhcd *ahcd)
 	/* flush the writes */
 	admhc_writel_flush(ahcd);
 
-	msleep(temp);
-	temp = admhc_read_rhdesc(ahcd);
-	if (!(temp & ADMHC_RH_NPS)) {
+	msleep(val);
+	val = admhc_read_rhdesc(ahcd);
+	if (!(val & ADMHC_RH_NPS)) {
 		/* power down each port */
-		for (temp = 0; temp < ahcd->num_ports; temp++)
-			admhc_write_portstatus(ahcd, temp, ADMHC_PS_CPP);
+		for (val = 0; val < ahcd->num_ports; val++)
+			admhc_write_portstatus(ahcd, val, ADMHC_PS_CPP);
 	}
 	/* flush those writes */
 	admhc_writel_flush(ahcd);
@@ -552,9 +548,9 @@ static int admhc_run(struct admhcd *ahcd)
 	spin_lock_irq(&ahcd->lock);
 
 	admhc_writel(ahcd, ADMHC_CTRL_SR,  &ahcd->regs->gencontrol);
-	temp = 30;	/* ... allow extra time */
+	val = 30;	/* ... allow extra time */
 	while ((admhc_readl(ahcd, &ahcd->regs->gencontrol) & ADMHC_CTRL_SR) != 0) {
-		if (--temp == 0) {
+		if (--val == 0) {
 			spin_unlock_irq(&ahcd->lock);
 			admhc_err(ahcd, "USB HC reset timed out!\n");
 			return -1;
@@ -571,7 +567,7 @@ static int admhc_run(struct admhcd *ahcd)
 	periodic_reinit(ahcd);
 
 	/* use rhsc irqs after khubd is fully initialized */
-	hcd->poll_rh = 1;
+	set_bit(HCD_FLAG_POLL_RH, &hcd->flags);
 	hcd->uses_new_polling = 1;
 
 #if 0
@@ -594,10 +590,10 @@ static int admhc_run(struct admhcd *ahcd)
 	ahcd->host_control = ADMHC_BUSS_OPER;
 	admhc_writel(ahcd, ahcd->host_control, &ahcd->regs->host_control);
 
-	temp = 20;
+	val = 20;
 	while ((admhc_readl(ahcd, &ahcd->regs->host_control)
 			& ADMHC_HC_BUSS) != ADMHC_BUSS_OPER) {
-		if (--temp == 0) {
+		if (--val == 0) {
 			spin_unlock_irq(&ahcd->lock);
 			admhc_err(ahcd, "unable to setup operational mode!\n");
 			return -1;
@@ -613,10 +609,10 @@ static int admhc_run(struct admhcd *ahcd)
 	/* FIXME: enabling DMA is always failed here for an unknown reason */
 	admhc_dma_enable(ahcd);
 
-	temp = 200;
+	val = 200;
 	while ((admhc_readl(ahcd, &ahcd->regs->host_control)
 			& ADMHC_HC_DMAE) != ADMHC_HC_DMAE) {
-		if (--temp == 0) {
+		if (--val == 0) {
 			spin_unlock_irq(&ahcd->lock);
 			admhc_err(ahcd, "unable to enable DMA!\n");
 			admhc_dump(ahcd, 1);
@@ -688,7 +684,7 @@ static irqreturn_t admhc_irq(struct usb_hcd *hcd)
 		 */
 		admhc_vdbg(ahcd, "Resume Detect\n");
 		admhc_intr_ack(ahcd, ADMHC_INTR_RESI);
-		hcd->poll_rh = 1;
+		set_bit(HCD_FLAG_POLL_RH, &hcd->flags);
 		if (ahcd->autostop) {
 			spin_lock(&ahcd->lock);
 			admhc_rh_resume(ahcd);
@@ -799,9 +795,10 @@ static int __init admhc_hcd_mod_init(void)
 	pr_info("%s: " DRIVER_INFO "\n", hcd_name);
 	pr_info("%s: block sizes: ed %Zd td %Zd\n", hcd_name,
 		sizeof(struct ed), sizeof(struct td));
+	set_bit(USB_OHCI_LOADED, &usb_hcds_loaded);
 
 #ifdef DEBUG
-	admhc_debug_root = debugfs_create_dir("admhc", NULL);
+	admhc_debug_root = debugfs_create_dir("admhc", usb_debug_root);
 	if (!admhc_debug_root) {
 		ret = -ENOENT;
 		goto error_debug;
@@ -826,6 +823,7 @@ error_platform:
 	admhc_debug_root = NULL;
 error_debug:
 #endif
+	clear_bit(USB_OHCI_LOADED, &usb_hcds_loaded);
 	return ret;
 }
 module_init(admhc_hcd_mod_init);
@@ -836,6 +834,7 @@ static void __exit admhc_hcd_mod_exit(void)
 #ifdef DEBUG
 	debugfs_remove(admhc_debug_root);
 #endif
+	clear_bit(USB_OHCI_LOADED, &usb_hcds_loaded);
 }
 module_exit(admhc_hcd_mod_exit);
 

@@ -18,6 +18,7 @@
 #include <linux/gpio.h>
 #include <linux/irq.h>
 #include <linux/slab.h>
+#include <linux/export.h>
 
 #include <asm/bootinfo.h>
 
@@ -244,31 +245,44 @@ void __init adm5120_add_device_uart(unsigned id)
 /*
  * GPIO buttons
  */
-#define ADM5120_BUTTON_INTERVAL	20
-struct gpio_buttons_platform_data adm5120_gpio_buttons_data = {
-	.poll_interval	= ADM5120_BUTTON_INTERVAL,
-};
-
-struct platform_device adm5120_gpio_buttons_device = {
-	.name		= "gpio-buttons",
-	.id		= -1,
-	.dev.platform_data = &adm5120_gpio_buttons_data,
-};
-
-void __init adm5120_add_device_gpio_buttons(unsigned nbuttons,
-				    struct gpio_button *buttons)
+void __init adm5120_register_gpio_buttons(int id,
+					  unsigned poll_interval,
+					  unsigned nbuttons,
+					  struct gpio_keys_button *buttons)
 {
-	struct gpio_button *p;
+	struct platform_device *pdev;
+	struct gpio_keys_platform_data pdata;
+	struct gpio_keys_button *p;
+	int err;
 
-	p = kmalloc(nbuttons * sizeof(*p), GFP_KERNEL);
+	p = kmemdup(buttons, nbuttons * sizeof(*p), GFP_KERNEL);
 	if (!p)
 		return;
 
-	memcpy(p, buttons, nbuttons * sizeof(*p));
-	adm5120_gpio_buttons_data.nbuttons = nbuttons;
-	adm5120_gpio_buttons_data.buttons = p;
+	pdev = platform_device_alloc("gpio-keys-polled", id);
+	if (!pdev)
+		goto err_free_buttons;
 
-	platform_device_register(&adm5120_gpio_buttons_device);
+	memset(&pdata, 0, sizeof(pdata));
+	pdata.poll_interval = poll_interval;
+	pdata.nbuttons = nbuttons;
+	pdata.buttons = p;
+
+	err = platform_device_add_data(pdev, &pdata, sizeof(pdata));
+	if (err)
+		goto err_put_pdev;
+
+	err = platform_device_add(pdev);
+	if (err)
+		goto err_put_pdev;
+
+	return;
+
+err_put_pdev:
+	platform_device_put(pdev);
+
+err_free_buttons:
+	kfree(p);
 }
 
 /*

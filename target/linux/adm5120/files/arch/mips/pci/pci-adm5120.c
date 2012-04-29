@@ -49,7 +49,7 @@
 static unsigned int adm5120_pci_nr_irqs __initdata;
 static struct adm5120_pci_irq *adm5120_pci_irq_map __initdata;
 
-static spinlock_t pci_lock = SPIN_LOCK_UNLOCKED;
+static DEFINE_SPINLOCK(pci_lock);
 
 /* -------------------------------------------------------------------------*/
 
