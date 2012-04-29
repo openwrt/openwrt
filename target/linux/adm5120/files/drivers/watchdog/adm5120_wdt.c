@@ -123,8 +123,7 @@ static ssize_t wdt_write(struct file *file, const char *data, size_t len, loff_t
 	return 0;
 }
 
-static int wdt_ioctl(struct inode *inode, struct file *file,
-	unsigned int cmd, unsigned long arg)
+static long wdt_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int new_timeout;
 	static struct watchdog_info ident = {
@@ -166,7 +165,7 @@ static const struct file_operations wdt_fops = {
 	.owner		= THIS_MODULE,
 	.llseek		= no_llseek,
 	.write		= wdt_write,
-	.ioctl		= wdt_ioctl,
+	.unlocked_ioctl	= wdt_ioctl,
 	.open		= wdt_open,
 	.release	= wdt_release,
 };

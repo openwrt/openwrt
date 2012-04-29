@@ -75,7 +75,7 @@ admhc_hub_status_data(struct usb_hcd *hcd, char *buf)
 	u32		status;
 
 	spin_lock_irqsave(&ahcd->lock, flags);
-	if (!test_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags))
+	if (!HCD_HW_ACCESSIBLE(hcd))
 		goto done;
 
 	/* init status */
@@ -106,8 +106,11 @@ admhc_hub_status_data(struct usb_hcd *hcd, char *buf)
 		}
 	}
 
-	hcd->poll_rh = admhc_root_hub_state_changes(ahcd, changed,
-			any_connected);
+	if (admhc_root_hub_state_changes(ahcd, changed,
+			any_connected))
+		set_bit(HCD_FLAG_POLL_RH, &hcd->flags);
+	else
+		clear_bit(HCD_FLAG_POLL_RH, &hcd->flags);
 
 done:
 	spin_unlock_irqrestore(&ahcd->lock, flags);
@@ -143,9 +146,9 @@ static int admhc_get_hub_descriptor(struct admhcd *ahcd, char *buf)
 	    temp |= 0x0008;
 	desc->wHubCharacteristics = (__force __u16)cpu_to_hc16(ahcd, temp);
 
-	/* two bitmaps:  ports removable, and usb 1.0 legacy PortPwrCtrlMask */
-	desc->bitmap[0] = 0;
-	desc->bitmap[0] = ~0;
+	/* ports removable, and usb 1.0 legacy PortPwrCtrlMask */
+	desc->u.hs.DeviceRemovable[0] = 0;
+	desc->u.hs.DeviceRemovable[0] = ~0;
 
 	return 0;
 }
@@ -310,10 +313,10 @@ static int admhc_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		u16 wIndex, char *buf, u16 wLength)
 {
 	struct admhcd	*ahcd = hcd_to_admhcd(hcd);
-	int		ports = hcd_to_bus(hcd)->root_hub->maxchild;
+	int		ports = ahcd->num_ports;
 	int		ret = 0;
 
-	if (unlikely(!test_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags)))
+	if (unlikely(!HCD_HW_ACCESSIBLE(hcd)))
 		return -ESHUTDOWN;
 
 	switch (typeReq) {

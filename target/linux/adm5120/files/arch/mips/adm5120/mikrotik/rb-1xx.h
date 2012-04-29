@@ -26,7 +26,7 @@
 #include <prom/routerboot.h>
 
 extern struct platform_nand_data rb1xx_nand_data __initdata;
-extern struct gpio_button rb1xx_gpio_buttons[] __initdata;
+extern struct gpio_keys_button rb1xx_gpio_buttons[] __initdata;
 
 extern void rb1xx_add_device_flash(void) __init;
 extern void rb1xx_add_device_nand(void) __init;

@@ -11,7 +11,9 @@
 
 #include "compex.h"
 
-#ifdef CONFIG_MTD_PARTITIONS
+#define WP54_KEYS_POLL_INTERVAL		20
+#define WP54_KEYS_DEBOUNCE_INTERVAL	(3 * WP54_KEYS_POLL_INTERVAL)
+
 static struct mtd_partition wp54g_wrt_partitions[] = {
 	{
 		.name	= "cfe",
@@ -28,18 +30,17 @@ static struct mtd_partition wp54g_wrt_partitions[] = {
 		.size	= 0x010000,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
 static struct adm5120_pci_irq wp54_pci_irqs[] __initdata = {
 	PCIIRQ(2, 0, 1, ADM5120_IRQ_PCI0),
 };
 
-static struct gpio_button wp54_gpio_buttons[] __initdata = {
+static struct gpio_keys_button wp54_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset_button",
 		.type		= EV_KEY,
-		.code		= BTN_0,
-		.threshold	= 5,
+		.code           = KEY_RESTART,
+		.debounce_interval = WP54_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= ADM5120_GPIO_PIN4,
 	}
 };
@@ -71,8 +72,9 @@ static void __init wp54_setup(void)
 	adm5120_board_reset = wp54_reset;
 
 	adm5120_add_device_switch(2, wp54_vlans);
-	adm5120_add_device_gpio_buttons(ARRAY_SIZE(wp54_gpio_buttons),
-					wp54_gpio_buttons);
+	adm5120_register_gpio_buttons(-1, WP54_KEYS_POLL_INTERVAL,
+				      ARRAY_SIZE(wp54_gpio_buttons),
+				      wp54_gpio_buttons);
 	adm5120_add_device_gpio_leds(ARRAY_SIZE(wp54_gpio_leds),
 					wp54_gpio_leds);
 
@@ -83,10 +85,8 @@ MIPS_MACHINE(MACH_ADM5120_WP54, "WP54", "Compex WP54 family", wp54_setup);
 
 static void __init wp54_wrt_setup(void)
 {
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(wp54g_wrt_partitions);
 	adm5120_flash0_data.parts = wp54g_wrt_partitions;
-#endif
 
 	wp54_setup();
 }

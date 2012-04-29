@@ -18,7 +18,9 @@
 #define BR61XX_CONFIG_OFFSET	0x8000
 #define BR61XX_CONFIG_SIZE		0x1000
 
-#ifdef CONFIG_MTD_PARTITIONS
+#define BR61XX_KEYS_POLL_INTERVAL	20
+#define BR61XX_KEYS_DEBOUNCE_INTERVAL	(3 * BR61XX_KEYS_POLL_INTERVAL)
+
 static struct mtd_partition br61xx_partitions[] = {
 	{
 		.name	= "admboot",
@@ -35,14 +37,13 @@ static struct mtd_partition br61xx_partitions[] = {
 		.size	= MTDPART_SIZ_FULL,
 	}
 };
-#endif /* CONFIG_MTD_PARTITIONS */
 
-static struct gpio_button br61xx_gpio_buttons[] __initdata = {
+static struct gpio_keys_button br61xx_gpio_buttons[] __initdata = {
 	{
 		.desc		= "reset_button",
 		.type		= EV_KEY,
-		.code		= BTN_0,
-		.threshold	= 5,
+		.code           = KEY_RESTART,
+		.debounce_interval = BR61XX_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= ADM5120_GPIO_PIN2,
 	}
 };
@@ -68,10 +69,8 @@ static void __init br61xx_mac_setup(void)
 void __init br61xx_generic_setup(void)
 {
 
-#ifdef CONFIG_MTD_PARTITIONS
 	adm5120_flash0_data.nr_parts = ARRAY_SIZE(br61xx_partitions);
 	adm5120_flash0_data.parts = br61xx_partitions;
-#endif /* CONFIG_MTD_PARTITIONS */
 	adm5120_add_device_flash(0);
 
 	adm5120_add_device_gpio(BR61XX_GPIO_DEV_MASK);
@@ -80,8 +79,10 @@ void __init br61xx_generic_setup(void)
 	adm5120_add_device_uart(1);
 
 	adm5120_add_device_switch(5, br61xx_vlans);
-	adm5120_add_device_gpio_buttons(ARRAY_SIZE(br61xx_gpio_buttons),
-					br61xx_gpio_buttons);
+
+	adm5120_register_gpio_buttons(-1, BR61XX_KEYS_POLL_INTERVAL,
+				      ARRAY_SIZE(br61xx_gpio_buttons),
+				      br61xx_gpio_buttons);
 
 	br61xx_mac_setup();
 }

@@ -257,7 +257,7 @@ static int admhc_bus_suspend(struct usb_hcd *hcd)
 
 	spin_lock_irq(&ahcd->lock);
 
-	if (unlikely(!test_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags)))
+	if (unlikely(!HCD_HW_ACCESSIBLE(hcd)))
 		rc = -ESHUTDOWN;
 	else
 		rc = admhc_rh_suspend(ahcd, 0);
@@ -275,7 +275,7 @@ static int admhc_bus_resume(struct usb_hcd *hcd)
 
 	spin_lock_irq(&ahcd->lock);
 
-	if (unlikely(!test_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags)))
+	if (unlikely(!HCD_HW_ACCESSIBLE(hcd)))
 		rc = -ESHUTDOWN;
 	else
 		rc = admhc_rh_resume(ahcd);
