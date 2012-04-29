@@ -399,23 +399,3 @@ define Image/Build/Profile/Generic
 
 	$(call Image/Build/Experimental,$(1))
 endef
-
-ifeq ($(PROFILE),RouterBoard)
-  define Image/cmdline/yaffs2
-	root=/dev/mtdblock3 rootfstype=yaffs2
-  endef
-
-  define Image/BuildKernel/RouterBoard
-	$(CP) $(KDIR)/vmlinux.elf $(call imgname,kernel,rb1xx)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(call imgname,kernel,rb1xx) \
-		'$(strip $(call Image/cmdline/yaffs2))'
-  endef
-
-  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-    define Image/BuildKernel
-	$(call Image/BuildKernel/RouterBoard)
-    endef
-  endif
-
-endif
-
