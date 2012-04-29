@@ -414,7 +414,7 @@ endef
 
 
 define Image/Build/Profile/UPVEL
-	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_4M,ur-336un,UR-336UN,ttyS1,57600,phys)
+	$(call Image/Build/Template/$(fs_squash)/$(1),GENERIC_8M,ur-336un,UR-336UN,ttyS1,57600,phys)
 endef
 
 define Image/Build/Profile/WR6202
