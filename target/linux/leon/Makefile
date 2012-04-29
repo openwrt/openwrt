@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=sparc
 BOARD:=leon
 BOARDNAME:=LEON
-FEATURES+=fpu tgz
+FEATURES+=fpu tgz broken
 
 CFLAGS:=-Os -pipe -mcpu=v8 -fno-caller-saves
 KERNELNAME:="uImage"
