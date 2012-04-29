@@ -17,6 +17,8 @@ LINUX_VERSION:=2.6.38.8
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += kmod-booke-wdt
+
 define Target/Description
 	Build images for the Freescale MPC85xx based boards.
 endef
