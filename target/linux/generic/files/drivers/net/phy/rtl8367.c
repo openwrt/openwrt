@@ -1071,7 +1071,7 @@ static int rtl8367_led_blinkrate_set(struct rtl8366_smi *smi, unsigned int rate)
 	return 0;
 }
 
-static int rtl8367_hw_init(struct rtl8366_smi *smi)
+static int rtl8367_setup(struct rtl8366_smi *smi)
 {
 	struct rtl8367_platform_data *pdata;
 	int err;
@@ -1485,7 +1485,7 @@ static int rtl8367_sw_reset_switch(struct switch_dev *dev)
 		return err;
 
 
-	err = rtl8367_hw_init(smi);
+	err = rtl8367_setup(smi);
 	if (err)
 		return err;
 
@@ -1633,11 +1633,6 @@ static int rtl8367_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 	(void) rtl8367_read_phy_reg(smi, addr, reg, &t);
 
 	return err;
-}
-
-static int rtl8367_setup(struct rtl8366_smi *smi)
-{
-	return rtl8367_hw_init(smi);
 }
 
 static int rtl8367_detect(struct rtl8366_smi *smi)
