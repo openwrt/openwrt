@@ -721,6 +721,8 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ath79_switch_data;
+
+			ath79_switch_data.phy_poll_mask |= BIT(4);
 		}
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
@@ -776,6 +778,8 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ath79_switch_data;
+
+			ath79_switch_data.phy_poll_mask |= BIT(4);
 		}
 
 		pdata->has_gbit = 1;

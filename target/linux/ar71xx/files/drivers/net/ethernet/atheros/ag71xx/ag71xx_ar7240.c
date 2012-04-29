@@ -1115,19 +1115,26 @@ static void link_function(struct work_struct *work) {
 	struct ag71xx *ag = container_of(work, struct ag71xx, link_work.work);
 	struct ar7240sw *as = ag->phy_priv;
 	unsigned long flags;
+	u8 mask;
 	int i;
 	int status = 0;
 
-	for (i = 0; i < as->swdev.ports; i++) {
-		int link = ar7240sw_phy_read(ag->mii_bus, i, MII_BMSR);
-		if(link & BMSR_LSTATUS) {
+	mask = ~as->swdata->phy_poll_mask;
+	for (i = 0; i < AR7240_NUM_PHYS; i++) {
+		int link;
+
+		if (!(mask & BIT(i)))
+			continue;
+
+		link = ar7240sw_phy_read(ag->mii_bus, i, MII_BMSR);
+		if (link & BMSR_LSTATUS) {
 			status = 1;
 			break;
 		}
 	}
 
 	spin_lock_irqsave(&ag->lock, flags);
-	if(status != ag->link) {
+	if (status != ag->link) {
 		ag->link = status;
 		ag71xx_link_adjust(ag);
 	}
