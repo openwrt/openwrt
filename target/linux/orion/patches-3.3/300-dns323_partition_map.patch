@@ -1,0 +1,30 @@
+--- a/arch/arm/mach-orion5x/dns323-setup.c
++++ b/arch/arm/mach-orion5x/dns323-setup.c
+@@ -113,6 +113,13 @@ subsys_initcall(dns323_pci_init);
+  *  0x00020000-0x001a0000 : "Linux Kernel"
+  *  0x001a0000-0x007d0000 : "File System"
+  *  0x007d0000-0x00800000 : "u-boot"
++ *
++ * Layout as used by OpenWrt
++ *  0x00000000-0x00010000 : "MTD1"
++ *  0x00010000-0x00020000 : "MTD2"
++ *  0x00020000-0x001a0000 : "kernel"
++ *  0x001a0000-0x007d0000 : "rootfs"
++ *  0x007d0000-0x00800000 : "u-boot"
+  */
+ 
+ #define DNS323_NOR_BOOT_BASE 0xf4000000
+@@ -128,11 +135,11 @@ static struct mtd_partition dns323_parti
+ 		.size	= 0x00010000,
+ 		.offset = 0x00010000,
+ 	}, {
+-		.name	= "Linux Kernel",
++		.name	= "kernel",
+ 		.size	= 0x00180000,
+ 		.offset	= 0x00020000,
+ 	}, {
+-		.name	= "File System",
++		.name	= "rootfs",
+ 		.size	= 0x00630000,
+ 		.offset	= 0x001A0000,
+ 	}, {
