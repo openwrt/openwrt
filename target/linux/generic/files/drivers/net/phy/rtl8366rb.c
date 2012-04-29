@@ -265,7 +265,7 @@ static int rtl8366rb_reset_chip(struct rtl8366_smi *smi)
 	return 0;
 }
 
-static int rtl8366rb_hw_init(struct rtl8366_smi *smi)
+static int rtl8366rb_setup(struct rtl8366_smi *smi)
 {
 	int err;
 
@@ -942,7 +942,7 @@ static int rtl8366rb_sw_reset_switch(struct switch_dev *dev)
 	if (err)
 		return err;
 
-	err = rtl8366rb_hw_init(smi);
+	err = rtl8366rb_setup(smi);
 	if (err)
 		return err;
 
@@ -1136,11 +1136,6 @@ static int rtl8366rb_mii_write(struct mii_bus *bus, int addr, int reg, u16 val)
 	(void) rtl8366rb_read_phy_reg(smi, addr, 0, reg, &t);
 
 	return err;
-}
-
-static int rtl8366rb_setup(struct rtl8366_smi *smi)
-{
-	return rtl8366rb_hw_init(smi);
 }
 
 static int rtl8366rb_detect(struct rtl8366_smi *smi)
