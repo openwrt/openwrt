@@ -1475,31 +1475,6 @@ static int rtl8367_sw_reset_port_mibs(struct switch_dev *dev,
 				RTL8367_MIB_CTRL_PORT_RESET_MASK(port % 8));
 }
 
-static int rtl8367_sw_reset_switch(struct switch_dev *dev)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	int err;
-
-	err = rtl8367_reset_chip(smi);
-	if (err)
-		return err;
-
-
-	err = rtl8367_setup(smi);
-	if (err)
-		return err;
-
-	err = rtl8366_reset_vlan(smi);
-	if (err)
-		return err;
-
-	err = rtl8366_enable_vlan(smi, 1);
-	if (err)
-		return err;
-
-	return rtl8366_enable_all_ports(smi, 1);
-}
-
 static struct switch_attr rtl8367_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1578,7 +1553,7 @@ static const struct switch_dev_ops rtl8366m_ops = {
 	.set_vlan_ports = rtl8366_sw_set_vlan_ports,
 	.get_port_pvid = rtl8366_sw_get_port_pvid,
 	.set_port_pvid = rtl8366_sw_set_port_pvid,
-	.reset_switch = rtl8367_sw_reset_switch,
+	.reset_switch = rtl8366_sw_reset_switch,
 	.get_port_link = rtl8367_sw_get_port_link,
 };
 

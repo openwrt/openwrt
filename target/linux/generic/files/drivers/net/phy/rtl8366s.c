@@ -833,30 +833,6 @@ static int rtl8366s_sw_reset_port_mibs(struct switch_dev *dev,
 				0, (1 << (val->port_vlan + 3)));
 }
 
-static int rtl8366s_sw_reset_switch(struct switch_dev *dev)
-{
-	struct rtl8366_smi *smi = sw_to_rtl8366_smi(dev);
-	int err;
-
-	err = rtl8366s_reset_chip(smi);
-	if (err)
-		return err;
-
-	err = rtl8366s_setup(smi);
-	if (err)
-		return err;
-
-	err = rtl8366_reset_vlan(smi);
-	if (err)
-		return err;
-
-	err = rtl8366_enable_vlan(smi, 1);
-	if (err)
-		return err;
-
-	return rtl8366_enable_all_ports(smi, 1);
-}
-
 static struct switch_attr rtl8366s_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -964,7 +940,7 @@ static const struct switch_dev_ops rtl8366_ops = {
 	.set_vlan_ports = rtl8366_sw_set_vlan_ports,
 	.get_port_pvid = rtl8366_sw_get_port_pvid,
 	.set_port_pvid = rtl8366_sw_set_port_pvid,
-	.reset_switch = rtl8366s_sw_reset_switch,
+	.reset_switch = rtl8366_sw_reset_switch,
 	.get_port_link = rtl8366s_sw_get_port_link,
 };
 
