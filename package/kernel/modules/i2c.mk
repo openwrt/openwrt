@@ -143,7 +143,8 @@ OF_I2C_MODULES:=\
 define KernelPackage/of-i2c
   $(call i2c_defaults,$(OF_I2C_MODULES),58)
   TITLE:=OpenFirmware I2C accessors
-  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx kmod-i2c-core
+  DEPENDS:=@TARGET_ppc40x||TARGET_ppc4xx||TARGET_mpc52xx||TARGET_mpc83xx||TARGET_mpc85xx \
+          kmod-i2c-core
 endef
 
 define KernelPackage/of-i2c/description
@@ -152,6 +153,21 @@ endef
 
 $(eval $(call KernelPackage,of-i2c))
 
+I2C_MPC_MODULES:=\
+  CONFIG_I2C_MPC:drivers/i2c/busses/i2c-mpc
+
+define KernelPackage/i2c-mpc
+  $(call i2c_defaults,$(I2C_MPC_MODULES),59)
+  TITLE:=MPC I2C accessors
+  DEPENDS:=@TARGET_mpc52xx||TARGET_mpc83xx||TARGET_mpc85xx \
+          +kmod-i2c-core +kmod-of-i2c
+endef
+
+define KernelPackage/i2c-mpc/description
+ Kernel module for Freescale MPC52xx MPC83xx MPC85xx I2C accessors.
+endef
+
+$(eval $(call KernelPackage,i2c-mpc))
 
 I2C_IBM_IIC_MODULES:=\
   CONFIG_I2C_IBM_IIC:drivers/i2c/busses/i2c-ibm_iic
