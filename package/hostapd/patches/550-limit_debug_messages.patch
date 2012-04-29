@@ -1,6 +1,6 @@
 --- a/src/utils/wpa_debug.c
 +++ b/src/utils/wpa_debug.c
-@@ -118,7 +118,7 @@ static int syslog_priority(int level)
+@@ -201,7 +201,7 @@ void wpa_debug_close_linux_tracing(void)
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -9,7 +9,7 @@
  {
  	va_list ap;
  
-@@ -154,8 +154,8 @@ void wpa_printf(int level, const char *f
+@@ -248,8 +248,8 @@ void wpa_printf(int level, const char *f
  }
  
  
@@ -19,8 +19,8 @@
 +		  size_t len, int show)
  {
  	size_t i;
- 	if (level < wpa_debug_level)
-@@ -262,20 +262,9 @@ static void _wpa_hexdump(int level, cons
+ 
+@@ -375,20 +375,9 @@ static void _wpa_hexdump(int level, cons
  #endif /* CONFIG_ANDROID_LOG */
  }
  
@@ -43,7 +43,7 @@
  {
  	size_t i, llen;
  	const u8 *pos = buf;
-@@ -363,19 +352,6 @@ static void _wpa_hexdump_ascii(int level
+@@ -495,19 +484,6 @@ static void _wpa_hexdump_ascii(int level
  }
  
  
@@ -63,7 +63,7 @@
  #ifdef CONFIG_DEBUG_FILE
  static char *last_path = NULL;
  #endif /* CONFIG_DEBUG_FILE */
-@@ -459,7 +435,7 @@ void wpa_msg_register_ifname_cb(wpa_msg_
+@@ -591,7 +567,7 @@ void wpa_msg_register_ifname_cb(wpa_msg_
  }
  
  
@@ -72,7 +72,7 @@
  {
  	va_list ap;
  	char *buf;
-@@ -493,7 +469,7 @@ void wpa_msg(void *ctx, int level, const
+@@ -625,7 +601,7 @@ void wpa_msg(void *ctx, int level, const
  }
  
  

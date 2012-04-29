@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -211,7 +211,9 @@ struct wpa_driver_nl80211_data {
+@@ -212,7 +212,9 @@ struct wpa_driver_nl80211_data {
  	int if_removed;
  	int if_disabled;
  	int ignore_if_down_event;
@@ -10,7 +10,7 @@
  	struct wpa_driver_capa capa;
  	int has_capability;
  
-@@ -2755,7 +2757,7 @@ static int wpa_driver_nl80211_init_nl(st
+@@ -2768,7 +2770,7 @@ static int wpa_driver_nl80211_init_nl(st
  	return 0;
  }
  
@@ -19,7 +19,7 @@
  static void wpa_driver_nl80211_rfkill_blocked(void *ctx)
  {
  	wpa_printf(MSG_DEBUG, "nl80211: RFKILL blocked");
-@@ -2778,6 +2780,7 @@ static void wpa_driver_nl80211_rfkill_un
+@@ -2791,6 +2793,7 @@ static void wpa_driver_nl80211_rfkill_un
  	}
  	/* rtnetlink ifup handler will report interface as enabled */
  }
@@ -27,7 +27,7 @@
  
  
  static void nl80211_get_phy_name(struct wpa_driver_nl80211_data *drv)
-@@ -2909,7 +2912,9 @@ static void * wpa_driver_nl80211_init(vo
+@@ -2922,7 +2925,9 @@ static void * wpa_driver_nl80211_init(vo
  				      void *global_priv)
  {
  	struct wpa_driver_nl80211_data *drv;
@@ -37,7 +37,7 @@
  	struct i802_bss *bss;
  
  	if (global_priv == NULL)
-@@ -2943,6 +2948,7 @@ static void * wpa_driver_nl80211_init(vo
+@@ -2956,6 +2961,7 @@ static void * wpa_driver_nl80211_init(vo
  
  	nl80211_get_phy_name(drv);
  
@@ -45,7 +45,7 @@
  	rcfg = os_zalloc(sizeof(*rcfg));
  	if (rcfg == NULL)
  		goto failed;
-@@ -2955,6 +2961,7 @@ static void * wpa_driver_nl80211_init(vo
+@@ -2968,6 +2974,7 @@ static void * wpa_driver_nl80211_init(vo
  		wpa_printf(MSG_DEBUG, "nl80211: RFKILL status not available");
  		os_free(rcfg);
  	}
@@ -53,7 +53,7 @@
  
  	if (wpa_driver_nl80211_finish_drv_init(drv))
  		goto failed;
-@@ -3241,10 +3248,12 @@ static void nl80211_mgmt_unsubscribe(str
+@@ -3254,10 +3261,12 @@ static void nl80211_mgmt_unsubscribe(str
  }
  
  
@@ -66,7 +66,7 @@
  
  static int
  wpa_driver_nl80211_finish_drv_init_sta(struct wpa_driver_nl80211_data *drv,
-@@ -3265,13 +3274,16 @@ wpa_driver_nl80211_finish_drv_init_sta(s
+@@ -3278,13 +3287,16 @@ wpa_driver_nl80211_finish_drv_init_sta(s
  	}
  
  	if (linux_set_iface_flags(drv->global->ioctl_sock, bss->ifname, 1)) {
@@ -84,7 +84,7 @@
  			wpa_printf(MSG_ERROR, "nl80211: Could not set "
  				   "interface '%s' UP", bss->ifname);
  			return -1;
-@@ -3302,8 +3314,10 @@ wpa_driver_nl80211_finish_drv_init(struc
+@@ -3315,8 +3327,10 @@ wpa_driver_nl80211_finish_drv_init(struc
  		return -1;
  
  	if (send_rfkill_event) {
@@ -95,7 +95,7 @@
  	}
  
  	return 0;
-@@ -3389,7 +3403,9 @@ static void wpa_driver_nl80211_deinit(vo
+@@ -3403,7 +3417,9 @@ static void wpa_driver_nl80211_deinit(vo
  
  	netlink_send_oper_ifla(drv->global->netlink, drv->ifindex, 0,
  			       IF_OPER_UP);

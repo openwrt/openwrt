@@ -36,16 +36,16 @@
  #include "wpa_supplicant_i.h"
  #include "driver_i.h"
  
-@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
- 	wpa_supplicant_fd_workaround();
+@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
  
  	for (;;) {
--		c = getopt(argc, argv, "b:Bc:C:D:de:f:g:hH:i:KLNo:O:p:P:qstuvW");
-+		c = getopt(argc, argv, "b:Bc:C:D:de:f:g:hH:i:KLNo:O:p:P:qstuv::W");
+ 		c = getopt(argc, argv,
+-			   "b:Bc:C:D:de:f:g:hH:i:KLNo:O:p:P:qsTtuvW");
++			   "b:Bc:C:D:de:f:g:hH:i:KLNo:O:p:P:qsTtuv::W");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -227,8 +228,12 @@ int main(int argc, char *argv[])
+@@ -237,8 +238,12 @@ int main(int argc, char *argv[])
  			break;
  #endif /* CONFIG_DBUS */
  		case 'v':

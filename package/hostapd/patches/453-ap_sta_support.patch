@@ -9,7 +9,7 @@
  };
  
  /**
-@@ -263,6 +265,8 @@ struct wpa_supplicant {
+@@ -271,6 +273,8 @@ struct wpa_supplicant {
  #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
  	char bridge_ifname[16];
  
@@ -117,7 +117,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2498,6 +2555,21 @@ static int wpa_supplicant_init_iface(str
+@@ -2522,6 +2579,21 @@ static int wpa_supplicant_init_iface(str
  		os_strlcpy(wpa_s->bridge_ifname, iface->bridge_ifname,
  			   sizeof(wpa_s->bridge_ifname));
  	}
@@ -192,24 +192,24 @@
  	       "[-p<driver_param>] \\\n"
  	       "        [-b<br_ifname>] [-f<debug file>] [-e<entropy file>] "
  	       "\\\n"
-@@ -63,6 +63,7 @@ static void usage(void)
- #endif /* CONFIG_DEBUG_SYSLOG */
+@@ -67,6 +67,7 @@ static void usage(void)
+ #endif /* CONFIG_DEBUG_LINUX_TRACING */
  	printf("  -t = include timestamp in debug messages\n"
  	       "  -h = show this help text\n"
 +		   "  -H = connect to a hostapd instance to manage state changes\n"
  	       "  -L = show license (BSD)\n"
  	       "  -o = override driver parameter for new interfaces\n"
  	       "  -O = override ctrl_interface parameter for new interfaces\n"
-@@ -139,7 +140,7 @@ int main(int argc, char *argv[])
- 	wpa_supplicant_fd_workaround();
+@@ -144,7 +145,7 @@ int main(int argc, char *argv[])
  
  	for (;;) {
--		c = getopt(argc, argv, "b:Bc:C:D:de:f:g:hi:KLNo:O:p:P:qstuvW");
-+		c = getopt(argc, argv, "b:Bc:C:D:de:f:g:hH:i:KLNo:O:p:P:qstuvW");
+ 		c = getopt(argc, argv,
+-			   "b:Bc:C:D:de:f:g:hi:KLNo:O:p:P:qsTtuvW");
++			   "b:Bc:C:D:de:f:g:hH:i:KLNo:O:p:P:qsTtuvW");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -183,6 +184,9 @@ int main(int argc, char *argv[])
+@@ -188,6 +189,9 @@ int main(int argc, char *argv[])
  			usage();
  			exitcode = 0;
  			goto out;
