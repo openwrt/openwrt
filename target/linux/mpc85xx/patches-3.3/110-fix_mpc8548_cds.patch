@@ -1,0 +1,40 @@
+--- a/arch/powerpc/boot/dts/mpc8548cds.dts
++++ b/arch/powerpc/boot/dts/mpc8548cds.dts
+@@ -301,6 +301,9 @@
+ 				  0x0 0x100000>;
+ 		};
+ 	};
++	chosen {
++		linux,stdout-path = "/soc8548@e0000000/serial@4600";
++	};
+ };
+ 
+ /include/ "fsl/mpc8548si-post.dtsi"
+--- a/arch/powerpc/boot/dts/fsl/mpc8548si-post.dtsi
++++ b/arch/powerpc/boot/dts/fsl/mpc8548si-post.dtsi
+@@ -116,7 +116,24 @@
+ 
+ /include/ "pq3-i2c-0.dtsi"
+ /include/ "pq3-i2c-1.dtsi"
+-/include/ "pq3-duart-0.dtsi"
++
++	serial0: serial@4600 {
++		cell-index = <1>;
++		device_type = "serial";
++		compatible = "fsl,ns16550", "ns16550";
++		reg = <0x4600 0x100>;
++		clock-frequency = <0>;
++		interrupts = <42 2 0 0>;
++	};
++
++	serial1: serial@4500 {
++		cell-index = <0>;
++		device_type = "serial";
++		compatible = "fsl,ns16550", "ns16550";
++		reg = <0x4500 0x100>;
++		clock-frequency = <0>;
++		interrupts = <42 2 0 0>;
++	};
+ 
+ 	L2: l2-cache-controller@20000 {
+ 		compatible = "fsl,mpc8548-l2-cache-controller";
