@@ -48,6 +48,30 @@ find_config() {
 	return 1;
 }
 
+fixup_interface() {
+		local iftype ifname device proto
+		local __cfg="$1"
+
+		config_get iftype "$__cfg" TYPE
+		case "$iftype" in
+			interface)
+				append interfaces "$__cfg"
+				config_get proto "$__cfg" proto
+				config_get iftype "$__cfg" type
+				config_get ifname "$__cfg" ifname
+				config_get device "$__cfg" device "$ifname"
+				config_set "$__cfg" device "$device"
+				case "$iftype" in
+					bridge)
+						config_set "$__cfg" ifnames "$device"
+						config_set "$__cfg" ifname br-"$CONFIG_SECTION"
+					;;
+				esac
+				( type "scan_$proto" ) >/dev/null 2>/dev/null && eval "scan_$proto '$__cfg'"
+			;;
+		esac
+}
+
 scan_interfaces() {
 	local cfgfile="${1:-network}"
 	interfaces=
@@ -57,25 +81,7 @@ scan_interfaces() {
 				config_set "$2" auto 1
 			;;
 		esac
-		local iftype ifname device proto
-		config_get iftype "$CONFIG_SECTION" TYPE
-		case "$iftype" in
-			interface)
-				append interfaces "$CONFIG_SECTION"
-				config_get proto "$CONFIG_SECTION" proto
-				config_get iftype "$CONFIG_SECTION" type
-				config_get ifname "$CONFIG_SECTION" ifname
-				config_get device "$CONFIG_SECTION" device "$ifname"
-				config_set "$CONFIG_SECTION" device "$device"
-				case "$iftype" in
-					bridge)
-						config_set "$CONFIG_SECTION" ifnames "$device"
-						config_set "$CONFIG_SECTION" ifname br-"$CONFIG_SECTION"
-					;;
-				esac
-				( type "scan_$proto" ) >/dev/null 2>/dev/null && eval "scan_$proto '$CONFIG_SECTION'"
-			;;
-		esac
+		fixup_interface "$CONFIG_SECTION"
 	}
 	config_load "${cfgfile}"
 }
