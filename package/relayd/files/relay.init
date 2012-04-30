@@ -26,6 +26,8 @@ start_relay() {
 	config_get proto "$cfg" proto
 	[[ "$proto" == relay ]] || return 0
 
+	fixup_interface "$cfg"
+
 	SERVICE_DAEMONIZE=1
 	SERVICE_WRITE_PID=1
 	SERVICE_PID_FILE="/var/run/relay-$cfg.pid"
@@ -92,6 +94,6 @@ stop() {
 
 start() {
 	include /lib/network
-	scan_interfaces
+	config_load network
 	config_foreach start_relay interface
 }
