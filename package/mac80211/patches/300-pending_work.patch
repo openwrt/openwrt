@@ -227,6 +227,24 @@
  	REG_RMW_FIELD(ah, AR_PHY_PAPRD_CTRL0_B0,
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
+@@ -373,7 +373,7 @@ static void ar9003_hw_spur_ofdm_work(str
+ 			else
+ 				spur_subchannel_sd = 0;
+ 
+-			spur_freq_sd = (freq_offset << 9) / 11;
++			spur_freq_sd = ((freq_offset + 10) << 9) / 11;
+ 
+ 		} else {
+ 			if (REG_READ_FIELD(ah, AR_PHY_GEN_CTRL,
+@@ -382,7 +382,7 @@ static void ar9003_hw_spur_ofdm_work(str
+ 			else
+ 				spur_subchannel_sd = 1;
+ 
+-			spur_freq_sd = (freq_offset << 9) / 11;
++			spur_freq_sd = ((freq_offset - 10) << 9) / 11;
+ 
+ 		}
+ 
 @@ -526,22 +526,10 @@ static void ar9003_hw_init_bb(struct ath
  	 * Value is in 100ns increments.
  	 */
