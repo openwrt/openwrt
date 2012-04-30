@@ -11,6 +11,7 @@ resolve_ifname() {
 
 resolve_network() {
 	local ifn
+	fixup_interface "$1"
 	config_get ifn "$1" ifname
 	[ -z "$ifn" ] && return 1
 	resolve_ifname "$ifn"
@@ -25,8 +26,6 @@ start_relay() {
 
 	config_get proto "$cfg" proto
 	[[ "$proto" == relay ]] || return 0
-
-	fixup_interface "$cfg"
 
 	SERVICE_DAEMONIZE=1
 	SERVICE_WRITE_PID=1
