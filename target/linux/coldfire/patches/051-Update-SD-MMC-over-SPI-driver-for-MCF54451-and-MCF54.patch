@@ -1,0 +1,105 @@
+From 44d4e083f1527e0acc6d25eadd5258565c3b8a3a Mon Sep 17 00:00:00 2001
+From: Alison Wang <b18965@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:55 +0800
+Subject: [PATCH 51/52] Update SD/MMC over SPI driver for MCF54451 and MCF54418
+
+This patch fixed the errors in initialization and module mode.
+
+Signed-off-by: Alison Wang <b18965@freescale.com>
+---
+ arch/m68k/coldfire/m5445x/devices.c |    6 +++---
+ drivers/mmc/host/Kconfig            |    8 ++++----
+ drivers/spi/spi.c                   |    4 ++++
+ 3 files changed, 11 insertions(+), 7 deletions(-)
+
+--- a/arch/m68k/coldfire/m5445x/devices.c
++++ b/arch/m68k/coldfire/m5445x/devices.c
+@@ -20,7 +20,7 @@
+ 
+ #include <linux/interrupt.h>
+ #include <linux/init.h>
+-#ifdef CONFIG_MMC_SPI
++#if defined(CONFIG_MMC_SPI) || defined(CONFIG_MMC_SPI_MODULE)
+ #include <linux/mmc/host.h>
+ #include <linux/spi/mmc_spi.h>
+ #endif
+@@ -107,7 +107,7 @@ static struct coldfire_dspi_chip codec_s
+ };
+ #endif
+ 
+-#if defined(CONFIG_MMC_SPI)
++#if defined(CONFIG_MMC_SPI) || defined(CONFIG_MMC_SPI_MODULE)
+ int mmc_spi_init(struct device *mmc_spi_device,
+ 		irqreturn_t mmc_spi_irq_handler(int irq, void *private),
+ 		void *irq_privatedata)
+@@ -234,7 +234,7 @@ static struct spi_board_info spi_board_i
+ 	},
+ #endif
+ 
+-#if defined(CONFIG_MMC_SPI)
++#if defined(CONFIG_MMC_SPI) || defined(CONFIG_MMC_SPI_MODULE)
+ 	{
+ 		.modalias = "mmc_spi",
+ 		.max_speed_hz = 25000000,
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -369,7 +369,7 @@ config MMC_SPI
+ 	  If unsure, or if your system has no SPI master driver, say N.
+ 
+ config M54451_SD_HW_DETECT
+-	tristate "use extern IRQ7 to detect SD/MMC card"
++	bool "use extern IRQ7 to detect SD/MMC card"
+ 	depends on MMC_SPI && M54451
+ 	default y
+ 	help
+@@ -377,7 +377,7 @@ config M54451_SD_HW_DETECT
+ 	  use irq7 to dectect the card inserting/removing.
+ 
+ config M5441X_SD_HW_DETECT
+-	tristate "use extern IRQ to detect SD/MMC card"
++	bool "use extern IRQ to detect SD/MMC card"
+ 	depends on MMC_SPI && M5441X
+ 	help
+ 	  MMC/SD interface on 54418evb was over SPI. Enable this option will
+@@ -388,14 +388,14 @@ choice
+ 	depends on M5441X_SD_HW_DETECT
+ 
+ config DETECT_USE_EXTERN_IRQ7
+-	tristate "based extern IRQ7"
++	bool "based extern IRQ7"
+ 	depends on M5441X_SD_HW_DETECT
+ 	help
+ 	  MMC/SD cards using spi controller,
+ 	  we use the extern irq7 to detect card.
+ 
+ config DETECT_USE_EXTERN_IRQ1
+-	tristate "based extern IRQ1"
++	bool "based extern IRQ1"
+ 	depends on M5441X_SD_HW_DETECT
+ 	help
+ 	  MMC/SD cards using spi controller,
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -725,18 +725,22 @@ EXPORT_SYMBOL_GPL(spi_busnum_to_master);
+  */
+ int spi_setup(struct spi_device *spi)
+ {
++#ifndef CONFIG_COLDFIRE
+ 	unsigned	bad_bits;
++#endif
+ 	int		status;
+ 
+ 	/* help drivers fail *cleanly* when they need options
+ 	 * that aren't supported with their current master
+ 	 */
++#ifndef CONFIG_COLDFIRE
+ 	bad_bits = spi->mode & ~spi->master->mode_bits;
+ 	if (bad_bits) {
+ 		dev_err(&spi->dev, "setup: unsupported mode bits %x\n",
+ 			bad_bits);
+ 		return -EINVAL;
+ 	}
++#endif
+ 
+ 	if (!spi->bits_per_word)
+ 		spi->bits_per_word = 8;

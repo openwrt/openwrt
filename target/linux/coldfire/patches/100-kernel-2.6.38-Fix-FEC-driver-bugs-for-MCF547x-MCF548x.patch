@@ -1,0 +1,180 @@
+From 92b8d976e58fe5e6eb97aedcaa46e80c924fbc04 Mon Sep 17 00:00:00 2001
+From: Wang Huan <wanghuan@zch06.freescale.net>
+Date: Mon, 5 Sep 2011 08:59:46 +0800
+Subject: [PATCH] Fix FEC driver bugs for MCF547x/MCF548x
+
+This patch fixed kernel panic during flood ping with huge packets.
+It also fixed the data integrity errors when running iozone on an
+NFSv3-mounted file system.
+
+Signed-off-by: Jason Jin <jason.jin@freescale.com>
+---
+ arch/m68k/include/asm/cf_548x_cacheflush.h |   45 ++++++++++++++++++++++++---
+ drivers/net/fec_m547x.c                    |   18 +++++-----
+ 2 files changed, 49 insertions(+), 14 deletions(-)
+
+--- a/arch/m68k/include/asm/cf_548x_cacheflush.h
++++ b/arch/m68k/include/asm/cf_548x_cacheflush.h
+@@ -27,8 +27,8 @@
+ 	unsigned long end_set;					\
+ 								\
+ 	start_set = 0;						\
+-	end_set = (unsigned long)LAST_DCACHE_ADDR;		\
+-								\
++	end_set = (unsigned long)LAST_ICACHE_ADDR;		\
++	asm("nop");						\
+ 	for (set = start_set; set <= end_set; set += (0x10 - 3)) {\
+ 		asm volatile("cpushl %%ic,(%0)\n"		\
+ 		"\taddq%.l #1,%0\n"				\
+@@ -48,7 +48,7 @@
+ 								\
+ 	start_set = 0;						\
+ 	end_set = (unsigned long)LAST_DCACHE_ADDR;		\
+-								\
++	asm("nop");							\
+ 	for (set = start_set; set <= end_set; set += (0x10 - 3)) {	\
+ 		asm volatile("cpushl %%dc,(%0)\n"		\
+ 		"\taddq%.l #1,%0\n"				\
+@@ -68,7 +68,7 @@
+ 							\
+ 	start_set = 0;					\
+ 	end_set = (unsigned long)LAST_DCACHE_ADDR;	\
+-							\
++	asm("nop");						\
+ 	for (set = start_set; set <= end_set; set += (0x10 - 3)) { \
+ 		asm volatile("cpushl %%bc,(%0)\n"		\
+ 		"\taddq%.l #1,%0\n"				\
+@@ -240,12 +240,47 @@ extern inline void flush_icache_range(un
+ 	}
+ }
+ 
++static inline void flush_dcache_range(unsigned long address,
++	unsigned long endaddr)
++{
++	unsigned long set;
++	unsigned long start_set;
++	unsigned long end_set;
++
++	start_set = address & _DCACHE_SET_MASK;
++	end_set = endaddr & _DCACHE_SET_MASK;
++
++	if (start_set > end_set) {
++		/* from the begining to the lowest address */
++		for (set = 0; set <= end_set; set += (0x10 - 3)) {
++			asm volatile("cpushl %%dc,(%0)\n"
++			"\taddq%.l #1,%0\n"
++			"\tcpushl %%dc,(%0)\n"
++			"\taddq%.l #1,%0\n"
++			"\tcpushl %%dc,(%0)\n"
++			"\taddq%.l #1,%0\n"
++			"\tcpushl %%dc,(%0)" : "=a" (set) : "a" (set));
++		}
++		/* next loop will finish the cache ie pass the hole */
++		end_set = LAST_ICACHE_ADDR;
++	}
++	for (set = start_set; set <= end_set; set += (0x10 - 3)) {
++		asm volatile("cpushl %%dc,(%0)\n"
++			"\taddq%.l #1,%0\n"
++			"\tcpushl %%dc,(%0)\n"
++			"\taddq%.l #1,%0\n"
++			"\tcpushl %%dc,(%0)\n"
++			"\taddq%.l #1,%0\n"
++			"\tcpushl %%dc,(%0)" : "=a" (set) : "a" (set));
++	}
++}
++
+ static inline void copy_to_user_page(struct vm_area_struct *vma,
+ 				     struct page *page, unsigned long vaddr,
+ 				     void *dst, void *src, int len)
+ {
+ 	memcpy(dst, src, len);
+-	flush_icache_user_page(vma, page, vaddr, len);
++	flush_dcache();
+ }
+ static inline void copy_from_user_page(struct vm_area_struct *vma,
+ 				       struct page *page, unsigned long vaddr,
+--- a/drivers/net/fec_m547x.c
++++ b/drivers/net/fec_m547x.c
+@@ -34,7 +34,7 @@
+ #include <asm/m5485sram.h>
+ #include <asm/virtconvert.h>
+ #include <asm/irq.h>
+-
++#include <asm/cf_cacheflush.h>
+ #include "fec_m547x.h"
+ 
+ #ifdef	CONFIG_FEC_548x_ENABLE_FEC2
+@@ -97,7 +97,7 @@ static void fec_interrupt_fec_rx_handler
+ static irqreturn_t fec_interrupt_handler(int irq, void *dev_id);
+ static void fec_interrupt_fec_tx_handler_fec0(void);
+ static void fec_interrupt_fec_rx_handler_fec0(void);
+-static void fec_interrupt_fec_reinit(unsigned long data);
++static void fec_interrupt_fec_reinit(struct net_device *dev);
+ 
+ /* default fec0 address */
+ unsigned char fec_mac_addr_fec0[6] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x50 };
+@@ -145,6 +145,7 @@ static int coldfire_fec_mdio_read(struct
+ #ifdef CONFIG_FEC_548x_SHARED_PHY
+ 	unsigned long base_addr = (unsigned long)FEC_BASE_ADDR_FEC0;
+ #else
++	struct net_device *dev = bus->priv;
+ 	unsigned long base_addr = (unsigned long) dev->base_addr;
+ #endif
+ 	int tries = 100;
+@@ -179,6 +180,7 @@ static int coldfire_fec_mdio_write(struc
+ #ifdef CONFIG_FEC_548x_SHARED_PHY
+ 	unsigned long base_addr = (unsigned long)FEC_BASE_ADDR_FEC0;
+ #else
++	struct net_device *dev = bus->priv;
+ 	unsigned long base_addr = (unsigned long) dev->base_addr;
+ #endif
+ 	int tries = 100;
+@@ -394,9 +396,6 @@ static int mcf547x_fec_open(struct net_d
+ 
+ 	dma_connect(channel, (int) fp->fecpriv_interrupt_fec_tx_handler);
+ 
+-	/* init tasklet for controller reinitialization */
+-	tasklet_init(&fp->fecpriv_tasklet_reinit,
+-		fec_interrupt_fec_reinit, (unsigned long) dev);
+ 
+ 	/* Reset FIFOs */
+ 	FEC_FECFRST(base_addr) |= FEC_SW_RST | FEC_RST_CTL;
+@@ -790,6 +789,8 @@ static int mcf547x_fec_start_xmit(struct
+ 
+ 	/* flush data cache before initializing
+ 	 * the descriptor and starting DMA */
++	flush_dcache_range(virt_to_phys(data_aligned),
++			virt_to_phys(data_aligned) + skb->len);
+ 
+ 	spin_lock_irq(&fp->fecpriv_lock);
+ 
+@@ -1308,7 +1309,7 @@ irqreturn_t fec_interrupt_handler(int ir
+ 		netif_stop_queue(dev);
+ 
+ 		/* execute reinitialization as tasklet */
+-		tasklet_schedule(&fp->fecpriv_tasklet_reinit);
++		fec_interrupt_fec_reinit(dev);
+ 
+ 		fp->fecpriv_stat.rx_dropped++;
+ 	}
+@@ -1343,10 +1344,9 @@ irqreturn_t fec_interrupt_handler(int ir
+ *              when controller must be reinitialized.
+ *
+ *************************************************************************/
+-void fec_interrupt_fec_reinit(unsigned long data)
++void fec_interrupt_fec_reinit(struct net_device *dev)
+ {
+ 	int i;
+-	struct net_device *dev = (struct net_device *)data;
+ 	struct fec_priv *fp = netdev_priv(dev);
+ 	unsigned long base_addr = (unsigned long) dev->base_addr;
+ 
+@@ -1385,7 +1385,7 @@ void fec_interrupt_fec_reinit(unsigned l
+ 	fp->fecpriv_current_tx = fp->fecpriv_next_tx = 0;
+ 
+ 	/* flush entire data cache before restarting the DMA */
+-
++	flush_dcache();
+ 	/* restart DMA from beginning */
+ 	MCD_startDma(fp->fecpriv_fec_rx_channel,
+ 		     (char *) fp->fecpriv_rxdesc, 0,

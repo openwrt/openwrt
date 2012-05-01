@@ -1,0 +1,973 @@
+From c1de95e3a608c48b5576e32181480930d9106ac4 Mon Sep 17 00:00:00 2001
+From: Alison Wang <b18965@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:44 +0800
+Subject: [PATCH 18/52] Add SSD1289 TFT LCD framebuffer driver on TWR-MCF5441X
+
+Add SSD1289 TFT LCD framebuffer driver on TWR-MCF5441X. Flexbus and spi
+interfaces are both supported.
+
+Signed-off-by: Alison Wang <b18965@freescale.com>
+---
+ arch/m68k/coldfire/m5441x/config.c     |    1 +
+ arch/m68k/coldfire/m5441x/devices.c    |    1 +
+ arch/m68k/include/asm/fsl-ssd1289-fb.h |   93 ++++
+ drivers/video/Kconfig                  |   24 +
+ drivers/video/Makefile                 |    1 +
+ drivers/video/fsl-ssd1289-fb.c         |  791 ++++++++++++++++++++++++++++++++
+ 6 files changed, 911 insertions(+), 0 deletions(-)
+ create mode 100644 arch/m68k/include/asm/fsl-ssd1289-fb.h
+ create mode 100644 drivers/video/fsl-ssd1289-fb.c
+
+--- a/arch/m68k/coldfire/m5441x/config.c
++++ b/arch/m68k/coldfire/m5441x/config.c
+@@ -45,6 +45,7 @@
+ #include <asm/mcf5441x_fbcs.h>
+ #include <asm/mcf5441x_dtim.h>
+ #include <asm/mcf5441x_xbs.h>
++#include <asm/fsl-ssd1289-fb.h>
+ 
+ extern int get_irq_list(struct seq_file *p, void *v);
+ extern char _text, _end;
+--- a/arch/m68k/coldfire/m5441x/devices.c
++++ b/arch/m68k/coldfire/m5441x/devices.c
+@@ -33,6 +33,7 @@
+ #include <asm/mcfqspi.h>
+ #include <asm/mcfdspi.h>
+ #include <asm/cf_io.h>
++#include <asm/fsl-ssd1289-fb.h>
+ 
+ /*
+  * I2C: only support i2c0 module on m5441x platform
+--- /dev/null
++++ b/arch/m68k/include/asm/fsl-ssd1289-fb.h
+@@ -0,0 +1,93 @@
++/*
++ * Copyright (C) 2010-2011 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * Freescale MCF54418 SSD1289 TFT LCD framebuffer driver
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++
++#ifndef __FSL_SSD1289_FB_H__
++#define __FSL_SSD1289_FB_H__
++
++#define SSD1289_REG_OSCILLATION		0x00
++#define SSD1289_REG_DRIVER_OUT_CTRL	0x01
++#define SSD1289_REG_LCD_DRIVE_AC	0x02
++#define SSD1289_REG_POWER_CTRL_1	0x03
++#define SSD1289_REG_COMPARE_1		0x05
++#define SSD1289_REG_COMPARE_2		0x06
++#define SSD1289_REG_DISPLAY_CTRL	0x07
++#define SSD1289_REG_FRAME_CYCLE		0x0b
++#define SSD1289_REG_POWER_CTRL_2	0x0c
++#define SSD1289_REG_POWER_CTRL_3	0x0d
++#define SSD1289_REG_POWER_CTRL_4	0x0e
++#define SSD1289_REG_GATE_SCAN_START	0x0f
++#define SSD1289_REG_SLEEP_MODE		0x10
++#define SSD1289_REG_ENTRY_MODE		0x11
++#define SSD1289_REG_OPT_SPEED_3		0x12
++#define SSD1289_REG_H_PORCH		0x16
++#define SSD1289_REG_V_PORCH		0x17
++#define SSD1289_REG_POWER_CTRL_5	0x1e
++#define SSD1289_REG_GDDRAM_DATA		0x22
++#define SSD1289_REG_WR_DATA_MASK_1	0x23
++#define SSD1289_REG_WR_DATA_MASK_2	0x24
++#define SSD1289_REG_FRAME_FREQUENCY	0x25
++#define SSD1289_REG_OPT_SPEED_1		0x28
++#define SSD1289_REG_OPT_SPEED_2		0x2f
++#define SSD1289_REG_GAMMA_CTRL_1	0x30
++#define SSD1289_REG_GAMMA_CTRL_2	0x31
++#define SSD1289_REG_GAMMA_CTRL_3	0x32
++#define SSD1289_REG_GAMMA_CTRL_4	0x33
++#define SSD1289_REG_GAMMA_CTRL_5	0x34
++#define SSD1289_REG_GAMMA_CTRL_6	0x35
++#define SSD1289_REG_GAMMA_CTRL_7	0x36
++#define SSD1289_REG_GAMMA_CTRL_8	0x37
++#define SSD1289_REG_GAMMA_CTRL_9	0x3a
++#define SSD1289_REG_GAMMA_CTRL_10	0x3b
++#define SSD1289_REG_V_SCROLL_CTRL_1	0x41
++#define SSD1289_REG_V_SCROLL_CTRL_2	0x42
++#define SSD1289_REG_H_RAM_ADR_POS	0x44
++#define SSD1289_REG_V_RAM_ADR_START	0x45
++#define SSD1289_REG_V_RAM_ADR_END	0x46
++#define SSD1289_REG_FIRST_WIN_START	0x48
++#define SSD1289_REG_FIRST_WIN_END	0x49
++#define SSD1289_REG_SECND_WIN_START	0x4a
++#define SSD1289_REG_SECND_WIN_END	0x4b
++#define SSD1289_REG_GDDRAM_X_ADDR	0x4e
++#define SSD1289_REG_GDDRAM_Y_ADDR	0x4f
++
++struct ssd1289 {
++	void __iomem *cmd;
++	void __iomem *data;
++} __packed;
++
++struct fsl_ssd1289_fb_info {
++	struct device *dev;
++	struct ssd1289 ssd1289_reg;
++	int openflag;
++	struct spi_device *spidev;
++
++	struct task_struct *task;
++	unsigned long pseudo_palette[16];
++};
++
++/* LCD description */
++struct fsl_ssd1289_fb_display {
++	/* Screen size */
++	unsigned short width;
++	unsigned short height;
++
++	/* Screen info */
++	unsigned short xres;
++	unsigned short yres;
++	unsigned short bpp;
++};
++
++#define FLEXBUS_LCD_CMD_ADDRESS		0xc0000000
++#define FLEXBUS_LCD_DATA_ADDRESS	0xc0010000
++
++#define SPI_LCD_BLOCK_SIZE		4096
++#define SPI_LCD_BLOCK_HALF_SIZE		2048
++#endif
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -1980,6 +1980,30 @@ config FB_FSL_DIU
+ 	---help---
+ 	  Framebuffer driver for the Freescale SoC DIU
+ 
++config FB_FSL_SSD1289
++	tristate "SSD1289 TFT LCD (Freescale MCF54418)"
++	depends on FB && M5441X
++	select FB_CFB_FILLRECT
++	select FB_CFB_COPYAREA
++	select FB_CFB_IMAGEBLIT
++	select FB_SYS_FOPS
++	---help---
++	  This is the framebuffer device driver for a Solomon Systech 240RGBx320
++	  TFT LCD SSD1289.
++
++choice
++	prompt "SSD1289 LCD Controller Interface mode"
++	depends on FB_FSL_SSD1289
++
++config SSD1289_FLEXBUS_MODE
++	bool "SSD1289 LCD Controller Flexbus Interface mode"
++
++config SSD1289_SPI_MODE
++	bool "SSD1289 LCD Controller SPI Interface mode"
++	depends on SPI_DSPI && DSPI0
++
++endchoice
++
+ config FB_W100
+ 	tristate "W100 frame buffer support"
+ 	depends on FB && ARCH_PXA
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -120,6 +120,7 @@ obj-$(CONFIG_FB_IMX)              += imx
+ obj-$(CONFIG_FB_S3C)		  += s3c-fb.o
+ obj-$(CONFIG_FB_S3C2410)	  += s3c2410fb.o
+ obj-$(CONFIG_FB_FSL_DIU)	  += fsl-diu-fb.o
++obj-$(CONFIG_FB_FSL_SSD1289)      += fsl-ssd1289-fb.o
+ obj-$(CONFIG_FB_COBALT)           += cobalt_lcdfb.o
+ obj-$(CONFIG_FB_PNX4008_DUM)	  += pnx4008/
+ obj-$(CONFIG_FB_PNX4008_DUM_RGB)  += pnx4008/
+--- /dev/null
++++ b/drivers/video/fsl-ssd1289-fb.c
+@@ -0,0 +1,791 @@
++/*
++ * Copyright (C) 2010-2011 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ * Freescale MCF54418 SSD1289 TFT LCD framebuffer driver
++ *
++ * Author: Alison Wang <b18965@freescale.com>
++ *         Jason Jin <Jason.jin@freescale.com>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <linux/string.h>
++#include <linux/mm.h>
++#include <linux/slab.h>
++#include <linux/delay.h>
++#include <linux/fb.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/dma-mapping.h>
++#include <linux/clk.h>
++#include <linux/uaccess.h>
++#include <linux/timer.h>
++#include <linux/kthread.h>
++#include <linux/spi/spi.h>
++
++#include <asm/mcf5441x_fbcs.h>
++#include <asm/mcf5441x_dspi.h>
++#include <asm/fsl-ssd1289-fb.h>
++#include <asm/mcf5441x_gpio.h>
++#include <asm/mcf5441x_ccm.h>
++#include <asm/mcf_edma.h>
++
++#ifdef CONFIG_PM
++#include <linux/pm.h>
++#endif
++
++#if defined(CONFIG_SSD1289_SPI_MODE)
++unsigned char spi_block_buffer[SPI_LCD_BLOCK_SIZE];
++
++static int ssd1289_spi_writeblock(struct fb_info *info,
++		unsigned char *daddr, int flag)
++{
++	struct fsl_ssd1289_fb_info *fbinfo = info->par;
++	struct spi_device *devtmp;
++	int i;
++
++	for (i = 0; i < SPI_LCD_BLOCK_SIZE; i++) {
++		if (i % 2 == 0)
++			spi_block_buffer[i] = 0x01;
++		else if (flag == 1)
++			spi_block_buffer[i] = *(daddr + (i >> 1));
++		else if (flag == 0)
++			spi_block_buffer[i] = 0;
++	}
++
++	devtmp = fbinfo->spidev;
++	spi_write(devtmp, (const unsigned char *)spi_block_buffer,
++			SPI_LCD_BLOCK_SIZE);
++	return 0;
++}
++
++static int ssd1289_spi_write(struct fb_info *info,
++		unsigned short value, unsigned int flag)
++{
++	struct fsl_ssd1289_fb_info *fbinfo = info->par;
++	struct spi_device *devtmp;
++	unsigned short tmpl;
++	unsigned short tmph;
++
++	devtmp = fbinfo->spidev;
++	if (flag == 1) {
++		/* D/C = 1 */
++		tmph = ((value >> 8) & 0xff) + 0x0100;
++		tmpl = (value & 0xff) + 0x0100;
++		spi_write(devtmp, (const u8 *)&tmph, sizeof(tmph));
++		spi_write(devtmp, (const u8 *)&tmpl, sizeof(tmpl));
++	} else {
++		/* D/C = 0 */
++		tmpl = (value & 0xff);
++		spi_write(devtmp, (const u8 *)&tmpl, sizeof(tmpl));
++	}
++	return 0;
++}
++#elif defined(CONFIG_SSD1289_FLEXBUS_MODE)
++static int ssd1289_flexbus_write(struct fb_info *info, unsigned short value,
++			unsigned int flag)
++{
++	struct fsl_ssd1289_fb_info *fbinfo = info->par;
++	void __iomem *cmd_addr, *data_addr;
++
++	cmd_addr = fbinfo->ssd1289_reg.cmd;
++	data_addr = fbinfo->ssd1289_reg.data;
++
++	if (flag == 0)
++		out_be16(cmd_addr, value);
++	else
++		out_be16(data_addr, value);
++
++	return 0;
++}
++#endif
++
++static int ssd1289_write(struct fb_info *info, unsigned short value,
++		unsigned int flag)
++{
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++	ssd1289_flexbus_write(info, value, flag);
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++	ssd1289_spi_write(info, value, flag);
++#endif
++	return 0;
++}
++
++static void fsl_ssd1289_enable_lcd(struct fb_info *info)
++{
++	int i;
++
++#if defined(CONFIG_SSD1289_SPI_MODE)
++	int count;
++#elif defined(CONFIG_SSD1289_FLEXBUS_MODE)
++	/* GPIO configuration */
++	MCF_GPIO_PAR_BE = MCF_GPIO_PAR_BE_BE3_FB_A1 | MCF_GPIO_PAR_BE_BE2_FB_A0
++		| MCF_GPIO_PAR_BE_BE1_BE1 | MCF_GPIO_PAR_BE_BE0_BE0;
++	MCF_GPIO_PAR_CS |= MCF_GPIO_PAR_CS_CS0_CS0;
++#endif
++
++	ssd1289_write(info, SSD1289_REG_DISPLAY_CTRL, 0);
++	ssd1289_write(info, 0x0200, 1);
++
++	ssd1289_write(info, SSD1289_REG_OSCILLATION, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	mdelay(100);
++
++	/* turn on the oscillator */
++	ssd1289_write(info, SSD1289_REG_OSCILLATION, 0);
++	ssd1289_write(info, 0x0001, 1);
++
++	mdelay(100);
++	/* power control 1 */
++	ssd1289_write(info, SSD1289_REG_POWER_CTRL_1, 0);
++	ssd1289_write(info, 0xaeac, 1);
++
++	/* power control 2 */
++	ssd1289_write(info, SSD1289_REG_POWER_CTRL_2, 0);
++	ssd1289_write(info, 0x0007, 1);
++
++	/* power control 3 */
++	ssd1289_write(info, SSD1289_REG_POWER_CTRL_3, 0);
++	ssd1289_write(info, 0x000f, 1);
++
++	/* power control 4 */
++	ssd1289_write(info, SSD1289_REG_POWER_CTRL_4, 0);
++	ssd1289_write(info, 0x2900, 1);
++
++	/* power control 5 */
++	ssd1289_write(info, SSD1289_REG_POWER_CTRL_5, 0);
++	ssd1289_write(info, 0x00b3, 1);
++
++	mdelay(15);
++	/* driver output control */
++	ssd1289_write(info, SSD1289_REG_DRIVER_OUT_CTRL, 0);
++	ssd1289_write(info, 0x2b3f, 1);
++
++	/* lcd-driving-waveform control */
++	ssd1289_write(info, SSD1289_REG_LCD_DRIVE_AC, 0);
++	ssd1289_write(info, 0x0600, 1);
++
++	/* sleep mode */
++	ssd1289_write(info, SSD1289_REG_SLEEP_MODE, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	/* entry mode */
++	ssd1289_write(info, SSD1289_REG_ENTRY_MODE, 0);
++	ssd1289_write(info, 0x60a8, 1);
++
++	mdelay(15);
++	/* compare register */
++	ssd1289_write(info, SSD1289_REG_COMPARE_1, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	ssd1289_write(info, SSD1289_REG_COMPARE_2, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	/* horizontal porch */
++	ssd1289_write(info, SSD1289_REG_H_PORCH, 0);
++	ssd1289_write(info, 0xef1c, 1);
++
++	/* vertical porch */
++	ssd1289_write(info, SSD1289_REG_V_PORCH, 0);
++	ssd1289_write(info, 0x0003, 1);
++
++	/* display control */
++	ssd1289_write(info, SSD1289_REG_DISPLAY_CTRL, 0);
++	ssd1289_write(info, 0x0233, 1);
++
++	/* frame cycle control */
++	ssd1289_write(info, SSD1289_REG_FRAME_CYCLE, 0);
++	ssd1289_write(info, 0x5312, 1);
++
++	/* gate scan position */
++	ssd1289_write(info, SSD1289_REG_GATE_SCAN_START, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	mdelay(20);
++	/* vertical scroll control */
++	ssd1289_write(info, SSD1289_REG_V_SCROLL_CTRL_1, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	ssd1289_write(info, SSD1289_REG_V_SCROLL_CTRL_2, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	/* 1st screen driving position */
++	ssd1289_write(info, SSD1289_REG_FIRST_WIN_START, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	ssd1289_write(info, SSD1289_REG_FIRST_WIN_END, 0);
++	ssd1289_write(info, 0x013F, 1);
++
++	/* 2nd screen driving position */
++	ssd1289_write(info, SSD1289_REG_SECND_WIN_START, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	ssd1289_write(info, SSD1289_REG_SECND_WIN_END, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	mdelay(20);
++	/* gamma control */
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_1, 0);
++	ssd1289_write(info, 0x0707, 1);
++
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_2, 0);
++	ssd1289_write(info, 0x0704, 1);
++
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_3, 0);
++	ssd1289_write(info, 0x0204, 1);
++
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_4, 0);
++	ssd1289_write(info, 0x0201, 1);
++
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_5, 0);
++	ssd1289_write(info, 0x0203, 1);
++
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_6, 0);
++	ssd1289_write(info, 0x0204, 1);
++
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_7, 0);
++	ssd1289_write(info, 0x0204, 1);
++
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_8, 0);
++	ssd1289_write(info, 0x0502, 1);
++
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_9, 0);
++	ssd1289_write(info, 0x0302, 1);
++
++	ssd1289_write(info, SSD1289_REG_GAMMA_CTRL_10, 0);
++	ssd1289_write(info, 0x0500, 1);
++
++	/* ram write data mask */
++	ssd1289_write(info, SSD1289_REG_WR_DATA_MASK_1, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	ssd1289_write(info, SSD1289_REG_WR_DATA_MASK_2, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	/* frame frequency control */
++	ssd1289_write(info, SSD1289_REG_FRAME_FREQUENCY, 0);
++	ssd1289_write(info, 0xe000, 1);
++
++	/* optimize data access speed */
++	ssd1289_write(info, SSD1289_REG_OPT_SPEED_1, 0);
++	ssd1289_write(info, 0x0006, 1);
++
++	ssd1289_write(info, SSD1289_REG_OPT_SPEED_2, 0);
++	ssd1289_write(info, 0x12ae, 1);
++
++	ssd1289_write(info, SSD1289_REG_OPT_SPEED_3, 0);
++	ssd1289_write(info, 0x6ceb, 1);
++
++	/* horizontal ram address position */
++	ssd1289_write(info, SSD1289_REG_H_RAM_ADR_POS, 0);
++	ssd1289_write(info, 0xef00, 1);
++
++	/* vertical ram address position */
++	ssd1289_write(info, SSD1289_REG_V_RAM_ADR_START, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	ssd1289_write(info, SSD1289_REG_V_RAM_ADR_END, 0);
++	ssd1289_write(info, 0x013f, 1);
++
++	mdelay(20);
++
++	/* set start address counter */
++	ssd1289_write(info, SSD1289_REG_GDDRAM_X_ADDR, 0);
++	ssd1289_write(info, 0x00ef, 1);
++
++	ssd1289_write(info, SSD1289_REG_GDDRAM_Y_ADDR, 0);
++	ssd1289_write(info, 0x0000, 1);
++
++	ssd1289_write(info, SSD1289_REG_GDDRAM_DATA, 0);
++
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++	for (i = 0; i < info->screen_size; i += 2)
++		ssd1289_write(info, 0, 1);
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++	count = info->screen_size / SPI_LCD_BLOCK_HALF_SIZE;
++	for (i = 0; i < count; i++)
++		ssd1289_spi_writeblock(info, NULL, 0);
++#endif
++}
++
++static void fsl_ssd1289_disable_lcd(struct fb_info *info)
++{
++	ssd1289_write(info, SSD1289_REG_DISPLAY_CTRL, 0);
++	ssd1289_write(info, 0x0200, 1);
++
++	ssd1289_write(info, SSD1289_REG_OSCILLATION, 0);
++	ssd1289_write(info, 0x0000, 1);
++}
++
++static int ssd1289fbd(void *arg)
++{
++	struct fb_info *info = arg;
++	int i;
++	unsigned short *buf_p;
++	struct fsl_ssd1289_fb_info *fbinfo = info->par;
++#if defined(CONFIG_SSD1289_SPI_MODE)
++	unsigned char *bufspi_p;
++	int count;
++#endif
++
++	while (!kthread_should_stop()) {
++		set_current_state(TASK_INTERRUPTIBLE);
++
++		if (fbinfo->openflag == 1) {
++			buf_p = (unsigned short *)(info->screen_base);
++
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++			for (i = 0; i < info->screen_size; i += 2) {
++				ssd1289_write(info, *buf_p, 1);
++				buf_p++;
++			}
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++			bufspi_p = (unsigned char *)buf_p;
++			count = info->screen_size / SPI_LCD_BLOCK_HALF_SIZE;
++			for (i = 0; i < count; i++)
++				ssd1289_spi_writeblock(info, (bufspi_p +
++					SPI_LCD_BLOCK_HALF_SIZE * i), 1);
++#endif
++		}
++		schedule_timeout(HZ/25);
++	}
++
++	return 0;
++}
++
++static int fsl_ssd1289_check_var(struct fb_var_screeninfo *var,
++				struct fb_info *info)
++{
++	if (var->xres_virtual < var->xres)
++		var->xres_virtual = var->xres;
++	if (var->yres_virtual < var->yres)
++		var->yres_virtual = var->yres;
++
++	if (var->xoffset < 0)
++		var->xoffset = 0;
++
++	if (var->yoffset < 0)
++		var->yoffset = 0;
++
++	if (var->xoffset + info->var.xres > info->var.xres_virtual)
++		var->xoffset = info->var.xres_virtual - info->var.xres;
++
++	if (var->yoffset + info->var.yres > info->var.yres_virtual)
++		var->yoffset = info->var.yres_virtual - info->var.yres;
++
++	switch (var->bits_per_pixel) {
++	case 8:
++		/* 8 bpp, 332 format */
++		var->red.length		= 3;
++		var->red.offset		= 5;
++		var->red.msb_right	= 0;
++
++		var->green.length	= 3;
++		var->green.offset	= 2;
++		var->green.msb_right	= 0;
++
++		var->blue.length	= 2;
++		var->blue.offset	= 0;
++		var->blue.msb_right	= 0;
++
++		var->transp.length	= 0;
++		var->transp.offset	= 0;
++		var->transp.msb_right	= 0;
++		break;
++	case 16:
++		/* 16 bpp, 565 format */
++		var->red.length		= 5;
++		var->red.offset		= 11;
++		var->red.msb_right	= 0;
++
++		var->green.length	= 6;
++		var->green.offset	= 5;
++		var->green.msb_right	= 0;
++
++		var->blue.length	= 5;
++		var->blue.offset	= 0;
++		var->blue.msb_right	= 0;
++
++		var->transp.length	= 0;
++		var->transp.offset	= 0;
++		var->transp.msb_right	= 0;
++		break;
++	default:
++		printk(KERN_ERR "Depth not supported: %u BPP\n",
++			var->bits_per_pixel);
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static int fsl_ssd1289_set_par(struct fb_info *info)
++{
++	struct fb_var_screeninfo *var = &info->var;
++
++	switch (var->bits_per_pixel) {
++	case 16:
++		info->fix.visual = FB_VISUAL_TRUECOLOR;
++		break;
++	case 8:
++		info->fix.visual = FB_VISUAL_PSEUDOCOLOR;
++		break;
++	default:
++		info->fix.visual = FB_VISUAL_PSEUDOCOLOR;
++		break;
++	}
++
++	return 0;
++}
++
++static inline __u32 CNVT_TOHW(__u32 val, __u32 width)
++{
++	return ((val<<width) + 0x7FFF - val)>>16;
++}
++
++static int fsl_ssd1289_setcolreg(unsigned regno,
++			       unsigned red, unsigned green, unsigned blue,
++			       unsigned transp, struct fb_info *info)
++{
++	int ret = 1;
++
++	/*
++	 * If greyscale is true, then we convert the RGB value
++	 * to greyscale no matter what visual we are using.
++	 */
++	if (info->var.grayscale)
++		red = green = blue = (19595 * red + 38470 * green +
++				      7471 * blue) >> 16;
++	switch (info->fix.visual) {
++	case FB_VISUAL_TRUECOLOR:
++		if (regno < 16) {
++			u32 *pal = info->pseudo_palette;
++			u32 value;
++
++			red = CNVT_TOHW(red, info->var.red.length);
++			green = CNVT_TOHW(green, info->var.green.length);
++			blue = CNVT_TOHW(blue, info->var.blue.length);
++			transp = CNVT_TOHW(transp, info->var.transp.length);
++
++			value = (red << info->var.red.offset) |
++				(green << info->var.green.offset) |
++				(blue << info->var.blue.offset) |
++				(transp << info->var.transp.offset);
++
++			pal[regno] = value;
++			ret = 0;
++		}
++		break;
++	case FB_VISUAL_STATIC_PSEUDOCOLOR:
++	case FB_VISUAL_PSEUDOCOLOR:
++		break;
++	}
++	return ret;
++}
++
++static int fsl_ssd1289_blank(int blank_mode, struct fb_info *info)
++{
++	if (blank_mode == FB_BLANK_POWERDOWN)
++		fsl_ssd1289_disable_lcd(info);
++	else
++		fsl_ssd1289_enable_lcd(info);
++
++	return 0;
++}
++
++static int fsl_ssd1289_open(struct fb_info *info, int user)
++{
++	struct fsl_ssd1289_fb_info *fbinfo = info->par;
++	struct task_struct *task;
++	int ret;
++
++	if (fbinfo->openflag == 0) {
++		memset(info->screen_base, 0, info->screen_size);
++		fsl_ssd1289_enable_lcd(info);
++
++		task = kthread_run(ssd1289fbd, info, "SSD1289 LCD");
++		if (IS_ERR(task)) {
++			ret = PTR_ERR(task);
++			return ret;
++		}
++		fbinfo->task = task;
++	}
++
++	fbinfo->openflag = 1;
++	return 0;
++}
++
++static int fsl_ssd1289_release(struct fb_info *info, int user)
++{
++	struct fsl_ssd1289_fb_info *fbinfo = info->par;
++
++	fbinfo->openflag = 0;
++	if (fbinfo->task) {
++		struct task_struct *task = fbinfo->task;
++		fbinfo->task = NULL;
++		kthread_stop(task);
++	}
++
++	memset(info->screen_base, 0, info->screen_size);
++	fsl_ssd1289_disable_lcd(info);
++	return 0;
++}
++
++static struct fb_ops fsl_ssd1289_ops = {
++	.owner		= THIS_MODULE,
++	.fb_check_var	= fsl_ssd1289_check_var,
++	.fb_set_par	= fsl_ssd1289_set_par,
++	.fb_setcolreg	= fsl_ssd1289_setcolreg,
++	.fb_blank	= fsl_ssd1289_blank,
++	.fb_open	= fsl_ssd1289_open,
++	.fb_release	= fsl_ssd1289_release,
++	.fb_copyarea	= cfb_copyarea,
++	.fb_fillrect	= cfb_fillrect,
++	.fb_imageblit	= cfb_imageblit,
++};
++
++static int fsl_ssd1289_map_video_memory(struct fb_info *info)
++{
++	unsigned int map_size = info->fix.smem_len;
++
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++	struct fsl_ssd1289_fb_info *fbinfo = info->par;
++
++	fbinfo->ssd1289_reg.cmd =
++		ioremap_nocache(FLEXBUS_LCD_CMD_ADDRESS, 2);
++	fbinfo->ssd1289_reg.data =
++		ioremap_nocache(FLEXBUS_LCD_DATA_ADDRESS, 2);
++#endif
++
++	info->screen_base = kmalloc(map_size, GFP_KERNEL);
++	info->fix.smem_start = virt_to_phys(info->screen_base);
++	info->screen_size = info->fix.smem_len;
++
++	if (info->screen_base)
++		memset(info->screen_base, 0, map_size);
++
++	return info->screen_base ? 0 : -ENOMEM;
++}
++
++static inline void fsl_ssd1289_unmap_video_memory(struct fb_info *info)
++{
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++	struct fsl_ssd1289_fb_info *fbinfo = info->par;
++
++	iounmap(fbinfo->ssd1289_reg.cmd);
++	iounmap(fbinfo->ssd1289_reg.data);
++#endif
++	kfree(info->screen_base);
++}
++
++
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++static int fsl_ssd1289_probe(struct platform_device *pdev)
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++static int fsl_ssd1289_probe(struct spi_device *spi)
++#endif
++{
++	struct fsl_ssd1289_fb_info *fbinfo;
++	struct fb_info *info;
++	struct fsl_ssd1289_fb_display *display;
++	int ret;
++	unsigned long smem_len;
++
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++	info = framebuffer_alloc(sizeof(struct fsl_ssd1289_fb_info),
++			&pdev->dev);
++	if (!info)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, info);
++
++	fbinfo = info->par;
++	fbinfo->dev = &pdev->dev;
++	display = pdev->dev.platform_data;
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++	info = framebuffer_alloc(sizeof(struct fsl_ssd1289_fb_info),
++			&spi->dev);
++	if (!info)
++		return -ENOMEM;
++
++	dev_set_drvdata(&spi->dev, info);
++
++	fbinfo = info->par;
++	fbinfo->dev = &spi->dev;
++	fbinfo->spidev = spi;
++	display = spi->dev.platform_data;
++#endif
++
++	fbinfo->openflag = 0;
++	info->fix.type = FB_TYPE_PACKED_PIXELS;
++	info->fix.type_aux = 0;
++	info->fix.xpanstep = 0;
++	info->fix.ypanstep = 0;
++	info->fix.ywrapstep = 0;
++	info->fix.accel = FB_ACCEL_NONE;
++
++	info->var.nonstd = 0;
++	info->var.activate = FB_ACTIVATE_NOW;
++	info->var.accel_flags = 0;
++	info->var.vmode = FB_VMODE_NONINTERLACED;
++
++	info->fbops = &fsl_ssd1289_ops;
++	info->flags = FBINFO_HWACCEL_IMAGEBLIT | FBINFO_HWACCEL_FILLRECT
++				| FBINFO_HWACCEL_COPYAREA;
++	info->pseudo_palette = &fbinfo->pseudo_palette;
++
++	/* find maximum required memory size for display */
++	smem_len = display->xres;
++	smem_len *= display->yres;
++	smem_len *= display->bpp;
++	smem_len >>= 3;
++	if (info->fix.smem_len < smem_len)
++		info->fix.smem_len = smem_len;
++
++	/* Intialize video memory */
++	ret = fsl_ssd1289_map_video_memory(info);
++	if (ret) {
++		printk(KERN_ERR "Failed to allocate video RAM: %d\n", ret);
++		ret = -ENOMEM;
++		goto dealloc_fb;
++	}
++
++	info->var.xres = display->xres;
++	info->var.yres = display->yres;
++	info->var.bits_per_pixel = display->bpp;
++	info->fix.line_length = (info->var.xres * info->var.bits_per_pixel) / 8;
++
++	fsl_ssd1289_check_var(&info->var, info);
++
++	ret = register_framebuffer(info);
++	if (ret < 0) {
++		printk(KERN_ERR "Failed to register framebuffer device: %d\n",
++			ret);
++		goto free_video_memory;
++	}
++
++	printk(KERN_INFO "fb: SSD1289 TFT LCD Framebuffer Driver\n");
++	return 0;
++
++free_video_memory:
++	fsl_ssd1289_unmap_video_memory(info);
++dealloc_fb:
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++	platform_set_drvdata(pdev, NULL);
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++	dev_set_drvdata(&spi->dev, NULL);
++#endif
++	framebuffer_release(info);
++	return ret;
++}
++
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++static int fsl_ssd1289_remove(struct platform_device *pdev)
++{
++	struct fb_info *info = platform_get_drvdata(pdev);
++
++	platform_set_drvdata(pdev, NULL);
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++static int fsl_ssd1289_remove(struct spi_device *spi)
++{
++	struct fb_info *info = dev_get_drvdata(&spi->dev);
++
++	dev_set_drvdata(&spi->dev, NULL);
++#endif
++	unregister_framebuffer(info);
++	fsl_ssd1289_unmap_video_memory(info);
++	framebuffer_release(info);
++	return 0;
++}
++
++#ifdef CONFIG_PM
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++static int fsl_ssd1289_suspend(struct platform_device *dev, pm_message_t state)
++{
++	struct fb_info *info = platform_get_drvdata(dev);
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++static int fsl_ssd1289_suspend(struct spi_device *spi, pm_message_t state)
++{
++	struct fb_info *info = dev_get_drvdata(&spi->dev);
++#endif
++	/* enter into sleep mode */
++	ssd1289_write(info, SSD1289_REG_SLEEP_MODE, 0);
++	ssd1289_write(info, 0x0001, 1);
++	return 0;
++}
++
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++static int fsl_ssd1289_resume(struct platform_device *dev)
++{
++	struct fb_info *info = platform_get_drvdata(dev);
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++static int fsl_ssd1289_resume(struct spi_device *spi)
++{
++	struct fb_info *info = dev_get_drvdata(&spi->dev);
++#endif
++	/* leave sleep mode */
++	ssd1289_write(info, SSD1289_REG_SLEEP_MODE, 0);
++	ssd1289_write(info, 0x0000, 1);
++	return 0;
++}
++#else
++#define fsl_ssd1289_suspend NULL
++#define fsl_ssd1289_resume NULL
++#endif
++
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++static struct platform_driver fsl_ssd1289_driver = {
++	.probe = fsl_ssd1289_probe,
++	.remove = fsl_ssd1289_remove,
++	.suspend = fsl_ssd1289_suspend,
++	.resume = fsl_ssd1289_resume,
++	.driver = {
++		.name = "fsl-ssd1289",
++		.owner = THIS_MODULE,
++	},
++};
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++static struct spi_driver spi_ssd1289_driver = {
++	.driver = {
++		.name	= "spi-ssd1289",
++		.bus	= &spi_bus_type,
++		.owner	= THIS_MODULE,
++	},
++	.probe = fsl_ssd1289_probe,
++	.remove = fsl_ssd1289_remove,
++	.suspend = fsl_ssd1289_suspend,
++	.resume = fsl_ssd1289_resume,
++};
++#endif
++
++static int __devinit fsl_ssd1289_init(void)
++{
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++	return platform_driver_register(&fsl_ssd1289_driver);
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++	return spi_register_driver(&spi_ssd1289_driver);
++#endif
++}
++
++static void __exit fsl_ssd1289_exit(void)
++{
++#if defined(CONFIG_SSD1289_FLEXBUS_MODE)
++	return platform_driver_unregister(&fsl_ssd1289_driver);
++#elif defined(CONFIG_SSD1289_SPI_MODE)
++	return spi_unregister_driver(&spi_ssd1289_driver);
++#endif
++}
++
++module_init(fsl_ssd1289_init);
++module_exit(fsl_ssd1289_exit);
++
++MODULE_AUTHOR("Alison Wang <b18965@freescale.com>");
++MODULE_DESCRIPTION("Freescale MCF54418 SSD1289 TFT LCD Framebuffer Driver");
++MODULE_LICENSE("GPL");

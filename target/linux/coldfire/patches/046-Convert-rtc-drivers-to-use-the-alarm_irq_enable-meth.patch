@@ -1,0 +1,109 @@
+From ab2284cd4730b9ea29937ee3a0ef1bcdc6b3159d Mon Sep 17 00:00:00 2001
+From: Alison Wang <b18965@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:54 +0800
+Subject: [PATCH 46/52] Convert rtc drivers to use the alarm_irq_enable method
+
+Old rtc drivers use the ioctl method instead of the alarm_irq_enable
+method for enabling alarm interupts. With the new virtualized RTC
+rework, its important for drivers to use the alarm_irq_enable instead.
+
+This patch converts the drivers that use the AIE ioctl method to
+use the alarm_irq_enable method.
+
+Signed-off-by: Alison Wang <b18965@freescale.com>
+---
+ drivers/rtc/rtc-m5441x.c |   22 +++++++++++-----------
+ drivers/rtc/rtc-mcf.c    |   23 +++++++++++------------
+ 2 files changed, 22 insertions(+), 23 deletions(-)
+
+--- a/drivers/rtc/rtc-m5441x.c
++++ b/drivers/rtc/rtc-m5441x.c
+@@ -400,17 +400,6 @@ static int mcf_rtc_ioctl(struct device *
+ 		writew((readw(MCF_RTC_IER) | PIE_BIT_DEF[i][1]), MCF_RTC_IER);
+ 		spin_unlock_irq(&rtc_lock);
+ 		return 0;
+-	case RTC_AIE_OFF:
+-		spin_lock_irq(&rtc_lock);
+-		writew((readw(MCF_RTC_IER) & ~MCF_RTC_ISR_ALM), MCF_RTC_IER);
+-		spin_unlock_irq(&rtc_lock);
+-		return 0;
+-
+-	case RTC_AIE_ON:
+-		spin_lock_irq(&rtc_lock);
+-		writew((readw(MCF_RTC_IER) | MCF_RTC_ISR_ALM), MCF_RTC_IER);
+-		spin_unlock_irq(&rtc_lock);
+-		return 0;
+ 
+ 	case RTC_UIE_OFF:	/* UIE is for the 1Hz interrupt */
+ 		spin_lock_irq(&rtc_lock);
+@@ -427,6 +416,16 @@ static int mcf_rtc_ioctl(struct device *
+ 	return -ENOIOCTLCMD;
+ }
+ 
++static int mcf_rtc_alarm_irq_enable(struct device *dev, unsigned int enabled)
++{
++	if (enabled)
++		writew((readw(MCF_RTC_IER) | MCF_RTC_ISR_ALM), MCF_RTC_IER);
++	else
++		writew((readw(MCF_RTC_IER) & ~MCF_RTC_ISR_ALM), MCF_RTC_IER);
++
++	return 0;
++}
++
+ /*!
+  * This function reads the current RTC time into tm in Gregorian date.
+  *
+@@ -534,6 +533,7 @@ static struct rtc_class_ops mcf_rtc_ops
+ 	.set_time = mcf_rtc_set_time,
+ 	.read_alarm = mcf_rtc_read_alarm,
+ 	.set_alarm = mcf_rtc_set_alarm,
++	.alarm_irq_enable = mcf_rtc_alarm_irq_enable,
+ };
+ 
+ static int __devinit mcf_rtc_probe(struct platform_device *pdev)
+--- a/drivers/rtc/rtc-mcf.c
++++ b/drivers/rtc/rtc-mcf.c
+@@ -298,18 +298,6 @@ static int mcf_rtc_ioctl(struct device *
+ 		writel((readl(MCF_RTC_IER) | PIE_BIT_DEF[i][1]), MCF_RTC_IER);
+ 		spin_unlock_irq(&rtc_lock);
+ 		return 0;
+-	case RTC_AIE_OFF:
+-		spin_lock_irq(&rtc_lock);
+-		writel((readl(MCF_RTC_IER) & ~MCF_RTC_ISR_ALM), MCF_RTC_IER);
+-		spin_unlock_irq(&rtc_lock);
+-		return 0;
+-
+-	case RTC_AIE_ON:
+-		spin_lock_irq(&rtc_lock);
+-		writel((readl(MCF_RTC_IER) | MCF_RTC_ISR_ALM), MCF_RTC_IER);
+-		spin_unlock_irq(&rtc_lock);
+-		return 0;
+-
+ 	case RTC_UIE_OFF:	/* UIE is for the 1Hz interrupt */
+ 		spin_lock_irq(&rtc_lock);
+ 		writel((readl(MCF_RTC_IER) & ~MCF_RTC_ISR_1HZ), MCF_RTC_IER);
+@@ -325,6 +313,16 @@ static int mcf_rtc_ioctl(struct device *
+ 	return -ENOIOCTLCMD;
+ }
+ 
++static int mcf_rtc_alarm_irq_enable(struct device *dev, unsigned int enabled)
++{
++	if (enabled)
++		writel((readl(MCF_RTC_IER) | MCF_RTC_ISR_ALM), MCF_RTC_IER);
++	else
++		writel((readl(MCF_RTC_IER) & ~MCF_RTC_ISR_ALM), MCF_RTC_IER);
++
++	return 0;
++}
++
+ /*!
+  * This function reads the current RTC time into tm in Gregorian date.
+  *
+@@ -466,6 +464,7 @@ static struct rtc_class_ops mcf_rtc_ops
+ 	.read_alarm = mcf_rtc_read_alarm,
+ 	.set_alarm = mcf_rtc_set_alarm,
+ 	.proc = mcf_rtc_proc,
++	.alarm_irq_enable = mcf_rtc_alarm_irq_enable,
+ };
+ 
+ static int __devinit mcf_rtc_probe(struct platform_device *pdev)

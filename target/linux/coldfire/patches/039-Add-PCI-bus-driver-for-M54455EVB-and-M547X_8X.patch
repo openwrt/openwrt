@@ -1,0 +1,3051 @@
+From 3f21ef5f7b72937a1ae293e8ba6ebd0bb0b175e3 Mon Sep 17 00:00:00 2001
+From: Jingchang Lu <b35083@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:49 +0800
+Subject: [PATCH 39/52] Add PCI bus driver for M54455EVB and M547X_8X
+
+Signed-off-by: Jingchang Lu <b35083@freescale.com>
+---
+ arch/m68k/coldfire/m5445x/devices.c      |    9 +
+ arch/m68k/coldfire/m5445x/mcf5445x-pci.c |  721 +++++++++++++++++++++
+ arch/m68k/coldfire/m5445x/pci.c          |  247 +++++++
+ arch/m68k/coldfire/m547x/pci.c           | 1023 ++++++++++++++++++++++++++++++
+ arch/m68k/coldfire/m547x/pci_dummy.S     |   45 ++
+ arch/m68k/include/asm/5445x_pci.h        |  111 ++++
+ arch/m68k/include/asm/548x_pci.h         |   99 +++
+ arch/m68k/include/asm/pci.h              |    6 +
+ arch/m68k/kernel/bios32_mcf548x.c        |  632 ++++++++++++++++++
+ drivers/pci/Makefile                     |    1 +
+ drivers/pci/access.c                     |   18 +
+ drivers/pci/setup-bus.c                  |    6 +
+ lib/iomap.c                              |    4 +
+ 13 files changed, 2922 insertions(+), 0 deletions(-)
+ create mode 100644 arch/m68k/coldfire/m5445x/mcf5445x-pci.c
+ create mode 100644 arch/m68k/coldfire/m5445x/pci.c
+ create mode 100644 arch/m68k/coldfire/m547x/pci.c
+ create mode 100644 arch/m68k/coldfire/m547x/pci_dummy.S
+ create mode 100644 arch/m68k/include/asm/5445x_pci.h
+ create mode 100644 arch/m68k/include/asm/548x_pci.h
+ create mode 100644 arch/m68k/kernel/bios32_mcf548x.c
+
+--- a/arch/m68k/coldfire/m5445x/devices.c
++++ b/arch/m68k/coldfire/m5445x/devices.c
+@@ -25,12 +25,15 @@
+ #include <linux/spi/mmc_spi.h>
+ #endif
+ 
++#include <linux/pci.h>
++
+ #include <asm/coldfire.h>
+ #include <asm/mcfsim.h>
+ #include <asm/mcfuart.h>
+ #include <asm/mcfqspi.h>
+ #include <asm/mcfdspi.h>
+ #include <asm/cf_io.h>
++#include <asm/pci.h>
+ 
+ /* ATA Interrupt */
+ #define IRQ_ATA		(64 + 64 + 54)
+@@ -517,6 +520,12 @@ void m5445x_uarts_init(void)
+ 
+ static int __init init_BSP(void)
+ {
++#ifndef CONFIG_M54455_PCI_initcall
++#if defined(CONFIG_M54455) && defined(CONFIG_PCI)
++	pci_init();
++	pcibios_init();
++#endif
++#endif
+ 	m5445x_uarts_init();
+ 	platform_add_devices(m5445x_devices, ARRAY_SIZE(m5445x_devices));
+ 	return 0;
+--- /dev/null
++++ b/arch/m68k/coldfire/m5445x/mcf5445x-pci.c
+@@ -0,0 +1,721 @@
++/*
++ * arch/m68k/coldfire/m5445x/mcf5445x-pci.c
++ *
++ * Coldfire M5445x specific PCI implementation.
++ *
++ * Copyright (C) 2007-2011 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Kurt Mahan <kmahan@freescale.com>
++ */
++
++#include <linux/delay.h>
++#include <linux/interrupt.h>
++#include <linux/pci.h>
++
++#include <asm/mcfsim.h>
++#include <asm/pci.h>
++#include <asm/irq.h>
++#include <asm/mcf5445x_pciarb.h>
++#include <asm/mcf5445x_pci.h>
++#include <asm/cf_io.h>
++/*
++ * Layout MCF5445x to PCI memory mappings:
++ *
++ *	WIN         MCF5445x                    PCI            TYPE
++ *	---         --------                    ---            ----
++ *     [0] 0xA0000000 -> 0xACFFFFFF  0xA0000000 -> 0xACFFFFFF  MEM
++ *     [1] 0xAC000000 -> 0xAEFFFFFF  0xAC000000 -> 0xAEFFFFFF  IO
++ *     [2] 0xAF000000 -> 0xAFFFFFFF  0xAF000000 -> 0xAFFFFFFF  CONFIG
++ */
++
++void __iomem *pci_mem_map;
++unsigned long pci_mem_mapsize = 256 * 1024 * 1024;
++
++#define MCF5445X_PCI_MEM_BASE		((unsigned int)pci_mem_map)
++#define MCF5445X_PCI_MEM_BASE_PHY	0xA0000000
++#define MCF5445X_PCI_MEM_SIZE		0x0C000000
++
++#define MCF5445X_PCI_IO_BASE		\
++	(MCF5445X_PCI_MEM_BASE + MCF5445X_PCI_MEM_SIZE)
++#define MCF5445X_PCI_IO_SIZE		0x03000000
++
++#define MCF5445X_PCI_CONFIG_BASE	\
++	(MCF5445X_PCI_IO_BASE + MCF5445X_PCI_IO_SIZE)
++#define MCF5445X_PCI_CONFIG_SIZE	0x01000000
++
++#define HOST_IO_BASE			\
++	(MCF5445X_PCI_MEM_BASE + MCF5445X_PCI_MEM_SIZE)
++#define PCI_IO_MASK			(MCF5445X_PCI_IO_SIZE - 1)
++
++#undef DEBUG
++#ifdef DEBUG
++# define DBG(x...) printk(x)
++#else
++# define DBG(x...)
++#endif
++
++/* PCI Bus memory resource block */
++struct resource pci_iomem_resource = {
++	.name = "PCI memory space",
++	.flags = IORESOURCE_MEM,
++};
++
++/* PCI Bus ioport resource block */
++struct resource pci_ioport_resource = {
++	.name = "PCI I/O space",
++	.flags = IORESOURCE_IO,
++};
++
++/*
++ * The M54455EVB multiplexes all the PCI interrupts via
++ * the FPGA and routes them to a single interrupt.  The
++ * PCI spec requires all PCI interrupt routines be smart
++ * enough to sort out their own interrupts.
++ * The interrupt source from the FPGA is configured
++ * to EPORT 3.
++ */
++#define MCF5445X_PCI_IRQ		0x43
++
++#define PCI_SLOTS			4
++
++/*
++ * FPGA Info
++ */
++#define FPGA_PCI_IRQ_ENABLE		(u32 *)0x09000000
++#define FPGA_PCI_IRQ_STATUS		(u32 *)0x09000004
++#define FPGA_PCI_IRQ_ROUTE		(u32 *)0x0900000c
++#define FPGA_SEVEN_LED			(u32 *)0x09000014
++
++
++/*
++ * mcf5445x_conf_device(struct pci_dev *dev)
++ *
++ * Machine dependent Configure the given device.
++ *
++ * Parameters:
++ *
++ * dev		- the pci device.
++ */
++void
++mcf5445x_conf_device(struct pci_dev *dev)
++{
++	set_fpga(FPGA_PCI_IRQ_ENABLE, 0x0f);
++}
++
++/*
++ * int mcf5445x_pci_config_read(unsigned int seg, unsigned int bus,
++ *				unsigned int devfn, int reg,
++ *				u32 *value)
++ *
++ * Read from PCI configuration space.
++ *
++ */
++int mcf5445x_pci_config_read(unsigned int seg, unsigned int bus,
++			unsigned int devfn, int reg, int len, u32 *value)
++{
++	u32 addr = MCF_PCI_PCICAR_BUSNUM(bus) |
++		   MCF_PCI_PCICAR_DEVNUM(PCI_SLOT(devfn)) |
++		   MCF_PCI_PCICAR_FUNCNUM(PCI_FUNC(devfn)) |
++		   MCF_PCI_PCICAR_DWORD(reg) |
++		   MCF_PCI_PCICAR_E;
++
++	if ((bus > 255) || (devfn > 255) || (reg > 255)) {
++		*value = -1;
++		return -EINVAL;
++	}
++
++	/* setup for config mode */
++	MCF_PCI_PCICAR = addr;
++	__asm__ __volatile__("nop");
++
++	switch (len) {
++	case 1:
++		*value = *(volatile u8 *)(MCF5445X_PCI_CONFIG_BASE+(reg&3));
++		break;
++	case 2:
++		*value = le16_to_cpu(*(volatile u16 *)
++				(MCF5445X_PCI_CONFIG_BASE + (reg&2)));
++		break;
++	case 4:
++		*value = le32_to_cpu(*(volatile u32 *)
++				(MCF5445X_PCI_CONFIG_BASE));
++		break;
++	}
++
++	/* clear config mode */
++	MCF_PCI_PCICAR = ~MCF_PCI_PCICAR_E;
++	__asm__ __volatile__("nop");
++
++	return 0;
++}
++
++/*
++ * int mcf5445x_pci_config_write(unsigned int seg, unsigned int bus,
++ *				unsigned int devfn, int reg,
++ *				u32 *value)
++ *
++ * Write to PCI configuration space
++ */
++int mcf5445x_pci_config_write(unsigned int seg, unsigned int bus,
++		    unsigned int devfn, int reg, int len, u32 value)
++{
++	u32 addr = MCF_PCI_PCICAR_BUSNUM(bus) |
++		   MCF_PCI_PCICAR_DEVNUM(PCI_SLOT(devfn)) |
++		   MCF_PCI_PCICAR_FUNCNUM(PCI_FUNC(devfn)) |
++		   MCF_PCI_PCICAR_DWORD(reg) |
++		   MCF_PCI_PCICAR_E;
++
++	if ((bus > 255) || (devfn > 255) || (reg > 255))
++		return -EINVAL;
++
++	/* setup for config mode */
++	MCF_PCI_PCICAR = addr;
++	__asm__ __volatile__("nop");
++
++	switch (len) {
++	case 1:
++		*(volatile u8 *)(MCF5445X_PCI_CONFIG_BASE+(reg&3)) = (u8)value;
++		break;
++	case 2:
++		*(volatile u16 *)(MCF5445X_PCI_CONFIG_BASE+(reg&2)) =
++				cpu_to_le16((u16)value);
++		break;
++	case 4:
++		*(volatile u32 *)(MCF5445X_PCI_CONFIG_BASE) =
++				cpu_to_le32(value);
++		break;
++	}
++
++	/* clear config mode */
++	MCF_PCI_PCICAR = ~MCF_PCI_PCICAR_E;
++	__asm__ __volatile__("nop");
++
++	return 0;
++}
++
++/* hardware operations */
++static struct pci_raw_ops mcf5445x_pci_ops = {
++	.read =		mcf5445x_pci_config_read,
++	.write =	mcf5445x_pci_config_write,
++};
++
++/************************************************************************/
++
++/*
++ * u8 pci_inb()
++ *
++ * Read a byte at specified address from I/O space
++ */
++unsigned char pci_inb(long addr)
++{
++	char value;
++
++	value = *(volatile unsigned char *) (HOST_IO_BASE |
++			(addr & PCI_IO_MASK));
++	DBG("PCI: inb addr=0x%08X, value=0x%02X\n", addr, value);
++
++	return (unsigned char) value;
++}
++
++
++/*
++ * u16 pci_inw()
++ *
++ * Read a word at specified address from I/O space
++ */
++unsigned short pci_inw(long addr)
++{
++	short value;
++	volatile unsigned short *ptr;
++
++	ptr = (volatile unsigned short *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	value = le16_to_cpu(*ptr);
++
++	DBG("PCI: inw addr=0x%08X, value=0x%04X\n",  addr, value);
++	return (unsigned short) value;
++}
++
++/*
++ * u16 pci_raw_inw()
++ *
++ * Read a raw word at specified address from I/O space
++ */
++unsigned short pci_raw_inw(long addr)
++{
++	short value;
++	volatile unsigned short *ptr;
++
++	ptr = (volatile unsigned short *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	value = *ptr;
++
++	DBG("PCI: raw_inw addr=0x%08X, value=0x%04X\n",  addr, value);
++	return (unsigned short) value;
++}
++
++/*
++ * u32 pci_inl()
++ *
++ * Read a dword at specified address from I/O space
++ */
++unsigned long pci_inl(long addr)
++{
++	long value;
++	volatile unsigned long *ptr;
++
++	ptr = (volatile unsigned long *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	value = le32_to_cpu(*ptr);
++
++	DBG("PCI: inl addr=0x%08X, value=0x%08X\n",  addr, value);
++	return (unsigned long) value;
++}
++
++/*
++ * u32 pci_raw_inl()
++ *
++ * Read a raw dword at specified address from I/O space
++ */
++unsigned long pci_raw_inl(long addr)
++{
++	long value;
++	volatile unsigned long *ptr;
++
++	ptr = (volatile unsigned long *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	value = *ptr;
++
++	DBG("PCI: raw_inl addr=0x%08X, value=0x%08X\n",  addr, value);
++	return (unsigned long) value;
++}
++
++/*
++ * void pci_outb()
++ *
++ * Write a byte value at specified address to I/O space
++ */
++void pci_outb(unsigned char value,  long addr)
++{
++
++	*(volatile unsigned char *) (HOST_IO_BASE | (addr & PCI_IO_MASK)) \
++		= value;
++	DBG("PCI: outb addr=0x%08X, value=0x%02X\n",  addr, value);
++}
++
++
++/*
++ * void pci_outw()
++ *
++ * Write a word value at specified address to I/O space
++ */
++void pci_outw(volatile unsigned short value, volatile  long addr)
++{
++	volatile unsigned short *ptr;
++
++	ptr = (volatile unsigned short *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	*ptr = cpu_to_le16(value);
++	DBG("PCI: outw addr=0x%08X, value=0x%04X\n",  addr, value);
++}
++
++/*
++ * void pci_raw_outw()
++ *
++ * Write a raw word value at specified address to I/O space
++ */
++void pci_raw_outw(volatile unsigned short value, volatile  long addr)
++{
++	volatile unsigned short *ptr;
++
++	ptr = (volatile unsigned short *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	*ptr = value;
++	DBG("PCI: raw_outw addr=0x%08X, value=0x%04X\n",  addr, value);
++}
++
++/*
++ * void pci_outl()
++ *
++ * Write a long word value at specified address to I/O space
++ */
++void pci_outl(volatile unsigned long value, volatile long addr)
++{
++	volatile unsigned long *ptr;
++
++	ptr = (volatile unsigned long *)(HOST_IO_BASE | (addr & PCI_IO_MASK));
++	*ptr = cpu_to_le32(value);
++	DBG("PCI: outl addr=0x%08X, value=0x%08X\n", addr, value);
++}
++
++/*
++ * void pci_raw_outl()
++ *
++ * Write a raw long word value at specified address to I/O space
++ */
++void pci_raw_outl(volatile unsigned long value, volatile long addr)
++{
++	volatile unsigned long *ptr;
++
++	ptr = (volatile unsigned long *)(HOST_IO_BASE | (addr & PCI_IO_MASK));
++	*ptr = value;
++	DBG("PCI: raw_outl addr=0x%08X, value=0x%08X\n", addr, value);
++}
++
++/*
++ * void pci_insb()
++ *
++ * Read several byte values from specified I/O port
++ */
++void pci_insb(volatile unsigned char *addr, unsigned char *buf, int len)
++{
++	for (; len--; buf++)
++		*buf = pci_inb((unsigned long)addr);
++	DBG("PCI: pci_insb addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++
++/*
++ * void pci_insw()
++ *
++ * Read several word values from specified I/O port
++ */
++void pci_insw(volatile unsigned short *addr, unsigned short *buf, int len)
++{
++	for (; len--; buf++)
++		*buf = pci_inw((unsigned long)addr);
++	DBG("PCI: pci_insw addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++/*
++ * void pci_insl()
++ *
++ * Read several dword values from specified I/O port
++ */
++void pci_insl(volatile unsigned long *addr, unsigned long *buf, int len)
++{
++	for (; len--; buf++)
++		*buf = pci_inl((unsigned long)addr);
++	DBG("PCI: pci_insl addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++/*
++ * void pci_outsb()
++ *
++ * Write several byte values to specified I/O port
++ */
++void pci_outsb(volatile unsigned char *addr, const unsigned char *buf, int len)
++{
++	for (; len--; buf++)
++		pci_outb((unsigned long)addr, *buf);
++	DBG("PCI: pci_outsb addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++/*
++ * void pci_outsw()
++ *
++ * Write several word values to specified I/O port
++ */
++void
++pci_outsw(volatile unsigned short *addr, const unsigned short *buf, int len)
++{
++	for (; len--; buf++)
++		pci_outw((unsigned long)addr, *buf);
++	DBG("PCI: pci_outsw addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++/*
++ * void pci_outsl()
++ *
++ * Write several dword values to specified I/O port
++ */
++void pci_outsl(volatile unsigned long *addr, const unsigned long *buf, int len)
++{
++	for (; len--; buf++)
++		pci_outl((unsigned long)addr, *buf);
++	DBG("PCI: pci_outsl addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++/*
++ * irqreturn_t mcf5445x_pci_interrupt( int irq, void *dev)
++ *
++ * PCI controller interrupt handler.
++ */
++static irqreturn_t
++mcf5445x_pci_interrupt(int irq, void *dev)
++{
++	u32 status = MCF_PCI_PCIGSCR;
++#ifdef DEBUG
++	printk(KERN_INFO "PCI: Controller irq status=0x%08x\n", status);
++#endif
++	/* clear */
++	MCF_PCI_PCIGSCR = status;
++
++	return IRQ_HANDLED;
++}
++
++/*
++ * irqreturn_t mcf5445x_pci_arb_interrupt( int irq, void *dev)
++ *
++ * PCI Arbiter interrupt handler.
++ */
++static irqreturn_t
++mcf5445x_pci_arb_interrupt(int irq, void *dev)
++{
++	u32 status = MCF_PCIARB_PASR;
++#ifdef DEBUG
++	printk(KERN_INFO "PCI: Arbiter irq status=0x%08x\n", status);
++#endif
++	/* clear */
++	MCF_PCIARB_PASR = status;
++	return IRQ_HANDLED;
++}
++
++/*
++ * struct pci_bus_info *init_mcf5445x_pci(void)
++ *
++ * Machine specific initialisation:
++ *
++ * - Allocate and initialise a 'pci_bus_info' structure
++ * - Initialize hardware
++ *
++ * Result: pointer to 'pci_bus_info' structure.
++ */
++int __init
++init_mcf5445x_pci(void)
++{
++	/*
++	 * Initialize the PCI core
++	 */
++	printk(KERN_INFO "init_mcf5445x_pci\n");
++
++	/* pci memory mapping */
++	pci_mem_map = ioremap(MCF5445X_PCI_MEM_BASE_PHY, pci_mem_mapsize);
++	if (!pci_mem_map) {
++		printk(KERN_ERR "PCI memory map failed by ioremap!\n");
++		return -ENOMEM;
++	}
++	printk(KERN_INFO "MCF5445X_PCI_MEM_BASE value is 0x%x\n", \
++			MCF5445X_PCI_MEM_BASE);
++
++	/* Initialize pci resource */
++	pci_iomem_resource.start = MCF5445X_PCI_MEM_BASE;
++	pci_iomem_resource.end = MCF5445X_PCI_MEM_BASE + \
++				 MCF5445X_PCI_MEM_SIZE - 1;
++
++	pci_ioport_resource.start = MCF5445X_PCI_IO_BASE;
++	pci_ioport_resource.end = MCF5445X_PCI_IO_BASE + \
++				  MCF5445X_PCI_IO_SIZE - 1;
++
++	/*
++	* Must Reset!!! If bootloader has PCI enabled, it will cause
++	* problem in linux when it tries to configure/find resources
++	* for the pci devices
++	*/
++	MCF_PCI_PCIGSCR = 1;
++
++	/* arbitration controller */
++	MCF_PCIARB_PACR = MCF_PCIARB_PACR_INTMPRI |
++			  MCF_PCIARB_PACR_EXTMPRI(0x0f) |
++			  MCF_PCIARB_PACR_INTMINTEN |
++			  MCF_PCIARB_PACR_EXTMINTEN(0x0f);
++
++	/* pci pin assignment regs */
++#if defined(CONFIG_PATA_FSL) || defined(CONFIG_PATA_FSL_MODULE)
++	MCF_GPIO_PAR_PCI = MCF_GPIO_PAR_PCI_GNT0 |
++			MCF_GPIO_PAR_PCI_GNT1 |
++			MCF_GPIO_PAR_PCI_GNT2 |
++			MCF_GPIO_PAR_PCI_GNT3_GNT3 |
++			MCF_GPIO_PAR_PCI_REQ0 |
++			MCF_GPIO_PAR_PCI_REQ1 |
++			MCF_GPIO_PAR_PCI_REQ2 |
++			MCF_GPIO_PAR_PCI_REQ3_REQ3;
++
++	MCF_GPIO_PAR_PCI = (MCF_GPIO_PAR_PCI &
++			(MCF_GPIO_PAR_PCI_GNT3_MASK &
++			 MCF_GPIO_PAR_PCI_REQ3_MASK)) |
++			MCF_GPIO_PAR_PCI_GNT3_ATA_DMACK |
++			MCF_GPIO_PAR_PCI_REQ3_ATA_INTRQ;
++#else
++	MCF_GPIO_PAR_PCI = MCF_GPIO_PAR_PCI_GNT0 |
++			   MCF_GPIO_PAR_PCI_GNT1 |
++			   MCF_GPIO_PAR_PCI_GNT2 |
++			   MCF_GPIO_PAR_PCI_GNT3_GNT3 |
++			   MCF_GPIO_PAR_PCI_REQ0 |
++			   MCF_GPIO_PAR_PCI_REQ1 |
++			   MCF_GPIO_PAR_PCI_REQ2 |
++			   MCF_GPIO_PAR_PCI_REQ3_REQ3;
++#endif
++	/* target control reg */
++	MCF_PCI_PCITCR = MCF_PCI_PCITCR_P |
++			 MCF_PCI_PCITCR_WCT(8);
++
++	/* PCI MEM address */
++	MCF_PCI_PCIIW0BTAR = MCF5445X_PCI_MEM_BASE_PHY |
++			     (MCF5445X_PCI_MEM_BASE >> 16);
++
++	/* PCI MEM address */
++	MCF_PCI_PCIIW1BTAR = (MCF5445X_PCI_MEM_BASE_PHY +
++				MCF5445X_PCI_MEM_SIZE)
++				| (MCF5445X_PCI_IO_BASE >> 16);
++
++	/* PCI IO address */
++	MCF_PCI_PCIIW2BTAR = (MCF5445X_PCI_MEM_BASE_PHY +
++				MCF5445X_PCI_MEM_SIZE + MCF5445X_PCI_IO_SIZE)
++				| (MCF5445X_PCI_CONFIG_BASE >> 16);
++
++	/* window control */
++	MCF_PCI_PCIIWCR = MCF_PCI_PCIIWCR_WINCTRL0_ENABLE |
++			  MCF_PCI_PCIIWCR_WINCTRL0_MEMREAD |
++			  MCF_PCI_PCIIWCR_WINCTRL1_ENABLE |
++			  MCF_PCI_PCIIWCR_WINCTRL1_IO |
++			  MCF_PCI_PCIIWCR_WINCTRL2_ENABLE |
++			  MCF_PCI_PCIIWCR_WINCTRL2_IO;
++
++	/* initiator control reg */
++	MCF_PCI_PCIICR = 0;
++
++	/* type 0 - command */
++	MCF_PCI_PCISCR = MCF_PCI_PCISCR_MW |	/* mem write/inval */
++			 MCF_PCI_PCISCR_B |	/* bus master enable */
++			 MCF_PCI_PCISCR_MA |	/* clear master abort error */
++			 MCF_PCI_PCISCR_M;	/* mem access enable */
++
++	/* type 0 - config reg */
++	MCF_PCI_PCICR1 = MCF_PCI_PCICR1_CACHELINESIZE(4) |
++			 MCF_PCI_PCICR1_LATTIMER(0xFF);
++	/* type 0 - config 2 reg */
++	MCF_PCI_PCICR2 = 0;
++
++	/* target control reg */
++	MCF_PCI_PCITCR2 = MCF_PCI_PCITCR2_B0E | MCF_PCI_PCITCR2_B5E;
++
++	/* translate addresses from PCI[0] to CF[SDRAM] */
++	MCF_PCI_PCITBATR0 = 0xFC000000 | MCF_PCI_PCITBATR5_EN;
++	MCF_PCI_PCITBATR5 = MCF_RAMBAR1 | MCF_PCI_PCITBATR5_EN;
++
++	/* inbound window for memory */
++	MCF_PCI_PCIBAR0 = 0xFC000000;
++	MCF_PCI_PCIBAR5 = MCF_RAMBAR1;
++
++	/* setup controller interrupt handlers */
++	if (request_irq(55+128, mcf5445x_pci_interrupt, IRQF_SHARED,
++			"PCI Controller", NULL))
++		printk(KERN_ERR "PCI: Unable to register controller irq\n");
++
++	if (request_irq(56+128, mcf5445x_pci_arb_interrupt, IRQF_SHARED,
++			"PCI Arbiter", NULL))
++		printk(KERN_ERR "PCI: Unable to register arbiter irq\n");
++
++	/* global control - clear reset bit */
++	MCF_PCI_PCIGSCR = MCF_PCI_PCIGSCR_SEE |
++			  MCF_PCI_PCIGSCR_PEE;
++
++	/* let everything settle */
++	udelay(1000);
++
++	/* allocate bus ioport resource */
++	if (request_resource(&ioport_resource, &pci_ioport_resource) < 0)
++		printk(KERN_ERR "PCI: Unable to alloc ioport resource\n");
++
++	/* allocate bus iomem resource */
++	if (request_resource(&iomem_resource, &pci_iomem_resource) < 0)
++		printk(KERN_ERR "PCI: Unable to alloc iomem resource\n");
++
++	/* setup FPGA to route PCI to IRQ3(67), SW7 to IRQ7, SW6 to IRQ4 */
++	set_fpga(FPGA_PCI_IRQ_ENABLE, 0x00000000);
++	set_fpga(FPGA_PCI_IRQ_ROUTE, 0x00000039);
++	set_fpga(FPGA_SEVEN_LED, 0x000000FF);
++
++	raw_pci_ops = &mcf5445x_pci_ops;
++#ifdef DEBUG
++	mcf5445x_pci_dumpregs();
++#endif
++	return 0;
++}
++
++/*
++ * DEBUGGING
++ */
++
++#ifdef DEBUG
++struct regdump {
++	u32 addr;
++	char regname[16];
++};
++
++struct regdump type0regs[] = {
++	{ 0xfc0a8000, "PCIIDR" },
++	{ 0xfc0a8004, "PCISCR" },
++	{ 0xfc0a8008, "PCICCRIR" },
++	{ 0xfc0a800c, "PCICR1" },
++	{ 0xfc0a8010, "PCIBAR0" },
++	{ 0xfc0a8014, "PCIBAR1" },
++	{ 0xfc0a8018, "PCIBAR2" },
++	{ 0xfc0a801c, "PCIBAR3" },
++	{ 0xfc0a8020, "PCIBAR4" },
++	{ 0xfc0a8024, "PCIBAR5" },
++	{ 0xfc0a8028, "PCICCPR" },
++	{ 0xfc0a802c, "PCISID" },
++	{ 0xfc0a8030, "PCIERBAR" },
++	{ 0xfc0a8034, "PCICPR" },
++	{ 0xfc0a803c, "PCICR2" },
++	{ 0, "" }
++};
++
++struct regdump genregs[] = {
++	{ 0xfc0a8060, "PCIGSCR" },
++	{ 0xfc0a8064, "PCITBATR0" },
++	{ 0xfc0a8068, "PCITBATR1" },
++	{ 0xfc0a806c, "PCITCR1" },
++	{ 0xfc0a8070, "PCIIW0BTAR" },
++	{ 0xfc0a8074, "PCIIW1BTAR" },
++	{ 0xfc0a8078, "PCIIW2BTAR" },
++	{ 0xfc0a8080, "PCIIWCR" },
++	{ 0xfc0a8084, "PCIICR" },
++	{ 0xfc0a8088, "PCIISR" },
++	{ 0xfc0a808c, "PCITCR2" },
++	{ 0xfc0a8090, "PCITBATR0" },
++	{ 0xfc0a8094, "PCITBATR1" },
++	{ 0xfc0a8098, "PCITBATR2" },
++	{ 0xfc0a809c, "PCITBATR3" },
++	{ 0xfc0a80a0, "PCITBATR4" },
++	{ 0xfc0a80a4, "PCITBATR5" },
++	{ 0xfc0a80a8, "PCIINTR" },
++	{ 0xfc0a80f8, "PCICAR" },
++	{ 0, "" }
++};
++
++struct regdump arbregs[] = {
++	{ 0xfc0ac000, "PACR" },
++	{ 0xfc0ac004, "PASR" },	/* documentation error */
++	{ 0, "" }
++};
++
++/*
++ * void mcf5445x_pci_dumpregs()
++ *
++ * Dump out all the PCI registers
++ */
++void
++mcf5445x_pci_dumpregs(void)
++{
++	struct regdump *reg;
++
++	printk(KERN_INFO "*** MCF5445x PCI TARGET 0 REGISTERS ***\n");
++
++	reg = type0regs;
++	while (reg->addr) {
++		printk(KERN_INFO "0x%08x  0x%08x  %s\n", reg->addr,
++			*((u32 *)reg->addr), reg->regname);
++		reg++;
++	}
++
++	printk(KERN_INFO "\n*** MCF5445x PCI GENERAL REGISTERS ***\n");
++	reg = genregs;
++	while (reg->addr) {
++		printk(KERN_INFO "0x%08x  0x%08x  %s\n", reg->addr,
++			*((u32 *)reg->addr), reg->regname);
++		reg++;
++	}
++	printk(KERN_INFO "\n*** MCF5445x PCI ARBITER REGISTERS ***\n");
++	reg = arbregs;
++	while (reg->addr) {
++		printk(KERN_INFO "0x%08x  0x%08x  %s\n", reg->addr,
++			*((u32 *)reg->addr), reg->regname);
++		reg++;
++	}
++}
++#endif /* DEBUG */
+--- /dev/null
++++ b/arch/m68k/coldfire/m5445x/pci.c
+@@ -0,0 +1,247 @@
++/*
++ * linux/arch/m68k/coldfire/m5445x/pci.c
++ *
++ * PCI initialization for Coldfire architectures.
++ *
++ * Currently Supported:
++ *	M5445x
++ *
++ * Copyright (C) 2007-2011 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Kurt Mahan <kmahan@freescale.com>
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/pci.h>
++
++#include <asm/mcfsim.h>
++#include <asm/pci.h>
++
++/* pci ops for reading/writing config */
++struct pci_raw_ops *raw_pci_ops;
++
++/* pci debug flag */
++static int debug_pci;
++
++static int
++pci_read(struct pci_bus *bus, unsigned int devfn, int where,
++	 int size, u32 *value)
++{
++	return raw_pci_ops->read(0, bus->number, devfn, where, size, value);
++}
++
++static int
++pci_write(struct pci_bus *bus, unsigned int devfn, int where,
++	  int size, u32 value)
++{
++	return raw_pci_ops->write(0, bus->number, devfn, where, size, value);
++}
++
++struct pci_ops pci_root_ops = {
++	.read = pci_read,
++	.write = pci_write,
++};
++
++/*
++ * pcibios_setup(char *)
++ *
++ * Initialize the pcibios based on cmd line params.
++ */
++char *
++pcibios_setup(char *str)
++{
++	if (!strcmp(str, "debug")) {
++		debug_pci = 1;
++		return NULL;
++	}
++	return str;
++}
++
++/*
++ * We need to avoid collisions with `mirrored' VGA ports
++ * and other strange ISA hardware, so we always want the
++ * addresses to be allocated in the 0x000-0x0ff region
++ * modulo 0x400.
++ *
++ * Why? Because some silly external IO cards only decode
++ * the low 10 bits of the IO address. The 0x00-0xff region
++ * is reserved for motherboard devices that decode all 16
++ * bits, so it's ok to allocate at, say, 0x2800-0x28ff,
++ * but we want to try to avoid allocating at 0x2900-0x2bff
++ * which might have be mirrored at 0x0100-0x03ff..
++ */
++resource_size_t
++pcibios_align_resource(void *data, const struct resource *res,
++		resource_size_t size, resource_size_t align)
++{
++	struct pci_dev *dev = data;
++	resource_size_t start = res->start;
++
++	if (res->flags & IORESOURCE_IO) {
++		if (size > 0x100)
++			printk(KERN_ERR "PCI: I/O Region %s/%d too large"
++			       " (%ld bytes)\n", pci_name(dev),
++			       dev->resource - res, (long int)size);
++
++		if (start & 0x3ff)
++			start = (start + 0x3ff) & ~0x3ff;
++	}
++
++	return start;
++}
++EXPORT_SYMBOL(pcibios_align_resource);
++
++/*
++ * Swizzle the device pin each time we cross a bridge
++ * and return the slot number.
++ */
++static u8 __devinit
++pcibios_swizzle(struct pci_dev *dev, u8 *pin)
++{
++	return 0;
++}
++
++/*
++ * Map a slot/pin to an IRQ.
++ */
++static int
++pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
++{
++	return 0x43;
++}
++
++/*
++ * pcibios_update_irq(struct pci_dev *dev, int irq)
++ *
++ * Update a PCI interrupt.
++ */
++void
++pcibios_update_irq(struct pci_dev *dev, int irq)
++{
++	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
++}
++
++/*
++ * pcibios_enable_device(struct pci_dev *dev, int mask)
++ *
++ * Enable a device on the PCI bus.
++ */
++int
++pcibios_enable_device(struct pci_dev *dev, int mask)
++{
++	u16 cmd, old_cmd;
++	int idx;
++	struct resource *r;
++
++	pci_read_config_word(dev, PCI_COMMAND, &cmd);
++	old_cmd = cmd;
++	for (idx = 0; idx < DEVICE_COUNT_RESOURCE; idx++) {
++		r = &dev->resource[idx];
++		if (!r->start && r->end) {
++			printk(KERN_ERR "PCI: Device %s not available because "
++			       "of resource collisions\n", pci_name(dev));
++			return -EINVAL;
++		}
++		if (r->flags & IORESOURCE_IO)
++			cmd |= PCI_COMMAND_IO;
++		if (r->flags & IORESOURCE_MEM)
++			cmd |= PCI_COMMAND_MEMORY;
++	}
++	if (cmd != old_cmd) {
++		printk("PCI: Enabling device %s (%04x -> %04x)\n",
++		       pci_name(dev), old_cmd, cmd);
++		pci_write_config_word(dev, PCI_COMMAND, cmd);
++#ifdef CONFIG_M54455
++		mcf5445x_conf_device(dev);
++#endif
++	}
++
++	return 0;
++}
++
++/*
++ * pcibios_fixup_bus(struct pci_bus *bus)
++ */
++void
++pcibios_fixup_bus(struct pci_bus *bus)
++{
++	struct pci_dev *dev = bus->self;
++
++	if (!dev) {
++		/* Root bus. */
++#ifdef CONFIG_M54455
++		bus->resource[0] = &pci_ioport_resource;
++		bus->resource[1] = &pci_iomem_resource;
++#endif
++	}
++}
++
++/*
++ * pcibios_init(void)
++ *
++ * Allocate/initialize low level pci bus/devices.
++ */
++#ifdef CONFIG_M54455_PCI_initcall
++static int __init
++#else
++int __init
++#endif
++pcibios_init(void)
++{
++	struct pci_bus *bus;
++
++	if (!raw_pci_ops) {
++		printk(KERN_WARNING "PCIBIOS: FATAL: NO PCI Hardware found\n");
++		return 0;
++	}
++
++	/* allocate and scan the (only) bus */
++	bus = pci_scan_bus_parented(NULL, 0, &pci_root_ops, NULL);
++
++	/* setup everything */
++	if (bus) {
++		/* compute the bridge window sizes */
++		pci_bus_size_bridges(bus);
++
++		/* (re)assign device resources */
++		pci_bus_assign_resources(bus);
++
++		/* add the bus to the system */
++		pci_bus_add_devices(bus);
++
++		/* fixup irqs */
++		pci_fixup_irqs(pcibios_swizzle, pcibios_map_irq);
++	}
++
++	return 0;
++}
++
++/*
++ * pci_init(void)
++ *
++ * Initialize the PCI Hardware.
++ */
++#ifdef CONFIG_M54455_PCI_initcall
++static int __init
++#else
++int __init
++#endif
++pci_init(void)
++{
++	printk(KERN_INFO "pci_init\n");
++#if defined(CONFIG_M54455)
++	init_mcf5445x_pci();
++#endif
++	if (!raw_pci_ops)
++		printk(KERN_ERR "PCI: FATAL: NO PCI Detected\n");
++
++	return 0;
++}
++
++#ifdef CONFIG_M54455_PCI_initcall
++/* low level hardware (first) */
++arch_initcall(pci_init);
++
++/* basic bios init (second) */
++subsys_initcall(pcibios_init);
++#endif
+--- /dev/null
++++ b/arch/m68k/coldfire/m547x/pci.c
+@@ -0,0 +1,1023 @@
++/*
++ * ColdFire 547x/548x PCI Host Controller functions
++ *
++ * Copyright (C) 2005-2011 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Shrek Wu b16972@freescale.com
++ * This code is based on the 2.6.10 version of pci.c
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++#include <linux/kernel.h>
++#include <linux/types.h>
++#include <linux/init.h>
++#include <linux/mm.h>
++#include <linux/string.h>
++#include <linux/pci.h>
++#include <linux/ioport.h>
++#include <linux/slab.h>
++#include <linux/version.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++
++#include <linux/dma-mapping.h>
++#include <asm/coldfire.h>
++#include <linux/io.h>
++#include <asm/m5485sim.h>
++#include <asm/m5485pci.h>
++#include <asm/irq.h>
++#include <linux/pci.h>
++#include <asm/virtconvert.h>
++
++
++#undef DEBUG
++/*define DEBUG*/
++#ifdef DEBUG
++/*#define DBG(x...) printk(KERN_DEBUG x)*/
++#define DBG(x...) printk(x)
++#else
++#define DBG(x...)
++#endif
++
++/*
++ *  Bridge configration dafaults
++ */
++#define PCI_RETRIES	0
++#define PCI_CACHE_LINE	8
++#define PCI_MINGNT	1
++#define PCI_MAXLAT	42
++
++
++/*
++ *  Initiator windows setting
++ */
++#define HOST_MEM_BASE		0xD0000000
++/* ColdFire Memory window base 	*/
++#define PCI_MEM_BASE		0xD0000000
++/* PCI Memory window base	*/
++#define PCI_MEM_SIZE		0x08000000
++/* Memory window size (128M)	*/
++#define HOST_IO_BASE		0xD8000000
++/* ColdFire I/O window base 	*/
++#define PCI_IO_BASE_ADDR	0x00000000
++/* PCI I/O window base 		*/
++#define PCI_IO_SIZE		0x00010000
++/* I/O window size (64K) 	*/
++/*#define HOST_CFG_BASE		0xD8000000*/
++#define HOST_CFG_BASE		0xD8008000
++/* ColdFire config window base 	*/
++#define HOST_DMA_BASE		CONFIG_SDRAM_BASE
++/* ColdFire PCI-DMA window base */
++#define PCI_HDR_BASE		(MCF_MBAR+0xB00)
++/* ColdFire config registers    */
++
++#define PCI_MEM_MASK		(PCI_MEM_SIZE-1)
++#define PCI_IO_MASK		(PCI_IO_SIZE-1)
++
++/* Macro to set initiator window */
++#define WxBAR(host_address, pci_address, size)	\
++	(((host_address)  & 0xff000000)      |	\
++	((((size)-1) & 0xff000000) >> 8)     |	\
++	((pci_address) & 0xff000000) >> 16)
++
++/*
++ *  BIOS internal data
++ */
++static u8 revision;		/* controller revision */
++
++/*
++ *	Board specific setting
++ */
++const unsigned int irq_lines[] = { 5, 7 };
++
++#define N_SLOTS		(sizeof(board_info) / sizeof(board_info[0]))
++#define N_IRQS		(sizeof(irq_lines)  / sizeof(irq_lines[0]))
++#define BRIDGE_SLOT	0
++
++const struct slotinfo {
++	unsigned char idsel;	/* device number     */
++	unsigned char irq;	/* external IRQ      */
++	unsigned char req;	/* REQ line number   */
++	unsigned char gnt;	/* GNT line number   */
++} board_info[] = {
++	{0,  0, 0, 0},		/* Bridge      */
++	{17, 5, 1, 1},		/* Slot #1     */
++	{18, 5, 2, 2},		/* Slot #2     */
++	{20, 7, 3, 3},		/* Slot #3     */
++	{21, 7, 4, 4},		/* Slot #4     */
++};
++
++/************************************************************************/
++
++/*
++ * static int mk_conf_addr()
++ *
++ * Return type0 or type1 configuration address
++ * by the means of device address and PCI dword location
++ * 0 - for not existing slots
++ */
++static int mk_conf_addr(/*struct pci_dev *dev*/
++	struct pci_bus *bus, unsigned int devfn, int where)
++{
++	int slot, func, address, idsel, dev_fn;
++
++	if (bus->number) {
++		address = MCF_PCICAR_E | (bus->number << 16) |
++		    (devfn << 8) | (where & 0xfc);
++	} else {
++		slot = PCI_SLOT(devfn);
++		if (slot > N_SLOTS || slot == BRIDGE_SLOT)
++			return 0;
++		else {
++			func = PCI_FUNC(devfn);
++			idsel = board_info[slot].idsel;
++
++			dev_fn = PCI_DEVFN(idsel, func);
++			address = MCF_PCICAR_E | (bus->number << 16) |
++			    (dev_fn << 8) | (where & 0xfc);
++		}
++	}
++
++	return address;
++}
++
++/*
++ * static int read_config_byte()
++ *
++ * Read a byte from configuration space of specified device
++ */
++static int read_config_byte(/*struct pci_dev *dev*/
++	struct pci_bus *bus, unsigned int devfn, int where, u8 *value)
++{
++	int slot;
++	int address;
++	int result;
++
++	*value = 0xff;
++	result = PCIBIOS_SUCCESSFUL;
++
++	slot = PCI_SLOT(devfn);
++	if (slot == BRIDGE_SLOT) {
++		if (where <= 0x40)
++			*value = *(volatile u8 *) (PCI_HDR_BASE +
++						(where & 0xfc) + (where & 3));
++		else
++			*value = 0;
++	} else {
++		address = mk_conf_addr(bus, devfn, where);
++		if (!address)
++			result = PCIBIOS_DEVICE_NOT_FOUND;
++		else {
++			MCF_PCICAR = address;
++			__asm__ __volatile__("nop");
++			*value = *(volatile u8 *) (HOST_CFG_BASE + (where & 3));
++		}
++	}
++	__asm("tpf");
++	MCF_PCICAR &= ~MCF_PCICAR_E;
++	DBG("PCI: read_config_byte bus=%d, dev=%d, fn=%d,"
++		" addr=0x%02X, val=0x%02X, ret=%02X\n",
++	bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, *value, result);
++
++	return result;
++}
++
++/*
++ * static int read_config_word()
++ *
++ * Read a word from configuration space of specified device
++ */
++static int read_config_word(/*struct pci_dev *dev*/
++	struct pci_bus *bus, unsigned int devfn, int where, u16 *value)
++{
++	int slot;
++	int address;
++	int result;
++
++	*value = 0xffff;
++	result = PCIBIOS_SUCCESSFUL;
++
++	if (where & 0x1)
++		result = PCIBIOS_BAD_REGISTER_NUMBER;
++	else {
++		slot = PCI_SLOT(devfn);
++		if (slot == BRIDGE_SLOT) {
++			if (where <= 0x3f)
++				*value =
++				    *(volatile u16 *) (PCI_HDR_BASE +
++					(where & 0xfc) + (where & 2));
++			else
++				*value = 0;
++		} else {
++			address = mk_conf_addr(bus, devfn, where);
++			if (!address)
++				result = PCIBIOS_DEVICE_NOT_FOUND;
++			else {
++				MCF_PCICAR = address;
++				__asm__ __volatile__("nop");
++				*value = le16_to_cpu(*(volatile u16 *)
++						     (HOST_CFG_BASE +
++						      (where & 2)));
++			}
++		}
++	}
++	__asm("tpf");
++	MCF_PCICAR &= ~MCF_PCICAR_E;
++	DBG("PCI: read_config_word bus=%d, dev=%d, fn=%d,"
++		" addr=0x%02X, val=0x%04X ret=%02X\n",
++	bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, *value, result);
++
++	return result;
++}
++
++/*
++ * static int read_config_dword()
++ *
++ * Read a long word from configuration space of specified device
++ */
++static int read_config_dword(/*struct pci_dev *dev*/
++	struct pci_bus *bus, unsigned int devfn, int where, u32 *value)
++{
++	int slot;
++	int address;
++	int result;
++
++	*value = 0xffffffff;
++	result = PCIBIOS_SUCCESSFUL;
++
++	if (where & 0x3)
++		result = PCIBIOS_BAD_REGISTER_NUMBER;
++	else {
++		slot = PCI_SLOT(devfn);
++		if (slot == BRIDGE_SLOT) {
++			if (where <= 0x3d)
++				*value =
++				    *(volatile u32 *) (PCI_HDR_BASE + where);
++			else
++				*value = 0;
++			__asm("tpf");
++		} else {
++			address = mk_conf_addr(bus, devfn, where);
++			if (!address)
++				result = PCIBIOS_DEVICE_NOT_FOUND;
++			else {
++				MCF_PCICAR = address;
++				__asm__ __volatile__("nop");
++				*value = le32_to_cpu(*(volatile u32 *)
++						     (HOST_CFG_BASE));
++				__asm("tpf");
++				if (bus->number != 0 && revision < 1) {
++					volatile u32 temp;
++					MCF_PCICAR |= 0xff0000;
++					temp = *(volatile u32 *)
++						(HOST_CFG_BASE);
++				}
++			}
++		}
++	}
++
++	MCF_PCICAR &= ~MCF_PCICAR_E;
++	DBG("PCI: read_config_dword bus=%d, dev=%d, fn=%d, "
++		"addr=0x%02X, value=0x%08X ret=%02X\n",
++	bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, *value, result);
++
++	return result;
++}
++
++
++
++/*
++ * static int write_config_byte()
++ *
++ * Write a byte to configuration space of specified device
++ */
++static int write_config_byte(/*struct pci_dev *dev*/
++	struct pci_bus *bus, unsigned int devfn, int where, u8 value)
++{
++	int slot;
++	int address;
++	int result;
++
++	result = PCIBIOS_SUCCESSFUL;
++
++	slot = PCI_SLOT(devfn);
++	if (slot == BRIDGE_SLOT) {
++		if (where <= 0x40)
++			*(volatile u8 *) (PCI_HDR_BASE + (where & 0xfc)
++					+ (where & 3)) = value;
++	} else {
++		address = mk_conf_addr(bus, devfn, where);
++		if (!address)
++			result = PCIBIOS_DEVICE_NOT_FOUND;
++		else {
++			MCF_PCICAR = address;
++			__asm__ __volatile__("tpf");
++			*(volatile u8 *) (HOST_CFG_BASE + (where & 3)) = value;
++		}
++	}
++	__asm("tpf");
++	MCF_PCICAR &= ~MCF_PCICAR_E;
++	pci_dummy_function();
++
++	DBG("PCI: write_config_byte bus=%d, dev=%d, fn=%d, "
++		"addr=0x%02X, value=0x%02X ret=%02X\n",
++	bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, value, result);
++
++	return result;
++}
++
++/*
++ * static int write_config_word()
++ *
++ * Write a word to configuration space of specified device
++ */
++static int write_config_word(/*struct pci_dev *dev*/
++	struct pci_bus *bus, unsigned int devfn, int where, u16 value)
++{
++	int slot;
++	int address;
++	int result;
++
++	result = PCIBIOS_SUCCESSFUL;
++
++	if (where & 0x1)
++		result = PCIBIOS_BAD_REGISTER_NUMBER;
++	else {
++		slot = PCI_SLOT(devfn);
++		if (slot == BRIDGE_SLOT) {
++			if (where <= 0x3f)
++				*(volatile u16 *) (PCI_HDR_BASE +
++					(where & 0xfc) + (where & 2)) = value;
++		} else {
++			address = mk_conf_addr(bus, devfn, where);
++			if (!address)
++				result = PCIBIOS_DEVICE_NOT_FOUND;
++			else {
++				MCF_PCICAR = address;
++				__asm__ __volatile__("tpf");
++				*(volatile u16 *) (HOST_CFG_BASE
++					+ (where & 2)) =
++						cpu_to_le16(value);
++			}
++		}
++	}
++	__asm("tpf");
++	MCF_PCICAR &= ~MCF_PCICAR_E;
++	pci_dummy_function();
++
++	DBG("PCI: write_config_word bus=%d, dev=%d, fn=%d, "
++		"addr=0x%02X, value=0x%04X ret=%02X\n",
++	bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, value, result);
++
++	return result;
++}
++
++/*
++ * static int write_config_dword()
++ *
++ * Write a long word to configuration space of specified device
++ */
++static int write_config_dword(/*struct pci_dev *dev*/
++	struct pci_bus *bus, unsigned int devfn, int where, u32 value)
++{
++	int slot;
++	int address;
++	int result;
++
++	result = PCIBIOS_SUCCESSFUL;
++
++	if (where & 0x3)
++		result = PCIBIOS_BAD_REGISTER_NUMBER;
++	else {
++		slot = PCI_SLOT(devfn);
++		if (slot == BRIDGE_SLOT) {
++			if (where <= 0x3d)
++				*(volatile u32 *) (PCI_HDR_BASE + where) =
++				    value;
++		} else {
++			address = mk_conf_addr(bus, devfn, where);
++			if (!address)
++				result = PCIBIOS_DEVICE_NOT_FOUND;
++			else {
++				MCF_PCICAR = address;
++				__asm__ __volatile__("tpf");
++				*(volatile u32 *) (HOST_CFG_BASE) =
++				    cpu_to_le32(value);
++			}
++		}
++	}
++	__asm("tpf");
++	MCF_PCICAR &= ~MCF_PCICAR_E;
++	pci_dummy_function();
++
++	DBG("PCI: write_config_dword dev=%d, fn=%d,"
++		"addr=0x%02X, value=0x%08X ret=%02X\n",
++	    PCI_SLOT(devfn), PCI_FUNC(devfn), where,  value, result);
++
++	return result;
++}
++
++static int config_read(struct pci_bus *bus, unsigned int devfn,
++		       int where, int size, u32 *val)
++{
++	switch (size) {
++	case 1:
++		return read_config_byte(bus, devfn, where, (u8 *) val);
++	case 2:
++		return read_config_word(bus, devfn, where, (u16 *) val);
++	default:
++		return read_config_dword(bus, devfn, where, val);
++	}
++}
++
++static int config_write(struct pci_bus *bus, unsigned int devfn,
++			int where, int size, u32 val)
++{
++	switch (size) {
++	case 1:
++		return write_config_byte(bus, devfn, where, (u8) val);
++	case 2:
++		return write_config_word(bus, devfn, where, (u16) val);
++	default:
++		return write_config_dword(bus, devfn, where, val);
++	}
++}
++
++/*
++ *  configuration routines entry points
++ */
++static struct pci_ops bus_ops = {
++	.read = config_read,
++	.write = config_write,
++};
++
++/************************************************************************/
++
++/*
++ * u8 pci_inb()
++ *
++ * Read a byte at specified address from I/O space
++ */
++unsigned char pci_inb(long addr)
++{
++	char value;
++
++	value = *(volatile unsigned char *)(HOST_IO_BASE |
++			(addr & PCI_IO_MASK));
++	DBG("PCI: inb addr=0x%08X, value=0x%02X\n", addr, value);
++
++	return (unsigned char) value;
++}
++
++
++/*
++ * u16 pci_inw()
++ *
++ * Read a word at specified address from I/O space
++ */
++unsigned short pci_inw(long addr)
++{
++	short value;
++	volatile unsigned short *ptr;
++
++	ptr = (volatile unsigned short *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	value = le16_to_cpu(*ptr);
++
++	DBG("PCI: inw addr=0x%08X, value=0x%04X\n",  addr, value);
++	return (unsigned short) value;
++}
++
++/*
++ * u16 pci_raw_inw()
++ *
++ * Read a raw word at specified address from I/O space
++ */
++unsigned short pci_raw_inw(long addr)
++{
++	short value;
++	volatile unsigned short *ptr;
++
++	ptr = (volatile unsigned short *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	value = *ptr;
++
++	DBG("PCI: raw_inw addr=0x%08X, value=0x%04X\n",  addr, value);
++	return (unsigned short) value;
++}
++
++/*
++ * u32 pci_inl()
++ *
++ * Read a dword at specified address from I/O space
++ */
++unsigned long pci_inl(long addr)
++{
++	long value;
++	volatile unsigned long *ptr;
++
++	ptr = (volatile unsigned long *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	value = le32_to_cpu(*ptr);
++
++	DBG("PCI: inl addr=0x%08X, value=0x%08X\n",  addr, value);
++	return (unsigned long) value;
++}
++
++/*
++ * u32 pci_raw_inl()
++ *
++ * Read a raw dword at specified address from I/O space
++ */
++unsigned long pci_raw_inl(long addr)
++{
++	long value;
++	volatile unsigned long *ptr;
++
++	ptr = (volatile unsigned long *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	value = *ptr;
++
++	DBG("PCI: raw_inl addr=0x%08X, value=0x%08X\n",  addr, value);
++	return (unsigned long) value;
++}
++
++/*
++ * void pci_outb()
++ *
++ * Write a byte value at specified address to I/O space
++ */
++void pci_outb(unsigned char value,  long addr)
++{
++
++	*(volatile unsigned char *)(HOST_IO_BASE | (addr & PCI_IO_MASK))
++		= value;
++	DBG("PCI: outb addr=0x%08X, value=0x%02X\n",  addr, value);
++}
++
++
++/*
++ * void pci_outw()
++ *
++ * Write a word value at specified address to I/O space
++ */
++void pci_outw(volatile unsigned short value, volatile  long addr)
++{
++	volatile unsigned short *ptr;
++
++	ptr = (volatile unsigned short *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	*ptr = cpu_to_le16(value);
++	DBG("PCI: outw addr=0x%08X, value=0x%04X\n",  addr, value);
++}
++
++/*
++ * void pci_raw_outw()
++ *
++ * Write a raw word value at specified address to I/O space
++ */
++void pci_raw_outw(volatile unsigned short value, volatile  long addr)
++{
++	volatile unsigned short *ptr;
++
++	ptr = (volatile unsigned short *) (HOST_IO_BASE | (addr & PCI_IO_MASK));
++	*ptr = value;
++	DBG("PCI: raw_outw addr=0x%08X, value=0x%04X\n",  addr, value);
++}
++
++/*
++ * void pci_outl()
++ *
++ * Write a long word value at specified address to I/O space
++ */
++void pci_outl(volatile unsigned long value, volatile long addr)
++{
++	volatile unsigned long *ptr;
++
++	ptr = (volatile unsigned long *)(HOST_IO_BASE | (addr & PCI_IO_MASK));
++	*ptr = cpu_to_le32(value);
++	DBG("PCI: outl addr=0x%08X, value=0x%08X\n", addr, value);
++}
++
++/*
++ * void pci_raw_outl()
++ *
++ * Write a raw long word value at specified address to I/O space
++ */
++void pci_raw_outl(volatile unsigned long value, volatile long addr)
++{
++	volatile unsigned long *ptr;
++
++	ptr = (volatile unsigned long *)(HOST_IO_BASE | (addr & PCI_IO_MASK));
++	*ptr = value;
++	DBG("PCI: raw_outl addr=0x%08X, value=0x%08X\n", addr, value);
++}
++
++/*
++ * void pci_insb()
++ *
++ * Read several byte values from specified I/O port
++ */
++void pci_insb(volatile unsigned char *addr, unsigned char *buf, int len)
++{
++	for (; len--; buf++)
++		*buf = pci_inb((unsigned long)addr);
++	DBG("PCI: pci_insb addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++
++/*
++ * void pci_insw()
++ *
++ * Read several word values from specified I/O port
++ */
++void pci_insw(volatile unsigned short *addr, unsigned short *buf, int len)
++{
++	for (; len--; buf++)
++		*buf = pci_inw((unsigned long)addr);
++	DBG("PCI: pci_insw addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++/*
++ * void pci_insl()
++ *
++ * Read several dword values from specified I/O port
++ */
++void pci_insl(volatile unsigned long *addr, unsigned long *buf, int len)
++{
++	for (; len--; buf++)
++		*buf = pci_inl((unsigned long)addr);
++	DBG("PCI: pci_insl addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++/*
++ * void pci_outsb()
++ *
++ * Write several byte values to specified I/O port
++ */
++void pci_outsb(volatile unsigned char *addr, const unsigned char *buf, int len)
++{
++	for (; len--; buf++)
++		pci_outb((unsigned long)addr, *buf);
++	DBG("PCI: pci_outsb addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++/*
++ * void pci_outsw()
++ *
++ * Write several word values to specified I/O port
++ */
++void pci_outsw(volatile unsigned short *addr,
++		const unsigned short *buf, int len)
++{
++	for (; len--; buf++)
++		pci_outw((unsigned long)addr, *buf);
++	DBG("PCI: pci_outsw addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++/*
++ * void pci_outsl()
++ *
++ * Write several dword values to specified I/O port
++ */
++void pci_outsl(volatile unsigned long *addr, const unsigned long *buf, int len)
++{
++	for (; len--; buf++)
++		pci_outl((unsigned long)addr, *buf);
++	DBG("PCI: pci_outsl addr=0x%08X, buf=%p, len=%d\n", addr, buf, len);
++}
++
++/*
++ * void pci_xlb_handler()
++ *
++ * PCI XLB interrupt handler
++ */
++irqreturn_t xlb_interrupt(int irq, void *dev)
++{
++	volatile int xlb_error = MCF_PCIISR;
++
++	/* Acknowlege interrupt */
++	MCF_PCIISR = xlb_error;
++
++	/* Dump interrupt reason */
++	if (xlb_error & MCF_PCIISR_RE)
++		DBG("PCI: Retry Error Received\n");
++
++	if (xlb_error & MCF_PCIISR_IA)
++		DBG("PCI: Initiator Abort Received\n");
++
++	if (xlb_error & MCF_PCIISR_TA)
++		DBG("PCI: Target Abort Received\n");
++
++	return IRQ_HANDLED;
++}
++
++
++/*
++ * void pci_arbiter_handler()
++ *
++ * PCI arbiter interrupt handler
++ */
++irqreturn_t arb_interrupt(int irq, void *dev)
++{
++	volatile unsigned long arb_error = MCF_PCIARB_PASR;
++
++	/* Acknowlege interrupt */
++	printk(KERN_ERR "%s\n", __func__);
++	MCF_PCIARB_PASR = arb_error;
++
++	if (arb_error & MCF_PCIARB_PASR_ITLMBK) {
++		DBG("PCI: coldfire master time-out\n");
++
++		/* Set infinite  number of retries */
++		MCF_PCIICR &= ~0xFF;
++	}
++
++	if (arb_error & MCF_PCIARB_PASR_EXTMBK(0x1F)) {
++		arb_error >>= 17;
++		DBG("PCI: external master time-out (mask = 0x%X)\n", arb_error);
++
++		/* raise arbitration priority level */
++		MCF_PCIARB_PACR = MCF_PCIARB_PACR_EXTMPRI(arb_error);
++	}
++
++	return IRQ_HANDLED;
++}
++
++
++/*
++ * void pci_eint_handler()
++ *
++ * Eport interrupt handler
++ */
++irqreturn_t eint_handler(int irq, void *dev)
++{
++	/* Just acknowlege interrupt and exit */
++	MCF_EPFR = 0x1 << (irq - 64);
++	return IRQ_HANDLED;
++}
++
++resource_size_t
++pcibios_align_resource(void *data, const struct resource *res,
++		resource_size_t size, resource_size_t align)
++{
++	struct pci_dev *dev = data;
++	resource_size_t start = res->start;
++
++	if (res->flags & IORESOURCE_IO) {
++		if (size > 0x100)
++			printk(KERN_ERR "PCI: I/O Region %s/%d too large"
++			       " (%ld bytes)\n", pci_name(dev),
++			       dev->resource - res, (long int)size);
++
++		if (start & 0x3ff)
++			start = (start + 0x3ff) & ~0x3ff;
++	}
++
++	return start;
++}
++EXPORT_SYMBOL(pcibios_align_resource);
++
++/*
++ * void __init coldfire_fixup(int pci_modify)
++ *
++ * Assign IRQ numbers as used by Linux to the interrupt pins
++ * of the PCI cards.
++ */
++static void __init coldfire_fixup(int pci_modify)
++{
++	struct pci_dev *dev;
++	unsigned char slot, pin;
++
++	DBG("%s\n", __func__);
++#ifdef NL_ORIGINAL
++	pci_for_each_dev(dev) {
++#else
++	dev = NULL;
++	while ((dev = pci_get_device(PCI_ANY_ID, PCI_ANY_ID, dev)) != NULL) {
++#endif
++		if (dev->class >> 16 != PCI_BASE_CLASS_BRIDGE) {
++			slot = PCI_SLOT(dev->devfn);
++			dev->irq = 64 + board_info[slot].irq;
++
++			/* Check if device needs interrupt */
++#ifdef NL_ORIGINAL
++			pcibios_read_config_byte(
++				dev->bus->number, dev->devfn,
++				PCI_INTERRUPT_PIN, &pin);
++
++			if (pin) {
++				pcibios_write_config_byte(
++					dev->bus->number, dev->devfn,
++					PCI_INTERRUPT_LINE, dev->irq);
++			}
++#else
++			pci_read_config_byte(dev,
++				PCI_INTERRUPT_PIN, &pin);
++
++			if (pin) {
++				pci_write_config_byte(dev,
++					PCI_INTERRUPT_LINE, dev->irq);
++			}
++#endif
++		}
++	}
++}
++
++static void __init configure_device(struct pci_dev *dev)
++{
++	/* TODO: This should depend from disable_pci_burst setting */
++	DBG("%s\n", __func__);
++#ifdef NL_ORIGINAL
++	pcibios_write_config_byte(bus, devfn,
++			PCI_CACHE_LINE_SIZE, PCI_CACHE_LINE);
++#else
++	pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, PCI_CACHE_LINE);
++
++	MCF_PCICR1 = MCF_PCICR1_LATTIMER(0xF8) |
++		MCF_PCICR1_CACHELINESIZE(PCI_CACHE_LINE);
++
++#endif
++}
++
++
++struct pci_bus_info *__init init_coldfire_pci(void)
++{
++	struct pci_bus_info *bus;
++	int i;
++	unsigned long pci_mem_va;
++	static char irq_name[N_IRQS][15];
++
++	MCF_SPCR |= 0x02; /*Enable the PCI clock*/
++
++	/* Get controller revision */
++	revision = MCF_PCICCRIR;
++	printk(KERN_INFO "ColdFire PCI Host Bridge "
++		"(Rev. %d) detected:"
++		"MEMBase %x,MEMLen %x,IOBase %x,IOLen %x\n",
++		revision, HOST_MEM_BASE,
++		PCI_MEM_SIZE - 1, 0, PCI_IO_SIZE - 1);
++
++	bus = (struct pci_bus_info *)kmalloc(sizeof(struct pci_bus_info),
++			GFP_KERNEL);
++	if (!bus) {
++		printk(KERN_ERR "can not alloc mem for pci bus!\n");
++		return NULL;
++	}
++
++	/* Setup bus info structure. */
++	memset(bus, 0, sizeof(struct pci_bus_info));
++
++	/* Request intiator memory resource */
++	bus->mem_space.start = PCI_MEM_BASE;/*HOST_MEM_BASE;*/
++	bus->mem_space.end = bus->mem_space.start + PCI_MEM_SIZE - 1;
++	bus->mem_space.name = "PCI Bus #0";
++	if (request_resource(&iomem_resource,
++				&(bus->mem_space)) != 0) {
++		printk(KERN_ERR "Failed to request bridge iomem resource\n");
++		return NULL;
++	}
++
++	/* Request intiator memory resource */
++	/*bus->io_space.start = 0;*/
++	bus->io_space.start = HOST_IO_BASE;
++	bus->io_space.end = bus->io_space.start + PCI_IO_SIZE - 1;
++	bus->io_space.name =  "PCI Bus #0";
++	if (request_resource(&ioport_resource,
++				&(bus->io_space)) != 0) {
++		printk(KERN_ERR "Failed to request bridge "
++			"ioport resource\n");
++		return NULL;
++	}
++
++	/* Must Reset!!! If bootloader has PCI enabled, it will cause
++	 * problem in linux when it tries to configure/find resources
++	 * for the pci devices.  Both registers need to be reset.
++	 */
++	/*MCF_PCIGSCR |= 0x1;*/
++	MCF_PCIGSCR = 0x1;
++	MCF_PCITCR = 0x00000000;
++
++	/* Set up the arbiter */
++	MCF_PCIARB_PACR = 0; /*MCF_PCIARB_PACR_PKMD*/
++
++	/* GNT and REQ */
++	MCF_PAR_PCIBG = 0x3FF;
++	MCF_PAR_PCIBR = 0x3FF;
++
++	/* Enable bus mastering, memory access and MWI */
++	MCF_PCISCR = (MCF_PCISCR_B | MCF_PCISCR_M);
++
++	/* Setup burst parameters */
++	/*The offset 0x0e normally was header_type, set it to 0 and fix later*/
++	MCF_PCICR1 = MCF_PCICR1_LATTIMER(0x00) |
++		MCF_PCICR1_CACHELINESIZE(PCI_CACHE_LINE);
++
++	MCF_PCICR2 = 0;
++	/*MCF_PCICR2_MINGNT(PCI_MINGNT) |
++		MCF_PCICR2_MAXLAT(PCI_MAXLAT);
++	*/
++	/* Turn on error signaling */
++	MCF_PCIICR = MCF_PCIICR_TAE | MCF_PCIICR_IAE | PCI_RETRIES;
++	MCF_PCIGSCR |= MCF_PCIGSCR_SEE;
++	/*
++	 * Configure Initiator Windows
++	 * Window 0: 128M PCI Memory @ HOST_MEM_BASE, 1:1 mapping
++	 * Window 1: 64K  I/O Memory @ HOST_IO_BASE,  1:0 mapping
++	 */
++	MCF_PCIIW0BTAR = WxBAR(HOST_MEM_BASE, PCI_MEM_BASE, PCI_MEM_SIZE);
++	MCF_PCIIW1BTAR = WxBAR(HOST_IO_BASE,  PCI_IO_BASE_ADDR,  PCI_IO_SIZE);
++
++	MCF_PCIIWCR = MCF_PCIIWCR_WINCTRL1_IO |
++		MCF_PCIIWCR_WINCTRL0_MEMREAD;
++
++	/* Target PCI DMA Windows */
++	MCF_PCIBAR1   = PCI_DMA_BASE;
++	MCF_PCITBATR1 = HOST_DMA_BASE | MCF_PCITBATR1_EN;
++
++	/* Enable internal PCI controller interrupts */
++	MCF_ICR(ISC_PCI_XLB) = ILP_PCI_XLB;
++	/*request_irq(64+ISC_PCI_XLB, xlb_interrupt,
++			SA_INTERRUPT, "PCI XL Bus", (void*)-1);
++	enable_irq (64+ISC_PCI_XLB);
++	*/
++	if (request_irq(64+ISC_PCI_XLB, xlb_interrupt,
++		IRQF_DISABLED, "PCI XL Bus", (void *)-1)) {
++		printk(KERN_ERR "Cannot allocate "
++			"ISC_PCI_XLB  IRQ\n");
++		return (struct pci_bus_info *)-EBUSY;
++	}
++
++	MCF_ICR(ISC_PCI_ARB) = ILP_PCI_ARB;
++	/*request_irq(64+ISC_PCI_ARB, arb_interrupt,
++			SA_INTERRUPT, "PCI Arbiter", (void*)-1);
++	enable_irq (64+ISC_PCI_ARB);
++	*/
++	if (request_irq(64 + ISC_PCI_ARB, arb_interrupt,
++		IRQF_DISABLED, "PCI Arbiter", (void *)-1)) {
++		printk(KERN_ERR "Cannot allocate "
++			"ISC_PCI_ARB  IRQ\n");
++		return (struct pci_bus_info *)-EBUSY;
++	}
++
++	/* Set slots interrupt setting */
++	for (i = 0; i < N_IRQS; i++) {
++		/* Set trailing edge for PCI interrupts */
++		MCF_EPPAR &= ~MCF_EPPAR_EPPA(irq_lines[i], 0x3);
++		if (irq_lines[i] == 5)
++			MCF_EPPAR |= MCF_EPPAR_EPPA(irq_lines[i],
++					MCF_EPPAR_EPPAx_FALLING);
++		else
++			MCF_EPPAR |= MCF_EPPAR_EPPA(irq_lines[i],
++					0/*MCF_EPPAR_EPPAx_FALLING*/);
++		/* Turn on irq line in eport */
++		MCF_EPIER |= MCF_EPIER_EPIE(irq_lines[i]);
++
++		/* Enable irq in gpio */
++		if (irq_lines[i] == 5)
++			MCF_PAR_FECI2CIRQ |= 1;
++
++		if (irq_lines[i] == 6)
++			MCF_PAR_FECI2CIRQ |= 2;
++
++		/* Register external interrupt handlers */
++		sprintf(irq_name[i], "PCI IRQ%d", irq_lines[i]);
++		/*request_irq(64 + irq_lines[i], eint_handler,
++			    SA_SHIRQ, irq_name[i], (void*)-1);
++		enable_irq(64 + irq_lines[i]);*/
++		if (request_irq(64 + irq_lines[i], eint_handler,
++			IRQF_SHARED, irq_name[i], (void *)-1)) {
++			printk(KERN_ERR "Cannot allocate "
++				"irq_lines[%d] IRQ\n",
++				irq_lines[i]);
++			return (struct pci_bus_info *)-EBUSY;
++		}
++	}
++
++	/* Clear PCI Reset and wait for devices to reset */
++	MCF_PCIGSCR &= ~MCF_PCIGSCR_PR;
++	schedule_timeout((5 * HZ));
++	/* Remap initiator windows (should be 1:1 to the physical memory) */
++	pci_mem_va = (int) ioremap_nocache(HOST_MEM_BASE,
++			PCI_MEM_SIZE + PCI_IO_SIZE);
++	udelay(1000); /* let every thing effect */
++#if 1
++	printk(KERN_INFO "%s: MEMBase_phy %x, Virt %x, len %x\n",
++		__func__, HOST_MEM_BASE, pci_mem_va,
++		PCI_MEM_SIZE + PCI_IO_SIZE);
++#endif
++	BUG_ON(pci_mem_va != HOST_MEM_BASE);
++
++	/* Setup bios32 and pci bus driver callbacks */
++	bus->m68k_pci_ops = &bus_ops;
++	bus->fixup = coldfire_fixup;
++	bus->conf_device = configure_device;
++
++	return bus;
++}
+--- /dev/null
++++ b/arch/m68k/coldfire/m547x/pci_dummy.S
+@@ -0,0 +1,45 @@
++/*
++ * Copyright (C) 2010-2011 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Author: Jason Jin <Jason.jin@freescale.com>
++ *
++ * This routine is the dummy function for PCI errata
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++.global _pci_dummy_function
++.global pci_dummy_function
++.text
++
++pci_dummy_function:
++_pci_dummy_function:
++
++/* force function start to 16-byte boundary.Can be done in linker file also */
++.align 16
++clr.l %d0
++move.l %d0, 0xF0000F0C
++/* Must use direct addressing. write to EPORT module
++* xlbus -> slavebus -> eport, writing '0' to register has no
++* effect
++*/
++
++rts
++tpf.l #0x0
++tpf.l #0x0
++tpf.l #0x0
++tpf.l #0x0
++tpf.l #0x0
++.end
+--- /dev/null
++++ b/arch/m68k/include/asm/5445x_pci.h
+@@ -0,0 +1,111 @@
++/*
++ * asm-m68k/pci.h - m68k specific PCI declarations.
++ *
++ * Copyright (C) 2007, 2009-2011 Freescale Semiconductor, Inc.
++ * All Rights Reserved.
++ * Kurt Mahan <kmahan@freescale.com>
++ */
++#ifndef _ASM_M68K_5445X_PCI_H
++#define _ASM_M68K_5445x_PCI_H
++
++#ifndef CONFIG_PCI
++/*
++ * The PCI address space does equal the physical memory
++ * address space.  The networking and block device layers use
++ * this boolean for bounce buffer decisions.
++ */
++#define PCI_DMA_BUS_IS_PHYS		(1)
++#else
++#include <asm-generic/pci-dma-compat.h>
++
++#define PCI_DMA_BASE                    0 /* PCI-DMA window base */
++#define NL_ORIGINAL
++/*
++ * The PCI address space does equal the physical memory
++ * address space.  The networking and block device layers use
++ * this boolean for bounce buffer decisions.
++ */
++#define PCI_DMA_BUS_IS_PHYS		(1)
++
++#define PCIBIOS_MIN_IO			0x00004000
++#define PCIBIOS_MIN_MEM			0x02000000
++
++#define pcibios_assign_all_busses()	0
++#define pcibios_scan_all_fns(a, b)	0
++
++struct pci_raw_ops {
++	int (*read)(unsigned int domain, unsigned int bus, unsigned int devfn,
++			int reg, int len, u32 *val);
++	int (*write)(unsigned int domain, unsigned int bus, unsigned int devfn,
++			int reg, int len, u32 val);
++};
++
++extern struct pci_raw_ops *raw_pci_ops;
++
++static inline void
++pcibios_set_master(struct pci_dev *dev)
++{
++	/* no special bus mastering setup handling */
++}
++
++static inline void
++pcibios_penalize_isa_irq(int irq, int active)
++{
++	/* no dynamic PCI IRQ allocation */
++}
++
++#if 0
++static inline void
++pcibios_add_platform_entries(struct pci_dev *dev)
++{
++	/* no special handling */
++}
++#endif
++
++static inline void
++pcibios_resource_to_bus(struct pci_dev *dev, struct pci_bus_region *region,
++			 struct resource *res)
++{
++	region->start = res->start;
++	region->end = res->end;
++}
++
++static inline void
++pcibios_bus_to_resource(struct pci_dev *dev, struct resource *res,
++			struct pci_bus_region *region)
++{
++	res->start = region->start;
++	res->end = region->end;
++}
++
++static inline struct resource *
++pcibios_select_root(struct pci_dev *pdev, struct resource *res)
++{
++	struct resource *root = NULL;
++
++	if (res->flags & IORESOURCE_IO)
++		root = &ioport_resource;
++	if (res->flags & IORESOURCE_MEM)
++		root = &iomem_resource;
++
++	return root;
++}
++
++#ifndef CONFIG_M54455_PCI_initcall
++extern int pci_init(void);
++extern int pcibios_init(void);
++#endif
++
++extern void set_fpga(u32 *addr, u32 val);
++
++#ifdef CONFIG_M54455
++extern int init_mcf5445x_pci(void);
++extern void mcf5445x_conf_device(struct pci_dev *dev);
++extern void mcf5445x_pci_dumpregs(void);
++
++extern struct resource pci_ioport_resource;
++extern struct resource pci_iomem_resource;
++#endif
++
++#endif /* CONFIG_PCI */
++#endif /* _ASM_M68K_5445X_PCI_H */
+--- /dev/null
++++ b/arch/m68k/include/asm/548x_pci.h
+@@ -0,0 +1,99 @@
++/*
++ * Copyright (C) 2009-2011 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Written by Wout Klaren.
++ */
++
++#ifndef _ASM_M68K_548X_PCI_H
++#define _ASM_M68K_548X_PCI_H
++
++#include <linux/mm.h>
++#include <asm/scatterlist.h>
++
++#include <asm-generic/pci.h>
++
++struct pci_ops;
++
++/*
++ * Structure with hardware dependent information and functions of the
++ * PCI bus.
++ */
++
++struct pci_bus_info {
++	/*
++	 * Resources of the PCI bus.
++	 */
++
++	struct resource mem_space;
++	struct resource io_space;
++
++	/*
++	 * System dependent functions.
++	 */
++
++	struct pci_ops *m68k_pci_ops;
++
++	void (*fixup)(int pci_modify);
++	void (*conf_device)(struct pci_dev *dev);
++};
++
++#define pcibios_assign_all_busses()	0
++#define pcibios_scan_all_fns(a, b)	0
++
++static inline void pcibios_set_master(struct pci_dev *dev)
++{
++	/* No special bus mastering setup handling */
++}
++
++static inline void pcibios_penalize_isa_irq(int irq)
++{
++	/* We don't do dynamic PCI IRQ allocation */
++}
++
++#ifndef CONFIG_COLDFIRE
++/* The PCI address space does equal the physical memory
++ * address space.  The networking and block device layers use
++ * this boolean for bounce buffer decisions.
++ */
++#define PCI_DMA_BUS_IS_PHYS	(1)
++
++#define PCIBIOS_MIN_IO		0x00004000
++#define PCIBIOS_MIN_MEM		0x04000000
++
++#else /* !CONFIG_COLDFIRE */
++#include <asm-generic/pci-dma-compat.h>
++#define PCI_DMA_BASE		/*0x40000000*/0
++/* PCI-DMA window base */
++
++extern struct pci_bus_info *__init init_coldfire_pci(void);
++extern void *pci_alloc_son(struct pci_dev *, size_t,
++		dma_addr_t *, int);
++/*
++ * The PCI address space equal the virtual memory
++ * address space on m547X/m548X.
++ */
++#define PCI_DMA_BUS_IS_PHYS	(1)
++
++#define PCIBIOS_MIN_IO		0x00000100
++#define PCIBIOS_MIN_MEM		0x02000000
++
++struct scatterlist;
++
++
++/* This is always fine. */
++#define pci_dac_dma_supported(pci_dev, mask)	(1)
++
++
++/* These macros should be used after a pci_map_sg call has been done
++ * to get bus addresses of each of the SG entries and their lengths.
++ * You should only work with the number of sg entries pci_map_sg
++ * returns.
++ */
++#define sg_dma_address(sg)	((sg)->dma_address)
++#define sg_dma_len(sg)		((sg)->length)
++
++extern void pci_dummy_function(void);
++/*Declarations of hardware specific initialisation functions*/
++extern struct pci_bus_info *init_hades_pci(void);
++
++#endif /* !CONFIG_COLDFIRE*/
++#endif /* _ASM_M68K_548X_PCI_H */
+--- a/arch/m68k/include/asm/pci.h
++++ b/arch/m68k/include/asm/pci.h
+@@ -1,7 +1,13 @@
+ #ifndef _ASM_M68K_PCI_H
+ #define _ASM_M68K_PCI_H
+ 
++#if defined(CONFIG_M5445X)
++#include "5445x_pci.h"
++#elif defined(CONFIG_M547X_8X)
++#include "548x_pci.h"
++#else
+ #include <asm-generic/pci-dma-compat.h>
++#endif
+ 
+ /* The PCI address space does equal the physical memory
+  * address space.  The networking and block device layers use
+--- /dev/null
++++ b/arch/m68k/kernel/bios32_mcf548x.c
+@@ -0,0 +1,632 @@
++/*
++ * bios32.c - PCI BIOS functions for m68k systems.
++ *
++ * Written by Wout Klaren.
++ *
++ * Copyright (C) 2008-2011 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Shrek Wu B16972@freescale.com
++ *
++ * Based on the DEC Alpha bios32.c by Dave Rusling and David Mosberger.
++ */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/device.h>
++#include <linux/delay.h>
++
++# define DBG_DEVS(args)
++
++#ifdef CONFIG_PCI
++
++/*
++ * PCI support for Linux/m68k. Currently only the Hades is supported.
++ *
++ * The support for PCI bridges in the DEC Alpha version has
++ * been removed in this version.
++ */
++
++#include <linux/pci.h>
++#include <linux/slab.h>
++#include <linux/mm.h>
++
++#include <asm/io.h>
++#include <asm/pci.h>
++#include <asm/uaccess.h>
++
++#define KB		1024
++#define MB		(1024*KB)
++#define GB		(1024*MB)
++
++#define MAJOR_REV	0
++#define MINOR_REV	5
++
++/*
++ * Align VAL to ALIGN, which must be a power of two.
++ */
++
++#define MAX(val1, val2)		(((val1) > (val2)) ? val1 : val2)
++
++/*
++ * Offsets relative to the I/O and memory base addresses from where resources
++ * are allocated.
++ */
++
++#ifdef CONFIG_COLDFIRE
++#define IO_ALLOC_OFFSET		0x00000100
++#define MEM_ALLOC_OFFSET	0x00000000
++#else /* CONFIG_COLDFIRE */
++#define IO_ALLOC_OFFSET		0x00004000
++#define MEM_ALLOC_OFFSET	0x04000000
++#endif /* CONFIG_COLDFIRE */
++
++/*
++ * Bus info structure of the PCI bus. A pointer to this structure is
++ * put in the sysdata member of the pci_bus structure.
++ */
++
++static struct pci_bus_info *bus_info;
++
++static int pci_modify = 1;
++/* If set, layout the PCI bus ourself. */
++static int skip_vga;
++/* If set do not modify base addresses of vga cards.*/
++static int disable_pci_burst;
++/* If set do not allow PCI bursts. */
++
++static volatile unsigned int io_base;
++static volatile unsigned int mem_base;
++
++/*
++ * static void disable_dev(struct pci_dev *dev)
++ *
++ * Disable PCI device DEV so that it does not respond to I/O or memory
++ * accesses.
++ *
++ * Parameters:
++ *
++ * dev	- device to disable.
++ */
++
++static void __init disable_dev(struct pci_dev *dev)
++{
++	unsigned short cmd;
++
++	if (((dev->class >> 8 == PCI_CLASS_NOT_DEFINED_VGA) ||
++	     (dev->class >> 8 == PCI_CLASS_DISPLAY_VGA) ||
++	     (dev->class >> 8 == PCI_CLASS_DISPLAY_XGA)) && skip_vga)
++		return;
++
++	pci_read_config_word(dev, PCI_COMMAND, &cmd);
++
++	cmd &= (~PCI_COMMAND_IO & ~PCI_COMMAND_MEMORY & ~PCI_COMMAND_MASTER);
++	pci_write_config_word(dev, PCI_COMMAND, cmd);
++}
++
++/* Stolen from pcibios_enable_resources/i386 */
++int pcibios_enable_device(struct pci_dev *dev, int mask)
++{
++	u16 cmd, old_cmd;
++	int idx;
++	struct resource *r;
++
++	pci_read_config_word(dev, PCI_COMMAND, &cmd);
++	old_cmd = cmd;
++	for (idx = 0; idx < 6; idx++) {
++		/* Only set up the requested stuff */
++		if (!(mask & (1<<idx)))
++			continue;
++
++		r = &dev->resource[idx];
++		if (!r->start && r->end) {
++			printk(KERN_ERR "PCI: Device %s not"
++				" available because"
++				" of resource collisions\n",
++				dev_name(&(dev->dev)));
++			return -EINVAL;
++		}
++		if (r->flags & IORESOURCE_IO)
++			cmd |= PCI_COMMAND_IO;
++		if (r->flags & IORESOURCE_MEM)
++			cmd |= PCI_COMMAND_MEMORY;
++	}
++	if (dev->resource[PCI_ROM_RESOURCE].start)
++		cmd |= PCI_COMMAND_MEMORY;
++	if (cmd != old_cmd) {
++		printk(KERN_ERR "PCI: Enabling device "
++			"%s (%04x -> %04x)\n",
++			dev_name(&(dev->dev)), old_cmd, cmd);
++		pci_write_config_word(dev, PCI_COMMAND, cmd);
++	}
++	return 0;
++}
++
++/*
++ * static void layout_dev(struct pci_dev *dev)
++ *
++ * Layout memory and I/O for a device.
++ *
++ * Parameters:
++ *
++ * device	- device to layout memory and I/O for.
++ */
++
++static void __init layout_dev(struct pci_dev *dev)
++{
++	unsigned short cmd;
++	unsigned int base, mask, size, reg;
++	unsigned int alignto;
++	int i;
++
++	/*
++	 * Skip video cards if requested.
++	 */
++	if (((dev->class >> 8 == PCI_CLASS_NOT_DEFINED_VGA) ||
++	     (dev->class >> 8 == PCI_CLASS_DISPLAY_VGA) ||
++	     (dev->class >> 8 == PCI_CLASS_DISPLAY_XGA)) && skip_vga) {
++		printk(KERN_ERR "%s: VGA\n", __func__);
++		return;
++	}
++
++	pci_read_config_word(dev, PCI_COMMAND, &cmd);
++
++	for (reg = PCI_BASE_ADDRESS_0, i = 0;
++		reg <= PCI_BASE_ADDRESS_5; reg += 4, i++) {
++		/*
++		 * Figure out how much space and of what type this
++		 * device wants.
++		 */
++
++		pci_write_config_dword(dev, reg, 0xffffffff);
++		pci_read_config_dword(dev, reg, &base);
++		if (!base) {
++			/* this base-address register is unused */
++			dev->resource[i].start = 0;
++			dev->resource[i].end = 0;
++			dev->resource[i].flags = 0;
++			continue;
++		}
++
++		/*
++		* We've read the base address register back after
++		* writing all ones and so now we must decode it.
++		*/
++		if (base & PCI_BASE_ADDRESS_SPACE_IO) {
++			/*
++			 * I/O space base address register.
++			 */
++
++			cmd |= PCI_COMMAND_IO;
++
++			base &= PCI_BASE_ADDRESS_IO_MASK;
++			mask = (~base << 1) | 0x1;
++			size = (mask & base) & 0xffffffff;
++
++			/*
++			 * Align to multiple of size of minimum base.
++			 */
++
++#ifdef CONFIG_COLDFIRE
++			alignto = MAX(PAGE_SIZE, size) ;
++#else /* !CONFIG_COLDFIRE */
++			alignto = MAX(0x040, size) ;
++#endif /* CONFIG_COLDFIRE */
++			base = ALIGN(io_base, alignto);
++			io_base = base + size;
++			pci_write_config_dword(dev, reg,
++				base | PCI_BASE_ADDRESS_SPACE_IO);
++			dev->resource[i].start = base;
++			dev->resource[i].end =
++				dev->resource[i].start + size - 1;
++			dev->resource[i].flags =
++				IORESOURCE_IO | PCI_BASE_ADDRESS_SPACE_IO;
++
++			DBG_DEVS(("layout_dev: IO address: %x\n", base));
++		} else {
++			unsigned int type;
++
++			/*
++			 * Memory space base address register.
++			 */
++			cmd |= PCI_COMMAND_MEMORY;
++
++			type = base & PCI_BASE_ADDRESS_MEM_TYPE_MASK;
++			base &= PCI_BASE_ADDRESS_MEM_MASK;
++			mask = (~base << 1) | 0x1;
++			size = (mask & base) & 0xffffffff;
++			switch (type) {
++			case PCI_BASE_ADDRESS_MEM_TYPE_32:
++			case PCI_BASE_ADDRESS_MEM_TYPE_64:
++				break;
++
++			case PCI_BASE_ADDRESS_MEM_TYPE_1M:
++				printk(KERN_INFO "bios32 WARNING: slot %d,"
++					" function %d "
++				       "requests memory below 1MB---don't "
++				       "know how to do that.\n",
++				       PCI_SLOT(dev->devfn),
++				       PCI_FUNC(dev->devfn));
++				continue;
++			}
++			DBG_DEVS(("%s MEM: base %x,type %x,mask %x,size %x\n",
++				__func__, base, type, mask, size));
++			/*
++			 * Align to multiple of size of minimum base.
++			 */
++
++			alignto = max_t(unsigned int, 0x1000, size);
++			base = ALIGN(mem_base, alignto);
++			mem_base = base + size;
++			pci_write_config_dword(dev, reg, base);
++			dev->resource[i].start = base;
++			dev->resource[i].end =
++				dev->resource[i].start + size - 1;
++			dev->resource[i].flags = IORESOURCE_MEM;
++
++			DBG_DEVS(("%s MEM :base %x,size %x\n",
++				__func__, base, size));
++			if (type == PCI_BASE_ADDRESS_MEM_TYPE_64) {
++				/*
++				 * 64-bit address, set the highest 32 bits
++				 * to zero.
++				 */
++
++				reg += 4;
++				pci_write_config_dword(dev, reg, 0);
++
++				i++;
++				dev->resource[i].start = 0;
++				dev->resource[i].end = 0;
++				dev->resource[i].flags = 0;
++				printk(KERN_ERR "%s:type == 64\n", __func__);
++			}
++		}
++	}
++	/*
++	 * Enable device:
++	 */
++	if (dev->class >> 8 == PCI_CLASS_NOT_DEFINED ||
++			dev->class >> 8 == PCI_CLASS_NOT_DEFINED_VGA ||
++			dev->class >> 8 == PCI_CLASS_DISPLAY_VGA ||
++			dev->class >> 8 == PCI_CLASS_DISPLAY_XGA) {
++		/*
++		 * All of these (may) have I/O scattered all around
++		 * and may not use i/o-base address registers at all.
++		 * So we just have to always enable I/O to these
++		 * devices.
++		 */
++		cmd |= PCI_COMMAND_IO;
++		pci_write_config_word(dev, PCI_COMMAND,
++				cmd | PCI_COMMAND_MASTER);
++	}
++
++	pci_write_config_byte(dev, PCI_LATENCY_TIMER,
++			(disable_pci_burst) ? 0 : 32);
++
++	if (bus_info != NULL)
++		bus_info->conf_device(dev);
++	/* Machine dependent configuration. */
++
++	printk(KERN_INFO "layout_dev: bus %d  slot 0x%x  "
++			"VID 0x%x  DID 0x%x  class 0x%x\n",
++		dev->bus->number, PCI_SLOT(dev->devfn),
++		dev->vendor, dev->device, dev->class);
++}
++
++/*
++ * static void layout_bus(struct pci_bus *bus)
++ *
++ * Layout memory and I/O for all devices on the given bus.
++ *
++ * Parameters:
++ *
++ * bus	- bus.
++ */
++
++static void __init layout_bus(struct pci_bus *bus)
++{
++	unsigned int bio, bmem;
++	struct pci_dev *dev;
++
++	DBG_DEVS(("layout_bus: starting bus %d\n", bus->number));
++
++	if (list_empty(&bus->devices) && list_empty(&bus->children))
++		return;
++
++	/*
++	 * Align the current bases on appropriate boundaries (4K for
++	 * IO and 1MB for memory).
++	 */
++
++	bio = io_base = ALIGN(io_base, 4*KB);
++	bmem = mem_base = ALIGN(mem_base, 1*MB);
++
++	/*
++	 * PCI devices might have been setup by a PCI BIOS emulation
++	 * running under TOS. In these cases there is a
++	 * window during which two devices may have an overlapping
++	 * address range. To avoid this causing trouble, we first
++	 * turn off the I/O and memory address decoders for all PCI
++	 * devices.  They'll be re-enabled only once all address
++	 * decoders are programmed consistently.
++	 */
++
++	DBG_DEVS(("layout_bus: disable_dev for bus %d\n", bus->number));
++
++#ifdef NL_ORIGINAL
++	for (dev = bus->devices; dev; dev = dev->sibling) {
++#else
++	dev = NULL;
++	while ((dev = pci_get_device(
++			PCI_ANY_ID, PCI_ANY_ID, dev)) != NULL) {
++#endif
++		if ((dev->class >> 16 != PCI_BASE_CLASS_BRIDGE) ||
++		    (dev->class >> 8 == PCI_CLASS_BRIDGE_PCMCIA))
++			disable_dev(dev);
++	}
++
++	/*
++	 * Allocate space to each device:
++	 */
++
++	DBG_DEVS(("layout_bus: starting bus %d devices\n", bus->number));
++
++#ifdef NL_ORIGINAL
++	for (dev = bus->devices; dev; dev = dev->sibling) {
++#else
++	dev = NULL;
++	while ((dev = pci_get_device(
++		PCI_ANY_ID, PCI_ANY_ID, dev)) != NULL) {
++#endif
++
++		if ((dev->class >> 16 != PCI_BASE_CLASS_BRIDGE) ||
++		    (dev->class >> 8 == PCI_CLASS_BRIDGE_PCMCIA))
++			layout_dev(dev);
++	}
++
++	DBG_DEVS(("layout_bus: bus %d finished\n", bus->number));
++}
++
++/*
++ * static void pcibios_fixup(void)
++ *
++ * Layout memory and I/O of all devices on the PCI bus if 'pci_modify' is
++ * true. This might be necessary because not every m68k machine with a PCI
++ * bus has a PCI BIOS. This function should be called right after
++ * pci_scan_bus() in pcibios_init().
++ */
++
++static void __init pcibios_fixup(void)
++{
++	DBG_DEVS(("%s\n", __func__));
++	if (pci_modify) {
++		/*
++		 * Set base addresses for allocation of I/O and memory space.
++		 */
++
++		io_base = bus_info->io_space.start + IO_ALLOC_OFFSET;
++		mem_base = bus_info->mem_space.start + MEM_ALLOC_OFFSET;
++
++		/*
++		 * Scan the tree, allocating PCI memory and I/O space.
++		 */
++
++#ifdef NL_ORIGINAL
++		layout_bus(pci_bus_b(pci_root.next));
++#else
++		layout_bus(pci_bus_b(pci_root_buses.next));
++#endif
++	}
++
++	/*
++	 * Fix interrupt assignments, etc.
++	 */
++
++	bus_info->fixup(pci_modify);
++}
++
++/*
++ * static void pcibios_claim_resources(struct pci_bus *bus)
++ *
++ * Claim all resources that are assigned to devices on the given bus.
++ *
++ * Parameters:
++ *
++ * bus	- bus.
++ */
++
++static void __init pcibios_claim_resources(struct pci_bus *bus)
++{
++	struct pci_dev *dev;
++	int i;
++	DBG_DEVS(("%s\n", __func__));
++#ifdef NL_ORIGINAL
++	while (bus) {
++#else
++	while ((bus = pci_find_next_bus(bus)) != NULL) {
++#endif
++
++#ifdef NL_ORIGINAL
++		for (dev = bus->devices; (dev != NULL);
++			dev = dev->sibling) {
++#else
++		dev = NULL;
++		while ((dev = pci_get_device(
++			PCI_ANY_ID, PCI_ANY_ID, dev)) != NULL) {
++#endif
++			for (i = 0; i < PCI_NUM_RESOURCES; i++) {
++				struct resource *r = &dev->resource[i];
++				struct resource *pr;
++				struct pci_bus_info *bus_info =
++					(struct pci_bus_info *)dev->sysdata;
++
++				if ((r->start == 0) || (r->parent != NULL))
++					continue;
++
++#ifdef CONFIG_COLDFIRE
++				if (dev->class >> 16 == PCI_BASE_CLASS_BRIDGE)
++					continue;
++#endif /* CONFIG_COLDFIRE */
++#if 1
++				if (r->flags & IORESOURCE_IO)
++					pr = &bus_info->io_space;
++				else
++					pr = &bus_info->mem_space;
++#else
++				if (r->flags & IORESOURCE_IO)
++					pr = &ioport_resource;
++				else
++					pr = &iomem_resource;
++#endif
++				if (request_resource(pr, r) < 0) {
++#ifdef NL_ORIGINAL
++					DBG_DEVS(("PCI: Address space"
++						" collision on "
++						"region %d of device %s\n",
++						i, dev->name));
++#else
++					printk(KERN_INFO "PCI: Address space"
++						" collision on region %d of"
++						" device %s\n",
++						i, dev_name(&(dev->dev)));
++#endif
++				}
++			}
++
++#ifdef NL_ORIGINAL
++		}
++		if (bus->children)
++			pcibios_claim_resources(bus->children);
++#else
++		}
++		if (!list_empty(&bus->children))
++			pcibios_claim_resources(pci_bus_b(bus->children.next));
++#endif
++
++#ifdef NL_ORIGINAL
++		bus = bus->next;
++#endif
++	}
++}
++
++/*
++ * int pcibios_assign_resource(struct pci_dev *dev, int i)
++ *
++ * Assign a new address to a PCI resource.
++ *
++ * Parameters:
++ *
++ * dev	- device.
++ * i	- resource.
++ *
++ * Result: 0 if successful.
++ */
++
++int __init pcibios_assign_resource(struct pci_dev *dev, int i)
++{
++	struct resource *r = &dev->resource[i];
++	struct resource *pr = pci_find_parent_resource(dev, r);
++	unsigned long size = r->end + 1;
++	DBG_DEVS(("%s:IO_ALLOC_OFFSET %x\n", __func__, IO_ALLOC_OFFSET));
++	if (!pr)
++		return -EINVAL;
++
++	if (r->flags & IORESOURCE_IO) {
++		DBG_DEVS(("%s:IORESOURCE_IO:start %x, size %lx\n",
++			__func__, bus_info->io_space.start, size));
++		if (size > 0x100)
++			return -EFBIG;
++
++#ifdef NL_ORIGINAL
++		if (allocate_resource(pr, r, size, bus_info->io_space.start +
++				IO_ALLOC_OFFSET,
++				bus_info->io_space.end,
++				1024))
++#else
++		if (allocate_resource(pr, r, size, bus_info->io_space.start +
++				IO_ALLOC_OFFSET,
++				bus_info->io_space.end,
++				1024, NULL, NULL))
++#endif
++			return -EBUSY;
++	} else {
++		DBG_DEVS(("%s:IORESOURCE_MEM:start %x, size %lx\n",
++				__func__, bus_info->mem_space.start, size));
++#ifdef NL_ORIGINAL
++		if (allocate_resource(pr, r, size, bus_info->mem_space.start +
++				      MEM_ALLOC_OFFSET,
++				      bus_info->mem_space.end, size))
++#else
++		if (allocate_resource(pr, r, size, bus_info->io_space.start +
++			IO_ALLOC_OFFSET,  bus_info->io_space.end,
++			1024, NULL, NULL))
++#endif
++			return -EBUSY;
++	}
++
++	if (i < 6)
++		pci_write_config_dword(dev,
++			PCI_BASE_ADDRESS_0 + 4 * i, r->start);
++
++	return 0;
++}
++
++void pcibios_fixup_bus(struct pci_bus *bus)
++{
++	struct pci_dev *dev;
++	void *sysdata;
++
++	sysdata = (bus->parent) ? bus->parent->sysdata : bus->sysdata;
++
++#ifdef NL_ORIGINAL
++	for (dev = bus->devices; (dev != NULL); dev = dev->sibling)
++#else
++	dev = NULL;
++	while ((dev = pci_get_device(PCI_ANY_ID, PCI_ANY_ID, dev)) != NULL)
++#endif
++		dev->sysdata = sysdata;
++}
++
++int __init pcibios_init(void)
++{
++	printk(KERN_INFO "Linux/m68k PCI BIOS32 "
++		"revision %x.%02x\n", MAJOR_REV, MINOR_REV);
++
++	bus_info = NULL;
++#ifdef CONFIG_COLDFIRE
++	bus_info = init_coldfire_pci();
++#endif /* CONFIG_COLDFIRE */
++#ifdef CONFIG_HADES
++	if (MACH_IS_HADES)
++		bus_info = init_hades_pci();
++#endif
++	if (bus_info != NULL) {
++		printk(KERN_ERR "PCI: Probing PCI hardware\n");
++		pci_scan_bus(0, bus_info->m68k_pci_ops, bus_info);
++		pcibios_fixup();
++#ifdef NL_ORIGINAL
++		pcibios_claim_resources(pci_root);
++#else
++		pcibios_claim_resources(pci_bus_b(pci_root_buses.next));
++#endif
++	} else
++		printk(KERN_ERR "PCI: No PCI bus detected\n");
++	return 0;
++}
++
++subsys_initcall(pcibios_init);
++
++char *pcibios_setup(char *str)
++{
++	if (!strcmp(str, "nomodify")) {
++		pci_modify = 0;
++		return NULL;
++	} else if (!strcmp(str, "skipvga")) {
++		skip_vga = 1;
++		return NULL;
++	} else if (!strcmp(str, "noburst")) {
++		disable_pci_burst = 1;
++		return NULL;
++	}
++
++	return str;
++}
++#endif /* CONFIG_PCI */
+--- a/drivers/pci/Makefile
++++ b/drivers/pci/Makefile
+@@ -50,6 +50,7 @@ obj-$(CONFIG_X86_VISWS) += setup-irq.o
+ obj-$(CONFIG_MN10300) += setup-bus.o
+ obj-$(CONFIG_MICROBLAZE) += setup-bus.o
+ obj-$(CONFIG_TILE) += setup-bus.o setup-irq.o
++obj-$(CONFIG_M54455) += setup-bus.o setup-irq.o
+ 
+ #
+ # ACPI Related PCI FW Functions
+--- a/drivers/pci/access.c
++++ b/drivers/pci/access.c
+@@ -25,6 +25,7 @@ static DEFINE_RAW_SPINLOCK(pci_lock);
+ #define PCI_word_BAD (pos & 1)
+ #define PCI_dword_BAD (pos & 3)
+ 
++#ifdef NL_ORIGINAL
+ #define PCI_OP_READ(size,type,len) \
+ int pci_bus_read_config_##size \
+ 	(struct pci_bus *bus, unsigned int devfn, int pos, type *value)	\
+@@ -39,6 +40,23 @@ int pci_bus_read_config_##size \
+ 	raw_spin_unlock_irqrestore(&pci_lock, flags);		\
+ 	return res;							\
+ }
++#else /* NL_ORIGINAL */
++#define PCI_OP_READ(size, type, len) \
++	int pci_bus_read_config_##size \
++	(struct pci_bus *bus, unsigned int devfn, \
++	 int pos, type * value) \
++{									\
++		int res;                                                \
++		unsigned long flags;                                    \
++		if (PCI_##size##_BAD)					\
++			return PCIBIOS_BAD_REGISTER_NUMBER;             \
++		raw_spin_lock_irqsave(&pci_lock, flags);                    \
++		res = bus->ops->read(                                   \
++				bus, devfn, pos, len, (u32 *)value);    \
++		raw_spin_unlock_irqrestore(&pci_lock, flags);               \
++		return res;                                             \
++}
++#endif /* NL_ORIGINAL */
+ 
+ #define PCI_OP_WRITE(size,type,len) \
+ int pci_bus_write_config_##size \
+--- a/drivers/pci/setup-bus.c
++++ b/drivers/pci/setup-bus.c
+@@ -77,7 +77,13 @@ static void __dev_sort_resources(struct
+ 	u16 class = dev->class >> 8;
+ 
+ 	/* Don't touch classless devices or host bridges or ioapics.  */
++#ifdef CONFIG_M5445X
++	if (class == PCI_CLASS_NOT_DEFINED || \
++			class == PCI_CLASS_BRIDGE_HOST || \
++			class == PCI_CLASS_BRIDGE_OTHER)
++#else
+ 	if (class == PCI_CLASS_NOT_DEFINED || class == PCI_CLASS_BRIDGE_HOST)
++#endif
+ 		return;
+ 
+ 	/* Don't touch ioapic devices already enabled by firmware */
+--- a/lib/iomap.c
++++ b/lib/iomap.c
+@@ -227,9 +227,13 @@ EXPORT_SYMBOL(iowrite32_rep);
+ /* Create a virtual mapping cookie for an IO port range */
+ void __iomem *ioport_map(unsigned long port, unsigned int nr)
+ {
++#ifndef CONFIG_M54455
+ 	if (port > PIO_MASK)
+ 		return NULL;
+ 	return (void __iomem *) (unsigned long) (port + PIO_OFFSET);
++#else
++	return (void __iomem *) (unsigned long) port;
++#endif
+ }
+ 
+ void ioport_unmap(void __iomem *addr)

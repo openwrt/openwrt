@@ -1,10 +1,11 @@
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -1804,6 +1804,7 @@ m68k-*-linux*)		# Motorola m68k's runnin
- 	if test x$sjlj != x1; then
- 	    tmake_file="$tmake_file m68k/t-slibgcc-elf-ver"
- 	fi
-+	tmake_file="m68k/t-floatlib m68k/t-m68kbare m68k/t-m68kelf"
- 	;;
- m68k-*-rtems*)
+@@ -1795,7 +1795,7 @@
  	default_m68k_cpu=68020
+ 	default_cf_cpu=5475
+ 	with_arch=${with_arch:-m68k}
+-	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h glibc-stdint.h m68k/linux.h ./sysroot-suffix.h"
++	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h glibc-stdint.h m68k/linux.h"
+ 	extra_options="${extra_options} m68k/ieee.opt"
+ 	tm_defines="${tm_defines} MOTOROLA=1"
+ 	tmake_file="${tmake_file} m68k/t-floatlib m68k/t-linux m68k/t-mlibs"
