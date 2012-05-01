@@ -221,7 +221,7 @@ wrap_bin_ld() {
 	local bin="$2"
 
 	echo    '#!/bin/sh'                                                > "$out"
-	echo -n 'exec "'"$bin"'" '"$CFLAGS"' ${STAGING_DIR:+'             >> "$out"
+	echo -n 'exec "'"$bin"'" ${STAGING_DIR:+'                         >> "$out"
 	echo -n '-L "$STAGING_DIR/usr/lib" '                              >> "$out"
 	echo    '-rpath-link "$STAGING_DIR/usr/lib"} "$@"'                >> "$out"
 
