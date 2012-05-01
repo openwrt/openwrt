@@ -1,0 +1,1287 @@
+From d984818481320cf4a1b44cefbc99448205cc7673 Mon Sep 17 00:00:00 2001
+From: Jingchang Lu <b35083@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:48 +0800
+Subject: [PATCH 38/52] Add PCI Framebuffer support for Silicon Motion's Lynx family
+
+The driver may support SM710, SM712, SM720, and the SM712
+has been tested on ColdFire M547X_8XEVB.
+
+Signed-off-by: Alison Wang <b18965@freescale.com>
+Signed-off-by: Jingchang Lu <b35083@freescale.com>
+---
+ drivers/video/Kconfig           |   15 +
+ drivers/video/Makefile          |    1 +
+ drivers/video/console/bitblit.c |   12 +
+ drivers/video/console/fbcon.c   |    4 +
+ drivers/video/fbmem.c           |    2 +-
+ drivers/video/smifb.c           |  963 +++++++++++++++++++++++++++++++++++++++
+ drivers/video/smifb.h           |  150 ++++++
+ include/linux/fb.h              |   18 +-
+ 8 files changed, 1163 insertions(+), 2 deletions(-)
+ create mode 100644 drivers/video/smifb.c
+ create mode 100644 drivers/video/smifb.h
+
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -204,6 +204,7 @@ config FB_WMT_GE_ROPS
+ config FB_DEFERRED_IO
+ 	bool
+ 	depends on FB
++	default y
+ 
+ config FB_HECUBA
+ 	tristate
+@@ -262,6 +263,20 @@ config FB_TILEBLITTING
+ comment "Frame buffer hardware drivers"
+ 	depends on FB
+ 
++config FB_SMI
++	tristate "Silicon Motion Lynx support"
++	depends on FB && PCI
++	select FB_CFB_FILLRECT
++	select FB_CFB_COPYAREA
++	select FB_CFB_IMAGEBLIT
++	---help---
++	  This enables support for the Silicon Motion Lynx family of graphic
++	  chips.
++
++	  The SM712 has been tested on ColdFire M547X_8Xevb.
++
++	  If unsure, say N.
++
+ config FB_CIRRUS
+ 	tristate "Cirrus Logic support"
+ 	depends on FB && (ZORRO || PCI)
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -29,6 +29,7 @@ obj-$(CONFIG_FB_DEFERRED_IO)   += fb_def
+ obj-$(CONFIG_FB_WMT_GE_ROPS)   += wmt_ge_rops.o
+ 
+ # Hardware specific drivers go first
++obj-$(CONFIG_FB_SMI)              += smifb.o
+ obj-$(CONFIG_FB_AMIGA)            += amifb.o c2p_planar.o
+ obj-$(CONFIG_FB_ARC)              += arcfb.o
+ obj-$(CONFIG_FB_CLPS711X)         += clps711xfb.o
+--- a/drivers/video/console/bitblit.c
++++ b/drivers/video/console/bitblit.c
+@@ -79,7 +79,11 @@ static inline void bit_putcs_aligned(str
+ 				     u32 d_pitch, u32 s_pitch, u32 cellsize,
+ 				     struct fb_image *image, u8 *buf, u8 *dst)
+ {
++#ifndef CONFIG_COLDFIRE
+ 	u16 charmask = vc->vc_hi_font_mask ? 0x1ff : 0xff;
++#else
++	u32 charmask = vc->vc_hi_font_mask ? 0x1ff : 0xff;
++#endif
+ 	u32 idx = vc->vc_font.width >> 3;
+ 	u8 *src;
+ 
+@@ -112,7 +116,11 @@ static inline void bit_putcs_unaligned(s
+ 				       struct fb_image *image, u8 *buf,
+ 				       u8 *dst)
+ {
++#ifndef CONFIG_COLDFIRE
+ 	u16 charmask = vc->vc_hi_font_mask ? 0x1ff : 0xff;
++#else
++	u32 charmask = vc->vc_hi_font_mask ? 0x1ff : 0xff;
++#endif
+ 	u32 shift_low = 0, mod = vc->vc_font.width % 8;
+ 	u32 shift_high = 8;
+ 	u32 idx = vc->vc_font.width >> 3;
+@@ -239,7 +247,11 @@ static void bit_cursor(struct vc_data *v
+ {
+ 	struct fb_cursor cursor;
+ 	struct fbcon_ops *ops = info->fbcon_par;
++#ifndef CONFIG_COLDFIRE
+ 	unsigned short charmask = vc->vc_hi_font_mask ? 0x1ff : 0xff;
++#else
++	unsigned long charmask = vc->vc_hi_font_mask ? 0x1ff : 0xff;
++#endif
+ 	int w = DIV_ROUND_UP(vc->vc_font.width, 8), c;
+ 	int y = real_y(ops->p, vc->vc_y);
+ 	int attribute, use_sw = (vc->vc_cursor_type & 0x10);
+--- a/drivers/video/console/fbcon.c
++++ b/drivers/video/console/fbcon.c
+@@ -2636,7 +2636,11 @@ static int fbcon_set_palette(struct vc_d
+ {
+ 	struct fb_info *info = registered_fb[con2fb_map[vc->vc_num]];
+ 	int i, j, k, depth;
++#ifndef CONFIG_COLDFIRE
+ 	u8 val;
++#else
++	u32 val;
++#endif
+ 
+ 	if (fbcon_is_inactive(vc, info))
+ 		return -EINVAL;
+--- a/drivers/video/fbmem.c
++++ b/drivers/video/fbmem.c
+@@ -1433,7 +1433,7 @@ static int fb_check_foreignness(struct f
+ 
+ 	fi->flags &= ~FBINFO_FOREIGN_ENDIAN;
+ 
+-#ifdef __BIG_ENDIAN
++#if defined(__BIG_ENDIAN) && !defined(CONFIG_COLDFIRE)
+ 	fi->flags |= foreign_endian ? 0 : FBINFO_BE_MATH;
+ #else
+ 	fi->flags |= foreign_endian ? FBINFO_BE_MATH : 0;
+--- /dev/null
++++ b/drivers/video/smifb.c
+@@ -0,0 +1,963 @@
++/***************************************************************************
++	smifb.c  -  Silicon Motion, Inc. LynxEM+ frame buffer device
++			-------------------
++    begin                : Thu Aug 9 2001
++    copyright            : (C) 2001 by Szu-Tao Huang
++    email                : johuang@siliconmotion.com
++ ***************************************************************************/
++/* Copyright (C) 2008-2011 Freescale Semiconductor, Inc. All Rights Reserved.*/
++/***************************************************************************
++ *                                                                         *
++ *   This program is free software; you can redistribute it and/or modify  *
++ *   it under the terms of the GNU General Public License as published by  *
++ *   the Free Software Foundation; either version 2 of the License, or     *
++ *   (at your option) any later version.                                   *
++ *                                                                         *
++ ***************************************************************************/
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <linux/string.h>
++#include <linux/mm.h>
++#include <linux/tty.h>
++#include <linux/slab.h>
++#include <linux/delay.h>
++#include <linux/fb.h>
++#include <linux/pci.h>
++#include <linux/init.h>
++
++#include <linux/io.h>
++#include <asm/irq.h>
++#include <asm/pgtable.h>
++#include <asm/system.h>
++#include <linux/uaccess.h>
++
++#include "console/fbcon.h"
++
++/*
++#include <video/fbcon.h>
++#include <video/fbcon-cfb8.h>
++#include <video/fbcon-cfb16.h>
++#include <video/fbcon-cfb24.h>
++*/
++
++#include <linux/fb.h>
++/*point to virtual Memory Map IO starting address*/
++static char *SMIRegs;
++/*point to virtual video memory starting address*/
++static char *SMILFB;
++/*used to record hardware information*/
++static struct par_info hw;
++#ifdef DEBUG_FB
++#define debug_printk(x...) printk(x)
++#else
++#define debug_printk(x...)
++#endif
++#include "smifb.h"
++
++struct ModeInit VGAMode[numVGAModes] = {
++	{
++		/*  mode#0: 640 x 480  8Bpp  60Hz */
++		640, 480, 8, 60,
++		/*  Init_MISC */
++		0xE3,
++		{   /*  Init_SR0_SR4 */
++			0x03, 0x01, 0x0F, 0x00, 0x0E,
++		},
++		{   /*  Init_SR10_SR24 */
++			0xFF, 0xBE, 0xEF, 0xFF, 0x00, 0x0E, 0x17, 0x2C,
++			0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0xC4, 0x30, 0x02, 0x01, 0x01,
++		},
++		{   /*  Init_SR30_SR75 */
++			0x32, 0x03, 0xA0, 0x09, 0xC0, 0x32, 0x32, 0x32,
++			0x32, 0x32, 0x32, 0x32, 0x00, 0x00, 0x03, 0xFF,
++			0x00, 0xFC, 0x00, 0x00, 0x20, 0x18, 0x00, 0xFC,
++			0x20, 0x0C, 0x44, 0x20, 0x00, 0x32, 0x32, 0x32,
++			0x04, 0x24, 0x63, 0x4F, 0x52, 0x0B, 0xDF, 0xEA,
++			0x04, 0x50, 0x19, 0x32, 0x32, 0x00, 0x00, 0x32,
++			0x01, 0x80, 0x7E, 0x1A, 0x1A, 0x00, 0x00, 0x00,
++			0x50, 0x03, 0x74, 0x14, 0x07, 0x82, 0x07, 0x04,
++			0x00, 0x45, 0x30, 0x30, 0x40, 0x30,
++		},
++		{   /*  Init_SR80_SR93 */
++			0xFF, 0x07, 0x00, 0x6F, 0x7F, 0x7F, 0xFF, 0x32,
++			0xF7, 0x00, 0x00, 0x00, 0xEF, 0xFF, 0x32, 0x32,
++			0x00, 0x00, 0x00, 0x00,
++		},
++		{   /*  Init_SRA0_SRAF */
++			0x00, 0xFF, 0xBF, 0xFF, 0xFF, 0xED, 0xED, 0xED,
++			0x7B, 0xFF, 0xFF, 0xFF, 0xBF, 0xEF, 0xFF, 0xDF,
++		},
++		{   /*  Init_GR00_GR08 */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
++			0xFF,
++		},
++		{   /*  Init_AR00_AR14 */
++			0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
++			0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
++			0x41, 0x00, 0x0F, 0x00, 0x00,
++		},
++		{   /*  Init_CR00_CR18 */
++			0x5F, 0x4F, 0x4F, 0x00, 0x53, 0x1F, 0x0B, 0x3E,
++			0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0xEA, 0x0C, 0xDF, 0x50, 0x40, 0xDF, 0x00, 0xE3,
++			0xFF,
++		},
++		{   /*  Init_CR30_CR4D */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x55, 0x03, 0x20,
++			0x00, 0x00, 0x00, 0x40, 0x00, 0xE7, 0xFF, 0xFD,
++			0x5F, 0x4F, 0x00, 0x54, 0x00, 0x0B, 0xDF, 0x00,
++			0xEA, 0x0C, 0x2E, 0x00, 0x4F, 0xDF,
++		},
++		{   /*  Init_CR90_CRA7 */
++			0x56, 0xDD, 0x5E, 0xEA, 0x87, 0x44, 0x8F, 0x55,
++			0x0A, 0x8F, 0x55, 0x0A, 0x00, 0x00, 0x18, 0x00,
++			0x11, 0x10, 0x0B, 0x0A, 0x0A, 0x0A, 0x0A, 0x00,
++		},
++	},
++	{
++		/*  mode#1: 640 x 480  16Bpp  60Hz */
++		640, 480, 16, 60,
++		/*  Init_MISC */
++		0xE3,
++		{   /*  Init_SR0_SR4 */
++			0x03, 0x01, 0x0F, 0x00, 0x0E,
++		},
++		{   /*  Init_SR10_SR24 */
++			0xFF, 0xBE, 0xEF, 0xFF, 0x00, 0x0E, 0x17, 0x2C,
++			0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0xC4, 0x30, 0x02, 0x01, 0x01,
++		},
++		{   /*  Init_SR30_SR75 */
++			0x32, 0x03, 0xA0, 0x09, 0xC0, 0x32, 0x32, 0x32,
++			0x32, 0x32, 0x32, 0x32, 0x00, 0x00, 0x03, 0xFF,
++			0x00, 0xFC, 0x00, 0x00, 0x20, 0x18, 0x00, 0xFC,
++			0x20, 0x0C, 0x44, 0x20, 0x00, 0x32, 0x32, 0x32,
++			0x04, 0x24, 0x63, 0x4F, 0x52, 0x0B, 0xDF, 0xEA,
++			0x04, 0x50, 0x19, 0x32, 0x32, 0x00, 0x00, 0x32,
++			0x01, 0x80, 0x7E, 0x1A, 0x1A, 0x00, 0x00, 0x00,
++			0x50, 0x03, 0x74, 0x14, 0x07, 0x82, 0x07, 0x04,
++			0x00, 0x45, 0x30, 0x30, 0x40, 0x30,
++		},
++		{   /*  Init_SR80_SR93 */
++			0xFF, 0x07, 0x00, 0x6F, 0x7F, 0x7F, 0xFF, 0x32,
++			0xF7, 0x00, 0x00, 0x00, 0xEF, 0xFF, 0x32, 0x32,
++			0x00, 0x00, 0x00, 0x00,
++		},
++		{   /*  Init_SRA0_SRAF */
++			0x00, 0xFF, 0xBF, 0xFF, 0xFF, 0xED, 0xED, 0xED,
++			0x7B, 0xFF, 0xFF, 0xFF, 0xBF, 0xEF, 0xFF, 0xDF,
++		},
++		{   /*  Init_GR00_GR08 */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
++			0xFF,
++		},
++		{   /*  Init_AR00_AR14 */
++			0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
++			0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
++			0x41, 0x00, 0x0F, 0x00, 0x00,
++		},
++		{   /*  Init_CR00_CR18 */
++			0x5F, 0x4F, 0x4F, 0x00, 0x53, 0x1F, 0x0B, 0x3E,
++			0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0xEA, 0x0C, 0xDF, 0x50, 0x40, 0xDF, 0x00, 0xE3,
++			0xFF,
++		},
++		{   /*  Init_CR30_CR4D */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x55, 0x03, 0x20,
++			0x00, 0x00, 0x00, 0x40, 0x00, 0xE7, 0xFF, 0xFD,
++			0x5F, 0x4F, 0x00, 0x54, 0x00, 0x0B, 0xDF, 0x00,
++			0xEA, 0x0C, 0x2E, 0x00, 0x4F, 0xDF,
++		},
++		{   /*  Init_CR90_CRA7 */
++			0x56, 0xDD, 0x5E, 0xEA, 0x87, 0x44, 0x8F, 0x55,
++			0x0A, 0x8F, 0x55, 0x0A, 0x00, 0x00, 0x18, 0x00,
++			0x11, 0x10, 0x0B, 0x0A, 0x0A, 0x0A, 0x0A, 0x00,
++		},
++	},
++	{
++		/*  mode#2: 640 x 480  24Bpp  60Hz */
++		640, 480, 24, 60,
++		/*  Init_MISC */
++		0xE3,
++		{   /*  Init_SR0_SR4 */
++			0x03, 0x01, 0x0F, 0x00, 0x0E,
++		},
++		{   /*  Init_SR10_SR24 */
++			0xFF, 0xBE, 0xEF, 0xFF, 0x00, 0x0E, 0x17, 0x2C,
++			0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0xC4, 0x30, 0x02, 0x01, 0x01,
++		},
++		{   /*  Init_SR30_SR75 */
++			0x32, 0x03, 0xA0, 0x09, 0xC0, 0x32, 0x32, 0x32,
++			0x32, 0x32, 0x32, 0x32, 0x00, 0x00, 0x03, 0xFF,
++			0x00, 0xFC, 0x00, 0x00, 0x20, 0x18, 0x00, 0xFC,
++			0x20, 0x0C, 0x44, 0x20, 0x00, 0x32, 0x32, 0x32,
++			0x04, 0x24, 0x63, 0x4F, 0x52, 0x0B, 0xDF, 0xEA,
++			0x04, 0x50, 0x19, 0x32, 0x32, 0x00, 0x00, 0x32,
++			0x01, 0x80, 0x7E, 0x1A, 0x1A, 0x00, 0x00, 0x00,
++			0x50, 0x03, 0x74, 0x14, 0x07, 0x82, 0x07, 0x04,
++			0x00, 0x45, 0x30, 0x30, 0x40, 0x30,
++		},
++		{   /*  Init_SR80_SR93 */
++			0xFF, 0x07, 0x00, 0x6F, 0x7F, 0x7F, 0xFF, 0x32,
++			0xF7, 0x00, 0x00, 0x00, 0xEF, 0xFF, 0x32, 0x32,
++			0x00, 0x00, 0x00, 0x00,
++		},
++		{   /*  Init_SRA0_SRAF */
++			0x00, 0xFF, 0xBF, 0xFF, 0xFF, 0xED, 0xED, 0xED,
++			0x7B, 0xFF, 0xFF, 0xFF, 0xBF, 0xEF, 0xFF, 0xDF,
++		},
++		{   /*  Init_GR00_GR08 */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
++			0xFF,
++		},
++		{   /*  Init_AR00_AR14 */
++			0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
++			0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
++			0x41, 0x00, 0x0F, 0x00, 0x00,
++		},
++		{   /*  Init_CR00_CR18 */
++			0x5F, 0x4F, 0x4F, 0x00, 0x53, 0x1F, 0x0B, 0x3E,
++			0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0xEA, 0x0C, 0xDF, 0x50, 0x40, 0xDF, 0x00, 0xE3,
++			0xFF,
++		},
++		{   /*  Init_CR30_CR4D */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x55, 0x03, 0x20,
++			0x00, 0x00, 0x00, 0x40, 0x00, 0xE7, 0xFF, 0xFD,
++			0x5F, 0x4F, 0x00, 0x54, 0x00, 0x0B, 0xDF, 0x00,
++			0xEA, 0x0C, 0x2E, 0x00, 0x4F, 0xDF,
++		},
++		{   /*  Init_CR90_CRA7 */
++			0x56, 0xDD, 0x5E, 0xEA, 0x87, 0x44, 0x8F, 0x55,
++			0x0A, 0x8F, 0x55, 0x0A, 0x00, 0x00, 0x18, 0x00,
++			0x11, 0x10, 0x0B, 0x0A, 0x0A, 0x0A, 0x0A, 0x00,
++		},
++	},
++	{/*  mode#3: 800 x 600  8Bpp  60Hz */
++		800, 600, 8, 60,
++		0x2B,	/*  Init_MISC */
++		{       /*  Init_SR0_SR4 */
++			0x03, 0x01, 0x0F, 0x03, 0x0E,
++		},
++		{   /*  Init_SR10_SR24 */
++			0xFF, 0xBE, 0xEE, 0xFF, 0x00, 0x0E, 0x17, 0x2C,
++			0x99, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0xC4, 0x30, 0x02, 0x01, 0x01,
++		},
++		{   /*  Init_SR30_SR75 */
++			0x24, 0x03, 0x20, 0x09, 0xC0, 0x24, 0x24, 0x24,
++			0x24, 0x24, 0x24, 0x24, 0x00, 0x00, 0x03, 0xFF,
++			0x00, 0xFC, 0x00, 0x00, 0x20, 0x38, 0x00, 0xFC,
++			0x20, 0x0C, 0x44, 0x20, 0x00, 0x24, 0x24, 0x24,
++			0x04, 0x48, 0x83, 0x63, 0x68, 0x72, 0x57, 0x58,
++			0x04, 0x55, 0x59, 0x24, 0x24, 0x00, 0x00, 0x24,
++			0x01, 0x80, 0x7A, 0x1A, 0x1A, 0x00, 0x00, 0x00,
++			0x50, 0x03, 0x74, 0x14, 0x1C, 0x85, 0x35, 0x13,
++			0x02, 0x45, 0x30, 0x35, 0x40, 0x20,
++		},
++		{   /*  Init_SR80_SR93 */
++			0xFF, 0x87, 0x00, 0x6F, 0x7F, 0x7F, 0xFF, 0x24,
++			0x90, 0x01, 0x2C, 0x01, 0xFF, 0x00, 0x24, 0x24,
++			0x00, 0x00, 0x00, 0x00,
++		},
++		{   /*  Init_SRA0_SRAF */
++			0x00, 0xFF, 0xBF, 0xFF, 0xFF, 0xED, 0xED, 0xED,
++			0x7B, 0xFF, 0xFF, 0xFF, 0xBF, 0xEF, 0xBF, 0xDF,
++		},
++		{   /*  Init_GR00_GR08 */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
++			0xFF,
++		},
++		{   /*  Init_AR00_AR14 */
++			0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
++			0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
++			0x41, 0x00, 0x0F, 0x00, 0x00,
++		},
++		{   /*  Init_CR00_CR18 */
++			0x7F, 0x63, 0x63, 0x00, 0x68, 0x18, 0x72, 0xF0,
++			0x00, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0x58, 0x0C, 0x57, 0x64, 0x40, 0x57, 0x00, 0xE3,
++			0xFF,
++		},
++		{   /*  Init_CR30_CR4D */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x03, 0x20,
++			0x00, 0x00, 0x00, 0x40, 0x00, 0xE7, 0xBF, 0xFD,
++			0x7F, 0x63, 0x00, 0x69, 0x18, 0x72, 0x57, 0x00,
++			0x58, 0x0C, 0xE0, 0x20, 0x63, 0x57,
++		},
++		{   /*  Init_CR90_CRA7 */
++			0x56, 0x4B, 0x5E, 0x55, 0x86, 0x9D, 0x8E, 0xAA,
++			0xDB, 0x2A, 0xDF, 0x33, 0x00, 0x00, 0x18, 0x00,
++			0x20, 0x1F, 0x1A, 0x19, 0x0F, 0x0F, 0x0F, 0x00,
++		},
++	},
++	{/*  mode#4: 800 x 600  16Bpp  60Hz */
++		800, 600, 16, 60,
++		/*  Init_MISC */
++		0x2B,
++		{   /*  Init_SR0_SR4 */
++			0x03, 0x01, 0x0F, 0x03, 0x0E,
++		},
++		{   /*  Init_SR10_SR24 */
++			0xFF, 0xBE, 0xEE, 0xFF, 0x00, 0x0E, 0x17, 0x2C,
++			0x99, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0xC4, 0x30, 0x02, 0x01, 0x01,
++		},
++		{   /*  Init_SR30_SR75 */
++			0x24, 0x03, 0x20, 0x09, 0xC0, 0x24, 0x24, 0x24,
++			0x24, 0x24, 0x24, 0x24, 0x00, 0x00, 0x03, 0xFF,
++			0x00, 0xFC, 0x00, 0x00, 0x20, 0x38, 0x00, 0xFC,
++			0x20, 0x0C, 0x44, 0x20, 0x00, 0x24, 0x24, 0x24,
++			0x04, 0x48, 0x83, 0x63, 0x68, 0x72, 0x57, 0x58,
++			0x04, 0x55, 0x59, 0x24, 0x24, 0x00, 0x00, 0x24,
++			0x01, 0x80, 0x7A, 0x1A, 0x1A, 0x00, 0x00, 0x00,
++			0x50, 0x03, 0x74, 0x14, 0x1C, 0x85, 0x35, 0x13,
++			0x02, 0x45, 0x30, 0x35, 0x40, 0x20,
++		},
++		{   /*  Init_SR80_SR93 */
++			0x00, 0x00, 0x00, 0x6F, 0x7F, 0x7F, 0xFF, 0x24,
++			0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x24, 0x24,
++			0x00, 0x00, 0x00, 0x00,
++		},
++		{   /*  Init_SRA0_SRAF */
++			0x00, 0xFF, 0xBF, 0xFF, 0xFF, 0xED, 0xED, 0xED,
++			0x7B, 0xFF, 0xFF, 0xFF, 0xBF, 0xEF, 0xBF, 0xDF,
++		},
++		{   /*  Init_GR00_GR08 */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
++			0xFF,
++		},
++		{   /*  Init_AR00_AR14 */
++			0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
++			0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
++			0x41, 0x00, 0x0F, 0x00, 0x00,
++		},
++		{   /*  Init_CR00_CR18 */
++			0x7F, 0x63, 0x63, 0x00, 0x68, 0x18, 0x72, 0xF0,
++			0x00, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0x58, 0x0C, 0x57, 0x64, 0x40, 0x57, 0x00, 0xE3,
++			0xFF,
++		},
++		{   /*  Init_CR30_CR4D */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x03, 0x20,
++			0x00, 0x00, 0x00, 0x40, 0x00, 0xE7, 0xBF, 0xFD,
++			0x7F, 0x63, 0x00, 0x69, 0x18, 0x72, 0x57, 0x00,
++			0x58, 0x0C, 0xE0, 0x20, 0x63, 0x57,
++		},
++		{   /*  Init_CR90_CRA7 */
++			0x56, 0x4B, 0x5E, 0x55, 0x86, 0x9D, 0x8E, 0xAA,
++			0xDB, 0x2A, 0xDF, 0x33, 0x00, 0x00, 0x18, 0x00,
++			0x20, 0x1F, 0x1A, 0x19, 0x0F, 0x0F, 0x0F, 0x00,
++		},
++	},
++		{/*  mode#5: 800 x 600  24Bpp  60Hz */
++		800, 600, 24, 60,
++		0x2B,
++		{   /*  Init_SR0_SR4 */
++			0x03, 0x01, 0x0F, 0x03, 0x0E,
++		},
++		{   /*  Init_SR10_SR24 */
++			0xFF, 0xBE, 0xEE, 0xFF, 0x00, 0x0E, 0x17, 0x2C,
++			0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0xC4, 0x30, 0x02, 0x01, 0x01,
++		},
++		{   /*  Init_SR30_SR75 */
++			0x36, 0x03, 0x20, 0x09, 0xC0, 0x36, 0x36, 0x36,
++			0x36, 0x36, 0x36, 0x36, 0x00, 0x00, 0x03, 0xFF,
++			0x00, 0xFC, 0x00, 0x00, 0x20, 0x18, 0x00, 0xFC,
++			0x20, 0x0C, 0x44, 0x20, 0x00, 0x36, 0x36, 0x36,
++			0x04, 0x48, 0x83, 0x63, 0x68, 0x72, 0x57, 0x58,
++			0x04, 0x55, 0x59, 0x36, 0x36, 0x00, 0x00, 0x36,
++			0x01, 0x80, 0x7E, 0x1A, 0x1A, 0x00, 0x00, 0x00,
++			0x50, 0x03, 0x74, 0x14, 0x1C, 0x85, 0x35, 0x13,
++			0x02, 0x45, 0x30, 0x30, 0x40, 0x20,
++		},
++		{   /*  Init_SR80_SR93 */
++			0xFF, 0x07, 0x00, 0x6F, 0x7F, 0x7F, 0xFF, 0x36,
++			0xF7, 0x00, 0x00, 0x00, 0xEF, 0xFF, 0x36, 0x36,
++			0x00, 0x00, 0x00, 0x00,
++		},
++		{   /*  Init_SRA0_SRAF */
++			0x00, 0xFF, 0xBF, 0xFF, 0xFF, 0xED, 0xED, 0xED,
++			0x7B, 0xFF, 0xFF, 0xFF, 0xBF, 0xEF, 0xBF, 0xDF,
++		},
++		{   /*  Init_GR00_GR08 */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
++			0xFF,
++		},
++		{   /*  Init_AR00_AR14 */
++			0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
++			0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
++			0x41, 0x00, 0x0F, 0x00, 0x00,
++		},
++		{   /*  Init_CR00_CR18 */
++			0x7F, 0x63, 0x63, 0x00, 0x68, 0x18, 0x72, 0xF0,
++			0x00, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++			0x58, 0x0C, 0x57, 0x64, 0x40, 0x57, 0x00, 0xE3,
++			0xFF,
++		},
++		{   /*  Init_CR30_CR4D */
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x03, 0x20,
++			0x00, 0x00, 0x00, 0x40, 0x00, 0xE7, 0xBF, 0xFD,
++			0x7F, 0x63, 0x00, 0x69, 0x18, 0x72, 0x57, 0x00,
++			0x58, 0x0C, 0xE0, 0x20, 0x63, 0x57,
++		},
++		{   /*  Init_CR90_CRA7 */
++			0x56, 0x4B, 0x5E, 0x55, 0x86, 0x9D, 0x8E, 0xAA,
++			0xDB, 0x2A, 0xDF, 0x33, 0x00, 0x00, 0x18, 0x00,
++			0x20, 0x1F, 0x1A, 0x19, 0x0F, 0x0F, 0x0F, 0x00,
++		},
++	},
++};
++
++static void smi_set_timing(struct smifb_info *sfb, struct par_info *hw)
++{
++	int i = 0, j = 0;
++	u32 m_nScreenStride;
++	debug_printk("set timing:hw->width %x,hw->height %x,bpp %x\n",
++			hw->width, hw->height, sfb->fb.var.bits_per_pixel);
++
++	for (j = 0; j < numVGAModes; j++) {
++		if (VGAMode[j].mmSizeX == hw->width &&
++			VGAMode[j].mmSizeY == hw->height &&
++			VGAMode[j].bpp == sfb->fb.var.bits_per_pixel &&
++			VGAMode[j].hz == hw->hz) {
++			debug_printk("VGAMode[%d]\n", j);
++			smi_mmiowb(0x0, 0x3c6);
++
++			smi_seqw(0, 0x1);
++
++			smi_mmiowb(VGAMode[j].Init_MISC, 0x3c2);
++
++			for (i = 0; i < SIZE_SR00_SR04; i++) {
++				/* init SEQ register SR00 - SR04 */
++				smi_seqw(i,
++					VGAMode[j].Init_SR00_SR04[i]);
++			}
++
++			for (i = 0; i < SIZE_SR10_SR24; i++) {
++				/* init SEQ register SR10 - SR24*/
++				smi_seqw(i + 0x10,
++					VGAMode[j].Init_SR10_SR24[i]);
++			}
++
++			for (i = 0; i < SIZE_SR30_SR75; i++) {
++				/* init SEQ register SR30 - SR75*/
++				if (((i + 0x30) != 0x62) &&
++					((i + 0x30) != 0x6a) &&
++					((i + 0x30) != 0x6b))
++					smi_seqw(i + 0x30,
++						VGAMode[j].Init_SR30_SR75[i]);
++			}
++			for (i = 0; i < SIZE_SR80_SR93; i++) {
++				/* init SEQ register SR80 - SR93*/
++				smi_seqw(i + 0x80,
++					VGAMode[j].Init_SR80_SR93[i]);
++			}
++			for (i = 0; i < SIZE_SRA0_SRAF; i++) {
++				/* init SEQ register SRA0 - SRAF */
++				smi_seqw(i + 0xa0,
++					VGAMode[j].Init_SRA0_SRAF[i]);
++			}
++
++			for (i = 0; i < SIZE_GR00_GR08; i++) {
++				/* init Graphic register GR00 - GR08*/
++				smi_grphw(i,
++					VGAMode[j].Init_GR00_GR08[i]);
++			}
++
++			for (i = 0; i < SIZE_AR00_AR14; i++) {
++				/* init Attribute register AR00 - AR14*/
++				smi_attrw(i,
++					VGAMode[j].Init_AR00_AR14[i]);
++			}
++
++			for (i = 0; i < SIZE_CR00_CR18; i++) {
++				/* init CRTC register CR00 - CR18 */
++				smi_crtcw(i,
++					VGAMode[j].Init_CR00_CR18[i]);
++			}
++
++			for (i = 0; i < SIZE_CR30_CR4D; i++) {
++				/* init CRTC register CR30 - CR4D*/
++				smi_crtcw(i + 0x30,
++					VGAMode[j].Init_CR30_CR4D[i]);
++			}
++
++			for (i = 0; i < SIZE_CR90_CRA7; i++) {
++				/*init CRTC register CR90 - CRA7*/
++				smi_crtcw(i + 0x90,
++					VGAMode[j].Init_CR90_CRA7[i]);
++			}
++		}
++	}
++	smi_mmiowb(0x67, 0x3c2);
++	/* set VPR registers */
++	writel(0x0, hw->m_pVPR+0x0C);
++	writel(0x0, hw->m_pVPR+0x40);
++	/* set data width */
++	m_nScreenStride = (hw->width * sfb->fb.var.bits_per_pixel) / 64;
++	switch (sfb->fb.var.bits_per_pixel) {
++	case 8:
++		writel(0x0, hw->m_pVPR+0x0);
++		break;
++	case 16:
++		writel(0x00020000, hw->m_pVPR+0x0);
++		break;
++	case 24:
++		writel(0x00040000, hw->m_pVPR+0x0);
++		break;
++	}
++	writel((u32)(((m_nScreenStride + 2) << 16) |
++			m_nScreenStride), hw->m_pVPR+0x10);
++}
++
++/*
++ * Set the color palette
++ */
++static int
++smifb_setcolreg(u_int regno, u_int red, u_int green, u_int blue,
++		   u_int trans, struct fb_info *info)
++{
++	struct smifb_info *sfb = (struct smifb_info *)info;
++	u32 *pal;
++
++	switch (sfb->fb.fix.visual) {
++	case FB_VISUAL_TRUECOLOR:		/* RGB 5:6:5 True Colour */
++		pal = sfb->fb.pseudo_palette;
++		/* System has 16 default color */
++		if (regno >= 16)
++			return 1;
++
++		pal[regno] = (red & 0xf800) |
++		    ((green & 0xfc00) >> 5) | ((blue & 0xf800) >> 11);
++		break;
++	}
++
++	return 0;
++}
++
++/*
++ *  smifb_decode_var():
++ *    Get the video params out of 'var'. If a value doesn't fit, round it up,
++ *    if it's too big, return -EINVAL.
++ *
++ *    Suggestion: Round up in the following order: bits_per_pixel, xres,
++ *    yres, xres_virtual, yres_virtual, xoffset, yoffset, grayscale,
++ *    bitfields, horizontal timing, vertical timing.
++ */
++static int smifb_decode_var(struct fb_var_screeninfo *var,
++		struct smifb_info *sfb, struct par_info *hw)
++{
++	hw->width = var->xres;
++	hw->height = var->yres;
++	hw->hz = 60;
++
++	return 0;
++}
++
++static int smifb_set_par(struct fb_info *info)
++{
++	struct smifb_info *sfb = (struct smifb_info *)info;
++	int err, chgvar = 0;
++	struct fb_var_screeninfo *var = &info->var;
++	struct fb_cmap *cmap;
++
++
++	/*
++	 * Decode var contents into a par structure, adjusting any
++	 * out of range values.
++	 */
++	err = smifb_decode_var(var, sfb, &hw);
++	if (err)
++		return err;
++
++	if (hw.width != var->xres)
++		chgvar = 1;
++	if (hw.height != var->yres)
++		chgvar = 1;
++
++	var->activate		&= ~FB_ACTIVATE_ALL;
++
++	smi_set_timing(sfb, &hw);
++
++	sfb->palette_size = var->bits_per_pixel == 8 ? 256 : 16;
++	cmap = (struct fb_cmap *)fb_default_cmap(sfb->palette_size);
++	fb_set_cmap(cmap, &sfb->fb);
++
++	return 0;
++}
++
++static int smifb_check_var(struct fb_var_screeninfo *var,
++				struct fb_info *info)
++{
++	var->bits_per_pixel += 7;
++	var->bits_per_pixel &= ~7;
++
++	var->xres_virtual =
++	    var->xres_virtual < var->xres ? var->xres : var->xres_virtual;
++	var->yres_virtual =
++	    var->yres_virtual < var->yres ? var->yres : var->yres_virtual;
++	debug_printk("var->bits_per_pixel %x\n", var->bits_per_pixel);
++	switch (var->bits_per_pixel) {
++	case 8:
++	case 16:		/* RGB 565 */
++	case 24:
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	switch (var->bits_per_pixel) {
++	case 16:
++		var->red.offset	= 11;
++		var->red.length	= 5;
++		var->green.offset	= 5;
++		var->green.length	= 6;
++		var->blue.offset	= 0;
++		var->blue.length	= 5;
++
++		info->fix.visual	= FB_VISUAL_TRUECOLOR;
++		info->fix.line_length = var->xres * 2;
++
++		break;
++	default:
++		return -EINVAL;
++		/* We don't support anything other than 16bpp for now. --NL */
++		break;
++	}
++	return 0;
++
++	/*smifb_set_color_bitfields(var);*/
++
++	return 0;
++}
++
++/*
++ * Formal definition of the VESA spec:
++ *  On
++ *	This refers to the state of the display when it is in full operation
++ *  Stand-By
++ *	This defines an optional operating state of minimal power reduction with
++ *	the shortest recovery time
++ *  Suspend
++ *	This refers to a level of power management in which substantial power
++ *	reduction is achieved by the display.  The display can have a longer
++ *	recovery time from this state than from the Stand-by state
++ *  Off
++ *	This indicates that the display is consuming the lowest level of power
++ *	and is non-operational. Recovery from this state may optionally require
++ *	the user to manually power on the monitor
++ *
++ *  Now, the fbdev driver adds an additional state, (blank), where they
++ *  turn off the video (maybe by colormap tricks), but don't mess with the
++ *  video itself: think of it semantically between on and Stand-By.
++ *
++ *  So here's what we should do in our fbdev blank routine:
++ *
++ *	VESA_NO_BLANKING (mode 0)	Video on,  front/back light on
++ *	VESA_VSYNC_SUSPEND (mode 1)	Video on,  front/back light off
++ *	VESA_HSYNC_SUSPEND (mode 2)	Video on,  front/back light off
++ *	VESA_POWERDOWN (mode 3)		Video off, front/back light off
++ *
++ *  This will match the matrox implementation.
++ */
++/*
++ * smifb_blank():
++ *	Blank the display by setting all palette values to zero.  Note, the
++ *	12 and 16 bpp modes don't really use the palette, so this will not
++ *	blank the display in all modes.
++ */
++static int smifb_blank(int blank, struct fb_info *info)
++{
++/* struct smifb_info *sfb = (struct smifb_info *)info; */
++#if 0
++	switch (blank) {
++	case VESA_POWERDOWN:
++	case VESA_VSYNC_SUSPEND:
++	case VESA_HSYNC_SUSPEND:
++	case VESA_NO_BLANKING:
++	}
++#endif
++	return 1;
++}
++
++static struct fb_ops smifb_ops = {
++	.owner		= THIS_MODULE,
++	.fb_check_var	= smifb_check_var,
++	.fb_set_par	= smifb_set_par,
++	.fb_setcolreg	= smifb_setcolreg,
++	.fb_blank	= smifb_blank,
++
++	/* Accelerated functions, using softversions, per se */
++	.fb_fillrect	= cfb_fillrect,
++	.fb_copyarea	= cfb_copyarea,
++	.fb_imageblit	= cfb_imageblit,
++	.fb_cursor	= soft_cursor,
++};
++
++/*
++ * Alloc struct smifb_info and assign the default value
++ */
++static struct smifb_info * __devinit
++smi_alloc_fb_info(struct pci_dev *dev, char *name)
++{
++	struct smifb_info *sfb;
++
++	sfb = kmalloc(sizeof(struct smifb_info) + sizeof(u32) * 16, GFP_KERNEL);
++
++	if (!sfb)
++		return NULL;
++
++	memset(sfb, 0, sizeof(struct smifb_info));
++
++	sfb->currcon        = -1;
++	sfb->dev            = dev;
++
++	strcpy(sfb->fb.fix.id, name);
++
++	sfb->fb.fix.type		= FB_TYPE_PACKED_PIXELS;
++	sfb->fb.fix.type_aux	= 0;
++	sfb->fb.fix.xpanstep	= 0;
++	sfb->fb.fix.ypanstep	= 0;
++	sfb->fb.fix.ywrapstep	= 0;
++	sfb->fb.fix.accel		= FB_ACCEL_NONE;
++
++	sfb->fb.var.nonstd		= 0;
++	sfb->fb.var.activate	= FB_ACTIVATE_NOW;
++	sfb->fb.var.height		= -1;
++	sfb->fb.var.width		= -1;
++	sfb->fb.var.accel_flags	= 0;
++	sfb->fb.var.vmode		= FB_VMODE_NONINTERLACED;
++
++	sfb->fb.fbops		= &smifb_ops;
++	sfb->fb.flags		= FBINFO_FLAG_DEFAULT;
++	sfb->fb.node		= -1;
++	sfb->fb.pseudo_palette	= (void *)(&sfb->palette_size + 1);
++
++	return sfb;
++}
++
++/*
++ * Unmap in the memory mapped IO registers
++ *
++ */
++
++static void __devinit
++smi_unmap_mmio(struct smifb_info *sfb)
++{
++	if (sfb && SMILFB) {
++		iounmap(SMILFB);
++		SMIRegs = NULL;
++	}
++}
++
++/*
++ * Map in the screen memory
++ *
++ */
++static int __devinit
++smi_map_smem(struct smifb_info *sfb, struct pci_dev *dev, u_long smem_len)
++{
++	sfb->fb.fix.smem_start = pci_resource_start(dev, 0);
++	sfb->fb.fix.smem_len  = smem_len;
++
++	debug_printk("%s:smem %x,len %x\n", __func__,
++		sfb->fb.fix.smem_start,
++		sfb->fb.fix.smem_len);
++
++	sfb->fb.screen_base = SMILFB;
++
++	if (!sfb->fb.screen_base) {
++		printk("%s: unable to map screen memory\n", sfb->fb.fix.id);
++		return -ENOMEM;
++	}
++
++	return 0;
++}
++
++
++/*
++ * Unmap in the screen memory
++ *
++ */
++static void __devinit
++smi_unmap_smem(struct smifb_info *sfb)
++{
++	if (sfb && sfb->fb.screen_base) {
++		iounmap(sfb->fb.screen_base);
++		sfb->fb.screen_base = NULL;
++	}
++}
++
++/*
++ * We need to wake up the LynxEM+, and make sure its in linear memory mode.
++ */
++static inline void __devinit
++smi_init_hw(void)
++{
++	/* The delays prevent the ColdFire PCI host from locking up. :/ --NL */
++	udelay(1000);
++	outb(0x18, 0x3c4);
++
++	udelay(1000);
++	outb(0x11, 0x3c5);
++	udelay(1000);
++
++	debug_printk("%s: 0x3c4 =%x 0x3c5 %x\n",
++			__func__, inw(0x3c4), inw(0x3c5));
++}
++
++static void __devinit
++smi_free_fb_info(struct smifb_info *sfb)
++{
++	if (sfb) {
++		fb_alloc_cmap(&sfb->fb.cmap, 0, 0);
++		kfree(sfb);
++	}
++}
++
++
++u16 SMI_ChipIDs[numChipIDs] = {0x710, 0x712, 0x720};
++
++int __devinit smifb_init(struct pci_dev *pdev, const struct pci_device_id *ent)
++{
++	struct smifb_info *sfb;
++	unsigned long smem_size;
++	char name[16];
++	int err;
++	char *m_pLAW;
++	unsigned long m_pLAWPhysical;
++
++	debug_printk("%s start\n", __func__);
++	sprintf(name, "smifb");
++	hw.chipID = pdev->device;
++	err = -ENOMEM;
++	sfb = smi_alloc_fb_info(pdev, name);
++	if (!sfb)
++		goto failed;
++
++	smi_init_hw();
++
++	/* Map address and memory detection */
++	m_pLAWPhysical = pci_resource_start(pdev, 0);
++	printk(KERN_INFO "%s:Physical addr %x,hw.chipID %x\n",
++			__func__, (unsigned int)m_pLAWPhysical,
++			(unsigned int)hw.chipID);
++	switch (hw.chipID) {
++	case 0x710:
++	case 0x712:
++		sfb->fb.fix.mmio_start = m_pLAWPhysical + 0x00700000;
++		sfb->fb.fix.mmio_len   = 0x00100000;
++
++		hw.m_pLFB = SMILFB =
++			ioremap(m_pLAWPhysical, 0x00800000);
++		debug_printk("%s:SMILFB%x\n", __func__, SMILFB);
++		hw.m_pMMIO = SMIRegs = SMILFB + 0x00700000;
++		hw.m_pDPR = hw.m_pLFB + 0x00408000;
++		hw.m_pVPR = hw.m_pLFB + 0x0040c000;
++
++		if (!SMIRegs) {
++			printk(KERN_ERR "%s: unable to map "
++				"memory mapped IO\n", sfb->fb.fix.id);
++			return -ENOMEM;
++		}
++
++		smi_seqw(0x62, 0x7A);
++		smi_seqw(0x6a, 0x0c);
++		smi_seqw(0x6b, 0x02);
++		smem_size = 0x00400000;
++
++		/* LynxEM+ memory dection */
++		*(u32 *)(SMILFB + 4) = 0xAA551133;
++		if (*(u32 *)(SMILFB + 4) != 0xAA551133) {
++			smem_size = 0x00200000;
++			/* Program the MCLK to 130 MHz */
++			smi_seqw(0x6a, 0x12);
++			smi_seqw(0x6b, 0x02);
++			smi_seqw(0x62, 0x3e);
++		}
++		break;
++	case 0x720:
++		sfb->fb.fix.mmio_start = m_pLAWPhysical + 0x000c0000;
++		sfb->fb.fix.mmio_len   = 0x00040000;
++
++		m_pLAW = ioremap(m_pLAWPhysical, 0x00a00000);
++		hw.m_pLFB = SMILFB = m_pLAW + 0x00200000;
++		hw.m_pMMIO = SMIRegs = m_pLAW + 0x000c0000;
++		hw.m_pDPR = m_pLAW;
++		hw.m_pVPR = m_pLAW + 0x800;
++
++		smi_seqw(0x62, 0xff);
++		smi_seqw(0x6a, 0x0d);
++		smi_seqw(0x6b, 0x02);
++		smem_size = 0x00400000;
++
++		break;
++	}
++
++	sfb->fb.var.xres = 640;
++	sfb->fb.var.yres = 480;
++	sfb->fb.var.bits_per_pixel = 16;
++
++	sfb->fb.var.xres_virtual = sfb->fb.var.xres;
++
++	sfb->fb.var.yres_virtual = sfb->fb.var.yres;
++
++	sfb->fb.flags = FBINFO_FLAG_DEFAULT;
++
++	debug_printk("%s:smem_size %x\n", __func__, smem_size);
++	err = smi_map_smem(sfb, pdev, smem_size);
++	debug_printk("%s:smi_map_smem error %x\n", __func__, err);
++	if (err)
++		goto failed;
++
++	fb_set_var(&sfb->fb, &sfb->fb.var);
++	smifb_check_var(&sfb->fb.var, &sfb->fb);
++	smifb_set_par((struct fb_info *)sfb);
++	debug_printk("%s:register_framebuffer\n", __func__);
++	err = register_framebuffer(&sfb->fb);
++	if (err < 0)
++		goto failed;
++
++	printk(KERN_INFO "Silicon Motion, Inc. "
++			"LynxEM+ Init complete.\n");
++	return 0;
++
++failed:
++	smi_unmap_smem(sfb);
++	smi_unmap_mmio(sfb);
++	smi_free_fb_info(sfb);
++	printk(KERN_INFO "Silicon Motion, Inc. "
++			"LynxEM+ Init FAILED.n");
++
++	return err;
++}
++
++static DEFINE_PCI_DEVICE_TABLE(smifb_pci_tbl) = {
++	{ 0x126f, 0x710, PCI_ANY_ID, PCI_ANY_ID },
++	{ 0x126f, 0x712, PCI_ANY_ID, PCI_ANY_ID },
++	{ 0x126f, 0x720, PCI_ANY_ID, PCI_ANY_ID },
++	{ 0 }
++};
++
++MODULE_DEVICE_TABLE(pci, smifb_pci_tbl);
++
++struct pci_driver smifb_driver = {
++	.name =         "smifb",
++	.id_table =     smifb_pci_tbl,
++	.probe =        smifb_init,
++};
++
++int __init smi_init(void)
++{
++	/*return pci_module_init(&smifb_driver);*/
++	return pci_register_driver(&smifb_driver);
++}
++
++module_init(smi_init);
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/drivers/video/smifb.h
+@@ -0,0 +1,150 @@
++/***************************************************************************
++			smifb.h  -  SiliconMotion LynxEM+ frame buffer device
++			-------------------
++    begin                : Thu Aug 9 2001
++    copyright            : (C) 2001 by Szu-Tao Huang
++    email                : johuang@siliconmotion.com
++ ***************************************************************************/
++/* Copyright (C) 2008-2011 Freescale Semiconductor, Inc. All Rights Reserved.*/
++/***************************************************************************
++ *                                                                         *
++ *   This program is free software; you can redistribute it and/or modify  *
++ *   it under the terms of the GNU General Public License as published by  *
++ *   the Free Software Foundation; either version 2 of the License, or     *
++ *   (at your option) any later version.                                   *
++ *                                                                         *
++ ***************************************************************************/
++
++#define smi_mmiowb(dat, reg)	writeb(dat, SMIRegs + reg)
++#define smi_mmioww(dat, reg)	writew(dat, SMIRegs + reg)
++#define smi_mmiowl(dat, reg)	writel(dat, SMIRegs + reg)
++
++#define smi_mmiorb(reg)	        readb(SMIRegs + reg)
++#define smi_mmiorw(reg)	        readw(SMIRegs + reg)
++#define smi_mmiorl(reg)	        readl(SMIRegs + reg)
++
++#define SIZE_SR00_SR04      (0x04 - 0x00 + 1)
++#define SIZE_SR10_SR24      (0x24 - 0x10 + 1)
++#define SIZE_SR30_SR75      (0x75 - 0x30 + 1)
++#define SIZE_SR80_SR93      (0x93 - 0x80 + 1)
++#define SIZE_SRA0_SRAF      (0xAF - 0xA0 + 1)
++#define SIZE_GR00_GR08      (0x08 - 0x00 + 1)
++#define SIZE_AR00_AR14      (0x14 - 0x00 + 1)
++#define SIZE_CR00_CR18      (0x18 - 0x00 + 1)
++#define SIZE_CR30_CR4D      (0x4D - 0x30 + 1)
++#define SIZE_CR90_CRA7      (0xA7 - 0x90 + 1)
++#define SIZE_VPR                        (0x6C + 1)
++#define SIZE_DPR			(0x44 + 1)
++
++#define numVGAModes			6
++#define numChipIDs			3
++
++#define NR_PALETTE	256
++#define NR_RGB          2
++
++/*
++ * Minimum X and Y resolutions
++ */
++#define MIN_XRES	640
++#define MIN_YRES	480
++
++static inline void smi_crtcw(int reg, int val)
++{
++	smi_mmiowb(reg, 0x3d4);
++	smi_mmiowb(val, 0x3d5);
++}
++
++static inline unsigned int smi_crtcr(int reg)
++{
++	smi_mmiowb(reg, 0x3d4);
++	return smi_mmiorb(0x3d5);
++}
++
++static inline void smi_grphw(int reg, int val)
++{
++	smi_mmiowb(reg, 0x3ce);
++	smi_mmiowb(val, 0x3cf);
++}
++
++static inline unsigned int smi_grphr(int reg)
++{
++	smi_mmiowb(reg, 0x3ce);
++	return smi_mmiorb(0x3cf);
++}
++
++static inline void smi_attrw(int reg, int val)
++{
++	smi_mmiorb(0x3da);
++	smi_mmiowb(reg, 0x3c0);
++	smi_mmiorb(0x3c1);
++	smi_mmiowb(val, 0x3c0);
++}
++
++static inline void smi_seqw(int reg, int val)
++{
++	smi_mmiowb(reg, 0x3c4);
++	smi_mmiowb(val, 0x3c5);
++}
++
++static inline unsigned int smi_seqr(int reg)
++{
++	smi_mmiowb(reg, 0x3c4);
++	return smi_mmiorb(0x3c5);
++}
++/*
++* Private structure
++*/
++struct smifb_info {
++	/*
++	* The following is a pointer to be passed into the
++	* functions below.  The modules outside the main
++	* smifb.c driver have no knowledge as to what
++	* is within this structure.
++	*/
++	struct fb_info          fb;
++	struct display_switch   *dispsw;
++	struct pci_dev          *dev;
++	signed int              currcon;
++
++	struct {
++		u8 red, green, blue;
++	} palette[NR_RGB];
++
++	u_int                   palette_size;
++};
++
++struct par_info {
++	/*
++	 * Hardware
++	 */
++	u16		chipID;
++	char	*m_pLFB;
++	char	*m_pMMIO;
++	char	*m_pDPR;
++	char	*m_pVPR;
++
++	u_int	width;
++	u_int	height;
++	u_int	hz;
++};
++
++/*The next structure holds all information relevant for
++ *a specific video mode.
++ */
++struct ModeInit {
++	int			  mmSizeX;
++	int			  mmSizeY;
++	int			  bpp;
++	int			  hz;
++	unsigned char Init_MISC;
++	unsigned char Init_SR00_SR04[SIZE_SR00_SR04];
++	unsigned char Init_SR10_SR24[SIZE_SR10_SR24];
++	unsigned char Init_SR30_SR75[SIZE_SR30_SR75];
++	unsigned char Init_SR80_SR93[SIZE_SR80_SR93];
++	unsigned char Init_SRA0_SRAF[SIZE_SRA0_SRAF];
++	unsigned char Init_GR00_GR08[SIZE_GR00_GR08];
++	unsigned char Init_AR00_AR14[SIZE_AR00_AR14];
++	unsigned char Init_CR00_CR18[SIZE_CR00_CR18];
++	unsigned char Init_CR30_CR4D[SIZE_CR30_CR4D];
++	unsigned char Init_CR90_CRA7[SIZE_CR90_CRA7];
++};
+--- a/include/linux/fb.h
++++ b/include/linux/fb.h
+@@ -935,6 +935,19 @@ static inline struct apertures_struct *a
+ #define fb_memcpy_fromfb sbus_memcpy_fromio
+ #define fb_memcpy_tofb sbus_memcpy_toio
+ 
++#elif defined(CONFIG_COLDFIRE)
++#define fb_readb readb
++#define fb_readw readw
++#define fb_readl readl
++#define fb_readq readq
++#define fb_writeb writeb
++#define fb_writew writew
++#define fb_writel writel
++#define fb_writeq writeq
++#define fb_memset memset_io
++#define fb_memcpy_fromfb memcpy_fromio
++#define fb_memcpy_tofb memcpy_toio
++
+ #elif defined(__i386__) || defined(__alpha__) || defined(__x86_64__) || defined(__hppa__) || defined(__sh__) || defined(__powerpc__) || defined(__avr32__) || defined(__bfin__)
+ 
+ #define fb_readb __raw_readb
+@@ -1045,6 +1058,9 @@ extern int fb_deferred_io_fsync(struct f
+ 
+ static inline bool fb_be_math(struct fb_info *info)
+ {
++#if defined(CONFIG_COLDFIRE)
++	return false;
++#endif
+ #ifdef CONFIG_FB_FOREIGN_ENDIAN
+ #if defined(CONFIG_FB_BOTH_ENDIAN)
+ 	return info->flags & FBINFO_BE_MATH;
+@@ -1054,7 +1070,7 @@ static inline bool fb_be_math(struct fb_
+ 	return false;
+ #endif /* CONFIG_FB_BOTH_ENDIAN */
+ #else
+-#ifdef __BIG_ENDIAN
++#if defined(__BIG_ENDIAN) && !defined(CONFIG_COLDFIRE)
+ 	return true;
+ #else
+ 	return false;

@@ -1,0 +1,50 @@
+From 25ebef8c87221774de01d1f1de4fb615fcfc6b54 Mon Sep 17 00:00:00 2001
+From: Jason Jin <Jason.jin@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:47 +0800
+Subject: [PATCH 34/52] Enable the NFC driver for soft_ecc.
+
+If enabled YAFFS2 support, soft ecc should be used for the
+nand flash driver.
+
+Signed-off-by: Jason Jin <Jason.jin@freescale.com>
+---
+ drivers/mtd/nand/Kconfig   |    6 ++++++
+ drivers/mtd/nand/fsl_nfc.c |   12 +++++++++---
+ 2 files changed, 15 insertions(+), 3 deletions(-)
+
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -481,6 +481,12 @@ config MTD_NAND_FSL_NFC
+ 	  Enables support for NAND Flash chips wired onto Freescale PowerPC
+ 	  processor localbus with User-Programmable Machine support.
+ 
++config MTD_NAND_FSL_NFC_SWECC
++	bool "Software ECC"
++	depends on MTD_NAND_FSL_NFC
++	help
++	  Use software ECC.
++
+ config MTD_NAND_MXC
+ 	tristate "MXC NAND support"
+ 	depends on ARCH_MX2 || ARCH_MX25 || ARCH_MX3 || ARCH_MX51
+--- a/drivers/mtd/nand/fsl_nfc.c
++++ b/drivers/mtd/nand/fsl_nfc.c
+@@ -403,9 +403,15 @@ fsl_nfc_command(struct mtd_info *mtd, un
+ 	if (page != -1)
+ 		prv->page = page;
+ 
+-	nfc_set_field(mtd, NFC_FLASH_CONFIG,
+-		CONFIG_ECC_MODE_MASK,
+-		CONFIG_ECC_MODE_SHIFT, ECC_45_BYTE);
++	if(hardware_ecc)
++		nfc_set_field(mtd, NFC_FLASH_CONFIG,
++			CONFIG_ECC_MODE_MASK,
++			CONFIG_ECC_MODE_SHIFT, ECC_45_BYTE);
++	else
++		/* set ECC BY_PASS */
++		nfc_set_field(mtd, NFC_FLASH_CONFIG,
++				CONFIG_ECC_MODE_MASK,
++				CONFIG_ECC_MODE_SHIFT, ECC_BYPASS);
+ 
+ 	if (!(page%0x40)) {
+ 			nfc_set_field(mtd, NFC_FLASH_CONFIG,

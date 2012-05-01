@@ -1,0 +1,195 @@
+From d1b6aa1480c937e326bef99746299cd004a51f28 Mon Sep 17 00:00:00 2001
+From: Alison Wang <b18965@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:46 +0800
+Subject: [PATCH 28/52] Add SD/MMC/SDIO over SPI support for MCF54451 and MCF54418
+
+Add SD/MMC/SDIO over SPI support for MCF54451 and MCF54418.
+
+Signed-off-by: Alison Wang <b18965@freescale.com>
+---
+ drivers/mmc/core/sdio.c    |    9 +++++-
+ drivers/mmc/host/Kconfig   |   35 +++++++++++++++++++++
+ drivers/mmc/host/mmc_spi.c |   73 ++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 116 insertions(+), 1 deletions(-)
+
+--- a/drivers/mmc/core/sdio.c
++++ b/drivers/mmc/core/sdio.c
+@@ -566,8 +566,15 @@ static void mmc_sdio_detect(struct mmc_h
+ 	/*
+ 	 * Just check if our card has been removed.
+ 	 */
++#if defined(M54451_SD_HW_DETECT)
++	{
++		unsigned char  x;
++		err = mmc_io_rw_direct(host->card, 0, 0,
++				SDIO_FBR_BASE(0) + SDIO_FBR_CIS + 0, 0, &x);
++	}
++#else
+ 	err = mmc_select_card(host->card);
+-
++#endif
+ 	mmc_release_host(host);
+ 
+ 	/*
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -368,6 +368,41 @@ config MMC_SPI
+ 
+ 	  If unsure, or if your system has no SPI master driver, say N.
+ 
++config M54451_SD_HW_DETECT
++	tristate "use extern IRQ7 to detect SD/MMC card"
++	depends on MMC_SPI && M54451
++	default y
++	help
++	  MMC/SD interface on 54551evb was over SPI. Enable this option will
++	  use irq7 to dectect the card inserting/removing.
++
++config M5441X_SD_HW_DETECT
++	tristate "use extern IRQ to detect SD/MMC card"
++	depends on MMC_SPI && M5441X
++	help
++	  MMC/SD interface on 54418evb was over SPI. Enable this option will
++	  use irq7 or irq1 to dectect the card inserting/removing.
++
++choice
++	prompt "MMC/SD card detect "
++	depends on M5441X_SD_HW_DETECT
++
++config DETECT_USE_EXTERN_IRQ7
++	tristate "based extern IRQ7"
++	depends on M5441X_SD_HW_DETECT
++	help
++	  MMC/SD cards using spi controller,
++	  we use the extern irq7 to detect card.
++
++config DETECT_USE_EXTERN_IRQ1
++	tristate "based extern IRQ1"
++	depends on M5441X_SD_HW_DETECT
++	help
++	  MMC/SD cards using spi controller,
++	  we use the extern irq1 to detect card.
++
++endchoice
++
+ config MMC_S3C
+ 	tristate "Samsung S3C SD/MMC Card Interface support"
+ 	depends on ARCH_S3C2410
+--- a/drivers/mmc/host/mmc_spi.c
++++ b/drivers/mmc/host/mmc_spi.c
+@@ -9,6 +9,10 @@
+  * (C) Copyright 2007, ATRON electronic GmbH,
+  *		Jan Nikitenko <jan.nikitenko@gmail.com>
+  *
++ * Copyright (C) 2009-2011 Freescale Semiconductor, Inc. All Rights Reserved.
++ *		Modified for M54451EVB/M54418TWR boards.
++ *		Shrek Wu <b16972@freescale.com>
++ *		Jingchang Lu <b22599@freescale.com>
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -32,6 +36,14 @@
+ #include <linux/crc7.h>
+ #include <linux/crc-itu-t.h>
+ #include <linux/scatterlist.h>
++#if defined(CONFIG_M54451_SD_HW_DETECT)
++#include <asm/mcf5445x_eport.h>
++#include <asm/mcf5445x_intc.h>
++#include <asm/mcfsim.h>
++#elif defined(CONFIG_M5441X_SD_HW_DETECT)
++#include <asm/mcf5441x_eport.h>
++#include <asm/mcfsim.h>
++#endif
+ 
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/mmc.h>		/* for R1_SPI_* bit values */
+@@ -268,6 +280,9 @@ static int mmc_spi_response_get(struct m
+ 	unsigned short rotator;
+ 	int 	i;
+ 	char	tag[32];
++#if defined(CONFIG_M54451_SD_HW_DETECT) || defined(CONFIG_M5441X_SD_HW_DETECT)
++	u8      oldcp_value = 0;
++#endif
+ 
+ 	snprintf(tag, sizeof(tag), "  ... CMD%d response SPI_%s",
+ 		cmd->opcode, maptype(cmd));
+@@ -278,6 +293,9 @@ static int mmc_spi_response_get(struct m
+ 	 * first byte.  After STOP_TRANSMISSION command it may include
+ 	 * two data bits, but otherwise it's all ones.
+ 	 */
++#if defined(CONFIG_M54451_SD_HW_DETECT) || defined(CONFIG_M5441X_SD_HW_DETECT)
++	oldcp_value = *cp;
++#endif
+ 	cp += 8;
+ 	while (cp < end && *cp == 0xff)
+ 		cp++;
+@@ -310,6 +328,15 @@ static int mmc_spi_response_get(struct m
+ 	}
+ 
+ checkstatus:
++#if defined(CONFIG_M54451_SD_HW_DETECT) || defined(CONFIG_M5441X_SD_HW_DETECT)
++	if ((*cp == 0) && (oldcp_value == 0)) {
++		dev_dbg(&host->spi->dev, "NO CARD in the SD SOCKET, "
++			"new status %02x, old status %02x\n",
++			*cp, oldcp_value);
++		value = -EBADR;
++		goto done;
++	}
++#endif
+ 	bitshift = 0;
+ 	if (*cp & 0x80)	{
+ 		/* Houston, we have an ugly card with a bit-shifted response */
+@@ -1313,7 +1340,53 @@ mmc_spi_detect_irq(int irq, void *mmc)
+ 	struct mmc_spi_host *host = mmc_priv(mmc);
+ 	u16 delay_msec = max(host->pdata->detect_delay, (u16)100);
+ 
++#if defined(CONFIG_M54451_SD_HW_DETECT)
++	dev_dbg(&host->spi->dev, "mmc_spi_detect_irq "
++		"MCF_EPORT_EPPAR %x, MCF_EPORT_EPIER %x,"
++		"MCF_INTC0_ICR7 %x, MCF_GPIO_PAR_IRQ %x,"
++		"MCF_EPORT_EPDDR %x, MCF_EPORT_EPFR %x\n",
++		MCF_EPORT_EPPAR, MCF_EPORT_EPIER,
++		MCF_INTC0_ICR7, MCF_GPIO_PAR_IRQ,
++		MCF_EPORT_EPDDR, MCF_EPORT_EPFR);
++
++	MCF_EPORT_EPIER &= (~MCF_EPORT_EPIER_EPIE7);
++#elif defined(CONFIG_M5441X_SD_HW_DETECT)
++#if defined(CONFIG_DETECT_USE_EXTERN_IRQ1)
++	MCF_EPORT_EPIER = MCF_EPORT_EPIER & (~MCF_EPORT_EPIER_EPIE1);
++#elif defined(CONFIG_DETECT_USE_EXTERN_IRQ7)
++	MCF_EPORT_EPIER = MCF_EPORT_EPIER & (~MCF_EPORT_EPIER_EPIE7);
++#else
++	MCF_EPORT_EPIER = MCF_EPORT_EPIER & (~MCF_EPORT_EPIER_EPIE7);
++#endif
++#endif
+ 	mmc_detect_change(mmc, msecs_to_jiffies(delay_msec));
++#if defined(CONFIG_M54451_SD_HW_DETECT)
++	MCF_EPORT_EPPAR |= MCF_EPORT_EPPAR_EPPA7_BOTH;
++	MCF_EPORT_EPIER = MCF_EPORT_EPIER | MCF_EPORT_EPIER_EPIE7;
++	MCF_EPORT_EPFR |= MCF_EPORT_EPFR_EPF7;
++	dev_dbg(&host->spi->dev, "mmc_spi_detect_irq "
++		"MCF_EPORT_EPPAR %x, MCF_EPORT_EPIER %x,"
++		"MCF_INTC0_ICR7 %x, MCF_GPIO_PAR_IRQ %x,"
++		"MCF_EPORT_EPDDR %x, MCF_EPORT_EPFR %x\n",
++		MCF_EPORT_EPPAR, MCF_EPORT_EPIER,
++		MCF_INTC0_ICR7, MCF_GPIO_PAR_IRQ,
++		MCF_EPORT_EPDDR, MCF_EPORT_EPFR);
++
++#elif defined(CONFIG_M5441X_SD_HW_DETECT)
++#if defined(CONFIG_DETECT_USE_EXTERN_IRQ1)
++	MCF_EPORT_EPPAR   = MCF_EPORT_EPPAR | MCF_EPORT_EPPAR_EPPA1_BOTH;
++	MCF_EPORT_EPIER   = MCF_EPORT_EPIER | MCF_EPORT_EPIER_EPIE1;
++	MCF_EPORT_EPFR    = MCF_EPORT_EPFR  | MCF_EPORT_EPFR_EPF1;
++#elif defined(CONFIG_DETECT_USE_EXTERN_IRQ7)
++	MCF_EPORT_EPPAR   = MCF_EPORT_EPPAR | MCF_EPORT_EPPAR_EPPA7_BOTH;
++	MCF_EPORT_EPIER   = MCF_EPORT_EPIER | MCF_EPORT_EPIER_EPIE7;
++	MCF_EPORT_EPFR    = MCF_EPORT_EPFR  | MCF_EPORT_EPFR_EPF7;
++#else
++	MCF_EPORT_EPPAR   = MCF_EPORT_EPPAR | MCF_EPORT_EPPAR_EPPA7_BOTH;
++	MCF_EPORT_EPIER   = MCF_EPORT_EPIER | MCF_EPORT_EPIER_EPIE7;
++	MCF_EPORT_EPFR    = MCF_EPORT_EPFR  | MCF_EPORT_EPFR_EPF7;
++#endif
++#endif
+ 	return IRQ_HANDLED;
+ }
+ 

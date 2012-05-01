@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2010 OpenWrt.org
+# Copyright (C) 2009-2012 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ BOARDNAME:=Freescale Coldfire v4e
 FEATURES:=squashfs broken
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.31.14
+LINUX_VERSION:=2.6.38.8
 
 include $(INCLUDE_DIR)/target.mk
 

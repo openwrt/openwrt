@@ -1,0 +1,68 @@
+From 04491155db32bc1a9c0b367a7cac0f4a9ea9c4d2 Mon Sep 17 00:00:00 2001
+From: Alison Wang <b18965@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:43 +0800
+Subject: [PATCH 17/52] Add cpu dma sync function for coldfire platform
+
+This patch add dma_sync_sg_for_cpu() and dma_sync_single_for_cpu()
+for coldfire platform. The previous empty function do not flush the
+cache for the ram used for DMA.
+
+Signed-off-by: Alison Wang <b18965@freescale.com>
+---
+ arch/m68k/include/asm/dma-mapping.h |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
+
+--- a/arch/m68k/include/asm/dma-mapping.h
++++ b/arch/m68k/include/asm/dma-mapping.h
+@@ -21,6 +21,9 @@ extern void *dma_alloc_coherent(struct d
+ extern void dma_free_coherent(struct device *, size_t,
+ 			      void *, dma_addr_t);
+ 
++extern void dma_sync_single_for_device(struct device *, dma_addr_t, size_t,
++				       enum dma_data_direction);
++
+ static inline void *dma_alloc_noncoherent(struct device *dev, size_t size,
+ 					  dma_addr_t *handle, gfp_t flag)
+ {
+@@ -42,6 +45,7 @@ extern dma_addr_t dma_map_single(struct
+ static inline void dma_unmap_single(struct device *dev, dma_addr_t addr,
+ 				    size_t size, enum dma_data_direction dir)
+ {
++	dma_sync_single_for_device(dev, addr, size, dir);
+ }
+ 
+ extern dma_addr_t dma_map_page(struct device *, struct page *,
+@@ -50,6 +54,7 @@ extern dma_addr_t dma_map_page(struct de
+ static inline void dma_unmap_page(struct device *dev, dma_addr_t address,
+ 				  size_t size, enum dma_data_direction dir)
+ {
++	dma_sync_single_for_device(dev, address, size, dir);
+ }
+ 
+ extern int dma_map_sg(struct device *, struct scatterlist *, int,
+@@ -57,10 +62,9 @@ extern int dma_map_sg(struct device *, s
+ static inline void dma_unmap_sg(struct device *dev, struct scatterlist *sg,
+ 				int nhwentries, enum dma_data_direction dir)
+ {
++	dma_map_sg(dev, sg, nhwentries, dir);
+ }
+ 
+-extern void dma_sync_single_for_device(struct device *, dma_addr_t, size_t,
+-				       enum dma_data_direction);
+ extern void dma_sync_sg_for_device(struct device *, struct scatterlist *, int,
+ 				   enum dma_data_direction);
+ 
+@@ -75,11 +79,13 @@ static inline void dma_sync_single_range
+ static inline void dma_sync_single_for_cpu(struct device *dev, dma_addr_t handle,
+ 					   size_t size, enum dma_data_direction dir)
+ {
++	dma_sync_single_for_device(dev, handle, size, dir);
+ }
+ 
+ static inline void dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sg,
+ 				       int nents, enum dma_data_direction dir)
+ {
++	dma_sync_sg_for_device(dev, sg, nents, dir);
+ }
+ 
+ static inline void dma_sync_single_range_for_cpu(struct device *dev,

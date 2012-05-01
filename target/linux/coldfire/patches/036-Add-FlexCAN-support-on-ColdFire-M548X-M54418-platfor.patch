@@ -1,0 +1,764 @@
+From c3b97e08b06be76ee9f2b410b13c045425fc7f3e Mon Sep 17 00:00:00 2001
+From: Jingchang Lu <b35083@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:48 +0800
+Subject: [PATCH 36/52] Add FlexCAN support on ColdFire M548X, M54418 platform
+
+Each cpu core has two FlexCAN interface, and the M54418's FlexCAN
+also support Rx message buffer FIFO mode but M548X not.
+
+Signed-off-by: Jingchang Lu <b35083@freescale.com>
+---
+ arch/m68k/Kconfig                       |    2 +
+ arch/m68k/coldfire/m5441x/Makefile      |    4 +
+ arch/m68k/coldfire/m5441x/mcf-flexcan.c |  121 ++++++++++++++++
+ arch/m68k/coldfire/m547x/Makefile       |    3 +
+ arch/m68k/coldfire/m547x/mcf-flexcan.c  |  117 +++++++++++++++
+ drivers/net/can/Kconfig                 |    9 ++
+ drivers/net/can/flexcan.c               |  239 ++++++++++++++++++++++++++++++-
+ 7 files changed, 489 insertions(+), 6 deletions(-)
+ create mode 100644 arch/m68k/coldfire/m5441x/mcf-flexcan.c
+ create mode 100644 arch/m68k/coldfire/m547x/mcf-flexcan.c
+
+--- a/arch/m68k/Kconfig
++++ b/arch/m68k/Kconfig
+@@ -372,6 +372,7 @@ config M547X
+ config M548X
+ 	bool
+ 	depends on M547X_8X
++	select HAVE_CAN_FLEXCAN
+ 	default n
+ 
+ choice
+@@ -430,6 +431,7 @@ config M5441X
+ 	select GENERIC_TIME
+ 	select USB_EHCI_FSL
+ 	select HAVE_FSL_USB_DR
++	select HAVE_CAN_FLEXCAN
+ 	help
+ 	  This option will add support for the MCF5441x processor with mmu.
+ 
+--- a/arch/m68k/coldfire/m5441x/Makefile
++++ b/arch/m68k/coldfire/m5441x/Makefile
+@@ -36,3 +36,7 @@ endif
+ ifneq ($(CONFIG_MODELO_SWITCH),)
+ obj-y += l2switch.o
+ endif
++
++ifneq ($(CONFIG_CAN_FLEXCAN),)
++obj-y += mcf-flexcan.o
++endif
+--- /dev/null
++++ b/arch/m68k/coldfire/m5441x/mcf-flexcan.c
+@@ -0,0 +1,121 @@
++/*
++ * Copyright (C) 2008-2011 Freescale Semiconductor, Inc. All rights reserved.
++ *
++ * Author: Huan Wang, b18965@freescale.com, Fri Aug 08 2008
++ *
++ * Description:
++ * CAN bus driver for Freescale Coldfire embedded CPU
++ *
++ * Changelog:
++ * Fri Aug 08 2008 Huan Wang <b18965@freescale.com>
++ * - create, support for MCF548x
++ *
++ * Tue Dec 08 2009 ChengJu Cai <b22600@freescale.com>
++ * - support for MCF532x MCF5253 MCF5227x
++ *
++ * July 2011 Jingchang.Lu <b35083@freescale.com>
++ * - Add into kernel CAN driver layer
++ *
++ * This file is part of the Linux kernel
++ * This is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <asm/mcfsim.h>
++
++
++static struct resource mcf5441x_can0_resources[] = {
++	[0] = {
++		.start		= 0xFC020000,
++		.end		= 0xFC0208C0,
++		.flags		= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start		= 0 + 64 + 64,
++		.end		= 0 + 64 + 64,
++		.flags		= IORESOURCE_IRQ,
++	},
++};
++
++static struct resource mcf5441x_can1_resources[] = {
++	[0] = {
++		.start		= 0xFC024000,
++		.end		= 0xFC0248C0,
++		.flags		= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start		= 4 + 64 + 64,
++		.end		= 4 + 64 + 64,
++		.flags		= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device mcf_flexcan[PDEV_MAX] = {
++	[0] = {
++		.name                   = "flexcan",
++		.id                     = 0,
++		.num_resources          = ARRAY_SIZE(mcf5441x_can0_resources),
++		.resource               = mcf5441x_can0_resources,
++	},
++	[1] = {
++		.name                   = "flexcan",
++		.id                     = 1,
++		.num_resources          = ARRAY_SIZE(mcf5441x_can1_resources),
++		.resource               = mcf5441x_can1_resources,
++	},
++
++};
++
++
++static void __init mcf_flexcan_config(void)
++{
++	MCF_PM_PPMCR0 = 8;      /* enable FlexCAN0 clock */
++	MCF_PM_PPMCR0 = 9;      /* enable FlexCAN1 clock */
++
++	/* CAN0 */
++	MCF_GPIO_PAR_CANI2C =
++		(MCF_GPIO_PAR_CANI2C & MCF_GPIO_PAR_CANI2C_I2C0SCL_MASK) |
++		MCF_GPIO_PAR_CANI2C_I2C0SCL_CAN0TX;
++	MCF_GPIO_PAR_CANI2C =
++		(MCF_GPIO_PAR_CANI2C & MCF_GPIO_PAR_CANI2C_I2C0SDA_MASK) |
++		MCF_GPIO_PAR_CANI2C_I2C0SDA_CAN0RX;
++	/* CAN1 */
++	MCF_GPIO_PAR_CANI2C =
++		(MCF_GPIO_PAR_CANI2C & MCF_GPIO_PAR_CANI2C_CAN1TX_MASK) |
++		MCF_GPIO_PAR_CANI2C_CAN1TX_CAN1TX;
++	MCF_GPIO_PAR_CANI2C =
++		(MCF_GPIO_PAR_CANI2C & MCF_GPIO_PAR_CANI2C_CAN1RX_MASK) |
++		MCF_GPIO_PAR_CANI2C_CAN1RX_CAN1RX;
++
++
++}
++
++static int __init flexcan_of_to_pdev(void)
++{
++	int i, err = -ENODEV;
++	for (i = 0; i < PDEV_MAX; i++) {
++		err = platform_device_register(&mcf_flexcan[i]);
++		if (err)
++			return err;
++		printk(KERN_INFO "ColdFire FlexCAN devices loaded\n");
++	}
++	return err;
++}
++
++static int __init mcf_flexcan_init(void)
++{
++	int err;
++	mcf_flexcan_config();
++	err = flexcan_of_to_pdev();
++
++	return 0;
++}
++
++arch_initcall(mcf_flexcan_init);
+--- a/arch/m68k/coldfire/m547x/Makefile
++++ b/arch/m68k/coldfire/m547x/Makefile
+@@ -5,3 +5,6 @@
+ obj-$(CONFIG_M547X_8X)	+= config.o mcf548x-devices.o devices.o
+ obj-$(CONFIG_PCI)       += pci.o pci_dummy.o
+ obj-$(CONFIG_MCD_DMA)	+= dma.o
++ifneq ($(CONFIG_CAN_FLEXCAN),)
++obj-y += mcf-flexcan.o
++endif
+--- /dev/null
++++ b/arch/m68k/coldfire/m547x/mcf-flexcan.c
+@@ -0,0 +1,117 @@
++/*
++ * Copyright (C) 2008-2011 Freescale Semiconductor, Inc. All rights reserved.
++ *
++ * Author: Huan Wang, b18965@freescale.com, Fri Aug 08 2008
++ *
++ * Description:
++ * CAN bus driver for Freescale Coldfire embedded CPU
++ *
++ * Changelog:
++ * Fri Aug 08 2008 Huan Wang <b18965@freescale.com>
++ * - create, support for MCF548x
++ *
++ * Tue Dec 08 2009 ChengJu Cai <b22600@freescale.com>
++ * - support for MCF532x MCF5253 MCF5227x
++ *
++ * July 2011 Jingchang.Lu <b35083@freescale.com>
++ * - Add into kernel CAN driver layer
++ *
++ * This file is part of the Linux kernel
++ * This is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <asm/mcfsim.h>
++
++
++static struct resource mcf548x_can0_resources[] = {
++	[0] = {
++		.start		= MCF_MBAR + 0x0000A000,
++		.end		= MCF_MBAR + 0x0000A7FF,
++		.flags		= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start		= 49 + 64,
++		.end		= 49 + 64,
++		.flags		= IORESOURCE_IRQ,
++	},
++};
++
++static struct resource mcf548x_can1_resources[] = {
++	[0] = {
++		.start		= MCF_MBAR + 0x0000A800,
++		.end		= MCF_MBAR + 0x0000AFFF,
++		.flags		= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start		= 55 + 64,
++		.end		= 55 + 64,
++		.flags		= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device mcf_flexcan[PDEV_MAX] = {
++	[0] = {
++		.name                   = "flexcan",
++		.id                     = 0,
++		.num_resources          = ARRAY_SIZE(mcf548x_can1_resources),
++		.resource               = mcf548x_can0_resources,
++	},
++	[1] = {
++		.name                   = "flexcan",
++		.id                     = 1,
++		.num_resources          = ARRAY_SIZE(mcf548x_can1_resources),
++		.resource               = mcf548x_can1_resources,
++	},
++
++};
++
++
++static void __init mcf_flexcan_config(void)
++{
++	int i;
++	MCF_PAR_TIMER = MCF_PAR_TIMER | 0x28;
++	MCF_PAR_TIMER = MCF_PAR_TIMER & 0xf8;
++	MCF_PAR_DSPI = MCF_PAR_DSPI | 0x0a00;
++	MCF_PAR_FECI2CIRQ = MCF_PAR_FECI2CIRQ | 0x0283;
++	MCF_PAR_PSCn(2) = MCF_PAR_PSCn(2) & 0x0f;
++	MCF_PAR_PSCn(2) = MCF_PAR_PSCn(2) | 0x50;
++
++	for (i = 0; i < 2; i++) {
++		MCF_ICR(ISC_CANn_MBOR(i)) = 0x33 + 0x01 * i;
++		MCF_ICR(ISC_CANn_ERR(i)) = 0x33 + 0x01 * i;
++		MCF_ICR(ISC_CANn_BUSOFF(i)) = 0x33 + 0x01 * i;
++	}
++
++
++}
++
++static int __init flexcan_of_to_pdev(void)
++{
++	int i, err = -ENODEV;
++	for (i = 0; i < PDEV_MAX; i++) {
++		err = platform_device_register(&mcf_flexcan[i]);
++		if (err)
++			return err;
++		printk(KERN_INFO "ColdFire FlexCAN devices loaded\n");
++	}
++	return err;
++}
++
++static int __init mcf_flexcan_init(void)
++{
++	int err;
++	mcf_flexcan_config();
++	err = flexcan_of_to_pdev();
++
++	return 0;
++}
++
++arch_initcall(mcf_flexcan_init);
+--- a/drivers/net/can/Kconfig
++++ b/drivers/net/can/Kconfig
+@@ -103,6 +103,15 @@ config CAN_FLEXCAN
+ 	---help---
+ 	  Say Y here if you want to support for Freescale FlexCAN.
+ 
++config FLEXCAN_NORXFIFO
++	bool "FlexCAN message buffer without Rx FIFO mode"
++	depends on CAN_FLEXCAN && COLDFIRE
++	default n
++	---help---
++	  Say Y here if you FlexCAN message buffer has no Rx FIFO mode.
++	  Freescale Coldfire series have different FlexCAN core version,
++	  MCF54418's support Rx FIFO mode while others such as MCF5485 not.
++
+ config PCH_CAN
+ 	tristate "PCH CAN"
+ 	depends on CAN_DEV && PCI
+--- a/drivers/net/can/flexcan.c
++++ b/drivers/net/can/flexcan.c
+@@ -4,6 +4,7 @@
+  * Copyright (c) 2005-2006 Varma Electronics Oy
+  * Copyright (c) 2009 Sascha Hauer, Pengutronix
+  * Copyright (c) 2010 Marc Kleine-Budde, Pengutronix
++ * Copyright (C) 2011 Freescale Semiconductor, Inc. All rights reserved.
+  *
+  * Based on code originally by Andrey Volkov <avolkov@varma-el.com>
+  *
+@@ -35,8 +36,28 @@
+ #include <linux/module.h>
+ #include <linux/platform_device.h>
+ 
++#ifndef CONFIG_COLDFIRE
+ #include <mach/clock.h>
+ 
++#else
++#include <asm/mcfsim.h>
++
++#undef readb
++#undef readw
++#undef readl
++#define readb(addr) __raw_readb(addr)
++#define readw(addr) __raw_readw(addr)
++#define readl(addr) __raw_readl(addr)
++
++#undef writeb
++#undef writew
++#undef writel
++#define writeb(b, addr) __raw_writeb(b, addr)
++#define writew(b, addr) __raw_writew(b, addr)
++#define writel(b, addr) __raw_writel(b, addr)
++
++#endif
++
+ #define DRV_NAME			"flexcan"
+ 
+ /* 8 for RX fifo and 2 error handling */
+@@ -85,12 +106,34 @@
+ #define FLEXCAN_CTRL_LOM		BIT(3)
+ #define FLEXCAN_CTRL_PROPSEG(x)		((x) & 0x07)
+ #define FLEXCAN_CTRL_ERR_BUS		(FLEXCAN_CTRL_ERR_MSK)
++
++#ifdef CONFIG_COLDFIRE
++
++# if defined(CONFIG_M548X)
++
++#define FLEXCAN_CTRL_ERR_STATE	FLEXCAN_CTRL_BOFF_MSK
++#define FLEXCAN_CTRL_ERR_ALL \
++	(FLEXCAN_CTRL_BOFF_MSK | FLEXCAN_CTRL_ERR_MSK)
++
++# elif defined(CONFIG_M5441X)
++
+ #define FLEXCAN_CTRL_ERR_STATE \
+ 	(FLEXCAN_CTRL_TWRN_MSK | FLEXCAN_CTRL_RWRN_MSK | \
+ 	 FLEXCAN_CTRL_BOFF_MSK)
+ #define FLEXCAN_CTRL_ERR_ALL \
+ 	(FLEXCAN_CTRL_ERR_BUS | FLEXCAN_CTRL_ERR_STATE)
+ 
++# endif
++
++#else /* !CONFIG_COLDFIRE */
++
++#define FLEXCAN_CTRL_ERR_STATE \
++	(FLEXCAN_CTRL_TWRN_MSK | FLEXCAN_CTRL_RWRN_MSK | \
++	 FLEXCAN_CTRL_BOFF_MSK)
++#define FLEXCAN_CTRL_ERR_ALL \
++	(FLEXCAN_CTRL_ERR_BUS | FLEXCAN_CTRL_ERR_STATE)
++
++#endif
+ /* FLEXCAN error and status register (ESR) bits */
+ #define FLEXCAN_ESR_TWRN_INT		BIT(17)
+ #define FLEXCAN_ESR_RWRN_INT		BIT(16)
+@@ -121,6 +164,18 @@
+ 	(FLEXCAN_ESR_ERR_BUS | FLEXCAN_ESR_ERR_STATE)
+ 
+ /* FLEXCAN interrupt flag register (IFLAG) bits */
++
++#ifdef CONFIG_FLEXCAN_NORXFIFO
++
++/* MB assignment for no Rx FIFO mode module */
++#define FLEXCAN_TX_BUF_ID               0
++#define FLEXCAN_RX_EXT_ID		15
++#define FLEXCAN_IFLAG_RX_FIFO_AVAILABLE 0xfffe
++#define FLEXCAN_IFLAG_DEFAULT \
++	(FLEXCAN_IFLAG_RX_FIFO_AVAILABLE | (0x01 << FLEXCAN_TX_BUF_ID))
++
++#else
++
+ #define FLEXCAN_TX_BUF_ID		8
+ #define FLEXCAN_IFLAG_BUF(x)		BIT(x)
+ #define FLEXCAN_IFLAG_RX_FIFO_OVERFLOW	BIT(7)
+@@ -130,6 +185,7 @@
+ 	(FLEXCAN_IFLAG_RX_FIFO_OVERFLOW | FLEXCAN_IFLAG_RX_FIFO_AVAILABLE | \
+ 	 FLEXCAN_IFLAG_BUF(FLEXCAN_TX_BUF_ID))
+ 
++#endif
+ /* FLEXCAN message buffers */
+ #define FLEXCAN_MB_CNT_CODE(x)		(((x) & 0xf) << 24)
+ #define FLEXCAN_MB_CNT_SRR		BIT(22)
+@@ -163,7 +219,11 @@ struct flexcan_regs {
+ 	u32 iflag2;		/* 0x2c */
+ 	u32 iflag1;		/* 0x30 */
+ 	u32 _reserved2[19];
++#ifdef CONFIG_COLDFIRE
++	struct flexcan_mb cantxfg[CAN_MB];
++#else
+ 	struct flexcan_mb cantxfg[64];
++#endif
+ };
+ 
+ struct flexcan_priv {
+@@ -181,8 +241,13 @@ struct flexcan_priv {
+ 
+ static struct can_bittiming_const flexcan_bittiming_const = {
+ 	.name = DRV_NAME,
++#ifdef CONFIG_COLDFIRE
++	.tseg1_min = 1,
++	.tseg1_max = 8,
++#else
+ 	.tseg1_min = 4,
+ 	.tseg1_max = 16,
++#endif
+ 	.tseg2_min = 2,
+ 	.tseg2_max = 8,
+ 	.sjw_max = 4,
+@@ -248,7 +313,7 @@ static int flexcan_start_xmit(struct sk_
+ 	struct net_device_stats *stats = &dev->stats;
+ 	struct flexcan_regs __iomem *regs = priv->base;
+ 	struct can_frame *cf = (struct can_frame *)skb->data;
+-	u32 can_id;
++	u32 can_id, tmp, tmp1;
+ 	u32 ctrl = FLEXCAN_MB_CNT_CODE(0xc) | (cf->can_dlc << 16);
+ 
+ 	if (can_dropped_invalid_skb(dev, skb))
+@@ -259,6 +324,11 @@ static int flexcan_start_xmit(struct sk_
+ 	if (cf->can_id & CAN_EFF_FLAG) {
+ 		can_id = cf->can_id & CAN_EFF_MASK;
+ 		ctrl |= FLEXCAN_MB_CNT_IDE | FLEXCAN_MB_CNT_SRR;
++#ifdef CONFIG_COLDFIRE
++		tmp = (can_id & CAN_SFF_MASK) << 18;
++		tmp1 = can_id >> 11;
++		can_id = tmp | tmp1;
++#endif
+ 	} else {
+ 		can_id = (cf->can_id & CAN_SFF_MASK) << 18;
+ 	}
+@@ -456,6 +526,87 @@ static int flexcan_poll_state(struct net
+ 	return 1;
+ }
+ 
++#ifdef CONFIG_FLEXCAN_NORXFIFO
++/* Get one frame from receive message buffer */
++static int flexcan_read_frame(struct net_device *dev)
++{
++	const struct flexcan_priv *priv = netdev_priv(dev);
++	struct flexcan_regs __iomem *regs = priv->base;
++	struct net_device_stats *stats = &dev->stats;
++	struct can_frame *cf;
++	struct sk_buff *skb;
++	struct flexcan_mb __iomem *mb;
++	u32 reg_iflag1, reg_ctrl, reg_id, i;
++
++	reg_iflag1 = readl(&regs->iflag1);
++
++	/* buf[0] if for TX */
++	for (i = 0; i < CAN_MB; i++) {
++		if (i == FLEXCAN_TX_BUF_ID)
++			continue;
++		/* find one received message slot */
++		if (reg_iflag1 & (0x01 << i))
++			break;
++	}
++	if (i >= CAN_MB)
++		return 0;
++
++	mb = &regs->cantxfg[i];
++
++	skb = alloc_can_skb(dev, &cf);
++	if (unlikely(!skb)) {
++		stats->rx_dropped++;
++		 return 0;
++	}
++
++	reg_ctrl = readl(&mb->can_ctrl);
++	reg_id = readl(&mb->can_id);
++
++	/* deactive RX buff */
++	writel(0, &mb->can_ctrl);
++
++	if (reg_ctrl & FLEXCAN_MB_CNT_IDE) {
++#ifdef CONFIG_COLDFIRE
++		/* Coldfire can_id order */
++		cf->can_id = (reg_id & CAN_EFF_MASK) >> 18;
++		cf->can_id |= (reg_id & 0x3ffff) << 11;
++		cf->can_id |= CAN_EFF_FLAG;
++#else
++		cf->can_id = ((reg_id >> 0) & CAN_EFF_MASK) | CAN_EFF_FLAG;
++#endif
++	} else
++		cf->can_id = (reg_id >> 18) & CAN_SFF_MASK;
++
++	if (reg_ctrl & FLEXCAN_MB_CNT_RTR)
++		cf->can_id |= CAN_RTR_FLAG;
++	cf->can_dlc = get_can_dlc((reg_ctrl >> 16) & 0xf);
++
++	*(__be32 *)(cf->data + 0) = cpu_to_be32(readl(&mb->data[0]));
++	*(__be32 *)(cf->data + 4) = cpu_to_be32(readl(&mb->data[1]));
++
++	/* reactive RX buffer */
++	if (i == FLEXCAN_RX_EXT_ID)
++		writel(FLEXCAN_MB_CNT_CODE(0x4)|0x600000,
++				&regs->cantxfg[i].can_ctrl);
++	else
++		writel(FLEXCAN_MB_CNT_CODE(0x4),
++				&regs->cantxfg[i].can_ctrl);
++
++	/* mark as read */
++	writel((0x01 << i), &regs->iflag1);
++	/* release MB lock */
++	readl(&regs->timer);
++
++	netif_receive_skb(skb);
++
++	stats->rx_packets++;
++	stats->rx_bytes += cf->can_dlc;
++
++	return 1;
++
++}
++#else
++
+ static void flexcan_read_fifo(const struct net_device *dev,
+ 			      struct can_frame *cf)
+ {
+@@ -466,9 +617,16 @@ static void flexcan_read_fifo(const stru
+ 
+ 	reg_ctrl = readl(&mb->can_ctrl);
+ 	reg_id = readl(&mb->can_id);
+-	if (reg_ctrl & FLEXCAN_MB_CNT_IDE)
++	if (reg_ctrl & FLEXCAN_MB_CNT_IDE) {
++#ifdef CONFIG_COLDFIRE
++		/* ColdFire can_id order as follow */
++		cf->can_id = (reg_id & CAN_EFF_MASK) >> 18;
++		cf->can_id |= (reg_id & 0x3ffff) << 11;
++		cf->can_id |= CAN_EFF_FLAG;
++#else
+ 		cf->can_id = ((reg_id >> 0) & CAN_EFF_MASK) | CAN_EFF_FLAG;
+-	else
++#endif
++	} else
+ 		cf->can_id = (reg_id >> 18) & CAN_SFF_MASK;
+ 
+ 	if (reg_ctrl & FLEXCAN_MB_CNT_RTR)
+@@ -503,6 +661,7 @@ static int flexcan_read_frame(struct net
+ 
+ 	return 1;
+ }
++#endif
+ 
+ static int flexcan_poll(struct napi_struct *napi, int quota)
+ {
+@@ -554,6 +713,14 @@ static irqreturn_t flexcan_irq(int irq,
+ 	reg_iflag1 = readl(&regs->iflag1);
+ 	reg_esr = readl(&regs->esr);
+ 	writel(FLEXCAN_ESR_ERR_INT, &regs->esr);	/* ACK err IRQ */
++#ifdef CONFIG_COLDFIRE
++#ifdef CONFIG_FLEXCAN_NORXFIFO
++	writel(FLEXCAN_ESR_BOFF_INT, &regs->esr);
++#else
++	/* ACK TWRN and RWRN error, and bus-off interrupt*/
++	writel(FLEXCAN_ESR_ERR_STATE, &regs->esr);
++#endif
++#endif
+ 
+ 	/*
+ 	 * schedule NAPI in case of:
+@@ -575,13 +742,14 @@ static irqreturn_t flexcan_irq(int irq,
+ 		       &regs->ctrl);
+ 		napi_schedule(&priv->napi);
+ 	}
+-
++#ifndef CONFIG_FLEXCAN_NORXFIFO
+ 	/* FIFO overflow */
+ 	if (reg_iflag1 & FLEXCAN_IFLAG_RX_FIFO_OVERFLOW) {
+ 		writel(FLEXCAN_IFLAG_RX_FIFO_OVERFLOW, &regs->iflag1);
+ 		dev->stats.rx_over_errors++;
+ 		dev->stats.rx_errors++;
+ 	}
++#endif
+ 
+ 	/* transmission complete interrupt */
+ 	if (reg_iflag1 & (1 << FLEXCAN_TX_BUF_ID)) {
+@@ -676,9 +844,14 @@ static int flexcan_chip_start(struct net
+ 	 *
+ 	 */
+ 	reg_mcr = readl(&regs->mcr);
++#ifdef CONFIG_FLEXCAN_NORXFIFO
++	reg_mcr |= FLEXCAN_MCR_FRZ | FLEXCAN_MCR_HALT |
++		FLEXCAN_MCR_SUPV;
++#else
+ 	reg_mcr |= FLEXCAN_MCR_FRZ | FLEXCAN_MCR_FEN | FLEXCAN_MCR_HALT |
+ 		FLEXCAN_MCR_SUPV | FLEXCAN_MCR_WRN_EN |
+ 		FLEXCAN_MCR_IDAM_C;
++#endif
+ 	dev_dbg(dev->dev.parent, "%s: writing mcr=0x%08x", __func__, reg_mcr);
+ 	writel(reg_mcr, &regs->mcr);
+ 
+@@ -713,9 +886,19 @@ static int flexcan_chip_start(struct net
+ 		writel(0, &regs->cantxfg[i].can_id);
+ 		writel(0, &regs->cantxfg[i].data[0]);
+ 		writel(0, &regs->cantxfg[i].data[1]);
+-
++#ifdef CONFIG_FLEXCAN_NORXFIFO
++		if (i == FLEXCAN_TX_BUF_ID)
++			continue;
++		if (i == FLEXCAN_RX_EXT_ID) /* enable receive extend message */
++			writel(FLEXCAN_MB_CNT_CODE(0x4)|0x600000,
++					&regs->cantxfg[i].can_ctrl);
++		else
++			writel(FLEXCAN_MB_CNT_CODE(0x4),
++					&regs->cantxfg[i].can_ctrl);
++#else
+ 		/* put MB into rx queue */
+ 		writel(FLEXCAN_MB_CNT_CODE(0x4), &regs->cantxfg[i].can_ctrl);
++#endif
+ 	}
+ 
+ 	/* acceptance mask/acceptance code (accept everything) */
+@@ -772,6 +955,7 @@ static void flexcan_chip_stop(struct net
+ 	return;
+ }
+ 
++
+ static int flexcan_open(struct net_device *dev)
+ {
+ 	struct flexcan_priv *priv = netdev_priv(dev);
+@@ -786,6 +970,24 @@ static int flexcan_open(struct net_devic
+ 	err = request_irq(dev->irq, flexcan_irq, IRQF_SHARED, dev->name, dev);
+ 	if (err)
+ 		goto out_close;
++	err = request_irq(dev->irq + 1, flexcan_irq, \
++			IRQF_DISABLED, dev->name, dev);
++	if (err) {
++		free_irq(dev->irq, dev);
++		goto out_close;
++	}
++#if defined(CONFIG_M548X)
++	err = request_irq(dev->irq + 2, flexcan_irq, \
++			IRQF_DISABLED, dev->name, dev);
++#elif defined(CONFIG_M5441X)
++	err = request_irq(dev->irq + 3, flexcan_irq, \
++			IRQF_DISABLED, dev->name, dev);
++#endif
++	if (err) {
++		free_irq(dev->irq, dev);
++		free_irq(dev->irq + 1, dev);
++		goto out_close;
++	}
+ 
+ 	/* start chip and queuing */
+ 	err = flexcan_chip_start(dev);
+@@ -813,6 +1015,14 @@ static int flexcan_close(struct net_devi
+ 	flexcan_chip_stop(dev);
+ 
+ 	free_irq(dev->irq, dev);
++#ifdef CONFIG_COLDFIRE
++	free_irq(dev->irq + 1, dev);
++#if defined(CONFIG_M548X)
++	free_irq(dev->irq + 2, dev);
++#elif defined(CONFIG_M5441X)
++	free_irq(dev->irq + 3, dev);
++#endif
++#endif
+ 	clk_disable(priv->clk);
+ 
+ 	close_candev(dev);
+@@ -854,14 +1064,23 @@ static int __devinit register_flexcandev
+ 
+ 	clk_enable(priv->clk);
+ 
++#if !defined(CONFIG_M548X)
+ 	/* select "bus clock", chip must be disabled */
+ 	flexcan_chip_disable(priv);
+ 	reg = readl(&regs->ctrl);
+ 	reg |= FLEXCAN_CTRL_CLK_SRC;
+ 	writel(reg, &regs->ctrl);
++#endif
+ 
+ 	flexcan_chip_enable(priv);
+ 
++#ifdef CONFIG_FLEXCAN_NORXFIFO
++	/* set freeze, halt and restrict register access */
++	reg = readl(&regs->mcr);
++	reg |= FLEXCAN_MCR_FRZ | FLEXCAN_MCR_HALT |
++		FLEXCAN_MCR_SUPV;
++	writel(reg, &regs->mcr);
++#else
+ 	/* set freeze, halt and activate FIFO, restrict register access */
+ 	reg = readl(&regs->mcr);
+ 	reg |= FLEXCAN_MCR_FRZ | FLEXCAN_MCR_HALT |
+@@ -880,6 +1099,7 @@ static int __devinit register_flexcandev
+ 		err = -ENODEV;
+ 		goto out;
+ 	}
++#endif
+ 
+ 	err = register_candev(dev);
+ 
+@@ -901,17 +1121,19 @@ static int __devinit flexcan_probe(struc
+ 	struct net_device *dev;
+ 	struct flexcan_priv *priv;
+ 	struct resource *mem;
+-	struct clk *clk;
++	struct clk *clk = NULL;
+ 	void __iomem *base;
+ 	resource_size_t mem_size;
+ 	int err, irq;
+ 
++#ifndef CONFIG_COLDFIRE
+ 	clk = clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(clk)) {
+ 		dev_err(&pdev->dev, "no clock defined\n");
+ 		err = PTR_ERR(clk);
+ 		goto failed_clock;
+ 	}
++#endif
+ 
+ 	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	irq = platform_get_irq(pdev, 0);
+@@ -943,7 +1165,12 @@ static int __devinit flexcan_probe(struc
+ 	dev->flags |= IFF_ECHO; /* we support local echo in hardware */
+ 
+ 	priv = netdev_priv(dev);
++#ifdef CONFIG_COLDFIRE
++	/* return value is core clock but we need bus clock */
++	priv->can.clock.freq = (clk_get_rate(clk)/2);
++#else
+ 	priv->can.clock.freq = clk_get_rate(clk);
++#endif
+ 	priv->can.bittiming_const = &flexcan_bittiming_const;
+ 	priv->can.do_set_mode = flexcan_set_mode;
+ 	priv->can.do_get_berr_counter = flexcan_get_berr_counter;

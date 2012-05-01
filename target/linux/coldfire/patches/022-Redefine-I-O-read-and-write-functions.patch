@@ -1,0 +1,32 @@
+From f8dab3ef2c0da1c50dee07142c0b8088da61bc82 Mon Sep 17 00:00:00 2001
+From: Alison Wang <b18965@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:45 +0800
+Subject: [PATCH 22/52] Redefine I/O read and write functions
+
+Redefine readb(), writeb(), readw(), writew(), readl(), write()
+functions.
+
+Signed-off-by: Alison Wang <b18965@freescale.com>
+---
+ arch/m68k/include/asm/cf_io.h |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+--- a/arch/m68k/include/asm/cf_io.h
++++ b/arch/m68k/include/asm/cf_io.h
+@@ -20,6 +20,16 @@
+ 
+ #include <asm-generic/iomap.h>
+ 
++/*
++ * These should be valid on any ioremap()ed region
++ */
++#define readb(addr)		in_8(addr)
++#define writeb(val, addr)	out_8((addr), (val))
++#define readw(addr)		in_le16(addr)
++#define writew(val, addr)	out_le16((addr), (val))
++#define readl(addr)		in_le32(addr)
++#define writel(val, addr)	out_le32((addr), (val))
++
+ #define readb_relaxed(addr) readb(addr)
+ #define readw_relaxed(addr) readw(addr)
+ #define readl_relaxed(addr) readl(addr)

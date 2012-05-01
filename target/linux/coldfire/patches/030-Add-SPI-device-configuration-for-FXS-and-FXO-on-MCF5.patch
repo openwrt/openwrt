@@ -1,0 +1,38 @@
+From 2a73218ebe0bdca04cc9299da50d7f079ca46a7d Mon Sep 17 00:00:00 2001
+From: Alison Wang <b18965@freescale.com>
+Date: Thu, 4 Aug 2011 09:59:47 +0800
+Subject: [PATCH 30/52] Add SPI device configuration for FXS and FXO on MCF54451 platform
+
+Add SPI device configuration for FXS and FXO on MCF54451 platform.
+So FXS and FXO drivers can use SPI subsystem interfaces for the SPI
+read and write operations. So as to fix the confliction between FXO/FXS
+with other SPI devices.
+
+Signed-off-by: Alison Wang <b18965@freescale.com>
+---
+ drivers/spi/Kconfig |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
+
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -189,6 +189,20 @@ config SPI_COLDFIRE_DSPI_EDMA
+ 	help
+ 	  Say "yes" if you want DSPI master driver to use eDMA for transfers.
+ 
++config VOIP_FXS
++	boolean "Coldfire VoIP FXS driver"
++	depends on M54451 && SPI_MASTER && SPI_DSPI
++	default n
++	help
++	  Say "yes" if you want VoIP FXS driver to use DSPI for transfers.
++
++config VOIP_FXO
++	boolean "Coldfire VoIP FXO driver"
++	depends on M54451 && SPI_MASTER && SPI_DSPI
++	default n
++	help
++	  Say "yes" if you want VoIP FXO driver to use DSPI for transfers.
++
+ config SPI_IMX_VER_IMX1
+ 	def_bool y if SOC_IMX1
+ 

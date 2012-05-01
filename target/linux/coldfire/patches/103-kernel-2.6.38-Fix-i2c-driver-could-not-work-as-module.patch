@@ -1,0 +1,30 @@
+From 358154a6d0dd87305c6af92810220f8a17641c07 Mon Sep 17 00:00:00 2001
+From: Wang Huan <wanghuan@zch06.freescale.net>
+Date: Mon, 8 Aug 2011 10:49:53 +0800
+Subject: [PATCH] Fix i2c driver could not work as module
+
+Signed-off-by: Alison Wang <b18965@freescale.com>
+---
+ arch/m68k/coldfire/m5445x/devices.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/m68k/coldfire/m5445x/devices.c
++++ b/arch/m68k/coldfire/m5445x/devices.c
+@@ -426,7 +426,7 @@ static inline void mcf5445x_init_pata(vo
+ /*
+  * I2C
+  */
+-#if defined(CONFIG_I2C)
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
+ static struct resource coldfire_i2c_resources[] = {
+ 	{		/* I/O */
+ 		.start		= 0xFC058000,
+@@ -464,7 +464,7 @@ static int __init mcf5445x_init_devices(
+ 	mcf5445x_init_pata();
+ #endif
+ 
+-#if defined(CONFIG_I2C)
++#if defined(CONFIG_I2C) || defined(CONFIG_I2C_MODULE)
+ 	mcf5445x_init_i2c();
+ #endif
+ 	return 0;
