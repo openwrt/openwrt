@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -534,6 +534,112 @@ static struct board_info __initdata boar
+@@ -537,6 +537,112 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -61,7 +61,7 @@
 +			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
 +};
@@ -103,7 +103,7 @@
 +			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
 +};
@@ -113,7 +113,7 @@
  static struct board_info __initdata board_FAST2404 = {
  	.name				= "F@ST2404",
  	.expected_cpu_id		= 0x6348,
-@@ -1418,6 +1524,8 @@ static const struct board_info __initdat
+@@ -1421,6 +1527,8 @@ static const struct board_info __initdat
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
  	&board_96348gw,

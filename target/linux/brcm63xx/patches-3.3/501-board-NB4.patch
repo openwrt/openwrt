@@ -10,7 +10,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -38,6 +41,12 @@
+@@ -41,6 +44,12 @@
  #define CFE_OFFSET_64K		0x10000
  #define CFE_OFFSET_128K		0x20000
  
@@ -23,7 +23,7 @@
  static struct bcm963xx_nvram nvram;
  static unsigned int mac_addr_used;
  static struct board_info board;
-@@ -664,6 +673,496 @@ static struct board_info __initdata boar
+@@ -667,6 +676,496 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -140,14 +140,14 @@
 +			.gpio		= 34,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +		{
 +			.desc		= "wps",
 +			.gpio		= 37,
 +			.type		= EV_KEY,
 +			.code		= KEY_WPS_BUTTON,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
 +	.devs = nb4_devices,
@@ -233,14 +233,14 @@
 +			.gpio		= 34,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +		{
 +			.desc		= "wps",
 +			.gpio		= 37,
 +			.type		= EV_KEY,
 +			.code		= KEY_WPS_BUTTON,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
 +	.devs = nb4_devices,
@@ -326,14 +326,14 @@
 +			.gpio		= 34,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +		{
 +			.desc		= "wps",
 +			.gpio		= 37,
 +			.type		= EV_KEY,
 +			.code		= KEY_WPS_BUTTON,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
 +	.devs = nb4_devices,
@@ -414,14 +414,14 @@
 +			.gpio		= 34,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +		{
 +			.desc		= "wps",
 +			.gpio		= 37,
 +			.type		= EV_KEY,
 +			.code		= KEY_WPS_BUTTON,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
 +	.devs = nb4_devices,
@@ -502,14 +502,14 @@
 +			.gpio		= 34,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +		{
 +			.desc		= "wps",
 +			.gpio		= 37,
 +			.type		= EV_KEY,
 +			.code		= KEY_WPS_BUTTON,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
 +	.devs = nb4_devices,
@@ -520,7 +520,7 @@
  #endif
  
  /*
-@@ -694,9 +1193,30 @@ static const struct board_info __initdat
+@@ -697,9 +1196,30 @@ static const struct board_info __initdat
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -551,7 +551,7 @@
  /*
   * Register a sane SPROMv2 to make the on-board
   * bcm4318 WLAN work
-@@ -847,6 +1367,9 @@ void __init board_prom_init(void)
+@@ -850,6 +1370,9 @@ void __init board_prom_init(void)
  		boardid_fixup(boot_addr);
  	}
  

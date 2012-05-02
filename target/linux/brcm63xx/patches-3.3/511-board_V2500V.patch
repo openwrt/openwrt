@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -318,6 +318,63 @@ static struct board_info __initdata boar
+@@ -321,6 +321,63 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -56,7 +56,7 @@
 +			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
 +};
@@ -64,7 +64,7 @@
  #endif
  
  /*
-@@ -1784,6 +1841,7 @@ static const struct board_info __initdat
+@@ -1787,6 +1844,7 @@ static const struct board_info __initdat
  	&board_96348_D4PW,
  	&board_spw500v,
  	&board_96348sv,
@@ -72,7 +72,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1937,6 +1995,22 @@ void __init board_prom_init(void)
+@@ -1940,6 +1998,22 @@ void __init board_prom_init(void)
  	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
  	val &= MPI_CSBASE_BASE_MASK;
  	boot_addr = (u8 *)KSEG1ADDR(val);
@@ -95,7 +95,7 @@
  
  	/* dump cfe version */
  	cfe = boot_addr + BCM963XX_CFE_VERSION_OFFSET;
-@@ -2158,6 +2232,13 @@ int __init board_register_devices(void)
+@@ -2161,6 +2235,13 @@ int __init board_register_devices(void)
  	val = bcm_mpi_readl(MPI_CSBASE_REG(0));
  	val &= MPI_CSBASE_BASE_MASK;
  
