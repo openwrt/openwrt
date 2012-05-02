@@ -8,7 +8,7 @@
  #include <linux/spi/spi.h>
  #include <linux/spi/spi_gpio.h>
  #include <linux/spi/74x164.h>
-@@ -52,6 +53,13 @@ static unsigned int mac_addr_used;
+@@ -55,6 +56,13 @@ static unsigned int mac_addr_used;
  static struct board_info board;
  
  /*
@@ -22,7 +22,7 @@
   * known 6338 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_6338
-@@ -2489,6 +2497,7 @@ void __init board_prom_init(void)
+@@ -2492,6 +2500,7 @@ void __init board_prom_init(void)
  
  	/* extract nvram data */
  	memcpy(&nvram, boot_addr + BCM963XX_NVRAM_OFFSET, sizeof(nvram));

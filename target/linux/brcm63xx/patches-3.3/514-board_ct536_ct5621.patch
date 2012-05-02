@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -686,6 +686,49 @@ static struct board_info __initdata boar
+@@ -689,6 +689,49 @@ static struct board_info __initdata boar
  };
  
  
@@ -42,7 +42,7 @@
 +			.active_low	= 1,
 +			.type		= EV_KEY,
 +			.code		= KEY_RESTART,
-+			.debounce_interval = 60,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
 +};
@@ -50,7 +50,7 @@
  static struct board_info __initdata board_96348gw = {
  	.name				= "96348GW",
  	.expected_cpu_id		= 0x6348,
-@@ -1899,6 +1942,7 @@ static const struct board_info __initdat
+@@ -1902,6 +1945,7 @@ static const struct board_info __initdat
  	&board_96348sv,
  	&board_V2500V_BB,
  	&board_V2110,
