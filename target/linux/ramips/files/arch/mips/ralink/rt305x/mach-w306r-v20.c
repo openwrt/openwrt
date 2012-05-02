@@ -20,7 +20,7 @@
 
 #include "devices.h"
 
-#define W306R_V20_GPIO_LED_SYS		9 /* FIXME */
+#define W306R_V20_GPIO_LED_SYS		9
 #define W306R_V20_GPIO_LED_WPS		13
 
 #define W306R_V20_GPIO_BUTTON_RESET	10
@@ -57,7 +57,7 @@ static void __init w306r_v20_init(void)
 
 	rt305x_gpio_init(RT305X_GPIO_MODE_GPIO << RT305X_GPIO_MODE_UART0_SHIFT);
 
-	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_LLLLW;
+	rt305x_esw_data.vlan_config = RT305X_ESW_VLAN_CONFIG_WLLLL;
 	rt305x_register_ethernet();
 	ramips_register_gpio_leds(-1, ARRAY_SIZE(w306r_v20_leds_gpio),
 				  w306r_v20_leds_gpio);
