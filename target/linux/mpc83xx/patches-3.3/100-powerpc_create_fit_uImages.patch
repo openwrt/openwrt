@@ -1,0 +1,86 @@
+--- a/arch/powerpc/Makefile
++++ b/arch/powerpc/Makefile
+@@ -165,7 +165,9 @@ all: zImage
+ 
+ # With make 3.82 we cannot mix normal and wildcard targets
+ BOOT_TARGETS1 := zImage zImage.initrd uImage
+-BOOT_TARGETS2 := zImage% dtbImage% treeImage.% cuImage.% simpleImage.% uImage.%
++BOOT_TARGETS2 := uImage.fit.% zImage% dtbImage% treeImage.% cuImage.% \
++		 simpleImage.% uImage.%
++
+ 
+ PHONY += $(BOOT_TARGETS1) $(BOOT_TARGETS2)
+ 
+@@ -198,6 +200,7 @@ define archhelp
+   @echo '* zImage          - Build default images selected by kernel config'
+   @echo '  zImage.*        - Compressed kernel image (arch/$(ARCH)/boot/zImage.*)'
+   @echo '  uImage          - U-Boot native image format'
++  @echo '  uImage.fit.<dt> - U-Boot Flattened Image Tree image format'
+   @echo '  cuImage.<dt>    - Backwards compatible U-Boot image for older'
+   @echo '                    versions which do not support device trees'
+   @echo '  dtbImage.<dt>   - zImage with an embedded device tree blob'
+--- a/arch/powerpc/boot/.gitignore
++++ b/arch/powerpc/boot/.gitignore
+@@ -18,6 +18,7 @@ kernel-vmlinux.strip.c
+ kernel-vmlinux.strip.gz
+ mktree
+ uImage
++uImage.fit.*
+ cuImage.*
+ dtbImage.*
+ treeImage.*
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -326,6 +326,9 @@ $(obj)/uImage.initrd.%: vmlinux $(obj)/%
+ $(obj)/uImage.%: vmlinux $(obj)/%.dtb $(wrapperbits)
+ 	$(call if_changed,wrap,uboot-$*,,$(obj)/$*.dtb)
+ 
++$(obj)/uImage.fit.%: vmlinux $(obj)/%.dtb $(wrapperbits)
++	$(call if_changed,wrap,uboot.fit,,$(obj)/$*.dtb)
++
+ $(obj)/cuImage.initrd.%: vmlinux $(obj)/%.dtb $(wrapperbits)
+ 	$(call if_changed,wrap,cuboot-$*,,$(obj)/$*.dtb,$(obj)/ramdisk.image.gz)
+ 
+@@ -363,7 +366,7 @@ install: $(CONFIGURE) $(addprefix $(obj)
+ 
+ # anything not in $(targets)
+ clean-files += $(image-) $(initrd-) cuImage.* dtbImage.* treeImage.* \
+-	zImage zImage.initrd zImage.chrp zImage.coff zImage.holly \
++	uImage.* zImage zImage.initrd zImage.chrp zImage.coff zImage.holly \
+ 	zImage.iseries zImage.miboot zImage.pmac zImage.pseries \
+ 	zImage.maple simpleImage.* otheros.bld *.dtb
+ 
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -47,6 +47,9 @@ CROSS=
+ # mkimage wrapper script
+ MKIMAGE=$srctree/scripts/mkuboot.sh
+ 
++# script to generate an .its file for uImage.fit.* images
++MKITS=$srctree/scripts/mkits.sh
++
+ # directory for object and other files used by this script
+ object=arch/powerpc/boot
+ objbin=$object
+@@ -332,6 +335,21 @@ uboot-obs600)
+     if [ -z "$cacheit" ]; then
+ 	rm -f "$vmz"
+     fi
++    exit 0
++    ;;
++uboot.fit)
++    rm -f "$ofile"
++    ${MKITS} -A ppc -C gzip -a $membase -e $membase -v $version \
++	-d "$srctree/$dtb" -k "$srctree/$vmz" -o "$object/uImage.its"
++
++    # mkimage calls dtc for FIT images so use kernel dtc if necessary
++    export PATH=$PATH:$srctree/scripts/dtc
++
++    ${MKIMAGE} -f "$object/uImage.its" "$ofile"
++    rm "$object/uImage.its"
++    if [ -z "$cacheit" ]; then
++	rm -f "$vmz"
++    fi
+     exit 0
+     ;;
+ esac
