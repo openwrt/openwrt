@@ -43,7 +43,6 @@ setup_interface_pptp() {
 		ip route replace $(find_route $ip)
 	done
 	uci_toggle_state network "$config" serv_addrs "$serv_addrs"
-}
 
 	# fix up the netmask
 	config_get netmask "$config" netmask
