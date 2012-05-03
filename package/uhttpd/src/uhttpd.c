@@ -948,9 +948,10 @@ int main (int argc, char **argv)
 					for (opt = 0; optarg[opt]; opt++)
 						if (optarg[opt] == '+')
 							optarg[opt] = ' ';
-
-					memset(port, 0, strlen(optarg)+1);
-					uh_urldecode(port, strlen(optarg), optarg, strlen(optarg));
+					/* opt now contains strlen(optarg) -- no need to re-scan */
+					memset(port, 0, opt+1);
+					if (uh_urldecode(port, opt, optarg, opt) < 0)
+					    fprintf( stderr, "uhttpd: invalid encoding\n" );
 
 					printf("%s", port);
 					free(port);
