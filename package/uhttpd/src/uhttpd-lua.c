@@ -31,7 +31,7 @@ static int uh_lua_recv(lua_State *L)
 
 	length = luaL_checknumber(L, 1);
 
-	if( (length > 0) && (length <= sizeof(buffer)) )
+	if ((length > 0) && (length <= sizeof(buffer)))
 	{
 		FD_ZERO(&reader);
 		FD_SET(fileno(stdin), &reader);
@@ -41,13 +41,13 @@ static int uh_lua_recv(lua_State *L)
 		timeout.tv_usec = 100000;
 
 		/* check whether fd is readable */
-		if( select(fileno(stdin) + 1, &reader, NULL, NULL, &timeout) > 0 )
+		if (select(fileno(stdin) + 1, &reader, NULL, NULL, &timeout) > 0)
 		{
 			/* receive data */
 			rlen = read(fileno(stdin), buffer, length);
 			lua_pushnumber(L, rlen);
 
-			if( rlen > 0 )
+			if (rlen > 0)
 			{
 				lua_pushlstring(L, buffer, rlen);
 				return 2;
@@ -75,9 +75,9 @@ static int uh_lua_send_common(lua_State *L, int chunked)
 
 	buffer = luaL_checklstring(L, 1, &length);
 
-	if( chunked )
+	if (chunked)
 	{
-		if( length > 0 )
+		if (length > 0)
 		{
 			snprintf(chunk, sizeof(chunk), "%X\r\n", length);
 			slen =  write(fileno(stdout), chunk, strlen(chunk));
@@ -117,7 +117,7 @@ static int uh_lua_str2str(lua_State *L, int (*xlate_func) (char *, int, const ch
 
 	inbuf = luaL_checklstring(L, 1, &inlen);
 	outlen = (* xlate_func)(outbuf, sizeof(outbuf), inbuf, inlen);
-	if( outlen < 0 )
+	if (outlen < 0)
 		luaL_error( L, "%s on URL-encode codec",
 			(outlen==-1) ? "buffer overflow" : "malformed string" );
 
@@ -177,7 +177,7 @@ lua_State * uh_lua_init(const struct config *conf)
 
 
 	/* load Lua handler */
-	switch( luaL_loadfile(L, conf->lua_handler) )
+	switch (luaL_loadfile(L, conf->lua_handler))
 	{
 		case LUA_ERRSYNTAX:
 			fprintf(stderr,
@@ -196,7 +196,7 @@ lua_State * uh_lua_init(const struct config *conf)
 
 		default:
 			/* compile Lua handler */
-			switch( lua_pcall(L, 0, 0, 0) )
+			switch (lua_pcall(L, 0, 0, 0))
 			{
 				case LUA_ERRRUN:
 					err_str = luaL_checkstring(L, -1);
@@ -218,7 +218,7 @@ lua_State * uh_lua_init(const struct config *conf)
 					/* test handler function */
 					lua_getglobal(L, UH_LUA_CALLBACK);
 
-					if( ! lua_isfunction(L, -1) )
+					if (! lua_isfunction(L, -1))
 					{
 						fprintf(stderr,
 							"Lua handler provides no " UH_LUA_CALLBACK "(), unable to continue\n");
@@ -260,21 +260,21 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 
 
 	/* spawn pipes for me->child, child->me */
-	if( (pipe(rfd) < 0) || (pipe(wfd) < 0) )
+	if ((pipe(rfd) < 0) || (pipe(wfd) < 0))
 	{
 		uh_http_sendhf(cl, 500, "Internal Server Error",
 			"Failed to create pipe: %s", strerror(errno));
 
-		if( rfd[0] > 0 ) close(rfd[0]);
-		if( rfd[1] > 0 ) close(rfd[1]);
-		if( wfd[0] > 0 ) close(wfd[0]);
-		if( wfd[1] > 0 ) close(wfd[1]);
+		if (rfd[0] > 0) close(rfd[0]);
+		if (rfd[1] > 0) close(rfd[1]);
+		if (wfd[0] > 0) close(wfd[0]);
+		if (wfd[1] > 0) close(wfd[1]);
 
 		return;
 	}
 
 
-	switch( (child = fork()) )
+	switch ((child = fork()))
 	{
 		case -1:
 			uh_http_sendhf(cl, 500, "Internal Server Error",
@@ -329,12 +329,12 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 			lua_setfield(L, -2, "SCRIPT_NAME");
 
 			/* query string, path info */
-			if( (query_string = strchr(req->url, '?')) != NULL )
+			if ((query_string = strchr(req->url, '?')) != NULL)
 			{
 				lua_pushstring(L, query_string + 1);
 				lua_setfield(L, -2, "QUERY_STRING");
 
-				if( (int)(query_string - req->url) > strlen(prefix) )
+				if ((int)(query_string - req->url) > strlen(prefix))
 				{
 					lua_pushlstring(L,
 						&req->url[strlen(prefix)],
@@ -344,7 +344,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 					lua_setfield(L, -2, "PATH_INFO");
 				}
 			}
-			else if( strlen(req->url) > strlen(prefix) )
+			else if (strlen(req->url) > strlen(prefix))
 			{
 				lua_pushstring(L, &req->url[strlen(prefix)]);
 				lua_setfield(L, -2, "PATH_INFO");
@@ -354,7 +354,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 			lua_pushnumber(L, floor(req->version * 10) / 10);
 			lua_setfield(L, -2, "HTTP_VERSION");
 
-			if( req->version > 1.0 )
+			if (req->version > 1.0)
 				lua_pushstring(L, "HTTP/1.1");
 			else
 				lua_pushstring(L, "HTTP/1.0");
@@ -378,12 +378,12 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 			/* essential env vars */
 			foreach_header(i, req->headers)
 			{
-				if( !strcasecmp(req->headers[i], "Content-Length") )
+				if (!strcasecmp(req->headers[i], "Content-Length"))
 				{
 					lua_pushnumber(L, atoi(req->headers[i+1]));
 					lua_setfield(L, -2, "CONTENT_LENGTH");
 				}
-				else if( !strcasecmp(req->headers[i], "Content-Type") )
+				else if (!strcasecmp(req->headers[i], "Content-Type"))
 				{
 					lua_pushstring(L, req->headers[i+1]);
 					lua_setfield(L, -2, "CONTENT_TYPE");
@@ -407,13 +407,13 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 
 
 			/* call */
-			switch( lua_pcall(L, 1, 0, 0) )
+			switch (lua_pcall(L, 1, 0, 0))
 			{
 				case LUA_ERRMEM:
 				case LUA_ERRRUN:
 					err_str = luaL_checkstring(L, -1);
 
-					if( ! err_str )
+					if (! err_str)
 						err_str = "Unknown error";
 
 					printf(
@@ -447,11 +447,11 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 			fd_max = max(rfd[0], wfd[1]) + 1;
 
 			/* find content length */
-			if( req->method == UH_HTTP_MSG_POST )
+			if (req->method == UH_HTTP_MSG_POST)
 			{
 				foreach_header(i, req->headers)
 				{
-					if( ! strcasecmp(req->headers[i], "Content-Length") )
+					if (! strcasecmp(req->headers[i], "Content-Length"))
 					{
 						content_length = atoi(req->headers[i+1]);
 						break;
@@ -461,7 +461,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 
 
 #define ensure(x) \
-	do { if( x < 0 ) goto out; } while(0)
+	do { if (x < 0) goto out; } while(0)
 
 			data_sent = 0;
 
@@ -469,7 +469,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 			timeout.tv_usec = 0;
 
 			/* I/O loop, watch our pipe ends and dispatch child reads/writes from/to socket */
-			while( 1 )
+			while (1)
 			{
 				FD_ZERO(&reader);
 				FD_ZERO(&writer);
@@ -478,21 +478,22 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 				FD_SET(wfd[1], &writer);
 
 				/* wait until we can read or write or both */
-				if( select_intr(fd_max, &reader,
-				    (content_length > -1) ? &writer : NULL, NULL,
-					(data_sent < 1) ? &timeout : NULL) > 0
-				) {
+				if (select_intr(fd_max, &reader,
+								(content_length > -1) ? &writer : NULL,
+								NULL,
+								(data_sent < 1) ? &timeout : NULL) > 0)
+				{
 					/* ready to write to Lua child */
-					if( FD_ISSET(wfd[1], &writer) )
+					if (FD_ISSET(wfd[1], &writer))
 					{
 						/* there is unread post data waiting */
-						if( content_length > 0 )
+						if (content_length > 0)
 						{
 							/* read it from socket ... */
-							if( (buflen = uh_tcp_recv(cl, buf, min(content_length, sizeof(buf)))) > 0 )
+							if ((buflen = uh_tcp_recv(cl, buf, min(content_length, sizeof(buf)))) > 0)
 							{
 								/* ... and write it to child's stdin */
-								if( write(wfd[1], buf, buflen) < 0 )
+								if (write(wfd[1], buf, buflen) < 0)
 									perror("write()");
 
 								content_length -= buflen;
@@ -501,7 +502,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 							/* unexpected eof! */
 							else
 							{
-								if( write(wfd[1], "", 0) < 0 )
+								if (write(wfd[1], "", 0) < 0)
 									perror("write()");
 
 								content_length = 0;
@@ -509,7 +510,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 						}
 
 						/* there is no more post data, close pipe to child's stdin */
-						else if( content_length > -1 )
+						else if (content_length > -1)
 						{
 							close(wfd[1]);
 							content_length = -1;
@@ -517,10 +518,10 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 					}
 
 					/* ready to read from Lua child */
-					if( FD_ISSET(rfd[0], &reader) )
+					if (FD_ISSET(rfd[0], &reader))
 					{
 						/* read data from child ... */
-						if( (buflen = read(rfd[0], buf, sizeof(buf))) > 0 )
+						if ((buflen = read(rfd[0], buf, sizeof(buf))) > 0)
 						{
 							/* pass through buffer to socket */
 							ensure(uh_tcp_send(cl, buf, buflen));
@@ -531,7 +532,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 						else
 						{
 							/* error? */
-							if( ! data_sent )
+							if (!data_sent)
 								uh_http_sendhf(cl, 500, "Internal Server Error",
 									"The Lua child did not produce any response");
 
@@ -543,7 +544,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 				/* timeout exceeded or interrupted by SIGCHLD */
 				else
 				{
-					if( (errno != EINTR) && ! data_sent )
+					if ((errno != EINTR) && ! data_sent)
 					{
 						ensure(uh_http_sendhf(cl, 504, "Gateway Timeout",
 							"The Lua script took too long to produce "
@@ -558,7 +559,7 @@ void uh_lua_request(struct client *cl, struct http_request *req, lua_State *L)
 			close(rfd[0]);
 			close(wfd[1]);
 
-			if( !kill(child, 0) )
+			if (!kill(child, 0))
 			{
 				kill(child, SIGTERM);
 				waitpid(child, NULL, 0);

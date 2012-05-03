@@ -44,7 +44,7 @@ static void uh_sigterm(int sig)
 
 static void uh_sigchld(int sig)
 {
-	while( waitpid(-1, NULL, WNOHANG) > 0 ) { }
+	while (waitpid(-1, NULL, WNOHANG) > 0) { }
 }
 
 static void uh_config_parse(struct config *conf)
@@ -58,56 +58,64 @@ static void uh_config_parse(struct config *conf)
 	const char *path = conf->file ? conf->file : "/etc/httpd.conf";
 
 
-	if( (c = fopen(path, "r")) != NULL )
+	if ((c = fopen(path, "r")) != NULL)
 	{
 		memset(line, 0, sizeof(line));
 
-		while( fgets(line, sizeof(line) - 1, c) )
+		while (fgets(line, sizeof(line) - 1, c))
 		{
-			if( (line[0] == '/') && (strchr(line, ':') != NULL) )
+			if ((line[0] == '/') && (strchr(line, ':') != NULL))
 			{
-				if( !(col1 = strchr(line, ':')) || (*col1++ = 0) ||
+				if (!(col1 = strchr(line, ':')) || (*col1++ = 0) ||
 				    !(col2 = strchr(col1, ':')) || (*col2++ = 0) ||
-					!(eol = strchr(col2, '\n')) || (*eol++  = 0) )
-						continue;
+					!(eol = strchr(col2, '\n')) || (*eol++  = 0))
+				{
+					continue;
+				}
 
-				if( !uh_auth_add(line, col1, col2) )
+				if (!uh_auth_add(line, col1, col2))
 				{
 					fprintf(stderr,
-						"Notice: No password set for user %s, ignoring "
-						"authentication on %s\n", col1, line
+							"Notice: No password set for user %s, ignoring "
+							"authentication on %s\n", col1, line
 					);
 				}
 			}
-			else if( !strncmp(line, "I:", 2) )
+			else if (!strncmp(line, "I:", 2))
 			{
-				if( !(col1 = strchr(line, ':')) || (*col1++ = 0) ||
-				    !(eol = strchr(col1, '\n')) || (*eol++  = 0) )
-				    	continue;
+				if (!(col1 = strchr(line, ':')) || (*col1++ = 0) ||
+				    !(eol = strchr(col1, '\n')) || (*eol++  = 0))
+				{
+				   	continue;
+				}
 
 				conf->index_file = strdup(col1);
 			}
-			else if( !strncmp(line, "E404:", 5) )
+			else if (!strncmp(line, "E404:", 5))
 			{
-				if( !(col1 = strchr(line, ':')) || (*col1++ = 0) ||
-				    !(eol = strchr(col1, '\n')) || (*eol++  = 0) )
-						continue;
+				if (!(col1 = strchr(line, ':')) || (*col1++ = 0) ||
+				    !(eol = strchr(col1, '\n')) || (*eol++  = 0))
+				{
+					continue;
+				}
 
 				conf->error_handler = strdup(col1);
 			}
 #ifdef HAVE_CGI
-			else if( (line[0] == '*') && (strchr(line, ':') != NULL) )
+			else if ((line[0] == '*') && (strchr(line, ':') != NULL))
 			{
-				if( !(col1 = strchr(line, '*')) || (*col1++ = 0) ||
+				if (!(col1 = strchr(line, '*')) || (*col1++ = 0) ||
 				    !(col2 = strchr(col1, ':')) || (*col2++ = 0) ||
-				    !(eol = strchr(col2, '\n')) || (*eol++  = 0) )
-						continue;
+				    !(eol = strchr(col2, '\n')) || (*eol++  = 0))
+				{
+					continue;
+				}
 
-				if( !uh_interpreter_add(col1, col2) )
+				if (!uh_interpreter_add(col1, col2))
 				{
 					fprintf(stderr,
-						"Unable to add interpreter %s for extension %s: "
-						"Out of memory\n", col2, col1
+							"Unable to add interpreter %s for extension %s: "
+							"Out of memory\n", col2, col1
 					);
 				}
 			}
@@ -118,10 +126,11 @@ static void uh_config_parse(struct config *conf)
 	}
 }
 
-static int uh_socket_bind(
-	fd_set *serv_fds, int *max_fd, const char *host, const char *port,
-	struct addrinfo *hints, int do_tls, struct config *conf
-) {
+static int uh_socket_bind(fd_set *serv_fds, int *max_fd,
+						  const char *host, const char *port,
+						  struct addrinfo *hints, int do_tls,
+						  struct config *conf)
+{
 	int sock = -1;
 	int yes = 1;
 	int status;
@@ -132,39 +141,39 @@ static int uh_socket_bind(
 	struct listener *l = NULL;
 	struct addrinfo *addrs = NULL, *p = NULL;
 
-	if( (status = getaddrinfo(host, port, hints, &addrs)) != 0 )
+	if ((status = getaddrinfo(host, port, hints, &addrs)) != 0)
 	{
 		fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(status));
 	}
 
 	/* try to bind a new socket to each found address */
-	for( p = addrs; p; p = p->ai_next )
+	for (p = addrs; p; p = p->ai_next)
 	{
 		/* get the socket */
-		if( (sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1 )
+		if ((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
 		{
 			perror("socket()");
 			goto error;
 		}
 
 		/* "address already in use" */
-		if( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) )
+		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
 		{
 			perror("setsockopt()");
 			goto error;
 		}
 
 		/* TCP keep-alive */
-		if( conf->tcp_keepalive > 0 )
+		if (conf->tcp_keepalive > 0)
 		{
 			tcp_ka_idl = 1;
 			tcp_ka_cnt = 3;
 			tcp_ka_int = conf->tcp_keepalive;
 
-			if( setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes)) ||
+			if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes)) ||
 			    setsockopt(sock, SOL_TCP, TCP_KEEPIDLE,  &tcp_ka_idl, sizeof(tcp_ka_idl)) ||
 			    setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, &tcp_ka_int, sizeof(tcp_ka_int)) ||
-			    setsockopt(sock, SOL_TCP, TCP_KEEPCNT,   &tcp_ka_cnt, sizeof(tcp_ka_cnt)) )
+			    setsockopt(sock, SOL_TCP, TCP_KEEPCNT,   &tcp_ka_cnt, sizeof(tcp_ka_cnt)))
 			{
 			    fprintf(stderr, "Notice: Unable to enable TCP keep-alive: %s\n",
 			    	strerror(errno));
@@ -172,9 +181,9 @@ static int uh_socket_bind(
 		}
 
 		/* required to get parallel v4 + v6 working */
-		if( p->ai_family == AF_INET6 )
+		if (p->ai_family == AF_INET6)
 		{
-			if( setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(yes)) == -1 )
+			if (setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(yes)) == -1)
 			{
 				perror("setsockopt()");
 				goto error;
@@ -182,21 +191,21 @@ static int uh_socket_bind(
 		}
 
 		/* bind */
-		if( bind(sock, p->ai_addr, p->ai_addrlen) == -1 )
+		if (bind(sock, p->ai_addr, p->ai_addrlen) == -1)
 		{
 			perror("bind()");
 			goto error;
 		}
 
 		/* listen */
-		if( listen(sock, UH_LIMIT_CLIENTS) == -1 )
+		if (listen(sock, UH_LIMIT_CLIENTS) == -1)
 		{
 			perror("listen()");
 			goto error;
 		}
 
 		/* add listener to global list */
-		if( ! (l = uh_listener_add(sock, conf)) )
+		if (!(l = uh_listener_add(sock, conf)))
 		{
 			fprintf(stderr, "uh_listener_add(): Failed to allocate memory\n");
 			goto error;
@@ -216,7 +225,7 @@ static int uh_socket_bind(
 		continue;
 
 		error:
-		if( sock > 0 )
+		if (sock > 0)
 			close(sock);
 	}
 
@@ -225,7 +234,8 @@ static int uh_socket_bind(
 	return bound;
 }
 
-static struct http_request * uh_http_header_parse(struct client *cl, char *buffer, int buflen)
+static struct http_request * uh_http_header_parse(struct client *cl,
+												  char *buffer, int buflen)
 {
 	char *method  = &buffer[0];
 	char *path    = NULL;
@@ -244,7 +254,7 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 
 
 	/* terminate initial header line */
-	if( (headers = strfind(buffer, buflen, "\r\n", 2)) != NULL )
+	if ((headers = strfind(buffer, buflen, "\r\n", 2)) != NULL)
 	{
 		buffer[buflen-1] = 0;
 
@@ -252,16 +262,16 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 		*headers++ = 0;
 
 		/* find request path */
-		if( (path = strchr(buffer, ' ')) != NULL )
+		if ((path = strchr(buffer, ' ')) != NULL)
 			*path++ = 0;
 
 		/* find http version */
-		if( (path != NULL) && ((version = strchr(path, ' ')) != NULL) )
+		if ((path != NULL) && ((version = strchr(path, ' ')) != NULL))
 			*version++ = 0;
 
 
 		/* check method */
-		if( strcmp(method, "GET") && strcmp(method, "HEAD") && strcmp(method, "POST") )
+		if (strcmp(method, "GET") && strcmp(method, "HEAD") && strcmp(method, "POST"))
 		{
 			/* invalid method */
 			uh_http_response(cl, 405, "Method Not Allowed");
@@ -286,7 +296,7 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 		}
 
 		/* check path */
-		if( !path || !strlen(path) )
+		if (!path || !strlen(path))
 		{
 			/* malformed request */
 			uh_http_response(cl, 400, "Bad Request");
@@ -298,8 +308,8 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 		}
 
 		/* check version */
-		if( (version == NULL) || (strcmp(version, "HTTP/0.9") &&
-		    strcmp(version, "HTTP/1.0") && strcmp(version, "HTTP/1.1")) )
+		if ((version == NULL) || (strcmp(version, "HTTP/0.9") &&
+		    strcmp(version, "HTTP/1.0") && strcmp(version, "HTTP/1.1")))
 		{
 			/* unsupported version */
 			uh_http_response(cl, 400, "Bad Request");
@@ -312,15 +322,15 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 
 
 		/* process header fields */
-		for( i = (int)(headers - buffer); i < buflen; i++ )
+		for (i = (int)(headers - buffer); i < buflen; i++)
 		{
 			/* found eol and have name + value, push out header tuple */
-			if( hdrname && hdrdata && (buffer[i] == '\r' || buffer[i] == '\n') )
+			if (hdrname && hdrdata && (buffer[i] == '\r' || buffer[i] == '\n'))
 			{
 				buffer[i] = 0;
 
 				/* store */
-				if( (hdrcount + 1) < array_size(req.headers) )
+				if ((hdrcount + 1) < array_size(req.headers))
 				{
 					req.headers[hdrcount++] = hdrname;
 					req.headers[hdrcount++] = hdrdata;
@@ -337,9 +347,9 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 			}
 
 			/* have name but no value and found a colon, start of value */
-			else if( hdrname && !hdrdata &&
-			    ((i+1) < buflen) && (buffer[i] == ':')
-			) {
+			else if (hdrname && !hdrdata &&
+					 ((i+1) < buflen) && (buffer[i] == ':'))
+			{
 				buffer[i] = 0;
 				hdrdata = &buffer[i+1];
 
@@ -348,7 +358,7 @@ static struct http_request * uh_http_header_parse(struct client *cl, char *buffe
 			}
 
 			/* have no name and found [A-Za-z], start of name */
-			else if( !hdrname && isalpha(buffer[i]) )
+			else if (!hdrname && isalpha(buffer[i]))
 			{
 				hdrname = &buffer[i];
 			}
@@ -380,7 +390,7 @@ static struct http_request * uh_http_header_recv(struct client *cl)
 
 	memset(buffer, 0, sizeof(buffer));
 
-	while( blen > 0 )
+	while (blen > 0)
 	{
 		FD_ZERO(&reader);
 		FD_SET(cl->socket, &reader);
@@ -390,12 +400,12 @@ static struct http_request * uh_http_header_recv(struct client *cl)
 		timeout.tv_usec = 100000;
 
 		/* check whether fd is readable */
-		if( select(cl->socket + 1, &reader, NULL, NULL, &timeout) > 0 )
+		if (select(cl->socket + 1, &reader, NULL, NULL, &timeout) > 0)
 		{
 			/* receive data */
 			ensure_out(rlen = uh_tcp_peek(cl, bufptr, blen));
 
-			if( (idxptr = strfind(buffer, sizeof(buffer), "\r\n\r\n", 4)) )
+			if ((idxptr = strfind(buffer, sizeof(buffer), "\r\n\r\n", 4)))
 			{
 				ensure_out(rlen = uh_tcp_recv(cl, bufptr,
 					(int)(idxptr - bufptr) + 4));
@@ -410,7 +420,7 @@ static struct http_request * uh_http_header_recv(struct client *cl)
 				ensure_out(rlen = uh_tcp_recv(cl, bufptr, rlen));
 
 				/* unexpected eof - #7904 */
-				if( rlen == 0 )
+				if (rlen == 0)
 					return NULL;
 
 				blen -= rlen;
@@ -434,11 +444,11 @@ out:
 #if defined(HAVE_LUA) || defined(HAVE_CGI)
 static int uh_path_match(const char *prefix, const char *url)
 {
-	if( (strstr(url, prefix) == url) &&
-	    ((prefix[strlen(prefix)-1] == '/') ||
+	if ((strstr(url, prefix) == url) &&
+		((prefix[strlen(prefix)-1] == '/') ||
 		 (strlen(url) == strlen(prefix))   ||
-		 (url[strlen(prefix)] == '/'))
-	) {
+		 (url[strlen(prefix)] == '/')))
+	{
 		return 1;
 	}
 
@@ -446,14 +456,14 @@ static int uh_path_match(const char *prefix, const char *url)
 }
 #endif
 
-static void uh_dispatch_request(
-	struct client *cl, struct http_request *req, struct path_info *pin
-) {
+static void uh_dispatch_request(struct client *cl, struct http_request *req,
+								struct path_info *pin)
+{
 #ifdef HAVE_CGI
 	struct interpreter *ipr = NULL;
 
-	if( uh_path_match(cl->server->conf->cgi_prefix, pin->name) ||
-		(ipr = uh_interpreter_lookup(pin->phys)) )
+	if (uh_path_match(cl->server->conf->cgi_prefix, pin->name) ||
+		(ipr = uh_interpreter_lookup(pin->phys)))
 	{
 		uh_cgi_request(cl, req, pin, ipr);
 	}
@@ -485,42 +495,42 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 	used_fds = serv_fds;
 
 	/* loop */
-	while(run)
+	while (run)
 	{
 		/* create a working copy of the used fd set */
 		read_fds = used_fds;
 
 		/* sleep until socket activity */
-		if( select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1 )
+		if (select(max_fd + 1, &read_fds, NULL, NULL, NULL) == -1)
 		{
 			perror("select()");
 			exit(1);
 		}
 
 		/* run through the existing connections looking for data to be read */
-		for( cur_fd = 0; cur_fd <= max_fd; cur_fd++ )
+		for (cur_fd = 0; cur_fd <= max_fd; cur_fd++)
 		{
 			/* is a socket managed by us */
-			if( FD_ISSET(cur_fd, &read_fds) )
+			if (FD_ISSET(cur_fd, &read_fds))
 			{
 				/* is one of our listen sockets */
-				if( FD_ISSET(cur_fd, &serv_fds) )
+				if (FD_ISSET(cur_fd, &serv_fds))
 				{
 					/* handle new connections */
-					if( (new_fd = accept(cur_fd, NULL, 0)) != -1 )
+					if ((new_fd = accept(cur_fd, NULL, 0)) != -1)
 					{
 						/* add to global client list */
-						if( (cl = uh_client_add(new_fd, uh_listener_lookup(cur_fd))) != NULL )
+						if ((cl = uh_client_add(new_fd, uh_listener_lookup(cur_fd))) != NULL)
 						{
 #ifdef HAVE_TLS
 							/* setup client tls context */
-							if( conf->tls )
+							if (conf->tls)
 							{
-								if( conf->tls_accept(cl) < 1 )
+								if (conf->tls_accept(cl) < 1)
 								{
 									fprintf(stderr,
-										"tls_accept failed, "
-										"connection dropped\n");
+											"tls_accept failed, "
+											"connection dropped\n");
 
 									/* close client socket */
 									close(new_fd);
@@ -543,7 +553,8 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 						else
 						{
 							fprintf(stderr,
-								"uh_client_add(): Cannot allocate memory\n");
+									"uh_client_add(): "
+									"Cannot allocate memory\n");
 
 							close(new_fd);
 						}
@@ -553,43 +564,43 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 				/* is a client socket */
 				else
 				{
-					if( ! (cl = uh_client_lookup(cur_fd)) )
+					if (!(cl = uh_client_lookup(cur_fd)))
 					{
 						/* this should not happen! */
 						fprintf(stderr,
-							"uh_client_lookup(): No entry for fd %i!\n",
-							cur_fd);
+								"uh_client_lookup(): No entry for fd %i!\n",
+								cur_fd);
 
 						goto cleanup;
 					}
 
 					/* parse message header */
-					if( (req = uh_http_header_recv(cl)) != NULL )
+					if ((req = uh_http_header_recv(cl)) != NULL)
 					{
 						/* RFC1918 filtering required? */
-						if( conf->rfc1918_filter &&
+						if (conf->rfc1918_filter &&
 						    sa_rfc1918(&cl->peeraddr) &&
-						    !sa_rfc1918(&cl->servaddr) )
+						    !sa_rfc1918(&cl->servaddr))
 						{
 							uh_http_sendhf(cl, 403, "Forbidden",
-								"Rejected request from RFC1918 IP "
-								"to public server address");
+										   "Rejected request from RFC1918 IP "
+										   "to public server address");
 						}
 						else
 #ifdef HAVE_LUA
 						/* Lua request? */
-						if( conf->lua_state &&
-						    uh_path_match(conf->lua_prefix, req->url) )
+						if (conf->lua_state &&
+							uh_path_match(conf->lua_prefix, req->url))
 						{
 							conf->lua_request(cl, req, conf->lua_state);
 						}
 						else
 #endif
 						/* dispatch request */
-						if( (pin = uh_path_lookup(cl, req->url)) != NULL )
+						if ((pin = uh_path_lookup(cl, req->url)) != NULL)
 						{
 							/* auth ok? */
-							if( !pin->redirected && uh_auth_check(cl, req, pin) )
+							if (!pin->redirected && uh_auth_check(cl, req, pin))
 								uh_dispatch_request(cl, req, pin);
 						}
 
@@ -599,7 +610,7 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 							/* Try to invoke an error handler */
 							pin = uh_path_lookup(cl, conf->error_handler);
 
-							if( pin && uh_auth_check(cl, req, pin) )
+							if (pin && uh_auth_check(cl, req, pin))
 							{
 								req->redirect_status = 404;
 								uh_dispatch_request(cl, req, pin);
@@ -614,7 +625,7 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 
 #ifdef HAVE_TLS
 					/* free client tls context */
-					if( conf->tls )
+					if (conf->tls)
 						conf->tls_close(cl);
 #endif
 
@@ -633,7 +644,7 @@ static void uh_mainloop(struct config *conf, fd_set serv_fds, int max_fd)
 
 #ifdef HAVE_LUA
 	/* destroy the Lua state */
-	if( conf->lua_state != NULL )
+	if (conf->lua_state != NULL)
 		conf->lua_close(conf->lua_state);
 #endif
 }
@@ -645,15 +656,15 @@ static inline int uh_inittls(struct config *conf)
 	void *lib;
 
 	/* already loaded */
-	if( conf->tls != NULL )
+	if (conf->tls != NULL)
 		return 0;
 
 	/* load TLS plugin */
-	if( ! (lib = dlopen("uhttpd_tls.so", RTLD_LAZY | RTLD_GLOBAL)) )
+	if (!(lib = dlopen("uhttpd_tls.so", RTLD_LAZY | RTLD_GLOBAL)))
 	{
 		fprintf(stderr,
-			"Notice: Unable to load TLS plugin - disabling SSL support! "
-			"(Reason: %s)\n", dlerror()
+				"Notice: Unable to load TLS plugin - disabling SSL support! "
+				"(Reason: %s)\n", dlerror()
 		);
 
 		return 1;
@@ -661,24 +672,24 @@ static inline int uh_inittls(struct config *conf)
 	else
 	{
 		/* resolve functions */
-		if( !(conf->tls_init   = dlsym(lib, "uh_tls_ctx_init"))      ||
+		if (!(conf->tls_init   = dlsym(lib, "uh_tls_ctx_init"))      ||
 		    !(conf->tls_cert   = dlsym(lib, "uh_tls_ctx_cert"))      ||
 		    !(conf->tls_key    = dlsym(lib, "uh_tls_ctx_key"))       ||
 		    !(conf->tls_free   = dlsym(lib, "uh_tls_ctx_free"))      ||
 		    !(conf->tls_accept = dlsym(lib, "uh_tls_client_accept")) ||
 		    !(conf->tls_close  = dlsym(lib, "uh_tls_client_close"))  ||
 		    !(conf->tls_recv   = dlsym(lib, "uh_tls_client_recv"))   ||
-		    !(conf->tls_send   = dlsym(lib, "uh_tls_client_send"))
-		) {
+		    !(conf->tls_send   = dlsym(lib, "uh_tls_client_send")))
+		{
 			fprintf(stderr,
-				"Error: Failed to lookup required symbols "
-				"in TLS plugin: %s\n", dlerror()
+					"Error: Failed to lookup required symbols "
+					"in TLS plugin: %s\n", dlerror()
 			);
 			exit(1);
 		}
 
 		/* init SSL context */
-		if( ! (conf->tls = conf->tls_init()) )
+		if (!(conf->tls = conf->tls_init()))
 		{
 			fprintf(stderr, "Error: Failed to initalize SSL context\n");
 			exit(1);
@@ -755,17 +766,17 @@ int main (int argc, char **argv)
 	memset(bind, 0, sizeof(bind));
 
 
-	while( (opt = getopt(argc, argv,
-		"fSDRC:K:E:I:p:s:h:c:l:L:d:r:m:x:i:t:T:A:")) > 0
-	) {
+	while ((opt = getopt(argc, argv,
+						 "fSDRC:K:E:I:p:s:h:c:l:L:d:r:m:x:i:t:T:A:")) > 0)
+	{
 		switch(opt)
 		{
 			/* [addr:]port */
 			case 'p':
 			case 's':
-				if( (port = strrchr(optarg, ':')) != NULL )
+				if ((port = strrchr(optarg, ':')) != NULL)
 				{
-					if( (optarg[0] == '[') && (port > optarg) && (port[-1] == ']') )
+					if ((optarg[0] == '[') && (port > optarg) && (port[-1] == ']'))
 						memcpy(bind, optarg + 1,
 							min(sizeof(bind), (int)(port - optarg) - 2));
 					else
@@ -780,9 +791,9 @@ int main (int argc, char **argv)
 				}
 
 #ifdef HAVE_TLS
-				if( opt == 's' )
+				if (opt == 's')
 				{
-					if( uh_inittls(&conf) )
+					if (uh_inittls(&conf))
 					{
 						fprintf(stderr,
 							"Notice: TLS support is disabled, "
@@ -796,10 +807,9 @@ int main (int argc, char **argv)
 #endif
 
 				/* bind sockets */
-				bound += uh_socket_bind(
-					&serv_fds, &max_fd, bind[0] ? bind : NULL, port,
-					&hints,	(opt == 's'), &conf
-				);
+				bound += uh_socket_bind(&serv_fds, &max_fd,
+										bind[0] ? bind : NULL,
+										port, &hints, (opt == 's'), &conf);
 
 				memset(bind, 0, sizeof(bind));
 				break;
@@ -807,12 +817,12 @@ int main (int argc, char **argv)
 #ifdef HAVE_TLS
 			/* certificate */
 			case 'C':
-				if( !uh_inittls(&conf) )
+				if (!uh_inittls(&conf))
 				{
-					if( conf.tls_cert(conf.tls, optarg) < 1 )
+					if (conf.tls_cert(conf.tls, optarg) < 1)
 					{
 						fprintf(stderr,
-							"Error: Invalid certificate file given\n");
+								"Error: Invalid certificate file given\n");
 						exit(1);
 					}
 
@@ -823,12 +833,12 @@ int main (int argc, char **argv)
 
 			/* key */
 			case 'K':
-				if( !uh_inittls(&conf) )
+				if (!uh_inittls(&conf))
 				{
-					if( conf.tls_key(conf.tls, optarg) < 1 )
+					if (conf.tls_key(conf.tls, optarg) < 1)
 					{
 						fprintf(stderr,
-							"Error: Invalid private key file given\n");
+								"Error: Invalid private key file given\n");
 						exit(1);
 					}
 
@@ -840,20 +850,20 @@ int main (int argc, char **argv)
 
 			/* docroot */
 			case 'h':
-				if( ! realpath(optarg, conf.docroot) )
+				if (! realpath(optarg, conf.docroot))
 				{
 					fprintf(stderr, "Error: Invalid directory %s: %s\n",
-						optarg, strerror(errno));
+							optarg, strerror(errno));
 					exit(1);
 				}
 				break;
 
 			/* error handler */
 			case 'E':
-				if( (strlen(optarg) == 0) || (optarg[0] != '/') )
+				if ((strlen(optarg) == 0) || (optarg[0] != '/'))
 				{
 					fprintf(stderr, "Error: Invalid error handler: %s\n",
-						optarg);
+							optarg);
 					exit(1);
 				}
 				conf.error_handler = optarg;
@@ -861,10 +871,10 @@ int main (int argc, char **argv)
 
 			/* index file */
 			case 'I':
-				if( (strlen(optarg) == 0) || (optarg[0] == '/') )
+				if ((strlen(optarg) == 0) || (optarg[0] == '/'))
 				{
 					fprintf(stderr, "Error: Invalid index page: %s\n",
-						optarg);
+							optarg);
 					exit(1);
 				}
 				conf.index_file = optarg;
@@ -892,7 +902,7 @@ int main (int argc, char **argv)
 
 			/* interpreter */
 			case 'i':
-				if( (optarg[0] == '.') && (port = strchr(optarg, '=')) )
+				if ((optarg[0] == '.') && (port = strchr(optarg, '=')))
 				{
 					*port++ = 0;
 					uh_interpreter_add(optarg, port);
@@ -900,7 +910,7 @@ int main (int argc, char **argv)
 				else
 				{
 					fprintf(stderr, "Error: Invalid interpreter: %s\n",
-						optarg);
+							optarg);
 					exit(1);
 				}
 				break;
@@ -942,7 +952,7 @@ int main (int argc, char **argv)
 
 			/* urldecode */
 			case 'd':
-				if( (port = malloc(strlen(optarg)+1)) != NULL )
+				if ((port = malloc(strlen(optarg)+1)) != NULL)
 				{
 					/* "decode" plus to space to retain compat */
 					for (opt = 0; optarg[opt]; opt++)
@@ -951,7 +961,7 @@ int main (int argc, char **argv)
 					/* opt now contains strlen(optarg) -- no need to re-scan */
 					memset(port, 0, opt+1);
 					if (uh_urldecode(port, opt, optarg, opt) < 0)
-					    fprintf( stderr, "uhttpd: invalid encoding\n" );
+					    fprintf(stderr, "uhttpd: invalid encoding\n");
 
 					printf("%s", port);
 					free(port);
@@ -1015,21 +1025,21 @@ int main (int argc, char **argv)
 	}
 
 #ifdef HAVE_TLS
-	if( (tls == 1) && (keys < 2) )
+	if ((tls == 1) && (keys < 2))
 	{
 		fprintf(stderr, "Error: Missing private key or certificate file\n");
 		exit(1);
 	}
 #endif
 
-	if( bound < 1 )
+	if (bound < 1)
 	{
 		fprintf(stderr, "Error: No sockets bound, unable to continue\n");
 		exit(1);
 	}
 
 	/* default docroot */
-	if( !conf.docroot[0] && !realpath(".", conf.docroot) )
+	if (!conf.docroot[0] && !realpath(".", conf.docroot))
 	{
 		fprintf(stderr, "Error: Can not determine default document root: %s\n",
 			strerror(errno));
@@ -1037,56 +1047,55 @@ int main (int argc, char **argv)
 	}
 
 	/* default realm */
-	if( ! conf.realm )
+	if (!conf.realm)
 		conf.realm = "Protected Area";
 
 	/* config file */
 	uh_config_parse(&conf);
 
 	/* default network timeout */
-	if( conf.network_timeout <= 0 )
+	if (conf.network_timeout <= 0)
 		conf.network_timeout = 30;
 
 #if defined(HAVE_CGI) || defined(HAVE_LUA)
 	/* default script timeout */
-	if( conf.script_timeout <= 0 )
+	if (conf.script_timeout <= 0)
 		conf.script_timeout = 60;
 #endif
 
 #ifdef HAVE_CGI
 	/* default cgi prefix */
-	if( ! conf.cgi_prefix )
+	if (!conf.cgi_prefix)
 		conf.cgi_prefix = "/cgi-bin";
 #endif
 
 #ifdef HAVE_LUA
 	/* load Lua plugin */
-	if( ! (lib = dlopen("uhttpd_lua.so", RTLD_LAZY | RTLD_GLOBAL)) )
+	if (!(lib = dlopen("uhttpd_lua.so", RTLD_LAZY | RTLD_GLOBAL)))
 	{
 		fprintf(stderr,
-			"Notice: Unable to load Lua plugin - disabling Lua support! "
-			"(Reason: %s)\n", dlerror()
-		);
+				"Notice: Unable to load Lua plugin - disabling Lua support! "
+				"(Reason: %s)\n", dlerror());
 	}
 	else
 	{
 		/* resolve functions */
-		if( !(conf.lua_init    = dlsym(lib, "uh_lua_init"))    ||
+		if (!(conf.lua_init    = dlsym(lib, "uh_lua_init"))    ||
 		    !(conf.lua_close   = dlsym(lib, "uh_lua_close"))   ||
-		    !(conf.lua_request = dlsym(lib, "uh_lua_request"))
-		) {
+		    !(conf.lua_request = dlsym(lib, "uh_lua_request")))
+		{
 			fprintf(stderr,
-				"Error: Failed to lookup required symbols "
-				"in Lua plugin: %s\n", dlerror()
+					"Error: Failed to lookup required symbols "
+					"in Lua plugin: %s\n", dlerror()
 			);
 			exit(1);
 		}
 
 		/* init Lua runtime if handler is specified */
-		if( conf.lua_handler )
+		if (conf.lua_handler)
 		{
 			/* default lua prefix */
-			if( ! conf.lua_prefix )
+			if (!conf.lua_prefix)
 				conf.lua_prefix = "/lua";
 
 			conf.lua_state = conf.lua_init(&conf);
@@ -1095,9 +1104,9 @@ int main (int argc, char **argv)
 #endif
 
 	/* fork (if not disabled) */
-	if( ! nofork )
+	if (!nofork)
 	{
-		switch( fork() )
+		switch (fork())
 		{
 			case -1:
 				perror("fork()");
@@ -1105,16 +1114,16 @@ int main (int argc, char **argv)
 
 			case 0:
 				/* daemon setup */
-				if( chdir("/") )
+				if (chdir("/"))
 					perror("chdir()");
 
-				if( (cur_fd = open("/dev/null", O_WRONLY)) > -1 )
+				if ((cur_fd = open("/dev/null", O_WRONLY)) > -1)
 					dup2(cur_fd, 0);
 
-				if( (cur_fd = open("/dev/null", O_RDONLY)) > -1 )
+				if ((cur_fd = open("/dev/null", O_RDONLY)) > -1)
 					dup2(cur_fd, 1);
 
-				if( (cur_fd = open("/dev/null", O_RDONLY)) > -1 )
+				if ((cur_fd = open("/dev/null", O_RDONLY)) > -1)
 					dup2(cur_fd, 2);
 
 				break;
@@ -1129,7 +1138,7 @@ int main (int argc, char **argv)
 
 #ifdef HAVE_LUA
 	/* destroy the Lua state */
-	if( conf.lua_state != NULL )
+	if (conf.lua_state != NULL)
 		conf.lua_close(conf.lua_state);
 #endif
 
