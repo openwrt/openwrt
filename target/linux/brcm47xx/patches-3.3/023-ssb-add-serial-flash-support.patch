@@ -1,0 +1,573 @@
+--- a/drivers/ssb/Kconfig
++++ b/drivers/ssb/Kconfig
+@@ -137,6 +137,12 @@ config SSB_DRIVER_MIPS
+ 
+ 	  If unsure, say N
+ 
++config SSB_SFLASH
++	bool
++	depends on SSB_DRIVER_MIPS
++	default y
++
++
+ # Assumption: We are on embedded, if we compile the MIPS core.
+ config SSB_EMBEDDED
+ 	bool
+--- a/drivers/ssb/Makefile
++++ b/drivers/ssb/Makefile
+@@ -11,6 +11,7 @@ ssb-$(CONFIG_SSB_SDIOHOST)		+= sdio.o
+ # built-in drivers
+ ssb-y					+= driver_chipcommon.o
+ ssb-y					+= driver_chipcommon_pmu.o
++ssb-$(CONFIG_SSB_SFLASH)		+= driver_chipcommon_sflash.o
+ ssb-$(CONFIG_SSB_DRIVER_MIPS)		+= driver_mipscore.o
+ ssb-$(CONFIG_SSB_DRIVER_EXTIF)		+= driver_extif.o
+ ssb-$(CONFIG_SSB_DRIVER_PCICORE)	+= driver_pcicore.o
+--- /dev/null
++++ b/drivers/ssb/driver_chipcommon_sflash.c
+@@ -0,0 +1,451 @@
++/*
++ * Broadcom SiliconBackplane chipcommon serial flash interface
++ *
++ * Copyright 2011, Jonas Gorski <jonas.gorski@gmail.com>
++ * Copyright 2011, 2012, Hauke Mehrtens <hauke@hauke-m.de>
++ * Copyright 2010, Broadcom Corporation
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <linux/ssb/ssb.h>
++#include <linux/ssb/ssb_driver_chipcommon.h>
++#include <linux/delay.h>
++
++#include "ssb_private.h"
++
++#define NUM_RETRIES	3
++
++
++/* Issue a serial flash command */
++static inline void ssb_sflash_cmd(struct ssb_chipcommon *cc, u32 opcode)
++{
++	chipco_write32(cc, SSB_CHIPCO_FLASHCTL,
++			SSB_CHIPCO_FLASHCTL_START | opcode);
++	while (chipco_read32(cc, SSB_CHIPCO_FLASHCTL)
++			& SSB_CHIPCO_FLASHCTL_BUSY)
++		;
++}
++
++
++static inline void ssb_sflash_write_u8(struct ssb_chipcommon *cc,
++				       u32 offset, u8 byte)
++{
++	chipco_write32(cc, SSB_CHIPCO_FLASHADDR, offset);
++	chipco_write32(cc, SSB_CHIPCO_FLASHDATA, byte);
++}
++
++/* Initialize serial flash access */
++int ssb_sflash_init(struct ssb_chipcommon *cc)
++{
++	u32 id, id2;
++
++	memset(&cc->sflash, 0, sizeof(struct ssb_sflash));
++
++	switch (cc->capabilities & SSB_CHIPCO_CAP_FLASHT) {
++	case SSB_CHIPCO_FLASHT_STSER:
++		/* Probe for ST chips */
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_DP);
++		chipco_write32(cc, SSB_CHIPCO_FLASHADDR, 0);
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_RES);
++		id = chipco_read32(cc, SSB_CHIPCO_FLASHDATA);
++		cc->sflash.blocksize = 64 * 1024;
++		switch (id) {
++		case 0x11:
++			/* ST M25P20 2 Mbit Serial Flash */
++			cc->sflash.numblocks = 4;
++			break;
++		case 0x12:
++			/* ST M25P40 4 Mbit Serial Flash */
++			cc->sflash.numblocks = 8;
++			break;
++		case 0x13:
++			/* ST M25P80 8 Mbit Serial Flash */
++			cc->sflash.numblocks = 16;
++			break;
++		case 0x14:
++			/* ST M25P16 16 Mbit Serial Flash */
++			cc->sflash.numblocks = 32;
++			break;
++		case 0x15:
++			/* ST M25P32 32 Mbit Serial Flash */
++			cc->sflash.numblocks = 64;
++			break;
++		case 0x16:
++			/* ST M25P64 64 Mbit Serial Flash */
++			cc->sflash.numblocks = 128;
++			break;
++		case 0x17:
++			/* ST M25FL128 128 Mbit Serial Flash */
++			cc->sflash.numblocks = 256;
++			break;
++		case 0xbf:
++			/* All of the following flashes are SST with
++			 * 4KB subsectors. Others should be added but
++			 * We'll have to revamp the way we identify them
++			 * since RES is not eough to disambiguate them.
++			 */
++			cc->sflash.blocksize = 4 * 1024;
++			chipco_write32(cc, SSB_CHIPCO_FLASHADDR, 1);
++			ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_RES);
++			id2 = chipco_read32(cc, SSB_CHIPCO_FLASHDATA);
++			switch (id2) {
++			case 1:
++				/* SST25WF512 512 Kbit Serial Flash */
++			case 0x48:
++				/* SST25VF512 512 Kbit Serial Flash */
++				cc->sflash.numblocks = 16;
++				break;
++			case 2:
++				/* SST25WF010 1 Mbit Serial Flash */
++			case 0x49:
++				/* SST25VF010 1 Mbit Serial Flash */
++				cc->sflash.numblocks = 32;
++				break;
++			case 3:
++				/* SST25WF020 2 Mbit Serial Flash */
++			case 0x43:
++				/* SST25VF020 2 Mbit Serial Flash */
++				cc->sflash.numblocks = 64;
++				break;
++			case 4:
++				/* SST25WF040 4 Mbit Serial Flash */
++			case 0x44:
++				/* SST25VF040 4 Mbit Serial Flash */
++			case 0x8d:
++				/* SST25VF040B 4 Mbit Serial Flash */
++				cc->sflash.numblocks = 128;
++				break;
++			case 5:
++				/* SST25WF080 8 Mbit Serial Flash */
++			case 0x8e:
++				/* SST25VF080B 8 Mbit Serial Flash */
++				cc->sflash.numblocks = 256;
++				break;
++			case 0x41:
++				/* SST25VF016 16 Mbit Serial Flash */
++				cc->sflash.numblocks = 512;
++				break;
++			case 0x4a:
++				/* SST25VF032 32 Mbit Serial Flash */
++				cc->sflash.numblocks = 1024;
++				break;
++			case 0x4b:
++				/* SST25VF064 64 Mbit Serial Flash */
++				cc->sflash.numblocks = 2048;
++				break;
++			}
++			break;
++		}
++		break;
++
++	case SSB_CHIPCO_FLASHT_ATSER:
++		/* Probe for Atmel chips */
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_AT_STATUS);
++		id = chipco_read32(cc, SSB_CHIPCO_FLASHDATA) & 0x3c;
++		switch (id) {
++		case 0xc:
++			/* Atmel AT45DB011 1Mbit Serial Flash */
++			cc->sflash.blocksize = 256;
++			cc->sflash.numblocks = 512;
++			break;
++		case 0x14:
++			/* Atmel AT45DB021 2Mbit Serial Flash */
++			cc->sflash.blocksize = 256;
++			cc->sflash.numblocks = 1024;
++			break;
++		case 0x1c:
++			/* Atmel AT45DB041 4Mbit Serial Flash */
++			cc->sflash.blocksize = 256;
++			cc->sflash.numblocks = 2048;
++			break;
++		case 0x24:
++			/* Atmel AT45DB081 8Mbit Serial Flash */
++			cc->sflash.blocksize = 256;
++			cc->sflash.numblocks = 4096;
++			break;
++		case 0x2c:
++			/* Atmel AT45DB161 16Mbit Serial Flash */
++			cc->sflash.blocksize = 512;
++			cc->sflash.numblocks = 4096;
++			break;
++		case 0x34:
++			/* Atmel AT45DB321 32Mbit Serial Flash */
++			cc->sflash.blocksize = 512;
++			cc->sflash.numblocks = 8192;
++			break;
++		case 0x3c:
++			/* Atmel AT45DB642 64Mbit Serial Flash */
++			cc->sflash.blocksize = 1024;
++			cc->sflash.numblocks = 8192;
++			break;
++		}
++		break;
++	}
++
++	cc->sflash.size = cc->sflash.blocksize * cc->sflash.numblocks;
++
++	return cc->sflash.size ? 0 : -ENODEV;
++}
++
++/* Read len bytes starting at offset into buf. Returns number of bytes read. */
++int ssb_sflash_read(struct ssb_chipcommon *cc, u32 offset, u32 len, u8 *buf)
++{
++	u8 *from, *to;
++	u32 cnt, i;
++
++	if (!len)
++		return 0;
++
++	if ((offset + len) > cc->sflash.size)
++		return -EINVAL;
++
++	if ((len >= 4) && (offset & 3))
++		cnt = 4 - (offset & 3);
++	else if ((len >= 4) && ((u32)buf & 3))
++		cnt = 4 - ((u32)buf & 3);
++	else
++		cnt = len;
++
++
++	if (cc->dev->id.revision == 12)
++		from = (u8 *)KSEG1ADDR(SSB_FLASH2 + offset);
++	else
++		from = (u8 *)KSEG0ADDR(SSB_FLASH2 + offset);
++
++	to = (u8 *)buf;
++
++	if (cnt < 4) {
++		for (i = 0; i < cnt; i++) {
++			*to = readb(from);
++			from++;
++			to++;
++		}
++		return cnt;
++	}
++
++	while (cnt >= 4) {
++		*(u32 *)to = readl(from);
++		from += 4;
++		to += 4;
++		cnt -= 4;
++	}
++
++	return len - cnt;
++}
++
++/* Poll for command completion. Returns zero when complete. */
++int ssb_sflash_poll(struct ssb_chipcommon *cc, u32 offset)
++{
++	if (offset >= cc->sflash.size)
++		return -22;
++
++	switch (cc->capabilities & SSB_CHIPCO_CAP_FLASHT) {
++	case SSB_CHIPCO_FLASHT_STSER:
++		/* Check for ST Write In Progress bit */
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_RDSR);
++		return chipco_read32(cc, SSB_CHIPCO_FLASHDATA)
++				& SSB_CHIPCO_FLASHSTA_ST_WIP;
++	case SSB_CHIPCO_FLASHT_ATSER:
++		/* Check for Atmel Ready bit */
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_AT_STATUS);
++		return !(chipco_read32(cc, SSB_CHIPCO_FLASHDATA)
++				& SSB_CHIPCO_FLASHSTA_AT_READY);
++	}
++
++	return 0;
++}
++
++
++static int sflash_st_write(struct ssb_chipcommon *cc, u32 offset, u32 len,
++			   const u8 *buf)
++{
++	struct ssb_bus *bus = cc->dev->bus;
++	int ret = 0;
++	bool is4712b0 = (bus->chip_id == 0x4712) && (bus->chip_rev == 3);
++	u32 mask;
++
++	/* Enable writes */
++	ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_WREN);
++	if (is4712b0) {
++		mask = 1 << 14;
++		ssb_sflash_write_u8(cc, offset, *buf++);
++		/* Set chip select */
++		chipco_set32(cc, SSB_CHIPCO_GPIOOUT, mask);
++		/* Issue a page program with the first byte */
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_PP);
++		ret = 1;
++		offset++;
++		len--;
++		while (len > 0) {
++			if ((offset & 255) == 0) {
++				/* Page boundary, drop cs and return */
++				chipco_mask32(cc, SSB_CHIPCO_GPIOOUT, ~mask);
++				udelay(1);
++				if (!ssb_sflash_poll(cc, offset)) {
++					/* Flash rejected command */
++					return -EAGAIN;
++				}
++				return ret;
++			} else {
++				/* Write single byte */
++				ssb_sflash_cmd(cc, *buf++);
++			}
++			ret++;
++			offset++;
++			len--;
++		}
++		/* All done, drop cs */
++		chipco_mask32(cc, SSB_CHIPCO_GPIOOUT, ~mask);
++		udelay(1);
++		if (!ssb_sflash_poll(cc, offset)) {
++			/* Flash rejected command */
++			return -EAGAIN;
++		}
++	} else if (cc->dev->id.revision >= 20) {
++		ssb_sflash_write_u8(cc, offset, *buf++);
++		/* Issue a page program with CSA bit set */
++		ssb_sflash_cmd(cc,
++				SSB_CHIPCO_FLASHCTL_ST_CSA |
++				SSB_CHIPCO_FLASHCTL_ST_PP);
++		ret = 1;
++		offset++;
++		len--;
++		while (len > 0) {
++			if ((offset & 255) == 0) {
++				/* Page boundary, poll droping cs and return */
++				chipco_write32(cc, SSB_CHIPCO_FLASHCTL, 0);
++				udelay(1);
++				if (!ssb_sflash_poll(cc, offset)) {
++					/* Flash rejected command */
++					return -EAGAIN;
++				}
++				return ret;
++			} else {
++				/* Write single byte */
++				ssb_sflash_cmd(cc,
++						SSB_CHIPCO_FLASHCTL_ST_CSA |
++						*buf++);
++			}
++			ret++;
++			offset++;
++			len--;
++		}
++		/* All done, drop cs & poll */
++		chipco_write32(cc, SSB_CHIPCO_FLASHCTL, 0);
++		udelay(1);
++		if (!ssb_sflash_poll(cc, offset)) {
++			/* Flash rejected command */
++			return -EAGAIN;
++		}
++	} else {
++		ret = 1;
++		ssb_sflash_write_u8(cc, offset, *buf);
++		/* Page program */
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_PP);
++	}
++	return ret;
++}
++
++static int sflash_at_write(struct ssb_chipcommon *cc, u32 offset, u32 len,
++			   const u8 *buf)
++{
++	struct ssb_sflash *sfl = &cc->sflash;
++	u32 page, byte, mask;
++	int ret = 0;
++	mask = sfl->blocksize - 1;
++	page = (offset & ~mask) << 1;
++	byte = offset & mask;
++	/* Read main memory page into buffer 1 */
++	if (byte || (len < sfl->blocksize)) {
++		int i = 100;
++		chipco_write32(cc, SSB_CHIPCO_FLASHADDR, page);
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_AT_BUF1_LOAD);
++		/* 250 us for AT45DB321B */
++		while (i > 0 && ssb_sflash_poll(cc, offset)) {
++			udelay(10);
++			i--;
++		}
++		BUG_ON(!ssb_sflash_poll(cc, offset));
++	}
++	/* Write into buffer 1 */
++	for (ret = 0; (ret < (int)len) && (byte < sfl->blocksize); ret++) {
++		ssb_sflash_write_u8(cc, byte++, *buf++);
++		ssb_sflash_cmd(cc,
++				SSB_CHIPCO_FLASHCTL_AT_BUF1_WRITE);
++	}
++	/* Write buffer 1 into main memory page */
++	chipco_write32(cc, SSB_CHIPCO_FLASHADDR, page);
++	ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_AT_BUF1_PROGRAM);
++
++	return ret;
++}
++
++/* Write len bytes starting at offset into buf. Returns number of bytes
++ * written. Caller should poll for completion.
++ */
++int ssb_sflash_write(struct ssb_chipcommon *cc, u32 offset, u32 len,
++			    const u8 *buf)
++{
++	struct ssb_sflash *sfl;
++	int ret = 0, tries = NUM_RETRIES;
++
++	if (!len)
++		return 0;
++
++	if ((offset + len) > cc->sflash.size)
++		return -EINVAL;
++
++	sfl = &cc->sflash;
++	switch (cc->capabilities & SSB_CHIPCO_CAP_FLASHT) {
++	case SSB_CHIPCO_FLASHT_STSER:
++		do {
++			ret = sflash_st_write(cc, offset, len, buf);
++			tries--;
++		} while (ret == -EAGAIN && tries > 0);
++
++		if (ret == -EAGAIN && tries == 0) {
++			pr_info("ST Flash rejected write\n");
++			ret = -EIO;
++		}
++		break;
++	case SSB_CHIPCO_FLASHT_ATSER:
++		ret = sflash_at_write(cc, offset, len, buf);
++		break;
++	}
++
++	return ret;
++}
++
++/* Erase a region. Returns number of bytes scheduled for erasure.
++ * Caller should poll for completion.
++ */
++int ssb_sflash_erase(struct ssb_chipcommon *cc, u32 offset)
++{
++	struct ssb_sflash *sfl;
++
++	if (offset >= cc->sflash.size)
++		return -EINVAL;
++
++	sfl = &cc->sflash;
++	switch (cc->capabilities & SSB_CHIPCO_CAP_FLASHT) {
++	case SSB_CHIPCO_FLASHT_STSER:
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_WREN);
++		chipco_write32(cc, SSB_CHIPCO_FLASHADDR, offset);
++		/* Newer flashes have "sub-sectors" which can be erased
++		 * independently with a new command: ST_SSE. The ST_SE command
++		 * erases 64KB just as before.
++		 */
++		if (sfl->blocksize < (64 * 1024))
++			ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_SSE);
++		else
++			ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_ST_SE);
++		return sfl->blocksize;
++	case SSB_CHIPCO_FLASHT_ATSER:
++		chipco_write32(cc, SSB_CHIPCO_FLASHADDR, offset << 1);
++		ssb_sflash_cmd(cc, SSB_CHIPCO_FLASHCTL_AT_PAGE_ERASE);
++		return sfl->blocksize;
++	}
++
++	return 0;
++}
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -203,7 +203,13 @@ static void ssb_mips_flash_detect(struct
+ 	switch (bus->chipco.capabilities & SSB_CHIPCO_CAP_FLASHT) {
+ 	case SSB_CHIPCO_FLASHT_STSER:
+ 	case SSB_CHIPCO_FLASHT_ATSER:
++#ifdef CONFIG_SSB_SFLASH
++		pr_info("found serial flash.\n");
++		bus->chipco.flash_type = SSB_SFLASH;
++		ssb_sflash_init(&bus->chipco);
++#else
+ 		pr_info("serial flash not supported.\n");
++#endif /* CONFIG_SSB_SFLASH */
+ 		break;
+ 	case SSB_CHIPCO_FLASHT_PARA:
+ 		pr_info("found parallel flash.\n");
+--- a/drivers/ssb/ssb_private.h
++++ b/drivers/ssb/ssb_private.h
+@@ -192,6 +192,10 @@ extern int ssb_devices_freeze(struct ssb
+ extern int ssb_devices_thaw(struct ssb_freeze_context *ctx);
+ 
+ 
++#ifdef CONFIG_SSB_SFLASH
++/* driver_chipcommon_sflash.c */
++int ssb_sflash_init(struct ssb_chipcommon *cc);
++#endif /* CONFIG_SSB_SFLASH */
+ 
+ /* b43_pci_bridge.c */
+ #ifdef CONFIG_SSB_B43_PCI_BRIDGE
+--- a/include/linux/ssb/ssb_driver_chipcommon.h
++++ b/include/linux/ssb/ssb_driver_chipcommon.h
+@@ -503,8 +503,10 @@
+ #define SSB_CHIPCO_FLASHCTL_ST_PP	0x0302		/* Page Program */
+ #define SSB_CHIPCO_FLASHCTL_ST_SE	0x02D8		/* Sector Erase */
+ #define SSB_CHIPCO_FLASHCTL_ST_BE	0x00C7		/* Bulk Erase */
+-#define SSB_CHIPCO_FLASHCTL_ST_DP	0x00B9		/* Deep Power-down */
+-#define SSB_CHIPCO_FLASHCTL_ST_RSIG	0x03AB		/* Read Electronic Signature */
++#define SSB_CHIPCO_FLASHCTL_ST_DP	0x00D9		/* Deep Power-down */
++#define SSB_CHIPCO_FLASHCTL_ST_RES	0x03AB		/* Read Electronic Signature */
++#define SSB_CHIPCO_FLASHCTL_ST_CSA	0x1000		/* Keep chip select asserted */
++#define SSB_CHIPCO_FLASHCTL_ST_SSE	0x0220		/* Sub-sector Erase */
+ 
+ /* Status register bits for ST flashes */
+ #define SSB_CHIPCO_FLASHSTA_ST_WIP	0x01		/* Write In Progress */
+@@ -585,6 +587,7 @@ struct ssb_chipcommon_pmu {
+ #ifdef CONFIG_SSB_DRIVER_MIPS
+ enum ssb_flash_type {
+ 	SSB_PFLASH,
++	SSB_SFLASH,
+ };
+ 
+ struct ssb_pflash {
+@@ -592,6 +595,14 @@ struct ssb_pflash {
+ 	u32 window;
+ 	u32 window_size;
+ };
++
++#ifdef CONFIG_SSB_SFLASH
++struct ssb_sflash {
++	u32 blocksize;		/* Block size */
++	u32 numblocks;		/* Number of blocks */
++	u32 size;		/* Total size in bytes */
++};
++#endif /* CONFIG_SSB_SFLASH */
+ #endif /* CONFIG_SSB_DRIVER_MIPS */
+ 
+ struct ssb_chipcommon {
+@@ -605,6 +616,9 @@ struct ssb_chipcommon {
+ 	enum ssb_flash_type flash_type;
+ 	union {
+ 		struct ssb_pflash pflash;
++#ifdef CONFIG_SSB_SFLASH
++		struct ssb_sflash sflash;
++#endif /* CONFIG_SSB_SFLASH */
+ 	};
+ #endif /* CONFIG_SSB_DRIVER_MIPS */
+ };
+@@ -666,6 +680,16 @@ extern int ssb_chipco_serial_init(struct
+ 				  struct ssb_serial_port *ports);
+ #endif /* CONFIG_SSB_SERIAL */
+ 
++#ifdef CONFIG_SSB_SFLASH
++/* Chipcommon sflash support. */
++int ssb_sflash_read(struct ssb_chipcommon *cc, u32 offset, u32 len,
++			   u8 *buf);
++int ssb_sflash_poll(struct ssb_chipcommon *cc, u32 offset);
++int ssb_sflash_write(struct ssb_chipcommon *cc, u32 offset, u32 len,
++			    const u8 *buf);
++int ssb_sflash_erase(struct ssb_chipcommon *cc, u32 offset);
++#endif /* CONFIG_SSB_SFLASH */
++
+ /* PMU support */
+ extern void ssb_pmu_init(struct ssb_chipcommon *cc);
+ 
