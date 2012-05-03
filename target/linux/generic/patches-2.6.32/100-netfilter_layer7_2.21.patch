@@ -2130,3 +2130,13 @@
 +
 +module_init(xt_layer7_init);
 +module_exit(xt_layer7_fini);
+--- a/include/linux/netfilter/Kbuild
++++ b/include/linux/netfilter/Kbuild
+@@ -45,6 +45,7 @@ header-y += xt_hashlimit.h
+ header-y += xt_helper.h
+ header-y += xt_iprange.h
+ header-y += xt_ipvs.h
++header-y += xt_layer7.h
+ header-y += xt_length.h
+ header-y += xt_limit.h
+ header-y += xt_mac.h
