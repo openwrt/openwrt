@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.4.5
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=ftp://ftp.samba.org/pub/ppp/
@@ -93,6 +93,16 @@ endef
 define Package/ppp-mod-radius/conffiles
 /etc/ppp/radius.conf
 /etc/ppp/radius/
+endef
+
+define Package/ppp-mod-pppol2tp
+$(call Package/ppp/Default)
+  DEPENDS:=@(PACKAGE_ppp||PACKAGE_ppp-multilink) +kmod-pppol2tp
+  TITLE:=PPPoL2TP plugin
+endef
+
+define Package/ppp-mod-pppol2tp/description
+This package contains a PPPoL2TP (PPP over L2TP) plugin for ppp.
 endef
 
 define Package/chat
@@ -220,6 +230,12 @@ define Package/ppp-mod-radius/install
 		$(1)/etc/ppp/radius/
 endef
 
+define Package/ppp-mod-pppol2tp/install
+	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_VERSION)
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_VERSION)/pppol2tp.so \
+		$(1)/usr/lib/pppd/$(PKG_VERSION)/
+endef
+
 define Package/chat/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/chat $(1)/usr/sbin/
@@ -240,6 +256,7 @@ $(eval $(call BuildPackage,ppp-multilink))
 $(eval $(call BuildPackage,ppp-mod-pppoa))
 $(eval $(call BuildPackage,ppp-mod-pppoe))
 $(eval $(call BuildPackage,ppp-mod-radius))
+$(eval $(call BuildPackage,ppp-mod-pppol2tp))
 $(eval $(call BuildPackage,chat))
 $(eval $(call BuildPackage,pppdump))
 $(eval $(call BuildPackage,pppstats))
