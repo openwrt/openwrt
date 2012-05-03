@@ -108,6 +108,11 @@ start_instance()
 
 	SERVICE_PID_FILE=/var/run/uhttpd_${cfg}.pid
 	service_start $UHTTPD_BIN -f $UHTTPD_ARGS
+
+	# Check if daemon is running, if not then
+	# re-execute in foreground to display error.
+	sleep 1 && service_check $UHTTPD_BIN || \
+		$UHTTPD_BIN -f $UHTTPD_ARGS
 }
 
 stop_instance()
