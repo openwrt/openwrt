@@ -1,0 +1,138 @@
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -20,11 +20,12 @@
+ #include <asm/addrspace.h>
+ #include <asm/mach-bcm47xx/nvram.h>
+ #include <asm/mach-bcm47xx/bcm47xx.h>
++#include <asm/mach-bcm47xx/bus.h>
+ 
+ static char nvram_buf[NVRAM_SPACE];
+ 
+ /* Probe for NVRAM header */
+-static void early_nvram_init(void)
++static void early_nvram_init_pflash(void)
+ {
+ #ifdef CONFIG_BCM47XX_SSB
+ 	struct ssb_chipcommon *ssb_cc;
+@@ -50,9 +51,6 @@ static void early_nvram_init(void)
+ #ifdef CONFIG_BCM47XX_BCMA
+ 	case BCM47XX_BUS_TYPE_BCMA:
+ 		bcma_cc = &bcm47xx_bus.bcma.bus.drv_cc;
+-		if (bcma_cc->flash_type != BCMA_PFLASH)
+-			return;
+-
+ 		base = bcma_cc->pflash.window;
+ 		lim = bcma_cc->pflash.window_size;
+ 		break;
+@@ -86,7 +84,110 @@ found:
+ 	for (i = 0; i < sizeof(struct nvram_header); i += 4)
+ 		*dst++ = *src++;
+ 	for (; i < header->len && i < NVRAM_SPACE; i += 4)
+-		*dst++ = le32_to_cpu(*src++);
++		*dst++ = *src++;
++}
++
++static int early_nvram_init_sflash(void)
++{
++	struct nvram_header header;
++	u32 off;
++	int ret;
++	char *dst;
++	int len;
++
++	/* check if the struct is already initilized */
++	if (!bcm47xx_sflash.size)
++		return -1;
++
++	off = FLASH_MIN;
++	while (off <= bcm47xx_sflash.size) {
++		ret = bcm47xx_sflash.read(&bcm47xx_sflash, off - NVRAM_SPACE, sizeof(header), (u8 *)&header);
++		if (ret != sizeof(header))
++			return ret;
++		if (header.magic == NVRAM_HEADER)
++			goto found;
++		off <<= 1;
++	}
++
++	off = FLASH_MIN;
++	while (off <= bcm47xx_sflash.size) {
++		ret = bcm47xx_sflash.read(&bcm47xx_sflash, off - (2 * NVRAM_SPACE), sizeof(header), (u8 *)&header);
++		if (ret != sizeof(header))
++			return ret;
++		if (header.magic == NVRAM_HEADER)
++			goto found;
++		off <<= 1;
++	}
++	return -1;
++
++found:
++	len = NVRAM_SPACE;
++	dst = nvram_buf;
++	while (len) {
++		ret = bcm47xx_sflash.read(&bcm47xx_sflash, off - (2 * NVRAM_SPACE), len, dst);
++		if (ret < 0)
++			return ret;
++		off += ret;
++		len -= ret;
++		dst += ret;
++	}
++	return 0;
++}
++
++#ifdef CONFIG_BCM47XX_SSB
++static void early_nvram_init_ssb(void)
++{
++	int err;
++
++	switch (bcm47xx_bus.ssb.chipco.flash_type) {
++	case SSB_PFLASH:
++		early_nvram_init_pflash();
++		break;
++	case SSB_SFLASH:
++		err = early_nvram_init_sflash();
++		if (err < 0)
++			printk(KERN_WARNING "can not read from flash: %i\n", err);
++		break;
++	default:
++		printk(KERN_WARNING "unknow flash type\n");
++	}
++}
++#endif
++
++#ifdef CONFIG_BCM47XX_BCMA
++static void early_nvram_init_bcma(void)
++{
++	int err;
++
++	switch (bcm47xx_bus.bcma.bus.drv_cc.flash_type) {
++	case BCMA_PFLASH:
++		early_nvram_init_pflash();
++		break;
++	case BCMA_SFLASH:
++		err = early_nvram_init_sflash();
++		if (err < 0)
++			printk(KERN_WARNING "can not read from flash: %i\n", err);
++		break;
++	default:
++		printk(KERN_WARNING "unknow flash type\n");
++	}
++}
++#endif
++
++static void early_nvram_init(void)
++{
++	switch (bcm47xx_bus_type) {
++#ifdef CONFIG_BCM47XX_SSB
++	case BCM47XX_BUS_TYPE_SSB:
++		early_nvram_init_ssb();
++		break;
++#endif
++#ifdef CONFIG_BCM47XX_BCMA
++	case BCM47XX_BUS_TYPE_BCMA:
++		early_nvram_init_bcma();
++		break;
++#endif
++	}
+ }
+ 
+ int nvram_getenv(char *name, char *val, size_t val_len)
