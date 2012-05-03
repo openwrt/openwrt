@@ -126,3 +126,19 @@
      add_options(Options);
  
      info("RP-PPPoE plugin version %s compiled against pppd %s",
+--- a/pppd/plugins/pppol2tp/pppol2tp.c	2010-11-15 12:12:43.000000000 +0000
++++ b/pppd/plugins/pppol2tp/pppol2tp.c	2012-04-24 15:53:58.806260309 +0100
+@@ -488,12 +488,7 @@ static void pppol2tp_check_options(void)
+ 
+ void plugin_init(void)
+ {
+-#if defined(__linux__)
+-	extern int new_style_driver;	/* From sys-linux.c */
+-	if (!ppp_available() && !new_style_driver)
+-		fatal("Kernel doesn't support ppp_generic - "
+-		    "needed for PPPoL2TP");
+-#else
++#if !defined(__linux__)
+ 	fatal("No PPPoL2TP support on this OS");
+ #endif
+ 	add_options(pppol2tp_options);
