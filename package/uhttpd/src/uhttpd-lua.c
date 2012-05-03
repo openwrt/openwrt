@@ -137,7 +137,7 @@ static int uh_lua_urlencode(lua_State *L)
 }
 
 
-lua_State * uh_lua_init(const char *handler)
+lua_State * uh_lua_init(const struct config *conf)
 {
 	lua_State *L = lua_open();
 	const char *err_str = NULL;
@@ -164,12 +164,20 @@ lua_State * uh_lua_init(const char *handler)
 	lua_pushcfunction(L, uh_lua_urlencode);
 	lua_setfield(L, -2, "urlencode");
 
+	/* Pass the document-root to the Lua handler by placing it in
+	** uhttpd.docroot.  It could alternatively be placed in env.DOCUMENT_ROOT
+	** which would more closely resemble the CGI protocol; but would mean that
+	** it is not available at the time when the handler-chunk is loaded but
+	** rather not until the handler is called, without any code savings. */
+	lua_pushstring(L, conf->docroot);
+	lua_setfield(L, -2, "docroot");
+
 	/* _G.uhttpd = { ... } */
 	lua_setfield(L, LUA_GLOBALSINDEX, "uhttpd");
 
 
 	/* load Lua handler */
-	switch( luaL_loadfile(L, handler) )
+	switch( luaL_loadfile(L, conf->lua_handler) )
 	{
 		case LUA_ERRSYNTAX:
 			fprintf(stderr,

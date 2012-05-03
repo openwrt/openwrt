@@ -32,7 +32,7 @@
 #define UH_LUA_ERR_PARAM   -3
 
 
-lua_State * uh_lua_init();
+lua_State * uh_lua_init(const struct config *conf);
 
 void uh_lua_request(
 	struct client *cl, struct http_request *req, lua_State *L

@@ -83,7 +83,7 @@ struct config {
 	char *lua_prefix;
 	char *lua_handler;
 	lua_State *lua_state;
-	lua_State * (*lua_init) (const char *handler);
+	lua_State * (*lua_init) (const struct config *conf);
 	void (*lua_close) (lua_State *L);
 	void (*lua_request) (struct client *cl, struct http_request *req, lua_State *L);
 #endif

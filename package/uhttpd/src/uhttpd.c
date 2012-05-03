@@ -1089,7 +1089,7 @@ int main (int argc, char **argv)
 			if( ! conf.lua_prefix )
 				conf.lua_prefix = "/lua";
 
-			conf.lua_state = conf.lua_init(conf.lua_handler);
+			conf.lua_state = conf.lua_init(&conf);
 		}
 	}
 #endif
