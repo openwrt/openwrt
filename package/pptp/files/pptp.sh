@@ -1,5 +1,6 @@
-find_gw() {
-	route -n | awk '$1 == "0.0.0.0" { print $2; exit }'
+find_route() {
+	ip route get $1 | sed -e 's/ /\n/g' | \
+            sed -ne '1p;/via/{N;p};/dev/{N;p};/src/{N;p};/mtu/{N;p}'
 }
 
 scan_pptp() {
@@ -9,7 +10,7 @@ scan_pptp() {
 stop_interface_pptp() {
 	stop_interface_ppp "$1"
 	for ip in $(uci_get_state network "$1" serv_addrs); do
-		route del -host "$ip" 2>/dev/null
+		ip route del "$ip" 2>/dev/null
 	done
 }
 
@@ -36,16 +37,13 @@ setup_interface_pptp() {
 	done
 	sleep 1
 
-	local gw="$(find_gw)"
-	[ -n "$gw" ] && {
-		local serv_addrs=""
-		for ip in $(resolveip -4 -t 3 "$server"); do
-			append serv_addrs "$ip"
-			route delete -host "$ip" 2>/dev/null
-			route add -host "$ip" gw "$gw"
-		done
-		uci_toggle_state network "$config" serv_addrs "$serv_addrs"
-	}
+	local serv_addrs=""
+	for ip in $(resolveip -t 3 "${server}"); do
+		append serv_addrs "$ip"
+		ip route replace $(find_route $ip)
+	done
+	uci_toggle_state network "$config" serv_addrs "$serv_addrs"
+}
 
 	# fix up the netmask
 	config_get netmask "$config" netmask
