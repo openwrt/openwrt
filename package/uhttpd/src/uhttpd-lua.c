@@ -108,17 +108,32 @@ static int uh_lua_sendc(lua_State *L)
 	return uh_lua_send_common(L, 1);
 }
 
-static int uh_lua_urldecode(lua_State *L)
+static int uh_lua_str2str(lua_State *L, int (*xlate_func) (char *, int, const char *, int))
 {
-	size_t inlen, outlen;
+	size_t inlen;
+	int outlen;
 	const char *inbuf;
 	char outbuf[UH_LIMIT_MSGHEAD];
 
 	inbuf = luaL_checklstring(L, 1, &inlen);
-	outlen = uh_urldecode(outbuf, sizeof(outbuf), inbuf, inlen);
+	outlen = (* xlate_func)(outbuf, sizeof(outbuf), inbuf, inlen);
+	if( outlen < 0 )
+		luaL_error( L, "%s on URL-encode codec",
+			(outlen==-1) ? "buffer overflow" : "malformed string" );
 
 	lua_pushlstring(L, outbuf, outlen);
 	return 1;
+}
+
+static int uh_lua_urldecode(lua_State *L)
+{
+	return uh_lua_str2str( L, uh_urldecode );
+}
+
+
+static int uh_lua_urlencode(lua_State *L)
+{
+	return uh_lua_str2str( L, uh_urlencode );
 }
 
 
@@ -145,6 +160,9 @@ lua_State * uh_lua_init(const char *handler)
 
 	lua_pushcfunction(L, uh_lua_urldecode);
 	lua_setfield(L, -2, "urldecode");
+
+	lua_pushcfunction(L, uh_lua_urlencode);
+	lua_setfield(L, -2, "urlencode");
 
 	/* _G.uhttpd = { ... } */
 	lua_setfield(L, LUA_GLOBALSINDEX, "uhttpd");

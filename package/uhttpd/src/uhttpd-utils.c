@@ -307,7 +307,7 @@ int uh_http_send(
 
 /* blen is the size of buf; slen is the length of src.  The input-string need
 ** not be, and the output string will not be, null-terminated.  Returns the
-** length of the decoded string. */
+** length of the decoded string, -1 on buffer overflow, -2 on malformed string. */
 int uh_urldecode(char *buf, int blen, const char *src, int slen)
 {
 	int i;
@@ -329,7 +329,15 @@ int uh_urldecode(char *buf, int blen, const char *src, int slen)
 			}
 			else
 			{
-				buf[len++] = '%';
+				/* Encoding error: it's hard to think of a
+				** scenario in which returning an incorrect
+				** 'decoding' of the malformed string is
+				** preferable to signaling an error condition. */
+				#if 0 /* WORSE_IS_BETTER */
+				    buf[len++] = '%';
+				#else
+				    return -2;
+				#endif
 			}
 		}
 		else
@@ -338,12 +346,12 @@ int uh_urldecode(char *buf, int blen, const char *src, int slen)
 		}
 	}
 
-	return len;
+	return (i == slen) ? len : -1;
 }
 
 /* blen is the size of buf; slen is the length of src.  The input-string need
 ** not be, and the output string will not be, null-terminated.  Returns the
-** length of the encoded string. */
+** length of the encoded string, or -1 on error (buffer overflow) */
 int uh_urlencode(char *buf, int blen, const char *src, int slen)
 {
 	int i;
@@ -365,11 +373,12 @@ int uh_urlencode(char *buf, int blen, const char *src, int slen)
 		}
 		else
 		{
+			len = -1;
 			break;
 		}
 	}
 
-	return len;
+	return (i == slen) ? len : -1;
 }
 
 int uh_b64decode(char *buf, int blen, const unsigned char *src, int slen)
@@ -495,6 +504,9 @@ static char * canonpath(const char *path, char *path_resolved)
 	return NULL;
 }
 
+/* Returns NULL on error.
+** NB: improperly encoded URL should give client 400 [Bad Syntax]; returning
+** NULL here causes 404 [Not Found], but that's not too unreasonable. */
 struct path_info * uh_path_lookup(struct client *cl, const char *url)
 {
 	static char path_phys[PATH_MAX];
@@ -530,21 +542,21 @@ struct path_info * uh_path_lookup(struct client *cl, const char *url)
 
 		/* urldecode component w/o query */
 		if( pathptr > url )
-			uh_urldecode(
-				&buffer[strlen(docroot)],
-				sizeof(buffer) - strlen(docroot) - 1,
-				url, pathptr - url
-			);
+			if ( uh_urldecode(
+					&buffer[strlen(docroot)],
+					sizeof(buffer) - strlen(docroot) - 1,
+					url, pathptr - url ) < 0 )
+				return NULL; /* bad URL */
 	}
 
 	/* no query string, decode all of url */
 	else
 	{
-		uh_urldecode(
-			&buffer[strlen(docroot)],
-			sizeof(buffer) - strlen(docroot) - 1,
-			url, strlen(url)
-		);
+		if ( uh_urldecode(
+				&buffer[strlen(docroot)],
+				sizeof(buffer) - strlen(docroot) - 1,
+				url, strlen(url) ) < 0 )
+			return NULL; /* bad URL */
 	}
 
 	/* create canon path */
