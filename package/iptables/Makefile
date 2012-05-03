@@ -343,26 +343,26 @@ endef
 
 TARGET_CPPFLAGS := \
 	-I$(PKG_BUILD_DIR)/include \
-	-I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include \
+	-I$(LINUX_DIR)/user_headers/include \
 	$(TARGET_CPPFLAGS)
 
 TARGET_CFLAGS += \
 	-I$(PKG_BUILD_DIR)/include \
-	-I$(LINUX_DIR)/arch/$(LINUX_KARCH)/include
+	-I$(LINUX_DIR)/user_headers/include
 
 CONFIGURE_ARGS += \
 	--enable-shared \
 	--enable-devel \
 	$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 	--enable-libipq \
-	--with-kernel="$(LINUX_DIR)" \
+	--with-kernel="$(LINUX_DIR)/user_headers" \
 	--with-xtlibdir=/usr/lib/iptables \
 	--enable-static
 
 MAKE_FLAGS := \
 	$(TARGET_CONFIGURE_OPTS) \
 	COPT_FLAGS="$(TARGET_CFLAGS)" \
-	KERNEL_DIR="$(LINUX_DIR)" PREFIX=/usr \
+	KERNEL_DIR="$(LINUX_DIR)/user_headers/" PREFIX=/usr \
 	KBUILD_OUTPUT="$(LINUX_DIR)" \
 	BUILTIN_MODULES="$(patsubst ipt_%,%,$(patsubst xt_%,%,$(IPT_BUILTIN) $(IPT_CONNTRACK-m) $(IPT_NAT-m)))"
 
