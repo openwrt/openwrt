@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=2012-04-17
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=2607092b22b5cb552dc3c79921c85369
 
@@ -102,11 +102,11 @@ Generic IEEE 802.11 Networking Stack (mac80211)
 endef
 
 PKG_LINUX_FIRMWARE_NAME:=linux-firmware
-PKG_LINUX_FIRMWARE_VERSION:=d543c1d98fc240267ee59fff93f7a0f36d9e2fc3
+PKG_LINUX_FIRMWARE_VERSION:=375e9548bf75a5664256d47a2f9e14b79181e02d
 PKG_LINUX_FIRMWARE_SOURCE:=$(PKG_LINUX_FIRMWARE_NAME)-$(PKG_LINUX_FIRMWARE_VERSION).tar.bz2
 PKG_LINUX_FIRMWARE_PROTO:=git
-# PKG_LINUX_FIRMWARE_SOURCE_URL:=git://git.kernel.org/pub/scm/linux/kernel/git/dwmw2/linux-firmware.git
-PKG_LINUX_FIRMWARE_SOURCE_URL:=git://git.infradead.org/users/dwmw2/linux-firmware.git
+# PKG_LINUX_FIRMWARE_SOURCE_URL:=git://git.infradead.org/users/dwmw2/linux-firmware.git
+PKG_LINUX_FIRMWARE_SOURCE_URL:=git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
 PKG_LINUX_FIRMWARE_SUBDIR:=$(PKG_LINUX_FIRMWARE_NAME)-$(PKG_LINUX_FIRMWARE_VERSION)
 
 define Download/linux-firmware
@@ -762,9 +762,10 @@ define KernelPackage/wl12xx
   URL:=http://wireless.kernel.org/en/users/Drivers/wl12xx
   DEPENDS+= @TARGET_omap4 +kmod-mac80211
   FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/wl12xx/wl12xx.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/wl12xx/wl12xx_sdio.ko
-  AUTOLOAD:=$(call AutoLoad,61,wl12xx wl12xx_sdio)
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl12xx/wl12xx.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore_sdio.ko
+  AUTOLOAD:=$(call AutoLoad,61,wlcore wlcore_sdio wl12xx)
 endef
 
 define KernelPackage/wl12xx/description
@@ -1395,9 +1396,10 @@ endef
 define KernelPackage/wl12xx/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-3.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-plt-3.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-nvs.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-4-mr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-4-plt.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-4-sr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl1271-nvs.bin \
 		$(1)/lib/firmware/ti-connectivity
 endef
 
