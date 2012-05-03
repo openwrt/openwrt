@@ -100,6 +100,7 @@ static const char const *parse_types[] = {
 #ifdef CONFIG_MTD_MYLOADER_PARTS
 	"MyLoader",
 #endif
+	NULL,
 };
 
 #define BANK_SIZE	(2<<20)
