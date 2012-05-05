@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2010 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -75,9 +75,9 @@ endef
 #endef
 
 define Image/Build/EVA
-	$(STAGING_DIR_HOST)/bin/lzma2eva $(EVA_LOADADDR) 0x$${shell $(TARGET_CROSS)nm $(KDIR)/linux-*/vmlinux | grep kernel_entry | cut -d' ' -f1} $(KDIR)/vmlinux.lzma $(KDIR)/loader.eva 
+	$(STAGING_DIR_HOST)/bin/lzma2eva $(EVA_LOADADDR) 0x$${shell $(TARGET_CROSS)nm $(KDIR)/linux-*/vmlinux | grep -w kernel_entry | cut -d' ' -f1} $(KDIR)/vmlinux.lzma $(KDIR)/loader.eva
 	dd if=$(KDIR)/loader.eva $(call align/$(1)) > $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
-	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin 
+	cat $(KDIR)/root.$(1) >> $(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin
 	$(call prepare_generic_squashfs,$(BIN_DIR)/openwrt-$(2)-$(KERNEL)-$(1).bin)
 endef
 
