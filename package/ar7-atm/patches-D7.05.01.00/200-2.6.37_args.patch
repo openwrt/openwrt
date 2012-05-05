@@ -1,8 +1,6 @@
-Index: sangam_atm-D7.04.03.00/tn7atm.c
-===================================================================
---- sangam_atm-D7.04.03.00.orig/tn7atm.c	2011-02-18 13:36:12.000000000 +0100
-+++ sangam_atm-D7.04.03.00/tn7atm.c	2011-02-18 13:36:21.268956988 +0100
-@@ -1867,7 +1867,11 @@
+--- a/tn7atm.c
++++ b/tn7atm.c
+@@ -2000,7 +2000,11 @@ static int __init tn7atm_register (Tn7At
  
    dgprintf (4, "device %s being registered\n", priv->name);
  
@@ -14,11 +12,9 @@ Index: sangam_atm-D7.04.03.00/tn7atm.c
  
    if (mydev == NULL)
    {
-Index: sangam_atm-D7.04.03.00/tn7dsl.c
-===================================================================
---- sangam_atm-D7.04.03.00.orig/tn7dsl.c	2011-02-18 13:36:12.000000000 +0100
-+++ sangam_atm-D7.04.03.00/tn7dsl.c	2011-02-18 13:37:41.678957013 +0100
-@@ -466,14 +466,17 @@
+--- a/tn7dsl.c
++++ b/tn7dsl.c
+@@ -512,14 +512,17 @@ int shim_osLoadFWImage(unsigned char *pt
  {
  	const struct firmware *fw_entry;
  	size_t size;

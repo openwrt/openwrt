@@ -1,8 +1,6 @@
-Index: sangam_atm-D7.05.01.00/cppi_cpaal5.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/cppi_cpaal5.c	2007-09-25 15:55:14.000000000 +0200
-+++ sangam_atm-D7.05.01.00/cppi_cpaal5.c	2010-03-07 19:03:28.000000000 +0100
-@@ -360,7 +360,7 @@
+--- a/cppi_cpaal5.c
++++ b/cppi_cpaal5.c
+@@ -360,7 +360,7 @@ static int halRxReturn(HAL_RECEIVEINFO *
             {
              /* malloc failed, add this RCB to Needs Buffer List */
              TempRcb->FragCount = 1;                                             /*MJH+030417*/
@@ -11,10 +9,8 @@ Index: sangam_atm-D7.05.01.00/cppi_cpaal5.c
  
              if(HalDev->NeedsCount < MAX_NEEDS)                                  /* +MJH 030410 */
                {                                                                 /* +MJH 030410 */
-Index: sangam_atm-D7.05.01.00/dsl_hal_api.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/dsl_hal_api.c	2007-09-27 10:35:44.000000000 +0200
-+++ sangam_atm-D7.05.01.00/dsl_hal_api.c	2010-03-07 19:03:28.000000000 +0100
+--- a/dsl_hal_api.c
++++ b/dsl_hal_api.c
 @@ -273,15 +273,15 @@
  *  09/15/07  CPH    CQ11466  Added EFM support
  *  09/27/07  EYin   CQ11929: Added NFEC/INP/Lp/Rp reporting for only ADSL2/2+ mode.
@@ -36,10 +32,8 @@ Index: sangam_atm-D7.05.01.00/dsl_hal_api.c
  
  //  UR8_MERGE_START CQ11054   Jack Zhang
  static unsigned int highprecision_selected = 0;  //By default we use low precision for backward compt.
-Index: sangam_atm-D7.05.01.00/dsl_hal_support.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/dsl_hal_support.c	2007-09-25 11:19:50.000000000 +0200
-+++ sangam_atm-D7.05.01.00/dsl_hal_support.c	2010-03-07 19:03:28.000000000 +0100
+--- a/dsl_hal_support.c
++++ b/dsl_hal_support.c
 @@ -142,9 +142,9 @@
  *  UR8_MERGE_START_END CQ11922 Tim
  *    04Sep07     0.14.00            Tim    CQ11922: Added support for new scratchram for INP NDR tables
@@ -53,10 +47,8 @@ Index: sangam_atm-D7.05.01.00/dsl_hal_support.c
  
  #define NUM_READ_RETRIES 3
  static unsigned int dslhal_support_adsl2ByteSwap32(unsigned int in32Bits);
-Index: sangam_atm-D7.05.01.00/dsl_hal_support.h
-===================================================================
---- sangam_atm-D7.05.01.00.orig/dsl_hal_support.h	2005-11-11 09:07:04.000000000 +0100
-+++ sangam_atm-D7.05.01.00/dsl_hal_support.h	2010-03-07 19:03:28.000000000 +0100
+--- a/dsl_hal_support.h
++++ b/dsl_hal_support.h
 @@ -49,7 +49,7 @@
  *    04Nov05     0.11.00            CPH    Fixed T1413 mode got Zero DS/US rate when DSL_BIT_TMODE is set.
  *******************************************************************************/
@@ -66,10 +58,8 @@ Index: sangam_atm-D7.05.01.00/dsl_hal_support.h
  
  #define virtual2Physical(a)    (((int)a)&~0xe0000000)
  /* External Function Prototype Declarations */
-Index: sangam_atm-D7.05.01.00/Makefile
-===================================================================
---- sangam_atm-D7.05.01.00.orig/Makefile	2005-06-01 04:46:28.000000000 +0200
-+++ sangam_atm-D7.05.01.00/Makefile	2010-03-07 19:03:45.000000000 +0100
+--- a/Makefile
++++ b/Makefile
 @@ -1,18 +1,9 @@
 -# File: drivers/atm/ti_evm3/Makefile
  #
@@ -95,10 +85,8 @@ Index: sangam_atm-D7.05.01.00/Makefile
 +EXTRA_CFLAGS += -DEL -I$(PWD) -DPOST_SILICON -DCOMMON_NSP -DNO_ACT -D__NO__VOICE_PATCH__ -DEL
 +obj-$(CONFIG_SANGAM_ATM) := tiatm.o
 +tiatm-objs += cpsar.o aal5sar.o tn7sar.o tn7atm.o tn7dsl.o dsl_hal_api.o dsl_hal_support.o
-Index: sangam_atm-D7.05.01.00/tn7atm.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/tn7atm.c	2008-08-28 17:15:22.000000000 +0200
-+++ sangam_atm-D7.05.01.00/tn7atm.c	2010-03-07 19:03:48.000000000 +0100
+--- a/tn7atm.c
++++ b/tn7atm.c
 @@ -66,7 +66,6 @@
   *    09/18/07 CPH    CQ11466  Added EFM Support
  *********************************************************************************************/
@@ -132,7 +120,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  MODULE_DESCRIPTION ("Tnetd73xx ATM Device Driver");
  MODULE_AUTHOR ("Zhicheng Tang");
  #endif
-@@ -108,9 +111,9 @@
+@@ -108,9 +111,9 @@ MODULE_AUTHOR ("Zhicheng Tang");
  
  /*end of externs */
  
@@ -145,7 +133,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  
  #define tn7atm_kfree_skb(x)     dev_kfree_skb(x)
  
-@@ -135,7 +138,7 @@
+@@ -135,7 +138,7 @@ static int EnableQoS = FALSE;
  /* prototypes */
  static int tn7atm_set_can_support_adsl2 (int can);
  
@@ -154,7 +142,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  
  void tn7atm_close (struct atm_vcc *vcc);
  
-@@ -298,13 +301,12 @@
+@@ -298,13 +301,12 @@ static const struct atmdev_ops tn7atm_op
          getsockopt:     NULL,
          setsockopt:     NULL,
          send:           tn7atm_send,
@@ -169,7 +157,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  static struct proc_dir_entry *root_proc_dir_entry = NULL;
  #define DRV_PROC_MODE 0644
  static int proc_root_already_exists = TRUE;
-@@ -626,56 +628,6 @@
+@@ -626,56 +628,6 @@ static int turbodsl_check_priority_type(
  
  /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   *
@@ -226,7 +214,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
   *  Function: int tn7atm_sar_irq(void)
   *
   *  Description: tnetd73xx SAR interrupt.
-@@ -766,7 +718,7 @@
+@@ -766,7 +718,7 @@ static int __init tn7atm_irq_request (st
  
    priv->sar_irq = LNXINTNUM (ATM_SAR_INT);      /* Interrupt line # */
  
@@ -235,7 +223,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
      printk ("Could not register tn7atm_sar_irq\n");
  
    /*
-@@ -777,8 +729,8 @@
+@@ -777,8 +729,8 @@ static int __init tn7atm_irq_request (st
    {
      def_sar_inter_pace = os_atoi (ptr);
    }
@@ -246,7 +234,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  
  
  #ifdef AR7_EFM
-@@ -790,7 +742,7 @@
+@@ -790,7 +742,7 @@ static int __init tn7atm_irq_request (st
     * Reigster Receive interrupt A
     */
    priv->dsl_irq = LNXINTNUM (ATM_DSL_INT);      /* Interrupt line # */
@@ -255,7 +243,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
      printk ("Could not register tn7atm_dsl_irq\n");
  
  /***** VRB Tasklet Mode ****/
-@@ -958,11 +910,15 @@
+@@ -958,11 +910,15 @@ static int __init tn7atm_get_ESI (struct
  #define ATM_VBR_RT     5
  #endif
  
@@ -272,7 +260,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  
    dgprintf(1, "tn7atm_open()\n");
  
-@@ -974,24 +930,18 @@
+@@ -974,24 +930,18 @@ int tn7atm_open (struct atm_vcc *vcc, sh
      return -1;
    }
  
@@ -303,7 +291,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
    {
      /* always use (max_dma_chan+1) for clear eoc */
      tn7atm_activate_vc_parm.chan = EOC_DMA_CHAN;
-@@ -999,7 +949,7 @@
+@@ -999,7 +949,7 @@ int tn7atm_open (struct atm_vcc *vcc, sh
      /* check to see whether clear eoc is opened or not */
      if (tn7atm_activate_vc_parm.priv->lut[tn7atm_activate_vc_parm.chan].inuse)
      {
@@ -312,7 +300,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
        printk("tn7atm_open: Clear EOC channel (dmachan=%d) already in use.\n", tn7atm_activate_vc_parm.chan);
        return -EBUSY;
      }
-@@ -1008,7 +958,7 @@
+@@ -1008,7 +958,7 @@ int tn7atm_open (struct atm_vcc *vcc, sh
      if (rc)
      {
        printk("tn7atm_open: failed to setup clear_eoc\n");
@@ -321,7 +309,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
        return -EBUSY;
      }
      tn7atm_set_lut(tn7atm_activate_vc_parm.priv,vcc, tn7atm_activate_vc_parm.chan);
-@@ -1017,17 +967,17 @@
+@@ -1017,17 +967,17 @@ int tn7atm_open (struct atm_vcc *vcc, sh
    }
    else  /* PVC channel setup */
    {
@@ -342,7 +330,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
          printk("PVC already opened. dmachan = %d\n", rc);
          return -EBUSY;
        }
-@@ -1059,6 +1009,7 @@
+@@ -1059,6 +1009,7 @@ int tn7atm_open (struct atm_vcc *vcc, sh
         tn7atm_activate_vc_parm.priority = 2;
         break;
  
@@ -350,7 +338,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
       case ATM_VBR: /* Variable Bit Rate-Non RealTime*/
         tn7atm_activate_vc_parm.qos = 1;
         tn7atm_activate_vc_parm.priority = 1;
-@@ -1080,6 +1031,7 @@
+@@ -1080,6 +1031,7 @@ int tn7atm_open (struct atm_vcc *vcc, sh
             tn7atm_activate_vc_parm.mbs = vcc->qos.txtp.max_pcr;
         tn7atm_activate_vc_parm.cdvt = vcc->qos.txtp.max_cdv;
         break;
@@ -358,7 +346,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  
       default:
           tn7atm_activate_vc_parm.qos = 2;
-@@ -1107,7 +1059,7 @@
+@@ -1107,7 +1059,7 @@ int tn7atm_open (struct atm_vcc *vcc, sh
     if (rc < 0)
     {
        printk("failed to activate hw channel\n");
@@ -367,7 +355,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
        tn7atm_lut_clear(vcc, tn7atm_activate_vc_parm.chan);
        //spin_unlock_irqrestore(&chan_init_lock, flags);
        return -EBUSY;
-@@ -1197,7 +1149,7 @@
+@@ -1197,7 +1149,7 @@ void tn7atm_close (struct atm_vcc *vcc)
    tn7atm_lut_clear (vcc, dmachan);
    //spin_unlock_irqrestore (&closeLock, closeFlag);
  
@@ -376,7 +364,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  
    dgprintf (1, "Leave tn7atm_close\n");
  }
-@@ -1630,8 +1582,7 @@
+@@ -1630,8 +1582,7 @@ int tn7atm_receive (void *os_dev, int ch
                                   * firewall is on */
  
    dgprintf (3, "pushing the skb...\n");
@@ -386,7 +374,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  
    xdump ((unsigned char *) skb->data, skb->len, 5);
  
-@@ -1854,8 +1805,7 @@
+@@ -1854,8 +1805,7 @@ printk("!!!free atm irq: tn7atm_exit\n")
  
    kfree (dev->dev_data);
  
@@ -396,7 +384,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  
    /*
     * remove proc entries
-@@ -2086,9 +2036,6 @@
+@@ -2086,9 +2036,6 @@ static int __init tn7atm_detect (void)
     * Set up proc entry for atm stats
     */
  
@@ -406,7 +394,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
      printk ("Creating new root folder %s in the proc for the driver stats \n",
              drv_proc_root_folder);
      root_proc_dir_entry = proc_mkdir (drv_proc_root_folder, NULL);
-@@ -2098,7 +2045,6 @@
+@@ -2098,7 +2045,6 @@ static int __init tn7atm_detect (void)
        return -ENOMEM;
      }
      proc_root_already_exists = FALSE;
@@ -414,7 +402,7 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  
  
    /*
-@@ -2731,7 +2677,5 @@
+@@ -2731,7 +2677,5 @@ int tn7atm_proc_turbodsl_write(struct fi
      return count;
  }
  
@@ -422,10 +410,8 @@ Index: sangam_atm-D7.05.01.00/tn7atm.c
  module_init (tn7atm_detect);
  module_exit (tn7atm_exit);
 -#endif /* MODULE */
-Index: sangam_atm-D7.05.01.00/tn7atm.h
-===================================================================
---- sangam_atm-D7.05.01.00.orig/tn7atm.h	2007-09-25 15:49:34.000000000 +0200
-+++ sangam_atm-D7.05.01.00/tn7atm.h	2010-03-07 19:03:28.000000000 +0100
+--- a/tn7atm.h
++++ b/tn7atm.h
 @@ -20,7 +20,8 @@
  //#include  "mips_support.h"
  #include  <linux/list.h>
@@ -436,10 +422,8 @@ Index: sangam_atm-D7.05.01.00/tn7atm.h
  
  #ifdef CONFIG_MODVERSIONS
  #include <linux/modversions.h>
-Index: sangam_atm-D7.05.01.00/tn7dsl.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/tn7dsl.c	2009-07-08 13:02:06.000000000 +0200
-+++ sangam_atm-D7.05.01.00/tn7dsl.c	2010-03-07 19:04:27.000000000 +0100
+--- a/tn7dsl.c
++++ b/tn7dsl.c
 @@ -102,7 +102,6 @@
  *  UR8_MERGE_END   CQ11813
  *  09/18/07 CPH   CQ11466: Added EFM support.
@@ -470,7 +454,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  /* Modules specific header files */
  #ifdef AR7_EFM
  #include "tn7efm.h"
-@@ -185,7 +188,7 @@
+@@ -185,7 +188,7 @@ led_reg_t ledreg[2];
  static struct led_funcs ledreg[2];
  #endif
  
@@ -479,7 +463,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  #define MAX_STR_SIZE     256
  #define DSL_MOD_SIZE     256
  
-@@ -316,7 +319,7 @@
+@@ -316,7 +319,7 @@ static PITIDSLHW_T    pIhw;
  static volatile int bshutdown;
  static char info[MAX_STR_SIZE];
  /* Used for DSL Polling enable */
@@ -488,7 +472,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  
  //kthread_t overlay_thread;
  /* end of module wide declars */
-@@ -369,6 +372,14 @@
+@@ -369,6 +372,14 @@ int os_atoih (const char *pstr)
    return val;
  }
  
@@ -503,7 +487,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  int os_atoi(const char *pStr)
  {
    int MulNeg = (*pStr == '-' ? -1 : 1);
-@@ -405,39 +416,6 @@
+@@ -405,39 +416,6 @@ void dprintf (int uDbgLevel, char *szFmt
  #endif
  }
  
@@ -543,7 +527,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  // * UR8_MERGE_START CQ10640   Jack Zhang
  int tn7dsl_dump_dsp_memory(char *input_str) //cph99
    {
-@@ -487,144 +465,78 @@
+@@ -487,144 +465,78 @@ unsigned int shim_osGetCpuFrequency(void
    return CpuFrequency;
  }
  
@@ -752,7 +736,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  
  int shim_osLoadDebugFWImage(unsigned char *ptr)
  {
-@@ -3287,6 +3199,7 @@
+@@ -3287,6 +3199,7 @@ int tn7dsl_init(void *priv)
    int high_precision_selected = 0;
  //  UR8_MERGE_END   CQ11054*
  
@@ -760,7 +744,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
    /*
     * start dsl
     */
-@@ -3665,7 +3578,7 @@
+@@ -3665,7 +3578,7 @@ static int dslmod_sysctl(ctl_table *ctl,
     */
    if(write)
      {
@@ -769,7 +753,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  
      switch (ctl->ctl_name)
        {
-@@ -3751,14 +3664,14 @@
+@@ -3751,14 +3664,14 @@ static int dslmod_sysctl(ctl_table *ctl,
    else
      {
      len += sprintf(info+len, mod_req);
@@ -786,7 +770,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
    ,
    {0}
    };
-@@ -3781,8 +3694,7 @@
+@@ -3781,8 +3694,7 @@ void tn7dsl_dslmod_sysctl_register(void)
    if (initialized == 1)
      return;
  
@@ -796,10 +780,8 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  
    /*
     * set the defaults
-Index: sangam_atm-D7.05.01.00/tn7sar.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/tn7sar.c	2007-09-25 15:49:22.000000000 +0200
-+++ sangam_atm-D7.05.01.00/tn7sar.c	2010-03-07 19:03:44.000000000 +0100
+--- a/tn7sar.c
++++ b/tn7sar.c
 @@ -43,7 +43,6 @@
   * 09/18/07 CPH   CQ11466: Added EFM support.
   *******************************************************************************/

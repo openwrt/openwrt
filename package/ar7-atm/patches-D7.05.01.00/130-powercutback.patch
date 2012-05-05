@@ -1,7 +1,5 @@
-Index: sangam_atm-D7.05.01.00/dsl_hal_advcfg.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/dsl_hal_advcfg.c	2005-08-09 08:20:46.000000000 +0200
-+++ sangam_atm-D7.05.01.00/dsl_hal_advcfg.c	2010-03-07 18:09:59.000000000 +0100
+--- a/dsl_hal_advcfg.c
++++ b/dsl_hal_advcfg.c
 @@ -36,9 +36,9 @@
  *    05Jul05     0.00.09            CPH    CQ9775: Change dslhal_advcfg_configDsTones input parameters & support for ADSL2+
  *    24Jul05     0.00.10            CPH    Fixed comments in dslhal_advcfg_configDsTones function header
@@ -15,10 +13,8 @@ Index: sangam_atm-D7.05.01.00/dsl_hal_advcfg.c
  
  /*****************************************************************************/
  /* ACT API functions -- To be moved into their own independent module --RamP */
-Index: sangam_atm-D7.05.01.00/Makefile
-===================================================================
---- sangam_atm-D7.05.01.00.orig/Makefile	2010-03-07 18:01:20.000000000 +0100
-+++ sangam_atm-D7.05.01.00/Makefile	2010-03-07 18:09:59.000000000 +0100
+--- a/Makefile
++++ b/Makefile
 @@ -4,6 +4,7 @@
  
  CONFIG_SANGAM_ATM=m
@@ -29,11 +25,9 @@ Index: sangam_atm-D7.05.01.00/Makefile
  obj-$(CONFIG_SANGAM_ATM) := tiatm.o
 -tiatm-objs += cpsar.o aal5sar.o tn7sar.o tn7atm.o tn7dsl.o dsl_hal_api.o dsl_hal_support.o
 +tiatm-objs += cpsar.o aal5sar.o tn7sar.o tn7atm.o tn7dsl.o dsl_hal_api.o dsl_hal_support.o dsl_hal_advcfg.o
-Index: sangam_atm-D7.05.01.00/tn7dsl.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/tn7dsl.c	2010-03-07 18:07:28.000000000 +0100
-+++ sangam_atm-D7.05.01.00/tn7dsl.c	2010-03-07 18:09:59.000000000 +0100
-@@ -3053,6 +3053,14 @@
+--- a/tn7dsl.c
++++ b/tn7dsl.c
+@@ -3053,6 +3053,14 @@ static int tn7dsl_set_dsl(void)
      dslhal_api_setRateAdaptFlag(pIhw, os_atoi(ptr));
    }
  
