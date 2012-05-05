@@ -36,13 +36,24 @@ endef
 
 MAKE_FLAGS += OPTIMIZE="$(TARGET_CFLAGS)"
 
-define Package/pptp/install
+ifneq ($(CONFIG_PACKAGE_netifd),)
+  define Package/pptp/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_DATA) ./files/options.pptp $(1)/etc/ppp/
 	$(INSTALL_DIR) $(1)/lib/network
 	$(INSTALL_BIN) ./files/pptp.sh $(1)/lib/network/
-endef
+  endef
+else
+  define Package/pptp/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc/ppp
+	$(INSTALL_DATA) ./files/options.pptp $(1)/etc/ppp/
+	$(INSTALL_DIR) $(1)/lib/network
+	$(INSTALL_DATA) ./files.old/pptp.sh $(1)/lib/network/
+  endef
+endif
 
 $(eval $(call BuildPackage,pptp))
