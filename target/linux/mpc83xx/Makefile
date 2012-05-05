@@ -10,7 +10,7 @@ ARCH:=powerpc
 BOARD:=mpc83xx
 BOARDNAME:=Freescale MPC83xx
 CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=603e
-FEATURES:=squashfs targz broken
+FEATURES:=squashfs targz
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
 LINUX_VERSION:=3.3.4
