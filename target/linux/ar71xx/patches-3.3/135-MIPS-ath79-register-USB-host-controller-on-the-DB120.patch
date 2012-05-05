@@ -1,0 +1,28 @@
+From 932c1688e960bff170f1fc8072b3d3e958407a60 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Tue, 13 Mar 2012 13:51:09 +0100
+Subject: [PATCH 40/47] MIPS: ath79: register USB host controller on the DB120 board
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ath79/mach-db120.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/mach-db120.c
++++ b/arch/mips/ath79/mach-db120.c
+@@ -25,6 +25,7 @@
+ #include "dev-gpio-buttons.h"
+ #include "dev-leds-gpio.h"
+ #include "dev-spi.h"
++#include "dev-usb.h"
+ #include "dev-wmac.h"
+ #include "pci.h"
+ 
+@@ -126,6 +127,7 @@ static void __init db120_setup(void)
+ 					db120_gpio_keys);
+ 	ath79_register_spi(&db120_spi_data, db120_spi_info,
+ 			   ARRAY_SIZE(db120_spi_info));
++	ath79_register_usb();
+ 	ath79_register_wmac(art + DB120_WMAC_CALDATA_OFFSET);
+ 	db120_pci_init(art + DB120_PCIE_CALDATA_OFFSET);
+ }

@@ -1,0 +1,31 @@
+From 51233d66e030239f99755b2983753eff9b748365 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 14 Mar 2012 10:28:35 +0100
+Subject: [PATCH 04/47] MIPS: ath79: fix AR933X WMAC reset code
+
+The current code puts the built-in WMAC device of the
+AR933X SoCs into reset instead of starting it. This
+causes a hard lock on AR933X based boards when the
+wireless driver tries to access the device.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: stable@vger.kernel.org
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3484/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/dev-wmac.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+--- a/arch/mips/ath79/dev-wmac.c
++++ b/arch/mips/ath79/dev-wmac.c
+@@ -58,8 +58,8 @@ static void __init ar913x_wmac_setup(voi
+ 
+ static int ar933x_wmac_reset(void)
+ {
+-	ath79_device_reset_clear(AR933X_RESET_WMAC);
+ 	ath79_device_reset_set(AR933X_RESET_WMAC);
++	ath79_device_reset_clear(AR933X_RESET_WMAC);
+ 
+ 	return 0;
+ }

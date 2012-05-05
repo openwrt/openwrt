@@ -1,0 +1,134 @@
+From 39f3275077a5b143616fcb3e7a6457a5c42739ee Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 14 Mar 2012 10:36:04 +0100
+Subject: [PATCH 13/47] MIPS: ath79: fix broken ar724x_pci_{read,write} functions
+
+The current ar724x_pci_{read,write} functions are
+broken. Due to that, pci_read_config_byte returns
+with bogus values, and pci_write_config_{byte,word}
+unconditionally clears the accessed PCI configuration
+registers instead of changing the value of them.
+
+The patch fixes the broken functions, thus the PCI
+configuration space can be accessed correctly.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3493/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/pci/pci-ar724x.c |   52 ++++++++++++++++++++++----------------------
+ 1 files changed, 26 insertions(+), 26 deletions(-)
+
+--- a/arch/mips/pci/pci-ar724x.c
++++ b/arch/mips/pci/pci-ar724x.c
+@@ -22,8 +22,9 @@ static void __iomem *ar724x_pci_devcfg_b
+ static int ar724x_pci_read(struct pci_bus *bus, unsigned int devfn, int where,
+ 			    int size, uint32_t *value)
+ {
+-	unsigned long flags, addr, tval, mask;
++	unsigned long flags;
+ 	void __iomem *base;
++	u32 data;
+ 
+ 	if (devfn)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+@@ -31,24 +32,22 @@ static int ar724x_pci_read(struct pci_bu
+ 	base = ar724x_pci_devcfg_base;
+ 
+ 	spin_lock_irqsave(&ar724x_pci_lock, flags);
++	data = __raw_readl(base + (where & ~3));
+ 
+ 	switch (size) {
+ 	case 1:
+-		addr = where & ~3;
+-		mask = 0xff000000 >> ((where % 4) * 8);
+-		tval = __raw_readl(base + addr);
+-		tval = tval & ~mask;
+-		*value = (tval >> ((4 - (where % 4))*8));
++		if (where & 1)
++			data >>= 8;
++		if (where & 2)
++			data >>= 16;
++		data &= 0xff;
+ 		break;
+ 	case 2:
+-		addr = where & ~3;
+-		mask = 0xffff0000 >> ((where % 4)*8);
+-		tval = __raw_readl(base + addr);
+-		tval = tval & ~mask;
+-		*value = (tval >> ((4 - (where % 4))*8));
++		if (where & 2)
++			data >>= 16;
++		data &= 0xffff;
+ 		break;
+ 	case 4:
+-		*value = __raw_readl(base + where);
+ 		break;
+ 	default:
+ 		spin_unlock_irqrestore(&ar724x_pci_lock, flags);
+@@ -57,6 +56,7 @@ static int ar724x_pci_read(struct pci_bu
+ 	}
+ 
+ 	spin_unlock_irqrestore(&ar724x_pci_lock, flags);
++	*value = data;
+ 
+ 	return PCIBIOS_SUCCESSFUL;
+ }
+@@ -64,8 +64,10 @@ static int ar724x_pci_read(struct pci_bu
+ static int ar724x_pci_write(struct pci_bus *bus, unsigned int devfn, int where,
+ 			     int size, uint32_t value)
+ {
+-	unsigned long flags, tval, addr, mask;
++	unsigned long flags;
+ 	void __iomem *base;
++	u32 data;
++	int s;
+ 
+ 	if (devfn)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+@@ -73,26 +75,21 @@ static int ar724x_pci_write(struct pci_b
+ 	base = ar724x_pci_devcfg_base;
+ 
+ 	spin_lock_irqsave(&ar724x_pci_lock, flags);
++	data = __raw_readl(base + (where & ~3));
+ 
+ 	switch (size) {
+ 	case 1:
+-		addr = where & ~3;
+-		mask = 0xff000000 >> ((where % 4)*8);
+-		tval = __raw_readl(base + addr);
+-		tval = tval & ~mask;
+-		tval |= (value << ((4 - (where % 4))*8)) & mask;
+-		__raw_writel(tval, base + addr);
++		s = ((where & 3) * 8);
++		data &= ~(0xff << s);
++		data |= ((value & 0xff) << s);
+ 		break;
+ 	case 2:
+-		addr = where & ~3;
+-		mask = 0xffff0000 >> ((where % 4)*8);
+-		tval = __raw_readl(base + addr);
+-		tval = tval & ~mask;
+-		tval |= (value << ((4 - (where % 4))*8)) & mask;
+-		__raw_writel(tval, base + addr);
++		s = ((where & 2) * 8);
++		data &= ~(0xffff << s);
++		data |= ((value & 0xffff) << s);
+ 		break;
+ 	case 4:
+-		__raw_writel(value, (base + where));
++		data = value;
+ 		break;
+ 	default:
+ 		spin_unlock_irqrestore(&ar724x_pci_lock, flags);
+@@ -100,6 +97,9 @@ static int ar724x_pci_write(struct pci_b
+ 		return PCIBIOS_BAD_REGISTER_NUMBER;
+ 	}
+ 
++	__raw_writel(data, base + (where & ~3));
++	/* flush write */
++	__raw_readl(base + (where & ~3));
+ 	spin_unlock_irqrestore(&ar724x_pci_lock, flags);
+ 
+ 	return PCIBIOS_SUCCESSFUL;

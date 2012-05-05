@@ -1,0 +1,34 @@
+From 12db6a98b438a50799873bfd2b736a3b02a4bd57 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 14 Mar 2012 10:36:13 +0100
+Subject: [PATCH 22/47] MIPS: ath79: register PCI controller on the PB44 board
+
+The PB44 reference board has two miniPCI slots. Register
+the PCI controller to make those usable.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3502/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/mach-pb44.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+--- a/arch/mips/ath79/mach-pb44.c
++++ b/arch/mips/ath79/mach-pb44.c
+@@ -19,6 +19,7 @@
+ #include "dev-leds-gpio.h"
+ #include "dev-spi.h"
+ #include "dev-usb.h"
++#include "pci.h"
+ 
+ #define PB44_GPIO_I2C_SCL	0
+ #define PB44_GPIO_I2C_SDA	1
+@@ -114,6 +115,7 @@ static void __init pb44_init(void)
+ 	ath79_register_spi(&pb44_spi_data, pb44_spi_info,
+ 			   ARRAY_SIZE(pb44_spi_info));
+ 	ath79_register_usb();
++	ath79_register_pci();
+ }
+ 
+ MIPS_MACHINE(ATH79_MACH_PB44, "PB44", "Atheros PB44 reference board",
