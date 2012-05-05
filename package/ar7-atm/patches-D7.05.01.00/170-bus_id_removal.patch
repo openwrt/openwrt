@@ -1,7 +1,5 @@
-Index: sangam_atm-D7.05.01.00/tn7dsl.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/tn7dsl.c	2010-03-07 18:18:39.000000000 +0100
-+++ sangam_atm-D7.05.01.00/tn7dsl.c	2010-03-07 18:19:04.000000000 +0100
+--- a/tn7dsl.c
++++ b/tn7dsl.c
 @@ -117,6 +117,7 @@
  #include <linux/vmalloc.h>
  #include <linux/file.h>
@@ -10,7 +8,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  
  #include <asm/io.h>
  #include <asm/ar7/ar7.h>
-@@ -492,7 +493,9 @@
+@@ -492,7 +493,9 @@ static void avsar_release(struct device
  }
  
  static struct device avsar = {
@@ -20,7 +18,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  	.release   = avsar_release,
  };
  
-@@ -501,6 +504,9 @@
+@@ -501,6 +504,9 @@ int shim_osLoadFWImage(unsigned char *pt
  	const struct firmware *fw_entry;
  	size_t size;
  

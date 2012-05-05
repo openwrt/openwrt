@@ -1,8 +1,6 @@
-Index: sangam_atm-D7.05.01.00/tn7dsl.c
-===================================================================
---- sangam_atm-D7.05.01.00.orig/tn7dsl.c	2010-11-09 18:32:33.478706990 +0100
-+++ sangam_atm-D7.05.01.00/tn7dsl.c	2010-11-09 18:32:33.488706997 +0100
-@@ -215,7 +215,11 @@
+--- a/tn7dsl.c
++++ b/tn7dsl.c
+@@ -215,7 +215,11 @@ led_reg_t ledreg[2];
  static struct led_funcs ledreg[2];
  #endif
  
@@ -14,7 +12,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
  #define MAX_STR_SIZE     256
  #define DSL_MOD_SIZE     256
  
-@@ -3615,9 +3619,16 @@
+@@ -3615,9 +3619,16 @@ static int dslmod_sysctl(ctl_table *ctl,
     */
    if(write)
      {
@@ -32,7 +30,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
        {
        case DEV_DSLMOD:
        ptr = strpbrk(info, " \t");
-@@ -3701,14 +3712,29 @@
+@@ -3701,14 +3712,29 @@ static int dslmod_sysctl(ctl_table *ctl,
    else
      {
      len += sprintf(info+len, mod_req);
@@ -62,7 +60,7 @@ Index: sangam_atm-D7.05.01.00/tn7dsl.c
    ,
    {0}
    };
-@@ -3716,7 +3742,16 @@
+@@ -3716,7 +3742,16 @@ ctl_table dslmod_table[] = {
  /* Make sure that /proc/sys/dev is there */
  ctl_table dslmod_root_table[] = {
  #ifdef CONFIG_PROC_FS

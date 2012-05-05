@@ -1,5 +1,5 @@
---- a/tn7dsl.c	2009-08-02 14:36:17.000000000 +0200
-+++ b/tn7dsl.c	2009-08-02 14:35:49.000000000 +0200
+--- a/tn7dsl.c
++++ b/tn7dsl.c
 @@ -109,6 +109,7 @@
  #include <linux/vmalloc.h>
  #include <linux/file.h>
@@ -8,7 +8,7 @@
  
  #include <asm/io.h>
  #include <asm/ar7/ar7.h>
-@@ -446,7 +447,9 @@
+@@ -446,7 +447,9 @@ static void avsar_release(struct device
  }
  
  static struct device avsar = {
@@ -18,10 +18,7 @@
  	.release   = avsar_release,
  };
  
-diff -urN sangam_atm-D7.04.03.00/tn7dsl.c sangam_atm-D7.04.03.00.new/tn7dsl.c
---- sangam_atm-D7.04.03.00/tn7dsl.c	2009-08-08 21:41:11.000000000 +0200
-+++ sangam_atm-D7.04.03.00.new/tn7dsl.c	2009-08-08 21:41:40.000000000 +0200
-@@ -458,6 +458,9 @@
+@@ -455,6 +458,9 @@ int shim_osLoadFWImage(unsigned char *pt
  	const struct firmware *fw_entry;
  	size_t size;
  
