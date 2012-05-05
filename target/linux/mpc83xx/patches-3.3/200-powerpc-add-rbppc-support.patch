@@ -306,7 +306,7 @@
 +};
 --- /dev/null
 +++ b/arch/powerpc/boot/rb600.c
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,70 @@
 +/*
 + * The RouterBOARD platform -- for booting RB600(A) RouterBOARDs.
 + *
@@ -334,8 +334,6 @@
 +{
 +	const u32 *reg, *timebase, *clock;
 +	int node, size;
-+	void *chosen;
-+	const char* bootargs;
 +
 +	dt_fixup_memory(0, memsize64);
 +
@@ -873,7 +871,7 @@
 +
 +static void rb333_fixups(void)
 +{
-+	const u32 *reg, *timebase, *clock;
++	const u32 *timebase, *clock;
 +	int node, size;
 +	void *chosen;
 +	const char* bootargs;
