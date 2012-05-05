@@ -1,0 +1,38 @@
+From e9889bee75d03338daf7ed422661ae28f3aa7063 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 14 Mar 2012 10:36:03 +0100
+Subject: [PATCH 12/47] MIPS: ath79: remove superfluous alignment checks from pci-ar724x.c
+
+The alignment of the 'where' parameters are checked
+in the core PCI code already.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3492/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/pci/pci-ar724x.c |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
+
+--- a/arch/mips/pci/pci-ar724x.c
++++ b/arch/mips/pci/pci-ar724x.c
+@@ -28,9 +28,6 @@ static int ar724x_pci_read(struct pci_bu
+ 	if (devfn)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+ 
+-	if (where & (size - 1))
+-		return PCIBIOS_BAD_REGISTER_NUMBER;
+-
+ 	base = ar724x_pci_devcfg_base;
+ 
+ 	spin_lock_irqsave(&ar724x_pci_lock, flags);
+@@ -73,9 +70,6 @@ static int ar724x_pci_write(struct pci_b
+ 	if (devfn)
+ 		return PCIBIOS_DEVICE_NOT_FOUND;
+ 
+-	if (where & (size - 1))
+-		return PCIBIOS_BAD_REGISTER_NUMBER;
+-
+ 	base = ar724x_pci_devcfg_base;
+ 
+ 	spin_lock_irqsave(&ar724x_pci_lock, flags);

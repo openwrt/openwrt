@@ -1,0 +1,64 @@
+From b2ab491ed634a4c0b7af5f11940e0ca42b1a87c8 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 14 Mar 2012 10:36:08 +0100
+Subject: [PATCH 17/47] MIPS: ath79: get rid of some ifdefs in mach-ubnt-xm.c
+
+Remove a superfluous ifdef around an include. Also
+reorganize the board setup code a bit, so another
+ifdef can be removed.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/3497/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/mach-ubnt-xm.c |   23 ++++++++++++-----------
+ 1 files changed, 12 insertions(+), 11 deletions(-)
+
+--- a/arch/mips/ath79/mach-ubnt-xm.c
++++ b/arch/mips/ath79/mach-ubnt-xm.c
+@@ -12,10 +12,7 @@
+ 
+ #include <linux/init.h>
+ #include <linux/pci.h>
+-
+-#ifdef CONFIG_PCI
+ #include <linux/ath9k_platform.h>
+-#endif /* CONFIG_PCI */
+ 
+ #include <asm/mach-ath79/irq.h>
+ 
+@@ -91,6 +88,17 @@ static struct ar724x_pci_data ubnt_xm_pc
+ 		.pdata	= &ubnt_xm_eeprom_data,
+ 	},
+ };
++
++static void __init ubnt_xm_pci_init(void)
++{
++	memcpy(ubnt_xm_eeprom_data.eeprom_data, UBNT_XM_EEPROM_ADDR,
++	       sizeof(ubnt_xm_eeprom_data.eeprom_data));
++
++	ar724x_pci_add_data(ubnt_xm_pci_data, ARRAY_SIZE(ubnt_xm_pci_data));
++	ath79_register_pci();
++}
++#else
++static inline void ubnt_xm_pci_init(void) {}
+ #endif /* CONFIG_PCI */
+ 
+ static void __init ubnt_xm_init(void)
+@@ -105,14 +113,7 @@ static void __init ubnt_xm_init(void)
+ 	ath79_register_spi(&ubnt_xm_spi_data, ubnt_xm_spi_info,
+ 			   ARRAY_SIZE(ubnt_xm_spi_info));
+ 
+-#ifdef CONFIG_PCI
+-	memcpy(ubnt_xm_eeprom_data.eeprom_data, UBNT_XM_EEPROM_ADDR,
+-	       sizeof(ubnt_xm_eeprom_data.eeprom_data));
+-
+-	ar724x_pci_add_data(ubnt_xm_pci_data, ARRAY_SIZE(ubnt_xm_pci_data));
+-#endif /* CONFIG_PCI */
+-
+-	ath79_register_pci();
++	ubnt_xm_pci_init();
+ }
+ 
+ MIPS_MACHINE(ATH79_MACH_UBNT_XM,

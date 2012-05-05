@@ -1,0 +1,58 @@
+From ccb089bbbe49949063cc348743605b3d813ca1c0 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 14 Mar 2012 10:45:20 +0100
+Subject: [PATCH 25/47] MIPS: ath79: sort case statements in ath79_detect_sys_type
+
+Sort the case statements alphabetically in order to improve
+readability.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+Acked-by: Luis R. Rodriguez <mcgrof@qca.qualcomm.com>
+Cc: linux-mips@linux-mips.org
+Cc: mcgrof@infradead.org
+Patchwork: https://patchwork.linux-mips.org/patch/3505/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/ath79/setup.c |   24 ++++++++++++------------
+ 1 files changed, 12 insertions(+), 12 deletions(-)
+
+--- a/arch/mips/ath79/setup.c
++++ b/arch/mips/ath79/setup.c
+@@ -116,18 +116,6 @@ static void __init ath79_detect_sys_type
+ 		rev = id & AR724X_REV_ID_REVISION_MASK;
+ 		break;
+ 
+-	case REV_ID_MAJOR_AR9330:
+-		ath79_soc = ATH79_SOC_AR9330;
+-		chip = "9330";
+-		rev = id & AR933X_REV_ID_REVISION_MASK;
+-		break;
+-
+-	case REV_ID_MAJOR_AR9331:
+-		ath79_soc = ATH79_SOC_AR9331;
+-		chip = "9331";
+-		rev = id & AR933X_REV_ID_REVISION_MASK;
+-		break;
+-
+ 	case REV_ID_MAJOR_AR913X:
+ 		minor = id & AR913X_REV_ID_MINOR_MASK;
+ 		rev = id >> AR913X_REV_ID_REVISION_SHIFT;
+@@ -145,6 +133,18 @@ static void __init ath79_detect_sys_type
+ 		}
+ 		break;
+ 
++	case REV_ID_MAJOR_AR9330:
++		ath79_soc = ATH79_SOC_AR9330;
++		chip = "9330";
++		rev = id & AR933X_REV_ID_REVISION_MASK;
++		break;
++
++	case REV_ID_MAJOR_AR9331:
++		ath79_soc = ATH79_SOC_AR9331;
++		chip = "9331";
++		rev = id & AR933X_REV_ID_REVISION_MASK;
++		break;
++
+ 	default:
+ 		panic("ath79: unknown SoC, id:0x%08x", id);
+ 	}
