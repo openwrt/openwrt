@@ -97,6 +97,9 @@ tplink_board_detect() {
 	"094100"*)
 		model="TP-Link TL-WR941N/ND"
 		;;
+	"104100"*)
+		model="TP-Link TL-WR1041N/ND"
+		;;
 	"104300"*)
 		model="TP-Link TL-WR1043N/ND"
 		;;
@@ -273,6 +276,9 @@ ar71xx_board_detect() {
 		;;
 	*TEW-673GRU)
 		name="tew-673gru"
+		;;
+	*"TL-WR1041N v2")
+		name="tl-wr1041n-v2"
 		;;
 	*TL-WR1043ND)
 		name="tl-wr1043nd"
