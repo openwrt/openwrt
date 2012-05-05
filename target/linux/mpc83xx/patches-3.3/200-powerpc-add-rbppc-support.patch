@@ -594,7 +594,7 @@
 +		enet0: ucc@2200 {
 +			tx-clock = <0x1a>;
 +			rx-clock = <0x1f>;
-+			mac-address = [00 0c 42 1c 29 d2];
++			local-mac-address = [00 00 00 00 00 00];
 +			interrupt-parent = <&qeic>;
 +			interrupts = <0x22>;
 +			reg = <0x2200 0x200>;
@@ -609,7 +609,7 @@
 +		enet1: ucc@3200 {
 +			tx-clock = <0x22>;
 +			rx-clock = <0x20>;
-+			mac-address = [00 0c 42 1c 29 d1];
++			local-mac-address = [00 00 00 00 00 00];
 +			interrupt-parent = <&qeic>;
 +			interrupts = <0x23>;
 +			reg = <0x3200 0x200>;
@@ -624,7 +624,7 @@
 +		enet2: ucc@3000 {
 +			tx-clock = <0x18>;
 +			rx-clock = <0x17>;
-+			mac-address = [00 0c 42 1c 29 d0];
++			local-mac-address = [00 00 00 00 00 00];
 +			interrupt-parent = <&qeic>;
 +			interrupts = <0x21>;
 +			reg = <0x3000 0x200>;
@@ -843,7 +843,7 @@
 +};
 --- /dev/null
 +++ b/arch/powerpc/boot/rb333.c
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,86 @@
 +/*
 + * The RouterBOARD platform -- for booting RB333 RouterBOARDs.
 + *
@@ -871,7 +871,7 @@
 +
 +static void rb333_fixups(void)
 +{
-+	const u32 *timebase, *clock;
++	const u32 *reg, *timebase, *clock;
 +	int node, size;
 +	void *chosen;
 +	const char* bootargs;
@@ -883,6 +883,19 @@
 +	timebase = fdt_getprop(fw_dtb, node, "timebase-frequency", &size);
 +	clock = fdt_getprop(fw_dtb, node, "clock-frequency", &size);
 +	dt_fixup_cpu_clocks(*clock, *timebase, 0);
++
++	/* Set the MAC addresses. */
++	node = fdt_path_offset(fw_dtb, "/qe@e0100000/ucc@2200");
++	reg = fdt_getprop(fw_dtb, node, "mac-address", &size);
++	dt_fixup_mac_address_by_alias("ethernet0", (const u8 *)reg);
++
++	node = fdt_path_offset(fw_dtb, "/qe@e0100000/ucc@3200");
++	reg = fdt_getprop(fw_dtb, node, "mac-address", &size);
++	dt_fixup_mac_address_by_alias("ethernet1", (const u8 *)reg);
++
++	node = fdt_path_offset(fw_dtb, "/qe@e0100000/ucc@3000");
++	reg = fdt_getprop(fw_dtb, node, "mac-address", &size);
++	dt_fixup_mac_address_by_alias("ethernet2", (const u8 *)reg);
 +
 +	/* Fixup chosen
 +	 * The bootloader reads the kernelparm segment and adds the content to
