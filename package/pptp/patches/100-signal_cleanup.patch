@@ -1,0 +1,74 @@
+--- a/pptp.c
++++ b/pptp.c
+@@ -60,6 +60,7 @@
+ int syncppp = 0;
+ int log_level = 1;
+ int disable_buffer = 0;
++pid_t callmgr_pid = 0;
+ 
+ struct in_addr get_ip_address(char *name);
+ int open_callmgr(struct in_addr inetaddr, char *phonenr, int argc,char **argv,char **envp, int pty_fd, int gre_fd);
+@@ -115,6 +116,8 @@ sigjmp_buf env;
+ /*** signal handler ***********************************************************/
+ void sighandler(int sig)
+ {
++	fprintf(stderr, "Got signal, pid=%d\n", callmgr_pid);
++	fflush(stderr);
+     siglongjmp(env, 1);
+ }
+ 
+@@ -330,6 +333,14 @@ int main(int argc, char **argv, char **e
+         parent_pid = 0; /* don't kill pppd */
+     }
+ 
++    if (sigsetjmp(env, 1)!= 0) goto shutdown;
++
++    signal(SIGINT,  sighandler);
++    signal(SIGTERM, sighandler);
++    signal(SIGKILL, sighandler);
++    signal(SIGCHLD, sighandler);
++    signal(SIGUSR1, sigstats);
++
+     do {
+         /*
+          * Open connection to call manager (Launch call manager if necessary.)
+@@ -360,13 +371,6 @@ int main(int argc, char **argv, char **e
+     if (rc != 0) perror("prctl");
+ #endif
+     inststr(argc, argv, envp, buf);
+-    if (sigsetjmp(env, 1)!= 0) goto shutdown;
+-
+-    signal(SIGINT,  sighandler);
+-    signal(SIGTERM, sighandler);
+-    signal(SIGKILL, sighandler);
+-    signal(SIGCHLD, sighandler);
+-    signal(SIGUSR1, sigstats);
+ 
+     /* Do GRE copy until close. */
+     pptp_gre_copy(call_id, peer_call_id, pty_fd, gre_fd);
+@@ -375,6 +379,8 @@ shutdown:
+     /* on close, kill all. */
+     if(launchpppd)
+         kill(parent_pid, SIGTERM);
++    if (callmgr_pid)
++	kill(callmgr_pid, SIGTERM);
+     close(pty_fd);
+     close(callmgr_sock);
+     exit(0);
+@@ -407,7 +413,7 @@ int open_callmgr(struct in_addr inetaddr
+     struct sockaddr_un where;
+     const int NUM_TRIES = 3;
+     int i, fd;
+-    pid_t pid;
++    pid_t pid = 0;
+     int status;
+     /* Open socket */
+     if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
+@@ -434,6 +440,7 @@ int open_callmgr(struct in_addr inetaddr
+                     launch_callmgr(inetaddr, phonenr, argc, argv, envp);
+                 }
+                 default: /* parent */
++		    callmgr_pid = pid;
+                     waitpid(pid, &status, 0);
+                     if (status!= 0)
+                         fatal("Call manager exited with error %d", status);
