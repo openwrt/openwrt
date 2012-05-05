@@ -34,6 +34,8 @@ define Package/pptp/conffiles
 /etc/ppp/options.pptp
 endef
 
+MAKE_FLAGS += OPTIMIZE="$(TARGET_CFLAGS)"
+
 define Package/pptp/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
