@@ -408,7 +408,7 @@
  	select DEFAULT_UIMAGE
 --- /dev/null
 +++ b/arch/powerpc/boot/dts/rb333.dts
-@@ -0,0 +1,432 @@
+@@ -0,0 +1,426 @@
 +
 +/*
 + * RouterBOARD 333 series Device Tree Source
@@ -438,14 +438,12 @@
 +	#size-cells = <1>;
 +	#address-cells = <1>;
 +
-+
 +	aliases {
 +		ethernet0 = &enet0;
 +		ethernet1 = &enet1;
 +		ethernet2 = &enet2;
 +		pci0 = &pci0;
 +	};
-+
 +
 +	chosen {
 +		bootargs = "console=ttyS0,115200 board=mpc8323 rootfstype=squashfs,yaffs2,jffs2 root=/dev/mtdblock1 boot=1";
@@ -455,31 +453,31 @@
 +		// interrupt-controller = <&ipic>;
 +	};
 +
-+        cpus {
-+                #cpus = <1>;
-+                #size-cells = <0>;
-+                #address-cells = <1>;
++	cpus {
++		#cpus = <1>;
++		#size-cells = <0>;
++		#address-cells = <1>;
 +
-+                PowerPC,8323E@0 {
-+                        device_type = "cpu";
-+                        reg = <0x0>;
-+                        i-cache-size = <0x4000>;
-+                        d-cache-size = <0x4000>;
-+                        i-cache-line-size = <0x20>;
-+                        d-cache-line-size = <0x20>;
-+                        // clock-frequency = <0x13de3650>;
-+                        // timebase-frequency = <0x1fc9f08>;
++		PowerPC,8323E@0 {
++			device_type = "cpu";
++			reg = <0x0>;
++			i-cache-size = <0x4000>;
++			d-cache-size = <0x4000>;
++			i-cache-line-size = <0x20>;
++			d-cache-line-size = <0x20>;
++			// clock-frequency = <0x13de3650>;
++			// timebase-frequency = <0x1fc9f08>;
 +			timebase-frequency = <0x0000000>; // filled by the bootwrapper from the firmware blob
 +			clock-frequency = <0x00000000>; // filled by the bootwrapper from the firmware blob
 +			32-bit;
-+                };
-+        };
++		};
++	};
 +
-+        memory {
-+                device_type = "memory";
-+                reg = <0x0 0x4000000>;
-+                // reg = <0x0 0x0000000>; // filled by the bootwrapper from the firmware blob
-+        };
++	memory {
++		device_type = "memory";
++		reg = <0x0 0x4000000>;
++		// reg = <0x0 0x0000000>; // filled by the bootwrapper from the firmware blob
++	};
 +
 +	flash {
 +		reg = <0xfe000000 0x20000>;
@@ -508,35 +506,203 @@
 +		fan_on = <&gpio0 0x10>;
 +	};
 +
++	soc8323@e0000000 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		device_type = "soc";
++		compatible = "simple-bus";
++		ranges = <0x0 0xe0000000 0x00100000>;
++		reg = <0xe0000000 0x00000200>;
++		bus-frequency = <1>;
++
++		wdt@200 {
++			device_type = "watchdog";
++			compatible = "mpc83xx_wdt";
++			reg = <0x200 0x100>;
++		};
++
++		ipic:pic@700 {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <2>;
++			reg = <0x700 0x100>;
++			device_type = "ipic";
++		};
++
++		par_io@1400 {
++			num-ports = <4>;
++			device_type = "par_io";
++			reg = <0x1400 0x100>;
++
++			ucc2pio: ucc_pin@02 {
++				pio-map = <
++			/* port  pin  dir  open_drain  assignment  has_irq */
++					3  4 3 0 2 0
++					3  5 1 0 2 0
++					0 18 1 0 1 0
++					0 19 1 0 1 0
++					0 20 1 0 1 0
++					0 21 1 0 1 0
++					0 30 1 0 1 0
++					3  6 2 0 1 0
++					0 29 2 0 1 0
++					0 31 2 0 1 0
++					0 22 2 0 1 0
++					0 23 2 0 1 0
++					0 24 2 0 1 0
++					0 25 2 0 1 0
++					0 28 2 0 1 0
++					0 26 2 0 1 0
++					3 31 2 0 1 0>;
++			};
++
++			ucc3pio: ucc_pin@03 {
++				pio-map = <
++			/* port  pin  dir  open_drain  assignment  has_irq */
++					1  0 1 0 1 0
++					1  1 1 0 1 0
++					1  2 1 0 1 0
++					1  3 1 0 1 0
++					1 12 1 0 1 0
++					3 24 2 0 1 0
++					1 11 2 0 1 0
++					1 13 2 0 1 0
++					1  4 2 0 1 0
++					1  5 2 0 1 0
++					1  6 2 0 1 0
++					1  7 2 0 1 0
++					1 10 2 0 1 0
++					1  8 2 0 1 0
++					3 29 2 0 1 0>;
++			};
++
++			ucc4pio: ucc_pin@04 {
++				pio-map = <
++			/* port  pin  dir  open_drain  assignment  has_irq */
++					1 18 1 0 1 0
++					1 19 1 0 1 0
++					1 20 1 0 1 0
++					1 21 1 0 1 0
++					1 30 1 0 1 0
++					3 20 2 0 1 0
++					1 30 2 0 1 0
++					1 31 2 0 1 0
++					1 22 2 0 1 0
++					1 23 2 0 1 0
++					1 24 2 0 1 0
++					1 25 2 0 1 0
++					1 28 2 0 1 0
++					1 26 2 0 1 0
++					3 21 2 0 1 0>;
++			};
++		};
++
++		serial0: serial@4500 {
++			cell-index = <0>;
++			device_type = "serial";
++			compatible = "fsl,ns16550", "ns16550";
++			reg = <0x4500 0x100>;
++			clock-frequency = <0x7f27c20>;
++			interrupts = <9 0x8>;
++			interrupt-parent = <&ipic>;
++		};
++
++		dma@82a8 {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			compatible = "fsl,mpc8323-dma", "fsl,elo-dma";
++			reg = <0x82a8 4>;
++			ranges = <0 0x8100 0x1a8>;
++			interrupt-parent = <&ipic>;
++			interrupts = <71 8>;
++			cell-index = <0>;
++			dma-channel@0 {
++				compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
++				reg = <0 0x80>;
++				cell-index = <0>;
++				interrupt-parent = <&ipic>;
++				interrupts = <71 8>;
++			};
++			dma-channel@80 {
++				compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
++				reg = <0x80 0x80>;
++				cell-index = <1>;
++				interrupt-parent = <&ipic>;
++				interrupts = <71 8>;
++			};
++			dma-channel@100 {
++				compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
++				reg = <0x100 0x80>;
++				cell-index = <2>;
++				interrupt-parent = <&ipic>;
++				interrupts = <71 8>;
++			};
++			dma-channel@180 {
++				compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
++				reg = <0x180 0x28>;
++				cell-index = <3>;
++				interrupt-parent = <&ipic>;
++				interrupts = <71 8>;
++			};
++		};
++
++		beeper {
++			gpio = <&gpio3 0x12>;
++			reg = <0x500 0x100>;
++			interrupt-parent = <&ipic>;
++			interrupts = <0x48 0x8>;
++		};
++
++		gpio3: gpio@3 {
++			reg = <0x144c 0x4>;
++			device-id = <0x3>;
++			compatible = "qe_gpio";
++			device_type = "gpio";
++		};
++
++		gpio2: gpio@2 {
++			reg = <0x1434 0x4>;
++			device-id = <0x2>;
++			compatible = "qe_gpio";
++			device_type = "gpio";
++		};
++
++		gpio0: gpio@0 {
++			reg = <0x1404 0x4>;
++			device-id = <0x0>;
++			compatible = "qe_gpio";
++			device_type = "gpio";
++		};
++	};
++
 +	pci0: pci@e0008500 {
-+                device_type = "pci";
-+                // compatible = "83xx";
++		device_type = "pci";
++		// compatible = "83xx";
 +		compatible = "fsl,mpc8349-pci";
-+                reg = <0xe0008500 0x100 0xe0008300 0x8>;
-+                #address-cells = <3>;
-+                #size-cells = <2>;
-+                #interrupt-cells = <1>;
++		reg = <0xe0008500 0x100 0xe0008300 0x8>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
 +		// clock-frequency = <0>;
-+                ranges = <0x2000000 0x0 0x80000000 0x80000000 0x0 0x20000000 0x1000000 0x0 0x0 0xd0000000 0x0 0x4000000>;
-+                bus-range = <0x0 0x0>;
-+                interrupt-map = <
++		ranges = <0x2000000 0x0 0x80000000 0x80000000 0x0 0x20000000 0x1000000 0x0 0x0 0xd0000000 0x0 0x4000000>;
++		bus-range = <0x0 0x0>;
++		interrupt-map = <
 +			/* IDSEL 0x10 AD16 miniPCI slot 0 */
-+                        0x8000 0x0 0x0 0x1 &ipic 0x11 0x8
-+                        0x8000 0x0 0x0 0x2 &ipic 0x12 0x8
++			0x8000 0x0 0x0 0x1 &ipic 0x11 0x8
++			0x8000 0x0 0x0 0x2 &ipic 0x12 0x8
 +
 +			/* IDSEL 0x11 AD17 miniPCI slot 1 */
-+                        0x8800 0x0 0x0 0x1 &ipic 0x12 0x8
-+                        0x8800 0x0 0x0 0x2 &ipic 0x13 0x8
++			0x8800 0x0 0x0 0x1 &ipic 0x12 0x8
++			0x8800 0x0 0x0 0x2 &ipic 0x13 0x8
 +
 +			/* IDSEL 0x12 AD18  miniPCI slot 2 */
-+                        0x9000 0x0 0x0 0x1 &ipic 0x13 0x8
-+                        0x9000 0x0 0x0 0x2 &ipic 0x11 0x8>;
++			0x9000 0x0 0x0 0x1 &ipic 0x13 0x8
++			0x9000 0x0 0x0 0x2 &ipic 0x11 0x8>;
 +
-+                interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
++		interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
 +		interrupt-parent = <&ipic>;
 +		// interrupts = <66 0x8>;
-+        };
-+
++	};
 +
 +	qe@e0100000 {
 +		reg = <0xe0100000 0x480>;
@@ -603,7 +769,7 @@
 +			compatible = "ucc_geth";
 +			device_type = "network";
 +			phy-handle = <&phy2>;
-+			pio-handle = <&pio3>;
++			pio-handle = <&ucc3pio>;
 +		};
 +
 +		enet1: ucc@3200 {
@@ -618,7 +784,7 @@
 +			compatible = "ucc_geth";
 +			device_type = "network";
 +			phy-handle = <&phy3>;
-+			pio-handle = <&pio4>;
++			pio-handle = <&ucc4pio>;
 +		};
 +
 +		enet2: ucc@3000 {
@@ -633,7 +799,7 @@
 +			compatible = "ucc_geth";
 +			device_type = "network";
 +			phy-handle = <&phy1>;
-+			pio-handle = <&pio2>;
++			pio-handle = <&ucc2pio>;
 +		};
 +
 +		spi@500 {
@@ -666,178 +832,6 @@
 +					"fsl,cpm-muram-data";
 +				reg = <0x0 0x4000>;
 +			};
-+		};
-+	};
-+
-+
-+	soc8323@e0000000 {
-+		bus-frequency = <0x1>;
-+		reg = <0xe0000000 0x200>;
-+		ranges = <0x0 0xe0000000 0x100000>;
-+		device_type = "soc";
-+		compatible = "simple-bus";
-+		#interrupt-cells = <0x2>;
-+		#size-cells = <1>;
-+		#address-cells = <1>;
-+
-+		beeper {
-+			gpio = <&gpio3 0x12>;
-+			reg = <0x500 0x100>;
-+			interrupt-parent = <&ipic>;
-+			interrupts = <0x48 0x8>;
-+		};
-+
-+		gpio3: gpio@3 {
-+			reg = <0x144c 0x4>;
-+			device-id = <0x3>;
-+			compatible = "qe_gpio";
-+			device_type = "gpio";
-+		};
-+
-+		gpio2: gpio@2 {
-+			reg = <0x1434 0x4>;
-+			device-id = <0x2>;
-+			compatible = "qe_gpio";
-+			device_type = "gpio";
-+		};
-+
-+		gpio0: gpio@0 {
-+			reg = <0x1404 0x4>;
-+			device-id = <0x0>;
-+			compatible = "qe_gpio";
-+			device_type = "gpio";
-+		};
-+
-+		par_io@1400 {
-+			num-ports = <4>;
-+			device_type = "par_io";
-+			reg = <0x1400 0x100>;
-+
-+			pio4: ucc_pin@04 {
-+				pio-map = <
-+			/* port  pin  dir  open_drain  assignment  has_irq */
-+					1 18 1 0 1 0
-+					1 19 1 0 1 0
-+					1 20 1 0 1 0
-+					1 21 1 0 1 0
-+					1 30 1 0 1 0
-+					3 20 2 0 1 0
-+					1 30 2 0 1 0
-+					1 31 2 0 1 0
-+					1 22 2 0 1 0
-+					1 23 2 0 1 0
-+					1 24 2 0 1 0
-+					1 25 2 0 1 0
-+					1 28 2 0 1 0
-+					1 26 2 0 1 0
-+					3 21 2 0 1 0>;
-+			};
-+
-+			pio3: ucc_pin@03 {
-+				pio-map = <
-+			/* port  pin  dir  open_drain  assignment  has_irq */
-+					1 0  1 0 1 0
-+					1 1  1 0 1 0
-+					1 2  1 0 1 0
-+					1 3  1 0 1 0
-+					1 12 1 0 1 0
-+					3 24 2 0 1 0
-+					1 11 2 0 1 0
-+					1 13 2 0 1 0
-+					1 4  2 0 1 0
-+					1 5  2 0 1 0
-+					1 6  2 0 1 0
-+					1 7  2 0 1 0
-+					1 10 2 0 1 0
-+					1 8  2 0 1 0
-+					3 29 2 0 1 0>;
-+			};
-+
-+			pio2: ucc_pin@02 {
-+				pio-map = <
-+			/* port  pin  dir  open_drain  assignment  has_irq */
-+					3 4  3 0 2 0
-+					3 5  1 0 2 0
-+					0 18 1 0 1 0
-+					0 19 1 0 1 0
-+					0 20 1 0 1 0
-+					0 21 1 0 1 0
-+					0 30 1 0 1 0
-+					3 6  2 0 1 0
-+					0 29 2 0 1 0
-+					0 31 2 0 1 0
-+					0 22 2 0 1 0
-+					0 23 2 0 1 0
-+					0 24 2 0 1 0
-+					0 25 2 0 1 0
-+					0 28 2 0 1 0
-+					0 26 2 0 1 0
-+					3 31 2 0 1 0>;
-+			};
-+		};
-+
-+		ipic: pic@700 {
-+			device_type = "ipic";
-+			built-in;
-+			reg = <0x700 0x100>;
-+			#interrupt-cells = <0x2>;
-+			#address-cells = <0x0>;
-+			interrupt-controller;
-+		};
-+
-+
-+		serial@4500 {
-+			interrupt-parent = <&ipic>;
-+			interrupts = <0x9 0x8>;
-+			clock-frequency = <0x7f27c20>;
-+			reg = <0x4500 0x100>;
-+			compatible = "ns16550";
-+			device_type = "serial";
-+		};
-+
-+                dma@82a8 {
-+                        #address-cells = <1>;
-+                        #size-cells = <1>;
-+                        compatible = "fsl,mpc8323-dma", "fsl,elo-dma";
-+                        reg = <0x82a8 4>;
-+                        ranges = <0 0x8100 0x1a8>;
-+                        interrupt-parent = <&ipic>;
-+                        interrupts = <71 8>;
-+                        cell-index = <0>;
-+                        dma-channel@0 {
-+                                compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
-+                                reg = <0 0x80>;
-+                                cell-index = <0>;
-+                                interrupt-parent = <&ipic>;
-+                                interrupts = <71 8>;
-+                        };
-+                        dma-channel@80 {
-+                                compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
-+                                reg = <0x80 0x80>;
-+                                cell-index = <1>;
-+                                interrupt-parent = <&ipic>;
-+                                interrupts = <71 8>;
-+                        };
-+                        dma-channel@100 {
-+                                compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
-+                                reg = <0x100 0x80>;
-+                                cell-index = <2>;
-+                                interrupt-parent = <&ipic>;
-+                                interrupts = <71 8>;
-+                        };
-+                        dma-channel@180 {
-+                                compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
-+                                reg = <0x180 0x28>;
-+                                cell-index = <3>;
-+                                interrupt-parent = <&ipic>;
-+                                interrupts = <71 8>;
-+                        };
-+                };
-+
-+		wdt@200 {
-+			reg = <0x200 0x100>;
-+			compatible = "mpc83xx_wdt";
-+			device_type = "watchdog";
 +		};
 +	};
 +};
