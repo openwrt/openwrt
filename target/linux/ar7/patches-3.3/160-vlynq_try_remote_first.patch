@@ -1,0 +1,20 @@
+--- a/drivers/vlynq/vlynq.c
++++ b/drivers/vlynq/vlynq.c
+@@ -514,9 +514,14 @@ static int __vlynq_enable_device(struct
+ 				!__vlynq_try_external(dev))
+ 				return 0;
+ 		} else {
+-			if (!__vlynq_try_external(dev) ||
+-				!__vlynq_try_local(dev)    ||
+-				!__vlynq_try_remote(dev))
++            /* XXX: I don't really know what difference it makes, if the order
++             * of the following calls is changed, but at least in this order
++             * my fritzbox doesn't hang at startup as in
++             * https://dev.openwrt.org/ticket/7324
++             */
++			if (!__vlynq_try_remote(dev) ||
++				!__vlynq_try_local(dev)  ||
++				!__vlynq_try_external(dev))
+ 				return 0;
+ 		}
+ 		break;
