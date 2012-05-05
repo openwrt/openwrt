@@ -1,3 +1,5 @@
+export PLATFORM=posix
+
 SCONS_VARS = \
 	CC="$(TARGET_CC)" \
 	CXX="$(TARGET_CXX)" \
