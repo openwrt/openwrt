@@ -9,10 +9,10 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=ar7
 BOARDNAME:=TI AR7
-FEATURES:=squashfs jffs2 atm
+FEATURES:=squashfs jffs2 atm broken
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=2.6.37.6
+LINUX_VERSION:=3.3.4
 
 include $(INCLUDE_DIR)/target.mk
 
