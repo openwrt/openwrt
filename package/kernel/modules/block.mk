@@ -611,11 +611,7 @@ define KernelPackage/mvsas
   KCONFIG:= \
 	CONFIG_SCSI_MVSAS \
 	CONFIG_SCSI_MVSAS_TASKLET=n
-  ifneq ($(CONFIG_LINUX_2_6_30),)
-	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas.ko
-  else
-	FILES:=$(LINUX_DIR)/drivers/scsi/mvsas/mvsas.ko
-  endif
+  FILES:=$(LINUX_DIR)/drivers/scsi/mvsas/mvsas.ko
   AUTOLOAD:=$(call AutoLoad,40,mvsas,1)
 endef
 
