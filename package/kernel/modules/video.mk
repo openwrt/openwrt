@@ -65,23 +65,6 @@ endef
 $(eval $(call KernelPackage,video-cpia2))
 
 
-define KernelPackage/video-konica
-  TITLE:=Konica USB webcam support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core
-  KCONFIG:=CONFIG_USB_KONICAWC
-  FILES:=$(LINUX_DIR)/drivers/media/video/usbvideo/konicawc.ko
-  AUTOLOAD:=$(call AutoLoad,70,konicawc)
-  $(call AddDepends/video)
-endef
-
-define KernelPackage/video-konica/description
- Kernel support for webcams based on a Konica chipset. This is known to 
- work with the Intel YC76 webcam.
-endef
-
-$(eval $(call KernelPackage,video-konica))
-
-
 define KernelPackage/video-sn9c102
   TITLE:=SN9C102 Camera Chip support
   DEPENDS:=@USB_SUPPORT +kmod-usb-core
@@ -625,3 +608,18 @@ define KernelPackage/video-gspca-jeilinj/description
 endef
 
 $(eval $(call KernelPackage,video-gspca-jeilinj))
+
+
+define KernelPackage/video-gspca-konica
+  TITLE:=konica webcam support
+  KCONFIG:=CONFIG_USB_GSPCA_KONICA
+  FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gspca_konica.ko
+  AUTOLOAD:=$(call AutoLoad,75,gspca_konica)
+  $(call AddDepends/video-gspca)
+endef
+
+define KernelPackage/video-gspca-konica/description
+ The Konica USB Camera Driver (konica) kernel module.
+endef
+
+$(eval $(call KernelPackage,video-gspca-konica))
