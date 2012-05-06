@@ -676,21 +676,6 @@ endef
 $(eval $(call KernelPackage,usb-storage-extras))
 
 
-define KernelPackage/usb-video
-  TITLE:=Support for USB video devices
-  KCONFIG:=CONFIG_VIDEO_USBVIDEO
-  FILES:=$(LINUX_DIR)/drivers/media/video/usbvideo/usbvideo.ko
-  AUTOLOAD:=$(call AutoLoad,61,usbvideo)
-  $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-video/description
- Kernel support for USB video devices
-endef
-
-$(eval $(call KernelPackage,usb-video))
-
-
 define KernelPackage/usb-atm
   TITLE:=Support for ATM on USB bus
   DEPENDS:=+kmod-atm
