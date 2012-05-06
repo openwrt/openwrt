@@ -580,7 +580,6 @@ $(eval $(call KernelPackage,video-gspca-stv06xx))
 
 define KernelPackage/video-gspca-gl860
   TITLE:=gl860 webcam support
-  DEPENDS:=@LINUX_2_6_32
   KCONFIG:=CONFIG_USB_GL860
   FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gl860/gspca_gl860.ko
   AUTOLOAD:=$(call AutoLoad,75,gspca_gl860)
@@ -596,7 +595,6 @@ $(eval $(call KernelPackage,video-gspca-gl860))
 
 define KernelPackage/video-gspca-jeilinj
   TITLE:=jeilinj webcam support
-  DEPENDS:=@LINUX_2_6_32
   KCONFIG:=CONFIG_USB_GSPCA_JEILINJ
   FILES:=$(LINUX_DIR)/drivers/media/video/gspca/gspca_jeilinj.ko
   AUTOLOAD:=$(call AutoLoad,75,gspca_jeilinj)
