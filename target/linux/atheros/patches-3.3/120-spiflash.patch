@@ -1,6 +1,6 @@
 --- a/drivers/mtd/devices/Kconfig
 +++ b/drivers/mtd/devices/Kconfig
-@@ -112,6 +112,10 @@ config MTD_SST25L
+@@ -120,6 +120,10 @@ config MTD_SST25L
  	  Set up your spi devices with the right board-specific platform data,
  	  if you want to specify device partitioning.
  
@@ -13,14 +13,18 @@
  	help
 --- a/drivers/mtd/devices/Makefile
 +++ b/drivers/mtd/devices/Makefile
-@@ -17,3 +17,4 @@ obj-$(CONFIG_MTD_BLOCK2MTD)	+= block2mtd
+@@ -18,5 +18,6 @@ obj-$(CONFIG_MTD_BLOCK2MTD)	+= block2mtd
  obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
  obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
  obj-$(CONFIG_MTD_SST25L)	+= sst25l.o
 +obj-$(CONFIG_MTD_AR2315)	+= ar2315.o
+ 
+-CFLAGS_docg3.o			+= -I$(src)
+\ No newline at end of file
++CFLAGS_docg3.o			+= -I$(src)
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,517 @@
+@@ -0,0 +1,515 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -29,6 +33,7 @@
 + * Copyright (C) 2006-2007 FON Technology, SL.
 + * Copyright (C) 2006-2007 Imre Kaloz <kaloz@openwrt.org>
 + * Copyright (C) 2006-2009 Felix Fietkau <nbd@openwrt.org>
++ * Copyright (C) 2012 Alexandros C. Couloumbis <alex@ozo.com>
 + *
 + * This code is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License version 2 as
@@ -429,7 +434,7 @@
 +}
 +
 +
-+#ifdef CONFIG_MTD_PARTITIONS
++#if defined CONFIG_MTD_REDBOOT_PARTS || CONFIG_MTD_MYLOADER_PARTS
 +static const char *part_probe_types[] = { "cmdlinepart", "RedBoot", "MyLoader", NULL };
 +#endif
 +
@@ -438,9 +443,8 @@
 +spiflash_probe(struct platform_device *pdev)
 +{
 +	struct spiflash_priv *priv;
-+	struct mtd_partition *parts;
 +	struct mtd_info *mtd;
-+	int index, num_parts;
++	int index;
 +	int result = 0;
 +
 +	priv = kzalloc(sizeof(struct spiflash_priv), GFP_KERNEL);
@@ -481,13 +485,11 @@
 +	mtd->write = spiflash_write;
 +	mtd->owner = THIS_MODULE;
 +
-+#ifdef CONFIG_MTD_PARTITIONS
++#if defined CONFIG_MTD_REDBOOT_PARTS || CONFIG_MTD_MYLOADER_PARTS
 +	/* parse redboot partitions */
-+	num_parts = parse_mtd_partitions(mtd, part_probe_types, &parts, 0);
-+	if (!num_parts)
-+		goto error;
 +
-+	result = add_mtd_partitions(mtd, parts, num_parts);
++	result = mtd_device_parse_register(mtd, part_probe_types,
++			NULL, NULL, 0);
 +#endif
 +
 +	return result;
@@ -505,7 +507,7 @@
 +	struct spiflash_priv *priv = platform_get_drvdata(pdev);
 +	struct mtd_info *mtd = &priv->mtd;
 +
-+	del_mtd_partitions(mtd);
++	mtd_device_unregister(mtd);
 +	iounmap(priv->mmraddr);
 +	iounmap(priv->readaddr);
 +	kfree(priv);
