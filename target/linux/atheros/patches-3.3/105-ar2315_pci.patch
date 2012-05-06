@@ -240,9 +240,9 @@
 +arch_initcall(ar2315_pci_init);
 --- a/arch/mips/ar231x/Kconfig
 +++ b/arch/mips/ar231x/Kconfig
-@@ -15,3 +15,13 @@ config ATHEROS_AR2315
+@@ -14,3 +14,10 @@ config ATHEROS_AR2315
+ 	select SYS_SUPPORTS_32BIT_KERNEL
  	select SYS_SUPPORTS_BIG_ENDIAN
- 	select GENERIC_GPIO
  	default y
 +
 +config ATHEROS_AR2315_PCI
@@ -250,13 +250,10 @@
 +	depends on ATHEROS_AR2315
 +	select HW_HAS_PCI
 +	select PCI
-+	select USB_ARCH_HAS_HCD
-+	select USB_ARCH_HAS_OHCI
-+	select USB_ARCH_HAS_EHCI
 +	default y
 --- a/arch/mips/ar231x/ar2315.c
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -63,6 +63,27 @@ static inline void ar2315_gpio_irq(void)
+@@ -64,6 +64,27 @@ static inline void ar2315_gpio_irq(void)
  		do_IRQ(AR531X_GPIO_IRQ_BASE + bit);
  }
  
@@ -284,7 +281,7 @@
  
  /*
   * Called when an interrupt is received, this function
-@@ -81,6 +102,10 @@ ar2315_irq_dispatch(void)
+@@ -82,6 +103,10 @@ ar2315_irq_dispatch(void)
  		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0_INTRS);

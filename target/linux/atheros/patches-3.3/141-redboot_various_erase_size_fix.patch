@@ -1,6 +1,6 @@
 --- a/drivers/mtd/redboot.c
 +++ b/drivers/mtd/redboot.c
-@@ -57,6 +57,22 @@ static inline int redboot_checksum(struc
+@@ -58,6 +58,22 @@ static inline int redboot_checksum(struc
  	return 1;
  }
  
@@ -21,9 +21,9 @@
 +}
 +
  static int parse_redboot_partitions(struct mtd_info *master,
-                              struct mtd_partition **pparts,
-                              unsigned long fis_origin)
-@@ -73,6 +89,7 @@ static int parse_redboot_partitions(stru
+ 				    struct mtd_partition **pparts,
+ 				    struct mtd_part_parser_data *data)
+@@ -74,6 +90,7 @@ static int parse_redboot_partitions(stru
  	int namelen = 0;
  	int nulllen = 0;
  	int numslots;
@@ -31,7 +31,7 @@
  	unsigned long offset;
  #ifdef CONFIG_MTD_REDBOOT_PARTS_UNALLOCATED
  	static char nullstring[] = "unallocated";
-@@ -186,7 +203,10 @@ static int parse_redboot_partitions(stru
+@@ -188,7 +205,10 @@ static int parse_redboot_partitions(stru
  		goto out;
  	}
  
@@ -43,7 +43,7 @@
  		struct fis_list *new_fl, **prev;
  
  		if (buf[i].name[0] == 0xff) {
-@@ -262,12 +282,13 @@ static int parse_redboot_partitions(stru
+@@ -263,12 +283,13 @@ static int parse_redboot_partitions(stru
  	}
  #endif
  	for ( ; i<nrparts; i++) {
@@ -59,7 +59,7 @@
  		strcpy(names, fl->img->name);
  #ifdef CONFIG_MTD_REDBOOT_PARTS_READONLY
  		if (!memcmp(names, "RedBoot", 8) ||
-@@ -297,7 +318,9 @@ static int parse_redboot_partitions(stru
+@@ -298,7 +319,9 @@ static int parse_redboot_partitions(stru
  		fl = fl->next;
  		kfree(tmp_fl);
  	}

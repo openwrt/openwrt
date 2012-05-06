@@ -43,7 +43,6 @@ MODULE_LICENSE("GPL");
 struct mvswitch_priv {
 	const struct net_device_ops *ndo_old;
 	struct net_device_ops ndo;
-	struct vlan_group *grp;
 	u8 vlans[16];
 };
 
@@ -162,9 +161,6 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 	if (!priv)
 		goto error;
 
-	if (!priv->grp)
-		goto error;
-
 #ifdef HEADER_MODE
 	buf = skb->data;
 	skb_pull(skb, MV_HEADER_SIZE);
@@ -185,10 +181,11 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 
 	skb->protocol = eth_type_trans(skb, skb->dev);
 
+	__vlan_hwaccel_put_tag(skb, vlan);
 	if (napi)
-		return vlan_hwaccel_receive_skb(skb, priv->grp, vlan);
+		return netif_receive_skb(skb);
 	else
-		return vlan_hwaccel_rx(skb, priv->grp, vlan);
+		return netif_rx(skb);
 
 error:
 	/* no vlan? eat the packet! */
@@ -207,14 +204,6 @@ static int
 mvswitch_netif_receive_skb(struct sk_buff *skb)
 {
 	return mvswitch_mangle_rx(skb, 1);
-}
-
-
-static void
-mvswitch_vlan_rx_register(struct net_device *dev, struct vlan_group *grp)
-{
-	struct mvswitch_priv *priv = dev->phy_ptr;
-	priv->grp = grp;
 }
 
 
@@ -346,7 +335,6 @@ mvswitch_config_init(struct phy_device *pdev)
 	priv->ndo_old = dev->netdev_ops;
 	memcpy(&priv->ndo, priv->ndo_old, sizeof(struct net_device_ops));
 	priv->ndo.ndo_start_xmit = mvswitch_mangle_tx;
-	priv->ndo.ndo_vlan_rx_register = mvswitch_vlan_rx_register;
 	dev->netdev_ops = &priv->ndo;
 
 	pdev->pkt_align = 2;

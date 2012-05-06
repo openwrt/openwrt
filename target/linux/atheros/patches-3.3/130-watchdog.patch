@@ -100,8 +100,8 @@
 +	.identity = "ar2315 Watchdog",
 +};
 +
-+static int
-+ar2315_wdt_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
++static long
++ar2315_wdt_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 +{
 +	int new_wdt_timeout;
 +	int ret = -ENOIOCTLCMD;
@@ -203,9 +203,9 @@
 +module_exit(exit_ar2315_wdt);
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -972,6 +972,12 @@ config BCM63XX_WDT
- 	  To compile this driver as a loadable module, choose M here.
- 	  The module will be called bcm63xx_wdt.
+@@ -1033,6 +1033,12 @@ config LANTIQ_WDT
+ 	help
+ 	  Hardware driver for the Lantiq SoC Watchdog Timer.
  
 +config ATHEROS_WDT
 +	tristate "Atheros wisoc Watchdog Timer"
@@ -218,7 +218,7 @@
  # POWERPC Architecture
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -118,6 +118,7 @@ obj-$(CONFIG_WDT_MTX1) += mtx-1_wdt.o
+@@ -128,6 +128,7 @@ obj-$(CONFIG_WDT_MTX1) += mtx-1_wdt.o
  obj-$(CONFIG_PNX833X_WDT) += pnx833x_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
