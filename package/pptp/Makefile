@@ -42,8 +42,8 @@ ifneq ($(CONFIG_PACKAGE_netifd),)
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pptp $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_DATA) ./files/options.pptp $(1)/etc/ppp/
-	$(INSTALL_DIR) $(1)/lib/network
-	$(INSTALL_BIN) ./files/pptp.sh $(1)/lib/network/
+	$(INSTALL_DIR) $(1)/lib/netifd/proto/
+	$(INSTALL_BIN) ./files/pptp.sh $(1)/lib/netifd/proto/
   endef
 else
   define Package/pptp/install
