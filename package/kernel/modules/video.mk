@@ -49,6 +49,28 @@ define AddDepends/video
 endef
 
 
+define KernelPackage/video-videobuf2
+  TITLE:=videobuf2 lib
+  DEPENDS:= @!(LINUX_2_6_37||LINUX_2_6_38)
+  KCONFIG:= \
+	CONFIG_VIDEOBUF2_CORE \
+	CONFIG_VIDEOBUF2_MEMOPS \
+	CONFIG_VIDEOBUF2_VMALLOC
+  FILES:= \
+	$(LINUX_DIR)/drivers/media/video/videobuf2-core.ko \
+	$(LINUX_DIR)/drivers/media/video/videobuf2-memops.ko \
+	$(LINUX_DIR)/drivers/media/video/videobuf2-vmalloc.ko
+  AUTOLOAD:=$(call AutoLoad,65,videobuf2-core videobuf2-memops videobuf2-vmalloc)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-videobuf2/description
+ Kernel modules for supporting CPIA2 USB based cameras.
+endef
+
+$(eval $(call KernelPackage,video-videobuf2))
+
+
 define KernelPackage/video-cpia2
   TITLE:=CPIA2 video driver
   DEPENDS:=@USB_SUPPORT +kmod-usb-core
@@ -85,7 +107,7 @@ $(eval $(call KernelPackage,video-sn9c102))
 
 define KernelPackage/video-pwc
   TITLE:=Philips USB webcam support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39||LINUX_3_0):kmod-video-videobuf2
   KCONFIG:= \
 	CONFIG_USB_PWC \
 	CONFIG_USB_PWC_DEBUG=n
@@ -103,7 +125,7 @@ $(eval $(call KernelPackage,video-pwc))
 
 define KernelPackage/video-uvc
   TITLE:=USB Video Class (UVC) support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39||LINUX_3_0||LINUX_3_1||LINUX_3_2):kmod-video-videobuf2
   KCONFIG:= CONFIG_USB_VIDEO_CLASS
   FILES:=$(LINUX_DIR)/drivers/media/video/uvc/uvcvideo.ko
   AUTOLOAD:=$(call AutoLoad,90,uvcvideo)
