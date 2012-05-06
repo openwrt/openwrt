@@ -994,19 +994,6 @@ endef
 $(eval $(call KernelPackage,usb-test))
 
 
-define KernelPackage/usb-phidget
-  TITLE:=USB Phidget Driver
-  KCONFIG:=CONFIG_USB_PHIDGET CONFIG_USB_PHIDGETKIT CONFIG_USB_PHIDGETMOTORCONTROL CONFIG_USB_PHIDGETSERVO
-  FILES:=$(LINUX_DIR)/drivers/usb/misc/phidget*.ko
-$(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-phidget/description
- Kernel support for USB Phidget devices.
-endef
-
-$(eval $(call KernelPackage,usb-phidget))
-
 define KernelPackage/usb-rt305x-dwc_otg
   TITLE:=RT305X USB controller driver
   DEPENDS:=@TARGET_ramips_rt305x
