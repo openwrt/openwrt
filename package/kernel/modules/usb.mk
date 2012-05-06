@@ -307,21 +307,6 @@ define AddDepends/usb-serial
 endef
 
 
-define KernelPackage/usb-serial-airprime
-  TITLE:=Support for Airprime (EVDO)
-  KCONFIG:=CONFIG_USB_SERIAL_AIRPRIME
-  FILES:=$(LINUX_DIR)/drivers/usb/serial/airprime.ko
-  AUTOLOAD:=$(call AutoLoad,65,airprime)
-  $(call AddDepends/usb-serial)
-endef
-
-define KernelPackage/usb-serial-airprime/description
- Kernel support for Airprime (EVDO)
-endef
-
-$(eval $(call KernelPackage,usb-serial-airprime))
-
-
 define KernelPackage/usb-serial-belkin
   TITLE:=Support for Belkin devices
   KCONFIG:=CONFIG_USB_SERIAL_BELKIN
