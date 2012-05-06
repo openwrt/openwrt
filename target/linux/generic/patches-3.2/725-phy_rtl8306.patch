@@ -1,7 +1,7 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -124,6 +124,10 @@ config AR8216_PHY
- 	tristate "Driver for Atheros AR8216 switches"
+@@ -126,6 +126,10 @@ config AR8216_PHY
+ 	select ETHERNET_PACKET_MANGLE
  	select SWCONFIG
  
 +config RTL8306_PHY

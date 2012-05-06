@@ -196,28 +196,24 @@ static void ag71xx_ring_rx_clean(struct ag71xx *ag)
 		}
 }
 
-static int ag71xx_rx_reserve(struct ag71xx *ag)
+struct sk_buff *ag71xx_rx_alloc(struct ag71xx *ag)
 {
-	int reserve = 0;
+	/*
+	 * On AR71xx/AR91xx packets must be 4-byte aligned.
+	 *
+	 * When using builtin AR8216 support, hardware adds a 2-byte header,
+	 * so we don't need any extra alignment in that case.
+	 */
+	if (!ag71xx_get_pdata(ag)->is_ar724x || ag71xx_has_ar8216(ag))
+		return netdev_alloc_skb(ag->dev, AG71XX_RX_PKT_SIZE);
 
-	if (ag71xx_get_pdata(ag)->is_ar724x) {
-		if (!ag71xx_has_ar8216(ag))
-			reserve = 2;
-
-		if (ag->phy_dev)
-			reserve += 4 - (ag->phy_dev->pkt_align % 4);
-
-		reserve %= 4;
-	}
-
-	return reserve + AG71XX_RX_PKT_RESERVE;
+	return netdev_alloc_skb_ip_align(ag->dev, AG71XX_RX_PKT_SIZE);
 }
 
 
 static int ag71xx_ring_rx_init(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->rx_ring;
-	unsigned int reserve = ag71xx_rx_reserve(ag);
 	unsigned int i;
 	int ret;
 
@@ -235,15 +231,13 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 		struct sk_buff *skb;
 		dma_addr_t dma_addr;
 
-		skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE + reserve);
+		skb = ag71xx_rx_alloc(ag);
 		if (!skb) {
 			ret = -ENOMEM;
 			break;
 		}
 
 		skb->dev = ag->dev;
-		skb_reserve(skb, reserve);
-
 		dma_addr = dma_map_single(&ag->dev->dev, skb->data,
 					  AG71XX_RX_PKT_SIZE,
 					  DMA_FROM_DEVICE);
@@ -265,7 +259,6 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 {
 	struct ag71xx_ring *ring = &ag->rx_ring;
-	unsigned int reserve = ag71xx_rx_reserve(ag);
 	unsigned int count;
 
 	count = 0;
@@ -278,11 +271,10 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 			dma_addr_t dma_addr;
 			struct sk_buff *skb;
 
-			skb = dev_alloc_skb(AG71XX_RX_PKT_SIZE + reserve);
+			skb = ag71xx_rx_alloc(ag);
 			if (skb == NULL)
 				break;
 
-			skb_reserve(skb, reserve);
 			skb->dev = ag->dev;
 
 			dma_addr = dma_map_single(&ag->dev->dev, skb->data,
@@ -914,12 +906,8 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 		} else {
 			skb->dev = dev;
 			skb->ip_summed = CHECKSUM_NONE;
-			if (ag->phy_dev) {
-				ag->phy_dev->netif_receive_skb(skb);
-			} else {
-				skb->protocol = eth_type_trans(skb, dev);
-				netif_receive_skb(skb);
-			}
+			skb->protocol = eth_type_trans(skb, dev);
+			netif_receive_skb(skb);
 		}
 
 		ring->buf[i].skb = NULL;

@@ -1,11 +1,12 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -120,6 +120,10 @@ config IP17XX_PHY
+@@ -121,6 +121,11 @@ config IP17XX_PHY
  	tristate "Driver for IC+ IP17xx switches"
  	select SWCONFIG
  
 +config AR8216_PHY
 +	tristate "Driver for Atheros AR8216 switches"
++	select ETHERNET_PACKET_MANGLE
 +	select SWCONFIG
 +
  config FIXED_PHY
