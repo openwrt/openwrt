@@ -1,0 +1,2046 @@
+--- a/engine/SCons/dblite.py
++++ b/engine/SCons/dblite.py
+@@ -10,11 +10,11 @@ import pickle
+ import shutil
+ import time
+ 
+-keep_all_files = 00000
++keep_all_files = 0o0
+ ignore_corrupt_dbfiles = 0
+ 
+ def corruption_warning(filename):
+-    print "Warning: Discarding corrupt database:", filename
++    print("Warning: Discarding corrupt database:", filename)
+ 
+ try: unicode
+ except NameError:
+@@ -70,14 +70,14 @@ class dblite(object):
+     self._flag = flag
+     self._mode = mode
+     self._dict = {}
+-    self._needs_sync = 00000
++    self._needs_sync = 0o0
+     if self._os_chown is not None and (os.geteuid()==0 or os.getuid()==0):
+       # running as root; chown back to current owner/group when done
+       try:
+         statinfo = os.stat(self._file_name)
+         self._chown_to = statinfo.st_uid
+         self._chgrp_to = statinfo.st_gid
+-      except OSError, e:
++      except OSError as e:
+         # db file doesn't exist yet.
+         # Check os.environ for SUDO_UID, use if set
+         self._chown_to = int(os.environ.get('SUDO_UID', -1))
+@@ -90,7 +90,7 @@ class dblite(object):
+     else:
+       try:
+         f = self._open(self._file_name, "rb")
+-      except IOError, e:
++      except IOError as e:
+         if (self._flag != "c"):
+           raise e
+         self._open(self._file_name, "wb", self._mode)
+@@ -122,7 +122,7 @@ class dblite(object):
+     # (e.g. from a previous run as root).  We should still be able to
+     # unlink() the file if the directory's writable, though, so ignore
+     # any OSError exception  thrown by the chmod() call.
+-    try: self._os_chmod(self._file_name, 0777)
++    try: self._os_chmod(self._file_name, 0o777)
+     except OSError: pass
+     self._os_unlink(self._file_name)
+     self._os_rename(self._tmp_name, self._file_name)
+@@ -131,7 +131,7 @@ class dblite(object):
+         self._os_chown(self._file_name, self._chown_to, self._chgrp_to)
+       except OSError:
+         pass
+-    self._needs_sync = 00000
++    self._needs_sync = 0o0
+     if (keep_all_files):
+       self._shutil_copyfile(
+         self._file_name,
+@@ -151,7 +151,7 @@ class dblite(object):
+     if (not is_string(value)):
+       raise TypeError("value `%s' must be a string but is %s" % (value, type(value)))
+     self._dict[key] = value
+-    self._needs_sync = 0001
++    self._needs_sync = 0o1
+ 
+   def keys(self):
+     return list(self._dict.keys())
+@@ -171,7 +171,7 @@ class dblite(object):
+   def __len__(self):
+     return len(self._dict)
+ 
+-def open(file, flag=None, mode=0666):
++def open(file, flag=None, mode=0o666):
+   return dblite(file, flag, mode)
+ 
+ def _exercise():
+@@ -198,7 +198,7 @@ def _exercise():
+   assert db[unicode("ubar")] == unicode("ufoo")
+   try:
+     db.sync()
+-  except IOError, e:
++  except IOError as e:
+     assert str(e) == "Read-only database: tmp.dblite"
+   else:
+     raise RuntimeError("IOError expected.")
+@@ -208,13 +208,13 @@ def _exercise():
+   db.sync()
+   try:
+     db[(1,2)] = "tuple"
+-  except TypeError, e:
++  except TypeError as e:
+     assert str(e) == "key `(1, 2)' must be a string but is <type 'tuple'>", str(e)
+   else:
+     raise RuntimeError("TypeError exception expected")
+   try:
+     db["list"] = [1,2]
+-  except TypeError, e:
++  except TypeError as e:
+     assert str(e) == "value `[1, 2]' must be a string but is <type 'list'>", str(e)
+   else:
+     raise RuntimeError("TypeError exception expected")
+@@ -238,11 +238,11 @@ def _exercise():
+   os.unlink("tmp.dblite")
+   try:
+     db = open("tmp", "w")
+-  except IOError, e:
++  except IOError as e:
+     assert str(e) == "[Errno 2] No such file or directory: 'tmp.dblite'", str(e)
+   else:
+     raise RuntimeError("IOError expected.")
+-  print "OK"
++  print("OK")
+ 
+ if (__name__ == "__main__"):
+   _exercise()
+--- a/engine/SCons/SConsign.py
++++ b/engine/SCons/SConsign.py
+@@ -84,7 +84,7 @@ def Get_DataBase(dir):
+         DB_sync_list.append(db)
+         return db, "c"
+     except TypeError:
+-        print "DataBase =", DataBase
++        print("DataBase =", DataBase)
+         raise
+ 
+ def Reset():
+@@ -215,7 +215,7 @@ class DB(Base):
+                     raise TypeError
+             except KeyboardInterrupt:
+                 raise
+-            except Exception, e:
++            except Exception as e:
+                 SCons.Warnings.warn(SCons.Warnings.CorruptSConsignWarning,
+                                     "Ignoring corrupt sconsign entry : %s (%s)\n"%(self.dir.tpath, e))
+             for key, entry in self.entries.items():
+@@ -340,7 +340,7 @@ class DirFile(Dir):
+         if fname != self.sconsign:
+             try:
+                 mode = os.stat(self.sconsign)[0]
+-                os.chmod(self.sconsign, 0666)
++                os.chmod(self.sconsign, 0o666)
+                 os.unlink(self.sconsign)
+             except (IOError, OSError):
+                 # Try to carry on in the face of either OSError
+--- a/engine/SCons/Util.py
++++ b/engine/SCons/Util.py
+@@ -264,10 +264,10 @@ def print_tree(root, child_func, prune=0
+     children = child_func(root)
+ 
+     if prune and rname in visited and children:
+-        sys.stdout.write(''.join(tags + margins + ['+-[', rname, ']']) + u'\n')
++        sys.stdout.write(''.join(tags + margins + ['+-[', rname, ']']) + '\n')
+         return
+ 
+-    sys.stdout.write(''.join(tags + margins + ['+-', rname]) + u'\n')
++    sys.stdout.write(''.join(tags + margins + ['+-', rname]) + '\n')
+ 
+     visited[rname] = 1
+ 
+@@ -718,7 +718,7 @@ else:
+                     # raised so as to not mask possibly serious disk or
+                     # network issues.
+                     continue
+-                if stat.S_IMODE(st[stat.ST_MODE]) & 0111:
++                if stat.S_IMODE(st[stat.ST_MODE]) & 0o111:
+                     try:
+                         reject.index(f)
+                     except ValueError:
+@@ -1355,9 +1355,9 @@ def AddMethod(obj, function, name=None):
+         self.z = x + y
+       AddMethod(f, A, "add")
+       a.add(2, 4)
+-      print a.z
++      print(a.z)
+       AddMethod(lambda self, i: self.l[i], a, "listIndex")
+-      print a.listIndex(5)
++      print(a.listIndex(5))
+     """
+     if name is None:
+         name = function.func_name
+--- a/setup.py
++++ b/setup.py
+@@ -333,7 +333,7 @@ class install_scripts(_install_scripts):
+                     # log.info("changing mode of %s", file)
+                     pass
+                 else:
+-                    mode = ((os.stat(file)[stat.ST_MODE]) | 0555) & 07777
++                    mode = ((os.stat(file)[stat.ST_MODE]) | 0o555) & 0o7777
+                     # log.info("changing mode of %s to %o", file, mode)
+                     os.chmod(file, mode)
+         # --- /distutils copy/paste ---
+@@ -414,7 +414,7 @@ arguments = {
+ distutils.core.setup(**arguments)
+ 
+ if Installed:
+-    print '\n'.join(Installed)
++    print('\n'.join(Installed))
+ 
+ # Local Variables:
+ # tab-width:4
+--- a/engine/SCons/compat/_scons_subprocess.py
++++ b/engine/SCons/compat/_scons_subprocess.py
+@@ -248,11 +248,11 @@ A more real-world example would look lik
+ try:
+     retcode = call("mycmd" + " myarg", shell=True)
+     if retcode < 0:
+-        print >>sys.stderr, "Child was terminated by signal", -retcode
++        print(>>sys.stderr, "Child was terminated by signal", -retcode)
+     else:
+-        print >>sys.stderr, "Child returned", retcode
+-except OSError, e:
+-    print >>sys.stderr, "Execution failed:", e
++        print(>>sys.stderr, "Child returned", retcode)
++except OSError as e:
++    print(>>sys.stderr, "Execution failed:", e)
+ 
+ 
+ Replacing os.spawn*
+@@ -439,7 +439,7 @@ except TypeError:
+     def is_int(obj):
+         return isinstance(obj, type(1))
+     def is_int_or_long(obj):
+-        return type(obj) in (type(1), type(1L))
++        return type(obj) in (type(1), type(1))
+ else:
+     def is_int(obj):
+         return isinstance(obj, int)
+@@ -802,7 +802,7 @@ class Popen(object):
+                 startupinfo.wShowWindow = SW_HIDE
+                 comspec = os.environ.get("COMSPEC", "cmd.exe")
+                 args = comspec + " /c " + args
+-                if (GetVersion() >= 0x80000000L or
++                if (GetVersion() >= 0x80000000 or
+                         os.path.basename(comspec).lower() == "command.com"):
+                     # Win9x, or using command.com on NT. We need to
+                     # use the w9xpopen intermediate program. For more
+@@ -830,7 +830,7 @@ class Popen(object):
+                                          env,
+                                          cwd,
+                                          startupinfo)
+-            except pywintypes.error, e:
++            except pywintypes.error as e:
+                 # Translate pywintypes.error to WindowsError, which is
+                 # a subclass of OSError.  FIXME: We should really
+                 # translate errno using _sys_errlist (or simliar), but
+@@ -1215,8 +1215,8 @@ def _demo_posix():
+     # Example 1: Simple redirection: Get process list
+     #
+     plist = Popen(["ps"], stdout=PIPE).communicate()[0]
+-    print "Process list:"
+-    print plist
++    print("Process list:")
++    print(plist)
+ 
+     #
+     # Example 2: Change uid before executing child
+@@ -1228,25 +1228,25 @@ def _demo_posix():
+     #
+     # Example 3: Connecting several subprocesses
+     #
+-    print "Looking for 'hda'..."
++    print("Looking for 'hda'...")
+     p1 = Popen(["dmesg"], stdout=PIPE)
+     p2 = Popen(["grep", "hda"], stdin=p1.stdout, stdout=PIPE)
+-    print repr(p2.communicate()[0])
++    print(repr(p2.communicate()[0]))
+ 
+     #
+     # Example 4: Catch execution error
+     #
+     print
+-    print "Trying a weird file..."
++    print("Trying a weird file...")
+     try:
+-        print Popen(["/this/path/does/not/exist"]).communicate()
+-    except OSError, e:
++        print(Popen(["/this/path/does/not/exist"]).communicate())
++    except OSError as e:
+         if e.errno == errno.ENOENT:
+-            print "The file didn't exist.  I thought so..."
+-            print "Child traceback:"
+-            print e.child_traceback
++            print("The file didn't exist.  I thought so...")
++            print("Child traceback:")
++            print(e.child_traceback)
+         else:
+-            print "Error", e.errno
++            print("Error", e.errno)
+     else:
+         sys.stderr.write( "Gosh.  No error.\n" )
+ 
+@@ -1255,15 +1255,15 @@ def _demo_windows():
+     #
+     # Example 1: Connecting several subprocesses
+     #
+-    print "Looking for 'PROMPT' in set output..."
++    print("Looking for 'PROMPT' in set output...")
+     p1 = Popen("set", stdout=PIPE, shell=True)
+     p2 = Popen('find "PROMPT"', stdin=p1.stdout, stdout=PIPE)
+-    print repr(p2.communicate()[0])
++    print(repr(p2.communicate()[0]))
+ 
+     #
+     # Example 2: Simple execution of program
+     #
+-    print "Executing calc..."
++    print("Executing calc...")
+     p = Popen("calc")
+     p.wait()
+ 
+--- a/engine/SCons/Memoize.py
++++ b/engine/SCons/Memoize.py
+@@ -143,7 +143,7 @@ class Counter(object):
+         CounterList.append(self)
+     def display(self):
+         fmt = "    %7d hits %7d misses    %s()"
+-        print fmt % (self.hit, self.miss, self.name)
++        print(fmt % (self.hit, self.miss, self.name))
+     def __cmp__(self, other):
+         try:
+             return cmp(self.name, other.name)
+@@ -215,7 +215,7 @@ class Memoizer(object):
+ 
+ def Dump(title=None):
+     if title:
+-        print title
++        print(title)
+     CounterList.sort()
+     for counter in CounterList:
+         counter.display()
+--- a/engine/SCons/Node/FS.py
++++ b/engine/SCons/Node/FS.py
+@@ -550,7 +550,7 @@ class EntryProxy(SCons.Util.Proxy):
+         except KeyError:
+             try:
+                 attr = SCons.Util.Proxy.__getattr__(self, name)
+-            except AttributeError, e:
++            except AttributeError as e:
+                 # Raise our own AttributeError subclass with an
+                 # overridden __str__() method that identifies the
+                 # name of the entry that caused the exception.
+@@ -2420,7 +2420,7 @@ class File(Base):
+         fname = self.rfile().abspath
+         try:
+             contents = open(fname, "rb").read()
+-        except EnvironmentError, e:
++        except EnvironmentError as e:
+             if not e.filename:
+                 e.filename = fname
+             raise
+@@ -2455,7 +2455,7 @@ class File(Base):
+         try:
+             cs = SCons.Util.MD5filesignature(fname,
+                 chunksize=SCons.Node.FS.File.md5_chunksize*1024)
+-        except EnvironmentError, e:
++        except EnvironmentError as e:
+             if not e.filename:
+                 e.filename = fname
+             raise
+@@ -2793,7 +2793,7 @@ class File(Base):
+     def _rmv_existing(self):
+         self.clear_memoized_values()
+         if print_duplicate:
+-            print "dup: removing existing target %s"%self
++            print("dup: removing existing target %s"%self)
+         e = Unlink(self, [], None)
+         if isinstance(e, SCons.Errors.BuildError):
+             raise e
+@@ -2817,7 +2817,7 @@ class File(Base):
+             else:
+                 try:
+                     self._createDir()
+-                except SCons.Errors.StopError, drive:
++                except SCons.Errors.StopError as drive:
+                     desc = "No drive `%s' for target `%s'." % (drive, self)
+                     raise SCons.Errors.StopError(desc)
+ 
+@@ -2835,7 +2835,7 @@ class File(Base):
+     def do_duplicate(self, src):
+         self._createDir()
+         if print_duplicate:
+-            print "dup: relinking variant '%s' from '%s'"%(self, src)
++            print("dup: relinking variant '%s' from '%s'"%(self, src))
+         Unlink(self, None, None)
+         e = Link(self, src, None)
+         if isinstance(e, SCons.Errors.BuildError):
+@@ -2870,7 +2870,7 @@ class File(Base):
+                         # The source file does not exist.  Make sure no old
+                         # copy remains in the variant directory.
+                         if print_duplicate:
+-                            print "dup: no src for %s, unlinking old variant copy"%self
++                            print("dup: no src for %s, unlinking old variant copy"%self)
+                         if Base.exists(self) or self.islink():
+                             self.fs.unlink(self.path)
+                         # Return None explicitly because the Base.exists() call
+@@ -3199,7 +3199,7 @@ class FileFinder(object):
+         if verbose and not callable(verbose):
+             if not SCons.Util.is_String(verbose):
+                 verbose = "find_file"
+-            _verbose = u'  %s: ' % verbose
++            _verbose = '  %s: ' % verbose
+             verbose = lambda s: sys.stdout.write(_verbose + s)
+ 
+         filedir, filename = os.path.split(filename)
+--- a/engine/SCons/SConf.py
++++ b/engine/SCons/SConf.py
+@@ -239,7 +239,7 @@ class SConfBuildTask(SCons.Taskmaster.Al
+                 # Earlier versions of Python don't have sys.excepthook...
+                 def excepthook(type, value, tb):
+                     traceback.print_tb(tb)
+-                    print type, value
++                    print(type, value)
+             excepthook(*self.exc_info())
+         return SCons.Taskmaster.Task.failed(self)
+ 
+@@ -332,7 +332,7 @@ class SConfBuildTask(SCons.Taskmaster.Al
+             except SystemExit:
+                 exc_value = sys.exc_info()[1]
+                 raise SCons.Errors.ExplicitExit(self.targets[0],exc_value.code)
+-            except Exception, e:
++            except Exception as e:
+                 for t in self.targets:
+                     binfo = t.get_binfo()
+                     binfo.__class__ = SConfBuildInfo
+--- a/engine/SCons/Script/Interactive.py
++++ b/engine/SCons/Script/Interactive.py
+@@ -129,12 +129,12 @@ class SConsInteractiveCmd(cmd.Cmd):
+             self.shell_variable = 'SHELL'
+ 
+     def default(self, argv):
+-        print "*** Unknown command: %s" % argv[0]
++        print("*** Unknown command: %s" % argv[0])
+ 
+     def onecmd(self, line):
+         line = line.strip()
+         if not line:
+-            print self.lastcmd
++            print(self.lastcmd)
+             return self.emptyline()
+         self.lastcmd = line
+         if line[0] == '!':
+@@ -274,7 +274,7 @@ class SConsInteractiveCmd(cmd.Cmd):
+         return self.do_build(['build', '--clean'] + argv[1:])
+ 
+     def do_EOF(self, argv):
+-        print
++        print()
+         self.do_exit(argv)
+ 
+     def _do_one_help(self, arg):
+@@ -357,7 +357,7 @@ class SConsInteractiveCmd(cmd.Cmd):
+             # Doing the right thing with an argument list currently
+             # requires different shell= values on Windows and Linux.
+             p = subprocess.Popen(argv, shell=(sys.platform=='win32'))
+-        except EnvironmentError, e:
++        except EnvironmentError as e:
+             sys.stderr.write('scons: %s: %s\n' % (argv[0], e.strerror))
+         else:
+             p.wait()
+--- a/engine/SCons/Script/Main.py
++++ b/engine/SCons/Script/Main.py
+@@ -224,7 +224,7 @@ class BuildTask(SCons.Taskmaster.OutOfDa
+                     self.exception_set()
+                 self.do_failed()
+             else:
+-                print "scons: Nothing to be done for `%s'." % t
++                print("scons: Nothing to be done for `%s'." % t)
+                 SCons.Taskmaster.OutOfDateTask.executed(self)
+         else:
+             SCons.Taskmaster.OutOfDateTask.executed(self)
+@@ -290,8 +290,8 @@ class BuildTask(SCons.Taskmaster.OutOfDa
+             if self.options.debug_includes:
+                 tree = t.render_include_tree()
+                 if tree:
+-                    print
+-                    print tree
++                    print()
++                    print(tree)
+         SCons.Taskmaster.OutOfDateTask.postprocess(self)
+ 
+     def make_ready(self):
+@@ -326,10 +326,10 @@ class CleanTask(SCons.Taskmaster.AlwaysT
+                 else:
+                     errstr = "Path '%s' exists but isn't a file or directory."
+                     raise SCons.Errors.UserError(errstr % (pathstr))
+-        except SCons.Errors.UserError, e:
+-            print e
+-        except (IOError, OSError), e:
+-            print "scons: Could not remove '%s':" % pathstr, e.strerror
++        except SCons.Errors.UserError as e:
++            print(e)
++        except (IOError, OSError) as e:
++            print("scons: Could not remove '%s':" % pathstr, e.strerror)
+ 
+     def show(self):
+         target = self.targets[0]
+@@ -348,13 +348,13 @@ class CleanTask(SCons.Taskmaster.AlwaysT
+             for t in self.targets:
+                 try:
+                     removed = t.remove()
+-                except OSError, e:
++                except OSError as e:
+                     # An OSError may indicate something like a permissions
+                     # issue, an IOError would indicate something like
+                     # the file not existing.  In either case, print a
+                     # message and keep going to try to remove as many
+                     # targets aa possible.
+-                    print "scons: Could not remove '%s':" % str(t), e.strerror
++                    print("scons: Could not remove '%s':" % str(t), e.strerror)
+                 else:
+                     if removed:
+                         display("Removed " + str(t))
+@@ -595,7 +595,7 @@ def _scons_internal_error():
+     """Handle all errors but user errors. Print out a message telling
+     the user what to do in this case and print a normal trace.
+     """
+-    print 'internal error'
++    print('internal error')
+     traceback.print_exc()
+     sys.exit(2)
+ 
+@@ -707,7 +707,7 @@ def _load_site_scons_dir(topdir, site_di
+                 # the error checking makes it longer.
+                 try:
+                     m = sys.modules['SCons.Script']
+-                except Exception, e:
++                except Exception as e:
+                     fmt = 'cannot import site_init.py: missing SCons.Script module %s'
+                     raise SCons.Errors.InternalError(fmt % repr(e))
+                 try:
+@@ -720,10 +720,10 @@ def _load_site_scons_dir(topdir, site_di
+                             site_m[k] = m.__dict__[k]
+ 
+                     # This is the magic.
+-                    exec fp in site_m
++                    exec(fp.read()) in site_m
+                 except KeyboardInterrupt:
+                     raise
+-                except Exception, e:
++                except Exception as e:
+                     fmt = '*** Error loading site_init file %s:\n'
+                     sys.stderr.write(fmt % repr(site_init_file))
+                     raise
+@@ -733,7 +733,7 @@ def _load_site_scons_dir(topdir, site_di
+                             m.__dict__[k] = site_m[k]
+             except KeyboardInterrupt:
+                 raise
+-            except ImportError, e:
++            except ImportError as e:
+                 fmt = '*** cannot import site init file %s:\n'
+                 sys.stderr.write(fmt % repr(site_init_file))
+                 raise
+@@ -785,7 +785,7 @@ def _load_all_site_scons_dirs(topdir, ve
+     dirs=sysdirs + [topdir]
+     for d in dirs:
+         if verbose:    # this is used by unit tests.
+-            print "Loading site dir ", d
++            print("Loading site dir ", d)
+         _load_site_scons_dir(d)
+ 
+ def test_load_all_site_scons_dirs(d):
+@@ -976,7 +976,7 @@ def _main(parser):
+     try:
+         for script in scripts:
+             SCons.Script._SConscript._SConscript(fs, script)
+-    except SCons.Errors.StopError, e:
++    except SCons.Errors.StopError as e:
+         # We had problems reading an SConscript file, such as it
+         # couldn't be copied in to the VariantDir.  Since we're just
+         # reading SConscript files and haven't started building
+@@ -1032,8 +1032,8 @@ def _main(parser):
+             # SConscript files.  Give them the options usage.
+             raise SConsPrintHelpException
+         else:
+-            print help_text
+-            print "Use scons -H for help about command-line options."
++            print(help_text)
++            print("Use scons -H for help about command-line options.")
+         exit_status = 0
+         return
+ 
+@@ -1296,7 +1296,7 @@ def _exec_main(parser, values):
+         prof = Profile()
+         try:
+             prof.runcall(_main, parser)
+-        except SConsPrintHelpException, e:
++        except SConsPrintHelpException as e:
+             prof.dump_stats(options.profile_file)
+             raise e
+         except SystemExit:
+@@ -1340,22 +1340,22 @@ def main():
+     
+     try:
+         _exec_main(parser, values)
+-    except SystemExit, s:
++    except SystemExit as s:
+         if s:
+             exit_status = s
+     except KeyboardInterrupt:
+         print("scons: Build interrupted.")
+         sys.exit(2)
+-    except SyntaxError, e:
++    except SyntaxError as e:
+         _scons_syntax_error(e)
+     except SCons.Errors.InternalError:
+         _scons_internal_error()
+-    except SCons.Errors.UserError, e:
++    except SCons.Errors.UserError as e:
+         _scons_user_error(e)
+     except SConsPrintHelpException:
+         parser.print_help()
+         exit_status = 0
+-    except SCons.Errors.BuildError, e:
++    except SCons.Errors.BuildError as e:
+         exit_status = e.exitstatus
+     except:
+         # An exception here is likely a builtin Python exception Python
+@@ -1391,10 +1391,10 @@ def main():
+             else:
+                 ct = last_command_end - first_command_start
+         scons_time = total_time - sconscript_time - ct
+-        print "Total build time: %f seconds"%total_time
+-        print "Total SConscript file execution time: %f seconds"%sconscript_time
+-        print "Total SCons execution time: %f seconds"%scons_time
+-        print "Total command execution time: %f seconds"%ct
++        print("Total build time: %f seconds"%total_time)
++        print("Total SConscript file execution time: %f seconds"%sconscript_time)
++        print("Total SCons execution time: %f seconds"%scons_time)
++        print("Total command execution time: %f seconds"%ct)
+ 
+     sys.exit(exit_status)
+ 
+--- a/engine/SCons/Script/SConscript.py
++++ b/engine/SCons/Script/SConscript.py
+@@ -113,7 +113,7 @@ def compute_exports(exports):
+                     retval[export] = loc[export]
+                 except KeyError:
+                     retval[export] = glob[export]
+-    except KeyError, x:
++    except KeyError as x:
+         raise SCons.Errors.UserError("Export of non-existent variable '%s'"%x)
+ 
+     return retval
+@@ -145,7 +145,7 @@ def Return(*vars, **kw):
+         for var in fvars:
+             for v in var.split():
+                 retval.append(call_stack[-1].globals[v])
+-    except KeyError, x:
++    except KeyError as x:
+         raise SCons.Errors.UserError("Return of non-existent variable '%s'"%x)
+ 
+     if len(retval) == 1:
+@@ -174,7 +174,7 @@ def _SConscript(fs, *files, **kw):
+         try:
+             SCons.Script.sconscript_reading = SCons.Script.sconscript_reading + 1
+             if fn == "-":
+-                exec sys.stdin in call_stack[-1].globals
++                exec(sys.stdin.read()) in call_stack[-1].globals
+             else:
+                 if isinstance(fn, SCons.Node.Node):
+                     f = fn
+@@ -257,7 +257,7 @@ def _SConscript(fs, *files, **kw):
+                         pass
+                     try:
+                         try:
+-                            exec _file_ in call_stack[-1].globals
++                            exec(_file_.read()) in call_stack[-1].globals
+                         except SConscriptReturn:
+                             pass
+                     finally:
+@@ -282,7 +282,7 @@ def _SConscript(fs, *files, **kw):
+                 rdir._create()  # Make sure there's a directory there.
+                 try:
+                     os.chdir(rdir.get_abspath())
+-                except OSError, e:
++                except OSError as e:
+                     # We still couldn't chdir there, so raise the error,
+                     # but only if actions are being executed.
+                     #
+@@ -467,8 +467,8 @@ class SConsEnvironment(SCons.Environment
+                 scons_ver_string = '%d.%d.%d' % (major, minor, revision)
+             else:
+                 scons_ver_string = '%d.%d' % (major, minor)
+-            print "SCons %s or greater required, but you have SCons %s" % \
+-                  (scons_ver_string, SCons.__version__)
++            print("SCons %s or greater required, but you have SCons %s" % \
++                  (scons_ver_string, SCons.__version__))
+             sys.exit(2)
+ 
+     def EnsurePythonVersion(self, major, minor):
+@@ -480,7 +480,7 @@ class SConsEnvironment(SCons.Environment
+             python_ver = self._get_major_minor_revision(sys.version)[:2]
+         if python_ver < (major, minor):
+             v = sys.version.split(" ", 1)[0]
+-            print "Python %d.%d or greater required, but you have Python %s" %(major,minor,v)
++            print("Python %d.%d or greater required, but you have Python %s" %(major,minor,v))
+             sys.exit(2)
+ 
+     def Exit(self, value=0):
+@@ -519,7 +519,7 @@ class SConsEnvironment(SCons.Environment
+                             globals[v] = exports[v]
+                         else:
+                             globals[v] = global_exports[v]
+-        except KeyError,x:
++        except KeyError as x:
+             raise SCons.Errors.UserError("Import of non-existent variable '%s'"%x)
+ 
+     def SConscript(self, *ls, **kw):
+--- a/engine/SCons/Taskmaster.py
++++ b/engine/SCons/Taskmaster.py
+@@ -107,7 +107,7 @@ fmt = "%(considered)3d "\
+ 
+ def dump_stats():
+     for n in sorted(StatsNodes, key=lambda a: str(a)):
+-        print (fmt % n.stats.__dict__) + str(n)
++        print((fmt % n.stats.__dict__) + str(n))
+ 
+ 
+ 
+@@ -164,7 +164,7 @@ class Task(object):
+         """
+         global print_prepare
+         T = self.tm.trace
+-        if T: T.write(self.trace_message(u'Task.prepare()', self.node))
++        if T: T.write(self.trace_message('Task.prepare()', self.node))
+ 
+         # Now that it's the appropriate time, give the TaskMaster a
+         # chance to raise any exceptions it encountered while preparing
+@@ -189,13 +189,13 @@ class Task(object):
+         executor.prepare()
+         for t in executor.get_action_targets():
+             if print_prepare:
+-                print "Preparing target %s..."%t
++                print("Preparing target %s..."%t)
+                 for s in t.side_effects:
+-                    print "...with side-effect %s..."%s
++                    print("...with side-effect %s..."%s)
+             t.prepare()
+             for s in t.side_effects:
+                 if print_prepare:
+-                    print "...Preparing side-effect %s..."%s
++                    print("...Preparing side-effect %s..."%s)
+                 s.prepare()
+ 
+     def get_target(self):
+@@ -224,7 +224,7 @@ class Task(object):
+         prepare(), executed() or failed().
+         """
+         T = self.tm.trace
+-        if T: T.write(self.trace_message(u'Task.execute()', self.node))
++        if T: T.write(self.trace_message('Task.execute()', self.node))
+ 
+         try:
+             everything_was_cached = 1
+@@ -248,7 +248,7 @@ class Task(object):
+             raise
+         except SCons.Errors.BuildError:
+             raise
+-        except Exception, e:
++        except Exception as e:
+             buildError = SCons.Errors.convert_to_BuildError(e)
+             buildError.node = self.targets[0]
+             buildError.exc_info = sys.exc_info()
+@@ -376,7 +376,7 @@ class Task(object):
+         This is the default behavior for building only what's necessary.
+         """
+         T = self.tm.trace
+-        if T: T.write(self.trace_message(u'Task.make_ready_current()',
++        if T: T.write(self.trace_message('Task.make_ready_current()',
+                                          self.node))
+ 
+         self.out_of_date = []
+@@ -386,7 +386,7 @@ class Task(object):
+                 t.disambiguate().make_ready()
+                 is_up_to_date = not t.has_builder() or \
+                                 (not t.always_build and t.is_up_to_date())
+-            except EnvironmentError, e:
++            except EnvironmentError as e:
+                 raise SCons.Errors.BuildError(node=t, errstr=e.strerror, filename=e.filename)
+ 
+             if not is_up_to_date:
+@@ -421,7 +421,7 @@ class Task(object):
+         that can be put back on the candidates list.
+         """
+         T = self.tm.trace
+-        if T: T.write(self.trace_message(u'Task.postprocess()', self.node))
++        if T: T.write(self.trace_message('Task.postprocess()', self.node))
+ 
+         # We may have built multiple targets, some of which may have
+         # common parents waiting for this build.  Count up how many
+@@ -438,7 +438,7 @@ class Task(object):
+             # A node can only be in the pending_children set if it has
+             # some waiting_parents.
+             if t.waiting_parents:
+-                if T: T.write(self.trace_message(u'Task.postprocess()',
++                if T: T.write(self.trace_message('Task.postprocess()',
+                                                  t,
+                                                  'removing'))
+                 pending_children.discard(t)
+@@ -457,7 +457,7 @@ class Task(object):
+ 
+         for p, subtract in parents.items():
+             p.ref_count = p.ref_count - subtract
+-            if T: T.write(self.trace_message(u'Task.postprocess()',
++            if T: T.write(self.trace_message('Task.postprocess()',
+                                              p,
+                                              'adjusted parent ref count'))
+             if p.ref_count == 0:
+@@ -517,7 +517,9 @@ class Task(object):
+         except ValueError:
+             exc_type, exc_value = exc
+             exc_traceback = None
+-        raise exc_type, exc_value, exc_traceback
++        e = exc_type(exc_value)
++        e.__traceback__ = exc_traceback
++        raise e
+ 
+ class AlwaysTask(Task):
+     def needs_execute(self):
+@@ -741,12 +743,12 @@ class Taskmaster(object):
+         self.ready_exc = None
+ 
+         T = self.trace
+-        if T: T.write(u'\n' + self.trace_message('Looking for a node to evaluate'))
++        if T: T.write('\n' + self.trace_message('Looking for a node to evaluate'))
+ 
+         while True:
+             node = self.next_candidate()
+             if node is None:
+-                if T: T.write(self.trace_message('No candidate anymore.') + u'\n')
++                if T: T.write(self.trace_message('No candidate anymore.') + '\n')
+                 return None
+ 
+             node = node.disambiguate()
+@@ -769,7 +771,7 @@ class Taskmaster(object):
+             else:
+                 S = None
+ 
+-            if T: T.write(self.trace_message(u'    Considering node %s and its children:' % self.trace_node(node)))
++            if T: T.write(self.trace_message('    Considering node %s and its children:' % self.trace_node(node)))
+ 
+             if state == NODE_NO_STATE:
+                 # Mark this node as being on the execution stack:
+@@ -777,7 +779,7 @@ class Taskmaster(object):
+             elif state > NODE_PENDING:
+                 # Skip this node if it has already been evaluated:
+                 if S: S.already_handled = S.already_handled + 1
+-                if T: T.write(self.trace_message(u'       already handled (executed)'))
++                if T: T.write(self.trace_message('       already handled (executed)'))
+                 continue
+ 
+             executor = node.get_executor()
+@@ -790,7 +792,7 @@ class Taskmaster(object):
+                 self.ready_exc = (SCons.Errors.ExplicitExit, e)
+                 if T: T.write(self.trace_message('       SystemExit'))
+                 return node
+-            except Exception, e:
++            except Exception as e:
+                 # We had a problem just trying to figure out the
+                 # children (like a child couldn't be linked in to a
+                 # VariantDir, or a Scanner threw something).  Arrange to
+@@ -808,7 +810,7 @@ class Taskmaster(object):
+             for child in chain(executor.get_all_prerequisites(), children):
+                 childstate = child.get_state()
+ 
+-                if T: T.write(self.trace_message(u'       ' + self.trace_node(child)))
++                if T: T.write(self.trace_message('       ' + self.trace_node(child)))
+ 
+                 if childstate == NODE_NO_STATE:
+                     children_not_visited.append(child)
+@@ -867,7 +869,7 @@ class Taskmaster(object):
+                     # count so we can be put back on the list for
+                     # re-evaluation when they've all finished.
+                     node.ref_count =  node.ref_count + child.add_to_waiting_parents(node)
+-                    if T: T.write(self.trace_message(u'     adjusted ref count: %s, child %s' %
++                    if T: T.write(self.trace_message('     adjusted ref count: %s, child %s' %
+                                   (self.trace_node(node), repr(str(child)))))
+ 
+                 if T:
+@@ -893,7 +895,7 @@ class Taskmaster(object):
+             # The default when we've gotten through all of the checks above:
+             # this node is ready to be built.
+             if S: S.build = S.build + 1
+-            if T: T.write(self.trace_message(u'Evaluating %s\n' %
++            if T: T.write(self.trace_message('Evaluating %s\n' %
+                                              self.trace_node(node)))
+ 
+             # For debugging only:
+--- a/engine/SCons/Tool/FortranCommon.py
++++ b/engine/SCons/Tool/FortranCommon.py
+@@ -61,7 +61,7 @@ def isfortran(env, source):
+ def _fortranEmitter(target, source, env):
+     node = source[0].rfile()
+     if not node.exists() and not node.is_derived():
+-       print "Could not locate " + str(node.name)
++       print("Could not locate " + str(node.name))
+        return ([], [])
+     mod_regex = """(?i)^\s*MODULE\s+(?!PROCEDURE)(\w+)"""
+     cre = re.compile(mod_regex,re.M)
+@@ -167,7 +167,7 @@ def add_fortran_to_env(env):
+     except KeyError:
+         FortranSuffixes = ['.f', '.for', '.ftn']
+ 
+-    #print "Adding %s to fortran suffixes" % FortranSuffixes
++    #print("Adding %s to fortran suffixes" % FortranSuffixes)
+     try:
+         FortranPPSuffixes = env['FORTRANPPFILESUFFIXES']
+     except KeyError:
+@@ -191,7 +191,7 @@ def add_f77_to_env(env):
+     except KeyError:
+         F77Suffixes = ['.f77']
+ 
+-    #print "Adding %s to f77 suffixes" % F77Suffixes
++    #print("Adding %s to f77 suffixes" % F77Suffixes)
+     try:
+         F77PPSuffixes = env['F77PPFILESUFFIXES']
+     except KeyError:
+@@ -206,7 +206,7 @@ def add_f90_to_env(env):
+     except KeyError:
+         F90Suffixes = ['.f90']
+ 
+-    #print "Adding %s to f90 suffixes" % F90Suffixes
++    #print("Adding %s to f90 suffixes" % F90Suffixes)
+     try:
+         F90PPSuffixes = env['F90PPFILESUFFIXES']
+     except KeyError:
+@@ -222,7 +222,7 @@ def add_f95_to_env(env):
+     except KeyError:
+         F95Suffixes = ['.f95']
+ 
+-    #print "Adding %s to f95 suffixes" % F95Suffixes
++    #print("Adding %s to f95 suffixes" % F95Suffixes)
+     try:
+         F95PPSuffixes = env['F95PPFILESUFFIXES']
+     except KeyError:
+@@ -238,7 +238,7 @@ def add_f03_to_env(env):
+     except KeyError:
+         F03Suffixes = ['.f03']
+ 
+-    #print "Adding %s to f95 suffixes" % F95Suffixes
++    #print("Adding %s to f95 suffixes" % F95Suffixes)
+     try:
+         F03PPSuffixes = env['F03PPFILESUFFIXES']
+     except KeyError:
+--- a/engine/SCons/Tool/intelc.py
++++ b/engine/SCons/Tool/intelc.py
+@@ -205,17 +205,17 @@ def get_all_compiler_versions():
+                         # Registry points to nonexistent dir.  Ignore this
+                         # version.
+                         value = get_intel_registry_value('ProductDir', subkey, 'IA32')
+-                    except MissingRegistryError, e:
++                    except MissingRegistryError as e:
+ 
+                         # Registry key is left dangling (potentially
+                         # after uninstalling).
+ 
+-                        print \
++                        print(\
+                             "scons: *** Ignoring the registry key for the Intel compiler version %s.\n" \
+                             "scons: *** It seems that the compiler was uninstalled and that the registry\n" \
+-                            "scons: *** was not cleaned up properly.\n" % subkey
++                            "scons: *** was not cleaned up properly.\n" % subkey)
+                     else:
+-                        print "scons: *** Ignoring "+str(value)
++                        print("scons: *** Ignoring "+str(value))
+ 
+                 i = i + 1
+         except EnvironmentError:
+@@ -294,7 +294,7 @@ def get_intel_compiler_top(version, abi)
+                     break
+             return top
+         top = find_in_2010style_dir(version) or find_in_2008style_dir(version)
+-        print "INTELC: top=",top
++        print("INTELC: top=",top)
+         if not top:
+             raise MissingDirError("Can't find version %s Intel compiler in %s (abi='%s')"%(version,top, abi))
+     return top
+@@ -394,8 +394,8 @@ def generate(env, version=None, abi=None
+             bindir="bin"
+             libdir="lib"
+         if verbose:
+-            print "Intel C compiler: using version %s (%g), abi %s, in '%s/%s'"%\
+-                  (repr(version), linux_ver_normalize(version),abi,topdir,bindir)
++            print("Intel C compiler: using version %s (%g), abi %s, in '%s/%s'"%\
++                  (repr(version), linux_ver_normalize(version),abi,topdir,bindir))
+             if is_linux:
+                 # Show the actual compiler version by running the compiler.
+                 os.system('%s/%s/icc --version'%(topdir,bindir))
+@@ -439,7 +439,7 @@ def generate(env, version=None, abi=None
+                     env.PrependENVPath(p[0], os.path.join(topdir, p[2]))
+                 else:
+                     env.PrependENVPath(p[0], path.split(os.pathsep))
+-                    # print "ICL %s: %s, final=%s"%(p[0], path, str(env['ENV'][p[0]]))
++                    # print("ICL %s: %s, final=%s"%(p[0], path, str(env['ENV'][p[0]])))
+ 
+     if is_windows:
+         env['CC']        = 'icl'
+--- a/engine/SCons/Tool/MSCommon/common.py
++++ b/engine/SCons/Tool/MSCommon/common.py
+@@ -38,7 +38,7 @@ import SCons.Util
+ logfile = os.environ.get('SCONS_MSCOMMON_DEBUG')
+ if logfile == '-':
+     def debug(x):
+-        print x
++        print(x)
+ elif logfile:
+     try:
+         import logging
+--- a/engine/SCons/Tool/mslink.py
++++ b/engine/SCons/Tool/mslink.py
+@@ -186,7 +186,7 @@ def RegServerFunc(target, source, env):
+         if ret:
+             raise SCons.Errors.UserError("Unable to register %s" % target[0])
+         else:
+-            print "Registered %s sucessfully" % target[0]
++            print("Registered %s sucessfully" % target[0])
+         return ret
+     return 0
+ 
+@@ -203,10 +203,10 @@ def embedManifestDllCheck(target, source
+         if os.path.exists(manifestSrc):
+             ret = (embedManifestDllAction) ([target[0]],None,env)        
+             if ret:
+-                raise SCons.Errors.UserError, "Unable to embed manifest into %s" % (target[0])
++                raise SCons.Errors.UserError("Unable to embed manifest into %s" % (target[0]))
+             return ret
+         else:
+-            print '(embed: no %s.manifest found; not embedding.)'%str(target[0])
++            print('(embed: no %s.manifest found; not embedding.)'%str(target[0]))
+     return 0
+ 
+ def embedManifestExeCheck(target, source, env):
+@@ -217,10 +217,10 @@ def embedManifestExeCheck(target, source
+         if os.path.exists(manifestSrc):
+             ret = (embedManifestExeAction) ([target[0]],None,env)
+             if ret:
+-                raise SCons.Errors.UserError, "Unable to embed manifest into %s" % (target[0])
++                raise SCons.Errors.UserError("Unable to embed manifest into %s" % (target[0]))
+             return ret
+         else:
+-            print '(embed: no %s.manifest found; not embedding.)'%str(target[0])
++            print('(embed: no %s.manifest found; not embedding.)'%str(target[0]))
+     return 0
+ 
+ embedManifestDllCheckAction = SCons.Action.Action(embedManifestDllCheck, None)
+--- a/engine/SCons/Tool/msvs.py
++++ b/engine/SCons/Tool/msvs.py
+@@ -195,7 +195,7 @@ def makeHierarchy(sources):
+                 dict = dict[part]
+             dict[path[-1]] = file
+         #else:
+-        #    print 'Warning: failed to decompose path for '+str(file)
++        #    print('Warning: failed to decompose path for '+str(file))
+     return hierarchy
+ 
+ class _DSPGenerator(object):
+@@ -351,7 +351,7 @@ class _DSPGenerator(object):
+                 config.platform = 'Win32'
+ 
+             self.configs[variant] = config
+-            print "Adding '" + self.name + ' - ' + config.variant + '|' + config.platform + "' to '" + str(dspfile) + "'"
++            print("Adding '" + self.name + ' - ' + config.variant + '|' + config.platform + "' to '" + str(dspfile) + "'")
+ 
+         for i in range(len(variants)):
+             AddConfig(self, variants[i], buildtarget[i], outdir[i], runfile[i], cmdargs)
+@@ -551,7 +551,7 @@ class _GenerateV6DSP(_DSPGenerator):
+     def Build(self):
+         try:
+             self.file = open(self.dspabs,'w')
+-        except IOError, detail:
++        except IOError as detail:
+             raise SCons.Errors.InternalError('Unable to open "' + self.dspabs + '" for writing:' + str(detail))
+         else:
+             self.PrintHeader()
+@@ -865,7 +865,7 @@ class _GenerateV7DSP(_DSPGenerator):
+     def Build(self):
+         try:
+             self.file = open(self.dspabs,'w')
+-        except IOError, detail:
++        except IOError as detail:
+             raise SCons.Errors.InternalError('Unable to open "' + self.dspabs + '" for writing:' + str(detail))
+         else:
+             self.PrintHeader()
+@@ -1033,7 +1033,7 @@ class _GenerateV10DSP(_DSPGenerator):
+         self.filtersabs = self.dspabs + '.filters'
+         try:
+             self.filters_file = open(self.filtersabs, 'w')
+-        except IOError, detail:
++        except IOError as detail:
+             raise SCons.Errors.InternalError('Unable to open "' + self.filtersabs + '" for writing:' + str(detail))
+             
+         self.filters_file.write('<?xml version="1.0" encoding="utf-8"?>\n'
+@@ -1105,7 +1105,7 @@ class _GenerateV10DSP(_DSPGenerator):
+         cats = sorted([k for k in categories.keys() if self.sources[k]],
+ 		              key = lambda a: a.lower())
+         
+-        # print vcxproj.filters file first
++        # print(vcxproj.filters file first)
+         self.filters_file.write('\t<ItemGroup>\n')
+         for kind in cats:
+             self.filters_file.write('\t\t<Filter Include="%s">\n'
+@@ -1135,7 +1135,7 @@ class _GenerateV10DSP(_DSPGenerator):
+             
+         self.filters_file.write('\t</ItemGroup>\n')
+             
+-        # then print files and filters
++        # then print(files and filters)
+         for kind in cats:
+             self.file.write('\t<ItemGroup>\n')
+             self.filters_file.write('\t<ItemGroup>\n')
+@@ -1170,12 +1170,12 @@ class _GenerateV10DSP(_DSPGenerator):
+                         '\t</ItemGroup>\n' % str(self.sconscript))
+ 
+     def Parse(self):
+-        print "_GenerateV10DSP.Parse()"
++        print("_GenerateV10DSP.Parse()")
+ 
+     def Build(self):
+         try:
+             self.file = open(self.dspabs, 'w')
+-        except IOError, detail:
++        except IOError as detail:
+             raise SCons.Errors.InternalError('Unable to open "' + self.dspabs + '" for writing:' + str(detail))
+         else:
+             self.PrintHeader()
+@@ -1252,7 +1252,7 @@ class _GenerateV7DSW(_DSWGenerator):
+                 config.platform = 'Win32'
+ 
+             self.configs[variant] = config
+-            print "Adding '" + self.name + ' - ' + config.variant + '|' + config.platform + "' to '" + str(dswfile) + "'"
++            print("Adding '" + self.name + ' - ' + config.variant + '|' + config.platform + "' to '" + str(dswfile) + "'")
+ 
+         if 'variant' not in env:
+             raise SCons.Errors.InternalError("You must specify a 'variant' argument (i.e. 'Debug' or " +\
+@@ -1431,7 +1431,7 @@ class _GenerateV7DSW(_DSWGenerator):
+     def Build(self):
+         try:
+             self.file = open(self.dswfile,'w')
+-        except IOError, detail:
++        except IOError as detail:
+             raise SCons.Errors.InternalError('Unable to open "' + self.dswfile + '" for writing:' + str(detail))
+         else:
+             self.PrintSolution()
+@@ -1480,7 +1480,7 @@ class _GenerateV6DSW(_DSWGenerator):
+     def Build(self):
+         try:
+             self.file = open(self.dswfile,'w')
+-        except IOError, detail:
++        except IOError as detail:
+             raise SCons.Errors.InternalError('Unable to open "' + self.dswfile + '" for writing:' + str(detail))
+         else:
+             self.PrintWorkspace()
+@@ -1537,8 +1537,8 @@ def GenerateProject(target, source, env)
+     if not dspfile is builddspfile:
+         try:
+             bdsp = open(str(builddspfile), "w+")
+-        except IOError, detail:
+-            print 'Unable to open "' + str(dspfile) + '" for writing:',detail,'\n'
++        except IOError as detail:
++            print('Unable to open "' + str(dspfile) + '" for writing:',detail,'\n')
+             raise
+ 
+         bdsp.write("This is just a placeholder file.\nThe real project file is here:\n%s\n" % dspfile.get_abspath())
+@@ -1553,8 +1553,8 @@ def GenerateProject(target, source, env)
+ 
+             try:
+                 bdsw = open(str(builddswfile), "w+")
+-            except IOError, detail:
+-                print 'Unable to open "' + str(dspfile) + '" for writing:',detail,'\n'
++            except IOError as detail:
++                print('Unable to open "' + str(dspfile) + '" for writing:',detail,'\n')
+                 raise
+ 
+             bdsw.write("This is just a placeholder file.\nThe real workspace file is here:\n%s\n" % dswfile.get_abspath())
+--- a/engine/SCons/Tool/qt.py
++++ b/engine/SCons/Tool/qt.py
+@@ -130,12 +130,12 @@ class _Automoc(object):
+             if not obj.has_builder():
+                 # binary obj file provided
+                 if debug:
+-                    print "scons: qt: '%s' seems to be a binary. Discarded." % str(obj)
++                    print("scons: qt: '%s' seems to be a binary. Discarded." % str(obj))
+                 continue
+             cpp = obj.sources[0]
+             if not splitext(str(cpp))[1] in cxx_suffixes:
+                 if debug:
+-                    print "scons: qt: '%s' is no cxx file. Discarded." % str(cpp) 
++                    print("scons: qt: '%s' is no cxx file. Discarded." % str(cpp) )
+                 # c or fortran source
+                 continue
+             #cpp_contents = comment.sub('', cpp.get_text_contents())
+@@ -148,12 +148,12 @@ class _Automoc(object):
+                 h = find_file(hname, (cpp.get_dir(),), env.File)
+                 if h:
+                     if debug:
+-                        print "scons: qt: Scanning '%s' (header of '%s')" % (str(h), str(cpp))
++                        print("scons: qt: Scanning '%s' (header of '%s')" % (str(h), str(cpp)))
+                     #h_contents = comment.sub('', h.get_text_contents())
+                     h_contents = h.get_text_contents()
+                     break
+             if not h and debug:
+-                print "scons: qt: no header for '%s'." % (str(cpp))
++                print("scons: qt: no header for '%s'." % (str(cpp)))
+             if h and q_object_search.search(h_contents):
+                 # h file with the Q_OBJECT macro found -> add moc_cpp
+                 moc_cpp = env.Moc(h)
+@@ -161,14 +161,14 @@ class _Automoc(object):
+                 out_sources.append(moc_o)
+                 #moc_cpp.target_scanner = SCons.Defaults.CScan
+                 if debug:
+-                    print "scons: qt: found Q_OBJECT macro in '%s', moc'ing to '%s'" % (str(h), str(moc_cpp))
++                    print("scons: qt: found Q_OBJECT macro in '%s', moc'ing to '%s'" % (str(h), str(moc_cpp)))
+             if cpp and q_object_search.search(cpp_contents):
+                 # cpp file with Q_OBJECT macro found -> add moc
+                 # (to be included in cpp)
+                 moc = env.Moc(cpp)
+                 env.Ignore(moc, moc)
+                 if debug:
+-                    print "scons: qt: found Q_OBJECT macro in '%s', moc'ing to '%s'" % (str(cpp), str(moc))
++                    print("scons: qt: found Q_OBJECT macro in '%s', moc'ing to '%s'" % (str(cpp), str(moc)))
+                 #moc.source_scanner = SCons.Defaults.CScan
+         # restore the original env attributes (FIXME)
+         objBuilder.env = objBuilderEnv
+--- a/engine/SCons/Tool/tex.py
++++ b/engine/SCons/Tool/tex.py
+@@ -147,15 +147,15 @@ def FindFile(name,suffixes,paths,env,req
+         if ext:
+             name = name + ext
+     if Verbose:
+-        print " searching for '%s' with extensions: " % name,suffixes
++        print(" searching for '%s' with extensions: " % name,suffixes)
+ 
+     for path in paths:
+         testName = os.path.join(path,name)
+         if Verbose:
+-            print " look for '%s'" % testName
++            print(" look for '%s'" % testName)
+         if os.path.isfile(testName):
+             if Verbose:
+-                print " found '%s'" % testName
++                print(" found '%s'" % testName)
+             return env.fs.File(testName)
+         else:
+             name_ext = SCons.Util.splitext(testName)[1]
+@@ -166,14 +166,14 @@ def FindFile(name,suffixes,paths,env,req
+             for suffix in suffixes:
+                 testNameExt = testName + suffix
+                 if Verbose:
+-                    print " look for '%s'" % testNameExt
++                    print(" look for '%s'" % testNameExt)
+ 
+                 if os.path.isfile(testNameExt):
+                     if Verbose:
+-                        print " found '%s'" % testNameExt
++                        print(" found '%s'" % testNameExt)
+                     return env.fs.File(testNameExt)
+     if Verbose:
+-        print " did not find '%s'" % name
++        print(" did not find '%s'" % name)
+     return None
+ 
+ def InternalLaTeXAuxAction(XXXLaTeXAction, target = None, source= None, env=None):
+@@ -232,7 +232,7 @@ def InternalLaTeXAuxAction(XXXLaTeXActio
+         saved_hashes[suffix] = theNode.get_csig()
+ 
+     if Verbose:
+-        print "hashes: ",saved_hashes
++        print("hashes: ",saved_hashes)
+ 
+     must_rerun_latex = True
+ 
+@@ -248,12 +248,12 @@ def InternalLaTeXAuxAction(XXXLaTeXActio
+ 
+         if saved_hashes[suffix] == new_md5:
+             if Verbose:
+-                print "file %s not changed" % (targetbase+suffix)
++                print("file %s not changed" % (targetbase+suffix))
+             return False        # unchanged
+         saved_hashes[suffix] = new_md5
+         must_rerun_latex = True
+         if Verbose:
+-            print "file %s changed, rerunning Latex, new hash = " % (targetbase+suffix), new_md5
++            print("file %s changed, rerunning Latex, new hash = " % (targetbase+suffix), new_md5)
+         return True     # changed
+ 
+     # generate the file name that latex will generate
+@@ -292,7 +292,7 @@ def InternalLaTeXAuxAction(XXXLaTeXActio
+             auxfiles = list(dups.keys())
+ 
+         if Verbose:
+-            print "auxfiles ",auxfiles
++            print("auxfiles ",auxfiles)
+ 
+         # Now decide if bibtex will need to be run.
+         # The information that bibtex reads from the .aux file is
+@@ -306,7 +306,7 @@ def InternalLaTeXAuxAction(XXXLaTeXActio
+                     content = open(target_aux, "rb").read()
+                     if content.find("bibdata") != -1:
+                         if Verbose:
+-                            print "Need to run bibtex"
++                            print("Need to run bibtex")
+                         bibfile = env.fs.File(SCons.Util.splitext(target_aux)[0])
+                         result = BibTeXAction(bibfile, bibfile, env)
+                         if result != 0:
+@@ -317,7 +317,7 @@ def InternalLaTeXAuxAction(XXXLaTeXActio
+         if check_MD5(suffix_nodes['.idx'],'.idx') or (count == 1 and run_makeindex):
+             # We must run makeindex
+             if Verbose:
+-                print "Need to run makeindex"
++                print("Need to run makeindex")
+             idxfile = suffix_nodes['.idx']
+             result = MakeIndexAction(idxfile, idxfile, env)
+             if result != 0:
+@@ -335,7 +335,7 @@ def InternalLaTeXAuxAction(XXXLaTeXActio
+         if check_MD5(suffix_nodes['.nlo'],'.nlo') or (count == 1 and run_nomenclature):
+             # We must run makeindex
+             if Verbose:
+-                print "Need to run makeindex for nomenclature"
++                print("Need to run makeindex for nomenclature")
+             nclfile = suffix_nodes['.nlo']
+             result = MakeNclAction(nclfile, nclfile, env)
+             if result != 0:
+@@ -347,7 +347,7 @@ def InternalLaTeXAuxAction(XXXLaTeXActio
+         if check_MD5(suffix_nodes['.glo'],'.glo') or (count == 1 and run_glossaries) or (count == 1 and run_glossary):
+             # We must run makeindex
+             if Verbose:
+-                print "Need to run makeindex for glossary"
++                print("Need to run makeindex for glossary")
+             glofile = suffix_nodes['.glo']
+             result = MakeGlossaryAction(glofile, glofile, env)
+             if result != 0:
+@@ -359,7 +359,7 @@ def InternalLaTeXAuxAction(XXXLaTeXActio
+         if check_MD5(suffix_nodes['.acn'],'.acn') or (count == 1 and run_acronyms):
+             # We must run makeindex
+             if Verbose:
+-                print "Need to run makeindex for acronyms"
++                print("Need to run makeindex for acronyms")
+             acrfile = suffix_nodes['.acn']
+             result = MakeAcronymsAction(acrfile, acrfile, env)
+             if result != 0:
+@@ -371,26 +371,26 @@ def InternalLaTeXAuxAction(XXXLaTeXActio
+         if warning_rerun_re.search(logContent):
+             must_rerun_latex = True
+             if Verbose:
+-                print "rerun Latex due to latex or package rerun warning"
++                print("rerun Latex due to latex or package rerun warning")
+ 
+         if rerun_citations_re.search(logContent):
+             must_rerun_latex = True
+             if Verbose:
+-                print "rerun Latex due to 'Rerun to get citations correct' warning"
++                print("rerun Latex due to 'Rerun to get citations correct' warning")
+ 
+         if undefined_references_re.search(logContent):
+             must_rerun_latex = True
+             if Verbose:
+-                print "rerun Latex due to undefined references or citations"
++                print("rerun Latex due to undefined references or citations")
+ 
+         if (count >= int(env.subst('$LATEXRETRIES')) and must_rerun_latex):
+-            print "reached max number of retries on Latex ,",int(env.subst('$LATEXRETRIES'))
++            print("reached max number of retries on Latex ,",int(env.subst('$LATEXRETRIES')))
+ # end of while loop
+ 
+     # rename Latex's output to what the target name is
+     if not (str(target[0]) == resultfilename  and  os.path.isfile(resultfilename)):
+         if os.path.isfile(resultfilename):
+-            print "move %s to %s" % (resultfilename, str(target[0]), )
++            print("move %s to %s" % (resultfilename, str(target[0]), ))
+             shutil.move(resultfilename,str(target[0]))
+ 
+     # Original comment (when TEXPICTS was not restored):
+@@ -444,27 +444,27 @@ def is_LaTeX(flist,env,abspath):
+     else:
+         env['ENV']['TEXINPUTS'] = savedpath
+     if Verbose:
+-        print "is_LaTeX search path ",paths
+-        print "files to search :",flist
++        print("is_LaTeX search path ",paths)
++        print("files to search :",flist)
+ 
+     # Now that we have the search path and file list, check each one
+     for f in flist:
+         if Verbose:
+-            print " checking for Latex source ",str(f)
++            print(" checking for Latex source ",str(f))
+ 
+         content = f.get_text_contents()
+         if LaTeX_re.search(content):
+             if Verbose:
+-                print "file %s is a LaTeX file" % str(f)
++                print("file %s is a LaTeX file" % str(f))
+             return 1
+         if Verbose:
+-            print "file %s is not a LaTeX file" % str(f)
++            print("file %s is not a LaTeX file" % str(f))
+ 
+         # now find included files
+         inc_files = [ ]
+         inc_files.extend( include_re.findall(content) )
+         if Verbose:
+-            print "files included by '%s': "%str(f),inc_files
++            print("files included by '%s': "%str(f),inc_files)
+         # inc_files is list of file names as given. need to find them
+         # using TEXINPUTS paths.
+ 
+@@ -474,7 +474,7 @@ def is_LaTeX(flist,env,abspath):
+             # make this a list since is_LaTeX takes a list.
+             fileList = [srcNode,]
+             if Verbose:
+-                print "FindFile found ",srcNode
++                print("FindFile found ",srcNode)
+             if srcNode is not None:
+                 file_test = is_LaTeX(fileList, env, abspath)
+ 
+@@ -483,7 +483,7 @@ def is_LaTeX(flist,env,abspath):
+                 return file_test
+ 
+         if Verbose:
+-            print " done scanning ",str(f)
++            print(" done scanning ",str(f))
+ 
+     return 0
+ 
+@@ -548,7 +548,7 @@ def ScanFiles(theFile, target, paths, fi
+ 
+     content = theFile.get_text_contents()
+     if Verbose:
+-        print " scanning ",str(theFile)
++        print(" scanning ",str(theFile))
+ 
+     for i in range(len(file_tests_search)):
+         if file_tests[i][0] is None:
+@@ -558,12 +558,12 @@ def ScanFiles(theFile, target, paths, fi
+     if incResult:
+         aux_files.append(os.path.join(targetdir, incResult.group(1)))
+     if Verbose:
+-        print "\include file names : ", aux_files
++        print("\include file names : ", aux_files)
+     # recursively call this on each of the included files
+     inc_files = [ ]
+     inc_files.extend( include_re.findall(content) )
+     if Verbose:
+-        print "files included by '%s': "%str(theFile),inc_files
++        print("files included by '%s': "%str(theFile),inc_files)
+     # inc_files is list of file names as given. need to find them
+     # using TEXINPUTS paths.
+ 
+@@ -572,7 +572,7 @@ def ScanFiles(theFile, target, paths, fi
+         if srcNode is not None:
+             file_tests = ScanFiles(srcNode, target, paths, file_tests, file_tests_search, env, graphics_extensions, targetdir, aux_files)
+     if Verbose:
+-        print " done scanning ",str(theFile)
++        print(" done scanning ",str(theFile))
+     return file_tests
+ 
+ def tex_emitter_core(target, source, env, graphics_extensions):
+@@ -602,7 +602,7 @@ def tex_emitter_core(target, source, env
+     env.SideEffect(logfilename,target[0])
+     env.SideEffect(flsfilename,target[0])
+     if Verbose:
+-        print "side effect :",auxfilename,logfilename,flsfilename
++        print("side effect :",auxfilename,logfilename,flsfilename)
+     env.Clean(target[0],auxfilename)
+     env.Clean(target[0],logfilename)
+     env.Clean(target[0],flsfilename)
+@@ -671,7 +671,7 @@ def tex_emitter_core(target, source, env
+     else:
+         env['ENV']['TEXINPUTS'] = savedpath
+     if Verbose:
+-        print "search path ",paths
++        print("search path ",paths)
+ 
+     aux_files = []
+     file_tests = ScanFiles(source[0], target, paths, file_tests, file_tests_search, env, graphics_extensions, targetdir, aux_files)
+@@ -692,14 +692,14 @@ def tex_emitter_core(target, source, env
+                 for suffix in suffix_list[:-1]:
+                     env.SideEffect(file_name + suffix,target[0])
+                     if Verbose:
+-                        print "side effect :",file_name + suffix
++                        print("side effect :",file_name + suffix)
+                     env.Clean(target[0],file_name + suffix)
+ 
+     for aFile in aux_files:
+         aFile_base = SCons.Util.splitext(aFile)[0]
+         env.SideEffect(aFile_base + '.aux',target[0])
+         if Verbose:
+-            print "side effect :",aFile_base + '.aux'
++            print("side effect :",aFile_base + '.aux')
+         env.Clean(target[0],aFile_base + '.aux')
+     # read fls file to get all other files that latex creates and will read on the next pass
+     # remove files from list that we explicitly dealt with above
+@@ -712,7 +712,7 @@ def tex_emitter_core(target, source, env
+                 out_files.remove(filename)
+         env.SideEffect(out_files,target[0])
+         if Verbose:
+-            print "side effect :",out_files
++            print("side effect :",out_files)
+         env.Clean(target[0],out_files)
+ 
+     return (target, source)
+--- a/engine/SCons/Action.py
++++ b/engine/SCons/Action.py
+@@ -553,7 +553,7 @@ class _ActionAction(ActionBase):
+                 source = executor.get_all_sources()
+             t = ' and '.join(map(str, target))
+             l = '\n  '.join(self.presub_lines(env))
+-            out = u"Building %s with action:\n  %s\n" % (t, l)
++            out = "Building %s with action:\n  %s\n" % (t, l)
+             sys.stdout.write(out)
+         cmd = None
+         if show and self.strfunction:
+@@ -672,7 +672,7 @@ def _subproc(scons_env, cmd, error = 'ig
+ 
+     try:
+         return subprocess.Popen(cmd, **kw)
+-    except EnvironmentError, e:
++    except EnvironmentError as e:
+         if error == 'raise': raise
+         # return a dummy Popen instance that only returns error
+         class dummyPopen(object):
+@@ -1060,11 +1060,11 @@ class FunctionAction(_ActionAction):
+             rsources = list(map(rfile, source))
+             try:
+                 result = self.execfunction(target=target, source=rsources, env=env)
+-            except KeyboardInterrupt, e:
++            except KeyboardInterrupt as e:
+                 raise
+-            except SystemExit, e:
++            except SystemExit as e:
+                 raise
+-            except Exception, e:
++            except Exception as e:
+                 result = e
+                 exc_info = sys.exc_info()
+ 
+--- a/engine/SCons/Builder.py
++++ b/engine/SCons/Builder.py
+@@ -167,7 +167,7 @@ class DictCmdGenerator(SCons.Util.Select
+ 
+         try:
+             ret = SCons.Util.Selector.__call__(self, env, source, ext)
+-        except KeyError, e:
++        except KeyError as e:
+             raise UserError("Ambiguous suffixes after environment substitution: %s == %s == %s" % (e.args[0], e.args[1], e.args[2]))
+         if ret is None:
+             raise UserError("While building `%s' from `%s': Don't know how to build from a source file with suffix `%s'.  Expected a suffix in this list: %s." % \
+--- a/engine/SCons/Defaults.py
++++ b/engine/SCons/Defaults.py
+@@ -221,7 +221,7 @@ def mkdir_func(dest):
+     for entry in dest:
+         try:
+             os.makedirs(str(entry))
+-        except os.error, e:
++        except os.error as e:
+             p = str(entry)
+             if (e.args[0] == errno.EEXIST or
+                     (sys.platform=='win32' and e.args[0]==183)) \
+--- a/engine/SCons/Job.py
++++ b/engine/SCons/Job.py
+@@ -278,14 +278,14 @@ else:
+ 
+             try:
+                 prev_size = threading.stack_size(stack_size*1024) 
+-            except AttributeError, e:
++            except AttributeError as e:
+                 # Only print a warning if the stack size has been
+                 # explicitly set.
+                 if not explicit_stack_size is None:
+                     msg = "Setting stack size is unsupported by this version of Python:\n    " + \
+                         e.args[0]
+                     SCons.Warnings.warn(SCons.Warnings.StackSizeWarning, msg)
+-            except ValueError, e:
++            except ValueError as e:
+                 msg = "Setting stack size failed:\n    " + str(e)
+                 SCons.Warnings.warn(SCons.Warnings.StackSizeWarning, msg)
+ 
+--- a/engine/SCons/Node/__init__.py
++++ b/engine/SCons/Node/__init__.py
+@@ -370,7 +370,7 @@ class Node(object):
+         """
+         try:
+             self.get_executor()(self, **kw)
+-        except SCons.Errors.BuildError, e:
++        except SCons.Errors.BuildError as e:
+             e.node = self
+             raise
+ 
+@@ -826,7 +826,7 @@ class Node(object):
+         """Adds dependencies."""
+         try:
+             self._add_child(self.depends, self.depends_set, depend)
+-        except TypeError, e:
++        except TypeError as e:
+             e = e.args[0]
+             if SCons.Util.is_List(e):
+                 s = list(map(str, e))
+@@ -843,7 +843,7 @@ class Node(object):
+         """Adds dependencies to ignore."""
+         try:
+             self._add_child(self.ignore, self.ignore_set, depend)
+-        except TypeError, e:
++        except TypeError as e:
+             e = e.args[0]
+             if SCons.Util.is_List(e):
+                 s = list(map(str, e))
+@@ -857,7 +857,7 @@ class Node(object):
+             return
+         try:
+             self._add_child(self.sources, self.sources_set, source)
+-        except TypeError, e:
++        except TypeError as e:
+             e = e.args[0]
+             if SCons.Util.is_List(e):
+                 s = list(map(str, e))
+--- a/engine/SCons/Platform/posix.py
++++ b/engine/SCons/Platform/posix.py
+@@ -77,7 +77,7 @@ def exec_fork(l, env): 
+         exitval = 127
+         try:
+             os.execvpe(l[0], l, env)
+-        except OSError, e:
++        except OSError as e:
+             exitval = exitvalmap.get(e[0], e[0])
+             sys.stderr.write("scons: %s: %s\n" % (l[0], e[1]))
+         os._exit(exitval)
+@@ -125,8 +125,8 @@ def process_cmd_output(cmd_stdout, cmd_s
+                 else:
+                     #sys.__stderr__.write( "str(stderr) = %s\n" % str )
+                     stderr.write(str)
+-        except select.error, (_errno, _strerror):
+-            if _errno != errno.EINTR:
++        except OSError as e:
++            if e.errno != errno.EINTR:
+                 raise
+ 
+ def exec_popen3(l, env, stdout, stderr):
+@@ -164,7 +164,7 @@ def exec_piped_fork(l, env, stdout, stde
+         exitval = 127
+         try:
+             os.execvpe(l[0], l, env)
+-        except OSError, e:
++        except OSError as e:
+             exitval = exitvalmap.get(e[0], e[0])
+             stderr.write("scons: %s: %s\n" % (l[0], e[1]))
+         os._exit(exitval)
+--- a/engine/SCons/Platform/win32.py
++++ b/engine/SCons/Platform/win32.py
+@@ -125,7 +125,7 @@ def piped_spawn(sh, escape, cmd, args, e
+         try:
+             args = [sh, '/C', escape(' '.join(args)) ]
+             ret = os.spawnve(os.P_WAIT, sh, args, env)
+-        except OSError, e:
++        except OSError as e:
+             # catch any error
+             try:
+                 ret = exitvalmap[e[0]]
+@@ -153,7 +153,7 @@ def piped_spawn(sh, escape, cmd, args, e
+ def exec_spawn(l, env):
+     try:
+         result = os.spawnve(os.P_WAIT, l[0], l, env)
+-    except OSError, e:
++    except OSError as e:
+         try:
+             result = exitvalmap[e[0]]
+             sys.stderr.write("scons: %s: %s\n" % (l[0], e[1]))
+--- a/engine/SCons/Scanner/C.py
++++ b/engine/SCons/Scanner/C.py
+@@ -59,7 +59,7 @@ class SConsCPPScanner(SCons.cpp.PreProce
+     def read_file(self, file):
+         try:
+             fp = open(str(file.rfile()))
+-        except EnvironmentError, e:
++        except EnvironmentError as e:
+             self.missing.append((file, self.current_file))
+             return ''
+         else:
+--- a/engine/SCons/Script/SConsOptions.py
++++ b/engine/SCons/Script/SConsOptions.py
+@@ -161,7 +161,7 @@ class SConsValues(optparse.Values):
+         elif name == 'diskcheck':
+             try:
+                 value = diskcheck_convert(value)
+-            except ValueError, v:
++            except ValueError as v:
+                 raise SCons.Errors.UserError("Not a valid diskcheck value: %s"%v)
+             if 'diskcheck' not in self.__dict__:
+                 # No --diskcheck= option was specified on the command line.
+@@ -629,7 +629,7 @@ def Parser(version):
+     def opt_diskcheck(option, opt, value, parser):
+         try:
+             diskcheck_value = diskcheck_convert(value)
+-        except ValueError, e:
++        except ValueError as e:
+             raise OptionValueError("Warning: `%s' is not a valid diskcheck type" % e)
+         setattr(parser.values, option.dest, diskcheck_value)
+ 
+--- a/engine/SCons/Subst.py
++++ b/engine/SCons/Subst.py
+@@ -438,7 +438,7 @@ def scons_subst(strSubst, env, mode=SUBS
+                             s = eval(key, self.gvars, lvars)
+                         except KeyboardInterrupt:
+                             raise
+-                        except Exception, e:
++                        except Exception as e:
+                             if e.__class__ in AllowableExceptions:
+                                 return ''
+                             raise_exception(e, lvars['TARGETS'], s)
+@@ -653,7 +653,7 @@ def scons_subst_list(strSubst, env, mode
+                             s = eval(key, self.gvars, lvars)
+                         except KeyboardInterrupt:
+                             raise
+-                        except Exception, e:
++                        except Exception as e:
+                             if e.__class__ in AllowableExceptions:
+                                 return
+                             raise_exception(e, lvars['TARGETS'], s)
+--- a/engine/SCons/Tool/filesystem.py
++++ b/engine/SCons/Tool/filesystem.py
+@@ -66,7 +66,7 @@ def generate(env):
+     try:
+         env['BUILDERS']['CopyTo']
+         env['BUILDERS']['CopyAs']
+-    except KeyError, e:
++    except KeyError as e:
+         global copyToBuilder
+         if copyToBuilder is None:
+             copyToBuilder = SCons.Builder.Builder(
+--- a/engine/SCons/Tool/__init__.py
++++ b/engine/SCons/Tool/__init__.py
+@@ -110,7 +110,7 @@ class Tool(object):
+                 finally:
+                     if file:
+                         file.close()
+-            except ImportError, e:
++            except ImportError as e:
+                 if str(e)!="No module named %s"%self.name:
+                     raise SCons.Errors.EnvironmentError(e)
+                 try:
+@@ -122,7 +122,7 @@ class Tool(object):
+                         try:
+                             importer = zipimport.zipimporter(aPath)
+                             return importer.load_module(self.name)
+-                        except ImportError, e:
++                        except ImportError as e:
+                             pass
+         finally:
+             sys.path = oldpythonpath
+@@ -140,7 +140,7 @@ class Tool(object):
+                     if file:
+                         file.close()
+                     return module
+-                except ImportError, e:
++                except ImportError as e:
+                     if str(e)!="No module named %s"%self.name:
+                         raise SCons.Errors.EnvironmentError(e)
+                     try:
+@@ -149,10 +149,10 @@ class Tool(object):
+                         module = importer.load_module(full_name)
+                         setattr(SCons.Tool, self.name, module)
+                         return module
+-                    except ImportError, e:
++                    except ImportError as e:
+                         m = "No tool named '%s': %s" % (self.name, e)
+                         raise SCons.Errors.EnvironmentError(m)
+-            except ImportError, e:
++            except ImportError as e:
+                 m = "No tool named '%s': %s" % (self.name, e)
+                 raise SCons.Errors.EnvironmentError(m)
+ 
+--- a/engine/SCons/Tool/install.py
++++ b/engine/SCons/Tool/install.py
+@@ -81,21 +81,21 @@ def scons_copytree(src, dst, symlinks=Fa
+             else:
+                 shutil.copy2(srcname, dstname)
+             # XXX What about devices, sockets etc.?
+-        except (IOError, os.error), why:
++        except (IOError, os.error) as why:
+             errors.append((srcname, dstname, str(why)))
+         # catch the CopytreeError from the recursive copytree so that we can
+         # continue with other files
+-        except CopytreeError, err:
++        except CopytreeError as err:
+             errors.extend(err.args[0])
+     try:
+         shutil.copystat(src, dst)
+     except WindowsError:
+         # can't copy file access times on Windows
+         pass
+-    except OSError, why:
++    except OSError as why:
+         errors.extend((src, dst, str(why)))
+     if errors:
+-        raise CopytreeError, errors
++        raise CopytreeError(errors)
+ 
+ 
+ #
+--- a/engine/SCons/Tool/MSCommon/netframework.py
++++ b/engine/SCons/Tool/MSCommon/netframework.py
+@@ -40,7 +40,7 @@ def find_framework_root():
+     try:
+         froot = read_reg(_FRAMEWORKDIR_HKEY_ROOT)
+         debug("Found framework install root in registry: %s" % froot)
+-    except WindowsError, e:
++    except WindowsError as e:
+         debug("Could not read reg key %s" % _FRAMEWORKDIR_HKEY_ROOT)
+         return None
+ 
+--- a/engine/SCons/Tool/MSCommon/sdk.py
++++ b/engine/SCons/Tool/MSCommon/sdk.py
+@@ -80,7 +80,7 @@ class SDKDefinition(object):
+ 
+         try:
+             sdk_dir = common.read_reg(hkey)
+-        except WindowsError, e:
++        except WindowsError as e:
+             debug('find_sdk_dir(): no SDK registry key %s' % repr(hkey))
+             return None
+ 
+@@ -299,7 +299,7 @@ def get_cur_sdk_dir_from_reg():
+     try:
+         val = common.read_reg(_CURINSTALLED_SDK_HKEY_ROOT)
+         debug("Found current sdk dir in registry: %s" % val)
+-    except WindowsError, e:
++    except WindowsError as e:
+         debug("Did not find current sdk in registry")
+         return None
+ 
+--- a/engine/SCons/Tool/MSCommon/vc.py
++++ b/engine/SCons/Tool/MSCommon/vc.py
+@@ -117,13 +117,13 @@ def get_host_target(env):
+         
+     try:
+         host = _ARCH_TO_CANONICAL[host_platform.lower()]
+-    except KeyError, e:
++    except KeyError as e:
+         msg = "Unrecognized host architecture %s"
+         raise ValueError(msg % repr(host_platform))
+ 
+     try:
+         target = _ARCH_TO_CANONICAL[target_platform.lower()]
+-    except KeyError, e:
++    except KeyError as e:
+         raise ValueError("Unrecognized target architecture %s" % target_platform)
+ 
+     return (host, target,req_target_platform)
+@@ -161,7 +161,7 @@ def msvc_version_to_maj_min(msvc_version
+        maj = int(t[0])
+        min = int(t[1])
+        return maj, min
+-   except ValueError, e:
++   except ValueError as e:
+        raise ValueError("Unrecognized version %s (%s)" % (msvc_version,msvc_version_numeric))
+ 
+ def is_host_target_supported(host_target, msvc_version):
+@@ -210,7 +210,7 @@ def find_vc_pdir(msvc_version):
+         key = root + key
+         try:
+             comps = common.read_reg(key)
+-        except WindowsError, e:
++        except WindowsError as e:
+             debug('find_vc_dir(): no VC registry key %s' % repr(key))
+         else:
+             debug('find_vc_dir(): found VC in registry: %s' % comps)
+@@ -282,7 +282,7 @@ def get_installed_vcs():
+                 installed_versions.append(ver)
+             else:
+                 debug('find_vc_pdir return None for ver %s' % ver)
+-        except VisualCException, e:
++        except VisualCException as e:
+             debug('did not find VC %s: caught exception %s' % (ver, str(e)))
+     return installed_versions
+ 
+@@ -376,7 +376,7 @@ def msvc_find_valid_batch_script(env,ver
+         try:
+             (vc_script,sdk_script) = find_batch_file(env,version,host_platform,tp)
+             debug('vc.py:msvc_find_valid_batch_script() vc_script:%s sdk_script:%s'%(vc_script,sdk_script))
+-        except VisualCException, e:
++        except VisualCException as e:
+             msg = str(e)
+             debug('Caught exception while looking for batch file (%s)' % msg)
+             warn_msg = "VC version %s not installed.  " + \
+@@ -391,14 +391,14 @@ def msvc_find_valid_batch_script(env,ver
+         if vc_script:
+             try:
+                 d = script_env(vc_script, args=arg)
+-            except BatchFileExecutionError, e:
++            except BatchFileExecutionError as e:
+                 debug('vc.py:msvc_find_valid_batch_script() use_script 3: failed running VC script %s: %s: Error:%s'%(repr(vc_script),arg,e))
+                 vc_script=None
+         if not vc_script and sdk_script:
+             debug('vc.py:msvc_find_valid_batch_script() use_script 4: trying sdk script: %s'%(sdk_script))
+             try:
+                 d = script_env(sdk_script,args=[])
+-            except BatchFileExecutionError,e:
++            except BatchFileExecutionError as e:
+                 debug('vc.py:msvc_find_valid_batch_script() use_script 5: failed running SDK script %s: Error:%s'%(repr(sdk_script),e))
+                 continue
+         elif not vc_script and not sdk_script:
+--- a/engine/SCons/Tool/MSCommon/vs.py
++++ b/engine/SCons/Tool/MSCommon/vs.py
+@@ -85,7 +85,7 @@ class VisualStudio(object):
+             key = root + key
+             try:
+                 comps = read_reg(key)
+-            except WindowsError, e:
++            except WindowsError as e:
+                 debug('find_vs_dir_by_reg(): no VS registry key %s' % repr(key))
+             else:
+                 debug('find_vs_dir_by_reg(): found VS in registry: %s' % comps)
+--- a/engine/SCons/Tool/packaging/__init__.py
++++ b/engine/SCons/Tool/packaging/__init__.py
+@@ -120,7 +120,7 @@ def Package(env, target=None, source=Non
+         try:
+             file,path,desc=imp.find_module(type, __path__)
+             return imp.load_module(type, file, path, desc)
+-        except ImportError, e:
++        except ImportError as e:
+             raise EnvironmentError("packager %s not available: %s"%(type,str(e)))
+ 
+     packagers=list(map(load_packager, PACKAGETYPE))
+@@ -141,7 +141,7 @@ def Package(env, target=None, source=Non
+         if 'PACKAGEROOT' not in kw:
+             kw['PACKAGEROOT'] = default_name%kw
+ 
+-    except KeyError, e:
++    except KeyError as e:
+         raise SCons.Errors.UserError( "Missing Packagetag '%s'"%e.args[0] )
+ 
+     # setup the source files
+@@ -157,10 +157,10 @@ def Package(env, target=None, source=Non
+ 
+         assert( len(target) == 0 )
+ 
+-    except KeyError, e:
++    except KeyError as e:
+         raise SCons.Errors.UserError( "Missing Packagetag '%s' for %s packager"\
+                                       % (e.args[0],packager.__name__) )
+-    except TypeError, e:
++    except TypeError as e:
+         # this exception means that a needed argument for the packager is
+         # missing. As our packagers get their "tags" as named function
+         # arguments we need to find out which one is missing.
+--- a/engine/SCons/Tool/packaging/msi.py
++++ b/engine/SCons/Tool/packaging/msi.py
+@@ -216,7 +216,7 @@ def build_wxsfile(target, source, env):
+         if 'CHANGE_SPECFILE' in env:
+             env['CHANGE_SPECFILE'](target, source)
+ 
+-    except KeyError, e:
++    except KeyError as e:
+         raise SCons.Errors.UserError( '"%s" package field for MSI is missing.' % e.args[0] )
+ 
+ #
+--- a/engine/SCons/Tool/packaging/rpm.py
++++ b/engine/SCons/Tool/packaging/rpm.py
+@@ -115,7 +115,7 @@ def collectintargz(target, source, env):
+     try:
+         #tarball = env['SOURCE_URL'].split('/')[-1]
+         tarball = env['SOURCE_URL'].split('/')[-1]
+-    except KeyError, e:
++    except KeyError as e:
+         raise SCons.Errors.UserError( "Missing PackageTag '%s' for RPM packager" % e.args[0] )
+ 
+     tarball = src_targz.package(env, source=sources, target=tarball,
+@@ -151,7 +151,7 @@ def build_specfile(target, source, env):
+         if 'CHANGE_SPECFILE' in env:
+             env['CHANGE_SPECFILE'](target, source)
+ 
+-    except KeyError, e:
++    except KeyError as e:
+         raise SCons.Errors.UserError( '"%s" package field for RPM is missing.' % e.args[0] )
+ 
+ 
+@@ -339,7 +339,7 @@ class SimpleTagCompiler(object):
+         for key, replacement in domestic:
+             try:
+                 str = str + replacement % values[key]
+-            except KeyError, e:
++            except KeyError as e:
+                 if self.mandatory:
+                     raise e
+ 
+@@ -352,7 +352,7 @@ class SimpleTagCompiler(object):
+                 int_values_for_key = [(get_country_code(t[0]),t[1]) for t in x]
+                 for v in int_values_for_key:
+                     str = str + replacement % v
+-            except KeyError, e:
++            except KeyError as e:
+                 if self.mandatory:
+                     raise e
+ 
+--- a/engine/SCons/Tool/textfile.py
++++ b/engine/SCons/Tool/textfile.py
+@@ -107,7 +107,7 @@ def _action(target, source, env):
+     # write the file
+     try:
+         fd = open(target[0].get_path(), "wb")
+-    except (OSError,IOError), e:
++    except (OSError,IOError) as e:
+         raise SCons.Errors.UserError("Can't write target file %s" % target[0])
+     # separate lines by 'linesep' only if linesep is not empty
+     lsep = None
+--- a/engine/SCons/Variables/__init__.py
++++ b/engine/SCons/Variables/__init__.py
+@@ -170,7 +170,7 @@ class Variables(object):
+                     sys.path.insert(0, dir)
+                 try:
+                     values['__name__'] = filename
+-                    exec open(filename, 'rU').read() in {}, values
++                    exec(open(filename, 'rU').read() in {}, values)
+                 finally:
+                     if dir:
+                         del sys.path[0]
+@@ -206,7 +206,7 @@ class Variables(object):
+                         env[option.key] = option.converter(value)
+                     except TypeError:
+                         env[option.key] = option.converter(value, env)
+-                except ValueError, x:
++                except ValueError as x:
+                     raise SCons.Errors.UserError('Error converting option: %s\n%s'%(option.key, x))
+ 
+ 
+@@ -268,7 +268,7 @@ class Variables(object):
+             finally:
+                 fh.close()
+ 
+-        except IOError, x:
++        except IOError as x:
+             raise SCons.Errors.UserError('Error writing options to file: %s\n%s' % (filename, x))
+ 
+     def GenerateHelpText(self, env, sort=None):
+--- a/engine/SCons/Script/__init__.py
++++ b/engine/SCons/Script/__init__.py
+@@ -364,7 +364,7 @@ GlobalDefaultBuilders = [
+ ]
+ 
+ for name in GlobalDefaultEnvironmentFunctions + GlobalDefaultBuilders:
+-    exec "%s = _SConscript.DefaultEnvironmentCall(%s)" % (name, repr(name))
++    exec("%s = _SConscript.DefaultEnvironmentCall(%s)" % (name, repr(name)))
+ del name
+ 
+ # There are a handful of variables that used to live in the
