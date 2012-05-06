@@ -135,7 +135,7 @@
 +	.owner		= THIS_MODULE,
 +	.llseek		= no_llseek,
 +	.write		= ar2315_wdt_write,
-+	.ioctl		= ar2315_wdt_ioctl,
++	.unlocked_ioctl	= ar2315_wdt_ioctl,
 +	.open		= ar2315_wdt_open,
 +	.release	= ar2315_wdt_release,
 +};
