@@ -25,7 +25,7 @@ $(eval $(call KernelPackage,fs-autofs4))
 define KernelPackage/fs-btrfs
   SUBMENU:=$(FS_MENU)
   TITLE:=BTRFS filesystem support
-  DEPENDS:=+kmod-lib-crc32c +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37):kmod-lib-lzo +kmod-lib-zlib
+  DEPENDS:=+kmod-lib-crc32c +!(LINUX_2_6_37):kmod-lib-lzo +kmod-lib-zlib
   KCONFIG:=\
 	CONFIG_BTRFS_FS \
 	CONFIG_BTRFS_FS_POSIX_ACL=n \
@@ -53,12 +53,12 @@ define KernelPackage/fs-cifs
   AUTOLOAD:=$(call AutoLoad,30,cifs)
   $(call AddDepends/nls)
   DEPENDS+= \
-    +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36):kmod-crypto-arc4 \
-    +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36):kmod-crypto-hmac \
-    +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36):kmod-crypto-md5 \
-    +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37):kmod-crypto-md4 \
-    +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-crypto-des \
-    +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-crypto-ecb
+    +kmod-crypto-arc4 \
+    +kmod-crypto-hmac \
+    +kmod-crypto-md5 \
+    +!(LINUX_2_6_37):kmod-crypto-md4 \
+    +!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-crypto-des \
+    +!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-crypto-ecb
 endef
 
 define KernelPackage/fs-cifs/description
@@ -81,42 +81,6 @@ define KernelPackage/fs-exportfs/description
 endef
 
 $(eval $(call KernelPackage,fs-exportfs))
-
-
-define KernelPackage/fs-ext2
-  SUBMENU:=$(FS_MENU)
-  TITLE:=EXT2 filesystem support
-  KCONFIG:=CONFIG_EXT2_FS
-  DEPENDS:=@LINUX_2_6_30||LINUX_2_6_31
-  FILES:=$(LINUX_DIR)/fs/ext2/ext2.ko
-  AUTOLOAD:=$(call AutoLoad,32,ext2,1)
-endef
-
-define KernelPackage/fs-ext2/description
- Kernel module for EXT2 filesystem support
-endef
-
-$(eval $(call KernelPackage,fs-ext2,1))
-
-
-define KernelPackage/fs-ext3
-  SUBMENU:=$(FS_MENU)
-  TITLE:=EXT3 filesystem support
-  KCONFIG:= \
-	CONFIG_EXT3_FS \
-	CONFIG_JBD
-  DEPENDS:=@LINUX_2_6_30||LINUX_2_6_31
-  FILES:= \
-	$(LINUX_DIR)/fs/ext3/ext3.ko \
-	$(LINUX_DIR)/fs/jbd/jbd.ko
-  AUTOLOAD:=$(call AutoLoad,31,jbd ext3,1)
-endef
-
-define KernelPackage/fs-ext3/description
- Kernel module for EXT3 filesystem support
-endef
-
-$(eval $(call KernelPackage,fs-ext3))
 
 
 define KernelPackage/fs-ext4

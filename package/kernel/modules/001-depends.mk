@@ -34,6 +34,6 @@ endef
 
 define AddDepends/rtc
   DEPENDS+= \
-    +(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-rtc-core-2.6 \
-    +!(LINUX_2_6_30||LINUX_2_6_31||LINUX_2_6_32||LINUX_2_6_36||LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-rtc-core-3.x
+    +(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-rtc-core-2.6 \
+    +!(LINUX_2_6_37||LINUX_2_6_38||LINUX_2_6_39):kmod-rtc-core-3.x
 endef

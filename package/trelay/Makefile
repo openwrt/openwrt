@@ -17,7 +17,6 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/trelay
   SUBMENU:=Network Support
   TITLE:=Trivial Ethernet Relay
-  DEPENDS:=@!LINUX_2_6_30 @!LINUX_2_6_31 @!LINUX_2_6_32
   FILES:=$(PKG_BUILD_DIR)/trelay.ko
   AUTOLOAD:=$(call AutoLoad,50,trelay)
 endef
