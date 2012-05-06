@@ -71,6 +71,9 @@ start() {
 
 	load_modules /etc/modules.d/*
 
+	# allow wifi modules time to settle
+	sleep 1
+
 	/sbin/wifi detect > /tmp/wireless.tmp
 	[ -s /tmp/wireless.tmp ] && {
 		cat /tmp/wireless.tmp >> /etc/config/wireless
