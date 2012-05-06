@@ -32,7 +32,7 @@
 +obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1282 @@
+@@ -0,0 +1,1279 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -784,7 +784,7 @@
 +		if (sp->rx_skb[idx])
 +			break;
 +
-+		skb = netdev_alloc_skb(dev, AR2313_BUFSIZE);
++		skb = netdev_alloc_skb_ip_align(dev, AR2313_BUFSIZE);
 +		if (!skb) {
 +			printk("\n\n\n\n %s: No memory in system\n\n\n\n",
 +				   __FUNCTION__);
@@ -795,7 +795,6 @@
 +		 * Make sure IP header starts on a fresh cache line.
 +		 */
 +		skb->dev = dev;
-+		skb_reserve(skb, RX_OFFSET);
 +		sp->rx_skb[idx] = skb;
 +
 +		rd = (ar231x_descr_t *) & sp->rx_ring[idx];
@@ -867,7 +866,7 @@
 +
 +		} else {
 +			/* alloc new buffer. */
-+			skb_new = netdev_alloc_skb(dev, AR2313_BUFSIZE + RX_OFFSET);
++			skb_new = netdev_alloc_skb_ip_align(dev, AR2313_BUFSIZE);
 +			if (skb_new != NULL) {
 +
 +				skb = sp->rx_skb[idx];
@@ -881,8 +880,6 @@
 +				netif_rx(skb);
 +
 +				skb_new->dev = dev;
-+				/* 16 bit align */
-+				skb_reserve(skb_new, RX_OFFSET);
 +				/* reset descriptor's curr_addr */
 +				rxdesc->addr = virt_to_phys(skb_new->data);
 +

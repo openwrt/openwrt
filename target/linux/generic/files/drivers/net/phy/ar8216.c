@@ -221,8 +221,8 @@ ar8216_read_port_link(struct ar8216_priv *priv, int port,
 	}
 }
 
-static int
-ar8216_mangle_tx(struct sk_buff *skb, struct net_device *dev)
+static struct sk_buff *
+ar8216_mangle_tx(struct net_device *dev, struct sk_buff *skb)
 {
 	struct ar8216_priv *priv = dev->phy_ptr;
 	unsigned char *buf;
@@ -243,32 +243,27 @@ ar8216_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	buf[1] = 0x80;
 
 send:
-	return priv->ndo_old->ndo_start_xmit(skb, dev);
+	return skb;
 
 error:
 	dev_kfree_skb_any(skb);
-	return 0;
+	return NULL;
 }
 
-static int
-ar8216_mangle_rx(struct sk_buff *skb, int napi)
+static void
+ar8216_mangle_rx(struct net_device *dev, struct sk_buff *skb)
 {
 	struct ar8216_priv *priv;
-	struct net_device *dev;
 	unsigned char *buf;
 	int port, vlan;
 
-	dev = skb->dev;
-	if (!dev)
-		goto error;
-
 	priv = dev->phy_ptr;
 	if (!priv)
-		goto error;
+		return;
 
 	/* don't strip the header if vlan mode is disabled */
 	if (!priv->vlan)
-		goto recv;
+		return;
 
 	/* strip header, get vlan id */
 	buf = skb->data;
@@ -276,13 +271,13 @@ ar8216_mangle_rx(struct sk_buff *skb, int napi)
 
 	/* check for vlan header presence */
 	if ((buf[12 + 2] != 0x81) || (buf[13 + 2] != 0x00))
-		goto recv;
+		return;
 
 	port = buf[0] & 0xf;
 
 	/* no need to fix up packets coming from a tagged source */
 	if (priv->vlan_tagged & (1 << port))
-		goto recv;
+		return;
 
 	/* lookup port vid from local table, the switch passes an invalid vlan id */
 	vlan = priv->vlan_id[priv->pvid[port]];
@@ -290,31 +285,6 @@ ar8216_mangle_rx(struct sk_buff *skb, int napi)
 	buf[14 + 2] &= 0xf0;
 	buf[14 + 2] |= vlan >> 8;
 	buf[15 + 2] = vlan & 0xff;
-
-recv:
-	skb->protocol = eth_type_trans(skb, skb->dev);
-
-	if (napi)
-		return netif_receive_skb(skb);
-	else
-		return netif_rx(skb);
-
-error:
-	/* no vlan? eat the packet! */
-	dev_kfree_skb_any(skb);
-	return NET_RX_DROP;
-}
-
-static int
-ar8216_netif_rx(struct sk_buff *skb)
-{
-	return ar8216_mangle_rx(skb, 0);
-}
-
-static int
-ar8216_netif_receive_skb(struct sk_buff *skb)
-{
-	return ar8216_mangle_rx(skb, 1);
 }
 
 static int
@@ -1356,13 +1326,9 @@ ar8216_config_init(struct phy_device *pdev)
 
 	/* VID fixup only needed on ar8216 */
 	if (pdev->addr == 0 && priv->chip_type == AR8216) {
-		pdev->pkt_align = 2;
-		pdev->netif_receive_skb = ar8216_netif_receive_skb;
-		pdev->netif_rx = ar8216_netif_rx;
-		priv->ndo_old = dev->netdev_ops;
-		memcpy(&priv->ndo, priv->ndo_old, sizeof(struct net_device_ops));
-		priv->ndo.ndo_start_xmit = ar8216_mangle_tx;
-		dev->netdev_ops = &priv->ndo;
+		dev->priv_flags |= IFF_NO_IP_ALIGN;
+		dev->eth_mangle_rx = ar8216_mangle_rx;
+		dev->eth_mangle_tx = ar8216_mangle_tx;
 	}
 
 	priv->init = false;
@@ -1443,8 +1409,10 @@ ar8216_remove(struct phy_device *pdev)
 	if (!priv)
 		return;
 
-	if (priv->ndo_old && dev)
-		dev->netdev_ops = priv->ndo_old;
+	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
+	dev->eth_mangle_rx = NULL;
+	dev->eth_mangle_tx = NULL;
+
 	if (pdev->addr == 0)
 		unregister_switch(&priv->dev);
 	kfree(priv);

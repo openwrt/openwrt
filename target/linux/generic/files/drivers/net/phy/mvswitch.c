@@ -41,8 +41,7 @@ MODULE_LICENSE("GPL");
 #define MVSWITCH_MAGIC 0x88E6060
 
 struct mvswitch_priv {
-	const struct net_device_ops *ndo_old;
-	struct net_device_ops ndo;
+	netdev_features_t orig_features;
 	u8 vlans[16];
 };
 
@@ -61,8 +60,8 @@ w16(struct phy_device *phydev, int addr, int reg, u16 val)
 }
 
 
-static int
-mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
+static struct sk_buff *
+mvswitch_mangle_tx(struct net_device *dev, struct sk_buff *skb)
 {
 	struct mvswitch_priv *priv;
 	char *buf = NULL;
@@ -132,7 +131,7 @@ mvswitch_mangle_tx(struct sk_buff *skb, struct net_device *dev)
 	));
 #endif
 
-	return priv->ndo_old->ndo_start_xmit(skb, dev);
+	return skb;
 
 error_expand:
 	if (net_ratelimit())
@@ -141,25 +140,20 @@ error_expand:
 error:
 	/* any errors? drop the packet! */
 	dev_kfree_skb_any(skb);
-	return 0;
+	return NULL;
 }
 
-static int
-mvswitch_mangle_rx(struct sk_buff *skb, int napi)
+static void
+mvswitch_mangle_rx(struct net_device *dev, struct sk_buff *skb)
 {
 	struct mvswitch_priv *priv;
-	struct net_device *dev;
-	int vlan = -1;
 	unsigned char *buf;
+	int vlan = -1;
 	int i;
 
-	dev = skb->dev;
-	if (!dev)
-		goto error;
-
 	priv = dev->phy_ptr;
-	if (!priv)
-		goto error;
+	if (WARN_ON_ONCE(!priv))
+		return;
 
 #ifdef HEADER_MODE
 	buf = skb->data;
@@ -167,7 +161,7 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 #else
 	buf = skb->data + skb->len - MV_TRAILER_SIZE;
 	if (buf[0] != 0x80)
-		goto error;
+		return;
 #endif
 
 	/* look for the vlan matching the incoming port */
@@ -177,33 +171,9 @@ mvswitch_mangle_rx(struct sk_buff *skb, int napi)
 	}
 
 	if (vlan == -1)
-		goto error;
-
-	skb->protocol = eth_type_trans(skb, skb->dev);
+		return;
 
 	__vlan_hwaccel_put_tag(skb, vlan);
-	if (napi)
-		return netif_receive_skb(skb);
-	else
-		return netif_rx(skb);
-
-error:
-	/* no vlan? eat the packet! */
-	dev_kfree_skb_any(skb);
-	return 0;
-}
-
-
-static int
-mvswitch_netif_rx(struct sk_buff *skb)
-{
-	return mvswitch_mangle_rx(skb, 0);
-}
-
-static int
-mvswitch_netif_receive_skb(struct sk_buff *skb)
-{
-	return mvswitch_mangle_rx(skb, 1);
 }
 
 
@@ -331,16 +301,12 @@ mvswitch_config_init(struct phy_device *pdev)
 		MV_SWITCHCTL_DROP
 	);
 
-	/* hook into the tx function */
-	priv->ndo_old = dev->netdev_ops;
-	memcpy(&priv->ndo, priv->ndo_old, sizeof(struct net_device_ops));
-	priv->ndo.ndo_start_xmit = mvswitch_mangle_tx;
-	dev->netdev_ops = &priv->ndo;
+	dev->eth_mangle_rx = mvswitch_mangle_rx;
+	dev->eth_mangle_tx = mvswitch_mangle_tx;
+	priv->orig_features = dev->features;
 
-	pdev->pkt_align = 2;
-	pdev->netif_receive_skb = mvswitch_netif_receive_skb;
-	pdev->netif_rx = mvswitch_netif_rx;
 #ifdef HEADER_MODE
+	dev->priv_flags |= IFF_NO_IP_ALIGN;
 	dev->features |= NETIF_F_HW_VLAN_RX | NETIF_F_HW_VLAN_TX;
 #else
 	dev->features |= NETIF_F_HW_VLAN_RX;
@@ -387,11 +353,11 @@ mvswitch_remove(struct phy_device *pdev)
 	struct mvswitch_priv *priv = to_mvsw(pdev);
 	struct net_device *dev = pdev->attached_dev;
 
-	/* restore old netdev ops */
-	if (priv->ndo_old && dev)
-		dev->netdev_ops = priv->ndo_old;
 	dev->phy_ptr = NULL;
-	dev->features &= ~NETIF_F_HW_VLAN_RX;
+	dev->eth_mangle_rx = NULL;
+	dev->eth_mangle_tx = NULL;
+	dev->features = priv->orig_features;
+	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
 	kfree(priv);
 }
 

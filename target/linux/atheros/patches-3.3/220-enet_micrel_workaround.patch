@@ -43,21 +43,7 @@
  	kfree(dev);
  	return 0;
  }
-@@ -846,7 +864,12 @@ static int ar231x_rx_int(struct net_devi
- 				dev->stats.rx_bytes += skb->len;
- 
- 				/* pass the packet to upper layers */
--				sp->rx(skb);
-+				if (sp->rx) {
-+					sp->rx(skb);
-+				} else {
-+					skb->protocol = eth_type_trans(skb, skb->dev);
-+					netif_rx(skb);
-+				}
- 				skb_new->dev = dev;
- 
- 				/* 16 bit align */
-@@ -1142,6 +1165,9 @@ static int ar231x_ioctl(struct net_devic
+@@ -1133,6 +1151,9 @@ static int ar231x_ioctl(struct net_devic
  	struct ar231x_private *sp = netdev_priv(dev);
  	int ret;
  

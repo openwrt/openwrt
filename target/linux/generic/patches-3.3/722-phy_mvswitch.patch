@@ -1,11 +1,12 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -113,6 +113,9 @@ config ADM6996_PHY
+@@ -113,6 +113,10 @@ config ADM6996_PHY
  	  Currently supports the ADM6996FC and ADM6996M switches.
  	  Support for FC is very limited.
  
 +config MVSWITCH_PHY
 +	tristate "Driver for Marvell 88E6060 switches"
++	select ETHERNET_PACKET_MANGLE
 +
  config FIXED_PHY
  	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
