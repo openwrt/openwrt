@@ -82,41 +82,6 @@ endef
 $(eval $(call KernelPackage,video-konica))
 
 
-define KernelPackage/video-ov511
-  TITLE:=OV511 USB webcam support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core
-  KCONFIG:=CONFIG_USB_OV511
-  FILES:=$(LINUX_DIR)/drivers/media/video/ov511.ko
-  AUTOLOAD:=$(call AutoLoad,70,ov511)
-  $(call AddDepends/video)
-endef
-
-
-define KernelPackage/video-ov511/description
- Kernel modules for supporting OmniVision OV511 USB webcams.
-endef
-
-$(eval $(call KernelPackage,video-ov511))
-
-
-define KernelPackage/video-ovcamchip
-  TITLE:=OV6xxx/OV7xxx Camera Chip support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core
-  KCONFIG:=CONFIG_VIDEO_OVCAMCHIP
-  FILES:=$(LINUX_DIR)/drivers/media/video/ovcamchip/ovcamchip.ko
-  AUTOLOAD:=$(call AutoLoad,70,ovcamchip)
-  $(call AddDepends/video)
-endef
-
-
-define KernelPackage/video-ovcamchip/description
- Kernel modules for supporting OmniVision OV6xxx and OV7xxx series of 
- camera chips.
-endef
-
-$(eval $(call KernelPackage,video-ovcamchip))
-
-
 define KernelPackage/video-sn9c102
   TITLE:=SN9C102 Camera Chip support
   DEPENDS:=@USB_SUPPORT +kmod-usb-core
