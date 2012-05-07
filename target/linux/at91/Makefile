@@ -14,7 +14,7 @@ FEATURES:=squashfs jffs2 targz ext2 usb
 CFLAGS:=-Os -pipe -march=armv5te -mtune=arm926ej-s -fno-caller-saves
 SUBTARGETS:=9g20 9260 9263
 
-LINUX_VERSION:=3.3.4
+LINUX_VERSION:=3.3.5
 DEVICE_TYPE=
 
 include $(INCLUDE_DIR)/target.mk
