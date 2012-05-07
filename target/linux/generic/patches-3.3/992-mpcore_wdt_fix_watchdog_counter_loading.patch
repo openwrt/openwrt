@@ -51,7 +51,7 @@ Signed-off-by: Vitaly Kuzmichev <vkuzmichev@mvista.com>
 +EXPORT_SYMBOL_GPL(twd_timer_get_rate);
 --- a/drivers/watchdog/mpcore_wdt.c
 +++ b/drivers/watchdog/mpcore_wdt.c
-@@ -99,9 +99,7 @@ static void mpcore_wdt_keepalive(struct 
+@@ -99,9 +99,7 @@ static void mpcore_wdt_keepalive(struct
  
  	spin_lock(&wdt_lock);
  	/* Assume prescale is set to 256 */

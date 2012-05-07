@@ -49,7 +49,7 @@ Subject: [PATCH 26/63] MIPS: BCM63XX: register ehci device.
  #include <board_bcm963xx.h>
  #include <bcm_tag.h>
  
-@@ -945,6 +946,9 @@ int __init board_register_devices(void)
+@@ -944,6 +945,9 @@ int __init board_register_devices(void)
  	    !board_get_mac_address(board.enet1.mac_addr))
  		bcm63xx_enet_register(1, &board.enet1);
  
