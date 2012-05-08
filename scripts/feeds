@@ -10,6 +10,7 @@ use Cwd 'abs_path';
 
 chdir "$FindBin::Bin/..";
 $ENV{TOPDIR}=getcwd();
+$ENV{GIT_CONFIG_PARAMETERS}="'core.autocrlf=false'";
 
 my $mk=`which gmake`;	# select the right 'make' program
 chomp($mk);		# trim trailing newline
