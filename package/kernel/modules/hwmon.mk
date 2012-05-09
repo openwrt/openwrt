@@ -45,6 +45,21 @@ endef
 $(eval $(call KernelPackage,hwmon-vid))
 
 
+define KernelPackage/hwmon-adt7475
+  TITLE:=ADT7473/7475/7476/7490 monitoring support
+  KCONFIG:=CONFIG_SENSORS_ADT7475
+  FILES:=$(LINUX_DIR)/drivers/hwmon/adt7475.ko
+  AUTOLOAD:=$(call AutoLoad,60,adt7475)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
+endef
+
+define KernelPackage/hwmon-adt7475/description
+  Kernel module for ADT7473/7475/7476/7490 thermal monitor chip.
+endef
+
+$(eval $(call KernelPackage,hwmon-adt7475))
+
+
 define KernelPackage/hwmon-lm63
   TITLE:=LM63/64 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM63
