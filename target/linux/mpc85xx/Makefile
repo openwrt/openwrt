@@ -10,10 +10,10 @@ ARCH:=powerpc
 BOARD:=mpc85xx
 BOARDNAME:=Freescale MPC85xx
 CFLAGS:=-Os -pipe -fno-caller-saves -mcpu=8540
-FEATURES:=spe_fpu ramdisk
+FEATURES:=spe_fpu ramdisk broken
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.38.8
+LINUX_VERSION:=3.3.5
 
 include $(INCLUDE_DIR)/target.mk
 
