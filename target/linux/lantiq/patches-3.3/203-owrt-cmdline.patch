@@ -1,0 +1,45 @@
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -43,6 +43,34 @@ void prom_free_prom_memory(void)
+ {
+ }
+ 
++#ifdef CONFIG_IMAGE_CMDLINE_HACK
++extern char __image_cmdline[];
++
++static void __init
++prom_init_image_cmdline(void)
++{
++	char *p = __image_cmdline;
++	int replace = 0;
++
++	if (*p == '-') {
++		replace = 1;
++		p++;
++	}
++
++	if (*p == '\0')
++		return;
++
++	if (replace) {
++		strlcpy(arcs_cmdline, p, sizeof(arcs_cmdline));
++	} else {
++		strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
++		strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
++	}
++}
++#else
++static void __init prom_init_image_cmdline(void) { return; }
++#endif
++
+ static void __init prom_init_cmdline(void)
+ {
+ 	int argc = fw_arg0;
+@@ -59,6 +87,7 @@ static void __init prom_init_cmdline(voi
+ 			strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
+ 		}
+ 	}
++	prom_init_image_cmdline();
+ }
+ 
+ void __iomem *ltq_remap_resource(struct resource *res)
