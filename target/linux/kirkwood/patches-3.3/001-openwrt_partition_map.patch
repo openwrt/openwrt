@@ -1,0 +1,11 @@
+--- a/arch/arm/mach-kirkwood/sheevaplug-setup.c
++++ b/arch/arm/mach-kirkwood/sheevaplug-setup.c
+@@ -33,7 +33,7 @@ static struct mtd_partition sheevaplug_n
+ 		.offset = MTDPART_OFS_NXTBLK,
+ 		.size = SZ_4M
+ 	}, {
+-		.name = "root",
++		.name = "rootfs",
+ 		.offset = MTDPART_OFS_NXTBLK,
+ 		.size = MTDPART_SIZ_FULL
+ 	},
