@@ -4,7 +4,7 @@
  	  Say 'Y' here if you want your kernel to support the
  	  RaidSonic ICY BOX IB-NAS6210 device.
  
-+config MACH_NSA_310
++config MACH_NSA310
 +	bool "ZyXEL NSA-310"
 +	help
 +	  Say 'Y' here if you want your kernel to support the
@@ -19,7 +19,7 @@
  obj-$(CONFIG_MACH_NET5BIG_V2)		+= netxbig_v2-setup.o lacie_v2-common.o
  obj-$(CONFIG_MACH_T5325)		+= t5325-setup.o
  obj-$(CONFIG_MACH_NAS6210)		+= nas6210-setup.o
-+obj-$(CONFIG_MACH_NSA_310)		+= nsa-310-setup.o
++obj-$(CONFIG_MACH_NSA310)		+= nsa-310-setup.o
  
  obj-$(CONFIG_CPU_IDLE)			+= cpuidle.o
 --- /dev/null
