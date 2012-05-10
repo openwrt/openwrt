@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=orion
 BOARDNAME:=Marvell Orion
-SUBTARGETS:=generic harddisk dns323 broken
+SUBTARGETS:=generic harddisk dns323
 CFLAGS=-Os -pipe -march=armv5te -mtune=xscale -fno-caller-saves
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
