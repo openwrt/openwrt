@@ -52,56 +52,59 @@ sub which($) {
 	return $res;
 }
 
-my $md5cmd = which("md5sum");
-$md5cmd or $md5cmd = which("md5");
-$md5cmd or die 'no md5 checksum program found, please install md5 or md5sum';
+my $md5cmd = which("md5sum") || which("md5") || die 'no md5 checksum program found, please install md5 or md5sum';
 chomp $md5cmd;
 
 sub download
 {
 	my $mirror = shift;
-	my $options = $ENV{WGET_OPTIONS};
-	$options or $options = "";
+	my $options = $ENV{WGET_OPTIONS} || "";
 
-	$mirror =~ s/\/$//;
-	if( $mirror =~ /^file:\/\// ) {
-		my $cache = $mirror;
-		$cache =~ s/file:\/\///g;
-		if(system("test -d $cache")) {
-			print STDERR "Wrong local cache directory -$cache-.\n";
+	$mirror =~ s!/$!!;
+
+	if ($mirror =~ s!^file://!!) {
+		if (! -d "$mirror") {
+			print STDERR "Wrong local cache directory -$mirror-.\n";
 			cleanup();
 			return;
 		}
-		if(! -d $target) {
-			system("mkdir -p $target/");
+
+		if (! -d "$target") {
+			system("mkdir", "-p", "$target/");
 		}
-		if (open TMPDLS, "find $cache -follow -name $filename 2>/dev/null |"){
-			my $i = 0;
-			my $link = "";
-			while (defined($link = readline TMPDLS)) {
-				chomp $link;
-				$i++;
-				if ($i > 1) {
-					print("$i or more instances of $filename in $cache found . Only one instance allowed.\n");
-					return;
-				}
-			}
-			close TMPDLS;
-			if ($i < 1) {
-				print("No instances of $filename found in $cache.\n");
-				return;
-			} elsif ($i == 1){
-				print("Copying $filename from $link\n");
-				copy($link, "$target/$filename.dl");
-			}
-		} else {
-			print("Failed to search for $filename in $cache\n");
+
+		if (! open TMPDLS, "find $mirror -follow -name $filename 2>/dev/null |") {
+			print("Failed to search for $filename in $mirror\n");
 			return;
 		}
-		system("$md5cmd $target/$filename.dl > \"$target/$filename.md5sum\" ") == 0 or return;
+
+		my $link;
+
+		while (defined(my $line = readline TMPDLS)) {
+			chomp ($link = $line);
+			if ($. > 1) {
+				print("$. or more instances of $filename in $mirror found . Only one instance allowed.\n");
+				return;
+			}
+		}
+
+		close TMPDLS;
+
+		if (! $link) {
+			print("No instances of $filename found in $mirror.\n");
+			return;
+		}
+
+		print("Copying $filename from $link\n");
+		copy($link, "$target/$filename.dl");
+
+		if (system("$md5cmd '$target/$filename.dl' > '$target/$filename.md5sum'")) {
+			print("Failed to generate md5 sum for $filename\n");
+			return;
+		}
 	} else {
-		open WGET, "wget -t5 --timeout=20 --no-check-certificate $options -O- \"$mirror/$filename\" |" or die "Cannot launch wget.\n";
-		open MD5SUM, "| $md5cmd > \"$target/$filename.md5sum\"" or die "Cannot launch md5sum.\n";
+		open WGET, "wget -t5 --timeout=20 --no-check-certificate $options -O- '$mirror/$filename' |" or die "Cannot launch wget.\n";
+		open MD5SUM, "| $md5cmd > '$target/$filename.md5sum'" or die "Cannot launch md5sum.\n";
 		open OUTPUT, "> $target/$filename.dl" or die "Cannot create file $target/$filename.dl: $!\n";
 		my $buffer;
 		while (read WGET, $buffer, 1048576) {
@@ -112,7 +115,7 @@ sub download
 		close WGET;
 		close OUTPUT;
 
-		if (($? >> 8) != 0 ) {
+		if ($? >> 8) {
 			print STDERR "Download failed.\n";
 			cleanup();
 			return;
@@ -130,7 +133,7 @@ sub download
 	}
 
 	unlink "$target/$filename";
-	system("mv \"$target/$filename.dl\" \"$target/$filename\"");
+	system("mv", "$target/$filename.dl", "$target/$filename");
 	cleanup();
 }
 
