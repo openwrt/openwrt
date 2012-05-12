@@ -1,0 +1,23 @@
+--- a/arch/mips/sibyte/swarm/swarm-i2c.c
++++ b/arch/mips/sibyte/swarm/swarm-i2c.c
+@@ -13,6 +13,11 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ 
++static struct i2c_board_info swarm_i2c_info0[] __initdata = {
++	{
++		I2C_BOARD_INFO("lm90", 0x2a),
++	},
++};
+ 
+ static struct i2c_board_info swarm_i2c_info1[] __initdata = {
+ 	{
+@@ -24,6 +29,8 @@ static int __init swarm_i2c_init(void)
+ {
+ 	int err;
+ 
++	err = i2c_register_board_info(0, swarm_i2c_info0,
++				      ARRAY_SIZE(swarm_i2c_info0));
+ 	err = i2c_register_board_info(1, swarm_i2c_info1,
+ 				      ARRAY_SIZE(swarm_i2c_info1));
+ 	if (err < 0)
