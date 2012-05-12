@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
-FEATURES:=squashfs jffs2 pci usb
+FEATURES:=squashfs jffs2 pci usb broken
 CFLAGS:=-Os -pipe -march=octeon -fno-caller-saves
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
