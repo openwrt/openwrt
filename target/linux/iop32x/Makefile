@@ -9,10 +9,10 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=iop32x
 BOARDNAME:=Intel IOP32x
-FEATURES:=squashfs
+FEATURES:=squashfs broken
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=2.6.37.6
+LINUX_VERSION:=3.3.5
 
 include $(INCLUDE_DIR)/target.mk
 
