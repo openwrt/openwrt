@@ -36,6 +36,30 @@ CONFIGURE_ARGS += \
 	--disable-nls 		\
 	--disable-tls
 
+define Build/InstallDev
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		BUILDCC="$(HOSTCC)" \
+		DESTDIR="$(1)" \
+		installdirs install-data
+
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_BUILD_DIR)/libblkid/blkid.pc $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_BUILD_DIR)/libmount/mount.pc $(1)/usr/lib/pkgconfig
+	$(CP) $(PKG_BUILD_DIR)/libuuid/uuid.pc $(1)/usr/lib/pkgconfig
+
+	$(INSTALL_DIR) $(1)/usr/include/blkid
+	$(CP) $(PKG_BUILD_DIR)/libblkid/src/blkid.h $(1)/usr/include/blkid
+	$(INSTALL_DIR) $(1)/usr/include/libmount
+	$(CP) $(PKG_BUILD_DIR)/libmount/src/libmount.h $(1)/usr/include/libmount
+	$(INSTALL_DIR) $(1)/usr/include/uuid
+	$(CP) $(PKG_BUILD_DIR)/libuuid/src/uuid.h $(1)/usr/include/uuid
+
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libblkid/src/.libs/libblkid.{a,so.*} $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libmount/src/.libs/libmount.{a,so.*} $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libuuid/src/.libs/libuuid.{a,so.*} $(1)/usr/lib
+endef
+
 define Package/libblkid
 $(call Package/util-linux/Default)
   TITLE:=block device id library
@@ -90,7 +114,7 @@ endef
 define Package/blkid
 $(call Package/util-linux/Default)
   TITLE:=locate/print block device attributes
-  DEPENDS:= +libblkid +libuuid 
+  DEPENDS:= +libblkid +libuuid
   SUBMENU=disc
 endef
 
@@ -262,7 +286,7 @@ endef
 define Package/partx-utils
 $(call Package/util-linux/Default)
   TITLE:=inform kernel about the presence and numbering of on-disk partitions
-  DEPENDS:= +libblkid +libuuid 
+  DEPENDS:= +libblkid +libuuid
   SUBMENU=disc
 endef
 
