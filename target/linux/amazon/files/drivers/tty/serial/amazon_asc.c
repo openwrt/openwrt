@@ -666,7 +666,7 @@ static struct uart_driver amazonasc_reg = {
 	.cons =				&amazonasc_console,
 };
 
-static int __init amazon_asc_probe(struct platform_device *dev)
+static int amazon_asc_probe(struct platform_device *dev)
 {
 	unsigned char res;
 	uart_register_driver(&amazonasc_reg);
