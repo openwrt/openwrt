@@ -11,6 +11,9 @@ fi
 which md5sum >/dev/null 2>&1 || alias md5sum=md5
 
 for pkg in `find $pkg_dir -name '*.ipk' | sort`; do
+	name="${pkg##*/}"
+	name="${name%%_*}"
+	[[ "$name" = "kernel" ]] && continue
 	echo "Generating index for package $pkg" >&2
 	file_size=$(ls -l $pkg | awk '{print $5}')
 	md5sum=$(md5sum $pkg | awk '{print $1}')
