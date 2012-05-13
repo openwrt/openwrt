@@ -1,0 +1,11 @@
+--- a/arch/arm/mach-gemini/gpio.c
++++ b/arch/arm/mach-gemini/gpio.c
+@@ -120,7 +120,7 @@ static int gpio_set_irq_type(struct irq_
+ 	__raw_writel(reg_level, base + GPIO_INT_LEVEL);
+ 	__raw_writel(reg_both, base + GPIO_INT_BOTH_EDGE);
+ 
+-	gpio_ack_irq(d->irq);
++	gpio_ack_irq(d);
+ 
+ 	return 0;
+ }
