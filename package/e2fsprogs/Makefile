@@ -34,8 +34,8 @@ $(call Package/e2fsprogs/Default)
 endef
 
 define Package/e2fsprogs/description
- This package contains essential ext2 filesystem utilities which consists of 
- e2fsck, mke2fs, debugfs, dumpe2fs, tune2fs, and most of the other core ext2 
+ This package contains essential ext2 filesystem utilities which consists of
+ e2fsck, mke2fs, debugfs, dumpe2fs, tune2fs, and most of the other core ext2
  filesystem utilities.
 endef
 
@@ -83,6 +83,9 @@ TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
 	--enable-elf-shlibs	\
+	--disable-libuuid	\
+	--disable-libblkid	\
+	--disable-uuidd		\
 	--disable-tls		\
 	--disable-nls		\
 	--disable-rpath
