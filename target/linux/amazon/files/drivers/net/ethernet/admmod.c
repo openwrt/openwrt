@@ -1245,7 +1245,6 @@ int adm_process_protocol_filter_request (unsigned int cmd, PPROTOCOLFILTER uPROT
 
 int adm_process_mac_table_request (unsigned int cmd, PMACENTRY mMACENTRY)
 {
-    unsigned int rtval;
     unsigned int val;		//6996i
     unsigned int control[6] ;	//6996i
     unsigned int status[6] ;	//6996i

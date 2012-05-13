@@ -1,6 +1,6 @@
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -1166,6 +1166,9 @@ static int __xipram do_write_oneword(str
+@@ -1152,6 +1152,9 @@ static int __xipram do_write_oneword(str
  	int retry_cnt = 0;
  
  	adr += chip->start;
@@ -10,7 +10,7 @@
  
  	mutex_lock(&chip->mutex);
  	ret = get_chip(map, chip, adr, FL_WRITING);
-@@ -1433,7 +1436,11 @@ static int __xipram do_write_buffer(stru
+@@ -1420,7 +1423,11 @@ static int __xipram do_write_buffer(stru
  	z = 0;
  	while(z < words * map_bankwidth(map)) {
  		datum = map_word_load(map, buf);
@@ -22,7 +22,7 @@
  
  		z += map_bankwidth(map);
  		buf += map_bankwidth(map);
-@@ -1678,6 +1685,9 @@ static int __xipram do_erase_oneblock(st
+@@ -1665,6 +1672,9 @@ static int __xipram do_erase_oneblock(st
  	int ret = 0;
  
  	adr += chip->start;
@@ -32,7 +32,7 @@
  
  	mutex_lock(&chip->mutex);
  	ret = get_chip(map, chip, adr, FL_ERASING);
-@@ -1806,6 +1816,10 @@ static int do_atmel_lock(struct map_info
+@@ -1793,6 +1803,10 @@ static int do_atmel_lock(struct map_info
  	struct cfi_private *cfi = map->fldrv_priv;
  	int ret;
  
@@ -43,7 +43,7 @@
  	mutex_lock(&chip->mutex);
  	ret = get_chip(map, chip, adr + chip->start, FL_LOCKING);
  	if (ret)
-@@ -1842,6 +1856,10 @@ static int do_atmel_unlock(struct map_in
+@@ -1828,6 +1842,10 @@ static int do_atmel_unlock(struct map_in
  	struct cfi_private *cfi = map->fldrv_priv;
  	int ret;
  

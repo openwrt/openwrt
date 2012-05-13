@@ -34,10 +34,11 @@
 #include <asm/irq.h>
 #include <asm/time.h>
 
-static void amazon_disable_irq(unsigned int irq_nr)
+static void amazon_disable_irq(struct irq_data *d)
 {
 	int i;
 	u32 amazon_ier = AMAZON_ICU_IM0_IER;
+	unsigned int irq_nr = d->irq;
 
 	if (irq_nr <= INT_NUM_IM0_IRL11 && irq_nr >= INT_NUM_IM0_IRL0)
 		amazon_writel(amazon_readl(amazon_ier) & (~(AMAZON_DMA_H_MASK)), amazon_ier);
@@ -53,11 +54,12 @@ static void amazon_disable_irq(unsigned int irq_nr)
 	}	
 }
 
-static void amazon_mask_and_ack_irq(unsigned int irq_nr)
+static void amazon_mask_and_ack_irq(struct irq_data *d)
 {
 	int i;
 	u32 amazon_ier = AMAZON_ICU_IM0_IER;
 	u32 amazon_isr = AMAZON_ICU_IM0_ISR;
+	unsigned int irq_nr = d->irq;
 
 	if (irq_nr <= INT_NUM_IM0_IRL11 && irq_nr >= INT_NUM_IM0_IRL0){
 		amazon_writel(amazon_readl(amazon_ier) & (~(AMAZON_DMA_H_MASK)), amazon_ier);
@@ -77,10 +79,11 @@ static void amazon_mask_and_ack_irq(unsigned int irq_nr)
 	}
 }
 
-static void amazon_enable_irq(unsigned int irq_nr)
+static void amazon_enable_irq(struct irq_data *d)
 {
 	int i;
 	u32 amazon_ier = AMAZON_ICU_IM0_IER;
+	unsigned int irq_nr = d->irq;
 
 	if (irq_nr <= INT_NUM_IM0_IRL11 && irq_nr >= INT_NUM_IM0_IRL0)
 		amazon_writel(amazon_readl(amazon_ier) | AMAZON_DMA_H_MASK, amazon_ier);
@@ -96,29 +99,21 @@ static void amazon_enable_irq(unsigned int irq_nr)
 	}
 }
 
-static unsigned int amazon_startup_irq(unsigned int irq)
+static unsigned int amazon_startup_irq(struct irq_data *d)
 {
-	amazon_enable_irq(irq);
+	amazon_enable_irq(d);
 	return 0;
-}
-
-static void amazon_end_irq(unsigned int irq)
-{
-	if (!(irq_desc[irq].status & (IRQ_DISABLED|IRQ_INPROGRESS))) {
-		amazon_enable_irq(irq);
-	}
 }
 
 static struct irq_chip amazon_irq_type = {
 	.name = "AMAZON",
-	.startup = amazon_startup_irq,
-	.enable = amazon_enable_irq,
-	.disable = amazon_disable_irq,
-	.unmask = amazon_enable_irq,
-	.ack = amazon_mask_and_ack_irq,
-	.mask = amazon_disable_irq,
-	.mask_ack = amazon_mask_and_ack_irq,
-	.end = amazon_end_irq
+	.irq_startup = amazon_startup_irq,
+	.irq_enable = amazon_enable_irq,
+	.irq_disable = amazon_disable_irq,
+	.irq_unmask = amazon_enable_irq,
+	.irq_ack = amazon_mask_and_ack_irq,
+	.irq_mask = amazon_disable_irq,
+	.irq_mask_ack = amazon_mask_and_ack_irq,
 };
 
 /* Cascaded interrupts from IM0-4 */
@@ -178,7 +173,7 @@ void __init arch_init_irq(void)
 	}
 
 	for (i = INT_NUM_IRQ0; i <= INT_NUM_IM4_IRL31; i++)
-		set_irq_chip_and_handler(i, &amazon_irq_type,
+		irq_set_chip_and_handler(i, &amazon_irq_type,
 			handle_level_irq);
 
 	set_c0_status(IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5);

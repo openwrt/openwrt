@@ -118,7 +118,7 @@ int find_uImage_size(unsigned long start_offset)
 	return temp + 0x40;
 }
 
-static int __init amazon_mtd_probe(struct platform_device *dev)
+static int amazon_mtd_probe(struct platform_device *dev)
 {
 	unsigned long uimage_size;
 	struct mtd_info *mymtd = NULL;
@@ -167,7 +167,7 @@ static int __init amazon_mtd_probe(struct platform_device *dev)
 		amazon_partitions[2].size = mymtd->size - amazon_partitions[2].offset - (2 * mymtd->erasesize);
 	}
 
-	add_mtd_partitions(mymtd, parts, 3);
+	mtd_device_register(mymtd, parts, 3);
 
 	printk(KERN_INFO "amazon_mtd: added %s flash with %dMB\n",
 		amazon_map.name, ((int)mymtd->size) >> 20);

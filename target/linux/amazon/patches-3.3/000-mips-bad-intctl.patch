@@ -1,6 +1,6 @@
 --- a/arch/mips/kernel/traps.c
 +++ b/arch/mips/kernel/traps.c
-@@ -1578,7 +1578,16 @@ void __cpuinit per_cpu_trap_init(void)
+@@ -1593,7 +1593,16 @@ void __cpuinit per_cpu_trap_init(void)
  	if (cpu_has_mips_r2) {
  		cp0_compare_irq_shift = CAUSEB_TI - CAUSEB_IP;
  		cp0_compare_irq = (read_c0_intctl() >> INTCTLB_IPTI) & 7;
@@ -19,7 +19,7 @@
  	} else {
 --- a/arch/mips/include/asm/irq.h
 +++ b/arch/mips/include/asm/irq.h
-@@ -138,9 +138,11 @@ extern void free_irqno(unsigned int irq)
+@@ -139,9 +139,11 @@ extern void free_irqno(unsigned int irq)
   * IE7.  Since R2 their number has to be read from the c0_intctl register.
   */
  #define CP0_LEGACY_COMPARE_IRQ 7
