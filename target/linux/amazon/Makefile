@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=amazon
 BOARDNAME:=Infineon Amazon
 FEATURES:=squashfs jffs2 broken
-LINUX_VERSION:=2.6.37.6
+LINUX_VERSION:=3.3.5
 
 include $(INCLUDE_DIR)/target.mk
 

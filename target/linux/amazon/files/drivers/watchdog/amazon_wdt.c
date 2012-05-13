@@ -215,7 +215,7 @@ static struct file_operations wdt_fops = {
 	release:	wdt_release,	
 };
 
-static int __init amazon_wdt_probe(struct platform_device *dev)
+static int amazon_wdt_probe(struct platform_device *dev)
 {
 	int result = result = register_chrdev(0, "watchdog", &wdt_fops);
    	

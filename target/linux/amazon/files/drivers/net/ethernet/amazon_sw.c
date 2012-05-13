@@ -98,7 +98,7 @@
 #define ETHERNET_PACKET_DMA_BUFFER_SIZE 1536
 
 /***************************************** Module Parameters *************************************/
-char mode[] = "bridge";
+static char mode[] = "bridge";
 module_param_array(mode, charp, NULL, 0);
 
 static int timeout = 1 * HZ;

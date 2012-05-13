@@ -1,0 +1,7 @@
+--- a/drivers/tty/serial/Makefile
++++ b/drivers/tty/serial/Makefile
+@@ -78,3 +78,4 @@ obj-$(CONFIG_SERIAL_LANTIQ)	+= lantiq.o
+ obj-$(CONFIG_SERIAL_XILINX_PS_UART) += xilinx_uartps.o
+ obj-$(CONFIG_SERIAL_SIRFSOC) += sirfsoc_uart.o
+ obj-$(CONFIG_SERIAL_AR933X)   += ar933x_uart.o
++obj-$(CONFIG_AMAZON_ASC_UART) += amazon_asc.o

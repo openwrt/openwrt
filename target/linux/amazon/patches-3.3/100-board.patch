@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -102,6 +102,22 @@ config BCM63XX
+@@ -120,6 +120,22 @@ config BCM63XX
  	help
  	 Support for BCM63XX based boards
  
@@ -23,17 +23,17 @@
  config MIPS_COBALT
  	bool "Cobalt Server"
  	select CEVT_R4K
-@@ -716,6 +732,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
+@@ -813,6 +829,7 @@ config NLM_XLP_BOARD
  
  endchoice
  
 +source "arch/mips/amazon/Kconfig"
  source "arch/mips/alchemy/Kconfig"
- source "arch/mips/bcm63xx/Kconfig"
- source "arch/mips/jazz/Kconfig"
+ source "arch/mips/ath79/Kconfig"
+ source "arch/mips/bcm47xx/Kconfig"
 --- a/arch/mips/Kbuild.platforms
 +++ b/arch/mips/Kbuild.platforms
-@@ -5,6 +5,7 @@ platforms += ar7
+@@ -6,6 +6,7 @@ platforms += ath79
  platforms += bcm47xx
  platforms += bcm63xx
  platforms += cavium-octeon
