@@ -85,6 +85,7 @@ define Image/Build/jffs2-64k
 	$(call Image/Build/CyberTAN,$(1),wrt300n_v1,EWCB,1.03.6,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt300n_v11,EWC2,1.51.2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt350n_v1,EWCG,1.04.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt610n_v1,610N,1.0.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),we800g,3,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Edi,$(1),ps1208mfg,$(patsubst jffs2-%,jffs2,$(1)))
