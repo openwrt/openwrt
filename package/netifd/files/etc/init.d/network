@@ -8,8 +8,7 @@ start() {
 	include /lib/network
 	setup_switch
 
-	ubus call network reload
-
+	ifup -a
 	grep -qs config /etc/config/wireless && {
 		/sbin/wifi up
 	}
