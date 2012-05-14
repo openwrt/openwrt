@@ -25,20 +25,14 @@ ppp_generic_init_config() {
 ppp_generic_setup() {
 	local config="$1"; shift
 
-	json_get_var ipv6 ipv6
+	json_get_vars ipv6 peerdns defaultroute demand keepalive username password pppd_options
 	[ "$ipv6" = 1 ] || ipv6=""
-
-	json_get_var peerdns peerdns
 	[ "$peerdns" = 0 ] && peerdns="" || peerdns="1"
-
-	json_get_var defaultroute defaultroute
 	if [ "$defaultroute" = 1 ]; then
 		defaultroute="defaultroute replacedefaultroute";
 	else
 		defaultroute="nodefaultroute"
 	fi
-
-	json_get_var demand demand
 	if [ "${demand:-0}" -gt 0 ]; then
 		demand="precompiled-active-filter /etc/ppp/filter demand idle $demand"
 	else
@@ -47,16 +41,10 @@ ppp_generic_setup() {
 
 	[ -n "$mtu" ] || json_get_var mtu mtu
 
-	json_get_var keepalive keepalive
 	local interval="${keepalive##*[, ]}"
 	[ "$interval" != "$keepalive" ] || interval=5
-
-	json_get_var username username
-	json_get_var password password
-
 	[ -n "$connect" ] || json_get_var connect connect
 	[ -n "$disconnect" ] || json_get_var disconnect disconnect
-	json_get_var pppd_options pppd_options
 
 	proto_run_command "$config" /usr/sbin/pppd \
 		nodetach ipparam "$config" \
@@ -155,11 +143,8 @@ proto_pppoa_setup() {
 		/sbin/insmod $module 2>&- >&-
 	done
 
-	json_get_var atmdev atmdev
-	json_get_var vci vci
-	json_get_var vpi vpi
+	json_get_vars atmdev vci vpi encaps
 
-	json_get_var encaps encaps
 	case "$encaps" in
 		1|vc) encaps="vc-encaps" ;;
 		*) encaps="llc-encaps" ;;
