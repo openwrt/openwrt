@@ -15,6 +15,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/pptpclient
 PKG_MD5SUM:=b47735ba5d6d37dfdbccb85afc044ede
 
+PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_netifd
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/pptp
