@@ -11,6 +11,8 @@ PKG_NAME:=6to4
 PKG_VERSION:=8
 PKG_RELEASE:=1
 
+PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_netifd
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/6to4
