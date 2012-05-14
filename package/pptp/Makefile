@@ -23,7 +23,7 @@ define Package/pptp
   TITLE:=PPTP client
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
   URL:=http://pptpclient.sourceforge.net/
-  DEPENDS:=+ppp +kmod-gre +resolveip +ip
+  DEPENDS:=+ppp +kmod-gre +resolveip +!PACKAGE_netifd:ip
 endef
 
 define Package/pptp/description
