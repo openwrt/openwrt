@@ -21,7 +21,18 @@ proto_pptp_setup() {
 	local load
 
 	json_get_var server server
-	proto_add_host_dependency "$config" "$server"
+
+	serv_addr=
+	for ip in $(resolveip -t 5 "$server"); do
+		proto_add_host_dependency "$config" "$server"
+		serv_addr=1
+	done
+	[ -n "$serv_addr" ] || {
+		echo "Could not resolve server address"
+		sleep 5
+		proto_setup_failed "$config"
+		exit 1
+	}
 
 	json_get_var buffering buffering
 	[ "${buffering:-1}" == 0 ] && buffering="--nobuffer" || buffering=
