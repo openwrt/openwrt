@@ -20,7 +20,7 @@ proto_pptp_setup() {
 	local iface="$2"
 	local load
 
-	json_get_var server server
+	json_get_vars server buffering
 
 	serv_addr=
 	for ip in $(resolveip -t 5 "$server"); do
@@ -34,7 +34,6 @@ proto_pptp_setup() {
 		exit 1
 	}
 
-	json_get_var buffering buffering
 	[ "${buffering:-1}" == 0 ] && buffering="--nobuffer" || buffering=
 
 	for module in slhc ppp_generic ppp_async ip_gre; do
