@@ -32,7 +32,7 @@
  	if (status == 0) {
  		struct device	*dev;
  
-@@ -1347,11 +1346,11 @@ const char *gpiochip_is_requested(struct
+@@ -1351,11 +1350,11 @@ const char *gpiochip_is_requested(struct
  		return NULL;
  	if (test_bit(FLAG_REQUESTED, &gpio_desc[gpio].flags) == 0)
  		return NULL;

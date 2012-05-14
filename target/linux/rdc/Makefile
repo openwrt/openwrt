@@ -13,7 +13,7 @@ FEATURES:=squashfs jffs2 pci usb pcmcia broken
 CFLAGS:=-Os -pipe -march=i486 -mtune=i486 -fno-caller-saves
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.3.5
+LINUX_VERSION:=3.3.6
 
 include $(INCLUDE_DIR)/target.mk
 

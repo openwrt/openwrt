@@ -13,7 +13,7 @@
  	---help---
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -874,6 +874,169 @@ static int refresh_rootfs_split(struct m
+@@ -867,6 +867,169 @@ static int refresh_rootfs_split(struct m
  }
  #endif /* CONFIG_MTD_ROOTFS_SPLIT */
  
@@ -183,7 +183,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -890,7 +1053,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -883,7 +1046,7 @@ int add_mtd_partitions(struct mtd_info *
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
  	int i;
@@ -192,7 +192,7 @@
  	int ret;
  #endif
  
-@@ -907,6 +1070,17 @@ int add_mtd_partitions(struct mtd_info *
+@@ -900,6 +1063,17 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
