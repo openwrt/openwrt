@@ -15,7 +15,6 @@ resolve_network() {
 	config_get ifn "$1" ifname
 	[ -z "$ifn" ] && return 1
 	resolve_ifname "$ifn"
-	return 0
 }
 
 start_relay() {
