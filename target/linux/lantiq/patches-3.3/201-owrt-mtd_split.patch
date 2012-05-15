@@ -13,11 +13,10 @@
  	---help---
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -867,6 +867,169 @@ static int refresh_rootfs_split(struct m
+@@ -867,6 +867,168 @@ static int refresh_rootfs_split(struct m
  }
  #endif /* CONFIG_MTD_ROOTFS_SPLIT */
  
-+
 +#ifdef CONFIG_MTD_UIMAGE_SPLIT
 +static unsigned long find_uimage_size(struct mtd_info *mtd,
 +				      unsigned long offset)
@@ -98,7 +97,7 @@
 +}
 +
 +static unsigned long find_brnimage_size(struct mtd_info *mtd,
-+				      unsigned long offset)
++					unsigned long offset)
 +{
 +	unsigned long buf[4];
 +	// Assume at most 2MB of kernel image
@@ -183,7 +182,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -883,7 +1046,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -883,7 +1045,7 @@ int add_mtd_partitions(struct mtd_info *
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
  	int i;
@@ -192,7 +191,7 @@
  	int ret;
  #endif
  
-@@ -900,6 +1063,17 @@ int add_mtd_partitions(struct mtd_info *
+@@ -900,6 +1062,15 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  
@@ -200,10 +199,8 @@
 +		if (!strcmp(parts[i].name, "linux")) {
 +			ret = split_uimage(master, &parts[i]);
 +
-+			if (ret) {
-+				printk(KERN_WARNING
-+				       "Can't split linux partition\n");
-+			}
++			if (ret)
++				printk(KERN_WARNING "Can't split linux partition\n");
 +		}
 +#endif
 +

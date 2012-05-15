@@ -36,14 +36,14 @@
 static struct resource resources[] =
 {
 	[0] = {
-		.name    = "dwc_otg_membase",
-		.start   = LTQ_USB_IOMEM_BASE,
-		.end	 = LTQ_USB_IOMEM_BASE + LTQ_USB_IOMEM_SIZE - 1,
-		.flags	 = IORESOURCE_MEM,
+		.name	= "dwc_otg_membase",
+		.start	= LTQ_USB_IOMEM_BASE,
+		.end	= LTQ_USB_IOMEM_BASE + LTQ_USB_IOMEM_SIZE - 1,
+		.flags	= IORESOURCE_MEM,
 	},
 	[1] = {
-		.name    = "dwc_otg_irq",
-		.flags   = IORESOURCE_IRQ,
+		.name	= "dwc_otg_irq",
+		.flags	= IORESOURCE_IRQ,
 	},
 };
 
@@ -52,7 +52,7 @@ static u64 dwc_dmamask = (u32)0x1fffffff;
 static struct platform_device platform_dev = {
 	.name = "dwc_otg",
 	.dev = {
-		.dma_mask      = &dwc_dmamask,
+		.dma_mask	= &dwc_dmamask,
 	},
 	.resource		= resources,
 	.num_resources		= ARRAY_SIZE(resources),

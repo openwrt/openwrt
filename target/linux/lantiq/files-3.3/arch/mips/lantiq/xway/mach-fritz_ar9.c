@@ -84,9 +84,9 @@ fritz7320_gpio_keys[] __initdata = {
 };
 
 static struct ltq_pci_data ltq_pci_data = {
-	.clock  = PCI_CLOCK_INT,
-	.gpio   = PCI_GNT1 | PCI_REQ1,
-	.irq    = {
+	.clock	= PCI_CLOCK_INT,
+	.gpio	= PCI_GNT1 | PCI_REQ1,
+	.irq	= {
 		[14] = INT_NUM_IM0_IRL0 + 22,
 	},
 };
@@ -97,7 +97,8 @@ static struct ltq_eth_data ltq_eth_data = {
 
 static int usb_pins[2] = { 50, 51 };
 
-static void __init fritz7320_init(void)
+static void __init
+fritz7320_init(void)
 {
 	ltq_register_gpio_keys_polled(-1, LTQ_KEYS_POLL_INTERVAL,
 		ARRAY_SIZE(fritz7320_gpio_keys), fritz7320_gpio_keys);
@@ -109,6 +110,6 @@ static void __init fritz7320_init(void)
 }
 
 MIPS_MACHINE(LANTIQ_MACH_FRITZ7320,
-	     "FRITZ7320",
-	     "FRITZ!BOX 7320",
-	      fritz7320_init);
+			"FRITZ7320",
+			"FRITZ!BOX 7320",
+			fritz7320_init);

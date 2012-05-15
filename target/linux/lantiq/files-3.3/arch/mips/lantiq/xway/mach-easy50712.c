@@ -55,7 +55,8 @@ static struct ltq_eth_data ltq_eth_data = {
 	.mii_mode = PHY_INTERFACE_MODE_MII,
 };
 
-static void __init easy50712_init(void)
+static void __init
+easy50712_init(void)
 {
 	ltq_register_gpio_stp();
 	ltq_register_nor(&easy50712_flash_data);
@@ -65,6 +66,6 @@ static void __init easy50712_init(void)
 }
 
 MIPS_MACHINE(LTQ_MACH_EASY50712,
-	     "EASY50712",
-	     "EASY50712 Eval Board",
-	      easy50712_init);
+			"EASY50712",
+			"EASY50712 Eval Board",
+			easy50712_init);

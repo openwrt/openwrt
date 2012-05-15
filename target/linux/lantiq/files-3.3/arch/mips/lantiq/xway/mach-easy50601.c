@@ -45,7 +45,8 @@ static struct ltq_eth_data ltq_eth_data = {
 	.mii_mode = -1, /* use EPHY */
 };
 
-static void __init easy50601_init(void)
+static void __init
+easy50601_init(void)
 {
 	ltq_register_nor(&easy50601_flash_data);
 	ltq_register_etop(&ltq_eth_data);

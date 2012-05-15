@@ -128,14 +128,14 @@ static struct flash_platform_data spi_flash_data = {
 };
 
 static struct spi_board_info spi_flash __initdata = {
-	.modalias               = "m25p80",
-	.bus_num                = 0,
-	.chip_select            = 0,
-	.max_speed_hz           = 10 * 1000 * 1000,
-	.mode                   = SPI_MODE_3,
+	.modalias		= "m25p80",
+	.bus_num		= 0,
+	.chip_select		= 0,
+	.max_speed_hz		= 10 * 1000 * 1000,
+	.mode			= SPI_MODE_3,
 	.chip_select		= 0,
 	.controller_data	= (void *) SPI_GPIO_CS0,
-	.platform_data          = &spi_flash_data
+	.platform_data		= &spi_flash_data
 };
 
 static void __init
@@ -145,7 +145,8 @@ spi_gpio_init(void)
 	platform_device_register(&spi_gpio_device);
 }
 
-static void __init fritz3370_init(void)
+static void __init
+fritz3370_init(void)
 {
 	spi_gpio_init();
 	platform_device_register_simple("pcie-xway", 0, NULL, 0);
@@ -158,6 +159,6 @@ static void __init fritz3370_init(void)
 }
 
 MIPS_MACHINE(LANTIQ_MACH_FRITZ3370,
-	     "FRITZ3370",
-	     "FRITZ!BOX 3370",
-	      fritz3370_init);
+			"FRITZ3370",
+			"FRITZ!BOX 3370",
+			fritz3370_init);

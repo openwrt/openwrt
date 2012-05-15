@@ -17,7 +17,6 @@
 #include <linux/mtd/partitions.h>
 #include <linux/mtd/physmap.h>
 #include <linux/input.h>
-#include <linux/ath5k_platform.h>
 #include <linux/pci.h>
 #include <linux/phy.h>
 #include <linux/io.h>
@@ -40,7 +39,8 @@
 
 static u8 ltq_ethaddr[6] = { 0 };
 
-static int __init setup_ethaddr(char *str)
+static int __init
+setup_ethaddr(char *str)
 {
 	if (!mac_pton(str, ltq_ethaddr))
 		memset(ltq_ethaddr, 0, 6);
@@ -55,9 +55,10 @@ enum {
 	SX762,
 	SX763,
 };
-static u8 board = SX763;
+static u8 board __initdata = SX763;
 
-static int __init setup_board(char *str)
+static int __init
+setup_board(char *str)
 {
 	if (!strcmp(str, "sx761"))
 		board = SX761;
@@ -137,7 +138,8 @@ static struct ltq_eth_data ltq_eth_data = {
 	.mii_mode	= PHY_INTERFACE_MODE_MII,
 };
 
-static void __init gigasx76x_init(void)
+static void __init
+gigasx76x_init(void)
 {
 #define GIGASX76X_USB		29
 

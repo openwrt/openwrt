@@ -133,42 +133,10 @@ static struct physmap_flash_data arv_flash_data = {
 	.parts		= arv_partitions,
 };
 
-static void arv_load_nor(unsigned int max)
-{
-#define UBOOT_MAGIC	0x27051956
-
-	int i;
-	int sector = -1;
-
-	if (ltq_brn_boot) {
-		if (max == 0x800000)
-			ltq_register_nor(&arv75xx_brnboot_flash_data);
-		else
-			ltq_register_nor(&arv45xx_brnboot_flash_data);
-		return;
-	}
-
-	for (i = 1; i < 4 && sector < 0; i++) {
-		unsigned int uboot_magic;
-		memcpy_fromio(&uboot_magic, (void *)KSEG1ADDR(LTQ_FLASH_START) + (i * 0x10000), 4);
-		if (uboot_magic == UBOOT_MAGIC)
-			sector = i;
-	}
-
-	if (sector < 0)
-		return;
-
-	arv_partitions[0].size = arv_partitions[1].offset = (sector - 1) * 0x10000;
-	arv_partitions[2].offset = arv_partitions[0].size + 0x10000;
-	arv_partitions[2].size = max - arv_partitions[2].offset - 0x10000;
-	arv_partitions[3].offset = max - 0x10000;
-	ltq_register_nor(&arv_flash_data);
-}
-
 static struct ltq_pci_data ltq_pci_data = {
-	.clock  = PCI_CLOCK_EXT,
-	.gpio   = PCI_GNT1 | PCI_REQ1,
-	.irq    = {
+	.clock	= PCI_CLOCK_EXT,
+	.gpio	= PCI_GNT1 | PCI_REQ1,
+	.irq	= {
 		[14] = INT_NUM_IM0_IRL0 + 22,
 	},
 };
@@ -312,9 +280,10 @@ arv4525pw_gpio_leds[] __initdata = {
 #define ARV4525PW_PHYRESET	13
 #define ARV4525PW_RELAY		31
 
-static struct gpio arv4525pw_gpios[] __initdata = {
-	{ ARV4525PW_PHYRESET, GPIOF_OUT_INIT_HIGH, "phyreset" },
-	{ ARV4525PW_RELAY,    GPIOF_OUT_INIT_HIGH, "relay"    },
+static struct gpio
+arv4525pw_gpios[] __initdata = {
+	{ ARV4525PW_PHYRESET,	GPIOF_OUT_INIT_HIGH, "phyreset"	},
+	{ ARV4525PW_RELAY,	GPIOF_OUT_INIT_HIGH, "relay"	},
 };
 
 
@@ -416,7 +385,40 @@ arv7525pw_gpio_keys[] __initdata = {
 	},
 };
 
-static void
+static void __init
+arv_load_nor(unsigned int max)
+{
+#define UBOOT_MAGIC	0x27051956
+
+	int i;
+	int sector = -1;
+
+	if (ltq_brn_boot) {
+		if (max == 0x800000)
+			ltq_register_nor(&arv75xx_brnboot_flash_data);
+		else
+			ltq_register_nor(&arv45xx_brnboot_flash_data);
+		return;
+	}
+
+	for (i = 1; i < 4 && sector < 0; i++) {
+		unsigned int uboot_magic;
+		memcpy_fromio(&uboot_magic, (void *)KSEG1ADDR(LTQ_FLASH_START) + (i * 0x10000), 4);
+		if (uboot_magic == UBOOT_MAGIC)
+			sector = i;
+	}
+
+	if (sector < 0)
+		return;
+
+	arv_partitions[0].size = arv_partitions[1].offset = (sector - 1) * 0x10000;
+	arv_partitions[2].offset = arv_partitions[0].size + 0x10000;
+	arv_partitions[2].size = max - arv_partitions[2].offset - 0x10000;
+	arv_partitions[3].offset = max - 0x10000;
+	ltq_register_nor(&arv_flash_data);
+}
+
+static void __init
 arv_register_ethernet(unsigned int mac_addr)
 {
 	memcpy_fromio(&ltq_eth_data.mac.sa_data,
@@ -428,7 +430,7 @@ static u16 arv_ath5k_eeprom_data[ATH5K_PLAT_EEP_MAX_WORDS];
 static u16 arv_ath9k_eeprom_data[ATH9K_PLAT_EEP_MAX_WORDS];
 static u8 arv_athxk_eeprom_mac[6];
 
-void __init
+static void __init
 arv_register_ath5k(unsigned int ath_addr, unsigned int mac_addr)
 {
 	int i;
@@ -452,7 +454,7 @@ arv_register_ath5k(unsigned int ath_addr, unsigned int mac_addr)
 	}
 }
 
-void __init
+static void __init
 arv_register_ath9k(unsigned int ath_addr, unsigned int mac_addr)
 {
 	int i;
@@ -483,7 +485,7 @@ arv3527p_init(void)
 #define ARV3527P_MAC_ADDR		0x3f0016
 
 	ltq_register_gpio_stp();
-	//ltq_add_device_gpio_leds(arv3527p_gpio_leds, ARRAY_SIZE(arv3527p_gpio_leds));
+	// ltq_add_device_gpio_leds(arv3527p_gpio_leds, ARRAY_SIZE(arv3527p_gpio_leds));
 	arv_load_nor(0x400000);
 	arv_register_ethernet(ARV3527P_MAC_ADDR);
 }
@@ -625,7 +627,7 @@ arv452Cpw_init(void)
 	xway_register_dwc(ARV452CPW_USB);
 	arv_register_ethernet(ARV452CPW_MAC_ADDR);
 	arv_register_ath5k(ARV452CPW_ATH_ADDR, ARV452CPW_MAC_ADDR);
-        ltq_register_ath5k(arv_ath5k_eeprom_data, arv_athxk_eeprom_mac);
+	ltq_register_ath5k(arv_ath5k_eeprom_data, arv_athxk_eeprom_mac);
 
 	gpio_request(ARV452CPW_SWITCH_RESET, "switch");
 	gpio_set_value(ARV452CPW_SWITCH_RESET, 1);

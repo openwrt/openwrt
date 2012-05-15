@@ -24,7 +24,7 @@
 +void __init
 +ltq_register_tapi(void)
 +{
-+#define CP1_SIZE       (1 << 20)
++#define CP1_SIZE	(1 << 20)
 +	dma_addr_t dma;
 +	cp1_base =
 +		(void*)CPHYSADDR(dma_alloc_coherent(NULL, CP1_SIZE, &dma, GFP_ATOMIC));
@@ -67,17 +67,17 @@
 +/* ebu */
 +static struct resource ltq_ebu_resource =
 +{
-+	.name   = "gpio_ebu",
-+	.start  = LTQ_EBU_GPIO_START,
-+	.end    = LTQ_EBU_GPIO_START + LTQ_EBU_GPIO_SIZE - 1,
-+	.flags  = IORESOURCE_MEM,
++	.name	= "gpio_ebu",
++	.start	= LTQ_EBU_GPIO_START,
++	.end	= LTQ_EBU_GPIO_START + LTQ_EBU_GPIO_SIZE - 1,
++	.flags	= IORESOURCE_MEM,
 +};
 +
 +static struct platform_device ltq_ebu =
 +{
-+	.name           = "ltq_ebu",
-+	.resource       = &ltq_ebu_resource,
-+	.num_resources  = 1,
++	.name		= "ltq_ebu",
++	.resource	= &ltq_ebu_resource,
++	.num_resources	= 1,
 +};
 +
 +void __init
@@ -109,9 +109,9 @@
 +
 +static struct resource ltq_spi_resources[] = {
 +	{
-+		.start  = LTQ_SSC_BASE_ADDR,
-+		.end    = LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
-+		.flags  = IORESOURCE_MEM,
++		.start	= LTQ_SSC_BASE_ADDR,
++		.end	= LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags	= IORESOURCE_MEM,
 +	},
 +	IRQ_RES(spi_tx, LTQ_SSC_TIR),
 +	IRQ_RES(spi_rx, LTQ_SSC_RIR),
@@ -120,9 +120,9 @@
 +
 +static struct resource ltq_spi_resources_ar9[] = {
 +	{
-+		.start  = LTQ_SSC_BASE_ADDR,
-+		.end    = LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
-+		.flags  = IORESOURCE_MEM,
++		.start	= LTQ_SSC_BASE_ADDR,
++		.end	= LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags	= IORESOURCE_MEM,
 +	},
 +	IRQ_RES(spi_tx, LTQ_SSC_TIR_AR9),
 +	IRQ_RES(spi_rx, LTQ_SSC_RIR_AR9),
@@ -131,9 +131,9 @@
 +
 +static struct resource ltq_spi_resources_ase[] = {
 +	{
-+		.start  = LTQ_SSC_BASE_ADDR,
-+		.end    = LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
-+		.flags  = IORESOURCE_MEM,
++		.start	= LTQ_SSC_BASE_ADDR,
++		.end	= LTQ_SSC_BASE_ADDR + LTQ_SSC_SIZE - 1,
++		.flags	= IORESOURCE_MEM,
 +	},
 +	IRQ_RES(spi_tx, LTQ_SSC_TIR_ASE),
 +	IRQ_RES(spi_rx, LTQ_SSC_RIR_ASE),
