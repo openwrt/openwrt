@@ -5,7 +5,7 @@ case "${0##*/}" in
 	*) arg1="$0.py" ;;
 esac
 
-for bin in python2.7 python2.6 python2.5 python2.4 python2 python; do
+for bin in python python2 python2.7 python2.6 python2.5 python2.4; do
     case "$($bin -V 2>&1)" in
         "Python 2"*) exec $bin $arg1 "$@" ;;
     esac
