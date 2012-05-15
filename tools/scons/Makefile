@@ -23,7 +23,12 @@ define Host/Compile
 endef
 
 define Host/Install
-	python $(HOST_BUILD_DIR)/setup.py install --prefix=$(STAGING_DIR_HOST)
+	./files/pywrap.sh $(HOST_BUILD_DIR)/setup.py install --prefix=$(STAGING_DIR_HOST)
+	rm -f $(STAGING_DIR_HOST)/bin/scons*.py
+	for bin in $(STAGING_DIR_HOST)/bin/scons*; do \
+		mv "$$$$bin" "$$$$bin.py";                \
+		cp ./files/pywrap.sh "$$$$bin";           \
+	done
 endef
 
 $(eval $(call HostBuild))
