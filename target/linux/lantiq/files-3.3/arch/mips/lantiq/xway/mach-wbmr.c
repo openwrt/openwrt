@@ -88,9 +88,9 @@ wbmr_gpio_keys[] __initdata = {
 };
 
 static struct ltq_pci_data ltq_pci_data = {
-	.clock      = PCI_CLOCK_INT,
-	.gpio   = PCI_GNT1 | PCI_REQ1,
-	.irq    = {
+	.clock	= PCI_CLOCK_INT,
+	.gpio	= PCI_GNT1 | PCI_REQ1,
+	.irq	= {
 		[14] = INT_NUM_IM0_IRL0 + 22,
 	},
 };

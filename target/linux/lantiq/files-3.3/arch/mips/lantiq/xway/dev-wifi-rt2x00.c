@@ -26,6 +26,6 @@ rt2x00_pci_plat_dev_init(struct pci_dev *dev)
 void __init
 ltq_register_rt2x00(const char *firmware)
 {
-	rt2x00_pdata.eeprom_file_name =  kstrdup(firmware, GFP_KERNEL);
+	rt2x00_pdata.eeprom_file_name = kstrdup(firmware, GFP_KERNEL);
 	ltqpci_plat_dev_init = rt2x00_pci_plat_dev_init;
 }
