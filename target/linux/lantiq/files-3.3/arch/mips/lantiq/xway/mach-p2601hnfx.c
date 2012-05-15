@@ -29,7 +29,7 @@
 #include "dev-dwc_otg.h"
 
 
-static struct mtd_partition p2601hnf1_partitions[] __initdata =
+static struct mtd_partition p2601hnfx_partitions[] __initdata =
 {
 	{
 		.name	= "uboot",
@@ -53,12 +53,12 @@ static struct mtd_partition p2601hnf1_partitions[] __initdata =
 	},
 };
 
-static struct physmap_flash_data p2601hnf1_flash_data __initdata = {
-	.nr_parts	= ARRAY_SIZE(p2601hnf1_partitions),
-	.parts		= p2601hnf1_partitions,
+static struct physmap_flash_data p2601hnfx_flash_data __initdata = {
+	.nr_parts	= ARRAY_SIZE(p2601hnfx_partitions),
+	.parts		= p2601hnfx_partitions,
 };
 
-static struct gpio_led p2601hnf1_leds_gpio[] __initdata = {
+static struct gpio_led p2601hnfx_leds_gpio[] __initdata = {
 	{ .name = "soc:red:power", .gpio = 29, .active_low = 1, .default_trigger = "default-off" },
 	{ .name = "soc:yellow:phone", .gpio = 64, .active_low = 1, .default_trigger = "default-off" },
 	{ .name = "soc:green:phone", .gpio = 65, .active_low = 1, .default_trigger = "default-off" },
@@ -71,7 +71,7 @@ static struct gpio_led p2601hnf1_leds_gpio[] __initdata = {
 };
 
 static struct gpio_button
-p2601hnf1_gpio_buttons[] /*__initdata*/ = {
+p2601hnfx_gpio_buttons[] /* __initdata */ = {
 	{ .desc = "reset", .type = EV_KEY, .code = BTN_0, .threshold = 3, .gpio = 53, .active_low = 1, },
 	{ .desc = "wlan", .type = EV_KEY, .code = BTN_1, .threshold = 1, .gpio = 54, .active_low = 1, },
 };
@@ -81,17 +81,16 @@ static struct ltq_eth_data ltq_eth_data = {
 };
 
 static void __init
-p2601hnf1_init(void)
+p2601hnfx_init(void)
 {
-
-#define P2601HNF1_USB			9
+#define P2601HNFX_USB			9
 
 	ltq_register_gpio_stp();
-	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(p2601hnf1_leds_gpio), p2601hnf1_leds_gpio);
-	ltq_register_gpio_buttons(p2601hnf1_gpio_buttons, ARRAY_SIZE(p2601hnf1_gpio_buttons));
-	ltq_register_nor(&p2601hnf1_flash_data);
+	ltq_add_device_gpio_leds(-1, ARRAY_SIZE(p2601hnfx_leds_gpio), p2601hnfx_leds_gpio);
+	ltq_register_gpio_buttons(p2601hnfx_gpio_buttons, ARRAY_SIZE(p2601hnfx_gpio_buttons));
+	ltq_register_nor(&p2601hnfx_flash_data);
 	ltq_register_etop(&ltq_eth_data);
-	xway_register_dwc(P2601HNF1_USB);
+	xway_register_dwc(P2601HNFX_USB);
 
 	// enable the ethernet ports on the SoC
 //	ltq_w32((ltq_r32(LTQ_GPORT_P0_CTL) & ~(1 << 17)) | (1 << 18), LTQ_GPORT_P0_CTL);
@@ -99,8 +98,7 @@ p2601hnf1_init(void)
 //	ltq_w32((ltq_r32(LTQ_GPORT_P2_CTL) & ~(1 << 17)) | (1 << 18), LTQ_GPORT_P2_CTL);
 }
 
-MIPS_MACHINE(LANTIQ_MACH_P2601HNF1,
-			"P2601HNF1",
-			"ZyXEL P-2601HN-F1",
-			p2601hnf1_init);
-
+MIPS_MACHINE(LANTIQ_MACH_P2601HNFX,
+			"P2601HNFX",
+			"ZyXEL P-2601HN-Fx",
+			p2601hnfx_init);

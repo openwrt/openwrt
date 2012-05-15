@@ -157,15 +157,18 @@ endif
 ifeq ($(CONFIG_TARGET_lantiq_ar9),y)
 Image/BuildKernel/Profile/WBMR=$(call Image/BuildKernel/Template,WBMR,$(xway_cmdline))
 Image/BuildKernel/Profile/DGN3500B=$(call Image/BuildKernel/Template,DGN3500B,$(xway_cmdline))
+Image/BuildKernel/Profile/P2601HNFX=$(call Image/BuildKernel/Template,P2601HNFX,$(xway_cmdline))
 Image/BuildKernel/Profile/FRITZ7320=$(call Image/BuildKernelEVA/Template,FRITZ7320,$(xway_cmdline))
 
 Image/Build/Profile/WBMR=$(call Image/Build/$(1),$(1),WBMR)
 Image/Build/Profile/DGN3500B=$(call Image/Build/$(1),$(1),DGN3500B)
+Image/Build/Profile/P2601HNFX=$(call Image/Build/$(1),$(1),P2601HNFX)
 Image/Build/Profile/FRITZ7320=$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
 
 define Image/BuildKernel/Profile/Generic
 	$(call Image/BuildKernel/Template,WBMR,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,DGN3500B,$(xway_cmdline))
+	$(call Image/BuildKernel/Template,P2601HNFX,$(xway_cmdline))
 	$(call Image/BuildKernelEVA/Template,FRITZ7320,$(xway_cmdline))
 	$(call Image/BuildKernel/Template,NONE)
 endef
@@ -173,6 +176,7 @@ endef
 define Image/Build/Profile/Generic
 	$(call Image/Build/$(1),$(1),WBMR)
 	$(call Image/Build/$(1),$(1),DGN3500B)
+	$(call Image/Build/$(1),$(1),P2601HNFX)
 	$(call Image/BuildEVA/$(1),$(1),FRITZ7320)
 	$(call Image/Build/$(1),$(1),NONE)
 	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).rootfs

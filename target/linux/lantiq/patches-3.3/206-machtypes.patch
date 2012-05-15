@@ -1,6 +1,6 @@
 --- a/arch/mips/lantiq/machtypes.h
 +++ b/arch/mips/lantiq/machtypes.h
-@@ -20,6 +20,36 @@ enum lantiq_mach_type {
+@@ -20,6 +20,39 @@ enum lantiq_mach_type {
  	LANTIQ_MACH_EASY98000,		/* Falcon Eval Board, NOR Flash */
  	LANTIQ_MACH_EASY98000SF,	/* Falcon Eval Board, Serial Flash */
  	LANTIQ_MACH_EASY98000NAND,	/* Falcon Eval Board, NAND Flash */
@@ -34,12 +34,15 @@
 +
 +	/* Buffalo */
 +	LANTIQ_MACH_WBMR,		/* WBMR-HP-G300H */
++
++	/* ZyXEL */
++	LANTIQ_MACH_P2601HNFX,		/* ZyXEL P-2601HN-Fx */
  };
  
  #endif
 --- a/arch/mips/lantiq/xway/Kconfig
 +++ b/arch/mips/lantiq/xway/Kconfig
-@@ -6,6 +6,30 @@ config LANTIQ_MACH_EASY50712
+@@ -6,6 +6,34 @@ config LANTIQ_MACH_EASY50712
  	bool "Easy50712 - Danube"
  	default y
  
@@ -59,6 +62,10 @@
 +	bool "WBMR-HP-G300H"
 +	default y
 +
++config LANTIQ_MACH_P2601HNFX
++	bool "P2601HNFX"
++	default y
++
 +config LANTIQ_MACH_FRITZ_VR9
 +	bool "FRITZ3370"
 +	default y
@@ -72,7 +79,7 @@
  choice
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -2,3 +2,9 @@ obj-y := sysctrl.o reset.o gpio.o gpio_s
+@@ -2,3 +2,10 @@ obj-y := sysctrl.o reset.o gpio.o gpio_s
  
  obj-$(CONFIG_LANTIQ_MACH_EASY50712) += mach-easy50712.o
  obj-$(CONFIG_LANTIQ_MACH_EASY50601) += mach-easy50601.o
@@ -82,6 +89,7 @@
 +obj-$(CONFIG_LANTIQ_MACH_GIGASX76X) += mach-gigasx76x.o
 +obj-$(CONFIG_LANTIQ_MACH_NETGEAR) += mach-netgear.o
 +obj-$(CONFIG_LANTIQ_MACH_WBMR) += mach-wbmr.o
++obj-$(CONFIG_LANTIQ_MACH_P2601HNFX) += mach-p2601hnfx.o
 --- a/arch/mips/lantiq/falcon/Kconfig
 +++ b/arch/mips/lantiq/falcon/Kconfig
 @@ -6,6 +6,14 @@ config LANTIQ_MACH_EASY98000
