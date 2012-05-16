@@ -633,50 +633,71 @@ endef
 $(eval $(call KernelPackage,mppe))
 
 
-define KernelPackage/sched
+SCHED_MODULES = $(patsubst $(LINUX_DIR)/net/sched/%.ko,%,$(wildcard $(LINUX_DIR)/net/sched/*.ko))
+SCHED_MODULES_CORE = sch_ingress sch_codel sch_fq_codel sch_hfsc cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_mirred act_connmark act_skbedit
+SCHED_MODULES_EXTRA = $(filter-out $(SCHED_MODULES_CORE),$(SCHED_MODULES))
+SCHED_FILES = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_CORE))
+SCHED_FILES_EXTRA = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(SCHED_MODULES_EXTRA))
+
+define KernelPackage/sched-core
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Traffic schedulers
   KCONFIG:= \
 	CONFIG_NET_SCHED=y \
-	CONFIG_NET_SCH_DSMARK \
-	CONFIG_NET_SCH_ESFQ \
-	CONFIG_NET_SCH_ESFQ_NFCT=y \
-	CONFIG_NET_SCH_FIFO \
-	CONFIG_NET_SCH_GRED \
 	CONFIG_NET_SCH_HFSC \
-	CONFIG_NET_SCH_HTB \
 	CONFIG_NET_SCH_INGRESS \
-	CONFIG_NET_SCH_PRIO \
-	CONFIG_NET_SCH_RED \
-	CONFIG_NET_SCH_TBF \
-	CONFIG_NET_SCH_SFQ \
-	CONFIG_NET_SCH_TEQL \
 	CONFIG_NET_SCH_CODEL \
 	CONFIG_NET_SCH_FQ_CODEL \
 	CONFIG_NET_CLS=y \
 	CONFIG_NET_CLS_ACT=y \
-	CONFIG_NET_CLS_BASIC \
 	CONFIG_NET_CLS_FLOW \
 	CONFIG_NET_CLS_FW \
 	CONFIG_NET_CLS_ROUTE4 \
 	CONFIG_NET_CLS_TCINDEX \
 	CONFIG_NET_CLS_U32 \
 	CONFIG_NET_ACT_MIRRED \
-	CONFIG_NET_ACT_IPT \
-	CONFIG_NET_ACT_POLICE \
 	CONFIG_NET_ACT_CONNMARK \
 	CONFIG_NET_ACT_SKBEDIT \
 	CONFIG_NET_EMATCH=y \
+	CONFIG_NET_EMATCH_U32
+  FILES:=$(SCHED_FILES)
+endef
+
+define KernelPackage/sched-core/description
+ Core kernel scheduler support for IP traffic
+endef
+
+$(eval $(call KernelPackage,sched-core))
+
+
+define KernelPackage/sched
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Traffic schedulers
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:= \
+	CONFIG_NET_SCH_DSMARK \
+	CONFIG_NET_SCH_HTB \
+	CONFIG_NET_SCH_ESFQ \
+	CONFIG_NET_SCH_ESFQ_NFCT=y \
+	CONFIG_NET_SCH_FIFO \
+	CONFIG_NET_SCH_GRED \
+	CONFIG_NET_SCH_PRIO \
+	CONFIG_NET_SCH_RED \
+	CONFIG_NET_SCH_TBF \
+	CONFIG_NET_SCH_SFQ \
+	CONFIG_NET_SCH_TEQL \
+	CONFIG_NET_CLS_BASIC \
+	CONFIG_NET_ACT_POLICE \
+	CONFIG_NET_ACT_IPT \
 	CONFIG_NET_EMATCH_CMP \
 	CONFIG_NET_EMATCH_NBYTE \
-	CONFIG_NET_EMATCH_U32 \
 	CONFIG_NET_EMATCH_META \
 	CONFIG_NET_EMATCH_TEXT
-  FILES:=$(LINUX_DIR)/net/sched/*.ko
+  FILES:=$(SCHED_FILES_EXTRA)
 endef
 
 define KernelPackage/sched/description
- Kernel schedulers for IP traffic
+ Extra kernel schedulers modules for IP traffic
 endef
 
 $(eval $(call KernelPackage,sched))
