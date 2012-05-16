@@ -1,9 +1,38 @@
 #!/bin/sh
 
 . /etc/functions.sh
+. /usr/share/libubox/jshn.sh
+
+find_iface_address()
+{
+	local iface="$1"
+	local ipaddr="$2"
+	local prefix="$3"
+
+	local tmp="$(ubus call network.interface."$iface" status 2>/dev/null)"
+
+	json_load "${tmp:-{}}"
+	json_get_type tmp address
+
+	if [ "$tmp" = array ]; then
+
+		json_select address
+		json_get_type tmp 1
+
+		if [ "$tmp" = object ]; then
+
+			json_select 1
+			[ -n "$ipaddr" ] && json_get_var "$ipaddr" address
+			[ -n "$prefix" ] && json_get_var "$prefix" mask
+
+		fi
+	fi
+}
 
 if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
-	local wanip=$(uci -P/var/state get network.wan.ipaddr)
+	local wanip
+	find_iface_address wan wanip
+	[ -n "$wanip" ] || return
 
 	iptables -t nat -F nat_reflection_in 2>/dev/null || {
 		iptables -t nat -N nat_reflection_in
@@ -60,8 +89,9 @@ if [ "$ACTION" = "add" ] && [ "$INTERFACE" = "wan" ]; then
 
 			local net
 			for net in $(find_networks "$dest"); do
-				local lanip=$(uci -P/var/state get network.$net.ipaddr)
-				local lanmk=$(uci -P/var/state get network.$net.netmask)
+				local lanip lanmk
+				find_iface_address "$net" lanip lanmk
+				[ -n "$lanip" ] || return
 
 				local proto
 				config_get proto "$cfg" proto
