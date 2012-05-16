@@ -344,8 +344,7 @@ tc filter add dev $device parent ffff: protocol ip prio 1 u32 match u32 0 0 flow
 	fi
 	add_insmod cls_fw
 	add_insmod sch_hfsc
-	add_insmod sch_sfq
-	add_insmod sch_red
+	add_insmod sch_fq_codel
 
 	cat <<EOF
 ${INSMOD:+$INSMOD$N}${dev_up:+$dev_up
