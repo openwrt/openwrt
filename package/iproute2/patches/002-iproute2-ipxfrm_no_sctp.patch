@@ -4,7 +4,7 @@
 
 --- a/ip/ipxfrm.c
 +++ b/ip/ipxfrm.c
-@@ -467,7 +467,6 @@ void xfrm_selector_print(struct xfrm_sel
+@@ -468,7 +468,6 @@ void xfrm_selector_print(struct xfrm_sel
  	switch (sel->proto) {
  	case IPPROTO_TCP:
  	case IPPROTO_UDP:
@@ -12,7 +12,7 @@
  	case IPPROTO_DCCP:
  	default: /* XXX */
  		if (sel->sport_mask)
-@@ -1172,7 +1171,6 @@ static int xfrm_selector_upspec_parse(st
+@@ -1263,7 +1262,6 @@ static int xfrm_selector_upspec_parse(st
  		switch (sel->proto) {
  		case IPPROTO_TCP:
  		case IPPROTO_UDP:
