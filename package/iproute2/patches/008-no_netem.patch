@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -33,7 +33,7 @@ CCOPTS = -D_GNU_SOURCE -O2 -Wstrict-prot
+ CFLAGS = $(CCOPTS) -I../include $(DEFINES)
+ YACCFLAGS = -d -t -v
+ 
+-SUBDIRS=lib ip tc misc netem genl
++SUBDIRS=lib ip tc misc genl
+ 
+ LIBNETLINK=../lib/libnetlink.a ../lib/libutil.a
+ LDLIBS += $(LIBNETLINK)
