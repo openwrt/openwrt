@@ -1,0 +1,109 @@
+--- a/arch/mips/lib/memset.S
++++ b/arch/mips/lib/memset.S
+@@ -19,6 +19,8 @@
+ #define LONG_S_R sdr
+ #endif
+ 
++#include "prefetch.h"
++
+ #define EX(insn,reg,addr,handler)			\
+ 9:	insn	reg, addr;				\
+ 	.section __ex_table,"a"; 			\
+@@ -75,6 +77,8 @@ FEXPORT(__bzero)
+ 	bnez		t0, .Lsmall_memset
+ 	 andi		t0, a0, LONGMASK	/* aligned? */
+ 
++	prefetch_store a0, a2, t2, t3, t4
++
+ #ifndef CONFIG_CPU_DADDI_WORKAROUNDS
+ 	beqz		t0, 1f
+ 	 PTR_SUBU	t0, LONGSIZE		/* alignment in bytes */
+--- a/arch/mips/include/asm/processor.h
++++ b/arch/mips/include/asm/processor.h
+@@ -354,7 +354,7 @@ unsigned long get_wchan(struct task_stru
+ #define prefetch(x) __builtin_prefetch((x), 0, 1)
+ 
+ #define ARCH_HAS_PREFETCHW
+-#define prefetchw(x) __builtin_prefetch((x), 1, 1)
++#define prefetchw(x) do {} while (0)
+ 
+ #endif
+ 
+--- /dev/null
++++ b/arch/mips/lib/prefetch.h
+@@ -0,0 +1,35 @@
++/*
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ *
++ * Copyright (C) 2012  Felix Fietkau <nbd@openwrt.org>
++ */
++
++.macro	prefetch_store	dst, size, temp1, temp2, temp3
++#ifdef CONFIG_CPU_MIPS32
++	li		\temp1, ((1 << CONFIG_MIPS_L1_CACHE_SHIFT) - 1)
++	nor		\temp1, \temp1, \temp1
++
++	and		\temp2, \size, \temp1
++	beqz		\temp2, 2f
++	 nop
++
++	move		\temp2, \dst
++	PTR_ADDIU	\temp2, ((1 << CONFIG_MIPS_L1_CACHE_SHIFT) - 1)
++	and		\temp2, \temp2, \temp1
++
++	move		\temp3, \dst
++	PTR_ADDU	\temp3, \size
++	and		\temp3, \temp3, \temp1
++
++1:	beq		\temp2, \temp3, 2f
++	 nop
++
++	pref		30, 0(\temp2)
++
++	b		1b
++	  PTR_ADDIU	\temp2, (1 << CONFIG_MIPS_L1_CACHE_SHIFT)
++2:
++#endif
++.endm
+--- a/arch/mips/lib/memcpy.S
++++ b/arch/mips/lib/memcpy.S
+@@ -182,6 +182,8 @@
+ 	.set	at=v1
+ #endif
+ 
++#include "prefetch.h"
++
+ /*
+  * A combined memcpy/__copy_user
+  * __copy_user sets len to 0 for success; else to an upper bound of
+@@ -199,6 +201,8 @@ FEXPORT(__copy_user)
+ 	 */
+ #define rem t8
+ 
++	prefetch_store a0, a2, t0, t1, t2
++
+ 	R10KCBARRIER(0(ra))
+ 	/*
+ 	 * The "issue break"s below are very approximate.
+--- a/arch/mips/lib/memcpy-inatomic.S
++++ b/arch/mips/lib/memcpy-inatomic.S
+@@ -182,6 +182,8 @@
+ 	.set	at=v1
+ #endif
+ 
++#include "prefetch.h"
++
+ /*
+  * A combined memcpy/__copy_user
+  * __copy_user sets len to 0 for success; else to an upper bound of
+@@ -196,6 +198,8 @@ LEAF(__copy_user_inatomic)
+ 	 */
+ #define rem t8
+ 
++	prefetch_store dst, len, t0, t1, t2
++
+ 	/*
+ 	 * The "issue break"s below are very approximate.
+ 	 * Issue delays for dcache fills will perturb the schedule, as will
