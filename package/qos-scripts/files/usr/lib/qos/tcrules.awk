@@ -79,47 +79,9 @@ END {
 	# leaf qdisc
 	avpkt = 1200
 	for (i = 1; i <= n; i++) {
-		printf "tc qdisc add dev "device" parent 1:"class[i]"0 handle "class[i]"00: "
-
-		# RED parameters - also used to determine the queue length for sfq
-		# calculate min value. for links <= 256 kbit, we use 1500 bytes
-		# use 50 ms queue length as min threshold for faster links
-		# max threshold is fixed to 3*min
-		base_pkt=3000
-		base_rate=256
-		min_lat=50
-		if (maxrate[i] <= base_rate) min = base_pkt
-		else min = int(maxrate[i] * 1024 / 8 * 0.05)
-		max = 3 * min
-		limit = (min + max) * 3
-
-		if (qdisc[i] != "") {
-			# user specified qdisc
-			print qdisc[i] " limit " limit
-		} else if (rtm1[i] > 0) {
-			# rt class - use sfq
-			print "sfq perturb 2 limit "  limit
-		} else {
-			# non-rt class - use RED
-
-			avpkt = pktsize[i]
-			# don't use avpkt values less than 500 bytes
-			if (avpkt < 500) avpkt = 500
-			# if avpkt is too close to min, scale down avpkt to allow proper bursting
-			if (avpkt > min * 0.70) avpkt *= 0.70
-
-
-			# according to http://www.cs.unc.edu/~jeffay/papers/IEEE-ToN-01.pdf a drop
-			# probability somewhere between 0.1 and 0.2 should be a good tradeoff
-			# between link utilization and response time (0.1: response; 0.2: utilization)
-			prob="0.12"
-		
-			rburst=int((2*min + max) / (3 * avpkt))
-			if (rburst < 2) rburst = 2
-			print "red min " min " max " max " burst " rburst " avpkt " avpkt " limit " limit " probability " prob " ecn"
-		}
+		print "tc qdisc add dev "device" parent 1:"class[i]"0 handle "class[i]"00: fq_codel"
 	}
-	
+
 	# filter rule
 	for (i = 1; i <= n; i++) {
 		print "tc filter add dev "device" parent 1: prio "class[i]" protocol ip handle "class[i]"/0xff fw flowid 1:"class[i] "0" 
