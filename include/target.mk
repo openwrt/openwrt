@@ -183,6 +183,9 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_VGA_CONSOLE)$(CONFIG_FB),)
       FEATURES += display
     endif
+    ifneq ($(CONFIG_RTC_CLASS),)
+      FEATURES += rtc
+    endif
 
     # remove duplicates
     FEATURES:=$(sort $(FEATURES))
