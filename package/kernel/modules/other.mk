@@ -132,22 +132,6 @@ endef
 $(eval $(call KernelPackage,eeprom-at25))
 
 
-define KernelPackage/gpio-cs5535
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=AMD CS5535/CS5536 GPIO driver
-  DEPENDS:=@TARGET_x86 @LINUX_2_6_37
-  KCONFIG:=CONFIG_CS5535_GPIO
-  FILES:=$(LINUX_DIR)/drivers/char/cs5535_gpio.ko
-  AUTOLOAD:=$(call AutoLoad,50,cs5535_gpio)
-endef
-
-define KernelPackage/gpio-cs5535/description
- This package contains the AMD CS5535/CS5536 GPIO driver
-endef
-
-$(eval $(call KernelPackage,gpio-cs5535))
-
-
 define KernelPackage/gpio-cs5535-new
   SUBMENU:=$(OTHER_MENU)
   TITLE:=AMD CS5535/CS5536 GPIO driver with improved sysfs support
