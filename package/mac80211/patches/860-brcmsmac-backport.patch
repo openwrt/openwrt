@@ -1,0 +1,4465 @@
+--- a/drivers/net/wireless/brcm80211/brcmsmac/Makefile
++++ b/drivers/net/wireless/brcm80211/brcmsmac/Makefile
+@@ -39,10 +39,7 @@ BRCMSMAC_OFILES := \
+ 	phy/phytbl_lcn.o \
+ 	phy/phytbl_n.o \
+ 	phy/phy_qmath.o \
+-	otp.o \
+-	srom.o \
+ 	dma.o \
+-	nicpci.o \
+ 	brcms_trace_events.o
+ 
+ MODULEPFX := brcmsmac
+--- a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.c
+@@ -22,7 +22,6 @@
+ #include <linux/kernel.h>
+ #include <linux/printk.h>
+ #include <linux/delay.h>
+-#include <linux/pci.h>
+ 
+ #include <defs.h>
+ #include <chipcommon.h>
+@@ -32,8 +31,6 @@
+ #include "types.h"
+ #include "pub.h"
+ #include "pmu.h"
+-#include "srom.h"
+-#include "nicpci.h"
+ #include "aiutils.h"
+ 
+ /* slow_clk_ctl */
+@@ -324,7 +321,6 @@
+ #define	IS_SIM(chippkg)	\
+ 	((chippkg == HDLSIM_PKG_ID) || (chippkg == HWSIM_PKG_ID))
+ 
+-#define PCI(sih)	(ai_get_buscoretype(sih) == PCI_CORE_ID)
+ #define PCIE(sih)	(ai_get_buscoretype(sih) == PCIE_CORE_ID)
+ 
+ #define PCI_FORCEHT(sih) (PCIE(sih) && (ai_get_chip_id(sih) == BCM4716_CHIP_ID))
+@@ -457,36 +453,9 @@ struct aidmp {
+ 	u32 componentid3;	/* 0xffc */
+ };
+ 
+-/* return true if PCIE capability exists in the pci config space */
+-static bool ai_ispcie(struct si_info *sii)
+-{
+-	u8 cap_ptr;
+-
+-	cap_ptr =
+-	    pcicore_find_pci_capability(sii->pcibus, PCI_CAP_ID_EXP, NULL,
+-					NULL);
+-	if (!cap_ptr)
+-		return false;
+-
+-	return true;
+-}
+-
+-static bool ai_buscore_prep(struct si_info *sii)
+-{
+-	/* kludge to enable the clock on the 4306 which lacks a slowclock */
+-	if (!ai_ispcie(sii))
+-		ai_clkctl_xtal(&sii->pub, XTAL | PLL, ON);
+-	return true;
+-}
+-
+ static bool
+ ai_buscore_setup(struct si_info *sii, struct bcma_device *cc)
+ {
+-	struct bcma_device *pci = NULL;
+-	struct bcma_device *pcie = NULL;
+-	struct bcma_device *core;
+-
+-
+ 	/* no cores found, bail out */
+ 	if (cc->bus->nr_cores == 0)
+ 		return false;
+@@ -495,8 +464,7 @@ ai_buscore_setup(struct si_info *sii, st
+ 	sii->pub.ccrev = cc->id.rev;
+ 
+ 	/* get chipcommon chipstatus */
+-	if (ai_get_ccrev(&sii->pub) >= 11)
+-		sii->chipst = bcma_read32(cc, CHIPCREGOFFS(chipstatus));
++	sii->chipst = bcma_read32(cc, CHIPCREGOFFS(chipstatus));
+ 
+ 	/* get chipcommon capabilites */
+ 	sii->pub.cccaps = bcma_read32(cc, CHIPCREGOFFS(capabilities));
+@@ -509,64 +477,18 @@ ai_buscore_setup(struct si_info *sii, st
+ 	}
+ 
+ 	/* figure out buscore */
+-	list_for_each_entry(core, &cc->bus->cores, list) {
+-		uint cid, crev;
+-
+-		cid = core->id.id;
+-		crev = core->id.rev;
+-
+-		if (cid == PCI_CORE_ID) {
+-			pci = core;
+-		} else if (cid == PCIE_CORE_ID) {
+-			pcie = core;
+-		}
+-	}
+-
+-	if (pci && pcie) {
+-		if (ai_ispcie(sii))
+-			pci = NULL;
+-		else
+-			pcie = NULL;
+-	}
+-	if (pci) {
+-		sii->buscore = pci;
+-	} else if (pcie) {
+-		sii->buscore = pcie;
+-	}
+-
+-	/* fixup necessary chip/core configurations */
+-	if (!sii->pch) {
+-		sii->pch = pcicore_init(&sii->pub, sii->icbus->drv_pci.core);
+-		if (sii->pch == NULL)
+-			return false;
+-	}
+-	if (ai_pci_fixcfg(&sii->pub))
+-		return false;
++	sii->buscore = ai_findcore(&sii->pub, PCIE_CORE_ID, 0);
+ 
+ 	return true;
+ }
+ 
+-/*
+- * get boardtype and boardrev
+- */
+-static __used void ai_nvram_process(struct si_info *sii)
+-{
+-	uint w = 0;
+-
+-	/* do a pci config read to get subsystem id and subvendor id */
+-	pci_read_config_dword(sii->pcibus, PCI_SUBSYSTEM_VENDOR_ID, &w);
+-
+-	sii->pub.boardvendor = w & 0xffff;
+-	sii->pub.boardtype = (w >> 16) & 0xffff;
+-}
+-
+ static struct si_info *ai_doattach(struct si_info *sii,
+ 				   struct bcma_bus *pbus)
+ {
+ 	struct si_pub *sih = &sii->pub;
+ 	u32 w, savewin;
+ 	struct bcma_device *cc;
+-	uint socitype;
++	struct ssb_sprom *sprom = &pbus->sprom;
+ 
+ 	savewin = 0;
+ 
+@@ -576,38 +498,15 @@ static struct si_info *ai_doattach(struc
+ 	/* switch to Chipcommon core */
+ 	cc = pbus->drv_cc.core;
+ 
+-	/* bus/core/clk setup for register access */
+-	if (!ai_buscore_prep(sii))
+-		return NULL;
++	sih->chip = pbus->chipinfo.id;
++	sih->chiprev = pbus->chipinfo.rev;
++	sih->chippkg = pbus->chipinfo.pkg;
++	sih->boardvendor = pbus->boardinfo.vendor;
++	sih->boardtype = pbus->boardinfo.type;
+ 
+-	/*
+-	 * ChipID recognition.
+-	 *   We assume we can read chipid at offset 0 from the regs arg.
+-	 *   If we add other chiptypes (or if we need to support old sdio
+-	 *   hosts w/o chipcommon), some way of recognizing them needs to
+-	 *   be added here.
+-	 */
+-	w = bcma_read32(cc, CHIPCREGOFFS(chipid));
+-	socitype = (w & CID_TYPE_MASK) >> CID_TYPE_SHIFT;
+-	/* Might as wll fill in chip id rev & pkg */
+-	sih->chip = w & CID_ID_MASK;
+-	sih->chiprev = (w & CID_REV_MASK) >> CID_REV_SHIFT;
+-	sih->chippkg = (w & CID_PKG_MASK) >> CID_PKG_SHIFT;
+-
+-	/* scan for cores */
+-	if (socitype != SOCI_AI)
+-		return NULL;
+-
+-	SI_MSG("Found chip type AI (0x%08x)\n", w);
+ 	if (!ai_buscore_setup(sii, cc))
+ 		goto exit;
+ 
+-	/* Init nvram from sprom/otp if they exist */
+-	if (srom_var_init(&sii->pub))
+-		goto exit;
+-
+-	ai_nvram_process(sii);
+-
+ 	/* === NVRAM, clock is ready === */
+ 	bcma_write32(cc, CHIPCREGOFFS(gpiopullup), 0);
+ 	bcma_write32(cc, CHIPCREGOFFS(gpiopulldown), 0);
+@@ -620,15 +519,13 @@ static struct si_info *ai_doattach(struc
+ 	}
+ 
+ 	/* setup the GPIO based LED powersave register */
+-	w = getintvar(sih, BRCMS_SROM_LEDDC);
++	w = (sprom->leddc_on_time << BCMA_CC_GPIOTIMER_ONTIME_SHIFT) |
++		 (sprom->leddc_off_time << BCMA_CC_GPIOTIMER_OFFTIME_SHIFT);
+ 	if (w == 0)
+ 		w = DEFAULT_GPIOTIMERVAL;
+ 	ai_cc_reg(sih, offsetof(struct chipcregs, gpiotimerval),
+ 		  ~0, w);
+ 
+-	if (PCIE(sih))
+-		pcicore_attach(sii->pch, SI_DOATTACH);
+-
+ 	if (ai_get_chip_id(sih) == BCM43224_CHIP_ID) {
+ 		/*
+ 		 * enable 12 mA drive strenth for 43224 and
+@@ -662,9 +559,6 @@ static struct si_info *ai_doattach(struc
+ 	return sii;
+ 
+  exit:
+-	if (sii->pch)
+-		pcicore_deinit(sii->pch);
+-	sii->pch = NULL;
+ 
+ 	return NULL;
+ }
+@@ -703,11 +597,6 @@ void ai_detach(struct si_pub *sih)
+ 	if (sii == NULL)
+ 		return;
+ 
+-	if (sii->pch)
+-		pcicore_deinit(sii->pch);
+-	sii->pch = NULL;
+-
+-	srom_free_vars(sih);
+ 	kfree(sii);
+ }
+ 
+@@ -758,21 +647,7 @@ uint ai_cc_reg(struct si_pub *sih, uint
+ /* return the slow clock source - LPO, XTAL, or PCI */
+ static uint ai_slowclk_src(struct si_pub *sih, struct bcma_device *cc)
+ {
+-	struct si_info *sii;
+-	u32 val;
+-
+-	sii = (struct si_info *)sih;
+-	if (ai_get_ccrev(&sii->pub) < 6) {
+-		pci_read_config_dword(sii->pcibus, PCI_GPIO_OUT,
+-				      &val);
+-		if (val & PCI_CFG_GPIO_SCS)
+-			return SCC_SS_PCI;
+-		return SCC_SS_XTAL;
+-	} else if (ai_get_ccrev(&sii->pub) < 10) {
+-		return bcma_read32(cc, CHIPCREGOFFS(slow_clk_ctl)) &
+-		       SCC_SS_MASK;
+-	} else			/* Insta-clock */
+-		return SCC_SS_XTAL;
++	return SCC_SS_XTAL;
+ }
+ 
+ /*
+@@ -782,36 +657,12 @@ static uint ai_slowclk_src(struct si_pub
+ static uint ai_slowclk_freq(struct si_pub *sih, bool max_freq,
+ 			    struct bcma_device *cc)
+ {
+-	u32 slowclk;
+ 	uint div;
+ 
+-	slowclk = ai_slowclk_src(sih, cc);
+-	if (ai_get_ccrev(sih) < 6) {
+-		if (slowclk == SCC_SS_PCI)
+-			return max_freq ? (PCIMAXFREQ / 64)
+-				: (PCIMINFREQ / 64);
+-		else
+-			return max_freq ? (XTALMAXFREQ / 32)
+-				: (XTALMINFREQ / 32);
+-	} else if (ai_get_ccrev(sih) < 10) {
+-		div = 4 *
+-		    (((bcma_read32(cc, CHIPCREGOFFS(slow_clk_ctl)) &
+-		      SCC_CD_MASK) >> SCC_CD_SHIFT) + 1);
+-		if (slowclk == SCC_SS_LPO)
+-			return max_freq ? LPOMAXFREQ : LPOMINFREQ;
+-		else if (slowclk == SCC_SS_XTAL)
+-			return max_freq ? (XTALMAXFREQ / div)
+-				: (XTALMINFREQ / div);
+-		else if (slowclk == SCC_SS_PCI)
+-			return max_freq ? (PCIMAXFREQ / div)
+-				: (PCIMINFREQ / div);
+-	} else {
+-		/* Chipc rev 10 is InstaClock */
+-		div = bcma_read32(cc, CHIPCREGOFFS(system_clk_ctl));
+-		div = 4 * ((div >> SYCC_CD_SHIFT) + 1);
+-		return max_freq ? XTALMAXFREQ : (XTALMINFREQ / div);
+-	}
+-	return 0;
++	/* Chipc rev 10 is InstaClock */
++	div = bcma_read32(cc, CHIPCREGOFFS(system_clk_ctl));
++	div = 4 * ((div >> SYCC_CD_SHIFT) + 1);
++	return max_freq ? XTALMAXFREQ : (XTALMINFREQ / div);
+ }
+ 
+ static void
+@@ -834,8 +685,7 @@ ai_clkctl_setdelay(struct si_pub *sih, s
+ 
+ 	/* Starting with 4318 it is ILP that is used for the delays */
+ 	slowmaxfreq =
+-	    ai_slowclk_freq(sih,
+-			    (ai_get_ccrev(sih) >= 10) ? false : true, cc);
++	    ai_slowclk_freq(sih, false, cc);
+ 
+ 	pll_on_delay = ((slowmaxfreq * pll_delay) + 999999) / 1000000;
+ 	fref_sel_delay = ((slowmaxfreq * FREF_DELAY) + 999999) / 1000000;
+@@ -857,9 +707,8 @@ void ai_clkctl_init(struct si_pub *sih)
+ 		return;
+ 
+ 	/* set all Instaclk chip ILP to 1 MHz */
+-	if (ai_get_ccrev(sih) >= 10)
+-		bcma_maskset32(cc, CHIPCREGOFFS(system_clk_ctl), SYCC_CD_MASK,
+-			       (ILP_DIV_1MHZ << SYCC_CD_SHIFT));
++	bcma_maskset32(cc, CHIPCREGOFFS(system_clk_ctl), SYCC_CD_MASK,
++		       (ILP_DIV_1MHZ << SYCC_CD_SHIFT));
+ 
+ 	ai_clkctl_setdelay(sih, cc);
+ }
+@@ -894,140 +743,6 @@ u16 ai_clkctl_fast_pwrup_delay(struct si
+ 	return fpdelay;
+ }
+ 
+-/* turn primary xtal and/or pll off/on */
+-int ai_clkctl_xtal(struct si_pub *sih, uint what, bool on)
+-{
+-	struct si_info *sii;
+-	u32 in, out, outen;
+-
+-	sii = (struct si_info *)sih;
+-
+-	/* pcie core doesn't have any mapping to control the xtal pu */
+-	if (PCIE(sih))
+-		return -1;
+-
+-	pci_read_config_dword(sii->pcibus, PCI_GPIO_IN, &in);
+-	pci_read_config_dword(sii->pcibus, PCI_GPIO_OUT, &out);
+-	pci_read_config_dword(sii->pcibus, PCI_GPIO_OUTEN, &outen);
+-
+-	/*
+-	 * Avoid glitching the clock if GPRS is already using it.
+-	 * We can't actually read the state of the PLLPD so we infer it
+-	 * by the value of XTAL_PU which *is* readable via gpioin.
+-	 */
+-	if (on && (in & PCI_CFG_GPIO_XTAL))
+-		return 0;
+-
+-	if (what & XTAL)
+-		outen |= PCI_CFG_GPIO_XTAL;
+-	if (what & PLL)
+-		outen |= PCI_CFG_GPIO_PLL;
+-
+-	if (on) {
+-		/* turn primary xtal on */
+-		if (what & XTAL) {
+-			out |= PCI_CFG_GPIO_XTAL;
+-			if (what & PLL)
+-				out |= PCI_CFG_GPIO_PLL;
+-			pci_write_config_dword(sii->pcibus,
+-					       PCI_GPIO_OUT, out);
+-			pci_write_config_dword(sii->pcibus,
+-					       PCI_GPIO_OUTEN, outen);
+-			udelay(XTAL_ON_DELAY);
+-		}
+-
+-		/* turn pll on */
+-		if (what & PLL) {
+-			out &= ~PCI_CFG_GPIO_PLL;
+-			pci_write_config_dword(sii->pcibus,
+-					       PCI_GPIO_OUT, out);
+-			mdelay(2);
+-		}
+-	} else {
+-		if (what & XTAL)
+-			out &= ~PCI_CFG_GPIO_XTAL;
+-		if (what & PLL)
+-			out |= PCI_CFG_GPIO_PLL;
+-		pci_write_config_dword(sii->pcibus,
+-				       PCI_GPIO_OUT, out);
+-		pci_write_config_dword(sii->pcibus,
+-				       PCI_GPIO_OUTEN, outen);
+-	}
+-
+-	return 0;
+-}
+-
+-/* clk control mechanism through chipcommon, no policy checking */
+-static bool _ai_clkctl_cc(struct si_info *sii, uint mode)
+-{
+-	struct bcma_device *cc;
+-	u32 scc;
+-
+-	/* chipcommon cores prior to rev6 don't support dynamic clock control */
+-	if (ai_get_ccrev(&sii->pub) < 6)
+-		return false;
+-
+-	cc = ai_findcore(&sii->pub, BCMA_CORE_CHIPCOMMON, 0);
+-
+-	if (!(ai_get_cccaps(&sii->pub) & CC_CAP_PWR_CTL) &&
+-	    (ai_get_ccrev(&sii->pub) < 20))
+-		return mode == CLK_FAST;
+-
+-	switch (mode) {
+-	case CLK_FAST:		/* FORCEHT, fast (pll) clock */
+-		if (ai_get_ccrev(&sii->pub) < 10) {
+-			/*
+-			 * don't forget to force xtal back
+-			 * on before we clear SCC_DYN_XTAL..
+-			 */
+-			ai_clkctl_xtal(&sii->pub, XTAL, ON);
+-			bcma_maskset32(cc, CHIPCREGOFFS(slow_clk_ctl),
+-				       (SCC_XC | SCC_FS | SCC_IP), SCC_IP);
+-		} else if (ai_get_ccrev(&sii->pub) < 20) {
+-			bcma_set32(cc, CHIPCREGOFFS(system_clk_ctl), SYCC_HR);
+-		} else {
+-			bcma_set32(cc, CHIPCREGOFFS(clk_ctl_st), CCS_FORCEHT);
+-		}
+-
+-		/* wait for the PLL */
+-		if (ai_get_cccaps(&sii->pub) & CC_CAP_PMU) {
+-			u32 htavail = CCS_HTAVAIL;
+-			SPINWAIT(((bcma_read32(cc, CHIPCREGOFFS(clk_ctl_st)) &
+-				   htavail) == 0), PMU_MAX_TRANSITION_DLY);
+-		} else {
+-			udelay(PLL_DELAY);
+-		}
+-		break;
+-
+-	case CLK_DYNAMIC:	/* enable dynamic clock control */
+-		if (ai_get_ccrev(&sii->pub) < 10) {
+-			scc = bcma_read32(cc, CHIPCREGOFFS(slow_clk_ctl));
+-			scc &= ~(SCC_FS | SCC_IP | SCC_XC);
+-			if ((scc & SCC_SS_MASK) != SCC_SS_XTAL)
+-				scc |= SCC_XC;
+-			bcma_write32(cc, CHIPCREGOFFS(slow_clk_ctl), scc);
+-
+-			/*
+-			 * for dynamic control, we have to
+-			 * release our xtal_pu "force on"
+-			 */
+-			if (scc & SCC_XC)
+-				ai_clkctl_xtal(&sii->pub, XTAL, OFF);
+-		} else if (ai_get_ccrev(&sii->pub) < 20) {
+-			/* Instaclock */
+-			bcma_mask32(cc, CHIPCREGOFFS(system_clk_ctl), ~SYCC_HR);
+-		} else {
+-			bcma_mask32(cc, CHIPCREGOFFS(clk_ctl_st), ~CCS_FORCEHT);
+-		}
+-		break;
+-
+-	default:
+-		break;
+-	}
+-
+-	return mode == CLK_FAST;
+-}
+-
+ /*
+  *  clock control policy function throught chipcommon
+  *
+@@ -1036,133 +751,53 @@ static bool _ai_clkctl_cc(struct si_info
+  *    this is a wrapper over the next internal function
+  *      to allow flexible policy settings for outside caller
+  */
+-bool ai_clkctl_cc(struct si_pub *sih, uint mode)
++bool ai_clkctl_cc(struct si_pub *sih, enum bcma_clkmode mode)
+ {
+ 	struct si_info *sii;
++	struct bcma_device *cc;
+ 
+ 	sii = (struct si_info *)sih;
+ 
+-	/* chipcommon cores prior to rev6 don't support dynamic clock control */
+-	if (ai_get_ccrev(sih) < 6)
+-		return false;
+-
+ 	if (PCI_FORCEHT(sih))
+-		return mode == CLK_FAST;
++		return mode == BCMA_CLKMODE_FAST;
+ 
+-	return _ai_clkctl_cc(sii, mode);
++	cc = ai_findcore(&sii->pub, BCMA_CORE_CHIPCOMMON, 0);
++	bcma_core_set_clockmode(cc, mode);
++	return mode == BCMA_CLKMODE_FAST;
+ }
+ 
+ void ai_pci_up(struct si_pub *sih)
+ {
+ 	struct si_info *sii;
++	struct bcma_device *cc;
+ 
+ 	sii = (struct si_info *)sih;
+ 
+-	if (PCI_FORCEHT(sih))
+-		_ai_clkctl_cc(sii, CLK_FAST);
++	if (PCI_FORCEHT(sih)) {
++		cc = ai_findcore(&sii->pub, BCMA_CORE_CHIPCOMMON, 0);
++		bcma_core_set_clockmode(cc, BCMA_CLKMODE_FAST);
++	}
+ 
+ 	if (PCIE(sih))
+-		pcicore_up(sii->pch, SI_PCIUP);
+-
+-}
+-
+-/* Unconfigure and/or apply various WARs when system is going to sleep mode */
+-void ai_pci_sleep(struct si_pub *sih)
+-{
+-	struct si_info *sii;
+-
+-	sii = (struct si_info *)sih;
+-
+-	pcicore_sleep(sii->pch);
++		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci, true);
+ }
+ 
+ /* Unconfigure and/or apply various WARs when going down */
+ void ai_pci_down(struct si_pub *sih)
+ {
+ 	struct si_info *sii;
++	struct bcma_device *cc;
+ 
+ 	sii = (struct si_info *)sih;
+ 
+ 	/* release FORCEHT since chip is going to "down" state */
+-	if (PCI_FORCEHT(sih))
+-		_ai_clkctl_cc(sii, CLK_DYNAMIC);
+-
+-	pcicore_down(sii->pch, SI_PCIDOWN);
+-}
+-
+-/*
+- * Configure the pci core for pci client (NIC) action
+- * coremask is the bitvec of cores by index to be enabled.
+- */
+-void ai_pci_setup(struct si_pub *sih, uint coremask)
+-{
+-	struct si_info *sii;
+-	u32 w;
+-
+-	sii = (struct si_info *)sih;
+-
+-	/*
+-	 * Enable sb->pci interrupts.  Assume
+-	 * PCI rev 2.3 support was added in pci core rev 6 and things changed..
+-	 */
+-	if (PCIE(sih) || (PCI(sih) && (ai_get_buscorerev(sih) >= 6))) {
+-		/* pci config write to set this core bit in PCIIntMask */
+-		pci_read_config_dword(sii->pcibus, PCI_INT_MASK, &w);
+-		w |= (coremask << PCI_SBIM_SHIFT);
+-		pci_write_config_dword(sii->pcibus, PCI_INT_MASK, w);
+-	}
+-
+-	if (PCI(sih)) {
+-		pcicore_pci_setup(sii->pch);
++	if (PCI_FORCEHT(sih)) {
++		cc = ai_findcore(&sii->pub, BCMA_CORE_CHIPCOMMON, 0);
++		bcma_core_set_clockmode(cc, BCMA_CLKMODE_DYNAMIC);
+ 	}
+-}
+-
+-/*
+- * Fixup SROMless PCI device's configuration.
+- * The current core may be changed upon return.
+- */
+-int ai_pci_fixcfg(struct si_pub *sih)
+-{
+-	struct si_info *sii = (struct si_info *)sih;
+-
+-	/* Fixup PI in SROM shadow area to enable the correct PCI core access */
+-	/* check 'pi' is correct and fix it if not */
+-	pcicore_fixcfg(sii->pch);
+-	pcicore_hwup(sii->pch);
+-	return 0;
+-}
+-
+-/* mask&set gpiocontrol bits */
+-u32 ai_gpiocontrol(struct si_pub *sih, u32 mask, u32 val, u8 priority)
+-{
+-	uint regoff;
+-
+-	regoff = offsetof(struct chipcregs, gpiocontrol);
+-	return ai_cc_reg(sih, regoff, mask, val);
+-}
+-
+-void ai_chipcontrl_epa4331(struct si_pub *sih, bool on)
+-{
+-	struct bcma_device *cc;
+-	u32 val;
+-
+-	cc = ai_findcore(sih, CC_CORE_ID, 0);
+ 
+-	if (on) {
+-		if (ai_get_chippkg(sih) == 9 || ai_get_chippkg(sih) == 0xb)
+-			/* Ext PA Controls for 4331 12x9 Package */
+-			bcma_set32(cc, CHIPCREGOFFS(chipcontrol),
+-				   CCTRL4331_EXTPA_EN |
+-				   CCTRL4331_EXTPA_ON_GPIO2_5);
+-		else
+-			/* Ext PA Controls for 4331 12x12 Package */
+-			bcma_set32(cc, CHIPCREGOFFS(chipcontrol),
+-				   CCTRL4331_EXTPA_EN);
+-	} else {
+-		val &= ~(CCTRL4331_EXTPA_EN | CCTRL4331_EXTPA_ON_GPIO2_5);
+-		bcma_mask32(cc, CHIPCREGOFFS(chipcontrol),
+-			    ~(CCTRL4331_EXTPA_EN | CCTRL4331_EXTPA_ON_GPIO2_5));
+-	}
++	if (PCIE(sih))
++		bcma_core_pci_extend_L1timer(&sii->icbus->drv_pci, false);
+ }
+ 
+ /* Enable BT-COEX & Ex-PA for 4313 */
+@@ -1184,6 +819,9 @@ bool ai_deviceremoved(struct si_pub *sih
+ 
+ 	sii = (struct si_info *)sih;
+ 
++	if (sii->icbus->hosttype != BCMA_HOSTTYPE_PCI)
++		return false;
++
+ 	pci_read_config_dword(sii->pcibus, PCI_VENDOR_ID, &w);
+ 	if ((w & 0xFFFF) != PCI_VENDOR_ID_BROADCOM)
+ 		return true;
+@@ -1191,45 +829,6 @@ bool ai_deviceremoved(struct si_pub *sih
+ 	return false;
+ }
+ 
+-bool ai_is_sprom_available(struct si_pub *sih)
+-{
+-	struct si_info *sii = (struct si_info *)sih;
+-
+-	if (ai_get_ccrev(sih) >= 31) {
+-		struct bcma_device *cc;
+-		u32 sromctrl;
+-
+-		if ((ai_get_cccaps(sih) & CC_CAP_SROM) == 0)
+-			return false;
+-
+-		cc = ai_findcore(sih, BCMA_CORE_CHIPCOMMON, 0);
+-		sromctrl = bcma_read32(cc, CHIPCREGOFFS(sromcontrol));
+-		return sromctrl & SRC_PRESENT;
+-	}
+-
+-	switch (ai_get_chip_id(sih)) {
+-	case BCM4313_CHIP_ID:
+-		return (sii->chipst & CST4313_SPROM_PRESENT) != 0;
+-	default:
+-		return true;
+-	}
+-}
+-
+-bool ai_is_otp_disabled(struct si_pub *sih)
+-{
+-	struct si_info *sii = (struct si_info *)sih;
+-
+-	switch (ai_get_chip_id(sih)) {
+-	case BCM4313_CHIP_ID:
+-		return (sii->chipst & CST4313_OTP_PRESENT) == 0;
+-		/* These chips always have their OTP on */
+-	case BCM43224_CHIP_ID:
+-	case BCM43225_CHIP_ID:
+-	default:
+-		return false;
+-	}
+-}
+-
+ uint ai_get_buscoretype(struct si_pub *sih)
+ {
+ 	struct si_info *sii = (struct si_info *)sih;
+--- a/drivers/net/wireless/brcm80211/brcmsmac/aiutils.h
++++ b/drivers/net/wireless/brcm80211/brcmsmac/aiutils.h
+@@ -113,10 +113,6 @@
+ #define	XTAL			0x1	/* primary crystal oscillator (2050) */
+ #define	PLL			0x2	/* main chip pll */
+ 
+-/* clkctl clk mode */
+-#define	CLK_FAST		0	/* force fast (pll) clock */
+-#define	CLK_DYNAMIC		2	/* enable dynamic clock control */
+-
+ /* GPIO usage priorities */
+ #define GPIO_DRV_PRIORITY	0	/* Driver */
+ #define GPIO_APP_PRIORITY	1	/* Application */
+@@ -172,9 +168,7 @@ struct si_info {
+ 	struct si_pub pub;	/* back plane public state (must be first) */
+ 	struct bcma_bus *icbus;	/* handle to soc interconnect bus */
+ 	struct pci_dev *pcibus;	/* handle to pci bus */
+-	struct pcicore_info *pch; /* PCI/E core handle */
+ 	struct bcma_device *buscore;
+-	struct list_head var_list; /* list of srom variables */
+ 
+ 	u32 chipst;		/* chip status */
+ };
+@@ -197,38 +191,20 @@ extern u32 ai_core_cflags(struct bcma_de
+ extern struct si_pub *ai_attach(struct bcma_bus *pbus);
+ extern void ai_detach(struct si_pub *sih);
+ extern uint ai_cc_reg(struct si_pub *sih, uint regoff, u32 mask, u32 val);
+-extern void ai_pci_setup(struct si_pub *sih, uint coremask);
+ extern void ai_clkctl_init(struct si_pub *sih);
+ extern u16 ai_clkctl_fast_pwrup_delay(struct si_pub *sih);
+ extern bool ai_clkctl_cc(struct si_pub *sih, uint mode);
+-extern int ai_clkctl_xtal(struct si_pub *sih, uint what, bool on);
+ extern bool ai_deviceremoved(struct si_pub *sih);
+-extern u32 ai_gpiocontrol(struct si_pub *sih, u32 mask, u32 val,
+-			     u8 priority);
+-
+-/* OTP status */
+-extern bool ai_is_otp_disabled(struct si_pub *sih);
+-
+-/* SPROM availability */
+-extern bool ai_is_sprom_available(struct si_pub *sih);
+ 
+-extern void ai_pci_sleep(struct si_pub *sih);
+ extern void ai_pci_down(struct si_pub *sih);
+ extern void ai_pci_up(struct si_pub *sih);
+-extern int ai_pci_fixcfg(struct si_pub *sih);
+ 
+-extern void ai_chipcontrl_epa4331(struct si_pub *sih, bool on);
+ /* Enable Ex-PA for 4313 */
+ extern void ai_epa_4313war(struct si_pub *sih);
+ 
+ extern uint ai_get_buscoretype(struct si_pub *sih);
+ extern uint ai_get_buscorerev(struct si_pub *sih);
+ 
+-static inline int ai_get_ccrev(struct si_pub *sih)
+-{
+-	return sih->ccrev;
+-}
+-
+ static inline u32 ai_get_cccaps(struct si_pub *sih)
+ {
+ 	return sih->cccaps;
+--- a/drivers/net/wireless/brcm80211/brcmsmac/antsel.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/antsel.c
+@@ -108,7 +108,7 @@ brcms_c_antsel_init_cfg(struct antsel_in
+ struct antsel_info *brcms_c_antsel_attach(struct brcms_c_info *wlc)
+ {
+ 	struct antsel_info *asi;
+-	struct si_pub *sih = wlc->hw->sih;
++	struct ssb_sprom *sprom = &wlc->hw->d11core->bus->sprom;
+ 
+ 	asi = kzalloc(sizeof(struct antsel_info), GFP_ATOMIC);
+ 	if (!asi)
+@@ -118,7 +118,7 @@ struct antsel_info *brcms_c_antsel_attac
+ 	asi->pub = wlc->pub;
+ 	asi->antsel_type = ANTSEL_NA;
+ 	asi->antsel_avail = false;
+-	asi->antsel_antswitch = (u8) getintvar(sih, BRCMS_SROM_ANTSWITCH);
++	asi->antsel_antswitch = sprom->antswitch;
+ 
+ 	if ((asi->pub->sromrev >= 4) && (asi->antsel_antswitch != 0)) {
+ 		switch (asi->antsel_antswitch) {
+@@ -128,12 +128,12 @@ struct antsel_info *brcms_c_antsel_attac
+ 			/* 4321/2 board with 2x3 switch logic */
+ 			asi->antsel_type = ANTSEL_2x3;
+ 			/* Antenna selection availability */
+-			if (((u16) getintvar(sih, BRCMS_SROM_AA2G) == 7) ||
+-			    ((u16) getintvar(sih, BRCMS_SROM_AA5G) == 7)) {
++			if ((sprom->ant_available_bg == 7) ||
++			    (sprom->ant_available_a == 7)) {
+ 				asi->antsel_avail = true;
+ 			} else if (
+-				(u16) getintvar(sih, BRCMS_SROM_AA2G) == 3 ||
+-				(u16) getintvar(sih, BRCMS_SROM_AA5G) == 3) {
++				sprom->ant_available_bg == 3 ||
++				sprom->ant_available_a == 3) {
+ 				asi->antsel_avail = false;
+ 			} else {
+ 				asi->antsel_avail = false;
+@@ -146,8 +146,8 @@ struct antsel_info *brcms_c_antsel_attac
+ 			break;
+ 		}
+ 	} else if ((asi->pub->sromrev == 4) &&
+-		   ((u16) getintvar(sih, BRCMS_SROM_AA2G) == 7) &&
+-		   ((u16) getintvar(sih, BRCMS_SROM_AA5G) == 0)) {
++		   (sprom->ant_available_bg == 7) &&
++		   (sprom->ant_available_a == 0)) {
+ 		/* hack to match old 4321CB2 cards with 2of3 antenna switch */
+ 		asi->antsel_type = ANTSEL_2x3;
+ 		asi->antsel_avail = true;
+--- a/drivers/net/wireless/brcm80211/brcmsmac/channel.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/channel.c
+@@ -1110,7 +1110,7 @@ struct brcms_cm_info *brcms_c_channel_mg
+ 	char country_abbrev[BRCM_CNTRY_BUF_SZ];
+ 	const struct country_info *country;
+ 	struct brcms_pub *pub = wlc->pub;
+-	char *ccode;
++	struct ssb_sprom *sprom = &wlc->hw->d11core->bus->sprom;
+ 
+ 	BCMMSG(wlc->wiphy, "wl%d\n", wlc->pub->unit);
+ 
+@@ -1122,9 +1122,8 @@ struct brcms_cm_info *brcms_c_channel_mg
+ 	wlc->cmi = wlc_cm;
+ 
+ 	/* store the country code for passing up as a regulatory hint */
+-	ccode = getvar(wlc->hw->sih, BRCMS_SROM_CCODE);
+-	if (ccode && brcms_c_country_valid(ccode))
+-		strncpy(wlc->pub->srom_ccode, ccode, BRCM_CNTRY_BUF_SZ - 1);
++	if (sprom->alpha2 && brcms_c_country_valid(sprom->alpha2))
++		strncpy(wlc->pub->srom_ccode, sprom->alpha2, sizeof(sprom->alpha2));
+ 
+ 	/*
+ 	 * internal country information which must match
+--- a/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/mac80211_if.c
+@@ -28,7 +28,6 @@
+ #include <linux/bcma/bcma.h>
+ #include <net/mac80211.h>
+ #include <defs.h>
+-#include "nicpci.h"
+ #include "phy/phy_int.h"
+ #include "d11.h"
+ #include "channel.h"
+@@ -773,7 +772,7 @@ void brcms_dpc(unsigned long data)
+  * Precondition: Since this function is called in brcms_pci_probe() context,
+  * no locking is required.
+  */
+-static int brcms_request_fw(struct brcms_info *wl, struct pci_dev *pdev)
++static int brcms_request_fw(struct brcms_info *wl, struct bcma_device *pdev)
+ {
+ 	int status;
+ 	struct device *device = &pdev->dev;
+@@ -1025,7 +1024,7 @@ static struct brcms_info *brcms_attach(s
+ 	spin_lock_init(&wl->isr_lock);
+ 
+ 	/* prepare ucode */
+-	if (brcms_request_fw(wl, pdev->bus->host_pci) < 0) {
++	if (brcms_request_fw(wl, pdev) < 0) {
+ 		wiphy_err(wl->wiphy, "%s: Failed to find firmware usually in "
+ 			  "%s\n", KBUILD_MODNAME, "/lib/firmware/brcm");
+ 		brcms_release_fw(wl);
+@@ -1046,12 +1045,12 @@ static struct brcms_info *brcms_attach(s
+ 	wl->pub->ieee_hw = hw;
+ 
+ 	/* register our interrupt handler */
+-	if (request_irq(pdev->bus->host_pci->irq, brcms_isr,
++	if (request_irq(pdev->irq, brcms_isr,
+ 			IRQF_SHARED, KBUILD_MODNAME, wl)) {
+ 		wiphy_err(wl->wiphy, "wl%d: request_irq() failed\n", unit);
+ 		goto fail;
+ 	}
+-	wl->irq = pdev->bus->host_pci->irq;
++	wl->irq = pdev->irq;
+ 
+ 	/* register module */
+ 	brcms_c_module_register(wl->pub, "linux", wl, NULL);
+@@ -1101,7 +1100,7 @@ static int __devinit brcms_bcma_probe(st
+ 
+ 	dev_info(&pdev->dev, "mfg %x core %x rev %d class %d irq %d\n",
+ 		 pdev->id.manuf, pdev->id.id, pdev->id.rev, pdev->id.class,
+-		 pdev->bus->host_pci->irq);
++		 pdev->irq);
+ 
+ 	if ((pdev->id.manuf != BCMA_MANUF_BCM) ||
+ 	    (pdev->id.id != BCMA_CORE_80211))
+--- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
+@@ -850,8 +850,7 @@ brcms_c_dotxstatus(struct brcms_c_info *
+ 	 */
+ 	if (!(txs->status & TX_STATUS_AMPDU)
+ 	    && (txs->status & TX_STATUS_INTERMEDIATE)) {
+-		wiphy_err(wlc->wiphy, "%s: INTERMEDIATE but not AMPDU\n",
+-			  __func__);
++		BCMMSG(wlc->wiphy, "INTERMEDIATE but not AMPDU\n");
+ 		return false;
+ 	}
+ 
+@@ -1223,7 +1222,7 @@ static void brcms_b_wait_for_wake(struct
+ }
+ 
+ /* control chip clock to save power, enable dynamic clock or force fast clock */
+-static void brcms_b_clkctl_clk(struct brcms_hardware *wlc_hw, uint mode)
++static void brcms_b_clkctl_clk(struct brcms_hardware *wlc_hw, enum bcma_clkmode mode)
+ {
+ 	if (ai_get_cccaps(wlc_hw->sih) & CC_CAP_PMU) {
+ 		/* new chips with PMU, CCS_FORCEHT will distribute the HT clock
+@@ -1233,7 +1232,7 @@ static void brcms_b_clkctl_clk(struct br
+ 		 */
+ 
+ 		if (wlc_hw->clk) {
+-			if (mode == CLK_FAST) {
++			if (mode == BCMA_CLKMODE_FAST) {
+ 				bcma_set32(wlc_hw->d11core,
+ 					   D11REGOFFS(clk_ctl_st),
+ 					   CCS_FORCEHT);
+@@ -1264,7 +1263,7 @@ static void brcms_b_clkctl_clk(struct br
+ 					~CCS_FORCEHT);
+ 			}
+ 		}
+-		wlc_hw->forcefastclk = (mode == CLK_FAST);
++		wlc_hw->forcefastclk = (mode == BCMA_CLKMODE_FAST);
+ 	} else {
+ 
+ 		/* old chips w/o PMU, force HT through cc,
+@@ -1571,7 +1570,7 @@ void brcms_b_bw_set(struct brcms_hardwar
+ 	/* request FAST clock if not on */
+ 	fastclk = wlc_hw->forcefastclk;
+ 	if (!fastclk)
+-		brcms_b_clkctl_clk(wlc_hw, CLK_FAST);
++		brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_FAST);
+ 
+ 	wlc_phy_bw_state_set(wlc_hw->band->pi, bw);
+ 
+@@ -1580,7 +1579,7 @@ void brcms_b_bw_set(struct brcms_hardwar
+ 
+ 	/* restore the clk */
+ 	if (!fastclk)
+-		brcms_b_clkctl_clk(wlc_hw, CLK_DYNAMIC);
++		brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_DYNAMIC);
+ }
+ 
+ static void brcms_b_upd_synthpu(struct brcms_hardware *wlc_hw)
+@@ -1886,27 +1885,20 @@ static bool brcms_c_validboardtype(struc
+ 	return true;
+ }
+ 
+-static char *brcms_c_get_macaddr(struct brcms_hardware *wlc_hw)
++static void brcms_c_get_macaddr(struct brcms_hardware *wlc_hw, u8 etheraddr[ETH_ALEN])
+ {
+-	enum brcms_srom_id var_id = BRCMS_SROM_MACADDR;
+-	char *macaddr;
++	struct ssb_sprom *sprom = &wlc_hw->d11core->bus->sprom;
+ 
+ 	/* If macaddr exists, use it (Sromrev4, CIS, ...). */
+-	macaddr = getvar(wlc_hw->sih, var_id);
+-	if (macaddr != NULL)
+-		return macaddr;
++	if (!is_zero_ether_addr(sprom->il0mac)) {
++		memcpy(etheraddr, sprom->il0mac, 6);
++		return;
++	}
+ 
+ 	if (wlc_hw->_nbands > 1)
+-		var_id = BRCMS_SROM_ET1MACADDR;
++		memcpy(etheraddr, sprom->et1mac, 6);
+ 	else
+-		var_id = BRCMS_SROM_IL0MACADDR;
+-
+-	macaddr = getvar(wlc_hw->sih, var_id);
+-	if (macaddr == NULL)
+-		wiphy_err(wlc_hw->wlc->wiphy, "wl%d: wlc_get_macaddr: macaddr "
+-			  "getvar(%d) not found\n", wlc_hw->unit, var_id);
+-
+-	return macaddr;
++		memcpy(etheraddr, sprom->il0mac, 6);
+ }
+ 
+ /* power both the pll and external oscillator on/off */
+@@ -1921,9 +1913,6 @@ static void brcms_b_xtal(struct brcms_ha
+ 	if (!want && wlc_hw->pllreq)
+ 		return;
+ 
+-	if (wlc_hw->sih)
+-		ai_clkctl_xtal(wlc_hw->sih, XTAL | PLL, want);
+-
+ 	wlc_hw->sbclk = want;
+ 	if (!wlc_hw->sbclk) {
+ 		wlc_hw->clk = false;
+@@ -2008,7 +1997,7 @@ void brcms_b_corereset(struct brcms_hard
+ 	/* request FAST clock if not on  */
+ 	fastclk = wlc_hw->forcefastclk;
+ 	if (!fastclk)
+-		brcms_b_clkctl_clk(wlc_hw, CLK_FAST);
++		brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_FAST);
+ 
+ 	/* reset the dma engines except first time thru */
+ 	if (bcma_core_is_enabled(wlc_hw->d11core)) {
+@@ -2057,7 +2046,7 @@ void brcms_b_corereset(struct brcms_hard
+ 	brcms_c_mctrl_reset(wlc_hw);
+ 
+ 	if (ai_get_cccaps(wlc_hw->sih) & CC_CAP_PMU)
+-		brcms_b_clkctl_clk(wlc_hw, CLK_FAST);
++		brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_FAST);
+ 
+ 	brcms_b_phy_reset(wlc_hw);
+ 
+@@ -2069,7 +2058,7 @@ void brcms_b_corereset(struct brcms_hard
+ 
+ 	/* restore the clk setting */
+ 	if (!fastclk)
+-		brcms_b_clkctl_clk(wlc_hw, CLK_DYNAMIC);
++		brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_DYNAMIC);
+ }
+ 
+ /* txfifo sizes needs to be modified(increased) since the newer cores
+@@ -2222,7 +2211,7 @@ static void brcms_c_gpio_init(struct brc
+ 		gm |= gc |= BOARD_GPIO_PACTRL;
+ 
+ 	/* apply to gpiocontrol register */
+-	ai_gpiocontrol(wlc_hw->sih, gm, gc, GPIO_DRV_PRIORITY);
++	bcma_chipco_gpio_control(&wlc_hw->d11core->bus->drv_cc, gm, gc);
+ }
+ 
+ static void brcms_ucode_write(struct brcms_hardware *wlc_hw,
+@@ -3375,7 +3364,7 @@ static brcms_b_init(struct brcms_hardwar
+ 	/* request FAST clock if not on */
+ 	fastclk = wlc_hw->forcefastclk;
+ 	if (!fastclk)
+-		brcms_b_clkctl_clk(wlc_hw, CLK_FAST);
++		brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_FAST);
+ 
+ 	/* disable interrupts */
+ 	macintmask = brcms_intrsoff(wlc->wl);
+@@ -3409,7 +3398,7 @@ static brcms_b_init(struct brcms_hardwar
+ 
+ 	/* restore the clk */
+ 	if (!fastclk)
+-		brcms_b_clkctl_clk(wlc_hw, CLK_DYNAMIC);
++		brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_DYNAMIC);
+ }
+ 
+ static void brcms_c_set_phy_chanspec(struct brcms_c_info *wlc,
+@@ -4440,17 +4429,22 @@ static int brcms_b_attach(struct brcms_c
+ 			  uint unit, bool piomode)
+ {
+ 	struct brcms_hardware *wlc_hw;
+-	char *macaddr = NULL;
+ 	uint err = 0;
+ 	uint j;
+ 	bool wme = false;
+ 	struct shared_phy_params sha_params;
+ 	struct wiphy *wiphy = wlc->wiphy;
+ 	struct pci_dev *pcidev = core->bus->host_pci;
++	struct ssb_sprom *sprom = &core->bus->sprom;
+ 
+-	BCMMSG(wlc->wiphy, "wl%d: vendor 0x%x device 0x%x\n", unit,
+-	       pcidev->vendor,
+-	       pcidev->device);
++	if (core->bus->hosttype == BCMA_HOSTTYPE_PCI)
++		BCMMSG(wlc->wiphy, "wl%d: vendor 0x%x device 0x%x\n", unit,
++		       pcidev->vendor,
++		       pcidev->device);
++	else
++		BCMMSG(wlc->wiphy, "wl%d: vendor 0x%x device 0x%x\n", unit,
++		       core->bus->boardinfo.vendor,
++		       core->bus->boardinfo.type);
+ 
+ 	wme = true;
+ 
+@@ -4476,7 +4470,8 @@ static int brcms_b_attach(struct brcms_c
+ 	}
+ 
+ 	/* verify again the device is supported */
+-	if (!brcms_c_chipmatch(pcidev->vendor, pcidev->device)) {
++	if (core->bus->hosttype == BCMA_HOSTTYPE_PCI &&
++	    !brcms_c_chipmatch(pcidev->vendor, pcidev->device)) {
+ 		wiphy_err(wiphy, "wl%d: brcms_b_attach: Unsupported "
+ 			"vendor/device (0x%x/0x%x)\n",
+ 			 unit, pcidev->vendor, pcidev->device);
+@@ -4484,8 +4479,13 @@ static int brcms_b_attach(struct brcms_c
+ 		goto fail;
+ 	}
+ 
+-	wlc_hw->vendorid = pcidev->vendor;
+-	wlc_hw->deviceid = pcidev->device;
++	if (core->bus->hosttype == BCMA_HOSTTYPE_PCI) {
++		wlc_hw->vendorid = pcidev->vendor;
++		wlc_hw->deviceid = pcidev->device;
++	} else {
++		wlc_hw->vendorid = core->bus->boardinfo.vendor;
++		wlc_hw->deviceid = core->bus->boardinfo.type;
++	}
+ 
+ 	wlc_hw->d11core = core;
+ 	wlc_hw->corerev = core->id.rev;
+@@ -4505,7 +4505,7 @@ static int brcms_b_attach(struct brcms_c
+ 	 *   is still false; But it will be called again inside wlc_corereset,
+ 	 *   after d11 is out of reset.
+ 	 */
+-	brcms_b_clkctl_clk(wlc_hw, CLK_FAST);
++	brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_FAST);
+ 	brcms_b_corereset(wlc_hw, BRCMS_USE_COREFLAGS);
+ 
+ 	if (!brcms_b_validate_chip_access(wlc_hw)) {
+@@ -4516,7 +4516,7 @@ static int brcms_b_attach(struct brcms_c
+ 	}
+ 
+ 	/* get the board rev, used just below */
+-	j = getintvar(wlc_hw->sih, BRCMS_SROM_BOARDREV);
++	j = sprom->board_rev;
+ 	/* promote srom boardrev of 0xFF to 1 */
+ 	if (j == BOARDREV_PROMOTABLE)
+ 		j = BOARDREV_PROMOTED;
+@@ -4529,11 +4529,9 @@ static int brcms_b_attach(struct brcms_c
+ 		err = 15;
+ 		goto fail;
+ 	}
+-	wlc_hw->sromrev = (u8) getintvar(wlc_hw->sih, BRCMS_SROM_REV);
+-	wlc_hw->boardflags = (u32) getintvar(wlc_hw->sih,
+-					     BRCMS_SROM_BOARDFLAGS);
+-	wlc_hw->boardflags2 = (u32) getintvar(wlc_hw->sih,
+-					      BRCMS_SROM_BOARDFLAGS2);
++	wlc_hw->sromrev = sprom->revision;
++	wlc_hw->boardflags = sprom->boardflags_lo + (sprom->boardflags_hi << 16);
++	wlc_hw->boardflags2 = sprom->boardflags2_lo + (sprom->boardflags2_hi << 16);
+ 
+ 	if (wlc_hw->boardflags & BFL_NOPLLDOWN)
+ 		brcms_b_pllreq(wlc_hw, true, BRCMS_PLLREQ_SHARED);
+@@ -4706,25 +4704,18 @@ static int brcms_b_attach(struct brcms_c
+ 	 */
+ 
+ 	/* init etheraddr state variables */
+-	macaddr = brcms_c_get_macaddr(wlc_hw);
+-	if (macaddr == NULL) {
+-		wiphy_err(wiphy, "wl%d: brcms_b_attach: macaddr not found\n",
+-			  unit);
+-		err = 21;
+-		goto fail;
+-	}
+-	if (!mac_pton(macaddr, wlc_hw->etheraddr) ||
+-	    is_broadcast_ether_addr(wlc_hw->etheraddr) ||
++	brcms_c_get_macaddr(wlc_hw, wlc_hw->etheraddr);
++
++	if (is_broadcast_ether_addr(wlc_hw->etheraddr) ||
+ 	    is_zero_ether_addr(wlc_hw->etheraddr)) {
+-		wiphy_err(wiphy, "wl%d: brcms_b_attach: bad macaddr %s\n",
+-			  unit, macaddr);
++		wiphy_err(wiphy, "wl%d: brcms_b_attach: bad macaddr\n",
++			  unit);
+ 		err = 22;
+ 		goto fail;
+ 	}
+ 
+-	BCMMSG(wlc->wiphy, "deviceid 0x%x nbands %d board 0x%x macaddr: %s\n",
+-	       wlc_hw->deviceid, wlc_hw->_nbands, ai_get_boardtype(wlc_hw->sih),
+-	       macaddr);
++	BCMMSG(wlc->wiphy, "deviceid 0x%x nbands %d board 0x%x\n",
++	       wlc_hw->deviceid, wlc_hw->_nbands, ai_get_boardtype(wlc_hw->sih));
+ 
+ 	return err;
+ 
+@@ -4774,16 +4765,16 @@ static bool brcms_c_attach_stf_ant_init(
+ 	int aa;
+ 	uint unit;
+ 	int bandtype;
+-	struct si_pub *sih = wlc->hw->sih;
++	struct ssb_sprom *sprom = &wlc->hw->d11core->bus->sprom;
+ 
+ 	unit = wlc->pub->unit;
+ 	bandtype = wlc->band->bandtype;
+ 
+ 	/* get antennas available */
+ 	if (bandtype == BRCM_BAND_5G)
+-		aa = (s8) getintvar(sih, BRCMS_SROM_AA5G);
++		aa = sprom->ant_available_a;
+ 	else
+-		aa = (s8) getintvar(sih, BRCMS_SROM_AA2G);
++		aa = sprom->ant_available_bg;
+ 
+ 	if ((aa < 1) || (aa > 15)) {
+ 		wiphy_err(wlc->wiphy, "wl%d: %s: Invalid antennas available in"
+@@ -4803,9 +4794,9 @@ static bool brcms_c_attach_stf_ant_init(
+ 
+ 	/* Compute Antenna Gain */
+ 	if (bandtype == BRCM_BAND_5G)
+-		wlc->band->antgain = (s8) getintvar(sih, BRCMS_SROM_AG1);
++		wlc->band->antgain = sprom->antenna_gain.a1;
+ 	else
+-		wlc->band->antgain = (s8) getintvar(sih, BRCMS_SROM_AG0);
++		wlc->band->antgain = sprom->antenna_gain.a0;
+ 
+ 	brcms_c_attach_antgain_init(wlc);
+ 
+@@ -4956,15 +4947,6 @@ static int brcms_b_detach(struct brcms_c
+ 
+ 	callbacks = 0;
+ 
+-	if (wlc_hw->sih) {
+-		/*
+-		 * detach interrupt sync mechanism since interrupt is disabled
+-		 * and per-port interrupt object may has been freed. this must
+-		 * be done before sb core switch
+-		 */
+-		ai_pci_sleep(wlc_hw->sih);
+-	}
+-
+ 	brcms_b_detach_dmapio(wlc_hw);
+ 
+ 	band = wlc_hw->band;
+@@ -5051,9 +5033,7 @@ static void brcms_b_hw_up(struct brcms_h
+ 	 */
+ 	brcms_b_xtal(wlc_hw, ON);
+ 	ai_clkctl_init(wlc_hw->sih);
+-	brcms_b_clkctl_clk(wlc_hw, CLK_FAST);
+-
+-	ai_pci_fixcfg(wlc_hw->sih);
++	brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_FAST);
+ 
+ 	/*
+ 	 * TODO: test suspend/resume
+@@ -5082,8 +5062,6 @@ static void brcms_b_hw_up(struct brcms_h
+ 
+ static int brcms_b_up_prep(struct brcms_hardware *wlc_hw)
+ {
+-	uint coremask;
+-
+ 	BCMMSG(wlc_hw->wlc->wiphy, "wl%d\n", wlc_hw->unit);
+ 
+ 	/*
+@@ -5092,15 +5070,14 @@ static int brcms_b_up_prep(struct brcms_
+ 	 */
+ 	brcms_b_xtal(wlc_hw, ON);
+ 	ai_clkctl_init(wlc_hw->sih);
+-	brcms_b_clkctl_clk(wlc_hw, CLK_FAST);
++	brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_FAST);
+ 
+ 	/*
+ 	 * Configure pci/pcmcia here instead of in brcms_c_attach()
+ 	 * to allow mfg hotswap:  down, hotswap (chip power cycle), up.
+ 	 */
+-	coremask = (1 << wlc_hw->wlc->core->coreidx);
+-
+-	ai_pci_setup(wlc_hw->sih, coremask);
++	bcma_core_pci_irq_ctl(&wlc_hw->d11core->bus->drv_pci, wlc_hw->d11core,
++			      true);
+ 
+ 	/*
+ 	 * Need to read the hwradio status here to cover the case where the
+@@ -5130,7 +5107,7 @@ static int brcms_b_up_finish(struct brcm
+ 	wlc_phy_hw_state_upd(wlc_hw->band->pi, true);
+ 
+ 	/* FULLY enable dynamic power control and d11 core interrupt */
+-	brcms_b_clkctl_clk(wlc_hw, CLK_DYNAMIC);
++	brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_DYNAMIC);
+ 	brcms_intrson(wlc_hw->wlc->wl);
+ 	return 0;
+ }
+@@ -5271,7 +5248,7 @@ static int brcms_b_bmac_down_prep(struct
+ 		brcms_intrsoff(wlc_hw->wlc->wl);
+ 
+ 		/* ensure we're running on the pll clock again */
+-		brcms_b_clkctl_clk(wlc_hw, CLK_FAST);
++		brcms_b_clkctl_clk(wlc_hw, BCMA_CLKMODE_FAST);
+ 	}
+ 	/* down phy at the last of this stage */
+ 	callbacks += wlc_phy_down(wlc_hw->band->pi);
+--- a/drivers/net/wireless/brcm80211/brcmsmac/nicpci.c
++++ /dev/null
+@@ -1,826 +0,0 @@
+-/*
+- * Copyright (c) 2010 Broadcom Corporation
+- *
+- * Permission to use, copy, modify, and/or distribute this software for any
+- * purpose with or without fee is hereby granted, provided that the above
+- * copyright notice and this permission notice appear in all copies.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+- */
+-
+-#include <linux/slab.h>
+-#include <linux/delay.h>
+-#include <linux/pci.h>
+-
+-#include <defs.h>
+-#include <soc.h>
+-#include <chipcommon.h>
+-#include "aiutils.h"
+-#include "pub.h"
+-#include "nicpci.h"
+-
+-/* SPROM offsets */
+-#define SRSH_ASPM_OFFSET		4	/* word 4 */
+-#define SRSH_ASPM_ENB			0x18	/* bit 3, 4 */
+-#define SRSH_ASPM_L1_ENB		0x10	/* bit 4 */
+-#define SRSH_ASPM_L0s_ENB		0x8	/* bit 3 */
+-
+-#define SRSH_PCIE_MISC_CONFIG		5	/* word 5 */
+-#define SRSH_L23READY_EXIT_NOPERST	0x8000	/* bit 15 */
+-#define SRSH_CLKREQ_OFFSET_REV5		20	/* word 20 for srom rev <= 5 */
+-#define SRSH_CLKREQ_ENB			0x0800	/* bit 11 */
+-#define SRSH_BD_OFFSET                  6	/* word 6 */
+-
+-/* chipcontrol */
+-#define CHIPCTRL_4321_PLL_DOWN		0x800000/* serdes PLL down override */
+-
+-/* MDIO control */
+-#define MDIOCTL_DIVISOR_MASK		0x7f	/* clock to be used on MDIO */
+-#define MDIOCTL_DIVISOR_VAL		0x2
+-#define MDIOCTL_PREAM_EN		0x80	/* Enable preamble sequnce */
+-#define MDIOCTL_ACCESS_DONE		0x100	/* Transaction complete */
+-
+-/* MDIO Data */
+-#define MDIODATA_MASK			0x0000ffff	/* data 2 bytes */
+-#define MDIODATA_TA			0x00020000	/* Turnaround */
+-
+-#define MDIODATA_REGADDR_SHF		18		/* Regaddr shift */
+-#define MDIODATA_REGADDR_MASK		0x007c0000	/* Regaddr Mask */
+-#define MDIODATA_DEVADDR_SHF		23	/* Physmedia devaddr shift */
+-#define MDIODATA_DEVADDR_MASK		0x0f800000
+-						/* Physmedia devaddr Mask */
+-
+-/* MDIO Data for older revisions < 10 */
+-#define MDIODATA_REGADDR_SHF_OLD	18	/* Regaddr shift */
+-#define MDIODATA_REGADDR_MASK_OLD	0x003c0000
+-						/* Regaddr Mask */
+-#define MDIODATA_DEVADDR_SHF_OLD	22	/* Physmedia devaddr shift  */
+-#define MDIODATA_DEVADDR_MASK_OLD	0x0fc00000
+-						/* Physmedia devaddr Mask */
+-
+-/* Transactions flags */
+-#define MDIODATA_WRITE			0x10000000
+-#define MDIODATA_READ			0x20000000
+-#define MDIODATA_START			0x40000000
+-
+-#define MDIODATA_DEV_ADDR		0x0	/* dev address for serdes */
+-#define	MDIODATA_BLK_ADDR		0x1F	/* blk address for serdes */
+-
+-/* serdes regs (rev < 10) */
+-#define MDIODATA_DEV_PLL		0x1d	/* SERDES PLL Dev */
+-#define MDIODATA_DEV_TX			0x1e	/* SERDES TX Dev */
+-#define MDIODATA_DEV_RX			0x1f	/* SERDES RX Dev */
+-
+-/* SERDES RX registers */
+-#define SERDES_RX_CTRL			1	/* Rx cntrl */
+-#define SERDES_RX_TIMER1		2	/* Rx Timer1 */
+-#define SERDES_RX_CDR			6	/* CDR */
+-#define SERDES_RX_CDRBW			7	/* CDR BW */
+-/* SERDES RX control register */
+-#define SERDES_RX_CTRL_FORCE		0x80	/* rxpolarity_force */
+-#define SERDES_RX_CTRL_POLARITY		0x40	/* rxpolarity_value */
+-
+-/* SERDES PLL registers */
+-#define SERDES_PLL_CTRL                 1	/* PLL control reg */
+-#define PLL_CTRL_FREQDET_EN             0x4000	/* bit 14 is FREQDET on */
+-
+-/* Linkcontrol reg offset in PCIE Cap */
+-#define PCIE_CAP_LINKCTRL_OFFSET	16	/* offset in pcie cap */
+-#define PCIE_CAP_LCREG_ASPML0s		0x01	/* ASPM L0s in linkctrl */
+-#define PCIE_CAP_LCREG_ASPML1		0x02	/* ASPM L1 in linkctrl */
+-#define PCIE_CLKREQ_ENAB		0x100	/* CLKREQ Enab in linkctrl */
+-
+-#define PCIE_ASPM_ENAB			3	/* ASPM L0s & L1 in linkctrl */
+-#define PCIE_ASPM_L1_ENAB		2	/* ASPM L0s & L1 in linkctrl */
+-#define PCIE_ASPM_L0s_ENAB		1	/* ASPM L0s & L1 in linkctrl */
+-#define PCIE_ASPM_DISAB			0	/* ASPM L0s & L1 in linkctrl */
+-
+-/* Power management threshold */
+-#define PCIE_L1THRESHOLDTIME_MASK       0xFF00	/* bits 8 - 15 */
+-#define PCIE_L1THRESHOLDTIME_SHIFT      8	/* PCIE_L1THRESHOLDTIME_SHIFT */
+-#define PCIE_L1THRESHOLD_WARVAL         0x72	/* WAR value */
+-#define PCIE_ASPMTIMER_EXTEND		0x01000000
+-						/* > rev7:
+-						 * enable extend ASPM timer
+-						 */
+-
+-/* different register spaces to access thru pcie indirect access */
+-#define PCIE_CONFIGREGS		1	/* Access to config space */
+-#define PCIE_PCIEREGS		2	/* Access to pcie registers */
+-
+-/* PCIE protocol PHY diagnostic registers */
+-#define	PCIE_PLP_STATUSREG		0x204	/* Status */
+-
+-/* Status reg PCIE_PLP_STATUSREG */
+-#define PCIE_PLP_POLARITYINV_STAT	0x10
+-
+-/* PCIE protocol DLLP diagnostic registers */
+-#define PCIE_DLLP_LCREG			0x100	/* Link Control */
+-#define PCIE_DLLP_PMTHRESHREG		0x128	/* Power Management Threshold */
+-
+-/* PCIE protocol TLP diagnostic registers */
+-#define PCIE_TLP_WORKAROUNDSREG		0x004	/* TLP Workarounds */
+-
+-/* Sonics to PCI translation types */
+-#define	SBTOPCI_PREF	0x4		/* prefetch enable */
+-#define	SBTOPCI_BURST	0x8		/* burst enable */
+-#define	SBTOPCI_RC_READMULTI	0x20	/* memory read multiple */
+-
+-#define PCI_CLKRUN_DSBL	0x8000	/* Bit 15 forceClkrun */
+-
+-/* PCI core index in SROM shadow area */
+-#define SRSH_PI_OFFSET	0	/* first word */
+-#define SRSH_PI_MASK	0xf000	/* bit 15:12 */
+-#define SRSH_PI_SHIFT	12	/* bit 15:12 */
+-
+-#define PCIREGOFFS(field)	offsetof(struct sbpciregs, field)
+-#define PCIEREGOFFS(field)	offsetof(struct sbpcieregs, field)
+-
+-/* Sonics side: PCI core and host control registers */
+-struct sbpciregs {
+-	u32 control;		/* PCI control */
+-	u32 PAD[3];
+-	u32 arbcontrol;		/* PCI arbiter control */
+-	u32 clkrun;		/* Clkrun Control (>=rev11) */
+-	u32 PAD[2];
+-	u32 intstatus;		/* Interrupt status */
+-	u32 intmask;		/* Interrupt mask */
+-	u32 sbtopcimailbox;	/* Sonics to PCI mailbox */
+-	u32 PAD[9];
+-	u32 bcastaddr;		/* Sonics broadcast address */
+-	u32 bcastdata;		/* Sonics broadcast data */
+-	u32 PAD[2];
+-	u32 gpioin;		/* ro: gpio input (>=rev2) */
+-	u32 gpioout;		/* rw: gpio output (>=rev2) */
+-	u32 gpioouten;		/* rw: gpio output enable (>= rev2) */
+-	u32 gpiocontrol;	/* rw: gpio control (>= rev2) */
+-	u32 PAD[36];
+-	u32 sbtopci0;		/* Sonics to PCI translation 0 */
+-	u32 sbtopci1;		/* Sonics to PCI translation 1 */
+-	u32 sbtopci2;		/* Sonics to PCI translation 2 */
+-	u32 PAD[189];
+-	u32 pcicfg[4][64];	/* 0x400 - 0x7FF, PCI Cfg Space (>=rev8) */
+-	u16 sprom[36];		/* SPROM shadow Area */
+-	u32 PAD[46];
+-};
+-
+-/* SB side: PCIE core and host control registers */
+-struct sbpcieregs {
+-	u32 control;		/* host mode only */
+-	u32 PAD[2];
+-	u32 biststatus;		/* bist Status: 0x00C */
+-	u32 gpiosel;		/* PCIE gpio sel: 0x010 */
+-	u32 gpioouten;		/* PCIE gpio outen: 0x14 */
+-	u32 PAD[2];
+-	u32 intstatus;		/* Interrupt status: 0x20 */
+-	u32 intmask;		/* Interrupt mask: 0x24 */
+-	u32 sbtopcimailbox;	/* sb to pcie mailbox: 0x028 */
+-	u32 PAD[53];
+-	u32 sbtopcie0;		/* sb to pcie translation 0: 0x100 */
+-	u32 sbtopcie1;		/* sb to pcie translation 1: 0x104 */
+-	u32 sbtopcie2;		/* sb to pcie translation 2: 0x108 */
+-	u32 PAD[5];
+-
+-	/* pcie core supports in direct access to config space */
+-	u32 configaddr;	/* pcie config space access: Address field: 0x120 */
+-	u32 configdata;	/* pcie config space access: Data field: 0x124 */
+-
+-	/* mdio access to serdes */
+-	u32 mdiocontrol;	/* controls the mdio access: 0x128 */
+-	u32 mdiodata;		/* Data to the mdio access: 0x12c */
+-
+-	/* pcie protocol phy/dllp/tlp register indirect access mechanism */
+-	u32 pcieindaddr;	/* indirect access to
+-				 * the internal register: 0x130
+-				 */
+-	u32 pcieinddata;	/* Data to/from the internal regsiter: 0x134 */
+-
+-	u32 clkreqenctrl;	/* >= rev 6, Clkreq rdma control : 0x138 */
+-	u32 PAD[177];
+-	u32 pciecfg[4][64];	/* 0x400 - 0x7FF, PCIE Cfg Space */
+-	u16 sprom[64];		/* SPROM shadow Area */
+-};
+-
+-struct pcicore_info {
+-	struct bcma_device *core;
+-	struct si_pub *sih;	/* System interconnect handle */
+-	struct pci_dev *dev;
+-	u8 pciecap_lcreg_offset;/* PCIE capability LCreg offset
+-				 * in the config space
+-				 */
+-	bool pcie_pr42767;
+-	u8 pcie_polarity;
+-	u8 pcie_war_aspm_ovr;	/* Override ASPM/Clkreq settings */
+-
+-	u8 pmecap_offset;	/* PM Capability offset in the config space */
+-	bool pmecap;		/* Capable of generating PME */
+-};
+-
+-#define PCIE_ASPM(sih)							\
+-	((ai_get_buscoretype(sih) == PCIE_CORE_ID) &&			\
+-	 ((ai_get_buscorerev(sih) >= 3) &&				\
+-	  (ai_get_buscorerev(sih) <= 5)))
+-
+-
+-/* delay needed between the mdio control/ mdiodata register data access */
+-static void pr28829_delay(void)
+-{
+-	udelay(10);
+-}
+-
+-/* Initialize the PCI core.
+- * It's caller's responsibility to make sure that this is done only once
+- */
+-struct pcicore_info *pcicore_init(struct si_pub *sih, struct bcma_device *core)
+-{
+-	struct pcicore_info *pi;
+-
+-	/* alloc struct pcicore_info */
+-	pi = kzalloc(sizeof(struct pcicore_info), GFP_ATOMIC);
+-	if (pi == NULL)
+-		return NULL;
+-
+-	pi->sih = sih;
+-	pi->dev = core->bus->host_pci;
+-	pi->core = core;
+-
+-	if (core->id.id == PCIE_CORE_ID) {
+-		u8 cap_ptr;
+-		cap_ptr = pcicore_find_pci_capability(pi->dev, PCI_CAP_ID_EXP,
+-						      NULL, NULL);
+-		pi->pciecap_lcreg_offset = cap_ptr + PCIE_CAP_LINKCTRL_OFFSET;
+-	}
+-	return pi;
+-}
+-
+-void pcicore_deinit(struct pcicore_info *pch)
+-{
+-	kfree(pch);
+-}
+-
+-/* return cap_offset if requested capability exists in the PCI config space */
+-/* Note that it's caller's responsibility to make sure it's a pci bus */
+-u8
+-pcicore_find_pci_capability(struct pci_dev *dev, u8 req_cap_id,
+-			    unsigned char *buf, u32 *buflen)
+-{
+-	u8 cap_id;
+-	u8 cap_ptr = 0;
+-	u32 bufsize;
+-	u8 byte_val;
+-
+-	/* check for Header type 0 */
+-	pci_read_config_byte(dev, PCI_HEADER_TYPE, &byte_val);
+-	if ((byte_val & 0x7f) != PCI_HEADER_TYPE_NORMAL)
+-		goto end;
+-
+-	/* check if the capability pointer field exists */
+-	pci_read_config_byte(dev, PCI_STATUS, &byte_val);
+-	if (!(byte_val & PCI_STATUS_CAP_LIST))
+-		goto end;
+-
+-	pci_read_config_byte(dev, PCI_CAPABILITY_LIST, &cap_ptr);
+-	/* check if the capability pointer is 0x00 */
+-	if (cap_ptr == 0x00)
+-		goto end;
+-
+-	/* loop thru the capability list
+-	 * and see if the pcie capability exists
+-	 */
+-
+-	pci_read_config_byte(dev, cap_ptr, &cap_id);
+-
+-	while (cap_id != req_cap_id) {
+-		pci_read_config_byte(dev, cap_ptr + 1, &cap_ptr);
+-		if (cap_ptr == 0x00)
+-			break;
+-		pci_read_config_byte(dev, cap_ptr, &cap_id);
+-	}
+-	if (cap_id != req_cap_id)
+-		goto end;
+-
+-	/* found the caller requested capability */
+-	if (buf != NULL && buflen != NULL) {
+-		u8 cap_data;
+-
+-		bufsize = *buflen;
+-		if (!bufsize)
+-			goto end;
+-		*buflen = 0;
+-		/* copy the capability data excluding cap ID and next ptr */
+-		cap_data = cap_ptr + 2;
+-		if ((bufsize + cap_data) > PCI_SZPCR)
+-			bufsize = PCI_SZPCR - cap_data;
+-		*buflen = bufsize;
+-		while (bufsize--) {
+-			pci_read_config_byte(dev, cap_data, buf);
+-			cap_data++;
+-			buf++;
+-		}
+-	}
+-end:
+-	return cap_ptr;
+-}
+-
+-/* ***** Register Access API */
+-static uint
+-pcie_readreg(struct bcma_device *core, uint addrtype, uint offset)
+-{
+-	uint retval = 0xFFFFFFFF;
+-
+-	switch (addrtype) {
+-	case PCIE_CONFIGREGS:
+-		bcma_write32(core, PCIEREGOFFS(configaddr), offset);
+-		(void)bcma_read32(core, PCIEREGOFFS(configaddr));
+-		retval = bcma_read32(core, PCIEREGOFFS(configdata));
+-		break;
+-	case PCIE_PCIEREGS:
+-		bcma_write32(core, PCIEREGOFFS(pcieindaddr), offset);
+-		(void)bcma_read32(core, PCIEREGOFFS(pcieindaddr));
+-		retval = bcma_read32(core, PCIEREGOFFS(pcieinddata));
+-		break;
+-	}
+-
+-	return retval;
+-}
+-
+-static uint pcie_writereg(struct bcma_device *core, uint addrtype,
+-			  uint offset, uint val)
+-{
+-	switch (addrtype) {
+-	case PCIE_CONFIGREGS:
+-		bcma_write32(core, PCIEREGOFFS(configaddr), offset);
+-		bcma_write32(core, PCIEREGOFFS(configdata), val);
+-		break;
+-	case PCIE_PCIEREGS:
+-		bcma_write32(core, PCIEREGOFFS(pcieindaddr), offset);
+-		bcma_write32(core, PCIEREGOFFS(pcieinddata), val);
+-		break;
+-	default:
+-		break;
+-	}
+-	return 0;
+-}
+-
+-static bool pcie_mdiosetblock(struct pcicore_info *pi, uint blk)
+-{
+-	uint mdiodata, i = 0;
+-	uint pcie_serdes_spinwait = 200;
+-
+-	mdiodata = (MDIODATA_START | MDIODATA_WRITE | MDIODATA_TA |
+-		    (MDIODATA_DEV_ADDR << MDIODATA_DEVADDR_SHF) |
+-		    (MDIODATA_BLK_ADDR << MDIODATA_REGADDR_SHF) |
+-		    (blk << 4));
+-	bcma_write32(pi->core, PCIEREGOFFS(mdiodata), mdiodata);
+-
+-	pr28829_delay();
+-	/* retry till the transaction is complete */
+-	while (i < pcie_serdes_spinwait) {
+-		if (bcma_read32(pi->core, PCIEREGOFFS(mdiocontrol)) &
+-		    MDIOCTL_ACCESS_DONE)
+-			break;
+-
+-		udelay(1000);
+-		i++;
+-	}
+-
+-	if (i >= pcie_serdes_spinwait)
+-		return false;
+-
+-	return true;
+-}
+-
+-static int
+-pcie_mdioop(struct pcicore_info *pi, uint physmedia, uint regaddr, bool write,
+-	    uint *val)
+-{
+-	uint mdiodata;
+-	uint i = 0;
+-	uint pcie_serdes_spinwait = 10;
+-
+-	/* enable mdio access to SERDES */
+-	bcma_write32(pi->core, PCIEREGOFFS(mdiocontrol),
+-		     MDIOCTL_PREAM_EN | MDIOCTL_DIVISOR_VAL);
+-
+-	if (ai_get_buscorerev(pi->sih) >= 10) {
+-		/* new serdes is slower in rw,
+-		 * using two layers of reg address mapping
+-		 */
+-		if (!pcie_mdiosetblock(pi, physmedia))
+-			return 1;
+-		mdiodata = ((MDIODATA_DEV_ADDR << MDIODATA_DEVADDR_SHF) |
+-			    (regaddr << MDIODATA_REGADDR_SHF));
+-		pcie_serdes_spinwait *= 20;
+-	} else {
+-		mdiodata = ((physmedia << MDIODATA_DEVADDR_SHF_OLD) |
+-			    (regaddr << MDIODATA_REGADDR_SHF_OLD));
+-	}
+-
+-	if (!write)
+-		mdiodata |= (MDIODATA_START | MDIODATA_READ | MDIODATA_TA);
+-	else
+-		mdiodata |= (MDIODATA_START | MDIODATA_WRITE | MDIODATA_TA |
+-			     *val);
+-
+-	bcma_write32(pi->core, PCIEREGOFFS(mdiodata), mdiodata);
+-
+-	pr28829_delay();
+-
+-	/* retry till the transaction is complete */
+-	while (i < pcie_serdes_spinwait) {
+-		if (bcma_read32(pi->core, PCIEREGOFFS(mdiocontrol)) &
+-		    MDIOCTL_ACCESS_DONE) {
+-			if (!write) {
+-				pr28829_delay();
+-				*val = (bcma_read32(pi->core,
+-						    PCIEREGOFFS(mdiodata)) &
+-					MDIODATA_MASK);
+-			}
+-			/* Disable mdio access to SERDES */
+-			bcma_write32(pi->core, PCIEREGOFFS(mdiocontrol), 0);
+-			return 0;
+-		}
+-		udelay(1000);
+-		i++;
+-	}
+-
+-	/* Timed out. Disable mdio access to SERDES. */
+-	bcma_write32(pi->core, PCIEREGOFFS(mdiocontrol), 0);
+-	return 1;
+-}
+-
+-/* use the mdio interface to read from mdio slaves */
+-static int
+-pcie_mdioread(struct pcicore_info *pi, uint physmedia, uint regaddr,
+-	      uint *regval)
+-{
+-	return pcie_mdioop(pi, physmedia, regaddr, false, regval);
+-}
+-
+-/* use the mdio interface to write to mdio slaves */
+-static int
+-pcie_mdiowrite(struct pcicore_info *pi, uint physmedia, uint regaddr, uint val)
+-{
+-	return pcie_mdioop(pi, physmedia, regaddr, true, &val);
+-}
+-
+-/* ***** Support functions ***** */
+-static u8 pcie_clkreq(struct pcicore_info *pi, u32 mask, u32 val)
+-{
+-	u32 reg_val;
+-	u8 offset;
+-
+-	offset = pi->pciecap_lcreg_offset;
+-	if (!offset)
+-		return 0;
+-
+-	pci_read_config_dword(pi->dev, offset, &reg_val);
+-	/* set operation */
+-	if (mask) {
+-		if (val)
+-			reg_val |= PCIE_CLKREQ_ENAB;
+-		else
+-			reg_val &= ~PCIE_CLKREQ_ENAB;
+-		pci_write_config_dword(pi->dev, offset, reg_val);
+-		pci_read_config_dword(pi->dev, offset, &reg_val);
+-	}
+-	if (reg_val & PCIE_CLKREQ_ENAB)
+-		return 1;
+-	else
+-		return 0;
+-}
+-
+-static void pcie_extendL1timer(struct pcicore_info *pi, bool extend)
+-{
+-	u32 w;
+-	struct si_pub *sih = pi->sih;
+-
+-	if (ai_get_buscoretype(sih) != PCIE_CORE_ID ||
+-	    ai_get_buscorerev(sih) < 7)
+-		return;
+-
+-	w = pcie_readreg(pi->core, PCIE_PCIEREGS, PCIE_DLLP_PMTHRESHREG);
+-	if (extend)
+-		w |= PCIE_ASPMTIMER_EXTEND;
+-	else
+-		w &= ~PCIE_ASPMTIMER_EXTEND;
+-	pcie_writereg(pi->core, PCIE_PCIEREGS, PCIE_DLLP_PMTHRESHREG, w);
+-	w = pcie_readreg(pi->core, PCIE_PCIEREGS, PCIE_DLLP_PMTHRESHREG);
+-}
+-
+-/* centralized clkreq control policy */
+-static void pcie_clkreq_upd(struct pcicore_info *pi, uint state)
+-{
+-	struct si_pub *sih = pi->sih;
+-
+-	switch (state) {
+-	case SI_DOATTACH:
+-		if (PCIE_ASPM(sih))
+-			pcie_clkreq(pi, 1, 0);
+-		break;
+-	case SI_PCIDOWN:
+-		/* turn on serdes PLL down */
+-		if (ai_get_buscorerev(sih) == 6) {
+-			ai_cc_reg(sih,
+-				  offsetof(struct chipcregs, chipcontrol_addr),
+-				  ~0, 0);
+-			ai_cc_reg(sih,
+-				  offsetof(struct chipcregs, chipcontrol_data),
+-				  ~0x40, 0);
+-		} else if (pi->pcie_pr42767) {
+-			pcie_clkreq(pi, 1, 1);
+-		}
+-		break;
+-	case SI_PCIUP:
+-		/* turn off serdes PLL down */
+-		if (ai_get_buscorerev(sih) == 6) {
+-			ai_cc_reg(sih,
+-				  offsetof(struct chipcregs, chipcontrol_addr),
+-				  ~0, 0);
+-			ai_cc_reg(sih,
+-				  offsetof(struct chipcregs, chipcontrol_data),
+-				  ~0x40, 0x40);
+-		} else if (PCIE_ASPM(sih)) {	/* disable clkreq */
+-			pcie_clkreq(pi, 1, 0);
+-		}
+-		break;
+-	}
+-}
+-
+-/* ***** PCI core WARs ***** */
+-/* Done only once at attach time */
+-static void pcie_war_polarity(struct pcicore_info *pi)
+-{
+-	u32 w;
+-
+-	if (pi->pcie_polarity != 0)
+-		return;
+-
+-	w = pcie_readreg(pi->core, PCIE_PCIEREGS, PCIE_PLP_STATUSREG);
+-
+-	/* Detect the current polarity at attach and force that polarity and
+-	 * disable changing the polarity
+-	 */
+-	if ((w & PCIE_PLP_POLARITYINV_STAT) == 0)
+-		pi->pcie_polarity = SERDES_RX_CTRL_FORCE;
+-	else
+-		pi->pcie_polarity = (SERDES_RX_CTRL_FORCE |
+-				     SERDES_RX_CTRL_POLARITY);
+-}
+-
+-/* enable ASPM and CLKREQ if srom doesn't have it */
+-/* Needs to happen when update to shadow SROM is needed
+- *   : Coming out of 'standby'/'hibernate'
+- *   : If pcie_war_aspm_ovr state changed
+- */
+-static void pcie_war_aspm_clkreq(struct pcicore_info *pi)
+-{
+-	struct si_pub *sih = pi->sih;
+-	u16 val16;
+-	u32 w;
+-
+-	if (!PCIE_ASPM(sih))
+-		return;
+-
+-	/* bypass this on QT or VSIM */
+-	val16 = bcma_read16(pi->core, PCIEREGOFFS(sprom[SRSH_ASPM_OFFSET]));
+-
+-	val16 &= ~SRSH_ASPM_ENB;
+-	if (pi->pcie_war_aspm_ovr == PCIE_ASPM_ENAB)
+-		val16 |= SRSH_ASPM_ENB;
+-	else if (pi->pcie_war_aspm_ovr == PCIE_ASPM_L1_ENAB)
+-		val16 |= SRSH_ASPM_L1_ENB;
+-	else if (pi->pcie_war_aspm_ovr == PCIE_ASPM_L0s_ENAB)
+-		val16 |= SRSH_ASPM_L0s_ENB;
+-
+-	bcma_write16(pi->core, PCIEREGOFFS(sprom[SRSH_ASPM_OFFSET]), val16);
+-
+-	pci_read_config_dword(pi->dev, pi->pciecap_lcreg_offset, &w);
+-	w &= ~PCIE_ASPM_ENAB;
+-	w |= pi->pcie_war_aspm_ovr;
+-	pci_write_config_dword(pi->dev, pi->pciecap_lcreg_offset, w);
+-
+-	val16 = bcma_read16(pi->core,
+-			    PCIEREGOFFS(sprom[SRSH_CLKREQ_OFFSET_REV5]));
+-
+-	if (pi->pcie_war_aspm_ovr != PCIE_ASPM_DISAB) {
+-		val16 |= SRSH_CLKREQ_ENB;
+-		pi->pcie_pr42767 = true;
+-	} else
+-		val16 &= ~SRSH_CLKREQ_ENB;
+-
+-	bcma_write16(pi->core, PCIEREGOFFS(sprom[SRSH_CLKREQ_OFFSET_REV5]),
+-		     val16);
+-}
+-
+-/* Apply the polarity determined at the start */
+-/* Needs to happen when coming out of 'standby'/'hibernate' */
+-static void pcie_war_serdes(struct pcicore_info *pi)
+-{
+-	u32 w = 0;
+-
+-	if (pi->pcie_polarity != 0)
+-		pcie_mdiowrite(pi, MDIODATA_DEV_RX, SERDES_RX_CTRL,
+-			       pi->pcie_polarity);
+-
+-	pcie_mdioread(pi, MDIODATA_DEV_PLL, SERDES_PLL_CTRL, &w);
+-	if (w & PLL_CTRL_FREQDET_EN) {
+-		w &= ~PLL_CTRL_FREQDET_EN;
+-		pcie_mdiowrite(pi, MDIODATA_DEV_PLL, SERDES_PLL_CTRL, w);
+-	}
+-}
+-
+-/* Fix MISC config to allow coming out of L2/L3-Ready state w/o PRST */
+-/* Needs to happen when coming out of 'standby'/'hibernate' */
+-static void pcie_misc_config_fixup(struct pcicore_info *pi)
+-{
+-	u16 val16;
+-
+-	val16 = bcma_read16(pi->core,
+-			    PCIEREGOFFS(sprom[SRSH_PCIE_MISC_CONFIG]));
+-
+-	if ((val16 & SRSH_L23READY_EXIT_NOPERST) == 0) {
+-		val16 |= SRSH_L23READY_EXIT_NOPERST;
+-		bcma_write16(pi->core,
+-			     PCIEREGOFFS(sprom[SRSH_PCIE_MISC_CONFIG]), val16);
+-	}
+-}
+-
+-/* quick hack for testing */
+-/* Needs to happen when coming out of 'standby'/'hibernate' */
+-static void pcie_war_noplldown(struct pcicore_info *pi)
+-{
+-	/* turn off serdes PLL down */
+-	ai_cc_reg(pi->sih, offsetof(struct chipcregs, chipcontrol),
+-		  CHIPCTRL_4321_PLL_DOWN, CHIPCTRL_4321_PLL_DOWN);
+-
+-	/* clear srom shadow backdoor */
+-	bcma_write16(pi->core, PCIEREGOFFS(sprom[SRSH_BD_OFFSET]), 0);
+-}
+-
+-/* Needs to happen when coming out of 'standby'/'hibernate' */
+-static void pcie_war_pci_setup(struct pcicore_info *pi)
+-{
+-	struct si_pub *sih = pi->sih;
+-	u32 w;
+-
+-	if (ai_get_buscorerev(sih) == 0 || ai_get_buscorerev(sih) == 1) {
+-		w = pcie_readreg(pi->core, PCIE_PCIEREGS,
+-				 PCIE_TLP_WORKAROUNDSREG);
+-		w |= 0x8;
+-		pcie_writereg(pi->core, PCIE_PCIEREGS,
+-			      PCIE_TLP_WORKAROUNDSREG, w);
+-	}
+-
+-	if (ai_get_buscorerev(sih) == 1) {
+-		w = pcie_readreg(pi->core, PCIE_PCIEREGS, PCIE_DLLP_LCREG);
+-		w |= 0x40;
+-		pcie_writereg(pi->core, PCIE_PCIEREGS, PCIE_DLLP_LCREG, w);
+-	}
+-
+-	if (ai_get_buscorerev(sih) == 0) {
+-		pcie_mdiowrite(pi, MDIODATA_DEV_RX, SERDES_RX_TIMER1, 0x8128);
+-		pcie_mdiowrite(pi, MDIODATA_DEV_RX, SERDES_RX_CDR, 0x0100);
+-		pcie_mdiowrite(pi, MDIODATA_DEV_RX, SERDES_RX_CDRBW, 0x1466);
+-	} else if (PCIE_ASPM(sih)) {
+-		/* Change the L1 threshold for better performance */
+-		w = pcie_readreg(pi->core, PCIE_PCIEREGS,
+-				 PCIE_DLLP_PMTHRESHREG);
+-		w &= ~PCIE_L1THRESHOLDTIME_MASK;
+-		w |= PCIE_L1THRESHOLD_WARVAL << PCIE_L1THRESHOLDTIME_SHIFT;
+-		pcie_writereg(pi->core, PCIE_PCIEREGS,
+-			      PCIE_DLLP_PMTHRESHREG, w);
+-
+-		pcie_war_serdes(pi);
+-
+-		pcie_war_aspm_clkreq(pi);
+-	} else if (ai_get_buscorerev(pi->sih) == 7)
+-		pcie_war_noplldown(pi);
+-
+-	/* Note that the fix is actually in the SROM,
+-	 * that's why this is open-ended
+-	 */
+-	if (ai_get_buscorerev(pi->sih) >= 6)
+-		pcie_misc_config_fixup(pi);
+-}
+-
+-/* ***** Functions called during driver state changes ***** */
+-void pcicore_attach(struct pcicore_info *pi, int state)
+-{
+-	struct si_pub *sih = pi->sih;
+-	u32 bfl2 = (u32)getintvar(sih, BRCMS_SROM_BOARDFLAGS2);
+-
+-	/* Determine if this board needs override */
+-	if (PCIE_ASPM(sih)) {
+-		if (bfl2 & BFL2_PCIEWAR_OVR)
+-			pi->pcie_war_aspm_ovr = PCIE_ASPM_DISAB;
+-		else
+-			pi->pcie_war_aspm_ovr = PCIE_ASPM_ENAB;
+-	}
+-
+-	/* These need to happen in this order only */
+-	pcie_war_polarity(pi);
+-
+-	pcie_war_serdes(pi);
+-
+-	pcie_war_aspm_clkreq(pi);
+-
+-	pcie_clkreq_upd(pi, state);
+-
+-}
+-
+-void pcicore_hwup(struct pcicore_info *pi)
+-{
+-	if (!pi || ai_get_buscoretype(pi->sih) != PCIE_CORE_ID)
+-		return;
+-
+-	pcie_war_pci_setup(pi);
+-}
+-
+-void pcicore_up(struct pcicore_info *pi, int state)
+-{
+-	if (!pi || ai_get_buscoretype(pi->sih) != PCIE_CORE_ID)
+-		return;
+-
+-	/* Restore L1 timer for better performance */
+-	pcie_extendL1timer(pi, true);
+-
+-	pcie_clkreq_upd(pi, state);
+-}
+-
+-/* When the device is going to enter D3 state
+- * (or the system is going to enter S3/S4 states)
+- */
+-void pcicore_sleep(struct pcicore_info *pi)
+-{
+-	u32 w;
+-
+-	if (!pi || !PCIE_ASPM(pi->sih))
+-		return;
+-
+-	pci_read_config_dword(pi->dev, pi->pciecap_lcreg_offset, &w);
+-	w &= ~PCIE_CAP_LCREG_ASPML1;
+-	pci_write_config_dword(pi->dev, pi->pciecap_lcreg_offset, w);
+-
+-	pi->pcie_pr42767 = false;
+-}
+-
+-void pcicore_down(struct pcicore_info *pi, int state)
+-{
+-	if (!pi || ai_get_buscoretype(pi->sih) != PCIE_CORE_ID)
+-		return;
+-
+-	pcie_clkreq_upd(pi, state);
+-
+-	/* Reduce L1 timer for better power savings */
+-	pcie_extendL1timer(pi, false);
+-}
+-
+-void pcicore_fixcfg(struct pcicore_info *pi)
+-{
+-	struct bcma_device *core = pi->core;
+-	u16 val16;
+-	uint regoff;
+-
+-	switch (pi->core->id.id) {
+-	case BCMA_CORE_PCI:
+-		regoff = PCIREGOFFS(sprom[SRSH_PI_OFFSET]);
+-		break;
+-
+-	case BCMA_CORE_PCIE:
+-		regoff = PCIEREGOFFS(sprom[SRSH_PI_OFFSET]);
+-		break;
+-
+-	default:
+-		return;
+-	}
+-
+-	val16 = bcma_read16(pi->core, regoff);
+-	if (((val16 & SRSH_PI_MASK) >> SRSH_PI_SHIFT) !=
+-	    (u16)core->core_index) {
+-		val16 = ((u16)core->core_index << SRSH_PI_SHIFT) |
+-			(val16 & ~SRSH_PI_MASK);
+-		bcma_write16(pi->core, regoff, val16);
+-	}
+-}
+-
+-/* precondition: current core is pci core */
+-void
+-pcicore_pci_setup(struct pcicore_info *pi)
+-{
+-	bcma_set32(pi->core, PCIREGOFFS(sbtopci2),
+-		   SBTOPCI_PREF | SBTOPCI_BURST);
+-
+-	if (pi->core->id.rev >= 11) {
+-		bcma_set32(pi->core, PCIREGOFFS(sbtopci2),
+-			   SBTOPCI_RC_READMULTI);
+-		bcma_set32(pi->core, PCIREGOFFS(clkrun), PCI_CLKRUN_DSBL);
+-		(void)bcma_read32(pi->core, PCIREGOFFS(clkrun));
+-	}
+-}
+--- a/drivers/net/wireless/brcm80211/brcmsmac/nicpci.h
++++ /dev/null
+@@ -1,77 +0,0 @@
+-/*
+- * Copyright (c) 2010 Broadcom Corporation
+- *
+- * Permission to use, copy, modify, and/or distribute this software for any
+- * purpose with or without fee is hereby granted, provided that the above
+- * copyright notice and this permission notice appear in all copies.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+- */
+-
+-#ifndef	_BRCM_NICPCI_H_
+-#define	_BRCM_NICPCI_H_
+-
+-#include "types.h"
+-
+-/* PCI configuration address space size */
+-#define PCI_SZPCR		256
+-
+-/* Brcm PCI configuration registers */
+-/* backplane address space accessed by BAR0 */
+-#define PCI_BAR0_WIN		0x80
+-/* sprom property control */
+-#define PCI_SPROM_CONTROL	0x88
+-/* mask of PCI and other cores interrupts */
+-#define PCI_INT_MASK		0x94
+-/* backplane core interrupt mask bits offset */
+-#define  PCI_SBIM_SHIFT		8
+-/* backplane address space accessed by second 4KB of BAR0 */
+-#define PCI_BAR0_WIN2		0xac
+-/* pci config space gpio input (>=rev3) */
+-#define PCI_GPIO_IN		0xb0
+-/* pci config space gpio output (>=rev3) */
+-#define PCI_GPIO_OUT		0xb4
+-/* pci config space gpio output enable (>=rev3) */
+-#define PCI_GPIO_OUTEN		0xb8
+-
+-/* bar0 + 4K accesses external sprom */
+-#define PCI_BAR0_SPROM_OFFSET	(4 * 1024)
+-/* bar0 + 6K accesses pci core registers */
+-#define PCI_BAR0_PCIREGS_OFFSET	(6 * 1024)
+-/*
+- * pci core SB registers are at the end of the
+- * 8KB window, so their address is the "regular"
+- * address plus 4K
+- */
+-#define PCI_BAR0_PCISBR_OFFSET	(4 * 1024)
+-/* bar0 window size Match with corerev 13 */
+-#define PCI_BAR0_WINSZ		(16 * 1024)
+-/* On pci corerev >= 13 and all pcie, the bar0 is now 16KB and it maps: */
+-/* bar0 + 8K accesses pci/pcie core registers */
+-#define PCI_16KB0_PCIREGS_OFFSET (8 * 1024)
+-/* bar0 + 12K accesses chipc core registers */
+-#define PCI_16KB0_CCREGS_OFFSET	(12 * 1024)
+-
+-struct sbpciregs;
+-struct sbpcieregs;
+-
+-extern struct pcicore_info *pcicore_init(struct si_pub *sih,
+-					 struct bcma_device *core);
+-extern void pcicore_deinit(struct pcicore_info *pch);
+-extern void pcicore_attach(struct pcicore_info *pch, int state);
+-extern void pcicore_hwup(struct pcicore_info *pch);
+-extern void pcicore_up(struct pcicore_info *pch, int state);
+-extern void pcicore_sleep(struct pcicore_info *pch);
+-extern void pcicore_down(struct pcicore_info *pch, int state);
+-extern u8 pcicore_find_pci_capability(struct pci_dev *dev, u8 req_cap_id,
+-				      unsigned char *buf, u32 *buflen);
+-extern void pcicore_fixcfg(struct pcicore_info *pch);
+-extern void pcicore_pci_setup(struct pcicore_info *pch);
+-
+-#endif /* _BRCM_NICPCI_H_ */
+--- a/drivers/net/wireless/brcm80211/brcmsmac/otp.c
++++ /dev/null
+@@ -1,410 +0,0 @@
+-/*
+- * Copyright (c) 2010 Broadcom Corporation
+- *
+- * Permission to use, copy, modify, and/or distribute this software for any
+- * purpose with or without fee is hereby granted, provided that the above
+- * copyright notice and this permission notice appear in all copies.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+- */
+-
+-#include <linux/io.h>
+-#include <linux/errno.h>
+-#include <linux/string.h>
+-
+-#include <brcm_hw_ids.h>
+-#include <chipcommon.h>
+-#include "aiutils.h"
+-#include "otp.h"
+-
+-#define OTPS_GUP_MASK		0x00000f00
+-#define OTPS_GUP_SHIFT		8
+-/* h/w subregion is programmed */
+-#define OTPS_GUP_HW		0x00000100
+-/* s/w subregion is programmed */
+-#define OTPS_GUP_SW		0x00000200
+-/* chipid/pkgopt subregion is programmed */
+-#define OTPS_GUP_CI		0x00000400
+-/* fuse subregion is programmed */
+-#define OTPS_GUP_FUSE		0x00000800
+-
+-/* Fields in otpprog in rev >= 21 */
+-#define OTPP_COL_MASK		0x000000ff
+-#define OTPP_COL_SHIFT		0
+-#define OTPP_ROW_MASK		0x0000ff00
+-#define OTPP_ROW_SHIFT		8
+-#define OTPP_OC_MASK		0x0f000000
+-#define OTPP_OC_SHIFT		24
+-#define OTPP_READERR		0x10000000
+-#define OTPP_VALUE_MASK		0x20000000
+-#define OTPP_VALUE_SHIFT	29
+-#define OTPP_START_BUSY		0x80000000
+-#define	OTPP_READ		0x40000000
+-
+-/* Opcodes for OTPP_OC field */
+-#define OTPPOC_READ		0
+-#define OTPPOC_BIT_PROG		1
+-#define OTPPOC_VERIFY		3
+-#define OTPPOC_INIT		4
+-#define OTPPOC_SET		5
+-#define OTPPOC_RESET		6
+-#define OTPPOC_OCST		7
+-#define OTPPOC_ROW_LOCK		8
+-#define OTPPOC_PRESCN_TEST	9
+-
+-#define OTPTYPE_IPX(ccrev)	((ccrev) == 21 || (ccrev) >= 23)
+-
+-#define OTPP_TRIES	10000000	/* # of tries for OTPP */
+-
+-#define MAXNUMRDES		9	/* Maximum OTP redundancy entries */
+-
+-/* Fixed size subregions sizes in words */
+-#define OTPGU_CI_SZ		2
+-
+-struct otpinfo;
+-
+-/* OTP function struct */
+-struct otp_fn_s {
+-	int (*init)(struct si_pub *sih, struct otpinfo *oi);
+-	int (*read_region)(struct otpinfo *oi, int region, u16 *data,
+-			   uint *wlen);
+-};
+-
+-struct otpinfo {
+-	struct bcma_device *core; /* chipc core */
+-	const struct otp_fn_s *fn;	/* OTP functions */
+-	struct si_pub *sih;		/* Saved sb handle */
+-
+-	/* IPX OTP section */
+-	u16 wsize;		/* Size of otp in words */
+-	u16 rows;		/* Geometry */
+-	u16 cols;		/* Geometry */
+-	u32 status;		/* Flag bits (lock/prog/rv).
+-				 * (Reflected only when OTP is power cycled)
+-				 */
+-	u16 hwbase;		/* hardware subregion offset */
+-	u16 hwlim;		/* hardware subregion boundary */
+-	u16 swbase;		/* software subregion offset */
+-	u16 swlim;		/* software subregion boundary */
+-	u16 fbase;		/* fuse subregion offset */
+-	u16 flim;		/* fuse subregion boundary */
+-	int otpgu_base;		/* offset to General Use Region */
+-};
+-
+-/* OTP layout */
+-/* CC revs 21, 24 and 27 OTP General Use Region word offset */
+-#define REVA4_OTPGU_BASE	12
+-
+-/* CC revs 23, 25, 26, 28 and above OTP General Use Region word offset */
+-#define REVB8_OTPGU_BASE	20
+-
+-/* CC rev 36 OTP General Use Region word offset */
+-#define REV36_OTPGU_BASE	12
+-
+-/* Subregion word offsets in General Use region */
+-#define OTPGU_HSB_OFF		0
+-#define OTPGU_SFB_OFF		1
+-#define OTPGU_CI_OFF		2
+-#define OTPGU_P_OFF		3
+-#define OTPGU_SROM_OFF		4
+-
+-/* Flag bit offsets in General Use region  */
+-#define OTPGU_HWP_OFF		60
+-#define OTPGU_SWP_OFF		61
+-#define OTPGU_CIP_OFF		62
+-#define OTPGU_FUSEP_OFF		63
+-#define OTPGU_CIP_MSK		0x4000
+-#define OTPGU_P_MSK		0xf000
+-#define OTPGU_P_SHIFT		(OTPGU_HWP_OFF % 16)
+-
+-/* OTP Size */
+-#define OTP_SZ_FU_324		((roundup(324, 8))/8)	/* 324 bits */
+-#define OTP_SZ_FU_288		(288/8)	/* 288 bits */
+-#define OTP_SZ_FU_216		(216/8)	/* 216 bits */
+-#define OTP_SZ_FU_72		(72/8)	/* 72 bits */
+-#define OTP_SZ_CHECKSUM		(16/8)	/* 16 bits */
+-#define OTP4315_SWREG_SZ	178	/* 178 bytes */
+-#define OTP_SZ_FU_144		(144/8)	/* 144 bits */
+-
+-static u16
+-ipxotp_otpr(struct otpinfo *oi, uint wn)
+-{
+-	return bcma_read16(oi->core,
+-			   CHIPCREGOFFS(sromotp[wn]));
+-}
+-
+-/*
+- * Calculate max HW/SW region byte size by subtracting fuse region
+- * and checksum size, osizew is oi->wsize (OTP size - GU size) in words
+- */
+-static int ipxotp_max_rgnsz(struct si_pub *sih, int osizew)
+-{
+-	int ret = 0;
+-
+-	switch (ai_get_chip_id(sih)) {
+-	case BCM43224_CHIP_ID:
+-	case BCM43225_CHIP_ID:
+-		ret = osizew * 2 - OTP_SZ_FU_72 - OTP_SZ_CHECKSUM;
+-		break;
+-	case BCM4313_CHIP_ID:
+-		ret = osizew * 2 - OTP_SZ_FU_72 - OTP_SZ_CHECKSUM;
+-		break;
+-	default:
+-		break;	/* Don't know about this chip */
+-	}
+-
+-	return ret;
+-}
+-
+-static void _ipxotp_init(struct otpinfo *oi)
+-{
+-	uint k;
+-	u32 otpp, st;
+-	int ccrev = ai_get_ccrev(oi->sih);
+-
+-
+-	/*
+-	 * record word offset of General Use Region
+-	 * for various chipcommon revs
+-	 */
+-	if (ccrev == 21 || ccrev == 24
+-	    || ccrev == 27) {
+-		oi->otpgu_base = REVA4_OTPGU_BASE;
+-	} else if (ccrev == 36) {
+-		/*
+-		 * OTP size greater than equal to 2KB (128 words),
+-		 * otpgu_base is similar to rev23
+-		 */
+-		if (oi->wsize >= 128)
+-			oi->otpgu_base = REVB8_OTPGU_BASE;
+-		else
+-			oi->otpgu_base = REV36_OTPGU_BASE;
+-	} else if (ccrev == 23 || ccrev >= 25) {
+-		oi->otpgu_base = REVB8_OTPGU_BASE;
+-	}
+-
+-	/* First issue an init command so the status is up to date */
+-	otpp =
+-	    OTPP_START_BUSY | ((OTPPOC_INIT << OTPP_OC_SHIFT) & OTPP_OC_MASK);
+-
+-	bcma_write32(oi->core, CHIPCREGOFFS(otpprog), otpp);
+-	st = bcma_read32(oi->core, CHIPCREGOFFS(otpprog));
+-	for (k = 0; (st & OTPP_START_BUSY) && (k < OTPP_TRIES); k++)
+-		st = bcma_read32(oi->core, CHIPCREGOFFS(otpprog));
+-	if (k >= OTPP_TRIES)
+-		return;
+-
+-	/* Read OTP lock bits and subregion programmed indication bits */
+-	oi->status = bcma_read32(oi->core, CHIPCREGOFFS(otpstatus));
+-
+-	if ((ai_get_chip_id(oi->sih) == BCM43224_CHIP_ID)
+-	    || (ai_get_chip_id(oi->sih) == BCM43225_CHIP_ID)) {
+-		u32 p_bits;
+-		p_bits = (ipxotp_otpr(oi, oi->otpgu_base + OTPGU_P_OFF) &
+-			  OTPGU_P_MSK) >> OTPGU_P_SHIFT;
+-		oi->status |= (p_bits << OTPS_GUP_SHIFT);
+-	}
+-
+-	/*
+-	 * h/w region base and fuse region limit are fixed to
+-	 * the top and the bottom of the general use region.
+-	 * Everything else can be flexible.
+-	 */
+-	oi->hwbase = oi->otpgu_base + OTPGU_SROM_OFF;
+-	oi->hwlim = oi->wsize;
+-	if (oi->status & OTPS_GUP_HW) {
+-		oi->hwlim =
+-		    ipxotp_otpr(oi, oi->otpgu_base + OTPGU_HSB_OFF) / 16;
+-		oi->swbase = oi->hwlim;
+-	} else
+-		oi->swbase = oi->hwbase;
+-
+-	/* subtract fuse and checksum from beginning */
+-	oi->swlim = ipxotp_max_rgnsz(oi->sih, oi->wsize) / 2;
+-
+-	if (oi->status & OTPS_GUP_SW) {
+-		oi->swlim =
+-		    ipxotp_otpr(oi, oi->otpgu_base + OTPGU_SFB_OFF) / 16;
+-		oi->fbase = oi->swlim;
+-	} else
+-		oi->fbase = oi->swbase;
+-
+-	oi->flim = oi->wsize;
+-}
+-
+-static int ipxotp_init(struct si_pub *sih, struct otpinfo *oi)
+-{
+-	/* Make sure we're running IPX OTP */
+-	if (!OTPTYPE_IPX(ai_get_ccrev(sih)))
+-		return -EBADE;
+-
+-	/* Make sure OTP is not disabled */
+-	if (ai_is_otp_disabled(sih))
+-		return -EBADE;
+-
+-	/* Check for otp size */
+-	switch ((ai_get_cccaps(sih) & CC_CAP_OTPSIZE) >> CC_CAP_OTPSIZE_SHIFT) {
+-	case 0:
+-		/* Nothing there */
+-		return -EBADE;
+-	case 1:		/* 32x64 */
+-		oi->rows = 32;
+-		oi->cols = 64;
+-		oi->wsize = 128;
+-		break;
+-	case 2:		/* 64x64 */
+-		oi->rows = 64;
+-		oi->cols = 64;
+-		oi->wsize = 256;
+-		break;
+-	case 5:		/* 96x64 */
+-		oi->rows = 96;
+-		oi->cols = 64;
+-		oi->wsize = 384;
+-		break;
+-	case 7:		/* 16x64 *//* 1024 bits */
+-		oi->rows = 16;
+-		oi->cols = 64;
+-		oi->wsize = 64;
+-		break;
+-	default:
+-		/* Don't know the geometry */
+-		return -EBADE;
+-	}
+-
+-	/* Retrieve OTP region info */
+-	_ipxotp_init(oi);
+-	return 0;
+-}
+-
+-static int
+-ipxotp_read_region(struct otpinfo *oi, int region, u16 *data, uint *wlen)
+-{
+-	uint base, i, sz;
+-
+-	/* Validate region selection */
+-	switch (region) {
+-	case OTP_HW_RGN:
+-		sz = (uint) oi->hwlim - oi->hwbase;
+-		if (!(oi->status & OTPS_GUP_HW)) {
+-			*wlen = sz;
+-			return -ENODATA;
+-		}
+-		if (*wlen < sz) {
+-			*wlen = sz;
+-			return -EOVERFLOW;
+-		}
+-		base = oi->hwbase;
+-		break;
+-	case OTP_SW_RGN:
+-		sz = ((uint) oi->swlim - oi->swbase);
+-		if (!(oi->status & OTPS_GUP_SW)) {
+-			*wlen = sz;
+-			return -ENODATA;
+-		}
+-		if (*wlen < sz) {
+-			*wlen = sz;
+-			return -EOVERFLOW;
+-		}
+-		base = oi->swbase;
+-		break;
+-	case OTP_CI_RGN:
+-		sz = OTPGU_CI_SZ;
+-		if (!(oi->status & OTPS_GUP_CI)) {
+-			*wlen = sz;
+-			return -ENODATA;
+-		}
+-		if (*wlen < sz) {
+-			*wlen = sz;
+-			return -EOVERFLOW;
+-		}
+-		base = oi->otpgu_base + OTPGU_CI_OFF;
+-		break;
+-	case OTP_FUSE_RGN:
+-		sz = (uint) oi->flim - oi->fbase;
+-		if (!(oi->status & OTPS_GUP_FUSE)) {
+-			*wlen = sz;
+-			return -ENODATA;
+-		}
+-		if (*wlen < sz) {
+-			*wlen = sz;
+-			return -EOVERFLOW;
+-		}
+-		base = oi->fbase;
+-		break;
+-	case OTP_ALL_RGN:
+-		sz = ((uint) oi->flim - oi->hwbase);
+-		if (!(oi->status & (OTPS_GUP_HW | OTPS_GUP_SW))) {
+-			*wlen = sz;
+-			return -ENODATA;
+-		}
+-		if (*wlen < sz) {
+-			*wlen = sz;
+-			return -EOVERFLOW;
+-		}
+-		base = oi->hwbase;
+-		break;
+-	default:
+-		return -EINVAL;
+-	}
+-
+-	/* Read the data */
+-	for (i = 0; i < sz; i++)
+-		data[i] = ipxotp_otpr(oi, base + i);
+-
+-	*wlen = sz;
+-	return 0;
+-}
+-
+-static const struct otp_fn_s ipxotp_fn = {
+-	(int (*)(struct si_pub *, struct otpinfo *)) ipxotp_init,
+-	(int (*)(struct otpinfo *, int, u16 *, uint *)) ipxotp_read_region,
+-};
+-
+-static int otp_init(struct si_pub *sih, struct otpinfo *oi)
+-{
+-	int ret;
+-
+-	memset(oi, 0, sizeof(struct otpinfo));
+-
+-	oi->core = ai_findcore(sih, BCMA_CORE_CHIPCOMMON, 0);
+-
+-	if (OTPTYPE_IPX(ai_get_ccrev(sih)))
+-		oi->fn = &ipxotp_fn;
+-
+-	if (oi->fn == NULL)
+-		return -EBADE;
+-
+-	oi->sih = sih;
+-
+-	ret = (oi->fn->init)(sih, oi);
+-
+-	return ret;
+-}
+-
+-int
+-otp_read_region(struct si_pub *sih, int region, u16 *data, uint *wlen) {
+-	struct otpinfo otpinfo;
+-	struct otpinfo *oi = &otpinfo;
+-	int err = 0;
+-
+-	if (ai_is_otp_disabled(sih)) {
+-		err = -EPERM;
+-		goto out;
+-	}
+-
+-	err = otp_init(sih, oi);
+-	if (err)
+-		goto out;
+-
+-	err = ((oi)->fn->read_region)(oi, region, data, wlen);
+-
+- out:
+-	return err;
+-}
+--- a/drivers/net/wireless/brcm80211/brcmsmac/otp.h
++++ /dev/null
+@@ -1,36 +0,0 @@
+-/*
+- * Copyright (c) 2010 Broadcom Corporation
+- *
+- * Permission to use, copy, modify, and/or distribute this software for any
+- * purpose with or without fee is hereby granted, provided that the above
+- * copyright notice and this permission notice appear in all copies.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+- */
+-
+-#ifndef	_BRCM_OTP_H_
+-#define	_BRCM_OTP_H_
+-
+-#include "types.h"
+-
+-/* OTP regions */
+-#define OTP_HW_RGN	1
+-#define OTP_SW_RGN	2
+-#define OTP_CI_RGN	4
+-#define OTP_FUSE_RGN	8
+-/* From h/w region to end of OTP including checksum */
+-#define OTP_ALL_RGN	0xf
+-
+-/* OTP Size */
+-#define OTP_SZ_MAX		(6144/8)	/* maximum bytes in one CIS */
+-
+-extern int otp_read_region(struct si_pub *sih, int region, u16 *data,
+-			   uint *wlen);
+-
+-#endif				/* _BRCM_OTP_H_ */
+--- a/drivers/net/wireless/brcm80211/brcmsmac/phy/phy_lcn.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/phy/phy_lcn.c
+@@ -4817,28 +4817,23 @@ static bool wlc_phy_txpwr_srom_read_lcnp
+ 	s8 txpwr = 0;
+ 	int i;
+ 	struct brcms_phy_lcnphy *pi_lcn = pi->u.pi_lcnphy;
+-	struct phy_shim_info *shim = pi->sh->physhim;
++	struct ssb_sprom *sprom = &pi->d11core->bus->sprom;
+ 
+ 	if (CHSPEC_IS2G(pi->radio_chanspec)) {
+ 		u16 cckpo = 0;
+ 		u32 offset_ofdm, offset_mcs;
+ 
+-		pi_lcn->lcnphy_tr_isolation_mid =
+-			(u8)wlapi_getintvar(shim, BRCMS_SROM_TRISO2G);
++		pi_lcn->lcnphy_tr_isolation_mid = sprom->fem.ghz2.tr_iso;
+ 
+-		pi_lcn->lcnphy_rx_power_offset =
+-			(u8)wlapi_getintvar(shim, BRCMS_SROM_RXPO2G);
++		pi_lcn->lcnphy_rx_power_offset = sprom->rxpo2g;
+ 
+-		pi->txpa_2g[0] = (s16)wlapi_getintvar(shim, BRCMS_SROM_PA0B0);
+-		pi->txpa_2g[1] = (s16)wlapi_getintvar(shim, BRCMS_SROM_PA0B1);
+-		pi->txpa_2g[2] = (s16)wlapi_getintvar(shim, BRCMS_SROM_PA0B2);
+-
+-		pi_lcn->lcnphy_rssi_vf =
+-				(u8)wlapi_getintvar(shim, BRCMS_SROM_RSSISMF2G);
+-		pi_lcn->lcnphy_rssi_vc =
+-				(u8)wlapi_getintvar(shim, BRCMS_SROM_RSSISMC2G);
+-		pi_lcn->lcnphy_rssi_gs =
+-				(u8)wlapi_getintvar(shim, BRCMS_SROM_RSSISAV2G);
++		pi->txpa_2g[0] = sprom->pa0b0;
++		pi->txpa_2g[1] = sprom->pa0b1;
++		pi->txpa_2g[2] = sprom->pa0b2;
++
++		pi_lcn->lcnphy_rssi_vf = sprom->rssismf2g;
++		pi_lcn->lcnphy_rssi_vc = sprom->rssismc2g;
++		pi_lcn->lcnphy_rssi_gs = sprom->rssisav2g;
+ 
+ 		pi_lcn->lcnphy_rssi_vf_lowtemp = pi_lcn->lcnphy_rssi_vf;
+ 		pi_lcn->lcnphy_rssi_vc_lowtemp = pi_lcn->lcnphy_rssi_vc;
+@@ -4848,7 +4843,7 @@ static bool wlc_phy_txpwr_srom_read_lcnp
+ 		pi_lcn->lcnphy_rssi_vc_hightemp = pi_lcn->lcnphy_rssi_vc;
+ 		pi_lcn->lcnphy_rssi_gs_hightemp = pi_lcn->lcnphy_rssi_gs;
+ 
+-		txpwr = (s8)wlapi_getintvar(shim, BRCMS_SROM_MAXP2GA0);
++		txpwr = sprom->core_pwr_info[0].maxpwr_2g;
+ 		pi->tx_srom_max_2g = txpwr;
+ 
+ 		for (i = 0; i < PWRTBL_NUM_COEFF; i++) {
+@@ -4856,8 +4851,8 @@ static bool wlc_phy_txpwr_srom_read_lcnp
+ 			pi->txpa_2g_high_temp[i] = pi->txpa_2g[i];
+ 		}
+ 
+-		cckpo = (u16)wlapi_getintvar(shim, BRCMS_SROM_CCK2GPO);
+-		offset_ofdm = (u32)wlapi_getintvar(shim, BRCMS_SROM_OFDM2GPO);
++		cckpo = sprom->cck2gpo;
++		offset_ofdm = sprom->ofdm2gpo;
+ 		if (cckpo) {
+ 			uint max_pwr_chan = txpwr;
+ 
+@@ -4876,7 +4871,7 @@ static bool wlc_phy_txpwr_srom_read_lcnp
+ 		} else {
+ 			u8 opo = 0;
+ 
+-			opo = (u8)wlapi_getintvar(shim, BRCMS_SROM_OPO);
++			opo = sprom->opo;
+ 
+ 			for (i = TXP_FIRST_CCK; i <= TXP_LAST_CCK; i++)
+ 				pi->tx_srom_max_rate_2g[i] = txpwr;
+@@ -4886,12 +4881,8 @@ static bool wlc_phy_txpwr_srom_read_lcnp
+ 						((offset_ofdm & 0xf) * 2);
+ 				offset_ofdm >>= 4;
+ 			}
+-			offset_mcs =
+-				wlapi_getintvar(shim,
+-						BRCMS_SROM_MCS2GPO1) << 16;
+-			offset_mcs |=
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS2GPO0);
++			offset_mcs = sprom->mcs2gpo[1] << 16;
++			offset_mcs |= sprom->mcs2gpo[0];
+ 			pi_lcn->lcnphy_mcs20_po = offset_mcs;
+ 			for (i = TXP_FIRST_SISO_MCS_20;
+ 			     i <= TXP_LAST_SISO_MCS_20; i++) {
+@@ -4901,25 +4892,17 @@ static bool wlc_phy_txpwr_srom_read_lcnp
+ 			}
+ 		}
+ 
+-		pi_lcn->lcnphy_rawtempsense =
+-			(u16)wlapi_getintvar(shim, BRCMS_SROM_RAWTEMPSENSE);
+-		pi_lcn->lcnphy_measPower =
+-			(u8)wlapi_getintvar(shim, BRCMS_SROM_MEASPOWER);
+-		pi_lcn->lcnphy_tempsense_slope =
+-			(u8)wlapi_getintvar(shim, BRCMS_SROM_TEMPSENSE_SLOPE);
+-		pi_lcn->lcnphy_hw_iqcal_en =
+-			(bool)wlapi_getintvar(shim, BRCMS_SROM_HW_IQCAL_EN);
+-		pi_lcn->lcnphy_iqcal_swp_dis =
+-			(bool)wlapi_getintvar(shim, BRCMS_SROM_IQCAL_SWP_DIS);
+-		pi_lcn->lcnphy_tempcorrx =
+-			(u8)wlapi_getintvar(shim, BRCMS_SROM_TEMPCORRX);
+-		pi_lcn->lcnphy_tempsense_option =
+-			(u8)wlapi_getintvar(shim, BRCMS_SROM_TEMPSENSE_OPTION);
+-		pi_lcn->lcnphy_freqoffset_corr =
+-			(u8)wlapi_getintvar(shim, BRCMS_SROM_FREQOFFSET_CORR);
+-		if ((u8)wlapi_getintvar(shim, BRCMS_SROM_AA2G) > 1)
++		pi_lcn->lcnphy_rawtempsense = sprom->rawtempsense;
++		pi_lcn->lcnphy_measPower = sprom->measpower;
++		pi_lcn->lcnphy_tempsense_slope = sprom->tempsense_slope;
++		pi_lcn->lcnphy_hw_iqcal_en = sprom->hw_iqcal_en;
++		pi_lcn->lcnphy_iqcal_swp_dis = sprom->iqcal_swp_dis;
++		pi_lcn->lcnphy_tempcorrx = sprom->tempcorrx;
++		pi_lcn->lcnphy_tempsense_option = sprom->tempsense_option;
++		pi_lcn->lcnphy_freqoffset_corr = sprom->freqoffset_corr;
++		if (sprom->ant_available_bg > 1)
+ 			wlc_phy_ant_rxdiv_set((struct brcms_phy_pub *) pi,
+-				(u8) wlapi_getintvar(shim, BRCMS_SROM_AA2G));
++				sprom->ant_available_bg);
+ 	}
+ 	pi_lcn->lcnphy_cck_dig_filt_type = -1;
+ 
+--- a/drivers/net/wireless/brcm80211/brcmsmac/phy/phy_n.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/phy/phy_n.c
+@@ -14388,30 +14388,30 @@ static void wlc_phy_txpwr_srom_read_ppr_
+ {
+ 	u16 bw40po, cddpo, stbcpo, bwduppo;
+ 	uint band_num;
+-	struct phy_shim_info *shim = pi->sh->physhim;
++	struct ssb_sprom *sprom = &pi->d11core->bus->sprom;
+ 
+ 	if (pi->sh->sromrev >= 9)
+ 		return;
+ 
+-	bw40po = (u16) wlapi_getintvar(shim, BRCMS_SROM_BW40PO);
++	bw40po = sprom->bw40po;
+ 	pi->bw402gpo = bw40po & 0xf;
+ 	pi->bw405gpo = (bw40po & 0xf0) >> 4;
+ 	pi->bw405glpo = (bw40po & 0xf00) >> 8;
+ 	pi->bw405ghpo = (bw40po & 0xf000) >> 12;
+ 
+-	cddpo = (u16) wlapi_getintvar(shim, BRCMS_SROM_CDDPO);
++	cddpo = sprom->cddpo;
+ 	pi->cdd2gpo = cddpo & 0xf;
+ 	pi->cdd5gpo = (cddpo & 0xf0) >> 4;
+ 	pi->cdd5glpo = (cddpo & 0xf00) >> 8;
+ 	pi->cdd5ghpo = (cddpo & 0xf000) >> 12;
+ 
+-	stbcpo = (u16) wlapi_getintvar(shim, BRCMS_SROM_STBCPO);
++	stbcpo = sprom->stbcpo;
+ 	pi->stbc2gpo = stbcpo & 0xf;
+ 	pi->stbc5gpo = (stbcpo & 0xf0) >> 4;
+ 	pi->stbc5glpo = (stbcpo & 0xf00) >> 8;
+ 	pi->stbc5ghpo = (stbcpo & 0xf000) >> 12;
+ 
+-	bwduppo = (u16) wlapi_getintvar(shim, BRCMS_SROM_BWDUPPO);
++	bwduppo = sprom->bwduppo;
+ 	pi->bwdup2gpo = bwduppo & 0xf;
+ 	pi->bwdup5gpo = (bwduppo & 0xf0) >> 4;
+ 	pi->bwdup5glpo = (bwduppo & 0xf00) >> 8;
+@@ -14421,242 +14421,137 @@ static void wlc_phy_txpwr_srom_read_ppr_
+ 	     band_num++) {
+ 		switch (band_num) {
+ 		case 0:
+-
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].max_pwr_2g =
+-				(s8) wlapi_getintvar(shim,
+-						     BRCMS_SROM_MAXP2GA0);
++				sprom->core_pwr_info[0].maxpwr_2g;
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].max_pwr_2g =
+-				(s8) wlapi_getintvar(shim,
+-						     BRCMS_SROM_MAXP2GA1);
++				sprom->core_pwr_info[1].maxpwr_2g;
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].pwrdet_2g_a1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA2GW0A0);
++				sprom->core_pwr_info[0].pa_2g[0];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].pwrdet_2g_a1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA2GW0A1);
++				sprom->core_pwr_info[1].pa_2g[0];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].pwrdet_2g_b0 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA2GW1A0);
++				sprom->core_pwr_info[0].pa_2g[1];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].pwrdet_2g_b0 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA2GW1A1);
++				sprom->core_pwr_info[1].pa_2g[1];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].pwrdet_2g_b1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA2GW2A0);
++				sprom->core_pwr_info[0].pa_2g[2];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].pwrdet_2g_b1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA2GW2A1);
++				sprom->core_pwr_info[1].pa_2g[2];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].idle_targ_2g =
+-				(s8) wlapi_getintvar(shim, BRCMS_SROM_ITT2GA0);
++				sprom->core_pwr_info[0].itssi_2g;
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].idle_targ_2g =
+-				(s8) wlapi_getintvar(shim, BRCMS_SROM_ITT2GA1);
++				sprom->core_pwr_info[1].itssi_2g;
++
++			pi->cck2gpo = sprom->cck2gpo;
+ 
+-			pi->cck2gpo = (u16) wlapi_getintvar(shim,
+-							    BRCMS_SROM_CCK2GPO);
++			pi->ofdm2gpo = sprom->ofdm2gpo;
+ 
+-			pi->ofdm2gpo =
+-				(u32) wlapi_getintvar(shim,
+-						      BRCMS_SROM_OFDM2GPO);
+-
+-			pi->mcs2gpo[0] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS2GPO0);
+-			pi->mcs2gpo[1] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS2GPO1);
+-			pi->mcs2gpo[2] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS2GPO2);
+-			pi->mcs2gpo[3] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS2GPO3);
+-			pi->mcs2gpo[4] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS2GPO4);
+-			pi->mcs2gpo[5] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS2GPO5);
+-			pi->mcs2gpo[6] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS2GPO6);
+-			pi->mcs2gpo[7] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS2GPO7);
++			pi->mcs2gpo[0] = sprom->mcs2gpo[0];
++			pi->mcs2gpo[1] = sprom->mcs2gpo[1];
++			pi->mcs2gpo[2] = sprom->mcs2gpo[2];
++			pi->mcs2gpo[3] = sprom->mcs2gpo[3];
++			pi->mcs2gpo[4] = sprom->mcs2gpo[4];
++			pi->mcs2gpo[5] = sprom->mcs2gpo[5];
++			pi->mcs2gpo[6] = sprom->mcs2gpo[6];
++			pi->mcs2gpo[7] = sprom->mcs2gpo[7];
+ 			break;
+ 		case 1:
+ 
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].max_pwr_5gm =
+-				(s8) wlapi_getintvar(shim, BRCMS_SROM_MAXP5GA0);
++				sprom->core_pwr_info[0].maxpwr_5g;
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].max_pwr_5gm =
+-				(s8) wlapi_getintvar(shim,
+-						     BRCMS_SROM_MAXP5GA1);
++				sprom->core_pwr_info[1].maxpwr_5g;
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].pwrdet_5gm_a1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GW0A0);
++				sprom->core_pwr_info[0].pa_5g[0];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].pwrdet_5gm_a1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GW0A1);
++				sprom->core_pwr_info[1].pa_5g[0];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].pwrdet_5gm_b0 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GW1A0);
++				sprom->core_pwr_info[0].pa_5g[1];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].pwrdet_5gm_b0 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GW1A1);
++				sprom->core_pwr_info[1].pa_5g[1];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].pwrdet_5gm_b1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GW2A0);
++				sprom->core_pwr_info[0].pa_5g[2];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].pwrdet_5gm_b1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GW2A1);
++				sprom->core_pwr_info[1].pa_5g[2];
+ 			pi->nphy_pwrctrl_info[PHY_CORE_0].idle_targ_5gm =
+-				(s8) wlapi_getintvar(shim, BRCMS_SROM_ITT5GA0);
++				sprom->core_pwr_info[0].itssi_5g;
+ 			pi->nphy_pwrctrl_info[PHY_CORE_1].idle_targ_5gm =
+-				(s8) wlapi_getintvar(shim, BRCMS_SROM_ITT5GA1);
++				sprom->core_pwr_info[1].itssi_5g;
++
++			pi->ofdm5gpo = sprom->ofdm5gpo;
+ 
+-			pi->ofdm5gpo =
+-				(u32) wlapi_getintvar(shim,
+-						      BRCMS_SROM_OFDM5GPO);
+-
+-			pi->mcs5gpo[0] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GPO0);
+-			pi->mcs5gpo[1] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GPO1);
+-			pi->mcs5gpo[2] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GPO2);
+-			pi->mcs5gpo[3] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GPO3);
+-			pi->mcs5gpo[4] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GPO4);
+-			pi->mcs5gpo[5] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GPO5);
+-			pi->mcs5gpo[6] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GPO6);
+-			pi->mcs5gpo[7] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GPO7);
++			pi->mcs5gpo[0] = sprom->mcs5gpo[0];
++			pi->mcs5gpo[1] = sprom->mcs5gpo[1];
++			pi->mcs5gpo[2] = sprom->mcs5gpo[2];
++			pi->mcs5gpo[3] = sprom->mcs5gpo[3];
++			pi->mcs5gpo[4] = sprom->mcs5gpo[4];
++			pi->mcs5gpo[5] = sprom->mcs5gpo[5];
++			pi->mcs5gpo[6] = sprom->mcs5gpo[6];
++			pi->mcs5gpo[7] = sprom->mcs5gpo[7];
+ 			break;
+ 		case 2:
+ 
+ 			pi->nphy_pwrctrl_info[0].max_pwr_5gl =
+-				(s8) wlapi_getintvar(shim,
+-						     BRCMS_SROM_MAXP5GLA0);
++				sprom->core_pwr_info[0].maxpwr_5gl;
+ 			pi->nphy_pwrctrl_info[1].max_pwr_5gl =
+-				(s8) wlapi_getintvar(shim,
+-						     BRCMS_SROM_MAXP5GLA1);
++				sprom->core_pwr_info[1].maxpwr_5gl;
+ 			pi->nphy_pwrctrl_info[0].pwrdet_5gl_a1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GLW0A0);
++				sprom->core_pwr_info[0].pa_5gl[0];
+ 			pi->nphy_pwrctrl_info[1].pwrdet_5gl_a1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GLW0A1);
++				sprom->core_pwr_info[1].pa_5gl[0];
+ 			pi->nphy_pwrctrl_info[0].pwrdet_5gl_b0 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GLW1A0);
++				sprom->core_pwr_info[0].pa_5gl[1];
+ 			pi->nphy_pwrctrl_info[1].pwrdet_5gl_b0 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GLW1A1);
++				sprom->core_pwr_info[1].pa_5gl[1];
+ 			pi->nphy_pwrctrl_info[0].pwrdet_5gl_b1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GLW2A0);
++				sprom->core_pwr_info[0].pa_5gl[2];
+ 			pi->nphy_pwrctrl_info[1].pwrdet_5gl_b1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GLW2A1);
++				sprom->core_pwr_info[1].pa_5gl[2];
+ 			pi->nphy_pwrctrl_info[0].idle_targ_5gl = 0;
+ 			pi->nphy_pwrctrl_info[1].idle_targ_5gl = 0;
+ 
+-			pi->ofdm5glpo =
+-				(u32) wlapi_getintvar(shim,
+-						      BRCMS_SROM_OFDM5GLPO);
+-
+-			pi->mcs5glpo[0] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GLPO0);
+-			pi->mcs5glpo[1] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GLPO1);
+-			pi->mcs5glpo[2] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GLPO2);
+-			pi->mcs5glpo[3] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GLPO3);
+-			pi->mcs5glpo[4] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GLPO4);
+-			pi->mcs5glpo[5] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GLPO5);
+-			pi->mcs5glpo[6] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GLPO6);
+-			pi->mcs5glpo[7] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GLPO7);
++			pi->ofdm5glpo = sprom->ofdm5glpo;
++
++			pi->mcs5glpo[0] = sprom->mcs5glpo[0];
++			pi->mcs5glpo[1] = sprom->mcs5glpo[1];
++			pi->mcs5glpo[2] = sprom->mcs5glpo[2];
++			pi->mcs5glpo[3] = sprom->mcs5glpo[3];
++			pi->mcs5glpo[4] = sprom->mcs5glpo[4];
++			pi->mcs5glpo[5] = sprom->mcs5glpo[5];
++			pi->mcs5glpo[6] = sprom->mcs5glpo[6];
++			pi->mcs5glpo[7] = sprom->mcs5glpo[7];
+ 			break;
+ 		case 3:
+ 
+ 			pi->nphy_pwrctrl_info[0].max_pwr_5gh =
+-				(s8) wlapi_getintvar(shim,
+-						     BRCMS_SROM_MAXP5GHA0);
++				sprom->core_pwr_info[0].maxpwr_5gh;
+ 			pi->nphy_pwrctrl_info[1].max_pwr_5gh =
+-				(s8) wlapi_getintvar(shim,
+-						     BRCMS_SROM_MAXP5GHA1);
++				sprom->core_pwr_info[1].maxpwr_5gh;
+ 			pi->nphy_pwrctrl_info[0].pwrdet_5gh_a1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GHW0A0);
++				sprom->core_pwr_info[0].pa_5gh[0];
+ 			pi->nphy_pwrctrl_info[1].pwrdet_5gh_a1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GHW0A1);
++				sprom->core_pwr_info[1].pa_5gh[0];
+ 			pi->nphy_pwrctrl_info[0].pwrdet_5gh_b0 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GHW1A0);
++				sprom->core_pwr_info[0].pa_5gh[1];
+ 			pi->nphy_pwrctrl_info[1].pwrdet_5gh_b0 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GHW1A1);
++				sprom->core_pwr_info[1].pa_5gh[1];
+ 			pi->nphy_pwrctrl_info[0].pwrdet_5gh_b1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GHW2A0);
++				sprom->core_pwr_info[0].pa_5gh[2];
+ 			pi->nphy_pwrctrl_info[1].pwrdet_5gh_b1 =
+-				(s16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_PA5GHW2A1);
++				sprom->core_pwr_info[1].pa_5gh[2];
+ 			pi->nphy_pwrctrl_info[0].idle_targ_5gh = 0;
+ 			pi->nphy_pwrctrl_info[1].idle_targ_5gh = 0;
+ 
+-			pi->ofdm5ghpo =
+-				(u32) wlapi_getintvar(shim,
+-						      BRCMS_SROM_OFDM5GHPO);
+-
+-			pi->mcs5ghpo[0] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GHPO0);
+-			pi->mcs5ghpo[1] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GHPO1);
+-			pi->mcs5ghpo[2] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GHPO2);
+-			pi->mcs5ghpo[3] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GHPO3);
+-			pi->mcs5ghpo[4] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GHPO4);
+-			pi->mcs5ghpo[5] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GHPO5);
+-			pi->mcs5ghpo[6] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GHPO6);
+-			pi->mcs5ghpo[7] =
+-				(u16) wlapi_getintvar(shim,
+-						      BRCMS_SROM_MCS5GHPO7);
++			pi->ofdm5ghpo = sprom->ofdm5ghpo;
++
++			pi->mcs5ghpo[0] = sprom->mcs5ghpo[0];
++			pi->mcs5ghpo[1] = sprom->mcs5ghpo[1];
++			pi->mcs5ghpo[2] = sprom->mcs5ghpo[2];
++			pi->mcs5ghpo[3] = sprom->mcs5ghpo[3];
++			pi->mcs5ghpo[4] = sprom->mcs5ghpo[4];
++			pi->mcs5ghpo[5] = sprom->mcs5ghpo[5];
++			pi->mcs5ghpo[6] = sprom->mcs5ghpo[6];
++			pi->mcs5ghpo[7] = sprom->mcs5ghpo[7];
+ 			break;
+ 		}
+ 	}
+@@ -14666,45 +14561,34 @@ static void wlc_phy_txpwr_srom_read_ppr_
+ 
+ static bool wlc_phy_txpwr_srom_read_nphy(struct brcms_phy *pi)
+ {
+-	struct phy_shim_info *shim = pi->sh->physhim;
++	struct ssb_sprom *sprom = &pi->d11core->bus->sprom;
+ 
+-	pi->antswitch = (u8) wlapi_getintvar(shim, BRCMS_SROM_ANTSWITCH);
+-	pi->aa2g = (u8) wlapi_getintvar(shim, BRCMS_SROM_AA2G);
+-	pi->aa5g = (u8) wlapi_getintvar(shim, BRCMS_SROM_AA5G);
+-
+-	pi->srom_fem2g.tssipos = (u8) wlapi_getintvar(shim,
+-						      BRCMS_SROM_TSSIPOS2G);
+-	pi->srom_fem2g.extpagain = (u8) wlapi_getintvar(shim,
+-							BRCMS_SROM_EXTPAGAIN2G);
+-	pi->srom_fem2g.pdetrange = (u8) wlapi_getintvar(shim,
+-							BRCMS_SROM_PDETRANGE2G);
+-	pi->srom_fem2g.triso = (u8) wlapi_getintvar(shim, BRCMS_SROM_TRISO2G);
+-	pi->srom_fem2g.antswctrllut =
+-			(u8) wlapi_getintvar(shim, BRCMS_SROM_ANTSWCTL2G);
+-
+-	pi->srom_fem5g.tssipos = (u8) wlapi_getintvar(shim,
+-						      BRCMS_SROM_TSSIPOS5G);
+-	pi->srom_fem5g.extpagain = (u8) wlapi_getintvar(shim,
+-							BRCMS_SROM_EXTPAGAIN5G);
+-	pi->srom_fem5g.pdetrange = (u8) wlapi_getintvar(shim,
+-							BRCMS_SROM_PDETRANGE5G);
+-	pi->srom_fem5g.triso = (u8) wlapi_getintvar(shim, BRCMS_SROM_TRISO5G);
+-	if (wlapi_getvar(shim, BRCMS_SROM_ANTSWCTL5G))
+-		pi->srom_fem5g.antswctrllut =
+-			(u8) wlapi_getintvar(shim, BRCMS_SROM_ANTSWCTL5G);
++	pi->antswitch = sprom->antswitch;
++	pi->aa2g = sprom->ant_available_bg;
++	pi->aa5g = sprom->ant_available_a;
++
++	pi->srom_fem2g.tssipos = sprom->fem.ghz2.tssipos;
++	pi->srom_fem2g.extpagain = sprom->fem.ghz2.extpa_gain;
++	pi->srom_fem2g.pdetrange = sprom->fem.ghz2.pdet_range;
++	pi->srom_fem2g.triso = sprom->fem.ghz2.tr_iso;
++	pi->srom_fem2g.antswctrllut = sprom->fem.ghz2.antswlut;
++
++	pi->srom_fem5g.tssipos = sprom->fem.ghz5.tssipos;
++	pi->srom_fem5g.extpagain = sprom->fem.ghz5.extpa_gain;
++	pi->srom_fem5g.pdetrange = sprom->fem.ghz5.pdet_range;
++	pi->srom_fem5g.triso = sprom->fem.ghz5.tr_iso;
++	if (sprom->fem.ghz5.antswlut)
++		pi->srom_fem5g.antswctrllut = sprom->fem.ghz5.antswlut;
+ 	else
+-		pi->srom_fem5g.antswctrllut =
+-			(u8) wlapi_getintvar(shim, BRCMS_SROM_ANTSWCTL2G);
++		pi->srom_fem5g.antswctrllut = sprom->fem.ghz2.antswlut;
+ 
+ 	wlc_phy_txpower_ipa_upd(pi);
+ 
+-	pi->phy_txcore_disable_temp =
+-			(s16) wlapi_getintvar(shim, BRCMS_SROM_TEMPTHRESH);
++	pi->phy_txcore_disable_temp = sprom->tempthresh;
+ 	if (pi->phy_txcore_disable_temp == 0)
+ 		pi->phy_txcore_disable_temp = PHY_CHAIN_TX_DISABLE_TEMP;
+ 
+-	pi->phy_tempsense_offset = (s8) wlapi_getintvar(shim,
+-							BRCMS_SROM_TEMPOFFSET);
++	pi->phy_tempsense_offset = sprom->tempoffset;
+ 	if (pi->phy_tempsense_offset != 0) {
+ 		if (pi->phy_tempsense_offset >
+ 		    (NPHY_SROM_TEMPSHIFT + NPHY_SROM_MAXTEMPOFFSET))
+@@ -14719,8 +14603,7 @@ static bool wlc_phy_txpwr_srom_read_nphy
+ 	pi->phy_txcore_enable_temp =
+ 		pi->phy_txcore_disable_temp - PHY_HYSTERESIS_DELTATEMP;
+ 
+-	pi->phycal_tempdelta =
+-			(u8) wlapi_getintvar(shim, BRCMS_SROM_PHYCAL_TEMPDELTA);
++	pi->phycal_tempdelta = sprom->phycal_tempdelta;
+ 	if (pi->phycal_tempdelta > NPHY_CAL_MAXTEMPDELTA)
+ 		pi->phycal_tempdelta = 0;
+ 
+@@ -21462,7 +21345,7 @@ void wlc_phy_antsel_init(struct brcms_ph
+ 		write_phy_reg(pi, 0xc8, 0x0);
+ 		write_phy_reg(pi, 0xc9, 0x0);
+ 
+-		ai_gpiocontrol(pi->sh->sih, mask, mask, GPIO_DRV_PRIORITY);
++		bcma_chipco_gpio_control(&pi->d11core->bus->drv_cc, mask, mask);
+ 
+ 		mc = bcma_read32(pi->d11core, D11REGOFFS(maccontrol));
+ 		mc &= ~MCTL_GPOUT_SEL_MASK;
+--- a/drivers/net/wireless/brcm80211/brcmsmac/phy_shim.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/phy_shim.c
+@@ -214,12 +214,3 @@ wlapi_copyto_objmem(struct phy_shim_info
+ {
+ 	brcms_b_copyto_objmem(physhim->wlc_hw, offset, buf, l, sel);
+ }
+-
+-char *wlapi_getvar(struct phy_shim_info *physhim, enum brcms_srom_id id)
+-{
+-	return getvar(physhim->wlc_hw->sih, id);
+-}
+-int wlapi_getintvar(struct phy_shim_info *physhim, enum brcms_srom_id id)
+-{
+-	return getintvar(physhim->wlc_hw->sih, id);
+-}
+--- a/drivers/net/wireless/brcm80211/brcmsmac/phy_shim.h
++++ b/drivers/net/wireless/brcm80211/brcmsmac/phy_shim.h
+@@ -175,8 +175,5 @@ extern void wlapi_copyto_objmem(struct p
+ extern void wlapi_high_update_phy_mode(struct phy_shim_info *physhim,
+ 				       u32 phy_mode);
+ extern u16 wlapi_bmac_get_txant(struct phy_shim_info *physhim);
+-extern char *wlapi_getvar(struct phy_shim_info *physhim, enum brcms_srom_id id);
+-extern int wlapi_getintvar(struct phy_shim_info *physhim,
+-			   enum brcms_srom_id id);
+ 
+ #endif				/* _BRCM_PHY_SHIM_H_ */
+--- a/drivers/net/wireless/brcm80211/brcmsmac/pub.h
++++ b/drivers/net/wireless/brcm80211/brcmsmac/pub.h
+@@ -22,232 +22,6 @@
+ #include "types.h"
+ #include "defs.h"
+ 
+-enum brcms_srom_id {
+-	BRCMS_SROM_NULL,
+-	BRCMS_SROM_CONT,
+-	BRCMS_SROM_AA2G,
+-	BRCMS_SROM_AA5G,
+-	BRCMS_SROM_AG0,
+-	BRCMS_SROM_AG1,
+-	BRCMS_SROM_AG2,
+-	BRCMS_SROM_AG3,
+-	BRCMS_SROM_ANTSWCTL2G,
+-	BRCMS_SROM_ANTSWCTL5G,
+-	BRCMS_SROM_ANTSWITCH,
+-	BRCMS_SROM_BOARDFLAGS2,
+-	BRCMS_SROM_BOARDFLAGS,
+-	BRCMS_SROM_BOARDNUM,
+-	BRCMS_SROM_BOARDREV,
+-	BRCMS_SROM_BOARDTYPE,
+-	BRCMS_SROM_BW40PO,
+-	BRCMS_SROM_BWDUPPO,
+-	BRCMS_SROM_BXA2G,
+-	BRCMS_SROM_BXA5G,
+-	BRCMS_SROM_CC,
+-	BRCMS_SROM_CCK2GPO,
+-	BRCMS_SROM_CCKBW202GPO,
+-	BRCMS_SROM_CCKBW20UL2GPO,
+-	BRCMS_SROM_CCODE,
+-	BRCMS_SROM_CDDPO,
+-	BRCMS_SROM_DEVID,
+-	BRCMS_SROM_ET1MACADDR,
+-	BRCMS_SROM_EXTPAGAIN2G,
+-	BRCMS_SROM_EXTPAGAIN5G,
+-	BRCMS_SROM_FREQOFFSET_CORR,
+-	BRCMS_SROM_HW_IQCAL_EN,
+-	BRCMS_SROM_IL0MACADDR,
+-	BRCMS_SROM_IQCAL_SWP_DIS,
+-	BRCMS_SROM_LEDBH0,
+-	BRCMS_SROM_LEDBH1,
+-	BRCMS_SROM_LEDBH2,
+-	BRCMS_SROM_LEDBH3,
+-	BRCMS_SROM_LEDDC,
+-	BRCMS_SROM_LEGOFDM40DUPPO,
+-	BRCMS_SROM_LEGOFDMBW202GPO,
+-	BRCMS_SROM_LEGOFDMBW205GHPO,
+-	BRCMS_SROM_LEGOFDMBW205GLPO,
+-	BRCMS_SROM_LEGOFDMBW205GMPO,
+-	BRCMS_SROM_LEGOFDMBW20UL2GPO,
+-	BRCMS_SROM_LEGOFDMBW20UL5GHPO,
+-	BRCMS_SROM_LEGOFDMBW20UL5GLPO,
+-	BRCMS_SROM_LEGOFDMBW20UL5GMPO,
+-	BRCMS_SROM_MACADDR,
+-	BRCMS_SROM_MCS2GPO0,
+-	BRCMS_SROM_MCS2GPO1,
+-	BRCMS_SROM_MCS2GPO2,
+-	BRCMS_SROM_MCS2GPO3,
+-	BRCMS_SROM_MCS2GPO4,
+-	BRCMS_SROM_MCS2GPO5,
+-	BRCMS_SROM_MCS2GPO6,
+-	BRCMS_SROM_MCS2GPO7,
+-	BRCMS_SROM_MCS32PO,
+-	BRCMS_SROM_MCS5GHPO0,
+-	BRCMS_SROM_MCS5GHPO1,
+-	BRCMS_SROM_MCS5GHPO2,
+-	BRCMS_SROM_MCS5GHPO3,
+-	BRCMS_SROM_MCS5GHPO4,
+-	BRCMS_SROM_MCS5GHPO5,
+-	BRCMS_SROM_MCS5GHPO6,
+-	BRCMS_SROM_MCS5GHPO7,
+-	BRCMS_SROM_MCS5GLPO0,
+-	BRCMS_SROM_MCS5GLPO1,
+-	BRCMS_SROM_MCS5GLPO2,
+-	BRCMS_SROM_MCS5GLPO3,
+-	BRCMS_SROM_MCS5GLPO4,
+-	BRCMS_SROM_MCS5GLPO5,
+-	BRCMS_SROM_MCS5GLPO6,
+-	BRCMS_SROM_MCS5GLPO7,
+-	BRCMS_SROM_MCS5GPO0,
+-	BRCMS_SROM_MCS5GPO1,
+-	BRCMS_SROM_MCS5GPO2,
+-	BRCMS_SROM_MCS5GPO3,
+-	BRCMS_SROM_MCS5GPO4,
+-	BRCMS_SROM_MCS5GPO5,
+-	BRCMS_SROM_MCS5GPO6,
+-	BRCMS_SROM_MCS5GPO7,
+-	BRCMS_SROM_MCSBW202GPO,
+-	BRCMS_SROM_MCSBW205GHPO,
+-	BRCMS_SROM_MCSBW205GLPO,
+-	BRCMS_SROM_MCSBW205GMPO,
+-	BRCMS_SROM_MCSBW20UL2GPO,
+-	BRCMS_SROM_MCSBW20UL5GHPO,
+-	BRCMS_SROM_MCSBW20UL5GLPO,
+-	BRCMS_SROM_MCSBW20UL5GMPO,
+-	BRCMS_SROM_MCSBW402GPO,
+-	BRCMS_SROM_MCSBW405GHPO,
+-	BRCMS_SROM_MCSBW405GLPO,
+-	BRCMS_SROM_MCSBW405GMPO,
+-	BRCMS_SROM_MEASPOWER,
+-	BRCMS_SROM_OFDM2GPO,
+-	BRCMS_SROM_OFDM5GHPO,
+-	BRCMS_SROM_OFDM5GLPO,
+-	BRCMS_SROM_OFDM5GPO,
+-	BRCMS_SROM_OPO,
+-	BRCMS_SROM_PA0B0,
+-	BRCMS_SROM_PA0B1,
+-	BRCMS_SROM_PA0B2,
+-	BRCMS_SROM_PA0ITSSIT,
+-	BRCMS_SROM_PA0MAXPWR,
+-	BRCMS_SROM_PA1B0,
+-	BRCMS_SROM_PA1B1,
+-	BRCMS_SROM_PA1B2,
+-	BRCMS_SROM_PA1HIB0,
+-	BRCMS_SROM_PA1HIB1,
+-	BRCMS_SROM_PA1HIB2,
+-	BRCMS_SROM_PA1HIMAXPWR,
+-	BRCMS_SROM_PA1ITSSIT,
+-	BRCMS_SROM_PA1LOB0,
+-	BRCMS_SROM_PA1LOB1,
+-	BRCMS_SROM_PA1LOB2,
+-	BRCMS_SROM_PA1LOMAXPWR,
+-	BRCMS_SROM_PA1MAXPWR,
+-	BRCMS_SROM_PDETRANGE2G,
+-	BRCMS_SROM_PDETRANGE5G,
+-	BRCMS_SROM_PHYCAL_TEMPDELTA,
+-	BRCMS_SROM_RAWTEMPSENSE,
+-	BRCMS_SROM_REGREV,
+-	BRCMS_SROM_REV,
+-	BRCMS_SROM_RSSISAV2G,
+-	BRCMS_SROM_RSSISAV5G,
+-	BRCMS_SROM_RSSISMC2G,
+-	BRCMS_SROM_RSSISMC5G,
+-	BRCMS_SROM_RSSISMF2G,
+-	BRCMS_SROM_RSSISMF5G,
+-	BRCMS_SROM_RXCHAIN,
+-	BRCMS_SROM_RXPO2G,
+-	BRCMS_SROM_RXPO5G,
+-	BRCMS_SROM_STBCPO,
+-	BRCMS_SROM_TEMPCORRX,
+-	BRCMS_SROM_TEMPOFFSET,
+-	BRCMS_SROM_TEMPSENSE_OPTION,
+-	BRCMS_SROM_TEMPSENSE_SLOPE,
+-	BRCMS_SROM_TEMPTHRESH,
+-	BRCMS_SROM_TRI2G,
+-	BRCMS_SROM_TRI5GH,
+-	BRCMS_SROM_TRI5GL,
+-	BRCMS_SROM_TRI5G,
+-	BRCMS_SROM_TRISO2G,
+-	BRCMS_SROM_TRISO5G,
+-	BRCMS_SROM_TSSIPOS2G,
+-	BRCMS_SROM_TSSIPOS5G,
+-	BRCMS_SROM_TXCHAIN,
+-	/*
+-	 * per-path identifiers (see srom.c)
+-	 */
+-	BRCMS_SROM_ITT2GA0,
+-	BRCMS_SROM_ITT2GA1,
+-	BRCMS_SROM_ITT2GA2,
+-	BRCMS_SROM_ITT2GA3,
+-	BRCMS_SROM_ITT5GA0,
+-	BRCMS_SROM_ITT5GA1,
+-	BRCMS_SROM_ITT5GA2,
+-	BRCMS_SROM_ITT5GA3,
+-	BRCMS_SROM_MAXP2GA0,
+-	BRCMS_SROM_MAXP2GA1,
+-	BRCMS_SROM_MAXP2GA2,
+-	BRCMS_SROM_MAXP2GA3,
+-	BRCMS_SROM_MAXP5GA0,
+-	BRCMS_SROM_MAXP5GA1,
+-	BRCMS_SROM_MAXP5GA2,
+-	BRCMS_SROM_MAXP5GA3,
+-	BRCMS_SROM_MAXP5GHA0,
+-	BRCMS_SROM_MAXP5GHA1,
+-	BRCMS_SROM_MAXP5GHA2,
+-	BRCMS_SROM_MAXP5GHA3,
+-	BRCMS_SROM_MAXP5GLA0,
+-	BRCMS_SROM_MAXP5GLA1,
+-	BRCMS_SROM_MAXP5GLA2,
+-	BRCMS_SROM_MAXP5GLA3,
+-	BRCMS_SROM_PA2GW0A0,
+-	BRCMS_SROM_PA2GW0A1,
+-	BRCMS_SROM_PA2GW0A2,
+-	BRCMS_SROM_PA2GW0A3,
+-	BRCMS_SROM_PA2GW1A0,
+-	BRCMS_SROM_PA2GW1A1,
+-	BRCMS_SROM_PA2GW1A2,
+-	BRCMS_SROM_PA2GW1A3,
+-	BRCMS_SROM_PA2GW2A0,
+-	BRCMS_SROM_PA2GW2A1,
+-	BRCMS_SROM_PA2GW2A2,
+-	BRCMS_SROM_PA2GW2A3,
+-	BRCMS_SROM_PA5GHW0A0,
+-	BRCMS_SROM_PA5GHW0A1,
+-	BRCMS_SROM_PA5GHW0A2,
+-	BRCMS_SROM_PA5GHW0A3,
+-	BRCMS_SROM_PA5GHW1A0,
+-	BRCMS_SROM_PA5GHW1A1,
+-	BRCMS_SROM_PA5GHW1A2,
+-	BRCMS_SROM_PA5GHW1A3,
+-	BRCMS_SROM_PA5GHW2A0,
+-	BRCMS_SROM_PA5GHW2A1,
+-	BRCMS_SROM_PA5GHW2A2,
+-	BRCMS_SROM_PA5GHW2A3,
+-	BRCMS_SROM_PA5GLW0A0,
+-	BRCMS_SROM_PA5GLW0A1,
+-	BRCMS_SROM_PA5GLW0A2,
+-	BRCMS_SROM_PA5GLW0A3,
+-	BRCMS_SROM_PA5GLW1A0,
+-	BRCMS_SROM_PA5GLW1A1,
+-	BRCMS_SROM_PA5GLW1A2,
+-	BRCMS_SROM_PA5GLW1A3,
+-	BRCMS_SROM_PA5GLW2A0,
+-	BRCMS_SROM_PA5GLW2A1,
+-	BRCMS_SROM_PA5GLW2A2,
+-	BRCMS_SROM_PA5GLW2A3,
+-	BRCMS_SROM_PA5GW0A0,
+-	BRCMS_SROM_PA5GW0A1,
+-	BRCMS_SROM_PA5GW0A2,
+-	BRCMS_SROM_PA5GW0A3,
+-	BRCMS_SROM_PA5GW1A0,
+-	BRCMS_SROM_PA5GW1A1,
+-	BRCMS_SROM_PA5GW1A2,
+-	BRCMS_SROM_PA5GW1A3,
+-	BRCMS_SROM_PA5GW2A0,
+-	BRCMS_SROM_PA5GW2A1,
+-	BRCMS_SROM_PA5GW2A2,
+-	BRCMS_SROM_PA5GW2A3,
+-};
+-
+ #define	BRCMS_NUMRATES	16	/* max # of rates in a rateset */
+ 
+ /* phy types */
+@@ -565,8 +339,6 @@ extern void brcms_c_ampdu_flush(struct b
+ 			    struct ieee80211_sta *sta, u16 tid);
+ extern void brcms_c_ampdu_tx_operational(struct brcms_c_info *wlc, u8 tid,
+ 					 u8 ba_wsize, uint max_rx_ampdu_bytes);
+-extern char *getvar(struct si_pub *sih, enum brcms_srom_id id);
+-extern int getintvar(struct si_pub *sih, enum brcms_srom_id id);
+ extern int brcms_c_module_register(struct brcms_pub *pub,
+ 				   const char *name, struct brcms_info *hdl,
+ 				   int (*down_fn)(void *handle));
+--- a/drivers/net/wireless/brcm80211/brcmsmac/srom.c
++++ /dev/null
+@@ -1,980 +0,0 @@
+-/*
+- * Copyright (c) 2010 Broadcom Corporation
+- *
+- * Permission to use, copy, modify, and/or distribute this software for any
+- * purpose with or without fee is hereby granted, provided that the above
+- * copyright notice and this permission notice appear in all copies.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+- */
+-
+-#include <linux/kernel.h>
+-#include <linux/string.h>
+-#include <linux/io.h>
+-#include <linux/etherdevice.h>
+-#include <linux/crc8.h>
+-#include <stdarg.h>
+-
+-#include <chipcommon.h>
+-#include <brcmu_utils.h>
+-#include "pub.h"
+-#include "nicpci.h"
+-#include "aiutils.h"
+-#include "otp.h"
+-#include "srom.h"
+-#include "soc.h"
+-
+-/*
+- * SROM CRC8 polynomial value:
+- *
+- * x^8 + x^7 +x^6 + x^4 + x^2 + 1
+- */
+-#define SROM_CRC8_POLY		0xAB
+-
+-/* Maximum srom: 6 Kilobits == 768 bytes */
+-#define	SROM_MAX		768
+-
+-/* PCI fields */
+-#define PCI_F0DEVID		48
+-
+-#define	SROM_WORDS		64
+-
+-#define	SROM_SSID		2
+-
+-#define	SROM_WL1LHMAXP		29
+-
+-#define	SROM_WL1LPAB0		30
+-#define	SROM_WL1LPAB1		31
+-#define	SROM_WL1LPAB2		32
+-
+-#define	SROM_WL1HPAB0		33
+-#define	SROM_WL1HPAB1		34
+-#define	SROM_WL1HPAB2		35
+-
+-#define	SROM_MACHI_IL0		36
+-#define	SROM_MACMID_IL0		37
+-#define	SROM_MACLO_IL0		38
+-#define	SROM_MACHI_ET1		42
+-#define	SROM_MACMID_ET1		43
+-#define	SROM_MACLO_ET1		44
+-
+-#define	SROM_BXARSSI2G		40
+-#define	SROM_BXARSSI5G		41
+-
+-#define	SROM_TRI52G		42
+-#define	SROM_TRI5GHL		43
+-
+-#define	SROM_RXPO52G		45
+-
+-#define	SROM_AABREV		46
+-/* Fields in AABREV */
+-#define	SROM_BR_MASK		0x00ff
+-#define	SROM_CC_MASK		0x0f00
+-#define	SROM_CC_SHIFT		8
+-#define	SROM_AA0_MASK		0x3000
+-#define	SROM_AA0_SHIFT		12
+-#define	SROM_AA1_MASK		0xc000
+-#define	SROM_AA1_SHIFT		14
+-
+-#define	SROM_WL0PAB0		47
+-#define	SROM_WL0PAB1		48
+-#define	SROM_WL0PAB2		49
+-
+-#define	SROM_LEDBH10		50
+-#define	SROM_LEDBH32		51
+-
+-#define	SROM_WL10MAXP		52
+-
+-#define	SROM_WL1PAB0		53
+-#define	SROM_WL1PAB1		54
+-#define	SROM_WL1PAB2		55
+-
+-#define	SROM_ITT		56
+-
+-#define	SROM_BFL		57
+-#define	SROM_BFL2		28
+-
+-#define	SROM_AG10		58
+-
+-#define	SROM_CCODE		59
+-
+-#define	SROM_OPO		60
+-
+-#define	SROM_CRCREV		63
+-
+-#define	SROM4_WORDS		220
+-
+-#define SROM4_TXCHAIN_MASK	0x000f
+-#define SROM4_RXCHAIN_MASK	0x00f0
+-#define SROM4_SWITCH_MASK	0xff00
+-
+-/* Per-path fields */
+-#define	MAX_PATH_SROM		4
+-
+-#define	SROM4_CRCREV		219
+-
+-/* SROM Rev 8: Make space for a 48word hardware header for PCIe rev >= 6.
+- * This is acombined srom for both MIMO and SISO boards, usable in
+- * the .130 4Kilobit OTP with hardware redundancy.
+- */
+-#define	SROM8_BREV		65
+-
+-#define	SROM8_BFL0		66
+-#define	SROM8_BFL1		67
+-#define	SROM8_BFL2		68
+-#define	SROM8_BFL3		69
+-
+-#define	SROM8_MACHI		70
+-#define	SROM8_MACMID		71
+-#define	SROM8_MACLO		72
+-
+-#define	SROM8_CCODE		73
+-#define	SROM8_REGREV		74
+-
+-#define	SROM8_LEDBH10		75
+-#define	SROM8_LEDBH32		76
+-
+-#define	SROM8_LEDDC		77
+-
+-#define	SROM8_AA		78
+-
+-#define	SROM8_AG10		79
+-#define	SROM8_AG32		80
+-
+-#define	SROM8_TXRXC		81
+-
+-#define	SROM8_BXARSSI2G		82
+-#define	SROM8_BXARSSI5G		83
+-#define	SROM8_TRI52G		84
+-#define	SROM8_TRI5GHL		85
+-#define	SROM8_RXPO52G		86
+-
+-#define SROM8_FEM2G		87
+-#define SROM8_FEM5G		88
+-#define SROM8_FEM_ANTSWLUT_MASK		0xf800
+-#define SROM8_FEM_ANTSWLUT_SHIFT	11
+-#define SROM8_FEM_TR_ISO_MASK		0x0700
+-#define SROM8_FEM_TR_ISO_SHIFT		8
+-#define SROM8_FEM_PDET_RANGE_MASK	0x00f8
+-#define SROM8_FEM_PDET_RANGE_SHIFT	3
+-#define SROM8_FEM_EXTPA_GAIN_MASK	0x0006
+-#define SROM8_FEM_EXTPA_GAIN_SHIFT	1
+-#define SROM8_FEM_TSSIPOS_MASK		0x0001
+-#define SROM8_FEM_TSSIPOS_SHIFT		0
+-
+-#define SROM8_THERMAL		89
+-
+-/* Temp sense related entries */
+-#define SROM8_MPWR_RAWTS		90
+-#define SROM8_TS_SLP_OPT_CORRX	91
+-/* FOC: freiquency offset correction, HWIQ: H/W IOCAL enable,
+- * IQSWP: IQ CAL swap disable */
+-#define SROM8_FOC_HWIQ_IQSWP	92
+-
+-/* Temperature delta for PHY calibration */
+-#define SROM8_PHYCAL_TEMPDELTA	93
+-
+-/* Per-path offsets & fields */
+-#define	SROM8_PATH0		96
+-#define	SROM8_PATH1		112
+-#define	SROM8_PATH2		128
+-#define	SROM8_PATH3		144
+-
+-#define	SROM8_2G_ITT_MAXP	0
+-#define	SROM8_2G_PA		1
+-#define	SROM8_5G_ITT_MAXP	4
+-#define	SROM8_5GLH_MAXP		5
+-#define	SROM8_5G_PA		6
+-#define	SROM8_5GL_PA		9
+-#define	SROM8_5GH_PA		12
+-
+-/* All the miriad power offsets */
+-#define	SROM8_2G_CCKPO		160
+-
+-#define	SROM8_2G_OFDMPO		161
+-#define	SROM8_5G_OFDMPO		163
+-#define	SROM8_5GL_OFDMPO	165
+-#define	SROM8_5GH_OFDMPO	167
+-
+-#define	SROM8_2G_MCSPO		169
+-#define	SROM8_5G_MCSPO		177
+-#define	SROM8_5GL_MCSPO		185
+-#define	SROM8_5GH_MCSPO		193
+-
+-#define	SROM8_CDDPO		201
+-#define	SROM8_STBCPO		202
+-#define	SROM8_BW40PO		203
+-#define	SROM8_BWDUPPO		204
+-
+-/* SISO PA parameters are in the path0 spaces */
+-#define	SROM8_SISO		96
+-
+-/* Legacy names for SISO PA paramters */
+-#define	SROM8_W0_ITTMAXP	(SROM8_SISO + SROM8_2G_ITT_MAXP)
+-#define	SROM8_W0_PAB0		(SROM8_SISO + SROM8_2G_PA)
+-#define	SROM8_W0_PAB1		(SROM8_SISO + SROM8_2G_PA + 1)
+-#define	SROM8_W0_PAB2		(SROM8_SISO + SROM8_2G_PA + 2)
+-#define	SROM8_W1_ITTMAXP	(SROM8_SISO + SROM8_5G_ITT_MAXP)
+-#define	SROM8_W1_MAXP_LCHC	(SROM8_SISO + SROM8_5GLH_MAXP)
+-#define	SROM8_W1_PAB0		(SROM8_SISO + SROM8_5G_PA)
+-#define	SROM8_W1_PAB1		(SROM8_SISO + SROM8_5G_PA + 1)
+-#define	SROM8_W1_PAB2		(SROM8_SISO + SROM8_5G_PA + 2)
+-#define	SROM8_W1_PAB0_LC	(SROM8_SISO + SROM8_5GL_PA)
+-#define	SROM8_W1_PAB1_LC	(SROM8_SISO + SROM8_5GL_PA + 1)
+-#define	SROM8_W1_PAB2_LC	(SROM8_SISO + SROM8_5GL_PA + 2)
+-#define	SROM8_W1_PAB0_HC	(SROM8_SISO + SROM8_5GH_PA)
+-#define	SROM8_W1_PAB1_HC	(SROM8_SISO + SROM8_5GH_PA + 1)
+-#define	SROM8_W1_PAB2_HC	(SROM8_SISO + SROM8_5GH_PA + 2)
+-
+-/* SROM REV 9 */
+-#define SROM9_2GPO_CCKBW20	160
+-#define SROM9_2GPO_CCKBW20UL	161
+-#define SROM9_2GPO_LOFDMBW20	162
+-#define SROM9_2GPO_LOFDMBW20UL	164
+-
+-#define SROM9_5GLPO_LOFDMBW20	166
+-#define SROM9_5GLPO_LOFDMBW20UL	168
+-#define SROM9_5GMPO_LOFDMBW20	170
+-#define SROM9_5GMPO_LOFDMBW20UL	172
+-#define SROM9_5GHPO_LOFDMBW20	174
+-#define SROM9_5GHPO_LOFDMBW20UL	176
+-
+-#define SROM9_2GPO_MCSBW20	178
+-#define SROM9_2GPO_MCSBW20UL	180
+-#define SROM9_2GPO_MCSBW40	182
+-
+-#define SROM9_5GLPO_MCSBW20	184
+-#define SROM9_5GLPO_MCSBW20UL	186
+-#define SROM9_5GLPO_MCSBW40	188
+-#define SROM9_5GMPO_MCSBW20	190
+-#define SROM9_5GMPO_MCSBW20UL	192
+-#define SROM9_5GMPO_MCSBW40	194
+-#define SROM9_5GHPO_MCSBW20	196
+-#define SROM9_5GHPO_MCSBW20UL	198
+-#define SROM9_5GHPO_MCSBW40	200
+-
+-#define SROM9_PO_MCS32		202
+-#define SROM9_PO_LOFDM40DUP	203
+-
+-/* SROM flags (see sromvar_t) */
+-
+-/* value continues as described by the next entry */
+-#define SRFL_MORE	1
+-#define	SRFL_NOFFS	2	/* value bits can't be all one's */
+-#define	SRFL_PRHEX	4	/* value is in hexdecimal format */
+-#define	SRFL_PRSIGN	8	/* value is in signed decimal format */
+-#define	SRFL_CCODE	0x10	/* value is in country code format */
+-#define	SRFL_ETHADDR	0x20	/* value is an Ethernet address */
+-#define SRFL_LEDDC	0x40	/* value is an LED duty cycle */
+-/* do not generate a nvram param, entry is for mfgc */
+-#define SRFL_NOVAR	0x80
+-
+-/* Max. nvram variable table size */
+-#define	MAXSZ_NVRAM_VARS	4096
+-
+-/*
+- * indicates type of value.
+- */
+-enum brcms_srom_var_type {
+-	BRCMS_SROM_STRING,
+-	BRCMS_SROM_SNUMBER,
+-	BRCMS_SROM_UNUMBER
+-};
+-
+-/*
+- * storage type for srom variable.
+- *
+- * var_list: for linked list operations.
+- * varid: identifier of the variable.
+- * var_type: type of variable.
+- * buf: variable value when var_type == BRCMS_SROM_STRING.
+- * uval: unsigned variable value when var_type == BRCMS_SROM_UNUMBER.
+- * sval: signed variable value when var_type == BRCMS_SROM_SNUMBER.
+- */
+-struct brcms_srom_list_head {
+-	struct list_head var_list;
+-	enum brcms_srom_id varid;
+-	enum brcms_srom_var_type var_type;
+-	union {
+-		char buf[0];
+-		u32 uval;
+-		s32 sval;
+-	};
+-};
+-
+-struct brcms_sromvar {
+-	enum brcms_srom_id varid;
+-	u32 revmask;
+-	u32 flags;
+-	u16 off;
+-	u16 mask;
+-};
+-
+-struct brcms_varbuf {
+-	char *base;		/* pointer to buffer base */
+-	char *buf;		/* pointer to current position */
+-	unsigned int size;	/* current (residual) size in bytes */
+-};
+-
+-/*
+- * Assumptions:
+- * - Ethernet address spans across 3 consecutive words
+- *
+- * Table rules:
+- * - Add multiple entries next to each other if a value spans across multiple
+- *   words (even multiple fields in the same word) with each entry except the
+- *   last having it's SRFL_MORE bit set.
+- * - Ethernet address entry does not follow above rule and must not have
+- *   SRFL_MORE bit set. Its SRFL_ETHADDR bit implies it takes multiple words.
+- * - The last entry's name field must be NULL to indicate the end of the table.
+- *   Other entries must have non-NULL name.
+- */
+-static const struct brcms_sromvar pci_sromvars[] = {
+-	{BRCMS_SROM_DEVID, 0xffffff00, SRFL_PRHEX | SRFL_NOVAR, PCI_F0DEVID,
+-	 0xffff},
+-	{BRCMS_SROM_BOARDREV, 0xffffff00, SRFL_PRHEX, SROM8_BREV, 0xffff},
+-	{BRCMS_SROM_BOARDFLAGS, 0xffffff00, SRFL_PRHEX | SRFL_MORE, SROM8_BFL0,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM8_BFL1, 0xffff},
+-	{BRCMS_SROM_BOARDFLAGS2, 0xffffff00, SRFL_PRHEX | SRFL_MORE, SROM8_BFL2,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM8_BFL3, 0xffff},
+-	{BRCMS_SROM_BOARDTYPE, 0xfffffffc, SRFL_PRHEX, SROM_SSID, 0xffff},
+-	{BRCMS_SROM_BOARDNUM, 0xffffff00, 0, SROM8_MACLO, 0xffff},
+-	{BRCMS_SROM_REGREV, 0xffffff00, 0, SROM8_REGREV, 0x00ff},
+-	{BRCMS_SROM_LEDBH0, 0xffffff00, SRFL_NOFFS, SROM8_LEDBH10, 0x00ff},
+-	{BRCMS_SROM_LEDBH1, 0xffffff00, SRFL_NOFFS, SROM8_LEDBH10, 0xff00},
+-	{BRCMS_SROM_LEDBH2, 0xffffff00, SRFL_NOFFS, SROM8_LEDBH32, 0x00ff},
+-	{BRCMS_SROM_LEDBH3, 0xffffff00, SRFL_NOFFS, SROM8_LEDBH32, 0xff00},
+-	{BRCMS_SROM_PA0B0, 0xffffff00, SRFL_PRHEX, SROM8_W0_PAB0, 0xffff},
+-	{BRCMS_SROM_PA0B1, 0xffffff00, SRFL_PRHEX, SROM8_W0_PAB1, 0xffff},
+-	{BRCMS_SROM_PA0B2, 0xffffff00, SRFL_PRHEX, SROM8_W0_PAB2, 0xffff},
+-	{BRCMS_SROM_PA0ITSSIT, 0xffffff00, 0, SROM8_W0_ITTMAXP, 0xff00},
+-	{BRCMS_SROM_PA0MAXPWR, 0xffffff00, 0, SROM8_W0_ITTMAXP, 0x00ff},
+-	{BRCMS_SROM_OPO, 0xffffff00, 0, SROM8_2G_OFDMPO, 0x00ff},
+-	{BRCMS_SROM_AA2G, 0xffffff00, 0, SROM8_AA, 0x00ff},
+-	{BRCMS_SROM_AA5G, 0xffffff00, 0, SROM8_AA, 0xff00},
+-	{BRCMS_SROM_AG0, 0xffffff00, 0, SROM8_AG10, 0x00ff},
+-	{BRCMS_SROM_AG1, 0xffffff00, 0, SROM8_AG10, 0xff00},
+-	{BRCMS_SROM_AG2, 0xffffff00, 0, SROM8_AG32, 0x00ff},
+-	{BRCMS_SROM_AG3, 0xffffff00, 0, SROM8_AG32, 0xff00},
+-	{BRCMS_SROM_PA1B0, 0xffffff00, SRFL_PRHEX, SROM8_W1_PAB0, 0xffff},
+-	{BRCMS_SROM_PA1B1, 0xffffff00, SRFL_PRHEX, SROM8_W1_PAB1, 0xffff},
+-	{BRCMS_SROM_PA1B2, 0xffffff00, SRFL_PRHEX, SROM8_W1_PAB2, 0xffff},
+-	{BRCMS_SROM_PA1LOB0, 0xffffff00, SRFL_PRHEX, SROM8_W1_PAB0_LC, 0xffff},
+-	{BRCMS_SROM_PA1LOB1, 0xffffff00, SRFL_PRHEX, SROM8_W1_PAB1_LC, 0xffff},
+-	{BRCMS_SROM_PA1LOB2, 0xffffff00, SRFL_PRHEX, SROM8_W1_PAB2_LC, 0xffff},
+-	{BRCMS_SROM_PA1HIB0, 0xffffff00, SRFL_PRHEX, SROM8_W1_PAB0_HC, 0xffff},
+-	{BRCMS_SROM_PA1HIB1, 0xffffff00, SRFL_PRHEX, SROM8_W1_PAB1_HC, 0xffff},
+-	{BRCMS_SROM_PA1HIB2, 0xffffff00, SRFL_PRHEX, SROM8_W1_PAB2_HC, 0xffff},
+-	{BRCMS_SROM_PA1ITSSIT, 0xffffff00, 0, SROM8_W1_ITTMAXP, 0xff00},
+-	{BRCMS_SROM_PA1MAXPWR, 0xffffff00, 0, SROM8_W1_ITTMAXP, 0x00ff},
+-	{BRCMS_SROM_PA1LOMAXPWR, 0xffffff00, 0, SROM8_W1_MAXP_LCHC, 0xff00},
+-	{BRCMS_SROM_PA1HIMAXPWR, 0xffffff00, 0, SROM8_W1_MAXP_LCHC, 0x00ff},
+-	{BRCMS_SROM_BXA2G, 0xffffff00, 0, SROM8_BXARSSI2G, 0x1800},
+-	{BRCMS_SROM_RSSISAV2G, 0xffffff00, 0, SROM8_BXARSSI2G, 0x0700},
+-	{BRCMS_SROM_RSSISMC2G, 0xffffff00, 0, SROM8_BXARSSI2G, 0x00f0},
+-	{BRCMS_SROM_RSSISMF2G, 0xffffff00, 0, SROM8_BXARSSI2G, 0x000f},
+-	{BRCMS_SROM_BXA5G, 0xffffff00, 0, SROM8_BXARSSI5G, 0x1800},
+-	{BRCMS_SROM_RSSISAV5G, 0xffffff00, 0, SROM8_BXARSSI5G, 0x0700},
+-	{BRCMS_SROM_RSSISMC5G, 0xffffff00, 0, SROM8_BXARSSI5G, 0x00f0},
+-	{BRCMS_SROM_RSSISMF5G, 0xffffff00, 0, SROM8_BXARSSI5G, 0x000f},
+-	{BRCMS_SROM_TRI2G, 0xffffff00, 0, SROM8_TRI52G, 0x00ff},
+-	{BRCMS_SROM_TRI5G, 0xffffff00, 0, SROM8_TRI52G, 0xff00},
+-	{BRCMS_SROM_TRI5GL, 0xffffff00, 0, SROM8_TRI5GHL, 0x00ff},
+-	{BRCMS_SROM_TRI5GH, 0xffffff00, 0, SROM8_TRI5GHL, 0xff00},
+-	{BRCMS_SROM_RXPO2G, 0xffffff00, SRFL_PRSIGN, SROM8_RXPO52G, 0x00ff},
+-	{BRCMS_SROM_RXPO5G, 0xffffff00, SRFL_PRSIGN, SROM8_RXPO52G, 0xff00},
+-	{BRCMS_SROM_TXCHAIN, 0xffffff00, SRFL_NOFFS, SROM8_TXRXC,
+-	 SROM4_TXCHAIN_MASK},
+-	{BRCMS_SROM_RXCHAIN, 0xffffff00, SRFL_NOFFS, SROM8_TXRXC,
+-	 SROM4_RXCHAIN_MASK},
+-	{BRCMS_SROM_ANTSWITCH, 0xffffff00, SRFL_NOFFS, SROM8_TXRXC,
+-	 SROM4_SWITCH_MASK},
+-	{BRCMS_SROM_TSSIPOS2G, 0xffffff00, 0, SROM8_FEM2G,
+-	 SROM8_FEM_TSSIPOS_MASK},
+-	{BRCMS_SROM_EXTPAGAIN2G, 0xffffff00, 0, SROM8_FEM2G,
+-	 SROM8_FEM_EXTPA_GAIN_MASK},
+-	{BRCMS_SROM_PDETRANGE2G, 0xffffff00, 0, SROM8_FEM2G,
+-	 SROM8_FEM_PDET_RANGE_MASK},
+-	{BRCMS_SROM_TRISO2G, 0xffffff00, 0, SROM8_FEM2G, SROM8_FEM_TR_ISO_MASK},
+-	{BRCMS_SROM_ANTSWCTL2G, 0xffffff00, 0, SROM8_FEM2G,
+-	 SROM8_FEM_ANTSWLUT_MASK},
+-	{BRCMS_SROM_TSSIPOS5G, 0xffffff00, 0, SROM8_FEM5G,
+-	 SROM8_FEM_TSSIPOS_MASK},
+-	{BRCMS_SROM_EXTPAGAIN5G, 0xffffff00, 0, SROM8_FEM5G,
+-	 SROM8_FEM_EXTPA_GAIN_MASK},
+-	{BRCMS_SROM_PDETRANGE5G, 0xffffff00, 0, SROM8_FEM5G,
+-	 SROM8_FEM_PDET_RANGE_MASK},
+-	{BRCMS_SROM_TRISO5G, 0xffffff00, 0, SROM8_FEM5G, SROM8_FEM_TR_ISO_MASK},
+-	{BRCMS_SROM_ANTSWCTL5G, 0xffffff00, 0, SROM8_FEM5G,
+-	 SROM8_FEM_ANTSWLUT_MASK},
+-	{BRCMS_SROM_TEMPTHRESH, 0xffffff00, 0, SROM8_THERMAL, 0xff00},
+-	{BRCMS_SROM_TEMPOFFSET, 0xffffff00, 0, SROM8_THERMAL, 0x00ff},
+-
+-	{BRCMS_SROM_CCODE, 0xffffff00, SRFL_CCODE, SROM8_CCODE, 0xffff},
+-	{BRCMS_SROM_MACADDR, 0xffffff00, SRFL_ETHADDR, SROM8_MACHI, 0xffff},
+-	{BRCMS_SROM_LEDDC, 0xffffff00, SRFL_NOFFS | SRFL_LEDDC, SROM8_LEDDC,
+-	 0xffff},
+-	{BRCMS_SROM_RAWTEMPSENSE, 0xffffff00, SRFL_PRHEX, SROM8_MPWR_RAWTS,
+-	 0x01ff},
+-	{BRCMS_SROM_MEASPOWER, 0xffffff00, SRFL_PRHEX, SROM8_MPWR_RAWTS,
+-	 0xfe00},
+-	{BRCMS_SROM_TEMPSENSE_SLOPE, 0xffffff00, SRFL_PRHEX,
+-	 SROM8_TS_SLP_OPT_CORRX, 0x00ff},
+-	{BRCMS_SROM_TEMPCORRX, 0xffffff00, SRFL_PRHEX, SROM8_TS_SLP_OPT_CORRX,
+-	 0xfc00},
+-	{BRCMS_SROM_TEMPSENSE_OPTION, 0xffffff00, SRFL_PRHEX,
+-	 SROM8_TS_SLP_OPT_CORRX, 0x0300},
+-	{BRCMS_SROM_FREQOFFSET_CORR, 0xffffff00, SRFL_PRHEX,
+-	 SROM8_FOC_HWIQ_IQSWP, 0x000f},
+-	{BRCMS_SROM_IQCAL_SWP_DIS, 0xffffff00, SRFL_PRHEX, SROM8_FOC_HWIQ_IQSWP,
+-	 0x0010},
+-	{BRCMS_SROM_HW_IQCAL_EN, 0xffffff00, SRFL_PRHEX, SROM8_FOC_HWIQ_IQSWP,
+-	 0x0020},
+-	{BRCMS_SROM_PHYCAL_TEMPDELTA, 0xffffff00, 0, SROM8_PHYCAL_TEMPDELTA,
+-	 0x00ff},
+-
+-	{BRCMS_SROM_CCK2GPO, 0x00000100, 0, SROM8_2G_CCKPO, 0xffff},
+-	{BRCMS_SROM_OFDM2GPO, 0x00000100, SRFL_MORE, SROM8_2G_OFDMPO, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM8_2G_OFDMPO + 1, 0xffff},
+-	{BRCMS_SROM_OFDM5GPO, 0x00000100, SRFL_MORE, SROM8_5G_OFDMPO, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM8_5G_OFDMPO + 1, 0xffff},
+-	{BRCMS_SROM_OFDM5GLPO, 0x00000100, SRFL_MORE, SROM8_5GL_OFDMPO, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM8_5GL_OFDMPO + 1, 0xffff},
+-	{BRCMS_SROM_OFDM5GHPO, 0x00000100, SRFL_MORE, SROM8_5GH_OFDMPO, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM8_5GH_OFDMPO + 1, 0xffff},
+-	{BRCMS_SROM_MCS2GPO0, 0x00000100, 0, SROM8_2G_MCSPO, 0xffff},
+-	{BRCMS_SROM_MCS2GPO1, 0x00000100, 0, SROM8_2G_MCSPO + 1, 0xffff},
+-	{BRCMS_SROM_MCS2GPO2, 0x00000100, 0, SROM8_2G_MCSPO + 2, 0xffff},
+-	{BRCMS_SROM_MCS2GPO3, 0x00000100, 0, SROM8_2G_MCSPO + 3, 0xffff},
+-	{BRCMS_SROM_MCS2GPO4, 0x00000100, 0, SROM8_2G_MCSPO + 4, 0xffff},
+-	{BRCMS_SROM_MCS2GPO5, 0x00000100, 0, SROM8_2G_MCSPO + 5, 0xffff},
+-	{BRCMS_SROM_MCS2GPO6, 0x00000100, 0, SROM8_2G_MCSPO + 6, 0xffff},
+-	{BRCMS_SROM_MCS2GPO7, 0x00000100, 0, SROM8_2G_MCSPO + 7, 0xffff},
+-	{BRCMS_SROM_MCS5GPO0, 0x00000100, 0, SROM8_5G_MCSPO, 0xffff},
+-	{BRCMS_SROM_MCS5GPO1, 0x00000100, 0, SROM8_5G_MCSPO + 1, 0xffff},
+-	{BRCMS_SROM_MCS5GPO2, 0x00000100, 0, SROM8_5G_MCSPO + 2, 0xffff},
+-	{BRCMS_SROM_MCS5GPO3, 0x00000100, 0, SROM8_5G_MCSPO + 3, 0xffff},
+-	{BRCMS_SROM_MCS5GPO4, 0x00000100, 0, SROM8_5G_MCSPO + 4, 0xffff},
+-	{BRCMS_SROM_MCS5GPO5, 0x00000100, 0, SROM8_5G_MCSPO + 5, 0xffff},
+-	{BRCMS_SROM_MCS5GPO6, 0x00000100, 0, SROM8_5G_MCSPO + 6, 0xffff},
+-	{BRCMS_SROM_MCS5GPO7, 0x00000100, 0, SROM8_5G_MCSPO + 7, 0xffff},
+-	{BRCMS_SROM_MCS5GLPO0, 0x00000100, 0, SROM8_5GL_MCSPO, 0xffff},
+-	{BRCMS_SROM_MCS5GLPO1, 0x00000100, 0, SROM8_5GL_MCSPO + 1, 0xffff},
+-	{BRCMS_SROM_MCS5GLPO2, 0x00000100, 0, SROM8_5GL_MCSPO + 2, 0xffff},
+-	{BRCMS_SROM_MCS5GLPO3, 0x00000100, 0, SROM8_5GL_MCSPO + 3, 0xffff},
+-	{BRCMS_SROM_MCS5GLPO4, 0x00000100, 0, SROM8_5GL_MCSPO + 4, 0xffff},
+-	{BRCMS_SROM_MCS5GLPO5, 0x00000100, 0, SROM8_5GL_MCSPO + 5, 0xffff},
+-	{BRCMS_SROM_MCS5GLPO6, 0x00000100, 0, SROM8_5GL_MCSPO + 6, 0xffff},
+-	{BRCMS_SROM_MCS5GLPO7, 0x00000100, 0, SROM8_5GL_MCSPO + 7, 0xffff},
+-	{BRCMS_SROM_MCS5GHPO0, 0x00000100, 0, SROM8_5GH_MCSPO, 0xffff},
+-	{BRCMS_SROM_MCS5GHPO1, 0x00000100, 0, SROM8_5GH_MCSPO + 1, 0xffff},
+-	{BRCMS_SROM_MCS5GHPO2, 0x00000100, 0, SROM8_5GH_MCSPO + 2, 0xffff},
+-	{BRCMS_SROM_MCS5GHPO3, 0x00000100, 0, SROM8_5GH_MCSPO + 3, 0xffff},
+-	{BRCMS_SROM_MCS5GHPO4, 0x00000100, 0, SROM8_5GH_MCSPO + 4, 0xffff},
+-	{BRCMS_SROM_MCS5GHPO5, 0x00000100, 0, SROM8_5GH_MCSPO + 5, 0xffff},
+-	{BRCMS_SROM_MCS5GHPO6, 0x00000100, 0, SROM8_5GH_MCSPO + 6, 0xffff},
+-	{BRCMS_SROM_MCS5GHPO7, 0x00000100, 0, SROM8_5GH_MCSPO + 7, 0xffff},
+-	{BRCMS_SROM_CDDPO, 0x00000100, 0, SROM8_CDDPO, 0xffff},
+-	{BRCMS_SROM_STBCPO, 0x00000100, 0, SROM8_STBCPO, 0xffff},
+-	{BRCMS_SROM_BW40PO, 0x00000100, 0, SROM8_BW40PO, 0xffff},
+-	{BRCMS_SROM_BWDUPPO, 0x00000100, 0, SROM8_BWDUPPO, 0xffff},
+-
+-	/* power per rate from sromrev 9 */
+-	{BRCMS_SROM_CCKBW202GPO, 0xfffffe00, 0, SROM9_2GPO_CCKBW20, 0xffff},
+-	{BRCMS_SROM_CCKBW20UL2GPO, 0xfffffe00, 0, SROM9_2GPO_CCKBW20UL, 0xffff},
+-	{BRCMS_SROM_LEGOFDMBW202GPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_2GPO_LOFDMBW20, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_2GPO_LOFDMBW20 + 1, 0xffff},
+-	{BRCMS_SROM_LEGOFDMBW20UL2GPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_2GPO_LOFDMBW20UL, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_2GPO_LOFDMBW20UL + 1, 0xffff},
+-	{BRCMS_SROM_LEGOFDMBW205GLPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_5GLPO_LOFDMBW20, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GLPO_LOFDMBW20 + 1, 0xffff},
+-	{BRCMS_SROM_LEGOFDMBW20UL5GLPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_5GLPO_LOFDMBW20UL, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GLPO_LOFDMBW20UL + 1, 0xffff},
+-	{BRCMS_SROM_LEGOFDMBW205GMPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_5GMPO_LOFDMBW20, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GMPO_LOFDMBW20 + 1, 0xffff},
+-	{BRCMS_SROM_LEGOFDMBW20UL5GMPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_5GMPO_LOFDMBW20UL, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GMPO_LOFDMBW20UL + 1, 0xffff},
+-	{BRCMS_SROM_LEGOFDMBW205GHPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_5GHPO_LOFDMBW20, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GHPO_LOFDMBW20 + 1, 0xffff},
+-	{BRCMS_SROM_LEGOFDMBW20UL5GHPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_5GHPO_LOFDMBW20UL, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GHPO_LOFDMBW20UL + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW202GPO, 0xfffffe00, SRFL_MORE, SROM9_2GPO_MCSBW20,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_2GPO_MCSBW20 + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW20UL2GPO, 0xfffffe00, SRFL_MORE, SROM9_2GPO_MCSBW20UL,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_2GPO_MCSBW20UL + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW402GPO, 0xfffffe00, SRFL_MORE, SROM9_2GPO_MCSBW40,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_2GPO_MCSBW40 + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW205GLPO, 0xfffffe00, SRFL_MORE, SROM9_5GLPO_MCSBW20,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GLPO_MCSBW20 + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW20UL5GLPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_5GLPO_MCSBW20UL, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GLPO_MCSBW20UL + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW405GLPO, 0xfffffe00, SRFL_MORE, SROM9_5GLPO_MCSBW40,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GLPO_MCSBW40 + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW205GMPO, 0xfffffe00, SRFL_MORE, SROM9_5GMPO_MCSBW20,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GMPO_MCSBW20 + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW20UL5GMPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_5GMPO_MCSBW20UL, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GMPO_MCSBW20UL + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW405GMPO, 0xfffffe00, SRFL_MORE, SROM9_5GMPO_MCSBW40,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GMPO_MCSBW40 + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW205GHPO, 0xfffffe00, SRFL_MORE, SROM9_5GHPO_MCSBW20,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GHPO_MCSBW20 + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW20UL5GHPO, 0xfffffe00, SRFL_MORE,
+-	 SROM9_5GHPO_MCSBW20UL, 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GHPO_MCSBW20UL + 1, 0xffff},
+-	{BRCMS_SROM_MCSBW405GHPO, 0xfffffe00, SRFL_MORE, SROM9_5GHPO_MCSBW40,
+-	 0xffff},
+-	{BRCMS_SROM_CONT, 0, 0, SROM9_5GHPO_MCSBW40 + 1, 0xffff},
+-	{BRCMS_SROM_MCS32PO, 0xfffffe00, 0, SROM9_PO_MCS32, 0xffff},
+-	{BRCMS_SROM_LEGOFDM40DUPPO, 0xfffffe00, 0, SROM9_PO_LOFDM40DUP, 0xffff},
+-
+-	{BRCMS_SROM_NULL, 0, 0, 0, 0}
+-};
+-
+-static const struct brcms_sromvar perpath_pci_sromvars[] = {
+-	{BRCMS_SROM_MAXP2GA0, 0xffffff00, 0, SROM8_2G_ITT_MAXP, 0x00ff},
+-	{BRCMS_SROM_ITT2GA0, 0xffffff00, 0, SROM8_2G_ITT_MAXP, 0xff00},
+-	{BRCMS_SROM_ITT5GA0, 0xffffff00, 0, SROM8_5G_ITT_MAXP, 0xff00},
+-	{BRCMS_SROM_PA2GW0A0, 0xffffff00, SRFL_PRHEX, SROM8_2G_PA, 0xffff},
+-	{BRCMS_SROM_PA2GW1A0, 0xffffff00, SRFL_PRHEX, SROM8_2G_PA + 1, 0xffff},
+-	{BRCMS_SROM_PA2GW2A0, 0xffffff00, SRFL_PRHEX, SROM8_2G_PA + 2, 0xffff},
+-	{BRCMS_SROM_MAXP5GA0, 0xffffff00, 0, SROM8_5G_ITT_MAXP, 0x00ff},
+-	{BRCMS_SROM_MAXP5GHA0, 0xffffff00, 0, SROM8_5GLH_MAXP, 0x00ff},
+-	{BRCMS_SROM_MAXP5GLA0, 0xffffff00, 0, SROM8_5GLH_MAXP, 0xff00},
+-	{BRCMS_SROM_PA5GW0A0, 0xffffff00, SRFL_PRHEX, SROM8_5G_PA, 0xffff},
+-	{BRCMS_SROM_PA5GW1A0, 0xffffff00, SRFL_PRHEX, SROM8_5G_PA + 1, 0xffff},
+-	{BRCMS_SROM_PA5GW2A0, 0xffffff00, SRFL_PRHEX, SROM8_5G_PA + 2, 0xffff},
+-	{BRCMS_SROM_PA5GLW0A0, 0xffffff00, SRFL_PRHEX, SROM8_5GL_PA, 0xffff},
+-	{BRCMS_SROM_PA5GLW1A0, 0xffffff00, SRFL_PRHEX, SROM8_5GL_PA + 1,
+-	 0xffff},
+-	{BRCMS_SROM_PA5GLW2A0, 0xffffff00, SRFL_PRHEX, SROM8_5GL_PA + 2,
+-	 0xffff},
+-	{BRCMS_SROM_PA5GHW0A0, 0xffffff00, SRFL_PRHEX, SROM8_5GH_PA, 0xffff},
+-	{BRCMS_SROM_PA5GHW1A0, 0xffffff00, SRFL_PRHEX, SROM8_5GH_PA + 1,
+-	 0xffff},
+-	{BRCMS_SROM_PA5GHW2A0, 0xffffff00, SRFL_PRHEX, SROM8_5GH_PA + 2,
+-	 0xffff},
+-	{BRCMS_SROM_NULL, 0, 0, 0, 0}
+-};
+-
+-/* crc table has the same contents for every device instance, so it can be
+- * shared between devices. */
+-static u8 brcms_srom_crc8_table[CRC8_TABLE_SIZE];
+-
+-static uint mask_shift(u16 mask)
+-{
+-	uint i;
+-	for (i = 0; i < (sizeof(mask) << 3); i++) {
+-		if (mask & (1 << i))
+-			return i;
+-	}
+-	return 0;
+-}
+-
+-static uint mask_width(u16 mask)
+-{
+-	int i;
+-	for (i = (sizeof(mask) << 3) - 1; i >= 0; i--) {
+-		if (mask & (1 << i))
+-			return (uint) (i - mask_shift(mask) + 1);
+-	}
+-	return 0;
+-}
+-
+-static inline void le16_to_cpu_buf(u16 *buf, uint nwords)
+-{
+-	while (nwords--)
+-		*(buf + nwords) = le16_to_cpu(*(__le16 *)(buf + nwords));
+-}
+-
+-static inline void cpu_to_le16_buf(u16 *buf, uint nwords)
+-{
+-	while (nwords--)
+-		*(__le16 *)(buf + nwords) = cpu_to_le16(*(buf + nwords));
+-}
+-
+-/*
+- * convert binary srom data into linked list of srom variable items.
+- */
+-static int
+-_initvars_srom_pci(u8 sromrev, u16 *srom, struct list_head *var_list)
+-{
+-	struct brcms_srom_list_head *entry;
+-	enum brcms_srom_id id;
+-	u16 w;
+-	u32 val = 0;
+-	const struct brcms_sromvar *srv;
+-	uint width;
+-	uint flags;
+-	u32 sr = (1 << sromrev);
+-	uint p;
+-	uint pb =  SROM8_PATH0;
+-	const uint psz = SROM8_PATH1 - SROM8_PATH0;
+-
+-	/* first store the srom revision */
+-	entry = kzalloc(sizeof(struct brcms_srom_list_head), GFP_KERNEL);
+-	if (!entry)
+-		return -ENOMEM;
+-
+-	entry->varid = BRCMS_SROM_REV;
+-	entry->var_type = BRCMS_SROM_UNUMBER;
+-	entry->uval = sromrev;
+-	list_add(&entry->var_list, var_list);
+-
+-	for (srv = pci_sromvars; srv->varid != BRCMS_SROM_NULL; srv++) {
+-		enum brcms_srom_var_type type;
+-		u8 ea[ETH_ALEN];
+-		u8 extra_space = 0;
+-
+-		if ((srv->revmask & sr) == 0)
+-			continue;
+-
+-		flags = srv->flags;
+-		id = srv->varid;
+-
+-		/* This entry is for mfgc only. Don't generate param for it, */
+-		if (flags & SRFL_NOVAR)
+-			continue;
+-
+-		if (flags & SRFL_ETHADDR) {
+-			/*
+-			 * stored in string format XX:XX:XX:XX:XX:XX (17 chars)
+-			 */
+-			ea[0] = (srom[srv->off] >> 8) & 0xff;
+-			ea[1] = srom[srv->off] & 0xff;
+-			ea[2] = (srom[srv->off + 1] >> 8) & 0xff;
+-			ea[3] = srom[srv->off + 1] & 0xff;
+-			ea[4] = (srom[srv->off + 2] >> 8) & 0xff;
+-			ea[5] = srom[srv->off + 2] & 0xff;
+-			/* 17 characters + string terminator - union size */
+-			extra_space = 18 - sizeof(s32);
+-			type = BRCMS_SROM_STRING;
+-		} else {
+-			w = srom[srv->off];
+-			val = (w & srv->mask) >> mask_shift(srv->mask);
+-			width = mask_width(srv->mask);
+-
+-			while (srv->flags & SRFL_MORE) {
+-				srv++;
+-				if (srv->off == 0)
+-					continue;
+-
+-				w = srom[srv->off];
+-				val +=
+-				    ((w & srv->mask) >> mask_shift(srv->
+-								   mask)) <<
+-				    width;
+-				width += mask_width(srv->mask);
+-			}
+-
+-			if ((flags & SRFL_NOFFS)
+-			    && ((int)val == (1 << width) - 1))
+-				continue;
+-
+-			if (flags & SRFL_CCODE) {
+-				type = BRCMS_SROM_STRING;
+-			} else if (flags & SRFL_LEDDC) {
+-				/* LED Powersave duty cycle has to be scaled:
+-				 *(oncount >> 24) (offcount >> 8)
+-				 */
+-				u32 w32 = /* oncount */
+-					  (((val >> 8) & 0xff) << 24) |
+-					  /* offcount */
+-					  (((val & 0xff)) << 8);
+-				type = BRCMS_SROM_UNUMBER;
+-				val = w32;
+-			} else if ((flags & SRFL_PRSIGN)
+-				 && (val & (1 << (width - 1)))) {
+-				type = BRCMS_SROM_SNUMBER;
+-				val |= ~0 << width;
+-			} else
+-				type = BRCMS_SROM_UNUMBER;
+-		}
+-
+-		entry = kzalloc(sizeof(struct brcms_srom_list_head) +
+-				extra_space, GFP_KERNEL);
+-		if (!entry)
+-			return -ENOMEM;
+-		entry->varid = id;
+-		entry->var_type = type;
+-		if (flags & SRFL_ETHADDR) {
+-			snprintf(entry->buf, 18, "%pM", ea);
+-		} else if (flags & SRFL_CCODE) {
+-			if (val == 0)
+-				entry->buf[0] = '\0';
+-			else
+-				snprintf(entry->buf, 3, "%c%c",
+-					 (val >> 8), (val & 0xff));
+-		} else {
+-			entry->uval = val;
+-		}
+-
+-		list_add(&entry->var_list, var_list);
+-	}
+-
+-	for (p = 0; p < MAX_PATH_SROM; p++) {
+-		for (srv = perpath_pci_sromvars;
+-		     srv->varid != BRCMS_SROM_NULL; srv++) {
+-			if ((srv->revmask & sr) == 0)
+-				continue;
+-
+-			if (srv->flags & SRFL_NOVAR)
+-				continue;
+-
+-			w = srom[pb + srv->off];
+-			val = (w & srv->mask) >> mask_shift(srv->mask);
+-			width = mask_width(srv->mask);
+-
+-			/* Cheating: no per-path var is more than
+-			 * 1 word */
+-			if ((srv->flags & SRFL_NOFFS)
+-			    && ((int)val == (1 << width) - 1))
+-				continue;
+-
+-			entry =
+-			    kzalloc(sizeof(struct brcms_srom_list_head),
+-				    GFP_KERNEL);
+-			if (!entry)
+-				return -ENOMEM;
+-			entry->varid = srv->varid+p;
+-			entry->var_type = BRCMS_SROM_UNUMBER;
+-			entry->uval = val;
+-			list_add(&entry->var_list, var_list);
+-		}
+-		pb += psz;
+-	}
+-	return 0;
+-}
+-
+-/*
+- * The crc check is done on a little-endian array, we need
+- * to switch the bytes around before checking crc (and
+- * then switch it back).
+- */
+-static int do_crc_check(u16 *buf, unsigned nwords)
+-{
+-	u8 crc;
+-
+-	cpu_to_le16_buf(buf, nwords);
+-	crc = crc8(brcms_srom_crc8_table, (void *)buf, nwords << 1, CRC8_INIT_VALUE);
+-	le16_to_cpu_buf(buf, nwords);
+-
+-	return crc == CRC8_GOOD_VALUE(brcms_srom_crc8_table);
+-}
+-
+-/*
+- * Read in and validate sprom.
+- * Return 0 on success, nonzero on error.
+- */
+-static int
+-sprom_read_pci(struct si_pub *sih, u16 *buf, uint nwords, bool check_crc)
+-{
+-	int err = 0;
+-	uint i;
+-	struct bcma_device *core;
+-	uint sprom_offset;
+-
+-	/* determine core to read */
+-	if (ai_get_ccrev(sih) < 32) {
+-		core = ai_findcore(sih, BCMA_CORE_80211, 0);
+-		sprom_offset = PCI_BAR0_SPROM_OFFSET;
+-	} else {
+-		core = ai_findcore(sih, BCMA_CORE_CHIPCOMMON, 0);
+-		sprom_offset = CHIPCREGOFFS(sromotp);
+-	}
+-
+-	/* read the sprom */
+-	for (i = 0; i < nwords; i++)
+-		buf[i] = bcma_read16(core, sprom_offset+i*2);
+-
+-	if (buf[0] == 0xffff)
+-		/*
+-		 * The hardware thinks that an srom that starts with
+-		 * 0xffff is blank, regardless of the rest of the
+-		 * content, so declare it bad.
+-		 */
+-		return -ENODATA;
+-
+-	if (check_crc && !do_crc_check(buf, nwords))
+-		err = -EIO;
+-
+-	return err;
+-}
+-
+-static int otp_read_pci(struct si_pub *sih, u16 *buf, uint nwords)
+-{
+-	u8 *otp;
+-	uint sz = OTP_SZ_MAX / 2;	/* size in words */
+-	int err = 0;
+-
+-	otp = kzalloc(OTP_SZ_MAX, GFP_ATOMIC);
+-	if (otp == NULL)
+-		return -ENOMEM;
+-
+-	err = otp_read_region(sih, OTP_HW_RGN, (u16 *) otp, &sz);
+-
+-	sz = min_t(uint, sz, nwords);
+-	memcpy(buf, otp, sz * 2);
+-
+-	kfree(otp);
+-
+-	/* Check CRC */
+-	if (buf[0] == 0xffff)
+-		/* The hardware thinks that an srom that starts with 0xffff
+-		 * is blank, regardless of the rest of the content, so declare
+-		 * it bad.
+-		 */
+-		return -ENODATA;
+-
+-	/* fixup the endianness so crc8 will pass */
+-	cpu_to_le16_buf(buf, sz);
+-	if (crc8(brcms_srom_crc8_table, (u8 *) buf, sz * 2,
+-		 CRC8_INIT_VALUE) != CRC8_GOOD_VALUE(brcms_srom_crc8_table))
+-		err = -EIO;
+-	else
+-		/* now correct the endianness of the byte array */
+-		le16_to_cpu_buf(buf, sz);
+-
+-	return err;
+-}
+-
+-/*
+- * Initialize nonvolatile variable table from sprom.
+- * Return 0 on success, nonzero on error.
+- */
+-int srom_var_init(struct si_pub *sih)
+-{
+-	u16 *srom;
+-	u8 sromrev = 0;
+-	u32 sr;
+-	int err = 0;
+-
+-	/*
+-	 * Apply CRC over SROM content regardless SROM is present or not.
+-	 */
+-	srom = kmalloc(SROM_MAX, GFP_ATOMIC);
+-	if (!srom)
+-		return -ENOMEM;
+-
+-	crc8_populate_lsb(brcms_srom_crc8_table, SROM_CRC8_POLY);
+-	if (ai_is_sprom_available(sih)) {
+-		err = sprom_read_pci(sih, srom, SROM4_WORDS, true);
+-
+-		if (err == 0)
+-			/* srom read and passed crc */
+-			/* top word of sprom contains version and crc8 */
+-			sromrev = srom[SROM4_CRCREV] & 0xff;
+-	} else {
+-		/* Use OTP if SPROM not available */
+-		err = otp_read_pci(sih, srom, SROM4_WORDS);
+-		if (err == 0)
+-			/* OTP only contain SROM rev8/rev9 for now */
+-			sromrev = srom[SROM4_CRCREV] & 0xff;
+-	}
+-
+-	if (!err) {
+-		struct si_info *sii = (struct si_info *)sih;
+-
+-		/* Bitmask for the sromrev */
+-		sr = 1 << sromrev;
+-
+-		/*
+-		 * srom version check: Current valid versions: 8, 9
+-		 */
+-		if ((sr & 0x300) == 0) {
+-			err = -EINVAL;
+-			goto errout;
+-		}
+-
+-		INIT_LIST_HEAD(&sii->var_list);
+-
+-		/* parse SROM into name=value pairs. */
+-		err = _initvars_srom_pci(sromrev, srom, &sii->var_list);
+-		if (err)
+-			srom_free_vars(sih);
+-	}
+-
+-errout:
+-	kfree(srom);
+-	return err;
+-}
+-
+-void srom_free_vars(struct si_pub *sih)
+-{
+-	struct si_info *sii;
+-	struct brcms_srom_list_head *entry, *next;
+-
+-	sii = (struct si_info *)sih;
+-	list_for_each_entry_safe(entry, next, &sii->var_list, var_list) {
+-		list_del(&entry->var_list);
+-		kfree(entry);
+-	}
+-}
+-
+-/*
+- * Search the name=value vars for a specific one and return its value.
+- * Returns NULL if not found.
+- */
+-char *getvar(struct si_pub *sih, enum brcms_srom_id id)
+-{
+-	struct si_info *sii;
+-	struct brcms_srom_list_head *entry;
+-
+-	sii = (struct si_info *)sih;
+-
+-	list_for_each_entry(entry, &sii->var_list, var_list)
+-		if (entry->varid == id)
+-			return &entry->buf[0];
+-
+-	/* nothing found */
+-	return NULL;
+-}
+-
+-/*
+- * Search the vars for a specific one and return its value as
+- * an integer. Returns 0 if not found.-
+- */
+-int getintvar(struct si_pub *sih, enum brcms_srom_id id)
+-{
+-	struct si_info *sii;
+-	struct brcms_srom_list_head *entry;
+-	unsigned long res;
+-
+-	sii = (struct si_info *)sih;
+-
+-	list_for_each_entry(entry, &sii->var_list, var_list)
+-		if (entry->varid == id) {
+-			if (entry->var_type == BRCMS_SROM_SNUMBER ||
+-			    entry->var_type == BRCMS_SROM_UNUMBER)
+-				return (int)entry->sval;
+-			else if (!kstrtoul(&entry->buf[0], 0, &res))
+-				return (int)res;
+-		}
+-
+-	return 0;
+-}
+--- a/drivers/net/wireless/brcm80211/brcmsmac/srom.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- * Copyright (c) 2010 Broadcom Corporation
+- *
+- * Permission to use, copy, modify, and/or distribute this software for any
+- * purpose with or without fee is hereby granted, provided that the above
+- * copyright notice and this permission notice appear in all copies.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+- * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+- * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+- * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+- */
+-
+-#ifndef	_BRCM_SROM_H_
+-#define	_BRCM_SROM_H_
+-
+-#include "types.h"
+-
+-/* Prototypes */
+-extern int srom_var_init(struct si_pub *sih);
+-extern void srom_free_vars(struct si_pub *sih);
+-
+-extern int srom_read(struct si_pub *sih, uint bus, void *curmap,
+-		     uint byteoff, uint nbytes, u16 *buf, bool check_crc);
+-
+-#endif				/* _BRCM_SROM_H_ */
+--- a/drivers/net/wireless/brcm80211/brcmsmac/stf.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/stf.c
+@@ -370,9 +370,11 @@ void brcms_c_stf_phy_txant_upd(struct br
+ 
+ void brcms_c_stf_phy_chain_calc(struct brcms_c_info *wlc)
+ {
++	struct ssb_sprom *sprom = &wlc->hw->d11core->bus->sprom;
++
+ 	/* get available rx/tx chains */
+-	wlc->stf->hw_txchain = (u8) getintvar(wlc->hw->sih, BRCMS_SROM_TXCHAIN);
+-	wlc->stf->hw_rxchain = (u8) getintvar(wlc->hw->sih, BRCMS_SROM_RXCHAIN);
++	wlc->stf->hw_txchain = sprom->txchain;
++	wlc->stf->hw_rxchain = sprom->rxchain;
+ 
+ 	/* these parameter are intended to be used for all PHY types */
+ 	if (wlc->stf->hw_txchain == 0 || wlc->stf->hw_txchain == 0xf) {

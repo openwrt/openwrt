@@ -1,0 +1,202 @@
+--- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
+@@ -1944,7 +1944,8 @@ static bool brcms_b_radio_read_hwdisable
+ 		 * accesses phyreg throughput mac. This can be skipped since
+ 		 * only mac reg is accessed below
+ 		 */
+-		flags |= SICF_PCLKE;
++		if (D11REV_GE(wlc_hw->corerev, 18))
++			flags |= SICF_PCLKE;
+ 
+ 		/*
+ 		 * TODO: test suspend/resume
+@@ -2025,7 +2026,8 @@ void brcms_b_corereset(struct brcms_hard
+ 	 * phyreg throughput mac, AND phy_reset is skipped at early stage when
+ 	 * band->pi is invalid. need to enable PHY CLK
+ 	 */
+-	flags |= SICF_PCLKE;
++	if (D11REV_GE(wlc_hw->corerev, 18))
++		flags |= SICF_PCLKE;
+ 
+ 	/*
+ 	 * reset the core
+--- a/drivers/net/wireless/brcm80211/brcmsmac/phy/phy_n.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/phy/phy_n.c
+@@ -17895,6 +17895,9 @@ static u32 *wlc_phy_get_ipa_gaintbl_nphy
+ 					nphy_tpc_txgain_ipa_2g_2057rev7;
+ 		} else if (NREV_IS(pi->pubpi.phy_rev, 6)) {
+ 			tx_pwrctrl_tbl = nphy_tpc_txgain_ipa_rev6;
++			if (pi->sh->chip == BCM47162_CHIP_ID) {
++				tx_pwrctrl_tbl = nphy_tpc_txgain_ipa_rev5;
++			}
+ 		} else if (NREV_IS(pi->pubpi.phy_rev, 5)) {
+ 			tx_pwrctrl_tbl = nphy_tpc_txgain_ipa_rev5;
+ 		} else {
+@@ -19256,8 +19259,14 @@ static void wlc_phy_spurwar_nphy(struct
+ 			case 38:
+ 			case 102:
+ 			case 118:
+-				nphy_adj_tone_id_buf[0] = 0;
+-				nphy_adj_noise_var_buf[0] = 0x0;
++				if ((pi->sh->chip == BCM4716_CHIP_ID) &&
++				    (pi->sh->chippkg == BCM4717_PKG_ID)) {
++					nphy_adj_tone_id_buf[0] = 32;
++					nphy_adj_noise_var_buf[0] = 0x21f;
++				} else {
++					nphy_adj_tone_id_buf[0] = 0;
++					nphy_adj_noise_var_buf[0] = 0x0;
++				}
+ 				break;
+ 			case 134:
+ 				nphy_adj_tone_id_buf[0] = 32;
+@@ -20697,12 +20706,22 @@ wlc_phy_chanspec_radio2056_setup(struct
+ 			write_radio_reg(pi, RADIO_2056_SYN_PLL_LOOPFILTER2 |
+ 					RADIO_2056_SYN, 0x1f);
+ 
+-			write_radio_reg(pi,
+-					RADIO_2056_SYN_PLL_LOOPFILTER4 |
+-					RADIO_2056_SYN, 0xb);
+-			write_radio_reg(pi,
+-					RADIO_2056_SYN_PLL_CP2 |
+-					RADIO_2056_SYN, 0x14);
++			if ((pi->sh->chip == BCM4716_CHIP_ID) ||
++			    (pi->sh->chip == BCM47162_CHIP_ID)) {
++				write_radio_reg(pi,
++						RADIO_2056_SYN_PLL_LOOPFILTER4 |
++						RADIO_2056_SYN, 0x14);
++				write_radio_reg(pi,
++						RADIO_2056_SYN_PLL_CP2 |
++						RADIO_2056_SYN, 0x00);
++			} else {
++				write_radio_reg(pi,
++						RADIO_2056_SYN_PLL_LOOPFILTER4 |
++						RADIO_2056_SYN, 0xb);
++				write_radio_reg(pi,
++						RADIO_2056_SYN_PLL_CP2 |
++						RADIO_2056_SYN, 0x14);
++			}
+ 		}
+ 	}
+ 
+@@ -20749,24 +20768,33 @@ wlc_phy_chanspec_radio2056_setup(struct
+ 				WRITE_RADIO_REG2(pi, RADIO_2056, TX, core,
+ 						 PADG_IDAC, 0xcc);
+ 
+-				bias = 0x25;
+-				cascbias = 0x20;
++				if ((pi->sh->chip == BCM4716_CHIP_ID) ||
++				    (pi->sh->chip ==
++				     BCM47162_CHIP_ID)) {
++					bias = 0x40;
++					cascbias = 0x45;
++					pag_boost_tune = 0x5;
++					pgag_boost_tune = 0x33;
++					padg_boost_tune = 0x77;
++					mixg_boost_tune = 0x55;
++				} else {
++					bias = 0x25;
++					cascbias = 0x20;
+ 
+-				if ((pi->sh->chip ==
+-				     BCM43224_CHIP_ID)
+-				    || (pi->sh->chip ==
+-					BCM43225_CHIP_ID)) {
+-					if (pi->sh->chippkg ==
+-					    BCM43224_FAB_SMIC) {
+-						bias = 0x2a;
+-						cascbias = 0x38;
++					if ((pi->sh->chip == BCM43224_CHIP_ID)
++					    || (pi->sh->chip ==	BCM43225_CHIP_ID)) {
++						if (pi->sh->chippkg ==
++						    BCM43224_FAB_SMIC) {
++							bias = 0x2a;
++							cascbias = 0x38;
++						}
+ 					}
+-				}
+ 
+-				pag_boost_tune = 0x4;
+-				pgag_boost_tune = 0x03;
+-				padg_boost_tune = 0x77;
+-				mixg_boost_tune = 0x65;
++					pag_boost_tune = 0x4;
++					pgag_boost_tune = 0x03;
++					padg_boost_tune = 0x77;
++					mixg_boost_tune = 0x65;
++				}
+ 
+ 				WRITE_RADIO_REG2(pi, RADIO_2056, TX, core,
+ 						 INTPAG_IMAIN_STAT, bias);
+@@ -21180,19 +21208,27 @@ wlc_phy_chanspec_nphy_setup(struct brcms
+ 		} else if (NREV_GE(pi->pubpi.phy_rev, 7)) {
+ 			if (val == 54)
+ 				spuravoid = 1;
+-		} else {
+-			if (pi->nphy_aband_spurwar_en &&
+-			    ((val == 38) || (val == 102)
+-			     || (val == 118)))
++		} else if (pi->nphy_aband_spurwar_en &&
++			    ((val == 38) || (val == 102) || (val == 118))) {
++			if ((pi->sh->chip == BCM4716_CHIP_ID)
++			    && (pi->sh->chippkg == BCM4717_PKG_ID)) {
++				spuravoid = 0;
++			} else {
+ 				spuravoid = 1;
++			}
+ 		}
+ 
+ 		if (pi->phy_spuravoid == SPURAVOID_FORCEON)
+ 			spuravoid = 1;
+ 
+-		wlapi_bmac_core_phypll_ctl(pi->sh->physhim, false);
+-		si_pmu_spuravoid_pllupdate(pi->sh->sih, spuravoid);
+-		wlapi_bmac_core_phypll_ctl(pi->sh->physhim, true);
++		if ((pi->sh->chip == BCM4716_CHIP_ID) ||
++		    (pi->sh->chip == BCM47162_CHIP_ID)) {
++			si_pmu_spuravoid_pllupdate(pi->sh->sih, spuravoid);
++		} else {
++			wlapi_bmac_core_phypll_ctl(pi->sh->physhim, false);
++			si_pmu_spuravoid_pllupdate(pi->sh->sih, spuravoid);
++			wlapi_bmac_core_phypll_ctl(pi->sh->physhim, true);
++		}
+ 
+ 		if ((pi->sh->chip == BCM43224_CHIP_ID) ||
+ 		    (pi->sh->chip == BCM43225_CHIP_ID)) {
+@@ -21211,7 +21247,10 @@ wlc_phy_chanspec_nphy_setup(struct brcms
+ 			}
+ 		}
+ 
+-		wlapi_bmac_core_phypll_reset(pi->sh->physhim);
++		if (!((pi->sh->chip == BCM4716_CHIP_ID) ||
++		      (pi->sh->chip == BCM47162_CHIP_ID))) {
++			wlapi_bmac_core_phypll_reset(pi->sh->physhim);
++		}
+ 
+ 		mod_phy_reg(pi, 0x01, (0x1 << 15),
+ 			    ((spuravoid > 0) ? (0x1 << 15) : 0));
+@@ -24925,14 +24964,20 @@ wlc_phy_a2_nphy(struct brcms_phy *pi, st
+ 			if (txgains->useindex) {
+ 				phy_a4 = 15 - ((txgains->index) >> 3);
+ 				if (CHSPEC_IS2G(pi->radio_chanspec)) {
+-					if (NREV_GE(pi->pubpi.phy_rev, 6))
++					if (NREV_GE(pi->pubpi.phy_rev, 6)) {
+ 						phy_a5 = 0x00f7 | (phy_a4 << 8);
+-
+-					else
+-					if (NREV_IS(pi->pubpi.phy_rev, 5))
++						if (pi->sh->chip ==
++						    BCM47162_CHIP_ID) {
++							phy_a5 =
++							    0x10f7 | (phy_a4 <<
++								      8);
++						}
++					} else
++					if (NREV_IS(pi->pubpi.phy_rev, 5)) {
+ 						phy_a5 = 0x10f7 | (phy_a4 << 8);
+-					else
++					} else {
+ 						phy_a5 = 0x50f7 | (phy_a4 << 8);
++					}
+ 				} else {
+ 					phy_a5 = 0x70f7 | (phy_a4 << 8);
+ 				}
