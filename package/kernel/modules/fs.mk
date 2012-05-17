@@ -91,14 +91,9 @@ define KernelPackage/fs-ext4
 	CONFIG_JBD2
   FILES:= \
 	$(LINUX_DIR)/fs/ext4/ext4.ko \
-	$(LINUX_DIR)/fs/jbd2/jbd2.ko
- ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.37)),1)
-    FILES+= \
+	$(LINUX_DIR)/fs/jbd2/jbd2.ko \
 	$(LINUX_DIR)/fs/mbcache.ko
-    AUTOLOAD:=$(call AutoLoad,30,mbcache jbd2 ext4,1)
- else
-    AUTOLOAD:=$(call AutoLoad,30,jbd2 ext4,1)
- endif
+  AUTOLOAD:=$(call AutoLoad,30,mbcache jbd2 ext4,1)
   $(call AddDepends/crc16)
 endef
 

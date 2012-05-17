@@ -78,13 +78,8 @@ define KernelPackage/xen-evtchn
   TITLE:=Xen event channels
   DEPENDS:=@TARGET_x86_xen_domu
   KCONFIG:=CONFIG_XEN_DEV_EVTCHN
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.37)),1)
-    FILES:=$(LINUX_DIR)/drivers/xen/xen-evtchn.ko
-    AUTOLOAD:=$(call AutoLoad,06,xen-evtchn)
-  else
-    FILES:=$(LINUX_DIR)/drivers/xen/evtchn.ko
-    AUTOLOAD:=$(call AutoLoad,06,evtchn)
-  endif
+  FILES:=$(LINUX_DIR)/drivers/xen/xen-evtchn.ko
+  AUTOLOAD:=$(call AutoLoad,06,xen-evtchn)
 endef
 
 define KernelPackage/xen-evtchn/description

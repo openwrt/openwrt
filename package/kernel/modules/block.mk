@@ -43,13 +43,10 @@ endef
 define KernelPackage/ata-ahci
   TITLE:=AHCI Serial ATA support
   KCONFIG:=CONFIG_SATA_AHCI
-  FILES:=$(LINUX_DIR)/drivers/ata/ahci.ko
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1)
-    FILES += $(LINUX_DIR)/drivers/ata/libahci.ko
-    AUTOLOAD:=$(call AutoLoad,41,libahci ahci,1)
-  else
-    AUTOLOAD:=$(call AutoLoad,41,ahci,1)
-  endif
+  FILES:= \
+    $(LINUX_DIR)/drivers/ata/ahci.ko \
+    $(LINUX_DIR)/drivers/ata/libahci.ko
+  AUTOLOAD:=$(call AutoLoad,41,libahci ahci,1)
   $(call AddDepends/ata)
 endef
 
@@ -343,17 +340,8 @@ $(call KernelPackage/md/Depends,)
 	$(LINUX_DIR)/crypto/async_tx/async_xor.ko \
 	$(LINUX_DIR)/crypto/async_tx/async_pq.ko \
 	$(LINUX_DIR)/crypto/async_tx/async_raid6_recov.ko \
-	$(LINUX_DIR)/drivers/md/raid456.ko
-  # Additional files with kernel-dependent locations or presence
-  # For Linux >= 2.6.36
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.36)), 1)
-    FILES+= \
+	$(LINUX_DIR)/drivers/md/raid456.ko \
 	$(LINUX_DIR)/lib/raid6/raid6_pq.ko
-  # For Linux < 2.6.36
-  else
-    FILES+= \
-	$(LINUX_DIR)/drivers/md/raid6_pq.ko
-  endif
   AUTOLOAD:=$(call AutoLoad,28, xor async_tx async_memcpy async_xor raid6_pq async_pq async_raid6_recov raid456)
 endef
 

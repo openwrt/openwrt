@@ -44,14 +44,7 @@ define KernelPackage/bluetooth
 	$(LINUX_DIR)/net/bluetooth/hidp/hidp.ko \
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btusb.ko
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.39)),1)
-    AUTOLOAD:=$(call AutoLoad,90,bluetooth rfcomm bnep hidp hci_uart btusb)
-  else
-    FILES+= \
-	$(LINUX_DIR)/net/bluetooth/l2cap.ko \
-	$(LINUX_DIR)/net/bluetooth/sco.ko
-    AUTOLOAD:=$(call AutoLoad,90,bluetooth l2cap sco rfcomm bnep hidp hci_uart btusb)
-  endif
+  AUTOLOAD:=$(call AutoLoad,90,bluetooth rfcomm bnep hidp hci_uart btusb)
 endef
 
 define KernelPackage/bluetooth/description
@@ -922,11 +915,7 @@ define KernelPackage/serial-8250
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.3)),1)
   FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250.ko
 else
- ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.38)),1)
   FILES:=$(LINUX_DIR)/drivers/tty/serial/8250.ko
- else
-  FILES:=$(LINUX_DIR)/drivers/serial/8250.ko
- endif
 endif
 endef
 
