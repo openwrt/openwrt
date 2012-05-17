@@ -1,6 +1,6 @@
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
-@@ -297,6 +297,23 @@ static int bcma_get_next_core(struct bcm
+@@ -323,6 +323,23 @@ static int bcma_get_next_core(struct bcm
  			return -EILSEQ;
  	}
  
@@ -24,7 +24,7 @@
  	/* get & parse slave ports */
  	for (i = 0; i < ports[1]; i++) {
  		for (j = 0; ; j++) {
-@@ -309,7 +326,7 @@ static int bcma_get_next_core(struct bcm
+@@ -335,7 +352,7 @@ static int bcma_get_next_core(struct bcm
  				break;
  			} else {
  				if (i == 0 && j == 0)
@@ -35,7 +35,7 @@
  	}
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -139,6 +139,7 @@ struct bcma_device {
+@@ -144,6 +144,7 @@ struct bcma_device {
  	u8 core_unit;
  
  	u32 addr;

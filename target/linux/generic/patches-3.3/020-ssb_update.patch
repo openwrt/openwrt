@@ -1,3 +1,14 @@
+--- a/drivers/ssb/b43_pci_bridge.c
++++ b/drivers/ssb/b43_pci_bridge.c
+@@ -29,6 +29,8 @@ static const struct pci_device_id b43_pc
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4319) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4320) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4321) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4322) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43222) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4324) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4325) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4328) },
 --- a/drivers/ssb/driver_chipcommon_pmu.c
 +++ b/drivers/ssb/driver_chipcommon_pmu.c
 @@ -13,6 +13,9 @@
@@ -149,7 +160,26 @@
  					   &clkctl_n, &clkctl_m);
 --- a/drivers/ssb/pci.c
 +++ b/drivers/ssb/pci.c
-@@ -331,7 +331,6 @@ static void sprom_extract_r123(struct ss
+@@ -178,6 +178,18 @@ err_pci:
+ #define SPEX(_outvar, _offset, _mask, _shift) \
+ 	SPEX16(_outvar, _offset, _mask, _shift)
+ 
++#define SPEX_ARRAY8(_field, _offset, _mask, _shift)	\
++	do {	\
++		SPEX(_field[0], _offset +  0, _mask, _shift);	\
++		SPEX(_field[1], _offset +  2, _mask, _shift);	\
++		SPEX(_field[2], _offset +  4, _mask, _shift);	\
++		SPEX(_field[3], _offset +  6, _mask, _shift);	\
++		SPEX(_field[4], _offset +  8, _mask, _shift);	\
++		SPEX(_field[5], _offset + 10, _mask, _shift);	\
++		SPEX(_field[6], _offset + 12, _mask, _shift);	\
++		SPEX(_field[7], _offset + 14, _mask, _shift);	\
++	} while (0)
++
+ 
+ static inline u8 ssb_crc8(u8 crc, u8 data)
+ {
+@@ -331,7 +343,6 @@ static void sprom_extract_r123(struct ss
  {
  	int i;
  	u16 v;
@@ -157,8 +187,24 @@
  	u16 loc[3];
  
  	if (out->revision == 3)			/* rev 3 moved MAC */
-@@ -390,20 +389,12 @@ static void sprom_extract_r123(struct ss
+@@ -361,8 +372,9 @@ static void sprom_extract_r123(struct ss
+ 	SPEX(et0mdcport, SSB_SPROM1_ETHPHY, SSB_SPROM1_ETHPHY_ET0M, 14);
+ 	SPEX(et1mdcport, SSB_SPROM1_ETHPHY, SSB_SPROM1_ETHPHY_ET1M, 15);
+ 	SPEX(board_rev, SSB_SPROM1_BINF, SSB_SPROM1_BINF_BREV, 0);
+-	SPEX(country_code, SSB_SPROM1_BINF, SSB_SPROM1_BINF_CCODE,
+-	     SSB_SPROM1_BINF_CCODE_SHIFT);
++	if (out->revision == 1)
++		SPEX(country_code, SSB_SPROM1_BINF, SSB_SPROM1_BINF_CCODE,
++		     SSB_SPROM1_BINF_CCODE_SHIFT);
+ 	SPEX(ant_available_a, SSB_SPROM1_BINF, SSB_SPROM1_BINF_ANTA,
+ 	     SSB_SPROM1_BINF_ANTA_SHIFT);
+ 	SPEX(ant_available_bg, SSB_SPROM1_BINF, SSB_SPROM1_BINF_ANTBG,
+@@ -388,22 +400,16 @@ static void sprom_extract_r123(struct ss
+ 	SPEX(boardflags_lo, SSB_SPROM1_BFLLO, 0xFFFF, 0);
+ 	if (out->revision >= 2)
  		SPEX(boardflags_hi, SSB_SPROM2_BFLHI, 0xFFFF, 0);
++	SPEX(alpha2[0], SSB_SPROM1_CCODE, 0xff00, 8);
++	SPEX(alpha2[1], SSB_SPROM1_CCODE, 0x00ff, 0);
  
  	/* Extract the antenna gain values. */
 -	gain = r123_extract_antgain(out->revision, in,
@@ -184,7 +230,27 @@
  }
  
  /* Revs 4 5 and 8 have partially shared layout */
-@@ -504,16 +495,14 @@ static void sprom_extract_r45(struct ssb
+@@ -464,14 +470,17 @@ static void sprom_extract_r45(struct ssb
+ 	SPEX(et0phyaddr, SSB_SPROM4_ETHPHY, SSB_SPROM4_ETHPHY_ET0A, 0);
+ 	SPEX(et1phyaddr, SSB_SPROM4_ETHPHY, SSB_SPROM4_ETHPHY_ET1A,
+ 	     SSB_SPROM4_ETHPHY_ET1A_SHIFT);
++	SPEX(board_rev, SSB_SPROM4_BOARDREV, 0xFFFF, 0);
+ 	if (out->revision == 4) {
+-		SPEX(country_code, SSB_SPROM4_CCODE, 0xFFFF, 0);
++		SPEX(alpha2[0], SSB_SPROM4_CCODE, 0xff00, 8);
++		SPEX(alpha2[1], SSB_SPROM4_CCODE, 0x00ff, 0);
+ 		SPEX(boardflags_lo, SSB_SPROM4_BFLLO, 0xFFFF, 0);
+ 		SPEX(boardflags_hi, SSB_SPROM4_BFLHI, 0xFFFF, 0);
+ 		SPEX(boardflags2_lo, SSB_SPROM4_BFL2LO, 0xFFFF, 0);
+ 		SPEX(boardflags2_hi, SSB_SPROM4_BFL2HI, 0xFFFF, 0);
+ 	} else {
+-		SPEX(country_code, SSB_SPROM5_CCODE, 0xFFFF, 0);
++		SPEX(alpha2[0], SSB_SPROM5_CCODE, 0xff00, 8);
++		SPEX(alpha2[1], SSB_SPROM5_CCODE, 0x00ff, 0);
+ 		SPEX(boardflags_lo, SSB_SPROM5_BFLLO, 0xFFFF, 0);
+ 		SPEX(boardflags_hi, SSB_SPROM5_BFLHI, 0xFFFF, 0);
+ 		SPEX(boardflags2_lo, SSB_SPROM5_BFL2LO, 0xFFFF, 0);
+@@ -504,16 +513,14 @@ static void sprom_extract_r45(struct ssb
  	}
  
  	/* Extract the antenna gain values. */
@@ -205,7 +271,7 @@
  
  	sprom_extract_r458(out, in);
  
-@@ -523,7 +512,13 @@ static void sprom_extract_r45(struct ssb
+@@ -523,14 +530,22 @@ static void sprom_extract_r45(struct ssb
  static void sprom_extract_r8(struct ssb_sprom *out, const u16 *in)
  {
  	int i;
@@ -220,7 +286,17 @@
  
  	/* extract the MAC address */
  	for (i = 0; i < 3; i++) {
-@@ -596,16 +591,46 @@ static void sprom_extract_r8(struct ssb_
+ 		v = in[SPOFF(SSB_SPROM8_IL0MAC) + i];
+ 		*(((__be16 *)out->il0mac) + i) = cpu_to_be16(v);
+ 	}
+-	SPEX(country_code, SSB_SPROM8_CCODE, 0xFFFF, 0);
++	SPEX(board_rev, SSB_SPROM8_BOARDREV, 0xFFFF, 0);
++	SPEX(alpha2[0], SSB_SPROM8_CCODE, 0xff00, 8);
++	SPEX(alpha2[1], SSB_SPROM8_CCODE, 0x00ff, 0);
+ 	SPEX(boardflags_lo, SSB_SPROM8_BFLLO, 0xFFFF, 0);
+ 	SPEX(boardflags_hi, SSB_SPROM8_BFLHI, 0xFFFF, 0);
+ 	SPEX(boardflags2_lo, SSB_SPROM8_BFL2LO, 0xFFFF, 0);
+@@ -596,16 +611,46 @@ static void sprom_extract_r8(struct ssb_
  	SPEX32(ofdm5ghpo, SSB_SPROM8_OFDM5GHPO, 0xFFFFFFFF, 0);
  
  	/* Extract the antenna gain values. */
@@ -273,6 +349,78 @@
  
  	/* Extract FEM info */
  	SPEX(fem.ghz2.tssipos, SSB_SPROM8_FEM2G,
+@@ -630,6 +675,63 @@ static void sprom_extract_r8(struct ssb_
+ 	SPEX(fem.ghz5.antswlut, SSB_SPROM8_FEM5G,
+ 		SSB_SROM8_FEM_ANTSWLUT, SSB_SROM8_FEM_ANTSWLUT_SHIFT);
+ 
++	SPEX(leddc_on_time, SSB_SPROM8_LEDDC, SSB_SPROM8_LEDDC_ON,
++	     SSB_SPROM8_LEDDC_ON_SHIFT);
++	SPEX(leddc_off_time, SSB_SPROM8_LEDDC, SSB_SPROM8_LEDDC_OFF,
++	     SSB_SPROM8_LEDDC_OFF_SHIFT);
++
++	SPEX(txchain, SSB_SPROM8_TXRXC, SSB_SPROM8_TXRXC_TXCHAIN,
++	     SSB_SPROM8_TXRXC_TXCHAIN_SHIFT);
++	SPEX(rxchain, SSB_SPROM8_TXRXC, SSB_SPROM8_TXRXC_RXCHAIN,
++	     SSB_SPROM8_TXRXC_RXCHAIN_SHIFT);
++	SPEX(antswitch, SSB_SPROM8_TXRXC, SSB_SPROM8_TXRXC_SWITCH,
++	     SSB_SPROM8_TXRXC_SWITCH_SHIFT);
++
++	SPEX(opo, SSB_SPROM8_OFDM2GPO, 0x00ff, 0);
++
++	SPEX_ARRAY8(mcs2gpo, SSB_SPROM8_2G_MCSPO, ~0, 0);
++	SPEX_ARRAY8(mcs5gpo, SSB_SPROM8_5G_MCSPO, ~0, 0);
++	SPEX_ARRAY8(mcs5glpo, SSB_SPROM8_5GL_MCSPO, ~0, 0);
++	SPEX_ARRAY8(mcs5ghpo, SSB_SPROM8_5GH_MCSPO, ~0, 0);
++
++	SPEX(rawtempsense, SSB_SPROM8_RAWTS, SSB_SPROM8_RAWTS_RAWTEMP,
++	     SSB_SPROM8_RAWTS_RAWTEMP_SHIFT);
++	SPEX(measpower, SSB_SPROM8_RAWTS, SSB_SPROM8_RAWTS_MEASPOWER,
++	     SSB_SPROM8_RAWTS_MEASPOWER_SHIFT);
++	SPEX(tempsense_slope, SSB_SPROM8_OPT_CORRX,
++	     SSB_SPROM8_OPT_CORRX_TEMP_SLOPE,
++	     SSB_SPROM8_OPT_CORRX_TEMP_SLOPE_SHIFT);
++	SPEX(tempcorrx, SSB_SPROM8_OPT_CORRX, SSB_SPROM8_OPT_CORRX_TEMPCORRX,
++	     SSB_SPROM8_OPT_CORRX_TEMPCORRX_SHIFT);
++	SPEX(tempsense_option, SSB_SPROM8_OPT_CORRX,
++	     SSB_SPROM8_OPT_CORRX_TEMP_OPTION,
++	     SSB_SPROM8_OPT_CORRX_TEMP_OPTION_SHIFT);
++	SPEX(freqoffset_corr, SSB_SPROM8_HWIQ_IQSWP,
++	     SSB_SPROM8_HWIQ_IQSWP_FREQ_CORR,
++	     SSB_SPROM8_HWIQ_IQSWP_FREQ_CORR_SHIFT);
++	SPEX(iqcal_swp_dis, SSB_SPROM8_HWIQ_IQSWP,
++	     SSB_SPROM8_HWIQ_IQSWP_IQCAL_SWP,
++	     SSB_SPROM8_HWIQ_IQSWP_IQCAL_SWP_SHIFT);
++	SPEX(hw_iqcal_en, SSB_SPROM8_HWIQ_IQSWP, SSB_SPROM8_HWIQ_IQSWP_HW_IQCAL,
++	     SSB_SPROM8_HWIQ_IQSWP_HW_IQCAL_SHIFT);
++
++	SPEX(bw40po, SSB_SPROM8_BW40PO, ~0, 0);
++	SPEX(cddpo, SSB_SPROM8_CDDPO, ~0, 0);
++	SPEX(stbcpo, SSB_SPROM8_STBCPO, ~0, 0);
++	SPEX(bwduppo, SSB_SPROM8_BWDUPPO, ~0, 0);
++
++	SPEX(tempthresh, SSB_SPROM8_THERMAL, SSB_SPROM8_THERMAL_TRESH,
++	     SSB_SPROM8_THERMAL_TRESH_SHIFT);
++	SPEX(tempoffset, SSB_SPROM8_THERMAL, SSB_SPROM8_THERMAL_OFFSET,
++	     SSB_SPROM8_THERMAL_OFFSET_SHIFT);
++	SPEX(phycal_tempdelta, SSB_SPROM8_TEMPDELTA,
++	     SSB_SPROM8_TEMPDELTA_PHYCAL,
++	     SSB_SPROM8_TEMPDELTA_PHYCAL_SHIFT);
++	SPEX(temps_period, SSB_SPROM8_TEMPDELTA, SSB_SPROM8_TEMPDELTA_PERIOD,
++	     SSB_SPROM8_TEMPDELTA_PERIOD_SHIFT);
++	SPEX(temps_hysteresis, SSB_SPROM8_TEMPDELTA,
++	     SSB_SPROM8_TEMPDELTA_HYSTERESIS,
++	     SSB_SPROM8_TEMPDELTA_HYSTERESIS_SHIFT);
+ 	sprom_extract_r458(out, in);
+ 
+ 	/* TODO - get remaining rev 8 stuff needed */
+@@ -759,7 +861,6 @@ static void ssb_pci_get_boardinfo(struct
+ {
+ 	bi->vendor = bus->host_pci->subsystem_vendor;
+ 	bi->type = bus->host_pci->subsystem_device;
+-	bi->rev = bus->host_pci->revision;
+ }
+ 
+ int ssb_pci_get_invariants(struct ssb_bus *bus,
 --- a/drivers/ssb/pcmcia.c
 +++ b/drivers/ssb/pcmcia.c
 @@ -676,14 +676,10 @@ static int ssb_pcmcia_do_get_invariants(
@@ -414,7 +562,7 @@
  	} antenna_gain;
  
  	struct {
-@@ -103,7 +109,79 @@ struct ssb_sprom {
+@@ -103,14 +109,85 @@ struct ssb_sprom {
  		} ghz5;
  	} fem;
  
@@ -495,6 +643,13 @@
  };
  
  /* Information about the PCB the circuitry is soldered on. */
+ struct ssb_boardinfo {
+ 	u16 vendor;
+ 	u16 type;
+-	u8  rev;
+ };
+ 
+ 
 --- a/include/linux/ssb/ssb_driver_gige.h
 +++ b/include/linux/ssb/ssb_driver_gige.h
 @@ -2,6 +2,7 @@
@@ -507,10 +662,96 @@
  
 --- a/include/linux/ssb/ssb_regs.h
 +++ b/include/linux/ssb/ssb_regs.h
-@@ -449,6 +449,39 @@
- #define SSB_SPROM8_TS_SLP_OPT_CORRX	0x00B6
- #define SSB_SPROM8_FOC_HWIQ_IQSWP	0x00B8
- #define SSB_SPROM8_PHYCAL_TEMPDELTA	0x00BA
+@@ -228,6 +228,7 @@
+ #define  SSB_SPROM1_AGAIN_BG_SHIFT	0
+ #define  SSB_SPROM1_AGAIN_A		0xFF00	/* A-PHY */
+ #define  SSB_SPROM1_AGAIN_A_SHIFT	8
++#define SSB_SPROM1_CCODE		0x0076
+ 
+ /* SPROM Revision 2 (inherits from rev 1) */
+ #define SSB_SPROM2_BFLHI		0x0038	/* Boardflags (high 16 bits) */
+@@ -267,6 +268,7 @@
+ #define  SSB_SPROM3_OFDMGPO		0x107A	/* G-PHY OFDM Power Offset (4 bytes, BigEndian) */
+ 
+ /* SPROM Revision 4 */
++#define SSB_SPROM4_BOARDREV		0x0042	/* Board revision */
+ #define SSB_SPROM4_BFLLO		0x0044	/* Boardflags (low 16 bits) */
+ #define SSB_SPROM4_BFLHI		0x0046  /* Board Flags Hi */
+ #define SSB_SPROM4_BFL2LO		0x0048	/* Board flags 2 (low 16 bits) */
+@@ -389,6 +391,11 @@
+ #define  SSB_SPROM8_GPIOB_P2		0x00FF	/* Pin 2 */
+ #define  SSB_SPROM8_GPIOB_P3		0xFF00	/* Pin 3 */
+ #define  SSB_SPROM8_GPIOB_P3_SHIFT	8
++#define SSB_SPROM8_LEDDC		0x009A
++#define  SSB_SPROM8_LEDDC_ON		0xFF00	/* oncount */
++#define  SSB_SPROM8_LEDDC_ON_SHIFT	8
++#define  SSB_SPROM8_LEDDC_OFF		0x00FF	/* offcount */
++#define  SSB_SPROM8_LEDDC_OFF_SHIFT	0
+ #define SSB_SPROM8_ANTAVAIL		0x009C  /* Antenna available bitfields*/
+ #define  SSB_SPROM8_ANTAVAIL_A		0xFF00	/* A-PHY bitfield */
+ #define  SSB_SPROM8_ANTAVAIL_A_SHIFT	8
+@@ -404,6 +411,13 @@
+ #define  SSB_SPROM8_AGAIN2_SHIFT	0
+ #define  SSB_SPROM8_AGAIN3		0xFF00	/* Antenna 3 */
+ #define  SSB_SPROM8_AGAIN3_SHIFT	8
++#define SSB_SPROM8_TXRXC		0x00A2
++#define  SSB_SPROM8_TXRXC_TXCHAIN	0x000f
++#define  SSB_SPROM8_TXRXC_TXCHAIN_SHIFT	0
++#define  SSB_SPROM8_TXRXC_RXCHAIN	0x00f0
++#define  SSB_SPROM8_TXRXC_RXCHAIN_SHIFT	4
++#define  SSB_SPROM8_TXRXC_SWITCH	0xff00
++#define  SSB_SPROM8_TXRXC_SWITCH_SHIFT	8
+ #define SSB_SPROM8_RSSIPARM2G		0x00A4	/* RSSI params for 2GHz */
+ #define  SSB_SPROM8_RSSISMF2G		0x000F
+ #define  SSB_SPROM8_RSSISMC2G		0x00F0
+@@ -430,6 +444,7 @@
+ #define  SSB_SPROM8_TRI5GH_SHIFT	8
+ #define SSB_SPROM8_RXPO			0x00AC  /* RX power offsets */
+ #define  SSB_SPROM8_RXPO2G		0x00FF	/* 2GHz RX power offset */
++#define  SSB_SPROM8_RXPO2G_SHIFT	0
+ #define  SSB_SPROM8_RXPO5G		0xFF00	/* 5GHz RX power offset */
+ #define  SSB_SPROM8_RXPO5G_SHIFT	8
+ #define SSB_SPROM8_FEM2G		0x00AE
+@@ -445,10 +460,71 @@
+ #define  SSB_SROM8_FEM_ANTSWLUT		0xF800
+ #define  SSB_SROM8_FEM_ANTSWLUT_SHIFT	11
+ #define SSB_SPROM8_THERMAL		0x00B2
+-#define SSB_SPROM8_MPWR_RAWTS		0x00B4
+-#define SSB_SPROM8_TS_SLP_OPT_CORRX	0x00B6
+-#define SSB_SPROM8_FOC_HWIQ_IQSWP	0x00B8
+-#define SSB_SPROM8_PHYCAL_TEMPDELTA	0x00BA
++#define  SSB_SPROM8_THERMAL_OFFSET	0x00ff
++#define  SSB_SPROM8_THERMAL_OFFSET_SHIFT	0
++#define  SSB_SPROM8_THERMAL_TRESH	0xff00
++#define  SSB_SPROM8_THERMAL_TRESH_SHIFT	8
++/* Temp sense related entries */
++#define SSB_SPROM8_RAWTS		0x00B4
++#define  SSB_SPROM8_RAWTS_RAWTEMP	0x01ff
++#define  SSB_SPROM8_RAWTS_RAWTEMP_SHIFT	0
++#define  SSB_SPROM8_RAWTS_MEASPOWER	0xfe00
++#define  SSB_SPROM8_RAWTS_MEASPOWER_SHIFT	9
++#define SSB_SPROM8_OPT_CORRX		0x00B6
++#define  SSB_SPROM8_OPT_CORRX_TEMP_SLOPE	0x00ff
++#define  SSB_SPROM8_OPT_CORRX_TEMP_SLOPE_SHIFT	0
++#define  SSB_SPROM8_OPT_CORRX_TEMPCORRX	0xfc00
++#define  SSB_SPROM8_OPT_CORRX_TEMPCORRX_SHIFT	10
++#define  SSB_SPROM8_OPT_CORRX_TEMP_OPTION	0x0300
++#define  SSB_SPROM8_OPT_CORRX_TEMP_OPTION_SHIFT	8
++/* FOC: freiquency offset correction, HWIQ: H/W IOCAL enable, IQSWP: IQ CAL swap disable */
++#define SSB_SPROM8_HWIQ_IQSWP		0x00B8
++#define  SSB_SPROM8_HWIQ_IQSWP_FREQ_CORR	0x000f
++#define  SSB_SPROM8_HWIQ_IQSWP_FREQ_CORR_SHIFT	0
++#define  SSB_SPROM8_HWIQ_IQSWP_IQCAL_SWP	0x0010
++#define  SSB_SPROM8_HWIQ_IQSWP_IQCAL_SWP_SHIFT	4
++#define  SSB_SPROM8_HWIQ_IQSWP_HW_IQCAL	0x0020
++#define  SSB_SPROM8_HWIQ_IQSWP_HW_IQCAL_SHIFT	5
++#define SSB_SPROM8_TEMPDELTA		0x00BA
++#define  SSB_SPROM8_TEMPDELTA_PHYCAL	0x00ff
++#define  SSB_SPROM8_TEMPDELTA_PHYCAL_SHIFT	0
++#define  SSB_SPROM8_TEMPDELTA_PERIOD	0x0f00
++#define  SSB_SPROM8_TEMPDELTA_PERIOD_SHIFT	8
++#define  SSB_SPROM8_TEMPDELTA_HYSTERESIS	0xf000
++#define  SSB_SPROM8_TEMPDELTA_HYSTERESIS_SHIFT	12
 +
 +/* There are 4 blocks with power info sharing the same layout */
 +#define SSB_SROM8_PWR_INFO_CORE0	0x00C0
@@ -547,7 +788,7 @@
  #define SSB_SPROM8_MAXP_BG		0x00C0  /* Max Power 2GHz in path 1 */
  #define  SSB_SPROM8_MAXP_BG_MASK	0x00FF  /* Mask for Max Power 2GHz */
  #define  SSB_SPROM8_ITSSI_BG		0xFF00	/* Mask for path 1 itssi_bg */
-@@ -473,6 +506,7 @@
+@@ -473,12 +549,23 @@
  #define SSB_SPROM8_PA1HIB0		0x00D8	/* 5.8GHz power amp settings */
  #define SSB_SPROM8_PA1HIB1		0x00DA
  #define SSB_SPROM8_PA1HIB2		0x00DC
@@ -555,3 +796,19 @@
  #define SSB_SPROM8_CCK2GPO		0x0140	/* CCK power offset */
  #define SSB_SPROM8_OFDM2GPO		0x0142	/* 2.4GHz OFDM power offset */
  #define SSB_SPROM8_OFDM5GPO		0x0146	/* 5.3GHz OFDM power offset */
+ #define SSB_SPROM8_OFDM5GLPO		0x014A	/* 5.2GHz OFDM power offset */
+ #define SSB_SPROM8_OFDM5GHPO		0x014E	/* 5.8GHz OFDM power offset */
+ 
++#define SSB_SPROM8_2G_MCSPO		0x0152
++#define SSB_SPROM8_5G_MCSPO		0x0162
++#define SSB_SPROM8_5GL_MCSPO		0x0172
++#define SSB_SPROM8_5GH_MCSPO		0x0182
++
++#define SSB_SPROM8_CDDPO		0x0192
++#define SSB_SPROM8_STBCPO		0x0194
++#define SSB_SPROM8_BW40PO		0x0196
++#define SSB_SPROM8_BWDUPPO		0x0198
++
+ /* Values for boardflags_lo read from SPROM */
+ #define SSB_BFL_BTCOEXIST		0x0001	/* implements Bluetooth coexistance */
+ #define SSB_BFL_PACTRL			0x0002	/* GPIO 9 controlling the PA */
