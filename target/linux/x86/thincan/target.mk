@@ -1,3 +1,4 @@
+LINUX_VERSION:=3.3.6
 DEVICE_TYPE:=terminal
 BOARDNAME:=Artec ThinCan
 
