@@ -374,12 +374,8 @@ define KernelPackage/crypto-misc
 	$(LINUX_DIR)/crypto/tea.ko \
 	$(LINUX_DIR)/crypto/tgr192.ko \
 	$(LINUX_DIR)/crypto/twofish_common.ko \
-	$(LINUX_DIR)/crypto/wp512.ko
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,2.6.35)),1)
-    FILES += $(LINUX_DIR)/crypto/twofish.ko
-  else
-    FILES += $(LINUX_DIR)/crypto/twofish_generic.ko
-  endif
+	$(LINUX_DIR)/crypto/wp512.ko \
+    $(LINUX_DIR)/crypto/twofish_generic.ko
   ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),le,3.1)),1)
     FILES += $(LINUX_DIR)/crypto/blowfish.ko
   else

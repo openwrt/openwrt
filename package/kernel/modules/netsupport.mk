@@ -438,13 +438,8 @@ define KernelPackage/gre
   TITLE:=GRE support
   DEPENDS:=+PACKAGE_kmod-ipv6:kmod-ipv6
   KCONFIG:=CONFIG_NET_IPGRE CONFIG_NET_IPGRE_DEMUX
- ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.37)),1)
   FILES:=$(LINUX_DIR)/net/ipv4/ip_gre.ko $(LINUX_DIR)/net/ipv4/gre.ko
   AUTOLOAD:=$(call AutoLoad,39,gre ip_gre)
- else
-  FILES:=$(LINUX_DIR)/net/ipv4/ip_gre.ko
-  AUTOLOAD:=$(call AutoLoad,39,ip_gre)
- endif
 endef
 
 define KernelPackage/gre/description
@@ -572,20 +567,15 @@ define KernelPackage/pptp
 endef
 
 $(eval $(call KernelPackage,pptp))
-	
+
 
 define KernelPackage/pppol2tp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPPoL2TP support
   DEPENDS:=kmod-ppp +kmod-pppoe +kmod-l2tp
   KCONFIG:=CONFIG_PPPOL2TP
-  ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,2.6.35)),1)
-    FILES:=$(LINUX_DIR)/net/l2tp/l2tp_ppp.ko
-    AUTOLOAD:=$(call AutoLoad,40,l2tp_ppp)
-  else
-    FILES:=$(LINUX_DIR)/drivers/net/pppol2tp.ko
-    AUTOLOAD:=$(call AutoLoad,40,pppol2tp)
-  endif
+  FILES:=$(LINUX_DIR)/net/l2tp/l2tp_ppp.ko
+  AUTOLOAD:=$(call AutoLoad,40,l2tp_ppp)
 endef
 
 define KernelPackage/pppol2tp/description
